@@ -96,7 +96,7 @@ export const MORALE: Record<Outcome, number> = {
   Desastre: -15,
 };
 /** Monedas por punto de dificultad de un encargo (antes de peligro y duración). */
-export const REWARD_PER_POINT = 5.5;
+export const REWARD_PER_POINT = 5;
 /** Probabilidad de que un fracaso acabe en desastre, por nivel de peligro. */
 export const DISASTER = [0.05, 0.3, 0.6, 0.9] as const;
 /** Probabilidad de una baja (herida grave, muerte o desaparición) en un fracaso, por peligro. */
@@ -105,3 +105,29 @@ export const FAIL_CASUALTY = [0, 0.05, 0.15, 0.3] as const;
 export const TWIST_DIFF = 3;
 /** Parte del oro que se queda un codicioso. */
 export const GREED = 0.1;
+
+// ---------- Clases ----------
+/** Explorador: días que ahorra en viajes largos (desde SCOUT_MIN días) y cuánto reduce el desastre. */
+export const SCOUT_MIN = 3;
+export const SCOUT_DAYS = 1;
+export const SCOUT_AMBUSH = 0.5;
+/** Pícaro: oro extra cuando se cobra; además trae el objeto aunque el éxito sea parcial. */
+export const ROGUE_GOLD = 0.1;
+/** Guerrero: multiplica el riesgo de herida de sus compañeros. */
+export const WARRIOR_GUARD = 0.5;
+/** Clérigo: multiplica las pérdidas de moral del grupo (y además evita muertes). */
+export const CLERIC_SOLACE = 0.5;
+
+// ---------- Moral ----------
+/** Cansancio: moral que cuesta cada día fuera, sea cual sea el resultado. */
+export const TRIP_FATIGUE = 4;
+/** Moral que se recupera cada noche descansando en el gremio, según la taberna. */
+export const restMorale = (tab: number) => 2 + tab;
+/** Hasta dónde llega la moral solo descansando: una taberna mejor anima más. */
+export const restCap = (tab: number) => 55 + 6 * tab;
+/** Probabilidad por noche de que alguien harto se vaya, y de que alguien desanimado pida aumento. */
+export const DESERT_CHANCE = 0.35;
+export const RAISE_CHANCE = 0.3;
+export const RAISE_AMOUNT = 3;
+export const RAISE_MORALE = 25;
+export const REFUSE_MORALE = -10;

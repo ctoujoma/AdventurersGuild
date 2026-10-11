@@ -2,7 +2,8 @@ import { useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
 import { canSend } from '../core/game';
 import type { GameState, Quest } from '../core/model';
-import { RISK_LABELS, skill } from '../core/party';
+import { PERKS, partyClasses, tripDays } from '../core/classes';
+import { RISK_LABELS, moraleMod, skill } from '../core/party';
 import { questEstimate } from '../core/resolve';
 import { CLASS_NAMES, dangerClass, dangerLabel, statusLabel } from '../data/labels';
 import { Icon } from './icons';
@@ -27,6 +28,9 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
   const scale = Math.max(1, ...est.rows.map((r) => Math.max(r.diff, r.power))) * 1.15;
   const blocked = party.length ? canSend(game, q.id, sel) : null;
   const mage = party.find((h) => h.cls === 'mago');
+  const members = party.map(memberOf);
+  const days = tripDays(q, members);
+  const hideDanger = q.dangerHidden && !mage;
 
   const toggle = (id: string) => {
     setWarn(null);
@@ -64,8 +68,8 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
                 {c.skill} {c.diff}
               </span>
             ))}
-            <span class={`danger danger-${dangerClass(q.danger, q.dangerHidden)}`}>
-              Peligro {dangerLabel(q.danger, q.dangerHidden)}
+            <span class={`danger danger-${dangerClass(q.danger, hideDanger)}`}>
+              Peligro {dangerLabel(q.danger, hideDanger)}
             </span>
             {q.item && <span class="chal chal-item">+ objeto</span>}
           </div>
@@ -73,8 +77,8 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
           <div class={`estimate est-${party.length ? est.level : 'none'}`}>
             <b>{party.length ? RISK_LABELS[est.level] : 'Elige un grupo'}</b>
             <span>
-              {party.length ? `Grupo ${party.length}/${q.slots}` : `Hasta ${q.slots}`} · {q.days}{' '}
-              {plural(q.days, 'día', 'días')} ·{' '}
+              {party.length ? `Grupo ${party.length}/${q.slots}` : `Hasta ${q.slots}`} · {days}{' '}
+              {plural(days, 'día', 'días')} ·{' '}
               <span class="reward-inline">
                 <Icon name="coin" size={12} />
                 {q.reward}
@@ -85,6 +89,20 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
             <div class="twist" role="status">
               <b>{mage.name} nota algo raro.</b> {q.twist} El primer desafío será más duro.
             </div>
+          )}
+          {mage && q.dangerHidden && (
+            <div class="twist" role="status">
+              <b>{mage.name} no se fía del cliente.</b> El peligro real es mayor de lo que dice.
+            </div>
+          )}
+          {party.length > 0 && (
+            <ul class="perks">
+              {partyClasses(members).map((c) => (
+                <li key={c}>
+                  <b>{PERKS[c].name}</b> {PERKS[c].desc}
+                </li>
+              ))}
+            </ul>
           )}
           <div class="cbars">
             {est.rows.map((r) => {
@@ -122,6 +140,15 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
                     <b>{h.name}</b>
                     <span class="muted">
                       {CLASS_NAMES[h.cls][h.sex]} · {h.lvl}
+                      {moraleMod(h) > 0 && (
+                        <span class="mood up"> · {h.sex === 'f' ? 'animada' : 'animado'}</span>
+                      )}
+                      {moraleMod(h) < 0 && (
+                        <span class="mood down">
+                          {' '}
+                          · {h.sex === 'f' ? 'desanimada' : 'desanimado'}
+                        </span>
+                      )}
                     </span>
                     <span class="pick-skills">
                       {busy

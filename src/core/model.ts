@@ -31,6 +31,8 @@ export interface Hero {
   days: number;
   quote: string;
   history: string[];
+  /** Petición pendiente: un héroe desanimado pide aumento. */
+  request?: 'raise';
 }
 
 export type QuestType = 'Cazar' | 'Escoltar' | 'Explorar' | 'Recuperar' | 'Investigar' | 'Limpiar';

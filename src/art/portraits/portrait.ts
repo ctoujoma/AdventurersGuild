@@ -185,7 +185,7 @@ export function renderPortrait(look: HeroLook, marks: HeroMarks = {}, blink = fa
   if (look.sex === 'f') stamp(fig, LIPS, c);
   if (look.sex === 'f' && look.skin < 2) stamp(fig, BLUSH, c);
   if (look.freckles) stamp(fig, FRECKLES, c);
-  if (look.scar) stamp(fig, SCAR, c);
+  if (look.scar || marks.scar) stamp(fig, SCAR, c);
   if (look.beard) stamp(fig, look.face === 'alargada' ? BEARDS.perilla : BEARDS.barba, c);
 
   // Pelo por delante, recortado por el sombrero.

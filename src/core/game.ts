@@ -9,16 +9,24 @@ import {
   DAYS,
   DEBT,
   FACILITY_MAX,
+  DESERT_CHANCE,
   MAX_CANDIDATES,
+  RAISE_AMOUNT,
+  RAISE_CHANCE,
+  RAISE_MORALE,
   RANKS,
+  REFUSE_MORALE,
   SCHEDULE,
   START,
   UPGRADE_COST,
   capacity,
   healRate,
   rankIndex,
+  restCap,
+  restMorale,
   tavernIncome,
 } from './balance';
+import { tripDays } from './classes';
 import { generateHero, generateQuest } from './generate';
 import {
   SAVE_VERSION,
@@ -28,6 +36,7 @@ import {
   type Hero,
   type Quest,
 } from './model';
+import { MORALE_LOW, MORALE_QUIT } from './party';
 import { resolveMission } from './resolve';
 import { Rng } from './rng';
 import { listNames, plural } from './text';
@@ -39,9 +48,12 @@ export type Action =
   | { type: 'upgrade'; fac: keyof Facilities }
   | { type: 'sell'; itemId: string }
   | { type: 'read'; reportId: string }
+  | { type: 'answer'; id: string; yes: boolean }
   | { type: 'endDay' };
 
 // ---------- Consultas ----------
+
+const has = (h: Hero, id: string) => h.traits.some((t) => t.id === id);
 
 /** Héroes que siguen en el gremio (ocupan cama aunque estén fuera). */
 export const roster = (s: GameState) =>
@@ -179,16 +191,17 @@ export function reduce(state: GameState, action: Action): GameState {
       if (canSend(state, action.questId, action.heroIds)) return state;
       const s = structuredClone(state);
       const q = s.quests.find((x) => x.id === action.questId)!;
-      for (const id of action.heroIds) {
-        const h = s.heroes.find((x) => x.id === id)!;
+      const party = action.heroIds.map((id) => s.heroes.find((x) => x.id === id)!);
+      const days = tripDays(q, party);
+      for (const h of party) {
         h.status = 'mision';
-        h.days = q.days;
+        h.days = days;
       }
       s.missions.push({
         id: `m${s.uid++}`,
-        quest: { ...q, fresh: false },
+        quest: { ...q, days, fresh: false },
         heroIds: [...action.heroIds],
-        daysLeft: q.days,
+        daysLeft: days,
       });
       s.quests = s.quests.filter((x) => x.id !== q.id);
       return s;
@@ -213,6 +226,22 @@ export function reduce(state: GameState, action: Action): GameState {
       if (!r || r.read) return state;
       const s = structuredClone(state);
       s.reports.find((x) => x.id === action.reportId)!.read = true;
+      return s;
+    }
+    case 'answer': {
+      const h = state.heroes.find((x) => x.id === action.id);
+      if (!h?.request) return state;
+      const s = structuredClone(state);
+      const x = s.heroes.find((y) => y.id === action.id)!;
+      delete x.request;
+      if (action.yes) {
+        x.salary += RAISE_AMOUNT;
+        x.morale = Math.min(100, x.morale + RAISE_MORALE);
+        x.history.push(`Día ${s.day} · Le subiste el sueldo`);
+      } else {
+        x.morale = Math.max(0, x.morale + REFUSE_MORALE);
+        x.history.push(`Día ${s.day} · Le negaste el aumento`);
+      }
       return s;
     }
     case 'endDay':
@@ -284,6 +313,33 @@ export function endDay(state: GameState): GameState {
         events.push({ t: `Han encontrado la capa de ${h.name}. No volverá.`, k: 'bad' });
       }
     }
+  }
+
+  // Moral: se descansa en la taberna; quien está harto se va, quien está desanimado pide más.
+  const deserters: Hero[] = [];
+  for (const h of s.heroes) {
+    if (h.status !== 'ok') continue;
+    const cap = restCap(s.fac.tab) + (has(h, 'bebedor') && s.fac.tab >= 2 ? 10 : 0);
+    if (h.morale < cap) h.morale = Math.min(cap, h.morale + restMorale(s.fac.tab));
+    if (h.morale < MORALE_QUIT && !has(h, 'leal') && rng.chance(DESERT_CHANCE)) {
+      deserters.push(h);
+      continue;
+    }
+    if (h.morale < MORALE_LOW && !h.request && rng.chance(RAISE_CHANCE)) {
+      h.request = 'raise';
+      events.push({
+        t: `${h.name} quiere hablar contigo: pide ${RAISE_AMOUNT} monedas más de sueldo.`,
+        k: 'warn',
+      });
+    }
+  }
+  if (deserters.length) {
+    s.heroes = s.heroes.filter((h) => !deserters.includes(h));
+    for (const h of deserters)
+      events.push({
+        t: `${h.name} ha recogido sus cosas antes del alba. Estaba ${h.sex === 'f' ? 'harta' : 'harto'}.`,
+        k: 'bad',
+      });
   }
 
   // Tablón: caducan los viejos y llegan nuevos.

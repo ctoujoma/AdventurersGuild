@@ -18,6 +18,7 @@ export function lookOf(h: Hero): HeroLook {
 export const marksOf = (h: Hero): HeroMarks => ({
   injured: h.status === 'herido',
   eyepatch: h.traits.some((t) => t.id === 'tuerto'),
+  scar: h.traits.some((t) => t.id === 'cortado'),
 });
 
 export const memberOf = (h: Hero): Member => ({
@@ -25,6 +26,7 @@ export const memberOf = (h: Hero): Member => ({
   lvl: h.lvl,
   attrs: h.attrs,
   traits: h.traits,
+  morale: h.morale,
 });
 
 const fullName = (h: Hero) => (h.nick ? `${h.name} ${h.nick}` : h.name);

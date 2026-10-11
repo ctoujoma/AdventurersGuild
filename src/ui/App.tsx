@@ -179,14 +179,16 @@ export function App() {
     const q = game.quests.find((x) => x.id === qid);
     if (!q) return;
     const before = gameRef.current;
-    if (dispatch({ type: 'send', questId: qid, heroIds: ids }) === before) return;
+    const next = dispatch({ type: 'send', questId: qid, heroIds: ids });
+    if (next === before) return;
+    const days = next.missions.at(-1)?.daysLeft ?? q.days;
     const names = listNames(ids.map((id) => game.heroes.find((h) => h.id === id)?.name ?? ''));
     audio.play('depart');
     setQuestId(null);
     setPanel(null);
     scene.current?.focus('puerta');
     toast(
-      `${names} ${plural(ids.length, 'sale', 'salen')} hacia ${q.place}. Vuelta en ${q.days} ${plural(q.days, 'día', 'días')}.`,
+      `${names} ${plural(ids.length, 'sale', 'salen')} hacia ${q.place}. Vuelta en ${days} ${plural(days, 'día', 'días')}.`,
     );
   };
 
@@ -381,6 +383,7 @@ export function App() {
             onClose={() => setCard(null)}
             onHire={() => hire(cardHero.id)}
             onFire={() => fire(cardHero.id)}
+            onAnswer={(yes) => dispatch({ type: 'answer', id: cardHero.id, yes })}
             onLocate={() => {
               setCard(null);
               setPanel(null);

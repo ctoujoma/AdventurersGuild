@@ -5,6 +5,7 @@
  */
 import { CLOSERS, LINES, OPENERS, SCARS } from '../data/stories';
 import { TRAIT_INFO } from '../data/traits';
+import { partyMods } from './classes';
 import {
   DISASTER,
   FAIL_CASUALTY,
@@ -13,6 +14,7 @@ import {
   MORALE,
   PAY,
   REP,
+  TRIP_FATIGUE,
   TWIST_DIFF,
   XP,
   XP_PER_LEVEL,
@@ -37,7 +39,7 @@ export const MAIN_ATTR = {
 
 /** Lo que se ve antes de enviar: con un mago en el grupo, el giro oculto se descubre. */
 export function questEstimate(q: Quest, party: readonly Member[]): Estimate & { reveal: boolean } {
-  const reveal = !!q.twist && party.some((m) => m.cls === 'mago');
+  const reveal = !!q.twist && partyMods(party).seer;
   const challenges = q.challenges.map((c, i) =>
     reveal && i === 0 ? { ...c, diff: c.diff + TWIST_DIFF } : c,
   );
@@ -52,6 +54,7 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
   const names = listNames(party.map((h) => h.name));
   const body: string[] = [];
   const chips: { t: string; k: ChipKind }[] = [];
+  const mods = partyMods(party);
   const say = (text: string, h?: Hero) =>
     body.push(fill(text, { who: names, place: q.place, h: h?.name ?? names }));
 
@@ -90,11 +93,21 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
   let outcome: Outcome;
   if (passes === n) outcome = sumP / n > 0.8 ? 'Éxito brillante' : 'Éxito';
   else if (passes > 0) outcome = 'Éxito parcial';
-  else outcome = rng.chance(DISASTER[q.danger]!) ? 'Desastre' : 'Fracaso';
+  else {
+    const ambush = rng.chance(DISASTER[q.danger]!);
+    const scout = party.find((h) => h.cls === 'explorador');
+    if (ambush && scout && rng.chance(1 - mods.disaster)) {
+      outcome = 'Fracaso';
+      say(`${scout.name} olió la emboscada a tiempo y los sacó por un barranco. Se salvaron.`);
+    } else outcome = ambush ? 'Desastre' : 'Fracaso';
+  }
   say(rng.pick(CLOSERS[outcome]));
 
   // Oro, reputación y botín.
-  let gold = Math.round(q.reward * PAY[outcome]);
+  let gold = Math.round(q.reward * PAY[outcome] * mods.gold);
+  const rogue = party.find((h) => h.cls === 'picaro');
+  if (gold > 0 && rogue && rng.chance(0.5))
+    say(`${rogue.name} volvió con los bolsillos más llenos de lo que cuenta el contrato.`);
   const greedy = party.find((h) => has(h, 'codicioso'));
   if (gold > 0 && greedy) {
     const cut = Math.round(gold * GREED);
@@ -106,9 +119,11 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
   const dRep = REP[outcome];
   state.rep = Math.max(0, state.rep + dRep);
   chips.push({ t: `${dRep >= 0 ? '+' : ''}${dRep} reputación`, k: dRep >= 0 ? 'good' : 'bad' });
-  if (q.item && PAY[outcome] >= 1) {
+  const looted = PAY[outcome] >= 1 || (outcome === 'Éxito parcial' && mods.partialLoot);
+  if (q.item && looted) {
     state.inventory.push({ ...q.item, id: `i${state.uid++}` });
     chips.push({ t: `Botín: ${q.item.name}`, k: 'info' });
+    if (PAY[outcome] < 1 && rogue) say(`Aun así, ${rogue.name} no se fue con las manos vacías.`);
   }
 
   // Bajas.
@@ -121,16 +136,18 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
       say(`${victim.name} salió corriendo a la primera señal. No es heroico, pero está vivo.`);
       victim = null;
     } else if (healer && healer !== victim) {
-      const scar = SCARS[0]!;
+      const options = SCARS.filter((x) => !has(victim!, x.trait));
       victim.status = 'herido';
       victim.days = 5;
-      if (!has(victim, scar.trait)) {
+      if (options.length) {
+        const scar = rng.pick(options);
         victim.traits.push({ id: scar.trait });
-        victim.nick ??= scar.nick[victim.sex];
+        const nick = victim.nick ?? scar.nick[victim.sex];
+        victim.nick = nick;
         say(
-          `${victim.name} ${scar.text}. Si ha vuelto es porque ${healer.name} rezó muy deprisa. Desde hoy le llaman ${victim.name} ${victim.nick}.`,
+          `${victim.name} ${scar.text}. Si ha vuelto es porque ${healer.name} rezó muy deprisa. Desde hoy le llaman ${victim.name} ${nick}.`,
         );
-        chips.push({ t: `Secuela: ${sx(victim, 'Tuerto', 'Tuerta')}`, k: 'warn' });
+        chips.push({ t: `Secuela: ${TRAIT_INFO[scar.trait][victim.sex]}`, k: 'warn' });
       } else say(`${victim.name} estuvo a punto de no contarlo. ${healer.name} rezó muy deprisa.`);
       chips.push({ t: `${victim.name}: grave, 5 días`, k: 'bad' });
     } else if (rng.chance(0.5)) {
@@ -158,7 +175,8 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
     if (h !== victim) {
       h.status = 'ok';
       h.days = 0;
-      const risk = INJURY[outcome] * (healer ? 0.5 : 1) + (has(h, 'valiente') ? 0.08 : 0);
+      const guarded = party.some((o) => o !== h && o.cls === 'guerrero');
+      const risk = INJURY[outcome] * (guarded ? mods.guard : 1) + (has(h, 'valiente') ? 0.08 : 0);
       if (rng.chance(risk)) {
         h.status = 'herido';
         h.days = rng.int(2, 4);
@@ -175,9 +193,10 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
       h.salary += 3;
       chips.push({ t: `${h.name} sube a nivel ${h.lvl}`, k: 'good' });
     }
-    let dMorale = MORALE[outcome];
+    let dMorale = MORALE[outcome] - TRIP_FATIGUE * q.days;
     if (fallen) dMorale -= has(h, 'leal') ? 20 : 10;
     if (has(h, 'codicioso') && q.reward >= 200 && PAY[outcome] >= 1) dMorale += 5;
+    if (dMorale < 0) dMorale = Math.round(dMorale * mods.solace);
     h.morale = clamp(h.morale + dMorale, 0, 100);
     h.history.push(`Día ${state.day} · ${q.title} · ${outcome}`);
     const hidden = h.traits.find((t) => t.hidden);

@@ -30,6 +30,7 @@ export interface HeroLook {
 export interface HeroMarks {
   injured?: boolean;
   eyepatch?: boolean;
+  scar?: boolean;
 }
 
 const HEADGEAR: Record<OutfitId, [HeadgearId, number] | null> = {

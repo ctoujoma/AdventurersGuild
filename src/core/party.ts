@@ -16,7 +16,9 @@ export type TraitId =
   | 'leal'
   | 'arrogante'
   | 'supersticioso'
-  | 'tuerto';
+  | 'tuerto'
+  | 'cojo'
+  | 'cortado';
 
 export type Attrs = Record<AttrId, number>;
 
@@ -31,6 +33,8 @@ export interface Member {
   lvl: number;
   attrs: Attrs;
   traits: readonly Trait[];
+  /** Moral 0–100: animado rinde más, desanimado rinde menos. */
+  morale?: number;
 }
 
 export interface Challenge {
@@ -78,7 +82,29 @@ const TRAIT_EFFECTS: Partial<
   bebedor: { attrs: { D: -1 } },
   supersticioso: { skills: { Arcano: -2 } },
   tuerto: { attrs: { D: -1 }, skills: { Combate: 1 } },
+  cojo: { skills: { Supervivencia: -2 } },
+  cortado: { skills: { Combate: 1 } },
 };
+
+export type MoraleBand = 'animado' | 'normal' | 'desanimado' | 'harto';
+
+/** Umbrales de moral: por encima de ANIMADO rinde +1, por debajo de DESANIMADO −1. */
+export const MORALE_HIGH = 75;
+export const MORALE_LOW = 35;
+export const MORALE_QUIT = 15;
+
+export function moraleBand(morale: number): MoraleBand {
+  if (morale >= MORALE_HIGH) return 'animado';
+  if (morale >= MORALE_LOW) return 'normal';
+  if (morale >= MORALE_QUIT) return 'desanimado';
+  return 'harto';
+}
+
+/** Lo que la moral suma o resta a cada habilidad. */
+export function moraleMod(m: Member): number {
+  if (m.morale === undefined) return 0;
+  return m.morale >= MORALE_HIGH ? 1 : m.morale < MORALE_LOW ? -1 : 0;
+}
 
 /** El gafe empeora todas las tiradas del grupo. */
 const JINX = 0.05;
@@ -107,7 +133,8 @@ export function skill(m: Member, s: SkillId, includeHidden = false): number {
         wm * attr(m, 'M', includeHidden)) /
         2,
     ) +
-    (m.lvl - 1);
+    (m.lvl - 1) +
+    moraleMod(m);
   for (const t of known(m, includeHidden)) v += TRAIT_EFFECTS[t.id]?.skills?.[s] ?? 0;
   return Math.max(0, v);
 }

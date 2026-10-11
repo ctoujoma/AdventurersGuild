@@ -1,5 +1,5 @@
 import type { Danger, Facilities, Hero, Outcome } from '../core/model';
-import type { ClassId } from '../core/party';
+import type { ClassId, MoraleBand } from '../core/party';
 
 /** Textos de la interfaz que dependen de los datos del juego. */
 
@@ -101,4 +101,31 @@ export const CAPTIONS: Record<string, string> = {
   laud: 'Alguien lo dejó a cuenta de una ronda. Todavía suena bien.',
   chimenea: 'Chisporrotea. Bigotes no se separa de ella.',
   chimeneaFria: 'Fría como el corazón del prestamista.',
+};
+
+/** Cómo se enseña cada tramo de moral. */
+export const MORALE_INFO: Record<
+  MoraleBand,
+  { label: { m: string; f: string }; short: string; desc: string }
+> = {
+  animado: {
+    label: { m: 'Animado.', f: 'Animada.' },
+    short: '+1',
+    desc: '+1 a todas las habilidades.',
+  },
+  normal: {
+    label: { m: 'Tranquilo.', f: 'Tranquila.' },
+    short: '',
+    desc: 'Descansar en la taberna le sube la moral; mejorarla, más.',
+  },
+  desanimado: {
+    label: { m: 'Desanimado.', f: 'Desanimada.' },
+    short: '−1',
+    desc: '−1 a todas las habilidades. Puede pedirte un aumento.',
+  },
+  harto: {
+    label: { m: 'Harto.', f: 'Harta.' },
+    short: '−1',
+    desc: '−1 a todo y puede irse cualquier noche. Déjale descansar o súbele el sueldo.',
+  },
 };

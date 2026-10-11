@@ -1814,3 +1814,92 @@ button:focus-visible {
 .face {
   line-height: 0;
 }
+
+/* ---------- Fase 3a: habilidades de clase y moral ---------- */
+.pill-request {
+  background: var(--orange);
+  color: var(--ink);
+}
+.pill-animado {
+  background: var(--leaf);
+}
+.pill-desanimado {
+  background: var(--steel);
+}
+.pill-harto {
+  background: var(--wine);
+}
+.morale-note {
+  margin: 2px 0 0;
+  font-size: 13px;
+  line-height: 1.25;
+}
+.morale-note b {
+  font-family: var(--pixel);
+  font-weight: 400;
+}
+.morale-animado b {
+  color: var(--leaf);
+}
+.morale-desanimado b,
+.morale-harto b {
+  color: var(--wine);
+}
+.request {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  font-size: 14px;
+  background: rgba(247, 118, 34, 0.14);
+  box-shadow: 0 0 0 2px var(--orange);
+}
+.perk {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0 8px;
+  align-items: baseline;
+  padding: 6px 8px;
+  background: rgba(79, 47, 45, 0.12);
+  box-shadow: 0 0 0 2px var(--oak);
+}
+.perk small {
+  grid-column: 1 / -1;
+  font-family: var(--pixel);
+  font-size: 11px;
+  color: var(--oak);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.perk b {
+  font-family: var(--pixel);
+  font-weight: 400;
+}
+.perk span {
+  font-size: 14px;
+  line-height: 1.25;
+}
+.perks {
+  margin: 0;
+  padding: 6px 8px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 14px;
+  line-height: 1.25;
+  background: rgba(62, 137, 72, 0.12);
+  box-shadow: 0 0 0 2px var(--leaf);
+}
+.perks b {
+  font-family: var(--pixel);
+  font-weight: 400;
+  color: var(--leaf);
+  margin-right: 4px;
+}
+.mood.up {
+  color: var(--leaf);
+}
+.mood.down {
+  color: var(--wine);
+}

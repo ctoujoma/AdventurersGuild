@@ -157,4 +157,14 @@ export const FLAVOR = [
 /** Apodos que se ganan con una herida grave. */
 export const SCARS = [
   { trait: 'tuerto' as const, nick: { m: 'el Tuerto', f: 'la Tuerta' }, text: 'ha perdido un ojo' },
+  {
+    trait: 'cojo' as const,
+    nick: { m: 'Pata Chula', f: 'Pata Chula' },
+    text: 'se ha dejado media rodilla entre las rocas',
+  },
+  {
+    trait: 'cortado' as const,
+    nick: { m: 'Cara Cortada', f: 'Cara Cortada' },
+    text: 'lleva un tajo de oreja a barbilla',
+  },
 ];
