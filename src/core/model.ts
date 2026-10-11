@@ -35,6 +35,8 @@ export interface Hero {
   request?: 'raise' | 'cache';
   /** Objeto equipado (una ranura). Se pierde si cae o deserta. */
   item?: Item;
+  /** De guardia: no sale de misión y defiende mejor la taberna. */
+  guard?: boolean;
 }
 
 export type QuestType = 'Cazar' | 'Escoltar' | 'Explorar' | 'Recuperar' | 'Investigar' | 'Limpiar';
@@ -122,6 +124,8 @@ export interface Report {
   body: string[];
   chips: { t: string; k: ChipKind }[];
   read: boolean;
+  /** Informe de un asalto a la taberna (con su propio titular). */
+  raid?: { won: boolean };
 }
 
 export interface Fallen {
@@ -145,6 +149,24 @@ export interface Facilities {
 export interface DawnEvent {
   t: string;
   k?: ChipKind;
+}
+
+export interface Raid {
+  day: number;
+  band: string;
+  strength: number;
+  warned: boolean;
+}
+
+export interface RaidResult {
+  day: number;
+  band: string;
+  bandits: number;
+  defenders: string[];
+  won: boolean;
+  /** Defensores que acabaron heridos. */
+  hurt: string[];
+  stolen: number;
 }
 
 /** Contadores de la partida: hazañas, desafíos y récords. */
@@ -236,4 +258,10 @@ export interface GameState {
   month?: Month;
   /** Días de pago seguidos sin poder pagar los salarios (modo libre). */
   unpaid?: number;
+  /** Asalto en camino (si `warned`, el jugador lo sabe). */
+  raid?: Raid | null;
+  /** Sin asaltos hasta este día (tras repeler uno, se corre la voz). */
+  truce?: number;
+  /** Último asalto, para verlo en la escena al amanecer. */
+  lastRaid?: RaidResult | null;
 }

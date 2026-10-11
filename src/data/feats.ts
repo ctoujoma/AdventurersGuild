@@ -56,6 +56,14 @@ export const FEATS: readonly FeatDef[] = [
     rewards: [{ rep: 3 }, { gold: 100 }, { gold: 200, item: 1 }],
   },
   {
+    id: 'asaltos',
+    name: 'Aquí no se roba',
+    text: 'Repele {n} asaltos a la taberna',
+    stat: 'raids',
+    tiers: [1, 3, 5],
+    rewards: [{ gold: 60 }, { gold: 150, rep: 5 }, { item: 2 }],
+  },
+  {
     id: 'sinbajas',
     name: 'Todos a casa',
     text: 'Pasa {n} días seguidos sin bajas',

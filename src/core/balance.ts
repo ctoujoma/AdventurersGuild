@@ -166,3 +166,14 @@ export const SALARY_EVERY = 7;
 export const UNPAID_LIMIT = 2;
 export const UNPAID_MORALE = -20;
 export const REFUSE_MORALE = -10;
+
+// ---------- Asaltos ----------
+/** Desde qué día pueden llegar asaltos y a partir de qué notoriedad empiezan a fijarse. */
+export const RAID_FROM = 12;
+export const RAID_NOTORIETY = 80;
+/** Tope de probabilidad diaria de que una banda se fije en el gremio. */
+export const RAID_MAX_CHANCE = 0.25;
+/** Probabilidad base de chivatazo al programarse un asalto. */
+export const RAID_BASE = 0.45;
+/** Lo que suma cada héroe de guardia a la defensa. */
+export const GUARD_BONUS = 3;

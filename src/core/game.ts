@@ -35,6 +35,7 @@ import {
 } from './balance';
 import { tripDays } from './classes';
 import { arrival, checkFeats, checkMonth, emptyStats, startMonth } from './feats';
+import { stepRaids } from './raids';
 import { generateHero, generateQuest } from './generate';
 import {
   SAVE_VERSION,
@@ -62,6 +63,7 @@ export type Action =
   | { type: 'sellTrophy'; id: string }
   | { type: 'tip'; id: string }
   | { type: 'ackOpening' }
+  | { type: 'guard'; id: string; on: boolean }
   | { type: 'endDay' };
 
 // ---------- Consultas ----------
@@ -102,6 +104,8 @@ export function canSend(s: GameState, questId: string, heroIds: readonly string[
   if (heroIds.length > q.slots) return `Este encargo admite ${q.slots} como máximo.`;
   const party = heroIds.map((id) => s.heroes.find((h) => h.id === id));
   if (party.some((h) => !h || h.status !== 'ok')) return 'Alguien del grupo no está disponible.';
+  const guard = party.find((h) => h!.guard);
+  if (guard) return `${guard.name} está de guardia en la taberna.`;
   const proud = party.find((h) => h!.traits.some((t) => t.id === 'arrogante' && !t.hidden));
   if (proud && party.some((h) => h!.lvl < proud.lvl))
     return `${proud.name} no va con héroes de menor nivel.`;
@@ -313,6 +317,13 @@ export function reduce(state: GameState, action: Action): GameState {
       }
       return s;
     }
+    case 'guard': {
+      const h = state.heroes.find((x) => x.id === action.id);
+      if (!h || h.status !== 'ok' || !!h.guard === action.on) return state;
+      const s = structuredClone(state);
+      s.heroes.find((x) => x.id === action.id)!.guard = action.on || undefined;
+      return s;
+    }
     case 'ackOpening': {
       if (!state.opening || state.opening.seen) return state;
       return { ...state, opening: { ...state.opening, seen: true } };
@@ -421,6 +432,11 @@ export function endDay(state: GameState): GameState {
         k: 'bad',
       });
   }
+
+  // Asaltos: chivatazos y, si toca esta noche, la pelea en el patio.
+  s.lastRaid = null;
+  const raidReport = stepRaids(s, rng, events);
+  if (raidReport) s.reports.unshift(raidReport);
 
   // Tablón: caducan los viejos y llegan nuevos.
   for (const q of s.quests) {
