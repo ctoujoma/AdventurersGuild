@@ -63,7 +63,7 @@ Los tamaños son relativos (S < M < L). Cada fase termina en algo que se puede p
 - [x] Despliegue automático en GitHub Pages al hacer push a `main` (`.github/workflows/deploy.yml`)
 - [x] Esqueleto de interfaz: 4 pestañas, diseño vertical
 - [x] Adelantado: pixel art generado por código (ver [`arte.md`](arte.md))
-  - [x] Retratos 40×40 dibujados a mano por piezas, sprites de frente y de perfil con animación
+  - [x] Retratos 40×48 dibujados a mano por piezas, sprites de frente y de perfil con animación
   - [x] Taberna de tres plantas, desván y bodega con cámara, paralaje, luz tramada, partículas y vida
   - [x] Objetos interactivos enlazados con la interfaz (tablón → encargos, camas → mejoras…)
   - [x] Sonido sintetizado: ambiente, laúd y efectos
@@ -75,7 +75,7 @@ Los tamaños son relativos (S < M < L). Cada fase termina en algo que se puede p
 - [ ] Modelo de datos: héroe, encargo, estado de partida
 - [ ] Datos: 5 clases, unos 10 rasgos, unos 6 tipos de encargo, listas de nombres
 - [ ] Generadores de candidatos y encargos (escalados por rango)
-- [ ] Cálculo de habilidades del grupo y estimación de riesgo
+- [x] Cálculo de habilidades del grupo y estimación de riesgo (`core/party.ts`) · adelantado
 - [ ] Resolución de misiones: desafíos, 5 resultados y consecuencias básicas (oro, XP, heridas)
 - [ ] Avance de día: regresos, caducidades, rotación de candidatos, salarios semanales
 - [ ] Acciones: contratar, despedir, enviar grupo, terminar día
@@ -87,7 +87,7 @@ Los tamaños son relativos (S < M < L). Cada fase termina en algo que se puede p
 ### Fase 2: Primer prototipo jugable · M
 - [ ] Taberna: resumen del día, candidatos y botón de contratar
 - [ ] Tablón: lista de encargos con detalle
-- [ ] Envío: elegir héroes, ver estimación, enviar
+- [x] Envío: elegir héroes, ver estimación, enviar (los héroes salen por la puerta en la escena) · adelantado
 - [ ] Héroes: plantilla y ficha (atributos, rasgos, estado)
 - [ ] Informes de misión al amanecer (texto simple)
 - [ ] Botón «Terminar día» y barra superior con oro, día y deuda

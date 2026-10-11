@@ -10,12 +10,12 @@ Pixel art nocturno y cálido: la taberna iluminada por la chimenea en mitad de l
 
 ## Retratos (`src/art/portraits/`)
 
-Son de 40×40, en vista de tres cuartos, y se montan con piezas dibujadas a mano:
+Son de 40×48, en vista de tres cuartos, y se montan con piezas dibujadas a mano. Las 8 filas de arriba son para lo que se lleva en la cabeza: cascos de cúpula alta, sombreros de mago puntiagudos y plumas caben enteros, sin aplastarse. Detrás hay un halo cálido tramado en damero.
 
 - **Cabeza** (masculina o femenina) con el sombreado ya pintado.
 - **Rasgos:** 4 juegos de ojos (incluido el parpadeo), 4 cejas, 5 bocas, nariz grande, pecas, cicatriz y rubor.
 - **Pelo:** 6 peinados, con pieza delantera y trasera (melena, coleta).
-- **Barba** o perilla, y **sombrero** de su clase: casco, capucha, sombrero de mago o gorra con pluma.
+- **Barba** o perilla, y **sombrero** de su clase: casco de bandas con nasal, capucha, sombrero de mago con cinta dorada o gorro de cazador con pluma.
 - **Busto de su clase:** hombreras, capa, túnica, estola o delantal.
 - **Marcas de estado:** parche y venda.
 
@@ -55,12 +55,13 @@ El mundo mide 512×384 píxeles y se ve en corte lateral, como una casa de muñe
 - Los héroes pasean, se sientan a las mesas o se calientan junto al fuego.
 - Los candidatos esperan en la barra y el tabernero va y viene detrás.
 - Los heridos guardan cama y sueltan «zZ».
+- Al mandar un grupo, sus héroes cruzan la sala, bajan el escalón de la puerta (que cruje) y se pierden en la noche del patio; al volver de una misión entran por el mismo camino.
 - El gato Bigotes duerme junto a la chimenea y a ratos da una vuelta.
 - La rata cruza la bodega, los murciélagos cuelgan del desván y el búho parpadea en el tejado.
 - Partículas: ascuas, chispas, humo, vapor del caldero, hojas que caen y la gota de la bodega.
 
 **Se puede tocar casi todo:**
-- El tablón abre los encargos.
+- El tablón abre los encargos; cada nota abre su ficha para formar el grupo (desafíos, estimación de riesgo y quién va) y mandarlo. La nota desaparece del tablón de la escena.
 - La barra abre los candidatos.
 - Dormitorios, enfermería, despacho y cofres abren el gremio.
 - Un héroe abre su ficha con retrato.
@@ -72,6 +73,6 @@ Todo está sintetizado con WebAudio, sin archivos:
 
 - **Ambiente:** el chisporroteo del fuego suena más fuerte cuanto más cerca está la cámara de la chimenea; grillos (más fuertes fuera), viento.
 - **Música:** un laúd de cuerda pulsada (Karplus-Strong) toca una melodía en re dórico con bajo y acordes.
-- **Efectos:** clics, papel, monedas, martillazos al mejorar, ronroneo, ululato, chispas, chapoteo, crujido, chillido y aleteo.
+- **Efectos:** clics, papel, monedas, martillazos al mejorar, ronroneo, ululato, chispas, chapoteo, crujido, chillido, aleteo, una nota al elegir héroe y una fanfarria de laúd cuando el grupo sale.
 
 Hay un botón para silenciarlo. El sonido arranca con el primer toque, porque los navegadores lo exigen.

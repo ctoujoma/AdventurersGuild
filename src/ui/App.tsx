@@ -15,11 +15,13 @@ import { HeroCard } from './HeroCard';
 import { Hud } from './Hud';
 import { Icon } from './icons';
 import { Panel } from './Panel';
+import { QuestSheet } from './QuestSheet';
 import { GremioPanel } from './panels/GremioPanel';
 import { HeroesPanel } from './panels/HeroesPanel';
 import { TablonPanel } from './panels/TablonPanel';
 import { SceneView } from './SceneView';
 import { TabBar, type TabId } from './TabBar';
+import { listNames, plural } from './text';
 
 interface Bubble {
   text: string;
@@ -32,6 +34,9 @@ export function App() {
   const [tab, setTab] = useState<TabId>('taberna');
   const [fac, setFac] = useState<Facilities>(DEMO_FACILITIES);
   const [heroes, setHeroes] = useState<DemoHero[]>(DEMO_HEROES);
+  const [quests, setQuests] = useState(DEMO_QUESTS);
+  const [questId, setQuestId] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ text: string; key: number } | null>(null);
   const [loot, setLoot] = useState(3);
   const [gold, setGold] = useState(312);
   const [card, setCard] = useState<string | null>(null);
@@ -43,8 +48,8 @@ export function App() {
   const scene = useRef<WorldScene | null>(null);
 
   const model = useMemo<SceneModel>(
-    () => ({ fac, quests: DEMO_QUESTS.length, loot, heroes: heroes.map(toSceneHero) }),
-    [fac, loot, heroes],
+    () => ({ fac, quests: quests.length, loot, heroes: heroes.map(toSceneHero) }),
+    [fac, quests, loot, heroes],
   );
 
   useEffect(() => {
@@ -58,6 +63,12 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(null), 5000);
+    return () => clearTimeout(t);
+  }, [notice]);
+
+  useEffect(() => {
     if (!bubble) return;
     const t = setTimeout(() => setBubble(null), 3800);
     return () => clearTimeout(t);
@@ -68,6 +79,7 @@ export function App() {
     audio.play(t === 'taberna' ? 'close' : 'open');
     setTab(t);
     setCard(null);
+    setQuestId(null);
     setBubble(null);
   };
 
@@ -116,6 +128,25 @@ export function App() {
     setTimeout(() => scene.current?.focusHero(id), 50);
   };
 
+  /** Manda un grupo: la nota sale del tablón y los héroes cruzan la puerta. */
+  const send = (questId: string, ids: string[]) => {
+    const q = quests.find((x) => x.id === questId);
+    if (!q || !ids.length) return;
+    const names = listNames(ids.map((id) => heroes.find((h) => h.id === id)?.name ?? ''));
+    audio.play('depart');
+    setQuests((list) => list.filter((x) => x.id !== q.id));
+    setHeroes((list) =>
+      list.map((h) => (ids.includes(h.id) ? { ...h, status: 'mision', days: q.days } : h)),
+    );
+    setQuestId(null);
+    setTab('taberna');
+    scene.current?.focus('puerta');
+    setNotice({
+      text: `${names} ${plural(ids.length, 'sale', 'salen')} hacia ${q.place}. Vuelta en ${q.days} ${plural(q.days, 'día', 'días')}.`,
+      key: Date.now(),
+    });
+  };
+
   const upgrade = (k: keyof Facilities, delta: number) => {
     const next = Math.max(0, Math.min(3, fac[k] + delta));
     if (next === fac[k]) return;
@@ -125,6 +156,7 @@ export function App() {
   };
 
   const cardHero = heroes.find((h) => h.id === card) ?? null;
+  const openQuest = quests.find((q) => q.id === questId) ?? null;
 
   return (
     <div class="game">
@@ -157,9 +189,14 @@ export function App() {
             {bubble.text}
           </div>
         )}
-        {hint && (
+        {hint && !notice && (
           <div class="hint-toast" role="status">
             Arrastra para recorrer la taberna · Toca personas y objetos
+          </div>
+        )}
+        {notice && (
+          <div key={notice.key} class="hint-toast notice" role="status">
+            {notice.text}
           </div>
         )}
         <div class="stage-tools">
@@ -179,7 +216,13 @@ export function App() {
         </div>
         {tab === 'tablon' && (
           <Panel title="Tablón de encargos" onClose={() => openTab('taberna')} variant="cork">
-            <TablonPanel quests={DEMO_QUESTS} />
+            <TablonPanel
+              quests={quests}
+              onOpen={(id) => {
+                audio.play('open');
+                setQuestId(id);
+              }}
+            />
           </Panel>
         )}
         {tab === 'heroes' && (
@@ -204,6 +247,15 @@ export function App() {
               onUpgrade={upgrade}
             />
           </Panel>
+        )}
+        {openQuest && (
+          <QuestSheet
+            key={openQuest.id}
+            quest={openQuest}
+            heroes={heroes.filter((h) => h.status !== 'candidato')}
+            onClose={() => setQuestId(null)}
+            onSend={(ids) => send(openQuest.id, ids)}
+          />
         )}
         {cardHero && (
           <HeroCard

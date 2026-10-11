@@ -3,6 +3,7 @@ import { generateLook, type OutfitId } from '../../art/heroes/look';
 import { CLASS_NAMES, STATUS_LABEL, lookOf, type DemoHero } from '../../data/demo';
 import { Icon } from '../icons';
 import { Portrait } from '../Portrait';
+import { TraitChip } from '../TraitChip';
 
 interface Props {
   heroes: DemoHero[];
@@ -49,14 +50,15 @@ export function HeroesPanel({ heroes, filter, setFilter, onOpen, onHire, gold }:
         </span>
         <div class="chips">
           {h.traits.map((t) => (
-            <span key={t} class={`trait ${t === '¿?' ? 'trait-hidden' : ''}`}>
-              {t}
-            </span>
+            <TraitChip key={t.id} trait={t} sex={h.sex} />
           ))}
         </div>
       </div>
       <div class="hero-side">
-        <span class={`pill pill-${h.status}`}>{STATUS_LABEL[h.status]}</span>
+        <span class={`pill pill-${h.status}`}>
+          {STATUS_LABEL[h.status]}
+          {h.days && h.status !== 'ok' ? ` · ${h.days} d` : ''}
+        </span>
         {h.status === 'candidato' && (
           <button
             class="btn btn-gold"

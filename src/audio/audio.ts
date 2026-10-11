@@ -19,7 +19,10 @@ export type Sfx =
   | 'creak'
   | 'squeak'
   | 'bats'
-  | 'drip';
+  | 'drip'
+  | 'select'
+  | 'deselect'
+  | 'depart';
 
 const STORAGE_KEY = 'jarro:sonido';
 const FIRE = { x: 346, y: 272 };
@@ -215,6 +218,20 @@ class AudioEngine {
         break;
       case 'drip':
         this.tone('sine', 1500, 600, t, 0.06, 0.02 * v);
+        break;
+      case 'select':
+        this.pluck(74, t, 0.24 * v);
+        this.pluck(81, t + 0.06, 0.16 * v);
+        break;
+      case 'deselect':
+        this.pluck(69, t, 0.18 * v);
+        break;
+      case 'depart':
+        // Pequeña fanfarria de laúd: el grupo sale a la aventura.
+        [50, 57, 62].forEach((n, i) => this.pluck(n, t + i * 0.02, 0.3 * v));
+        [69, 74].forEach((n, i) => this.pluck(n, t + 0.18 + i * 0.16, 0.34 * v));
+        [74, 78, 81, 86].forEach((n, i) => this.pluck(n, t + 0.52 + i * 0.03, 0.28 * v));
+        this.thump(t + 0.52, 0.08 * v);
         break;
     }
   }

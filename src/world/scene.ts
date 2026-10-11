@@ -7,9 +7,11 @@ import { UNCLE, buildWorld, type WorldBuild } from './build';
 import { Camera } from './camera';
 import { BAT_FRAMES, CAT_FRAMES, OWL_FRAMES, RAT_FRAMES, flagFrame } from './creatures';
 import {
+  B,
   BAR_SPOTS,
   F,
   FIRE_SPOT,
+  GROUND,
   HALL_WALK,
   KEEPER_RANGE,
   ROOF,
@@ -80,7 +82,21 @@ export const ROOM_CENTERS: Record<string, Point> = {
   despacho: { x: 264, y: 104 },
   rellano: { x: 396, y: 180 },
   exterior: { x: 60, y: 250 },
+  puerta: { x: 130, y: 262 },
 };
+
+/** Puerta de la calle: por aquí salen los grupos y vuelven de las misiones. */
+const DOOR_X = B.left + 2;
+/** Hasta dónde andan por el patio antes de perderse en la noche. */
+const YARD_END = 26;
+const TRIP_SPEED = 30;
+
+/** Altura de los pies: el patio queda un escalón por debajo de la sala. */
+function feetAt(x: number): number {
+  if (x >= DOOR_X) return F.hall.floor;
+  if (x <= DOOR_X - 6) return GROUND;
+  return Math.round(F.hall.floor + ((DOOR_X - x) / 6) * (GROUND - F.hall.floor));
+}
 
 type Activity = 'idle' | 'walk' | 'sit' | 'fire';
 
@@ -96,6 +112,8 @@ interface HeroActor {
   seat: number;
   dist: number;
   blinkAt: number;
+  /** Saliendo hacia una misión o volviendo de ella. */
+  trip: 'out' | 'in' | null;
 }
 
 interface Drawn {
@@ -239,14 +257,28 @@ export class WorldScene {
       const a = this.heroes.get(h.id);
       const spr = heroSprites(h.look, h.marks);
       if (a) {
-        const statusChanged = a.hero.status !== h.status;
+        const was = a.hero.status;
         a.hero = h;
         a.spr = spr;
-        if (statusChanged) {
+        if (was !== h.status) {
           a.act = 'idle';
           a.timer = 0.5;
           a.seat = -1;
+          a.trip = null;
           if (h.status === 'candidato') a.x = BAR_SPOTS[0]!;
+          if (h.status === 'mision' && was === 'ok') {
+            // Recoge sus cosas y sale por la puerta hasta perderse en la noche.
+            a.trip = 'out';
+            a.act = 'walk';
+            a.target = YARD_END;
+            a.next = 'idle';
+          } else if (h.status === 'ok' && was === 'mision') {
+            a.trip = 'in';
+            a.x = YARD_END;
+            a.act = 'walk';
+            a.target = HALL_WALK.min + Math.random() * 40;
+            a.next = 'idle';
+          }
         }
       } else {
         const x = HALL_WALK.min + Math.random() * (HALL_WALK.max - HALL_WALK.min);
@@ -262,6 +294,7 @@ export class WorldScene {
           seat: -1,
           dist: 0,
           blinkAt: Math.random() * 4,
+          trip: null,
         });
       }
     }
@@ -377,12 +410,15 @@ export class WorldScene {
       [...this.heroes.values()].filter((a) => a.seat >= 0).map((a) => a.seat),
     );
     for (const a of this.heroes.values()) {
-      if (a.hero.status !== 'ok') continue;
+      if (a.hero.status !== 'ok' && a.trip !== 'out') continue;
       a.timer -= dt;
       if (a.act === 'walk') {
-        const step = 20 * dt * Math.sign(a.target - a.x);
+        const step = (a.trip ? TRIP_SPEED : 20) * dt * Math.sign(a.target - a.x);
+        if (a.trip && Math.sign(a.x - DOOR_X) !== Math.sign(a.x + step - DOOR_X))
+          this.cb.onSound?.('creak', 0.7);
         if (Math.abs(a.target - a.x) <= Math.abs(step)) {
           a.x = a.target;
+          a.trip = null;
           a.act = a.next;
           a.timer =
             a.act === 'sit'
@@ -790,7 +826,7 @@ export class WorldScene {
 
     // Héroes de pie o andando.
     const walkers = [...this.heroes.values()].filter(
-      (a) => a.hero.status === 'ok' && a.act !== 'sit',
+      (a) => (a.hero.status === 'ok' && a.act !== 'sit') || a.trip === 'out',
     );
     walkers.sort((a, b) => a.hero.id.localeCompare(b.hero.id));
     for (const a of walkers) {
@@ -798,11 +834,16 @@ export class WorldScene {
       const img = walking
         ? a.spr.walk[Math.floor(a.dist / 3.5) % 4]!
         : this.blinkOr(a.spr, a.blinkAt);
+      const feet = feetAt(a.x);
       const x = Math.round(a.x - 9);
-      const y = F.hall.floor - FEET_Y;
-      this.shadow(a.x, F.hall.floor);
+      const y = feet - FEET_Y;
+      // En el patio se funden con la oscuridad (al salir) o aparecen de ella (al volver).
+      const fade = Math.max(0, Math.min(1, (a.x - YARD_END) / 30));
+      ctx.globalAlpha = a.trip ? fade : 1;
+      this.shadow(a.x, feet);
       const flip = walking ? a.dir < 0 : false;
       at(img, x, y, flip);
+      ctx.globalAlpha = 1;
       drawn.push({ kind: 'hero', id: a.hero.id, label: a.hero.name, x, y, img, flip });
     }
     this.drawn = drawn;

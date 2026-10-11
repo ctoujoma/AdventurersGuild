@@ -160,6 +160,16 @@ const ICONS = {
     '.kfkkfk.',
     '.kkkkkk.',
   ],
+  check: [
+    '........',
+    '.......k',
+    '......kk',
+    'k....kk.',
+    'kk..kk..',
+    '.kkkk...',
+    '..kk....',
+    '........',
+  ],
   close: [
     'kk....kk',
     'kkk..kkk',

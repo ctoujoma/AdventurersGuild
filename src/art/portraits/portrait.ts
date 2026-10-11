@@ -18,17 +18,20 @@ import {
   NOSE_BIG,
   OUTFITS,
   SCAR,
-  SIZE,
+  H,
+  TOP,
+  W,
   toGrid,
   type Part,
 } from './parts';
 
 /**
- * Retratos de 40×40 montados con piezas dibujadas a mano (ver parts.ts):
+ * Retratos de 40×48 montados con piezas dibujadas a mano (ver parts.ts):
  * se apilan como capas, se recolorean con la paleta del héroe y se contornean.
  */
 
-export const PORTRAIT = SIZE;
+export const PORTRAIT_W = W;
+export const PORTRAIT_H = H;
 export const PORTRAIT_BG = P.plum;
 
 type Slots = Record<string, string>;
@@ -112,17 +115,38 @@ function gridOf(part: Part): string[] {
   return g;
 }
 
-function stamp(b: PixelBuffer, part: Part, colors: Slots, fromRow = 0, toRow = SIZE): void {
+/** Estampa una pieza; `fromRow` (en filas de pieza) recorta lo que queda por encima. */
+function stamp(b: PixelBuffer, part: Part, colors: Slots, fromRow = -TOP): void {
   const g = gridOf(part);
-  for (let y = fromRow; y < toRow; y++) {
+  for (let y = Math.max(0, fromRow + TOP); y < H; y++) {
     const row = g[y]!;
-    for (let x = 0; x < SIZE; x++) {
+    for (let x = 0; x < W; x++) {
       const ch = row[x]!;
       if (ch === '.') continue;
       const c = colors[ch];
       if (c) b.set(x, y, c);
     }
   }
+}
+
+/**
+ * Fondo: un halo cálido detrás de la cabeza que se apaga hacia los bordes,
+ * con transiciones en damero de dos píxeles, como en los retratos de los RPG clásicos.
+ */
+let bg: PixelBuffer | null = null;
+function backdrop(): PixelBuffer {
+  if (bg) return bg;
+  bg = new PixelBuffer(W, H);
+  const ramp = [P.ebony, PORTRAIT_BG, P.bark];
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const d = Math.hypot(x - 20, (y - TOP - 14) * 0.9);
+      const odd = (x + y) & 1;
+      const lv = d < 13 ? 2 : d < 15 ? 1 + odd : d < 22 ? 1 : d < 24 ? odd : 0;
+      bg.set(x, y, ramp[lv]!);
+    }
+  }
+  return bg;
 }
 
 const cache = new Map<string, PixelBuffer>();
@@ -133,7 +157,7 @@ export function renderPortrait(look: HeroLook, marks: HeroMarks = {}, blink = fa
   if (hit) return hit;
 
   const c = slots(look);
-  const fig = new PixelBuffer(SIZE, SIZE);
+  const fig = new PixelBuffer(W, H);
   const hg = marks.injured && look.headgear === 'casco' ? null : look.headgear;
   const hair = look.hairStyle;
 
@@ -175,14 +199,13 @@ export function renderPortrait(look: HeroLook, marks: HeroMarks = {}, blink = fa
   if (marks.eyepatch) stamp(fig, EYEPATCH, c);
   if (marks.injured) stamp(fig, BANDAGE, c);
 
-  // Fondo liso y contorno oscuro alrededor de la figura.
-  const out = new PixelBuffer(SIZE, SIZE);
-  out.rect(0, 0, SIZE, SIZE, PORTRAIT_BG);
-  for (let y = 0; y < SIZE; y++) {
-    for (let x = 0; x < SIZE; x++) {
+  // Fondo con halo y contorno oscuro alrededor de la figura.
+  const out = backdrop().clone();
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
       const px = fig.get(x, y);
       if (alpha(px)) {
-        out.data[y * SIZE + x] = px;
+        out.data[y * W + x] = px;
         continue;
       }
       if (

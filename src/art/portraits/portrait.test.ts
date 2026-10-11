@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { generateLook, type OutfitId } from '../heroes/look';
 import * as parts from './parts';
-import { PORTRAIT, renderPortrait } from './portrait';
+import { PORTRAIT_H, PORTRAIT_W, renderPortrait } from './portrait';
 
 const isPart = (v: unknown): v is parts.Part =>
   Array.isArray(v) && v.every((s) => Array.isArray(s) && s.length === 3);
@@ -20,7 +20,7 @@ describe('piezas de retrato', () => {
   });
 
   for (const [name, part] of all) {
-    it(`${name} cabe en la rejilla de ${parts.SIZE}×${parts.SIZE}`, () => {
+    it(`${name} cabe en la rejilla de ${parts.W}×${parts.H}`, () => {
       expect(() => parts.toGrid(part)).not.toThrow();
     });
   }
@@ -36,8 +36,8 @@ describe('renderPortrait', () => {
           injured: true,
           eyepatch: true,
         });
-        expect(p.w).toBe(PORTRAIT);
-        expect(p.h).toBe(PORTRAIT);
+        expect(p.w).toBe(PORTRAIT_W);
+        expect(p.h).toBe(PORTRAIT_H);
       }
     }
   });

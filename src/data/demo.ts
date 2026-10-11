@@ -1,4 +1,5 @@
-import { generateLook, type HeroLook, type OutfitId, type Sex } from '../art/heroes/look';
+import { generateLook, type HeroLook, type Sex } from '../art/heroes/look';
+import type { Attrs, Challenge, ClassId, Trait } from '../core/party';
 import type { Facilities } from '../world/geometry';
 import type { HeroStatus, SceneHero } from '../world/scene';
 
@@ -7,7 +8,7 @@ import type { HeroStatus, SceneHero } from '../world/scene';
  * el estado real de la partida.
  */
 
-export type ClassId = Exclude<OutfitId, 'tabernero'>;
+export type { ClassId };
 
 export interface DemoHero {
   id: string;
@@ -16,8 +17,9 @@ export interface DemoHero {
   sex: Sex;
   cls: ClassId;
   lvl: number;
+  attrs: Attrs;
   status: HeroStatus;
-  traits: string[];
+  traits: Trait[];
   eyepatch?: boolean;
   days?: number;
   fee?: number;
@@ -49,7 +51,8 @@ export const DEMO_HEROES: DemoHero[] = [
     cls: 'guerrero',
     lvl: 3,
     status: 'herido',
-    traits: ['Valiente', 'Bebedor', 'Tuerto'],
+    attrs: { F: 7, D: 4, M: 2 },
+    traits: [{ id: 'valiente' }, { id: 'bebedor' }, { id: 'tuerto' }],
     eyepatch: true,
     days: 3,
     salary: 20,
@@ -61,7 +64,8 @@ export const DEMO_HEROES: DemoHero[] = [
     cls: 'picaro',
     lvl: 2,
     status: 'ok',
-    traits: ['Codiciosa', 'Afortunada'],
+    attrs: { F: 3, D: 7, M: 5 },
+    traits: [{ id: 'codicioso' }, { id: 'afortunado' }],
     salary: 18,
   },
   {
@@ -71,7 +75,8 @@ export const DEMO_HEROES: DemoHero[] = [
     cls: 'clerigo',
     lvl: 2,
     status: 'ok',
-    traits: ['Leal', '¿?'],
+    attrs: { F: 4, D: 3, M: 6 },
+    traits: [{ id: 'leal' }, { id: 'supersticioso', hidden: true }],
     salary: 16,
   },
   {
@@ -81,7 +86,8 @@ export const DEMO_HEROES: DemoHero[] = [
     cls: 'explorador',
     lvl: 1,
     status: 'mision',
-    traits: ['Cobarde', '¿?'],
+    attrs: { F: 4, D: 6, M: 4 },
+    traits: [{ id: 'cobarde' }, { id: 'gafe', hidden: true }],
     days: 2,
     salary: 12,
   },
@@ -92,7 +98,8 @@ export const DEMO_HEROES: DemoHero[] = [
     cls: 'mago',
     lvl: 2,
     status: 'candidato',
-    traits: ['Arrogante', '¿?'],
+    attrs: { F: 2, D: 3, M: 8 },
+    traits: [{ id: 'arrogante' }, { id: 'afortunado', hidden: true }],
     fee: 80,
     salary: 25,
     quote: '«Cobro por adelantado. Y no me llames bruja.»',
@@ -105,7 +112,8 @@ export const DEMO_HEROES: DemoHero[] = [
     cls: 'guerrero',
     lvl: 1,
     status: 'candidato',
-    traits: ['Leal', '¿?'],
+    attrs: { F: 8, D: 3, M: 1 },
+    traits: [{ id: 'leal' }, { id: 'supersticioso', hidden: true }],
     fee: 50,
     salary: 15,
     quote: '«¿A quién hay que pegar?»',
@@ -117,7 +125,8 @@ export const DEMO_HEROES: DemoHero[] = [
     cls: 'explorador',
     lvl: 1,
     status: 'candidato',
-    traits: ['Gafe', '¿?'],
+    attrs: { F: 3, D: 7, M: 4 },
+    traits: [{ id: 'gafe' }, { id: 'valiente', hidden: true }],
     fee: 30,
     salary: 10,
     quote: '«Lo de gafe son rumores. Casi todos.»',
@@ -144,11 +153,16 @@ export interface DemoQuest {
   id: string;
   title: string;
   client: string;
+  type: string;
   text: string;
   reward: number;
   danger: 'Bajo' | 'Medio' | 'Alto' | '¿?';
   days: number;
-  challenges: string[];
+  /** Héroes que admite como máximo. */
+  slots: number;
+  expires: number;
+  place: string;
+  challenges: Challenge[];
 }
 
 export const DEMO_QUESTS: DemoQuest[] = [
@@ -156,41 +170,67 @@ export const DEMO_QUESTS: DemoQuest[] = [
     id: 'q1',
     title: 'Ratas en la bodega del molino',
     client: 'Ilario, molinero',
+    type: 'Limpiar',
     text: '«Son ratas, pero grandes. Muy grandes. Bueno, una.»',
     reward: 60,
     danger: 'Bajo',
     days: 1,
-    challenges: ['Combate 7'],
+    slots: 2,
+    expires: 3,
+    place: 'el molino',
+    challenges: [{ skill: 'Combate', diff: 7 }],
   },
   {
     id: 'q2',
     title: 'El puente de los ahorcados',
     client: 'Gremio de mercaderes',
+    type: 'Escoltar',
     text: 'Tres carros de lana deben cruzar antes de la feria. Los dos últimos no llegaron.',
     reward: 180,
     danger: 'Medio',
     days: 2,
-    challenges: ['Combate 13', 'Trampas 9'],
+    slots: 3,
+    expires: 4,
+    place: 'el puente',
+    challenges: [
+      { skill: 'Combate', diff: 13 },
+      { skill: 'Trampas', diff: 9 },
+    ],
   },
   {
     id: 'q3',
     title: 'Lo que suena en la cripta de Valdeloro',
     client: 'Hermana Odile, templo',
+    type: 'Investigar',
     text: 'Desde hace una semana suenan campanas bajo tierra. La cripta no tiene campanas.',
     reward: 320,
     danger: 'Alto',
     days: 3,
-    challenges: ['Arcano 16', 'Combate 14', 'Trampas 10'],
+    slots: 4,
+    expires: 5,
+    place: 'Valdeloro',
+    challenges: [
+      { skill: 'Arcano', diff: 16 },
+      { skill: 'Combate', diff: 14 },
+      { skill: 'Trampas', diff: 10 },
+    ],
   },
   {
     id: 'q4',
     title: 'Un tal Corvo busca a alguien discreto',
     client: 'Desconocido',
+    type: 'Recuperar',
     text: 'Una caja, una casa vacía, ninguna pregunta. Paga la mitad por adelantado.',
     reward: 240,
     danger: '¿?',
     days: 2,
-    challenges: ['Trampas 13', 'Supervivencia 8'],
+    slots: 2,
+    expires: 2,
+    place: 'la casa del canal',
+    challenges: [
+      { skill: 'Trampas', diff: 13 },
+      { skill: 'Supervivencia', diff: 8 },
+    ],
   },
 ];
 

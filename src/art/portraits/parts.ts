@@ -1,8 +1,10 @@
 /**
- * Piezas de retrato dibujadas a mano, píxel a píxel, en una rejilla de 40×40.
+ * Piezas de retrato dibujadas a mano, píxel a píxel, en una rejilla de 40×48.
  * Vista de tres cuartos mirando a la izquierda; luz desde arriba a la izquierda.
  *
  * Cada pieza es una lista de tramos [fila, columna inicial, patrón]; '.' no pinta.
+ * Las filas cuentan desde la coronilla (fila 6); por encima quedan TOP filas libres
+ * para cascos, sombreros y plumas, que usan filas negativas.
  * Huecos de color (se resuelven por retrato):
  *   piel   S s t u v   (S la línea más oscura, v el brillo)
  *   pelo   h i j l     (h oscuro … l brillo)
@@ -10,17 +12,21 @@
  *   metal  m n o p     ·  ojos w x y  ·  W blanco · r labios · k contorno · R rojo · K L cuero oscuro
  */
 
-export const SIZE = 40;
+export const W = 40;
+export const H = 48;
+/** Filas por encima de la fila 0, reservadas para lo que se lleva en la cabeza. */
+export const TOP = 8;
 
 export type Span = readonly [number, number, string];
 export type Part = readonly Span[];
 
-/** Convierte tramos en 40 filas de 40 caracteres (lanza si algo se sale). */
+/** Convierte tramos en H filas de W caracteres (lanza si algo se sale). */
 export function toGrid(part: Part): string[] {
-  const rows = Array.from({ length: SIZE }, () => '.'.repeat(SIZE));
-  for (const [y, x0, p] of part) {
-    if (y < 0 || y >= SIZE || x0 < 0 || x0 + p.length > SIZE)
-      throw new Error(`Tramo fuera de la rejilla: ${y},${x0},${p}`);
+  const rows = Array.from({ length: H }, () => '.'.repeat(W));
+  for (const [row, x0, p] of part) {
+    const y = row + TOP;
+    if (y < 0 || y >= H || x0 < 0 || x0 + p.length > W)
+      throw new Error(`Tramo fuera de la rejilla: ${row},${x0},${p}`);
     const r = rows[y]!;
     let out = r.slice(0, x0);
     for (let i = 0; i < p.length; i++) out += p[i] === '.' ? r[x0 + i] : p[i];
@@ -378,29 +384,35 @@ export const BEARDS = {
 // ---------- Sombreros ----------
 
 export const HEADGEAR = {
+  // Casco de bandas con nasal y carrilleras: cúpula alta con nervio central y remaches.
   casco: [
-    [2, 15, 'nooooonn'],
-    [3, 13, 'nooppooonnn'],
-    [4, 11, 'noppppooooonnn'],
-    [5, 10, 'nopppooooooonnnm'],
-    [6, 9, 'noppooooooooonnnmm'],
-    [7, 9, 'nopoooooooooonnnmm'],
-    [8, 8, 'noooooooooooooonnnmm'],
-    [9, 8, 'nooooooooooooonnnnmm'],
-    [10, 8, 'noooooooooooonnnnnmm'],
-    [11, 8, 'nnnnnnnnnnnnnnnnnmmmm'],
-    [12, 7, 'mpopopopopopopopopomm'],
-    [13, 7, 'mmmmmmmmmmmmmmmmmmmmm'],
+    [-2, 18, 'pn'],
+    [-1, 16, 'oppnnm'],
+    [0, 15, 'opppnnnmm'],
+    [1, 13, 'ooppopnnnnmm'],
+    [2, 12, 'ooppopnnnnnnmm'],
+    [3, 11, 'ooppoopnnnnnnnmm'],
+    [4, 11, 'oppooopnnnnnnnmmm'],
+    [5, 10, 'oopoooopnnnnnnnmmm'],
+    [6, 10, 'oooooopnnnnnnnnnmmm'],
+    [7, 9, 'noooooopnnnnnnnnnmmm'],
+    [8, 9, 'noooooopnnnnnnnnnnmmm'],
+    [9, 8, 'nnoooooopnnnnnnnnnnmmm'],
+    [10, 8, 'mnnnnnnnonnnnnnnnnnnmmm'],
+    [11, 8, 'mmmmmmmmmmmmmmmmmmmmmmm'],
+    [12, 7, 'oooopoooopoooopoooopooonm'],
+    [13, 7, 'mnnnnnnnnnnnnnnnnnnnnnmmm'],
     [14, 14, 'mpm'],
     [15, 14, 'mom'],
     [16, 14, 'mom'],
     [17, 14, 'mom'],
     [18, 15, 'mm'],
-    [14, 26, 'mnnm'],
-    [15, 26, 'mnnm'],
-    [16, 26, 'mnm'],
-    [17, 26, 'mnm'],
-    [18, 26, 'mm'],
+    [14, 25, 'mnonm'],
+    [15, 25, 'mnonm'],
+    [16, 25, 'mnonm'],
+    [17, 26, 'mnnm'],
+    [18, 26, 'mnm'],
+    [19, 27, 'mm'],
   ],
   capucha: [
     [1, 15, 'abbbbbba'],
@@ -426,36 +438,62 @@ export const HEADGEAR = {
     [28, 4, 'abcccbbbbaaa'],
     [28, 24, 'aabbbbbbbbbaa'],
   ],
+  // Sombrero de mago: cono alto que se curva hacia atrás, cinta dorada, estrella y ala ancha.
   sombrero: [
-    [0, 30, 'aa'],
-    [1, 27, 'abbba'],
-    [2, 25, 'abcba'],
-    [3, 23, 'abcca'],
-    [4, 20, 'abccca'],
-    [5, 18, 'abcdccb'],
-    [6, 16, 'abcddccba'],
-    [7, 15, 'abcddcccba'],
-    [8, 14, 'aBCDDCCCBBa'],
-    [9, 13, 'aBBCCCCCBBBa'],
-    [10, 3, 'aabbccccddccccccccccccbbbbbbaaa'],
-    [11, 2, 'abccddddccccccccccccbbbbbbbbbbaa'],
-    [12, 3, 'aabbbbbbbbbbbbbbbbbbbbbbbbaaa'],
-    [7, 18, 'W'],
-    [6, 19, 'D'],
+    [-7, 31, 'ba'],
+    [-6, 29, 'dcba'],
+    [-5, 28, 'dcba'],
+    [-4, 26, 'dccbba'],
+    [-3, 25, 'dccbba'],
+    [-2, 24, 'dccbbba'],
+    [-1, 23, 'dcccbba'],
+    [0, 22, 'dcccbbba'],
+    [1, 21, 'dccccbbba'],
+    [2, 20, 'dccccbbba'],
+    [3, 19, 'dcccccbbba'],
+    [4, 18, 'dcccccbbbaa'],
+    [5, 17, 'dccccccbbaa'],
+    [6, 16, 'dccccccbbbaa'],
+    [7, 15, 'DDCCCCCCCBBBA'],
+    [8, 14, 'DCCCCCCCCBBBA'],
+    [9, 5, 'abcccccc'],
+    [9, 13, 'DCCCCCCCCBBBBA'],
+    [9, 27, 'bbbbbbba'],
+    [2, 24, 'D'],
+    [3, 23, 'DWD'],
+    [4, 24, 'D'],
+    [-2, 27, 'D'],
+    [10, 3, 'dddccccccccccccccccbbbbbbbbbbbbaaa'],
+    [11, 2, 'cccbbbbbbbbbbbbbbbbbbbbbbbbbbbaaaaaa'],
+    [12, 4, 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'],
   ],
+  // Gorro de cazador con visera hacia delante y pluma larga.
   gorra: [
-    [0, 31, 'R'],
-    [1, 29, 'RRW'],
-    [2, 27, 'RRW'],
-    [3, 25, 'RRW'],
-    [3, 15, 'abbbba'],
-    [4, 13, 'abccccbba'],
-    [5, 11, 'abcddcccbbba'],
-    [6, 10, 'abcdddccccbbbRa'],
-    [7, 9, 'abcddcccccccbbba'],
-    [8, 9, 'BBCCCCCCCCCCCBBBB'],
-    [9, 7, 'aabbbbbbbbbbbbbbbbbaa'],
-    [10, 8, 'aaaaaaaaaaaaaaaaaaa'],
+    [0, 15, 'dccba'],
+    [1, 13, 'dcccccbba'],
+    [2, 12, 'dcccccbbbbba'],
+    [3, 11, 'dccccccbbbbbbaa'],
+    [4, 10, 'dccccccbbbbbbbbaa'],
+    [5, 10, 'dcccccbbbbbbbbbbaa'],
+    [6, 9, 'dcccccbbbbbbbbbbbbaa'],
+    [7, 9, 'DCCCCCBBBBBBBBBBBBAA'],
+    [8, 6, 'dddcccccbbbbbbbbbbbbbbaa'],
+    [9, 4, 'cccccbbbbbbbbbbbbbbbbbbaaa'],
+    [10, 6, 'aaaaaaaaaaaaaaaaaa'],
+    [-6, 34, 'R'],
+    [-5, 33, 'RK'],
+    [-4, 33, 'RWK'],
+    [-3, 32, 'RWK'],
+    [-2, 32, 'RWK'],
+    [-1, 31, 'RRWK'],
+    [0, 31, 'RWK'],
+    [1, 30, 'RRWK'],
+    [2, 30, 'RWK'],
+    [3, 29, 'RRWK'],
+    [4, 29, 'RWK'],
+    [5, 28, 'RWK'],
+    [6, 28, 'WK'],
+    [7, 28, 'W'],
   ],
 } satisfies Record<string, Part>;
 

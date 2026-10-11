@@ -509,6 +509,18 @@ button:focus-visible {
   white-space: nowrap;
 }
 
+.trait-pos {
+  background: var(--leaf);
+}
+
+.trait-neg {
+  background: var(--wine);
+}
+
+.trait-mix {
+  background: var(--rust);
+}
+
 .trait-hidden {
   background: transparent;
   color: var(--oak);
@@ -548,11 +560,40 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  text-align: left;
+  color: var(--plum);
   box-shadow: 4px 4px 0 rgba(24, 20, 37, 0.45);
+  transform: rotate(var(--tilt, 0deg));
+  transition: transform 0.12s steps(2);
 }
 
-.note h3 {
-  margin: 0;
+.note:hover {
+  transform: rotate(0deg) translateY(-3px);
+  box-shadow: 6px 8px 0 rgba(24, 20, 37, 0.45);
+}
+
+.note:active {
+  transform: rotate(0deg) translateY(1px);
+  box-shadow: 2px 2px 0 rgba(24, 20, 37, 0.45);
+}
+
+.note-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.note-type {
+  font-family: var(--pixel);
+  font-size: 12px;
+  padding: 0 5px;
+  color: var(--sand);
+  background: var(--rust);
+}
+
+.note-title {
   font-family: var(--pixel);
   font-size: 17px;
   line-height: 1.15;
@@ -566,12 +607,11 @@ button:focus-visible {
   font-style: italic;
 }
 
-.note p {
-  margin: 0;
+.note-text {
   font-size: 14px;
 }
 
-.note footer {
+.note-foot {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -773,6 +813,250 @@ button:focus-visible {
   gap: 8px;
 }
 
+/* ---------- Encargo: formar grupo ---------- */
+.questsheet {
+  width: min(430px, calc(100% - 16px));
+  max-height: calc(100% - 16px);
+  padding: 10px 4px 10px 10px;
+}
+
+.qs-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px 6px 4px 2px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--oak) transparent;
+}
+
+.qs-warn,
+.qs-send {
+  margin-right: 6px;
+}
+
+.qs-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 18px;
+}
+
+.qs-head h3 {
+  margin: 0;
+  font-family: var(--pixel);
+  font-size: 21px;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+
+.eyebrow {
+  font-size: 13px;
+  color: var(--rust);
+  font-style: italic;
+}
+
+.estimate {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  color: var(--white);
+  background: var(--slate);
+  box-shadow:
+    0 0 0 2px var(--ink),
+    inset 0 -3px 0 rgba(24, 20, 37, 0.35);
+}
+
+.estimate b {
+  font-family: var(--pixel);
+  font-size: 20px;
+}
+
+.estimate > span {
+  font-size: 13px;
+  text-align: right;
+}
+
+.est-0 {
+  background: var(--leaf);
+}
+
+.est-1 {
+  background: #b8860b;
+}
+
+.est-2 {
+  background: var(--orange);
+}
+
+.est-3 {
+  background: var(--wine);
+}
+
+.reward-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--pixel);
+}
+
+.cbars {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cbar {
+  display: grid;
+  grid-template-columns: 96px 1fr 44px;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--pixel);
+  font-size: 13px;
+}
+
+.cbar .v {
+  text-align: right;
+}
+
+.cbar .track {
+  position: relative;
+  height: 10px;
+  background: var(--tan);
+  box-shadow: 0 0 0 2px var(--plum);
+}
+
+.cbar .track i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  max-width: 100%;
+  transition: width 0.25s steps(5);
+}
+
+.cbar .track i.ok {
+  background: var(--leaf);
+}
+
+.cbar .track i.close {
+  background: var(--gold);
+}
+
+.cbar .track i.low {
+  background: var(--red);
+}
+
+.cbar .track b {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--ink);
+}
+
+.qs-sub {
+  margin: 4px 0 0;
+  font-family: var(--pixel);
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.picks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pick {
+  display: grid;
+  grid-template-columns: auto 1fr 22px;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  padding: 6px 8px;
+  background: rgba(228, 166, 114, 0.35);
+  box-shadow: 0 0 0 2px var(--tan);
+}
+
+.pick:hover:not(:disabled) {
+  background: rgba(228, 166, 114, 0.6);
+}
+
+.pick[aria-pressed='true'] {
+  background: rgba(62, 137, 72, 0.3);
+  box-shadow: 0 0 0 2px var(--leaf);
+}
+
+.pick:disabled {
+  cursor: not-allowed;
+  background: rgba(139, 155, 180, 0.18);
+  box-shadow: 0 0 0 2px rgba(148, 90, 60, 0.4);
+}
+
+.pick:disabled .portrait-frame {
+  filter: grayscale(0.85) brightness(0.8);
+}
+
+.pick:disabled .pick-info b,
+.pick:disabled .pick-skills {
+  color: var(--oak);
+}
+
+.pick:disabled .check {
+  visibility: hidden;
+}
+
+.pick-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pick-info b {
+  font-family: var(--pixel);
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.pick-info .muted {
+  font-size: 13px;
+}
+
+.pick-skills {
+  font-family: var(--pixel);
+  font-size: 12px;
+  color: var(--rust);
+}
+
+.check {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  background: var(--sand);
+  box-shadow: 0 0 0 2px var(--plum);
+}
+
+.pick[aria-pressed='true'] .check {
+  background: var(--lemon);
+}
+
+.qs-warn {
+  margin: 0;
+  font-size: 13px;
+  color: var(--wine);
+}
+
+.qs-send {
+  padding: 8px 10px;
+  font-size: 16px;
+  white-space: normal;
+}
+
 /* ---------- Gremio ---------- */
 .debt-top {
   display: flex;
@@ -879,4 +1163,11 @@ button:focus-visible {
     animation: none !important;
     transition: none !important;
   }
+}
+
+.notice {
+  box-shadow:
+    0 0 0 2px var(--gold),
+    0 0 0 4px var(--ink);
+  animation: fadeout 5s steps(10) forwards;
 }

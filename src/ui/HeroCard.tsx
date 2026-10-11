@@ -1,6 +1,7 @@
 import { CLASS_NAMES, STATUS_LABEL, lookOf, type DemoHero } from '../data/demo';
 import { Icon } from './icons';
 import { Portrait } from './Portrait';
+import { TraitChip } from './TraitChip';
 
 interface Props {
   hero: DemoHero;
@@ -46,13 +47,7 @@ export function HeroCard({ hero, gold, onClose, onHire, onLocate, onCycle }: Pro
         {hero.quote && <p class="quote">{hero.quote}</p>}
         <div class="chips">
           {hero.traits.map((t) => (
-            <span
-              key={t}
-              class={`trait ${t === '¿?' ? 'trait-hidden' : ''}`}
-              title={t === '¿?' ? 'Rasgo oculto: se descubre tras su primera misión' : undefined}
-            >
-              {t}
-            </span>
+            <TraitChip key={t.id} trait={t} sex={hero.sex} />
           ))}
         </div>
         <div class="herocard-actions">
