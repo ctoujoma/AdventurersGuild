@@ -1,0 +1,1042 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>El Jarro Partido</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,600;1,400&family=Alegreya+Sans:wght@400;500;700&family=Grenze+Gotisch:wght@500;700&display=swap">
+<style>
+/* Layout: un móvil interactivo a la izquierda (el juego) y, al lado, notas del diseño que cambian con la pantalla. En móvil, el juego ocupa el ancho y las notas van debajo. */
+:root {
+  --page: #cfd6cc;
+  --bezel: #26302c;
+  --bg: #e4e8df;
+  --surface: #f4f6f0;
+  --surface-2: #dde3d7;
+  --line: #c0c9bb;
+  --fg: #1d2723;
+  --muted: #5a6760;
+  --accent: #8a6417;
+  --accent-ink: #fff8e6;
+  --scrim: rgba(18, 26, 23, .55);
+  --night: #17241f;
+  --night-fg: #efe4c8;
+  --parch: #efe2c2;
+  --parch-2: #e3d2a9;
+  --parch-ink: #3a2a16;
+  --parch-muted: #7a6544;
+  --good: #3d7a34;
+  --warn: #a5670e;
+  --bad: #b2402f;
+  --info: #2f6a95;
+  --c-guerrero: #b65640;
+  --c-picaro: #7563be;
+  --c-mago: #2f7fae;
+  --c-clerigo: #b08a1c;
+  --c-explorador: #4c8c4c;
+  --font-display: "Grenze Gotisch", "UnifrakturMaguntia", Georgia, serif;
+  --font-body: "Alegreya Sans", "Gill Sans", "Trebuchet MS", sans-serif;
+  --font-story: "Alegreya", Georgia, "Times New Roman", serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page: #0e1513; --bezel: #050807; --bg: #15211d; --surface: #1d2c27; --surface-2: #26382f; --line: #33473e;
+    --fg: #ece4cf; --muted: #a2ab9b; --accent: #d4aa50; --accent-ink: #1b1407; --scrim: rgba(4, 8, 6, .65);
+    --night: #0b1210; --night-fg: #efe4c8;
+    --good: #85bb6f; --warn: #e2a443; --bad: #e0705d; --info: #82add0;
+    --c-guerrero: #d97a62; --c-picaro: #a493e6; --c-mago: #64b2df; --c-clerigo: #dcb84e; --c-explorador: #7fbf78;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page: #0e1513; --bezel: #050807; --bg: #15211d; --surface: #1d2c27; --surface-2: #26382f; --line: #33473e;
+  --fg: #ece4cf; --muted: #a2ab9b; --accent: #d4aa50; --accent-ink: #1b1407; --scrim: rgba(4, 8, 6, .65);
+  --night: #0b1210; --night-fg: #efe4c8;
+  --good: #85bb6f; --warn: #e2a443; --bad: #e0705d; --info: #82add0;
+  --c-guerrero: #d97a62; --c-picaro: #a493e6; --c-mago: #64b2df; --c-clerigo: #dcb84e; --c-explorador: #7fbf78;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  background: var(--page); color: var(--fg);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.4;
+  padding-inline: 16px; padding-block: 24px;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+
+.stage { display: flex; gap: 36px; justify-content: center; align-items: flex-start; max-width: 1040px; margin: 0 auto; }
+.device {
+  flex: 0 0 auto; width: 392px; height: min(820px, calc(100svh - 48px)); min-height: 620px;
+  border: 10px solid var(--bezel); border-radius: 46px; overflow: hidden; background: var(--bg);
+  box-shadow: 0 30px 60px -30px rgba(0,0,0,.45);
+}
+.notes { flex: 1 1 320px; max-width: 420px; min-width: 0; display: flex; flex-direction: column; gap: 20px; padding-top: 8px; }
+@media (max-width: 800px) {
+  .stage { flex-direction: column; align-items: stretch; gap: 24px; }
+  .device { width: 100%; height: min(760px, calc(100svh - 40px)); min-height: 540px; border-width: 1px; border-color: var(--line); border-radius: 20px; }
+  .notes { max-width: none; }
+}
+
+/* ---------- App ---------- */
+.app { position: relative; height: 100%; display: grid; grid-template-rows: auto 1fr auto auto; background: var(--bg); overflow: hidden; }
+.topbar { padding: 16px 16px 10px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; background: var(--surface); }
+.tb-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
+.dayno { font-family: var(--font-display); font-size: 30px; line-height: 1; font-weight: 700; }
+.dayno small { font-family: var(--font-body); font-size: 13px; color: var(--muted); font-weight: 500; margin-left: 4px; }
+.gname { text-align: right; min-width: 0; }
+.gname b { display: block; font-family: var(--font-display); font-size: 19px; font-weight: 500; line-height: 1.1; }
+.gname span { font-size: 12px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.stat .k { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.stat .v { font-weight: 700; font-size: 16px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat .v.warn { color: var(--warn); }
+.stat .v.bad { color: var(--bad); }
+.coin { display: inline-block; width: .8em; height: .8em; border-radius: 50%; background: var(--accent); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 60%, #000); margin-right: 4px; vertical-align: -.05em; }
+
+.screen { overflow-y: auto; padding: 16px 14px 20px; display: flex; flex-direction: column; gap: 22px; }
+.sec { display: flex; flex-direction: column; gap: 10px; }
+.sec-h { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.sec-h h2 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 22px; line-height: 1.1; text-wrap: balance; }
+.sec-h .aside { font-size: 12px; color: var(--muted); text-align: right; }
+.flavor { margin: 0; font-family: var(--font-story); font-style: italic; color: var(--muted); font-size: 14px; }
+.empty { font-size: 14px; color: var(--muted); padding: 12px; border: 1px dashed var(--line); border-radius: 10px; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; text-align: left; width: 100%; }
+button.card:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+
+/* Correo */
+.letter-btn { display: grid; grid-template-columns: 38px 1fr auto; align-items: center; gap: 12px; background: var(--parch); color: var(--parch-ink); border: 1px solid var(--parch-2); border-radius: 10px; padding: 10px 12px; text-align: left; width: 100%; }
+.letter-btn.read { background: var(--surface); color: var(--fg); border-color: var(--line); }
+.letter-btn .seal { width: 34px; height: 34px; border-radius: 50%; background: var(--bad); color: #fff3e6; display: grid; place-items: center; font-family: var(--font-display); font-size: 18px; }
+.letter-btn.read .seal { background: var(--surface-2); color: var(--muted); }
+.letter-btn b { display: block; font-size: 15px; }
+.letter-btn span { font-size: 13px; opacity: .8; }
+
+/* Misiones en curso */
+.mission { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; }
+.mission .who { display: flex; }
+.mission .who .pt + .pt { margin-left: -12px; }
+.mission b { font-size: 14px; display: block; }
+.track { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; margin-top: 5px; }
+.track > i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+.mission .meta { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; margin-top: 3px; }
+
+/* Retratos */
+.pt { --c: var(--muted); position: relative; flex: 0 0 auto; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 15px; background: color-mix(in srgb, var(--c) 22%, var(--surface)); border: 2px solid var(--c); color: var(--fg); }
+.pt.sm { width: 34px; height: 34px; font-size: 12px; }
+.pt.lg { width: 72px; height: 72px; font-size: 24px; }
+.pt .ic { position: absolute; right: -5px; bottom: -5px; width: 20px; height: 20px; border-radius: 50%; background: var(--c); color: var(--surface); display: grid; place-items: center; }
+.pt.sm .ic { width: 16px; height: 16px; right: -4px; bottom: -4px; }
+.pt.lg .ic { width: 28px; height: 28px; }
+.pt .ic svg { width: 70%; height: 70%; }
+.pt.off { filter: grayscale(1); opacity: .55; }
+.c-guerrero { --c: var(--c-guerrero); } .c-picaro { --c: var(--c-picaro); } .c-mago { --c: var(--c-mago); } .c-clerigo { --c: var(--c-clerigo); } .c-explorador { --c: var(--c-explorador); }
+
+/* Candidatos */
+.cand-top { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; }
+.cand-top .nm b { display: block; font-size: 16px; }
+.cand-top .nm span, .sub { font-size: 13px; color: var(--muted); }
+.price { text-align: right; font-size: 12px; color: var(--muted); }
+.price b { display: block; font-size: 15px; color: var(--fg); font-variant-numeric: tabular-nums; }
+.quote { margin: 0; font-family: var(--font-story); font-style: italic; font-size: 14px; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.row.between { justify-content: space-between; flex-wrap: nowrap; }
+.attrs { display: flex; gap: 10px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.attrs b { color: var(--fg); }
+
+.trait { font-size: 12px; padding: 2px 8px; border-radius: 6px; background: var(--surface-2); border: 1px solid transparent; white-space: nowrap; }
+.trait.pos { color: var(--good); }
+.trait.neg { color: var(--bad); }
+.trait.mix { color: var(--warn); }
+.trait.hid { background: transparent; border: 1px dashed var(--muted); color: var(--muted); }
+
+.pill { font-size: 12px; padding: 2px 9px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; font-weight: 500; }
+.pill.good { color: var(--good); } .pill.warn { color: var(--warn); } .pill.bad { color: var(--bad); } .pill.info { color: var(--info); } .pill.muted { color: var(--muted); }
+.pill.solid { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+.btn { border: 1px solid var(--line); background: var(--surface-2); border-radius: 9px; padding: 7px 12px; font-weight: 700; font-size: 14px; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.danger { color: var(--bad); border-color: currentColor; background: transparent; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* Encargos */
+.quest-head { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.quest h3 { margin: 0; font-size: 17px; line-height: 1.2; text-wrap: balance; }
+.client { font-size: 13px; color: var(--muted); }
+.qtext { margin: 0; font-family: var(--font-story); font-size: 14px; }
+.chal { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 6px; background: var(--surface-2); font-variant-numeric: tabular-nums; }
+.quest-foot { display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; border-top: 1px dashed var(--line); padding-top: 8px; font-size: 13px; color: var(--muted); }
+.reward { font-weight: 700; font-size: 16px; color: var(--fg); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.danger-0 { color: var(--good); } .danger-1 { color: var(--warn); } .danger-2, .danger-3 { color: var(--bad); } .danger-x { color: var(--info); }
+
+/* Héroes */
+.hero-row { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; }
+.hero-row .nm b { font-size: 15px; }
+.hero-row .nm .nick { font-family: var(--font-story); font-style: italic; font-weight: 400; color: var(--muted); }
+.hero-row .right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.morale { width: 64px; height: 5px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.morale i { display: block; height: 100%; background: var(--good); }
+.morale.low i { background: var(--bad); } .morale.mid i { background: var(--warn); }
+.summary-line { font-size: 13px; color: var(--muted); }
+
+/* Gremio */
+.debt-big { display: flex; align-items: baseline; gap: 6px; font-variant-numeric: tabular-nums; }
+.debt-big b { font-family: var(--font-display); font-size: 34px; line-height: 1; font-weight: 700; }
+.debt-big span { color: var(--muted); }
+.bar { height: 10px; border-radius: 5px; background: var(--surface-2); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--accent); }
+.sched { display: grid; grid-template-columns: auto 1fr auto; gap: 6px 12px; font-size: 14px; font-variant-numeric: tabular-nums; align-items: center; }
+.sched .d { color: var(--muted); }
+.fac { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; }
+.fac b { font-size: 15px; }
+.pips { display: inline-flex; gap: 3px; margin-left: 6px; vertical-align: 1px; }
+.pips i { width: 8px; height: 8px; border-radius: 2px; border: 1px solid var(--accent); }
+.pips i.on { background: var(--accent); }
+.fac .eff { grid-column: 1; font-size: 13px; color: var(--muted); }
+.inv { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; align-items: center; }
+.inv .d { font-size: 13px; color: var(--muted); grid-column: 1; }
+.wall { background: var(--night); color: var(--night-fg); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; text-align: center; }
+.wall .name { font-family: var(--font-display); font-size: 20px; letter-spacing: .02em; }
+.wall .ep { font-family: var(--font-story); font-style: italic; font-size: 13px; opacity: .75; }
+.wall hr { border: 0; border-top: 1px solid color-mix(in srgb, var(--night-fg) 20%, transparent); width: 40%; margin: 0 auto; }
+
+/* Barra de terminar día y pestañas */
+.endday { padding: 8px 14px; background: var(--surface); border-top: 1px solid var(--line); }
+.endday button { width: 100%; border: 0; border-radius: 12px; padding: 12px; background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 16px; display: flex; justify-content: center; align-items: center; gap: 8px; }
+.endday small { font-weight: 500; opacity: .8; }
+.tabs { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--surface); border-top: 1px solid var(--line); padding: 4px 4px 8px; }
+.tab { background: none; border: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; font-size: 12px; color: var(--muted); position: relative; border-radius: 10px; }
+.tab svg { width: 24px; height: 24px; }
+.tab[aria-current="page"] { color: var(--fg); font-weight: 700; }
+.tab[aria-current="page"] svg { color: var(--accent); }
+.badge { position: absolute; top: 2px; left: calc(50% + 6px); min-width: 17px; height: 17px; border-radius: 9px; background: var(--bad); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; padding: 0 4px; }
+
+/* Hojas superpuestas */
+.sheet { position: absolute; inset: 0; background: var(--scrim); display: flex; align-items: flex-end; z-index: 20; }
+.panel { width: 100%; max-height: 92%; overflow-y: auto; background: var(--bg); border-radius: 20px 20px 0 0; padding: 18px 16px 22px; display: flex; flex-direction: column; gap: 16px; animation: up .22s ease-out; }
+@keyframes up { from { transform: translateY(30px); } to { transform: none; } }
+.panel-h { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.panel-h h2 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 24px; line-height: 1.1; text-wrap: balance; }
+.x { background: var(--surface-2); border: 0; width: 32px; height: 32px; border-radius: 50%; flex: 0 0 auto; font-size: 18px; line-height: 1; }
+
+.estimate { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px; border-radius: 12px; background: var(--surface); border: 1px solid var(--line); }
+.est-label { font-family: var(--font-display); font-size: 24px; line-height: 1; }
+.est-0 { color: var(--good); } .est-1 { color: var(--info); } .est-2 { color: var(--warn); } .est-3 { color: var(--bad); }
+.est-sub { font-size: 12px; color: var(--muted); text-align: right; }
+.cbar { display: grid; grid-template-columns: 100px 1fr 54px; gap: 10px; align-items: center; font-size: 13px; }
+.cbar .tr { position: relative; height: 10px; border-radius: 5px; background: var(--surface-2); }
+.cbar .tr i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; }
+.cbar .tr i.ok { background: var(--good); } .cbar .tr i.close { background: var(--warn); } .cbar .tr i.low { background: var(--bad); }
+.cbar .tr b { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--fg); }
+.cbar .v { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+.twist { font-size: 14px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--info); color: var(--fg); background: color-mix(in srgb, var(--info) 10%, transparent); }
+.twist b { color: var(--info); }
+.pick { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); width: 100%; text-align: left; }
+.pick[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.pick:disabled { opacity: .5; cursor: not-allowed; }
+.check { width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--line); display: grid; place-items: center; font-weight: 700; color: var(--accent-ink); font-size: 14px; }
+.pick[aria-pressed="true"] .check { background: var(--accent); border-color: var(--accent); }
+.skills-mini { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* Informe como carta */
+.panel.letter { background: var(--parch); color: var(--parch-ink); background-image: radial-gradient(circle at 20% 0%, rgba(255,255,255,.35), transparent 50%), radial-gradient(circle at 100% 100%, rgba(120,80,30,.12), transparent 60%); }
+.panel.letter .x { background: var(--parch-2); color: var(--parch-ink); }
+.letter .eyebrow { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--parch-muted); }
+.letter .outcome { font-family: var(--font-display); font-size: 28px; line-height: 1; }
+.letter .story { font-family: var(--font-story); font-size: 16px; line-height: 1.55; display: flex; flex-direction: column; gap: 10px; }
+.letter .story p { margin: 0; }
+.letter .chips { display: flex; flex-wrap: wrap; gap: 6px; border-top: 1px solid var(--parch-2); padding-top: 12px; }
+.letter .chip { font-size: 13px; padding: 3px 9px; border-radius: 6px; background: var(--parch-2); font-variant-numeric: tabular-nums; }
+.letter .chip.good { color: #2f6627; } .letter .chip.bad { color: #9b3022; } .letter .chip.warn { color: #8a560a; } .letter .chip.info { color: #24577e; }
+.letter .sign { font-family: var(--font-display); font-size: 18px; text-align: right; color: var(--parch-muted); }
+
+/* Ficha */
+.sheet-top { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center; }
+.attr-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.attr { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+.attr .k { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.attr .v { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.skill-list { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font-size: 14px; font-variant-numeric: tabular-nums; }
+.trait-list { display: flex; flex-direction: column; gap: 6px; }
+.trait-line { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: baseline; font-size: 14px; }
+.trait-line .d { color: var(--muted); font-size: 13px; }
+.hist { margin: 0; padding-left: 18px; font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
+.h3 { margin: 0; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.confirm { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--bad); border-radius: 10px; font-size: 14px; }
+
+/* Amanecer */
+.dawn { position: absolute; inset: 0; z-index: 30; background: linear-gradient(180deg, var(--night) 0%, color-mix(in srgb, var(--night) 70%, #8a5a2a) 100%); color: var(--night-fg); display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 18px; padding: 32px; text-align: center; animation: fade .4s ease-out; }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+.dawn .big { font-family: var(--font-display); font-size: 64px; line-height: 1; }
+.dawn ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 15px; }
+.dawn ul li.bad { color: #f0a090; }
+.dawn button { border: 1px solid var(--night-fg); background: transparent; color: var(--night-fg); padding: 10px 20px; border-radius: 10px; font-weight: 700; }
+
+.toast { position: absolute; left: 16px; right: 16px; bottom: 132px; z-index: 40; background: var(--fg); color: var(--bg); padding: 10px 14px; border-radius: 10px; font-size: 14px; text-align: center; animation: up .2s ease-out; }
+
+/* ---------- Notas ---------- */
+.notes header h1 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 40px; line-height: 1; text-wrap: balance; }
+.notes header p { margin: 8px 0 0; color: var(--muted); max-width: 60ch; }
+.note-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.note-card .where { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+.note-card h2 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 26px; line-height: 1.1; }
+.note-card p { margin: 0; max-width: 62ch; }
+.note-card .try { font-size: 14px; color: var(--muted); }
+.note-card ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.note-meta { font-size: 13px; color: var(--muted); display: flex; flex-direction: column; gap: 8px; }
+.note-meta button { align-self: flex-start; }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="device">
+    <div class="app" id="app">
+      <header class="topbar" id="topbar"></header>
+      <main class="screen" id="screen"></main>
+      <div class="endday"><button data-a="endDay" id="endBtn">Terminar día</button></div>
+      <nav class="tabs" id="tabs" aria-label="Secciones"></nav>
+      <div class="sheet" id="sheet" hidden></div>
+      <div class="dawn" id="dawn" hidden></div>
+      <div class="toast" id="toast" hidden></div>
+    </div>
+  </div>
+
+  <aside class="notes" aria-label="Notas del mockup">
+    <header>
+      <h1>El Jarro Partido</h1>
+      <p>Mockup jugable del gremio de aventureros. Puedes contratar, mandar grupos a encargos y terminar días: las tiradas son reales y los números, de ejemplo.</p>
+    </header>
+    <div class="note-card" id="noteCard"></div>
+    <div class="note-card">
+      <span class="where">Para todo el juego</span>
+      <ol>
+        <li>Estética: taberna de noche, madera y latón, con los informes en pergamino. ¿Te encaja o lo quieres más luminoso, o con pixel art desde ya?</li>
+        <li>Navegación: 4 pestañas y el botón «Terminar día» siempre a mano. ¿Echas algo en falta?</li>
+        <li>Tono: humor ligero con algún golpe amargo. ¿Más gamberro, más serio?</li>
+      </ol>
+    </div>
+    <div class="note-meta">
+      <span>El estado se guarda solo mientras tienes la página abierta.</span>
+      <button class="btn" id="resetBtn">Empezar de nuevo</button>
+    </div>
+  </aside>
+</div>
+
+<script>
+(() => {
+  // ---------- Datos ----------
+  const ICONS = {
+    guerrero: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 19 18 6M14 5h5v5M7 13l4 4M4 20l2-2"/></svg>',
+    picaro: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 2v13M7 15h10M12 15v5M10 22h4"/></svg>',
+    mago: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.6 6.3 6.8.5-5.2 4.4 1.7 6.6L12 16.6l-5.9 3.7 1.7-6.6L2.6 9.3l6.8-.5Z"/></svg>',
+    clerigo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 3v18M6 9h12"/></svg>',
+    explorador: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M7 3c7 3 7 15 0 18M7 3v18M4 12h15M16 9l3 3-3 3"/></svg>',
+  };
+  const TAB_ICONS = {
+    taberna: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 8h11v10a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3Z"/><path d="M16 11h2a2 2 0 0 1 0 4h-2M8 3.5c0 1 1 1.2 1 2.2M12 3c0 1 1 1.2 1 2.2"/></svg>',
+    tablon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="1.5"/><path d="M7 17l-2 4M17 17l2 4M7 8h6M7 12h9"/></svg>',
+    heroes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 19v-6a7 7 0 0 1 14 0v6Z"/><path d="M12 6v13M5 14h4.5M14.5 14H19"/></svg>',
+    gremio: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 21V9l3-2V4h2v2h2V4h2v2h2V4h2v3l3 2v12Z"/><path d="M10 21v-5h4v5"/></svg>',
+  };
+
+  const CLS = {
+    guerrero:   { m: 'Guerrero',   f: 'Guerrera',    main: 'Combate' },
+    picaro:     { m: 'Pícaro',     f: 'Pícara',      main: 'Trampas' },
+    mago:       { m: 'Mago',       f: 'Maga',        main: 'Arcano' },
+    clerigo:    { m: 'Clérigo',    f: 'Clériga',     main: 'Sanación' },
+    explorador: { m: 'Explorador', f: 'Exploradora', main: 'Supervivencia' },
+  };
+  const SKILLS = ['Combate', 'Trampas', 'Arcano', 'Supervivencia'];
+  // Pesos [Fuerza, Destreza, Mente] por clase y habilidad
+  const W = {
+    guerrero:   { Combate: [2, 1, 0], Trampas: [0, 1, 0],   Arcano: [0, 0, .5],  Supervivencia: [1, .5, 0] },
+    picaro:     { Combate: [1, 1, 0], Trampas: [0, 2, 1],   Arcano: [0, 0, .5],  Supervivencia: [0, 1, .5] },
+    mago:       { Combate: [0, 0, 1], Trampas: [0, 0, 1],   Arcano: [0, 0, 2],   Supervivencia: [0, 0, .5] },
+    clerigo:    { Combate: [1, 0, .5], Trampas: [0, 0, .5], Arcano: [0, 0, 1.5], Supervivencia: [.5, 0, .5] },
+    explorador: { Combate: [1, 1, 0], Trampas: [0, 1, 0],   Arcano: [0, 0, .5],  Supervivencia: [1, 1, 1] },
+  };
+  const TR = {
+    valiente:     { m: 'Valiente', f: 'Valiente', tone: 'pos', d: '+2 Combate. Nunca huye, aunque debería.', mod: { Combate: 2 } },
+    cobarde:      { m: 'Cobarde', f: 'Cobarde', tone: 'mix', d: '−2 Combate. En un desastre huye… y sobrevive.', mod: { Combate: -2 } },
+    codicioso:    { m: 'Codicioso', f: 'Codiciosa', tone: 'mix', d: 'Se queda el 10 % del oro. Rinde más si la paga es alta.' },
+    afortunado:   { m: 'Afortunado', f: 'Afortunada', tone: 'pos', d: 'Repite una tirada fallida por misión.' },
+    gafe:         { m: 'Gafe', f: 'Gafe', tone: 'neg', d: 'Empeora un poco todas las tiradas del grupo.' },
+    borracho:     { m: 'Bebedor', f: 'Bebedora', tone: 'neg', d: '−1 Destreza. Más moral si la taberna está mejorada.', attr: { D: -1 } },
+    leal:         { m: 'Leal', f: 'Leal', tone: 'pos', d: 'Nunca deserta. Sufre el doble si cae un compañero.' },
+    arrogante:    { m: 'Arrogante', f: 'Arrogante', tone: 'mix', d: 'No acepta ir con héroes de menor nivel.' },
+    supersticioso:{ m: 'Supersticioso', f: 'Supersticiosa', tone: 'neg', d: '−2 Arcano. Odia las criptas.', mod: { Arcano: -2 } },
+    tuerto:       { m: 'Tuerto', f: 'Tuerta', tone: 'mix', d: 'Secuela. −1 Destreza, +1 Combate: da más miedo.', attr: { D: -1 }, mod: { Combate: 1 } },
+  };
+  const DANGER = ['Bajo', 'Medio', 'Alto', 'Letal'];
+  const SCHEDULE = [{ day: 7, amt: 150 }, { day: 14, amt: 200 }, { day: 21, amt: 250 }, { day: 28, amt: 400 }];
+  const RANKS = [{ n: 'cobre', at: 0 }, { n: 'hierro', at: 50 }, { n: 'plata', at: 120 }, { n: 'oro', at: 250 }];
+  const FAC = {
+    dorm: { n: 'Dormitorios', max: 3, cost: [0, 0, 150, 300], eff: l => `Caben ${2 + l * 2} héroes` },
+    enf:  { n: 'Enfermería', max: 3, cost: [120, 120, 220, 380], eff: l => l === 0 ? 'Sin enfermería: las heridas curan a su ritmo' : `Las heridas curan ${l + 1} veces más rápido` },
+    tab:  { n: 'Taberna', max: 3, cost: [0, 0, 180, 320], eff: l => `+${l * 12} monedas al día y mejores candidatos` },
+  };
+  const FLAVOR = [
+    'En la barra, un bardo desafina y nadie se queja: es primo del herrero.',
+    'Alguien ha grabado «Brom nunca falla» en una mesa. Debajo, otra mano: «Ya».',
+    'El gato de la taberna ha cazado algo que no es un ratón. Nadie quiere mirar.',
+    'Hoy la sopa tiene tropezones. Mejor no preguntar de qué.',
+    'Un viajero pregunta si es aquí donde contratan héroes «baratos, pero no tanto».',
+    'Ha llovido toda la noche. La gotera de la esquina ya tiene nombre: Gertrudis.',
+  ];
+  const QUEST_POOL = [
+    { title: 'El fantasma de la posada del Cuervo', client: 'Berta, posadera', type: 'Investigar', text: '«No es que dé miedo, es que no paga.»', challenges: [{ s: 'Arcano', d: 8 }], slots: 2, days: 1, reward: 70, danger: 0, expires: 3, place: 'la posada del Cuervo' },
+    { title: 'Bandidos en el vado', client: 'Alcaldía de Sotomuro', type: 'Cazar', text: 'Cobran peaje a todo el que cruza. Un peaje que no es nuestro.', challenges: [{ s: 'Combate', d: 14 }, { s: 'Supervivencia', d: 7 }], slots: 3, days: 2, reward: 150, danger: 1, expires: 4, place: 'el vado' },
+    { title: 'El sótano que respira', client: 'Viuda de Arnau', type: 'Limpiar', text: 'Su marido guardaba «cosas de alquimia» ahí abajo. Ahora el sótano respira.', challenges: [{ s: 'Trampas', d: 9 }, { s: 'Arcano', d: 9 }], slots: 2, days: 2, reward: 130, danger: 1, expires: 3, place: 'el sótano' },
+    { title: 'Huevos de grifo para el conde', client: 'Mayordomo del conde', type: 'Recuperar', text: 'El conde quiere una tortilla. No pregunta de qué.', challenges: [{ s: 'Supervivencia', d: 13 }, { s: 'Combate', d: 12 }], slots: 3, days: 3, reward: 260, danger: 2, expires: 4, place: 'los riscos' },
+  ];
+  const CAND_POOL = [
+    { name: 'Odo Fresno', g: 'm', cls: 'clerigo', lvl: 1, F: 4, D: 3, M: 6, traits: [{ id: 'codicioso' }, { id: 'valiente', hidden: true }], fee: 45, salary: 14, quote: '«Rezo por todos. Por algunos, más caro.»' },
+    { name: 'Wenda', g: 'f', cls: 'picaro', lvl: 2, F: 3, D: 8, M: 4, traits: [{ id: 'borracho' }, { id: 'leal', hidden: true }], fee: 60, salary: 18, quote: '«Las cerraduras me hablan. Sobre todo a partir de la tercera jarra.»' },
+    { name: 'Bastián Roble', g: 'm', cls: 'mago', lvl: 1, F: 2, D: 3, M: 7, traits: [{ id: 'cobarde' }, { id: 'afortunado', hidden: true }], fee: 40, salary: 15, quote: '«Mi especialidad es la magia defensiva. Muy defensiva.»' },
+  ];
+
+  function initialState() {
+    return {
+      day: 4, gold: 312, rep: 18, paid: 0, flavor: 0, uid: 100,
+      tab: 'taberna', overlay: null, selected: [], dawn: null, poolQ: 0, poolC: 0,
+      fac: { dorm: 2, enf: 0, tab: 1 },
+      heroes: [
+        { id: 'brom', name: 'Brom', nick: 'el Tuerto', g: 'm', cls: 'guerrero', lvl: 3, xp: 40, F: 7, D: 4, M: 2, traits: [{ id: 'valiente' }, { id: 'borracho' }, { id: 'tuerto' }], morale: 62, salary: 20, status: 'herido', days: 3,
+          history: ['Día 1 · Ratas del granero · Éxito', 'Días 2–4 · Huargos del camino norte · Éxito; perdió un ojo'] },
+        { id: 'lysa', name: 'Lysa Vel', g: 'f', cls: 'picaro', lvl: 2, xp: 70, F: 3, D: 7, M: 5, traits: [{ id: 'codicioso' }, { id: 'afortunado' }], morale: 78, salary: 18, status: 'ok', days: 0,
+          history: ['Días 2–4 · Huargos del camino norte · Éxito; se quedó 12 monedas'] },
+        { id: 'maren', name: 'Maren', g: 'f', cls: 'clerigo', lvl: 2, xp: 20, F: 4, D: 3, M: 6, traits: [{ id: 'leal' }, { id: 'supersticioso', hidden: true }], morale: 70, salary: 16, status: 'ok', days: 0,
+          history: ['Día 2 · Bendición de la cosecha · Éxito'] },
+        { id: 'toby', name: 'Tobías', g: 'm', cls: 'explorador', lvl: 1, xp: 10, F: 4, D: 6, M: 4, traits: [{ id: 'cobarde' }, { id: 'gafe', hidden: true }], morale: 55, salary: 12, status: 'mision', days: 2,
+          history: ['Día 3 · Contratado'] },
+      ],
+      candidates: [
+        { id: 'isolde', name: 'Isolde Brasa', g: 'f', cls: 'mago', lvl: 2, F: 2, D: 3, M: 8, traits: [{ id: 'arrogante' }, { id: 'afortunado', hidden: true }], fee: 80, salary: 25, quote: '«Cobro por adelantado. Y no me llames bruja.»' },
+        { id: 'garr', name: 'Garr', nick: 'Pedrusco', g: 'm', cls: 'guerrero', lvl: 1, F: 8, D: 3, M: 1, traits: [{ id: 'leal' }, { id: 'supersticioso', hidden: true }], fee: 50, salary: 15, quote: '«¿A quién hay que pegar?»' },
+        { id: 'nim', name: 'Nim', g: 'f', cls: 'explorador', lvl: 1, F: 3, D: 7, M: 4, traits: [{ id: 'gafe' }, { id: 'valiente', hidden: true }], fee: 30, salary: 10, quote: '«Lo de gafe son rumores. Casi todos.»' },
+      ],
+      missions: [
+        { id: 'm0', heroIds: ['toby'], daysLeft: 2, total: 3,
+          quest: { title: 'Escoltar la carreta de sal', client: 'Salinas de Ormaz', type: 'Escoltar', challenges: [{ s: 'Supervivencia', d: 5 }], slots: 1, days: 3, reward: 90, danger: 1, place: 'las salinas' } },
+      ],
+      quests: [
+        { id: 'q1', title: 'Ratas en la bodega del molino', client: 'Ilario, molinero', type: 'Limpiar', text: '«Son ratas, pero grandes. Muy grandes. Bueno, una.»', challenges: [{ s: 'Combate', d: 7 }], slots: 2, days: 1, reward: 60, danger: 0, expires: 3, place: 'el molino' },
+        { id: 'q2', title: 'El puente de los ahorcados', client: 'Gremio de mercaderes', type: 'Escoltar', text: 'Tres carros de lana deben cruzar el puente antes de la feria. Los dos últimos no llegaron.', challenges: [{ s: 'Combate', d: 13 }, { s: 'Trampas', d: 9 }], slots: 3, days: 2, reward: 180, danger: 1, expires: 4, place: 'el puente' },
+        { id: 'q3', title: 'Lo que suena en la cripta de Valdeloro', client: 'Hermana Odile, templo', type: 'Investigar', text: 'Desde hace una semana suenan campanas bajo tierra. La cripta no tiene campanas.', challenges: [{ s: 'Arcano', d: 16 }, { s: 'Combate', d: 14 }, { s: 'Trampas', d: 10 }], slots: 4, days: 3, reward: 320, item: { name: 'Reliquia sin nombre', desc: 'Está tibia. Siempre.', value: 90 }, danger: 2, expires: 5, place: 'Valdeloro', twist: 'Las campanas no avisan de nada: llaman a alguien. Será más duro de lo que dice el templo.' },
+        { id: 'q4', title: 'Un tal Corvo busca a alguien discreto', client: 'Desconocido', type: 'Recuperar', text: 'Una caja, una casa vacía, ninguna pregunta. Paga la mitad por adelantado.', challenges: [{ s: 'Trampas', d: 13 }, { s: 'Supervivencia', d: 8 }], slots: 2, days: 2, reward: 240, danger: 3, dangerHidden: true, expires: 2, place: 'la casa del canal', twist: 'La casa no está vacía. Alguien más busca la misma caja.' },
+      ],
+      reports: [
+        { id: 'r0', day: 4, title: 'Huargos del camino norte', who: 'Brom y Lysa', outcome: 'Éxito', read: false,
+          body: [
+            'Los huargos bajaron del monte justo donde decía el leñador. Brom se plantó en mitad del camino y no retrocedió ni un paso, aunque el más grande le dejó un recuerdo en la cara.',
+            'Lysa se encargó del resto desde los árboles. Se encargó también de contar el botín, y le salieron doce monedas menos de las que debían.',
+            'Brom ha perdido un ojo. Desde esta mañana en la taberna le llaman <b>Brom el Tuerto</b>, y él invita a una ronda cada vez que alguien lo dice. Ahora sabes por qué: es bebedor.',
+          ],
+          chips: [{ t: '+108 monedas', k: 'good' }, { t: '+5 reputación', k: 'good' }, { t: 'Lysa se queda 12', k: 'warn' }, { t: 'Brom: herido, 3 días', k: 'bad' }, { t: 'Secuela: Tuerto', k: 'warn' }, { t: 'Descubierto: Bebedor', k: 'info' }] },
+      ],
+      inventory: [
+        { id: 'i1', name: 'Espada oxidada', desc: 'Del camino norte. Con una buena limpieza, +1 Combate.', value: 15 },
+        { id: 'i2', name: 'Colmillos de huargo ×3', desc: 'Material. La tienda de pociones del pueblo los compraría.', value: 24 },
+        { id: 'i3', name: 'Llave de hierro negro', desc: 'Nadie sabe qué abre. Todavía.', value: 5 },
+      ],
+      fallen: [
+        { name: 'Aldric «Medio Pan»', ep: 'Mina de Hondogrís · en tiempos de tu tío. Pidió media ración hasta el final.' },
+        { name: 'Fausto, tu tío', ep: 'No murió en una misión. Murió debiendo mil monedas.' },
+      ],
+    };
+  }
+
+  // ---------- Utilidades ----------
+  let S;
+  const $ = id => document.getElementById(id);
+  const sx = (h, m, f) => h.g === 'f' ? f : m;
+  const clsName = h => CLS[h.cls][h.g];
+  const traitName = (h, t) => TR[t.id][h.g];
+  const initials = n => n.split(/\s+/).filter(w => /^[A-ZÁÉÍÓÚÑ]/.test(w)).slice(0, 2).map(w => w[0]).join('');
+  const heroById = id => S.heroes.find(h => h.id === id);
+  const listNames = arr => arr.length <= 1 ? (arr[0] || '') : arr.slice(0, -1).join(', ') + ' y ' + arr[arr.length - 1];
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const rank = () => [...RANKS].reverse().find(r => S.rep >= r.at);
+  const nextRank = () => RANKS.find(r => r.at > S.rep);
+  const cap = () => 2 + S.fac.dorm * 2;
+  const roster = () => S.heroes.filter(h => !['muerto', 'desaparecido'].includes(h.status));
+  const cumUpTo = p => SCHEDULE.filter(x => x.day <= p.day).reduce((a, x) => a + x.amt, 0);
+  const nextPayment = () => SCHEDULE.find(p => cumUpTo(p) > S.paid);
+  const salaries = () => roster().reduce((a, h) => a + h.salary, 0);
+
+  function attr(h, k) {
+    let v = h[k];
+    h.traits.forEach(t => { const a = TR[t.id].attr; if (a && a[k]) v += a[k]; });
+    return Math.max(0, v);
+  }
+  function skill(h, s) {
+    const w = W[h.cls][s];
+    let v = Math.round((w[0] * attr(h, 'F') + w[1] * attr(h, 'D') + w[2] * attr(h, 'M')) / 2) + (h.lvl - 1);
+    h.traits.forEach(t => { const m = TR[t.id].mod; if (m && m[s]) v += m[s]; });
+    return Math.max(0, v);
+  }
+  function portrait(h, size = '') {
+    const off = ['muerto', 'desaparecido'].includes(h.status) ? ' off' : '';
+    return `<span class="pt ${size} c-${h.cls}${off}" aria-hidden="true">${initials(h.name)}<span class="ic">${ICONS[h.cls]}</span></span>`;
+  }
+  function traitChips(h) {
+    return h.traits.map(t => t.hidden
+      ? `<span class="trait hid" title="Rasgo oculto: se descubre tras su primera misión">¿?</span>`
+      : `<span class="trait ${TR[t.id].tone}" title="${TR[t.id].d}">${traitName(h, t)}</span>`).join('');
+  }
+  function statusPill(h) {
+    switch (h.status) {
+      case 'ok': return '<span class="pill good">Disponible</span>';
+      case 'mision': return `<span class="pill info">Fuera · ${h.days} d</span>`;
+      case 'herido': return `<span class="pill bad">${sx(h, 'Herido', 'Herida')} · ${h.days} d</span>`;
+      case 'muerto': return '<span class="pill muted">Caído</span>';
+      case 'desaparecido': return `<span class="pill muted">${sx(h, 'Desaparecido', 'Desaparecida')}</span>`;
+    }
+  }
+  function moraleBar(h) {
+    const k = h.morale < 35 ? 'low' : h.morale < 60 ? 'mid' : '';
+    return `<span class="morale ${k}" title="Moral ${h.morale}/100"><i style="width:${h.morale}%"></i></span>`;
+  }
+
+  // ---------- Estimación y resolución ----------
+  const prob = (power, diff) => clamp(0.5 + (power - diff) * 0.09, 0.05, 0.95);
+  const hasMago = heroes => heroes.some(h => h.cls === 'mago');
+  function estimate(q, heroes) {
+    const reveal = q.twist && hasMago(heroes);
+    const gafe = heroes.some(h => h.traits.some(t => t.id === 'gafe' && !t.hidden)) ? 0.05 : 0;
+    const rows = q.challenges.map((c, i) => {
+      const diff = c.d + (reveal && i === 0 ? 3 : 0);
+      const power = heroes.reduce((a, h) => a + skill(h, c.s), 0);
+      return { s: c.s, diff, power, p: heroes.length ? clamp(prob(power, diff) - gafe, 0.03, 0.95) : 0 };
+    });
+    const total = heroes.length ? rows.reduce((a, r) => a * r.p, 1) : 0;
+    const lvl = total >= 0.75 ? 0 : total >= 0.5 ? 1 : total >= 0.25 ? 2 : 3;
+    return { rows, total, lvl, label: ['Pan comido', 'Probable', 'Arriesgado', 'Suicida'][lvl], reveal };
+  }
+
+  const LINES = {
+    Combate: { ok: ['{h} se plantó delante y no retrocedió ni un paso.', '{h} repartió golpes con más entusiasmo que técnica, pero funcionó.'],
+               ko: ['Eran más de los que decía el encargo, y {h} se llevó la peor parte.', '{h} cargó primero y pensó después. Esta vez salió mal.'] },
+    Trampas: { ok: ['{h} encontró el cable antes de que nadie lo pisara.', 'La cerradura cedió en cuanto {h} le habló bajito.'],
+               ko: ['La trampa saltó; {h} todavía tiene el susto en el cuerpo.', '{h} juró que esa losa no estaba ahí antes.'] },
+    Arcano:  { ok: ['{h} leyó las runas en voz alta y lo que esperaba allí se calló.', '{h} reconoció el símbolo a tiempo y nadie tocó lo que no debía.'],
+               ko: ['{h} pronunció mal una palabra. Las velas se apagaron todas a la vez.', 'Nadie entendió lo que estaba escrito en la pared. {h} dijo que sí, y mintió.'] },
+    Supervivencia: { ok: ['{h} encontró un atajo por el barranco y ganaron medio día.', '{h} olió la emboscada antes de verla.'],
+                     ko: ['Se perdieron dos veces. {h} jura que el mapa estaba mal.', 'Llovió tres días seguidos y {h} eligió el peor sitio para acampar.'] },
+  };
+  const CLOSE = {
+    'Éxito brillante': 'Volvieron cantando, y no solo por el vino.',
+    'Éxito': 'Trabajo hecho. El cliente pagó sin rechistar.',
+    'Éxito parcial': 'El cliente pagó la mitad, «por las molestias».',
+    'Fracaso': 'Volvieron con las manos vacías y la mirada en el suelo.',
+    'Desastre': 'No volvieron todos.',
+  };
+
+  function resolve(m) {
+    const q = m.quest;
+    const party = m.heroIds.map(heroById);
+    const lucky = new Set(party.filter(h => h.traits.some(t => t.id === 'afortunado')).map(h => h.id));
+    const gafe = party.some(h => h.traits.some(t => t.id === 'gafe')) ? 0.05 : 0;
+    const body = [];
+    const chips = [];
+    let passes = 0, sumP = 0;
+    if (q.twist) body.push(`Lo que nadie dijo: ${q.twist.charAt(0).toLowerCase() + q.twist.slice(1)}`);
+    q.challenges.forEach((c, i) => {
+      const diff = c.d + (q.twist && i === 0 ? 3 : 0);
+      const power = party.reduce((a, h) => a + skill(h, c.s), 0);
+      const p = clamp(prob(power, diff) - gafe, 0.03, 0.95);
+      sumP += p;
+      let ok = Math.random() < p;
+      const best = [...party].sort((a, b) => skill(b, c.s) - skill(a, c.s))[0];
+      if (!ok && lucky.size) {
+        const lh = heroById([...lucky][0]); lucky.delete(lh.id);
+        ok = Math.random() < p;
+        if (ok) body.push(`Cuando todo se torcía, la suerte de ${lh.name} lo enderezó.`);
+      }
+      if (ok) passes++;
+      body.push(pick(LINES[c.s][ok ? 'ok' : 'ko']).replace('{h}', best.name));
+    });
+    const n = q.challenges.length;
+    let outcome;
+    if (passes === n) outcome = sumP / n > 0.8 ? 'Éxito brillante' : 'Éxito';
+    else if (passes > 0) outcome = 'Éxito parcial';
+    else outcome = q.danger >= 2 && Math.random() < 0.6 ? 'Desastre' : 'Fracaso';
+    body.push(CLOSE[outcome]);
+
+    const mult = { 'Éxito brillante': 1.25, 'Éxito': 1, 'Éxito parcial': 0.5, 'Fracaso': 0, 'Desastre': 0 }[outcome];
+    let gold = Math.round(q.reward * mult);
+    const greedy = party.filter(h => h.traits.some(t => t.id === 'codicioso'));
+    if (gold > 0 && greedy.length) {
+      const cut = Math.round(gold * 0.1);
+      gold -= cut;
+      chips.push({ t: `${greedy[0].name} se queda ${cut}`, k: 'warn' });
+    }
+    S.gold += gold;
+    chips.unshift({ t: gold > 0 ? `+${gold} monedas` : 'Sin cobrar', k: gold > 0 ? 'good' : 'bad' });
+    const dRep = { 'Éxito brillante': 8, 'Éxito': 5, 'Éxito parcial': 1, 'Fracaso': -3, 'Desastre': -6 }[outcome];
+    S.rep = Math.max(0, S.rep + dRep);
+    chips.push({ t: `${dRep >= 0 ? '+' : ''}${dRep} reputación`, k: dRep >= 0 ? 'good' : 'bad' });
+    if (q.item && mult >= 1) {
+      S.inventory.push({ id: 'i' + (S.uid++), ...q.item });
+      chips.push({ t: `Objeto: ${q.item.name}`, k: 'info' });
+    }
+
+    const healer = party.some(h => h.cls === 'clerigo');
+    const injChance = { 'Éxito brillante': 0.05, 'Éxito': 0.12, 'Éxito parcial': 0.3, 'Fracaso': 0.5, 'Desastre': 0.6 }[outcome] * (healer ? 0.5 : 1);
+    let victim = null;
+    if (outcome === 'Desastre') {
+      victim = pick(party);
+      if (victim.traits.some(t => t.id === 'cobarde')) {
+        body.push(`${victim.name} salió corriendo a la primera señal. No es heroico, pero está vivo.`);
+        victim = null;
+      } else if (healer && victim.cls !== 'clerigo') {
+        victim.status = 'herido'; victim.days = 5;
+        if (!victim.traits.some(t => t.id === 'tuerto')) victim.traits.push({ id: 'tuerto' });
+        body.push(`${victim.name} estuvo a punto de no contarlo. Si vuelve es porque alguien rezó muy deprisa. Le queda una secuela.`);
+        chips.push({ t: `${victim.name}: grave, 5 días`, k: 'bad' }, { t: `Secuela: ${traitName(victim, { id: 'tuerto' })}`, k: 'warn' });
+      } else if (Math.random() < 0.5) {
+        victim.status = 'muerto';
+        S.fallen.unshift({ name: victim.name + (victim.nick ? ` «${victim.nick}»` : ''), ep: `${q.title} · día ${S.day}.` });
+        body.push(`${victim.name} no volvió. Su nombre irá al Muro de los caídos.`);
+        chips.push({ t: `${victim.name}: ${sx(victim, 'caído', 'caída')}`, k: 'bad' });
+      } else {
+        victim.status = 'desaparecido';
+        body.push(`Nadie sabe qué fue de ${victim.name}. Lo último que vieron fue su sombra cerca de ${q.place}.`);
+        chips.push({ t: `${victim.name}: ${sx(victim, 'desaparecido', 'desaparecida')}`, k: 'bad' });
+      }
+    }
+    party.forEach(h => {
+      if (['muerto', 'desaparecido'].includes(h.status) || h === victim) return;
+      h.status = 'ok'; h.days = 0;
+      h.xp += { 'Éxito brillante': 50, 'Éxito': 40, 'Éxito parcial': 25, 'Fracaso': 15, 'Desastre': 15 }[outcome];
+      if (h.xp >= 100) { h.xp -= 100; h.lvl++; chips.push({ t: `${h.name} sube a nivel ${h.lvl}`, k: 'good' }); }
+      const extra = h.traits.some(t => t.id === 'valiente') ? 0.1 : 0;
+      if (Math.random() < injChance + extra) {
+        h.status = 'herido'; h.days = 2 + Math.floor(Math.random() * 3);
+        body.push(`${h.name} vuelve ${sx(h, 'herido', 'herida')}: ${h.days} días de reposo.`);
+        chips.push({ t: `${h.name}: ${sx(h, 'herido', 'herida')}, ${h.days} días`, k: 'bad' });
+      }
+      h.morale = clamp(h.morale + (mult >= 1 ? 8 : mult > 0 ? 0 : -10) - (victim && victim.status === 'muerto' ? (h.traits.some(t => t.id === 'leal') ? 20 : 10) : 0), 0, 100);
+      h.history.push(`Día ${S.day} · ${q.title} · ${outcome}`);
+      const hid = h.traits.find(t => t.hidden);
+      if (hid) {
+        hid.hidden = false;
+        body.push(`Por cierto: has descubierto que ${h.name} es ${traitName(h, hid).toLowerCase()}.`);
+        chips.push({ t: `Descubierto: ${traitName(h, hid)}`, k: 'info' });
+      }
+    });
+
+    S.reports.unshift({ id: 'r' + (S.uid++), day: S.day, title: q.title, who: listNames(party.map(h => h.name)), outcome, read: false, body, chips });
+    return { names: listNames(party.map(h => h.name)), outcome };
+  }
+
+  // ---------- Acciones ----------
+  const A = {
+    tab(v) { S.tab = v; S.overlay = null; render(); $('screen').scrollTop = 0; },
+    close() { S.overlay = null; S.selected = []; render(); },
+    noop() {},
+    openReport(id) { const r = S.reports.find(r => r.id === id); r.read = true; S.overlay = { type: 'informe', id }; render(); },
+    openQuest(id) { S.overlay = { type: 'envio', id }; S.selected = []; render(); },
+    toggle(id) {
+      const q = S.quests.find(q => q.id === S.overlay.id);
+      const i = S.selected.indexOf(id);
+      if (i >= 0) S.selected.splice(i, 1);
+      else if (S.selected.length < q.slots) S.selected.push(id);
+      else toast(`Este encargo admite ${q.slots} ${q.slots === 1 ? 'héroe' : 'héroes'} como máximo.`);
+      render();
+    },
+    send() {
+      const q = S.quests.find(q => q.id === S.overlay.id);
+      const party = S.selected.map(heroById);
+      party.forEach(h => { h.status = 'mision'; h.days = q.days; });
+      S.missions.push({ id: 'm' + (S.uid++), heroIds: [...S.selected], daysLeft: q.days, total: q.days, quest: q });
+      S.quests = S.quests.filter(x => x.id !== q.id);
+      S.overlay = null; S.selected = [];
+      render();
+      toast(`${listNames(party.map(h => h.name))} ${party.length > 1 ? 'salen' : 'sale'} hacia ${q.place}. Vuelta en ${q.days} ${q.days === 1 ? 'día' : 'días'}.`);
+    },
+    hire(id) {
+      const c = S.candidates.find(c => c.id === id);
+      if (roster().length >= cap()) return toast('No queda sitio en los dormitorios. Mejóralos en Gremio.');
+      if (S.gold < c.fee) return toast(`Te faltan ${c.fee - S.gold} monedas para la prima de fichaje.`);
+      S.gold -= c.fee;
+      S.heroes.push({ ...c, xp: 0, morale: 65, status: 'ok', days: 0, traits: c.traits.map(t => ({ ...t })), history: [`Día ${S.day} · ${sx(c, 'Contratado', 'Contratada')}`] });
+      S.candidates = S.candidates.filter(x => x.id !== id);
+      render();
+      toast(`${c.name} se une al gremio. Su rasgo oculto se sabrá tras su primera misión.`);
+    },
+    openHero(id) { S.overlay = { type: 'ficha', id, confirm: false }; render(); },
+    askFire() { S.overlay.confirm = true; render(); },
+    cancelFire() { S.overlay.confirm = false; render(); },
+    fire() {
+      const h = heroById(S.overlay.id);
+      S.heroes = S.heroes.filter(x => x !== h);
+      S.overlay = null; render();
+      toast(`${h.name} recoge sus cosas y se va sin despedirse.`);
+    },
+    upgrade(k) {
+      const f = FAC[k], l = S.fac[k], cost = f.cost[l + 1] ?? f.cost[l];
+      if (S.gold < cost) return toast(`Te faltan ${cost - S.gold} monedas.`);
+      S.gold -= cost; S.fac[k] = l + 1; render();
+      toast(`${f.n} mejorada a nivel ${l + 1}.`);
+    },
+    sell(id) {
+      const it = S.inventory.find(i => i.id === id);
+      S.gold += it.value; S.inventory = S.inventory.filter(i => i !== it); render();
+      toast(`Vendido: ${it.name} por ${it.value} monedas.`);
+    },
+    endDay() {
+      const events = [];
+      S.day++;
+      S.flavor = (S.flavor + 1) % FLAVOR.length;
+      const income = S.fac.tab * 12;
+      S.gold += income;
+      events.push({ t: `La taberna deja ${income} monedas.` });
+      // Regresos
+      S.missions.forEach(m => { m.daysLeft--; m.heroIds.forEach(id => { const h = heroById(id); if (h) h.days = m.daysLeft; }); });
+      S.missions.filter(m => m.daysLeft <= 0).forEach(m => { const r = resolve(m); events.push({ t: `Vuelve ${r.names}: ${r.outcome.toLowerCase()}.`, bad: ['Fracaso', 'Desastre'].includes(r.outcome) }); });
+      S.missions = S.missions.filter(m => m.daysLeft > 0);
+      // Curación
+      S.heroes.filter(h => h.status === 'herido').forEach(h => { h.days -= 1 + S.fac.enf; if (h.days <= 0) { h.status = 'ok'; h.days = 0; events.push({ t: `${h.name} vuelve a estar ${sx(h, 'listo', 'lista')}.` }); } });
+      // Tablón
+      S.quests.forEach(q => q.expires--);
+      const gone = S.quests.filter(q => q.expires <= 0);
+      if (gone.length) events.push({ t: `Caduca: ${gone.map(q => q.title).join(', ')}.` });
+      S.quests = S.quests.filter(q => q.expires > 0);
+      S.quests.forEach(q => q.fresh = false);
+      if (S.quests.length < 4) {
+        const q = { ...QUEST_POOL[S.poolQ % QUEST_POOL.length], id: 'q' + (S.uid++), fresh: true };
+        S.poolQ++;
+        S.quests.push(q);
+        events.push({ t: `Nuevo encargo: ${q.title}.` });
+      }
+      // Candidatos
+      if (S.day % 3 === 0) {
+        const c = { ...CAND_POOL[S.poolC % CAND_POOL.length], id: 'c' + (S.uid++) };
+        S.poolC++;
+        if (S.candidates.length >= 3) S.candidates.shift();
+        S.candidates.push(c);
+        events.push({ t: `En la barra hay alguien nuevo buscando trabajo: ${c.name}.` });
+      }
+      // Pago semanal
+      const pay = SCHEDULE.find(p => p.day === S.day);
+      if (pay) {
+        const sal = salaries();
+        const total = sal + pay.amt;
+        S.gold -= total;
+        S.paid += pay.amt;
+        events.push({ t: `Día de pago: ${sal} en salarios y ${pay.amt} al prestamista.`, bad: S.gold < 0 });
+        if (S.gold < 0) events.push({ t: 'No llegas. En el juego completo aquí acabaría la partida; en el mockup, el prestamista lo apunta.', bad: true });
+      }
+      S.overlay = null; S.selected = [];
+      S.dawn = events;
+      render();
+    },
+    closeDawn() { S.dawn = null; S.tab = 'taberna'; render(); $('screen').scrollTop = 0; },
+  };
+
+  // ---------- Vistas ----------
+  function topbar() {
+    const np = nextPayment();
+    const nr = nextRank();
+    return `
+      <div class="tb-row">
+        <div class="dayno">Día ${S.day}<small class="num">/ 30</small></div>
+        <div class="gname"><b>El Jarro Partido</b><span>Gremio de ${rank().n}</span></div>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="k">Oro</span><span class="v ${S.gold < 0 ? 'bad' : ''}"><i class="coin"></i>${S.gold}</span></div>
+        <div class="stat"><span class="k">Reputación</span><span class="v">${S.rep}${nr ? `<small style="color:var(--muted);font-weight:500"> / ${nr.at}</small>` : ''}</span></div>
+        <div class="stat"><span class="k">${np ? `Pago · día ${np.day}` : 'Deuda'}</span><span class="v ${np && np.day - S.day <= 3 ? 'warn' : ''}">${np ? np.amt + salaries() : 'Pagada'}</span></div>
+      </div>`;
+  }
+
+  function vTaberna() {
+    const unread = S.reports.filter(r => !r.read);
+    const shown = S.reports.slice(0, Math.max(3, unread.length));
+    const mail = shown.length ? shown.map(r => `
+      <button class="letter-btn ${r.read ? 'read' : ''}" data-a="openReport" data-v="${r.id}">
+        <span class="seal">${r.read ? '✓' : 'G'}</span>
+        <span><b>${r.title}</b><span>${r.who} · ${r.outcome}</span></span>
+        ${r.read ? `<span class="sub num">día ${r.day}</span>` : '<span class="pill solid">Nuevo</span>'}
+      </button>`).join('') : '<div class="empty">Nadie ha vuelto todavía. Los informes llegan aquí al amanecer.</div>';
+
+    const away = S.missions.length ? S.missions.map(m => {
+      const hs = m.heroIds.map(heroById).filter(Boolean);
+      const done = (m.total - m.daysLeft) / m.total * 100;
+      return `<div class="card mission">
+          <span class="who">${hs.map(h => portrait(h, 'sm')).join('')}</span>
+          <div><b>${m.quest.title}</b>
+            <div class="track"><i style="width:${Math.max(8, done)}%"></i></div>
+            <div class="meta"><span>${listNames(hs.map(h => h.name))}</span><span class="num">vuelven en ${m.daysLeft} ${m.daysLeft === 1 ? 'día' : 'días'}</span></div>
+          </div></div>`;
+    }).join('') : '<div class="empty">No hay nadie fuera. Ve al Tablón para mandar un grupo.</div>';
+
+    const cands = S.candidates.length ? S.candidates.map(c => `
+      <div class="card">
+        <div class="cand-top">
+          ${portrait(c)}
+          <div class="nm"><b>${c.name}${c.nick ? ` <span class="nick" style="font-family:var(--font-story);font-style:italic;font-weight:400;color:var(--muted)">«${c.nick}»</span>` : ''}</b><span>${clsName(c)} · nivel ${c.lvl}</span></div>
+          <div class="price"><b>${c.fee}</b>fichaje · ${c.salary}/sem</div>
+        </div>
+        <p class="quote">${c.quote}</p>
+        <div class="row between">
+          <div class="row">${traitChips(c)}</div>
+          <button class="btn primary" data-a="hire" data-v="${c.id}">Contratar</button>
+        </div>
+      </div>`).join('') : '<div class="empty">Hoy no hay nadie buscando trabajo. Vuelve mañana.</div>';
+
+    return `
+      <p class="flavor">${FLAVOR[S.flavor]}</p>
+      <section class="sec"><div class="sec-h"><h2>Correo del amanecer</h2>${unread.length ? `<span class="aside">${unread.length} sin leer</span>` : ''}</div>${mail}</section>
+      <section class="sec"><div class="sec-h"><h2>Fuera del gremio</h2></div>${away}</section>
+      <section class="sec"><div class="sec-h"><h2>Buscan trabajo</h2><span class="aside num">plazas ${roster().length}/${cap()}</span></div>${cands}</section>`;
+  }
+
+  function chalChips(q) { return q.challenges.map(c => `<span class="chal">${c.s} ${c.d}</span>`).join(''); }
+  function dangerTxt(q) { return q.dangerHidden ? '<span class="danger-x">Peligro: ¿?</span>' : `<span class="danger-${q.danger}">Peligro ${DANGER[q.danger].toLowerCase()}</span>`; }
+
+  function vTablon() {
+    const list = S.quests.map(q => `
+      <button class="card quest" data-a="openQuest" data-v="${q.id}">
+        <div class="quest-head">
+          <span class="row"><span class="pill muted">${q.type}</span>${q.fresh ? '<span class="pill solid">Nuevo</span>' : ''}</span>
+          <span class="sub num">${q.expires === 1 ? 'caduca mañana' : `caduca en ${q.expires} días`}</span>
+        </div>
+        <h3>${q.title}</h3>
+        <span class="client">${q.client}</span>
+        <p class="qtext">${q.text}</p>
+        <div class="row">${chalChips(q)}</div>
+        <div class="quest-foot">
+          <span>${q.days} ${q.days === 1 ? 'día' : 'días'} · hasta ${q.slots} · ${dangerTxt(q)}</span>
+          <span class="reward"><i class="coin"></i>${q.reward}${q.item ? ' + objeto' : ''}</span>
+        </div>
+      </button>`).join('');
+    return `<section class="sec"><div class="sec-h"><h2>Tablón de encargos</h2><span class="aside">${S.quests.length} encargos</span></div>
+      ${list || '<div class="empty">El tablón está vacío. Mañana llegarán más encargos.</div>'}</section>`;
+  }
+
+  function vHeroes() {
+    const all = S.heroes;
+    const avail = all.filter(h => h.status === 'ok').length;
+    const rows = all.map(h => `
+      <button class="card hero-row" data-a="openHero" data-v="${h.id}">
+        ${portrait(h)}
+        <div class="nm" style="min-width:0">
+          <b>${h.name}</b>${h.nick ? ` <span class="nick">${h.nick}</span>` : ''}
+          <div class="sub">${clsName(h)} · nivel ${h.lvl}</div>
+          <div class="row" style="margin-top:5px">${traitChips(h)}</div>
+        </div>
+        <div class="right">${statusPill(h)}${['muerto', 'desaparecido'].includes(h.status) ? '' : moraleBar(h)}</div>
+      </button>`).join('');
+    return `<section class="sec">
+      <div class="sec-h"><h2>Tus héroes</h2><span class="aside num">${avail} disponibles</span></div>
+      <span class="summary-line num">${roster().length} de ${cap()} plazas · salarios ${salaries()} por semana</span>
+      ${rows || '<div class="empty">No tienes héroes. Contrata en la Taberna.</div>'}
+    </section>`;
+  }
+
+  function vGremio() {
+    const pct = S.paid / 1000 * 100;
+    const np = nextPayment();
+    const sched = SCHEDULE.map(p => {
+      const st = S.paid >= cumUpTo(p) ? '<span class="pill good">Pagado</span>'
+        : p === np ? '<span class="pill warn">Próximo</span>' : '<span class="pill muted">Pendiente</span>';
+      return `<span class="d">Día ${p.day}</span><span><b class="num">${p.amt}</b> + salarios</span>${st}`;
+    }).join('');
+    const facs = Object.entries(FAC).map(([k, f]) => {
+      const l = S.fac[k];
+      const can = l < f.max;
+      const cost = f.cost[l + 1];
+      return `<div class="card fac">
+        <span><b>${f.n}</b><span class="pips">${Array.from({ length: f.max }, (_, i) => `<i class="${i < l ? 'on' : ''}"></i>`).join('')}</span></span>
+        ${can ? `<button class="btn" data-a="upgrade" data-v="${k}"><i class="coin"></i>${cost}</button>` : '<span class="pill good">Máximo</span>'}
+        <span class="eff">${f.eff(l)}</span>
+      </div>`;
+    }).join('');
+    const inv = S.inventory.length ? S.inventory.map(i => `
+      <div class="card inv"><b>${i.name}</b><button class="btn" data-a="sell" data-v="${i.id}">Vender · ${i.value}</button><span class="d">${i.desc}</span></div>`).join('')
+      : '<div class="empty">El arcón está vacío.</div>';
+    const wall = S.fallen.map((f, i) => `${i ? '<hr>' : ''}<div><div class="name">${f.name}</div><div class="ep">${f.ep}</div></div>`).join('');
+    return `
+      <section class="sec"><div class="sec-h"><h2>La deuda</h2><span class="aside">con Merlo, el prestamista</span></div>
+        <div class="card">
+          <div class="debt-big"><b>${S.paid}</b><span>/ 1000 pagado</span></div>
+          <div class="bar"><i style="width:${pct}%"></i></div>
+          <div class="sched">${sched}</div>
+        </div></section>
+      <section class="sec"><div class="sec-h"><h2>Instalaciones</h2></div>${facs}</section>
+      <section class="sec"><div class="sec-h"><h2>Arcón del botín</h2></div>${inv}</section>
+      <section class="sec"><div class="sec-h"><h2>Muro de los caídos</h2></div><div class="wall">${wall}</div></section>`;
+  }
+
+  function vEnvio() {
+    const q = S.quests.find(q => q.id === S.overlay.id);
+    const party = S.selected.map(heroById);
+    const est = estimate(q, party);
+    const maxRef = Math.max(...est.rows.map(r => Math.max(r.diff, r.power))) * 1.15 || 1;
+    const bars = est.rows.map(r => {
+      const k = r.power >= r.diff ? 'ok' : r.power >= r.diff - 3 ? 'close' : 'low';
+      return `<div class="cbar"><span>${r.s}</span><span class="tr"><i class="${k}" style="width:${r.power / maxRef * 100}%"></i><b style="left:${r.diff / maxRef * 100}%" title="Dificultad"></b></span><span class="v">${r.power} / ${r.diff}</span></div>`;
+    }).join('');
+    const picks = S.heroes.filter(h => !['muerto', 'desaparecido'].includes(h.status)).map(h => {
+      const on = S.selected.includes(h.id);
+      const busy = h.status !== 'ok';
+      const sk = q.challenges.map(c => `${c.s.slice(0, 3)} ${skill(h, c.s)}`).join(' · ');
+      return `<button class="pick" data-a="toggle" data-v="${h.id}" aria-pressed="${on}" ${busy ? 'disabled' : ''}>
+        ${portrait(h, 'sm')}
+        <span style="min-width:0"><b>${h.name}</b> <span class="sub">${clsName(h)} ${h.lvl}</span><div class="skills-mini">${busy ? statusPill(h) : sk}</div></span>
+        <span class="check">${on ? '✓' : ''}</span>
+      </button>`;
+    }).join('');
+    const twist = est.reveal ? `<div class="twist"><b>${party.find(h => h.cls === 'mago').name} nota algo raro.</b> ${q.twist}</div>` : '';
+    return `<div class="panel" data-a="noop">
+      <div class="panel-h"><div><span class="sub">${q.type} · ${q.client}</span><h2>${q.title}</h2></div><button class="x" data-a="close" aria-label="Cerrar">×</button></div>
+      <div class="row">${chalChips(q)}<span class="sub">· ${q.days} ${q.days === 1 ? 'día' : 'días'} · ${dangerTxt(q)}</span></div>
+      <div class="estimate">
+        <span class="est-label est-${party.length ? est.lvl : 3}">${party.length ? est.label : 'Elige un grupo'}</span>
+        <span class="est-sub num">${party.length ? `Grupo ${party.length}/${q.slots}<br>Paga ${q.reward}` : `Hasta ${q.slots} ${q.slots === 1 ? 'héroe' : 'héroes'}`}</span>
+      </div>
+      ${bars}
+      ${twist}
+      <div class="sec"><span class="h3">Quién va</span>${picks}</div>
+      <button class="btn primary" style="padding:12px;font-size:16px" data-a="send" ${party.length ? '' : 'disabled'}>${party.length ? `Enviar a ${listNames(party.map(h => h.name))}` : 'Elige al menos un héroe'}</button>
+    </div>`;
+  }
+
+  function vFicha() {
+    const h = heroById(S.overlay.id);
+    const dead = ['muerto', 'desaparecido'].includes(h.status);
+    const traits = h.traits.map(t => t.hidden
+      ? `<div class="trait-line"><span class="trait hid">¿?</span><span class="d">Rasgo oculto. Se descubre tras su primera misión.</span></div>`
+      : `<div class="trait-line"><span class="trait ${TR[t.id].tone}">${traitName(h, t)}</span><span class="d">${TR[t.id].d}</span></div>`).join('');
+    return `<div class="panel" data-a="noop">
+      <div class="panel-h">
+        <div class="sheet-top">${portrait(h, 'lg')}<div><h2>${h.name}</h2>${h.nick ? `<div style="font-family:var(--font-story);font-style:italic;color:var(--muted)">${h.nick}</div>` : ''}<div class="sub">${clsName(h)} · nivel ${h.lvl} · ${h.salary}/sem</div><div style="margin-top:6px">${statusPill(h)}</div></div></div>
+        <button class="x" data-a="close" aria-label="Cerrar">×</button>
+      </div>
+      ${dead ? '' : `<div><div class="row between sub"><span>Experiencia</span><span class="num">${h.xp}/100</span></div><div class="bar" style="height:6px"><i style="width:${h.xp}%"></i></div></div>
+      <div><div class="row between sub"><span>Moral</span><span class="num">${h.morale}/100</span></div><div class="bar" style="height:6px"><i style="width:${h.morale}%;background:var(--${h.morale < 35 ? 'bad' : h.morale < 60 ? 'warn' : 'good'})"></i></div></div>`}
+      <div class="attr-grid">
+        <div class="attr"><div class="k">Fuerza</div><div class="v">${attr(h, 'F')}</div></div>
+        <div class="attr"><div class="k">Destreza</div><div class="v">${attr(h, 'D')}</div></div>
+        <div class="attr"><div class="k">Mente</div><div class="v">${attr(h, 'M')}</div></div>
+      </div>
+      <div class="sec"><span class="h3">Habilidades</span><div class="skill-list">${SKILLS.map(s => `<span>${s}${CLS[h.cls].main === s ? ' <span class="pill solid" style="font-size:10px;padding:0 6px">clase</span>' : ''}</span><b>${skill(h, s)}</b>`).join('')}${h.cls === 'clerigo' ? '<span>Sanación <span class="pill solid" style="font-size:10px;padding:0 6px">clase</span></span><b>Reduce heridas</b>' : ''}</div></div>
+      <div class="sec"><span class="h3">Rasgos</span><div class="trait-list">${traits}</div></div>
+      <div class="sec"><span class="h3">Historial</span><ul class="hist">${h.history.map(x => `<li>${x}</li>`).join('')}</ul></div>
+      ${dead ? '' : S.overlay.confirm
+        ? `<div class="confirm"><span>¿Despedir a ${h.name}? Se va hoy y no vuelve.</span><div class="row"><button class="btn danger" data-a="fire">Sí, despedir</button><button class="btn" data-a="cancelFire">Cancelar</button></div></div>`
+        : `<button class="btn danger" data-a="askFire" ${h.status !== 'ok' ? 'disabled' : ''}>Despedir</button>`}
+    </div>`;
+  }
+
+  function vInforme() {
+    const r = S.reports.find(r => r.id === S.overlay.id);
+    return `<div class="panel letter" data-a="noop">
+      <div class="panel-h"><div><span class="eyebrow">Informe · día ${r.day}</span><div class="outcome">${r.outcome}</div></div><button class="x" data-a="close" aria-label="Cerrar">×</button></div>
+      <div><b>${r.title}</b><div style="color:var(--parch-muted);font-size:14px">${r.who}</div></div>
+      <div class="story">${r.body.map(p => `<p>${p}</p>`).join('')}</div>
+      <div class="chips">${r.chips.map(c => `<span class="chip ${c.k}">${c.t}</span>`).join('')}</div>
+      <div class="sign">— anotado en el libro del gremio</div>
+    </div>`;
+  }
+
+  const NOTES = {
+    taberna: { where: 'Pantalla de inicio', h: 'Taberna', p: 'Lo primero que ves cada mañana: los informes de quien ha vuelto, quién sigue fuera y quién busca trabajo en la barra.',
+      t: 'Prueba: abre el informe de Brom y Lysa, y contrata a alguien para verlo en Héroes.',
+      q: ['¿Informes como cartas al amanecer, o prefieres ver el resultado en cuanto vuelven?', 'Cada candidato esconde un rasgo (los «¿?»). ¿Apuesta divertida o frustrante?', '¿Tres candidatos a la vez es buen número?'] },
+    tablon: { where: 'Pestaña 2', h: 'Tablón', p: 'Los encargos que llegan. Cada uno tiene desafíos (habilidad y dificultad), plazas, días fuera, recompensa, peligro y fecha de caducidad.',
+      t: 'Prueba: toca un encargo para formar un grupo.',
+      q: ['¿Enseñamos la dificultad exacta (Combate 13) o solo pistas?', 'Peligro «¿?» en clientes sospechosos: ¿te gusta?', '¿Cuántos encargos a la vez en el tablón?'] },
+    envio: { where: 'Al tocar un encargo', h: 'Formar grupo', p: 'Cada barra compara la fuerza del grupo con un desafío; la raya marca la dificultad. Arriba, la estimación global.',
+      t: 'Prueba: añade y quita héroes. En la cripta, contrata antes a Isolde (maga) y llévala: descubrirá el giro oculto.',
+      q: ['¿Barras con números, o solo la etiqueta (Probable, Arriesgado…)?', '¿Añadimos una postura (prudente / temeraria) para cambiar riesgo por botín?', '¿Te gustaría poder comprar pociones antes de salir (enlace con la Tienda)?'] },
+    heroes: { where: 'Pestaña 3', h: 'Héroes', p: 'La plantilla: estado (disponible, fuera, herido), moral y rasgos de un vistazo.',
+      t: 'Prueba: toca a Brom para ver su ficha.',
+      q: ['¿Lista compacta como esta, o fichas tipo carta con retrato grande?', '¿Relaciones entre héroes (amistades, rivalidades) ya en el prototipo?'] },
+    ficha: { where: 'Al tocar un héroe', h: 'Ficha', p: 'Atributos, habilidades derivadas de ellos, rasgos (los ocultos aparecen como «¿?») e historial. El historial alimenta los informes.',
+      t: 'Los retratos son marcadores de color por clase; el arte llegaría después.',
+      q: ['¿Subir de nivel automático, o eligiendo una mejora?', '¿Equipo por héroe (arma, armadura, amuleto) o mejor algo más simple?'] },
+    gremio: { where: 'Pestaña 4', h: 'Gremio', p: 'La deuda manda: un pago cada 7 días más los salarios. Debajo, instalaciones, el arcón del botín y el Muro de los caídos.',
+      t: 'Prueba: mejora una instalación o vende algo del arcón.',
+      q: ['¿Te convence una partida de 30 días con deuda para el prototipo?', '¿Muro de los caídos con epitafios generados?'] },
+    informe: { where: 'Al abrir un informe', h: 'Informe de misión', p: 'La recompensa emocional: un texto montado con plantillas a partir de lo que salió en las tiradas, con el resumen en números debajo.',
+      t: 'Manda grupos y termina días: cada informe se genera con lo que pase.',
+      q: ['¿Largo como este o más corto?', '¿Ilustración por tipo de encargo más adelante?'] },
+    dawn: { where: 'Al terminar el día', h: 'Amanecer', p: 'La transición entre días resume lo que ha pasado durante la noche: regresos, heridas curadas, encargos nuevos y pagos.',
+      t: 'Después vuelves a la Taberna con los informes nuevos.',
+      q: ['¿Útil como resumen o prefieres ir directo a la taberna?'] },
+  };
+
+  function renderNotes() {
+    const key = S.dawn ? 'dawn' : S.overlay ? S.overlay.type : S.tab;
+    const n = NOTES[key];
+    $('noteCard').innerHTML = `<span class="where">${n.where}</span><h2>${n.h}</h2><p>${n.p}</p><p class="try">${n.t}</p>
+      <span class="h3">Preguntas para ti</span><ol>${n.q.map(x => `<li>${x}</li>`).join('')}</ol>`;
+  }
+
+  function render() {
+    $('topbar').innerHTML = topbar();
+    $('screen').innerHTML = { taberna: vTaberna, tablon: vTablon, heroes: vHeroes, gremio: vGremio }[S.tab]();
+    const badges = { taberna: S.reports.filter(r => !r.read).length, tablon: S.quests.filter(q => q.fresh).length, heroes: 0, gremio: 0 };
+    const labels = { taberna: 'Taberna', tablon: 'Tablón', heroes: 'Héroes', gremio: 'Gremio' };
+    $('tabs').innerHTML = Object.keys(labels).map(k => `<button class="tab" data-a="tab" data-v="${k}" ${S.tab === k ? 'aria-current="page"' : ''}>${TAB_ICONS[k]}${labels[k]}${badges[k] ? `<span class="badge">${badges[k]}</span>` : ''}</button>`).join('');
+    const away = S.missions.length;
+    $('endBtn').innerHTML = `Terminar día <small>${away ? `· ${away} ${away === 1 ? 'grupo fuera' : 'grupos fuera'}` : ''}</small>`;
+    const sh = $('sheet');
+    if (S.overlay) {
+      sh.hidden = false;
+      sh.innerHTML = { envio: vEnvio, ficha: vFicha, informe: vInforme }[S.overlay.type]();
+    } else { sh.hidden = true; sh.innerHTML = ''; }
+    const dw = $('dawn');
+    if (S.dawn) {
+      dw.hidden = false;
+      dw.innerHTML = `<span class="sub" style="color:inherit;opacity:.7;letter-spacing:.1em;text-transform:uppercase">Amanece en El Jarro Partido</span>
+        <div class="big">Día ${S.day}</div>
+        <ul>${S.dawn.map(e => `<li class="${e.bad ? 'bad' : ''}">${e.t}</li>`).join('')}</ul>
+        <button data-a="closeDawn">Abrir la taberna</button>`;
+    } else { dw.hidden = true; dw.innerHTML = ''; }
+    renderNotes();
+  }
+
+  let toastTimer;
+  function toast(msg) {
+    const t = $('toast');
+    t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.hidden = true; }, 2800);
+  }
+
+  $('app').addEventListener('click', e => {
+    const el = e.target.closest('[data-a]');
+    if (!el || el.disabled) return;
+    if (el.classList.contains('sheet') && e.target !== el) return;
+    const fn = A[el.dataset.a];
+    if (fn) fn(el.dataset.v);
+  });
+  $('sheet').dataset.a = 'close';
+  $('resetBtn').addEventListener('click', () => { S = initialState(); render(); toast('Partida reiniciada en el día 4.'); });
+
+  function start(data) {
+    S = data && data.state && data.state.day ? data.state : initialState();
+    window.claude?.hot?.snapshot?.(() => ({ state: S }));
+    render();
+  }
+  window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+})();
+</script>
+</body>
+</html>
