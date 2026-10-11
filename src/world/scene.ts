@@ -29,6 +29,7 @@ import {
 import { ambientCanvas, glowSprite, lightSprite, shaftSprite } from './lighting';
 import { buildSky, parallaxLayers, stars, type ParallaxLayer, type Star } from './parallax';
 import { Particles } from './particles';
+import { BATTLE_TIME, Battle } from './battle';
 import * as Prop from './props';
 
 export type HeroStatus = 'ok' | 'herido' | 'mision' | 'candidato';
@@ -65,7 +66,8 @@ export type SoundName =
   | 'bats'
   | 'build'
   | 'drip'
-  | 'cheer';
+  | 'cheer'
+  | 'hit';
 
 export interface Point {
   x: number;
@@ -183,7 +185,10 @@ export class WorldScene {
   private hover: { id: string; rect: { x: number; y: number; w: number; h: number } } | null = null;
   private t = 0;
   /** Noche que pasa en escena al terminar el día: oscurece, amanece y vuelve la luz. */
-  private night: { start: number; dur: number; done: (() => void) | null } | null = null;
+  private night: { start: number; dur: number; hold: number; done: (() => void) | null } | null =
+    null;
+  /** Asalto que se está viendo en el patio durante la noche. */
+  private battle: Battle | null = null;
   private last = 0;
   private raf = 0;
   private keeper = { x: 150, dir: 1 as 1 | -1, target: 150, timer: 2, walking: false, dist: 0 };
@@ -412,9 +417,54 @@ export class WorldScene {
    * Pasa la noche en la escena: la taberna se apaga, el cielo clarea por el horizonte y
    * `done` se llama al salir el sol (ahí se abre el resumen del amanecer).
    */
-  nightfall(done: () => void, dur = 2.6): void {
+  nightfall(done: () => void, dur = 2.6, hold = 0): void {
     this.night?.done?.();
-    this.night = { start: this.t, dur, done };
+    this.night = { start: this.t, dur, hold, done };
+  }
+
+  /** Noche con asalto: la pelea en el patio y, al acabar, el amanecer. */
+  raidNight(
+    raid: { won: boolean; bandits: number; defenders: string[]; hurt: string[] },
+    done: () => void,
+  ): void {
+    const defenders = raid.defenders
+      .map((id) => this.heroes.get(id))
+      .filter((a): a is HeroActor => !!a)
+      .map((a) => ({ id: a.hero.id, spr: a.spr, hurt: raid.hurt.includes(a.hero.id) }));
+    this.battle = new Battle(
+      { won: raid.won, bandits: raid.bandits, defenders },
+      {
+        feetAt,
+        spark: (x, y) => {
+          for (let i = 0; i < 5; i++) this.particles.spawn('spark', x, y);
+        },
+        coin: (x, y) => {
+          for (let i = 0; i < 8; i++) this.particles.spawn('coin', x, y);
+        },
+        sound: (n) => this.cb.onSound?.(n, n === 'hit' ? 0.6 : 1),
+      },
+    );
+    this.focus('patio');
+    this.nightfall(done, 2.6, BATTLE_TIME + 0.6);
+  }
+
+  /** Saltar la pelea: se pasa directamente al amanecer. */
+  skipRaid(): void {
+    if (!this.battle || !this.night) return;
+    this.battle.finish();
+    const a = 0.35 * this.night.dur;
+    this.night.start = this.t - a - this.night.hold;
+  }
+
+  /** Avance de la noche en la escala original (0–1.8), con la meseta oscura alargada. */
+  private nightP(): number {
+    const n = this.night!;
+    const te = this.t - n.start;
+    const a = 0.35 * n.dur;
+    const plateau = n.hold > 0 ? n.hold : 0.15 * n.dur;
+    if (te < a) return te / n.dur;
+    if (te < a + plateau) return 0.35 + (0.15 * (te - a)) / plateau;
+    return 0.5 + (te - a - plateau) / n.dur;
   }
 
   /** Celebración en la barra cuando un grupo vuelve con éxito: notas, monedas y brindis. */
@@ -434,9 +484,10 @@ export class WorldScene {
   private nightLight(): { dark: number; warm: number } {
     const n = this.night;
     if (!n) return { dark: 0, warm: 0 };
-    const p = (this.t - n.start) / n.dur;
+    const p = this.nightP();
     const ramp = (a: number, b: number) => Math.max(0, Math.min(1, (p - a) / (b - a)));
-    const dark = ramp(0, 0.35) * (1 - ramp(0.5, 0.9));
+    // Durante un asalto la noche no es tan cerrada: hay que ver la pelea.
+    const dark = ramp(0, 0.35) * (1 - ramp(0.5, 0.9)) * (this.battle ? 0.55 : 1);
     const warm = ramp(0.45, 0.9) * (1 - ramp(1.05, 1.8));
     return { dark, warm };
   }
@@ -494,8 +545,12 @@ export class WorldScene {
   private update(dt: number): void {
     this.t += dt;
     const t = this.t;
+    if (this.battle) {
+      this.battle.update(dt);
+      if (this.battle.done) this.battle = null;
+    }
     if (this.night) {
-      const p = (t - this.night.start) / this.night.dur;
+      const p = this.nightP();
       if (p >= 0.85 && this.night.done) {
         const done = this.night.done;
         this.night.done = null;
@@ -936,6 +991,7 @@ export class WorldScene {
     );
     walkers.sort((a, b) => a.hero.id.localeCompare(b.hero.id));
     for (const a of walkers) {
+      if (this.battle?.hidden.has(a.hero.id)) continue;
       const walking = a.act === 'walk';
       const img = walking
         ? a.spr.walk[Math.floor(a.dist / 3.5) % 4]!
@@ -953,11 +1009,12 @@ export class WorldScene {
       drawn.push({ kind: 'hero', id: a.hero.id, label: a.hero.name, x, y, img, flip });
     }
     this.drawn = drawn;
+    this.battle?.draw(ctx, cx, cy);
 
     // ---------- Luz ----------
     const l = this.lctx;
     l.globalCompositeOperation = 'copy';
-    l.drawImage(this.ambientC, -cx, -cy);
+    l.drawImage(this.ambientC, WORLD_X0 - cx, -cy);
     l.globalCompositeOperation = 'lighter';
     for (const li of W.lights) {
       if (li.x + li.r < cx || li.x - li.r > cx + vw || li.y + li.r < cy || li.y - li.r > cy + vh)
@@ -965,6 +1022,11 @@ export class WorldScene {
       const fl = noise(Math.floor(t * 9), li.x + li.y);
       const r = Math.max(4, Math.round((li.r * (1 - li.flicker * fl)) / 2) * 2);
       l.drawImage(lightSprite(r, li.color, li.intensity), li.x - r - cx, li.y - r - cy);
+    }
+    // Antorchas de los bandidos durante un asalto.
+    for (const tch of this.battle?.torches() ?? []) {
+      const r = 30 + Math.round(noise(Math.floor(t * 9), tch.x) * 4);
+      l.drawImage(lightSprite(r, [255, 150, 70], 1), tch.x - r - cx, tch.y - r - cy);
     }
     for (const s of W.shafts) {
       const sp = shaftSprite(s);

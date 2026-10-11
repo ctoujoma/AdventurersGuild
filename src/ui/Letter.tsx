@@ -30,7 +30,9 @@ export function Letter({ report: r, heroes, onClose }: Props) {
             G
           </span>
           <span class="eyebrow">Informe · día {r.day}</span>
-          <h3 class={`outcome outcome-${OUTCOME_CLASS[r.outcome]}`}>{r.outcome}</h3>
+          <h3 class={`outcome outcome-${OUTCOME_CLASS[r.outcome]}`}>
+            {r.raid ? (r.raid.won ? 'Asalto repelido' : 'Saqueo') : r.outcome}
+          </h3>
           <b class="letter-title">{r.title}</b>
           <div class="letter-party">
             {party.map((h) => (

@@ -26,7 +26,9 @@ export type Sfx =
   | 'dawn'
   | 'night'
   | 'cheer'
-  | 'impact';
+  | 'impact'
+  | 'hit'
+  | 'horn';
 
 const STORAGE_KEY = 'jarro:sonido';
 const FIRE = { x: 346, y: 272 };
@@ -237,6 +239,18 @@ class AudioEngine {
           const at = t + 0.7 + i * 0.16 + (i > 2 ? 0.3 : 0);
           this.tone('sine', 3400 + (i % 2) * 500, 4300 + (i % 3) * 300, at, 0.07, 0.025 * v);
         }
+        break;
+      case 'hit':
+        // Choque de acero: un golpe seco y un tintineo metálico.
+        this.thump(t, 0.12 * v);
+        this.ping(1800 + Math.random() * 900, t, 0.09, 0.05 * v);
+        this.crackle(t, 0.12 * v);
+        break;
+      case 'horn':
+        // Cuerno de alarma: ¡asalto!
+        this.tone('sawtooth', 147, 165, t, 0.55, 0.07 * v);
+        this.tone('sawtooth', 147, 196, t + 0.6, 0.8, 0.08 * v);
+        this.tone('sine', 294, 392, t + 0.6, 0.8, 0.04 * v);
         break;
       case 'impact':
         // El rótulo del título cae: golpe grave, crujido de madera y polvo.

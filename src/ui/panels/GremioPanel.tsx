@@ -1,5 +1,6 @@
 import { DEBT, SCHEDULE, capacity, facilityMax } from '../../core/balance';
 import { canUpgrade, nextPayment, salaries, upgradeCost } from '../../core/game';
+import { defense, notoriety } from '../../core/raids';
 import type { Facilities, GameState } from '../../core/model';
 import { FACILITY_INFO } from '../../data/labels';
 import { itemIcon, trophyIcon } from '../../art/items';
@@ -78,6 +79,25 @@ export function GremioPanel({
           </span>
         </div>
       )}
+
+      <div class={`card-paper security ${game.raid?.warned ? 'alert' : ''}`}>
+        <div class="debt-top">
+          <h3>Seguridad</h3>
+          <span class="muted">notoriedad {notoriety(game)}</span>
+        </div>
+        <span class="tiny">
+          {game.raid?.warned
+            ? `¡Chivatazo! ${game.raid.band} llegará en ${Math.max(0, game.raid.day - game.day)} noches. Deja a alguien fuerte en casa o de guardia.`
+            : (game.truce ?? 0) > game.day
+              ? `Tregua: los bandidos no se atreven hasta el día ${game.truce}.`
+              : 'Cuanto más famoso y rico es el gremio, más tienta a los bandidos.'}
+        </span>
+        <span class="tiny">
+          Defensa esta noche: <b>{defense(game)}</b> (
+          {game.heroes.filter((h) => h.status === 'ok').length} en casa,{' '}
+          {game.heroes.filter((h) => h.guard).length} de guardia)
+        </span>
+      </div>
 
       <button class="card-paper libro-link" onClick={onLibro}>
         <b>Libro de hazañas</b>

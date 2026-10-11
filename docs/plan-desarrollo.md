@@ -155,21 +155,21 @@ Lo que pasa al pagar la deuda: el final de «La deuda» deja de ser un final y s
 - [ ] **Eventos en ruta y en la taberna con elección** (emboscada, mercader, tesoro, pelea interna)
 - [ ] Desaparecidos que vuelven con historia y rasgo nuevo, o encargo de rescate
 
-### Fase 6: Asaltos a la taberna · L
+### Fase 6: Asaltos a la taberna · L ✅
 
 Inspirado en los ataques al refugio de *Fallout Shelter*: cuanto más famoso y rico es el gremio, más apetecible es para los bandidos.
 
-- [ ] **Escena más ancha**: más patio delante de la puerta (izquierda) para los combates y más espacio a la derecha para seguir ampliando el edificio
-- [ ] **Notoriedad**: sube con la reputación y con el valor del arcón y los trofeos; marca la probabilidad y la fuerza de los asaltos
-- [ ] **Chivatazos**: avisos con días de margen («Dicen que la banda del Tuerto anda preguntando por ti»). Vienen de:
+- [x] **Escena más ancha**: más patio delante de la puerta (izquierda) para los combates y más espacio a la derecha para seguir ampliando el edificio
+- [x] **Notoriedad**: sube con la reputación y con el valor del arcón y los trofeos; marca la probabilidad y la fuerza de los asaltos
+- [x] **Chivatazos**: avisos con días de margen («Dicen que la banda del Tuerto anda preguntando por ti»). Vienen de:
   - El tabernero y los rumores de la barra
   - Exploradores que vuelven de misión y ven a la banda
   - Un chivato al que se le paga
   - La torre del vigía (instalación)
-- [ ] **Defensa**: luchan los héroes que estén en la taberna. Se puede dejar a alguien **de guardia** (no sale de misión y defiende mejor). Así hay que decidir entre mandar a los fuertes a ganar oro o dejarlos en casa
-  - Defensas construibles que ayudan: empalizada, armería, torre del vigía
-- [ ] **Combate en tiempo real en el patio**: de noche, los bandidos llegan por el camino y los héroes salen por la puerta a pelear (choques, golpes, caídas); se puede acelerar o saltar
-- [ ] **Consecuencias**:
+- [x] **Defensa**: luchan los héroes que estén en la taberna. Se puede dejar a alguien **de guardia** (no sale de misión y defiende mejor). Así hay que decidir entre mandar a los fuertes a ganar oro o dejarlos en casa
+  - [x] La armería ya ayuda · [ ] empalizada y torre del vigía (fase 7)
+- [x] **Combate en tiempo real en el patio**: de noche, los bandidos llegan por el camino y los héroes salen por la puerta a pelear (choques, golpes, caídas); se puede acelerar o saltar
+- [x] **Consecuencias**:
   - Perder: saqueo (oro, tesoros o equipo del arcón; quizá un trofeo) y heridos
   - Ganar: días de tregua (se corre la voz y otras bandas se lo piensan), reputación y algo de botín de los bandidos
 

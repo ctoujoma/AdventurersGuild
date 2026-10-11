@@ -51,6 +51,16 @@ export function Hud({ game }: { game: GameState }) {
             <small class="hud-due">d{pay.day}</small>
           </span>
         )}
+        {game.raid?.warned && (
+          <span
+            class="hud-stat danger raid-warn"
+            title={`Chivatazo: ${game.raid.band} llegará en ${game.raid.day - game.day} noches`}
+          >
+            <Icon name="flag" size={16} />
+            <b>{Math.max(0, game.raid.day - game.day)}</b>
+            <small class="hud-due">noches</small>
+          </span>
+        )}
         <button
           class="btn-icon"
           aria-label={sound ? 'Silenciar' : 'Activar sonido'}

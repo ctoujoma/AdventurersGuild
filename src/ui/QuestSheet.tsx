@@ -126,7 +126,7 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
           <div class="picks">
             {heroes.map((h) => {
               const on = sel.includes(h.id);
-              const busy = h.status !== 'ok';
+              const busy = h.status !== 'ok' || !!h.guard;
               return (
                 <button
                   key={h.id}
@@ -152,7 +152,9 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
                     </span>
                     <span class="pick-skills">
                       {busy
-                        ? statusLabel(h)
+                        ? h.guard
+                          ? 'De guardia'
+                          : statusLabel(h)
                         : q.challenges
                             .map(
                               (c) =>

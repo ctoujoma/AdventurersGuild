@@ -53,6 +53,8 @@ export function App() {
   const [dawnOpen, setDawnOpen] = useState(!saved);
   /** La noche está pasando en la escena (entre «Terminar día» y el resumen del amanecer). */
   const [passing, setPassing] = useState(false);
+  /** Hay un asalto en el patio (se puede saltar). */
+  const [raiding, setRaiding] = useState(false);
   const [card, setCard] = useState<string | null>(null);
   const [questId, setQuestId] = useState<string | null>(null);
   const [reportId, setReportId] = useState<string | null>(null);
@@ -256,13 +258,20 @@ export function App() {
     if (next === before) return;
     const sunrise = () => {
       setPassing(false);
+      setRaiding(false);
       audio.play('dawn');
       setDawnOpen(true);
     };
     if (!scene.current) return sunrise();
     setPassing(true);
-    audio.play('night');
-    scene.current.nightfall(sunrise);
+    if (next.lastRaid) {
+      setRaiding(true);
+      audio.play('horn');
+      scene.current.raidNight(next.lastRaid, sunrise);
+    } else {
+      audio.play('night');
+      scene.current.nightfall(sunrise);
+    }
   };
 
   const closeDawn = (then?: PanelId) => {
@@ -484,6 +493,10 @@ export function App() {
             onHire={() => hire(cardHero.id)}
             onFire={() => fire(cardHero.id)}
             onAnswer={(yes) => dispatch({ type: 'answer', id: cardHero.id, yes })}
+            onGuard={(on) => {
+              dispatch({ type: 'guard', id: cardHero.id, on });
+              audio.play(on ? 'select' : 'deselect');
+            }}
             onEquip={(itemId) => {
               dispatch({ type: 'equip', heroId: cardHero.id, itemId });
               audio.play('select');
@@ -538,6 +551,14 @@ export function App() {
           openPanel(t === 'taberna' ? null : t);
         }}
       />
+      {raiding && (
+        <div class="raid-banner" role="status">
+          <b>¡Asalto a la taberna!</b>
+          <button class="btn btn-wood" onClick={() => scene.current?.skipRaid()}>
+            Saltar
+          </button>
+        </div>
+      )}
       {tip && (
         <UncleNote
           tip={tip}
