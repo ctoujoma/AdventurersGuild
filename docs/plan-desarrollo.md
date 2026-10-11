@@ -121,23 +121,23 @@ Los tamaños son relativos (S < M < L). Cada fase termina en algo que se puede p
 **3e · Crecimiento del edificio**
 - [x] Sala de mapas (desván), Armería (bodega) y Capilla (anexo nuevo a la derecha), con efectos y arte por nivel
 
-### Fase 4: «El gremio es tuyo» · M
+### Fase 4: «El gremio es tuyo» · M ✅
 
 Lo que pasa al pagar la deuda: el final de «La deuda» deja de ser un final y se convierte en la apertura al mundo.
 
-- [ ] **Pantalla de apertura** al acabar los 30 días con la deuda pagada: «El gremio es tuyo. Ahora empieza la aventura», con el resumen de cómo llegas (héroes, oro, trofeos, instalaciones, caídos)
+- [x] **Pantalla de apertura** al acabar los 30 días con la deuda pagada: «El gremio es tuyo. Ahora empieza la aventura», con el resumen de cómo llegas (héroes, oro, trofeos, instalaciones, caídos)
   - Opción principal: **«Abrir el gremio al mundo»** (se sigue con la misma partida, sin límite de días)
   - Opción secundaria, planteada como otro intento: «¿No te convence cómo has llegado? Empieza de nuevo y llega en mejores condiciones a la apertura». Se guarda el mejor resumen para comparar intentos
-- [ ] **Economía sin deuda (sin «mantenimiento del edificio»)**: el día de pago semanal se queda, pero solo para salarios
+- [x] **Economía sin deuda (sin «mantenimiento del edificio»)**: el día de pago semanal se queda, pero solo para salarios
   - Los héroes cobran más con cada nivel (más fuerte que ahora) y, al llegar a ciertos niveles, piden **caché de veterano**: mantener a un héroe mucho tiempo sale caro, así que hay que hacerle rendir en encargos de su rango
   - Los encargos de rango alto pagan bastante más: un veterano ocioso es un lujo; uno bien usado, una mina
   - Idea a valorar: los veteranos pueden **retirarse** con una despedida (y quizá quedarse como instructores)
-- [ ] **Libro de hazañas** (el libro de cuentas del desván): logros con niveles y recompensas
+- [x] **Libro de hazañas** (el libro de cuentas del desván): logros con niveles y recompensas
   - Hitos permanentes por tiers: completa 5 / 10 / 25 / 50 encargos; consigue 1 / 3 / 5 trofeos; sube un héroe a nivel 5 / 8 / 10; repele 1 / 3 / 5 asaltos; 15 días sin bajas; termina una cadena…
   - Desafíos del mes (cada 30 días, rotan): «5 encargos de Cazar», «2 éxitos brillantes sin heridos», «gana 500 monedas»…
   - Recompensas: oro y reputación en los fáciles; equipo bueno o legendario en los difíciles
-- [ ] **Récords** de la partida y entre partidas: días al frente, oro máximo, trofeos, asaltos repelidos, caídos
-- [ ] **Derrota en modo libre**: quiebra (no poder pagar salarios dos semanas seguidas) o quedarse sin héroes ni oro
+- [x] **Récords** de la partida y entre partidas: días al frente, oro máximo, trofeos, asaltos repelidos, caídos
+- [x] **Derrota en modo libre**: quiebra (no poder pagar salarios dos semanas seguidas) o quedarse sin héroes ni oro
 
 ### Fase 5: El mundo · L
 
@@ -190,13 +190,13 @@ Inspirado en los ataques al refugio de *Fallout Shelter*: cuanto más famoso y r
 - [ ] Habitaciones de veteranos: más moral y sus trofeos personales
 
 ### Fase 8: Pulido y pruebas · M
-- [ ] Pantalla de título y tutorial en los primeros días (el tío deja notas)
-- [ ] Balance con el simulador y con pruebas de jugadores reales (ahora la segunda mitad es fácil)
+- [x] Splash del desarrollador, pantalla de título y tutorial en los primeros días (el tío deja notas)
+- [ ] Balance con el simulador y con pruebas de jugadores reales (ahora la segunda mitad es fácil y el modo libre acumula demasiado oro: necesita los asaltos de la fase 6 y gastos de la fase 7)
 - [ ] El equipo se ve en el sprite y el retrato del héroe
 - [ ] Animaciones y transiciones; cartas que se deslizan; héroes que brindan en la celebración
 - [ ] Móvil en horizontal
 - [ ] Ajustes: volumen y velocidad
-- [ ] Exportar e importar la partida (copia de seguridad en texto)
+- [x] Guardar y cargar partidas: archivo o código de texto
 - [ ] PWA: instalable, offline, icono y pantalla de carga
 - [ ] Accesibilidad básica: contraste, tamaños de toque y de texto
 

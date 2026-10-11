@@ -31,8 +31,8 @@ export interface Hero {
   days: number;
   quote: string;
   history: string[];
-  /** Petición pendiente: un héroe desanimado pide aumento. */
-  request?: 'raise';
+  /** Petición pendiente: aumento (desanimado) o caché de veterano (al subir de nivel). */
+  request?: 'raise' | 'cache';
   /** Objeto equipado (una ranura). Se pierde si cae o deserta. */
   item?: Item;
 }
@@ -147,6 +147,56 @@ export interface DawnEvent {
   k?: ChipKind;
 }
 
+/** Contadores de la partida: hazañas, desafíos y récords. */
+export interface Stats {
+  missions: number;
+  wins: number;
+  brilliant: number;
+  trophies: number;
+  goldEarned: number;
+  maxLvl: number;
+  /** Último día con una baja (muerte); para «días sin bajas». */
+  lastDeath: number;
+  raids: number;
+  byType: Partial<Record<QuestType, number>>;
+}
+
+/** Cómo se llega a la apertura del gremio: se compara entre intentos. */
+export interface Arrival {
+  day: number;
+  heroes: number;
+  gold: number;
+  rep: number;
+  trophies: number;
+  facilities: number;
+  fallen: number;
+  score: number;
+}
+
+export interface MonthGoal {
+  id: string;
+  text: string;
+  /** Contador de Stats (o 'byType:Cazar') y valor al empezar el mes. */
+  stat: string;
+  base: number;
+  target: number;
+  reward: Reward;
+  done: boolean;
+}
+
+export interface Month {
+  start: number;
+  end: number;
+  goals: MonthGoal[];
+}
+
+export interface Reward {
+  gold?: number;
+  rep?: number;
+  /** Rareza del equipo de regalo. */
+  item?: Rarity;
+}
+
 export type GameOver = { kind: 'victoria' | 'derrota'; text: string; score: number } | null;
 
 export interface GameState {
@@ -175,4 +225,15 @@ export interface GameState {
   over: GameOver;
   /** Notas del tutorial ya leídas ('*' = sin consejos). */
   tips?: string[];
+  /** «La deuda» (30 días) o modo libre tras pagarla. */
+  mode?: 'deuda' | 'libre';
+  /** Resumen de la llegada a la apertura; se enseña una vez al pagar la deuda. */
+  opening?: Arrival & { seen: boolean };
+  stats?: Stats;
+  /** Hazañas: cuántos niveles se han cobrado de cada una. */
+  feats?: Record<string, number>;
+  /** Desafíos del mes (modo libre). */
+  month?: Month;
+  /** Días de pago seguidos sin poder pagar los salarios (modo libre). */
+  unpaid?: number;
 }

@@ -102,12 +102,15 @@ const value = (h: Hero) => h.attrs.F + h.attrs.D + h.attrs.M + h.lvl * 3;
 
 const N = Number(process.argv[2] ?? 300);
 const pct = (n: number, d: number) => `${((100 * n) / Math.max(1, d)).toFixed(0)} %`;
+const FREE_DAYS = Number(process.argv[3] ?? 40);
 const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 
 console.log(`Simulando ${N} partidas por estrategia…\n`);
 for (const st of STRATEGIES) {
   let wins = 0;
   const lossDays: number[] = [];
+  let broke = 0;
+  const freeGold: number[] = [];
   const golds: number[] = [];
   const deaths: number[] = [];
   const hired: number[] = [];
@@ -122,10 +125,18 @@ for (const st of STRATEGIES) {
   for (let i = 0; i < N; i++) {
     let s = newGame(`sim-${i}`);
     const start = s.heroes.length;
-    while (!s.over) s = playDay(s, st);
-    if (s.over.kind === 'victoria') {
+    while (!s.over && s.mode !== 'libre') s = playDay(s, st);
+    if (s.mode === 'libre') {
       wins++;
       golds.push(s.gold);
+      // Modo libre: ¿aguanta el gremio otros días pagando a sus veteranos?
+      for (let d = 0; d < FREE_DAYS && !s.over; d++) {
+        for (const h of s.heroes)
+          if (h.request) s = reduce(s, { type: 'answer', id: h.id, yes: true });
+        s = playDay(s, st);
+      }
+      if (s.over) broke++;
+      else freeGold.push(s.gold);
     } else lossDays.push(s.day);
     deaths.push(s.heroes.filter((h) => h.status === 'muerto').length);
     hired.push(s.heroes.length - start);
@@ -136,6 +147,10 @@ for (const st of STRATEGIES) {
   console.log(`■ ${st.name}`);
   console.log(`  victorias ${pct(wins, N)} · oro final medio ${avg(golds).toFixed(0)}`);
   if (lossDays.length) console.log(`  derrota media el día ${avg(lossDays).toFixed(1)}`);
+  if (wins)
+    console.log(
+      `  modo libre (${FREE_DAYS} días más): quiebra ${pct(broke, wins)} · oro medio al final ${avg(freeGold).toFixed(0)}`,
+    );
   console.log(
     `  misiones por partida ${avg(sent).toFixed(1)} · contratados ${avg(hired).toFixed(1)} · muertos ${avg(deaths).toFixed(2)}`,
   );

@@ -3,6 +3,7 @@ import { audio } from '../audio/audio';
 import { canHire, newGame, reduce, type Action } from '../core/game';
 import type { Facilities, GameState } from '../core/model';
 import { CAPTIONS, FACILITY_INFO } from '../data/labels';
+import { loadRecords, mergeRecords, saveRecords } from '../platform/records';
 import { loadGame, saveGame, webStorage } from '../platform/storage';
 import type { Point, WorldScene } from '../world/scene';
 import { Dawn } from './Dawn';
@@ -12,7 +13,9 @@ import { HeroCard } from './HeroCard';
 import { Hud } from './Hud';
 import { Icon } from './icons';
 import { Letter } from './Letter';
+import { Opening } from './Opening';
 import { Panel } from './Panel';
+import { LibroPanel } from './panels/LibroPanel';
 import { SaveMenu } from './SaveMenu';
 import { Splash } from './Splash';
 import { Title } from './Title';
@@ -29,7 +32,7 @@ import { TabBar, type TabId } from './TabBar';
 import { listNames, plural } from './text';
 import { sceneModel } from './view';
 
-type PanelId = Exclude<TabId, 'taberna'> | 'correo' | 'fuera';
+type PanelId = Exclude<TabId, 'taberna'> | 'correo' | 'fuera' | 'libro';
 
 interface Bubble {
   text: string;
@@ -65,6 +68,9 @@ export function App() {
   );
   const [hasGame, setHasGame] = useState(!!saved);
   const [saveMenu, setSaveMenu] = useState(false);
+  const [records, setRecords] = useState(loadRecords);
+  /** Mejor llegada antes de esta partida, para comparar en la apertura. */
+  const [prevBest] = useState(() => loadRecords().bestArrival);
   const scene = useRef<WorldScene | null>(null);
   const gameRef = useRef(game);
   gameRef.current = game;
@@ -105,6 +111,11 @@ export function App() {
     gameRef.current = next;
     setGame(next);
     saveGame(next);
+    setRecords((r) => {
+      const m = mergeRecords(r, next);
+      if (m !== r) saveRecords(m);
+      return m;
+    });
   };
   const dispatch = (a: Action): GameState => {
     const next = reduce(gameRef.current, a);
@@ -165,8 +176,7 @@ export function App() {
         openPanel('gremio');
         return;
       case 'despacho':
-        setFocusFac('mapas');
-        openPanel('gremio');
+        openPanel('libro');
         return;
       case 'equipo':
       case 'cofres':
@@ -425,6 +435,7 @@ export function App() {
               onUpgrade={upgrade}
               onSell={sell}
               onSaves={() => setSaveMenu(true)}
+              onLibro={() => openPanel('libro')}
               onTitle={toTitle}
               onSellTrophy={(id) => {
                 const t = game.trophies.find((x) => x.id === id);
@@ -434,6 +445,11 @@ export function App() {
                   toast(`Vendido: ${t.name} por ${t.value} monedas. La pared se queda más sosa.`);
               }}
             />
+          </Panel>
+        )}
+        {panel === 'libro' && (
+          <Panel title="Libro de hazañas" onClose={() => openPanel(null)}>
+            <LibroPanel game={game} records={records} />
           </Panel>
         )}
         {panel === 'correo' && (
@@ -497,6 +513,19 @@ export function App() {
             unread={unread}
             onClose={() => closeDawn()}
             onMail={() => closeDawn('correo')}
+          />
+        )}
+        {screen === 'game' && !dawnOpen && !passing && game.opening && !game.opening.seen && (
+          <Opening
+            arrival={game.opening}
+            best={prevBest}
+            onOpen={() => {
+              audio.play('dawn');
+              dispatch({ type: 'ackOpening' });
+              scene.current?.cheer('barra');
+              toast('El Jarro Partido abre sus puertas al mundo. ¡A por la leyenda!');
+            }}
+            onRetry={restart}
           />
         )}
         {game.over && !dawnOpen && screen === 'game' && <GameOver game={game} onNew={restart} />}

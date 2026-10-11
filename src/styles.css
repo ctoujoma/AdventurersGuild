@@ -2292,3 +2292,106 @@ button:focus-visible {
     transform: translate(-50%, 16px) rotate(-1deg);
   }
 }
+
+/* ---------- Apertura y Libro de hazañas ---------- */
+.opening .dawn-card h2 {
+  font-size: clamp(26px, 7vw, 36px);
+  color: var(--rust);
+}
+.opening-lead {
+  margin: -4px 0 6px;
+  font-family: var(--pixel);
+  font-size: 18px;
+  color: var(--oak);
+}
+.arrival {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin: 4px 0;
+}
+.arrival span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px;
+  font-size: 13px;
+  background: rgba(148, 90, 60, 0.12);
+  box-shadow: 0 0 0 2px var(--tan);
+}
+.arrival b {
+  font-family: var(--pixel);
+  font-size: 20px;
+  color: var(--ink);
+}
+.opening-score {
+  margin: 4px 0;
+  font-size: 15px;
+}
+.opening-score b {
+  font-family: var(--pixel);
+  color: var(--rust);
+}
+.feat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.feat b {
+  font-family: var(--pixel);
+  font-weight: 400;
+  font-size: 16px;
+}
+.feat small {
+  font-size: 13px;
+  color: var(--oak);
+}
+.feat .track {
+  display: block;
+  height: 8px;
+  background: var(--tan);
+  box-shadow: 0 0 0 2px var(--oak);
+}
+.feat .track i {
+  display: block;
+  height: 100%;
+  background: var(--gold);
+}
+.feat.done {
+  box-shadow:
+    0 0 0 2px var(--leaf),
+    inset 0 0 0 9999px rgba(62, 137, 72, 0.08);
+}
+.feat-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.records {
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+}
+.records b {
+  font-family: var(--pixel);
+  color: var(--rust);
+}
+.libro-link {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+.libro-link b {
+  font-family: var(--pixel);
+  font-size: 17px;
+}
+.libro-link:hover,
+.libro-link:focus-visible {
+  filter: brightness(1.05);
+}

@@ -154,4 +154,15 @@ export const DESERT_CHANCE = 0.35;
 export const RAISE_CHANCE = 0.3;
 export const RAISE_AMOUNT = 3;
 export const RAISE_MORALE = 25;
+
+// ---------- Veteranos y modo libre ----------
+/** Lo que sube el salario al alcanzar un nivel: más cuanto más alto. */
+export const levelRaise = (lvl: number) => 2 * lvl;
+/** Caché de veterano: al llegar a estos niveles piden un plus fijo. */
+export const CACHE: Readonly<Record<number, number>> = { 5: 15, 8: 30 };
+export const CACHE_REFUSE_MORALE = -25;
+/** En modo libre se pagan salarios cada SALARY_EVERY días; dos impagos seguidos, quiebra. */
+export const SALARY_EVERY = 7;
+export const UNPAID_LIMIT = 2;
+export const UNPAID_MORALE = -20;
 export const REFUSE_MORALE = -10;

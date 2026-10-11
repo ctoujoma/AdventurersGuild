@@ -1,4 +1,5 @@
 import { START } from '../core/balance';
+import { emptyStats } from '../core/feats';
 import { SAVE_VERSION, type GameState } from '../core/model';
 
 /**
@@ -48,6 +49,9 @@ export function parseSave(raw: string | null): GameState | null {
     if (!s || s.version !== SAVE_VERSION || !s.fac || !Array.isArray(s.heroes)) return null;
     s.fac = { ...START.fac, ...s.fac };
     s.trophies ??= [];
+    s.mode ??= 'deuda';
+    s.stats ??= emptyStats();
+    s.feats ??= {};
     return s;
   } catch {
     return null;

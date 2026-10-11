@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks';
-import { RAISE_AMOUNT, XP_PER_LEVEL } from '../core/balance';
+import { XP_PER_LEVEL } from '../core/balance';
 import { PERKS } from '../core/classes';
-import { canHire, gearInStock } from '../core/game';
+import { canHire, gearInStock, requestAmount } from '../core/game';
 import type { GameState, Hero } from '../core/model';
 import { SKILLS, attr, moraleBand, skill } from '../core/party';
 import { CLASS_NAMES, MORALE_INFO, statusLabel } from '../data/labels';
@@ -112,15 +112,16 @@ export function HeroCard({
               </p>
             </div>
           )}
-          {h.request === 'raise' && !candidate && (
+          {h.request && !candidate && (
             <div class="request" role="status">
               <span>
-                «Con lo que me pagas no me llega ni para la cerveza.» {h.name} pide {RAISE_AMOUNT}{' '}
-                monedas más por semana.
+                {h.request === 'cache'
+                  ? `«Nivel ${h.lvl}. Ya no soy un cualquiera, y mi precio tampoco.» ${h.name} pide su caché de veterano: ${requestAmount(h)} monedas más por semana. Si se lo niegas, se lo tomará muy mal.`
+                  : `«Con lo que me pagas no me llega ni para la cerveza.» ${h.name} pide ${requestAmount(h)} monedas más por semana.`}
               </span>
               <div class="herocard-actions">
                 <button class="btn btn-gold" onClick={() => onAnswer(true)}>
-                  Subir a {h.salary + RAISE_AMOUNT}
+                  Subir a {h.salary + requestAmount(h)}
                 </button>
                 <button class="btn btn-wood" onClick={() => onAnswer(false)}>
                   Negarse

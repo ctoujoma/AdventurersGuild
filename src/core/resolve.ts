@@ -21,6 +21,7 @@ import {
 } from '../data/tales';
 import { TRAIT_INFO } from '../data/traits';
 import { partyMods } from './classes';
+import { emptyStats } from './feats';
 import {
   ARMORY,
   DISASTER,
@@ -33,6 +34,8 @@ import {
   SCOUT_AMBUSH,
   TRIP_FATIGUE,
   TROPHY_REP,
+  CACHE,
+  levelRaise,
   TWIST_DIFF,
   XP,
   XP_PER_LEVEL,
@@ -115,6 +118,7 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
   const body: string[] = [];
   const chips: { t: string; k: ChipKind }[] = [];
   const mods = partyMods(party);
+  const stats = (state.stats ??= emptyStats());
   const say = (text: string, h?: Hero, extra: Record<string, string> = {}) =>
     body.push(
       fill(text, { who: names, place: q.place, client: q.client, h: h?.name ?? names, ...extra }),
@@ -228,6 +232,13 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
     chips.push({ t: `${greedy.name} se queda ${cut}`, k: 'warn' });
   }
   state.gold += gold;
+  stats.missions++;
+  stats.goldEarned += gold;
+  if (outcome === 'Éxito' || outcome === 'Éxito brillante') {
+    stats.wins++;
+    stats.byType[q.type] = (stats.byType[q.type] ?? 0) + 1;
+  }
+  if (outcome === 'Éxito brillante') stats.brilliant++;
   chips.unshift({ t: gold > 0 ? `+${gold} monedas` : 'Sin cobrar', k: gold > 0 ? 'good' : 'bad' });
   const dRep = REP[outcome];
   state.rep = Math.max(0, state.rep + dRep);
@@ -250,6 +261,7 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
       value: 40 + q.danger * 20,
     });
     state.rep += TROPHY_REP;
+    stats.trophies++;
     say(`Y se trajeron un recuerdo: ${lower(t.name)}. Irá a la pared de la sala.`);
     chips.push({ t: `Trofeo: ${t.name}`, k: 'good' });
   }
@@ -281,6 +293,7 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
     } else if (rng.chance(0.5)) {
       victim.status = 'muerto';
       fallen = victim;
+      stats.lastDeath = state.day;
       if (victim.item) {
         chips.push({ t: `Perdido: ${victim.item.name}`, k: 'bad' });
         delete victim.item;
@@ -324,8 +337,14 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
       h.lvl++;
       const a = MAIN_ATTR[h.cls];
       h.attrs[a] = Math.min(10, h.attrs[a] + 1);
-      h.salary += 3;
+      h.salary += levelRaise(h.lvl);
       chips.push({ t: `${h.name} sube a nivel ${h.lvl}`, k: 'good' });
+      state.stats!.maxLvl = Math.max(state.stats!.maxLvl, h.lvl);
+      // Veteranos: al llegar a ciertos niveles piden su caché.
+      if (CACHE[h.lvl] && !h.request) {
+        h.request = 'cache';
+        chips.push({ t: `${h.name} pide caché de veterano`, k: 'warn' });
+      }
     }
     let dMorale = MORALE[outcome] - TRIP_FATIGUE * q.days;
     if (fallen) dMorale -= Math.round((has(h, 'leal') ? 20 : 10) * (state.fac.cap >= 2 ? 0.5 : 1));
