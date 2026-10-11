@@ -220,7 +220,7 @@ export function buildWorld(
   // ================= Capilla (anexo a la derecha) =================
   chapel(back, put, fac.cap, fallen, lights, flames, glows, ambient);
 
-  const outer = buildOuter(glows);
+  const outer = buildOuter(glows, fac, lights, flames);
 
   return {
     back,

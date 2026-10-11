@@ -17,7 +17,19 @@ export const SCHEDULE: readonly { day: number; amount: number }[] = [
 
 export const START = {
   gold: 160,
-  fac: { dorm: 1, enf: 0, tab: 1, mapas: 0, arm: 0, cap: 0 } as Facilities,
+  fac: {
+    dorm: 1,
+    enf: 0,
+    tab: 1,
+    mapas: 0,
+    arm: 0,
+    cap: 0,
+    forja: 0,
+    establo: 0,
+    patio: 0,
+    empal: 0,
+    torre: 0,
+  } as Facilities,
   heroes: 2,
   candidates: 3,
   quests: 4,
@@ -31,7 +43,17 @@ export const UPGRADE_COST: Record<keyof Facilities, readonly number[]> = {
   mapas: [0, 120, 340],
   arm: [0, 150, 380],
   cap: [0, 110, 320],
+  forja: [0, 180, 360],
+  establo: [0, 140, 300],
+  patio: [0, 160, 340],
+  empal: [0, 120, 260],
+  torre: [0, 200, 380],
 };
+
+/** Patio de entrenamiento: experiencia por noche descansando, por nivel. */
+export const TRAINING_XP = [0, 6, 12] as const;
+/** Empalizada: lo que suma a la defensa, por nivel. */
+export const PALISADE = [0, 5, 10] as const;
 export const facilityMax = (k: keyof Facilities) => UPGRADE_COST[k].length - 1;
 
 export const capacity = (dorm: number) => 2 + 2 * dorm;

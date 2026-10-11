@@ -1,8 +1,9 @@
 import { Rng } from '../core/rng';
 import { P, R } from '../art/palette';
 import { PixelBuffer, bayer } from '../art/pixel';
-import type { Glow } from './build';
-import { GROUND, SPAN, WORLD_H, WORLD_W, WORLD_X0 } from './geometry';
+import type { Flame, Glow, Light } from './build';
+import { outbuildings } from './outbuildings';
+import { GROUND, SPAN, WORLD_H, WORLD_W, WORLD_X0, type Facilities } from './geometry';
 import { bush, lanternBody, piece } from './props';
 
 /**
@@ -61,7 +62,12 @@ function rock(w: number, h: number): PixelBuffer {
   });
 }
 
-export function buildOuter(glows: Glow[]): Outer {
+export function buildOuter(
+  glows: Glow[],
+  fac: Facilities,
+  lights: Light[],
+  flames: Flame[],
+): Outer {
   const back = new PixelBuffer(SPAN, WORLD_H);
   const front = new PixelBuffer(SPAN, WORLD_H);
   const rng = new Rng('afueras');
@@ -123,7 +129,11 @@ export function buildOuter(glows: Glow[]): Outer {
   putFront(bush('lejos-c', 24, 12), 528, GROUND - 10);
   putFront(bush('lejos-d', 20, 11), 620, GROUND - 9);
 
-  // Valla de la derecha, que sigue a la del huerto.
+  // Lo que el gremio ha construido fuera.
+  outbuildings(back, fac, lights, flames, glows);
+
+  // Valla de la derecha, que sigue a la del huerto (si no hay obras ahí).
+  if (fac.forja || fac.establo) return { back, front };
   for (let x = WORLD_W + 4; x < WORLD_X0 + SPAN; x += 9) {
     putFront(
       piece(3, 18, (p) => {

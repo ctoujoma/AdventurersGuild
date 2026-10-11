@@ -32,6 +32,7 @@ export function GremioPanel({
   onLibro,
 }: Props) {
   const keys = Object.keys(FACILITY_INFO) as (keyof Facilities)[];
+  const OUTSIDE: (keyof Facilities)[] = ['forja', 'establo', 'patio', 'empal', 'torre'];
   const next = nextPayment(game);
   let cum = 0;
   return (
@@ -114,48 +115,57 @@ export function GremioPanel({
         </span>
       </button>
 
-      <h3 class="sec-title">Instalaciones</h3>
-      <div class="list">
-        {keys.map((k) => {
-          const level = game.fac[k];
-          const info = FACILITY_INFO[k];
-          const cost = upgradeCost(game, k);
-          const why = canUpgrade(game, k);
-          return (
-            <article key={k} class={`card-paper facility ${focus === k ? 'is-focus' : ''}`}>
-              <div class="facility-info">
-                <b>{info.name}</b>
-                <span class="pips" aria-label={`Nivel ${level} de ${facilityMax(k)}`}>
-                  {Array.from({ length: facilityMax(k) }, (_, i) => (
-                    <i key={i} class={i < level ? 'on' : ''} />
-                  ))}
-                </span>
-                <span class="muted">
-                  {info.levels[level]} · {info.effect(level)}
-                </span>
-                {cost !== null && (
-                  <span class="next-level">
-                    Siguiente: {info.levels[level + 1]} · {info.effect(level + 1)}
-                  </span>
-                )}
-              </div>
-              {cost !== null ? (
-                <button
-                  class="btn btn-gold"
-                  aria-label={`Mejorar ${info.name} por ${cost} monedas`}
-                  disabled={!!why}
-                  title={why ?? undefined}
-                  onClick={() => onUpgrade(k)}
-                >
-                  <Icon name="coin" size={12} /> {cost}
-                </button>
-              ) : (
-                <span class="pill pill-ok">Máximo</span>
-              )}
-            </article>
-          );
-        })}
-      </div>
+      {(
+        [
+          ['En la casa', OUTSIDE.length ? keys.filter((x) => !OUTSIDE.includes(x)) : keys],
+          ['Fuera de la casa', OUTSIDE],
+        ] as const
+      ).map(([title, list]) => (
+        <section key={title}>
+          <h3 class="sec-title">{title}</h3>
+          <div class="list">
+            {list.map((k) => {
+              const level = game.fac[k];
+              const info = FACILITY_INFO[k];
+              const cost = upgradeCost(game, k);
+              const why = canUpgrade(game, k);
+              return (
+                <article key={k} class={`card-paper facility ${focus === k ? 'is-focus' : ''}`}>
+                  <div class="facility-info">
+                    <b>{info.name}</b>
+                    <span class="pips" aria-label={`Nivel ${level} de ${facilityMax(k)}`}>
+                      {Array.from({ length: facilityMax(k) }, (_, i) => (
+                        <i key={i} class={i < level ? 'on' : ''} />
+                      ))}
+                    </span>
+                    <span class="muted">
+                      {info.levels[level]} · {info.effect(level)}
+                    </span>
+                    {cost !== null && (
+                      <span class="next-level">
+                        Siguiente: {info.levels[level + 1]} · {info.effect(level + 1)}
+                      </span>
+                    )}
+                  </div>
+                  {cost !== null ? (
+                    <button
+                      class="btn btn-gold"
+                      aria-label={`Mejorar ${info.name} por ${cost} monedas`}
+                      disabled={!!why}
+                      title={why ?? undefined}
+                      onClick={() => onUpgrade(k)}
+                    >
+                      <Icon name="coin" size={12} /> {cost}
+                    </button>
+                  ) : (
+                    <span class="pill pill-ok">Máximo</span>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      ))}
       <p class="panel-note">
         Camas ocupadas: cuentan también quien está fuera o herido. Caben {capacity(game.fac.dorm)}.
       </p>

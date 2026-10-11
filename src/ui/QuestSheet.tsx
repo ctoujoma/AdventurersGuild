@@ -30,7 +30,7 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
   const scale = Math.max(1, ...est.rows.map((r) => Math.max(r.diff, r.power))) * 1.15;
   const blocked = party.length ? canSend(game, q.id, sel) : null;
   const mage = party.find((h) => h.cls === 'mago');
-  const days = tripDays(q, members);
+  const days = tripDays(q, members, game.fac.establo);
   const hideDanger = q.dangerHidden && !mage && game.fac.mapas < 2;
 
   const toggle = (id: string) => {

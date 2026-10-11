@@ -179,6 +179,20 @@ export function App() {
         setFocusFac('cap');
         openPanel('gremio');
         return;
+      case 'forja':
+      case 'establo':
+      case 'torre':
+        setFocusFac(id);
+        openPanel('gremio');
+        return;
+      case 'patio-entreno':
+        setFocusFac('patio');
+        openPanel('gremio');
+        return;
+      case 'empalizada':
+        setFocusFac('empal');
+        openPanel('gremio');
+        return;
       case 'despacho':
         openPanel('libro');
         return;

@@ -46,3 +46,43 @@ describe('instalaciones nuevas', () => {
     expect(rest(2)).toBeLessThanOrEqual(restCap(1));
   });
 });
+
+describe('construcciones de fuera', () => {
+  it('la forja mejora el objeto equipado', async () => {
+    const { gearOf } = await import('./resolve');
+    const item = { id: 'x', name: 'Espada', desc: '', value: 1, bonus: { Combate: 1 } };
+    const s = newGame('forja');
+    expect(gearOf(item, { ...s.fac, forja: 2 }).Combate).toBe(3);
+  });
+
+  it('el establo acorta los viajes largos', async () => {
+    const { tripDays } = await import('./classes');
+    const s = newGame('establo');
+    const q = { ...s.quests[0]!, days: 3 };
+    expect(tripDays(q, [s.heroes[0]!], 1)).toBe(2);
+    expect(tripDays({ ...q, days: 2 }, [s.heroes[0]!], 1)).toBe(2);
+  });
+
+  it('el patio entrena a quien descansa', () => {
+    let s = newGame('patio');
+    s.fac.patio = 2;
+    const xp = s.heroes[0]!.xp;
+    s = endDay(s);
+    expect(s.heroes[0]!.xp + s.heroes[0]!.lvl * 100).toBeGreaterThan(xp + 100);
+  });
+
+  it('la empalizada defiende y la torre siempre avisa', async () => {
+    const { defense, stepRaids } = await import('./raids');
+    const { Rng } = await import('./rng');
+    const s = newGame('defensa');
+    const base = defense(s);
+    s.fac.empal = 2;
+    expect(defense(s)).toBe(base + 10);
+    s.fac.torre = 1;
+    s.day = 20;
+    s.rep = 400;
+    s.gold = 9000;
+    for (let i = 0; i < 50 && !s.raid; i++) stepRaids(s, new Rng(`r${i}`), []);
+    expect(s.raid?.warned).toBe(true);
+  });
+});

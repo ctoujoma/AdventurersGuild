@@ -18,6 +18,7 @@ import {
   RANKS,
   REFUSE_MORALE,
   SALARY_EVERY,
+  TRAINING_XP,
   UNPAID_LIMIT,
   UNPAID_MORALE,
   SCHEDULE,
@@ -49,7 +50,7 @@ import {
   type Report,
 } from './model';
 import { MORALE_LOW, MORALE_QUIT } from './party';
-import { resolveMission } from './resolve';
+import { levelUp, resolveMission } from './resolve';
 import { Rng } from './rng';
 import { listNames, plural } from './text';
 
@@ -267,7 +268,7 @@ export function reduce(state: GameState, action: Action): GameState {
       const s = structuredClone(state);
       const q = s.quests.find((x) => x.id === action.questId)!;
       const party = action.heroIds.map((id) => s.heroes.find((x) => x.id === id)!);
-      const days = tripDays(q, party);
+      const days = tripDays(q, party, s.fac.establo);
       for (const h of party) {
         h.status = 'mision';
         h.days = days;
@@ -446,6 +447,18 @@ export function endDay(state: GameState): GameState {
     }
   }
 
+  // Patio de entrenamiento: quien descansa en casa también aprende.
+  if (s.fac.patio > 0)
+    for (const h of s.heroes) {
+      if (h.status !== 'ok') continue;
+      h.xp += TRAINING_XP[s.fac.patio] ?? 0;
+      for (const t of levelUp(s, h))
+        events.push({
+          t: `${t} entrenando en el patio.`,
+          k: t.includes('caché') ? 'warn' : 'good',
+        });
+    }
+
   // Moral: se descansa en la taberna; quien está harto se va, quien está desanimado pide más.
   const deserters: Hero[] = [];
   for (const h of s.heroes) {
@@ -495,7 +508,7 @@ export function endDay(state: GameState): GameState {
   let fresh = 0;
   while (
     s.quests.filter((q) => !q.chain && !q.rescue).length <
-    BOARD_SIZE(s.fac.tab, s.fac.mapas) - scaredClients(s)
+    BOARD_SIZE(s.fac.tab, s.fac.mapas) + (s.fac.torre >= 2 ? 1 : 0) - scaredClients(s)
   ) {
     s.quests.push(quest(s, rng));
     fresh++;

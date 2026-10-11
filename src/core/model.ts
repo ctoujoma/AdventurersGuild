@@ -151,6 +151,16 @@ export interface Facilities {
   arm: number;
   /** Capilla (anexo): moral, desaparecidos y una vela por cada caído. */
   cap: number;
+  /** Forja (derecha): mejora el equipo que llevan puesto. */
+  forja: number;
+  /** Establo (derecha): viajes más cortos y escoltas mejor pagadas. */
+  establo: number;
+  /** Patio de entrenamiento (izquierda): experiencia mientras descansan. */
+  patio: number;
+  /** Empalizada (izquierda): defensa contra asaltos. */
+  empal: number;
+  /** Torre del vigía (izquierda): avisa de los asaltos y trae encargos. */
+  torre: number;
 }
 
 /** Lo que pasó al terminar un día: se enseña en la transición del amanecer. */

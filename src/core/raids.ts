@@ -20,6 +20,7 @@ import {
   RAID_MAX_CHANCE,
   RAID_NOTORIETY,
   GUARD_BONUS,
+  PALISADE,
   rankIndex,
 } from './balance';
 import { THREAT_RAIDS, threatOf } from './events';
@@ -51,9 +52,9 @@ const defendersOf = (s: GameState) => s.heroes.filter((h) => h.status === 'ok');
 export function defense(s: GameState): number {
   const ds = defendersOf(s);
   const armed = equip(ds, s.fac);
-  return armed.reduce(
-    (a, h, i) => a + skill(h, 'Combate', true) + (ds[i]!.guard ? GUARD_BONUS : 0),
-    0,
+  return (
+    armed.reduce((a, h, i) => a + skill(h, 'Combate', true) + (ds[i]!.guard ? GUARD_BONUS : 0), 0) +
+    (ds.length ? (PALISADE[s.fac.empal] ?? 0) : 0)
   );
 }
 
@@ -62,12 +63,16 @@ function tipoff(s: GameState, rng: Rng, events: DawnEvent[], firstTry: boolean):
   const raid = s.raid!;
   const scout = defendersOf(s).find((h) => h.cls === 'explorador');
   const p = (firstTry ? RAID_BASE : 0.25) + (scout ? 0.2 : 0) + (s.fac.mapas >= 1 ? 0.15 : 0);
-  if (!rng.chance(p)) return;
+  // Desde la torre del vigía se ven venir siempre.
+  if (s.fac.torre < 1 && !rng.chance(p)) return;
   raid.warned = true;
   const days = raid.day - s.day;
-  const text = scout
-    ? fill(SCOUT_TIPOFF, { h: scout.name, band: raid.band })
-    : fill(rng.pick(TIPOFFS), { band: raid.band });
+  const text =
+    s.fac.torre >= 1
+      ? `El vigía de la torre ha visto antorchas en el camino real: es ${raid.band}.`
+      : scout
+        ? fill(SCOUT_TIPOFF, { h: scout.name, band: raid.band })
+        : fill(rng.pick(TIPOFFS), { band: raid.band });
   events.push({
     t: `Chivatazo: ${text} Llegarán en ${days <= 1 ? 'una noche' : `unas ${days} noches`}.`,
     k: 'bad',

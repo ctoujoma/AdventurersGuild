@@ -95,6 +95,11 @@ export const ROOM_CENTERS: Record<string, Point> = {
   exterior: { x: 60, y: 250 },
   patio: { x: 10, y: 262 },
   camino: { x: -64, y: 262 },
+  forja: { x: 542, y: 270 },
+  establo: { x: 604, y: 268 },
+  'patio-entreno': { x: -84, y: 280 },
+  empalizada: { x: -100, y: 278 },
+  torre: { x: -112, y: 220 },
   puerta: { x: 130, y: 262 },
   armeria: { x: 312, y: 330 },
   capilla: { x: 468, y: 262 },
@@ -540,6 +545,11 @@ export class WorldScene {
     if (b.mapas > a.mapas) this.celebrate('despacho');
     if (b.arm > a.arm) this.celebrate('armeria');
     if (b.cap > a.cap) this.celebrate('capilla');
+    if (b.forja > a.forja) this.celebrate('forja');
+    if (b.establo > a.establo) this.celebrate('establo');
+    if (b.patio > a.patio) this.celebrate('patio-entreno');
+    if (b.empal > a.empal) this.celebrate('empalizada');
+    if (b.torre > a.torre) this.celebrate('torre');
   }
 
   private update(dt: number): void {

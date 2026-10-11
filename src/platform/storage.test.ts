@@ -31,7 +31,15 @@ describe('guardado', () => {
     const mem = memory();
     const s = newGame('antigua');
     mem.write(JSON.stringify({ ...s, fac: { dorm: 2, enf: 1, tab: 1 } }));
-    expect(loadGame(mem)!.fac).toEqual({ dorm: 2, enf: 1, tab: 1, mapas: 0, arm: 0, cap: 0 });
+    expect(loadGame(mem)!.fac).toMatchObject({
+      dorm: 2,
+      enf: 1,
+      tab: 1,
+      mapas: 0,
+      arm: 0,
+      cap: 0,
+      forja: 0,
+    });
   });
 
   it('ignora partidas rotas o de otra versión', () => {

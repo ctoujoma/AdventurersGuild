@@ -17,7 +17,19 @@ import {
 describe('geometría y mejoras', () => {
   it('pinta tantas camas como capacidad tienen los dormitorios y caben en el cuarto', () => {
     for (const dorm of [1, 2, 3]) {
-      const l = layout({ dorm, enf: 0, tab: 1, mapas: 0, arm: 0, cap: 0 });
+      const l = layout({
+        dorm,
+        enf: 0,
+        tab: 1,
+        mapas: 0,
+        arm: 0,
+        cap: 0,
+        forja: 0,
+        establo: 0,
+        patio: 0,
+        empal: 0,
+        torre: 0,
+      });
       expect(l.bunks.length * 2).toBe(capacity(dorm));
       expect(Math.max(...l.bunks) + 24).toBeLessThanOrEqual(ROOMS.dorm.x1);
     }
@@ -25,26 +37,100 @@ describe('geometría y mejoras', () => {
 
   it('sin enfermería los heridos van a las literas', () => {
     expect(
-      sickbeds({ dorm: 1, enf: 0, tab: 1, mapas: 0, arm: 0, cap: 0 }).every(
-        (b) => b.kind === 'litera',
-      ),
+      sickbeds({
+        dorm: 1,
+        enf: 0,
+        tab: 1,
+        mapas: 0,
+        arm: 0,
+        cap: 0,
+        forja: 0,
+        establo: 0,
+        patio: 0,
+        empal: 0,
+        torre: 0,
+      }).every((b) => b.kind === 'litera'),
     ).toBe(true);
-    expect(sickbeds({ dorm: 1, enf: 2, tab: 1, mapas: 0, arm: 0, cap: 0 })).toHaveLength(2);
+    expect(
+      sickbeds({
+        dorm: 1,
+        enf: 2,
+        tab: 1,
+        mapas: 0,
+        arm: 0,
+        cap: 0,
+        forja: 0,
+        establo: 0,
+        patio: 0,
+        empal: 0,
+        torre: 0,
+      }),
+    ).toHaveLength(2);
   });
 
   it('la sala mejora con el nivel de la taberna', () => {
-    const l1 = layout({ dorm: 1, enf: 0, tab: 1, mapas: 0, arm: 0, cap: 0 });
-    const l3 = layout({ dorm: 1, enf: 0, tab: 3, mapas: 0, arm: 0, cap: 0 });
+    const l1 = layout({
+      dorm: 1,
+      enf: 0,
+      tab: 1,
+      mapas: 0,
+      arm: 0,
+      cap: 0,
+      forja: 0,
+      establo: 0,
+      patio: 0,
+      empal: 0,
+      torre: 0,
+    });
+    const l3 = layout({
+      dorm: 1,
+      enf: 0,
+      tab: 3,
+      mapas: 0,
+      arm: 0,
+      cap: 0,
+      forja: 0,
+      establo: 0,
+      patio: 0,
+      empal: 0,
+      torre: 0,
+    });
     expect(l3.tables.length).toBeGreaterThan(l1.tables.length);
     expect(l3.trophy && l3.lute && l3.chandelier && l3.tablecloths).toBe(true);
-    expect(layout({ dorm: 1, enf: 0, tab: 0, mapas: 0, arm: 0, cap: 0 }).fire).toBe('apagado');
+    expect(
+      layout({
+        dorm: 1,
+        enf: 0,
+        tab: 0,
+        mapas: 0,
+        arm: 0,
+        cap: 0,
+        forja: 0,
+        establo: 0,
+        patio: 0,
+        empal: 0,
+        torre: 0,
+      }).fire,
+    ).toBe('apagado');
   });
 
   it('todos los puntos interactivos están dentro del mundo', () => {
-    for (const h of hotspots({ dorm: 3, enf: 3, tab: 3, mapas: 2, arm: 2, cap: 2 })) {
-      expect(h.x).toBeGreaterThanOrEqual(0);
+    for (const h of hotspots({
+      dorm: 3,
+      enf: 3,
+      tab: 3,
+      mapas: 2,
+      arm: 2,
+      cap: 2,
+      forja: 2,
+      establo: 2,
+      patio: 2,
+      empal: 2,
+      torre: 2,
+    })) {
+      expect(h.x).toBeGreaterThanOrEqual(WORLD_X0);
       expect(h.y).toBeGreaterThanOrEqual(0);
-      expect(h.x + h.w).toBeLessThanOrEqual(WORLD_W);
+      expect(h.x + h.w).toBeLessThanOrEqual(WORLD_X1);
       expect(h.y + h.h).toBeLessThanOrEqual(WORLD_H);
     }
   });
@@ -61,6 +147,11 @@ describe('buildWorld', () => {
           mapas: Math.min(2, lvl),
           arm: Math.min(2, lvl),
           cap: Math.min(2, lvl),
+          forja: Math.min(2, lvl),
+          establo: Math.min(2, lvl),
+          patio: Math.min(2, lvl),
+          empal: Math.min(2, lvl),
+          torre: Math.min(2, lvl),
         },
         lvl * 2,
         4,
@@ -75,8 +166,40 @@ describe('buildWorld', () => {
   });
 
   it('las mejoras añaden luces y la chimenea se enciende', () => {
-    const poor = buildWorld({ dorm: 0, enf: 0, tab: 0, mapas: 0, arm: 0, cap: 0 }, 0, 0);
-    const rich = buildWorld({ dorm: 3, enf: 3, tab: 3, mapas: 2, arm: 2, cap: 2 }, 6, 6);
+    const poor = buildWorld(
+      {
+        dorm: 0,
+        enf: 0,
+        tab: 0,
+        mapas: 0,
+        arm: 0,
+        cap: 0,
+        forja: 0,
+        establo: 0,
+        patio: 0,
+        empal: 0,
+        torre: 0,
+      },
+      0,
+      0,
+    );
+    const rich = buildWorld(
+      {
+        dorm: 3,
+        enf: 3,
+        tab: 3,
+        mapas: 2,
+        arm: 2,
+        cap: 2,
+        forja: 2,
+        establo: 2,
+        patio: 2,
+        empal: 2,
+        torre: 2,
+      },
+      6,
+      6,
+    );
     expect(rich.lights.length).toBeGreaterThan(poor.lights.length);
     expect(poor.fire.level).toBe('apagado');
     expect(rich.fire.level).toBe('grande');
