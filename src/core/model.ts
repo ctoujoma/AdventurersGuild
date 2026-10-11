@@ -2,7 +2,7 @@
  * Modelo de la partida. Todo es JSON serializable: guardar es `JSON.stringify(state)`.
  * El núcleo no conoce el DOM ni el arte; el aspecto de cada héroe sale de su `seed`.
  */
-import type { CrestColor, CrestSymbol, Dish, StaffId } from '../data/custom';
+import type { CrestColor, CrestSymbol, DecorId, Dish, StaffId } from '../data/custom';
 import type { Attrs, Challenge, ClassId, SkillId, Trait } from './party';
 
 export const SAVE_VERSION = 1;
@@ -162,6 +162,8 @@ export interface Facilities {
   empal: number;
   /** Torre del vigía (izquierda): avisa de los asaltos y trae encargos. */
   torre: number;
+  /** Ala de veteranos (colgada de la fachada derecha): moral para los de nivel alto. */
+  vet: number;
 }
 
 /** Lo que pasó al terminar un día: se enseña en la transición del amanecer. */
@@ -177,6 +179,10 @@ export interface Custom {
   dish: Dish;
   staff: StaffId[];
   dog: boolean;
+  decor?: DecorId[];
+  raven?: boolean;
+  /** Día en que se montó la fiesta de la comarca. */
+  feast?: number;
 }
 
 export interface PendingEvent {

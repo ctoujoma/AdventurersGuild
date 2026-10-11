@@ -29,6 +29,7 @@ export const START = {
     patio: 0,
     empal: 0,
     torre: 0,
+    vet: 0,
   } as Facilities,
   heroes: 2,
   candidates: 3,
@@ -48,7 +49,14 @@ export const UPGRADE_COST: Record<keyof Facilities, readonly number[]> = {
   patio: [0, 160, 340],
   empal: [0, 120, 260],
   torre: [0, 200, 380],
+  vet: [0, 220, 420],
 };
+
+/** Ala de veteranos: a partir de este nivel de héroe se cuenta como veterano. */
+export const VET_LEVEL = 4;
+/** Moral extra por noche y tope de moral extra de los veteranos, por nivel del ala. */
+export const VET_REST = [0, 4, 8] as const;
+export const VET_CAP = [0, 10, 15] as const;
 
 /** Patio de entrenamiento: experiencia por noche descansando, por nivel. */
 export const TRAINING_XP = [0, 6, 12] as const;

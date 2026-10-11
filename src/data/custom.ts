@@ -64,6 +64,45 @@ export const STAFF: Record<StaffId, { name: string; desc: string; fee: number; s
   },
 };
 
+export type DecorId = 'naipes' | 'tarima' | 'tapices' | 'barril';
+
+/** Decoración del salón: huecos limitados, cada pieza con un efecto pequeño y su pega. */
+export const DECOR: Record<DecorId, { name: string; desc: string; price: number }> = {
+  naipes: {
+    name: 'Mesa de naipes',
+    desc: '+6 monedas al día, pero a veces acaba en pelea (alguien pierde moral).',
+    price: 50,
+  },
+  tarima: {
+    name: 'Tarima del bardo',
+    desc: '+2 de moral por noche; con bardo, trae 8 monedas más.',
+    price: 60,
+  },
+  tapices: {
+    name: 'Tapices con el escudo',
+    desc: '+1 de reputación cada 7 días: la taberna luce.',
+    price: 45,
+  },
+  barril: {
+    name: 'Barril de cerveza especial',
+    desc: '+1 de moral por noche y +2 monedas al día.',
+    price: 35,
+  },
+};
+/** Huecos de decoración: dos, y uno más con el salón grande. */
+export const decorSlots = (tab: number) => (tab >= 3 ? 3 : 2);
+export const BRAWL_CHANCE = 0.1;
+
+/** El cuervo mensajero lleva la fama del gremio a otros pueblos. */
+export const RAVEN_PRICE = 80;
+export const RAVEN_EVERY = 5;
+
+/** Fiesta de la comarca: cada 10 días se puede montar en la taberna. */
+export const FEAST_EVERY = 10;
+export const FEAST_PRICE = 30;
+export const FEAST_MORALE = 10;
+export const isFeastDay = (day: number) => day % FEAST_EVERY === 0;
+
 export const DOG_PRICE = 60;
 /** El perro guardián: defensa y olfato para los asaltos. */
 export const DOG_DEFENSE = 3;

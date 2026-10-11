@@ -170,6 +170,15 @@ export const FACILITY_INFO: Record<
         ? 'Sin efecto'
         : `Siempre hay chivatazo de los asaltos${l >= 2 ? '; un encargo más en el tablón' : ''}`,
   },
+  vet: {
+    name: 'Ala de veteranos',
+    room: 'veteranos',
+    levels: ['No hay', 'Cuartos con ventana para los veteranos', 'Ala con balcón y sus trofeos'],
+    effect: (l) =>
+      l === 0
+        ? 'Sin efecto'
+        : `Héroes de nivel 4 o más: +${[0, 4, 8][l]} de moral por noche y más tope${l >= 2 ? '; nunca desertan' : ''}`,
+  },
 };
 
 /** Lo que dice cada cosa de la escena al tocarla. */

@@ -1098,3 +1098,18 @@ export function floorSlab(b: PixelBuffer, x: number, y: number, w: number, seed:
   }
   b.hline(x, y + 7, w, P.black);
 }
+
+/** Cuervo mensajero posado (o batiendo las alas). */
+export function raven(flap: boolean): PixelBuffer {
+  const rows = flap
+    ? ['k......k', 'kk....kk', '.kkkkkk.', '..kekks.', '..kkkk..', '..kkkkk.', '...y.y..']
+    : ['........', '...kk...', '..kekks.', '.kkkk...', 'kkkkkk..', '.kkkkkk.', '..y.y...'];
+  return piece(8, 7, (b) =>
+    rows.forEach((r, y) =>
+      [...r].forEach((ch, x) => {
+        const c = { k: P.ebony, e: P.white, s: P.steel, y: P.slate }[ch];
+        if (c) b.set(x, y, c);
+      }),
+    ),
+  );
+}

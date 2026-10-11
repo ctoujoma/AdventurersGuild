@@ -2778,3 +2778,8 @@ button:focus-visible {
     0 0 0 2px var(--ink),
     0 0 0 4px var(--gold);
 }
+.tav-feast {
+  box-shadow:
+    0 0 0 2px var(--ink),
+    0 0 0 4px var(--gold);
+}

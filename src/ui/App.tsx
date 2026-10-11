@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { audio, type Mood } from '../audio/audio';
 import { canHire, customOf, newGame, reduce, type Action } from '../core/game';
-import { STAFF } from '../data/custom';
+import { DECOR, STAFF } from '../data/custom';
 import type { Facilities, GameState } from '../core/model';
 import { CAPTIONS, FACILITY_INFO } from '../data/labels';
 import { loadRecords, mergeRecords, saveRecords } from '../platform/records';
@@ -193,6 +193,10 @@ export function App() {
         return;
       case 'empalizada':
         setFocusFac('empal');
+        openPanel('gremio');
+        return;
+      case 'veteranos':
+        setFocusFac('vet');
         openPanel('gremio');
         return;
       case 'despacho':
@@ -512,6 +516,21 @@ export function App() {
                 dispatch({ type: 'buyDog' });
                 audio.play('coin');
                 toast('Tizón ya duerme junto a la puerta. ¡Guau!');
+              }}
+              onDecor={(id, on) => {
+                dispatch({ type: 'decor', id, on });
+                audio.play(on ? 'build' : 'close');
+                if (on) toast(`${DECOR[id].name}: ya luce en el salón.`);
+              }}
+              onRaven={() => {
+                dispatch({ type: 'buyRaven' });
+                audio.play('coin');
+                toast('Carbón se posa en el letrero y grazna. Parece que le gusta el sitio.');
+              }}
+              onFeast={() => {
+                dispatch({ type: 'feast' });
+                audio.fanfare();
+                toast('¡Fiesta montada! Banderines, música y la caja abierta hasta el alba.');
               }}
             />
           </Panel>

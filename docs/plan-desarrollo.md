@@ -189,8 +189,8 @@ Inspirado en los ataques al refugio de *Fallout Shelter*: cuanto más famoso y r
 - [x] Personal que se contrata y se ve por la taberna: cocinera tras la barra (el plato anima el doble), bardo ante la chimenea (+8 monedas al día), mozo en la enfermería (curan un día antes). Entrada de 30 y 6 de salario por semana cada uno
 - [x] Plato de la casa: pan y queso (gratis), guiso (4/noche, +2 de moral) o asado (10/noche, +4)
 - [x] Perro guardián (60 monedas): +3 de defensa y más probabilidad de chivatazo; duerme junto a la puerta
-- [ ] Huecos de decoración con efecto pequeño: diana (moral) o mesa de naipes (ingresos, alguna pelea), escenario del bardo o más mesas…
-- [ ] Más mascotas (un cuervo mensajero) y decoración de fiestas
+- [x] Decoración del salón (2 huecos, 3 con el salón grande): mesa de naipes (+6 al día, alguna pelea), tarima del bardo (+2 de moral; con bardo, +8 monedas), tapices con el escudo (+1 de reputación por semana) y barril especial (+1 de moral, +2 monedas); todo se ve en el salón
+- [x] Cuervo mensajero (80): vigila desde el letrero y trae +1 de reputación cada 5 días. Fiesta de la comarca cada 10 días: banderines y farolillos en la fachada y, si la montas (30), banderines dentro, caja doble esa noche, +10 de moral y brindis
 
 **Expansión del edificio** (aprovecha la escena ancha de la fase 6)
 - [x] Forja: el equipo rinde más (+1 a su primer atributo por nivel)
@@ -198,7 +198,7 @@ Inspirado en los ataques al refugio de *Fallout Shelter*: cuanto más famoso y r
 - [x] Establo: viajes más cortos y escoltas mejor pagadas
 - [x] Empalizada: más defensa contra asaltos
 - [x] Torre del vigía: avisa siempre de los asaltos y, a nivel 2, trae un encargo más al tablón
-- [ ] Habitaciones de veteranos: más moral y sus trofeos personales
+- [x] Ala de veteranos (220 / 420), colgada de la fachada derecha sobre la capilla: los héroes de nivel 4 o más ganan +4/+8 de moral por noche y más tope; a nivel 2 nunca desertan
 
 ### Fase 8: Pulido y pruebas · M
 - [x] Splash del desarrollador, pantalla de título y tutorial en los primeros días (el tío deja notas)

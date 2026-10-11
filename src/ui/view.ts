@@ -1,7 +1,7 @@
 import { generateLook, type HeroLook, type HeroMarks } from '../art/heroes/look';
 import type { Facilities, GameState, Hero, Item } from '../core/model';
 import { customOf, gearInStock } from '../core/game';
-import { CREST_COLORS } from '../data/custom';
+import { CREST_COLORS, isFeastDay } from '../data/custom';
 import { gearOf } from '../core/resolve';
 import type { Member } from '../core/party';
 import type { SceneHero, SceneModel } from '../world/scene';
@@ -69,6 +69,9 @@ export function sceneModel(s: GameState): SceneModel {
     },
     staff: customOf(s).staff,
     dog: customOf(s).dog,
+    decor: customOf(s).decor ?? [],
+    raven: !!customOf(s).raven,
+    feast: customOf(s).feast === s.day ? 'montada' : isFeastDay(s.day) ? 'dia' : 'no',
     gear: gearInStock(s).map((i) => ({ icon: i.icon ?? 'espada', rarity: i.rarity ?? 0 })),
     trophies: s.trophies.map((t) => t.icon),
     heroes,

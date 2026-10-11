@@ -76,6 +76,7 @@ function playDay(s: GameState, st: Strategy): GameState {
       'cap',
       'establo',
       'torre',
+      'vet',
     ] as const) {
       const cost = upgradeCost(s, k);
       if (cost !== null && s.gold - cost > reserve(s) + 120)

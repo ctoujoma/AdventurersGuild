@@ -19,6 +19,9 @@ import {
   REFUSE_MORALE,
   SALARY_EVERY,
   TRAINING_XP,
+  VET_CAP,
+  VET_LEVEL,
+  VET_REST,
   UNPAID_LIMIT,
   UNPAID_MORALE,
   SCHEDULE,
@@ -35,7 +38,22 @@ import {
   tavernIncome,
 } from './balance';
 import { tripDays } from './classes';
-import { DEFAULT_NAME, DISHES, DOG_PRICE, STAFF, type StaffId } from '../data/custom';
+import {
+  BRAWL_CHANCE,
+  DECOR,
+  DEFAULT_NAME,
+  DISHES,
+  DOG_PRICE,
+  FEAST_MORALE,
+  FEAST_PRICE,
+  RAVEN_EVERY,
+  RAVEN_PRICE,
+  STAFF,
+  decorSlots,
+  isFeastDay,
+  type DecorId,
+  type StaffId,
+} from '../data/custom';
 import { arrival, checkFeats, checkMonth, emptyStats, startMonth } from './feats';
 import { stepRaids } from './raids';
 import { advanceChain, offerChain } from './chains';
@@ -74,6 +92,9 @@ export type Action =
   | { type: 'custom'; patch: Partial<Pick<Custom, 'name' | 'color' | 'symbol' | 'dish'>> }
   | { type: 'staff'; id: StaffId; on: boolean }
   | { type: 'buyDog' }
+  | { type: 'decor'; id: DecorId; on: boolean }
+  | { type: 'buyRaven' }
+  | { type: 'feast' }
   | { type: 'endDay' };
 
 // ---------- Consultas ----------
@@ -366,6 +387,26 @@ export function reduce(state: GameState, action: Action): GameState {
       if (c.dog || state.gold < DOG_PRICE) return state;
       return { ...state, gold: state.gold - DOG_PRICE, custom: { ...c, dog: true } };
     }
+    case 'decor': {
+      const c = customOf(state);
+      const list = c.decor ?? [];
+      if (list.includes(action.id) === action.on) return state;
+      if (!action.on)
+        return { ...state, custom: { ...c, decor: list.filter((x) => x !== action.id) } };
+      const price = DECOR[action.id].price;
+      if (state.gold < price || list.length >= decorSlots(state.fac.tab)) return state;
+      return { ...state, gold: state.gold - price, custom: { ...c, decor: [...list, action.id] } };
+    }
+    case 'buyRaven': {
+      const c = customOf(state);
+      if (c.raven || state.gold < RAVEN_PRICE) return state;
+      return { ...state, gold: state.gold - RAVEN_PRICE, custom: { ...c, raven: true } };
+    }
+    case 'feast': {
+      const c = customOf(state);
+      if (!isFeastDay(state.day) || c.feast === state.day || state.gold < FEAST_PRICE) return state;
+      return { ...state, gold: state.gold - FEAST_PRICE, custom: { ...c, feast: state.day } };
+    }
     case 'choose': {
       if (!state.event) return state;
       const s = structuredClone(state);
@@ -424,14 +465,52 @@ export function endDay(state: GameState): GameState {
   s.day++;
 
   // La amenaza regional puede llevarse los ingresos del día (caravana asaltada).
+  const c0 = customOf(s);
+  const decor = c0.decor ?? [];
+  const bard = s.fac.tab > 0 && c0.staff.includes('bardo');
+  // La fiesta montada anoche dobla la caja.
+  const feast = c0.feast === s.day - 1;
   const income =
-    tavernIncome(s.fac.tab, s.rep, s.trophies.length) +
-    (s.fac.tab > 0 && customOf(s).staff.includes('bardo') ? 8 : 0);
+    (tavernIncome(s.fac.tab, s.rep, s.trophies.length) +
+      (bard ? 8 : 0) +
+      (bard && decor.includes('tarima') ? 8 : 0) +
+      (decor.includes('naipes') ? 6 : 0) +
+      (decor.includes('barril') ? 2 : 0)) *
+    (feast ? 2 : 1);
   const lost = stepThreat(s, rng, events, income);
   if (income - lost > 0) {
     s.gold += income - lost;
-    events.push({ t: `La taberna deja ${income - lost} monedas.`, k: 'good' });
+    events.push({
+      t: `La taberna deja ${income - lost} monedas${feast ? ': ¡la fiesta ha llenado el salón!' : '.'}`,
+      k: 'good',
+    });
   }
+  if (feast)
+    for (const h of s.heroes)
+      if (h.status === 'ok') h.morale = Math.min(100, h.morale + FEAST_MORALE);
+  // Tapices y cuervo: la fama del gremio se extiende.
+  if (decor.includes('tapices') && s.day % 7 === 0) s.rep += 1;
+  if (c0.raven && s.day % RAVEN_EVERY === 0) {
+    s.rep += 1;
+    events.push({
+      t: 'El cuervo vuelve de otro pueblo: allí ya se habla del gremio (+1 reputación).',
+    });
+  }
+  if (decor.includes('naipes') && rng.chance(BRAWL_CHANCE)) {
+    const home = s.heroes.filter((h) => h.status === 'ok');
+    if (home.length) {
+      const h = rng.pick(home);
+      h.morale = Math.max(0, h.morale - 8);
+      events.push({
+        t: `Pelea en la mesa de naipes: ${h.name} ha perdido la partida y los nervios.`,
+        k: 'warn',
+      });
+    }
+  }
+  if (isFeastDay(s.day))
+    events.push({
+      t: 'Hoy es la fiesta de la comarca: si montas la fiesta en la taberna, la caja lo notará.',
+    });
 
   // Regresos.
   for (const m of s.missions) {
@@ -510,15 +589,18 @@ export function endDay(state: GameState): GameState {
   const fed = dish.cost === 0 || s.gold >= dish.cost;
   if (fed) s.gold -= dish.cost;
   const dishMorale = fed ? dish.morale * (c.staff.includes('cocinera') ? 2 : 1) : 0;
+  const decorMorale = (decor.includes('tarima') ? 2 : 0) + (decor.includes('barril') ? 1 : 0);
 
   // Moral: se descansa en la taberna; quien está harto se va, quien está desanimado pide más.
   const deserters: Hero[] = [];
   for (const h of s.heroes) {
     if (h.status !== 'ok') continue;
-    const cap = restCap(s.fac.tab) + (has(h, 'bebedor') && s.fac.tab >= 2 ? 10 : 0);
-    const gain = restMorale(s.fac.tab) + chapelRest(s.fac.cap) + dishMorale;
+    const vet = h.lvl >= VET_LEVEL ? s.fac.vet : 0;
+    const cap = restCap(s.fac.tab) + (has(h, 'bebedor') && s.fac.tab >= 2 ? 10 : 0) + VET_CAP[vet]!;
+    const gain =
+      restMorale(s.fac.tab) + chapelRest(s.fac.cap) + dishMorale + decorMorale + VET_REST[vet]!;
     if (h.morale < cap) h.morale = Math.min(cap, h.morale + gain);
-    if (h.morale < MORALE_QUIT && !has(h, 'leal') && rng.chance(DESERT_CHANCE)) {
+    if (h.morale < MORALE_QUIT && !has(h, 'leal') && vet < 2 && rng.chance(DESERT_CHANCE)) {
       deserters.push(h);
       continue;
     }
@@ -638,7 +720,7 @@ export function endDay(state: GameState): GameState {
       s.opening = { ...arrival(s, alive), seen: false };
       startMonth(s, rng);
       events.push({
-        t: `La deuda de tu tío está pagada. El Jarro Partido es tuyo: gremio de ${rankOf(s).name}, ${alive} ${plural(alive, 'héroe', 'héroes')} y ${s.gold} monedas en la caja.`,
+        t: `La deuda de tu tío está pagada. ${customOf(s).name} es tuyo: gremio de ${rankOf(s).name}, ${alive} ${plural(alive, 'héroe', 'héroes')} y ${s.gold} monedas en la caja.`,
         k: 'good',
       });
     } else s.over = { kind: 'derrota', text: 'Se acabó el plazo y la deuda sigue ahí.', score: 0 };

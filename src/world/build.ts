@@ -30,7 +30,15 @@ import {
   stoneWall,
 } from './paint';
 import type { TrophyIcon } from '../core/model';
-import { armory, chapel, gearBoard, mapRoom, trophyWall, type GearView } from './annex';
+import {
+  armory,
+  chapel,
+  gearBoard,
+  mapRoom,
+  trophyWall,
+  veteranWing,
+  type GearView,
+} from './annex';
 import * as Prop from './props';
 import { buildOuter, type Outer } from './yard';
 
@@ -218,6 +226,7 @@ export function buildWorld(
   ];
 
   // ================= Capilla (anexo a la derecha) =================
+  veteranWing(back, fac.vet ?? 0, lights, glows);
   chapel(back, put, fac.cap, fallen, lights, flames, glows, ambient);
 
   const outer = buildOuter(glows, fac, lights, flames);

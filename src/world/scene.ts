@@ -52,6 +52,10 @@ export interface SceneModel {
   crest: { field: string; dark: string; symbol: string };
   staff: string[];
   dog: boolean;
+  /** Decoración del salón, cuervo y fiesta de la comarca (el día o ya montada). */
+  decor: string[];
+  raven: boolean;
+  feast: 'no' | 'dia' | 'montada';
   /** Equipo sin dueño (tablero de la bodega) y trofeos de la sala. */
   gear: GearView[];
   trophies: TrophyIcon[];
@@ -104,6 +108,7 @@ export const ROOM_CENTERS: Record<string, Point> = {
   'patio-entreno': { x: -84, y: 280 },
   empalizada: { x: -100, y: 278 },
   torre: { x: -112, y: 220 },
+  veteranos: { x: 464, y: 176 },
   puerta: { x: 130, y: 262 },
   armeria: { x: 312, y: 330 },
   capilla: { x: 468, y: 262 },
@@ -477,6 +482,87 @@ export class WorldScene {
     this.resize(this.cssW, this.cssH, Math.min(6, this.camera.zoom + 1));
     this.camera.centerOn(-52, 262);
     this.nightfall(done, 2.6, BATTLE_TIME + 0.6);
+  }
+
+  /** Guirnalda de banderines entre dos puntos, con su comba. */
+  private bunting(
+    x0: number,
+    x1: number,
+    y: number,
+    sag: number,
+    colors: readonly string[],
+    cx: number,
+    cy: number,
+  ): void {
+    const ctx = this.ctx;
+    const yAt = (x: number) => Math.round(y + sag * Math.sin((Math.PI * (x - x0)) / (x1 - x0)));
+    ctx.fillStyle = P.bark;
+    for (let x = x0; x <= x1; x++) ctx.fillRect(x - cx, yAt(x) - cy, 1, 1);
+    let i = 0;
+    for (let x = x0 + 3; x < x1 - 3; x += 7, i++) {
+      ctx.fillStyle = colors[i % colors.length]!;
+      const top = yAt(x + 2) + 1;
+      for (let r = 0; r < 4; r++) ctx.fillRect(x + r / 2 - cx, top + r - cy, 5 - r, 1);
+    }
+  }
+
+  /** Decoración del salón, la fiesta de la comarca y sus confetis. */
+  private drawDecor(ctx: CanvasRenderingContext2D, cx: number, cy: number, t: number): void {
+    if (!this.model) return;
+    const { decor, crest, feast } = this.model;
+    const floor = F.hall.floor;
+    const px = (x: number, y: number, c: string, w = 1, h = 1) => {
+      ctx.fillStyle = c;
+      ctx.fillRect(x - cx, y - cy, w, h);
+    };
+    if (decor.includes('tapices'))
+      this.bunting(196, 316, F.hall.top + 2, 4, [crest.field, P.gold, crest.dark], cx, cy);
+    if (decor.includes('tarima')) {
+      px(292, floor - 3, P.clay, 26, 1);
+      px(292, floor - 2, P.rust, 26, 2);
+      for (let x = 296; x < 318; x += 6) px(x, floor - 2, P.bark, 1, 2);
+    }
+    if (decor.includes('naipes')) {
+      // Cartas y monedas en la primera mesa.
+      const tx = 236;
+      const ty = floor - 16;
+      px(tx - 9, ty, P.white, 2, 3);
+      px(tx - 6, ty - 1, P.white, 2, 3);
+      px(tx - 8, ty + 1, P.red);
+      px(tx - 5, ty, P.black);
+      px(tx - 12, ty + 1, P.gold, 2, 2);
+      px(tx - 12, ty, P.lemon, 2, 1);
+    }
+    if (decor.includes('barril')) {
+      // Barrilito con espita sobre la barra.
+      const bx = 186;
+      const by = floor - 30;
+      px(bx, by, P.oak, 9, 8);
+      px(bx, by + 1, P.steel, 9, 1);
+      px(bx, by + 6, P.steel, 9, 1);
+      px(bx + 1, by, P.clay, 7, 1);
+      px(bx + 9, by + 4, P.gold, 2, 1);
+      px(bx + 10, by + 5, P.gold, 1, 1);
+    }
+    if (feast === 'no') return;
+    const party = [P.red, P.gold, P.sky, P.lime, P.rose];
+    // El pueblo está de fiesta: banderines y farolillos sobre la puerta.
+    this.bunting(4, 94, 206, 6, party, cx, cy);
+    for (const [lx, ly] of [
+      [22, 210],
+      [48, 212],
+      [74, 210],
+    ] as const) {
+      px(lx, ly, P.bark, 1, 2);
+      px(lx - 2, ly + 2, Math.sin(t * 3 + lx) > 0 ? P.orange : P.red, 5, 5);
+      px(lx - 1, ly + 3, P.lemon, 3, 3);
+    }
+    if (feast === 'montada') {
+      this.bunting(106, 196, F.hall.top + 3, 5, party, cx, cy);
+      this.bunting(316, 420, F.hall.top + 3, 5, party, cx, cy);
+      if (Math.random() < 0.12)
+        this.particles.spawn('spark', 140 + Math.random() * 260, F.hall.top + 6, { vy: 6 });
+    }
   }
 
   /** Saltar la pelea: se pasa directamente al amanecer. */
@@ -898,6 +984,11 @@ export class WorldScene {
         ctx.fillRect(Math.round(ax + ((bx - ax) * i) / 8) - cx, 168 + i - cy, 1, 1);
     }
     at(this.signImg, sx, 176);
+    if (this.model.raven) {
+      // De vez en cuando sacude las alas.
+      const flap = Math.sin(t * 0.7) > 0.93;
+      at(Prop.raven(flap && Math.floor(t * 10) % 2 === 0), sx + 11, 169 - (flap ? 1 : 0));
+    }
 
     // Murciélagos del desván.
     for (const b of this.bats) {
@@ -947,7 +1038,8 @@ export class WorldScene {
     if (staff.includes('cocinera'))
       at(this.blinkOr(this.staffSpr.cocinera, 0.71), 178 - 9, 286 - FEET_Y);
     if (staff.includes('bardo')) {
-      at(this.blinkOr(this.staffSpr.bardo, 0.13), 304 - 9, F.hall.floor - FEET_Y);
+      const lift = this.model.decor.includes('tarima') ? 3 : 0;
+      at(this.blinkOr(this.staffSpr.bardo, 0.13), 304 - 9, F.hall.floor - FEET_Y - lift);
       if (t > this.nextNote) {
         this.particles.spawn('note', 306, F.hall.floor - 24);
         this.nextNote = t + 1.1 + Math.random();
@@ -957,6 +1049,7 @@ export class WorldScene {
       at(this.blinkOr(this.staffSpr.mozo, 0.52), 336 - 9, F.upper.floor - FEET_Y);
     // Perro guardián a la puerta.
     if (this.model.dog) at(Prop.dog(Math.floor(t * 3) % 2 === 0), 66, GROUND - 10);
+    this.drawDecor(ctx, cx, cy, t);
 
     // Heridos en cama.
     const beds = sickbeds(this.model.fac);

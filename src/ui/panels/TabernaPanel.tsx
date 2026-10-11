@@ -4,10 +4,16 @@ import type { Custom, GameState } from '../../core/model';
 import {
   CREST_COLORS,
   CREST_SYMBOLS,
+  DECOR,
   DISHES,
   DOG_PRICE,
+  FEAST_PRICE,
+  RAVEN_PRICE,
   STAFF,
+  decorSlots,
+  isFeastDay,
   type CrestColor,
+  type DecorId,
   type CrestSymbol,
   type Dish,
   type StaffId,
@@ -20,11 +26,21 @@ interface Props {
   onCustom: (patch: Partial<Pick<Custom, 'name' | 'color' | 'symbol' | 'dish'>>) => void;
   onStaff: (id: StaffId, on: boolean) => void;
   onDog: () => void;
+  onDecor: (id: DecorId, on: boolean) => void;
+  onRaven: () => void;
+  onFeast: () => void;
 }
 
-/** Tu taberna: nombre, escudo del letrero, plato de la casa, personal y perro guardián. */
-export function TabernaPanel({ game, onCustom, onStaff, onDog }: Props) {
+/**
+ * Tu taberna: nombre y escudo del letrero, la fiesta de la comarca, la decoración del salón,
+ * el plato de la casa, el personal y los animales.
+ */
+export function TabernaPanel({ game, onCustom, onStaff, onDog, onDecor, onRaven, onFeast }: Props) {
   const c = customOf(game);
+  const decor = c.decor ?? [];
+  const slots = decorSlots(game.fac.tab);
+  const feastToday = isFeastDay(game.day);
+  const nextFeast = Math.ceil((game.day + 1) / 10) * 10;
   const [name, setName] = useState(c.name);
   const col = CREST_COLORS[c.color];
   const board = useMemo(() => crestBoard(col.field, col.dark, c.symbol), [c.color, c.symbol]);
@@ -78,6 +94,66 @@ export function TabernaPanel({ game, onCustom, onStaff, onDog }: Props) {
               {CREST_SYMBOLS[k]}
             </button>
           ))}
+        </div>
+      </section>
+
+      <section>
+        <h3 class="sec-title">Fiesta de la comarca</h3>
+        <article class={`card-paper facility ${feastToday ? 'tav-feast' : ''}`}>
+          <div class="facility-info">
+            <b>{feastToday ? '¡Hoy es la fiesta!' : `Próxima fiesta: día ${nextFeast}`}</b>
+            <span class="muted">
+              Cada 10 días el pueblo sale a la calle. Si la montas en la taberna, esa noche la caja
+              se dobla y los que descansan ganan 10 de moral.
+            </span>
+          </div>
+          {feastToday &&
+            (c.feast === game.day ? (
+              <span class="pill pill-ok">Montada</span>
+            ) : (
+              <button class="btn btn-gold" disabled={game.gold < FEAST_PRICE} onClick={onFeast}>
+                Montarla · {FEAST_PRICE}
+              </button>
+            ))}
+        </article>
+      </section>
+
+      <section>
+        <h3 class="sec-title">
+          Decoración del salón{' '}
+          <span class="muted">
+            ({decor.length}/{slots} huecos{slots < 3 ? '; uno más con el salón grande' : ''})
+          </span>
+        </h3>
+        <div class="list">
+          {(Object.keys(DECOR) as DecorId[]).map((k) => {
+            const d = DECOR[k];
+            const on = decor.includes(k);
+            return (
+              <article key={k} class="card-paper facility">
+                <div class="facility-info">
+                  <b>{d.name}</b>
+                  <span class="muted">{d.desc}</span>
+                  <span class="tiny">
+                    {on ? 'En el salón (quitarla no devuelve el dinero)' : `${d.price} monedas`}
+                  </span>
+                </div>
+                {on ? (
+                  <button class="btn btn-wood" onClick={() => onDecor(k, false)}>
+                    Quitar
+                  </button>
+                ) : (
+                  <button
+                    class="btn btn-gold"
+                    disabled={game.gold < d.price || decor.length >= slots}
+                    onClick={() => onDecor(k, true)}
+                  >
+                    Poner
+                  </button>
+                )}
+              </article>
+            );
+          })}
         </div>
       </section>
 
@@ -156,6 +232,26 @@ export function TabernaPanel({ game, onCustom, onStaff, onDog }: Props) {
           {!c.dog && (
             <button class="btn btn-gold" disabled={game.gold < DOG_PRICE} onClick={onDog}>
               {DOG_PRICE} monedas
+            </button>
+          )}
+        </article>
+      </section>
+
+      <section>
+        <h3 class="sec-title">Cuervo mensajero</h3>
+        <article class="card-paper facility">
+          <div class="facility-info">
+            <b>{c.raven ? 'Carbón' : 'Un cuervo amaestrado'}</b>
+            <span class="muted">
+              {c.raven
+                ? 'Vigila desde el letrero y vuela a otros pueblos con noticias del gremio.'
+                : 'Lleva la fama del gremio a otros pueblos.'}
+            </span>
+            <span class="tiny">+1 de reputación cada 5 días.</span>
+          </div>
+          {!c.raven && (
+            <button class="btn btn-gold" disabled={game.gold < RAVEN_PRICE} onClick={onRaven}>
+              {RAVEN_PRICE} monedas
             </button>
           )}
         </article>
