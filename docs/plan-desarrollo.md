@@ -99,19 +99,36 @@ Los tamaños son relativos (S < M < L). Cada fase termina en algo que se puede p
 **🎯 Hito:** se juegan los 30 días de «La deuda» en el móvil desde un enlace. Primera ronda de pruebas.
 
 ### Fase 3: Lo que traen (y lo que no) · L
-- [ ] Rasgos ocultos que se revelan tras la primera misión
-- [ ] Moral, deserción y peticiones de aumento
-- [ ] Heridas graves con secuelas y apodos
-- [ ] Muerte permanente y Muro de los caídos
-- [ ] Desaparecidos que regresan, se confirman muertos o generan un encargo de rescate
-- [ ] Botín e inventario: vender y equipar (objetos simples con bonificaciones)
-- [ ] Eventos en ruta
-- [ ] Informes narrativos con plantillas ricas y variación
-- [ ] Giros ocultos en encargos y su detección
-- [ ] Instalaciones: Dormitorios, Enfermería y Taberna (3 niveles)
-- [ ] Reputación y rangos
 
-**Terminado cuando** el juego produce anécdotas y las decisiones tienen consecuencias que duran.
+Orden acordado tras probar la fase 2 (prioridad del propietario: 3a y 3b, la escena que reacciona y el crecimiento del edificio):
+
+**3a · Héroes que importan**
+- [ ] Clases con habilidad real: el explorador acorta la misión y evita emboscadas, el pícaro trae más botín, el guerrero protege al grupo (menos heridas en combate), el clérigo evita muertes (ya reduce heridas) y el mago detecta giros (hecho)
+- [ ] Moral con efectos: con moral baja rinde menos, pide aumento, puede desertar (con botín); sube con éxitos, descanso y taberna mejorada; baja con heridas, caídos e impagos
+- [ ] Secuelas variadas con apodo (tuerto, cojo, cicatriz, manco…) y desaparecidos que vuelven con historia y rasgo nuevo, o encargo de rescate
+- [x] Rasgos ocultos que se revelan tras la primera misión · hecho en la fase 1
+
+**3b · Lo que traen**
+- [ ] Equipo: una ranura por héroe, objetos con bonificación; equipar desde la ficha
+- [ ] Materiales y trofeos: se venden o se exhiben; los trofeos aparecen en la taberna y dan reputación
+
+**3c · Historias**
+- [ ] Informes mucho más variados: frases por rasgo, por clase y por evento; más plantillas por tipo de encargo
+- [ ] Eventos en ruta (emboscada, mercader, tesoro, pelea interna) y eventos en la taberna con elección
+
+**3d · La escena cuenta la partida**
+- [ ] El amanecer ocurre en la escena: ciclo de luz día/noche con sentido (de día, luz cálida por las ventanas; al terminar el día, anochece)
+- [ ] Los grupos que vuelven con éxito celebran en la barra (jarras, notas del laúd); vela por cada caído en el Muro
+- [ ] El botín y los trofeos se ven en estanterías y paredes
+
+**3e · Crecimiento del edificio**
+- [ ] Nuevas instalaciones visibles que amplían el edificio: Sala de mapas (estimación precisa, detecta giros), Armería (equipo), Capilla (moral, ceremonias); un anexo o una torre en el corte lateral
+
+**3f · Más allá de «La deuda»**
+- [ ] Modo infinito: sin plazo, deudas o encargos que escalan; récords
+- [ ] Campaña: series de encargos encadenados (cadenas de misiones con historia) y una amenaza regional por actos
+
+**Terminado cuando** el juego produce anécdotas, las clases y la moral cambian las decisiones y el edificio crece con el gremio.
 
 ### Fase 4: Pulido y pruebas · M
 - [ ] Balance con el simulador y con pruebas de jugadores reales
