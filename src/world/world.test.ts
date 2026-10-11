@@ -1,7 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { buildWorld } from './build';
 import { Camera } from './camera';
-import { B, ROOMS, WORLD_H, WORLD_W, capacity, hotspots, layout, sickbeds } from './geometry';
+import {
+  B,
+  ROOMS,
+  WORLD_H,
+  WORLD_W,
+  WORLD_X0,
+  WORLD_X1,
+  capacity,
+  hotspots,
+  layout,
+  sickbeds,
+} from './geometry';
 
 describe('geometría y mejoras', () => {
   it('pinta tantas camas como capacidad tienen los dormitorios y caben en el cuarto', () => {
@@ -77,10 +88,10 @@ describe('Camera', () => {
     const c = new Camera();
     c.setView(400, 600, 2);
     c.centerOn(-500, -500, false);
-    expect(c.x).toBe(0);
+    expect(c.x).toBe(WORLD_X0);
     expect(c.y).toBe(0);
     c.centerOn(5000, 5000, false);
-    expect(c.x + c.vw).toBe(WORLD_W);
+    expect(c.x + c.vw).toBe(WORLD_X1);
     expect(c.y + c.vh).toBe(WORLD_H);
   });
 

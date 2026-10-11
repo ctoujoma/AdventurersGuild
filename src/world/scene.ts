@@ -18,7 +18,8 @@ import {
   KEEPER_RANGE,
   ROOF,
   WORLD_H,
-  WORLD_W,
+  SPAN,
+  WORLD_X0,
   hotspots,
   roofTop,
   sickbeds,
@@ -90,6 +91,8 @@ export const ROOM_CENTERS: Record<string, Point> = {
   despacho: { x: 264, y: 104 },
   rellano: { x: 396, y: 180 },
   exterior: { x: 60, y: 250 },
+  patio: { x: 10, y: 262 },
+  camino: { x: -64, y: 262 },
   puerta: { x: 130, y: 262 },
   armeria: { x: 312, y: 330 },
   capilla: { x: 468, y: 262 },
@@ -98,8 +101,8 @@ export const ROOM_CENTERS: Record<string, Point> = {
 /** Puerta de la calle: por aquí salen los grupos y vuelven de las misiones. */
 const DOOR_X = B.left + 2;
 /** Hasta dónde andan por el patio antes de perderse en la noche. */
-const YARD_END = 26;
-const TRIP_SPEED = 30;
+const YARD_END = -112;
+const TRIP_SPEED = 44;
 
 /** Altura de los pies: el patio queda un escalón por debajo de la sala. */
 function feetAt(x: number): number {
@@ -164,6 +167,8 @@ export class WorldScene {
   private world: WorldBuild | null = null;
   private backC: HTMLCanvasElement | null = null;
   private frontC: HTMLCanvasElement | null = null;
+  private outerC: HTMLCanvasElement | null = null;
+  private outerFrontC: HTMLCanvasElement | null = null;
   private ambientC: HTMLCanvasElement | null = null;
   private skyC: HTMLCanvasElement;
   private parallax: { c: HTMLCanvasElement; l: ParallaxLayer }[];
@@ -268,6 +273,8 @@ export class WorldScene {
       });
       this.backC = bufferCanvas(this.world.back);
       this.frontC = bufferCanvas(this.world.front);
+      this.outerC = bufferCanvas(this.world.outer.back);
+      this.outerFrontC = bufferCanvas(this.world.outer.front);
       this.ambientC = ambientCanvas(this.world.ambient);
       this.spots = hotspots(model.fac, model.trophies.length);
       if (prev) this.celebrateUpgrades(prev.fac, model.fac);
@@ -326,7 +333,7 @@ export class WorldScene {
     this.cssW = cssW;
     this.cssH = cssH;
     // Nunca más pequeño que el mundo: la vista siempre queda llena.
-    const minZoom = Math.max(1, Math.ceil(cssW / WORLD_W), Math.ceil(cssH / WORLD_H));
+    const minZoom = Math.max(1, Math.ceil(cssW / SPAN), Math.ceil(cssH / WORLD_H));
     const z = Math.max(minZoom, zoom ?? Math.max(2, Math.floor(Math.min(cssW / 180, cssH / 230))));
     this.camera.setView(cssW, cssH, z);
     this.canvas.width = this.camera.vw;
@@ -339,7 +346,7 @@ export class WorldScene {
   }
 
   zoomBy(step: number): void {
-    const minZoom = Math.max(1, Math.ceil(this.cssW / WORLD_W), Math.ceil(this.cssH / WORLD_H));
+    const minZoom = Math.max(1, Math.ceil(this.cssW / SPAN), Math.ceil(this.cssH / WORLD_H));
     const z = Math.max(minZoom, Math.min(6, this.camera.zoom + step));
     if (z !== this.camera.zoom) this.resize(this.cssW, this.cssH, z);
   }
@@ -722,9 +729,9 @@ export class WorldScene {
     ctx.fillRect(0, 0, vw, vh);
 
     // Cielo, estrellas, estrella fugaz, nubes y capas lejanas.
-    ctx.drawImage(this.skyC, -Math.round(cx * 0.08), -cy);
+    ctx.drawImage(this.skyC, WORLD_X0 - Math.round(cx * 0.08), -cy);
     for (const s of this.starList) {
-      const sx = s.x - Math.round(cx * 0.08);
+      const sx = s.x + WORLD_X0 - Math.round(cx * 0.08);
       const sy = s.y - cy;
       if (sx < 0 || sy < 0 || sx >= vw || sy >= vh) continue;
       const tw = noise(s.x, Math.floor(t * 1.5 + s.y));
@@ -747,16 +754,17 @@ export class WorldScene {
       }
     }
     for (const cl of this.clouds) {
-      const x = ((cl.x + t * cl.speed) % (WORLD_W + 80)) - 60 - cx * 0.15;
+      const x = ((cl.x + t * cl.speed) % (SPAN + 80)) - 60 + WORLD_X0 - cx * 0.15;
       drawBuffer(ctx, cl.img, x, cl.y - cy);
     }
     const { dark, warm } = this.nightLight();
     if (warm > 0) this.drawDawnSky(warm, cx, cy, vw, vh);
     for (const { c, l } of this.parallax) {
-      ctx.drawImage(c, -Math.round(cx * l.fx), -cy);
+      ctx.drawImage(c, WORLD_X0 - Math.round(cx * l.fx), -cy);
     }
 
     // Mundo (fondo) + elementos exteriores animados.
+    if (this.outerC) ctx.drawImage(this.outerC, WORLD_X0 - cx, -cy);
     ctx.drawImage(this.backC, -cx, -cy);
     const drawn: Drawn[] = [];
     const at = (img: PixelBuffer, x: number, y: number, flip = false) =>
@@ -884,6 +892,7 @@ export class WorldScene {
 
     // Capa delantera (barra, mesas, barandilla, arbustos).
     ctx.drawImage(this.frontC, -cx, -cy);
+    if (this.outerFrontC) ctx.drawImage(this.outerFrontC, WORLD_X0 - cx, -cy);
 
     // Candidatos en la barra.
     const cands = this.model.heroes

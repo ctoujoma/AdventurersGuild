@@ -274,13 +274,13 @@ export function App() {
     setDawnOpen(false);
     if (game.day === 1) setHint(true);
     if (then) openPanel(then);
-    else if (returned) setTimeout(() => scene.current?.focus('puerta'), 30);
+    else if (returned) setTimeout(() => scene.current?.focus('patio'), 30);
     if (wins.length)
       setTimeout(() => {
         scene.current?.cheer('barra');
         if (!then) scene.current?.focus('barra');
         toast(`¡Ronda para todos! ${wins.map((r) => r.who).join(' y ')} lo celebran en la barra.`);
-      }, 3600);
+      }, 5600);
   };
 
   const openReport = (id: string) => {

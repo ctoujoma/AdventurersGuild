@@ -25,8 +25,8 @@ export const START = {
 
 /** Coste de subir a cada nivel (índice = nivel nuevo); el nivel máximo es el último. */
 export const UPGRADE_COST: Record<keyof Facilities, readonly number[]> = {
-  dorm: [0, 80, 150, 280],
-  enf: [0, 100, 200, 340],
+  dorm: [0, 80, 170, 420],
+  enf: [0, 100, 230, 450],
   tab: [0, 90, 250, 450, 750],
   mapas: [0, 120, 340],
   arm: [0, 150, 380],

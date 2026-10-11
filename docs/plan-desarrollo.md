@@ -195,6 +195,7 @@ Inspirado en los ataques al refugio de *Fallout Shelter*: cuanto más famoso y r
 - [ ] El equipo se ve en el sprite y el retrato del héroe
 - [ ] Animaciones y transiciones; cartas que se deslizan; héroes que brindan en la celebración
 - [ ] Móvil en horizontal
+- [ ] Música ampliada: más temas y variaciones (día, noche, tensión antes de un asalto, celebración, modo libre) para que no se haga repetitiva; transiciones suaves entre ellos
 - [ ] Ajustes: volumen y velocidad
 - [x] Guardar y cargar partidas: archivo o código de texto
 - [ ] PWA: instalable, offline, icono y pantalla de carga

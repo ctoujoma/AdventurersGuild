@@ -1,4 +1,4 @@
-import { WORLD_H, WORLD_W } from './geometry';
+import { SPAN, WORLD_H, WORLD_X0, WORLD_X1 } from './geometry';
 
 /** Cámara 2D con arrastre, inercia, zoom entero y enfoque suave a un punto. */
 export class Camera {
@@ -27,8 +27,8 @@ export class Camera {
   }
 
   private bounds() {
-    const minX = this.vw >= WORLD_W ? (WORLD_W - this.vw) / 2 : 0;
-    const maxX = this.vw >= WORLD_W ? minX : WORLD_W - this.vw;
+    const minX = this.vw >= SPAN ? WORLD_X0 + (SPAN - this.vw) / 2 : WORLD_X0;
+    const maxX = this.vw >= SPAN ? minX : WORLD_X1 - this.vw;
     const minY = this.vh >= WORLD_H ? (WORLD_H - this.vh) / 2 : 0;
     const maxY = this.vh >= WORLD_H ? minY : WORLD_H - this.vh;
     return { minX, maxX, minY, maxY };

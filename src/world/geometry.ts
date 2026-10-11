@@ -6,6 +6,13 @@
 export const WORLD_W = 512;
 export const WORLD_H = 384;
 export const GROUND = 300;
+/**
+ * El mundo visible va más allá del corte del edificio (0..WORLD_W): un patio con el camino
+ * real a la izquierda, donde llegan los asaltos, y terreno a la derecha para crecer.
+ */
+export const WORLD_X0 = -128;
+export const WORLD_X1 = 640;
+export const SPAN = WORLD_X1 - WORLD_X0;
 
 /** Paredes exteriores del edificio (cortadas) y su interior. */
 export const B = { left: 96, right: 432, inL: 104, inR: 424 } as const;
