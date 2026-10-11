@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
 import { DAYS } from '../core/balance';
-import { nextPayment, nextRank, rankOf, salaries } from '../core/game';
+import { customOf, nextPayment, nextRank, rankOf, salaries } from '../core/game';
 import type { GameState } from '../core/model';
 import { Icon } from './icons';
 
@@ -22,7 +22,7 @@ export function Hud({ game }: { game: GameState }) {
         {game.mode !== 'libre' && <small>/{DAYS}</small>}
       </div>
       <div class="hud-name">
-        <b>El Jarro Partido</b>
+        <b>{customOf(game).name}</b>
         <span>Gremio de {rankOf(game).name}</span>
       </div>
       <div class="hud-stats">

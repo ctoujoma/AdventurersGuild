@@ -165,13 +165,14 @@ export const RAT_FRAMES = [
 ];
 
 /** Banderín ondeando (dibujado por columnas). */
-export function flagFrame(t: number): PixelBuffer {
+/** Estandarte del tejado, ondeando con los colores del escudo. */
+export function flagFrame(t: number, field: string = P.wine, dark: string = P.plum): PixelBuffer {
   const b = new PixelBuffer(12, 9);
   for (let x = 0; x < 11; x++) {
     const off = Math.round(Math.sin(x * 0.8 - t * 6) * (x / 11) * 1.6);
     const h = 6 - Math.floor(x / 4);
     for (let y = 0; y < h; y++) {
-      const c = y === 0 ? P.red : y === h - 1 ? P.plum : P.wine;
+      const c = y === 0 && field === P.wine ? P.red : y === h - 1 ? dark : field;
       b.set(x + 1, 1 + y + off + Math.floor(x / 8), c);
     }
   }

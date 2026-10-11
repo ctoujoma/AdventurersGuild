@@ -3,6 +3,7 @@ import { plural } from './text';
 
 interface Props {
   day: number;
+  name: string;
   flavor: string;
   events: DawnEvent[];
   unread: number;
@@ -11,14 +12,14 @@ interface Props {
 }
 
 /** Transición entre días: la noche se aclara y se cuenta lo que ha pasado. */
-export function Dawn({ day, flavor, events, unread, onClose, onMail }: Props) {
+export function Dawn({ day, name, flavor, events, unread, onClose, onMail }: Props) {
   return (
     <div class="dawn" role="dialog" aria-label={`Amanece el día ${day}`}>
       <div class="dawn-sky" aria-hidden="true">
         <span class="dawn-sun" />
       </div>
       <article class="dawn-card">
-        <span class="eyebrow">Amanece sobre El Jarro Partido</span>
+        <span class="eyebrow">Amanece sobre {name}</span>
         <h2>Día {day}</h2>
         <p class="quote">{flavor}</p>
         <ul class="dawn-events">

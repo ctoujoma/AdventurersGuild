@@ -992,6 +992,79 @@ export function signBoard(): PixelBuffer {
   });
 }
 
+/** Letrero con el escudo del gremio: campo de color y símbolo pintado. */
+export function crestBoard(field: string, dark: string, symbol: string): PixelBuffer {
+  if (symbol === 'jarra' && field === '#a22633') return signBoard();
+  return piece(30, 20, (b) => {
+    b.rect(0, 0, 30, 20, W[4]!);
+    b.rect(1, 1, 28, 18, W[3]!);
+    b.hline(1, 1, 28, W[5]!);
+    // Escudo.
+    b.rect(8, 3, 14, 11, dark);
+    b.rect(9, 3, 12, 11, field);
+    b.rect(10, 14, 10, 2, field);
+    b.rect(12, 16, 6, 1, field);
+    b.hline(9, 3, 12, P.gold);
+    const s = P.sand;
+    switch (symbol) {
+      case 'jarra':
+        b.rect(12, 6, 5, 6, s);
+        b.rect(17, 7, 2, 1, s);
+        b.rect(18, 8, 1, 2, s);
+        b.line(14, 6, 15, 9, dark);
+        break;
+      case 'espada':
+        b.vline(15, 4, 9, P.white);
+        b.hline(12, 11, 7, P.gold);
+        b.vline(15, 12, 3, s);
+        break;
+      case 'llave':
+        b.ellipse(15, 7, 2.5, 2.5, s);
+        b.set(15, 7, field);
+        b.vline(15, 9, 6, s);
+        b.hline(15, 12, 3, s);
+        b.hline(15, 14, 2, s);
+        break;
+      case 'estrella':
+        b.vline(15, 4, 11, P.lemon);
+        b.hline(10, 9, 11, P.lemon);
+        b.line(12, 6, 18, 12, P.gold);
+        b.line(18, 6, 12, 12, P.gold);
+        break;
+      case 'dragon':
+        b.rect(12, 8, 7, 4, s);
+        b.rect(17, 6, 3, 3, s);
+        b.set(19, 7, dark);
+        b.line(11, 7, 14, 5, s);
+        b.line(12, 12, 11, 14, s);
+        b.line(17, 12, 18, 14, s);
+        break;
+      case 'luna':
+        b.ellipse(15, 9, 4.5, 4.5, s);
+        b.ellipse(17, 8, 3.5, 3.5, field);
+        break;
+    }
+    b.rect(4, 2, 2, 2, P.gold);
+    b.rect(24, 2, 2, 2, P.gold);
+  });
+}
+
+/** Perro guardián tumbado (dos poses de cola). */
+export function dog(tail: boolean): PixelBuffer {
+  return piece(16, 10, (b) => {
+    b.rect(3, 4, 9, 4, P.cocoa);
+    b.rect(11, 2, 4, 4, P.cocoa);
+    b.set(14, 4, P.black);
+    b.set(12, 3, P.black);
+    b.rect(10, 1, 2, 2, P.umber);
+    b.rect(3, 8, 2, 2, P.umber);
+    b.rect(9, 8, 2, 2, P.umber);
+    b.hline(4, 6, 7, P.clay);
+    if (tail) b.line(3, 4, 0, 1, P.cocoa);
+    else b.line(3, 5, 0, 6, P.cocoa);
+  });
+}
+
 export function bush(seed: string, w = 22, h = 12): PixelBuffer {
   return piece(w, h, (b) => {
     const rng = new Rng(seed);

@@ -1,6 +1,6 @@
 import { bufferCanvas, drawBuffer } from '../art/canvas';
 import { FEET_Y, heroSprites, type HeroSprites } from '../art/heroes/hero';
-import type { HeroLook, HeroMarks } from '../art/heroes/look';
+import { generateLook, type HeroLook, type HeroMarks } from '../art/heroes/look';
 import type { TrophyIcon } from '../core/model';
 import type { GearView } from './annex';
 import { P } from '../art/palette';
@@ -48,6 +48,10 @@ export interface SceneModel {
   loot: number;
   /** Caídos: una vela por cada uno en la capilla. */
   fallen: number;
+  /** Escudo del gremio (letrero), personal contratado y perro guardián. */
+  crest: { field: string; dark: string; symbol: string };
+  staff: string[];
+  dog: boolean;
   /** Equipo sin dueño (tablero de la bodega) y trofeos de la sala. */
   gear: GearView[];
   trophies: TrophyIcon[];
@@ -197,6 +201,14 @@ export class WorldScene {
   private last = 0;
   private raf = 0;
   private keeper = { x: 150, dir: 1 as 1 | -1, target: 150, timer: 2, walking: false, dist: 0 };
+  private signImg: PixelBuffer = Prop.signBoard();
+  private signKey = '';
+  private staffSpr = {
+    cocinera: heroSprites(generateLook('cocinera', 'tabernero', 'f'), {}),
+    bardo: heroSprites({ ...generateLook('bardo', 'picaro', 'm'), headgear: 'gorra' }, {}),
+    mozo: heroSprites({ ...generateLook('mozo', 'explorador', 'm'), headgear: null }, {}),
+  };
+  private nextNote = 0;
   private keeperSpr = heroSprites(
     { ...UNCLE, hairStyle: 'corto', hairColor: 1, beard: true, skin: 2 },
     {},
@@ -288,6 +300,11 @@ export class WorldScene {
       this.ambientC = ambientCanvas(this.world.ambient);
       this.spots = hotspots(model.fac, model.trophies.length);
       if (prev) this.celebrateUpgrades(prev.fac, model.fac);
+    }
+    const sk = JSON.stringify(model.crest);
+    if (sk !== this.signKey) {
+      this.signKey = sk;
+      this.signImg = Prop.crestBoard(model.crest.field, model.crest.dark, model.crest.symbol);
     }
     // Héroes: crear, actualizar o quitar.
     for (const id of [...this.heroes.keys()])
@@ -836,7 +853,7 @@ export class WorldScene {
       drawBuffer(ctx, img, x - cx, y - cy, flip);
 
     // Banderín y búho en el tejado.
-    at(flagFrame(t), ROOF.apexX, ROOF.apexY - 19);
+    at(flagFrame(t, this.model.crest.field, this.model.crest.dark), ROOF.apexX, ROOF.apexY - 19);
     const owlImg =
       t < this.owl.lookUntil
         ? OWL_FRAMES.look
@@ -867,7 +884,7 @@ export class WorldScene {
       for (let i = 0; i <= 8; i++)
         ctx.fillRect(Math.round(ax + ((bx - ax) * i) / 8) - cx, 168 + i - cy, 1, 1);
     }
-    at(signBoard, sx, 176);
+    at(this.signImg, sx, 176);
 
     // Murciélagos del desván.
     for (const b of this.bats) {
@@ -910,6 +927,23 @@ export class WorldScene {
       ? this.keeperSpr.walk[Math.floor(k.dist / 3.5) % 4]!
       : this.blinkOr(this.keeperSpr, 0.37);
     at(kImg, k.x - 9, 286 - FEET_Y, k.walking && k.dir < 0);
+
+    // Personal contratado: la cocinera junto a la barra, el bardo ante la chimenea y el mozo
+    // en la enfermería.
+    const staff = this.model.staff;
+    if (staff.includes('cocinera'))
+      at(this.blinkOr(this.staffSpr.cocinera, 0.71), 178 - 9, 286 - FEET_Y);
+    if (staff.includes('bardo')) {
+      at(this.blinkOr(this.staffSpr.bardo, 0.13), 304 - 9, F.hall.floor - FEET_Y);
+      if (t > this.nextNote) {
+        this.particles.spawn('note', 306, F.hall.floor - 24);
+        this.nextNote = t + 1.1 + Math.random();
+      }
+    }
+    if (staff.includes('mozo'))
+      at(this.blinkOr(this.staffSpr.mozo, 0.52), 336 - 9, F.upper.floor - FEET_Y);
+    // Perro guardián a la puerta.
+    if (this.model.dog) at(Prop.dog(Math.floor(t * 3) % 2 === 0), 66, GROUND - 10);
 
     // Heridos en cama.
     const beds = sickbeds(this.model.fac);
@@ -1340,8 +1374,6 @@ export class WorldScene {
     );
   }
 }
-
-const signBoard = Prop.signBoard();
 
 function cloud(i: number): PixelBuffer {
   const b = new PixelBuffer(46, 14);

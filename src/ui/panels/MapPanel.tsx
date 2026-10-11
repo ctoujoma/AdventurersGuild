@@ -1,6 +1,7 @@
 import { useMemo } from 'preact/hooks';
 import { fogBuffer, mapBuffer } from '../../art/map';
 import { chainDef } from '../../core/chains';
+import { customOf } from '../../core/game';
 import type { GameState, Hero } from '../../core/model';
 import { dangerClass } from '../../data/labels';
 import {
@@ -114,9 +115,9 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
               <small>{n}</small>
             </span>
           ))}
-        <span class="map-tavern" style={pct(TAVERN.x, TAVERN.y)} title="El Jarro Partido">
+        <span class="map-tavern" style={pct(TAVERN.x, TAVERN.y)} title={customOf(game).name}>
           <b>⌂</b>
-          <small>El Jarro Partido</small>
+          <small>{customOf(game).name}</small>
         </span>
         {game.quests.map((q) => {
           const p = placeAt(q.place);

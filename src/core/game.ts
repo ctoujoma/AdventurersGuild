@@ -35,6 +35,7 @@ import {
   tavernIncome,
 } from './balance';
 import { tripDays } from './classes';
+import { DEFAULT_NAME, DISHES, DOG_PRICE, STAFF, type StaffId } from '../data/custom';
 import { arrival, checkFeats, checkMonth, emptyStats, startMonth } from './feats';
 import { stepRaids } from './raids';
 import { advanceChain, offerChain } from './chains';
@@ -46,6 +47,7 @@ import {
   type Facilities,
   type GameState,
   type Hero,
+  type Custom,
   type Quest,
   type Report,
 } from './model';
@@ -69,6 +71,9 @@ export type Action =
   | { type: 'ackOpening' }
   | { type: 'guard'; id: string; on: boolean }
   | { type: 'choose'; index: number }
+  | { type: 'custom'; patch: Partial<Pick<Custom, 'name' | 'color' | 'symbol' | 'dish'>> }
+  | { type: 'staff'; id: StaffId; on: boolean }
+  | { type: 'buyDog' }
   | { type: 'endDay' };
 
 // ---------- Consultas ----------
@@ -78,7 +83,20 @@ const has = (h: Hero, id: string) => h.traits.some((t) => t.id === id);
 /** Héroes que siguen en el gremio (ocupan cama aunque estén fuera). */
 export const roster = (s: GameState) =>
   s.heroes.filter((h) => h.status !== 'muerto' && h.status !== 'desaparecido');
-export const salaries = (s: GameState) => roster(s).reduce((a, h) => a + h.salary, 0);
+export const salaries = (s: GameState) =>
+  roster(s).reduce((a, h) => a + h.salary, 0) +
+  (s.custom?.staff ?? []).reduce((a, id) => a + STAFF[id].salary, 0);
+
+/** La taberna tal como la ha dejado el jugador (o como la dejó el tío). */
+export const customOf = (s: GameState): Custom =>
+  s.custom ?? {
+    name: DEFAULT_NAME,
+    color: 'vino',
+    symbol: 'jarra',
+    dish: 'pan',
+    staff: [],
+    dog: false,
+  };
 export const rankOf = (s: GameState) => RANKS[rankIndex(s.rep)]!;
 export const nextRank = (s: GameState) => RANKS[rankIndex(s.rep) + 1] ?? null;
 /** Próximo pago: cuota de la deuda más salarios, o solo salarios en modo libre. */
@@ -323,6 +341,31 @@ export function reduce(state: GameState, action: Action): GameState {
       }
       return s;
     }
+    case 'custom': {
+      const patch = { ...action.patch };
+      if (patch.name !== undefined) patch.name = patch.name.trim().slice(0, 24) || DEFAULT_NAME;
+      return { ...state, custom: { ...customOf(state), ...patch } };
+    }
+    case 'staff': {
+      const c = customOf(state);
+      const has = c.staff.includes(action.id);
+      if (has === action.on) return state;
+      const fee = STAFF[action.id].fee;
+      if (action.on && state.gold < fee) return state;
+      return {
+        ...state,
+        gold: state.gold - (action.on ? fee : 0),
+        custom: {
+          ...c,
+          staff: action.on ? [...c.staff, action.id] : c.staff.filter((x) => x !== action.id),
+        },
+      };
+    }
+    case 'buyDog': {
+      const c = customOf(state);
+      if (c.dog || state.gold < DOG_PRICE) return state;
+      return { ...state, gold: state.gold - DOG_PRICE, custom: { ...c, dog: true } };
+    }
     case 'choose': {
       if (!state.event) return state;
       const s = structuredClone(state);
@@ -381,7 +424,9 @@ export function endDay(state: GameState): GameState {
   s.day++;
 
   // La amenaza regional puede llevarse los ingresos del día (caravana asaltada).
-  const income = tavernIncome(s.fac.tab, s.rep, s.trophies.length);
+  const income =
+    tavernIncome(s.fac.tab, s.rep, s.trophies.length) +
+    (s.fac.tab > 0 && customOf(s).staff.includes('bardo') ? 8 : 0);
   const lost = stepThreat(s, rng, events, income);
   if (income - lost > 0) {
     s.gold += income - lost;
@@ -412,7 +457,7 @@ export function endDay(state: GameState): GameState {
   // Curación y desaparecidos.
   for (const h of s.heroes) {
     if (h.status === 'herido') {
-      h.days -= healRate(s.fac.enf);
+      h.days -= healRate(s.fac.enf) + (customOf(s).staff.includes('mozo') ? 1 : 0);
       if (h.days <= 0) {
         h.status = 'ok';
         h.days = 0;
@@ -459,12 +504,19 @@ export function endDay(state: GameState): GameState {
         });
     }
 
+  // Plato de la casa: cuesta cada noche y anima a quien descansa (el doble con cocinera).
+  const c = customOf(s);
+  const dish = DISHES[c.dish];
+  const fed = dish.cost === 0 || s.gold >= dish.cost;
+  if (fed) s.gold -= dish.cost;
+  const dishMorale = fed ? dish.morale * (c.staff.includes('cocinera') ? 2 : 1) : 0;
+
   // Moral: se descansa en la taberna; quien está harto se va, quien está desanimado pide más.
   const deserters: Hero[] = [];
   for (const h of s.heroes) {
     if (h.status !== 'ok') continue;
     const cap = restCap(s.fac.tab) + (has(h, 'bebedor') && s.fac.tab >= 2 ? 10 : 0);
-    const gain = restMorale(s.fac.tab) + chapelRest(s.fac.cap);
+    const gain = restMorale(s.fac.tab) + chapelRest(s.fac.cap) + dishMorale;
     if (h.morale < cap) h.morale = Math.min(cap, h.morale + gain);
     if (h.morale < MORALE_QUIT && !has(h, 'leal') && rng.chance(DESERT_CHANCE)) {
       deserters.push(h);

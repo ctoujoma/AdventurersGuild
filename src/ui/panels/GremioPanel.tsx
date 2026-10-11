@@ -17,6 +17,7 @@ interface Props {
   onSellTrophy: (id: string) => void;
   onSaves: () => void;
   onLibro: () => void;
+  onTaberna: () => void;
   onTitle: () => void;
 }
 
@@ -30,6 +31,7 @@ export function GremioPanel({
   onSaves,
   onTitle,
   onLibro,
+  onTaberna,
 }: Props) {
   const keys = Object.keys(FACILITY_INFO) as (keyof Facilities)[];
   const OUTSIDE: (keyof Facilities)[] = ['forja', 'establo', 'patio', 'empal', 'torre'];
@@ -106,6 +108,11 @@ export function GremioPanel({
           {game.heroes.filter((h) => h.guard).length} de guardia)
         </span>
       </div>
+
+      <button class="card-paper libro-link" onClick={onTaberna}>
+        <b>Tu taberna</b>
+        <span class="muted">Nombre, escudo, plato de la casa, personal y perro</span>
+      </button>
 
       <button class="card-paper libro-link" onClick={onLibro}>
         <b>Libro de hazañas</b>

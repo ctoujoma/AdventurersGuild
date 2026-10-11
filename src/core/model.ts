@@ -2,6 +2,7 @@
  * Modelo de la partida. Todo es JSON serializable: guardar es `JSON.stringify(state)`.
  * El núcleo no conoce el DOM ni el arte; el aspecto de cada héroe sale de su `seed`.
  */
+import type { CrestColor, CrestSymbol, Dish, StaffId } from '../data/custom';
 import type { Attrs, Challenge, ClassId, SkillId, Trait } from './party';
 
 export const SAVE_VERSION = 1;
@@ -169,6 +170,15 @@ export interface DawnEvent {
   k?: ChipKind;
 }
 
+export interface Custom {
+  name: string;
+  color: CrestColor;
+  symbol: CrestSymbol;
+  dish: Dish;
+  staff: StaffId[];
+  dog: boolean;
+}
+
 export interface PendingEvent {
   id: string;
   /** Héroes que aparecen en el suceso. */
@@ -297,6 +307,8 @@ export interface GameState {
   raid?: Raid | null;
   /** Sin asaltos hasta este día (tras repeler uno, se corre la voz). */
   truce?: number;
+  /** Cómo es la taberna: nombre, escudo, plato, personal y mascota. */
+  custom?: Custom;
   /** Amenaza regional (0–100): crece si se ignoran o fallan las historias. */
   threat?: number;
   /** Suceso de la taberna esperando una decisión. */

@@ -175,20 +175,22 @@ Inspirado en los ataques al refugio de *Fallout Shelter*: cuanto más famoso y r
 
 - [ ] **Combate con estilo** (pendiente): armas visibles y ataques por clase (tajo del guerrero, puñaladas del pícaro, proyectil del mago, flechas del explorador, maza y curación del clérigo), destello al recibir golpes, retroceso, bandidos variados (garrote, cuchillo, un jefe). Servirá también para los jefes del futuro
 
-### Fase 7: Tu taberna · M
+### Fase 7: Tu taberna · M ✅
 
-**Personalización**
-- [ ] Nombre de la taberna y escudo del gremio (colores y símbolo): se ven en el letrero, los estandartes y los sellos de las cartas
+**Personalización** (panel «Tu taberna», desde El gremio o tocando el letrero)
+- [x] Nombre de la taberna y escudo del gremio (5 colores y 6 símbolos): se ven en el letrero, el estandarte del tejado, el marcador, el amanecer, el mapa, la pantalla de título y el lacre de las cartas (con la inicial)
+- [x] Personal que se contrata y se ve por la taberna: cocinera tras la barra (el plato anima el doble), bardo ante la chimenea (+8 monedas al día), mozo en la enfermería (curan un día antes). Entrada de 30 y 6 de salario por semana cada uno
+- [x] Plato de la casa: pan y queso (gratis), guiso (4/noche, +2 de moral) o asado (10/noche, +4)
+- [x] Perro guardián (60 monedas): +3 de defensa y más probabilidad de chivatazo; duerme junto a la puerta
 - [ ] Huecos de decoración con efecto pequeño: diana (moral) o mesa de naipes (ingresos, alguna pelea), escenario del bardo o más mesas…
-- [ ] Personal que se contrata y se ve por la taberna: cocinera (moral), bardo (ingresos por la noche), mozo (curación)
-- [ ] Carta de la casa: el plato del día, con efectos y frases de ambiente
-- [ ] Mascotas (un perro guardián que también avisa de asaltos, un cuervo) y decoración de fiestas
+- [ ] Más mascotas (un cuervo mensajero) y decoración de fiestas
 
 **Expansión del edificio** (aprovecha la escena ancha de la fase 6)
-- [ ] Forja: mejorar y reparar equipo
-- [ ] Patio de entrenamiento con muñecos: experiencia mientras descansan
-- [ ] Establo: viajes más cortos y escoltas mejor pagadas
-- [ ] Torre del vigía sobre el tejado: avisa de asaltos y amenazas, trae encargos de más rango
+- [x] Forja: el equipo rinde más (+1 a su primer atributo por nivel)
+- [x] Patio de entrenamiento con muñecos: experiencia mientras descansan
+- [x] Establo: viajes más cortos y escoltas mejor pagadas
+- [x] Empalizada: más defensa contra asaltos
+- [x] Torre del vigía: avisa siempre de los asaltos y, a nivel 2, trae un encargo más al tablón
 - [ ] Habitaciones de veteranos: más moral y sus trofeos personales
 
 ### Fase 8: Pulido y pruebas · M

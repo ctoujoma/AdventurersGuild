@@ -4,6 +4,7 @@
  * que estén en casa (los de guardia, mejor) y el resultado es saqueo o tregua.
  * Todo se aplica sobre el estado ya copiado al terminar el día.
  */
+import { DOG_DEFENSE, DOG_TIPOFF } from '../data/custom';
 import {
   BANDS,
   RAID_EMPTY,
@@ -54,7 +55,8 @@ export function defense(s: GameState): number {
   const armed = equip(ds, s.fac);
   return (
     armed.reduce((a, h, i) => a + skill(h, 'Combate', true) + (ds[i]!.guard ? GUARD_BONUS : 0), 0) +
-    (ds.length ? (PALISADE[s.fac.empal] ?? 0) : 0)
+    (ds.length ? (PALISADE[s.fac.empal] ?? 0) : 0) +
+    (s.custom?.dog ? DOG_DEFENSE : 0)
   );
 }
 
@@ -62,7 +64,11 @@ export function defense(s: GameState): number {
 function tipoff(s: GameState, rng: Rng, events: DawnEvent[], firstTry: boolean): void {
   const raid = s.raid!;
   const scout = defendersOf(s).find((h) => h.cls === 'explorador');
-  const p = (firstTry ? RAID_BASE : 0.25) + (scout ? 0.2 : 0) + (s.fac.mapas >= 1 ? 0.15 : 0);
+  const p =
+    (firstTry ? RAID_BASE : 0.25) +
+    (scout ? 0.2 : 0) +
+    (s.fac.mapas >= 1 ? 0.15 : 0) +
+    (s.custom?.dog ? DOG_TIPOFF : 0);
   // Desde la torre del vigía se ven venir siempre.
   if (s.fac.torre < 1 && !rng.chance(p)) return;
   raid.warned = true;

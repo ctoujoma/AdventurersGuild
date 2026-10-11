@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
-import { canHire, newGame, reduce, type Action } from '../core/game';
+import { canHire, customOf, newGame, reduce, type Action } from '../core/game';
+import { STAFF } from '../data/custom';
 import type { Facilities, GameState } from '../core/model';
 import { CAPTIONS, FACILITY_INFO } from '../data/labels';
 import { loadRecords, mergeRecords, saveRecords } from '../platform/records';
@@ -28,13 +29,14 @@ import { GremioPanel } from './panels/GremioPanel';
 import { HeroesPanel } from './panels/HeroesPanel';
 import { MailPanel } from './panels/MailPanel';
 import { TablonPanel } from './panels/TablonPanel';
+import { TabernaPanel } from './panels/TabernaPanel';
 import { QuestSheet } from './QuestSheet';
 import { SceneView } from './SceneView';
 import { TabBar, type TabId } from './TabBar';
 import { listNames, plural } from './text';
 import { sceneModel } from './view';
 
-type PanelId = Exclude<TabId, 'taberna'> | 'correo' | 'fuera' | 'libro';
+type PanelId = Exclude<TabId, 'taberna'> | 'correo' | 'fuera' | 'libro' | 'casa';
 
 interface Bubble {
   text: string;
@@ -195,6 +197,9 @@ export function App() {
         return;
       case 'despacho':
         openPanel('libro');
+        return;
+      case 'letrero':
+        openPanel('casa');
         return;
       case 'equipo':
       case 'cofres':
@@ -461,6 +466,7 @@ export function App() {
               onSell={sell}
               onSaves={() => setSaveMenu(true)}
               onLibro={() => openPanel('libro')}
+              onTaberna={() => openPanel('casa')}
               onTitle={toTitle}
               onSellTrophy={(id) => {
                 const t = game.trophies.find((x) => x.id === id);
@@ -468,6 +474,31 @@ export function App() {
                 audio.play('coin');
                 if (t)
                   toast(`Vendido: ${t.name} por ${t.value} monedas. La pared se queda más sosa.`);
+              }}
+            />
+          </Panel>
+        )}
+        {panel === 'casa' && (
+          <Panel title="Tu taberna" onClose={() => openPanel(null)}>
+            <TabernaPanel
+              game={game}
+              onCustom={(patch) => {
+                dispatch({ type: 'custom', patch });
+                audio.play('click');
+              }}
+              onStaff={(id, on) => {
+                dispatch({ type: 'staff', id, on });
+                audio.play(on ? 'coin' : 'close');
+                toast(
+                  on
+                    ? `${STAFF[id].name}: contratado. Empieza esta noche.`
+                    : `${STAFF[id].name}: despedido.`,
+                );
+              }}
+              onDog={() => {
+                dispatch({ type: 'buyDog' });
+                audio.play('coin');
+                toast('Tizón ya duerme junto a la puerta. ¡Guau!');
               }}
             />
           </Panel>
@@ -505,7 +536,12 @@ export function App() {
           />
         )}
         {report && (
-          <Letter report={report} heroes={game.heroes} onClose={() => setReportId(null)} />
+          <Letter
+            report={report}
+            heroes={game.heroes}
+            seal={customOf(game)}
+            onClose={() => setReportId(null)}
+          />
         )}
         {cardHero && (
           <HeroCard
@@ -545,6 +581,7 @@ export function App() {
         {dawnOpen && screen === 'game' && (
           <Dawn
             day={game.day}
+            name={customOf(game).name}
             flavor={game.flavor}
             events={game.dawn}
             unread={unread}
@@ -560,7 +597,7 @@ export function App() {
               audio.play('dawn');
               dispatch({ type: 'ackOpening' });
               scene.current?.cheer('barra');
-              toast('El Jarro Partido abre sus puertas al mundo. ¡A por la leyenda!');
+              toast(`${customOf(game).name} abre sus puertas al mundo. ¡A por la leyenda!`);
             }}
             onRetry={restart}
           />
