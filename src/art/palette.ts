@@ -1,84 +1,157 @@
 /**
- * Paleta única del juego. Todo el pixel art (héroes, taberna, iconos) sale de aquí,
- * así el mundo se ve coherente y se comparte con la Tienda de pociones.
+ * Paleta del juego: Endesga 32 (rampas con cambio de tono, sombras hacia el púrpura y
+ * luces hacia el amarillo) más unos pocos tonos de piel y madera añadidos a mano.
+ * Todo el pixel art sale de aquí; la Tienda de pociones usará la misma.
  */
-export const C = {
-  outline: '#1b1424',
-  ink: '#2b2233',
+export const P = {
+  black: '#181425',
+  navy: '#262b44',
+  slate: '#3a4466',
+  steel: '#5a6988',
+  fog: '#8b9bb4',
+  mist: '#c0cbdc',
+  white: '#ffffff',
 
-  wood0: '#3d2617',
-  wood1: '#5e3b22',
-  wood2: '#84552f',
-  wood3: '#ad7a46',
-  wood4: '#d3a467',
+  plum: '#3e2731',
+  rust: '#733e39',
+  clay: '#b86f50',
+  tan: '#e4a672',
+  sand: '#ead4aa',
 
-  stone0: '#2c2f3b',
-  stone1: '#464a5a',
-  stone2: '#6a6f80',
-  stone3: '#959aa8',
+  brick: '#be4a2f',
+  amber: '#d77643',
+  skin: '#e8b796',
+  skinS: '#c28569',
 
-  plaster0: '#7c6450',
-  plaster1: '#a48a6c',
-  plaster2: '#c9b08a',
+  wine: '#a22633',
+  red: '#e43b44',
+  hot: '#ff0044',
 
-  fire0: '#8c2d1c',
-  fire1: '#d2562a',
-  fire2: '#f19a38',
-  fire3: '#ffd772',
-  fire4: '#fff4c2',
+  grape: '#68386c',
+  rose: '#b55088',
+  coral: '#f6757a',
 
-  red0: '#6e1f25',
-  red1: '#a8333a',
-  red2: '#d65a4e',
+  orange: '#f77622',
+  gold: '#feae34',
+  lemon: '#fee761',
 
-  blue0: '#1c2a4a',
-  blue1: '#2e4c80',
-  blue2: '#4f7fc0',
-  blue3: '#8fb8e8',
+  deep: '#193c3e',
+  forest: '#265c42',
+  leaf: '#3e8948',
+  lime: '#63c74d',
 
-  green0: '#1f3a26',
-  green1: '#3a6334',
-  green2: '#64944a',
-  green3: '#9cc46a',
+  ocean: '#124e89',
+  sky: '#0099db',
+  cyan: '#2ce8f5',
 
-  purple0: '#2e2140',
-  purple1: '#4d3a6b',
-  purple2: '#7a62a0',
-
-  cloth0: '#c7bfae',
-  cloth1: '#ece5d3',
-  cloth2: '#fffaf0',
-
-  gold0: '#8a6418',
-  gold1: '#c99a2e',
-  gold2: '#f0cd5c',
-
-  sky0: '#141a33',
-  sky1: '#1a2244',
-  sky2: '#20294f',
-  star: '#ffeec0',
-
-  dirt0: '#2a1e18',
-  dirt1: '#3a2a20',
-  dirt2: '#4e382a',
+  // Añadidos: madera intermedia y pieles oscuras.
+  bark: '#4f2f2d',
+  oak: '#945a3c',
+  umber: '#5c3a2e',
+  cocoa: '#8f5640',
+  ebony: '#2e1f27',
+  mocha: '#6e4232',
 } as const;
 
-export type ColorName = keyof typeof C;
+export type Ramp = readonly string[];
 
-/** Tonos de piel: [base, sombra]. */
-export const SKIN_TONES: readonly (readonly [string, string])[] = [
-  ['#f3cfa6', '#d9a57a'],
-  ['#e0a878', '#bb7d50'],
-  ['#b07446', '#8a5532'],
-  ['#7a4a2c', '#5a341e'],
+/** Rampas de material, de la sombra a la luz. */
+export const R = {
+  wood: [P.black, P.plum, P.bark, P.rust, P.oak, P.clay, P.tan],
+  woodDark: [P.black, P.plum, P.bark, P.rust, P.oak],
+  stone: [P.black, P.navy, P.slate, P.steel, P.fog, P.mist],
+  plaster: [P.rust, P.clay, P.skinS, P.skin, P.sand],
+  whitewash: [P.steel, P.fog, P.mist, P.white],
+  roof: [P.black, P.plum, P.wine, P.brick, P.amber],
+  leaf: [P.black, P.deep, P.forest, P.leaf, P.lime],
+  gold: [P.rust, P.brick, P.orange, P.gold, P.lemon, P.white],
+  fire: [P.wine, P.red, P.orange, P.gold, P.lemon, P.white],
+  metal: [P.black, P.slate, P.steel, P.fog, P.mist, P.white],
+  dirt: [P.black, P.ebony, P.plum, P.umber, P.bark],
+  cloth: {
+    red: [P.plum, P.wine, P.red, P.coral],
+    blue: [P.black, P.navy, P.ocean, P.sky],
+    purple: [P.black, P.plum, P.grape, P.rose],
+    green: [P.black, P.deep, P.forest, P.leaf, P.lime],
+    white: [P.slate, P.steel, P.fog, P.mist, P.white],
+    cream: [P.rust, P.clay, P.tan, P.sand],
+    leather: [P.black, P.plum, P.bark, P.rust, P.oak],
+  },
+} as const;
+
+/** Tonos de piel (sombra → luz). */
+export const SKIN: readonly Ramp[] = [
+  [P.rust, P.clay, P.skinS, P.skin, P.sand],
+  [P.plum, P.rust, P.clay, P.tan, P.skin],
+  [P.ebony, P.umber, P.cocoa, P.clay, P.tan],
+  [P.black, P.ebony, P.umber, P.mocha, P.cocoa],
 ];
 
-/** Colores de pelo: [base, sombra]. */
-export const HAIR_COLORS: readonly (readonly [string, string])[] = [
-  ['#2a2230', '#16111c'], // negro
-  ['#5e3b22', '#3d2617'], // castaño
-  ['#a8462a', '#6e2a1a'], // pelirrojo
-  ['#e0b85a', '#b08a34'], // rubio
-  ['#9a9aa4', '#6a6a74'], // canoso
-  ['#e8e4dc', '#b8b2a8'], // blanco
+/** Colores de pelo (sombra → luz). */
+export const HAIR: readonly Ramp[] = [
+  [P.black, P.navy, P.slate, P.steel], // negro
+  [P.black, P.plum, P.rust, P.oak], // castaño
+  [P.plum, P.rust, P.brick, P.amber, P.orange], // pelirrojo
+  [P.rust, P.amber, P.gold, P.lemon], // rubio
+  [P.slate, P.steel, P.fog, P.mist], // canoso
+  [P.steel, P.fog, P.mist, P.white], // blanco
 ];
+
+export const HAIR_NAMES = ['negro', 'castaño', 'pelirrojo', 'rubio', 'canoso', 'blanco'];
+
+/** Colores de ojos [sombra, base]. */
+export const EYES: readonly Ramp[] = [
+  [P.plum, P.rust], // marrones
+  [P.ocean, P.sky], // azules
+  [P.forest, P.leaf], // verdes
+  [P.slate, P.fog], // grises
+  [P.brick, P.gold], // ámbar
+];
+
+/** Un tono más oscuro dentro de su rampa: sirve para contornos selectivos y sombras. */
+export const DARKER: Readonly<Record<string, string>> = {
+  [P.black]: P.black,
+  [P.navy]: P.black,
+  [P.slate]: P.navy,
+  [P.steel]: P.slate,
+  [P.fog]: P.steel,
+  [P.mist]: P.fog,
+  [P.white]: P.mist,
+  [P.plum]: P.black,
+  [P.rust]: P.plum,
+  [P.clay]: P.rust,
+  [P.tan]: P.clay,
+  [P.sand]: P.tan,
+  [P.brick]: P.rust,
+  [P.amber]: P.brick,
+  [P.skin]: P.skinS,
+  [P.skinS]: P.clay,
+  [P.wine]: P.plum,
+  [P.red]: P.wine,
+  [P.hot]: P.red,
+  [P.grape]: P.plum,
+  [P.rose]: P.grape,
+  [P.coral]: P.rose,
+  [P.orange]: P.brick,
+  [P.gold]: P.orange,
+  [P.lemon]: P.gold,
+  [P.deep]: P.black,
+  [P.forest]: P.deep,
+  [P.leaf]: P.forest,
+  [P.lime]: P.leaf,
+  [P.ocean]: P.navy,
+  [P.sky]: P.ocean,
+  [P.cyan]: P.sky,
+  [P.bark]: P.plum,
+  [P.oak]: P.rust,
+  [P.umber]: P.ebony,
+  [P.cocoa]: P.umber,
+  [P.ebony]: P.black,
+  [P.mocha]: P.umber,
+};
+
+export function darker(color: string, steps = 1): string {
+  let c = color;
+  for (let i = 0; i < steps; i++) c = DARKER[c] ?? P.black;
+  return c;
+}

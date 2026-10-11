@@ -1,4 +1,5 @@
 import type { Grid } from '../sprite';
+import type { OutfitId } from './look';
 
 /**
  * Capas de los héroes. Cuerpo, ropa, pelo y armas son cuadrículas de 16×22
@@ -132,9 +133,7 @@ export const OUTFITS = {
     '...oooo..oooo...',
     '...OOOO..OOOO...',
   ],
-} satisfies Record<string, Grid>;
-
-export type OutfitId = keyof typeof OUTFITS;
+} satisfies Record<OutfitId, Grid>;
 
 export const HAIR = {
   corto: [
@@ -184,8 +183,6 @@ export const HAIR = {
   ],
   calvo: [],
 } satisfies Record<string, Grid>;
-
-export type HairStyle = keyof typeof HAIR;
 
 export const BEARD: Grid = [
   ...Array.from({ length: 7 }, () => '................'),
@@ -241,8 +238,6 @@ export const HELMS = {
     '...cccccccccc...',
   ],
 } satisfies Record<string, Grid>;
-
-export type HeadgearId = keyof typeof HATS | keyof typeof HELMS;
 
 export const WEAPONS = {
   guerrero: [

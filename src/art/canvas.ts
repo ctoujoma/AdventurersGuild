@@ -1,43 +1,36 @@
-import type { Pixels } from './sprite';
+import type { PixelBuffer } from './pixel';
 
-/** Convierte `Pixels` en un canvas, con caché: cada sprite se rasteriza una sola vez. */
-const cache = new WeakMap<Pixels, HTMLCanvasElement>();
+/** Convierte un PixelBuffer en canvas, con caché: cada imagen se rasteriza una sola vez. */
+const cache = new WeakMap<PixelBuffer, HTMLCanvasElement>();
 
-export function toCanvas(p: Pixels): HTMLCanvasElement {
-  const hit = cache.get(p);
+export function bufferCanvas(b: PixelBuffer): HTMLCanvasElement {
+  const hit = cache.get(b);
   if (hit) return hit;
   const canvas = document.createElement('canvas');
-  canvas.width = p.w;
-  canvas.height = p.h;
+  canvas.width = b.w;
+  canvas.height = b.h;
   const ctx = canvas.getContext('2d')!;
-  const img = ctx.createImageData(p.w, p.h);
-  p.data.forEach((color, i) => {
-    if (!color) return;
-    const n = parseInt(color.slice(1), 16);
-    img.data[i * 4] = (n >> 16) & 255;
-    img.data[i * 4 + 1] = (n >> 8) & 255;
-    img.data[i * 4 + 2] = n & 255;
-    img.data[i * 4 + 3] = 255;
-  });
+  const img = ctx.createImageData(b.w, b.h);
+  img.data.set(new Uint8Array(b.data.buffer, b.data.byteOffset, b.data.byteLength));
   ctx.putImageData(img, 0, 0);
-  cache.set(p, canvas);
+  cache.set(b, canvas);
   return canvas;
 }
 
-export function drawPixels(
+export function drawBuffer(
   ctx: CanvasRenderingContext2D,
-  p: Pixels,
+  b: PixelBuffer,
   x: number,
   y: number,
   flip = false,
 ): void {
-  const img = toCanvas(p);
+  const img = bufferCanvas(b);
   if (!flip) {
     ctx.drawImage(img, Math.round(x), Math.round(y));
     return;
   }
   ctx.save();
-  ctx.translate(Math.round(x) + p.w, Math.round(y));
+  ctx.translate(Math.round(x) + b.w, Math.round(y));
   ctx.scale(-1, 1);
   ctx.drawImage(img, 0, 0);
   ctx.restore();

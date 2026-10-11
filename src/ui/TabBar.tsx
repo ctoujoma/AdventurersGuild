@@ -1,89 +1,13 @@
+import { Icon, type IconName } from './icons';
+
 export type TabId = 'taberna' | 'tablon' | 'heroes' | 'gremio';
 
-const TABS: { id: TabId; label: string; icon: string[] }[] = [
-  // Iconos de 9×9 en pixel art: '#' relleno, '+' brillo.
-  {
-    id: 'taberna',
-    label: 'Taberna',
-    icon: [
-      '.#.#.....',
-      '#######..',
-      '#+####.#.',
-      '#+####..#',
-      '#+####..#',
-      '#+####.#.',
-      '######...',
-      '######...',
-      '.####....',
-    ],
-  },
-  {
-    id: 'tablon',
-    label: 'Tablón',
-    icon: [
-      '#########',
-      '#+++++++#',
-      '#+#+++#+#',
-      '#+++++++#',
-      '#++#+#++#',
-      '#+++++++#',
-      '#########',
-      '.#.....#.',
-      '#.......#',
-    ],
-  },
-  {
-    id: 'heroes',
-    label: 'Héroes',
-    icon: [
-      '...###...',
-      '..#####..',
-      '.##+#+##.',
-      '.#######.',
-      '..#####..',
-      '.#######.',
-      '##+###+##',
-      '#.#####.#',
-      '..##.##..',
-    ],
-  },
-  {
-    id: 'gremio',
-    label: 'Gremio',
-    icon: [
-      '#.#.#.#.#',
-      '#########',
-      '.#######.',
-      '.##+#+##.',
-      '.#######.',
-      '.#######.',
-      '.###.###.',
-      '.##...##.',
-      '.##...##.',
-    ],
-  },
+const TABS: { id: TabId; label: string }[] = [
+  { id: 'taberna', label: 'Taberna' },
+  { id: 'tablon', label: 'Tablón' },
+  { id: 'heroes', label: 'Héroes' },
+  { id: 'gremio', label: 'Gremio' },
 ];
-
-function PixelIcon({ rows }: { rows: string[] }) {
-  return (
-    <svg viewBox="0 0 9 9" class="pixel-icon" aria-hidden="true" shape-rendering="crispEdges">
-      {rows.flatMap((row, y) =>
-        [...row].map((ch, x) =>
-          ch === '.' ? null : (
-            <rect
-              key={`${x}-${y}`}
-              x={x}
-              y={y}
-              width="1"
-              height="1"
-              class={ch === '+' ? 'hi' : ''}
-            />
-          ),
-        ),
-      )}
-    </svg>
-  );
-}
 
 export function TabBar({ tab, onTab }: { tab: TabId; onTab: (t: TabId) => void }) {
   return (
@@ -95,8 +19,8 @@ export function TabBar({ tab, onTab }: { tab: TabId; onTab: (t: TabId) => void }
           aria-current={tab === t.id ? 'page' : undefined}
           onClick={() => onTab(t.id)}
         >
-          <PixelIcon rows={t.icon} />
-          {t.label}
+          <Icon name={t.id as IconName} size={28} />
+          <span>{t.label}</span>
         </button>
       ))}
     </nav>

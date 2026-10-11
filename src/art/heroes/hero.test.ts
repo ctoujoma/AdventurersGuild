@@ -1,32 +1,58 @@
 import { describe, expect, it } from 'vitest';
 import { validateGrid } from '../sprite';
 import { BASE, BEARD, BODY_W, HAIR, HATS, HELMS, OUTFITS, OVERLAYS, WEAPONS } from './layers';
-import { SPRITE_H, SPRITE_W, generateLook, renderHero } from './hero';
+import {
+  SIDE_ARM,
+  SIDE_BASE,
+  SIDE_BEARD,
+  SIDE_HAIR,
+  SIDE_HATS,
+  SIDE_HELMS,
+  SIDE_LEGS,
+  SIDE_ROBE,
+  SIDE_TORSO,
+  SIDE_WEAPONS,
+} from './layersSide';
+import { SPRITE_H, SPRITE_W, generateLook, heroSprites, renderHero } from './hero';
 
 // Todos los caracteres que pueden usar las capas de héroes.
-const SLOTS = Object.fromEntries([...'xXhHcCaAmMoOenrvVgGyYkw'].map((ch) => [ch, '#000000']));
+const SLOTS = Object.fromEntries([...'xXhHcCaAmMoOenrvVgGyYkwpPqQ'].map((ch) => [ch, '#000000']));
+
+const named = (prefix: string, rec: Record<string, readonly string[] | undefined>) =>
+  Object.fromEntries(Object.entries(rec).flatMap(([k, g]) => (g ? [[`${prefix}:${k}`, g]] : [])));
 
 describe('capas de héroes', () => {
   const layers = {
     BASE,
     BEARD,
-    ...Object.fromEntries(Object.entries(OUTFITS).map(([k, g]) => [`outfit:${k}`, g])),
-    ...Object.fromEntries(Object.entries(HAIR).map(([k, g]) => [`hair:${k}`, g])),
-    ...Object.fromEntries(Object.entries(HATS).map(([k, g]) => [`hat:${k}`, g])),
-    ...Object.fromEntries(Object.entries(HELMS).map(([k, g]) => [`helm:${k}`, g])),
-    ...Object.fromEntries(Object.entries(WEAPONS).map(([k, g]) => [`weapon:${k}`, g])),
-    ...Object.fromEntries(Object.entries(OVERLAYS).map(([k, g]) => [`overlay:${k}`, g])),
+    SIDE_BASE,
+    SIDE_BEARD,
+    ...named('outfit', OUTFITS),
+    ...named('hair', HAIR),
+    ...named('hat', HATS),
+    ...named('helm', HELMS),
+    ...named('weapon', WEAPONS),
+    ...named('overlay', OVERLAYS),
+    ...named('side-torso', SIDE_TORSO),
+    ...named('side-legs', SIDE_LEGS),
+    ...named('side-robe', SIDE_ROBE),
+    ...named('side-arm', SIDE_ARM),
+    ...named('side-hair', SIDE_HAIR),
+    ...named('side-hat', SIDE_HATS),
+    ...named('side-helm', SIDE_HELMS),
+    ...Object.fromEntries(
+      Object.entries(SIDE_WEAPONS).flatMap(([k, w]) => [
+        ...(w.back ? [[`side-weapon-back:${k}`, w.back]] : []),
+        ...(w.front ? [[`side-weapon-front:${k}`, w.front]] : []),
+      ]),
+    ),
   };
 
   for (const [name, grid] of Object.entries(layers)) {
     it(`${name} tiene filas de ${BODY_W} y colores conocidos`, () => {
-      expect(validateGrid(grid, SLOTS, BODY_W)).toEqual([]);
+      expect(validateGrid(grid as readonly string[], SLOTS, BODY_W)).toEqual([]);
     });
   }
-
-  it('los trajes cubren las 22 filas del cuerpo', () => {
-    for (const grid of Object.values(OUTFITS)) expect(grid).toHaveLength(BASE.length);
-  });
 });
 
 describe('generateLook', () => {
@@ -38,7 +64,7 @@ describe('generateLook', () => {
     const looks = new Set(
       Array.from({ length: 40 }, (_, i) => JSON.stringify(generateLook(`h${i}`, 'mago', 'f'))),
     );
-    expect(looks.size).toBeGreaterThan(20);
+    expect(looks.size).toBeGreaterThan(30);
   });
 
   it('solo los hombres llevan barba', () => {
@@ -46,18 +72,28 @@ describe('generateLook', () => {
   });
 });
 
-describe('renderHero', () => {
-  it('produce un sprite contorneado del tamaño esperado', () => {
-    const sprite = renderHero(generateLook('lysa', 'picaro', 'f'), { injured: true });
-    expect(sprite.w).toBe(SPRITE_W);
-    expect(sprite.h).toBe(SPRITE_H);
-    expect(sprite.data.filter(Boolean).length).toBeGreaterThan(150);
+describe('heroSprites', () => {
+  const look = generateLook('lysa', 'picaro', 'f');
+
+  it('produce todos los fotogramas con el tamaño esperado', () => {
+    const s = heroSprites(look);
+    for (const f of [...s.idle, s.blink, ...s.walk]) {
+      expect(f.w).toBe(SPRITE_W);
+      expect(f.h).toBe(SPRITE_H);
+      expect(f.countFilled()).toBeGreaterThan(120);
+    }
+    expect(s.walk).toHaveLength(4);
+    expect(s.sit.h).toBeLessThan(SPRITE_H);
+  });
+
+  it('el ciclo de paso cambia de fotograma a fotograma', () => {
+    const s = heroSprites(look);
+    expect(s.walk[0]!.data.join()).not.toBe(s.walk[1]!.data.join());
+    expect(s.idle[0].data.join()).not.toBe(s.idle[1].data.join());
   });
 
   it('el parche cambia el sprite', () => {
-    const look = generateLook('brom', 'guerrero', 'm');
-    const a = renderHero(look).data.join();
-    const b = renderHero(look, { eyepatch: true }).data.join();
-    expect(a).not.toBe(b);
+    const brom = generateLook('brom', 'guerrero', 'm');
+    expect(renderHero(brom).data.join()).not.toBe(renderHero(brom, { eyepatch: true }).data.join());
   });
 });

@@ -63,8 +63,10 @@ Los tamaños son relativos (S < M < L). Cada fase termina en algo que se puede p
 - [x] Despliegue automático en GitHub Pages al hacer push a `main` (`.github/workflows/deploy.yml`)
 - [x] Esqueleto de interfaz: 4 pestañas, diseño vertical
 - [x] Adelantado: pixel art generado por código (ver [`arte.md`](arte.md))
-  - [x] Héroes por capas a partir de una semilla
-  - [x] Taberna en corte lateral con las mejoras visibles y los héroes dentro
+  - [x] Retratos 40×40 dibujados a mano por piezas, sprites de frente y de perfil con animación
+  - [x] Taberna de tres plantas, desván y bodega con cámara, paralaje, luz tramada, partículas y vida
+  - [x] Objetos interactivos enlazados con la interfaz (tablón → encargos, camas → mejoras…)
+  - [x] Sonido sintetizado: ambiente, laúd y efectos
 
 **Terminado cuando** un enlace público abre la app en el móvil. Falta activar GitHub Pages en el repositorio (Settings → Pages → Source: GitHub Actions) y fusionar en `main`.
 

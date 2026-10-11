@@ -1,0 +1,213 @@
+import { P } from '../art/palette';
+
+/** Iconos de 12×12 en pixel art (cada carácter es un color). */
+const COLORS: Record<string, string> = {
+  k: P.black,
+  w: P.white,
+  m: P.mist,
+  f: P.fog,
+  s: P.steel,
+  g: P.gold,
+  G: P.lemon,
+  o: P.orange,
+  b: P.bark,
+  r: P.rust,
+  R: P.red,
+  W: P.wine,
+  t: P.tan,
+  n: P.sand,
+  c: P.clay,
+  l: P.leaf,
+  L: P.lime,
+  y: P.sky,
+  Y: P.ocean,
+};
+
+const ICONS = {
+  taberna: [
+    '..kkkkkk....',
+    '.kwwmwwmk...',
+    '.kmwwwmwk...',
+    '.kccttccbkk.',
+    '.kcnnttcb.k.',
+    '.kcnttccb.k.',
+    '.kctttccb.k.',
+    '.kcttcccbkk.',
+    '.kcttcccbk..',
+    '.kcccccbbk..',
+    '..kkkkkkk...',
+    '............',
+  ],
+  tablon: [
+    '.....kk.....',
+    '....kRWk....',
+    '.kkkkkkkkkk.',
+    '.knnnnnnnnk.',
+    '.knrrrrnnnk.',
+    '.knnnnnnnnk.',
+    '.knrrrnrrnk.',
+    '.knnnnnnnnk.',
+    '.knrrnrrrnk.',
+    '.knnnnnnntk.',
+    '.kkkkkkkkkk.',
+    '............',
+  ],
+  heroes: [
+    '....kkkk....',
+    '...kfmmfk...',
+    '..kfmmmmfk..',
+    '..kffmmffk..',
+    '.kfffffffk..',
+    '.kskkkkksk..',
+    '.ksk.kk.sk..',
+    '.kfkkkkkfk..',
+    '..kfffffk...',
+    '...kRRRk....',
+    '..kRWWWRk...',
+    '..kkkkkkk...',
+  ],
+  gremio: [
+    'k.k.k..k.k.k',
+    'kkkkk..kkkkk',
+    'kfffk..kfffk',
+    'kfkfkkkkfkfk',
+    'kfffffffffk.',
+    '.kfffkkfffk.',
+    '.kffkggkffk.',
+    '.kffkgGkffk.',
+    '.kffkggkffk.',
+    '.kffkggkffk.',
+    '.kkkkkkkkkk.',
+    '............',
+  ],
+  coin: [
+    '..kkkk..',
+    '.kgGGgk.',
+    'kgGggogk',
+    'kgGgoogk',
+    'kggoogok',
+    'kgoogook',
+    '.kooook.',
+    '..kkkk..',
+  ],
+  star: [
+    '...kk...',
+    '...kGk..',
+    'kkkkGgkk',
+    'kGGGGgok',
+    '.kgggok.',
+    '.kgkkgk.',
+    'kgk..kok',
+    'kk....kk',
+  ],
+  bell: [
+    '...kk...',
+    '..kGgk..',
+    '.kGggok.',
+    '.kGgggk.',
+    'kGggggok',
+    'kkkkkkkk',
+    '...kok..',
+    '....k...',
+  ],
+  sound: [
+    '...k....',
+    '..kk.k..',
+    'kkmk..k.',
+    'kmmk.k.k',
+    'kmmk.k.k',
+    'kkmk..k.',
+    '..kk.k..',
+    '...k....',
+  ],
+  mute: [
+    '...k....',
+    '..kk....',
+    'kkmk.k.k',
+    'kmmk..k.',
+    'kmmk.k.k',
+    'kkmk....',
+    '..kk....',
+    '...k....',
+  ],
+  plus: [
+    '........',
+    '...kk...',
+    '...kk...',
+    '.kkkkkk.',
+    '.kkkkkk.',
+    '...kk...',
+    '...kk...',
+    '........',
+  ],
+  minus: [
+    '........',
+    '........',
+    '........',
+    '.kkkkkk.',
+    '.kkkkkk.',
+    '........',
+    '........',
+    '........',
+  ],
+  home: [
+    '...kk...',
+    '..kffk..',
+    '.kffffk.',
+    'kffffffk',
+    '.kfkkfk.',
+    '.kfkkfk.',
+    '.kfkkfk.',
+    '.kkkkkk.',
+  ],
+  close: [
+    'kk....kk',
+    'kkk..kkk',
+    '.kkkkkk.',
+    '..kkkk..',
+    '..kkkk..',
+    '.kkkkkk.',
+    'kkk..kkk',
+    'kk....kk',
+  ],
+} satisfies Record<string, string[]>;
+
+export type IconName = keyof typeof ICONS;
+
+export function Icon({
+  name,
+  size = 24,
+  class: cls,
+}: {
+  name: IconName;
+  size?: number;
+  class?: string;
+}) {
+  const rows = ICONS[name];
+  const n = rows[0]!.length;
+  return (
+    <svg
+      viewBox={`0 0 ${n} ${rows.length}`}
+      width={size}
+      height={(size * rows.length) / n}
+      class={`icon ${cls ?? ''}`}
+      aria-hidden="true"
+      shape-rendering="crispEdges"
+    >
+      {rows.flatMap((row, y) =>
+        [...row].map((ch, x) =>
+          ch === '.' ? null : (
+            <rect
+              key={`${x}-${y}`}
+              x={x}
+              y={y}
+              width="1"
+              height="1"
+              fill={COLORS[ch] ?? 'currentColor'}
+            />
+          ),
+        ),
+      )}
+    </svg>
+  );
+}
