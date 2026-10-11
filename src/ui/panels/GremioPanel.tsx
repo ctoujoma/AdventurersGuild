@@ -1,8 +1,12 @@
 import { useState } from 'preact/hooks';
-import { DEBT, FACILITY_MAX, SCHEDULE, capacity } from '../../core/balance';
+import { DEBT, SCHEDULE, capacity, facilityMax } from '../../core/balance';
 import { canUpgrade, nextPayment, salaries, upgradeCost } from '../../core/game';
 import type { Facilities, GameState } from '../../core/model';
 import { FACILITY_INFO } from '../../data/labels';
+import { itemIcon, trophyIcon } from '../../art/items';
+import { TROPHY_INCOME, TROPHY_SLOTS } from '../../core/balance';
+import { RARITY_NAMES, itemEffect } from '../../data/items';
+import { BufferImage } from '../BufferImage';
 import { Icon } from '../icons';
 
 interface Props {
@@ -10,11 +14,12 @@ interface Props {
   focus: keyof Facilities | null;
   onUpgrade: (k: keyof Facilities) => void;
   onSell: (itemId: string) => void;
+  onSellTrophy: (id: string) => void;
   onNewGame: () => void;
 }
 
 /** La deuda, las instalaciones, el arcón del botín y el Muro de los caídos. */
-export function GremioPanel({ game, focus, onUpgrade, onSell, onNewGame }: Props) {
+export function GremioPanel({ game, focus, onUpgrade, onSell, onSellTrophy, onNewGame }: Props) {
   const [confirm, setConfirm] = useState(false);
   const keys = Object.keys(FACILITY_INFO) as (keyof Facilities)[];
   const next = nextPayment(game);
@@ -60,8 +65,8 @@ export function GremioPanel({ game, focus, onUpgrade, onSell, onNewGame }: Props
             <article key={k} class={`card-paper facility ${focus === k ? 'is-focus' : ''}`}>
               <div class="facility-info">
                 <b>{info.name}</b>
-                <span class="pips" aria-label={`Nivel ${level} de ${FACILITY_MAX}`}>
-                  {Array.from({ length: FACILITY_MAX }, (_, i) => (
+                <span class="pips" aria-label={`Nivel ${level} de ${facilityMax(k)}`}>
+                  {Array.from({ length: facilityMax(k) }, (_, i) => (
                     <i key={i} class={i < level ? 'on' : ''} />
                   ))}
                 </span>
@@ -99,15 +104,57 @@ export function GremioPanel({ game, focus, onUpgrade, onSell, onNewGame }: Props
       {!game.inventory.length && (
         <p class="panel-note">El arcón está vacío. Los encargos con «+» traen objetos.</p>
       )}
+      {game.inventory.some((i) => i.kind && i.kind !== 'tesoro') && (
+        <p class="panel-note">
+          El equipo cuelga en el tablero de la bodega. Se pone desde la ficha de cada héroe.
+        </p>
+      )}
       <div class="list">
         {game.inventory.map((it) => (
-          <article key={it.id} class="card-paper facility">
+          <article key={it.id} class={`card-paper facility rarity-${it.rarity ?? 0}`}>
+            {it.icon && <BufferImage buf={itemIcon(it.icon, it.rarity)} scale={2} />}
             <div class="facility-info">
               <b>{it.name}</b>
+              {it.icon && (
+                <span class="next-level">
+                  {RARITY_NAMES[it.rarity ?? 0]} · {itemEffect(it)}
+                </span>
+              )}
               <span class="muted">{it.desc}</span>
             </div>
             <button class="btn btn-wood" onClick={() => onSell(it.id)}>
               Vender · {it.value}
+            </button>
+          </article>
+        ))}
+      </div>
+
+      <h3 class="sec-title">Trofeos</h3>
+      {!game.trophies.length ? (
+        <p class="panel-note">
+          Las grandes hazañas (éxito brillante en encargos peligrosos) dejan un trofeo para la pared
+          de la sala.
+        </p>
+      ) : (
+        <p class="panel-note">
+          Caben {TROPHY_SLOTS} en la sala; cada uno expuesto atrae {TROPHY_INCOME} monedas al día.
+        </p>
+      )}
+      <div class="list">
+        {game.trophies.map((t, i) => (
+          <article key={t.id} class="card-paper facility">
+            <BufferImage buf={trophyIcon(t.icon)} scale={2} />
+            <div class="facility-info">
+              <b>{t.name}</b>
+              <span class="next-level">
+                {i < TROPHY_SLOTS ? 'En la pared de la sala' : 'Guardado: no queda pared'}
+              </span>
+              <span class="muted">
+                {t.desc} Lo trajeron {t.who} de {t.place}, día {t.day}.
+              </span>
+            </div>
+            <button class="btn btn-wood" onClick={() => onSellTrophy(t.id)}>
+              Vender · {t.value}
             </button>
           </article>
         ))}

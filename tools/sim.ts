@@ -11,6 +11,7 @@ import {
   newGame,
   roster,
   salaries,
+  upgradeCost,
 } from '../src/core/game';
 import type { GameState, Hero, Outcome } from '../src/core/model';
 import { questEstimate } from '../src/core/resolve';
@@ -23,14 +24,16 @@ interface Strategy {
   threshold: number | null;
   hire: boolean;
   upgrade: boolean;
+  /** Equipa los objetos en vez de venderlos. */
+  equip: boolean;
 }
 
 const STRATEGIES: Strategy[] = [
-  { name: 'pasiva (no manda a nadie)', threshold: null, hire: false, upgrade: false },
-  { name: 'temeraria (≥ 30 %)', threshold: 0.3, hire: true, upgrade: true },
-  { name: 'normal (≥ 55 %)', threshold: 0.55, hire: true, upgrade: true },
-  { name: 'cauta (≥ 75 %)', threshold: 0.75, hire: true, upgrade: true },
-  { name: 'sin contratar (≥ 55 %)', threshold: 0.55, hire: false, upgrade: false },
+  { name: 'pasiva (no manda a nadie)', threshold: null, hire: false, upgrade: false, equip: false },
+  { name: 'temeraria (≥ 30 %)', threshold: 0.3, hire: true, upgrade: true, equip: true },
+  { name: 'normal (≥ 55 %)', threshold: 0.55, hire: true, upgrade: true, equip: true },
+  { name: 'cauta (≥ 75 %)', threshold: 0.75, hire: true, upgrade: true, equip: true },
+  { name: 'sin contratar (≥ 55 %)', threshold: 0.55, hire: false, upgrade: false, equip: false },
 ];
 
 function* combos<T>(items: T[], max: number, start = 0, acc: T[] = []): Generator<T[]> {
@@ -48,11 +51,27 @@ function reserve(s: GameState): number {
 }
 
 function playDay(s: GameState, st: Strategy): GameState {
-  for (const it of s.inventory) s = reduce(s, { type: 'sell', itemId: it.id });
+  // El equipo se reparte entre quien no lleva nada; lo demás se vende.
+  for (const it of s.inventory) {
+    const bare =
+      st.equip && it.kind && it.kind !== 'tesoro'
+        ? s.heroes.find((h) => h.status === 'ok' && !h.item)
+        : undefined;
+    s = bare
+      ? reduce(s, { type: 'equip', heroId: bare.id, itemId: it.id })
+      : reduce(s, { type: 'sell', itemId: it.id });
+  }
 
   if (st.upgrade && roster(s).length >= capacity(s.fac.dorm) && !canUpgrade(s, 'dorm')) {
     if (s.gold - 150 > reserve(s)) s = reduce(s, { type: 'upgrade', fac: 'dorm' });
   }
+  // Con dinero de sobra, ampliar el edificio: armería, mapas y capilla.
+  if (st.upgrade)
+    for (const k of ['arm', 'mapas', 'cap'] as const) {
+      const cost = upgradeCost(s, k);
+      if (cost !== null && s.gold - cost > reserve(s) + 120)
+        s = reduce(s, { type: 'upgrade', fac: k });
+    }
   if (st.hire) {
     const best = [...s.candidates].sort((a, b) => value(b) / b.fee - value(a) / a.fee)[0];
     if (best && !canHire(s, best.id) && s.gold - best.fee > reserve(s))
@@ -65,7 +84,7 @@ function playDay(s: GameState, st: Strategy): GameState {
       let pick: Hero[] | null = null;
       let bestP = 0;
       for (const party of combos(ready, q.slots)) {
-        const p = questEstimate(q, party).total;
+        const p = questEstimate(q, party, s.fac).total;
         if (p < st.threshold) continue;
         // El grupo más pequeño que llega; a igualdad, el más seguro.
         if (!pick || party.length < pick.length || (party.length === pick.length && p > bestP)) {

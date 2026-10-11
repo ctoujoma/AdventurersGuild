@@ -43,6 +43,8 @@ export function App() {
   const [panel, setPanel] = useState<PanelId | null>(null);
   // Partida nueva: el día 1 se abre con la carta del tío.
   const [dawnOpen, setDawnOpen] = useState(!saved);
+  /** La noche está pasando en la escena (entre «Terminar día» y el resumen del amanecer). */
+  const [passing, setPassing] = useState(false);
   const [card, setCard] = useState<string | null>(null);
   const [questId, setQuestId] = useState<string | null>(null);
   const [reportId, setReportId] = useState<string | null>(null);
@@ -59,8 +61,8 @@ export function App() {
   const model = useMemo(() => sceneModel(sceneGame), [sceneGame]);
 
   useEffect(() => {
-    if (!dawnOpen) setSceneGame(game);
-  }, [game, dawnOpen]);
+    if (!dawnOpen && !passing) setSceneGame(game);
+  }, [game, dawnOpen, passing]);
 
   useEffect(() => {
     const unlock = () => audio.unlock();
@@ -143,7 +145,19 @@ export function App() {
       case 'mapa':
         openPanel('fuera');
         return;
+      case 'armeria':
+        setFocusFac('arm');
+        openPanel('gremio');
+        return;
+      case 'capilla':
+        setFocusFac('cap');
+        openPanel('gremio');
+        return;
       case 'despacho':
+        setFocusFac('mapas');
+        openPanel('gremio');
+        return;
+      case 'equipo':
       case 'cofres':
         setFocusFac(null);
         openPanel('gremio');
@@ -151,8 +165,11 @@ export function App() {
       case 'chimenea':
         say(game.fac.tab === 0 ? CAPTIONS.chimeneaFria! : CAPTIONS.chimenea!, at);
         return;
-      default:
-        if (CAPTIONS[id]) say(CAPTIONS[id]!, at);
+      default: {
+        const t = id.startsWith('trofeo-') ? game.trophies[Number(id.slice(7))] : null;
+        if (t) say(`${t.name}. Lo trajeron ${t.who} de ${t.place}, el día ${t.day}.`, at);
+        else if (CAPTIONS[id]) say(CAPTIONS[id]!, at);
+      }
     }
   };
 
@@ -179,14 +196,16 @@ export function App() {
     const q = game.quests.find((x) => x.id === qid);
     if (!q) return;
     const before = gameRef.current;
-    if (dispatch({ type: 'send', questId: qid, heroIds: ids }) === before) return;
+    const next = dispatch({ type: 'send', questId: qid, heroIds: ids });
+    if (next === before) return;
+    const days = next.missions.at(-1)?.daysLeft ?? q.days;
     const names = listNames(ids.map((id) => game.heroes.find((h) => h.id === id)?.name ?? ''));
     audio.play('depart');
     setQuestId(null);
     setPanel(null);
     scene.current?.focus('puerta');
     toast(
-      `${names} ${plural(ids.length, 'sale', 'salen')} hacia ${q.place}. Vuelta en ${q.days} ${plural(q.days, 'día', 'días')}.`,
+      `${names} ${plural(ids.length, 'sale', 'salen')} hacia ${q.place}. Vuelta en ${days} ${plural(days, 'día', 'días')}.`,
     );
   };
 
@@ -205,6 +224,7 @@ export function App() {
   };
 
   const endDay = () => {
+    if (passing) return;
     setHint(false);
     setPanel(null);
     setCard(null);
@@ -213,16 +233,33 @@ export function App() {
     const before = gameRef.current;
     const next = dispatch({ type: 'endDay' });
     if (next === before) return;
-    audio.play('dawn');
-    setDawnOpen(true);
+    const sunrise = () => {
+      setPassing(false);
+      audio.play('dawn');
+      setDawnOpen(true);
+    };
+    if (!scene.current) return sunrise();
+    setPassing(true);
+    audio.play('night');
+    scene.current.nightfall(sunrise);
   };
 
   const closeDawn = (then?: PanelId) => {
     const returned = sceneGame.missions.some((m) => !game.missions.some((x) => x.id === m.id));
+    // Si algún grupo vuelve con éxito, ronda en la barra cuando cruzan la puerta.
+    const wins = game.reports.filter(
+      (r) => r.day === game.day && r.outcome.startsWith('Éxito') && r.outcome !== 'Éxito parcial',
+    );
     setDawnOpen(false);
     if (game.day === 1) setHint(true);
     if (then) openPanel(then);
     else if (returned) setTimeout(() => scene.current?.focus('puerta'), 30);
+    if (wins.length)
+      setTimeout(() => {
+        scene.current?.cheer('barra');
+        if (!then) scene.current?.focus('barra');
+        toast(`¡Ronda para todos! ${wins.map((r) => r.who).join(' y ')} lo celebran en la barra.`);
+      }, 3600);
   };
 
   const openReport = (id: string) => {
@@ -254,7 +291,7 @@ export function App() {
 
   return (
     <div class="game">
-      <Hud game={game} />
+      <Hud game={passing ? sceneGame : game} />
       <div class="stage">
         <SceneView
           model={model}
@@ -321,6 +358,7 @@ export function App() {
           <Panel title="Tablón de encargos" onClose={() => openPanel(null)} variant="cork">
             <TablonPanel
               quests={game.quests}
+              seeAll={game.fac.mapas >= 2}
               onOpen={(id) => {
                 audio.play('open');
                 setQuestId(id);
@@ -346,6 +384,13 @@ export function App() {
               focus={focusFac}
               onUpgrade={upgrade}
               onSell={sell}
+              onSellTrophy={(id) => {
+                const t = game.trophies.find((x) => x.id === id);
+                dispatch({ type: 'sellTrophy', id });
+                audio.play('coin');
+                if (t)
+                  toast(`Vendido: ${t.name} por ${t.value} monedas. La pared se queda más sosa.`);
+              }}
               onNewGame={restart}
             />
           </Panel>
@@ -381,6 +426,15 @@ export function App() {
             onClose={() => setCard(null)}
             onHire={() => hire(cardHero.id)}
             onFire={() => fire(cardHero.id)}
+            onAnswer={(yes) => dispatch({ type: 'answer', id: cardHero.id, yes })}
+            onEquip={(itemId) => {
+              dispatch({ type: 'equip', heroId: cardHero.id, itemId });
+              audio.play('select');
+            }}
+            onUnequip={() => {
+              dispatch({ type: 'unequip', heroId: cardHero.id });
+              audio.play('deselect');
+            }}
             onLocate={() => {
               setCard(null);
               setPanel(null);

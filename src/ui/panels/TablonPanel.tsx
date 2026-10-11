@@ -5,11 +5,13 @@ import { plural } from '../text';
 
 interface Props {
   quests: Quest[];
+  /** Con la sala de mapas a nivel 2 se ve el peligro real. */
+  seeAll: boolean;
   onOpen: (id: string) => void;
 }
 
 /** Encargos como notas clavadas en el corcho; al tocar una se forma el grupo. */
-export function TablonPanel({ quests, onOpen }: Props) {
+export function TablonPanel({ quests, seeAll, onOpen }: Props) {
   return (
     <>
       <p class="panel-note">
@@ -45,8 +47,8 @@ export function TablonPanel({ quests, onOpen }: Props) {
               ))}
             </span>
             <span class="note-foot">
-              <span class={`danger danger-${dangerClass(q.danger, q.dangerHidden)}`}>
-                Peligro {dangerLabel(q.danger, q.dangerHidden)}
+              <span class={`danger danger-${dangerClass(q.danger, q.dangerHidden && !seeAll)}`}>
+                Peligro {dangerLabel(q.danger, q.dangerHidden && !seeAll)}
               </span>
               <span class="muted">
                 {q.days} {plural(q.days, 'día', 'días')} · hasta {q.slots}

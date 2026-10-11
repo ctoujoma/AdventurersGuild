@@ -1814,3 +1814,172 @@ button:focus-visible {
 .face {
   line-height: 0;
 }
+
+/* ---------- Fase 3a: habilidades de clase y moral ---------- */
+.pill-request {
+  background: var(--orange);
+  color: var(--ink);
+}
+.pill-animado {
+  background: var(--leaf);
+}
+.pill-desanimado {
+  background: var(--steel);
+}
+.pill-harto {
+  background: var(--wine);
+}
+.morale-note {
+  margin: 2px 0 0;
+  font-size: 13px;
+  line-height: 1.25;
+}
+.morale-note b {
+  font-family: var(--pixel);
+  font-weight: 400;
+}
+.morale-animado b {
+  color: var(--leaf);
+}
+.morale-desanimado b,
+.morale-harto b {
+  color: var(--wine);
+}
+.request {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  font-size: 14px;
+  background: rgba(247, 118, 34, 0.14);
+  box-shadow: 0 0 0 2px var(--orange);
+}
+.perk {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0 8px;
+  align-items: baseline;
+  padding: 6px 8px;
+  background: rgba(79, 47, 45, 0.12);
+  box-shadow: 0 0 0 2px var(--oak);
+}
+.perk small {
+  grid-column: 1 / -1;
+  font-family: var(--pixel);
+  font-size: 11px;
+  color: var(--oak);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.perk b {
+  font-family: var(--pixel);
+  font-weight: 400;
+}
+.perk span {
+  font-size: 14px;
+  line-height: 1.25;
+}
+.perks {
+  margin: 0;
+  padding: 6px 8px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 14px;
+  line-height: 1.25;
+  background: rgba(62, 137, 72, 0.12);
+  box-shadow: 0 0 0 2px var(--leaf);
+}
+.perks b {
+  font-family: var(--pixel);
+  font-weight: 400;
+  color: var(--leaf);
+  margin-right: 4px;
+}
+.mood.up {
+  color: var(--leaf);
+}
+.mood.down {
+  color: var(--wine);
+}
+
+/* ---------- Equipo y trofeos ---------- */
+.gear-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 8px;
+  background: rgba(58, 68, 102, 0.12);
+  box-shadow: 0 0 0 2px var(--steel);
+}
+.gear-slot > small {
+  font-family: var(--pixel);
+  font-size: 11px;
+  color: var(--steel);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.gear-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 1.25;
+  text-align: left;
+}
+.gear-item > span {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.gear-item b {
+  font-family: var(--pixel);
+  font-weight: 400;
+}
+.gear-item em {
+  font-style: normal;
+  font-family: var(--pixel);
+  font-size: 12px;
+}
+.gear-pick {
+  padding: 4px 6px;
+  background: var(--sand);
+  color: var(--ink);
+  border: 0;
+  box-shadow: 0 0 0 2px var(--oak);
+  cursor: pointer;
+  font: inherit;
+}
+.gear-pick:hover,
+.gear-pick:focus-visible {
+  background: var(--tan);
+}
+.gear-toggle {
+  align-self: flex-start;
+}
+.rarity-1 em,
+.facility.rarity-1 .next-level {
+  color: var(--ocean);
+}
+.rarity-2 em,
+.facility.rarity-2 .next-level {
+  color: var(--grape, #68386c);
+}
+.facility.rarity-2 {
+  box-shadow:
+    0 0 0 2px var(--gold),
+    0 0 10px rgba(254, 174, 52, 0.45);
+}
+.facility > canvas.pixel {
+  flex: none;
+}
+.facility:has(> canvas.pixel) {
+  grid-template-columns: auto 1fr auto;
+}
+.facility.rarity-0 .next-level {
+  color: var(--oak);
+}
+.gear-item small {
+  font-size: 13px;
+}

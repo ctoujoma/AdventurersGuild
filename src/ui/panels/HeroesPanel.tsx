@@ -1,7 +1,8 @@
 import { capacity } from '../../core/balance';
 import { canHire, roster, salaries } from '../../core/game';
 import type { GameState, Hero } from '../../core/model';
-import { CLASS_NAMES, statusLabel } from '../../data/labels';
+import { moraleBand } from '../../core/party';
+import { CLASS_NAMES, MORALE_INFO, statusLabel } from '../../data/labels';
 import { Icon } from '../icons';
 import { Portrait } from '../Portrait';
 import { TraitChip } from '../TraitChip';
@@ -43,6 +44,15 @@ export function HeroesPanel({ game, filter, setFilter, onOpen, onHire }: Props) 
           <span class={`pill pill-${candidate ? 'candidato' : h.status}`}>
             {statusLabel(h, candidate)}
           </span>
+          {!candidate && h.request && <span class="pill pill-request">Pide aumento</span>}
+          {!candidate &&
+            !h.request &&
+            h.status !== 'muerto' &&
+            moraleBand(h.morale) !== 'normal' && (
+              <span class={`pill pill-${moraleBand(h.morale)}`}>
+                {MORALE_INFO[moraleBand(h.morale)].label[h.sex].replace('.', '')}
+              </span>
+            )}
           {candidate && (
             <button
               class="btn btn-gold"

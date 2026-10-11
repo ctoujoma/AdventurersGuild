@@ -61,6 +61,18 @@ export const TRAIT_INFO: Record<
     tone: 'mix',
     desc: 'Secuela. −1 Destreza, +1 Combate: da más miedo.',
   },
+  cojo: {
+    m: 'Cojo',
+    f: 'Coja',
+    tone: 'neg',
+    desc: 'Secuela. −2 Supervivencia: los caminos largos se le hacen eternos.',
+  },
+  cortado: {
+    m: 'Cara cortada',
+    f: 'Cara cortada',
+    tone: 'mix',
+    desc: 'Secuela. +1 Combate: con esa cara, nadie quiere pelea.',
+  },
 };
 
 export const HIDDEN_TRAIT_HINT = 'Rasgo oculto: se descubre tras su primera misión';

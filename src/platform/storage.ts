@@ -1,3 +1,4 @@
+import { START } from '../core/balance';
 import { SAVE_VERSION, type GameState } from '../core/model';
 
 /**
@@ -36,13 +37,19 @@ export const webStorage: SaveStorage = {
   },
 };
 
-/** Carga la partida guardada si es de esta versión; si no, devuelve null. */
+/**
+ * Carga la partida guardada si es de esta versión; si no, devuelve null (y se empieza
+ * de cero). Las partidas de antes de las instalaciones nuevas se completan con nivel 0.
+ */
 export function loadGame(storage: SaveStorage = webStorage): GameState | null {
   const raw = storage.read();
   if (!raw) return null;
   try {
     const s = JSON.parse(raw) as GameState;
-    return s && s.version === SAVE_VERSION ? s : null;
+    if (!s || s.version !== SAVE_VERSION || !s.fac) return null;
+    s.fac = { ...START.fac, ...s.fac };
+    s.trophies ??= [];
+    return s;
   } catch {
     return null;
   }

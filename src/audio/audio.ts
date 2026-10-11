@@ -23,7 +23,9 @@ export type Sfx =
   | 'select'
   | 'deselect'
   | 'depart'
-  | 'dawn';
+  | 'dawn'
+  | 'night'
+  | 'cheer';
 
 const STORAGE_KEY = 'jarro:sonido';
 const FIRE = { x: 346, y: 272 };
@@ -234,6 +236,19 @@ class AudioEngine {
           const at = t + 0.7 + i * 0.16 + (i > 2 ? 0.3 : 0);
           this.tone('sine', 3400 + (i % 2) * 500, 4300 + (i % 3) * 300, at, 0.07, 0.025 * v);
         }
+        break;
+      case 'night':
+        // Cae la noche: dos notas graves y el búho a lo lejos.
+        [45, 40].forEach((n, i) => this.pluck(n, t + i * 0.35, 0.22 * v));
+        this.hoot(t + 0.6, 0.4, 0.07 * v);
+        this.hoot(t + 1.1, 0.6, 0.07 * v);
+        break;
+      case 'cheer':
+        // Brindis en la barra: jarras que chocan y una tonada alegre.
+        for (let i = 0; i < 4; i++) this.ping(2600 + i * 180, t + i * 0.06, 0.12, 0.04 * v);
+        [62, 66, 69, 74, 69, 74, 78].forEach((n, i) => this.pluck(n, t + 0.25 + i * 0.12, 0.3 * v));
+        this.thump(t + 0.25, 0.1 * v);
+        this.thump(t + 0.61, 0.1 * v);
         break;
       case 'depart':
         // Pequeña fanfarria de laúd: el grupo sale a la aventura.

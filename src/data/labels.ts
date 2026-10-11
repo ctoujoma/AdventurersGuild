@@ -1,5 +1,5 @@
 import type { Danger, Facilities, Hero, Outcome } from '../core/model';
-import type { ClassId } from '../core/party';
+import type { ClassId, MoraleBand } from '../core/party';
 
 /** Textos de la interfaz que dependen de los datos del juego. */
 
@@ -86,6 +86,47 @@ export const FACILITY_INFO: Record<
         ? 'No deja dinero'
         : `${l * 10} monedas al día, más encargos${l >= 2 ? ' y mejores candidatos' : ''}`,
   },
+  mapas: {
+    name: 'Sala de mapas',
+    room: 'despacho',
+    levels: [
+      'Un mapa viejo clavado en el desván',
+      'Mesa de cartografía y mapas de la comarca',
+      'Catalejo, globo y rutas marcadas con hilo rojo',
+    ],
+    effect: (l) =>
+      l === 0
+        ? 'Sin efecto'
+        : `+${l} ${l === 1 ? 'encargo' : 'encargos'} en el tablón${l >= 2 ? '; ves el peligro real de todos' : ''}`,
+  },
+  arm: {
+    name: 'Armería',
+    room: 'armeria',
+    levels: [
+      'Cuatro espadas oxidadas en la bodega',
+      'Armero con lanzas, espadas y escudos',
+      'Armaduras, yunque y piedra de afilar',
+    ],
+    effect: (l) =>
+      l === 0
+        ? 'Cada cual va con lo suyo'
+        : l === 1
+          ? '+1 Combate a todos'
+          : '+1 Combate, Trampas y Supervivencia a todos',
+  },
+  cap: {
+    name: 'Capilla',
+    room: 'capilla',
+    levels: [
+      'No hay: se reza donde se puede',
+      'Anexo de piedra con altar y una vela por cada caído',
+      'Campana, vidriera y bancos',
+    ],
+    effect: (l) =>
+      l === 0
+        ? 'Sin efecto'
+        : `Moral +${2 * l} por noche, los desaparecidos vuelven más${l >= 2 ? ' y los caídos duelen la mitad' : ''}`,
+  },
 };
 
 /** Lo que dice cada cosa de la escena al tocarla. */
@@ -101,4 +142,31 @@ export const CAPTIONS: Record<string, string> = {
   laud: 'Alguien lo dejó a cuenta de una ronda. Todavía suena bien.',
   chimenea: 'Chisporrotea. Bigotes no se separa de ella.',
   chimeneaFria: 'Fría como el corazón del prestamista.',
+};
+
+/** Cómo se enseña cada tramo de moral. */
+export const MORALE_INFO: Record<
+  MoraleBand,
+  { label: { m: string; f: string }; short: string; desc: string }
+> = {
+  animado: {
+    label: { m: 'Animado.', f: 'Animada.' },
+    short: '+1',
+    desc: '+1 a todas las habilidades.',
+  },
+  normal: {
+    label: { m: 'Tranquilo.', f: 'Tranquila.' },
+    short: '',
+    desc: 'Descansar en la taberna le sube la moral; mejorarla, más.',
+  },
+  desanimado: {
+    label: { m: 'Desanimado.', f: 'Desanimada.' },
+    short: '−1',
+    desc: '−1 a todas las habilidades. Puede pedirte un aumento.',
+  },
+  harto: {
+    label: { m: 'Harto.', f: 'Harta.' },
+    short: '−1',
+    desc: '−1 a todo y puede irse cualquier noche. Déjale descansar o súbele el sueldo.',
+  },
 };

@@ -29,6 +29,8 @@ import {
   post,
   stoneWall,
 } from './paint';
+import type { TrophyIcon } from '../core/model';
+import { armory, chapel, gearBoard, mapRoom, trophyWall, type GearView } from './annex';
 import * as Prop from './props';
 
 /**
@@ -114,7 +116,13 @@ export const UNCLE: HeroLook = {
   scar: false,
 };
 
-export function buildWorld(fac: Facilities, loot: number, quests: number): WorldBuild {
+export function buildWorld(
+  fac: Facilities,
+  loot: number,
+  quests: number,
+  fallen = 0,
+  extra: { gear?: readonly GearView[]; trophies?: readonly TrophyIcon[] } = {},
+): WorldBuild {
   const L = layout(fac);
   const back = new PixelBuffer(WORLD_W, WORLD_H);
   const front = new PixelBuffer(WORLD_W, WORLD_H);
@@ -141,15 +149,19 @@ export function buildWorld(fac: Facilities, loot: number, quests: number): World
 
   // ================= Bodega =================
   cellar(back, put, loot, lights);
+  armory(back, put, fac.arm);
+  gearBoard(back, put, extra.gear ?? [], glows, lights, flames);
 
   // ================= Sala común =================
   hall(back, front, put, putFront, L, fac, quests, lights, flames, glows, shafts);
 
   // ================= Piso de arriba =================
+  trophyWall(put, extra.trophies ?? []);
   upper(back, put, L, fac, lights, flames, glows, shafts);
 
   // ================= Desván =================
   attic(back, put, lights, flames, shafts);
+  mapRoom(back, put, fac.mapas, flames, lights);
 
   // ================= Forjados =================
   Prop.floorSlab(back, B.left, F.attic.floor, B.right - B.left, 'forjado-desvan');
@@ -166,7 +178,7 @@ export function buildWorld(fac: Facilities, loot: number, quests: number): World
   roof(back);
 
   // ================= Exterior cercano =================
-  yard(back, front, put, putFront, glows);
+  yard(back, front, put, putFront, glows, fac.cap > 0);
 
   // Luz ambiente por habitación (se multiplica sobre la escena).
   const ambient: Ambient[] = [
@@ -201,6 +213,9 @@ export function buildWorld(fac: Facilities, loot: number, quests: number): World
       color: [72, 64, 110],
     },
   ];
+
+  // ================= Capilla (anexo a la derecha) =================
+  chapel(back, put, fac.cap, fallen, lights, flames, glows, ambient);
 
   return {
     back,
@@ -406,7 +421,9 @@ function cellar(
   put(Prop.wineRack(), 110, y1 - 33);
   put(Prop.cask(), 156, y1 - 31);
   put(Prop.cask(), 188, y1 - 31);
-  for (let i = 0; i < Math.min(loot, 6); i++) put(Prop.chest(), 226 + i * 18, y1 - 13);
+  // Arcones del botín: tres en el suelo y el resto apilados encima.
+  for (let i = 0; i < Math.min(loot, 6); i++)
+    put(Prop.chest(), i < 3 ? 226 + i * 18 : 235 + (i - 3) * 18, i < 3 ? y1 - 13 : y1 - 26);
   put(Prop.cheeseShelf(), 340, y1 - 25);
   put(Prop.sack(), 372, y1 - 12);
   put(Prop.sack(), 382, y1 - 11);
@@ -839,6 +856,7 @@ function yard(
   put: (p: PixelBuffer, x: number, y: number, flip?: boolean) => void,
   putFront: (p: PixelBuffer, x: number, y: number, flip?: boolean) => void,
   glows: Glow[],
+  chapel: boolean,
 ): void {
   put(Prop.well(), 6, GROUND - 56);
   put(Prop.barrel(), 62, GROUND - 17);
@@ -855,8 +873,13 @@ function yard(
   b.hline(58, 165, B.left - 58, P.steel);
   b.line(B.left - 1, 172, B.left - 12, 167, P.slate);
   // Arbustos y valla delante.
-  putFront(Prop.bush('a', 26, 14), 434, GROUND - 13);
   putFront(Prop.bush('b', 20, 12), 0, GROUND - 11);
+  // Con capilla, la valla y el arbusto de la derecha dejan sitio al anexo.
+  if (chapel) {
+    putFront(Prop.bush('a', 12, 10), WORLD_W - 12, GROUND - 9);
+    return;
+  }
+  putFront(Prop.bush('a', 26, 14), 434, GROUND - 13);
   for (let x = 484; x < WORLD_W; x += 9) {
     putFront(
       Prop.piece(3, 18, (p) => {

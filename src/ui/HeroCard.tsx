@@ -1,10 +1,14 @@
 import { useState } from 'preact/hooks';
-import { XP_PER_LEVEL } from '../core/balance';
-import { canHire } from '../core/game';
+import { RAISE_AMOUNT, XP_PER_LEVEL } from '../core/balance';
+import { PERKS } from '../core/classes';
+import { canHire, gearInStock } from '../core/game';
 import type { GameState, Hero } from '../core/model';
-import { SKILLS, attr, skill } from '../core/party';
-import { CLASS_NAMES, statusLabel } from '../data/labels';
+import { SKILLS, attr, moraleBand, skill } from '../core/party';
+import { CLASS_NAMES, MORALE_INFO, statusLabel } from '../data/labels';
 import { HIDDEN_TRAIT_HINT, TRAIT_INFO, traitLabel } from '../data/traits';
+import { itemIcon } from '../art/items';
+import { RARITY_NAMES, itemEffect } from '../data/items';
+import { BufferImage } from './BufferImage';
 import { Icon } from './icons';
 import { Portrait } from './Portrait';
 import { lookOf, marksOf, memberOf } from './view';
@@ -17,6 +21,9 @@ interface Props {
   onHire: () => void;
   onFire: () => void;
   onLocate: () => void;
+  onAnswer: (yes: boolean) => void;
+  onEquip: (itemId: string) => void;
+  onUnequip: () => void;
 }
 
 const ATTRS = [
@@ -26,12 +33,28 @@ const ATTRS = [
 ] as const;
 
 /** Ficha completa de un héroe con su retrato. */
-export function HeroCard({ game, hero: h, candidate, onClose, onHire, onFire, onLocate }: Props) {
+export function HeroCard({
+  game,
+  hero: h,
+  candidate,
+  onClose,
+  onHire,
+  onFire,
+  onLocate,
+  onAnswer,
+  onEquip,
+  onUnequip,
+}: Props) {
+  const [picking, setPicking] = useState(false);
+  const stock = gearInStock(game);
+  const canGear = !candidate && (h.status === 'ok' || h.status === 'herido');
   const [confirm, setConfirm] = useState(false);
-  const m = memberOf(h);
+  const m = memberOf(h, game.fac);
   const why = candidate ? canHire(game, h.id) : null;
   const gone = h.status === 'muerto' || h.status === 'desaparecido';
-  const moraleK = h.morale < 35 ? 'low' : h.morale < 60 ? 'mid' : 'ok';
+  const band = moraleBand(h.morale);
+  const moraleK = band === 'animado' ? 'ok' : band === 'normal' ? 'mid' : 'low';
+  const perk = PERKS[h.cls];
   return (
     <div class="card-backdrop" onClick={onClose}>
       <article
@@ -84,8 +107,84 @@ export function HeroCard({ game, hero: h, candidate, onClose, onHire, onFire, on
                 </span>
                 <small>{h.morale}</small>
               </div>
+              <p class={`morale-note morale-${band}`}>
+                <b>{MORALE_INFO[band].label[h.sex]}</b> {MORALE_INFO[band].desc}
+              </p>
             </div>
           )}
+          {h.request === 'raise' && !candidate && (
+            <div class="request" role="status">
+              <span>
+                «Con lo que me pagas no me llega ni para la cerveza.» {h.name} pide {RAISE_AMOUNT}{' '}
+                monedas más por semana.
+              </span>
+              <div class="herocard-actions">
+                <button class="btn btn-gold" onClick={() => onAnswer(true)}>
+                  Subir a {h.salary + RAISE_AMOUNT}
+                </button>
+                <button class="btn btn-wood" onClick={() => onAnswer(false)}>
+                  Negarse
+                </button>
+              </div>
+            </div>
+          )}
+          {!candidate && (
+            <div class="gear-slot">
+              <small>Equipo</small>
+              {h.item ? (
+                <div class={`gear-item rarity-${h.item.rarity ?? 0}`}>
+                  <BufferImage buf={itemIcon(h.item.icon ?? 'espada', h.item.rarity)} scale={3} />
+                  <span>
+                    <b>{h.item.name}</b>
+                    <small>
+                      <em>{RARITY_NAMES[h.item.rarity ?? 0]}</em> · {itemEffect(h.item)}
+                    </small>
+                  </span>
+                  {canGear && (
+                    <button class="btn btn-wood" onClick={onUnequip}>
+                      Quitar
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <span class="muted">
+                  {stock.length
+                    ? 'Sin equipo. En el tablero de la bodega hay equipo libre.'
+                    : 'Sin equipo. Los encargos con «+ objeto» pueden traerlo.'}
+                </span>
+              )}
+              {canGear && stock.length > 0 && (
+                <button class="btn btn-wood gear-toggle" onClick={() => setPicking(!picking)}>
+                  {picking ? 'Cerrar' : h.item ? 'Cambiar' : 'Equipar'} · {stock.length}{' '}
+                  {stock.length === 1 ? 'disponible' : 'disponibles'}
+                </button>
+              )}
+              {picking &&
+                stock.map((it) => (
+                  <button
+                    key={it.id}
+                    class={`gear-item gear-pick rarity-${it.rarity ?? 0}`}
+                    onClick={() => {
+                      setPicking(false);
+                      onEquip(it.id);
+                    }}
+                  >
+                    <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity)} scale={2} />
+                    <span>
+                      <b>{it.name}</b>
+                      <small>
+                        <em>{RARITY_NAMES[it.rarity ?? 0]}</em> · {itemEffect(it)}
+                      </small>
+                    </span>
+                  </button>
+                ))}
+            </div>
+          )}
+          <div class="perk">
+            <small>Habilidad de clase</small>
+            <b>{perk.name}</b>
+            <span>{perk.desc}</span>
+          </div>
           <div class="attrs">
             {ATTRS.map(([k, label]) => (
               <div key={k} class="attr">
@@ -101,18 +200,6 @@ export function HeroCard({ game, hero: h, candidate, onClose, onHire, onFire, on
                 <b>{skill(m, s)}</b>
               </span>
             ))}
-            {h.cls === 'clerigo' && (
-              <span class="skill">
-                <span>Sanación</span>
-                <b>½ heridas</b>
-              </span>
-            )}
-            {h.cls === 'mago' && (
-              <span class="skill">
-                <span>Ve giros ocultos</span>
-                <b>sí</b>
-              </span>
-            )}
           </div>
           <div class="trait-list">
             {h.traits.map((t) => (
