@@ -20,6 +20,11 @@ export class Rng {
     this.state = typeof seed === 'string' ? hashString(seed) : seed >>> 0;
   }
 
+  /** Estado interno, para guardarlo con la partida y seguir la misma secuencia al cargar. */
+  save(): number {
+    return this.state;
+  }
+
   /** Número en [0, 1). */
   next(): number {
     this.state = (this.state + 0x6d2b79f5) >>> 0;

@@ -70,19 +70,19 @@ Los tamaños son relativos (S < M < L). Cada fase termina en algo que se puede p
 
 **Terminado cuando** un enlace público abre la app en el móvil. Falta activar GitHub Pages en el repositorio (Settings → Pages → Source: GitHub Actions) y fusionar en `main`.
 
-### Fase 1: Núcleo de simulación · M
-- [x] RNG con semilla y utilidades (elegir, tirada ponderada) · adelantado en la fase 0
-- [ ] Modelo de datos: héroe, encargo, estado de partida
-- [ ] Datos: 5 clases, unos 10 rasgos, unos 6 tipos de encargo, listas de nombres
-- [ ] Generadores de candidatos y encargos (escalados por rango)
-- [x] Cálculo de habilidades del grupo y estimación de riesgo (`core/party.ts`) · adelantado
-- [ ] Resolución de misiones: desafíos, 5 resultados y consecuencias básicas (oro, XP, heridas)
-- [ ] Avance de día: regresos, caducidades, rotación de candidatos, salarios semanales
-- [ ] Acciones: contratar, despedir, enviar grupo, terminar día
-- [ ] Tests unitarios de cada pieza
-- [ ] `npm run sim`: juega N partidas con una estrategia simple y saca estadísticas (oro, muertes, % de victorias)
+### Fase 1: Núcleo de simulación · M ✅
+- [x] RNG con semilla y utilidades (elegir, tirada ponderada); su estado se guarda con la partida
+- [x] Modelo de datos: héroe, encargo, misión, informe, estado de partida (`core/model.ts`), serializable y versionado
+- [x] Datos: 5 clases, 10 rasgos, 6 tipos de encargo con plantillas, nombres, frases de informe (`data/`)
+- [x] Generadores de candidatos y encargos (escalados por rango y nivel de taberna)
+- [x] Cálculo de habilidades del grupo y estimación de riesgo (`core/party.ts`); un mago descubre giros ocultos
+- [x] Resolución de misiones: desafíos, 5 resultados y consecuencias (oro, XP y niveles, heridas, secuelas y apodos, muertes, desaparecidos, botín, rasgos que se descubren)
+- [x] Avance de día: regresos, curación, desaparecidos que vuelven o no, caducidades, rotación de candidatos, ingresos de la taberna, salarios y pagos semanales, victoria y derrota
+- [x] Acciones con un reducer puro: contratar, despedir, enviar grupo, mejorar, vender, leer informe, terminar día
+- [x] Tests unitarios de cada pieza
+- [x] `npm run sim`: juega N partidas con cinco estrategias y saca estadísticas
 
-**Terminado cuando** el simulador juega 30 días completos sin interfaz y los tests pasan.
+**Balance inicial** (300 partidas por estrategia): sin mandar a nadie se pierde siempre; con una estrategia normal (enviar si la estimación pasa del 55 %) se gana el 66 %; con una cauta (75 %), el 30 %; la temeraria (30 %) gana el 82 % pero pierde un héroe cada dos partidas. Las constantes están en `core/balance.ts`.
 
 ### Fase 2: Primer prototipo jugable · M
 - [ ] Taberna: resumen del día, candidatos y botón de contratar
