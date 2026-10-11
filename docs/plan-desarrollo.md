@@ -114,7 +114,7 @@ Orden acordado tras probar la fase 2 (prioridad del propietario: 3a y 3b, la esc
 - [ ] Materiales y trofeos: se venden o se exhiben; los trofeos aparecen en la taberna y dan reputación
 
 **3c · Historias**
-- [ ] Informes mucho más variados: frases por rasgo, por clase y por evento; más plantillas por tipo de encargo
+- [x] Informes mucho más variados: el doble de aperturas, frases y cierres; frases por clase, apartes por rasgo (pista de los ocultos), sucesos en ruta con hallazgos de monedas, piques entre compañeros, moral, cierres del cliente y sin repetir frase en un mismo informe
 - [ ] Eventos en ruta (emboscada, mercader, tesoro, pelea interna) y eventos en la taberna con elección
 
 **3d · La escena cuenta la partida**

@@ -4,6 +4,20 @@
  * (que se recibe ya copiado: aquí se muta). Devuelve el informe para el amanecer.
  */
 import { CLOSERS, LINES, OPENERS, SCARS } from '../data/stories';
+import {
+  BANTER,
+  CLASS_LINES,
+  CLIENT_CLOSERS,
+  FINDS,
+  HIGH_MORALE,
+  LOW_MORALE,
+  MORE_CLOSERS,
+  MORE_LINES,
+  MORE_OPENERS,
+  REVEALS,
+  ROAD,
+  TRAIT_LINES,
+} from '../data/tales';
 import { TRAIT_INFO } from '../data/traits';
 import { partyMods } from './classes';
 import {
@@ -31,7 +45,15 @@ import type {
   Quest,
   Report,
 } from './model';
-import { chance, estimate, skill, type Estimate, type Member } from './party';
+import {
+  MORALE_HIGH,
+  MORALE_LOW,
+  chance,
+  estimate,
+  skill,
+  type Estimate,
+  type Member,
+} from './party';
 import type { Rng } from './rng';
 import { listNames } from './text';
 
@@ -76,10 +98,21 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
   const body: string[] = [];
   const chips: { t: string; k: ChipKind }[] = [];
   const mods = partyMods(party);
-  const say = (text: string, h?: Hero) =>
-    body.push(fill(text, { who: names, place: q.place, h: h?.name ?? names }));
+  const say = (text: string, h?: Hero, extra: Record<string, string> = {}) =>
+    body.push(
+      fill(text, { who: names, place: q.place, client: q.client, h: h?.name ?? names, ...extra }),
+    );
 
-  const opener = rng.pick(OPENERS[q.type]);
+  // Frases sin repetir dentro del mismo informe.
+  const used = new Set<string>();
+  const fresh = (pool: readonly string[]) => {
+    const left = pool.filter((x) => !used.has(x));
+    const v = rng.pick(left.length ? left : pool);
+    used.add(v);
+    return v;
+  };
+
+  const opener = rng.pick([...OPENERS[q.type], ...MORE_OPENERS[q.type]]);
   say(party.length > 1 ? opener[1] : opener[0]);
   const mage = party.find((h) => h.cls === 'mago');
   if (q.twist)
@@ -88,6 +121,34 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
         ? `${mage.name} ya lo había advertido: ${lower(q.twist)}`
         : `Lo que nadie dijo: ${lower(q.twist)}`,
     );
+
+  // El camino: un suceso, a veces un hallazgo; piques, rasgos y moral.
+  if (rng.chance(0.35)) {
+    if (rng.chance(0.3)) {
+      const found = rng.int(5, 15);
+      state.gold += found;
+      say(rng.pick(FINDS), undefined, { gold: String(found) });
+      chips.push({ t: `Hallazgo: +${found}`, k: 'good' });
+    } else say(rng.pick(ROAD));
+  }
+  if (party.length >= 2 && rng.chance(0.3)) {
+    const a = rng.pick(party);
+    const b = rng.pick(party.filter((h) => h !== a));
+    say(rng.pick(BANTER), undefined, { a: a.name, b: b.name });
+  }
+  const asides = party.flatMap((h) =>
+    h.traits.filter((t) => TRAIT_LINES[t.id]).map((t) => [h, t.id] as const),
+  );
+  if (asides.length && rng.chance(0.45)) {
+    const [h, id] = rng.pick(asides);
+    say(rng.pick(TRAIT_LINES[id]!), h);
+  }
+  if (rng.chance(0.4)) {
+    const low = party.filter((h) => h.morale < MORALE_LOW);
+    const high = party.filter((h) => h.morale >= MORALE_HIGH);
+    if (low.length) say(rng.pick(LOW_MORALE), rng.pick(low));
+    else if (high.length) say(rng.pick(HIGH_MORALE), rng.pick(high));
+  }
 
   // Desafíos.
   const lucky = party.filter((h) => has(h, 'afortunado'));
@@ -107,7 +168,11 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
     }
     if (ok) passes++;
     const best = [...party].sort((a, b) => skill(b, c.skill, true) - skill(a, c.skill, true))[0];
-    say(rng.pick(LINES[c.skill][ok ? 'ok' : 'ko']), best);
+    const k = ok ? 'ok' : 'ko';
+    const pool = rng.chance(0.35)
+      ? CLASS_LINES[best!.cls][k]
+      : [...LINES[c.skill][k], ...MORE_LINES[c.skill][k]];
+    say(fresh(pool), best);
   });
 
   const n = q.challenges.length;
@@ -122,7 +187,11 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
       say(`${scout.name} olió la emboscada a tiempo y los sacó por un barranco. Se salvaron.`);
     } else outcome = ambush ? 'Desastre' : 'Fracaso';
   }
-  say(rng.pick(CLOSERS[outcome]));
+  say(
+    rng.pick(
+      rng.chance(0.4) ? CLIENT_CLOSERS[outcome] : [...CLOSERS[outcome], ...MORE_CLOSERS[outcome]],
+    ),
+  );
 
   // Oro, reputación y botín.
   let gold = Math.round(q.reward * PAY[outcome] * mods.gold);
@@ -224,7 +293,7 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
     if (hidden) {
       hidden.hidden = false;
       const label = TRAIT_INFO[hidden.id][h.sex];
-      body.push(`Por cierto: has descubierto que ${h.name} es ${label.toLowerCase()}.`);
+      body.push(fill(fresh(REVEALS), { h: h.name, t: label.toLowerCase(), place: q.place }));
       chips.push({ t: `Descubierto: ${label}`, k: 'info' });
     }
   }
