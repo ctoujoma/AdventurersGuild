@@ -275,6 +275,7 @@ export function reduce(state: GameState, action: Action): GameState {
         daysLeft: days,
       });
       s.quests = s.quests.filter((x) => x.id !== q.id);
+      if (!(s.explored ??= []).includes(q.place)) s.explored.push(q.place);
       return s;
     }
     case 'upgrade': {

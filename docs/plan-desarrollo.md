@@ -173,6 +173,8 @@ Inspirado en los ataques al refugio de *Fallout Shelter*: cuanto más famoso y r
   - Perder: saqueo (oro, tesoros o equipo del arcón; quizá un trofeo) y heridos
   - Ganar: días de tregua (se corre la voz y otras bandas se lo piensan), reputación y algo de botín de los bandidos
 
+- [ ] **Combate con estilo** (pendiente): armas visibles y ataques por clase (tajo del guerrero, puñaladas del pícaro, proyectil del mago, flechas del explorador, maza y curación del clérigo), destello al recibir golpes, retroceso, bandidos variados (garrote, cuchillo, un jefe). Servirá también para los jefes del futuro
+
 ### Fase 7: Tu taberna · M
 
 **Personalización**

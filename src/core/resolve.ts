@@ -42,6 +42,7 @@ import {
 } from './balance';
 import { fill } from './generate';
 import { TROPHIES } from '../data/items';
+import { PLACE_INFO, placeAt } from '../data/places';
 import type {
   ChipKind,
   Facilities,
@@ -239,6 +240,22 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
     stats.byType[q.type] = (stats.byType[q.type] ?? 0) + 1;
   }
   if (outcome === 'Éxito brillante') stats.brilliant++;
+  // Explorar con éxito descubre los dos lugares más cercanos en el mapa.
+  if (q.type === 'Explorar' && PAY[outcome] >= 1) {
+    const here = placeAt(q.place);
+    const near = Object.entries(PLACE_INFO)
+      .filter(([n]) => n !== q.place && !state.explored?.includes(n))
+      .sort(
+        ([, a], [, b]) =>
+          Math.hypot(a.x - here.x, a.y - here.y) - Math.hypot(b.x - here.x, b.y - here.y),
+      )
+      .slice(0, 2)
+      .map(([n]) => n);
+    if (near.length) {
+      (state.explored ??= []).push(...near);
+      chips.push({ t: `En el mapa: ${listNames(near)}`, k: 'info' });
+    }
+  }
   chips.unshift({ t: gold > 0 ? `+${gold} monedas` : 'Sin cobrar', k: gold > 0 ? 'good' : 'bad' });
   const dRep = REP[outcome];
   state.rep = Math.max(0, state.rep + dRep);
@@ -306,6 +323,7 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
       chips.push({ t: `${victim.name}: ${sx(victim, 'caído', 'caída')}`, k: 'bad' });
     } else {
       victim.status = 'desaparecido';
+      victim.lostAt = q.place;
       victim.days = rng.int(2, 4);
       say(
         `Nadie sabe qué fue de ${victim.name}. Lo último que vieron fue su sombra cerca de ${q.place}.`,

@@ -37,6 +37,8 @@ export interface Hero {
   item?: Item;
   /** De guardia: no sale de misión y defiende mejor la taberna. */
   guard?: boolean;
+  /** Dónde se le perdió la pista (si está desaparecido). */
+  lostAt?: string;
 }
 
 export type QuestType = 'Cazar' | 'Escoltar' | 'Explorar' | 'Recuperar' | 'Investigar' | 'Limpiar';
@@ -262,6 +264,8 @@ export interface GameState {
   raid?: Raid | null;
   /** Sin asaltos hasta este día (tras repeler uno, se corre la voz). */
   truce?: number;
+  /** Lugares de la comarca ya visitados (levantan la niebla del mapa). */
+  explored?: string[];
   /** Último asalto, para verlo en la escena al amanecer. */
   lastRaid?: RaidResult | null;
 }

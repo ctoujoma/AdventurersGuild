@@ -22,6 +22,8 @@
   --wine: #a22633;
   --leaf: #3e8948;
   --sky: #0099db;
+  --ocean: #124e89;
+  --grape: #68386c;
   --pixel: 'Pixelify Sans', 'Courier New', monospace;
   --body: 'Alegreya Sans', 'Trebuchet MS', sans-serif;
   color-scheme: dark;
@@ -2450,4 +2452,167 @@ button:focus-visible {
 .security .tiny {
   display: block;
   margin-top: 4px;
+}
+
+/* ---------- Mapa de la comarca ---------- */
+.map-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.map {
+  position: relative;
+  width: 100%;
+  box-shadow:
+    0 0 0 3px var(--bark),
+    0 0 0 5px var(--ink);
+  overflow: hidden;
+}
+.map .map-layer {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+}
+.map-routes {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.map-routes .route {
+  stroke: var(--wine);
+  stroke-width: 1.2;
+  stroke-dasharray: 3 2;
+}
+.map-place,
+.map-tavern,
+.map-pin,
+.map-party,
+.map-missing,
+.map-raid {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+.map-place {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+.map-place i {
+  width: 5px;
+  height: 5px;
+  background: var(--rust);
+  box-shadow: 0 0 0 1px var(--sand);
+}
+.map-place small,
+.map-tavern small {
+  margin-top: 1px;
+  font-size: 9px;
+  line-height: 1;
+  color: var(--bark);
+  white-space: nowrap;
+  text-shadow:
+    0 0 2px var(--sand),
+    0 0 2px var(--sand);
+}
+.map-tavern {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+.map-tavern b {
+  font-size: 16px;
+  line-height: 1;
+  color: var(--wine);
+  text-shadow: 0 1px 0 var(--sand);
+}
+.map-tavern small {
+  font-family: var(--pixel);
+  color: var(--wine);
+}
+.map-pin,
+.map-party,
+.map-missing {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  font-family: var(--pixel);
+  font-size: 11px;
+  line-height: 1;
+  color: var(--sand);
+  cursor: pointer;
+  box-shadow: 0 0 0 2px var(--ink);
+}
+.map-pin {
+  background: var(--leaf);
+  border-radius: 50% 50% 50% 0;
+}
+.map-pin.danger-medio {
+  background: var(--gold);
+  color: var(--ink);
+}
+.map-pin.danger-alto {
+  background: var(--orange);
+  color: var(--ink);
+}
+.map-pin.danger-letal {
+  background: var(--red);
+}
+.map-pin.danger-x {
+  background: var(--grape, #68386c);
+}
+.map-party {
+  background: var(--sky);
+  border-radius: 3px;
+  animation: party-bob 1s steps(2) infinite;
+}
+.map-party.back {
+  background: var(--steel);
+}
+.map-missing {
+  background: var(--plum);
+}
+.map-raid {
+  font-size: 15px;
+  color: var(--red);
+  text-shadow:
+    0 0 2px var(--ink),
+    0 0 2px var(--ink);
+  animation: glow 1s steps(2) infinite;
+}
+@keyframes party-bob {
+  50% {
+    transform: translate(-50%, calc(-50% - 2px));
+  }
+}
+.map-legend {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--oak);
+}
+.map-legend span {
+  display: inline-grid;
+  place-items: center;
+  width: 13px;
+  height: 13px;
+  font-family: var(--pixel);
+  font-size: 10px;
+  color: var(--sand);
+  vertical-align: -2px;
+}
+.lg-pin {
+  background: var(--leaf);
+}
+.lg-party {
+  background: var(--sky);
+}
+.lg-missing {
+  background: var(--plum);
 }

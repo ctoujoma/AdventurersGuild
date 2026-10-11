@@ -16,6 +16,7 @@ import { Letter } from './Letter';
 import { Opening } from './Opening';
 import { Panel } from './Panel';
 import { LibroPanel } from './panels/LibroPanel';
+import { MapPanel } from './panels/MapPanel';
 import { SaveMenu } from './SaveMenu';
 import { Splash } from './Splash';
 import { Title } from './Title';
@@ -467,7 +468,15 @@ export function App() {
           </Panel>
         )}
         {panel === 'fuera' && (
-          <Panel title="Fuera del gremio" onClose={() => openPanel(null)}>
+          <Panel title="La comarca" onClose={() => openPanel(null)}>
+            <MapPanel
+              game={game}
+              onHero={(id) => setCard(id)}
+              onQuest={(id) => {
+                audio.play('open');
+                setQuestId(id);
+              }}
+            />
             <AwayPanel game={game} onHero={(id) => setCard(id)} />
           </Panel>
         )}
