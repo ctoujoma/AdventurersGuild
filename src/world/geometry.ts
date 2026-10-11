@@ -56,6 +56,12 @@ export interface Facilities {
   enf: number;
   /** Taberna (sala común): 0 en ruinas, 1–3 cada vez más acogedora. */
   tab: number;
+  /** Sala de mapas en el desván: 0–2. */
+  mapas: number;
+  /** Armería en la bodega: 0–2. */
+  arm: number;
+  /** Capilla en un anexo a la derecha: 0–2. */
+  cap: number;
 }
 
 export const FACILITY_MAX = 3;
@@ -169,11 +175,13 @@ export function hotspots(f: Facilities): HotspotDef[] {
     { id: 'retrato', label: 'Retrato del tío Fausto', x: 390, y: 154, w: 24, h: 28 },
     { id: 'despacho', label: 'Libro de cuentas', x: 242, y: 112, w: 48, h: 28 },
     { id: 'mapa', label: 'Mapa de la región', x: 204, y: 98, w: 40, h: 24 },
-    { id: 'cofres', label: 'Arcón del botín', x: 226, y: 326, w: 112, h: 26 },
+    { id: 'cofres', label: 'Arcón del botín', x: 226, y: 322, w: 58, h: 30 },
     { id: 'pozo', label: 'El pozo', x: 12, y: 248, w: 40, h: 52 },
     { id: 'letrero', label: 'El Jarro Partido', x: 52, y: 164, w: 40, h: 34 },
     { id: 'puerta', label: 'La puerta', x: 84, y: 244, w: 20, h: 48 },
   ];
+  if (f.arm > 0) list.push({ id: 'armeria', label: 'Armería', x: 284, y: 318, w: 56, h: 34 });
+  if (f.cap > 0) list.push({ id: 'capilla', label: 'Capilla', x: 440, y: 214, w: 56, h: 78 });
   if (layout(f).lute) list.push({ id: 'laud', label: 'Laúd', x: 263, y: 229, w: 15, h: 28 });
   return list;
 }

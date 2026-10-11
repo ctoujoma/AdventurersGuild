@@ -35,6 +35,8 @@ export interface Member {
   traits: readonly Trait[];
   /** Moral 0–100: animado rinde más, desanimado rinde menos. */
   morale?: number;
+  /** Equipo de la armería: suma a cada habilidad. */
+  gear?: Partial<Record<SkillId, number>>;
 }
 
 export interface Challenge {
@@ -134,7 +136,8 @@ export function skill(m: Member, s: SkillId, includeHidden = false): number {
         2,
     ) +
     (m.lvl - 1) +
-    moraleMod(m);
+    moraleMod(m) +
+    (m.gear?.[s] ?? 0);
   for (const t of known(m, includeHidden)) v += TRAIT_EFFECTS[t.id]?.skills?.[s] ?? 0;
   return Math.max(0, v);
 }

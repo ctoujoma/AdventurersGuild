@@ -11,6 +11,7 @@ import {
   newGame,
   roster,
   salaries,
+  upgradeCost,
 } from '../src/core/game';
 import type { GameState, Hero, Outcome } from '../src/core/model';
 import { questEstimate } from '../src/core/resolve';
@@ -53,6 +54,13 @@ function playDay(s: GameState, st: Strategy): GameState {
   if (st.upgrade && roster(s).length >= capacity(s.fac.dorm) && !canUpgrade(s, 'dorm')) {
     if (s.gold - 150 > reserve(s)) s = reduce(s, { type: 'upgrade', fac: 'dorm' });
   }
+  // Con dinero de sobra, ampliar el edificio: armería, mapas y capilla.
+  if (st.upgrade)
+    for (const k of ['arm', 'mapas', 'cap'] as const) {
+      const cost = upgradeCost(s, k);
+      if (cost !== null && s.gold - cost > reserve(s) + 120)
+        s = reduce(s, { type: 'upgrade', fac: k });
+    }
   if (st.hire) {
     const best = [...s.candidates].sort((a, b) => value(b) / b.fee - value(a) / a.fee)[0];
     if (best && !canHire(s, best.id) && s.gold - best.fee > reserve(s))
@@ -65,7 +73,7 @@ function playDay(s: GameState, st: Strategy): GameState {
       let pick: Hero[] | null = null;
       let bestP = 0;
       for (const party of combos(ready, q.slots)) {
-        const p = questEstimate(q, party).total;
+        const p = questEstimate(q, party, s.fac).total;
         if (p < st.threshold) continue;
         // El grupo más pequeño que llega; a igualdad, el más seguro.
         if (!pick || party.length < pick.length || (party.length === pick.length && p > bestP)) {

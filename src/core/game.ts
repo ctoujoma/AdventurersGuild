@@ -8,7 +8,6 @@ import {
   CANDIDATE_EVERY,
   DAYS,
   DEBT,
-  FACILITY_MAX,
   DESERT_CHANCE,
   MAX_CANDIDATES,
   RAISE_AMOUNT,
@@ -20,10 +19,13 @@ import {
   START,
   UPGRADE_COST,
   capacity,
+  chapelRest,
+  facilityMax,
   healRate,
   rankIndex,
   restCap,
   restMorale,
+  returnChance,
   tavernIncome,
 } from './balance';
 import { tripDays } from './classes';
@@ -63,7 +65,7 @@ export const rankOf = (s: GameState) => RANKS[rankIndex(s.rep)]!;
 export const nextRank = (s: GameState) => RANKS[rankIndex(s.rep) + 1] ?? null;
 export const nextPayment = (s: GameState) => SCHEDULE.find((p) => p.day > s.day) ?? null;
 export const upgradeCost = (s: GameState, k: keyof Facilities) =>
-  s.fac[k] >= FACILITY_MAX ? null : UPGRADE_COST[k][s.fac[k] + 1]!;
+  s.fac[k] >= facilityMax(k) ? null : UPGRADE_COST[k][s.fac[k] + 1]!;
 
 export function canHire(s: GameState, id: string): string | null {
   const c = s.candidates.find((x) => x.id === id);
@@ -295,7 +297,7 @@ export function endDay(state: GameState): GameState {
     } else if (h.status === 'desaparecido') {
       h.days--;
       if (h.days > 0) continue;
-      if (rng.chance(0.5)) {
+      if (rng.chance(returnChance(s.fac.cap))) {
         h.status = 'herido';
         h.days = 2;
         h.morale = Math.max(0, h.morale - 10);
@@ -320,7 +322,8 @@ export function endDay(state: GameState): GameState {
   for (const h of s.heroes) {
     if (h.status !== 'ok') continue;
     const cap = restCap(s.fac.tab) + (has(h, 'bebedor') && s.fac.tab >= 2 ? 10 : 0);
-    if (h.morale < cap) h.morale = Math.min(cap, h.morale + restMorale(s.fac.tab));
+    const gain = restMorale(s.fac.tab) + chapelRest(s.fac.cap);
+    if (h.morale < cap) h.morale = Math.min(cap, h.morale + gain);
     if (h.morale < MORALE_QUIT && !has(h, 'leal') && rng.chance(DESERT_CHANCE)) {
       deserters.push(h);
       continue;
@@ -351,7 +354,7 @@ export function endDay(state: GameState): GameState {
   if (gone.length) events.push({ t: `Caduca: ${listNames(gone.map((q) => q.title))}.` });
   s.quests = s.quests.filter((q) => q.expires > 0);
   let fresh = 0;
-  while (s.quests.length < BOARD_SIZE(s.fac.tab)) {
+  while (s.quests.length < BOARD_SIZE(s.fac.tab, s.fac.mapas)) {
     s.quests.push(quest(s, rng));
     fresh++;
   }

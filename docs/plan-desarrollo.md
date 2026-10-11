@@ -103,9 +103,10 @@ Los tamaños son relativos (S < M < L). Cada fase termina en algo que se puede p
 Orden acordado tras probar la fase 2 (prioridad del propietario: 3a y 3b, la escena que reacciona y el crecimiento del edificio):
 
 **3a · Héroes que importan**
-- [ ] Clases con habilidad real: el explorador acorta la misión y evita emboscadas, el pícaro trae más botín, el guerrero protege al grupo (menos heridas en combate), el clérigo evita muertes (ya reduce heridas) y el mago detecta giros (hecho)
-- [ ] Moral con efectos: con moral baja rinde menos, pide aumento, puede desertar (con botín); sube con éxitos, descanso y taberna mejorada; baja con heridas, caídos e impagos
-- [ ] Secuelas variadas con apodo (tuerto, cojo, cicatriz, manco…) y desaparecidos que vuelven con historia y rasgo nuevo, o encargo de rescate
+- [x] Clases con habilidad real: guerrero «Escudo» (compañeros con la mitad de heridas), pícaro «Manos largas» (+10 % de oro y objeto con éxito parcial), mago «Sexto sentido» (giros y peligro real), clérigo «Plegaria» (evita muertes, amortigua la moral), explorador «Atajos» (−1 día en viajes de 3+ y esquiva emboscadas)
+- [x] Moral con efectos: animado +1 / desanimado −1 a todo; cada día fuera cansa; se recupera descansando (más con taberna y capilla); el harto puede irse de noche y el desanimado pide aumento (aceptar o negarse)
+- [x] Secuelas variadas con apodo: tuerto, cojo («Pata Chula») y cara cortada (cicatriz en el retrato)
+- [ ] Desaparecidos que vuelven con historia y rasgo nuevo, o encargo de rescate
 - [x] Rasgos ocultos que se revelan tras la primera misión · hecho en la fase 1
 
 **3b · Lo que traen**
@@ -117,12 +118,13 @@ Orden acordado tras probar la fase 2 (prioridad del propietario: 3a y 3b, la esc
 - [ ] Eventos en ruta (emboscada, mercader, tesoro, pelea interna) y eventos en la taberna con elección
 
 **3d · La escena cuenta la partida**
-- [ ] El amanecer ocurre en la escena: ciclo de luz día/noche con sentido (de día, luz cálida por las ventanas; al terminar el día, anochece)
-- [ ] Los grupos que vuelven con éxito celebran en la barra (jarras, notas del laúd); vela por cada caído en el Muro
+- [x] El amanecer ocurre en la escena: al terminar el día anochece, clarea por el horizonte con el sol y luego llega el resumen
+- [x] Los grupos que vuelven con éxito celebran en la barra (notas, monedas, brindis); una vela por cada caído en la capilla
 - [ ] El botín y los trofeos se ven en estanterías y paredes
 
 **3e · Crecimiento del edificio**
-- [ ] Nuevas instalaciones visibles que amplían el edificio: Sala de mapas (estimación precisa, detecta giros), Armería (equipo), Capilla (moral, ceremonias); un anexo o una torre en el corte lateral
+- [x] Sala de mapas en el desván (+1/+2 encargos; a nivel 2, peligro real a la vista), Armería en la bodega (+1 Combate; a nivel 2 también Trampas y Supervivencia) y Capilla como anexo de piedra a la derecha (moral, desaparecidos que vuelven, caídos que duelen menos; campana y vidriera a nivel 2)
+- [ ] Una torre en el corte lateral para el final de partida
 
 **3f · Más allá de «La deuda»**
 - [ ] Modo infinito: sin plazo, deudas o encargos que escalan; récords

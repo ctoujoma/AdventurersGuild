@@ -24,13 +24,13 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
   const [warn, setWarn] = useState<string | null>(null);
   const heroes = game.heroes.filter((h) => h.status !== 'muerto');
   const party = sel.map((id) => heroes.find((h) => h.id === id)!).filter(Boolean);
-  const est = questEstimate(q, party.map(memberOf));
+  const members = party.map((h) => memberOf(h, game.fac));
+  const est = questEstimate(q, members, game.fac);
   const scale = Math.max(1, ...est.rows.map((r) => Math.max(r.diff, r.power))) * 1.15;
   const blocked = party.length ? canSend(game, q.id, sel) : null;
   const mage = party.find((h) => h.cls === 'mago');
-  const members = party.map(memberOf);
   const days = tripDays(q, members);
-  const hideDanger = q.dangerHidden && !mage;
+  const hideDanger = q.dangerHidden && !mage && game.fac.mapas < 2;
 
   const toggle = (id: string) => {
     setWarn(null);
@@ -90,7 +90,7 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
               <b>{mage.name} nota algo raro.</b> {q.twist} El primer desafío será más duro.
             </div>
           )}
-          {mage && q.dangerHidden && (
+          {mage && q.dangerHidden && game.fac.mapas < 2 && (
             <div class="twist" role="status">
               <b>{mage.name} no se fía del cliente.</b> El peligro real es mayor de lo que dice.
             </div>
@@ -154,7 +154,10 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
                       {busy
                         ? statusLabel(h)
                         : q.challenges
-                            .map((c) => `${c.skill.slice(0, 3)} ${skill(memberOf(h), c.skill)}`)
+                            .map(
+                              (c) =>
+                                `${c.skill.slice(0, 3)} ${skill(memberOf(h, game.fac), c.skill)}`,
+                            )
                             .join(' · ')}
                     </span>
                   </span>

@@ -145,7 +145,18 @@ export function App() {
       case 'mapa':
         openPanel('fuera');
         return;
+      case 'armeria':
+        setFocusFac('arm');
+        openPanel('gremio');
+        return;
+      case 'capilla':
+        setFocusFac('cap');
+        openPanel('gremio');
+        return;
       case 'despacho':
+        setFocusFac('mapas');
+        openPanel('gremio');
+        return;
       case 'cofres':
         setFocusFac(null);
         openPanel('gremio');
@@ -343,6 +354,7 @@ export function App() {
           <Panel title="Tablón de encargos" onClose={() => openPanel(null)} variant="cork">
             <TablonPanel
               quests={game.quests}
+              seeAll={game.fac.mapas >= 2}
               onOpen={(id) => {
                 audio.play('open');
                 setQuestId(id);

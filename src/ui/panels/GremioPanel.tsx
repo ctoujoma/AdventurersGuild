@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { DEBT, FACILITY_MAX, SCHEDULE, capacity } from '../../core/balance';
+import { DEBT, SCHEDULE, capacity, facilityMax } from '../../core/balance';
 import { canUpgrade, nextPayment, salaries, upgradeCost } from '../../core/game';
 import type { Facilities, GameState } from '../../core/model';
 import { FACILITY_INFO } from '../../data/labels';
@@ -60,8 +60,8 @@ export function GremioPanel({ game, focus, onUpgrade, onSell, onNewGame }: Props
             <article key={k} class={`card-paper facility ${focus === k ? 'is-focus' : ''}`}>
               <div class="facility-info">
                 <b>{info.name}</b>
-                <span class="pips" aria-label={`Nivel ${level} de ${FACILITY_MAX}`}>
-                  {Array.from({ length: FACILITY_MAX }, (_, i) => (
+                <span class="pips" aria-label={`Nivel ${level} de ${facilityMax(k)}`}>
+                  {Array.from({ length: facilityMax(k) }, (_, i) => (
                     <i key={i} class={i < level ? 'on' : ''} />
                   ))}
                 </span>

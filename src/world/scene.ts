@@ -42,6 +42,8 @@ export interface SceneModel {
   fac: Facilities;
   quests: number;
   loot: number;
+  /** Caídos: una vela por cada uno en la capilla. */
+  fallen: number;
   heroes: SceneHero[];
 }
 
@@ -84,6 +86,8 @@ export const ROOM_CENTERS: Record<string, Point> = {
   rellano: { x: 396, y: 180 },
   exterior: { x: 60, y: 250 },
   puerta: { x: 130, y: 262 },
+  armeria: { x: 312, y: 330 },
+  capilla: { x: 468, y: 262 },
 };
 
 /** Puerta de la calle: por aquí salen los grupos y vuelven de las misiones. */
@@ -243,10 +247,10 @@ export class WorldScene {
   setModel(model: SceneModel): void {
     const prev = this.model;
     this.model = model;
-    const key = JSON.stringify([model.fac, model.loot, model.quests]);
+    const key = JSON.stringify([model.fac, model.loot, model.quests, model.fallen]);
     if (key !== this.worldKey) {
       this.worldKey = key;
-      this.world = buildWorld(model.fac, model.loot, model.quests);
+      this.world = buildWorld(model.fac, model.loot, model.quests, model.fallen);
       this.backC = bufferCanvas(this.world.back);
       this.frontC = bufferCanvas(this.world.front);
       this.ambientC = ambientCanvas(this.world.ambient);
@@ -460,6 +464,9 @@ export class WorldScene {
     if (b.dorm > a.dorm) this.celebrate('dormitorios');
     if (b.enf > a.enf) this.celebrate('enfermeria');
     if (b.tab > a.tab) this.celebrate('sala');
+    if (b.mapas > a.mapas) this.celebrate('despacho');
+    if (b.arm > a.arm) this.celebrate('armeria');
+    if (b.cap > a.cap) this.celebrate('capilla');
   }
 
   private update(dt: number): void {

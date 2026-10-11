@@ -7,6 +7,7 @@ import { CLOSERS, LINES, OPENERS, SCARS } from '../data/stories';
 import { TRAIT_INFO } from '../data/traits';
 import { partyMods } from './classes';
 import {
+  ARMORY,
   DISASTER,
   FAIL_CASUALTY,
   GREED,
@@ -20,7 +21,16 @@ import {
   XP_PER_LEVEL,
 } from './balance';
 import { fill } from './generate';
-import type { ChipKind, GameState, Hero, Mission, Outcome, Quest, Report } from './model';
+import type {
+  ChipKind,
+  Facilities,
+  GameState,
+  Hero,
+  Mission,
+  Outcome,
+  Quest,
+  Report,
+} from './model';
 import { chance, estimate, skill, type Estimate, type Member } from './party';
 import type { Rng } from './rng';
 import { listNames } from './text';
@@ -38,7 +48,18 @@ export const MAIN_ATTR = {
 } as const;
 
 /** Lo que se ve antes de enviar: con un mago en el grupo, el giro oculto se descubre. */
-export function questEstimate(q: Quest, party: readonly Member[]): Estimate & { reveal: boolean } {
+/** Cada héroe con el equipo de la armería puesto. */
+export function equip<T extends Member>(party: readonly T[], fac?: Facilities): T[] {
+  const gear = ARMORY[fac?.arm ?? 0];
+  return gear && Object.keys(gear).length ? party.map((m) => ({ ...m, gear })) : [...party];
+}
+
+export function questEstimate(
+  q: Quest,
+  members: readonly Member[],
+  fac?: Facilities,
+): Estimate & { reveal: boolean } {
+  const party = equip(members, fac);
   const reveal = !!q.twist && partyMods(party).seer;
   const challenges = q.challenges.map((c, i) =>
     reveal && i === 0 ? { ...c, diff: c.diff + TWIST_DIFF } : c,
@@ -75,7 +96,7 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
   let sumP = 0;
   q.challenges.forEach((c, i) => {
     const diff = c.diff + (q.twist && i === 0 ? TWIST_DIFF : 0);
-    const power = party.reduce((a, h) => a + skill(h, c.skill, true), 0);
+    const power = equip(party, state.fac).reduce((a, h) => a + skill(h, c.skill, true), 0);
     const p = clamp(chance(power, diff) - jinx, 0.03, 0.95);
     sumP += p;
     let ok = rng.chance(p);
@@ -194,7 +215,7 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
       chips.push({ t: `${h.name} sube a nivel ${h.lvl}`, k: 'good' });
     }
     let dMorale = MORALE[outcome] - TRIP_FATIGUE * q.days;
-    if (fallen) dMorale -= has(h, 'leal') ? 20 : 10;
+    if (fallen) dMorale -= Math.round((has(h, 'leal') ? 20 : 10) * (state.fac.cap >= 2 ? 0.5 : 1));
     if (has(h, 'codicioso') && q.reward >= 200 && PAY[outcome] >= 1) dMorale += 5;
     if (dMorale < 0) dMorale = Math.round(dMorale * mods.solace);
     h.morale = clamp(h.morale + dMorale, 0, 100);

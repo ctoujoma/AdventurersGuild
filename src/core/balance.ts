@@ -3,6 +3,7 @@
  * (`npm run sim`) sin tocar la lógica.
  */
 import type { Facilities, Outcome } from './model';
+import type { SkillId } from './party';
 
 export const DAYS = 30;
 export const DEBT = 1000;
@@ -16,19 +17,22 @@ export const SCHEDULE: readonly { day: number; amount: number }[] = [
 
 export const START = {
   gold: 160,
-  fac: { dorm: 1, enf: 0, tab: 1 } as Facilities,
+  fac: { dorm: 1, enf: 0, tab: 1, mapas: 0, arm: 0, cap: 0 } as Facilities,
   heroes: 2,
   candidates: 3,
   quests: 4,
 };
 
-export const FACILITY_MAX = 3;
-/** Coste de subir a cada nivel (índice = nivel nuevo). */
+/** Coste de subir a cada nivel (índice = nivel nuevo); el nivel máximo es el último. */
 export const UPGRADE_COST: Record<keyof Facilities, readonly number[]> = {
   dorm: [0, 80, 150, 280],
   enf: [0, 100, 200, 340],
   tab: [0, 90, 170, 300],
+  mapas: [0, 120, 240],
+  arm: [0, 150, 280],
+  cap: [0, 110, 230],
 };
+export const facilityMax = (k: keyof Facilities) => UPGRADE_COST[k].length - 1;
 
 export const capacity = (dorm: number) => 2 + 2 * dorm;
 /** Ingreso diario de la taberna: por nivel y un poco por reputación. */
@@ -53,7 +57,7 @@ export function rankIndex(rep: number): number {
   return i;
 }
 
-export const BOARD_SIZE = (tab: number) => 3 + Math.min(2, tab);
+export const BOARD_SIZE = (tab: number, mapas = 0) => 3 + Math.min(2, tab) + mapas;
 /** Cada cuántos días llega un candidato nuevo. */
 export const CANDIDATE_EVERY = 2;
 export const MAX_CANDIDATES = 3;
@@ -125,6 +129,17 @@ export const TRIP_FATIGUE = 4;
 export const restMorale = (tab: number) => 2 + tab;
 /** Hasta dónde llega la moral solo descansando: una taberna mejor anima más. */
 export const restCap = (tab: number) => 55 + 6 * tab;
+/** Capilla: moral extra por noche y probabilidad de que vuelva un desaparecido. */
+export const chapelRest = (cap: number) => 2 * cap;
+export const returnChance = (cap: number) => 0.5 + 0.2 * cap;
+
+/** Armería: lo que suma a cada héroe según su nivel. */
+export const ARMORY: readonly Partial<Record<SkillId, number>>[] = [
+  {},
+  { Combate: 1 },
+  { Combate: 1, Trampas: 1, Supervivencia: 1 },
+];
+
 /** Probabilidad por noche de que alguien harto se vaya, y de que alguien desanimado pida aumento. */
 export const DESERT_CHANCE = 0.35;
 export const RAISE_CHANCE = 0.3;

@@ -99,6 +99,12 @@ export interface Facilities {
   dorm: number;
   enf: number;
   tab: number;
+  /** Sala de mapas (desván): más encargos y, a nivel 2, el peligro real a la vista. */
+  mapas: number;
+  /** Armería (bodega): equipo para todos. */
+  arm: number;
+  /** Capilla (anexo): moral, desaparecidos y una vela por cada caído. */
+  cap: number;
 }
 
 /** Lo que pasó al terminar un día: se enseña en la transición del amanecer. */

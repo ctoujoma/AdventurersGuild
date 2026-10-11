@@ -1,5 +1,6 @@
 import { generateLook, type HeroLook, type HeroMarks } from '../art/heroes/look';
-import type { GameState, Hero } from '../core/model';
+import { ARMORY } from '../core/balance';
+import type { Facilities, GameState, Hero } from '../core/model';
 import type { Member } from '../core/party';
 import type { SceneHero, SceneModel } from '../world/scene';
 
@@ -21,12 +22,13 @@ export const marksOf = (h: Hero): HeroMarks => ({
   scar: h.traits.some((t) => t.id === 'cortado'),
 });
 
-export const memberOf = (h: Hero): Member => ({
+export const memberOf = (h: Hero, fac?: Facilities): Member => ({
   cls: h.cls,
   lvl: h.lvl,
   attrs: h.attrs,
   traits: h.traits,
   morale: h.morale,
+  gear: ARMORY[fac?.arm ?? 0],
 });
 
 const fullName = (h: Hero) => (h.nick ? `${h.name} ${h.nick}` : h.name);
@@ -51,5 +53,11 @@ export function sceneModel(s: GameState): SceneModel {
       look: lookOf(h),
       marks: marksOf(h),
     });
-  return { fac: s.fac, quests: s.quests.length, loot: Math.min(6, s.inventory.length), heroes };
+  return {
+    fac: s.fac,
+    quests: s.quests.length,
+    loot: Math.min(6, s.inventory.length),
+    fallen: s.fallen.length,
+    heroes,
+  };
 }

@@ -39,7 +39,7 @@ export function HeroCard({
   onAnswer,
 }: Props) {
   const [confirm, setConfirm] = useState(false);
-  const m = memberOf(h);
+  const m = memberOf(h, game.fac);
   const why = candidate ? canHire(game, h.id) : null;
   const gone = h.status === 'muerto' || h.status === 'desaparecido';
   const band = moraleBand(h.morale);
