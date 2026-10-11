@@ -3,25 +3,30 @@ import splashUrl from '../assets/splash.webp';
 
 /**
  * Pantalla del desarrollador antes del título. La animación es `assets-src/splash-logo.gif`
- * convertida a WebP animado (mucho más ligero); HOLD es lo que dura una vuelta.
+ * convertida a WebP animado de una sola vuelta (se queda en el último fotograma).
+ * El tiempo cuenta desde que la imagen ha cargado, y la salida empieza justo antes del final.
  */
-const HOLD = 3000;
+const ANIM = 3000;
 /** Salida: fundido rápido mientras la imagen se estira hacia la pantalla. */
 const OUT = 420;
+const HOLD = ANIM - 150;
+/** Si la imagen tarda demasiado en cargar, se pasa al título igualmente. */
+const LOAD_TIMEOUT = 6000;
 
 interface Props {
   onDone: () => void;
 }
 
 export function Splash({ onDone }: Props) {
-  const [phase, setPhase] = useState<'in' | 'out'>('in');
+  const [phase, setPhase] = useState<'load' | 'in' | 'out'>('load');
 
   useEffect(() => {
-    if (phase === 'in') {
-      const t = setTimeout(() => setPhase('out'), HOLD);
-      return () => clearTimeout(t);
-    }
-    const t = setTimeout(onDone, OUT);
+    const t =
+      phase === 'load'
+        ? setTimeout(() => setPhase('out'), LOAD_TIMEOUT)
+        : phase === 'in'
+          ? setTimeout(() => setPhase('out'), HOLD)
+          : setTimeout(onDone, OUT);
     return () => clearTimeout(t);
   }, [phase]);
 
@@ -32,7 +37,12 @@ export function Splash({ onDone }: Props) {
       aria-label="Presenta el desarrollador"
       onClick={() => setPhase('out')}
     >
-      <img src={splashUrl} alt="" draggable={false} />
+      <img
+        src={splashUrl}
+        alt=""
+        draggable={false}
+        onLoad={() => setPhase((p) => (p === 'load' ? 'in' : p))}
+      />
     </div>
   );
 }

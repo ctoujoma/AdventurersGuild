@@ -74,7 +74,7 @@ export function generateHero(rng: Rng, id: string, opts: HeroOptions): Hero {
     if (rng.chance(0.45)) name += ` ${rng.pick(SURNAMES)}`;
     if (!opts.usedNames?.some((n) => n.split(' ')[0] === name.split(' ')[0])) break;
   }
-  const maxExtra = Math.min(2, opts.rank + (opts.tab >= 2 ? 1 : 0));
+  const maxExtra = Math.min(3, opts.rank + (opts.tab >= 2 ? 1 : 0) + (opts.tab >= 4 ? 1 : 0));
   const lvl = 1 + (maxExtra > 0 ? rng.int(0, maxExtra) : 0);
   const [main, second] = FOCUS[cls];
   const bonus = opts.tab >= 3 ? 1 : 0;

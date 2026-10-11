@@ -54,7 +54,7 @@ export interface Facilities {
   dorm: number;
   /** Enfermería: 0 cerrada, 1–3 con camillas. */
   enf: number;
-  /** Taberna (sala común): 0 en ruinas, 1–3 cada vez más acogedora. */
+  /** Taberna (sala común): 0 en ruinas, 1–4 cada vez más acogedora (4: gran salón). */
   tab: number;
   /** Sala de mapas en el desván: 0–2. */
   mapas: number;
@@ -98,6 +98,8 @@ export interface Layout {
   potions: boolean;
   herbs: boolean;
   screen: boolean;
+  /** Gran salón (taberna a nivel 4): alfombra roja, segundo candelabro, barra dorada. */
+  gala: boolean;
 }
 
 const BUNK_X = [110, 140, 170, 200];
@@ -131,6 +133,7 @@ export function layout(f: Facilities): Layout {
     potions: f.enf >= 3,
     herbs: f.enf >= 2,
     screen: f.enf >= 3,
+    gala: f.tab >= 4,
   };
 }
 

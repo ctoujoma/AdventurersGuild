@@ -27,10 +27,10 @@ export const START = {
 export const UPGRADE_COST: Record<keyof Facilities, readonly number[]> = {
   dorm: [0, 80, 150, 280],
   enf: [0, 100, 200, 340],
-  tab: [0, 90, 170, 300],
-  mapas: [0, 120, 240],
-  arm: [0, 150, 280],
-  cap: [0, 110, 230],
+  tab: [0, 90, 250, 450, 750],
+  mapas: [0, 120, 340],
+  arm: [0, 150, 380],
+  cap: [0, 110, 320],
 };
 export const facilityMax = (k: keyof Facilities) => UPGRADE_COST[k].length - 1;
 
