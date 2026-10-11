@@ -3,6 +3,13 @@ import type { GameState } from '../core/model';
 import { exportSave, parseSave, saveFileName } from '../platform/storage';
 import { Icon } from './icons';
 
+/** Lo mínimo del visor de claude.ai para ofrecer un archivo (capacidad `downloads`). */
+interface Host {
+  use(name: 'downloads'): Promise<{
+    save(r: { filename: string; data: string }): Promise<unknown>;
+  } | null>;
+}
+
 interface Props {
   /** Partida actual (null si no hay ninguna empezada). */
   game: GameState | null;
@@ -19,18 +26,36 @@ export function SaveMenu({ game, onLoad, onClose }: Props) {
   const [paste, setPaste] = useState('');
   const file = useRef<HTMLInputElement>(null);
 
-  const download = () => {
+  const download = async () => {
     if (!game) return;
+    const filename = saveFileName(game);
+    // Dentro de claude.ai el visor guarda el archivo (pide confirmación); en la web, descarga normal.
+    const host = (window as unknown as { claude?: Host }).claude;
+    const saver = host ? await host.use('downloads').catch(() => null) : null;
+    if (saver) {
+      try {
+        await saver.save({ filename, data: exportSave(game) });
+        setMsg(`Guardado como ${filename}.`);
+      } catch (e) {
+        const code = (e as { code?: string }).code;
+        setMsg(
+          code === 'declined'
+            ? 'Descarga cancelada.'
+            : 'Aquí no se puede descargar: usa «Copiar código».',
+        );
+      }
+      return;
+    }
     try {
       const blob = new Blob([exportSave(game)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = saveFileName(game);
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-      setMsg(`Guardado como ${saveFileName(game)}.`);
+      setMsg(`Guardado como ${filename}.`);
     } catch {
       setMsg('Este navegador no deja descargar: usa «Copiar código».');
     }
