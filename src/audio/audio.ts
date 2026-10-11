@@ -28,7 +28,16 @@ export type Sfx =
   | 'cheer'
   | 'impact'
   | 'hit'
-  | 'horn';
+  | 'horn'
+  | 'swing'
+  | 'thud'
+  | 'zap'
+  | 'boom'
+  | 'arrow'
+  | 'holy'
+  | 'thunder'
+  | 'roar'
+  | 'whoosh';
 
 const STORAGE_KEY = 'jarro:sonido';
 const FIRE = { x: 346, y: 272 };
@@ -245,6 +254,50 @@ class AudioEngine {
         this.thump(t, 0.12 * v);
         this.ping(1800 + Math.random() * 900, t, 0.09, 0.05 * v);
         this.crackle(t, 0.12 * v);
+        break;
+      case 'swing':
+        // Silbido del acero cortando el aire.
+        this.burst(t, 0.18, 0.08 * v, 'bandpass', 2400, 3);
+        this.tone('sine', 900, 300, t, 0.16, 0.02 * v);
+        break;
+      case 'whoosh':
+        this.burst(t, 0.22, 0.07 * v, 'bandpass', 900, 1.5);
+        break;
+      case 'thud':
+        // Golpe sordo: escudo, garrote, maza.
+        this.thump(t, 0.25 * v);
+        this.tone('sine', 120, 50, t, 0.18, 0.12 * v);
+        this.crackle(t + 0.01, 0.1 * v);
+        break;
+      case 'zap':
+        // Magia: barrido agudo con brillo.
+        this.tone('square', 1800, 500, t, 0.14, 0.025 * v);
+        this.tone('sine', 2600, 3400, t, 0.12, 0.03 * v);
+        break;
+      case 'boom':
+        // Explosión de fuego.
+        this.burst(t, 0.45, 0.22 * v, 'lowpass', 900);
+        this.tone('sine', 160, 40, t, 0.35, 0.18 * v);
+        for (let i = 0; i < 6; i++) this.crackle(t + 0.05 + Math.random() * 0.3, 0.2 * v);
+        break;
+      case 'arrow':
+        this.tone('triangle', 1200, 1900, t, 0.05, 0.03 * v);
+        this.burst(t + 0.02, 0.12, 0.04 * v, 'highpass', 3000);
+        break;
+      case 'holy':
+        // Luz sagrada: acorde brillante de campanillas.
+        [76, 81, 88].forEach((n, i) => this.ping(midi(n), t + i * 0.05, 0.6, 0.035 * v));
+        break;
+      case 'thunder':
+        this.burst(t, 0.08, 0.3 * v, 'highpass', 1800);
+        this.burst(t + 0.04, 0.9, 0.2 * v, 'lowpass', 300);
+        this.tone('sine', 90, 30, t, 0.7, 0.14 * v);
+        break;
+      case 'roar':
+        // Grito del jefe.
+        this.tone('sawtooth', 110, 80, t, 0.5, 0.06 * v);
+        this.tone('sawtooth', 165, 120, t, 0.5, 0.04 * v);
+        this.burst(t, 0.45, 0.05 * v, 'bandpass', 500, 1);
         break;
       case 'horn':
         // Cuerno de alarma: ¡asalto!

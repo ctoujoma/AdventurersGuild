@@ -175,6 +175,17 @@ export const SIDE_ARM = {
   ],
 } satisfies Record<string, Grid>;
 
+/** Brazos de combate: en alto (empieza 5 filas antes que los demás) y en estocada. */
+export const SIDE_ARM_UP: Grid = [
+  '..........xx....',
+  '.........qq.....',
+  '.........qq.....',
+  '........qq......',
+  '.......qq.......',
+  '.......qq.......',
+];
+export const SIDE_ARM_THRUST: Grid = [E, '.......qqqqqqxx.', '.......qQ.......', E, E, E, E];
+
 export const SIDE_HAIR: Record<string, Grid> = {
   corto: [
     E,

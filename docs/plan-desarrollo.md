@@ -173,7 +173,14 @@ Inspirado en los ataques al refugio de *Fallout Shelter*: cuanto más famoso y r
   - Perder: saqueo (oro, tesoros o equipo del arcón; quizá un trofeo) y heridos
   - Ganar: días de tregua (se corre la voz y otras bandas se lo piensan), reputación y algo de botín de los bandidos
 
-- [ ] **Combate con estilo** (pendiente): armas visibles y ataques por clase (tajo del guerrero, puñaladas del pícaro, proyectil del mago, flechas del explorador, maza y curación del clérigo), destello al recibir golpes, retroceso, bandidos variados (garrote, cuchillo, un jefe). Servirá también para los jefes del futuro
+- [x] **Combate con estilo**: cada clase con su arma en la mano y 4 ataques que se alternan sin repetir:
+  - Guerrero: tajo, estocada, golpe de escudo (aturde) y torbellino
+  - Pícaro: doble puñalada, daga lanzada, voltereta con entrada a fondo y puñalada baja
+  - Mago: bola de fuego, esquirla de hielo (congela), rayo del cielo y onda arcana
+  - Clérigo: mazazo, columna de luz, bendición y escudo de fe (burbuja que amortigua)
+  - Explorador: flecha, andanada de tres, flecha alta y carrera con patada
+  - Bandidos variados con 3 ataques cada uno: bruto (garrote), navajero, arquero (también flechas de fuego), incendiario (antorcha, botella ardiendo, fuego) y el jefe (hacha, grito de guerra que enrabieta a los suyos, giro)
+  - Destellos y retroceso al recibir, estelas de los golpes, luces de la magia en la noche, sonidos propios y la cámara se acerca al patio. El sistema sirve también para los jefes del futuro
 
 ### Fase 7: Tu taberna · M ✅
 

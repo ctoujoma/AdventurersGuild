@@ -29,7 +29,7 @@ import {
 import { ambientCanvas, glowSprite, lightSprite, shaftSprite } from './lighting';
 import { buildSky, parallaxLayers, stars, type ParallaxLayer, type Star } from './parallax';
 import { Particles } from './particles';
-import { BATTLE_TIME, Battle } from './battle';
+import { BATTLE_TIME, Battle, type BattleSound } from './battle';
 import * as Prop from './props';
 
 export type HeroStatus = 'ok' | 'herido' | 'mision' | 'candidato';
@@ -71,7 +71,7 @@ export type SoundName =
   | 'build'
   | 'drip'
   | 'cheer'
-  | 'hit';
+  | BattleSound;
 
 export interface Point {
   x: number;
@@ -198,6 +198,8 @@ export class WorldScene {
     null;
   /** Asalto que se está viendo en el patio durante la noche. */
   private battle: Battle | null = null;
+  /** Zoom de antes del asalto: la cámara se acerca al patio mientras dura la pelea. */
+  private raidZoom: number | null = null;
   private last = 0;
   private raf = 0;
   private keeper = { x: 150, dir: 1 as 1 | -1, target: 150, timer: 2, walking: false, dist: 0 };
@@ -452,21 +454,28 @@ export class WorldScene {
     const defenders = raid.defenders
       .map((id) => this.heroes.get(id))
       .filter((a): a is HeroActor => !!a)
-      .map((a) => ({ id: a.hero.id, spr: a.spr, hurt: raid.hurt.includes(a.hero.id) }));
+      .map((a) => ({
+        id: a.hero.id,
+        look: a.hero.look,
+        marks: a.hero.marks,
+        hurt: raid.hurt.includes(a.hero.id),
+      }));
     this.battle = new Battle(
       { won: raid.won, bandits: raid.bandits, defenders },
       {
         feetAt,
-        spark: (x, y) => {
-          for (let i = 0; i < 5; i++) this.particles.spawn('spark', x, y);
+        burst: (kind, x, y, n) => {
+          for (let i = 0; i < n; i++) this.particles.spawn(kind, x, y);
         },
         coin: (x, y) => {
           for (let i = 0; i < 8; i++) this.particles.spawn('coin', x, y);
         },
-        sound: (n) => this.cb.onSound?.(n, n === 'hit' ? 0.6 : 1),
+        sound: (n, v) => this.cb.onSound?.(n, v ?? 1),
       },
     );
-    this.focus('patio');
+    this.raidZoom = this.camera.zoom;
+    this.resize(this.cssW, this.cssH, Math.min(6, this.camera.zoom + 1));
+    this.camera.centerOn(-52, 262);
     this.nightfall(done, 2.6, BATTLE_TIME + 0.6);
   }
 
@@ -574,7 +583,11 @@ export class WorldScene {
     const t = this.t;
     if (this.battle) {
       this.battle.update(dt);
-      if (this.battle.done) this.battle = null;
+      if (this.battle.done) {
+        this.battle = null;
+        if (this.raidZoom !== null) this.resize(this.cssW, this.cssH, this.raidZoom);
+        this.raidZoom = null;
+      }
     }
     if (this.night) {
       const p = this.nightP();
@@ -1068,9 +1081,9 @@ export class WorldScene {
       l.drawImage(lightSprite(r, li.color, li.intensity), li.x - r - cx, li.y - r - cy);
     }
     // Antorchas de los bandidos durante un asalto.
-    for (const tch of this.battle?.torches() ?? []) {
-      const r = 30 + Math.round(noise(Math.floor(t * 9), tch.x) * 4);
-      l.drawImage(lightSprite(r, [255, 150, 70], 1), tch.x - r - cx, tch.y - r - cy);
+    for (const tch of this.battle?.lights() ?? []) {
+      const r = tch.r + Math.round(noise(Math.floor(t * 9), tch.x) * 4);
+      l.drawImage(lightSprite(r, tch.color, 1), tch.x - r - cx, tch.y - r - cy);
     }
     for (const s of W.shafts) {
       const sp = shaftSprite(s);
@@ -1095,6 +1108,10 @@ export class WorldScene {
     }
     for (const g of W.glows)
       ctx.drawImage(glowSprite(g.r, g.color, 0.45), g.x - g.r - cx, g.y - g.r - cy);
+    for (const g of this.battle?.glows() ?? []) {
+      const r = Math.round(g.r / 2);
+      ctx.drawImage(glowSprite(r, g.color, 0.5), g.x - r - cx, g.y - r - cy);
+    }
     if (W.layout.fire !== 'apagado') {
       const big = W.layout.fire === 'grande' ? 30 : 24;
       const fl = noise(Math.floor(t * 8), 3);
@@ -1117,6 +1134,7 @@ export class WorldScene {
       }
     }
     if (W.layout.fire !== 'apagado') this.drawFire(W);
+    this.battle?.drawFx(ctx, cx, cy);
     this.particles.draw(ctx, cx, cy, t);
 
     // Resalte del punto bajo el cursor y flecha sobre el héroe buscado.
