@@ -157,6 +157,7 @@ export function App() {
         setFocusFac('mapas');
         openPanel('gremio');
         return;
+      case 'equipo':
       case 'cofres':
         setFocusFac(null);
         openPanel('gremio');
@@ -164,8 +165,11 @@ export function App() {
       case 'chimenea':
         say(game.fac.tab === 0 ? CAPTIONS.chimeneaFria! : CAPTIONS.chimenea!, at);
         return;
-      default:
-        if (CAPTIONS[id]) say(CAPTIONS[id]!, at);
+      default: {
+        const t = id.startsWith('trofeo-') ? game.trophies[Number(id.slice(7))] : null;
+        if (t) say(`${t.name}. Lo trajeron ${t.who} de ${t.place}, el día ${t.day}.`, at);
+        else if (CAPTIONS[id]) say(CAPTIONS[id]!, at);
+      }
     }
   };
 
@@ -380,6 +384,13 @@ export function App() {
               focus={focusFac}
               onUpgrade={upgrade}
               onSell={sell}
+              onSellTrophy={(id) => {
+                const t = game.trophies.find((x) => x.id === id);
+                dispatch({ type: 'sellTrophy', id });
+                audio.play('coin');
+                if (t)
+                  toast(`Vendido: ${t.name} por ${t.value} monedas. La pared se queda más sosa.`);
+              }}
               onNewGame={restart}
             />
           </Panel>
@@ -416,6 +427,14 @@ export function App() {
             onHire={() => hire(cardHero.id)}
             onFire={() => fire(cardHero.id)}
             onAnswer={(yes) => dispatch({ type: 'answer', id: cardHero.id, yes })}
+            onEquip={(itemId) => {
+              dispatch({ type: 'equip', heroId: cardHero.id, itemId });
+              audio.play('select');
+            }}
+            onUnequip={() => {
+              dispatch({ type: 'unequip', heroId: cardHero.id });
+              audio.play('deselect');
+            }}
             onLocate={() => {
               setCard(null);
               setPanel(null);

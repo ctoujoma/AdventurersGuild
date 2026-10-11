@@ -1,7 +1,8 @@
 /**
  * Generadores con semilla: candidatos y encargos escalados por el rango del gremio.
  */
-import { CLIENTS, ITEMS, PLACES, SHADY_CLIENTS, TEMPLATES, TWISTS } from '../data/quests';
+import { GEAR, TREASURES } from '../data/items';
+import { CLIENTS, PLACES, SHADY_CLIENTS, TEMPLATES, TWISTS } from '../data/quests';
 import { FIRST_NAMES, QUOTES, SURNAMES } from '../data/names';
 import { REWARD_PER_POINT } from './balance';
 import type { Danger, Hero, Item, Quest, QuestType, Sex } from './model';
@@ -148,8 +149,19 @@ export function generateQuest(rng: Rng, id: string, rank: number, uidItem: strin
 
   let item: Item | undefined;
   if (rng.chance(0.15 + danger * 0.08)) {
-    const base = rng.pick(ITEMS);
-    item = { id: uidItem, ...base, value: Math.round(base.value * (1 + rank * 0.4)) };
+    // Equipo (más raro cuanto más peligro y rango) o un tesoro para vender.
+    if (rng.chance(0.6)) {
+      const rarity = rng.weighted<number>([
+        [0, 1],
+        [1, 0.3 + danger * 0.12 + rank * 0.06],
+        [2, 0.02 + danger * 0.04 + rank * 0.03],
+      ]);
+      const base = rng.pick(GEAR.filter((g) => g.rarity === rarity));
+      item = { id: uidItem, ...base, value: Math.round(base.value * (1 + rank * 0.2)) };
+    } else {
+      const base = rng.pick(TREASURES);
+      item = { id: uidItem, ...base, value: Math.round(base.value * (1 + rank * 0.4)) };
+    }
   }
   const twist = rng.chance(shady ? 0.6 : 0.12) ? rng.pick(TWISTS) : undefined;
 

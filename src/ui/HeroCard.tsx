@@ -1,11 +1,14 @@
 import { useState } from 'preact/hooks';
 import { RAISE_AMOUNT, XP_PER_LEVEL } from '../core/balance';
 import { PERKS } from '../core/classes';
-import { canHire } from '../core/game';
+import { canHire, gearInStock } from '../core/game';
 import type { GameState, Hero } from '../core/model';
 import { SKILLS, attr, moraleBand, skill } from '../core/party';
 import { CLASS_NAMES, MORALE_INFO, statusLabel } from '../data/labels';
 import { HIDDEN_TRAIT_HINT, TRAIT_INFO, traitLabel } from '../data/traits';
+import { itemIcon } from '../art/items';
+import { RARITY_NAMES, itemEffect } from '../data/items';
+import { BufferImage } from './BufferImage';
 import { Icon } from './icons';
 import { Portrait } from './Portrait';
 import { lookOf, marksOf, memberOf } from './view';
@@ -19,6 +22,8 @@ interface Props {
   onFire: () => void;
   onLocate: () => void;
   onAnswer: (yes: boolean) => void;
+  onEquip: (itemId: string) => void;
+  onUnequip: () => void;
 }
 
 const ATTRS = [
@@ -37,7 +42,12 @@ export function HeroCard({
   onFire,
   onLocate,
   onAnswer,
+  onEquip,
+  onUnequip,
 }: Props) {
+  const [picking, setPicking] = useState(false);
+  const stock = gearInStock(game);
+  const canGear = !candidate && (h.status === 'ok' || h.status === 'herido');
   const [confirm, setConfirm] = useState(false);
   const m = memberOf(h, game.fac);
   const why = candidate ? canHire(game, h.id) : null;
@@ -116,6 +126,58 @@ export function HeroCard({
                   Negarse
                 </button>
               </div>
+            </div>
+          )}
+          {!candidate && (
+            <div class="gear-slot">
+              <small>Equipo</small>
+              {h.item ? (
+                <div class={`gear-item rarity-${h.item.rarity ?? 0}`}>
+                  <BufferImage buf={itemIcon(h.item.icon ?? 'espada', h.item.rarity)} scale={3} />
+                  <span>
+                    <b>{h.item.name}</b>
+                    <small>
+                      <em>{RARITY_NAMES[h.item.rarity ?? 0]}</em> · {itemEffect(h.item)}
+                    </small>
+                  </span>
+                  {canGear && (
+                    <button class="btn btn-wood" onClick={onUnequip}>
+                      Quitar
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <span class="muted">
+                  {stock.length
+                    ? 'Sin equipo. En el tablero de la bodega hay equipo libre.'
+                    : 'Sin equipo. Los encargos con «+ objeto» pueden traerlo.'}
+                </span>
+              )}
+              {canGear && stock.length > 0 && (
+                <button class="btn btn-wood gear-toggle" onClick={() => setPicking(!picking)}>
+                  {picking ? 'Cerrar' : h.item ? 'Cambiar' : 'Equipar'} · {stock.length}{' '}
+                  {stock.length === 1 ? 'disponible' : 'disponibles'}
+                </button>
+              )}
+              {picking &&
+                stock.map((it) => (
+                  <button
+                    key={it.id}
+                    class={`gear-item gear-pick rarity-${it.rarity ?? 0}`}
+                    onClick={() => {
+                      setPicking(false);
+                      onEquip(it.id);
+                    }}
+                  >
+                    <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity)} scale={2} />
+                    <span>
+                      <b>{it.name}</b>
+                      <small>
+                        <em>{RARITY_NAMES[it.rarity ?? 0]}</em> · {itemEffect(it)}
+                      </small>
+                    </span>
+                  </button>
+                ))}
             </div>
           )}
           <div class="perk">

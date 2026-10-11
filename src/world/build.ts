@@ -29,7 +29,8 @@ import {
   post,
   stoneWall,
 } from './paint';
-import { armory, chapel, mapRoom } from './annex';
+import type { TrophyIcon } from '../core/model';
+import { armory, chapel, gearBoard, mapRoom, trophyWall, type GearView } from './annex';
 import * as Prop from './props';
 
 /**
@@ -115,7 +116,13 @@ export const UNCLE: HeroLook = {
   scar: false,
 };
 
-export function buildWorld(fac: Facilities, loot: number, quests: number, fallen = 0): WorldBuild {
+export function buildWorld(
+  fac: Facilities,
+  loot: number,
+  quests: number,
+  fallen = 0,
+  extra: { gear?: readonly GearView[]; trophies?: readonly TrophyIcon[] } = {},
+): WorldBuild {
   const L = layout(fac);
   const back = new PixelBuffer(WORLD_W, WORLD_H);
   const front = new PixelBuffer(WORLD_W, WORLD_H);
@@ -143,11 +150,13 @@ export function buildWorld(fac: Facilities, loot: number, quests: number, fallen
   // ================= Bodega =================
   cellar(back, put, loot, lights);
   armory(back, put, fac.arm);
+  gearBoard(back, put, extra.gear ?? [], glows, lights, flames);
 
   // ================= Sala común =================
   hall(back, front, put, putFront, L, fac, quests, lights, flames, glows, shafts);
 
   // ================= Piso de arriba =================
+  trophyWall(put, extra.trophies ?? []);
   upper(back, put, L, fac, lights, flames, glows, shafts);
 
   // ================= Desván =================

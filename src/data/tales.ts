@@ -339,3 +339,10 @@ export const REVEALS: readonly string[] = [
   'Los demás lo cuentan entre risas, o no tanto: {h} es {t}.',
   'Ahora ya lo sabes: {h} es {t}. En {place} quedó bien claro.',
 ];
+
+/** Cuando el protagonista lleva un objeto bueno o legendario ({item}). */
+export const ITEM_LINES: readonly string[] = [
+  '{h} sacó {item} y el asunto se resolvió en un suspiro.',
+  'Sin {item}, {h} no lo habría contado. Con ello, lo cuenta dos veces.',
+  '{Item} brilló en manos de {h} justo cuando más falta hacía.',
+];

@@ -10,6 +10,7 @@ import {
   CLIENT_CLOSERS,
   FINDS,
   HIGH_MORALE,
+  ITEM_LINES,
   LOW_MORALE,
   MORE_CLOSERS,
   MORE_LINES,
@@ -29,15 +30,19 @@ import {
   MORALE,
   PAY,
   REP,
+  SCOUT_AMBUSH,
   TRIP_FATIGUE,
+  TROPHY_REP,
   TWIST_DIFF,
   XP,
   XP_PER_LEVEL,
 } from './balance';
 import { fill } from './generate';
+import { TROPHIES } from '../data/items';
 import type {
   ChipKind,
   Facilities,
+  Item,
   GameState,
   Hero,
   Mission,
@@ -53,6 +58,7 @@ import {
   skill,
   type Estimate,
   type Member,
+  type SkillId,
 } from './party';
 import type { Rng } from './rng';
 import { listNames } from './text';
@@ -71,14 +77,25 @@ export const MAIN_ATTR = {
 
 /** Lo que se ve antes de enviar: con un mago en el grupo, el giro oculto se descubre. */
 /** Cada héroe con el equipo de la armería puesto. */
-export function equip<T extends Member>(party: readonly T[], fac?: Facilities): T[] {
-  const gear = ARMORY[fac?.arm ?? 0];
-  return gear && Object.keys(gear).length ? party.map((m) => ({ ...m, gear })) : [...party];
+/** Lo que suma a un héroe la armería del gremio más su objeto equipado. */
+export function gearOf(item: Item | undefined, fac?: Facilities): Partial<Record<SkillId, number>> {
+  const gear: Partial<Record<SkillId, number>> = { ...ARMORY[fac?.arm ?? 0] };
+  for (const [k, v] of Object.entries(item?.bonus ?? {}) as [SkillId, number][])
+    gear[k] = (gear[k] ?? 0) + v;
+  return gear;
+}
+
+/** Cada héroe con su equipo puesto: armería, objeto y su efecto. */
+export function equip<T extends Member & { item?: Item }>(
+  party: readonly T[],
+  fac?: Facilities,
+): T[] {
+  return party.map((m) => ({ ...m, gear: gearOf(m.item, fac), perk: m.item?.perk ?? m.perk }));
 }
 
 export function questEstimate(
   q: Quest,
-  members: readonly Member[],
+  members: readonly (Member & { item?: Item })[],
   fac?: Facilities,
 ): Estimate & { reveal: boolean } {
   const party = equip(members, fac);
@@ -151,8 +168,11 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
   }
 
   // Desafíos.
-  const lucky = party.filter((h) => has(h, 'afortunado'));
-  const jinx = party.some((h) => has(h, 'gafe')) ? 0.05 : 0;
+  const lucky = party.filter((h) => has(h, 'afortunado') || h.item?.perk === 'luck');
+  const warded = party.find((h) => h.item?.perk === 'ward');
+  const jinx = party.some((h) => has(h, 'gafe')) && !warded ? 0.05 : 0;
+  if (warded && party.some((h) => has(h, 'gafe')))
+    say(`El ${lower(warded.item!.name)} de ${warded.name} tuvo a raya la mala suerte del grupo.`);
   let passes = 0;
   let sumP = 0;
   q.challenges.forEach((c, i) => {
@@ -172,7 +192,9 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
     const pool = rng.chance(0.35)
       ? CLASS_LINES[best!.cls][k]
       : [...LINES[c.skill][k], ...MORE_LINES[c.skill][k]];
-    say(fresh(pool), best);
+    if (ok && (best!.item?.rarity ?? 0) >= 1 && rng.chance(0.4))
+      say(fresh(ITEM_LINES), best, { item: lower(best!.item!.name) });
+    else say(fresh(pool), best);
   });
 
   const n = q.challenges.length;
@@ -181,8 +203,9 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
   else if (passes > 0) outcome = 'Éxito parcial';
   else {
     const ambush = rng.chance(DISASTER[q.danger]!);
-    const scout = party.find((h) => h.cls === 'explorador');
-    if (ambush && scout && rng.chance(1 - mods.disaster)) {
+    const scout =
+      party.find((h) => h.cls === 'explorador') ?? party.find((h) => h.item?.perk === 'ambush');
+    if (ambush && scout && rng.chance(1 - SCOUT_AMBUSH)) {
       outcome = 'Fracaso';
       say(`${scout.name} olió la emboscada a tiempo y los sacó por un barranco. Se salvaron.`);
     } else outcome = ambush ? 'Desastre' : 'Fracaso';
@@ -215,6 +238,21 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
     chips.push({ t: `Botín: ${q.item.name}`, k: 'info' });
     if (PAY[outcome] < 1 && rogue) say(`Aun así, ${rogue.name} no se fue con las manos vacías.`);
   }
+  // Trofeo: solo de las grandes hazañas.
+  if (outcome === 'Éxito brillante' && q.danger >= 2) {
+    const t = rng.pick(TROPHIES[q.type]);
+    state.trophies.push({
+      id: `t${state.uid++}`,
+      ...t,
+      who: names,
+      place: q.place,
+      day: state.day,
+      value: 40 + q.danger * 20,
+    });
+    state.rep += TROPHY_REP;
+    say(`Y se trajeron un recuerdo: ${lower(t.name)}. Irá a la pared de la sala.`);
+    chips.push({ t: `Trofeo: ${t.name}`, k: 'good' });
+  }
 
   // Bajas.
   const healer = party.find((h) => h.cls === 'clerigo');
@@ -243,6 +281,10 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
     } else if (rng.chance(0.5)) {
       victim.status = 'muerto';
       fallen = victim;
+      if (victim.item) {
+        chips.push({ t: `Perdido: ${victim.item.name}`, k: 'bad' });
+        delete victim.item;
+      }
       state.fallen.unshift({
         name: victim.name + (victim.nick ? ` «${victim.nick}»` : ''),
         epitaph: `${q.title} · día ${state.day}.`,
@@ -266,7 +308,9 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
       h.status = 'ok';
       h.days = 0;
       const guarded = party.some((o) => o !== h && o.cls === 'guerrero');
-      const risk = INJURY[outcome] * (guarded ? mods.guard : 1) + (has(h, 'valiente') ? 0.08 : 0);
+      const armored = h.item?.perk === 'guard' ? 0.5 : 1;
+      const risk =
+        INJURY[outcome] * (guarded ? mods.guard : 1) * armored + (has(h, 'valiente') ? 0.08 : 0);
       if (rng.chance(risk)) {
         h.status = 'herido';
         h.days = rng.int(2, 4);

@@ -48,6 +48,7 @@ export function loadGame(storage: SaveStorage = webStorage): GameState | null {
     const s = JSON.parse(raw) as GameState;
     if (!s || s.version !== SAVE_VERSION || !s.fac) return null;
     s.fac = { ...START.fac, ...s.fac };
+    s.trophies ??= [];
     return s;
   } catch {
     return null;

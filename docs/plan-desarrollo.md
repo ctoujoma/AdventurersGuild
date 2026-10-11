@@ -110,8 +110,8 @@ Orden acordado tras probar la fase 2 (prioridad del propietario: 3a y 3b, la esc
 - [x] Rasgos ocultos que se revelan tras la primera misión · hecho en la fase 1
 
 **3b · Lo que traen**
-- [ ] Equipo: una ranura por héroe, objetos con bonificación; equipar desde la ficha
-- [ ] Materiales y trofeos: se venden o se exhiben; los trofeos aparecen en la taberna y dan reputación
+- [x] Equipo: una ranura por héroe; 13 objetos en 3 rarezas con bonificaciones y efectos (protección, suerte, contra el gafe, contra emboscadas); se equipa desde la ficha, se pierde si el héroe cae o deserta; el equipo libre cuelga en un tablero de la bodega
+- [x] Trofeos: tras un éxito brillante en encargos peligrosos; +3 reputación, se exhiben en la sala (4 huecos, +3 monedas al día cada uno), se pueden vender y cuentan quién los trajo
 
 **3c · Historias**
 - [x] Informes mucho más variados: el doble de aperturas, frases y cierres; frases por clase, apartes por rasgo (pista de los ocultos), sucesos en ruta con hallazgos de monedas, piques entre compañeros, moral, cierres del cliente y sin repetir frase en un mismo informe
@@ -120,7 +120,7 @@ Orden acordado tras probar la fase 2 (prioridad del propietario: 3a y 3b, la esc
 **3d · La escena cuenta la partida**
 - [x] El amanecer ocurre en la escena: al terminar el día anochece, clarea por el horizonte con el sol y luego llega el resumen
 - [x] Los grupos que vuelven con éxito celebran en la barra (notas, monedas, brindis); una vela por cada caído en la capilla
-- [ ] El botín y los trofeos se ven en estanterías y paredes
+- [x] El botín y los trofeos se ven: arcones para los tesoros, tablero para el equipo, pared de trofeos
 
 **3e · Crecimiento del edificio**
 - [x] Sala de mapas en el desván (+1/+2 encargos; a nivel 2, peligro real a la vista), Armería en la bodega (+1 Combate; a nivel 2 también Trampas y Supervivencia) y Capilla como anexo de piedra a la derecha (moral, desaparecidos que vuelven, caídos que duelen menos; campana y vidriera a nivel 2)

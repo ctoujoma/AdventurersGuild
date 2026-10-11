@@ -1,6 +1,7 @@
 import { generateLook, type HeroLook, type HeroMarks } from '../art/heroes/look';
-import { ARMORY } from '../core/balance';
-import type { Facilities, GameState, Hero } from '../core/model';
+import type { Facilities, GameState, Hero, Item } from '../core/model';
+import { gearInStock } from '../core/game';
+import { gearOf } from '../core/resolve';
 import type { Member } from '../core/party';
 import type { SceneHero, SceneModel } from '../world/scene';
 
@@ -22,13 +23,15 @@ export const marksOf = (h: Hero): HeroMarks => ({
   scar: h.traits.some((t) => t.id === 'cortado'),
 });
 
-export const memberOf = (h: Hero, fac?: Facilities): Member => ({
+export const memberOf = (h: Hero, fac?: Facilities): Member & { item?: Item } => ({
   cls: h.cls,
   lvl: h.lvl,
   attrs: h.attrs,
   traits: h.traits,
   morale: h.morale,
-  gear: ARMORY[fac?.arm ?? 0],
+  item: h.item,
+  gear: gearOf(h.item, fac),
+  perk: h.item?.perk,
 });
 
 const fullName = (h: Hero) => (h.nick ? `${h.name} ${h.nick}` : h.name);
@@ -56,8 +59,10 @@ export function sceneModel(s: GameState): SceneModel {
   return {
     fac: s.fac,
     quests: s.quests.length,
-    loot: Math.min(6, s.inventory.length),
+    loot: Math.min(6, s.inventory.filter((i) => !i.kind || i.kind === 'tesoro').length),
     fallen: s.fallen.length,
+    gear: gearInStock(s).map((i) => ({ icon: i.icon ?? 'espada', rarity: i.rarity ?? 0 })),
+    trophies: s.trophies.map((t) => t.icon),
     heroes,
   };
 }

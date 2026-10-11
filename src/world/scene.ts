@@ -1,6 +1,8 @@
 import { bufferCanvas, drawBuffer } from '../art/canvas';
 import { FEET_Y, heroSprites, type HeroSprites } from '../art/heroes/hero';
 import type { HeroLook, HeroMarks } from '../art/heroes/look';
+import type { TrophyIcon } from '../core/model';
+import type { GearView } from './annex';
 import { P } from '../art/palette';
 import { PixelBuffer, alpha } from '../art/pixel';
 import { UNCLE, buildWorld, type WorldBuild } from './build';
@@ -44,6 +46,9 @@ export interface SceneModel {
   loot: number;
   /** Caídos: una vela por cada uno en la capilla. */
   fallen: number;
+  /** Equipo sin dueño (tablero de la bodega) y trofeos de la sala. */
+  gear: GearView[];
+  trophies: TrophyIcon[];
   heroes: SceneHero[];
 }
 
@@ -247,14 +252,24 @@ export class WorldScene {
   setModel(model: SceneModel): void {
     const prev = this.model;
     this.model = model;
-    const key = JSON.stringify([model.fac, model.loot, model.quests, model.fallen]);
+    const key = JSON.stringify([
+      model.fac,
+      model.loot,
+      model.quests,
+      model.fallen,
+      model.gear,
+      model.trophies,
+    ]);
     if (key !== this.worldKey) {
       this.worldKey = key;
-      this.world = buildWorld(model.fac, model.loot, model.quests, model.fallen);
+      this.world = buildWorld(model.fac, model.loot, model.quests, model.fallen, {
+        gear: model.gear,
+        trophies: model.trophies,
+      });
       this.backC = bufferCanvas(this.world.back);
       this.frontC = bufferCanvas(this.world.front);
       this.ambientC = ambientCanvas(this.world.ambient);
-      this.spots = hotspots(model.fac);
+      this.spots = hotspots(model.fac, model.trophies.length);
       if (prev) this.celebrateUpgrades(prev.fac, model.fac);
     }
     // Héroes: crear, actualizar o quitar.

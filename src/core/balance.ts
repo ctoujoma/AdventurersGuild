@@ -36,8 +36,17 @@ export const facilityMax = (k: keyof Facilities) => UPGRADE_COST[k].length - 1;
 
 export const capacity = (dorm: number) => 2 + 2 * dorm;
 /** Ingreso diario de la taberna: por nivel y un poco por reputación. */
-export const tavernIncome = (tab: number, rep: number) =>
-  tab === 0 ? 0 : tab * 10 + Math.min(10, Math.floor(rep / 25) * 2);
+export const tavernIncome = (tab: number, rep: number, trophies = 0) =>
+  tab === 0
+    ? 0
+    : tab * 10 +
+      Math.min(10, Math.floor(rep / 25) * 2) +
+      Math.min(trophies, TROPHY_SLOTS) * TROPHY_INCOME;
+
+/** Trofeos: cuántos caben en la sala, lo que atraen cada día y la fama al conseguirlos. */
+export const TROPHY_SLOTS = 4;
+export const TROPHY_INCOME = 3;
+export const TROPHY_REP = 3;
 /** Días de cama que se recuperan cada noche. */
 export const healRate = (enf: number) => 1 + enf;
 

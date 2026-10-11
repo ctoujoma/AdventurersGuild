@@ -51,6 +51,9 @@ export type Action =
   | { type: 'sell'; itemId: string }
   | { type: 'read'; reportId: string }
   | { type: 'answer'; id: string; yes: boolean }
+  | { type: 'equip'; heroId: string; itemId: string }
+  | { type: 'unequip'; heroId: string }
+  | { type: 'sellTrophy'; id: string }
   | { type: 'endDay' };
 
 // ---------- Consultas ----------
@@ -89,6 +92,19 @@ export function canSend(s: GameState, questId: string, heroIds: readonly string[
   return null;
 }
 
+/** Equipo del arcón que se puede poner (los tesoros solo se venden). */
+export const gearInStock = (s: GameState) =>
+  s.inventory.filter((i) => i.kind && i.kind !== 'tesoro');
+
+export function canEquip(s: GameState, heroId: string, itemId: string): string | null {
+  const h = s.heroes.find((x) => x.id === heroId);
+  const it = s.inventory.find((x) => x.id === itemId);
+  if (!h || !it) return 'Ese objeto ya no está.';
+  if (!it.kind || it.kind === 'tesoro') return 'Esto no se equipa: se vende.';
+  if (h.status !== 'ok' && h.status !== 'herido') return `${h.name} no está en el gremio.`;
+  return null;
+}
+
 export function canUpgrade(s: GameState, k: keyof Facilities): string | null {
   const cost = upgradeCost(s, k);
   if (cost === null) return 'Ya está al máximo.';
@@ -116,6 +132,7 @@ export function newGame(seed: string): GameState {
     missions: [],
     reports: [],
     inventory: [],
+    trophies: [],
     fallen: [
       {
         name: 'Aldric «Medio Pan»',
@@ -186,7 +203,36 @@ export function reduce(state: GameState, action: Action): GameState {
       const h = state.heroes.find((x) => x.id === action.id);
       if (!h || h.status !== 'ok') return state;
       const s = structuredClone(state);
+      // Lo que llevaba es del gremio: vuelve al arcón.
+      if (h.item) s.inventory.push(structuredClone(h.item));
       s.heroes = s.heroes.filter((x) => x.id !== action.id);
+      return s;
+    }
+    case 'equip': {
+      if (canEquip(state, action.heroId, action.itemId)) return state;
+      const s = structuredClone(state);
+      const h = s.heroes.find((x) => x.id === action.heroId)!;
+      const it = s.inventory.find((x) => x.id === action.itemId)!;
+      s.inventory = s.inventory.filter((x) => x !== it);
+      if (h.item) s.inventory.push(h.item);
+      h.item = it;
+      return s;
+    }
+    case 'unequip': {
+      const h = state.heroes.find((x) => x.id === action.heroId);
+      if (!h?.item || (h.status !== 'ok' && h.status !== 'herido')) return state;
+      const s = structuredClone(state);
+      const x = s.heroes.find((y) => y.id === action.heroId)!;
+      s.inventory.push(x.item!);
+      delete x.item;
+      return s;
+    }
+    case 'sellTrophy': {
+      const t = state.trophies.find((x) => x.id === action.id);
+      if (!t) return state;
+      const s = structuredClone(state);
+      s.gold += t.value;
+      s.trophies = s.trophies.filter((x) => x.id !== t.id);
       return s;
     }
     case 'send': {
@@ -260,7 +306,7 @@ export function endDay(state: GameState): GameState {
   const events: DawnEvent[] = [];
   s.day++;
 
-  const income = tavernIncome(s.fac.tab, s.rep);
+  const income = tavernIncome(s.fac.tab, s.rep, s.trophies.length);
   if (income) {
     s.gold += income;
     events.push({ t: `La taberna deja ${income} monedas.`, k: 'good' });
@@ -313,6 +359,7 @@ export function endDay(state: GameState): GameState {
           epitaph: `${h.sex === 'f' ? 'Desaparecida' : 'Desaparecido'}. Encontraron su capa el día ${s.day}.`,
         });
         events.push({ t: `Han encontrado la capa de ${h.name}. No volverá.`, k: 'bad' });
+        delete h.item;
       }
     }
   }
@@ -340,7 +387,7 @@ export function endDay(state: GameState): GameState {
     s.heroes = s.heroes.filter((h) => !deserters.includes(h));
     for (const h of deserters)
       events.push({
-        t: `${h.name} ha recogido sus cosas antes del alba. Estaba ${h.sex === 'f' ? 'harta' : 'harto'}.`,
+        t: `${h.name} ha recogido sus cosas antes del alba. Estaba ${h.sex === 'f' ? 'harta' : 'harto'}.${h.item ? ` Se ha llevado ${h.item.name.toLowerCase()}.` : ''}`,
         k: 'bad',
       });
   }

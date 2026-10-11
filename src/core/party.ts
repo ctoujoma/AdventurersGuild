@@ -37,6 +37,8 @@ export interface Member {
   morale?: number;
   /** Equipo de la armería: suma a cada habilidad. */
   gear?: Partial<Record<SkillId, number>>;
+  /** Efecto del objeto equipado (ver Item['perk']). */
+  perk?: string;
 }
 
 export interface Challenge {
@@ -161,7 +163,8 @@ export interface Estimate {
 
 /** Lo que el jugador puede saber antes de enviar: fuerza por desafío y riesgo global. */
 export function estimate(challenges: readonly Challenge[], party: readonly Member[]): Estimate {
-  const jinx = party.some((m) => m.traits.some((t) => t.id === 'gafe' && !t.hidden)) ? JINX : 0;
+  const jinxed = party.some((m) => m.traits.some((t) => t.id === 'gafe' && !t.hidden));
+  const jinx = jinxed && !party.some((m) => m.perk === 'ward') ? JINX : 0;
   const rows = challenges.map((c) => {
     const power = party.reduce((sum, m) => sum + skill(m, c.skill), 0);
     const p = party.length ? clamp(chance(power, c.diff) - jinx, 0.03, 0.95) : 0;

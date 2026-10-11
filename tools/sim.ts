@@ -24,14 +24,16 @@ interface Strategy {
   threshold: number | null;
   hire: boolean;
   upgrade: boolean;
+  /** Equipa los objetos en vez de venderlos. */
+  equip: boolean;
 }
 
 const STRATEGIES: Strategy[] = [
-  { name: 'pasiva (no manda a nadie)', threshold: null, hire: false, upgrade: false },
-  { name: 'temeraria (≥ 30 %)', threshold: 0.3, hire: true, upgrade: true },
-  { name: 'normal (≥ 55 %)', threshold: 0.55, hire: true, upgrade: true },
-  { name: 'cauta (≥ 75 %)', threshold: 0.75, hire: true, upgrade: true },
-  { name: 'sin contratar (≥ 55 %)', threshold: 0.55, hire: false, upgrade: false },
+  { name: 'pasiva (no manda a nadie)', threshold: null, hire: false, upgrade: false, equip: false },
+  { name: 'temeraria (≥ 30 %)', threshold: 0.3, hire: true, upgrade: true, equip: true },
+  { name: 'normal (≥ 55 %)', threshold: 0.55, hire: true, upgrade: true, equip: true },
+  { name: 'cauta (≥ 75 %)', threshold: 0.75, hire: true, upgrade: true, equip: true },
+  { name: 'sin contratar (≥ 55 %)', threshold: 0.55, hire: false, upgrade: false, equip: false },
 ];
 
 function* combos<T>(items: T[], max: number, start = 0, acc: T[] = []): Generator<T[]> {
@@ -49,7 +51,16 @@ function reserve(s: GameState): number {
 }
 
 function playDay(s: GameState, st: Strategy): GameState {
-  for (const it of s.inventory) s = reduce(s, { type: 'sell', itemId: it.id });
+  // El equipo se reparte entre quien no lleva nada; lo demás se vende.
+  for (const it of s.inventory) {
+    const bare =
+      st.equip && it.kind && it.kind !== 'tesoro'
+        ? s.heroes.find((h) => h.status === 'ok' && !h.item)
+        : undefined;
+    s = bare
+      ? reduce(s, { type: 'equip', heroId: bare.id, itemId: it.id })
+      : reduce(s, { type: 'sell', itemId: it.id });
+  }
 
   if (st.upgrade && roster(s).length >= capacity(s.fac.dorm) && !canUpgrade(s, 'dorm')) {
     if (s.gold - 150 > reserve(s)) s = reduce(s, { type: 'upgrade', fac: 'dorm' });

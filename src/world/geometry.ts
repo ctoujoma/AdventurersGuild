@@ -157,8 +157,16 @@ export interface HotspotDef {
   h: number;
 }
 
+/** Huecos de los trofeos en la sala (los mismos que pinta annex.ts). */
+export const TROPHY_HOTSPOTS: readonly (readonly [number, number])[] = [
+  [318, 223],
+  [361, 223],
+  [377, 238],
+  [172, 236],
+];
+
 /** Zonas interactivas fijas del edificio. */
-export function hotspots(f: Facilities): HotspotDef[] {
+export function hotspots(f: Facilities, trophies = 0): HotspotDef[] {
   const list: HotspotDef[] = [
     { id: 'tablon', label: 'Tablón de encargos', x: 220, y: 228, w: 40, h: 30 },
     { id: 'barra', label: 'La barra', x: 126, y: 270, w: 66, h: 22 },
@@ -180,6 +188,10 @@ export function hotspots(f: Facilities): HotspotDef[] {
     { id: 'letrero', label: 'El Jarro Partido', x: 52, y: 164, w: 40, h: 34 },
     { id: 'puerta', label: 'La puerta', x: 84, y: 244, w: 20, h: 48 },
   ];
+  list.push({ id: 'equipo', label: 'Tablero del equipo', x: 190, y: 303, w: 74, h: 16 });
+  TROPHY_HOTSPOTS.slice(0, trophies).forEach(([x, y], i) =>
+    list.push({ id: `trofeo-${i}`, label: 'Trofeo', x, y, w: 14, h: 14 }),
+  );
   if (f.arm > 0) list.push({ id: 'armeria', label: 'Armería', x: 284, y: 318, w: 56, h: 34 });
   if (f.cap > 0) list.push({ id: 'capilla', label: 'Capilla', x: 440, y: 214, w: 56, h: 78 });
   if (layout(f).lute) list.push({ id: 'laud', label: 'Laúd', x: 263, y: 229, w: 15, h: 28 });

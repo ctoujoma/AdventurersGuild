@@ -1,7 +1,9 @@
+import { itemIcon, trophyIcon } from '../art/items';
 import { P, R } from '../art/palette';
+import type { ItemIcon, Rarity, TrophyIcon } from '../core/model';
 import { PixelBuffer, bayer } from '../art/pixel';
 import type { Ambient, Flame, Glow, Light, RGB } from './build';
-import { F, GROUND, ROOMS } from './geometry';
+import { F, GROUND, ROOMS, TROPHY_HOTSPOTS } from './geometry';
 import { ambientOcclusion, stoneWall } from './paint';
 import { armorStand, floorSlab, piece } from './props';
 
@@ -335,4 +337,52 @@ export function chapel(
     b.vline(apexX, apexY - 7, 7, P.gold);
     b.hline(apexX - 2, apexY - 5, 5, P.gold);
   }
+}
+
+// ---------- Equipo disponible y trofeos ----------
+
+export interface GearView {
+  icon: ItemIcon;
+  rarity: Rarity;
+}
+
+/** Tablero de la bodega donde cuelga el equipo que nadie lleva puesto. */
+export const GEAR_BOARD = { x: 190, y: 303, slots: 6 } as const;
+
+export function gearBoard(
+  b: PixelBuffer,
+  put: Put,
+  gear: readonly GearView[],
+  glows: Glow[],
+  lights: Light[],
+  flames: Flame[],
+): void {
+  const { x, y, slots } = GEAR_BOARD;
+  const w = slots * 12 + 2;
+  b.rect(x, y, w, 15, W[2]!);
+  b.hline(x, y, w, W[4]!);
+  b.hline(x, y + 14, w, W[1]!);
+  for (let i = 0; i < slots; i++) {
+    b.set(x + 6 + i * 12, y + 2, P.black);
+    b.set(x + 6 + i * 12, y + 1, W[5]!);
+  }
+  // Vela en el saliente del pilar: alumbra el tablero.
+  b.rect(x - 4, y + 8, 4, 2, W[3]!);
+  b.rect(x - 3, y + 5, 2, 3, P.white);
+  flames.push({ x: x - 3, y: y + 4, kind: 'vela' });
+  lights.push({ x: x + 30, y: y + 6, r: 46, color: CANDLE, intensity: 0.85, flicker: 0.1 });
+  gear.slice(0, slots).forEach((g, i) => {
+    put(itemIcon(g.icon, g.rarity), x + 1 + i * 12, y + 2);
+    if (g.rarity === 2) glows.push({ x: x + 7 + i * 12, y: y + 8, r: 9, color: [120, 220, 255] });
+  });
+}
+
+/** Huecos de la sala para los trofeos (esquina superior izquierda de cada uno). */
+export const TROPHY_SPOTS = TROPHY_HOTSPOTS;
+
+export function trophyWall(put: Put, trophies: readonly TrophyIcon[]): void {
+  trophies.slice(0, TROPHY_SPOTS.length).forEach((t, i) => {
+    const [x, y] = TROPHY_SPOTS[i]!;
+    put(trophyIcon(t), x, y);
+  });
 }
