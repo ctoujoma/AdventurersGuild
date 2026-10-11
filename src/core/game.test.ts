@@ -28,6 +28,7 @@ describe('partida nueva', () => {
     expect(s.candidates.length).toBe(3);
     expect(s.quests.length).toBeGreaterThanOrEqual(4);
     expect(s.day).toBe(1);
+    expect(s.dawn.length).toBeGreaterThan(0);
   });
 });
 

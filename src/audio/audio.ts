@@ -22,7 +22,8 @@ export type Sfx =
   | 'drip'
   | 'select'
   | 'deselect'
-  | 'depart';
+  | 'depart'
+  | 'dawn';
 
 const STORAGE_KEY = 'jarro:sonido';
 const FIRE = { x: 346, y: 272 };
@@ -225,6 +226,14 @@ class AudioEngine {
         break;
       case 'deselect':
         this.pluck(69, t, 0.18 * v);
+        break;
+      case 'dawn':
+        // Amanece: acorde de laúd que sube y unos pájaros.
+        [50, 57, 62, 66, 69].forEach((n, i) => this.pluck(n, t + i * 0.09, 0.26 * v));
+        for (let i = 0; i < 5; i++) {
+          const at = t + 0.7 + i * 0.16 + (i > 2 ? 0.3 : 0);
+          this.tone('sine', 3400 + (i % 2) * 500, 4300 + (i % 3) * 300, at, 0.07, 0.025 * v);
+        }
         break;
       case 'depart':
         // Pequeña fanfarria de laúd: el grupo sale a la aventura.

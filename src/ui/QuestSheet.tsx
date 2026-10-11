@@ -1,33 +1,32 @@
 import { useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
-import { RISK_LABELS, estimate, skill, type Member } from '../core/party';
-import { CLASS_NAMES, STATUS_LABEL, lookOf, type DemoHero, type DemoQuest } from '../data/demo';
+import { canSend } from '../core/game';
+import type { GameState, Quest } from '../core/model';
+import { RISK_LABELS, skill } from '../core/party';
+import { questEstimate } from '../core/resolve';
+import { CLASS_NAMES, dangerClass, dangerLabel, statusLabel } from '../data/labels';
 import { Icon } from './icons';
 import { Portrait } from './Portrait';
 import { listNames, plural } from './text';
+import { lookOf, marksOf, memberOf } from './view';
 
 interface Props {
-  quest: DemoQuest;
-  /** Héroes del gremio (sin candidatos). */
-  heroes: DemoHero[];
+  game: GameState;
+  quest: Quest;
   onClose: () => void;
   onSend: (ids: string[]) => void;
 }
 
-const member = (h: DemoHero): Member => ({
-  cls: h.cls,
-  lvl: h.lvl,
-  attrs: h.attrs,
-  traits: h.traits,
-});
-
 /** Ficha de un encargo: desafíos, estimación de riesgo y quién va. */
-export function QuestSheet({ quest: q, heroes, onClose, onSend }: Props) {
+export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
   const [sel, setSel] = useState<string[]>([]);
   const [warn, setWarn] = useState<string | null>(null);
+  const heroes = game.heroes.filter((h) => h.status !== 'muerto');
   const party = sel.map((id) => heroes.find((h) => h.id === id)!).filter(Boolean);
-  const est = estimate(q.challenges, party.map(member));
+  const est = questEstimate(q, party.map(memberOf));
   const scale = Math.max(1, ...est.rows.map((r) => Math.max(r.diff, r.power))) * 1.15;
+  const blocked = party.length ? canSend(game, q.id, sel) : null;
+  const mage = party.find((h) => h.cls === 'mago');
 
   const toggle = (id: string) => {
     setWarn(null);
@@ -65,9 +64,10 @@ export function QuestSheet({ quest: q, heroes, onClose, onSend }: Props) {
                 {c.skill} {c.diff}
               </span>
             ))}
-            <span class={`danger danger-${q.danger === '¿?' ? 'x' : q.danger.toLowerCase()}`}>
-              Peligro {q.danger.toLowerCase()}
+            <span class={`danger danger-${dangerClass(q.danger, q.dangerHidden)}`}>
+              Peligro {dangerLabel(q.danger, q.dangerHidden)}
             </span>
+            {q.item && <span class="chal chal-item">+ objeto</span>}
           </div>
 
           <div class={`estimate est-${party.length ? est.level : 'none'}`}>
@@ -81,6 +81,11 @@ export function QuestSheet({ quest: q, heroes, onClose, onSend }: Props) {
               </span>
             </span>
           </div>
+          {est.reveal && mage && (
+            <div class="twist" role="status">
+              <b>{mage.name} nota algo raro.</b> {q.twist} El primer desafío será más duro.
+            </div>
+          )}
           <div class="cbars">
             {est.rows.map((r) => {
               const k = r.power >= r.diff ? 'ok' : r.power >= r.diff - 3 ? 'close' : 'low';
@@ -112,12 +117,7 @@ export function QuestSheet({ quest: q, heroes, onClose, onSend }: Props) {
                   disabled={busy}
                   onClick={() => toggle(h.id)}
                 >
-                  <Portrait
-                    look={lookOf(h)}
-                    marks={{ injured: h.status === 'herido', eyepatch: h.eyepatch }}
-                    scale={1}
-                    alive={false}
-                  />
+                  <Portrait look={lookOf(h)} marks={marksOf(h)} scale={1} alive={false} />
                   <span class="pick-info">
                     <b>{h.name}</b>
                     <span class="muted">
@@ -125,9 +125,9 @@ export function QuestSheet({ quest: q, heroes, onClose, onSend }: Props) {
                     </span>
                     <span class="pick-skills">
                       {busy
-                        ? `${STATUS_LABEL[h.status]}${h.days ? ` · ${h.days} d` : ''}`
+                        ? statusLabel(h)
                         : q.challenges
-                            .map((c) => `${c.skill.slice(0, 3)} ${skill(member(h), c.skill)}`)
+                            .map((c) => `${c.skill.slice(0, 3)} ${skill(memberOf(h), c.skill)}`)
                             .join(' · ')}
                     </span>
                   </span>
@@ -139,12 +139,16 @@ export function QuestSheet({ quest: q, heroes, onClose, onSend }: Props) {
             })}
           </div>
         </div>
-        {warn && (
+        {(warn || blocked) && (
           <p class="qs-warn" role="status">
-            {warn}
+            {warn ?? blocked}
           </p>
         )}
-        <button class="btn btn-gold qs-send" disabled={!party.length} onClick={() => onSend(sel)}>
+        <button
+          class="btn btn-gold qs-send"
+          disabled={!party.length || !!blocked}
+          onClick={() => onSend(sel)}
+        >
           {party.length
             ? `Enviar a ${listNames(party.map((h) => h.name))}`
             : 'Elige al menos un héroe'}

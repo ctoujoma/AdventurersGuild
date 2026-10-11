@@ -109,8 +109,23 @@ export function newGame(seed: string): GameState {
       },
       { name: 'Fausto, tu tío', epitaph: 'No murió en una misión. Murió debiendo mil monedas.' },
     ],
-    dawn: [],
-    flavor: rng.pick(FLAVOR),
+    dawn: [
+      {
+        t: 'Tu tío Fausto te ha dejado El Jarro Partido… y mil monedas de deuda con Merlo, el prestamista.',
+        k: 'warn',
+      },
+      {
+        t: `Cada 7 días toca pagar: ${SCHEDULE.map((p) => p.amount).join(', ')}, más los salarios de tus héroes.`,
+        k: 'bad',
+      },
+      {
+        t: 'Toca el tablón de la sala para mandar grupos a los encargos. Vuelven con oro… si vuelven.',
+      },
+      { t: 'En la barra esperan candidatos. «Terminar día» hace pasar la noche.' },
+      { t: `Paga la deuda en ${DAYS} días y el gremio será tuyo.`, k: 'good' },
+    ],
+    flavor:
+      '«Sobrino: la taberna es tuya. Las deudas también. No te fíes de Merlo, ni del gato.» — Fausto',
     over: null,
   };
   // Un guerrero veterano de tu tío y alguien más; candidatos y encargos para empezar.

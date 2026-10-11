@@ -63,7 +63,8 @@ El mundo mide 512×384 píxeles y se ve en corte lateral, como una casa de muñe
 **Se puede tocar casi todo:**
 - El tablón abre los encargos; cada nota abre su ficha para formar el grupo (desafíos, estimación de riesgo y quién va) y mandarlo. La nota desaparece del tablón de la escena.
 - La barra abre los candidatos.
-- Dormitorios, enfermería, despacho y cofres abren el gremio.
+- Dormitorios, enfermería, despacho y cofres abren el gremio; el mapa del desván, quién está fuera.
+- Entre días, un amanecer en pixel art (cielo por bandas y sol que sube) cuenta lo que ha pasado; los informes llegan como cartas lacradas con los retratos del grupo.
 - Un héroe abre su ficha con retrato.
 - La chimenea suelta chispas, el gato ronronea con corazones, el laúd toca música con notas flotando, el búho ulula, los murciélagos salen volando, el pozo hace «plof» y el letrero se balancea.
 

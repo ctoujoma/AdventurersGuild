@@ -1,27 +1,30 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
-import {
-  CAPTIONS,
-  DEMO_FACILITIES,
-  DEMO_HEROES,
-  DEMO_QUESTS,
-  FACILITY_INFO,
-  toSceneHero,
-  type DemoHero,
-} from '../data/demo';
-import type { Facilities } from '../world/geometry';
-import type { Point, SceneModel, WorldScene } from '../world/scene';
+import { canHire, newGame, reduce, type Action } from '../core/game';
+import type { Facilities, GameState } from '../core/model';
+import { CAPTIONS, FACILITY_INFO } from '../data/labels';
+import { loadGame, saveGame, webStorage } from '../platform/storage';
+import type { Point, WorldScene } from '../world/scene';
+import { Dawn } from './Dawn';
+import { DayBar } from './DayBar';
+import { GameOver } from './GameOver';
 import { HeroCard } from './HeroCard';
 import { Hud } from './Hud';
 import { Icon } from './icons';
+import { Letter } from './Letter';
 import { Panel } from './Panel';
-import { QuestSheet } from './QuestSheet';
+import { AwayPanel } from './panels/AwayPanel';
 import { GremioPanel } from './panels/GremioPanel';
 import { HeroesPanel } from './panels/HeroesPanel';
+import { MailPanel } from './panels/MailPanel';
 import { TablonPanel } from './panels/TablonPanel';
+import { QuestSheet } from './QuestSheet';
 import { SceneView } from './SceneView';
 import { TabBar, type TabId } from './TabBar';
 import { listNames, plural } from './text';
+import { sceneModel } from './view';
+
+type PanelId = Exclude<TabId, 'taberna'> | 'correo' | 'fuera';
 
 interface Bubble {
   text: string;
@@ -30,37 +33,48 @@ interface Bubble {
   key: number;
 }
 
+const freshGame = () => newGame(Date.now().toString(36));
+
 export function App() {
-  const [tab, setTab] = useState<TabId>('taberna');
-  const [fac, setFac] = useState<Facilities>(DEMO_FACILITIES);
-  const [heroes, setHeroes] = useState<DemoHero[]>(DEMO_HEROES);
-  const [quests, setQuests] = useState(DEMO_QUESTS);
-  const [questId, setQuestId] = useState<string | null>(null);
-  const [notice, setNotice] = useState<{ text: string; key: number } | null>(null);
-  const [loot, setLoot] = useState(3);
-  const [gold, setGold] = useState(312);
+  const [saved] = useState(loadGame);
+  const [game, setGame] = useState<GameState>(() => saved ?? freshGame());
+  /** Lo que ve la escena: durante el amanecer sigue mostrando la noche anterior. */
+  const [sceneGame, setSceneGame] = useState(game);
+  const [panel, setPanel] = useState<PanelId | null>(null);
+  // Partida nueva: el día 1 se abre con la carta del tío.
+  const [dawnOpen, setDawnOpen] = useState(!saved);
   const [card, setCard] = useState<string | null>(null);
+  const [questId, setQuestId] = useState<string | null>(null);
+  const [reportId, setReportId] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ text: string; key: number } | null>(null);
   const [bubble, setBubble] = useState<Bubble | null>(null);
   const [hover, setHover] = useState<{ label: string; at: Point } | null>(null);
   const [focusFac, setFocusFac] = useState<keyof Facilities | null>(null);
   const [heroFilter, setHeroFilter] = useState<'todos' | 'candidatos'>('todos');
-  const [hint, setHint] = useState(true);
+  const [hint, setHint] = useState(false);
   const scene = useRef<WorldScene | null>(null);
+  const gameRef = useRef(game);
+  gameRef.current = game;
 
-  const model = useMemo<SceneModel>(
-    () => ({ fac, quests: quests.length, loot, heroes: heroes.map(toSceneHero) }),
-    [fac, quests, loot, heroes],
-  );
+  const model = useMemo(() => sceneModel(sceneGame), [sceneGame]);
+
+  useEffect(() => {
+    if (!dawnOpen) setSceneGame(game);
+  }, [game, dawnOpen]);
 
   useEffect(() => {
     const unlock = () => audio.unlock();
     window.addEventListener('pointerdown', unlock);
-    const t = setTimeout(() => setHint(false), 7000);
-    return () => {
-      window.removeEventListener('pointerdown', unlock);
-      clearTimeout(t);
-    };
+    if (!saved) saveGame(game);
+    return () => window.removeEventListener('pointerdown', unlock);
+    // Solo al arrancar.
   }, []);
+
+  useEffect(() => {
+    if (!hint) return;
+    const t = setTimeout(() => setHint(false), 8000);
+    return () => clearTimeout(t);
+  }, [hint]);
 
   useEffect(() => {
     if (!notice) return;
@@ -74,93 +88,173 @@ export function App() {
     return () => clearTimeout(t);
   }, [bubble]);
 
-  const openTab = (t: TabId) => {
-    if (t === tab) return;
-    audio.play(t === 'taberna' ? 'close' : 'open');
-    setTab(t);
-    setCard(null);
-    setQuestId(null);
-    setBubble(null);
+  const commit = (next: GameState) => {
+    gameRef.current = next;
+    setGame(next);
+    saveGame(next);
+  };
+  const dispatch = (a: Action): GameState => {
+    const next = reduce(gameRef.current, a);
+    if (next !== gameRef.current) commit(next);
+    return next;
   };
 
+  // Gancho para pruebas automáticas (solo con #debug en la URL).
+  useEffect(() => {
+    if (location.hash !== '#debug') return;
+    (window as unknown as { __game: unknown }).__game = {
+      get: () => gameRef.current,
+      dispatch,
+      set: (s: GameState) => commit(s),
+    };
+  });
+
+  const toast = (text: string) => setNotice({ text, key: Date.now() });
   const say = (text: string, at: Point) => setBubble({ text, x: at.x, y: at.y, key: Date.now() });
+
+  const openPanel = (p: PanelId | null) => {
+    if (p === panel) return;
+    audio.play(p ? 'open' : 'close');
+    setPanel(p);
+    setCard(null);
+    setQuestId(null);
+    setReportId(null);
+    setBubble(null);
+  };
 
   const onHotspot = (id: string, _label: string, at: Point) => {
     setHint(false);
     switch (id) {
       case 'tablon':
-        openTab('tablon');
+        openPanel('tablon');
         return;
       case 'barra':
         setHeroFilter('candidatos');
-        openTab('heroes');
+        openPanel('heroes');
         return;
       case 'dormitorios':
         setFocusFac('dorm');
-        openTab('gremio');
+        openPanel('gremio');
         return;
       case 'enfermeria':
         setFocusFac('enf');
-        openTab('gremio');
+        openPanel('gremio');
+        return;
+      case 'mapa':
+        openPanel('fuera');
         return;
       case 'despacho':
       case 'cofres':
         setFocusFac(null);
-        openTab('gremio');
+        openPanel('gremio');
         return;
       case 'chimenea':
-        say(fac.tab === 0 ? CAPTIONS.chimeneaFria! : CAPTIONS.chimenea!, at);
+        say(game.fac.tab === 0 ? CAPTIONS.chimeneaFria! : CAPTIONS.chimenea!, at);
         return;
       default:
         if (CAPTIONS[id]) say(CAPTIONS[id]!, at);
     }
   };
 
-  const updateHero = (id: string, patch: Partial<DemoHero>) =>
-    setHeroes((list) => list.map((h) => (h.id === id ? { ...h, ...patch } : h)));
-
   const hire = (id: string) => {
-    const h = heroes.find((x) => x.id === id);
-    if (!h) return;
+    const why = canHire(game, id);
+    if (why) return toast(why);
+    const c = game.candidates.find((x) => x.id === id)!;
+    dispatch({ type: 'hire', id });
     audio.play('coin');
-    setGold((g) => g - (h.fee ?? 0));
-    updateHero(id, { status: 'ok' });
-    setTimeout(() => scene.current?.focusHero(id), 50);
+    toast(`${c.name} se une al gremio. Su rasgo oculto se sabrá tras su primera misión.`);
+    setTimeout(() => scene.current?.focusHero(id), 60);
+  };
+
+  const fire = (id: string) => {
+    const h = game.heroes.find((x) => x.id === id)!;
+    dispatch({ type: 'fire', id });
+    audio.play('close');
+    setCard(null);
+    toast(`${h.name} recoge sus cosas y se va sin despedirse.`);
   };
 
   /** Manda un grupo: la nota sale del tablón y los héroes cruzan la puerta. */
-  const send = (questId: string, ids: string[]) => {
-    const q = quests.find((x) => x.id === questId);
-    if (!q || !ids.length) return;
-    const names = listNames(ids.map((id) => heroes.find((h) => h.id === id)?.name ?? ''));
+  const send = (qid: string, ids: string[]) => {
+    const q = game.quests.find((x) => x.id === qid);
+    if (!q) return;
+    const before = gameRef.current;
+    if (dispatch({ type: 'send', questId: qid, heroIds: ids }) === before) return;
+    const names = listNames(ids.map((id) => game.heroes.find((h) => h.id === id)?.name ?? ''));
     audio.play('depart');
-    setQuests((list) => list.filter((x) => x.id !== q.id));
-    setHeroes((list) =>
-      list.map((h) => (ids.includes(h.id) ? { ...h, status: 'mision', days: q.days } : h)),
-    );
     setQuestId(null);
-    setTab('taberna');
+    setPanel(null);
     scene.current?.focus('puerta');
-    setNotice({
-      text: `${names} ${plural(ids.length, 'sale', 'salen')} hacia ${q.place}. Vuelta en ${q.days} ${plural(q.days, 'día', 'días')}.`,
-      key: Date.now(),
-    });
+    toast(
+      `${names} ${plural(ids.length, 'sale', 'salen')} hacia ${q.place}. Vuelta en ${q.days} ${plural(q.days, 'día', 'días')}.`,
+    );
   };
 
-  const upgrade = (k: keyof Facilities, delta: number) => {
-    const next = Math.max(0, Math.min(3, fac[k] + delta));
-    if (next === fac[k]) return;
-    if (delta > 0) setTab('taberna');
+  const upgrade = (k: keyof Facilities) => {
+    const before = gameRef.current;
+    if (dispatch({ type: 'upgrade', fac: k }) === before) return;
+    setPanel(null);
     scene.current?.focus(FACILITY_INFO[k].room);
-    setFac({ ...fac, [k]: next });
   };
 
-  const cardHero = heroes.find((h) => h.id === card) ?? null;
-  const openQuest = quests.find((q) => q.id === questId) ?? null;
+  const sell = (itemId: string) => {
+    const it = game.inventory.find((i) => i.id === itemId);
+    dispatch({ type: 'sell', itemId });
+    audio.play('coin');
+    if (it) toast(`Vendido: ${it.name} por ${it.value} monedas.`);
+  };
+
+  const endDay = () => {
+    setHint(false);
+    setPanel(null);
+    setCard(null);
+    setQuestId(null);
+    setBubble(null);
+    const before = gameRef.current;
+    const next = dispatch({ type: 'endDay' });
+    if (next === before) return;
+    audio.play('dawn');
+    setDawnOpen(true);
+  };
+
+  const closeDawn = (then?: PanelId) => {
+    const returned = sceneGame.missions.some((m) => !game.missions.some((x) => x.id === m.id));
+    setDawnOpen(false);
+    if (game.day === 1) setHint(true);
+    if (then) openPanel(then);
+    else if (returned) setTimeout(() => scene.current?.focus('puerta'), 30);
+  };
+
+  const openReport = (id: string) => {
+    dispatch({ type: 'read', reportId: id });
+    audio.play('open');
+    setReportId(id);
+  };
+
+  const restart = () => {
+    webStorage.clear();
+    const s = freshGame();
+    commit(s);
+    setSceneGame(s);
+    setPanel(null);
+    setCard(null);
+    setDawnOpen(true);
+    scene.current?.focus('sala');
+  };
+
+  const cardHero =
+    game.heroes.find((h) => h.id === card) ?? game.candidates.find((h) => h.id === card) ?? null;
+  const cardIsCandidate = !!cardHero && game.candidates.includes(cardHero);
+  const openQuest = game.quests.find((q) => q.id === questId) ?? null;
+  const report = game.reports.find((r) => r.id === reportId) ?? null;
+  const unread = game.reports.filter((r) => !r.read).length;
+  const away = game.missions.length + game.heroes.filter((h) => h.status === 'desaparecido').length;
+  const tab: TabId =
+    panel === 'tablon' || panel === 'heroes' || panel === 'gremio' ? panel : 'taberna';
 
   return (
     <div class="game">
-      <Hud gold={gold} />
+      <Hud game={game} />
       <div class="stage">
         <SceneView
           model={model}
@@ -191,7 +285,7 @@ export function App() {
         )}
         {hint && !notice && (
           <div class="hint-toast" role="status">
-            Arrastra para recorrer la taberna · Toca personas y objetos
+            Arrastra para recorrer la taberna · Toca el tablón para mandar un grupo
           </div>
         )}
         {notice && (
@@ -214,10 +308,19 @@ export function App() {
             <Icon name="home" size={16} />
           </button>
         </div>
-        {tab === 'tablon' && (
-          <Panel title="Tablón de encargos" onClose={() => openTab('taberna')} variant="cork">
+        {!panel && !game.over && (
+          <DayBar
+            unread={unread}
+            away={away}
+            onMail={() => openPanel('correo')}
+            onAway={() => openPanel('fuera')}
+            onEndDay={endDay}
+          />
+        )}
+        {panel === 'tablon' && (
+          <Panel title="Tablón de encargos" onClose={() => openPanel(null)} variant="cork">
             <TablonPanel
-              quests={quests}
+              quests={game.quests}
               onOpen={(id) => {
                 audio.play('open');
                 setQuestId(id);
@@ -225,71 +328,90 @@ export function App() {
             />
           </Panel>
         )}
-        {tab === 'heroes' && (
-          <Panel title="Héroes" onClose={() => openTab('taberna')}>
+        {panel === 'heroes' && (
+          <Panel title="Héroes" onClose={() => openPanel(null)}>
             <HeroesPanel
-              heroes={heroes}
+              game={game}
               filter={heroFilter}
               setFilter={setHeroFilter}
               onOpen={(id) => setCard(id)}
               onHire={hire}
-              gold={gold}
             />
           </Panel>
         )}
-        {tab === 'gremio' && (
-          <Panel title="El gremio" onClose={() => openTab('taberna')}>
+        {panel === 'gremio' && (
+          <Panel title="El gremio" onClose={() => openPanel(null)}>
             <GremioPanel
-              fac={fac}
+              game={game}
               focus={focusFac}
-              loot={loot}
-              setLoot={setLoot}
               onUpgrade={upgrade}
+              onSell={sell}
+              onNewGame={restart}
             />
+          </Panel>
+        )}
+        {panel === 'correo' && (
+          <Panel title="Correo del amanecer" onClose={() => openPanel(null)}>
+            <MailPanel reports={game.reports} onOpen={openReport} />
+          </Panel>
+        )}
+        {panel === 'fuera' && (
+          <Panel title="Fuera del gremio" onClose={() => openPanel(null)}>
+            <AwayPanel game={game} onHero={(id) => setCard(id)} />
           </Panel>
         )}
         {openQuest && (
           <QuestSheet
             key={openQuest.id}
+            game={game}
             quest={openQuest}
-            heroes={heroes.filter((h) => h.status !== 'candidato')}
             onClose={() => setQuestId(null)}
             onSend={(ids) => send(openQuest.id, ids)}
           />
         )}
+        {report && (
+          <Letter report={report} heroes={game.heroes} onClose={() => setReportId(null)} />
+        )}
         {cardHero && (
           <HeroCard
+            key={cardHero.id}
+            game={game}
             hero={cardHero}
-            gold={gold}
+            candidate={cardIsCandidate}
             onClose={() => setCard(null)}
             onHire={() => hire(cardHero.id)}
+            onFire={() => fire(cardHero.id)}
             onLocate={() => {
               setCard(null);
-              setTab('taberna');
-              if (!scene.current?.focusHero(cardHero.id) && cardHero.status === 'mision')
-                say(`${cardHero.name} está de misión. Vuelve en ${cardHero.days} días.`, {
-                  x: 160,
-                  y: 120,
-                });
-            }}
-            onCycle={() => {
-              const next =
-                cardHero.status === 'ok'
-                  ? 'herido'
-                  : cardHero.status === 'herido'
-                    ? 'mision'
-                    : 'ok';
-              updateHero(cardHero.id, { status: next });
+              setPanel(null);
+              if (!scene.current?.focusHero(cardHero.id))
+                say(
+                  cardHero.status === 'mision'
+                    ? `${cardHero.name} está de misión. Vuelve en ${cardHero.days} ${plural(cardHero.days, 'día', 'días')}.`
+                    : `${cardHero.name} no está en la taberna.`,
+                  { x: 160, y: 120 },
+                );
             }}
           />
         )}
+        {dawnOpen && (
+          <Dawn
+            day={game.day}
+            flavor={game.flavor}
+            events={game.dawn}
+            unread={unread}
+            onClose={() => closeDawn()}
+            onMail={() => closeDawn('correo')}
+          />
+        )}
+        {game.over && !dawnOpen && <GameOver game={game} onNew={restart} />}
       </div>
       <TabBar
         tab={tab}
         onTab={(t) => {
           if (t === 'heroes') setHeroFilter('todos');
           if (t === 'gremio') setFocusFac(null);
-          openTab(t);
+          openPanel(t === 'taberna' ? null : t);
         }}
       />
     </div>

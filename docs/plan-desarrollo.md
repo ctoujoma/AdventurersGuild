@@ -84,14 +84,17 @@ Los tamaños son relativos (S < M < L). Cada fase termina en algo que se puede p
 
 **Balance inicial** (300 partidas por estrategia): sin mandar a nadie se pierde siempre; con una estrategia normal (enviar si la estimación pasa del 55 %) se gana el 66 %; con una cauta (75 %), el 30 %; la temeraria (30 %) gana el 82 % pero pierde un héroe cada dos partidas. Las constantes están en `core/balance.ts`.
 
-### Fase 2: Primer prototipo jugable · M
-- [ ] Taberna: resumen del día, candidatos y botón de contratar
-- [ ] Tablón: lista de encargos con detalle
-- [x] Envío: elegir héroes, ver estimación, enviar (los héroes salen por la puerta en la escena) · adelantado
-- [ ] Héroes: plantilla y ficha (atributos, rasgos, estado)
-- [ ] Informes de misión al amanecer (texto simple)
-- [ ] Botón «Terminar día» y barra superior con oro, día y deuda
-- [ ] Guardado automático y opción de nueva partida
+### Fase 2: Primer prototipo jugable · M ✅
+- [x] Taberna: la escena es la pantalla principal; barra del día con correo, grupos fuera y «Terminar día»
+- [x] Candidatos en la barra (escena y pestaña Héroes) y botón de contratar, con prima, camas y rasgo oculto
+- [x] Tablón: encargos del estado real con caducidad, «Nuevo», peligro (o «¿?») y objeto
+- [x] Envío: elegir héroes, ver estimación (el mago avisa del giro), enviar; salen por la puerta
+- [x] Héroes: plantilla y ficha completa (atributos, habilidades, XP, moral, rasgos, historial, despedir)
+- [x] Informes de misión al amanecer, como cartas con los retratos del grupo
+- [x] Amanecer entre días con el resumen de la noche; los que vuelven entran por la puerta
+- [x] Barra superior con día, rango, oro, reputación y próximo pago (avisa si no llegas)
+- [x] Gremio: deuda y calendario de pagos, mejoras con su coste, arcón del botín, Muro de los caídos
+- [x] Guardado automático (`platform/storage.ts`), nueva partida, carta del tío el día 1 y pantalla de victoria o derrota
 
 **🎯 Hito:** se juegan los 30 días de «La deuda» en el móvil desde un enlace. Primera ronda de pruebas.
 

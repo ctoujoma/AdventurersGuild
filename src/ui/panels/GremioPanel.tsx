@@ -1,24 +1,24 @@
-import { FACILITY_INFO } from '../../data/demo';
-import { FACILITY_MAX, type Facilities } from '../../world/geometry';
+import { useState } from 'preact/hooks';
+import { DEBT, FACILITY_MAX, SCHEDULE, capacity } from '../../core/balance';
+import { canUpgrade, nextPayment, salaries, upgradeCost } from '../../core/game';
+import type { Facilities, GameState } from '../../core/model';
+import { FACILITY_INFO } from '../../data/labels';
 import { Icon } from '../icons';
 
 interface Props {
-  fac: Facilities;
+  game: GameState;
   focus: keyof Facilities | null;
-  loot: number;
-  setLoot: (n: number) => void;
-  onUpgrade: (k: keyof Facilities, delta: number) => void;
+  onUpgrade: (k: keyof Facilities) => void;
+  onSell: (itemId: string) => void;
+  onNewGame: () => void;
 }
 
-const SCHEDULE = [
-  { day: 7, amt: 150, paid: false },
-  { day: 14, amt: 200, paid: false },
-  { day: 21, amt: 250, paid: false },
-  { day: 28, amt: 400, paid: false },
-];
-
-export function GremioPanel({ fac, focus, loot, setLoot, onUpgrade }: Props) {
+/** La deuda, las instalaciones, el arcón del botín y el Muro de los caídos. */
+export function GremioPanel({ game, focus, onUpgrade, onSell, onNewGame }: Props) {
+  const [confirm, setConfirm] = useState(false);
   const keys = Object.keys(FACILITY_INFO) as (keyof Facilities)[];
+  const next = nextPayment(game);
+  let cum = 0;
   return (
     <>
       <div class="card-paper debt">
@@ -27,25 +27,35 @@ export function GremioPanel({ fac, focus, loot, setLoot, onUpgrade }: Props) {
           <span class="muted">con Merlo, el prestamista</span>
         </div>
         <div class="debt-num">
-          <b>0</b> / 1000 pagado
+          <b>{game.paid}</b> / {DEBT} pagado
         </div>
         <div class="bar">
-          <i style={{ width: '0%' }} />
+          <i style={{ width: `${(game.paid / DEBT) * 100}%` }} />
         </div>
         <div class="sched">
-          {SCHEDULE.map((p, i) => (
-            <span key={p.day} class={i === 0 ? 'next' : ''}>
-              Día {p.day} · {p.amt}
-            </span>
-          ))}
+          {SCHEDULE.map((p) => {
+            cum += p.amount;
+            const paid = game.paid >= cum;
+            return (
+              <span key={p.day} class={paid ? 'paid' : p === next ? 'next' : ''}>
+                Día {p.day} · {p.amount}
+                {paid ? ' ✓' : ''}
+              </span>
+            );
+          })}
         </div>
+        <span class="tiny">
+          Cada pago incluye los salarios de la semana: ahora, {salaries(game)} monedas.
+        </span>
       </div>
+
       <h3 class="sec-title">Instalaciones</h3>
-      <p class="panel-note">Mejora o baja niveles y mira cómo cambia la taberna (vista previa).</p>
       <div class="list">
         {keys.map((k) => {
-          const level = fac[k];
+          const level = game.fac[k];
           const info = FACILITY_INFO[k];
+          const cost = upgradeCost(game, k);
+          const why = canUpgrade(game, k);
           return (
             <article key={k} class={`card-paper facility ${focus === k ? 'is-focus' : ''}`}>
               <div class="facility-info">
@@ -55,56 +65,82 @@ export function GremioPanel({ fac, focus, loot, setLoot, onUpgrade }: Props) {
                     <i key={i} class={i < level ? 'on' : ''} />
                   ))}
                 </span>
-                <span class="muted">{info.levels[level]}</span>
-                {level < FACILITY_MAX && (
-                  <span class="next-level">Siguiente: {info.levels[level + 1]}</span>
+                <span class="muted">
+                  {info.levels[level]} · {info.effect(level)}
+                </span>
+                {cost !== null && (
+                  <span class="next-level">
+                    Siguiente: {info.levels[level + 1]} · {info.effect(level + 1)}
+                  </span>
                 )}
               </div>
-              <div class="stepper">
-                <button
-                  class="btn btn-wood"
-                  aria-label={`Bajar ${info.name}`}
-                  disabled={level === 0}
-                  onClick={() => onUpgrade(k, -1)}
-                >
-                  <Icon name="minus" size={12} />
-                </button>
+              {cost !== null ? (
                 <button
                   class="btn btn-gold"
-                  aria-label={`Mejorar ${info.name}`}
-                  disabled={level === FACILITY_MAX}
-                  onClick={() => onUpgrade(k, 1)}
+                  aria-label={`Mejorar ${info.name} por ${cost} monedas`}
+                  disabled={!!why}
+                  title={why ?? undefined}
+                  onClick={() => onUpgrade(k)}
                 >
-                  Mejorar
+                  <Icon name="coin" size={12} /> {cost}
                 </button>
-              </div>
+              ) : (
+                <span class="pill pill-ok">Máximo</span>
+              )}
             </article>
           );
         })}
-        <article class="card-paper facility">
-          <div class="facility-info">
-            <b>Arcón del botín</b>
-            <span class="muted">{loot} objetos · un cofre por objeto en la bodega</span>
-          </div>
-          <div class="stepper">
-            <button
-              class="btn btn-wood"
-              aria-label="Quitar objeto"
-              disabled={loot === 0}
-              onClick={() => setLoot(loot - 1)}
-            >
-              <Icon name="minus" size={12} />
+      </div>
+      <p class="panel-note">
+        Camas ocupadas: cuentan también quien está fuera o herido. Caben {capacity(game.fac.dorm)}.
+      </p>
+
+      <h3 class="sec-title">Arcón del botín</h3>
+      {!game.inventory.length && (
+        <p class="panel-note">El arcón está vacío. Los encargos con «+» traen objetos.</p>
+      )}
+      <div class="list">
+        {game.inventory.map((it) => (
+          <article key={it.id} class="card-paper facility">
+            <div class="facility-info">
+              <b>{it.name}</b>
+              <span class="muted">{it.desc}</span>
+            </div>
+            <button class="btn btn-wood" onClick={() => onSell(it.id)}>
+              Vender · {it.value}
             </button>
-            <button
-              class="btn btn-wood"
-              aria-label="Añadir objeto"
-              disabled={loot === 6}
-              onClick={() => setLoot(loot + 1)}
-            >
-              <Icon name="plus" size={12} />
-            </button>
+          </article>
+        ))}
+      </div>
+
+      <h3 class="sec-title">Muro de los caídos</h3>
+      <div class="card-paper wall">
+        {game.fallen.map((f, i) => (
+          <div key={i} class="fallen">
+            <b>{f.name}</b>
+            <span>{f.epitaph}</span>
           </div>
-        </article>
+        ))}
+      </div>
+
+      <div class="newgame">
+        {confirm ? (
+          <>
+            <span>¿Empezar de cero? Esta partida se perderá.</span>
+            <div class="herocard-actions">
+              <button class="btn btn-red" onClick={onNewGame}>
+                Sí, nueva partida
+              </button>
+              <button class="btn btn-wood" onClick={() => setConfirm(false)}>
+                Cancelar
+              </button>
+            </div>
+          </>
+        ) : (
+          <button class="btn btn-wood" onClick={() => setConfirm(true)}>
+            Nueva partida
+          </button>
+        )}
       </div>
     </>
   );

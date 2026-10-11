@@ -1,85 +1,71 @@
-import { useMemo, useState } from 'preact/hooks';
-import { generateLook, type OutfitId } from '../../art/heroes/look';
-import { CLASS_NAMES, STATUS_LABEL, lookOf, type DemoHero } from '../../data/demo';
+import { capacity } from '../../core/balance';
+import { canHire, roster, salaries } from '../../core/game';
+import type { GameState, Hero } from '../../core/model';
+import { CLASS_NAMES, statusLabel } from '../../data/labels';
 import { Icon } from '../icons';
 import { Portrait } from '../Portrait';
 import { TraitChip } from '../TraitChip';
+import { lookOf, marksOf } from '../view';
 
 interface Props {
-  heroes: DemoHero[];
+  game: GameState;
   filter: 'todos' | 'candidatos';
   setFilter: (f: 'todos' | 'candidatos') => void;
   onOpen: (id: string) => void;
   onHire: (id: string) => void;
-  gold: number;
 }
 
-const CLASSES: OutfitId[] = ['guerrero', 'picaro', 'mago', 'clerigo', 'explorador'];
+/** Plantilla del gremio y candidatos que esperan en la barra. */
+export function HeroesPanel({ game, filter, setFilter, onOpen, onHire }: Props) {
+  const mine = game.heroes.filter((h) => h.status !== 'muerto');
+  const cands = game.candidates;
+  const cap = capacity(game.fac.dorm);
 
-export function HeroesPanel({ heroes, filter, setFilter, onOpen, onHire, gold }: Props) {
-  const [batch, setBatch] = useState(1);
-  const gallery = useMemo(
-    () =>
-      Array.from({ length: 10 }, (_, i) =>
-        generateLook(
-          `galeria-${batch}-${i}`,
-          CLASSES[i % CLASSES.length]!,
-          (i + batch) % 2 ? 'f' : 'm',
-        ),
-      ),
-    [batch],
-  );
-  const mine = heroes.filter((h) => h.status !== 'candidato');
-  const cands = heroes.filter((h) => h.status === 'candidato');
-
-  const row = (h: DemoHero) => (
-    <article key={h.id} class="hero-row card-paper" onClick={() => onOpen(h.id)}>
-      <Portrait
-        look={lookOf(h)}
-        marks={{ injured: h.status === 'herido', eyepatch: h.eyepatch }}
-        scale={2}
-        label={h.name}
-        alive={false}
-      />
-      <div class="hero-info">
-        <b>
-          {h.name} {h.nick && <span class="nick">{h.nick}</span>}
-        </b>
-        <span class="muted">
-          {CLASS_NAMES[h.cls][h.sex]} · nivel {h.lvl}
-        </span>
-        <div class="chips">
-          {h.traits.map((t) => (
-            <TraitChip key={t.id} trait={t} sex={h.sex} />
-          ))}
+  const row = (h: Hero, candidate: boolean) => {
+    const why = candidate ? canHire(game, h.id) : null;
+    return (
+      <article key={h.id} class="hero-row card-paper" onClick={() => onOpen(h.id)}>
+        <Portrait look={lookOf(h)} marks={marksOf(h)} scale={2} label={h.name} alive={false} />
+        <div class="hero-info">
+          <b>
+            {h.name} {h.nick && <span class="nick">{h.nick}</span>}
+          </b>
+          <span class="muted">
+            {CLASS_NAMES[h.cls][h.sex]} · nivel {h.lvl} · {h.salary}/sem
+          </span>
+          <div class="chips">
+            {h.traits.map((t) => (
+              <TraitChip key={t.id} trait={t} sex={h.sex} />
+            ))}
+          </div>
         </div>
-      </div>
-      <div class="hero-side">
-        <span class={`pill pill-${h.status}`}>
-          {STATUS_LABEL[h.status]}
-          {h.days && h.status !== 'ok' ? ` · ${h.days} d` : ''}
-        </span>
-        {h.status === 'candidato' && (
-          <button
-            class="btn btn-gold"
-            disabled={gold < (h.fee ?? 0)}
-            onClick={(e) => {
-              e.stopPropagation();
-              onHire(h.id);
-            }}
-          >
-            <Icon name="coin" size={12} /> {h.fee}
-          </button>
-        )}
-      </div>
-    </article>
-  );
+        <div class="hero-side">
+          <span class={`pill pill-${candidate ? 'candidato' : h.status}`}>
+            {statusLabel(h, candidate)}
+          </span>
+          {candidate && (
+            <button
+              class="btn btn-gold"
+              disabled={!!why}
+              title={why ?? `Prima de fichaje: ${h.fee}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onHire(h.id);
+              }}
+            >
+              <Icon name="coin" size={12} /> {h.fee}
+            </button>
+          )}
+        </div>
+      </article>
+    );
+  };
 
   return (
     <>
       <div class="segmented" role="tablist">
         <button role="tab" aria-selected={filter === 'todos'} onClick={() => setFilter('todos')}>
-          Tus héroes · {mine.length}
+          Tus héroes · {roster(game).length}/{cap}
         </button>
         <button
           role="tab"
@@ -89,22 +75,23 @@ export function HeroesPanel({ heroes, filter, setFilter, onOpen, onHire, gold }:
           En la barra · {cands.length}
         </button>
       </div>
-      <div class="list">{(filter === 'todos' ? mine : cands).map(row)}</div>
-      {filter === 'candidatos' && cands.length === 0 && (
-        <p class="panel-note">Hoy no hay nadie buscando trabajo.</p>
+      {filter === 'todos' ? (
+        <>
+          <p class="panel-note">
+            Salarios: {salaries(game)} monedas por semana. Se pagan con la deuda.
+          </p>
+          <div class="list">{mine.map((h) => row(h, false))}</div>
+          {!mine.length && <p class="panel-note">No te queda nadie. Contrata en la barra.</p>}
+        </>
+      ) : (
+        <>
+          <p class="panel-note">
+            Cada candidato esconde un rasgo (¿?) que se descubre tras su primera misión.
+          </p>
+          <div class="list">{cands.map((h) => row(h, true))}</div>
+          {!cands.length && <p class="panel-note">Hoy no hay nadie buscando trabajo.</p>}
+        </>
       )}
-      <div class="sec-h">
-        <h3>Galería de retratos</h3>
-        <button class="btn btn-wood" onClick={() => setBatch((b) => b + 1)}>
-          Otra tanda
-        </button>
-      </div>
-      <p class="panel-note">Cada héroe se monta con piezas dibujadas a mano según su semilla.</p>
-      <div class="gallery">
-        {gallery.map((look, i) => (
-          <Portrait key={`${batch}-${i}`} look={look} scale={2} alive={false} />
-        ))}
-      </div>
     </>
   );
 }

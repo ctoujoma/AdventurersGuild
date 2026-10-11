@@ -1,9 +1,10 @@
-import type { DemoQuest } from '../../data/demo';
+import type { Quest } from '../../core/model';
+import { dangerClass, dangerLabel } from '../../data/labels';
 import { Icon } from '../icons';
 import { plural } from '../text';
 
 interface Props {
-  quests: DemoQuest[];
+  quests: Quest[];
   onOpen: (id: string) => void;
 }
 
@@ -28,7 +29,8 @@ export function TablonPanel({ quests, onOpen }: Props) {
             <span class="pin" aria-hidden="true" />
             <span class="note-top">
               <span class="note-type">{q.type}</span>
-              <span class="muted">
+              {q.fresh && <span class="note-new">Nuevo</span>}
+              <span class={`muted ${q.expires === 1 ? 'urgent' : ''}`}>
                 {q.expires === 1 ? 'caduca mañana' : `caduca en ${q.expires} días`}
               </span>
             </span>
@@ -43,8 +45,8 @@ export function TablonPanel({ quests, onOpen }: Props) {
               ))}
             </span>
             <span class="note-foot">
-              <span class={`danger danger-${q.danger === '¿?' ? 'x' : q.danger.toLowerCase()}`}>
-                Peligro {q.danger.toLowerCase()}
+              <span class={`danger danger-${dangerClass(q.danger, q.dangerHidden)}`}>
+                Peligro {dangerLabel(q.danger, q.dangerHidden)}
               </span>
               <span class="muted">
                 {q.days} {plural(q.days, 'día', 'días')} · hasta {q.slots}
@@ -52,6 +54,7 @@ export function TablonPanel({ quests, onOpen }: Props) {
               <b class="reward">
                 <Icon name="coin" size={14} />
                 {q.reward}
+                {q.item ? ' +' : ''}
               </b>
             </span>
           </button>

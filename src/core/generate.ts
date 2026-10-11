@@ -38,11 +38,14 @@ const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export function fill(text: string, vars: Record<string, string>): string {
-  return text.replace(/\{(\w+)\}/g, (m, key: string) => {
-    const v = vars[key] ?? vars[key.toLowerCase()];
-    if (v === undefined) return m;
-    return key[0] === key[0]!.toUpperCase() ? cap(v) : v;
-  });
+  return text
+    .replace(/\{(\w+)\}/g, (m, key: string) => {
+      const v = vars[key] ?? vars[key.toLowerCase()];
+      if (v === undefined) return m;
+      return key[0] === key[0]!.toUpperCase() ? cap(v) : v;
+    })
+    .replace(/\b([Aa]) el\b/g, '$1l')
+    .replace(/\b([Dd])e el\b/g, '$1el');
 }
 
 function pickTraits(rng: Rng): Trait[] {
