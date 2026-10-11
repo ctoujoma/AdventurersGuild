@@ -13,6 +13,9 @@ import { Hud } from './Hud';
 import { Icon } from './icons';
 import { Letter } from './Letter';
 import { Panel } from './Panel';
+import { SaveMenu } from './SaveMenu';
+import { Splash } from './Splash';
+import { Title } from './Title';
 import { AwayPanel } from './panels/AwayPanel';
 import { GremioPanel } from './panels/GremioPanel';
 import { HeroesPanel } from './panels/HeroesPanel';
@@ -54,6 +57,12 @@ export function App() {
   const [focusFac, setFocusFac] = useState<keyof Facilities | null>(null);
   const [heroFilter, setHeroFilter] = useState<'todos' | 'candidatos'>('todos');
   const [hint, setHint] = useState(false);
+  /** Splash del desarrollador, título y juego. Con #debug se entra directo a la partida. */
+  const [screen, setScreen] = useState<'splash' | 'title' | 'game'>(() =>
+    location.hash.includes('debug') ? 'game' : 'splash',
+  );
+  const [hasGame, setHasGame] = useState(!!saved);
+  const [saveMenu, setSaveMenu] = useState(false);
   const scene = useRef<WorldScene | null>(null);
   const gameRef = useRef(game);
   gameRef.current = game;
@@ -268,7 +277,28 @@ export function App() {
     setReportId(id);
   };
 
+  const loadSave = (s: GameState) => {
+    commit(s);
+    setSceneGame(s);
+    setHasGame(true);
+    setSaveMenu(false);
+    setPanel(null);
+    setCard(null);
+    setDawnOpen(false);
+    setScreen('game');
+    audio.play('open');
+    toast(`Partida cargada: día ${s.day}, ${s.gold} monedas.`);
+  };
+
+  const toTitle = () => {
+    setPanel(null);
+    setCard(null);
+    setScreen('title');
+  };
+
   const restart = () => {
+    setHasGame(true);
+    setScreen('game');
     webStorage.clear();
     const s = freshGame();
     commit(s);
@@ -384,6 +414,8 @@ export function App() {
               focus={focusFac}
               onUpgrade={upgrade}
               onSell={sell}
+              onSaves={() => setSaveMenu(true)}
+              onTitle={toTitle}
               onSellTrophy={(id) => {
                 const t = game.trophies.find((x) => x.id === id);
                 dispatch({ type: 'sellTrophy', id });
@@ -391,7 +423,6 @@ export function App() {
                 if (t)
                   toast(`Vendido: ${t.name} por ${t.value} monedas. La pared se queda más sosa.`);
               }}
-              onNewGame={restart}
             />
           </Panel>
         )}
@@ -448,7 +479,7 @@ export function App() {
             }}
           />
         )}
-        {dawnOpen && (
+        {dawnOpen && screen === 'game' && (
           <Dawn
             day={game.day}
             flavor={game.flavor}
@@ -458,7 +489,7 @@ export function App() {
             onMail={() => closeDawn('correo')}
           />
         )}
-        {game.over && !dawnOpen && <GameOver game={game} onNew={restart} />}
+        {game.over && !dawnOpen && screen === 'game' && <GameOver game={game} onNew={restart} />}
       </div>
       <TabBar
         tab={tab}
@@ -468,6 +499,25 @@ export function App() {
           openPanel(t === 'taberna' ? null : t);
         }}
       />
+      {screen === 'title' && (
+        <Title
+          saved={hasGame ? game : null}
+          onContinue={() => {
+            audio.play('open');
+            setScreen('game');
+          }}
+          onNew={restart}
+          onSaves={() => setSaveMenu(true)}
+        />
+      )}
+      {screen === 'splash' && <Splash onDone={() => setScreen('title')} />}
+      {saveMenu && (
+        <SaveMenu
+          game={hasGame ? game : null}
+          onLoad={loadSave}
+          onClose={() => setSaveMenu(false)}
+        />
+      )}
     </div>
   );
 }

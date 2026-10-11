@@ -1,4 +1,3 @@
-import { useState } from 'preact/hooks';
 import { DEBT, SCHEDULE, capacity, facilityMax } from '../../core/balance';
 import { canUpgrade, nextPayment, salaries, upgradeCost } from '../../core/game';
 import type { Facilities, GameState } from '../../core/model';
@@ -15,12 +14,20 @@ interface Props {
   onUpgrade: (k: keyof Facilities) => void;
   onSell: (itemId: string) => void;
   onSellTrophy: (id: string) => void;
-  onNewGame: () => void;
+  onSaves: () => void;
+  onTitle: () => void;
 }
 
 /** La deuda, las instalaciones, el arcón del botín y el Muro de los caídos. */
-export function GremioPanel({ game, focus, onUpgrade, onSell, onSellTrophy, onNewGame }: Props) {
-  const [confirm, setConfirm] = useState(false);
+export function GremioPanel({
+  game,
+  focus,
+  onUpgrade,
+  onSell,
+  onSellTrophy,
+  onSaves,
+  onTitle,
+}: Props) {
   const keys = Object.keys(FACILITY_INFO) as (keyof Facilities)[];
   const next = nextPayment(game);
   let cum = 0;
@@ -170,24 +177,13 @@ export function GremioPanel({ game, focus, onUpgrade, onSell, onSellTrophy, onNe
         ))}
       </div>
 
-      <div class="newgame">
-        {confirm ? (
-          <>
-            <span>¿Empezar de cero? Esta partida se perderá.</span>
-            <div class="herocard-actions">
-              <button class="btn btn-red" onClick={onNewGame}>
-                Sí, nueva partida
-              </button>
-              <button class="btn btn-wood" onClick={() => setConfirm(false)}>
-                Cancelar
-              </button>
-            </div>
-          </>
-        ) : (
-          <button class="btn btn-wood" onClick={() => setConfirm(true)}>
-            Nueva partida
-          </button>
-        )}
+      <div class="newgame herocard-actions">
+        <button class="btn btn-wood" onClick={onSaves}>
+          Guardar y cargar
+        </button>
+        <button class="btn btn-wood" onClick={onTitle}>
+          Menú principal
+        </button>
       </div>
     </>
   );
