@@ -37,6 +37,7 @@ import { tripDays } from './classes';
 import { arrival, checkFeats, checkMonth, emptyStats, startMonth } from './feats';
 import { stepRaids } from './raids';
 import { advanceChain, offerChain } from './chains';
+import { choose, maybeEvent, scaredClients, stepThreat } from './events';
 import { generateHero, generateQuest } from './generate';
 import {
   SAVE_VERSION,
@@ -45,6 +46,7 @@ import {
   type GameState,
   type Hero,
   type Quest,
+  type Report,
 } from './model';
 import { MORALE_LOW, MORALE_QUIT } from './party';
 import { resolveMission } from './resolve';
@@ -65,6 +67,7 @@ export type Action =
   | { type: 'tip'; id: string }
   | { type: 'ackOpening' }
   | { type: 'guard'; id: string; on: boolean }
+  | { type: 'choose'; index: number }
   | { type: 'endDay' };
 
 // ---------- Consultas ----------
@@ -319,6 +322,14 @@ export function reduce(state: GameState, action: Action): GameState {
       }
       return s;
     }
+    case 'choose': {
+      if (!state.event) return state;
+      const s = structuredClone(state);
+      const rng = new Rng(s.rng);
+      choose(s, rng, action.index);
+      s.rng = rng.save();
+      return s;
+    }
     case 'guard': {
       const h = state.heroes.find((x) => x.id === action.id);
       if (!h || h.status !== 'ok' || !!h.guard === action.on) return state;
@@ -341,6 +352,26 @@ export function reduce(state: GameState, action: Action): GameState {
 
 // ---------- Avance de día ----------
 
+/** Vuelve un grupo de rescate: si ha ido bien, traen a quien estaba perdido. */
+function rescue(s: GameState, id: string, r: Report, events: DawnEvent[]): void {
+  const h = s.heroes.find((x) => x.id === id);
+  if (!h || h.status !== 'desaparecido') return;
+  if (r.outcome === 'Fracaso' || r.outcome === 'Desastre') {
+    r.body.push(`No encontraron ni rastro de ${h.name}.`);
+    return;
+  }
+  h.status = 'herido';
+  h.days = 2;
+  h.morale = Math.min(100, h.morale + 10);
+  h.history.push(`Día ${s.day} · Rescatado por ${r.who}`);
+  r.heading = 'Rescate';
+  r.body.push(
+    `Encontraron a ${h.name} escondido en una cueva, con hambre y muchas ganas de volver.`,
+  );
+  r.chips.push({ t: `${h.name} vuelve a casa`, k: 'good' });
+  events.push({ t: `¡${r.who} ha rescatado a ${h.name}!`, k: 'good' });
+}
+
 export function endDay(state: GameState): GameState {
   if (state.over) return state;
   const s = structuredClone(state);
@@ -348,10 +379,12 @@ export function endDay(state: GameState): GameState {
   const events: DawnEvent[] = [];
   s.day++;
 
+  // La amenaza regional puede llevarse los ingresos del día (caravana asaltada).
   const income = tavernIncome(s.fac.tab, s.rep, s.trophies.length);
-  if (income) {
-    s.gold += income;
-    events.push({ t: `La taberna deja ${income} monedas.`, k: 'good' });
+  const lost = stepThreat(s, rng, events, income);
+  if (income - lost > 0) {
+    s.gold += income - lost;
+    events.push({ t: `La taberna deja ${income - lost} monedas.`, k: 'good' });
   }
 
   // Regresos.
@@ -366,6 +399,7 @@ export function endDay(state: GameState): GameState {
     const r = resolveMission(s, m, rng);
     s.reports.unshift(r);
     if (m.quest.chain) advanceChain(s, rng, m.quest, r, events);
+    if (m.quest.rescue) rescue(s, m.quest.rescue, r, events);
     const bad = r.outcome === 'Fracaso' || r.outcome === 'Desastre';
     events.push({
       t: `${plural(r.heroIds.length, 'Vuelve', 'Vuelven')} ${r.who}: ${r.outcome.toLowerCase()}.`,
@@ -384,6 +418,8 @@ export function endDay(state: GameState): GameState {
         events.push({ t: `${h.name} vuelve a estar ${h.sex === 'f' ? 'lista' : 'listo'}.` });
       }
     } else if (h.status === 'desaparecido') {
+      // Mientras haya un grupo buscándole, no se le da por perdido.
+      if (s.missions.some((m) => m.quest.rescue === h.id)) continue;
       h.days--;
       if (h.days > 0) continue;
       if (rng.chance(returnChance(s.fac.cap))) {
@@ -391,8 +427,10 @@ export function endDay(state: GameState): GameState {
         h.days = 2;
         h.morale = Math.max(0, h.morale - 10);
         h.history.push(`Día ${s.day} · Volvió cuando ya nadie lo esperaba`);
+        const toughened = !h.traits.some((t) => t.id === 'curtido');
+        if (toughened) h.traits.push({ id: 'curtido' });
         events.push({
-          t: `¡${h.name} ha vuelto! Flaco, sucio y con una historia que nadie se cree.`,
+          t: `¡${h.name} ha vuelto! Flaco, sucio y con una historia que nadie se cree.${toughened ? ` Ahora ${h.sex === 'f' ? 'es curtida' : 'es curtido'}: +2 Supervivencia.` : ''}`,
           k: 'good',
         });
       } else {
@@ -441,6 +479,11 @@ export function endDay(state: GameState): GameState {
   const raidReport = stepRaids(s, rng, events);
   if (raidReport) s.reports.unshift(raidReport);
 
+  // Rescates que ya no hacen falta (volvió o cayó).
+  s.quests = s.quests.filter(
+    (q) => !q.rescue || s.heroes.some((h) => h.id === q.rescue && h.status === 'desaparecido'),
+  );
+
   // Tablón: caducan los viejos y llegan nuevos.
   for (const q of s.quests) {
     q.expires--;
@@ -450,7 +493,10 @@ export function endDay(state: GameState): GameState {
   if (gone.length) events.push({ t: `Caduca: ${listNames(gone.map((q) => q.title))}.` });
   s.quests = s.quests.filter((q) => q.expires > 0);
   let fresh = 0;
-  while (s.quests.filter((q) => !q.chain).length < BOARD_SIZE(s.fac.tab, s.fac.mapas)) {
+  while (
+    s.quests.filter((q) => !q.chain && !q.rescue).length <
+    BOARD_SIZE(s.fac.tab, s.fac.mapas) - scaredClients(s)
+  ) {
     s.quests.push(quest(s, rng));
     fresh++;
   }
@@ -536,6 +582,7 @@ export function endDay(state: GameState): GameState {
   if (!s.over) {
     checkFeats(s, rng, events);
     checkMonth(s, rng, events);
+    maybeEvent(s, rng);
   }
 
   s.flavor = rng.pick(FLAVOR);

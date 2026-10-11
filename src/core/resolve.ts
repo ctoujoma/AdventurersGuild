@@ -39,8 +39,9 @@ import {
   TWIST_DIFF,
   XP,
   XP_PER_LEVEL,
+  rankIndex,
 } from './balance';
-import { fill } from './generate';
+import { fill, generateQuest } from './generate';
 import { TROPHIES } from '../data/items';
 import { PLACE_INFO, placeAt } from '../data/places';
 import type {
@@ -325,6 +326,29 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
       victim.status = 'desaparecido';
       victim.lostAt = q.place;
       victim.days = rng.int(2, 4);
+      // Encargo de rescate: mientras alguien lo busca, no se le da por perdido.
+      const rq = generateQuest(
+        rng,
+        `q${state.uid++}`,
+        rankIndex(state.rep),
+        `i${state.uid++}`,
+        false,
+        'Explorar',
+      );
+      state.quests.push({
+        ...rq,
+        title: `Rescate de ${victim.name}`,
+        client: 'El propio gremio',
+        text: `Se perdió su rastro cerca de ${q.place}. Si alguien va a buscarle pronto, quizá aún esté a tiempo.`,
+        place: q.place,
+        danger: q.danger,
+        dangerHidden: undefined,
+        twist: undefined,
+        item: undefined,
+        reward: 0,
+        expires: victim.days,
+        rescue: victim.id,
+      });
       say(
         `Nadie sabe qué fue de ${victim.name}. Lo último que vieron fue su sombra cerca de ${q.place}.`,
       );

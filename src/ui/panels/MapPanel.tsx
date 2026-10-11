@@ -55,6 +55,10 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
     [fogKey],
   );
   const byId = (id: string) => game.heroes.find((h) => h.id === id);
+  // La amenaza nace donde termina la historia en marcha (o la última).
+  const threat = game.threat ?? 0;
+  const lastChain = [...(game.chains ?? [])].reverse()[0];
+  const threatAt = lastChain ? placeAt(chainDef(lastChain.id).steps.at(-1)!.place) : null;
   const missing = game.heroes.filter((h) => h.status === 'desaparecido');
   const pinsAt: Record<string, number> = {};
 
@@ -63,6 +67,18 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
       <div class="map" style={{ aspectRatio: `${MAP_W} / ${MAP_H}` }}>
         <BufferImage buf={mapBuffer()} scale={1} class="map-layer" label="Mapa de la comarca" />
         {fog && <BufferImage buf={fog} scale={1} class="map-layer" />}
+        {threat > 0 && threatAt && (
+          <span
+            class="map-threat"
+            style={{
+              ...pct(threatAt.x, threatAt.y),
+              width: `${((12 + threat * 0.9) / MAP_W) * 200}%`,
+              aspectRatio: '1',
+              opacity: 0.25 + threat / 160,
+            }}
+            aria-hidden="true"
+          />
+        )}
         <svg class="map-routes" viewBox={`0 0 ${MAP_W} ${MAP_H}`} aria-hidden="true">
           {(game.chains ?? []).map((cs) => {
             const def = chainDef(cs.id);
@@ -161,6 +177,7 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
       <p class="map-legend">
         <span class="lg-pin">!</span> encargos del tablón · <span class="lg-party">2</span> grupos
         de viaje · <span class="lg-missing">?</span> desaparecidos
+        {threat > 0 && ` · Amenaza en la comarca: ${threat}`}
         {level < 2 &&
           ' · La niebla se levanta visitando lugares (y explorando); la sala de mapas ayuda.'}
       </p>

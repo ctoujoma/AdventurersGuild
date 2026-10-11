@@ -139,21 +139,21 @@ Lo que pasa al pagar la deuda: el final de «La deuda» deja de ser un final y s
 - [x] **Récords** de la partida y entre partidas: días al frente, oro máximo, trofeos, asaltos repelidos, caídos
 - [x] **Derrota en modo libre**: quiebra (no poder pagar salarios dos semanas seguidas) o quedarse sin héroes ni oro
 
-### Fase 5: El mundo · L
+### Fase 5: El mundo · L ✅
 
-- [ ] **Mapa de la comarca**: pergamino en pixel art que se abre desde el mapa del desván o un botón
+- [x] **Mapa de la comarca**: pergamino en pixel art que se abre desde el mapa del desván o un botón
   - Chinchetas en los lugares de los encargos disponibles
   - Los grupos de viaje como figuritas que avanzan por el camino, con los días que faltan (sustituye al panel «Fuera»)
   - Las cadenas unidas con hilo rojo, como en la sala de mapas, con los pasos hechos tachados
   - La amenaza regional como una mancha que se extiende
   - La sala de mapas lo mejora: nivel 0 con niebla, nivel 1 rutas y días, nivel 2 el peligro real; los encargos de «Explorar» quitan niebla
-- [ ] **Cadenas de misiones**: 3–5 encargos enlazados con historia, de clientes que repiten (el alcalde, la bibliotecaria, Merlo…)
+- [x] **Cadenas de misiones**: 3–5 encargos enlazados con historia, de clientes que repiten (el alcalde, la bibliotecaria, Merlo…)
   - Cada paso aparece al completar el anterior, con sello especial; fracasar tuerce la historia (paso extra, amenaza mayor); abandonarla tiene consecuencias
   - Final con legendario único, trofeo especial y, a veces, una instalación desbloqueada
   - Datos en `data/chains.ts` con lugares y villanos variables (rejugables); empezar con 3–4 cadenas
-- [ ] **Amenaza regional por actos**: crece si se ignoran las cadenas; trae eventos al amanecer (caravanas asaltadas, clientes que no vienen)
-- [ ] **Eventos en ruta y en la taberna con elección** (emboscada, mercader, tesoro, pelea interna)
-- [ ] Desaparecidos que vuelven con historia y rasgo nuevo, o encargo de rescate
+- [x] **Amenaza regional**: crece si se ignoran las cadenas; trae eventos al amanecer (caravanas asaltadas, clientes que no vienen)
+- [x] **Sucesos en la taberna con elección** (buhonero, pelea en la barra, bardo, noble arruinado, lobos del pueblo, apuesta) · [ ] eventos en ruta con elección
+- [x] Desaparecidos: encargo de rescate donde se perdieron; los que vuelven solos regresan curtidos (+2 Supervivencia)
 
 ### Fase 6: Asaltos a la taberna · L ✅
 

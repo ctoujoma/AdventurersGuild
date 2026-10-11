@@ -13,6 +13,7 @@ import { HeroCard } from './HeroCard';
 import { Hud } from './Hud';
 import { Icon } from './icons';
 import { Letter } from './Letter';
+import { EventCard } from './EventCard';
 import { Opening } from './Opening';
 import { Panel } from './Panel';
 import { LibroPanel } from './panels/LibroPanel';
@@ -338,10 +339,10 @@ export function App() {
   const report = game.reports.find((r) => r.id === reportId) ?? null;
   const unread = game.reports.filter((r) => !r.read).length;
   const away = game.missions.length + game.heroes.filter((h) => h.status === 'desaparecido').length;
+  const calm = screen === 'game' && !dawnOpen && !passing && !(game.opening && !game.opening.seen);
+  const pendingEvent = calm && !game.over ? (game.event ?? null) : null;
   const tip =
-    screen === 'game' && !dawnOpen && !passing && !card && !questId && !reportId && !panel
-      ? nextTip(game)
-      : null;
+    calm && !pendingEvent && !card && !questId && !reportId && !panel ? nextTip(game) : null;
   // La nota del tío mira hacia lo que explica.
   useEffect(() => {
     if (tip?.focus) scene.current?.focus(tip.focus);
@@ -567,6 +568,16 @@ export function App() {
             Saltar
           </button>
         </div>
+      )}
+      {pendingEvent && (
+        <EventCard
+          event={pendingEvent}
+          onChoose={(i) => {
+            const next = dispatch({ type: 'choose', index: i });
+            audio.play(i === 0 ? 'coin' : 'close');
+            if (next.lastChoice) toast(next.lastChoice);
+          }}
+        />
       )}
       {tip && (
         <UncleNote

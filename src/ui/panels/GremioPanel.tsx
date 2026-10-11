@@ -92,6 +92,13 @@ export function GremioPanel({
               ? `Tregua: los bandidos no se atreven hasta el día ${game.truce}.`
               : 'Cuanto más famoso y rico es el gremio, más tienta a los bandidos.'}
         </span>
+        {(game.threat ?? 0) > 0 && (
+          <span class="tiny">
+            Amenaza en la comarca: <b>{game.threat}</b>
+            {(game.threat ?? 0) >= 40 ? ' · los caminos no son seguros' : ''}. Crece si una historia
+            espera en el tablón o sale mal.
+          </span>
+        )}
         <span class="tiny">
           Defensa esta noche: <b>{defense(game)}</b> (
           {game.heroes.filter((h) => h.status === 'ok').length} en casa,{' '}

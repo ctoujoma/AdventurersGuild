@@ -13,6 +13,10 @@ import type { DawnEvent, GameState, Quest, Report } from './model';
 import type { Rng } from './rng';
 
 export const chainDef = (id: string) => CHAINS.find((c) => c.id === id)!;
+
+/** Sube o baja la amenaza regional (0–100). */
+const threat = (s: GameState, d: number) =>
+  (s.threat = Math.max(0, Math.min(100, (s.threat ?? 0) + d)));
 export const activeChain = (s: GameState) => s.chains?.find((c) => c.status === 'activa') ?? null;
 
 /** Encargo de un paso de cadena, con la dificultad del rango actual (y de los tropiezos). */
@@ -92,6 +96,7 @@ export function advanceChain(
   const failed = r.outcome === 'Fracaso' || r.outcome === 'Desastre';
   if (failed) {
     cs.twists++;
+    threat(s, 8);
     s.quests.push(chainQuest(s, rng, def, cs.step, cs.twists));
     r.body.push(
       'La historia se ha torcido: habrá que volver a intentarlo, y ahora será más difícil.',
@@ -104,6 +109,7 @@ export function advanceChain(
     return;
   }
   cs.step++;
+  threat(s, -10);
   if (cs.step < def.steps.length) {
     s.quests.push(chainQuest(s, rng, def, cs.step, cs.twists));
     r.chips.push({ t: `«${def.name}» ${cs.step}/${def.steps.length}`, k: 'info' });
@@ -115,6 +121,7 @@ export function advanceChain(
   }
   // Final de la cadena.
   cs.status = 'hecha';
+  threat(s, -30);
   const stats = (s.stats ??= emptyStats());
   stats.chains = (stats.chains ?? 0) + 1;
   s.gold += def.reward.gold;

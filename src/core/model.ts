@@ -103,6 +103,8 @@ export interface Quest {
   /** Giro oculto: más duro de lo que parece. Un mago en el grupo lo detecta. */
   twist?: string;
   fresh?: boolean;
+  /** Rescate de un héroe desaparecido (su id). */
+  rescue?: string;
   /** Paso de una cadena de misiones (no caduca ni cuenta para el tablón). */
   chain?: { id: string; step: number };
 }
@@ -155,6 +157,14 @@ export interface Facilities {
 export interface DawnEvent {
   t: string;
   k?: ChipKind;
+}
+
+export interface PendingEvent {
+  id: string;
+  /** Héroes que aparecen en el suceso. */
+  who: string[];
+  text: string;
+  options: { label: string; hint: string }[];
 }
 
 export interface ChainState {
@@ -277,6 +287,12 @@ export interface GameState {
   raid?: Raid | null;
   /** Sin asaltos hasta este día (tras repeler uno, se corre la voz). */
   truce?: number;
+  /** Amenaza regional (0–100): crece si se ignoran o fallan las historias. */
+  threat?: number;
+  /** Suceso de la taberna esperando una decisión. */
+  event?: PendingEvent | null;
+  /** Lo que pasó con la última decisión (para avisar). */
+  lastChoice?: string | null;
   /** Cadenas de misiones empezadas. */
   chains?: ChainState[];
   /** Lugares de la comarca ya visitados (levantan la niebla del mapa). */

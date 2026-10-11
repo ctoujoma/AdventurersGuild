@@ -22,6 +22,7 @@ import {
   GUARD_BONUS,
   rankIndex,
 } from './balance';
+import { THREAT_RAIDS, threatOf } from './events';
 import { emptyStats } from './feats';
 import { fill } from './generate';
 import type { DawnEvent, GameState, Hero, Report } from './model';
@@ -34,7 +35,8 @@ import { listNames } from './text';
 export function notoriety(s: GameState): number {
   const treasure = s.inventory.reduce((a, i) => a + i.value, 0);
   const trophies = s.trophies.reduce((a, t) => a + t.value, 0);
-  return Math.round(s.rep + s.gold / 40 + (treasure + trophies) / 12);
+  const unrest = threatOf(s) >= THREAT_RAIDS ? 40 : 0;
+  return Math.round(s.rep + s.gold / 40 + (treasure + trophies) / 12 + unrest);
 }
 
 /** Probabilidad de que una banda se fije en el gremio esta noche. */
