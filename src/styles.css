@@ -2009,6 +2009,21 @@ button:focus-visible {
 .splash-out img {
   animation: splash-stretch 420ms cubic-bezier(0.55, 0, 1, 0.45) forwards;
 }
+/* En vertical, la franja 16:9 quedaba diminuta: se recorta a un cuadrado centrado en el
+   dinosaurio, a todo el ancho, con los bordes fundidos en un fondo del mismo tono. */
+@media (orientation: portrait) {
+  .splash {
+    background: radial-gradient(ellipse at 50% 50%, #1c2838 0%, #141c28 45%, #06080c 100%);
+  }
+  .splash img {
+    width: min(100vw, 72vh);
+    height: min(100vw, 72vh);
+    object-fit: cover;
+    object-position: 54% 50%;
+    -webkit-mask-image: linear-gradient(to bottom, transparent, #000 16%, #000 84%, transparent);
+    mask-image: linear-gradient(to bottom, transparent, #000 16%, #000 84%, transparent);
+  }
+}
 @keyframes splash-in {
   from {
     opacity: 0;
