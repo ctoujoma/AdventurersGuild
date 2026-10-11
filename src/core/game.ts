@@ -54,6 +54,7 @@ export type Action =
   | { type: 'equip'; heroId: string; itemId: string }
   | { type: 'unequip'; heroId: string }
   | { type: 'sellTrophy'; id: string }
+  | { type: 'tip'; id: string }
   | { type: 'endDay' };
 
 // ---------- Consultas ----------
@@ -187,7 +188,7 @@ function quest(s: GameState, rng: Rng): Quest {
 // ---------- Acciones ----------
 
 export function reduce(state: GameState, action: Action): GameState {
-  if (state.over && action.type !== 'read') return state;
+  if (state.over && action.type !== 'read' && action.type !== 'tip') return state;
   switch (action.type) {
     case 'hire': {
       if (canHire(state, action.id)) return state;
@@ -291,6 +292,10 @@ export function reduce(state: GameState, action: Action): GameState {
         x.history.push(`Día ${s.day} · Le negaste el aumento`);
       }
       return s;
+    }
+    case 'tip': {
+      if (state.tips?.includes(action.id)) return state;
+      return { ...state, tips: [...(state.tips ?? []), action.id] };
     }
     case 'endDay':
       return endDay(state);

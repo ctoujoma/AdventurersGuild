@@ -173,4 +173,6 @@ export interface GameState {
   dawn: DawnEvent[];
   flavor: string;
   over: GameOver;
+  /** Notas del tutorial ya leídas ('*' = sin consejos). */
+  tips?: string[];
 }

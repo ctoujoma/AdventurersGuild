@@ -16,6 +16,8 @@ import { Panel } from './Panel';
 import { SaveMenu } from './SaveMenu';
 import { Splash } from './Splash';
 import { Title } from './Title';
+import { nextTip } from './tips';
+import { UncleNote } from './UncleNote';
 import { AwayPanel } from './panels/AwayPanel';
 import { GremioPanel } from './panels/GremioPanel';
 import { HeroesPanel } from './panels/HeroesPanel';
@@ -316,6 +318,14 @@ export function App() {
   const report = game.reports.find((r) => r.id === reportId) ?? null;
   const unread = game.reports.filter((r) => !r.read).length;
   const away = game.missions.length + game.heroes.filter((h) => h.status === 'desaparecido').length;
+  const tip =
+    screen === 'game' && !dawnOpen && !passing && !card && !questId && !reportId && !panel
+      ? nextTip(game)
+      : null;
+  // La nota del tío mira hacia lo que explica.
+  useEffect(() => {
+    if (tip?.focus) scene.current?.focus(tip.focus);
+  }, [tip?.id]);
   const tab: TabId =
     panel === 'tablon' || panel === 'heroes' || panel === 'gremio' ? panel : 'taberna';
 
@@ -499,6 +509,16 @@ export function App() {
           openPanel(t === 'taberna' ? null : t);
         }}
       />
+      {tip && (
+        <UncleNote
+          tip={tip}
+          onOk={() => {
+            audio.play('close');
+            dispatch({ type: 'tip', id: tip.id });
+          }}
+          onOff={() => dispatch({ type: 'tip', id: '*' })}
+        />
+      )}
       {screen === 'title' && (
         <Title
           saved={hasGame ? game : null}
