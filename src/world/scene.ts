@@ -56,7 +56,8 @@ export type SoundName =
   | 'squeak'
   | 'bats'
   | 'build'
-  | 'drip';
+  | 'drip'
+  | 'cheer';
 
 export interface Point {
   x: number;
@@ -167,6 +168,8 @@ export class WorldScene {
   private drawn: Drawn[] = [];
   private hover: { id: string; rect: { x: number; y: number; w: number; h: number } } | null = null;
   private t = 0;
+  /** Noche que pasa en escena al terminar el día: oscurece, amanece y vuelve la luz. */
+  private night: { start: number; dur: number; done: (() => void) | null } | null = null;
   private last = 0;
   private raf = 0;
   private keeper = { x: 150, dir: 1 as 1 | -1, target: 150, timer: 2, walking: false, dist: 0 };
@@ -379,6 +382,67 @@ export class WorldScene {
     return true;
   }
 
+  /**
+   * Pasa la noche en la escena: la taberna se apaga, el cielo clarea por el horizonte y
+   * `done` se llama al salir el sol (ahí se abre el resumen del amanecer).
+   */
+  nightfall(done: () => void, dur = 2.6): void {
+    this.night?.done?.();
+    this.night = { start: this.t, dur, done };
+  }
+
+  /** Celebración en la barra cuando un grupo vuelve con éxito: notas, monedas y brindis. */
+  cheer(room = 'barra'): void {
+    const p = ROOM_CENTERS[room];
+    if (!p) return;
+    for (let i = 0; i < 12; i++)
+      this.particles.spawn('note', p.x + (Math.random() - 0.5) * 70, p.y - 6 - Math.random() * 14);
+    for (let i = 0; i < 6; i++)
+      this.particles.spawn('heart', p.x + (Math.random() - 0.5) * 50, p.y - 4 - Math.random() * 10);
+    for (let i = 0; i < 14; i++)
+      this.particles.spawn('coin', p.x + (Math.random() - 0.5) * 60, p.y - Math.random() * 16);
+    this.cb.onSound?.('cheer');
+  }
+
+  /** Luz de la noche que pasa: oscuridad (0–1) y calor del amanecer (0–1). */
+  private nightLight(): { dark: number; warm: number } {
+    const n = this.night;
+    if (!n) return { dark: 0, warm: 0 };
+    const p = (this.t - n.start) / n.dur;
+    const ramp = (a: number, b: number) => Math.max(0, Math.min(1, (p - a) / (b - a)));
+    const dark = ramp(0, 0.35) * (1 - ramp(0.5, 0.9));
+    const warm = ramp(0.45, 0.9) * (1 - ramp(1.05, 1.8));
+    return { dark, warm };
+  }
+
+  /** Cielo del amanecer: resplandor en el horizonte y el sol asomando por la derecha. */
+  private drawDawnSky(warm: number, cx: number, cy: number, vw: number, vh: number): void {
+    const ctx = this.ctx;
+    const horizon = GROUND - 40 - cy;
+    const g = ctx.createLinearGradient(0, horizon - 200, 0, horizon + 20);
+    g.addColorStop(0, 'rgba(90, 60, 120, 0)');
+    g.addColorStop(0.55, `rgba(232, 110, 120, ${0.45 * warm})`);
+    g.addColorStop(1, `rgba(254, 174, 52, ${0.8 * warm})`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, vw, vh);
+    // Sol tramado: sube unos píxeles mientras dura el amanecer.
+    const sx = Math.round(470 - cx * 0.08);
+    const sy = Math.round(horizon + 18 - warm * 26);
+    ctx.globalAlpha = Math.min(1, warm * 1.4);
+    ctx.drawImage(glowSprite(28, [254, 174, 52], 0.5), sx - 28, sy - 28);
+    ctx.fillStyle = P.lemon;
+    for (let y = -9; y <= 9; y++) {
+      const w = Math.floor(Math.sqrt(81 - y * y));
+      ctx.fillRect(sx - w, sy + y, w * 2 + 1, 1);
+    }
+    ctx.fillStyle = P.white;
+    for (let y = -5; y <= 3; y++) {
+      const w = Math.floor(Math.sqrt(25 - (y + 1) * (y + 1)));
+      ctx.fillRect(sx - w - 1, sy + y - 1, w * 2, 1);
+    }
+    ctx.globalAlpha = 1;
+  }
+
   /** Efecto de obra en una habitación (al mejorar). */
   celebrate(room: string): void {
     const p = ROOM_CENTERS[room];
@@ -401,6 +465,15 @@ export class WorldScene {
   private update(dt: number): void {
     this.t += dt;
     const t = this.t;
+    if (this.night) {
+      const p = (t - this.night.start) / this.night.dur;
+      if (p >= 0.85 && this.night.done) {
+        const done = this.night.done;
+        this.night.done = null;
+        done();
+      }
+      if (p >= 1.8) this.night = null;
+    }
     this.camera.update(dt);
     if (!this.world || !this.model) return;
     const W = this.world;
@@ -655,6 +728,8 @@ export class WorldScene {
       const x = ((cl.x + t * cl.speed) % (WORLD_W + 80)) - 60 - cx * 0.15;
       drawBuffer(ctx, cl.img, x, cl.y - cy);
     }
+    const { dark, warm } = this.nightLight();
+    if (warm > 0) this.drawDawnSky(warm, cx, cy, vw, vh);
     for (const { c, l } of this.parallax) {
       ctx.drawImage(c, -Math.round(cx * l.fx), -cy);
     }
@@ -866,6 +941,13 @@ export class WorldScene {
     }
     ctx.globalCompositeOperation = 'multiply';
     ctx.drawImage(this.light, 0, 0);
+    if (dark > 0 || warm > 0) {
+      // Noche azul y profunda; luego el amanecer lo tiñe todo de rosa y naranja.
+      const mix = (a: number, b: number) =>
+        Math.round(255 + (a - 255) * dark + (b - 255) * warm * (1 - dark));
+      ctx.fillStyle = `rgb(${mix(52, 255)}, ${mix(60, 214)}, ${mix(110, 178)})`;
+      ctx.fillRect(0, 0, vw, vh);
+    }
     ctx.globalCompositeOperation = 'source-over';
 
     // ---------- Emisivos ----------
