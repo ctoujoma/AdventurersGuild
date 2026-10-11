@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { audio } from '../audio/audio';
+import { audio, type Mood } from '../audio/audio';
 import { canHire, customOf, newGame, reduce, type Action } from '../core/game';
 import { STAFF } from '../data/custom';
 import type { Facilities, GameState } from '../core/model';
@@ -267,6 +267,16 @@ export function App() {
     if (it) toast(`Vendido: ${it.name} por ${it.value} monedas.`);
   };
 
+  // Música según lo que pasa: la pelea, un asalto anunciado, el modo libre o la taberna.
+  const mood: Mood = raiding
+    ? 'asalto'
+    : game.raid?.warned
+      ? 'tension'
+      : game.mode === 'libre'
+        ? 'libre'
+        : 'taberna';
+  useEffect(() => audio.setMood(mood), [mood]);
+
   const endDay = () => {
     if (passing) return;
     setHint(false);
@@ -277,11 +287,14 @@ export function App() {
     const before = gameRef.current;
     const next = dispatch({ type: 'endDay' });
     if (next === before) return;
+    const party = next.lastRaid?.won || (next.mode === 'libre' && before.mode !== 'libre');
     const sunrise = () => {
       setPassing(false);
       setRaiding(false);
       audio.play('dawn');
       setDawnOpen(true);
+      // Asalto repelido o deuda saldada: suena el brindis.
+      if (party) setTimeout(() => audio.fanfare(), 60);
     };
     if (!scene.current) return sunrise();
     setPassing(true);

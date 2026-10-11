@@ -206,7 +206,7 @@ Inspirado en los ataques al refugio de *Fallout Shelter*: cuanto más famoso y r
 - [ ] El equipo se ve en el sprite y el retrato del héroe
 - [ ] Animaciones y transiciones; cartas que se deslizan; héroes que brindan en la celebración
 - [ ] Móvil en horizontal
-- [ ] Música ampliada: más temas y variaciones (día, noche, tensión antes de un asalto, celebración, modo libre) para que no se haga repetitiva; transiciones suaves entre ellos
+- [x] Música ampliada: 7 temas (La jarra rota, El camino real, Velas en la bodega, Gremio de leyenda, Antorchas en el camino, ¡A las armas!, ¡Brindis!) repartidos por ambientes: taberna, modo libre, tensión con un asalto anunciado, la pelea y un brindis al repeler un asalto o saldar la deuda. Laúd, flauta, pandero y sonajero; cada repetición varía (adornos, notas de paso, bajo arpegiado, segunda voz) y los cambios se funden
 - [ ] Ajustes: volumen y velocidad
 - [x] Guardar y cargar partidas: archivo o código de texto
 - [ ] PWA: instalable, offline, icono y pantalla de carga

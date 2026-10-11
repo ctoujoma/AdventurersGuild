@@ -39,73 +39,15 @@ export type Sfx =
   | 'roar'
   | 'whoosh';
 
+import { PLAYLISTS, TUNES, scaleStep, type Mood, type Tune, type TuneId } from './music';
+
+export type { Mood } from './music';
+
 const STORAGE_KEY = 'jarro:sonido';
+const MUSIC_LEVEL = 0.55;
 const FIRE = { x: 346, y: 272 };
 
 const midi = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
-
-// Melodía en re dórico, compases de 6 corcheas. null = mantener.
-const MELODY: (number | null)[] = [
-  69,
-  null,
-  null,
-  65,
-  67,
-  69,
-  72,
-  null,
-  69,
-  67,
-  null,
-  65,
-  67,
-  null,
-  null,
-  64,
-  65,
-  67,
-  69,
-  null,
-  null,
-  null,
-  null,
-  null,
-  74,
-  null,
-  72,
-  69,
-  null,
-  67,
-  65,
-  null,
-  67,
-  69,
-  null,
-  72,
-  71,
-  null,
-  69,
-  67,
-  null,
-  64,
-  62,
-  null,
-  null,
-  null,
-  null,
-  null,
-];
-const BASS: [number, number][] = [
-  [50, 57],
-  [53, 48],
-  [48, 55],
-  [45, 52],
-  [50, 57],
-  [53, 48],
-  [43, 50],
-  [50, 45],
-];
-const STEP = 0.29;
 
 class AudioEngine {
   private ctx: AudioContext | null = null;
@@ -117,8 +59,13 @@ class AudioEngine {
   private noise!: AudioBuffer;
   private strings = new Map<number, AudioBuffer>();
   private enabled = true;
-  private musicStep = 0;
   private nextNote = 0;
+  private mood: Mood = 'taberna';
+  /** Tras la fiesta, a qué ambiente se vuelve. */
+  private returnTo: Mood = 'taberna';
+  private cur: { id: TuneId; rep: number } = { id: 'jarra', rep: 0 };
+  private listIdx = 0;
+  private musicStep = 0;
   private timers: number[] = [];
   private listeners = new Set<(on: boolean) => void>();
 
@@ -167,6 +114,39 @@ class AudioEngine {
     this.fireGain.gain.setTargetAtTime(fire, this.ctx.currentTime, 0.3);
     const outside = p.x < 120 || p.x > 410 || p.y < 120 ? 1 : 0.35;
     this.crickets.gain.setTargetAtTime(0.05 * outside, this.ctx.currentTime, 0.5);
+  }
+
+  /** Cambia la música al ambiente pedido, con un fundido corto. */
+  setMood(mood: Mood): void {
+    if (mood === this.mood) return;
+    // La fiesta suena entera; lo que pidan mientras tanto queda para después.
+    if (this.mood === 'fiesta' && mood !== 'fiesta') {
+      this.returnTo = mood;
+      return;
+    }
+    if (mood === 'fiesta') this.returnTo = this.mood;
+    this.switchMood(mood);
+  }
+
+  private switchMood(mood: Mood): void {
+    this.mood = mood;
+    this.listIdx = 0;
+    this.cur = { id: PLAYLISTS[mood][0]!, rep: 0 };
+    this.musicStep = 0;
+    const ctx = this.ctx;
+    if (!ctx) return;
+    // Fundido: baja, deja un respiro y entra el tema nuevo.
+    const now = ctx.currentTime;
+    const gap = mood === 'asalto' || mood === 'fiesta' ? 0.25 : 0.7;
+    this.musicBus.gain.cancelScheduledValues(now);
+    this.musicBus.gain.setTargetAtTime(0, now, 0.12);
+    this.musicBus.gain.setTargetAtTime(MUSIC_LEVEL, now + gap, 0.25);
+    this.nextNote = now + gap;
+  }
+
+  /** Una tonada de celebración y luego vuelve lo que sonaba. */
+  fanfare(): void {
+    this.setMood('fiesta');
   }
 
   play(name: Sfx, volume = 1): void {
@@ -349,7 +329,7 @@ class AudioEngine {
     const comp = ctx.createDynamicsCompressor();
     this.master.connect(comp).connect(ctx.destination);
     this.sfxBus = this.gain(1, this.master);
-    this.musicBus = this.gain(0.55, this.master);
+    this.musicBus = this.gain(MUSIC_LEVEL, this.master);
 
     this.noise = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
     const d = this.noise.getChannelData(0);
@@ -418,26 +398,93 @@ class AudioEngine {
   private scheduleMusic(): void {
     const ctx = this.ctx;
     if (!ctx) return;
-    const loopLen = MELODY.length + 24; // un respiro entre vueltas
     while (this.nextNote < ctx.currentTime + 0.4) {
-      const step = this.musicStep % loopLen;
+      const tune: Tune = TUNES[this.cur.id];
+      const len = tune.melody.length;
+      const s = this.musicStep;
       const t = this.nextNote;
-      if (step < MELODY.length) {
-        const n = MELODY[step];
-        if (n) this.pluck(n, t, 0.28, this.musicBus);
-        const bar = Math.floor(step / 6);
-        const inBar = step % 6;
-        const bass = BASS[bar % BASS.length]!;
-        if (inBar === 0) this.pluck(bass[0], t, 0.32, this.musicBus);
-        if (inBar === 3) this.pluck(bass[1], t, 0.2, this.musicBus);
-        if (inBar === 0 && bar % 2 === 0)
-          [bass[0] + 12, bass[0] + 15, bass[0] + 19].forEach((m, i) =>
-            this.pluck(m, t + 0.02 + i * 0.03, 0.08, this.musicBus),
-          );
-      }
+      if (s < len) this.playStep(tune, s, t, this.cur.rep);
       this.musicStep++;
-      this.nextNote += STEP * (step % 6 === 5 ? 1.08 : 1);
+      this.nextNote += tune.step * (s % 6 === 5 ? 1.06 : 1);
+      if (this.musicStep >= len + tune.breath) {
+        this.musicStep = 0;
+        this.cur.rep++;
+        if (this.cur.rep >= tune.repeats) this.nextTune();
+      }
     }
+  }
+
+  private nextTune(): void {
+    if (this.mood === 'fiesta') {
+      this.switchMood(this.returnTo);
+      return;
+    }
+    const list = PLAYLISTS[this.mood];
+    this.listIdx = (this.listIdx + 1) % list.length;
+    this.cur = { id: list[this.listIdx]!, rep: 0 };
+  }
+
+  /** Corcheas que dura la nota en `s` (hasta la siguiente nota o silencio). */
+  private hold(tune: Tune, s: number): number {
+    let n = 1;
+    while (s + n < tune.melody.length && tune.melody[s + n] === null && !tune.rests.has(s + n)) n++;
+    return n;
+  }
+
+  /**
+   * Una corchea del tema. La primera vuelta suena tal cual; las siguientes varían: adornos,
+   * notas de paso, el bajo arpegiado, una segunda voz en terceras o la flauta doblando.
+   */
+  private playStep(tune: Tune, s: number, t: number, rep: number): void {
+    const bus = this.musicBus;
+    const bar = Math.floor(s / 6);
+    const inBar = s % 6;
+    const n = tune.melody[s];
+    const vary = rep > 0;
+    if (n) {
+      const len = this.hold(tune, s);
+      const dur = len * tune.step;
+      if (tune.voice === 'flauta') this.flute(n, t, dur, 0.06);
+      else this.pluck(n, t, 0.28, bus);
+      if (vary && len >= 2 && Math.random() < 0.35) {
+        // Adorno: una nota de gracia por encima justo antes.
+        const g = scaleStep(n, tune.scale, 1);
+        if (tune.voice === 'flauta') this.flute(g, t - 0.06, 0.06, 0.035);
+        else this.pluck(g, t - 0.05, 0.12, bus);
+      }
+      if (rep % 2 === 1 && len >= 2) {
+        // Segunda vuelta: el otro instrumento dobla las notas largas.
+        if (tune.voice === 'laud') this.flute(n + 12, t, dur * 0.9, 0.025);
+        else this.pluck(scaleStep(n, tune.scale, -2), t, 0.12, bus);
+      }
+      if (rep >= 2) this.pluck(scaleStep(n, tune.scale, -2), t + 0.01, 0.12, bus);
+    } else if (vary && !tune.rests.has(s) && Math.random() < 0.2) {
+      // Nota de paso entre dos notas.
+      const prev = tune.melody[s - 1];
+      const next = tune.melody[s + 1];
+      if (prev && next && Math.abs(next - prev) >= 3)
+        this.pluck(scaleStep(prev, tune.scale, Math.sign(next - prev)), t, 0.14, bus);
+    }
+
+    const bass = tune.bass[bar % tune.bass.length]!;
+    if (tune.ostinato) this.pluck(tune.ostinato[inBar % tune.ostinato.length]!, t, 0.13, bus);
+    else if (rep % 2 === 1) {
+      // Bajo arpegiado.
+      if (inBar === 0) this.pluck(bass[0], t, 0.3, bus);
+      if (inBar === 2) this.pluck(bass[1], t, 0.16, bus);
+      if (inBar === 4) this.pluck(bass[0] + 12, t, 0.14, bus);
+    } else {
+      if (inBar === 0) this.pluck(bass[0], t, 0.32, bus);
+      if (inBar === 3) this.pluck(bass[1], t, 0.2, bus);
+    }
+    if (inBar === 0 && bar % 2 === 0 && !tune.ostinato && tune.voice === 'laud')
+      [bass[0] + 12, bass[0] + 15, bass[0] + 19].forEach((m, i) =>
+        this.pluck(m, t + 0.02 + i * 0.03, 0.08, bus),
+      );
+    const d = tune.drum?.[inBar];
+    if (d === 'X') this.drum(t, 0.16);
+    else if (d === 'x') this.drum(t, 0.08);
+    if (tune.shaker?.[inBar] === 'x') this.shaker(t, 0.03);
   }
 
   // ---------- Instrumentos ----------
@@ -479,6 +526,42 @@ class AudioEngine {
     src.start(t);
   }
 
+  /** Flauta de madera: seno con vibrato que entra tarde y un soplo al principio. */
+  private flute(note: number, t: number, dur: number, vol: number): void {
+    const ctx = this.ctx!;
+    const f = midi(note);
+    const o = ctx.createOscillator();
+    o.frequency.value = f;
+    const vib = ctx.createOscillator();
+    vib.frequency.value = 5.2;
+    const vibAmt = ctx.createGain();
+    vibAmt.gain.setValueAtTime(0, t);
+    vibAmt.gain.linearRampToValueAtTime(f * 0.006, t + Math.min(0.35, dur));
+    vib.connect(vibAmt).connect(o.frequency);
+    const g = ctx.createGain();
+    const end = t + Math.max(0.08, dur);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.05);
+    g.gain.setValueAtTime(vol * 0.85, end - 0.04);
+    g.gain.exponentialRampToValueAtTime(0.0005, end + 0.12);
+    o.connect(g).connect(this.musicBus);
+    o.start(t);
+    vib.start(t);
+    o.stop(end + 0.15);
+    vib.stop(end + 0.15);
+    this.burst(t, 0.06, vol * 0.4, 'bandpass', f * 2, 2, this.musicBus);
+  }
+
+  /** Pandero: golpe grave y un poco de parche. */
+  private drum(t: number, vol: number): void {
+    this.burst(t, 0.1, vol, 'lowpass', 500, 1, this.musicBus);
+    this.tone('sine', 150, 60, t, 0.14, vol * 0.9, this.musicBus);
+  }
+
+  private shaker(t: number, vol: number): void {
+    this.burst(t, 0.05, vol, 'highpass', 5000, 1, this.musicBus);
+  }
+
   // ---------- Bloques de sonido ----------
 
   private gain(value: number, to?: AudioNode): GainNode {
@@ -502,6 +585,7 @@ class AudioEngine {
     t: number,
     dur: number,
     vol: number,
+    to: AudioNode = this.sfxBus,
   ): void {
     const ctx = this.ctx!;
     const o = ctx.createOscillator();
@@ -512,7 +596,7 @@ class AudioEngine {
     g.gain.setValueAtTime(0, t);
     g.gain.linearRampToValueAtTime(vol, t + 0.005);
     g.gain.exponentialRampToValueAtTime(0.0005, t + dur);
-    o.connect(g).connect(this.sfxBus);
+    o.connect(g).connect(to);
     o.start(t);
     o.stop(t + dur + 0.02);
   }
