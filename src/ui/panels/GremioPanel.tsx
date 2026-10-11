@@ -1,4 +1,3 @@
-import { useState } from 'preact/hooks';
 import { DEBT, SCHEDULE, capacity, facilityMax } from '../../core/balance';
 import { canUpgrade, nextPayment, salaries, upgradeCost } from '../../core/game';
 import type { Facilities, GameState } from '../../core/model';
@@ -15,44 +14,78 @@ interface Props {
   onUpgrade: (k: keyof Facilities) => void;
   onSell: (itemId: string) => void;
   onSellTrophy: (id: string) => void;
-  onNewGame: () => void;
+  onSaves: () => void;
+  onLibro: () => void;
+  onTitle: () => void;
 }
 
 /** La deuda, las instalaciones, el arcón del botín y el Muro de los caídos. */
-export function GremioPanel({ game, focus, onUpgrade, onSell, onSellTrophy, onNewGame }: Props) {
-  const [confirm, setConfirm] = useState(false);
+export function GremioPanel({
+  game,
+  focus,
+  onUpgrade,
+  onSell,
+  onSellTrophy,
+  onSaves,
+  onTitle,
+  onLibro,
+}: Props) {
   const keys = Object.keys(FACILITY_INFO) as (keyof Facilities)[];
   const next = nextPayment(game);
   let cum = 0;
   return (
     <>
-      <div class="card-paper debt">
-        <div class="debt-top">
-          <h3>La deuda</h3>
-          <span class="muted">con Merlo, el prestamista</span>
+      {game.mode === 'libre' ? (
+        <div class="card-paper debt">
+          <div class="debt-top">
+            <h3>El gremio es tuyo</h3>
+            <span class="muted">deuda saldada</span>
+          </div>
+          <span class="tiny">
+            Cada 7 días se pagan los salarios: ahora, {salaries(game)} monedas
+            {next ? ` (día ${next.day})` : ''}. Dos semanas sin pagar y el gremio quiebra.
+          </span>
+          {(game.unpaid ?? 0) > 0 && (
+            <span class="qs-warn">¡La semana pasada no pagaste! Otra más y se acabó.</span>
+          )}
         </div>
-        <div class="debt-num">
-          <b>{game.paid}</b> / {DEBT} pagado
+      ) : (
+        <div class="card-paper debt">
+          <div class="debt-top">
+            <h3>La deuda</h3>
+            <span class="muted">con Merlo, el prestamista</span>
+          </div>
+          <div class="debt-num">
+            <b>{game.paid}</b> / {DEBT} pagado
+          </div>
+          <div class="bar">
+            <i style={{ width: `${(game.paid / DEBT) * 100}%` }} />
+          </div>
+          <div class="sched">
+            {SCHEDULE.map((p) => {
+              cum += p.amount;
+              const paid = game.paid >= cum;
+              return (
+                <span key={p.day} class={paid ? 'paid' : p === next ? 'next' : ''}>
+                  Día {p.day} · {p.amount}
+                  {paid ? ' ✓' : ''}
+                </span>
+              );
+            })}
+          </div>
+          <span class="tiny">
+            Cada pago incluye los salarios de la semana: ahora, {salaries(game)} monedas.
+          </span>
         </div>
-        <div class="bar">
-          <i style={{ width: `${(game.paid / DEBT) * 100}%` }} />
-        </div>
-        <div class="sched">
-          {SCHEDULE.map((p) => {
-            cum += p.amount;
-            const paid = game.paid >= cum;
-            return (
-              <span key={p.day} class={paid ? 'paid' : p === next ? 'next' : ''}>
-                Día {p.day} · {p.amount}
-                {paid ? ' ✓' : ''}
-              </span>
-            );
-          })}
-        </div>
-        <span class="tiny">
-          Cada pago incluye los salarios de la semana: ahora, {salaries(game)} monedas.
+      )}
+
+      <button class="card-paper libro-link" onClick={onLibro}>
+        <b>Libro de hazañas</b>
+        <span class="muted">
+          Logros con premio
+          {game.mode === 'libre' ? ', desafíos del mes' : ''} y récords
         </span>
-      </div>
+      </button>
 
       <h3 class="sec-title">Instalaciones</h3>
       <div class="list">
@@ -170,24 +203,13 @@ export function GremioPanel({ game, focus, onUpgrade, onSell, onSellTrophy, onNe
         ))}
       </div>
 
-      <div class="newgame">
-        {confirm ? (
-          <>
-            <span>¿Empezar de cero? Esta partida se perderá.</span>
-            <div class="herocard-actions">
-              <button class="btn btn-red" onClick={onNewGame}>
-                Sí, nueva partida
-              </button>
-              <button class="btn btn-wood" onClick={() => setConfirm(false)}>
-                Cancelar
-              </button>
-            </div>
-          </>
-        ) : (
-          <button class="btn btn-wood" onClick={() => setConfirm(true)}>
-            Nueva partida
-          </button>
-        )}
+      <div class="newgame herocard-actions">
+        <button class="btn btn-wood" onClick={onSaves}>
+          Guardar y cargar
+        </button>
+        <button class="btn btn-wood" onClick={onTitle}>
+          Menú principal
+        </button>
       </div>
     </>
   );

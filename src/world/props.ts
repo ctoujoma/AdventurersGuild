@@ -203,6 +203,12 @@ export function counter(level: number): PixelBuffer {
     b.hline(0, 0, 66, W[6]!);
     b.hline(0, 3, 66, W[3]!);
     for (let x = 4; x < 62; x += 9) b.hline(x, 2, 4, W[4]!);
+    // Gran salón: tablero y molduras con remate dorado.
+    if (level >= 4) {
+      b.hline(0, 0, 66, P.lemon);
+      b.hline(0, 4, 66, P.gold);
+      for (let i = 0; i < 4; i++) b.rect(3 + i * 16 + 5, 9, 3, 3, P.gold);
+    }
     // Barra de latón para los pies.
     if (level >= 2) {
       b.hline(0, 15, 66, P.gold);

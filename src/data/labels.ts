@@ -80,11 +80,12 @@ export const FACILITY_INFO: Record<
       'Una mesa, un farol y lo justo',
       'Dos mesas, barriles, apliques, diana y caldero',
       'Manteles, trofeo, laúd, candelabro y fuego grande',
+      'Gran salón: alfombra roja, dos candelabros y barra dorada',
     ],
     effect: (l) =>
       l === 0
         ? 'No deja dinero'
-        : `${l * 10} monedas al día, más encargos${l >= 2 ? ' y mejores candidatos' : ''}`,
+        : `${l * 10} monedas al día, más encargos${l >= 2 ? ' y mejores candidatos' : ''}${l >= 4 ? '; descansar anima del todo' : ''}`,
   },
   mapas: {
     name: 'Sala de mapas',

@@ -18,8 +18,8 @@ export function Hud({ game }: { game: GameState }) {
     <header class="hud">
       <div class="hud-day">
         <span class="hud-k">Día</span>
-        <b>{Math.min(game.day, DAYS)}</b>
-        <small>/{DAYS}</small>
+        <b>{game.mode === 'libre' ? game.day : Math.min(game.day, DAYS)}</b>
+        {game.mode !== 'libre' && <small>/{DAYS}</small>}
       </div>
       <div class="hud-name">
         <b>El Jarro Partido</b>
@@ -40,7 +40,11 @@ export function Hud({ game }: { game: GameState }) {
         {pay && (
           <span
             class={`hud-stat ${close && short ? 'danger' : close || short ? 'warn' : ''}`}
-            title={`Pago del día ${pay.day}: ${pay.amount} al prestamista y ${due - pay.amount} en salarios`}
+            title={
+              pay.amount
+                ? `Pago del día ${pay.day}: ${pay.amount} al prestamista y ${due - pay.amount} en salarios`
+                : `Salarios del día ${pay.day}: ${due}`
+            }
           >
             <Icon name="bell" size={16} />
             <b>{due}</b>

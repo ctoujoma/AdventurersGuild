@@ -27,10 +27,10 @@ export const START = {
 export const UPGRADE_COST: Record<keyof Facilities, readonly number[]> = {
   dorm: [0, 80, 150, 280],
   enf: [0, 100, 200, 340],
-  tab: [0, 90, 170, 300],
-  mapas: [0, 120, 240],
-  arm: [0, 150, 280],
-  cap: [0, 110, 230],
+  tab: [0, 90, 250, 450, 750],
+  mapas: [0, 120, 340],
+  arm: [0, 150, 380],
+  cap: [0, 110, 320],
 };
 export const facilityMax = (k: keyof Facilities) => UPGRADE_COST[k].length - 1;
 
@@ -154,4 +154,15 @@ export const DESERT_CHANCE = 0.35;
 export const RAISE_CHANCE = 0.3;
 export const RAISE_AMOUNT = 3;
 export const RAISE_MORALE = 25;
+
+// ---------- Veteranos y modo libre ----------
+/** Lo que sube el salario al alcanzar un nivel: más cuanto más alto. */
+export const levelRaise = (lvl: number) => 2 * lvl;
+/** Caché de veterano: al llegar a estos niveles piden un plus fijo. */
+export const CACHE: Readonly<Record<number, number>> = { 5: 15, 8: 30 };
+export const CACHE_REFUSE_MORALE = -25;
+/** En modo libre se pagan salarios cada SALARY_EVERY días; dos impagos seguidos, quiebra. */
+export const SALARY_EVERY = 7;
+export const UNPAID_LIMIT = 2;
+export const UNPAID_MORALE = -20;
 export const REFUSE_MORALE = -10;

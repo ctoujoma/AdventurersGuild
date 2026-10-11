@@ -13,8 +13,13 @@ import {
   RAISE_AMOUNT,
   RAISE_CHANCE,
   RAISE_MORALE,
+  CACHE,
+  CACHE_REFUSE_MORALE,
   RANKS,
   REFUSE_MORALE,
+  SALARY_EVERY,
+  UNPAID_LIMIT,
+  UNPAID_MORALE,
   SCHEDULE,
   START,
   UPGRADE_COST,
@@ -29,6 +34,7 @@ import {
   tavernIncome,
 } from './balance';
 import { tripDays } from './classes';
+import { arrival, checkFeats, checkMonth, emptyStats, startMonth } from './feats';
 import { generateHero, generateQuest } from './generate';
 import {
   SAVE_VERSION,
@@ -54,6 +60,8 @@ export type Action =
   | { type: 'equip'; heroId: string; itemId: string }
   | { type: 'unequip'; heroId: string }
   | { type: 'sellTrophy'; id: string }
+  | { type: 'tip'; id: string }
+  | { type: 'ackOpening' }
   | { type: 'endDay' };
 
 // ---------- Consultas ----------
@@ -66,7 +74,15 @@ export const roster = (s: GameState) =>
 export const salaries = (s: GameState) => roster(s).reduce((a, h) => a + h.salary, 0);
 export const rankOf = (s: GameState) => RANKS[rankIndex(s.rep)]!;
 export const nextRank = (s: GameState) => RANKS[rankIndex(s.rep) + 1] ?? null;
-export const nextPayment = (s: GameState) => SCHEDULE.find((p) => p.day > s.day) ?? null;
+/** Próximo pago: cuota de la deuda más salarios, o solo salarios en modo libre. */
+export const nextPayment = (s: GameState) =>
+  s.mode === 'libre'
+    ? { day: (Math.floor(s.day / SALARY_EVERY) + 1) * SALARY_EVERY, amount: 0 }
+    : (SCHEDULE.find((p) => p.day > s.day) ?? null);
+
+/** Lo que pide un héroe con petición pendiente. */
+export const requestAmount = (h: Hero) =>
+  h.request === 'cache' ? (CACHE[h.lvl] ?? CACHE[5]!) : RAISE_AMOUNT;
 export const upgradeCost = (s: GameState, k: keyof Facilities) =>
   s.fac[k] >= facilityMax(k) ? null : UPGRADE_COST[k][s.fac[k] + 1]!;
 
@@ -155,6 +171,9 @@ export function newGame(seed: string): GameState {
       { t: 'En la barra esperan candidatos. «Terminar día» hace pasar la noche.' },
       { t: `Paga la deuda en ${DAYS} días y el gremio será tuyo.`, k: 'good' },
     ],
+    mode: 'deuda',
+    stats: emptyStats(),
+    feats: {},
     flavor:
       '«Sobrino: la taberna es tuya. Las deudas también. No te fíes de Merlo, ni del gato.» — Fausto',
     over: null,
@@ -181,13 +200,13 @@ function hero(s: GameState, rng: Rng, cls?: Hero['cls']): Hero {
 }
 
 function quest(s: GameState, rng: Rng): Quest {
-  return generateQuest(rng, `q${s.uid++}`, rankIndex(s.rep), `i${s.uid++}`);
+  return generateQuest(rng, `q${s.uid++}`, rankIndex(s.rep), `i${s.uid++}`, s.mode === 'libre');
 }
 
 // ---------- Acciones ----------
 
 export function reduce(state: GameState, action: Action): GameState {
-  if (state.over && action.type !== 'read') return state;
+  if (state.over && action.type !== 'read' && action.type !== 'tip') return state;
   switch (action.type) {
     case 'hire': {
       if (canHire(state, action.id)) return state;
@@ -281,16 +300,26 @@ export function reduce(state: GameState, action: Action): GameState {
       if (!h?.request) return state;
       const s = structuredClone(state);
       const x = s.heroes.find((y) => y.id === action.id)!;
+      const amount = requestAmount(x);
+      const cache = x.request === 'cache';
       delete x.request;
       if (action.yes) {
-        x.salary += RAISE_AMOUNT;
+        x.salary += amount;
         x.morale = Math.min(100, x.morale + RAISE_MORALE);
-        x.history.push(`Día ${s.day} · Le subiste el sueldo`);
+        x.history.push(`Día ${s.day} · ${cache ? 'Le pagaste su caché' : 'Le subiste el sueldo'}`);
       } else {
-        x.morale = Math.max(0, x.morale + REFUSE_MORALE);
-        x.history.push(`Día ${s.day} · Le negaste el aumento`);
+        x.morale = Math.max(0, x.morale + (cache ? CACHE_REFUSE_MORALE : REFUSE_MORALE));
+        x.history.push(`Día ${s.day} · ${cache ? 'Le negaste el caché' : 'Le negaste el aumento'}`);
       }
       return s;
+    }
+    case 'ackOpening': {
+      if (!state.opening || state.opening.seen) return state;
+      return { ...state, opening: { ...state.opening, seen: true } };
+    }
+    case 'tip': {
+      if (state.tips?.includes(action.id)) return state;
+      return { ...state, tips: [...(state.tips ?? []), action.id] };
     }
     case 'endDay':
       return endDay(state);
@@ -359,6 +388,7 @@ export function endDay(state: GameState): GameState {
           epitaph: `${h.sex === 'f' ? 'Desaparecida' : 'Desaparecido'}. Encontraron su capa el día ${s.day}.`,
         });
         events.push({ t: `Han encontrado la capa de ${h.name}. No volverá.`, k: 'bad' });
+        if (s.stats) s.stats.lastDeath = s.day;
         delete h.item;
       }
     }
@@ -443,17 +473,47 @@ export function endDay(state: GameState): GameState {
     }
   }
 
-  if (!s.over && s.day > DAYS) {
+  // Modo libre: cada semana, salarios. Dos impagos seguidos y el gremio quiebra.
+  if (s.mode === 'libre' && s.day % SALARY_EVERY === 0) {
+    const wages = salaries(s);
+    if (s.gold >= wages) {
+      s.gold -= wages;
+      s.unpaid = 0;
+      if (wages) events.push({ t: `Día de pago: ${wages} monedas en salarios.`, k: 'warn' });
+    } else {
+      s.unpaid = (s.unpaid ?? 0) + 1;
+      for (const h of roster(s)) h.morale = Math.max(0, h.morale + UNPAID_MORALE);
+      if (s.unpaid >= UNPAID_LIMIT)
+        s.over = {
+          kind: 'derrota',
+          text: `Día ${s.day}: otra semana sin pagar salarios. Los héroes se marchan, los acreedores se llevan los muebles y El Jarro Partido cierra sus puertas.`,
+          score: arrival(s, roster(s).length).score,
+        };
+      else
+        events.push({
+          t: `No llegas a pagar los salarios (${wages}). Los héroes se quejan; si se repite la semana que viene, el gremio quiebra.`,
+          k: 'bad',
+        });
+    }
+  }
+
+  // Fin de «La deuda»: si está pagada, el gremio es tuyo y empieza la aventura.
+  if (!s.over && s.mode !== 'libre' && s.day > DAYS) {
     const alive = roster(s).length;
-    const score = s.gold + s.rep * 5 + alive * 50 + s.inventory.reduce((a, i) => a + i.value, 0);
-    s.over = {
-      kind: s.paid >= DEBT ? 'victoria' : 'derrota',
-      text:
-        s.paid >= DEBT
-          ? `La deuda de tu tío está pagada. El Jarro Partido es tuyo: gremio de ${rankOf(s).name}, ${alive} ${plural(alive, 'héroe', 'héroes')} y ${s.gold} monedas en la caja.`
-          : 'Se acabó el plazo y la deuda sigue ahí.',
-      score,
-    };
+    if (s.paid >= DEBT) {
+      s.mode = 'libre';
+      s.opening = { ...arrival(s, alive), seen: false };
+      startMonth(s, rng);
+      events.push({
+        t: `La deuda de tu tío está pagada. El Jarro Partido es tuyo: gremio de ${rankOf(s).name}, ${alive} ${plural(alive, 'héroe', 'héroes')} y ${s.gold} monedas en la caja.`,
+        k: 'good',
+      });
+    } else s.over = { kind: 'derrota', text: 'Se acabó el plazo y la deuda sigue ahí.', score: 0 };
+  }
+
+  if (!s.over) {
+    checkFeats(s, rng, events);
+    checkMonth(s, rng, events);
   }
 
   s.flavor = rng.pick(FLAVOR);

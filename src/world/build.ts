@@ -184,7 +184,7 @@ export function buildWorld(
   const ambient: Ambient[] = [
     {
       poly: rect(ROOMS.hall.x0, ROOMS.hall.y0, ROOMS.hall.x1, ROOMS.hall.y1),
-      color: fac.tab ? [96, 80, 128] : [64, 58, 100],
+      color: fac.tab >= 4 ? [112, 92, 136] : fac.tab ? [96, 80, 128] : [64, 58, 100],
     },
     {
       poly: rect(ROOMS.dorm.x0, ROOMS.dorm.y0, ROOMS.dorm.x1 + 4, ROOMS.dorm.y1),
@@ -525,7 +525,10 @@ function hall(
       flicker: 0.16,
     });
   // Alfombras.
-  if (L.rugs) {
+  if (L.gala) {
+    // Gran salón: alfombra roja de la puerta a la chimenea.
+    put(Prop.rug(176, [P.plum, P.wine, P.red, P.gold]), 198, F.hall.floor - 2);
+  } else if (L.rugs) {
     put(Prop.rug(54, [P.plum, P.wine, P.red, P.coral]), 320, F.hall.floor - 2);
     put(Prop.rug(70, [P.navy, P.ocean, P.sky, P.mist]), 228, F.hall.floor - 2);
   }
@@ -564,6 +567,11 @@ function hall(
     put(Prop.chandelier(), 273, y0 - 2);
     for (const cx of [276, 282, 288, 294, 300]) flames.push({ x: cx, y: y0 + 4, kind: 'vela' });
     lights.push({ x: 288, y: y0 + 12, r: 70, color: CANDLE, intensity: 0.9, flicker: 0.1 });
+  }
+  if (L.gala) {
+    put(Prop.chandelier(), 221, y0 - 2);
+    for (const cx of [224, 230, 236, 242, 248]) flames.push({ x: cx, y: y0 + 4, kind: 'vela' });
+    lights.push({ x: 236, y: y0 + 12, r: 70, color: CANDLE, intensity: 0.9, flicker: 0.1 });
   }
   // Escalera con barandilla.
   stairs(b, front);

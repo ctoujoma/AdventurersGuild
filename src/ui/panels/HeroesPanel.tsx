@@ -44,7 +44,11 @@ export function HeroesPanel({ game, filter, setFilter, onOpen, onHire }: Props) 
           <span class={`pill pill-${candidate ? 'candidato' : h.status}`}>
             {statusLabel(h, candidate)}
           </span>
-          {!candidate && h.request && <span class="pill pill-request">Pide aumento</span>}
+          {!candidate && h.request && (
+            <span class="pill pill-request">
+              {h.request === 'cache' ? 'Pide caché' : 'Pide aumento'}
+            </span>
+          )}
           {!candidate &&
             !h.request &&
             h.status !== 'muerto' &&

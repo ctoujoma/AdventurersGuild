@@ -226,11 +226,25 @@ describe('avance de día', () => {
     expect(endDay(s)).toBe(s);
   });
 
-  it('pagando todo se gana al final del día 30', () => {
+  it('pagando todo, el gremio es tuyo y empieza el modo libre', () => {
     let s = newGame('victoria');
-    while (!s.over) s = endDay({ ...s, gold: s.gold + 1000 });
-    expect(s.over!.kind).toBe('victoria');
+    while (s.mode !== 'libre' && !s.over) s = endDay({ ...s, gold: s.gold + 1000 });
+    expect(s.over).toBeNull();
     expect(s.day).toBe(DAYS + 1);
-    expect(s.over!.score).toBeGreaterThan(0);
+    expect(s.opening?.seen).toBe(false);
+    expect(s.opening!.score).toBeGreaterThan(0);
+    expect(s.month?.goals.length).toBeGreaterThan(0);
+    s = reduce(s, { type: 'ackOpening' });
+    expect(s.opening?.seen).toBe(true);
+    // Y la partida sigue: los salarios se pagan cada semana.
+    for (let i = 0; i < 10; i++) s = endDay({ ...s, gold: s.gold + 500 });
+    expect(s.over).toBeNull();
+  });
+
+  it('en modo libre, dos semanas sin pagar salarios es la quiebra', () => {
+    let s = newGame('quiebra');
+    while (s.mode !== 'libre' && !s.over) s = endDay({ ...s, gold: s.gold + 1000 });
+    for (let i = 0; i < 20 && !s.over; i++) s = endDay({ ...s, gold: 0 });
+    expect(s.over?.kind).toBe('derrota');
   });
 });

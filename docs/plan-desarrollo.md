@@ -98,52 +98,111 @@ Los tamaños son relativos (S < M < L). Cada fase termina en algo que se puede p
 
 **🎯 Hito:** se juegan los 30 días de «La deuda» en el móvil desde un enlace. Primera ronda de pruebas.
 
-### Fase 3: Lo que traen (y lo que no) · L
-
-Orden acordado tras probar la fase 2 (prioridad del propietario: 3a y 3b, la escena que reacciona y el crecimiento del edificio):
+### Fase 3: Héroes, botín y un edificio que crece · L ✅
 
 **3a · Héroes que importan**
 - [x] Clases con habilidad real: guerrero «Escudo» (compañeros con la mitad de heridas), pícaro «Manos largas» (+10 % de oro y objeto con éxito parcial), mago «Sexto sentido» (giros y peligro real), clérigo «Plegaria» (evita muertes, amortigua la moral), explorador «Atajos» (−1 día en viajes de 3+ y esquiva emboscadas)
 - [x] Moral con efectos: animado +1 / desanimado −1 a todo; cada día fuera cansa; se recupera descansando (más con taberna y capilla); el harto puede irse de noche y el desanimado pide aumento (aceptar o negarse)
 - [x] Secuelas variadas con apodo: tuerto, cojo («Pata Chula») y cara cortada (cicatriz en el retrato)
-- [ ] Desaparecidos que vuelven con historia y rasgo nuevo, o encargo de rescate
-- [x] Rasgos ocultos que se revelan tras la primera misión · hecho en la fase 1
+- [x] Rasgos ocultos que se revelan tras la primera misión
 
 **3b · Lo que traen**
 - [x] Equipo: una ranura por héroe; 13 objetos en 3 rarezas con bonificaciones y efectos (protección, suerte, contra el gafe, contra emboscadas); se equipa desde la ficha, se pierde si el héroe cae o deserta; el equipo libre cuelga en un tablero de la bodega
 - [x] Trofeos: tras un éxito brillante en encargos peligrosos; +3 reputación, se exhiben en la sala (4 huecos, +3 monedas al día cada uno), se pueden vender y cuentan quién los trajo
 
 **3c · Historias**
-- [x] Informes mucho más variados: el doble de aperturas, frases y cierres; frases por clase, apartes por rasgo (pista de los ocultos), sucesos en ruta con hallazgos de monedas, piques entre compañeros, moral, cierres del cliente y sin repetir frase en un mismo informe
-- [ ] Eventos en ruta (emboscada, mercader, tesoro, pelea interna) y eventos en la taberna con elección
+- [x] Informes mucho más variados: frases por clase, apartes por rasgo (pista de los ocultos), sucesos en ruta con hallazgos, piques entre compañeros, moral, cierres del cliente y sin repetir frase
 
 **3d · La escena cuenta la partida**
-- [x] El amanecer ocurre en la escena: al terminar el día anochece, clarea por el horizonte con el sol y luego llega el resumen
-- [x] Los grupos que vuelven con éxito celebran en la barra (notas, monedas, brindis); una vela por cada caído en la capilla
-- [x] El botín y los trofeos se ven: arcones para los tesoros, tablero para el equipo, pared de trofeos
+- [x] La noche pasa en la escena (anochece, clarea por el horizonte con el sol) y luego llega el resumen del amanecer
+- [x] Celebración en la barra al volver con éxito; una vela por cada caído en la capilla
+- [x] El botín se ve: arcones para los tesoros, tablero para el equipo, pared de trofeos
 
 **3e · Crecimiento del edificio**
-- [x] Sala de mapas en el desván (+1/+2 encargos; a nivel 2, peligro real a la vista), Armería en la bodega (+1 Combate; a nivel 2 también Trampas y Supervivencia) y Capilla como anexo de piedra a la derecha (moral, desaparecidos que vuelven, caídos que duelen menos; campana y vidriera a nivel 2)
-- [ ] Una torre en el corte lateral para el final de partida
+- [x] Sala de mapas (desván), Armería (bodega) y Capilla (anexo nuevo a la derecha), con efectos y arte por nivel
 
-**3f · Más allá de «La deuda»**
-- [ ] Modo infinito: sin plazo, deudas o encargos que escalan; récords
-- [ ] Campaña: series de encargos encadenados (cadenas de misiones con historia) y una amenaza regional por actos
+### Fase 4: «El gremio es tuyo» · M ✅
 
-**Terminado cuando** el juego produce anécdotas, las clases y la moral cambian las decisiones y el edificio crece con el gremio.
+Lo que pasa al pagar la deuda: el final de «La deuda» deja de ser un final y se convierte en la apertura al mundo.
 
-### Fase 4: Pulido y pruebas · M
-- [ ] Balance con el simulador y con pruebas de jugadores reales
-- [ ] Tutorial integrado en los primeros días (el tío deja notas)
-- [ ] Animaciones y transiciones; las cartas de informe se deslizan
-- [ ] Sonido sintetizado con WebAudio
+- [x] **Pantalla de apertura** al acabar los 30 días con la deuda pagada: «El gremio es tuyo. Ahora empieza la aventura», con el resumen de cómo llegas (héroes, oro, trofeos, instalaciones, caídos)
+  - Opción principal: **«Abrir el gremio al mundo»** (se sigue con la misma partida, sin límite de días)
+  - Opción secundaria, planteada como otro intento: «¿No te convence cómo has llegado? Empieza de nuevo y llega en mejores condiciones a la apertura». Se guarda el mejor resumen para comparar intentos
+- [x] **Economía sin deuda (sin «mantenimiento del edificio»)**: el día de pago semanal se queda, pero solo para salarios
+  - Los héroes cobran más con cada nivel (más fuerte que ahora) y, al llegar a ciertos niveles, piden **caché de veterano**: mantener a un héroe mucho tiempo sale caro, así que hay que hacerle rendir en encargos de su rango
+  - Los encargos de rango alto pagan bastante más: un veterano ocioso es un lujo; uno bien usado, una mina
+  - Idea a valorar: los veteranos pueden **retirarse** con una despedida (y quizá quedarse como instructores)
+- [x] **Libro de hazañas** (el libro de cuentas del desván): logros con niveles y recompensas
+  - Hitos permanentes por tiers: completa 5 / 10 / 25 / 50 encargos; consigue 1 / 3 / 5 trofeos; sube un héroe a nivel 5 / 8 / 10; repele 1 / 3 / 5 asaltos; 15 días sin bajas; termina una cadena…
+  - Desafíos del mes (cada 30 días, rotan): «5 encargos de Cazar», «2 éxitos brillantes sin heridos», «gana 500 monedas»…
+  - Recompensas: oro y reputación en los fáciles; equipo bueno o legendario en los difíciles
+- [x] **Récords** de la partida y entre partidas: días al frente, oro máximo, trofeos, asaltos repelidos, caídos
+- [x] **Derrota en modo libre**: quiebra (no poder pagar salarios dos semanas seguidas) o quedarse sin héroes ni oro
+
+### Fase 5: El mundo · L
+
+- [ ] **Mapa de la comarca**: pergamino en pixel art que se abre desde el mapa del desván o un botón
+  - Chinchetas en los lugares de los encargos disponibles
+  - Los grupos de viaje como figuritas que avanzan por el camino, con los días que faltan (sustituye al panel «Fuera»)
+  - Las cadenas unidas con hilo rojo, como en la sala de mapas, con los pasos hechos tachados
+  - La amenaza regional como una mancha que se extiende
+  - La sala de mapas lo mejora: nivel 0 con niebla, nivel 1 rutas y días, nivel 2 el peligro real; los encargos de «Explorar» quitan niebla
+- [ ] **Cadenas de misiones**: 3–5 encargos enlazados con historia, de clientes que repiten (el alcalde, la bibliotecaria, Merlo…)
+  - Cada paso aparece al completar el anterior, con sello especial; fracasar tuerce la historia (paso extra, amenaza mayor); abandonarla tiene consecuencias
+  - Final con legendario único, trofeo especial y, a veces, una instalación desbloqueada
+  - Datos en `data/chains.ts` con lugares y villanos variables (rejugables); empezar con 3–4 cadenas
+- [ ] **Amenaza regional por actos**: crece si se ignoran las cadenas; trae eventos al amanecer (caravanas asaltadas, clientes que no vienen)
+- [ ] **Eventos en ruta y en la taberna con elección** (emboscada, mercader, tesoro, pelea interna)
+- [ ] Desaparecidos que vuelven con historia y rasgo nuevo, o encargo de rescate
+
+### Fase 6: Asaltos a la taberna · L
+
+Inspirado en los ataques al refugio de *Fallout Shelter*: cuanto más famoso y rico es el gremio, más apetecible es para los bandidos.
+
+- [ ] **Escena más ancha**: más patio delante de la puerta (izquierda) para los combates y más espacio a la derecha para seguir ampliando el edificio
+- [ ] **Notoriedad**: sube con la reputación y con el valor del arcón y los trofeos; marca la probabilidad y la fuerza de los asaltos
+- [ ] **Chivatazos**: avisos con días de margen («Dicen que la banda del Tuerto anda preguntando por ti»). Vienen de:
+  - El tabernero y los rumores de la barra
+  - Exploradores que vuelven de misión y ven a la banda
+  - Un chivato al que se le paga
+  - La torre del vigía (instalación)
+- [ ] **Defensa**: luchan los héroes que estén en la taberna. Se puede dejar a alguien **de guardia** (no sale de misión y defiende mejor). Así hay que decidir entre mandar a los fuertes a ganar oro o dejarlos en casa
+  - Defensas construibles que ayudan: empalizada, armería, torre del vigía
+- [ ] **Combate en tiempo real en el patio**: de noche, los bandidos llegan por el camino y los héroes salen por la puerta a pelear (choques, golpes, caídas); se puede acelerar o saltar
+- [ ] **Consecuencias**:
+  - Perder: saqueo (oro, tesoros o equipo del arcón; quizá un trofeo) y heridos
+  - Ganar: días de tregua (se corre la voz y otras bandas se lo piensan), reputación y algo de botín de los bandidos
+
+### Fase 7: Tu taberna · M
+
+**Personalización**
+- [ ] Nombre de la taberna y escudo del gremio (colores y símbolo): se ven en el letrero, los estandartes y los sellos de las cartas
+- [ ] Huecos de decoración con efecto pequeño: diana (moral) o mesa de naipes (ingresos, alguna pelea), escenario del bardo o más mesas…
+- [ ] Personal que se contrata y se ve por la taberna: cocinera (moral), bardo (ingresos por la noche), mozo (curación)
+- [ ] Carta de la casa: el plato del día, con efectos y frases de ambiente
+- [ ] Mascotas (un perro guardián que también avisa de asaltos, un cuervo) y decoración de fiestas
+
+**Expansión del edificio** (aprovecha la escena ancha de la fase 6)
+- [ ] Forja: mejorar y reparar equipo
+- [ ] Patio de entrenamiento con muñecos: experiencia mientras descansan
+- [ ] Establo: viajes más cortos y escoltas mejor pagadas
+- [ ] Torre del vigía sobre el tejado: avisa de asaltos y amenazas, trae encargos de más rango
+- [ ] Habitaciones de veteranos: más moral y sus trofeos personales
+
+### Fase 8: Pulido y pruebas · M
+- [x] Splash del desarrollador, pantalla de título y tutorial en los primeros días (el tío deja notas)
+- [ ] Balance con el simulador y con pruebas de jugadores reales (ahora la segunda mitad es fácil y el modo libre acumula demasiado oro: necesita los asaltos de la fase 6 y gastos de la fase 7)
+- [ ] El equipo se ve en el sprite y el retrato del héroe
+- [ ] Animaciones y transiciones; cartas que se deslizan; héroes que brindan en la celebración
+- [ ] Móvil en horizontal
+- [ ] Ajustes: volumen y velocidad
+- [x] Guardar y cargar partidas: archivo o código de texto
 - [ ] PWA: instalable, offline, icono y pantalla de carga
-- [ ] Exportar e importar la partida (copia de seguridad en texto)
-- [ ] Accesibilidad básica: contraste, tamaños de toque, modo oscuro
+- [ ] Accesibilidad básica: contraste, tamaños de toque y de texto
 
 **🎯 Hito:** prototipo pulido para enseñar.
 
-### Fase 5: Android · M
+### Fase 9: Android · M
 - [ ] Integrar Capacitor y crear el proyecto Android
 - [ ] Guardado con Capacitor Preferences/Filesystem
 - [ ] Botón atrás de Android, márgenes seguros (notch), barra de estado y vibración
@@ -153,8 +212,12 @@ Orden acordado tras probar la fase 2 (prioridad del propietario: 3a y 3b, la esc
 
 **🎯 Hito:** la app instalada desde Google Play en pruebas internas.
 
-### Más adelante
-Arte en pixel art compartido con la Tienda de pociones, campaña por actos, más clases y rasgos, relaciones entre héroes, modo infinito, idiomas y cruce con la Tienda de pociones.
+### Ideas para el futuro
+- **Jefes al final de las cadenas, con opción de observar el combate** (reutiliza el combate en tiempo real de los asaltos)
+- Relaciones entre héroes (amistades, rivalidades, parejas) que afectan a la moral y a los informes
+- Más clases y rasgos
+- Arte compartido y cruce con la Tienda de pociones
+- Idiomas
 
 ## 4. Riesgos
 

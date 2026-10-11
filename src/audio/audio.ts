@@ -25,7 +25,8 @@ export type Sfx =
   | 'depart'
   | 'dawn'
   | 'night'
-  | 'cheer';
+  | 'cheer'
+  | 'impact';
 
 const STORAGE_KEY = 'jarro:sonido';
 const FIRE = { x: 346, y: 272 };
@@ -236,6 +237,13 @@ class AudioEngine {
           const at = t + 0.7 + i * 0.16 + (i > 2 ? 0.3 : 0);
           this.tone('sine', 3400 + (i % 2) * 500, 4300 + (i % 3) * 300, at, 0.07, 0.025 * v);
         }
+        break;
+      case 'impact':
+        // El rótulo del título cae: golpe grave, crujido de madera y polvo.
+        this.thump(t, 0.6 * v);
+        this.tone('sine', 140, 38, t, 0.4, 0.35 * v);
+        for (let i = 0; i < 10; i++) this.crackle(t + Math.random() * 0.25, 0.3 * v);
+        this.pluck(38, t + 0.05, 0.25 * v);
         break;
       case 'night':
         // Cae la noche: dos notas graves y el búho a lo lejos.

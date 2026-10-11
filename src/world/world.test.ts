@@ -41,11 +41,11 @@ describe('geometría y mejoras', () => {
 
 describe('buildWorld', () => {
   it('construye las capas para todos los niveles sin fallar', () => {
-    for (const lvl of [0, 1, 2, 3]) {
+    for (const lvl of [0, 1, 2, 3, 4]) {
       const w = buildWorld(
         {
-          dorm: lvl,
-          enf: lvl,
+          dorm: Math.min(3, lvl),
+          enf: Math.min(3, lvl),
           tab: lvl,
           mapas: Math.min(2, lvl),
           arm: Math.min(2, lvl),

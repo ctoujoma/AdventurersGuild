@@ -3,6 +3,7 @@ import { audio } from '../audio/audio';
 import { canHire, newGame, reduce, type Action } from '../core/game';
 import type { Facilities, GameState } from '../core/model';
 import { CAPTIONS, FACILITY_INFO } from '../data/labels';
+import { loadRecords, mergeRecords, saveRecords } from '../platform/records';
 import { loadGame, saveGame, webStorage } from '../platform/storage';
 import type { Point, WorldScene } from '../world/scene';
 import { Dawn } from './Dawn';
@@ -12,7 +13,14 @@ import { HeroCard } from './HeroCard';
 import { Hud } from './Hud';
 import { Icon } from './icons';
 import { Letter } from './Letter';
+import { Opening } from './Opening';
 import { Panel } from './Panel';
+import { LibroPanel } from './panels/LibroPanel';
+import { SaveMenu } from './SaveMenu';
+import { Splash } from './Splash';
+import { Title } from './Title';
+import { nextTip } from './tips';
+import { UncleNote } from './UncleNote';
 import { AwayPanel } from './panels/AwayPanel';
 import { GremioPanel } from './panels/GremioPanel';
 import { HeroesPanel } from './panels/HeroesPanel';
@@ -24,7 +32,7 @@ import { TabBar, type TabId } from './TabBar';
 import { listNames, plural } from './text';
 import { sceneModel } from './view';
 
-type PanelId = Exclude<TabId, 'taberna'> | 'correo' | 'fuera';
+type PanelId = Exclude<TabId, 'taberna'> | 'correo' | 'fuera' | 'libro';
 
 interface Bubble {
   text: string;
@@ -54,6 +62,15 @@ export function App() {
   const [focusFac, setFocusFac] = useState<keyof Facilities | null>(null);
   const [heroFilter, setHeroFilter] = useState<'todos' | 'candidatos'>('todos');
   const [hint, setHint] = useState(false);
+  /** Splash del desarrollador, título y juego. Con #debug se entra directo a la partida. */
+  const [screen, setScreen] = useState<'splash' | 'title' | 'game'>(() =>
+    location.hash.includes('debug') ? 'game' : 'splash',
+  );
+  const [hasGame, setHasGame] = useState(!!saved);
+  const [saveMenu, setSaveMenu] = useState(false);
+  const [records, setRecords] = useState(loadRecords);
+  /** Mejor llegada antes de esta partida, para comparar en la apertura. */
+  const [prevBest] = useState(() => loadRecords().bestArrival);
   const scene = useRef<WorldScene | null>(null);
   const gameRef = useRef(game);
   gameRef.current = game;
@@ -94,6 +111,11 @@ export function App() {
     gameRef.current = next;
     setGame(next);
     saveGame(next);
+    setRecords((r) => {
+      const m = mergeRecords(r, next);
+      if (m !== r) saveRecords(m);
+      return m;
+    });
   };
   const dispatch = (a: Action): GameState => {
     const next = reduce(gameRef.current, a);
@@ -154,8 +176,7 @@ export function App() {
         openPanel('gremio');
         return;
       case 'despacho':
-        setFocusFac('mapas');
-        openPanel('gremio');
+        openPanel('libro');
         return;
       case 'equipo':
       case 'cofres':
@@ -268,7 +289,28 @@ export function App() {
     setReportId(id);
   };
 
+  const loadSave = (s: GameState) => {
+    commit(s);
+    setSceneGame(s);
+    setHasGame(true);
+    setSaveMenu(false);
+    setPanel(null);
+    setCard(null);
+    setDawnOpen(false);
+    setScreen('game');
+    audio.play('open');
+    toast(`Partida cargada: día ${s.day}, ${s.gold} monedas.`);
+  };
+
+  const toTitle = () => {
+    setPanel(null);
+    setCard(null);
+    setScreen('title');
+  };
+
   const restart = () => {
+    setHasGame(true);
+    setScreen('game');
     webStorage.clear();
     const s = freshGame();
     commit(s);
@@ -286,6 +328,14 @@ export function App() {
   const report = game.reports.find((r) => r.id === reportId) ?? null;
   const unread = game.reports.filter((r) => !r.read).length;
   const away = game.missions.length + game.heroes.filter((h) => h.status === 'desaparecido').length;
+  const tip =
+    screen === 'game' && !dawnOpen && !passing && !card && !questId && !reportId && !panel
+      ? nextTip(game)
+      : null;
+  // La nota del tío mira hacia lo que explica.
+  useEffect(() => {
+    if (tip?.focus) scene.current?.focus(tip.focus);
+  }, [tip?.id]);
   const tab: TabId =
     panel === 'tablon' || panel === 'heroes' || panel === 'gremio' ? panel : 'taberna';
 
@@ -384,6 +434,9 @@ export function App() {
               focus={focusFac}
               onUpgrade={upgrade}
               onSell={sell}
+              onSaves={() => setSaveMenu(true)}
+              onLibro={() => openPanel('libro')}
+              onTitle={toTitle}
               onSellTrophy={(id) => {
                 const t = game.trophies.find((x) => x.id === id);
                 dispatch({ type: 'sellTrophy', id });
@@ -391,8 +444,12 @@ export function App() {
                 if (t)
                   toast(`Vendido: ${t.name} por ${t.value} monedas. La pared se queda más sosa.`);
               }}
-              onNewGame={restart}
             />
+          </Panel>
+        )}
+        {panel === 'libro' && (
+          <Panel title="Libro de hazañas" onClose={() => openPanel(null)}>
+            <LibroPanel game={game} records={records} />
           </Panel>
         )}
         {panel === 'correo' && (
@@ -448,7 +505,7 @@ export function App() {
             }}
           />
         )}
-        {dawnOpen && (
+        {dawnOpen && screen === 'game' && (
           <Dawn
             day={game.day}
             flavor={game.flavor}
@@ -458,7 +515,20 @@ export function App() {
             onMail={() => closeDawn('correo')}
           />
         )}
-        {game.over && !dawnOpen && <GameOver game={game} onNew={restart} />}
+        {screen === 'game' && !dawnOpen && !passing && game.opening && !game.opening.seen && (
+          <Opening
+            arrival={game.opening}
+            best={prevBest}
+            onOpen={() => {
+              audio.play('dawn');
+              dispatch({ type: 'ackOpening' });
+              scene.current?.cheer('barra');
+              toast('El Jarro Partido abre sus puertas al mundo. ¡A por la leyenda!');
+            }}
+            onRetry={restart}
+          />
+        )}
+        {game.over && !dawnOpen && screen === 'game' && <GameOver game={game} onNew={restart} />}
       </div>
       <TabBar
         tab={tab}
@@ -468,6 +538,35 @@ export function App() {
           openPanel(t === 'taberna' ? null : t);
         }}
       />
+      {tip && (
+        <UncleNote
+          tip={tip}
+          onOk={() => {
+            audio.play('close');
+            dispatch({ type: 'tip', id: tip.id });
+          }}
+          onOff={() => dispatch({ type: 'tip', id: '*' })}
+        />
+      )}
+      {screen === 'title' && (
+        <Title
+          saved={hasGame ? game : null}
+          onContinue={() => {
+            audio.play('open');
+            setScreen('game');
+          }}
+          onNew={restart}
+          onSaves={() => setSaveMenu(true)}
+        />
+      )}
+      {screen === 'splash' && <Splash onDone={() => setScreen('title')} />}
+      {saveMenu && (
+        <SaveMenu
+          game={hasGame ? game : null}
+          onLoad={loadSave}
+          onClose={() => setSaveMenu(false)}
+        />
+      )}
     </div>
   );
 }

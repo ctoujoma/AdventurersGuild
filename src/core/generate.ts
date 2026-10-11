@@ -74,7 +74,7 @@ export function generateHero(rng: Rng, id: string, opts: HeroOptions): Hero {
     if (rng.chance(0.45)) name += ` ${rng.pick(SURNAMES)}`;
     if (!opts.usedNames?.some((n) => n.split(' ')[0] === name.split(' ')[0])) break;
   }
-  const maxExtra = Math.min(2, opts.rank + (opts.tab >= 2 ? 1 : 0));
+  const maxExtra = Math.min(3, opts.rank + (opts.tab >= 2 ? 1 : 0) + (opts.tab >= 4 ? 1 : 0));
   const lvl = 1 + (maxExtra > 0 ? rng.int(0, maxExtra) : 0);
   const [main, second] = FOCUS[cls];
   const bonus = opts.tab >= 3 ? 1 : 0;
@@ -106,7 +106,14 @@ export function generateHero(rng: Rng, id: string, opts: HeroOptions): Hero {
 /** Fuerza típica de un héroe en su habilidad fuerte, según el rango. */
 const perHero = (rank: number) => 4.4 + rank * 1.7;
 
-export function generateQuest(rng: Rng, id: string, rank: number, uidItem: string): Quest {
+/** `free`: en modo libre los encargos de rango alto pagan sin el recorte de «La deuda». */
+export function generateQuest(
+  rng: Rng,
+  id: string,
+  rank: number,
+  uidItem: string,
+  free = false,
+): Quest {
   const type = rng.pick(QUEST_TYPES);
   const tpl = TEMPLATES[type];
   const shady = rng.chance(0.12);
@@ -144,7 +151,12 @@ export function generateQuest(rng: Rng, id: string, rank: number, uidItem: strin
   const sum = challenges.reduce((a, c) => a + c.diff, 0);
   const reward =
     Math.round(
-      (sum * REWARD_PER_POINT * (1 - 0.08 * rank) * (1 + 0.22 * danger) * (0.85 + 0.12 * days)) / 5,
+      (sum *
+        REWARD_PER_POINT *
+        (free ? 1 - 0.04 * rank : 1 - 0.08 * rank) *
+        (1 + 0.22 * danger) *
+        (0.85 + 0.12 * days)) /
+        5,
     ) * 5;
 
   let item: Item | undefined;
