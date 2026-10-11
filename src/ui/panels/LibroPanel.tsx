@@ -1,3 +1,4 @@
+import { chainDef } from '../../core/chains';
 import { goalProgress, rewardText, statValue } from '../../core/feats';
 import type { GameState } from '../../core/model';
 import { FEATS } from '../../data/feats';
@@ -39,6 +40,37 @@ export function LibroPanel({ game, records }: Props) {
           Los desafíos del mes empiezan cuando el gremio sea tuyo, al pagar la deuda.
         </p>
       )}
+
+      <h3 class="sec-title">Historias</h3>
+      {!(game.chains ?? []).length && (
+        <p class="panel-note">
+          Con algo de fama llegan cartas de clientes con historias de varios encargos.
+        </p>
+      )}
+      <div class="list">
+        {(game.chains ?? []).map((cs) => {
+          const def = chainDef(cs.id);
+          const n = cs.status === 'hecha' ? def.steps.length : cs.step;
+          return (
+            <article key={cs.id} class={`card-paper feat ${cs.status === 'hecha' ? 'done' : ''}`}>
+              <div class="feat-head">
+                <b>{def.name}</b>
+                <span class="pips">
+                  {def.steps.map((_, i) => (
+                    <i key={i} class={i < n ? 'on' : ''} />
+                  ))}
+                </span>
+              </div>
+              <small>
+                {def.client} ·{' '}
+                {cs.status === 'hecha'
+                  ? 'Cumplida'
+                  : `En el tablón: «${def.steps[cs.step]!.title}»${cs.twists ? ` (se ha torcido ${cs.twists} ${cs.twists === 1 ? 'vez' : 'veces'})` : ''}`}
+              </small>
+            </article>
+          );
+        })}
+      </div>
 
       <h3 class="sec-title">Hazañas</h3>
       <div class="list">

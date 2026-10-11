@@ -2616,3 +2616,38 @@ button:focus-visible {
 .lg-missing {
   background: var(--plum);
 }
+
+/* ---------- Cadenas de misiones ---------- */
+.note-chain {
+  box-shadow:
+    0 0 0 2px var(--gold),
+    0 3px 0 2px rgba(24, 20, 37, 0.35);
+}
+.note-seal {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  transform: scale(0.8);
+}
+.note-story {
+  font-family: var(--pixel);
+  font-size: 11px;
+  color: var(--wine);
+}
+.map-routes .thread polyline {
+  fill: none;
+  stroke: var(--red);
+  stroke-width: 1.4;
+}
+.map-routes .thread line {
+  stroke: var(--wine);
+  stroke-width: 1.4;
+}
+.map-routes .thread.done polyline {
+  stroke-dasharray: 2 1.5;
+}
+.map-pin.chain {
+  box-shadow:
+    0 0 0 2px var(--gold),
+    0 0 0 4px var(--ink);
+}

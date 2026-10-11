@@ -103,6 +103,8 @@ export interface Quest {
   /** Giro oculto: más duro de lo que parece. Un mago en el grupo lo detecta. */
   twist?: string;
   fresh?: boolean;
+  /** Paso de una cadena de misiones (no caduca ni cuenta para el tablón). */
+  chain?: { id: string; step: number };
 }
 
 export interface Mission {
@@ -128,6 +130,8 @@ export interface Report {
   read: boolean;
   /** Informe de un asalto a la taberna (con su propio titular). */
   raid?: { won: boolean };
+  /** Titular propio (cartas de clientes, finales de cadena). */
+  heading?: string;
 }
 
 export interface Fallen {
@@ -151,6 +155,14 @@ export interface Facilities {
 export interface DawnEvent {
   t: string;
   k?: ChipKind;
+}
+
+export interface ChainState {
+  id: string;
+  step: number;
+  status: 'activa' | 'hecha';
+  /** Veces que la historia se ha torcido (cada una, el paso vuelve más difícil). */
+  twists: number;
 }
 
 export interface Raid {
@@ -182,6 +194,7 @@ export interface Stats {
   /** Último día con una baja (muerte); para «días sin bajas». */
   lastDeath: number;
   raids: number;
+  chains?: number;
   byType: Partial<Record<QuestType, number>>;
 }
 
@@ -264,6 +277,8 @@ export interface GameState {
   raid?: Raid | null;
   /** Sin asaltos hasta este día (tras repeler uno, se corre la voz). */
   truce?: number;
+  /** Cadenas de misiones empezadas. */
+  chains?: ChainState[];
   /** Lugares de la comarca ya visitados (levantan la niebla del mapa). */
   explored?: string[];
   /** Último asalto, para verlo en la escena al amanecer. */

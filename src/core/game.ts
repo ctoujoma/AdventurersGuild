@@ -36,6 +36,7 @@ import {
 import { tripDays } from './classes';
 import { arrival, checkFeats, checkMonth, emptyStats, startMonth } from './feats';
 import { stepRaids } from './raids';
+import { advanceChain, offerChain } from './chains';
 import { generateHero, generateQuest } from './generate';
 import {
   SAVE_VERSION,
@@ -364,6 +365,7 @@ export function endDay(state: GameState): GameState {
   for (const m of s.missions.filter((x) => x.daysLeft <= 0)) {
     const r = resolveMission(s, m, rng);
     s.reports.unshift(r);
+    if (m.quest.chain) advanceChain(s, rng, m.quest, r, events);
     const bad = r.outcome === 'Fracaso' || r.outcome === 'Desastre';
     events.push({
       t: `${plural(r.heroIds.length, 'Vuelve', 'Vuelven')} ${r.who}: ${r.outcome.toLowerCase()}.`,
@@ -448,7 +450,7 @@ export function endDay(state: GameState): GameState {
   if (gone.length) events.push({ t: `Caduca: ${listNames(gone.map((q) => q.title))}.` });
   s.quests = s.quests.filter((q) => q.expires > 0);
   let fresh = 0;
-  while (s.quests.length < BOARD_SIZE(s.fac.tab, s.fac.mapas)) {
+  while (s.quests.filter((q) => !q.chain).length < BOARD_SIZE(s.fac.tab, s.fac.mapas)) {
     s.quests.push(quest(s, rng));
     fresh++;
   }
@@ -467,6 +469,9 @@ export function endDay(state: GameState): GameState {
     s.candidates.push(c);
     events.push({ t: `En la barra hay alguien nuevo buscando trabajo: ${c.name}.` });
   }
+
+  // Cadenas de misiones: carta del siguiente cliente cuando toca.
+  offerChain(s, rng, events);
 
   // Día de pago.
   const pay = SCHEDULE.find((p) => p.day === s.day);

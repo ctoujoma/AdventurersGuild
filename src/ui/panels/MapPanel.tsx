@@ -1,5 +1,6 @@
 import { useMemo } from 'preact/hooks';
 import { fogBuffer, mapBuffer } from '../../art/map';
+import { chainDef } from '../../core/chains';
 import type { GameState, Hero } from '../../core/model';
 import { dangerClass } from '../../data/labels';
 import {
@@ -63,6 +64,27 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
         <BufferImage buf={mapBuffer()} scale={1} class="map-layer" label="Mapa de la comarca" />
         {fog && <BufferImage buf={fog} scale={1} class="map-layer" />}
         <svg class="map-routes" viewBox={`0 0 ${MAP_W} ${MAP_H}`} aria-hidden="true">
+          {(game.chains ?? []).map((cs) => {
+            const def = chainDef(cs.id);
+            const upto = cs.status === 'hecha' ? def.steps.length - 1 : cs.step;
+            const pts = def.steps.slice(0, upto + 1).map((st) => placeAt(st.place));
+            return (
+              <g key={cs.id} class={`thread ${cs.status === 'hecha' ? 'done' : ''}`}>
+                <polyline points={pts.map((p) => `${p.x},${p.y}`).join(' ')} />
+                {def.steps
+                  .slice(0, cs.status === 'hecha' ? def.steps.length : cs.step)
+                  .map((st, i) => {
+                    const p = placeAt(st.place);
+                    return (
+                      <g key={i}>
+                        <line x1={p.x - 2.5} y1={p.y - 2.5} x2={p.x + 2.5} y2={p.y + 2.5} />
+                        <line x1={p.x - 2.5} y1={p.y + 2.5} x2={p.x + 2.5} y2={p.y - 2.5} />
+                      </g>
+                    );
+                  })}
+              </g>
+            );
+          })}
           {game.missions.map((m) => {
             const p = placeAt(m.quest.place);
             return <line key={m.id} x1={TAVERN.x} y1={TAVERN.y} x2={p.x} y2={p.y} class="route" />;
@@ -87,7 +109,7 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
           return (
             <button
               key={q.id}
-              class={`map-pin danger-${dangerClass(q.danger, hidden)}`}
+              class={`map-pin danger-${dangerClass(q.danger, hidden)} ${q.chain ? 'chain' : ''}`}
               style={pct(p.x + n * 7, p.y - 6)}
               aria-label={`${q.title} (${q.place})`}
               title={`${q.title} · ${q.reward} monedas · ${q.days} ${plural(q.days, 'día', 'días')}`}

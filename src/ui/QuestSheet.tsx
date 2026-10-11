@@ -2,6 +2,7 @@ import { useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
 import { canSend } from '../core/game';
 import type { GameState, Quest } from '../core/model';
+import { chainDef } from '../core/chains';
 import { PERKS, partyClasses, tripDays } from '../core/classes';
 import { RISK_LABELS, moraleMod, skill } from '../core/party';
 import { questEstimate } from '../core/resolve';
@@ -57,7 +58,9 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
         <div class="qs-scroll">
           <header class="qs-head">
             <span class="eyebrow">
-              {q.type} · {q.client}
+              {q.chain
+                ? `${chainDef(q.chain.id).name} · paso ${q.chain.step + 1} de ${chainDef(q.chain.id).steps.length}`
+                : `${q.type} · ${q.client}`}
             </span>
             <h3>{q.title}</h3>
           </header>

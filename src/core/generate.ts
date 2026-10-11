@@ -113,8 +113,9 @@ export function generateQuest(
   rank: number,
   uidItem: string,
   free = false,
+  forceType?: QuestType,
 ): Quest {
-  const type = rng.pick(QUEST_TYPES);
+  const type = forceType ?? rng.pick(QUEST_TYPES);
   const tpl = TEMPLATES[type];
   const shady = rng.chance(0.12);
   const client = shady ? rng.pick(SHADY_CLIENTS) : rng.pick(CLIENTS);

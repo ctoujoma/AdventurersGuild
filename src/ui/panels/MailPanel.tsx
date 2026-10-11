@@ -27,7 +27,17 @@ export function MailPanel({
             <span class="muted">{r.who}</span>
           </span>
           <span class="mail-side">
-            <span class={`outcome-pill outcome-${OUTCOME_CLASS[r.outcome]}`}>{r.outcome}</span>
+            <span
+              class={`outcome-pill outcome-${r.heading?.startsWith('Carta') ? 'mid' : OUTCOME_CLASS[r.outcome]}`}
+            >
+              {r.heading?.startsWith('Carta')
+                ? 'Carta'
+                : r.raid
+                  ? r.raid.won
+                    ? 'Repelido'
+                    : 'Saqueo'
+                  : r.outcome}
+            </span>
             <small class="muted">{r.read ? `día ${r.day}` : 'Nuevo'}</small>
           </span>
         </button>
