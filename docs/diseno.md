@@ -208,7 +208,7 @@ Más adelante se puede añadir un modo en tiempo real con progreso offline, al e
   - **Héroes:** plantilla, fichas e historial.
   - **Gremio:** instalaciones, inventario, finanzas y Muro de los caídos.
 - **Envío de un grupo:** tocar un encargo → elegir héroes → ver la estimación → enviar.
-- **Arte:** el prototipo usa iconos y emoji con buena tipografía. Después vendrá pixel art compartido con la Tienda de pociones, con retratos por capas.
+- **Arte:** pixel art desde el prototipo, con una paleta única compartida con la Tienda de pociones. Los héroes se componen por capas y la taberna se ve en corte lateral, con las mejoras a la vista. Detalles en [`arte.md`](arte.md).
 - **Sonido:** sintetizado con WebAudio, sin archivos.
 
 ## 7. Mundo compartido con la Tienda de pociones

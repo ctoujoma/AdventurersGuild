@@ -55,18 +55,21 @@ tools/
 
 Los tamaños son relativos (S < M < L). Cada fase termina en algo que se puede probar.
 
-### Fase 0: Cimientos · S
-- [ ] Proyecto Vite + TypeScript + Preact
-- [ ] ESLint + Prettier, `tsconfig` estricto
-- [ ] Vitest con un test de ejemplo
-- [ ] GitHub Actions: lint, typecheck, test y build
-- [ ] Despliegue automático en GitHub Pages
-- [ ] Esqueleto de interfaz: 4 pestañas vacías, diseño vertical
+### Fase 0: Cimientos · S ✅
+- [x] Proyecto Vite + TypeScript + Preact
+- [x] ESLint + Prettier, `tsconfig` estricto
+- [x] Vitest con tests de ejemplo (RNG, capas de héroes, distribución de la taberna)
+- [x] GitHub Actions: lint, formato, typecheck, test y build (`.github/workflows/ci.yml`)
+- [x] Despliegue automático en GitHub Pages al hacer push a `main` (`.github/workflows/deploy.yml`)
+- [x] Esqueleto de interfaz: 4 pestañas, diseño vertical
+- [x] Adelantado: pixel art generado por código (ver [`arte.md`](arte.md))
+  - [x] Héroes por capas a partir de una semilla
+  - [x] Taberna en corte lateral con las mejoras visibles y los héroes dentro
 
-**Terminado cuando** un enlace público abre la app vacía en el móvil.
+**Terminado cuando** un enlace público abre la app en el móvil. Falta activar GitHub Pages en el repositorio (Settings → Pages → Source: GitHub Actions) y fusionar en `main`.
 
 ### Fase 1: Núcleo de simulación · M
-- [ ] RNG con semilla y utilidades (elegir, barajar, tirada ponderada)
+- [x] RNG con semilla y utilidades (elegir, tirada ponderada) · adelantado en la fase 0
 - [ ] Modelo de datos: héroe, encargo, estado de partida
 - [ ] Datos: 5 clases, unos 10 rasgos, unos 6 tipos de encargo, listas de nombres
 - [ ] Generadores de candidatos y encargos (escalados por rango)
