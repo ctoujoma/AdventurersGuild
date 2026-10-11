@@ -761,6 +761,9 @@ button:focus-visible {
   inset: 0;
   z-index: 7;
   display: grid;
+  /* Fila y columna del tamaño de la pantalla: así max-height de las fichas se cumple y
+     su interior se desplaza en vez de salirse. */
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   place-items: center;
   background: rgba(24, 20, 37, 0.55);
   animation: fadein 0.15s steps(3);
@@ -843,6 +846,7 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
