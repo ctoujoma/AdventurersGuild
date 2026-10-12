@@ -21,9 +21,9 @@ export const TEMPLATES: Record<QuestType, QuestTemplate> = {
     extra: ['Supervivencia', 'Trampas'],
     titles: ['{Threat} en {place}', 'La bestia de {place}', 'Cazar {threat}'],
     texts: [
-      'Desde la luna nueva, {threat} baja hasta {place}. Ya no quedan gallinas que contar.',
-      '«Es grande, huele mal y no paga impuestos». Se refiere a {threat}.',
-      'Los pastores de {place} no duermen. {Threat} sí, de día. Ahí está la oportunidad.',
+      'Desde la luna nueva, {threat} baja hasta {place} y ya no queda una gallina viva.',
+      'Los vecinos hablan de algo «grande, apestoso y con muy malas pulgas». Es {threat}.',
+      'Los pastores de {place} no pegan ojo. {Threat}, en cambio, duerme de día, y es cuando hay que ir.',
     ],
     threats: [
       'un huargo tuerto',
@@ -45,7 +45,7 @@ export const TEMPLATES: Record<QuestType, QuestTemplate> = {
     texts: [
       'Hay que llevar una carga hasta {place}. Los dos últimos carros no llegaron.',
       'Un mercader con prisa y poca fe en los caminos quiere llegar entero a {place}.',
-      'Dicen que en el camino de {place} cobran peaje {threat}. Un peaje que no es nuestro.',
+      'En el camino de {place} asaltan carros, y dicen que son {threat}. La carga tiene que llegar.',
     ],
     threats: ['unos bandidos', 'unos salteadores', 'los hermanos Cardo', 'una banda de trasgos'],
   },
@@ -55,17 +55,17 @@ export const TEMPLATES: Record<QuestType, QuestTemplate> = {
     titles: ['Las ruinas de {place}', 'Lo que hay bajo {place}', 'Cartografiar {place}'],
     texts: [
       'Nadie ha vuelto de {place} con un mapa. Algunos han vuelto sin botas.',
-      'Un erudito paga por saber qué queda en {place}. No quiere ir en persona, obviamente.',
+      'Un erudito paga por saber qué queda en {place}. Él, por supuesto, se queda en casa.',
       'Bajo {place} hay túneles, y en los túneles, según dicen, {threat}.',
     ],
-    threats: ['arañas', 'algo que se arrastra', 'ecos que no son ecos', 'un antiguo guardián'],
+    threats: ['arañas', 'algo que se arrastra', 'algo que imita voces', 'un antiguo guardián'],
   },
   Recuperar: {
     main: 'Trampas',
     extra: ['Supervivencia', 'Combate'],
     titles: ['Una caja en {place}', 'El anillo de la abuela', 'Lo que se dejaron en {place}'],
     texts: [
-      'Una caja, una casa vacía en {place}, ninguna pregunta. Paga la mitad por adelantado.',
+      'Hay que sacar una caja de una casa vacía en {place} sin preguntar qué lleva. Mitad por adelantado.',
       'El objeto está en {place}, custodiado por {threat}. El cliente jura que le pertenece.',
       'Hay que recuperar un recuerdo de familia de {place}. La familia no es muy de fiar.',
     ],
@@ -95,11 +95,11 @@ export const TEMPLATES: Record<QuestType, QuestTemplate> = {
   Limpiar: {
     main: 'Combate',
     extra: ['Arcano', 'Trampas'],
-    titles: ['Ratas en {place}', 'El sótano que respira', 'Limpiar {place}'],
+    titles: ['Ratas en {place}', 'El sótano del alquimista', 'Limpiar {place}'],
     texts: [
       '«Son ratas, pero grandes. Muy grandes. Bueno, una.» Está en {place}.',
-      'El difunto guardaba «cosas de alquimia» en {place}. Ahora {place} respira.',
-      'Algo ha anidado en {place}: {threat}. Hay que sacarlo de ahí antes de la feria.',
+      'El difunto guardaba «cosas de alquimia» en {place}. Desde el entierro, algo se mueve ahí abajo.',
+      'Hay {threat} en {place}, y la feria es dentro de una semana.',
     ],
     threats: ['una rata gigante', 'babosas ácidas', 'un nido de kobolds', 'un limo con hambre'],
   },
@@ -142,9 +142,9 @@ export const CLIENTS = [
 export const SHADY_CLIENTS = ['Desconocido', 'Un tal Corvo', 'Una voz tras la cortina'];
 
 export const TWISTS = [
-  'Lo que buscaban ya no estaba solo.',
+  'Lo que buscaban tenía compañía.',
   'El cliente se olvidó de mencionar a los otros.',
-  'Las campanas no avisaban de nada: llamaban a alguien.',
+  'Por el camino les salió al paso algo que nadie había mencionado.',
   'Alguien más quería lo mismo, y llegó antes.',
   'La amenaza era el doble de grande de lo prometido.',
 ];
@@ -152,10 +152,14 @@ export const TWISTS = [
 export const ITEMS = [
   { name: 'Espada oxidada', desc: 'Con una buena limpieza, quizá corte algo.', value: 18 },
   { name: 'Colmillos de huargo', desc: 'La tienda de pociones los compraría.', value: 24 },
-  { name: 'Llave de hierro negro', desc: 'Nadie sabe qué abre. Todavía.', value: 8 },
+  {
+    name: 'Llave de hierro negro',
+    desc: 'No abre ninguna puerta de la comarca. Ya se ha probado.',
+    value: 8,
+  },
   { name: 'Amuleto de hueso', desc: 'Huele a humo y a otra cosa.', value: 30 },
   { name: 'Mapa a medio quemar', desc: 'Falta justo la parte importante.', value: 15 },
-  { name: 'Reliquia sin nombre', desc: 'Está tibia. Siempre.', value: 60 },
+  { name: 'Reliquia sin nombre', desc: 'Sigue tibia aunque pase la noche al raso.', value: 60 },
   { name: 'Bolsa de gemas turbias', desc: 'Brillan menos de lo que prometen.', value: 45 },
   { name: 'Escudo con blasón', desc: 'De una casa noble que ya no existe.', value: 35 },
 ];

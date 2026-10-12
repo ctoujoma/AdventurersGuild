@@ -211,6 +211,7 @@ Inspirado en los ataques al refugio de *Fallout Shelter*: cuanto más famoso y r
 - [x] Guardar y cargar partidas: archivo o código de texto
 - [x] PWA: manifiesto, iconos (también «maskable» y de Apple), pantalla completa y service worker para jugar sin conexión
 - [x] Accesibilidad básica: cifras legibles (Jersey 10 para los dígitos), contraste ≥ 5:1 en textos sobre pergamino, foco visible con teclado, Escape para cerrar, objetivos táctiles de 44 px
+- [x] Pulido tras las primeras pruebas: ventanas que dejan ver el exterior, roble entero, bocadillos anclados a lo que se toca, zoom más alejado, armas a la espalda bien inclinadas en el retrato, textos menos artificiales, panel del arcón (equipo, tesoros y trofeos), mapa con zoom, arrastre y fichas flotantes, y ciclo de día (mañana, tarde, atardecer y noche, que espera a «Terminar día»)
 
 **🎯 Hito:** prototipo pulido para enseñar.
 

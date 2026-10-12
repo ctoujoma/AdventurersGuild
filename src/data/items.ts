@@ -20,7 +20,7 @@ export const GEAR: readonly GearBase[] = [
   },
   {
     name: 'Ganzúas de alambre',
-    desc: 'Dobladas a mano. Abren casi todo, menos la paciencia.',
+    desc: 'Dobladas a mano. Abren casi todo, si se les da tiempo.',
     value: 18,
     kind: 'herramienta',
     rarity: 0,
@@ -47,7 +47,7 @@ export const GEAR: readonly GearBase[] = [
   },
   {
     name: 'Coraza abollada',
-    desc: 'Cada abolladura es un golpe que no llegó a la carne.',
+    desc: 'Está llena de bollos, pero sigue parando golpes.',
     value: 24,
     kind: 'armadura',
     rarity: 0,
@@ -57,7 +57,7 @@ export const GEAR: readonly GearBase[] = [
   // Bueno.
   {
     name: 'Hacha de leñador enano',
-    desc: 'Pesa como un yunque y corta como un rumor.',
+    desc: 'Pesa lo suyo, pero parte un tronco de un tajo.',
     value: 48,
     kind: 'arma',
     rarity: 1,
@@ -75,7 +75,7 @@ export const GEAR: readonly GearBase[] = [
   },
   {
     name: 'Capa de explorador',
-    desc: 'Del color del barro, del musgo y de la niebla.',
+    desc: 'Parda y verdosa. Tumbado en el monte, no te ve ni tu madre.',
     value: 46,
     kind: 'herramienta',
     rarity: 1,
@@ -95,7 +95,7 @@ export const GEAR: readonly GearBase[] = [
   },
   {
     name: 'Escudo con blasón',
-    desc: 'De una casa noble que ya no existe. El escudo, sí.',
+    desc: 'Lleva las armas de una casa noble que se extinguió hace años.',
     value: 50,
     kind: 'armadura',
     rarity: 1,
@@ -115,7 +115,7 @@ export const GEAR: readonly GearBase[] = [
   // Legendario.
   {
     name: 'Hoja de Vadoverde',
-    desc: 'Forjada para un rey que nunca la desenvainó. Silba al cortar.',
+    desc: 'Se hizo para un rey que murió sin estrenarla. Silba al cortar.',
     value: 120,
     kind: 'arma',
     rarity: 2,
@@ -154,7 +154,7 @@ export const TREASURES: readonly GearBase[] = [
   },
   {
     name: 'Llave de hierro negro',
-    desc: 'Nadie sabe qué abre. Todavía.',
+    desc: 'No abre ninguna puerta de la comarca. Ya se ha probado.',
     value: 10,
     kind: 'tesoro',
   },
@@ -164,7 +164,12 @@ export const TREASURES: readonly GearBase[] = [
     value: 15,
     kind: 'tesoro',
   },
-  { name: 'Reliquia sin nombre', desc: 'Está tibia. Siempre.', value: 60, kind: 'tesoro' },
+  {
+    name: 'Reliquia sin nombre',
+    desc: 'Sigue tibia aunque pase la noche al raso.',
+    value: 60,
+    kind: 'tesoro',
+  },
   {
     name: 'Bolsa de gemas turbias',
     desc: 'Brillan menos de lo que prometen.',
@@ -206,8 +211,16 @@ export const TROPHIES: Record<
     { name: 'Calavera con runas', desc: 'Las runas brillan cuando llueve.', icon: 'calavera' },
   ],
   Investigar: [
-    { name: 'Máscara del culto', desc: 'Sonríe. Nadie sabe por qué.', icon: 'mascara' },
-    { name: 'Estandarte de la hermandad', desc: 'Ya no existe la hermandad.', icon: 'estandarte' },
+    {
+      name: 'Máscara del culto',
+      desc: 'Tiene una sonrisa que no le gusta a nadie.',
+      icon: 'mascara',
+    },
+    {
+      name: 'Estandarte de la hermandad',
+      desc: 'De la hermandad ya no queda nadie.',
+      icon: 'estandarte',
+    },
   ],
   Recuperar: [
     { name: 'Ídolo del templo hundido', desc: 'Pesa más de lo que parece.', icon: 'idolo' },

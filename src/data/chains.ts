@@ -39,7 +39,7 @@ export const CHAINS: readonly ChainDef[] = [
     client: 'Alcaldía de Hondogrís',
     rep: 8,
     intro:
-      'Algo baja de las minas por la noche y se lleva las cabras. Luego, a los pastores. El alcalde de Hondogrís paga bien a quien llegue al fondo del asunto… y no hace preguntas sobre el método.',
+      'Algo baja de las minas por la noche y se lleva las cabras. La semana pasada se llevó a un pastor. El alcalde de Hondogrís paga bien a quien lo resuelva, y le da igual cómo.',
     steps: [
       {
         title: 'Rumores en el vado',
@@ -66,12 +66,12 @@ export const CHAINS: readonly ChainDef[] = [
         title: 'La bestia de Hondogrís',
         type: 'Cazar',
         place: 'Hondogrís',
-        text: 'Ya se sabe dónde duerme. Ahora hay que despertarla, y que no sea lo último que se haga.',
+        text: 'Ya se sabe dónde duerme. Toca bajar a por ella, y mejor con buenas armas.',
         danger: 3,
       },
     ],
     ending:
-      'La bestia de Hondogrís no volverá a bajar de las minas. En el pueblo han puesto el nombre del gremio a una calle. Bueno, a un callejón.',
+      'La bestia de Hondogrís no volverá a bajar de las minas. En el pueblo le han puesto el nombre del gremio a un callejón, que calles no les sobran.',
     reward: {
       gold: 250,
       rep: 12,
@@ -89,13 +89,13 @@ export const CHAINS: readonly ChainDef[] = [
     client: 'Hermana Odile, templo',
     rep: 35,
     intro:
-      'En el cementerio de Ormaz las tumbas aparecen abiertas desde dentro. La hermana Odile cree que alguien está celebrando ritos que no son los suyos, y quiere que paren antes de la luna nueva.',
+      'En el cementerio de Ormaz aparecen tumbas abiertas desde dentro. La hermana Odile sospecha de algún culto y quiere que se acabe antes de la luna nueva.',
     steps: [
       {
         title: 'Tumbas abiertas',
         type: 'Investigar',
         place: 'el cementerio de Ormaz',
-        text: 'Hay que pasar la noche en el cementerio y ver quién entra… o quién sale.',
+        text: 'Hay que pasar la noche en el cementerio y ver quién entra, o quién sale.',
         danger: 1,
       },
       {
@@ -114,7 +114,7 @@ export const CHAINS: readonly ChainDef[] = [
       },
     ],
     ending:
-      'La cripta está sellada y el culto, disperso. La hermana Odile ha bendecido la puerta de El Jarro Partido. Las cucarachas se han ido; los clientes, no.',
+      'La cripta está sellada y el culto, disperso. La hermana Odile vino a bendecir la puerta de El Jarro Partido, y de paso se tomó un vino.',
     reward: {
       gold: 300,
       rep: 15,
@@ -132,13 +132,13 @@ export const CHAINS: readonly ChainDef[] = [
     client: 'Gremio de mercaderes',
     rep: 70,
     intro:
-      'Desaparecen barcazas enteras entre el molino y la casa del canal. El gremio de mercaderes sospecha de contrabandistas con amigos en sitios altos, y prefiere a alguien de fuera para meter las narices.',
+      'Desaparecen barcazas enteras entre el molino y la casa del canal. El gremio de mercaderes sospecha de unos contrabandistas con buenos padrinos y prefiere que meta las narices alguien de fuera.',
     steps: [
       {
         title: 'Lo que flota en el canal',
         type: 'Investigar',
         place: 'la casa del canal',
-        text: 'Los guardas de la casa del canal no ven nada, no oyen nada y viven muy bien. Curioso.',
+        text: 'Los guardas de la casa del canal no ven ni oyen nada, pero estrenan botas cada mes.',
         danger: 1,
       },
       {
@@ -157,7 +157,7 @@ export const CHAINS: readonly ChainDef[] = [
       },
     ],
     ending:
-      'Las barcazas vuelven a llegar a su destino y el gremio de mercaderes paga lo prometido, con una propina que olía a remordimiento.',
+      'Las barcazas vuelven a llegar a su destino y el gremio de mercaderes paga lo prometido sin regatear, que ya es mucho.',
     reward: { gold: 450, rep: 12, item: 'Capa élfica' },
   },
   {
@@ -166,7 +166,7 @@ export const CHAINS: readonly ChainDef[] = [
     client: 'Maese Quirico, erudito',
     rep: 110,
     intro:
-      'Maese Quirico jura que la torre caída fue el observatorio de un mago que cartografió toda la comarca. Si encontráis su obra, os deja copiarla. Y os paga, que es lo importante.',
+      'Maese Quirico jura que la torre caída fue el observatorio de un mago que cartografió toda la comarca. Si encontráis sus mapas, os deja copiarlos, y además paga bien.',
     steps: [
       {
         title: 'El camino de los riscos',
@@ -179,7 +179,7 @@ export const CHAINS: readonly ChainDef[] = [
         title: 'El diario del astrónomo',
         type: 'Recuperar',
         place: 'la torre caída',
-        text: 'En lo que queda de la biblioteca debería estar su diario. Debería.',
+        text: 'En lo que queda de la biblioteca tendría que estar su diario, si no se lo han comido las ratas.',
         danger: 2,
       },
       {
@@ -191,7 +191,7 @@ export const CHAINS: readonly ChainDef[] = [
       },
     ],
     ending:
-      'Los mapas del astrónomo cubren cada rincón de la comarca. Ya no queda niebla en el mapa del desván, y Maese Quirico llora de alegría encima de ellos.',
+      'Los mapas del astrónomo cubren cada rincón de la comarca. Ya no queda niebla en el mapa del desván, y Maese Quirico no se despega de ellos ni para comer.',
     reward: { gold: 350, rep: 18, item: 'Varita de serbal', revealMap: true },
   },
 ];

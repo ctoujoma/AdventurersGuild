@@ -28,7 +28,7 @@ export const CREST_SYMBOLS: Record<CrestSymbol, string> = {
 };
 
 export const DISHES: Record<Dish, { name: string; desc: string; cost: number; morale: number }> = {
-  pan: { name: 'Pan y queso', desc: 'Gratis. Nadie se queja… mucho.', cost: 0, morale: 0 },
+  pan: { name: 'Pan y queso', desc: 'Gratis. Se quejan, pero se lo comen.', cost: 0, morale: 0 },
   guiso: {
     name: 'Guiso de la casa',
     desc: '+2 de moral por noche a quien descansa.',

@@ -80,6 +80,9 @@ export type SoundName =
 export interface Point {
   x: number;
   y: number;
+  /** Punto del mundo (para anclar bocadillos a lo que se ha tocado). */
+  wx?: number;
+  wy?: number;
 }
 
 export interface SceneCallbacks {
@@ -121,6 +124,11 @@ const YARD_END = -112;
 const TRIP_SPEED = 44;
 
 /** Altura de los pies: el patio queda un escalón por debajo de la sala. */
+/** Duración de un día de juego en segundos de escena (hasta que se hace de noche). */
+const DAY_LENGTH = 300;
+/** Luz con la que acaba el amanecer y empieza la mañana. */
+const DAWN_LIGHT = 0.65;
+
 function feetAt(x: number): number {
   if (x >= DOOR_X) return F.hall.floor;
   if (x <= DOOR_X - 6) return GROUND;
@@ -205,6 +213,9 @@ export class WorldScene {
   private battle: Battle | null = null;
   /** Velocidad elegida en Ajustes (multiplica el paso del tiempo de la escena). */
   speed = 1;
+  /** Cuándo empezó el día en curso (tiempo de escena) y cuánta luz había al caer la noche. */
+  private dayStart = 0;
+  private dayAtNightfall = 0;
   /** Brindis en curso: los héroes de la sala alzan la jarra hasta este instante. */
   private toastUntil = 0;
   /** Zoom de antes del asalto: la cámara se acerca al patio mientras dura la pelea. */
@@ -370,9 +381,13 @@ export class WorldScene {
   resize(cssW: number, cssH: number, zoom?: number): void {
     this.cssW = cssW;
     this.cssH = cssH;
-    // Nunca más pequeño que el mundo: la vista siempre queda llena.
-    const minZoom = Math.max(1, Math.ceil(cssW / SPAN), Math.ceil(cssH / WORLD_H));
-    const z = Math.max(minZoom, zoom ?? Math.max(2, Math.floor(Math.min(cssW / 180, cssH / 230))));
+    // Nunca más pequeño que el mundo: la vista siempre queda llena. El zoom más lejano
+    // puede ser fraccionario (encaja el mundo justo); los demás pasos son enteros.
+    const minZoom = this.minZoom(cssW, cssH);
+    const z = Math.max(
+      minZoom,
+      zoom ?? Math.max(2, Math.ceil(minZoom), Math.floor(Math.min(cssW / 180, cssH / 230))),
+    );
     this.camera.setView(cssW, cssH, z);
     this.canvas.width = this.camera.vw;
     this.canvas.height = this.camera.vh;
@@ -383,10 +398,24 @@ export class WorldScene {
     this.ctx.imageSmoothingEnabled = false;
   }
 
+  private minZoom(cssW: number, cssH: number): number {
+    return Math.max(1, Math.ceil(Math.max(cssW / SPAN, cssH / WORLD_H) * 100) / 100);
+  }
+
   zoomBy(step: number): void {
-    const minZoom = Math.max(1, Math.ceil(this.cssW / SPAN), Math.ceil(this.cssH / WORLD_H));
-    const z = Math.max(minZoom, Math.min(6, this.camera.zoom + step));
-    if (z !== this.camera.zoom) this.resize(this.cssW, this.cssH, z);
+    const min = this.minZoom(this.cssW, this.cssH);
+    const cur = this.camera.zoom;
+    // Pasos enteros y, por debajo del primero que llena la vista, el zoom que encaja todo.
+    const z =
+      step > 0
+        ? Math.min(6, Math.floor(cur) + 1)
+        : Math.max(min, Number.isInteger(cur) ? cur - 1 : Math.floor(cur));
+    if (z !== cur) this.resize(this.cssW, this.cssH, z);
+  }
+
+  /** Posición en pantalla (px CSS) de un punto del mundo. */
+  screenOf(wx: number, wy: number): Point {
+    return this.camera.toScreen(wx, wy);
   }
 
   focus(room: keyof typeof ROOM_CENTERS | string): void {
@@ -452,6 +481,7 @@ export class WorldScene {
    */
   nightfall(done: () => void, dur = 2.6, hold = 0): void {
     this.night?.done?.();
+    this.dayAtNightfall = this.daylight().day;
     this.night = { start: this.t, dur, hold, done };
   }
 
@@ -483,7 +513,7 @@ export class WorldScene {
       },
     );
     this.raidZoom = this.camera.zoom;
-    this.resize(this.cssW, this.cssH, Math.min(6, this.camera.zoom + 1));
+    this.resize(this.cssW, this.cssH, Math.min(6, Math.floor(this.camera.zoom) + 1));
     this.camera.centerOn(-52, 262);
     this.nightfall(done, 2.6, BATTLE_TIME + 0.6);
   }
@@ -621,6 +651,82 @@ export class WorldScene {
     return { dark, warm };
   }
 
+  /**
+   * Luz del día (0 noche – 1 pleno día) y del atardecer (0–1). El día avanza solo mientras
+   * juegas: mañana, mediodía, tarde, atardecer y noche, que se queda hasta terminar el día.
+   * Al caer la noche (fin del día) la luz se apaga y con el amanecer vuelve a subir.
+   */
+  daylight(): { day: number; dusk: number; tod: number } {
+    const smooth = (k: number) => k * k * (3 - 2 * k);
+    const n = this.night;
+    if (n) {
+      const p = this.nightP();
+      if (p < 0.35) return { day: this.dayAtNightfall * (1 - smooth(p / 0.35)), dusk: 0, tod: 1 };
+      if (p < 0.9) return { day: 0, dusk: 0, tod: 0 };
+      return { day: smooth(Math.min(1, (p - 0.9) / 0.9)) * DAWN_LIGHT, dusk: 0, tod: 0 };
+    }
+    const tod = Math.min(1, (this.t - this.dayStart) / DAY_LENGTH);
+    const k = (a: number, b: number) => Math.max(0, Math.min(1, (tod - a) / (b - a)));
+    const day =
+      tod < 0.12 ? DAWN_LIGHT + (1 - DAWN_LIGHT) * smooth(k(0, 0.12)) : 1 - smooth(k(0.6, 0.95));
+    const dusk = smooth(k(0.55, 0.78)) * (1 - smooth(k(0.82, 1)));
+    return { day, dusk, tod };
+  }
+
+  /** Cielo de día por encima del de noche: azul, con el sol cruzando y nubes claras. */
+  private drawDaySky(
+    d: { day: number; dusk: number; tod: number },
+    cx: number,
+    cy: number,
+    vw: number,
+    vh: number,
+  ): void {
+    const ctx = this.ctx;
+    const horizon = GROUND - 40 - cy;
+    if (d.day > 0) {
+      ctx.globalAlpha = d.day;
+      const g = ctx.createLinearGradient(0, horizon - 230, 0, horizon + 10);
+      g.addColorStop(0, '#3b7fc4');
+      g.addColorStop(0.65, '#7fbde6');
+      g.addColorStop(1, '#cfe9f2');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, vw, vh);
+      ctx.globalAlpha = 1;
+    }
+    if (d.dusk > 0) {
+      const g = ctx.createLinearGradient(0, horizon - 200, 0, horizon + 20);
+      g.addColorStop(0, 'rgba(104, 56, 108, 0)');
+      g.addColorStop(0.55, `rgba(232, 110, 120, ${0.5 * d.dusk})`);
+      g.addColorStop(1, `rgba(247, 118, 34, ${0.75 * d.dusk})`);
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, vw, vh);
+    }
+    // El sol: sale por la derecha, cruza alto y se pone por la izquierda.
+    const sunUp = Math.max(d.day, d.dusk);
+    if (sunUp <= 0 || d.tod >= 0.97) return;
+    const a = Math.PI * Math.min(1, d.tod / 0.95);
+    const sx = Math.round(560 - (560 + 60) * (d.tod / 0.95) - cx * 0.08);
+    const sy = Math.round(horizon + 10 - Math.sin(a) * 120);
+    const warmSun = d.dusk > 0.3;
+    ctx.globalAlpha = Math.min(1, sunUp * 1.3);
+    ctx.drawImage(
+      glowSprite(30, warmSun ? [254, 140, 52] : [255, 240, 180], 0.55),
+      sx - 30,
+      sy - 30,
+    );
+    ctx.fillStyle = warmSun ? P.orange : P.lemon;
+    for (let y = -8; y <= 8; y++) {
+      const w = Math.floor(Math.sqrt(64 - y * y));
+      ctx.fillRect(sx - w, sy + y, w * 2 + 1, 1);
+    }
+    ctx.fillStyle = warmSun ? P.lemon : P.white;
+    for (let y = -4; y <= 2; y++) {
+      const w = Math.floor(Math.sqrt(16 - (y + 1) * (y + 1)));
+      ctx.fillRect(sx - w - 1, sy + y - 1, w * 2, 1);
+    }
+    ctx.globalAlpha = 1;
+  }
+
   /** Cielo del amanecer: resplandor en el horizonte y el sol asomando por la derecha. */
   private drawDawnSky(warm: number, cx: number, cy: number, vw: number, vh: number): void {
     const ctx = this.ctx;
@@ -694,7 +800,10 @@ export class WorldScene {
         this.night.done = null;
         done();
       }
-      if (p >= 1.8) this.night = null;
+      if (p >= 1.8) {
+        this.night = null;
+        this.dayStart = t;
+      }
     }
     this.camera.update(dt);
     if (!this.world || !this.model) return;
@@ -922,8 +1031,10 @@ export class WorldScene {
     ctx.fillRect(0, 0, vw, vh);
 
     // Cielo, estrellas, estrella fugaz, nubes y capas lejanas.
+    const dl = this.daylight();
     ctx.drawImage(this.skyC, WORLD_X0 - Math.round(cx * 0.08), -cy);
-    for (const s of this.starList) {
+    ctx.globalAlpha = Math.max(0, 1 - dl.day * 1.4);
+    for (const s of dl.day > 0.7 ? [] : this.starList) {
       const sx = s.x + WORLD_X0 - Math.round(cx * 0.08);
       const sy = s.y - cy;
       if (sx < 0 || sy < 0 || sx >= vw || sy >= vh) continue;
@@ -939,7 +1050,9 @@ export class WorldScene {
         ctx.fillRect(sx, sy, 1, 1);
       }
     }
-    if (this.shooting) {
+    ctx.globalAlpha = 1;
+    this.drawDaySky(dl, cx, cy, vw, vh);
+    if (this.shooting && dl.day < 0.3) {
       const s = this.shooting;
       for (let i = 0; i < 8; i++) {
         ctx.fillStyle = i < 2 ? P.white : i < 5 ? P.mist : P.fog;
@@ -954,6 +1067,14 @@ export class WorldScene {
     if (warm > 0) this.drawDawnSky(warm, cx, cy, vw, vh);
     for (const { c, l } of this.parallax) {
       ctx.drawImage(c, WORLD_X0 - Math.round(cx * l.fx), -cy);
+    }
+    if (dl.day > 0 || dl.dusk > 0) {
+      // De día, las montañas y la arboleda se aclaran con la luz y la distancia.
+      ctx.globalCompositeOperation = 'screen';
+      const h = (v: number) => Math.round(v * dl.day + v * 0.4 * dl.dusk);
+      ctx.fillStyle = `rgb(${h(70) + Math.round(60 * dl.dusk)}, ${h(105)}, ${h(120)})`;
+      ctx.fillRect(0, 0, vw, vh);
+      ctx.globalCompositeOperation = 'source-over';
     }
 
     // Mundo (fondo) + elementos exteriores animados.
@@ -1194,6 +1315,12 @@ export class WorldScene {
     l.globalCompositeOperation = 'copy';
     l.drawImage(this.ambientC, WORLD_X0 - cx, -cy);
     l.globalCompositeOperation = 'lighter';
+    if (dl.day > 0 || dl.dusk > 0) {
+      // Luz del día (y la anaranjada del atardecer) sobre todo lo que se ve.
+      const v = Math.round(150 * dl.day);
+      l.fillStyle = `rgb(${v + Math.round(70 * dl.dusk)}, ${v + Math.round(30 * dl.dusk)}, ${Math.round(v * 0.95)})`;
+      l.fillRect(0, 0, vw, vh);
+    }
     for (const li of W.lights) {
       if (li.x + li.r < cx || li.x - li.r > cx + vw || li.y + li.r < cy || li.y - li.r > cy + vh)
         continue;
@@ -1370,7 +1497,7 @@ export class WorldScene {
     const w = this.camera.toWorld(cssX, cssY);
     const h = this.hit(w.x, w.y);
     if (!h) return;
-    const at = { x: cssX, y: cssY };
+    const at = { x: cssX, y: cssY, wx: w.x, wy: w.y };
     this.cb.onSound?.('click', 0.5);
     switch (h.kind) {
       case 'hero':

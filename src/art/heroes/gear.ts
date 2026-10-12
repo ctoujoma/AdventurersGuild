@@ -184,20 +184,22 @@ export function gearPortraitBack(b: PixelBuffer, g: GearMark): void {
   const a = ACCENT[g.rarity];
   switch (g.icon) {
     case 'espada':
-      // Empuñadura sobre el hombro derecho.
-      line(b, 35, 47, 30, 26, m[1], false);
-      line(b, 36, 46, 31, 26, m[2], false);
-      line(b, 27, 33, 35, 31, P.gold, false);
-      line(b, 31, 25, 31, 22, P.oak, false);
-      b.set(31, 21, a);
-      b.set(32, 21, a);
+      // A la espalda: la empuñadura asoma sobre el hombro y la hoja baja en diagonal por
+      // detrás, hacia la otra cadera.
+      line(b, 25, 47, 33, 30, m[1], false);
+      line(b, 26, 47, 34, 30, m[2], false);
+      line(b, 30, 28, 37, 31, P.gold, false);
+      line(b, 34, 28, 36, 23, P.oak, false);
+      b.set(36, 22, a);
+      b.set(37, 22, a);
       break;
     case 'hacha':
-      line(b, 35, 47, 30, 24, P.oak, false);
-      for (let y = 20; y <= 28; y++)
-        for (let x = 25; x <= 31; x++) {
-          const d = Math.abs(y - 24) + Math.max(0, 28 - x);
-          if (d < 5) b.set(x, y, d === 4 || x === 25 ? m[2] : m[1]);
+      // Mango en diagonal por detrás y la cabeza del hacha sobre el hombro, filo afuera.
+      line(b, 25, 47, 34, 22, P.oak, false);
+      for (let y = 18; y <= 26; y++)
+        for (let x = 33; x <= 39; x++) {
+          const d = Math.abs(y - 22) + Math.max(0, x - 36);
+          if (d < 5) b.set(x, y, d === 4 || x === 39 ? m[2] : m[1]);
         }
       break;
     case 'escudo':
@@ -267,10 +269,10 @@ export function gearPortraitFront(b: PixelBuffer, g: GearMark): void {
       sparkle(33, 33);
       break;
     case 'espada':
-      sparkle(33, 20);
+      sparkle(37, 19);
       break;
     case 'hacha':
-      sparkle(27, 19);
+      sparkle(37, 16);
       break;
     case 'escudo':
       sparkle(10, 34);

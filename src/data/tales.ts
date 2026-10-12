@@ -15,8 +15,8 @@ export const MORE_OPENERS: Record<QuestType, readonly [one: string, many: string
       'Las huellas eran tan grandes que {who} tuvieron que mirarlas dos veces.',
     ],
     [
-      '{who} salió hacia {place} antes del alba, con cebo, cuerda y pocas ganas.',
-      '{who} salieron hacia {place} antes del alba, con cebo, cuerda y pocas ganas.',
+      '{who} salió hacia {place} antes de que cantara el gallo, con un cordero atado de cebo.',
+      '{who} salieron hacia {place} antes de que cantara el gallo, con un cordero atado de cebo.',
     ],
     [
       'En {place} nadie salía de casa al anochecer. Mala señal para quien va de caza.',
@@ -29,8 +29,8 @@ export const MORE_OPENERS: Record<QuestType, readonly [one: string, many: string
       'La carga iba tapada con una lona, y {who} decidieron no preguntar.',
     ],
     [
-      'El camino a {place} tiene fama de cobrarse peaje. {who} iba con la mano en la empuñadura.',
-      'El camino a {place} tiene fama de cobrarse peaje. {who} iban con la mano en la empuñadura.',
+      'En el camino a {place} asaltan a uno de cada tres carros. {who} no soltó la empuñadura en todo el viaje.',
+      'En el camino a {place} asaltan a uno de cada tres carros. {who} no soltaron la empuñadura en todo el viaje.',
     ],
     [
       '{client} insistió en llevar también a su tía. {who} no supo decir que no.',
@@ -47,8 +47,8 @@ export const MORE_OPENERS: Record<QuestType, readonly [one: string, many: string
       '{who} contaron los pasos al entrar en {place}. A la vuelta les salían otros.',
     ],
     [
-      'Hacía siglos que nadie pisaba {place}, y se notaba en el polvo y en el silencio.',
-      'Hacía siglos que nadie pisaba {place}, y se notaba en el polvo y en el silencio.',
+      'En {place} había un palmo de polvo y, en el polvo, huellas de algo que no llevaba botas.',
+      'En {place} había un palmo de polvo y, en el polvo, huellas de algo que no llevaba botas.',
     ],
   ],
   Recuperar: [
@@ -57,8 +57,8 @@ export const MORE_OPENERS: Record<QuestType, readonly [one: string, many: string
       '{client} describió el objeto con tanto detalle que {who} sospecharon que no era suyo.',
     ],
     [
-      'Lo que había que traer estaba en {place}. Lo que lo vigilaba, también.',
-      'Lo que había que traer estaba en {place}. Lo que lo vigilaba, también.',
+      'El objeto seguía en {place}. El problema era el bicho que dormía encima.',
+      'El objeto seguía en {place}. El problema era el bicho que dormía encima.',
     ],
     [
       '{who} entró en {place} por la ventana, porque la puerta tenía demasiados cerrojos.',
@@ -75,22 +75,22 @@ export const MORE_OPENERS: Record<QuestType, readonly [one: string, many: string
       '{who} empezaron por lo de siempre: preguntar a la vieja que lo ve todo desde su ventana.',
     ],
     [
-      'Las pistas llevaban a {place}, y de {place} a ninguna parte.',
-      'Las pistas llevaban a {place}, y de {place} a ninguna parte.',
+      'Todas las pistas acababan en {place}, y allí nadie sabía nada de nada.',
+      'Todas las pistas acababan en {place}, y allí nadie sabía nada de nada.',
     ],
   ],
   Limpiar: [
     [
-      'Lo que vivía en {place} no pagaba alquiler, pero hacía mucho ruido.',
-      'Lo que vivía en {place} no pagaba alquiler, pero hacía mucho ruido.',
+      'Desde la puerta de {place} ya se oía algo rascando y royendo.',
+      'Desde la puerta de {place} ya se oía algo rascando y royendo.',
     ],
     [
       '{who} se tapó la nariz con un pañuelo antes de bajar a {place}. No sirvió de nada.',
       '{who} se taparon la nariz con un pañuelo antes de bajar a {place}. No sirvió de nada.',
     ],
     [
-      '{client} juraba que eran «solo unas pocas». No eran unas pocas.',
-      '{client} juraba que eran «solo unas pocas». No eran unas pocas.',
+      '{client} juraba que eran «cuatro o cinco». {who} contó más de treinta.',
+      '{client} juraba que eran «cuatro o cinco». {who} contaron más de treinta.',
     ],
   ],
 };
@@ -99,20 +99,20 @@ export const MORE_LINES: Record<SkillId, { ok: readonly string[]; ko: readonly s
   Combate: {
     ok: [
       '{h} esquivó el primer golpe y no hubo un segundo.',
-      'Con un grito que se oyó en tres valles, {h} hizo huir a la mitad antes de empezar.',
+      '{h} pegó un grito tan bestia que la mitad salió corriendo antes de empezar.',
       '{h} usó una silla, una cacerola y, al final, la espada.',
     ],
     ko: [
       '{h} resbaló en el barro justo cuando más falta hacía estar de pie.',
-      'El escudo de {h} aguantó. El brazo de detrás, no tanto.',
-      'Llegaron por la espalda, y {h} miraba hacia delante.',
+      'El escudo de {h} paró el golpe, pero el brazo se llevó un buen crujido.',
+      'Les cayeron por la espalda y {h} no se dio cuenta hasta que fue tarde.',
     ],
   },
   Trampas: {
     ok: [
       '{h} desmontó el mecanismo y se guardó un muelle «por si acaso».',
       'Un dardo pasó silbando junto a la oreja de {h}, que ya se había agachado.',
-      '{h} tanteó cada baldosa con la punta del cuchillo, despacio y sin prisa.',
+      '{h} fue tanteando cada baldosa con la punta del cuchillo. Tardaron, pero pasaron.',
     ],
     ko: [
       'Un clic, un silbido y {h} con el pelo chamuscado.',
@@ -124,7 +124,7 @@ export const MORE_LINES: Record<SkillId, { ok: readonly string[]; ko: readonly s
     ok: [
       '{h} trazó un círculo de sal y lo que acechaba no se atrevió a cruzarlo.',
       'El libro maldito se cerró solo cuando {h} le recitó su propio nombre.',
-      '{h} notó el frío de la magia antes que nadie y dio la voz de alarma.',
+      'A {h} se le erizó el vello de los brazos y dio la voz de alarma antes que nadie.',
     ],
     ko: [
       'El amuleto de {h} se puso al rojo vivo y hubo que tirarlo a un charco.',
@@ -134,12 +134,12 @@ export const MORE_LINES: Record<SkillId, { ok: readonly string[]; ko: readonly s
   },
   Supervivencia: {
     ok: [
-      '{h} leyó las nubes y supo cuándo esconderse de la tormenta.',
+      '{h} vio venir la tormenta por el color del cielo y encontró una cueva a tiempo.',
       '{h} cazó, desplumó y asó un faisán mientras los demás montaban el campamento.',
       'Siguiendo el musgo de los árboles, {h} los sacó del bosque sin un rasguño.',
     ],
     ko: [
-      '{h} encendió la hoguera con leña verde. Humo para dar y regalar, y nada de calor.',
+      '{h} encendió la hoguera con leña verde. Echó humo toda la noche y no calentó nada.',
       'El río estaba más crecido de lo que {h} calculó. Perdieron media carga.',
       '{h} dejó la comida sin colgar y los lobos cenaron mejor que el grupo.',
     ],
@@ -150,18 +150,18 @@ export const MORE_LINES: Record<SkillId, { ok: readonly string[]; ko: readonly s
 export const CLASS_LINES: Record<ClassId, { ok: readonly string[]; ko: readonly string[] }> = {
   guerrero: {
     ok: [
-      '{h} se puso delante de todos, como siempre, y lo aguantó todo, como siempre.',
-      'El acero de {h} habló por el grupo, y habló muy claro.',
+      '{h} se puso delante, como hace siempre, y aguantó todo lo que le echaron.',
+      '{h} no se anduvo con rodeos. Dos tajos y a otra cosa.',
     ],
     ko: [
-      '{h} quiso resolverlo a espadazos. No era de los que se resuelven a espadazos.',
-      'Ni la mejor armadura de {h} servía contra aquello.',
+      '{h} quiso arreglarlo a espadazos, y aquello no se arreglaba así.',
+      'La armadura de {h} pesaba demasiado para aquel terreno, y se notó.',
     ],
   },
   picaro: {
     ok: [
-      '{h} desapareció entre las sombras y apareció justo donde hacía falta.',
-      'Nadie vio a {h} hacerlo. Por eso salió bien.',
+      '{h} se escurrió por la parte de atrás y abrió la puerta desde dentro.',
+      '{h} entró y salió sin que nadie se diera cuenta, que para eso se le paga.',
     ],
     ko: [
       '{h} intentó colarse y tropezó con el único cubo de todo el pasillo.',
@@ -170,12 +170,12 @@ export const CLASS_LINES: Record<ClassId, { ok: readonly string[]; ko: readonly 
   },
   mago: {
     ok: [
-      '{h} murmuró algo en una lengua muerta y el problema dejó de ser un problema.',
+      '{h} murmuró algo en una lengua muerta y la cosa se calmó.',
       'Una chispa azul en la mano de {h} y el camino quedó despejado.',
     ],
     ko: [
       'A {h} se le enredó la lengua a mitad del conjuro. Salieron sapos.',
-      '{h} juraba que lo tenía todo calculado. Los números no estaban de acuerdo.',
+      '{h} lo tenía todo calculado, menos el viento.',
     ],
   },
   clerigo: {
@@ -185,7 +185,7 @@ export const CLASS_LINES: Record<ClassId, { ok: readonly string[]; ko: readonly 
     ],
     ko: [
       'Los dioses estaban ocupados en otra cosa cuando {h} los llamó.',
-      '{h} rezó con fe, pero rezó tarde.',
+      'Cuando {h} acabó la oración, ya era tarde.',
     ],
   },
   explorador: {
@@ -194,7 +194,7 @@ export const CLASS_LINES: Record<ClassId, { ok: readonly string[]; ko: readonly 
       '{h} pegó la oreja al suelo y supo por dónde venían.',
     ],
     ko: [
-      'Por primera vez en años, {h} se perdió. No quiere hablar de ello.',
+      'Por primera vez en años, {h} se perdió, y no quiere que se sepa.',
       'El rastro que siguió {h} era de un jabalí. Un jabalí con muy mal genio.',
     ],
   },
@@ -204,7 +204,7 @@ export const CLASS_LINES: Record<ClassId, { ok: readonly string[]; ko: readonly 
 export const TRAIT_LINES: Partial<Record<TraitId, readonly string[]>> = {
   valiente: [
     '{h} se ofreció a ir delante sin que nadie se lo pidiera.',
-    '{h} se rió en la cara del peligro. El peligro no se rió.',
+    '{h} se rió del peligro, y el peligro le dejó un recuerdo en la pierna.',
   ],
   cobarde: [
     '{h} sugirió tres veces dar media vuelta «por prudencia».',
@@ -238,7 +238,7 @@ export const TRAIT_LINES: Partial<Record<TraitId, readonly string[]>> = {
     '{h} se negó a cruzar el puente hasta escupir tres veces al río.',
     '{h} colgó ajos en la tienda. Nadie durmió bien, pero tampoco vino ningún vampiro.',
   ],
-  tuerto: ['El parche de {h} asustó más que su espada. Funcionó.'],
+  tuerto: ['Con el parche, a {h} le bastaba con mirar mal para que se apartaran.'],
   cojo: ['{h} renqueó todo el camino sin una queja. Bueno, con alguna.'],
   cortado: ['Bastó con que {h} sonriera para que nadie buscara pelea.'],
 };
@@ -246,20 +246,20 @@ export const TRAIT_LINES: Partial<Record<TraitId, readonly string[]>> = {
 /** Sucesos del camino, sin consecuencias. */
 export const ROAD: readonly string[] = [
   'A medio camino se cruzaron con un buhonero que vendía «agua de la fuente de la juventud». Olía a pozo.',
-  'Pasaron una noche en una posada donde la sopa era peor que la de El Jarro Partido. Lo apuntaron con orgullo.',
+  'Durmieron en una posada donde la sopa era aún peor que la de El Jarro Partido. No lo creían posible.',
   'Un pastor les indicó el camino a cambio de que le escucharan cantar. Cantaba mal y largo.',
-  'Una tormenta les obligó a refugiarse en un granero con una cabra que no paraba de mirarles.',
-  'En un cruce, un cartel decía «A {place}: cerca». Mentía.',
-  'Se cruzaron con otro grupo de aventureros. Hubo miradas, saludos tensos y nadie dijo a qué iba.',
+  'La tormenta los pilló en campo abierto y pasaron la noche en un granero, con una cabra muy curiosa.',
+  'En un cruce, un cartel decía «A {place}, una legua». Eran tres.',
+  'Se cruzaron con otra cuadrilla de aventureros. Se saludaron con la cabeza y nadie dijo adónde iba.',
   'Un niño les siguió dos leguas preguntando si eran héroes de verdad.',
-  'Durmieron bajo las estrellas. Alguien roncó como un oso, y nadie admite haber sido.',
+  'Durmieron al raso. Alguien roncó toda la noche y nadie reconoce haber sido.',
 ];
 
 /** Hallazgos del camino: unas monedas extra para la caja. */
 export const FINDS: readonly string[] = [
-  'Junto al camino encontraron una bolsa olvidada con {gold} monedas. Nadie la reclamó, y nadie preguntó mucho.',
+  'Junto al camino encontraron una bolsa con {gold} monedas. Preguntaron en la venta más cercana, pero sin mucho empeño.',
   'Un mercader agradecido por ahuyentar a unos lobos les dio {gold} monedas de propina.',
-  'En el bolsillo de un bandido dormido había {gold} monedas. Ya no las hay.',
+  'Un bandido dormía la mona junto al camino con {gold} monedas en el bolsillo. Se despertó más ligero.',
 ];
 
 /** Piques y complicidades entre dos del grupo. */
@@ -269,19 +269,19 @@ export const BANTER: readonly string[] = [
   '{a} roncó toda la noche y {b} amaneció con ojeras y ganas de venganza.',
   '{a} y {b} se apostaron la cena a ver quién volvía con más rasguños.',
   '{a} le salvó el pellejo a {b}, y se lo va a recordar durante meses.',
-  '{a} y {b} no se hablaron en todo el camino. Nadie sabe por qué, ni se atreve a preguntar.',
+  '{a} y {b} no se dirigieron la palabra en todo el viaje. Algo pasó la primera noche.',
 ];
 
 /** Cuando alguien del grupo va desanimado. */
 export const LOW_MORALE: readonly string[] = [
   '{h} iba con la cabeza en otra parte, y se notó.',
-  '{h} apenas habló en todo el viaje. Echa de menos la cama del gremio, o algo más.',
+  '{h} apenas abrió la boca en todo el viaje, y casi no comió.',
   '{h} preguntó en voz alta para qué se juega uno el pellejo por tan poco.',
 ];
 
 /** Cuando alguien va animado. */
 export const HIGH_MORALE: readonly string[] = [
-  '{h} silbó todo el camino. Contagia.',
+  '{h} fue silbando todo el camino y al final silbaban todos.',
   '{h} iba con tantas ganas que tiraba del grupo.',
 ];
 
@@ -301,7 +301,7 @@ export const CLIENT_CLOSERS: Record<Outcome, readonly string[]> = {
   ],
   Fracaso: [
     '{client} cerró la puerta sin decir palabra.',
-    '{client} ya está buscando otro gremio. Uno que cumpla.',
+    '{client} dice que la próxima vez buscará otro gremio.',
   ],
   Desastre: [
     '{client} ha pedido que no vuelvan a pasar por allí.',
@@ -311,38 +311,38 @@ export const CLIENT_CLOSERS: Record<Outcome, readonly string[]> = {
 
 export const MORE_CLOSERS: Record<Outcome, readonly string[]> = {
   'Éxito brillante': [
-    'Será una de esas historias que se cuentan en la taberna durante años, cada vez más exagerada.',
-    'Volvieron con la paga, con la gloria y con hambre.',
+    'Esta la contarán en la taberna durante años, y cada vez con más enemigos.',
+    'Volvieron con la paga y con un hambre de lobo.',
   ],
   Éxito: [
-    'Sin heroicidades, sin desgracias: un buen día de trabajo.',
-    'El gremio cobra, el cliente duerme tranquilo y todos contentos.',
+    'Nada de heroicidades. Un trabajo limpio y bien pagado.',
+    'El cliente pagó lo acordado y todos a cenar.',
   ],
   'Éxito parcial': [
-    'Ni bien ni mal: regular tirando a «ya veremos».',
-    'Lo importante se hizo. Lo demás, más o menos.',
+    'No salió mal del todo, pero tampoco como para presumir.',
+    'Hicieron lo principal y dejaron a medias lo demás.',
   ],
   Fracaso: [
-    'Hay días que es mejor no levantarse. Este era uno.',
-    'Al volver, nadie quiso contar la historia dos veces.',
+    'Hay días en que más vale no salir de la cama, y este fue uno.',
+    'De la paga, ni rastro. Esta noche se cena pan duro.',
   ],
   Desastre: [
-    'Algunas historias no se cuentan en la taberna. Esta, menos.',
+    'Esta historia no se va a contar en la taberna.',
     'El viaje de vuelta fue largo y muy silencioso.',
   ],
 };
 
 /** Cómo se cuenta que ha salido a la luz un rasgo oculto ({t}). */
 export const REVEALS: readonly string[] = [
-  'Por cierto: has descubierto que {h} es {t}.',
+  'Por cierto, ahora sabes algo más: {h} es {t}.',
   'De este viaje sacas algo en claro: {h} es {t}.',
-  'Los demás lo cuentan entre risas, o no tanto: {h} es {t}.',
-  'Ahora ya lo sabes: {h} es {t}. En {place} quedó bien claro.',
+  'Según cuentan los demás, {h} es {t}.',
+  'En {place} quedó bien claro que {h} es {t}.',
 ];
 
 /** Cuando el protagonista lleva un objeto bueno o legendario ({item}). */
 export const ITEM_LINES: readonly string[] = [
-  '{h} sacó {item} y el asunto se resolvió en un suspiro.',
-  'Sin {item}, {h} no lo habría contado. Con ello, lo cuenta dos veces.',
-  '{Item} brilló en manos de {h} justo cuando más falta hacía.',
+  '{h} sacó {item} y se acabó la discusión.',
+  'Sin {item}, {h} no habría vuelto para contarlo.',
+  '{Item} le salvó el pellejo a {h} en el peor momento.',
 ];

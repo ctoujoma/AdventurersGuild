@@ -159,6 +159,30 @@ function pew(): PixelBuffer {
 
 // ---------- Sala de mapas (desván) ----------
 
+/** Hilo rojo tensado entre alfileres, con una pizca de caída. */
+function thread(b: PixelBuffer, pins: [number, number][]): void {
+  for (let i = 0; i < pins.length - 1; i++) {
+    const [ax, ay] = pins[i]!;
+    const [bx, by] = pins[i + 1]!;
+    const n = Math.max(Math.abs(bx - ax), Math.abs(by - ay));
+    const sag = Math.min(3, n / 10);
+    for (let k = 0; k <= n; k++) {
+      const t = k / n;
+      b.set(
+        Math.round(ax + (bx - ax) * t),
+        Math.round(ay + (by - ay) * t + sag * 4 * t * (1 - t)),
+        P.red,
+      );
+    }
+  }
+  // Cabeza del alfiler: brillo arriba, sombra abajo.
+  for (const [x, y] of pins) {
+    b.rect(x - 1, y - 1, 2, 2, P.wine);
+    b.set(x - 1, y - 1, P.coral);
+    b.set(x, y + 1, P.black);
+  }
+}
+
 export function mapRoom(
   b: PixelBuffer,
   put: Put,
@@ -170,11 +194,19 @@ export function mapRoom(
   const floor = F.attic.floor;
   put(routeMap(), 250, 90);
   put(mapBasket(), 362, floor - 18);
-  // Hilo rojo entre los alfileres del mapa grande y el pequeño.
-  b.line(214, 106, 227, 110, P.red);
-  b.line(227, 110, 254, 95, P.red);
+  // Hilo rojo entre los alfileres del mapa grande y el pequeño: la ruta que se está
+  // planeando. Cuelga un poco entre alfiler y alfiler.
+  thread(b, [
+    [214, 106],
+    [224, 111],
+    [254, 94],
+  ]);
   if (level >= 2) {
-    b.line(223, 102, 263, 101, P.red);
+    thread(b, [
+      [227, 102],
+      [263, 101],
+      [273, 95],
+    ]);
     put(telescope(), 222, floor - 30);
     put(globe(), 262, floor - 37);
     b.rect(352, floor - 26, 2, 4, P.white);

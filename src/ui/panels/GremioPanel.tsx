@@ -3,18 +3,13 @@ import { canUpgrade, nextPayment, salaries, upgradeCost } from '../../core/game'
 import { defense, notoriety } from '../../core/raids';
 import type { Facilities, GameState } from '../../core/model';
 import { FACILITY_INFO } from '../../data/labels';
-import { itemIcon, trophyIcon } from '../../art/items';
-import { TROPHY_INCOME, TROPHY_SLOTS } from '../../core/balance';
-import { RARITY_NAMES, itemEffect } from '../../data/items';
-import { BufferImage } from '../BufferImage';
 import { Icon } from '../icons';
 
 interface Props {
   game: GameState;
   focus: keyof Facilities | null;
   onUpgrade: (k: keyof Facilities) => void;
-  onSell: (itemId: string) => void;
-  onSellTrophy: (id: string) => void;
+  onArcon: () => void;
   onSaves: () => void;
   onSettings: () => void;
   onLibro: () => void;
@@ -27,8 +22,7 @@ export function GremioPanel({
   game,
   focus,
   onUpgrade,
-  onSell,
-  onSellTrophy,
+  onArcon,
   onSaves,
   onSettings,
   onTitle,
@@ -183,65 +177,13 @@ export function GremioPanel({
         Camas ocupadas: cuentan también quien está fuera o herido. Caben {capacity(game.fac.dorm)}.
       </p>
 
-      <h3 class="sec-title">Arcón del botín</h3>
-      {!game.inventory.length && (
-        <p class="panel-note">El arcón está vacío. Los encargos con «+» traen objetos.</p>
-      )}
-      {game.inventory.some((i) => i.kind && i.kind !== 'tesoro') && (
-        <p class="panel-note">
-          El equipo cuelga en el tablero de la bodega. Se pone desde la ficha de cada héroe.
-        </p>
-      )}
-      <div class="list">
-        {game.inventory.map((it) => (
-          <article key={it.id} class={`card-paper facility rarity-${it.rarity ?? 0}`}>
-            {it.icon && <BufferImage buf={itemIcon(it.icon, it.rarity)} scale={2} />}
-            <div class="facility-info">
-              <b>{it.name}</b>
-              {it.icon && (
-                <span class="next-level">
-                  {RARITY_NAMES[it.rarity ?? 0]} · {itemEffect(it)}
-                </span>
-              )}
-              <span class="muted">{it.desc}</span>
-            </div>
-            <button class="btn btn-wood" onClick={() => onSell(it.id)}>
-              Vender · {it.value}
-            </button>
-          </article>
-        ))}
-      </div>
-
-      <h3 class="sec-title">Trofeos</h3>
-      {!game.trophies.length ? (
-        <p class="panel-note">
-          Las grandes hazañas (éxito brillante en encargos peligrosos) dejan un trofeo para la pared
-          de la sala.
-        </p>
-      ) : (
-        <p class="panel-note">
-          Caben {TROPHY_SLOTS} en la sala; cada uno expuesto atrae {TROPHY_INCOME} monedas al día.
-        </p>
-      )}
-      <div class="list">
-        {game.trophies.map((t, i) => (
-          <article key={t.id} class="card-paper facility">
-            <BufferImage buf={trophyIcon(t.icon)} scale={2} />
-            <div class="facility-info">
-              <b>{t.name}</b>
-              <span class="next-level">
-                {i < TROPHY_SLOTS ? 'En la pared de la sala' : 'Guardado: no queda pared'}
-              </span>
-              <span class="muted">
-                {t.desc} Lo trajeron {t.who} de {t.place}, día {t.day}.
-              </span>
-            </div>
-            <button class="btn btn-wood" onClick={() => onSellTrophy(t.id)}>
-              Vender · {t.value}
-            </button>
-          </article>
-        ))}
-      </div>
+      <button class="card-paper libro-link" onClick={onArcon}>
+        <b>Arcón y trofeos</b>
+        <span class="muted">
+          {game.inventory.length} {game.inventory.length === 1 ? 'objeto' : 'objetos'} en el arcón ·{' '}
+          {game.trophies.length} {game.trophies.length === 1 ? 'trofeo' : 'trofeos'}
+        </span>
+      </button>
 
       <h3 class="sec-title">Muro de los caídos</h3>
       <div class="card-paper wall">

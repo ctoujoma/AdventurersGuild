@@ -127,13 +127,13 @@ const EVENTS: readonly EventDef[] = [
         apply: (s) => {
           s.gold = Math.max(0, s.gold - 5);
           for (const h of home(s)) h.morale = Math.min(100, h.morale + 6);
-          return 'Canta sobre héroes que se parecen sospechosamente a los tuyos. Nadie se queja.';
+          return 'Canta romances de bandoleros y la sala acaba coreando el estribillo.';
         },
       },
       {
         label: 'Echarlo',
         hint: 'Nada cambia',
-        apply: () => 'Se va murmurando una canción muy fea sobre la taberna.',
+        apply: () => 'Se va refunfuñando. Esa noche canta en la posada de enfrente.',
       },
     ],
   },
@@ -141,7 +141,7 @@ const EVENTS: readonly EventDef[] = [
     id: 'noble',
     when: (s) => s.gold >= 100,
     text: () =>
-      'Un noble arruinado ofrece la espada de su familia en prenda por 100 monedas. Dice que volverá a por ella. No lo dice muy convencido.',
+      'Un noble arruinado ofrece la espada de su familia en prenda por 100 monedas. Jura que volverá a por ella antes del invierno.',
     options: [
       {
         label: 'Aceptar (100)',
@@ -204,7 +204,7 @@ const EVENTS: readonly EventDef[] = [
             return 'El tabernero saca un seis. El forastero paga, y se va sin terminarse la cerveza.';
           }
           s.gold -= 30;
-          return 'El forastero saca un seis. Y otro. Y se lleva las monedas con una sonrisa.';
+          return 'El forastero saca un seis y el tabernero un dos. Recoge las monedas y pide otra jarra.';
         },
       },
       {

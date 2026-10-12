@@ -32,22 +32,64 @@ import { HeroesPanel } from './panels/HeroesPanel';
 import { MailPanel } from './panels/MailPanel';
 import { TablonPanel } from './panels/TablonPanel';
 import { TabernaPanel } from './panels/TabernaPanel';
+import { ArconPanel, type ArconTab } from './panels/ArconPanel';
 import { QuestSheet } from './QuestSheet';
 import { SceneView } from './SceneView';
 import { TabBar, type TabId } from './TabBar';
 import { listNames, plural } from './text';
 import { sceneModel } from './view';
 
-type PanelId = Exclude<TabId, 'taberna'> | 'correo' | 'fuera' | 'libro' | 'casa';
+type PanelId = Exclude<TabId, 'taberna'> | 'correo' | 'fuera' | 'libro' | 'casa' | 'arcon';
 
 interface Bubble {
   text: string;
   x: number;
   y: number;
+  /** Si se sabe, el punto del mundo al que se refiere: el bocadillo lo sigue. */
+  wx?: number;
+  wy?: number;
   key: number;
 }
 
 const freshGame = () => newGame(Date.now().toString(36));
+
+/** Bocadillo de texto anclado a un punto de la escena: se mueve con la cámara. */
+function SpeechBubble({
+  bubble,
+  scene,
+}: {
+  bubble: Bubble;
+  scene: { current: WorldScene | null };
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (bubble.wx === undefined || bubble.wy === undefined) return;
+    let raf = 0;
+    const follow = () => {
+      const el = ref.current;
+      const s = scene.current;
+      if (el && s) {
+        const p = s.screenOf(bubble.wx!, bubble.wy!);
+        el.style.left = `${p.x}px`;
+        el.style.top = `${p.y}px`;
+      }
+      raf = requestAnimationFrame(follow);
+    };
+    raf = requestAnimationFrame(follow);
+    return () => cancelAnimationFrame(raf);
+  }, [bubble]);
+  return (
+    <div
+      ref={ref}
+      key={bubble.key}
+      class="bubble"
+      style={{ left: `${bubble.x}px`, top: `${bubble.y}px` }}
+      role="status"
+    >
+      {bubble.text}
+    </div>
+  );
+}
 
 export function App() {
   const [saved] = useState(loadGame);
@@ -55,6 +97,8 @@ export function App() {
   /** Lo que ve la escena: durante el amanecer sigue mostrando la noche anterior. */
   const [sceneGame, setSceneGame] = useState(game);
   const [panel, setPanel] = useState<PanelId | null>(null);
+  const [arconTab, setArconTab] = useState<ArconTab>('equipo');
+  const [focusTrophy, setFocusTrophy] = useState<string | null>(null);
   // Partida nueva: el día 1 se abre con la carta del tío.
   const [dawnOpen, setDawnOpen] = useState(!saved);
   /** La noche está pasando en la escena (entre «Terminar día» y el resumen del amanecer). */
@@ -151,7 +195,8 @@ export function App() {
   });
 
   const toast = (text: string) => setNotice({ text, key: Date.now() });
-  const say = (text: string, at: Point) => setBubble({ text, x: at.x, y: at.y, key: Date.now() });
+  const say = (text: string, at: Point) =>
+    setBubble({ text, x: at.x, y: at.y, wx: at.wx, wy: at.wy, key: Date.now() });
 
   const openPanel = (p: PanelId | null) => {
     if (p === panel) return;
@@ -217,19 +262,32 @@ export function App() {
         openPanel('casa');
         return;
       case 'equipo':
+        setArconTab('equipo');
+        openPanel('arcon');
+        return;
       case 'cofres':
-        setFocusFac(null);
-        openPanel('gremio');
+        setArconTab('tesoros');
+        openPanel('arcon');
         return;
       case 'chimenea':
         say(game.fac.tab === 0 ? CAPTIONS.chimeneaFria! : CAPTIONS.chimenea!, at);
         return;
       default: {
         const t = id.startsWith('trofeo-') ? game.trophies[Number(id.slice(7))] : null;
-        if (t) say(`${t.name}. Lo trajeron ${t.who} de ${t.place}, el día ${t.day}.`, at);
-        else if (CAPTIONS[id]) say(CAPTIONS[id]!, at);
+        if (t) {
+          setArconTab('trofeos');
+          setFocusTrophy(t.id);
+          openPanel('arcon');
+        } else if (CAPTIONS[id]) say(CAPTIONS[id]!, at);
       }
     }
+  };
+
+  const sellTrophy = (id: string) => {
+    const t = game.trophies.find((x) => x.id === id);
+    dispatch({ type: 'sellTrophy', id });
+    audio.play('coin');
+    if (t) toast(`Vendido: ${t.name} por ${t.value} monedas. La pared queda un poco más vacía.`);
   };
 
   const hire = (id: string) => {
@@ -436,16 +494,7 @@ export function App() {
             {hover.label}
           </span>
         )}
-        {bubble && (
-          <div
-            key={bubble.key}
-            class="bubble"
-            style={{ left: `${bubble.x}px`, top: `${bubble.y}px` }}
-            role="status"
-          >
-            {bubble.text}
-          </div>
-        )}
+        {bubble && <SpeechBubble bubble={bubble} scene={scene} />}
         {hint && !notice && (
           <div class="hint-toast" role="status">
             Arrastra para recorrer la taberna · Toca el tablón para mandar un grupo
@@ -509,18 +558,41 @@ export function App() {
               game={game}
               focus={focusFac}
               onUpgrade={upgrade}
-              onSell={sell}
               onSaves={() => setSaveMenu(true)}
               onSettings={() => setSettingsOpen(true)}
               onLibro={() => openPanel('libro')}
               onTaberna={() => openPanel('casa')}
               onTitle={toTitle}
-              onSellTrophy={(id) => {
-                const t = game.trophies.find((x) => x.id === id);
-                dispatch({ type: 'sellTrophy', id });
-                audio.play('coin');
-                if (t)
-                  toast(`Vendido: ${t.name} por ${t.value} monedas. La pared se queda más sosa.`);
+              onArcon={() => {
+                setArconTab('equipo');
+                openPanel('arcon');
+              }}
+            />
+          </Panel>
+        )}
+        {panel === 'arcon' && (
+          <Panel title="Arcón y trofeos" onClose={() => openPanel(null)}>
+            <ArconPanel
+              game={game}
+              tab={arconTab}
+              onTab={setArconTab}
+              focusTrophy={focusTrophy}
+              onEquip={(heroId, itemId) => {
+                const h = game.heroes.find((x) => x.id === heroId);
+                const it = game.inventory.find((x) => x.id === itemId);
+                dispatch({ type: 'equip', heroId, itemId });
+                audio.play('select');
+                if (h && it) toast(`${h.name} se equipa: ${it.name}.`);
+              }}
+              onUnequip={(heroId) => {
+                dispatch({ type: 'unequip', heroId });
+                audio.play('deselect');
+              }}
+              onSell={sell}
+              onSellTrophy={sellTrophy}
+              onHero={(id) => {
+                audio.play('open');
+                setCard(id);
               }}
             />
           </Panel>
