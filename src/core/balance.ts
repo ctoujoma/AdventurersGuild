@@ -187,7 +187,13 @@ export const RAISE_MORALE = 25;
 
 // ---------- Veteranos y modo libre ----------
 /** Lo que sube el salario al alcanzar un nivel: más cuanto más alto. */
-export const levelRaise = (lvl: number) => 2 * lvl;
+/** Subida de sueldo al subir de nivel: los veteranos (nivel 6 o más) piden bastante más. */
+export const levelRaise = (lvl: number) => (lvl <= 5 ? 2 * lvl : 5 * lvl);
+/**
+ * Modo libre: hay otros gremios pujando por los encargos y la comarca paga menos que en los
+ * apuros de la deuda (multiplicador base, antes del descuento por rango).
+ */
+export const FREE_PAY = 0.5;
 /** Caché de veterano: al llegar a estos niveles piden un plus fijo. */
 export const CACHE: Readonly<Record<number, number>> = { 5: 15, 8: 30 };
 export const CACHE_REFUSE_MORALE = -25;
