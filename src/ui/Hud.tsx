@@ -7,7 +7,7 @@ import { Counter } from './Counter';
 import { Icon } from './icons';
 
 /** Barra superior: día, nombre y rango del gremio, oro, reputación y próximo pago. */
-export function Hud({ game }: { game: GameState }) {
+export function Hud({ game, onSettings }: { game: GameState; onSettings: () => void }) {
   const [sound, setSound] = useState(audio.on);
   useEffect(() => audio.subscribe(setSound), []);
   const pay = nextPayment(game);
@@ -69,6 +69,9 @@ export function Hud({ game }: { game: GameState }) {
           onClick={() => audio.toggle()}
         >
           <Icon name={sound ? 'sound' : 'mute'} size={16} />
+        </button>
+        <button class="btn-icon" aria-label="Ajustes" onClick={onSettings}>
+          <Icon name="ajustes" size={16} />
         </button>
       </div>
     </header>

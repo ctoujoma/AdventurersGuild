@@ -54,6 +54,9 @@ class AudioEngine {
   private master!: GainNode;
   private sfxBus!: GainNode;
   private musicBus!: GainNode;
+  private ambientBus!: GainNode;
+  /** Volúmenes elegidos en Ajustes (0–1). */
+  private levels = { music: 1, sfx: 1, ambient: 1 };
   private fireGain!: GainNode;
   private crickets!: GainNode;
   private noise!: AudioBuffer;
@@ -116,6 +119,21 @@ class AudioEngine {
     this.crickets.gain.setTargetAtTime(0.05 * outside, this.ctx.currentTime, 0.5);
   }
 
+  /** Volúmenes de música, efectos y ambiente (0–1). */
+  setLevels(l: { music: number; sfx: number; ambient: number }): void {
+    this.levels = { ...l };
+    const ctx = this.ctx;
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    this.musicBus.gain.setTargetAtTime(this.musicLevel(), now, 0.05);
+    this.sfxBus.gain.setTargetAtTime(l.sfx, now, 0.05);
+    this.ambientBus.gain.setTargetAtTime(l.ambient, now, 0.05);
+  }
+
+  private musicLevel(): number {
+    return MUSIC_LEVEL * this.levels.music;
+  }
+
   /** Cambia la música al ambiente pedido, con un fundido corto. */
   setMood(mood: Mood): void {
     if (mood === this.mood) return;
@@ -140,7 +158,7 @@ class AudioEngine {
     const gap = mood === 'asalto' || mood === 'fiesta' ? 0.25 : 0.7;
     this.musicBus.gain.cancelScheduledValues(now);
     this.musicBus.gain.setTargetAtTime(0, now, 0.12);
-    this.musicBus.gain.setTargetAtTime(MUSIC_LEVEL, now + gap, 0.25);
+    this.musicBus.gain.setTargetAtTime(this.musicLevel(), now + gap, 0.25);
     this.nextNote = now + gap;
   }
 
@@ -328,15 +346,16 @@ class AudioEngine {
     this.master.gain.value = 0.9;
     const comp = ctx.createDynamicsCompressor();
     this.master.connect(comp).connect(ctx.destination);
-    this.sfxBus = this.gain(1, this.master);
-    this.musicBus = this.gain(MUSIC_LEVEL, this.master);
+    this.sfxBus = this.gain(this.levels.sfx, this.master);
+    this.musicBus = this.gain(this.musicLevel(), this.master);
+    this.ambientBus = this.gain(this.levels.ambient, this.master);
 
     this.noise = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
     const d = this.noise.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
 
     // Fuego: rumor grave + chasquidos.
-    this.fireGain = this.gain(0.3, this.master);
+    this.fireGain = this.gain(0.3, this.ambientBus);
     const rumble = this.noiseSource(true);
     const lp = ctx.createBiquadFilter();
     lp.type = 'lowpass';
@@ -357,7 +376,7 @@ class AudioEngine {
     const wf = ctx.createBiquadFilter();
     wf.type = 'lowpass';
     wf.frequency.value = 420;
-    const wg = this.gain(0.025, this.master);
+    const wg = this.gain(0.025, this.ambientBus);
     const lfo = ctx.createOscillator();
     lfo.frequency.value = 0.07;
     const lfoAmt = this.gain(0.018);
@@ -367,7 +386,7 @@ class AudioEngine {
     wind.start();
 
     // Grillos: dos osciladores con trinos programados.
-    this.crickets = this.gain(0.02, this.master);
+    this.crickets = this.gain(0.02, this.ambientBus);
     for (const [freq, period] of [
       [4300, 0.9],
       [3900, 1.3],

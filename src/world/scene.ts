@@ -203,6 +203,8 @@ export class WorldScene {
     null;
   /** Asalto que se está viendo en el patio durante la noche. */
   private battle: Battle | null = null;
+  /** Velocidad elegida en Ajustes (multiplica el paso del tiempo de la escena). */
+  speed = 1;
   /** Brindis en curso: los héroes de la sala alzan la jarra hasta este instante. */
   private toastUntil = 0;
   /** Zoom de antes del asalto: la cámara se acerca al patio mientras dura la pelea. */
@@ -397,7 +399,7 @@ export class WorldScene {
     const loop = (now: number) => {
       const dt = Math.min(0.05, (now - (this.last || now)) / 1000);
       this.last = now;
-      this.update(dt);
+      this.update(dt * this.speed);
       this.draw();
       this.raf = requestAnimationFrame(loop);
     };

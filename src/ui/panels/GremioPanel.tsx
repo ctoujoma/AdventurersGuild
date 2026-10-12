@@ -16,6 +16,7 @@ interface Props {
   onSell: (itemId: string) => void;
   onSellTrophy: (id: string) => void;
   onSaves: () => void;
+  onSettings: () => void;
   onLibro: () => void;
   onTaberna: () => void;
   onTitle: () => void;
@@ -29,6 +30,7 @@ export function GremioPanel({
   onSell,
   onSellTrophy,
   onSaves,
+  onSettings,
   onTitle,
   onLibro,
   onTaberna,
@@ -254,6 +256,9 @@ export function GremioPanel({
       <div class="newgame herocard-actions">
         <button class="btn btn-wood" onClick={onSaves}>
           Guardar y cargar
+        </button>
+        <button class="btn btn-wood" onClick={onSettings}>
+          Ajustes
         </button>
         <button class="btn btn-wood" onClick={onTitle}>
           Menú principal

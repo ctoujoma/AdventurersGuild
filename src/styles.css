@@ -2952,3 +2952,57 @@ button:focus-visible {
 .btn:active:not(:disabled) {
   transform: translateY(2px);
 }
+
+/* ---------- Ajustes ---------- */
+.settings h3 {
+  margin: 0 0 4px;
+  font-family: var(--pixel);
+}
+.set-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 34px;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0;
+}
+.set-row b {
+  font-family: var(--pixel);
+  text-align: right;
+}
+.set-row input[type='range'] {
+  width: 100%;
+  accent-color: var(--orange);
+  min-height: 32px;
+}
+.set-choices {
+  display: flex;
+  gap: 8px;
+}
+.set-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+}
+.set-check input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--orange);
+}
+/* Letra grande: los paneles y fichas se agrandan un poco. */
+.text-grande .panel-body,
+.text-grande .herocard .qs-scroll,
+.text-grande .dawn-card,
+.text-grande .note,
+.text-grande .eventcard {
+  zoom: 1.14;
+}
+/* Menos movimiento, elegido en Ajustes (como prefers-reduced-motion). */
+.calma *,
+.calma *::before,
+.calma *::after {
+  animation-duration: 1ms !important;
+  animation-delay: 0ms !important;
+  animation-iteration-count: 1 !important;
+  transition: none !important;
+}

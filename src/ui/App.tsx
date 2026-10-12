@@ -20,6 +20,8 @@ import { Panel } from './Panel';
 import { LibroPanel } from './panels/LibroPanel';
 import { MapPanel } from './panels/MapPanel';
 import { SaveMenu } from './SaveMenu';
+import { SettingsMenu } from './SettingsMenu';
+import { applyLook, loadSettings, saveSettings, type Settings } from '../platform/settings';
 import { Splash } from './Splash';
 import { Title } from './Title';
 import { nextTip } from './tips';
@@ -74,10 +76,19 @@ export function App() {
   );
   const [hasGame, setHasGame] = useState(!!saved);
   const [saveMenu, setSaveMenu] = useState(false);
+  const [settings, setSettings] = useState<Settings>(loadSettings);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [records, setRecords] = useState(loadRecords);
   /** Mejor llegada antes de esta partida, para comparar en la apertura. */
   const [prevBest] = useState(() => loadRecords().bestArrival);
   const scene = useRef<WorldScene | null>(null);
+  // Ajustes: volúmenes, velocidad de la escena y aspecto; se guardan al cambiar.
+  useEffect(() => {
+    audio.setLevels(settings);
+    applyLook(settings);
+    if (scene.current) scene.current.speed = settings.speed;
+    saveSettings(settings);
+  }, [settings]);
   const gameRef = useRef(game);
   gameRef.current = game;
 
@@ -388,11 +399,14 @@ export function App() {
 
   return (
     <div class="game">
-      <Hud game={passing ? sceneGame : game} />
+      <Hud game={passing ? sceneGame : game} onSettings={() => setSettingsOpen(true)} />
       <div class="stage">
         <SceneView
           model={model}
-          onReady={(s) => (scene.current = s)}
+          onReady={(s) => {
+            scene.current = s;
+            s.speed = settings.speed;
+          }}
           onHotspot={onHotspot}
           onHero={(id) => {
             setHint(false);
@@ -482,6 +496,7 @@ export function App() {
               onUpgrade={upgrade}
               onSell={sell}
               onSaves={() => setSaveMenu(true)}
+              onSettings={() => setSettingsOpen(true)}
               onLibro={() => openPanel('libro')}
               onTaberna={() => openPanel('casa')}
               onTitle={toTitle}
@@ -681,9 +696,17 @@ export function App() {
           }}
           onNew={restart}
           onSaves={() => setSaveMenu(true)}
+          onSettings={() => setSettingsOpen(true)}
         />
       )}
       {screen === 'splash' && <Splash onDone={() => setScreen('title')} />}
+      {settingsOpen && (
+        <SettingsMenu
+          settings={settings}
+          onChange={setSettings}
+          onClose={() => setSettingsOpen(false)}
+        />
+      )}
       {saveMenu && (
         <SaveMenu
           game={hasGame ? game : null}

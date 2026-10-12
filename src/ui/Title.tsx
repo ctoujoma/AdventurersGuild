@@ -12,10 +12,11 @@ interface Props {
   onContinue: () => void;
   onNew: () => void;
   onSaves: () => void;
+  onSettings: () => void;
 }
 
 /** Pantalla de título sobre la taberna de noche: el rótulo cae con un golpe seco. */
-export function Title({ saved, onContinue, onNew, onSaves }: Props) {
+export function Title({ saved, onContinue, onNew, onSaves, onSettings }: Props) {
   const [confirm, setConfirm] = useState(false);
   const custom = saved ? customOf(saved) : null;
   const sign = useMemo(() => {
@@ -71,6 +72,11 @@ export function Title({ saved, onContinue, onNew, onSaves }: Props) {
           {!confirm && (
             <button class="btn btn-wood" onClick={onSaves}>
               Guardar y cargar
+            </button>
+          )}
+          {!confirm && (
+            <button class="btn btn-wood" onClick={onSettings}>
+              Ajustes
             </button>
           )}
         </nav>
