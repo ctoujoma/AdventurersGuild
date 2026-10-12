@@ -1,4 +1,5 @@
-import type { Hero, Report } from '../core/model';
+import type { Custom, Hero, Report } from '../core/model';
+import { CREST_COLORS, sealInitial } from '../data/custom';
 import { OUTCOME_CLASS } from '../data/labels';
 import { Icon } from './icons';
 import { Portrait } from './Portrait';
@@ -7,11 +8,13 @@ import { lookOf, marksOf } from './view';
 interface Props {
   report: Report;
   heroes: Hero[];
+  /** La taberna que firma: inicial y color del lacre. */
+  seal: Custom;
   onClose: () => void;
 }
 
 /** Informe de misión como carta: quién fue, qué pasó y qué trajeron. */
-export function Letter({ report: r, heroes, onClose }: Props) {
+export function Letter({ report: r, heroes, seal, onClose }: Props) {
   const party = r.heroIds
     .map((id) => heroes.find((h) => h.id === id))
     .filter((h): h is Hero => !!h);
@@ -26,11 +29,17 @@ export function Letter({ report: r, heroes, onClose }: Props) {
           <Icon name="close" size={14} />
         </button>
         <div class="qs-scroll">
-          <span class="seal" aria-hidden="true">
-            G
+          <span
+            class="seal"
+            aria-hidden="true"
+            style={{ background: CREST_COLORS[seal.color].field }}
+          >
+            {sealInitial(seal.name)}
           </span>
           <span class="eyebrow">Informe · día {r.day}</span>
-          <h3 class={`outcome outcome-${OUTCOME_CLASS[r.outcome]}`}>{r.outcome}</h3>
+          <h3 class={`outcome outcome-${OUTCOME_CLASS[r.outcome]}`}>
+            {r.heading ?? (r.raid ? (r.raid.won ? 'Asalto repelido' : 'Saqueo') : r.outcome)}
+          </h3>
           <b class="letter-title">{r.title}</b>
           <div class="letter-party">
             {party.map((h) => (

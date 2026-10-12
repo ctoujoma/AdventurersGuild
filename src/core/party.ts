@@ -18,7 +18,8 @@ export type TraitId =
   | 'supersticioso'
   | 'tuerto'
   | 'cojo'
-  | 'cortado';
+  | 'cortado'
+  | 'curtido';
 
 export type Attrs = Record<AttrId, number>;
 
@@ -88,6 +89,7 @@ const TRAIT_EFFECTS: Partial<
   tuerto: { attrs: { D: -1 }, skills: { Combate: 1 } },
   cojo: { skills: { Supervivencia: -2 } },
   cortado: { skills: { Combate: 1 } },
+  curtido: { skills: { Supervivencia: 2 } },
 };
 
 export type MoraleBand = 'animado' | 'normal' | 'desanimado' | 'harto';

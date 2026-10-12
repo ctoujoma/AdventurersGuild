@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
 import { DAYS } from '../core/balance';
-import { nextPayment, nextRank, rankOf, salaries } from '../core/game';
+import { customOf, nextPayment, nextRank, rankOf, salaries } from '../core/game';
 import type { GameState } from '../core/model';
 import { Icon } from './icons';
 
@@ -22,7 +22,7 @@ export function Hud({ game }: { game: GameState }) {
         {game.mode !== 'libre' && <small>/{DAYS}</small>}
       </div>
       <div class="hud-name">
-        <b>El Jarro Partido</b>
+        <b>{customOf(game).name}</b>
         <span>Gremio de {rankOf(game).name}</span>
       </div>
       <div class="hud-stats">
@@ -49,6 +49,16 @@ export function Hud({ game }: { game: GameState }) {
             <Icon name="bell" size={16} />
             <b>{due}</b>
             <small class="hud-due">d{pay.day}</small>
+          </span>
+        )}
+        {game.raid?.warned && (
+          <span
+            class="hud-stat danger raid-warn"
+            title={`Chivatazo: ${game.raid.band} llegará en ${game.raid.day - game.day} noches`}
+          >
+            <Icon name="flag" size={16} />
+            <b>{Math.max(0, game.raid.day - game.day)}</b>
+            <small class="hud-due">noches</small>
           </span>
         )}
         <button

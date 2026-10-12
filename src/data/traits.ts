@@ -67,6 +67,12 @@ export const TRAIT_INFO: Record<
     tone: 'neg',
     desc: 'Secuela. −2 Supervivencia: los caminos largos se le hacen eternos.',
   },
+  curtido: {
+    m: 'Curtido',
+    f: 'Curtida',
+    tone: 'pos',
+    desc: 'Sobrevivió perdido en la comarca. +2 Supervivencia.',
+  },
   cortado: {
     m: 'Cara cortada',
     f: 'Cara cortada',

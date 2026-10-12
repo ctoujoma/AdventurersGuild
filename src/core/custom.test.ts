@@ -1,0 +1,141 @@
+import { describe, expect, it } from 'vitest';
+import {
+  DECOR,
+  DEFAULT_NAME,
+  DISHES,
+  DOG_DEFENSE,
+  DOG_PRICE,
+  FEAST_PRICE,
+  RAVEN_PRICE,
+  STAFF,
+  sealInitial,
+} from '../data/custom';
+import { customOf, endDay, newGame, reduce, salaries } from './game';
+import type { GameState } from './model';
+import { defense } from './raids';
+
+const rich = (seed: string): GameState => ({ ...newGame(seed), gold: 500 });
+
+describe('tu taberna', () => {
+  it('nombre por defecto, recortado y nunca vacío', () => {
+    let s = newGame('nombre');
+    expect(customOf(s).name).toBe(DEFAULT_NAME);
+    s = reduce(s, { type: 'custom', patch: { name: '  La Oca Dorada  ' } });
+    expect(customOf(s).name).toBe('La Oca Dorada');
+    s = reduce(s, { type: 'custom', patch: { name: 'x'.repeat(60) } });
+    expect(customOf(s).name.length).toBe(24);
+    s = reduce(s, { type: 'custom', patch: { name: '   ' } });
+    expect(customOf(s).name).toBe(DEFAULT_NAME);
+    s = reduce(s, { type: 'custom', patch: { color: 'mar', symbol: 'dragon' } });
+    expect(customOf(s)).toMatchObject({ color: 'mar', symbol: 'dragon' });
+  });
+
+  it('el lacre lleva la inicial de la primera palabra que no es artículo', () => {
+    expect(sealInitial('El Jarro Partido')).toBe('J');
+    expect(sealInitial('la oca dorada')).toBe('O');
+    expect(sealInitial('Cuervo')).toBe('C');
+  });
+
+  it('contratar cuesta la entrada y suma salario; despedir no devuelve nada', () => {
+    let s = rich('personal');
+    const base = salaries(s);
+    s = reduce(s, { type: 'staff', id: 'bardo', on: true });
+    expect(s.gold).toBe(500 - STAFF.bardo.fee);
+    expect(salaries(s)).toBe(base + STAFF.bardo.salary);
+    expect(reduce(s, { type: 'staff', id: 'bardo', on: true })).toBe(s);
+    s = reduce(s, { type: 'staff', id: 'bardo', on: false });
+    expect(customOf(s).staff).toEqual([]);
+    expect(s.gold).toBe(500 - STAFF.bardo.fee);
+    const poor = { ...newGame('pobre'), gold: 5 };
+    expect(reduce(poor, { type: 'staff', id: 'mozo', on: true })).toBe(poor);
+  });
+
+  it('el bardo trae 8 monedas al día', () => {
+    const s = rich('bardo');
+    s.fac.tab = 1;
+    const withBard = reduce(s, { type: 'staff', id: 'bardo', on: true });
+    const a = endDay({ ...withBard, gold: s.gold });
+    const b = endDay(s);
+    expect(a.gold - b.gold).toBe(8);
+  });
+
+  it('el mozo acelera la curación', () => {
+    const s = rich('mozo');
+    const h = s.heroes[0]!;
+    h.status = 'herido';
+    h.days = 4;
+    const withMozo = reduce(s, { type: 'staff', id: 'mozo', on: true });
+    const healed = (x: GameState) => x.heroes.find((y) => y.id === h.id)!.days;
+    expect(healed(endDay(withMozo))).toBe(healed(endDay(s)) - 1);
+  });
+
+  it('el plato de la casa cuesta y anima (el doble con cocinera)', () => {
+    const s = rich('plato');
+    for (const h of s.heroes) h.morale = 10;
+    const morale = (x: GameState) => x.heroes[0]!.morale;
+    const plain = endDay(s);
+    const stew = endDay(reduce(s, { type: 'custom', patch: { dish: 'guiso' } }));
+    expect(morale(stew) - morale(plain)).toBe(DISHES.guiso.morale);
+    expect(plain.gold - stew.gold).toBe(DISHES.guiso.cost);
+    let cook = reduce(s, { type: 'custom', patch: { dish: 'guiso' } });
+    cook = reduce(cook, { type: 'staff', id: 'cocinera', on: true });
+    expect(morale(endDay(cook)) - morale(plain)).toBe(DISHES.guiso.morale * 2);
+  });
+
+  it('el perro guardián se compra una vez y defiende', () => {
+    const s = rich('perro');
+    const d = defense(s);
+    const t = reduce(s, { type: 'buyDog' });
+    expect(t.gold).toBe(500 - DOG_PRICE);
+    expect(defense(t)).toBe(d + DOG_DEFENSE);
+    expect(reduce(t, { type: 'buyDog' })).toBe(t);
+  });
+
+  it('la decoración ocupa huecos limitados y cada pieza hace lo suyo', () => {
+    let s = { ...newGame('deco'), gold: 1000 };
+    s = reduce(s, { type: 'decor', id: 'naipes', on: true });
+    s = reduce(s, { type: 'decor', id: 'barril', on: true });
+    expect(s.gold).toBe(1000 - DECOR.naipes.price - DECOR.barril.price);
+    // Sin salón grande solo hay dos huecos.
+    expect(reduce(s, { type: 'decor', id: 'tapices', on: true })).toBe(s);
+    s.fac.tab = 3;
+    expect(customOf(reduce(s, { type: 'decor', id: 'tapices', on: true })).decor).toHaveLength(3);
+    // Naipes y barril: más caja que sin ellos.
+    const plain = { ...newGame('deco'), gold: 1000 };
+    plain.fac.tab = 3;
+    const a = endDay(s);
+    const b = endDay(plain);
+    expect(a.gold - (s.gold - plain.gold) - b.gold).toBeGreaterThanOrEqual(8);
+  });
+
+  it('el cuervo trae reputación cada 5 días', () => {
+    let s = reduce({ ...newGame('cuervo'), gold: 500 }, { type: 'buyRaven' });
+    expect(s.gold).toBe(500 - RAVEN_PRICE);
+    s.day = 4;
+    const rep = s.rep;
+    s = endDay(s);
+    expect(s.rep).toBeGreaterThanOrEqual(rep + 1);
+  });
+
+  it('la fiesta solo se monta el día de la fiesta y dobla la caja esa noche', () => {
+    const s = { ...newGame('fiesta'), gold: 500, day: 9 };
+    expect(reduce(s, { type: 'feast' })).toBe(s);
+    const day10 = { ...s, day: 10 };
+    const mounted = reduce(day10, { type: 'feast' });
+    expect(mounted.gold).toBe(500 - FEAST_PRICE);
+    const a = endDay(mounted);
+    const b = endDay(day10);
+    expect(a.gold + FEAST_PRICE).toBeGreaterThan(b.gold);
+  });
+
+  it('el ala de veteranos anima a los de nivel alto y a nivel 2 no desertan', () => {
+    const s = { ...newGame('vet'), gold: 500 };
+    for (const h of s.heroes) {
+      h.lvl = 5;
+      h.morale = 10;
+    }
+    const base = endDay(s).heroes[0]!.morale;
+    const withWing = endDay({ ...s, fac: { ...s.fac, vet: 1 } }).heroes[0]!.morale;
+    expect(withWing - base).toBe(4);
+  });
+});

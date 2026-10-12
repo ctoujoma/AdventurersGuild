@@ -16,6 +16,8 @@ import {
 } from './layers';
 import {
   SIDE_ARM,
+  SIDE_ARM_THRUST,
+  SIDE_ARM_UP,
   SIDE_BASE,
   SIDE_BEARD,
   SIDE_HAIR,
@@ -228,6 +230,7 @@ function composeSide(
   marks: HeroMarks,
   step: Step | 'stand',
   blink: boolean,
+  fight?: FightPose,
 ): PixelBuffer {
   const c = slots(look);
   const b = new PixelBuffer(BODY_W, BODY_H + HEADROOM);
@@ -236,7 +239,7 @@ function composeSide(
   const bob = contact ? 1 : 0;
   const up = (g: Grid, from = 0) => stamp(b, g.slice(from), c, 0, HEADROOM + from + bob);
   const hg = headgearOf(look, marks);
-  const weapons = SIDE_WEAPONS[look.outfit];
+  const weapons: { back?: Grid; front?: Grid } = fight ? {} : SIDE_WEAPONS[look.outfit];
 
   if (weapons.back) up(weapons.back);
   up(blink ? withBlink(SIDE_BASE, [5, 6]) : SIDE_BASE);
@@ -251,11 +254,22 @@ function composeSide(
         : [SIDE_LEGS.contact, SIDE_LEGS.passing, SIDE_LEGS.contact, SIDE_LEGS.passing][step]!;
   stamp(b, lower, c, 0, HEADROOM + 17, step === 2 || step === 3);
   up(SIDE_TORSO[look.outfit]);
-  const arm =
-    step === 'stand'
-      ? SIDE_ARM.rest
-      : [SIDE_ARM.back, SIDE_ARM.rest, SIDE_ARM.forward, SIDE_ARM.rest][step]!;
-  stamp(b, arm, c, 0, HEADROOM + 10 + bob);
+  if (fight === 'up') stamp(b, SIDE_ARM_UP, c, 0, HEADROOM + 6 + bob);
+  else if (fight) {
+    const g = {
+      ready: SIDE_ARM.rest,
+      windup: SIDE_ARM.back,
+      strike: SIDE_ARM.forward,
+      thrust: SIDE_ARM_THRUST,
+    }[fight];
+    stamp(b, g, c, 0, HEADROOM + 10 + bob);
+  } else {
+    const arm =
+      step === 'stand'
+        ? SIDE_ARM.rest
+        : [SIDE_ARM.back, SIDE_ARM.rest, SIDE_ARM.forward, SIDE_ARM.rest][step]!;
+    stamp(b, arm, c, 0, HEADROOM + 10 + bob);
+  }
   if (look.beard && hg !== 'capucha') up(SIDE_BEARD);
   if (hg === 'capucha') up(SIDE_HELMS.capucha);
   else if (hg === 'casco') {
@@ -276,6 +290,40 @@ function composeSide(
     );
   if (weapons.front) up(weapons.front);
   return b;
+}
+
+/** Poses de combate de perfil (mirando a la derecha), sin arma: se pinta aparte en la mano. */
+export type FightPose = 'ready' | 'windup' | 'strike' | 'up' | 'thrust';
+
+/** Dónde queda la mano en cada pose, en píxeles del sprite (con su contorno). */
+export const HAND: Record<FightPose, { x: number; y: number }> = {
+  ready: { x: 9, y: HEADROOM + 16 },
+  windup: { x: 5, y: HEADROOM + 16 },
+  strike: { x: 12, y: HEADROOM + 17 },
+  up: { x: 12, y: HEADROOM + 7 },
+  thrust: { x: 15, y: HEADROOM + 13 },
+};
+
+const fightCache = new Map<string, Record<FightPose, PixelBuffer>>();
+
+export function fightSprites(
+  look: HeroLook,
+  marks: HeroMarks = {},
+): Record<FightPose, PixelBuffer> {
+  const key = JSON.stringify([look, marks]);
+  const hit = fightCache.get(key);
+  if (hit) return hit;
+  const pose = (p: FightPose, lunge: boolean) =>
+    selOut(composeSide(look, marks, lunge ? 0 : 'stand', false, p));
+  const out = {
+    ready: pose('ready', false),
+    windup: pose('windup', false),
+    strike: pose('strike', true),
+    up: pose('up', false),
+    thrust: pose('thrust', true),
+  };
+  fightCache.set(key, out);
+  return out;
 }
 
 const cache = new Map<string, HeroSprites>();

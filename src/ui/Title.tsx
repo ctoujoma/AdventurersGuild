@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useMemo, useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
 import type { GameState } from '../core/model';
-import { signBoard } from '../world/props';
+import { customOf } from '../core/game';
+import { CREST_COLORS, DEFAULT_NAME } from '../data/custom';
+import { crestBoard } from '../world/props';
 import { BufferImage } from './BufferImage';
 
 interface Props {
@@ -12,11 +14,14 @@ interface Props {
   onSaves: () => void;
 }
 
-const SIGN = signBoard();
-
 /** Pantalla de título sobre la taberna de noche: el rótulo cae con un golpe seco. */
 export function Title({ saved, onContinue, onNew, onSaves }: Props) {
   const [confirm, setConfirm] = useState(false);
+  const custom = saved ? customOf(saved) : null;
+  const sign = useMemo(() => {
+    const col = CREST_COLORS[custom?.color ?? 'vino'];
+    return crestBoard(col.field, col.dark, custom?.symbol ?? 'jarra');
+  }, [custom?.color, custom?.symbol]);
 
   useEffect(() => {
     const t = setTimeout(() => audio.play('impact'), 160);
@@ -29,10 +34,10 @@ export function Title({ saved, onContinue, onNew, onSaves }: Props) {
       <div class="title-shake">
         <div class="title-logo">
           <span class="title-dust" aria-hidden="true" />
-          <BufferImage buf={SIGN} scale={4} class="title-sign" />
+          <BufferImage buf={sign} scale={4} class="title-sign" />
           <span class="title-small">El Gremio de</span>
           <h1 class="title-big">Aventureros</h1>
-          <span class="title-plaque">El Jarro Partido</span>
+          <span class="title-plaque">{custom?.name ?? DEFAULT_NAME}</span>
         </div>
         <nav class="title-menu" aria-label="Menú principal">
           {saved && !confirm && (

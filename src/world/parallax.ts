@@ -1,9 +1,11 @@
 import { Rng } from '../core/rng';
 import { P } from '../art/palette';
 import { PixelBuffer, bayer } from '../art/pixel';
-import { GROUND, WORLD_H, WORLD_W } from './geometry';
+import { GROUND, SPAN, WORLD_H, WORLD_X0 } from './geometry';
 
 /**
+ * Todas las capas miden SPAN de ancho y su píxel 0 está en WORLD_X0 (se pintan desplazadas).
+ *
  * Capas lejanas de la noche: cielo, luna, montañas, colinas con aldea y castillo, y una
  * hilera de árboles. Cada una se desplaza a una fracción de la cámara (paralaje).
  */
@@ -24,11 +26,11 @@ export interface Star {
 const SKY = [P.black, P.navy, P.slate, P.steel];
 
 export function buildSky(): PixelBuffer {
-  const b = new PixelBuffer(WORLD_W, WORLD_H);
+  const b = new PixelBuffer(SPAN, WORLD_H);
   for (let y = 0; y < WORLD_H; y++) {
     const t = Math.min(1, Math.max(0, (y - 20) / 210));
     const v = t * (SKY.length - 1.3);
-    for (let x = 0; x < WORLD_W; x++) {
+    for (let x = 0; x < SPAN; x++) {
       const base = Math.floor(v);
       const f = v - base;
       const step = f > 0.7 ? (f - 0.7) / 0.3 > bayer(x, y) : false;
@@ -36,7 +38,7 @@ export function buildSky(): PixelBuffer {
     }
   }
   // Luna con halo tramado y cráteres.
-  const mx = 78;
+  const mx = 78 - WORLD_X0;
   const my = 64;
   for (let y = my - 34; y <= my + 34; y++) {
     for (let x = mx - 34; x <= mx + 34; x++) {
@@ -63,8 +65,8 @@ export function buildSky(): PixelBuffer {
 
 export function stars(): Star[] {
   const rng = new Rng('estrellas');
-  return Array.from({ length: 90 }, () => ({
-    x: rng.int(0, WORLD_W - 1),
+  return Array.from({ length: 130 }, () => ({
+    x: rng.int(0, SPAN - 1),
     y: rng.int(0, 230),
     bright: rng.chance(0.2),
   }));
@@ -72,14 +74,14 @@ export function stars(): Star[] {
 
 /** Silueta de montañas: masa oscura, filo iluminado por la luna y nieve en las cumbres. */
 export function buildMountains(): PixelBuffer {
-  const b = new PixelBuffer(WORLD_W, WORLD_H);
+  const b = new PixelBuffer(SPAN, WORLD_H);
   const ridge = (x: number) => {
     // Picos marcados: valor absoluto de senos (crestas) más detalle.
     const a = Math.abs(Math.sin(x * 0.013 + 0.4)) * 58;
     const c = Math.abs(Math.sin(x * 0.029 + 2.1)) * 22;
     return 238 - a - c - Math.sin(x * 0.11) * 3;
   };
-  for (let x = 0; x < WORLD_W; x++) {
+  for (let x = 0; x < SPAN; x++) {
     const top = Math.round(ridge(x));
     const slope = ridge(x + 1) - ridge(x - 1); // > 0: la cresta baja hacia la derecha (cara a la luna)
     for (let y = top; y < GROUND; y++) {
@@ -100,15 +102,15 @@ export function buildMountains(): PixelBuffer {
 
 /** Colinas con una aldea dormida y un castillo con una ventana encendida. */
 export function buildHills(): PixelBuffer {
-  const b = new PixelBuffer(WORLD_W, WORLD_H);
+  const b = new PixelBuffer(SPAN, WORLD_H);
   const rng = new Rng('aldea');
   const hill = (x: number) => 252 - Math.sin(x * 0.017 + 0.6) * 16 - Math.sin(x * 0.043) * 6;
-  for (let x = 0; x < WORLD_W; x++) {
+  for (let x = 0; x < SPAN; x++) {
     const top = Math.round(hill(x));
     for (let y = top; y < GROUND + 4; y++) b.set(x, y, y - top < 1 ? P.forest : P.deep);
   }
   // Casas: tejado, muro y ventanas encendidas.
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < Math.ceil(SPAN / 52); i++) {
     const x = 30 + i * 52 + rng.int(-10, 10);
     const base = Math.round(hill(x + 5)) + 3;
     const w = rng.int(9, 14);
@@ -127,7 +129,7 @@ export function buildHills(): PixelBuffer {
     if (rng.chance(0.4)) b.rect(x + w - 3, base - h - 6, 2, 4, P.black);
   }
   // Castillo en la loma de la derecha.
-  const cx = 420;
+  const cx = 420 - WORLD_X0;
   const cb = Math.round(hill(cx)) + 2;
   b.rect(cx, cb - 22, 26, 22, P.black);
   for (const tx of [cx - 4, cx + 24]) {
@@ -144,10 +146,10 @@ export function buildHills(): PixelBuffer {
 
 /** Hilera de árboles oscuros justo detrás del edificio. */
 export function buildTreeline(): PixelBuffer {
-  const b = new PixelBuffer(WORLD_W, WORLD_H);
+  const b = new PixelBuffer(SPAN, WORLD_H);
   const rng = new Rng('arboleda');
-  for (let i = 0; i < 40; i++) {
-    const x = rng.int(-10, WORLD_W + 10);
+  for (let i = 0; i < 60; i++) {
+    const x = rng.int(-10, SPAN + 10);
     const h = rng.int(30, 60);
     const base = GROUND + 2;
     const conifer = rng.chance(0.55);

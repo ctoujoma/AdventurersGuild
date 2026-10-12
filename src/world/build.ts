@@ -30,8 +30,17 @@ import {
   stoneWall,
 } from './paint';
 import type { TrophyIcon } from '../core/model';
-import { armory, chapel, gearBoard, mapRoom, trophyWall, type GearView } from './annex';
+import {
+  armory,
+  chapel,
+  gearBoard,
+  mapRoom,
+  trophyWall,
+  veteranWing,
+  type GearView,
+} from './annex';
 import * as Prop from './props';
+import { buildOuter, type Outer } from './yard';
 
 /**
  * Construye las capas fijas del mundo para unas mejoras concretas: el fondo (edificio,
@@ -86,6 +95,8 @@ export interface WorldBuild {
   glows: Glow[];
   ambient: Ambient[];
   layout: Layout;
+  /** Patio y camino a la izquierda, terreno a la derecha (búferes de SPAN, origen WORLD_X0). */
+  outer: Outer;
   fire: { x: number; y: number; w: number; level: Layout['fire'] };
 }
 
@@ -215,11 +226,15 @@ export function buildWorld(
   ];
 
   // ================= Capilla (anexo a la derecha) =================
+  veteranWing(back, fac.vet ?? 0, lights, glows);
   chapel(back, put, fac.cap, fallen, lights, flames, glows, ambient);
+
+  const outer = buildOuter(glows, fac, lights, flames);
 
   return {
     back,
     front,
+    outer,
     lights,
     shafts,
     flames,

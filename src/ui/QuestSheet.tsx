@@ -2,6 +2,7 @@ import { useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
 import { canSend } from '../core/game';
 import type { GameState, Quest } from '../core/model';
+import { chainDef } from '../core/chains';
 import { PERKS, partyClasses, tripDays } from '../core/classes';
 import { RISK_LABELS, moraleMod, skill } from '../core/party';
 import { questEstimate } from '../core/resolve';
@@ -29,7 +30,7 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
   const scale = Math.max(1, ...est.rows.map((r) => Math.max(r.diff, r.power))) * 1.15;
   const blocked = party.length ? canSend(game, q.id, sel) : null;
   const mage = party.find((h) => h.cls === 'mago');
-  const days = tripDays(q, members);
+  const days = tripDays(q, members, game.fac.establo);
   const hideDanger = q.dangerHidden && !mage && game.fac.mapas < 2;
 
   const toggle = (id: string) => {
@@ -57,7 +58,9 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
         <div class="qs-scroll">
           <header class="qs-head">
             <span class="eyebrow">
-              {q.type} · {q.client}
+              {q.chain
+                ? `${chainDef(q.chain.id).name} · paso ${q.chain.step + 1} de ${chainDef(q.chain.id).steps.length}`
+                : `${q.type} · ${q.client}`}
             </span>
             <h3>{q.title}</h3>
           </header>
@@ -126,7 +129,7 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
           <div class="picks">
             {heroes.map((h) => {
               const on = sel.includes(h.id);
-              const busy = h.status !== 'ok';
+              const busy = h.status !== 'ok' || !!h.guard;
               return (
                 <button
                   key={h.id}
@@ -152,7 +155,9 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
                     </span>
                     <span class="pick-skills">
                       {busy
-                        ? statusLabel(h)
+                        ? h.guard
+                          ? 'De guardia'
+                          : statusLabel(h)
                         : q.challenges
                             .map(
                               (c) =>

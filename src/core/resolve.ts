@@ -39,9 +39,11 @@ import {
   TWIST_DIFF,
   XP,
   XP_PER_LEVEL,
+  rankIndex,
 } from './balance';
-import { fill } from './generate';
+import { fill, generateQuest } from './generate';
 import { TROPHIES } from '../data/items';
+import { PLACE_INFO, placeAt } from '../data/places';
 import type {
   ChipKind,
   Facilities,
@@ -83,8 +85,11 @@ export const MAIN_ATTR = {
 /** Lo que suma a un héroe la armería del gremio más su objeto equipado. */
 export function gearOf(item: Item | undefined, fac?: Facilities): Partial<Record<SkillId, number>> {
   const gear: Partial<Record<SkillId, number>> = { ...ARMORY[fac?.arm ?? 0] };
-  for (const [k, v] of Object.entries(item?.bonus ?? {}) as [SkillId, number][])
-    gear[k] = (gear[k] ?? 0) + v;
+  const bonus = Object.entries(item?.bonus ?? {}) as [SkillId, number][];
+  bonus.forEach(([k, v], i) => {
+    // La forja afila el objeto equipado: más en su habilidad principal.
+    gear[k] = (gear[k] ?? 0) + v + (i === 0 ? (fac?.forja ?? 0) : 0);
+  });
   return gear;
 }
 
@@ -107,6 +112,27 @@ export function questEstimate(
     reveal && i === 0 ? { ...c, diff: c.diff + TWIST_DIFF } : c,
   );
   return { ...estimate(challenges, party), reveal };
+}
+
+/** Sube de nivel si toca (mejora su atributo, sube el sueldo, quizá pide caché). */
+export function levelUp(state: GameState, h: Hero): string[] {
+  const out: string[] = [];
+  while (h.xp >= XP_PER_LEVEL) {
+    h.xp -= XP_PER_LEVEL;
+    h.lvl++;
+    const a = MAIN_ATTR[h.cls];
+    h.attrs[a] = Math.min(10, h.attrs[a] + 1);
+    h.salary += levelRaise(h.lvl);
+    out.push(`${h.name} sube a nivel ${h.lvl}`);
+    const st = (state.stats ??= emptyStats());
+    st.maxLvl = Math.max(st.maxLvl, h.lvl);
+    // Veteranos: al llegar a ciertos niveles piden su caché.
+    if (CACHE[h.lvl] && !h.request) {
+      h.request = 'cache';
+      out.push(`${h.name} pide caché de veterano`);
+    }
+  }
+  return out;
 }
 
 export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
@@ -221,7 +247,8 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
   );
 
   // Oro, reputación y botín.
-  let gold = Math.round(q.reward * PAY[outcome] * mods.gold);
+  const escort = q.type === 'Escoltar' && state.fac.establo >= 2 ? 1.25 : 1;
+  let gold = Math.round(q.reward * PAY[outcome] * mods.gold * escort);
   const rogue = party.find((h) => h.cls === 'picaro');
   if (gold > 0 && rogue && rng.chance(0.5))
     say(`${rogue.name} volvió con los bolsillos más llenos de lo que cuenta el contrato.`);
@@ -239,6 +266,22 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
     stats.byType[q.type] = (stats.byType[q.type] ?? 0) + 1;
   }
   if (outcome === 'Éxito brillante') stats.brilliant++;
+  // Explorar con éxito descubre los dos lugares más cercanos en el mapa.
+  if (q.type === 'Explorar' && PAY[outcome] >= 1) {
+    const here = placeAt(q.place);
+    const near = Object.entries(PLACE_INFO)
+      .filter(([n]) => n !== q.place && !state.explored?.includes(n))
+      .sort(
+        ([, a], [, b]) =>
+          Math.hypot(a.x - here.x, a.y - here.y) - Math.hypot(b.x - here.x, b.y - here.y),
+      )
+      .slice(0, 2)
+      .map(([n]) => n);
+    if (near.length) {
+      (state.explored ??= []).push(...near);
+      chips.push({ t: `En el mapa: ${listNames(near)}`, k: 'info' });
+    }
+  }
   chips.unshift({ t: gold > 0 ? `+${gold} monedas` : 'Sin cobrar', k: gold > 0 ? 'good' : 'bad' });
   const dRep = REP[outcome];
   state.rep = Math.max(0, state.rep + dRep);
@@ -306,7 +349,31 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
       chips.push({ t: `${victim.name}: ${sx(victim, 'caído', 'caída')}`, k: 'bad' });
     } else {
       victim.status = 'desaparecido';
+      victim.lostAt = q.place;
       victim.days = rng.int(2, 4);
+      // Encargo de rescate: mientras alguien lo busca, no se le da por perdido.
+      const rq = generateQuest(
+        rng,
+        `q${state.uid++}`,
+        rankIndex(state.rep),
+        `i${state.uid++}`,
+        false,
+        'Explorar',
+      );
+      state.quests.push({
+        ...rq,
+        title: `Rescate de ${victim.name}`,
+        client: 'El propio gremio',
+        text: `Se perdió su rastro cerca de ${q.place}. Si alguien va a buscarle pronto, quizá aún esté a tiempo.`,
+        place: q.place,
+        danger: q.danger,
+        dangerHidden: undefined,
+        twist: undefined,
+        item: undefined,
+        reward: 0,
+        expires: victim.days,
+        rescue: victim.id,
+      });
       say(
         `Nadie sabe qué fue de ${victim.name}. Lo último que vieron fue su sombra cerca de ${q.place}.`,
       );
@@ -332,20 +399,7 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
       }
     }
     h.xp += XP[outcome];
-    if (h.xp >= XP_PER_LEVEL) {
-      h.xp -= XP_PER_LEVEL;
-      h.lvl++;
-      const a = MAIN_ATTR[h.cls];
-      h.attrs[a] = Math.min(10, h.attrs[a] + 1);
-      h.salary += levelRaise(h.lvl);
-      chips.push({ t: `${h.name} sube a nivel ${h.lvl}`, k: 'good' });
-      state.stats!.maxLvl = Math.max(state.stats!.maxLvl, h.lvl);
-      // Veteranos: al llegar a ciertos niveles piden su caché.
-      if (CACHE[h.lvl] && !h.request) {
-        h.request = 'cache';
-        chips.push({ t: `${h.name} pide caché de veterano`, k: 'warn' });
-      }
-    }
+    for (const t of levelUp(state, h)) chips.push({ t, k: t.includes('caché') ? 'warn' : 'good' });
     let dMorale = MORALE[outcome] - TRIP_FATIGUE * q.days;
     if (fallen) dMorale -= Math.round((has(h, 'leal') ? 20 : 10) * (state.fac.cap >= 2 ? 0.5 : 1));
     if (has(h, 'codicioso') && q.reward >= 200 && PAY[outcome] >= 1) dMorale += 5;

@@ -139,55 +139,66 @@ Lo que pasa al pagar la deuda: el final de «La deuda» deja de ser un final y s
 - [x] **Récords** de la partida y entre partidas: días al frente, oro máximo, trofeos, asaltos repelidos, caídos
 - [x] **Derrota en modo libre**: quiebra (no poder pagar salarios dos semanas seguidas) o quedarse sin héroes ni oro
 
-### Fase 5: El mundo · L
+### Fase 5: El mundo · L ✅
 
-- [ ] **Mapa de la comarca**: pergamino en pixel art que se abre desde el mapa del desván o un botón
+- [x] **Mapa de la comarca**: pergamino en pixel art que se abre desde el mapa del desván o un botón
   - Chinchetas en los lugares de los encargos disponibles
   - Los grupos de viaje como figuritas que avanzan por el camino, con los días que faltan (sustituye al panel «Fuera»)
   - Las cadenas unidas con hilo rojo, como en la sala de mapas, con los pasos hechos tachados
   - La amenaza regional como una mancha que se extiende
   - La sala de mapas lo mejora: nivel 0 con niebla, nivel 1 rutas y días, nivel 2 el peligro real; los encargos de «Explorar» quitan niebla
-- [ ] **Cadenas de misiones**: 3–5 encargos enlazados con historia, de clientes que repiten (el alcalde, la bibliotecaria, Merlo…)
+- [x] **Cadenas de misiones**: 3–5 encargos enlazados con historia, de clientes que repiten (el alcalde, la bibliotecaria, Merlo…)
   - Cada paso aparece al completar el anterior, con sello especial; fracasar tuerce la historia (paso extra, amenaza mayor); abandonarla tiene consecuencias
   - Final con legendario único, trofeo especial y, a veces, una instalación desbloqueada
   - Datos en `data/chains.ts` con lugares y villanos variables (rejugables); empezar con 3–4 cadenas
-- [ ] **Amenaza regional por actos**: crece si se ignoran las cadenas; trae eventos al amanecer (caravanas asaltadas, clientes que no vienen)
-- [ ] **Eventos en ruta y en la taberna con elección** (emboscada, mercader, tesoro, pelea interna)
-- [ ] Desaparecidos que vuelven con historia y rasgo nuevo, o encargo de rescate
+- [x] **Amenaza regional**: crece si se ignoran las cadenas; trae eventos al amanecer (caravanas asaltadas, clientes que no vienen)
+- [x] **Sucesos en la taberna con elección** (buhonero, pelea en la barra, bardo, noble arruinado, lobos del pueblo, apuesta) · [ ] eventos en ruta con elección
+- [x] Desaparecidos: encargo de rescate donde se perdieron; los que vuelven solos regresan curtidos (+2 Supervivencia)
 
-### Fase 6: Asaltos a la taberna · L
+### Fase 6: Asaltos a la taberna · L ✅
 
 Inspirado en los ataques al refugio de *Fallout Shelter*: cuanto más famoso y rico es el gremio, más apetecible es para los bandidos.
 
-- [ ] **Escena más ancha**: más patio delante de la puerta (izquierda) para los combates y más espacio a la derecha para seguir ampliando el edificio
-- [ ] **Notoriedad**: sube con la reputación y con el valor del arcón y los trofeos; marca la probabilidad y la fuerza de los asaltos
-- [ ] **Chivatazos**: avisos con días de margen («Dicen que la banda del Tuerto anda preguntando por ti»). Vienen de:
+- [x] **Escena más ancha**: más patio delante de la puerta (izquierda) para los combates y más espacio a la derecha para seguir ampliando el edificio
+- [x] **Notoriedad**: sube con la reputación y con el valor del arcón y los trofeos; marca la probabilidad y la fuerza de los asaltos
+- [x] **Chivatazos**: avisos con días de margen («Dicen que la banda del Tuerto anda preguntando por ti»). Vienen de:
   - El tabernero y los rumores de la barra
   - Exploradores que vuelven de misión y ven a la banda
   - Un chivato al que se le paga
   - La torre del vigía (instalación)
-- [ ] **Defensa**: luchan los héroes que estén en la taberna. Se puede dejar a alguien **de guardia** (no sale de misión y defiende mejor). Así hay que decidir entre mandar a los fuertes a ganar oro o dejarlos en casa
-  - Defensas construibles que ayudan: empalizada, armería, torre del vigía
-- [ ] **Combate en tiempo real en el patio**: de noche, los bandidos llegan por el camino y los héroes salen por la puerta a pelear (choques, golpes, caídas); se puede acelerar o saltar
-- [ ] **Consecuencias**:
+- [x] **Defensa**: luchan los héroes que estén en la taberna. Se puede dejar a alguien **de guardia** (no sale de misión y defiende mejor). Así hay que decidir entre mandar a los fuertes a ganar oro o dejarlos en casa
+  - [x] La armería ya ayuda · [ ] empalizada y torre del vigía (fase 7)
+- [x] **Combate en tiempo real en el patio**: de noche, los bandidos llegan por el camino y los héroes salen por la puerta a pelear (choques, golpes, caídas); se puede acelerar o saltar
+- [x] **Consecuencias**:
   - Perder: saqueo (oro, tesoros o equipo del arcón; quizá un trofeo) y heridos
   - Ganar: días de tregua (se corre la voz y otras bandas se lo piensan), reputación y algo de botín de los bandidos
 
-### Fase 7: Tu taberna · M
+- [x] **Combate con estilo**: cada clase con su arma en la mano y 4 ataques que se alternan sin repetir:
+  - Guerrero: tajo, estocada, golpe de escudo (aturde) y torbellino
+  - Pícaro: doble puñalada, daga lanzada, voltereta con entrada a fondo y puñalada baja
+  - Mago: bola de fuego, esquirla de hielo (congela), rayo del cielo y onda arcana
+  - Clérigo: mazazo, columna de luz, bendición y escudo de fe (burbuja que amortigua)
+  - Explorador: flecha, andanada de tres, flecha alta y carrera con patada
+  - Bandidos variados con 3 ataques cada uno: bruto (garrote), navajero, arquero (también flechas de fuego), incendiario (antorcha, botella ardiendo, fuego) y el jefe (hacha, grito de guerra que enrabieta a los suyos, giro)
+  - Destellos y retroceso al recibir, estelas de los golpes, luces de la magia en la noche, sonidos propios y la cámara se acerca al patio. El sistema sirve también para los jefes del futuro
 
-**Personalización**
-- [ ] Nombre de la taberna y escudo del gremio (colores y símbolo): se ven en el letrero, los estandartes y los sellos de las cartas
-- [ ] Huecos de decoración con efecto pequeño: diana (moral) o mesa de naipes (ingresos, alguna pelea), escenario del bardo o más mesas…
-- [ ] Personal que se contrata y se ve por la taberna: cocinera (moral), bardo (ingresos por la noche), mozo (curación)
-- [ ] Carta de la casa: el plato del día, con efectos y frases de ambiente
-- [ ] Mascotas (un perro guardián que también avisa de asaltos, un cuervo) y decoración de fiestas
+### Fase 7: Tu taberna · M ✅
+
+**Personalización** (panel «Tu taberna», desde El gremio o tocando el letrero)
+- [x] Nombre de la taberna y escudo del gremio (5 colores y 6 símbolos): se ven en el letrero, el estandarte del tejado, el marcador, el amanecer, el mapa, la pantalla de título y el lacre de las cartas (con la inicial)
+- [x] Personal que se contrata y se ve por la taberna: cocinera tras la barra (el plato anima el doble), bardo ante la chimenea (+8 monedas al día), mozo en la enfermería (curan un día antes). Entrada de 30 y 6 de salario por semana cada uno
+- [x] Plato de la casa: pan y queso (gratis), guiso (4/noche, +2 de moral) o asado (10/noche, +4)
+- [x] Perro guardián (60 monedas): +3 de defensa y más probabilidad de chivatazo; duerme junto a la puerta
+- [x] Decoración del salón (2 huecos, 3 con el salón grande): mesa de naipes (+6 al día, alguna pelea), tarima del bardo (+2 de moral; con bardo, +8 monedas), tapices con el escudo (+1 de reputación por semana) y barril especial (+1 de moral, +2 monedas); todo se ve en el salón
+- [x] Cuervo mensajero (80): vigila desde el letrero y trae +1 de reputación cada 5 días. Fiesta de la comarca cada 10 días: banderines y farolillos en la fachada y, si la montas (30), banderines dentro, caja doble esa noche, +10 de moral y brindis
 
 **Expansión del edificio** (aprovecha la escena ancha de la fase 6)
-- [ ] Forja: mejorar y reparar equipo
-- [ ] Patio de entrenamiento con muñecos: experiencia mientras descansan
-- [ ] Establo: viajes más cortos y escoltas mejor pagadas
-- [ ] Torre del vigía sobre el tejado: avisa de asaltos y amenazas, trae encargos de más rango
-- [ ] Habitaciones de veteranos: más moral y sus trofeos personales
+- [x] Forja: el equipo rinde más (+1 a su primer atributo por nivel)
+- [x] Patio de entrenamiento con muñecos: experiencia mientras descansan
+- [x] Establo: viajes más cortos y escoltas mejor pagadas
+- [x] Empalizada: más defensa contra asaltos
+- [x] Torre del vigía: avisa siempre de los asaltos y, a nivel 2, trae un encargo más al tablón
+- [x] Ala de veteranos (220 / 420), colgada de la fachada derecha sobre la capilla: los héroes de nivel 4 o más ganan +4/+8 de moral por noche y más tope; a nivel 2 nunca desertan
 
 ### Fase 8: Pulido y pruebas · M
 - [x] Splash del desarrollador, pantalla de título y tutorial en los primeros días (el tío deja notas)
@@ -195,6 +206,7 @@ Inspirado en los ataques al refugio de *Fallout Shelter*: cuanto más famoso y r
 - [ ] El equipo se ve en el sprite y el retrato del héroe
 - [ ] Animaciones y transiciones; cartas que se deslizan; héroes que brindan en la celebración
 - [ ] Móvil en horizontal
+- [x] Música ampliada: 7 temas (La jarra rota, El camino real, Velas en la bodega, Gremio de leyenda, Antorchas en el camino, ¡A las armas!, ¡Brindis!) repartidos por ambientes: taberna, modo libre, tensión con un asalto anunciado, la pelea y un brindis al repeler un asalto o saldar la deuda. Laúd, flauta, pandero y sonajero; cada repetición varía (adornos, notas de paso, bajo arpegiado, segunda voz) y los cambios se funden
 - [ ] Ajustes: volumen y velocidad
 - [x] Guardar y cargar partidas: archivo o código de texto
 - [ ] PWA: instalable, offline, icono y pantalla de carga

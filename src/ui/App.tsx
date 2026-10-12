@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { audio } from '../audio/audio';
-import { canHire, newGame, reduce, type Action } from '../core/game';
+import { audio, type Mood } from '../audio/audio';
+import { canHire, customOf, newGame, reduce, type Action } from '../core/game';
+import { DECOR, STAFF } from '../data/custom';
 import type { Facilities, GameState } from '../core/model';
 import { CAPTIONS, FACILITY_INFO } from '../data/labels';
 import { loadRecords, mergeRecords, saveRecords } from '../platform/records';
@@ -13,9 +14,11 @@ import { HeroCard } from './HeroCard';
 import { Hud } from './Hud';
 import { Icon } from './icons';
 import { Letter } from './Letter';
+import { EventCard } from './EventCard';
 import { Opening } from './Opening';
 import { Panel } from './Panel';
 import { LibroPanel } from './panels/LibroPanel';
+import { MapPanel } from './panels/MapPanel';
 import { SaveMenu } from './SaveMenu';
 import { Splash } from './Splash';
 import { Title } from './Title';
@@ -26,13 +29,14 @@ import { GremioPanel } from './panels/GremioPanel';
 import { HeroesPanel } from './panels/HeroesPanel';
 import { MailPanel } from './panels/MailPanel';
 import { TablonPanel } from './panels/TablonPanel';
+import { TabernaPanel } from './panels/TabernaPanel';
 import { QuestSheet } from './QuestSheet';
 import { SceneView } from './SceneView';
 import { TabBar, type TabId } from './TabBar';
 import { listNames, plural } from './text';
 import { sceneModel } from './view';
 
-type PanelId = Exclude<TabId, 'taberna'> | 'correo' | 'fuera' | 'libro';
+type PanelId = Exclude<TabId, 'taberna'> | 'correo' | 'fuera' | 'libro' | 'casa';
 
 interface Bubble {
   text: string;
@@ -53,6 +57,8 @@ export function App() {
   const [dawnOpen, setDawnOpen] = useState(!saved);
   /** La noche está pasando en la escena (entre «Terminar día» y el resumen del amanecer). */
   const [passing, setPassing] = useState(false);
+  /** Hay un asalto en el patio (se puede saltar). */
+  const [raiding, setRaiding] = useState(false);
   const [card, setCard] = useState<string | null>(null);
   const [questId, setQuestId] = useState<string | null>(null);
   const [reportId, setReportId] = useState<string | null>(null);
@@ -175,8 +181,29 @@ export function App() {
         setFocusFac('cap');
         openPanel('gremio');
         return;
+      case 'forja':
+      case 'establo':
+      case 'torre':
+        setFocusFac(id);
+        openPanel('gremio');
+        return;
+      case 'patio-entreno':
+        setFocusFac('patio');
+        openPanel('gremio');
+        return;
+      case 'empalizada':
+        setFocusFac('empal');
+        openPanel('gremio');
+        return;
+      case 'veteranos':
+        setFocusFac('vet');
+        openPanel('gremio');
+        return;
       case 'despacho':
         openPanel('libro');
+        return;
+      case 'letrero':
+        openPanel('casa');
         return;
       case 'equipo':
       case 'cofres':
@@ -244,6 +271,16 @@ export function App() {
     if (it) toast(`Vendido: ${it.name} por ${it.value} monedas.`);
   };
 
+  // Música según lo que pasa: la pelea, un asalto anunciado, el modo libre o la taberna.
+  const mood: Mood = raiding
+    ? 'asalto'
+    : game.raid?.warned
+      ? 'tension'
+      : game.mode === 'libre'
+        ? 'libre'
+        : 'taberna';
+  useEffect(() => audio.setMood(mood), [mood]);
+
   const endDay = () => {
     if (passing) return;
     setHint(false);
@@ -254,15 +291,25 @@ export function App() {
     const before = gameRef.current;
     const next = dispatch({ type: 'endDay' });
     if (next === before) return;
+    const party = next.lastRaid?.won || (next.mode === 'libre' && before.mode !== 'libre');
     const sunrise = () => {
       setPassing(false);
+      setRaiding(false);
       audio.play('dawn');
       setDawnOpen(true);
+      // Asalto repelido o deuda saldada: suena el brindis.
+      if (party) setTimeout(() => audio.fanfare(), 60);
     };
     if (!scene.current) return sunrise();
     setPassing(true);
-    audio.play('night');
-    scene.current.nightfall(sunrise);
+    if (next.lastRaid) {
+      setRaiding(true);
+      audio.play('horn');
+      scene.current.raidNight(next.lastRaid, sunrise);
+    } else {
+      audio.play('night');
+      scene.current.nightfall(sunrise);
+    }
   };
 
   const closeDawn = (then?: PanelId) => {
@@ -274,13 +321,13 @@ export function App() {
     setDawnOpen(false);
     if (game.day === 1) setHint(true);
     if (then) openPanel(then);
-    else if (returned) setTimeout(() => scene.current?.focus('puerta'), 30);
+    else if (returned) setTimeout(() => scene.current?.focus('patio'), 30);
     if (wins.length)
       setTimeout(() => {
         scene.current?.cheer('barra');
         if (!then) scene.current?.focus('barra');
         toast(`¡Ronda para todos! ${wins.map((r) => r.who).join(' y ')} lo celebran en la barra.`);
-      }, 3600);
+      }, 5600);
   };
 
   const openReport = (id: string) => {
@@ -328,10 +375,10 @@ export function App() {
   const report = game.reports.find((r) => r.id === reportId) ?? null;
   const unread = game.reports.filter((r) => !r.read).length;
   const away = game.missions.length + game.heroes.filter((h) => h.status === 'desaparecido').length;
+  const calm = screen === 'game' && !dawnOpen && !passing && !(game.opening && !game.opening.seen);
+  const pendingEvent = calm && !game.over ? (game.event ?? null) : null;
   const tip =
-    screen === 'game' && !dawnOpen && !passing && !card && !questId && !reportId && !panel
-      ? nextTip(game)
-      : null;
+    calm && !pendingEvent && !card && !questId && !reportId && !panel ? nextTip(game) : null;
   // La nota del tío mira hacia lo que explica.
   useEffect(() => {
     if (tip?.focus) scene.current?.focus(tip.focus);
@@ -436,6 +483,7 @@ export function App() {
               onSell={sell}
               onSaves={() => setSaveMenu(true)}
               onLibro={() => openPanel('libro')}
+              onTaberna={() => openPanel('casa')}
               onTitle={toTitle}
               onSellTrophy={(id) => {
                 const t = game.trophies.find((x) => x.id === id);
@@ -443,6 +491,46 @@ export function App() {
                 audio.play('coin');
                 if (t)
                   toast(`Vendido: ${t.name} por ${t.value} monedas. La pared se queda más sosa.`);
+              }}
+            />
+          </Panel>
+        )}
+        {panel === 'casa' && (
+          <Panel title="Tu taberna" onClose={() => openPanel(null)}>
+            <TabernaPanel
+              game={game}
+              onCustom={(patch) => {
+                dispatch({ type: 'custom', patch });
+                audio.play('click');
+              }}
+              onStaff={(id, on) => {
+                dispatch({ type: 'staff', id, on });
+                audio.play(on ? 'coin' : 'close');
+                toast(
+                  on
+                    ? `${STAFF[id].name}: contratado. Empieza esta noche.`
+                    : `${STAFF[id].name}: despedido.`,
+                );
+              }}
+              onDog={() => {
+                dispatch({ type: 'buyDog' });
+                audio.play('coin');
+                toast('Tizón ya duerme junto a la puerta. ¡Guau!');
+              }}
+              onDecor={(id, on) => {
+                dispatch({ type: 'decor', id, on });
+                audio.play(on ? 'build' : 'close');
+                if (on) toast(`${DECOR[id].name}: ya luce en el salón.`);
+              }}
+              onRaven={() => {
+                dispatch({ type: 'buyRaven' });
+                audio.play('coin');
+                toast('Carbón se posa en el letrero y grazna. Parece que le gusta el sitio.');
+              }}
+              onFeast={() => {
+                dispatch({ type: 'feast' });
+                audio.fanfare();
+                toast('¡Fiesta montada! Banderines, música y la caja abierta hasta el alba.');
               }}
             />
           </Panel>
@@ -458,7 +546,15 @@ export function App() {
           </Panel>
         )}
         {panel === 'fuera' && (
-          <Panel title="Fuera del gremio" onClose={() => openPanel(null)}>
+          <Panel title="La comarca" onClose={() => openPanel(null)}>
+            <MapPanel
+              game={game}
+              onHero={(id) => setCard(id)}
+              onQuest={(id) => {
+                audio.play('open');
+                setQuestId(id);
+              }}
+            />
             <AwayPanel game={game} onHero={(id) => setCard(id)} />
           </Panel>
         )}
@@ -472,7 +568,12 @@ export function App() {
           />
         )}
         {report && (
-          <Letter report={report} heroes={game.heroes} onClose={() => setReportId(null)} />
+          <Letter
+            report={report}
+            heroes={game.heroes}
+            seal={customOf(game)}
+            onClose={() => setReportId(null)}
+          />
         )}
         {cardHero && (
           <HeroCard
@@ -484,6 +585,10 @@ export function App() {
             onHire={() => hire(cardHero.id)}
             onFire={() => fire(cardHero.id)}
             onAnswer={(yes) => dispatch({ type: 'answer', id: cardHero.id, yes })}
+            onGuard={(on) => {
+              dispatch({ type: 'guard', id: cardHero.id, on });
+              audio.play(on ? 'select' : 'deselect');
+            }}
             onEquip={(itemId) => {
               dispatch({ type: 'equip', heroId: cardHero.id, itemId });
               audio.play('select');
@@ -508,6 +613,7 @@ export function App() {
         {dawnOpen && screen === 'game' && (
           <Dawn
             day={game.day}
+            name={customOf(game).name}
             flavor={game.flavor}
             events={game.dawn}
             unread={unread}
@@ -523,7 +629,7 @@ export function App() {
               audio.play('dawn');
               dispatch({ type: 'ackOpening' });
               scene.current?.cheer('barra');
-              toast('El Jarro Partido abre sus puertas al mundo. ¡A por la leyenda!');
+              toast(`${customOf(game).name} abre sus puertas al mundo. ¡A por la leyenda!`);
             }}
             onRetry={restart}
           />
@@ -538,6 +644,24 @@ export function App() {
           openPanel(t === 'taberna' ? null : t);
         }}
       />
+      {raiding && (
+        <div class="raid-banner" role="status">
+          <b>¡Asalto a la taberna!</b>
+          <button class="btn btn-wood" onClick={() => scene.current?.skipRaid()}>
+            Saltar
+          </button>
+        </div>
+      )}
+      {pendingEvent && (
+        <EventCard
+          event={pendingEvent}
+          onChoose={(i) => {
+            const next = dispatch({ type: 'choose', index: i });
+            audio.play(i === 0 ? 'coin' : 'close');
+            if (next.lastChoice) toast(next.lastChoice);
+          }}
+        />
+      )}
       {tip && (
         <UncleNote
           tip={tip}

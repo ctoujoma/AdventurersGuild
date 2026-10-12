@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { XP_PER_LEVEL } from '../core/balance';
+import { GUARD_BONUS, XP_PER_LEVEL } from '../core/balance';
 import { PERKS } from '../core/classes';
 import { canHire, gearInStock, requestAmount } from '../core/game';
 import type { GameState, Hero } from '../core/model';
@@ -24,6 +24,7 @@ interface Props {
   onAnswer: (yes: boolean) => void;
   onEquip: (itemId: string) => void;
   onUnequip: () => void;
+  onGuard: (on: boolean) => void;
 }
 
 const ATTRS = [
@@ -44,6 +45,7 @@ export function HeroCard({
   onAnswer,
   onEquip,
   onUnequip,
+  onGuard,
 }: Props) {
   const [picking, setPicking] = useState(false);
   const stock = gearInStock(game);
@@ -179,6 +181,18 @@ export function HeroCard({
                     </span>
                   </button>
                 ))}
+            </div>
+          )}
+          {!candidate && h.status === 'ok' && (
+            <div class={`guard-box ${h.guard ? 'on' : ''}`}>
+              <span>
+                {h.guard
+                  ? `De guardia: no sale de misión y suma +${GUARD_BONUS} si asaltan la taberna.`
+                  : 'Si asaltan la taberna, defienden quienes estén en casa. De guardia, defienden mejor.'}
+              </span>
+              <button class="btn btn-wood" onClick={() => onGuard(!h.guard)}>
+                {h.guard ? 'Quitar la guardia' : 'Dejar de guardia'}
+              </button>
             </div>
           )}
           <div class="perk">

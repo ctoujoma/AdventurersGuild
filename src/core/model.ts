@@ -2,6 +2,7 @@
  * Modelo de la partida. Todo es JSON serializable: guardar es `JSON.stringify(state)`.
  * El núcleo no conoce el DOM ni el arte; el aspecto de cada héroe sale de su `seed`.
  */
+import type { CrestColor, CrestSymbol, DecorId, Dish, StaffId } from '../data/custom';
 import type { Attrs, Challenge, ClassId, SkillId, Trait } from './party';
 
 export const SAVE_VERSION = 1;
@@ -35,6 +36,10 @@ export interface Hero {
   request?: 'raise' | 'cache';
   /** Objeto equipado (una ranura). Se pierde si cae o deserta. */
   item?: Item;
+  /** De guardia: no sale de misión y defiende mejor la taberna. */
+  guard?: boolean;
+  /** Dónde se le perdió la pista (si está desaparecido). */
+  lostAt?: string;
 }
 
 export type QuestType = 'Cazar' | 'Escoltar' | 'Explorar' | 'Recuperar' | 'Investigar' | 'Limpiar';
@@ -99,6 +104,10 @@ export interface Quest {
   /** Giro oculto: más duro de lo que parece. Un mago en el grupo lo detecta. */
   twist?: string;
   fresh?: boolean;
+  /** Rescate de un héroe desaparecido (su id). */
+  rescue?: string;
+  /** Paso de una cadena de misiones (no caduca ni cuenta para el tablón). */
+  chain?: { id: string; step: number };
 }
 
 export interface Mission {
@@ -122,6 +131,10 @@ export interface Report {
   body: string[];
   chips: { t: string; k: ChipKind }[];
   read: boolean;
+  /** Informe de un asalto a la taberna (con su propio titular). */
+  raid?: { won: boolean };
+  /** Titular propio (cartas de clientes, finales de cadena). */
+  heading?: string;
 }
 
 export interface Fallen {
@@ -139,12 +152,71 @@ export interface Facilities {
   arm: number;
   /** Capilla (anexo): moral, desaparecidos y una vela por cada caído. */
   cap: number;
+  /** Forja (derecha): mejora el equipo que llevan puesto. */
+  forja: number;
+  /** Establo (derecha): viajes más cortos y escoltas mejor pagadas. */
+  establo: number;
+  /** Patio de entrenamiento (izquierda): experiencia mientras descansan. */
+  patio: number;
+  /** Empalizada (izquierda): defensa contra asaltos. */
+  empal: number;
+  /** Torre del vigía (izquierda): avisa de los asaltos y trae encargos. */
+  torre: number;
+  /** Ala de veteranos (colgada de la fachada derecha): moral para los de nivel alto. */
+  vet: number;
 }
 
 /** Lo que pasó al terminar un día: se enseña en la transición del amanecer. */
 export interface DawnEvent {
   t: string;
   k?: ChipKind;
+}
+
+export interface Custom {
+  name: string;
+  color: CrestColor;
+  symbol: CrestSymbol;
+  dish: Dish;
+  staff: StaffId[];
+  dog: boolean;
+  decor?: DecorId[];
+  raven?: boolean;
+  /** Día en que se montó la fiesta de la comarca. */
+  feast?: number;
+}
+
+export interface PendingEvent {
+  id: string;
+  /** Héroes que aparecen en el suceso. */
+  who: string[];
+  text: string;
+  options: { label: string; hint: string }[];
+}
+
+export interface ChainState {
+  id: string;
+  step: number;
+  status: 'activa' | 'hecha';
+  /** Veces que la historia se ha torcido (cada una, el paso vuelve más difícil). */
+  twists: number;
+}
+
+export interface Raid {
+  day: number;
+  band: string;
+  strength: number;
+  warned: boolean;
+}
+
+export interface RaidResult {
+  day: number;
+  band: string;
+  bandits: number;
+  defenders: string[];
+  won: boolean;
+  /** Defensores que acabaron heridos. */
+  hurt: string[];
+  stolen: number;
 }
 
 /** Contadores de la partida: hazañas, desafíos y récords. */
@@ -158,6 +230,7 @@ export interface Stats {
   /** Último día con una baja (muerte); para «días sin bajas». */
   lastDeath: number;
   raids: number;
+  chains?: number;
   byType: Partial<Record<QuestType, number>>;
 }
 
@@ -236,4 +309,22 @@ export interface GameState {
   month?: Month;
   /** Días de pago seguidos sin poder pagar los salarios (modo libre). */
   unpaid?: number;
+  /** Asalto en camino (si `warned`, el jugador lo sabe). */
+  raid?: Raid | null;
+  /** Sin asaltos hasta este día (tras repeler uno, se corre la voz). */
+  truce?: number;
+  /** Cómo es la taberna: nombre, escudo, plato, personal y mascota. */
+  custom?: Custom;
+  /** Amenaza regional (0–100): crece si se ignoran o fallan las historias. */
+  threat?: number;
+  /** Suceso de la taberna esperando una decisión. */
+  event?: PendingEvent | null;
+  /** Lo que pasó con la última decisión (para avisar). */
+  lastChoice?: string | null;
+  /** Cadenas de misiones empezadas. */
+  chains?: ChainState[];
+  /** Lugares de la comarca ya visitados (levantan la niebla del mapa). */
+  explored?: string[];
+  /** Último asalto, para verlo en la escena al amanecer. */
+  lastRaid?: RaidResult | null;
 }

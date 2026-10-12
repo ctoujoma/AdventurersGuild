@@ -386,3 +386,99 @@ export function trophyWall(put: Put, trophies: readonly TrophyIcon[]): void {
     put(trophyIcon(t), x, y);
   });
 }
+
+// ---------- Ala de veteranos ----------
+
+/** Dónde cuelga el ala de veteranos: de la fachada derecha, a la altura de la planta alta. */
+export const VET_WING = { x0: 432, x1: 494, top: 150, floor: 204 } as const;
+
+/**
+ * Cuartos de entramado colgados de la fachada, sobre el anexo de la capilla: una ventana
+ * encendida y, a nivel 2, otra más, jardinera y el escudo-trofeo de los veteranos.
+ */
+export function veteranWing(b: PixelBuffer, level: number, lights: Light[], glows: Glow[]): void {
+  if (level <= 0) return;
+  const { x0, x1, top, floor } = VET_WING;
+  // Apoyos: tornapuntas contra el muro y un pie derecho hasta el suelo (la capilla lo tapa).
+  for (let i = 0; i < 22; i++) {
+    b.set(x0 + i, floor + 24 - i, W[2]!);
+    b.set(x0 + i, floor + 25 - i, W[3]!);
+  }
+  b.rect(x1 - 7, floor, 3, GROUND - floor, W[3]!);
+  b.vline(x1 - 7, floor, GROUND - floor, W[4]!);
+  // Paredes de yeso.
+  for (let y = top; y < floor; y++)
+    for (let x = x0; x <= x1; x++)
+      b.set(
+        x,
+        y,
+        bayer(x, y) < 0.18 ? P.tan : y > floor - 4 && bayer(x, y) < 0.5 ? P.clay : P.sand,
+      );
+  // Entramado: marco, postes, viga media y cruces.
+  const beam = (x: number, y: number, w: number, h: number) => {
+    b.rect(x, y, w, h, W[2]!);
+    b.hline(x, y, w, W[3]!);
+  };
+  beam(x0, top, x1 - x0 + 1, 2);
+  beam(x0, floor - 2, x1 - x0 + 1, 3);
+  beam(x0, top + 26, x1 - x0 + 1, 2);
+  for (const x of [x0, x0 + 20, x0 + 40, x1 - 1]) b.rect(x, top, 2, floor - top, W[2]!);
+  for (let i = 0; i < 18; i++) {
+    b.set(x0 + 2 + i, floor - 3 - Math.round(i * 1.2), W[2]!);
+    b.set(x1 - 2 - i, floor - 3 - Math.round(i * 1.2), W[2]!);
+  }
+  // Cabezas de viga bajo el suelo.
+  for (let x = x0 + 4; x < x1; x += 8) b.rect(x, floor + 1, 3, 2, W[1]!);
+  // Tejadillo inclinado de tejas.
+  for (let x = x0 - 2; x <= x1 + 4; x++) {
+    const y = Math.round(top - 10 + ((x - x0 + 2) / (x1 - x0 + 6)) * 8);
+    for (let k = 0; k < 6; k++) {
+      const c = k === 0 ? P.brick : k === 5 ? P.plum : (x + (k >> 1)) % 5 === 0 ? P.plum : P.wine;
+      b.set(x, y + k, c);
+    }
+  }
+  // Ventanas encendidas.
+  const lit = (wx: number) => {
+    const wy = top + 6;
+    b.rect(wx - 1, wy - 1, 14, 17, W[2]!);
+    for (let y = wy; y < wy + 15; y++)
+      for (let x = wx; x < wx + 12; x++)
+        b.set(x, y, Math.abs(x - wx - 6) + Math.abs(y - wy - 7) < 6 ? P.lemon : P.gold);
+    b.rect(wx + 5, wy, 2, 15, W[2]!);
+    b.rect(wx, wy + 7, 12, 1, W[2]!);
+    b.rect(wx - 2, wy + 15, 16, 2, W[4]!);
+    glows.push({ x: wx + 6, y: wy + 7, r: 12, color: [255, 200, 120] });
+    lights.push({
+      x: wx + 6,
+      y: wy + 8,
+      r: 34,
+      color: [255, 190, 110],
+      intensity: 0.7,
+      flicker: 0.08,
+    });
+  };
+  lit(x0 + 24);
+  if (level >= 2) {
+    lit(x0 + 44);
+    // Jardinera con flores bajo la primera ventana.
+    b.rect(x0 + 22, top + 23, 16, 3, P.rust);
+    for (let x = x0 + 23; x < x0 + 37; x += 2) {
+      b.set(x, top + 22, (x >> 1) % 3 ? P.red : P.lemon);
+      b.set(x + 1, top + 22, P.leaf);
+    }
+    // Escudo de los veteranos con dos espadas cruzadas.
+    const sx = x0 + 6;
+    const sy = top + 7;
+    for (let i = -1; i < 12; i++) {
+      b.set(sx - 2 + i, sy - 1 + i, P.mist);
+      b.set(sx + 10 - i, sy - 1 + i, P.mist);
+    }
+    for (let y = 0; y < 12; y++) {
+      const half = y < 7 ? 5 : 5 - (y - 6);
+      for (let x = -half; x <= half; x++)
+        b.set(sx + 4 + x, sy + y, Math.abs(x) === half ? P.gold : P.wine);
+    }
+    b.set(sx + 4, sy + 4, P.lemon);
+    b.set(sx + 4, sy + 5, P.lemon);
+  }
+}

@@ -1,6 +1,6 @@
 import { bayer } from '../art/pixel';
 import type { Ambient, RGB, Shaft } from './build';
-import { WORLD_H, WORLD_W } from './geometry';
+import { SPAN, WORLD_H, WORLD_X0 } from './geometry';
 
 /**
  * Luz en clave de pixel art: cada foco es un círculo con escalones tramados (no un
@@ -86,11 +86,15 @@ export function shaftSprite(s: Shaft): { canvas: HTMLCanvasElement; x: number; y
   return { canvas: c, x: s.x, y: s.y };
 }
 
-/** Luz ambiente de todo el mundo: blanco (sin efecto) fuera, penumbra tintada dentro. */
+/**
+ * Luz ambiente de todo el mundo: blanco (sin efecto) fuera, penumbra tintada dentro.
+ * Cubre todo el ancho visible (origen en WORLD_X0) para que las luces sumen bien fuera.
+ */
 export function ambientCanvas(ambient: readonly Ambient[]): HTMLCanvasElement {
-  const [c, ctx] = makeCanvas(WORLD_W, WORLD_H);
+  const [c, ctx] = makeCanvas(SPAN, WORLD_H);
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, WORLD_W, WORLD_H);
+  ctx.fillRect(0, 0, SPAN, WORLD_H);
+  ctx.translate(-WORLD_X0, 0);
   for (const a of ambient) {
     ctx.fillStyle = `rgb(${a.color[0]}, ${a.color[1]}, ${a.color[2]})`;
     ctx.beginPath();

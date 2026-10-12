@@ -1,6 +1,6 @@
 import { bufferCanvas, drawBuffer } from '../art/canvas';
 import { FEET_Y, heroSprites, type HeroSprites } from '../art/heroes/hero';
-import type { HeroLook, HeroMarks } from '../art/heroes/look';
+import { generateLook, type HeroLook, type HeroMarks } from '../art/heroes/look';
 import type { TrophyIcon } from '../core/model';
 import type { GearView } from './annex';
 import { P } from '../art/palette';
@@ -18,7 +18,8 @@ import {
   KEEPER_RANGE,
   ROOF,
   WORLD_H,
-  WORLD_W,
+  SPAN,
+  WORLD_X0,
   hotspots,
   roofTop,
   sickbeds,
@@ -28,6 +29,7 @@ import {
 import { ambientCanvas, glowSprite, lightSprite, shaftSprite } from './lighting';
 import { buildSky, parallaxLayers, stars, type ParallaxLayer, type Star } from './parallax';
 import { Particles } from './particles';
+import { BATTLE_TIME, Battle, type BattleSound } from './battle';
 import * as Prop from './props';
 
 export type HeroStatus = 'ok' | 'herido' | 'mision' | 'candidato';
@@ -46,6 +48,14 @@ export interface SceneModel {
   loot: number;
   /** Caídos: una vela por cada uno en la capilla. */
   fallen: number;
+  /** Escudo del gremio (letrero), personal contratado y perro guardián. */
+  crest: { field: string; dark: string; symbol: string };
+  staff: string[];
+  dog: boolean;
+  /** Decoración del salón, cuervo y fiesta de la comarca (el día o ya montada). */
+  decor: string[];
+  raven: boolean;
+  feast: 'no' | 'dia' | 'montada';
   /** Equipo sin dueño (tablero de la bodega) y trofeos de la sala. */
   gear: GearView[];
   trophies: TrophyIcon[];
@@ -64,7 +74,8 @@ export type SoundName =
   | 'bats'
   | 'build'
   | 'drip'
-  | 'cheer';
+  | 'cheer'
+  | BattleSound;
 
 export interface Point {
   x: number;
@@ -90,6 +101,14 @@ export const ROOM_CENTERS: Record<string, Point> = {
   despacho: { x: 264, y: 104 },
   rellano: { x: 396, y: 180 },
   exterior: { x: 60, y: 250 },
+  patio: { x: 10, y: 262 },
+  camino: { x: -64, y: 262 },
+  forja: { x: 542, y: 270 },
+  establo: { x: 604, y: 268 },
+  'patio-entreno': { x: -84, y: 280 },
+  empalizada: { x: -100, y: 278 },
+  torre: { x: -112, y: 220 },
+  veteranos: { x: 464, y: 176 },
   puerta: { x: 130, y: 262 },
   armeria: { x: 312, y: 330 },
   capilla: { x: 468, y: 262 },
@@ -98,8 +117,8 @@ export const ROOM_CENTERS: Record<string, Point> = {
 /** Puerta de la calle: por aquí salen los grupos y vuelven de las misiones. */
 const DOOR_X = B.left + 2;
 /** Hasta dónde andan por el patio antes de perderse en la noche. */
-const YARD_END = 26;
-const TRIP_SPEED = 30;
+const YARD_END = -112;
+const TRIP_SPEED = 44;
 
 /** Altura de los pies: el patio queda un escalón por debajo de la sala. */
 function feetAt(x: number): number {
@@ -164,6 +183,8 @@ export class WorldScene {
   private world: WorldBuild | null = null;
   private backC: HTMLCanvasElement | null = null;
   private frontC: HTMLCanvasElement | null = null;
+  private outerC: HTMLCanvasElement | null = null;
+  private outerFrontC: HTMLCanvasElement | null = null;
   private ambientC: HTMLCanvasElement | null = null;
   private skyC: HTMLCanvasElement;
   private parallax: { c: HTMLCanvasElement; l: ParallaxLayer }[];
@@ -178,10 +199,23 @@ export class WorldScene {
   private hover: { id: string; rect: { x: number; y: number; w: number; h: number } } | null = null;
   private t = 0;
   /** Noche que pasa en escena al terminar el día: oscurece, amanece y vuelve la luz. */
-  private night: { start: number; dur: number; done: (() => void) | null } | null = null;
+  private night: { start: number; dur: number; hold: number; done: (() => void) | null } | null =
+    null;
+  /** Asalto que se está viendo en el patio durante la noche. */
+  private battle: Battle | null = null;
+  /** Zoom de antes del asalto: la cámara se acerca al patio mientras dura la pelea. */
+  private raidZoom: number | null = null;
   private last = 0;
   private raf = 0;
   private keeper = { x: 150, dir: 1 as 1 | -1, target: 150, timer: 2, walking: false, dist: 0 };
+  private signImg: PixelBuffer = Prop.signBoard();
+  private signKey = '';
+  private staffSpr = {
+    cocinera: heroSprites(generateLook('cocinera', 'tabernero', 'f'), {}),
+    bardo: heroSprites({ ...generateLook('bardo', 'picaro', 'm'), headgear: 'gorra' }, {}),
+    mozo: heroSprites({ ...generateLook('mozo', 'explorador', 'm'), headgear: null }, {}),
+  };
+  private nextNote = 0;
   private keeperSpr = heroSprites(
     { ...UNCLE, hairStyle: 'corto', hairColor: 1, beard: true, skin: 2 },
     {},
@@ -268,9 +302,16 @@ export class WorldScene {
       });
       this.backC = bufferCanvas(this.world.back);
       this.frontC = bufferCanvas(this.world.front);
+      this.outerC = bufferCanvas(this.world.outer.back);
+      this.outerFrontC = bufferCanvas(this.world.outer.front);
       this.ambientC = ambientCanvas(this.world.ambient);
       this.spots = hotspots(model.fac, model.trophies.length);
       if (prev) this.celebrateUpgrades(prev.fac, model.fac);
+    }
+    const sk = JSON.stringify(model.crest);
+    if (sk !== this.signKey) {
+      this.signKey = sk;
+      this.signImg = Prop.crestBoard(model.crest.field, model.crest.dark, model.crest.symbol);
     }
     // Héroes: crear, actualizar o quitar.
     for (const id of [...this.heroes.keys()])
@@ -326,7 +367,7 @@ export class WorldScene {
     this.cssW = cssW;
     this.cssH = cssH;
     // Nunca más pequeño que el mundo: la vista siempre queda llena.
-    const minZoom = Math.max(1, Math.ceil(cssW / WORLD_W), Math.ceil(cssH / WORLD_H));
+    const minZoom = Math.max(1, Math.ceil(cssW / SPAN), Math.ceil(cssH / WORLD_H));
     const z = Math.max(minZoom, zoom ?? Math.max(2, Math.floor(Math.min(cssW / 180, cssH / 230))));
     this.camera.setView(cssW, cssH, z);
     this.canvas.width = this.camera.vw;
@@ -339,7 +380,7 @@ export class WorldScene {
   }
 
   zoomBy(step: number): void {
-    const minZoom = Math.max(1, Math.ceil(this.cssW / WORLD_W), Math.ceil(this.cssH / WORLD_H));
+    const minZoom = Math.max(1, Math.ceil(this.cssW / SPAN), Math.ceil(this.cssH / WORLD_H));
     const z = Math.max(minZoom, Math.min(6, this.camera.zoom + step));
     if (z !== this.camera.zoom) this.resize(this.cssW, this.cssH, z);
   }
@@ -405,9 +446,142 @@ export class WorldScene {
    * Pasa la noche en la escena: la taberna se apaga, el cielo clarea por el horizonte y
    * `done` se llama al salir el sol (ahí se abre el resumen del amanecer).
    */
-  nightfall(done: () => void, dur = 2.6): void {
+  nightfall(done: () => void, dur = 2.6, hold = 0): void {
     this.night?.done?.();
-    this.night = { start: this.t, dur, done };
+    this.night = { start: this.t, dur, hold, done };
+  }
+
+  /** Noche con asalto: la pelea en el patio y, al acabar, el amanecer. */
+  raidNight(
+    raid: { won: boolean; bandits: number; defenders: string[]; hurt: string[] },
+    done: () => void,
+  ): void {
+    const defenders = raid.defenders
+      .map((id) => this.heroes.get(id))
+      .filter((a): a is HeroActor => !!a)
+      .map((a) => ({
+        id: a.hero.id,
+        look: a.hero.look,
+        marks: a.hero.marks,
+        hurt: raid.hurt.includes(a.hero.id),
+      }));
+    this.battle = new Battle(
+      { won: raid.won, bandits: raid.bandits, defenders },
+      {
+        feetAt,
+        burst: (kind, x, y, n) => {
+          for (let i = 0; i < n; i++) this.particles.spawn(kind, x, y);
+        },
+        coin: (x, y) => {
+          for (let i = 0; i < 8; i++) this.particles.spawn('coin', x, y);
+        },
+        sound: (n, v) => this.cb.onSound?.(n, v ?? 1),
+      },
+    );
+    this.raidZoom = this.camera.zoom;
+    this.resize(this.cssW, this.cssH, Math.min(6, this.camera.zoom + 1));
+    this.camera.centerOn(-52, 262);
+    this.nightfall(done, 2.6, BATTLE_TIME + 0.6);
+  }
+
+  /** Guirnalda de banderines entre dos puntos, con su comba. */
+  private bunting(
+    x0: number,
+    x1: number,
+    y: number,
+    sag: number,
+    colors: readonly string[],
+    cx: number,
+    cy: number,
+  ): void {
+    const ctx = this.ctx;
+    const yAt = (x: number) => Math.round(y + sag * Math.sin((Math.PI * (x - x0)) / (x1 - x0)));
+    ctx.fillStyle = P.bark;
+    for (let x = x0; x <= x1; x++) ctx.fillRect(x - cx, yAt(x) - cy, 1, 1);
+    let i = 0;
+    for (let x = x0 + 3; x < x1 - 3; x += 7, i++) {
+      ctx.fillStyle = colors[i % colors.length]!;
+      const top = yAt(x + 2) + 1;
+      for (let r = 0; r < 4; r++) ctx.fillRect(x + r / 2 - cx, top + r - cy, 5 - r, 1);
+    }
+  }
+
+  /** Decoración del salón, la fiesta de la comarca y sus confetis. */
+  private drawDecor(ctx: CanvasRenderingContext2D, cx: number, cy: number, t: number): void {
+    if (!this.model) return;
+    const { decor, crest, feast } = this.model;
+    const floor = F.hall.floor;
+    const px = (x: number, y: number, c: string, w = 1, h = 1) => {
+      ctx.fillStyle = c;
+      ctx.fillRect(x - cx, y - cy, w, h);
+    };
+    if (decor.includes('tapices'))
+      this.bunting(196, 316, F.hall.top + 2, 4, [crest.field, P.gold, crest.dark], cx, cy);
+    if (decor.includes('tarima')) {
+      px(292, floor - 3, P.clay, 26, 1);
+      px(292, floor - 2, P.rust, 26, 2);
+      for (let x = 296; x < 318; x += 6) px(x, floor - 2, P.bark, 1, 2);
+    }
+    if (decor.includes('naipes')) {
+      // Cartas y monedas en la primera mesa.
+      const tx = 236;
+      const ty = floor - 16;
+      px(tx - 9, ty, P.white, 2, 3);
+      px(tx - 6, ty - 1, P.white, 2, 3);
+      px(tx - 8, ty + 1, P.red);
+      px(tx - 5, ty, P.black);
+      px(tx - 12, ty + 1, P.gold, 2, 2);
+      px(tx - 12, ty, P.lemon, 2, 1);
+    }
+    if (decor.includes('barril')) {
+      // Barrilito con espita sobre la barra.
+      const bx = 186;
+      const by = floor - 30;
+      px(bx, by, P.oak, 9, 8);
+      px(bx, by + 1, P.steel, 9, 1);
+      px(bx, by + 6, P.steel, 9, 1);
+      px(bx + 1, by, P.clay, 7, 1);
+      px(bx + 9, by + 4, P.gold, 2, 1);
+      px(bx + 10, by + 5, P.gold, 1, 1);
+    }
+    if (feast === 'no') return;
+    const party = [P.red, P.gold, P.sky, P.lime, P.rose];
+    // El pueblo está de fiesta: banderines y farolillos sobre la puerta.
+    this.bunting(4, 94, 206, 6, party, cx, cy);
+    for (const [lx, ly] of [
+      [22, 210],
+      [48, 212],
+      [74, 210],
+    ] as const) {
+      px(lx, ly, P.bark, 1, 2);
+      px(lx - 2, ly + 2, Math.sin(t * 3 + lx) > 0 ? P.orange : P.red, 5, 5);
+      px(lx - 1, ly + 3, P.lemon, 3, 3);
+    }
+    if (feast === 'montada') {
+      this.bunting(106, 196, F.hall.top + 3, 5, party, cx, cy);
+      this.bunting(316, 420, F.hall.top + 3, 5, party, cx, cy);
+      if (Math.random() < 0.12)
+        this.particles.spawn('spark', 140 + Math.random() * 260, F.hall.top + 6, { vy: 6 });
+    }
+  }
+
+  /** Saltar la pelea: se pasa directamente al amanecer. */
+  skipRaid(): void {
+    if (!this.battle || !this.night) return;
+    this.battle.finish();
+    const a = 0.35 * this.night.dur;
+    this.night.start = this.t - a - this.night.hold;
+  }
+
+  /** Avance de la noche en la escala original (0–1.8), con la meseta oscura alargada. */
+  private nightP(): number {
+    const n = this.night!;
+    const te = this.t - n.start;
+    const a = 0.35 * n.dur;
+    const plateau = n.hold > 0 ? n.hold : 0.15 * n.dur;
+    if (te < a) return te / n.dur;
+    if (te < a + plateau) return 0.35 + (0.15 * (te - a)) / plateau;
+    return 0.5 + (te - a - plateau) / n.dur;
   }
 
   /** Celebración en la barra cuando un grupo vuelve con éxito: notas, monedas y brindis. */
@@ -427,9 +601,10 @@ export class WorldScene {
   private nightLight(): { dark: number; warm: number } {
     const n = this.night;
     if (!n) return { dark: 0, warm: 0 };
-    const p = (this.t - n.start) / n.dur;
+    const p = this.nightP();
     const ramp = (a: number, b: number) => Math.max(0, Math.min(1, (p - a) / (b - a)));
-    const dark = ramp(0, 0.35) * (1 - ramp(0.5, 0.9));
+    // Durante un asalto la noche no es tan cerrada: hay que ver la pelea.
+    const dark = ramp(0, 0.35) * (1 - ramp(0.5, 0.9)) * (this.battle ? 0.55 : 1);
     const warm = ramp(0.45, 0.9) * (1 - ramp(1.05, 1.8));
     return { dark, warm };
   }
@@ -482,13 +657,26 @@ export class WorldScene {
     if (b.mapas > a.mapas) this.celebrate('despacho');
     if (b.arm > a.arm) this.celebrate('armeria');
     if (b.cap > a.cap) this.celebrate('capilla');
+    if (b.forja > a.forja) this.celebrate('forja');
+    if (b.establo > a.establo) this.celebrate('establo');
+    if (b.patio > a.patio) this.celebrate('patio-entreno');
+    if (b.empal > a.empal) this.celebrate('empalizada');
+    if (b.torre > a.torre) this.celebrate('torre');
   }
 
   private update(dt: number): void {
     this.t += dt;
     const t = this.t;
+    if (this.battle) {
+      this.battle.update(dt);
+      if (this.battle.done) {
+        this.battle = null;
+        if (this.raidZoom !== null) this.resize(this.cssW, this.cssH, this.raidZoom);
+        this.raidZoom = null;
+      }
+    }
     if (this.night) {
-      const p = (t - this.night.start) / this.night.dur;
+      const p = this.nightP();
       if (p >= 0.85 && this.night.done) {
         const done = this.night.done;
         this.night.done = null;
@@ -722,9 +910,9 @@ export class WorldScene {
     ctx.fillRect(0, 0, vw, vh);
 
     // Cielo, estrellas, estrella fugaz, nubes y capas lejanas.
-    ctx.drawImage(this.skyC, -Math.round(cx * 0.08), -cy);
+    ctx.drawImage(this.skyC, WORLD_X0 - Math.round(cx * 0.08), -cy);
     for (const s of this.starList) {
-      const sx = s.x - Math.round(cx * 0.08);
+      const sx = s.x + WORLD_X0 - Math.round(cx * 0.08);
       const sy = s.y - cy;
       if (sx < 0 || sy < 0 || sx >= vw || sy >= vh) continue;
       const tw = noise(s.x, Math.floor(t * 1.5 + s.y));
@@ -747,23 +935,24 @@ export class WorldScene {
       }
     }
     for (const cl of this.clouds) {
-      const x = ((cl.x + t * cl.speed) % (WORLD_W + 80)) - 60 - cx * 0.15;
+      const x = ((cl.x + t * cl.speed) % (SPAN + 80)) - 60 + WORLD_X0 - cx * 0.15;
       drawBuffer(ctx, cl.img, x, cl.y - cy);
     }
     const { dark, warm } = this.nightLight();
     if (warm > 0) this.drawDawnSky(warm, cx, cy, vw, vh);
     for (const { c, l } of this.parallax) {
-      ctx.drawImage(c, -Math.round(cx * l.fx), -cy);
+      ctx.drawImage(c, WORLD_X0 - Math.round(cx * l.fx), -cy);
     }
 
     // Mundo (fondo) + elementos exteriores animados.
+    if (this.outerC) ctx.drawImage(this.outerC, WORLD_X0 - cx, -cy);
     ctx.drawImage(this.backC, -cx, -cy);
     const drawn: Drawn[] = [];
     const at = (img: PixelBuffer, x: number, y: number, flip = false) =>
       drawBuffer(ctx, img, x - cx, y - cy, flip);
 
     // Banderín y búho en el tejado.
-    at(flagFrame(t), ROOF.apexX, ROOF.apexY - 19);
+    at(flagFrame(t, this.model.crest.field, this.model.crest.dark), ROOF.apexX, ROOF.apexY - 19);
     const owlImg =
       t < this.owl.lookUntil
         ? OWL_FRAMES.look
@@ -794,7 +983,12 @@ export class WorldScene {
       for (let i = 0; i <= 8; i++)
         ctx.fillRect(Math.round(ax + ((bx - ax) * i) / 8) - cx, 168 + i - cy, 1, 1);
     }
-    at(signBoard, sx, 176);
+    at(this.signImg, sx, 176);
+    if (this.model.raven) {
+      // De vez en cuando sacude las alas.
+      const flap = Math.sin(t * 0.7) > 0.93;
+      at(Prop.raven(flap && Math.floor(t * 10) % 2 === 0), sx + 11, 169 - (flap ? 1 : 0));
+    }
 
     // Murciélagos del desván.
     for (const b of this.bats) {
@@ -837,6 +1031,25 @@ export class WorldScene {
       ? this.keeperSpr.walk[Math.floor(k.dist / 3.5) % 4]!
       : this.blinkOr(this.keeperSpr, 0.37);
     at(kImg, k.x - 9, 286 - FEET_Y, k.walking && k.dir < 0);
+
+    // Personal contratado: la cocinera junto a la barra, el bardo ante la chimenea y el mozo
+    // en la enfermería.
+    const staff = this.model.staff;
+    if (staff.includes('cocinera'))
+      at(this.blinkOr(this.staffSpr.cocinera, 0.71), 178 - 9, 286 - FEET_Y);
+    if (staff.includes('bardo')) {
+      const lift = this.model.decor.includes('tarima') ? 3 : 0;
+      at(this.blinkOr(this.staffSpr.bardo, 0.13), 304 - 9, F.hall.floor - FEET_Y - lift);
+      if (t > this.nextNote) {
+        this.particles.spawn('note', 306, F.hall.floor - 24);
+        this.nextNote = t + 1.1 + Math.random();
+      }
+    }
+    if (staff.includes('mozo'))
+      at(this.blinkOr(this.staffSpr.mozo, 0.52), 336 - 9, F.upper.floor - FEET_Y);
+    // Perro guardián a la puerta.
+    if (this.model.dog) at(Prop.dog(Math.floor(t * 3) % 2 === 0), 66, GROUND - 10);
+    this.drawDecor(ctx, cx, cy, t);
 
     // Heridos en cama.
     const beds = sickbeds(this.model.fac);
@@ -884,6 +1097,7 @@ export class WorldScene {
 
     // Capa delantera (barra, mesas, barandilla, arbustos).
     ctx.drawImage(this.frontC, -cx, -cy);
+    if (this.outerFrontC) ctx.drawImage(this.outerFrontC, WORLD_X0 - cx, -cy);
 
     // Candidatos en la barra.
     const cands = this.model.heroes
@@ -927,6 +1141,7 @@ export class WorldScene {
     );
     walkers.sort((a, b) => a.hero.id.localeCompare(b.hero.id));
     for (const a of walkers) {
+      if (this.battle?.hidden.has(a.hero.id)) continue;
       const walking = a.act === 'walk';
       const img = walking
         ? a.spr.walk[Math.floor(a.dist / 3.5) % 4]!
@@ -944,11 +1159,12 @@ export class WorldScene {
       drawn.push({ kind: 'hero', id: a.hero.id, label: a.hero.name, x, y, img, flip });
     }
     this.drawn = drawn;
+    this.battle?.draw(ctx, cx, cy);
 
     // ---------- Luz ----------
     const l = this.lctx;
     l.globalCompositeOperation = 'copy';
-    l.drawImage(this.ambientC, -cx, -cy);
+    l.drawImage(this.ambientC, WORLD_X0 - cx, -cy);
     l.globalCompositeOperation = 'lighter';
     for (const li of W.lights) {
       if (li.x + li.r < cx || li.x - li.r > cx + vw || li.y + li.r < cy || li.y - li.r > cy + vh)
@@ -956,6 +1172,11 @@ export class WorldScene {
       const fl = noise(Math.floor(t * 9), li.x + li.y);
       const r = Math.max(4, Math.round((li.r * (1 - li.flicker * fl)) / 2) * 2);
       l.drawImage(lightSprite(r, li.color, li.intensity), li.x - r - cx, li.y - r - cy);
+    }
+    // Antorchas de los bandidos durante un asalto.
+    for (const tch of this.battle?.lights() ?? []) {
+      const r = tch.r + Math.round(noise(Math.floor(t * 9), tch.x) * 4);
+      l.drawImage(lightSprite(r, tch.color, 1), tch.x - r - cx, tch.y - r - cy);
     }
     for (const s of W.shafts) {
       const sp = shaftSprite(s);
@@ -980,6 +1201,10 @@ export class WorldScene {
     }
     for (const g of W.glows)
       ctx.drawImage(glowSprite(g.r, g.color, 0.45), g.x - g.r - cx, g.y - g.r - cy);
+    for (const g of this.battle?.glows() ?? []) {
+      const r = Math.round(g.r / 2);
+      ctx.drawImage(glowSprite(r, g.color, 0.5), g.x - r - cx, g.y - r - cy);
+    }
     if (W.layout.fire !== 'apagado') {
       const big = W.layout.fire === 'grande' ? 30 : 24;
       const fl = noise(Math.floor(t * 8), 3);
@@ -1002,6 +1227,7 @@ export class WorldScene {
       }
     }
     if (W.layout.fire !== 'apagado') this.drawFire(W);
+    this.battle?.drawFx(ctx, cx, cy);
     this.particles.draw(ctx, cx, cy, t);
 
     // Resalte del punto bajo el cursor y flecha sobre el héroe buscado.
@@ -1259,8 +1485,6 @@ export class WorldScene {
     );
   }
 }
-
-const signBoard = Prop.signBoard();
 
 function cloud(i: number): PixelBuffer {
   const b = new PixelBuffer(46, 14);

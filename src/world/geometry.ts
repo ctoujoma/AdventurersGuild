@@ -6,6 +6,13 @@
 export const WORLD_W = 512;
 export const WORLD_H = 384;
 export const GROUND = 300;
+/**
+ * El mundo visible va más allá del corte del edificio (0..WORLD_W): un patio con el camino
+ * real a la izquierda, donde llegan los asaltos, y terreno a la derecha para crecer.
+ */
+export const WORLD_X0 = -128;
+export const WORLD_X1 = 640;
+export const SPAN = WORLD_X1 - WORLD_X0;
 
 /** Paredes exteriores del edificio (cortadas) y su interior. */
 export const B = { left: 96, right: 432, inL: 104, inR: 424 } as const;
@@ -62,6 +69,14 @@ export interface Facilities {
   arm: number;
   /** Capilla en un anexo a la derecha: 0–2. */
   cap: number;
+  /** Fuera del corte: forja y establo a la derecha; patio, empalizada y torre a la izquierda. */
+  forja: number;
+  establo: number;
+  patio: number;
+  empal: number;
+  torre: number;
+  /** Ala de veteranos colgada de la fachada derecha: 0–2. */
+  vet?: number;
 }
 
 export const FACILITY_MAX = 3;
@@ -195,6 +210,23 @@ export function hotspots(f: Facilities, trophies = 0): HotspotDef[] {
   TROPHY_HOTSPOTS.slice(0, trophies).forEach(([x, y], i) =>
     list.push({ id: `trofeo-${i}`, label: 'Trofeo', x, y, w: 14, h: 14 }),
   );
+  if (f.forja > 0) list.push({ id: 'forja', label: 'Forja', x: 518, y: 252, w: 50, h: 48 });
+  if (f.establo > 0) list.push({ id: 'establo', label: 'Establo', x: 572, y: 250, w: 64, h: 50 });
+  if (f.patio > 0)
+    list.push({
+      id: 'patio-entreno',
+      label: 'Patio de entrenamiento',
+      x: -102,
+      y: 268,
+      w: 52,
+      h: 32,
+    });
+  if (f.empal > 0)
+    list.push({ id: 'empalizada', label: 'Empalizada', x: -127, y: 266, w: 20, h: 34 });
+  if (f.torre > 0)
+    list.push({ id: 'torre', label: 'Torre del vigía', x: -128, y: 160, w: 26, h: 140 });
+  if ((f.vet ?? 0) > 0)
+    list.push({ id: 'veteranos', label: 'Ala de veteranos', x: 434, y: 138, w: 62, h: 70 });
   if (f.arm > 0) list.push({ id: 'armeria', label: 'Armería', x: 284, y: 318, w: 56, h: 34 });
   if (f.cap > 0) list.push({ id: 'capilla', label: 'Capilla', x: 440, y: 214, w: 56, h: 78 });
   if (layout(f).lute) list.push({ id: 'laud', label: 'Laúd', x: 263, y: 229, w: 15, h: 28 });

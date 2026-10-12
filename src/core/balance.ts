@@ -17,7 +17,20 @@ export const SCHEDULE: readonly { day: number; amount: number }[] = [
 
 export const START = {
   gold: 160,
-  fac: { dorm: 1, enf: 0, tab: 1, mapas: 0, arm: 0, cap: 0 } as Facilities,
+  fac: {
+    dorm: 1,
+    enf: 0,
+    tab: 1,
+    mapas: 0,
+    arm: 0,
+    cap: 0,
+    forja: 0,
+    establo: 0,
+    patio: 0,
+    empal: 0,
+    torre: 0,
+    vet: 0,
+  } as Facilities,
   heroes: 2,
   candidates: 3,
   quests: 4,
@@ -25,13 +38,30 @@ export const START = {
 
 /** Coste de subir a cada nivel (índice = nivel nuevo); el nivel máximo es el último. */
 export const UPGRADE_COST: Record<keyof Facilities, readonly number[]> = {
-  dorm: [0, 80, 150, 280],
-  enf: [0, 100, 200, 340],
+  dorm: [0, 80, 170, 420],
+  enf: [0, 100, 230, 450],
   tab: [0, 90, 250, 450, 750],
   mapas: [0, 120, 340],
   arm: [0, 150, 380],
   cap: [0, 110, 320],
+  forja: [0, 180, 360],
+  establo: [0, 140, 300],
+  patio: [0, 160, 340],
+  empal: [0, 120, 260],
+  torre: [0, 200, 380],
+  vet: [0, 220, 420],
 };
+
+/** Ala de veteranos: a partir de este nivel de héroe se cuenta como veterano. */
+export const VET_LEVEL = 4;
+/** Moral extra por noche y tope de moral extra de los veteranos, por nivel del ala. */
+export const VET_REST = [0, 4, 8] as const;
+export const VET_CAP = [0, 10, 15] as const;
+
+/** Patio de entrenamiento: experiencia por noche descansando, por nivel. */
+export const TRAINING_XP = [0, 6, 12] as const;
+/** Empalizada: lo que suma a la defensa, por nivel. */
+export const PALISADE = [0, 5, 10] as const;
 export const facilityMax = (k: keyof Facilities) => UPGRADE_COST[k].length - 1;
 
 export const capacity = (dorm: number) => 2 + 2 * dorm;
@@ -166,3 +196,14 @@ export const SALARY_EVERY = 7;
 export const UNPAID_LIMIT = 2;
 export const UNPAID_MORALE = -20;
 export const REFUSE_MORALE = -10;
+
+// ---------- Asaltos ----------
+/** Desde qué día pueden llegar asaltos y a partir de qué notoriedad empiezan a fijarse. */
+export const RAID_FROM = 12;
+export const RAID_NOTORIETY = 80;
+/** Tope de probabilidad diaria de que una banda se fije en el gremio. */
+export const RAID_MAX_CHANCE = 0.25;
+/** Probabilidad base de chivatazo al programarse un asalto. */
+export const RAID_BASE = 0.45;
+/** Lo que suma cada héroe de guardia a la defensa. */
+export const GUARD_BONUS = 3;

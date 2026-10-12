@@ -67,7 +67,17 @@ function playDay(s: GameState, st: Strategy): GameState {
   }
   // Con dinero de sobra, ampliar el edificio: armería, mapas y capilla.
   if (st.upgrade)
-    for (const k of ['arm', 'mapas', 'cap'] as const) {
+    for (const k of [
+      'arm',
+      'empal',
+      'mapas',
+      'forja',
+      'patio',
+      'cap',
+      'establo',
+      'torre',
+      'vet',
+    ] as const) {
       const cost = upgradeCost(s, k);
       if (cost !== null && s.gold - cost > reserve(s) + 120)
         s = reduce(s, { type: 'upgrade', fac: k });

@@ -128,6 +128,57 @@ export const FACILITY_INFO: Record<
         ? 'Sin efecto'
         : `Moral +${2 * l} por noche, los desaparecidos vuelven más${l >= 2 ? ' y los caídos duelen la mitad' : ''}`,
   },
+  forja: {
+    name: 'Forja',
+    room: 'forja',
+    levels: [
+      'No hay: el herrero del pueblo cobra caro',
+      'Cobertizo con fragua, yunque y fuelle',
+      'Fragua grande con chimenea y armero',
+    ],
+    effect: (l) => (l === 0 ? 'Sin efecto' : `+${l} al objeto que lleva puesto cada héroe`),
+  },
+  establo: {
+    name: 'Establo',
+    room: 'establo',
+    levels: ['No hay: se va a pie', 'Cuadra con dos caballos', 'Cuadra grande y carro'],
+    effect: (l) =>
+      l === 0
+        ? 'Sin efecto'
+        : `Un día menos en viajes de 3 o más días${l >= 2 ? '; las escoltas pagan un 25 % más' : ''}`,
+  },
+  patio: {
+    name: 'Patio de entrenamiento',
+    room: 'patio-entreno',
+    levels: ['No hay', 'Muñecos de paja junto al camino', 'Muñecos, diana y armero de prácticas'],
+    effect: (l) =>
+      l === 0 ? 'Sin efecto' : `+${[0, 6, 12][l]} de experiencia por noche a quien descansa`,
+  },
+  empal: {
+    name: 'Empalizada',
+    room: 'empalizada',
+    levels: ['No hay', 'Estacas afiladas cerrando el patio', 'Empalizada doble con pasarela'],
+    effect: (l) =>
+      l === 0 ? 'Sin efecto' : `+${[0, 5, 10][l]} a la defensa si asaltan la taberna`,
+  },
+  torre: {
+    name: 'Torre del vigía',
+    room: 'torre',
+    levels: ['No hay', 'Torre de madera con farol', 'Torre alta con campana y estandarte'],
+    effect: (l) =>
+      l === 0
+        ? 'Sin efecto'
+        : `Siempre hay chivatazo de los asaltos${l >= 2 ? '; un encargo más en el tablón' : ''}`,
+  },
+  vet: {
+    name: 'Ala de veteranos',
+    room: 'veteranos',
+    levels: ['No hay', 'Cuartos con ventana para los veteranos', 'Ala con balcón y sus trofeos'],
+    effect: (l) =>
+      l === 0
+        ? 'Sin efecto'
+        : `Héroes de nivel 4 o más: +${[0, 4, 8][l]} de moral por noche y más tope${l >= 2 ? '; nunca desertan' : ''}`,
+  },
 };
 
 /** Lo que dice cada cosa de la escena al tocarla. */

@@ -33,9 +33,11 @@ export const PERKS: Record<ClassId, { name: string; desc: string }> = {
 const hasCls = (party: readonly Member[], c: ClassId) => party.some((m) => m.cls === c);
 
 /** Días que tarda el grupo: un explorador conoce atajos. */
-export function tripDays(q: Quest, party: readonly Member[]): number {
+export function tripDays(q: Quest, party: readonly Member[], establo = 0): number {
   const scout = hasCls(party, 'explorador') && q.days >= SCOUT_MIN;
-  return q.days - (scout ? SCOUT_DAYS : 0);
+  // El establo presta monturas: un día menos en los viajes largos.
+  const horses = establo >= 1 && q.days >= SCOUT_MIN;
+  return Math.max(1, q.days - (scout ? SCOUT_DAYS : 0) - (horses ? 1 : 0));
 }
 
 /** Multiplicadores que el grupo aplica a la resolución. */
