@@ -282,6 +282,21 @@ export function App() {
     if (it) toast(`Vendido: ${it.name} por ${it.value} monedas.`);
   };
 
+  // Teclado: Escape cierra lo que esté encima (ajustes, partidas, carta, encargo, ficha, panel).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (settingsOpen) setSettingsOpen(false);
+      else if (saveMenu) setSaveMenu(false);
+      else if (reportId) setReportId(null);
+      else if (questId) setQuestId(null);
+      else if (card) setCard(null);
+      else if (panel) openPanel(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+
   // Música según lo que pasa: la pelea, un asalto anunciado, el modo libre o la taberna.
   const mood: Mood = raiding
     ? 'asalto'

@@ -3048,3 +3048,27 @@ button:focus-visible {
     max-height: calc(100% - 8px);
   }
 }
+
+/* ---------- Accesibilidad ---------- */
+/* Foco visible con teclado en todo lo que se puede pulsar o escribir. */
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+[role='radio']:focus-visible,
+.tab:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+/* En pantallas táctiles, objetivos de al menos 44 px. */
+@media (pointer: coarse) {
+  .btn-icon {
+    width: 44px;
+    height: 44px;
+  }
+  .btn {
+    min-height: 44px;
+  }
+  .stage-tools {
+    gap: 8px;
+  }
+}
