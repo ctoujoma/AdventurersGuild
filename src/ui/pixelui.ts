@@ -140,7 +140,8 @@ function paperTex(): PixelBuffer {
     for (let x = 0; x < 32; x++) {
       const n = Math.sin(x * 4.1 + y * 9.7) * 999.1;
       const f = n - Math.floor(n);
-      b.set(x, y, f > 0.93 ? P.tan : P.sand);
+      // Motas suaves: que se note el papel sin ensuciar la letra.
+      b.set(x, y, f > 0.94 ? '#e6c79d' : P.sand);
     }
   }
   return b;

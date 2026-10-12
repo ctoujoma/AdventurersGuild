@@ -1,0 +1,23 @@
+{
+  "name": "El Gremio de Aventureros · El Jarro Partido",
+  "short_name": "El Jarro Partido",
+  "description": "Lleva la taberna de tu tío, contrata aventureros y salda la deuda antes de que se acabe el mes.",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#181425",
+  "theme_color": "#181425",
+  "categories": ["games"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    {
+      "src": "icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

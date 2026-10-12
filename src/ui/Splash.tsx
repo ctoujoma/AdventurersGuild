@@ -4,12 +4,17 @@ import splashUrl from '../assets/splash.webp';
 /**
  * Pantalla del desarrollador antes del título. La animación es `assets-src/splash-logo.gif`
  * convertida a WebP animado de una sola vuelta (se queda en el último fotograma).
- * El tiempo cuenta desde que la imagen ha cargado, y la salida empieza justo antes del final.
+ * El tiempo cuenta desde que la imagen ha cargado, y la salida empieza poco después del final.
  */
 const ANIM = 3000;
 /** Salida: fundido rápido mientras la imagen se estira hacia la pantalla. */
 const OUT = 420;
-const HOLD = ANIM - 150;
+/**
+ * El WebP es de una sola vuelta y se queda quieto en el último fotograma, así que se espera
+ * un poco después del final para que se vea entero (la carga y el primer pintado se comen
+ * unas décimas) antes de estirar y fundir.
+ */
+const HOLD = ANIM + 350;
 /** Si la imagen tarda demasiado en cargar, se pasa al título igualmente. */
 const LOAD_TIMEOUT = 6000;
 

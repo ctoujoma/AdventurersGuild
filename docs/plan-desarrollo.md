@@ -202,15 +202,15 @@ Inspirado en los ataques al refugio de *Fallout Shelter*: cuanto más famoso y r
 
 ### Fase 8: Pulido y pruebas · M
 - [x] Splash del desarrollador, pantalla de título y tutorial en los primeros días (el tío deja notas)
-- [ ] Balance con el simulador y con pruebas de jugadores reales (ahora la segunda mitad es fácil y el modo libre acumula demasiado oro: necesita los asaltos de la fase 6 y gastos de la fase 7)
-- [ ] El equipo se ve en el sprite y el retrato del héroe
-- [ ] Animaciones y transiciones; cartas que se deslizan; héroes que brindan en la celebración
-- [ ] Móvil en horizontal
+- [x] Balance del modo libre: otros gremios pujan por los encargos (pagan la mitad o menos según el rango) y los veteranos de nivel 6 o más piden subidas de 5 × nivel. En el simulador el oro crece al principio (~+2.700 en 20 días) y se estabiliza hacia los 40 días (quiebra un 2–10 % si se acepta todo). Falta afinar con pruebas de jugadores reales
+- [x] El equipo se ve en el sprite y el retrato del héroe: coraza, capa, amuleto, espada o hacha a la espalda, escudo, varita, botas y ganzúas, con metal y brillo según la rareza
+- [x] Animaciones y transiciones: paneles que suben y bajan con el contenido escalonado, cartas que llegan deslizándose con el lacre estampado, avisos que bajan, amanecer línea a línea, oro y reputación que corren y destellan, botones que se hunden y héroes que brindan jarra en alto al volver un grupo
+- [x] Móvil en horizontal: pestañas en columna a la izquierda, marcador estrecho y paneles a toda altura
 - [x] Música ampliada: 7 temas (La jarra rota, El camino real, Velas en la bodega, Gremio de leyenda, Antorchas en el camino, ¡A las armas!, ¡Brindis!) repartidos por ambientes: taberna, modo libre, tensión con un asalto anunciado, la pelea y un brindis al repeler un asalto o saldar la deuda. Laúd, flauta, pandero y sonajero; cada repetición varía (adornos, notas de paso, bajo arpegiado, segunda voz) y los cambios se funden
-- [ ] Ajustes: volumen y velocidad
+- [x] Ajustes: volumen de música, efectos y ambiente; velocidad de la escena (×1, ×1,5, ×2); letra grande; menos movimiento
 - [x] Guardar y cargar partidas: archivo o código de texto
-- [ ] PWA: instalable, offline, icono y pantalla de carga
-- [ ] Accesibilidad básica: contraste, tamaños de toque y de texto
+- [x] PWA: manifiesto, iconos (también «maskable» y de Apple), pantalla completa y service worker para jugar sin conexión
+- [x] Accesibilidad básica: cifras legibles (Jersey 10 para los dígitos), contraste ≥ 5:1 en textos sobre pergamino, foco visible con teclado, Escape para cerrar, objetivos táctiles de 44 px
 
 **🎯 Hito:** prototipo pulido para enseñar.
 

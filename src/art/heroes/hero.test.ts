@@ -97,3 +97,28 @@ describe('heroSprites', () => {
     expect(renderHero(brom).data.join()).not.toBe(renderHero(brom, { eyepatch: true }).data.join());
   });
 });
+
+describe('equipo visible', () => {
+  it('el equipo cambia el sprite y el retrato, y la rareza también', async () => {
+    const { renderPortrait } = await import('../portraits/portrait');
+    const look = generateLook('equipado', 'guerrero', 'm');
+    const plain = heroSprites(look);
+    const sword = heroSprites(look, { gear: { icon: 'espada', rarity: 0 } });
+    const gold = heroSprites(look, { gear: { icon: 'espada', rarity: 2 } });
+    expect(sword.idle[0].data).not.toEqual(plain.idle[0].data);
+    expect(sword.walk[0].data).not.toEqual(plain.walk[0].data);
+    expect(gold.idle[0].data).not.toEqual(sword.idle[0].data);
+    for (const icon of [
+      'coraza',
+      'capa',
+      'amuleto',
+      'espada',
+      'hacha',
+      'escudo',
+      'varita',
+    ] as const)
+      expect(renderPortrait(look, { gear: { icon, rarity: 1 } }).data).not.toEqual(
+        renderPortrait(look).data,
+      );
+  });
+});

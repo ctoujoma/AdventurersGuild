@@ -16,6 +16,7 @@ interface Props {
   onSell: (itemId: string) => void;
   onSellTrophy: (id: string) => void;
   onSaves: () => void;
+  onSettings: () => void;
   onLibro: () => void;
   onTaberna: () => void;
   onTitle: () => void;
@@ -29,6 +30,7 @@ export function GremioPanel({
   onSell,
   onSellTrophy,
   onSaves,
+  onSettings,
   onTitle,
   onLibro,
   onTaberna,
@@ -48,6 +50,10 @@ export function GremioPanel({
           <span class="tiny">
             Cada 7 días se pagan los salarios: ahora, {salaries(game)} monedas
             {next ? ` (día ${next.day})` : ''}. Dos semanas sin pagar y el gremio quiebra.
+          </span>
+          <span class="tiny">
+            Sin la deuda, otros gremios pujan por los mismos encargos: pagan menos. Y los veteranos
+            de nivel 6 o más piden subidas mayores.
           </span>
           {(game.unpaid ?? 0) > 0 && (
             <span class="qs-warn">¡La semana pasada no pagaste! Otra más y se acabó.</span>
@@ -250,6 +256,9 @@ export function GremioPanel({
       <div class="newgame herocard-actions">
         <button class="btn btn-wood" onClick={onSaves}>
           Guardar y cargar
+        </button>
+        <button class="btn btn-wood" onClick={onSettings}>
+          Ajustes
         </button>
         <button class="btn btn-wood" onClick={onTitle}>
           Menú principal

@@ -1,3 +1,13 @@
+/* Cifras: los números de Pixelify Sans (2, 5 y 8) se confunden a tamaño pequeño; para los
+   dígitos se usa Jersey 10 (SIL OFL), igual de pixelada pero con cifras claras. */
+@font-face {
+  font-family: 'Cifras';
+  src: url('./assets/fonts/jersey-10-latin-400-normal.woff2') format('woff2');
+  unicode-range: U+0030-0039;
+  font-display: swap;
+  size-adjust: 125%;
+}
+
 /* Interfaz en pixel art: la taberna ocupa la pantalla y los paneles suben encima.
    Los marcos y texturas (--frame-*, --tex-*, --btn-*) se generan al arrancar (pixelui.ts). */
 :root {
@@ -24,7 +34,10 @@
   --sky: #0099db;
   --ocean: #124e89;
   --grape: #68386c;
-  --pixel: 'Pixelify Sans', 'Courier New', monospace;
+  /* Texto secundario sobre pergamino, con contraste suficiente (≥ 5:1 sobre --sand). */
+  --text-soft: #6e4232;
+  --text-good: #265c42;
+  --pixel: 'Cifras', 'Pixelify Sans', 'Courier New', monospace;
   --body: 'Alegreya Sans', 'Trebuchet MS', sans-serif;
   color-scheme: dark;
 }
@@ -46,6 +59,8 @@ body {
   font-family: var(--body);
   font-size: 16px;
   line-height: 1.35;
+  /* Alegreya Sans trae cifras «de texto» que suben y bajan: mejor alineadas y de igual ancho. */
+  font-variant-numeric: lining-nums tabular-nums;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
 }
@@ -488,20 +503,20 @@ button:focus-visible {
 }
 
 .muted {
-  color: var(--oak);
+  color: var(--text-soft);
   font-size: 14px;
 }
 
 .nick {
   font-style: italic;
   font-weight: 400;
-  color: var(--oak);
+  color: var(--text-soft);
 }
 
 .tiny {
   margin: 0;
   font-size: 13px;
-  color: var(--fog);
+  color: var(--text-soft);
 }
 
 .card-paper {
@@ -544,7 +559,7 @@ button:focus-visible {
 
 .trait-hidden {
   background: transparent;
-  color: var(--oak);
+  color: var(--text-soft);
   box-shadow: 0 0 0 2px var(--oak);
 }
 
@@ -1028,7 +1043,7 @@ button:focus-visible {
 
 .pick:disabled .pick-info b,
 .pick:disabled .pick-skills {
-  color: var(--oak);
+  color: var(--text-soft);
 }
 
 .pick:disabled .check {
@@ -1090,7 +1105,8 @@ button:focus-visible {
   gap: 8px;
 }
 
-.debt h3 {
+.debt h3,
+.security h3 {
   margin: 0;
   font-family: var(--pixel);
   font-size: 18px;
@@ -1120,7 +1136,7 @@ button:focus-visible {
   gap: 6px 10px;
   font-family: var(--pixel);
   font-size: 13px;
-  color: var(--oak);
+  color: var(--text-soft);
 }
 
 .sched .next {
@@ -1157,7 +1173,7 @@ button:focus-visible {
 
 .next-level {
   font-size: 13px;
-  color: var(--leaf);
+  color: var(--text-good);
 }
 
 .pips {
@@ -1397,7 +1413,7 @@ button:focus-visible {
 }
 
 .herocard .tiny {
-  color: var(--oak);
+  color: var(--text-soft);
 }
 
 .seal {
@@ -1439,7 +1455,7 @@ button:focus-visible {
 }
 
 .outcome-win {
-  color: var(--leaf);
+  color: var(--text-good);
 }
 
 .outcome-mid {
@@ -1505,7 +1521,7 @@ button:focus-visible {
   margin: 0;
   text-align: right;
   font-style: italic;
-  color: var(--oak);
+  color: var(--text-soft);
 }
 
 .mail {
@@ -1768,7 +1784,7 @@ button:focus-visible {
 }
 
 .sched .paid {
-  color: var(--leaf);
+  color: var(--text-good);
 }
 
 .pill-desaparecido,
@@ -1841,7 +1857,7 @@ button:focus-visible {
   font-weight: 400;
 }
 .morale-animado b {
-  color: var(--leaf);
+  color: var(--text-good);
 }
 .morale-desanimado b,
 .morale-harto b {
@@ -1869,7 +1885,7 @@ button:focus-visible {
   grid-column: 1 / -1;
   font-family: var(--pixel);
   font-size: 11px;
-  color: var(--oak);
+  color: var(--text-soft);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -1896,11 +1912,11 @@ button:focus-visible {
 .perks b {
   font-family: var(--pixel);
   font-weight: 400;
-  color: var(--leaf);
+  color: var(--text-good);
   margin-right: 4px;
 }
 .mood.up {
-  color: var(--leaf);
+  color: var(--text-good);
 }
 .mood.down {
   color: var(--wine);
@@ -1918,7 +1934,7 @@ button:focus-visible {
 .gear-slot > small {
   font-family: var(--pixel);
   font-size: 11px;
-  color: var(--steel);
+  color: var(--text-soft);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -1980,7 +1996,7 @@ button:focus-visible {
   grid-template-columns: auto 1fr auto;
 }
 .facility.rarity-0 .next-level {
-  color: var(--oak);
+  color: var(--text-soft);
 }
 .gear-item small {
   font-size: 13px;
@@ -2299,7 +2315,7 @@ button:focus-visible {
   padding: 0;
   font: inherit;
   font-size: 13px;
-  color: var(--oak);
+  color: var(--text-soft);
   text-decoration: underline;
   cursor: pointer;
 }
@@ -2319,7 +2335,7 @@ button:focus-visible {
   margin: -4px 0 6px;
   font-family: var(--pixel);
   font-size: 18px;
-  color: var(--oak);
+  color: var(--text-soft);
 }
 .arrival {
   display: grid;
@@ -2361,7 +2377,7 @@ button:focus-visible {
 }
 .feat small {
   font-size: 13px;
-  color: var(--oak);
+  color: var(--text-soft);
 }
 .feat .track {
   display: block;
@@ -2400,7 +2416,6 @@ button:focus-visible {
   gap: 2px;
   width: 100%;
   text-align: left;
-  border: 0;
   cursor: pointer;
   font: inherit;
 }
@@ -2610,7 +2625,7 @@ button:focus-visible {
 .map-legend {
   margin: 0;
   font-size: 12.5px;
-  color: var(--oak);
+  color: var(--text-soft);
 }
 .map-legend span {
   display: inline-grid;
@@ -2784,7 +2799,6 @@ button:focus-visible {
   gap: 2px;
   width: 100%;
   text-align: left;
-  border: 0;
   cursor: pointer;
   font: inherit;
 }
@@ -2797,4 +2811,264 @@ button:focus-visible {
   box-shadow:
     0 0 0 2px var(--ink),
     0 0 0 4px var(--gold);
+}
+
+/* ---------- Animaciones y transiciones ---------- */
+.panel-leave {
+  animation: panel-sink 0.15s steps(4) forwards;
+}
+@keyframes panel-sink {
+  to {
+    transform: translate(-50%, 45%);
+    opacity: 0;
+  }
+}
+/* El contenido del panel entra escalonado. */
+.panel-body > *,
+.panel-body > .list > * {
+  animation: item-in 0.26s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+.panel-body > :nth-child(2),
+.panel-body > .list > :nth-child(2) {
+  animation-delay: 40ms;
+}
+.panel-body > :nth-child(3),
+.panel-body > .list > :nth-child(3) {
+  animation-delay: 80ms;
+}
+.panel-body > :nth-child(4),
+.panel-body > .list > :nth-child(4) {
+  animation-delay: 120ms;
+}
+.panel-body > :nth-child(5),
+.panel-body > .list > :nth-child(5) {
+  animation-delay: 160ms;
+}
+.panel-body > :nth-child(n + 6),
+.panel-body > .list > :nth-child(n + 6) {
+  animation-delay: 200ms;
+}
+@keyframes item-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* La carta llega deslizándose, ladeada, y el lacre cae encima. */
+.letter {
+  animation: letter-in 0.34s cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
+}
+@keyframes letter-in {
+  from {
+    opacity: 0;
+    transform: translateY(70px) rotate(-5deg);
+  }
+}
+.letter .seal {
+  animation: seal-stamp 0.3s cubic-bezier(0.3, 1.6, 0.5, 1) 0.28s both;
+}
+@keyframes seal-stamp {
+  0% {
+    opacity: 0;
+    transform: scale(2.4) rotate(-20deg);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(0.85) rotate(4deg);
+  }
+}
+.card-backdrop.is-leaving {
+  animation: fadeout-fast 0.16s steps(4) forwards;
+}
+.card-backdrop.is-leaving .letter {
+  animation: letter-out 0.16s ease-in forwards;
+}
+@keyframes fadeout-fast {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes letter-out {
+  to {
+    transform: translateY(50px) rotate(4deg);
+  }
+}
+
+/* Avisos: bajan desde arriba antes de apagarse. */
+.notice {
+  animation:
+    notice-in 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.3),
+    fadeout 5s steps(10) forwards;
+}
+@keyframes notice-in {
+  from {
+    transform: translate(-50%, -24px);
+    opacity: 0;
+  }
+}
+
+/* Lo que pasó durante la noche aparece línea a línea en el amanecer. */
+.dawn-events li {
+  animation: item-in 0.3s ease-out both;
+}
+.dawn-events li:nth-child(1) {
+  animation-delay: 0.7s;
+}
+.dawn-events li:nth-child(2) {
+  animation-delay: 0.85s;
+}
+.dawn-events li:nth-child(3) {
+  animation-delay: 1s;
+}
+.dawn-events li:nth-child(4) {
+  animation-delay: 1.15s;
+}
+.dawn-events li:nth-child(n + 5) {
+  animation-delay: 1.3s;
+}
+
+/* Cartas sin leer: el lacre late un poco. */
+.mail:not(.read) .seal {
+  animation: seal-pulse 1.6s ease-in-out infinite;
+}
+@keyframes seal-pulse {
+  50% {
+    transform: scale(1.12);
+  }
+}
+
+/* Oro y reputación que suben o bajan. */
+.count-up {
+  color: var(--lime, #63c74d);
+  text-shadow: 0 0 6px rgba(99, 199, 77, 0.6);
+}
+.count-down {
+  color: var(--coral, #f6757a);
+  text-shadow: 0 0 6px rgba(246, 117, 122, 0.6);
+}
+
+/* Botones: se hunden al pulsar. */
+.btn:active:not(:disabled) {
+  transform: translateY(2px);
+}
+
+/* ---------- Ajustes ---------- */
+.settings h3 {
+  margin: 0 0 4px;
+  font-family: var(--pixel);
+}
+.set-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 34px;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0;
+}
+.set-row b {
+  font-family: var(--pixel);
+  text-align: right;
+}
+.set-row input[type='range'] {
+  width: 100%;
+  accent-color: var(--orange);
+  min-height: 32px;
+}
+.set-choices {
+  display: flex;
+  gap: 8px;
+}
+.set-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+}
+.set-check input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--orange);
+}
+/* Letra grande: los paneles y fichas se agrandan un poco. */
+.text-grande .panel-body,
+.text-grande .herocard .qs-scroll,
+.text-grande .dawn-card,
+.text-grande .note,
+.text-grande .eventcard {
+  zoom: 1.14;
+}
+/* Menos movimiento, elegido en Ajustes (como prefers-reduced-motion). */
+.calma *,
+.calma *::before,
+.calma *::after {
+  animation-duration: 1ms !important;
+  animation-delay: 0ms !important;
+  animation-iteration-count: 1 !important;
+  transition: none !important;
+}
+
+/* ---------- Móvil en horizontal (pantallas bajas) ----------
+   Las pestañas pasan a una columna a la izquierda y el marcador se estrecha, para que la
+   escena y los paneles tengan toda la altura posible. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .game {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'tabs hud'
+      'tabs stage';
+  }
+  .hud {
+    grid-area: hud;
+    padding: calc(env(safe-area-inset-top, 0px) + 1px) 8px 1px;
+    border-width: 6px;
+  }
+  .hud-name span {
+    display: none;
+  }
+  .stage {
+    grid-area: stage;
+  }
+  .tabs {
+    grid-area: tabs;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, 1fr);
+    padding: 0 0 0 env(safe-area-inset-left, 0px);
+    width: 76px;
+  }
+  .tab {
+    justify-content: center;
+    font-size: 12px;
+  }
+  .panel {
+    max-height: calc(100% - 6px);
+    width: min(100%, 760px);
+  }
+  .herocard {
+    max-height: calc(100% - 8px);
+  }
+}
+
+/* ---------- Accesibilidad ---------- */
+/* Foco visible con teclado en todo lo que se puede pulsar o escribir. */
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+[role='radio']:focus-visible,
+.tab:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+/* En pantallas táctiles, objetivos de al menos 44 px. */
+@media (pointer: coarse) {
+  .btn-icon {
+    width: 44px;
+    height: 44px;
+  }
+  .btn {
+    min-height: 44px;
+  }
+  .stage-tools {
+    gap: 8px;
+  }
 }
