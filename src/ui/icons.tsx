@@ -220,6 +220,18 @@ const ICONS = {
     '..k.kssk.k..',
     '....kkkk....',
   ],
+  espadas: [
+    'k........k',
+    'kmk....kmk',
+    '.kmk..kmk.',
+    '..kmkkmk..',
+    '...kmmk...',
+    '...kmmk...',
+    '..kgkkgk..',
+    '.kbk..kbk.',
+    'kgk....kgk',
+    'kk......kk',
+  ],
   reloj: [
     'kkkkkkkk',
     '.knnnnk.',

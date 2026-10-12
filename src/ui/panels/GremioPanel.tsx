@@ -72,7 +72,7 @@ export function GremioPanel({
               return (
                 <span key={p.day} class={paid ? 'paid' : p === next ? 'next' : ''}>
                   Día {p.day} · {p.amount}
-                  {paid ? ' ✓' : ''}
+                  {paid && <Icon name="check" size={8} class="sched-ok" />}
                 </span>
               );
             })}

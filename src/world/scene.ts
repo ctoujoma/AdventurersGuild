@@ -709,11 +709,14 @@ export class WorldScene {
     const sy = Math.round(horizon + 10 - Math.sin(a) * 120);
     const warmSun = d.dusk > 0.3;
     ctx.globalAlpha = Math.min(1, sunUp * 1.3);
+    // El halo es un foco aditivo (fondo negro): se suma al cielo, no se pinta encima.
+    ctx.globalCompositeOperation = 'lighter';
     ctx.drawImage(
       glowSprite(30, warmSun ? [254, 140, 52] : [255, 240, 180], 0.55),
       sx - 30,
       sy - 30,
     );
+    ctx.globalCompositeOperation = 'source-over';
     ctx.fillStyle = warmSun ? P.orange : P.lemon;
     for (let y = -8; y <= 8; y++) {
       const w = Math.floor(Math.sqrt(64 - y * y));
@@ -741,7 +744,9 @@ export class WorldScene {
     const sx = Math.round(470 - cx * 0.08);
     const sy = Math.round(horizon + 18 - warm * 26);
     ctx.globalAlpha = Math.min(1, warm * 1.4);
+    ctx.globalCompositeOperation = 'lighter';
     ctx.drawImage(glowSprite(28, [254, 174, 52], 0.5), sx - 28, sy - 28);
+    ctx.globalCompositeOperation = 'source-over';
     ctx.fillStyle = P.lemon;
     for (let y = -9; y <= 9; y++) {
       const w = Math.floor(Math.sqrt(81 - y * y));

@@ -212,13 +212,15 @@ Inspirado en los ataques al refugio de *Fallout Shelter*: cuanto más famoso y r
 - [x] PWA: manifiesto, iconos (también «maskable» y de Apple), pantalla completa y service worker para jugar sin conexión
 - [x] Accesibilidad básica: cifras legibles (Jersey 10 para los dígitos), contraste ≥ 5:1 en textos sobre pergamino, foco visible con teclado, Escape para cerrar, objetivos táctiles de 44 px
 - [x] Pulido tras las primeras pruebas: ventanas que dejan ver el exterior, roble entero, bocadillos anclados a lo que se toca, zoom más alejado, armas a la espalda bien inclinadas en el retrato, textos menos artificiales, panel del arcón (equipo, tesoros y trofeos), mapa con zoom, arrastre y fichas flotantes, y ciclo de día (mañana, tarde, atardecer y noche, que espera a «Terminar día»)
+- [x] Claridad: fichas del mapa con iconos, historias por pasos (✓ hechos, número del siguiente, flechas y tramo pendiente a trazos), cifras de la barra que se explican al tocarlas, lacre con el número de paso en el tablón, glosario en Ajustes y ayuda al mantener pulsado (botones, marcadores, barras de la ficha)
+- [x] Preparación para Android en la web: el botón «atrás» cierra lo que esté abierto en vez de salir, vibración en golpes, monedas, obras y asaltos (se quita en Ajustes), márgenes seguros también en horizontal, iconos pixel en lugar de símbolos de texto
 
 **🎯 Hito:** prototipo pulido para enseñar.
 
 ### Fase 9: Android · M
 - [ ] Integrar Capacitor y crear el proyecto Android
 - [ ] Guardado con Capacitor Preferences/Filesystem
-- [ ] Botón atrás de Android, márgenes seguros (notch), barra de estado y vibración
+- [ ] Botón atrás de Android (conectar `backButton` de Capacitor con el historial que ya usa la web), barra de estado y vibración nativa (Haptics); los márgenes seguros ya están
 - [ ] Icono adaptativo y pantalla de inicio
 - [ ] Build de APK/AAB en CI y firma
 - [ ] Publicación en Google Play (pruebas internas → cerradas)

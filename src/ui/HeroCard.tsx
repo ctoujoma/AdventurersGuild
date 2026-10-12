@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { GUARD_BONUS, XP_PER_LEVEL } from '../core/balance';
+import { GUARD_BONUS, VET_LEVEL, XP_PER_LEVEL } from '../core/balance';
 import { PERKS } from '../core/classes';
 import { canHire, gearInStock, requestAmount } from '../core/game';
 import type { GameState, Hero } from '../core/model';
@@ -93,7 +93,10 @@ export function HeroCard({
           {candidate && <p class="quote">{h.quote}</p>}
           {!candidate && !gone && (
             <div class="meters">
-              <div class="meter">
+              <div
+                class="meter"
+                data-help={`Al llegar a ${XP_PER_LEVEL} sube de nivel: rinde más y cobra más. Desde el nivel ${VET_LEVEL} es veterano.`}
+              >
                 <span>Experiencia</span>
                 <span class="track">
                   <i class="xp" style={{ width: `${(h.xp / XP_PER_LEVEL) * 100}%` }} />
@@ -102,7 +105,10 @@ export function HeroCard({
                   {h.xp}/{XP_PER_LEVEL}
                 </small>
               </div>
-              <div class="meter">
+              <div
+                class="meter"
+                data-help="Las ganas de trabajar. Baja con los viajes y los fracasos; sube descansando en la taberna."
+              >
                 <span>Moral</span>
                 <span class="track">
                   <i class={moraleK} style={{ width: `${h.morale}%` }} />

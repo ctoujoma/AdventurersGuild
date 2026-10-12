@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
+import { useBackButton } from '../platform/back';
+import { HoldHelp } from './HoldHelp';
+import { setHaptics } from '../platform/haptics';
 import { audio, type Mood } from '../audio/audio';
 import { canHire, customOf, newGame, reduce, type Action } from '../core/game';
 import { DECOR, STAFF } from '../data/custom';
@@ -130,6 +133,7 @@ export function App() {
   useEffect(() => {
     audio.setLevels(settings);
     applyLook(settings);
+    setHaptics(settings.vibrate);
     if (scene.current) scene.current.speed = settings.speed;
     saveSettings(settings);
   }, [settings]);
@@ -340,20 +344,25 @@ export function App() {
     if (it) toast(`Vendido: ${it.name} por ${it.value} monedas.`);
   };
 
-  // Teclado: Escape cierra lo que esté encima (ajustes, partidas, carta, encargo, ficha, panel).
+  // Escape y el botón «atrás» del móvil cierran lo que esté encima (ajustes, partidas,
+  // informe, encargo, ficha, panel).
+  const overlayOpen = settingsOpen || saveMenu || !!reportId || !!questId || !!card || !!panel;
+  const closeTop = () => {
+    if (settingsOpen) setSettingsOpen(false);
+    else if (saveMenu) setSaveMenu(false);
+    else if (reportId) setReportId(null);
+    else if (questId) setQuestId(null);
+    else if (card) setCard(null);
+    else if (panel) openPanel(null);
+  };
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
-      if (settingsOpen) setSettingsOpen(false);
-      else if (saveMenu) setSaveMenu(false);
-      else if (reportId) setReportId(null);
-      else if (questId) setQuestId(null);
-      else if (card) setCard(null);
-      else if (panel) openPanel(null);
+      if (e.key === 'Escape') closeTop();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   });
+  useBackButton(overlayOpen, closeTop);
 
   // Música según lo que pasa: la pelea, un asalto anunciado, el modo libre o la taberna.
   const mood: Mood = raiding
@@ -801,6 +810,7 @@ export function App() {
           onClose={() => setSaveMenu(false)}
         />
       )}
+      <HoldHelp />
     </div>
   );
 }

@@ -13,4 +13,10 @@ describe('ajustes', () => {
     const bad = parseSettings({ music: 7, sfx: -1, ambient: 'x', speed: 3, calm: 'sí' });
     expect(bad).toEqual({ ...DEFAULT_SETTINGS, music: 1, sfx: 0 });
   });
+
+  it('la vibración viene puesta y solo se quita a propósito', () => {
+    expect(parseSettings({}).vibrate).toBe(true);
+    expect(parseSettings({ vibrate: 'no' }).vibrate).toBe(true);
+    expect(parseSettings({ vibrate: false }).vibrate).toBe(false);
+  });
 });

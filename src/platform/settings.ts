@@ -10,6 +10,8 @@ export interface Settings {
   bigText: boolean;
   /** Menos movimiento en la interfaz. */
   calm: boolean;
+  /** Vibración en los momentos con peso (si el móvil la tiene). */
+  vibrate: boolean;
 }
 
 const KEY = 'jarro:ajustes';
@@ -20,6 +22,7 @@ export const DEFAULT_SETTINGS: Settings = {
   speed: 1,
   bigText: false,
   calm: false,
+  vibrate: true,
 };
 
 const clamp01 = (v: unknown, d: number) =>
@@ -35,6 +38,7 @@ export function parseSettings(raw: unknown): Settings {
     speed: r.speed === 1.5 || r.speed === 2 ? r.speed : 1,
     bigText: r.bigText === true,
     calm: r.calm === true,
+    vibrate: r.vibrate !== false,
   };
 }
 

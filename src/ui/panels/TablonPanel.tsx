@@ -31,8 +31,12 @@ export function TablonPanel({ quests, seeAll, onOpen }: Props) {
           >
             <span class="pin" aria-hidden="true" />
             {q.chain && (
-              <span class="seal note-seal" aria-hidden="true">
-                G
+              <span
+                class="seal note-seal"
+                title={`Paso ${q.chain.step + 1} de una historia`}
+                aria-hidden="true"
+              >
+                {q.chain.step + 1}
               </span>
             )}
             <span class="note-top">
