@@ -32,6 +32,55 @@ function pine(b: PixelBuffer, cx: number, h: number): void {
   b.rect(cx - 2, base - 6, 5, 7, P.bark);
 }
 
+/** El roble detrás de la casa (a la derecha). Se pinta en un búfer de 0..WORLD_W + 128. */
+function oak(b: PixelBuffer, cx: number): void {
+  const rng = new Rng('roble');
+  // Tronco con corteza.
+  for (let y = 180; y < GROUND + 2; y++) {
+    const w = 7 + Math.floor(Math.max(0, y - 270) / 5);
+    for (let x = cx - w; x <= cx + w; x++) {
+      const e = (x - (cx - w)) / (2 * w);
+      const c = e < 0.25 ? P.rust : e < 0.6 ? P.bark : P.plum;
+      b.set(x, y, (x * 3 + Math.floor(y / 4)) % 7 === 0 ? P.plum : c);
+    }
+  }
+  // Ramas.
+  for (const [dx, dy, len] of [
+    [-1, -1, 26],
+    [1, -1, 24],
+    [-1, -0.4, 20],
+  ] as const) {
+    for (let i = 0; i < len; i++) {
+      const x = Math.round(cx + dx * i);
+      const y = Math.round(210 + dy * i);
+      b.rect(x - 1, y, 3, 2, P.bark);
+    }
+  }
+  // Copa: racimos con luz de luna arriba a la izquierda.
+  const clusters: [number, number, number][] = [];
+  for (let i = 0; i < 26; i++)
+    clusters.push([cx + rng.int(-52, 46), rng.int(108, 214), rng.int(10, 18)]);
+  clusters.sort((a, b2) => a[1] - b2[1]);
+  for (const [x0, y0, r] of clusters) {
+    b.ellipse(x0, y0, r, r * 0.85, (x, y, t) => {
+      const lx = (x - x0) / r;
+      const ly = (y - y0) / r;
+      const lit = -lx * 0.6 - ly * 0.8;
+      if (t > 0.85) return P.black;
+      if (lit > 0.45 + bayer(x, y) * 0.2) return P.forest;
+      if (lit < -0.3 - bayer(x, y) * 0.2) return P.black;
+      return P.deep;
+    });
+    for (let k = 0; k < 6; k++) {
+      const a = rng.next() * Math.PI;
+      const px = Math.round(x0 - Math.cos(a) * r * 0.6);
+      const py = Math.round(y0 - Math.sin(a) * r * 0.6);
+      b.set(px, py, P.leaf);
+      b.set(px + 1, py, P.forest);
+    }
+  }
+}
+
 function signpost(): PixelBuffer {
   return piece(26, 34, (b) => {
     b.rect(11, 6, 3, 28, W[3]!);
@@ -80,6 +129,10 @@ export function buildOuter(
   pine(back, X(-58), 56);
   pine(back, X(560), 70);
   pine(back, X(612), 90);
+  // El roble de detrás de la casa: su copa sobresale por la derecha del edificio.
+  const tree = new PixelBuffer(WORLD_W + 128, WORLD_H);
+  oak(tree, 470);
+  back.blit(tree, X(0), 0);
 
   // Suelo continuo (mismo dibujo que bajo el edificio, en coordenadas del mundo).
   for (let y = GROUND; y < WORLD_H; y++) {

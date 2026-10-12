@@ -95,7 +95,7 @@ export const SURNAMES = [
 export const QUOTES: Record<ClassId, readonly string[]> = {
   guerrero: [
     '«¿A quién hay que pegar?»',
-    '«Tengo un escudo, una espada y muy pocas ideas. Las justas.»',
+    '«Traigo escudo, espada y ganas. Lo de pensar, mejor que lo haga otro.»',
     '«He sobrevivido a tres guerras y a un matrimonio.»',
     '«Cobro por golpe. Es broma. Más o menos.»',
   ],
@@ -107,7 +107,7 @@ export const QUOTES: Record<ClassId, readonly string[]> = {
   ],
   mago: [
     '«Cobro por adelantado. Y no me llames bruja.»',
-    '«Mi especialidad es la magia defensiva. Muy defensiva.»',
+    '«Lo mío es la magia defensiva. Sobre todo, defenderme a mí.»',
     '«Leo runas, estrellas y contratos. Los contratos dan más miedo.»',
     '«Si ves humo verde, aléjate. Si ves humo morado, corre.»',
   ],
@@ -115,11 +115,11 @@ export const QUOTES: Record<ClassId, readonly string[]> = {
     '«Rezo por todos. Por algunos, más caro.»',
     '«He cerrado heridas peores que la tuya. Y bocas.»',
     '«Los dioses me escuchan. A veces contestan.»',
-    '«Llevo vendas, ungüento y paciencia. Lo último se acaba antes.»',
+    '«Llevo vendas y ungüento. La paciencia la traigo justa.»',
   ],
   explorador: [
     '«Lo de gafe son rumores. Casi todos.»',
-    '«Conozco un atajo. Casi nunca falla.»',
+    '«Conozco un atajo. Bueno, conozco a uno que lo conoce.»',
     '«Duermo mejor bajo un árbol que bajo tu techo. Sin ofender.»',
     '«Huelo la lluvia dos días antes. Y a los bandidos, tres.»',
   ],

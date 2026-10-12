@@ -44,10 +44,51 @@ interface Bubble {
   text: string;
   x: number;
   y: number;
+  /** Si se sabe, el punto del mundo al que se refiere: el bocadillo lo sigue. */
+  wx?: number;
+  wy?: number;
   key: number;
 }
 
 const freshGame = () => newGame(Date.now().toString(36));
+
+/** Bocadillo de texto anclado a un punto de la escena: se mueve con la cámara. */
+function SpeechBubble({
+  bubble,
+  scene,
+}: {
+  bubble: Bubble;
+  scene: { current: WorldScene | null };
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (bubble.wx === undefined || bubble.wy === undefined) return;
+    let raf = 0;
+    const follow = () => {
+      const el = ref.current;
+      const s = scene.current;
+      if (el && s) {
+        const p = s.screenOf(bubble.wx!, bubble.wy!);
+        el.style.left = `${p.x}px`;
+        el.style.top = `${p.y}px`;
+      }
+      raf = requestAnimationFrame(follow);
+    };
+    raf = requestAnimationFrame(follow);
+    return () => cancelAnimationFrame(raf);
+  }, [bubble]);
+  return (
+    <div
+      ref={ref}
+      key={bubble.key}
+      class="bubble"
+      style={{ left: `${bubble.x}px`, top: `${bubble.y}px` }}
+      role="status"
+    >
+      {bubble.text}
+    </div>
+  );
+}
 
 export function App() {
   const [saved] = useState(loadGame);
@@ -151,7 +192,8 @@ export function App() {
   });
 
   const toast = (text: string) => setNotice({ text, key: Date.now() });
-  const say = (text: string, at: Point) => setBubble({ text, x: at.x, y: at.y, key: Date.now() });
+  const say = (text: string, at: Point) =>
+    setBubble({ text, x: at.x, y: at.y, wx: at.wx, wy: at.wy, key: Date.now() });
 
   const openPanel = (p: PanelId | null) => {
     if (p === panel) return;
@@ -436,16 +478,7 @@ export function App() {
             {hover.label}
           </span>
         )}
-        {bubble && (
-          <div
-            key={bubble.key}
-            class="bubble"
-            style={{ left: `${bubble.x}px`, top: `${bubble.y}px` }}
-            role="status"
-          >
-            {bubble.text}
-          </div>
-        )}
+        {bubble && <SpeechBubble bubble={bubble} scene={scene} />}
         {hint && !notice && (
           <div class="hint-toast" role="status">
             Arrastra para recorrer la taberna · Toca el tablón para mandar un grupo

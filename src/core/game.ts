@@ -202,7 +202,7 @@ export function newGame(seed: string): GameState {
         name: 'Aldric «Medio Pan»',
         epitaph: 'Mina de Hondogrís, en tiempos de tu tío. Pidió media ración hasta el final.',
       },
-      { name: 'Fausto, tu tío', epitaph: 'No murió en una misión. Murió debiendo mil monedas.' },
+      { name: 'Fausto, tu tío', epitaph: 'Murió en su cama, debiendo mil monedas a medio pueblo.' },
     ],
     dawn: [
       {
@@ -214,7 +214,7 @@ export function newGame(seed: string): GameState {
         k: 'bad',
       },
       {
-        t: 'Toca el tablón de la sala para mandar grupos a los encargos. Vuelven con oro… si vuelven.',
+        t: 'Toca el tablón de la sala para mandar grupos a los encargos. Si sale bien, vuelven con oro.',
       },
       { t: 'En la barra esperan candidatos. «Terminar día» hace pasar la noche.' },
       { t: `Paga la deuda en ${DAYS} días y el gremio será tuyo.`, k: 'good' },
@@ -223,7 +223,7 @@ export function newGame(seed: string): GameState {
     stats: emptyStats(),
     feats: {},
     flavor:
-      '«Sobrino: la taberna es tuya. Las deudas también. No te fíes de Merlo, ni del gato.» — Fausto',
+      '«Sobrino: la taberna es tuya, con sus deudas. A Merlo págale a tiempo, que no perdona. El gato viene con la casa.» — Fausto',
     over: null,
   };
   // Un guerrero veterano de tu tío y alguien más; candidatos y encargos para empezar.
@@ -555,7 +555,7 @@ export function endDay(state: GameState): GameState {
         const toughened = !h.traits.some((t) => t.id === 'curtido');
         if (toughened) h.traits.push({ id: 'curtido' });
         events.push({
-          t: `¡${h.name} ha vuelto! Flaco, sucio y con una historia que nadie se cree.${toughened ? ` Ahora ${h.sex === 'f' ? 'es curtida' : 'es curtido'}: +2 Supervivencia.` : ''}`,
+          t: `¡${h.name} ha vuelto! Con hambre, lleno de barro y con ganas de contarlo todo.${toughened ? ` Ahora ${h.sex === 'f' ? 'es curtida' : 'es curtido'}: +2 Supervivencia.` : ''}`,
           k: 'good',
         });
       } else {
@@ -701,7 +701,7 @@ export function endDay(state: GameState): GameState {
       if (s.unpaid >= UNPAID_LIMIT)
         s.over = {
           kind: 'derrota',
-          text: `Día ${s.day}: otra semana sin pagar salarios. Los héroes se marchan, los acreedores se llevan los muebles y El Jarro Partido cierra sus puertas.`,
+          text: `Día ${s.day}: otra semana sin pagar salarios. Los héroes se marchan, los acreedores se llevan los muebles y ${customOf(s).name} cierra.`,
           score: arrival(s, roster(s).length).score,
         };
       else

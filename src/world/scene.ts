@@ -80,6 +80,9 @@ export type SoundName =
 export interface Point {
   x: number;
   y: number;
+  /** Punto del mundo (para anclar bocadillos a lo que se ha tocado). */
+  wx?: number;
+  wy?: number;
 }
 
 export interface SceneCallbacks {
@@ -370,9 +373,13 @@ export class WorldScene {
   resize(cssW: number, cssH: number, zoom?: number): void {
     this.cssW = cssW;
     this.cssH = cssH;
-    // Nunca más pequeño que el mundo: la vista siempre queda llena.
-    const minZoom = Math.max(1, Math.ceil(cssW / SPAN), Math.ceil(cssH / WORLD_H));
-    const z = Math.max(minZoom, zoom ?? Math.max(2, Math.floor(Math.min(cssW / 180, cssH / 230))));
+    // Nunca más pequeño que el mundo: la vista siempre queda llena. El zoom más lejano
+    // puede ser fraccionario (encaja el mundo justo); los demás pasos son enteros.
+    const minZoom = this.minZoom(cssW, cssH);
+    const z = Math.max(
+      minZoom,
+      zoom ?? Math.max(2, Math.ceil(minZoom), Math.floor(Math.min(cssW / 180, cssH / 230))),
+    );
     this.camera.setView(cssW, cssH, z);
     this.canvas.width = this.camera.vw;
     this.canvas.height = this.camera.vh;
@@ -383,10 +390,24 @@ export class WorldScene {
     this.ctx.imageSmoothingEnabled = false;
   }
 
+  private minZoom(cssW: number, cssH: number): number {
+    return Math.max(1, Math.ceil(Math.max(cssW / SPAN, cssH / WORLD_H) * 100) / 100);
+  }
+
   zoomBy(step: number): void {
-    const minZoom = Math.max(1, Math.ceil(this.cssW / SPAN), Math.ceil(this.cssH / WORLD_H));
-    const z = Math.max(minZoom, Math.min(6, this.camera.zoom + step));
-    if (z !== this.camera.zoom) this.resize(this.cssW, this.cssH, z);
+    const min = this.minZoom(this.cssW, this.cssH);
+    const cur = this.camera.zoom;
+    // Pasos enteros y, por debajo del primero que llena la vista, el zoom que encaja todo.
+    const z =
+      step > 0
+        ? Math.min(6, Math.floor(cur) + 1)
+        : Math.max(min, Number.isInteger(cur) ? cur - 1 : Math.floor(cur));
+    if (z !== cur) this.resize(this.cssW, this.cssH, z);
+  }
+
+  /** Posición en pantalla (px CSS) de un punto del mundo. */
+  screenOf(wx: number, wy: number): Point {
+    return this.camera.toScreen(wx, wy);
   }
 
   focus(room: keyof typeof ROOM_CENTERS | string): void {
@@ -483,7 +504,7 @@ export class WorldScene {
       },
     );
     this.raidZoom = this.camera.zoom;
-    this.resize(this.cssW, this.cssH, Math.min(6, this.camera.zoom + 1));
+    this.resize(this.cssW, this.cssH, Math.min(6, Math.floor(this.camera.zoom) + 1));
     this.camera.centerOn(-52, 262);
     this.nightfall(done, 2.6, BATTLE_TIME + 0.6);
   }
@@ -1370,7 +1391,7 @@ export class WorldScene {
     const w = this.camera.toWorld(cssX, cssY);
     const h = this.hit(w.x, w.y);
     if (!h) return;
-    const at = { x: cssX, y: cssY };
+    const at = { x: cssX, y: cssY, wx: w.x, wy: w.y };
     this.cb.onSound?.('click', 0.5);
     switch (h.kind) {
       case 'hero':

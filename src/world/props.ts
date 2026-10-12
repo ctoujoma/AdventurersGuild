@@ -546,6 +546,9 @@ export function firewood(): PixelBuffer {
   });
 }
 
+/** Color marcador del cristal: build lo recorta para que se vea lo que hay detrás. */
+export const GLASS = '#ff00fe';
+
 export function windowFrame(
   w: number,
   h: number,
@@ -555,17 +558,14 @@ export function windowFrame(
     b.rect(0, 0, w + 4, h + 4, W[3]!);
     b.hline(0, 0, w + 4, W[5]!);
     b.vline(0, 0, h + 4, W[4]!);
-    // Cristal nocturno: degradado con reflejo de luna.
+    // Cristal: se recorta al montar la escena (se ve el exterior); solo un reflejo suelto.
     for (let y = 2; y < h + 2; y++) {
-      for (let x = 2; x < w + 2; x++) {
-        const t = (y - 2) / h;
-        b.set(x, y, opts.broken ? P.black : t < 0.4 + bayer(x, y) * 0.3 ? P.slate : P.navy);
-      }
+      for (let x = 2; x < w + 2; x++) b.set(x, y, opts.broken ? P.black : GLASS);
     }
     if (!opts.broken) {
-      b.line(3, 4, 5, 2, P.fog);
-      b.line(3, 6, 7, 2, P.steel);
-      b.set(w - 1, h - 1, P.steel);
+      b.set(3, 3, P.mist);
+      b.set(4, 3, P.fog);
+      b.set(3, 4, P.fog);
       b.rect(2 + Math.floor(w / 2), 2, 1, h, W[3]!);
       b.rect(2, 2 + Math.floor(h / 2), w, 1, W[3]!);
     } else {

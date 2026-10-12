@@ -183,17 +183,17 @@ export const FACILITY_INFO: Record<
 
 /** Lo que dice cada cosa de la escena al tocarla. */
 export const CAPTIONS: Record<string, string> = {
-  gato: 'Bigotes ronronea. Es el verdadero dueño de la taberna.',
+  gato: 'Bigotes ronronea. Lleva aquí más años que tú.',
   buho: '¡Uh-uuuh! Vigila el tejado desde que tu tío no está.',
-  murcielago: '¡Murciélagos! Pagan poco alquiler, pero lo pagan.',
+  murcielago: '¡Murciélagos! Al menos se comen los mosquitos.',
   rata: 'Una rata. Bigotes ni se inmuta.',
-  retrato: 'Tío Fausto. Te dejó la taberna… y mil monedas de deuda.',
-  pozo: '¡Plof! Dicen que concede deseos a quien paga sus deudas.',
+  retrato: 'El tío Fausto. Te dejó la taberna y mil monedas de deuda.',
+  pozo: '¡Plof! Dicen que echar una moneda da suerte. A ti no te sobran.',
   letrero: 'El Jarro Partido. Tu tío juraba que lo arreglaría.',
-  puerta: 'Por aquí salen los grupos… y por aquí vuelven, si vuelven.',
+  puerta: 'Por aquí salen los grupos. La bisagra de abajo chirría.',
   laud: 'Alguien lo dejó a cuenta de una ronda. Todavía suena bien.',
   chimenea: 'Chisporrotea. Bigotes no se separa de ella.',
-  chimeneaFria: 'Fría como el corazón del prestamista.',
+  chimeneaFria: 'Apagada. Hace falta leña, y la leña cuesta.',
 };
 
 /** Cómo se enseña cada tramo de moral. */
