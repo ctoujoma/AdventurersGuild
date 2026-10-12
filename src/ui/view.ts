@@ -22,6 +22,7 @@ export const marksOf = (h: Hero): HeroMarks => ({
   injured: h.status === 'herido',
   eyepatch: h.traits.some((t) => t.id === 'tuerto'),
   scar: h.traits.some((t) => t.id === 'cortado'),
+  gear: h.item?.icon ? { icon: h.item.icon, rarity: h.item.rarity ?? 0 } : undefined,
 });
 
 export const memberOf = (h: Hero, fac?: Facilities): Member & { item?: Item } => ({

@@ -1,6 +1,7 @@
 import { HAIR, P, SKIN, darker } from '../palette';
 import { PixelBuffer, alpha, toHex } from '../pixel';
 import type { Grid } from '../sprite';
+import { gearFront, gearSide } from './gear';
 import {
   BASE,
   BEARD,
@@ -205,6 +206,7 @@ function composeFront(
   if (marks.eyepatch) body(OVERLAYS.parche);
   if (marks.injured && hg !== 'sombrero' && hg !== 'gorra') body(OVERLAYS.venda);
   body(WEAPONS[look.outfit]);
+  if (marks.gear) gearFront(b, marks.gear);
   return b;
 }
 
@@ -289,6 +291,7 @@ function composeSide(
       ),
     );
   if (weapons.front) up(weapons.front);
+  if (marks.gear) gearSide(b, marks.gear);
   return b;
 }
 
