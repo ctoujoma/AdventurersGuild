@@ -203,6 +203,8 @@ export class WorldScene {
     null;
   /** Asalto que se está viendo en el patio durante la noche. */
   private battle: Battle | null = null;
+  /** Brindis en curso: los héroes de la sala alzan la jarra hasta este instante. */
+  private toastUntil = 0;
   /** Zoom de antes del asalto: la cámara se acerca al patio mientras dura la pelea. */
   private raidZoom: number | null = null;
   private last = 0;
@@ -595,6 +597,14 @@ export class WorldScene {
     for (let i = 0; i < 14; i++)
       this.particles.spawn('coin', p.x + (Math.random() - 0.5) * 60, p.y - Math.random() * 16);
     this.cb.onSound?.('cheer');
+    this.toastUntil = this.t + 3.4;
+    // Los que pasean por la sala se paran a brindar.
+    for (const a of this.heroes.values())
+      if (a.act === 'walk' && !a.trip && feetAt(a.x) === F.hall.floor) {
+        a.act = 'idle';
+        a.target = a.x;
+        a.timer = 3.6;
+      }
   }
 
   /** Luz de la noche que pasa: oscuridad (0–1) y calor del amanecer (0–1). */
@@ -1154,7 +1164,23 @@ export class WorldScene {
       ctx.globalAlpha = a.trip ? fade : 1;
       this.shadow(a.x, feet);
       const flip = walking ? a.dir < 0 : false;
-      at(img, x, y, flip);
+      // Brindis: los que están quietos en la sala saltan y alzan la jarra; al chocar, chispas.
+      const toasting = !walking && !a.trip && t < this.toastUntil && feet === F.hall.floor;
+      const beat = Math.sin(t * 9 + a.x * 0.7);
+      const hop = toasting && beat > 0.3 ? -2 : 0;
+      at(img, x, y + hop, flip);
+      if (toasting) {
+        const up = beat > 0 ? 0 : 2;
+        const mx = x + 14;
+        const my = y + hop + 6 + up;
+        ctx.fillStyle = P.sand;
+        ctx.fillRect(mx - cx, my - cy, 4, 1);
+        ctx.fillStyle = P.oak;
+        ctx.fillRect(mx - cx, my + 1 - cy, 4, 4);
+        ctx.fillStyle = P.clay;
+        ctx.fillRect(mx + 4 - cx, my + 2 - cy, 1, 2);
+        if (beat > 0.97) this.particles.spawn('spark', mx + 2, my - 1);
+      }
       ctx.globalAlpha = 1;
       drawn.push({ kind: 'hero', id: a.hero.id, label: a.hero.name, x, y, img, flip });
     }

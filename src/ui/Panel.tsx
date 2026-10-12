@@ -1,4 +1,5 @@
 import type { ComponentChildren } from 'preact';
+import { useState } from 'preact/hooks';
 import { Icon } from './icons';
 
 interface Props {
@@ -10,11 +11,18 @@ interface Props {
 
 /** Panel que sube sobre la escena: marco de madera y fondo de pergamino o corcho. */
 export function Panel({ title, onClose, variant = 'paper', children }: Props) {
+  // Al cerrar, baja antes de desaparecer.
+  const [leaving, setLeaving] = useState(false);
+  const close = () => {
+    if (leaving) return;
+    setLeaving(true);
+    setTimeout(onClose, 150);
+  };
   return (
-    <section class={`panel panel-${variant}`} aria-label={title}>
+    <section class={`panel panel-${variant} ${leaving ? 'panel-leave' : ''}`} aria-label={title}>
       <header class="panel-head">
         <h2>{title}</h2>
-        <button class="btn-icon" aria-label="Cerrar" onClick={onClose}>
+        <button class="btn-icon" aria-label="Cerrar" onClick={close}>
           <Icon name="close" size={14} />
         </button>
       </header>

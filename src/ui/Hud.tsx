@@ -3,6 +3,7 @@ import { audio } from '../audio/audio';
 import { DAYS } from '../core/balance';
 import { customOf, nextPayment, nextRank, rankOf, salaries } from '../core/game';
 import type { GameState } from '../core/model';
+import { Counter } from './Counter';
 import { Icon } from './icons';
 
 /** Barra superior: día, nombre y rango del gremio, oro, reputación y próximo pago. */
@@ -28,14 +29,14 @@ export function Hud({ game }: { game: GameState }) {
       <div class="hud-stats">
         <span class="hud-stat" title="Oro">
           <Icon name="coin" size={16} />
-          <b>{game.gold}</b>
+          <Counter value={game.gold} />
         </span>
         <span
           class="hud-stat"
           title={nr ? `Reputación: ${nr.at} para gremio de ${nr.name}` : 'Reputación'}
         >
           <Icon name="star" size={16} />
-          <b>{game.rep}</b>
+          <Counter value={game.rep} />
         </span>
         {pay && (
           <span

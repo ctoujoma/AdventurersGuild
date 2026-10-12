@@ -203,8 +203,8 @@ Inspirado en los ataques al refugio de *Fallout Shelter*: cuanto más famoso y r
 ### Fase 8: Pulido y pruebas · M
 - [x] Splash del desarrollador, pantalla de título y tutorial en los primeros días (el tío deja notas)
 - [ ] Balance con el simulador y con pruebas de jugadores reales (ahora la segunda mitad es fácil y el modo libre acumula demasiado oro: necesita los asaltos de la fase 6 y gastos de la fase 7)
-- [ ] El equipo se ve en el sprite y el retrato del héroe
-- [ ] Animaciones y transiciones; cartas que se deslizan; héroes que brindan en la celebración
+- [x] El equipo se ve en el sprite y el retrato del héroe: coraza, capa, amuleto, espada o hacha a la espalda, escudo, varita, botas y ganzúas, con metal y brillo según la rareza
+- [x] Animaciones y transiciones: paneles que suben y bajan con el contenido escalonado, cartas que llegan deslizándose con el lacre estampado, avisos que bajan, amanecer línea a línea, oro y reputación que corren y destellan, botones que se hunden y héroes que brindan jarra en alto al volver un grupo
 - [ ] Móvil en horizontal
 - [x] Música ampliada: 7 temas (La jarra rota, El camino real, Velas en la bodega, Gremio de leyenda, Antorchas en el camino, ¡A las armas!, ¡Brindis!) repartidos por ambientes: taberna, modo libre, tensión con un asalto anunciado, la pelea y un brindis al repeler un asalto o saldar la deuda. Laúd, flauta, pandero y sonajero; cada repetición varía (adornos, notas de paso, bajo arpegiado, segunda voz) y los cambios se funden
 - [ ] Ajustes: volumen y velocidad
