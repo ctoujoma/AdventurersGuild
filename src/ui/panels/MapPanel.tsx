@@ -70,7 +70,23 @@ function Stat({
 }
 const MAX_ZOOM = 4;
 
-type Info = { kind: 'place'; name: string } | { kind: 'party'; id: string } | { kind: 'tavern' };
+type Info =
+  | { kind: 'place'; name: string }
+  | { kind: 'party'; id: string }
+  | { kind: 'chain'; id: string }
+  | { kind: 'tavern' };
+
+/** Punta de flecha en mitad de un tramo, apuntando hacia su final. */
+function arrow(a: { x: number; y: number }, b: { x: number; y: number }): string {
+  const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+  const ux = (b.x - a.x) / len;
+  const uy = (b.y - a.y) / len;
+  const mx = (a.x + b.x) / 2 + ux * 2;
+  const my = (a.y + b.y) / 2 + uy * 2;
+  const s = 3.2;
+  const p = (dx: number, dy: number) => `${(mx + dx).toFixed(1)},${(my + dy).toFixed(1)}`;
+  return `M${p(0, 0)} L${p(-ux * s - uy * s * 0.6, -uy * s + ux * s * 0.6)} L${p(-ux * s + uy * s * 0.6, -uy * s - ux * s * 0.6)} Z`;
+}
 
 /** Dónde va un grupo: media misión de ida y media de vuelta. */
 function partyPos(place: string, days: number, left: number) {
@@ -322,6 +338,60 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
         ),
       };
     }
+  } else if (info?.kind === 'chain') {
+    const cs = (game.chains ?? []).find((c) => c.id === info.id);
+    if (cs) {
+      const def = chainDef(cs.id);
+      const done = cs.status === 'hecha';
+      const at = done ? def.steps.length - 1 : cs.step;
+      const p = placeAt(def.steps[at]!.place);
+      const q = game.quests.find((x) => x.chain?.id === cs.id);
+      const left = def.steps.length - cs.step - 1;
+      card = {
+        ...screen(p.x, p.y),
+        body: (
+          <>
+            <b class="map-card-title">
+              <span class="mc-terrain">
+                <Icon name="historia" size={14} />
+              </span>
+              {def.name}
+            </b>
+            <span class="tiny">
+              {def.client} · {done ? 'terminada' : `paso ${cs.step + 1} de ${def.steps.length}`}
+            </span>
+            <ol class="mc-steps">
+              {def.steps.slice(0, at + 1).map((st, i) => {
+                const now = !done && i === cs.step;
+                return (
+                  <li key={i} class={now ? 'now' : 'past'}>
+                    <i>{now ? i + 1 : <Icon name="check" size={7} />}</i>
+                    <span>
+                      {now && q ? (
+                        <button class="linklike" onClick={() => onQuest(q.id)}>
+                          {st.title}
+                        </button>
+                      ) : (
+                        st.title
+                      )}
+                      <small>{st.place}</small>
+                    </span>
+                  </li>
+                );
+              })}
+              {!done && left > 0 && (
+                <li class="later">
+                  <i>?</i>
+                  <span>
+                    {left} {plural(left, 'paso más', 'pasos más')} por descubrir
+                  </span>
+                </li>
+              )}
+            </ol>
+          </>
+        ),
+      };
+    }
   } else if (info?.kind === 'tavern') {
     const out = game.missions.reduce((n, m) => n + m.heroIds.length, 0);
     card = {
@@ -428,22 +498,22 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
           <svg class="map-routes" viewBox={`0 0 ${MAP_W} ${MAP_H}`} aria-hidden="true">
             {(game.chains ?? []).map((cs) => {
               const def = chainDef(cs.id);
-              const upto = cs.status === 'hecha' ? def.steps.length - 1 : cs.step;
+              const done = cs.status === 'hecha';
+              const upto = done ? def.steps.length - 1 : cs.step;
               const pts = def.steps.slice(0, upto + 1).map((st) => placeAt(st.place));
               return (
-                <g key={cs.id} class={`thread ${cs.status === 'hecha' ? 'done' : ''}`}>
-                  <polyline points={pts.map((p) => `${p.x},${p.y}`).join(' ')} />
-                  {def.steps
-                    .slice(0, cs.status === 'hecha' ? def.steps.length : cs.step)
-                    .map((st, i) => {
-                      const p = placeAt(st.place);
-                      return (
-                        <g key={i}>
-                          <line x1={p.x - 2.5} y1={p.y - 2.5} x2={p.x + 2.5} y2={p.y + 2.5} />
-                          <line x1={p.x - 2.5} y1={p.y + 2.5} x2={p.x + 2.5} y2={p.y - 2.5} />
-                        </g>
-                      );
-                    })}
+                <g key={cs.id} class={`thread ${done ? 'done' : ''}`}>
+                  {pts.slice(1).map((q, i) => {
+                    const a = pts[i]!;
+                    // El último tramo de una historia en marcha lleva al paso que falta.
+                    const next = !done && i === pts.length - 2;
+                    return (
+                      <g key={i} class={next ? 'next' : ''}>
+                        <line x1={a.x} y1={a.y} x2={q.x} y2={q.y} />
+                        <path d={arrow(a, q)} />
+                      </g>
+                    );
+                  })}
                 </g>
               );
             })}
@@ -482,6 +552,29 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
             <b>⌂</b>
             <small>{customOf(game).name}</small>
           </button>
+          {(game.chains ?? []).flatMap((cs) => {
+            const def = chainDef(cs.id);
+            const done = cs.status === 'hecha';
+            const upto = done ? def.steps.length - 1 : cs.step;
+            return def.steps.slice(0, upto + 1).map((st, i) => {
+              const p = placeAt(st.place);
+              const now = !done && i === cs.step;
+              return (
+                <button
+                  key={`${cs.id}-${i}`}
+                  class={`map-step ${now ? 'now' : 'past'} ${done ? 'closed' : ''}`}
+                  style={pct(p.x - 9, p.y - 3)}
+                  aria-label={`«${def.name}», paso ${i + 1} de ${def.steps.length}: ${now ? 'el siguiente' : 'hecho'}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    tap(() => setInfo({ kind: 'chain', id: cs.id }))();
+                  }}
+                >
+                  {now ? i + 1 : <Icon name="check" size={7} />}
+                </button>
+              );
+            });
+          })}
           {game.quests.map((q) => {
             const p = placeAt(q.place);
             const n = (pinsAt[q.place] = (pinsAt[q.place] ?? 0) + 1) - 1;
@@ -576,13 +669,31 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
         </div>
       </div>
       {place === 'dock' && cardEl}
-      <p class="map-legend">
-        <span class="lg-pin">!</span> encargos · <span class="lg-party">2</span> grupos de viaje ·{' '}
-        <span class="lg-missing">?</span> desaparecidos · <i class="lg-route" /> camino de un grupo,
-        de la taberna al encargo · <i class="lg-thread" /> hilo de una historia: une sus pasos, con
-        una cruz en los hechos
-        {threat > 0 && ` · Amenaza en la comarca: ${threat}`} · Toca un lugar para ver qué hay;
-        arrastra y usa la rueda o los botones para moverte.
+      <ul class="map-legend">
+        <li>
+          <span class="lg-pin">!</span> Encargo
+        </li>
+        <li>
+          <span class="lg-party">2</span> Grupo de viaje
+        </li>
+        <li>
+          <span class="lg-missing">?</span> Desaparecido
+        </li>
+        <li>
+          <i class="lg-route" /> Camino de un grupo
+        </li>
+        <li>
+          <i class="lg-thread" />
+          <span class="lg-step past">✓</span> Historia: paso hecho
+        </li>
+        <li>
+          <i class="lg-thread next" />
+          <span class="lg-step now">2</span> Historia: siguiente paso
+        </li>
+        {threat > 0 && <li class="lg-threat">Amenaza en la comarca: {threat}</li>}
+      </ul>
+      <p class="map-hint">
+        Toca un lugar o un número para ver qué hay; arrastra o pellizca para moverte.
         {level < 2 && ' La niebla se levanta explorando (la sala de mapas ayuda).'}
       </p>
     </div>

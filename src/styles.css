@@ -2677,8 +2677,23 @@ button:focus-visible {
   }
 }
 .map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
   margin: 0;
+  padding: 0;
+  list-style: none;
   font-size: 12.5px;
+  color: var(--text-soft);
+}
+.map-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.map-hint {
+  margin: 0;
+  font-size: 12px;
   color: var(--text-soft);
 }
 .map-legend span {
@@ -2689,7 +2704,6 @@ button:focus-visible {
   font-family: var(--pixel);
   font-size: 10px;
   color: var(--sand);
-  vertical-align: -2px;
 }
 .lg-pin {
   background: var(--leaf);
@@ -2703,7 +2717,6 @@ button:focus-visible {
 .map-legend i {
   display: inline-block;
   width: 16px;
-  vertical-align: 3px;
 }
 .lg-route {
   border-top: 2px dashed var(--ink);
@@ -2711,6 +2724,25 @@ button:focus-visible {
 }
 .lg-thread {
   border-top: 2px solid var(--red);
+}
+.lg-thread.next {
+  border-top-style: dashed;
+}
+.map-legend .lg-step {
+  border-radius: 50%;
+}
+.lg-step.past {
+  background: var(--sand);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--wine);
+  font-size: 9px;
+}
+.lg-step.now {
+  background: var(--red);
+  color: var(--white);
+}
+.lg-threat {
+  color: var(--wine);
 }
 
 /* ---------- Cadenas de misiones ---------- */
@@ -2730,17 +2762,125 @@ button:focus-visible {
   font-size: 11px;
   color: var(--wine);
 }
-.map-routes .thread polyline {
-  fill: none;
+/* Hilo de una historia: tramos hechos continuos con flecha; el que lleva al paso
+   siguiente, a trazos que avanzan hacia él. Una historia terminada queda apagada. */
+.map-routes .thread line {
   stroke: var(--red);
   stroke-width: 1.4;
 }
-.map-routes .thread line {
-  stroke: var(--wine);
-  stroke-width: 1.4;
+.map-routes .thread path {
+  fill: var(--red);
 }
-.map-routes .thread.done polyline {
-  stroke-dasharray: 2 1.5;
+.map-routes .thread .next line {
+  stroke-dasharray: 3 2;
+  animation: thread-march 0.9s linear infinite;
+}
+.map-routes .thread.done {
+  opacity: 0.45;
+}
+.map-routes .thread.done line {
+  stroke: var(--wine);
+}
+.map-routes .thread.done path {
+  fill: var(--wine);
+}
+@keyframes thread-march {
+  to {
+    stroke-dashoffset: -5;
+  }
+}
+.map-step {
+  position: absolute;
+  transform: translate(-50%, -50%) scale(var(--inv, 1));
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  font-family: var(--pixel);
+  cursor: pointer;
+}
+.map-step.past {
+  width: 11px;
+  height: 11px;
+  background: var(--sand);
+  box-shadow:
+    0 0 0 1px var(--wine),
+    0 0 0 2px var(--sand);
+}
+.map-step.closed {
+  opacity: 0.6;
+}
+.map-step.now {
+  z-index: 1;
+  width: 15px;
+  height: 15px;
+  font-size: 11px;
+  color: var(--white);
+  background: var(--red);
+  box-shadow:
+    0 0 0 1px var(--ink),
+    0 0 0 2px var(--sand);
+  animation: step-pulse 1.4s ease-in-out infinite;
+}
+@keyframes step-pulse {
+  50% {
+    box-shadow:
+      0 0 0 1px var(--ink),
+      0 0 0 4px rgba(228, 59, 68, 0.35);
+  }
+}
+/* Pasos de la historia dentro de la ficha. */
+.mc-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.mc-steps li {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  font-size: 13.5px;
+}
+.mc-steps li > span {
+  display: flex;
+  flex-direction: column;
+}
+.mc-steps small {
+  font-size: 11.5px;
+  color: var(--text-soft);
+}
+.mc-steps i {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 13px;
+  height: 13px;
+  margin-top: 2px;
+  border-radius: 50%;
+  font-style: normal;
+  font-family: var(--pixel);
+  font-size: 10px;
+  background: var(--sand);
+  box-shadow: inset 0 0 0 1px var(--wine);
+}
+.mc-steps .now i {
+  color: var(--white);
+  background: var(--red);
+  box-shadow: none;
+}
+.mc-steps .now {
+  font-weight: 600;
+}
+.mc-steps .later {
+  color: var(--text-soft);
+}
+.mc-steps .later i {
+  color: var(--text-soft);
+  box-shadow: inset 0 0 0 1px var(--text-soft);
 }
 .map-pin.chain {
   box-shadow:
