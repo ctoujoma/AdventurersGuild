@@ -1,8 +1,8 @@
-import { useMemo } from 'preact/hooks';
+import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { fogBuffer, mapBuffer } from '../../art/map';
 import { chainDef } from '../../core/chains';
 import { customOf } from '../../core/game';
-import type { GameState, Hero } from '../../core/model';
+import type { GameState, Hero, Quest } from '../../core/model';
 import { dangerClass } from '../../data/labels';
 import {
   KNOWN_RADIUS,
@@ -12,8 +12,10 @@ import {
   REVEAL_RADIUS,
   TAVERN,
   placeAt,
+  type Terrain,
 } from '../../data/places';
 import { BufferImage } from '../BufferImage';
+import { Icon } from '../icons';
 import { listNames, plural } from '../text';
 
 interface Props {
@@ -27,6 +29,21 @@ const pct = (x: number, y: number) => ({
   top: `${(y / MAP_H) * 100}%`,
 });
 
+const TERRAIN: Record<Terrain, string> = {
+  rio: 'Junto al río',
+  pueblo: 'Pueblo',
+  monte: 'Montaña',
+  bosque: 'Bosque',
+  costa: 'Costa',
+  pantano: 'Pantano',
+  campo: 'Campo',
+  ruina: 'Ruinas',
+};
+const DANGER_NAMES = ['Peligro bajo', 'Peligro medio', 'Peligro alto', 'Peligro letal'];
+const MAX_ZOOM = 4;
+
+type Info = { kind: 'place'; name: string } | { kind: 'party'; id: string } | { kind: 'tavern' };
+
 /** Dónde va un grupo: media misión de ida y media de vuelta. */
 function partyPos(place: string, days: number, left: number) {
   const p = placeAt(place);
@@ -35,22 +52,26 @@ function partyPos(place: string, days: number, left: number) {
   return { x: TAVERN.x + (p.x - TAVERN.x) * k, y: TAVERN.y + (p.y - TAVERN.y) * k, back: f > 0.5 };
 }
 
-/** Mapa de la comarca: encargos, grupos de viaje, desaparecidos y asaltos que se acercan. */
+/**
+ * Mapa de la comarca: encargos, grupos de viaje, desaparecidos y asaltos que se acercan.
+ * Se puede acercar (rueda, pellizco o botones) y arrastrar; tocar un lugar, un encargo o
+ * un grupo abre una ficha flotante dentro del propio mapa.
+ */
 export function MapPanel({ game, onQuest, onHero }: Props) {
   const level = game.fac.mapas;
   const explored = game.explored ?? [];
+  const knownRadius = KNOWN_RADIUS + (level >= 1 ? 20 : 0);
   const known = (name: string) =>
     level >= 2 ||
     explored.includes(name) ||
-    Math.hypot(placeAt(name).x - TAVERN.x, placeAt(name).y - TAVERN.y) <
-      KNOWN_RADIUS + (level >= 1 ? 20 : 0);
+    Math.hypot(placeAt(name).x - TAVERN.x, placeAt(name).y - TAVERN.y) < knownRadius;
   const fogKey = `${level}|${explored.join(',')}`;
   const fog = useMemo(
     () =>
       level >= 2
         ? null
         : fogBuffer([
-            { x: TAVERN.x, y: TAVERN.y, r: KNOWN_RADIUS + (level >= 1 ? 20 : 0) },
+            { x: TAVERN.x, y: TAVERN.y, r: knownRadius },
             ...explored.map((n) => ({ ...placeAt(n), r: REVEAL_RADIUS })),
           ]),
     [fogKey],
@@ -63,124 +84,389 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
   const missing = game.heroes.filter((h) => h.status === 'desaparecido');
   const pinsAt: Record<string, number> = {};
 
+  // ---------- Zoom y arrastre ----------
+  const vp = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ w: 1, h: 1 });
+  const [view, setView] = useState({ z: 1, x: 0, y: 0 });
+  const [info, setInfo] = useState<Info | null>(null);
+  const ptrs = useRef(new Map<number, { x: number; y: number }>());
+  const gesture = useRef<{ moved: number; pinch: number; z: number } | null>(null);
+  useEffect(() => {
+    const el = vp.current;
+    if (!el) return;
+    const fit = () => setSize({ w: el.clientWidth || 1, h: el.clientHeight || 1 });
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const clampView = (v: { z: number; x: number; y: number }) => ({
+    z: v.z,
+    x: Math.min(0, Math.max(size.w - size.w * v.z, v.x)),
+    y: Math.min(0, Math.max(size.h - size.h * v.z, v.y)),
+  });
+  const zoomAt = (factor: number, px: number, py: number) =>
+    setView((v) => {
+      const z = Math.max(1, Math.min(MAX_ZOOM, v.z * factor));
+      return clampView({ z, x: px - ((px - v.x) * z) / v.z, y: py - ((py - v.y) * z) / v.z });
+    });
+  const local = (e: PointerEvent | WheelEvent) => {
+    const r = vp.current!.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  };
+  const onDown = (e: PointerEvent) => {
+    ptrs.current.set(e.pointerId, local(e));
+    gesture.current ??= { moved: 0, pinch: 0, z: view.z };
+    if (ptrs.current.size === 2) {
+      const [a, b] = [...ptrs.current.values()];
+      gesture.current.pinch = Math.hypot(a!.x - b!.x, a!.y - b!.y);
+      gesture.current.z = view.z;
+    }
+  };
+  const onMove = (e: PointerEvent) => {
+    const prev = ptrs.current.get(e.pointerId);
+    if (!prev || !gesture.current) return;
+    const p = local(e);
+    ptrs.current.set(e.pointerId, p);
+    if (ptrs.current.size === 2) {
+      const [a, b] = [...ptrs.current.values()];
+      const d = Math.hypot(a!.x - b!.x, a!.y - b!.y);
+      if (gesture.current.pinch > 0) {
+        const target = (gesture.current.z * d) / gesture.current.pinch;
+        zoomAt(target / view.z, (a!.x + b!.x) / 2, (a!.y + b!.y) / 2);
+      }
+      gesture.current.moved += 10;
+      return;
+    }
+    const dx = p.x - prev.x;
+    const dy = p.y - prev.y;
+    gesture.current.moved += Math.abs(dx) + Math.abs(dy);
+    if (gesture.current.moved > 4) {
+      vp.current?.setPointerCapture(e.pointerId);
+      setView((v) => clampView({ ...v, x: v.x + dx, y: v.y + dy }));
+    }
+  };
+  const onUp = (e: PointerEvent) => {
+    ptrs.current.delete(e.pointerId);
+    if (!ptrs.current.size) setTimeout(() => (gesture.current = null), 0);
+  };
+  /** Un toque que no ha sido arrastre. */
+  const tap = (fn: () => void) => () => {
+    if ((gesture.current?.moved ?? 0) > 4) return;
+    fn();
+  };
+  const onWheel = (e: WheelEvent) => {
+    e.preventDefault();
+    const p = local(e);
+    zoomAt(e.deltaY < 0 ? 1.25 : 0.8, p.x, p.y);
+  };
+  // Posición en el visor (px) de un punto del mapa.
+  const screen = (mx: number, my: number) => ({
+    x: view.x + (mx / MAP_W) * size.w * view.z,
+    y: view.y + (my / MAP_H) * size.h * view.z,
+  });
+
+  // ---------- Ficha flotante ----------
+  const questsAt = (name: string) => game.quests.filter((q) => q.place === name);
+  const missionsTo = (name: string) => game.missions.filter((m) => m.quest.place === name);
+  const questLine = (q: Quest) => {
+    const hidden = q.dangerHidden && level < 2;
+    return (
+      <li key={q.id}>
+        <button class="map-card-quest" onClick={() => onQuest(q.id)}>
+          <b>{q.title}</b>
+          <span>
+            {q.reward} monedas · {q.days} {plural(q.days, 'día', 'días')} ·{' '}
+            {hidden ? 'peligro sin saber' : DANGER_NAMES[q.danger]}
+            {q.chain ? ' · historia' : ''}
+          </span>
+        </button>
+      </li>
+    );
+  };
+  let card: { x: number; y: number; body: preact.ComponentChildren } | null = null;
+  if (info?.kind === 'place') {
+    const p = placeAt(info.name);
+    const qs = questsAt(info.name);
+    const ms = missionsTo(info.name);
+    const lost = missing.filter((h) => h.lostAt === info.name);
+    const terrain = PLACE_INFO[info.name]?.terrain;
+    card = {
+      ...screen(p.x, p.y),
+      body: (
+        <>
+          <b class="map-card-title">{info.name}</b>
+          <span class="tiny">
+            {known(info.name) ? (terrain ? TERRAIN[terrain] : 'Lugar') : 'Sin explorar'}
+            {explored.includes(info.name) ? ' · explorado' : ''}
+          </span>
+          {qs.length > 0 && <ul class="map-card-list">{qs.map(questLine)}</ul>}
+          {ms.map((m) => {
+            const party = m.heroIds.map(byId).filter((h): h is Hero => !!h);
+            return (
+              <span key={m.id} class="tiny">
+                {listNames(party.map((h) => h.name))} {plural(party.length, 'está', 'están')} de
+                camino ({m.daysLeft} {plural(m.daysLeft, 'día', 'días')}).
+              </span>
+            );
+          })}
+          {lost.map((h) => (
+            <button key={h.id} class="linklike" onClick={() => onHero(h.id)}>
+              Aquí se perdió la pista de {h.name}
+            </button>
+          ))}
+          {!qs.length && !ms.length && !lost.length && (
+            <span class="tiny">Ahora mismo no hay nada que hacer aquí.</span>
+          )}
+        </>
+      ),
+    };
+  } else if (info?.kind === 'party') {
+    const m = game.missions.find((x) => x.id === info.id);
+    if (m) {
+      const pos = partyPos(m.quest.place, m.quest.days, m.daysLeft);
+      const party = m.heroIds.map(byId).filter((h): h is Hero => !!h);
+      card = {
+        ...screen(pos.x, pos.y),
+        body: (
+          <>
+            <b class="map-card-title">{m.quest.title}</b>
+            <span class="tiny">
+              {pos.back ? 'Vuelven de' : 'Van hacia'} {m.quest.place} · {m.daysLeft}{' '}
+              {plural(m.daysLeft, 'día', 'días')} para volver
+            </span>
+            <div class="map-card-heroes">
+              {party.map((h) => (
+                <button key={h.id} class="btn btn-wood" onClick={() => onHero(h.id)}>
+                  {h.name}
+                </button>
+              ))}
+            </div>
+          </>
+        ),
+      };
+    }
+  } else if (info?.kind === 'tavern') {
+    card = {
+      ...screen(TAVERN.x, TAVERN.y),
+      body: (
+        <>
+          <b class="map-card-title">{customOf(game).name}</b>
+          <span class="tiny">
+            En el cruce de caminos.{' '}
+            {game.missions.length
+              ? `${game.missions.length} ${plural(game.missions.length, 'grupo fuera', 'grupos fuera')}.`
+              : 'Todos en casa.'}
+          </span>
+        </>
+      ),
+    };
+  }
+  const cardX = card ? Math.max(96, Math.min(size.w - 96, card.x)) : 0;
+  const cardY = card ? Math.max(4, Math.min(size.h - 4, card.y)) : 0;
+  const below = card ? cardY < size.h * 0.45 : false;
+
   return (
     <div class="map-wrap">
-      <div class="map" style={{ aspectRatio: `${MAP_W} / ${MAP_H}` }}>
-        <BufferImage buf={mapBuffer()} scale={1} class="map-layer" label="Mapa de la comarca" />
-        {fog && <BufferImage buf={fog} scale={1} class="map-layer" />}
-        {threat > 0 && threatAt && (
-          <span
-            class="map-threat"
-            style={{
-              ...pct(threatAt.x, threatAt.y),
-              width: `${((12 + threat * 0.9) / MAP_W) * 200}%`,
-              aspectRatio: '1',
-              opacity: 0.25 + threat / 160,
+      <div
+        ref={vp}
+        class="map-viewport"
+        style={{ aspectRatio: `${MAP_W} / ${MAP_H}` }}
+        onPointerDown={onDown}
+        onPointerMove={onMove}
+        onPointerUp={onUp}
+        onPointerCancel={onUp}
+        onWheel={onWheel}
+      >
+        <div
+          class="map"
+          style={{
+            transform: `translate(${view.x}px, ${view.y}px) scale(${view.z})`,
+            ['--inv' as string]: String(1 / view.z),
+          }}
+          onClick={tap(() => setInfo(null))}
+        >
+          <BufferImage buf={mapBuffer()} scale={1} class="map-layer" label="Mapa de la comarca" />
+          {fog && <BufferImage buf={fog} scale={1} class="map-layer" />}
+          {threat > 0 && threatAt && (
+            <span
+              class="map-threat"
+              style={{
+                ...pct(threatAt.x, threatAt.y),
+                width: `${((12 + threat * 0.9) / MAP_W) * 200}%`,
+                aspectRatio: '1',
+                opacity: 0.25 + threat / 160,
+              }}
+              aria-hidden="true"
+            />
+          )}
+          <svg class="map-routes" viewBox={`0 0 ${MAP_W} ${MAP_H}`} aria-hidden="true">
+            {(game.chains ?? []).map((cs) => {
+              const def = chainDef(cs.id);
+              const upto = cs.status === 'hecha' ? def.steps.length - 1 : cs.step;
+              const pts = def.steps.slice(0, upto + 1).map((st) => placeAt(st.place));
+              return (
+                <g key={cs.id} class={`thread ${cs.status === 'hecha' ? 'done' : ''}`}>
+                  <polyline points={pts.map((p) => `${p.x},${p.y}`).join(' ')} />
+                  {def.steps
+                    .slice(0, cs.status === 'hecha' ? def.steps.length : cs.step)
+                    .map((st, i) => {
+                      const p = placeAt(st.place);
+                      return (
+                        <g key={i}>
+                          <line x1={p.x - 2.5} y1={p.y - 2.5} x2={p.x + 2.5} y2={p.y + 2.5} />
+                          <line x1={p.x - 2.5} y1={p.y + 2.5} x2={p.x + 2.5} y2={p.y - 2.5} />
+                        </g>
+                      );
+                    })}
+                </g>
+              );
+            })}
+            {game.missions.map((m) => {
+              const p = placeAt(m.quest.place);
+              return (
+                <line key={m.id} x1={TAVERN.x} y1={TAVERN.y} x2={p.x} y2={p.y} class="route" />
+              );
+            })}
+          </svg>
+          {Object.entries(PLACE_INFO)
+            .filter(([n]) => known(n))
+            .map(([n, p]) => (
+              <button
+                key={n}
+                class={`map-place ${info?.kind === 'place' && info.name === n ? 'on' : ''}`}
+                style={pct(p.x, p.y)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  tap(() => setInfo({ kind: 'place', name: n }))();
+                }}
+              >
+                <i />
+                <small>{n}</small>
+              </button>
+            ))}
+          <button
+            class="map-tavern"
+            style={pct(TAVERN.x, TAVERN.y)}
+            title={customOf(game).name}
+            onClick={(e) => {
+              e.stopPropagation();
+              tap(() => setInfo({ kind: 'tavern' }))();
             }}
-            aria-hidden="true"
-          />
-        )}
-        <svg class="map-routes" viewBox={`0 0 ${MAP_W} ${MAP_H}`} aria-hidden="true">
-          {(game.chains ?? []).map((cs) => {
-            const def = chainDef(cs.id);
-            const upto = cs.status === 'hecha' ? def.steps.length - 1 : cs.step;
-            const pts = def.steps.slice(0, upto + 1).map((st) => placeAt(st.place));
+          >
+            <b>⌂</b>
+            <small>{customOf(game).name}</small>
+          </button>
+          {game.quests.map((q) => {
+            const p = placeAt(q.place);
+            const n = (pinsAt[q.place] = (pinsAt[q.place] ?? 0) + 1) - 1;
+            const hidden = q.dangerHidden && level < 2;
             return (
-              <g key={cs.id} class={`thread ${cs.status === 'hecha' ? 'done' : ''}`}>
-                <polyline points={pts.map((p) => `${p.x},${p.y}`).join(' ')} />
-                {def.steps
-                  .slice(0, cs.status === 'hecha' ? def.steps.length : cs.step)
-                  .map((st, i) => {
-                    const p = placeAt(st.place);
-                    return (
-                      <g key={i}>
-                        <line x1={p.x - 2.5} y1={p.y - 2.5} x2={p.x + 2.5} y2={p.y + 2.5} />
-                        <line x1={p.x - 2.5} y1={p.y + 2.5} x2={p.x + 2.5} y2={p.y - 2.5} />
-                      </g>
-                    );
-                  })}
-              </g>
+              <button
+                key={q.id}
+                class={`map-pin danger-${dangerClass(q.danger, hidden)} ${q.chain ? 'chain' : ''}`}
+                style={pct(p.x + n * 7, p.y - 6)}
+                aria-label={`${q.title} (${q.place})`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  tap(() => setInfo({ kind: 'place', name: q.place }))();
+                }}
+              >
+                !
+              </button>
             );
           })}
           {game.missions.map((m) => {
-            const p = placeAt(m.quest.place);
-            return <line key={m.id} x1={TAVERN.x} y1={TAVERN.y} x2={p.x} y2={p.y} class="route" />;
+            const pos = partyPos(m.quest.place, m.quest.days, m.daysLeft);
+            const party = m.heroIds.map(byId).filter((h): h is Hero => !!h);
+            return (
+              <button
+                key={m.id}
+                class={`map-party ${pos.back ? 'back' : ''}`}
+                style={pct(pos.x, pos.y)}
+                aria-label={`${listNames(party.map((h) => h.name))}: ${pos.back ? 'vuelven de' : 'van hacia'} ${m.quest.place}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  tap(() => setInfo({ kind: 'party', id: m.id }))();
+                }}
+              >
+                {party.length}
+              </button>
+            );
           })}
-        </svg>
-        {Object.entries(PLACE_INFO)
-          .filter(([n]) => known(n))
-          .map(([n, p]) => (
-            <span key={n} class="map-place" style={pct(p.x, p.y)}>
-              <i />
-              <small>{n}</small>
-            </span>
+          {missing.map((h) => (
+            <button
+              key={h.id}
+              class="map-missing"
+              style={pct(placeAt(h.lostAt ?? '').x + 6, placeAt(h.lostAt ?? '').y + 4)}
+              aria-label={`${h.name}: se le perdió la pista aquí`}
+              onClick={(e) => {
+                e.stopPropagation();
+                tap(() => setInfo({ kind: 'place', name: h.lostAt ?? '' }))();
+              }}
+            >
+              ?
+            </button>
           ))}
-        <span class="map-tavern" style={pct(TAVERN.x, TAVERN.y)} title={customOf(game).name}>
-          <b>⌂</b>
-          <small>{customOf(game).name}</small>
-        </span>
-        {game.quests.map((q) => {
-          const p = placeAt(q.place);
-          const n = (pinsAt[q.place] = (pinsAt[q.place] ?? 0) + 1) - 1;
-          const hidden = q.dangerHidden && level < 2;
-          return (
-            <button
-              key={q.id}
-              class={`map-pin danger-${dangerClass(q.danger, hidden)} ${q.chain ? 'chain' : ''}`}
-              style={pct(p.x + n * 7, p.y - 6)}
-              aria-label={`${q.title} (${q.place})`}
-              title={`${q.title} · ${q.reward} monedas · ${q.days} ${plural(q.days, 'día', 'días')}`}
-              onClick={() => onQuest(q.id)}
+          {game.raid?.warned && (
+            <span
+              class="map-raid"
+              style={pct(
+                Math.max(8, TAVERN.x - 14 * Math.max(1, game.raid.day - game.day)),
+                TAVERN.y + 10,
+              )}
+              title={`${game.raid.band}: llega en ${game.raid.day - game.day} noches`}
             >
-              !
-            </button>
-          );
-        })}
-        {game.missions.map((m) => {
-          const pos = partyPos(m.quest.place, m.quest.days, m.daysLeft);
-          const party = m.heroIds.map(byId).filter((h): h is Hero => !!h);
-          return (
-            <button
-              key={m.id}
-              class={`map-party ${pos.back ? 'back' : ''}`}
-              style={pct(pos.x, pos.y)}
-              title={`${listNames(party.map((h) => h.name))}: ${pos.back ? 'vuelven de' : 'van hacia'} ${m.quest.place}`}
-              onClick={() => party[0] && onHero(party[0].id)}
-            >
-              {party.length}
-            </button>
-          );
-        })}
-        {missing.map((h) => (
-          <button
-            key={h.id}
-            class="map-missing"
-            style={pct(placeAt(h.lostAt ?? '').x + 6, placeAt(h.lostAt ?? '').y + 4)}
-            title={`${h.name}: se le perdió la pista aquí`}
-            onClick={() => onHero(h.id)}
+              ⚔
+            </span>
+          )}
+        </div>
+        {card && (
+          <div
+            class={`map-card ${below ? 'below' : ''}`}
+            style={{ left: `${cardX}px`, top: `${cardY}px` }}
+            onPointerDown={(e) => e.stopPropagation()}
           >
-            ?
-          </button>
-        ))}
-        {game.raid?.warned && (
-          <span
-            class="map-raid"
-            style={pct(
-              Math.max(8, TAVERN.x - 14 * Math.max(1, game.raid.day - game.day)),
-              TAVERN.y + 10,
-            )}
-            title={`${game.raid.band}: llega en ${game.raid.day - game.day} noches`}
-          >
-            ⚔
-          </span>
+            <button class="btn-icon map-card-x" aria-label="Cerrar" onClick={() => setInfo(null)}>
+              <Icon name="close" size={10} />
+            </button>
+            {card.body}
+          </div>
         )}
+        <div class="map-tools" onPointerDown={(e) => e.stopPropagation()}>
+          <button
+            class="btn-icon"
+            aria-label="Acercar el mapa"
+            onClick={() => zoomAt(1.5, size.w / 2, size.h / 2)}
+          >
+            <Icon name="plus" size={14} />
+          </button>
+          <button
+            class="btn-icon"
+            aria-label="Alejar el mapa"
+            onClick={() => zoomAt(1 / 1.5, size.w / 2, size.h / 2)}
+          >
+            <Icon name="minus" size={14} />
+          </button>
+          <button
+            class="btn-icon"
+            aria-label="Ver la taberna"
+            onClick={() => {
+              const z = Math.max(view.z, 2);
+              const t = { x: (TAVERN.x / MAP_W) * size.w * z, y: (TAVERN.y / MAP_H) * size.h * z };
+              setView(clampView({ z, x: size.w / 2 - t.x, y: size.h / 2 - t.y }));
+            }}
+          >
+            <Icon name="home" size={14} />
+          </button>
+        </div>
       </div>
       <p class="map-legend">
-        <span class="lg-pin">!</span> encargos del tablón · <span class="lg-party">2</span> grupos
-        de viaje · <span class="lg-missing">?</span> desaparecidos
-        {threat > 0 && ` · Amenaza en la comarca: ${threat}`}
-        {level < 2 &&
-          ' · La niebla se levanta visitando lugares (y explorando); la sala de mapas ayuda.'}
+        <span class="lg-pin">!</span> encargos · <span class="lg-party">2</span> grupos de viaje ·{' '}
+        <span class="lg-missing">?</span> desaparecidos
+        {threat > 0 && ` · Amenaza en la comarca: ${threat}`} · Toca un lugar para ver qué hay;
+        arrastra y usa la rueda o los botones para moverte.
+        {level < 2 && ' La niebla se levanta explorando (la sala de mapas ayuda).'}
       </p>
     </div>
   );
