@@ -196,6 +196,10 @@ button:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
   font-family: var(--pixel);
   font-size: 17px;
   color: var(--white);
@@ -215,6 +219,31 @@ button:focus-visible {
   50% {
     opacity: 0.45;
   }
+}
+
+.hud-stat:focus-visible {
+  outline: 2px solid var(--lemon);
+  outline-offset: 2px;
+}
+
+/* Explicación de una cifra de la barra, al tocarla. */
+.hud-tip {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 8px;
+  max-width: min(320px, calc(100% - 16px));
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 13.5px;
+  line-height: 1.35;
+  background: var(--sand);
+  color: var(--plum);
+  box-shadow:
+    0 0 0 2px var(--bark),
+    0 0 0 4px var(--ink),
+    0 6px 10px rgba(24, 20, 37, 0.35);
+  animation: note-in 0.18s ease-out both;
+  cursor: pointer;
 }
 
 .hud-due {
@@ -2523,9 +2552,10 @@ button:focus-visible {
   height: 100%;
 }
 .map-routes .route {
-  stroke: var(--wine);
-  stroke-width: 1.2;
-  stroke-dasharray: 3 2;
+  stroke: var(--ink);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+  opacity: 0.75;
 }
 .map-place,
 .map-tavern,
@@ -2669,6 +2699,18 @@ button:focus-visible {
 }
 .lg-missing {
   background: var(--plum);
+}
+.map-legend i {
+  display: inline-block;
+  width: 16px;
+  vertical-align: 3px;
+}
+.lg-route {
+  border-top: 2px dashed var(--ink);
+  opacity: 0.75;
+}
+.lg-thread {
+  border-top: 2px solid var(--red);
 }
 
 /* ---------- Cadenas de misiones ---------- */
@@ -3156,6 +3198,66 @@ textarea:focus-visible,
 }
 .map-card.below {
   transform: translate(-50%, 14px);
+}
+/* Cifras con icono dentro de la ficha. */
+.mc-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+.mc-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--pixel);
+  font-size: 13px;
+  color: var(--plum);
+}
+.mc-stat[class*='danger-'] {
+  gap: 1px;
+  padding: 1px 3px;
+  color: var(--white);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+.map-card-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.mc-terrain {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  font-family: var(--pixel);
+  color: var(--text-soft);
+}
+.mc-ok {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  background: var(--leaf);
+}
+.mc-lost i {
+  display: inline-grid;
+  place-items: center;
+  width: 13px;
+  height: 13px;
+  font-style: normal;
+  font-family: var(--pixel);
+  font-size: 10px;
+  color: var(--sand);
+  background: var(--plum);
+}
+
+/* Sin sitio dentro del mapa: va debajo, en el flujo del panel. */
+.map-card.docked {
+  position: relative;
+  transform: none;
+  align-self: center;
+  max-width: 100%;
+  margin-top: 4px;
 }
 .map-card-title {
   font-family: var(--pixel);

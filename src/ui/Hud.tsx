@@ -2,11 +2,17 @@ import { useEffect, useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
 import { DAYS } from '../core/balance';
 import { customOf, nextPayment, nextRank, rankOf, salaries } from '../core/game';
+import { plural } from './text';
 import type { GameState } from '../core/model';
 import { Counter } from './Counter';
 import { Icon } from './icons';
 
-/** Barra superior: día, nombre y rango del gremio, oro, reputación y próximo pago. */
+type Tip = 'oro' | 'rep' | 'pago' | 'asalto';
+
+/**
+ * Barra superior: día, nombre y rango del gremio, oro, reputación y próximo pago. Al tocar
+ * una cifra sale debajo una línea que explica qué es.
+ */
 export function Hud({ game, onSettings }: { game: GameState; onSettings: () => void }) {
   const [sound, setSound] = useState(audio.on);
   useEffect(() => audio.subscribe(setSound), []);
@@ -15,6 +21,30 @@ export function Hud({ game, onSettings }: { game: GameState; onSettings: () => v
   const close = pay ? pay.day - game.day <= 2 : false;
   const short = pay ? game.gold < due : false;
   const nr = nextRank(game);
+  const [tip, setTip] = useState<Tip | null>(null);
+  useEffect(() => {
+    if (!tip) return;
+    const t = setTimeout(() => setTip(null), 6000);
+    return () => clearTimeout(t);
+  }, [tip]);
+  const toggle = (t: Tip) => setTip((cur) => (cur === t ? null : t));
+  const left = pay ? pay.day - game.day : 0;
+  const nights = game.raid ? Math.max(0, game.raid.day - game.day) : 0;
+  const when = left <= 1 ? 'mañana' : `en ${left} días`;
+  const tips: Record<Tip, string> = {
+    oro: `Oro en la caja: ${game.gold} monedas.`,
+    rep: nr
+      ? `Reputación: ${game.rep}. Con ${nr.at} el gremio pasa a ser de ${nr.name}: mejores encargos y héroes.`
+      : `Reputación: ${game.rep}. Ya sois el gremio más famoso de la comarca.`,
+    pago: !pay
+      ? ''
+      : pay.amount
+        ? `Próximo pago, el día ${pay.day} (${when}): ${pay.amount} al prestamista y ${due - pay.amount} en salarios. Total ${due}.${short ? ' Ahora mismo no llega.' : ''}`
+        : `Salarios del día ${pay.day} (${when}): ${due} monedas.${short ? ' Ahora mismo no llega.' : ''}`,
+    asalto: game.raid
+      ? `Chivatazo: ${game.raid.band} llega en ${nights} ${plural(nights, 'noche', 'noches')}. Prepara las defensas.`
+      : '',
+  };
   return (
     <header class="hud">
       <div class="hud-day">
@@ -27,40 +57,47 @@ export function Hud({ game, onSettings }: { game: GameState; onSettings: () => v
         <span>Gremio de {rankOf(game).name}</span>
       </div>
       <div class="hud-stats">
-        <span class="hud-stat" title="Oro">
+        <button
+          class="hud-stat"
+          aria-label={tips.oro}
+          aria-expanded={tip === 'oro'}
+          onClick={() => toggle('oro')}
+        >
           <Icon name="coin" size={16} />
           <Counter value={game.gold} />
-        </span>
-        <span
+        </button>
+        <button
           class="hud-stat"
-          title={nr ? `Reputación: ${nr.at} para gremio de ${nr.name}` : 'Reputación'}
+          aria-label={tips.rep}
+          aria-expanded={tip === 'rep'}
+          onClick={() => toggle('rep')}
         >
           <Icon name="star" size={16} />
           <Counter value={game.rep} />
-        </span>
+        </button>
         {pay && (
-          <span
+          <button
             class={`hud-stat ${close && short ? 'danger' : close || short ? 'warn' : ''}`}
-            title={
-              pay.amount
-                ? `Pago del día ${pay.day}: ${pay.amount} al prestamista y ${due - pay.amount} en salarios`
-                : `Salarios del día ${pay.day}: ${due}`
-            }
+            aria-label={tips.pago}
+            aria-expanded={tip === 'pago'}
+            onClick={() => toggle('pago')}
           >
             <Icon name="bell" size={16} />
             <b>{due}</b>
-            <small class="hud-due">d{pay.day}</small>
-          </span>
+            <small class="hud-due">día {pay.day}</small>
+          </button>
         )}
         {game.raid?.warned && (
-          <span
+          <button
             class="hud-stat danger raid-warn"
-            title={`Chivatazo: ${game.raid.band} llegará en ${game.raid.day - game.day} noches`}
+            aria-label={tips.asalto}
+            aria-expanded={tip === 'asalto'}
+            onClick={() => toggle('asalto')}
           >
             <Icon name="flag" size={16} />
             <b>{Math.max(0, game.raid.day - game.day)}</b>
             <small class="hud-due">noches</small>
-          </span>
+          </button>
         )}
         <button
           class="btn-icon"
@@ -74,6 +111,11 @@ export function Hud({ game, onSettings }: { game: GameState; onSettings: () => v
           <Icon name="ajustes" size={16} />
         </button>
       </div>
+      {tip && tips[tip] && (
+        <p class="hud-tip" role="status" onClick={() => setTip(null)}>
+          {tips[tip]}
+        </p>
+      )}
     </header>
   );
 }
