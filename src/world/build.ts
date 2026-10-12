@@ -793,7 +793,10 @@ function attic(
   ]);
   // Ventana redonda del hastial.
   b.ellipse(ROOF.apexX, 72, 8.5, 8.5, P.oak);
-  b.ellipse(ROOF.apexX, 72, 7, 7, (x, y) => (y < 72 + (bayer(x, y) - 0.5) * 4 ? P.slate : P.navy));
+  // El cristal se recorta para que detrás se vea el cielo; queda un reflejo.
+  for (let y = 64; y <= 80; y++)
+    for (let x = ROOF.apexX - 8; x <= ROOF.apexX + 8; x++)
+      if ((x + 0.5 - ROOF.apexX) ** 2 + (y + 0.5 - 72) ** 2 <= 49) b.clear(x, y);
   b.rect(ROOF.apexX, 65, 1, 14, P.oak);
   b.rect(ROOF.apexX - 7, 72, 14, 1, P.oak);
   b.set(ROOF.apexX - 4, 68, P.fog);
