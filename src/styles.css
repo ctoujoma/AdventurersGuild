@@ -873,6 +873,8 @@ button:focus-visible {
 .herocard {
   position: relative;
   width: min(360px, calc(100% - 24px));
+  /* Nunca más alta que la pantalla: el interior (.qs-scroll) se desplaza. */
+  max-height: calc(100% - 16px);
   border-style: solid;
   border-width: 16px;
   border-image: var(--frame-wood) 8 / 16px / 0 round;
@@ -2520,8 +2522,12 @@ button:focus-visible {
 /* Gremio: accesos a Tu taberna, el arcón y el libro. */
 .gremio-links {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
+}
+/* Si queda uno suelto, ocupa toda la fila. */
+.gremio-links > :last-child:nth-child(odd) {
+  grid-column: 1 / -1;
 }
 .gremio-links .libro-link b {
   font-size: 15px;

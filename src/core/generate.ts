@@ -2,7 +2,14 @@
  * Generadores con semilla: candidatos y encargos escalados por el rango del gremio.
  */
 import { GEAR, TREASURES } from '../data/items';
-import { CLIENTS, PLACES, SHADY_CLIENTS, TEMPLATES, TWISTS } from '../data/quests';
+import {
+  CLIENTS,
+  PLACES,
+  SHADY_CLIENTS,
+  TEMPLATES,
+  TWISTS,
+  type QuestTemplate,
+} from '../data/quests';
 import { FIRST_NAMES, QUOTES, SURNAMES } from '../data/names';
 import { FREE_PAY, REWARD_PER_POINT } from './balance';
 import type { Danger, Hero, Item, Quest, QuestType, Sex } from './model';
@@ -107,6 +114,18 @@ export function generateHero(rng: Rng, id: string, opts: HeroOptions): Hero {
 const perHero = (rank: number) => 4.4 + rank * 1.7;
 
 /** `free`: en modo libre los encargos de rango alto pagan sin el recorte de «La deuda». */
+/**
+ * Título y texto de un encargo: o un título genérico con cualquier texto del tipo, o una
+ * historia concreta cuyo título y texto van juntos.
+ */
+export function pickStory(rng: Rng, tpl: QuestTemplate): readonly [string, string] {
+  const pairs = tpl.stories ?? [];
+  const i = rng.int(0, tpl.titles.length + pairs.length - 1);
+  return i < tpl.titles.length
+    ? [tpl.titles[i]!, rng.pick(tpl.texts)]
+    : pairs[i - tpl.titles.length]!;
+}
+
 export function generateQuest(
   rng: Rng,
   id: string,
@@ -177,13 +196,14 @@ export function generateQuest(
     }
   }
   const twist = rng.chance(shady ? 0.6 : 0.12) ? rng.pick(TWISTS) : undefined;
+  const [title, text] = pickStory(rng, tpl);
 
   return {
     id,
-    title: cap(fill(rng.pick(tpl.titles), vars)),
+    title: cap(fill(title, vars)),
     client,
     type,
-    text: fill(rng.pick(tpl.texts), vars),
+    text: fill(text, vars),
     place,
     challenges,
     slots,
