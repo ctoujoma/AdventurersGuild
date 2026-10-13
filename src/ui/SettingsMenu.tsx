@@ -1,3 +1,5 @@
+import { GLOSSARY } from '../data/glossary';
+import { canVibrate } from '../platform/haptics';
 import type { Settings } from '../platform/settings';
 import { Icon } from './icons';
 
@@ -9,7 +11,7 @@ interface Props {
 
 const SPEEDS: Settings['speed'][] = [1, 1.5, 2];
 
-/** Ajustes: volúmenes, velocidad de la escena, letra grande y menos movimiento. */
+/** Ajustes: volúmenes, velocidad de la escena, lectura, movimiento y vibración. */
 export function SettingsMenu({ settings: s, onChange, onClose }: Props) {
   const set = (patch: Partial<Settings>) => onChange({ ...s, ...patch });
   const slider = (key: 'music' | 'sfx' | 'ambient', label: string) => (
@@ -72,6 +74,28 @@ export function SettingsMenu({ settings: s, onChange, onClose }: Props) {
             />
             <span>Menos movimiento en la interfaz</span>
           </label>
+          {canVibrate() && (
+            <label class="set-check">
+              <input
+                type="checkbox"
+                checked={s.vibrate}
+                onChange={(e) => set({ vibrate: e.currentTarget.checked })}
+              />
+              <span>Vibración en golpes, monedas y asaltos</span>
+            </label>
+          )}
+          <h4 class="qs-sub">Qué es cada cosa</h4>
+          <p class="tiny">
+            Mantén pulsado un botón, un marcador del mapa o una cifra para ver qué es.
+          </p>
+          <dl class="glossary">
+            {GLOSSARY.map((g) => (
+              <div key={g.term}>
+                <dt>{g.term}</dt>
+                <dd>{g.text}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </article>
     </div>

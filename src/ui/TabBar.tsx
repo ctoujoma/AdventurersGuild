@@ -2,11 +2,15 @@ import { Icon, type IconName } from './icons';
 
 export type TabId = 'taberna' | 'tablon' | 'heroes' | 'gremio';
 
-const TABS: { id: TabId; label: string }[] = [
-  { id: 'taberna', label: 'Taberna' },
-  { id: 'tablon', label: 'Tablón' },
-  { id: 'heroes', label: 'Héroes' },
-  { id: 'gremio', label: 'Gremio' },
+const TABS: { id: TabId; label: string; help: string }[] = [
+  { id: 'taberna', label: 'Taberna', help: 'Vuelve a la escena de la taberna.' },
+  { id: 'tablon', label: 'Tablón', help: 'Los encargos que se pueden aceptar y mandar.' },
+  { id: 'heroes', label: 'Héroes', help: 'Tu gente y los que buscan trabajo en la barra.' },
+  {
+    id: 'gremio',
+    label: 'Gremio',
+    help: 'Mejoras de la casa, la deuda, tu taberna y los ajustes.',
+  },
 ];
 
 export function TabBar({ tab, onTab }: { tab: TabId; onTab: (t: TabId) => void }) {
@@ -17,6 +21,7 @@ export function TabBar({ tab, onTab }: { tab: TabId; onTab: (t: TabId) => void }
           key={t.id}
           class="tab"
           aria-current={tab === t.id ? 'page' : undefined}
+          data-help={t.help}
           onClick={() => onTab(t.id)}
         >
           <Icon name={t.id as IconName} size={28} />

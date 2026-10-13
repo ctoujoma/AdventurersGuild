@@ -62,7 +62,7 @@ function Stat({
   children: preact.ComponentChildren;
 }) {
   return (
-    <span class="mc-stat" title={label} aria-label={label}>
+    <span class="mc-stat" title={label} aria-label={label} data-help={label}>
       <Icon name={icon} size={11} />
       {children}
     </span>
@@ -238,6 +238,7 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
             <span
               class={`mc-stat danger-${dangerClass(q.danger, hidden)}`}
               title={hidden ? 'Peligro sin saber' : DANGER_NAMES[q.danger]}
+              data-help={`${hidden ? 'Peligro sin saber' : DANGER_NAMES[q.danger]}: una calavera por nivel, de bajo a letal.`}
               aria-label={hidden ? 'Peligro sin saber' : DANGER_NAMES[q.danger]}
             >
               {hidden ? (
@@ -278,6 +279,7 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
             <span
               class="mc-terrain"
               title={seen ? (terrain ? TERRAIN[terrain] : 'Lugar') : 'Sin explorar'}
+              data-help={seen ? (terrain ? TERRAIN[terrain] : 'Lugar') : 'Sin explorar'}
             >
               {seen && terrain ? <Icon name={TERRAIN_ICON[terrain]} size={14} /> : '?'}
             </span>
@@ -317,7 +319,7 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
             <b class="map-card-title">{m.quest.title}</b>
             <span class="mc-stats">
               <Stat icon="pasos" label={pos.back ? 'Vuelven de' : 'Van hacia'}>
-                {pos.back ? '← ' : '→ '}
+                {pos.back ? 'vuelven de ' : 'hacia '}
                 {m.quest.place}
               </Stat>
               <Stat
@@ -549,7 +551,9 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
               tap(() => setInfo({ kind: 'tavern' }))();
             }}
           >
-            <b>⌂</b>
+            <b>
+              <Icon name="home" size={14} />
+            </b>
             <small>{customOf(game).name}</small>
           </button>
           {(game.chains ?? []).flatMap((cs) => {
@@ -563,6 +567,7 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
                 <button
                   key={`${cs.id}-${i}`}
                   class={`map-step ${now ? 'now' : 'past'} ${done ? 'closed' : ''}`}
+                  data-help={`«${def.name}»: ${now ? `paso ${i + 1}, el siguiente que hay que hacer` : `paso ${i + 1}, hecho`}.`}
                   style={pct(p.x - 9, p.y - 3)}
                   aria-label={`«${def.name}», paso ${i + 1} de ${def.steps.length}: ${now ? 'el siguiente' : 'hecho'}`}
                   onClick={(e) => {
@@ -583,6 +588,7 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
               <button
                 key={q.id}
                 class={`map-pin danger-${dangerClass(q.danger, hidden)} ${q.chain ? 'chain' : ''}`}
+                data-help={`Encargo: ${q.title}. El color dice el peligro (${hidden ? 'sin saber' : DANGER_NAMES[q.danger]!.toLowerCase()})${q.chain ? '; el aro dorado, que es de una historia' : ''}.`}
                 style={pct(p.x + n * 7, p.y - 6)}
                 aria-label={`${q.title} (${q.place})`}
                 onClick={(e) => {
@@ -601,6 +607,7 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
               <button
                 key={m.id}
                 class={`map-party ${pos.back ? 'back' : ''}`}
+                data-help={`Grupo de viaje (${party.length}): ${pos.back ? 'vuelve de' : 'va hacia'} ${m.quest.place}. Gris a la vuelta.`}
                 style={pct(pos.x, pos.y)}
                 aria-label={`${listNames(party.map((h) => h.name))}: ${pos.back ? 'vuelven de' : 'van hacia'} ${m.quest.place}`}
                 onClick={(e) => {
@@ -616,6 +623,7 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
             <button
               key={h.id}
               class="map-missing"
+              data-help={`Aquí se perdió la pista de ${h.name}.`}
               style={pct(placeAt(h.lostAt ?? '').x + 6, placeAt(h.lostAt ?? '').y + 4)}
               aria-label={`${h.name}: se le perdió la pista aquí`}
               onClick={(e) => {
@@ -629,13 +637,14 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
           {game.raid?.warned && (
             <span
               class="map-raid"
+              data-help={`${game.raid.band} viene hacia la taberna: llega en ${game.raid.day - game.day} noches.`}
               style={pct(
                 Math.max(8, TAVERN.x - 14 * Math.max(1, game.raid.day - game.day)),
                 TAVERN.y + 10,
               )}
               title={`${game.raid.band}: llega en ${game.raid.day - game.day} noches`}
             >
-              ⚔
+              <Icon name="espadas" size={15} />
             </span>
           )}
         </div>
@@ -684,7 +693,10 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
         </li>
         <li>
           <i class="lg-thread" />
-          <span class="lg-step past">✓</span> Historia: paso hecho
+          <span class="lg-step past">
+            <Icon name="check" size={7} />
+          </span>{' '}
+          Historia: paso hecho
         </li>
         <li>
           <i class="lg-thread next" />

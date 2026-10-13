@@ -226,6 +226,53 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
+/* Glosario de Ajustes. */
+.glossary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 0;
+}
+.glossary dt {
+  font-family: var(--pixel);
+  font-size: 14px;
+  color: var(--wine);
+}
+.glossary dd {
+  margin: 1px 0 0;
+  font-size: 13.5px;
+  line-height: 1.4;
+}
+
+/* Ayuda al mantener pulsado (ver HoldHelp). */
+[data-help] {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.hold-help {
+  position: fixed;
+  z-index: 60;
+  width: max-content;
+  max-width: min(280px, calc(100vw - 24px));
+  margin: 0;
+  padding: 6px 10px;
+  font-size: 13.5px;
+  line-height: 1.35;
+  background: var(--sand);
+  color: var(--plum);
+  box-shadow:
+    0 0 0 2px var(--bark),
+    0 0 0 4px var(--ink),
+    0 6px 10px rgba(24, 20, 37, 0.35);
+  transform: translate(-50%, calc(-100% - 10px));
+  animation: note-in 0.15s ease-out both;
+  pointer-events: none;
+}
+.hold-help.below {
+  transform: translate(-50%, 10px);
+}
+
 /* Explicación de una cifra de la barra, al tocarla. */
 .hud-tip {
   position: absolute;
@@ -378,6 +425,8 @@ button:focus-visible {
 .bubble {
   position: absolute;
   transform: translate(-50%, calc(-100% - 18px));
+  /* Ancho propio: si dependiera del hueco a la derecha, cambiaría al mover la cámara. */
+  width: max-content;
   max-width: min(260px, 80vw);
   z-index: 4;
   color: var(--plum);
@@ -824,6 +873,8 @@ button:focus-visible {
 .herocard {
   position: relative;
   width: min(360px, calc(100% - 24px));
+  /* Nunca más alta que la pantalla: el interior (.qs-scroll) se desplaza. */
+  max-height: calc(100% - 16px);
   border-style: solid;
   border-width: 16px;
   border-image: var(--frame-wood) 8 / 16px / 0 round;
@@ -847,6 +898,12 @@ button:focus-visible {
   position: absolute;
   top: -10px;
   right: -10px;
+}
+
+/* El contenido desplazable empieza por debajo del botón de cerrar, para que la barra de
+   desplazamiento no se cruce con él. */
+.herocard-x ~ .qs-scroll {
+  margin-top: 26px;
 }
 
 .herocard-top {
@@ -1170,6 +1227,11 @@ button:focus-visible {
 
 .sched .next {
   color: var(--wine);
+}
+
+.sched-ok {
+  margin-left: 4px;
+  vertical-align: 0;
 }
 
 .facility {
@@ -2457,6 +2519,39 @@ button:focus-visible {
   filter: brightness(1.05);
 }
 
+/* Gremio: accesos a Tu taberna, el arcón y el libro. */
+.gremio-links {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+/* Si queda uno suelto, ocupa toda la fila. */
+.gremio-links > :last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+.gremio-links .libro-link b {
+  font-size: 15px;
+}
+.facility-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+/* Mejoras que ya se pueden pagar. */
+.tab-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  margin-left: 6px;
+  padding: 0 3px;
+  font-size: 11px;
+  color: var(--white);
+  background: var(--red);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+
 /* ---------- Asaltos ---------- */
 .raid-banner {
   position: absolute;
@@ -2609,10 +2704,8 @@ button:focus-visible {
   cursor: pointer;
 }
 .map-tavern b {
-  font-size: 16px;
-  line-height: 1;
-  color: var(--wine);
-  text-shadow: 0 1px 0 var(--sand);
+  line-height: 0;
+  filter: drop-shadow(0 1px 0 var(--sand));
 }
 .map-tavern small {
   font-family: var(--pixel);
@@ -2664,11 +2757,8 @@ button:focus-visible {
   background: var(--plum);
 }
 .map-raid {
-  font-size: 15px;
-  color: var(--red);
-  text-shadow:
-    0 0 2px var(--ink),
-    0 0 2px var(--ink);
+  line-height: 0;
+  filter: drop-shadow(0 0 1px var(--sand));
   animation: glow 1s steps(2) infinite;
 }
 @keyframes party-bob {
@@ -2756,8 +2846,19 @@ button:focus-visible {
   top: 6px;
   right: 8px;
   transform: scale(0.8);
+  /* El mismo lacre rojo con número que marca el paso siguiente en el mapa. */
+  color: var(--white);
+  background: var(--red);
+}
+/* Hueco para el lacre a la derecha. */
+.note-chain .note-top {
+  padding-right: 40px;
 }
 .note-story {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-family: var(--pixel);
   font-size: 11px;
   color: var(--wine);
@@ -3226,8 +3327,13 @@ button:focus-visible {
   }
   .hud {
     grid-area: hud;
-    padding: calc(env(safe-area-inset-top, 0px) + 1px) 8px 1px;
+    padding: calc(env(safe-area-inset-top, 0px) + 1px) calc(env(safe-area-inset-right, 0px) + 8px)
+      1px 8px;
     border-width: 6px;
+  }
+  /* En horizontal, la muesca o la barra de gestos pueden caer a la derecha. */
+  .stage {
+    margin-right: env(safe-area-inset-right, 0px);
   }
   .hud-name span {
     display: none;

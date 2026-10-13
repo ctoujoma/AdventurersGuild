@@ -39,6 +39,7 @@ export type Sfx =
   | 'roar'
   | 'whoosh';
 
+import { haptic } from '../platform/haptics';
 import { PLAYLISTS, TUNES, scaleStep, type Mood, type Tune, type TuneId } from './music';
 
 export type { Mood } from './music';
@@ -168,6 +169,7 @@ class AudioEngine {
   }
 
   play(name: Sfx, volume = 1): void {
+    haptic(name);
     const ctx = this.ctx;
     if (!ctx || !this.enabled) return;
     const t = ctx.currentTime + 0.005;
