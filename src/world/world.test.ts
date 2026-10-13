@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildWorld } from './build';
-import { Camera } from './camera';
+import { Camera, SKY_TOP } from './camera';
 import {
   B,
   ROOMS,
@@ -207,15 +207,26 @@ describe('buildWorld', () => {
 });
 
 describe('Camera', () => {
-  it('no se sale del mundo', () => {
+  it('no se sale del mundo (salvo un poco de cielo por arriba)', () => {
     const c = new Camera();
     c.setView(400, 600, 2);
     c.centerOn(-500, -500, false);
     expect(c.x).toBe(WORLD_X0);
-    expect(c.y).toBe(0);
+    expect(c.y).toBe(-SKY_TOP);
     c.centerOn(5000, 5000, false);
     expect(c.x + c.vw).toBe(WORLD_X1);
     expect(c.y + c.vh).toBe(WORLD_H);
+  });
+
+  it('un enfoque suave fuera de los límites termina y suelta la cámara', () => {
+    const c = new Camera();
+    c.setView(400, 600, 2);
+    c.centerOn(250, 5000);
+    for (let i = 0; i < 200; i++) c.update(1 / 60);
+    expect(c.y + c.vh).toBeCloseTo(WORLD_H, 0);
+    c.centerOn(250, -5000, false);
+    c.update(1 / 60);
+    expect(c.y).toBe(-SKY_TOP);
   });
 
   it('convierte entre pantalla y mundo', () => {

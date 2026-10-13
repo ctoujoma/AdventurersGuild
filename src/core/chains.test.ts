@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CHAINS } from '../data/chains';
-import { PLACE_INFO } from '../data/places';
+import { PLACE_INFO, TAVERN } from '../data/places';
 import { activeChain, advanceChain, offerChain } from './chains';
 import { endDay, newGame } from './game';
 import type { GameState, Report } from './model';
@@ -28,6 +28,37 @@ function withChain(): GameState {
 describe('cadenas de misiones', () => {
   it('todos los pasos van a lugares del mapa', () => {
     for (const c of CHAINS) for (const st of c.steps) expect(PLACE_INFO[st.place]).toBeDefined();
+  });
+
+  it('el camino de cada historia no zigzaguea, no repite sitio ni se cruza', () => {
+    type Pt = { x: number; y: number };
+    const cross = (a: Pt, b: Pt, c: Pt, d: Pt) => {
+      const o = (p: Pt, q: Pt, r: Pt) =>
+        Math.sign((q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x));
+      return o(a, b, c) * o(a, b, d) < 0 && o(c, d, a) * o(c, d, b) < 0;
+    };
+    for (const c of CHAINS) {
+      const places = c.steps.map((st) => st.place).filter((p, i, a) => p !== a[i - 1]);
+      expect(new Set(places).size, c.id).toBe(places.length);
+      const pts = [TAVERN, ...places.map((p) => PLACE_INFO[p]!)];
+      // Sin giros de casi media vuelta (ir y volver).
+      for (let i = 1; i + 1 < pts.length; i++) {
+        const a = pts[i - 1]!;
+        const b = pts[i]!;
+        const d = pts[i + 1]!;
+        const u = { x: b.x - a.x, y: b.y - a.y };
+        const v = { x: d.x - b.x, y: d.y - b.y };
+        const cos = (u.x * v.x + u.y * v.y) / Math.hypot(u.x, u.y) / Math.hypot(v.x, v.y);
+        expect(cos, `${c.id} giro en ${places[i - 1]}`).toBeGreaterThan(
+          Math.cos((150 * Math.PI) / 180),
+        );
+      }
+      for (let i = 0; i + 1 < pts.length; i++)
+        for (let j = i + 2; j + 1 < pts.length; j++)
+          expect(cross(pts[i]!, pts[i + 1]!, pts[j]!, pts[j + 1]!), `${c.id} ${i}-${j}`).toBe(
+            false,
+          );
+    }
   });
 
   it('con fama llega la carta y el primer paso aparece en el tablón', () => {

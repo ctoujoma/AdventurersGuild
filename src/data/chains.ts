@@ -42,17 +42,17 @@ export const CHAINS: readonly ChainDef[] = [
       'Algo baja de las minas por la noche y se lleva las cabras. La semana pasada se llevó a un pastor. El alcalde de Hondogrís paga bien a quien lo resuelva, y le da igual cómo.',
     steps: [
       {
-        title: 'Rumores en el vado',
+        title: 'Rumores en la posada',
         type: 'Investigar',
-        place: 'el vado',
-        text: 'Los barqueros del vado vieron pasar algo enorme río arriba. Que lo cuenten con detalle.',
+        place: 'la posada del Cuervo',
+        text: 'Los arrieros que paran en la posada del Cuervo vieron cruzar algo enorme camino de la sierra. Que lo cuenten con detalle.',
         danger: 1,
       },
       {
         title: 'El mapa del capataz',
         type: 'Recuperar',
-        place: 'la posada del Cuervo',
-        text: 'El capataz de la mina dejó un mapa de las galerías en prenda en la posada del Cuervo. El posadero no quiere soltarlo.',
+        place: 'Hondogrís',
+        text: 'El capataz de la mina dejó un mapa de las galerías en prenda en la cantina de Hondogrís. El cantinero no quiere soltarlo.',
         danger: 1,
       },
       {
@@ -65,8 +65,8 @@ export const CHAINS: readonly ChainDef[] = [
       {
         title: 'La bestia de Hondogrís',
         type: 'Cazar',
-        place: 'Hondogrís',
-        text: 'Ya se sabe dónde duerme. Toca bajar a por ella, y mejor con buenas armas.',
+        place: 'el vado',
+        text: 'Las huellas de la guarida bajan cada noche a beber al vado. Toca esperarla allí, y mejor con buenas armas.',
         danger: 3,
       },
     ],
@@ -92,24 +92,24 @@ export const CHAINS: readonly ChainDef[] = [
       'En el cementerio de Ormaz aparecen tumbas abiertas desde dentro. La hermana Odile sospecha de algún culto y quiere que se acabe antes de la luna nueva.',
     steps: [
       {
-        title: 'Tumbas abiertas',
-        type: 'Investigar',
-        place: 'el cementerio de Ormaz',
-        text: 'Hay que pasar la noche en el cementerio y ver quién entra, o quién sale.',
-        danger: 1,
-      },
-      {
         title: 'La testigo de la ermita',
         type: 'Escoltar',
         place: 'la ermita',
-        text: 'Una novicia lo vio todo y el culto lo sabe. Hay que llevarla a la ermita sana y salva.',
+        text: 'Una novicia vio a los encapuchados abrir las tumbas y el culto lo sabe. Hay que llevarla a la ermita sana y salva.',
+        danger: 1,
+      },
+      {
+        title: 'Velas negras en el granero',
+        type: 'Investigar',
+        place: 'el granero de los Cardo',
+        text: 'La novicia dice que los encapuchados guardan palas y velas negras en el granero de los Cardo. Hay que pasar la noche allí y seguirlos.',
         danger: 2,
       },
       {
         title: 'La cripta de Ormaz',
         type: 'Limpiar',
         place: 'el cementerio de Ormaz',
-        text: 'Bajo la capilla del cementerio hay una cripta que no sale en ningún plano. Ahí se reúnen.',
+        text: 'Los encapuchados llevaron hasta una cripta bajo la capilla del cementerio que no sale en ningún plano. Ahí se reúnen.',
         danger: 3,
       },
     ],
@@ -135,17 +135,17 @@ export const CHAINS: readonly ChainDef[] = [
       'Desaparecen barcazas enteras entre el molino y la casa del canal. El gremio de mercaderes sospecha de unos contrabandistas con buenos padrinos y prefiere que meta las narices alguien de fuera.',
     steps: [
       {
-        title: 'Lo que flota en el canal',
+        title: 'Lo que se oye en el molino',
         type: 'Investigar',
-        place: 'la casa del canal',
-        text: 'Los guardas de la casa del canal no ven ni oyen nada, pero estrenan botas cada mes.',
+        place: 'el molino',
+        text: 'Del molino salen las barcazas cargadas y algunas no llegan. El molinero las ve pasar todas y sabe más de lo que cuenta.',
         danger: 1,
       },
       {
         title: 'El cargamento señuelo',
         type: 'Escoltar',
-        place: 'el molino',
-        text: 'Un cargamento falso, bien a la vista, hasta el molino. Si pican, sabremos quiénes son.',
+        place: 'la casa del canal',
+        text: 'Un cargamento falso, bien a la vista, del molino a la casa del canal, donde los guardas estrenan botas cada mes. Si pican, sabremos quiénes son.',
         danger: 2,
       },
       {

@@ -1,5 +1,8 @@
 import { SPAN, WORLD_H, WORLD_X0, WORLD_X1 } from './geometry';
 
+/** Cielo de más por encima del mundo, para ver el sol sobre el tejado al subir la cámara. */
+export const SKY_TOP = 36;
+
 /** Cámara 2D con arrastre, inercia, zoom entero y enfoque suave a un punto. */
 export class Camera {
   x = 0;
@@ -29,8 +32,9 @@ export class Camera {
   private bounds() {
     const minX = this.vw >= SPAN ? WORLD_X0 + (SPAN - this.vw) / 2 : WORLD_X0;
     const maxX = this.vw >= SPAN ? minX : WORLD_X1 - this.vw;
-    const minY = this.vh >= WORLD_H ? (WORLD_H - this.vh) / 2 : 0;
-    const maxY = this.vh >= WORLD_H ? minY : WORLD_H - this.vh;
+    const h = WORLD_H + SKY_TOP;
+    const minY = this.vh >= h ? (h - this.vh) / 2 - SKY_TOP : -SKY_TOP;
+    const maxY = this.vh >= h ? minY : WORLD_H - this.vh;
     return { minX, maxX, minY, maxY };
   }
 
@@ -68,6 +72,7 @@ export class Camera {
     const ty = y - this.vh / 2;
     if (smooth) this.target = { x: tx, y: ty };
     else {
+      this.target = null;
       this.x = tx;
       this.y = ty;
       this.clamp();
@@ -77,6 +82,10 @@ export class Camera {
 
   update(dt: number): void {
     if (this.target) {
+      // El destino, dentro de los límites: si no, nunca se llegaría y seguiría tirando.
+      const b = this.bounds();
+      this.target.x = Math.max(b.minX, Math.min(b.maxX, this.target.x));
+      this.target.y = Math.max(b.minY, Math.min(b.maxY, this.target.y));
       const k = 1 - Math.pow(0.002, dt);
       this.x += (this.target.x - this.x) * k;
       this.y += (this.target.y - this.y) * k;

@@ -140,15 +140,23 @@ const DAY_LENGTH = 720;
 /** Luz con la que acaba el amanecer y empieza la mañana. */
 const DAWN_LIGHT = 0.65;
 
-/** Dónde está el sol en la vista según el avance del día (0 mañana – 1 ocaso). */
-function sunAt(p: number, vw: number, vh: number): { x: number; y: number } {
-  // Por la franja alta: en vertical el tejado tapa casi todo el cielo.
-  const lift = Math.min(44, vh * 0.2);
+/** Desplazamiento del cielo lejano (estrellas, sol y luna) respecto a la cámara. */
+const SKY_FX = 0.15;
+
+/**
+ * Dónde está el sol según el avance del día (0 mañana – 1 ocaso), en coordenadas del mundo
+ * con el desplazamiento del cielo: se queda en su sitio al mover la cámara o el zoom, como
+ * la luna. Sale por la derecha, pasa por encima del tejado y se pone por la izquierda.
+ */
+function sunAt(p: number, cx: number, cy: number): { x: number; y: number } {
   return {
-    x: Math.round(vw * (0.92 - 0.84 * p)),
-    y: Math.round(9 + (1 - Math.sin(Math.PI * p)) * lift),
+    x: Math.round(244 - 236 * p - cx * SKY_FX),
+    y: Math.round(84 - Math.sin(Math.PI * p) * 62 - cy),
   };
 }
+
+/** La luna, arriba a la izquierda (de ahí viene la luz de los montes). */
+const MOON = { x: 84, y: 64 } as const;
 
 function feetAt(x: number): number {
   if (x >= DOOR_X) return F.hall.floor;
@@ -699,6 +707,7 @@ export class WorldScene {
   /** Cielo de día por encima del de noche: azul, con el sol cruzando y nubes claras. */
   private drawDaySky(
     d: { day: number; dusk: number; tod: number },
+    cx: number,
     cy: number,
     vw: number,
     vh: number,
@@ -726,9 +735,8 @@ export class WorldScene {
     // El sol: sale por la derecha, cruza alto y se pone por la izquierda.
     const sunUp = Math.max(d.day, d.dusk);
     if (sunUp <= 0 || d.tod >= 0.97) return;
-    // Cruza lo que se ve del cielo, de derecha a izquierda, más alto a mediodía.
     const p = Math.min(1, d.tod / 0.95);
-    const { x: sx, y: sy } = sunAt(p, vw, vh);
+    const { x: sx, y: sy } = sunAt(p, cx, cy);
     const warmSun = d.dusk > 0.3;
     ctx.globalAlpha = Math.min(1, sunUp * 1.3);
     // El halo es un foco aditivo (fondo negro): se suma al cielo, no se pinta encima.
@@ -752,8 +760,8 @@ export class WorldScene {
     ctx.globalAlpha = 1;
   }
 
-  /** Cielo del amanecer: resplandor en el horizonte y el sol asomando arriba a la derecha. */
-  private drawDawnSky(warm: number, cy: number, vw: number, vh: number): void {
+  /** Cielo del amanecer: resplandor en el horizonte y el sol asomando por la derecha. */
+  private drawDawnSky(warm: number, cx: number, cy: number, vw: number, vh: number): void {
     const ctx = this.ctx;
     const horizon = GROUND - 40 - cy;
     const g = ctx.createLinearGradient(0, horizon - 200, 0, horizon + 20);
@@ -763,7 +771,7 @@ export class WorldScene {
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, vw, vh);
     // Sol tramado: asoma donde empezará su camino de la mañana.
-    const start = sunAt(0, vw, vh);
+    const start = sunAt(0, cx, cy);
     const sx = start.x;
     const sy = Math.round(start.y + 30 * (1 - warm));
     ctx.globalAlpha = Math.min(1, warm * 1.4);
@@ -1060,10 +1068,10 @@ export class WorldScene {
 
     // Cielo, estrellas, estrella fugaz, nubes y capas lejanas.
     const dl = this.daylight();
-    ctx.drawImage(this.skyC, WORLD_X0 - Math.round(cx * 0.08), -cy);
+    ctx.drawImage(this.skyC, WORLD_X0 - Math.round(cx * SKY_FX), -cy);
     ctx.globalAlpha = Math.max(0, 1 - dl.day * 1.4);
     for (const s of dl.day > 0.7 ? [] : this.starList) {
-      const sx = s.x + WORLD_X0 - Math.round(cx * 0.08);
+      const sx = s.x + WORLD_X0 - Math.round(cx * SKY_FX);
       const sy = s.y - cy;
       if (sx < 0 || sy < 0 || sx >= vw || sy >= vh) continue;
       const tw = noise(s.x, Math.floor(t * 1.5 + s.y));
@@ -1079,31 +1087,31 @@ export class WorldScene {
       }
     }
     ctx.globalAlpha = 1;
-    // La luna, en lo alto de la vista a la izquierda (de ahí viene la luz de los montes).
+    // La luna se apaga con el día.
     const moonA = Math.max(0, 1 - dl.day * 1.25);
     if (moonA > 0) {
       ctx.globalAlpha = moonA;
       ctx.drawImage(
         this.moonC,
-        Math.round(vw * 0.2 - MOON_R - cx * 0.02),
-        Math.round(Math.min(40, vh * 0.12) - MOON_R),
+        Math.round(MOON.x - MOON_R - cx * SKY_FX),
+        Math.round(MOON.y - MOON_R - cy),
       );
       ctx.globalAlpha = 1;
     }
-    this.drawDaySky(dl, cy, vw, vh);
+    this.drawDaySky(dl, cx, cy, vw, vh);
     if (this.shooting && dl.day < 0.3) {
       const s = this.shooting;
       for (let i = 0; i < 8; i++) {
         ctx.fillStyle = i < 2 ? P.white : i < 5 ? P.mist : P.fog;
-        ctx.fillRect(Math.round(s.x - i * 2.6 - cx * 0.08), Math.round(s.y - i - cy), 1, 1);
+        ctx.fillRect(Math.round(s.x - i * 2.6 - cx * SKY_FX), Math.round(s.y - i - cy), 1, 1);
       }
     }
     for (const cl of this.clouds) {
-      const x = ((cl.x + t * cl.speed) % (SPAN + 80)) - 60 + WORLD_X0 - cx * 0.15;
+      const x = ((cl.x + t * cl.speed) % (SPAN + 80)) - 60 + WORLD_X0 - cx * 0.2;
       drawBuffer(ctx, cl.img, x, cl.y - cy);
     }
     const { dark, warm } = this.nightLight();
-    if (warm > 0) this.drawDawnSky(warm, cy, vw, vh);
+    if (warm > 0) this.drawDawnSky(warm, cx, cy, vw, vh);
     for (const { c, l } of this.parallax) {
       ctx.drawImage(c, WORLD_X0 - Math.round(cx * l.fx), -cy);
     }
@@ -1351,7 +1359,11 @@ export class WorldScene {
 
     // ---------- Luz ----------
     const l = this.lctx;
+    // Fuera del mapa de luz (el cielo de más por arriba) también es exterior: blanco.
     l.globalCompositeOperation = 'copy';
+    l.fillStyle = '#ffffff';
+    l.fillRect(0, 0, vw, vh);
+    l.globalCompositeOperation = 'source-over';
     l.drawImage(this.ambientC, WORLD_X0 - cx, -cy);
     l.globalCompositeOperation = 'lighter';
     if (dl.day > 0 || dl.dusk > 0) {
