@@ -898,6 +898,12 @@ button:focus-visible {
   right: -10px;
 }
 
+/* El contenido desplazable empieza por debajo del botón de cerrar, para que la barra de
+   desplazamiento no se cruce con él. */
+.herocard-x ~ .qs-scroll {
+  margin-top: 26px;
+}
+
 .herocard-top {
   display: flex;
   gap: 12px;
@@ -2509,6 +2515,35 @@ button:focus-visible {
 .libro-link:hover,
 .libro-link:focus-visible {
   filter: brightness(1.05);
+}
+
+/* Gremio: accesos a Tu taberna, el arcón y el libro. */
+.gremio-links {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+.gremio-links .libro-link b {
+  font-size: 15px;
+}
+.facility-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+/* Mejoras que ya se pueden pagar. */
+.tab-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  margin-left: 6px;
+  padding: 0 3px;
+  font-size: 11px;
+  color: var(--white);
+  background: var(--red);
+  box-shadow: 0 0 0 1px var(--ink);
 }
 
 /* ---------- Asaltos ---------- */

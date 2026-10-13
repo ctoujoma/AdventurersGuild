@@ -51,6 +51,10 @@ export const GLOSSARY: readonly { term: string; text: string }[] = [
     text: 'Un éxito brillante en un encargo peligroso deja un trofeo. Colgado en la sala, atrae clientes: monedas cada día.',
   },
   {
+    term: 'Modo libre',
+    text: 'Con la deuda saldada el gremio es tuyo y la partida sigue. Otros gremios pujan por los encargos y pagan menos; los salarios se pagan cada 7 días y dos semanas sin pagar acaban con todo.',
+  },
+  {
     term: 'Fiesta de la comarca',
     text: 'Cada 10 días. Si la montas en la taberna, esa noche la caja se dobla y los que descansan se animan.',
   },
