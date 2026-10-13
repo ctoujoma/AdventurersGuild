@@ -12,7 +12,7 @@ export const LAYER_W = SPAN + 512;
 /**
  * Todas las capas miden LAYER_W de ancho y su píxel 0 está en WORLD_X0 (se pintan desplazadas).
  *
- * Capas lejanas de la noche: cielo, luna, montañas, colinas con aldea y castillo, y una
+ * Capas lejanas de la noche: cielo, montañas, colinas con aldea y castillo, y una
  * hilera de árboles. Cada una se desplaza a una fracción de la cámara (paralaje).
  */
 
@@ -43,9 +43,18 @@ export function buildSky(): PixelBuffer {
       b.set(x, y, SKY[Math.min(SKY.length - 1, base + (step ? 1 : 0))]!);
     }
   }
-  // Luna con halo tramado y cráteres.
-  const mx = 78 - WORLD_X0;
-  const my = 64;
+  return b;
+}
+
+/**
+ * La luna con su halo tramado y cráteres, aparte del cielo: se pinta solo de noche, en lo
+ * alto de la vista, y se desvanece con la luz del día.
+ */
+export const MOON_R = 34;
+export function buildMoon(): PixelBuffer {
+  const b = new PixelBuffer(MOON_R * 2 + 1, MOON_R * 2 + 1);
+  const mx = MOON_R;
+  const my = MOON_R;
   for (let y = my - 34; y <= my + 34; y++) {
     for (let x = mx - 34; x <= mx + 34; x++) {
       const d = Math.hypot(x - mx, y - my);

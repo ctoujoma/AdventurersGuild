@@ -27,7 +27,15 @@ import {
   type HotspotDef,
 } from './geometry';
 import { ambientCanvas, glowSprite, lightSprite, shaftSprite } from './lighting';
-import { buildSky, parallaxLayers, stars, type ParallaxLayer, type Star } from './parallax';
+import {
+  MOON_R,
+  buildMoon,
+  buildSky,
+  parallaxLayers,
+  stars,
+  type ParallaxLayer,
+  type Star,
+} from './parallax';
 import { Particles } from './particles';
 import { BATTLE_TIME, Battle, type BattleSound } from './battle';
 import * as Prop from './props';
@@ -124,10 +132,23 @@ const YARD_END = -112;
 const TRIP_SPEED = 44;
 
 /** Altura de los pies: el patio queda un escalón por debajo de la sala. */
-/** Duración de un día de juego en segundos de escena (hasta que se hace de noche). */
-const DAY_LENGTH = 300;
+/**
+ * Duración de un día de juego en segundos de escena (a velocidad ×1) hasta que se hace de
+ * noche. La noche espera a «Terminar día».
+ */
+const DAY_LENGTH = 720;
 /** Luz con la que acaba el amanecer y empieza la mañana. */
 const DAWN_LIGHT = 0.65;
+
+/** Dónde está el sol en la vista según el avance del día (0 mañana – 1 ocaso). */
+function sunAt(p: number, vw: number, vh: number): { x: number; y: number } {
+  // Por la franja alta: en vertical el tejado tapa casi todo el cielo.
+  const lift = Math.min(44, vh * 0.2);
+  return {
+    x: Math.round(vw * (0.92 - 0.84 * p)),
+    y: Math.round(9 + (1 - Math.sin(Math.PI * p)) * lift),
+  };
+}
 
 function feetAt(x: number): number {
   if (x >= DOOR_X) return F.hall.floor;
@@ -195,6 +216,7 @@ export class WorldScene {
   private outerFrontC: HTMLCanvasElement | null = null;
   private ambientC: HTMLCanvasElement | null = null;
   private skyC: HTMLCanvasElement;
+  private moonC: HTMLCanvasElement;
   private parallax: { c: HTMLCanvasElement; l: ParallaxLayer }[];
   private starList: Star[] = stars();
   private clouds: { x: number; y: number; img: PixelBuffer; speed: number }[];
@@ -276,6 +298,7 @@ export class WorldScene {
     this.light = document.createElement('canvas');
     this.lctx = this.light.getContext('2d')!;
     this.skyC = bufferCanvas(buildSky());
+    this.moonC = bufferCanvas(buildMoon());
     this.parallax = parallaxLayers().map((l) => ({ c: bufferCanvas(l.buf), l }));
     this.clouds = [0, 1, 2, 3].map((i) => ({
       x: i * 150 + 20,
@@ -676,7 +699,6 @@ export class WorldScene {
   /** Cielo de día por encima del de noche: azul, con el sol cruzando y nubes claras. */
   private drawDaySky(
     d: { day: number; dusk: number; tod: number },
-    cx: number,
     cy: number,
     vw: number,
     vh: number,
@@ -704,9 +726,9 @@ export class WorldScene {
     // El sol: sale por la derecha, cruza alto y se pone por la izquierda.
     const sunUp = Math.max(d.day, d.dusk);
     if (sunUp <= 0 || d.tod >= 0.97) return;
-    const a = Math.PI * Math.min(1, d.tod / 0.95);
-    const sx = Math.round(560 - (560 + 60) * (d.tod / 0.95) - cx * 0.08);
-    const sy = Math.round(horizon + 10 - Math.sin(a) * 120);
+    // Cruza lo que se ve del cielo, de derecha a izquierda, más alto a mediodía.
+    const p = Math.min(1, d.tod / 0.95);
+    const { x: sx, y: sy } = sunAt(p, vw, vh);
     const warmSun = d.dusk > 0.3;
     ctx.globalAlpha = Math.min(1, sunUp * 1.3);
     // El halo es un foco aditivo (fondo negro): se suma al cielo, no se pinta encima.
@@ -730,8 +752,8 @@ export class WorldScene {
     ctx.globalAlpha = 1;
   }
 
-  /** Cielo del amanecer: resplandor en el horizonte y el sol asomando por la derecha. */
-  private drawDawnSky(warm: number, cx: number, cy: number, vw: number, vh: number): void {
+  /** Cielo del amanecer: resplandor en el horizonte y el sol asomando arriba a la derecha. */
+  private drawDawnSky(warm: number, cy: number, vw: number, vh: number): void {
     const ctx = this.ctx;
     const horizon = GROUND - 40 - cy;
     const g = ctx.createLinearGradient(0, horizon - 200, 0, horizon + 20);
@@ -740,9 +762,10 @@ export class WorldScene {
     g.addColorStop(1, `rgba(254, 174, 52, ${0.8 * warm})`);
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, vw, vh);
-    // Sol tramado: sube unos píxeles mientras dura el amanecer.
-    const sx = Math.round(470 - cx * 0.08);
-    const sy = Math.round(horizon + 18 - warm * 26);
+    // Sol tramado: asoma donde empezará su camino de la mañana.
+    const start = sunAt(0, vw, vh);
+    const sx = start.x;
+    const sy = Math.round(start.y + 30 * (1 - warm));
     ctx.globalAlpha = Math.min(1, warm * 1.4);
     ctx.globalCompositeOperation = 'lighter';
     ctx.drawImage(glowSprite(28, [254, 174, 52], 0.5), sx - 28, sy - 28);
@@ -1056,7 +1079,18 @@ export class WorldScene {
       }
     }
     ctx.globalAlpha = 1;
-    this.drawDaySky(dl, cx, cy, vw, vh);
+    // La luna, en lo alto de la vista a la izquierda (de ahí viene la luz de los montes).
+    const moonA = Math.max(0, 1 - dl.day * 1.25);
+    if (moonA > 0) {
+      ctx.globalAlpha = moonA;
+      ctx.drawImage(
+        this.moonC,
+        Math.round(vw * 0.2 - MOON_R - cx * 0.02),
+        Math.round(Math.min(40, vh * 0.12) - MOON_R),
+      );
+      ctx.globalAlpha = 1;
+    }
+    this.drawDaySky(dl, cy, vw, vh);
     if (this.shooting && dl.day < 0.3) {
       const s = this.shooting;
       for (let i = 0; i < 8; i++) {
@@ -1069,7 +1103,7 @@ export class WorldScene {
       drawBuffer(ctx, cl.img, x, cl.y - cy);
     }
     const { dark, warm } = this.nightLight();
-    if (warm > 0) this.drawDawnSky(warm, cx, cy, vw, vh);
+    if (warm > 0) this.drawDawnSky(warm, cy, vw, vh);
     for (const { c, l } of this.parallax) {
       ctx.drawImage(c, WORLD_X0 - Math.round(cx * l.fx), -cy);
     }

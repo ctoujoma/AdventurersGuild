@@ -9,6 +9,7 @@ import {
   MAP_H,
   MAP_W,
   PLACE_INFO,
+  REGIONS,
   REVEAL_RADIUS,
   TAVERN,
   placeAt,
@@ -68,7 +69,9 @@ function Stat({
     </span>
   );
 }
-const MAX_ZOOM = 4;
+const MAX_ZOOM = 6;
+/** Zoom con el que se abre el mapa, centrado en la taberna. */
+const START_ZOOM = 1.7;
 
 type Info =
   | { kind: 'place'; name: string }
@@ -110,16 +113,21 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
     explored.includes(name) ||
     Math.hypot(placeAt(name).x - TAVERN.x, placeAt(name).y - TAVERN.y) < knownRadius;
   const fogKey = `${level}|${explored.join(',')}`;
-  const fog = useMemo(
-    () =>
-      level >= 2
-        ? null
-        : fogBuffer([
-            { x: TAVERN.x, y: TAVERN.y, r: knownRadius },
-            ...explored.map((n) => ({ ...placeAt(n), r: REVEAL_RADIUS })),
-          ]),
+  // Lo conocido: alrededor de la taberna y de lo explorado. Con la sala de mapas completa
+  // se ve toda la comarca, pero las tierras de más allá siguen en la niebla.
+  const seen = useMemo(
+    () => [
+      { x: TAVERN.x, y: TAVERN.y, r: knownRadius + (level >= 2 ? 30 : 0) },
+      ...(level >= 2 ? Object.keys(PLACE_INFO) : explored).map((n) => ({
+        ...placeAt(n),
+        r: REVEAL_RADIUS,
+      })),
+    ],
     [fogKey],
   );
+  const fog = useMemo(() => fogBuffer(seen), [seen]);
+  const regionSeen = (x: number, y: number) =>
+    seen.some((k) => Math.hypot(x - k.x, y - k.y) < k.r + 24);
   const byId = (id: string) => game.heroes.find((h) => h.id === id);
   // La amenaza nace donde termina la historia en marcha (o la última).
   const threat = game.threat ?? 0;
@@ -145,6 +153,15 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
     const el = vp.current;
     if (!el) return;
     const fit = () => setSize({ w: el.clientWidth || 1, h: el.clientHeight || 1 });
+    // Al abrir: acercado y centrado en la taberna (el mapa es mayor que la comarca).
+    const w = el.clientWidth || 1;
+    const h = el.clientHeight || 1;
+    const z = START_ZOOM;
+    setView({
+      z,
+      x: Math.min(0, Math.max(w - w * z, w / 2 - (TAVERN.x / MAP_W) * w * z)),
+      y: Math.min(0, Math.max(h - h * z, h / 2 - (TAVERN.y / MAP_H) * h * z)),
+    });
     fit();
     const ro = new ResizeObserver(fit);
     ro.observe(el);
@@ -484,7 +501,7 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
           onClick={tap(() => setInfo(null))}
         >
           <BufferImage buf={mapBuffer()} scale={1} class="map-layer" label="Mapa de la comarca" />
-          {fog && <BufferImage buf={fog} scale={1} class="map-layer" />}
+          <BufferImage buf={fog} scale={1} class="map-layer" />
           {threat > 0 && threatAt && (
             <span
               class="map-threat"
@@ -526,6 +543,11 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
               );
             })}
           </svg>
+          {REGIONS.filter((r) => regionSeen(r.x, r.y)).map((r) => (
+            <span key={r.name} class="map-region" style={pct(r.x, r.y)} aria-hidden="true">
+              {r.name}
+            </span>
+          ))}
           {Object.entries(PLACE_INFO)
             .filter(([n]) => known(n))
             .map(([n, p]) => (
