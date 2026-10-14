@@ -125,6 +125,8 @@ for (const st of STRATEGIES) {
   const deaths: number[] = [];
   const hired: number[] = [];
   const sent: number[] = [];
+  const reps: number[] = [];
+  const stories: number[] = [];
   const outcomes: Record<Outcome, number> = {
     'Éxito brillante': 0,
     Éxito: 0,
@@ -151,6 +153,8 @@ for (const st of STRATEGIES) {
     deaths.push(s.heroes.filter((h) => h.status === 'muerto').length);
     hired.push(s.heroes.length - start);
     sent.push(s.reports.length);
+    reps.push(s.rep);
+    stories.push((s.chains ?? []).filter((c) => c.status === 'hecha').length);
     for (const r of s.reports) outcomes[r.outcome]++;
   }
   const total = Object.values(outcomes).reduce((a, b) => a + b, 0);
@@ -163,6 +167,9 @@ for (const st of STRATEGIES) {
     );
   console.log(
     `  misiones por partida ${avg(sent).toFixed(1)} · contratados ${avg(hired).toFixed(1)} · muertos ${avg(deaths).toFixed(2)}`,
+  );
+  console.log(
+    `  reputación final media ${avg(reps).toFixed(0)} · historias completadas ${avg(stories).toFixed(1)}`,
   );
   if (total)
     console.log(

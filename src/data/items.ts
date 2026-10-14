@@ -143,6 +143,36 @@ export const GEAR: readonly GearBase[] = [
     bonus: { Arcano: 3 },
     perk: 'ward',
   },
+  {
+    name: 'Botas de siete leguas',
+    desc: 'De un carretero de los Ferrán. Con ellas los caminos se acortan, o eso parece.',
+    value: 110,
+    kind: 'herramienta',
+    rarity: 2,
+    icon: 'botas',
+    bonus: { Supervivencia: 3 },
+    perk: 'ambush',
+  },
+  {
+    name: 'Corona del Rey Ahogado',
+    desc: 'Verde de algas y fría como el fondo de la laguna. Quien la lleva no teme a los muertos.',
+    value: 125,
+    kind: 'amuleto',
+    rarity: 2,
+    icon: 'amuleto',
+    bonus: { Arcano: 2, Supervivencia: 1 },
+    perk: 'ward',
+  },
+  {
+    name: 'Coraza de escamas de sierpe',
+    desc: 'Hecha con las escamas de la sierpe de Sierra Parda. No arde ni con brasas.',
+    value: 140,
+    kind: 'armadura',
+    rarity: 2,
+    icon: 'coraza',
+    bonus: { Combate: 2, Supervivencia: 2 },
+    perk: 'guard',
+  },
 ];
 
 export const TREASURES: readonly GearBase[] = [

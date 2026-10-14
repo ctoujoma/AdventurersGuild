@@ -56,7 +56,7 @@ import {
 } from '../data/custom';
 import { arrival, checkFeats, checkMonth, emptyStats, startMonth } from './feats';
 import { stepRaids } from './raids';
-import { advanceChain, offerChain } from './chains';
+import { advanceChain, bossOf, fightRoster, offerChain } from './chains';
 import { choose, maybeEvent, scaredClients, stepThreat } from './events';
 import { generateHero, generateQuest } from './generate';
 import {
@@ -520,9 +520,23 @@ export function endDay(state: GameState): GameState {
       if (h) h.days = m.daysLeft;
     }
   }
+  s.lastFight = null;
   for (const m of s.missions.filter((x) => x.daysLeft <= 0)) {
+    const boss = bossOf(m.quest);
+    const roster = boss ? fightRoster(s.heroes.filter((h) => m.heroIds.includes(h.id))) : null;
     const r = resolveMission(s, m, rng);
     s.reports.unshift(r);
+    if (boss && roster) {
+      // La pelea contra el jefe queda en el informe para verla al amanecer o más tarde.
+      for (const x of roster) x.fate = s.heroes.find((h) => h.id === x.id)?.status ?? 'muerto';
+      r.fight = {
+        boss,
+        place: m.quest.place,
+        won: r.outcome !== 'Fracaso' && r.outcome !== 'Desastre',
+        heroes: roster,
+      };
+      s.lastFight = r.id;
+    }
     if (m.quest.chain) advanceChain(s, rng, m.quest, r, events);
     if (m.quest.rescue) rescue(s, m.quest.rescue, r, events);
     const bad = r.outcome === 'Fracaso' || r.outcome === 'Desastre';

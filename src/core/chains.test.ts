@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { CHAINS } from '../data/chains';
 import { PLACE_INFO, TAVERN } from '../data/places';
-import { activeChain, advanceChain, offerChain } from './chains';
+import { BOSSES } from '../data/bosses';
+import { GEAR } from '../data/items';
+import { activeChain, advanceChain, chainQuest, offerChain } from './chains';
 import { endDay, newGame } from './game';
 import type { GameState, Report } from './model';
 import { Rng } from './rng';
@@ -95,5 +97,40 @@ describe('cadenas de misiones', () => {
     expect(s.gold).toBe(gold + def.reward.gold);
     expect(s.inventory.some((it) => it.name === def.reward.item)).toBe(true);
     expect(s.stats?.chains).toBe(1);
+  });
+
+  it('los premios y los jefes de las historias existen', () => {
+    for (const c of CHAINS) {
+      expect(
+        GEAR.some((g) => g.name === c.reward.item),
+        c.id,
+      ).toBe(true);
+      for (const st of c.steps) if (st.boss) expect(BOSSES[st.boss]).toBeDefined();
+    }
+    expect(CHAINS.filter((c) => c.steps.some((st) => st.boss)).length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('la pelea contra el jefe queda en el informe y se avisa al amanecer', () => {
+    const s = withChain();
+    const def = CHAINS[0]!;
+    const last = def.steps.length - 1;
+    expect(def.steps[last]!.boss).toBe('bestia');
+    s.chains![0]!.step = last;
+    s.quests = s.quests.filter((q) => !q.chain);
+    const q = chainQuest(s, new Rng('b'), def, last, 0);
+    const party = s.heroes.slice(0, 2);
+    for (const h of party) {
+      h.status = 'mision';
+      h.days = 1;
+    }
+    s.missions.push({ id: 'm1', quest: q, heroIds: party.map((h) => h.id), daysLeft: 1 });
+    const after = endDay(s);
+    const r = after.reports.find((x) => x.id === after.lastFight)!;
+    expect(r.fight?.boss).toBe('bestia');
+    expect(r.fight?.place).toBe(q.place);
+    expect(r.fight?.heroes.map((h) => h.id)).toEqual(party.map((h) => h.id));
+    expect(r.fight?.won).toBe(r.outcome !== 'Fracaso' && r.outcome !== 'Desastre');
+    // La noche siguiente ya no hay aviso pendiente.
+    expect(endDay(after).lastFight).toBeNull();
   });
 });

@@ -216,6 +216,8 @@ Inspirado en los ataques al refugio de *Fallout Shelter*: cuanto más famoso y r
 - [x] Mapa de la comarca más grande y detallado (400×280): la comarca conocida en el centro y tierras por descubrir alrededor (sierras del norte, el este, las marismas y la costa) para lugares futuros; costa con sondeos y rumbos, dos ríos con puentes, sierras nevadas, bosques, marismas, campos, aldeas, caminos reales, rosa de los vientos, barco y nombres de región. Lo desconocido queda bajo un velo de pergamino
 - [x] Ciclo de día más largo (12 minutos de escena a ×1), con el sol y la luna fijos en el cielo (no siguen a la cámara) y un poco de cielo de más sobre el tejado para verlos al subir
 - [x] Historias con caminos sin zigzag: pasos reordenados para que cada una avance en arco o en línea por el mapa (con test que lo vigila)
+- [x] Tres historias nuevas en las tierras de alrededor (la caravana de la sal, el Rey Ahogado y la sierpe de Sierra Parda) con lugares nuevos en el mapa
+- [x] Jefes con pelea visible: la bestia de Hondogrís, el Rey Ahogado y la sierpe. Aviso al amanecer para verla en directo (o dejarla para luego) y repetición desde el informe; escenario del lugar, sprites grandes, ataques propios y barra de vida sobre el motor de combate de los asaltos
 - [x] Preparación para Android en la web: el botón «atrás» cierra lo que esté abierto en vez de salir, vibración en golpes, monedas, obras y asaltos (se quita en Ajustes), márgenes seguros también en horizontal, iconos pixel en lugar de símbolos de texto
 
 **🎯 Hito:** prototipo pulido para enseñar.

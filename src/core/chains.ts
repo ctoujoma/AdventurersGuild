@@ -3,13 +3,14 @@
  * cada éxito trae el siguiente. Un fracaso tuerce la historia (el paso vuelve más difícil).
  * Al acabar: oro, fama, un objeto legendario y, a veces, un trofeo o el mapa completo.
  */
+import type { BossKind } from '../data/bosses';
 import { CHAINS, type ChainDef } from '../data/chains';
 import { GEAR } from '../data/items';
 import { PLACE_INFO } from '../data/places';
 import { rankIndex } from './balance';
 import { emptyStats } from './feats';
 import { generateQuest } from './generate';
-import type { DawnEvent, GameState, Quest, Report } from './model';
+import type { BossFight, DawnEvent, GameState, Hero, Quest, Report } from './model';
 import type { Rng } from './rng';
 
 export const chainDef = (id: string) => CHAINS.find((c) => c.id === id)!;
@@ -51,6 +52,26 @@ export function chainQuest(
     challenges: q.challenges.map((c) => ({ ...c, diff: c.diff + twists * 2 })),
     chain: { id: def.id, step },
   };
+}
+
+/** El jefe que espera al final de este encargo, si lo hay. */
+export function bossOf(q: Quest): BossKind | undefined {
+  return q.chain ? chainDef(q.chain.id).steps[q.chain.step]?.boss : undefined;
+}
+
+/** Quién va a pelear contra el jefe, tal como sale de la taberna (antes de la pelea). */
+export function fightRoster(heroes: readonly Hero[]): BossFight['heroes'] {
+  return heroes.map((h) => ({
+    id: h.id,
+    name: h.name,
+    seed: h.seed,
+    cls: h.cls,
+    sex: h.sex,
+    eyepatch: h.traits.some((t) => t.id === 'tuerto') || undefined,
+    scar: h.traits.some((t) => t.id === 'cortado') || undefined,
+    gear: h.item?.icon ? { icon: h.item.icon, rarity: h.item.rarity ?? 0 } : undefined,
+    fate: 'ok',
+  }));
 }
 
 /** Si no hay ninguna en marcha y la fama alcanza, llega la carta de la siguiente cadena. */

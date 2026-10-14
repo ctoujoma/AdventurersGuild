@@ -33,6 +33,16 @@ export const PLACE_INFO: Record<string, { x: number; y: number; terrain: Terrain
   'el pantano de las ranas': { x: 140, y: 200, terrain: 'pantano' },
   'la ermita': { x: 294, y: 192, terrain: 'ruina' },
   'el granero de los Cardo': { x: 232, y: 202, terrain: 'campo' },
+  // Tierras de más allá, que se abren con las historias.
+  'el mesón de Levante': { x: 322, y: 150, terrain: 'pueblo' },
+  'el desfiladero de las Cabras': { x: 350, y: 112, terrain: 'monte' },
+  'el campamento de los Tuertos': { x: 372, y: 82, terrain: 'bosque' },
+  'la aldea de Juncal': { x: 176, y: 238, terrain: 'costa' },
+  'el islote del Fraile': { x: 148, y: 258, terrain: 'ruina' },
+  'la laguna Negra': { x: 128, y: 246, terrain: 'pantano' },
+  'el paso del Lobo': { x: 182, y: 62, terrain: 'monte' },
+  'el monasterio de Peñalta': { x: 248, y: 48, terrain: 'ruina' },
+  'la cueva de la Sierpe': { x: 300, y: 34, terrain: 'monte' },
 };
 
 /** Posición de un lugar (los desconocidos, cerca de la taberna). */
@@ -47,7 +57,7 @@ export const REVEAL_RADIUS = 30;
 
 /** Nombres de las regiones, rotulados en el mapa cuando se conoce la zona. */
 export const REGIONS: readonly { name: string; x: number; y: number }[] = [
-  { name: 'Sierra Parda', x: 236, y: 30 },
+  { name: 'Sierra Parda', x: 214, y: 24 },
   { name: 'Mar del Poniente', x: 40, y: 150 },
   { name: 'Las Marismas', x: 118, y: 236 },
   { name: 'Tierras del Este', x: 352, y: 128 },

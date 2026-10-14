@@ -1,4 +1,5 @@
 import type { QuestType, TrophyIcon } from '../core/model';
+import type { BossKind } from './bosses';
 
 /**
  * Cadenas de misiones: historias de varios encargos enlazados. Cada paso aparece en el
@@ -12,6 +13,8 @@ export interface ChainStep {
   place: string;
   text: string;
   danger: 0 | 1 | 2 | 3;
+  /** Jefe al final del paso: la pelea se puede ver. */
+  boss?: BossKind;
 }
 
 export interface ChainDef {
@@ -68,6 +71,7 @@ export const CHAINS: readonly ChainDef[] = [
         place: 'el vado',
         text: 'Las huellas de la guarida bajan cada noche a beber al vado. Toca esperarla allí, y mejor con buenas armas.',
         danger: 3,
+        boss: 'bestia',
       },
     ],
     ending:
@@ -123,6 +127,49 @@ export const CHAINS: readonly ChainDef[] = [
         name: 'Máscara del sumo sacerdote',
         desc: 'Nadie quiere ponérsela.',
         icon: 'mascara',
+      },
+    },
+  },
+  {
+    id: 'caravana',
+    name: 'La caravana de la sal',
+    client: 'Casa Ferrán, salineros',
+    rep: 55,
+    intro:
+      'La caravana de sal de los Ferrán no llegó a Levante: ni carros, ni mulas, ni un solo carretero. La familia paga lo que haga falta por saber qué pasó, y más si vuelve la sal.',
+    steps: [
+      {
+        title: 'El último mesón',
+        type: 'Investigar',
+        place: 'el mesón de Levante',
+        text: 'La caravana durmió en el mesón de Levante y salió de madrugada. El mesonero jura que no vio nada, pero tiene sal nueva en la despensa.',
+        danger: 1,
+      },
+      {
+        title: 'Rodadas en el desfiladero',
+        type: 'Explorar',
+        place: 'el desfiladero de las Cabras',
+        text: 'Las rodadas de los carros se salen del camino y se meten en el desfiladero de las Cabras, por donde no pasa nadie con dos dedos de frente.',
+        danger: 2,
+      },
+      {
+        title: 'El campamento de los Tuertos',
+        type: 'Recuperar',
+        place: 'el campamento de los Tuertos',
+        text: 'La banda de los Tuertos tiene la sal, las mulas y a los carreteros. Hay que traerlo todo de vuelta, empezando por los carreteros.',
+        danger: 3,
+      },
+    ],
+    ending:
+      'Los carreteros están en casa y la sal, en su almacén. Los Ferrán han mandado al gremio un saco de sal, que en la cocina siempre viene bien, y una bolsa que viene mejor todavía.',
+    reward: {
+      gold: 400,
+      rep: 14,
+      item: 'Botas de siete leguas',
+      trophy: {
+        name: 'Estandarte de los Tuertos',
+        desc: 'Un ojo tachado sobre fondo negro.',
+        icon: 'estandarte',
       },
     },
   },
@@ -193,5 +240,93 @@ export const CHAINS: readonly ChainDef[] = [
     ending:
       'Los mapas del astrónomo cubren cada rincón de la comarca. Ya no queda niebla en el mapa del desván, y Maese Quirico no se despega de ellos ni para comer.',
     reward: { gold: 350, rep: 18, item: 'Varita de serbal', revealMap: true },
+  },
+  {
+    id: 'ahogado',
+    name: 'El Rey Ahogado',
+    client: 'Cofradía de pescadores de Juncal',
+    rep: 140,
+    intro:
+      'En Juncal las redes salen llenas de huesos y a medianoche se oye una campana bajo la laguna Negra. Los pescadores dicen que el rey que se ahogó allí hace cien años ha vuelto a reclamar su reino, y que de momento empieza por ellos.',
+    steps: [
+      {
+        title: 'Redes llenas de huesos',
+        type: 'Investigar',
+        place: 'la aldea de Juncal',
+        text: 'Los pescadores de Juncal sacan huesos con las redes y nadie quiere salir a faenar. Hay que saber de dónde vienen.',
+        danger: 1,
+      },
+      {
+        title: 'La campana del Fraile',
+        type: 'Explorar',
+        place: 'el islote del Fraile',
+        text: 'En la capilla del islote del Fraile enterraron la corona del rey. Alguien ha abierto la tumba, y la campana ya no está en su torre.',
+        danger: 2,
+      },
+      {
+        title: 'El Rey Ahogado',
+        type: 'Limpiar',
+        place: 'la laguna Negra',
+        text: 'La campana suena cada medianoche en el fondo de la laguna Negra. Ahí espera el rey, con su corona y sus ahogados. Toca devolverlo al fondo.',
+        danger: 3,
+        boss: 'ahogado',
+      },
+    ],
+    ending:
+      'La laguna Negra está en calma y en Juncal las redes vuelven a sacar peces, que huelen peor que los huesos pero se venden mejor. La campana del Fraile suena otra vez en su torre.',
+    reward: {
+      gold: 500,
+      rep: 18,
+      item: 'Corona del Rey Ahogado',
+      trophy: {
+        name: 'Ancla del Rey Ahogado',
+        desc: 'Gotea aunque haga sol.',
+        icon: 'calavera',
+      },
+    },
+  },
+  {
+    id: 'sierpe',
+    name: 'La sierpe de Sierra Parda',
+    client: 'Abad Lope, monasterio de Peñalta',
+    rep: 200,
+    intro:
+      'Arden los pastos de Sierra Parda y faltan rebaños enteros. El abad Lope, del monasterio de Peñalta, dice que es una sierpe: lo pone en sus libros y los libros no mienten. El pastor que la vio ya no dice nada; se ha ido a vivir al llano.',
+    steps: [
+      {
+        title: 'Pastos quemados',
+        type: 'Investigar',
+        place: 'el paso del Lobo',
+        text: 'En el paso del Lobo hay pastos quemados en círculo y huesos de oveja limpios como platos. Hay que mirarlo de cerca y contarlo despacio.',
+        danger: 1,
+      },
+      {
+        title: 'El bestiario del abad',
+        type: 'Escoltar',
+        place: 'el monasterio de Peñalta',
+        text: 'El bestiario del abad explica cómo se mata una sierpe, pero el copista que lo trae no se atreve a subir solo al monasterio de Peñalta.',
+        danger: 2,
+      },
+      {
+        title: 'La sierpe de Sierra Parda',
+        type: 'Cazar',
+        place: 'la cueva de la Sierpe',
+        text: 'Según el bestiario, la sierpe duerme en su cueva con la panza llena. Toca entrar con escudos, agua y mucho valor.',
+        danger: 3,
+        boss: 'sierpe',
+      },
+    ],
+    ending:
+      'La sierpe de Sierra Parda no quemará más pastos. El abad Lope ha añadido una página a su bestiario con el nombre del gremio, y los pastores vuelven a subir al monte.',
+    reward: {
+      gold: 650,
+      rep: 22,
+      item: 'Coraza de escamas de sierpe',
+      trophy: {
+        name: 'Cabeza de la sierpe',
+        desc: 'Aún huele a humo.',
+        icon: 'cabeza',
+      },
+    },
   },
 ];
