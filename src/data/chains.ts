@@ -1,4 +1,5 @@
 import type { QuestType, TrophyIcon } from '../core/model';
+import type { BossKind } from './bosses';
 
 /**
  * Cadenas de misiones: historias de varios encargos enlazados. Cada paso aparece en el
@@ -12,6 +13,8 @@ export interface ChainStep {
   place: string;
   text: string;
   danger: 0 | 1 | 2 | 3;
+  /** Jefe al final del paso: la pelea se puede ver. */
+  boss?: BossKind;
 }
 
 export interface ChainDef {
@@ -42,17 +45,17 @@ export const CHAINS: readonly ChainDef[] = [
       'Algo baja de las minas por la noche y se lleva las cabras. La semana pasada se llevó a un pastor. El alcalde de Hondogrís paga bien a quien lo resuelva, y le da igual cómo.',
     steps: [
       {
-        title: 'Rumores en el vado',
+        title: 'Rumores en la posada',
         type: 'Investigar',
-        place: 'el vado',
-        text: 'Los barqueros del vado vieron pasar algo enorme río arriba. Que lo cuenten con detalle.',
+        place: 'la posada del Cuervo',
+        text: 'Los arrieros que paran en la posada del Cuervo vieron cruzar algo enorme camino de la sierra. Que lo cuenten con detalle.',
         danger: 1,
       },
       {
         title: 'El mapa del capataz',
         type: 'Recuperar',
-        place: 'la posada del Cuervo',
-        text: 'El capataz de la mina dejó un mapa de las galerías en prenda en la posada del Cuervo. El posadero no quiere soltarlo.',
+        place: 'Hondogrís',
+        text: 'El capataz de la mina dejó un mapa de las galerías en prenda en la cantina de Hondogrís. El cantinero no quiere soltarlo.',
         danger: 1,
       },
       {
@@ -65,9 +68,10 @@ export const CHAINS: readonly ChainDef[] = [
       {
         title: 'La bestia de Hondogrís',
         type: 'Cazar',
-        place: 'Hondogrís',
-        text: 'Ya se sabe dónde duerme. Toca bajar a por ella, y mejor con buenas armas.',
+        place: 'el vado',
+        text: 'Las huellas de la guarida bajan cada noche a beber al vado. Toca esperarla allí, y mejor con buenas armas.',
         danger: 3,
+        boss: 'bestia',
       },
     ],
     ending:
@@ -92,24 +96,24 @@ export const CHAINS: readonly ChainDef[] = [
       'En el cementerio de Ormaz aparecen tumbas abiertas desde dentro. La hermana Odile sospecha de algún culto y quiere que se acabe antes de la luna nueva.',
     steps: [
       {
-        title: 'Tumbas abiertas',
-        type: 'Investigar',
-        place: 'el cementerio de Ormaz',
-        text: 'Hay que pasar la noche en el cementerio y ver quién entra, o quién sale.',
-        danger: 1,
-      },
-      {
         title: 'La testigo de la ermita',
         type: 'Escoltar',
         place: 'la ermita',
-        text: 'Una novicia lo vio todo y el culto lo sabe. Hay que llevarla a la ermita sana y salva.',
+        text: 'Una novicia vio a los encapuchados abrir las tumbas y el culto lo sabe. Hay que llevarla a la ermita sana y salva.',
+        danger: 1,
+      },
+      {
+        title: 'Velas negras en el granero',
+        type: 'Investigar',
+        place: 'el granero de los Cardo',
+        text: 'La novicia dice que los encapuchados guardan palas y velas negras en el granero de los Cardo. Hay que pasar la noche allí y seguirlos.',
         danger: 2,
       },
       {
         title: 'La cripta de Ormaz',
         type: 'Limpiar',
         place: 'el cementerio de Ormaz',
-        text: 'Bajo la capilla del cementerio hay una cripta que no sale en ningún plano. Ahí se reúnen.',
+        text: 'Los encapuchados llevaron hasta una cripta bajo la capilla del cementerio que no sale en ningún plano. Ahí se reúnen.',
         danger: 3,
       },
     ],
@@ -127,6 +131,49 @@ export const CHAINS: readonly ChainDef[] = [
     },
   },
   {
+    id: 'caravana',
+    name: 'La caravana de la sal',
+    client: 'Casa Ferrán, salineros',
+    rep: 55,
+    intro:
+      'La caravana de sal de los Ferrán no llegó a Levante: ni carros, ni mulas, ni un solo carretero. La familia paga lo que haga falta por saber qué pasó, y más si vuelve la sal.',
+    steps: [
+      {
+        title: 'El último mesón',
+        type: 'Investigar',
+        place: 'el mesón de Levante',
+        text: 'La caravana durmió en el mesón de Levante y salió de madrugada. El mesonero jura que no vio nada, pero tiene sal nueva en la despensa.',
+        danger: 1,
+      },
+      {
+        title: 'Rodadas en el desfiladero',
+        type: 'Explorar',
+        place: 'el desfiladero de las Cabras',
+        text: 'Las rodadas de los carros se salen del camino y se meten en el desfiladero de las Cabras, por donde no pasa nadie con dos dedos de frente.',
+        danger: 2,
+      },
+      {
+        title: 'El campamento de los Tuertos',
+        type: 'Recuperar',
+        place: 'el campamento de los Tuertos',
+        text: 'La banda de los Tuertos tiene la sal, las mulas y a los carreteros. Hay que traerlo todo de vuelta, empezando por los carreteros.',
+        danger: 3,
+      },
+    ],
+    ending:
+      'Los carreteros están en casa y la sal, en su almacén. Los Ferrán han mandado al gremio un saco de sal, que en la cocina siempre viene bien, y una bolsa que viene mejor todavía.',
+    reward: {
+      gold: 400,
+      rep: 14,
+      item: 'Botas de siete leguas',
+      trophy: {
+        name: 'Estandarte de los Tuertos',
+        desc: 'Un ojo tachado sobre fondo negro.',
+        icon: 'estandarte',
+      },
+    },
+  },
+  {
     id: 'canal',
     name: 'Contrabando en el canal',
     client: 'Gremio de mercaderes',
@@ -135,17 +182,17 @@ export const CHAINS: readonly ChainDef[] = [
       'Desaparecen barcazas enteras entre el molino y la casa del canal. El gremio de mercaderes sospecha de unos contrabandistas con buenos padrinos y prefiere que meta las narices alguien de fuera.',
     steps: [
       {
-        title: 'Lo que flota en el canal',
+        title: 'Lo que se oye en el molino',
         type: 'Investigar',
-        place: 'la casa del canal',
-        text: 'Los guardas de la casa del canal no ven ni oyen nada, pero estrenan botas cada mes.',
+        place: 'el molino',
+        text: 'Del molino salen las barcazas cargadas y algunas no llegan. El molinero las ve pasar todas y sabe más de lo que cuenta.',
         danger: 1,
       },
       {
         title: 'El cargamento señuelo',
         type: 'Escoltar',
-        place: 'el molino',
-        text: 'Un cargamento falso, bien a la vista, hasta el molino. Si pican, sabremos quiénes son.',
+        place: 'la casa del canal',
+        text: 'Un cargamento falso, bien a la vista, del molino a la casa del canal, donde los guardas estrenan botas cada mes. Si pican, sabremos quiénes son.',
         danger: 2,
       },
       {
@@ -193,5 +240,93 @@ export const CHAINS: readonly ChainDef[] = [
     ending:
       'Los mapas del astrónomo cubren cada rincón de la comarca. Ya no queda niebla en el mapa del desván, y Maese Quirico no se despega de ellos ni para comer.',
     reward: { gold: 350, rep: 18, item: 'Varita de serbal', revealMap: true },
+  },
+  {
+    id: 'ahogado',
+    name: 'El Rey Ahogado',
+    client: 'Cofradía de pescadores de Juncal',
+    rep: 140,
+    intro:
+      'En Juncal las redes salen llenas de huesos y a medianoche se oye una campana bajo la laguna Negra. Los pescadores dicen que el rey que se ahogó allí hace cien años ha vuelto a reclamar su reino, y que de momento empieza por ellos.',
+    steps: [
+      {
+        title: 'Redes llenas de huesos',
+        type: 'Investigar',
+        place: 'la aldea de Juncal',
+        text: 'Los pescadores de Juncal sacan huesos con las redes y nadie quiere salir a faenar. Hay que saber de dónde vienen.',
+        danger: 1,
+      },
+      {
+        title: 'La campana del Fraile',
+        type: 'Explorar',
+        place: 'el islote del Fraile',
+        text: 'En la capilla del islote del Fraile enterraron la corona del rey. Alguien ha abierto la tumba, y la campana ya no está en su torre.',
+        danger: 2,
+      },
+      {
+        title: 'El Rey Ahogado',
+        type: 'Limpiar',
+        place: 'la laguna Negra',
+        text: 'La campana suena cada medianoche en el fondo de la laguna Negra. Ahí espera el rey, con su corona y sus ahogados. Toca devolverlo al fondo.',
+        danger: 3,
+        boss: 'ahogado',
+      },
+    ],
+    ending:
+      'La laguna Negra está en calma y en Juncal las redes vuelven a sacar peces, que huelen peor que los huesos pero se venden mejor. La campana del Fraile suena otra vez en su torre.',
+    reward: {
+      gold: 500,
+      rep: 18,
+      item: 'Corona del Rey Ahogado',
+      trophy: {
+        name: 'Ancla del Rey Ahogado',
+        desc: 'Gotea aunque haga sol.',
+        icon: 'calavera',
+      },
+    },
+  },
+  {
+    id: 'sierpe',
+    name: 'La sierpe de Sierra Parda',
+    client: 'Abad Lope, monasterio de Peñalta',
+    rep: 200,
+    intro:
+      'Arden los pastos de Sierra Parda y faltan rebaños enteros. El abad Lope, del monasterio de Peñalta, dice que es una sierpe: lo pone en sus libros y los libros no mienten. El pastor que la vio ya no dice nada; se ha ido a vivir al llano.',
+    steps: [
+      {
+        title: 'Pastos quemados',
+        type: 'Investigar',
+        place: 'el paso del Lobo',
+        text: 'En el paso del Lobo hay pastos quemados en círculo y huesos de oveja limpios como platos. Hay que mirarlo de cerca y contarlo despacio.',
+        danger: 1,
+      },
+      {
+        title: 'El bestiario del abad',
+        type: 'Escoltar',
+        place: 'el monasterio de Peñalta',
+        text: 'El bestiario del abad explica cómo se mata una sierpe, pero el copista que lo trae no se atreve a subir solo al monasterio de Peñalta.',
+        danger: 2,
+      },
+      {
+        title: 'La sierpe de Sierra Parda',
+        type: 'Cazar',
+        place: 'la cueva de la Sierpe',
+        text: 'Según el bestiario, la sierpe duerme en su cueva con la panza llena. Toca entrar con escudos, agua y mucho valor.',
+        danger: 3,
+        boss: 'sierpe',
+      },
+    ],
+    ending:
+      'La sierpe de Sierra Parda no quemará más pastos. El abad Lope ha añadido una página a su bestiario con el nombre del gremio, y los pastores vuelven a subir al monte.',
+    reward: {
+      gold: 650,
+      rep: 22,
+      item: 'Coraza de escamas de sierpe',
+      trophy: {
+        name: 'Cabeza de la sierpe',
+        desc: 'Aún huele a humo.',
+        icon: 'cabeza',
+      },
+    },
   },
 ];

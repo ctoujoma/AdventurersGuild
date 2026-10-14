@@ -23,6 +23,10 @@ export const GLOSSARY: readonly { term: string; text: string }[] = [
     text: 'Encargos encadenados que llegan por carta. Cada paso abre el siguiente; en el mapa el hilo rojo une los pasos hechos (✓) con el que falta (número). Si dejas uno esperando, la comarca se revuelve.',
   },
   {
+    term: 'Jefes',
+    text: 'Algunas historias acaban contra un jefe. Esa noche, al amanecer, sale un aviso para ver la pelea; si la dejas para luego, queda en el informe con «Ver la batalla».',
+  },
+  {
     term: 'Amenaza de la comarca',
     text: 'Crece cada noche que un paso de historia espera en el tablón y baja si no hay ninguna en marcha. Alta, asaltan las caravanas, llegan menos encargos y vienen bandidos a la taberna.',
   },

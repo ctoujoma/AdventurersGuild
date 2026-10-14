@@ -2,6 +2,7 @@
  * Modelo de la partida. Todo es JSON serializable: guardar es `JSON.stringify(state)`.
  * El núcleo no conoce el DOM ni el arte; el aspecto de cada héroe sale de su `seed`.
  */
+import type { BossKind } from '../data/bosses';
 import type { CrestColor, CrestSymbol, DecorId, Dish, StaffId } from '../data/custom';
 import type { Attrs, Challenge, ClassId, SkillId, Trait } from './party';
 
@@ -135,6 +136,27 @@ export interface Report {
   raid?: { won: boolean };
   /** Titular propio (cartas de clientes, finales de cadena). */
   heading?: string;
+  /** Pelea contra un jefe, guardada para verla (y repetirla). */
+  fight?: BossFight;
+}
+
+/** Quién peleó contra el jefe y cómo acabó cada uno (para pintar la pelea más tarde). */
+export interface BossFight {
+  boss: BossKind;
+  place: string;
+  won: boolean;
+  heroes: {
+    id: string;
+    name: string;
+    seed: string;
+    cls: ClassId;
+    sex: Sex;
+    eyepatch?: boolean;
+    scar?: boolean;
+    gear?: { icon: ItemIcon; rarity: Rarity };
+    /** Cómo quedó tras la pelea. */
+    fate: HeroStatus;
+  }[];
 }
 
 export interface Fallen {
@@ -327,4 +349,6 @@ export interface GameState {
   explored?: string[];
   /** Último asalto, para verlo en la escena al amanecer. */
   lastRaid?: RaidResult | null;
+  /** Informe de la pelea contra un jefe de esta noche (para el aviso del amanecer). */
+  lastFight?: string | null;
 }

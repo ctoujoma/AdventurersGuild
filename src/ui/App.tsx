@@ -5,11 +5,12 @@ import { setHaptics } from '../platform/haptics';
 import { audio, type Mood } from '../audio/audio';
 import { canHire, customOf, newGame, reduce, type Action } from '../core/game';
 import { DECOR, STAFF } from '../data/custom';
-import type { Facilities, GameState } from '../core/model';
+import type { BossFight as BossFightRecord, Facilities, GameState } from '../core/model';
 import { CAPTIONS, FACILITY_INFO } from '../data/labels';
 import { loadRecords, mergeRecords, saveRecords } from '../platform/records';
 import { loadGame, saveGame, webStorage } from '../platform/storage';
 import type { Point, WorldScene } from '../world/scene';
+import { BossCall, BossFight } from './BossFight';
 import { Dawn } from './Dawn';
 import { DayBar } from './DayBar';
 import { GameOver } from './GameOver';
@@ -108,6 +109,9 @@ export function App() {
   const [passing, setPassing] = useState(false);
   /** Hay un asalto en el patio (se puede saltar). */
   const [raiding, setRaiding] = useState(false);
+  /** Pelea contra un jefe de esta noche: el aviso (id del informe) y la pelea abierta. */
+  const [bossCall, setBossCall] = useState<string | null>(null);
+  const [watching, setWatching] = useState<{ fight: BossFightRecord; dawn: boolean } | null>(null);
   const [card, setCard] = useState<string | null>(null);
   const [questId, setQuestId] = useState<string | null>(null);
   const [reportId, setReportId] = useState<string | null>(null);
@@ -346,9 +350,15 @@ export function App() {
 
   // Escape y el botón «atrás» del móvil cierran lo que esté encima (ajustes, partidas,
   // informe, encargo, ficha, panel).
-  const overlayOpen = settingsOpen || saveMenu || !!reportId || !!questId || !!card || !!panel;
+  const overlayOpen =
+    !!watching || settingsOpen || saveMenu || !!reportId || !!questId || !!card || !!panel;
+  const closeWatch = () => {
+    if (watching?.dawn) setDawnOpen(true);
+    setWatching(null);
+  };
   const closeTop = () => {
-    if (settingsOpen) setSettingsOpen(false);
+    if (watching) closeWatch();
+    else if (settingsOpen) setSettingsOpen(false);
     else if (saveMenu) setSaveMenu(false);
     else if (reportId) setReportId(null);
     else if (questId) setQuestId(null);
@@ -365,13 +375,14 @@ export function App() {
   useBackButton(overlayOpen, closeTop);
 
   // Música según lo que pasa: la pelea, un asalto anunciado, el modo libre o la taberna.
-  const mood: Mood = raiding
-    ? 'asalto'
-    : game.raid?.warned
-      ? 'tension'
-      : game.mode === 'libre'
-        ? 'libre'
-        : 'taberna';
+  const mood: Mood =
+    raiding || watching
+      ? 'asalto'
+      : game.raid?.warned
+        ? 'tension'
+        : game.mode === 'libre'
+          ? 'libre'
+          : 'taberna';
   useEffect(() => audio.setMood(mood), [mood]);
 
   const endDay = () => {
@@ -389,7 +400,9 @@ export function App() {
       setPassing(false);
       setRaiding(false);
       audio.play('dawn');
-      setDawnOpen(true);
+      // Si esta noche un grupo ha dado con un jefe, primero el aviso (verlo o no).
+      if (next.lastFight) setBossCall(next.lastFight);
+      else setDawnOpen(true);
       // Asalto repelido o deuda saldada: suena el brindis.
       if (party) setTimeout(() => audio.fanfare(), 60);
     };
@@ -466,6 +479,7 @@ export function App() {
   const cardIsCandidate = !!cardHero && game.candidates.includes(cardHero);
   const openQuest = game.quests.find((q) => q.id === questId) ?? null;
   const report = game.reports.find((r) => r.id === reportId) ?? null;
+  const callReport = bossCall ? game.reports.find((r) => r.id === bossCall) : undefined;
   const unread = game.reports.filter((r) => !r.read).length;
   const away = game.missions.length + game.heroes.filter((h) => h.status === 'desaparecido').length;
   const calm = screen === 'game' && !dawnOpen && !passing && !(game.opening && !game.opening.seen);
@@ -684,6 +698,9 @@ export function App() {
             heroes={game.heroes}
             seal={customOf(game)}
             onClose={() => setReportId(null)}
+            onWatch={
+              report.fight ? () => setWatching({ fight: report.fight!, dawn: false }) : undefined
+            }
           />
         )}
         {cardHero && (
@@ -763,6 +780,22 @@ export function App() {
           </button>
         </div>
       )}
+      {bossCall && callReport?.fight && (
+        <BossCall
+          fight={callReport.fight}
+          who={callReport.who}
+          onWatch={() => {
+            setBossCall(null);
+            audio.play('horn');
+            setWatching({ fight: callReport.fight!, dawn: true });
+          }}
+          onLater={() => {
+            setBossCall(null);
+            setDawnOpen(true);
+          }}
+        />
+      )}
+      {watching && <BossFight fight={watching.fight} onClose={closeWatch} />}
       {pendingEvent && (
         <EventCard
           event={pendingEvent}

@@ -1,3 +1,4 @@
+import { bossArt, type BossArt, type BossPose } from '../art/bosses';
 import { bufferCanvas } from '../art/canvas';
 import { P } from '../art/palette';
 import {
@@ -12,6 +13,7 @@ import {
 } from '../art/heroes/hero';
 import { generateLook } from '../art/heroes/look';
 import type { PixelBuffer } from '../art/pixel';
+import type { BossKind } from '../data/bosses';
 import type { PKind } from './particles';
 import { WEAPONS, type WeaponId } from './weapons';
 
@@ -21,6 +23,10 @@ import { WEAPONS, type WeaponId } from './weapons';
  * varios ataques que se van alternando para que ninguna pelea se vea igual: tajos, estocadas,
  * volteretas, bolas de fuego, rayos, luz sagrada, andanadas de flechas… El resultado ya lo
  * ha decidido el núcleo; aquí solo se cuenta bonito. Dura unos 13 segundos.
+ *
+ * La misma pelea sirve para los jefes de las historias (`arena`): el grupo entra por la
+ * izquierda en un escenario lejos de la taberna y el jefe, con sus esbirros, espera a la
+ * derecha. Dura algo más y el jefe tiene sus propios ataques.
  */
 
 export interface BattleSpec {
@@ -28,6 +34,8 @@ export interface BattleSpec {
   bandits: number;
   /** Defensores con su aspecto; `hurt` acaban en el suelo. */
   defenders: { id: string; look: HeroLook; marks: HeroMarks; hurt: boolean }[];
+  /** Pelea contra un jefe en su guarida, de `width` píxeles de ancho. */
+  arena?: { boss: BossKind; minions: number; width: number };
 }
 
 export type BattleSound =
@@ -70,7 +78,8 @@ export type Style =
   | 'navajero'
   | 'arquero'
   | 'incendiario'
-  | 'jefe';
+  | 'jefe'
+  | BossKind;
 
 interface Frame {
   pose: FightPose;
@@ -90,6 +99,16 @@ interface Frame {
   glow?: boolean;
   /** Mirar al revés (torbellino). */
   turn?: boolean;
+}
+
+interface HurtOpts {
+  sound?: BattleSound;
+  puff?: boolean;
+  stun?: boolean;
+  spark?: number;
+  tint?: string;
+  freeze?: number;
+  fire?: boolean;
 }
 
 interface Move {
@@ -133,6 +152,13 @@ interface Fighter {
   rage: number;
   /** Dónde arde su antorcha (para la luz), o null. */
   torchAt: { x: number; y: number } | null;
+  /** Altura del pecho sobre los pies (donde se apuntan los golpes). */
+  chestH: number;
+  /** Dibujo del jefe (si lo es) y su vida para la barra (0–1). */
+  art?: BossArt;
+  hp: number;
+  /** Esbirro ahogado: se pinta verdoso y sin antorcha. */
+  ghost?: boolean;
 }
 
 type ShotKind = 'arrow' | 'firearrow' | 'fire' | 'ice' | 'dagger' | 'bottle';
@@ -169,8 +195,8 @@ interface Fx {
 
 export const BATTLE_TIME = 13;
 const DOOR = 98;
-const FIGHT_AT = 4.6;
-const OUTCOME_AT = 9.2;
+/** Pelea contra un jefe: llegada, golpes, desenlace y final. */
+const ARENA_TIMES = { fight: 3.4, outcome: 15.5, end: 20 };
 /** Altura del pecho sobre los pies, donde se apuntan los golpes. */
 const CHEST = 13;
 
@@ -255,6 +281,146 @@ function bowShot(
       ),
   };
 }
+
+/** Rugido del jefe al ver llegar al grupo (sin golpe). */
+const ROAR: Move = {
+  dur: 1.1,
+  hits: [],
+  frame: (p) => ({ pose: p > 0.15 && p < 0.85 ? 'up' : 'ready', angle: 0 }),
+  hit: () => {},
+};
+
+/** Fases de un golpe de jefe: preparar, soltar y volver (con desplazamiento opcional). */
+const bossFrame =
+  (at: number, pose: 'strike' | 'thrust', lunge = 3, back = 2): Move['frame'] =>
+  (p) =>
+    p < at - 0.15
+      ? { pose: 'windup', angle: 0, dx: -back * seg(p, 0, at - 0.15) }
+      : p < at + 0.25
+        ? { pose, angle: 0, dx: lerp(-back, lunge, seg(p, at - 0.15, at)) }
+        : { pose: 'ready', angle: 0, dx: lunge * (1 - seg(p, at + 0.25, 1)) };
+
+const BOSS_MOVES: Record<BossKind, Move[]> = {
+  bestia: [
+    // Colmillazo.
+    {
+      dur: 0.9,
+      hits: [0.55],
+      frame: bossFrame(0.55, 'strike'),
+      hit: (b, f) => b.area(f, f.art!.reach + 16, 6, { sound: 'thud', spark: 5 }),
+    },
+    // Embestida: retrocede, carga y arrolla.
+    {
+      dur: 1.4,
+      hits: [0.5],
+      frame: bossFrame(0.5, 'thrust', 20, 7),
+      hit: (b, f) => {
+        b.area(f, f.art!.reach + 30, 7, { sound: 'thud', puff: true, stun: true });
+        b.burstAt('puff', f.x + f.face * 18, b.feet(f) - 2, 8);
+      },
+    },
+    // Bramido: se encabrita y aturde a todos.
+    {
+      dur: 1.2,
+      hits: [0.35],
+      frame: (p) => ({ pose: p > 0.2 && p < 0.85 ? 'up' : 'ready', angle: 0 }),
+      hit: (b, f) => {
+        const m = f.art!.mouth.up;
+        b.fx('shout', f.x + f.face * m.x, b.feet(f) + m.y, 0.8, P.sand, 26, undefined, f.face);
+        b.sound('roar');
+        b.stunAround(f, 90, 0.7);
+      },
+    },
+  ],
+  ahogado: [
+    // Ancla: la levanta y la deja caer sobre quien tiene delante.
+    {
+      dur: 1.2,
+      hits: [0.6],
+      frame: bossFrame(0.6, 'strike', 3, 1),
+      hit: (b, f) => {
+        const to = f.foe;
+        if (!to) return;
+        b.fx('ring', to.x, b.feet(to) - 1, 0.5, P.sky, 20);
+        b.burstAt('splash', to.x, b.feet(to) - 2, 8);
+        b.areaAt(f, to.x, 16, 7, { sound: 'thud', puff: true, stun: true });
+      },
+    },
+    // Ola: el agua de la laguna barre a todo el grupo.
+    {
+      dur: 1.3,
+      hits: [0.5],
+      frame: (p) => ({ pose: p > 0.15 && p < 0.8 ? 'up' : 'ready', angle: 0 }),
+      hit: (b, f) => {
+        b.fx('ring', f.x, b.feet(f) - 1, 0.9, P.cyan, 80);
+        b.area(f, 110, 3, { tint: P.cyan, freeze: 0.5, sound: 'zap', spark: 2 });
+      },
+    },
+    // Llama a sus ahogados, que se enrabietan.
+    {
+      dur: 1.0,
+      hits: [0.4],
+      when: (b, f) => b.allies(f).length > 1,
+      frame: (p) => ({ pose: p > 0.2 && p < 0.8 ? 'up' : 'ready', angle: 0 }),
+      hit: (b, f) => {
+        const m = f.art!.mouth.up;
+        b.fx('shout', f.x + f.face * 6, b.feet(f) + m.y + 10, 0.7, P.cyan, 22, undefined, f.face);
+        b.sound('roar');
+        for (const a of b.allies(f)) a.rage = 1.8;
+      },
+    },
+  ],
+  sierpe: [
+    // Mordisco.
+    {
+      dur: 0.85,
+      hits: [0.55],
+      frame: bossFrame(0.55, 'strike'),
+      hit: (b, f) => b.strike(f, 6, { sound: 'thud', spark: 5 }),
+    },
+    // Aliento de fuego sobre todo el grupo.
+    {
+      dur: 1.8,
+      hits: [0.3, 0.45, 0.6, 0.75],
+      frame: (p) =>
+        p < 0.22
+          ? { pose: 'windup', angle: 0 }
+          : p < 0.85
+            ? { pose: 'thrust', angle: 0 }
+            : { pose: 'ready', angle: 0 },
+      hit: (b, f, i) => {
+        if (i === 0) {
+          const m = f.art!.mouth.thrust;
+          b.fx(
+            'flames',
+            f.x + f.face * m.x,
+            b.feet(f) + m.y + 2,
+            1.1,
+            P.orange,
+            90,
+            undefined,
+            f.face,
+          );
+          b.sound('whoosh');
+          b.sound('boom', 0.5);
+        }
+        b.area(f, 110, 3, { tint: P.orange, fire: true, spark: 1 });
+      },
+    },
+    // Coletazo: se da la vuelta y barre con la cola.
+    {
+      dur: 1.0,
+      hits: [0.5],
+      frame: (p) => ({
+        pose: p < 0.3 ? 'windup' : 'strike',
+        angle: 0,
+        turn: p > 0.3 && p < 0.75,
+        dx: p > 0.3 && p < 0.75 ? -6 : 0,
+      }),
+      hit: (b, f) => b.area(f, f.art!.reach + 22, 5, { sound: 'thud', puff: true, stun: true }),
+    },
+  ],
+};
 
 export const MOVES: Record<Style, Move[]> = {
   guerrero: [
@@ -626,6 +792,7 @@ export const MOVES: Record<Style, Move[]> = {
       },
     },
   ],
+  ...BOSS_MOVES,
 };
 
 interface Kit {
@@ -648,6 +815,9 @@ const KITS: Record<Style, Kit> = {
   arquero: { main: 'arco', ready: 0, ranged: true, torch: false },
   incendiario: { main: 'antorcha', ready: 20, ranged: false, torch: true },
   jefe: { main: 'hacha', ready: 30, ranged: false, torch: true },
+  bestia: { main: 'garrote', ready: 0, ranged: false, torch: false },
+  ahogado: { main: 'garrote', ready: 0, ranged: false, torch: false },
+  sierpe: { main: 'garrote', ready: 0, ranged: false, torch: false },
 };
 
 const BANDIT_TYPES: Style[] = ['bruto', 'navajero', 'arquero', 'incendiario'];
@@ -724,17 +894,32 @@ export class Battle {
   t = 0;
   done = false;
   readonly hidden: Set<string>;
+  /** Cuándo empiezan los golpes, cuándo se decide y cuánto dura. */
+  readonly fightAt: number;
+  readonly outcomeAt: number;
+  readonly duration: number;
   private fighters: Fighter[] = [];
   private shots: Shot[] = [];
   private effects: Fx[] = [];
   private resolved = false;
   private lastSound = new Map<string, number>();
+  /** En las peleas contra jefes: quién cae antes del final, y cuándo. */
+  private doom: { f: Fighter; at: number }[] = [];
+  private roared = false;
 
   constructor(
     private spec: BattleSpec,
     private hooks: BattleHooks,
   ) {
     this.hidden = new Set(spec.defenders.map((d) => d.id));
+    const times = spec.arena ? ARENA_TIMES : { fight: 4.6, outcome: 9.2, end: BATTLE_TIME };
+    this.fightAt = times.fight;
+    this.outcomeAt = times.outcome;
+    this.duration = times.end;
+    if (spec.arena) {
+      this.setupArena(spec.arena);
+      return;
+    }
     const n = spec.bandits;
     for (let i = 0; i < n; i++) {
       const style: Style =
@@ -752,6 +937,62 @@ export class Battle {
         }),
       );
     }
+  }
+
+  /** Jefe y esbirros a la derecha; el grupo entra andando por la izquierda. */
+  private setupArena(a: NonNullable<BattleSpec['arena']>): void {
+    const art = bossArt(a.boss);
+    const bx = Math.round(a.width * 0.74);
+    const dummy = banditLook('jefe', 0);
+    const boss = this.fighter('b', a.boss, dummy.look, dummy.marks, {
+      x: bx,
+      target: bx,
+      speed: 0,
+      dist: 0,
+      then: 'fight',
+    });
+    Object.assign(boss, { art, chestH: art.chest, state: 'fight', face: -1, cool: 1 });
+    this.fighters.push(boss);
+    const minions: Fighter[] = [];
+    for (let i = 0; i < a.minions; i++) {
+      const style: Style = i % 2 ? 'navajero' : 'bruto';
+      const { look, marks } = banditLook(style, 100 + i);
+      const m = this.fighter('b', style, { ...look, headgear: null }, marks, {
+        x: a.width + 16 + i * 14,
+        target: bx - art.reach - 16 - i * 16,
+        speed: 30,
+        dist: i * 5,
+        then: 'fight',
+      });
+      m.ghost = true;
+      minions.push(m);
+      this.fighters.push(m);
+    }
+    const foes = [...minions, boss];
+    const front = (f: Fighter) => f.target - (f.art ? f.art.reach : 0) - 13;
+    let melee = 0;
+    let ranged = 0;
+    this.spec.defenders.forEach((d, i) => {
+      const style = styleOf(d.look.outfit);
+      const far = KITS[style].ranged;
+      const k = far ? ranged++ : melee++;
+      const foe = far ? boss : foes[k % foes.length]!;
+      const f = this.fighter('d', style, d.look, d.marks, {
+        id: d.id,
+        x: -14 - i * 14,
+        target: far
+          ? Math.max(14, bx - art.reach - 64 - k * 14)
+          : front(foe) - Math.floor(k / foes.length) * 7,
+        speed: 55,
+        dist: i * 3,
+        then: 'fight',
+        foe,
+      });
+      foe.foe ??= f;
+      this.fighters.push(f);
+      // Los que acaban heridos (o peor) caen antes del final, uno tras otro.
+      if (d.hurt) this.doom.push({ f, at: this.outcomeAt - 3.2 + this.doom.length * 0.9 });
+    });
   }
 
   private fighter(
@@ -778,6 +1019,8 @@ export class Battle {
       stun: 0,
       rage: 0,
       torchAt: null,
+      chestH: CHEST,
+      hp: 1,
       ...o,
     };
   }
@@ -789,7 +1032,7 @@ export class Battle {
   }
 
   chest(f: Fighter): number {
-    return this.hooks.feetAt(f.x) - CHEST;
+    return this.hooks.feetAt(f.x) - f.chestH;
   }
 
   sound(name: BattleSound, volume = 1): void {
@@ -847,46 +1090,53 @@ export class Battle {
   }
 
   /** Golpe a todos los enemigos a menos de `radius`. */
-  area(
-    f: Fighter,
-    radius: number,
-    power: number,
-    o: { sound?: BattleSound; spark?: number; tint?: string },
-  ): void {
+  area(f: Fighter, radius: number, power: number, o: HurtOpts): void {
     for (const e of this.fighters)
       if (e.side !== f.side && e.state === 'fight' && Math.abs(e.x - f.x) <= radius)
         this.hurt(e, f, power, o);
   }
 
-  hurt(
-    to: Fighter,
-    from: Fighter,
-    power: number,
-    o: {
-      sound?: BattleSound;
-      puff?: boolean;
-      stun?: boolean;
-      spark?: number;
-      tint?: string;
-      freeze?: number;
-      fire?: boolean;
-    } = {},
-  ): void {
+  /** Golpe a los enemigos de `f` que estén a menos de `radius` del punto `x`. */
+  areaAt(f: Fighter, x: number, radius: number, power: number, o: HurtOpts): void {
+    for (const e of this.fighters)
+      if (e.side !== f.side && e.state === 'fight' && Math.abs(e.x - x) <= radius)
+        this.hurt(e, f, power, o);
+  }
+
+  /** Aturde a los enemigos cercanos (rugidos de los jefes). */
+  stunAround(f: Fighter, radius: number, dur: number): void {
+    for (const e of this.fighters)
+      if (e.side !== f.side && e.state === 'fight' && Math.abs(e.x - f.x) <= radius) {
+        e.stun = Math.max(e.stun, dur);
+        e.move = undefined;
+        this.fx('stars', e.x, this.chest(e) - 14, dur, P.lemon, 0, e);
+      }
+  }
+
+  hurt(to: Fighter, from: Fighter, power: number, o: HurtOpts = {}): void {
     if (!this.alive(to)) return;
     const dir = Math.sign(to.x - from.x) || -from.face;
     const shielded = to.bubble > 0;
     to.flash = 0.09;
     to.tint = shielded ? P.cyan : (o.tint ?? P.white);
-    to.knock += dir * (shielded ? power * 0.3 : power);
-    if (o.stun && !shielded) to.stun = 0.55;
-    if (o.freeze && !shielded) to.frozen = o.freeze;
-    if (to.move && power >= 5 && !shielded) to.move = undefined;
+    if (to.art) {
+      // El jefe apenas se mueve con los golpes, pero la barra baja (sin llegar al final
+      // antes de tiempo: el desenlace ya está escrito).
+      to.knock += dir * power * 0.25;
+      const floor = !this.spec.won ? 0.45 : this.t < this.outcomeAt ? 0.12 : 0;
+      to.hp = Math.max(floor, to.hp - power * 0.016);
+    } else {
+      to.knock += dir * (shielded ? power * 0.3 : power);
+      if (o.stun && !shielded) to.stun = 0.55;
+      if (o.freeze && !shielded) to.frozen = o.freeze;
+      if (to.move && power >= 5 && !shielded) to.move = undefined;
+    }
     const y = this.chest(to);
     const sx = to.x - dir * 4;
     if (o.spark !== 0) this.hooks.burst('spark', sx, y, o.spark ?? 4);
     if (o.fire) this.hooks.burst('ember', sx, y, 5);
     if (o.puff) this.hooks.burst('puff', to.x, this.feet(to) - 2, 5);
-    if (o.stun && !shielded) this.fx('stars', to.x, y - 14, 0.55, P.lemon, 0, to);
+    if (o.stun && !shielded && !to.art) this.fx('stars', to.x, y - 14, 0.55, P.lemon, 0, to);
     if (power >= 5) this.fx('slash', sx, y, 0.18, P.white, 0, undefined, dir > 0 ? 1 : -1);
     if (o.sound) this.sound(o.sound, o.sound === 'hit' ? 0.55 : 0.8);
   }
@@ -946,8 +1196,14 @@ export class Battle {
 
   /** Salta al final (el resultado no cambia). */
   finish(): void {
-    this.t = BATTLE_TIME;
+    this.t = this.duration;
     this.done = true;
+  }
+
+  /** Vida del jefe (0–1), o null si no es una pelea contra un jefe. */
+  get bossHp(): number | null {
+    const b = this.fighters.find((f) => f.art);
+    return b ? b.hp : null;
   }
 
   update(dt: number): void {
@@ -957,8 +1213,9 @@ export class Battle {
     const { spec, hooks } = this;
     const bandits = this.fighters.filter((f) => f.side === 'b');
 
+    if (spec.arena) this.arenaBeats(t0);
     // Los defensores salen por la puerta poco después de que suene la alarma.
-    if (t0 < 1.4 && this.t >= 1.4) {
+    if (!spec.arena && t0 < 1.4 && this.t >= 1.4) {
       // Cuerpo a cuerpo, cada uno frente a un bandido; los de distancia, detrás de la línea.
       const front = Math.max(...bandits.map((b) => b.target)) + 13;
       let melee = 0;
@@ -985,11 +1242,11 @@ export class Battle {
     }
 
     // Desenlace.
-    if (!this.resolved && this.t >= OUTCOME_AT) {
+    if (!this.resolved && this.t >= this.outcomeAt) {
       this.resolved = true;
       this.outcome();
     }
-    if (this.t >= BATTLE_TIME) this.done = true;
+    if (this.t >= this.duration) this.done = true;
 
     for (const f of this.fighters) {
       f.flash = Math.max(0, f.flash - dt);
@@ -1036,8 +1293,12 @@ export class Battle {
         f.foe = foes.reduce((a, b) => (Math.abs(b.x - f.x) < Math.abs(a.x - f.x) ? b : a));
     }
     if (f.foe) f.face = f.foe.x >= f.x ? 1 : -1;
-    if (this.t >= OUTCOME_AT || this.t < FIGHT_AT - 0.8) {
-      f.move = undefined;
+    if (this.t >= this.outcomeAt || this.t < this.fightAt - 0.8) {
+      // Fuera de la pelea solo vale el rugido del jefe al ver llegar al grupo.
+      if (f.move?.m === ROAR) {
+        f.move.t += dt;
+        if (f.move.t >= ROAR.dur) f.move = undefined;
+      } else f.move = undefined;
       return;
     }
     if (f.stun > 0 || f.frozen > 0) return;
@@ -1061,6 +1322,38 @@ export class Battle {
     if (p >= 1) {
       f.move = undefined;
       f.cool = 0.2 + Math.random() * 0.75;
+    }
+  }
+
+  /** Momentos fijos de la pelea contra el jefe: el rugido al llegar y los que caen. */
+  private arenaBeats(t0: number): void {
+    const boss = this.fighters.find((f) => f.art)!;
+    if (!this.roared && this.t >= 1.6) {
+      this.roared = true;
+      const m = boss.art!.mouth.up;
+      boss.move = { m: ROAR, t: 0, fired: 0 };
+      this.fx(
+        'shout',
+        boss.x + boss.face * m.x,
+        this.feet(boss) + m.y,
+        0.9,
+        P.sand,
+        26,
+        undefined,
+        boss.face,
+      );
+      this.sound('roar');
+    }
+    for (const d of this.doom) {
+      if (t0 >= d.at || this.t < d.at || d.f.state !== 'fight') continue;
+      d.f.flash = 0.25;
+      d.f.tint = P.white;
+      d.f.knock -= 12;
+      d.f.move = undefined;
+      this.hooks.burst('spark', d.f.x, this.chest(d.f), 8);
+      this.fx('slash', d.f.x, this.chest(d.f), 0.25, P.white, 0);
+      this.sound('thud');
+      d.f.state = 'down';
     }
   }
 
@@ -1089,7 +1382,7 @@ export class Battle {
       return;
     }
     f.state = f.then;
-    f.face = f.side === 'b' ? 1 : -1;
+    f.face = (f.side === 'b') === !this.spec.arena ? 1 : -1;
   }
 
   private outcome(): void {
@@ -1101,11 +1394,46 @@ export class Battle {
     const knockout = (f: Fighter, by: Fighter | undefined) => {
       f.flash = 0.25;
       f.tint = P.white;
-      f.knock += (by ? Math.sign(f.x - by.x) : f.side === 'b' ? -1 : 1) * 10;
+      f.knock += (by ? Math.sign(f.x - by.x) : f.side === 'b' ? -1 : 1) * (f.art ? 3 : 10);
       hooks.burst('spark', f.x, this.chest(f), 8);
       this.fx('slash', f.x, this.chest(f), 0.22, P.white, 0);
       f.state = 'down';
     };
+    if (spec.arena) {
+      const boss = bandits.find((f) => f.art)!;
+      const standing = defenders.filter((d) => d.state === 'fight');
+      if (spec.won) {
+        boss.hp = 0;
+        knockout(boss, standing[0]);
+        this.fx('boom', boss.x, this.chest(boss), 0.6, P.white, 26);
+        hooks.burst('puff', boss.x, this.feet(boss) - 2, 16);
+        this.sound('boom');
+        this.sound('thud');
+        bandits.forEach((b, i) => {
+          if (b === boss) return;
+          if (i % 2) knockout(b, b.foe);
+          else Object.assign(b, { state: 'flee', target: spec.arena!.width + 40, speed: 60 });
+        });
+        for (const d of standing) d.state = 'cheer';
+        setTimeout(() => hooks.sound('cheer'), 700);
+      } else {
+        boss.state = 'cheer';
+        this.fx(
+          'shout',
+          boss.x + boss.face * 20,
+          this.chest(boss) - 8,
+          1,
+          P.sand,
+          30,
+          undefined,
+          boss.face,
+        );
+        this.sound('roar');
+        for (const b of bandits) if (b !== boss && b.state === 'fight') b.state = 'cheer';
+        for (const d of standing) Object.assign(d, { state: 'flee', target: -40, speed: 62 });
+      }
+      return;
+    }
     if (spec.won) {
       bandits.forEach((b, i) => {
         if (i % 2 === 0 && i < bandits.length - 1) knockout(b, b.foe);
@@ -1144,8 +1472,10 @@ export class Battle {
       if (f.state === 'gone' || f.state === 'inside') continue;
       const feet = this.hooks.feetAt(f.x);
       ctx.fillStyle = 'rgba(24, 20, 37, 0.45)';
-      ctx.fillRect(Math.round(f.x + f.knock - 5) - cx, feet - 1 - cy, 10, 1);
-      if (f.state === 'walk' || f.state === 'flee' || f.state === 'loot')
+      const half = f.art ? f.art.reach : 5;
+      ctx.fillRect(Math.round(f.x + f.knock - half) - cx, feet - 1 - cy, half * 2, 1);
+      if (f.art) this.drawBoss(ctx, f, feet, cx, cy);
+      else if (f.state === 'walk' || f.state === 'flee' || f.state === 'loot')
         this.drawWalker(ctx, f, feet, cx, cy);
       else this.drawFighter(ctx, f, feet, cx, cy);
     }
@@ -1168,9 +1498,15 @@ export class Battle {
       ctx.scale(-1, 1);
       ctx.drawImage(bufferCanvas(img), 0, 0);
     } else ctx.drawImage(bufferCanvas(img), x, y);
+    if (f.ghost) {
+      ctx.globalAlpha = 0.45;
+      if (flip) ctx.drawImage(tintOf(img, P.leaf), 0, 0);
+      else ctx.drawImage(tintOf(img, P.leaf), x, y);
+      ctx.globalAlpha = 1;
+    }
     ctx.restore();
     // Antorcha o saco en la mano.
-    if (f.side !== 'b') return;
+    if (f.side !== 'b' || f.ghost) return;
     const hx = Math.round(f.x + 5 * (flip ? -1 : 1)) - cx;
     const hy = y + 6;
     if (f.sack) {
@@ -1250,14 +1586,21 @@ export class Battle {
     // Lo que va a la espalda o en la otra mano (detrás del cuerpo).
     if (kit.off === 'escudo' && !fr.shield) this.weapon(ctx, 'escudo', -4, -15, 0);
     if (kit.off === 'daga') this.weapon(ctx, 'daga', 3, -9, 120);
-    if (kit.torch && kit.main !== 'antorcha') {
+    if (kit.torch && kit.main !== 'antorcha' && !f.ghost) {
       this.weapon(ctx, 'antorcha', -3, -10, -20);
       this.flame(ctx, -5, -15, f.x);
       f.torchAt = { x: f.x - 5 * face, y: oy - 15 };
     }
 
     const img = f.poses[fr.pose];
-    const special = f.frozen > 0 ? P.cyan : f.rage > 0 && Math.sin(this.t * 16) > 0 ? P.red : null;
+    const special =
+      f.frozen > 0
+        ? P.cyan
+        : f.rage > 0 && Math.sin(this.t * 16) > 0
+          ? P.red
+          : f.ghost
+            ? P.leaf
+            : null;
     const c =
       f.flash > 0 ? tintOf(img, f.tint) : special ? tintOf(img, special) : bufferCanvas(img);
     // El destello y los tintes van sobre el sprite, semitransparentes.
@@ -1303,6 +1646,38 @@ export class Battle {
     ctx.restore();
 
     if (f.bubble > 0) this.bubble(ctx, ox - cx, oy - CHEST - cy, f.bubble);
+  }
+
+  /** El jefe: su pose según lo que hace, volteado hacia el grupo, con destellos y tintes. */
+  private drawBoss(
+    ctx: CanvasRenderingContext2D,
+    f: Fighter,
+    feet: number,
+    cx: number,
+    cy: number,
+  ): void {
+    const art = f.art!;
+    const fr = f.state === 'down' ? null : this.frameOf(f);
+    const pose: BossPose = fr ? fr.pose : 'down';
+    const img = art.poses[pose];
+    const face = fr?.turn ? -f.face : f.face;
+    ctx.save();
+    ctx.translate(
+      Math.round(f.x + f.knock + (fr?.dx ?? 0) * f.face) - cx,
+      Math.round(feet + (fr?.dy ?? 0)) - cy,
+    );
+    if (face < 0) ctx.scale(-1, 1);
+    const foot = pose === 'down' ? art.downFoot : art.foot;
+    const x = -foot.x;
+    const y = -foot.y;
+    ctx.drawImage(bufferCanvas(img), x, y);
+    const special = f.frozen > 0 ? P.cyan : f.rage > 0 && Math.sin(this.t * 16) > 0 ? P.red : null;
+    if (f.flash > 0 || special) {
+      ctx.globalAlpha = f.flash > 0 ? 0.55 : 0.4;
+      ctx.drawImage(tintOf(img, f.flash > 0 ? f.tint : special!), x, y);
+      ctx.globalAlpha = 1;
+    }
+    ctx.restore();
   }
 
   private weapon(

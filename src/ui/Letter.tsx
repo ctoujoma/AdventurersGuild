@@ -13,10 +13,12 @@ interface Props {
   /** La taberna que firma: inicial y color del lacre. */
   seal: Custom;
   onClose: () => void;
+  /** Ver (otra vez) la pelea contra el jefe, si la hubo. */
+  onWatch?: () => void;
 }
 
 /** Informe de misión como carta: quién fue, qué pasó y qué trajeron. */
-export function Letter({ report: r, heroes, seal, onClose }: Props) {
+export function Letter({ report: r, heroes, seal, onClose, onWatch }: Props) {
   const party = r.heroIds
     .map((id) => heroes.find((h) => h.id === id))
     .filter((h): h is Hero => !!h);
@@ -77,6 +79,11 @@ export function Letter({ report: r, heroes, seal, onClose }: Props) {
               </span>
             ))}
           </div>
+          {onWatch && (
+            <button class="btn btn-wood letter-watch" onClick={onWatch}>
+              <Icon name="espadas" size={14} /> Ver la batalla
+            </button>
+          )}
           <p class="sign">— anotado en el libro del gremio</p>
         </div>
       </article>

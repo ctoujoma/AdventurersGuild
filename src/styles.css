@@ -2682,6 +2682,19 @@ button:focus-visible {
   background: var(--rust);
   box-shadow: 0 0 0 1px var(--sand);
 }
+/* Nombres de región, rotulados a mano y desvaídos; no crecen con el zoom. */
+.map-region {
+  position: absolute;
+  transform: translate(-50%, -50%) scale(var(--inv, 1));
+  font-family: var(--pixel);
+  font-size: 10px;
+  font-style: italic;
+  letter-spacing: 0.08em;
+  color: var(--wine);
+  opacity: 0.6;
+  white-space: nowrap;
+  pointer-events: none;
+}
 .map-place small,
 .map-tavern small {
   margin-top: 1px;
@@ -3562,4 +3575,119 @@ textarea:focus-visible,
   z-index: 4;
   display: flex;
   gap: 4px;
+}
+
+/* ---------- Peleas contra jefes ---------- */
+.bossfight {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+    max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  background: var(--ink);
+  animation: note-in 260ms ease-out both;
+}
+.bossfight-head,
+.bossfight-foot {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  color: var(--sand);
+  text-align: center;
+}
+.bossfight-head .eyebrow {
+  color: var(--fog);
+}
+.bossfight-name {
+  display: block;
+  margin: 2px 0 6px;
+  font-family: var(--pixel);
+  font-size: 20px;
+  font-weight: 400;
+  color: var(--gold);
+}
+.boss-hp {
+  height: 10px;
+  margin: 0 auto;
+  max-width: 320px;
+  background: var(--plum);
+  box-shadow:
+    0 0 0 2px var(--ink),
+    0 0 0 4px var(--rust);
+}
+.boss-hp i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(to bottom, var(--red) 0 50%, var(--wine) 50%);
+  transition: width 160ms steps(4);
+}
+.bossfight-stage {
+  display: block;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  image-rendering: pixelated;
+  box-shadow:
+    0 0 0 3px var(--ink),
+    0 0 0 6px var(--bark);
+}
+.bossfight-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.bossfight-party {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 12px;
+  margin: 0;
+  font-size: 14px;
+  color: var(--mist);
+}
+.bossfight-party .fate-herido {
+  color: var(--tan);
+}
+.bossfight-party .fate-muerto,
+.bossfight-party .fate-desaparecido {
+  color: var(--red);
+  text-decoration: line-through;
+}
+.bossfight-result {
+  margin: 0;
+  font-family: var(--pixel);
+  font-size: 18px;
+}
+.bossfight-result.won {
+  color: var(--lemon);
+}
+.bossfight-result.lost {
+  color: var(--red);
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .bossfight {
+    gap: 4px;
+  }
+  .bossfight-name {
+    margin: 0 0 4px;
+    font-size: 16px;
+  }
+  .bossfight-foot {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+.letter-watch {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 10px;
 }
