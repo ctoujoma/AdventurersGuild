@@ -1,3 +1,7 @@
+import { useState } from 'preact/hooks';
+import type { Cheat } from '../core/cheats';
+import type { BossKind } from '../data/bosses';
+import { BOSSES } from '../data/bosses';
 import { GLOSSARY } from '../data/glossary';
 import { canVibrate } from '../platform/haptics';
 import type { Settings } from '../platform/settings';
@@ -7,13 +11,35 @@ interface Props {
   settings: Settings;
   onChange: (s: Settings) => void;
   onClose: () => void;
+  /** Modo prueba: atajos y peleas contra jefes. */
+  onCheat: (kind: Cheat) => string;
+  onBoss: (boss: BossKind, won: boolean) => void;
 }
+
+const CHEATS: { kind: Cheat; label: string }[] = [
+  { kind: 'oro', label: '+500 monedas' },
+  { kind: 'fama', label: '+50 reputación' },
+  { kind: 'dias', label: 'Pasar 3 días' },
+  { kind: 'curar', label: 'Curar y animar' },
+  { kind: 'obras', label: 'Mejoras al máximo' },
+  { kind: 'asalto', label: 'Asalto esta noche' },
+  { kind: 'historia', label: 'Avanzar historia' },
+];
 
 const SPEEDS: Settings['speed'][] = [1, 1.5, 2];
 
 /** Ajustes: volúmenes, velocidad de la escena, lectura, movimiento y vibración. */
-export function SettingsMenu({ settings: s, onChange, onClose }: Props) {
+export function SettingsMenu({ settings: s, onChange, onClose, onCheat, onBoss }: Props) {
   const set = (patch: Partial<Settings>) => onChange({ ...s, ...patch });
+  // Cinco toques seguidos en el título abren el modo prueba.
+  const [taps, setTaps] = useState(0);
+  const tapTitle = () => {
+    const n = taps + 1;
+    setTaps(n);
+    if (n >= 5 && !s.tester) set({ tester: true });
+  };
+  const [won, setWon] = useState(true);
+  const [note, setNote] = useState<string | null>(null);
   const slider = (key: 'music' | 'sfx' | 'ambient', label: string) => (
     <label class="set-row">
       <span>{label}</span>
@@ -37,7 +63,7 @@ export function SettingsMenu({ settings: s, onChange, onClose }: Props) {
         </button>
         <div class="qs-scroll">
           <span class="eyebrow">A tu gusto</span>
-          <h3>Ajustes</h3>
+          <h3 onClick={tapTitle}>Ajustes</h3>
           <h4 class="qs-sub">Sonido</h4>
           {slider('music', 'Música')}
           {slider('sfx', 'Efectos')}
@@ -83,6 +109,59 @@ export function SettingsMenu({ settings: s, onChange, onClose }: Props) {
               />
               <span>Vibración en golpes, monedas y asaltos</span>
             </label>
+          )}
+          {s.tester && (
+            <>
+              <h4 class="qs-sub">Modo prueba</h4>
+              <p class="tiny">Atajos para probar sin esperar. Cambian la partida en curso.</p>
+              <div class="tester-grid">
+                {CHEATS.map((c) => (
+                  <button
+                    key={c.kind}
+                    class="btn btn-wood"
+                    onClick={() => setNote(onCheat(c.kind))}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+              {note && (
+                <p class="tester-note" role="status">
+                  {note}
+                </p>
+              )}
+              <p class="tiny">
+                Ver una pelea contra un jefe con los héroes de casa (no cambia nada):
+              </p>
+              <div class="set-choices" role="radiogroup" aria-label="Resultado">
+                {[true, false].map((v) => (
+                  <button
+                    key={String(v)}
+                    role="radio"
+                    aria-checked={won === v}
+                    class={`btn ${won === v ? 'btn-gold' : 'btn-wood'}`}
+                    onClick={() => setWon(v)}
+                  >
+                    {v ? 'Ganan' : 'Pierden'}
+                  </button>
+                ))}
+              </div>
+              <div class="tester-grid">
+                {(Object.keys(BOSSES) as BossKind[]).map((b) => (
+                  <button key={b} class="btn btn-wood" onClick={() => onBoss(b, won)}>
+                    {BOSSES[b].name}
+                  </button>
+                ))}
+              </div>
+              <label class="set-check">
+                <input
+                  type="checkbox"
+                  checked={s.tester}
+                  onChange={(e) => set({ tester: e.currentTarget.checked })}
+                />
+                <span>Modo prueba activado</span>
+              </label>
+            </>
           )}
           <h4 class="qs-sub">Qué es cada cosa</h4>
           <p class="tiny">

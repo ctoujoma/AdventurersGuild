@@ -24,6 +24,16 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
   const [sel, setSel] = useState<string[]>([]);
   const [warn, setWarn] = useState<string | null>(null);
   const heroes = game.heroes.filter((h) => h.status !== 'muerto');
+  // Los disponibles primero y, entre ellos, quien más destaca en lo que pide el encargo
+  // (su mejor habilidad de las pedidas y, a igualdad, la suma de todas).
+  const fit = (h: (typeof heroes)[number]) => {
+    const vals = q.challenges.map((c) => skill(memberOf(h, game.fac), c.skill));
+    return Math.max(0, ...vals) * 100 + vals.reduce((a, b) => a + b, 0);
+  };
+  const busyOf = (h: (typeof heroes)[number]) => h.status !== 'ok' || !!h.guard;
+  const ranked = [...heroes].sort(
+    (a, b) => Number(busyOf(a)) - Number(busyOf(b)) || fit(b) - fit(a),
+  );
   const party = sel.map((id) => heroes.find((h) => h.id === id)!).filter(Boolean);
   const members = party.map((h) => memberOf(h, game.fac));
   const est = questEstimate(q, members, game.fac);
@@ -127,9 +137,9 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
 
           <h4 class="qs-sub">Quién va</h4>
           <div class="picks">
-            {heroes.map((h) => {
+            {ranked.map((h) => {
               const on = sel.includes(h.id);
-              const busy = h.status !== 'ok' || !!h.guard;
+              const busy = busyOf(h);
               return (
                 <button
                   key={h.id}

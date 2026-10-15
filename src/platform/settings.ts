@@ -12,6 +12,8 @@ export interface Settings {
   calm: boolean;
   /** Vibración en los momentos con peso (si el móvil la tiene). */
   vibrate: boolean;
+  /** Modo prueba: atajos en Ajustes (se abre tocando cinco veces el título). */
+  tester: boolean;
 }
 
 const KEY = 'jarro:ajustes';
@@ -23,6 +25,7 @@ export const DEFAULT_SETTINGS: Settings = {
   bigText: false,
   calm: false,
   vibrate: true,
+  tester: false,
 };
 
 const clamp01 = (v: unknown, d: number) =>
@@ -39,6 +42,7 @@ export function parseSettings(raw: unknown): Settings {
     bigText: r.bigText === true,
     calm: r.calm === true,
     vibrate: r.vibrate !== false,
+    tester: r.tester === true,
   };
 }
 

@@ -58,7 +58,7 @@ export const FACILITY_INFO: Record<
       '3 literas y cortinas',
       '4 literas con colchas, farol y banderines',
     ],
-    effect: (l) => `Caben ${2 + 2 * l} héroes`,
+    effect: (l) => `Caben ${2 + 2 * l} héroes (el ala de veteranos suma más camas)`,
   },
   enf: {
     name: 'Enfermería',
@@ -177,7 +177,7 @@ export const FACILITY_INFO: Record<
     effect: (l) =>
       l === 0
         ? 'Sin efecto'
-        : `Héroes de nivel 4 o más: +${[0, 4, 8][l]} de moral por noche y más tope${l >= 2 ? '; nunca desertan' : ''}`,
+        : `+${2 * l} camas. Héroes de nivel 4 o más: +${[0, 4, 8][l]} de moral por noche y más tope${l >= 2 ? '; nunca desertan' : ''}`,
   },
 };
 

@@ -20,7 +20,7 @@ interface Props {
 export function HeroesPanel({ game, filter, setFilter, onOpen, onHire }: Props) {
   const mine = game.heroes.filter((h) => h.status !== 'muerto');
   const cands = game.candidates;
-  const cap = capacity(game.fac.dorm);
+  const cap = capacity(game.fac.dorm, game.fac.vet ?? 0);
 
   const row = (h: Hero, candidate: boolean) => {
     const why = candidate ? canHire(game, h.id) : null;

@@ -10,6 +10,7 @@ import { CAPTIONS, FACILITY_INFO } from '../data/labels';
 import { loadRecords, mergeRecords, saveRecords } from '../platform/records';
 import { loadGame, saveGame, webStorage } from '../platform/storage';
 import type { Point, WorldScene } from '../world/scene';
+import { cheat, testFight } from '../core/cheats';
 import { BossCall, BossFight } from './BossFight';
 import { Dawn } from './Dawn';
 import { DayBar } from './DayBar';
@@ -834,6 +835,21 @@ export function App() {
           settings={settings}
           onChange={setSettings}
           onClose={() => setSettingsOpen(false)}
+          onCheat={(kind) => {
+            const r = cheat(gameRef.current, kind);
+            if (r.state !== gameRef.current) {
+              commit(r.state);
+              setSceneGame(r.state);
+            }
+            audio.play('coin');
+            return r.note;
+          }}
+          onBoss={(boss, won) => {
+            const fight = testFight(gameRef.current, boss, won);
+            if (!fight) return toast('No hay nadie en casa para pelear.');
+            setSettingsOpen(false);
+            setWatching({ fight, dawn: false });
+          }}
         />
       )}
       {saveMenu && (
