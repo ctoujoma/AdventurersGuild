@@ -80,13 +80,14 @@ type Info =
   | { kind: 'tavern' };
 
 /** Punta de flecha en mitad de un tramo, apuntando hacia su final. */
-function arrow(a: { x: number; y: number }, b: { x: number; y: number }): string {
+function arrow(a: { x: number; y: number }, b: { x: number; y: number }, inv = 1): string {
   const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
   const ux = (b.x - a.x) / len;
   const uy = (b.y - a.y) / len;
-  const mx = (a.x + b.x) / 2 + ux * 2;
-  const my = (a.y + b.y) / 2 + uy * 2;
-  const s = 3.2;
+  const mx = (a.x + b.x) / 2 + ux * 2 * inv;
+  const my = (a.y + b.y) / 2 + uy * 2 * inv;
+  // Del mismo tamaño en pantalla con cualquier zoom.
+  const s = 3.2 * inv;
   const p = (dx: number, dy: number) => `${(mx + dx).toFixed(1)},${(my + dy).toFixed(1)}`;
   return `M${p(0, 0)} L${p(-ux * s - uy * s * 0.6, -uy * s + ux * s * 0.6)} L${p(-ux * s + uy * s * 0.6, -uy * s - ux * s * 0.6)} Z`;
 }
@@ -529,7 +530,7 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
                     return (
                       <g key={i} class={next ? 'next' : ''}>
                         <line x1={a.x} y1={a.y} x2={q.x} y2={q.y} />
-                        <path d={arrow(a, q)} />
+                        <path d={arrow(a, q, 1 / view.z)} />
                       </g>
                     );
                   })}
