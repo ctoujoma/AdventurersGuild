@@ -135,8 +135,8 @@ export const upgradeCost = (s: GameState, k: keyof Facilities) =>
 export function canHire(s: GameState, id: string): string | null {
   const c = s.candidates.find((x) => x.id === id);
   if (!c) return 'Ese candidato ya no está.';
-  if (roster(s).length >= capacity(s.fac.dorm))
-    return 'No queda sitio en los dormitorios. Mejóralos en Gremio.';
+  if (roster(s).length >= capacity(s.fac.dorm, s.fac.vet ?? 0))
+    return 'No queda sitio: mejora los dormitorios o abre el ala de veteranos en Gremio.';
   if (s.gold < c.fee) return `Te faltan ${c.fee - s.gold} monedas para la prima de fichaje.`;
   return null;
 }

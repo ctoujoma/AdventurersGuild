@@ -64,7 +64,8 @@ export const TRAINING_XP = [0, 6, 12] as const;
 export const PALISADE = [0, 5, 10] as const;
 export const facilityMax = (k: keyof Facilities) => UPGRADE_COST[k].length - 1;
 
-export const capacity = (dorm: number) => 2 + 2 * dorm;
+/** Camas: las de los dormitorios y, con el ala de veteranos, dos más por nivel. */
+export const capacity = (dorm: number, vet = 0) => 2 + 2 * dorm + 2 * vet;
 /** Ingreso diario de la taberna: por nivel y un poco por reputación. */
 export const tavernIncome = (tab: number, rep: number, trophies = 0) =>
   tab === 0

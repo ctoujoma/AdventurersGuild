@@ -1,10 +1,27 @@
 import { describe, expect, it } from 'vitest';
-import { BOARD_SIZE, facilityMax, restCap } from './balance';
-import { canUpgrade, endDay, newGame, reduce } from './game';
+import { BOARD_SIZE, capacity, facilityMax, restCap } from './balance';
+import { canHire, canUpgrade, endDay, newGame, reduce, roster } from './game';
 import { skill } from './party';
 import { questEstimate } from './resolve';
 
 describe('instalaciones nuevas', () => {
+  it('el ala de veteranos suma camas: hasta 12 héroes', () => {
+    expect(capacity(3)).toBe(8);
+    expect(capacity(3, 2)).toBe(12);
+    const s = newGame('camas');
+    s.gold = 9999;
+    s.fac.dorm = 3;
+    const full = () => {
+      const c = s.candidates[0]!;
+      while (s.heroes.length < 8) s.heroes.push({ ...c, id: `h${s.heroes.length}x` });
+    };
+    full();
+    expect(roster(s).length).toBe(8);
+    expect(canHire(s, s.candidates[0]!.id)).toMatch(/sitio/);
+    s.fac.vet = 1;
+    expect(canHire(s, s.candidates[0]!.id)).toBeNull();
+  });
+
   it('se compran hasta su nivel máximo', () => {
     let s = newGame('obras');
     s.gold = 5000;

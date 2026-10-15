@@ -934,8 +934,13 @@ button:focus-visible {
 
 .herocard-actions {
   display: flex;
-  flex-wrap: wrap;
   gap: 8px;
+}
+/* En una sola fila, repartidos a partes iguales: deja más sitio a la ficha. */
+.herocard-actions .btn {
+  flex: 1 1 0;
+  min-width: 0;
+  padding-inline: 4px;
 }
 
 /* ---------- Encargo: formar grupo ---------- */
