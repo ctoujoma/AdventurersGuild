@@ -3698,3 +3698,25 @@ textarea:focus-visible,
   width: 100%;
   margin-top: 10px;
 }
+
+/* Modo prueba (Ajustes) */
+.tester-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin: 4px 0 8px;
+}
+.tester-grid .btn {
+  min-width: 0;
+  padding-inline: 4px;
+  white-space: normal;
+  line-height: 1.1;
+}
+.tester-note {
+  margin: 0 0 8px;
+  padding: 4px 8px;
+  font-size: 13.5px;
+  color: var(--text-good);
+  background: rgba(62, 137, 72, 0.12);
+  box-shadow: 0 0 0 2px var(--leaf);
+}

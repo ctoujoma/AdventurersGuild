@@ -219,6 +219,7 @@ Inspirado en los ataques al refugio de *Fallout Shelter*: cuanto más famoso y r
 - [x] Tres historias nuevas en las tierras de alrededor (la caravana de la sal, el Rey Ahogado y la sierpe de Sierra Parda) con lugares nuevos en el mapa
 - [x] Jefes con pelea visible: la bestia de Hondogrís, el Rey Ahogado y la sierpe. Aviso al amanecer para verla en directo (o dejarla para luego) y repetición desde el informe; escenario del lugar, sprites grandes, ataques propios y barra de vida sobre el motor de combate de los asaltos
 - [x] Retoques: marcadores y caminos del mapa que no crecen con el zoom, héroes ordenados por lo que pide el encargo, botones de la ficha en una fila y el ala de veteranos con camas (+2 por nivel, hasta 12 héroes)
+- [x] Modo prueba oculto en Ajustes (cinco toques en el título): oro, fama, pasar días, curar, mejoras, asalto esta noche, avanzar historias y ver las peleas contra los jefes
 - [x] Preparación para Android en la web: el botón «atrás» cierra lo que esté abierto en vez de salir, vibración en golpes, monedas, obras y asaltos (se quita en Ajustes), márgenes seguros también en horizontal, iconos pixel en lugar de símbolos de texto
 
 **🎯 Hito:** prototipo pulido para enseñar.
