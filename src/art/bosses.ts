@@ -17,6 +17,8 @@ export interface BossArt {
   foot: { x: number; y: number };
   /** Lo mismo para la pose de caído (tumbado, apoya en otra fila). */
   downFoot: { x: number; y: number };
+  /** Cómo muere: 'sink' se lo traga el agua; si no, se encabrita y cae en su pose de caído. */
+  fall?: 'sink';
   /** Altura del pecho sobre el suelo (donde se apuntan los golpes). */
   chest: number;
   /** Boca o arma respecto a los pies, mirando a la derecha, en cada pose. */
@@ -63,8 +65,8 @@ function beast(o: BeastPose): PixelBuffer {
     for (let x = 9; x < 42; x += 3) b.line(x, g - 18, x - 1, g - 21, P.ebony);
     b.ellipse(48, g - 7, 8, 6, (x, y) => rampAt(FUR, 0.3 + shade(y, g - 13, 12) * 0.5, x, y));
     b.ellipse(55, g - 5, 4, 3, P.skinS);
-    b.line(51, g - 3, 56, g - 9, P.sand);
-    b.set(56, g - 10, P.white);
+    b.line(52, g - 2, 55, g - 3, P.sand);
+    b.set(56, g - 4, P.white);
     b.hline(46, g - 9, 3, P.black); // ojo cerrado
     b.rect(56, g - 2, 2, 2, P.coral);
     return outline(b);
@@ -121,14 +123,21 @@ function beast(o: BeastPose): PixelBuffer {
     );
     b.hline(hx + 3, hy + 5, 6, P.red);
   }
-  // Colmillos curvos.
-  for (const [dx, c] of [
-    [0, P.sand],
-    [1, P.white],
-  ] as const) {
-    b.line(hx + 6 + dx, hy + 6, hx + 8 + dx, hy + 1, c);
-    b.line(hx + 8 + dx, hy + 1, hx + 7 + dx, hy - 2, c);
-  }
+  // Colmillo: sale de la mandíbula por debajo del hocico y se curva hacia arriba por delante.
+  for (const [x, y, c] of [
+    [hx + 5, hy + 6, P.sand],
+    [hx + 6, hy + 7, P.sand],
+    [hx + 7, hy + 7, P.sand],
+    [hx + 8, hy + 7, P.sand],
+    [hx + 9, hy + 7, P.sand],
+    [hx + 10, hy + 6, P.sand],
+    [hx + 11, hy + 6, P.white],
+    [hx + 12, hy + 5, P.white],
+    [hx + 7, hy + 8, P.tan],
+    [hx + 8, hy + 8, P.tan],
+    [hx + 9, hy + 8, P.tan],
+  ] as const)
+    b.set(x, y, c);
   // Ojo rojo con brillo.
   b.rect(hx + 2, hy - 3, 2, 2, P.red);
   b.set(hx + 3, hy - 3, P.hot);
@@ -325,6 +334,7 @@ function kingArt(): Omit<BossArt, 'downFoot'> {
       down: m(40, 70),
     },
     reach: 16,
+    fall: 'sink',
   };
 }
 
@@ -398,14 +408,38 @@ function wyrm(o: WyrmPose): PixelBuffer {
     b.ellipse(x, y, r, r * 0.8, (px, py) => body(px, py, y - r, r * 2));
     if (i % 5 === 2) b.line(x, y - r, x - 2, y - r - 3, P.wine);
   }
-  // Patas.
-  if (!o.down)
-    for (const lx of [26, 44]) {
-      b.rect(lx - 3, by + 4, 7, g - by - 6, P.wine);
-      b.rect(lx - 2, by + 4, 3, g - by - 7, P.brick);
-      b.rect(lx - 4, g - 2, 9, 2, P.plum);
-      for (let c = 0; c < 3; c++) b.set(lx + 3 + c, g - 1, P.sand);
+  // Patas de reptil: muslo recio, espinilla hacia atrás y pie con tres garras. Las del
+  // otro lado, más oscuras y un poco desplazadas, dan profundidad.
+  const leg = (lx: number, far: boolean) => {
+    const dim = far ? 0.3 : 0;
+    const kx = lx + 3;
+    const ky = by + 11;
+    const ax = lx - 1;
+    const ay = g - 4;
+    for (let i = 0; i <= 8; i++) {
+      const k = i / 8;
+      const x = kx + (ax - kx) * k;
+      const y = ky + (ay - ky) * k;
+      b.ellipse(x, y, 2.8 - k * 0.8, 2.4, (px, py) =>
+        rampAt(SCALES, 0.6 - dim - k * 0.25 + (px < x ? -0.15 : 0), px, py),
+      );
     }
+    b.set(kx + 2, ky + 1, far ? P.plum : P.wine);
+    b.set(kx + 3, ky + 2, far ? P.plum : P.wine);
+    b.ellipse(ax + 2, g - 2.5, 4.5, 2, far ? P.plum : P.wine);
+    b.hline(ax, g - 3, 4, far ? P.wine : P.brick);
+    for (let c = 0; c < 3; c++) {
+      b.set(ax + 4 + c * 2, g - 1, far ? P.tan : P.sand);
+      b.set(ax + 5 + c * 2, g - 1, far ? P.tan : P.white);
+    }
+    b.ellipse(lx, by + 5, 6, 7.5, (x, y) => rampAt(SCALES, 0.75 - dim - (y - by) / 22, x, y));
+  };
+  if (!o.down) {
+    leg(29, true);
+    leg(47, true);
+    leg(25, false);
+    leg(43, false);
+  }
   // Cuerpo.
   b.ellipse(34, by, 17, 10, (x, y) => body(x, y, by - 10, 20));
   // Cuello en curva hasta la cabeza.
