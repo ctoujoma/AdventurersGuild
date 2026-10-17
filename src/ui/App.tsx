@@ -9,7 +9,7 @@ import type { BossFight as BossFightRecord, Facilities, GameState } from '../cor
 import { CAPTIONS, FACILITY_INFO } from '../data/labels';
 import { loadRecords, mergeRecords, saveRecords } from '../platform/records';
 import { loadGame, saveGame, webStorage } from '../platform/storage';
-import type { Point, WorldScene } from '../world/scene';
+import type { Point } from '../world/scene';
 import { cheat, testFight } from '../core/cheats';
 import { BossCall, BossFight } from './BossFight';
 import { Dawn } from './Dawn';
@@ -39,12 +39,14 @@ import { TablonPanel } from './panels/TablonPanel';
 import { TabernaPanel } from './panels/TabernaPanel';
 import { ArconPanel, type ArconTab } from './panels/ArconPanel';
 import { QuestSheet } from './QuestSheet';
-import { SceneView } from './SceneView';
+import { SceneView, type GameScene } from './SceneView';
+import { RoomPanel, type RoomLink } from './panels/RoomPanel';
+import { ROOMS } from '../data/rooms';
 import { TabBar, type TabId } from './TabBar';
 import { listNames, plural } from './text';
 import { sceneModel } from './view';
 
-type PanelId = Exclude<TabId, 'taberna'> | 'correo' | 'fuera' | 'libro' | 'casa' | 'arcon';
+type PanelId = Exclude<TabId, 'taberna'> | 'correo' | 'fuera' | 'libro' | 'casa' | 'arcon' | 'sala';
 
 interface Bubble {
   text: string;
@@ -59,13 +61,7 @@ interface Bubble {
 const freshGame = () => newGame(Date.now().toString(36));
 
 /** Bocadillo de texto anclado a un punto de la escena: se mueve con la cámara. */
-function SpeechBubble({
-  bubble,
-  scene,
-}: {
-  bubble: Bubble;
-  scene: { current: WorldScene | null };
-}) {
+function SpeechBubble({ bubble, scene }: { bubble: Bubble; scene: { current: GameScene | null } }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (bubble.wx === undefined || bubble.wy === undefined) return;
@@ -103,6 +99,8 @@ export function App() {
   const [sceneGame, setSceneGame] = useState(game);
   const [panel, setPanel] = useState<PanelId | null>(null);
   const [arconTab, setArconTab] = useState<ArconTab>('equipo');
+  /** Sala tocada en la vista de salas (su ficha). */
+  const [roomId, setRoomId] = useState<string | null>(null);
   const [focusTrophy, setFocusTrophy] = useState<string | null>(null);
   // Partida nueva: el día 1 se abre con la carta del tío.
   const [dawnOpen, setDawnOpen] = useState(!saved);
@@ -133,7 +131,7 @@ export function App() {
   const [records, setRecords] = useState(loadRecords);
   /** Mejor llegada antes de esta partida, para comparar en la apertura. */
   const [prevBest] = useState(() => loadRecords().bestArrival);
-  const scene = useRef<WorldScene | null>(null);
+  const scene = useRef<GameScene | null>(null);
   // Ajustes: volúmenes, velocidad de la escena y aspecto; se guardan al cambiar.
   useEffect(() => {
     audio.setLevels(settings);
@@ -219,6 +217,11 @@ export function App() {
 
   const onHotspot = (id: string, _label: string, at: Point) => {
     setHint(false);
+    if (id.startsWith('sala:')) {
+      setRoomId(id.slice(5));
+      openPanel('sala');
+      return;
+    }
     switch (id) {
       case 'tablon':
         openPanel('tablon');
@@ -340,6 +343,19 @@ export function App() {
     if (dispatch({ type: 'upgrade', fac: k }) === before) return;
     setPanel(null);
     scene.current?.focus(FACILITY_INFO[k].room);
+  };
+
+  const upgradeRoom = (id: string) => {
+    const before = gameRef.current;
+    if (dispatch({ type: 'upgradeRoom', id }) === before) return;
+    setPanel(null);
+    scene.current?.focus(id);
+  };
+
+  const roomLink = (to: RoomLink) => {
+    if (to === 'candidatos') setHeroFilter('candidatos');
+    if (to === 'equipo' || to === 'tesoros') setArconTab(to);
+    openPanel(to === 'candidatos' ? 'heroes' : to === 'equipo' || to === 'tesoros' ? 'arcon' : to);
   };
 
   const sell = (itemId: string) => {
@@ -499,6 +515,8 @@ export function App() {
       <Hud game={passing ? sceneGame : game} onSettings={() => setSettingsOpen(true)} />
       <div class="stage">
         <SceneView
+          key={settings.rooms ? 'salas' : 'taberna'}
+          rooms={settings.rooms}
           model={model}
           onReady={(s) => {
             scene.current = s;
@@ -574,6 +592,14 @@ export function App() {
               onOpen={(id) => setCard(id)}
               onHire={hire}
             />
+          </Panel>
+        )}
+        {panel === 'sala' && roomId && (
+          <Panel
+            title={ROOMS[game.building.rooms.find((r) => r.id === roomId)?.type ?? 'salon'].name}
+            onClose={() => openPanel(null)}
+          >
+            <RoomPanel game={game} roomId={roomId} onUpgrade={upgradeRoom} onLink={roomLink} />
           </Panel>
         )}
         {panel === 'gremio' && (

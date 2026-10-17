@@ -1,10 +1,20 @@
-import { SPAN, WORLD_H, WORLD_X0, WORLD_X1 } from './geometry';
+import { WORLD_H, WORLD_X0, WORLD_X1 } from './geometry';
 
 /** Cielo de más por encima del mundo, para ver el sol sobre el tejado al subir la cámara. */
 export const SKY_TOP = 36;
 
+/** Rectángulo del mundo por el que se puede mover la cámara. */
+export interface CameraWorld {
+  x0: number;
+  x1: number;
+  y0: number;
+  y1: number;
+}
+
 /** Cámara 2D con arrastre, inercia, zoom entero y enfoque suave a un punto. */
 export class Camera {
+  /** Por defecto, la taberna dibujada con su cielo de más por arriba. */
+  world: CameraWorld = { x0: WORLD_X0, x1: WORLD_X1, y0: -SKY_TOP, y1: WORLD_H };
   x = 0;
   y = 0;
   zoom = 2;
@@ -30,11 +40,13 @@ export class Camera {
   }
 
   private bounds() {
-    const minX = this.vw >= SPAN ? WORLD_X0 + (SPAN - this.vw) / 2 : WORLD_X0;
-    const maxX = this.vw >= SPAN ? minX : WORLD_X1 - this.vw;
-    const h = WORLD_H + SKY_TOP;
-    const minY = this.vh >= h ? (h - this.vh) / 2 - SKY_TOP : -SKY_TOP;
-    const maxY = this.vh >= h ? minY : WORLD_H - this.vh;
+    const { x0, x1, y0, y1 } = this.world;
+    const w = x1 - x0;
+    const h = y1 - y0;
+    const minX = this.vw >= w ? x0 + (w - this.vw) / 2 : x0;
+    const maxX = this.vw >= w ? minX : x1 - this.vw;
+    const minY = this.vh >= h ? y0 + (h - this.vh) / 2 : y0;
+    const maxY = this.vh >= h ? minY : y1 - this.vh;
     return { minX, maxX, minY, maxY };
   }
 

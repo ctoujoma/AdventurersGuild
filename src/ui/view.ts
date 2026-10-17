@@ -60,6 +60,7 @@ export function sceneModel(s: GameState): SceneModel {
     });
   return {
     fac: s.fac,
+    building: s.building,
     quests: s.quests.length,
     loot: Math.min(6, s.inventory.filter((i) => !i.kind || i.kind === 'tesoro').length),
     fallen: s.fallen.length,

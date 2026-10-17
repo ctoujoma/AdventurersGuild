@@ -1272,6 +1272,18 @@ button:focus-visible {
   color: var(--text-good);
 }
 
+/* Ficha de sala: atajos a los paneles que tienen que ver con ella. */
+.room-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.room-links:empty {
+  display: none;
+}
+
 .pips {
   display: inline-flex;
   gap: 4px;

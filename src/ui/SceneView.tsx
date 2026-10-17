@@ -1,26 +1,32 @@
 import { useEffect, useRef } from 'preact/hooks';
 import { audio } from '../audio/audio';
+import { RoomScene } from '../world/rooms/RoomScene';
 import { WorldScene, type Point, type SceneModel } from '../world/scene';
+
+/** La escena que se ve: la taberna dibujada o el gremio por salas (en pruebas). */
+export type GameScene = WorldScene | RoomScene;
 
 interface Props {
   model: SceneModel;
-  onReady: (scene: WorldScene) => void;
+  onReady: (scene: GameScene) => void;
   onHotspot: (id: string, label: string, at: Point) => void;
   onHero: (id: string, at: Point) => void;
   onHover: (label: string | null, at: Point | null) => void;
   paused?: boolean;
+  /** Pinta el gremio por salas en lugar de la taberna dibujada. */
+  rooms?: boolean;
 }
 
 /** La taberna viva a pantalla completa. */
-export function SceneView({ model, onReady, onHotspot, onHero, onHover, paused }: Props) {
+export function SceneView({ model, onReady, onHotspot, onHero, onHover, paused, rooms }: Props) {
   const wrap = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const scene = useRef<WorldScene | null>(null);
+  const scene = useRef<GameScene | null>(null);
   const handlers = useRef({ onHotspot, onHero, onHover });
   handlers.current = { onHotspot, onHero, onHover };
 
   useEffect(() => {
-    const s = new WorldScene(canvas.current!, {
+    const s = new (rooms ? RoomScene : WorldScene)(canvas.current!, {
       onHotspot: (id, label, at) => handlers.current.onHotspot(id, label, at),
       onHero: (id, at) => handlers.current.onHero(id, at),
       onHover: (label, at) => handlers.current.onHover(label, at),
@@ -29,7 +35,7 @@ export function SceneView({ model, onReady, onHotspot, onHero, onHover, paused }
     });
     scene.current = s;
     // Gancho de depuración para pruebas automáticas (solo con #debug en la URL).
-    if (location.hash === '#debug') (window as unknown as { __scene: WorldScene }).__scene = s;
+    if (location.hash === '#debug') (window as unknown as { __scene: GameScene }).__scene = s;
     s.setModel(model);
     const el = wrap.current!;
     const fit = () => s.resize(el.clientWidth, el.clientHeight);
