@@ -2,6 +2,7 @@
  * Todas las constantes de equilibrio en un solo sitio, para ajustarlas con el simulador
  * (`npm run sim`) sin tocar la lógica.
  */
+import type { RoomType } from '../data/rooms';
 import type { Facilities, Outcome } from './model';
 import type { SkillId } from './party';
 
@@ -63,6 +64,55 @@ export const TRAINING_XP = [0, 6, 12] as const;
 /** Empalizada: lo que suma a la defensa, por nivel. */
 export const PALISADE = [0, 5, 10] as const;
 export const facilityMax = (k: keyof Facilities) => UPGRADE_COST[k].length - 1;
+
+/**
+ * Salas: coste de cada nivel (índice = nivel nuevo; el 1 es construirla o arreglarla). Las
+ * que sustituyen a una instalación de antes cuestan lo mismo que ella.
+ */
+export const ROOM_COST: Record<RoomType, readonly number[]> = {
+  recibidor: [0, 100, 150, 320],
+  salon: UPGRADE_COST.tab,
+  cocina: [0, 100, 220, 400],
+  bodega: [0, 100, 220, 400],
+  tesoro: [0, 120, 260, 480],
+  dormitorio: UPGRADE_COST.dorm,
+  enfermeria: UPGRADE_COST.enf,
+  capilla: UPGRADE_COST.cap,
+  mapas: UPGRADE_COST.mapas,
+  armeria: UPGRADE_COST.arm,
+  forja: UPGRADE_COST.forja,
+  veteranos: UPGRADE_COST.vet,
+  torre: UPGRADE_COST.torre,
+  servicio: [0, 80, 170, 380],
+  despensa: [0, 80, 180, 360],
+  armas: [0, 150, 320, 520],
+  tiro: [0, 150, 320, 520],
+  biblioteca: [0, 150, 320, 520],
+};
+export const roomMax = (t: RoomType) => ROOM_COST[t].length - 1;
+/** Mejorar una sala más ancha que la de serie cuesta este recargo por hueco de más. */
+export const ROOM_SIZE_COST = 0.5;
+/** Ampliar: cada hueco nuevo cuesta esta parte de lo que costó subir un hueco a su nivel. */
+export const EXTEND_RATE = 0.6;
+/** Mover una sala: por hueco. */
+export const MOVE_COST = 15;
+/** Al destruir una sala se devuelve esta parte de lo gastado en ella. */
+export const DEMOLISH_REFUND = 0.5;
+/** Excavar un hueco, según la profundidad (índice = plantas bajo tierra). */
+export const DIG_COST = [0, 60, 90, 130, 180, 240, 310] as const;
+/** Ancho del edificio en huecos: al empezar y como mucho, comprando solares a la derecha. */
+export const START_COLS = 4;
+export const MAX_COLS = 7;
+/** Precio de cada solar nuevo (índice = solares ya comprados). */
+export const PLOT_COST = [150, 250, 400] as const;
+/** Plantas como máximo sobre el suelo y bajo tierra. */
+export const MAX_UP = 4;
+export const MAX_DOWN = DIG_COST.length - 1;
+/** Escaleras como máximo y precio de la segunda. */
+export const MAX_STAIRS = 2;
+export const STAIR_COST = 200;
+/** Noches que tarda cada obra (mejorar es inmediato, como antes). */
+export const WORK_NIGHTS = { build: 1, extend: 1, move: 1 } as const;
 
 /** Camas: las de los dormitorios y, con el ala de veteranos, dos más por nivel. */
 export const capacity = (dorm: number, vet = 0) => 2 + 2 * dorm + 2 * vet;
