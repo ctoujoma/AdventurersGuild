@@ -4,9 +4,10 @@
  */
 import type { BossKind } from '../data/bosses';
 import type { CrestColor, CrestSymbol, DecorId, Dish, StaffId } from '../data/custom';
+import type { RoomType } from '../data/rooms';
 import type { Attrs, Challenge, ClassId, SkillId, Trait } from './party';
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 export type Sex = 'm' | 'f';
 
@@ -188,6 +189,44 @@ export interface Facilities {
   vet: number;
 }
 
+/** Obra en curso: la sala nueva o movida no funciona hasta que acaba; la ampliada, sí. */
+export interface Works {
+  kind: 'build' | 'extend' | 'move';
+  nights: number;
+  /** Al ampliar: el tamaño de antes, que es el que cuenta hasta que acaba la obra. */
+  from?: { col: number; w: number; h: number };
+}
+
+/** Una sala del corte del edificio. Ocupa `w` huecos de ancho y `h` plantas de alto. */
+export interface Room {
+  id: string;
+  type: RoomType;
+  /** Hueco de la izquierda (0 = junto al patio). */
+  col: number;
+  /** Planta de abajo (0 = planta baja; las negativas, bajo tierra). */
+  floor: number;
+  w: number;
+  h: number;
+  /** 0 = rota o sin levantar. */
+  level: number;
+  /** Monedas gastadas en ella: al destruirla se devuelve una parte. */
+  spent: number;
+  works?: Works;
+}
+
+/** El edificio: salas, escaleras, lo excavado y lo que hay en el patio. */
+export interface Building {
+  /** Ancho en huecos, sin contar las escaleras. */
+  cols: number;
+  /** Escaleras: cada una va justo a la izquierda del hueco con ese índice. */
+  stairs: number[];
+  /** Huecos excavados bajo tierra, como «hueco,planta». */
+  dug: string[];
+  rooms: Room[];
+  /** Establo, muñecos de entrenamiento y empalizada, por nivel. */
+  yard: Record<'establo' | 'patio' | 'empal', number>;
+}
+
 /** Lo que pasó al terminar un día: se enseña en la transición del amanecer. */
 export interface DawnEvent {
   t: string;
@@ -305,6 +344,9 @@ export interface GameState {
   rep: number;
   /** Deuda ya pagada al prestamista. */
   paid: number;
+  /** Las salas y el patio. */
+  building: Building;
+  /** Nivel de cada instalación de antes, sacado del edificio (ver core/rooms.ts). */
   fac: Facilities;
   heroes: Hero[];
   candidates: Hero[];

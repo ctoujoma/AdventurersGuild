@@ -3,14 +3,16 @@ import { BOARD_SIZE, capacity, facilityMax, restCap } from './balance';
 import { canHire, canUpgrade, endDay, newGame, reduce, roster } from './game';
 import { skill } from './party';
 import { questEstimate } from './resolve';
+import { beds } from './rooms';
 
 describe('instalaciones nuevas', () => {
-  it('el ala de veteranos suma camas: hasta 12 héroes', () => {
+  it('los cuartos de veteranos suman camas: hasta 12 héroes', () => {
     expect(capacity(3)).toBe(8);
     expect(capacity(3, 2)).toBe(12);
     const s = newGame('camas');
     s.gold = 9999;
-    s.fac.dorm = 3;
+    s.building.rooms.find((r) => r.type === 'dormitorio')!.level = 3;
+    expect(beds(s.building)).toBe(capacity(3));
     const full = () => {
       const c = s.candidates[0]!;
       while (s.heroes.length < 8) s.heroes.push({ ...c, id: `h${s.heroes.length}x` });
@@ -18,7 +20,17 @@ describe('instalaciones nuevas', () => {
     full();
     expect(roster(s).length).toBe(8);
     expect(canHire(s, s.candidates[0]!.id)).toMatch(/sitio/);
-    s.fac.vet = 1;
+    s.building.rooms.push({
+      id: 'v',
+      type: 'veteranos',
+      col: 1,
+      floor: 2,
+      w: 1,
+      h: 1,
+      level: 2,
+      spent: 0,
+    });
+    expect(beds(s.building)).toBe(capacity(3, 2));
     expect(canHire(s, s.candidates[0]!.id)).toBeNull();
   });
 

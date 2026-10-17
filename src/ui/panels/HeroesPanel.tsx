@@ -1,7 +1,7 @@
-import { capacity } from '../../core/balance';
 import { canHire, roster, salaries } from '../../core/game';
 import type { GameState, Hero } from '../../core/model';
 import { moraleBand } from '../../core/party';
+import { beds } from '../../core/rooms';
 import { CLASS_NAMES, MORALE_INFO, statusLabel } from '../../data/labels';
 import { Icon } from '../icons';
 import { Portrait } from '../Portrait';
@@ -20,7 +20,7 @@ interface Props {
 export function HeroesPanel({ game, filter, setFilter, onOpen, onHire }: Props) {
   const mine = game.heroes.filter((h) => h.status !== 'muerto');
   const cands = game.candidates;
-  const cap = capacity(game.fac.dorm, game.fac.vet ?? 0);
+  const cap = beds(game.building);
 
   const row = (h: Hero, candidate: boolean) => {
     const why = candidate ? canHire(game, h.id) : null;

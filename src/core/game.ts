@@ -26,10 +26,7 @@ import {
   UNPAID_MORALE,
   SCHEDULE,
   START,
-  UPGRADE_COST,
-  capacity,
   chapelRest,
-  facilityMax,
   healRate,
   rankIndex,
   restCap,
@@ -54,6 +51,7 @@ import {
   type DecorId,
   type StaffId,
 } from '../data/custom';
+import type { RoomType } from '../data/rooms';
 import { arrival, checkFeats, checkMonth, emptyStats, startMonth } from './feats';
 import { stepRaids } from './raids';
 import { advanceChain, bossOf, fightRoster, offerChain } from './chains';
@@ -71,6 +69,25 @@ import {
 } from './model';
 import { MORALE_LOW, MORALE_QUIT } from './party';
 import { levelUp, resolveMission } from './resolve';
+import {
+  applyPlan,
+  beds,
+  facOf,
+  facilityCost,
+  planBuild,
+  planDemolish,
+  planDig,
+  planExtend,
+  planFacility,
+  planMove,
+  planPlot,
+  planStair,
+  planUpgrade,
+  stepWorks,
+  uncleBuilding,
+  type ExtendDir,
+  type Plan,
+} from './rooms';
 import { Rng } from './rng';
 import { listNames, plural } from './text';
 
@@ -79,6 +96,14 @@ export type Action =
   | { type: 'fire'; id: string }
   | { type: 'send'; questId: string; heroIds: string[] }
   | { type: 'upgrade'; fac: keyof Facilities }
+  | { type: 'upgradeRoom'; id: string }
+  | { type: 'build'; room: RoomType; col: number; floor: number }
+  | { type: 'extend'; id: string; dir: ExtendDir }
+  | { type: 'move'; id: string; col: number; floor: number }
+  | { type: 'demolish'; id: string }
+  | { type: 'dig'; col: number; floor: number }
+  | { type: 'buyPlot' }
+  | { type: 'addStair'; at: number }
   | { type: 'sell'; itemId: string }
   | { type: 'read'; reportId: string }
   | { type: 'answer'; id: string; yes: boolean }
@@ -129,14 +154,13 @@ export const nextPayment = (s: GameState) =>
 /** Lo que pide un héroe con petición pendiente. */
 export const requestAmount = (h: Hero) =>
   h.request === 'cache' ? (CACHE[h.lvl] ?? CACHE[5]!) : RAISE_AMOUNT;
-export const upgradeCost = (s: GameState, k: keyof Facilities) =>
-  s.fac[k] >= facilityMax(k) ? null : UPGRADE_COST[k][s.fac[k] + 1]!;
+export const upgradeCost = (s: GameState, k: keyof Facilities) => facilityCost(s, k);
 
 export function canHire(s: GameState, id: string): string | null {
   const c = s.candidates.find((x) => x.id === id);
   if (!c) return 'Ese candidato ya no está.';
-  if (roster(s).length >= capacity(s.fac.dorm, s.fac.vet ?? 0))
-    return 'No queda sitio: mejora los dormitorios o abre el ala de veteranos en Gremio.';
+  if (roster(s).length >= beds(s.building))
+    return 'No queda sitio: mejora o amplía los dormitorios, o abre los cuartos de veteranos.';
   if (s.gold < c.fee) return `Te faltan ${c.fee - s.gold} monedas para la prima de fichaje.`;
   return null;
 }
@@ -170,10 +194,40 @@ export function canEquip(s: GameState, heroId: string, itemId: string): string |
 }
 
 export function canUpgrade(s: GameState, k: keyof Facilities): string | null {
-  const cost = upgradeCost(s, k);
-  if (cost === null) return 'Ya está al máximo.';
-  if (s.gold < cost) return `Te faltan ${cost - s.gold} monedas.`;
-  return null;
+  const plan = planFacility(s, k);
+  return 'error' in plan ? plan.error : null;
+}
+
+/** Obra pedida por el jugador: el plan dice si se puede y cómo queda el edificio. */
+function planOf(s: GameState, a: Action): Plan | null {
+  switch (a.type) {
+    case 'upgrade':
+      return planFacility(s, a.fac);
+    case 'upgradeRoom':
+      return planUpgrade(s, a.id);
+    case 'build':
+      return planBuild(s, a.room, a.col, a.floor);
+    case 'extend':
+      return planExtend(s, a.id, a.dir);
+    case 'move':
+      return planMove(s, a.id, a.col, a.floor);
+    case 'demolish':
+      return planDemolish(s, a.id);
+    case 'dig':
+      return planDig(s, a.col, a.floor);
+    case 'buyPlot':
+      return planPlot(s);
+    case 'addStair':
+      return planStair(s, a.at);
+    default:
+      return null;
+  }
+}
+
+/** Por qué no se puede hacer una obra (o null si se puede). */
+export function canWork(s: GameState, a: Action): string | null {
+  const plan = planOf(s, a);
+  return plan && 'error' in plan ? plan.error : null;
 }
 
 // ---------- Partida nueva ----------
@@ -189,7 +243,8 @@ export function newGame(seed: string): GameState {
     gold: START.gold,
     rep: 0,
     paid: 0,
-    fac: { ...START.fac },
+    building: uncleBuilding(),
+    fac: facOf(uncleBuilding()),
     heroes: [],
     candidates: [],
     quests: [],
@@ -255,6 +310,13 @@ function quest(s: GameState, rng: Rng): Quest {
 
 export function reduce(state: GameState, action: Action): GameState {
   if (state.over && action.type !== 'read' && action.type !== 'tip') return state;
+  const plan = planOf(state, action);
+  if (plan) {
+    if ('error' in plan) return state;
+    const s = structuredClone(state);
+    applyPlan(s, plan);
+    return s;
+  }
   switch (action.type) {
     case 'hire': {
       if (canHire(state, action.id)) return state;
@@ -320,13 +382,6 @@ export function reduce(state: GameState, action: Action): GameState {
       });
       s.quests = s.quests.filter((x) => x.id !== q.id);
       if (!(s.explored ??= []).includes(q.place)) s.explored.push(q.place);
-      return s;
-    }
-    case 'upgrade': {
-      if (canUpgrade(state, action.fac)) return state;
-      const s = structuredClone(state);
-      s.gold -= upgradeCost(s, action.fac)!;
-      s.fac[action.fac]++;
       return s;
     }
     case 'sell': {
@@ -432,6 +487,8 @@ export function reduce(state: GameState, action: Action): GameState {
     }
     case 'endDay':
       return endDay(state);
+    default:
+      return state;
   }
 }
 
@@ -463,6 +520,7 @@ export function endDay(state: GameState): GameState {
   const rng = new Rng(s.rng);
   const events: DawnEvent[] = [];
   s.day++;
+  stepWorks(s, events);
 
   // La amenaza regional puede llevarse los ingresos del día (caravana asaltada).
   const c0 = customOf(s);

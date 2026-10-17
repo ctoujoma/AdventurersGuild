@@ -5,11 +5,12 @@
 import { CHAINS } from '../data/chains';
 import type { BossKind } from '../data/bosses';
 import { BANDS } from '../data/raids';
-import { UPGRADE_COST, rankIndex } from './balance';
+import { rankIndex } from './balance';
 import { activeChain, advanceChain, chainDef, fightRoster, offerChain } from './chains';
 import { endDay } from './game';
-import type { BossFight, Facilities, GameState, Report } from './model';
+import type { BossFight, GameState, Report } from './model';
 import { Rng } from './rng';
+import { maxOut, syncFac } from './rooms';
 
 export type Cheat = 'oro' | 'fama' | 'curar' | 'obras' | 'asalto' | 'historia' | 'dias';
 
@@ -37,9 +38,9 @@ export function cheat(state: GameState, kind: Cheat): { state: GameState; note: 
       for (const h of s.heroes) if (h.status !== 'muerto') h.morale = 100;
       return { state: s, note: 'Todos curados y con la moral al máximo.' };
     case 'obras':
-      for (const k of Object.keys(UPGRADE_COST) as (keyof Facilities)[])
-        s.fac[k] = UPGRADE_COST[k].length - 1;
-      return { state: s, note: 'Todas las mejoras al máximo.' };
+      maxOut(s.building);
+      syncFac(s);
+      return { state: s, note: 'Todas las salas y mejoras al máximo.' };
     case 'asalto':
       s.raid = {
         day: s.day + 1,
