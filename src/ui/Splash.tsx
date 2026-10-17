@@ -10,11 +10,10 @@ const ANIM = 3000;
 /** Salida: fundido rápido mientras la imagen se estira hacia la pantalla. */
 const OUT = 420;
 /**
- * El WebP es de una sola vuelta y se queda quieto en el último fotograma, así que se espera
- * un poco después del final para que se vea entero (la carga y el primer pintado se comen
- * unas décimas) antes de estirar y fundir.
+ * El WebP es de una sola vuelta y se queda quieto en el último fotograma. La salida empieza
+ * un poco antes del final de la animación: así no se queda parado esperando el zoom.
  */
-const HOLD = ANIM + 350;
+const HOLD = ANIM - 1300;
 /** Si la imagen tarda demasiado en cargar, se pasa al título igualmente. */
 const LOAD_TIMEOUT = 6000;
 

@@ -159,6 +159,9 @@ interface Fighter {
   hp: number;
   /** Esbirro ahogado: se pinta verdoso y sin antorcha. */
   ghost?: boolean;
+  /** Cuándo cayó (para la animación de muerte del jefe) y si ya ha tocado el suelo. */
+  downAt?: number;
+  landed?: boolean;
 }
 
 type ShotKind = 'arrow' | 'firearrow' | 'fire' | 'ice' | 'dagger' | 'bottle';
@@ -195,6 +198,10 @@ interface Fx {
 
 export const BATTLE_TIME = 13;
 const DOOR = 98;
+/** Muerte de los jefes: cuánto tarda en tocar el suelo, y cuánto se tambalea antes. */
+const TIP_SWAY = 0.5;
+const deathTime = (f: { art?: { fall?: 'sink' } }) => (f.art?.fall === 'sink' ? 2 : 0.55);
+
 /** Pelea contra un jefe: llegada, golpes, desenlace y final. */
 const ARENA_TIMES = { fight: 3.4, outcome: 15.5, end: 20 };
 /** Altura del pecho sobre los pies, donde se apuntan los golpes. */
@@ -1328,6 +1335,26 @@ export class Battle {
   /** Momentos fijos de la pelea contra el jefe: el rugido al llegar y los que caen. */
   private arenaBeats(t0: number): void {
     const boss = this.fighters.find((f) => f.art)!;
+    // Muerte del jefe: mientras se hunde, el agua borbotea; al final, el golpe (o el
+    // último remolino) y el polvo.
+    const dead = boss.state === 'down' ? this.t - (boss.downAt ?? 0) : -1;
+    const sinks = boss.art!.fall === 'sink';
+    if (sinks && dead > TIP_SWAY && !boss.landed && Math.random() < 0.5)
+      this.hooks.burst('splash', boss.x + (Math.random() - 0.5) * 24, this.feet(boss) - 1, 1);
+    if (dead >= deathTime(boss) && !boss.landed) {
+      boss.landed = true;
+      const y = this.feet(boss) - 1;
+      if (sinks) {
+        this.fx('ring', boss.x, y, 0.9, P.sky, 30);
+        this.hooks.burst('splash', boss.x, y - 1, 12);
+        this.sound('zap', 0.6);
+      } else {
+        this.hooks.burst('puff', boss.x, y - 1, 16);
+        this.fx('ring', boss.x, y, 0.6, P.sand, 34);
+        this.sound('boom', 0.7);
+      }
+      this.sound('thud');
+    }
     if (!this.roared && this.t >= 1.6) {
       this.roared = true;
       const m = boss.art!.mouth.up;
@@ -1398,6 +1425,7 @@ export class Battle {
       hooks.burst('spark', f.x, this.chest(f), 8);
       this.fx('slash', f.x, this.chest(f), 0.22, P.white, 0);
       f.state = 'down';
+      f.downAt = this.t;
     };
     if (spec.arena) {
       const boss = bandits.find((f) => f.art)!;
@@ -1405,10 +1433,19 @@ export class Battle {
       if (spec.won) {
         boss.hp = 0;
         knockout(boss, standing[0]);
-        this.fx('boom', boss.x, this.chest(boss), 0.6, P.white, 26);
-        hooks.burst('puff', boss.x, this.feet(boss) - 2, 16);
-        this.sound('boom');
-        this.sound('thud');
+        // Último grito; el golpe contra el suelo llega al caer (ver `arenaBeats`).
+        const m = boss.art!.mouth.up;
+        this.fx(
+          'shout',
+          boss.x + boss.face * m.x,
+          this.feet(boss) + m.y,
+          0.7,
+          P.sand,
+          22,
+          undefined,
+          boss.face,
+        );
+        this.sound('roar');
         bandits.forEach((b, i) => {
           if (b === boss) return;
           if (i % 2) knockout(b, b.foe);
@@ -1473,7 +1510,8 @@ export class Battle {
       const feet = this.hooks.feetAt(f.x);
       ctx.fillStyle = 'rgba(24, 20, 37, 0.45)';
       const half = f.art ? f.art.reach : 5;
-      ctx.fillRect(Math.round(f.x + f.knock - half) - cx, feet - 1 - cy, half * 2, 1);
+      const sunk = f.art?.fall === 'sink' && f.state === 'down';
+      if (!sunk) ctx.fillRect(Math.round(f.x + f.knock - half) - cx, feet - 1 - cy, half * 2, 1);
       if (f.art) this.drawBoss(ctx, f, feet, cx, cy);
       else if (f.state === 'walk' || f.state === 'flee' || f.state === 'loot')
         this.drawWalker(ctx, f, feet, cx, cy);
@@ -1657,7 +1695,18 @@ export class Battle {
     cy: number,
   ): void {
     const art = f.art!;
-    const fr = f.state === 'down' ? null : this.frameOf(f);
+    if (f.state === 'down' && art.fall === 'sink') {
+      this.drawSinking(ctx, f, feet, cx, cy);
+      return;
+    }
+    // Al morir se encabrita un momento, temblando, antes de caer de golpe.
+    const dying = f.state === 'down' && this.t - (f.downAt ?? -9) < deathTime(f);
+    const fr: Frame | null =
+      f.state !== 'down'
+        ? this.frameOf(f)
+        : dying
+          ? { pose: 'up', angle: 0, dx: Math.sin(this.t * 40) * 1.5 }
+          : null;
     const pose: BossPose = fr ? fr.pose : 'down';
     const img = art.poses[pose];
     const face = fr?.turn ? -f.face : f.face;
@@ -1678,6 +1727,50 @@ export class Battle {
       ctx.globalAlpha = 1;
     }
     ctx.restore();
+  }
+
+  /**
+   * Muerte del Rey Ahogado: se tambalea y la laguna se lo traga, inclinándose hacia atrás,
+   * cada vez más deprisa, hasta que no queda más que el remolino.
+   */
+  private drawSinking(
+    ctx: CanvasRenderingContext2D,
+    f: Fighter,
+    feet: number,
+    cx: number,
+    cy: number,
+  ): void {
+    const art = f.art!;
+    const e = this.t - (f.downAt ?? this.t);
+    const k = clamp01((e - TIP_SWAY) / (deathTime(f) - TIP_SWAY));
+    if (k >= 1) return;
+    const sway = e < TIP_SWAY ? Math.sin(e * 28) * 1.5 * (1 - e / TIP_SWAY) : Math.sin(e * 9);
+    const depth = Math.pow(k, 1.6) * (art.foot.y + 4);
+    const img = art.poses.up;
+    const gx = Math.round(f.x + f.knock + sway * f.face) - cx;
+    const gy = Math.round(feet) - cy;
+    ctx.save();
+    // Solo se ve lo que queda por encima del agua.
+    ctx.beginPath();
+    ctx.rect(gx - 80, gy - 120, 160, 120);
+    ctx.clip();
+    ctx.translate(gx, gy + Math.round(depth));
+    if (f.face < 0) ctx.scale(-1, 1);
+    ctx.rotate(-0.25 * k);
+    ctx.drawImage(bufferCanvas(img), -art.foot.x, -art.foot.y);
+    if (f.flash > 0) {
+      ctx.globalAlpha = 0.55;
+      ctx.drawImage(tintOf(img, f.tint), -art.foot.x, -art.foot.y);
+      ctx.globalAlpha = 1;
+    }
+    ctx.restore();
+    // Agua revuelta a su alrededor.
+    ctx.fillStyle = P.sky;
+    const w = 18 + Math.round(8 * Math.sin(e * 6));
+    ctx.fillRect(gx - w, gy - 1, w * 2, 1);
+    ctx.fillStyle = P.mist;
+    for (let i = -w; i < w; i += 5)
+      ctx.fillRect(gx + i + Math.round(Math.sin(e * 10 + i) * 2), gy - 2, 2, 1);
   }
 
   private weapon(
