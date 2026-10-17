@@ -1,7 +1,7 @@
 import { bufferCanvas, drawBuffer } from '../art/canvas';
 import { FEET_Y, heroSprites, type HeroSprites } from '../art/heroes/hero';
 import { generateLook, type HeroLook, type HeroMarks } from '../art/heroes/look';
-import type { TrophyIcon } from '../core/model';
+import type { Building, TrophyIcon } from '../core/model';
 import type { GearView } from './annex';
 import { P } from '../art/palette';
 import { PixelBuffer, alpha } from '../art/pixel';
@@ -52,6 +52,8 @@ export interface SceneHero {
 
 export interface SceneModel {
   fac: Facilities;
+  /** El edificio por salas (lo pinta la escena de salas; la taberna dibujada no lo usa). */
+  building?: Building;
   quests: number;
   loot: number;
   /** Caídos: una vela por cada uno en la capilla. */
