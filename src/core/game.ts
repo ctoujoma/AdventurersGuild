@@ -104,6 +104,8 @@ export type Action =
   | { type: 'dig'; col: number; floor: number }
   | { type: 'buyPlot' }
   | { type: 'addStair'; at: number }
+  /** Varias obras seguidas (las del modo plano): se hacen todas o ninguna. */
+  | { type: 'works'; steps: Action[] }
   | { type: 'sell'; itemId: string }
   | { type: 'read'; reportId: string }
   | { type: 'answer'; id: string; yes: boolean }
@@ -230,6 +232,27 @@ export function canWork(s: GameState, a: Action): string | null {
   return plan && 'error' in plan ? plan.error : null;
 }
 
+/** Hace una obra sobre una copia del estado, o dice por qué no se puede. */
+export function tryWork(s: GameState, a: Action): GameState | { error: string } {
+  const plan = planOf(s, a);
+  if (!plan) return { error: 'Eso no es una obra.' };
+  if ('error' in plan) return plan;
+  const next = structuredClone(s);
+  applyPlan(next, plan);
+  return next;
+}
+
+/** Las obras de una lista, una tras otra; la primera que falla lo para todo. */
+export function tryWorks(s: GameState, steps: readonly Action[]): GameState | { error: string } {
+  let cur = s;
+  for (const a of steps) {
+    const next = tryWork(cur, a);
+    if ('error' in next) return next;
+    cur = next;
+  }
+  return cur;
+}
+
 // ---------- Partida nueva ----------
 
 export function newGame(seed: string): GameState {
@@ -318,6 +341,10 @@ export function reduce(state: GameState, action: Action): GameState {
     return s;
   }
   switch (action.type) {
+    case 'works': {
+      const next = tryWorks(state, action.steps);
+      return 'error' in next ? state : next;
+    }
     case 'hire': {
       if (canHire(state, action.id)) return state;
       const s = structuredClone(state);

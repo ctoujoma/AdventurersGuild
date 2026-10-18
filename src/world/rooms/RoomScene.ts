@@ -104,7 +104,7 @@ const noise = (a: number, b: number) => {
 /** Punto del espacio 3D a partir de una x y una y del mundo 2D (y hacia abajo) y una profundidad. */
 const at = (x: number, y: number, depth: number) => new Vector3(x, GROUND - y, -depth);
 
-interface Spot {
+export interface Spot {
   id: string;
   label: string;
   rect: Rect;
@@ -162,6 +162,10 @@ export class RoomScene {
   private particles = new Particles();
   private spots: Spot[] = [];
   private hover: Spot | null = null;
+  /** Sitios para una obra: mientras los hay, solo se tocan ellos. */
+  private targets: Spot[] | null = null;
+  private chosen: string | null = null;
+  private targetsKey = '';
   private model: SceneModel | null = null;
   private key = '';
   private t = 0;
@@ -205,6 +209,31 @@ export class RoomScene {
   }
 
   // ---------- API (la misma que la taberna dibujada) ----------
+
+  /** Marca los sitios donde se puede hacer una obra (y el elegido), o los quita con null. */
+  setTargets(list: Spot[] | null, chosen: string | null = null): void {
+    // Elegir uno no mueve la cámara: solo una lista nueva de sitios.
+    const key = list?.map((t) => `${t.id}:${t.rect.x},${t.rect.y}`).join(' ') ?? '';
+    const fresh = key !== this.targetsKey;
+    this.targetsKey = key;
+    this.targets = list;
+    this.chosen = chosen;
+    this.hover = null;
+    this.topLive = true;
+    // Si no se ven todos, la cámara se aleja lo justo (sin pasarse) y los centra.
+    if (!fresh || !list?.length || !this.cssW) return;
+    const x0 = Math.min(...list.map((t) => t.rect.x)) - 16;
+    const y0 = Math.min(...list.map((t) => t.rect.y)) - 16;
+    const x1 = Math.max(...list.map((t) => t.rect.x + t.rect.w)) + 16;
+    const y1 = Math.max(...list.map((t) => t.rect.y + t.rect.h)) + 16;
+    const { px, py, vw, vh } = this.camera;
+    if (x0 >= px && x1 <= px + vw && y0 >= py && y1 <= py + vh - 40) return;
+    // Abajo queda sitio para la barra de la obra.
+    const fit = Math.floor(Math.min(this.cssW / (x1 - x0), (this.cssH - 120) / (y1 - y0)));
+    const z = Math.max(this.minZoom(this.cssW, this.cssH), Math.min(this.camera.zoom, fit));
+    if (z !== this.camera.zoom) this.resize(this.cssW, this.cssH, z);
+    this.camera.centerOn((x0 + x1) / 2, (y0 + y1) / 2 + 20 / z);
+  }
 
   setModel(model: SceneModel): void {
     const prev = this.model?.building;
@@ -893,10 +922,11 @@ export class RoomScene {
     }
 
     // Partículas y la marca de la sala señalada, en una lámina por delante.
-    const live = this.particles.list.length > 0 || !!this.hover;
+    const live = this.particles.list.length > 0 || !!this.hover || !!this.targets?.length;
     if (live || this.topLive) {
       const ctx = this.topCtx;
       ctx.clearRect(0, 0, view.vw, view.vh);
+      if (this.targets) this.marks(this.targets);
       this.particles.draw(ctx, view.px, view.py, t);
       if (this.hover) this.brackets(this.hover.rect);
       this.topTex.needsUpdate = true;
@@ -909,6 +939,33 @@ export class RoomScene {
     r.clearDepth();
     r.render(this.scene, this.cam3);
     if (live) r.render(this.topScene, this.flat);
+  }
+
+  /** Los sitios de una obra: un recuadro de puntos que late; el elegido, lleno y con marca. */
+  private marks(list: Spot[]): void {
+    const { topCtx: ctx, camera } = this;
+    const beat = Math.floor(this.t * 2) % 2;
+    for (const s of list) {
+      const x = Math.round(s.rect.x - camera.px) + 2;
+      const y = Math.round(s.rect.y - camera.py) + 2;
+      const w = Math.round(s.rect.w) - 4;
+      const h = Math.round(s.rect.h) - 4;
+      const on = s.id === this.chosen;
+      ctx.globalAlpha = on ? 0.45 : 0.18;
+      ctx.fillStyle = on ? P.gold : P.lime;
+      ctx.fillRect(x, y, w, h);
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = on ? P.lemon : P.lime;
+      for (let i = beat; i < w; i += 4) {
+        ctx.fillRect(x + i, y, 2, 1);
+        ctx.fillRect(x + i, y + h - 1, 2, 1);
+      }
+      for (let i = beat; i < h; i += 4) {
+        ctx.fillRect(x, y + i, 1, 2);
+        ctx.fillRect(x + w - 1, y + i, 1, 2);
+      }
+      if (on) this.brackets(s.rect);
+    }
   }
 
   private brackets(rc: Rect): void {
@@ -934,7 +991,7 @@ export class RoomScene {
 
   private hit(wx: number, wy: number): Spot | null {
     return (
-      this.spots.find(
+      (this.targets ?? this.spots).find(
         (s) =>
           wx >= s.rect.x && wx < s.rect.x + s.rect.w && wy >= s.rect.y && wy < s.rect.y + s.rect.h,
       ) ?? null

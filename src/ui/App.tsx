@@ -41,6 +41,11 @@ import { ArconPanel, type ArconTab } from './panels/ArconPanel';
 import { QuestSheet } from './QuestSheet';
 import { SceneView, type GameScene } from './SceneView';
 import { RoomPanel, type RoomLink } from './panels/RoomPanel';
+import { ObrasPanel } from './panels/ObrasPanel';
+import { WorksBar } from './WorksBar';
+import { useWorks } from './works';
+import { RoomScene } from '../world/rooms/RoomScene';
+import type { Pick } from '../world/rooms/works';
 import { ROOMS } from '../data/rooms';
 import { TabBar, type TabId } from './TabBar';
 import { listNames, plural } from './text';
@@ -143,8 +148,6 @@ export function App() {
   const gameRef = useRef(game);
   gameRef.current = game;
 
-  const model = useMemo(() => sceneModel(sceneGame), [sceneGame]);
-
   useEffect(() => {
     if (!dawnOpen && !passing) setSceneGame(game);
   }, [game, dawnOpen, passing]);
@@ -205,6 +208,27 @@ export function App() {
   const say = (text: string, at: Point) =>
     setBubble({ text, x: at.x, y: at.y, wx: at.wx, wy: at.wy, key: Date.now() });
 
+  // Obras en la vista de salas: elegir sitio en la escena y el modo plano (que se ve en la escena).
+  const works = useWorks({ game, dispatch, toast, focus: (id) => scene.current?.focus(id) });
+  const draft = works.planning ? works.view : null;
+  const model = useMemo(() => sceneModel(draft ?? sceneGame), [sceneGame, draft]);
+  useEffect(() => {
+    const s = scene.current;
+    if (!(s instanceof RoomScene)) return;
+    s.setTargets(
+      works.pick
+        ? works.targets.map((t) => ({ id: t.id, rect: t.rect, label: `${t.label} · ${t.cost}` }))
+        : null,
+      works.chosen?.id ?? null,
+    );
+  }, [works.pick, works.targets, works.chosen?.id]);
+  /** Las obras de verdad solo se eligen en la escena por salas (si el navegador la pinta). */
+  const roomsLive = settings.rooms && scene.current instanceof RoomScene;
+  const pickSpot = (p: Pick) => {
+    openPanel(null);
+    works.startPick(p);
+  };
+
   const openPanel = (p: PanelId | null) => {
     if (p === panel) return;
     audio.play(p ? 'open' : 'close');
@@ -217,6 +241,10 @@ export function App() {
 
   const onHotspot = (id: string, _label: string, at: Point) => {
     setHint(false);
+    if (id.startsWith('obra:')) {
+      works.choose(id);
+      return;
+    }
     if (id.startsWith('sala:')) {
       setRoomId(id.slice(5));
       openPanel('sala');
@@ -368,7 +396,14 @@ export function App() {
   // Escape y el botón «atrás» del móvil cierran lo que esté encima (ajustes, partidas,
   // informe, encargo, ficha, panel).
   const overlayOpen =
-    !!watching || settingsOpen || saveMenu || !!reportId || !!questId || !!card || !!panel;
+    !!watching ||
+    settingsOpen ||
+    saveMenu ||
+    !!reportId ||
+    !!questId ||
+    !!card ||
+    !!panel ||
+    !!works.pick;
   const closeWatch = () => {
     if (watching?.dawn) setDawnOpen(true);
     setWatching(null);
@@ -381,6 +416,7 @@ export function App() {
     else if (questId) setQuestId(null);
     else if (card) setCard(null);
     else if (panel) openPanel(null);
+    else if (works.pick) works.cancelPick();
   };
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -499,10 +535,18 @@ export function App() {
   const callReport = bossCall ? game.reports.find((r) => r.id === bossCall) : undefined;
   const unread = game.reports.filter((r) => !r.read).length;
   const away = game.missions.length + game.heroes.filter((h) => h.status === 'desaparecido').length;
-  const calm = screen === 'game' && !dawnOpen && !passing && !(game.opening && !game.opening.seen);
+  const calm =
+    screen === 'game' &&
+    !dawnOpen &&
+    !passing &&
+    !(game.opening && !game.opening.seen) &&
+    !works.pick &&
+    !works.planning;
   const pendingEvent = calm && !game.over ? (game.event ?? null) : null;
   const tip =
-    calm && !pendingEvent && !card && !questId && !reportId && !panel ? nextTip(game) : null;
+    calm && !pendingEvent && !card && !questId && !reportId && !panel
+      ? nextTip(game, roomsLive)
+      : null;
   // La nota del tío mira hacia lo que explica.
   useEffect(() => {
     if (tip?.focus) scene.current?.focus(tip.focus);
@@ -562,7 +606,10 @@ export function App() {
             <Icon name="home" size={16} />
           </button>
         </div>
-        {!panel && !game.over && (
+        {!panel && (works.pick || works.planning) && (
+          <WorksBar works={works} onMore={() => openPanel('gremio')} />
+        )}
+        {!panel && !game.over && !works.pick && !works.planning && (
           <DayBar
             unread={unread}
             away={away}
@@ -596,18 +643,59 @@ export function App() {
         )}
         {panel === 'sala' && roomId && (
           <Panel
-            title={ROOMS[game.building.rooms.find((r) => r.id === roomId)?.type ?? 'salon'].name}
+            title={
+              ROOMS[works.view.building.rooms.find((r) => r.id === roomId)?.type ?? 'salon'].name
+            }
             onClose={() => openPanel(null)}
           >
-            <RoomPanel game={game} roomId={roomId} onUpgrade={upgradeRoom} onLink={roomLink} />
+            <RoomPanel
+              game={works.view}
+              roomId={roomId}
+              onUpgrade={(id) =>
+                works.planning
+                  ? works.work({ type: 'upgradeRoom', id }) && openPanel(null)
+                  : upgradeRoom(id)
+              }
+              onLink={roomLink}
+              onWork={
+                roomsLive
+                  ? (a) => {
+                      if (works.work(a)) openPanel(null);
+                    }
+                  : undefined
+              }
+              onMove={roomsLive ? (id) => pickSpot({ kind: 'move', id }) : undefined}
+            />
           </Panel>
         )}
         {panel === 'gremio' && (
           <Panel title="El gremio" onClose={() => openPanel(null)}>
             <GremioPanel
-              game={game}
+              game={works.view}
               focus={focusFac}
-              onUpgrade={upgrade}
+              onUpgrade={(k) =>
+                works.planning ? works.work({ type: 'upgrade', fac: k }) : upgrade(k)
+              }
+              obrasFirst={works.planning}
+              obras={
+                roomsLive ? (
+                  <ObrasPanel
+                    game={works.view}
+                    planning={works.planning}
+                    onPick={pickSpot}
+                    onWork={(a) => works.work(a)}
+                    onRoom={(id) => {
+                      setRoomId(id);
+                      openPanel('sala');
+                      scene.current?.focus(id);
+                    }}
+                    onPlan={() => {
+                      works.startPlan();
+                      openPanel(null);
+                    }}
+                  />
+                ) : undefined
+              }
               onSaves={() => setSaveMenu(true)}
               onSettings={() => setSettingsOpen(true)}
               onLibro={() => openPanel('libro')}
@@ -779,6 +867,7 @@ export function App() {
         {screen === 'game' && !dawnOpen && !passing && game.opening && !game.opening.seen && (
           <Opening
             arrival={game.opening}
+            rooms={roomsLive}
             best={prevBest}
             onOpen={() => {
               audio.play('dawn');
