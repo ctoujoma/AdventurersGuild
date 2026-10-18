@@ -315,3 +315,11 @@ export const HUNGER_MORALE = 8;
 /** Raciones y jarras al empezar. */
 export const START_FOOD = 12;
 export const START_BEER = 10;
+
+// ---------- Entrenamiento ----------
+/** Progreso que da un día en una sala de entrenamiento de nivel 1 (algo más con cada nivel). */
+export const TRAIN_RATE = 1;
+/** Progreso que cuesta subir un punto: unos fijos más el valor que ya se tiene. */
+export const TRAIN_COST_BASE = 2;
+/** Hasta dónde se puede entrenar un atributo según el nivel de la sala. */
+export const TRAIN_CAP = [0, 5, 7, 9] as const;

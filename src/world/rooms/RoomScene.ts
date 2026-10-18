@@ -221,6 +221,15 @@ export class RoomScene {
   private raf = 0;
   private pointers = new Map<number, Point>();
   private press: { x: number; y: number; moved: boolean; time: number } | null = null;
+  /** Alguien cogido con el dedo: dónde está el dedo (css), la sala de debajo y si vale soltarlo ahí. */
+  private drag: {
+    id: string;
+    x: number;
+    y: number;
+    moved: boolean;
+    room: string | null;
+    ok: boolean;
+  } | null = null;
   private pinch = 0;
   private cssW = 0;
   private cssH = 0;
@@ -986,6 +995,7 @@ export class RoomScene {
     this.crowd.setNight(this.night && this.nightP() < 1.6 ? 'night' : tod > 0.82 ? 'dusk' : 'day');
     this.crowd.setClock(this.night ? 1 : tod);
     this.crowd.update(dt, this.t);
+    this.edgePan(dt);
     if (this.marker && this.t > this.marker.until) this.marker = null;
     this.camera.update(dt);
     this.particles.update(dt, this.t);
@@ -1063,11 +1073,15 @@ export class RoomScene {
       !!this.hoverHero ||
       !!this.marker ||
       !!this.targets?.length ||
-      this.floats.length > 0;
+      this.floats.length > 0 ||
+      !!this.drag?.moved ||
+      (!this.night && !!this.model?.heroes.some((h) => h.train));
     if (live || this.topLive) {
       const ctx = this.topCtx;
       ctx.clearRect(0, 0, view.vw, view.vh);
       if (this.targets) this.marks(this.targets);
+      this.dropMark();
+      this.trainBars();
       this.particles.draw(ctx, view.px, view.py, t);
       this.floatUp();
       if (this.hover) this.brackets(this.hover.rect);
@@ -1226,6 +1240,116 @@ export class RoomScene {
     this.cb.onHotspot?.(h.id, h.label, { x: cssX, y: cssY, wx: w.x, wy: w.y });
   }
 
+  // ---------- Arrastrar personas ----------
+
+  /** La sala que hay bajo un punto de la pantalla (id), si hay. */
+  private roomAt(cssX: number, cssY: number): string | null {
+    const w = this.camera.toWorld(cssX, cssY);
+    const h = this.hit(w.x, w.y);
+    return h?.id.startsWith('sala:') ? h.id.slice(5) : null;
+  }
+
+  private moveDrag(p: Point): void {
+    const d = this.drag!;
+    d.x = p.x;
+    d.y = p.y;
+    if (!d.moved && this.press && Math.hypot(p.x - this.press.x, p.y - this.press.y) > 6) {
+      d.moved = true;
+      this.press.moved = true;
+      this.cb.onSound?.('click', 0.4);
+    }
+    if (!d.moved) return;
+    const { camera } = this;
+    const v: View = { px: camera.px, py: camera.py, vw: camera.vw, vh: camera.vh };
+    this.crowd.hold(d.id, v, p.x / camera.zoom, p.y / camera.zoom);
+    d.room = this.roomAt(p.x, p.y);
+    d.ok = !!this.cb.onDragOver?.(d.id, d.room, p)?.ok;
+    this.hover = null;
+    this.cb.onHover?.(null, null);
+  }
+
+  /** Suelta a quien se lleva: si la sala vale, se queda allí; si no, vuelve a donde estaba. */
+  private endDrag(): void {
+    const d = this.drag;
+    this.drag = null;
+    if (!d) return;
+    const r = d.ok && d.room ? this.layout?.rooms.find((x) => x.room.id === d.room) : undefined;
+    if (r) {
+      const w = this.camera.toWorld(d.x, d.y);
+      const x = Math.max(r.rect.x + 12, Math.min(r.rect.x + r.rect.w - 12, w.x));
+      this.crowd.drop(d.id, { x, floor: r.room.floor });
+      this.cb.onDrop?.(d.id, d.room);
+      this.cb.onSound?.('build', 0.5);
+    } else {
+      this.crowd.drop(d.id, null);
+      this.cb.onDrop?.(d.id, null);
+    }
+  }
+
+  private cancelDrag(): void {
+    if (!this.drag) return;
+    this.drag.ok = false;
+    this.endDrag();
+  }
+
+  /** Encima de quien entrena, su barra: se va llenando a lo largo del día. */
+  private trainBars(): void {
+    const tod = this.clockTod ?? 0;
+    if (this.night || tod > 0.82) return;
+    const { topCtx: ctx, camera } = this;
+    for (const h of this.crowd.visible()) {
+      if (!h.train) continue;
+      const r = this.heroRect(h.id);
+      if (!r) continue;
+      const fill = Math.min(1, h.train.at + h.train.perDay * tod);
+      const W = 16;
+      const x = Math.round(r.x + r.w / 2 - camera.px - W / 2);
+      const y = Math.round(r.y - camera.py) + 6;
+      ctx.fillStyle = P.black;
+      ctx.fillRect(x - 1, y - 1, W + 2, 5);
+      ctx.fillStyle = P.steel;
+      ctx.fillRect(x, y, W, 3);
+      ctx.fillStyle = fill >= 1 ? P.lemon : P.lime;
+      ctx.fillRect(x, y, Math.max(1, Math.round(W * fill)), 3);
+    }
+  }
+
+  /** La sala bajo el dedo mientras se lleva a alguien: verde si vale, roja si no. */
+  private dropMark(): void {
+    const d = this.drag;
+    const r = d?.room ? this.layout?.rooms.find((x) => x.room.id === d.room) : undefined;
+    if (!d || !r) return;
+    const { topCtx: ctx, camera } = this;
+    const x = Math.round(r.rect.x - camera.px) + 1;
+    const y = Math.round(r.rect.y - camera.py) + 1;
+    const w = Math.round(r.rect.w) - 2;
+    const h = Math.round(r.rect.h) - 2;
+    const c = d.ok ? P.lime : P.red;
+    ctx.globalAlpha = 0.12;
+    ctx.fillStyle = c;
+    ctx.fillRect(x, y, w, h);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = c;
+    ctx.fillRect(x, y, w, 1);
+    ctx.fillRect(x, y + h - 1, w, 1);
+    ctx.fillRect(x, y, 1, h);
+    ctx.fillRect(x + w - 1, y, 1, h);
+  }
+
+  /** Llevando a alguien cerca del borde, la cámara se desliza hacia allí. */
+  private edgePan(dt: number): void {
+    const d = this.drag;
+    if (!d?.moved || !this.cssW) return;
+    const EDGE = 36;
+    const speed = 260 * dt;
+    const dx = d.x < EDGE ? speed : d.x > this.cssW - EDGE ? -speed : 0;
+    const dy = d.y < EDGE ? speed : d.y > this.cssH - EDGE ? -speed : 0;
+    if (dx || dy) {
+      this.camera.drag(dx, dy, 0);
+      this.moveDrag({ x: d.x, y: d.y });
+    }
+  }
+
   private bindInput(): void {
     const c = this.canvas;
     const local = (e: PointerEvent | WheelEvent) => {
@@ -1238,9 +1362,14 @@ export class RoomScene {
       this.pointers.set(e.pointerId, p);
       if (this.pointers.size === 1) {
         this.press = { x: p.x, y: p.y, moved: false, time: performance.now() };
-        this.camera.dragging = true;
         this.camera.stopInertia();
+        // Sobre alguien que se puede coger, el dedo lo lleva; si no, mueve la cámara.
+        const who = this.targets ? null : this.heroAt(p.x, p.y);
+        if (who && this.cb.canDrag?.(who))
+          this.drag = { id: who, x: p.x, y: p.y, moved: false, room: null, ok: false };
+        else this.camera.dragging = true;
       } else if (this.pointers.size === 2) {
+        this.cancelDrag();
         const [a, b] = [...this.pointers.values()];
         this.pinch = Math.hypot(a!.x - b!.x, a!.y - b!.y);
         if (this.press) this.press.moved = true;
@@ -1278,6 +1407,10 @@ export class RoomScene {
         }
         return;
       }
+      if (this.drag) {
+        this.moveDrag(p);
+        return;
+      }
       const now = performance.now();
       const dt = (now - (this.press?.time ?? now)) / 1000;
       if (this.press) {
@@ -1293,6 +1426,13 @@ export class RoomScene {
     });
     const end = (e: PointerEvent) => {
       const p = local(e);
+      if (this.drag?.moved) {
+        this.pointers.delete(e.pointerId);
+        this.endDrag();
+        this.press = null;
+        return;
+      }
+      this.drag = null;
       const wasClick = this.press && !this.press.moved && this.pointers.size === 1;
       this.pointers.delete(e.pointerId);
       if (this.pointers.size === 0) {
@@ -1305,6 +1445,7 @@ export class RoomScene {
     c.addEventListener('pointerup', end);
     c.addEventListener('pointercancel', (e) => {
       this.pointers.delete(e.pointerId);
+      this.cancelDrag();
       this.camera.release();
       this.press = null;
     });

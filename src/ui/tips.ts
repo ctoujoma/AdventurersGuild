@@ -1,5 +1,6 @@
 import { gearInStock, roster } from '../core/game';
 import { hungryTonight } from '../core/larder';
+import { slotsOf, isTrainRoom } from '../core/workers';
 import type { GameState } from '../core/model';
 import { MORALE_LOW } from '../core/party';
 
@@ -65,7 +66,7 @@ export const TIPS: readonly Tip[] = [
     id: 'trabajo',
     rooms: true,
     focus: 'cocina',
-    text: 'Remedios cocina, Tobías atiende el salón y Nico sube los barriles de la bodega. Vienen cada mañana del pueblo y cobran con los héroes. Toca una sala para ver quién trabaja en ella; los héroes que se quedan en casa también pueden echar una mano.',
+    text: 'Remedios cocina, Tobías atiende el salón y Nico sube los barriles de la bodega. Vienen cada mañana del pueblo y cobran con los héroes. Toca una sala para ver quién trabaja en ella. Para cambiar a alguien de sitio, cógelo con el dedo y suéltalo en otra sala; los héroes que se quedan en casa también pueden echar una mano.',
     when: (s) => s.day >= 3 && s.workers.length > 0,
   },
   {
@@ -127,6 +128,12 @@ export const TIPS: readonly Tip[] = [
     focus: 'cocina',
     text: 'Lo que hace Remedios en la cocina y Nico en la bodega se suma por la noche, y lo tienes arriba: el pan son las raciones y la jarra, la cerveza. Los visitantes comen y beben de ahí, y los de casa cenan antes de dormir. Si no llega, pon a alguien más en la cocina o arréglala; quien se acuesta sin cenar se levanta de mal humor.',
     when: (s) => (s.day >= 6 && s.mode !== 'libre') || hungryTonight(s) > 0,
+  },
+  {
+    id: 'entreno',
+    rooms: true,
+    text: 'Ya tienes donde entrenar. Coge con el dedo a un héroe que esté en casa y suéltalo en la sala: la barra sobre su cabeza dice cuánto le falta para el siguiente punto. Cada sala tiene un tope; mejorándola, se llega más lejos.',
+    when: (s) => s.building.rooms.some((r) => isTrainRoom(r.type) && slotsOf(r) > 0),
   },
 ];
 
