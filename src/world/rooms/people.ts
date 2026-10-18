@@ -4,6 +4,7 @@
  * DOM): la escena mueve las figuras y este fichero decide a dónde van.
  */
 import type { Room } from '../../core/model';
+import { isJobRoom } from '../../core/workers';
 import { beds, seats, type Bed } from './furniture';
 import { PATIO_W, PITCH, STAIR_W, WALL, floorY, interior, type RoomsLayout } from './layout';
 
@@ -119,6 +120,10 @@ export interface SeatSpot extends Place {
 export interface Spots {
   beds: BedSpot[];
   cots: BedSpot[];
+  /** Camas del dormitorio del servicio (para los trabajadores). */
+  staffBeds: BedSpot[];
+  /** Salas con trabajo: por dónde se mueve quien trabaja en cada una (por id). */
+  jobs: Map<string, { room: Room; x0: number; x1: number }>;
   seats: SeatSpot[];
   /** De pie en la barra (los candidatos esperan aquí). */
   bar: Place[];
@@ -136,6 +141,8 @@ export function spots(L: RoomsLayout): Spots {
   const out: Spots = {
     beds: [],
     cots: [],
+    staffBeds: [],
+    jobs: new Map(),
     seats: [],
     bar: [],
     guard: [],
@@ -155,12 +162,15 @@ export function spots(L: RoomsLayout): Spots {
     if (!inUse(room)) continue;
     for (const b of beds(room, i.w)) {
       const spot = { ...b, x: i.x + b.x, roomId: room.id, floor: room.floor };
-      (b.kind === 'catre' ? out.cots : out.beds).push(spot);
+      (room.type === 'servicio' ? out.staffBeds : b.kind === 'catre' ? out.cots : out.beds).push(
+        spot,
+      );
     }
     for (const s of seats(room, i.w)) out.seats.push({ x: i.x + s.x, floor: room.floor, z: s.z });
     if (room.type === 'salon')
       for (let k = 0; k < 4; k++) out.bar.push({ x: i.x + 30 + k * 14, floor: room.floor });
     if (room.type !== 'tesoro') out.rooms.push({ room, x0: i.x + 14, x1: i.x + i.w - 14 });
+    if (isJobRoom(room.type)) out.jobs.set(room.id, { room, x0: i.x + 16, x1: i.x + i.w - 16 });
   }
   return out;
 }
@@ -181,11 +191,14 @@ export interface Resident {
   id: string;
   status: 'ok' | 'herido' | 'mision' | 'candidato';
   guard?: boolean;
+  /** Trabajador: con cama en el servicio o de los que duermen en el pueblo (sin sitio fijo). */
+  staff?: 'casa' | 'pueblo';
 }
 
 /**
  * Sitio fijo de cada uno: los heridos en los catres (y si no caben, en camas), los de guardia
- * en el recibidor, los candidatos en la barra y los demás con una cama cada uno.
+ * en el recibidor, los candidatos en la barra, los trabajadores en el servicio y los demás con
+ * una cama cada uno.
  */
 export function homes(people: readonly Resident[], S: Spots): Map<string, Goal> {
   const out = new Map<string, Goal>();
@@ -202,7 +215,12 @@ export function homes(people: readonly Resident[], S: Spots): Map<string, Goal> 
     if (b) out.set(p.id, bed(b));
   }
   let g = 0;
-  for (const p of people.filter((x) => x.status === 'ok')) {
+  const staff = [...S.staffBeds];
+  for (const p of people.filter((x) => x.staff === 'casa')) {
+    const b = staff.shift();
+    if (b) out.set(p.id, bed(b));
+  }
+  for (const p of people.filter((x) => x.status === 'ok' && !x.staff)) {
     if (p.guard && g < S.guard.length) {
       out.set(p.id, { place: S.guard[g++]!, pose: 'stand' });
       continue;
@@ -237,6 +255,31 @@ export function wander(S: Spots, taken: ReadonlySet<SeatSpot>, rnd: () => number
     place: { x: room.x0 + rnd() * (room.x1 - room.x0), floor: room.room.floor },
     pose: 'stand',
   };
+}
+
+/**
+ * A dónde va quien trabaja en una sala: cada uno a su puesto (`k` de `n`) y, en el salón, de
+ * mesa en mesa sirviendo.
+ */
+export function workGoal(
+  S: Spots,
+  roomId: string,
+  k: number,
+  n: number,
+  rnd: () => number,
+): Goal | null {
+  const j = S.jobs.get(roomId);
+  if (!j) return null;
+  const floor = j.room.floor;
+  if (j.room.type === 'salon') {
+    const tables = S.seats.filter((s) => s.floor === floor && s.x >= j.x0 - 20 && s.x <= j.x1 + 20);
+    if (tables.length && rnd() < 0.7) {
+      const t = tables[Math.floor(rnd() * tables.length)]!;
+      return { place: { x: t.x + (rnd() < 0.5 ? -9 : 9), floor }, pose: 'stand' };
+    }
+  }
+  const x = j.x0 + (((k % Math.max(1, n)) + 0.5) * (j.x1 - j.x0)) / Math.max(1, n);
+  return { place: { x: x + (rnd() - 0.5) * 8, floor }, pose: 'stand' };
 }
 
 /** Altura del suelo de una planta en el mundo (y hacia abajo). */

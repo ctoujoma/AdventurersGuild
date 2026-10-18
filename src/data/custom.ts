@@ -43,27 +43,6 @@ export const DISHES: Record<Dish, { name: string; desc: string; cost: number; mo
   },
 };
 
-export const STAFF: Record<StaffId, { name: string; desc: string; fee: number; salary: number }> = {
-  cocinera: {
-    name: 'Cocinera',
-    desc: 'El plato de la casa anima el doble.',
-    fee: 30,
-    salary: 6,
-  },
-  bardo: {
-    name: 'Bardo',
-    desc: '+8 monedas al día: la gente se queda a escucharle.',
-    fee: 30,
-    salary: 6,
-  },
-  mozo: {
-    name: 'Mozo',
-    desc: 'Atiende a los heridos: curan un día más rápido.',
-    fee: 30,
-    salary: 6,
-  },
-};
-
 export type DecorId = 'naipes' | 'tarima' | 'tapices' | 'barril';
 
 /** Decoración del salón: huecos limitados, cada pieza con un efecto pequeño y su pega. */
@@ -75,7 +54,7 @@ export const DECOR: Record<DecorId, { name: string; desc: string; price: number 
   },
   tarima: {
     name: 'Tarima del bardo',
-    desc: '+2 de moral por noche; con bardo, trae 8 monedas más.',
+    desc: '+2 de moral por noche; con el bardo tocando en el salón, trae 8 monedas más.',
     price: 60,
   },
   tapices: {
