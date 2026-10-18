@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DISHES } from '../data/custom';
-import { COOK_FULL, HERO_WORK, SKILL_XP, tavernIncome } from './balance';
+import { COOK_FULL, HERO_WORK, SKILL_XP } from './balance';
+import { serveCap, visitorsOf } from './salon';
 import { dayIncome, endDay, newGame, reduce, salaries } from './game';
 import type { GameState, Room } from './model';
 import { Rng } from './rng';
@@ -43,12 +44,15 @@ describe('trabajadores', () => {
   });
 
   it('el servicio del salón y la cerveza de la bodega se notan en la caja', () => {
-    const s = newGame('caja');
-    const base = tavernIncome(s.fac.tab, s.rep, s.trophies.length);
-    // Bardo 4 × 1,5 = 6 en el salón (6 × 0,5) y mozo 3 × 1,5 = 4,5 en la bodega (4,5 × 0,4).
-    expect(dayIncome(s, s.day)).toBe(base + 5);
+    const s = { ...newGame('caja'), rep: 400 };
+    // Con mucha gente, quien atiende la barra decide a cuántos se sirve.
     const idle = reduce(s, { type: 'assign', who: village(s, 'bardo').id, room: null });
-    expect(dayIncome(idle, idle.day)).toBe(base + 2);
+    expect(serveCap(idle)).toBeLessThan(serveCap(s));
+    expect(visitorsOf(idle, 5).served).toBeLessThan(visitorsOf(s, 5).served);
+    expect(dayIncome(idle, 5)).toBeLessThan(dayIncome(s, 5));
+    // Sin nadie en la bodega no se vende cerveza.
+    const dry = reduce(s, { type: 'fireWorker', id: village(s, 'mozo').id });
+    expect(dayIncome(dry, 5)).toBeLessThan(dayIncome(s, 5));
   });
 
   it('los héroes echan una mano, pero rinden menos y solo si están en casa', () => {
@@ -155,8 +159,8 @@ describe('trabajadores', () => {
 
   it('desde el día 30 viene gente a pedir trabajo', () => {
     const s = libre('piden');
-    s.day = 33;
-    stepWorkers(s, new Rng(3), []);
+    // Con mucha gente en el salón, alguno acaba pidiendo trabajo.
+    for (let i = 0; i < 10 && !s.seekers.length; i++) stepWorkers(s, new Rng(i), [], 12);
     expect(s.seekers).toHaveLength(1);
     const w = s.seekers[0]!;
     expect(w.skill).toBeGreaterThanOrEqual(2);

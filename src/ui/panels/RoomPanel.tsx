@@ -1,5 +1,13 @@
 import { useState } from 'preact/hooks';
-import { BEER_COIN, NURSE_WORK, SERVE_COIN, roomMax } from '../../core/balance';
+import { NURSE_WORK, roomMax } from '../../core/balance';
+import {
+  appeal,
+  beerPerVisitor,
+  neighborsOf,
+  seatsOf,
+  visitorList,
+  visitorsOf,
+} from '../../core/salon';
 import { canWork, type Action } from '../../core/game';
 import type { GameState, Room } from '../../core/model';
 import {
@@ -69,10 +77,12 @@ const num = (x: number) => x.toFixed(1).replace('.', ',').replace(',0', '');
 /** Lo que hace hoy la gente que trabaja en una sala. */
 function crewEffect(game: GameState, room: Room): string {
   switch (room.type) {
-    case 'salon':
-      return `El servicio deja ${Math.round(workIn(game, 'salon') * SERVE_COIN)} monedas al día.`;
+    case 'salon': {
+      const v = visitorsOf(game, game.day);
+      return `Hoy se atiende a ${v.served} de ${v.total} visitantes.`;
+    }
     case 'bodega':
-      return `La cerveza deja ${Math.round(workIn(game, 'bodega') * BEER_COIN)} monedas al día en el salón.`;
+      return `Cada visitante atendido toma cerveza: ${num(beerPerVisitor(game))} monedas más.`;
     case 'cocina':
       return `El plato de la casa anima ×${num(cookBoost(game))}.`;
     case 'enfermeria':
@@ -82,6 +92,28 @@ function crewEffect(game: GameState, room: Room): string {
     default:
       return '';
   }
+}
+
+/** El salón por dentro: su Atractivo, las plazas y quién viene hoy. */
+function SalonInfo({ game }: { game: GameState }) {
+  const v = visitorsOf(game, game.day);
+  return (
+    <span class="salon-info">
+      <span>
+        <b>Atractivo {appeal(game)}</b> · {seatsOf(game.building)} plazas
+      </span>
+      <span class="muted">
+        Hoy {v.total ? `vienen ${visitorList(v)}` : 'no viene nadie'}.
+        {v.served < v.total
+          ? ` Solo se puede atender a ${v.served}: hace falta más gente en la barra.`
+          : ''}
+      </span>
+      <span class="tiny">
+        Más Atractivo (decoración, fachada, trofeos y el nivel del salón) trae más gente; la
+        reputación también.
+      </span>
+    </span>
+  );
 }
 
 /** Quién trabaja en la sala, quitar a alguien y poner a otro (trabajador o héroe en casa). */
@@ -277,6 +309,12 @@ export function RoomPanel({ game, roomId, onUpgrade, onLink, onWork, onMove, onA
         {info && cost !== null && (
           <span class="next-level">Mejora: {info.effect(room.level + 1)}</span>
         )}
+        {room.type === 'salon' && room.level > 0 && <SalonInfo game={game} />}
+        {neighborsOf(game.building, room).map((n) => (
+          <span key={n.text} class={n.good ? 'next-level' : 'muted room-bad'}>
+            {n.text}
+          </span>
+        ))}
         {room.type === 'servicio' && room.level > 0 && (
           <span class="muted">
             Camas del servicio: {staffBeds(game.building)} · trabajadores {game.workers.length}/

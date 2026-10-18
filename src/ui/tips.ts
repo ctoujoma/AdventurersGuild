@@ -113,6 +113,13 @@ export const TIPS: readonly Tip[] = [
     text: 'Ahora viene gente del pueblo a pedir trabajo: lo verás en «Héroes», pestaña «Trabajo». Pero cada uno nuevo necesita su cama, así que antes construye el dormitorio del servicio.',
     when: (s) => seen(s, 'excavar') && sinceOpening(s) >= 3,
   },
+  {
+    id: 'visitas',
+    rooms: true,
+    focus: 'salon',
+    text: 'La caja la llenan los que vienen al salón: campesinos, mercaderes y, si el salón luce, algún noble que trae fama. Cuanto más Atractivo (decoración, fachada, trofeos), más gente; pero si nadie atiende la barra, se van sin pagar. Ojo con los forasteros que miran demasiado.',
+    when: (s) => s.day >= 5 && s.mode !== 'libre',
+  },
 ];
 
 /** La siguiente nota que toca enseñar, si alguna. */

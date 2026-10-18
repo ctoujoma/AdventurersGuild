@@ -3,7 +3,7 @@
  * El núcleo no conoce el DOM ni el arte; el aspecto de cada héroe sale de su `seed`.
  */
 import type { BossKind } from '../data/bosses';
-import type { CrestColor, CrestSymbol, DecorId, Dish, StaffId } from '../data/custom';
+import type { CrestColor, CrestSymbol, DecorId, Dish, FacadeId, StaffId } from '../data/custom';
 import type { Trade } from '../data/workers';
 import type { RoomType } from '../data/rooms';
 import type { Attrs, Challenge, ClassId, SkillId, Trait } from './party';
@@ -265,6 +265,8 @@ export interface Custom {
   dish: Dish;
   dog: boolean;
   decor?: DecorId[];
+  /** Lo que adorna la fachada (atrae visitantes). */
+  facade?: FacadeId[];
   raven?: boolean;
   /** Día en que se montó la fiesta de la comarca. */
   feast?: number;
@@ -420,6 +422,8 @@ export interface GameState {
   chains?: ChainState[];
   /** Lugares de la comarca ya visitados (levantan la niebla del mapa). */
   explored?: string[];
+  /** Día en que un espía de los bandidos estudió la casa (más riesgo de asalto unos días). */
+  scout?: number;
   /** Último asalto, para verlo en la escena al amanecer. */
   lastRaid?: RaidResult | null;
   /** Informe de la pelea contra un jefe de esta noche (para el aviso del amanecer). */

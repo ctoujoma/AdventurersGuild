@@ -6,7 +6,8 @@ import { audio, type Mood } from '../audio/audio';
 import { canClose, canHire, customOf, newGame, reduce, type Action } from '../core/game';
 import { canAssign, canHireWorker } from '../core/workers';
 import { DAY_SECONDS, DELIVERIES, DUSK } from '../core/balance';
-import { DECOR } from '../data/custom';
+import { DECOR, FACADE } from '../data/custom';
+import { RUMORS, VISITORS, type VisitorKind } from '../data/visitors';
 import type { BossFight as BossFightRecord, Facilities, GameState } from '../core/model';
 import { CAPTIONS, FACILITY_INFO } from '../data/labels';
 import { loadRecords, mergeRecords, saveRecords } from '../platform/records';
@@ -652,6 +653,19 @@ export function App() {
           onHero={(id, at) => {
             setHint(false);
             setBubble(null);
+            // Los visitantes cuentan lo que se oye por ahí.
+            if (id.startsWith('vis-')) {
+              const i = Number(id.split('-')[2]);
+              const kind = model.visitors?.kinds[i] ?? 'campesino';
+              audio.play('click', 0.5);
+              say(
+                kind === 'espia'
+                  ? 'Forastero callado: «¿Y la cámara del tesoro… queda muy abajo?»'
+                  : `${VISITORS[kind as VisitorKind].name.replace(/^./, (c) => c.toUpperCase())}: «${RUMORS[(game.day * 7 + i) % RUMORS.length]}»`,
+                at,
+              );
+              return;
+            }
             // Un trabajador no tiene ficha: dice lo suyo.
             const w = game.workers.find((x) => x.id === id);
             if (w) {
@@ -883,6 +897,11 @@ export function App() {
                 dispatch({ type: 'decor', id, on });
                 audio.play(on ? 'build' : 'close');
                 if (on) toast(`${DECOR[id].name}: ya luce en el salón.`);
+              }}
+              onFacade={(id) => {
+                dispatch({ type: 'facade', id });
+                audio.play('build');
+                toast(`${FACADE[id].name}: ya se ven desde el camino.`);
               }}
               onRaven={() => {
                 dispatch({ type: 'buyRaven' });

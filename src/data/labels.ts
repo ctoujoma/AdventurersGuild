@@ -84,8 +84,8 @@ export const FACILITY_INFO: Record<
     ],
     effect: (l) =>
       l === 0
-        ? 'No deja dinero'
-        : `${l * 10} monedas al día, más encargos${l >= 2 ? ' y mejores candidatos' : ''}${l >= 4 ? '; descansar anima del todo' : ''}`,
+        ? 'No deja dinero: no viene nadie'
+        : `+${l * 2} de Atractivo (más visitantes), más encargos${l >= 2 ? ' y mejores candidatos' : ''}${l >= 4 ? '; descansar anima del todo' : ''}`,
   },
   mapas: {
     name: 'Sala de mapas',

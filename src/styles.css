@@ -3988,3 +3988,14 @@ textarea:focus-visible,
 .ribbon .btn {
   min-height: 34px;
 }
+.salon-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  background: rgba(254, 174, 52, 0.12);
+  box-shadow: 0 0 0 2px var(--tan);
+}
+.room-bad {
+  color: var(--wine);
+}

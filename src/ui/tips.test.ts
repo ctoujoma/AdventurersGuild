@@ -50,5 +50,9 @@ describe('notas del tío', () => {
     s.day = 3;
     expect(nextTip(s)).toBeNull();
     expect(nextTip(s, true)?.id).toBe('trabajo');
+    // Y unos días después, cómo llegan los visitantes.
+    const t = reduce(s, { type: 'tip', id: 'trabajo' });
+    expect(nextTip(t, true)).toBeNull();
+    expect(nextTip({ ...t, day: 5 }, true)?.id).toBe('visitas');
   });
 });
