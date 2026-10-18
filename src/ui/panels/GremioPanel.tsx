@@ -209,8 +209,12 @@ export function GremioPanel({
                 <span class="tiny">Tregua hasta el día {game.truce}.</span>
               )
             )}
-            <span class="tiny" data-help="Los que están en casa defienden; los de guardia, más.">
-              Defensa esta noche: <b>{defense(game)}</b> ({home} en casa, {guards} de guardia)
+            <span
+              class="tiny"
+              data-help="Se pelea sala a sala: los de guardia salen al patio y los demás acuden desde la cama. La puerta y la cerradura de la cámara les dan tiempo."
+            >
+              Si asaltaran esta noche, se pararían <b>{Math.round(defense(game) * 10)}</b> de cada
+              10 ({home} en casa, {guards} de guardia)
             </span>
             {(game.threat ?? 0) > 0 && (
               <span class="tiny" data-help="Crece si una historia espera en el tablón.">

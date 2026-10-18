@@ -312,6 +312,47 @@ export interface RaidResult {
   /** Defensores que acabaron heridos. */
   hurt: string[];
   stolen: number;
+  /** Oro que cargaban los bandidos que cayeron antes de salir (vuelve a la cámara). */
+  recovered?: number;
+  /** La pelea sala a sala, segundo a segundo, para verla en la escena. */
+  plan?: RaidPlan;
+}
+
+/**
+ * Lo que pasa en un asalto, en segundos desde que se oyen las botas. Los sitios son salas (por
+ * id), el patio ('patio') o el camino ('fuera'). Las figuras son héroes, trabajadores o
+ * bandidos ('b0', 'b1'…).
+ */
+export type RaidStep =
+  /** Echan a andar hacia una sala vecina y llegan en `dur` segundos. */
+  | { t: number; k: 'move'; ids: string[]; to: string; dur: number }
+  /** Se despierta y sale corriendo (los que duermen). */
+  | { t: number; k: 'wake'; id: string }
+  /** Empiezan a pelear en una sala. */
+  | { t: number; k: 'fight'; at: string }
+  /** Cae un defensor (herido, no muerto). */
+  | { t: number; k: 'fall'; id: string }
+  /** Cae un bandido; si cargaba oro, se recupera. */
+  | { t: number; k: 'down'; id: string; gold: number }
+  /** Empiezan a romper la puerta, y la rompen. */
+  | { t: number; k: 'door'; dur: number }
+  | { t: number; k: 'broke' }
+  /** Empiezan con la cerradura de la cámara, y la abren. */
+  | { t: number; k: 'lock'; dur: number }
+  | { t: number; k: 'open' }
+  /** Un bandido carga su saco. */
+  | { t: number; k: 'loot'; id: string; gold: number }
+  /** Un bandido se pierde por el camino con lo que lleva. */
+  | { t: number; k: 'escape'; id: string; gold: number };
+
+export interface RaidPlan {
+  /** Camino de los bandidos: del recibidor a la cámara (ids de sala). */
+  route: string[];
+  /** Dónde está cada uno al empezar. */
+  start: Record<string, string>;
+  steps: RaidStep[];
+  /** Segundo en el que acaba todo. */
+  end: number;
 }
 
 /** Contadores de la partida: hazañas, desafíos y récords. */
@@ -437,6 +478,8 @@ export interface GameState {
   explored?: string[];
   /** Día en que un espía de los bandidos estudió la casa (más riesgo de asalto unos días). */
   scout?: number;
+  /** Oro que no cabía en la cámara y se ha perdido desde el último amanecer. */
+  spilt?: number;
   /** Último asalto, para verlo en la escena al amanecer. */
   lastRaid?: RaidResult | null;
   /** Informe de la pelea contra un jefe de esta noche (para el aviso del amanecer). */

@@ -3,6 +3,7 @@ import { audio } from '../audio/audio';
 import { DAYS } from '../core/balance';
 import { customOf, nextPayment, nextRank, rankOf, salaries } from '../core/game';
 import { beerCap, dailyYield, foodCap, hungryTonight } from '../core/larder';
+import { goldCap, vaultFull } from '../core/vault';
 import { plural } from './text';
 import type { GameState } from '../core/model';
 import { Counter } from './Counter';
@@ -35,7 +36,7 @@ export function Hud({ game, onSettings }: { game: GameState; onSettings: () => v
   const made = dailyYield(game);
   const hungry = hungryTonight(game);
   const tips: Record<Tip, string> = {
-    oro: `Oro en la caja: ${game.gold} monedas.`,
+    oro: `Oro: ${game.gold} de ${goldCap(game)} que caben en la cámara del tesoro.${vaultFull(game) ? ' Está casi llena: lo que no quepa se perderá. Gasta, mejórala o hazla más grande.' : ''}`,
     rep: nr
       ? `Reputación: ${game.rep}. Con ${nr.at} el gremio pasa a ser de ${nr.name}: mejores encargos y héroes.`
       : `Reputación: ${game.rep}. Ya sois el gremio más famoso de la comarca.`,
@@ -63,7 +64,7 @@ export function Hud({ game, onSettings }: { game: GameState; onSettings: () => v
       </div>
       <div class="hud-stats">
         <button
-          class="hud-stat"
+          class={`hud-stat ${game.gold >= goldCap(game) ? 'danger' : vaultFull(game) ? 'warn' : ''}`}
           aria-label={tips.oro}
           aria-expanded={tip === 'oro'}
           onClick={() => toggle('oro')}

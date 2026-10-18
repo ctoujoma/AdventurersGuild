@@ -57,8 +57,19 @@ const CLIMB = 30;
 /** Fotogramas del atlas (cada uno de CELL × SPRITE de alto). */
 const CELL = 24;
 const TALL = 28;
-const F = { idle: 0, blink: 2, walk: 3, walkL: 7, sit: 11, sleep: 12, cot: 16, mat: 17 } as const;
-const FRAMES = 18;
+const F = {
+  idle: 0,
+  blink: 2,
+  walk: 3,
+  walkL: 7,
+  sit: 11,
+  sleep: 12,
+  cot: 16,
+  mat: 17,
+  down: 18,
+  downL: 19,
+} as const;
+const FRAMES = 20;
 
 type Tint = readonly [number, number, number];
 
@@ -73,7 +84,7 @@ interface Actor {
   lane: number;
   path: Place[];
   goal: Goal | null;
-  pose: 'stand' | 'walk' | 'sit' | 'bed';
+  pose: 'stand' | 'walk' | 'sit' | 'bed' | 'down';
   wait: number;
   dir: 1 | -1;
   dist: number;
@@ -88,6 +99,9 @@ interface Actor {
   sat: number;
   /** Cogido con el dedo: dónde se le lleva (pies, en el mundo), colgando bajo el dedo. */
   held?: { x: number; y: number } | null;
+  /** En un asalto: corre más (o menos) para llegar a su hora, y el golpe que está dando (0–1). */
+  run?: number;
+  swing?: number;
 }
 
 const hash = (s: string) => {
@@ -130,6 +144,20 @@ function atlas(spr: HeroSprites): PixelBuffer {
   b.rect(m + 4, 14, 20, 4, P.clay);
   b.hline(m + 4, 14, 20, P.tan);
   b.hline(m + 4, 17, 20, P.rust);
+  // En el suelo, caído: la figura de pie tumbada de lado (la cabeza a un lado o al otro).
+  const src = spr.idle[0];
+  for (const [i, left] of [
+    [F.down, true],
+    [F.downL, false],
+  ] as const)
+    for (let y = 2; y < Math.min(src.h, CELL + 2); y++)
+      for (let x = 0; x < src.w; x++) {
+        const c = src.data[y * src.w + x]!;
+        if (!c) continue;
+        const dx = left ? y - 2 : CELL + 1 - y;
+        const dy = TALL - 2 - src.w + x;
+        if (dy >= 0 && dy < TALL) b.data[dy * b.w + i * CELL + dx] = c;
+      }
   return b;
 }
 
@@ -153,6 +181,8 @@ export class Crowd {
   private seed = 1;
   /** Los visitantes de hoy. */
   private visitors: SceneVisitors = { day: 0, kinds: [] };
+  /** Durante un asalto nadie decide por su cuenta: la escena dice a dónde va cada uno. */
+  private scripted = false;
 
   constructor(
     shared: Shared,
@@ -343,6 +373,12 @@ export class Crowd {
         this.place(a, t);
         continue;
       }
+      if (this.scripted) {
+        if (a.path.length) this.walk(a, dt);
+        if (a.swing) a.swing = Math.max(0, a.swing - dt * 3);
+        this.place(a, t);
+        continue;
+      }
       if (a.pose === 'sit') a.sat += dt;
       if (a.path.length) this.walk(a, dt);
       else if (a.leaving) {
@@ -414,6 +450,126 @@ export class Crowd {
       .map((a) => a.hero);
   }
 
+  // ---------- Asalto: la escena lleva a cada uno ----------
+
+  /** Empieza o acaba un asalto. Al acabar, los bandidos se van y cada uno vuelve a lo suyo. */
+  setScripted(on: boolean): void {
+    if (on === this.scripted) return;
+    this.scripted = on;
+    if (on) return;
+    for (const a of [...this.actors.values()]) {
+      if (a.hero.bandit) {
+        this.remove(a.hero.id);
+        continue;
+      }
+      a.run = undefined;
+      a.swing = undefined;
+      a.path = [];
+      if (a.gone) continue;
+      const g = this.homes.get(a.hero.id);
+      if (this.time === 'night' && g) {
+        this.put(a, g.place);
+        this.arrive(a, g);
+      } else {
+        a.pose = 'stand';
+        a.goal = null;
+        a.wait = this.rnd() * 2;
+      }
+    }
+  }
+
+  /** Un bandido que aparece en un sitio. */
+  addBandit(id: string, look: SceneHero['look'], marks: SceneHero['marks'], p: Place): void {
+    if (this.actors.has(id)) return;
+    this.add({ id, name: 'Bandido', status: 'ok', look, marks, bandit: true });
+    const a = this.actors.get(id)!;
+    this.put(a, p);
+    a.pose = 'stand';
+  }
+
+  /** Echa a correr hasta un sitio para llegar en `dur` segundos (si le da tiempo). */
+  runTo(id: string, p: Place, dur: number): void {
+    const a = this.actors.get(id);
+    if (!a || a.gone || a.pose === 'down' || !this.L) return;
+    this.standUp(a);
+    const path = route(this.L, { x: a.x, floor: a.floor }, p, this.segs) ?? [p];
+    let len = 0;
+    let x = a.x;
+    let f = a.floor;
+    for (const q of path) {
+      len +=
+        q.floor !== f ? (Math.abs(floorY(q.floor) - floorY(f)) * SPEED) / CLIMB : Math.abs(q.x - x);
+      x = q.x;
+      f = q.floor;
+    }
+    a.run = Math.max(0.6, Math.min(4, len / Math.max(0.3, dur) / SPEED));
+    a.path = path;
+    a.goal = { place: p, pose: 'stand' };
+    a.pose = 'walk';
+  }
+
+  /** Aparece directamente en un sitio (al saltarse el asalto). */
+  warp(id: string, p: Place): void {
+    const a = this.actors.get(id);
+    if (!a || a.gone) return;
+    this.standUp(a);
+    a.path = [];
+    this.put(a, p);
+    if (a.pose === 'walk') a.pose = 'stand';
+  }
+
+  /** Se levanta de la cama (o de la silla) de un salto. */
+  wake(id: string): void {
+    const a = this.actors.get(id);
+    if (a) this.standUp(a);
+  }
+
+  /** Cae al suelo. */
+  knock(id: string): void {
+    const a = this.actors.get(id);
+    if (!a) return;
+    a.path = [];
+    a.goal = null;
+    a.swing = 0;
+    a.pose = 'down';
+  }
+
+  /** Da un golpe hacia un lado. */
+  strike(id: string, dir: 1 | -1): void {
+    const a = this.actors.get(id);
+    if (!a || a.pose === 'down') return;
+    a.dir = dir;
+    a.swing = 1;
+  }
+
+  /** Se acerca un poco (para ponerse cara a cara con quien pelea). */
+  nudge(id: string, dx: number): void {
+    const a = this.actors.get(id);
+    if (!a || a.path.length || a.pose === 'down') return;
+    a.x += dx;
+    a.dir = dx > 0 ? 1 : -1;
+    a.dist += Math.abs(dx);
+  }
+
+  /** Dónde está alguien (los pies) y si va andando. */
+  where(id: string): (Place & { y: number; moving: boolean; down: boolean }) | null {
+    const a = this.actors.get(id);
+    if (!a || a.gone) return null;
+    return { x: a.x, floor: a.floor, y: a.y, moving: a.path.length > 0, down: a.pose === 'down' };
+  }
+
+  /** Desaparece de la escena (un bandido que se pierde por el camino). */
+  vanish(id: string): void {
+    this.remove(id);
+  }
+
+  private standUp(a: Actor): void {
+    if (a.pose !== 'bed' && a.pose !== 'sit') return;
+    this.seatFree(a);
+    a.goal = null;
+    a.pose = 'stand';
+  }
+
   nameOf(id: string): string {
     return this.actors.get(id)?.hero.name ?? '';
   }
@@ -465,7 +621,7 @@ export class Crowd {
       sat: 0,
     };
     this.actors.set(h.id, a);
-    if (h.visitor) return;
+    if (h.visitor || h.bandit) return;
     if (this.village(a) && this.time !== 'day') {
       // De noche, los del pueblo están en su casa.
       this.hide(a);
@@ -607,11 +763,12 @@ export class Crowd {
 
   private walk(a: Actor, dt: number): void {
     const next = a.path[0]!;
+    const run = a.run ?? 1;
     if (next.floor !== a.floor) {
       // Escalera: sube o baja en vertical por el hueco.
       const ty = floorY(next.floor);
       const dy = ty - a.y;
-      const step = CLIMB * dt;
+      const step = CLIMB * run * dt;
       a.dist += step;
       if (Math.abs(dy) <= step) {
         a.y = ty;
@@ -620,7 +777,7 @@ export class Crowd {
       } else a.y += Math.sign(dy) * step;
     } else {
       const dx = next.x - a.x;
-      const step = SPEED * dt;
+      const step = SPEED * run * dt;
       a.dist += step;
       if (Math.abs(dx) > 0.5) a.dir = dx > 0 ? 1 : -1;
       if (Math.abs(dx) <= step) {
@@ -679,6 +836,20 @@ export class Crowd {
     }
     const top = a.y - FEET_Y / k;
     let frame: number;
+    if (a.pose === 'down') {
+      return {
+        frame: a.dir > 0 ? F.down : F.downL,
+        left: a.x - CELL / 2 / k,
+        bottom: top + TALL / k,
+        z,
+      };
+    }
+    if (a.swing) {
+      // Golpe: el paso largo de andar, echándose hacia delante.
+      const lunge = (a.dir * 3 * Math.sin(a.swing * Math.PI)) / k;
+      frame = (a.dir > 0 ? F.walk : F.walkL) + 1;
+      return { frame, left: a.x - CELL / 2 / k + lunge, bottom: top + TALL / k, z };
+    }
     if (a.pose === 'walk') {
       const step = Math.floor(a.dist / 6) % 4;
       frame = (a.dir > 0 ? F.walk : F.walkL) + step;

@@ -1,3 +1,4 @@
+import { vaultFull } from '../core/vault';
 import { gearInStock, roster } from '../core/game';
 import { hungryTonight } from '../core/larder';
 import { slotsOf, isTrainRoom } from '../core/workers';
@@ -134,6 +135,13 @@ export const TIPS: readonly Tip[] = [
     rooms: true,
     text: 'Ya tienes donde entrenar. Coge con el dedo a un héroe que esté en casa y suéltalo en la sala: la barra sobre su cabeza dice cuánto le falta para el siguiente punto. Cada sala tiene un tope; mejorándola, se llega más lejos.',
     when: (s) => s.building.rooms.some((r) => isTrainRoom(r.type) && slotsOf(r) > 0),
+  },
+  {
+    id: 'tesoro',
+    rooms: true,
+    focus: 'cofres',
+    text: 'Todo el oro se guarda en la cámara del tesoro, y ya casi no cabe más: lo que sobre se perderá. Mejórala (o, cuando puedas hacer obras, hazla más grande). Su nivel es también la cerradura que tendrían que forzar los bandidos.',
+    when: (s) => vaultFull(s),
   },
 ];
 

@@ -209,7 +209,8 @@ export function TabernaPanel({
                 : 'Ladra a los forasteros y no le teme a nada.'}
             </span>
             <span class="tiny">
-              +3 de defensa y más probabilidad de chivatazo antes de un asalto.
+              Si asaltan la taberna, ladra y despierta a todos antes. Y más probabilidad de
+              chivatazo.
             </span>
           </div>
           {!c.dog && (

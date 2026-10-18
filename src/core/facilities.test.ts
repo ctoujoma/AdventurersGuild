@@ -101,12 +101,13 @@ describe('construcciones de fuera', () => {
   });
 
   it('la empalizada defiende y la torre siempre avisa', async () => {
-    const { defense, stepRaids } = await import('./raids');
+    const { stepRaids } = await import('./raids');
+    const { assaultSetup } = await import('./assault');
     const { Rng } = await import('./rng');
     const s = newGame('defensa');
-    const base = defense(s);
+    const base = assaultSetup(s, 20, new Rng('e')).yard;
     s.fac.empal = 2;
-    expect(defense(s)).toBe(base + 10);
+    expect(assaultSetup(s, 20, new Rng('e')).yard).toBeGreaterThan(base);
     s.fac.torre = 1;
     s.day = 20;
     s.rep = 400;

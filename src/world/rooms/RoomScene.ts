@@ -22,7 +22,7 @@ import {
 } from 'three';
 import { P } from '../../art/palette';
 import type { PixelBuffer } from '../../art/pixel';
-import type { Building, Room, RoomYield } from '../../core/model';
+import type { Building, RaidResult, Room, RoomYield } from '../../core/model';
 import { ROOMS } from '../../data/rooms';
 import { Camera } from '../camera';
 import { GROUND } from '../geometry';
@@ -31,9 +31,12 @@ import * as Prop from '../props';
 import type { Point, SceneCallbacks, SceneModel } from '../scene';
 import { LANTERN, dummy, furnish, type Glow, type RGB } from './furniture';
 import { Crowd } from './crowd';
+import { RaidShow } from './raid';
 import { Look, MAX_LIGHTS, mesh, quad, sharedUniforms, type Corners } from './gl';
+import { route, type Place } from './people';
 import {
   DEPTH,
+  PATIO_W,
   PARTITION,
   PITCH,
   SLAB,
@@ -216,7 +219,21 @@ export class RoomScene {
   /** Hora del día que lleva el reloj de la partida (0 mañana, 1 noche); manda sobre la propia. */
   private clockTod: number | null = null;
   private dayAtNightfall = 0;
-  private night: { start: number; dur: number; done: (() => void) | null } | null = null;
+  private night: {
+    start: number;
+    dur: number;
+    /** Segundos de más a oscuras (mientras dura un asalto, hasta que acabe). */
+    hold: number;
+    done: (() => void) | null;
+  } | null = null;
+  /** El asalto de esta noche: espera a que oscurezca y luego se ve entero (o se salta). */
+  private raid: RaidShow | null = null;
+  private raidPlan: RaidResult['plan'] | null = null;
+  /** Zoom de antes del asalto (durante la pelea se acerca un poco). */
+  private raidZoom: number | null = null;
+  /** Por dónde entrarían los bandidos hasta la cámara: puntos del camino (en el mundo). */
+  private routeIds = '';
+  private routePts: { x: number; y: number }[] | null = null;
   private last = 0;
   private raf = 0;
   private pointers = new Map<number, Point>();
@@ -292,6 +309,39 @@ export class RoomScene {
     this.camera.centerOn((x0 + x1) / 2, (y0 + y1) / 2 + 45 / z);
   }
 
+  /** Marca el camino que harían los bandidos (ids de sala, del recibidor a la cámara), o lo quita. */
+  setRoute(ids: string[] | null): void {
+    const key = ids?.join(' ') ?? '';
+    if (key === this.routeIds && (this.routePts !== null) === !!ids) return;
+    this.routeIds = key;
+    this.routePts = ids ? this.routePoints(ids) : null;
+    this.topLive = true;
+  }
+
+  private routePoints(ids: string[]): { x: number; y: number }[] | null {
+    const L = this.layout;
+    if (!L) return null;
+    const centers: Place[] = [{ x: -PATIO_W + 30, floor: 0 }];
+    for (const id of ids) {
+      const r = L.rooms.find((x) => x.room.id === id);
+      if (!r) continue;
+      const i = interior(r.rect);
+      centers.push({ x: i.x + i.w / 2, floor: r.room.floor });
+    }
+    const out: { x: number; y: number }[] = [];
+    const lift = 8;
+    centers.forEach((c, k) => {
+      if (k === 0) {
+        out.push({ x: c.x, y: floorY(c.floor) - lift });
+        return;
+      }
+      const prev = centers[k - 1]!;
+      const path = route(L, prev, c) ?? [c];
+      for (const q of path) out.push({ x: q.x, y: floorY(q.floor) - lift });
+    });
+    return out;
+  }
+
   setModel(model: SceneModel): void {
     const prev = this.model?.building;
     this.model = model;
@@ -309,6 +359,7 @@ export class RoomScene {
     this.rebuild(L, model);
     this.crowd.setLayout(L);
     this.crowd.setPeople(model.heroes);
+    if (this.routePts) this.routePts = this.routePoints(this.routeIds.split(' '));
     this.camera.world = { x0: L.x0, x1: L.x1, y0: L.y0, y1: L.y1 };
     // La torre se toca donde se ve, encima del tejado.
     this.spots = L.rooms.map(({ room, rect }) => ({
@@ -442,21 +493,30 @@ export class RoomScene {
     return { ambient: ROOM_LIT, sun: 0.25 };
   }
 
-  nightfall(done: () => void, dur = 2.6): void {
+  nightfall(done: () => void, dur = 2.6, hold = 0): void {
     this.night?.done?.();
     this.dayAtNightfall = this.daylight().day;
-    this.night = { start: this.t, dur, done };
+    this.night = { start: this.t, dur, hold, done };
   }
 
-  /** Noche con asalto: la pelea dentro de casa llega con su PR; de momento solo pasa la noche. */
-  raidNight(
-    _raid: { won: boolean; bandits: number; defenders: string[]; hurt: string[] },
-    done: () => void,
-  ): void {
-    this.nightfall(done);
+  /**
+   * Noche con asalto: al oscurecer llegan los bandidos y se ve la pelea sala a sala tal como la
+   * ha decidido el núcleo; al acabar (o al saltarla), amanece.
+   */
+  raidNight(raid: Pick<RaidResult, 'plan'>, done: () => void): void {
+    if (!raid.plan || !this.layout) return this.nightfall(done);
+    this.raidPlan = raid.plan;
+    this.nightfall(done, 2.6, Infinity);
   }
 
-  skipRaid(): void {}
+  skipRaid(): void {
+    if (this.raid) this.raid.finish();
+    else if (this.raidPlan && this.night) {
+      // Aún no había empezado: se da por visto y amanece.
+      this.raidPlan = null;
+      this.night.hold = 0;
+    }
+  }
 
   /** La hora del reloj de la partida: el cielo y la gente la siguen. */
   setTime(tod: number): void {
@@ -526,7 +586,7 @@ export class RoomScene {
     const n = this.night!;
     const te = this.t - n.start;
     const a = 0.35 * n.dur;
-    const plateau = 0.15 * n.dur;
+    const plateau = 0.15 * n.dur + n.hold;
     if (te < a) return te / n.dur;
     if (te < a + plateau) return 0.35 + (0.15 * (te - a)) / plateau;
     return 0.5 + (te - a - plateau) / n.dur;
@@ -537,7 +597,8 @@ export class RoomScene {
     const p = this.nightP();
     const ramp = (a: number, b: number) => Math.max(0, Math.min(1, (p - a) / (b - a)));
     return {
-      dark: ramp(0, 0.35) * (1 - ramp(0.5, 0.9)),
+      // Con asalto, algo menos oscuro: que se vea la pelea.
+      dark: ramp(0, 0.35) * (1 - ramp(0.5, 0.9)) * (this.raid ? 0.45 : 1),
       warm: ramp(0.45, 0.9) * (1 - ramp(1.05, 1.8)),
     };
   }
@@ -978,6 +1039,7 @@ export class RoomScene {
 
   private update(dt: number): void {
     this.t += dt;
+    if (this.night) this.raidStep(dt);
     if (this.night) {
       const p = this.nightP();
       if (p >= 0.85 && this.night.done) {
@@ -999,6 +1061,46 @@ export class RoomScene {
     if (this.marker && this.t > this.marker.until) this.marker = null;
     this.camera.update(dt);
     this.particles.update(dt, this.t);
+  }
+
+  /** El asalto: empieza a oscuras, la cámara sigue a los bandidos y, al acabar, sigue la noche. */
+  private raidStep(dt: number): void {
+    const n = this.night!;
+    const dark = this.t - n.start >= 0.35 * n.dur;
+    if (this.raidPlan && dark && this.layout) {
+      this.crowd.setScripted(true);
+      this.raid = new RaidShow(this.raidPlan, this.layout, this.crowd, {
+        burst: (kind, x, y, k) => {
+          for (let i = 0; i < k; i++)
+            this.particles.spawn(
+              kind,
+              x + (Math.random() - 0.5) * 8,
+              y + (Math.random() - 0.5) * 6,
+            );
+        },
+        sound: (name, v) => this.cb.onSound?.(name, v ?? 1),
+      });
+      this.raidPlan = null;
+      this.raidZoom = this.camera.zoom;
+      const z = Math.min(6, Math.max(3, Math.floor(this.camera.zoom) + 1));
+      if (this.cssW && z !== this.camera.zoom) this.resize(this.cssW, this.cssH, z);
+    }
+    const raid = this.raid;
+    if (!raid) return;
+    if (!raid.done) {
+      raid.update(dt);
+      const f = raid.focus();
+      if (f && !this.pointers.size) this.camera.centerOn(f.x, f.y);
+      return;
+    }
+    // Se acabó: la noche sigue su curso hasta el amanecer.
+    if (n.hold === Infinity) n.hold = Math.max(0, this.t - n.start - 0.5 * n.dur);
+    if (this.nightP() >= 0.85) {
+      this.crowd.setScripted(false);
+      this.raid = null;
+      if (this.raidZoom !== null && this.cssW) this.resize(this.cssW, this.cssH, this.raidZoom);
+      this.raidZoom = null;
+    }
   }
 
   private draw(): void {
@@ -1075,13 +1177,17 @@ export class RoomScene {
       !!this.targets?.length ||
       this.floats.length > 0 ||
       !!this.drag?.moved ||
+      !!this.raid ||
+      !!this.routePts ||
       (!this.night && !!this.model?.heroes.some((h) => h.train));
     if (live || this.topLive) {
       const ctx = this.topCtx;
       ctx.clearRect(0, 0, view.vw, view.vh);
+      if (this.routePts && !this.raid) this.raidRoute(this.routePts);
       if (this.targets) this.marks(this.targets);
       this.dropMark();
       this.trainBars();
+      this.raid?.draw(ctx, view.px, view.py);
       this.particles.draw(ctx, view.px, view.py, t);
       this.floatUp();
       if (this.hover) this.brackets(this.hover.rect);
@@ -1292,6 +1398,39 @@ export class RoomScene {
     this.endDrag();
   }
 
+  /** El camino de los bandidos: puntos rojos que avanzan del patio a la cámara del tesoro. */
+  private raidRoute(pts: { x: number; y: number }[]): void {
+    const { topCtx: ctx, camera } = this;
+    const shift = Math.floor(this.t * 12) % 8;
+    let walked = 0;
+    for (let k = 1; k < pts.length; k++) {
+      const a = pts[k - 1]!;
+      const b = pts[k]!;
+      const len = Math.hypot(b.x - a.x, b.y - a.y);
+      for (let d = 0; d < len; d++) {
+        if ((walked + d + 8 - shift) % 8 >= 4) continue;
+        const x = Math.round(a.x + ((b.x - a.x) * d) / len - camera.px);
+        const y = Math.round(a.y + ((b.y - a.y) * d) / len - camera.py);
+        ctx.fillStyle = P.black;
+        ctx.fillRect(x - 1, y - 1, 3, 3);
+        ctx.fillStyle = P.red;
+        ctx.fillRect(x, y, 1, 1);
+      }
+      walked += len;
+    }
+    // Al final, la cámara: una marca dorada.
+    const end = pts.at(-1);
+    if (!end) return;
+    const x = Math.round(end.x - camera.px);
+    const y = Math.round(end.y - camera.py);
+    ctx.fillStyle = P.black;
+    ctx.fillRect(x - 3, y - 3, 7, 7);
+    ctx.fillStyle = P.gold;
+    ctx.fillRect(x - 2, y - 2, 5, 5);
+    ctx.fillStyle = P.lemon;
+    ctx.fillRect(x - 1, y - 1, 2, 2);
+  }
+
   /** Encima de quien entrena, su barra: se va llenando a lo largo del día. */
   private trainBars(): void {
     const tod = this.clockTod ?? 0;
@@ -1364,7 +1503,7 @@ export class RoomScene {
         this.press = { x: p.x, y: p.y, moved: false, time: performance.now() };
         this.camera.stopInertia();
         // Sobre alguien que se puede coger, el dedo lo lleva; si no, mueve la cámara.
-        const who = this.targets ? null : this.heroAt(p.x, p.y);
+        const who = this.targets || this.raid ? null : this.heroAt(p.x, p.y);
         if (who && this.cb.canDrag?.(who))
           this.drag = { id: who, x: p.x, y: p.y, moved: false, room: null, ok: false };
         else this.camera.dragging = true;

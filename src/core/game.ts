@@ -2,8 +2,10 @@
  * La partida: estado inicial, acciones del jugador (reducer puro) y avance de día.
  * `reduce(state, action)` nunca muta el estado que recibe: copia y devuelve uno nuevo.
  */
+import { earn, spill, vaultNews } from './vault';
 import { FLAVOR } from '../data/stories';
 import {
+  MAX_GUARDS,
   BOARD_SIZE,
   CANDIDATE_EVERY,
   DAYS,
@@ -205,6 +207,10 @@ export function canSend(s: GameState, questId: string, heroIds: readonly string[
     return `${proud.name} no va con héroes de menor nivel.`;
   return null;
 }
+
+/** En el recibidor caben dos de guardia. */
+export const guardsFull = (s: GameState) =>
+  s.heroes.filter((h) => h.status === 'ok' && h.guard).length >= MAX_GUARDS;
 
 /** Equipo del arcón que se puede poner (los tesoros solo se venden). */
 export const gearInStock = (s: GameState) =>
@@ -457,7 +463,7 @@ export function reduce(state: GameState, action: Action): GameState {
       const t = state.trophies.find((x) => x.id === action.id);
       if (!t) return state;
       const s = structuredClone(state);
-      s.gold += t.value;
+      earn(s, t.value);
       s.trophies = s.trophies.filter((x) => x.id !== t.id);
       return s;
     }
@@ -486,7 +492,7 @@ export function reduce(state: GameState, action: Action): GameState {
       const it = state.inventory.find((i) => i.id === action.itemId);
       if (!it) return state;
       const s = structuredClone(state);
-      s.gold += it.value;
+      earn(s, it.value);
       s.inventory = s.inventory.filter((i) => i.id !== it.id);
       return s;
     }
@@ -563,6 +569,7 @@ export function reduce(state: GameState, action: Action): GameState {
     case 'guard': {
       const h = state.heroes.find((x) => x.id === action.id);
       if (!h || h.status !== 'ok' || !!h.guard === action.on) return state;
+      if (action.on && guardsFull(state)) return state;
       const s = structuredClone(state);
       const g = s.heroes.find((x) => x.id === action.id)!;
       g.guard = action.on || undefined;
@@ -642,7 +649,7 @@ function tick(state: GameState, to: number): GameState {
   const due = Math.floor((dayIncome(s, s.day) * n) / DELIVERIES);
   const till = s.till ?? 0;
   if (due > till) {
-    s.gold += due - till;
+    earn(s, due - till);
     s.till = due;
   }
   return s;
@@ -971,6 +978,12 @@ export function endDay(state: GameState): GameState {
     checkMonth(s, rng, events);
     maybeEvent(s, rng);
   }
+
+  // Lo que no cabe en la cámara del tesoro se pierde.
+  const kept = spill(s);
+  s.gold = kept.gold;
+  s.spilt = kept.spilt;
+  vaultNews(s, events);
 
   s.flavor = rng.pick(FLAVOR);
   s.dawn = events;
