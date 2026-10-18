@@ -20,6 +20,13 @@ import {
 
 const SKY_FX = 0.15;
 const MOON = { x: 84, y: 64 } as const;
+/**
+ * El sol y la luna están muy lejos: con la cámara apenas se mueven, también en vertical. Se
+ * colocan como antes para una cámara a la altura de siempre (`SKY_Y0`) y desde ahí se desplazan
+ * poco.
+ */
+const SKY_Y0 = 40;
+const farY = (cy: number) => SKY_Y0 + (cy - SKY_Y0) * SKY_FX;
 
 export interface Daylight {
   /** Luz del día (0–1), del atardecer (0–1) y avance del día (0 mañana – 1 noche). */
@@ -88,7 +95,7 @@ export class Sky {
       ctx.drawImage(
         this.moonC,
         Math.round(MOON.x - MOON_R - cx * SKY_FX),
-        Math.round(MOON.y - MOON_R - cy),
+        Math.round(MOON.y - MOON_R - farY(cy)),
       );
       ctx.globalAlpha = 1;
     }
@@ -146,7 +153,7 @@ export class Sky {
     if (sunUp <= 0 || d.tod >= 0.97) return;
     const p = Math.min(1, d.tod / 0.95);
     const sx = Math.round(300 - 280 * p - cx * SKY_FX);
-    const sy = Math.round(84 - Math.sin(Math.PI * p) * 62 - cy);
+    const sy = Math.round(84 - Math.sin(Math.PI * p) * 62 - farY(cy));
     const warmSun = d.dusk > 0.3;
     ctx.globalAlpha = Math.min(1, sunUp * 1.3);
     ctx.globalCompositeOperation = 'lighter';

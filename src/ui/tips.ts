@@ -35,7 +35,7 @@ export const TIPS: readonly Tip[] = [
   {
     id: 'noche',
     focus: 'puerta',
-    text: 'Ya se han ido y tardarán unos días en volver. Cuando no tengas nada más que hacer, pulsa «Terminar día». Por la mañana llega el correo.',
+    text: 'Ya se han ido y tardarán unos días en volver. Cuando no tengas nada más que hacer, salta al anochecer y pulsa «Terminar día». Por la mañana llega el correo.',
     when: (s) => s.missions.length > 0 && s.day <= 2,
   },
   {

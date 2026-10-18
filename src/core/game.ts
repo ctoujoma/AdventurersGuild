@@ -7,6 +7,9 @@ import {
   BOARD_SIZE,
   CANDIDATE_EVERY,
   DAYS,
+  DAY_SECONDS,
+  DELIVERIES,
+  DUSK,
   DEBT,
   DESERT_CHANCE,
   MAX_CANDIDATES,
@@ -122,6 +125,10 @@ export type Action =
   | { type: 'decor'; id: DecorId; on: boolean }
   | { type: 'buyRaven' }
   | { type: 'feast' }
+  /** El reloj del día avanza hasta `to` segundos (y la caja entrega lo que toque). */
+  | { type: 'tick'; to: number }
+  /** Saltar al anochecer. */
+  | { type: 'dusk' }
   | { type: 'endDay' };
 
 // ---------- Consultas ----------
@@ -266,6 +273,8 @@ export function newGame(seed: string): GameState {
     gold: START.gold,
     rep: 0,
     paid: 0,
+    clock: 0,
+    till: 0,
     building: uncleBuilding(),
     fac: facOf(uncleBuilding()),
     heroes: [],
@@ -512,6 +521,10 @@ export function reduce(state: GameState, action: Action): GameState {
       if (state.tips?.includes(action.id)) return state;
       return { ...state, tips: [...(state.tips ?? []), action.id] };
     }
+    case 'tick':
+      return tick(state, action.to);
+    case 'dusk':
+      return tick(state, DUSK * DAY_SECONDS);
     case 'endDay':
       return endDay(state);
     default:
@@ -541,6 +554,44 @@ function rescue(s: GameState, id: string, r: Report, events: DawnEvent[]): void 
   events.push({ t: `¡${r.who} ha rescatado a ${h.name}!`, k: 'good' });
 }
 
+/** Lo que deja la taberna el día `day`: la sala, el bardo, la decoración y la fiesta. */
+export function dayIncome(s: GameState, day: number): number {
+  const c = customOf(s);
+  const decor = c.decor ?? [];
+  const bard = s.fac.tab > 0 && c.staff.includes('bardo');
+  // La fiesta montada ese día dobla la caja.
+  const feast = c.feast === day;
+  return (
+    (tavernIncome(s.fac.tab, s.rep, s.trophies.length) +
+      (bard ? 8 : 0) +
+      (bard && decor.includes('tarima') ? 8 : 0) +
+      (decor.includes('naipes') ? 6 : 0) +
+      (decor.includes('barril') ? 2 : 0)) *
+    (feast ? 2 : 1)
+  );
+}
+
+/** Parte del día que ha pasado (0 por la mañana, 1 de noche). */
+export const dayPart = (s: GameState) => Math.min(1, (s.clock ?? 0) / DAY_SECONDS);
+
+/** La taberna solo se cierra al anochecer. */
+export const canClose = (s: GameState) => dayPart(s) >= DUSK;
+
+/** Avanza el reloj y entrega la caja que toque a esa hora (en entregas iguales). */
+function tick(state: GameState, to: number): GameState {
+  const clock = Math.min(DAY_SECONDS, Math.max(state.clock ?? 0, to));
+  if (clock === (state.clock ?? 0)) return state;
+  const s = { ...state, clock };
+  const n = Math.min(DELIVERIES, Math.floor((clock / (DUSK * DAY_SECONDS)) * DELIVERIES));
+  const due = Math.floor((dayIncome(s, s.day) * n) / DELIVERIES);
+  const till = s.till ?? 0;
+  if (due > till) {
+    s.gold += due - till;
+    s.till = due;
+  }
+  return s;
+}
+
 export function endDay(state: GameState): GameState {
   if (state.over) return state;
   const s = structuredClone(state);
@@ -552,19 +603,14 @@ export function endDay(state: GameState): GameState {
   // La amenaza regional puede llevarse los ingresos del día (caravana asaltada).
   const c0 = customOf(s);
   const decor = c0.decor ?? [];
-  const bard = s.fac.tab > 0 && c0.staff.includes('bardo');
-  // La fiesta montada anoche dobla la caja.
   const feast = c0.feast === s.day - 1;
-  const income =
-    (tavernIncome(s.fac.tab, s.rep, s.trophies.length) +
-      (bard ? 8 : 0) +
-      (bard && decor.includes('tarima') ? 8 : 0) +
-      (decor.includes('naipes') ? 6 : 0) +
-      (decor.includes('barril') ? 2 : 0)) *
-    (feast ? 2 : 1);
+  const income = dayIncome(s, s.day - 1);
   const lost = stepThreat(s, rng, events, income);
+  // Lo que la caja ya entregó durante el día no se cobra otra vez.
+  s.gold += income - lost - (s.till ?? 0);
+  s.clock = 0;
+  s.till = 0;
   if (income - lost > 0) {
-    s.gold += income - lost;
     events.push({
       t: `La taberna deja ${income - lost} monedas${feast ? ': ¡la fiesta ha llenado el salón!' : '.'}`,
       k: 'good',

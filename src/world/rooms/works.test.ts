@@ -54,3 +54,25 @@ describe('sitios para las obras', () => {
     expect(targetsFor(s, { kind: 'move', id: 'nada' })).toHaveLength(0);
   });
 });
+
+describe('ganar sitio tocando la escena', () => {
+  it('marca los huecos que se pueden excavar y el solar de al lado, cada uno con su obra', () => {
+    const s = open();
+    const list = targetsFor(s, { kind: 'expand' });
+    expect(list.some((t) => t.action.type === 'dig')).toBe(true);
+    const plot = list.find((t) => t.action.type === 'buyPlot')!;
+    expect(plot.label).toBe('Comprar solar');
+    expect(new Set(list.map((t) => t.id)).size).toBe(list.length);
+    for (const t of list) expect(valid(s, t.action)).toBe(true);
+  });
+
+  it('junto a una sala igual de nivel 1, construir sale como ampliarla', () => {
+    const s = open();
+    const list = targetsFor(s, { kind: 'build', type: 'mapas' });
+    // La sala de mapas es única: no hay sitio. Una despensa nueva sí sale como sala nueva.
+    expect(list).toHaveLength(0);
+    expect(
+      targetsFor(s, { kind: 'build', type: 'despensa' }).every((t) => t.label === 'Despensa'),
+    ).toBe(true);
+  });
+});

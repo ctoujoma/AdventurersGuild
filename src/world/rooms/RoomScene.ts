@@ -77,6 +77,8 @@ import { EYE, eyeOf, frustum, scaleAt, type View } from './view3d';
 
 /** Duración del día de la escena hasta que anochece (el reloj de verdad llega con el día vivo). */
 const DAY_LENGTH = 720;
+/** Terreno de más a cada lado del mundo (lo que la perspectiva deja ver al fondo). */
+const TERRAIN_PAD = 640;
 const DAWN_LIGHT = 0.65;
 const NEAR = 20;
 const FAR = EYE + 400;
@@ -177,6 +179,8 @@ export class RoomScene {
   private key = '';
   private t = 0;
   private dayStart = 0;
+  /** Hora del día que lleva el reloj de la partida (0 mañana, 1 noche); manda sobre la propia. */
+  private clockTod: number | null = null;
   private dayAtNightfall = 0;
   private night: { start: number; dur: number; done: (() => void) | null } | null = null;
   private last = 0;
@@ -235,12 +239,13 @@ export class RoomScene {
     const x1 = Math.max(...list.map((t) => t.rect.x + t.rect.w)) + 16;
     const y1 = Math.max(...list.map((t) => t.rect.y + t.rect.h)) + 16;
     const { px, py, vw, vh } = this.camera;
-    if (x0 >= px && x1 <= px + vw && y0 >= py && y1 <= py + vh - 40) return;
-    // Abajo queda sitio para la barra de la obra.
+    // Abajo queda sitio para la barra de la obra (unos 90 píxeles de pantalla).
+    const bar = 90 / this.camera.zoom;
+    if (x0 >= px && x1 <= px + vw && y0 >= py && y1 <= py + vh - bar) return;
     const fit = Math.floor(Math.min(this.cssW / (x1 - x0), (this.cssH - 120) / (y1 - y0)));
     const z = Math.max(this.minZoom(this.cssW, this.cssH), Math.min(this.camera.zoom, fit));
     if (z !== this.camera.zoom) this.resize(this.cssW, this.cssH, z);
-    this.camera.centerOn((x0 + x1) / 2, (y0 + y1) / 2 + 20 / z);
+    this.camera.centerOn((x0 + x1) / 2, (y0 + y1) / 2 + 45 / z);
   }
 
   setModel(model: SceneModel): void {
@@ -408,6 +413,23 @@ export class RoomScene {
 
   skipRaid(): void {}
 
+  /** La hora del reloj de la partida: el cielo y la gente la siguen. */
+  setTime(tod: number): void {
+    this.clockTod = Math.max(0, Math.min(1, tod));
+  }
+
+  /** Una entrega de la caja: unas monedas saltan en el salón. */
+  pay(): void {
+    const p = this.layout ? focusPoint(this.layout, 'barra') : null;
+    if (!p) return;
+    for (let i = 0; i < 6; i++)
+      this.particles.spawn(
+        'coin',
+        p.x - 30 + (Math.random() - 0.5) * 30,
+        p.y + 10 - Math.random() * 10,
+      );
+  }
+
   cheer(room = 'barra'): void {
     const p = this.layout ? focusPoint(this.layout, room) : null;
     if (!p) return;
@@ -437,7 +459,7 @@ export class RoomScene {
       if (p < 0.9) return { day: 0, dusk: 0, tod: 0 };
       return { day: smooth(Math.min(1, (p - 0.9) / 0.9)) * DAWN_LIGHT, dusk: 0, tod: 0 };
     }
-    const tod = Math.min(1, (this.t - this.dayStart) / DAY_LENGTH);
+    const tod = this.clockTod ?? Math.min(1, (this.t - this.dayStart) / DAY_LENGTH);
     const k = (a: number, b: number) => Math.max(0, Math.min(1, (tod - a) / (b - a)));
     const day =
       tod < 0.12 ? DAWN_LIGHT + (1 - DAWN_LIGHT) * smooth(k(0, 0.12)) : 1 - smooth(k(0.6, 0.95));
@@ -553,27 +575,30 @@ export class RoomScene {
       );
     }
 
-    // El terreno de arriba: patio, hierba y lo de detrás del edificio.
+    // El terreno de arriba: patio, hierba y lo de detrás del edificio. Va mucho más allá de lo
+    // que deja ver la cámara: al fondo la perspectiva lo estrecha y si no se le vería el final.
     const yard = { ambient: OUTDOOR, sun: 1, dither: 0 };
     const back = DEPTH + 2;
+    const x0 = L.x0 - TERRAIN_PAD;
+    const x1 = L.x1 + TERRAIN_PAD;
     this.plane(
       g,
-      groundTex(L.left - L.x0, YARD_D / 2, true, 'patio'),
+      groundTex(L.left - x0, YARD_D / 2, true, 'patio'),
       [
-        at(L.x0, GROUND, 0),
+        at(x0, GROUND, 0),
         at(L.left, GROUND, 0),
         at(L.left, GROUND, YARD_D),
-        at(L.x0, GROUND, YARD_D),
+        at(x0, GROUND, YARD_D),
       ],
       yard,
     );
     this.plane(
       g,
-      groundTex(L.x1 - L.right, YARD_D / 2, false, 'solares'),
+      groundTex(x1 - L.right, YARD_D / 2, false, 'solares'),
       [
         at(L.right, GROUND, 0),
-        at(L.x1, GROUND, 0),
-        at(L.x1, GROUND, YARD_D),
+        at(x1, GROUND, 0),
+        at(x1, GROUND, YARD_D),
         at(L.right, GROUND, YARD_D),
       ],
       yard,
@@ -888,7 +913,7 @@ export class RoomScene {
       }
     }
     // A la cama: al atardecer van andando y de noche ya están acostados.
-    const tod = Math.min(1, (this.t - this.dayStart) / DAY_LENGTH);
+    const tod = this.clockTod ?? Math.min(1, (this.t - this.dayStart) / DAY_LENGTH);
     this.crowd.setNight(this.night && this.nightP() < 1.6 ? 'night' : tod > 0.82 ? 'dusk' : 'day');
     this.crowd.update(dt, this.t);
     if (this.marker && this.t > this.marker.until) this.marker = null;

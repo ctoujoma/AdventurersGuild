@@ -344,6 +344,10 @@ export interface GameState {
   rep: number;
   /** Deuda ya pagada al prestamista. */
   paid: number;
+  /** Segundos que lleva el día de hoy (el reloj se para con el juego cerrado). */
+  clock?: number;
+  /** Lo que la caja de hoy ya ha entregado durante el día. */
+  till?: number;
   /** Las salas y el patio. */
   building: Building;
   /** Nivel de cada instalación de antes, sacado del edificio (ver core/rooms.ts). */

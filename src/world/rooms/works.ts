@@ -7,7 +7,15 @@
 import { MAX_DOWN, MAX_UP } from '../../core/balance';
 import type { Action } from '../../core/game';
 import type { GameState } from '../../core/model';
-import { planBuild, planDig, planMove, planStair, roomAt, type Plan } from '../../core/rooms';
+import {
+  planBuild,
+  planDig,
+  planMove,
+  planPlot,
+  planStair,
+  roomAt,
+  type Plan,
+} from '../../core/rooms';
 import { ROOMS, type RoomType } from '../../data/rooms';
 import {
   CELL_W,
@@ -26,7 +34,9 @@ export type Pick =
   | { kind: 'build'; type: RoomType }
   | { kind: 'move'; id: string }
   | { kind: 'dig' }
-  | { kind: 'stair' };
+  | { kind: 'stair' }
+  /** Ganar sitio tocando la escena: los huecos que se pueden excavar y el solar de al lado. */
+  | { kind: 'expand' };
 
 export interface Target {
   id: string;
@@ -57,6 +67,8 @@ export function pickTitle(s: GameState, pick: Pick): string {
       return 'Elige qué hueco excavar';
     case 'stair':
       return 'Elige dónde poner la escalera';
+    case 'expand':
+      return 'Toca un hueco para excavarlo o el solar para comprarlo';
   }
 }
 
@@ -81,7 +93,14 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
         for (let c = 0; c < b.cols; c++) {
           if (roomAt(b, c, f)) continue;
           const plan = planBuild(s, pick.type, c, f);
-          add(plan, cell(s, c, f), name, { type: 'build', room: pick.type, col: c, floor: f });
+          // Junto a una igual y del mismo nivel no sale otra sala: se amplía la de al lado.
+          const grows = !('error' in plan) && plan.b.rooms.length === b.rooms.length;
+          add(plan, cell(s, c, f), grows ? `Ampliar ${name.toLowerCase()}` : name, {
+            type: 'build',
+            room: pick.type,
+            col: c,
+            floor: f,
+          });
         }
       break;
     }
@@ -101,6 +120,19 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
             floor: f,
           });
         }
+      break;
+    }
+    case 'expand': {
+      const dig = targetsFor(s, { kind: 'dig' });
+      out.push(...dig);
+      // El solar de al lado: el hueco de la planta baja a la derecha del edificio.
+      const plot = planPlot(s);
+      if (!('error' in plot)) {
+        const L = roomsLayout(b);
+        add(plot, { x: L.right + 4, y: floorTop(0), w: CELL_W - 8, h: ROOM_H }, 'Comprar solar', {
+          type: 'buyPlot',
+        });
+      }
       break;
     }
     case 'dig':

@@ -109,7 +109,9 @@ export function useWorks({ game, dispatch, toast, focus }: Deps): Works {
     }
     const next = dispatch(a);
     audio.play(a.type === 'demolish' ? 'close' : 'build');
-    toast(told(game, a));
+    // Construir junto a una sala igual del mismo nivel la amplía en vez de hacer otra.
+    const grew = a.type === 'build' && next.building.rooms.length === game.building.rooms.length;
+    toast(told(game, grew ? { type: 'extend', id: '', dir: 'right' } : a));
     const id = roomOf(game, next, a);
     if (id) focus(id);
     return true;
@@ -139,7 +141,10 @@ export function useWorks({ game, dispatch, toast, focus }: Deps): Works {
       audio.play('select', 0.6);
     },
     confirm: () => {
-      if (chosen && work(chosen.action)) endPick();
+      if (!chosen || !work(chosen.action)) return;
+      // Ganando sitio se sigue tocando huecos, como en una mina; lo demás acaba al hacerlo.
+      if (pick?.kind === 'expand') setChosenId(null);
+      else endPick();
     },
     cancelPick: () => {
       endPick();

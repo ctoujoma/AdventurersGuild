@@ -3,7 +3,8 @@ import { useBackButton } from '../platform/back';
 import { HoldHelp } from './HoldHelp';
 import { setHaptics } from '../platform/haptics';
 import { audio, type Mood } from '../audio/audio';
-import { canHire, customOf, newGame, reduce, type Action } from '../core/game';
+import { canClose, canHire, customOf, newGame, reduce, type Action } from '../core/game';
+import { DAY_SECONDS, DELIVERIES, DUSK } from '../core/balance';
 import { DECOR, STAFF } from '../data/custom';
 import type { BossFight as BossFightRecord, Facilities, GameState } from '../core/model';
 import { CAPTIONS, FACILITY_INFO } from '../data/labels';
@@ -44,6 +45,7 @@ import { RoomPanel, type RoomLink } from './panels/RoomPanel';
 import { ObrasPanel } from './panels/ObrasPanel';
 import { WorksBar } from './WorksBar';
 import { useWorks } from './works';
+import { LOCKED, worksOpen } from '../core/rooms';
 import { RoomScene } from '../world/rooms/RoomScene';
 import type { Pick } from '../world/rooms/works';
 import { ROOMS } from '../data/rooms';
@@ -205,6 +207,30 @@ export function App() {
   });
 
   const toast = (text: string) => setNotice({ text, key: Date.now() });
+
+  /** Reloj del día en la interfaz (el del estado se guarda cada pocos segundos). */
+  const clockRef = useRef(game.clock ?? 0);
+  const [clock, setClock] = useState(clockRef.current);
+  /** Mueve el reloj: la escena lo sigue y la partida se entera al cruzar una entrega o cada 5 s. */
+  const moveClock = (next: number, before: number) => {
+    clockRef.current = next;
+    setClock(next);
+    scene.current?.setTime(next / DAY_SECONDS);
+    const open = DUSK * DAY_SECONDS;
+    const delivery = (x: number) => Math.floor((Math.min(x, open) / open) * DELIVERIES);
+    if (
+      Math.floor(next / 5) === Math.floor(before / 5) &&
+      delivery(next) === delivery(before) &&
+      next < DAY_SECONDS
+    )
+      return;
+    const gold = gameRef.current.gold;
+    const after = dispatch({ type: 'tick', to: next });
+    if (after.gold > gold) {
+      scene.current?.pay();
+      audio.play('coin', 0.25);
+    }
+  };
   const say = (text: string, at: Point) =>
     setBubble({ text, x: at.x, y: at.y, wx: at.wx, wy: at.wy, key: Date.now() });
 
@@ -440,6 +466,8 @@ export function App() {
 
   const endDay = () => {
     if (passing) return;
+    dispatch({ type: 'tick', to: clockRef.current });
+    if (!canClose(gameRef.current)) return;
     setHint(false);
     setPanel(null);
     setCard(null);
@@ -551,6 +579,34 @@ export function App() {
   useEffect(() => {
     if (tip?.focus) scene.current?.focus(tip.focus);
   }, [tip?.id]);
+
+  // El reloj del día: corre con el juego abierto, también con un panel delante, y se para en
+  // los momentos que piden atención (evento, nota, asalto, amanecer…) y con la pestaña oculta.
+  const ticking =
+    calm &&
+    !game.over &&
+    !pendingEvent &&
+    !tip &&
+    !watching &&
+    !bossCall &&
+    !settingsOpen &&
+    !saveMenu;
+  useEffect(() => {
+    clockRef.current = game.clock ?? 0;
+    setClock(clockRef.current);
+    scene.current?.setTime(clockRef.current / DAY_SECONDS);
+  }, [game.day, game.seed]);
+  useEffect(() => {
+    if (!ticking) return;
+    const id = setInterval(() => {
+      if (document.hidden) return;
+      const before = clockRef.current;
+      const next = Math.min(DAY_SECONDS, before + 0.25 * settings.pace);
+      if (next === before) return;
+      moveClock(next, before);
+    }, 250);
+    return () => clearInterval(id);
+  }, [ticking, settings.pace]);
   const tab: TabId =
     panel === 'tablon' || panel === 'heroes' || panel === 'gremio' ? panel : 'taberna';
 
@@ -564,6 +620,7 @@ export function App() {
           model={model}
           onReady={(s) => {
             scene.current = s;
+            s.setTime(clockRef.current / DAY_SECONDS);
             s.speed = settings.speed;
           }}
           onHotspot={onHotspot}
@@ -607,6 +664,20 @@ export function App() {
           >
             <Icon name="home" size={16} />
           </button>
+          {roomsLive && (
+            <button
+              class={`btn-icon ${works.pick?.kind === 'expand' ? 'is-on' : ''}`}
+              aria-label="Ganar sitio: excavar o comprar solar"
+              data-help="Ganar sitio: marca los huecos que se pueden excavar y el solar de al lado, con su precio. Tócalos para pagarlos."
+              onClick={() => {
+                if (works.pick?.kind === 'expand') works.cancelPick();
+                else if (!worksOpen(works.view)) toast(LOCKED);
+                else pickSpot({ kind: 'expand' });
+              }}
+            >
+              <Icon name="pico" size={16} />
+            </button>
+          )}
         </div>
         {!panel && (works.pick || works.planning) && (
           <WorksBar works={works} onMore={() => openPanel('gremio')} />
@@ -617,6 +688,18 @@ export function App() {
             away={away}
             onMail={() => openPanel('correo')}
             onAway={() => openPanel('fuera')}
+            part={clock / DAY_SECONDS}
+            canClose={clock >= DUSK * DAY_SECONDS}
+            pace={settings.pace}
+            onPace={() =>
+              setSettings({
+                ...settings,
+                pace: settings.pace === 1 ? 2 : settings.pace === 2 ? 4 : 1,
+              })
+            }
+            onDusk={() =>
+              moveClock(Math.max(clockRef.current, DUSK * DAY_SECONDS), clockRef.current)
+            }
             onEndDay={endDay}
           />
         )}
