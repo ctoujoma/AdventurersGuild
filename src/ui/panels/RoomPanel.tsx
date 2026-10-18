@@ -1,7 +1,14 @@
+import { useState } from 'preact/hooks';
 import { roomMax } from '../../core/balance';
-import { canWork } from '../../core/game';
-import type { GameState } from '../../core/model';
-import { upgradeCostOf } from '../../core/rooms';
+import { canWork, type Action } from '../../core/game';
+import type { GameState, Room } from '../../core/model';
+import {
+  planDemolish,
+  planExtend,
+  upgradeCostOf,
+  worksOpen,
+  type ExtendDir,
+} from '../../core/rooms';
 import { FACILITY_INFO } from '../../data/labels';
 import { ROOMS, type RoomType } from '../../data/rooms';
 import { plural } from '../../core/text';
@@ -30,10 +37,88 @@ interface Props {
   roomId: string;
   onUpgrade: (id: string) => void;
   onLink: (to: RoomLink) => void;
+  /** Obras de verdad (ampliar, destruir) y elegir en la escena a dónde mover la sala. */
+  onWork?: (a: Action) => void;
+  onMove?: (id: string) => void;
 }
 
-/** Ficha de una sala: para qué sirve, su nivel y arreglarla o mejorarla. */
-export function RoomPanel({ game, roomId, onUpgrade, onLink }: Props) {
+const DIRS: { dir: ExtendDir; label: string }[] = [
+  { dir: 'left', label: 'Ampliar a la izquierda' },
+  { dir: 'right', label: 'Ampliar a la derecha' },
+  { dir: 'up', label: 'Subir una planta' },
+];
+
+/** Ampliar, mover y destruir: lo que se puede hacer con la sala una vez pagada la deuda. */
+function RoomWorks({
+  game,
+  room,
+  onWork,
+  onMove,
+}: {
+  game: GameState;
+  room: Room;
+  onWork: (a: Action) => void;
+  onMove?: (id: string) => void;
+}) {
+  const [sure, setSure] = useState(false);
+  const def = ROOMS[room.type];
+  if (!worksOpen(game))
+    return <span class="muted">Ampliar, mover o tirar salas: al pagar la deuda.</span>;
+  if (room.works) return null;
+  const grow = DIRS.filter(
+    ({ dir }) => (dir === 'up' ? room.h < def.maxH : room.w < def.maxW) && room.level > 0,
+  ).map((d) => ({ ...d, plan: planExtend(game, room.id, d.dir) }));
+  const open = grow.filter((g) => !('error' in g.plan));
+  // Si falta oro se dice; si no, es que al lado no hay hueco.
+  const growWhy =
+    grow
+      .map((g) => ('error' in g.plan ? g.plan.error : ''))
+      .find((e) => e.startsWith('Te faltan')) ?? 'no hay hueco libre al lado.';
+  const demolish = planDemolish(game, room.id);
+  const refund = 'error' in demolish ? 0 : -demolish.cost;
+  return (
+    <div class="room-works">
+      {open.map((g) => (
+        <button
+          key={g.dir}
+          class="btn btn-wood"
+          onClick={() => onWork({ type: 'extend', id: room.id, dir: g.dir })}
+        >
+          {g.label} <Icon name="coin" size={10} /> {'cost' in g.plan ? g.plan.cost : ''}
+        </button>
+      ))}
+      {grow.length > 0 && !open.length && <span class="muted">Ampliar: {growWhy}</span>}
+      {!def.fixed && onMove && (
+        <button class="btn btn-wood" onClick={() => onMove(room.id)}>
+          Mover
+        </button>
+      )}
+      {!def.keep &&
+        (sure ? (
+          <span class="room-sure">
+            <span>
+              {refund > 0
+                ? `¿Tirarla? Recuperas ${refund} monedas.`
+                : '¿Tirarla? No recuperas nada.'}
+            </span>
+            <button class="btn btn-red" onClick={() => onWork({ type: 'demolish', id: room.id })}>
+              Tirar
+            </button>
+            <button class="btn btn-wood" onClick={() => setSure(false)}>
+              No
+            </button>
+          </span>
+        ) : (
+          <button class="btn btn-wood" onClick={() => setSure(true)}>
+            Tirar
+          </button>
+        ))}
+    </div>
+  );
+}
+
+/** Ficha de una sala: para qué sirve, su nivel, arreglarla o mejorarla y sus obras. */
+export function RoomPanel({ game, roomId, onUpgrade, onLink, onWork, onMove }: Props) {
   const room = game.building.rooms.find((r) => r.id === roomId);
   if (!room) return <p class="muted">Esa sala ya no está.</p>;
   const def = ROOMS[room.type];
@@ -71,6 +156,7 @@ export function RoomPanel({ game, roomId, onUpgrade, onLink }: Props) {
         {info && cost !== null && (
           <span class="next-level">Mejora: {info.effect(room.level + 1)}</span>
         )}
+        {onWork && <RoomWorks game={game} room={room} onWork={onWork} onMove={onMove} />}
         <span class="room-links">
           {(LINKS[room.type] ?? []).map((l) => (
             <button key={l.to} class="btn btn-wood" onClick={() => onLink(l.to)}>

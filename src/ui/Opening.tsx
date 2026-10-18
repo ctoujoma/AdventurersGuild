@@ -5,12 +5,14 @@ interface Props {
   arrival: Arrival;
   /** Mejor llegada de intentos anteriores, para comparar. */
   best: Arrival | null;
+  /** Vista de salas: se abren las obras. */
+  rooms?: boolean;
   onOpen: () => void;
   onRetry: () => void;
 }
 
 /** Al pagar la deuda: el gremio es tuyo y empieza la aventura (o se intenta otra vez). */
-export function Opening({ arrival: a, best, onOpen, onRetry }: Props) {
+export function Opening({ arrival: a, best, rooms, onOpen, onRetry }: Props) {
   const [retry, setRetry] = useState(false);
   const better = best && a.score > best.score;
   return (
@@ -47,6 +49,12 @@ export function Opening({ arrival: a, best, onOpen, onRetry }: Props) {
           {best && (better ? ' · ¡tu mejor llegada!' : ` · tu mejor: ${best.score}`)}
         </p>
         <ul class="dawn-events">
+          {rooms && (
+            <li class="ev ev-good">
+              Se acabaron los apaños: ya puedes construir salas nuevas, ampliarlas, moverlas,
+              excavar el sótano y comprar los solares de al lado.
+            </li>
+          )}
           <li class="ev ev-info">
             Sin Merlo encima: cada 7 días solo se pagan salarios. Dos semanas sin pagar y el gremio
             quiebra.

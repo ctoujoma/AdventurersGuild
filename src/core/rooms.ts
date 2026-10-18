@@ -182,7 +182,11 @@ export function problem(b: Building): string | null {
     }
     for (let c = r.col; c < r.col + r.w; c++) {
       if (under(c, r.floor)?.type === 'torre') return 'Encima de la torre no se construye.';
-      if (r.floor > 0 && ![c - 1, c, c + 1].some((x) => under(x, r.floor)))
+      const holds = (x: number) => {
+        const u = under(x, r.floor);
+        return !!u && u.type !== 'torre';
+      };
+      if (r.floor > 0 && ![c - 1, c, c + 1].some(holds))
         return 'Una planta solo puede sobresalir un hueco de la de abajo.';
     }
   }

@@ -3732,3 +3732,87 @@ textarea:focus-visible,
   background: rgba(62, 137, 72, 0.12);
   box-shadow: 0 0 0 2px var(--leaf);
 }
+
+/* ---------- Obras ---------- */
+.worksbar {
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: calc(100% - 20px);
+  width: max-content;
+}
+
+.worksbar-text {
+  padding: 0 6px;
+  font-family: var(--pixel);
+  font-size: 15px;
+  color: var(--white);
+}
+
+.worksbar .btn {
+  min-height: 36px;
+}
+
+.room-works {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.room-sure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.obras-floor {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.obras-rooms {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px;
+}
+
+.obras-room {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  min-width: 0;
+  padding: 6px 8px;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.obras-room b {
+  font-family: var(--pixel);
+  font-size: 15px;
+}
+
+.obras-room.is-off {
+  opacity: 0.75;
+}
+
+.obras-build {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px;
+}
+
+.obras-build .obras-room:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.obras-cost {
+  margin-top: auto;
+  font-family: var(--pixel);
+  font-size: 14px;
+  color: var(--rust);
+}

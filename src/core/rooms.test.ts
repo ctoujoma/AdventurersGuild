@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { DIG_COST, PLOT_COST, START, STAIR_COST, UPGRADE_COST, capacity } from './balance';
-import { canWork, endDay, newGame, reduce, type Action } from './game';
+import {
+  DIG_COST,
+  PLOT_COST,
+  ROOM_COST,
+  START,
+  STAIR_COST,
+  UPGRADE_COST,
+  capacity,
+} from './balance';
+import { canWork, endDay, newGame, reduce, tryWorks, type Action } from './game';
 import type { GameState, Room } from './model';
 import { LOCKED, beds, facOf, problem, uncleBuilding, upgradeCostOf } from './rooms';
 
@@ -80,6 +88,8 @@ describe('obras', () => {
     let s = ok(ok(open(), { type: 'buyPlot' }), { type: 'buyPlot' });
     expect(s.building.cols).toBe(6);
     no(s, { type: 'build', room: 'cocina', col: 5, floor: 1 }, /sobresalir/);
+    // La torre no sirve de apoyo: junto a ella, una planta más arriba, no se construye.
+    no(s, { type: 'build', room: 'cocina', col: 1, floor: 4 }, /sobresalir/);
     no(s, { type: 'build', room: 'cocina', col: 4, floor: 2 }, /sin paso/);
     no(s, { type: 'build', room: 'cocina', col: 0, floor: 4 }, /torre/);
     s = ok(s, { type: 'build', room: 'cocina', col: 4, floor: 1 });
@@ -159,6 +169,22 @@ describe('obras', () => {
     for (let i = 0; i < 3; i++) s = ok(s, { type: 'buyPlot' });
     expect(s.building.cols).toBe(7);
     no(s, { type: 'buyPlot' }, /solares/);
+  });
+
+  it('el modo plano paga varias obras de una vez, o ninguna si una falla', () => {
+    const s = open();
+    const steps: Action[] = [
+      { type: 'buyPlot' },
+      { type: 'build', room: 'despensa', col: 4, floor: 0 },
+      { type: 'dig', col: 0, floor: -2 },
+    ];
+    const next = reduce(s, { type: 'works', steps });
+    expect(next.building.cols).toBe(5);
+    expect(next.building.rooms.some((r) => r.type === 'despensa' && r.col === 4)).toBe(true);
+    expect(next.gold).toBe(9999 - PLOT_COST[0] - ROOM_COST.despensa[1]! - DIG_COST[2]);
+    // Sin el solar, la despensa no cabe: no se hace nada.
+    expect(reduce(s, { type: 'works', steps: steps.slice(1) })).toBe(s);
+    expect(tryWorks(s, steps.slice(1))).toEqual({ error: 'No cabe en el solar.' });
   });
 
   it('sin oro no hay obra', () => {
