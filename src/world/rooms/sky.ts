@@ -19,14 +19,10 @@ import {
 } from '../parallax';
 
 const SKY_FX = 0.15;
-const MOON = { x: 84, y: 64 } as const;
-/**
- * El sol y la luna están muy lejos: con la cámara apenas se mueven, también en vertical. Se
- * colocan como antes para una cámara a la altura de siempre (`SKY_Y0`) y desde ahí se desplazan
- * poco.
- */
-const SKY_Y0 = 40;
-const farY = (cy: number) => SKY_Y0 + (cy - SKY_Y0) * SKY_FX;
+/** La luna, a cierta distancia en x y por encima del horizonte. */
+const MOON = { x: 84, up: 156 } as const;
+/** Lo más alto que sube el sol sobre el horizonte, en píxeles. */
+const SUN_UP = 170;
 
 export interface Daylight {
   /** Luz del día (0–1), del atardecer (0–1) y avance del día (0 mañana – 1 noche). */
@@ -62,26 +58,32 @@ export class Sky {
     speed: 2 + i,
   }));
 
-  /** Pinta el cielo de una vista que empieza en (cx, cy) del mundo. */
+  /**
+   * Pinta el cielo de una vista que empieza en la x `cx` del mundo. `hz` es la altura en la vista
+   * del horizonte (el fondo del terreno): como en una cámara de verdad, lo lejano (montes, sol y
+   * luna) se queda a esa altura aunque la cámara suba o baje.
+   */
   draw(
     ctx: CanvasRenderingContext2D,
     cx: number,
-    cy: number,
     vw: number,
     vh: number,
     t: number,
     dl: Daylight,
     nl: NightLight,
+    hz: number,
   ): void {
+    // Las capas se dibujaron con el horizonte en GROUND: se bajan o suben hasta `hz`.
+    const top = Math.round(hz - GROUND);
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
     ctx.fillStyle = P.black;
     ctx.fillRect(0, 0, vw, vh);
-    ctx.drawImage(this.skyC, WORLD_X0 - Math.round(cx * SKY_FX), -cy);
+    ctx.drawImage(this.skyC, WORLD_X0 - Math.round(cx * SKY_FX), top);
     ctx.globalAlpha = Math.max(0, 1 - dl.day * 1.4);
     for (const s of dl.day > 0.7 ? [] : this.starList) {
       const sx = s.x + WORLD_X0 - Math.round(cx * SKY_FX);
-      const sy = s.y - cy;
+      const sy = s.y + top;
       if (sx < 0 || sy < 0 || sx >= vw || sy >= vh) continue;
       const tw = noise(s.x, Math.floor(t * 1.5 + s.y));
       if (!s.bright && tw < 0.25) continue;
@@ -95,17 +97,17 @@ export class Sky {
       ctx.drawImage(
         this.moonC,
         Math.round(MOON.x - MOON_R - cx * SKY_FX),
-        Math.round(MOON.y - MOON_R - farY(cy)),
+        Math.round(hz - MOON.up - MOON_R),
       );
       ctx.globalAlpha = 1;
     }
-    this.drawDay(ctx, dl, cx, cy, vw, vh);
+    this.drawDay(ctx, dl, cx, hz, vw, vh);
     for (const cl of this.clouds) {
       const x = ((cl.x + t * cl.speed) % 900) - 60 + WORLD_X0 - cx * 0.2;
-      drawBuffer(ctx, cl.img, x, cl.y - cy);
+      drawBuffer(ctx, cl.img, x, cl.y + top);
     }
-    if (nl.warm > 0) this.drawDawn(ctx, nl.warm, cy, vw, vh);
-    for (const { c, l } of this.parallax) ctx.drawImage(c, WORLD_X0 - Math.round(cx * l.fx), -cy);
+    if (nl.warm > 0) this.drawDawn(ctx, nl.warm, hz, vw, vh);
+    for (const { c, l } of this.parallax) ctx.drawImage(c, WORLD_X0 - Math.round(cx * l.fx), top);
     if (dl.day > 0 || dl.dusk > 0) {
       ctx.globalCompositeOperation = 'screen';
       const h = (v: number) => Math.round(v * dl.day + v * 0.4 * dl.dusk);
@@ -126,11 +128,11 @@ export class Sky {
     ctx: CanvasRenderingContext2D,
     d: Daylight,
     cx: number,
-    cy: number,
+    hz: number,
     vw: number,
     vh: number,
   ): void {
-    const horizon = GROUND - 40 - cy;
+    const horizon = hz - 40;
     if (d.day > 0) {
       ctx.globalAlpha = d.day;
       const g = ctx.createLinearGradient(0, horizon - 230, 0, horizon + 10);
@@ -150,10 +152,12 @@ export class Sky {
       ctx.fillRect(0, 0, vw, vh);
     }
     const sunUp = Math.max(d.day, d.dusk);
-    if (sunUp <= 0 || d.tod >= 0.97) return;
-    const p = Math.min(1, d.tod / 0.95);
+    if (sunUp <= 0) return;
+    // Sale ya alto por la mañana, cruza y al atardecer baja hasta perderse tras los montes.
+    const p = Math.min(1, 0.1 + d.tod * 0.95);
     const sx = Math.round(300 - 280 * p - cx * SKY_FX);
-    const sy = Math.round(84 - Math.sin(Math.PI * p) * 62 - farY(cy));
+    const sy = Math.round(hz - 10 - (Math.sin(Math.PI * p) * 1.15 - 0.15) * SUN_UP);
+    if (sy > hz + 20) return;
     const warmSun = d.dusk > 0.3;
     ctx.globalAlpha = Math.min(1, sunUp * 1.3);
     ctx.globalCompositeOperation = 'lighter';
@@ -174,11 +178,11 @@ export class Sky {
   private drawDawn(
     ctx: CanvasRenderingContext2D,
     warm: number,
-    cy: number,
+    hz: number,
     vw: number,
     vh: number,
   ): void {
-    const horizon = GROUND - 40 - cy;
+    const horizon = hz - 40;
     const g = ctx.createLinearGradient(0, horizon - 200, 0, horizon + 20);
     g.addColorStop(0, 'rgba(90, 60, 120, 0)');
     g.addColorStop(0.55, `rgba(232, 110, 120, ${0.45 * warm})`);

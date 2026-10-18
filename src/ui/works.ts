@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
-import { canWork, tryWork, tryWorks, type Action } from '../core/game';
+import { canWork, needsPlan, planIssue, tryWork, tryWorks, type Action } from '../core/game';
+import { laxly } from '../core/rooms';
 import type { GameState } from '../core/model';
 import { ROOMS } from '../data/rooms';
 import { targetsFor, type Pick, type Target } from '../world/rooms/works';
@@ -16,7 +17,11 @@ export interface Works {
   steps: Action[];
   /** Lo que cuesta el plano hasta ahora (negativo si se recupera oro). */
   planCost: number;
+  /** Lo que falta arreglar en el plano para poder pagarlo (salas sin paso…). */
+  issue: string | null;
   pick: Pick | null;
+  /** Lo que se marca en la escena: lo elegido o, en el modo obras, excavar y solares. */
+  active: Pick | null;
   targets: Target[];
   chosen: Target | null;
   /** Hace una obra (o la apunta en el plano). Devuelve si se ha hecho. */
@@ -85,12 +90,20 @@ export function useWorks({ game, dispatch, toast, focus }: Deps): Works {
     return 'error' in d ? game : d;
   }, [game, steps]);
   const view = draft ?? game;
-  const targets = useMemo(() => (pick ? targetsFor(view, pick) : []), [view, pick]);
+  // En el modo obras, sin nada elegido, se ven los huecos que se pueden excavar y el solar.
+  const active: Pick | null = pick ?? (steps ? { kind: 'expand' } : null);
+  // En el plano (y al mover, que puede llevar a él) se deja la casa a medias por el camino.
+  const loose = !!steps || pick?.kind === 'move';
+  const targets = useMemo(
+    () =>
+      active ? (loose ? laxly(() => targetsFor(view, active)) : targetsFor(view, active)) : [],
+    [view, pick, !!steps, loose],
+  );
   const chosen = targets.find((t) => t.id === chosenId) ?? null;
 
   const work = (a: Action): boolean => {
     if (steps) {
-      const next = tryWork(view, a);
+      const next = laxly(() => tryWork(view, a));
       if ('error' in next) {
         toast(next.error);
         return false;
@@ -99,6 +112,16 @@ export function useWorks({ game, dispatch, toast, focus }: Deps): Works {
       audio.play('select');
       toast('Apuntado en el plano.');
       const id = roomOf(view, next, a);
+      if (id) focus(id);
+      return true;
+    }
+    if (needsPlan(game, a)) {
+      // La casa quedaría a medias: se sigue en el plano y se paga cuando todo cuadre.
+      setSteps([a]);
+      audio.play('select');
+      toast('Así la casa queda a medias: sigue en el plano y paga cuando todo tenga paso.');
+      const next = tryWorks(game, [a]);
+      const id = 'error' in next ? null : roomOf(game, next, a);
       if (id) focus(id);
       return true;
     }
@@ -127,7 +150,9 @@ export function useWorks({ game, dispatch, toast, focus }: Deps): Works {
     planning: !!steps,
     steps: steps ?? [],
     planCost: game.gold - view.gold,
+    issue: steps ? planIssue(view) : null,
     pick,
+    active,
     targets,
     chosen,
     work,
@@ -137,6 +162,12 @@ export function useWorks({ game, dispatch, toast, focus }: Deps): Works {
       if (!targetsFor(view, p).length) toast('No queda ningún sitio donde hacerlo.');
     },
     choose: (id) => {
+      // En el modo obras basta un toque: se apunta y se deshace si hace falta.
+      if (steps) {
+        const t = targets.find((x) => x.id === id);
+        if (t && work(t.action) && pick && pick.kind !== 'expand') endPick();
+        return;
+      }
       setChosenId(id);
       audio.play('select', 0.6);
     },
@@ -152,7 +183,7 @@ export function useWorks({ game, dispatch, toast, focus }: Deps): Works {
     },
     startPlan: () => {
       setSteps([]);
-      toast('Modo plano: prueba las obras y paga al final.');
+      toast('Modo obras: toca los huecos marcados o elige una sala abajo. Se paga al final.');
     },
     undo: () => {
       if (!steps?.length) return;
@@ -161,6 +192,11 @@ export function useWorks({ game, dispatch, toast, focus }: Deps): Works {
     },
     pay: () => {
       if (!steps?.length) return;
+      const issue = planIssue(view);
+      if (issue) {
+        toast(`Antes de pagar: ${issue}`);
+        return;
+      }
       const before = game;
       if (dispatch({ type: 'works', steps }) === before) {
         toast('El plano ya no cuadra con la taberna: revísalo.');

@@ -243,12 +243,14 @@ export function App() {
     const s = scene.current;
     if (!(s instanceof RoomScene)) return;
     s.setTargets(
-      works.pick
+      works.active
         ? works.targets.map((t) => ({ id: t.id, rect: t.rect, label: `${t.label} · ${t.cost}` }))
         : null,
       works.chosen?.id ?? null,
+      // Los huecos de siempre del modo obras no mueven la cámara ni tapan las salas.
+      !works.pick,
     );
-  }, [works.pick, works.targets, works.chosen?.id]);
+  }, [works.active?.kind, works.targets, works.chosen?.id, works.pick]);
   /** Las obras de verdad solo se eligen en la escena por salas (si el navegador la pinta). */
   const roomsLive = !settings.classic && scene.current instanceof RoomScene;
   const pickSpot = (p: Pick) => {
@@ -696,16 +698,21 @@ export function App() {
           </button>
           {roomsLive && (
             <button
-              class={`btn-icon ${works.pick?.kind === 'expand' ? 'is-on' : ''}`}
-              aria-label="Ganar sitio: excavar o comprar solar"
-              data-help="Ganar sitio: marca los huecos que se pueden excavar y el solar de al lado, con su precio. Tócalos para pagarlos."
+              class={`btn-icon ${works.planning ? 'is-on' : ''}`}
+              aria-label="Modo obras"
+              data-help="Modo obras: marca los huecos que se pueden excavar y el solar de al lado, y abajo salen las salas para construir. Todo se apunta y se paga al final."
               onClick={() => {
-                if (works.pick?.kind === 'expand') works.cancelPick();
+                if (works.planning && works.steps.length)
+                  toast('Tienes obras apuntadas: págalas o sal desde la barra de abajo.');
+                else if (works.planning) works.discard();
                 else if (!worksOpen(works.view)) toast(LOCKED);
-                else pickSpot({ kind: 'expand' });
+                else {
+                  openPanel(null);
+                  works.startPlan();
+                }
               }}
             >
-              <Icon name="pico" size={16} />
+              <Icon name="martillo" size={16} />
             </button>
           )}
         </div>

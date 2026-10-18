@@ -1,4 +1,4 @@
-import { useMemo } from 'preact/hooks';
+import { useMemo, useState } from 'preact/hooks';
 import {
   DIG_COST,
   MAX_COLS,
@@ -43,8 +43,11 @@ function stateOf(r: Room): string {
  * Las obras del gremio: construir salas nuevas, ganar sitio (excavar, solares, escaleras),
  * planear una reforma y la lista de salas por planta.
  */
+type ObrasTab = 'construir' | 'salas' | 'sitio';
+
 export function ObrasPanel({ game, planning, onPick, onWork, onRoom, onPlan }: Props) {
   const open = worksOpen(game);
+  const [tab, setTab] = useState<ObrasTab>(open ? 'construir' : 'salas');
   const b = game.building;
   // Qué salas se pueden construir y en cuántos sitios.
   const menu = useMemo(() => {
@@ -63,46 +66,62 @@ export function ObrasPanel({ game, planning, onPick, onWork, onRoom, onPlan }: P
       {!open && <p class="panel-note">{LOCKED} Toca una sala para verla.</p>}
       {open && !planning && (
         <button class="card-paper libro-link" onClick={onPlan}>
-          <b>Planear una reforma</b>
+          <b>Modo obras</b>
           <span class="muted">
-            Prueba las obras sin pagar, mira lo que cuesta todo y paga al final.
+            Toca en la taberna los huecos para excavar o el solar, elige salas en la cinta de abajo
+            y paga todo al final.
           </span>
         </button>
       )}
-
-      <section>
-        <h3 class="sec-title">Salas</h3>
-        <div class="list">
-          {floors.map((f) => (
-            <div key={f} class="obras-floor">
-              <span class="tiny">{FLOOR_NAME(f)}</span>
-              <div class="obras-rooms">
-                {b.rooms
-                  .filter((r) => r.floor === f)
-                  .sort((x, y) => x.col - y.col)
-                  .map((r) => (
-                    <button
-                      key={r.id}
-                      class={`card-paper obras-room ${r.level === 0 || r.works ? 'is-off' : ''}`}
-                      onClick={() => onRoom(r.id)}
-                    >
-                      <b>{ROOMS[r.type].name}</b>
-                      <span class="pips" aria-hidden="true">
-                        {Array.from({ length: roomMax(r.type) }, (_, i) => (
-                          <i key={i} class={i < r.level ? 'on' : ''} />
-                        ))}
-                      </span>
-                      <span class="muted">{stateOf(r)}</span>
-                    </button>
-                  ))}
-              </div>
-            </div>
+      {open && (
+        <div class="segmented segmented-3" role="tablist">
+          {(
+            [
+              ['construir', 'Construir'],
+              ['salas', 'Salas'],
+              ['sitio', 'Más sitio'],
+            ] as const
+          ).map(([k, label]) => (
+            <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}>
+              {label}
+            </button>
           ))}
         </div>
-      </section>
-      {open && (
+      )}
+
+      {tab === 'salas' && (
         <section>
-          <h3 class="sec-title">Construir</h3>
+          <div class="list">
+            {floors.map((f) => (
+              <div key={f} class="obras-floor">
+                <span class="tiny">{FLOOR_NAME(f)}</span>
+                <div class="obras-rooms">
+                  {b.rooms
+                    .filter((r) => r.floor === f)
+                    .sort((x, y) => x.col - y.col)
+                    .map((r) => (
+                      <button
+                        key={r.id}
+                        class={`card-paper obras-room ${r.level === 0 || r.works ? 'is-off' : ''}`}
+                        onClick={() => onRoom(r.id)}
+                      >
+                        <b>{ROOMS[r.type].name}</b>
+                        <span class="pips" aria-hidden="true">
+                          {Array.from({ length: roomMax(r.type) }, (_, i) => (
+                            <i key={i} class={i < r.level ? 'on' : ''} />
+                          ))}
+                        </span>
+                        <span class="muted">{stateOf(r)}</span>
+                      </button>
+                    ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+      {open && tab === 'construir' && (
+        <section>
           <div class="obras-build">
             {menu.map(({ t, spots }) => {
               const cost = ROOM_COST[t][1]!;
@@ -133,9 +152,8 @@ export function ObrasPanel({ game, planning, onPick, onWork, onRoom, onPlan }: P
         </section>
       )}
 
-      {open && (
+      {open && tab === 'sitio' && (
         <section>
-          <h3 class="sec-title">Más sitio</h3>
           <div class="list">
             <article class="card-paper facility">
               <div class="facility-info">

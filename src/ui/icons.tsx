@@ -162,6 +162,18 @@ const ICONS = {
     '....kr....',
     '....kk....',
   ],
+  martillo: [
+    '.kkkkkkk..',
+    'kmmmmmmmk.',
+    'kffffffmk.',
+    '.kkkcckkk.',
+    '....kck...',
+    '....kck...',
+    '....krk...',
+    '....krk...',
+    '....krk...',
+    '....kkk...',
+  ],
   home: [
     '...kk...',
     '..kffk..',
