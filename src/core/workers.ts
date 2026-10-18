@@ -8,14 +8,12 @@ import { FIRST_NAMES } from '../data/names';
 import type { StaffId } from '../data/custom';
 import type { RoomType } from '../data/rooms';
 import {
-  BEER_COIN,
   COOK_FULL,
   HERO_WORK,
   JOB_SLOTS,
   MAX_SEEKERS,
   NURSE_WORK,
-  SEEKER_EVERY,
-  SERVE_COIN,
+  SEEKER_CHANCE,
   SKILL_XP,
   TRADE_BONUS,
 } from './balance';
@@ -79,10 +77,6 @@ export function workIn(s: GameState, type: Trade): number {
   }
   return total;
 }
-
-/** Monedas al día por el servicio: el salón atendido y la cerveza de la bodega. */
-export const serviceCoins = (s: GameState) =>
-  Math.round(workIn(s, 'salon') * SERVE_COIN + workIn(s, 'bodega') * BEER_COIN);
 
 /** Cuánto anima el plato de la casa según quién cocina (×1 sin nadie, ×2 con la cocina llena). */
 export const cookBoost = (s: GameState) => 1 + Math.min(1, workIn(s, 'cocina') / COOK_FULL);
@@ -232,8 +226,11 @@ export function addSeeker(s: GameState, rng: Rng, events: DawnEvent[]): void {
   events.push({ t: `Viene a pedir trabajo ${workerTitle(w)} (Maña ${w.skill}).` });
 }
 
-/** La noche de los trabajadores: quien ha trabajado coge maña y llega gente pidiendo trabajo. */
-export function stepWorkers(s: GameState, rng: Rng, events: DawnEvent[]): void {
+/**
+ * La noche de los trabajadores: quien ha trabajado coge maña y, entre los visitantes del día,
+ * alguno viene a pedir trabajo (más cuanta más gente pasa por el salón).
+ */
+export function stepWorkers(s: GameState, rng: Rng, events: DawnEvent[], visitors = 0): void {
   for (const w of s.workers) {
     const r = s.building.rooms.find((x) => x.id === w.room);
     if (!r || slotsOf(r) === 0 || w.skill >= 10) continue;
@@ -243,7 +240,8 @@ export function stepWorkers(s: GameState, rng: Rng, events: DawnEvent[]): void {
     w.skill++;
     events.push({ t: `${w.name} le ha cogido el truco al trabajo: Maña ${w.skill}.`, k: 'good' });
   }
-  if (s.mode === 'libre' && s.day % SEEKER_EVERY === 0) addSeeker(s, rng, events);
+  if (s.mode === 'libre' && rng.chance(Math.min(0.6, SEEKER_CHANCE + visitors * 0.02)))
+    addSeeker(s, rng, events);
 }
 
 /** Por qué no se puede contratar a alguien que pide trabajo (null = se puede). */

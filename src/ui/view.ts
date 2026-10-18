@@ -2,6 +2,7 @@ import { generateLook, type HeroLook, type HeroMarks } from '../art/heroes/look'
 import type { Facilities, GameState, Hero, Item, Worker } from '../core/model';
 import { customOf, gearInStock } from '../core/game';
 import { staffBeds, workerTitle } from '../core/workers';
+import { visitorsOf } from '../core/salon';
 import { CREST_COLORS, isFeastDay } from '../data/custom';
 import { gearOf } from '../core/resolve';
 import type { Member } from '../core/party';
@@ -48,6 +49,22 @@ export const memberOf = (h: Hero, fac?: Facilities): Member & { item?: Item } =>
   gear: gearOf(h.item, fac),
   perk: h.item?.perk,
 });
+
+/** Los visitantes de hoy en el orden en que llegan (mezclados, siempre igual para el mismo día). */
+function visitorOrder(s: GameState): string[] {
+  const v = visitorsOf(s, s.day);
+  const list = (Object.keys(v.kinds) as (keyof typeof v.kinds)[]).flatMap((k) =>
+    Array.from({ length: v.kinds[k] }, () => k as string),
+  );
+  // Barajado con la semilla del día: el noble no llega siempre el último.
+  let h = s.day * 2654435761;
+  for (let i = list.length - 1; i > 0; i--) {
+    h = (Math.imul(h ^ (h >>> 15), 2246822519) + i) >>> 0;
+    const j = h % (i + 1);
+    [list[i], list[j]] = [list[j]!, list[i]!];
+  }
+  return list;
+}
 
 const fullName = (h: Hero) => (h.nick ? `${h.name} ${h.nick}` : h.name);
 
@@ -99,6 +116,8 @@ export function sceneModel(s: GameState): SceneModel {
     staff: s.workers.flatMap((w) => (w.village ? [w.village] : [])),
     dog: customOf(s).dog,
     decor: customOf(s).decor ?? [],
+    facade: customOf(s).facade ?? [],
+    visitors: { day: s.day, kinds: visitorOrder(s) },
     raven: !!customOf(s).raven,
     feast: customOf(s).feast === s.day ? 'montada' : isFeastDay(s.day) ? 'dia' : 'no',
     gear: gearInStock(s).map((i) => ({ icon: i.icon ?? 'espada', rarity: i.rarity ?? 0 })),

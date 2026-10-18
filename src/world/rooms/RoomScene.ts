@@ -286,7 +286,8 @@ export class RoomScene {
     this.model = model;
     const b = model.building;
     if (!b) return;
-    const key = JSON.stringify([b, model.crest]);
+    const key = JSON.stringify([b, model.crest, model.facade]);
+    if (model.visitors) this.crowd.setVisitors(model.visitors);
     if (key === this.key) {
       this.crowd.setPeople(model.heroes);
       return;
@@ -874,6 +875,29 @@ export class RoomScene {
       const dx = door.rect.x - WALL;
       put(Prop.crestBoard(model.crest.field, model.crest.dark, model.crest.symbol), dx - 22, 6, 54);
       put(Prop.lanternBody(), dx - 8, 4, 46);
+      // La fachada: lo que se ve desde el camino.
+      const facade = model.facade ?? [];
+      if (facade.includes('letrero')) put(Prop.nameBoard(), dx - 26, 3, 74);
+      if (facade.includes('flores')) {
+        put(Prop.flowerPot('flores1'), dx - 36, 5);
+        put(Prop.flowerPot('flores2'), dx - 50, 9);
+      }
+      if (facade.includes('banderines'))
+        put(Prop.bunting(120, model.crest.field, P.lemon), dx - 70, 30, 62);
+      if (facade.includes('faroles'))
+        for (const lx of [px + 70, px + 150]) {
+          put(Prop.lampPost(), lx, 24);
+          this.lamps.push({
+            pos: at(lx, GROUND - 36, 24),
+            r: 50,
+            color: LANTERN,
+            power: 0.9,
+            flicker: 0.1,
+            zone: [lx - 60, -SLAB, lx + 60, 140],
+            seed: lx,
+            fire: false,
+          });
+        }
       this.lamps.push({
         pos: at(dx - 8, GROUND - 52, 0),
         r: 60,
@@ -948,6 +972,7 @@ export class RoomScene {
     // A la cama: al atardecer van andando y de noche ya están acostados.
     const tod = this.clockTod ?? Math.min(1, (this.t - this.dayStart) / DAY_LENGTH);
     this.crowd.setNight(this.night && this.nightP() < 1.6 ? 'night' : tod > 0.82 ? 'dusk' : 'day');
+    this.crowd.setClock(this.night ? 1 : tod);
     this.crowd.update(dt, this.t);
     if (this.marker && this.t > this.marker.until) this.marker = null;
     this.camera.update(dt);

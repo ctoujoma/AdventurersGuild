@@ -1117,3 +1117,69 @@ export function raven(flap: boolean): PixelBuffer {
     ),
   );
 }
+
+// ---------- Fachada ----------
+
+/** Maceta de barro con geranios. */
+export function flowerPot(seed: string): PixelBuffer {
+  return piece(12, 14, (b) => {
+    const rng = new Rng(seed);
+    b.rect(2, 8, 8, 6, P.rust);
+    b.hline(1, 8, 10, P.clay);
+    b.hline(2, 13, 8, P.bark);
+    for (let i = 0; i < 5; i++) b.ellipse(rng.int(3, 8), rng.int(3, 6), 2, 2, P.forest);
+    for (let i = 0; i < 4; i++) {
+      const x = rng.int(2, 9);
+      const y = rng.int(1, 5);
+      b.set(x, y, rng.chance(0.5) ? P.red : P.coral);
+      b.set(x + 1, y, P.red);
+    }
+  });
+}
+
+/** Farol de patio en su poste. */
+export function lampPost(): PixelBuffer {
+  return piece(9, 40, (b) => {
+    b.rect(3, 12, 3, 27, P.slate);
+    b.rect(1, 37, 7, 3, P.navy);
+    b.rect(2, 0, 5, 2, P.slate);
+    b.rect(1, 2, 7, 8, P.navy);
+    b.rect(2, 3, 5, 6, P.gold);
+    b.rect(3, 4, 3, 4, P.lemon);
+    b.rect(1, 10, 7, 2, P.slate);
+  });
+}
+
+/** Ristra de banderines de dos colores, de `len` píxeles de largo, colgando en curva. */
+export function bunting(len: number, a: string, c: string): PixelBuffer {
+  return piece(
+    len,
+    12,
+    (b) => {
+      const sag = (x: number) => Math.round(Math.sin((Math.PI * x) / (len - 1)) * 4);
+      for (let x = 0; x < len; x++) b.set(x, sag(x), P.bark);
+      for (let x = 3, i = 0; x < len - 5; x += 7, i++) {
+        const y = sag(x + 2) + 1;
+        const col = i % 2 ? c : a;
+        for (let k = 0; k < 5; k++)
+          b.hline(x + Math.floor(k / 2), y + k, 5 - 2 * Math.floor(k / 2), col);
+      }
+    },
+    'none',
+  );
+}
+
+/** Letrero largo con el nombre pintado en letras doradas (rayas, de lejos). */
+export function nameBoard(): PixelBuffer {
+  return piece(44, 11, (b) => {
+    b.rect(0, 0, 44, 11, W[2]!);
+    b.rect(1, 1, 42, 9, W[1]!);
+    b.hline(1, 1, 42, W[3]!);
+    for (let x = 5; x < 39; x += 4) {
+      b.rect(x, 4, 3, 3, P.gold);
+      b.set(x + 1, 4, P.lemon);
+    }
+    b.set(2, 5, P.gold);
+    b.set(41, 5, P.gold);
+  });
+}

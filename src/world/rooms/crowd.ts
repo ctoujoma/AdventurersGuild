@@ -9,7 +9,8 @@ import { P } from '../../art/palette';
 import { PixelBuffer } from '../../art/pixel';
 import { FEET_Y, heroSprites, type HeroSprites } from '../../art/heroes/hero';
 import { bunkQuilt } from '../props';
-import type { SceneHero } from '../scene';
+import { generateLook, type OutfitId } from '../../art/heroes/look';
+import type { SceneHero, SceneVisitors } from '../scene';
 import { GROUND } from '../geometry';
 import { Look, mesh, type Shared } from './gl';
 import { floorY, type RoomsLayout, type Rect } from './layout';
@@ -30,8 +31,26 @@ import {
 } from './people';
 import { project, scaleAt, type View } from './view3d';
 
-/** Como mucho, tantas figuras animadas a la vez. */
+/** Como mucho, tantas figuras animadas a la vez (y de ellas, tantos visitantes). */
 export const MAX_ACTORS = 30;
+const MAX_VISITORS = 8;
+/** Los visitantes llegan repartidos entre la mañana y poco antes del anochecer y se quedan un rato. */
+const ARRIVE_FROM = 0.04;
+const ARRIVE_SPAN = 0.68;
+const STAY = 0.22;
+/** Pinta de cada tipo de visitante. */
+const VISITOR_LOOK: Record<string, OutfitId> = {
+  campesino: 'explorador',
+  mercader: 'picaro',
+  noble: 'clerigo',
+  espia: 'picaro',
+};
+const VISITOR_NAME: Record<string, string> = {
+  campesino: 'Campesino',
+  mercader: 'Mercader',
+  noble: 'Noble',
+  espia: 'Forastero callado',
+};
 const SPEED = 36;
 const CLIMB = 30;
 
@@ -65,6 +84,8 @@ interface Actor {
   /** Trabajador del pueblo: de camino a casa al anochecer y ya fuera (no se ve). */
   homeward: boolean;
   gone: boolean;
+  /** Segundos que lleva sentado (los visitantes no se van sin haber comido algo). */
+  sat: number;
 }
 
 const hash = (s: string) => {
@@ -128,6 +149,8 @@ export class Crowd {
   private time: 'day' | 'dusk' | 'night' = 'day';
   /** Para no repetir decisiones iguales: un generador sencillo con semilla. */
   private seed = 1;
+  /** Los visitantes de hoy. */
+  private visitors: SceneVisitors = { day: 0, kinds: [] };
 
   constructor(
     shared: Shared,
@@ -164,6 +187,7 @@ export class Crowd {
     const home = heroes.filter((h) => h.status !== 'mision').sort((a, b) => order(a) - order(b));
     const shown = new Set(home.slice(0, MAX_ACTORS).map((h) => h.id));
     for (const [id, a] of this.actors) {
+      if (a.hero.visitor) continue;
       const h = heroes.find((x) => x.id === id);
       if (!h || (!shown.has(id) && !(h.status === 'mision' && a.hero.status === 'ok'))) {
         this.remove(id);
@@ -207,6 +231,69 @@ export class Crowd {
     }
   }
 
+  /** Los visitantes de hoy: si cambia el día, los de ayer se van. */
+  setVisitors(v: SceneVisitors): void {
+    if (v.day === this.visitors.day && v.kinds.length === this.visitors.kinds.length) return;
+    if (v.day !== this.visitors.day)
+      for (const a of [...this.actors.values()]) if (a.hero.visitor) this.remove(a.hero.id);
+    this.visitors = v;
+  }
+
+  /** La hora del día: entran los visitantes que tocan y se van los que ya han estado un rato. */
+  setClock(tod: number): void {
+    if (!this.S || !this.L) return;
+    const { day, kinds } = this.visitors;
+    const n = kinds.length;
+    let present = [...this.actors.values()].filter((a) => a.hero.visitor && !a.leaving).length;
+    for (let i = 0; i < n; i++) {
+      const id = `vis-${day}-${i}`;
+      const at = ARRIVE_FROM + (i / Math.max(1, n)) * ARRIVE_SPAN;
+      const a = this.actors.get(id);
+      const due = tod >= at && tod < at + STAY && this.time === 'day';
+      // Con el reloj rápido, que al menos se siente un rato antes de irse.
+      const done = this.time !== 'day' || tod >= at + STAY * 2 || (a?.sat ?? 0) >= 6;
+      if (due && !a && present < MAX_VISITORS && this.actors.size < MAX_ACTORS) {
+        this.addVisitor(id, kinds[i]!, i);
+        present++;
+      } else if (!due && a && !a.leaving && (tod < at || done)) {
+        // Ya ha comido y bebido: se va por donde vino.
+        a.leaving = true;
+        a.goal = null;
+        this.go(a, { place: outside(), pose: 'stand' });
+        present--;
+      }
+    }
+  }
+
+  private addVisitor(id: string, kind: string, i: number): void {
+    const look = generateLook(
+      `${id}-${kind}`,
+      VISITOR_LOOK[kind] ?? 'explorador',
+      i % 2 ? 'f' : 'm',
+    );
+    this.add({
+      id,
+      name: VISITOR_NAME[kind] ?? 'Visitante',
+      status: 'ok',
+      look,
+      marks: {},
+      visitor: true,
+    });
+    const a = this.actors.get(id)!;
+    this.put(a, outside());
+    // A una mesa libre o, si no queda ninguna, de pie en la barra.
+    const free = this.S!.seats.filter((x) => !this.taken().has(x));
+    const seat = free[Math.floor(this.rnd() * free.length)];
+    const goal: Goal = seat
+      ? { place: { x: seat.x, floor: seat.floor }, pose: 'sit', z: seat.z }
+      : {
+          place: this.S!.bar[Math.floor(this.rnd() * this.S!.bar.length)] ?? this.S!.door,
+          pose: 'stand',
+        };
+    this.go(a, goal);
+    a.wait = 999;
+  }
+
   /** Cambia la hora: al atardecer van a la cama andando y de noche ya están acostados. */
   setNight(time: 'day' | 'dusk' | 'night'): void {
     if (time === this.time) return;
@@ -228,7 +315,11 @@ export class Crowd {
       for (const a of this.actors.values()) a.wait = this.rnd() * 3;
       return;
     }
-    for (const a of this.actors.values()) {
+    for (const a of [...this.actors.values()]) {
+      if (a.hero.visitor) {
+        this.remove(a.hero.id);
+        continue;
+      }
       if (a.leaving || a.gone) continue;
       if (this.village(a)) {
         this.hide(a);
@@ -246,9 +337,10 @@ export class Crowd {
   update(dt: number, t: number): void {
     for (const a of this.actors.values()) {
       if (a.gone) continue;
+      if (a.pose === 'sit') a.sat += dt;
       if (a.path.length) this.walk(a, dt);
       else if (a.leaving) {
-        this.away.add(a.hero.id);
+        if (!a.hero.visitor) this.away.add(a.hero.id);
         this.remove(a.hero.id);
         continue;
       } else if (a.homeward) {
@@ -326,8 +418,10 @@ export class Crowd {
       leaving: false,
       homeward: false,
       gone: false,
+      sat: 0,
     };
     this.actors.set(h.id, a);
+    if (h.visitor) return;
     if (this.village(a) && this.time !== 'day') {
       // De noche, los del pueblo están en su casa.
       this.hide(a);
@@ -363,12 +457,14 @@ export class Crowd {
 
   private rehome(): void {
     if (!this.S) return;
-    const people = [...this.actors.values()].map((a) => ({
-      id: a.hero.id,
-      status: a.hero.status,
-      guard: a.hero.guard,
-      staff: a.hero.staff,
-    }));
+    const people = [...this.actors.values()]
+      .filter((a) => !a.hero.visitor)
+      .map((a) => ({
+        id: a.hero.id,
+        status: a.hero.status,
+        guard: a.hero.guard,
+        staff: a.hero.staff,
+      }));
     this.homes = homes(people, this.S);
   }
 
@@ -409,6 +505,10 @@ export class Crowd {
   private decide(a: Actor): void {
     if (!this.S) return;
     const h = a.hero;
+    if (h.visitor) {
+      a.wait = 999;
+      return;
+    }
     if (this.time !== 'day' && this.village(a)) {
       // Se acabó el día: vuelve al pueblo por el patio.
       a.homeward = true;

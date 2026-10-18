@@ -122,17 +122,9 @@ export const DAY_SECONDS = 300;
 export const DUSK = 0.8;
 /** Entregas en que llega la caja del día, repartidas hasta el anochecer. */
 export const DELIVERIES = 8;
-/** Ingreso diario de la taberna: por nivel y un poco por reputación. */
-export const tavernIncome = (tab: number, rep: number, trophies = 0) =>
-  tab === 0
-    ? 0
-    : tab * 10 +
-      Math.min(10, Math.floor(rep / 25) * 2) +
-      Math.min(trophies, TROPHY_SLOTS) * TROPHY_INCOME;
-
-/** Trofeos: cuántos caben en la sala, lo que atraen cada día y la fama al conseguirlos. */
+/** Trofeos: cuántos caben en la pared del salón, el Atractivo de cada uno y la fama al conseguirlos. */
 export const TROPHY_SLOTS = 4;
-export const TROPHY_INCOME = 3;
+export const TROPHY_APPEAL = 2;
 export const TROPHY_REP = 3;
 /** Días de cama que se recuperan cada noche. */
 export const healRate = (enf: number) => 1 + enf;
@@ -278,15 +270,35 @@ export const JOB_SLOTS = 2;
 export const TRADE_BONUS = 1.5;
 /** Lo que rinde un héroe echando una mano (menos que cualquier trabajador con maña). */
 export const HERO_WORK = 2;
-/** Monedas al día por cada punto de trabajo en el salón y en la bodega. */
-export const SERVE_COIN = 0.5;
-export const BEER_COIN = 0.4;
 /** Trabajo en la cocina con el que el plato de la casa anima el doble. */
 export const COOK_FULL = 6;
 /** Trabajo en la enfermería con el que los heridos se curan un día antes. */
 export const NURSE_WORK = 3;
 /** Noches de trabajo por cada punto de Maña que ya se tiene para subir otro. */
 export const SKILL_XP = 5;
-/** Cada cuántos días viene alguien a pedir trabajo (desde el día 30) y cuántos esperan. */
-export const SEEKER_EVERY = 3;
+/** Probabilidad base de que alguien pida trabajo cada día (desde el día 30) y cuántos esperan. */
+export const SEEKER_CHANCE = 0.2;
 export const MAX_SEEKERS = 3;
+
+// ---------- Salón y visitantes ----------
+/** Visitantes que quiere venir: unos fijos, más con la reputación y con el Atractivo. */
+export const VISIT_BASE = 3;
+export const VISIT_PER_REP = 1 / 25;
+export const VISIT_PER_APPEAL = 0.7;
+/** Cuántas veces se llena cada plaza del salón en un día. */
+export const SEAT_TURNS = 1.5;
+/** Visitantes que se atienden sin nadie en el salón, y cuántos más por punto de trabajo. */
+export const SERVE_BASE = 2;
+export const SERVE_PER_WORK = 0.8;
+/** Cerveza por visitante atendido según el trabajo de la bodega (con un tope). */
+export const BEER_PER_WORK = 0.12;
+export const BEER_MAX = 1.5;
+/** Atractivo mínimo para que vengan nobles. */
+export const NOBLE_APPEAL = 8;
+/** Días que dura el peligro tras la visita de un espía y cuánto sube el riesgo de asalto. */
+export const SPY_DAYS = 5;
+export const SPY_RISK = 0.06;
+/** Peleas en el salón: una base, más con mucha gente y con la mesa de naipes. */
+export const BRAWL_BASE = 0.03;
+export const BRAWL_PER_VISITOR = 0.008;
+export const BRAWL_NAIPES = 0.08;

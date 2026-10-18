@@ -35,12 +35,11 @@ import {
   restCap,
   restMorale,
   returnChance,
-  tavernIncome,
 } from './balance';
 import { tripDays } from './classes';
 import {
-  BRAWL_CHANCE,
   DECOR,
+  FACADE,
   DEFAULT_NAME,
   DISHES,
   DOG_PRICE,
@@ -51,6 +50,7 @@ import {
   decorSlots,
   isFeastDay,
   type DecorId,
+  type FacadeId,
 } from '../data/custom';
 import type { RoomType } from '../data/rooms';
 import { arrival, checkFeats, checkMonth, emptyStats, startMonth } from './feats';
@@ -93,6 +93,7 @@ import {
 } from './rooms';
 import { Rng } from './rng';
 import { listNames, plural } from './text';
+import { brawlChance, noisyBeds, visitorList, visitorsOf } from './salon';
 import {
   addSeeker,
   assign,
@@ -102,7 +103,6 @@ import {
   cookBoost,
   freeRoomFor,
   nurseBonus,
-  serviceCoins,
   stepWorkers,
   tidyJobs,
   villageCrew,
@@ -140,6 +140,7 @@ export type Action =
   | { type: 'custom'; patch: Partial<Pick<Custom, 'name' | 'color' | 'symbol' | 'dish'>> }
   | { type: 'buyDog' }
   | { type: 'decor'; id: DecorId; on: boolean }
+  | { type: 'facade'; id: FacadeId }
   | { type: 'buyRaven' }
   | { type: 'feast' }
   /** El reloj del día avanza hasta `to` segundos (y la caja entrega lo que toque). */
@@ -531,6 +532,13 @@ export function reduce(state: GameState, action: Action): GameState {
       if (state.gold < price || list.length >= decorSlots(state.fac.tab)) return state;
       return { ...state, gold: state.gold - price, custom: { ...c, decor: [...list, action.id] } };
     }
+    case 'facade': {
+      const c = customOf(state);
+      const list = c.facade ?? [];
+      const price = FACADE[action.id].price;
+      if (list.includes(action.id) || state.gold < price) return state;
+      return { ...state, gold: state.gold - price, custom: { ...c, facade: [...list, action.id] } };
+    }
     case 'buyRaven': {
       const c = customOf(state);
       if (c.raven || state.gold < RAVEN_PRICE) return state;
@@ -600,7 +608,7 @@ function rescue(s: GameState, id: string, r: Report, events: DawnEvent[]): void 
   events.push({ t: `¡${r.who} ha rescatado a ${h.name}!`, k: 'good' });
 }
 
-/** Lo que deja la taberna el día `day`: la sala, el servicio, la decoración y la fiesta. */
+/** Lo que deja la taberna el día `day`: los visitantes atendidos, la decoración y la fiesta. */
 export function dayIncome(s: GameState, day: number): number {
   const c = customOf(s);
   const decor = c.decor ?? [];
@@ -608,8 +616,7 @@ export function dayIncome(s: GameState, day: number): number {
   // La fiesta montada ese día dobla la caja.
   const feast = c.feast === day;
   return (
-    (tavernIncome(s.fac.tab, s.rep, s.trophies.length) +
-      (s.fac.tab > 0 ? serviceCoins(s) : 0) +
+    (visitorsOf(s, day).coins +
       (bard && decor.includes('tarima') ? 8 : 0) +
       (decor.includes('naipes') ? 6 : 0) +
       (decor.includes('barril') ? 2 : 0)) *
@@ -652,6 +659,7 @@ export function endDay(state: GameState): GameState {
   const decor = c0.decor ?? [];
   const feast = c0.feast === s.day - 1;
   const income = dayIncome(s, s.day - 1);
+  const visits = visitorsOf(s, s.day - 1);
   const lost = stepThreat(s, rng, events, income);
   // Lo que la caja ya entregó durante el día no se cobra otra vez.
   s.gold += income - lost - (s.till ?? 0);
@@ -659,7 +667,7 @@ export function endDay(state: GameState): GameState {
   s.till = 0;
   if (income - lost > 0) {
     events.push({
-      t: `La taberna deja ${income - lost} monedas${feast ? ': ¡la fiesta ha llenado el salón!' : '.'}`,
+      t: `${visits.total ? `Vinieron ${visitorList(visits)}${visits.served < visits.total ? ` (se atendió a ${visits.served})` : ''}. ` : ''}La taberna deja ${income - lost} monedas${feast ? ': ¡la fiesta ha llenado el salón!' : '.'}`,
       k: 'good',
     });
   }
@@ -674,14 +682,44 @@ export function endDay(state: GameState): GameState {
       t: 'El cuervo vuelve de otro pueblo: allí ya se habla del gremio (+1 reputación).',
     });
   }
-  if (decor.includes('naipes') && rng.chance(BRAWL_CHANCE)) {
-    const home = s.heroes.filter((h) => h.status === 'ok');
-    if (home.length) {
-      const h = rng.pick(home);
-      h.morale = Math.max(0, h.morale - 8);
+  // Lo que traen los visitantes: fama de los nobles, ojos de los espías y alguna pelea.
+  if (visits.kinds.noble) {
+    s.rep += visits.kinds.noble;
+    events.push({
+      t: `${visits.kinds.noble === 1 ? 'Un noble ha cenado' : 'Unos nobles han cenado'} en el salón: se hablará del gremio (+${visits.kinds.noble} reputación).`,
+      k: 'good',
+    });
+  }
+  if (visits.kinds.espia) {
+    const guard = s.heroes.find((h) => h.status === 'ok' && h.guard);
+    if (guard) {
+      s.rep += 1;
       events.push({
-        t: `Pelea en la mesa de naipes: ${h.name} ha perdido la partida y los nervios.`,
+        t: `${guard.name} caló a un forastero que miraba demasiado la puerta de la cámara: era un espía de los bandidos y salió corriendo.`,
+        k: 'good',
+      });
+    } else s.scout = s.day - 1;
+  }
+  if (rng.chance(brawlChance(s, visits))) {
+    const home = s.heroes.filter((h) => h.status === 'ok');
+    const guard = home.find((h) => h.guard);
+    if (guard)
+      events.push({
+        t: `Pelea en el salón${decor.includes('naipes') ? ' por una partida de naipes' : ''}: ${guard.name}, que estaba de guardia, la cortó en un momento.`,
+      });
+    else if (home.length) {
+      const h = rng.pick(home);
+      h.morale = Math.max(0, h.morale - 6);
+      events.push({
+        t: `Pelea en el salón${decor.includes('naipes') ? ' por una partida de naipes' : ''}: ${h.name} se llevó un par de golpes separando a los que se pegaban.`,
         k: 'warn',
+      });
+    } else {
+      const broken = Math.min(s.gold, rng.int(6, 16));
+      s.gold -= broken;
+      events.push({
+        t: `Pelea en el salón y nadie de los nuestros para pararla: ${broken} monedas en sillas y jarras rotas.`,
+        k: 'bad',
       });
     }
   }
@@ -781,7 +819,11 @@ export function endDay(state: GameState): GameState {
   const fed = dish.cost === 0 || s.gold >= dish.cost;
   if (fed) s.gold -= dish.cost;
   const dishMorale = fed ? Math.round(dish.morale * cookBoost(s)) : 0;
-  const decorMorale = (decor.includes('tarima') ? 2 : 0) + (decor.includes('barril') ? 1 : 0);
+  const decorMorale =
+    (decor.includes('tarima') ? 2 : 0) +
+    (decor.includes('barril') ? 1 : 0) +
+    (decor.includes('chimenea') ? 1 : 0) -
+    (noisyBeds(s.building) ? 1 : 0);
 
   // Moral: se descansa en la taberna; quien está harto se va, quien está desanimado pide más.
   const deserters: Hero[] = [];
@@ -844,8 +886,8 @@ export function endDay(state: GameState): GameState {
       t: `${fresh} ${plural(fresh, 'encargo nuevo', 'encargos nuevos')} en el tablón.`,
     });
 
-  // Candidatos.
-  if (s.day % CANDIDATE_EVERY === 0) {
+  // Candidatos: entre los visitantes viene algún aventurero (más cuanta más gente).
+  if (rng.chance(Math.min(0.9, (0.5 + visits.total / 10) / CANDIDATE_EVERY))) {
     const c = hero(s, rng);
     if (s.candidates.length >= MAX_CANDIDATES) {
       const left = s.candidates.shift()!;
@@ -856,7 +898,7 @@ export function endDay(state: GameState): GameState {
   }
 
   // Trabajadores: cogen maña y, desde el día 30, viene gente a pedir trabajo.
-  stepWorkers(s, rng, events);
+  stepWorkers(s, rng, events, visits.total);
 
   // Cadenas de misiones: carta del siguiente cliente cuando toca.
   offerChain(s, rng, events);

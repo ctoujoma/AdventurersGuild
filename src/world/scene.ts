@@ -54,6 +54,14 @@ export interface SceneHero {
   work?: string;
   /** Trabajador: duerme en el dormitorio del servicio o se va a dormir al pueblo. */
   staff?: 'casa' | 'pueblo';
+  /** Visitante del salón: entra, se sienta un rato y se va. */
+  visitor?: boolean;
+}
+
+/** Los visitantes de hoy, en orden de llegada (la escena los hace entrar a lo largo del día). */
+export interface SceneVisitors {
+  day: number;
+  kinds: string[];
 }
 
 export interface SceneModel {
@@ -70,6 +78,9 @@ export interface SceneModel {
   dog: boolean;
   /** Decoración del salón, cuervo y fiesta de la comarca (el día o ya montada). */
   decor: string[];
+  /** Adornos de la fachada y visitantes de hoy (la vista de salas los enseña). */
+  facade?: string[];
+  visitors?: SceneVisitors;
   raven: boolean;
   feast: 'no' | 'dia' | 'montada';
   /** Equipo sin dueño (tablero de la bodega) y trofeos de la sala. */

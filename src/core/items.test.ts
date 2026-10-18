@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { GEAR } from '../data/items';
-import { tavernIncome } from './balance';
+import { appeal } from './salon';
 import { canEquip, endDay, gearInStock, newGame, reduce } from './game';
 import { generateQuest } from './generate';
 import type { GameState, Item } from './model';
@@ -87,8 +87,9 @@ describe('trofeos', () => {
     expect(r.outcome).toBe('Éxito brillante');
     expect(s.trophies).toHaveLength(1);
     expect(s.rep).toBeGreaterThan(rep + 5);
-    expect(tavernIncome(1, 0, 1)).toBeGreaterThan(tavernIncome(1, 0, 0));
     const sold = reduce(s, { type: 'sellTrophy', id: s.trophies[0]!.id });
+    // En la pared del salón atrae gente.
+    expect(appeal(s)).toBeGreaterThan(appeal(sold));
     expect(sold.trophies).toHaveLength(0);
     expect(sold.gold).toBe(s.gold + s.trophies[0]!.value);
   });
