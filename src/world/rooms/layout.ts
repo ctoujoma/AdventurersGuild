@@ -8,14 +8,17 @@ import { MAX_DOWN } from '../../core/balance';
 import type { Building, Room } from '../../core/model';
 import { GROUND } from '../geometry';
 
-/** Ancho de un hueco, de una escalera y alto de una planta (interior + forjado). */
-export const CELL_W = 120;
-export const STAIR_W = 40;
-export const ROOM_H = 90;
-export const SLAB = 10;
-export const PITCH = ROOM_H + SLAB;
 /** Paredes entre salas: la mitad del grosor cae dentro de cada hueco. */
 export const PARTITION = 16;
+/**
+ * Ancho de un hueco (110 de sala por dentro más su tabique), de una escalera y alto de una
+ * planta (90 de sala más el forjado, igual de grueso que los tabiques).
+ */
+export const CELL_W = 110 + PARTITION;
+export const STAIR_W = 40;
+export const ROOM_H = 90;
+export const SLAB = 16;
+export const PITCH = ROOM_H + SLAB;
 /** Lo que el muro de fuera sobresale del hueco (con su media pared, igual de grueso). */
 export const WALL = PARTITION / 2;
 /** Fondo de las salas, del plano de corte a la pared del fondo. */

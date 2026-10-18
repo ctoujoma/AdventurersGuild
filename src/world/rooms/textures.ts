@@ -505,11 +505,12 @@ export function facade(L: RoomsLayout): Facade {
   planksV(wood, 0, 0, W, g + SLAB, 'muros', WOOD_DARK, 6);
   const stone = new PixelBuffer(W, H);
   stoneWall(stone, 0, g, W, H - g, 'sillares', { ramp: STONE, bw: 12, bh: 6 });
+  const stairs = stairCells(L);
   const cells: { rect: Rect; floor: number }[] = [
     ...L.rooms
       .filter((x) => x.room.type !== 'torre')
       .map(({ room, rect }) => ({ rect, floor: room.floor })),
-    ...stairCells(L),
+    ...stairs,
     ...caveCells(L),
   ];
   for (const { rect, floor } of cells) {
@@ -523,6 +524,19 @@ export function facade(L: RoomsLayout): Facade {
       beam(buf, x, y + h - SLAB, w, SLAB, WOOD_DARK);
     }
   }
+  // Forjados entre una sala y la de encima: igual, el alma oscura en medio del grueso.
+  const solid = cells.filter((c) => !stairs.includes(c as (typeof stairs)[number]));
+  for (const a of solid)
+    for (const c of solid) {
+      if (c.rect.y + c.rect.h + SLAB !== a.rect.y) continue;
+      const x0 = Math.max(a.rect.x, c.rect.x) - WALL;
+      const x1 = Math.min(a.rect.x + a.rect.w, c.rect.x + c.rect.w) + WALL;
+      if (x1 <= x0) continue;
+      const y = a.rect.y - SLAB / 2 - CORE / 2 - oy;
+      buf.rect(x0 - ox, y, x1 - x0, CORE, P.black);
+      buf.hline(x0 - ox, y, x1 - x0, P.ebony);
+      buf.hline(x0 - ox, y + CORE - 1, x1 - x0, P.ebony);
+    }
   // Tabiques entre salas: textura a los lados y el alma oscura en medio.
   for (const a of cells)
     for (const c of cells) {
