@@ -54,5 +54,11 @@ describe('notas del tío', () => {
     const t = reduce(s, { type: 'tip', id: 'trabajo' });
     expect(nextTip(t, true)).toBeNull();
     expect(nextTip({ ...t, day: 5 }, true)?.id).toBe('visitas');
+    // Y lo de la comida: al día siguiente, o antes si esa noche no hay cena para todos.
+    const v = reduce(t, { type: 'tip', id: 'visitas' });
+    expect(nextTip({ ...v, day: 6 }, true)?.id).toBe('comida');
+    const cook = v.workers.find((w) => w.village === 'cocinera')!;
+    const hungry = reduce({ ...v, food: 0 }, { type: 'assign', who: cook.id, room: null });
+    expect(nextTip(hungry, true)?.id).toBe('comida');
   });
 });

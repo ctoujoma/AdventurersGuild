@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { DISHES } from '../data/custom';
-import { COOK_FULL, HERO_WORK, SKILL_XP } from './balance';
+import { HERO_WORK, SKILL_XP } from './balance';
 import { serveCap, visitorsOf } from './salon';
+import { dailyYield } from './larder';
 import { dayIncome, endDay, newGame, reduce, salaries } from './game';
 import type { GameState, Room } from './model';
 import { Rng } from './rng';
@@ -9,7 +9,6 @@ import {
   addSeeker,
   canAssign,
   canHireWorker,
-  cookBoost,
   slotsOf,
   staffBeds,
   stepWorkers,
@@ -43,16 +42,17 @@ describe('trabajadores', () => {
     expect(salaries(s)).toBe(heroes + 18);
   });
 
-  it('el servicio del salón y la cerveza de la bodega se notan en la caja', () => {
+  it('el servicio del salón se nota en la caja y la bodega, en las jarras', () => {
     const s = { ...newGame('caja'), rep: 400 };
     // Con mucha gente, quien atiende la barra decide a cuántos se sirve.
     const idle = reduce(s, { type: 'assign', who: village(s, 'bardo').id, room: null });
     expect(serveCap(idle)).toBeLessThan(serveCap(s));
     expect(visitorsOf(idle, 5).served).toBeLessThan(visitorsOf(s, 5).served);
     expect(dayIncome(idle, 5)).toBeLessThan(dayIncome(s, 5));
-    // Sin nadie en la bodega no se vende cerveza.
+    // Sin nadie en la bodega no se saca cerveza.
     const dry = reduce(s, { type: 'fireWorker', id: village(s, 'mozo').id });
-    expect(dayIncome(dry, 5)).toBeLessThan(dayIncome(s, 5));
+    expect(dailyYield(dry).beer).toBe(0);
+    expect(dailyYield(s).beer).toBeGreaterThan(0);
   });
 
   it('los héroes echan una mano, pero rinden menos y solo si están en casa', () => {
@@ -80,20 +80,6 @@ describe('trabajadores', () => {
     // Las salas rotas o sin trabajo no tienen puestos.
     expect(canAssign(s, s.heroes[1]!.id, roomOf(s, 'enfermeria').id)).toMatch(/en uso/);
     expect(canAssign(s, s.heroes[1]!.id, roomOf(s, 'capilla').id)).toMatch(/trabajo/);
-  });
-
-  it('la cocina hace que el plato de la casa anime más', () => {
-    const s = reduce(
-      { ...newGame('plato'), gold: 500 },
-      { type: 'custom', patch: { dish: 'guiso' } },
-    );
-    for (const h of s.heroes) h.morale = 10;
-    expect(cookBoost(s)).toBe(1 + Math.min(1, 6 / COOK_FULL));
-    const morale = (x: GameState) => x.heroes[0]!.morale;
-    const cook = endDay(s);
-    const none = endDay(reduce(s, { type: 'fireWorker', id: village(s, 'cocinera').id }));
-    // Con la cocinera, el guiso anima el doble.
-    expect(morale(cook) - morale(none)).toBe(DISHES.guiso.morale);
   });
 
   it('alguien en la enfermería cura antes a los heridos', () => {

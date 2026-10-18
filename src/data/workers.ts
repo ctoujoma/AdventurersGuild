@@ -17,12 +17,12 @@ export const TRADES: Record<Trade, { name: Record<Sex, string>; job: string; giv
   cocina: {
     name: { m: 'Cocinero', f: 'Cocinera' },
     job: 'Cocina',
-    gives: 'el plato de la casa anima más',
+    gives: 'la comida de la casa',
   },
   bodega: {
     name: { m: 'Cervecero', f: 'Cervecera' },
     job: 'Hace cerveza',
-    gives: 'cerveza que se vende en el salón',
+    gives: 'cerveza para el salón',
   },
   enfermeria: {
     name: { m: 'Enfermero', f: 'Enfermera' },

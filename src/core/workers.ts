@@ -8,7 +8,6 @@ import { FIRST_NAMES } from '../data/names';
 import type { StaffId } from '../data/custom';
 import type { RoomType } from '../data/rooms';
 import {
-  COOK_FULL,
   HERO_WORK,
   JOB_SLOTS,
   MAX_SEEKERS,
@@ -65,21 +64,18 @@ const used = (s: GameState, roomId: string) => {
 export const effortOf = (w: Worker, type: RoomType) =>
   w.skill * (w.trade === type ? TRADE_BONUS : 1);
 
-/** Trabajo de hoy en las salas de un tipo: la gente que hay y el nivel de la sala. */
-export function workIn(s: GameState, type: Trade): number {
-  let total = 0;
-  for (const r of s.building.rooms) {
-    if (r.type !== type || slotsOf(r) === 0) continue;
-    let n = 0;
-    for (const w of s.workers) if (w.room === r.id) n += effortOf(w, type);
-    for (const h of s.heroes) if (h.job === r.id && h.status === 'ok' && !h.guard) n += HERO_WORK;
-    total += n * (0.75 + 0.25 * r.level);
-  }
-  return total;
+/** Trabajo de hoy en una sala: la gente que hay y el nivel de la sala. */
+export function workAt(s: GameState, r: Room): number {
+  if (!isJobRoom(r.type) || slotsOf(r) === 0) return 0;
+  let n = 0;
+  for (const w of s.workers) if (w.room === r.id) n += effortOf(w, r.type);
+  for (const h of s.heroes) if (h.job === r.id && h.status === 'ok' && !h.guard) n += HERO_WORK;
+  return n * (0.75 + 0.25 * r.level);
 }
 
-/** Cuánto anima el plato de la casa según quién cocina (×1 sin nadie, ×2 con la cocina llena). */
-export const cookBoost = (s: GameState) => 1 + Math.min(1, workIn(s, 'cocina') / COOK_FULL);
+/** Trabajo de hoy en todas las salas de un tipo. */
+export const workIn = (s: GameState, type: Trade) =>
+  s.building.rooms.reduce((a, r) => a + (r.type === type ? workAt(s, r) : 0), 0);
 
 /** Días de más que se curan los heridos cada noche con alguien en la enfermería. */
 export const nurseBonus = (s: GameState) => (workIn(s, 'enfermeria') >= NURSE_WORK ? 1 : 0);

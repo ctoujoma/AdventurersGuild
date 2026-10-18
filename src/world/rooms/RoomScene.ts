@@ -22,7 +22,7 @@ import {
 } from 'three';
 import { P } from '../../art/palette';
 import type { PixelBuffer } from '../../art/pixel';
-import type { Building, Room } from '../../core/model';
+import type { Building, Room, RoomYield } from '../../core/model';
 import { ROOMS } from '../../data/rooms';
 import { Camera } from '../camera';
 import { GROUND } from '../geometry';
@@ -205,6 +205,8 @@ export class RoomScene {
   private targets: Spot[] | null = null;
   private chosen: string | null = null;
   private targetsKey = '';
+  /** Lo que dio cada sala anoche: cifras que suben y se desvanecen encima de la sala. */
+  private floats: { rect: Rect; n: number; beer: boolean; t0: number }[] = [];
   /** Marcas de siempre del modo obras: se tocan ellas y también las salas, sin mover la cámara. */
   private soft = false;
   private model: SceneModel | null = null;
@@ -450,6 +452,16 @@ export class RoomScene {
   /** La hora del reloj de la partida: el cielo y la gente la siguen. */
   setTime(tod: number): void {
     this.clockTod = Math.max(0, Math.min(1, tod));
+  }
+
+  /** Al amanecer, lo que hizo cada sala sube flotando sobre ella (raciones y jarras). */
+  yields(list: RoomYield[]): void {
+    list.forEach((y, i) => {
+      const spot = this.spots.find((s) => s.id === `sala:${y.room}`);
+      const n = y.food ?? y.beer ?? 0;
+      if (spot && n > 0)
+        this.floats.push({ rect: spot.rect, n, beer: !y.food, t0: this.t + 0.3 + i * 0.35 });
+    });
   }
 
   /** Una entrega de la caja: unas monedas saltan en el salón. */
@@ -1050,12 +1062,14 @@ export class RoomScene {
       !!this.hover ||
       !!this.hoverHero ||
       !!this.marker ||
-      !!this.targets?.length;
+      !!this.targets?.length ||
+      this.floats.length > 0;
     if (live || this.topLive) {
       const ctx = this.topCtx;
       ctx.clearRect(0, 0, view.vw, view.vh);
       if (this.targets) this.marks(this.targets);
       this.particles.draw(ctx, view.px, view.py, t);
+      this.floatUp();
       if (this.hover) this.brackets(this.hover.rect);
       for (const id of [this.hoverHero, this.marker?.id]) {
         const r = id ? this.heroRect(id) : null;
@@ -1113,6 +1127,51 @@ export class RoomScene {
         ctx.fillRect(cx + 1, cy + 1, 1, 1);
         tinyDigits(ctx, cost, cx + 5, cy, on ? P.lemon : P.white);
       }
+    }
+  }
+
+  /** Las cifras de lo que dio cada sala: «+12» con su pan o su jarra, en una placa oscura y a doble tamaño. */
+  private floatUp(): void {
+    const { topCtx: ctx, camera } = this;
+    const LIFE = 3.2;
+    this.floats = this.floats.filter((f) => this.t - f.t0 < LIFE);
+    for (const f of this.floats) {
+      const k = this.t - f.t0;
+      if (k < 0) continue;
+      const text = String(f.n);
+      const tw = 10 + text.length * 4;
+      const x = Math.round(f.rect.x + f.rect.w / 2 - camera.px - tw);
+      const y = Math.round(f.rect.y + f.rect.h * 0.4 - camera.py - Math.min(1, k / 1.2) * 16);
+      const alpha = k > LIFE - 0.8 ? (LIFE - k) / 0.8 : Math.min(1, k * 4);
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(2, 2);
+      ctx.globalAlpha = alpha * 0.8;
+      ctx.fillStyle = P.black;
+      ctx.fillRect(-2, -2, tw + 3, 9);
+      ctx.globalAlpha = alpha;
+      // El pan o la jarra.
+      if (f.beer) {
+        ctx.fillStyle = P.gold;
+        ctx.fillRect(0, 1, 4, 4);
+        ctx.fillStyle = P.white;
+        ctx.fillRect(0, 0, 4, 1);
+        ctx.fillStyle = P.lemon;
+        ctx.fillRect(4, 2, 1, 2);
+      } else {
+        ctx.fillStyle = P.tan;
+        ctx.fillRect(0, 1, 5, 3);
+        ctx.fillRect(1, 0, 3, 1);
+        ctx.fillStyle = P.clay;
+        ctx.fillRect(0, 4, 5, 1);
+      }
+      // El signo más y la cifra.
+      const c = f.beer ? P.lemon : P.white;
+      ctx.fillStyle = c;
+      ctx.fillRect(6, 2, 3, 1);
+      ctx.fillRect(7, 1, 1, 3);
+      tinyDigits(ctx, text, 10, 0, c);
+      ctx.restore();
     }
   }
 

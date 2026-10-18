@@ -1,4 +1,5 @@
 import { gearInStock, roster } from '../core/game';
+import { hungryTonight } from '../core/larder';
 import type { GameState } from '../core/model';
 import { MORALE_LOW } from '../core/party';
 
@@ -119,6 +120,13 @@ export const TIPS: readonly Tip[] = [
     focus: 'salon',
     text: 'La caja la llenan los que vienen al salón: campesinos, mercaderes y, si el salón luce, algún noble que trae fama. Cuanto más Atractivo (decoración, fachada, trofeos), más gente; pero si nadie atiende la barra, se van sin pagar. Ojo con los forasteros que miran demasiado.',
     when: (s) => s.day >= 5 && s.mode !== 'libre',
+  },
+  {
+    id: 'comida',
+    rooms: true,
+    focus: 'cocina',
+    text: 'Lo que hace Remedios en la cocina y Nico en la bodega se suma por la noche, y lo tienes arriba: el pan son las raciones y la jarra, la cerveza. Los visitantes comen y beben de ahí, y los de casa cenan antes de dormir. Si no llega, pon a alguien más en la cocina o arréglala; quien se acuesta sin cenar se levanta de mal humor.',
+    when: (s) => (s.day >= 6 && s.mode !== 'libre') || hungryTonight(s) > 0,
   },
 ];
 

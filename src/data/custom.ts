@@ -1,11 +1,10 @@
 /**
- * Personalización de la taberna: escudo, plato de la casa, personal y mascota. Los efectos
+ * Personalización de la taberna: escudo, decoración, fachada, personal y mascota. Los efectos
  * son pequeños; lo importante es que la taberna se parezca a quien la lleva.
  */
 
 export type CrestColor = 'vino' | 'mar' | 'bosque' | 'oro' | 'noche';
 export type CrestSymbol = 'jarra' | 'espada' | 'llave' | 'estrella' | 'dragon' | 'luna';
-export type Dish = 'pan' | 'guiso' | 'asado';
 export type StaffId = 'cocinera' | 'bardo' | 'mozo';
 
 export const DEFAULT_NAME = 'El Jarro Partido';
@@ -25,22 +24,6 @@ export const CREST_SYMBOLS: Record<CrestSymbol, string> = {
   estrella: 'Estrella',
   dragon: 'Dragón',
   luna: 'Luna',
-};
-
-export const DISHES: Record<Dish, { name: string; desc: string; cost: number; morale: number }> = {
-  pan: { name: 'Pan y queso', desc: 'Gratis. Se quejan, pero se lo comen.', cost: 0, morale: 0 },
-  guiso: {
-    name: 'Guiso de la casa',
-    desc: '+2 de moral por noche a quien descansa.',
-    cost: 4,
-    morale: 2,
-  },
-  asado: {
-    name: 'Asado del domingo',
-    desc: '+4 de moral por noche a quien descansa.',
-    cost: 10,
-    morale: 4,
-  },
 };
 
 export type DecorId = 'naipes' | 'tarima' | 'tapices' | 'barril' | 'lampara' | 'chimenea';

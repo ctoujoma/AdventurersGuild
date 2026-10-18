@@ -533,6 +533,13 @@ export function App() {
     );
     setDawnOpen(false);
     if (game.day === 1) setHint(true);
+    // Lo que hicieron las salas anoche sube flotando sobre ellas.
+    const made = game.yields;
+    if (made?.length)
+      setTimeout(() => {
+        const s = scene.current;
+        if (s instanceof RoomScene) s.yields(made);
+      }, 400);
     if (then) openPanel(then);
     else if (returned) setTimeout(() => scene.current?.focus('patio'), 30);
     if (wins.length)

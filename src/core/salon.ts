@@ -8,8 +8,7 @@ import type { RoomType } from '../data/rooms';
 import type { VisitorKind } from '../data/visitors';
 import { VISITORS } from '../data/visitors';
 import {
-  BEER_MAX,
-  BEER_PER_WORK,
+  BEER_COIN,
   BRAWL_BASE,
   BRAWL_NAIPES,
   BRAWL_PER_VISITOR,
@@ -119,18 +118,15 @@ export function serveCap(s: GameState): number {
   );
 }
 
-/** Cerveza que se vende por visitante atendido. */
-export function beerPerVisitor(s: GameState): number {
-  const under = s.building.rooms.some((r) => r.type === 'bodega' && r.floor < 0);
-  return Math.min(BEER_MAX, workIn(s, 'bodega') * BEER_PER_WORK * (under ? 1.25 : 1));
-}
-
 export interface DayVisitors {
   /** Los que han venido y los que se han podido atender. */
   total: number;
   served: number;
+  /** Raciones y jarras que se tomaron los atendidos (de lo que había guardado). */
+  fed: number;
+  drank: number;
   kinds: Record<VisitorKind, number>;
-  /** Lo que dejan en la caja los atendidos (comida, bebida y cerveza). */
+  /** Lo que dejan en la caja los atendidos: la cena y la cerveza. */
   coins: number;
 }
 
@@ -143,7 +139,7 @@ const KINDS = Object.keys(VISITORS) as VisitorKind[];
 export function visitorsOf(s: GameState, day: number): DayVisitors {
   const kinds: Record<VisitorKind, number> = { campesino: 0, mercader: 0, noble: 0, espia: 0 };
   const seats = seatsOf(s.building);
-  if (!seats) return { total: 0, served: 0, kinds, coins: 0 };
+  if (!seats) return { total: 0, served: 0, fed: 0, drank: 0, kinds, coins: 0 };
   const rng = new Rng(`${s.seed}:visitas:${day}`);
   const a = appeal(s);
   const want = VISIT_BASE + s.rep * VISIT_PER_REP + a * VISIT_PER_APPEAL + rng.int(-1, 1);
@@ -161,16 +157,22 @@ export function visitorsOf(s: GameState, day: number): DayVisitors {
     kinds.espia++;
   }
   const served = Math.min(total, Math.round(serveCap(s)));
-  // Se atiende antes a quien más gasta.
+  // Se atiende antes a quien más gasta; sin raciones guardadas, solo beben.
   let left = served;
+  let food = Math.max(0, Math.floor(s.food));
+  let fed = 0;
   let coins = 0;
   for (const k of ['noble', 'mercader', 'campesino', 'espia'] as const) {
     const n = Math.min(left, kinds[k]);
-    coins += n * VISITORS[k].spend;
+    const f = Math.min(n, food);
+    coins += f * VISITORS[k].spend;
+    food -= f;
+    fed += f;
     left -= n;
   }
-  coins += served * beerPerVisitor(s);
-  return { total, served, kinds, coins: Math.round(coins) };
+  const drank = Math.min(served, Math.max(0, Math.floor(s.beer)));
+  coins += drank * BEER_COIN;
+  return { total, served, fed, drank, kinds, coins };
 }
 
 /** Probabilidad de pelea en el salón con esta gente. */
