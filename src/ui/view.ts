@@ -48,6 +48,7 @@ export function sceneModel(s: GameState): SceneModel {
       status: h.status,
       look: lookOf(h),
       marks: marksOf(h),
+      guard: !!h.guard,
     });
   }
   for (const h of s.candidates)

@@ -30,7 +30,8 @@ import { Particles } from '../particles';
 import * as Prop from '../props';
 import type { Point, SceneCallbacks, SceneModel } from '../scene';
 import { LANTERN, dummy, furnish, type Glow, type RGB } from './furniture';
-import { Look, MAX_LIGHTS, mesh, quad, type Corners } from './gl';
+import { Crowd } from './crowd';
+import { Look, MAX_LIGHTS, mesh, quad, sharedUniforms, type Corners } from './gl';
 import {
   DEPTH,
   PARTITION,
@@ -141,8 +142,14 @@ export class RoomScene {
   private cam3 = new PerspectiveCamera();
   private flat = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
   /** Materiales del edificio (se rehacen con él) y los de las láminas de pantalla. */
-  private look = new Look();
-  private keep = new Look();
+  /** Día y focos: los mismos para el edificio, las láminas y la gente. */
+  private shared = sharedUniforms();
+  private look = new Look(this.shared);
+  private keep = new Look(this.shared);
+  private crowd = new Crowd(this.shared, (x, floor) => this.tintAt(x, floor));
+  /** Persona señalada con el ratón y la que se ha buscado desde su ficha (un rato). */
+  private hoverHero: string | null = null;
+  private marker: { id: string; until: number } | null = null;
   private world = new Group();
   private lamps: Lamp[] = [];
   private towerRect: Rect | null = null;
@@ -204,6 +211,7 @@ export class RoomScene {
     this.skyScene.add(new Mesh(sheet, this.keep.screen(this.skyTex, false)));
     this.topScene.add(new Mesh(sheet, this.keep.screen(this.topTex, true)));
     this.scene.add(this.world);
+    this.scene.add(this.crowd.group);
     canvas.addEventListener('webglcontextlost', (e) => e.preventDefault());
     this.bindInput();
   }
@@ -241,11 +249,16 @@ export class RoomScene {
     const b = model.building;
     if (!b) return;
     const key = JSON.stringify([b, model.crest]);
-    if (key === this.key) return;
+    if (key === this.key) {
+      this.crowd.setPeople(model.heroes);
+      return;
+    }
     this.key = key;
     const L = roomsLayout(b);
     this.layout = L;
     this.rebuild(L, model);
+    this.crowd.setLayout(L);
+    this.crowd.setPeople(model.heroes);
     this.camera.world = { x0: L.x0, x1: L.x1, y0: L.y0, y1: L.y1 };
     // La torre se toca donde se ve, encima del tejado.
     this.spots = L.rooms.map(({ room, rect }) => ({
@@ -343,20 +356,40 @@ export class RoomScene {
     this.stop();
     this.look.dispose();
     this.keep.dispose();
+    this.crowd.dispose();
     this.skyTex.dispose();
     this.topTex.dispose();
     this.renderer.dispose();
   }
 
-  /** Los héroes llegan a las salas en el PR de la gente; de momento no se señalan. */
+  /** Dónde se ve a alguien (arriba de su cabeza), en coordenadas del plano de corte. */
   heroPosition(id: string): Point | null {
-    void id;
-    return null;
+    const r = this.heroRect(id);
+    return r ? { x: r.x + r.w / 2, y: r.y } : null;
   }
 
+  /** Centra la cámara en alguien y lo marca un rato. */
   focusHero(id: string): boolean {
-    void id;
-    return false;
+    const p = this.heroPosition(id);
+    if (!p) return false;
+    this.camera.centerOn(p.x, p.y + 14);
+    this.marker = { id, until: this.t + 4 };
+    return true;
+  }
+
+  /** Recuadro de alguien en coordenadas del plano de corte (lo que tapa en pantalla). */
+  private heroRect(id: string): Rect | null {
+    const { camera } = this;
+    const v: View = { px: camera.px, py: camera.py, vw: camera.vw, vh: camera.vh };
+    const r = this.crowd.screenRect(id, v);
+    return r ? { x: r.x + camera.px, y: r.y + camera.py, w: r.w, h: r.h } : null;
+  }
+
+  /** Luz de fondo donde está alguien: fuera, en una sala o bajo tierra. */
+  private tintAt(x: number, floor: number): { ambient: Tint; sun: number } {
+    if (x < 0) return { ambient: OUTDOOR, sun: 1 };
+    if (floor < 0) return { ambient: ROOM_DEEP, sun: 0 };
+    return { ambient: ROOM_LIT, sun: 0.25 };
   }
 
   nightfall(done: () => void, dur = 2.6): void {
@@ -438,7 +471,7 @@ export class RoomScene {
     // Lo de antes fuera (las láminas de cielo y partículas se quedan).
     this.world.clear();
     this.look.dispose();
-    this.look = new Look();
+    this.look = new Look(this.shared);
     this.lamps = [];
     this.flames = [];
     this.towerRect = null;
@@ -854,6 +887,11 @@ export class RoomScene {
         this.dayStart = this.t;
       }
     }
+    // A la cama: al atardecer van andando y de noche ya están acostados.
+    const tod = Math.min(1, (this.t - this.dayStart) / DAY_LENGTH);
+    this.crowd.setNight(this.night && this.nightP() < 1.6 ? 'night' : tod > 0.82 ? 'dusk' : 'day');
+    this.crowd.update(dt, this.t);
+    if (this.marker && this.t > this.marker.until) this.marker = null;
     this.camera.update(dt);
     this.particles.update(dt, this.t);
   }
@@ -922,13 +960,22 @@ export class RoomScene {
     }
 
     // Partículas y la marca de la sala señalada, en una lámina por delante.
-    const live = this.particles.list.length > 0 || !!this.hover || !!this.targets?.length;
+    const live =
+      this.particles.list.length > 0 ||
+      !!this.hover ||
+      !!this.hoverHero ||
+      !!this.marker ||
+      !!this.targets?.length;
     if (live || this.topLive) {
       const ctx = this.topCtx;
       ctx.clearRect(0, 0, view.vw, view.vh);
       if (this.targets) this.marks(this.targets);
       this.particles.draw(ctx, view.px, view.py, t);
       if (this.hover) this.brackets(this.hover.rect);
+      for (const id of [this.hoverHero, this.marker?.id]) {
+        const r = id ? this.heroRect(id) : null;
+        if (r) this.brackets(r);
+      }
       this.topTex.needsUpdate = true;
       this.topLive = live;
     }
@@ -998,8 +1045,22 @@ export class RoomScene {
     );
   }
 
+  /** La persona que hay bajo un punto de la pantalla (no mientras se elige sitio para una obra). */
+  private heroAt(cssX: number, cssY: number): string | null {
+    if (this.targets) return null;
+    const { camera } = this;
+    const v: View = { px: camera.px, py: camera.py, vw: camera.vw, vh: camera.vh };
+    return this.crowd.hit(v, cssX / camera.zoom, cssY / camera.zoom);
+  }
+
   private click(cssX: number, cssY: number): void {
     const w = this.camera.toWorld(cssX, cssY);
+    const who = this.heroAt(cssX, cssY);
+    if (who) {
+      const p = this.heroPosition(who);
+      this.cb.onHero?.(who, { x: cssX, y: cssY, wx: p?.x ?? w.x, wy: p?.y ?? w.y });
+      return;
+    }
     const h = this.hit(w.x, w.y);
     if (!h) return;
     this.cb.onSound?.('click', 0.5);
@@ -1030,6 +1091,14 @@ export class RoomScene {
       const p = local(e);
       const prev = this.pointers.get(e.pointerId);
       if (!prev) {
+        const who = this.heroAt(p.x, p.y);
+        this.hoverHero = who;
+        if (who) {
+          this.hover = null;
+          c.style.cursor = 'pointer';
+          this.cb.onHover?.(this.crowd.nameOf(who), p);
+          return;
+        }
         const w = this.camera.toWorld(p.x, p.y);
         const h = this.hit(w.x, w.y);
         this.hover = h;
@@ -1083,6 +1152,7 @@ export class RoomScene {
     c.addEventListener('pointerleave', () => {
       if (!this.pointers.size) {
         this.hover = null;
+        this.hoverHero = null;
         this.cb.onHover?.(null, null);
       }
     });

@@ -18,6 +18,7 @@ import {
   RGBAFormat,
   ShaderMaterial,
   UnsignedByteType,
+  Vector2,
   Vector3,
   Vector4,
   type Side,
@@ -43,9 +44,11 @@ const OFF = new Set<string>([P.hot, P.rose, P.coral, P.grape]);
 const PALETTE = [...new Set<string>(Object.values(P))].filter((c) => !OFF.has(c)).map(rgb);
 
 const SURFACE_VERT = /* glsl */ `
+  uniform vec2 uUvOffset;
+  uniform vec2 uUvScale;
   varying vec2 vUv;
   void main() {
-    vUv = uv;
+    vUv = uUvOffset + uv * uUvScale;
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   }
 `;
@@ -67,6 +70,8 @@ const SURFACE_FRAG = /* glsl */ `
   uniform vec3 uLightColor[LIGHTS];
   uniform vec4 uLightZone[LIGHTS];
   uniform vec3 uPalette[COLORS];
+  uniform vec2 uUvOffset;
+  uniform vec2 uUvScale;
   varying vec2 vUv;
   const float BAYER[16] = float[16](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.);
   void main() {
@@ -77,7 +82,9 @@ const SURFACE_FRAG = /* glsl */ `
     vec2 size = vec2(textureSize(map, 0));
     vec2 tc = floor(vUv * size);
     vec2 uvc = (tc + 0.5) / size;
-    vec3 world = uOrigin + uAxisU * uvc.x + uAxisV * uvc.y;
+    // En un atlas de fotogramas, la posición dentro del fotograma que se ve.
+    vec2 local = (uvc - uUvOffset) / uUvScale;
+    vec3 world = uOrigin + uAxisU * local.x + uAxisV * local.y;
     vec3 n = uNormal;
     // Luz del día solo por encima del suelo.
     vec3 light = uAmbient + uDaylight * uSun * step(-0.5, world.y);
@@ -175,18 +182,28 @@ export interface SurfaceOpts {
   wrap?: number;
   dither?: number;
   side?: Side;
+  /** Fotogramas puestos uno al lado del otro en la textura (se ve uno: `uUvOffset`). */
+  frames?: number;
 }
 
-/** Los materiales de una escena, con los uniformes que comparten (día, focos y paleta). */
-export class Look {
-  readonly shared = {
+/** Uniformes que comparten todos los materiales de una escena: día, focos y paleta. */
+export function sharedUniforms() {
+  return {
     uDaylight: { value: new Vector3() },
     uLightPos: { value: Array.from({ length: MAX_LIGHTS }, () => new Vector4()) },
     uLightColor: { value: Array.from({ length: MAX_LIGHTS }, () => new Vector3()) },
     uLightZone: { value: Array.from({ length: MAX_LIGHTS }, () => new Vector4()) },
     uPalette: { value: PALETTE },
   };
+}
+
+export type Shared = ReturnType<typeof sharedUniforms>;
+
+/** Los materiales de una escena, con los uniformes que comparten (día, focos y paleta). */
+export class Look {
   private owned: { dispose(): void }[] = [];
+
+  constructor(readonly shared: Shared = sharedUniforms()) {}
 
   /** Material de un plano con sus esquinas (para saber dónde cae cada téxel en el mundo). */
   surface(b: PixelBuffer, corners: Corners, o: SurfaceOpts): ShaderMaterial {
@@ -207,6 +224,8 @@ export class Look {
           uSun: { value: o.sun },
           uWrap: { value: o.wrap ?? 0.25 },
           uDither: { value: o.dither ?? 0.035 },
+          uUvOffset: { value: new Vector2(0, 0) },
+          uUvScale: { value: new Vector2(1 / (o.frames ?? 1), 1) },
         },
         vertexShader: SURFACE_VERT,
         fragmentShader: SURFACE_FRAG,
