@@ -4,9 +4,8 @@ import { HoldHelp } from './HoldHelp';
 import { setHaptics } from '../platform/haptics';
 import { audio, type Mood } from '../audio/audio';
 import { canClose, canHire, customOf, newGame, reduce, type Action } from '../core/game';
-import { canAssign, canHireWorker } from '../core/workers';
 import { DAY_SECONDS, DELIVERIES, DUSK } from '../core/balance';
-import { DECOR } from '../data/custom';
+import { DECOR, STAFF } from '../data/custom';
 import type { BossFight as BossFightRecord, Facilities, GameState } from '../core/model';
 import { CAPTIONS, FACILITY_INFO } from '../data/labels';
 import { loadRecords, mergeRecords, saveRecords } from '../platform/records';
@@ -35,7 +34,7 @@ import { nextTip } from './tips';
 import { UncleNote } from './UncleNote';
 import { AwayPanel } from './panels/AwayPanel';
 import { GremioPanel } from './panels/GremioPanel';
-import { HeroesPanel, type HeroFilter } from './panels/HeroesPanel';
+import { HeroesPanel } from './panels/HeroesPanel';
 import { MailPanel } from './panels/MailPanel';
 import { TablonPanel } from './panels/TablonPanel';
 import { TabernaPanel } from './panels/TabernaPanel';
@@ -126,7 +125,7 @@ export function App() {
   const [bubble, setBubble] = useState<Bubble | null>(null);
   const [hover, setHover] = useState<{ label: string; at: Point } | null>(null);
   const [focusFac, setFocusFac] = useState<keyof Facilities | null>(null);
-  const [heroFilter, setHeroFilter] = useState<HeroFilter>('todos');
+  const [heroFilter, setHeroFilter] = useState<'todos' | 'candidatos'>('todos');
   const [hint, setHint] = useState(false);
   /** Splash del desarrollador, título y juego. Con #debug se entra directo a la partida. */
   const [screen, setScreen] = useState<'splash' | 'title' | 'game'>(() =>
@@ -407,32 +406,10 @@ export function App() {
     scene.current?.focus(id);
   };
 
-  const hireWorker = (id: string) => {
-    const w = game.seekers.find((x) => x.id === id);
-    const why = canHireWorker(game, id);
-    if (why) return toast(why);
-    dispatch({ type: 'hireWorker', id });
-    audio.play('coin');
-    if (w) toast(`${w.name} se queda a trabajar. Empieza ahora mismo.`);
-  };
-
-  const assignJob = (who: string, room: string | null) => {
-    const why = canAssign(gameRef.current, who, room);
-    if (why) return toast(why);
-    dispatch({ type: 'assign', who, room });
-    audio.play(room ? 'select' : 'deselect');
-  };
-
   const roomLink = (to: RoomLink) => {
-    if (to === 'candidatos' || to === 'trabajadores') setHeroFilter(to);
+    if (to === 'candidatos') setHeroFilter('candidatos');
     if (to === 'equipo' || to === 'tesoros') setArconTab(to);
-    openPanel(
-      to === 'candidatos' || to === 'trabajadores'
-        ? 'heroes'
-        : to === 'equipo' || to === 'tesoros'
-          ? 'arcon'
-          : to,
-    );
+    openPanel(to === 'candidatos' ? 'heroes' : to === 'equipo' || to === 'tesoros' ? 'arcon' : to);
   };
 
   const sell = (itemId: string) => {
@@ -647,16 +624,9 @@ export function App() {
             s.speed = settings.speed;
           }}
           onHotspot={onHotspot}
-          onHero={(id, at) => {
+          onHero={(id) => {
             setHint(false);
             setBubble(null);
-            // Un trabajador no tiene ficha: dice lo suyo.
-            const w = game.workers.find((x) => x.id === id);
-            if (w) {
-              audio.play('click', 0.5);
-              say(`${w.name}: «${w.quote}»`, at);
-              return;
-            }
             audio.play('open', 0.6);
             setCard(id);
           }}
@@ -753,14 +723,6 @@ export function App() {
               setFilter={setHeroFilter}
               onOpen={(id) => setCard(id)}
               onHire={hire}
-              onHireWorker={hireWorker}
-              onFireWorker={(id) => {
-                const w = game.workers.find((x) => x.id === id);
-                dispatch({ type: 'fireWorker', id });
-                audio.play('close');
-                if (w) toast(`${w.name} recoge sus cosas y se despide.`);
-              }}
-              onAssign={assignJob}
             />
           </Panel>
         )}
@@ -788,7 +750,6 @@ export function App() {
                   : undefined
               }
               onMove={roomsLive ? (id) => pickSpot({ kind: 'move', id }) : undefined}
-              onAssign={works.planning ? undefined : assignJob}
             />
           </Panel>
         )}
@@ -866,6 +827,15 @@ export function App() {
               onCustom={(patch) => {
                 dispatch({ type: 'custom', patch });
                 audio.play('click');
+              }}
+              onStaff={(id, on) => {
+                dispatch({ type: 'staff', id, on });
+                audio.play(on ? 'coin' : 'close');
+                toast(
+                  on
+                    ? `${STAFF[id].name}: contratado. Empieza esta noche.`
+                    : `${STAFF[id].name}: despedido.`,
+                );
               }}
               onDog={() => {
                 dispatch({ type: 'buyDog' });
@@ -947,7 +917,6 @@ export function App() {
               dispatch({ type: 'guard', id: cardHero.id, on });
               audio.play(on ? 'select' : 'deselect');
             }}
-            onJob={works.planning ? undefined : (room) => assignJob(cardHero.id, room)}
             onEquip={(itemId) => {
               dispatch({ type: 'equip', heroId: cardHero.id, itemId });
               audio.play('select');

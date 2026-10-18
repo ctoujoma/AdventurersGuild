@@ -21,7 +21,6 @@ import {
   segments,
   spots,
   wander,
-  workGoal,
   type Goal,
   type Place,
   type Segments,
@@ -38,8 +37,8 @@ const CLIMB = 30;
 /** Fotogramas del atlas (cada uno de CELL × SPRITE de alto). */
 const CELL = 24;
 const TALL = 28;
-const F = { idle: 0, blink: 2, walk: 3, walkL: 7, sit: 11, sleep: 12, cot: 16, mat: 17 } as const;
-const FRAMES = 18;
+const F = { idle: 0, blink: 2, walk: 3, walkL: 7, sit: 11, sleep: 12, cot: 16 } as const;
+const FRAMES = 17;
 
 type Tint = readonly [number, number, number];
 
@@ -62,9 +61,6 @@ interface Actor {
   seat: SeatSpot | null;
   /** Saliendo de misión: al llegar al patio desaparece. */
   leaving: boolean;
-  /** Trabajador del pueblo: de camino a casa al anochecer y ya fuera (no se ve). */
-  homeward: boolean;
-  gone: boolean;
 }
 
 const hash = (s: string) => {
@@ -101,12 +97,6 @@ function atlas(spr: HeroSprites): PixelBuffer {
   b.blit(spr.bed, x, 0);
   b.rect(x + 4, 14, 20, 4, P.white);
   b.hline(x + 4, 17, 20, P.mist);
-  // En el jergón del servicio: una manta parda de lana.
-  const m = F.mat * CELL;
-  b.blit(spr.bed, m, 0);
-  b.rect(m + 4, 14, 20, 4, P.clay);
-  b.hline(m + 4, 14, 20, P.tan);
-  b.hline(m + 4, 17, 20, P.rust);
   return b;
 }
 
@@ -170,9 +160,7 @@ export class Crowd {
         continue;
       }
       const was = a.hero.status;
-      const work = a.hero.work;
       a.hero = h;
-      if (work !== h.work && !a.gone && !a.leaving) a.wait = 0;
       if (was === h.status) continue;
       a.goal = null;
       a.path = [];
@@ -191,49 +179,18 @@ export class Crowd {
       this.add(h);
     }
     this.rehome();
-    // Quien ya tiene cama en el servicio deja de irse al pueblo.
-    for (const a of this.actors.values()) {
-      if (!a.gone || this.village(a)) continue;
-      a.gone = false;
-      a.mesh.visible = true;
-      const g = this.homes.get(a.hero.id);
-      if (this.time === 'night' && g) {
-        this.put(a, g.place);
-        this.arrive(a, g);
-      } else {
-        this.put(a, outside());
-        a.wait = 0;
-      }
-    }
   }
 
   /** Cambia la hora: al atardecer van a la cama andando y de noche ya están acostados. */
   setNight(time: 'day' | 'dusk' | 'night'): void {
     if (time === this.time) return;
     this.time = time;
-    if (time === 'day') {
-      // Los del pueblo llegan por la mañana, cada uno a su hora.
-      for (const a of this.actors.values()) {
-        a.homeward = false;
-        if (a.gone) {
-          a.gone = false;
-          a.mesh.visible = true;
-          a.path = [];
-          a.pose = 'stand';
-          this.put(a, outside());
-        }
-      }
-    }
     if (time !== 'night') {
       for (const a of this.actors.values()) a.wait = this.rnd() * 3;
       return;
     }
     for (const a of this.actors.values()) {
-      if (a.leaving || a.gone) continue;
-      if (this.village(a)) {
-        this.hide(a);
-        continue;
-      }
+      if (a.leaving) continue;
       const g = this.homes.get(a.hero.id);
       if (!g) continue;
       a.path = [];
@@ -245,14 +202,10 @@ export class Crowd {
 
   update(dt: number, t: number): void {
     for (const a of this.actors.values()) {
-      if (a.gone) continue;
       if (a.path.length) this.walk(a, dt);
       else if (a.leaving) {
         this.away.add(a.hero.id);
         this.remove(a.hero.id);
-        continue;
-      } else if (a.homeward) {
-        this.hide(a);
         continue;
       } else if ((a.wait -= dt) <= 0) this.decide(a);
       this.place(a, t);
@@ -263,7 +216,6 @@ export class Crowd {
   hit(v: View, x: number, y: number): string | null {
     let best: { id: string; z: number } | null = null;
     for (const a of this.actors.values()) {
-      if (a.gone) continue;
       const r = this.rectOf(a, v);
       if (!r || x < r.x || x > r.x + r.w || y < r.y || y > r.y + r.h) continue;
       const z = this.depth(a);
@@ -275,7 +227,7 @@ export class Crowd {
   /** Recuadro en pantalla (en píxeles de la vista) de lo que se ve de alguien. */
   screenRect(id: string, v: View): Rect | null {
     const a = this.actors.get(id);
-    return a && !a.gone ? this.rectOf(a, v) : null;
+    return a ? this.rectOf(a, v) : null;
   }
 
   nameOf(id: string): string {
@@ -324,15 +276,8 @@ export class Crowd {
       blinkAt: this.rnd() * 4,
       seat: null,
       leaving: false,
-      homeward: false,
-      gone: false,
     };
     this.actors.set(h.id, a);
-    if (this.village(a) && this.time !== 'day') {
-      // De noche, los del pueblo están en su casa.
-      this.hide(a);
-      return;
-    }
     if (this.away.delete(h.id) && this.S) {
       // Vuelve de misión: entra por la puerta desde el patio.
       this.put(a, outside());
@@ -341,7 +286,7 @@ export class Crowd {
     }
     // Al aparecer de día ya está en algún sitio de la casa; de noche, en su cama.
     if (this.S && h.status === 'ok' && !h.guard && this.time === 'day') {
-      const g = this.workOf(a) ?? wander(this.S, this.taken(), this.rnd);
+      const g = wander(this.S, this.taken(), this.rnd);
       if (g && route(this.L!, start, g.place, this.segs)) {
         this.put(a, g.place);
         this.arrive(a, g);
@@ -367,7 +312,6 @@ export class Crowd {
       id: a.hero.id,
       status: a.hero.status,
       guard: a.hero.guard,
-      staff: a.hero.staff,
     }));
     this.homes = homes(people, this.S);
   }
@@ -382,48 +326,11 @@ export class Crowd {
     a.seat = null;
   }
 
-  /** Del pueblo y sin cama en el servicio: duerme en su casa. */
-  private village(a: Actor): boolean {
-    return a.hero.staff === 'pueblo' || (a.hero.staff === 'casa' && !this.homes.has(a.hero.id));
-  }
-
-  /** Ya se ha ido a su casa del pueblo: no se ve hasta mañana. */
-  private hide(a: Actor): void {
-    a.homeward = false;
-    a.gone = true;
-    a.path = [];
-    a.goal = null;
-    a.mesh.visible = false;
-    this.seatFree(a);
-  }
-
-  /** A qué puesto va alguien que trabaja en una sala (si es de día y está en casa). */
-  private workOf(a: Actor): Goal | null {
-    const h = a.hero;
-    if (!this.S || !h.work || this.time !== 'day' || h.status !== 'ok' || h.guard) return null;
-    const mates = [...this.actors.values()].filter((x) => x.hero.work === h.work);
-    return workGoal(this.S, h.work, mates.indexOf(a), mates.length, this.rnd);
-  }
-
   /** Qué hace ahora alguien que está parado. */
   private decide(a: Actor): void {
     if (!this.S) return;
     const h = a.hero;
-    if (this.time !== 'day' && this.village(a)) {
-      // Se acabó el día: vuelve al pueblo por el patio.
-      a.homeward = true;
-      this.go(a, { place: outside(), pose: 'stand' });
-      return;
-    }
     const home = this.homes.get(h.id);
-    const job = this.workOf(a);
-    if (job) {
-      // En el salón van de mesa en mesa; en las demás salas, cada uno a lo suyo.
-      a.wait = 4 + this.rnd() * 8;
-      if (Math.abs(job.place.x - a.x) < 4 && job.place.floor === a.floor) return;
-      this.go(a, job);
-      return;
-    }
     const free = h.status === 'ok' && !h.guard && this.time === 'day';
     const g = free ? wander(this.S, this.taken(), this.rnd) : home;
     a.wait = free ? 5 + this.rnd() * 9 : 3 + this.rnd() * 3;
@@ -507,12 +414,6 @@ export class Crowd {
         const left = bed.x - 14 / k;
         const top = ground - 40 / k + (bed.top - 12) / k;
         return { frame: F.sleep + bed.level, left, bottom: top + TALL / k, z };
-      }
-      if (bed.kind === 'jergon') {
-        // En el suelo, con la cabeza en un extremo del jergón.
-        const left = bed.x - 15 / k;
-        const top = ground - 5 / k - 12 / k + 1 / k;
-        return { frame: F.mat, left, bottom: top + TALL / k, z };
       }
       const left = bed.x - 18 / k;
       const top = ground - 14 / k - 12 / k + 1 / k;

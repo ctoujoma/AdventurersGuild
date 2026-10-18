@@ -14,7 +14,7 @@ describe('notas del tío', () => {
 
   it('el día 30, en la vista de salas, el tío explica las obras una a una', () => {
     let s = newGame('obras');
-    s.tips = [...TIPS.filter((t) => !t.rooms).map((t) => t.id), 'trabajo'];
+    s.tips = TIPS.filter((t) => !t.rooms).map((t) => t.id);
     s.mode = 'libre';
     s.day = 31;
     s.opening = {
@@ -38,17 +38,5 @@ describe('notas del tío', () => {
     s = reduce(s, { type: 'tip', id: 'plano' });
     s.day = 33;
     expect(nextTip(s, true)?.id).toBe('excavar');
-    s = reduce(s, { type: 'tip', id: 'excavar' });
-    // Y después, el dormitorio del servicio para los que piden trabajo.
-    s.day = 34;
-    expect(nextTip(s, true)?.id).toBe('servicio');
-  });
-
-  it('en la vista de salas, el tío presenta a los tres del pueblo', () => {
-    const s = newGame('trabajo');
-    s.tips = TIPS.filter((t) => !t.rooms).map((t) => t.id);
-    s.day = 3;
-    expect(nextTip(s)).toBeNull();
-    expect(nextTip(s, true)?.id).toBe('trabajo');
   });
 });

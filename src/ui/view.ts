@@ -1,7 +1,6 @@
 import { generateLook, type HeroLook, type HeroMarks } from '../art/heroes/look';
-import type { Facilities, GameState, Hero, Item, Worker } from '../core/model';
+import type { Facilities, GameState, Hero, Item } from '../core/model';
 import { customOf, gearInStock } from '../core/game';
-import { staffBeds, workerTitle } from '../core/workers';
 import { CREST_COLORS, isFeastDay } from '../data/custom';
 import { gearOf } from '../core/resolve';
 import type { Member } from '../core/party';
@@ -15,18 +14,6 @@ export function lookOf(h: Hero): HeroLook {
   if (!l) {
     l = generateLook(h.seed, h.cls, h.sex);
     looks.set(h.seed, l);
-  }
-  return l;
-}
-
-/** Los trabajadores visten de taberna (el mozo, sin gorro; el bardo, con gorra). */
-export function workerLook(w: Worker): HeroLook {
-  let l = looks.get(w.seed);
-  if (!l) {
-    l = generateLook(w.seed, 'tabernero', w.sex);
-    if (w.village === 'bardo') l = { ...l, headgear: 'gorra' };
-    if (w.village === 'mozo') l = { ...l, headgear: null };
-    looks.set(w.seed, l);
   }
   return l;
 }
@@ -62,21 +49,8 @@ export function sceneModel(s: GameState): SceneModel {
       look: lookOf(h),
       marks: marksOf(h),
       guard: !!h.guard,
-      work: h.job,
     });
   }
-  // Los trabajadores: los que tienen cama en el servicio duermen en casa; los demás, en el pueblo.
-  let beds = staffBeds(s.building);
-  for (const w of s.workers)
-    heroes.push({
-      id: w.id,
-      name: workerTitle(w),
-      status: 'ok',
-      look: workerLook(w),
-      marks: {},
-      work: w.room,
-      staff: beds-- > 0 ? 'casa' : 'pueblo',
-    });
   for (const h of s.candidates)
     heroes.push({
       id: h.id,
@@ -96,7 +70,7 @@ export function sceneModel(s: GameState): SceneModel {
       dark: CREST_COLORS[customOf(s).color].dark,
       symbol: customOf(s).symbol,
     },
-    staff: s.workers.flatMap((w) => (w.village ? [w.village] : [])),
+    staff: customOf(s).staff,
     dog: customOf(s).dog,
     decor: customOf(s).decor ?? [],
     raven: !!customOf(s).raven,

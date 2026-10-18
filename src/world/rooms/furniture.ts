@@ -95,7 +95,7 @@ export function seats(room: Room, w: number): Seat[] {
  * el centro del mueble en x, su profundidad y la fila de la almohada dentro de su dibujo.
  */
 export interface Bed {
-  kind: 'litera' | 'catre' | 'jergon';
+  kind: 'litera' | 'catre';
   x: number;
   z: number;
   /** Fila (desde arriba del dibujo) donde empieza el colchón. */
@@ -108,18 +108,7 @@ export const BUNK_ROWS = [6, 26] as const;
 
 export function beds(room: Room, w: number): Bed[] {
   if (!inUse(room)) return [];
-  if (room.type === 'servicio' && room.level < 2) {
-    // Jergones de paja en el suelo, uno por cama.
-    const n = bunkCount(room, w);
-    return Array.from({ length: n }, (_, i) => ({
-      kind: 'jergon' as const,
-      x: slot(w, i, n),
-      z: WALL,
-      top: 0,
-      level: room.level,
-    }));
-  }
-  if (room.type === 'dormitorio' || room.type === 'veteranos' || room.type === 'servicio') {
+  if (room.type === 'dormitorio' || room.type === 'veteranos') {
     const n = bunkCount(room, w);
     const level = room.type === 'veteranos' ? 3 : room.level;
     return Array.from({ length: n }, (_, i) =>
@@ -139,15 +128,9 @@ export function beds(room: Room, w: number): Bed[] {
   return [];
 }
 
-/**
- * Literas (o jergones) de un dormitorio. El del servicio tiene dos camas por hueco y nivel:
- * dos jergones por hueco al principio y, desde el nivel 2, tantas literas como el nivel.
- */
 const bunkCount = (room: Room, w: number) =>
   Math.min(
-    room.type === 'servicio'
-      ? room.w * (room.level < 2 ? 2 : room.level)
-      : room.w * (room.level >= 2 ? 2 : 1),
+    room.w * (room.type === 'servicio' ? 2 : 1) * (room.level >= 2 ? 2 : 1),
     Math.floor(w / 30),
   );
 const cotCount = (room: Room) => Math.min(3, room.level + room.w - 1);

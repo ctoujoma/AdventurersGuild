@@ -50,10 +50,6 @@ export interface SceneHero {
   marks: HeroMarks;
   /** De guardia en el recibidor (la vista de salas lo enseña). */
   guard?: boolean;
-  /** Sala en la que trabaja de día (id). */
-  work?: string;
-  /** Trabajador: duerme en el dormitorio del servicio o se va a dormir al pueblo. */
-  staff?: 'casa' | 'pueblo';
 }
 
 export interface SceneModel {
@@ -339,9 +335,7 @@ export class WorldScene {
 
   // ---------- API ----------
 
-  setModel(full: SceneModel): void {
-    // Los trabajadores se ven en la vista de salas; aquí siguen dibujados los tres de siempre.
-    const model = { ...full, heroes: full.heroes.filter((h) => !h.staff) };
+  setModel(model: SceneModel): void {
     const prev = this.model;
     this.model = model;
     const key = JSON.stringify([

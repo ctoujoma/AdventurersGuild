@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { BEER_COIN, NURSE_WORK, SERVE_COIN, roomMax } from '../../core/balance';
+import { roomMax } from '../../core/balance';
 import { canWork, type Action } from '../../core/game';
 import type { GameState, Room } from '../../core/model';
 import {
@@ -12,37 +12,17 @@ import {
 import { FACILITY_INFO } from '../../data/labels';
 import { ROOMS, type RoomType } from '../../data/rooms';
 import { plural } from '../../core/text';
-import {
-  canAssign,
-  cookBoost,
-  crewOf,
-  isJobRoom,
-  slotsOf,
-  staffBeds,
-  workIn,
-  workerCap,
-  workerTitle,
-} from '../../core/workers';
 import { Icon } from '../icons';
-import { jobRoomName } from '../JobPicker';
 
 /** A dónde lleva cada sala: los paneles de siempre que tienen que ver con ella. */
-export type RoomLink =
-  'tablon' | 'candidatos' | 'casa' | 'heroes' | 'trabajadores' | 'libro' | 'equipo' | 'tesoros';
-
-const WORK = { to: 'trabajadores', label: 'Trabajadores' } as const;
+export type RoomLink = 'tablon' | 'candidatos' | 'casa' | 'heroes' | 'libro' | 'equipo' | 'tesoros';
 
 const LINKS: Partial<Record<RoomType, { to: RoomLink; label: string }[]>> = {
   salon: [
     { to: 'tablon', label: 'Tablón de encargos' },
     { to: 'candidatos', label: 'Candidatos' },
     { to: 'casa', label: 'Tu taberna' },
-    WORK,
   ],
-  cocina: [WORK],
-  bodega: [WORK],
-  enfermeria: [WORK],
-  servicio: [WORK],
   recibidor: [{ to: 'heroes', label: 'Guardia' }],
   dormitorio: [{ to: 'heroes', label: 'Héroes' }],
   veteranos: [{ to: 'heroes', label: 'Héroes' }],
@@ -60,107 +40,6 @@ interface Props {
   /** Obras de verdad (ampliar, destruir) y elegir en la escena a dónde mover la sala. */
   onWork?: (a: Action) => void;
   onMove?: (id: string) => void;
-  /** Poner a alguien a trabajar en la sala o quitarlo. */
-  onAssign?: (who: string, room: string | null) => void;
-}
-
-const num = (x: number) => x.toFixed(1).replace('.', ',').replace(',0', '');
-
-/** Lo que hace hoy la gente que trabaja en una sala. */
-function crewEffect(game: GameState, room: Room): string {
-  switch (room.type) {
-    case 'salon':
-      return `El servicio deja ${Math.round(workIn(game, 'salon') * SERVE_COIN)} monedas al día.`;
-    case 'bodega':
-      return `La cerveza deja ${Math.round(workIn(game, 'bodega') * BEER_COIN)} monedas al día en el salón.`;
-    case 'cocina':
-      return `El plato de la casa anima ×${num(cookBoost(game))}.`;
-    case 'enfermeria':
-      return workIn(game, 'enfermeria') >= NURSE_WORK
-        ? 'Los heridos se curan un día antes.'
-        : 'Con más mano, los heridos se curarían un día antes.';
-    default:
-      return '';
-  }
-}
-
-/** Quién trabaja en la sala, quitar a alguien y poner a otro (trabajador o héroe en casa). */
-function RoomCrew({
-  game,
-  room,
-  onAssign,
-}: {
-  game: GameState;
-  room: Room;
-  onAssign: (who: string, room: string | null) => void;
-}) {
-  const slots = slotsOf(room);
-  if (!slots) return null;
-  const crew = crewOf(game, room.id);
-  const here = [
-    ...crew.workers.map((w) => ({ id: w.id, name: workerTitle(w), note: `Maña ${w.skill}` })),
-    ...crew.heroes.map((h) => ({
-      id: h.id,
-      name: h.name,
-      note: h.status === 'ok' && !h.guard ? 'echa una mano' : 'fuera hoy',
-    })),
-  ];
-  const free = [
-    ...game.workers
-      .filter((w) => w.room !== room.id)
-      .map((w) => {
-        const now = game.building.rooms.find((r) => r.id === w.room);
-        return {
-          id: w.id,
-          name: `${workerTitle(w)}${now ? ` (en ${jobRoomName(game, now)})` : ''}`,
-        };
-      }),
-    ...game.heroes
-      .filter((h) => h.job !== room.id && !canAssign(game, h.id, room.id))
-      .map((h) => ({ id: h.id, name: `${h.name} (héroe)` })),
-  ];
-  return (
-    <div class="room-crew">
-      <span>
-        <b>
-          Trabajan aquí · {here.length}/{slots}
-        </b>{' '}
-        <span class="muted">{crewEffect(game, room)}</span>
-      </span>
-      {here.map((p) => (
-        <span key={p.id} class="crew-chip">
-          <span>
-            {p.name} <span class="muted">· {p.note}</span>
-          </span>
-          <button
-            class="btn btn-wood"
-            aria-label={`Quitar a ${p.name}`}
-            onClick={() => onAssign(p.id, null)}
-          >
-            Quitar
-          </button>
-        </span>
-      ))}
-      {here.length < slots && free.length > 0 && (
-        <select
-          class="job-select"
-          value=""
-          aria-label="Poner a trabajar aquí"
-          onChange={(e) => {
-            const v = (e.target as HTMLSelectElement).value;
-            if (v) onAssign(v, room.id);
-          }}
-        >
-          <option value="">Poner a trabajar aquí…</option>
-          {free.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-      )}
-    </div>
-  );
 }
 
 const DIRS: { dir: ExtendDir; label: string }[] = [
@@ -239,7 +118,7 @@ function RoomWorks({
 }
 
 /** Ficha de una sala: para qué sirve, su nivel, arreglarla o mejorarla y sus obras. */
-export function RoomPanel({ game, roomId, onUpgrade, onLink, onWork, onMove, onAssign }: Props) {
+export function RoomPanel({ game, roomId, onUpgrade, onLink, onWork, onMove }: Props) {
   const room = game.building.rooms.find((r) => r.id === roomId);
   if (!room) return <p class="muted">Esa sala ya no está.</p>;
   const def = ROOMS[room.type];
@@ -277,16 +156,6 @@ export function RoomPanel({ game, roomId, onUpgrade, onLink, onWork, onMove, onA
         {info && cost !== null && (
           <span class="next-level">Mejora: {info.effect(room.level + 1)}</span>
         )}
-        {room.type === 'servicio' && room.level > 0 && (
-          <span class="muted">
-            Camas del servicio: {staffBeds(game.building)} · trabajadores {game.workers.length}/
-            {workerCap(game)}
-          </span>
-        )}
-        {isJobRoom(room.type) && room.level === 0 && (
-          <span class="muted">Arreglada, tendrá {room.w * 2} puestos de trabajo.</span>
-        )}
-        {onAssign && <RoomCrew game={game} room={room} onAssign={onAssign} />}
         {onWork && <RoomWorks game={game} room={room} onWork={onWork} onMove={onMove} />}
         <span class="room-links">
           {(LINKS[room.type] ?? []).map((l) => (

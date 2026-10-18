@@ -270,23 +270,3 @@ export const RAID_MAX_CHANCE = 0.25;
 export const RAID_BASE = 0.45;
 /** Lo que suma cada héroe de guardia a la defensa. */
 export const GUARD_BONUS = 3;
-
-// ---------- Trabajadores ----------
-/** Puestos de trabajo por cada hueco de una sala que produce. */
-export const JOB_SLOTS = 2;
-/** En su oficio se rinde la mitad más. */
-export const TRADE_BONUS = 1.5;
-/** Lo que rinde un héroe echando una mano (menos que cualquier trabajador con maña). */
-export const HERO_WORK = 2;
-/** Monedas al día por cada punto de trabajo en el salón y en la bodega. */
-export const SERVE_COIN = 0.5;
-export const BEER_COIN = 0.4;
-/** Trabajo en la cocina con el que el plato de la casa anima el doble. */
-export const COOK_FULL = 6;
-/** Trabajo en la enfermería con el que los heridos se curan un día antes. */
-export const NURSE_WORK = 3;
-/** Noches de trabajo por cada punto de Maña que ya se tiene para subir otro. */
-export const SKILL_XP = 5;
-/** Cada cuántos días viene alguien a pedir trabajo (desde el día 30) y cuántos esperan. */
-export const SEEKER_EVERY = 3;
-export const MAX_SEEKERS = 3;

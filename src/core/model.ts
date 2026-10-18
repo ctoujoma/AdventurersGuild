@@ -4,11 +4,10 @@
  */
 import type { BossKind } from '../data/bosses';
 import type { CrestColor, CrestSymbol, DecorId, Dish, StaffId } from '../data/custom';
-import type { Trade } from '../data/workers';
 import type { RoomType } from '../data/rooms';
 import type { Attrs, Challenge, ClassId, SkillId, Trait } from './party';
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 2;
 
 export type Sex = 'm' | 'f';
 
@@ -43,30 +42,6 @@ export interface Hero {
   guard?: boolean;
   /** Dónde se le perdió la pista (si está desaparecido). */
   lostAt?: string;
-  /** Sala en la que echa una mano mientras está en casa (id). */
-  job?: string;
-}
-
-/** Quien trabaja en la taberna: no sale de misión, cobra poco y rinde más en su oficio. */
-export interface Worker {
-  id: string;
-  /** Semilla del aspecto. */
-  seed: string;
-  name: string;
-  sex: Sex;
-  /** Maña, de 1 a 10: lo que rinde. Sube trabajando. */
-  skill: number;
-  trade: Trade;
-  /** Noches trabajadas hacia la siguiente subida de Maña. */
-  xp: number;
-  salary: number;
-  /** Prima por empezar (solo cuenta mientras pide trabajo). */
-  fee: number;
-  /** Sala en la que trabaja (id); sin sala, descansa. */
-  room?: string;
-  /** Uno de los tres del pueblo que ya trabajaban para tu tío. */
-  village?: StaffId;
-  quote: string;
 }
 
 export type QuestType = 'Cazar' | 'Escoltar' | 'Explorar' | 'Recuperar' | 'Investigar' | 'Limpiar';
@@ -263,6 +238,7 @@ export interface Custom {
   color: CrestColor;
   symbol: CrestSymbol;
   dish: Dish;
+  staff: StaffId[];
   dog: boolean;
   decor?: DecorId[];
   raven?: boolean;
@@ -378,9 +354,6 @@ export interface GameState {
   fac: Facilities;
   heroes: Hero[];
   candidates: Hero[];
-  /** Trabajadores de la casa y gente que ha venido a pedir trabajo. */
-  workers: Worker[];
-  seekers: Worker[];
   quests: Quest[];
   missions: Mission[];
   reports: Report[];

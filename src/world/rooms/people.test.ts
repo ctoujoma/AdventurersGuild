@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { maxOut, uncleBuilding } from '../../core/rooms';
 import { colX, floorTop, roomsLayout } from './layout';
-import { homes, outside, route, segments, spots, wander, workGoal, type Place } from './people';
+import { homes, outside, route, segments, spots, wander, type Place } from './people';
 
 const L0 = () => roomsLayout(uncleBuilding());
 const centerOf = (L: ReturnType<typeof L0>, type: string): Place => {
@@ -84,36 +84,5 @@ describe('la gente de la casa', () => {
     const goals = Array.from({ length: 6 }, () => wander(S, new Set(), rnd)!);
     expect(goals.some((g) => g.pose === 'sit')).toBe(true);
     for (const g of goals) expect(route(L0(), S.door, g.place)).not.toBeNull();
-  });
-
-  it('los trabajadores duermen en el servicio y trabajan en su sala', () => {
-    const b = uncleBuilding();
-    b.rooms.push({ id: 'srv', type: 'servicio', col: 4, floor: 1, w: 1, h: 1, level: 1, spent: 0 });
-    b.cols = 5;
-    const S = spots(roomsLayout(b));
-    // Dos jergones por hueco, aparte de las camas de los héroes.
-    expect(S.staffBeds).toHaveLength(2);
-    expect(S.staffBeds.every((x) => x.kind === 'jergon' && x.roomId === 'srv')).toBe(true);
-    const H = homes(
-      [
-        { id: 'a', status: 'ok', staff: 'casa' },
-        { id: 'b', status: 'ok', staff: 'casa' },
-        { id: 'c', status: 'ok', staff: 'casa' },
-        { id: 'd', status: 'ok', staff: 'pueblo' },
-      ],
-      S,
-    );
-    expect(H.get('a')?.bed?.roomId).toBe('srv');
-    expect(H.get('b')?.bed?.roomId).toBe('srv');
-    // Sin cama (o del pueblo), no tiene sitio en casa.
-    expect(H.has('c')).toBe(false);
-    expect(H.has('d')).toBe(false);
-    // La cocina tiene puestos; en ella cada uno va a su sitio.
-    const cocina = b.rooms.find((r) => r.type === 'cocina')!;
-    const g0 = workGoal(S, cocina.id, 0, 2, () => 0.5)!;
-    const g1 = workGoal(S, cocina.id, 1, 2, () => 0.5)!;
-    expect(g0.place.floor).toBe(cocina.floor);
-    expect(g1.place.x).toBeGreaterThan(g0.place.x);
-    expect(workGoal(S, 'srv', 0, 1, () => 0.5)).toBeNull();
   });
 });
