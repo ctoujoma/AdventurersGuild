@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   DECOR,
   DEFAULT_NAME,
-  DOG_DEFENSE,
   DOG_PRICE,
   FEAST_PRICE,
   RAVEN_PRICE,
@@ -10,7 +9,8 @@ import {
 } from '../data/custom';
 import { customOf, endDay, newGame, reduce } from './game';
 import type { GameState } from './model';
-import { defense } from './raids';
+import { assaultSetup } from './assault';
+import { Rng } from './rng';
 
 const rich = (seed: string): GameState => ({ ...newGame(seed), gold: 500 });
 
@@ -34,13 +34,13 @@ describe('tu taberna', () => {
     expect(sealInitial('Cuervo')).toBe('C');
   });
 
-  it('el perro guardián se compra una vez y defiende', () => {
+  it('el perro guardián se compra una vez y de noche despierta antes a todos', () => {
     const s = rich('perro');
-    const d = defense(s);
     const t = reduce(s, { type: 'buyDog' });
     expect(t.gold).toBe(500 - DOG_PRICE);
-    expect(defense(t)).toBe(d + DOG_DEFENSE);
     expect(reduce(t, { type: 'buyDog' })).toBe(t);
+    const wake = (x: typeof s) => assaultSetup(x, 20, new Rng('ladra')).defenders[0]!.wake;
+    expect(wake(t)).toBeLessThan(wake(s));
   });
 
   it('la decoración ocupa huecos limitados y cada pieza hace lo suyo', () => {

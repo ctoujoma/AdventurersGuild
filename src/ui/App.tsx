@@ -4,6 +4,7 @@ import { HoldHelp } from './HoldHelp';
 import { haptic, setHaptics } from '../platform/haptics';
 import { audio, type Mood } from '../audio/audio';
 import { canClose, canHire, customOf, newGame, reduce, type Action } from '../core/game';
+import { raidRoute } from '../core/assault';
 import { canAssign, canHireWorker } from '../core/workers';
 import { DAY_SECONDS, DELIVERIES, DUSK } from '../core/balance';
 import { DECOR, FACADE } from '../data/custom';
@@ -255,6 +256,16 @@ export function App() {
       !works.pick,
     );
   }, [works.active?.kind, works.targets, works.chosen?.id, works.pick]);
+  // El camino de los bandidos, a la vista mientras se planea la casa o se mira la cámara o la puerta.
+  const routeRoom =
+    panel === 'sala' && roomId ? (draft ?? game).building.rooms.find((r) => r.id === roomId) : null;
+  const showRoute =
+    works.planning || routeRoom?.type === 'tesoro' || routeRoom?.type === 'recibidor';
+  const routeBuilding = (draft ?? game).building;
+  useEffect(() => {
+    const s = scene.current;
+    if (s instanceof RoomScene) s.setRoute(showRoute ? raidRoute(routeBuilding) : null);
+  }, [showRoute, routeBuilding]);
   /** Las obras de verdad solo se eligen en la escena por salas (si el navegador la pinta). */
   const roomsLive = !settings.classic && scene.current instanceof RoomScene;
   const pickSpot = (p: Pick) => {

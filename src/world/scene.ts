@@ -56,6 +56,8 @@ export interface SceneHero {
   staff?: 'casa' | 'pueblo';
   /** Visitante del salón: entra, se sienta un rato y se va. */
   visitor?: boolean;
+  /** Bandido de un asalto (solo de noche, mientras dura). */
+  bandit?: boolean;
   /** Entrenando: cómo va la barra al empezar el día (0–1) y cuánto sube en un día entero. */
   train?: { at: number; perDay: number };
 }

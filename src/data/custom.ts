@@ -113,8 +113,7 @@ export const FEAST_MORALE = 10;
 export const isFeastDay = (day: number) => day % FEAST_EVERY === 0;
 
 export const DOG_PRICE = 60;
-/** El perro guardián: defensa y olfato para los asaltos. */
-export const DOG_DEFENSE = 3;
+/** El perro guardián: olfato para los asaltos (y de noche, ladra y despierta a todos antes). */
 export const DOG_TIPOFF = 0.25;
 
 /** Inicial del lacre: la primera palabra que no sea un artículo («El Jarro Partido» → J). */

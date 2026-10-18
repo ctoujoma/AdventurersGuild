@@ -15,6 +15,7 @@ import {
 } from '../src/core/game';
 import type { GameState, Hero, Outcome } from '../src/core/model';
 import { questEstimate } from '../src/core/resolve';
+import { vaultFull, vaultOf } from '../src/core/vault';
 
 declare const process: { argv: string[] };
 
@@ -82,6 +83,22 @@ function playDay(s: GameState, st: Strategy): GameState {
       if (cost !== null && s.gold - cost > reserve(s) + 120)
         s = reduce(s, { type: 'upgrade', fac: k });
     }
+  // La cámara casi llena: mejorarla antes de que se pierda el oro.
+  const vault = vaultOf(s);
+  if (st.upgrade && vault && vaultFull(s)) {
+    // Primero subirla de nivel; al máximo, ampliarla (ya en el modo libre).
+    for (const a of [
+      { type: 'upgradeRoom', id: vault.id },
+      { type: 'extend', id: vault.id, dir: 'right' },
+      { type: 'extend', id: vault.id, dir: 'left' },
+    ] as const) {
+      const next = reduce(s, a);
+      if (next !== s && next.gold > reserve(s)) {
+        s = next;
+        break;
+      }
+    }
+  }
   if (st.hire) {
     const best = [...s.candidates].sort((a, b) => value(b) / b.fee - value(a) / a.fee)[0];
     if (best && !canHire(s, best.id) && s.gold - best.fee > reserve(s))

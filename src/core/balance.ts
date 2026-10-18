@@ -262,6 +262,50 @@ export const RAID_MAX_CHANCE = 0.25;
 export const RAID_BASE = 0.45;
 /** Lo que suma cada héroe de guardia a la defensa. */
 export const GUARD_BONUS = 3;
+/** Como mucho, tantos de guardia en el recibidor. */
+export const MAX_GUARDS = 2;
+
+// ---------- Cámara del tesoro ----------
+/** Oro que cabe por hueco de la cámara, según su nivel (el 0 es lo que se esconde sin cámara). */
+export const VAULT_STORE = [300, 1500, 4000, 10000] as const;
+/** A partir de esta parte del tope, el juego avisa de que la cámara está casi llena. */
+export const VAULT_WARN = 0.85;
+/** Segundos que tardan los bandidos en abrir la cerradura, según el nivel de la cámara. */
+export const LOCK_TIME = [2, 6, 10, 15] as const;
+/** Segundos que aguanta la puerta, según el nivel del recibidor. */
+export const DOOR_TIME = [2, 5, 8, 12] as const;
+
+// ---------- Asalto por salas (segundos de la pelea que se ve) ----------
+/** Andar de una sala a otra: por hueco de distancia, por planta de escalera y del patio a la puerta. */
+export const RAID_CELL = 1.6;
+export const RAID_FLOOR = 1.6;
+export const RAID_YARD = 2.5;
+/** Lo que tardan los bandidos en llegar al patio y en perderse de vista al huir. */
+export const RAID_ARRIVE = 3;
+export const RAID_EXIT = 2;
+/** Lo que tardan en despertarse y salir corriendo los que duermen (con perro, menos). */
+export const RAID_WAKE = 4;
+export const RAID_WAKE_DOG = 1.5;
+/** Con gente de guardia, dan la voz de alarma en cuanto ven las antorchas por el camino. */
+export const RAID_ALARM = 1;
+export const RAID_SPOT = 4;
+/** Vida de cada uno: héroes, trabajadores y bandidos. */
+export const HERO_HP = 12;
+/** Los de guardia están vestidos y armados: aguantan más. */
+export const GUARD_HP = 18;
+export const WORKER_HP = 8;
+export const BANDIT_HP = 12;
+/** Daño por segundo por punto de fuerza, y fuerza de cada bandido por punto de la banda. */
+export const FIGHT_RATE = 0.35;
+export const BANDIT_POWER = 0.75;
+/** Oro que carga cada bandido: unos fijos más la fuerza de la banda. */
+export const BANDIT_CARRY = 40;
+/** Lo que se tarda en cargar los sacos. */
+export const LOAD_TIME = 1.5;
+/** Lo que suma la empalizada a quien pelea en el patio, por nivel. */
+export const PALISADE_FIGHT = 0.15;
+/** Si en tanto tiempo no ha acabado, los bandidos se van con lo que tengan. */
+export const RAID_MAX_T = 150;
 
 // ---------- Trabajadores ----------
 /** Puestos de trabajo por cada hueco de una sala que produce. */

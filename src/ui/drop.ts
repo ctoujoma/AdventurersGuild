@@ -1,4 +1,4 @@
-import type { Action } from '../core/game';
+import { guardsFull, type Action } from '../core/game';
 import type { GameState } from '../core/model';
 import { ATTR_NAMES, trainCap } from '../core/training';
 import { canAssign, hasPosts, isTrainRoom } from '../core/workers';
@@ -47,6 +47,7 @@ export function planDrop(game: GameState, who: string, roomId: string): Drop {
   if (h.status !== 'ok') return { ok: false, text: `${h.name} no está en casa.` };
   if (room.type === 'recibidor') {
     if (h.guard) return { ok: false, text: `${h.name} ya está de guardia.` };
+    if (guardsFull(game)) return { ok: false, text: 'Ya hay dos de guardia en la puerta.' };
     return {
       ok: true,
       text: `${h.name} se pone de guardia en la puerta.`,

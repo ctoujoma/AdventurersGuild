@@ -4,7 +4,10 @@ import { appeal, neighborsOf, seatsOf, visitorList, visitorsOf } from '../../cor
 import { canWork, type Action } from '../../core/game';
 import { beerCap, brewAt, cookAt, dailyYield, eatersOf, foodCap } from '../../core/larder';
 import { ATTR_NAMES, gainText, skillGain, trainCap, trainState } from '../../core/training';
-import { TRAIN_CAP } from '../../core/balance';
+import { LOCK_TIME, MAX_GUARDS, TRAIN_CAP, VAULT_STORE } from '../../core/balance';
+import { raidRoute, routeTime } from '../../core/assault';
+import { defense } from '../../core/raids';
+import { doorTime, goldCap, lockTime } from '../../core/vault';
 import { dayPart } from '../../core/game';
 import type { GameState, Room } from '../../core/model';
 import {
@@ -16,7 +19,7 @@ import {
 } from '../../core/rooms';
 import { FACILITY_INFO } from '../../data/labels';
 import { ROOMS, TRAINS, type RoomType } from '../../data/rooms';
-import { plural } from '../../core/text';
+import { listNames, plural } from '../../core/text';
 import {
   canAssign,
   crewOf,
@@ -138,6 +141,65 @@ function LarderInfo({ game, room }: { game: GameState; room: Room }) {
         {beer
           ? 'Cada jarra deja una moneda. Lo que no cabe en la bodega se echa a perder.'
           : 'Sin raciones, los visitantes solo beben y los de casa se acuestan sin cenar. Lo que no cabe se echa a perder: la despensa guarda mucho más.'}
+      </span>
+    </span>
+  );
+}
+
+/** La cámara del tesoro: cuánto oro cabe, cuánto aguanta la cerradura y por dónde vendrían. */
+function VaultInfo({ game, room }: { game: GameState; room: Room }) {
+  const cap = goldCap(game);
+  const better = room.level < VAULT_STORE.length - 1;
+  const route = raidRoute(game.building).slice(1, -1);
+  const names = route.map((id) => {
+    const r = game.building.rooms.find((x) => x.id === id);
+    return r ? ROOMS[r.type].name.toLowerCase() : '';
+  });
+  const odds = Math.round(defense(game) * 10);
+  return (
+    <span class="salon-info">
+      <span>
+        <b>
+          Oro {game.gold}/{cap}
+        </b>{' '}
+        · la cerradura aguanta {lockTime(game)} s
+      </span>
+      {better && (
+        <span class="next-level">
+          Mejorada: cabrían {VAULT_STORE[room.level + 1] * room.w * room.h} y la cerradura
+          aguantaría {LOCK_TIME[room.level + 1]} s.
+        </span>
+      )}
+      <span class="muted">
+        Los bandidos tardarían unos {routeTime(game.building)} s en llegar desde la puerta
+        {names.length ? `, pasando por ${listNames(names)}` : ''}. El camino rojo de la escena.
+      </span>
+      <span class="muted">
+        Si asaltaran esta noche, se {odds === 1 ? 'pararía' : 'pararían'} {odds} de cada 10 asaltos
+        como el que podría venir.
+      </span>
+      <span class="tiny">
+        Lo que no cabe se pierde. Cuanto más lejos de la puerta y mejor cerrada, más tiempo para que
+        los nuestros se despierten y les corten el paso.
+      </span>
+    </span>
+  );
+}
+
+/** El recibidor: la puerta y los de guardia. */
+function DoorInfo({ game }: { game: GameState }) {
+  const guards = game.heroes.filter((h) => h.status === 'ok' && h.guard).length;
+  return (
+    <span class="salon-info">
+      <span>
+        <b>
+          De guardia {guards}/{MAX_GUARDS}
+        </b>{' '}
+        · la puerta aguanta {doorTime(game)} s
+      </span>
+      <span class="muted">
+        Con gente de guardia, la primera pelea es en el patio y dan la voz de alarma en cuanto ven
+        las antorchas. Sin nadie, los bandidos rompen la puerta y entran.
       </span>
     </span>
   );
@@ -396,6 +458,8 @@ export function RoomPanel({ game, roomId, onUpgrade, onLink, onWork, onMove, onA
         {(room.type === 'cocina' || room.type === 'despensa' || room.type === 'bodega') &&
           room.level > 0 && <LarderInfo game={game} room={room} />}
         {isTrainRoom(room.type) && room.level > 0 && <TrainInfo game={game} room={room} />}
+        {room.type === 'tesoro' && <VaultInfo game={game} room={room} />}
+        {room.type === 'recibidor' && <DoorInfo game={game} />}
         {neighborsOf(game.building, room).map((n) => (
           <span key={n.text} class={n.good ? 'next-level' : 'muted room-bad'}>
             {n.text}

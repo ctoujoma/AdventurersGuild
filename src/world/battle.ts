@@ -827,9 +827,9 @@ const KITS: Record<Style, Kit> = {
   sierpe: { main: 'garrote', ready: 0, ranged: false, torch: false },
 };
 
-const BANDIT_TYPES: Style[] = ['bruto', 'navajero', 'arquero', 'incendiario'];
+export const BANDIT_TYPES: Style[] = ['bruto', 'navajero', 'arquero', 'incendiario'];
 
-function banditLook(style: Style, i: number): { look: HeroLook; marks: HeroMarks } {
+export function banditLook(style: Style, i: number): { look: HeroLook; marks: HeroMarks } {
   const seed = `bandido-${i}`;
   switch (style) {
     case 'bruto':

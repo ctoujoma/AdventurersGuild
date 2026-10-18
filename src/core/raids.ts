@@ -1,10 +1,11 @@
 /**
  * Asaltos a la taberna: cuanto más famoso y rico es el gremio, más apetece a los bandidos.
- * Se programan con unos días de antelación (a veces llega un chivatazo), luchan los héroes
- * que estén en casa (los de guardia, mejor) y el resultado es saqueo o tregua.
+ * Se programan con unos días de antelación (a veces llega un chivatazo) y se pelean sala a
+ * sala (core/assault.ts): si alguien sale con vida, saqueo; si caen todos, tregua y botín.
  * Todo se aplica sobre el estado ya copiado al terminar el día.
  */
-import { DOG_DEFENSE, DOG_TIPOFF } from '../data/custom';
+import { DOG_TIPOFF } from '../data/custom';
+import { ROOMS } from '../data/rooms';
 import {
   BANDS,
   RAID_EMPTY,
@@ -22,16 +23,13 @@ import {
   RAID_NOTORIETY,
   SPY_DAYS,
   SPY_RISK,
-  GUARD_BONUS,
-  PALISADE,
   rankIndex,
 } from './balance';
+import { YARD, assaultSetup, banditCount, holdOdds, likelyStrength, simulate } from './assault';
 import { THREAT_RAIDS, threatOf } from './events';
 import { emptyStats } from './feats';
 import { fill } from './generate';
-import type { DawnEvent, GameState, Hero, Report } from './model';
-import { chance, skill } from './party';
-import { equip } from './resolve';
+import type { DawnEvent, GameState, Report } from './model';
 import type { Rng } from './rng';
 import { listNames } from './text';
 
@@ -53,16 +51,8 @@ export function raidChance(s: GameState): number {
 
 const defendersOf = (s: GameState) => s.heroes.filter((h) => h.status === 'ok');
 
-/** Fuerza de la defensa: el combate de quien está en casa, con su equipo y la guardia. */
-export function defense(s: GameState): number {
-  const ds = defendersOf(s);
-  const armed = equip(ds, s.fac);
-  return (
-    armed.reduce((a, h, i) => a + skill(h, 'Combate', true) + (ds[i]!.guard ? GUARD_BONUS : 0), 0) +
-    (ds.length ? (PALISADE[s.fac.empal] ?? 0) : 0) +
-    (s.custom?.dog ? DOG_DEFENSE : 0)
-  );
-}
+/** De cada diez asaltos como el que vendría esta noche, cuántos se pararían en seco. */
+export const defense = (s: GameState) => holdOdds(s, likelyStrength(s, notoriety(s)));
 
 /** Chivatazo: más fácil con un explorador en casa o con la sala de mapas. */
 function tipoff(s: GameState, rng: Rng, events: DawnEvent[], firstTry: boolean): void {
@@ -109,23 +99,52 @@ function resolveRaid(s: GameState, rng: Rng, events: DawnEvent[]): Report {
   const raid = s.raid!;
   s.raid = null;
   const stats = (s.stats ??= emptyStats());
-  const ds = defendersOf(s);
+  const fight = simulate(assaultSetup(s, raid.strength, rng), rng);
+  const ds = s.heroes.filter((h) => fight.fought.includes(h.id));
+  const fallen = new Set(fight.fell);
   const names = ds.length ? listNames(ds.map((h) => h.name)) : 'nadie';
   const body: string[] = [fill(rng.pick(RAID_OPEN), { band: raid.band })];
   const chips: Report['chips'] = [];
-  const p = ds.length ? chance(defense(s), raid.strength) : 0;
-  const won = rng.chance(p);
-  const hurt: Hero[] = [];
-  let stolen = 0;
+  const won = fight.escaped === 0;
+  const hurt = s.heroes.filter((h) => fallen.has(h.id));
+  const steps = fight.plan.steps;
+  const guards = s.heroes.filter((h) => fight.plan.start[h.id] === fight.plan.route[0] && h.guard);
+  const roomName = (id: string) => {
+    const r = s.building.rooms.find((x) => x.id === id);
+    return r ? ROOMS[r.type].name.toLowerCase() : 'la casa';
+  };
 
+  // Lo que se cuenta: el patio, la puerta, las salas y la cámara.
+  if (guards.length)
+    body.push(
+      fill(rng.pick(RAID_FIGHT), { h: guards[0]!.name }) +
+        (steps.some((x) => x.k === 'broke')
+          ? ` Pero eran muchos: ${guards.length > 1 ? 'los de guardia cayeron' : 'cayó'} y rompieron la puerta.`
+          : ''),
+    );
+  else if (steps.some((x) => x.k === 'broke'))
+    body.push('No había nadie de guardia: rompieron la puerta a hachazos y entraron.');
+  const rooms = [
+    ...new Set(steps.flatMap((x) => (x.k === 'fight' && x.at !== YARD ? [x.at] : []))),
+  ];
+  if (rooms.length)
+    body.push(
+      `Se peleó en ${listNames(rooms.map((r) => roomName(r)))}${ds.length ? `: ${names} plantaron cara` : ''}.`,
+    );
   if (!ds.length) body.push(RAID_EMPTY);
-  else {
-    const best = [...ds].sort((a, b) => skill(b, 'Combate') - skill(a, 'Combate'));
-    for (const h of best.slice(0, 2)) body.push(fill(rng.pick(RAID_FIGHT), { h: h.name }));
-  }
+  if (steps.some((x) => x.k === 'open'))
+    body.push(
+      fight.stolen > 0
+        ? 'Forzaron la cerradura de la cámara y cargaron los sacos.'
+        : 'Forzaron la cerradura de la cámara, pero no llegaron a sacar nada de casa.',
+    );
+  else if (steps.some((x) => x.k === 'lock'))
+    body.push('Llegaron a la cámara, pero la cerradura aguantó lo justo.');
 
+  if (fight.recovered > 0)
+    chips.push({ t: `Recuperado: ${fight.recovered} monedas que se llevaban`, k: 'good' });
   if (won) {
-    const loot = rng.int(15, 45);
+    const loot = rng.int(15, 45) + fight.downed * 5;
     const truce = rng.int(8, 12);
     s.gold += loot;
     s.rep += 4;
@@ -140,17 +159,16 @@ function resolveRaid(s: GameState, rng: Rng, events: DawnEvent[]): Report {
     for (const h of ds) {
       h.morale = Math.min(100, h.morale + 8);
       h.xp = Math.min(99, h.xp + 15);
-      if (rng.chance(0.15)) hurt.push(h);
     }
   } else {
-    stolen = Math.round(s.gold * (0.25 + rng.next() * 0.15));
-    s.gold -= stolen;
+    s.gold = Math.max(0, s.gold - fight.stolen);
     s.rep = Math.max(0, s.rep - 3);
     s.truce = s.day + rng.int(4, 6);
     body.push(rng.pick(RAID_LOST));
-    chips.push({ t: `Saqueo: −${stolen} monedas`, k: 'bad' }, { t: '−3 reputación', k: 'bad' });
-    // Se llevan algo del arcón (nunca lo que los héroes llevan puesto) y quizá un trofeo.
-    for (let i = 0; i < 2 && s.inventory.length; i++) {
+    if (fight.stolen > 0) chips.push({ t: `Saqueo: −${fight.stolen} monedas`, k: 'bad' });
+    chips.push({ t: '−3 reputación', k: 'bad' });
+    // Los que salen con vida se llevan algo del arcón (nunca lo que los héroes llevan puesto).
+    for (let i = 0; i < Math.min(2, fight.escaped) && s.inventory.length; i++) {
       if (i > 0 && !rng.chance(0.5)) break;
       const it = s.inventory.splice(rng.int(0, s.inventory.length - 1), 1)[0]!;
       chips.push({ t: `Robado: ${it.name}`, k: 'bad' });
@@ -159,35 +177,40 @@ function resolveRaid(s: GameState, rng: Rng, events: DawnEvent[]): Report {
       const t = s.trophies.splice(rng.int(0, s.trophies.length - 1), 1)[0]!;
       chips.push({ t: `Robado el trofeo: ${t.name}`, k: 'bad' });
     }
-    for (const h of ds) {
-      h.morale = Math.max(0, h.morale - 10);
-      if (rng.chance(0.45)) hurt.push(h);
-    }
+    for (const h of ds) h.morale = Math.max(0, h.morale - 10);
   }
   for (const h of hurt) {
     h.status = 'herido';
     h.days = rng.int(2, 3);
+    delete h.guard;
+    delete h.job;
     chips.push({
       t: `${h.name}: ${h.sex === 'f' ? 'herida' : 'herido'}, ${h.days} días`,
       k: 'bad',
     });
   }
+  for (const w of s.workers)
+    if (fallen.has(w.id)) chips.push({ t: `${w.name} se llevó unos buenos golpes`, k: 'bad' });
   for (const h of ds) h.history.push(`Día ${s.day} · Defendió la taberna de ${raid.band}`);
 
   events.push({
     t: won
-      ? `¡${raid.band} asaltó la taberna y ${names} ${ds.length > 1 ? 'los echaron' : 'los echó'}!`
-      : `${raid.band} asaltó la taberna y se llevó ${stolen} monedas.`,
+      ? `¡${raid.band[0]!.toUpperCase()}${raid.band.slice(1)} asaltó la taberna y ${names} ${ds.length > 1 ? 'los echaron' : 'los echó'}!`
+      : fight.stolen > 0
+        ? `${raid.band[0]!.toUpperCase()}${raid.band.slice(1)} asaltó la taberna y se llevó ${fight.stolen} monedas.`
+        : `${raid.band[0]!.toUpperCase()}${raid.band.slice(1)} asaltó la taberna y salió con lo que pudo del arcón.`,
     k: won ? 'good' : 'bad',
   });
   s.lastRaid = {
     day: s.day,
     band: raid.band,
-    bandits: Math.max(2, Math.min(6, Math.round(raid.strength / 6))),
+    bandits: banditCount(raid.strength),
     defenders: ds.map((h) => h.id),
     won,
     hurt: hurt.map((h) => h.id),
-    stolen,
+    stolen: fight.stolen,
+    recovered: fight.recovered,
+    plan: fight.plan,
   };
   return {
     id: `r${s.uid++}`,
