@@ -10,6 +10,7 @@ import { itemIcon } from '../art/items';
 import { RARITY_NAMES, itemEffect } from '../data/items';
 import { BufferImage } from './BufferImage';
 import { Icon } from './icons';
+import { JobPicker } from './JobPicker';
 import { Portrait } from './Portrait';
 import { lookOf, marksOf, memberOf } from './view';
 
@@ -25,6 +26,8 @@ interface Props {
   onEquip: (itemId: string) => void;
   onUnequip: () => void;
   onGuard: (on: boolean) => void;
+  /** Echar una mano en una sala mientras está en casa (null: deja de trabajar). */
+  onJob?: (room: string | null) => void;
 }
 
 const ATTRS = [
@@ -46,6 +49,7 @@ export function HeroCard({
   onEquip,
   onUnequip,
   onGuard,
+  onJob,
 }: Props) {
   const [picking, setPicking] = useState(false);
   const stock = gearInStock(game);
@@ -199,6 +203,21 @@ export function HeroCard({
               <button class="btn btn-wood" onClick={() => onGuard(!h.guard)}>
                 {h.guard ? 'Quitar la guardia' : 'Dejar de guardia'}
               </button>
+            </div>
+          )}
+          {!candidate && h.status === 'ok' && !h.guard && onJob && (
+            <div class="guard-box">
+              <span>
+                Mientras está en casa puede echar una mano en una sala (rinde menos que un
+                trabajador).
+              </span>
+              <JobPicker
+                game={game}
+                who={h.id}
+                current={h.job}
+                idle="No trabaja"
+                onAssign={onJob}
+              />
             </div>
           )}
           <div class="perk">

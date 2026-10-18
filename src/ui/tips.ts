@@ -61,6 +61,13 @@ export const TIPS: readonly Tip[] = [
     when: (s) => s.day >= 3 && s.gold >= 120 && s.fac.dorm + s.fac.enf + s.fac.tab <= 2,
   },
   {
+    id: 'trabajo',
+    rooms: true,
+    focus: 'cocina',
+    text: 'Remedios cocina, Tobías atiende el salón y Nico sube los barriles de la bodega. Vienen cada mañana del pueblo y cobran con los héroes. Toca una sala para ver quién trabaja en ella; los héroes que se quedan en casa también pueden echar una mano.',
+    when: (s) => s.day >= 3 && s.workers.length > 0,
+  },
+  {
     id: 'moral',
     text: 'Alguien anda desanimado y rinde menos. Déjalo descansar en la taberna unos días, o súbele el sueldo si te lo pide. El que está harto se larga cualquier noche.',
     when: (s) => s.heroes.some((h) => h.status === 'ok' && h.morale < MORALE_LOW),
@@ -99,6 +106,12 @@ export const TIPS: readonly Tip[] = [
     focus: 'bodega',
     text: 'Debajo del sótano hay roca. Para meter más salas abajo, excava junto a la escalera, planta a planta; cuanto más hondo, más caro. Hacia arriba también se sube, pero cada planta solo sobresale un hueco de la de abajo.',
     when: (s) => seen(s, 'plano') && sinceOpening(s) >= 2,
+  },
+  {
+    id: 'servicio',
+    rooms: true,
+    text: 'Ahora viene gente del pueblo a pedir trabajo: lo verás en «Héroes», pestaña «Trabajo». Pero cada uno nuevo necesita su cama, así que antes construye el dormitorio del servicio.',
+    when: (s) => seen(s, 'excavar') && sinceOpening(s) >= 3,
   },
 ];
 

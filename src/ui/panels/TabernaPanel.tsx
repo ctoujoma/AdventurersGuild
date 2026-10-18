@@ -9,14 +9,12 @@ import {
   DOG_PRICE,
   FEAST_PRICE,
   RAVEN_PRICE,
-  STAFF,
   decorSlots,
   isFeastDay,
   type CrestColor,
   type DecorId,
   type CrestSymbol,
   type Dish,
-  type StaffId,
 } from '../../data/custom';
 import { crestBoard } from '../../world/props';
 import { BufferImage } from '../BufferImage';
@@ -24,7 +22,6 @@ import { BufferImage } from '../BufferImage';
 interface Props {
   game: GameState;
   onCustom: (patch: Partial<Pick<Custom, 'name' | 'color' | 'symbol' | 'dish'>>) => void;
-  onStaff: (id: StaffId, on: boolean) => void;
   onDog: () => void;
   onDecor: (id: DecorId, on: boolean) => void;
   onRaven: () => void;
@@ -33,9 +30,9 @@ interface Props {
 
 /**
  * Tu taberna: nombre y escudo del letrero, la fiesta de la comarca, la decoración del salón,
- * el plato de la casa, el personal y los animales.
+ * el plato de la casa y los animales (el personal está con los héroes, en «Trabajo»).
  */
-export function TabernaPanel({ game, onCustom, onStaff, onDog, onDecor, onRaven, onFeast }: Props) {
+export function TabernaPanel({ game, onCustom, onDog, onDecor, onRaven, onFeast }: Props) {
   const c = customOf(game);
   const decor = c.decor ?? [];
   const slots = decorSlots(game.fac.tab);
@@ -174,42 +171,6 @@ export function TabernaPanel({ game, onCustom, onStaff, onDog, onDecor, onRaven,
                 <span class="muted">{d.desc}</span>
                 <span class="tiny">{d.cost ? `${d.cost} monedas cada noche` : 'Sin coste'}</span>
               </button>
-            );
-          })}
-        </div>
-      </section>
-
-      <section>
-        <h3 class="sec-title">Personal</h3>
-        <div class="list">
-          {(Object.keys(STAFF) as StaffId[]).map((k) => {
-            const p = STAFF[k];
-            const on = c.staff.includes(k);
-            return (
-              <article key={k} class="card-paper facility">
-                <div class="facility-info">
-                  <b>{p.name}</b>
-                  <span class="muted">{p.desc}</span>
-                  <span class="tiny">
-                    {on
-                      ? `Trabaja aquí · ${p.salary} monedas de salario por semana`
-                      : `Contratar: ${p.fee} monedas y ${p.salary} de salario por semana`}
-                  </span>
-                </div>
-                {on ? (
-                  <button class="btn btn-wood" onClick={() => onStaff(k, false)}>
-                    Despedir
-                  </button>
-                ) : (
-                  <button
-                    class="btn btn-gold"
-                    disabled={game.gold < p.fee}
-                    onClick={() => onStaff(k, true)}
-                  >
-                    Contratar
-                  </button>
-                )}
-              </article>
             );
           })}
         </div>
