@@ -18,11 +18,13 @@
   "dependencies": {
     "@fontsource/alegreya-sans": "^5.3.0",
     "@fontsource/pixelify-sans": "^5.3.0",
-    "preact": "^10.29.8"
+    "preact": "^10.29.8",
+    "three": "0.160.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
     "@preact/preset-vite": "^2.10.6",
+    "@types/three": "0.160.0",
     "esbuild": "^0.28.2",
     "eslint": "^9.39.5",
     "eslint-config-prettier": "^10.1.8",

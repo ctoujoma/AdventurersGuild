@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'preact/hooks';
 import { audio } from '../audio/audio';
 import { RoomScene } from '../world/rooms/RoomScene';
-import { WorldScene, type Point, type SceneModel } from '../world/scene';
+import { WorldScene, type Point, type SceneCallbacks, type SceneModel } from '../world/scene';
 
 /** La escena que se ve: la taberna dibujada o el gremio por salas (en pruebas). */
 export type GameScene = WorldScene | RoomScene;
@@ -17,6 +17,15 @@ interface Props {
   rooms?: boolean;
 }
 
+/** La escena por salas, si el navegador puede pintar 3D (si no, se queda la taberna dibujada). */
+function roomScene(canvas: HTMLCanvasElement, cb: SceneCallbacks): RoomScene | null {
+  try {
+    return new RoomScene(canvas, cb);
+  } catch {
+    return null;
+  }
+}
+
 /** La taberna viva a pantalla completa. */
 export function SceneView({ model, onReady, onHotspot, onHero, onHover, paused, rooms }: Props) {
   const wrap = useRef<HTMLDivElement>(null);
@@ -26,13 +35,16 @@ export function SceneView({ model, onReady, onHotspot, onHero, onHover, paused, 
   handlers.current = { onHotspot, onHero, onHover };
 
   useEffect(() => {
-    const s = new (rooms ? RoomScene : WorldScene)(canvas.current!, {
+    const callbacks: SceneCallbacks = {
       onHotspot: (id, label, at) => handlers.current.onHotspot(id, label, at),
       onHero: (id, at) => handlers.current.onHero(id, at),
       onHover: (label, at) => handlers.current.onHover(label, at),
       onSound: (name, vol) => audio.play(name, vol),
       onFrame: (p) => audio.listen(p),
-    });
+    };
+    const s =
+      (rooms && roomScene(canvas.current!, callbacks)) ||
+      new WorldScene(canvas.current!, callbacks);
     scene.current = s;
     // Gancho de depuración para pruebas automáticas (solo con #debug en la URL).
     if (location.hash === '#debug') (window as unknown as { __scene: GameScene }).__scene = s;
@@ -48,7 +60,8 @@ export function SceneView({ model, onReady, onHotspot, onHero, onHover, paused, 
     document.addEventListener('visibilitychange', vis);
     return () => {
       ro.disconnect();
-      s.stop();
+      if (s instanceof RoomScene) s.dispose();
+      else s.stop();
       document.removeEventListener('visibilitychange', vis);
     };
     // La escena se crea una sola vez.
