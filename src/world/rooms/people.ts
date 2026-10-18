@@ -4,7 +4,7 @@
  * DOM): la escena mueve las figuras y este fichero decide a dónde van.
  */
 import type { Room } from '../../core/model';
-import { isJobRoom } from '../../core/workers';
+import { hasPosts } from '../../core/workers';
 import { beds, seats, type Bed } from './furniture';
 import { PATIO_W, PITCH, STAIR_W, WALL, floorY, interior, type RoomsLayout } from './layout';
 
@@ -170,7 +170,7 @@ export function spots(L: RoomsLayout): Spots {
     if (room.type === 'salon')
       for (let k = 0; k < 4; k++) out.bar.push({ x: i.x + 30 + k * 14, floor: room.floor });
     if (room.type !== 'tesoro') out.rooms.push({ room, x0: i.x + 14, x1: i.x + i.w - 14 });
-    if (isJobRoom(room.type)) out.jobs.set(room.id, { room, x0: i.x + 16, x1: i.x + i.w - 16 });
+    if (hasPosts(room.type)) out.jobs.set(room.id, { room, x0: i.x + 16, x1: i.x + i.w - 16 });
   }
   return out;
 }

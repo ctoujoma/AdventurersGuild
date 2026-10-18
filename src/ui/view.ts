@@ -3,6 +3,7 @@ import type { Facilities, GameState, Hero, Item, Worker } from '../core/model';
 import { customOf, gearInStock } from '../core/game';
 import { staffBeds, workerTitle } from '../core/workers';
 import { visitorsOf } from '../core/salon';
+import { trainState } from '../core/training';
 import { CREST_COLORS, isFeastDay } from '../data/custom';
 import { gearOf } from '../core/resolve';
 import type { Member } from '../core/party';
@@ -68,6 +69,12 @@ function visitorOrder(s: GameState): string[] {
 
 const fullName = (h: Hero) => (h.nick ? `${h.name} ${h.nick}` : h.name);
 
+/** La barra de entrenamiento de un héroe (si entrena y aún puede subir). */
+function trainBar(s: GameState, h: Hero): SceneHero['train'] {
+  const t = trainState(s, h);
+  return t && !t.capped ? { at: t.frac, perDay: t.perDay } : undefined;
+}
+
 export function sceneModel(s: GameState): SceneModel {
   const heroes: SceneHero[] = [];
   for (const h of s.heroes) {
@@ -80,6 +87,7 @@ export function sceneModel(s: GameState): SceneModel {
       marks: marksOf(h),
       guard: !!h.guard,
       work: h.job,
+      train: trainBar(s, h),
     });
   }
   // Los trabajadores: los que tienen cama en el servicio duermen en casa; los demás, en el pueblo.

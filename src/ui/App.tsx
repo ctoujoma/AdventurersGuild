@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useBackButton } from '../platform/back';
 import { HoldHelp } from './HoldHelp';
-import { setHaptics } from '../platform/haptics';
+import { haptic, setHaptics } from '../platform/haptics';
 import { audio, type Mood } from '../audio/audio';
 import { canClose, canHire, customOf, newGame, reduce, type Action } from '../core/game';
 import { canAssign, canHireWorker } from '../core/workers';
@@ -33,6 +33,7 @@ import { applyLook, loadSettings, saveSettings, type Settings } from '../platfor
 import { Splash } from './Splash';
 import { Title } from './Title';
 import { nextTip } from './tips';
+import { canDrag, planDrop } from './drop';
 import { UncleNote } from './UncleNote';
 import { AwayPanel } from './panels/AwayPanel';
 import { GremioPanel } from './panels/GremioPanel';
@@ -126,6 +127,8 @@ export function App() {
   const [notice, setNotice] = useState<{ text: string; key: number } | null>(null);
   const [bubble, setBubble] = useState<Bubble | null>(null);
   const [hover, setHover] = useState<{ label: string; at: Point } | null>(null);
+  /** Llevando a alguien con el dedo: qué pasaría si se suelta ahí. */
+  const [dragTip, setDragTip] = useState<{ text: string; ok: boolean; at: Point } | null>(null);
   const [focusFac, setFocusFac] = useState<keyof Facilities | null>(null);
   const [heroFilter, setHeroFilter] = useState<HeroFilter>('todos');
   const [hint, setHint] = useState(false);
@@ -684,8 +687,35 @@ export function App() {
             setCard(id);
           }}
           onHover={(label, at) => setHover(label && at ? { label, at } : null)}
+          canDrag={(id) => !works.planning && canDrag(gameRef.current, id)}
+          onDragOver={(id, room, at) => {
+            setBubble(null);
+            setHint(false);
+            const d = room ? planDrop(gameRef.current, id, room) : null;
+            setDragTip({ text: d?.text ?? 'Suéltalo en una sala.', ok: !!d?.ok, at });
+            return d;
+          }}
+          onDrop={(id, room) => {
+            setDragTip(null);
+            const d = room ? planDrop(gameRef.current, id, room) : null;
+            if (!d?.ok) return;
+            for (const a of d.actions) dispatch(a);
+            toast(d.text);
+            haptic('select');
+          }}
         />
-        {hover && !bubble && (
+        {dragTip && (
+          <span
+            class={`droptip ${dragTip.ok ? 'ok' : 'bad'}`}
+            style={{
+              left: `${Math.max(124, Math.min(window.innerWidth - 124, dragTip.at.x))}px`,
+              top: `${Math.max(110, dragTip.at.y)}px`,
+            }}
+          >
+            {dragTip.text}
+          </span>
+        )}
+        {hover && !bubble && !dragTip && (
           <span class="hovertip" style={{ left: `${hover.at.x}px`, top: `${hover.at.y}px` }}>
             {hover.label}
           </span>

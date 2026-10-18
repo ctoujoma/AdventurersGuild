@@ -12,6 +12,10 @@ interface Props {
   onHotspot: (id: string, label: string, at: Point) => void;
   onHero: (id: string, at: Point) => void;
   onHover: (label: string | null, at: Point | null) => void;
+  /** Arrastrar a alguien a una sala (solo en la vista de salas). */
+  canDrag?: (id: string) => boolean;
+  onDragOver?: (id: string, room: string | null, at: Point) => { ok: boolean } | null;
+  onDrop?: (id: string, room: string | null) => void;
   paused?: boolean;
   /** Pinta el gremio por salas en lugar de la taberna dibujada. */
   rooms?: boolean;
@@ -27,18 +31,22 @@ function roomScene(canvas: HTMLCanvasElement, cb: SceneCallbacks): RoomScene | n
 }
 
 /** La taberna viva a pantalla completa. */
-export function SceneView({ model, onReady, onHotspot, onHero, onHover, paused, rooms }: Props) {
+export function SceneView(props: Props) {
+  const { model, onReady, paused, rooms } = props;
   const wrap = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const scene = useRef<GameScene | null>(null);
-  const handlers = useRef({ onHotspot, onHero, onHover });
-  handlers.current = { onHotspot, onHero, onHover };
+  const handlers = useRef(props);
+  handlers.current = props;
 
   useEffect(() => {
     const callbacks: SceneCallbacks = {
       onHotspot: (id, label, at) => handlers.current.onHotspot(id, label, at),
       onHero: (id, at) => handlers.current.onHero(id, at),
       onHover: (label, at) => handlers.current.onHover(label, at),
+      canDrag: (id) => handlers.current.canDrag?.(id) ?? false,
+      onDragOver: (id, room, at) => handlers.current.onDragOver?.(id, room, at) ?? null,
+      onDrop: (id, room) => handlers.current.onDrop?.(id, room),
       onSound: (name, vol) => audio.play(name, vol),
       onFrame: (p) => audio.listen(p),
     };

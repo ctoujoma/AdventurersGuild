@@ -56,6 +56,8 @@ export interface SceneHero {
   staff?: 'casa' | 'pueblo';
   /** Visitante del salón: entra, se sienta un rato y se va. */
   visitor?: boolean;
+  /** Entrenando: cómo va la barra al empezar el día (0–1) y cuánto sube en un día entero. */
+  train?: { at: number; perDay: number };
 }
 
 /** Los visitantes de hoy, en orden de llegada (la escena los hace entrar a lo largo del día). */
@@ -116,6 +118,11 @@ export interface SceneCallbacks {
   onHotspot?(id: string, label: string, at: Point): void;
   onHero?(id: string, at: Point): void;
   onHover?(label: string | null, at: Point | null): void;
+  /** Arrastrar a alguien a una sala: si se le puede coger, qué pasaría al soltarlo ahí y soltarlo. */
+  canDrag?(id: string): boolean;
+  onDragOver?(id: string, room: string | null, at: Point): { ok: boolean } | null;
+  /** Al soltar: la sala (si vale) o null si se suelta en un sitio que no sirve. */
+  onDrop?(id: string, room: string | null): void;
   onSound?(name: SoundName, volume?: number): void;
   onFrame?(listener: Point): void;
 }

@@ -209,7 +209,7 @@ export function HeroCard({
             <div class="guard-box">
               <span>
                 Mientras está en casa puede echar una mano en una sala (rinde menos que un
-                trabajador).
+                trabajador) o entrenar. También puedes cogerlo en la escena y soltarlo en la sala.
               </span>
               <JobPicker
                 game={game}

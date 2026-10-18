@@ -95,6 +95,7 @@ import {
 import { Rng } from './rng';
 import { listNames, plural } from './text';
 import { stepLarder } from './larder';
+import { stepTraining } from './training';
 import { brawlChance, noisyBeds, visitorList, visitorsOf } from './salon';
 import {
   addSeeker,
@@ -814,6 +815,9 @@ export function endDay(state: GameState): GameState {
           k: t.includes('caché') ? 'warn' : 'good',
         });
     }
+
+  // Salas de entrenamiento: quien entrena suma el día y quizá sube un punto.
+  stepTraining(s, events);
 
   // Comida y cerveza: lo que tomaron los visitantes, lo que han hecho las salas y la cena.
   stepLarder(s, visits, events);

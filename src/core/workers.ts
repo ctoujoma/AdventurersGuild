@@ -6,7 +6,7 @@
 import { VILLAGE, TRADE_LIST, WORKER_QUOTES, TRADES, type Trade } from '../data/workers';
 import { FIRST_NAMES } from '../data/names';
 import type { StaffId } from '../data/custom';
-import type { RoomType } from '../data/rooms';
+import { TRAINS, type RoomType } from '../data/rooms';
 import {
   HERO_WORK,
   JOB_SLOTS,
@@ -25,10 +25,16 @@ export const VILLAGE_COUNT = 3;
 
 export const isJobRoom = (t: RoomType): t is Trade => (TRADE_LIST as RoomType[]).includes(t);
 
-/** Puestos de una sala: dos por hueco si produce y está en uso. */
+/** Salas de entrenamiento: tienen puestos, pero solo para héroes. */
+export const isTrainRoom = (t: RoomType) => TRAINS[t] !== undefined;
+
+/** Salas con puestos: las que producen y las de entrenamiento. */
+export const hasPosts = (t: RoomType) => isJobRoom(t) || isTrainRoom(t);
+
+/** Puestos de una sala: dos por hueco si tiene puestos y está en uso. */
 export function slotsOf(r: Room): number {
   const a = active(r);
-  return isJobRoom(r.type) && a.level > 0 ? a.cells * JOB_SLOTS : 0;
+  return hasPosts(r.type) && a.level > 0 ? a.cells * JOB_SLOTS : 0;
 }
 
 /** Camas del dormitorio del servicio: dos por hueco y nivel. */
@@ -101,7 +107,8 @@ export function canAssign(s: GameState, who: string, room: string | null): strin
   if ((w?.room ?? h?.job) === room) return null;
   const r = s.building.rooms.find((x) => x.id === room);
   if (!r) return 'Esa sala ya no está.';
-  if (!isJobRoom(r.type)) return 'En esa sala no hay trabajo.';
+  if (!hasPosts(r.type)) return 'En esa sala no hay trabajo.';
+  if (w && isTrainRoom(r.type)) return 'Entrenar es cosa de los héroes.';
   if (slotsOf(r) === 0) return 'La sala no está en uso.';
   if (used(s, room) >= slotsOf(r)) return 'No quedan puestos libres en esa sala.';
   return null;
@@ -139,7 +146,7 @@ export function freeRoomFor(s: GameState, trade: Trade): Room | null {
 export function tidyJobs(s: GameState): void {
   const ok = (id: string | undefined) => {
     const r = id ? s.building.rooms.find((x) => x.id === id) : undefined;
-    return !!r && isJobRoom(r.type) && active(r).cells > 0;
+    return !!r && hasPosts(r.type) && active(r).cells > 0;
   };
   for (const h of s.heroes) if (h.job && !ok(h.job)) delete h.job;
   const lost: Worker[] = [];

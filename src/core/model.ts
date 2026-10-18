@@ -43,8 +43,10 @@ export interface Hero {
   guard?: boolean;
   /** Dónde se le perdió la pista (si está desaparecido). */
   lostAt?: string;
-  /** Sala en la que echa una mano mientras está en casa (id). */
+  /** Sala en la que echa una mano o entrena mientras está en casa (id). */
   job?: string;
+  /** Progreso de entrenamiento hacia el siguiente punto de cada atributo. */
+  train?: Partial<Attrs>;
 }
 
 /** Quien trabaja en la taberna: no sale de misión, cobra poco y rinde más en su oficio. */

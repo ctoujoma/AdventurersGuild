@@ -86,6 +86,8 @@ interface Actor {
   gone: boolean;
   /** Segundos que lleva sentado (los visitantes no se van sin haber comido algo). */
   sat: number;
+  /** Cogido con el dedo: dónde se le lleva (pies, en el mundo), colgando bajo el dedo. */
+  held?: { x: number; y: number } | null;
 }
 
 const hash = (s: string) => {
@@ -337,6 +339,10 @@ export class Crowd {
   update(dt: number, t: number): void {
     for (const a of this.actors.values()) {
       if (a.gone) continue;
+      if (a.held) {
+        this.place(a, t);
+        continue;
+      }
       if (a.pose === 'sit') a.sat += dt;
       if (a.path.length) this.walk(a, dt);
       else if (a.leaving) {
@@ -368,6 +374,44 @@ export class Crowd {
   screenRect(id: string, v: View): Rect | null {
     const a = this.actors.get(id);
     return a && !a.gone ? this.rectOf(a, v) : null;
+  }
+
+  /** Coge a alguien con el dedo: queda colgando bajo ese punto de la vista (en píxeles de la vista). */
+  hold(id: string, v: View, sx: number, sy: number): void {
+    const a = this.actors.get(id);
+    if (!a || a.gone) return;
+    if (!a.held) {
+      this.seatFree(a);
+      a.path = [];
+      a.pose = 'stand';
+      a.goal = null;
+    }
+    // A una profundidad fija la perspectiva es lineal: se deshace con dos puntos.
+    const z = this.depth(a);
+    const p0 = project(v, 0, 0, z);
+    const p1 = project(v, 100, 100, z);
+    const k = scaleAt(z);
+    a.held = {
+      x: ((sx - p0.x) * 100) / (p1.x - p0.x),
+      y: ((sy - p0.y) * 100) / (p1.y - p0.y) + 16 / k,
+    };
+  }
+
+  /** Lo suelta: en ese sitio (y de ahí va a lo suyo) o, si no vale, vuelve a donde estaba. */
+  drop(id: string, p: Place | null): void {
+    const a = this.actors.get(id);
+    if (!a?.held) return;
+    a.held = null;
+    // Donde cae se queda un momento (le llega su tarea nueva) y luego va a lo suyo.
+    if (p) this.put(a, p);
+    a.wait = p ? 0.8 : 0;
+  }
+
+  /** Quien está a la vista ahora mismo (ni fuera, ni en el pueblo, ni cogido con el dedo). */
+  visible(): SceneHero[] {
+    return [...this.actors.values()]
+      .filter((a) => !a.gone && !a.held && !a.homeward)
+      .map((a) => a.hero);
   }
 
   nameOf(id: string): string {
@@ -617,6 +661,16 @@ export class Crowd {
       const left = bed.x - 18 / k;
       const top = ground - 14 / k - 12 / k + 1 / k;
       return { frame: F.cot, left, bottom: top + TALL / k, z };
+    }
+    if (a.held) {
+      // Colgando del dedo, pataleando un poco.
+      const step = Math.floor(t * 8) % 4;
+      return {
+        frame: F.walk + step,
+        left: a.held.x - CELL / 2 / k,
+        bottom: a.held.y - FEET_Y / k + TALL / k,
+        z,
+      };
     }
     if (a.pose === 'sit') {
       // Sentado en el taburete: la cintura sobre el asiento.

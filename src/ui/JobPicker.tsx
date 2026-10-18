@@ -1,5 +1,5 @@
 import type { GameState, Room } from '../core/model';
-import { canAssign, crewOf, isJobRoom, slotsOf } from '../core/workers';
+import { canAssign, crewOf, hasPosts, slotsOf } from '../core/workers';
 import { ROOMS } from '../data/rooms';
 
 /** Planta de una sala, para distinguir dos salas iguales. */
@@ -15,7 +15,7 @@ export function jobRoomName(game: GameState, r: Room): string {
 /** Salas en uso donde se puede trabajar, con sus puestos ocupados. */
 export function jobRooms(game: GameState): { room: Room; used: number; slots: number }[] {
   return game.building.rooms
-    .filter((r) => isJobRoom(r.type) && slotsOf(r) > 0)
+    .filter((r) => hasPosts(r.type) && slotsOf(r) > 0)
     .map((room) => {
       const c = crewOf(game, room.id);
       return { room, used: c.workers.length + c.heroes.length, slots: slotsOf(room) };

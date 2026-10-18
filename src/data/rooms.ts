@@ -3,6 +3,7 @@
  * están en core/balance.ts (ROOM_COST) y las reglas de obra en core/rooms.ts.
  */
 import type { Facilities } from '../core/model';
+import type { AttrId } from '../core/party';
 
 export type RoomType =
   | 'recibidor'
@@ -189,6 +190,9 @@ export const ROOMS: Record<RoomType, RoomDef> = {
     place: 'libre',
   },
 };
+
+/** Salas de entrenamiento y el atributo que se entrena en cada una. */
+export const TRAINS: Partial<Record<RoomType, AttrId>> = { armas: 'F', tiro: 'D', biblioteca: 'M' };
 
 /** Instalaciones que no son salas: van en el patio, delante de la taberna. */
 export type YardKey = 'establo' | 'patio' | 'empal';

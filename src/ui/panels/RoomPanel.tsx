@@ -3,6 +3,9 @@ import { NURSE_WORK, roomMax } from '../../core/balance';
 import { appeal, neighborsOf, seatsOf, visitorList, visitorsOf } from '../../core/salon';
 import { canWork, type Action } from '../../core/game';
 import { beerCap, brewAt, cookAt, dailyYield, eatersOf, foodCap } from '../../core/larder';
+import { ATTR_NAMES, gainText, skillGain, trainCap, trainState } from '../../core/training';
+import { TRAIN_CAP } from '../../core/balance';
+import { dayPart } from '../../core/game';
 import type { GameState, Room } from '../../core/model';
 import {
   planDemolish,
@@ -12,12 +15,13 @@ import {
   type ExtendDir,
 } from '../../core/rooms';
 import { FACILITY_INFO } from '../../data/labels';
-import { ROOMS, type RoomType } from '../../data/rooms';
+import { ROOMS, TRAINS, type RoomType } from '../../data/rooms';
 import { plural } from '../../core/text';
 import {
   canAssign,
   crewOf,
-  isJobRoom,
+  hasPosts,
+  isTrainRoom,
   slotsOf,
   staffBeds,
   workIn,
@@ -139,6 +143,61 @@ function LarderInfo({ game, room }: { game: GameState; room: Room }) {
   );
 }
 
+/** «Le faltan unos 3 días» (o «Sube esta noche»). */
+function daysLeft(frac: number, perDay: number): string {
+  const d = Math.ceil((1 - frac) / perDay - 1e-9);
+  return d <= 1 ? 'Sube esta noche' : `Le faltan unos ${d} días`;
+}
+
+/** Una sala de entrenamiento: qué se entrena, hasta dónde y cómo va cada uno. */
+function TrainInfo({ game, room }: { game: GameState; room: Room }) {
+  const attr = TRAINS[room.type]!;
+  const cap = trainCap(room);
+  const next = TRAIN_CAP[room.level + 1];
+  const part = dayPart(game);
+  const here = game.heroes.filter((h) => h.job === room.id);
+  return (
+    <span class="salon-info">
+      <span>
+        <b>
+          {ATTR_NAMES[attr]} hasta {cap}
+        </b>
+      </span>
+      {here.map((h) => {
+        const t = trainState(game, h, part);
+        const gain = gainText(skillGain(h, attr));
+        return (
+          <span key={h.id} class="train-row">
+            <span>
+              {h.name} · {ATTR_NAMES[attr]} {h.attrs[attr]}
+              {t?.capped ? ' (en el tope)' : ''}
+            </span>
+            {t && !t.capped && (
+              <span class="train-bar" aria-label={`${Math.round(t.frac * 100)} %`}>
+                <i style={{ width: `${Math.round(t.frac * 100)}%` }} />
+              </span>
+            )}
+            {!t && <span class="muted">fuera hoy</span>}
+            {t && !t.capped && (
+              <span class="tiny">
+                {daysLeft(t.frac, t.perDay)}.{' '}
+                {gain
+                  ? `Con ese punto: ${gain}.`
+                  : 'Ese punto aún no se notará en las habilidades.'}
+              </span>
+            )}
+          </span>
+        );
+      })}
+      <span class="tiny">
+        Arrastra aquí a un héroe que esté en casa para que entrene. Las habilidades suben solas
+        según su clase.
+        {next ? ` Mejorada, se llega hasta ${next} y se entrena más rápido.` : ''}
+      </span>
+    </span>
+  );
+}
+
 /** Quién trabaja en la sala, quitar a alguien y poner a otro (trabajador o héroe en casa). */
 function RoomCrew({
   game,
@@ -151,17 +210,18 @@ function RoomCrew({
 }) {
   const slots = slotsOf(room);
   if (!slots) return null;
+  const train = isTrainRoom(room.type);
   const crew = crewOf(game, room.id);
   const here = [
     ...crew.workers.map((w) => ({ id: w.id, name: workerTitle(w), note: `Maña ${w.skill}` })),
     ...crew.heroes.map((h) => ({
       id: h.id,
       name: h.name,
-      note: h.status === 'ok' && !h.guard ? 'echa una mano' : 'fuera hoy',
+      note: h.status === 'ok' && !h.guard ? (train ? 'entrena' : 'echa una mano') : 'fuera hoy',
     })),
   ];
   const free = [
-    ...game.workers
+    ...(train ? [] : game.workers)
       .filter((w) => w.room !== room.id)
       .map((w) => {
         const now = game.building.rooms.find((r) => r.id === w.room);
@@ -178,7 +238,7 @@ function RoomCrew({
     <div class="room-crew">
       <span>
         <b>
-          Trabajan aquí · {here.length}/{slots}
+          {train ? 'Entrenan' : 'Trabajan'} aquí · {here.length}/{slots}
         </b>{' '}
         <span class="muted">{crewEffect(game, room)}</span>
       </span>
@@ -206,7 +266,7 @@ function RoomCrew({
             if (v) onAssign(v, room.id);
           }}
         >
-          <option value="">Poner a trabajar aquí…</option>
+          <option value="">{train ? 'Poner a entrenar aquí…' : 'Poner a trabajar aquí…'}</option>
           {free.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
@@ -335,6 +395,7 @@ export function RoomPanel({ game, roomId, onUpgrade, onLink, onWork, onMove, onA
         {room.type === 'salon' && room.level > 0 && <SalonInfo game={game} />}
         {(room.type === 'cocina' || room.type === 'despensa' || room.type === 'bodega') &&
           room.level > 0 && <LarderInfo game={game} room={room} />}
+        {isTrainRoom(room.type) && room.level > 0 && <TrainInfo game={game} room={room} />}
         {neighborsOf(game.building, room).map((n) => (
           <span key={n.text} class={n.good ? 'next-level' : 'muted room-bad'}>
             {n.text}
@@ -346,8 +407,11 @@ export function RoomPanel({ game, roomId, onUpgrade, onLink, onWork, onMove, onA
             {workerCap(game)}
           </span>
         )}
-        {isJobRoom(room.type) && room.level === 0 && (
-          <span class="muted">Arreglada, tendrá {room.w * 2} puestos de trabajo.</span>
+        {hasPosts(room.type) && room.level === 0 && (
+          <span class="muted">
+            Arreglada, tendrá {room.w * 2}{' '}
+            {isTrainRoom(room.type) ? 'sitios para entrenar' : 'puestos de trabajo'}.
+          </span>
         )}
         {onAssign && <RoomCrew game={game} room={room} onAssign={onAssign} />}
         {onWork && <RoomWorks game={game} room={room} onWork={onWork} onMove={onMove} />}
