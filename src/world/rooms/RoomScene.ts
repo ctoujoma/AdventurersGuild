@@ -1,35 +1,99 @@
 /**
- * La escena del gremio por salas: el corte del edificio con su cielo, la luz del día y de la
- * noche, la cámara y los toques. Se maneja igual que la taberna dibujada (mismos métodos),
- * para que la interfaz no tenga que saber cuál está mirando.
+ * La escena del gremio por salas, en 3D pixelado: cada sala es una caja de verdad detrás del
+ * plano de corte, con sus muebles como figuras planas y la luz de sus faroles; fuera, el cielo,
+ * el patio y los tejados. Se maneja igual que la taberna dibujada (mismos métodos), para que la
+ * interfaz no tenga que saber cuál está mirando.
+ *
+ * La cámara es la 2D de siempre (arrastre, inercia, zoom entero y límites): lo que encuadra en
+ * el plano de corte es justo lo que se ve, píxel a píxel. Los toques se resuelven ahí mismo.
  */
-import { bufferCanvas, drawBuffer } from '../../art/canvas';
+import {
+  CanvasTexture,
+  Group,
+  Mesh,
+  NearestFilter,
+  OrthographicCamera,
+  PerspectiveCamera,
+  PlaneGeometry,
+  Scene,
+  Vector3,
+  WebGLRenderer,
+  type ShaderMaterial,
+} from 'three';
 import { P } from '../../art/palette';
-import { PixelBuffer } from '../../art/pixel';
-import type { Building } from '../../core/model';
+import type { PixelBuffer } from '../../art/pixel';
+import type { Building, Room } from '../../core/model';
 import { ROOMS } from '../../data/rooms';
 import { Camera } from '../camera';
-import { GROUND, WORLD_X0 } from '../geometry';
-import { glowSprite, lightSprite } from '../lighting';
-import {
-  MOON_R,
-  buildMoon,
-  buildSky,
-  parallaxLayers,
-  stars,
-  type ParallaxLayer,
-  type Star,
-} from '../parallax';
+import { GROUND } from '../geometry';
 import { Particles } from '../particles';
+import * as Prop from '../props';
 import type { Point, SceneCallbacks, SceneModel } from '../scene';
-import { focusPoint, roomsLayout, type Rect, type RoomsLayout } from './layout';
-import { paintRooms, type RoomsBuild } from './paint';
+import { LANTERN, dummy, furnish, type Glow, type RGB } from './furniture';
+import { Look, MAX_LIGHTS, mesh, quad, type Corners } from './gl';
+import {
+  DEPTH,
+  PARTITION,
+  PITCH,
+  SLAB,
+  WALL,
+  floorTop,
+  floorY,
+  focusPoint,
+  interior,
+  roofLift,
+  roomsLayout,
+  sidesOf,
+  type Rect,
+  type RoomsLayout,
+  type Side,
+} from './layout';
+import { Sky, type Daylight, type NightLight } from './sky';
+import {
+  backWall,
+  bare,
+  caveBack,
+  caveCells,
+  ceilingTex,
+  facade,
+  floorTex,
+  groundTex,
+  mirror,
+  outerSide,
+  palisade,
+  roofTiles,
+  ruined,
+  scaffold,
+  sideTex,
+  stable,
+  stairBack,
+  stairCells,
+  themeOf,
+  watchtower,
+  type Theme,
+} from './textures';
+import { EYE, eyeOf, frustum, scaleAt, type View } from './view3d';
 
 /** Duración del día de la escena hasta que anochece (el reloj de verdad llega con el día vivo). */
 const DAY_LENGTH = 720;
 const DAWN_LIGHT = 0.65;
-const SKY_FX = 0.15;
-const MOON = { x: 84, y: 64 } as const;
+const NEAR = 20;
+const FAR = EYE + 400;
+/** Fondo del terreno que se ve a los lados y por detrás del edificio. */
+const YARD_D = 220;
+
+type Tint = readonly [number, number, number];
+/** Luz de fondo de cada sitio (0–1 por canal): la noche sin faroles. */
+const OUTDOOR: Tint = [0.3, 0.28, 0.42];
+const ROOM_LIT: Tint = [0.44, 0.38, 0.46];
+const ROOM_DEEP: Tint = [0.42, 0.37, 0.52];
+const ROOM_DIM: Tint = [0.34, 0.31, 0.46];
+const STAIRS: Tint = [0.4, 0.35, 0.5];
+const CAVE: Tint = [0.3, 0.27, 0.4];
+/** El corte de la tierra y la roca, que se vea aunque no le dé ningún farol. */
+const EARTH: Tint = [0.62, 0.56, 0.72];
+
+const smooth = (k: number) => k * k * (3 - 2 * k);
 
 const noise = (a: number, b: number) => {
   let h = Math.imul(a * 374761393 + b * 668265263, 1274126177);
@@ -37,12 +101,26 @@ const noise = (a: number, b: number) => {
   return ((Math.imul(h, 1103515245) >>> 0) % 1000) / 1000;
 };
 
-const smooth = (k: number) => k * k * (3 - 2 * k);
+/** Punto del espacio 3D a partir de una x y una y del mundo 2D (y hacia abajo) y una profundidad. */
+const at = (x: number, y: number, depth: number) => new Vector3(x, GROUND - y, -depth);
 
 interface Spot {
   id: string;
   label: string;
   rect: Rect;
+}
+
+/** Un foco: dónde está, hasta dónde llega y la zona a la que alumbra (en 3D, y hacia arriba). */
+interface Lamp {
+  pos: Vector3;
+  r: number;
+  color: RGB;
+  power: number;
+  flicker: number;
+  zone: [number, number, number, number];
+  seed: number;
+  /** Los faroles se notan menos de día; el fuego, igual. */
+  fire: boolean;
 }
 
 /** Nombre de una sala tal como se enseña al tocarla. */
@@ -58,26 +136,29 @@ export function roomLabel(b: Building, id: string): string {
 export class RoomScene {
   readonly camera = new Camera();
   speed = 1;
-  private ctx: CanvasRenderingContext2D;
-  private light: HTMLCanvasElement;
-  private lctx: CanvasRenderingContext2D;
+  private renderer: WebGLRenderer;
+  private scene = new Scene();
+  private cam3 = new PerspectiveCamera();
+  private flat = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  /** Materiales del edificio (se rehacen con él) y los de las láminas de pantalla. */
+  private look = new Look();
+  private keep = new Look();
+  private world = new Group();
+  private lamps: Lamp[] = [];
+  private towerRect: Rect | null = null;
+  private flames: Mesh[] = [];
+  private skyCanvas = document.createElement('canvas');
+  private skyCtx = this.skyCanvas.getContext('2d')!;
+  private skyTex = new CanvasTexture(this.skyCanvas);
+  private skyScene = new Scene();
+  private skyAt = '';
+  private top = document.createElement('canvas');
+  private topCtx = this.top.getContext('2d')!;
+  private topTex = new CanvasTexture(this.top);
+  private topScene = new Scene();
+  private topLive = false;
+  private sky = new Sky();
   private layout: RoomsLayout | null = null;
-  private build: RoomsBuild | null = null;
-  private backC: HTMLCanvasElement | null = null;
-  private ambientC: HTMLCanvasElement | null = null;
-  private skyC = bufferCanvas(buildSky());
-  private moonC = bufferCanvas(buildMoon());
-  private parallax: { c: HTMLCanvasElement; l: ParallaxLayer }[] = parallaxLayers().map((l) => ({
-    c: bufferCanvas(l.buf),
-    l,
-  }));
-  private starList: Star[] = stars();
-  private clouds = [0, 1, 2, 3].map((i) => ({
-    x: i * 170 + 20,
-    y: 30 + ((i * 37) % 80),
-    img: cloud(i),
-    speed: 2 + i,
-  }));
   private particles = new Particles();
   private spots: Spot[] = [];
   private hover: Spot | null = null;
@@ -100,11 +181,26 @@ export class RoomScene {
     private canvas: HTMLCanvasElement,
     private cb: SceneCallbacks = {},
   ) {
-    this.ctx = canvas.getContext('2d')!;
-    this.light = document.createElement('canvas');
-    this.lctx = this.light.getContext('2d')!;
-    for (let i = 0; i < 8; i++)
-      this.particles.spawn('firefly', -150 + Math.random() * 130, GROUND - 60 + Math.random() * 50);
+    this.renderer = new WebGLRenderer({
+      canvas,
+      antialias: false,
+      alpha: false,
+      stencil: false,
+      powerPreference: 'low-power',
+    });
+    this.renderer.setPixelRatio(1);
+    this.renderer.autoClear = false;
+    this.renderer.setClearColor(P.black, 1);
+    for (const tex of [this.skyTex, this.topTex]) {
+      tex.magFilter = NearestFilter;
+      tex.minFilter = NearestFilter;
+      tex.generateMipmaps = false;
+    }
+    const sheet = this.keep.own(new PlaneGeometry(2, 2));
+    this.skyScene.add(new Mesh(sheet, this.keep.screen(this.skyTex, false)));
+    this.topScene.add(new Mesh(sheet, this.keep.screen(this.topTex, true)));
+    this.scene.add(this.world);
+    canvas.addEventListener('webglcontextlost', (e) => e.preventDefault());
     this.bindInput();
   }
 
@@ -120,14 +216,13 @@ export class RoomScene {
     this.key = key;
     const L = roomsLayout(b);
     this.layout = L;
-    this.build = paintRooms(L, { crest: model.crest, yard: b.yard });
-    this.backC = bufferCanvas(this.build.back);
-    this.ambientC = ambientCanvas(this.build, L);
+    this.rebuild(L, model);
     this.camera.world = { x0: L.x0, x1: L.x1, y0: L.y0, y1: L.y1 };
+    // La torre se toca donde se ve, encima del tejado.
     this.spots = L.rooms.map(({ room, rect }) => ({
       id: `sala:${room.id}`,
       label: roomLabel(b, room.id),
-      rect,
+      rect: room.type === 'torre' ? (this.towerRect ?? rect) : rect,
     }));
     if (this.cssW) this.resize(this.cssW, this.cssH, this.camera.zoom);
     if (!this.framed && this.cssW) this.frame();
@@ -148,17 +243,23 @@ export class RoomScene {
       zoom ?? Math.max(2, Math.ceil(min), Math.floor(Math.min(cssW / 200, cssH / 240))),
     );
     this.camera.setView(cssW, cssH, z);
-    this.canvas.width = this.camera.vw;
-    this.canvas.height = this.camera.vh;
-    this.canvas.style.width = `${this.camera.vw * z}px`;
-    this.canvas.style.height = `${this.camera.vh * z}px`;
-    this.light.width = this.camera.vw;
-    this.light.height = this.camera.vh;
-    this.ctx.imageSmoothingEnabled = false;
+    const { vw, vh } = this.camera;
+    this.renderer.setSize(vw, vh, false);
+    this.canvas.style.width = `${vw * z}px`;
+    this.canvas.style.height = `${vh * z}px`;
+    for (const c of [this.skyCanvas, this.top]) {
+      c.width = vw;
+      c.height = vh;
+    }
+    // Las texturas cambian de tamaño: three.js tiene que crearlas de nuevo.
+    this.skyTex.dispose();
+    this.topTex.dispose();
+    this.skyAt = '';
+    this.topLive = true;
     if (!this.framed && this.layout) this.frame();
   }
 
-  /** La primera vez, la cámara mira a la planta baja. */
+  /** La primera vez, la cámara mira al salón. */
   private frame(): void {
     this.framed = true;
     const p = this.layout ? focusPoint(this.layout, 'sala') : null;
@@ -193,7 +294,7 @@ export class RoomScene {
   start(): void {
     if (this.raf) return;
     const loop = (now: number) => {
-      const dt = Math.min(0.05, (now - (this.last || now)) / 1000);
+      const dt = Math.max(0, Math.min(0.05, (now - (this.last || now)) / 1000));
       this.last = now;
       this.update(dt * this.speed);
       this.draw();
@@ -206,6 +307,16 @@ export class RoomScene {
     cancelAnimationFrame(this.raf);
     this.raf = 0;
     this.last = 0;
+  }
+
+  /** Suelta lo que la escena tiene en la tarjeta gráfica. */
+  dispose(): void {
+    this.stop();
+    this.look.dispose();
+    this.keep.dispose();
+    this.skyTex.dispose();
+    this.topTex.dispose();
+    this.renderer.dispose();
   }
 
   /** Los héroes llegan a las salas en el PR de la gente; de momento no se señalan. */
@@ -256,7 +367,7 @@ export class RoomScene {
   }
 
   /** Luz del día (0–1), del atardecer (0–1) y avance del día (0 mañana – 1 noche). */
-  daylight(): { day: number; dusk: number; tod: number } {
+  daylight(): Daylight {
     const n = this.night;
     if (n) {
       const p = this.nightP();
@@ -282,7 +393,7 @@ export class RoomScene {
     return 0.5 + (te - a - plateau) / n.dur;
   }
 
-  private nightLight(): { dark: number; warm: number } {
+  private nightLight(): NightLight {
     if (!this.night) return { dark: 0, warm: 0 };
     const p = this.nightP();
     const ramp = (a: number, b: number) => Math.max(0, Math.min(1, (p - a) / (b - a)));
@@ -290,6 +401,412 @@ export class RoomScene {
       dark: ramp(0, 0.35) * (1 - ramp(0.5, 0.9)),
       warm: ramp(0.45, 0.9) * (1 - ramp(1.05, 1.8)),
     };
+  }
+
+  // ---------- Montaje del edificio ----------
+
+  private rebuild(L: RoomsLayout, model: SceneModel): void {
+    // Lo de antes fuera (las láminas de cielo y partículas se quedan).
+    this.world.clear();
+    this.look.dispose();
+    this.look = new Look();
+    this.lamps = [];
+    this.flames = [];
+    this.towerRect = null;
+    const b = L.b;
+    const g = this.world;
+
+    // El plano de corte, en dos: lo de encima del suelo, a la luz del día, y la tierra.
+    const F = facade(L);
+    const fx1 = F.x + F.buf.w;
+    const fy1 = F.y + F.buf.h;
+    const cut = GROUND - F.y;
+    this.plane(
+      g,
+      F.buf.crop(0, 0, F.buf.w, cut),
+      [at(F.x, GROUND, 0), at(fx1, GROUND, 0), at(fx1, F.y, 0), at(F.x, F.y, 0)],
+      { ambient: OUTDOOR, sun: 1 },
+    );
+    this.plane(
+      g,
+      F.buf.crop(0, cut, F.buf.w, F.buf.h - cut),
+      [at(F.x, fy1, 0), at(fx1, fy1, 0), at(fx1, GROUND, 0), at(F.x, GROUND, 0)],
+      { ambient: EARTH, sun: 0 },
+    );
+
+    // Salas, escaleras y huecos excavados.
+    for (const { room, rect } of L.rooms) if (room.type !== 'torre') this.roomBox(room, rect, b);
+    for (const s of stairCells(L)) {
+      const left = b.rooms.some((r) => this.covers(r, s.s - 1, s.floor))
+        ? 'sala'
+        : s.floor < 0
+          ? 'tierra'
+          : 'aire';
+      const right = b.rooms.some((r) => this.covers(r, s.s, s.floor))
+        ? 'sala'
+        : s.floor < 0
+          ? 'tierra'
+          : 'aire';
+      this.box(
+        s.rect,
+        themeOf(s.floor),
+        STAIRS,
+        s.floor >= 0 ? 0.35 : 0,
+        `escalera${s.s}${s.floor}`,
+        {
+          back: stairBack(themeOf(s.floor), interior(s.rect).w, s.rect.h, s.floor),
+          sides: { left: [left], right: [right] },
+          floor: s.floor,
+        },
+      );
+    }
+    for (const c of caveCells(L)) {
+      const r = interior(c.rect);
+      this.box(c.rect, 'cueva', CAVE, 0, `cueva${c.col}${c.floor}`, {
+        back: caveBack(r.w, r.h, `cueva${c.col}${c.floor}`),
+        sides: { left: ['tierra'], right: ['tierra'] },
+        floor: c.floor,
+      });
+    }
+
+    // Tejados: las dos vertientes, por detrás de su hastial.
+    for (const run of F.runs) {
+      const mid = (run.x0 + run.x1) / 2;
+      const eave = run.base + 2;
+      const ridge = run.base - run.h;
+      const len = Math.round(Math.hypot((run.x1 - run.x0) / 2, run.h));
+      const d = DEPTH + 6;
+      const opts = { ambient: OUTDOOR, sun: 1, dither: 0 };
+      this.plane(
+        g,
+        roofTiles(len, `tejado${run.x0}`),
+        [at(run.x0, eave, d), at(run.x0, eave, 0), at(mid, ridge, 0), at(mid, ridge, d)],
+        opts,
+      );
+      this.plane(
+        g,
+        roofTiles(len, `tejado${run.x1}`),
+        [at(run.x1, eave, 0), at(run.x1, eave, d), at(mid, ridge, d), at(mid, ridge, 0)],
+        opts,
+      );
+    }
+
+    // El terreno de arriba: patio, hierba y lo de detrás del edificio.
+    const yard = { ambient: OUTDOOR, sun: 1, dither: 0 };
+    const back = DEPTH + 2;
+    this.plane(
+      g,
+      groundTex(L.left - L.x0, YARD_D / 2, true, 'patio'),
+      [
+        at(L.x0, GROUND, 0),
+        at(L.left, GROUND, 0),
+        at(L.left, GROUND, YARD_D),
+        at(L.x0, GROUND, YARD_D),
+      ],
+      yard,
+    );
+    this.plane(
+      g,
+      groundTex(L.x1 - L.right, YARD_D / 2, false, 'solares'),
+      [
+        at(L.right, GROUND, 0),
+        at(L.x1, GROUND, 0),
+        at(L.x1, GROUND, YARD_D),
+        at(L.right, GROUND, YARD_D),
+      ],
+      yard,
+    );
+    this.plane(
+      g,
+      groundTex(L.right - L.left, (YARD_D - back) / 2, false, 'huerto'),
+      [
+        at(L.left, GROUND, back),
+        at(L.right, GROUND, back),
+        at(L.right, GROUND, YARD_D),
+        at(L.left, GROUND, YARD_D),
+      ],
+      yard,
+    );
+    this.yard(L, model);
+
+    // La torre del vigía, sobre el caballete del tejado que tenga debajo.
+    const tower = L.rooms.find((x) => x.room.type === 'torre');
+    if (tower) {
+      const cx = tower.rect.x + tower.rect.w / 2;
+      const base = floorY(tower.room.floor);
+      const lift = roofLift(F.runs, cx, base) - 2;
+      const img = watchtower(tower.room.level, model.crest);
+      this.figure(g, img, cx, base - lift, DEPTH / 2, OUTDOOR, 1);
+      const k = scaleAt(DEPTH / 2);
+      const top = Math.min(tower.rect.y, base - lift - img.h / k);
+      this.towerRect = { x: cx - img.w / 2, y: top, w: img.w, h: base - top };
+      if (tower.room.level > 0) {
+        this.lamps.push({
+          pos: at(cx, base - lift - (img.h - 30) / k, DEPTH / 2 - 8),
+          r: 60,
+          color: [255, 168, 92],
+          power: 0.9,
+          flicker: 0.2,
+          zone: [cx - 60, GROUND - base + lift, cx + 60, GROUND - base + lift + 140],
+          seed: 7,
+          fire: true,
+        });
+      }
+    }
+  }
+
+  private covers(r: Room, c: number, f: number): boolean {
+    return r.type !== 'torre' && c >= r.col && c < r.col + r.w && f >= r.floor && f < r.floor + r.h;
+  }
+
+  /** Caja de una sala con sus muebles, sus faroles y, si está en obras, el andamio delante. */
+  private roomBox(room: Room, rect: Rect, b: Building): void {
+    const r = interior(rect);
+    const dim = ruined(room) || bare(room);
+    const ambient = dim ? ROOM_DIM : room.floor < 0 ? ROOM_DEEP : ROOM_LIT;
+    const sun =
+      room.floor < 0 ? 0 : room.type === 'tesoro' || room.type === 'despensa' ? 0.15 : 0.55;
+    const theme = themeOf(room.floor);
+    const seed = `${room.id}${room.type}`;
+    const sides = sidesOf(b, room);
+    this.box(rect, theme, ambient, sun, seed, {
+      back: backWall(room, r.w, r.h),
+      floorTex: floorTex(room, theme, r.w, seed),
+      sides,
+      floor: room.floor,
+      door: room.type === 'recibidor',
+    });
+    const zone = this.zoneOf(rect);
+    const floor3 = GROUND - (r.y + r.h);
+    const ceil3 = GROUND - r.y;
+    for (const th of furnish(room, r.w)) {
+      const k = scaleAt(th.z);
+      const h = th.img.h / k;
+      const x = r.x + th.x;
+      const bottom = th.hang ? ceil3 - h - th.y : floor3 + th.y;
+      this.figure(this.world, th.img, x, GROUND - bottom, th.z, ambient, sun);
+      if (th.light) this.addLight(th.light, x, bottom, th.z, zone);
+    }
+    if (room.works) {
+      const k = scaleAt(3);
+      const img = scaffold(r.w * k, r.h * k);
+      this.figure(this.world, img, r.x + r.w / 2, r.y + r.h, 3, ROOM_DIM, sun);
+    }
+  }
+
+  /** Zona que alumbran los focos de un hueco: su interior y media pared de cada lado. */
+  private zoneOf(rect: Rect): [number, number, number, number] {
+    return [
+      rect.x + 1,
+      GROUND - (rect.y + rect.h + SLAB),
+      rect.x + rect.w - 1,
+      GROUND - (rect.y - SLAB),
+    ];
+  }
+
+  private addLight(l: Glow, x: number, bottom: number, z: number, zone: Lamp['zone']): void {
+    const k = scaleAt(z);
+    const y = bottom + l.dy / k;
+    this.lamps.push({
+      pos: new Vector3(x, y, -z + 6),
+      r: l.r,
+      color: l.color,
+      power: l.power,
+      flicker: l.flicker,
+      zone,
+      seed: Math.round(x * 7 + y * 13),
+      fire: l.flicker >= 0.2,
+    });
+    for (const f of l.flames ?? []) {
+      // Tres llamas una dentro de otra: naranja, oro y limón.
+      const layers: [number, number, string][] = [
+        [12, 5, P.orange],
+        [8, 4, P.gold],
+        [4, 3, P.lemon],
+      ];
+      layers.forEach(([w, h, color], i) => {
+        const m = mesh(
+          quad(
+            [
+              new Vector3(-w / 2, 0, 0),
+              new Vector3(w / 2, 0, 0),
+              new Vector3(w / 2, h, 0),
+              new Vector3(-w / 2, h, 0),
+            ],
+            this.look,
+          ),
+          this.look.flat(color),
+        );
+        m.scale.setScalar(f.size / k);
+        m.position.set(x + f.dx / k, bottom + (f.dy + l.dy - 8) / k, -z + 0.6 + i * 0.05);
+        this.world.add(m);
+        this.flames.push(m);
+      });
+    }
+  }
+
+  /**
+   * Caja de un hueco: fondo, suelo, techo y los dos lados (con puerta a lo que haya al otro lado
+   * en cada planta); por fuera, la pared del edificio donde da al aire.
+   */
+  private box(
+    rect: Rect,
+    theme: Theme,
+    ambient: Tint,
+    sun: number,
+    seed: string,
+    o: {
+      back: PixelBuffer;
+      floorTex?: PixelBuffer;
+      sides: { left: Side[]; right: Side[] };
+      floor: number;
+      door?: boolean;
+    },
+  ): void {
+    const g = this.world;
+    const r = interior(rect);
+    const x0 = r.x;
+    const x1 = r.x + r.w;
+    const yt = r.y;
+    const yb = r.y + r.h;
+    const D = DEPTH;
+    const opts = { ambient, sun };
+    const flat = { ambient, sun, dither: 0 };
+    this.plane(g, o.back, [at(x0, yb, D), at(x1, yb, D), at(x1, yt, D), at(x0, yt, D)], opts);
+    this.plane(
+      g,
+      o.floorTex ?? floorTex(null, theme, r.w, seed),
+      [at(x0, yb, 0), at(x1, yb, 0), at(x1, yb, D), at(x0, yb, D)],
+      flat,
+    );
+    this.plane(
+      g,
+      ceilingTex(theme, r.w, seed),
+      [at(x0, yt, D), at(x1, yt, D), at(x1, yt, 0), at(x0, yt, 0)],
+      flat,
+    );
+    const doors = (s: Side[]) => s.flatMap((x, i) => (x === 'sala' || x === 'escalera' ? [i] : []));
+    this.plane(
+      g,
+      sideTex(theme, r.h, doors(o.sides.left), `${seed}i`),
+      [at(x0, yb, 0), at(x0, yb, D), at(x0, yt, D), at(x0, yt, 0)],
+      flat,
+    );
+    this.plane(
+      g,
+      mirror(sideTex(theme, r.h, doors(o.sides.right), `${seed}d`)),
+      [at(x1, yb, D), at(x1, yb, 0), at(x1, yt, 0), at(x1, yt, D)],
+      flat,
+    );
+    // Paredes de fuera, planta a planta, donde el hueco da al aire.
+    const outdoor = { ambient: OUTDOOR, sun: 1, dither: 0 };
+    let doorDone = !o.door;
+    for (const [side, list] of [
+      ['left', o.sides.left],
+      ['right', o.sides.right],
+    ] as const)
+      list.forEach((s, i) => {
+        if (s !== 'aire') return;
+        const f = o.floor + i;
+        const top = floorTop(f) - SLAB;
+        const bottom = floorY(f);
+        const withDoor = !doorDone && i === 0;
+        if (withDoor) doorDone = true;
+        const tex = outerSide(themeOf(f), PITCH, withDoor, `${seed}f${side}${i}`);
+        if (side === 'left') {
+          const x = rect.x - WALL;
+          this.plane(
+            g,
+            mirror(tex),
+            [at(x, bottom, D), at(x, bottom, 0), at(x, top, 0), at(x, top, D)],
+            outdoor,
+          );
+        } else {
+          const x = rect.x + rect.w + WALL;
+          this.plane(
+            g,
+            tex,
+            [at(x, bottom, 0), at(x, bottom, D), at(x, top, D), at(x, top, 0)],
+            outdoor,
+          );
+        }
+      });
+  }
+
+  /** Lo de fuera: pozo, muñecos, establo, empalizada, el escudo y el farol de la puerta. */
+  private yard(L: RoomsLayout, model: SceneModel): void {
+    const g = this.world;
+    const y = L.b.yard;
+    const px = L.patio.x;
+    const put = (img: PixelBuffer, x: number, depth: number, up = 0) =>
+      this.figure(g, img, x, GROUND - up, depth, OUTDOOR, 1);
+    put(Prop.well(), px + 40, 70);
+    put(Prop.bush('patio1'), L.left - 30, 12);
+    put(Prop.bush('patio2'), L.right + 40, 30);
+    put(Prop.bush('patio3'), L.right + 80, 90);
+    for (let i = 0; i < Math.min(2, y.patio); i++) put(dummy(), px + 110 + i * 30, 40 + i * 16);
+    if (y.establo > 0) put(stable(y.establo), px + 120, 150);
+    if (y.empal > 0)
+      for (let x = px; x < L.left - 20; x += 38)
+        put(palisade(y.empal > 1 ? 30 : 22), x + 20, YARD_D - 30);
+    const door = L.rooms.find((x) => x.room.type === 'recibidor');
+    if (door) {
+      const dx = door.rect.x - WALL;
+      put(Prop.crestBoard(model.crest.field, model.crest.dark, model.crest.symbol), dx - 22, 6, 54);
+      put(Prop.lanternBody(), dx - 8, 4, 46);
+      this.lamps.push({
+        pos: at(dx - 8, GROUND - 52, 0),
+        r: 60,
+        color: LANTERN,
+        power: 1,
+        flicker: 0.1,
+        zone: [px - 40, -SLAB, dx + PARTITION / 2, 140],
+        seed: 3,
+        fire: false,
+      });
+    }
+  }
+
+  /** Figura plana a `depth`, al tamaño de su dibujo en pantalla; (x, base) del mundo 2D. */
+  private figure(
+    g: Group,
+    img: PixelBuffer,
+    x: number,
+    base: number,
+    depth: number,
+    ambient: Tint,
+    sun: number,
+  ): void {
+    const k = scaleAt(depth);
+    const w = img.w / k;
+    const h = img.h / k;
+    this.plane(
+      g,
+      img,
+      [
+        at(x - w / 2, base, depth),
+        at(x + w / 2, base, depth),
+        at(x + w / 2, base - h, depth),
+        at(x - w / 2, base - h, depth),
+      ],
+      {
+        ambient,
+        sun,
+        wrap: 0.6,
+        dither: 0.03,
+      },
+    );
+  }
+
+  private plane(
+    g: Group,
+    img: PixelBuffer,
+    corners: Corners,
+    o: { ambient: Tint; sun: number; wrap?: number; dither?: number },
+  ): ShaderMaterial {
+    const m = this.look.surface(img, corners, o);
+    g.add(mesh(quad(corners, this.look), m));
+    return m;
   }
 
   // ---------- Simulación y dibujo ----------
@@ -310,185 +827,97 @@ export class RoomScene {
     }
     this.camera.update(dt);
     this.particles.update(dt, this.t);
-    // Humo de la cocina y de la forja.
-    if (this.build && Math.random() < dt * 2)
-      for (const l of this.build.lights)
-        if (l.flicker >= 0.3 && Math.random() < 0.3)
-          this.particles.spawn('ember', l.x + (Math.random() - 0.5) * 8, l.y);
   }
 
   private draw(): void {
-    const { ctx, camera } = this;
-    const W = this.build;
-    if (!W || !this.backC || !this.ambientC) return;
-    const cx = camera.px;
-    const cy = camera.py;
-    const vw = camera.vw;
-    const vh = camera.vh;
+    if (!this.layout || !this.camera.vw) return;
+    const { camera } = this;
+    const view: View = { px: camera.px, py: camera.py, vw: camera.vw, vh: camera.vh };
     const t = this.t;
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = P.black;
-    ctx.fillRect(0, 0, vw, vh);
-
-    // Cielo, estrellas, luna, sol, nubes y capas lejanas.
     const dl = this.daylight();
-    ctx.drawImage(this.skyC, WORLD_X0 - Math.round(cx * SKY_FX), -cy);
-    ctx.globalAlpha = Math.max(0, 1 - dl.day * 1.4);
-    for (const s of dl.day > 0.7 ? [] : this.starList) {
-      const sx = s.x + WORLD_X0 - Math.round(cx * SKY_FX);
-      const sy = s.y - cy;
-      if (sx < 0 || sy < 0 || sx >= vw || sy >= vh) continue;
-      const tw = noise(s.x, Math.floor(t * 1.5 + s.y));
-      if (!s.bright && tw < 0.25) continue;
-      ctx.fillStyle = s.bright && tw > 0.6 ? P.white : tw > 0.5 ? P.mist : P.fog;
-      ctx.fillRect(sx, sy, 1, 1);
-    }
-    ctx.globalAlpha = 1;
-    const moonA = Math.max(0, 1 - dl.day * 1.25);
-    if (moonA > 0) {
-      ctx.globalAlpha = moonA;
-      ctx.drawImage(
-        this.moonC,
-        Math.round(MOON.x - MOON_R - cx * SKY_FX),
-        Math.round(MOON.y - MOON_R - cy),
-      );
-      ctx.globalAlpha = 1;
-    }
-    this.drawDaySky(dl, cx, cy, vw, vh);
-    for (const cl of this.clouds) {
-      const x = ((cl.x + t * cl.speed) % 900) - 60 + WORLD_X0 - cx * 0.2;
-      drawBuffer(ctx, cl.img, x, cl.y - cy);
-    }
-    const { dark, warm } = this.nightLight();
-    if (warm > 0) this.drawDawnSky(warm, cy, vw, vh);
-    for (const { c, l } of this.parallax) ctx.drawImage(c, WORLD_X0 - Math.round(cx * l.fx), -cy);
-    if (dl.day > 0 || dl.dusk > 0) {
-      ctx.globalCompositeOperation = 'screen';
-      const h = (v: number) => Math.round(v * dl.day + v * 0.4 * dl.dusk);
-      ctx.fillStyle = `rgb(${h(70) + Math.round(60 * dl.dusk)}, ${h(105)}, ${h(120)})`;
-      ctx.fillRect(0, 0, vw, vh);
-      ctx.globalCompositeOperation = 'source-over';
-    }
+    const nl = this.nightLight();
 
-    // El edificio.
-    ctx.drawImage(this.backC, W.ox - cx, W.oy - cy);
+    // Cámara: el ojo delante del corte y el encuadre justo de la vista.
+    const e = eyeOf(view);
+    this.cam3.position.set(e.x, GROUND - e.y, EYE);
+    const f = frustum(view, NEAR);
+    this.cam3.projectionMatrix.makePerspective(f.left, f.right, f.top, f.bottom, NEAR, FAR);
+    this.cam3.projectionMatrixInverse.copy(this.cam3.projectionMatrix).invert();
 
-    // Luz: ambiente por sala, día, focos.
-    const l = this.lctx;
-    l.globalCompositeOperation = 'copy';
-    l.fillStyle = '#ffffff';
-    l.fillRect(0, 0, vw, vh);
-    l.globalCompositeOperation = 'source-over';
-    l.drawImage(this.ambientC, W.ox - cx, W.oy - cy);
-    l.globalCompositeOperation = 'lighter';
-    if (dl.day > 0 || dl.dusk > 0) {
-      const v = Math.round(150 * dl.day);
-      l.fillStyle = `rgb(${v + Math.round(70 * dl.dusk)}, ${v + Math.round(30 * dl.dusk)}, ${Math.round(v * 0.95)})`;
-      l.fillRect(0, 0, vw, vh);
-    }
-    for (const li of W.lights) {
-      if (li.x + li.r < cx || li.x - li.r > cx + vw || li.y + li.r < cy || li.y - li.r > cy + vh)
-        continue;
-      const fl = noise(Math.floor(t * 9), li.x + li.y);
-      const r = Math.max(4, Math.round((li.r * (1 - li.flicker * fl)) / 2) * 2);
-      l.drawImage(lightSprite(r, li.color, li.intensity), li.x - r - cx, li.y - r - cy);
-    }
-    ctx.globalCompositeOperation = 'multiply';
-    ctx.drawImage(this.light, 0, 0);
-    if (dark > 0 || warm > 0) {
-      const mix = (a: number, b: number) =>
-        Math.round(255 + (a - 255) * dark + (b - 255) * warm * (1 - dark));
-      ctx.fillStyle = `rgb(${mix(52, 255)}, ${mix(60, 214)}, ${mix(110, 178)})`;
-      ctx.fillRect(0, 0, vw, vh);
-    }
-
-    // Brillos encima de la escena ya iluminada.
-    ctx.globalCompositeOperation = 'lighter';
-    for (const f of W.flames)
-      ctx.drawImage(glowSprite(6, [255, 150, 70], 0.35), f.x - 6 - cx, f.y - 5 - cy);
-    for (const g of W.glows)
-      ctx.drawImage(glowSprite(g.r, g.color, 0.45), g.x - g.r - cx, g.y - g.r - cy);
-    ctx.globalCompositeOperation = 'source-over';
-    for (const f of W.flames) {
-      const tall = noise(Math.floor(t * 10), f.x * 3 + f.y) > 0.45;
-      ctx.fillStyle = P.lemon;
-      ctx.fillRect(f.x - cx, f.y - cy - (tall ? 1 : 0), 1, tall ? 2 : 1);
-      ctx.fillStyle = P.orange;
-      ctx.fillRect(f.x - cx, f.y + 1 - cy, 1, 1);
-    }
-    this.particles.draw(ctx, cx, cy, t);
-    if (this.hover) this.brackets(this.hover.rect);
-  }
-
-  /** Cielo de día por encima del de noche: azul, con el sol cruzando. */
-  private drawDaySky(
-    d: { day: number; dusk: number; tod: number },
-    cx: number,
-    cy: number,
-    vw: number,
-    vh: number,
-  ): void {
-    const ctx = this.ctx;
-    const horizon = GROUND - 40 - cy;
-    if (d.day > 0) {
-      ctx.globalAlpha = d.day;
-      const g = ctx.createLinearGradient(0, horizon - 230, 0, horizon + 10);
-      g.addColorStop(0, '#3b7fc4');
-      g.addColorStop(0.65, '#7fbde6');
-      g.addColorStop(1, '#cfe9f2');
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, vw, vh);
-      ctx.globalAlpha = 1;
-    }
-    if (d.dusk > 0) {
-      const g = ctx.createLinearGradient(0, horizon - 200, 0, horizon + 20);
-      g.addColorStop(0, 'rgba(104, 56, 108, 0)');
-      g.addColorStop(0.55, `rgba(232, 110, 120, ${0.5 * d.dusk})`);
-      g.addColorStop(1, `rgba(247, 118, 34, ${0.75 * d.dusk})`);
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, vw, vh);
-    }
-    const sunUp = Math.max(d.day, d.dusk);
-    if (sunUp <= 0 || d.tod >= 0.97) return;
-    const p = Math.min(1, d.tod / 0.95);
-    const sx = Math.round(300 - 280 * p - cx * SKY_FX);
-    const sy = Math.round(84 - Math.sin(Math.PI * p) * 62 - cy);
-    const warmSun = d.dusk > 0.3;
-    ctx.globalAlpha = Math.min(1, sunUp * 1.3);
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.drawImage(
-      glowSprite(30, warmSun ? [254, 140, 52] : [255, 240, 180], 0.55),
-      sx - 30,
-      sy - 30,
+    // Luz del día (o de la luna) y los focos más cercanos a la vista.
+    const s = this.look.shared;
+    const moon = 1 - dl.day;
+    s.uDaylight.value.set(
+      0.78 * dl.day + 0.3 * dl.dusk + 0.16 * moon + 0.22 * nl.warm,
+      0.76 * dl.day + 0.12 * dl.dusk + 0.18 * moon + 0.12 * nl.warm,
+      0.72 * dl.day + 0.32 * moon * (1 - 0.4 * nl.dark),
     );
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = warmSun ? P.orange : P.lemon;
-    for (let y = -8; y <= 8; y++) {
-      const w = Math.floor(Math.sqrt(64 - y * y));
-      ctx.fillRect(sx - w, sy + y, w * 2 + 1, 1);
+    const lampK = 0.3 + 0.7 * (1 - dl.day);
+    const fireK = 0.6 + 0.4 * (1 - dl.day);
+    const cx = view.px + view.vw / 2;
+    const cy = GROUND - (view.py + view.vh / 2);
+    const x0 = view.px - 40;
+    const x1 = view.px + view.vw + 40;
+    const y0 = GROUND - (view.py + view.vh + 40);
+    const y1 = GROUND - (view.py - 40);
+    const near = this.lamps
+      .filter((l) => l.zone[2] > x0 && l.zone[0] < x1 && l.zone[3] > y0 && l.zone[1] < y1)
+      .sort(
+        (a, b) => Math.hypot(a.pos.x - cx, a.pos.y - cy) - Math.hypot(b.pos.x - cx, b.pos.y - cy),
+      );
+    for (let i = 0; i < MAX_LIGHTS; i++) {
+      const l = near[i];
+      if (!l) {
+        s.uLightPos.value[i]!.w = 0;
+        continue;
+      }
+      const fl = 1 - l.flicker * noise(Math.floor(t * 9), l.seed);
+      const k = (l.fire ? fireK : lampK) * l.power * fl;
+      s.uLightPos.value[i]!.set(l.pos.x, l.pos.y, l.pos.z, l.r);
+      s.uLightColor.value[i]!.set(
+        (l.color[0] / 255) * k,
+        (l.color[1] / 255) * k,
+        (l.color[2] / 255) * k,
+      );
+      s.uLightZone.value[i]!.set(...l.zone);
     }
-    ctx.globalAlpha = 1;
+    for (const m of this.flames)
+      m.scale.y = m.scale.x * (0.6 + noise(Math.floor(t * 10), m.id) * 0.7);
+
+    // El cielo, solo cuando cambia (la cámara se mueve o pasa un rato).
+    const skyKey = `${view.px},${view.py},${Math.floor(t * 8)},${view.vw},${view.vh}`;
+    if (skyKey !== this.skyAt) {
+      this.skyAt = skyKey;
+      this.sky.draw(this.skyCtx, view.px, view.py, view.vw, view.vh, t, dl, nl);
+      this.skyTex.needsUpdate = true;
+    }
+
+    // Partículas y la marca de la sala señalada, en una lámina por delante.
+    const live = this.particles.list.length > 0 || !!this.hover;
+    if (live || this.topLive) {
+      const ctx = this.topCtx;
+      ctx.clearRect(0, 0, view.vw, view.vh);
+      this.particles.draw(ctx, view.px, view.py, t);
+      if (this.hover) this.brackets(this.hover.rect);
+      this.topTex.needsUpdate = true;
+      this.topLive = live;
+    }
+
+    const r = this.renderer;
+    r.clear();
+    r.render(this.skyScene, this.flat);
+    r.clearDepth();
+    r.render(this.scene, this.cam3);
+    if (live) r.render(this.topScene, this.flat);
   }
 
-  private drawDawnSky(warm: number, cy: number, vw: number, vh: number): void {
-    const ctx = this.ctx;
-    const horizon = GROUND - 40 - cy;
-    const g = ctx.createLinearGradient(0, horizon - 200, 0, horizon + 20);
-    g.addColorStop(0, 'rgba(90, 60, 120, 0)');
-    g.addColorStop(0.55, `rgba(232, 110, 120, ${0.45 * warm})`);
-    g.addColorStop(1, `rgba(254, 174, 52, ${0.8 * warm})`);
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, vw, vh);
-  }
-
-  private brackets(r: Rect): void {
-    const { ctx, camera } = this;
+  private brackets(rc: Rect): void {
+    const { topCtx: ctx, camera } = this;
     const pulse = Math.floor(this.t * 3) % 2;
-    const x0 = r.x - camera.px - 2 - pulse;
-    const y0 = r.y - camera.py - 2 - pulse;
-    const x1 = r.x + r.w - camera.px + 1 + pulse;
-    const y1 = r.y + r.h - camera.py + 1 + pulse;
+    const x0 = rc.x - camera.px - 2 - pulse;
+    const y0 = rc.y - camera.py - 2 - pulse;
+    const x1 = rc.x + rc.w - camera.px + 1 + pulse;
+    const y1 = rc.y + rc.h - camera.py + 1 + pulse;
     ctx.fillStyle = P.gold;
     for (const [x, y, dx, dy] of [
       [x0, y0, 1, 1],
@@ -613,38 +1042,4 @@ export class RoomScene {
       { passive: false },
     );
   }
-}
-
-/** Luz ambiente del edificio: blanco fuera; dentro de cada sala y bajo tierra, penumbra tintada. */
-function ambientCanvas(W: RoomsBuild, L: RoomsLayout): HTMLCanvasElement {
-  const c = document.createElement('canvas');
-  c.width = L.x1 - L.x0;
-  c.height = L.y1 - L.y0;
-  const ctx = c.getContext('2d')!;
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, c.width, c.height);
-  ctx.translate(-W.ox, -W.oy);
-  for (const a of W.ambient) {
-    ctx.fillStyle = `rgb(${a.color[0]}, ${a.color[1]}, ${a.color[2]})`;
-    ctx.beginPath();
-    a.poly.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
-    ctx.closePath();
-    ctx.fill();
-  }
-  return c;
-}
-
-function cloud(i: number): PixelBuffer {
-  const b = new PixelBuffer(46, 14);
-  const puffs: [number, number, number][] = [
-    [10, 9, 6],
-    [20, 6, 7],
-    [31, 8, 6],
-    [38, 10, 4],
-  ];
-  for (const [x, y, r] of puffs)
-    b.ellipse(x + (i % 2) * 3, y, r, r * 0.75, (_px, py) =>
-      py < y - r * 0.3 ? P.fog : py > y + 1 ? P.navy : P.slate,
-    );
-  return b;
 }

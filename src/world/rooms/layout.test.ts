@@ -3,14 +3,18 @@ import { uncleBuilding } from '../../core/rooms';
 import { GROUND } from '../geometry';
 import {
   CELL_W,
+  PARTITION,
   STAIR_W,
   WALL,
   colX,
   floorTop,
   floorY,
   focusPoint,
+  interior,
+  roofRuns,
   roomAtPoint,
   roomsLayout,
+  sidesOf,
   stairX,
   type Rect,
 } from './layout';
@@ -58,5 +62,38 @@ describe('geometría por salas', () => {
     });
     expect(focusPoint(L, 'patio')!.x).toBeLessThan(0);
     expect(focusPoint(L, 'veteranos')).toBeNull();
+  });
+
+  it('entre sala y sala queda una pared gruesa, y por fuera el muro es igual de grueso', () => {
+    const L = roomsLayout(uncleBuilding());
+    const at = (type: string) => interior(L.rooms.find((x) => x.room.type === type)!.rect);
+    const salon = at('salon');
+    const cocina = at('cocina');
+    expect(cocina.x - (salon.x + salon.w)).toBe(PARTITION);
+    expect(at('recibidor').x - L.left).toBe(WALL + PARTITION / 2);
+    expect(L.right - (cocina.x + cocina.w)).toBe(WALL + PARTITION / 2);
+  });
+
+  it('cada tramo de salas que acaba a la misma altura lleva su tejado', () => {
+    const L = roomsLayout(uncleBuilding());
+    const runs = roofRuns(L);
+    // La columna del despacho (con la escalera) sube una planta más que el resto.
+    expect(runs).toHaveLength(2);
+    expect(runs[0]!.base).toBeLessThan(runs[1]!.base);
+    expect(runs[0]!.x0).toBeLessThan(L.left);
+    expect(runs[1]!.x1).toBeGreaterThan(L.right);
+  });
+
+  it('sabe qué hay al otro lado de cada pared', () => {
+    const b = uncleBuilding();
+    const of = (type: string) =>
+      sidesOf(
+        b,
+        b.rooms.find((r) => r.type === type)!,
+      );
+    expect(of('recibidor')).toEqual({ left: ['aire'], right: ['escalera'] });
+    expect(of('salon')).toEqual({ left: ['escalera'], right: ['sala'] });
+    expect(of('bodega').left).toEqual(['tierra']);
+    expect(of('capilla').right).toEqual(['aire']);
   });
 });
