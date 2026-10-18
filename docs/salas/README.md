@@ -1,0 +1,100 @@
+# Rama `salas`: estado y cómo seguir
+
+Esto es todo lo necesario para que otra persona (o un agente) retome el trabajo del sistema de
+salas sin el historial de la conversación. Léelo entero antes de tocar nada.
+
+## Qué es
+
+_El Gremio de Aventureros · El Jarro Partido_: juego de gestión de un gremio en una taberna
+(TypeScript + Vite + Preact, escena en three.js con pixel art). El diseño original está en
+[`../diseno.md`](../diseno.md) y la técnica en [`../plan-desarrollo.md`](../plan-desarrollo.md).
+
+La rama `salas` sustituye la taberna dibujada por un **edificio de salas en corte, como Fallout
+Shelter**: se construyen, amplían, mueven y mejoran salas; la gente anda por ellas; el día pasa
+en tiempo real; hay trabajadores, visitantes, comida, entrenamiento y asaltos sala a sala.
+
+## Forma de trabajar (acordada con el usuario)
+
+- **Idioma:** todo en español (código, comentarios, textos, PR y respuestas). Respuestas breves.
+- **Ramas:** se desarrolla en `claude/sharp-mendel-apsm2a`; cada PR va contra **`salas`** (no
+  contra `main`). Al fusionarse un PR:
+  `git fetch origin salas && git checkout -B claude/sharp-mendel-apsm2a origin/salas && git push --force-with-lease -u origin claude/sharp-mendel-apsm2a`.
+  Al final de todo, un PR `salas` → `main`.
+- **No vigilar los PR** ni programar recordatorios: el usuario avisa cuando fusiona.
+- **Antes de subir:** `npm run lint && npm run format:check && npm run typecheck && npm test && npm run build`.
+- **Commits:** mensaje en español que explique el qué y el porqué. Sin nombres de modelos.
+- **Versión de pruebas:** el usuario prueba en un artefacto de claude.ai («Jarro: rama salas»).
+  Se genera con `python3 tools/build-artifact.py dist <salida>.html` tras `npm run build`
+  (cambia el `<title>` a «Jarro: rama salas»). Desde otra cuenta habrá que publicar uno nuevo o
+  pasarle el HTML al usuario.
+- **Capturas:** `tools/shots/` (ver su README). Chromium ya está en el contenedor.
+- **Partidas viejas:** el juego no está publicado; se sube `SAVE_VERSION` y las antiguas se
+  ignoran. En el menú de pruebas (`#debug`, «Modo pruebas» en Ajustes) hay trucos.
+- **Estilo del código:** núcleo en TS puro con tests (`src/core`), la escena solo enseña lo que
+  decide el núcleo. Comentarios en español, breves, explicando el porqué. Prettier manda.
+
+## Plan de 12 PR y estado
+
+| # | PR | Estado |
+| --- | --- | --- |
+| 1 | Núcleo de salas | Hecho (#11) |
+| 2 | Escena de salas (luego rehecha en 3D, #13) | Hecho (#12, #13) |
+| 3 | Obras | Hecho (#14, retoques #16 y #18) |
+| 4 | Gente en la casa | Hecho (#15) |
+| 5 | El día vivo | Hecho (#16) |
+| 6 | Trabajadores | Hecho (#17) |
+| 7 | Salón y visitantes | Hecho (#19) |
+| 8 | Comida y cerveza | Hecho (#20) |
+| 9 | Entrenamiento + arrastrar personajes a salas | Hecho (#21) |
+| 10 | Tesoro y asaltos sala a sala | Hecho (#22) |
+| 11 | Arte de cada sala | **En curso:** salón de muestra en #23 (abierto), esperando el visto bueno del estilo |
+| 12 | Balance y limpieza | Pendiente |
+
+**Prioridad actual (pedida por el usuario): rehacer las obras antes de seguir con el arte.**
+La propuesta está en [`obras-rework.md`](obras-rework.md), con las preguntas que hay que
+cerrar con el usuario antes de programar.
+
+El PR #23 (abierto) lleva: salón de muestra, salas únicas en la cinta de obras («Ampliar»),
+quitar salas obligatorias en el plano, voladizos sin huecos, puerta del recibidor por dentro,
+tabiques y forjados de 16 con alma oscura y huecos de 126 × 106 (salas de 110 × 90 por dentro).
+
+## Decisiones de diseño ya tomadas (resumen)
+
+- Ancho de 4 a 7 huecos comprando solares; hasta 4 plantas arriba y 6 abajo (excavando).
+- Al empezar: la taberna del tío con todas las salas en su sitio y muchas rotas. Antes del día 30
+  solo se arregla y se mejora; al pagar la deuda (día 30) se abren las obras de verdad.
+- Recibidor = entrada y guardia (2 como mucho; su nivel es la puerta). Salón = visitantes y caja.
+  Cámara del tesoro = tope del oro (lo que no cabe se pierde) y cerradura.
+- Trabajadores con Maña y oficio; los 3 del pueblo al principio, luego una cama del servicio cada uno.
+- Comida (cocina/despensa) y cerveza (bodega) como recursos; sin cenar baja la moral.
+- Entrenamiento en 3 salas (Fuerza, Destreza, Mente) con tope por nivel.
+- Asaltos simulados en el núcleo (`src/core/assault.ts`) y reproducidos en la escena.
+- Estilo visual: 3D pixelado (cámara lateral, render a baja resolución con la paleta). Arte
+  definitivo «entre el actual y la dirección A» (aventura gráfica VGA), sala a sala.
+- Ideas aprobadas para más adelante: botones «?» de ayuda (la pulsación larga sobre personajes
+  ahora es arrastrar), noches especiales, huéspedes, calabozo, perro que avisa, persecución del
+  bandido que huye, revisar qué aporta la empalizada.
+
+## Mapa del código (lo de las salas)
+
+- `src/data/rooms.ts`: catálogo de salas (tamaños, únicas, `keep`, `fixed`).
+- `src/core/rooms.ts`: reglas de obra (`plan…` devuelve el edificio como quedaría y el coste;
+  `problem()` valida; `laxly()` es el modo plano, que deja salas sin paso; `MUST` = obligatorias).
+- `src/core/game.ts`: estado, `reduce`, `endDay`, `tryWorks` (plano) y `planIssue`.
+- `src/core/balance.ts`: todas las constantes. `npm run sim` para comparar el balance.
+- `src/core/{workers,salon,larder,training,vault,assault,raids}.ts`: sistemas de cada PR.
+- `src/world/rooms/`: la escena 3D. `layout.ts` (geometría: `CELL_W`, `PARTITION`, `SLAB`…),
+  `RoomScene.ts` (montaje, cámara, toques, arrastre, asalto), `textures.ts` (caras de las salas
+  y el corte), `furniture.ts` (muebles), `salon.ts` (arte nuevo del salón), `crowd.ts` y
+  `people.ts` (gente y caminos), `works.ts` (sitios válidos para cada obra), `raid.ts` (asalto).
+- `src/ui/`: `App.tsx`, `works.ts` (hook del modo obras y plano), `WorksBar.tsx` (cinta),
+  `panels/RoomPanel.tsx` (ficha de sala), `drop.ts` (soltar personajes en salas).
+
+## Problemas conocidos
+
+- **Obras confusas** (lo más urgente): ver [`obras-rework.md`](obras-rework.md).
+- En el modo plano, tras mover una sala no deja volver a moverla.
+- El salón no deja ampliarse hacia arriba de forma descubrible.
+- Las escaleras solo pueden ser 2 y van de arriba abajo del edificio.
+- Un hueco vacío de planta baja encima de un sótano excavado se ve gris claro por arriba.
+- Durante la noche del asalto, la barra del día enseña ya «Mañana» y «Al anochecer».
