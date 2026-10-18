@@ -62,23 +62,96 @@ const fire = (dy: number, r: number, color: RGB, big: boolean): Glow => ({
     : [{ dx: 0, dy: 0, size: 0.6 }],
 });
 
+const slot = (w: number, i: number, n: number) => 10 + ((i + 0.5) * (w - 20)) / n;
+
+/** Si la sala está en uso (ni rota ni en obras): solo entonces tiene sus muebles. */
+const inUse = (room: Room) => room.level > 0 && !(room.works && room.works.kind !== 'extend');
+
+/** Mesas del salón: dónde va cada una y sus dos taburetes. */
+function tables(room: Room, w: number): { x: number; z: number }[] {
+  const n = Math.max(1, room.w * 2 - 1);
+  return Array.from({ length: n }, (_, i) => ({
+    x: 92 + ((i + 0.5) * (w - 150)) / n,
+    z: i % 2 ? MID - 4 : FRONT + 6,
+  }));
+}
+
+/** Un sitio donde sentarse: el taburete (centro en x y profundidad). */
+export interface Seat {
+  x: number;
+  z: number;
+}
+
+export function seats(room: Room, w: number): Seat[] {
+  if (room.type !== 'salon' || !inUse(room)) return [];
+  return tables(room, w).flatMap((t) => [
+    { x: t.x - 18, z: t.z - 2 },
+    { x: t.x + 18, z: t.z + 2 },
+  ]);
+}
+
+/**
+ * Una cama: la litera (dos camas, `row` 0 arriba y 1 abajo) o el catre de la enfermería, con
+ * el centro del mueble en x, su profundidad y la fila de la almohada dentro de su dibujo.
+ */
+export interface Bed {
+  kind: 'litera' | 'catre';
+  x: number;
+  z: number;
+  /** Fila (desde arriba del dibujo) donde empieza el colchón. */
+  top: number;
+  level: number;
+}
+
+/** Literas de una litera: el colchón de arriba y el de abajo, en filas del dibujo. */
+export const BUNK_ROWS = [6, 26] as const;
+
+export function beds(room: Room, w: number): Bed[] {
+  if (!inUse(room)) return [];
+  if (room.type === 'dormitorio' || room.type === 'veteranos') {
+    const n = bunkCount(room, w);
+    const level = room.type === 'veteranos' ? 3 : room.level;
+    return Array.from({ length: n }, (_, i) =>
+      BUNK_ROWS.map((top) => ({ kind: 'litera' as const, x: slot(w, i, n), z: WALL, top, level })),
+    ).flat();
+  }
+  if (room.type === 'enfermeria') {
+    const n = cotCount(room);
+    return Array.from({ length: n }, (_, i) => ({
+      kind: 'catre' as const,
+      x: slot(w, i, n),
+      z: i % 2 ? MID : FRONT + 4,
+      top: 3,
+      level: room.level,
+    }));
+  }
+  return [];
+}
+
+const bunkCount = (room: Room, w: number) =>
+  Math.min(
+    room.w * (room.type === 'servicio' ? 2 : 1) * (room.level >= 2 ? 2 : 1),
+    Math.floor(w / 30),
+  );
+const cotCount = (room: Room) => Math.min(3, room.level + room.w - 1);
+
 /** Muebles de una sala de ancho `w` (interior). */
 export function furnish(room: Room, w: number): Thing[] {
   const t: Thing[] = [];
   const add = (img: PixelBuffer, x: number, z: number, y = 0, light?: Glow) =>
     t.push({ img, x, z, y, light });
-  const slot = (i: number, n: number) => 10 + ((i + 0.5) * (w - 20)) / n;
+  const slot3 = (i: number, n: number) => slot(w, i, n);
   if (room.works && room.works.kind !== 'extend') {
     // Obra: herramientas y material por el suelo.
-    add(Prop.crate(), slot(0, 3), MID);
-    add(Prop.sack(), slot(2, 3), FRONT);
-    add(planks(), slot(1, 3), WALL);
+    add(Prop.crate(), slot3(0, 3), MID);
+    add(Prop.sack(), slot3(2, 3), FRONT);
+    add(planks(), slot3(1, 3), WALL);
     return t;
   }
   if (room.level === 0) {
-    add(Prop.brokenChair(), slot(0, 3), FRONT);
-    add(Prop.rolledCarpet(), slot(1, 3), MID);
-    add(Prop.crate(), slot(2, 3), WALL);
+    add(Prop.brokenChair(), slot3(0, 3), FRONT);
+    add(Prop.rolledCarpet(), slot3(1, 3), MID);
+    add(Prop.crate(), slot3(2, 3), WALL);
     return t;
   }
   const cells = room.w;
@@ -102,10 +175,7 @@ export function furnish(room: Room, w: number): Thing[] {
       add(Prop.kegStand(Math.min(3, lvl + 1)), 22, WALL + 2);
       add(Prop.counter(Math.min(4, lvl)), 44, WALL - 16);
       add(Prop.fireplace(Math.min(3, lvl)), w - 40, WALL + 2, 0, fire(10, 90, FIRE, true));
-      const tables = Math.max(1, cells * 2 - 1);
-      for (let i = 0; i < tables; i++) {
-        const tx = 92 + ((i + 0.5) * (w - 150)) / tables;
-        const z = i % 2 ? MID - 4 : FRONT + 6;
+      for (const { x: tx, z } of tables(room, w)) {
         add(Prop.roundTable(lvl >= 3), tx, z);
         add(Prop.stool(), tx - 18, z - 2);
         add(Prop.stool(), tx + 18, z + 2);
@@ -130,14 +200,14 @@ export function furnish(room: Room, w: number): Thing[] {
       break;
     case 'bodega': {
       const n = Math.min(3, cells * 2);
-      for (let i = 0; i < n; i++) add(Prop.cask(), slot(i, n), WALL);
+      for (let i = 0; i < n; i++) add(Prop.cask(), slot(w, i, n), WALL);
       if (lvl >= 2) add(Prop.wineRack(), w - 30, WALL - 14);
       add(Prop.barrel(), w - 16, FRONT);
       break;
     }
     case 'tesoro': {
       const n = Math.min(4, lvl + cells);
-      for (let i = 0; i < n; i++) add(Prop.chest(i % 2 === 1), slot(i, n), i % 2 ? MID : FRONT);
+      for (let i = 0; i < n; i++) add(Prop.chest(i % 2 === 1), slot(w, i, n), i % 2 ? MID : FRONT);
       add(Prop.sack(), 14, WALL, 0, {
         dy: 4,
         r: 50,
@@ -150,22 +220,21 @@ export function furnish(room: Room, w: number): Thing[] {
     case 'dormitorio':
     case 'veteranos':
     case 'servicio': {
-      const beds = cells * (room.type === 'servicio' ? 2 : 1) * (lvl >= 2 ? 2 : 1);
-      const n = Math.min(beds, Math.floor(w / 30));
+      const n = bunkCount(room, w);
       for (let i = 0; i < n; i++) {
         const straw = room.type === 'servicio' && lvl < 2;
         add(
           straw ? Prop.strawMat() : Prop.bunk(room.type === 'veteranos' ? 3 : lvl),
-          slot(i, n),
+          slot(w, i, n),
           WALL,
         );
-        if (!straw && i % 2 === 0) add(Prop.trunk(), slot(i, n), FRONT + 4);
+        if (!straw && i % 2 === 0) add(Prop.trunk(), slot(w, i, n), FRONT + 4);
       }
       break;
     }
     case 'enfermeria': {
-      const n = Math.min(3, lvl + cells - 1);
-      for (let i = 0; i < n; i++) add(Prop.cot(), slot(i, n), i % 2 ? MID : FRONT + 4);
+      const n = cotCount(room);
+      for (let i = 0; i < n; i++) add(Prop.cot(), slot(w, i, n), i % 2 ? MID : FRONT + 4);
       add(Prop.cabinet(lvl >= 3), w - 18, WALL);
       add(Prop.washbasin(), 12, WALL);
       break;
@@ -181,7 +250,7 @@ export function furnish(room: Room, w: number): Thing[] {
         flames: [-5, 0, 5].map((dx) => ({ dx, dy: 1, size: 0.3 })),
       });
       const n = Math.min(3, cells + 1);
-      for (let i = 0; i < n; i++) add(bench(), slot(i, n), FRONT + 2);
+      for (let i = 0; i < n; i++) add(bench(), slot(w, i, n), FRONT + 2);
       break;
     }
     case 'mapas':

@@ -48,6 +48,8 @@ export interface SceneHero {
   status: HeroStatus;
   look: HeroLook;
   marks: HeroMarks;
+  /** De guardia en el recibidor (la vista de salas lo enseña). */
+  guard?: boolean;
 }
 
 export interface SceneModel {

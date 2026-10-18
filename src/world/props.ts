@@ -25,13 +25,17 @@ export function piece(
 
 // ---------- Dormitorio y enfermería ----------
 
-export function bunk(level: number): PixelBuffer {
-  const quilt: Ramp = [
+/** Colores de la manta de una litera según el nivel del dormitorio. */
+export const bunkQuilt = (level: number): Ramp =>
+  [
     [P.plum, P.bark, P.rust, P.oak],
     [P.plum, P.bark, P.rust, P.oak],
     [P.plum, P.wine, P.red, P.coral],
     [P.navy, P.ocean, P.sky, P.mist],
-  ][level]!;
+  ][Math.max(0, Math.min(3, level))]!;
+
+export function bunk(level: number): PixelBuffer {
+  const quilt = bunkQuilt(level);
   return piece(24, 40, (b) => {
     for (const px of [0, 21]) {
       b.rect(px, 0, 3, 40, W[3]!);

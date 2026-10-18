@@ -13,6 +13,8 @@ export interface Tip {
   focus?: string;
   /** Solo en la vista de salas (las obras de verdad). */
   rooms?: boolean;
+  /** Lo que dice en la vista de salas, si allí las cosas están en otro sitio. */
+  roomsText?: string;
   when: (s: GameState) => boolean;
 }
 
@@ -26,6 +28,8 @@ export const TIPS: readonly Tip[] = [
     id: 'tablon',
     focus: 'tablon',
     text: 'El corcho de la sala es el tablón, donde se cuelgan los encargos. Toca uno, elige a quién mandas y fíjate en el riesgo. Mejor «Probable» que «Suicida».',
+    roomsText:
+      'El tablón de encargos está en el salón: toca la sala y ábrelo. Toca un encargo, elige a quién mandas y fíjate en el riesgo. Mejor «Probable» que «Suicida».',
     when: (s) => s.day === 1 && !s.missions.length && !s.reports.length,
   },
   {
@@ -65,6 +69,8 @@ export const TIPS: readonly Tip[] = [
     id: 'equipo',
     focus: 'bodega',
     text: 'Ha llegado equipo y lo he colgado en el tablero de la bodega. Dáselo a alguien desde su ficha. Eso sí, si cae en una misión, el objeto se pierde con él.',
+    roomsText:
+      'Ha llegado equipo y lo tengo guardado en el arcón. Dáselo a alguien desde su ficha. Eso sí, si cae en una misión, el objeto se pierde con él.',
     when: (s) => gearInStock(s).length > 0,
   },
   {
@@ -100,5 +106,7 @@ export const TIPS: readonly Tip[] = [
 export function nextTip(s: GameState, rooms = false): Tip | null {
   const done = s.tips ?? [];
   if (done.includes('*')) return null;
-  return TIPS.find((t) => !done.includes(t.id) && (!t.rooms || rooms) && t.when(s)) ?? null;
+  const t = TIPS.find((x) => !done.includes(x.id) && (!x.rooms || rooms) && x.when(s));
+  if (!t) return null;
+  return rooms && t.roomsText ? { ...t, text: t.roomsText } : t;
 }

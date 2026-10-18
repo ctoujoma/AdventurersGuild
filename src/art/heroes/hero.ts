@@ -50,6 +50,8 @@ export interface HeroSprites {
   sit: PixelBuffer;
   /** Cabeza con venda para pintarla en la almohada. */
   bed: PixelBuffer;
+  /** Cabeza dormida, sin venda, para la almohada del dormitorio. */
+  sleep: PixelBuffer;
 }
 
 type Slots = Record<string, string>;
@@ -337,18 +339,16 @@ export function heroSprites(look: HeroLook, marks: HeroMarks = {}): HeroSprites 
   if (hit) return hit;
   const front = composeFront(look, marks, false);
   const sitRows = HEADROOM + 17;
-  const bedRaw = composeFront(
-    { ...look, headgear: look.headgear === 'capucha' ? 'capucha' : null },
-    { ...marks, injured: true },
-    true,
-    false,
-  );
+  const bare = { ...look, headgear: look.headgear === 'capucha' ? ('capucha' as const) : null };
+  const bedRaw = composeFront(bare, { ...marks, injured: true }, true, false);
+  const sleepRaw = composeFront(bare, marks, true, false);
   const sprites: HeroSprites = {
     idle: [selOut(front), selOut(breathe(front))],
     blink: selOut(composeFront(look, marks, true)),
     walk: ([0, 1, 2, 3] as const).map((s) => selOut(composeSide(look, marks, s, false))),
     sit: selOut(front.crop(0, 0, BODY_W, sitRows)),
     bed: selOut(bedRaw.crop(1, 2, BODY_W - 2, HEADROOM + 10)),
+    sleep: selOut(sleepRaw.crop(1, 2, BODY_W - 2, HEADROOM + 10)),
   };
   cache.set(key, sprites);
   return sprites;

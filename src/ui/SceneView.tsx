@@ -3,7 +3,7 @@ import { audio } from '../audio/audio';
 import { RoomScene } from '../world/rooms/RoomScene';
 import { WorldScene, type Point, type SceneCallbacks, type SceneModel } from '../world/scene';
 
-/** La escena que se ve: la taberna dibujada o el gremio por salas (en pruebas). */
+/** La escena que se ve: el gremio por salas o, si se elige en Ajustes, la taberna dibujada. */
 export type GameScene = WorldScene | RoomScene;
 
 interface Props {

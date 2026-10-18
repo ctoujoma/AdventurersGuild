@@ -19,4 +19,10 @@ describe('ajustes', () => {
     expect(parseSettings({ vibrate: 'no' }).vibrate).toBe(true);
     expect(parseSettings({ vibrate: false }).vibrate).toBe(false);
   });
+
+  it('la vista de salas es la de siempre, aunque se guardara apagada cuando estaba en pruebas', () => {
+    expect(parseSettings({}).classic).toBe(false);
+    expect(parseSettings({ rooms: false }).classic).toBe(false);
+    expect(parseSettings({ classic: true }).classic).toBe(true);
+  });
 });

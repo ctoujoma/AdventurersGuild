@@ -223,7 +223,7 @@ export function App() {
     );
   }, [works.pick, works.targets, works.chosen?.id]);
   /** Las obras de verdad solo se eligen en la escena por salas (si el navegador la pinta). */
-  const roomsLive = settings.rooms && scene.current instanceof RoomScene;
+  const roomsLive = !settings.classic && scene.current instanceof RoomScene;
   const pickSpot = (p: Pick) => {
     openPanel(null);
     works.startPick(p);
@@ -559,8 +559,8 @@ export function App() {
       <Hud game={passing ? sceneGame : game} onSettings={() => setSettingsOpen(true)} />
       <div class="stage">
         <SceneView
-          key={settings.rooms ? 'salas' : 'taberna'}
-          rooms={settings.rooms}
+          key={settings.classic ? 'taberna' : 'salas'}
+          rooms={!settings.classic}
           model={model}
           onReady={(s) => {
             scene.current = s;
@@ -583,7 +583,9 @@ export function App() {
         {bubble && <SpeechBubble bubble={bubble} scene={scene} />}
         {hint && !notice && (
           <div class="hint-toast" role="status">
-            Arrastra para recorrer la taberna · Toca el tablón para mandar un grupo
+            {roomsLive
+              ? 'Arrastra para recorrer la casa · Toca el salón para ver el tablón'
+              : 'Arrastra para recorrer la taberna · Toca el tablón para mandar un grupo'}
           </div>
         )}
         {notice && (

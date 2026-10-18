@@ -103,10 +103,10 @@ export function SettingsMenu({ settings: s, onChange, onClose, onCheat, onBoss }
           <label class="set-check">
             <input
               type="checkbox"
-              checked={s.rooms}
-              onChange={(e) => set({ rooms: e.currentTarget.checked })}
+              checked={s.classic}
+              onChange={(e) => set({ classic: e.currentTarget.checked })}
             />
-            <span>Vista de salas (en pruebas)</span>
+            <span>Taberna dibujada (la vista de antes)</span>
           </label>
           {canVibrate() && (
             <label class="set-check">
