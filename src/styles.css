@@ -3816,3 +3816,56 @@ textarea:focus-visible,
   font-size: 14px;
   color: var(--rust);
 }
+
+/* ---------- Reloj del día ---------- */
+.clock {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  column-gap: 6px;
+  row-gap: 3px;
+  min-height: 44px;
+  padding: 3px 8px;
+  background: rgba(24, 20, 37, 0.5);
+  box-shadow: 0 0 0 2px var(--ink);
+  color: var(--white);
+  font: inherit;
+  cursor: pointer;
+}
+
+.clock-name {
+  font-family: var(--pixel);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.clock-pace {
+  font-family: var(--pixel);
+  font-size: 13px;
+  line-height: 1;
+  color: var(--gold);
+  justify-self: end;
+}
+
+.clock-bar {
+  grid-column: 1 / -1;
+  position: relative;
+  width: 76px;
+  height: 6px;
+  background: var(--slate);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+
+.clock-bar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--gold);
+}
+
+.clock-bar b {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--white);
+}

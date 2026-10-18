@@ -177,6 +177,8 @@ export class RoomScene {
   private key = '';
   private t = 0;
   private dayStart = 0;
+  /** Hora del día que lleva el reloj de la partida (0 mañana, 1 noche); manda sobre la propia. */
+  private clockTod: number | null = null;
   private dayAtNightfall = 0;
   private night: { start: number; dur: number; done: (() => void) | null } | null = null;
   private last = 0;
@@ -408,6 +410,23 @@ export class RoomScene {
 
   skipRaid(): void {}
 
+  /** La hora del reloj de la partida: el cielo y la gente la siguen. */
+  setTime(tod: number): void {
+    this.clockTod = Math.max(0, Math.min(1, tod));
+  }
+
+  /** Una entrega de la caja: unas monedas saltan en el salón. */
+  pay(): void {
+    const p = this.layout ? focusPoint(this.layout, 'barra') : null;
+    if (!p) return;
+    for (let i = 0; i < 6; i++)
+      this.particles.spawn(
+        'coin',
+        p.x - 30 + (Math.random() - 0.5) * 30,
+        p.y + 10 - Math.random() * 10,
+      );
+  }
+
   cheer(room = 'barra'): void {
     const p = this.layout ? focusPoint(this.layout, room) : null;
     if (!p) return;
@@ -437,7 +456,7 @@ export class RoomScene {
       if (p < 0.9) return { day: 0, dusk: 0, tod: 0 };
       return { day: smooth(Math.min(1, (p - 0.9) / 0.9)) * DAWN_LIGHT, dusk: 0, tod: 0 };
     }
-    const tod = Math.min(1, (this.t - this.dayStart) / DAY_LENGTH);
+    const tod = this.clockTod ?? Math.min(1, (this.t - this.dayStart) / DAY_LENGTH);
     const k = (a: number, b: number) => Math.max(0, Math.min(1, (tod - a) / (b - a)));
     const day =
       tod < 0.12 ? DAWN_LIGHT + (1 - DAWN_LIGHT) * smooth(k(0, 0.12)) : 1 - smooth(k(0.6, 0.95));
@@ -888,7 +907,7 @@ export class RoomScene {
       }
     }
     // A la cama: al atardecer van andando y de noche ya están acostados.
-    const tod = Math.min(1, (this.t - this.dayStart) / DAY_LENGTH);
+    const tod = this.clockTod ?? Math.min(1, (this.t - this.dayStart) / DAY_LENGTH);
     this.crowd.setNight(this.night && this.nightP() < 1.6 ? 'night' : tod > 0.82 ? 'dusk' : 'day');
     this.crowd.update(dt, this.t);
     if (this.marker && this.t > this.marker.until) this.marker = null;

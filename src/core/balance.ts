@@ -116,6 +116,12 @@ export const WORK_NIGHTS = { build: 1, extend: 1, move: 1 } as const;
 
 /** Camas: las de los dormitorios y, con el ala de veteranos, dos más por nivel. */
 export const capacity = (dorm: number, vet = 0) => 2 + 2 * dorm + 2 * vet;
+/** Segundos que dura un día con el juego abierto (a velocidad normal). */
+export const DAY_SECONDS = 300;
+/** Parte del día desde la que es anochecer y se puede cerrar la taberna. */
+export const DUSK = 0.8;
+/** Entregas en que llega la caja del día, repartidas hasta el anochecer. */
+export const DELIVERIES = 8;
 /** Ingreso diario de la taberna: por nivel y un poco por reputación. */
 export const tavernIncome = (tab: number, rep: number, trophies = 0) =>
   tab === 0
