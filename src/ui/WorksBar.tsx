@@ -49,7 +49,7 @@ function Ribbon({ works: w, onMore }: Props) {
           const grow = !!ROOMS[t].unique && b.rooms.some((r) => r.type === t);
           const cost = grow && list.length ? Math.min(...list.map((x) => x.cost)) : ROOM_COST[t][1];
           return { t, spots: list.length, grow, cost };
-        }).filter((x) => !x.grow || x.spots > 0),
+        }),
       ),
     [w.view],
   );

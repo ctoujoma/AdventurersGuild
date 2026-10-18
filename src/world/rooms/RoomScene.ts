@@ -782,21 +782,28 @@ export class RoomScene {
     const theme = themeOf(room.floor);
     const seed = `${room.id}${room.type}`;
     const sides = sidesOf(b, room);
+    // Sin nada debajo de su primer o último hueco, la pared de fuera baja hasta debajo del forjado.
+    const free = (c: number) =>
+      room.floor > 0 && !b.rooms.some((o) => this.covers(o, c, room.floor - 1));
     this.box(rect, theme, ambient, sun, seed, {
       back: backWall(room, r.w, r.h, this.salonLook()),
       floorTex: floorTex(room, theme, r.w, seed),
       sides,
       floor: room.floor,
       door: room.type === 'recibidor',
+      hang: { left: free(room.col), right: free(room.col + room.w - 1) },
     });
     // En voladizo (sin nada debajo), la cara de abajo del suelo, que se ve desde el patio.
     if (room.floor > 0) {
       const under = { ambient: OUTDOOR, sun: 0.6, dither: 0 };
       const y = r.y + r.h + SLAB;
-      for (let c = room.col; c < room.col + room.w; c++) {
+      const last = room.col + room.w - 1;
+      for (let c = room.col; c <= last; c++) {
         if (b.rooms.some((o) => this.covers(o, c, room.floor - 1))) continue;
-        const x0 = Math.max(r.x, colX(b, c) - WALL);
-        const x1 = Math.min(r.x + r.w, colX(b, c) + CELL_W + WALL);
+        // Hasta la cara de fuera del muro donde da al aire; si no, hasta media pared.
+        const x0 = c === room.col && sides.left[0] === 'aire' ? rect.x - WALL : colX(b, c);
+        const x1 =
+          c === last && sides.right[0] === 'aire' ? rect.x + rect.w + WALL : colX(b, c) + CELL_W;
         this.plane(
           this.world,
           ceilingTex('madera', Math.round(x1 - x0), `${seed}bajo${c}`),
@@ -897,6 +904,8 @@ export class RoomScene {
       sides: { left: Side[]; right: Side[] };
       floor: number;
       door?: boolean;
+      /** Sin sala debajo del hueco de cada lado (en voladizo). */
+      hang?: { left: boolean; right: boolean };
     },
   ): void {
     const g = this.world;
@@ -924,7 +933,7 @@ export class RoomScene {
     const doors = (s: Side[]) => s.flatMap((x, i) => (x === 'sala' || x === 'escalera' ? [i] : []));
     this.plane(
       g,
-      sideTex(theme, r.h, doors(o.sides.left), `${seed}i`),
+      sideTex(theme, r.h, doors(o.sides.left), `${seed}i`, o.door ? [0] : []),
       [at(x0, yb, 0), at(x0, yb, D), at(x0, yt, D), at(x0, yt, 0)],
       flat,
     );
@@ -945,7 +954,7 @@ export class RoomScene {
         if (s !== 'aire') return;
         const f = o.floor + i;
         const top = floorTop(f) - SLAB;
-        const bottom = floorY(f);
+        const bottom = floorY(f) + (i === 0 && o.hang?.[side] ? SLAB : 0);
         const withDoor = !doorDone && i === 0;
         if (withDoor) doorDone = true;
         const tex = outerSide(themeOf(f), PITCH, withDoor, `${seed}f${side}${i}`);

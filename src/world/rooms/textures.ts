@@ -59,6 +59,8 @@ const TILE: Ramp = [P.black, P.plum, P.rust, P.clay, P.tan];
 
 /** Ancho de un hueco en la pared del fondo y dónde cae su ventana. */
 const CELL_BACK = CELL_W * BACK;
+/** Alma oscura de los tabiques entre salas (lo demás del grosor lleva la textura del muro). */
+const CORE = 8;
 const windowX = (i: number) => Math.round((i * CELL_W + CELL_W * 0.7 - PARTITION / 2) * BACK);
 
 /** Las salas que no tienen ventanas aunque estén por encima del suelo. */
@@ -289,7 +291,13 @@ export function ceilingTex(theme: Theme, w: number, seed: string): PixelBuffer {
  * Pared de un lado (fondo × alto, el fondo a media resolución; x = 0 junto al corte). Lleva
  * puerta en cada planta (contada desde abajo) que da a otra sala o a la escalera.
  */
-export function sideTex(theme: Theme, h: number, doors: number[], seed: string): PixelBuffer {
+export function sideTex(
+  theme: Theme,
+  h: number,
+  doors: number[],
+  seed: string,
+  front: number[] = [],
+): PixelBuffer {
   const b = new PixelBuffer(DEEP, h);
   if (theme === 'yeso') {
     plaster(b, 0, 0, DEEP, h, seed, PLASTER);
@@ -305,6 +313,20 @@ export function sideTex(theme: Theme, h: number, doors: number[], seed: string):
     b.rect(8, y - 50, 13, 50, P.plum);
     b.rect(9, y - 48, 11, 48, P.bark);
     b.rect(10, y - 46, 9, 46, P.black);
+  }
+  // La puerta de la calle, cerrada: tablones con herrajes, aldaba y su umbral.
+  for (const f of front) {
+    const y = h - f * PITCH;
+    b.rect(6, y - 54, 17, 54, P.plum);
+    b.rect(7, y - 52, 15, 52, P.bark);
+    planksV(b, 8, y - 51, 13, 51, `${seed}puerta`, [P.plum, P.rust, P.oak, P.clay], 4);
+    for (const by of [y - 44, y - 16]) {
+      b.hline(8, by, 13, P.slate);
+      b.hline(8, by + 1, 13, P.navy);
+    }
+    b.ellipse(18, y - 28, 1.5, 1.5, P.gold);
+    b.set(18, y - 26, P.amber);
+    b.hline(5, y - 1, 19, P.steel);
   }
   ambientOcclusion(b, 0, 0, DEEP, h, 3, { top: true, bottom: true, left: false, right: true });
   return b;
@@ -501,6 +523,18 @@ export function facade(L: RoomsLayout): Facade {
       beam(buf, x, y + h - SLAB, w, SLAB, WOOD_DARK);
     }
   }
+  // Tabiques entre salas: textura a los lados y el alma oscura en medio.
+  for (const a of cells)
+    for (const c of cells) {
+      if (a.rect.x + a.rect.w !== c.rect.x) continue;
+      const y0 = Math.max(a.rect.y, c.rect.y);
+      const y1 = Math.min(a.rect.y + a.rect.h, c.rect.y + c.rect.h);
+      if (y1 <= y0) continue;
+      const x = c.rect.x - CORE / 2 - ox;
+      buf.rect(x, y0 - oy, CORE, y1 - y0, P.black);
+      buf.vline(x, y0 - oy, y1 - y0, P.ebony);
+      buf.vline(x + CORE - 1, y0 - oy, y1 - y0, P.ebony);
+    }
   for (const { rect } of cells) {
     const r = interior(rect);
     for (let j = 0; j < r.h; j++)

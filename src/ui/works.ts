@@ -119,7 +119,7 @@ export function useWorks({ game, dispatch, toast, focus }: Deps): Works {
       // La casa quedaría a medias: se sigue en el plano y se paga cuando todo cuadre.
       setSteps([a]);
       audio.play('select');
-      toast('Así la casa queda a medias: sigue en el plano y paga cuando todo tenga paso.');
+      toast('Así la casa queda a medias: sigue en el plano y paga cuando todo cuadre.');
       const next = tryWorks(game, [a]);
       const id = 'error' in next ? null : roomOf(game, next, a);
       if (id) focus(id);

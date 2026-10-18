@@ -153,6 +153,9 @@ export function extendCostOf(r: Room, cells: number): number {
  */
 let lax = false;
 
+/** Salas que siempre tiene que haber: las que no se pueden tirar fuera del plano. */
+export const MUST = (Object.keys(ROOMS) as RoomType[]).filter((t) => ROOMS[t].keep);
+
 /** Hace `fn` dejando pasar salas sin paso desde el recibidor (se arregla con más obras). */
 export function laxly<T>(fn: () => T): T {
   const was = lax;
@@ -189,7 +192,6 @@ export function problem(b: Building): string | null {
     count.set(r.type, (count.get(r.type) ?? 0) + 1);
     if (d.unique && count.get(r.type)! > 1) return `Ya tienes ${d.name.toLowerCase()}.`;
   }
-  if (count.get('recibidor') !== 1) return 'Falta el recibidor.';
   const under = (c: number, f: number) => at.get(key(c, f - 1));
   for (const r of b.rooms) {
     if (r.type === 'torre') {
@@ -208,6 +210,9 @@ export function problem(b: Building): string | null {
     }
   }
   if (lax) return null;
+  // Las salas que no pueden faltar (se pueden quitar en el plano para ponerlas en otro sitio).
+  const gone = MUST.find((t) => !count.get(t));
+  if (gone) return `Falta: ${ROOMS[gone].name}. Vuelve a ponerla en el plano para poder pagar.`;
   const lost = cutOff(b, at);
   return lost ? `${ROOMS[lost.type].name}: se quedaría sin paso desde el recibidor.` : null;
 }
@@ -218,7 +223,8 @@ export function problem(b: Building): string | null {
  * y a la torre desde la sala de debajo.
  */
 function cutOff(b: Building, at: Map<string, Room>): Room | null {
-  const start = b.rooms.find((r) => r.type === 'recibidor')!;
+  const start = b.rooms.find((r) => r.type === 'recibidor');
+  if (!start) return b.rooms[0] ?? null;
   const seen = new Set<Room>([start]);
   const stairsSeen = new Set<number>();
   const queue: Room[] = [start];
@@ -407,7 +413,9 @@ export function planDemolish(s: GameState, id: string): Plan {
   const got = find(s, id);
   if ('error' in got) return got;
   const { b, r } = got;
-  if (ROOMS[r.type].keep) return { error: `${ROOMS[r.type].name}: no se puede quitar.` };
+  // En el plano sí: se quita para ponerla en otro sitio, y no se paga hasta que vuelva a estar.
+  if (ROOMS[r.type].keep && !lax)
+    return { error: `${ROOMS[r.type].name}: no se puede quitar (en el plano, sí, para moverla).` };
   if (r.works) return { error: BUSY };
   b.rooms = b.rooms.filter((x) => x !== r);
   return finish(s, b, -Math.floor(r.spent * DEMOLISH_REFUND));

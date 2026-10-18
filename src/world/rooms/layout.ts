@@ -15,7 +15,7 @@ export const ROOM_H = 90;
 export const SLAB = 10;
 export const PITCH = ROOM_H + SLAB;
 /** Paredes entre salas: la mitad del grosor cae dentro de cada hueco. */
-export const PARTITION = 10;
+export const PARTITION = 16;
 /** Lo que el muro de fuera sobresale del hueco (con su media pared, igual de grueso). */
 export const WALL = PARTITION / 2;
 /** Fondo de las salas, del plano de corte a la pared del fondo. */

@@ -263,4 +263,17 @@ describe('el plano deja la casa a medias', () => {
     expect(planIssue(whole)).toBeNull();
     expect(reduce(s, { type: 'works', steps })).not.toBe(s);
   });
+
+  it('en el plano se puede quitar el salón para ponerlo en otro sitio, pero no pagar sin él', () => {
+    const s = { ...newGame('obligatorias'), mode: 'libre' as const, gold: 9999 };
+    const salon = s.building.rooms.find((r) => r.type === 'salon')!;
+    const quit: Action = { type: 'demolish', id: salon.id };
+    // Fuera del plano no se puede; en el plano sí, y el plano avisa de lo que falta.
+    expect(canWork(s, quit)).toMatch(/no se puede quitar/);
+    expect(needsPlan(s, quit)).toBe(true);
+    const plan = tryWorks(s, [quit]);
+    if ('error' in plan) throw new Error(plan.error);
+    expect(planIssue(plan)).toMatch(/Falta: Salón/);
+    expect(reduce(s, { type: 'works', steps: [quit] })).toBe(s);
+  });
 });
