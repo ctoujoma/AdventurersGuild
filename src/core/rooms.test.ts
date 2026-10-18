@@ -8,7 +8,16 @@ import {
   UPGRADE_COST,
   capacity,
 } from './balance';
-import { canWork, endDay, newGame, reduce, tryWorks, type Action } from './game';
+import {
+  canWork,
+  endDay,
+  needsPlan,
+  newGame,
+  planIssue,
+  reduce,
+  tryWorks,
+  type Action,
+} from './game';
 import type { GameState, Room } from './model';
 import { LOCKED, beds, extendCostOf, facOf, problem, uncleBuilding, upgradeCostOf } from './rooms';
 
@@ -228,5 +237,30 @@ describe('obras', () => {
     const s = open();
     s.gold = 10;
     no(s, { type: 'buyPlot' }, /Te faltan/);
+  });
+});
+
+describe('el plano deja la casa a medias', () => {
+  it('se puede dejar una sala sin paso mientras se planea, pero no pagar así', () => {
+    const s = open('medias');
+    const dorm = room(s, 'dormitorio');
+    const gone: Action = { type: 'demolish', id: dorm.id };
+    // Sin el dormitorio, la capilla se queda sin paso: suelto no se puede, en el plano sí.
+    expect(canWork(s, gone)).toMatch(/sin paso/);
+    expect(needsPlan(s, gone)).toBe(true);
+    const half = tryWorks(s, [gone]);
+    if ('error' in half) throw new Error(half.error);
+    expect(planIssue(half)).toMatch(/sin paso/);
+    expect(reduce(s, { type: 'works', steps: [gone] })).toBe(s);
+    // Otras salas en el hueco devuelven el paso y entonces sí se paga.
+    const steps: Action[] = [
+      gone,
+      { type: 'build', room: 'cocina', col: 1, floor: 1 },
+      { type: 'build', room: 'bodega', col: 2, floor: 1 },
+    ];
+    const whole = tryWorks(s, steps);
+    if ('error' in whole) throw new Error(whole.error);
+    expect(planIssue(whole)).toBeNull();
+    expect(reduce(s, { type: 'works', steps })).not.toBe(s);
   });
 });

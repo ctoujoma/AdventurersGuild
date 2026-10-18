@@ -3916,3 +3916,75 @@ textarea:focus-visible,
   padding: 2px 8px;
   font-size: 13px;
 }
+.worksbar-issue {
+  display: block;
+  color: var(--lemon);
+  font-size: 12px;
+}
+
+/* ---------- Cinta del modo obras ---------- */
+.ribbon {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 10px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 6px;
+  width: auto;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 6px;
+  background: rgba(24, 20, 37, 0.9);
+  box-shadow: 0 0 0 2px rgba(24, 20, 37, 0.95);
+}
+.ribbon > * {
+  width: 100%;
+  box-sizing: border-box;
+}
+.ribbon-rooms {
+  min-width: 0;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 2px 4px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+}
+.ribbon-room {
+  flex: 0 0 auto;
+  min-width: 84px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 5px 8px;
+  scroll-snap-align: start;
+  font-family: var(--pixel);
+  color: var(--ink);
+  background: var(--tan);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+.ribbon-room b {
+  font-size: 13px;
+  white-space: nowrap;
+}
+.ribbon-room span {
+  font-size: 12px;
+}
+.ribbon-room:disabled {
+  opacity: 0.45;
+}
+.ribbon-foot {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.ribbon-text {
+  font-size: 13px;
+}
+.ribbon .btn {
+  min-height: 34px;
+}

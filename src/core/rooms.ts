@@ -147,6 +147,23 @@ export function extendCostOf(r: Room, cells: number): number {
   return Math.round(cells * EXTEND_RATE * sum);
 }
 
+/**
+ * En el plano se puede dejar alguna sala sin paso mientras se sigue reformando (para mover salas
+ * sin tener el camino ya hecho); al pagar, el edificio tiene que cuadrar del todo.
+ */
+let lax = false;
+
+/** Hace `fn` dejando pasar salas sin paso desde el recibidor (se arregla con más obras). */
+export function laxly<T>(fn: () => T): T {
+  const was = lax;
+  lax = true;
+  try {
+    return fn();
+  } finally {
+    lax = was;
+  }
+}
+
 /** Lo que falla en un edificio (o null si todo cuadra): tamaños, solapes, apoyos y paso. */
 export function problem(b: Building): string | null {
   if (!b.stairs.length || b.stairs.length > MAX_STAIRS) return 'Hace falta una escalera, o dos.';
@@ -190,6 +207,7 @@ export function problem(b: Building): string | null {
         return 'Una planta solo puede sobresalir un hueco de la de abajo.';
     }
   }
+  if (lax) return null;
   const lost = cutOff(b, at);
   return lost ? `${ROOMS[lost.type].name}: se quedaría sin paso desde el recibidor.` : null;
 }

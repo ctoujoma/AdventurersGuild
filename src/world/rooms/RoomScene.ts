@@ -73,7 +73,7 @@ import {
   watchtower,
   type Theme,
 } from './textures';
-import { EYE, eyeOf, frustum, scaleAt, type View } from './view3d';
+import { EYE, eyeOf, frustum, project, scaleAt, type View } from './view3d';
 
 /** Duración del día de la escena hasta que anochece (el reloj de verdad llega con el día vivo). */
 const DAY_LENGTH = 720;
@@ -126,6 +126,36 @@ interface Lamp {
   fire: boolean;
 }
 
+/** Cifras de 3×5 píxeles para los precios de las marcas de obra. */
+const DIGITS = [
+  '111101101101111',
+  '010110010010111',
+  '111001111100111',
+  '111001111001111',
+  '101101111001001',
+  '111100111001111',
+  '111100111101111',
+  '111001001001001',
+  '111101111101111',
+  '111101111001111',
+];
+
+function tinyDigits(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  color: string,
+) {
+  ctx.fillStyle = color;
+  [...text].forEach((ch, i) => {
+    const g = DIGITS[Number(ch)];
+    if (!g) return;
+    for (let k = 0; k < 15; k++)
+      if (g[k] === '1') ctx.fillRect(x + i * 4 + (k % 3), y + Math.floor(k / 3), 1, 1);
+  });
+}
+
 /** Nombre de una sala tal como se enseña al tocarla. */
 export function roomLabel(b: Building, id: string): string {
   const r = b.rooms.find((x) => x.id === id);
@@ -175,6 +205,8 @@ export class RoomScene {
   private targets: Spot[] | null = null;
   private chosen: string | null = null;
   private targetsKey = '';
+  /** Marcas de siempre del modo obras: se tocan ellas y también las salas, sin mover la cámara. */
+  private soft = false;
   private model: SceneModel | null = null;
   private key = '';
   private t = 0;
@@ -223,17 +255,18 @@ export class RoomScene {
   // ---------- API (la misma que la taberna dibujada) ----------
 
   /** Marca los sitios donde se puede hacer una obra (y el elegido), o los quita con null. */
-  setTargets(list: Spot[] | null, chosen: string | null = null): void {
+  setTargets(list: Spot[] | null, chosen: string | null = null, soft = false): void {
     // Elegir uno no mueve la cámara: solo una lista nueva de sitios.
     const key = list?.map((t) => `${t.id}:${t.rect.x},${t.rect.y}`).join(' ') ?? '';
     const fresh = key !== this.targetsKey;
     this.targetsKey = key;
     this.targets = list;
     this.chosen = chosen;
+    this.soft = soft;
     this.hover = null;
     this.topLive = true;
     // Si no se ven todos, la cámara se aleja lo justo (sin pasarse) y los centra.
-    if (!fresh || !list?.length || !this.cssW) return;
+    if (soft || !fresh || !list?.length || !this.cssW) return;
     const x0 = Math.min(...list.map((t) => t.rect.x)) - 16;
     const y0 = Math.min(...list.map((t) => t.rect.y)) - 16;
     const x1 = Math.max(...list.map((t) => t.rect.x + t.rect.w)) + 16;
@@ -980,7 +1013,9 @@ export class RoomScene {
     const skyKey = `${view.px},${view.py},${Math.floor(t * 8)},${view.vw},${view.vh}`;
     if (skyKey !== this.skyAt) {
       this.skyAt = skyKey;
-      this.sky.draw(this.skyCtx, view.px, view.py, view.vw, view.vh, t, dl, nl);
+      // El horizonte: donde acaba el terreno, al fondo (con la perspectiva, sube y baja con la cámara).
+      const hz = project(view, view.px + view.vw / 2, GROUND, YARD_D).y;
+      this.sky.draw(this.skyCtx, view.px, view.vw, view.vh, t, dl, nl, hz);
       this.skyTex.needsUpdate = true;
     }
 
@@ -1037,6 +1072,22 @@ export class RoomScene {
         ctx.fillRect(x + w - 1, y + i, 1, 2);
       }
       if (on) this.brackets(s.rect);
+      // El precio en medio, en una placa oscura, como en las obras de un refugio.
+      const cost = /· (\d+)$/.exec(s.label)?.[1];
+      if (cost) {
+        const tw = cost.length * 4 + 6;
+        const cx = Math.round(x + w / 2 - tw / 2);
+        const cy = Math.round(y + h / 2 - 4);
+        ctx.fillStyle = P.black;
+        ctx.globalAlpha = 0.75;
+        ctx.fillRect(cx - 2, cy - 2, tw + 3, 9);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = P.gold;
+        ctx.fillRect(cx, cy + 1, 3, 3);
+        ctx.fillStyle = P.lemon;
+        ctx.fillRect(cx + 1, cy + 1, 1, 1);
+        tinyDigits(ctx, cost, cx + 5, cy, on ? P.lemon : P.white);
+      }
     }
   }
 
@@ -1062,17 +1113,16 @@ export class RoomScene {
   // ---------- Interacción ----------
 
   private hit(wx: number, wy: number): Spot | null {
-    return (
-      (this.targets ?? this.spots).find(
-        (s) =>
-          wx >= s.rect.x && wx < s.rect.x + s.rect.w && wy >= s.rect.y && wy < s.rect.y + s.rect.h,
-      ) ?? null
-    );
+    const inside = (s: Spot) =>
+      wx >= s.rect.x && wx < s.rect.x + s.rect.w && wy >= s.rect.y && wy < s.rect.y + s.rect.h;
+    const target = this.targets?.find(inside);
+    if (target || (this.targets && !this.soft)) return target ?? null;
+    return this.spots.find(inside) ?? null;
   }
 
   /** La persona que hay bajo un punto de la pantalla (no mientras se elige sitio para una obra). */
   private heroAt(cssX: number, cssY: number): string | null {
-    if (this.targets) return null;
+    if (this.targets && !this.soft) return null;
     const { camera } = this;
     const v: View = { px: camera.px, py: camera.py, vw: camera.vw, vh: camera.vh };
     return this.crowd.hit(v, cssX / camera.zoom, cssY / camera.zoom);

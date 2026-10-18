@@ -84,6 +84,8 @@ import {
   planPlot,
   planStair,
   planUpgrade,
+  laxly,
+  problem,
   stepWorks,
   uncleBuilding,
   type ExtendDir,
@@ -263,16 +265,29 @@ export function tryWork(s: GameState, a: Action): GameState | { error: string } 
   return next;
 }
 
-/** Las obras de una lista, una tras otra; la primera que falla lo para todo. */
+/**
+ * Las obras de una lista (el plano), una tras otra; la primera que falla lo para todo. Por el
+ * camino la casa puede quedar a medias (salas sin paso): eso solo se mira al final,
+ * con `planIssue`, y el reducer no deja pagar hasta que cuadre.
+ */
 export function tryWorks(s: GameState, steps: readonly Action[]): GameState | { error: string } {
-  let cur = s;
-  for (const a of steps) {
-    const next = tryWork(cur, a);
-    if ('error' in next) return next;
-    cur = next;
-  }
-  return cur;
+  return laxly(() => {
+    let cur = s;
+    for (const a of steps) {
+      const next = tryWork(cur, a);
+      if ('error' in next) return next;
+      cur = next;
+    }
+    return cur;
+  });
 }
+
+/** Lo que impide pagar el plano tal como está (salas sin paso desde el recibidor). */
+export const planIssue = (s: GameState) => problem(s.building);
+
+/** Una obra que solo se puede hacer en el plano (deja la casa a medias hasta otra obra). */
+export const needsPlan = (s: GameState, a: Action) =>
+  !!canWork(s, a) && !laxly(() => canWork(s, a));
 
 // ---------- Partida nueva ----------
 
@@ -374,7 +389,7 @@ export function reduce(state: GameState, action: Action): GameState {
   switch (action.type) {
     case 'works': {
       const next = tryWorks(state, action.steps);
-      return 'error' in next ? state : next;
+      return 'error' in next || planIssue(next) ? state : next;
     }
     case 'hire': {
       if (canHire(state, action.id)) return state;

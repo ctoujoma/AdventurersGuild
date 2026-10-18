@@ -91,20 +91,20 @@ export const TIPS: readonly Tip[] = [
     id: 'obras',
     rooms: true,
     focus: 'sala',
-    text: 'La casa ya es tuya del todo, así que se acabaron los apaños: ahora se hace obra de verdad. En «Gremio», pestaña «Obras», eliges una sala nueva y dónde va. Si tocas una sala, la amplías, la mueves o la tiras.',
+    text: 'La casa ya es tuya del todo, así que se acabaron los apaños: ahora se hace obra de verdad. Toca el martillo, a la derecha, para el modo obras: abajo eliges una sala nueva y luego dónde va. Si tocas una sala, la amplías, la mueves o la tiras.',
     when: (s) => sinceOpening(s) >= 0,
   },
   {
     id: 'plano',
     rooms: true,
-    text: 'Antes de levantar media casa, prueba «Planear una reforma». Haces las obras de mentira, ves cómo queda y lo que cuesta, y pagas al final. Si no te convence, lo dejas y no pierdes ni una moneda.',
+    text: 'En el modo obras todo se hace de mentira hasta que pagas: ves cómo queda y lo que cuesta. Puedes dejar una sala sin paso un momento mientras mueves otras; solo hay que arreglarlo antes de pagar. Si no te convence, sales y no pierdes ni una moneda.',
     when: (s) => seen(s, 'obras') && sinceOpening(s) >= 1,
   },
   {
     id: 'excavar',
     rooms: true,
     focus: 'bodega',
-    text: 'Debajo del sótano hay roca. Para meter más salas abajo, excava junto a la escalera, planta a planta; cuanto más hondo, más caro. Hacia arriba también se sube, pero cada planta solo sobresale un hueco de la de abajo.',
+    text: 'Debajo del sótano hay roca. En el modo obras se marcan los huecos que se pueden excavar, con su precio: tócalos y listo. Cuanto más hondo, más caro. Hacia arriba también se sube, pero cada planta solo sobresale un hueco de la de abajo.',
     when: (s) => seen(s, 'plano') && sinceOpening(s) >= 2,
   },
   {
