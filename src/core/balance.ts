@@ -270,8 +270,6 @@ export const JOB_SLOTS = 2;
 export const TRADE_BONUS = 1.5;
 /** Lo que rinde un héroe echando una mano (menos que cualquier trabajador con maña). */
 export const HERO_WORK = 2;
-/** Trabajo en la cocina con el que el plato de la casa anima el doble. */
-export const COOK_FULL = 6;
 /** Trabajo en la enfermería con el que los heridos se curan un día antes. */
 export const NURSE_WORK = 3;
 /** Noches de trabajo por cada punto de Maña que ya se tiene para subir otro. */
@@ -290,9 +288,6 @@ export const SEAT_TURNS = 1.5;
 /** Visitantes que se atienden sin nadie en el salón, y cuántos más por punto de trabajo. */
 export const SERVE_BASE = 2;
 export const SERVE_PER_WORK = 0.8;
-/** Cerveza por visitante atendido según el trabajo de la bodega (con un tope). */
-export const BEER_PER_WORK = 0.12;
-export const BEER_MAX = 1.5;
 /** Atractivo mínimo para que vengan nobles. */
 export const NOBLE_APPEAL = 8;
 /** Días que dura el peligro tras la visita de un espía y cuánto sube el riesgo de asalto. */
@@ -302,3 +297,21 @@ export const SPY_RISK = 0.06;
 export const BRAWL_BASE = 0.03;
 export const BRAWL_PER_VISITOR = 0.008;
 export const BRAWL_NAIPES = 0.08;
+
+// ---------- Comida y cerveza ----------
+/** Raciones que hace la cocina y jarras que saca la bodega por punto de trabajo, cada día. */
+export const COOK_PER_WORK = 2;
+export const BREW_PER_WORK = 1;
+/** La bodega bajo tierra, fresca, saca más cerveza. */
+export const CELLAR_COOL = 1.25;
+/** Lo que se guarda por hueco y nivel: la cocina un poco, la despensa mucho; la cerveza, en la bodega. */
+export const KITCHEN_STORE = 12;
+export const PANTRY_STORE = 30;
+export const CELLAR_STORE = 20;
+/** Lo que paga cada visitante por su jarra. */
+export const BEER_COIN = 1;
+/** Moral que pierde quien se acuesta sin cenar. */
+export const HUNGER_MORALE = 8;
+/** Raciones y jarras al empezar. */
+export const START_FOOD = 12;
+export const START_BEER = 10;

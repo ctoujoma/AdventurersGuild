@@ -1,14 +1,8 @@
 import { useState } from 'preact/hooks';
 import { NURSE_WORK, roomMax } from '../../core/balance';
-import {
-  appeal,
-  beerPerVisitor,
-  neighborsOf,
-  seatsOf,
-  visitorList,
-  visitorsOf,
-} from '../../core/salon';
+import { appeal, neighborsOf, seatsOf, visitorList, visitorsOf } from '../../core/salon';
 import { canWork, type Action } from '../../core/game';
+import { beerCap, brewAt, cookAt, dailyYield, eatersOf, foodCap } from '../../core/larder';
 import type { GameState, Room } from '../../core/model';
 import {
   planDemolish,
@@ -22,7 +16,6 @@ import { ROOMS, type RoomType } from '../../data/rooms';
 import { plural } from '../../core/text';
 import {
   canAssign,
-  cookBoost,
   crewOf,
   isJobRoom,
   slotsOf,
@@ -72,8 +65,6 @@ interface Props {
   onAssign?: (who: string, room: string | null) => void;
 }
 
-const num = (x: number) => x.toFixed(1).replace('.', ',').replace(',0', '');
-
 /** Lo que hace hoy la gente que trabaja en una sala. */
 function crewEffect(game: GameState, room: Room): string {
   switch (room.type) {
@@ -82,9 +73,9 @@ function crewEffect(game: GameState, room: Room): string {
       return `Hoy se atiende a ${v.served} de ${v.total} visitantes.`;
     }
     case 'bodega':
-      return `Cada visitante atendido toma cerveza: ${num(beerPerVisitor(game))} monedas más.`;
+      return `Saca ${Math.round(brewAt(game, room))} jarras al día.`;
     case 'cocina':
-      return `El plato de la casa anima ×${num(cookBoost(game))}.`;
+      return `Hace ${Math.round(cookAt(game, room))} raciones al día.`;
     case 'enfermeria':
       return workIn(game, 'enfermeria') >= NURSE_WORK
         ? 'Los heridos se curan un día antes.'
@@ -111,6 +102,38 @@ function SalonInfo({ game }: { game: GameState }) {
       <span class="tiny">
         Más Atractivo (decoración, fachada, trofeos y el nivel del salón) trae más gente; la
         reputación también.
+      </span>
+    </span>
+  );
+}
+
+/** Lo guardado y lo que se gasta: raciones en la cocina y la despensa, jarras en la bodega. */
+function LarderInfo({ game, room }: { game: GameState; room: Room }) {
+  const beer = room.type === 'bodega';
+  const v = visitorsOf(game, game.day);
+  const e = eatersOf(game);
+  const home = e.heroes.length + e.workers.length;
+  const made = dailyYield(game)[beer ? 'beer' : 'food'];
+  const need = beer ? v.served : v.served + home;
+  return (
+    <span class="salon-info">
+      <span>
+        <b>
+          {beer ? 'Jarras' : 'Raciones'} {beer ? game.beer : game.food}/
+          {beer ? beerCap(game.building) : foodCap(game.building)}
+        </b>{' '}
+        · se hacen {made} al día
+      </span>
+      <span class="muted">
+        {beer
+          ? `Hoy beberán ${v.served} visitantes.`
+          : `Hoy comen ${v.served} visitantes y cenan ${home} de casa.`}
+        {made < need ? ' Se gasta más de lo que se hace.' : ''}
+      </span>
+      <span class="tiny">
+        {beer
+          ? 'Cada jarra deja una moneda. Lo que no cabe en la bodega se echa a perder.'
+          : 'Sin raciones, los visitantes solo beben y los de casa se acuestan sin cenar. Lo que no cabe se echa a perder: la despensa guarda mucho más.'}
       </span>
     </span>
   );
@@ -310,6 +333,8 @@ export function RoomPanel({ game, roomId, onUpgrade, onLink, onWork, onMove, onA
           <span class="next-level">Mejora: {info.effect(room.level + 1)}</span>
         )}
         {room.type === 'salon' && room.level > 0 && <SalonInfo game={game} />}
+        {(room.type === 'cocina' || room.type === 'despensa' || room.type === 'bodega') &&
+          room.level > 0 && <LarderInfo game={game} room={room} />}
         {neighborsOf(game.building, room).map((n) => (
           <span key={n.text} class={n.good ? 'next-level' : 'muted room-bad'}>
             {n.text}

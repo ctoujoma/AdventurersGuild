@@ -4,9 +4,9 @@ import { NOBLE_APPEAL, RAID_NOTORIETY, SEAT_TURNS } from './balance';
 import { newGame, reduce } from './game';
 import type { GameState, Room } from './model';
 import { raidChance } from './raids';
+import { brewAt } from './larder';
 import {
   appeal,
-  beerPerVisitor,
   brawlChance,
   neighborsOf,
   noisyBeds,
@@ -79,7 +79,7 @@ describe('el salón y sus visitantes', () => {
     expect(serveCap(far)).toBeLessThan(serveCap(s));
     const up = structuredClone(s);
     room(up, 'bodega').floor = 0;
-    expect(beerPerVisitor(up)).toBeLessThan(beerPerVisitor(s));
+    expect(brewAt(up, room(up, 'bodega'))).toBeLessThan(brewAt(s, room(s, 'bodega')));
     // Las camas pegadas al salón descansan peor.
     expect(noisyBeds(s.building)).toBe(false);
     const loud = structuredClone(s);

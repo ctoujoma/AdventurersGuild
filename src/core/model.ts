@@ -3,7 +3,7 @@
  * El núcleo no conoce el DOM ni el arte; el aspecto de cada héroe sale de su `seed`.
  */
 import type { BossKind } from '../data/bosses';
-import type { CrestColor, CrestSymbol, DecorId, Dish, FacadeId, StaffId } from '../data/custom';
+import type { CrestColor, CrestSymbol, DecorId, FacadeId, StaffId } from '../data/custom';
 import type { Trade } from '../data/workers';
 import type { RoomType } from '../data/rooms';
 import type { Attrs, Challenge, ClassId, SkillId, Trait } from './party';
@@ -252,6 +252,13 @@ export interface Building {
   yard: Record<'establo' | 'patio' | 'empal', number>;
 }
 
+/** Lo que da una sala al terminar el día. */
+export interface RoomYield {
+  room: string;
+  food?: number;
+  beer?: number;
+}
+
 /** Lo que pasó al terminar un día: se enseña en la transición del amanecer. */
 export interface DawnEvent {
   t: string;
@@ -262,7 +269,6 @@ export interface Custom {
   name: string;
   color: CrestColor;
   symbol: CrestSymbol;
-  dish: Dish;
   dog: boolean;
   decor?: DecorId[];
   /** Lo que adorna la fachada (atrae visitantes). */
@@ -374,6 +380,11 @@ export interface GameState {
   clock?: number;
   /** Lo que la caja de hoy ya ha entregado durante el día. */
   till?: number;
+  /** Raciones en la cocina y la despensa, y jarras en la bodega. */
+  food: number;
+  beer: number;
+  /** Lo que hizo cada sala anoche (para enseñarlo flotando al amanecer). */
+  yields?: RoomYield[];
   /** Las salas y el patio. */
   building: Building;
   /** Nivel de cada instalación de antes, sacado del edificio (ver core/rooms.ts). */
@@ -410,7 +421,7 @@ export interface GameState {
   raid?: Raid | null;
   /** Sin asaltos hasta este día (tras repeler uno, se corre la voz). */
   truce?: number;
-  /** Cómo es la taberna: nombre, escudo, plato, personal y mascota. */
+  /** Cómo es la taberna: nombre, escudo, decoración, personal y mascota. */
   custom?: Custom;
   /** Amenaza regional (0–100): crece si se ignoran o fallan las historias. */
   threat?: number;

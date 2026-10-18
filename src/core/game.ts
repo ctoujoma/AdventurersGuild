@@ -29,6 +29,8 @@ import {
   UNPAID_MORALE,
   SCHEDULE,
   START,
+  START_BEER,
+  START_FOOD,
   chapelRest,
   healRate,
   rankIndex,
@@ -41,7 +43,6 @@ import {
   DECOR,
   FACADE,
   DEFAULT_NAME,
-  DISHES,
   DOG_PRICE,
   FEAST_MORALE,
   FEAST_PRICE,
@@ -93,6 +94,7 @@ import {
 } from './rooms';
 import { Rng } from './rng';
 import { listNames, plural } from './text';
+import { stepLarder } from './larder';
 import { brawlChance, noisyBeds, visitorList, visitorsOf } from './salon';
 import {
   addSeeker,
@@ -100,7 +102,6 @@ import {
   bardPlaying,
   canAssign,
   canHireWorker,
-  cookBoost,
   freeRoomFor,
   nurseBonus,
   stepWorkers,
@@ -137,7 +138,7 @@ export type Action =
   | { type: 'ackOpening' }
   | { type: 'guard'; id: string; on: boolean }
   | { type: 'choose'; index: number }
-  | { type: 'custom'; patch: Partial<Pick<Custom, 'name' | 'color' | 'symbol' | 'dish'>> }
+  | { type: 'custom'; patch: Partial<Pick<Custom, 'name' | 'color' | 'symbol'>> }
   | { type: 'buyDog' }
   | { type: 'decor'; id: DecorId; on: boolean }
   | { type: 'facade'; id: FacadeId }
@@ -165,7 +166,6 @@ export const customOf = (s: GameState): Custom =>
     name: DEFAULT_NAME,
     color: 'vino',
     symbol: 'jarra',
-    dish: 'pan',
     dog: false,
   };
 export const rankOf = (s: GameState) => RANKS[rankIndex(s.rep)]!;
@@ -305,6 +305,8 @@ export function newGame(seed: string): GameState {
     paid: 0,
     clock: 0,
     till: 0,
+    food: START_FOOD,
+    beer: START_BEER,
     building: uncleBuilding(),
     fac: facOf(uncleBuilding()),
     heroes: [],
@@ -667,7 +669,7 @@ export function endDay(state: GameState): GameState {
   s.till = 0;
   if (income - lost > 0) {
     events.push({
-      t: `${visits.total ? `Vinieron ${visitorList(visits)}${visits.served < visits.total ? ` (se atendió a ${visits.served})` : ''}. ` : ''}La taberna deja ${income - lost} monedas${feast ? ': ¡la fiesta ha llenado el salón!' : '.'}`,
+      t: `${visits.total ? `Vinieron ${visitorList(visits)}${visits.served < visits.total ? ` (se atendió a ${visits.served})` : ''}. ` : ''}${visits.fed < visits.served ? `Faltó comida: ${visits.served - visits.fed} solo ${visits.served - visits.fed === 1 ? 'bebió' : 'bebieron'}. ` : ''}La taberna deja ${income - lost} monedas${feast ? ': ¡la fiesta ha llenado el salón!' : '.'}`,
       k: 'good',
     });
   }
@@ -813,12 +815,8 @@ export function endDay(state: GameState): GameState {
         });
     }
 
-  // Plato de la casa: cuesta cada noche y anima a quien descansa (más si alguien cocina).
-  const c = customOf(s);
-  const dish = DISHES[c.dish];
-  const fed = dish.cost === 0 || s.gold >= dish.cost;
-  if (fed) s.gold -= dish.cost;
-  const dishMorale = fed ? Math.round(dish.morale * cookBoost(s)) : 0;
+  // Comida y cerveza: lo que tomaron los visitantes, lo que han hecho las salas y la cena.
+  stepLarder(s, visits, events);
   const decorMorale =
     (decor.includes('tarima') ? 2 : 0) +
     (decor.includes('barril') ? 1 : 0) +
@@ -831,8 +829,7 @@ export function endDay(state: GameState): GameState {
     if (h.status !== 'ok') continue;
     const vet = h.lvl >= VET_LEVEL ? s.fac.vet : 0;
     const cap = restCap(s.fac.tab) + (has(h, 'bebedor') && s.fac.tab >= 2 ? 10 : 0) + VET_CAP[vet]!;
-    const gain =
-      restMorale(s.fac.tab) + chapelRest(s.fac.cap) + dishMorale + decorMorale + VET_REST[vet]!;
+    const gain = restMorale(s.fac.tab) + chapelRest(s.fac.cap) + decorMorale + VET_REST[vet]!;
     if (h.morale < cap) h.morale = Math.min(cap, h.morale + gain);
     if (h.morale < MORALE_QUIT && !has(h, 'leal') && vet < 2 && rng.chance(DESERT_CHANCE)) {
       deserters.push(h);

@@ -1,3 +1,4 @@
+import { START_BEER, START_FOOD } from '../core/balance';
 import { emptyStats } from '../core/feats';
 import { SAVE_VERSION, type GameState } from '../core/model';
 import { facOf } from '../core/rooms';
@@ -52,6 +53,8 @@ export function parseSave(raw: string | null): GameState | null {
     s.mode ??= 'deuda';
     s.stats ??= emptyStats();
     s.feats ??= {};
+    s.food ??= START_FOOD;
+    s.beer ??= START_BEER;
     return s;
   } catch {
     return null;

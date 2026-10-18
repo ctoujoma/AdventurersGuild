@@ -2,15 +2,16 @@ import { useEffect, useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
 import { DAYS } from '../core/balance';
 import { customOf, nextPayment, nextRank, rankOf, salaries } from '../core/game';
+import { beerCap, dailyYield, foodCap, hungryTonight } from '../core/larder';
 import { plural } from './text';
 import type { GameState } from '../core/model';
 import { Counter } from './Counter';
 import { Icon } from './icons';
 
-type Tip = 'oro' | 'rep' | 'pago' | 'asalto';
+type Tip = 'oro' | 'rep' | 'comida' | 'cerveza' | 'pago' | 'asalto';
 
 /**
- * Barra superior: día, nombre y rango del gremio, oro, reputación y próximo pago. Al tocar
+ * Barra superior: día, nombre y rango del gremio, oro, reputación, comida, cerveza y próximo pago. Al tocar
  * una cifra sale debajo una línea que explica qué es.
  */
 export function Hud({ game, onSettings }: { game: GameState; onSettings: () => void }) {
@@ -31,11 +32,15 @@ export function Hud({ game, onSettings }: { game: GameState; onSettings: () => v
   const left = pay ? pay.day - game.day : 0;
   const nights = game.raid ? Math.max(0, game.raid.day - game.day) : 0;
   const when = left <= 1 ? 'mañana' : `en ${left} días`;
+  const made = dailyYield(game);
+  const hungry = hungryTonight(game);
   const tips: Record<Tip, string> = {
     oro: `Oro en la caja: ${game.gold} monedas.`,
     rep: nr
       ? `Reputación: ${game.rep}. Con ${nr.at} el gremio pasa a ser de ${nr.name}: mejores encargos y héroes.`
       : `Reputación: ${game.rep}. Ya sois el gremio más famoso de la comarca.`,
+    comida: `Raciones: ${game.food} de ${foodCap(game.building)} que caben. La cocina hace ${made.food} al día; comen los visitantes y cenan los de casa.${hungry ? ` Esta noche ${hungry} se ${hungry === 1 ? 'quedaría' : 'quedarían'} sin cenar.` : ''}`,
+    cerveza: `Jarras: ${game.beer} de ${beerCap(game.building)} que caben. La bodega saca ${made.beer} al día y cada visitante se toma una.`,
     pago: !pay
       ? ''
       : pay.amount
@@ -74,6 +79,24 @@ export function Hud({ game, onSettings }: { game: GameState; onSettings: () => v
         >
           <Icon name="star" size={16} />
           <Counter value={game.rep} />
+        </button>
+        <button
+          class={`hud-stat ${hungry ? 'warn' : ''}`}
+          aria-label={tips.comida}
+          aria-expanded={tip === 'comida'}
+          onClick={() => toggle('comida')}
+        >
+          <Icon name="pan" size={16} />
+          <Counter value={game.food} />
+        </button>
+        <button
+          class="hud-stat"
+          aria-label={tips.cerveza}
+          aria-expanded={tip === 'cerveza'}
+          onClick={() => toggle('cerveza')}
+        >
+          <Icon name="jarra" size={16} />
+          <Counter value={game.beer} />
         </button>
         {pay && (
           <button

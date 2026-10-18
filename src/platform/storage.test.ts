@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { START_BEER, START_FOOD } from '../core/balance';
 import { endDay, newGame } from '../core/game';
+import type { GameState } from '../core/model';
 import { loadGame, saveGame, type SaveStorage } from './storage';
 
 function memory(): SaveStorage & { data: string | null } {
@@ -25,6 +27,15 @@ describe('guardado', () => {
     const loaded = loadGame(mem)!;
     expect(loaded).toEqual(s);
     expect(endDay(loaded)).toEqual(endDay(s));
+  });
+
+  it('una partida de antes de la despensa empieza con la comida y la cerveza de siempre', () => {
+    const mem = memory();
+    const old: Partial<GameState> = newGame('sin-despensa');
+    delete old.food;
+    delete old.beer;
+    mem.write(JSON.stringify(old));
+    expect(loadGame(mem)).toMatchObject({ food: START_FOOD, beer: START_BEER });
   });
 
   it('saca las instalaciones del edificio guardado', () => {

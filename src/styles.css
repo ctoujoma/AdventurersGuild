@@ -221,6 +221,29 @@ button:focus-visible {
   }
 }
 
+/* En un móvil estrecho no caben todas las cifras con su aire: se juntan un poco. */
+@media (max-width: 479px) {
+  .hud {
+    gap: 6px;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  .hud-stats {
+    gap: 5px;
+  }
+
+  .hud-stat {
+    gap: 2px;
+    font-size: 15px;
+  }
+
+  .hud .btn-icon {
+    width: 30px;
+    height: 30px;
+  }
+}
+
 .hud-stat:focus-visible {
   outline: 2px solid var(--lemon);
   outline-offset: 2px;

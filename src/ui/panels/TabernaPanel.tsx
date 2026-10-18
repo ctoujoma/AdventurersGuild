@@ -6,7 +6,6 @@ import {
   CREST_COLORS,
   CREST_SYMBOLS,
   DECOR,
-  DISHES,
   FACADE,
   DOG_PRICE,
   FEAST_PRICE,
@@ -17,14 +16,13 @@ import {
   type DecorId,
   type FacadeId,
   type CrestSymbol,
-  type Dish,
 } from '../../data/custom';
 import { crestBoard } from '../../world/props';
 import { BufferImage } from '../BufferImage';
 
 interface Props {
   game: GameState;
-  onCustom: (patch: Partial<Pick<Custom, 'name' | 'color' | 'symbol' | 'dish'>>) => void;
+  onCustom: (patch: Partial<Pick<Custom, 'name' | 'color' | 'symbol'>>) => void;
   onDog: () => void;
   onDecor: (id: DecorId, on: boolean) => void;
   onFacade: (id: FacadeId) => void;
@@ -34,7 +32,7 @@ interface Props {
 
 /**
  * Tu taberna: nombre y escudo del letrero, la fiesta de la comarca, la decoración del salón,
- * el plato de la casa y los animales (el personal está con los héroes, en «Trabajo»).
+ * la fachada y los animales (el personal está con los héroes, en «Trabajo»).
  */
 export function TabernaPanel({
   game,
@@ -195,28 +193,6 @@ export function TabernaPanel({
                   </button>
                 )}
               </article>
-            );
-          })}
-        </div>
-      </section>
-
-      <section>
-        <h3 class="sec-title">Plato de la casa</h3>
-        <div class="list" role="radiogroup" aria-label="Plato de la casa">
-          {(Object.keys(DISHES) as Dish[]).map((k) => {
-            const d = DISHES[k];
-            return (
-              <button
-                key={k}
-                role="radio"
-                aria-checked={c.dish === k}
-                class="card-paper tav-option"
-                onClick={() => onCustom({ dish: k })}
-              >
-                <b>{d.name}</b>
-                <span class="muted">{d.desc}</span>
-                <span class="tiny">{d.cost ? `${d.cost} monedas cada noche` : 'Sin coste'}</span>
-              </button>
             );
           })}
         </div>
