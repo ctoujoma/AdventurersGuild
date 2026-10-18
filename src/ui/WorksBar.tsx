@@ -43,10 +43,13 @@ function Ribbon({ works: w, onMore }: Props) {
   const items = useMemo(
     () =>
       laxly(() =>
-        ORDER.filter((t) => !(ROOMS[t].unique && b.rooms.some((r) => r.type === t))).map((t) => ({
-          t,
-          spots: targetsFor(w.view, { kind: 'build', type: t }).length,
-        })),
+        ORDER.map((t) => {
+          // Las únicas que ya están se amplían desde aquí (a los lados y, el salón, hacia arriba).
+          const list = targetsFor(w.view, { kind: 'build', type: t });
+          const grow = !!ROOMS[t].unique && b.rooms.some((r) => r.type === t);
+          const cost = grow && list.length ? Math.min(...list.map((x) => x.cost)) : ROOM_COST[t][1];
+          return { t, spots: list.length, grow, cost };
+        }).filter((x) => !x.grow || x.spots > 0),
       ),
     [w.view],
   );
@@ -58,18 +61,21 @@ function Ribbon({ works: w, onMore }: Props) {
   return (
     <div class="worksbar ribbon" role="toolbar" aria-label="Modo obras">
       <div class="ribbon-rooms">
-        {items.map(({ t, spots }) => (
+        {items.map(({ t, spots, grow, cost }) => (
           <button
             key={t}
             class="ribbon-room"
             disabled={!spots}
             data-help={ROOMS[t].desc}
-            aria-label={`Construir ${ROOMS[t].name} por ${ROOM_COST[t][1]} monedas`}
+            aria-label={`${grow ? 'Ampliar' : 'Construir'} ${ROOMS[t].name} por ${cost} monedas`}
             onClick={() => w.startPick({ kind: 'build', type: t })}
           >
-            <b>{ROOMS[t].name}</b>
+            <b>
+              {grow ? 'Ampliar ' : ''}
+              {grow ? ROOMS[t].name.toLowerCase() : ROOMS[t].name}
+            </b>
             <span>
-              <Icon name="coin" size={9} /> {ROOM_COST[t][1]}
+              <Icon name="coin" size={9} /> {cost}
             </span>
           </button>
         ))}

@@ -32,6 +32,7 @@ import {
   type RoofRun,
   type RoomsLayout,
 } from './layout';
+import { NO_LOOK, salonWall, type SalonLook } from './salon';
 import { BACK } from './view3d';
 
 export type Theme = 'madera' | 'yeso' | 'piedra' | 'cueva';
@@ -66,7 +67,7 @@ const BLIND = new Set(['tesoro', 'despensa']);
 // ---------- Caras de una sala ----------
 
 /** Pared del fondo de una sala de `w`×`h` (interior), ya a la escala del fondo. */
-export function backWall(room: Room, w: number, h: number): PixelBuffer {
+export function backWall(room: Room, w: number, h: number, look: SalonLook = NO_LOOK): PixelBuffer {
   const bw = Math.round(w * BACK);
   const bh = Math.round(h * BACK);
   const b = new PixelBuffer(bw, bh);
@@ -96,7 +97,12 @@ export function backWall(room: Room, w: number, h: number): PixelBuffer {
     for (let j = 0; j < room.h; j++)
       for (let i = 0; i < room.w; i++)
         windowAt(b, windowX(i), Math.round((j * PITCH + 18) * BACK), room, ruin);
-  if (!bare(room) && !ruin) decorate(b, room);
+  if (!bare(room) && !ruin) {
+    if (room.type === 'salon') {
+      const windows = Array.from({ length: room.w }, (_, i) => windowX(i));
+      salonWall(b, room, look, windows, CELL_BACK, wain);
+    } else decorate(b, room);
+  }
   if (ruin) {
     cobweb(b, 1, 1, 8, 1);
     cobweb(b, bw - 2, 1, 6, -1);
@@ -155,15 +161,6 @@ function decorate(b: PixelBuffer, room: Room) {
     case 'recibidor':
       coatRack(b, 8, floor - Math.round(64 * BACK));
       hang(Prop.sconce(), 0, 54, 30);
-      break;
-    case 'salon':
-      // El tablón de anuncios, junto a la barra.
-      hang(Prop.noticeBoard(Math.min(4, lvl + 1), lvl >= 2), 0, 34, 0);
-      if (room.w > 1) {
-        hang(Prop.shelf(36, 4, `salon-${room.id}`, true), 1, 40);
-        hang(Prop.antlers(), 1, 66, 6);
-      } else hang(Prop.antlers(), 0, 70, 8);
-      if (room.w > 2) hang(Prop.dartboard(), 2, 40, 12);
       break;
     case 'cocina': {
       b.hline(6, 8, b.w - 12, P.slate);

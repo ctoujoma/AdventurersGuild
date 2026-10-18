@@ -10,6 +10,17 @@ import type { Room } from '../../core/model';
 import { stoneWall } from '../paint';
 import * as Prop from '../props';
 import { DEPTH } from './layout';
+import {
+  NO_LOOK,
+  bar,
+  barrels,
+  hearth as salonHearth,
+  larder,
+  logPile,
+  stage,
+  tableSet,
+  type SalonLook,
+} from './salon';
 
 export type RGB = [number, number, number];
 
@@ -153,7 +164,7 @@ const bunkCount = (room: Room, w: number) =>
 const cotCount = (room: Room) => Math.min(3, room.level + room.w - 1);
 
 /** Muebles de una sala de ancho `w` (interior). */
-export function furnish(room: Room, w: number): Thing[] {
+export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing[] {
   const t: Thing[] = [];
   const add = (img: PixelBuffer, x: number, z: number, y = 0, light?: Glow) =>
     t.push({ img, x, z, y, light });
@@ -189,15 +200,35 @@ export function furnish(room: Room, w: number): Thing[] {
       add(Prop.barrel(), 14, FRONT);
       break;
     case 'salon': {
-      add(Prop.kegStand(Math.min(3, lvl + 1)), 22, WALL + 2);
-      add(Prop.counter(Math.min(4, lvl)), 44, WALL - 16);
-      add(Prop.fireplace(Math.min(3, lvl)), w - 40, WALL + 2, 0, fire(10, 90, FIRE, true));
-      for (const { x: tx, z } of tables(room, w)) {
-        add(Prop.roundTable(lvl >= 3), tx, z);
+      const decor = look.decor;
+      const big = decor.includes('chimenea');
+      add(bar(lvl, decor.includes('barril')), 44, WALL - 16);
+      add(barrels(), 17, FRONT + 4);
+      add(
+        salonHearth(lvl, look.crest, big),
+        w - 40,
+        WALL + 2,
+        0,
+        fire(10, big ? 120 : 90, FIRE, true),
+      );
+      add(logPile(), w - 13, WALL - 12);
+      if (look.dog) add(Prop.dog(false), w - 46, FRONT + 6);
+      if (decor.includes('tarima')) add(stage(), w - 94, WALL - 2);
+      t.push({ img: larder(), x: 84, z: WALL - 8, y: 0, hang: true });
+      tables(room, w).forEach(({ x: tx, z }, i) => {
+        const cards = i === 0 && decor.includes('naipes');
+        const candle = lvl >= 2 && !cards;
+        add(
+          tableSet(`${room.id}-${i}`, lvl >= 3, candle, cards),
+          tx,
+          z,
+          0,
+          candle ? { dy: 18, r: 34, color: CANDLE, power: 0.45, flicker: 0.12 } : undefined,
+        );
         add(Prop.stool(), tx - 18, z - 2);
         add(Prop.stool(), tx + 18, z + 2);
-      }
-      if (room.h > 1 || lvl >= 3)
+      });
+      if (room.h > 1 || lvl >= 3 || decor.includes('lampara'))
         t.push({
           img: Prop.chandelier(),
           x: w / 2 + 20,

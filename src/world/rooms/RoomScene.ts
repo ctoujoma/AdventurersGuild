@@ -32,15 +32,18 @@ import type { Point, SceneCallbacks, SceneModel } from '../scene';
 import { LANTERN, dummy, furnish, type Glow, type RGB } from './furniture';
 import { Crowd } from './crowd';
 import { RaidShow } from './raid';
+import { NO_LOOK, type SalonLook } from './salon';
 import { Look, MAX_LIGHTS, mesh, quad, sharedUniforms, type Corners } from './gl';
 import { route, type Place } from './people';
 import {
+  CELL_W,
   DEPTH,
   PATIO_W,
   PARTITION,
   PITCH,
   SLAB,
   WALL,
+  colX,
   floorTop,
   floorY,
   focusPoint,
@@ -347,7 +350,14 @@ export class RoomScene {
     this.model = model;
     const b = model.building;
     if (!b) return;
-    const key = JSON.stringify([b, model.crest, model.facade]);
+    const key = JSON.stringify([
+      b,
+      model.crest,
+      model.facade,
+      model.decor,
+      model.trophies,
+      model.dog,
+    ]);
     if (model.visitors) this.crowd.setVisitors(model.visitors);
     if (key === this.key) {
       this.crowd.setPeople(model.heroes);
@@ -773,16 +783,32 @@ export class RoomScene {
     const seed = `${room.id}${room.type}`;
     const sides = sidesOf(b, room);
     this.box(rect, theme, ambient, sun, seed, {
-      back: backWall(room, r.w, r.h),
+      back: backWall(room, r.w, r.h, this.salonLook()),
       floorTex: floorTex(room, theme, r.w, seed),
       sides,
       floor: room.floor,
       door: room.type === 'recibidor',
     });
+    // En voladizo (sin nada debajo), la cara de abajo del suelo, que se ve desde el patio.
+    if (room.floor > 0) {
+      const under = { ambient: OUTDOOR, sun: 0.6, dither: 0 };
+      const y = r.y + r.h + SLAB;
+      for (let c = room.col; c < room.col + room.w; c++) {
+        if (b.rooms.some((o) => this.covers(o, c, room.floor - 1))) continue;
+        const x0 = Math.max(r.x, colX(b, c) - WALL);
+        const x1 = Math.min(r.x + r.w, colX(b, c) + CELL_W + WALL);
+        this.plane(
+          this.world,
+          ceilingTex('madera', Math.round(x1 - x0), `${seed}bajo${c}`),
+          [at(x0, y, DEPTH), at(x1, y, DEPTH), at(x1, y, 0), at(x0, y, 0)],
+          under,
+        );
+      }
+    }
     const zone = this.zoneOf(rect);
     const floor3 = GROUND - (r.y + r.h);
     const ceil3 = GROUND - r.y;
-    for (const th of furnish(room, r.w)) {
+    for (const th of furnish(room, r.w, this.salonLook())) {
       const k = scaleAt(th.z);
       const h = th.img.h / k;
       const x = r.x + th.x;
@@ -795,6 +821,13 @@ export class RoomScene {
       const img = scaffold(r.w * k, r.h * k);
       this.figure(this.world, img, r.x + r.w / 2, r.y + r.h, 3, ROOM_DIM, sun);
     }
+  }
+
+  /** Lo que el salón enseña de la partida: decoración, escudo, trofeos y el perro. */
+  private salonLook(): SalonLook {
+    const m = this.model;
+    if (!m) return NO_LOOK;
+    return { decor: m.decor, crest: m.crest, trophies: m.trophies, dog: m.dog };
   }
 
   /** Zona que alumbran los focos de un hueco: su interior y media pared de cada lado. */

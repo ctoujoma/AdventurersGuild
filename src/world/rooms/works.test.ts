@@ -75,4 +75,19 @@ describe('ganar sitio tocando la escena', () => {
       targetsFor(s, { kind: 'build', type: 'despensa' }).every((t) => t.label === 'Despensa'),
     ).toBe(true);
   });
+
+  it('las salas únicas que ya están se amplían desde la cinta: a los lados y el salón hacia arriba', () => {
+    const s = open();
+    // Sin cocina, dormitorio ni capilla, el salón tiene sitio a la derecha y encima.
+    const gone = ['cocina', 'dormitorio', 'capilla'];
+    s.building.rooms = s.building.rooms.filter((r) => !gone.includes(r.type));
+    const list = targetsFor(s, { kind: 'build', type: 'salon' });
+    const dirs = list.map((t) => (t.action.type === 'extend' ? t.action.dir : null));
+    expect(dirs).toContain('right');
+    expect(dirs).toContain('up');
+    for (const t of list) {
+      expect(t.label).toBe('Ampliar salón');
+      expect(valid(s, t.action)).toBe(true);
+    }
+  });
 });

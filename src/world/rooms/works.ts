@@ -10,10 +10,12 @@ import type { GameState } from '../../core/model';
 import {
   planBuild,
   planDig,
+  planExtend,
   planMove,
   planPlot,
   planStair,
   roomAt,
+  type ExtendDir,
   type Plan,
 } from '../../core/rooms';
 import { ROOMS, type RoomType } from '../../data/rooms';
@@ -58,7 +60,9 @@ const cell = (s: GameState, c: number, f: number): Rect => ({
 export function pickTitle(s: GameState, pick: Pick): string {
   switch (pick.kind) {
     case 'build':
-      return `Elige dónde construir: ${ROOMS[pick.type].name.toLowerCase()}`;
+      return ROOMS[pick.type].unique && s.building.rooms.some((r) => r.type === pick.type)
+        ? `Elige por dónde ampliar: ${ROOMS[pick.type].name.toLowerCase()}`
+        : `Elige dónde construir: ${ROOMS[pick.type].name.toLowerCase()}`;
     case 'move': {
       const r = s.building.rooms.find((x) => x.id === pick.id);
       return r ? `Elige a dónde mover: ${ROOMS[r.type].name.toLowerCase()}` : 'Elige sitio';
@@ -88,6 +92,23 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
   switch (pick.kind) {
     case 'build': {
       const name = ROOMS[pick.type].name;
+      // Las salas que solo puede haber una (salón, cámara…) crecen desde la que ya hay: a los
+      // lados y, el salón, hacia arriba.
+      const own = ROOMS[pick.type].unique ? b.rooms.find((r) => r.type === pick.type) : undefined;
+      if (own) {
+        const grow: [ExtendDir, Rect][] = [
+          ['left', roomRect(b, { ...own, col: own.col - 1, w: 1 })],
+          ['right', roomRect(b, { ...own, col: own.col + own.w, w: 1 })],
+          ['up', roomRect(b, { ...own, floor: own.floor + own.h, h: 1 })],
+        ];
+        for (const [dir, rect] of grow)
+          add(planExtend(s, own.id, dir), rect, `Ampliar ${name.toLowerCase()}`, {
+            type: 'extend',
+            id: own.id,
+            dir,
+          });
+        break;
+      }
       const hi = pick.type === 'torre' ? MAX_UP + 1 : MAX_UP;
       for (const f of floors(-MAX_DOWN, hi))
         for (let c = 0; c < b.cols; c++) {
