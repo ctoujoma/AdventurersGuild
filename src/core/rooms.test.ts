@@ -10,7 +10,7 @@ import {
 } from './balance';
 import { canWork, endDay, newGame, reduce, tryWorks, type Action } from './game';
 import type { GameState, Room } from './model';
-import { LOCKED, beds, facOf, problem, uncleBuilding, upgradeCostOf } from './rooms';
+import { LOCKED, beds, extendCostOf, facOf, problem, uncleBuilding, upgradeCostOf } from './rooms';
 
 const room = (s: GameState, type: Room['type']) => s.building.rooms.find((r) => r.type === type)!;
 
@@ -185,6 +185,43 @@ describe('obras', () => {
     // Sin el solar, la despensa no cabe: no se hace nada.
     expect(reduce(s, { type: 'works', steps: steps.slice(1) })).toBe(s);
     expect(tryWorks(s, steps.slice(1))).toEqual({ error: 'No cabe en el solar.' });
+  });
+
+  it('construir al lado de una sala igual y de nivel 1 cuenta como ampliarla; con otro nivel, no', () => {
+    let s = ok(ok(open(), { type: 'buyPlot' }), { type: 'buyPlot' });
+    s = endDay(ok(s, { type: 'build', room: 'despensa', col: 4, floor: 0 }));
+    const base = s;
+    const gold = s.gold;
+    s = ok(s, { type: 'build', room: 'despensa', col: 5, floor: 0 });
+    const d = s.building.rooms.filter((r) => r.type === 'despensa');
+    expect(d).toHaveLength(1);
+    expect(d[0]!.w).toBe(2);
+    expect(d[0]!.works?.kind).toBe('extend');
+    expect(gold - s.gold).toBe(extendCostOf(d[0]!, 1));
+    expect(gold - s.gold).toBeLessThan(ROOM_COST.despensa[1]!);
+    // Si la de al lado es de otro nivel, la nueva va aparte.
+    s = ok(base, {
+      type: 'upgradeRoom',
+      id: base.building.rooms.find((r) => r.type === 'despensa')!.id,
+    });
+    s = ok(s, { type: 'build', room: 'despensa', col: 5, floor: 0 });
+    expect(s.building.rooms.filter((r) => r.type === 'despensa')).toHaveLength(2);
+  });
+
+  it('al igualar el nivel, dos salas iguales que se tocan se juntan, sin pasar del ancho máximo', () => {
+    let s = ok(ok(open(), { type: 'buyPlot' }), { type: 'buyPlot' });
+    s = endDay(ok(s, { type: 'build', room: 'despensa', col: 4, floor: 0 }));
+    const first = s.building.rooms.find((r) => r.type === 'despensa')!;
+    s = ok(s, { type: 'upgradeRoom', id: first.id });
+    s = endDay(ok(s, { type: 'build', room: 'despensa', col: 5, floor: 0 }));
+    expect(s.building.rooms.filter((r) => r.type === 'despensa')).toHaveLength(2);
+    const second = s.building.rooms.find((r) => r.type === 'despensa' && r.col === 5)!;
+    s = ok(s, { type: 'upgradeRoom', id: second.id });
+    const d = s.building.rooms.filter((r) => r.type === 'despensa');
+    expect(d).toHaveLength(1);
+    expect(d[0]!.w).toBe(2);
+    expect(d[0]!.level).toBe(2);
+    expect(problem(s.building)).toBeNull();
   });
 
   it('sin oro no hay obra', () => {

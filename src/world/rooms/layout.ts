@@ -105,7 +105,7 @@ export function roomsLayout(b: Building): RoomsLayout {
     x1: right + RIGHT,
     y0: Math.min(0, sky - SKY),
     // Debajo, sitio para que la barra de abajo no tape la última planta.
-    y1: floorY(bottom) + SLAB + 64,
+    y1: floorY(bottom) + SLAB + 90,
     left: 0,
     right,
     top,

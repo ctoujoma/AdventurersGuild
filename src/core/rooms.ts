@@ -252,9 +252,48 @@ function newRoom(b: Building, type: RoomType, col: number, floor: number): Room 
   return { id: `r${n + 1}`, type, col, floor, w: 1, h: 1, level: 1, spent: 0 };
 }
 
+/**
+ * Dos salas del mismo tipo y nivel que se tocan en la misma planta se juntan en una (si no se
+ * pasan del ancho máximo y no hay una escalera entre ellas). Las que están en obras esperan.
+ */
+function joinable(b: Building, a: Room, c: Room): boolean {
+  return (
+    a !== c &&
+    a.type === c.type &&
+    a.type !== 'torre' &&
+    a.level === c.level &&
+    a.floor === c.floor &&
+    a.h === c.h &&
+    a.col + a.w === c.col &&
+    !b.stairs.includes(c.col) &&
+    a.w + c.w <= ROOMS[a.type].maxW &&
+    !a.works &&
+    !c.works
+  );
+}
+
+export function mergeRooms(b: Building): void {
+  for (;;) {
+    let pair: [Room, Room] | null = null;
+    for (const a of b.rooms) {
+      const c = b.rooms.find((x) => joinable(b, a, x));
+      if (c) {
+        pair = [a, c];
+        break;
+      }
+    }
+    if (!pair) return;
+    const [a, c] = pair;
+    a.w += c.w;
+    a.spent += c.spent;
+    b.rooms = b.rooms.filter((x) => x !== c);
+  }
+}
+
 // ---------- Planes de obra ----------
 
 function finish(s: GameState, b: Building, cost: number): Plan {
+  mergeRooms(b);
   const e = problem(b);
   if (e) return { error: e };
   if (cost > s.gold) return { error: `Te faltan ${cost - s.gold} monedas.` };
@@ -280,10 +319,26 @@ export function planUpgrade(s: GameState, id: string): Plan {
   return finish(s, b, cost);
 }
 
-/** Construir una sala nueva de un hueco. Tarda una noche en estar lista. */
+/**
+ * Construir una sala nueva de un hueco. Tarda una noche en estar lista. Al lado de otra igual y
+ * de nivel 1 cuenta como ampliarla: se junta con ella y cuesta lo que una ampliación.
+ */
 export function planBuild(s: GameState, type: RoomType, col: number, floor: number): Plan {
   if (!worksOpen(s)) return { error: LOCKED };
   const b = structuredClone(s.building);
+  const fresh: Room = { ...newRoom(b, type, col, floor), works: undefined };
+  const next = b.rooms.find(
+    (r) => !roomAt(b, col, floor) && (joinable(b, r, fresh) || joinable(b, fresh, r)) && r.h === 1,
+  );
+  if (next) {
+    const from = { col: next.col, w: next.w, h: next.h };
+    if (next.col > col) next.col = col;
+    next.w++;
+    const cost = extendCostOf(next, 1);
+    next.spent += cost;
+    next.works = { kind: 'extend', nights: WORK_NIGHTS.extend, from };
+    return finish(s, b, cost);
+  }
   const cost = ROOM_COST[type][1]!;
   b.rooms.push({
     ...newRoom(b, type, col, floor),
@@ -435,7 +490,10 @@ export function stepWorks(s: GameState, events: DawnEvent[]) {
     delete r.works;
     done = true;
   }
-  if (done) syncFac(s);
+  if (done) {
+    mergeRooms(s.building);
+    syncFac(s);
+  }
 }
 
 /** Modo prueba: todo al máximo, con los cuartos de veteranos donde quepan. */

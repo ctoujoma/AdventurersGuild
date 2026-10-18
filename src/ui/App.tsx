@@ -45,6 +45,7 @@ import { RoomPanel, type RoomLink } from './panels/RoomPanel';
 import { ObrasPanel } from './panels/ObrasPanel';
 import { WorksBar } from './WorksBar';
 import { useWorks } from './works';
+import { LOCKED, worksOpen } from '../core/rooms';
 import { RoomScene } from '../world/rooms/RoomScene';
 import type { Pick } from '../world/rooms/works';
 import { ROOMS } from '../data/rooms';
@@ -663,6 +664,20 @@ export function App() {
           >
             <Icon name="home" size={16} />
           </button>
+          {roomsLive && (
+            <button
+              class={`btn-icon ${works.pick?.kind === 'expand' ? 'is-on' : ''}`}
+              aria-label="Ganar sitio: excavar o comprar solar"
+              data-help="Ganar sitio: marca los huecos que se pueden excavar y el solar de al lado, con su precio. Tócalos para pagarlos."
+              onClick={() => {
+                if (works.pick?.kind === 'expand') works.cancelPick();
+                else if (!worksOpen(works.view)) toast(LOCKED);
+                else pickSpot({ kind: 'expand' });
+              }}
+            >
+              <Icon name="pico" size={16} />
+            </button>
+          )}
         </div>
         {!panel && (works.pick || works.planning) && (
           <WorksBar works={works} onMore={() => openPanel('gremio')} />

@@ -3869,3 +3869,11 @@ textarea:focus-visible,
   width: 2px;
   background: var(--white);
 }
+
+/* Botón de la escena encendido (ganar sitio). */
+.btn-icon.is-on {
+  background: var(--gold);
+  box-shadow:
+    0 0 0 2px var(--ink),
+    inset 0 -3px 0 var(--orange);
+}
