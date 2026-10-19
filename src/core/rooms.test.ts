@@ -6,6 +6,7 @@ import {
   ROOM_COST,
   START,
   STAIR_COST,
+  STAIR_STEP,
   UPGRADE_COST,
   capacity,
 } from './balance';
@@ -20,7 +21,16 @@ import {
   type Action,
 } from './game';
 import type { GameState, Room } from './model';
-import { LOCKED, beds, extendCostOf, facOf, problem, uncleBuilding, upgradeCostOf } from './rooms';
+import {
+  LOCKED,
+  beds,
+  extendCostOf,
+  facOf,
+  problem,
+  stairCost,
+  uncleBuilding,
+  upgradeCostOf,
+} from './rooms';
 
 const room = (s: GameState, type: Room['type']) => s.building.rooms.find((r) => r.type === type)!;
 
@@ -63,7 +73,7 @@ describe('la taberna del tío', () => {
     no(s, { type: 'demolish', id: forja.id }, LOCKED);
     no(s, { type: 'dig', col: 0, floor: -2 }, LOCKED);
     no(s, { type: 'buyPlot' }, LOCKED);
-    no(s, { type: 'addStair', at: 3 }, LOCKED);
+    no(s, { type: 'addStair', at: 3, floor: 0 }, LOCKED);
     s = ok(s, { type: 'upgradeRoom', id: forja.id });
     expect(s.fac.forja).toBe(1);
     expect(s.gold).toBe(9999 - UPGRADE_COST.forja[1]!);
@@ -101,14 +111,36 @@ describe('obras', () => {
     expect(problem(s.building)).toBeNull();
   });
 
-  it('nada cruza la escalera ni se queda sin paso', () => {
+  it('escaleras por tramos: nada las cruza, sin límite y cada tramo cuesta un poco más', () => {
     const s = ok(open(), { type: 'buyPlot' });
-    no(s, { type: 'addStair', at: 2 }, /cruzar la escalera/);
+    no(s, { type: 'addStair', at: 2, floor: 0 }, /cruzar la escalera/);
     no(s, { type: 'build', room: 'despensa', col: 4, floor: -1 }, /excavar/);
-    const t = ok(s, { type: 'addStair', at: 3 });
-    expect(t.building.stairs).toEqual([1, 3]);
-    expect(t.gold).toBe(9999 - PLOT_COST[0] - STAIR_COST);
-    no(t, { type: 'addStair', at: 4 }, /dos escaleras/);
+    // Un tramo suelto en el aire, no.
+    no(s, { type: 'addStair', at: 3, floor: 3 }, /tiene que salir/);
+    const first = stairCost(s.building);
+    expect(first).toBe(STAIR_COST + 3 * STAIR_STEP);
+    const t = ok(s, { type: 'addStair', at: 3, floor: 0 });
+    expect(t.building.stairs).toContainEqual({ at: 3, floor: 0 });
+    expect(t.gold).toBe(9999 - PLOT_COST[0] - first);
+    // La columna nueva no corta el paso entre salas (sin tramo, es un pasillo).
+    expect(problem(t.building)).toBeNull();
+    no(t, { type: 'addStair', at: 3, floor: 0 }, /ya hay escalera/);
+    const u = ok(t, { type: 'addStair', at: 3, floor: 1 });
+    expect(t.gold - u.gold).toBe(first + STAIR_STEP);
+    // Bajo tierra la escalera abre su hueco y junto a ella se puede excavar.
+    no(u, { type: 'dig', col: 3, floor: -2 }, /junto a la escalera/);
+    let v = ok(u, { type: 'addStair', at: 3, floor: -1 });
+    v = ok(v, { type: 'addStair', at: 3, floor: -2 });
+    v = ok(v, { type: 'dig', col: 3, floor: -2 });
+    expect(v.building.dug).toContain('3,-2');
+  });
+
+  it('a una planta solo se llega si los tramos llegan a ella', () => {
+    const s = open();
+    // Sin el tramo de la planta 1 a la 2, la sala de mapas se queda sin paso.
+    const b = structuredClone(s.building);
+    b.stairs = b.stairs.filter((x) => x.floor !== 1);
+    expect(problem(b)).toMatch(/Sala de mapas: se quedaría sin paso/);
   });
 
   it('las salas únicas no se repiten', () => {
@@ -162,8 +194,11 @@ describe('obras', () => {
     let s = open();
     no(s, { type: 'dig', col: 0, floor: -3 }, /junto a la escalera/);
     no(s, { type: 'dig', col: 3, floor: -2 }, /junto a la escalera/);
+    // Junto al rellano de más abajo, la escalera baja un tramo con lo excavado.
+    const flight = stairCost(s.building);
     s = ok(s, { type: 'dig', col: 0, floor: -2 });
-    expect(s.gold).toBe(9999 - DIG_COST[2]);
+    expect(s.gold).toBe(9999 - DIG_COST[2] - flight);
+    expect(s.building.stairs).toContainEqual({ at: 1, floor: -2 });
     s = ok(s, { type: 'dig', col: 0, floor: -3 });
     s = ok(s, { type: 'dig', col: 1, floor: -3 });
     no(s, { type: 'dig', col: 1, floor: -3 }, /Ya está excavado/);
@@ -188,7 +223,9 @@ describe('obras', () => {
     const next = reduce(s, { type: 'works', steps });
     expect(next.building.cols).toBe(5);
     expect(next.building.rooms.some((r) => r.type === 'despensa' && r.col === 4)).toBe(true);
-    expect(next.gold).toBe(9999 - PLOT_COST[0] - ROOM_COST.despensa[1]! - DIG_COST[2]);
+    expect(next.gold).toBe(
+      9999 - PLOT_COST[0] - ROOM_COST.despensa[1]! - DIG_COST[2] - stairCost(s.building),
+    );
     // Sin el solar, la despensa no cabe: no se hace nada.
     expect(reduce(s, { type: 'works', steps: steps.slice(1) })).toBe(s);
     expect(tryWorks(s, steps.slice(1))).toEqual({ error: 'No cabe en el solar.' });

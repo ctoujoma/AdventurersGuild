@@ -25,7 +25,7 @@ import {
 } from './balance';
 import type { Building, GameState, Room } from './model';
 import { Rng } from './rng';
-import { active } from './rooms';
+import { active, isShaft } from './rooms';
 import { workIn } from './workers';
 
 /** El salón en uso (o null si está roto o en obras). */
@@ -39,8 +39,8 @@ export function besides(b: Building, r: Room, type: RoomType): boolean {
   return b.rooms.some((o) => {
     if (o === r || o.type !== type || active(o).level === 0) return false;
     if (o.floor > r.floor + r.h - 1 || o.floor + o.h - 1 < r.floor) return false;
-    if (o.col + o.w === r.col) return !b.stairs.includes(r.col);
-    if (o.col === r.col + r.w) return !b.stairs.includes(o.col);
+    if (o.col + o.w === r.col) return !isShaft(b, r.col);
+    if (o.col === r.col + r.w) return !isShaft(b, o.col);
     return false;
   });
 }

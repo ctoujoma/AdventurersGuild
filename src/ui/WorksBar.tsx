@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
-import { ROOM_COST, STAIR_COST } from '../core/balance';
-import { laxly } from '../core/rooms';
+import { ROOM_COST } from '../core/balance';
+import { laxly, stairCost } from '../core/rooms';
 import { ROOMS, type RoomType } from '../data/rooms';
 import { pickTitle, targetsFor } from '../world/rooms/works';
 import { Icon } from './icons';
@@ -53,10 +53,7 @@ function Ribbon({ works: w, onMore }: Props) {
       ),
     [w.view],
   );
-  const stairs = useMemo(
-    () => (b.stairs.length < 2 ? laxly(() => targetsFor(w.view, { kind: 'stair' })).length : 0),
-    [w.view],
-  );
+  const stairs = useMemo(() => laxly(() => targetsFor(w.view, { kind: 'stair' })).length, [w.view]);
   const n = w.steps.length;
   const [leaving, setLeaving] = useState(false);
   useEffect(() => setLeaving(false), [n]);
@@ -81,19 +78,18 @@ function Ribbon({ works: w, onMore }: Props) {
             </span>
           </button>
         ))}
-        {b.stairs.length < 2 && (
-          <button
-            class="ribbon-room"
-            disabled={!stairs}
-            aria-label={`Otra escalera por ${STAIR_COST} monedas`}
-            onClick={() => w.startPick({ kind: 'stair' })}
-          >
-            <b>Escalera</b>
-            <span>
-              <Icon name="coin" size={9} /> {STAIR_COST}
-            </span>
-          </button>
-        )}
+        <button
+          class="ribbon-room"
+          disabled={!stairs}
+          data-help="Un tramo une una planta con la de encima. Cada tramo cuesta un poco más."
+          aria-label={`Tramo de escalera por ${stairCost(b)} monedas`}
+          onClick={() => w.startPick({ kind: 'stair' })}
+        >
+          <b>Escalera</b>
+          <span>
+            <Icon name="coin" size={9} /> {stairCost(b)}
+          </span>
+        </button>
       </div>
       <span class="worksbar-text ribbon-text">
         {n ? (

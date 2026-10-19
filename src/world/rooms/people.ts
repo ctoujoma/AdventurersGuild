@@ -31,7 +31,7 @@ export function segments(L: RoomsLayout): Segments {
   };
   for (const { room, rect } of L.rooms)
     if (room.type !== 'torre') push(room.floor, rect.x, rect.x + rect.w);
-  for (let f = L.deepest; f <= L.top; f++) for (const s of L.stairs) push(f, s, s + STAIR_W);
+  for (const s of L.stairs) for (const f of [...s.floors, ...s.halls]) push(f, s.x, s.x + STAIR_W);
   // El patio, delante del recibidor.
   push(0, -PATIO_W, 0);
   const out: Segments = new Map();
@@ -61,26 +61,41 @@ export function route(L: RoomsLayout, from: Place, to: Place, S = segments(L)): 
   const z = segOf(S, to);
   if (a < 0 || z < 0) return null;
   if (from.floor === to.floor && a === z) return [to];
-  // Nodos: cada escalera en cada planta. Dijkstra sencillo (son pocos).
+  // Nodos: cada rellano de cada escalera. Dijkstra sencillo (son pocos).
   const nodes: Place[] = [];
-  for (let f = L.deepest; f <= L.top; f++)
-    for (const s of L.stairs) nodes.push({ x: s + STAIR_W / 2, floor: f });
+  const shaft: number[] = [];
+  L.stairs.forEach((s, k) => {
+    for (const f of s.floors) {
+      nodes.push({ x: s.x + STAIR_W / 2, floor: f });
+      shaft.push(k);
+    }
+  });
   const n = nodes.length;
   const dist = new Array<number>(n).fill(Infinity);
   const prev = new Array<number>(n).fill(-1);
   const done = new Array<boolean>(n).fill(false);
-  const linked = (p: Place, q: Place) =>
-    p.floor === q.floor ? segOf(S, p) === segOf(S, q) : p.x === q.x;
+  const level = (p: Place, q: Place) => p.floor === q.floor && segOf(S, p) === segOf(S, q);
+  // Dos rellanos se unen por la planta o, en la misma escalera, por el tramo de en medio.
+  const linked = (i: number, j: number) => {
+    const p = nodes[i]!;
+    const q = nodes[j]!;
+    if (p.floor === q.floor) return level(p, q);
+    const s = L.stairs[shaft[i]!]!;
+    return (
+      shaft[i] === shaft[j] &&
+      Math.abs(p.floor - q.floor) === 1 &&
+      s.flights.includes(Math.min(p.floor, q.floor))
+    );
+  };
   const cost = (p: Place, q: Place) => Math.abs(p.x - q.x) + Math.abs(p.floor - q.floor) * PITCH;
-  for (let i = 0; i < n; i++)
-    if (linked(from, nodes[i]!) && nodes[i]!.floor === from.floor) dist[i] = cost(from, nodes[i]!);
+  for (let i = 0; i < n; i++) if (level(from, nodes[i]!)) dist[i] = cost(from, nodes[i]!);
   for (;;) {
     let u = -1;
     for (let i = 0; i < n; i++) if (!done[i] && (u < 0 || dist[i]! < dist[u]!)) u = i;
     if (u < 0 || dist[u] === Infinity) break;
     done[u] = true;
     for (let v = 0; v < n; v++) {
-      if (done[v] || !linked(nodes[u]!, nodes[v]!)) continue;
+      if (done[v] || !linked(u, v)) continue;
       const d = dist[u]! + cost(nodes[u]!, nodes[v]!);
       if (d < dist[v]!) {
         dist[v] = d;

@@ -695,7 +695,7 @@ export class RoomScene {
         s.floor >= 0 ? 0.35 : 0,
         `escalera${s.s}${s.floor}`,
         {
-          back: stairBack(themeOf(s.floor), interior(s.rect).w, s.rect.h, s.floor),
+          back: stairBack(themeOf(s.floor), interior(s.rect).w, s.rect.h, s.floor, s.steps),
           sides: { left: [left], right: [right] },
           floor: s.floor,
         },

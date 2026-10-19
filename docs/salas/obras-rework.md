@@ -146,12 +146,16 @@ Rama: `claude/sharp-mendel-apsm2a` (PR #23 abierto contra `salas`). Cada punto, 
 
 ### 3. Escaleras por tramos
 
-- [ ] 3.1 Modelo: `Building.stairs` → tramos `{ at, floor }` (une `floor` y `floor + 1` en la
-      columna `at`). La columna de escalera existe si tiene algún tramo. Sube `SAVE_VERSION`.
-- [ ] 3.2 Reglas (paso, excavar junto a escalera, salas que no cruzan escalera, fusionar), caminos
-      (`people.ts`, `assault.ts`), geometría (`layout.ts`, `textures.ts`), sin límite y con
-      precio creciente. Tests.
-- [ ] 3.3 Construir tramos desde la cinta tocando sitios en la escena.
+- [x] 3.1 Modelo: `Building.stairs` → tramos `{ at, floor }` (une `floor` y `floor + 1` en la
+      columna `at`). La columna de escalera existe si tiene algún tramo. `SAVE_VERSION` 4.
+- [x] 3.2 Reglas: rellano donde llega un tramo; sin tramo y con sala a los dos lados, la columna
+      es un **pasillo** (se pasa; así poner escalera nunca corta caminos). Cada tramo sale de
+      una sala, un hueco excavado u otro tramo. Excavar junto al rellano de más abajo baja la
+      escalera un tramo (y lo cobra). Sin límite; precio `STAIR_COST + STAIR_STEP × tramos`.
+      Caminos (`people.ts`), asaltos (`assault.ts`), geometría (`layout.ts`: `Shaft` con
+      `flights`, `floors`, `halls`) y texturas (`stairCells` con `steps`). Tests.
+- [x] 3.3 Tramos desde la cinta («Escalera», con su precio): cada tramo es una casilla en la
+      escena (de medio rellano a medio rellano) y se encadenan sin salir de la elección.
 
 ### 4. Cinta y sensación
 

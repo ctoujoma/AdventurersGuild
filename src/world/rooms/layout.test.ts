@@ -45,7 +45,7 @@ describe('geometría por salas', () => {
       expect(r.x + r.w).toBeLessThanOrEqual(L.right);
       expect(r.y).toBeGreaterThan(L.y0);
       expect(r.y + r.h).toBeLessThan(L.y1);
-      for (const s of L.stairs) expect(s >= r.x + r.w || s + STAIR_W <= r.x).toBe(true);
+      for (const s of L.stairs) expect(s.x >= r.x + r.w || s.x + STAIR_W <= r.x).toBe(true);
       for (const o of L.rooms) if (o !== a) expect(overlap(r, o.rect)).toBe(false);
     }
     expect(L.top).toBe(2);

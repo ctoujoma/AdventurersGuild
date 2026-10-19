@@ -137,8 +137,8 @@ export function useWorks({ game, dispatch, toast, focus, raise }: Deps): Works {
         audio.play('deselect');
         return;
       }
-      // Excavar y ampliar siguen marcados (se encadenan); lo demás acaba al hacerlo.
-      if (work(t.action) && pick && pick.kind !== 'expand') endPick();
+      // Excavar, ampliar y la escalera siguen marcados (se encadenan); lo demás acaba al hacerlo.
+      if (work(t.action) && pick && pick.kind !== 'expand' && pick.kind !== 'stair') endPick();
     },
     cancelPick: () => {
       endPick();

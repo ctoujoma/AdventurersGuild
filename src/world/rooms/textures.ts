@@ -27,7 +27,6 @@ import {
   floorTop,
   interior,
   roofRuns,
-  stairX,
   type Rect,
   type RoofRun,
   type RoomsLayout,
@@ -333,20 +332,29 @@ export function sideTex(
 }
 
 /** Pared del fondo de un tramo de escalera, con los peldaños pintados en zigzag. */
-export function stairBack(theme: Theme, w: number, h: number, floor: number): PixelBuffer {
+export function stairBack(
+  theme: Theme,
+  w: number,
+  h: number,
+  floor: number,
+  steps = true,
+): PixelBuffer {
   const bw = Math.round(w * BACK);
   const bh = Math.round(h * BACK);
   const b = new PixelBuffer(bw, bh);
   const seed = `escalera${floor}`;
   if (theme === 'madera' || theme === 'yeso') planksV(b, 0, 0, bw, bh, seed, WOOD_DARK, 6);
   else stoneWall(b, 0, 0, bw, bh, seed, { ramp: theme === 'cueva' ? ROCK : STONE, bw: 8, bh: 6 });
-  const steps = 9;
+  // Un pasillo (sin tramo) es solo la pared del fondo.
+  if (!steps) {
+    ambientOcclusion(b, 0, 0, bw, bh, 4, { top: true, bottom: false, left: true, right: true });
+    return b;
+  }
+  const n = 9;
   const up = floor % 2 === 0;
-  const rise = (bh - 4) / steps;
-  for (let i = 0; i < steps; i++) {
-    const sx = Math.round(
-      up ? 1 + (i * (bw - 7)) / (steps - 1) : bw - 7 - (i * (bw - 7)) / (steps - 1),
-    );
+  const rise = (bh - 4) / n;
+  for (let i = 0; i < n; i++) {
+    const sx = Math.round(up ? 1 + (i * (bw - 7)) / (n - 1) : bw - 7 - (i * (bw - 7)) / (n - 1));
     const sy = Math.round(bh - 4 - i * rise);
     b.rect(sx, sy, 6, 3, P.oak);
     b.hline(sx, sy, 6, P.clay);
@@ -444,14 +452,21 @@ export interface Facade {
   runs: RoofRun[];
 }
 
-/** Rectángulo de cada hueco de escalera, planta a planta. */
-export const stairCells = (L: RoomsLayout): { rect: Rect; floor: number; s: number }[] =>
-  L.b.stairs.flatMap((s) => {
-    const out = [];
-    for (let f = L.deepest; f <= L.top; f++)
-      out.push({ rect: { x: stairX(L.b, s), y: floorTop(f), w: STAIR_W, h: ROOM_H }, floor: f, s });
-    return out;
-  });
+/**
+ * Cada hueco de las columnas de escalera (`s`: el hueco a cuya izquierda va): los rellanos, con
+ * sus peldaños, y los pasillos entre dos salas donde no llega ningún tramo.
+ */
+export const stairCells = (
+  L: RoomsLayout,
+): { rect: Rect; floor: number; s: number; steps: boolean }[] =>
+  L.stairs.flatMap((s) =>
+    [...s.floors, ...s.halls].map((f) => ({
+      rect: { x: s.x, y: floorTop(f), w: STAIR_W, h: ROOM_H },
+      floor: f,
+      s: s.at,
+      steps: s.floors.includes(f),
+    })),
+  );
 
 /** Huecos excavados en los que todavía no hay sala. */
 export const caveCells = (L: RoomsLayout): { rect: Rect; floor: number; col: number }[] =>

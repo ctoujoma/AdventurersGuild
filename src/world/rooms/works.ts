@@ -14,6 +14,7 @@ import {
   planMove,
   planPlot,
   planStair,
+  isShaft,
   roomAt,
   type ExtendDir,
   type Plan,
@@ -21,11 +22,12 @@ import {
 import { ROOMS, type RoomType } from '../../data/rooms';
 import {
   CELL_W,
+  PITCH,
   ROOM_H,
   STAIR_W,
   colX,
+  stairX,
   floorTop,
-  floorY,
   roomRect,
   roomsLayout,
   type Rect,
@@ -216,14 +218,18 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
           add(planDig(s, c, f), cell(s, c, f), 'Excavar', { type: 'dig', col: c, floor: f });
       break;
     case 'stair': {
-      const L = roomsLayout(b);
-      const y = floorTop(L.top);
-      const h = floorY(L.deepest) - y;
-      for (let at = 1; at <= b.cols; at++)
-        add(planStair(s, at), { x: colX(b, at) - STAIR_W / 2, y, w: STAIR_W, h }, 'Escalera', {
-          type: 'addStair',
-          at,
-        });
+      // Cada tramo, de la mitad de su rellano de abajo a la del de arriba (no se pisan).
+      for (let at = 1; at <= b.cols; at++) {
+        const x = isShaft(b, at) ? stairX(b, at) : colX(b, at) - STAIR_W / 2;
+        for (const f of floors(-MAX_DOWN, MAX_UP - 1)) {
+          const y = floorTop(f + 1) + ROOM_H / 2;
+          add(planStair(s, at, f), { x, y, w: STAIR_W, h: PITCH }, 'Tramo de escalera', {
+            type: 'addStair',
+            at,
+            floor: f,
+          });
+        }
+      }
       break;
     }
   }

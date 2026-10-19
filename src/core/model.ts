@@ -8,7 +8,7 @@ import type { Trade } from '../data/workers';
 import type { RoomType } from '../data/rooms';
 import type { Attrs, Challenge, ClassId, SkillId, Trait } from './party';
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 export type Sex = 'm' | 'f';
 
@@ -241,12 +241,22 @@ export interface Room {
   works?: Works;
 }
 
+/**
+ * Un tramo de escalera: une la planta `floor` con la de encima en la columna de escalera que va
+ * justo a la izquierda del hueco `at`. La columna existe (y ensancha el edificio) si tiene algún
+ * tramo; en las plantas a las que no llega ninguno, es muro.
+ */
+export interface Stair {
+  at: number;
+  floor: number;
+}
+
 /** El edificio: salas, escaleras, lo excavado y lo que hay en el patio. */
 export interface Building {
   /** Ancho en huecos, sin contar las escaleras. */
   cols: number;
-  /** Escaleras: cada una va justo a la izquierda del hueco con ese índice. */
-  stairs: number[];
+  /** Tramos de escalera, sin límite (como los ascensores de Fallout Shelter). */
+  stairs: Stair[];
   /** Huecos excavados bajo tierra, como «hueco,planta». */
   dug: string[];
   rooms: Room[];

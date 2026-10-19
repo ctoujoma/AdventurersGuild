@@ -129,7 +129,7 @@ export type Action =
   | { type: 'demolish'; id: string }
   | { type: 'dig'; col: number; floor: number }
   | { type: 'buyPlot' }
-  | { type: 'addStair'; at: number }
+  | { type: 'addStair'; at: number; floor: number }
   /** Varias obras seguidas (las del modo plano): se hacen todas o ninguna. */
   | { type: 'works'; steps: Action[] }
   | { type: 'sell'; itemId: string }
@@ -251,7 +251,7 @@ function planOf(s: GameState, a: Action): Plan | null {
     case 'buyPlot':
       return planPlot(s);
     case 'addStair':
-      return planStair(s, a.at);
+      return planStair(s, a.at, a.floor);
     default:
       return null;
   }
