@@ -116,3 +116,43 @@ pestañas (F) y sensación (G).
 3. Escaleras por tramos (modelo, caminos, geometría, asaltos) con sus tests.
 4. Cinta con pestañas e iconos de sala; sonidos y efectos.
 5. Probar con el usuario en la versión de pruebas y después volver al arte (PR 11).
+
+## Progreso (se marca al terminar cada punto; si te cortas, sigue por el primero sin marcar)
+
+Rama: `claude/sharp-mendel-apsm2a` (PR #23 abierto contra `salas`). Cada punto, un commit.
+
+### 1. Núcleo
+
+- [x] 1.1 Obras al momento: construir, ampliar y mover ya no dejan `works` (ni noches); quedan
+      hechas al pagar. `stepWorks` se queda solo para partidas viejas.
+- [x] 1.2 Borrador (`tryWorks`): las salas nuevas del borrador se tiran devolviendo todo lo
+      gastado y se mueven gratis; una sala ya movida en el borrador no vuelve a pagar mudanza;
+      en el borrador no se mira el oro paso a paso, y `planIssue` dice «Te faltan N monedas».
+- [x] 1.3 Tests del núcleo al día (rooms, works, game) y tests nuevos de lo anterior.
+
+### 2. Interfaz y escena
+
+- [ ] 2.1 Un solo modo obras = borrador: el martillo abre el borrador; «Deshacer», «Pagar»
+      (desactivado con el motivo) y «Salir» (pregunta si descarta). Fuera de obras, la ficha de
+      sala solo informa y deja mejorar. Se quita el camino de obras sueltas (`confirm`, `chosen`).
+- [ ] 2.2 Menú-icono junto a la sala elegida en el modo obras: mejorar (precio), mover, tirar,
+      info.
+- [ ] 2.3 Casillas fantasma «+» para ampliar (lados y encima si cabe en alto), tachadas con
+      motivo si no hay sitio.
+- [ ] 2.4 Mover arrastrando la sala (verde/rojo bajo el dedo) dentro del borrador.
+- [ ] 2.5 Al pagar: andamio, polvo y martillazos 2–3 s en cada sala tocada.
+
+### 3. Escaleras por tramos
+
+- [ ] 3.1 Modelo: `Building.stairs` → tramos `{ at, floor }` (une `floor` y `floor + 1` en la
+      columna `at`). La columna de escalera existe si tiene algún tramo. Sube `SAVE_VERSION`.
+- [ ] 3.2 Reglas (paso, excavar junto a escalera, salas que no cruzan escalera, fusionar), caminos
+      (`people.ts`, `assault.ts`), geometría (`layout.ts`, `textures.ts`), sin límite y con
+      precio creciente. Tests.
+- [ ] 3.3 Construir tramos desde la cinta tocando sitios en la escena.
+
+### 4. Cinta y sensación
+
+- [ ] 4.1 Cinta con pestañas e iconos de sala; las únicas como «Ampliar».
+- [ ] 4.2 Sonidos por tipo de obra, precio flotando, vibración.
+- [ ] 4.3 Probar en el navegador, publicar la versión de pruebas y actualizar `README.md`.

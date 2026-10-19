@@ -48,10 +48,10 @@ interface Deps {
 function told(s: GameState, a: Action): string {
   switch (a.type) {
     case 'build':
-      return `Obra en marcha: ${ROOMS[a.room].name.toLowerCase()}. Mañana estará lista.`;
+      return `Sala nueva: ${ROOMS[a.room].name.toLowerCase()}.`;
     case 'move': {
       const r = s.building.rooms.find((x) => x.id === a.id);
-      return r ? `${ROOMS[r.type].name}: se muda esta noche.` : 'Mudanza en marcha.';
+      return r ? `${ROOMS[r.type].name}: ya está en su sitio nuevo.` : 'Sala movida.';
     }
     case 'dig':
       return 'Hueco excavado: ya se puede construir ahí.';
@@ -60,7 +60,7 @@ function told(s: GameState, a: Action): string {
     case 'buyPlot':
       return 'Solar comprado: un hueco más de ancho en todas las plantas.';
     case 'extend':
-      return 'Obra en marcha: mañana la sala será más grande.';
+      return 'La sala ya es más grande.';
     case 'demolish':
       return 'Sala derribada. Se recupera la mitad de lo gastado.';
     default:
@@ -203,7 +203,9 @@ export function useWorks({ game, dispatch, toast, focus }: Deps): Works {
         return;
       }
       audio.play('build');
-      toast(`Plano pagado: ${steps.length} ${steps.length === 1 ? 'obra' : 'obras'} en marcha.`);
+      toast(
+        `Obras pagadas: ${steps.length} ${steps.length === 1 ? 'obra hecha' : 'obras hechas'}.`,
+      );
       setSteps(null);
       endPick();
     },

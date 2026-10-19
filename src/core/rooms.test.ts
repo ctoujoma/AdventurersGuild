@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DIG_COST,
+  MOVE_COST,
   PLOT_COST,
   ROOM_COST,
   START,
@@ -82,15 +83,10 @@ describe('la taberna del tío', () => {
 });
 
 describe('obras', () => {
-  it('una sala nueva tarda una noche en estar lista', () => {
-    let s = ok(open(), { type: 'upgrade', fac: 'vet' });
-    const vet = room(s, 'veteranos');
-    expect(vet.works?.kind).toBe('build');
-    expect(s.fac.vet).toBe(0);
-    s = endDay(s);
+  it('una sala nueva queda lista al momento', () => {
+    const s = ok(open(), { type: 'upgrade', fac: 'vet' });
     expect(room(s, 'veteranos').works).toBeUndefined();
     expect(s.fac.vet).toBe(1);
-    expect(s.dawn.some((e) => /sala nueva/.test(e.t))).toBe(true);
   });
 
   it('una planta sobresale como mucho un hueco y la torre va encima de todo', () => {
@@ -119,15 +115,13 @@ describe('obras', () => {
     no(open(), { type: 'build', room: 'armeria', col: 1, floor: 2 }, /Ya tienes armería/);
   });
 
-  it('ampliar: la sala crece hacia un lado y cuenta lo de antes hasta que acaba la obra', () => {
+  it('ampliar: la sala crece hacia un lado y cuenta ya con su tamaño nuevo', () => {
     let s = open();
     no(s, { type: 'extend', id: room(s, 'dormitorio').id, dir: 'right' }, /otra sala/);
     no(s, { type: 'demolish', id: room(s, 'dormitorio').id }, /Capilla: se quedaría sin paso/);
     s = ok(s, { type: 'demolish', id: room(s, 'capilla').id });
     s = ok(s, { type: 'extend', id: room(s, 'dormitorio').id, dir: 'right' });
     expect(room(s, 'dormitorio').w).toBe(3);
-    expect(beds(s.building)).toBe(4);
-    s = endDay(s);
     expect(beds(s.building)).toBe(6);
     no(s, { type: 'extend', id: room(s, 'dormitorio').id, dir: 'left' }, /no crece tanto/);
     expect(upgradeCostOf(room(s, 'dormitorio'))).toBe(Math.round(UPGRADE_COST.dorm[2]! * 1.5));
@@ -148,7 +142,11 @@ describe('obras', () => {
     no(s, { type: 'move', id: room(s, 'recibidor').id, col: 1, floor: 2 }, /no se puede mover/);
     no(s, { type: 'move', id: room(s, 'mapas').id, col: 1, floor: 2 }, /torre/);
     s = ok(s, { type: 'move', id: room(s, 'enfermeria').id, col: 1, floor: 2 });
-    expect(room(s, 'enfermeria')).toMatchObject({ col: 1, floor: 2, works: { kind: 'move' } });
+    expect(room(s, 'enfermeria')).toMatchObject({ col: 1, floor: 2 });
+    expect(room(s, 'enfermeria').works).toBeUndefined();
+    // Y se puede volver a mover enseguida (aquí, a donde estaba).
+    s = ok(s, { type: 'move', id: room(s, 'enfermeria').id, col: 0, floor: 1 });
+    expect(room(s, 'enfermeria')).toMatchObject({ col: 0, floor: 1 });
   });
 
   it('destruir devuelve la mitad de lo gastado; el recibidor, el salón y el tesoro se quedan', () => {
@@ -205,7 +203,6 @@ describe('obras', () => {
     const d = s.building.rooms.filter((r) => r.type === 'despensa');
     expect(d).toHaveLength(1);
     expect(d[0]!.w).toBe(2);
-    expect(d[0]!.works?.kind).toBe('extend');
     expect(gold - s.gold).toBe(extendCostOf(d[0]!, 1));
     expect(gold - s.gold).toBeLessThan(ROOM_COST.despensa[1]!);
     // Si la de al lado es de otro nivel, la nueva va aparte.
@@ -275,5 +272,33 @@ describe('el plano deja la casa a medias', () => {
     if ('error' in plan) throw new Error(plan.error);
     expect(planIssue(plan)).toMatch(/Falta: Salón/);
     expect(reduce(s, { type: 'works', steps: [quit] })).toBe(s);
+  });
+
+  it('en el borrador: mover varias veces paga una mudanza; lo puesto en él se quita gratis', () => {
+    const s = open();
+    const enf = room(s, 'enfermeria').id;
+    const moved = tryWorks(s, [
+      { type: 'move', id: enf, col: 1, floor: 2 },
+      { type: 'move', id: enf, col: 0, floor: 1 },
+      { type: 'move', id: enf, col: 1, floor: 2 },
+    ]);
+    if ('error' in moved) throw new Error(moved.error);
+    expect(s.gold - moved.gold).toBe(MOVE_COST);
+    const built = tryWorks(s, [
+      { type: 'build', room: 'cocina', col: 1, floor: 2 },
+      { type: 'demolish', id: 'r1' },
+    ]);
+    if ('error' in built) throw new Error(built.error);
+    expect(built.gold).toBe(s.gold);
+  });
+
+  it('en el borrador no se mira el oro paso a paso: se avisa al pagar', () => {
+    const s = { ...open(), gold: 50 };
+    const d = tryWorks(s, [{ type: 'build', room: 'cocina', col: 1, floor: 2 }]);
+    if ('error' in d) throw new Error(d.error);
+    expect(planIssue(d)).toMatch(/Te faltan/);
+    expect(
+      reduce(s, { type: 'works', steps: [{ type: 'build', room: 'cocina', col: 1, floor: 2 }] }),
+    ).toBe(s);
   });
 });

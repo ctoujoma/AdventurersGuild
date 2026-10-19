@@ -21,7 +21,6 @@ import {
   STAIR_COST,
   START_COLS,
   UPGRADE_COST,
-  WORK_NIGHTS,
   roomMax,
 } from './balance';
 import type { Building, DawnEvent, Facilities, GameState, Room } from './model';
@@ -32,7 +31,6 @@ export type ExtendDir = 'left' | 'right' | 'up';
 
 export const LOCKED =
   'Las obras se abren al pagar la deuda: de momento solo se arregla y se mejora lo que hay.';
-const BUSY = 'Espera a que acabe la obra.';
 
 const key = (c: number, f: number) => `${c},${f}`;
 const floorOf = (k: string) => Number(k.split(',')[1]);
@@ -155,6 +153,25 @@ let lax = false;
 
 /** Salas que siempre tiene que haber: las que no se pueden tirar fuera del plano. */
 export const MUST = (Object.keys(ROOMS) as RoomType[]).filter((t) => ROOMS[t].keep);
+
+/**
+ * El borrador del modo obras: las salas que ya estaban antes de empezarlo (las demás son nuevas
+ * del borrador: se quitan devolviendo todo y se mueven gratis) y las que ya se han movido en él
+ * (la mudanza se paga una vez).
+ */
+let draft: { base: Set<string>; moved: Set<string> } | null = null;
+const isFresh = (id: string) => !!draft && !draft.base.has(id);
+
+/** Hace `fn` como borrador de obras sobre la taberna `base`, dejando la casa a medias. */
+export function drafting<T>(base: Building, fn: () => T): T {
+  const was = draft;
+  draft = { base: new Set(base.rooms.map((r) => r.id)), moved: new Set() };
+  try {
+    return laxly(fn);
+  } finally {
+    draft = was;
+  }
+}
 
 /** Hace `fn` dejando pasar salas sin paso desde el recibidor (se arregla con más obras). */
 export function laxly<T>(fn: () => T): T {
@@ -320,7 +337,8 @@ function finish(s: GameState, b: Building, cost: number): Plan {
   mergeRooms(b);
   const e = problem(b);
   if (e) return { error: e };
-  if (cost > s.gold) return { error: `Te faltan ${cost - s.gold} monedas.` };
+  // En el borrador el oro se mira al pagarlo todo junto (`planIssue`).
+  if (!lax && cost > s.gold) return { error: `Te faltan ${cost - s.gold} monedas.` };
   return { b, cost };
 }
 
@@ -335,7 +353,6 @@ export function planUpgrade(s: GameState, id: string): Plan {
   const got = find(s, id);
   if ('error' in got) return got;
   const { b, r } = got;
-  if (r.works && r.works.kind !== 'extend') return { error: BUSY };
   const cost = upgradeCostOf(r);
   if (cost === null) return { error: 'Ya está al máximo.' };
   r.level++;
@@ -344,31 +361,25 @@ export function planUpgrade(s: GameState, id: string): Plan {
 }
 
 /**
- * Construir una sala nueva de un hueco. Tarda una noche en estar lista. Al lado de otra igual y
- * de nivel 1 cuenta como ampliarla: se junta con ella y cuesta lo que una ampliación.
+ * Construir una sala nueva de un hueco: queda lista al pagar. Al lado de otra igual y de nivel 1
+ * cuenta como ampliarla: se junta con ella y cuesta lo que una ampliación.
  */
 export function planBuild(s: GameState, type: RoomType, col: number, floor: number): Plan {
   if (!worksOpen(s)) return { error: LOCKED };
   const b = structuredClone(s.building);
-  const fresh: Room = { ...newRoom(b, type, col, floor), works: undefined };
+  const fresh: Room = newRoom(b, type, col, floor);
   const next = b.rooms.find(
     (r) => !roomAt(b, col, floor) && (joinable(b, r, fresh) || joinable(b, fresh, r)) && r.h === 1,
   );
   if (next) {
-    const from = { col: next.col, w: next.w, h: next.h };
     if (next.col > col) next.col = col;
     next.w++;
     const cost = extendCostOf(next, 1);
     next.spent += cost;
-    next.works = { kind: 'extend', nights: WORK_NIGHTS.extend, from };
     return finish(s, b, cost);
   }
   const cost = ROOM_COST[type][1]!;
-  b.rooms.push({
-    ...newRoom(b, type, col, floor),
-    spent: cost,
-    works: { kind: 'build', nights: WORK_NIGHTS.build },
-  });
+  b.rooms.push({ ...fresh, spent: cost });
   return finish(s, b, cost);
 }
 
@@ -378,33 +389,34 @@ export function planExtend(s: GameState, id: string, dir: ExtendDir): Plan {
   const got = find(s, id);
   if ('error' in got) return got;
   const { b, r } = got;
-  if (r.works) return { error: BUSY };
   if (r.level === 0) return { error: 'Primero hay que arreglarla.' };
-  const from = { col: r.col, w: r.w, h: r.h };
+  const before = r.w * r.h;
   if (dir === 'up') r.h++;
   else {
     r.w++;
     if (dir === 'left') r.col--;
   }
-  const cost = extendCostOf(r, r.w * r.h - from.w * from.h);
+  const cost = extendCostOf(r, r.w * r.h - before);
   r.spent += cost;
-  r.works = { kind: 'extend', nights: WORK_NIGHTS.extend, from };
   return finish(s, b, cost);
 }
 
-/** Mover una sala a otro sitio libre del mismo tamaño. Esa noche no funciona. */
+/**
+ * Mover una sala a otro sitio libre del mismo tamaño. En el borrador se puede mover tantas veces
+ * como se quiera: la mudanza se paga una vez, y las salas nuevas del borrador se mueven gratis.
+ */
 export function planMove(s: GameState, id: string, col: number, floor: number): Plan {
   if (!worksOpen(s)) return { error: LOCKED };
   const got = find(s, id);
   if ('error' in got) return got;
   const { b, r } = got;
   if (ROOMS[r.type].fixed) return { error: `${ROOMS[r.type].name}: no se puede mover.` };
-  if (r.works) return { error: BUSY };
   if (r.col === col && r.floor === floor) return { error: 'Ya está ahí.' };
   r.col = col;
   r.floor = floor;
-  r.works = { kind: 'move', nights: WORK_NIGHTS.move };
-  return finish(s, b, MOVE_COST * r.w * r.h);
+  const paid = isFresh(id) || !!draft?.moved.has(id);
+  draft?.moved.add(id);
+  return finish(s, b, paid ? 0 : MOVE_COST * r.w * r.h);
 }
 
 /** Destruir una sala: se recupera la mitad de lo gastado en ella. */
@@ -416,9 +428,9 @@ export function planDemolish(s: GameState, id: string): Plan {
   // En el plano sí: se quita para ponerla en otro sitio, y no se paga hasta que vuelva a estar.
   if (ROOMS[r.type].keep && !lax)
     return { error: `${ROOMS[r.type].name}: no se puede quitar (en el plano, sí, para moverla).` };
-  if (r.works) return { error: BUSY };
   b.rooms = b.rooms.filter((x) => x !== r);
-  return finish(s, b, -Math.floor(r.spent * DEMOLISH_REFUND));
+  // Una sala puesta en este mismo borrador se quita devolviendo todo.
+  return finish(s, b, -(isFresh(id) ? r.spent : Math.floor(r.spent * DEMOLISH_REFUND)));
 }
 
 /** Excavar un hueco: junto a otro excavado o junto a la escalera, una planta más abajo. */
