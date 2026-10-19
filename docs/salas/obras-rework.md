@@ -87,19 +87,31 @@ comprar solar: casillas fantasma siempre visibles en el modo obras (como ya hace
 Sonido distinto para colocar, ampliar, mover y tirar; polvo y monedas; el precio que sube
 flotando («−120»); el andamio que dura un instante; vibración en el móvil.
 
-## Preguntas para el usuario
+## Decisiones (respuestas del usuario, 19-10)
 
-1. **¿Pago al momento con deshacer (A)** o mantener el borrador que se paga al final?
-2. **¿Mover salas arrastrando (D)** o quitar mover, como Fallout Shelter (tirar y reconstruir)?
-3. **¿Construir solo junto a lo que ya hay**, como Fallout Shelter, o en cualquier hueco con paso?
-4. **Escaleras por tramos (E):** ¿con límite o solo con precio creciente?
-5. ¿Las obras siguen tardando una noche, o se ven levantar en el momento (unos segundos, como en
-   el día vivo)?
+1. **Borrador que se paga al final**, por poder reordenar la taberna del tío. Para que no haya
+   dos modos: **el modo obras es el borrador**. Todo lo que se hace en él se apila (con su coste
+   sumado en la barra), «Deshacer» quita lo último, «Pagar» lo hace de verdad y «Salir» sin pagar
+   pregunta si se descarta. Mientras falte algo (salas sin paso, una obligatoria quitada o no
+   llegue el oro), «Pagar» está desactivado y dice por qué. Esto sustituye a la propuesta A.
+2. **Mover arrastrando, sí** (propuesta D): es una ventaja porque las salas únicas ya vienen
+   puestas desde el principio. Mover varias veces la misma sala en el borrador tiene que poder.
+3. **En cualquier hueco que tenga paso** (no solo pegado a lo que ya hay).
+4. **Escaleras por tramos sin límite**, solo con precio creciente, como Fallout Shelter.
+5. **Tiempo de obra: propuesta pendiente de confirmar.** Recomendación: al pagar, las obras se
+   levantan en unos segundos a la vista (andamio, polvo y martillazos, 2–3 s por sala) y quedan
+   listas ese mismo día; el freno es el precio, no la espera. Si el usuario prefiere algo más
+   lento, una hora del día vivo por hueco.
+
+Con esto, la propuesta queda: borrador = modo obras (1), menú-icono junto a la sala (B),
+casillas fantasma para ampliar (C), mover arrastrando (D), escaleras por tramos (E), cinta con
+pestañas (F) y sensación (G).
 
 ## Orden sugerido para programar
 
-1. Núcleo: obras inmediatas con pila de deshacer; validación de salir del modo obras; mudanza que
-   no bloquea; tests.
+1. Núcleo: el borrador como única forma de hacer obras (pila con deshacer, coste total, motivos
+   que impiden pagar), obras que no bloquean otras obras de la misma sala dentro del borrador,
+   construir en cualquier hueco con paso, obras al momento al pagar; tests.
 2. Escena: casillas fantasma de ampliar, menú-icono junto a la sala, mover arrastrando.
 3. Escaleras por tramos (modelo, caminos, geometría, asaltos) con sus tests.
 4. Cinta con pestañas e iconos de sala; sonidos y efectos.
