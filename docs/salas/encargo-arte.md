@@ -11,10 +11,12 @@ como dirección. El estilo acordado es «entre el actual y la dirección A» (av
 pixel art cálido, materiales con 3–4 tonos, contornos oscuros, mucho detalle de atrezo que cuente
 qué se hace en la sala y que cambie con el nivel.
 
-Una sala (o dos parecidas) por PR, contra la rama `salas`. En cada PR: capturas antes/después
-de la sala a nivel 0 (por reparar), 1, 2 y 3, de ancho 1 y de ancho máximo, de día y de noche.
-Publicar la versión de pruebas para el usuario y esperar su visto bueno antes de seguir con la
-siguiente (el usuario se fija mucho en alineaciones y en que nada tape nada).
+Una sala (o dos parecidas) por PR, contra **`main`** (al fusionar, GitHub Pages lo publica y lo
+prueban los amigos del usuario). En cada PR: capturas antes/después de la sala a nivel 0 (por
+reparar), 1, 2 y 3, de ancho 1 y de ancho máximo, de día y de noche. Si puedes, publica también
+la versión de pruebas (ver «Comprobar»). Espera el visto bueno del usuario y su aviso de que ha
+fusionado antes de seguir con la siguiente (se fija mucho en alineaciones y en que nada tape
+nada). No vigiles los PR ni programes recordatorios: el usuario avisa.
 
 Orden propuesto (de más a menos visible): recibidor, cocina, dormitorio, bodega, cámara del
 tesoro, enfermería, capilla, armería, forja, sala de mapas, despensa, sala de armas, sala de
@@ -66,8 +68,10 @@ Lo que aprendimos con el salón (para no repetir errores):
   `window.__game.get()/set(estado)` deja preparar cualquier sala: cambiar `level`, `w`, `h`,
   `works`; y `window.__scene.camera` (`zoom`, `centerOn(x, y)`) encuadrarla. Las capturas de
   esta conversación usaban `deviceScaleFactor: 1`, ventana de 1280×760 y `zoom` 2–3.
-- Versión de pruebas: `python3 tools/build-artifact.py dist <salida>.html` tras el build, con
-  `<title>` «Jarro: rama salas».
+- Versión de pruebas: `python3 tools/build-artifact.py dist <salida>.html` tras el build (un
+  solo HTML), publicada como artefacto de claude.ai con título «Jarro: pruebas» si tienes la
+  herramienta; vuelve a publicarla en la misma dirección en cada PR.
+- No cambies `SAVE_VERSION` (hay gente jugando): el arte no toca el formato de la partida.
 
 ## Fuera del encargo
 

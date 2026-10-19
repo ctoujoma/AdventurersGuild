@@ -81,7 +81,7 @@ export const TIPS: readonly Tip[] = [
     text: '¡Un trofeo! Lo he colgado en la sala. La gente viene a verlo, se toma algo y eso son monedas cada día.',
     when: (s) => s.trophies.length > 0,
   },
-  // El día 30: las obras se abren y el tío explica cómo encajar las salas.
+  // Al pagar la deuda: las obras se abren y el tío explica cómo encajar las salas.
   {
     id: 'obras',
     focus: 'sala',

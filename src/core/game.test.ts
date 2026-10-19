@@ -1,6 +1,6 @@
 import { DAY_SECONDS, DUSK } from './balance';
 import { describe, expect, it } from 'vitest';
-import { DAYS, SCHEDULE, capacity } from './balance';
+import { DEBT, SCHEDULE, capacity } from './balance';
 import {
   canSend,
   endDay,
@@ -241,7 +241,9 @@ describe('avance de día', () => {
     let s = newGame('victoria');
     while (s.mode !== 'libre' && !s.over) s = endDay({ ...s, gold: s.gold + 1000 });
     expect(s.over).toBeNull();
-    expect(s.day).toBe(DAYS + 1);
+    // Con el último pago la deuda queda saldada y el gremio es tuyo ese mismo día.
+    expect(s.day).toBe(SCHEDULE.at(-1)!.day);
+    expect(s.paid).toBe(DEBT);
     expect(s.opening?.seen).toBe(false);
     expect(s.opening!.score).toBeGreaterThan(0);
     expect(s.month?.goals.length).toBeGreaterThan(0);

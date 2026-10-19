@@ -1,4 +1,4 @@
-# Rama `salas`: estado y cómo seguir
+# El gremio por salas: estado y cómo seguir
 
 Esto es todo lo necesario para que otra persona (o un agente) retome el trabajo del sistema de
 salas sin el historial de la conversación. Léelo entero antes de tocar nada.
@@ -9,27 +9,28 @@ _El Gremio de Aventureros · El Jarro Partido_: juego de gestión de un gremio e
 (TypeScript + Vite + Preact, escena en three.js con pixel art). El diseño original está en
 [`../diseno.md`](../diseno.md) y la técnica en [`../plan-desarrollo.md`](../plan-desarrollo.md).
 
-La rama `salas` sustituye la taberna dibujada por un **edificio de salas en corte, como Fallout
-Shelter**: se construyen, amplían, mueven y mejoran salas; la gente anda por ellas; el día pasa
+El juego es un **edificio de salas en corte, como Fallout Shelter** (se hizo en la rama `salas`,
+PR #11 a #25, y pasó a `main` en #26): se construyen, amplían, mueven y mejoran salas; la gente anda por ellas; el día pasa
 en tiempo real; hay trabajadores, visitantes, comida, entrenamiento y asaltos sala a sala.
 
 ## Forma de trabajar (acordada con el usuario)
 
 - **Idioma:** todo en español (código, comentarios, textos, PR y respuestas). Respuestas breves.
-- **Ramas:** se desarrolla en `claude/sharp-mendel-apsm2a`; cada PR va contra **`salas`** (no
-  contra `main`). Al fusionarse un PR:
-  `git fetch origin salas && git checkout -B claude/sharp-mendel-apsm2a origin/salas && git push --force-with-lease -u origin claude/sharp-mendel-apsm2a`.
-  Al final de todo, un PR `salas` → `main`.
+- **Ramas:** cada agente trabaja en su rama y cada PR va contra **`main`** (la rama `salas` ya
+  no se usa). Al fusionarse un PR, la rama se rehace desde `main`:
+  `git fetch origin main && git checkout -B <tu-rama> origin/main && git push --force-with-lease -u origin <tu-rama>`.
 - **No vigilar los PR** ni programar recordatorios: el usuario avisa cuando fusiona.
 - **Antes de subir:** `npm run lint && npm run format:check && npm run typecheck && npm test && npm run build`.
 - **Commits:** mensaje en español que explique el qué y el porqué. Sin nombres de modelos.
-- **Versión de pruebas:** el usuario prueba en un artefacto de claude.ai («Jarro: rama salas»).
-  Se genera con `python3 tools/build-artifact.py dist <salida>.html` tras `npm run build`
-  (cambia el `<title>` a «Jarro: rama salas»). Desde otra cuenta habrá que publicar uno nuevo o
-  pasarle el HTML al usuario.
+- **Versión publicada:** al fusionar en `main`, GitHub Pages publica el juego solo
+  (`.github/workflows/deploy.yml`); el usuario lo comparte con sus amigos para que prueben.
+- **Versión de pruebas antes de fusionar:** un HTML de un solo fichero con
+  `python3 tools/build-artifact.py dist <salida>.html` tras `npm run build`, publicado como
+  artefacto de claude.ai (título «Jarro: pruebas») si tienes la herramienta; si no, las capturas
+  del PR.
 - **Capturas:** `tools/shots/` (ver su README). Chromium ya está en el contenedor.
-- **Partidas viejas:** el juego no está publicado; se sube `SAVE_VERSION` y las antiguas se
-  ignoran. En el menú de pruebas (`#debug`, «Modo pruebas» en Ajustes) hay trucos.
+- **Partidas viejas:** si cambia el formato, se sube `SAVE_VERSION` y las antiguas se ignoran
+  (ahora hay gente probando: evítalo si no hace falta y avísalo en el PR). En el menú de pruebas (`#debug`, «Modo pruebas» en Ajustes) hay trucos.
 - **Una sola vista:** la taberna dibujada de antes se quitó (PR 12); si el navegador no puede
   pintar 3D (WebGL), la escena enseña un aviso y el resto del juego sigue.
 - **Estilo del código:** núcleo en TS puro con tests (`src/core`), la escena solo enseña lo que
@@ -50,21 +51,22 @@ en tiempo real; hay trabajadores, visitantes, comida, entrenamiento y asaltos sa
 | 9 | Entrenamiento + arrastrar personajes a salas | Hecho (#21) |
 | 10 | Tesoro y asaltos sala a sala | Hecho (#22) |
 | 11 | Arte de cada sala | Salón de muestra, obras rehechas y rondas de pruebas en #23; el resto de salas, encargado (ver [`encargo-arte.md`](encargo-arte.md)) |
-| 12 | Balance y limpieza | Primera parte hecha (#24); segunda (quitar la taberna dibujada) en un PR nuevo |
+| 12 | Balance y limpieza | Hecho (#24, #25); todo a `main` en #26 |
 
 **Obras rehechas** (pedido del usuario antes de seguir con el arte): ver
 [`obras-rework.md`](obras-rework.md), con decisiones y progreso punto a punto, incluidas las
 rondas de pruebas del usuario (apartado 5).
 
 **Cómo seguir:** (1) arte del resto de salas una a una, encargado a otro agente: ver
-[`encargo-arte.md`](encargo-arte.md); (2) probar con partidas de verdad lo apuntado en
-«Balance»; (3) PR `salas` → `main`.
+[`encargo-arte.md`](encargo-arte.md); (2) probar con partidas de verdad (los amigos del
+usuario, en GitHub Pages) lo apuntado en «Balance».
 
 ## Decisiones de diseño ya tomadas (resumen)
 
 - Ancho de 4 a 7 huecos comprando solares; hasta 4 plantas arriba y 6 abajo (excavando).
-- Al empezar: la taberna del tío con todas las salas en su sitio y muchas rotas. Antes del día 30
-  solo se arregla y se mejora; al pagar la deuda (día 30) se abren las obras de verdad.
+- Al empezar: la taberna del tío con todas las salas en su sitio y muchas rotas. Hasta pagar la
+  deuda solo se arregla y se mejora; con el último pago (día 28) el gremio es tuyo y se abren
+  las obras de verdad.
 - Recibidor = entrada y guardia (2 como mucho; su nivel es la puerta). Salón = visitantes y caja.
   Cámara del tesoro = tope del oro (lo que no cabe se pierde) y cerradura.
 - Trabajadores con Maña y oficio; los 3 del pueblo al principio, luego una cama del servicio cada uno.

@@ -185,7 +185,7 @@ Hay 3 niveles por instalación. En el prototipo solo estarán las tres primeras.
 
 ### Prototipo: «La deuda»
 - 30 días con una deuda de unas 1000 monedas. Cada 7 días hay un pago mínimo creciente.
-- Victoria: deuda pagada el día 30 (puntuación según rango, héroes vivos y oro).
+- Victoria: deuda pagada (con el último pago, el día 28; plazo hasta el 30). Puntuación según rango, héroes vivos y oro.
 - Derrota: no cubrir un pago semanal.
 - Rejugable gracias a la semilla: cada partida genera héroes y encargos distintos.
 
