@@ -88,7 +88,7 @@ export function bunk(level: number, tiers: 2 | 3, style: Style): PixelBuffer {
     style === 'veterano'
       ? [P.black, P.ebony, P.plum, P.bark, P.rust]
       : style === 'servicio'
-        ? [P.plum, P.bark, P.rust, P.oak, P.clay]
+        ? [P.rust, P.oak, P.clay, P.tan, P.sand]
         : [P.black, P.plum, P.bark, P.rust, P.oak, P.clay];
   return Prop.piece(24, h, (b) => {
     for (const px of [0, 21]) {
@@ -163,7 +163,8 @@ function bunkShelf(seed: number, style: Style): PixelBuffer {
   return Prop.piece(14, 8, (b) => {
     b.rect(0, 6, 14, 2, W[4]!);
     b.hline(0, 6, 14, W[5]!);
-    const k = seed % 3;
+    // (En el servicio, siempre la jarra: no hay yelmos ni libros.)
+    const k = style === 'servicio' ? 2 : seed % 3;
     if (style === 'veterano' || k === 0) {
       // Yelmo.
       b.ellipse(4, 3.5, 3, 3, P.steel);
@@ -352,7 +353,7 @@ function things(room: Room, w: number): Thing[] {
     // Bajo la ventana: el baúl (el armadura del veterano, desde el nivel 3).
     if (style === 'veterano' && lvl >= 3) t.push(at(Prop.armorStand(), c.win, WALL));
     else if (style === 'servicio' && lvl < 2) t.push(at(bucket(), c.win, WALL));
-    else t.push(at(chest(style === 'veterano' ? 3 : lvl), c.win, WALL));
+    else t.push(at(chest(quiltOf(room)), c.win, WALL));
     // A su derecha: la mesilla con su vela (o la escoba del servicio).
     const rx = c.win + WIN_HALF + 7;
     if (style === 'servicio') t.push(at(broom(), rx, WALL));
