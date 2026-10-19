@@ -9,6 +9,7 @@ import { armeria } from './armeria';
 import { bodega } from './bodega';
 import { dormitorio, servicio, veteranos } from './camas';
 import { enfermeria } from './enfermeria';
+import { armas, biblioteca, tiro } from './entrenamiento';
 import { forja } from './forja';
 import { tesoro } from './tesoro';
 import { cocina } from './cocina';
@@ -27,4 +28,7 @@ export const ART: Partial<Record<RoomType, RoomArt>> = {
   tesoro,
   armeria,
   forja,
+  armas,
+  tiro,
+  biblioteca,
 };
