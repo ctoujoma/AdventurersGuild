@@ -195,6 +195,12 @@ Rama: `claude/sharp-mendel-apsm2a` (PR #23 abierto contra `salas`). Cada punto, 
       colgado en un estante por hueco (`gearRack`, 4 huecos a nivel 1 y 8 a nivel 2) y lo que no
       cabe en arcones; en la armería sin reparar o en obras, todo en arcones (`chestPile`, uno
       por cada tres); sin armería, arcones en la cámara del tesoro. Tests.
-- [ ] 5.7 Pregunta del usuario: que la escalera solo ocupe sitio en las plantas a las que llega
-      y las salas de las demás plantas se corran. Explicadas las consecuencias y dos opciones
-      (correr las salas de verdad, o que la sala de al lado ocupe el hueco); esperando decisión.
+- [x] 5.7 Pregunta del usuario: que la escalera solo ocupe sitio en las plantas a las que llega.
+      Decidido: se queda como está (con pasillos) y la opción de correr las salas pasa a
+      «Mejoras de futuro» en [`README.md`](README.md).
+- [x] 5.8 Salón de dos alturas: la chimenea sube hasta el techo (`hearth(…, rise)`), la lámpara
+      grande cuelga de una cadena hasta media sala, la viga de en medio es un listón, las
+      tornapuntas van planta a planta, pendones del gremio arriba (`banner`) y los trofeos a
+      media pared de arriba (`salonWall`). Ventanas de arriba centradas (la que caería tras el
+      tiro, a su lado) y nada de la pared detrás de la chimenea (`hearthSpan`): el tablón se
+      corre a su izquierda y los trofeos no lo pisan.

@@ -12,6 +12,8 @@ import type { Room, TrophyIcon } from '../../core/model';
 import { Rng } from '../../core/rng';
 import { stoneWall } from '../paint';
 import * as Prop from '../props';
+import { DEPTH, PITCH, ROOM_H } from './layout';
+import { BACK, scaleAt } from './view3d';
 
 const W = R.wood; // [black, plum, bark, rust, oak, clay, tan]
 const DARK: Ramp = [P.black, P.ebony, P.plum, P.bark];
@@ -103,6 +105,29 @@ function tapestry(field: string, dark: string): PixelBuffer {
   });
 }
 
+/** Pendón largo con los colores del escudo, colgado de una vara (en el salón de dos alturas). */
+function banner(field: string, dark: string, h: number): PixelBuffer {
+  return Prop.piece(14, h, (b) => {
+    b.hline(0, 0, 14, W[3]!);
+    b.set(0, 1, P.gold);
+    b.set(13, 1, P.gold);
+    const body = h - 6;
+    b.rect(2, 1, 10, body, field);
+    b.vline(2, 1, body, dark);
+    b.vline(11, 1, body, dark);
+    // Cola de golondrina abajo.
+    for (let k = 0; k < 5; k++) {
+      b.hline(2, body + 1 + k, 5 - k, field);
+      b.hline(7 + k, body + 1 + k, 5 - k, field);
+    }
+    // El emblema en medio: un rombo dorado.
+    const cy = Math.round(body * 0.4);
+    for (let k = 0; k < 4; k++) b.hline(7 - k, cy - 3 + k, 2 * k, P.gold);
+    for (let k = 0; k < 4; k++) b.hline(4 + k, cy + 1 + k, 6 - 2 * k, P.gold);
+    b.hline(3, 3, 8, P.gold);
+  });
+}
+
 /** Ristras de ajos, hierbas y un jamón colgando de una vara del techo (delante de la barra). */
 export function larder(): PixelBuffer {
   return Prop.piece(26, 16, (b) => larderOn(b, 2, 0));
@@ -147,31 +172,59 @@ function braces(b: PixelBuffer, x0: number, x1: number, top: number, bottom: num
 /**
  * Lo propio del salón en la pared del fondo (`b` ya lleva el yeso, el zócalo y las ventanas):
  * la alacena detrás de la barra, el tablón, tornapuntas, trofeos, tapices, apliques y ristras.
- * `windows` son las x (en el fondo) de las ventanas; `cell` lo que mide un hueco en el fondo.
+ * `windows` son las x (en el fondo) de las ventanas de cada planta, de arriba abajo; `cell` lo
+ * que mide un hueco en el fondo.
  */
 export function salonWall(
   b: PixelBuffer,
   room: Room,
   look: SalonLook,
-  windows: number[],
+  windows: number[][],
   cell: number,
   wain: number,
 ): void {
   const lvl = room.level;
   const floor = b.h;
-  const free = (x: number, w: number) => windows.every((wx) => x + w < wx - 14 || x > wx + 14);
-  // Tornapuntas en los paños sin ventana (entre los postes de cada 36).
-  for (let x = 0; x + 36 <= b.w; x += 36)
-    if (free(x + 3, 30)) braces(b, x + 3, x + 36, 5, floor - wain - 4);
+  // Arriba de la planta de abajo (en el de dos alturas, la de arriba queda para lucir).
+  const low = floor - Math.round(ROOM_H * BACK);
+  const tall = room.h > 1;
+  // Lo que no se tapa con una ventana de la planta `j` (por defecto, la de abajo).
+  const free = (x: number, w: number, j = room.h - 1) =>
+    windows[j]!.every((wx) => x + w < wx - 14 || x > wx + 14);
+  // Dónde empieza la chimenea (y su tiro) vista en el fondo: lo de la pared no se pone detrás.
+  const { hearthLeft, flueLeft } = hearthSpan(b.w);
+  // Tornapuntas en los paños sin ventana (entre los postes de cada 36), planta a planta.
+  for (let j = 0; j < room.h; j++) {
+    const top = Math.round(j * PITCH * BACK) + 5;
+    const bottom = j === room.h - 1 ? floor - wain - 4 : Math.round((j * PITCH + ROOM_H) * BACK);
+    for (let x = 0; x + 36 <= b.w; x += 36)
+      if (free(x + 3, 30, j)) braces(b, x + 3, x + 36, top, bottom);
+  }
   // Alacena detrás de la barra.
   b.blit(backBar(lvl, room.id), 4, floor - 46);
   // El tablón de anuncios, en el segundo hueco (o tras la alacena, si solo hay uno).
   const board = Prop.noticeBoard(Math.min(4, lvl + 1), lvl >= 2);
-  const bx = Math.min(Math.round(cell + 6), b.w - board.w - 2);
-  if (room.w > 1 && free(bx, board.w)) b.blit(board, bx, Math.round(floor - 30 - board.h));
+  const bx = Math.min(Math.round(cell + 6), hearthLeft - board.w - 3);
+  const boardOn = room.w > 1 && free(bx, board.w);
+  if (boardOn) b.blit(board, bx, Math.round(floor - 30 - board.h));
   // Apliques con vela en los postes (desde el nivel 2).
   if (lvl >= 2)
-    for (let x = 36; x < b.w - 40; x += 72) if (free(x - 3, 7)) b.blit(Prop.sconce(), x - 2, 22);
+    for (let x = 36; x < b.w - 40; x += 72)
+      if (free(x - 3, 7)) b.blit(Prop.sconce(), x - 2, low + 22);
+  // En el de dos alturas, pendones del gremio en los postes de arriba (sin tapar ventanas).
+  const flags: number[] = [];
+  if (tall)
+    for (let x = 36; x < b.w - 30; x += 36)
+      if (free(x - 7, 14, 0) && x + 7 < flueLeft && x - (flags.at(-1) ?? -99) >= 60) {
+        b.blit(banner(look.crest.field, look.crest.dark, low - 24), x - 7, 4);
+        flags.push(x);
+      }
+  const clear = (x: number, w: number) =>
+    free(x, w, 0) &&
+    x + w < flueLeft &&
+    flags.every((f) => x + w < f - 8 || x > f + 8) &&
+    // En el de una planta, la fila de arriba no pisa el tablón.
+    (tall || !boardOn || x + w < bx || x > bx + board.w);
   // Tapices con el escudo.
   if (look.decor.includes('tapices')) {
     const spots = [];
@@ -179,12 +232,13 @@ export function salonWall(
       if (free(x - 6, 12) && Math.abs(x - bx - 19) > 26) spots.push(x);
     for (const x of spots) b.blit(tapestry(look.crest.field, look.crest.dark), x - 5, 4);
   }
-  // Trofeos de las misiones, en fila arriba.
-  let x = 56;
+  // Trofeos de las misiones, en fila arriba (en el de dos alturas, a media pared de arriba).
+  let x = 8;
+  const ty = tall ? Math.round(low * 0.45) : 4;
   for (const t of look.trophies.slice(0, 6)) {
-    while (x < b.w - 70 && !free(x, 14)) x += 6;
+    while (x < b.w - 70 && !clear(x, 14)) x += 6;
     if (x >= b.w - 70) break;
-    b.blit(trophyIcon(t), x, 4);
+    b.blit(trophyIcon(t), x, ty);
     x += 18;
   }
 }
@@ -319,9 +373,37 @@ export function stage(): PixelBuffer {
  * La chimenea del salón: la de siempre con el tiro más alto y, encima de la repisa, el escudo del
  * gremio entre dos espadas (desde el nivel 2) y lo que se va juntando en la repisa.
  */
-export function hearth(level: number, crest: SalonLook['crest'], big: boolean): PixelBuffer {
+/** La chimenea: a cuánto de la pared de la derecha va su centro y a qué fondo. */
+export const HEARTH_RIGHT = 40;
+export const HEARTH_Z = DEPTH - 4;
+
+/**
+ * Dónde empiezan la chimenea y su tiro vistos en la pared del fondo (de `bw` de ancho), para no
+ * poner nada detrás. Las piezas miden 56 de ancho y el tiro va de 16 a 40.
+ */
+export function hearthSpan(bw: number): {
+  hearthLeft: number;
+  flueLeft: number;
+  flueRight: number;
+} {
+  const k = scaleAt(HEARTH_Z);
+  const mid = bw / BACK - HEARTH_RIGHT;
+  return {
+    hearthLeft: Math.round((mid - 28 / k) * BACK),
+    flueLeft: Math.round((mid - 12 / k) * BACK),
+    flueRight: Math.round((mid + 12 / k) * BACK),
+  };
+}
+
+export function hearth(
+  level: number,
+  crest: SalonLook['crest'],
+  big: boolean,
+  rise = 0,
+): PixelBuffer {
   const fire = Prop.fireplace(Math.min(3, level + (big ? 1 : 0)));
-  const top = 18;
+  // El tiro sube hasta el techo: `rise` de más en el salón de dos alturas.
+  const top = 18 + rise;
   return Prop.piece(fire.w, fire.h + top, (b) => {
     stoneWall(b, 16, 0, 24, top + 2, 'tiro-salon', { bw: 8, bh: 5 });
     b.blit(fire, 0, top);
@@ -341,17 +423,18 @@ export function hearth(level: number, crest: SalonLook['crest'], big: boolean): 
     }
     if (level >= 2) {
       // Espadas cruzadas y el escudo del gremio.
-      b.line(17, 2, 39, top + 4, P.fog);
-      b.line(39, 2, 17, top + 4, P.fog);
-      b.set(17, 2, P.gold);
-      b.set(39, 2, P.gold);
-      b.rect(22, 3, 12, 11, crest.dark);
-      b.rect(23, 3, 10, 11, crest.field);
-      b.rect(24, 14, 8, 2, crest.field);
-      b.rect(26, 16, 4, 1, crest.field);
-      b.hline(23, 3, 10, P.gold);
-      b.rect(26, 6, 4, 5, P.sand);
-      b.set(27, 7, crest.dark);
+      const y = rise;
+      b.line(17, y + 2, 39, top + 4, P.fog);
+      b.line(39, y + 2, 17, top + 4, P.fog);
+      b.set(17, y + 2, P.gold);
+      b.set(39, y + 2, P.gold);
+      b.rect(22, y + 3, 12, 11, crest.dark);
+      b.rect(23, y + 3, 10, 11, crest.field);
+      b.rect(24, y + 14, 8, 2, crest.field);
+      b.rect(26, y + 16, 4, 1, crest.field);
+      b.hline(23, y + 3, 10, P.gold);
+      b.rect(26, y + 6, 4, 5, P.sand);
+      b.set(27, y + 7, crest.dark);
     }
   });
 }

@@ -11,8 +11,11 @@ import { itemIcon } from '../../art/items';
 import type { GearView } from '../annex';
 import { stoneWall } from '../paint';
 import * as Prop from '../props';
-import { DEPTH } from './layout';
+import { DEPTH, PITCH } from './layout';
+import { scaleAt } from './view3d';
 import {
+  HEARTH_RIGHT,
+  HEARTH_Z,
   NO_LOOK,
   bar,
   barrels,
@@ -64,6 +67,18 @@ export function gearRoom(b: Building): string | null {
   const arm = b.rooms.filter((r) => r.type === 'armeria');
   const r = arm.find(inUse) ?? arm[0] ?? b.rooms.find((x) => x.type === 'tesoro');
   return r?.id ?? null;
+}
+
+/** Cadena de la que cuelga la lámpara grande. */
+function chain(h: number): PixelBuffer {
+  return Prop.piece(
+    3,
+    h,
+    (b) => {
+      for (let y = 0; y < h; y++) b.set(1, y, y % 3 === 2 ? P.steel : P.slate);
+    },
+    'none',
+  );
 }
 
 /** Huecos para colgar equipo en cada estante de la armería, por nivel. */
@@ -258,10 +273,12 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
       const big = decor.includes('chimenea');
       add(bar(lvl, decor.includes('barril')), 44, WALL - 16);
       add(barrels(), 17, FRONT + 4);
+      // En el de dos alturas, el tiro de la chimenea sube hasta el techo.
+      const rise = Math.round((room.h - 1) * PITCH * scaleAt(HEARTH_Z));
       add(
-        salonHearth(lvl, look.crest, big),
-        w - 40,
-        WALL + 2,
+        salonHearth(lvl, look.crest, big, rise),
+        w - HEARTH_RIGHT,
+        HEARTH_Z,
         0,
         fire(10, big ? 120 : 90, FIRE, true),
       );
@@ -282,15 +299,26 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
         add(Prop.stool(), tx - 18, z - 2);
         add(Prop.stool(), tx + 18, z + 2);
       });
-      if (room.h > 1 || lvl >= 3 || decor.includes('lampara'))
+      if (room.h > 1 || lvl >= 3 || decor.includes('lampara')) {
+        // En el de dos alturas, colgada de una cadena larga hasta media sala.
+        const drop = (room.h - 1) * (PITCH - 24);
+        if (drop)
+          t.push({
+            img: chain(Math.round(drop * scaleAt(MID))),
+            x: w / 2 + 20,
+            z: MID,
+            y: 0,
+            hang: true,
+          });
         t.push({
           img: Prop.chandelier(),
           x: w / 2 + 20,
           z: MID,
-          y: 0,
+          y: drop,
           hang: true,
           light: { dy: 4, r: 120, color: WARM, power: 0.9, flicker: 0.06 },
         });
+      }
       break;
     }
     case 'cocina':

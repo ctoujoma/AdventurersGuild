@@ -47,12 +47,17 @@ en tiempo real; hay trabajadores, visitantes, comida, entrenamiento y asaltos sa
 | 8 | Comida y cerveza | Hecho (#20) |
 | 9 | Entrenamiento + arrastrar personajes a salas | Hecho (#21) |
 | 10 | Tesoro y asaltos sala a sala | Hecho (#22) |
-| 11 | Arte de cada sala | **En curso:** salón de muestra y obras rehechas en #23 (abierto), esperando la prueba del usuario |
+| 11 | Arte de cada sala | **En curso:** salón de muestra, obras rehechas y dos rondas de pruebas en #23 (abierto) |
 | 12 | Balance y limpieza | Pendiente |
 
 **Obras rehechas** (pedido del usuario antes de seguir con el arte): ver
-[`obras-rework.md`](obras-rework.md), con decisiones y progreso punto a punto. Ahora toca que
-el usuario lo pruebe en la versión de pruebas (v18) y, con su visto bueno, volver al arte.
+[`obras-rework.md`](obras-rework.md), con decisiones y progreso punto a punto, incluidas las
+rondas de pruebas del usuario (apartado 5).
+
+**Cómo seguir:** (1) que el usuario pruebe la versión de pruebas y fusione #23; (2) con su visto
+bueno al estilo del salón, arte del resto de salas una a una (mismo método que `salon.ts`:
+pared del fondo propia, muebles de delante y luces), en PR pequeños; (3) PR 12: balance con
+`npm run sim` y limpieza (quitar la taberna dibujada si ya no hace falta); (4) PR `salas` → `main`.
 
 El PR #23 (abierto) lleva: salón de muestra, voladizos sin huecos, puerta del recibidor por
 dentro, tabiques y forjados de 16 con alma oscura (huecos de 126 × 106, salas de 110 × 90 por
@@ -76,6 +81,17 @@ ampliar, mover arrastrando, escaleras por tramos sin límite y cinta con pestañ
 - Ideas aprobadas para más adelante: botones «?» de ayuda (la pulsación larga sobre personajes
   ahora es arrastrar), noches especiales, huéspedes, calabozo, perro que avisa, persecución del
   bandido que huye, revisar qué aporta la empalizada.
+
+## Mejoras de futuro (apuntadas, sin hacer)
+
+- **Escaleras que solo ocupan sitio donde llegan:** la columna de escalera tendría ancho solo en
+  las plantas con rellano y en las demás las salas se juntarían (sin pasillos). Consecuencias
+  vistas: el edificio queda escalonado (el hueco mide un tercio de sala: paredes que no casan
+  entre plantas, borde derecho en escalera, voladizos parciales que dibujar); una sala de dos
+  alturas no puede tener escalera en una planta y no en la otra (habría que prohibirlo); poner o
+  quitar un tramo corre media planta. Toca `colX`/`stairX`/`innerWidth` por planta en
+  `layout.ts`, `roomRect`, tejados, voladizos, `works.ts` y `textures.ts`.
+- Equipo: la armería sin reparar se ve oscura y sus arcones se distinguen poco (darles algo de luz).
 
 ## Mapa del código (lo de las salas)
 
