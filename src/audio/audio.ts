@@ -11,6 +11,7 @@ export type Sfx =
   | 'close'
   | 'coin'
   | 'build'
+  | 'hammer'
   | 'purr'
   | 'hoot'
   | 'sparks'
@@ -201,6 +202,10 @@ class AudioEngine {
         }
         this.ping(1318, t + 0.7, 0.4, 0.07 * v);
         this.ping(1760, t + 0.78, 0.6, 0.07 * v);
+        break;
+      case 'hammer':
+        this.thump(t, 0.14 * v);
+        this.ping(2000 + Math.random() * 500, t, 0.07, 0.03 * v);
         break;
       case 'purr':
         this.purr(t, 1.4, 0.22 * v);

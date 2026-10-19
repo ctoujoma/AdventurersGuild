@@ -2,7 +2,7 @@ import { useMemo, useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
 import { planIssue, tryWorks, type Action } from '../core/game';
 import { laxly } from '../core/rooms';
-import type { GameState } from '../core/model';
+import type { GameState, Room } from '../core/model';
 import { ROOMS } from '../data/rooms';
 import { targetsFor, type Pick, type Target } from '../world/rooms/works';
 
@@ -46,6 +46,8 @@ interface Deps {
   toast: (text: string) => void;
   /** Mira a una sala de la escena (la que se acaba de tocar). */
   focus: (id: string) => void;
+  /** Levanta en la escena las salas recién hechas (andamio y polvo). */
+  raise: (ids: string[]) => void;
 }
 
 /** Sala a la que mirar tras una obra, si la hay. */
@@ -58,11 +60,21 @@ function roomOf(before: GameState, after: GameState, a: Action): string | null {
   return null;
 }
 
+/** Salas nuevas o cambiadas (sitio, tamaño o nivel) entre dos estados, de abajo arriba. */
+export function touchedRooms(before: GameState, after: GameState): string[] {
+  const key = (r: Room) => [r.type, r.col, r.floor, r.w, r.h, r.level].join(' ');
+  const old = new Map(before.building.rooms.map((r) => [r.id, key(r)]));
+  return after.building.rooms
+    .filter((r) => old.get(r.id) !== key(r))
+    .sort((a, b) => a.floor - b.floor || a.col - b.col)
+    .map((r) => r.id);
+}
+
 /** Sonido de cada obra al apuntarla. */
 const soundOf = (a: Action) =>
   a.type === 'demolish' ? 'close' : a.type === 'move' ? 'select' : 'build';
 
-export function useWorks({ game, dispatch, toast, focus }: Deps): Works {
+export function useWorks({ game, dispatch, toast, focus, raise }: Deps): Works {
   const [steps, setSteps] = useState<Action[] | null>(null);
   const [pick, setPick] = useState<Pick | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
@@ -157,11 +169,15 @@ export function useWorks({ game, dispatch, toast, focus }: Deps): Works {
         return;
       }
       const before = game;
-      if (dispatch({ type: 'works', steps }) === before) {
+      const after = dispatch({ type: 'works', steps });
+      if (after === before) {
         toast('Las obras ya no cuadran con la taberna: revísalas.');
         return;
       }
-      audio.play('build');
+      const ids = touchedRooms(before, after);
+      if (ids[0]) focus(ids[0]);
+      raise(ids);
+      audio.play('coin');
       toast(
         `Obras pagadas: ${steps.length} ${steps.length === 1 ? 'obra hecha' : 'obras hechas'}.`,
       );

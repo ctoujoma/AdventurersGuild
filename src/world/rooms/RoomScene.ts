@@ -90,6 +90,8 @@ const NEAR = 20;
 const FAR = EYE + 400;
 /** Fondo del terreno que se ve a los lados y por detrás del edificio. */
 const YARD_D = 220;
+/** Lo que tarda en levantarse una sala al pagar las obras (s). */
+const RAISE = 2.4;
 
 type Tint = readonly [number, number, number];
 /** Luz de fondo de cada sitio (0–1 por canal): la noche sin faroles. */
@@ -215,6 +217,8 @@ export class RoomScene {
   private targetsKey = '';
   /** Lo que dio cada sala anoche: cifras que suben y se desvanecen encima de la sala. */
   private floats: { rect: Rect; n: number; beer: boolean; t0: number }[] = [];
+  /** Salas que se están levantando tras pagar las obras (andamio, polvo y martillazos). */
+  private raising: { id: string; t0: number; knock: number }[] = [];
   /** Marcas de siempre del modo obras: se tocan ellas y también las salas, sin mover la cámara. */
   private soft = false;
   private model: SceneModel | null = null;
@@ -555,6 +559,18 @@ export class RoomScene {
       const n = y.food ?? y.beer ?? 0;
       if (spot && n > 0)
         this.floats.push({ rect: spot.rect, n, beer: !y.food, t0: this.t + 0.3 + i * 0.35 });
+    });
+  }
+
+  /**
+   * Las obras pagadas se levantan a la vista: cada sala tocada sale con andamio, polvo y
+   * martillazos un par de segundos, una detrás de otra.
+   */
+  raise(ids: string[]): void {
+    const gap = Math.min(0.5, 2 / Math.max(1, ids.length));
+    ids.forEach((id, i) => {
+      const t0 = this.t + i * gap;
+      this.raising.push({ id, t0, knock: t0 });
     });
   }
 
@@ -1235,6 +1251,7 @@ export class RoomScene {
       this.floats.length > 0 ||
       !!this.drag?.moved ||
       !!this.roomDrag?.moved ||
+      this.raising.length > 0 ||
       !!this.raid ||
       !!this.routePts ||
       (!this.night && !!this.model?.heroes.some((h) => h.train));
@@ -1244,6 +1261,7 @@ export class RoomScene {
       if (this.routePts && !this.raid) this.raidRoute(this.routePts);
       if (this.targets) this.marks(this.targets);
       this.roomGhost();
+      this.scaffolds();
       this.dropMark();
       this.trainBars();
       this.raid?.draw(ctx, view.px, view.py);
@@ -1499,6 +1517,64 @@ export class RoomScene {
       this.cb.onHotspot?.(t.id, t.label, { x: p.x, y: p.y, wx: w.x, wy: w.y });
       this.cb.onSound?.('build', 0.5);
     } else this.cb.onRoomDrop?.();
+  }
+
+  /** El andamio de las salas que se levantan: lo que falta por subir, en sombra, y el polvo. */
+  private scaffolds(): void {
+    if (!this.raising.length) return;
+    const { topCtx: ctx, camera, t } = this;
+    this.raising = this.raising.filter((s) => {
+      if (t < s.t0 + RAISE) return true;
+      const r = this.roomRect(s.id);
+      if (!r) return false;
+      // Acabada: cae el andamio en una nube de polvo.
+      for (let i = 0; i < 18; i++)
+        this.particles.spawn('puff', r.x + Math.random() * r.w, r.y + r.h - Math.random() * 20);
+      this.cb.onSound?.('build', 0.6);
+      return false;
+    });
+    for (const s of this.raising) {
+      const k = (t - s.t0) / RAISE;
+      const r = this.roomRect(s.id);
+      if (k < 0 || !r) continue;
+      const x = Math.round(r.x - camera.px);
+      const y = Math.round(r.y - camera.py);
+      const w = Math.round(r.w);
+      const h = Math.round(r.h);
+      // La sala sube de abajo arriba: lo que falta, en sombra.
+      const up = Math.min(1, k / 0.85);
+      const rest = Math.round(h * (1 - up));
+      ctx.globalAlpha = 0.7;
+      ctx.fillStyle = P.black;
+      ctx.fillRect(x, y, w, rest);
+      // El andamio: postes y tablones de madera, que se van al final.
+      ctx.globalAlpha = k > 0.85 ? (1 - k) / 0.15 : 1;
+      const poles: number[] = [];
+      for (let px = 4; px < w - 6; px += Math.max(30, Math.floor((w - 10) / 3))) poles.push(px);
+      poles.push(w - 7);
+      for (const px of poles) {
+        ctx.fillStyle = P.black;
+        ctx.fillRect(x + px - 1, y, 5, h);
+        ctx.fillStyle = P.oak;
+        ctx.fillRect(x + px, y, 3, h);
+      }
+      for (let py = h - 6; py > 4; py -= 28) {
+        ctx.fillStyle = P.black;
+        ctx.fillRect(x + 2, y + py - 1, w - 4, 5);
+        ctx.fillStyle = P.clay;
+        ctx.fillRect(x + 3, y + py, w - 6, 3);
+      }
+      ctx.globalAlpha = 1;
+      // Martillazos con su polvo donde se está subiendo.
+      if (k < 0.85 && t >= s.knock) {
+        s.knock = t + 0.28 + Math.random() * 0.18;
+        const wx = r.x + 8 + Math.random() * (r.w - 16);
+        const wy = r.y + r.h * (1 - up);
+        for (let i = 0; i < 3; i++) this.particles.spawn('puff', wx, wy + Math.random() * 6);
+        this.particles.spawn('dust', wx, wy);
+        this.cb.onSound?.('hammer', 0.7);
+      }
+    }
   }
 
   /** Lo que se ve mientras se lleva una sala: su silueta bajo el dedo, verde si cabe ahí. */

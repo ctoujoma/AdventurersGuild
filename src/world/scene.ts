@@ -104,6 +104,7 @@ export type SoundName =
   | 'squeak'
   | 'bats'
   | 'build'
+  | 'hammer'
   | 'drip'
   | 'cheer'
   | BattleSound;

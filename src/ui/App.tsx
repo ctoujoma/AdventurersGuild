@@ -242,7 +242,16 @@ export function App() {
     setBubble({ text, x: at.x, y: at.y, wx: at.wx, wy: at.wy, key: Date.now() });
 
   // Obras en la vista de salas: elegir sitio en la escena y el modo plano (que se ve en la escena).
-  const works = useWorks({ game, dispatch, toast, focus: (id) => scene.current?.focus(id) });
+  const works = useWorks({
+    game,
+    dispatch,
+    toast,
+    focus: (id) => scene.current?.focus(id),
+    raise: (ids) => {
+      const s = scene.current;
+      if (s instanceof RoomScene) s.raise(ids);
+    },
+  });
   const draft = works.planning ? works.view : null;
   const model = useMemo(() => sceneModel(draft ?? sceneGame), [sceneGame, draft]);
   useEffect(() => {
