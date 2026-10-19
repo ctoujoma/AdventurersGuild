@@ -32,7 +32,11 @@ export const GLOSSARY: readonly { term: string; text: string }[] = [
   },
   {
     term: 'Asaltos y chivatazos',
-    text: 'Desde el día 12, una banda puede atacar la taberna de noche. Con suerte alguien avisa antes (la bandera roja de arriba cuenta las noches). La empalizada, el vigía y el perro ayudan.',
+    text: 'Desde el día 12, una banda puede atacar la taberna de noche. Con suerte alguien avisa antes (la bandera roja de arriba cuenta las noches). Se pelea sala a sala: los de guardia (dos como mucho) salen al patio y dan la alarma; si caen, rompen la puerta y van a por la cámara del tesoro. Los que duermen acuden corriendo, y la puerta, la cerradura y la distancia les dan tiempo. Lo que cargan los bandidos se recupera si caen antes de salir.',
+  },
+  {
+    term: 'Cámara del tesoro',
+    text: 'Guarda todo el oro del gremio; cuanto más grande y mejor, más cabe. Lo que no cabe se pierde (el oro de arriba se pone en amarillo cuando está casi llena). Su nivel es también la cerradura que tienen que forzar los bandidos.',
   },
   {
     term: 'Moral',

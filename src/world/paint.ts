@@ -96,51 +96,6 @@ export function planksV(
   }
 }
 
-/** Tablones horizontales escalonados (suelos, paredes de dormitorio, desván). */
-export function planksH(
-  b: PixelBuffer,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  seed: string,
-  ramp: Ramp = [P.plum, P.bark, P.rust, P.oak],
-  ph = 5,
-): void {
-  const rng = new Rng(seed);
-  for (let py = y, row = 0; py < y + h; py += ph, row++) {
-    const hh = Math.min(ph, y + h - py);
-    let px = x - rng.int(0, 30);
-    while (px < x + w) {
-      const len = rng.int(18, 40);
-      const tone = rng.weighted([
-        [1, 2],
-        [2, 3],
-      ] as const);
-      const x0 = Math.max(px, x);
-      const x1 = Math.min(px + len, x + w);
-      if (x1 > x0) {
-        b.rect(x0, py, x1 - x0, hh, ramp[tone]!);
-        b.hline(x0, py, x1 - x0, ramp[Math.min(ramp.length - 1, tone + 1)]!);
-        b.hline(x0, py + hh - 1, x1 - x0, ramp[0]!);
-        if (px >= x) b.vline(px, py, hh, ramp[0]!);
-        for (let k = 0; k < len / 9; k++)
-          b.hline(
-            x0 + rng.int(0, Math.max(0, x1 - x0 - 4)),
-            py + rng.int(1, Math.max(1, hh - 2)),
-            rng.int(2, 5),
-            ramp[Math.max(0, tone - 1)]!,
-          );
-        if (px >= x) {
-          b.set(px + 2, py + 1, P.black);
-          b.set(px + 2, py + hh - 2, P.black);
-        }
-      }
-      px += len;
-    }
-  }
-}
-
 /** Yeso: tono plano con motas sueltas y pinceladas cortas; en ruinas, grietas y boquetes. */
 export function plaster(
   b: PixelBuffer,
@@ -259,28 +214,6 @@ export function ambientOcclusion(
   }
 }
 
-/** Sombra de contacto bajo un objeto (elipse oscura tramada). */
-export function contactShadow(
-  b: PixelBuffer,
-  cx: number,
-  y: number,
-  rx: number,
-  strength = 0.7,
-): void {
-  for (let i = -rx; i <= rx; i++) {
-    for (let j = -1; j <= 1; j++) {
-      const t = 1 - Math.abs(i) / (rx + 1) - Math.abs(j) * 0.35;
-      if (t <= 0) continue;
-      const px = Math.round(cx + i);
-      const py = y + j;
-      if (bayer(px, py) < t * strength) {
-        const c = b.get(px, py);
-        if (alpha(c)) b.set(px, py, darker(toHex(c)));
-      }
-    }
-  }
-}
-
 /** Telaraña en una esquina (sup-izq si dir=1; sup-der si dir=-1). */
 export function cobweb(b: PixelBuffer, x: number, y: number, size: number, dir: 1 | -1): void {
   const c = P.fog;
@@ -295,25 +228,4 @@ export function cobweb(b: PixelBuffer, x: number, y: number, size: number, dir: 
     }
   }
   for (let i = 0; i < size; i += 2) b.set(x + dir * i, y + i, c);
-}
-
-/** Relleno con degradado vertical tramado sobre una rampa. */
-export function gradientV(
-  b: PixelBuffer,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  ramp: Ramp,
-  reverse = false,
-): void {
-  const n = ramp.length - 1;
-  for (let j = 0; j < h; j++) {
-    const t = (reverse ? 1 - j / Math.max(1, h - 1) : j / Math.max(1, h - 1)) * n;
-    for (let i = 0; i < w; i++) {
-      const base = Math.floor(t);
-      const idx = Math.min(n, base + (t - base > bayer(x + i, y + j) ? 1 : 0));
-      b.set(x + i, y + j, ramp[idx]!);
-    }
-  }
 }

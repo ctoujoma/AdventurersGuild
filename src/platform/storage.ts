@@ -1,6 +1,7 @@
-import { START } from '../core/balance';
+import { START_BEER, START_FOOD } from '../core/balance';
 import { emptyStats } from '../core/feats';
 import { SAVE_VERSION, type GameState } from '../core/model';
+import { facOf } from '../core/rooms';
 
 /**
  * Dónde se guarda la partida. En la web, localStorage; en Android se cambiará por
@@ -40,18 +41,20 @@ export const webStorage: SaveStorage = {
 
 /**
  * Lee una partida desde texto (guardado local o archivo importado). Si no es válida o es
- * de otra versión devuelve null. Las partidas antiguas se completan con lo que falte.
+ * de otra versión devuelve null. El nivel de las instalaciones se saca del edificio.
  */
 export function parseSave(raw: string | null): GameState | null {
   if (!raw) return null;
   try {
     const s = JSON.parse(raw) as GameState;
-    if (!s || s.version !== SAVE_VERSION || !s.fac || !Array.isArray(s.heroes)) return null;
-    s.fac = { ...START.fac, ...s.fac };
+    if (!s || s.version !== SAVE_VERSION || !s.building || !Array.isArray(s.heroes)) return null;
+    s.fac = facOf(s.building);
     s.trophies ??= [];
     s.mode ??= 'deuda';
     s.stats ??= emptyStats();
     s.feats ??= {};
+    s.food ??= START_FOOD;
+    s.beer ??= START_BEER;
     return s;
   } catch {
     return null;

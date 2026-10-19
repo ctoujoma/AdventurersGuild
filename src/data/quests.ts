@@ -335,18 +335,3 @@ export const TWISTS = [
   'Alguien más quería lo mismo, y llegó antes.',
   'La amenaza era el doble de grande de lo prometido.',
 ];
-
-export const ITEMS = [
-  { name: 'Espada oxidada', desc: 'Con una buena limpieza, quizá corte algo.', value: 18 },
-  { name: 'Colmillos de huargo', desc: 'La tienda de pociones los compraría.', value: 24 },
-  {
-    name: 'Llave de hierro negro',
-    desc: 'No abre ninguna puerta de la comarca. Ya se ha probado.',
-    value: 8,
-  },
-  { name: 'Amuleto de hueso', desc: 'Huele a humo y a otra cosa.', value: 30 },
-  { name: 'Mapa a medio quemar', desc: 'Falta justo la parte importante.', value: 15 },
-  { name: 'Reliquia sin nombre', desc: 'Sigue tibia aunque pase la noche al raso.', value: 60 },
-  { name: 'Bolsa de gemas turbias', desc: 'Brillan menos de lo que prometen.', value: 45 },
-  { name: 'Escudo con blasón', desc: 'De una casa noble que ya no existe.', value: 35 },
-];

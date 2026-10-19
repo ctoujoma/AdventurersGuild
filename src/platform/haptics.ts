@@ -10,6 +10,8 @@ const PATTERNS: Partial<Record<Sfx, number | number[]>> = {
   coin: 14,
   depart: 22,
   build: [20, 40, 20],
+  hammer: 12,
+  creak: 10,
   impact: 28,
   hit: 22,
   thud: 30,

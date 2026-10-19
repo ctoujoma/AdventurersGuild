@@ -3,10 +3,12 @@
  * El núcleo no conoce el DOM ni el arte; el aspecto de cada héroe sale de su `seed`.
  */
 import type { BossKind } from '../data/bosses';
-import type { CrestColor, CrestSymbol, DecorId, Dish, StaffId } from '../data/custom';
+import type { CrestColor, CrestSymbol, DecorId, FacadeId, StaffId } from '../data/custom';
+import type { Trade } from '../data/workers';
+import type { RoomType } from '../data/rooms';
 import type { Attrs, Challenge, ClassId, SkillId, Trait } from './party';
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 4;
 
 export type Sex = 'm' | 'f';
 
@@ -41,6 +43,32 @@ export interface Hero {
   guard?: boolean;
   /** Dónde se le perdió la pista (si está desaparecido). */
   lostAt?: string;
+  /** Sala en la que echa una mano o entrena mientras está en casa (id). */
+  job?: string;
+  /** Progreso de entrenamiento hacia el siguiente punto de cada atributo. */
+  train?: Partial<Attrs>;
+}
+
+/** Quien trabaja en la taberna: no sale de misión, cobra poco y rinde más en su oficio. */
+export interface Worker {
+  id: string;
+  /** Semilla del aspecto. */
+  seed: string;
+  name: string;
+  sex: Sex;
+  /** Maña, de 1 a 10: lo que rinde. Sube trabajando. */
+  skill: number;
+  trade: Trade;
+  /** Noches trabajadas hacia la siguiente subida de Maña. */
+  xp: number;
+  salary: number;
+  /** Prima por empezar (solo cuenta mientras pide trabajo). */
+  fee: number;
+  /** Sala en la que trabaja (id); sin sala, descansa. */
+  room?: string;
+  /** Uno de los tres del pueblo que ya trabajaban para tu tío. */
+  village?: StaffId;
+  quote: string;
 }
 
 export type QuestType = 'Cazar' | 'Escoltar' | 'Explorar' | 'Recuperar' | 'Investigar' | 'Limpiar';
@@ -188,6 +216,61 @@ export interface Facilities {
   vet: number;
 }
 
+/** Obra en curso: la sala nueva o movida no funciona hasta que acaba; la ampliada, sí. */
+export interface Works {
+  kind: 'build' | 'extend' | 'move';
+  nights: number;
+  /** Al ampliar: el tamaño de antes, que es el que cuenta hasta que acaba la obra. */
+  from?: { col: number; w: number; h: number };
+}
+
+/** Una sala del corte del edificio. Ocupa `w` huecos de ancho y `h` plantas de alto. */
+export interface Room {
+  id: string;
+  type: RoomType;
+  /** Hueco de la izquierda (0 = junto al patio). */
+  col: number;
+  /** Planta de abajo (0 = planta baja; las negativas, bajo tierra). */
+  floor: number;
+  w: number;
+  h: number;
+  /** 0 = rota o sin levantar. */
+  level: number;
+  /** Monedas gastadas en ella: al destruirla se devuelve una parte. */
+  spent: number;
+  works?: Works;
+}
+
+/**
+ * Un tramo de escalera: une la planta `floor` con la de encima en la columna de escalera que va
+ * justo a la izquierda del hueco `at`. La columna existe (y ensancha el edificio) si tiene algún
+ * tramo; en las plantas a las que no llega ninguno, es muro.
+ */
+export interface Stair {
+  at: number;
+  floor: number;
+}
+
+/** El edificio: salas, escaleras, lo excavado y lo que hay en el patio. */
+export interface Building {
+  /** Ancho en huecos, sin contar las escaleras. */
+  cols: number;
+  /** Tramos de escalera, sin límite (como los ascensores de Fallout Shelter). */
+  stairs: Stair[];
+  /** Huecos excavados bajo tierra, como «hueco,planta». */
+  dug: string[];
+  rooms: Room[];
+  /** Establo, muñecos de entrenamiento y empalizada, por nivel. */
+  yard: Record<'establo' | 'patio' | 'empal', number>;
+}
+
+/** Lo que da una sala al terminar el día. */
+export interface RoomYield {
+  room: string;
+  food?: number;
+  beer?: number;
+}
+
 /** Lo que pasó al terminar un día: se enseña en la transición del amanecer. */
 export interface DawnEvent {
   t: string;
@@ -198,10 +281,10 @@ export interface Custom {
   name: string;
   color: CrestColor;
   symbol: CrestSymbol;
-  dish: Dish;
-  staff: StaffId[];
   dog: boolean;
   decor?: DecorId[];
+  /** Lo que adorna la fachada (atrae visitantes). */
+  facade?: FacadeId[];
   raven?: boolean;
   /** Día en que se montó la fiesta de la comarca. */
   feast?: number;
@@ -239,6 +322,47 @@ export interface RaidResult {
   /** Defensores que acabaron heridos. */
   hurt: string[];
   stolen: number;
+  /** Oro que cargaban los bandidos que cayeron antes de salir (vuelve a la cámara). */
+  recovered?: number;
+  /** La pelea sala a sala, segundo a segundo, para verla en la escena. */
+  plan?: RaidPlan;
+}
+
+/**
+ * Lo que pasa en un asalto, en segundos desde que se oyen las botas. Los sitios son salas (por
+ * id), el patio ('patio') o el camino ('fuera'). Las figuras son héroes, trabajadores o
+ * bandidos ('b0', 'b1'…).
+ */
+export type RaidStep =
+  /** Echan a andar hacia una sala vecina y llegan en `dur` segundos. */
+  | { t: number; k: 'move'; ids: string[]; to: string; dur: number }
+  /** Se despierta y sale corriendo (los que duermen). */
+  | { t: number; k: 'wake'; id: string }
+  /** Empiezan a pelear en una sala. */
+  | { t: number; k: 'fight'; at: string }
+  /** Cae un defensor (herido, no muerto). */
+  | { t: number; k: 'fall'; id: string }
+  /** Cae un bandido; si cargaba oro, se recupera. */
+  | { t: number; k: 'down'; id: string; gold: number }
+  /** Empiezan a romper la puerta, y la rompen. */
+  | { t: number; k: 'door'; dur: number }
+  | { t: number; k: 'broke' }
+  /** Empiezan con la cerradura de la cámara, y la abren. */
+  | { t: number; k: 'lock'; dur: number }
+  | { t: number; k: 'open' }
+  /** Un bandido carga su saco. */
+  | { t: number; k: 'loot'; id: string; gold: number }
+  /** Un bandido se pierde por el camino con lo que lleva. */
+  | { t: number; k: 'escape'; id: string; gold: number };
+
+export interface RaidPlan {
+  /** Camino de los bandidos: del recibidor a la cámara (ids de sala). */
+  route: string[];
+  /** Dónde está cada uno al empezar. */
+  start: Record<string, string>;
+  steps: RaidStep[];
+  /** Segundo en el que acaba todo. */
+  end: number;
 }
 
 /** Contadores de la partida: hazañas, desafíos y récords. */
@@ -305,9 +429,24 @@ export interface GameState {
   rep: number;
   /** Deuda ya pagada al prestamista. */
   paid: number;
+  /** Segundos que lleva el día de hoy (el reloj se para con el juego cerrado). */
+  clock?: number;
+  /** Lo que la caja de hoy ya ha entregado durante el día. */
+  till?: number;
+  /** Raciones en la cocina y la despensa, y jarras en la bodega. */
+  food: number;
+  beer: number;
+  /** Lo que hizo cada sala anoche (para enseñarlo flotando al amanecer). */
+  yields?: RoomYield[];
+  /** Las salas y el patio. */
+  building: Building;
+  /** Nivel de cada instalación de antes, sacado del edificio (ver core/rooms.ts). */
   fac: Facilities;
   heroes: Hero[];
   candidates: Hero[];
+  /** Trabajadores de la casa y gente que ha venido a pedir trabajo. */
+  workers: Worker[];
+  seekers: Worker[];
   quests: Quest[];
   missions: Mission[];
   reports: Report[];
@@ -335,7 +474,7 @@ export interface GameState {
   raid?: Raid | null;
   /** Sin asaltos hasta este día (tras repeler uno, se corre la voz). */
   truce?: number;
-  /** Cómo es la taberna: nombre, escudo, plato, personal y mascota. */
+  /** Cómo es la taberna: nombre, escudo, decoración, personal y mascota. */
   custom?: Custom;
   /** Amenaza regional (0–100): crece si se ignoran o fallan las historias. */
   threat?: number;
@@ -347,6 +486,10 @@ export interface GameState {
   chains?: ChainState[];
   /** Lugares de la comarca ya visitados (levantan la niebla del mapa). */
   explored?: string[];
+  /** Día en que un espía de los bandidos estudió la casa (más riesgo de asalto unos días). */
+  scout?: number;
+  /** Oro que no cabía en la cámara y se ha perdido desde el último amanecer. */
+  spilt?: number;
   /** Último asalto, para verlo en la escena al amanecer. */
   lastRaid?: RaidResult | null;
   /** Informe de la pelea contra un jefe de esta noche (para el aviso del amanecer). */

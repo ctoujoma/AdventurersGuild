@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { START_BEER, START_FOOD } from '../core/balance';
 import { endDay, newGame } from '../core/game';
+import type { GameState } from '../core/model';
 import { loadGame, saveGame, type SaveStorage } from './storage';
 
 function memory(): SaveStorage & { data: string | null } {
@@ -27,19 +29,36 @@ describe('guardado', () => {
     expect(endDay(loaded)).toEqual(endDay(s));
   });
 
-  it('completa las instalaciones nuevas en partidas antiguas', () => {
+  it('una partida de antes de la despensa empieza con la comida y la cerveza de siempre', () => {
+    const mem = memory();
+    const old: Partial<GameState> = newGame('sin-despensa');
+    delete old.food;
+    delete old.beer;
+    mem.write(JSON.stringify(old));
+    expect(loadGame(mem)).toMatchObject({ food: START_FOOD, beer: START_BEER });
+  });
+
+  it('saca las instalaciones del edificio guardado', () => {
     const mem = memory();
     const s = newGame('antigua');
-    mem.write(JSON.stringify({ ...s, fac: { dorm: 2, enf: 1, tab: 1 } }));
+    for (const r of s.building.rooms)
+      if (r.type === 'dormitorio' || r.type === 'enfermeria') r.level = 2;
+    mem.write(JSON.stringify({ ...s, fac: { dorm: 1, enf: 0, tab: 1 } }));
     expect(loadGame(mem)!.fac).toMatchObject({
       dorm: 2,
-      enf: 1,
+      enf: 2,
       tab: 1,
       mapas: 0,
       arm: 0,
       cap: 0,
       forja: 0,
     });
+  });
+
+  it('ignora las partidas de antes de las salas', () => {
+    const mem = memory();
+    mem.write(JSON.stringify({ ...newGame('sin-salas'), building: undefined }));
+    expect(loadGame(mem)).toBeNull();
   });
 
   it('ignora partidas rotas o de otra versión', () => {

@@ -1,43 +1,51 @@
 import { useMemo, useState } from 'preact/hooks';
 import { customOf } from '../../core/game';
+import { appeal } from '../../core/salon';
 import type { Custom, GameState } from '../../core/model';
 import {
   CREST_COLORS,
   CREST_SYMBOLS,
   DECOR,
-  DISHES,
+  FACADE,
   DOG_PRICE,
   FEAST_PRICE,
   RAVEN_PRICE,
-  STAFF,
   decorSlots,
   isFeastDay,
   type CrestColor,
   type DecorId,
+  type FacadeId,
   type CrestSymbol,
-  type Dish,
-  type StaffId,
 } from '../../data/custom';
 import { crestBoard } from '../../world/props';
 import { BufferImage } from '../BufferImage';
 
 interface Props {
   game: GameState;
-  onCustom: (patch: Partial<Pick<Custom, 'name' | 'color' | 'symbol' | 'dish'>>) => void;
-  onStaff: (id: StaffId, on: boolean) => void;
+  onCustom: (patch: Partial<Pick<Custom, 'name' | 'color' | 'symbol'>>) => void;
   onDog: () => void;
   onDecor: (id: DecorId, on: boolean) => void;
+  onFacade: (id: FacadeId) => void;
   onRaven: () => void;
   onFeast: () => void;
 }
 
 /**
  * Tu taberna: nombre y escudo del letrero, la fiesta de la comarca, la decoración del salón,
- * el plato de la casa, el personal y los animales.
+ * la fachada y los animales (el personal está con los héroes, en «Trabajo»).
  */
-export function TabernaPanel({ game, onCustom, onStaff, onDog, onDecor, onRaven, onFeast }: Props) {
+export function TabernaPanel({
+  game,
+  onCustom,
+  onDog,
+  onDecor,
+  onFacade,
+  onRaven,
+  onFeast,
+}: Props) {
   const c = customOf(game);
   const decor = c.decor ?? [];
+  const facade = c.facade ?? [];
   const slots = decorSlots(game.fac.tab);
   const feastToday = isFeastDay(game.day);
   const nextFeast = Math.ceil((game.day + 1) / 10) * 10;
@@ -122,7 +130,7 @@ export function TabernaPanel({ game, onCustom, onStaff, onDog, onDecor, onRaven,
         <h3 class="sec-title">
           Decoración del salón{' '}
           <span class="muted">
-            ({decor.length}/{slots} huecos{slots < 3 ? '; uno más con el salón grande' : ''})
+            ({decor.length}/{slots} huecos; uno más por cada nivel del salón)
           </span>
         </h3>
         <div class="list">
@@ -135,7 +143,8 @@ export function TabernaPanel({ game, onCustom, onStaff, onDog, onDecor, onRaven,
                   <b>{d.name}</b>
                   <span class="muted">{d.desc}</span>
                   <span class="tiny">
-                    {on ? 'En el salón (quitarla no devuelve el dinero)' : `${d.price} monedas`}
+                    +{d.appeal} de Atractivo ·{' '}
+                    {on ? 'en el salón (quitarla no devuelve el dinero)' : `${d.price} monedas`}
                   </span>
                 </div>
                 {on ? (
@@ -158,55 +167,29 @@ export function TabernaPanel({ game, onCustom, onStaff, onDog, onDecor, onRaven,
       </section>
 
       <section>
-        <h3 class="sec-title">Plato de la casa</h3>
-        <div class="list" role="radiogroup" aria-label="Plato de la casa">
-          {(Object.keys(DISHES) as Dish[]).map((k) => {
-            const d = DISHES[k];
-            return (
-              <button
-                key={k}
-                role="radio"
-                aria-checked={c.dish === k}
-                class="card-paper tav-option"
-                onClick={() => onCustom({ dish: k })}
-              >
-                <b>{d.name}</b>
-                <span class="muted">{d.desc}</span>
-                <span class="tiny">{d.cost ? `${d.cost} monedas cada noche` : 'Sin coste'}</span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      <section>
-        <h3 class="sec-title">Personal</h3>
+        <h3 class="sec-title">
+          Fachada <span class="muted">(Atractivo {appeal(game)}: trae más visitantes)</span>
+        </h3>
         <div class="list">
-          {(Object.keys(STAFF) as StaffId[]).map((k) => {
-            const p = STAFF[k];
-            const on = c.staff.includes(k);
+          {(Object.keys(FACADE) as FacadeId[]).map((k) => {
+            const f = FACADE[k];
+            const on = facade.includes(k);
             return (
               <article key={k} class="card-paper facility">
                 <div class="facility-info">
-                  <b>{p.name}</b>
-                  <span class="muted">{p.desc}</span>
-                  <span class="tiny">
-                    {on
-                      ? `Trabaja aquí · ${p.salary} monedas de salario por semana`
-                      : `Contratar: ${p.fee} monedas y ${p.salary} de salario por semana`}
-                  </span>
+                  <b>{f.name}</b>
+                  <span class="muted">{f.desc}</span>
+                  <span class="tiny">+{f.appeal} de Atractivo</span>
                 </div>
                 {on ? (
-                  <button class="btn btn-wood" onClick={() => onStaff(k, false)}>
-                    Despedir
-                  </button>
+                  <span class="pill pill-ok">Puesto</span>
                 ) : (
                   <button
                     class="btn btn-gold"
-                    disabled={game.gold < p.fee}
-                    onClick={() => onStaff(k, true)}
+                    disabled={game.gold < f.price}
+                    onClick={() => onFacade(k)}
                   >
-                    Contratar
+                    {f.price}
                   </button>
                 )}
               </article>
@@ -226,7 +209,8 @@ export function TabernaPanel({ game, onCustom, onStaff, onDog, onDecor, onRaven,
                 : 'Ladra a los forasteros y no le teme a nada.'}
             </span>
             <span class="tiny">
-              +3 de defensa y más probabilidad de chivatazo antes de un asalto.
+              Si asaltan la taberna, ladra y despierta a todos antes. Y más probabilidad de
+              chivatazo.
             </span>
           </div>
           {!c.dog && (

@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useBackButton } from '../platform/back';
 import { HoldHelp } from './HoldHelp';
-import { setHaptics } from '../platform/haptics';
+import { haptic, setHaptics } from '../platform/haptics';
 import { audio, type Mood } from '../audio/audio';
-import { canHire, customOf, newGame, reduce, type Action } from '../core/game';
-import { DECOR, STAFF } from '../data/custom';
+import { canClose, canHire, customOf, newGame, reduce, type Action } from '../core/game';
+import { raidRoute } from '../core/assault';
+import { canAssign, canHireWorker } from '../core/workers';
+import { DAY_SECONDS, DELIVERIES, DUSK } from '../core/balance';
+import { DECOR, FACADE } from '../data/custom';
+import { RUMORS, VISITORS, type VisitorKind } from '../data/visitors';
 import type { BossFight as BossFightRecord, Facilities, GameState } from '../core/model';
-import { CAPTIONS, FACILITY_INFO } from '../data/labels';
+import { FACILITY_INFO } from '../data/labels';
 import { loadRecords, mergeRecords, saveRecords } from '../platform/records';
 import { loadGame, saveGame, webStorage } from '../platform/storage';
-import type { Point, WorldScene } from '../world/scene';
+import type { Point } from '../world/scene';
 import { cheat, testFight } from '../core/cheats';
 import { BossCall, BossFight } from './BossFight';
 import { Dawn } from './Dawn';
@@ -30,21 +34,30 @@ import { applyLook, loadSettings, saveSettings, type Settings } from '../platfor
 import { Splash } from './Splash';
 import { Title } from './Title';
 import { nextTip } from './tips';
+import { canDrag, planDrop } from './drop';
 import { UncleNote } from './UncleNote';
 import { AwayPanel } from './panels/AwayPanel';
 import { GremioPanel } from './panels/GremioPanel';
-import { HeroesPanel } from './panels/HeroesPanel';
+import { HeroesPanel, type HeroFilter } from './panels/HeroesPanel';
 import { MailPanel } from './panels/MailPanel';
 import { TablonPanel } from './panels/TablonPanel';
 import { TabernaPanel } from './panels/TabernaPanel';
 import { ArconPanel, type ArconTab } from './panels/ArconPanel';
 import { QuestSheet } from './QuestSheet';
-import { SceneView } from './SceneView';
+import { SceneView, type GameScene } from './SceneView';
+import { RoomPanel, type RoomLink } from './panels/RoomPanel';
+import { ObrasPanel } from './panels/ObrasPanel';
+import { WorksBar } from './WorksBar';
+import { RoomMenu } from './RoomMenu';
+import { useWorks } from './works';
+import { LOCKED, worksOpen } from '../core/rooms';
+import type { Pick } from '../world/rooms/works';
+import { ROOMS } from '../data/rooms';
 import { TabBar, type TabId } from './TabBar';
 import { listNames, plural } from './text';
 import { sceneModel } from './view';
 
-type PanelId = Exclude<TabId, 'taberna'> | 'correo' | 'fuera' | 'libro' | 'casa' | 'arcon';
+type PanelId = Exclude<TabId, 'taberna'> | 'correo' | 'fuera' | 'libro' | 'casa' | 'arcon' | 'sala';
 
 interface Bubble {
   text: string;
@@ -59,13 +72,7 @@ interface Bubble {
 const freshGame = () => newGame(Date.now().toString(36));
 
 /** Bocadillo de texto anclado a un punto de la escena: se mueve con la cámara. */
-function SpeechBubble({
-  bubble,
-  scene,
-}: {
-  bubble: Bubble;
-  scene: { current: WorldScene | null };
-}) {
+function SpeechBubble({ bubble, scene }: { bubble: Bubble; scene: { current: GameScene | null } }) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (bubble.wx === undefined || bubble.wy === undefined) return;
@@ -103,7 +110,8 @@ export function App() {
   const [sceneGame, setSceneGame] = useState(game);
   const [panel, setPanel] = useState<PanelId | null>(null);
   const [arconTab, setArconTab] = useState<ArconTab>('equipo');
-  const [focusTrophy, setFocusTrophy] = useState<string | null>(null);
+  /** Sala tocada en la vista de salas (su ficha). */
+  const [roomId, setRoomId] = useState<string | null>(null);
   // Partida nueva: el día 1 se abre con la carta del tío.
   const [dawnOpen, setDawnOpen] = useState(!saved);
   /** La noche está pasando en la escena (entre «Terminar día» y el resumen del amanecer). */
@@ -119,8 +127,10 @@ export function App() {
   const [notice, setNotice] = useState<{ text: string; key: number } | null>(null);
   const [bubble, setBubble] = useState<Bubble | null>(null);
   const [hover, setHover] = useState<{ label: string; at: Point } | null>(null);
+  /** Llevando a alguien con el dedo: qué pasaría si se suelta ahí. */
+  const [dragTip, setDragTip] = useState<{ text: string; ok: boolean; at: Point } | null>(null);
   const [focusFac, setFocusFac] = useState<keyof Facilities | null>(null);
-  const [heroFilter, setHeroFilter] = useState<'todos' | 'candidatos'>('todos');
+  const [heroFilter, setHeroFilter] = useState<HeroFilter>('todos');
   const [hint, setHint] = useState(false);
   /** Splash del desarrollador, título y juego. Con #debug se entra directo a la partida. */
   const [screen, setScreen] = useState<'splash' | 'title' | 'game'>(() =>
@@ -133,7 +143,7 @@ export function App() {
   const [records, setRecords] = useState(loadRecords);
   /** Mejor llegada antes de esta partida, para comparar en la apertura. */
   const [prevBest] = useState(() => loadRecords().bestArrival);
-  const scene = useRef<WorldScene | null>(null);
+  const scene = useRef<GameScene | null>(null);
   // Ajustes: volúmenes, velocidad de la escena y aspecto; se guardan al cambiar.
   useEffect(() => {
     audio.setLevels(settings);
@@ -144,8 +154,6 @@ export function App() {
   }, [settings]);
   const gameRef = useRef(game);
   gameRef.current = game;
-
-  const model = useMemo(() => sceneModel(sceneGame), [sceneGame]);
 
   useEffect(() => {
     if (!dawnOpen && !passing) setSceneGame(game);
@@ -204,8 +212,86 @@ export function App() {
   });
 
   const toast = (text: string) => setNotice({ text, key: Date.now() });
+
+  /** Reloj del día en la interfaz (el del estado se guarda cada pocos segundos). */
+  const clockRef = useRef(game.clock ?? 0);
+  const [clock, setClock] = useState(clockRef.current);
+  /** Mueve el reloj: la escena lo sigue y la partida se entera al cruzar una entrega o cada 5 s. */
+  const moveClock = (next: number, before: number) => {
+    clockRef.current = next;
+    setClock(next);
+    scene.current?.setTime(next / DAY_SECONDS);
+    const open = DUSK * DAY_SECONDS;
+    const delivery = (x: number) => Math.floor((Math.min(x, open) / open) * DELIVERIES);
+    if (
+      Math.floor(next / 5) === Math.floor(before / 5) &&
+      delivery(next) === delivery(before) &&
+      next < DAY_SECONDS
+    )
+      return;
+    const gold = gameRef.current.gold;
+    const after = dispatch({ type: 'tick', to: next });
+    if (after.gold > gold) {
+      scene.current?.pay();
+      audio.play('coin', 0.25);
+    }
+  };
   const say = (text: string, at: Point) =>
     setBubble({ text, x: at.x, y: at.y, wx: at.wx, wy: at.wy, key: Date.now() });
+
+  // Obras en la vista de salas: elegir sitio en la escena y el modo plano (que se ve en la escena).
+  const works = useWorks({
+    game,
+    dispatch,
+    toast,
+    focus: (id) => scene.current?.focus(id),
+    raise: (ids) => {
+      const s = scene.current;
+      s?.raise(ids);
+    },
+    price: (id, cost) => {
+      const s = scene.current;
+      s?.priceTag(id, cost);
+    },
+  });
+  const draft = works.planning ? works.view : null;
+  const model = useMemo(() => sceneModel(draft ?? sceneGame), [sceneGame, draft]);
+  useEffect(() => {
+    const s = scene.current;
+    if (!s) return;
+    s.setTargets(
+      works.active
+        ? works.targets.map((t) => ({
+            id: t.id,
+            rect: t.rect,
+            label: t.blocked ? t.label : `${t.label} · ${Math.abs(t.cost)}`,
+            blocked: !!t.blocked,
+            remove: t.cost < 0,
+          }))
+        : null,
+      null,
+      // Los huecos de siempre del modo obras (los de ampliar y los de mudanza) no mueven la cámara.
+      !works.pick || works.pick.kind === 'move',
+    );
+    s.setGrabbable(works.planning && !works.pick ? works.selected : null);
+  }, [works.active?.kind, works.targets, works.pick, works.selected, works.planning]);
+  // El camino de los bandidos, a la vista mientras se planea la casa o se mira la cámara o la puerta.
+  const routeRoom =
+    panel === 'sala' && roomId ? (draft ?? game).building.rooms.find((r) => r.id === roomId) : null;
+  const showRoute =
+    works.planning || routeRoom?.type === 'tesoro' || routeRoom?.type === 'recibidor';
+  const routeBuilding = (draft ?? game).building;
+  useEffect(() => {
+    const s = scene.current;
+    s?.setRoute(showRoute ? raidRoute(routeBuilding) : null);
+  }, [showRoute, routeBuilding]);
+  /** Las obras se eligen en la escena (si el navegador la ha podido pintar). */
+  const roomsLive = !!scene.current;
+  const pickSpot = (p: Pick) => {
+    openPanel(null);
+    if (!works.planning) works.startPlan();
+    works.startPick(p);
+  };
 
   const openPanel = (p: PanelId | null) => {
     if (p === panel) return;
@@ -217,78 +303,20 @@ export function App() {
     setBubble(null);
   };
 
-  const onHotspot = (id: string, _label: string, at: Point) => {
+  const onHotspot = (id: string) => {
     setHint(false);
-    switch (id) {
-      case 'tablon':
-        openPanel('tablon');
+    if (id.startsWith('obra:')) {
+      works.choose(id);
+      return;
+    }
+    if (id.startsWith('sala:')) {
+      // En el modo obras, tocar una sala la elige (menú de obras junto a ella).
+      if (works.planning) {
+        works.select(id.slice(5));
         return;
-      case 'barra':
-        setHeroFilter('candidatos');
-        openPanel('heroes');
-        return;
-      case 'dormitorios':
-        setFocusFac('dorm');
-        openPanel('gremio');
-        return;
-      case 'enfermeria':
-        setFocusFac('enf');
-        openPanel('gremio');
-        return;
-      case 'mapa':
-        openPanel('fuera');
-        return;
-      case 'armeria':
-        setFocusFac('arm');
-        openPanel('gremio');
-        return;
-      case 'capilla':
-        setFocusFac('cap');
-        openPanel('gremio');
-        return;
-      case 'forja':
-      case 'establo':
-      case 'torre':
-        setFocusFac(id);
-        openPanel('gremio');
-        return;
-      case 'patio-entreno':
-        setFocusFac('patio');
-        openPanel('gremio');
-        return;
-      case 'empalizada':
-        setFocusFac('empal');
-        openPanel('gremio');
-        return;
-      case 'veteranos':
-        setFocusFac('vet');
-        openPanel('gremio');
-        return;
-      case 'despacho':
-        openPanel('libro');
-        return;
-      case 'letrero':
-        openPanel('casa');
-        return;
-      case 'equipo':
-        setArconTab('equipo');
-        openPanel('arcon');
-        return;
-      case 'cofres':
-        setArconTab('tesoros');
-        openPanel('arcon');
-        return;
-      case 'chimenea':
-        say(game.fac.tab === 0 ? CAPTIONS.chimeneaFria! : CAPTIONS.chimenea!, at);
-        return;
-      default: {
-        const t = id.startsWith('trofeo-') ? game.trophies[Number(id.slice(7))] : null;
-        if (t) {
-          setArconTab('trofeos');
-          setFocusTrophy(t.id);
-          openPanel('arcon');
-        } else if (CAPTIONS[id]) say(CAPTIONS[id]!, at);
       }
+      setRoomId(id.slice(5));
+      openPanel('sala');
     }
   };
 
@@ -342,6 +370,41 @@ export function App() {
     scene.current?.focus(FACILITY_INFO[k].room);
   };
 
+  const upgradeRoom = (id: string) => {
+    const before = gameRef.current;
+    if (dispatch({ type: 'upgradeRoom', id }) === before) return;
+    setPanel(null);
+    scene.current?.focus(id);
+  };
+
+  const hireWorker = (id: string) => {
+    const w = game.seekers.find((x) => x.id === id);
+    const why = canHireWorker(game, id);
+    if (why) return toast(why);
+    dispatch({ type: 'hireWorker', id });
+    audio.play('coin');
+    if (w) toast(`${w.name} se queda a trabajar. Empieza ahora mismo.`);
+  };
+
+  const assignJob = (who: string, room: string | null) => {
+    const why = canAssign(gameRef.current, who, room);
+    if (why) return toast(why);
+    dispatch({ type: 'assign', who, room });
+    audio.play(room ? 'select' : 'deselect');
+  };
+
+  const roomLink = (to: RoomLink) => {
+    if (to === 'candidatos' || to === 'trabajadores') setHeroFilter(to);
+    if (to === 'equipo' || to === 'tesoros') setArconTab(to);
+    openPanel(
+      to === 'candidatos' || to === 'trabajadores'
+        ? 'heroes'
+        : to === 'equipo' || to === 'tesoros'
+          ? 'arcon'
+          : to,
+    );
+  };
+
   const sell = (itemId: string) => {
     const it = game.inventory.find((i) => i.id === itemId);
     dispatch({ type: 'sell', itemId });
@@ -352,7 +415,14 @@ export function App() {
   // Escape y el botón «atrás» del móvil cierran lo que esté encima (ajustes, partidas,
   // informe, encargo, ficha, panel).
   const overlayOpen =
-    !!watching || settingsOpen || saveMenu || !!reportId || !!questId || !!card || !!panel;
+    !!watching ||
+    settingsOpen ||
+    saveMenu ||
+    !!reportId ||
+    !!questId ||
+    !!card ||
+    !!panel ||
+    !!works.pick;
   const closeWatch = () => {
     if (watching?.dawn) setDawnOpen(true);
     setWatching(null);
@@ -365,6 +435,7 @@ export function App() {
     else if (questId) setQuestId(null);
     else if (card) setCard(null);
     else if (panel) openPanel(null);
+    else if (works.pick) works.cancelPick();
   };
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -388,6 +459,8 @@ export function App() {
 
   const endDay = () => {
     if (passing) return;
+    dispatch({ type: 'tick', to: clockRef.current });
+    if (!canClose(gameRef.current)) return;
     setHint(false);
     setPanel(null);
     setCard(null);
@@ -427,6 +500,13 @@ export function App() {
     );
     setDawnOpen(false);
     if (game.day === 1) setHint(true);
+    // Lo que hicieron las salas anoche sube flotando sobre ellas.
+    const made = game.yields;
+    if (made?.length)
+      setTimeout(() => {
+        const s = scene.current;
+        s?.yields(made);
+      }, 400);
     if (then) openPanel(then);
     else if (returned) setTimeout(() => scene.current?.focus('patio'), 30);
     if (wins.length)
@@ -483,7 +563,13 @@ export function App() {
   const callReport = bossCall ? game.reports.find((r) => r.id === bossCall) : undefined;
   const unread = game.reports.filter((r) => !r.read).length;
   const away = game.missions.length + game.heroes.filter((h) => h.status === 'desaparecido').length;
-  const calm = screen === 'game' && !dawnOpen && !passing && !(game.opening && !game.opening.seen);
+  const calm =
+    screen === 'game' &&
+    !dawnOpen &&
+    !passing &&
+    !(game.opening && !game.opening.seen) &&
+    !works.pick &&
+    !works.planning;
   const pendingEvent = calm && !game.over ? (game.event ?? null) : null;
   const tip =
     calm && !pendingEvent && !card && !questId && !reportId && !panel ? nextTip(game) : null;
@@ -491,6 +577,34 @@ export function App() {
   useEffect(() => {
     if (tip?.focus) scene.current?.focus(tip.focus);
   }, [tip?.id]);
+
+  // El reloj del día: corre con el juego abierto, también con un panel delante, y se para en
+  // los momentos que piden atención (evento, nota, asalto, amanecer…) y con la pestaña oculta.
+  const ticking =
+    calm &&
+    !game.over &&
+    !pendingEvent &&
+    !tip &&
+    !watching &&
+    !bossCall &&
+    !settingsOpen &&
+    !saveMenu;
+  useEffect(() => {
+    clockRef.current = game.clock ?? 0;
+    setClock(clockRef.current);
+    scene.current?.setTime(clockRef.current / DAY_SECONDS);
+  }, [game.day, game.seed]);
+  useEffect(() => {
+    if (!ticking) return;
+    const id = setInterval(() => {
+      if (document.hidden) return;
+      const before = clockRef.current;
+      const next = Math.min(DAY_SECONDS, before + 0.25 * settings.pace);
+      if (next === before) return;
+      moveClock(next, before);
+    }, 250);
+    return () => clearInterval(id);
+  }, [ticking, settings.pace]);
   const tab: TabId =
     panel === 'tablon' || panel === 'heroes' || panel === 'gremio' ? panel : 'taberna';
 
@@ -502,18 +616,71 @@ export function App() {
           model={model}
           onReady={(s) => {
             scene.current = s;
+            s.setTime(clockRef.current / DAY_SECONDS);
             s.speed = settings.speed;
           }}
           onHotspot={onHotspot}
-          onHero={(id) => {
+          onHero={(id, at) => {
             setHint(false);
             setBubble(null);
+            // Los visitantes cuentan lo que se oye por ahí.
+            if (id.startsWith('vis-')) {
+              const i = Number(id.split('-')[2]);
+              const kind = model.visitors?.kinds[i] ?? 'campesino';
+              audio.play('click', 0.5);
+              say(
+                kind === 'espia'
+                  ? 'Forastero callado: «¿Y la cámara del tesoro… queda muy abajo?»'
+                  : `${VISITORS[kind as VisitorKind].name.replace(/^./, (c) => c.toUpperCase())}: «${RUMORS[(game.day * 7 + i) % RUMORS.length]}»`,
+                at,
+              );
+              return;
+            }
+            // Un trabajador no tiene ficha: dice lo suyo.
+            const w = game.workers.find((x) => x.id === id);
+            if (w) {
+              audio.play('click', 0.5);
+              say(`${w.name}: «${w.quote}»`, at);
+              return;
+            }
             audio.play('open', 0.6);
             setCard(id);
           }}
           onHover={(label, at) => setHover(label && at ? { label, at } : null)}
+          canDrag={(id) => !works.planning && canDrag(gameRef.current, id)}
+          onDragOver={(id, room, at) => {
+            setBubble(null);
+            setHint(false);
+            const d = room ? planDrop(gameRef.current, id, room) : null;
+            setDragTip({ text: d?.text ?? 'Suéltalo en una sala.', ok: !!d?.ok, at });
+            return d;
+          }}
+          onRoomDrag={(id) => works.startPick({ kind: 'move', id })}
+          onRoomDrop={() => {
+            works.cancelPick();
+            toast('Ahí no cabe: suéltala en una casilla verde.');
+          }}
+          onDrop={(id, room) => {
+            setDragTip(null);
+            const d = room ? planDrop(gameRef.current, id, room) : null;
+            if (!d?.ok) return;
+            for (const a of d.actions) dispatch(a);
+            toast(d.text);
+            haptic('select');
+          }}
         />
-        {hover && !bubble && (
+        {dragTip && (
+          <span
+            class={`droptip ${dragTip.ok ? 'ok' : 'bad'}`}
+            style={{
+              left: `${Math.max(124, Math.min(window.innerWidth - 124, dragTip.at.x))}px`,
+              top: `${Math.max(110, dragTip.at.y)}px`,
+            }}
+          >
+            {dragTip.text}
+          </span>
+        )}
+        {hover && !bubble && !dragTip && (
           <span class="hovertip" style={{ left: `${hover.at.x}px`, top: `${hover.at.y}px` }}>
             {hover.label}
           </span>
@@ -521,7 +688,7 @@ export function App() {
         {bubble && <SpeechBubble bubble={bubble} scene={scene} />}
         {hint && !notice && (
           <div class="hint-toast" role="status">
-            Arrastra para recorrer la taberna · Toca el tablón para mandar un grupo
+            Arrastra para recorrer la casa · Toca el salón para ver el tablón
           </div>
         )}
         {notice && (
@@ -543,13 +710,61 @@ export function App() {
           >
             <Icon name="home" size={16} />
           </button>
+          {roomsLive && (
+            <button
+              class={`btn-icon ${works.planning ? 'is-on' : ''}`}
+              aria-label="Modo obras"
+              data-help="Modo obras: marca los huecos que se pueden excavar y el solar de al lado, y abajo salen las salas para construir. Todo se apunta y se paga al final."
+              onClick={() => {
+                if (works.planning && works.steps.length)
+                  toast('Tienes obras apuntadas: págalas o sal desde la barra de abajo.');
+                else if (works.planning) works.discard();
+                else if (!worksOpen(works.view)) toast(LOCKED);
+                else {
+                  openPanel(null);
+                  works.startPlan();
+                }
+              }}
+            >
+              <Icon name="martillo" size={16} />
+            </button>
+          )}
         </div>
-        {!panel && !game.over && (
+        {!panel && works.planning && works.selected && !works.pick && scene.current && (
+          <RoomMenu
+            scene={scene.current}
+            game={works.view}
+            roomId={works.selected}
+            onUpgrade={(id) => works.work({ type: 'upgradeRoom', id })}
+            onMove={(id) => works.startPick({ kind: 'move', id })}
+            onDemolish={(id) => works.work({ type: 'demolish', id })}
+            onInfo={(id) => {
+              setRoomId(id);
+              openPanel('sala');
+            }}
+            onClose={() => works.select(null)}
+          />
+        )}
+        {!panel && works.planning && <WorksBar works={works} onMore={() => openPanel('gremio')} />}
+        {!panel && !game.over && !works.pick && !works.planning && (
           <DayBar
             unread={unread}
             away={away}
             onMail={() => openPanel('correo')}
             onAway={() => openPanel('fuera')}
+            part={clock / DAY_SECONDS}
+            canClose={clock >= DUSK * DAY_SECONDS}
+            night={passing}
+            pace={settings.pace}
+            onPace={() =>
+              setSettings({
+                ...settings,
+                pace: settings.pace === 1 ? 2 : settings.pace === 2 ? 4 : 1,
+              })
+            }
+            onDusk={() =>
+              moveClock(Math.max(clockRef.current, DUSK * DAY_SECONDS), clockRef.current)
+            }
             onEndDay={endDay}
           />
         )}
@@ -573,15 +788,65 @@ export function App() {
               setFilter={setHeroFilter}
               onOpen={(id) => setCard(id)}
               onHire={hire}
+              onHireWorker={hireWorker}
+              onFireWorker={(id) => {
+                const w = game.workers.find((x) => x.id === id);
+                dispatch({ type: 'fireWorker', id });
+                audio.play('close');
+                if (w) toast(`${w.name} recoge sus cosas y se despide.`);
+              }}
+              onAssign={assignJob}
+            />
+          </Panel>
+        )}
+        {panel === 'sala' && roomId && (
+          <Panel
+            title={
+              ROOMS[works.view.building.rooms.find((r) => r.id === roomId)?.type ?? 'salon'].name
+            }
+            onClose={() => openPanel(null)}
+          >
+            <RoomPanel
+              game={works.view}
+              roomId={roomId}
+              onUpgrade={(id) =>
+                works.planning
+                  ? works.work({ type: 'upgradeRoom', id }) && openPanel(null)
+                  : upgradeRoom(id)
+              }
+              onLink={roomLink}
+              onAssign={works.planning ? undefined : assignJob}
             />
           </Panel>
         )}
         {panel === 'gremio' && (
           <Panel title="El gremio" onClose={() => openPanel(null)}>
             <GremioPanel
-              game={game}
+              game={works.view}
               focus={focusFac}
-              onUpgrade={upgrade}
+              onUpgrade={(k) =>
+                works.planning ? works.work({ type: 'upgrade', fac: k }) : upgrade(k)
+              }
+              obrasFirst={works.planning}
+              obras={
+                roomsLive ? (
+                  <ObrasPanel
+                    game={works.view}
+                    planning={works.planning}
+                    onPick={pickSpot}
+                    onWork={(a) => works.work(a)}
+                    onRoom={(id) => {
+                      setRoomId(id);
+                      openPanel('sala');
+                      scene.current?.focus(id);
+                    }}
+                    onPlan={() => {
+                      works.startPlan();
+                      openPanel(null);
+                    }}
+                  />
+                ) : undefined
+              }
               onSaves={() => setSaveMenu(true)}
               onSettings={() => setSettingsOpen(true)}
               onLibro={() => openPanel('libro')}
@@ -600,7 +865,6 @@ export function App() {
               game={game}
               tab={arconTab}
               onTab={setArconTab}
-              focusTrophy={focusTrophy}
               onEquip={(heroId, itemId) => {
                 const h = game.heroes.find((x) => x.id === heroId);
                 const it = game.inventory.find((x) => x.id === itemId);
@@ -629,15 +893,6 @@ export function App() {
                 dispatch({ type: 'custom', patch });
                 audio.play('click');
               }}
-              onStaff={(id, on) => {
-                dispatch({ type: 'staff', id, on });
-                audio.play(on ? 'coin' : 'close');
-                toast(
-                  on
-                    ? `${STAFF[id].name}: contratado. Empieza esta noche.`
-                    : `${STAFF[id].name}: despedido.`,
-                );
-              }}
               onDog={() => {
                 dispatch({ type: 'buyDog' });
                 audio.play('coin');
@@ -647,6 +902,11 @@ export function App() {
                 dispatch({ type: 'decor', id, on });
                 audio.play(on ? 'build' : 'close');
                 if (on) toast(`${DECOR[id].name}: ya luce en el salón.`);
+              }}
+              onFacade={(id) => {
+                dispatch({ type: 'facade', id });
+                audio.play('build');
+                toast(`${FACADE[id].name}: ya se ven desde el camino.`);
               }}
               onRaven={() => {
                 dispatch({ type: 'buyRaven' });
@@ -718,6 +978,7 @@ export function App() {
               dispatch({ type: 'guard', id: cardHero.id, on });
               audio.play(on ? 'select' : 'deselect');
             }}
+            onJob={works.planning ? undefined : (room) => assignJob(cardHero.id, room)}
             onEquip={(itemId) => {
               dispatch({ type: 'equip', heroId: cardHero.id, itemId });
               audio.play('select');
@@ -753,6 +1014,7 @@ export function App() {
         {screen === 'game' && !dawnOpen && !passing && game.opening && !game.opening.seen && (
           <Opening
             arrival={game.opening}
+            rooms={roomsLive}
             best={prevBest}
             onOpen={() => {
               audio.play('dawn');

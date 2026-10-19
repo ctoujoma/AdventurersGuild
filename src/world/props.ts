@@ -1,7 +1,7 @@
 import { Rng } from '../core/rng';
 import { P, R, darker, type Ramp } from '../art/palette';
 import { PixelBuffer, bayer, toHex } from '../art/pixel';
-import { cobweb, planksH, stoneWall } from './paint';
+import { stoneWall } from './paint';
 
 /**
  * Muebles y objetos de la taberna. Cada pieza se pinta en su propio búfer, recibe un
@@ -25,13 +25,17 @@ export function piece(
 
 // ---------- Dormitorio y enfermería ----------
 
-export function bunk(level: number): PixelBuffer {
-  const quilt: Ramp = [
+/** Colores de la manta de una litera según el nivel del dormitorio. */
+export const bunkQuilt = (level: number): Ramp =>
+  [
     [P.plum, P.bark, P.rust, P.oak],
     [P.plum, P.bark, P.rust, P.oak],
     [P.plum, P.wine, P.red, P.coral],
     [P.navy, P.ocean, P.sky, P.mist],
-  ][level]!;
+  ][Math.max(0, Math.min(3, level))]!;
+
+export function bunk(level: number): PixelBuffer {
+  const quilt = bunkQuilt(level);
   return piece(24, 40, (b) => {
     for (const px of [0, 21]) {
       b.rect(px, 0, 3, 40, W[3]!);
@@ -114,19 +118,6 @@ export function cabinet(glow: boolean): PixelBuffer {
         b.set(x + 1, sy - h - 1, W[4]!);
         b.set(x, sy - h + 1, glow ? P.white : c[1]!);
       }
-    }
-  });
-}
-
-export function screen(): PixelBuffer {
-  return piece(20, 26, (b) => {
-    for (let i = 0; i < 3; i++) {
-      const x = i * 7;
-      b.rect(x, 0, 6, 24, W[3]!);
-      b.rect(x + 1, 1, 4, 22, i === 1 ? P.mist : P.white);
-      b.vline(x + 4, 1, 22, P.fog);
-      b.rect(x + 1, 24, 1, 2, W[2]!);
-      b.rect(x + 4, 24, 1, 2, W[2]!);
     }
   });
 }
@@ -219,7 +210,7 @@ export function counter(level: number): PixelBuffer {
 }
 
 /** Botella pequeña de estantería. */
-function bottleOn(b: PixelBuffer, x: number, base: number, kind: number): void {
+export function bottleOn(b: PixelBuffer, x: number, base: number, kind: number): void {
   const colors: Ramp[] = [
     [P.deep, P.forest, P.leaf],
     [P.plum, P.wine, P.red],
@@ -277,38 +268,6 @@ export function shelf(w: number, items: number, seed: string, mugs = false): Pix
         x += rng.int(4, 6);
       }
     }
-  });
-}
-
-export function keg(): PixelBuffer {
-  return piece(18, 18, (b) => {
-    b.ellipse(9, 9, 9, 9, W[3]!);
-    b.ellipse(9, 9, 7, 7, W[4]!);
-    b.ellipse(8, 8, 4, 4, W[5]!);
-    for (const r of [8.2, 5.2]) {
-      for (let a = 0; a < 64; a++) {
-        const t = (a / 64) * Math.PI * 2;
-        b.set(
-          Math.round(9 + Math.cos(t) * r - 0.5),
-          Math.round(9 + Math.sin(t) * r - 0.5),
-          P.slate,
-        );
-      }
-    }
-    b.rect(8, 13, 3, 3, P.steel);
-    b.set(9, 16, P.fog);
-    b.set(6, 6, W[6]!);
-  });
-}
-
-export function kegStand(count: number): PixelBuffer {
-  return piece(22, 40, (b) => {
-    b.rect(1, 18, 2, 22, W[3]!);
-    b.rect(19, 18, 2, 22, W[3]!);
-    b.rect(0, 36, 22, 3, W[2]!);
-    b.rect(0, 18, 22, 2, W[3]!);
-    if (count >= 1) b.blit(keg(), 1, 19);
-    if (count >= 2) b.blit(keg(), 1, -1);
   });
 }
 
@@ -483,113 +442,6 @@ export function chandelier(): PixelBuffer {
   });
 }
 
-export function hanging(kind: number): PixelBuffer {
-  if (kind % 3 === 0) {
-    // Jamón.
-    return piece(8, 16, (b) => {
-      b.vline(4, 0, 4, P.sand);
-      b.ellipse(4, 10, 4, 6, P.wine);
-      b.ellipse(3.5, 9, 2.6, 4, P.red);
-      b.rect(3, 3, 3, 2, P.sand);
-      b.set(2, 8, P.coral);
-    });
-  }
-  if (kind % 3 === 1) {
-    // Ristra de ajos.
-    return piece(6, 18, (b) => {
-      b.vline(3, 0, 18, P.tan);
-      for (let y = 3; y < 18; y += 3) {
-        b.ellipse(2 + ((y / 3) % 2), y + 1, 2, 1.6, P.mist);
-        b.set(2, y, P.white);
-      }
-    });
-  }
-  // Manojo de hierbas.
-  return piece(7, 14, (b) => {
-    b.vline(3, 0, 4, P.tan);
-    b.rect(2, 4, 3, 2, W[3]!);
-    for (let i = 0; i < 7; i++) b.line(3, 6, i, 13, i % 2 ? P.leaf : P.forest);
-    b.set(1, 12, P.lime);
-    b.set(5, 11, P.lime);
-  });
-}
-
-export function rug(w: number, ramp: Ramp): PixelBuffer {
-  return piece(
-    w,
-    3,
-    (b) => {
-      b.rect(0, 0, w, 3, ramp[2]!);
-      b.hline(0, 0, w, ramp[3]!);
-      for (let x = 2; x < w - 2; x += 4) b.set(x, 1, ramp[1]!);
-      for (let x = 0; x < w; x += 2) b.set(x, 2, ramp[1]!);
-    },
-    'none',
-  );
-}
-
-export function firewood(): PixelBuffer {
-  return piece(16, 14, (b) => {
-    const logs = [
-      [3, 11],
-      [8, 11],
-      [13, 11],
-      [5.5, 7],
-      [10.5, 7],
-      [8, 3],
-    ];
-    for (const [x, y] of logs) {
-      b.ellipse(x!, y!, 2.6, 2.6, W[3]!);
-      b.ellipse(x!, y!, 1.6, 1.6, W[5]!);
-      b.set(Math.floor(x!), Math.floor(y!), W[4]!);
-    }
-  });
-}
-
-/** Color marcador del cristal: build lo recorta para que se vea lo que hay detrás. */
-export const GLASS = '#ff00fe';
-
-export function windowFrame(
-  w: number,
-  h: number,
-  opts: { curtains?: boolean; broken?: boolean; color?: Ramp } = {},
-): PixelBuffer {
-  return piece(w + 4, h + 4, (b) => {
-    b.rect(0, 0, w + 4, h + 4, W[3]!);
-    b.hline(0, 0, w + 4, W[5]!);
-    b.vline(0, 0, h + 4, W[4]!);
-    // Cristal: se recorta al montar la escena (se ve el exterior); solo un reflejo suelto.
-    for (let y = 2; y < h + 2; y++) {
-      for (let x = 2; x < w + 2; x++) b.set(x, y, opts.broken ? P.black : GLASS);
-    }
-    if (!opts.broken) {
-      b.set(3, 3, P.mist);
-      b.set(4, 3, P.fog);
-      b.set(3, 4, P.fog);
-      b.rect(2 + Math.floor(w / 2), 2, 1, h, W[3]!);
-      b.rect(2, 2 + Math.floor(h / 2), w, 1, W[3]!);
-    } else {
-      for (let i = 0; i < w + 4; i++) {
-        b.rect(i, 3 + Math.floor(i * 0.45), 1, 3, W[4]!);
-        b.rect(i, h - 2 - Math.floor(i * 0.3), 1, 3, W[3]!);
-      }
-      b.set(2, 3, P.black);
-    }
-    // Alféizar.
-    b.rect(-1, h + 2, w + 6, 2, W[4]!);
-    if (opts.curtains) {
-      const c = opts.color ?? [P.plum, P.wine, P.red, P.coral];
-      for (const side of [0, 1]) {
-        const x0 = side === 0 ? 0 : w;
-        b.rect(x0, 0, 4, h + 3, c[2]!);
-        b.vline(x0 + (side === 0 ? 0 : 3), 0, h + 3, c[1]!);
-        b.vline(x0 + 1, 0, h + 3, c[3]!);
-      }
-      b.rect(-1, 0, w + 6, 2, W[2]!);
-    }
-  });
-}
-
 // ---------- Bodega ----------
 
 export function cask(): PixelBuffer {
@@ -694,18 +546,6 @@ export function cheeseShelf(): PixelBuffer {
       b.ellipse(x! + 3.5, y! - 2.5, 4, 2.5, P.gold);
       b.hline(x!, y! - 3, 8, P.lemon);
       b.hline(x!, y! - 1, 8, P.orange);
-    }
-  });
-}
-
-export function ladder(h: number): PixelBuffer {
-  return piece(10, h, (b) => {
-    b.rect(0, 0, 2, h, W[3]!);
-    b.rect(8, 0, 2, h, W[3]!);
-    b.vline(0, 0, h, W[4]!);
-    for (let y = 3; y < h; y += 6) {
-      b.hline(2, y, 6, W[4]!);
-      b.hline(2, y + 1, 6, W[2]!);
     }
   });
 }
@@ -868,44 +708,6 @@ export function armorStand(): PixelBuffer {
     b.ellipse(13, 9.5, 3, 2, P.fog);
     b.hline(2, 18, 12, P.slate);
   });
-}
-
-export function uncleFrame(face: PixelBuffer): PixelBuffer {
-  return piece(24, 30, (b) => {
-    b.rect(0, 0, 24, 30, P.orange);
-    b.rect(1, 1, 22, 28, P.gold);
-    b.rect(2, 2, 20, 26, P.brick);
-    b.rect(3, 3, 18, 24, P.plum);
-    for (let y = 3; y < 27; y++)
-      for (let x = 3; x < 21; x++) if (bayer(x, y) < (y - 3) / 40) b.set(x, y, P.black);
-    b.blit(face, 3, 3);
-    b.set(0, 0, P.lemon);
-    b.set(23, 29, P.rust);
-    b.rect(9, 27, 6, 2, P.lemon);
-  });
-}
-
-export function pennants(w: number): PixelBuffer {
-  return piece(
-    w,
-    10,
-    (b) => {
-      const colors = [P.red, P.gold, P.sky, P.lime, P.coral];
-      for (let x = 0; x < w; x++) b.set(x, Math.round(1 + Math.sin((x / w) * Math.PI) * 3), P.tan);
-      for (let i = 0, x = 2; x < w - 4; x += 7, i++) {
-        const y = Math.round(1 + Math.sin(((x + 2) / w) * Math.PI) * 3);
-        b.poly(
-          [
-            [x, y],
-            [x + 5, y],
-            [x + 2.5, y + 6],
-          ],
-          colors[i % colors.length]!,
-        );
-      }
-    },
-    'none',
-  );
 }
 
 // ---------- Exterior ----------
@@ -1080,36 +882,68 @@ export function bush(seed: string, w = 22, h = 12): PixelBuffer {
   });
 }
 
-export function cobwebAt(b: PixelBuffer, x: number, y: number, size: number, dir: 1 | -1): void {
-  cobweb(b, x, y, size, dir);
+// ---------- Fachada ----------
+
+/** Maceta de barro con geranios. */
+export function flowerPot(seed: string): PixelBuffer {
+  return piece(12, 14, (b) => {
+    const rng = new Rng(seed);
+    b.rect(2, 8, 8, 6, P.rust);
+    b.hline(1, 8, 10, P.clay);
+    b.hline(2, 13, 8, P.bark);
+    for (let i = 0; i < 5; i++) b.ellipse(rng.int(3, 8), rng.int(3, 6), 2, 2, P.forest);
+    for (let i = 0; i < 4; i++) {
+      const x = rng.int(2, 9);
+      const y = rng.int(1, 5);
+      b.set(x, y, rng.chance(0.5) ? P.red : P.coral);
+      b.set(x + 1, y, P.red);
+    }
+  });
 }
 
-export function floorSlab(b: PixelBuffer, x: number, y: number, w: number, seed: string): void {
-  // Tarima vista de canto + vigas (cabezas de viguetas cada 24 px).
-  planksH(b, x, y, w, 3, seed, [P.plum, P.rust, P.oak, P.clay], 3);
-  b.hline(x, y, w, P.tan);
-  b.rect(x, y + 3, w, 5, P.bark);
-  b.hline(x, y + 3, w, P.plum);
-  for (let jx = x + 6; jx < x + w - 4; jx += 24) {
-    b.rect(jx, y + 3, 6, 5, P.rust);
-    b.hline(jx, y + 3, 6, P.oak);
-    b.vline(jx + 5, y + 4, 4, P.plum);
-    b.set(jx + 2, y + 5, P.bark);
-  }
-  b.hline(x, y + 7, w, P.black);
+/** Farol de patio en su poste. */
+export function lampPost(): PixelBuffer {
+  return piece(9, 40, (b) => {
+    b.rect(3, 12, 3, 27, P.slate);
+    b.rect(1, 37, 7, 3, P.navy);
+    b.rect(2, 0, 5, 2, P.slate);
+    b.rect(1, 2, 7, 8, P.navy);
+    b.rect(2, 3, 5, 6, P.gold);
+    b.rect(3, 4, 3, 4, P.lemon);
+    b.rect(1, 10, 7, 2, P.slate);
+  });
 }
 
-/** Cuervo mensajero posado (o batiendo las alas). */
-export function raven(flap: boolean): PixelBuffer {
-  const rows = flap
-    ? ['k......k', 'kk....kk', '.kkkkkk.', '..kekks.', '..kkkk..', '..kkkkk.', '...y.y..']
-    : ['........', '...kk...', '..kekks.', '.kkkk...', 'kkkkkk..', '.kkkkkk.', '..y.y...'];
-  return piece(8, 7, (b) =>
-    rows.forEach((r, y) =>
-      [...r].forEach((ch, x) => {
-        const c = { k: P.ebony, e: P.white, s: P.steel, y: P.slate }[ch];
-        if (c) b.set(x, y, c);
-      }),
-    ),
+/** Ristra de banderines de dos colores, de `len` píxeles de largo, colgando en curva. */
+export function bunting(len: number, a: string, c: string): PixelBuffer {
+  return piece(
+    len,
+    12,
+    (b) => {
+      const sag = (x: number) => Math.round(Math.sin((Math.PI * x) / (len - 1)) * 4);
+      for (let x = 0; x < len; x++) b.set(x, sag(x), P.bark);
+      for (let x = 3, i = 0; x < len - 5; x += 7, i++) {
+        const y = sag(x + 2) + 1;
+        const col = i % 2 ? c : a;
+        for (let k = 0; k < 5; k++)
+          b.hline(x + Math.floor(k / 2), y + k, 5 - 2 * Math.floor(k / 2), col);
+      }
+    },
+    'none',
   );
+}
+
+/** Letrero largo con el nombre pintado en letras doradas (rayas, de lejos). */
+export function nameBoard(): PixelBuffer {
+  return piece(44, 11, (b) => {
+    b.rect(0, 0, 44, 11, W[2]!);
+    b.rect(1, 1, 42, 9, W[1]!);
+    b.hline(1, 1, 42, W[3]!);
+    for (let x = 5; x < 39; x += 4) {
+      b.rect(x, 4, 3, 3, P.gold);
+      b.set(x + 1, 4, P.lemon);
+    }
+    b.set(2, 5, P.gold);
+    b.set(41, 5, P.gold);
+  });
 }

@@ -97,8 +97,6 @@ export const HAIR: readonly Ramp[] = [
   [P.steel, P.fog, P.mist, P.white], // blanco
 ];
 
-export const HAIR_NAMES = ['negro', 'castaño', 'pelirrojo', 'rubio', 'canoso', 'blanco'];
-
 /** Colores de ojos [sombra, base]. */
 export const EYES: readonly Ramp[] = [
   [P.plum, P.rust], // marrones

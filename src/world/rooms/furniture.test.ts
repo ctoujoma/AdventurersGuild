@@ -1,0 +1,71 @@
+import { describe, expect, it } from 'vitest';
+import { ROOMS, type RoomType } from '../../data/rooms';
+import type { Room } from '../../core/model';
+import { furnish, gearRoom } from './furniture';
+import { uncleBuilding } from '../../core/rooms';
+import { NO_LOOK } from './salon';
+import { CELL_W, DEPTH, PARTITION } from './layout';
+import { scaleAt } from './view3d';
+
+const room = (type: RoomType, r: Partial<Room> = {}): Room => ({
+  id: 'x',
+  type,
+  col: 0,
+  floor: 0,
+  w: 1,
+  h: 1,
+  level: 1,
+  spent: 0,
+  ...r,
+});
+
+describe('muebles de la vista 3D', () => {
+  it('cada sala en uso tiene sus muebles dentro y su farol encendido', () => {
+    for (const type of Object.keys(ROOMS) as RoomType[]) {
+      if (type === 'torre') continue;
+      for (const w of [1, 2]) {
+        const iw = w * CELL_W - PARTITION;
+        const things = furnish(room(type, { w, level: 2 }), iw);
+        expect(things.some((t) => t.hang && t.light)).toBe(true);
+        for (const t of things) {
+          const half = t.img.w / scaleAt(t.z) / 2;
+          expect(t.x - half, `${type} ${w}`).toBeGreaterThanOrEqual(-1);
+          expect(t.x + half, `${type} ${w}`).toBeLessThanOrEqual(iw + 1);
+          expect(t.z).toBeGreaterThan(0);
+          expect(t.z).toBeLessThan(DEPTH);
+        }
+      }
+    }
+  });
+
+  it('el fuego tiembla y tiene llamas; las salas rotas o en obras no dan luz', () => {
+    for (const type of ['salon', 'cocina', 'forja'] as const) {
+      const fire = furnish(room(type), CELL_W - PARTITION).find((t) => t.light?.flames);
+      expect(fire?.light?.flicker).toBeGreaterThanOrEqual(0.2);
+    }
+    expect(furnish(room('salon', { level: 0 }), 110).some((t) => t.light)).toBe(false);
+    expect(
+      furnish(room('salon', { works: { kind: 'build', nights: 1 } }), 110).some((t) => t.light),
+    ).toBe(false);
+  });
+
+  it('el equipo sin dueño se cuelga en la armería o se guarda en arcones', () => {
+    const b = uncleBuilding();
+    const arm = b.rooms.find((r) => r.type === 'armeria')!;
+    // La del tío está por reparar: el equipo va a ella igualmente, en arcones.
+    expect(gearRoom(b)).toBe(arm.id);
+    const gear = Array.from({ length: 5 }, () => ({ icon: 'espada' as const, rarity: 0 as const }));
+    const look = { ...NO_LOOK, gear, gearRoom: 'x' };
+    const iw = CELL_W - PARTITION;
+    const chests = (t: ReturnType<typeof furnish>) =>
+      t.filter((x) => x.img.w === 18 && x.img.h === 14).length;
+    expect(chests(furnish(room('armeria', { level: 0 }), iw, look))).toBe(2);
+    // Reparada, un estante de 4 y lo que sobra (1) en un arcón.
+    const lvl1 = furnish(room('armeria'), iw, look);
+    expect(lvl1.filter((x) => x.y === 22)).toHaveLength(1);
+    expect(chests(lvl1)).toBe(1);
+    // Sin armería, a la cámara del tesoro.
+    b.rooms = b.rooms.filter((r) => r !== arm);
+    expect(gearRoom(b)).toBe(b.rooms.find((r) => r.type === 'tesoro')!.id);
+  });
+});

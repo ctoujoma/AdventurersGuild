@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks';
 import { GUARD_BONUS, VET_LEVEL, XP_PER_LEVEL } from '../core/balance';
 import { PERKS } from '../core/classes';
-import { canHire, gearInStock, requestAmount } from '../core/game';
+import { canHire, gearInStock, guardsFull, requestAmount } from '../core/game';
 import type { GameState, Hero } from '../core/model';
 import { SKILLS, attr, moraleBand, skill } from '../core/party';
 import { CLASS_NAMES, MORALE_INFO, statusLabel } from '../data/labels';
@@ -10,6 +10,7 @@ import { itemIcon } from '../art/items';
 import { RARITY_NAMES, itemEffect } from '../data/items';
 import { BufferImage } from './BufferImage';
 import { Icon } from './icons';
+import { JobPicker } from './JobPicker';
 import { Portrait } from './Portrait';
 import { lookOf, marksOf, memberOf } from './view';
 
@@ -25,6 +26,8 @@ interface Props {
   onEquip: (itemId: string) => void;
   onUnequip: () => void;
   onGuard: (on: boolean) => void;
+  /** Echar una mano en una sala mientras está en casa (null: deja de trabajar). */
+  onJob?: (room: string | null) => void;
 }
 
 const ATTRS = [
@@ -46,6 +49,7 @@ export function HeroCard({
   onEquip,
   onUnequip,
   onGuard,
+  onJob,
 }: Props) {
   const [picking, setPicking] = useState(false);
   const stock = gearInStock(game);
@@ -193,12 +197,34 @@ export function HeroCard({
             <div class={`guard-box ${h.guard ? 'on' : ''}`}>
               <span>
                 {h.guard
-                  ? `De guardia: no sale de misión y suma +${GUARD_BONUS} si asaltan la taberna.`
-                  : 'Si asaltan la taberna, defienden quienes estén en casa. De guardia, defienden mejor.'}
+                  ? `De guardia: no sale de misión, pega +${GUARD_BONUS} y aguanta más si asaltan la taberna; ve venir a los bandidos y da la alarma.`
+                  : guardsFull(game)
+                    ? 'Ya hay dos de guardia en la puerta (no caben más).'
+                    : 'Si asaltan la taberna, los de guardia salen al patio y dan la alarma; caben dos.'}
               </span>
-              <button class="btn btn-wood" onClick={() => onGuard(!h.guard)}>
+              <button
+                class="btn btn-wood"
+                disabled={!h.guard && guardsFull(game)}
+                title={!h.guard && guardsFull(game) ? 'Ya hay dos de guardia.' : undefined}
+                onClick={() => onGuard(!h.guard)}
+              >
                 {h.guard ? 'Quitar la guardia' : 'Dejar de guardia'}
               </button>
+            </div>
+          )}
+          {!candidate && h.status === 'ok' && !h.guard && onJob && (
+            <div class="guard-box">
+              <span>
+                Mientras está en casa puede echar una mano en una sala (rinde menos que un
+                trabajador) o entrenar. También puedes cogerlo en la escena y soltarlo en la sala.
+              </span>
+              <JobPicker
+                game={game}
+                who={h.id}
+                current={h.job}
+                idle="No trabaja"
+                onAssign={onJob}
+              />
             </div>
           )}
           <div class="perk">

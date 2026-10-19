@@ -31,6 +31,7 @@
   --red: #e43b44;
   --wine: #a22633;
   --leaf: #3e8948;
+  --lime: #63c74d;
   --sky: #0099db;
   --ocean: #124e89;
   --grape: #68386c;
@@ -117,6 +118,18 @@ button:focus-visible {
   display: grid;
   place-items: center;
   overflow: hidden;
+}
+
+/* Sin WebGL no hay escena: un aviso en su lugar (el resto del juego sigue). */
+.scene-fail {
+  position: absolute;
+  max-width: 28em;
+  margin: 16px;
+  padding: 12px 16px;
+  background: var(--navy);
+  border: 2px solid var(--slate);
+  color: var(--mist);
+  text-align: center;
 }
 
 .scene-canvas {
@@ -218,6 +231,29 @@ button:focus-visible {
 @keyframes blink {
   50% {
     opacity: 0.45;
+  }
+}
+
+/* En un móvil estrecho no caben todas las cifras con su aire: se juntan un poco. */
+@media (max-width: 479px) {
+  .hud {
+    gap: 6px;
+    padding-left: 6px;
+    padding-right: 6px;
+  }
+
+  .hud-stats {
+    gap: 5px;
+  }
+
+  .hud-stat {
+    gap: 2px;
+    font-size: 15px;
+  }
+
+  .hud .btn-icon {
+    width: 30px;
+    height: 30px;
   }
 }
 
@@ -420,6 +456,32 @@ button:focus-visible {
     0 0 0 2px var(--gold),
     0 0 0 4px var(--ink);
   white-space: nowrap;
+}
+
+/* Llevando a alguien con el dedo: lo que pasará al soltarlo, encima de la figura. */
+.droptip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 60px));
+  pointer-events: none;
+  z-index: 4;
+  max-width: 230px;
+  font-family: var(--body);
+  font-size: 13px;
+  line-height: 1.3;
+  text-align: center;
+  padding: 4px 8px;
+  background: var(--ink);
+  color: var(--white);
+  box-shadow:
+    0 0 0 2px var(--red),
+    0 0 0 4px var(--ink);
+}
+
+.droptip.ok {
+  color: var(--lemon);
+  box-shadow:
+    0 0 0 2px var(--lime),
+    0 0 0 4px var(--ink);
 }
 
 .bubble {
@@ -1270,6 +1332,18 @@ button:focus-visible {
 .next-level {
   font-size: 13px;
   color: var(--text-good);
+}
+
+/* Ficha de sala: atajos a los paneles que tienen que ver con ella. */
+.room-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.room-links:empty {
+  display: none;
 }
 
 .pips {
@@ -3719,4 +3793,375 @@ textarea:focus-visible,
   color: var(--text-good);
   background: rgba(62, 137, 72, 0.12);
   box-shadow: 0 0 0 2px var(--leaf);
+}
+
+/* ---------- Obras ---------- */
+.worksbar {
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: calc(100% - 20px);
+  width: max-content;
+}
+
+.worksbar-text {
+  padding: 0 6px;
+  font-family: var(--pixel);
+  font-size: 15px;
+  color: var(--white);
+}
+
+.worksbar .btn {
+  min-height: 36px;
+}
+
+.room-works {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.room-sure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.obras-floor {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.obras-rooms {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px;
+}
+
+.obras-room {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  min-width: 0;
+  padding: 6px 8px;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+
+.obras-room b {
+  font-family: var(--pixel);
+  font-size: 15px;
+}
+
+.obras-room.is-off {
+  opacity: 0.75;
+}
+
+.obras-build {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px;
+}
+
+.obras-build .obras-room:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.obras-cost {
+  margin-top: auto;
+  font-family: var(--pixel);
+  font-size: 14px;
+  color: var(--rust);
+}
+
+/* ---------- Reloj del día ---------- */
+.clock {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  column-gap: 6px;
+  row-gap: 3px;
+  min-height: 44px;
+  padding: 3px 8px;
+  background: rgba(24, 20, 37, 0.5);
+  box-shadow: 0 0 0 2px var(--ink);
+  color: var(--white);
+  font: inherit;
+  cursor: pointer;
+}
+
+.clock-name {
+  font-family: var(--pixel);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.clock-pace {
+  font-family: var(--pixel);
+  font-size: 13px;
+  line-height: 1;
+  color: var(--gold);
+  justify-self: end;
+}
+
+.clock-bar {
+  grid-column: 1 / -1;
+  position: relative;
+  width: 76px;
+  height: 6px;
+  background: var(--slate);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+
+.clock-bar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--gold);
+}
+
+.clock-bar b {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--white);
+}
+
+/* Botón de la escena encendido (ganar sitio). */
+.btn-icon.is-on {
+  background: var(--gold);
+  box-shadow:
+    0 0 0 2px var(--ink),
+    inset 0 -3px 0 var(--orange);
+}
+
+/* ---------- Trabajadores ---------- */
+.segmented-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+.worker-row {
+  cursor: default;
+}
+.job-select {
+  justify-self: start;
+  max-width: 100%;
+  font-family: var(--pixel);
+  font-size: 14px;
+  padding: 3px 6px;
+  color: var(--ink);
+  background: var(--tan);
+  border: 0;
+  border-radius: 0;
+  box-shadow: 0 0 0 2px var(--ink);
+}
+.room-crew {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 6px 8px;
+  background: rgba(115, 62, 57, 0.08);
+  box-shadow: 0 0 0 2px var(--tan);
+}
+.crew-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+}
+.crew-chip .btn {
+  padding: 2px 8px;
+  font-size: 13px;
+}
+.worksbar-issue {
+  display: block;
+  color: var(--lemon);
+  font-size: 12px;
+}
+
+/* ---------- Cinta del modo obras ---------- */
+.ribbon {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 10px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 6px;
+  width: auto;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 6px;
+  background: rgba(24, 20, 37, 0.9);
+  box-shadow: 0 0 0 2px rgba(24, 20, 37, 0.95);
+}
+.ribbon > * {
+  width: 100%;
+  box-sizing: border-box;
+}
+.ribbon-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ribbon-tab {
+  flex: 1 0 auto;
+  padding: 4px 8px;
+  font-family: var(--pixel);
+  font-size: 13px;
+  color: var(--tan);
+  background: transparent;
+  box-shadow: inset 0 -2px 0 rgba(228, 166, 114, 0.35);
+}
+.ribbon-tab.is-on {
+  color: var(--ink);
+  background: var(--tan);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+.ribbon-rooms {
+  min-width: 0;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 2px 2px 4px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+}
+.ribbon-room {
+  flex: 0 0 auto;
+  min-width: 84px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 5px 8px;
+  scroll-snap-align: start;
+  font-family: var(--pixel);
+  color: var(--ink);
+  background: var(--tan);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+.ribbon-room .icon {
+  margin-bottom: 1px;
+}
+.ribbon-room b {
+  font-size: 13px;
+  white-space: nowrap;
+}
+.ribbon-room span {
+  font-size: 12px;
+}
+.ribbon-room:disabled {
+  opacity: 0.45;
+}
+.ribbon-foot {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.ribbon-text {
+  font-size: 13px;
+}
+.ribbon .btn {
+  min-height: 34px;
+}
+.salon-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  background: rgba(254, 174, 52, 0.12);
+  box-shadow: 0 0 0 2px var(--tan);
+}
+.room-bad {
+  color: var(--wine);
+}
+
+/* Sala de entrenamiento: cada héroe con su barra. */
+.train-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
+  margin-top: 4px;
+}
+
+.train-row .tiny {
+  flex-basis: 100%;
+}
+
+.train-bar {
+  position: relative;
+  flex: 1 1 80px;
+  max-width: 140px;
+  height: 8px;
+  background: var(--slate);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+
+.train-bar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--leaf);
+}
+
+/* Menú de obras de la sala elegida, encima de ella en la escena. */
+.room-menu {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 6px));
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: max-content;
+  padding: 4px 6px;
+  border-style: solid;
+  border-width: 10px;
+  border-image: var(--frame-parchment) 5 fill / 10px / 0 stretch;
+  animation: pop 0.18s steps(3);
+}
+.room-menu-name {
+  color: var(--plum);
+  font-size: 13px;
+}
+.room-menu-row {
+  display: flex;
+  gap: 4px;
+}
+.room-menu-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 46px;
+  min-height: 46px;
+  padding: 3px 4px;
+  color: var(--sand);
+  background: var(--bark);
+  border: 2px solid #181425;
+  box-shadow: inset 0 2px 0 var(--rust);
+  font-size: 11px;
+  cursor: pointer;
+}
+.room-menu-btn:active {
+  transform: translateY(1px);
+}
+.room-menu-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.room-menu-btn span {
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }

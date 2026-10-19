@@ -84,8 +84,8 @@ export const FACILITY_INFO: Record<
     ],
     effect: (l) =>
       l === 0
-        ? 'No deja dinero'
-        : `${l * 10} monedas al día, más encargos${l >= 2 ? ' y mejores candidatos' : ''}${l >= 4 ? '; descansar anima del todo' : ''}`,
+        ? 'No deja dinero: no viene nadie'
+        : `+${l * 2} de Atractivo (más visitantes), más encargos${l >= 2 ? ' y mejores candidatos' : ''}${l >= 4 ? '; descansar anima del todo' : ''}`,
   },
   mapas: {
     name: 'Sala de mapas',
@@ -179,21 +179,6 @@ export const FACILITY_INFO: Record<
         ? 'Sin efecto'
         : `+${2 * l} camas. Héroes de nivel 4 o más: +${[0, 4, 8][l]} de moral por noche y más tope${l >= 2 ? '; nunca desertan' : ''}`,
   },
-};
-
-/** Lo que dice cada cosa de la escena al tocarla. */
-export const CAPTIONS: Record<string, string> = {
-  gato: 'Bigotes ronronea. Lleva aquí más años que tú.',
-  buho: '¡Uh-uuuh! Vigila el tejado desde que tu tío no está.',
-  murcielago: '¡Murciélagos! Al menos se comen los mosquitos.',
-  rata: 'Una rata. Bigotes ni se inmuta.',
-  retrato: 'El tío Fausto. Te dejó la taberna y mil monedas de deuda.',
-  pozo: '¡Plof! Dicen que echar una moneda da suerte. A ti no te sobran.',
-  letrero: 'El Jarro Partido. Tu tío juraba que lo arreglaría.',
-  puerta: 'Por aquí salen los grupos. La bisagra de abajo chirría.',
-  laud: 'Alguien lo dejó a cuenta de una ronda. Todavía suena bien.',
-  chimenea: 'Chisporrotea. Bigotes no se separa de ella.',
-  chimeneaFria: 'Apagada. Hace falta leña, y la leña cuesta.',
 };
 
 /** Cómo se enseña cada tramo de moral. */

@@ -1,6 +1,6 @@
 import { useState } from 'preact/hooks';
 import { itemIcon, trophyIcon } from '../../art/items';
-import { TROPHY_INCOME, TROPHY_SLOTS } from '../../core/balance';
+import { TROPHY_APPEAL, TROPHY_SLOTS } from '../../core/balance';
 import type { GameState, Hero, Item } from '../../core/model';
 import { RARITY_NAMES, itemEffect } from '../../data/items';
 import { BufferImage } from '../BufferImage';
@@ -11,8 +11,6 @@ interface Props {
   game: GameState;
   tab: ArconTab;
   onTab: (t: ArconTab) => void;
-  /** Trofeo a resaltar (si se ha tocado uno en la pared). */
-  focusTrophy?: string | null;
   onEquip: (heroId: string, itemId: string) => void;
   onUnequip: (heroId: string) => void;
   onSell: (itemId: string) => void;
@@ -31,7 +29,6 @@ export function ArconPanel({
   game,
   tab,
   onTab,
-  focusTrophy,
   onEquip,
   onUnequip,
   onSell,
@@ -183,15 +180,12 @@ export function ArconPanel({
         <>
           <p class="panel-note">
             {game.trophies.length
-              ? `Caben ${TROPHY_SLOTS} en la pared de la sala; cada uno expuesto atrae ${TROPHY_INCOME} monedas al día.`
+              ? `Caben ${TROPHY_SLOTS} en la pared del salón; cada uno expuesto suma ${TROPHY_APPEAL} de Atractivo y trae más visitantes.`
               : 'Un éxito brillante en un encargo peligroso deja un trofeo para la pared de la sala.'}
           </p>
           <div class="list">
             {game.trophies.map((t, i) => (
-              <article
-                key={t.id}
-                class={`card-paper facility ${focusTrophy === t.id ? 'is-focus' : ''}`}
-              >
+              <article key={t.id} class="card-paper facility">
                 <BufferImage buf={trophyIcon(t.icon)} scale={2} />
                 <div class="facility-info">
                   <b>{t.name}</b>

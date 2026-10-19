@@ -1,7 +1,10 @@
 import { generateLook, type HeroLook, type HeroMarks } from '../art/heroes/look';
-import type { Facilities, GameState, Hero, Item } from '../core/model';
+import type { Facilities, GameState, Hero, Item, Worker } from '../core/model';
 import { customOf, gearInStock } from '../core/game';
-import { CREST_COLORS, isFeastDay } from '../data/custom';
+import { staffBeds, workerTitle } from '../core/workers';
+import { visitorsOf } from '../core/salon';
+import { trainState } from '../core/training';
+import { CREST_COLORS } from '../data/custom';
 import { gearOf } from '../core/resolve';
 import type { Member } from '../core/party';
 import type { SceneHero, SceneModel } from '../world/scene';
@@ -14,6 +17,18 @@ export function lookOf(h: Hero): HeroLook {
   if (!l) {
     l = generateLook(h.seed, h.cls, h.sex);
     looks.set(h.seed, l);
+  }
+  return l;
+}
+
+/** Los trabajadores visten de taberna (el mozo, sin gorro; el bardo, con gorra). */
+export function workerLook(w: Worker): HeroLook {
+  let l = looks.get(w.seed);
+  if (!l) {
+    l = generateLook(w.seed, 'tabernero', w.sex);
+    if (w.village === 'bardo') l = { ...l, headgear: 'gorra' };
+    if (w.village === 'mozo') l = { ...l, headgear: null };
+    looks.set(w.seed, l);
   }
   return l;
 }
@@ -36,7 +51,29 @@ export const memberOf = (h: Hero, fac?: Facilities): Member & { item?: Item } =>
   perk: h.item?.perk,
 });
 
+/** Los visitantes de hoy en el orden en que llegan (mezclados, siempre igual para el mismo día). */
+function visitorOrder(s: GameState): string[] {
+  const v = visitorsOf(s, s.day);
+  const list = (Object.keys(v.kinds) as (keyof typeof v.kinds)[]).flatMap((k) =>
+    Array.from({ length: v.kinds[k] }, () => k as string),
+  );
+  // Barajado con la semilla del día: el noble no llega siempre el último.
+  let h = s.day * 2654435761;
+  for (let i = list.length - 1; i > 0; i--) {
+    h = (Math.imul(h ^ (h >>> 15), 2246822519) + i) >>> 0;
+    const j = h % (i + 1);
+    [list[i], list[j]] = [list[j]!, list[i]!];
+  }
+  return list;
+}
+
 const fullName = (h: Hero) => (h.nick ? `${h.name} ${h.nick}` : h.name);
+
+/** La barra de entrenamiento de un héroe (si entrena y aún puede subir). */
+function trainBar(s: GameState, h: Hero): SceneHero['train'] {
+  const t = trainState(s, h);
+  return t && !t.capped ? { at: t.frac, perDay: t.perDay } : undefined;
+}
 
 export function sceneModel(s: GameState): SceneModel {
   const heroes: SceneHero[] = [];
@@ -48,8 +85,23 @@ export function sceneModel(s: GameState): SceneModel {
       status: h.status,
       look: lookOf(h),
       marks: marksOf(h),
+      guard: !!h.guard,
+      work: h.job,
+      train: trainBar(s, h),
     });
   }
+  // Los trabajadores: los que tienen cama en el servicio duermen en casa; los demás, en el pueblo.
+  let beds = staffBeds(s.building);
+  for (const w of s.workers)
+    heroes.push({
+      id: w.id,
+      name: workerTitle(w),
+      status: 'ok',
+      look: workerLook(w),
+      marks: {},
+      work: w.room,
+      staff: beds-- > 0 ? 'casa' : 'pueblo',
+    });
   for (const h of s.candidates)
     heroes.push({
       id: h.id,
@@ -59,20 +111,16 @@ export function sceneModel(s: GameState): SceneModel {
       marks: marksOf(h),
     });
   return {
-    fac: s.fac,
-    quests: s.quests.length,
-    loot: Math.min(6, s.inventory.filter((i) => !i.kind || i.kind === 'tesoro').length),
-    fallen: s.fallen.length,
+    building: s.building,
     crest: {
       field: CREST_COLORS[customOf(s).color].field,
       dark: CREST_COLORS[customOf(s).color].dark,
       symbol: customOf(s).symbol,
     },
-    staff: customOf(s).staff,
     dog: customOf(s).dog,
     decor: customOf(s).decor ?? [],
-    raven: !!customOf(s).raven,
-    feast: customOf(s).feast === s.day ? 'montada' : isFeastDay(s.day) ? 'dia' : 'no',
+    facade: customOf(s).facade ?? [],
+    visitors: { day: s.day, kinds: visitorOrder(s) },
     gear: gearInStock(s).map((i) => ({ icon: i.icon ?? 'espada', rarity: i.rarity ?? 0 })),
     trophies: s.trophies.map((t) => t.icon),
     heroes,

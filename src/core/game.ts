@@ -2,11 +2,16 @@
  * La partida: estado inicial, acciones del jugador (reducer puro) y avance de día.
  * `reduce(state, action)` nunca muta el estado que recibe: copia y devuelve uno nuevo.
  */
+import { earn, spill, vaultNews } from './vault';
 import { FLAVOR } from '../data/stories';
 import {
+  MAX_GUARDS,
   BOARD_SIZE,
   CANDIDATE_EVERY,
   DAYS,
+  DAY_SECONDS,
+  DELIVERIES,
+  DUSK,
   DEBT,
   DESERT_CHANCE,
   MAX_CANDIDATES,
@@ -26,34 +31,31 @@ import {
   UNPAID_MORALE,
   SCHEDULE,
   START,
-  UPGRADE_COST,
-  capacity,
+  START_BEER,
+  START_FOOD,
   chapelRest,
-  facilityMax,
   healRate,
   rankIndex,
   restCap,
   restMorale,
   returnChance,
-  tavernIncome,
 } from './balance';
 import { tripDays } from './classes';
 import {
-  BRAWL_CHANCE,
   DECOR,
+  FACADE,
   DEFAULT_NAME,
-  DISHES,
   DOG_PRICE,
   FEAST_MORALE,
   FEAST_PRICE,
   RAVEN_EVERY,
   RAVEN_PRICE,
-  STAFF,
   decorSlots,
   isFeastDay,
   type DecorId,
-  type StaffId,
+  type FacadeId,
 } from '../data/custom';
+import type { RoomType } from '../data/rooms';
 import { arrival, checkFeats, checkMonth, emptyStats, startMonth } from './feats';
 import { stepRaids } from './raids';
 import { advanceChain, bossOf, fightRoster, offerChain } from './chains';
@@ -71,14 +73,67 @@ import {
 } from './model';
 import { MORALE_LOW, MORALE_QUIT } from './party';
 import { levelUp, resolveMission } from './resolve';
+import {
+  applyPlan,
+  beds,
+  facOf,
+  facilityCost,
+  planBuild,
+  planDemolish,
+  planDig,
+  planExtend,
+  planFacility,
+  planMove,
+  planPlot,
+  planStair,
+  planUnstair,
+  planUpgrade,
+  drafting,
+  laxly,
+  problem,
+  stepWorks,
+  uncleBuilding,
+  type ExtendDir,
+  type Plan,
+} from './rooms';
 import { Rng } from './rng';
 import { listNames, plural } from './text';
+import { stepLarder } from './larder';
+import { stepTraining } from './training';
+import { brawlChance, noisyBeds, visitorList, visitorsOf } from './salon';
+import {
+  addSeeker,
+  assign,
+  bardPlaying,
+  canAssign,
+  canHireWorker,
+  freeRoomFor,
+  nurseBonus,
+  stepWorkers,
+  tidyJobs,
+  villageCrew,
+} from './workers';
 
 export type Action =
   | { type: 'hire'; id: string }
   | { type: 'fire'; id: string }
+  | { type: 'hireWorker'; id: string }
+  | { type: 'fireWorker'; id: string }
+  /** Poner a trabajar a un trabajador o a un héroe en una sala (null: deja de trabajar). */
+  | { type: 'assign'; who: string; room: string | null }
   | { type: 'send'; questId: string; heroIds: string[] }
   | { type: 'upgrade'; fac: keyof Facilities }
+  | { type: 'upgradeRoom'; id: string }
+  | { type: 'build'; room: RoomType; col: number; floor: number }
+  | { type: 'extend'; id: string; dir: ExtendDir }
+  | { type: 'move'; id: string; col: number; floor: number }
+  | { type: 'demolish'; id: string }
+  | { type: 'dig'; col: number; floor: number }
+  | { type: 'buyPlot' }
+  | { type: 'addStair'; at: number; floor: number }
+  | { type: 'removeStair'; at: number; floor: number }
+  /** Varias obras seguidas (las del modo plano): se hacen todas o ninguna. */
+  | { type: 'works'; steps: Action[] }
   | { type: 'sell'; itemId: string }
   | { type: 'read'; reportId: string }
   | { type: 'answer'; id: string; yes: boolean }
@@ -89,12 +144,16 @@ export type Action =
   | { type: 'ackOpening' }
   | { type: 'guard'; id: string; on: boolean }
   | { type: 'choose'; index: number }
-  | { type: 'custom'; patch: Partial<Pick<Custom, 'name' | 'color' | 'symbol' | 'dish'>> }
-  | { type: 'staff'; id: StaffId; on: boolean }
+  | { type: 'custom'; patch: Partial<Pick<Custom, 'name' | 'color' | 'symbol'>> }
   | { type: 'buyDog' }
   | { type: 'decor'; id: DecorId; on: boolean }
+  | { type: 'facade'; id: FacadeId }
   | { type: 'buyRaven' }
   | { type: 'feast' }
+  /** El reloj del día avanza hasta `to` segundos (y la caja entrega lo que toque). */
+  | { type: 'tick'; to: number }
+  /** Saltar al anochecer. */
+  | { type: 'dusk' }
   | { type: 'endDay' };
 
 // ---------- Consultas ----------
@@ -105,8 +164,7 @@ const has = (h: Hero, id: string) => h.traits.some((t) => t.id === id);
 export const roster = (s: GameState) =>
   s.heroes.filter((h) => h.status !== 'muerto' && h.status !== 'desaparecido');
 export const salaries = (s: GameState) =>
-  roster(s).reduce((a, h) => a + h.salary, 0) +
-  (s.custom?.staff ?? []).reduce((a, id) => a + STAFF[id].salary, 0);
+  roster(s).reduce((a, h) => a + h.salary, 0) + s.workers.reduce((a, w) => a + w.salary, 0);
 
 /** La taberna tal como la ha dejado el jugador (o como la dejó el tío). */
 export const customOf = (s: GameState): Custom =>
@@ -114,8 +172,6 @@ export const customOf = (s: GameState): Custom =>
     name: DEFAULT_NAME,
     color: 'vino',
     symbol: 'jarra',
-    dish: 'pan',
-    staff: [],
     dog: false,
   };
 export const rankOf = (s: GameState) => RANKS[rankIndex(s.rep)]!;
@@ -129,14 +185,13 @@ export const nextPayment = (s: GameState) =>
 /** Lo que pide un héroe con petición pendiente. */
 export const requestAmount = (h: Hero) =>
   h.request === 'cache' ? (CACHE[h.lvl] ?? CACHE[5]!) : RAISE_AMOUNT;
-export const upgradeCost = (s: GameState, k: keyof Facilities) =>
-  s.fac[k] >= facilityMax(k) ? null : UPGRADE_COST[k][s.fac[k] + 1]!;
+export const upgradeCost = (s: GameState, k: keyof Facilities) => facilityCost(s, k);
 
 export function canHire(s: GameState, id: string): string | null {
   const c = s.candidates.find((x) => x.id === id);
   if (!c) return 'Ese candidato ya no está.';
-  if (roster(s).length >= capacity(s.fac.dorm, s.fac.vet ?? 0))
-    return 'No queda sitio: mejora los dormitorios o abre el ala de veteranos en Gremio.';
+  if (roster(s).length >= beds(s.building))
+    return 'No queda sitio: mejora o amplía los dormitorios, o abre los cuartos de veteranos.';
   if (s.gold < c.fee) return `Te faltan ${c.fee - s.gold} monedas para la prima de fichaje.`;
   return null;
 }
@@ -156,6 +211,10 @@ export function canSend(s: GameState, questId: string, heroIds: readonly string[
   return null;
 }
 
+/** En el recibidor caben dos de guardia. */
+export const guardsFull = (s: GameState) =>
+  s.heroes.filter((h) => h.status === 'ok' && h.guard).length >= MAX_GUARDS;
+
 /** Equipo del arcón que se puede poner (los tesoros solo se venden). */
 export const gearInStock = (s: GameState) =>
   s.inventory.filter((i) => i.kind && i.kind !== 'tesoro');
@@ -170,11 +229,79 @@ export function canEquip(s: GameState, heroId: string, itemId: string): string |
 }
 
 export function canUpgrade(s: GameState, k: keyof Facilities): string | null {
-  const cost = upgradeCost(s, k);
-  if (cost === null) return 'Ya está al máximo.';
-  if (s.gold < cost) return `Te faltan ${cost - s.gold} monedas.`;
-  return null;
+  const plan = planFacility(s, k);
+  return 'error' in plan ? plan.error : null;
 }
+
+/** Obra pedida por el jugador: el plan dice si se puede y cómo queda el edificio. */
+function planOf(s: GameState, a: Action): Plan | null {
+  switch (a.type) {
+    case 'upgrade':
+      return planFacility(s, a.fac);
+    case 'upgradeRoom':
+      return planUpgrade(s, a.id);
+    case 'build':
+      return planBuild(s, a.room, a.col, a.floor);
+    case 'extend':
+      return planExtend(s, a.id, a.dir);
+    case 'move':
+      return planMove(s, a.id, a.col, a.floor);
+    case 'demolish':
+      return planDemolish(s, a.id);
+    case 'dig':
+      return planDig(s, a.col, a.floor);
+    case 'buyPlot':
+      return planPlot(s);
+    case 'addStair':
+      return planStair(s, a.at, a.floor);
+    case 'removeStair':
+      return planUnstair(s, a.at, a.floor);
+    default:
+      return null;
+  }
+}
+
+/** Por qué no se puede hacer una obra (o null si se puede). */
+export function canWork(s: GameState, a: Action): string | null {
+  const plan = planOf(s, a);
+  return plan && 'error' in plan ? plan.error : null;
+}
+
+/** Hace una obra sobre una copia del estado, o dice por qué no se puede. */
+export function tryWork(s: GameState, a: Action): GameState | { error: string } {
+  const plan = planOf(s, a);
+  if (!plan) return { error: 'Eso no es una obra.' };
+  if ('error' in plan) return plan;
+  const next = structuredClone(s);
+  applyPlan(next, plan);
+  tidyJobs(next);
+  return next;
+}
+
+/**
+ * Las obras de una lista (el plano), una tras otra; la primera que falla lo para todo. Por el
+ * camino la casa puede quedar a medias (salas sin paso): eso solo se mira al final,
+ * con `planIssue`, y el reducer no deja pagar hasta que cuadre.
+ */
+export function tryWorks(s: GameState, steps: readonly Action[]): GameState | { error: string } {
+  return drafting(s.building, () => {
+    let cur = s;
+    for (const a of steps) {
+      const next = tryWork(cur, a);
+      if ('error' in next) return next;
+      cur = next;
+    }
+    return cur;
+  });
+}
+
+/** Lo que impide pagar el borrador tal como está (salas sin paso, una que falta o el oro). */
+export const planIssue = (s: GameState) =>
+  problem(s.building) ?? (s.gold < 0 ? `Te faltan ${-s.gold} monedas.` : null);
+
+/** Una obra que solo se puede hacer en el plano (deja la casa a medias hasta otra obra). */
+export const needsPlan = (s: GameState, a: Action) =>
+  !!canWork(s, a) && !laxly(() => canWork(s, a));
 
 // ---------- Partida nueva ----------
 
@@ -189,9 +316,16 @@ export function newGame(seed: string): GameState {
     gold: START.gold,
     rep: 0,
     paid: 0,
-    fac: { ...START.fac },
+    clock: 0,
+    till: 0,
+    food: START_FOOD,
+    beer: START_BEER,
+    building: uncleBuilding(),
+    fac: facOf(uncleBuilding()),
     heroes: [],
     candidates: [],
+    workers: [],
+    seekers: [],
     quests: [],
     missions: [],
     reports: [],
@@ -214,9 +348,9 @@ export function newGame(seed: string): GameState {
         k: 'bad',
       },
       {
-        t: 'Toca el tablón de la sala para mandar grupos a los encargos. Si sale bien, vuelven con oro.',
+        t: 'El tablón de encargos está en el salón: toca la sala y ábrelo para mandar grupos. Si sale bien, vuelven con oro.',
       },
-      { t: 'En la barra esperan candidatos. «Terminar día» hace pasar la noche.' },
+      { t: 'En la barra del salón esperan candidatos. «Terminar día» hace pasar la noche.' },
       { t: `Paga la deuda en ${DAYS} días y el gremio será tuyo.`, k: 'good' },
     ],
     mode: 'deuda',
@@ -233,6 +367,11 @@ export function newGame(seed: string): GameState {
     s.heroes.push(h);
   }
   for (let i = 0; i < START.candidates; i++) s.candidates.push(hero(s, rng));
+  // Los tres del pueblo, cada uno en lo suyo.
+  for (const w of villageCrew(s)) {
+    w.room = freeRoomFor(s, w.trade)?.id;
+    s.workers.push(w);
+  }
   for (let i = 0; i < START.quests; i++) s.quests.push(quest(s, rng));
   s.rng = rng.save();
   return s;
@@ -255,7 +394,19 @@ function quest(s: GameState, rng: Rng): Quest {
 
 export function reduce(state: GameState, action: Action): GameState {
   if (state.over && action.type !== 'read' && action.type !== 'tip') return state;
+  const plan = planOf(state, action);
+  if (plan) {
+    if ('error' in plan) return state;
+    const s = structuredClone(state);
+    applyPlan(s, plan);
+    tidyJobs(s);
+    return s;
+  }
   switch (action.type) {
+    case 'works': {
+      const next = tryWorks(state, action.steps);
+      return 'error' in next || planIssue(next) ? state : next;
+    }
     case 'hire': {
       if (canHire(state, action.id)) return state;
       const s = structuredClone(state);
@@ -273,6 +424,26 @@ export function reduce(state: GameState, action: Action): GameState {
       // Lo que llevaba es del gremio: vuelve al arcón.
       if (h.item) s.inventory.push(structuredClone(h.item));
       s.heroes = s.heroes.filter((x) => x.id !== action.id);
+      return s;
+    }
+    case 'hireWorker': {
+      if (canHireWorker(state, action.id)) return state;
+      const s = structuredClone(state);
+      const w = s.seekers.find((x) => x.id === action.id)!;
+      s.gold -= w.fee;
+      s.seekers = s.seekers.filter((x) => x !== w);
+      w.room = freeRoomFor(s, w.trade)?.id;
+      s.workers.push(w);
+      return s;
+    }
+    case 'fireWorker': {
+      if (!state.workers.some((w) => w.id === action.id)) return state;
+      return { ...state, workers: state.workers.filter((w) => w.id !== action.id) };
+    }
+    case 'assign': {
+      if (canAssign(state, action.who, action.room)) return state;
+      const s = structuredClone(state);
+      assign(s, action.who, action.room);
       return s;
     }
     case 'equip': {
@@ -298,7 +469,7 @@ export function reduce(state: GameState, action: Action): GameState {
       const t = state.trophies.find((x) => x.id === action.id);
       if (!t) return state;
       const s = structuredClone(state);
-      s.gold += t.value;
+      earn(s, t.value);
       s.trophies = s.trophies.filter((x) => x.id !== t.id);
       return s;
     }
@@ -311,6 +482,7 @@ export function reduce(state: GameState, action: Action): GameState {
       for (const h of party) {
         h.status = 'mision';
         h.days = days;
+        delete h.job;
       }
       s.missions.push({
         id: `m${s.uid++}`,
@@ -322,18 +494,11 @@ export function reduce(state: GameState, action: Action): GameState {
       if (!(s.explored ??= []).includes(q.place)) s.explored.push(q.place);
       return s;
     }
-    case 'upgrade': {
-      if (canUpgrade(state, action.fac)) return state;
-      const s = structuredClone(state);
-      s.gold -= upgradeCost(s, action.fac)!;
-      s.fac[action.fac]++;
-      return s;
-    }
     case 'sell': {
       const it = state.inventory.find((i) => i.id === action.itemId);
       if (!it) return state;
       const s = structuredClone(state);
-      s.gold += it.value;
+      earn(s, it.value);
       s.inventory = s.inventory.filter((i) => i.id !== it.id);
       return s;
     }
@@ -367,21 +532,6 @@ export function reduce(state: GameState, action: Action): GameState {
       if (patch.name !== undefined) patch.name = patch.name.trim().slice(0, 24) || DEFAULT_NAME;
       return { ...state, custom: { ...customOf(state), ...patch } };
     }
-    case 'staff': {
-      const c = customOf(state);
-      const has = c.staff.includes(action.id);
-      if (has === action.on) return state;
-      const fee = STAFF[action.id].fee;
-      if (action.on && state.gold < fee) return state;
-      return {
-        ...state,
-        gold: state.gold - (action.on ? fee : 0),
-        custom: {
-          ...c,
-          staff: action.on ? [...c.staff, action.id] : c.staff.filter((x) => x !== action.id),
-        },
-      };
-    }
     case 'buyDog': {
       const c = customOf(state);
       if (c.dog || state.gold < DOG_PRICE) return state;
@@ -396,6 +546,13 @@ export function reduce(state: GameState, action: Action): GameState {
       const price = DECOR[action.id].price;
       if (state.gold < price || list.length >= decorSlots(state.fac.tab)) return state;
       return { ...state, gold: state.gold - price, custom: { ...c, decor: [...list, action.id] } };
+    }
+    case 'facade': {
+      const c = customOf(state);
+      const list = c.facade ?? [];
+      const price = FACADE[action.id].price;
+      if (list.includes(action.id) || state.gold < price) return state;
+      return { ...state, gold: state.gold - price, custom: { ...c, facade: [...list, action.id] } };
     }
     case 'buyRaven': {
       const c = customOf(state);
@@ -418,8 +575,12 @@ export function reduce(state: GameState, action: Action): GameState {
     case 'guard': {
       const h = state.heroes.find((x) => x.id === action.id);
       if (!h || h.status !== 'ok' || !!h.guard === action.on) return state;
+      if (action.on && guardsFull(state)) return state;
       const s = structuredClone(state);
-      s.heroes.find((x) => x.id === action.id)!.guard = action.on || undefined;
+      const g = s.heroes.find((x) => x.id === action.id)!;
+      g.guard = action.on || undefined;
+      // De guardia no se puede estar a la vez en la cocina.
+      if (action.on) delete g.job;
       return s;
     }
     case 'ackOpening': {
@@ -430,8 +591,14 @@ export function reduce(state: GameState, action: Action): GameState {
       if (state.tips?.includes(action.id)) return state;
       return { ...state, tips: [...(state.tips ?? []), action.id] };
     }
+    case 'tick':
+      return tick(state, action.to);
+    case 'dusk':
+      return tick(state, DUSK * DAY_SECONDS);
     case 'endDay':
       return endDay(state);
+    default:
+      return state;
   }
 }
 
@@ -457,31 +624,66 @@ function rescue(s: GameState, id: string, r: Report, events: DawnEvent[]): void 
   events.push({ t: `¡${r.who} ha rescatado a ${h.name}!`, k: 'good' });
 }
 
+/** Lo que deja la taberna el día `day`: los visitantes atendidos, la decoración y la fiesta. */
+export function dayIncome(s: GameState, day: number): number {
+  const c = customOf(s);
+  const decor = c.decor ?? [];
+  const bard = s.fac.tab > 0 && bardPlaying(s);
+  // La fiesta montada ese día dobla la caja.
+  const feast = c.feast === day;
+  return (
+    (visitorsOf(s, day).coins +
+      (bard && decor.includes('tarima') ? 8 : 0) +
+      (decor.includes('naipes') ? 6 : 0) +
+      (decor.includes('barril') ? 2 : 0)) *
+    (feast ? 2 : 1)
+  );
+}
+
+/** Parte del día que ha pasado (0 por la mañana, 1 de noche). */
+export const dayPart = (s: GameState) => Math.min(1, (s.clock ?? 0) / DAY_SECONDS);
+
+/** La taberna solo se cierra al anochecer. */
+export const canClose = (s: GameState) => dayPart(s) >= DUSK;
+
+/** Avanza el reloj y entrega la caja que toque a esa hora (en entregas iguales). */
+function tick(state: GameState, to: number): GameState {
+  const clock = Math.min(DAY_SECONDS, Math.max(state.clock ?? 0, to));
+  if (clock === (state.clock ?? 0)) return state;
+  const s = { ...state, clock };
+  const n = Math.min(DELIVERIES, Math.floor((clock / (DUSK * DAY_SECONDS)) * DELIVERIES));
+  const due = Math.floor((dayIncome(s, s.day) * n) / DELIVERIES);
+  const till = s.till ?? 0;
+  if (due > till) {
+    earn(s, due - till);
+    s.till = due;
+  }
+  return s;
+}
+
 export function endDay(state: GameState): GameState {
   if (state.over) return state;
   const s = structuredClone(state);
   const rng = new Rng(s.rng);
   const events: DawnEvent[] = [];
   s.day++;
+  stepWorks(s, events);
+  tidyJobs(s);
 
   // La amenaza regional puede llevarse los ingresos del día (caravana asaltada).
   const c0 = customOf(s);
   const decor = c0.decor ?? [];
-  const bard = s.fac.tab > 0 && c0.staff.includes('bardo');
-  // La fiesta montada anoche dobla la caja.
   const feast = c0.feast === s.day - 1;
-  const income =
-    (tavernIncome(s.fac.tab, s.rep, s.trophies.length) +
-      (bard ? 8 : 0) +
-      (bard && decor.includes('tarima') ? 8 : 0) +
-      (decor.includes('naipes') ? 6 : 0) +
-      (decor.includes('barril') ? 2 : 0)) *
-    (feast ? 2 : 1);
+  const income = dayIncome(s, s.day - 1);
+  const visits = visitorsOf(s, s.day - 1);
   const lost = stepThreat(s, rng, events, income);
+  // Lo que la caja ya entregó durante el día no se cobra otra vez.
+  s.gold += income - lost - (s.till ?? 0);
+  s.clock = 0;
+  s.till = 0;
   if (income - lost > 0) {
-    s.gold += income - lost;
     events.push({
-      t: `La taberna deja ${income - lost} monedas${feast ? ': ¡la fiesta ha llenado el salón!' : '.'}`,
+      t: `${visits.total ? `Vinieron ${visitorList(visits)}${visits.served < visits.total ? ` (se atendió a ${visits.served})` : ''}. ` : ''}${visits.fed < visits.served ? `Faltó comida: ${visits.served - visits.fed} solo ${visits.served - visits.fed === 1 ? 'bebió' : 'bebieron'}. ` : ''}La taberna deja ${income - lost} monedas${feast ? ': ¡la fiesta ha llenado el salón!' : '.'}`,
       k: 'good',
     });
   }
@@ -496,14 +698,44 @@ export function endDay(state: GameState): GameState {
       t: 'El cuervo vuelve de otro pueblo: allí ya se habla del gremio (+1 reputación).',
     });
   }
-  if (decor.includes('naipes') && rng.chance(BRAWL_CHANCE)) {
-    const home = s.heroes.filter((h) => h.status === 'ok');
-    if (home.length) {
-      const h = rng.pick(home);
-      h.morale = Math.max(0, h.morale - 8);
+  // Lo que traen los visitantes: fama de los nobles, ojos de los espías y alguna pelea.
+  if (visits.kinds.noble) {
+    s.rep += visits.kinds.noble;
+    events.push({
+      t: `${visits.kinds.noble === 1 ? 'Un noble ha cenado' : 'Unos nobles han cenado'} en el salón: se hablará del gremio (+${visits.kinds.noble} reputación).`,
+      k: 'good',
+    });
+  }
+  if (visits.kinds.espia) {
+    const guard = s.heroes.find((h) => h.status === 'ok' && h.guard);
+    if (guard) {
+      s.rep += 1;
       events.push({
-        t: `Pelea en la mesa de naipes: ${h.name} ha perdido la partida y los nervios.`,
+        t: `${guard.name} caló a un forastero que miraba demasiado la puerta de la cámara: era un espía de los bandidos y salió corriendo.`,
+        k: 'good',
+      });
+    } else s.scout = s.day - 1;
+  }
+  if (rng.chance(brawlChance(s, visits))) {
+    const home = s.heroes.filter((h) => h.status === 'ok');
+    const guard = home.find((h) => h.guard);
+    if (guard)
+      events.push({
+        t: `Pelea en el salón${decor.includes('naipes') ? ' por una partida de naipes' : ''}: ${guard.name}, que estaba de guardia, la cortó en un momento.`,
+      });
+    else if (home.length) {
+      const h = rng.pick(home);
+      h.morale = Math.max(0, h.morale - 6);
+      events.push({
+        t: `Pelea en el salón${decor.includes('naipes') ? ' por una partida de naipes' : ''}: ${h.name} se llevó un par de golpes separando a los que se pegaban.`,
         k: 'warn',
+      });
+    } else {
+      const broken = Math.min(s.gold, rng.int(6, 16));
+      s.gold -= broken;
+      events.push({
+        t: `Pelea en el salón y nadie de los nuestros para pararla: ${broken} monedas en sillas y jarras rotas.`,
+        k: 'bad',
       });
     }
   }
@@ -550,7 +782,7 @@ export function endDay(state: GameState): GameState {
   // Curación y desaparecidos.
   for (const h of s.heroes) {
     if (h.status === 'herido') {
-      h.days -= healRate(s.fac.enf) + (customOf(s).staff.includes('mozo') ? 1 : 0);
+      h.days -= healRate(s.fac.enf) + nurseBonus(s);
       if (h.days <= 0) {
         h.status = 'ok';
         h.days = 0;
@@ -597,13 +829,16 @@ export function endDay(state: GameState): GameState {
         });
     }
 
-  // Plato de la casa: cuesta cada noche y anima a quien descansa (el doble con cocinera).
-  const c = customOf(s);
-  const dish = DISHES[c.dish];
-  const fed = dish.cost === 0 || s.gold >= dish.cost;
-  if (fed) s.gold -= dish.cost;
-  const dishMorale = fed ? dish.morale * (c.staff.includes('cocinera') ? 2 : 1) : 0;
-  const decorMorale = (decor.includes('tarima') ? 2 : 0) + (decor.includes('barril') ? 1 : 0);
+  // Salas de entrenamiento: quien entrena suma el día y quizá sube un punto.
+  stepTraining(s, events);
+
+  // Comida y cerveza: lo que tomaron los visitantes, lo que han hecho las salas y la cena.
+  stepLarder(s, visits, events);
+  const decorMorale =
+    (decor.includes('tarima') ? 2 : 0) +
+    (decor.includes('barril') ? 1 : 0) +
+    (decor.includes('chimenea') ? 1 : 0) -
+    (noisyBeds(s.building) ? 1 : 0);
 
   // Moral: se descansa en la taberna; quien está harto se va, quien está desanimado pide más.
   const deserters: Hero[] = [];
@@ -611,8 +846,7 @@ export function endDay(state: GameState): GameState {
     if (h.status !== 'ok') continue;
     const vet = h.lvl >= VET_LEVEL ? s.fac.vet : 0;
     const cap = restCap(s.fac.tab) + (has(h, 'bebedor') && s.fac.tab >= 2 ? 10 : 0) + VET_CAP[vet]!;
-    const gain =
-      restMorale(s.fac.tab) + chapelRest(s.fac.cap) + dishMorale + decorMorale + VET_REST[vet]!;
+    const gain = restMorale(s.fac.tab) + chapelRest(s.fac.cap) + decorMorale + VET_REST[vet]!;
     if (h.morale < cap) h.morale = Math.min(cap, h.morale + gain);
     if (h.morale < MORALE_QUIT && !has(h, 'leal') && vet < 2 && rng.chance(DESERT_CHANCE)) {
       deserters.push(h);
@@ -666,8 +900,8 @@ export function endDay(state: GameState): GameState {
       t: `${fresh} ${plural(fresh, 'encargo nuevo', 'encargos nuevos')} en el tablón.`,
     });
 
-  // Candidatos.
-  if (s.day % CANDIDATE_EVERY === 0) {
+  // Candidatos: entre los visitantes viene algún aventurero (más cuanta más gente).
+  if (rng.chance(Math.min(0.9, (0.5 + visits.total / 10) / CANDIDATE_EVERY))) {
     const c = hero(s, rng);
     if (s.candidates.length >= MAX_CANDIDATES) {
       const left = s.candidates.shift()!;
@@ -676,6 +910,9 @@ export function endDay(state: GameState): GameState {
     s.candidates.push(c);
     events.push({ t: `En la barra hay alguien nuevo buscando trabajo: ${c.name}.` });
   }
+
+  // Trabajadores: cogen maña y, desde el día 30, viene gente a pedir trabajo.
+  stepWorkers(s, rng, events, visits.total);
 
   // Cadenas de misiones: carta del siguiente cliente cuando toca.
   offerChain(s, rng, events);
@@ -733,6 +970,8 @@ export function endDay(state: GameState): GameState {
       s.mode = 'libre';
       s.opening = { ...arrival(s, alive), seen: false };
       startMonth(s, rng);
+      // Con las obras llega también gente a pedir trabajo (y el dormitorio del servicio).
+      for (let i = 0; i < 2; i++) addSeeker(s, rng, events);
       events.push({
         t: `La deuda de tu tío está pagada. ${customOf(s).name} es tuyo: gremio de ${rankOf(s).name}, ${alive} ${plural(alive, 'héroe', 'héroes')} y ${s.gold} monedas en la caja.`,
         k: 'good',
@@ -745,6 +984,12 @@ export function endDay(state: GameState): GameState {
     checkMonth(s, rng, events);
     maybeEvent(s, rng);
   }
+
+  // Lo que no cabe en la cámara del tesoro se pierde.
+  const kept = spill(s);
+  s.gold = kept.gold;
+  s.spilt = kept.spilt;
+  vaultNews(s, events);
 
   s.flavor = rng.pick(FLAVOR);
   s.dawn = events;

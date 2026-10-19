@@ -1,9 +1,11 @@
+import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { DEBT, SCHEDULE, facilityMax } from '../../core/balance';
 import { canUpgrade, nextPayment, salaries, upgradeCost } from '../../core/game';
 import { defense, notoriety } from '../../core/raids';
 import type { Facilities, GameState } from '../../core/model';
 import { FACILITY_INFO } from '../../data/labels';
+import { YARD } from '../../data/rooms';
 import { Icon } from '../icons';
 
 interface Props {
@@ -16,6 +18,10 @@ interface Props {
   onLibro: () => void;
   onTaberna: () => void;
   onTitle: () => void;
+  /** Vista de salas: la pestaña de obras sustituye a la de mejoras (el patio sigue igual). */
+  obras?: ComponentChildren;
+  /** Abrir directamente en las obras (mientras se planea una reforma). */
+  obrasFirst?: boolean;
 }
 
 type GremioTab = 'gremio' | 'mejoras';
@@ -32,8 +38,10 @@ export function GremioPanel({
   onTitle,
   onLibro,
   onTaberna,
+  obras,
+  obrasFirst,
 }: Props) {
-  const [tab, setTab] = useState<GremioTab>(focus ? 'mejoras' : 'gremio');
+  const [tab, setTab] = useState<GremioTab>(focus || obrasFirst ? 'mejoras' : 'gremio');
   useEffect(() => {
     if (focus) setTab('mejoras');
   }, [focus]);
@@ -101,11 +109,27 @@ export function GremioPanel({
           class={`btn ${tab === 'mejoras' ? 'btn-gold' : 'btn-wood'}`}
           onClick={() => setTab('mejoras')}
         >
-          Mejoras{affordable.length > 0 && <span class="tab-count">{affordable.length}</span>}
+          {obras ? (
+            'Obras'
+          ) : (
+            <>
+              Mejoras{affordable.length > 0 && <span class="tab-count">{affordable.length}</span>}
+            </>
+          )}
         </button>
       </div>
 
-      {tab === 'mejoras' && (
+      {tab === 'mejoras' && obras && (
+        <>
+          {obras}
+          <section>
+            <h3 class="sec-title">Fuera</h3>
+            <div class="list">{YARD.map(facility)}</div>
+          </section>
+        </>
+      )}
+
+      {tab === 'mejoras' && !obras && (
         <>
           {(
             [
@@ -185,8 +209,12 @@ export function GremioPanel({
                 <span class="tiny">Tregua hasta el día {game.truce}.</span>
               )
             )}
-            <span class="tiny" data-help="Los que están en casa defienden; los de guardia, más.">
-              Defensa esta noche: <b>{defense(game)}</b> ({home} en casa, {guards} de guardia)
+            <span
+              class="tiny"
+              data-help="Se pelea sala a sala: los de guardia salen al patio y los demás acuden desde la cama. La puerta y la cerradura de la cámara les dan tiempo."
+            >
+              Si asaltaran esta noche, se pararían <b>{Math.round(defense(game) * 10)}</b> de cada
+              10 ({home} en casa, {guards} de guardia)
             </span>
             {(game.threat ?? 0) > 0 && (
               <span class="tiny" data-help="Crece si una historia espera en el tablón.">

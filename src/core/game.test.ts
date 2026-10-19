@@ -1,6 +1,17 @@
+import { DAY_SECONDS, DUSK } from './balance';
 import { describe, expect, it } from 'vitest';
 import { DAYS, SCHEDULE, capacity } from './balance';
-import { canSend, endDay, newGame, reduce, roster, salaries } from './game';
+import {
+  canSend,
+  endDay,
+  newGame,
+  reduce,
+  roster,
+  salaries,
+  canClose,
+  dayIncome,
+  dayPart,
+} from './game';
 import { generateHero, generateQuest } from './generate';
 import type { GameState, Hero } from './model';
 import { questEstimate, resolveMission } from './resolve';
@@ -246,5 +257,47 @@ describe('avance de día', () => {
     while (s.mode !== 'libre' && !s.over) s = endDay({ ...s, gold: s.gold + 1000 });
     for (let i = 0; i < 20 && !s.over; i++) s = endDay({ ...s, gold: 0 });
     expect(s.over?.kind).toBe('derrota');
+  });
+});
+
+describe('el día vivo', () => {
+  /** Partida con la taberna abierta para que haya caja. */
+  const open = (seed: string) => {
+    const s = newGame(seed);
+    s.building.rooms.find((r) => r.type === 'salon')!.level = 3;
+    s.fac.tab = 3;
+    return s;
+  };
+
+  it('la caja llega en entregas durante el día y al cerrar se cobra lo mismo que de golpe', () => {
+    const plain = endDay(open('caja'));
+    let s = open('caja');
+    const income = dayIncome(s, s.day);
+    expect(income).toBeGreaterThan(0);
+    const gold0 = s.gold;
+    s = reduce(s, { type: 'tick', to: 10 });
+    expect(s.gold).toBe(gold0);
+    s = reduce(s, { type: 'tick', to: (DUSK * DAY_SECONDS) / 2 });
+    expect(s.gold).toBe(gold0 + Math.floor(income / 2));
+    s = reduce(s, { type: 'dusk' });
+    expect(s.gold).toBe(gold0 + income);
+    expect(s.till).toBe(income);
+    const closed = endDay(s);
+    expect(closed.gold).toBe(plain.gold);
+    expect(closed.clock).toBe(0);
+    expect(closed.till).toBe(0);
+  });
+
+  it('solo se cierra al anochecer y el reloj no pasa de la noche ni va hacia atrás', () => {
+    let s = open('reloj');
+    expect(canClose(s)).toBe(false);
+    s = reduce(s, { type: 'tick', to: DUSK * DAY_SECONDS - 1 });
+    expect(canClose(s)).toBe(false);
+    s = reduce(s, { type: 'dusk' });
+    expect(canClose(s)).toBe(true);
+    expect(dayPart(s)).toBe(DUSK);
+    s = reduce(s, { type: 'tick', to: 99999 });
+    expect(s.clock).toBe(DAY_SECONDS);
+    expect(reduce(s, { type: 'tick', to: 5 })).toBe(s);
   });
 });

@@ -2,6 +2,7 @@
  * Todas las constantes de equilibrio en un solo sitio, para ajustarlas con el simulador
  * (`npm run sim`) sin tocar la lógica.
  */
+import type { RoomType } from '../data/rooms';
 import type { Facilities, Outcome } from './model';
 import type { SkillId } from './party';
 
@@ -9,10 +10,10 @@ export const DAYS = 30;
 export const DEBT = 1000;
 /** Pagos mínimos al prestamista. Cada pago incluye los salarios de la semana. */
 export const SCHEDULE: readonly { day: number; amount: number }[] = [
-  { day: 7, amount: 150 },
+  { day: 7, amount: 110 },
   { day: 14, amount: 200 },
-  { day: 21, amount: 250 },
-  { day: 28, amount: 400 },
+  { day: 21, amount: 260 },
+  { day: 28, amount: 430 },
 ];
 
 export const START = {
@@ -60,23 +61,66 @@ export const VET_CAP = [0, 10, 15] as const;
 
 /** Patio de entrenamiento: experiencia por noche descansando, por nivel. */
 export const TRAINING_XP = [0, 6, 12] as const;
-/** Empalizada: lo que suma a la defensa, por nivel. */
-export const PALISADE = [0, 5, 10] as const;
 export const facilityMax = (k: keyof Facilities) => UPGRADE_COST[k].length - 1;
+
+/**
+ * Salas: coste de cada nivel (índice = nivel nuevo; el 1 es construirla o arreglarla). Las
+ * que sustituyen a una instalación de antes cuestan lo mismo que ella.
+ */
+export const ROOM_COST: Record<RoomType, readonly number[]> = {
+  recibidor: [0, 100, 150, 320],
+  salon: UPGRADE_COST.tab,
+  cocina: [0, 100, 220, 400],
+  bodega: [0, 100, 220, 400],
+  tesoro: [0, 120, 260, 480],
+  dormitorio: UPGRADE_COST.dorm,
+  enfermeria: UPGRADE_COST.enf,
+  capilla: UPGRADE_COST.cap,
+  mapas: UPGRADE_COST.mapas,
+  armeria: UPGRADE_COST.arm,
+  forja: UPGRADE_COST.forja,
+  veteranos: UPGRADE_COST.vet,
+  torre: UPGRADE_COST.torre,
+  servicio: [0, 80, 170, 380],
+  despensa: [0, 80, 180, 360],
+  armas: [0, 150, 320, 520],
+  tiro: [0, 150, 320, 520],
+  biblioteca: [0, 150, 320, 520],
+};
+export const roomMax = (t: RoomType) => ROOM_COST[t].length - 1;
+/** Mejorar una sala más ancha que la de serie cuesta este recargo por hueco de más. */
+export const ROOM_SIZE_COST = 0.5;
+/** Ampliar: cada hueco nuevo cuesta esta parte de lo que costó subir un hueco a su nivel. */
+export const EXTEND_RATE = 0.6;
+/** Mover una sala: por hueco. */
+export const MOVE_COST = 15;
+/** Al destruir una sala se devuelve esta parte de lo gastado en ella. */
+export const DEMOLISH_REFUND = 0.5;
+/** Excavar un hueco, según la profundidad (índice = plantas bajo tierra). */
+export const DIG_COST = [0, 60, 90, 130, 180, 240, 310] as const;
+/** Ancho del edificio en huecos: al empezar y como mucho, comprando solares a la derecha. */
+export const START_COLS = 4;
+export const MAX_COLS = 7;
+/** Precio de cada solar nuevo (índice = solares ya comprados). */
+export const PLOT_COST = [150, 250, 400] as const;
+/** Plantas como máximo sobre el suelo y bajo tierra. */
+export const MAX_UP = 4;
+export const MAX_DOWN = DIG_COST.length - 1;
+/** Precio de un tramo de escalera: el primero y lo que sube con cada tramo que ya hay. */
+export const STAIR_COST = 50;
+export const STAIR_STEP = 10;
 
 /** Camas: las de los dormitorios y, con el ala de veteranos, dos más por nivel. */
 export const capacity = (dorm: number, vet = 0) => 2 + 2 * dorm + 2 * vet;
-/** Ingreso diario de la taberna: por nivel y un poco por reputación. */
-export const tavernIncome = (tab: number, rep: number, trophies = 0) =>
-  tab === 0
-    ? 0
-    : tab * 10 +
-      Math.min(10, Math.floor(rep / 25) * 2) +
-      Math.min(trophies, TROPHY_SLOTS) * TROPHY_INCOME;
-
-/** Trofeos: cuántos caben en la sala, lo que atraen cada día y la fama al conseguirlos. */
+/** Segundos que dura un día con el juego abierto (a velocidad normal). */
+export const DAY_SECONDS = 300;
+/** Parte del día desde la que es anochecer y se puede cerrar la taberna. */
+export const DUSK = 0.8;
+/** Entregas en que llega la caja del día, repartidas hasta el anochecer. */
+export const DELIVERIES = 8;
+/** Trofeos: cuántos caben en la pared del salón, el Atractivo de cada uno y la fama al conseguirlos. */
 export const TROPHY_SLOTS = 4;
-export const TROPHY_INCOME = 3;
+export const TROPHY_APPEAL = 2;
 export const TROPHY_REP = 3;
 /** Días de cama que se recuperan cada noche. */
 export const healRate = (enf: number) => 1 + enf;
@@ -214,3 +258,108 @@ export const RAID_MAX_CHANCE = 0.25;
 export const RAID_BASE = 0.45;
 /** Lo que suma cada héroe de guardia a la defensa. */
 export const GUARD_BONUS = 3;
+/** Como mucho, tantos de guardia en el recibidor. */
+export const MAX_GUARDS = 2;
+
+// ---------- Cámara del tesoro ----------
+/** Oro que cabe por hueco de la cámara, según su nivel (el 0 es lo que se esconde sin cámara). */
+export const VAULT_STORE = [300, 1500, 4000, 10000] as const;
+/** A partir de esta parte del tope, el juego avisa de que la cámara está casi llena. */
+export const VAULT_WARN = 0.85;
+/** Segundos que tardan los bandidos en abrir la cerradura, según el nivel de la cámara. */
+export const LOCK_TIME = [2, 6, 10, 15] as const;
+/** Segundos que aguanta la puerta, según el nivel del recibidor. */
+export const DOOR_TIME = [2, 5, 8, 12] as const;
+
+// ---------- Asalto por salas (segundos de la pelea que se ve) ----------
+/** Andar de una sala a otra: por hueco de distancia, por planta de escalera y del patio a la puerta. */
+export const RAID_CELL = 1.6;
+export const RAID_FLOOR = 1.6;
+export const RAID_YARD = 2.5;
+/** Lo que tardan los bandidos en llegar al patio y en perderse de vista al huir. */
+export const RAID_ARRIVE = 3;
+export const RAID_EXIT = 2;
+/** Lo que tardan en despertarse y salir corriendo los que duermen (con perro, menos). */
+export const RAID_WAKE = 4;
+export const RAID_WAKE_DOG = 1.5;
+/** Con gente de guardia, dan la voz de alarma en cuanto ven las antorchas por el camino. */
+export const RAID_ALARM = 1;
+export const RAID_SPOT = 4;
+/** Vida de cada uno: héroes, trabajadores y bandidos. */
+export const HERO_HP = 12;
+/** Los de guardia están vestidos y armados: aguantan más. */
+export const GUARD_HP = 18;
+export const WORKER_HP = 8;
+export const BANDIT_HP = 12;
+/** Daño por segundo por punto de fuerza, y fuerza de cada bandido por punto de la banda. */
+export const FIGHT_RATE = 0.35;
+export const BANDIT_POWER = 0.75;
+/** Oro que carga cada bandido: unos fijos más la fuerza de la banda. */
+export const BANDIT_CARRY = 40;
+/** Lo que se tarda en cargar los sacos. */
+export const LOAD_TIME = 1.5;
+/** Lo que suma la empalizada a quien pelea en el patio, por nivel. */
+export const PALISADE_FIGHT = 0.15;
+/** Si en tanto tiempo no ha acabado, los bandidos se van con lo que tengan. */
+export const RAID_MAX_T = 150;
+
+// ---------- Trabajadores ----------
+/** Puestos de trabajo por cada hueco de una sala que produce. */
+export const JOB_SLOTS = 2;
+/** En su oficio se rinde la mitad más. */
+export const TRADE_BONUS = 1.5;
+/** Lo que rinde un héroe echando una mano (menos que cualquier trabajador con maña). */
+export const HERO_WORK = 2;
+/** Trabajo en la enfermería con el que los heridos se curan un día antes. */
+export const NURSE_WORK = 3;
+/** Noches de trabajo por cada punto de Maña que ya se tiene para subir otro. */
+export const SKILL_XP = 5;
+/** Probabilidad base de que alguien pida trabajo cada día (desde el día 30) y cuántos esperan. */
+export const SEEKER_CHANCE = 0.2;
+export const MAX_SEEKERS = 3;
+
+// ---------- Salón y visitantes ----------
+/** Visitantes que quiere venir: unos fijos, más con la reputación y con el Atractivo. */
+export const VISIT_BASE = 3;
+export const VISIT_PER_REP = 1 / 25;
+export const VISIT_PER_APPEAL = 0.7;
+/** Cuántas veces se llena cada plaza del salón en un día. */
+export const SEAT_TURNS = 1.5;
+/** Visitantes que se atienden sin nadie en el salón, y cuántos más por punto de trabajo. */
+export const SERVE_BASE = 2;
+export const SERVE_PER_WORK = 0.8;
+/** Atractivo mínimo para que vengan nobles. */
+export const NOBLE_APPEAL = 8;
+/** Días que dura el peligro tras la visita de un espía y cuánto sube el riesgo de asalto. */
+export const SPY_DAYS = 5;
+export const SPY_RISK = 0.06;
+/** Peleas en el salón: una base, más con mucha gente y con la mesa de naipes. */
+export const BRAWL_BASE = 0.03;
+export const BRAWL_PER_VISITOR = 0.008;
+export const BRAWL_NAIPES = 0.08;
+
+// ---------- Comida y cerveza ----------
+/** Raciones que hace la cocina y jarras que saca la bodega por punto de trabajo, cada día. */
+export const COOK_PER_WORK = 2;
+export const BREW_PER_WORK = 1;
+/** La bodega bajo tierra, fresca, saca más cerveza. */
+export const CELLAR_COOL = 1.25;
+/** Lo que se guarda por hueco y nivel: la cocina un poco, la despensa mucho; la cerveza, en la bodega. */
+export const KITCHEN_STORE = 12;
+export const PANTRY_STORE = 30;
+export const CELLAR_STORE = 20;
+/** Lo que paga cada visitante por su jarra. */
+export const BEER_COIN = 1;
+/** Moral que pierde quien se acuesta sin cenar. */
+export const HUNGER_MORALE = 8;
+/** Raciones y jarras al empezar. */
+export const START_FOOD = 12;
+export const START_BEER = 10;
+
+// ---------- Entrenamiento ----------
+/** Progreso que da un día en una sala de entrenamiento de nivel 1 (algo más con cada nivel). */
+export const TRAIN_RATE = 1;
+/** Progreso que cuesta subir un punto: unos fijos más el valor que ya se tiene. */
+export const TRAIN_COST_BASE = 2;
+/** Hasta dónde se puede entrenar un atributo según el nivel de la sala. */
+export const TRAIN_CAP = [0, 5, 7, 9] as const;
