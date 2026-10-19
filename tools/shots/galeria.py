@@ -6,7 +6,8 @@ Uso: python3 tools/shots/galeria.py <antes> <después> <salida>
 
 Cada lámina tiene, por cada ancho de la sala (1 y el máximo), cuatro filas: antes de día,
 antes de noche, después de día y después de noche; y una columna por nivel (0 a 3). Deja
-también `salas.json` con el tamaño de cada celda y dónde empieza cada bloque.
+también `salas.json` con el tamaño de cada celda y dónde empieza cada bloque. Las variantes
+del «después» (`tesoro_o50`…) usan el «antes» de su sala si no tienen el suyo.
 """
 
 import json
@@ -43,7 +44,7 @@ for room in rooms:
     y = 0
     for w in widths:
         cells = [
-            shots[v].get((room, w, lvl, t))
+            shots[v].get((room, w, lvl, t)) or shots[v].get((room.split("_")[0], w, lvl, t))
             for v in ("antes", "despues")
             for t in ("dia", "noche")
             for lvl in range(4)
@@ -58,7 +59,9 @@ for room in rooms:
             [("antes", "dia"), ("antes", "noche"), ("despues", "dia"), ("despues", "noche")]
         ):
             for lvl in range(4):
-                im = shots[v].get((room, b["w"], lvl, t))
+                im = shots[v].get((room, b["w"], lvl, t)) or shots[v].get(
+                    (room.split("_")[0], b["w"], lvl, t)
+                )
                 if not im:
                     continue
                 # Centrada abajo en su celda (la torre cambia de alto de una versión a otra).

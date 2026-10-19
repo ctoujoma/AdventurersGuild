@@ -5,7 +5,9 @@
  *
  *   node tools/shots/galeria.mjs <carpeta> [puerto=4173] [tipos=todos]
  *
- * Saca `<tipo>-a<ancho>-n<nivel>-<dia|noche>.png` a zoom 4 (cada píxel del mundo, 4×4);
+ * Saca `<tipo>-a<ancho>-n<nivel>-<dia|noche>.png` a zoom 4 (cada píxel del mundo, 4×4); la
+ * cámara del tesoro, con tres cantidades de oro (`tesoro_o10`, `_o50` y `_o100`: lo lleno que
+ * está, en %), porque sus montones crecen con él;
  * `tools/shots/galeria.py` los reduce a 1:1 y los junta en láminas para el visor. Se puede
  * correr contra otra versión del juego (por ejemplo, `main` para el «antes»): solo toca
  * `window.__game` y `window.__scene`.
@@ -96,11 +98,20 @@ await page.evaluate(() => {
   sc.setTime = () => {};
 });
 
-/** Prepara la sala `type` a ese ancho y nivel; devuelve el recorte en la pantalla. */
-async function shoot(type, w, level) {
+/** Lo que cabe en la cámara del tesoro por hueco y nivel (VAULT_STORE de core/balance.ts). */
+const VAULT_STORE = [300, 1500, 4000, 10000];
+/** Lo lleno que sale el tesoro en cada juego de capturas. */
+const GOLD = [0.1, 0.5, 1];
+
+/**
+ * Prepara la sala `type` a ese ancho y nivel (y, si se da, con el oro que llena esa parte de la
+ * cámara); devuelve el recorte en la pantalla.
+ */
+async function shoot(type, w, level, fill) {
   await page.evaluate(
-    ([type, slot, w, level]) => {
+    ([type, slot, w, level, gold]) => {
       const s = structuredClone(window.__base);
+      if (gold !== null) s.gold = gold;
       s.tips = ['*'];
       s.heroes = [];
       s.workers = [];
@@ -158,7 +169,15 @@ async function shoot(type, w, level) {
       window.__game.set(s);
       window.__sala = r.id;
     },
-    [type, SLOTS[type], w, level],
+    [
+      type,
+      SLOTS[type],
+      w,
+      level,
+      fill === undefined
+        ? null
+        : Math.round(Math.max(VAULT_STORE[0], VAULT_STORE[level] * w) * fill),
+    ],
   );
   await page.waitForTimeout(1200);
   const box = await page.evaluate((zoom) => {
@@ -191,14 +210,17 @@ for (const night of [false, true]) {
   const t = night ? 'noche' : 'dia';
   for (const type of types) {
     const max = SLOTS[type][2];
-    for (const w of [...new Set([1, max])])
-      for (const level of [3, 2, 1, 0]) {
-        const clip = await shoot(type, w, level);
-        const file = `${type}-a${w}-n${level}-${t}.png`;
-        await page.screenshot({ path: `${out}/${file}`, clip });
-        manifest[file] = clip;
-        console.log(file);
-      }
+    const fills = type === 'tesoro' ? GOLD : [undefined];
+    for (const fill of fills)
+      for (const w of [...new Set([1, max])])
+        for (const level of [3, 2, 1, 0]) {
+          const clip = await shoot(type, w, level, fill);
+          const name = fill === undefined ? type : `${type}_o${Math.round(fill * 100)}`;
+          const file = `${name}-a${w}-n${level}-${t}.png`;
+          await page.screenshot({ path: `${out}/${file}`, clip });
+          manifest[file] = clip;
+          console.log(file);
+        }
   }
 }
 writeFileSync(`${out}/manifest.json`, JSON.stringify(manifest));

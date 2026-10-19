@@ -27,7 +27,28 @@ tiro, biblioteca, dormitorio del servicio, veteranos y torre del vigía.
 **Cambio de plan (pedido del usuario):** en vez de una sala por PR, se hizo el arte de todas en
 la misma rama y se enseñan juntas en un artefacto de revisión («Salas del Jarro»: antes y
 después, cada nivel, de día y de noche, ancho 1 y máximo). Si el usuario lo aprueba, ese mismo
-código pasa a producción (PR #28). Estado: **todas hechas, esperando su revisión**.
+código pasa a producción (PR #28). Estado: **todas hechas; segunda ronda (su feedback) hecha,
+esperando su revisión**.
+
+Segunda ronda (lo que pidió tras ver la galería):
+
+- **Salas anchas sin repetir la pequeña**: `stretchesOf` (kit.ts) da los tramos de pared entre
+  ventanas (izquierda, de en medio y derecha) y `row` reparte piezas en uno con huecos iguales.
+  Cada sala pone lo propio en cada tramo de en medio (horno de pan, secadero, botica…).
+- **Tesoro según el oro**: la escena recibe lo lleno que está la cámara (`SceneModel.vault`, en
+  octavos) y los montones, arcones y pilas crecen con ello.
+- **Acabados por nivel** (`salas/acabados.ts`, para las salas con su arte): nivel 2, yeso fino
+  con cenefa, postes y arrimadero en la madera, zócalo de madera en la piedra, entibos en la
+  cueva; nivel 3, azulejo, pared entelada (cada sala con su color, ver `CLOTH`) o enlucida,
+  sillería de arenisca con cornisa, chapado de piedra, y en el suelo parqué, olambrillas,
+  damero de mármol o losas. Se pinta en el fondo, en los lados y en el suelo, debajo de lo de
+  cada sala, y respeta el alto del zócalo.
+- **Luz**: en el nivel 3, la araña de hierro (`chandelier`) en lugar del farol, igual de alta
+  y más fuerte; en el 2, apliques pintados con su luz (`sconceOn` + `wallLight`, una figura
+  vacía que solo alumbra) donde no había otra (despensa, armas, tiro), la vela de la repisa del
+  servicio y la de la mesa del curandero. Ojo: la escena usa las 16 luces más cercanas al
+  centro de la vista (`MAX_LIGHTS`), así que mejor pocas por sala.
+- **Nivel 4**: pendiente de que el usuario decida (toca reglas y balance).
 
 Cómo está montado (ver `src/world/rooms/salas/`):
 

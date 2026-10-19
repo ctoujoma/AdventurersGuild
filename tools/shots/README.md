@@ -12,7 +12,9 @@ Sirven para revisar a ojo los cambios de la escena de salas (no son tests).
 5. Galería de todas las salas (antes y después): con dos `vite preview` (uno con el build de
    `main` en otro puerto, por ejemplo desde un `git worktree`), `node tools/shots/galeria.mjs
 <carpeta> <puerto> [tipos]` para cada uno y luego `python3 tools/shots/galeria.py <antes>
-<después> <salida>`, que deja una lámina por sala y `salas.json` para el visor.
+<después> <salida>`, que deja una lámina por sala y `salas.json` para el visor. La cámara del
+tesoro sale tres veces (`tesoro_o10`, `_o50`, `_o100`: al 10 %, a la mitad y llena), porque su
+oro crece con lo que guarda; sin «antes» propio, usan el de `tesoro`.
 
 El juego deja a mano `window.__game` (`get()`/`set(estado)`) y `window.__scene` (la escena)
 para preparar cualquier situación antes de la captura: subir salas de nivel, provocar un asalto
