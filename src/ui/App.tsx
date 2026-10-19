@@ -10,7 +10,7 @@ import { DAY_SECONDS, DELIVERIES, DUSK } from '../core/balance';
 import { DECOR, FACADE } from '../data/custom';
 import { RUMORS, VISITORS, type VisitorKind } from '../data/visitors';
 import type { BossFight as BossFightRecord, Facilities, GameState } from '../core/model';
-import { CAPTIONS, FACILITY_INFO } from '../data/labels';
+import { FACILITY_INFO } from '../data/labels';
 import { loadRecords, mergeRecords, saveRecords } from '../platform/records';
 import { loadGame, saveGame, webStorage } from '../platform/storage';
 import type { Point } from '../world/scene';
@@ -51,7 +51,6 @@ import { WorksBar } from './WorksBar';
 import { RoomMenu } from './RoomMenu';
 import { useWorks } from './works';
 import { LOCKED, worksOpen } from '../core/rooms';
-import { RoomScene } from '../world/rooms/RoomScene';
 import type { Pick } from '../world/rooms/works';
 import { ROOMS } from '../data/rooms';
 import { TabBar, type TabId } from './TabBar';
@@ -113,7 +112,6 @@ export function App() {
   const [arconTab, setArconTab] = useState<ArconTab>('equipo');
   /** Sala tocada en la vista de salas (su ficha). */
   const [roomId, setRoomId] = useState<string | null>(null);
-  const [focusTrophy, setFocusTrophy] = useState<string | null>(null);
   // Partida nueva: el día 1 se abre con la carta del tío.
   const [dawnOpen, setDawnOpen] = useState(!saved);
   /** La noche está pasando en la escena (entre «Terminar día» y el resumen del amanecer). */
@@ -249,18 +247,18 @@ export function App() {
     focus: (id) => scene.current?.focus(id),
     raise: (ids) => {
       const s = scene.current;
-      if (s instanceof RoomScene) s.raise(ids);
+      s?.raise(ids);
     },
     price: (id, cost) => {
       const s = scene.current;
-      if (s instanceof RoomScene) s.priceTag(id, cost);
+      s?.priceTag(id, cost);
     },
   });
   const draft = works.planning ? works.view : null;
   const model = useMemo(() => sceneModel(draft ?? sceneGame), [sceneGame, draft]);
   useEffect(() => {
     const s = scene.current;
-    if (!(s instanceof RoomScene)) return;
+    if (!s) return;
     s.setTargets(
       works.active
         ? works.targets.map((t) => ({
@@ -285,10 +283,10 @@ export function App() {
   const routeBuilding = (draft ?? game).building;
   useEffect(() => {
     const s = scene.current;
-    if (s instanceof RoomScene) s.setRoute(showRoute ? raidRoute(routeBuilding) : null);
+    s?.setRoute(showRoute ? raidRoute(routeBuilding) : null);
   }, [showRoute, routeBuilding]);
-  /** Las obras de verdad solo se eligen en la escena por salas (si el navegador la pinta). */
-  const roomsLive = !settings.classic && scene.current instanceof RoomScene;
+  /** Las obras se eligen en la escena (si el navegador la ha podido pintar). */
+  const roomsLive = !!scene.current;
   const pickSpot = (p: Pick) => {
     openPanel(null);
     if (!works.planning) works.startPlan();
@@ -305,7 +303,7 @@ export function App() {
     setBubble(null);
   };
 
-  const onHotspot = (id: string, _label: string, at: Point) => {
+  const onHotspot = (id: string) => {
     setHint(false);
     if (id.startsWith('obra:')) {
       works.choose(id);
@@ -319,78 +317,6 @@ export function App() {
       }
       setRoomId(id.slice(5));
       openPanel('sala');
-      return;
-    }
-    switch (id) {
-      case 'tablon':
-        openPanel('tablon');
-        return;
-      case 'barra':
-        setHeroFilter('candidatos');
-        openPanel('heroes');
-        return;
-      case 'dormitorios':
-        setFocusFac('dorm');
-        openPanel('gremio');
-        return;
-      case 'enfermeria':
-        setFocusFac('enf');
-        openPanel('gremio');
-        return;
-      case 'mapa':
-        openPanel('fuera');
-        return;
-      case 'armeria':
-        setFocusFac('arm');
-        openPanel('gremio');
-        return;
-      case 'capilla':
-        setFocusFac('cap');
-        openPanel('gremio');
-        return;
-      case 'forja':
-      case 'establo':
-      case 'torre':
-        setFocusFac(id);
-        openPanel('gremio');
-        return;
-      case 'patio-entreno':
-        setFocusFac('patio');
-        openPanel('gremio');
-        return;
-      case 'empalizada':
-        setFocusFac('empal');
-        openPanel('gremio');
-        return;
-      case 'veteranos':
-        setFocusFac('vet');
-        openPanel('gremio');
-        return;
-      case 'despacho':
-        openPanel('libro');
-        return;
-      case 'letrero':
-        openPanel('casa');
-        return;
-      case 'equipo':
-        setArconTab('equipo');
-        openPanel('arcon');
-        return;
-      case 'cofres':
-        setArconTab('tesoros');
-        openPanel('arcon');
-        return;
-      case 'chimenea':
-        say(game.fac.tab === 0 ? CAPTIONS.chimeneaFria! : CAPTIONS.chimenea!, at);
-        return;
-      default: {
-        const t = id.startsWith('trofeo-') ? game.trophies[Number(id.slice(7))] : null;
-        if (t) {
-          setArconTab('trofeos');
-          setFocusTrophy(t.id);
-          openPanel('arcon');
-        } else if (CAPTIONS[id]) say(CAPTIONS[id]!, at);
-      }
     }
   };
 
@@ -579,7 +505,7 @@ export function App() {
     if (made?.length)
       setTimeout(() => {
         const s = scene.current;
-        if (s instanceof RoomScene) s.yields(made);
+        s?.yields(made);
       }, 400);
     if (then) openPanel(then);
     else if (returned) setTimeout(() => scene.current?.focus('patio'), 30);
@@ -646,9 +572,7 @@ export function App() {
     !works.planning;
   const pendingEvent = calm && !game.over ? (game.event ?? null) : null;
   const tip =
-    calm && !pendingEvent && !card && !questId && !reportId && !panel
-      ? nextTip(game, roomsLive)
-      : null;
+    calm && !pendingEvent && !card && !questId && !reportId && !panel ? nextTip(game) : null;
   // La nota del tío mira hacia lo que explica.
   useEffect(() => {
     if (tip?.focus) scene.current?.focus(tip.focus);
@@ -689,8 +613,6 @@ export function App() {
       <Hud game={passing ? sceneGame : game} onSettings={() => setSettingsOpen(true)} />
       <div class="stage">
         <SceneView
-          key={settings.classic ? 'taberna' : 'salas'}
-          rooms={!settings.classic}
           model={model}
           onReady={(s) => {
             scene.current = s;
@@ -766,9 +688,7 @@ export function App() {
         {bubble && <SpeechBubble bubble={bubble} scene={scene} />}
         {hint && !notice && (
           <div class="hint-toast" role="status">
-            {roomsLive
-              ? 'Arrastra para recorrer la casa · Toca el salón para ver el tablón'
-              : 'Arrastra para recorrer la taberna · Toca el tablón para mandar un grupo'}
+            Arrastra para recorrer la casa · Toca el salón para ver el tablón
           </div>
         )}
         {notice && (
@@ -810,25 +730,21 @@ export function App() {
             </button>
           )}
         </div>
-        {!panel &&
-          works.planning &&
-          works.selected &&
-          !works.pick &&
-          scene.current instanceof RoomScene && (
-            <RoomMenu
-              scene={scene.current}
-              game={works.view}
-              roomId={works.selected}
-              onUpgrade={(id) => works.work({ type: 'upgradeRoom', id })}
-              onMove={(id) => works.startPick({ kind: 'move', id })}
-              onDemolish={(id) => works.work({ type: 'demolish', id })}
-              onInfo={(id) => {
-                setRoomId(id);
-                openPanel('sala');
-              }}
-              onClose={() => works.select(null)}
-            />
-          )}
+        {!panel && works.planning && works.selected && !works.pick && scene.current && (
+          <RoomMenu
+            scene={scene.current}
+            game={works.view}
+            roomId={works.selected}
+            onUpgrade={(id) => works.work({ type: 'upgradeRoom', id })}
+            onMove={(id) => works.startPick({ kind: 'move', id })}
+            onDemolish={(id) => works.work({ type: 'demolish', id })}
+            onInfo={(id) => {
+              setRoomId(id);
+              openPanel('sala');
+            }}
+            onClose={() => works.select(null)}
+          />
+        )}
         {!panel && works.planning && <WorksBar works={works} onMore={() => openPanel('gremio')} />}
         {!panel && !game.over && !works.pick && !works.planning && (
           <DayBar
@@ -949,7 +865,6 @@ export function App() {
               game={game}
               tab={arconTab}
               onTab={setArconTab}
-              focusTrophy={focusTrophy}
               onEquip={(heroId, itemId) => {
                 const h = game.heroes.find((x) => x.id === heroId);
                 const it = game.inventory.find((x) => x.id === itemId);

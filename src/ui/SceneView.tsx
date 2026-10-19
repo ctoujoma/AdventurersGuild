@@ -1,10 +1,10 @@
-import { useEffect, useRef } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
 import { RoomScene } from '../world/rooms/RoomScene';
-import { WorldScene, type Point, type SceneCallbacks, type SceneModel } from '../world/scene';
+import type { Point, SceneCallbacks, SceneModel } from '../world/scene';
 
-/** La escena que se ve: el gremio por salas o, si se elige en Ajustes, la taberna dibujada. */
-export type GameScene = WorldScene | RoomScene;
+/** La escena que se ve: el gremio por salas. */
+export type GameScene = RoomScene;
 
 interface Props {
   model: SceneModel;
@@ -19,11 +19,9 @@ interface Props {
   onRoomDrag?: (id: string) => void;
   onRoomDrop?: () => void;
   paused?: boolean;
-  /** Pinta el gremio por salas en lugar de la taberna dibujada. */
-  rooms?: boolean;
 }
 
-/** La escena por salas, si el navegador puede pintar 3D (si no, se queda la taberna dibujada). */
+/** La escena por salas, si el navegador puede pintar 3D (WebGL). */
 function roomScene(canvas: HTMLCanvasElement, cb: SceneCallbacks): RoomScene | null {
   try {
     return new RoomScene(canvas, cb);
@@ -34,7 +32,8 @@ function roomScene(canvas: HTMLCanvasElement, cb: SceneCallbacks): RoomScene | n
 
 /** La taberna viva a pantalla completa. */
 export function SceneView(props: Props) {
-  const { model, onReady, paused, rooms } = props;
+  const { model, onReady, paused } = props;
+  const [failed, setFailed] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const scene = useRef<GameScene | null>(null);
@@ -54,9 +53,11 @@ export function SceneView(props: Props) {
       onSound: (name, vol) => audio.play(name, vol),
       onFrame: (p) => audio.listen(p),
     };
-    const s =
-      (rooms && roomScene(canvas.current!, callbacks)) ||
-      new WorldScene(canvas.current!, callbacks);
+    const s = roomScene(canvas.current!, callbacks);
+    if (!s) {
+      setFailed(true);
+      return;
+    }
     scene.current = s;
     // Gancho de depuración para pruebas automáticas (solo con #debug en la URL).
     if (location.hash === '#debug') (window as unknown as { __scene: GameScene }).__scene = s;
@@ -72,8 +73,7 @@ export function SceneView(props: Props) {
     document.addEventListener('visibilitychange', vis);
     return () => {
       ro.disconnect();
-      if (s instanceof RoomScene) s.dispose();
-      else s.stop();
+      s.dispose();
       document.removeEventListener('visibilitychange', vis);
     };
     // La escena se crea una sola vez.
@@ -96,6 +96,12 @@ export function SceneView(props: Props) {
         class="pixel scene-canvas"
         aria-label="La taberna El Jarro Partido. Arrastra para recorrerla y toca lo que quieras."
       />
+      {failed && (
+        <p class="scene-fail" role="alert">
+          Este navegador no puede pintar la taberna (le falta WebGL). Prueba con otro navegador o
+          activa la aceleración por hardware.
+        </p>
+      )}
     </div>
   );
 }

@@ -4,7 +4,7 @@
  * la barra con sus jarras, las mesas con velas, la chimenea con el escudo, los barriles y la
  * leña. Crece con el nivel del salón y con la decoración que se compra.
  */
-import type { GearView } from '../annex';
+import type { GearView } from '../scene';
 import { trophyIcon } from '../../art/items';
 import { P, R, type Ramp } from '../../art/palette';
 import { PixelBuffer } from '../../art/pixel';

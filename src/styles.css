@@ -120,6 +120,18 @@ button:focus-visible {
   overflow: hidden;
 }
 
+/* Sin WebGL no hay escena: un aviso en su lugar (el resto del juego sigue). */
+.scene-fail {
+  position: absolute;
+  max-width: 28em;
+  margin: 16px;
+  padding: 12px 16px;
+  background: var(--navy);
+  border: 2px solid var(--slate);
+  color: var(--mist);
+  text-align: center;
+}
+
 .scene-canvas {
   display: block;
   cursor: grab;

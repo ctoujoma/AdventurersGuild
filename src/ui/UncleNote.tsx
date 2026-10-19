@@ -1,4 +1,4 @@
-import { UNCLE } from '../world/build';
+import { UNCLE } from '../art/heroes/uncle';
 import { Portrait } from './Portrait';
 import type { Tip } from './tips';
 

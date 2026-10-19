@@ -11,8 +11,6 @@ interface Props {
   game: GameState;
   tab: ArconTab;
   onTab: (t: ArconTab) => void;
-  /** Trofeo a resaltar (si se ha tocado uno en la pared). */
-  focusTrophy?: string | null;
   onEquip: (heroId: string, itemId: string) => void;
   onUnequip: (heroId: string) => void;
   onSell: (itemId: string) => void;
@@ -31,7 +29,6 @@ export function ArconPanel({
   game,
   tab,
   onTab,
-  focusTrophy,
   onEquip,
   onUnequip,
   onSell,
@@ -188,10 +185,7 @@ export function ArconPanel({
           </p>
           <div class="list">
             {game.trophies.map((t, i) => (
-              <article
-                key={t.id}
-                class={`card-paper facility ${focusTrophy === t.id ? 'is-focus' : ''}`}
-              >
+              <article key={t.id} class="card-paper facility">
                 <BufferImage buf={trophyIcon(t.icon)} scale={2} />
                 <div class="facility-info">
                   <b>{t.name}</b>

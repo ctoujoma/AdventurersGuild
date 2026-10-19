@@ -15,10 +15,6 @@ export interface Tip {
   text: string;
   /** Sitio de la escena al que mirar mientras se lee. */
   focus?: string;
-  /** Solo en la vista de salas (las obras de verdad). */
-  rooms?: boolean;
-  /** Lo que dice en la vista de salas, si allí las cosas están en otro sitio. */
-  roomsText?: string;
   when: (s: GameState) => boolean;
 }
 
@@ -31,9 +27,7 @@ export const TIPS: readonly Tip[] = [
   {
     id: 'tablon',
     focus: 'tablon',
-    text: 'El corcho de la sala es el tablón, donde se cuelgan los encargos. Toca uno, elige a quién mandas y fíjate en el riesgo. Mejor «Probable» que «Suicida».',
-    roomsText:
-      'El tablón de encargos está en el salón: toca la sala y ábrelo. Toca un encargo, elige a quién mandas y fíjate en el riesgo. Mejor «Probable» que «Suicida».',
+    text: 'El tablón de encargos está en el salón: toca la sala y ábrelo. Toca un encargo, elige a quién mandas y fíjate en el riesgo. Mejor «Probable» que «Suicida».',
     when: (s) => s.day === 1 && !s.missions.length && !s.reports.length,
   },
   {
@@ -66,7 +60,6 @@ export const TIPS: readonly Tip[] = [
   },
   {
     id: 'trabajo',
-    rooms: true,
     focus: 'cocina',
     text: 'Remedios cocina, Tobías atiende el salón y Nico sube los barriles de la bodega. Vienen cada mañana del pueblo y cobran con los héroes. Toca una sala para ver quién trabaja en ella. Para cambiar a alguien de sitio, cógelo con el dedo y suéltalo en otra sala; los héroes que se quedan en casa también pueden echar una mano.',
     when: (s) => s.day >= 3 && s.workers.length > 0,
@@ -78,10 +71,8 @@ export const TIPS: readonly Tip[] = [
   },
   {
     id: 'equipo',
-    focus: 'bodega',
-    text: 'Ha llegado equipo y lo he colgado en el tablero de la bodega. Dáselo a alguien desde su ficha. Eso sí, si cae en una misión, el objeto se pierde con él.',
-    roomsText:
-      'Ha llegado equipo y lo tengo guardado en el arcón. Dáselo a alguien desde su ficha. Eso sí, si cae en una misión, el objeto se pierde con él.',
+    focus: 'armeria',
+    text: 'Ha llegado equipo y lo he dejado en la armería (en arcones, mientras no la arregles). Dáselo a alguien desde su ficha. Eso sí, si cae en una misión, el objeto se pierde con él.',
     when: (s) => gearInStock(s).length > 0,
   },
   {
@@ -93,53 +84,45 @@ export const TIPS: readonly Tip[] = [
   // El día 30: las obras se abren y el tío explica cómo encajar las salas.
   {
     id: 'obras',
-    rooms: true,
     focus: 'sala',
     text: 'La casa ya es tuya del todo, así que se acabaron los apaños: ahora se hace obra de verdad. Toca el martillo, a la derecha, para el modo obras: abajo eliges una sala nueva y luego dónde va. Si tocas una sala, la amplías, la mueves o la tiras.',
     when: (s) => sinceOpening(s) >= 0,
   },
   {
     id: 'plano',
-    rooms: true,
     text: 'En el modo obras todo se hace de mentira hasta que pagas: ves cómo queda y lo que cuesta. Puedes dejar una sala sin paso un momento mientras mueves otras; solo hay que arreglarlo antes de pagar. Si no te convence, sales y no pierdes ni una moneda.',
     when: (s) => seen(s, 'obras') && sinceOpening(s) >= 1,
   },
   {
     id: 'excavar',
-    rooms: true,
     focus: 'bodega',
     text: 'Debajo del sótano hay roca. En el modo obras se marcan los huecos que se pueden excavar, con su precio: tócalos y listo. Cuanto más hondo, más caro. Hacia arriba también se sube, pero cada planta solo sobresale un hueco de la de abajo.',
     when: (s) => seen(s, 'plano') && sinceOpening(s) >= 2,
   },
   {
     id: 'servicio',
-    rooms: true,
     text: 'Ahora viene gente del pueblo a pedir trabajo: lo verás en «Héroes», pestaña «Trabajo». Pero cada uno nuevo necesita su cama, así que antes construye el dormitorio del servicio.',
     when: (s) => seen(s, 'excavar') && sinceOpening(s) >= 3,
   },
   {
     id: 'visitas',
-    rooms: true,
     focus: 'salon',
     text: 'La caja la llenan los que vienen al salón: campesinos, mercaderes y, si el salón luce, algún noble que trae fama. Cuanto más Atractivo (decoración, fachada, trofeos), más gente; pero si nadie atiende la barra, se van sin pagar. Ojo con los forasteros que miran demasiado.',
     when: (s) => s.day >= 5 && s.mode !== 'libre',
   },
   {
     id: 'comida',
-    rooms: true,
     focus: 'cocina',
     text: 'Lo que hace Remedios en la cocina y Nico en la bodega se suma por la noche, y lo tienes arriba: el pan son las raciones y la jarra, la cerveza. Los visitantes comen y beben de ahí, y los de casa cenan antes de dormir. Si no llega, pon a alguien más en la cocina o arréglala; quien se acuesta sin cenar se levanta de mal humor.',
     when: (s) => (s.day >= 6 && s.mode !== 'libre') || hungryTonight(s) > 0,
   },
   {
     id: 'entreno',
-    rooms: true,
     text: 'Ya tienes donde entrenar. Coge con el dedo a un héroe que esté en casa y suéltalo en la sala: la barra sobre su cabeza dice cuánto le falta para el siguiente punto. Cada sala tiene un tope; mejorándola, se llega más lejos.',
     when: (s) => s.building.rooms.some((r) => isTrainRoom(r.type) && slotsOf(r) > 0),
   },
   {
     id: 'tesoro',
-    rooms: true,
     focus: 'cofres',
     text: 'Todo el oro se guarda en la cámara del tesoro, y ya casi no cabe más: lo que sobre se perderá. Mejórala (o, cuando puedas hacer obras, hazla más grande). Su nivel es también la cerradura que tendrían que forzar los bandidos.',
     when: (s) => vaultFull(s),
@@ -147,10 +130,8 @@ export const TIPS: readonly Tip[] = [
 ];
 
 /** La siguiente nota que toca enseñar, si alguna. */
-export function nextTip(s: GameState, rooms = false): Tip | null {
+export function nextTip(s: GameState): Tip | null {
   const done = s.tips ?? [];
   if (done.includes('*')) return null;
-  const t = TIPS.find((x) => !done.includes(x.id) && (!x.rooms || rooms) && x.when(s));
-  if (!t) return null;
-  return rooms && t.roomsText ? { ...t, text: t.roomsText } : t;
+  return TIPS.find((x) => !done.includes(x.id) && x.when(s)) ?? null;
 }

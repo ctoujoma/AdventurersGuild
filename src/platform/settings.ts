@@ -16,12 +16,6 @@ export interface Settings {
   vibrate: boolean;
   /** Modo prueba: atajos en Ajustes (se abre tocando cinco veces el título). */
   tester: boolean;
-  /**
-   * La taberna dibujada de antes en lugar de la vista de salas (que es la de siempre ahora).
-   * Va con nombre nuevo para que los ajustes guardados con la vista de salas apagada no la
-   * dejen apagada.
-   */
-  classic: boolean;
 }
 
 const KEY = 'jarro:ajustes';
@@ -35,7 +29,6 @@ export const DEFAULT_SETTINGS: Settings = {
   calm: false,
   vibrate: true,
   tester: false,
-  classic: false,
 };
 
 const clamp01 = (v: unknown, d: number) =>
@@ -54,7 +47,6 @@ export function parseSettings(raw: unknown): Settings {
     calm: r.calm === true,
     vibrate: r.vibrate !== false,
     tester: r.tester === true,
-    classic: r.classic === true,
   };
 }
 
