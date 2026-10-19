@@ -148,7 +148,7 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
   // (En las salas con su arte, en el nivel 3, la araña de hierro, igual de alta.)
   if (!art?.ownLamp)
     t.push({
-      img: art && lvl >= 3 ? chandelier(9) : lamp(),
+      img: art && lvl >= 3 ? chandelier(9, lvl >= 4) : lamp(),
       x: w / 2,
       z: MID,
       y: 0,

@@ -48,7 +48,11 @@ Segunda ronda (lo que pidió tras ver la galería):
   vacía que solo alumbra) donde no había otra (despensa, armas, tiro), la vela de la repisa del
   servicio y la de la mesa del curandero. Ojo: la escena usa las 16 luces más cercanas al
   centro de la vista (`MAX_LIGHTS`), así que mejor pocas por sala.
-- **Nivel 4**: pendiente de que el usuario decida (toca reglas y balance).
+- **Niveles nuevos, solo vista**: el usuario pidió dejarlos pintados sin usarlos en el juego
+  para valorarlos. Hay nivel 3 en las salas que hoy acaban en el 2 y nivel 4 en tesoro,
+  dormitorio, cocina, bodega, armas, tiro y biblioteca (`ART_MAX` en `salas/index.ts`; los
+  acabados del 4, en `acabados.ts`). Qué se ve y qué haría falta en el código para activarlos:
+  [`niveles-nuevos.md`](niveles-nuevos.md).
 
 Cómo está montado (ver `src/world/rooms/salas/`):
 
