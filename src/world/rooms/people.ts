@@ -6,7 +6,7 @@
 import type { Room } from '../../core/model';
 import { hasPosts } from '../../core/workers';
 import { beds, seats, type Bed } from './furniture';
-import { SPOT } from './recibidor';
+import { SPOT } from './salas/recibidor';
 import { PATIO_W, PITCH, STAIR_W, WALL, floorY, interior, type RoomsLayout } from './layout';
 
 /** Un punto del suelo: x del mundo y planta. */

@@ -1,18 +1,18 @@
 /**
  * Arte del recibidor: la entrada desde el patio y el puesto de los de guardia. En la pared del
  * fondo, el perchero junto a la puerta, los carteles de «Se busca», el armero de lanzas con su
- * escudo y el cuadro de llaves; delante, el banco, el atril con el libro de visitas, el baúl o
+ * escudo; delante, el banco, el atril con el libro de visitas, el baúl o
  * la armadura y la campana de aviso. Su nivel es la puerta de la calle: de tablas sueltas a
  * herrada y atrancada.
  */
-import { P, R, type Ramp } from '../../art/palette';
-import { PixelBuffer } from '../../art/pixel';
-import type { Room } from '../../core/model';
-import { planksV } from '../paint';
-import * as Prop from '../props';
-import type { SalonLook } from './salon';
+import { P, type Ramp } from '../../../art/palette';
+import { PixelBuffer } from '../../../art/pixel';
+import type { Room } from '../../../core/model';
+import { planksV } from '../../paint';
+import * as Prop from '../../props';
+import type { SalonLook } from '../salon';
+import { MID, W, WALL, at, bx, hung, type RoomArt, type Thing, type WallCtx } from './kit';
 
-const W = R.wood; // [black, plum, bark, rust, oak, clay, tan]
 const CLOAKS: Ramp[] = [
   [P.plum, P.wine, P.red, P.coral],
   [P.black, P.deep, P.forest, P.leaf],
@@ -161,16 +161,9 @@ function shield(crest: SalonLook['crest'] | null): PixelBuffer {
  * el poste del medio y los carteles entre la ventana y la pared. Arriba a la izquierda no se
  * pone nada: ahí cuelga la campana.
  */
-export function recibidorWall(
-  b: PixelBuffer,
-  room: Room,
-  look: SalonLook,
-  windows: number[][],
-  wain: number,
-): void {
+function wall(b: PixelBuffer, room: Room, look: SalonLook, { cells, top, ruin }: WallCtx): void {
+  if (ruin) return;
   const lvl = room.level;
-  const floor = b.h;
-  const top = floor - wain - 3;
   // El armero, en el poste del medio (algo a la derecha, para dejar sitio al perchero), apoyado
   // en el zócalo; el perchero, a su izquierda, con la barra a la misma altura que su remate.
   const spears = spearRack(lvl, look.crest);
@@ -179,7 +172,7 @@ export function recibidorWall(
   b.blit(coatRack(lvl), 1, sy);
   // Carteles de «Se busca», uno encima de otro a la derecha de la ventana (por encima de la
   // armadura del rincón).
-  const wx = windows[0]?.[0] ?? b.w;
+  const wx = bx(cells[0]!.win);
   const px = Math.round((wx + 13 + b.w - 7) / 2);
   const faces = [P.oak, P.umber];
   if (px + 7 <= b.w - 1)
@@ -313,3 +306,19 @@ export function alarmBell(): PixelBuffer {
     p.vline(5, 10, 4, P.tan);
   });
 }
+
+// ---------- En la sala ----------
+
+/** Todo pegado a la pared: el suelo de delante es el paso de la puerta y el de los de guardia. */
+function things(room: Room): Thing[] {
+  const lvl = room.level;
+  const t: Thing[] = [at(bench(lvl), SPOT.bench, WALL - 4)];
+  if (lvl >= 2) t.push(at(lectern(lvl), SPOT.lectern, WALL));
+  t.push(
+    at(lvl >= 3 ? Prop.armorStand() : lvl >= 2 ? Prop.trunk() : Prop.crate(), SPOT.corner, WALL),
+  );
+  if (lvl >= 2) t.push(hung(alarmBell(), SPOT.bell, MID));
+  return t;
+}
+
+export const recibidor: RoomArt = { wall, things };

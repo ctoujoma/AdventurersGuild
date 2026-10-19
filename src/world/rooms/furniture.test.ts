@@ -4,7 +4,7 @@ import type { Room } from '../../core/model';
 import { furnish, gearRoom } from './furniture';
 import { uncleBuilding } from '../../core/rooms';
 import { NO_LOOK } from './salon';
-import { SPOT } from './recibidor';
+import { SPOT } from './salas/recibidor';
 import { CELL_W, DEPTH, PARTITION } from './layout';
 import { scaleAt } from './view3d';
 

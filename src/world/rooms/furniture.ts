@@ -11,9 +11,23 @@ import { itemIcon } from '../../art/items';
 import type { GearView } from '../scene';
 import { stoneWall } from '../paint';
 import * as Prop from '../props';
-import { DEPTH, PITCH } from './layout';
+import { PITCH } from './layout';
 import { scaleAt } from './view3d';
-import { SPOT, alarmBell, bench as recibidorBench, lectern } from './recibidor';
+import { ART } from './salas';
+import {
+  CANDLE,
+  FIRE,
+  FORGE,
+  FRONT,
+  GOLD,
+  LANTERN,
+  MID,
+  WALL,
+  WARM,
+  fire,
+  type Glow,
+  type Thing,
+} from './salas/kit';
 import {
   HEARTH_RIGHT,
   HEARTH_Z,
@@ -28,37 +42,8 @@ import {
   type SalonLook,
 } from './salon';
 
-export type RGB = [number, number, number];
-
-export interface Glow {
-  /** Altura sobre la base de la figura y alcance de la luz, en píxeles del mundo. */
-  dy: number;
-  r: number;
-  color: RGB;
-  /** Fuerza (1 = farol) y cuánto tiembla (0 quieta, 0,3 fuego). */
-  power: number;
-  flicker: number;
-  /** Llamas que se ven bailar (fuego de chimenea, fogón o velas). */
-  flames?: { dx: number; dy: number; size: number }[];
-}
-
-export interface Thing {
-  img: PixelBuffer;
-  /** Centro en x, profundidad y altura de la base sobre el suelo. */
-  x: number;
-  z: number;
-  y: number;
-  /** Colgado del techo (y se cuenta desde el techo hacia abajo hasta su parte de arriba). */
-  hang?: boolean;
-  light?: Glow;
-}
-
-export const LANTERN: RGB = [255, 196, 120];
-const WARM: RGB = [255, 168, 92];
-const FIRE: RGB = [255, 132, 60];
-const FORGE: RGB = [255, 110, 44];
-const CANDLE: RGB = [255, 210, 140];
-const GOLD: RGB = [254, 200, 80];
+export type { Glow, RGB, Thing } from './salas/kit';
+export { LANTERN } from './salas/kit';
 
 /**
  * Dónde se guarda el equipo sin dueño: en la armería (colgado si está en uso, en arcones si
@@ -119,25 +104,6 @@ function chestPile(
     add(Prop.chest(), x0 + dir * (k * 18 + row * 9), MID, row * 11);
   }
 }
-
-/** Contra la pared del fondo, a media sala y delante. */
-const WALL = DEPTH - 6;
-const MID = DEPTH / 2;
-const FRONT = 12;
-
-const fire = (dy: number, r: number, color: RGB, big: boolean): Glow => ({
-  dy,
-  r,
-  color,
-  power: 0.85,
-  flicker: 0.3,
-  flames: big
-    ? [
-        { dx: -4, dy: 0, size: 1 },
-        { dx: 3, dy: 1, size: 0.8 },
-      ]
-    : [{ dx: 0, dy: 0, size: 0.6 }],
-});
 
 const slot = (w: number, i: number, n: number) => 10 + ((i + 0.5) * (w - 20)) / n;
 
@@ -245,8 +211,10 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
   }
   // El equipo sin dueño, en arcones si la sala donde se guarda no está para colgarlo.
   const gear = look.gearRoom === room.id ? look.gear : [];
+  const art = ART[room.type];
   if (room.level === 0) {
     if (gear.length) chestPile(add, gear.length, 20, 1);
+    if (art?.ruin) return [...t, ...art.ruin(room, w, look)];
     add(Prop.brokenChair(), slot3(0, 3), FRONT);
     add(Prop.rolledCarpet(), slot3(1, 3), MID);
     add(Prop.crate(), slot3(2, 3), WALL);
@@ -254,24 +222,24 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
   }
   const cells = room.w;
   const lvl = room.level;
-  // Farol del techo en cada sala que se usa.
-  t.push({
-    img: lamp(),
-    x: w / 2,
-    z: MID,
-    y: 0,
-    hang: true,
-    light: { dy: 4, r: Math.max(80, Math.round(w * 0.7)), color: LANTERN, power: 1, flicker: 0.08 },
-  });
+  // Farol del techo en cada sala que se usa (salvo las que ponen sus propias luces).
+  if (!art?.ownLamp)
+    t.push({
+      img: lamp(),
+      x: w / 2,
+      z: MID,
+      y: 0,
+      hang: true,
+      light: {
+        dy: 4,
+        r: Math.max(80, Math.round(w * 0.7)),
+        color: LANTERN,
+        power: 1,
+        flicker: 0.08,
+      },
+    });
+  if (art?.things) return [...t, ...art.things(room, w, look)];
   switch (room.type) {
-    case 'recibidor': {
-      // Todo pegado a la pared: el suelo de delante es el paso de la puerta y el de los de guardia.
-      add(recibidorBench(lvl), SPOT.bench, WALL - 4);
-      if (lvl >= 2) add(lectern(lvl), SPOT.lectern, WALL);
-      add(lvl >= 3 ? Prop.armorStand() : lvl >= 2 ? Prop.trunk() : Prop.crate(), SPOT.corner, WALL);
-      if (lvl >= 2) t.push({ img: alarmBell(), x: SPOT.bell, z: MID, y: 0, hang: true });
-      break;
-    }
     case 'salon': {
       const decor = look.decor;
       const big = decor.includes('chimenea');

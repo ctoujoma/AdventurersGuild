@@ -17,7 +17,6 @@ import * as Prop from '../props';
 import {
   CELL_W,
   DEPTH,
-  PARTITION,
   PITCH,
   ROOM_H,
   SLAB,
@@ -31,7 +30,9 @@ import {
   type RoofRun,
   type RoomsLayout,
 } from './layout';
-import { recibidorWall, streetDoor } from './recibidor';
+import { ART } from './salas';
+import { BLIND, cellsOf, windowX } from './salas/kit';
+import { streetDoor } from './salas/recibidor';
 import { NO_LOOK, hearthSpan, salonWall, type SalonLook } from './salon';
 import { BACK } from './view3d';
 
@@ -61,11 +62,6 @@ const TILE: Ramp = [P.black, P.plum, P.rust, P.clay, P.tan];
 const CELL_BACK = CELL_W * BACK;
 /** Alma oscura de los tabiques entre salas (lo demás del grosor lleva la textura del muro). */
 const CORE = 8;
-/** Ventana del hueco `i`: a un lado, para lo que cuelga a su izquierda. */
-const windowX = (i: number) => Math.round((i * CELL_W + CELL_W * 0.7 - PARTITION / 2) * BACK);
-
-/** Las salas que no tienen ventanas aunque estén por encima del suelo. */
-const BLIND = new Set(['tesoro', 'despensa']);
 
 // ---------- Caras de una sala ----------
 
@@ -108,9 +104,14 @@ export function backWall(room: Room, w: number, h: number, look: SalonLook = NO_
     windows.forEach((row, j) =>
       row.forEach((x) => windowAt(b, x, Math.round((j * PITCH + 18) * BACK), room, ruin)),
     );
-  if (!bare(room) && !ruin) {
-    if (room.type === 'salon') salonWall(b, room, look, windows, CELL_BACK, wain);
-    else if (room.type === 'recibidor') recibidorWall(b, room, look, windows, wain);
+  // Lo propio de cada sala (las que ya tienen su arte, también por reparar).
+  const art = ART[room.type];
+  if (!bare(room)) {
+    if (art?.wall)
+      art.wall(b, room, look, { cells: cellsOf(room, w), wain, top: bh - wain - 3, ruin });
+    else if (ruin) {
+      // Por reparar: nada colgado.
+    } else if (room.type === 'salon') salonWall(b, room, look, windows, CELL_BACK, wain);
     else decorate(b, room);
   }
   if (ruin) {
