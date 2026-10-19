@@ -6,10 +6,26 @@
  */
 import { P } from '../../art/palette';
 import { PixelBuffer } from '../../art/pixel';
-import type { Room } from '../../core/model';
+import type { Building, Room } from '../../core/model';
+import { itemIcon } from '../../art/items';
+import type { GearView } from '../annex';
 import { stoneWall } from '../paint';
 import * as Prop from '../props';
-import { DEPTH } from './layout';
+import { DEPTH, PITCH } from './layout';
+import { scaleAt } from './view3d';
+import {
+  HEARTH_RIGHT,
+  HEARTH_Z,
+  NO_LOOK,
+  bar,
+  barrels,
+  hearth as salonHearth,
+  larder,
+  logPile,
+  stage,
+  tableSet,
+  type SalonLook,
+} from './salon';
 
 export type RGB = [number, number, number];
 
@@ -42,6 +58,66 @@ const FIRE: RGB = [255, 132, 60];
 const FORGE: RGB = [255, 110, 44];
 const CANDLE: RGB = [255, 210, 140];
 const GOLD: RGB = [254, 200, 80];
+
+/**
+ * Dónde se guarda el equipo sin dueño: en la armería (colgado si está en uso, en arcones si
+ * está por reparar o en obras) y, si no hay armería, en arcones en la cámara del tesoro.
+ */
+export function gearRoom(b: Building): string | null {
+  const arm = b.rooms.filter((r) => r.type === 'armeria');
+  const r = arm.find(inUse) ?? arm[0] ?? b.rooms.find((x) => x.type === 'tesoro');
+  return r?.id ?? null;
+}
+
+/** Cadena de la que cuelga la lámpara grande. */
+function chain(h: number): PixelBuffer {
+  return Prop.piece(
+    3,
+    h,
+    (b) => {
+      for (let y = 0; y < h; y++) b.set(1, y, y % 3 === 2 ? P.steel : P.slate);
+    },
+    'none',
+  );
+}
+
+/** Huecos para colgar equipo en cada estante de la armería, por nivel. */
+const RACK_SLOTS = [0, 4, 8, 8];
+
+/** Estante de pared con el equipo colgado (con su rareza) y clavijas en los huecos libres. */
+function gearRack(items: readonly GearView[], slots: number): PixelBuffer {
+  const cols = 4;
+  const rows = Math.ceil(slots / cols);
+  const w = cols * 14 + 4;
+  const h = rows * 15 + 3;
+  return Prop.piece(w, h, (b) => {
+    b.rect(0, 0, w, h, P.bark);
+    b.rect(1, 1, w - 2, h - 2, P.rust);
+    for (let r = 0; r < rows; r++) b.hline(1, 2 + r * 15 + 13, w - 2, P.oak);
+    for (let i = 0; i < slots; i++) {
+      const x = 2 + (i % cols) * 14;
+      const y = 2 + Math.floor(i / cols) * 15;
+      const it = items[i];
+      if (it) b.blit(itemIcon(it.icon, it.rarity), x, y);
+      else b.rect(x + 5, y + 5, 2, 2, P.oak);
+    }
+  });
+}
+
+/** Arcones apilados con el equipo que no cabe (o no se puede colgar): uno por cada tres. */
+function chestPile(
+  add: (img: PixelBuffer, x: number, z: number, y?: number) => void,
+  n: number,
+  x0: number,
+  dir: 1 | -1,
+) {
+  const count = Math.min(6, Math.ceil(n / 3));
+  for (let i = 0; i < count; i++) {
+    const row = i < 3 ? 0 : 1;
+    const k = row ? i - 3 : i;
+    add(Prop.chest(), x0 + dir * (k * 18 + row * 9), MID, row * 11);
+  }
+}
 
 /** Contra la pared del fondo, a media sala y delante. */
 const WALL = DEPTH - 6;
@@ -153,19 +229,23 @@ const bunkCount = (room: Room, w: number) =>
 const cotCount = (room: Room) => Math.min(3, room.level + room.w - 1);
 
 /** Muebles de una sala de ancho `w` (interior). */
-export function furnish(room: Room, w: number): Thing[] {
+export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing[] {
   const t: Thing[] = [];
   const add = (img: PixelBuffer, x: number, z: number, y = 0, light?: Glow) =>
     t.push({ img, x, z, y, light });
   const slot3 = (i: number, n: number) => slot(w, i, n);
   if (room.works && room.works.kind !== 'extend') {
+    if (look.gearRoom === room.id && look.gear.length) chestPile(add, look.gear.length, 20, 1);
     // Obra: herramientas y material por el suelo.
     add(Prop.crate(), slot3(0, 3), MID);
     add(Prop.sack(), slot3(2, 3), FRONT);
     add(planks(), slot3(1, 3), WALL);
     return t;
   }
+  // El equipo sin dueño, en arcones si la sala donde se guarda no está para colgarlo.
+  const gear = look.gearRoom === room.id ? look.gear : [];
   if (room.level === 0) {
+    if (gear.length) chestPile(add, gear.length, 20, 1);
     add(Prop.brokenChair(), slot3(0, 3), FRONT);
     add(Prop.rolledCarpet(), slot3(1, 3), MID);
     add(Prop.crate(), slot3(2, 3), WALL);
@@ -189,23 +269,56 @@ export function furnish(room: Room, w: number): Thing[] {
       add(Prop.barrel(), 14, FRONT);
       break;
     case 'salon': {
-      add(Prop.kegStand(Math.min(3, lvl + 1)), 22, WALL + 2);
-      add(Prop.counter(Math.min(4, lvl)), 44, WALL - 16);
-      add(Prop.fireplace(Math.min(3, lvl)), w - 40, WALL + 2, 0, fire(10, 90, FIRE, true));
-      for (const { x: tx, z } of tables(room, w)) {
-        add(Prop.roundTable(lvl >= 3), tx, z);
+      const decor = look.decor;
+      const big = decor.includes('chimenea');
+      add(bar(lvl, decor.includes('barril')), 44, WALL - 16);
+      add(barrels(), 17, FRONT + 4);
+      // En el de dos alturas, el tiro de la chimenea sube hasta el techo.
+      const rise = Math.round((room.h - 1) * PITCH * scaleAt(HEARTH_Z));
+      add(
+        salonHearth(lvl, look.crest, big, rise),
+        w - HEARTH_RIGHT,
+        HEARTH_Z,
+        0,
+        fire(10, big ? 120 : 90, FIRE, true),
+      );
+      add(logPile(), w - 13, WALL - 12);
+      if (look.dog) add(Prop.dog(false), w - 46, FRONT + 6);
+      if (decor.includes('tarima')) add(stage(), w - 94, WALL - 2);
+      t.push({ img: larder(), x: 84, z: WALL - 8, y: 0, hang: true });
+      tables(room, w).forEach(({ x: tx, z }, i) => {
+        const cards = i === 0 && decor.includes('naipes');
+        const candle = lvl >= 2 && !cards;
+        add(
+          tableSet(`${room.id}-${i}`, lvl >= 3, candle, cards),
+          tx,
+          z,
+          0,
+          candle ? { dy: 18, r: 34, color: CANDLE, power: 0.45, flicker: 0.12 } : undefined,
+        );
         add(Prop.stool(), tx - 18, z - 2);
         add(Prop.stool(), tx + 18, z + 2);
-      }
-      if (room.h > 1 || lvl >= 3)
+      });
+      if (room.h > 1 || lvl >= 3 || decor.includes('lampara')) {
+        // En el de dos alturas, colgada de una cadena larga hasta media sala.
+        const drop = (room.h - 1) * (PITCH - 24);
+        if (drop)
+          t.push({
+            img: chain(Math.round(drop * scaleAt(MID))),
+            x: w / 2 + 20,
+            z: MID,
+            y: 0,
+            hang: true,
+          });
         t.push({
           img: Prop.chandelier(),
           x: w / 2 + 20,
           z: MID,
-          y: 0,
+          y: drop,
           hang: true,
           light: { dy: 4, r: 120, color: WARM, power: 0.9, flicker: 0.06 },
         });
+      }
       break;
     }
     case 'cocina':
@@ -225,6 +338,8 @@ export function furnish(room: Room, w: number): Thing[] {
     case 'tesoro': {
       const n = Math.min(4, lvl + cells);
       for (let i = 0; i < n; i++) add(Prop.chest(i % 2 === 1), slot(w, i, n), i % 2 ? MID : FRONT);
+      // Sin armería, el equipo sin dueño también se guarda aquí.
+      if (gear.length) chestPile(add, gear.length, w - 24, -1);
       add(Prop.sack(), 14, WALL, 0, {
         dy: 4,
         r: 50,
@@ -275,11 +390,18 @@ export function furnish(room: Room, w: number): Thing[] {
       add(Prop.chair(), w / 2 + 40, MID - 6);
       add(Prop.trunk(), 18, WALL);
       break;
-    case 'armeria':
+    case 'armeria': {
       add(Prop.armorStand(), 14, WALL);
       if (lvl >= 2) add(Prop.armorStand(), w - 14, WALL);
-      add(Prop.crate(), w / 2, FRONT);
+      // Un estante por hueco con el equipo colgado; lo que no cabe, en arcones.
+      const per = RACK_SLOTS[Math.min(lvl, 3)]!;
+      for (let c = 0; c < cells; c++)
+        add(gearRack(gear.slice(c * per, (c + 1) * per), per), slot(w, c, cells), WALL, 22);
+      const extra = gear.length - per * cells;
+      if (extra > 0) chestPile(add, extra, w - 24, -1);
+      else add(Prop.crate(), w / 2, FRONT);
       break;
+    }
     case 'forja':
       add(hearth(true), 20, WALL + 2, 0, fire(10, 70, FORGE, false));
       add(anvil(), w / 2 + 6, MID);

@@ -29,18 +29,21 @@ import { GROUND } from '../geometry';
 import { Particles } from '../particles';
 import * as Prop from '../props';
 import type { Point, SceneCallbacks, SceneModel } from '../scene';
-import { LANTERN, dummy, furnish, type Glow, type RGB } from './furniture';
+import { LANTERN, dummy, furnish, gearRoom, type Glow, type RGB } from './furniture';
 import { Crowd } from './crowd';
 import { RaidShow } from './raid';
+import { NO_LOOK, type SalonLook } from './salon';
 import { Look, MAX_LIGHTS, mesh, quad, sharedUniforms, type Corners } from './gl';
 import { route, type Place } from './people';
 import {
+  CELL_W,
   DEPTH,
   PATIO_W,
   PARTITION,
   PITCH,
   SLAB,
   WALL,
+  colX,
   floorTop,
   floorY,
   focusPoint,
@@ -87,6 +90,8 @@ const NEAR = 20;
 const FAR = EYE + 400;
 /** Fondo del terreno que se ve a los lados y por detrás del edificio. */
 const YARD_D = 220;
+/** Lo que tarda en levantarse una sala al pagar las obras (s). */
+const RAISE = 2.4;
 
 type Tint = readonly [number, number, number];
 /** Luz de fondo de cada sitio (0–1 por canal): la noche sin faroles. */
@@ -114,6 +119,10 @@ export interface Spot {
   id: string;
   label: string;
   rect: Rect;
+  /** Casilla tachada: se ve, pero no se puede hacer la obra (si tapa una sala, se toca la sala). */
+  blocked?: boolean;
+  /** Obra que quita algo (un tramo de escalera): en coral, con lo que devuelve. */
+  remove?: boolean;
 }
 
 /** Un foco: dónde está, hasta dónde llega y la zona a la que alumbra (en 3D, y hacia arriba). */
@@ -209,7 +218,19 @@ export class RoomScene {
   private chosen: string | null = null;
   private targetsKey = '';
   /** Lo que dio cada sala anoche: cifras que suben y se desvanecen encima de la sala. */
-  private floats: { rect: Rect; n: number; beer: boolean; t0: number }[] = [];
+  /** Cifras que suben: comida o cerveza del día y, en obras, el precio (`coin`) de lo apuntado. */
+  private floats: {
+    rect: Rect | null;
+    id?: string;
+    n: number;
+    beer: boolean;
+    coin?: boolean;
+    t0: number;
+  }[] = [];
+  /** Último sitio tocado en el mundo (para poner ahí el precio de una obra sin sala). */
+  private lastTap: { x: number; y: number } | null = null;
+  /** Salas que se están levantando tras pagar las obras (andamio, polvo y martillazos). */
+  private raising: { id: string; t0: number; knock: number }[] = [];
   /** Marcas de siempre del modo obras: se tocan ellas y también las salas, sin mover la cámara. */
   private soft = false;
   private model: SceneModel | null = null;
@@ -247,6 +268,9 @@ export class RoomScene {
     room: string | null;
     ok: boolean;
   } | null = null;
+  /** Modo obras: la sala elegida, que se puede coger para moverla, y la que se lleva con el dedo. */
+  private grabbable: string | null = null;
+  private roomDrag: { id: string; x: number; y: number; moved: boolean; rect: Rect } | null = null;
   private pinch = 0;
   private cssW = 0;
   private cssH = 0;
@@ -309,6 +333,16 @@ export class RoomScene {
     this.camera.centerOn((x0 + x1) / 2, (y0 + y1) / 2 + 45 / z);
   }
 
+  /** En el modo obras, la sala elegida se puede coger con el dedo para moverla (o ninguna). */
+  setGrabbable(id: string | null): void {
+    this.grabbable = id;
+  }
+
+  /** Rectángulo de una sala en el mundo (para anclar menús encima de ella). */
+  roomRect(id: string): Rect | null {
+    return this.spots.find((s) => s.id === `sala:${id}`)?.rect ?? null;
+  }
+
   /** Marca el camino que harían los bandidos (ids de sala, del recibidor a la cámara), o lo quita. */
   setRoute(ids: string[] | null): void {
     const key = ids?.join(' ') ?? '';
@@ -347,7 +381,15 @@ export class RoomScene {
     this.model = model;
     const b = model.building;
     if (!b) return;
-    const key = JSON.stringify([b, model.crest, model.facade]);
+    const key = JSON.stringify([
+      b,
+      model.crest,
+      model.facade,
+      model.decor,
+      model.trophies,
+      model.dog,
+      model.gear,
+    ]);
     if (model.visitors) this.crowd.setVisitors(model.visitors);
     if (key === this.key) {
       this.crowd.setPeople(model.heroes);
@@ -533,6 +575,29 @@ export class RoomScene {
     });
   }
 
+  /**
+   * Las obras pagadas se levantan a la vista: cada sala tocada sale con andamio, polvo y
+   * martillazos un par de segundos, una detrás de otra.
+   */
+  raise(ids: string[]): void {
+    const gap = Math.min(0.5, 2 / Math.max(1, ids.length));
+    ids.forEach((id, i) => {
+      const t0 = this.t + i * gap;
+      this.raising.push({ id, t0, knock: t0 });
+    });
+  }
+
+  /**
+   * El precio de una obra apuntada sube flotando: sobre su sala (si la tiene) o donde se tocó.
+   * Negativo, lo que se recupera.
+   */
+  priceTag(id: string | null, n: number): void {
+    const at = this.lastTap;
+    const rect = id ? null : at ? { x: at.x - 40, y: at.y - 20, w: 80, h: 40 } : null;
+    if (!id && !rect) return;
+    this.floats.push({ rect, id: id ?? undefined, n, beer: false, coin: true, t0: this.t });
+  }
+
   /** Una entrega de la caja: unas monedas saltan en el salón. */
   pay(): void {
     const p = this.layout ? focusPoint(this.layout, 'barra') : null;
@@ -654,7 +719,7 @@ export class RoomScene {
         s.floor >= 0 ? 0.35 : 0,
         `escalera${s.s}${s.floor}`,
         {
-          back: stairBack(themeOf(s.floor), interior(s.rect).w, s.rect.h, s.floor),
+          back: stairBack(themeOf(s.floor), interior(s.rect).w, s.rect.h, s.floor, s.steps),
           sides: { left: [left], right: [right] },
           floor: s.floor,
         },
@@ -772,17 +837,40 @@ export class RoomScene {
     const theme = themeOf(room.floor);
     const seed = `${room.id}${room.type}`;
     const sides = sidesOf(b, room);
+    // Sin nada debajo de su primer o último hueco, la pared de fuera baja hasta debajo del forjado.
+    const free = (c: number) =>
+      room.floor > 0 && !b.rooms.some((o) => this.covers(o, c, room.floor - 1));
     this.box(rect, theme, ambient, sun, seed, {
-      back: backWall(room, r.w, r.h),
+      back: backWall(room, r.w, r.h, this.salonLook()),
       floorTex: floorTex(room, theme, r.w, seed),
       sides,
       floor: room.floor,
       door: room.type === 'recibidor',
+      hang: { left: free(room.col), right: free(room.col + room.w - 1) },
     });
+    // En voladizo (sin nada debajo), la cara de abajo del suelo, que se ve desde el patio.
+    if (room.floor > 0) {
+      const under = { ambient: OUTDOOR, sun: 0.6, dither: 0 };
+      const y = r.y + r.h + SLAB;
+      const last = room.col + room.w - 1;
+      for (let c = room.col; c <= last; c++) {
+        if (b.rooms.some((o) => this.covers(o, c, room.floor - 1))) continue;
+        // Hasta la cara de fuera del muro donde da al aire; si no, hasta media pared.
+        const x0 = c === room.col && sides.left[0] === 'aire' ? rect.x - WALL : colX(b, c);
+        const x1 =
+          c === last && sides.right[0] === 'aire' ? rect.x + rect.w + WALL : colX(b, c) + CELL_W;
+        this.plane(
+          this.world,
+          ceilingTex('madera', Math.round(x1 - x0), `${seed}bajo${c}`),
+          [at(x0, y, DEPTH), at(x1, y, DEPTH), at(x1, y, 0), at(x0, y, 0)],
+          under,
+        );
+      }
+    }
     const zone = this.zoneOf(rect);
     const floor3 = GROUND - (r.y + r.h);
     const ceil3 = GROUND - r.y;
-    for (const th of furnish(room, r.w)) {
+    for (const th of furnish(room, r.w, this.salonLook())) {
       const k = scaleAt(th.z);
       const h = th.img.h / k;
       const x = r.x + th.x;
@@ -795,6 +883,20 @@ export class RoomScene {
       const img = scaffold(r.w * k, r.h * k);
       this.figure(this.world, img, r.x + r.w / 2, r.y + r.h, 3, ROOM_DIM, sun);
     }
+  }
+
+  /** Lo que el salón enseña de la partida: decoración, escudo, trofeos y el perro. */
+  private salonLook(): SalonLook {
+    const m = this.model;
+    if (!m) return NO_LOOK;
+    return {
+      decor: m.decor,
+      crest: m.crest,
+      trophies: m.trophies,
+      dog: m.dog,
+      gear: m.gear,
+      gearRoom: m.building ? gearRoom(m.building) : null,
+    };
   }
 
   /** Zona que alumbran los focos de un hueco: su interior y media pared de cada lado. */
@@ -864,6 +966,8 @@ export class RoomScene {
       sides: { left: Side[]; right: Side[] };
       floor: number;
       door?: boolean;
+      /** Sin sala debajo del hueco de cada lado (en voladizo). */
+      hang?: { left: boolean; right: boolean };
     },
   ): void {
     const g = this.world;
@@ -891,7 +995,7 @@ export class RoomScene {
     const doors = (s: Side[]) => s.flatMap((x, i) => (x === 'sala' || x === 'escalera' ? [i] : []));
     this.plane(
       g,
-      sideTex(theme, r.h, doors(o.sides.left), `${seed}i`),
+      sideTex(theme, r.h, doors(o.sides.left), `${seed}i`, o.door ? [0] : []),
       [at(x0, yb, 0), at(x0, yb, D), at(x0, yt, D), at(x0, yt, 0)],
       flat,
     );
@@ -912,7 +1016,7 @@ export class RoomScene {
         if (s !== 'aire') return;
         const f = o.floor + i;
         const top = floorTop(f) - SLAB;
-        const bottom = floorY(f);
+        const bottom = floorY(f) + (i === 0 && o.hang?.[side] ? SLAB : 0);
         const withDoor = !doorDone && i === 0;
         if (withDoor) doorDone = true;
         const tex = outerSide(themeOf(f), PITCH, withDoor, `${seed}f${side}${i}`);
@@ -1177,6 +1281,8 @@ export class RoomScene {
       !!this.targets?.length ||
       this.floats.length > 0 ||
       !!this.drag?.moved ||
+      !!this.roomDrag?.moved ||
+      this.raising.length > 0 ||
       !!this.raid ||
       !!this.routePts ||
       (!this.night && !!this.model?.heroes.some((h) => h.train));
@@ -1185,6 +1291,8 @@ export class RoomScene {
       ctx.clearRect(0, 0, view.vw, view.vh);
       if (this.routePts && !this.raid) this.raidRoute(this.routePts);
       if (this.targets) this.marks(this.targets);
+      this.roomGhost();
+      this.scaffolds();
       this.dropMark();
       this.trainBars();
       this.raid?.draw(ctx, view.px, view.py);
@@ -1217,11 +1325,35 @@ export class RoomScene {
       const w = Math.round(s.rect.w) - 4;
       const h = Math.round(s.rect.h) - 4;
       const on = s.id === this.chosen;
+      if (s.blocked) {
+        // Tachada: borde rojo de puntos y una cruz en medio.
+        ctx.globalAlpha = 0.12;
+        ctx.fillStyle = P.red;
+        ctx.fillRect(x, y, w, h);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = P.red;
+        for (let i = beat; i < w; i += 4) {
+          ctx.fillRect(x + i, y, 2, 1);
+          ctx.fillRect(x + i, y + h - 1, 2, 1);
+        }
+        for (let i = beat; i < h; i += 4) {
+          ctx.fillRect(x, y + i, 1, 2);
+          ctx.fillRect(x + w - 1, y + i, 1, 2);
+        }
+        const cx = Math.round(x + w / 2);
+        const cy = Math.round(y + h / 2);
+        for (let k = -4; k <= 4; k++) {
+          ctx.fillRect(cx + k, cy + k, 1, 1);
+          ctx.fillRect(cx + k, cy - k, 1, 1);
+        }
+        continue;
+      }
+      const tone = s.remove ? P.coral : P.lime;
       ctx.globalAlpha = on ? 0.45 : 0.18;
-      ctx.fillStyle = on ? P.gold : P.lime;
+      ctx.fillStyle = on ? P.gold : tone;
       ctx.fillRect(x, y, w, h);
       ctx.globalAlpha = 1;
-      ctx.fillStyle = on ? P.lemon : P.lime;
+      ctx.fillStyle = on ? P.lemon : tone;
       for (let i = beat; i < w; i += 4) {
         ctx.fillRect(x + i, y, 2, 1);
         ctx.fillRect(x + i, y + h - 1, 2, 1);
@@ -1245,7 +1377,8 @@ export class RoomScene {
         ctx.fillRect(cx, cy + 1, 3, 3);
         ctx.fillStyle = P.lemon;
         ctx.fillRect(cx + 1, cy + 1, 1, 1);
-        tinyDigits(ctx, cost, cx + 5, cy, on ? P.lemon : P.white);
+        // Lo que devuelve, en verde, como el precio que sube al quitarlo.
+        tinyDigits(ctx, cost, cx + 5, cy, on ? P.lemon : s.remove ? P.lime : P.white);
       }
     }
   }
@@ -1257,11 +1390,12 @@ export class RoomScene {
     this.floats = this.floats.filter((f) => this.t - f.t0 < LIFE);
     for (const f of this.floats) {
       const k = this.t - f.t0;
-      if (k < 0) continue;
-      const text = String(f.n);
+      const rect = f.rect ?? (f.id ? this.roomRect(f.id) : null);
+      if (k < 0 || !rect) continue;
+      const text = String(Math.abs(f.n));
       const tw = 10 + text.length * 4;
-      const x = Math.round(f.rect.x + f.rect.w / 2 - camera.px - tw);
-      const y = Math.round(f.rect.y + f.rect.h * 0.4 - camera.py - Math.min(1, k / 1.2) * 16);
+      const x = Math.round(rect.x + rect.w / 2 - camera.px - tw);
+      const y = Math.round(rect.y + rect.h * 0.4 - camera.py - Math.min(1, k / 1.2) * 16);
       const alpha = k > LIFE - 0.8 ? (LIFE - k) / 0.8 : Math.min(1, k * 4);
       ctx.save();
       ctx.translate(x, y);
@@ -1270,8 +1404,14 @@ export class RoomScene {
       ctx.fillStyle = P.black;
       ctx.fillRect(-2, -2, tw + 3, 9);
       ctx.globalAlpha = alpha;
-      // El pan o la jarra.
-      if (f.beer) {
+      // La moneda, el pan o la jarra.
+      if (f.coin) {
+        ctx.fillStyle = P.gold;
+        ctx.fillRect(0, 1, 5, 3);
+        ctx.fillRect(1, 0, 3, 5);
+        ctx.fillStyle = P.lemon;
+        ctx.fillRect(1, 1, 2, 2);
+      } else if (f.beer) {
         ctx.fillStyle = P.gold;
         ctx.fillRect(0, 1, 4, 4);
         ctx.fillStyle = P.white;
@@ -1285,11 +1425,12 @@ export class RoomScene {
         ctx.fillStyle = P.clay;
         ctx.fillRect(0, 4, 5, 1);
       }
-      // El signo más y la cifra.
-      const c = f.beer ? P.lemon : P.white;
+      // El signo y la cifra (en obras, menos lo que se gasta y más lo que se recupera).
+      const spent = f.coin && f.n > 0;
+      const c = spent ? P.coral : f.coin ? P.lime : f.beer ? P.lemon : P.white;
       ctx.fillStyle = c;
       ctx.fillRect(6, 2, 3, 1);
-      ctx.fillRect(7, 1, 1, 3);
+      if (!spent) ctx.fillRect(7, 1, 1, 3);
       tinyDigits(ctx, text, 10, 0, c);
       ctx.restore();
     }
@@ -1319,9 +1460,10 @@ export class RoomScene {
   private hit(wx: number, wy: number): Spot | null {
     const inside = (s: Spot) =>
       wx >= s.rect.x && wx < s.rect.x + s.rect.w && wy >= s.rect.y && wy < s.rect.y + s.rect.h;
-    const target = this.targets?.find(inside);
+    const room = this.spots.find(inside) ?? null;
+    const target = this.targets?.find((t) => inside(t) && !(t.blocked && room));
     if (target || (this.targets && !this.soft)) return target ?? null;
-    return this.spots.find(inside) ?? null;
+    return room;
   }
 
   /** La persona que hay bajo un punto de la pantalla (no mientras se elige sitio para una obra). */
@@ -1334,6 +1476,7 @@ export class RoomScene {
 
   private click(cssX: number, cssY: number): void {
     const w = this.camera.toWorld(cssX, cssY);
+    this.lastTap = w;
     const who = this.heroAt(cssX, cssY);
     if (who) {
       const p = this.heroPosition(who);
@@ -1390,6 +1533,115 @@ export class RoomScene {
       this.crowd.drop(d.id, null);
       this.cb.onDrop?.(d.id, null);
     }
+  }
+
+  /** La casilla de mudanza bajo un punto de la pantalla (si es válida). */
+  private moveTargetAt(cssX: number, cssY: number): Spot | null {
+    const w = this.camera.toWorld(cssX, cssY);
+    return (
+      this.targets?.find(
+        (t) =>
+          !t.blocked &&
+          w.x >= t.rect.x &&
+          w.x < t.rect.x + t.rect.w &&
+          w.y >= t.rect.y &&
+          w.y < t.rect.y + t.rect.h,
+      ) ?? null
+    );
+  }
+
+  /** Suelta la sala que se llevaba: en una casilla válida se muda; si no, se queda donde estaba. */
+  private endRoomDrag(p: Point): void {
+    this.roomDrag = null;
+    const t = this.moveTargetAt(p.x, p.y);
+    if (t) {
+      const w = this.camera.toWorld(p.x, p.y);
+      this.lastTap = w;
+      this.cb.onHotspot?.(t.id, t.label, { x: p.x, y: p.y, wx: w.x, wy: w.y });
+      this.cb.onSound?.('build', 0.5);
+    } else this.cb.onRoomDrop?.();
+  }
+
+  /** El andamio de las salas que se levantan: lo que falta por subir, en sombra, y el polvo. */
+  private scaffolds(): void {
+    if (!this.raising.length) return;
+    const { topCtx: ctx, camera, t } = this;
+    this.raising = this.raising.filter((s) => {
+      if (t < s.t0 + RAISE) return true;
+      const r = this.roomRect(s.id);
+      if (!r) return false;
+      // Acabada: cae el andamio en una nube de polvo.
+      for (let i = 0; i < 18; i++)
+        this.particles.spawn('puff', r.x + Math.random() * r.w, r.y + r.h - Math.random() * 20);
+      this.cb.onSound?.('build', 0.6);
+      return false;
+    });
+    for (const s of this.raising) {
+      const k = (t - s.t0) / RAISE;
+      const r = this.roomRect(s.id);
+      if (k < 0 || !r) continue;
+      const x = Math.round(r.x - camera.px);
+      const y = Math.round(r.y - camera.py);
+      const w = Math.round(r.w);
+      const h = Math.round(r.h);
+      // La sala sube de abajo arriba: lo que falta, en sombra.
+      const up = Math.min(1, k / 0.85);
+      const rest = Math.round(h * (1 - up));
+      ctx.globalAlpha = 0.7;
+      ctx.fillStyle = P.black;
+      ctx.fillRect(x, y, w, rest);
+      // El andamio: postes y tablones de madera, que se van al final.
+      ctx.globalAlpha = k > 0.85 ? (1 - k) / 0.15 : 1;
+      const poles: number[] = [];
+      for (let px = 4; px < w - 6; px += Math.max(30, Math.floor((w - 10) / 3))) poles.push(px);
+      poles.push(w - 7);
+      for (const px of poles) {
+        ctx.fillStyle = P.black;
+        ctx.fillRect(x + px - 1, y, 5, h);
+        ctx.fillStyle = P.oak;
+        ctx.fillRect(x + px, y, 3, h);
+      }
+      for (let py = h - 6; py > 4; py -= 28) {
+        ctx.fillStyle = P.black;
+        ctx.fillRect(x + 2, y + py - 1, w - 4, 5);
+        ctx.fillStyle = P.clay;
+        ctx.fillRect(x + 3, y + py, w - 6, 3);
+      }
+      ctx.globalAlpha = 1;
+      // Martillazos con su polvo donde se está subiendo.
+      if (k < 0.85 && t >= s.knock) {
+        s.knock = t + 0.28 + Math.random() * 0.18;
+        const wx = r.x + 8 + Math.random() * (r.w - 16);
+        const wy = r.y + r.h * (1 - up);
+        for (let i = 0; i < 3; i++) this.particles.spawn('puff', wx, wy + Math.random() * 6);
+        this.particles.spawn('dust', wx, wy);
+        this.cb.onSound?.('hammer', 0.7);
+      }
+    }
+  }
+
+  /** Lo que se ve mientras se lleva una sala: su silueta bajo el dedo, verde si cabe ahí. */
+  private roomGhost(): void {
+    const d = this.roomDrag;
+    if (!d?.moved) return;
+    const { topCtx: ctx, camera } = this;
+    const t = this.moveTargetAt(d.x, d.y);
+    const w = camera.toWorld(d.x, d.y);
+    const r = t?.rect ?? { ...d.rect, x: w.x - d.rect.w / 2, y: w.y - d.rect.h / 2 };
+    const x = Math.round(r.x - camera.px) + 1;
+    const y = Math.round(r.y - camera.py) + 1;
+    const rw = Math.round(r.w) - 2;
+    const rh = Math.round(r.h) - 2;
+    const c = t ? P.lime : P.red;
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = c;
+    ctx.fillRect(x, y, rw, rh);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = c;
+    ctx.fillRect(x, y, rw, 2);
+    ctx.fillRect(x, y + rh - 2, rw, 2);
+    ctx.fillRect(x, y, 2, rh);
+    ctx.fillRect(x + rw - 2, y, 2, rh);
   }
 
   private cancelDrag(): void {
@@ -1477,15 +1729,15 @@ export class RoomScene {
 
   /** Llevando a alguien cerca del borde, la cámara se desliza hacia allí. */
   private edgePan(dt: number): void {
-    const d = this.drag;
-    if (!d?.moved || !this.cssW) return;
+    const d = this.drag?.moved ? this.drag : this.roomDrag?.moved ? this.roomDrag : null;
+    if (!d || !this.cssW) return;
     const EDGE = 36;
     const speed = 260 * dt;
     const dx = d.x < EDGE ? speed : d.x > this.cssW - EDGE ? -speed : 0;
     const dy = d.y < EDGE ? speed : d.y > this.cssH - EDGE ? -speed : 0;
     if (dx || dy) {
       this.camera.drag(dx, dy, 0);
-      this.moveDrag({ x: d.x, y: d.y });
+      if (d === this.drag) this.moveDrag({ x: d.x, y: d.y });
     }
   }
 
@@ -1504,8 +1756,18 @@ export class RoomScene {
         this.camera.stopInertia();
         // Sobre alguien que se puede coger, el dedo lo lleva; si no, mueve la cámara.
         const who = this.targets || this.raid ? null : this.heroAt(p.x, p.y);
+        const w = this.camera.toWorld(p.x, p.y);
+        const grab = this.grabbable ? this.roomRect(this.grabbable) : null;
         if (who && this.cb.canDrag?.(who))
           this.drag = { id: who, x: p.x, y: p.y, moved: false, room: null, ok: false };
+        else if (
+          grab &&
+          w.x >= grab.x &&
+          w.x < grab.x + grab.w &&
+          w.y >= grab.y &&
+          w.y < grab.y + grab.h
+        )
+          this.roomDrag = { id: this.grabbable!, x: p.x, y: p.y, moved: false, rect: grab };
         else this.camera.dragging = true;
       } else if (this.pointers.size === 2) {
         this.cancelDrag();
@@ -1550,6 +1812,22 @@ export class RoomScene {
         this.moveDrag(p);
         return;
       }
+      if (this.roomDrag) {
+        const d = this.roomDrag;
+        d.x = p.x;
+        d.y = p.y;
+        if (!d.moved && this.press && Math.hypot(p.x - this.press.x, p.y - this.press.y) > 6) {
+          d.moved = true;
+          this.press.moved = true;
+          this.cb.onRoomDrag?.(d.id);
+          this.cb.onSound?.('click', 0.4);
+        }
+        if (d.moved) {
+          this.hover = null;
+          this.cb.onHover?.(null, null);
+        }
+        return;
+      }
       const now = performance.now();
       const dt = (now - (this.press?.time ?? now)) / 1000;
       if (this.press) {
@@ -1565,6 +1843,13 @@ export class RoomScene {
     });
     const end = (e: PointerEvent) => {
       const p = local(e);
+      if (this.roomDrag?.moved) {
+        this.pointers.delete(e.pointerId);
+        this.endRoomDrag(p);
+        this.press = null;
+        return;
+      }
+      this.roomDrag = null;
       if (this.drag?.moved) {
         this.pointers.delete(e.pointerId);
         this.endDrag();
@@ -1585,6 +1870,8 @@ export class RoomScene {
     c.addEventListener('pointercancel', (e) => {
       this.pointers.delete(e.pointerId);
       this.cancelDrag();
+      if (this.roomDrag?.moved) this.cb.onRoomDrop?.();
+      this.roomDrag = null;
       this.camera.release();
       this.press = null;
     });

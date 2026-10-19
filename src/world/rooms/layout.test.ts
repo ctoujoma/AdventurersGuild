@@ -45,7 +45,7 @@ describe('geometría por salas', () => {
       expect(r.x + r.w).toBeLessThanOrEqual(L.right);
       expect(r.y).toBeGreaterThan(L.y0);
       expect(r.y + r.h).toBeLessThan(L.y1);
-      for (const s of L.stairs) expect(s >= r.x + r.w || s + STAIR_W <= r.x).toBe(true);
+      for (const s of L.stairs) expect(s.x >= r.x + r.w || s.x + STAIR_W <= r.x).toBe(true);
       for (const o of L.rooms) if (o !== a) expect(overlap(r, o.rect)).toBe(false);
     }
     expect(L.top).toBe(2);
@@ -95,5 +95,20 @@ describe('geometría por salas', () => {
     expect(of('salon')).toEqual({ left: ['escalera'], right: ['sala'] });
     expect(of('bodega').left).toEqual(['tierra']);
     expect(of('capilla').right).toEqual(['aire']);
+  });
+
+  it('en una sala de dos alturas solo hay puertas abajo', () => {
+    const b = uncleBuilding();
+    b.rooms = b.rooms.filter((r) => r.type !== 'dormitorio');
+    const salon = b.rooms.find((r) => r.type === 'salon')!;
+    salon.h = 2;
+    expect(sidesOf(b, salon)).toEqual({ left: ['escalera', 'muro'], right: ['sala', 'muro'] });
+    // Y la capilla, que da a la planta de arriba del salón, tampoco abre puerta hacia él.
+    expect(
+      sidesOf(
+        b,
+        b.rooms.find((r) => r.type === 'capilla')!,
+      ).left,
+    ).toEqual(['muro']);
   });
 });

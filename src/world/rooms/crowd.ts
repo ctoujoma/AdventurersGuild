@@ -6,7 +6,7 @@
  */
 import { Group, PlaneGeometry, Vector3, type Mesh, type ShaderMaterial } from 'three';
 import { P } from '../../art/palette';
-import { PixelBuffer } from '../../art/pixel';
+import { PixelBuffer, alpha } from '../../art/pixel';
 import { FEET_Y, heroSprites, type HeroSprites } from '../../art/heroes/hero';
 import { bunkQuilt } from '../props';
 import { generateLook, type OutfitId } from '../../art/heroes/look';
@@ -75,6 +75,8 @@ type Tint = readonly [number, number, number];
 
 interface Actor {
   hero: SceneHero;
+  /** Sus fotogramas (para tocarle solo donde se le ve). */
+  img: PixelBuffer;
   mat: ShaderMaterial;
   mesh: Mesh;
   x: number;
@@ -183,6 +185,8 @@ export class Crowd {
   private visitors: SceneVisitors = { day: 0, kinds: [] };
   /** Durante un asalto nadie decide por su cuenta: la escena dice a dónde va cada uno. */
   private scripted = false;
+  /** La hora de la escena en el último fotograma (para saber qué dibujo tiene cada uno). */
+  private now = 0;
 
   constructor(
     shared: Shared,
@@ -221,7 +225,9 @@ export class Crowd {
     for (const [id, a] of this.actors) {
       if (a.hero.visitor) continue;
       const h = heroes.find((x) => x.id === id);
-      if (!h || (!shown.has(id) && !(h.status === 'mision' && a.hero.status === 'ok'))) {
+      // El que acaba de salir de misión sigue hasta la puerta aunque ya no esté en casa.
+      const going = h?.status === 'mision' && (a.leaving || a.hero.status === 'ok');
+      if (!h || (!shown.has(id) && !going)) {
         this.remove(id);
         continue;
       }
@@ -367,6 +373,7 @@ export class Crowd {
   }
 
   update(dt: number, t: number): void {
+    this.now = t;
     for (const a of this.actors.values()) {
       if (a.gone) continue;
       if (a.held) {
@@ -393,17 +400,40 @@ export class Crowd {
     }
   }
 
-  /** La persona que hay en un punto de la vista (en píxeles de la vista), la de delante. */
+  /**
+   * La persona que hay en un punto de la vista (en píxeles de la vista): la de delante entre las
+   * que se ven justo ahí; si el dedo cae en el hueco de todas, la de delante de su recuadro.
+   */
   hit(v: View, x: number, y: number): string | null {
-    let best: { id: string; z: number } | null = null;
+    let best: { id: string; z: number; solid: boolean } | null = null;
     for (const a of this.actors.values()) {
       if (a.gone) continue;
       const r = this.rectOf(a, v);
       if (!r || x < r.x || x > r.x + r.w || y < r.y || y > r.y + r.h) continue;
       const z = this.depth(a);
-      if (!best || z < best.z) best = { id: a.hero.id, z };
+      const solid = this.solidAt(a, v, x, y);
+      if (!best || (solid && !best.solid) || (solid === best.solid && z < best.z))
+        best = { id: a.hero.id, z, solid };
     }
     return best?.id ?? null;
+  }
+
+  /** Si en ese punto se ve algo de su dibujo (con un píxel de margen, que el dedo no es fino). */
+  private solidAt(a: Actor, v: View, x: number, y: number): boolean {
+    const f = this.frame(a, this.now);
+    const k = scaleAt(f.z);
+    const p0 = project(v, f.left, f.bottom - TALL / k, f.z);
+    const p1 = project(v, f.left + CELL / k, f.bottom, f.z);
+    const px = Math.floor(((x - p0.x) / (p1.x - p0.x)) * CELL);
+    const py = Math.floor(((y - p0.y) / (p1.y - p0.y)) * TALL);
+    for (let dy = -1; dy <= 1; dy++)
+      for (let dx = -1; dx <= 1; dx++) {
+        const qx = px + dx;
+        const qy = py + dy;
+        if (qx < 0 || qx >= CELL || qy < 0 || qy >= TALL) continue;
+        if (alpha(a.img.get(f.frame * CELL + qx, qy))) return true;
+      }
+    return false;
   }
 
   /** Recuadro en pantalla (en píxeles de la vista) de lo que se ve de alguien. */
@@ -586,11 +616,14 @@ export class Crowd {
   private add(h: SceneHero): void {
     const spr = heroSprites(h.look, h.marks);
     const k = scaleAt(LANES[0]);
-    const mat = this.look.surface(
-      atlas(spr),
-      [at(0, 0, 0), at(1, 0, 0), at(1, -1, 0), at(0, -1, 0)],
-      { ambient: [0.44, 0.38, 0.46], sun: 0, wrap: 0.6, dither: 0.03, frames: FRAMES },
-    );
+    const img = atlas(spr);
+    const mat = this.look.surface(img, [at(0, 0, 0), at(1, 0, 0), at(1, -1, 0), at(0, -1, 0)], {
+      ambient: [0.44, 0.38, 0.46],
+      sun: 0,
+      wrap: 0.6,
+      dither: 0.03,
+      frames: FRAMES,
+    });
     // Delante de lo que esté a su misma profundidad (el taburete, la cama).
     mat.polygonOffset = true;
     mat.polygonOffsetFactor = -1;
@@ -601,6 +634,7 @@ export class Crowd {
     const start = this.homes.get(h.id)?.place ?? this.S?.door ?? { x: 12, floor: 0 };
     const a: Actor = {
       hero: h,
+      img,
       mat,
       mesh: m,
       x: start.x,

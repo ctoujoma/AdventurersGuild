@@ -104,6 +104,7 @@ export type SoundName =
   | 'squeak'
   | 'bats'
   | 'build'
+  | 'hammer'
   | 'drip'
   | 'cheer'
   | BattleSound;
@@ -125,6 +126,9 @@ export interface SceneCallbacks {
   onDragOver?(id: string, room: string | null, at: Point): { ok: boolean } | null;
   /** Al soltar: la sala (si vale) o null si se suelta en un sitio que no sirve. */
   onDrop?(id: string, room: string | null): void;
+  /** Modo obras: se empieza a arrastrar la sala elegida (para moverla) y se suelta fuera de sitio. */
+  onRoomDrag?(id: string): void;
+  onRoomDrop?(): void;
   onSound?(name: SoundName, volume?: number): void;
   onFrame?(listener: Point): void;
 }

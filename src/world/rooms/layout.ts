@@ -4,18 +4,22 @@
  * dibujan lo que diga este fichero.
  */
 import type { RoomType } from '../../data/rooms';
-import { MAX_DOWN } from '../../core/balance';
+import { MAX_DOWN, MAX_UP } from '../../core/balance';
 import type { Building, Room } from '../../core/model';
+import { isShaft, landing, shafts } from '../../core/rooms';
 import { GROUND } from '../geometry';
 
-/** Ancho de un hueco, de una escalera y alto de una planta (interior + forjado). */
-export const CELL_W = 120;
+/** Paredes entre salas: la mitad del grosor cae dentro de cada hueco. */
+export const PARTITION = 16;
+/**
+ * Ancho de un hueco (110 de sala por dentro más su tabique), de una escalera y alto de una
+ * planta (90 de sala más el forjado, igual de grueso que los tabiques).
+ */
+export const CELL_W = 110 + PARTITION;
 export const STAIR_W = 40;
 export const ROOM_H = 90;
-export const SLAB = 10;
+export const SLAB = 16;
 export const PITCH = ROOM_H + SLAB;
-/** Paredes entre salas: la mitad del grosor cae dentro de cada hueco. */
-export const PARTITION = 10;
 /** Lo que el muro de fuera sobresale del hueco (con su media pared, igual de grueso). */
 export const WALL = PARTITION / 2;
 /** Fondo de las salas, del plano de corte a la pared del fondo. */
@@ -55,9 +59,22 @@ export interface RoomsLayout {
   top: number;
   deepest: number;
   rooms: { room: Room; rect: Rect }[];
-  /** Escaleras: x de su hueco. Van desde la planta más honda hasta la más alta. */
-  stairs: number[];
+  /** Columnas de escalera, de izquierda a derecha. */
+  stairs: Shaft[];
   patio: Rect;
+}
+
+/** Una columna de escalera: dónde va, sus tramos, sus rellanos y sus pasillos. */
+export interface Shaft {
+  /** Va justo a la izquierda del hueco `at`; `x` es el borde izquierdo de su hueco. */
+  at: number;
+  x: number;
+  /** Plantas desde las que sube un tramo. */
+  flights: number[];
+  /** Plantas con rellano (a las que llega algún tramo). */
+  floors: number[];
+  /** Plantas sin rellano con sala a los dos lados: ahí la columna es un pasillo. */
+  halls: number[];
 }
 
 /** Arriba del interior de una planta y su suelo. */
@@ -65,7 +82,7 @@ export const floorTop = (f: number) => GROUND - f * PITCH - ROOM_H;
 export const floorY = (f: number) => GROUND - f * PITCH;
 
 const stairsBefore = (b: Building, c: number, inclusive: boolean) =>
-  b.stairs.filter((s) => (inclusive ? s <= c : s < c)).length;
+  shafts(b).filter((s) => (inclusive ? s <= c : s < c)).length;
 
 /** Borde izquierdo de un hueco (las escaleras de su izquierda lo empujan). */
 export const colX = (b: Building, c: number) =>
@@ -75,7 +92,7 @@ export const colX = (b: Building, c: number) =>
 export const stairX = (b: Building, s: number) =>
   WALL + s * CELL_W + STAIR_W * stairsBefore(b, s, false);
 
-export const innerWidth = (b: Building) => b.cols * CELL_W + b.stairs.length * STAIR_W;
+export const innerWidth = (b: Building) => b.cols * CELL_W + shafts(b).length * STAIR_W;
 
 export function roomRect(b: Building, r: Room): Rect {
   const y = floorTop(r.floor + r.h - 1);
@@ -89,6 +106,20 @@ export const interior = (r: Rect): Rect => ({
   w: r.w - PARTITION,
   h: r.h,
 });
+
+function shaftOf(b: Building, at: number): Shaft {
+  // Pasillo solo entre suelos: la planta de arriba de una sala alta no tiene.
+  const by = (c: number, f: number) =>
+    b.rooms.some((r) => r.type !== 'torre' && c >= r.col && c < r.col + r.w && f === r.floor);
+  const floors: number[] = [];
+  const halls: number[] = [];
+  for (let f = -MAX_DOWN; f <= MAX_UP; f++) {
+    if (landing(b, at, f)) floors.push(f);
+    else if (by(at - 1, f) && by(at, f)) halls.push(f);
+  }
+  const flights = b.stairs.filter((s) => s.at === at).map((s) => s.floor);
+  return { at, x: stairX(b, at), flights, floors, halls };
+}
 
 export function roomsLayout(b: Building): RoomsLayout {
   const plain = b.rooms.filter((r) => r.type !== 'torre');
@@ -111,7 +142,7 @@ export function roomsLayout(b: Building): RoomsLayout {
     top,
     deepest,
     rooms: b.rooms.map((room) => ({ room, rect: roomRect(b, room) })),
-    stairs: b.stairs.map((s) => stairX(b, s)),
+    stairs: shafts(b).map((at) => shaftOf(b, at)),
     patio: { x: -PATIO_W, y: floorTop(0), w: PATIO_W, h: ROOM_H },
   };
 }
@@ -181,7 +212,8 @@ export function roofRuns(L: RoomsLayout): RoofRun[] {
     );
   for (let c = 0; c < L.b.cols; c++)
     segs.push({ x: colX(L.b, c), w: CELL_W, top: topOf(colX(L.b, c), CELL_W) });
-  for (const s of L.stairs) segs.push({ x: s, w: STAIR_W, top: L.top });
+  for (const s of L.stairs)
+    segs.push({ x: s.x, w: STAIR_W, top: Math.max(-99, ...s.floors, ...s.halls) });
   segs.sort((a, c) => a.x - c.x);
   let i = 0;
   while (i < segs.length) {
@@ -217,17 +249,21 @@ export function roofLift(runs: RoofRun[], x: number, base: number): number {
 }
 
 /** Qué hay al otro lado de cada pared de una sala, planta a planta. */
-export type Side = 'sala' | 'escalera' | 'aire' | 'tierra';
+export type Side = 'sala' | 'escalera' | 'muro' | 'aire' | 'tierra';
 
 export function sidesOf(b: Building, r: Room): { left: Side[]; right: Side[] } {
   const look = (c: number, f: number, stair: number): Side => {
-    if (b.stairs.includes(stair)) return 'escalera';
     const o = b.rooms.find(
       (x) =>
         x.type !== 'torre' && c >= x.col && c < x.col + x.w && f >= x.floor && f < x.floor + x.h,
     );
-    if (o) return 'sala';
-    return f < 0 ? 'tierra' : 'aire';
+    // Solo hay paso de suelo a suelo: en las salas altas, la planta de arriba es pared.
+    const walk = f === r.floor;
+    if (landing(b, stair, f)) return walk ? 'escalera' : 'muro';
+    if (!o) return f < 0 ? 'tierra' : 'aire';
+    if (!walk || o.floor !== f) return 'muro';
+    // Con la columna de escalera en medio y sin tramo, se pasa por un pasillo.
+    return isShaft(b, stair) ? 'escalera' : 'sala';
   };
   const left: Side[] = [];
   const right: Side[] = [];

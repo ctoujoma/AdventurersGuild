@@ -391,13 +391,15 @@ function RoomWorks({
           Mover
         </button>
       )}
-      {!def.keep &&
+      {!def.fixed &&
         (sure ? (
           <span class="room-sure">
             <span>
-              {refund > 0
-                ? `¿Tirarla? Recuperas ${refund} monedas.`
-                : '¿Tirarla? No recuperas nada.'}
+              {def.keep
+                ? '¿Quitarla del plano? Antes de pagar tendrás que ponerla en otro sitio.'
+                : refund > 0
+                  ? `¿Tirarla? Recuperas ${refund} monedas.`
+                  : '¿Tirarla? No recuperas nada.'}
             </span>
             <button class="btn btn-red" onClick={() => onWork({ type: 'demolish', id: room.id })}>
               Tirar

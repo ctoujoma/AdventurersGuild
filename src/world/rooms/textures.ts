@@ -27,11 +27,11 @@ import {
   floorTop,
   interior,
   roofRuns,
-  stairX,
   type Rect,
   type RoofRun,
   type RoomsLayout,
 } from './layout';
+import { NO_LOOK, hearthSpan, salonWall, type SalonLook } from './salon';
 import { BACK } from './view3d';
 
 export type Theme = 'madera' | 'yeso' | 'piedra' | 'cueva';
@@ -58,6 +58,9 @@ const TILE: Ramp = [P.black, P.plum, P.rust, P.clay, P.tan];
 
 /** Ancho de un hueco en la pared del fondo y dónde cae su ventana. */
 const CELL_BACK = CELL_W * BACK;
+/** Alma oscura de los tabiques entre salas (lo demás del grosor lleva la textura del muro). */
+const CORE = 8;
+/** Ventana del hueco `i`: a un lado, para lo que cuelga a su izquierda. */
 const windowX = (i: number) => Math.round((i * CELL_W + CELL_W * 0.7 - PARTITION / 2) * BACK);
 
 /** Las salas que no tienen ventanas aunque estén por encima del suelo. */
@@ -66,7 +69,7 @@ const BLIND = new Set(['tesoro', 'despensa']);
 // ---------- Caras de una sala ----------
 
 /** Pared del fondo de una sala de `w`×`h` (interior), ya a la escala del fondo. */
-export function backWall(room: Room, w: number, h: number): PixelBuffer {
+export function backWall(room: Room, w: number, h: number, look: SalonLook = NO_LOOK): PixelBuffer {
   const bw = Math.round(w * BACK);
   const bh = Math.round(h * BACK);
   const b = new PixelBuffer(bw, bh);
@@ -88,15 +91,27 @@ export function backWall(room: Room, w: number, h: number): PixelBuffer {
   } else if (theme === 'piedra')
     stoneWall(b, 0, 0, bw, bh, seed, { ramp: CELLAR, bw: 12, bh: 7, moss: ruin ? 10 : 0 });
   else stoneWall(b, 0, 0, bw, bh, seed, { ramp: ROCK, bw: 14, bh: 8 });
-  // Vigas a la altura de cada planta en las salas de más de una.
+  // Vigas a la altura de cada planta en las salas de más de una (en el salón, solo un listón:
+  // es una sala alta, no dos plantas).
   for (let j = 1; j < room.h; j++)
-    beam(b, 0, Math.round((j * PITCH - SLAB) * BACK), bw, 4, WOOD_DARK);
+    beam(b, 0, Math.round((j * PITCH - SLAB) * BACK), bw, room.type === 'salon' ? 2 : 4, WOOD_DARK);
   beam(b, 0, 0, bw, 3, WOOD_DARK);
+  // Ventanas planta a planta (de arriba abajo), en las mismas columnas en todas. En el salón
+  // se quita la columna que cae detrás de la chimenea (o de su tiro, que sube hasta el techo).
+  const { hearthLeft } = hearthSpan(bw);
+  const cols = Array.from({ length: room.w }, (_, i) => windowX(i)).filter(
+    (x) => room.type !== 'salon' || x + 14 < hearthLeft,
+  );
+  const windows = Array.from({ length: room.h }, () => cols);
   if (room.floor >= 0 && !BLIND.has(room.type))
-    for (let j = 0; j < room.h; j++)
-      for (let i = 0; i < room.w; i++)
-        windowAt(b, windowX(i), Math.round((j * PITCH + 18) * BACK), room, ruin);
-  if (!bare(room) && !ruin) decorate(b, room);
+    windows.forEach((row, j) =>
+      row.forEach((x) => windowAt(b, x, Math.round((j * PITCH + 18) * BACK), room, ruin)),
+    );
+  if (!bare(room) && !ruin) {
+    if (room.type === 'salon') {
+      salonWall(b, room, look, windows, CELL_BACK, wain);
+    } else decorate(b, room);
+  }
   if (ruin) {
     cobweb(b, 1, 1, 8, 1);
     cobweb(b, bw - 2, 1, 6, -1);
@@ -155,15 +170,6 @@ function decorate(b: PixelBuffer, room: Room) {
     case 'recibidor':
       coatRack(b, 8, floor - Math.round(64 * BACK));
       hang(Prop.sconce(), 0, 54, 30);
-      break;
-    case 'salon':
-      // El tablón de anuncios, junto a la barra.
-      hang(Prop.noticeBoard(Math.min(4, lvl + 1), lvl >= 2), 0, 34, 0);
-      if (room.w > 1) {
-        hang(Prop.shelf(36, 4, `salon-${room.id}`, true), 1, 40);
-        hang(Prop.antlers(), 1, 66, 6);
-      } else hang(Prop.antlers(), 0, 70, 8);
-      if (room.w > 2) hang(Prop.dartboard(), 2, 40, 12);
       break;
     case 'cocina': {
       b.hline(6, 8, b.w - 12, P.slate);
@@ -292,7 +298,13 @@ export function ceilingTex(theme: Theme, w: number, seed: string): PixelBuffer {
  * Pared de un lado (fondo × alto, el fondo a media resolución; x = 0 junto al corte). Lleva
  * puerta en cada planta (contada desde abajo) que da a otra sala o a la escalera.
  */
-export function sideTex(theme: Theme, h: number, doors: number[], seed: string): PixelBuffer {
+export function sideTex(
+  theme: Theme,
+  h: number,
+  doors: number[],
+  seed: string,
+  front: number[] = [],
+): PixelBuffer {
   const b = new PixelBuffer(DEEP, h);
   if (theme === 'yeso') {
     plaster(b, 0, 0, DEEP, h, seed, PLASTER);
@@ -309,25 +321,48 @@ export function sideTex(theme: Theme, h: number, doors: number[], seed: string):
     b.rect(9, y - 48, 11, 48, P.bark);
     b.rect(10, y - 46, 9, 46, P.black);
   }
+  // La puerta de la calle, cerrada: tablones con herrajes, aldaba y su umbral.
+  for (const f of front) {
+    const y = h - f * PITCH;
+    b.rect(6, y - 54, 17, 54, P.plum);
+    b.rect(7, y - 52, 15, 52, P.bark);
+    planksV(b, 8, y - 51, 13, 51, `${seed}puerta`, [P.plum, P.rust, P.oak, P.clay], 4);
+    for (const by of [y - 44, y - 16]) {
+      b.hline(8, by, 13, P.slate);
+      b.hline(8, by + 1, 13, P.navy);
+    }
+    b.ellipse(18, y - 28, 1.5, 1.5, P.gold);
+    b.set(18, y - 26, P.amber);
+    b.hline(5, y - 1, 19, P.steel);
+  }
   ambientOcclusion(b, 0, 0, DEEP, h, 3, { top: true, bottom: true, left: false, right: true });
   return b;
 }
 
 /** Pared del fondo de un tramo de escalera, con los peldaños pintados en zigzag. */
-export function stairBack(theme: Theme, w: number, h: number, floor: number): PixelBuffer {
+export function stairBack(
+  theme: Theme,
+  w: number,
+  h: number,
+  floor: number,
+  steps = true,
+): PixelBuffer {
   const bw = Math.round(w * BACK);
   const bh = Math.round(h * BACK);
   const b = new PixelBuffer(bw, bh);
   const seed = `escalera${floor}`;
   if (theme === 'madera' || theme === 'yeso') planksV(b, 0, 0, bw, bh, seed, WOOD_DARK, 6);
   else stoneWall(b, 0, 0, bw, bh, seed, { ramp: theme === 'cueva' ? ROCK : STONE, bw: 8, bh: 6 });
-  const steps = 9;
+  // Un pasillo (sin tramo) es solo la pared del fondo.
+  if (!steps) {
+    ambientOcclusion(b, 0, 0, bw, bh, 4, { top: true, bottom: false, left: true, right: true });
+    return b;
+  }
+  const n = 9;
   const up = floor % 2 === 0;
-  const rise = (bh - 4) / steps;
-  for (let i = 0; i < steps; i++) {
-    const sx = Math.round(
-      up ? 1 + (i * (bw - 7)) / (steps - 1) : bw - 7 - (i * (bw - 7)) / (steps - 1),
-    );
+  const rise = (bh - 4) / n;
+  for (let i = 0; i < n; i++) {
+    const sx = Math.round(up ? 1 + (i * (bw - 7)) / (n - 1) : bw - 7 - (i * (bw - 7)) / (n - 1));
     const sy = Math.round(bh - 4 - i * rise);
     b.rect(sx, sy, 6, 3, P.oak);
     b.hline(sx, sy, 6, P.clay);
@@ -425,14 +460,21 @@ export interface Facade {
   runs: RoofRun[];
 }
 
-/** Rectángulo de cada hueco de escalera, planta a planta. */
-export const stairCells = (L: RoomsLayout): { rect: Rect; floor: number; s: number }[] =>
-  L.b.stairs.flatMap((s) => {
-    const out = [];
-    for (let f = L.deepest; f <= L.top; f++)
-      out.push({ rect: { x: stairX(L.b, s), y: floorTop(f), w: STAIR_W, h: ROOM_H }, floor: f, s });
-    return out;
-  });
+/**
+ * Cada hueco de las columnas de escalera (`s`: el hueco a cuya izquierda va): los rellanos, con
+ * sus peldaños, y los pasillos entre dos salas donde no llega ningún tramo.
+ */
+export const stairCells = (
+  L: RoomsLayout,
+): { rect: Rect; floor: number; s: number; steps: boolean }[] =>
+  L.stairs.flatMap((s) =>
+    [...s.floors, ...s.halls].map((f) => ({
+      rect: { x: s.x, y: floorTop(f), w: STAIR_W, h: ROOM_H },
+      floor: f,
+      s: s.at,
+      steps: s.floors.includes(f),
+    })),
+  );
 
 /** Huecos excavados en los que todavía no hay sala. */
 export const caveCells = (L: RoomsLayout): { rect: Rect; floor: number; col: number }[] =>
@@ -486,11 +528,12 @@ export function facade(L: RoomsLayout): Facade {
   planksV(wood, 0, 0, W, g + SLAB, 'muros', WOOD_DARK, 6);
   const stone = new PixelBuffer(W, H);
   stoneWall(stone, 0, g, W, H - g, 'sillares', { ramp: STONE, bw: 12, bh: 6 });
+  const stairs = stairCells(L);
   const cells: { rect: Rect; floor: number }[] = [
     ...L.rooms
       .filter((x) => x.room.type !== 'torre')
       .map(({ room, rect }) => ({ rect, floor: room.floor })),
-    ...stairCells(L),
+    ...stairs,
     ...caveCells(L),
   ];
   for (const { rect, floor } of cells) {
@@ -504,6 +547,31 @@ export function facade(L: RoomsLayout): Facade {
       beam(buf, x, y + h - SLAB, w, SLAB, WOOD_DARK);
     }
   }
+  // Forjados entre una sala y la de encima: igual, el alma oscura en medio del grueso.
+  const solid = cells.filter((c) => !stairs.includes(c as (typeof stairs)[number]));
+  for (const a of solid)
+    for (const c of solid) {
+      if (c.rect.y + c.rect.h + SLAB !== a.rect.y) continue;
+      const x0 = Math.max(a.rect.x, c.rect.x) - WALL;
+      const x1 = Math.min(a.rect.x + a.rect.w, c.rect.x + c.rect.w) + WALL;
+      if (x1 <= x0) continue;
+      const y = a.rect.y - SLAB / 2 - CORE / 2 - oy;
+      buf.rect(x0 - ox, y, x1 - x0, CORE, P.black);
+      buf.hline(x0 - ox, y, x1 - x0, P.ebony);
+      buf.hline(x0 - ox, y + CORE - 1, x1 - x0, P.ebony);
+    }
+  // Tabiques entre salas: textura a los lados y el alma oscura en medio.
+  for (const a of cells)
+    for (const c of cells) {
+      if (a.rect.x + a.rect.w !== c.rect.x) continue;
+      const y0 = Math.max(a.rect.y, c.rect.y);
+      const y1 = Math.min(a.rect.y + a.rect.h, c.rect.y + c.rect.h);
+      if (y1 <= y0) continue;
+      const x = c.rect.x - CORE / 2 - ox;
+      buf.rect(x, y0 - oy, CORE, y1 - y0, P.black);
+      buf.vline(x, y0 - oy, y1 - y0, P.ebony);
+      buf.vline(x + CORE - 1, y0 - oy, y1 - y0, P.ebony);
+    }
   for (const { rect } of cells) {
     const r = interior(rect);
     for (let j = 0; j < r.h; j++)

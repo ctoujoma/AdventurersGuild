@@ -12,16 +12,15 @@ import {
   EXTEND_RATE,
   MAX_COLS,
   MAX_DOWN,
-  MAX_STAIRS,
   MAX_UP,
   MOVE_COST,
   PLOT_COST,
   ROOM_COST,
   ROOM_SIZE_COST,
   STAIR_COST,
+  STAIR_STEP,
   START_COLS,
   UPGRADE_COST,
-  WORK_NIGHTS,
   roomMax,
 } from './balance';
 import type { Building, DawnEvent, Facilities, GameState, Room } from './model';
@@ -32,10 +31,8 @@ export type ExtendDir = 'left' | 'right' | 'up';
 
 export const LOCKED =
   'Las obras se abren al pagar la deuda: de momento solo se arregla y se mejora lo que hay.';
-const BUSY = 'Espera a que acabe la obra.';
 
 const key = (c: number, f: number) => `${c},${f}`;
-const floorOf = (k: string) => Number(k.split(',')[1]);
 
 /** La taberna del tío al empezar: cada cosa en su sitio y muchas salas rotas. */
 export function uncleBuilding(): Building {
@@ -52,7 +49,7 @@ export function uncleBuilding(): Building {
   });
   return {
     cols: START_COLS,
-    stairs: [1],
+    stairs: [-1, 0, 1].map((floor) => ({ at: 1, floor })),
     dug: [0, 1, 2, 3].map((c) => key(c, -1)),
     rooms: [
       room('torre', 0, 3, 1, 0),
@@ -73,6 +70,29 @@ export function uncleBuilding(): Building {
 }
 
 // ---------- Consultas ----------
+
+/** Columnas de escalera (la que va a la izquierda del hueco `x`), de izquierda a derecha. */
+export const shafts = (b: Building): number[] =>
+  [...new Set(b.stairs.map((s) => s.at))].sort((x, y) => x - y);
+
+export const isShaft = (b: Building, x: number) => b.stairs.some((s) => s.at === x);
+
+const hasStair = (b: Building, x: number, f: number) =>
+  b.stairs.some((s) => s.at === x && s.floor === f);
+
+/** Hay rellano en la columna `x` y la planta `f`: algún tramo llega a ella. */
+export const landing = (b: Building, x: number, f: number) =>
+  hasStair(b, x, f) || hasStair(b, x, f - 1);
+
+/** Se va por la escalera de la columna `x` de la planta `a` a la `c` (todos los tramos están). */
+export function stairLinks(b: Building, x: number, a: number, c: number): boolean {
+  if (a === c) return landing(b, x, a);
+  for (let f = Math.min(a, c); f < Math.max(a, c); f++) if (!hasStair(b, x, f)) return false;
+  return true;
+}
+
+/** Lo que cuesta el próximo tramo de escalera: cada uno, un poco más. */
+export const stairCost = (b: Building) => STAIR_COST + STAIR_STEP * b.stairs.length;
 
 /** Las obras de verdad (construir, ampliar, mover…) se abren al pagar la deuda. */
 export const worksOpen = (s: GameState) => s.mode === 'libre';
@@ -153,6 +173,32 @@ export function extendCostOf(r: Room, cells: number): number {
  */
 let lax = false;
 
+/** Salas que siempre tiene que haber: las que no se pueden tirar fuera del plano. */
+export const MUST = (Object.keys(ROOMS) as RoomType[]).filter((t) => ROOMS[t].keep);
+
+/**
+ * El borrador del modo obras: las salas que ya estaban antes de empezarlo (las demás son nuevas
+ * del borrador: se quitan devolviendo todo y se mueven gratis), las que ya se han movido en él
+ * (la mudanza se paga una vez) y los tramos de escalera que ya estaban.
+ */
+let draft: { base: Set<string>; moved: Set<string>; flights: Set<string> } | null = null;
+const isFresh = (id: string) => !!draft && !draft.base.has(id);
+
+/** Hace `fn` como borrador de obras sobre la taberna `base`, dejando la casa a medias. */
+export function drafting<T>(base: Building, fn: () => T): T {
+  const was = draft;
+  draft = {
+    base: new Set(base.rooms.map((r) => r.id)),
+    moved: new Set(),
+    flights: new Set(base.stairs.map((x) => key(x.at, x.floor))),
+  };
+  try {
+    return laxly(fn);
+  } finally {
+    draft = was;
+  }
+}
+
 /** Hace `fn` dejando pasar salas sin paso desde el recibidor (se arregla con más obras). */
 export function laxly<T>(fn: () => T): T {
   const was = lax;
@@ -166,9 +212,14 @@ export function laxly<T>(fn: () => T): T {
 
 /** Lo que falla en un edificio (o null si todo cuadra): tamaños, solapes, apoyos y paso. */
 export function problem(b: Building): string | null {
-  if (!b.stairs.length || b.stairs.length > MAX_STAIRS) return 'Hace falta una escalera, o dos.';
-  if (b.stairs.some((x, i) => x < 1 || x > b.cols || b.stairs.indexOf(x) !== i))
-    return 'Esa escalera no cabe ahí.';
+  const flights = new Set<string>();
+  for (const s of b.stairs) {
+    const k = key(s.at, s.floor);
+    if (s.at < 1 || s.at > b.cols || s.floor < -MAX_DOWN || s.floor >= MAX_UP || flights.has(k))
+      return 'Esa escalera no cabe ahí.';
+    flights.add(k);
+  }
+  const cols = shafts(b);
   const at = new Map<string, Room>();
   const count = new Map<RoomType, number>();
   for (const r of b.rooms) {
@@ -179,7 +230,7 @@ export function problem(b: Building): string | null {
       return 'No cabe en el solar.';
     if (d.place === 'baja' && r.floor !== 0) return `${d.name}: va en la planta baja.`;
     if (r.type === 'recibidor' && r.col !== 0) return 'El recibidor va junto al patio.';
-    if (b.stairs.some((x) => x > r.col && x < r.col + r.w))
+    if (cols.some((x) => x > r.col && x < r.col + r.w))
       return 'Una sala no puede cruzar la escalera.';
     for (const [c, f] of cellsOf(r)) {
       if (at.has(key(c, f))) return 'Ahí ya hay otra sala.';
@@ -189,7 +240,6 @@ export function problem(b: Building): string | null {
     count.set(r.type, (count.get(r.type) ?? 0) + 1);
     if (d.unique && count.get(r.type)! > 1) return `Ya tienes ${d.name.toLowerCase()}.`;
   }
-  if (count.get('recibidor') !== 1) return 'Falta el recibidor.';
   const under = (c: number, f: number) => at.get(key(c, f - 1));
   for (const r of b.rooms) {
     if (r.type === 'torre') {
@@ -207,50 +257,76 @@ export function problem(b: Building): string | null {
         return 'Una planta solo puede sobresalir un hueco de la de abajo.';
     }
   }
+  // Cada tramo sale de algo: hacia arriba, de una planta con sala al lado; hacia abajo, de una
+  // sala o un hueco excavado de la planta de encima; o de otro tramo.
+  const beside = (x: number, f: number) =>
+    [at.get(key(x - 1, f)), at.get(key(x, f))].some((r) => r && r.type !== 'torre') ||
+    (f < 0 && (isDug(b, x - 1, f) || isDug(b, x, f)));
+  for (const { at: x, floor: f } of b.stairs) {
+    const from =
+      f > 0
+        ? hasStair(b, x, f - 1) || beside(x, f)
+        : f < 0
+          ? hasStair(b, x, f + 1) || beside(x, f + 1)
+          : hasStair(b, x, -1) || hasStair(b, x, 1) || beside(x, 0) || beside(x, 1);
+    if (!from)
+      return 'La escalera tiene que salir de una sala, de un hueco excavado o de otro tramo.';
+  }
   if (lax) return null;
+  // Las salas que no pueden faltar (se pueden quitar en el plano para ponerlas en otro sitio).
+  const gone = MUST.find((t) => !count.get(t));
+  if (gone) return `Falta: ${ROOMS[gone].name}. Vuelve a ponerla en el plano para poder pagar.`;
   const lost = cutOff(b, at);
   return lost ? `${ROOMS[lost.type].name}: se quedaría sin paso desde el recibidor.` : null;
 }
 
 /**
- * La primera sala a la que no se llega desde el recibidor. Cada escalera baja hasta lo más
- * hondo que se ha excavado y sube hasta la última planta; se pasa de una sala a la de al lado
- * y a la torre desde la sala de debajo.
+ * La primera sala a la que no se llega desde el recibidor. Se anda por la planta de abajo de cada
+ * sala (en las de dos alturas, la de arriba es aire). Se pasa de una sala a la de al lado
+ * (con columna de escalera en medio también: sin tramo, es un pasillo), a la torre desde la sala
+ * de debajo y, por los tramos de cada escalera, a las salas que dan a sus rellanos.
  */
 function cutOff(b: Building, at: Map<string, Room>): Room | null {
-  const start = b.rooms.find((r) => r.type === 'recibidor')!;
+  const start = b.rooms.find((r) => r.type === 'recibidor');
+  if (!start) return b.rooms[0] ?? null;
   const seen = new Set<Room>([start]);
-  const stairsSeen = new Set<number>();
+  const landed = new Set<string>();
   const queue: Room[] = [start];
-  const visit = (r: Room | undefined) => {
-    if (r && !seen.has(r)) {
+  // Se anda por el suelo de cada sala: en las altas, solo por la planta de abajo.
+  const visit = (r: Room | undefined, f: number) => {
+    if (r && r.type !== 'torre' && r.floor === f && !seen.has(r)) {
       seen.add(r);
       queue.push(r);
     }
   };
+  // Sube y baja por la escalera desde un rellano, entrando en las salas de cada planta.
+  const climb = (x: number, f0: number) => {
+    const todo = landing(b, x, f0) ? [f0] : [];
+    while (todo.length) {
+      const f = todo.pop()!;
+      if (landed.has(key(x, f))) continue;
+      landed.add(key(x, f));
+      visit(at.get(key(x - 1, f)), f);
+      visit(at.get(key(x, f)), f);
+      if (hasStair(b, x, f)) todo.push(f + 1);
+      if (hasStair(b, x, f - 1)) todo.push(f - 1);
+    }
+  };
+  const side = (x: number, c: number, f: number) => {
+    visit(at.get(key(c, f)), f);
+    climb(x, f);
+  };
   while (queue.length) {
     const r = queue.shift()!;
-    if (r.type === 'torre') {
-      visit(at.get(key(r.col, r.floor - 1)));
-      continue;
-    }
-    for (let f = r.floor; f < r.floor + r.h; f++) {
-      visit(at.get(key(r.col - 1, f)));
-      visit(at.get(key(r.col + r.w, f)));
-    }
+    side(r.col, r.col - 1, r.floor);
+    side(r.col + r.w, r.col + r.w, r.floor);
     for (let c = r.col; c < r.col + r.w; c++) {
       const up = at.get(key(c, r.floor + r.h));
-      if (up?.type === 'torre') visit(up);
-    }
-    for (const x of b.stairs) {
-      if (x !== r.col && x !== r.col + r.w) continue;
-      if (stairsSeen.has(x)) continue;
-      stairsSeen.add(x);
-      for (const o of b.rooms)
-        if (o.type !== 'torre' && (o.col === x || o.col + o.w === x)) visit(o);
+      if (up?.type === 'torre') seen.add(up);
     }
   }
-  return b.rooms.find((r) => !seen.has(r)) ?? null;
+  const lost = b.rooms.filter((r) => !seen.has(r));
+  return lost.find((r) => r.type !== 'torre') ?? lost[0] ?? null;
 }
 
 /** Hueco libre para una sala nueva de un hueco (planta baja hacia arriba y luego hacia abajo). */
@@ -283,7 +359,7 @@ function joinable(b: Building, a: Room, c: Room): boolean {
     a.floor === c.floor &&
     a.h === c.h &&
     a.col + a.w === c.col &&
-    !b.stairs.includes(c.col) &&
+    !isShaft(b, c.col) &&
     a.w + c.w <= ROOMS[a.type].maxW &&
     !a.works &&
     !c.works
@@ -314,7 +390,8 @@ function finish(s: GameState, b: Building, cost: number): Plan {
   mergeRooms(b);
   const e = problem(b);
   if (e) return { error: e };
-  if (cost > s.gold) return { error: `Te faltan ${cost - s.gold} monedas.` };
+  // En el borrador el oro se mira al pagarlo todo junto (`planIssue`).
+  if (!lax && cost > s.gold) return { error: `Te faltan ${cost - s.gold} monedas.` };
   return { b, cost };
 }
 
@@ -329,7 +406,6 @@ export function planUpgrade(s: GameState, id: string): Plan {
   const got = find(s, id);
   if ('error' in got) return got;
   const { b, r } = got;
-  if (r.works && r.works.kind !== 'extend') return { error: BUSY };
   const cost = upgradeCostOf(r);
   if (cost === null) return { error: 'Ya está al máximo.' };
   r.level++;
@@ -338,31 +414,25 @@ export function planUpgrade(s: GameState, id: string): Plan {
 }
 
 /**
- * Construir una sala nueva de un hueco. Tarda una noche en estar lista. Al lado de otra igual y
- * de nivel 1 cuenta como ampliarla: se junta con ella y cuesta lo que una ampliación.
+ * Construir una sala nueva de un hueco: queda lista al pagar. Al lado de otra igual y de nivel 1
+ * cuenta como ampliarla: se junta con ella y cuesta lo que una ampliación.
  */
 export function planBuild(s: GameState, type: RoomType, col: number, floor: number): Plan {
   if (!worksOpen(s)) return { error: LOCKED };
   const b = structuredClone(s.building);
-  const fresh: Room = { ...newRoom(b, type, col, floor), works: undefined };
+  const fresh: Room = newRoom(b, type, col, floor);
   const next = b.rooms.find(
     (r) => !roomAt(b, col, floor) && (joinable(b, r, fresh) || joinable(b, fresh, r)) && r.h === 1,
   );
   if (next) {
-    const from = { col: next.col, w: next.w, h: next.h };
     if (next.col > col) next.col = col;
     next.w++;
     const cost = extendCostOf(next, 1);
     next.spent += cost;
-    next.works = { kind: 'extend', nights: WORK_NIGHTS.extend, from };
     return finish(s, b, cost);
   }
   const cost = ROOM_COST[type][1]!;
-  b.rooms.push({
-    ...newRoom(b, type, col, floor),
-    spent: cost,
-    works: { kind: 'build', nights: WORK_NIGHTS.build },
-  });
+  b.rooms.push({ ...fresh, spent: cost });
   return finish(s, b, cost);
 }
 
@@ -372,33 +442,34 @@ export function planExtend(s: GameState, id: string, dir: ExtendDir): Plan {
   const got = find(s, id);
   if ('error' in got) return got;
   const { b, r } = got;
-  if (r.works) return { error: BUSY };
   if (r.level === 0) return { error: 'Primero hay que arreglarla.' };
-  const from = { col: r.col, w: r.w, h: r.h };
+  const before = r.w * r.h;
   if (dir === 'up') r.h++;
   else {
     r.w++;
     if (dir === 'left') r.col--;
   }
-  const cost = extendCostOf(r, r.w * r.h - from.w * from.h);
+  const cost = extendCostOf(r, r.w * r.h - before);
   r.spent += cost;
-  r.works = { kind: 'extend', nights: WORK_NIGHTS.extend, from };
   return finish(s, b, cost);
 }
 
-/** Mover una sala a otro sitio libre del mismo tamaño. Esa noche no funciona. */
+/**
+ * Mover una sala a otro sitio libre del mismo tamaño. En el borrador se puede mover tantas veces
+ * como se quiera: la mudanza se paga una vez, y las salas nuevas del borrador se mueven gratis.
+ */
 export function planMove(s: GameState, id: string, col: number, floor: number): Plan {
   if (!worksOpen(s)) return { error: LOCKED };
   const got = find(s, id);
   if ('error' in got) return got;
   const { b, r } = got;
   if (ROOMS[r.type].fixed) return { error: `${ROOMS[r.type].name}: no se puede mover.` };
-  if (r.works) return { error: BUSY };
   if (r.col === col && r.floor === floor) return { error: 'Ya está ahí.' };
   r.col = col;
   r.floor = floor;
-  r.works = { kind: 'move', nights: WORK_NIGHTS.move };
-  return finish(s, b, MOVE_COST * r.w * r.h);
+  const paid = isFresh(id) || !!draft?.moved.has(id);
+  draft?.moved.add(id);
+  return finish(s, b, paid ? 0 : MOVE_COST * r.w * r.h);
 }
 
 /** Destruir una sala: se recupera la mitad de lo gastado en ella. */
@@ -407,25 +478,37 @@ export function planDemolish(s: GameState, id: string): Plan {
   const got = find(s, id);
   if ('error' in got) return got;
   const { b, r } = got;
-  if (ROOMS[r.type].keep) return { error: `${ROOMS[r.type].name}: no se puede quitar.` };
-  if (r.works) return { error: BUSY };
+  // En el plano sí: se quita para ponerla en otro sitio, y no se paga hasta que vuelva a estar.
+  if (ROOMS[r.type].keep && !lax)
+    return { error: `${ROOMS[r.type].name}: no se puede quitar (en el plano, sí, para moverla).` };
   b.rooms = b.rooms.filter((x) => x !== r);
-  return finish(s, b, -Math.floor(r.spent * DEMOLISH_REFUND));
+  // Una sala puesta en este mismo borrador se quita devolviendo todo.
+  return finish(s, b, -(isFresh(id) ? r.spent : Math.floor(r.spent * DEMOLISH_REFUND)));
 }
 
-/** Excavar un hueco: junto a otro excavado o junto a la escalera, una planta más abajo. */
+/**
+ * Excavar un hueco: junto a otro excavado o junto a un rellano de escalera. Junto al rellano de
+ * más abajo de una escalera, la escalera baja un tramo con él (y se paga el tramo).
+ */
 export function planDig(s: GameState, col: number, floor: number): Plan {
   if (!worksOpen(s)) return { error: LOCKED };
   const b = structuredClone(s.building);
   if (floor >= 0 || floor < -MAX_DOWN || col < 0 || col >= b.cols)
     return { error: 'Ahí no se puede excavar.' };
   if (isDug(b, col, floor)) return { error: 'Ya está excavado.' };
-  const deepest = Math.min(0, ...b.dug.map(floorOf));
-  const byStair = b.stairs.some((x) => x === col || x === col + 1) && floor + 1 >= deepest;
-  if (!byStair && !isDug(b, col - 1, floor) && !isDug(b, col + 1, floor))
+  const sides = [col, col + 1];
+  const byStair = sides.some((x) => landing(b, x, floor));
+  const down = byStair ? undefined : sides.find((x) => landing(b, x, floor + 1));
+  if (!byStair && down === undefined && !isDug(b, col - 1, floor) && !isDug(b, col + 1, floor))
     return { error: 'Hay que excavar junto a la escalera o junto a otro hueco excavado.' };
+  let cost = DIG_COST[-floor]!;
+  if (down !== undefined) {
+    cost += stairCost(b);
+    b.stairs.push({ at: down, floor });
+    b.stairs.sort((x, y) => x.at - y.at || x.floor - y.floor);
+  }
   b.dug.push(key(col, floor));
-  return finish(s, b, DIG_COST[-floor]!);
+  return finish(s, b, cost);
 }
 
 /** Comprar el solar de la derecha: un hueco más de ancho en todas las plantas. */
@@ -438,15 +521,32 @@ export function planPlot(s: GameState): Plan {
   return finish(s, b, cost);
 }
 
-/** Poner otra escalera a la izquierda del hueco `at`. */
-export function planStair(s: GameState, at: number): Plan {
+/**
+ * Poner un tramo de escalera a la izquierda del hueco `at`, de la planta `floor` a la de encima.
+ * Bajo tierra, la escalera abre su propio hueco (luego se excava junto a ella).
+ */
+export function planStair(s: GameState, at: number, floor: number): Plan {
   if (!worksOpen(s)) return { error: LOCKED };
   const b = structuredClone(s.building);
-  if (b.stairs.length >= MAX_STAIRS) return { error: 'Ya hay dos escaleras.' };
-  if (b.stairs.includes(at)) return { error: 'Ahí ya hay escalera.' };
-  b.stairs.push(at);
-  b.stairs.sort((x, y) => x - y);
-  return finish(s, b, STAIR_COST);
+  if (hasStair(b, at, floor)) return { error: 'Ahí ya hay escalera.' };
+  const cost = stairCost(b);
+  b.stairs.push({ at, floor });
+  b.stairs.sort((x, y) => x.at - y.at || x.floor - y.floor);
+  return finish(s, b, cost);
+}
+
+/**
+ * Quitar un tramo de escalera (si no deja otro en el aire). Uno
+ * puesto en este mismo borrador devuelve lo que costó; uno que ya estaba, la mitad.
+ */
+export function planUnstair(s: GameState, at: number, floor: number): Plan {
+  if (!worksOpen(s)) return { error: LOCKED };
+  const b = structuredClone(s.building);
+  if (!hasStair(b, at, floor)) return { error: 'Ahí no hay escalera.' };
+  b.stairs = b.stairs.filter((x) => x.at !== at || x.floor !== floor);
+  const paid = stairCost(b);
+  const fresh = !!draft && !draft.flights.has(key(at, floor));
+  return finish(s, b, -(fresh ? paid : Math.floor(paid * DEMOLISH_REFUND)));
 }
 
 const isYard = (k: keyof Facilities): k is YardKey => (YARD as readonly string[]).includes(k);

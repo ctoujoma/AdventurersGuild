@@ -86,7 +86,9 @@ import {
   planMove,
   planPlot,
   planStair,
+  planUnstair,
   planUpgrade,
+  drafting,
   laxly,
   problem,
   stepWorks,
@@ -128,7 +130,8 @@ export type Action =
   | { type: 'demolish'; id: string }
   | { type: 'dig'; col: number; floor: number }
   | { type: 'buyPlot' }
-  | { type: 'addStair'; at: number }
+  | { type: 'addStair'; at: number; floor: number }
+  | { type: 'removeStair'; at: number; floor: number }
   /** Varias obras seguidas (las del modo plano): se hacen todas o ninguna. */
   | { type: 'works'; steps: Action[] }
   | { type: 'sell'; itemId: string }
@@ -250,7 +253,9 @@ function planOf(s: GameState, a: Action): Plan | null {
     case 'buyPlot':
       return planPlot(s);
     case 'addStair':
-      return planStair(s, a.at);
+      return planStair(s, a.at, a.floor);
+    case 'removeStair':
+      return planUnstair(s, a.at, a.floor);
     default:
       return null;
   }
@@ -279,7 +284,7 @@ export function tryWork(s: GameState, a: Action): GameState | { error: string } 
  * con `planIssue`, y el reducer no deja pagar hasta que cuadre.
  */
 export function tryWorks(s: GameState, steps: readonly Action[]): GameState | { error: string } {
-  return laxly(() => {
+  return drafting(s.building, () => {
     let cur = s;
     for (const a of steps) {
       const next = tryWork(cur, a);
@@ -290,8 +295,9 @@ export function tryWorks(s: GameState, steps: readonly Action[]): GameState | { 
   });
 }
 
-/** Lo que impide pagar el plano tal como está (salas sin paso desde el recibidor). */
-export const planIssue = (s: GameState) => problem(s.building);
+/** Lo que impide pagar el borrador tal como está (salas sin paso, una que falta o el oro). */
+export const planIssue = (s: GameState) =>
+  problem(s.building) ?? (s.gold < 0 ? `Te faltan ${-s.gold} monedas.` : null);
 
 /** Una obra que solo se puede hacer en el plano (deja la casa a medias hasta otra obra). */
 export const needsPlan = (s: GameState, a: Action) =>

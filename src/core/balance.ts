@@ -108,11 +108,9 @@ export const PLOT_COST = [150, 250, 400] as const;
 /** Plantas como máximo sobre el suelo y bajo tierra. */
 export const MAX_UP = 4;
 export const MAX_DOWN = DIG_COST.length - 1;
-/** Escaleras como máximo y precio de la segunda. */
-export const MAX_STAIRS = 2;
-export const STAIR_COST = 200;
-/** Noches que tarda cada obra (mejorar es inmediato, como antes). */
-export const WORK_NIGHTS = { build: 1, extend: 1, move: 1 } as const;
+/** Precio de un tramo de escalera: el primero y lo que sube con cada tramo que ya hay. */
+export const STAIR_COST = 50;
+export const STAIR_STEP = 10;
 
 /** Camas: las de los dormitorios y, con el ala de veteranos, dos más por nivel. */
 export const capacity = (dorm: number, vet = 0) => 2 + 2 * dorm + 2 * vet;

@@ -1,16 +1,8 @@
 import { useMemo, useState } from 'preact/hooks';
-import {
-  DIG_COST,
-  MAX_COLS,
-  PLOT_COST,
-  ROOM_COST,
-  START_COLS,
-  STAIR_COST,
-  roomMax,
-} from '../../core/balance';
+import { DIG_COST, MAX_COLS, PLOT_COST, ROOM_COST, START_COLS, roomMax } from '../../core/balance';
 import { canWork, type Action } from '../../core/game';
 import type { GameState, Room } from '../../core/model';
-import { LOCKED, worksOpen } from '../../core/rooms';
+import { LOCKED, stairCost, worksOpen } from '../../core/rooms';
 import { ROOMS, type RoomType } from '../../data/rooms';
 import { targetsFor, type Pick } from '../../world/rooms/works';
 import { Icon } from '../icons';
@@ -197,24 +189,20 @@ export function ObrasPanel({ game, planning, onPick, onWork, onRoom, onPlan }: P
             </article>
             <article class="card-paper facility">
               <div class="facility-info">
-                <b>Otra escalera</b>
+                <b>Escalera</b>
                 <span class="muted">
-                  {b.stairs.length >= 2
-                    ? 'Ya tienes dos escaleras.'
-                    : 'Caminos más cortos entre plantas. Va de lo más hondo a lo más alto.'}
+                  Cada tramo une una planta con la de encima; cada uno cuesta un poco más.
                 </span>
               </div>
-              {b.stairs.length < 2 && (
-                <button
-                  class="btn btn-gold"
-                  aria-label={`Poner otra escalera por ${STAIR_COST} monedas`}
-                  disabled={!stairs.length}
-                  title={stairs.length ? undefined : 'No cabe en ningún sitio sin cortar una sala.'}
-                  onClick={() => onPick({ kind: 'stair' })}
-                >
-                  <Icon name="coin" size={12} /> {STAIR_COST}
-                </button>
-              )}
+              <button
+                class="btn btn-gold"
+                aria-label={`Poner un tramo de escalera por ${stairCost(b)} monedas`}
+                disabled={!stairs.length}
+                title={stairs.length ? undefined : 'No cabe en ningún sitio sin cortar una sala.'}
+                onClick={() => onPick({ kind: 'stair' })}
+              >
+                <Icon name="coin" size={12} /> {stairCost(b)}
+              </button>
             </article>
           </div>
         </section>

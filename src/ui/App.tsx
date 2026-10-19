@@ -48,6 +48,7 @@ import { SceneView, type GameScene } from './SceneView';
 import { RoomPanel, type RoomLink } from './panels/RoomPanel';
 import { ObrasPanel } from './panels/ObrasPanel';
 import { WorksBar } from './WorksBar';
+import { RoomMenu } from './RoomMenu';
 import { useWorks } from './works';
 import { LOCKED, worksOpen } from '../core/rooms';
 import { RoomScene } from '../world/rooms/RoomScene';
@@ -241,7 +242,20 @@ export function App() {
     setBubble({ text, x: at.x, y: at.y, wx: at.wx, wy: at.wy, key: Date.now() });
 
   // Obras en la vista de salas: elegir sitio en la escena y el modo plano (que se ve en la escena).
-  const works = useWorks({ game, dispatch, toast, focus: (id) => scene.current?.focus(id) });
+  const works = useWorks({
+    game,
+    dispatch,
+    toast,
+    focus: (id) => scene.current?.focus(id),
+    raise: (ids) => {
+      const s = scene.current;
+      if (s instanceof RoomScene) s.raise(ids);
+    },
+    price: (id, cost) => {
+      const s = scene.current;
+      if (s instanceof RoomScene) s.priceTag(id, cost);
+    },
+  });
   const draft = works.planning ? works.view : null;
   const model = useMemo(() => sceneModel(draft ?? sceneGame), [sceneGame, draft]);
   useEffect(() => {
@@ -249,13 +263,20 @@ export function App() {
     if (!(s instanceof RoomScene)) return;
     s.setTargets(
       works.active
-        ? works.targets.map((t) => ({ id: t.id, rect: t.rect, label: `${t.label} · ${t.cost}` }))
+        ? works.targets.map((t) => ({
+            id: t.id,
+            rect: t.rect,
+            label: t.blocked ? t.label : `${t.label} · ${Math.abs(t.cost)}`,
+            blocked: !!t.blocked,
+            remove: t.cost < 0,
+          }))
         : null,
-      works.chosen?.id ?? null,
-      // Los huecos de siempre del modo obras no mueven la cámara ni tapan las salas.
-      !works.pick,
+      null,
+      // Los huecos de siempre del modo obras (los de ampliar y los de mudanza) no mueven la cámara.
+      !works.pick || works.pick.kind === 'move',
     );
-  }, [works.active?.kind, works.targets, works.chosen?.id, works.pick]);
+    s.setGrabbable(works.planning && !works.pick ? works.selected : null);
+  }, [works.active?.kind, works.targets, works.pick, works.selected, works.planning]);
   // El camino de los bandidos, a la vista mientras se planea la casa o se mira la cámara o la puerta.
   const routeRoom =
     panel === 'sala' && roomId ? (draft ?? game).building.rooms.find((r) => r.id === roomId) : null;
@@ -270,6 +291,7 @@ export function App() {
   const roomsLive = !settings.classic && scene.current instanceof RoomScene;
   const pickSpot = (p: Pick) => {
     openPanel(null);
+    if (!works.planning) works.startPlan();
     works.startPick(p);
   };
 
@@ -290,6 +312,11 @@ export function App() {
       return;
     }
     if (id.startsWith('sala:')) {
+      // En el modo obras, tocar una sala la elige (menú de obras junto a ella).
+      if (works.planning) {
+        works.select(id.slice(5));
+        return;
+      }
       setRoomId(id.slice(5));
       openPanel('sala');
       return;
@@ -706,6 +733,11 @@ export function App() {
             setDragTip({ text: d?.text ?? 'Suéltalo en una sala.', ok: !!d?.ok, at });
             return d;
           }}
+          onRoomDrag={(id) => works.startPick({ kind: 'move', id })}
+          onRoomDrop={() => {
+            works.cancelPick();
+            toast('Ahí no cabe: suéltala en una casilla verde.');
+          }}
           onDrop={(id, room) => {
             setDragTip(null);
             const d = room ? planDrop(gameRef.current, id, room) : null;
@@ -778,9 +810,26 @@ export function App() {
             </button>
           )}
         </div>
-        {!panel && (works.pick || works.planning) && (
-          <WorksBar works={works} onMore={() => openPanel('gremio')} />
-        )}
+        {!panel &&
+          works.planning &&
+          works.selected &&
+          !works.pick &&
+          scene.current instanceof RoomScene && (
+            <RoomMenu
+              scene={scene.current}
+              game={works.view}
+              roomId={works.selected}
+              onUpgrade={(id) => works.work({ type: 'upgradeRoom', id })}
+              onMove={(id) => works.startPick({ kind: 'move', id })}
+              onDemolish={(id) => works.work({ type: 'demolish', id })}
+              onInfo={(id) => {
+                setRoomId(id);
+                openPanel('sala');
+              }}
+              onClose={() => works.select(null)}
+            />
+          )}
+        {!panel && works.planning && <WorksBar works={works} onMore={() => openPanel('gremio')} />}
         {!panel && !game.over && !works.pick && !works.planning && (
           <DayBar
             unread={unread}
@@ -849,14 +898,6 @@ export function App() {
                   : upgradeRoom(id)
               }
               onLink={roomLink}
-              onWork={
-                roomsLive
-                  ? (a) => {
-                      if (works.work(a)) openPanel(null);
-                    }
-                  : undefined
-              }
-              onMove={roomsLive ? (id) => pickSpot({ kind: 'move', id }) : undefined}
               onAssign={works.planning ? undefined : assignJob}
             />
           </Panel>

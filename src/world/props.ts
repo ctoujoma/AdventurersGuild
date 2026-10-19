@@ -223,7 +223,7 @@ export function counter(level: number): PixelBuffer {
 }
 
 /** Botella pequeña de estantería. */
-function bottleOn(b: PixelBuffer, x: number, base: number, kind: number): void {
+export function bottleOn(b: PixelBuffer, x: number, base: number, kind: number): void {
   const colors: Ramp[] = [
     [P.deep, P.forest, P.leaf],
     [P.plum, P.wine, P.red],

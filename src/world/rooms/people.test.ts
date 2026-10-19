@@ -29,7 +29,7 @@ describe('la gente de la casa', () => {
       (p, i) => i > 0 && p.x === path[i - 1]!.x && p.floor !== path[i - 1]!.floor,
     );
     expect(climb).toBeGreaterThan(0);
-    const sx = L.stairs[0]!;
+    const sx = L.stairs[0]!.x;
     expect(path[climb]!.x).toBeGreaterThan(sx);
     expect(path[climb]!.x).toBeLessThan(sx + 40);
   });
@@ -42,15 +42,23 @@ describe('la gente de la casa', () => {
     expect(floorTop(0)).toBeLessThan(floorTop(-1));
   });
 
+  it('sin el tramo de en medio no se sube a esa planta', () => {
+    const b = uncleBuilding();
+    b.stairs = b.stairs.filter((x) => x.floor !== 1);
+    const L = roomsLayout(b);
+    expect(route(L, centerOf(L, 'recibidor'), centerOf(L, 'dormitorio'))).not.toBeNull();
+    expect(route(L, centerOf(L, 'recibidor'), centerOf(L, 'mapas'))).toBeNull();
+  });
+
   it('con dos escaleras se va por la más corta', () => {
     const b = uncleBuilding();
     maxOut(b);
-    b.stairs = [1, 3];
+    for (let f = -1; f < 2; f++) b.stairs.push({ at: 3, floor: f });
     const L = roomsLayout(b);
     const from = { x: colX(b, 3) + 60, floor: 0 };
     const to = { x: colX(b, 3) + 60, floor: 1 };
     const path = route(L, from, to)!;
-    expect(path[0]!.x).toBeCloseTo(L.stairs[1]! + 20, 5);
+    expect(path[0]!.x).toBeCloseTo(L.stairs[1]!.x + 20, 5);
   });
 
   it('cada uno tiene su sitio: heridos en catres, guardias en el recibidor, candidatos en la barra', () => {

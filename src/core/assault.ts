@@ -36,6 +36,7 @@ import type { Building, GameState, RaidPlan, RaidStep } from './model';
 import { skill } from './party';
 import { equip } from './resolve';
 import { Rng } from './rng';
+import { shafts, stairLinks } from './rooms';
 import { doorTime, lockTime } from './vault';
 import { staffBeds } from './workers';
 
@@ -79,15 +80,19 @@ export function raidGraph(b: Building): RaidGraph {
       if (a.floor === c.floor && a.col + a.w === c.col)
         link(a.id, c.id, (mid(c) - mid(a)) * RAID_CELL);
   }
-  for (const x of b.stairs) {
+  // Por cada escalera, las salas que dan a sus rellanos, si los tramos las unen.
+  for (const x of shafts(b)) {
     const by = rooms.filter((r) => r.col === x || r.col + r.w === x);
     for (let i = 0; i < by.length; i++)
       for (let j = i + 1; j < by.length; j++) {
         const a = by[i]!;
         const c = by[j]!;
         if (a.floor === c.floor) continue;
+        // Se entra por el suelo de cada sala (en las altas, la planta de abajo).
+        if (!stairLinks(b, x, a.floor, c.floor)) continue;
+        const climb = Math.abs(a.floor - c.floor);
         const walk = (Math.abs(mid(a) - x) + Math.abs(mid(c) - x)) * RAID_CELL;
-        link(a.id, c.id, walk + Math.abs(a.floor - c.floor) * RAID_FLOOR);
+        link(a.id, c.id, walk + climb * RAID_FLOOR);
       }
   }
   const door = b.rooms.find((r) => r.type === 'recibidor');

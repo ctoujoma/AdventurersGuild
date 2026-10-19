@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { ROOMS, type RoomType } from '../../data/rooms';
 import type { Room } from '../../core/model';
-import { furnish } from './furniture';
+import { furnish, gearRoom } from './furniture';
+import { uncleBuilding } from '../../core/rooms';
+import { NO_LOOK } from './salon';
 import { CELL_W, DEPTH, PARTITION } from './layout';
 import { scaleAt } from './view3d';
 
@@ -45,5 +47,25 @@ describe('muebles de la vista 3D', () => {
     expect(
       furnish(room('salon', { works: { kind: 'build', nights: 1 } }), 110).some((t) => t.light),
     ).toBe(false);
+  });
+
+  it('el equipo sin dueño se cuelga en la armería o se guarda en arcones', () => {
+    const b = uncleBuilding();
+    const arm = b.rooms.find((r) => r.type === 'armeria')!;
+    // La del tío está por reparar: el equipo va a ella igualmente, en arcones.
+    expect(gearRoom(b)).toBe(arm.id);
+    const gear = Array.from({ length: 5 }, () => ({ icon: 'espada' as const, rarity: 0 as const }));
+    const look = { ...NO_LOOK, gear, gearRoom: 'x' };
+    const iw = CELL_W - PARTITION;
+    const chests = (t: ReturnType<typeof furnish>) =>
+      t.filter((x) => x.img.w === 18 && x.img.h === 14).length;
+    expect(chests(furnish(room('armeria', { level: 0 }), iw, look))).toBe(2);
+    // Reparada, un estante de 4 y lo que sobra (1) en un arcón.
+    const lvl1 = furnish(room('armeria'), iw, look);
+    expect(lvl1.filter((x) => x.y === 22)).toHaveLength(1);
+    expect(chests(lvl1)).toBe(1);
+    // Sin armería, a la cámara del tesoro.
+    b.rooms = b.rooms.filter((r) => r !== arm);
+    expect(gearRoom(b)).toBe(b.rooms.find((r) => r.type === 'tesoro')!.id);
   });
 });

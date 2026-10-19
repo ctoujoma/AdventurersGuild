@@ -45,7 +45,9 @@ describe('texturas de la vista 3D', () => {
 
   it('las salas de arriba tienen ventanas por las que se ve el cielo; abajo y en el tesoro, no', () => {
     const w = CELL_W - PARTITION;
-    expect(holes(backWall(room({}), w, ROOM_H))).toBeGreaterThan(100);
+    // (En el salón, la ventana de detrás de la chimenea no se pone: se mira uno de dos huecos.)
+    expect(holes(backWall(room({ w: 2 }), 2 * CELL_W - PARTITION, ROOM_H))).toBeGreaterThan(100);
+    expect(holes(backWall(room({ type: 'dormitorio' }), w, ROOM_H))).toBeGreaterThan(100);
     expect(holes(backWall(room({ type: 'bodega', floor: -1 }), w, ROOM_H))).toBe(0);
     expect(holes(backWall(room({ type: 'tesoro', floor: 0 }), w, ROOM_H))).toBe(0);
   });
