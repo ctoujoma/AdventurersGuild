@@ -134,7 +134,7 @@ function things(room: Room, w: number): Thing[] {
   return cellsOf(room, w).flatMap((c) => [
     at(pantryShelf(lvl, c.i), c.x0 + 24, WALL),
     at(crates(lvl, c.i), c.win - 6, WALL),
-    at(grain(lvl), c.win + WIN_HALF + 5, WALL - 2),
+    at(grain(lvl), Math.min(c.win + WIN_HALF + 5, c.x1 - 12), WALL - 2),
   ]);
 }
 
