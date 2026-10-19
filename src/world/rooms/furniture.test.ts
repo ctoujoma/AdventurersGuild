@@ -5,6 +5,8 @@ import { furnish, gearRoom } from './furniture';
 import { uncleBuilding } from '../../core/rooms';
 import { NO_LOOK } from './salon';
 import { SPOT } from './salas/recibidor';
+import { ART } from './salas';
+import { SILL, cellsOf } from './salas/kit';
 import { CELL_W, DEPTH, PARTITION } from './layout';
 import { scaleAt } from './view3d';
 
@@ -24,18 +26,39 @@ describe('muebles de la vista 3D', () => {
   it('cada sala en uso tiene sus muebles dentro y su farol encendido', () => {
     for (const type of Object.keys(ROOMS) as RoomType[]) {
       if (type === 'torre') continue;
-      for (const w of [1, 2]) {
-        const iw = w * CELL_W - PARTITION;
-        const things = furnish(room(type, { w, level: 2 }), iw);
-        expect(things.some((t) => t.hang && t.light)).toBe(true);
-        for (const t of things) {
-          const half = t.img.w / scaleAt(t.z) / 2;
-          expect(t.x - half, `${type} ${w}`).toBeGreaterThanOrEqual(-1);
-          expect(t.x + half, `${type} ${w}`).toBeLessThanOrEqual(iw + 1);
-          expect(t.z).toBeGreaterThan(0);
-          expect(t.z).toBeLessThan(DEPTH);
+      for (let w = 1; w <= ROOMS[type].maxW; w++)
+        for (const level of [1, 2, 3]) {
+          const iw = w * CELL_W - PARTITION;
+          const things = furnish(room(type, { w, level }), iw);
+          expect(things.some((t) => t.hang && t.light)).toBe(true);
+          for (const t of things) {
+            const half = t.img.w / scaleAt(t.z) / 2;
+            const at = `${type} ${w} ${level}`;
+            expect(t.x - half, at).toBeGreaterThanOrEqual(-1);
+            expect(t.x + half, at).toBeLessThanOrEqual(iw + 1);
+            expect(t.z).toBeGreaterThan(0);
+            expect(t.z).toBeLessThan(DEPTH);
+          }
         }
-      }
+    }
+  });
+
+  it('nada alto delante de una ventana: lo de debajo, más bajo que el alféizar', () => {
+    for (const type of Object.keys(ART) as RoomType[]) {
+      for (let w = 1; w <= ROOMS[type].maxW; w++)
+        for (const level of [1, 2, 3]) {
+          const r = room(type, { w, level });
+          const iw = w * CELL_W - PARTITION;
+          const wins = cellsOf(r, iw).map((c) => c.win);
+          for (const t of furnish(r, iw)) {
+            const half = t.img.w / scaleAt(t.z) / 2;
+            // Contra la pared (o colgado delante): si pisa el marco de una ventana, es bajo.
+            if (!t.hang && t.z < DEPTH - 12) continue;
+            const over = wins.some((x) => t.x + half > x - 13 && t.x - half < x + 13);
+            if (!over) continue;
+            expect(t.img.h, `${type} ${w} ${level}`).toBeLessThanOrEqual(t.hang ? 11 : SILL + 2);
+          }
+        }
     }
   });
 

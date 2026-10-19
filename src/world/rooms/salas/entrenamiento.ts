@@ -116,20 +116,20 @@ function weights(level: number): PixelBuffer {
 
 /** Saco de golpear colgado de su horca de madera (de pie, contra la pared). */
 function punchBag(): PixelBuffer {
-  return Prop.piece(12, 36, (p) => {
+  return Prop.piece(11, 36, (p) => {
     // Poste, brazo y pie.
-    p.rect(9, 1, 2, 33, W[3]!);
-    p.vline(9, 1, 33, W[4]!);
-    p.rect(2, 1, 9, 2, W[4]!);
-    p.hline(2, 1, 9, W[5]!);
-    p.rect(5, 33, 7, 3, W[2]!);
+    p.rect(8, 1, 2, 33, W[3]!);
+    p.vline(8, 1, 33, W[4]!);
+    p.rect(2, 1, 8, 2, W[4]!);
+    p.hline(2, 1, 8, W[5]!);
+    p.rect(4, 33, 7, 3, W[2]!);
     // Cuerda y saco.
     p.vline(4, 3, 4, P.tan);
-    p.rect(1, 7, 7, 18, P.umber);
+    p.rect(1, 7, 6, 18, P.umber);
     p.vline(1, 7, 18, P.cocoa);
-    p.vline(7, 8, 17, P.ebony);
-    p.ellipse(4, 25, 3.5, 1.5, P.umber);
-    for (const y of [10, 22]) p.hline(1, y, 7, P.tan);
+    p.vline(6, 8, 17, P.ebony);
+    p.ellipse(4, 25, 3, 1.5, P.umber);
+    for (const y of [10, 22]) p.hline(1, y, 6, P.tan);
   });
 }
 
@@ -185,7 +185,7 @@ function armasThings(room: Room, w: number): Thing[] {
       at(weights(lvl), c.win, WALL),
     ];
     // El saco de golpear, a la derecha de la ventana (desde el nivel 2).
-    if (lvl >= 2) t.push(at(punchBag(), Math.min(c.win + WIN_HALF + 8, c.x1 - 9), WALL));
+    if (lvl >= 2) t.push(at(punchBag(), Math.min(c.win + WIN_HALF + 8, c.x1 - 8), WALL));
     return t;
   });
 }
@@ -309,7 +309,8 @@ function tiroWall(b: PixelBuffer, room: Room, _look: SalonLook, { cells, ruin }:
 
 function tiroFloor(b: PixelBuffer, room: Room): void {
   // La raya de tiro, delante, de pared a pared.
-  for (let x = 2; x < b.w - 2; x += 4) b.hline(x, FLOOR_D - 6, 2, room.level >= 2 ? P.white : P.sand);
+  for (let x = 2; x < b.w - 2; x += 4)
+    b.hline(x, FLOOR_D - 6, 2, room.level >= 2 ? P.white : P.sand);
 }
 
 function tiroThings(room: Room, w: number): Thing[] {
@@ -502,7 +503,7 @@ function bibliotecaRuin(room: Room, w: number): Thing[] {
   return cellsOf(room, w).flatMap((c) => [
     at(empty, c.x0 + 30, WALL),
     at(bookPile(), c.win, WALL),
-    at(Prop.crate(), Math.min(c.win + WIN_HALF + 7, c.x1 - 9), WALL),
+    at(Prop.crate(), Math.min(c.win + WIN_HALF + 7, c.x1 - 8), WALL),
   ]);
 }
 

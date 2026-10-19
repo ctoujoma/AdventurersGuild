@@ -30,6 +30,7 @@ import { Particles } from '../particles';
 import * as Prop from '../props';
 import type { Point, SceneCallbacks, SceneModel } from '../scene';
 import { LANTERN, dummy, furnish, gearRoom, type Glow, type RGB } from './furniture';
+import { towerLampY, watchtower } from './salas/torre';
 import { Crowd } from './crowd';
 import { RaidShow } from './raid';
 import { NO_LOOK, type SalonLook } from './salon';
@@ -76,7 +77,6 @@ import {
   stairBack,
   stairCells,
   themeOf,
-  watchtower,
   type Theme,
 } from './textures';
 import { EYE, eyeOf, frustum, project, scaleAt, type View } from './view3d';
@@ -829,7 +829,7 @@ export class RoomScene {
       this.towerRect = { x: cx - img.w / 2, y: top, w: img.w, h: base - top };
       if (tower.room.level > 0) {
         this.lamps.push({
-          pos: at(cx, base - lift - (img.h - 30) / k, DEPTH / 2 - 8),
+          pos: at(cx, base - lift - (img.h - towerLampY(tower.room.level)) / k, DEPTH / 2 - 8),
           r: 60,
           color: [255, 168, 92],
           power: 0.9,

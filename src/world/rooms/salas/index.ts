@@ -8,9 +8,11 @@ import type { RoomArt } from './kit';
 import { armeria } from './armeria';
 import { bodega } from './bodega';
 import { dormitorio, servicio, veteranos } from './camas';
+import { capilla } from './capilla';
 import { enfermeria } from './enfermeria';
 import { armas, biblioteca, tiro } from './entrenamiento';
 import { forja } from './forja';
+import { mapas } from './mapas';
 import { tesoro } from './tesoro';
 import { cocina } from './cocina';
 import { despensa } from './despensa';
@@ -31,4 +33,6 @@ export const ART: Partial<Record<RoomType, RoomArt>> = {
   armas,
   tiro,
   biblioteca,
+  capilla,
+  mapas,
 };

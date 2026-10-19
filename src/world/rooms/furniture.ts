@@ -1,15 +1,12 @@
 /**
  * Muebles de cada sala para la vista 3D: qué figura plana va, a qué distancia del plano de
  * corte y qué da luz. Todo en coordenadas de la sala (x desde la pared de la izquierda, z hacia
- * el fondo, y desde el suelo hacia arriba); la escena los coloca en el mundo. Arte provisional
- * (los muebles de la taberna de siempre); el definitivo llega sala por sala.
+ * el fondo, y desde el suelo hacia arriba); la escena los coloca en el mundo. El salón se monta
+ * aquí; las demás salas ponen sus muebles desde su fichero de `salas/`.
  */
 import { P } from '../../art/palette';
 import { PixelBuffer } from '../../art/pixel';
 import type { Building, Room } from '../../core/model';
-import { itemIcon } from '../../art/items';
-import type { GearView } from '../scene';
-import { stoneWall } from '../paint';
 import * as Prop from '../props';
 import { PITCH } from './layout';
 import { scaleAt } from './view3d';
@@ -19,9 +16,7 @@ import { cotsOf } from './salas/enfermeria';
 import {
   CANDLE,
   FIRE,
-  FORGE,
   FRONT,
-  GOLD,
   LANTERN,
   MID,
   WALL,
@@ -70,29 +65,6 @@ function chain(h: number): PixelBuffer {
   );
 }
 
-/** Huecos para colgar equipo en cada estante de la armería, por nivel. */
-const RACK_SLOTS = [0, 4, 8, 8];
-
-/** Estante de pared con el equipo colgado (con su rareza) y clavijas en los huecos libres. */
-function gearRack(items: readonly GearView[], slots: number): PixelBuffer {
-  const cols = 4;
-  const rows = Math.ceil(slots / cols);
-  const w = cols * 14 + 4;
-  const h = rows * 15 + 3;
-  return Prop.piece(w, h, (b) => {
-    b.rect(0, 0, w, h, P.bark);
-    b.rect(1, 1, w - 2, h - 2, P.rust);
-    for (let r = 0; r < rows; r++) b.hline(1, 2 + r * 15 + 13, w - 2, P.oak);
-    for (let i = 0; i < slots; i++) {
-      const x = 2 + (i % cols) * 14;
-      const y = 2 + Math.floor(i / cols) * 15;
-      const it = items[i];
-      if (it) b.blit(itemIcon(it.icon, it.rarity), x, y);
-      else b.rect(x + 5, y + 5, 2, 2, P.oak);
-    }
-  });
-}
-
 /** Arcones apilados con el equipo que no cabe (o no se puede colgar): uno por cada tres. */
 function chestPile(
   add: (img: PixelBuffer, x: number, z: number, y?: number) => void,
@@ -136,9 +108,6 @@ export function seats(room: Room, w: number): Seat[] {
   ]);
 }
 
-/** Literas de una litera: el colchón de arriba y el de abajo, en filas del dibujo. */
-export const BUNK_ROWS = [6, 26] as const;
-
 export function beds(room: Room, w: number): Bed[] {
   if (!inUse(room)) return [];
   if (room.type === 'dormitorio' || room.type === 'veteranos' || room.type === 'servicio')
@@ -146,19 +115,6 @@ export function beds(room: Room, w: number): Bed[] {
   if (room.type === 'enfermeria') return cotsOf(room, w);
   return [];
 }
-
-/**
- * Literas (o jergones) de un dormitorio. El del servicio tiene dos camas por hueco y nivel:
- * dos jergones por hueco al principio y, desde el nivel 2, tantas literas como el nivel.
- */
-const bunkCount = (room: Room, w: number) =>
-  Math.min(
-    room.type === 'servicio'
-      ? room.w * (room.level < 2 ? 2 : room.level)
-      : room.w * (room.level >= 2 ? 2 : 1),
-    Math.floor(w / 30),
-  );
-const cotCount = (room: Room) => Math.min(3, room.level + room.w - 1);
 
 /** Muebles de una sala de ancho `w` (interior). */
 export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing[] {
@@ -186,7 +142,6 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
     add(Prop.crate(), slot3(2, 3), WALL);
     return t;
   }
-  const cells = room.w;
   const lvl = room.level;
   // Farol del techo en cada sala que se usa (salvo las que ponen sus propias luces).
   if (!art?.ownLamp)
@@ -259,110 +214,6 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
       }
       break;
     }
-    case 'cocina':
-      add(oven(), 26, WALL + 2, 0, fire(12, 70, FIRE, false));
-      add(Prop.smallTable(), w / 2 + 6, MID);
-      add(Prop.sack(), w - 26, WALL);
-      add(Prop.barrel(), w - 12, WALL - 6);
-      add(Prop.crate(), w - 30, FRONT);
-      break;
-    case 'bodega': {
-      const n = Math.min(3, cells * 2);
-      for (let i = 0; i < n; i++) add(Prop.cask(), slot(w, i, n), WALL);
-      if (lvl >= 2) add(Prop.wineRack(), w - 30, WALL - 14);
-      add(Prop.barrel(), w - 16, FRONT);
-      break;
-    }
-    case 'tesoro': {
-      const n = Math.min(4, lvl + cells);
-      for (let i = 0; i < n; i++) add(Prop.chest(i % 2 === 1), slot(w, i, n), i % 2 ? MID : FRONT);
-      // Sin armería, el equipo sin dueño también se guarda aquí.
-      if (gear.length) chestPile(add, gear.length, w - 24, -1);
-      add(Prop.sack(), 14, WALL, 0, {
-        dy: 4,
-        r: 50,
-        color: GOLD,
-        power: 0.5,
-        flicker: 0.05,
-      });
-      break;
-    }
-    case 'dormitorio':
-    case 'veteranos':
-    case 'servicio': {
-      const n = bunkCount(room, w);
-      for (let i = 0; i < n; i++) {
-        const straw = room.type === 'servicio' && lvl < 2;
-        add(
-          straw ? Prop.strawMat() : Prop.bunk(room.type === 'veteranos' ? 3 : lvl),
-          slot(w, i, n),
-          WALL,
-        );
-        if (!straw && i % 2 === 0) add(Prop.trunk(), slot(w, i, n), FRONT + 4);
-      }
-      break;
-    }
-    case 'enfermeria': {
-      const n = cotCount(room);
-      for (let i = 0; i < n; i++) add(Prop.cot(), slot(w, i, n), i % 2 ? MID : FRONT + 4);
-      add(Prop.cabinet(lvl >= 3), w - 18, WALL);
-      add(Prop.washbasin(), 12, WALL);
-      break;
-    }
-    case 'capilla': {
-      add(Prop.smallTable(), w / 2, WALL);
-      add(candles(), w / 2, WALL - 1, 14, {
-        dy: 8,
-        r: 60,
-        color: CANDLE,
-        power: 0.8,
-        flicker: 0.15,
-        flames: [-5, 0, 5].map((dx) => ({ dx, dy: 1, size: 0.3 })),
-      });
-      const n = Math.min(3, cells + 1);
-      for (let i = 0; i < n; i++) add(bench(), slot(w, i, n), FRONT + 2);
-      break;
-    }
-    case 'mapas':
-      add(Prop.desk(), w / 2 + 10, MID);
-      add(Prop.chair(), w / 2 + 40, MID - 6);
-      add(Prop.trunk(), 18, WALL);
-      break;
-    case 'armeria': {
-      add(Prop.armorStand(), 14, WALL);
-      if (lvl >= 2) add(Prop.armorStand(), w - 14, WALL);
-      // Un estante por hueco con el equipo colgado; lo que no cabe, en arcones.
-      const per = RACK_SLOTS[Math.min(lvl, 3)]!;
-      for (let c = 0; c < cells; c++)
-        add(gearRack(gear.slice(c * per, (c + 1) * per), per), slot(w, c, cells), WALL, 22);
-      const extra = gear.length - per * cells;
-      if (extra > 0) chestPile(add, extra, w - 24, -1);
-      else add(Prop.crate(), w / 2, FRONT);
-      break;
-    }
-    case 'forja':
-      add(hearth(true), 20, WALL + 2, 0, fire(10, 70, FORGE, false));
-      add(anvil(), w / 2 + 6, MID);
-      add(Prop.barrel(), w - 14, FRONT);
-      break;
-    case 'despensa':
-      add(Prop.cheeseShelf(), 20, WALL);
-      add(Prop.sack(), w / 2, MID);
-      add(Prop.crate(), w - 16, FRONT);
-      break;
-    case 'armas':
-      add(Prop.armorStand(), 14, WALL);
-      add(dummy(), w / 2 + 10, MID);
-      break;
-    case 'tiro':
-      add(Prop.crate(), w - 18, WALL);
-      add(dummy(), w - 40, WALL - 8);
-      break;
-    case 'biblioteca':
-      add(Prop.bookshelf(), 18, WALL);
-      add(Prop.bookshelf(), w - 18, WALL);
-      add(Prop.desk(), w / 2, MID);
-      break;
     case 'torre':
       break;
   }
@@ -381,64 +232,6 @@ export function lamp(): PixelBuffer {
       p.rect(2, 9, 3, 5, P.gold);
       p.set(3, 10, P.lemon);
       p.hline(0, 15, 7, P.black);
-    },
-    'none',
-  );
-}
-
-function bench(): PixelBuffer {
-  return Prop.piece(28, 9, (p) => {
-    p.rect(0, 0, 28, 3, P.oak);
-    p.hline(0, 0, 28, P.clay);
-    p.rect(2, 3, 3, 6, P.bark);
-    p.rect(23, 3, 3, 6, P.bark);
-  });
-}
-
-function oven(): PixelBuffer {
-  return Prop.piece(34, 40, (p) => {
-    stoneWall(p, 0, 6, 34, 34, 'horno', {
-      ramp: [P.black, P.navy, P.slate, P.steel, P.fog],
-      bw: 6,
-      bh: 5,
-    });
-    p.rect(4, 0, 26, 6, P.slate);
-    p.ellipse(17, 26, 9, 8, P.black);
-    p.rect(9, 26, 16, 10, P.black);
-    p.rect(11, 29, 12, 6, P.orange);
-    p.hline(12, 28, 10, P.gold);
-    p.set(14, 30, P.lemon);
-  });
-}
-
-function hearth(forge: boolean): PixelBuffer {
-  return Prop.piece(30, 32, (p) => {
-    stoneWall(p, 0, 0, 30, 32, forge ? 'fragua' : 'fogon', {
-      ramp: [P.black, P.navy, P.slate, P.steel, P.fog],
-      bw: 6,
-      bh: 4,
-    });
-    p.rect(6, 14, 18, 14, P.black);
-    p.rect(8, 21, 14, 6, forge ? P.orange : P.red);
-    p.hline(9, 20, 12, P.gold);
-  });
-}
-
-function anvil(): PixelBuffer {
-  return Prop.piece(18, 12, (p) => {
-    p.rect(2, 0, 14, 4, P.slate);
-    p.hline(2, 0, 14, P.fog);
-    p.rect(6, 4, 6, 4, P.navy);
-    p.rect(3, 8, 12, 4, P.bark);
-  });
-}
-
-function candles(): PixelBuffer {
-  return Prop.piece(
-    13,
-    6,
-    (p) => {
-      for (const x of [1, 6, 11]) p.vline(x, 1, 5, P.sand);
     },
     'none',
   );

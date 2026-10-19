@@ -109,10 +109,7 @@ export function backWall(room: Room, w: number, h: number, look: SalonLook = NO_
   if (!bare(room)) {
     if (art?.wall)
       art.wall(b, room, look, { cells: cellsOf(room, w), wain, top: bh - wain - 3, ruin });
-    else if (ruin) {
-      // Por reparar: nada colgado.
-    } else if (room.type === 'salon') salonWall(b, room, look, windows, CELL_BACK, wain);
-    else decorate(b, room);
+    else if (!ruin && room.type === 'salon') salonWall(b, room, look, windows, CELL_BACK, wain);
   }
   if (ruin) {
     cobweb(b, 1, 1, 8, 1);
@@ -157,91 +154,6 @@ function windowAt(b: PixelBuffer, cx: number, y: number, room: Room, ruin: boole
     b.set(x + 5, y + h - 2, P.lime);
     b.set(x + 6, y + h - 1, P.leaf);
   }
-}
-
-/** Lo que va colgado en la pared del fondo, a la izquierda de cada ventana. */
-function decorate(b: PixelBuffer, room: Room) {
-  const floor = b.h;
-  /** Pone una pieza en el hueco `i`, con su base a `up` píxeles (del mundo) sobre el suelo. */
-  const hang = (img: PixelBuffer, i: number, up: number, dx = 0) => {
-    const x = Math.round(i * CELL_BACK + 6 + dx);
-    b.blit(img, Math.min(x, b.w - img.w - 2), Math.round(floor - up * BACK - img.h));
-  };
-  const lvl = room.level;
-  switch (room.type) {
-    case 'cocina': {
-      b.hline(6, 8, b.w - 12, P.slate);
-      const rng = new Rng(`cacharros-${room.id}`);
-      for (let x = 12; x < b.w - 12; x += 11) {
-        b.vline(x, 9, 3, P.black);
-        if (rng.chance(0.5)) {
-          b.ellipse(x, 15, 3, 2, P.slate);
-          b.hline(x - 2, 13, 5, P.steel);
-        } else
-          for (let k = 0; k < 5; k++)
-            b.vline(x - 2 + (k % 3), 11 + k, 2, k % 2 ? P.leaf : P.forest);
-      }
-      hang(Prop.shelf(30, 3, `cocina-${room.id}`), 0, 44, 32);
-      break;
-    }
-    case 'veteranos':
-      hang(Prop.antlers(), 0, 64, 6);
-      hang(Prop.sword(), 0, 52, 2);
-      break;
-    case 'dormitorio':
-      if (lvl >= 2) hang(Prop.shelf(24, 2, `dorm-${room.id}`), 0, 60, 4);
-      break;
-    case 'mapas':
-      hang(Prop.wallMap(), 0, 38, -2);
-      break;
-    case 'armeria':
-    case 'armas':
-      for (let i = 0; i < 3; i++) hang(Prop.sword(), 0, 34 + i * 10, 14);
-      break;
-    case 'forja':
-      tools(b, Math.round(CELL_BACK * 0.42), floor - Math.round(60 * BACK));
-      break;
-    case 'despensa':
-      for (let i = 0; i < 4; i++) ham(b, 14 + i * 12, 6);
-      break;
-    case 'tiro':
-      hang(Prop.dartboard(), 0, 42, 10);
-      if (room.w > 1) hang(Prop.dartboard(), 1, 46, 10);
-      break;
-    case 'capilla':
-      b.ellipse(Math.round(b.w / 2), 12, 5, 5, P.gold);
-      b.ellipse(Math.round(b.w / 2), 12, 3, 3, P.lemon);
-      break;
-    case 'enfermeria':
-      for (let i = 0; i < 3; i++) herbs(b, 10 + i * 9, 8);
-      break;
-    default:
-      break;
-  }
-}
-
-function tools(b: PixelBuffer, x: number, y: number) {
-  b.hline(x, y, 30, P.bark);
-  for (let i = 0; i < 4; i++) {
-    const tx = x + 3 + i * 7;
-    b.vline(tx, y + 1, 12, P.umber);
-    if (i % 2) b.rect(tx - 2, y + 11, 5, 3, P.slate);
-    else {
-      b.vline(tx - 1, y + 10, 4, P.steel);
-      b.vline(tx + 1, y + 10, 4, P.steel);
-    }
-  }
-}
-
-function ham(b: PixelBuffer, x: number, y: number) {
-  b.vline(x + 2, y, 3, P.black);
-  b.ellipse(x + 2, y + 7, 3, 5, P.brick);
-  b.ellipse(x + 2, y + 6, 1, 2, P.coral);
-}
-
-function herbs(b: PixelBuffer, x: number, y: number) {
-  b.vline(x + 2, y, 2, P.black);
-  for (let k = 0; k < 7; k++) b.vline(x + (k % 3) + 1, y + 2 + k, 2, k % 2 ? P.leaf : P.forest);
 }
 
 /** Suelo de la sala (ancho × fondo, a media resolución): tablas hacia el fondo, losas o roca. */
@@ -619,45 +531,6 @@ function gable(b: PixelBuffer, x0: number, x1: number, base: number, h: number) 
 }
 
 // ---------- Figuras de fuera ----------
-
-/** La torre del vigía: sin levantar, un solar con estacas; luego de madera, más alta al subir. */
-export function watchtower(level: number, crest: { field: string; dark: string }): PixelBuffer {
-  if (level === 0)
-    return Prop.piece(40, 12, (p) => {
-      for (const dx of [2, 12, 25, 35]) post(p, dx, 2, 3, 10, WOOD_DARK);
-      p.hline(2, 4, 36, P.tan);
-    });
-  const h = level > 1 ? 84 : 64;
-  return Prop.piece(52, h + 24, (p) => {
-    const top = 24;
-    const cx = 26;
-    post(p, cx - 18, top + 12, 4, h - 12, WOOD_DARK);
-    post(p, cx + 14, top + 12, 4, h - 12, WOOD_DARK);
-    for (let y = top + 20; y < top + h - 6; y += 14) {
-      p.line(cx - 15, y, cx + 15, y + 10, P.bark);
-      p.line(cx + 15, y, cx - 15, y + 10, P.bark);
-    }
-    p.rect(cx - 22, top + 8, 44, 6, P.oak);
-    p.hline(cx - 22, top + 8, 44, P.clay);
-    p.hline(cx - 22, top + 13, 44, P.bark);
-    p.poly(
-      [
-        [cx - 24, top + 8],
-        [cx, top - 10],
-        [cx + 24, top + 8],
-      ],
-      P.wine,
-    );
-    p.line(cx - 24, top + 8, cx, top - 10, P.black);
-    p.line(cx, top - 10, cx + 24, top + 8, P.black);
-    if (level > 1) {
-      p.vline(cx, 0, 14, P.black);
-      p.rect(cx + 1, 0, 9, 6, crest.field);
-      p.hline(cx + 1, 5, 9, crest.dark);
-      p.ellipse(cx, top + 2, 3, 3, P.gold);
-    }
-  });
-}
 
 /** Andamio delante de una sala en obras, ya al tamaño con el que se ve. */
 export function scaffold(w: number, h: number): PixelBuffer {
