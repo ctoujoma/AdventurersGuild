@@ -1,9 +1,8 @@
 # Rehacer las obras: propuesta
 
 Las obras (construir, ampliar, mover, excavar, escaleras) son una parte central de cómo se siente
-el juego, y ahora mismo confunden. Este documento recoge lo que falla, cómo lo resuelve Fallout
-Shelter y una propuesta para rehacerlo. **Antes de programar hay que cerrar con el usuario las
-preguntas del final.**
+el juego, y confundían. Este documento recoge lo que fallaba, cómo lo resuelve Fallout Shelter,
+la propuesta, lo que decidió el usuario y el progreso. **Hecho entero** (ver «Progreso»).
 
 ## Qué falla ahora (pruebas del usuario)
 
@@ -98,10 +97,9 @@ flotando («−120»); el andamio que dura un instante; vibración en el móvil.
    puestas desde el principio. Mover varias veces la misma sala en el borrador tiene que poder.
 3. **En cualquier hueco que tenga paso** (no solo pegado a lo que ya hay).
 4. **Escaleras por tramos sin límite**, solo con precio creciente, como Fallout Shelter.
-5. **Tiempo de obra: propuesta pendiente de confirmar.** Recomendación: al pagar, las obras se
-   levantan en unos segundos a la vista (andamio, polvo y martillazos, 2–3 s por sala) y quedan
-   listas ese mismo día; el freno es el precio, no la espera. Si el usuario prefiere algo más
-   lento, una hora del día vivo por hueco.
+5. **Tiempo de obra (confirmado):** al pagar, las obras se levantan en unos segundos a la vista
+   (andamio, polvo y martillazos, 2–3 s por sala) y quedan listas ese mismo día; el freno es el
+   precio, no la espera.
 
 Con esto, la propuesta queda: borrador = modo obras (1), menú-icono junto a la sala (B),
 casillas fantasma para ampliar (C), mover arrastrando (D), escaleras por tramos (E), cinta con
@@ -163,4 +161,12 @@ Rama: `claude/sharp-mendel-apsm2a` (PR #23 abierto contra `salas`). Cada punto, 
       de sala (`ICON` en `WorksBar.tsx`, dibujos en `icons.tsx`); las únicas como «Ampliar».
 - [x] 4.2 Sonidos por tipo de obra (`SOUND` en `ui/works.ts`; la vibración va con el sonido),
       precio que sube flotando sobre la sala o donde se tocó (`RoomScene.priceTag`).
-- [ ] 4.3 Probar en el navegador, publicar la versión de pruebas y actualizar `README.md`.
+- [x] 4.3 Probar en el navegador, publicar la versión de pruebas (v18) y actualizar `README.md`.
+
+### Siguiente (pendiente de que el usuario lo pruebe)
+
+- Recoger su opinión en la versión de pruebas y pulir lo que diga.
+- Ideas que han salido y no están hechas: quitar tramos de escalera (ahora solo con
+  «Deshacer» en el borrador); al empezar a arrastrar una sala, alejar la cámara para que se vean
+  sus sitios (ahora se ven con el borde de la pantalla, que la mueve).
+- Luego, volver al arte (PR 11), esperando el visto bueno del estilo del salón.

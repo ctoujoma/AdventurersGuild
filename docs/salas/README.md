@@ -47,16 +47,18 @@ en tiempo real; hay trabajadores, visitantes, comida, entrenamiento y asaltos sa
 | 8 | Comida y cerveza | Hecho (#20) |
 | 9 | Entrenamiento + arrastrar personajes a salas | Hecho (#21) |
 | 10 | Tesoro y asaltos sala a sala | Hecho (#22) |
-| 11 | Arte de cada sala | **En curso:** salón de muestra en #23 (abierto), esperando el visto bueno del estilo |
+| 11 | Arte de cada sala | **En curso:** salón de muestra y obras rehechas en #23 (abierto), esperando la prueba del usuario |
 | 12 | Balance y limpieza | Pendiente |
 
-**Prioridad actual (pedida por el usuario): rehacer las obras antes de seguir con el arte.**
-La propuesta está en [`obras-rework.md`](obras-rework.md), con las preguntas que hay que
-cerrar con el usuario antes de programar.
+**Obras rehechas** (pedido del usuario antes de seguir con el arte): ver
+[`obras-rework.md`](obras-rework.md), con decisiones y progreso punto a punto. Ahora toca que
+el usuario lo pruebe en la versión de pruebas (v18) y, con su visto bueno, volver al arte.
 
-El PR #23 (abierto) lleva: salón de muestra, salas únicas en la cinta de obras («Ampliar»),
-quitar salas obligatorias en el plano, voladizos sin huecos, puerta del recibidor por dentro,
-tabiques y forjados de 16 con alma oscura y huecos de 126 × 106 (salas de 110 × 90 por dentro).
+El PR #23 (abierto) lleva: salón de muestra, voladizos sin huecos, puerta del recibidor por
+dentro, tabiques y forjados de 16 con alma oscura (huecos de 126 × 106, salas de 110 × 90 por
+dentro) y el rehacer de las obras: un solo modo obras que es un borrador (Deshacer, Pagar,
+Salir), obras al momento con andamio al pagar, menú-icono junto a la sala, casillas «+» para
+ampliar, mover arrastrando, escaleras por tramos sin límite y cinta con pestañas e iconos.
 
 ## Decisiones de diseño ya tomadas (resumen)
 
@@ -79,22 +81,22 @@ tabiques y forjados de 16 con alma oscura y huecos de 126 × 106 (salas de 110 �
 
 - `src/data/rooms.ts`: catálogo de salas (tamaños, únicas, `keep`, `fixed`).
 - `src/core/rooms.ts`: reglas de obra (`plan…` devuelve el edificio como quedaría y el coste;
-  `problem()` valida; `laxly()` es el modo plano, que deja salas sin paso; `MUST` = obligatorias).
-- `src/core/game.ts`: estado, `reduce`, `endDay`, `tryWorks` (plano) y `planIssue`.
+  `problem()` valida; `laxly()` deja salas sin paso; `drafting()` es el borrador del modo obras;
+  `MUST` = obligatorias; escaleras por tramos: `shafts`, `landing`, `stairLinks`, `stairCost`).
+- `src/core/game.ts`: estado, `reduce`, `endDay`, `tryWorks` (el borrador) y `planIssue`.
 - `src/core/balance.ts`: todas las constantes. `npm run sim` para comparar el balance.
 - `src/core/{workers,salon,larder,training,vault,assault,raids}.ts`: sistemas de cada PR.
 - `src/world/rooms/`: la escena 3D. `layout.ts` (geometría: `CELL_W`, `PARTITION`, `SLAB`…),
   `RoomScene.ts` (montaje, cámara, toques, arrastre, asalto), `textures.ts` (caras de las salas
   y el corte), `furniture.ts` (muebles), `salon.ts` (arte nuevo del salón), `crowd.ts` y
   `people.ts` (gente y caminos), `works.ts` (sitios válidos para cada obra), `raid.ts` (asalto).
-- `src/ui/`: `App.tsx`, `works.ts` (hook del modo obras y plano), `WorksBar.tsx` (cinta),
-  `panels/RoomPanel.tsx` (ficha de sala), `drop.ts` (soltar personajes en salas).
+- `src/ui/`: `App.tsx`, `works.ts` (hook del modo obras = borrador), `WorksBar.tsx` (cinta con
+  pestañas), `RoomMenu.tsx` (menú-icono junto a la sala), `panels/RoomPanel.tsx` (ficha de
+  sala), `drop.ts` (soltar personajes en salas).
 
 ## Problemas conocidos
 
-- **Obras confusas** (lo más urgente): ver [`obras-rework.md`](obras-rework.md).
-- En el modo plano, tras mover una sala no deja volver a moverla.
-- El salón no deja ampliarse hacia arriba de forma descubrible.
-- Las escaleras solo pueden ser 2 y van de arriba abajo del edificio.
+- Las obras rehechas esperan la prueba del usuario (ver «Siguiente» en
+  [`obras-rework.md`](obras-rework.md)).
 - Un hueco vacío de planta baja encima de un sótano excavado se ve gris claro por arriba.
 - Durante la noche del asalto, la barra del día enseña ya «Mañana» y «Al anochecer».
