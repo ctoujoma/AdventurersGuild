@@ -359,7 +359,7 @@ function bookcase(level: number, seed: number): PixelBuffer {
       p.rect(0, sy, 24, 2, W[4]!);
       p.hline(0, sy, 24, W[5]!);
       // Cuántos libros caben en la balda según el nivel.
-      const fill = level >= 2 ? 19 : row === 1 ? 9 : 14;
+      const fill = level >= 2 ? 19 : level === 1 ? (row === 1 ? 9 : 14) : row === 2 ? 5 : 0;
       let x = 3;
       while (x < 3 + fill) {
         const h = 7 + ((k * 5) % 4);
