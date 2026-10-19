@@ -47,6 +47,8 @@ export interface SceneModel {
   visitors?: SceneVisitors;
   /** Equipo sin dueño (armería o arcones) y trofeos del salón. */
   gear: GearView[];
+  /** Lo llena que está la cámara del tesoro, de 0 a 1 (el oro que se ve en ella). */
+  vault?: number;
   trophies: TrophyIcon[];
   heroes: SceneHero[];
 }

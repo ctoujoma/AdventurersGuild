@@ -140,6 +140,9 @@ interface Lamp {
   deep?: boolean;
 }
 
+/** El oro de la cámara, en octavos: la escena solo se repinta cuando cambia de octavo. */
+const vaultStep = (v = 0) => Math.round(Math.max(0, Math.min(1, v)) * 8);
+
 /** Cifras de 3×5 píxeles para los precios de las marcas de obra. */
 const DIGITS = [
   '111101101101111',
@@ -391,6 +394,7 @@ export class RoomScene {
       model.trophies,
       model.dog,
       model.gear,
+      vaultStep(model.vault),
     ]);
     if (model.visitors) this.crowd.setVisitors(model.visitors);
     if (key === this.key) {
@@ -917,6 +921,7 @@ export class RoomScene {
       dog: m.dog,
       gear: m.gear,
       gearRoom: m.building ? gearRoom(m.building) : null,
+      vault: vaultStep(m.vault) / 8,
     };
   }
 
