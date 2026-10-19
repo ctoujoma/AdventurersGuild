@@ -6,6 +6,7 @@
 import type { Room } from '../../core/model';
 import { hasPosts } from '../../core/workers';
 import { beds, seats, type Bed } from './furniture';
+import { SPOT } from './recibidor';
 import { PATIO_W, PITCH, STAIR_W, WALL, floorY, interior, type RoomsLayout } from './layout';
 
 /** Un punto del suelo: x del mundo y planta. */
@@ -169,10 +170,8 @@ export function spots(L: RoomsLayout): Spots {
     const i = interior(rect);
     if (room.type === 'recibidor') {
       out.door = { x: i.x + 10, floor: 0 };
-      out.guard = [
-        { x: i.x + i.w * 0.42, floor: 0 },
-        { x: i.x + i.w * 0.7, floor: 0 },
-      ];
+      // Delante del armero (ver `SPOT` en recibidor.ts).
+      out.guard = SPOT.guards.map((gx) => ({ x: i.x + gx, floor: 0 }));
     }
     if (!inUse(room)) continue;
     for (const b of beds(room, i.w)) {

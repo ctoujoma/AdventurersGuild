@@ -22,6 +22,22 @@ Orden propuesto (de más a menos visible): recibidor, cocina, dormitorio, bodega
 tesoro, enfermería, capilla, armería, forja, sala de mapas, despensa, sala de armas, sala de
 tiro, biblioteca, dormitorio del servicio, veteranos y torre del vigía.
 
+## Progreso
+
+| Sala | Estado |
+| --- | --- |
+| Recibidor | Hecho, espera visto bueno (`recibidor.ts`; capturas en [`capturas/`](capturas/)) |
+
+Notas del recibidor (sirven para las demás):
+
+- Solo mide un hueco: «ancho 1» y «ancho máximo» son la misma captura.
+- Los sitios de los muebles y de los de guardia están en `SPOT` (`recibidor.ts`); los de guardia
+  (`people.ts`) se ponen delante del armero, que va en la pared, para no tapar ningún mueble.
+- La puerta de la calle cambia con el nivel (por dentro en `sideTex`, por fuera en
+  `Prop.doorLeaf`).
+- Las piezas finas (astas de lanza) se pintan sin contorno: `Prop.piece` las engorda.
+- `node tools/shots/sala.mjs <carpeta> <tipo> [anchos]` saca todas las capturas de una sala.
+
 ## Cómo está hecho el salón (el modelo a copiar)
 
 Todo el arte se pinta en código sobre `PixelBuffer` (`src/art/pixel.ts`) con la paleta `P`

@@ -864,7 +864,7 @@ export class RoomScene {
       floorTex: floorTex(room, theme, r.w, seed),
       sides,
       floor: room.floor,
-      door: room.type === 'recibidor',
+      door: room.type === 'recibidor' ? room.level : undefined,
       hang: { left: free(room.col), right: free(room.col + room.w - 1) },
     });
     // En voladizo (sin nada debajo), la cara de abajo del suelo, que se ve desde el patio.
@@ -984,7 +984,8 @@ export class RoomScene {
       floorTex?: PixelBuffer;
       sides: { left: Side[]; right: Side[] };
       floor: number;
-      door?: boolean;
+      /** La puerta de la calle (en el recibidor), con su nivel. */
+      door?: number;
       /** Sin sala debajo del hueco de cada lado (en voladizo). */
       hang?: { left: boolean; right: boolean };
     },
@@ -1014,7 +1015,7 @@ export class RoomScene {
     const doors = (s: Side[]) => s.flatMap((x, i) => (x === 'sala' || x === 'escalera' ? [i] : []));
     this.plane(
       g,
-      sideTex(theme, r.h, doors(o.sides.left), `${seed}i`, o.door ? [0] : []),
+      sideTex(theme, r.h, doors(o.sides.left), `${seed}i`, o.door !== undefined ? [0] : [], o.door),
       [at(x0, yb, 0), at(x0, yb, D), at(x0, yt, D), at(x0, yt, 0)],
       flat,
     );
@@ -1026,7 +1027,7 @@ export class RoomScene {
     );
     // Paredes de fuera, planta a planta, donde el hueco da al aire.
     const outdoor = { ambient: OUTDOOR, sun: 1, dither: 0 };
-    let doorDone = !o.door;
+    let doorDone = o.door === undefined;
     for (const [side, list] of [
       ['left', o.sides.left],
       ['right', o.sides.right],
@@ -1038,7 +1039,7 @@ export class RoomScene {
         const bottom = floorY(f) + (i === 0 && o.hang?.[side] ? SLAB : 0);
         const withDoor = !doorDone && i === 0;
         if (withDoor) doorDone = true;
-        const tex = outerSide(themeOf(f), PITCH, withDoor, `${seed}f${side}${i}`);
+        const tex = outerSide(themeOf(f), PITCH, withDoor, `${seed}f${side}${i}`, o.door);
         if (side === 'left') {
           const x = rect.x - WALL;
           this.plane(

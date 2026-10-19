@@ -4,6 +4,7 @@ import type { Room } from '../../core/model';
 import { furnish, gearRoom } from './furniture';
 import { uncleBuilding } from '../../core/rooms';
 import { NO_LOOK } from './salon';
+import { SPOT } from './recibidor';
 import { CELL_W, DEPTH, PARTITION } from './layout';
 import { scaleAt } from './view3d';
 
@@ -67,5 +68,20 @@ describe('muebles de la vista 3D', () => {
     // Sin armería, a la cámara del tesoro.
     b.rooms = b.rooms.filter((r) => r !== arm);
     expect(gearRoom(b)).toBe(b.rooms.find((r) => r.type === 'tesoro')!.id);
+  });
+
+  it('recibidor: nada pasa del alféizar bajo la ventana ni se pone delante del armero', () => {
+    const iw = CELL_W - PARTITION;
+    // La ventana del hueco, vista en el fondo (de 65 a 95) y lo que mide hasta el alféizar.
+    const win = [65, 95];
+    for (const level of [1, 2, 3]) {
+      const things = furnish(room('recibidor', { level }), iw).filter((t) => !t.hang);
+      for (const t of things) {
+        const half = t.img.w / scaleAt(t.z) / 2;
+        if (t.x + half > win[0]! && t.x - half < win[1]!) expect(t.img.h).toBeLessThanOrEqual(32);
+        // Los de guardia están delante del armero: ahí no hay muebles.
+        for (const g of SPOT.guards) expect(Math.abs(t.x - g), `${level}`).toBeGreaterThan(half);
+      }
+    }
   });
 });

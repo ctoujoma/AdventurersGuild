@@ -13,6 +13,7 @@ import { stoneWall } from '../paint';
 import * as Prop from '../props';
 import { DEPTH, PITCH } from './layout';
 import { scaleAt } from './view3d';
+import { SPOT, alarmBell, bench as recibidorBench, lectern } from './recibidor';
 import {
   HEARTH_RIGHT,
   HEARTH_Z,
@@ -263,11 +264,14 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
     light: { dy: 4, r: Math.max(80, Math.round(w * 0.7)), color: LANTERN, power: 1, flicker: 0.08 },
   });
   switch (room.type) {
-    case 'recibidor':
-      add(bench(), 24, WALL - 4);
-      add(Prop.armorStand(), w - 18, WALL);
-      add(Prop.barrel(), 14, FRONT);
+    case 'recibidor': {
+      // Todo pegado a la pared: el suelo de delante es el paso de la puerta y el de los de guardia.
+      add(recibidorBench(lvl), SPOT.bench, WALL - 4);
+      if (lvl >= 2) add(lectern(lvl), SPOT.lectern, WALL);
+      add(lvl >= 3 ? Prop.armorStand() : lvl >= 2 ? Prop.trunk() : Prop.crate(), SPOT.corner, WALL);
+      if (lvl >= 2) t.push({ img: alarmBell(), x: SPOT.bell, z: MID, y: 0, hang: true });
       break;
+    }
     case 'salon': {
       const decor = look.decor;
       const big = decor.includes('chimenea');

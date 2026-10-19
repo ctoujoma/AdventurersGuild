@@ -31,6 +31,7 @@ import {
   type RoofRun,
   type RoomsLayout,
 } from './layout';
+import { recibidorWall, streetDoor } from './recibidor';
 import { NO_LOOK, hearthSpan, salonWall, type SalonLook } from './salon';
 import { BACK } from './view3d';
 
@@ -108,9 +109,9 @@ export function backWall(room: Room, w: number, h: number, look: SalonLook = NO_
       row.forEach((x) => windowAt(b, x, Math.round((j * PITCH + 18) * BACK), room, ruin)),
     );
   if (!bare(room) && !ruin) {
-    if (room.type === 'salon') {
-      salonWall(b, room, look, windows, CELL_BACK, wain);
-    } else decorate(b, room);
+    if (room.type === 'salon') salonWall(b, room, look, windows, CELL_BACK, wain);
+    else if (room.type === 'recibidor') recibidorWall(b, room, look, windows, wain);
+    else decorate(b, room);
   }
   if (ruin) {
     cobweb(b, 1, 1, 8, 1);
@@ -167,10 +168,6 @@ function decorate(b: PixelBuffer, room: Room) {
   };
   const lvl = room.level;
   switch (room.type) {
-    case 'recibidor':
-      coatRack(b, 8, floor - Math.round(64 * BACK));
-      hang(Prop.sconce(), 0, 54, 30);
-      break;
     case 'cocina': {
       b.hline(6, 8, b.w - 12, P.slate);
       const rng = new Rng(`cacharros-${room.id}`);
@@ -222,15 +219,6 @@ function decorate(b: PixelBuffer, room: Room) {
   }
 }
 
-function coatRack(b: PixelBuffer, x: number, y: number) {
-  b.hline(x, y, 24, P.rust);
-  for (const px of [3, 11, 19]) b.set(x + px, y + 1, P.black);
-  b.rect(x + 2, y + 2, 7, 18, P.wine);
-  b.vline(x + 2, y + 2, 18, P.plum);
-  b.rect(x + 15, y + 1, 8, 4, P.umber);
-  b.hline(x + 14, y + 5, 10, P.bark);
-}
-
 function tools(b: PixelBuffer, x: number, y: number) {
   b.hline(x, y, 30, P.bark);
   for (let i = 0; i < 4; i++) {
@@ -270,10 +258,27 @@ export function floorTex(room: Room | null, theme: Theme, w: number, seed: strin
       for (let i = x + 4; i < x + rw - 4; i += 6) b.set(i, DEEP / 2, ramp[2]);
     };
     if (room.type === 'salon') rug(w - 100, 70, [P.wine, P.red, P.gold]);
-    if (room.type === 'recibidor') rug(30, 50, [P.forest, P.leaf, P.lime]);
+    if (room.type === 'recibidor') doormat(b, room.level);
     if (room.type === 'capilla') rug(w / 2 - 12, 24, [P.wine, P.grape, P.gold]);
   }
   return b;
+}
+
+/**
+ * Suelo del recibidor: un felpudo de esparto en la puerta y, con nivel, una alfombra que entra
+ * hasta los de guardia (roja y con fleco dorado al final).
+ */
+function doormat(b: PixelBuffer, level: number) {
+  if (level >= 2) {
+    const [edge, base, dot] = level >= 3 ? [P.wine, P.red, P.gold] : [P.deep, P.forest, P.leaf];
+    b.rect(18, 8, 70, DEEP - 16, edge);
+    b.rect(19, 9, 68, DEEP - 18, base);
+    for (let x = 22; x < 86; x += 5) b.set(x, DEEP / 2, dot);
+    if (level >= 3) for (let y = 8; y < DEEP - 8; y += 2) b.set(88, y, P.gold);
+  }
+  b.rect(1, 8, 18, DEEP - 16, P.oak);
+  b.rect(2, 9, 16, DEEP - 18, P.tan);
+  for (let y = 10; y < DEEP - 9; y += 2) b.hline(3, y, 14, P.clay);
 }
 
 /** Techo (ancho × fondo, a media resolución): tablas oscuras con vigas, bóveda o roca. */
@@ -304,6 +309,7 @@ export function sideTex(
   doors: number[],
   seed: string,
   front: number[] = [],
+  strength = 1,
 ): PixelBuffer {
   const b = new PixelBuffer(DEEP, h);
   if (theme === 'yeso') {
@@ -321,20 +327,8 @@ export function sideTex(
     b.rect(9, y - 48, 11, 48, P.bark);
     b.rect(10, y - 46, 9, 46, P.black);
   }
-  // La puerta de la calle, cerrada: tablones con herrajes, aldaba y su umbral.
-  for (const f of front) {
-    const y = h - f * PITCH;
-    b.rect(6, y - 54, 17, 54, P.plum);
-    b.rect(7, y - 52, 15, 52, P.bark);
-    planksV(b, 8, y - 51, 13, 51, `${seed}puerta`, [P.plum, P.rust, P.oak, P.clay], 4);
-    for (const by of [y - 44, y - 16]) {
-      b.hline(8, by, 13, P.slate);
-      b.hline(8, by + 1, 13, P.navy);
-    }
-    b.ellipse(18, y - 28, 1.5, 1.5, P.gold);
-    b.set(18, y - 26, P.amber);
-    b.hline(5, y - 1, 19, P.steel);
-  }
+  // La puerta de la calle, cerrada; más fuerte cuanto más nivel tiene el recibidor.
+  for (const f of front) streetDoor(b, 6, h - f * PITCH - 54, strength, seed);
   ambientOcclusion(b, 0, 0, DEEP, h, 3, { top: true, bottom: true, left: false, right: true });
   return b;
 }
@@ -392,7 +386,13 @@ export function mirror(b: PixelBuffer): PixelBuffer {
  * Pared de fuera de un lado del edificio (fondo × alto, con el forjado arriba; x = 0 junto al
  * corte). La del recibidor lleva la puerta.
  */
-export function outerSide(theme: Theme, h: number, door: boolean, seed: string): PixelBuffer {
+export function outerSide(
+  theme: Theme,
+  h: number,
+  door: boolean,
+  seed: string,
+  strength = 1,
+): PixelBuffer {
   const b = new PixelBuffer(DEEP, h);
   if (theme === 'yeso') {
     plaster(b, 0, 0, DEEP, h, seed, PLASTER);
@@ -402,7 +402,7 @@ export function outerSide(theme: Theme, h: number, door: boolean, seed: string):
   for (let y = 0; y < h; y += PITCH) beam(b, 0, y, DEEP, SLAB, WOOD_DARK);
   if (door) {
     b.rect(8, h - 50, 16, 50, P.plum);
-    b.blit(Prop.doorLeaf(), 10, h - 49);
+    b.blit(Prop.doorLeaf(strength), 10, h - 49);
   }
   return b;
 }

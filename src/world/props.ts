@@ -749,15 +749,28 @@ export function well(): PixelBuffer {
   });
 }
 
-export function doorLeaf(): PixelBuffer {
+/** Hoja de la puerta de la calle por fuera: más herrada cuanto más fuerte (`level`, la del recibidor). */
+export function doorLeaf(level = 1): PixelBuffer {
   return piece(10, 46, (b) => {
-    b.rect(0, 0, 10, 46, W[3]!);
-    for (let x = 0; x < 10; x += 3) b.vline(x, 0, 46, W[2]!);
+    b.rect(0, 0, 10, 46, level === 0 ? W[2]! : W[3]!);
+    for (let x = 0; x < 10; x += 3) b.vline(x, 0, 46, level === 0 ? W[1]! : W[2]!);
     b.vline(9, 0, 46, W[1]!);
-    for (const y of [6, 38]) {
+    if (level === 0) {
+      // Rota: falta una tabla y el herraje de abajo cuelga.
+      b.rect(4, 8, 2, 26, P.black);
+      b.rect(0, 6, 10, 2, P.slate);
+      b.line(0, 36, 9, 40, P.slate);
+      return;
+    }
+    const bands = level >= 2 ? [5, 16, 37] : [6, 38];
+    for (const y of bands) {
       b.rect(0, y, 10, 3, P.slate);
       b.hline(0, y, 10, P.steel);
+      if (level >= 2) for (let x = 1; x < 10; x += 3) b.set(x, y + 1, P.fog);
     }
+    if (level >= 3)
+      for (let y = 11; y < 36; y += 5)
+        for (let x = 2 + (((y - 11) / 5) % 2) * 2; x < 9; x += 4) b.set(x, y, P.fog);
     b.rect(2, 22, 2, 3, P.gold);
   });
 }
