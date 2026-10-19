@@ -8,7 +8,7 @@ import { P } from '../../art/palette';
 import { PixelBuffer } from '../../art/pixel';
 import type { Building, Room } from '../../core/model';
 import { itemIcon } from '../../art/items';
-import type { GearView } from '../annex';
+import type { GearView } from '../scene';
 import { stoneWall } from '../paint';
 import * as Prop from '../props';
 import { DEPTH, PITCH } from './layout';

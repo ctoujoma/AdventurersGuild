@@ -30,6 +30,8 @@ en tiempo real; hay trabajadores, visitantes, comida, entrenamiento y asaltos sa
 - **Capturas:** `tools/shots/` (ver su README). Chromium ya está en el contenedor.
 - **Partidas viejas:** el juego no está publicado; se sube `SAVE_VERSION` y las antiguas se
   ignoran. En el menú de pruebas (`#debug`, «Modo pruebas» en Ajustes) hay trucos.
+- **Una sola vista:** la taberna dibujada de antes se quitó (PR 12); si el navegador no puede
+  pintar 3D (WebGL), la escena enseña un aviso y el resto del juego sigue.
 - **Estilo del código:** núcleo en TS puro con tests (`src/core`), la escena solo enseña lo que
   decide el núcleo. Comentarios en español, breves, explicando el porqué. Prettier manda.
 
@@ -48,21 +50,15 @@ en tiempo real; hay trabajadores, visitantes, comida, entrenamiento y asaltos sa
 | 9 | Entrenamiento + arrastrar personajes a salas | Hecho (#21) |
 | 10 | Tesoro y asaltos sala a sala | Hecho (#22) |
 | 11 | Arte de cada sala | Salón de muestra, obras rehechas y rondas de pruebas en #23; el resto de salas, encargado (ver [`encargo-arte.md`](encargo-arte.md)) |
-| 12 | Balance y limpieza | **En curso:** primera tanda en un PR (ver «Balance» abajo) |
+| 12 | Balance y limpieza | Primera parte hecha (#24); segunda (quitar la taberna dibujada) en un PR nuevo |
 
 **Obras rehechas** (pedido del usuario antes de seguir con el arte): ver
 [`obras-rework.md`](obras-rework.md), con decisiones y progreso punto a punto, incluidas las
 rondas de pruebas del usuario (apartado 5).
 
-**Cómo seguir:** (1) que el usuario pruebe la versión de pruebas y fusione #23; (2) arte del resto de
-salas una a una, encargado a otro agente: ver [`encargo-arte.md`](encargo-arte.md); (3) PR 12: balance con
-`npm run sim` y limpieza (quitar la taberna dibujada si ya no hace falta); (4) PR `salas` → `main`.
-
-El PR #23 (abierto) lleva: salón de muestra, voladizos sin huecos, puerta del recibidor por
-dentro, tabiques y forjados de 16 con alma oscura (huecos de 126 × 106, salas de 110 × 90 por
-dentro) y el rehacer de las obras: un solo modo obras que es un borrador (Deshacer, Pagar,
-Salir), obras al momento con andamio al pagar, menú-icono junto a la sala, casillas «+» para
-ampliar, mover arrastrando, escaleras por tramos sin límite y cinta con pestañas e iconos.
+**Cómo seguir:** (1) arte del resto de salas una a una, encargado a otro agente: ver
+[`encargo-arte.md`](encargo-arte.md); (2) probar con partidas de verdad lo apuntado en
+«Balance»; (3) PR `salas` → `main`.
 
 ## Decisiones de diseño ya tomadas (resumen)
 

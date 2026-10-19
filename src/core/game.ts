@@ -348,9 +348,9 @@ export function newGame(seed: string): GameState {
         k: 'bad',
       },
       {
-        t: 'Toca el tablón de la sala para mandar grupos a los encargos. Si sale bien, vuelven con oro.',
+        t: 'El tablón de encargos está en el salón: toca la sala y ábrelo para mandar grupos. Si sale bien, vuelven con oro.',
       },
-      { t: 'En la barra esperan candidatos. «Terminar día» hace pasar la noche.' },
+      { t: 'En la barra del salón esperan candidatos. «Terminar día» hace pasar la noche.' },
       { t: `Paga la deuda en ${DAYS} días y el gremio será tuyo.`, k: 'good' },
     ],
     mode: 'deuda',

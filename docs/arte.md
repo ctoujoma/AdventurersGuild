@@ -34,39 +34,20 @@ El contorno es selectivo: un tono bastante más oscuro que el borde de cada zona
 
 ## La taberna (`src/world/`)
 
-El mundo mide 512×384 píxeles y se ve en corte lateral, como una casa de muñecas. No cabe en la pantalla: se recorre arrastrando, con inercia, rueda o pellizco para el zoom (siempre a escala entera) y un botón para volver a la sala.
+La taberna se ve como un edificio de salas en corte (al estilo de Fallout Shelter), en 3D
+pixelado con three.js: `src/world/rooms/` (ver [`salas/README.md`](salas/README.md) y, para
+el arte de cada sala, [`salas/encargo-arte.md`](salas/encargo-arte.md)). La taberna dibujada
+de antes, fija y en 2D, se quitó en el PR 12 de la rama `salas`; de ella quedan las piezas que
+se reutilizan:
 
-| Zona | Qué hay | Qué cambia con las mejoras |
-| --- | --- | --- |
-| Tejado | Tejas festoneadas, musgo, chimenea con humo, banderín y búho | — |
-| Desván | Despacho del gremio: libro de cuentas, mapa, librería, armadura y murciélagos | — |
-| Dormitorios | Literas, ventana y faroles | De paja en el suelo a 4 literas con colchas, cortinas y banderines |
-| Enfermería | Camillas junto al tiro caliente de la chimenea | De cerrada con tablones a botica con pociones que brillan |
-| Rellano | Retrato del tío Fausto, escalera de mano y barandilla | — |
-| Sala común | Barra con tabernero, estanterías, barriles, tablón, mesas, chimenea con caldero y escalera | De cuarto en ruinas y frío a manteles, trofeo de caza, laúd, candelabro y fuego grande |
-| Bodega | Bóvedas de piedra, botellero, toneles, gotera y rata | Un cofre por cada objeto del arcón |
-| Exterior | Pozo, farol con polillas, letrero que se balancea, roble y luciérnagas | — |
-
-**Fondo con paralaje:** cielo con luna y halo tramado, estrellas que titilan, estrella fugaz, nubes, montañas nevadas, colinas con aldea y castillo con ventanas encendidas, y una hilera de árboles. Cada capa se mueve a su velocidad.
-
-**Luz:** cada habitación tiene su penumbra tintada y cada foco suma un círculo de luz por escalones tramados (`lighting.ts`). Los focos son la chimenea, las velas, los apliques, los faroles y la botica. Después todo se multiplica sobre la escena. Por las ventanas entran rayos de luna en diagonal con motas de polvo flotando. Las llamas y los faroles brillan encima.
-
-**Vida:**
-- Los héroes pasean, se sientan a las mesas o se calientan junto al fuego.
-- Los candidatos esperan en la barra y el tabernero va y viene detrás.
-- Los heridos guardan cama y sueltan «zZ».
-- Al mandar un grupo, sus héroes cruzan la sala, bajan el escalón de la puerta (que cruje) y se pierden en la noche del patio; al volver de una misión entran por el mismo camino.
-- El gato Bigotes duerme junto a la chimenea y a ratos da una vuelta.
-- La rata cruza la bodega, los murciélagos cuelgan del desván y el búho parpadea en el tejado.
-- Partículas: ascuas, chispas, humo, vapor del caldero, hojas que caen y la gota de la bodega.
-
-**Se puede tocar casi todo:**
-- El tablón abre los encargos; cada nota abre su ficha para formar el grupo (desafíos, estimación de riesgo y quién va) y mandarlo. La nota desaparece del tablón de la escena.
-- La barra abre los candidatos.
-- Dormitorios, enfermería, despacho y cofres abren el gremio; el mapa del desván, quién está fuera.
-- Entre días, un amanecer en pixel art (cielo por bandas y sol que sube) cuenta lo que ha pasado; los informes llegan como cartas lacradas con los retratos del grupo.
-- Un héroe abre su ficha con retrato.
-- La chimenea suelta chispas, el gato ronronea con corazones, el laúd toca música con notas flotando, el búho ulula, los murciélagos salen volando, el pozo hace «plof» y el letrero se balancea.
+- `props.ts`: atrezo (barriles, cofres, chimeneas, mesas, camas, letrero con el escudo…).
+- `paint.ts`: pinceles de materiales (yeso, madera, piedra, vigas, telarañas).
+- `parallax.ts`: cielo, luna, estrellas, montañas, colinas y árboles del fondo.
+- `lighting.ts`: focos tramados para los halos y la pelea contra el jefe.
+- `particles.ts`: ascuas, chispas, humo y polvo.
+- `camera.ts` y `geometry.ts`: cámara 2D y medidas del mundo (altura del suelo).
+- `battle.ts` y `weapons.ts`: la pelea animada (contra el jefe y los bandidos del asalto).
+- `scene.ts`: los tipos que la escena recibe del juego (`SceneModel`) y sus avisos.
 
 ## Sonido (`src/audio/audio.ts`)
 

@@ -100,14 +100,6 @@ export function SettingsMenu({ settings: s, onChange, onClose, onCheat, onBoss }
             />
             <span>Menos movimiento en la interfaz</span>
           </label>
-          <label class="set-check">
-            <input
-              type="checkbox"
-              checked={s.classic}
-              onChange={(e) => set({ classic: e.currentTarget.checked })}
-            />
-            <span>Taberna dibujada (la vista de antes)</span>
-          </label>
           {canVibrate() && (
             <label class="set-check">
               <input
