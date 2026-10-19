@@ -31,6 +31,7 @@ import {
   type RoomsLayout,
 } from './layout';
 import { ART } from './salas';
+import { PLASTER_FINE, WOOD_FINE, floorFinish, sideFinish, wallFinish } from './salas/acabados';
 import { BLIND, cellsOf, windowX } from './salas/kit';
 import { streetDoor } from './salas/recibidor';
 import { NO_LOOK, hearthSpan, salonWall, type SalonLook } from './salon';
@@ -74,20 +75,23 @@ export function backWall(room: Room, w: number, h: number, look: SalonLook = NO_
   const seed = `${room.id}-${room.type}`;
   const ruin = ruined(room);
   const wain = 14;
+  // Las salas con su arte ganan acabados desde el nivel 2 (el salón tiene los suyos).
+  const fine = !bare(room) && !ruin && !!ART[room.type] && room.level >= 2;
   if (bare(room)) {
     plaster(b, 0, 0, bw, bh, seed, RAW);
     for (let x = 0; x < bw; x += 30) post(b, x, 0, 3, bh, WOOD_DARK);
   } else if (theme === 'yeso') {
-    plaster(b, 0, 0, bw, bh - wain, seed, ruin ? RAW : PLASTER, ruin);
+    plaster(b, 0, 0, bw, bh - wain, seed, ruin ? RAW : fine ? PLASTER_FINE : PLASTER, ruin);
     planksV(b, 0, bh - wain, bw, wain, seed, WAINSCOT, 6);
     beam(b, 0, bh - wain - 3, bw, 3, WOOD_DARK);
     for (let x = 0; x < bw; x += 36) post(b, x, 0, 3, bh - wain - 3, WOOD_DARK);
   } else if (theme === 'madera') {
-    planksV(b, 0, 0, bw, bh, seed, ruin ? WOOD_DARK : WOOD, 7);
+    planksV(b, 0, 0, bw, bh, seed, ruin ? WOOD_DARK : fine ? WOOD_FINE : WOOD, 7);
     beam(b, 0, bh - wain, bw, 3, WOOD_DARK);
   } else if (theme === 'piedra')
     stoneWall(b, 0, 0, bw, bh, seed, { ramp: CELLAR, bw: 12, bh: 7, moss: ruin ? 10 : 0 });
   else stoneWall(b, 0, 0, bw, bh, seed, { ramp: ROCK, bw: 14, bh: 8 });
+  if (fine) wallFinish(b, room, theme, wain, seed);
   // Vigas a la altura de cada planta en las salas de más de una (en el salón, solo un listón:
   // es una sala alta, no dos plantas).
   for (let j = 1; j < room.h; j++)
@@ -165,6 +169,19 @@ export function floorTex(room: Room | null, theme: Theme, w: number, seed: strin
   else if (theme === 'cueva') stoneWall(b, 0, 0, w, DEEP, seed, { ramp: ROCK, bw: 12, bh: 5 });
   else planksV(b, 0, 0, w, DEEP, seed, room && ruined(room) ? WOOD_DARK : WOOD, 8);
   if (room && !bare(room) && !ruined(room)) {
+    if (ART[room.type])
+      floorFinish(
+        b,
+        room,
+        room.type === 'cocina' || room.type === 'forja'
+          ? 'barro'
+          : theme === 'piedra'
+            ? 'piedra'
+            : theme === 'cueva'
+              ? 'roca'
+              : 'tablas',
+        seed,
+      );
     const rug = (x: number, rw: number, ramp: [string, string, string]) => {
       b.rect(x, 6, rw, DEEP - 12, ramp[0]);
       b.rect(x + 2, 7, rw - 4, DEEP - 14, ramp[1]);
@@ -207,6 +224,7 @@ export function sideTex(
   seed: string,
   front: number[] = [],
   strength = 1,
+  room?: Room,
 ): PixelBuffer {
   const b = new PixelBuffer(DEEP, h);
   if (theme === 'yeso') {
@@ -218,6 +236,8 @@ export function sideTex(
   } else if (theme === 'madera') planksV(b, 0, 0, DEEP, h, seed, WOOD_DARK, 7);
   else if (theme === 'piedra') stoneWall(b, 0, 0, DEEP, h, seed, { ramp: CELLAR, bw: 8, bh: 7 });
   else stoneWall(b, 0, 0, DEEP, h, seed, { ramp: ROCK, bw: 9, bh: 8 });
+  // Los acabados de la sala, como en su pared del fondo.
+  if (room && !bare(room) && !ruined(room) && ART[room.type]) sideFinish(b, room, theme, seed);
   for (const f of doors) {
     const y = h - f * PITCH;
     b.rect(8, y - 50, 13, 50, P.plum);

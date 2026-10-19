@@ -872,6 +872,7 @@ export class RoomScene {
       floor: room.floor,
       door: room.type === 'recibidor' ? room.level : undefined,
       hang: { left: free(room.col), right: free(room.col + room.w - 1) },
+      room,
     });
     // En voladizo (sin nada debajo), la cara de abajo del suelo, que se ve desde el patio.
     if (room.floor > 0) {
@@ -1003,6 +1004,8 @@ export class RoomScene {
       door?: number;
       /** Sin sala debajo del hueco de cada lado (en voladizo). */
       hang?: { left: boolean; right: boolean };
+      /** La sala (para los acabados de sus lados). */
+      room?: Room;
     },
   ): void {
     const g = this.world;
@@ -1030,13 +1033,21 @@ export class RoomScene {
     const doors = (s: Side[]) => s.flatMap((x, i) => (x === 'sala' || x === 'escalera' ? [i] : []));
     this.plane(
       g,
-      sideTex(theme, r.h, doors(o.sides.left), `${seed}i`, o.door !== undefined ? [0] : [], o.door),
+      sideTex(
+        theme,
+        r.h,
+        doors(o.sides.left),
+        `${seed}i`,
+        o.door !== undefined ? [0] : [],
+        o.door,
+        o.room,
+      ),
       [at(x0, yb, 0), at(x0, yb, D), at(x0, yt, D), at(x0, yt, 0)],
       flat,
     );
     this.plane(
       g,
-      mirror(sideTex(theme, r.h, doors(o.sides.right), `${seed}d`)),
+      mirror(sideTex(theme, r.h, doors(o.sides.right), `${seed}d`, [], 1, o.room)),
       [at(x1, yb, D), at(x1, yb, 0), at(x1, yt, 0), at(x1, yt, D)],
       flat,
     );
