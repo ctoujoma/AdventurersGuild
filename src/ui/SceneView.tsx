@@ -16,6 +16,8 @@ interface Props {
   canDrag?: (id: string) => boolean;
   onDragOver?: (id: string, room: string | null, at: Point) => { ok: boolean } | null;
   onDrop?: (id: string, room: string | null) => void;
+  onRoomDrag?: (id: string) => void;
+  onRoomDrop?: () => void;
   paused?: boolean;
   /** Pinta el gremio por salas en lugar de la taberna dibujada. */
   rooms?: boolean;
@@ -47,6 +49,8 @@ export function SceneView(props: Props) {
       canDrag: (id) => handlers.current.canDrag?.(id) ?? false,
       onDragOver: (id, room, at) => handlers.current.onDragOver?.(id, room, at) ?? null,
       onDrop: (id, room) => handlers.current.onDrop?.(id, room),
+      onRoomDrag: (id) => handlers.current.onRoomDrag?.(id),
+      onRoomDrop: () => handlers.current.onRoomDrop?.(),
       onSound: (name, vol) => audio.play(name, vol),
       onFrame: (p) => audio.listen(p),
     };

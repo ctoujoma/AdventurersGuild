@@ -258,10 +258,11 @@ export function App() {
           }))
         : null,
       null,
-      // Los huecos de siempre del modo obras (y los de ampliar) no mueven la cámara ni tapan las salas.
-      !works.pick,
+      // Los huecos de siempre del modo obras (los de ampliar y los de mudanza) no mueven la cámara.
+      !works.pick || works.pick.kind === 'move',
     );
-  }, [works.active?.kind, works.targets, works.pick]);
+    s.setGrabbable(works.planning && !works.pick ? works.selected : null);
+  }, [works.active?.kind, works.targets, works.pick, works.selected, works.planning]);
   // El camino de los bandidos, a la vista mientras se planea la casa o se mira la cámara o la puerta.
   const routeRoom =
     panel === 'sala' && roomId ? (draft ?? game).building.rooms.find((r) => r.id === roomId) : null;
@@ -717,6 +718,11 @@ export function App() {
             const d = room ? planDrop(gameRef.current, id, room) : null;
             setDragTip({ text: d?.text ?? 'Suéltalo en una sala.', ok: !!d?.ok, at });
             return d;
+          }}
+          onRoomDrag={(id) => works.startPick({ kind: 'move', id })}
+          onRoomDrop={() => {
+            works.cancelPick();
+            toast('Ahí no cabe: suéltala en una casilla verde.');
           }}
           onDrop={(id, room) => {
             setDragTip(null);

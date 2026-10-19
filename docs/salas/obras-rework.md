@@ -139,7 +139,8 @@ Rama: `claude/sharp-mendel-apsm2a` (PR #23 abierto contra `salas`). Cada punto, 
       info.
 - [x] 2.3 Casillas fantasma «+» para ampliar (lados y encima si cabe en alto), tachadas con
       motivo si no hay sitio.
-- [ ] 2.4 Mover arrastrando la sala (verde/rojo bajo el dedo) dentro del borrador.
+- [x] 2.4 Mover arrastrando la sala (verde/rojo bajo el dedo) dentro del borrador: con la sala
+      elegida, se coge con el dedo y salen sus sitios; soltar fuera la deja donde estaba.
 - [ ] 2.5 Al pagar: andamio, polvo y martillazos 2–3 s en cada sala tocada.
 
 ### 3. Escaleras por tramos

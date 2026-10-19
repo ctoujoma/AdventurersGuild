@@ -252,6 +252,9 @@ export class RoomScene {
     room: string | null;
     ok: boolean;
   } | null = null;
+  /** Modo obras: la sala elegida, que se puede coger para moverla, y la que se lleva con el dedo. */
+  private grabbable: string | null = null;
+  private roomDrag: { id: string; x: number; y: number; moved: boolean; rect: Rect } | null = null;
   private pinch = 0;
   private cssW = 0;
   private cssH = 0;
@@ -312,6 +315,11 @@ export class RoomScene {
     const z = Math.max(this.minZoom(this.cssW, this.cssH), Math.min(this.camera.zoom, fit));
     if (z !== this.camera.zoom) this.resize(this.cssW, this.cssH, z);
     this.camera.centerOn((x0 + x1) / 2, (y0 + y1) / 2 + 45 / z);
+  }
+
+  /** En el modo obras, la sala elegida se puede coger con el dedo para moverla (o ninguna). */
+  setGrabbable(id: string | null): void {
+    this.grabbable = id;
   }
 
   /** Rectángulo de una sala en el mundo (para anclar menús encima de ella). */
@@ -1226,6 +1234,7 @@ export class RoomScene {
       !!this.targets?.length ||
       this.floats.length > 0 ||
       !!this.drag?.moved ||
+      !!this.roomDrag?.moved ||
       !!this.raid ||
       !!this.routePts ||
       (!this.night && !!this.model?.heroes.some((h) => h.train));
@@ -1234,6 +1243,7 @@ export class RoomScene {
       ctx.clearRect(0, 0, view.vw, view.vh);
       if (this.routePts && !this.raid) this.raidRoute(this.routePts);
       if (this.targets) this.marks(this.targets);
+      this.roomGhost();
       this.dropMark();
       this.trainBars();
       this.raid?.draw(ctx, view.px, view.py);
@@ -1465,6 +1475,56 @@ export class RoomScene {
     }
   }
 
+  /** La casilla de mudanza bajo un punto de la pantalla (si es válida). */
+  private moveTargetAt(cssX: number, cssY: number): Spot | null {
+    const w = this.camera.toWorld(cssX, cssY);
+    return (
+      this.targets?.find(
+        (t) =>
+          !t.blocked &&
+          w.x >= t.rect.x &&
+          w.x < t.rect.x + t.rect.w &&
+          w.y >= t.rect.y &&
+          w.y < t.rect.y + t.rect.h,
+      ) ?? null
+    );
+  }
+
+  /** Suelta la sala que se llevaba: en una casilla válida se muda; si no, se queda donde estaba. */
+  private endRoomDrag(p: Point): void {
+    this.roomDrag = null;
+    const t = this.moveTargetAt(p.x, p.y);
+    if (t) {
+      const w = this.camera.toWorld(p.x, p.y);
+      this.cb.onHotspot?.(t.id, t.label, { x: p.x, y: p.y, wx: w.x, wy: w.y });
+      this.cb.onSound?.('build', 0.5);
+    } else this.cb.onRoomDrop?.();
+  }
+
+  /** Lo que se ve mientras se lleva una sala: su silueta bajo el dedo, verde si cabe ahí. */
+  private roomGhost(): void {
+    const d = this.roomDrag;
+    if (!d?.moved) return;
+    const { topCtx: ctx, camera } = this;
+    const t = this.moveTargetAt(d.x, d.y);
+    const w = camera.toWorld(d.x, d.y);
+    const r = t?.rect ?? { ...d.rect, x: w.x - d.rect.w / 2, y: w.y - d.rect.h / 2 };
+    const x = Math.round(r.x - camera.px) + 1;
+    const y = Math.round(r.y - camera.py) + 1;
+    const rw = Math.round(r.w) - 2;
+    const rh = Math.round(r.h) - 2;
+    const c = t ? P.lime : P.red;
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = c;
+    ctx.fillRect(x, y, rw, rh);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = c;
+    ctx.fillRect(x, y, rw, 2);
+    ctx.fillRect(x, y + rh - 2, rw, 2);
+    ctx.fillRect(x, y, 2, rh);
+    ctx.fillRect(x + rw - 2, y, 2, rh);
+  }
+
   private cancelDrag(): void {
     if (!this.drag) return;
     this.drag.ok = false;
@@ -1550,15 +1610,15 @@ export class RoomScene {
 
   /** Llevando a alguien cerca del borde, la cámara se desliza hacia allí. */
   private edgePan(dt: number): void {
-    const d = this.drag;
-    if (!d?.moved || !this.cssW) return;
+    const d = this.drag?.moved ? this.drag : this.roomDrag?.moved ? this.roomDrag : null;
+    if (!d || !this.cssW) return;
     const EDGE = 36;
     const speed = 260 * dt;
     const dx = d.x < EDGE ? speed : d.x > this.cssW - EDGE ? -speed : 0;
     const dy = d.y < EDGE ? speed : d.y > this.cssH - EDGE ? -speed : 0;
     if (dx || dy) {
       this.camera.drag(dx, dy, 0);
-      this.moveDrag({ x: d.x, y: d.y });
+      if (d === this.drag) this.moveDrag({ x: d.x, y: d.y });
     }
   }
 
@@ -1577,8 +1637,18 @@ export class RoomScene {
         this.camera.stopInertia();
         // Sobre alguien que se puede coger, el dedo lo lleva; si no, mueve la cámara.
         const who = this.targets || this.raid ? null : this.heroAt(p.x, p.y);
+        const w = this.camera.toWorld(p.x, p.y);
+        const grab = this.grabbable ? this.roomRect(this.grabbable) : null;
         if (who && this.cb.canDrag?.(who))
           this.drag = { id: who, x: p.x, y: p.y, moved: false, room: null, ok: false };
+        else if (
+          grab &&
+          w.x >= grab.x &&
+          w.x < grab.x + grab.w &&
+          w.y >= grab.y &&
+          w.y < grab.y + grab.h
+        )
+          this.roomDrag = { id: this.grabbable!, x: p.x, y: p.y, moved: false, rect: grab };
         else this.camera.dragging = true;
       } else if (this.pointers.size === 2) {
         this.cancelDrag();
@@ -1623,6 +1693,22 @@ export class RoomScene {
         this.moveDrag(p);
         return;
       }
+      if (this.roomDrag) {
+        const d = this.roomDrag;
+        d.x = p.x;
+        d.y = p.y;
+        if (!d.moved && this.press && Math.hypot(p.x - this.press.x, p.y - this.press.y) > 6) {
+          d.moved = true;
+          this.press.moved = true;
+          this.cb.onRoomDrag?.(d.id);
+          this.cb.onSound?.('click', 0.4);
+        }
+        if (d.moved) {
+          this.hover = null;
+          this.cb.onHover?.(null, null);
+        }
+        return;
+      }
       const now = performance.now();
       const dt = (now - (this.press?.time ?? now)) / 1000;
       if (this.press) {
@@ -1638,6 +1724,13 @@ export class RoomScene {
     });
     const end = (e: PointerEvent) => {
       const p = local(e);
+      if (this.roomDrag?.moved) {
+        this.pointers.delete(e.pointerId);
+        this.endRoomDrag(p);
+        this.press = null;
+        return;
+      }
+      this.roomDrag = null;
       if (this.drag?.moved) {
         this.pointers.delete(e.pointerId);
         this.endDrag();
@@ -1658,6 +1751,8 @@ export class RoomScene {
     c.addEventListener('pointercancel', (e) => {
       this.pointers.delete(e.pointerId);
       this.cancelDrag();
+      if (this.roomDrag?.moved) this.cb.onRoomDrop?.();
+      this.roomDrag = null;
       this.camera.release();
       this.press = null;
     });
