@@ -3994,6 +3994,26 @@ textarea:focus-visible,
   width: 100%;
   box-sizing: border-box;
 }
+.ribbon-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ribbon-tab {
+  flex: 1 0 auto;
+  padding: 4px 8px;
+  font-family: var(--pixel);
+  font-size: 13px;
+  color: var(--tan);
+  background: transparent;
+  box-shadow: inset 0 -2px 0 rgba(228, 166, 114, 0.35);
+}
+.ribbon-tab.is-on {
+  color: var(--ink);
+  background: var(--tan);
+  box-shadow: 0 0 0 2px var(--ink);
+}
 .ribbon-rooms {
   min-width: 0;
   display: flex;
@@ -4016,6 +4036,9 @@ textarea:focus-visible,
   color: var(--ink);
   background: var(--tan);
   box-shadow: 0 0 0 2px var(--ink);
+}
+.ribbon-room .icon {
+  margin-bottom: 1px;
 }
 .ribbon-room b {
   font-size: 13px;

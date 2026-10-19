@@ -3,7 +3,7 @@ import { ROOM_COST } from '../core/balance';
 import { laxly, stairCost } from '../core/rooms';
 import { ROOMS, type RoomType } from '../data/rooms';
 import { pickTitle, targetsFor } from '../world/rooms/works';
-import { Icon } from './icons';
+import { Icon, type IconName } from './icons';
 import type { Works } from './works';
 
 interface Props {
@@ -12,27 +12,35 @@ interface Props {
   onMore: () => void;
 }
 
-/** Orden de la cinta: lo que más se construye primero. */
-const ORDER: RoomType[] = [
-  'dormitorio',
-  'servicio',
-  'cocina',
-  'bodega',
-  'despensa',
-  'enfermeria',
-  'armas',
-  'tiro',
-  'biblioteca',
-  'capilla',
-  'mapas',
-  'armeria',
-  'forja',
-  'veteranos',
-  'torre',
-  'salon',
-  'tesoro',
-  'recibidor',
+/** Pestañas de la cinta, con sus salas (lo que más se construye, primero) y su icono. */
+const TABS: { name: string; rooms: RoomType[] }[] = [
+  { name: 'Gente', rooms: ['dormitorio', 'servicio', 'enfermeria', 'capilla', 'veteranos'] },
+  { name: 'Comida', rooms: ['cocina', 'bodega', 'despensa'] },
+  { name: 'Entreno', rooms: ['armas', 'tiro', 'biblioteca'] },
+  { name: 'Defensa', rooms: ['armeria', 'forja', 'torre', 'tesoro', 'recibidor'] },
+  { name: 'Gremio', rooms: ['salon', 'mapas'] },
 ];
+
+const ICON: Record<RoomType, IconName> = {
+  dormitorio: 'cama',
+  servicio: 'cama',
+  veteranos: 'star',
+  enfermeria: 'cruz',
+  capilla: 'vela',
+  cocina: 'olla',
+  bodega: 'barril',
+  despensa: 'pan',
+  armas: 'espadas',
+  tiro: 'diana',
+  biblioteca: 'libro',
+  armeria: 'escudo',
+  forja: 'yunque',
+  torre: 'torre',
+  tesoro: 'cofre',
+  recibidor: 'puerta',
+  salon: 'jarra',
+  mapas: 'mapa',
+};
 
 /**
  * Cinta del modo obras, como en un refugio: las salas que se pueden construir en una fila que
@@ -40,10 +48,11 @@ const ORDER: RoomType[] = [
  */
 function Ribbon({ works: w, onMore }: Props) {
   const b = w.view.building;
+  const [tab, setTab] = useState(0);
   const items = useMemo(
     () =>
       laxly(() =>
-        ORDER.map((t) => {
+        TABS[tab]!.rooms.map((t) => {
           // Las únicas que ya están se amplían desde aquí (a los lados y, el salón, hacia arriba).
           const list = targetsFor(w.view, { kind: 'build', type: t });
           const grow = !!ROOMS[t].unique && b.rooms.some((r) => r.type === t);
@@ -51,7 +60,7 @@ function Ribbon({ works: w, onMore }: Props) {
           return { t, spots: list.length, grow, cost };
         }),
       ),
-    [w.view],
+    [w.view, tab],
   );
   const stairs = useMemo(() => laxly(() => targetsFor(w.view, { kind: 'stair' })).length, [w.view]);
   const n = w.steps.length;
@@ -59,6 +68,19 @@ function Ribbon({ works: w, onMore }: Props) {
   useEffect(() => setLeaving(false), [n]);
   return (
     <div class="worksbar ribbon" role="toolbar" aria-label="Modo obras">
+      <div class="ribbon-tabs" role="tablist">
+        {TABS.map((x, i) => (
+          <button
+            key={x.name}
+            role="tab"
+            aria-selected={i === tab}
+            class={`ribbon-tab ${i === tab ? 'is-on' : ''}`}
+            onClick={() => setTab(i)}
+          >
+            {x.name}
+          </button>
+        ))}
+      </div>
       <div class="ribbon-rooms">
         {items.map(({ t, spots, grow, cost }) => (
           <button
@@ -69,6 +91,7 @@ function Ribbon({ works: w, onMore }: Props) {
             aria-label={`${grow ? 'Ampliar' : 'Construir'} ${ROOMS[t].name} por ${cost} monedas`}
             onClick={() => w.startPick({ kind: 'build', type: t })}
           >
+            <Icon name={ICON[t]} size={20} />
             <b>
               {grow ? 'Ampliar ' : ''}
               {grow ? ROOMS[t].name.toLowerCase() : ROOMS[t].name}
@@ -78,18 +101,21 @@ function Ribbon({ works: w, onMore }: Props) {
             </span>
           </button>
         ))}
-        <button
-          class="ribbon-room"
-          disabled={!stairs}
-          data-help="Un tramo une una planta con la de encima. Cada tramo cuesta un poco más."
-          aria-label={`Tramo de escalera por ${stairCost(b)} monedas`}
-          onClick={() => w.startPick({ kind: 'stair' })}
-        >
-          <b>Escalera</b>
-          <span>
-            <Icon name="coin" size={9} /> {stairCost(b)}
-          </span>
-        </button>
+        {TABS[tab]!.name === 'Gremio' && (
+          <button
+            class="ribbon-room"
+            disabled={!stairs}
+            data-help="Un tramo une una planta con la de encima. Cada tramo cuesta un poco más."
+            aria-label={`Tramo de escalera por ${stairCost(b)} monedas`}
+            onClick={() => w.startPick({ kind: 'stair' })}
+          >
+            <Icon name="escalera" size={20} />
+            <b>Escalera</b>
+            <span>
+              <Icon name="coin" size={9} /> {stairCost(b)}
+            </span>
+          </button>
+        )}
       </div>
       <span class="worksbar-text ribbon-text">
         {n ? (

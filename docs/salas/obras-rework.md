@@ -159,6 +159,7 @@ Rama: `claude/sharp-mendel-apsm2a` (PR #23 abierto contra `salas`). Cada punto, 
 
 ### 4. Cinta y sensación
 
-- [ ] 4.1 Cinta con pestañas e iconos de sala; las únicas como «Ampliar».
+- [x] 4.1 Cinta con pestañas (Gente, Comida, Entreno, Defensa, Gremio con la escalera) e iconos
+      de sala (`ICON` en `WorksBar.tsx`, dibujos en `icons.tsx`); las únicas como «Ampliar».
 - [ ] 4.2 Sonidos por tipo de obra, precio flotando, vibración.
 - [ ] 4.3 Probar en el navegador, publicar la versión de pruebas y actualizar `README.md`.
