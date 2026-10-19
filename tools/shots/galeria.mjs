@@ -5,7 +5,7 @@
  *
  *   node tools/shots/galeria.mjs <carpeta> [puerto=4173] [tipos=todos]
  *
- * Saca `<tipo>-a<ancho>-n<nivel>-<dia|noche>.png` a zoom 2 (cada píxel del mundo, 2×2);
+ * Saca `<tipo>-a<ancho>-n<nivel>-<dia|noche>.png` a zoom 4 (cada píxel del mundo, 4×4);
  * `tools/shots/galeria.py` los reduce a 1:1 y los junta en láminas para el visor. Se puede
  * correr contra otra versión del juego (por ejemplo, `main` para el «antes»): solo toca
  * `window.__game` y `window.__scene`.
@@ -15,19 +15,23 @@ import { chromium } from 'playwright';
 
 const out = process.argv[2] ?? 'galeria';
 const port = Number(process.argv[3] ?? 4173);
-/** Dónde va cada sala en la partida del tío (hueco y planta) y su ancho máximo. */
+/**
+ * Dónde se pone cada sala (hueco y planta) y su ancho máximo: en el hueco 1 de su planta, para
+ * que la cámara la vea de frente (en los extremos del edificio no puede centrarse), salvo el
+ * recibidor y la torre, que tienen su sitio.
+ */
 const SLOTS = {
   recibidor: [0, 0, 1],
   salon: [1, 0, 3],
-  cocina: [3, 0, 3],
-  bodega: [0, -1, 3],
-  tesoro: [3, -1, 3],
+  cocina: [1, 0, 3],
+  bodega: [1, -1, 3],
+  tesoro: [1, -1, 3],
   dormitorio: [1, 1, 3],
-  enfermeria: [0, 1, 3],
-  capilla: [3, 1, 3],
-  mapas: [0, 2, 3],
+  enfermeria: [1, 1, 3],
+  capilla: [1, 1, 3],
+  mapas: [1, 2, 3],
   armeria: [1, -1, 3],
-  forja: [2, -1, 3],
+  forja: [1, -1, 3],
   despensa: [1, -1, 3],
   armas: [1, 1, 3],
   tiro: [1, 1, 3],
@@ -37,8 +41,8 @@ const SLOTS = {
   torre: [0, 3, 1],
 };
 const types = process.argv[4] ? process.argv[4].split(',') : Object.keys(SLOTS);
-const vp = { width: 1280, height: 760 };
-const ZOOM = 2;
+const vp = { width: 1920, height: 1080 };
+const ZOOM = 4;
 mkdirSync(out, { recursive: true });
 const browser = await chromium.launch({
   executablePath: process.env.CHROME ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
@@ -111,7 +115,8 @@ async function shoot(type, w, level) {
       r.col = col;
       r.floor = floor;
       // Le hace sitio: fuera lo que pise su planta y las escaleras de dentro.
-      b.cols = Math.max(b.cols, col + w);
+      // (Con un hueco de más a la derecha, para que la cámara pueda centrarla.)
+      b.cols = Math.max(b.cols, col + w + 1);
       b.rooms = b.rooms.filter(
         (x) =>
           x === r ||

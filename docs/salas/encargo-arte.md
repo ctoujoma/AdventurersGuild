@@ -24,19 +24,41 @@ tiro, biblioteca, dormitorio del servicio, veteranos y torre del vigía.
 
 ## Progreso
 
-| Sala | Estado |
-| --- | --- |
-| Recibidor | Hecho, espera visto bueno (`recibidor.ts`; capturas en [`capturas/`](capturas/)) |
+**Cambio de plan (pedido del usuario):** en vez de una sala por PR, se hizo el arte de todas en
+la misma rama y se enseñan juntas en un artefacto de revisión («Salas del Jarro»: antes y
+después, cada nivel, de día y de noche, ancho 1 y máximo). Si el usuario lo aprueba, ese mismo
+código pasa a producción (PR #28). Estado: **todas hechas, esperando su revisión**.
 
-Notas del recibidor (sirven para las demás):
+Cómo está montado (ver `src/world/rooms/salas/`):
 
-- Solo mide un hueco: «ancho 1» y «ancho máximo» son la misma captura.
-- Los sitios de los muebles y de los de guardia están en `SPOT` (`recibidor.ts`); los de guardia
-  (`people.ts`) se ponen delante del armero, que va en la pared, para no tapar ningún mueble.
-- La puerta de la calle cambia con el nivel (por dentro en `sideTex`, por fuera en
+- Cada sala en su fichero (`cocina.ts`, `camas.ts` para los tres dormitorios,
+  `entrenamiento.ts` para armas, tiro y biblioteca…), registrada en `salas/index.ts`. Aporta
+  su pared (`wall`), sus muebles (`things`), lo que queda por reparar (`ruin`), su suelo
+  (`floor`) y, si hace falta, sus propias luces (`ownLamp`). El salón sigue en `salon.ts`.
+- `salas/kit.ts`: profundidades, luces, los huecos con su ventana (`cellsOf`: cada hueco tiene
+  a la izquierda de la ventana sitio para lo alto, bajo la ventana solo lo más bajo que el
+  alféizar, `SILL`, y a la derecha algo estrecho), el farol de cadena corta que se cuelga
+  delante de la ventana sin taparla (`lampOver`) y los tipos `Thing`, `Glow` y `Bed`.
+- Las camas que se ven son las que usa la gente: `bedsOf` (camas.ts) y `cotsOf`
+  (enfermeria.ts) mandan en las dos cosas. El servicio acaba con literas de tres pisos: el
+  núcleo le da 6 camas por hueco en el nivel 3.
+- Sin ventanas (bajo tierra, tesoro y despensa), cada sala pone algo en su sitio (una pizarra,
+  un cuadro, la herradura…).
+- `furniture.test.ts` mira todas las salas, niveles y anchos: muebles dentro de la sala, farol
+  encendido y nada alto delante de una ventana.
+
+Notas que sirven para seguir:
+
+- El recibidor solo mide un hueco; sus muebles y los dos de guardia van en `SPOT`
+  (`salas/recibidor.ts`): los de guardia, delante del armero, para no tapar ningún mueble. La
+  puerta de la calle cambia con el nivel (por dentro en `sideTex`, por fuera en
   `Prop.doorLeaf`).
 - Las piezas finas (astas de lanza) se pintan sin contorno: `Prop.piece` las engorda.
-- `node tools/shots/sala.mjs <carpeta> <tipo> [anchos]` saca todas las capturas de una sala.
+- Nunca se borra un píxel de la pared del fondo (`clear`): queda transparente y se ve el cielo.
+- Lo colgado delante (a media sala) se mueve con la perspectiva respecto a la pared: cerca de
+  una ventana acaba tapándola; mejor de pie contra la pared.
+- Capturas: `node tools/shots/sala.mjs <carpeta> <tipo> [anchos]` para una sala (con gente) y
+  `tools/shots/galeria.mjs` + `galeria.py` para la galería de todas (ver su README).
 
 ## Cómo está hecho el salón (el modelo a copiar)
 

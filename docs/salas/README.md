@@ -50,15 +50,15 @@ en tiempo real; hay trabajadores, visitantes, comida, entrenamiento y asaltos sa
 | 8 | Comida y cerveza | Hecho (#20) |
 | 9 | Entrenamiento + arrastrar personajes a salas | Hecho (#21) |
 | 10 | Tesoro y asaltos sala a sala | Hecho (#22) |
-| 11 | Arte de cada sala | Salón de muestra, obras rehechas y rondas de pruebas en #23; el resto de salas, encargado (ver [`encargo-arte.md`](encargo-arte.md)) |
+| 11 | Arte de cada sala | Salón de muestra, obras rehechas y rondas de pruebas en #23; el resto de salas, hecho en #28 y esperando la revisión del usuario (ver [`encargo-arte.md`](encargo-arte.md)) |
 | 12 | Balance y limpieza | Hecho (#24, #25); todo a `main` en #26 |
 
 **Obras rehechas** (pedido del usuario antes de seguir con el arte): ver
 [`obras-rework.md`](obras-rework.md), con decisiones y progreso punto a punto, incluidas las
 rondas de pruebas del usuario (apartado 5).
 
-**Cómo seguir:** (1) arte del resto de salas una a una, encargado a otro agente: ver
-[`encargo-arte.md`](encargo-arte.md); (2) probar con partidas de verdad (los amigos del
+**Cómo seguir:** (1) arte del resto de salas: hecho, falta el visto bueno del usuario (ver
+[`encargo-arte.md`](encargo-arte.md)); (2) probar con partidas de verdad (los amigos del
 usuario, en GitHub Pages) lo apuntado en «Balance».
 
 ## Decisiones de diseño ya tomadas (resumen)
@@ -101,7 +101,8 @@ usuario, en GitHub Pages) lo apuntado en «Balance».
 - `src/core/{workers,salon,larder,training,vault,assault,raids}.ts`: sistemas de cada PR.
 - `src/world/rooms/`: la escena 3D. `layout.ts` (geometría: `CELL_W`, `PARTITION`, `SLAB`…),
   `RoomScene.ts` (montaje, cámara, toques, arrastre, asalto), `textures.ts` (caras de las salas
-  y el corte), `furniture.ts` (muebles), `salon.ts` (arte nuevo del salón), `crowd.ts` y
+  y el corte), `furniture.ts` (muebles), `salon.ts` (arte del salón), `salas/` (arte de cada
+  una de las demás salas, ver [`encargo-arte.md`](encargo-arte.md)), `crowd.ts` y
   `people.ts` (gente y caminos), `works.ts` (sitios válidos para cada obra), `raid.ts` (asalto).
 - `src/ui/`: `App.tsx`, `works.ts` (hook del modo obras = borrador), `WorksBar.tsx` (cinta con
   pestañas), `RoomMenu.tsx` (menú-icono junto a la sala), `panels/RoomPanel.tsx` (ficha de
