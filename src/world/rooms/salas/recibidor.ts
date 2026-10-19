@@ -11,7 +11,7 @@ import type { Room } from '../../../core/model';
 import { planksV } from '../../paint';
 import * as Prop from '../../props';
 import type { SalonLook } from '../salon';
-import { MID, W, WALL, at, bx, hung, type RoomArt, type Thing, type WallCtx } from './kit';
+import { FLOOR_D, MID, W, WALL, at, bx, hung, type RoomArt, type Thing, type WallCtx } from './kit';
 
 const CLOAKS: Ramp[] = [
   [P.plum, P.wine, P.red, P.coral],
@@ -307,6 +307,24 @@ export function alarmBell(): PixelBuffer {
   });
 }
 
+/**
+ * Suelo del recibidor: un felpudo de esparto en la puerta y, con nivel, una alfombra que entra
+ * hasta los de guardia (roja y con fleco dorado al final).
+ */
+function floor(b: PixelBuffer, room: Room) {
+  const level = room.level;
+  if (level >= 2) {
+    const [edge, base, dot] = level >= 3 ? [P.wine, P.red, P.gold] : [P.deep, P.forest, P.leaf];
+    b.rect(18, 8, 70, FLOOR_D - 16, edge);
+    b.rect(19, 9, 68, FLOOR_D - 18, base);
+    for (let x = 22; x < 86; x += 5) b.set(x, FLOOR_D / 2, dot);
+    if (level >= 3) for (let y = 8; y < FLOOR_D - 8; y += 2) b.set(88, y, P.gold);
+  }
+  b.rect(1, 8, 18, FLOOR_D - 16, P.oak);
+  b.rect(2, 9, 16, FLOOR_D - 18, P.tan);
+  for (let y = 10; y < FLOOR_D - 9; y += 2) b.hline(3, y, 14, P.clay);
+}
+
 // ---------- En la sala ----------
 
 /** Todo pegado a la pared: el suelo de delante es el paso de la puerta y el de los de guardia. */
@@ -321,4 +339,4 @@ function things(room: Room): Thing[] {
   return t;
 }
 
-export const recibidor: RoomArt = { wall, things };
+export const recibidor: RoomArt = { wall, things, floor };

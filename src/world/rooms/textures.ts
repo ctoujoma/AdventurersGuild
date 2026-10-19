@@ -258,28 +258,12 @@ export function floorTex(room: Room | null, theme: Theme, w: number, seed: strin
       b.rect(x + 2, 7, rw - 4, DEEP - 14, ramp[1]);
       for (let i = x + 4; i < x + rw - 4; i += 6) b.set(i, DEEP / 2, ramp[2]);
     };
-    if (room.type === 'salon') rug(w - 100, 70, [P.wine, P.red, P.gold]);
-    if (room.type === 'recibidor') doormat(b, room.level);
-    if (room.type === 'capilla') rug(w / 2 - 12, 24, [P.wine, P.grape, P.gold]);
+    const art = ART[room.type];
+    if (art?.floor) art.floor(b, room, cellsOf(room, w));
+    else if (room.type === 'salon') rug(w - 100, 70, [P.wine, P.red, P.gold]);
+    else if (room.type === 'capilla') rug(w / 2 - 12, 24, [P.wine, P.grape, P.gold]);
   }
   return b;
-}
-
-/**
- * Suelo del recibidor: un felpudo de esparto en la puerta y, con nivel, una alfombra que entra
- * hasta los de guardia (roja y con fleco dorado al final).
- */
-function doormat(b: PixelBuffer, level: number) {
-  if (level >= 2) {
-    const [edge, base, dot] = level >= 3 ? [P.wine, P.red, P.gold] : [P.deep, P.forest, P.leaf];
-    b.rect(18, 8, 70, DEEP - 16, edge);
-    b.rect(19, 9, 68, DEEP - 18, base);
-    for (let x = 22; x < 86; x += 5) b.set(x, DEEP / 2, dot);
-    if (level >= 3) for (let y = 8; y < DEEP - 8; y += 2) b.set(88, y, P.gold);
-  }
-  b.rect(1, 8, 18, DEEP - 16, P.oak);
-  b.rect(2, 9, 16, DEEP - 18, P.tan);
-  for (let y = 10; y < DEEP - 9; y += 2) b.hline(3, y, 14, P.clay);
 }
 
 /** Techo (ancho × fondo, a media resolución): tablas oscuras con vigas, bóveda o roca. */

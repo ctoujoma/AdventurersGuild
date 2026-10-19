@@ -14,6 +14,8 @@ import * as Prop from '../props';
 import { PITCH } from './layout';
 import { scaleAt } from './view3d';
 import { ART } from './salas';
+import { bedsOf } from './salas/camas';
+import { cotsOf } from './salas/enfermeria';
 import {
   CANDLE,
   FIRE,
@@ -25,6 +27,7 @@ import {
   WALL,
   WARM,
   fire,
+  type Bed,
   type Glow,
   type Thing,
 } from './salas/kit';
@@ -42,7 +45,7 @@ import {
   type SalonLook,
 } from './salon';
 
-export type { Glow, RGB, Thing } from './salas/kit';
+export type { Bed, Glow, RGB, Thing } from './salas/kit';
 export { LANTERN } from './salas/kit';
 
 /**
@@ -133,52 +136,14 @@ export function seats(room: Room, w: number): Seat[] {
   ]);
 }
 
-/**
- * Una cama: la litera (dos camas, `row` 0 arriba y 1 abajo) o el catre de la enfermería, con
- * el centro del mueble en x, su profundidad y la fila de la almohada dentro de su dibujo.
- */
-export interface Bed {
-  kind: 'litera' | 'catre' | 'jergon';
-  x: number;
-  z: number;
-  /** Fila (desde arriba del dibujo) donde empieza el colchón. */
-  top: number;
-  level: number;
-}
-
 /** Literas de una litera: el colchón de arriba y el de abajo, en filas del dibujo. */
 export const BUNK_ROWS = [6, 26] as const;
 
 export function beds(room: Room, w: number): Bed[] {
   if (!inUse(room)) return [];
-  if (room.type === 'servicio' && room.level < 2) {
-    // Jergones de paja en el suelo, uno por cama.
-    const n = bunkCount(room, w);
-    return Array.from({ length: n }, (_, i) => ({
-      kind: 'jergon' as const,
-      x: slot(w, i, n),
-      z: WALL,
-      top: 0,
-      level: room.level,
-    }));
-  }
-  if (room.type === 'dormitorio' || room.type === 'veteranos' || room.type === 'servicio') {
-    const n = bunkCount(room, w);
-    const level = room.type === 'veteranos' ? 3 : room.level;
-    return Array.from({ length: n }, (_, i) =>
-      BUNK_ROWS.map((top) => ({ kind: 'litera' as const, x: slot(w, i, n), z: WALL, top, level })),
-    ).flat();
-  }
-  if (room.type === 'enfermeria') {
-    const n = cotCount(room);
-    return Array.from({ length: n }, (_, i) => ({
-      kind: 'catre' as const,
-      x: slot(w, i, n),
-      z: i % 2 ? MID : FRONT + 4,
-      top: 3,
-      level: room.level,
-    }));
-  }
+  if (room.type === 'dormitorio' || room.type === 'veteranos' || room.type === 'servicio')
+    return bedsOf(room, w);
+  if (room.type === 'enfermeria') return cotsOf(room, w);
   return [];
 }
 

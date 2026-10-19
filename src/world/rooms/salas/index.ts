@@ -5,8 +5,20 @@
  */
 import type { RoomType } from '../../../data/rooms';
 import type { RoomArt } from './kit';
+import { bodega } from './bodega';
+import { dormitorio, servicio, veteranos } from './camas';
+import { enfermeria } from './enfermeria';
+import { cocina } from './cocina';
+import { despensa } from './despensa';
 import { recibidor } from './recibidor';
 
 export const ART: Partial<Record<RoomType, RoomArt>> = {
   recibidor,
+  cocina,
+  despensa,
+  bodega,
+  dormitorio,
+  servicio,
+  veteranos,
+  enfermeria,
 };

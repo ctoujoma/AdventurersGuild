@@ -1,0 +1,188 @@
+/**
+ * Arte de la bodega: hace y guarda la cerveza. Bajo cada ventana (o donde iría), una cuba en su
+ * caballete, más baja que el alféizar. En el primer hueco, los barriles apilados y, desde el
+ * nivel 2, la caldera de cobre con su fuego y su tiro hasta el techo; en los demás, sacos de
+ * cebada y, con nivel, barriles y el botellero. En la pared, jarras colgadas y lúpulo.
+ */
+import { P } from '../../../art/palette';
+import { PixelBuffer } from '../../../art/pixel';
+import type { Room } from '../../../core/model';
+import { stoneWall } from '../../paint';
+import * as Prop from '../../props';
+import type { SalonLook } from '../salon';
+import {
+  FIRE,
+  WALL,
+  WIN_HALF,
+  W,
+  at,
+  bx,
+  cellsOf,
+  fire,
+  type Cell,
+  type RoomArt,
+  type Thing,
+  type WallCtx,
+} from './kit';
+import { sack, web } from './piezas';
+
+// ---------- Piezas ----------
+
+/** Cuba en su caballete; con nivel, con la espita de latón y la marca de tiza. */
+export function vat(level: number, seed: number): PixelBuffer {
+  const b = Prop.cask();
+  if (level >= 2) {
+    b.rect(12, 21, 4, 3, P.gold);
+    b.set(13, 24, P.lemon);
+  }
+  if (level >= 3) {
+    // Rayas de tiza: las que se llevan sacadas.
+    for (let k = 0; k < 3 + (seed % 2); k++) b.vline(16 + k * 2, 9, 4, P.mist);
+    b.line(15, 12, 23, 9, P.mist);
+  }
+  return b;
+}
+
+/** Caldera de cobre sobre su hornillo de ladrillo, con el tiro hasta el techo. */
+export function kettle(level: number): PixelBuffer {
+  const w = 32;
+  const h = 64;
+  return Prop.piece(w, h, (p) => {
+    // Tiro.
+    p.rect(13, 0, 6, 30, P.slate);
+    p.vline(13, 0, 30, P.steel);
+    p.vline(18, 0, 30, P.navy);
+    for (const y of [8, 20]) p.hline(12, y, 8, P.fog);
+    // Caldera: cúpula de cobre con remaches.
+    p.ellipse(16, 38, 14, 10, P.rust);
+    p.ellipse(16, 37, 13, 9, P.brick);
+    p.ellipse(13, 34, 6, 4, P.amber);
+    p.ellipse(11, 33, 2.5, 1.5, P.gold);
+    for (let x = 5; x < 28; x += 4) p.set(x, 41, P.rust);
+    p.hline(2, 44, 28, P.rust);
+    p.rect(3, 45, 26, 2, P.amber);
+    p.hline(3, 45, 26, P.gold);
+    // Grifo de salida.
+    p.rect(27, 40, 4, 2, P.amber);
+    p.set(30, 42, P.gold);
+    // Hornillo de ladrillo con su boca encendida.
+    stoneWall(p, 1, 47, 30, 17, 'hornillo-bodega', {
+      ramp: [P.plum, P.rust, P.brick, P.amber],
+      bw: 5,
+      bh: 3,
+    });
+    p.rect(10, 53, 12, 11, P.black);
+    p.hline(11, 63, 10, W[3]!);
+    p.hline(12, 62, 8, P.orange);
+    p.set(15, 61, P.gold);
+    if (level >= 3) {
+      // La pala de remover, apoyada.
+      p.line(29, 22, 31, 46, W[4]!);
+      p.rect(28, 18, 3, 5, W[5]!);
+    }
+  });
+}
+
+/** Sacos de cebada con un manojo de lúpulo encima. */
+function barley(level: number): PixelBuffer {
+  return Prop.piece(17, 17, (p) => {
+    sack(p, 0, 7);
+    sack(p, 8, 7, [P.rust, P.clay, P.tan]);
+    if (level >= 2) {
+      sack(p, 4, 1, [P.clay, P.tan, P.sand]);
+      for (let k = 0; k < 3; k++) p.ellipse(6 + k * 2, 1, 1.3, 1.3, k % 2 ? P.lime : P.leaf);
+    }
+  });
+}
+
+/** Jarras colgadas de una tabla (una más por nivel). */
+function mugRack(level: number): PixelBuffer {
+  return Prop.piece(11, 9, (p) => {
+    p.hline(0, 0, 11, W[3]!);
+    p.hline(0, 1, 11, W[2]!);
+    for (let k = 0; k < Math.min(3, level + 1); k++) {
+      const x = 1 + k * 3;
+      p.set(x + 1, 2, P.black);
+      p.rect(x, 3, 3, 4, k % 2 ? P.clay : P.oak);
+      p.hline(x, 3, 3, P.tan);
+      p.set(x + 1, 7, W[2]!);
+    }
+  });
+}
+
+/** Guirnalda de lúpulo colgando de un clavo (de 5 de ancho). */
+function hops(b: PixelBuffer, x: number, y: number, n: number) {
+  b.set(x + 2, y, P.black);
+  b.vline(x + 2, y + 1, n * 3 + 1, P.forest);
+  for (let k = 0; k < n; k++) {
+    const cx = x + 2 + (k % 2 ? 1.5 : -1.5);
+    b.ellipse(cx, y + 3 + k * 3, 1.5, 1.6, P.leaf);
+    b.set(Math.round(cx), y + 2 + k * 3, P.lime);
+  }
+}
+
+// ---------- Pared y sala ----------
+
+function wall(b: PixelBuffer, room: Room, _look: SalonLook, { cells, ruin }: WallCtx): void {
+  if (ruin) return;
+  const lvl = room.level;
+  for (const c of cells) {
+    const winR = bx(c.win + WIN_HALF);
+    // A la derecha de la ventana: jarras colgadas y el lúpulo.
+    if (bx(c.x1) - winR >= 12) b.blit(mugRack(lvl), winR + 1, 22);
+    if (lvl >= 2 && bx(c.x1) - winR >= 18) hops(b, winR + 13, 20, 3 + lvl);
+    // Sin ventana: una pizarra con las cuentas de la cerveza.
+    if (!c.glass) {
+      const x = bx(c.win) - 8;
+      b.rect(x, 14, 16, 12, W[3]!);
+      b.rect(x + 1, 15, 14, 10, P.black);
+      for (let k = 0; k < 2 + lvl; k++) b.vline(x + 3 + k * 2, 17, 4, P.mist);
+      b.line(x + 2, 20, x + 4 + (2 + lvl) * 2, 18, P.mist);
+      b.hline(x + 3, 23, 8, P.fog);
+    }
+  }
+}
+
+function cellThings(c: Cell, lvl: number, t: Thing[]) {
+  const left = c.x0 + (c.i === 0 ? 22 : 24);
+  if (c.i === 0) {
+    if (lvl >= 2) t.push(at(kettle(lvl), left, WALL + 2, 0, fire(4, 70, FIRE, false)));
+    // Los barriles, a la derecha de la caldera (o en su sitio, sin ella).
+    t.push(at(lvl >= 2 ? Prop.barrel() : barrels(), lvl >= 2 ? c.x0 + 51 : left, WALL));
+  } else {
+    if (lvl >= 3) t.push(at(Prop.wineRack(), left + 2, WALL));
+    else t.push(at(lvl >= 2 ? barrels() : barley(lvl), left, WALL));
+    if (lvl >= 3) t.push(at(barley(lvl), c.x0 + 60, WALL - 2));
+  }
+  t.push(at(vat(lvl, c.i), c.win, WALL));
+}
+
+/** Barriles apilados: dos abajo y uno encima. */
+function barrels(): PixelBuffer {
+  return Prop.piece(26, 28, (b) => {
+    const one = Prop.barrel();
+    b.blit(one, 0, 13);
+    b.blit(one, 13, 13);
+    b.blit(one, 7, 0);
+  });
+}
+
+function things(room: Room, w: number): Thing[] {
+  const t: Thing[] = [];
+  for (const c of cellsOf(room, w)) cellThings(c, room.level, t);
+  return t;
+}
+
+/** Por reparar: la cuba sin aros, barriles tirados y telarañas. */
+function ruin(room: Room, w: number): Thing[] {
+  const broken = Prop.cask();
+  web(broken, 3, 1, 1);
+  for (let y = 4; y < 22; y += 3) broken.set(14, y, P.black);
+  return cellsOf(room, w).flatMap((c) => [
+    at(broken, c.win, WALL),
+    at(Prop.barrel(), c.x0 + 20, WALL),
+    at(Prop.brokenChair(), c.x0 + 44, 18),
+  ]);
+}
+
+export const bodega: RoomArt = { wall, things, ruin };

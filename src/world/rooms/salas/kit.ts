@@ -4,8 +4,9 @@
  * cuando está por reparar). Cada sala va en su fichero de esta carpeta y se registra en
  * `index.ts`.
  */
-import { R } from '../../../art/palette';
+import { P, R } from '../../../art/palette';
 import type { PixelBuffer } from '../../../art/pixel';
+import * as Prop from '../../props';
 import type { Room } from '../../../core/model';
 import type { SalonLook } from '../salon';
 import { CELL_W, DEPTH, PARTITION } from '../layout';
@@ -35,6 +36,9 @@ export interface Thing {
   hang?: boolean;
   light?: Glow;
 }
+
+/** Filas de la textura del suelo (va a media resolución en profundidad). */
+export const FLOOR_D = DEPTH / 2;
 
 /** Contra la pared del fondo, a media sala y delante. */
 export const WALL = DEPTH - 6;
@@ -138,8 +142,55 @@ export interface RoomArt {
   things?(room: Room, w: number, look: SalonLook): Thing[];
   /** Los muebles de la sala por reparar (si no, los de cualquier sala rota). */
   ruin?(room: Room, w: number, look: SalonLook): Thing[];
+  /** Lo que se pinta en el suelo (alfombras, esteras…), en su textura de ancho × fondo. */
+  floor?(b: PixelBuffer, room: Room, cells: Cell[]): void;
   /** Pone sus propias luces colgadas: entonces no lleva el farol de siempre. */
   ownLamp?: boolean;
+}
+
+/**
+ * Una cama de las que usa la gente (la litera, el catre de la enfermería o el jergón), con el
+ * centro del mueble en x, su profundidad y la fila de la almohada (contada como en una litera
+ * de 40 de alto: en una de tres pisos, más alta, sale negativa arriba).
+ */
+export interface Bed {
+  kind: 'litera' | 'catre' | 'jergon';
+  x: number;
+  z: number;
+  top: number;
+  level: number;
+}
+
+/** Farol de cadena corta: colgado delante de una ventana, no la tapa. */
+export function lantern(): PixelBuffer {
+  return Prop.piece(
+    7,
+    9,
+    (p) => {
+      p.vline(3, 0, 1, P.black);
+      p.rect(1, 1, 5, 7, P.black);
+      p.rect(2, 2, 3, 5, P.gold);
+      p.set(3, 3, P.lemon);
+      p.hline(0, 8, 7, P.black);
+    },
+    'none',
+  );
+}
+
+/**
+ * El farol de la sala, colgado delante de la ventana del hueco de en medio (allí no tapa nada:
+ * con su cadena corta queda por encima del cristal), para las salas con muebles altos a los
+ * lados de las ventanas.
+ */
+export function lampOver(cells: Cell[], w: number): Thing {
+  const c = cells[Math.floor((cells.length - 1) / 2)]!;
+  return hung(lantern(), c.win, MID, 0, {
+    dy: 3,
+    r: Math.max(80, Math.round(w * 0.7)),
+    color: LANTERN,
+    power: 1,
+    flicker: 0.08,
+  });
 }
 
 /** Un mueble en el suelo. */
