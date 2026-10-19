@@ -136,6 +136,8 @@ interface Lamp {
   seed: number;
   /** Los faroles se notan menos de día; el fuego, igual. */
   fire: boolean;
+  /** En una sala a la que no llega el sol (bajo tierra, el tesoro): alumbra igual de día. */
+  deep?: boolean;
 }
 
 /** Cifras de 3×5 píxeles para los precios de las marcas de obra. */
@@ -895,7 +897,7 @@ export class RoomScene {
       const x = r.x + th.x;
       const bottom = th.hang ? ceil3 - h - th.y : floor3 + th.y;
       this.figure(this.world, th.img, x, GROUND - bottom, th.z, ambient, sun);
-      if (th.light) this.addLight(th.light, x, bottom, th.z, zone);
+      if (th.light) this.addLight(th.light, x, bottom, th.z, zone, sun < 0.2);
     }
     if (room.works) {
       const k = scaleAt(3);
@@ -928,7 +930,14 @@ export class RoomScene {
     ];
   }
 
-  private addLight(l: Glow, x: number, bottom: number, z: number, zone: Lamp['zone']): void {
+  private addLight(
+    l: Glow,
+    x: number,
+    bottom: number,
+    z: number,
+    zone: Lamp['zone'],
+    deep = false,
+  ): void {
     const k = scaleAt(z);
     const y = bottom + l.dy / k;
     this.lamps.push({
@@ -940,6 +949,7 @@ export class RoomScene {
       zone,
       seed: Math.round(x * 7 + y * 13),
       fire: l.flicker >= 0.2,
+      deep,
     });
     for (const f of l.flames ?? []) {
       // Tres llamas una dentro de otra: naranja, oro y limón.
@@ -1270,7 +1280,7 @@ export class RoomScene {
         continue;
       }
       const fl = 1 - l.flicker * noise(Math.floor(t * 9), l.seed);
-      const k = (l.fire ? fireK : lampK) * l.power * fl;
+      const k = (l.deep ? 1 : l.fire ? fireK : lampK) * l.power * fl;
       s.uLightPos.value[i]!.set(l.pos.x, l.pos.y, l.pos.z, l.r);
       s.uLightColor.value[i]!.set(
         (l.color[0] / 255) * k,

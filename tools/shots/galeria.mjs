@@ -105,6 +105,31 @@ async function shoot(type, w, level) {
       s.heroes = [];
       s.workers = [];
       s.candidates = [];
+      // En la armería, algo de equipo sin dueño para ver los estantes (y lo que no cabe, en arcones).
+      const gear = [
+        ['espada', 'arma', 0],
+        ['escudo', 'armadura', 1],
+        ['hacha', 'arma', 0],
+        ['coraza', 'armadura', 2],
+        ['varita', 'arma', 1],
+        ['capa', 'armadura', 0],
+        ['botas', 'armadura', 1],
+        ['amuleto', 'amuleto', 2],
+        ['ganzua', 'herramienta', 0],
+        ['espada', 'arma', 2],
+      ];
+      s.inventory =
+        type === 'armeria'
+          ? gear.map(([icon, kind, rarity], i) => ({
+              id: `galeria-${i}`,
+              name: icon,
+              desc: '',
+              value: 10,
+              kind,
+              icon,
+              rarity,
+            }))
+          : [];
       const b = s.building;
       const [col, floor] = slot;
       let r = b.rooms.find((x) => x.type === type);
