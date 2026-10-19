@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'preact/hooks';
-import { audio } from '../audio/audio';
+import { audio, type Sfx } from '../audio/audio';
 import { planIssue, tryWorks, type Action } from '../core/game';
 import { laxly } from '../core/rooms';
 import type { GameState, Room } from '../core/model';
@@ -48,6 +48,8 @@ interface Deps {
   focus: (id: string) => void;
   /** Levanta en la escena las salas recién hechas (andamio y polvo). */
   raise: (ids: string[]) => void;
+  /** Enseña en la escena lo que cuesta la obra apuntada (sobre su sala o donde se tocó). */
+  price: (id: string | null, cost: number) => void;
 }
 
 /** Sala a la que mirar tras una obra, si la hay. */
@@ -70,11 +72,20 @@ export function touchedRooms(before: GameState, after: GameState): string[] {
     .map((r) => r.id);
 }
 
-/** Sonido de cada obra al apuntarla. */
-const soundOf = (a: Action) =>
-  a.type === 'demolish' ? 'close' : a.type === 'move' ? 'select' : 'build';
+/** Sonido de cada obra al apuntarla (con su vibración en el móvil). */
+const SOUND: Partial<Record<Action['type'], Sfx>> = {
+  build: 'build',
+  extend: 'hammer',
+  upgradeRoom: 'build',
+  upgrade: 'build',
+  move: 'select',
+  demolish: 'thud',
+  dig: 'thud',
+  addStair: 'creak',
+  buyPlot: 'coin',
+};
 
-export function useWorks({ game, dispatch, toast, focus, raise }: Deps): Works {
+export function useWorks({ game, dispatch, toast, focus, raise, price }: Deps): Works {
   const [steps, setSteps] = useState<Action[] | null>(null);
   const [pick, setPick] = useState<Pick | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
@@ -104,9 +115,11 @@ export function useWorks({ game, dispatch, toast, focus, raise }: Deps): Works {
       return false;
     }
     setSteps(list);
-    audio.play(soundOf(a));
+    audio.play(SOUND[a.type] ?? 'build');
     const id = roomOf(view, next, a);
     if (id) focus(id);
+    const cost = view.gold - next.gold;
+    if (cost) price(a.type === 'demolish' ? null : id, cost);
     if (a.type === 'demolish') setSelected(null);
     return true;
   };

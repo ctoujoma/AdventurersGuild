@@ -161,5 +161,6 @@ Rama: `claude/sharp-mendel-apsm2a` (PR #23 abierto contra `salas`). Cada punto, 
 
 - [x] 4.1 Cinta con pestañas (Gente, Comida, Entreno, Defensa, Gremio con la escalera) e iconos
       de sala (`ICON` en `WorksBar.tsx`, dibujos en `icons.tsx`); las únicas como «Ampliar».
-- [ ] 4.2 Sonidos por tipo de obra, precio flotando, vibración.
+- [x] 4.2 Sonidos por tipo de obra (`SOUND` en `ui/works.ts`; la vibración va con el sonido),
+      precio que sube flotando sobre la sala o donde se tocó (`RoomScene.priceTag`).
 - [ ] 4.3 Probar en el navegador, publicar la versión de pruebas y actualizar `README.md`.

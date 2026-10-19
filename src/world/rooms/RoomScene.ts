@@ -216,7 +216,17 @@ export class RoomScene {
   private chosen: string | null = null;
   private targetsKey = '';
   /** Lo que dio cada sala anoche: cifras que suben y se desvanecen encima de la sala. */
-  private floats: { rect: Rect; n: number; beer: boolean; t0: number }[] = [];
+  /** Cifras que suben: comida o cerveza del día y, en obras, el precio (`coin`) de lo apuntado. */
+  private floats: {
+    rect: Rect | null;
+    id?: string;
+    n: number;
+    beer: boolean;
+    coin?: boolean;
+    t0: number;
+  }[] = [];
+  /** Último sitio tocado en el mundo (para poner ahí el precio de una obra sin sala). */
+  private lastTap: { x: number; y: number } | null = null;
   /** Salas que se están levantando tras pagar las obras (andamio, polvo y martillazos). */
   private raising: { id: string; t0: number; knock: number }[] = [];
   /** Marcas de siempre del modo obras: se tocan ellas y también las salas, sin mover la cámara. */
@@ -572,6 +582,17 @@ export class RoomScene {
       const t0 = this.t + i * gap;
       this.raising.push({ id, t0, knock: t0 });
     });
+  }
+
+  /**
+   * El precio de una obra apuntada sube flotando: sobre su sala (si la tiene) o donde se tocó.
+   * Negativo, lo que se recupera.
+   */
+  priceTag(id: string | null, n: number): void {
+    const at = this.lastTap;
+    const rect = id ? null : at ? { x: at.x - 40, y: at.y - 20, w: 80, h: 40 } : null;
+    if (!id && !rect) return;
+    this.floats.push({ rect, id: id ?? undefined, n, beer: false, coin: true, t0: this.t });
   }
 
   /** Una entrega de la caja: unas monedas saltan en el salón. */
@@ -1357,11 +1378,12 @@ export class RoomScene {
     this.floats = this.floats.filter((f) => this.t - f.t0 < LIFE);
     for (const f of this.floats) {
       const k = this.t - f.t0;
-      if (k < 0) continue;
-      const text = String(f.n);
+      const rect = f.rect ?? (f.id ? this.roomRect(f.id) : null);
+      if (k < 0 || !rect) continue;
+      const text = String(Math.abs(f.n));
       const tw = 10 + text.length * 4;
-      const x = Math.round(f.rect.x + f.rect.w / 2 - camera.px - tw);
-      const y = Math.round(f.rect.y + f.rect.h * 0.4 - camera.py - Math.min(1, k / 1.2) * 16);
+      const x = Math.round(rect.x + rect.w / 2 - camera.px - tw);
+      const y = Math.round(rect.y + rect.h * 0.4 - camera.py - Math.min(1, k / 1.2) * 16);
       const alpha = k > LIFE - 0.8 ? (LIFE - k) / 0.8 : Math.min(1, k * 4);
       ctx.save();
       ctx.translate(x, y);
@@ -1370,8 +1392,14 @@ export class RoomScene {
       ctx.fillStyle = P.black;
       ctx.fillRect(-2, -2, tw + 3, 9);
       ctx.globalAlpha = alpha;
-      // El pan o la jarra.
-      if (f.beer) {
+      // La moneda, el pan o la jarra.
+      if (f.coin) {
+        ctx.fillStyle = P.gold;
+        ctx.fillRect(0, 1, 5, 3);
+        ctx.fillRect(1, 0, 3, 5);
+        ctx.fillStyle = P.lemon;
+        ctx.fillRect(1, 1, 2, 2);
+      } else if (f.beer) {
         ctx.fillStyle = P.gold;
         ctx.fillRect(0, 1, 4, 4);
         ctx.fillStyle = P.white;
@@ -1385,11 +1413,12 @@ export class RoomScene {
         ctx.fillStyle = P.clay;
         ctx.fillRect(0, 4, 5, 1);
       }
-      // El signo más y la cifra.
-      const c = f.beer ? P.lemon : P.white;
+      // El signo y la cifra (en obras, menos lo que se gasta y más lo que se recupera).
+      const spent = f.coin && f.n > 0;
+      const c = spent ? P.coral : f.coin ? P.lime : f.beer ? P.lemon : P.white;
       ctx.fillStyle = c;
       ctx.fillRect(6, 2, 3, 1);
-      ctx.fillRect(7, 1, 1, 3);
+      if (!spent) ctx.fillRect(7, 1, 1, 3);
       tinyDigits(ctx, text, 10, 0, c);
       ctx.restore();
     }
@@ -1435,6 +1464,7 @@ export class RoomScene {
 
   private click(cssX: number, cssY: number): void {
     const w = this.camera.toWorld(cssX, cssY);
+    this.lastTap = w;
     const who = this.heroAt(cssX, cssY);
     if (who) {
       const p = this.heroPosition(who);
@@ -1514,6 +1544,7 @@ export class RoomScene {
     const t = this.moveTargetAt(p.x, p.y);
     if (t) {
       const w = this.camera.toWorld(p.x, p.y);
+      this.lastTap = w;
       this.cb.onHotspot?.(t.id, t.label, { x: p.x, y: p.y, wx: w.x, wy: w.y });
       this.cb.onSound?.('build', 0.5);
     } else this.cb.onRoomDrop?.();

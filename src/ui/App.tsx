@@ -251,6 +251,10 @@ export function App() {
       const s = scene.current;
       if (s instanceof RoomScene) s.raise(ids);
     },
+    price: (id, cost) => {
+      const s = scene.current;
+      if (s instanceof RoomScene) s.priceTag(id, cost);
+    },
   });
   const draft = works.planning ? works.view : null;
   const model = useMemo(() => sceneModel(draft ?? sceneGame), [sceneGame, draft]);
