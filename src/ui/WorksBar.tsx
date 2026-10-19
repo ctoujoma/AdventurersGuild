@@ -1,4 +1,4 @@
-import { useMemo } from 'preact/hooks';
+import { useEffect, useMemo, useState } from 'preact/hooks';
 import { ROOM_COST, STAIR_COST } from '../core/balance';
 import { laxly } from '../core/rooms';
 import { ROOMS, type RoomType } from '../data/rooms';
@@ -58,6 +58,8 @@ function Ribbon({ works: w, onMore }: Props) {
     [w.view],
   );
   const n = w.steps.length;
+  const [leaving, setLeaving] = useState(false);
+  useEffect(() => setLeaving(false), [n]);
   return (
     <div class="worksbar ribbon" role="toolbar" aria-label="Modo obras">
       <div class="ribbon-rooms">
@@ -100,7 +102,7 @@ function Ribbon({ works: w, onMore }: Props) {
             <Icon name="coin" size={10} /> {Math.abs(w.planCost)}
           </>
         ) : (
-          'Toca un hueco marcado o una sala'
+          'Elige una sala abajo o toca una sala de la casa'
         )}
         {w.issue && <span class="worksbar-issue">{w.issue}</span>}
       </span>
@@ -119,40 +121,35 @@ function Ribbon({ works: w, onMore }: Props) {
         >
           Pagar
         </button>
-        <button class="btn btn-wood" onClick={w.discard}>
-          Salir
+        <button
+          class={`btn ${leaving ? 'btn-red' : 'btn-wood'}`}
+          onClick={() => {
+            // Con obras apuntadas, el primer toque pregunta y el segundo descarta.
+            if (!n || leaving) w.discard();
+            else setLeaving(true);
+          }}
+        >
+          {leaving ? '¿Descartar?' : 'Salir'}
         </button>
       </div>
     </div>
   );
 }
 
-/** Barra de abajo mientras se elige sitio para una obra o se está en el modo obras. */
+/**
+ * Barra de abajo del modo obras: la cinta de salas y lo que lleva el borrador; mientras se elige
+ * sitio para una obra de la cinta (o a dónde mover una sala), qué se está eligiendo y «Volver».
+ */
 export function WorksBar({ works: w, onMore }: Props) {
-  if (w.pick) {
-    const c = w.chosen;
+  if (!w.planning) return null;
+  if (w.pick)
     return (
       <div class="daybar worksbar" role="status">
-        <span class="worksbar-text">
-          {c ? (
-            <>
-              {c.label} · <Icon name="coin" size={10} /> {c.cost}
-            </>
-          ) : (
-            pickTitle(w.view, w.pick)
-          )}
-        </span>
-        {c && !w.planning && (
-          <button class="btn btn-gold" onClick={w.confirm}>
-            Hacer
-          </button>
-        )}
+        <span class="worksbar-text">{pickTitle(w.view, w.pick)}</span>
         <button class="btn btn-wood" onClick={w.cancelPick}>
-          {w.planning ? 'Volver' : 'Cancelar'}
+          Volver
         </button>
       </div>
     );
-  }
-  if (!w.planning) return null;
   return <Ribbon works={w} onMore={onMore} />;
 }

@@ -6,7 +6,7 @@
  */
 import { MAX_DOWN, MAX_UP } from '../../core/balance';
 import type { Action } from '../../core/game';
-import type { GameState } from '../../core/model';
+import type { GameState, Room } from '../../core/model';
 import {
   planBuild,
   planDig,
@@ -38,7 +38,9 @@ export type Pick =
   | { kind: 'dig' }
   | { kind: 'stair' }
   /** Ganar sitio tocando la escena: los huecos que se pueden excavar y el solar de al lado. */
-  | { kind: 'expand' };
+  | { kind: 'expand' }
+  /** Ampliar una sala elegida: casillas a los lados y encima (si crece en alto). */
+  | { kind: 'grow'; id: string };
 
 export interface Target {
   id: string;
@@ -47,6 +49,8 @@ export interface Target {
   label: string;
   cost: number;
   action: Action;
+  /** Casilla que se enseña tachada: por qué no se puede (y no hace nada al tocarla). */
+  blocked?: string;
 }
 
 const cell = (s: GameState, c: number, f: number): Rect => ({
@@ -55,6 +59,23 @@ const cell = (s: GameState, c: number, f: number): Rect => ({
   w: CELL_W,
   h: ROOM_H,
 });
+
+/** La sala que ocupa el hueco al que crecería `r` hacia `dir` (si hay alguna). */
+function roomAtRect(b: GameState['building'], r: Room, dir: ExtendDir): Room | undefined {
+  if (dir === 'up') {
+    for (let c = r.col; c < r.col + r.w; c++) {
+      const o = roomAt(b, c, r.floor + r.h);
+      if (o) return o;
+    }
+    return undefined;
+  }
+  const c = dir === 'left' ? r.col - 1 : r.col + r.w;
+  for (let f = r.floor; f < r.floor + r.h; f++) {
+    const o = roomAt(b, c, f);
+    if (o) return o;
+  }
+  return undefined;
+}
 
 /** Una frase corta de lo que se va a hacer, para el aviso de abajo. */
 export function pickTitle(s: GameState, pick: Pick): string {
@@ -73,6 +94,8 @@ export function pickTitle(s: GameState, pick: Pick): string {
       return 'Elige dónde poner la escalera';
     case 'expand':
       return 'Toca un hueco para excavarlo o el solar para comprarlo';
+    case 'grow':
+      return 'Toca un «+» para ampliar la sala';
   }
 }
 
@@ -141,6 +164,37 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
             floor: f,
           });
         }
+      break;
+    }
+    case 'grow': {
+      const r = b.rooms.find((x) => x.id === pick.id);
+      if (!r || r.type === 'torre') break;
+      const def = ROOMS[r.type];
+      const name = def.name.toLowerCase();
+      const sides: [ExtendDir, Rect, boolean][] = [
+        ['left', roomRect(b, { ...r, col: r.col - 1, w: 1 }), r.col > 0 && r.w < def.maxW],
+        [
+          'right',
+          roomRect(b, { ...r, col: r.col + r.w, w: 1 }),
+          r.col + r.w < b.cols && r.w < def.maxW,
+        ],
+        [
+          'up',
+          roomRect(b, { ...r, floor: r.floor + r.h, h: 1 }),
+          r.h < def.maxH && r.floor + r.h <= MAX_UP,
+        ],
+      ];
+      for (const [dir, rect, fits] of sides) {
+        if (!fits) continue;
+        const action: Action = { type: 'extend', id: r.id, dir };
+        const plan = planExtend(s, r.id, dir);
+        if ('error' in plan) {
+          const why = roomAtRect(b, r, dir)
+            ? `Ahí está ${ROOMS[roomAtRect(b, r, dir)!.type].name.toLowerCase()}.`
+            : plan.error;
+          out.push({ id: `obra:${out.length}`, rect, label: why, cost: 0, action, blocked: why });
+        } else add(plan, rect, `Ampliar ${name}`, action);
+      }
       break;
     }
     case 'expand': {

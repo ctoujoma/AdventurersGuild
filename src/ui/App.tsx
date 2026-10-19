@@ -48,6 +48,7 @@ import { SceneView, type GameScene } from './SceneView';
 import { RoomPanel, type RoomLink } from './panels/RoomPanel';
 import { ObrasPanel } from './panels/ObrasPanel';
 import { WorksBar } from './WorksBar';
+import { RoomMenu } from './RoomMenu';
 import { useWorks } from './works';
 import { LOCKED, worksOpen } from '../core/rooms';
 import { RoomScene } from '../world/rooms/RoomScene';
@@ -249,13 +250,18 @@ export function App() {
     if (!(s instanceof RoomScene)) return;
     s.setTargets(
       works.active
-        ? works.targets.map((t) => ({ id: t.id, rect: t.rect, label: `${t.label} · ${t.cost}` }))
+        ? works.targets.map((t) => ({
+            id: t.id,
+            rect: t.rect,
+            label: t.blocked ? t.label : `${t.label} · ${t.cost}`,
+            blocked: !!t.blocked,
+          }))
         : null,
-      works.chosen?.id ?? null,
-      // Los huecos de siempre del modo obras no mueven la cámara ni tapan las salas.
+      null,
+      // Los huecos de siempre del modo obras (y los de ampliar) no mueven la cámara ni tapan las salas.
       !works.pick,
     );
-  }, [works.active?.kind, works.targets, works.chosen?.id, works.pick]);
+  }, [works.active?.kind, works.targets, works.pick]);
   // El camino de los bandidos, a la vista mientras se planea la casa o se mira la cámara o la puerta.
   const routeRoom =
     panel === 'sala' && roomId ? (draft ?? game).building.rooms.find((r) => r.id === roomId) : null;
@@ -270,6 +276,7 @@ export function App() {
   const roomsLive = !settings.classic && scene.current instanceof RoomScene;
   const pickSpot = (p: Pick) => {
     openPanel(null);
+    if (!works.planning) works.startPlan();
     works.startPick(p);
   };
 
@@ -290,6 +297,11 @@ export function App() {
       return;
     }
     if (id.startsWith('sala:')) {
+      // En el modo obras, tocar una sala la elige (menú de obras junto a ella).
+      if (works.planning) {
+        works.select(id.slice(5));
+        return;
+      }
       setRoomId(id.slice(5));
       openPanel('sala');
       return;
@@ -778,9 +790,26 @@ export function App() {
             </button>
           )}
         </div>
-        {!panel && (works.pick || works.planning) && (
-          <WorksBar works={works} onMore={() => openPanel('gremio')} />
-        )}
+        {!panel &&
+          works.planning &&
+          works.selected &&
+          !works.pick &&
+          scene.current instanceof RoomScene && (
+            <RoomMenu
+              scene={scene.current}
+              game={works.view}
+              roomId={works.selected}
+              onUpgrade={(id) => works.work({ type: 'upgradeRoom', id })}
+              onMove={(id) => works.startPick({ kind: 'move', id })}
+              onDemolish={(id) => works.work({ type: 'demolish', id })}
+              onInfo={(id) => {
+                setRoomId(id);
+                openPanel('sala');
+              }}
+              onClose={() => works.select(null)}
+            />
+          )}
+        {!panel && works.planning && <WorksBar works={works} onMore={() => openPanel('gremio')} />}
         {!panel && !game.over && !works.pick && !works.planning && (
           <DayBar
             unread={unread}
@@ -849,14 +878,6 @@ export function App() {
                   : upgradeRoom(id)
               }
               onLink={roomLink}
-              onWork={
-                roomsLive
-                  ? (a) => {
-                      if (works.work(a)) openPanel(null);
-                    }
-                  : undefined
-              }
-              onMove={roomsLive ? (id) => pickSpot({ kind: 'move', id }) : undefined}
               onAssign={works.planning ? undefined : assignJob}
             />
           </Panel>

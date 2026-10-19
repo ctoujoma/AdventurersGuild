@@ -4077,3 +4077,56 @@ textarea:focus-visible,
   inset: 0 auto 0 0;
   background: var(--leaf);
 }
+
+/* Menú de obras de la sala elegida, encima de ella en la escena. */
+.room-menu {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 6px));
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: max-content;
+  padding: 4px 6px;
+  border-style: solid;
+  border-width: 10px;
+  border-image: var(--frame-parchment) 5 fill / 10px / 0 stretch;
+  animation: pop 0.18s steps(3);
+}
+.room-menu-name {
+  color: var(--plum);
+  font-size: 13px;
+}
+.room-menu-row {
+  display: flex;
+  gap: 4px;
+}
+.room-menu-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 46px;
+  min-height: 46px;
+  padding: 3px 4px;
+  color: var(--sand);
+  background: var(--bark);
+  border: 2px solid #181425;
+  box-shadow: inset 0 2px 0 var(--rust);
+  font-size: 11px;
+  cursor: pointer;
+}
+.room-menu-btn:active {
+  transform: translateY(1px);
+}
+.room-menu-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.room-menu-btn span {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}

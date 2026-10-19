@@ -132,12 +132,12 @@ Rama: `claude/sharp-mendel-apsm2a` (PR #23 abierto contra `salas`). Cada punto, 
 
 ### 2. Interfaz y escena
 
-- [ ] 2.1 Un solo modo obras = borrador: el martillo abre el borrador; «Deshacer», «Pagar»
+- [x] 2.1 Un solo modo obras = borrador: el martillo abre el borrador; «Deshacer», «Pagar»
       (desactivado con el motivo) y «Salir» (pregunta si descarta). Fuera de obras, la ficha de
       sala solo informa y deja mejorar. Se quita el camino de obras sueltas (`confirm`, `chosen`).
-- [ ] 2.2 Menú-icono junto a la sala elegida en el modo obras: mejorar (precio), mover, tirar,
+- [x] 2.2 Menú-icono junto a la sala elegida en el modo obras: mejorar (precio), mover, tirar,
       info.
-- [ ] 2.3 Casillas fantasma «+» para ampliar (lados y encima si cabe en alto), tachadas con
+- [x] 2.3 Casillas fantasma «+» para ampliar (lados y encima si cabe en alto), tachadas con
       motivo si no hay sitio.
 - [ ] 2.4 Mover arrastrando la sala (verde/rojo bajo el dedo) dentro del borrador.
 - [ ] 2.5 Al pagar: andamio, polvo y martillazos 2–3 s en cada sala tocada.

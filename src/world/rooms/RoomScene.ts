@@ -117,6 +117,8 @@ export interface Spot {
   id: string;
   label: string;
   rect: Rect;
+  /** Casilla tachada: se ve, pero no se puede hacer la obra (si tapa una sala, se toca la sala). */
+  blocked?: boolean;
 }
 
 /** Un foco: dónde está, hasta dónde llega y la zona a la que alumbra (en 3D, y hacia arriba). */
@@ -310,6 +312,11 @@ export class RoomScene {
     const z = Math.max(this.minZoom(this.cssW, this.cssH), Math.min(this.camera.zoom, fit));
     if (z !== this.camera.zoom) this.resize(this.cssW, this.cssH, z);
     this.camera.centerOn((x0 + x1) / 2, (y0 + y1) / 2 + 45 / z);
+  }
+
+  /** Rectángulo de una sala en el mundo (para anclar menús encima de ella). */
+  roomRect(id: string): Rect | null {
+    return this.spots.find((s) => s.id === `sala:${id}`)?.rect ?? null;
   }
 
   /** Marca el camino que harían los bandidos (ids de sala, del recibidor a la cámara), o lo quita. */
@@ -1259,6 +1266,29 @@ export class RoomScene {
       const w = Math.round(s.rect.w) - 4;
       const h = Math.round(s.rect.h) - 4;
       const on = s.id === this.chosen;
+      if (s.blocked) {
+        // Tachada: borde rojo de puntos y una cruz en medio.
+        ctx.globalAlpha = 0.12;
+        ctx.fillStyle = P.red;
+        ctx.fillRect(x, y, w, h);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = P.red;
+        for (let i = beat; i < w; i += 4) {
+          ctx.fillRect(x + i, y, 2, 1);
+          ctx.fillRect(x + i, y + h - 1, 2, 1);
+        }
+        for (let i = beat; i < h; i += 4) {
+          ctx.fillRect(x, y + i, 1, 2);
+          ctx.fillRect(x + w - 1, y + i, 1, 2);
+        }
+        const cx = Math.round(x + w / 2);
+        const cy = Math.round(y + h / 2);
+        for (let k = -4; k <= 4; k++) {
+          ctx.fillRect(cx + k, cy + k, 1, 1);
+          ctx.fillRect(cx + k, cy - k, 1, 1);
+        }
+        continue;
+      }
       ctx.globalAlpha = on ? 0.45 : 0.18;
       ctx.fillStyle = on ? P.gold : P.lime;
       ctx.fillRect(x, y, w, h);
@@ -1361,9 +1391,10 @@ export class RoomScene {
   private hit(wx: number, wy: number): Spot | null {
     const inside = (s: Spot) =>
       wx >= s.rect.x && wx < s.rect.x + s.rect.w && wy >= s.rect.y && wy < s.rect.y + s.rect.h;
-    const target = this.targets?.find(inside);
+    const room = this.spots.find(inside) ?? null;
+    const target = this.targets?.find((t) => inside(t) && !(t.blocked && room));
     if (target || (this.targets && !this.soft)) return target ?? null;
-    return this.spots.find(inside) ?? null;
+    return room;
   }
 
   /** La persona que hay bajo un punto de la pantalla (no mientras se elige sitio para una obra). */

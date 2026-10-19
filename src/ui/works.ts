@@ -1,35 +1,39 @@
 import { useMemo, useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
-import { canWork, needsPlan, planIssue, tryWork, tryWorks, type Action } from '../core/game';
+import { planIssue, tryWorks, type Action } from '../core/game';
 import { laxly } from '../core/rooms';
 import type { GameState } from '../core/model';
 import { ROOMS } from '../data/rooms';
 import { targetsFor, type Pick, type Target } from '../world/rooms/works';
 
 /**
- * Las obras desde la interfaz: elegir sitio en la escena y confirmar, y el modo plano, en el
- * que las obras se prueban sobre un borrador y se pagan todas juntas al final.
+ * El modo obras desde la interfaz. Es un borrador: todo lo que se hace en él se apunta (con su
+ * coste sumado), se ve en la escena como quedaría y se paga junto al final; mientras falte algo
+ * (salas sin paso, una obligatoria quitada o el oro), no se puede pagar.
  */
 export interface Works {
-  /** El gremio tal como se enseña: el borrador del plano, si lo hay. */
+  /** El gremio tal como se enseña: el borrador, si se está en el modo obras. */
   view: GameState;
   planning: boolean;
   steps: Action[];
-  /** Lo que cuesta el plano hasta ahora (negativo si se recupera oro). */
+  /** Lo que cuesta el borrador hasta ahora (negativo si se recupera oro). */
   planCost: number;
-  /** Lo que falta arreglar en el plano para poder pagarlo (salas sin paso…). */
+  /** Lo que impide pagar el borrador (salas sin paso, una que falta, el oro…). */
   issue: string | null;
+  /** Obra elegida en la cinta (construir una sala, una escalera…): sus sitios brillan. */
   pick: Pick | null;
-  /** Lo que se marca en la escena: lo elegido o, en el modo obras, excavar y solares. */
+  /** Sala elegida en el modo obras: se ve su menú y las casillas para ampliarla. */
+  selected: string | null;
+  /** Lo que se marca en la escena: lo elegido, la sala elegida o excavar y solares. */
   active: Pick | null;
   targets: Target[];
-  chosen: Target | null;
-  /** Hace una obra (o la apunta en el plano). Devuelve si se ha hecho. */
+  /** Apunta una obra en el borrador. Devuelve si se ha podido. */
   work: (a: Action) => boolean;
   startPick: (p: Pick) => void;
+  /** Toca una casilla marcada en la escena. */
   choose: (id: string) => void;
-  confirm: () => void;
   cancelPick: () => void;
+  select: (id: string | null) => void;
   startPlan: () => void;
   undo: () => void;
   pay: () => void;
@@ -44,30 +48,6 @@ interface Deps {
   focus: (id: string) => void;
 }
 
-/** Lo que se cuenta al hacer una obra. */
-function told(s: GameState, a: Action): string {
-  switch (a.type) {
-    case 'build':
-      return `Sala nueva: ${ROOMS[a.room].name.toLowerCase()}.`;
-    case 'move': {
-      const r = s.building.rooms.find((x) => x.id === a.id);
-      return r ? `${ROOMS[r.type].name}: ya está en su sitio nuevo.` : 'Sala movida.';
-    }
-    case 'dig':
-      return 'Hueco excavado: ya se puede construir ahí.';
-    case 'addStair':
-      return 'Escalera nueva: llega de arriba abajo.';
-    case 'buyPlot':
-      return 'Solar comprado: un hueco más de ancho en todas las plantas.';
-    case 'extend':
-      return 'La sala ya es más grande.';
-    case 'demolish':
-      return 'Sala derribada. Se recupera la mitad de lo gastado.';
-    default:
-      return 'Hecho.';
-  }
-}
-
 /** Sala a la que mirar tras una obra, si la hay. */
 function roomOf(before: GameState, after: GameState, a: Action): string | null {
   if (a.type === 'move' || a.type === 'extend' || a.type === 'upgradeRoom') return a.id;
@@ -78,10 +58,14 @@ function roomOf(before: GameState, after: GameState, a: Action): string | null {
   return null;
 }
 
+/** Sonido de cada obra al apuntarla. */
+const soundOf = (a: Action) =>
+  a.type === 'demolish' ? 'close' : a.type === 'move' ? 'select' : 'build';
+
 export function useWorks({ game, dispatch, toast, focus }: Deps): Works {
   const [steps, setSteps] = useState<Action[] | null>(null);
   const [pick, setPick] = useState<Pick | null>(null);
-  const [chosenId, setChosenId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
 
   // El borrador se rehace desde la partida y la lista de obras: así deshacer es quitar la última.
   const draft = useMemo(() => {
@@ -90,100 +74,75 @@ export function useWorks({ game, dispatch, toast, focus }: Deps): Works {
     return 'error' in d ? game : d;
   }, [game, steps]);
   const view = draft ?? game;
-  // En el modo obras, sin nada elegido, se ven los huecos que se pueden excavar y el solar.
-  const active: Pick | null = pick ?? (steps ? { kind: 'expand' } : null);
-  // En el plano (y al mover, que puede llevar a él) se deja la casa a medias por el camino.
-  const loose = !!steps || pick?.kind === 'move';
+  const room = selected && view.building.rooms.some((r) => r.id === selected) ? selected : null;
+  const active: Pick | null = !steps
+    ? null
+    : (pick ?? (room ? { kind: 'grow', id: room } : { kind: 'expand' }));
   const targets = useMemo(
-    () =>
-      active ? (loose ? laxly(() => targetsFor(view, active)) : targetsFor(view, active)) : [],
-    [view, pick, !!steps, loose],
+    () => (active ? laxly(() => targetsFor(view, active)) : []),
+    [view, JSON.stringify(active)],
   );
-  const chosen = targets.find((t) => t.id === chosenId) ?? null;
 
   const work = (a: Action): boolean => {
-    if (steps) {
-      const next = laxly(() => tryWork(view, a));
-      if ('error' in next) {
-        toast(next.error);
-        return false;
-      }
-      setSteps([...steps, a]);
-      audio.play('select');
-      toast('Apuntado en el plano.');
-      const id = roomOf(view, next, a);
-      if (id) focus(id);
-      return true;
-    }
-    if (needsPlan(game, a)) {
-      // La casa quedaría a medias: se sigue en el plano y se paga cuando todo cuadre.
-      setSteps([a]);
-      audio.play('select');
-      toast('Así la casa queda a medias: sigue en el plano y paga cuando todo cuadre.');
-      const next = tryWorks(game, [a]);
-      const id = 'error' in next ? null : roomOf(game, next, a);
-      if (id) focus(id);
-      return true;
-    }
-    const why = canWork(game, a);
-    if (why) {
-      toast(why);
+    // Fuera del modo obras, una obra lo abre con ella ya apuntada.
+    const list = [...(steps ?? []), a];
+    const next = tryWorks(game, list);
+    if ('error' in next) {
+      toast(next.error);
       return false;
     }
-    const next = dispatch(a);
-    audio.play(a.type === 'demolish' ? 'close' : 'build');
-    // Construir junto a una sala igual del mismo nivel la amplía en vez de hacer otra.
-    const grew = a.type === 'build' && next.building.rooms.length === game.building.rooms.length;
-    toast(told(game, grew ? { type: 'extend', id: '', dir: 'right' } : a));
-    const id = roomOf(game, next, a);
+    setSteps(list);
+    audio.play(soundOf(a));
+    const id = roomOf(view, next, a);
     if (id) focus(id);
+    if (a.type === 'demolish') setSelected(null);
     return true;
   };
 
-  const endPick = () => {
-    setPick(null);
-    setChosenId(null);
-  };
+  const endPick = () => setPick(null);
 
   return {
     view,
     planning: !!steps,
     steps: steps ?? [],
     planCost: game.gold - view.gold,
-    issue: steps ? planIssue(view) : null,
+    issue: steps?.length ? planIssue(view) : null,
     pick,
+    selected: room,
     active,
     targets,
-    chosen,
     work,
     startPick: (p) => {
       setPick(p);
-      setChosenId(null);
-      if (!targetsFor(view, p).length) toast('No queda ningún sitio donde hacerlo.');
+      setSelected(null);
+      if (!laxly(() => targetsFor(view, p)).length) toast('No queda ningún sitio donde hacerlo.');
     },
     choose: (id) => {
-      // En el modo obras basta un toque: se apunta y se deshace si hace falta.
-      if (steps) {
-        const t = targets.find((x) => x.id === id);
-        if (t && work(t.action) && pick && pick.kind !== 'expand') endPick();
+      const t = targets.find((x) => x.id === id);
+      if (!t) return;
+      if (t.blocked) {
+        toast(t.blocked);
+        audio.play('deselect');
         return;
       }
-      setChosenId(id);
-      audio.play('select', 0.6);
-    },
-    confirm: () => {
-      if (!chosen || !work(chosen.action)) return;
-      // Ganando sitio se sigue tocando huecos, como en una mina; lo demás acaba al hacerlo.
-      if (pick?.kind === 'expand') setChosenId(null);
-      else endPick();
+      // Excavar y ampliar siguen marcados (se encadenan); lo demás acaba al hacerlo.
+      if (work(t.action) && pick && pick.kind !== 'expand') endPick();
     },
     cancelPick: () => {
       endPick();
       audio.play('close');
     },
+    select: (id) => {
+      setPick(null);
+      setSelected(id);
+      if (id) audio.play('select', 0.6);
+    },
     startPlan: () => {
       setSteps([]);
-      toast('Modo obras: toca los huecos marcados o elige una sala abajo. Se paga al final.');
+      setSelected(null);
+      toast(
+        'Modo obras: elige una sala abajo o toca una sala para mejorarla, moverla o ampliarla.',
+      );
     },
     undo: () => {
       if (!steps?.length) return;
@@ -199,7 +158,7 @@ export function useWorks({ game, dispatch, toast, focus }: Deps): Works {
       }
       const before = game;
       if (dispatch({ type: 'works', steps }) === before) {
-        toast('El plano ya no cuadra con la taberna: revísalo.');
+        toast('Las obras ya no cuadran con la taberna: revísalas.');
         return;
       }
       audio.play('build');
@@ -207,12 +166,20 @@ export function useWorks({ game, dispatch, toast, focus }: Deps): Works {
         `Obras pagadas: ${steps.length} ${steps.length === 1 ? 'obra hecha' : 'obras hechas'}.`,
       );
       setSteps(null);
+      setSelected(null);
       endPick();
     },
     discard: () => {
       setSteps(null);
+      setSelected(null);
       endPick();
       audio.play('close');
     },
   };
 }
+
+/** Nombre corto de una sala para los botones y avisos. */
+export const roomName = (s: GameState, id: string) => {
+  const r = s.building.rooms.find((x) => x.id === id);
+  return r ? ROOMS[r.type].name : '';
+};
