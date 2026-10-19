@@ -82,6 +82,7 @@ const SOUND: Partial<Record<Action['type'], Sfx>> = {
   demolish: 'thud',
   dig: 'thud',
   addStair: 'creak',
+  removeStair: 'thud',
   buyPlot: 'coin',
 };
 
@@ -119,7 +120,7 @@ export function useWorks({ game, dispatch, toast, focus, raise, price }: Deps): 
     const id = roomOf(view, next, a);
     if (id) focus(id);
     const cost = view.gold - next.gold;
-    if (cost) price(a.type === 'demolish' ? null : id, cost);
+    if (cost) price(a.type === 'demolish' || a.type === 'removeStair' ? null : id, cost);
     if (a.type === 'demolish') setSelected(null);
     return true;
   };

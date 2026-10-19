@@ -121,6 +121,8 @@ export interface Spot {
   rect: Rect;
   /** Casilla tachada: se ve, pero no se puede hacer la obra (si tapa una sala, se toca la sala). */
   blocked?: boolean;
+  /** Obra que quita algo (un tramo de escalera): en coral, con lo que devuelve. */
+  remove?: boolean;
 }
 
 /** Un foco: dónde está, hasta dónde llega y la zona a la que alumbra (en 3D, y hacia arriba). */
@@ -1338,11 +1340,12 @@ export class RoomScene {
         }
         continue;
       }
+      const tone = s.remove ? P.coral : P.lime;
       ctx.globalAlpha = on ? 0.45 : 0.18;
-      ctx.fillStyle = on ? P.gold : P.lime;
+      ctx.fillStyle = on ? P.gold : tone;
       ctx.fillRect(x, y, w, h);
       ctx.globalAlpha = 1;
-      ctx.fillStyle = on ? P.lemon : P.lime;
+      ctx.fillStyle = on ? P.lemon : tone;
       for (let i = beat; i < w; i += 4) {
         ctx.fillRect(x + i, y, 2, 1);
         ctx.fillRect(x + i, y + h - 1, 2, 1);
@@ -1366,7 +1369,8 @@ export class RoomScene {
         ctx.fillRect(cx, cy + 1, 3, 3);
         ctx.fillStyle = P.lemon;
         ctx.fillRect(cx + 1, cy + 1, 1, 1);
-        tinyDigits(ctx, cost, cx + 5, cy, on ? P.lemon : P.white);
+        // Lo que devuelve, en verde, como el precio que sube al quitarlo.
+        tinyDigits(ctx, cost, cx + 5, cy, on ? P.lemon : s.remove ? P.lime : P.white);
       }
     }
   }

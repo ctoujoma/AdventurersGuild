@@ -108,11 +108,9 @@ export const interior = (r: Rect): Rect => ({
 });
 
 function shaftOf(b: Building, at: number): Shaft {
+  // Pasillo solo entre suelos: la planta de arriba de una sala alta no tiene.
   const by = (c: number, f: number) =>
-    b.rooms.some(
-      (r) =>
-        r.type !== 'torre' && c >= r.col && c < r.col + r.w && f >= r.floor && f < r.floor + r.h,
-    );
+    b.rooms.some((r) => r.type !== 'torre' && c >= r.col && c < r.col + r.w && f === r.floor);
   const floors: number[] = [];
   const halls: number[] = [];
   for (let f = -MAX_DOWN; f <= MAX_UP; f++) {
@@ -251,18 +249,21 @@ export function roofLift(runs: RoofRun[], x: number, base: number): number {
 }
 
 /** Qué hay al otro lado de cada pared de una sala, planta a planta. */
-export type Side = 'sala' | 'escalera' | 'aire' | 'tierra';
+export type Side = 'sala' | 'escalera' | 'muro' | 'aire' | 'tierra';
 
 export function sidesOf(b: Building, r: Room): { left: Side[]; right: Side[] } {
   const look = (c: number, f: number, stair: number): Side => {
-    if (landing(b, stair, f)) return 'escalera';
     const o = b.rooms.find(
       (x) =>
         x.type !== 'torre' && c >= x.col && c < x.col + x.w && f >= x.floor && f < x.floor + x.h,
     );
+    // Solo hay paso de suelo a suelo: en las salas altas, la planta de arriba es pared.
+    const walk = f === r.floor;
+    if (landing(b, stair, f)) return walk ? 'escalera' : 'muro';
+    if (!o) return f < 0 ? 'tierra' : 'aire';
+    if (!walk || o.floor !== f) return 'muro';
     // Con la columna de escalera en medio y sin tramo, se pasa por un pasillo.
-    if (o) return isShaft(b, stair) ? 'escalera' : 'sala';
-    return f < 0 ? 'tierra' : 'aire';
+    return isShaft(b, stair) ? 'escalera' : 'sala';
   };
   const left: Side[] = [];
   const right: Side[] = [];

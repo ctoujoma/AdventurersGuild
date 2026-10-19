@@ -96,4 +96,19 @@ describe('geometría por salas', () => {
     expect(of('bodega').left).toEqual(['tierra']);
     expect(of('capilla').right).toEqual(['aire']);
   });
+
+  it('en una sala de dos alturas solo hay puertas abajo', () => {
+    const b = uncleBuilding();
+    b.rooms = b.rooms.filter((r) => r.type !== 'dormitorio');
+    const salon = b.rooms.find((r) => r.type === 'salon')!;
+    salon.h = 2;
+    expect(sidesOf(b, salon)).toEqual({ left: ['escalera', 'muro'], right: ['sala', 'muro'] });
+    // Y la capilla, que da a la planta de arriba del salón, tampoco abre puerta hacia él.
+    expect(
+      sidesOf(
+        b,
+        b.rooms.find((r) => r.type === 'capilla')!,
+      ).left,
+    ).toEqual(['muro']);
+  });
 });

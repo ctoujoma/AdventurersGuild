@@ -170,3 +170,26 @@ Rama: `claude/sharp-mendel-apsm2a` (PR #23 abierto contra `salas`). Cada punto, 
   «Deshacer» en el borrador); al empezar a arrastrar una sala, alejar la cámara para que se vean
   sus sitios (ahora se ven con el borde de la pantalla, que la mueve).
 - Luego, volver al arte (PR 11), esperando el visto bueno del estilo del salón.
+
+### 5. Ronda de pruebas 2 (lo que el usuario vio jugando)
+
+- [x] 5.1 Los héroes que salen de misión no se veían salir: el actor que se iba se borraba en la
+      siguiente llamada a `Crowd.setPeople` (ya tenía estado `mision`). Ahora sigue hasta la puerta
+      mientras `leaving`.
+- [x] 5.2 Mago que en la escena parece clérigo (retrato y ficha bien). Escena y retrato usan el
+      mismo `look`; lo más probable es que al tocar a alguien se abriera la ficha del de delante
+      aunque el dedo cayera en su hueco transparente. Ahora `Crowd.hit` mira el píxel del dibujo
+      (`solidAt`) y gana el que se ve justo ahí. (Ojo: los nobles visitantes visten de clérigo, y
+      un 25 % de los magos va sin sombrero.) Si vuelve a pasar, pedir captura.
+- [x] 5.3 Quitar tramos de escalera: acción `removeStair` (`planUnstair`); devuelve lo que costó
+      si se puso en el mismo borrador (el borrador guarda `flights`) y la mitad si ya estaba. En
+      la elección «Escalera» los tramos que hay salen en coral con lo que devuelven.
+- [x] 5.4 Salón de dos alturas: solo se anda y se pasa por la planta de abajo de cada sala.
+      `cutOff` (núcleo), `raidGraph` (asaltos), `shaftOf` (pasillos) y `sidesOf` (nuevo lado
+      `muro`: pared sin puerta) siguen la misma regla. Tests.
+- [x] 5.5 Pregunta: ¿sin tramo, sin pasillo? Respondida (ver el mensaje al usuario): se puede,
+      pero la columna de escalera ocupa todas las plantas (la rejilla es igual en todas), así
+      que sin pasillo cada escalera partiría en dos todas las plantas donde no tiene tramo.
+- [ ] 5.6 Pregunta: objetos conseguidos sin verse en ningún sitio. Propuesta hecha al usuario
+      (equipo colgado en la armería por iconos y rareza; sin armería, en arcones apilados en la
+      cámara del tesoro o el recibidor). Esperando su decisión.

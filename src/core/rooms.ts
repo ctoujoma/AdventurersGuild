@@ -178,16 +178,20 @@ export const MUST = (Object.keys(ROOMS) as RoomType[]).filter((t) => ROOMS[t].ke
 
 /**
  * El borrador del modo obras: las salas que ya estaban antes de empezarlo (las demás son nuevas
- * del borrador: se quitan devolviendo todo y se mueven gratis) y las que ya se han movido en él
- * (la mudanza se paga una vez).
+ * del borrador: se quitan devolviendo todo y se mueven gratis), las que ya se han movido en él
+ * (la mudanza se paga una vez) y los tramos de escalera que ya estaban.
  */
-let draft: { base: Set<string>; moved: Set<string> } | null = null;
+let draft: { base: Set<string>; moved: Set<string>; flights: Set<string> } | null = null;
 const isFresh = (id: string) => !!draft && !draft.base.has(id);
 
 /** Hace `fn` como borrador de obras sobre la taberna `base`, dejando la casa a medias. */
 export function drafting<T>(base: Building, fn: () => T): T {
   const was = draft;
-  draft = { base: new Set(base.rooms.map((r) => r.id)), moved: new Set() };
+  draft = {
+    base: new Set(base.rooms.map((r) => r.id)),
+    moved: new Set(),
+    flights: new Set(base.stairs.map((x) => key(x.at, x.floor))),
+  };
   try {
     return laxly(fn);
   } finally {
@@ -277,7 +281,8 @@ export function problem(b: Building): string | null {
 }
 
 /**
- * La primera sala a la que no se llega desde el recibidor. Se pasa de una sala a la de al lado
+ * La primera sala a la que no se llega desde el recibidor. Se anda por la planta de abajo de cada
+ * sala (en las de dos alturas, la de arriba es aire). Se pasa de una sala a la de al lado
  * (con columna de escalera en medio también: sin tramo, es un pasillo), a la torre desde la sala
  * de debajo y, por los tramos de cada escalera, a las salas que dan a sus rellanos.
  */
@@ -287,8 +292,9 @@ function cutOff(b: Building, at: Map<string, Room>): Room | null {
   const seen = new Set<Room>([start]);
   const landed = new Set<string>();
   const queue: Room[] = [start];
-  const visit = (r: Room | undefined) => {
-    if (r && r.type !== 'torre' && !seen.has(r)) {
+  // Se anda por el suelo de cada sala: en las altas, solo por la planta de abajo.
+  const visit = (r: Room | undefined, f: number) => {
+    if (r && r.type !== 'torre' && r.floor === f && !seen.has(r)) {
       seen.add(r);
       queue.push(r);
     }
@@ -300,22 +306,20 @@ function cutOff(b: Building, at: Map<string, Room>): Room | null {
       const f = todo.pop()!;
       if (landed.has(key(x, f))) continue;
       landed.add(key(x, f));
-      visit(at.get(key(x - 1, f)));
-      visit(at.get(key(x, f)));
+      visit(at.get(key(x - 1, f)), f);
+      visit(at.get(key(x, f)), f);
       if (hasStair(b, x, f)) todo.push(f + 1);
       if (hasStair(b, x, f - 1)) todo.push(f - 1);
     }
   };
   const side = (x: number, c: number, f: number) => {
-    visit(at.get(key(c, f)));
+    visit(at.get(key(c, f)), f);
     climb(x, f);
   };
   while (queue.length) {
     const r = queue.shift()!;
-    for (let f = r.floor; f < r.floor + r.h; f++) {
-      side(r.col, r.col - 1, f);
-      side(r.col + r.w, r.col + r.w, f);
-    }
+    side(r.col, r.col - 1, r.floor);
+    side(r.col + r.w, r.col + r.w, r.floor);
     for (let c = r.col; c < r.col + r.w; c++) {
       const up = at.get(key(c, r.floor + r.h));
       if (up?.type === 'torre') seen.add(up);
@@ -529,6 +533,20 @@ export function planStair(s: GameState, at: number, floor: number): Plan {
   b.stairs.push({ at, floor });
   b.stairs.sort((x, y) => x.at - y.at || x.floor - y.floor);
   return finish(s, b, cost);
+}
+
+/**
+ * Quitar un tramo de escalera (si no deja otro en el aire). Uno
+ * puesto en este mismo borrador devuelve lo que costó; uno que ya estaba, la mitad.
+ */
+export function planUnstair(s: GameState, at: number, floor: number): Plan {
+  if (!worksOpen(s)) return { error: LOCKED };
+  const b = structuredClone(s.building);
+  if (!hasStair(b, at, floor)) return { error: 'Ahí no hay escalera.' };
+  b.stairs = b.stairs.filter((x) => x.at !== at || x.floor !== floor);
+  const paid = stairCost(b);
+  const fresh = !!draft && !draft.flights.has(key(at, floor));
+  return finish(s, b, -(fresh ? paid : Math.floor(paid * DEMOLISH_REFUND)));
 }
 
 const isYard = (k: keyof Facilities): k is YardKey => (YARD as readonly string[]).includes(k);

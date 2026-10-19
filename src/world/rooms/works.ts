@@ -14,6 +14,7 @@ import {
   planMove,
   planPlot,
   planStair,
+  planUnstair,
   isShaft,
   roomAt,
   type ExtendDir,
@@ -93,7 +94,7 @@ export function pickTitle(s: GameState, pick: Pick): string {
     case 'dig':
       return 'Elige qué hueco excavar';
     case 'stair':
-      return 'Elige dónde poner la escalera';
+      return 'Toca para poner o quitar tramos de escalera';
     case 'expand':
       return 'Toca un hueco para excavarlo o el solar para comprarlo';
     case 'grow':
@@ -223,11 +224,10 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
         const x = isShaft(b, at) ? stairX(b, at) : colX(b, at) - STAIR_W / 2;
         for (const f of floors(-MAX_DOWN, MAX_UP - 1)) {
           const y = floorTop(f + 1) + ROOM_H / 2;
-          add(planStair(s, at, f), { x, y, w: STAIR_W, h: PITCH }, 'Tramo de escalera', {
-            type: 'addStair',
-            at,
-            floor: f,
-          });
+          const rect = { x, y, w: STAIR_W, h: PITCH };
+          add(planStair(s, at, f), rect, 'Tramo de escalera', { type: 'addStair', at, floor: f });
+          // Los que ya hay se pueden quitar (devuelven algo), si no dejan otro en el aire.
+          add(planUnstair(s, at, f), rect, 'Quitar tramo', { type: 'removeStair', at, floor: f });
         }
       }
       break;

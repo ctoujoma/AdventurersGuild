@@ -86,6 +86,7 @@ import {
   planMove,
   planPlot,
   planStair,
+  planUnstair,
   planUpgrade,
   drafting,
   laxly,
@@ -130,6 +131,7 @@ export type Action =
   | { type: 'dig'; col: number; floor: number }
   | { type: 'buyPlot' }
   | { type: 'addStair'; at: number; floor: number }
+  | { type: 'removeStair'; at: number; floor: number }
   /** Varias obras seguidas (las del modo plano): se hacen todas o ninguna. */
   | { type: 'works'; steps: Action[] }
   | { type: 'sell'; itemId: string }
@@ -252,6 +254,8 @@ function planOf(s: GameState, a: Action): Plan | null {
       return planPlot(s);
     case 'addStair':
       return planStair(s, a.at, a.floor);
+    case 'removeStair':
+      return planUnstair(s, a.at, a.floor);
     default:
       return null;
   }

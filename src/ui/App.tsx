@@ -266,8 +266,9 @@ export function App() {
         ? works.targets.map((t) => ({
             id: t.id,
             rect: t.rect,
-            label: t.blocked ? t.label : `${t.label} · ${t.cost}`,
+            label: t.blocked ? t.label : `${t.label} · ${Math.abs(t.cost)}`,
             blocked: !!t.blocked,
+            remove: t.cost < 0,
           }))
         : null,
       null,

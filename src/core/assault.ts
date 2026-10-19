@@ -88,11 +88,9 @@ export function raidGraph(b: Building): RaidGraph {
         const a = by[i]!;
         const c = by[j]!;
         if (a.floor === c.floor) continue;
-        let climb = Infinity;
-        for (let fa = a.floor; fa < a.floor + a.h; fa++)
-          for (let fc = c.floor; fc < c.floor + c.h; fc++)
-            if (fa !== fc && stairLinks(b, x, fa, fc)) climb = Math.min(climb, Math.abs(fa - fc));
-        if (climb === Infinity) continue;
+        // Se entra por el suelo de cada sala (en las altas, la planta de abajo).
+        if (!stairLinks(b, x, a.floor, c.floor)) continue;
+        const climb = Math.abs(a.floor - c.floor);
         const walk = (Math.abs(mid(a) - x) + Math.abs(mid(c) - x)) * RAID_CELL;
         link(a.id, c.id, walk + climb * RAID_FLOOR);
       }

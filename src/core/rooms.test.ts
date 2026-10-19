@@ -7,6 +7,7 @@ import {
   START,
   STAIR_COST,
   STAIR_STEP,
+  DEMOLISH_REFUND,
   UPGRADE_COST,
   capacity,
 } from './balance';
@@ -133,6 +134,30 @@ describe('obras', () => {
     v = ok(v, { type: 'addStair', at: 3, floor: -2 });
     v = ok(v, { type: 'dig', col: 3, floor: -2 });
     expect(v.building.dug).toContain('3,-2');
+  });
+
+  it('los tramos de las puntas se quitan (en el borrador, devolviendo todo)', () => {
+    const s = ok(open(), { type: 'buyPlot' });
+    const add: Action = { type: 'addStair', at: 3, floor: 0 };
+    const off: Action = { type: 'removeStair', at: 3, floor: 0 };
+    const t = ok(s, add);
+    const u = ok(t, off);
+    expect(u.building.stairs).not.toContainEqual({ at: 3, floor: 0 });
+    expect(u.gold - t.gold).toBe(Math.floor(stairCost(u.building) * DEMOLISH_REFUND));
+    no(u, off, /no hay escalera/);
+    // Puesto y quitado en el mismo borrador: como si nada.
+    const d = tryWorks(s, [add, off]);
+    expect('error' in d ? d.error : d.gold).toBe(s.gold);
+    // Sin el tramo de arriba, la sala de mapas se queda sin paso.
+    no(s, { type: 'removeStair', at: 1, floor: 1 }, /Sala de mapas: se quedaría sin paso/);
+  });
+
+  it('en una sala de dos alturas solo se anda por la planta de abajo', () => {
+    const b = structuredClone(open().building);
+    b.rooms = b.rooms.filter((r) => r.type !== 'dormitorio');
+    b.rooms.find((r) => r.type === 'salon')!.h = 2;
+    // La capilla solo toca la planta de arriba del salón: por ahí no se pasa.
+    expect(problem(b)).toMatch(/Capilla: se quedaría sin paso/);
   });
 
   it('a una planta solo se llega si los tramos llegan a ella', () => {
