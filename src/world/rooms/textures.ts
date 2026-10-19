@@ -60,9 +60,8 @@ const TILE: Ramp = [P.black, P.plum, P.rust, P.clay, P.tan];
 const CELL_BACK = CELL_W * BACK;
 /** Alma oscura de los tabiques entre salas (lo demás del grosor lleva la textura del muro). */
 const CORE = 8;
-/** Ventana del hueco `i`: a un lado, para lo que cuelga a su izquierda, o centrada. */
-const windowX = (i: number, center = false) =>
-  Math.round((i * CELL_W + CELL_W * (center ? 0.5 : 0.7) - PARTITION / 2) * BACK);
+/** Ventana del hueco `i`: a un lado, para lo que cuelga a su izquierda. */
+const windowX = (i: number) => Math.round((i * CELL_W + CELL_W * 0.7 - PARTITION / 2) * BACK);
 
 /** Las salas que no tienen ventanas aunque estén por encima del suelo. */
 const BLIND = new Set(['tesoro', 'despensa']);
@@ -97,18 +96,13 @@ export function backWall(room: Room, w: number, h: number, look: SalonLook = NO_
   for (let j = 1; j < room.h; j++)
     beam(b, 0, Math.round((j * PITCH - SLAB) * BACK), bw, room.type === 'salon' ? 2 : 4, WOOD_DARK);
   beam(b, 0, 0, bw, 3, WOOD_DARK);
-  // Ventanas planta a planta (de arriba abajo). En las plantas altas del salón no hay nada
-  // colgado al lado: van centradas (y la que caería detrás del tiro de la chimenea, a su lado).
-  const flue = hearthSpan(bw);
-  const upper = (i: number) => {
-    const x = windowX(i, true);
-    return x + 12 > flue.flueLeft && x - 12 < flue.flueRight ? flue.flueLeft - 14 : x;
-  };
-  const windows = Array.from({ length: room.h }, (_, j) =>
-    Array.from({ length: room.w }, (_, i) =>
-      room.type === 'salon' && j < room.h - 1 ? upper(i) : windowX(i),
-    ),
+  // Ventanas planta a planta (de arriba abajo), en las mismas columnas en todas. En el salón
+  // se quita la columna que cae detrás de la chimenea (o de su tiro, que sube hasta el techo).
+  const { hearthLeft } = hearthSpan(bw);
+  const cols = Array.from({ length: room.w }, (_, i) => windowX(i)).filter(
+    (x) => room.type !== 'salon' || x + 14 < hearthLeft,
   );
+  const windows = Array.from({ length: room.h }, () => cols);
   if (room.floor >= 0 && !BLIND.has(room.type))
     windows.forEach((row, j) =>
       row.forEach((x) => windowAt(b, x, Math.round((j * PITCH + 18) * BACK), room, ruin)),

@@ -47,16 +47,15 @@ en tiempo real; hay trabajadores, visitantes, comida, entrenamiento y asaltos sa
 | 8 | Comida y cerveza | Hecho (#20) |
 | 9 | Entrenamiento + arrastrar personajes a salas | Hecho (#21) |
 | 10 | Tesoro y asaltos sala a sala | Hecho (#22) |
-| 11 | Arte de cada sala | **En curso:** salón de muestra, obras rehechas y dos rondas de pruebas en #23 (abierto) |
+| 11 | Arte de cada sala | Salón de muestra, obras rehechas y rondas de pruebas en #23; el resto de salas, encargado (ver [`encargo-arte.md`](encargo-arte.md)) |
 | 12 | Balance y limpieza | Pendiente |
 
 **Obras rehechas** (pedido del usuario antes de seguir con el arte): ver
 [`obras-rework.md`](obras-rework.md), con decisiones y progreso punto a punto, incluidas las
 rondas de pruebas del usuario (apartado 5).
 
-**Cómo seguir:** (1) que el usuario pruebe la versión de pruebas y fusione #23; (2) con su visto
-bueno al estilo del salón, arte del resto de salas una a una (mismo método que `salon.ts`:
-pared del fondo propia, muebles de delante y luces), en PR pequeños; (3) PR 12: balance con
+**Cómo seguir:** (1) que el usuario pruebe la versión de pruebas y fusione #23; (2) arte del resto de
+salas una a una, encargado a otro agente: ver [`encargo-arte.md`](encargo-arte.md); (3) PR 12: balance con
 `npm run sim` y limpieza (quitar la taberna dibujada si ya no hace falta); (4) PR `salas` → `main`.
 
 El PR #23 (abierto) lleva: salón de muestra, voladizos sin huecos, puerta del recibidor por

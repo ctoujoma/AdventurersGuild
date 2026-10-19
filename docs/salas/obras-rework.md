@@ -201,6 +201,6 @@ Rama: `claude/sharp-mendel-apsm2a` (PR #23 abierto contra `salas`). Cada punto, 
 - [x] 5.8 Salón de dos alturas: la chimenea sube hasta el techo (`hearth(…, rise)`), la lámpara
       grande cuelga de una cadena hasta media sala, la viga de en medio es un listón, las
       tornapuntas van planta a planta, pendones del gremio arriba (`banner`) y los trofeos a
-      media pared de arriba (`salonWall`). Ventanas de arriba centradas (la que caería tras el
-      tiro, a su lado) y nada de la pared detrás de la chimenea (`hearthSpan`): el tablón se
+      media pared de arriba (`salonWall`). Ventanas en las mismas columnas en todas las plantas (se
+      quita la que cae tras la chimenea o su tiro) y nada de la pared detrás de la chimenea (`hearthSpan`): el tablón se
       corre a su izquierda y los trofeos no lo pisan.
