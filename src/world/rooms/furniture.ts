@@ -178,8 +178,9 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
   const gear = look.gearRoom === room.id ? look.gear : [];
   const art = ART[room.type];
   if (room.level === 0) {
-    if (gear.length) chestPile(add, gear.length, 20, 1);
+    // (Las salas con su arte guardan ellas mismas el equipo en arcones.)
     if (art?.ruin) return [...t, ...art.ruin(room, w, look)];
+    if (gear.length) chestPile(add, gear.length, 20, 1);
     add(Prop.brokenChair(), slot3(0, 3), FRONT);
     add(Prop.rolledCarpet(), slot3(1, 3), MID);
     add(Prop.crate(), slot3(2, 3), WALL);
