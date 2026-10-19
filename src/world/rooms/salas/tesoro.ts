@@ -20,7 +20,8 @@ import {
   at,
   bx,
   cellsOf,
-  type Cell,
+  row,
+  stretchesOf,
   type Glow,
   type RoomArt,
   type Thing,
@@ -91,16 +92,38 @@ function vaultDoor(level: number): PixelBuffer {
   });
 }
 
-/** Montón de monedas de oro (de 18 de ancho), con algún destello. */
-function goldPile(big: boolean): PixelBuffer {
-  const w = big ? 22 : 16;
-  const h = big ? 10 : 7;
-  return Prop.piece(w, h, (p) => {
-    p.ellipse(w / 2, h, w / 2, h - 0.5, P.orange);
-    p.ellipse(w / 2 - 1, h - 0.5, w / 2 - 2, h - 2, P.gold);
-    for (let x = 2; x < w - 2; x += 3) p.set(x, h - 2 - (x % 2), P.lemon);
-    p.set(Math.floor(w / 2), 1, P.white);
-    p.set(Math.floor(w / 2) - 1, 2, P.lemon);
+/**
+ * Montón de monedas: un cerro de capas de monedas (cada una, una rayita con su brillo arriba y
+ * su sombra abajo), con destellos y monedas sueltas al pie. `amount` (0–1) dice lo grande que es.
+ */
+export function goldPile(amount: number, wide = 1): PixelBuffer {
+  const a = Math.max(0, Math.min(1, amount));
+  const w = Math.round((14 + a * 16) * wide);
+  const h = Math.round(3 + a * 13 * Math.min(1.4, wide));
+  return Prop.piece(w + 6, h + 3, (p) => {
+    const cx = (w + 6) / 2;
+    const base = h + 1;
+    // Cuerpo del cerro, de la sombra a la luz.
+    p.ellipse(cx, base, w / 2, h, P.brick);
+    p.ellipse(cx - 0.5, base, w / 2 - 1, h - 1, P.orange);
+    p.ellipse(cx - 1.5, base - 0.5, w / 2 - 3, h - 2.5, P.gold);
+    // Monedas en filas: rayita de oro claro con su borde oscuro debajo.
+    for (let y = base - h + 2; y < base; y += 2)
+      for (let x = 1 + ((y >> 1) % 2) * 2; x < w + 5; x += 4) {
+        if (p.get(x, y) === 0 || p.get(x + 2, y) === 0) continue;
+        p.hline(x, y, 2, P.lemon);
+        p.set(x, y + 1, P.orange);
+        p.set(x + 1, y + 1, P.brick);
+      }
+    // Destellos.
+    p.set(Math.round(cx - w / 5), base - h + 2, P.white);
+    if (a > 0.5) p.set(Math.round(cx + w / 6), base - Math.round(h * 0.6), P.white);
+    // Monedas sueltas al pie.
+    for (const dx of [-w / 2 - 1, w / 2 + 1, -w / 3, w / 2.5]) {
+      const x = Math.round(cx + dx);
+      p.hline(x - 1, base + 1, 2, P.gold);
+      p.set(x, base, P.lemon);
+    }
   });
 }
 
@@ -116,20 +139,65 @@ function coinSack(): PixelBuffer {
   });
 }
 
-/** Arcón abierto rebosando de oro (con alguna gema, desde el nivel 3). */
-function openChest(gems: boolean): PixelBuffer {
-  return Prop.piece(18, 15, (p) => {
-    p.blit(Prop.chest(true), 1, 3);
-    p.ellipse(9, 6, 7, 2.5, P.gold);
-    p.hline(3, 5, 12, P.lemon);
-    if (gems) {
-      p.set(6, 5, P.red);
-      p.set(10, 4, P.cyan);
-      p.set(13, 5, P.lime);
-    }
+/** Arcón: cerrado si está vacío; abierto con el oro a la altura de `amount` (rebosando a 1). */
+function goldChest(amount: number, gems: boolean): PixelBuffer {
+  if (amount <= 0) return Prop.chest();
+  return Prop.piece(18, 16, (p) => {
+    p.blit(Prop.chest(true), 1, 4);
     // Tapa abierta hacia atrás.
-    p.rect(1, 0, 16, 3, W[4]!);
-    p.hline(1, 0, 16, W[5]!);
+    p.rect(1, 1, 16, 3, W[4]!);
+    p.hline(1, 1, 16, W[5]!);
+    // El oro de dentro (y, lleno, rebosando por delante).
+    const top = 8 - Math.round(amount * 3);
+    p.ellipse(9, top + 1, 7, 1.5 + amount, P.gold);
+    for (let x = 4; x < 15; x += 3) p.set(x, top, P.lemon);
+    if (amount >= 1) {
+      p.vline(5, 9, 4, P.gold);
+      p.vline(12, 9, 5, P.gold);
+      p.set(12, 14, P.lemon);
+      p.hline(3, 15, 3, P.gold);
+    }
+    if (gems && amount >= 0.5) {
+      p.set(6, top, P.red);
+      p.set(10, top - 1, P.cyan);
+      p.set(13, top, P.lime);
+    }
+  });
+}
+
+/** Mesa con pilas de monedas contadas (más pilas cuanto más oro). */
+function coinStacks(amount: number): PixelBuffer {
+  return Prop.piece(28, 22, (p) => {
+    p.rect(0, 12, 28, 3, W[4]!);
+    p.hline(0, 12, 28, W[5]!);
+    p.rect(2, 15, 3, 7, W[3]!);
+    p.rect(23, 15, 3, 7, W[3]!);
+    const n = Math.round(amount * 6);
+    for (let k = 0; k < n; k++) {
+      const x = 2 + k * 4;
+      const hh = 3 + ((k * 5) % 4) + Math.round(amount * 3);
+      p.rect(x, 12 - hh, 3, hh, P.gold);
+      for (let y = 12 - hh; y < 12; y += 2) p.hline(x, y, 3, P.orange);
+      p.hline(x, 12 - hh, 3, P.lemon);
+    }
+    // El libro de cuentas.
+    p.rect(19, 9, 7, 3, P.wine);
+    p.hline(19, 9, 7, P.white);
+  });
+}
+
+/** Caja fuerte de hierro con remaches (en el tramo de en medio). */
+function strongbox(): PixelBuffer {
+  return Prop.piece(20, 16, (p) => {
+    p.rect(0, 2, 20, 14, P.slate);
+    p.rect(1, 3, 18, 12, P.steel);
+    p.hline(0, 2, 20, P.fog);
+    for (let x = 2; x < 19; x += 4) {
+      p.set(x, 4, P.mist);
+      p.set(x, 13, P.mist);
+    }
+    p.rect(8, 6, 4, 5, P.gold);
+    p.set(9, 8, P.black);
   });
 }
 
@@ -171,46 +239,102 @@ function goblets(level: number): PixelBuffer {
 // ---------- Pared y sala ----------
 
 function wall(b: PixelBuffer, room: Room, _look: SalonLook, { cells, ruin }: WallCtx): void {
-  for (const c of cells) {
+  const lvl = room.level;
+  cells.forEach((c, j) => {
     const x = bx(c.win);
-    if (c.i === 0) {
-      // La caja fuerte (por reparar, la de tablas, rota).
-      const d = vaultDoor(ruin ? 1 : room.level);
+    if (j === 0) {
+      // La caja fuerte (por reparar, la de tablas, rota) y, encima de los arcones, las copas.
+      const d = vaultDoor(ruin ? 1 : lvl);
       if (ruin) web(d, 2, 2, 1);
       b.blit(d, x - 13, 12);
-      // Encima de los arcones, la repisa de las copas.
-      if (!ruin && room.level >= 2) b.blit(goblets(room.level), bx(c.x0 + 26) - 11, 22);
-    } else if (!ruin && room.level >= 2) b.blit(goblets(room.level), x - 11, 18);
-    // A la derecha, una vela en su aplique (desde el nivel 2).
-    const winR = bx(c.win + WIN_HALF);
-    if (!ruin && room.level >= 2 && bx(c.x1) - winR >= 8) {
-      b.rect(winR + 3, 28, 5, 2, P.slate);
-      candleOn(b, winR + 4, 28, 4);
+      if (!ruin && lvl >= 2) b.blit(goblets(lvl), bx(c.x0 + 26) - 11, 22);
+    } else if (!ruin && lvl >= 2) {
+      // Copas en el segundo sitio; en el tercero, un escudo de oro colgado.
+      if (j === 1) b.blit(goblets(lvl), x - 11, 18);
+      else {
+        b.ellipse(x, 22, 8, 8, P.orange);
+        b.ellipse(x - 0.5, 21.5, 7, 7, P.gold);
+        b.ellipse(x, 22, 3, 3, P.lemon);
+        b.set(x - 4, 17, P.white);
+        b.line(x - 6, 22, x + 6, 22, P.orange);
+      }
     }
+  });
+  // Una vela en su aplique en el tramo de la derecha (desde el nivel 2).
+  const last = cells.at(-1)!;
+  const winR = bx(last.win + WIN_HALF);
+  if (!ruin && lvl >= 2 && bx(last.x1) - winR >= 8) {
+    b.rect(winR + 3, 28, 5, 2, P.slate);
+    candleOn(b, winR + 4, 28, 4);
   }
 }
 
-/** Lo de un hueco: arcones y sacos a la izquierda, oro bajo la caja (o la repisa). */
-function cellThings(c: Cell, lvl: number, t: Thing[]) {
-  const l = c.x0;
-  if (lvl >= 3 && c.i > 0) t.push(at(idol(), l + 13, WALL));
-  else t.push(at(Prop.chest(), l + 13, WALL));
-  t.push(at(lvl >= 2 ? openChest(lvl >= 3) : Prop.chest(), l + 36, WALL, 0, SHINE(40, 0.35)));
-  if (lvl >= 2) t.push(at(coinSack(), l + 57, WALL));
-  // Debajo de la caja fuerte (más bajo que ella) y de la repisa: el oro.
-  t.push(at(goldPile(lvl >= 3), c.win + 1, WALL, 0, lvl >= 2 ? SHINE(50) : undefined));
-}
-
+/**
+ * Dónde se ve el oro, por orden: se va repartiendo según lo llena que está la cámara
+ * (`look.vault`), así que con poco oro solo brilla el montón de la caja fuerte y con la cámara
+ * llena rebosan los arcones, los cerros y las pilas de monedas. Las salas anchas suman, en el
+ * primer tramo de en medio, un gran cerro de oro (con el ídolo en el nivel 3) y, en el segundo,
+ * la mesa de contar con la caja fuerte de hierro.
+ */
 function things(room: Room, w: number, look: SalonLook): Thing[] {
+  const lvl = room.level;
   const cells = cellsOf(room, w);
-  const t: Thing[] = [];
   const gear = look.gearRoom === room.id ? look.gear : [];
-  cells.forEach((c, i) => {
-    // Sin armería, el equipo va en arcones en el último hueco (en el sitio de los arcones).
-    if (gear.length && i === cells.length - 1) {
-      t.push(...gearChests(gear.length, c.x0 + 12, 1));
-      t.push(at(goldPile(room.level >= 3), c.win, WALL, 0, SHINE(50)));
-    } else cellThings(c, room.level, t);
+  const stretches = stretchesOf(room, w);
+  // Los sitios del oro, en el orden en que se llenan.
+  type Spot = { key: string; weight: number };
+  const spots: Spot[] = [
+    { key: 'w0', weight: 1 },
+    { key: 'c0', weight: 0.6 },
+  ];
+  for (const s of stretches) if (s.kind === 'mid') spots.push({ key: `m${s.i}`, weight: 1.6 });
+  cells.forEach((_, j) => j > 0 && spots.push({ key: `w${j}`, weight: 1 }));
+  spots.push({ key: 'c1', weight: 0.6 });
+  if (lvl >= 2) spots.push({ key: 'sacks', weight: 0.5 });
+  const total = spots.reduce((a, x) => a + x.weight, 0);
+  let left = (look.vault ?? 0) * total;
+  const fill: Record<string, number> = {};
+  for (const sp of spots) {
+    fill[sp.key] = Math.max(0, Math.min(1, left / sp.weight));
+    left -= sp.weight;
+  }
+  const glow = (a: number, r: number) => (a > 0 ? SHINE(r, 0.2 + a * 0.5) : undefined);
+  const t: Thing[] = [];
+  for (const s of stretches) {
+    if (s.kind === 'left') {
+      // Sin armería, el equipo va en arcones aquí, en el sitio de los del oro.
+      if (gear.length) t.push(...gearChests(gear.length, s.x0 + 12, 1));
+      else
+        t.push(
+          ...row(s, [
+            [goldChest(fill.c0!, lvl >= 3), WALL, glow(fill.c0!, 30)],
+            [goldChest(fill.c1!, lvl >= 3), WALL],
+          ]),
+        );
+    } else if (s.kind === 'right') {
+      if (fill.sacks! > 0) t.push(at(coinSack(), Math.min(s.x0 + 8.5, w - 9), WALL - 2));
+    } else if (s.kind === 'mid') {
+      const a = fill[`m${s.i}`]!;
+      if (s.i === 1)
+        t.push(
+          ...row(s, [
+            ...(lvl >= 3 ? ([[idol(), WALL]] as [PixelBuffer, number][]) : []),
+            [a > 0 ? goldPile(a, 1.5) : strongbox(), WALL, glow(a, 60)],
+          ]),
+        );
+      else
+        t.push(
+          ...row(s, [
+            [strongbox(), WALL],
+            [coinStacks(a), WALL - 2, glow(a, 40)],
+          ]),
+        );
+    }
+  }
+  // Debajo de la caja fuerte y de las repisas (más bajo que ellas): los montones.
+  cells.forEach((c, j) => {
+    const a = fill[`w${j}`]!;
+    if (a > 0) t.push(at(goldPile(a, 0.8), c.win, WALL, 0, glow(a, 50)));
   });
   return t;
 }
@@ -221,10 +345,8 @@ function ruin(room: Room, w: number, look: SalonLook): Thing[] {
   const tipped = new PixelBuffer(18, 14);
   tipped.blit(Prop.chest(true), 0, 0, true);
   const t: Thing[] = [];
-  for (const c of cellsOf(room, w)) {
-    t.push(at(tipped, c.x0 + 20, WALL));
-    t.push(at(Prop.crate(), c.win + WIN_HALF + 6, WALL));
-  }
+  for (const s of stretchesOf(room, w)) if (s.kind !== 'right') t.push(at(tipped, s.x0 + 20, WALL));
+  for (const c of cellsOf(room, w)) t.push(at(Prop.crate(), c.win, WALL));
   if (gear.length) t.push(...gearChests(gear.length, w - 14, -1));
   return t;
 }

@@ -15,12 +15,14 @@ import {
   FLOOR_D,
   FRONT,
   WALL,
-  WIN_HALF,
   W,
   at,
   bx,
+  candle,
   cellsOf,
   lampOver,
+  row,
+  stretchesOf,
   type Cell,
   type RoomArt,
   type Thing,
@@ -169,13 +171,82 @@ function sun(b: PixelBuffer, x: number, y: number) {
 
 // ---------- Pared, suelo y sala ----------
 
-function wall(b: PixelBuffer, room: Room, _look: SalonLook, { cells, ruin }: WallCtx): void {
+/** Púlpito de madera con su escalerilla y el tornavoz. */
+function pulpit(level: number): PixelBuffer {
+  return Prop.piece(24, 40, (p) => {
+    // Tornavoz arriba.
+    p.rect(2, 0, 20, 3, W[3]!);
+    p.hline(2, 0, 20, W[5]!);
+    p.vline(20, 3, 16, W[2]!);
+    // La copa del púlpito sobre su pie.
+    p.rect(6, 18, 14, 9, W[4]!);
+    p.hline(6, 18, 14, W[5]!);
+    for (const x of [9, 13, 17]) p.vline(x, 20, 6, W[3]!);
+    p.rect(11, 27, 4, 10, W[3]!);
+    p.rect(8, 37, 10, 3, W[2]!);
+    // Escalerilla.
+    p.line(0, 39, 6, 25, W[3]!);
+    for (let k = 0; k < 4; k++) p.hline(1 + k * 1.5, 37 - k * 3.5, 3, W[4]!);
+    // El paño con el escudo (dorado en el nivel 3).
+    p.rect(10, 20, 6, 6, level >= 3 ? P.gold : P.wine);
+    p.set(12, 22, P.lemon);
+  });
+}
+
+/** Relicario dorado en su peana. */
+function reliquary(): PixelBuffer {
+  return Prop.piece(16, 30, (p) => {
+    p.rect(2, 18, 12, 12, P.steel);
+    p.hline(2, 18, 12, P.mist);
+    p.rect(1, 17, 14, 2, P.fog);
+    // La arqueta.
+    p.rect(3, 8, 10, 9, P.gold);
+    p.rect(4, 9, 8, 7, P.orange);
+    p.hline(3, 8, 10, P.lemon);
+    p.poly(
+      [
+        [3, 8],
+        [8, 3],
+        [13, 8],
+      ],
+      P.gold,
+    );
+    p.vline(8, 0, 4, P.lemon);
+    p.hline(7, 1, 3, P.lemon);
+    p.set(6, 12, P.red);
+    p.set(10, 12, P.cyan);
+  });
+}
+
+/** Candelero de pie con velas (bajo una ventana). */
+function candleStand(level: number): PixelBuffer {
+  return Prop.piece(14, 26, (p) => {
+    p.rect(3, 24, 8, 2, P.gold);
+    p.vline(7, 10, 14, P.gold);
+    p.hline(1, 10, 13, P.gold);
+    for (let k = 0; k < Math.min(3, level + 1); k++) candleOn(p, 1 + k * 5, 10, 5);
+  });
+}
+
+function wall(b: PixelBuffer, room: Room, look: SalonLook, { cells, ruin }: WallCtx): void {
   if (ruin) return;
   for (const c of cells) {
     if (!c.glass) sun(b, bx(c.win), 24);
     // La lápida, entre la imagen del santo y el candelabro, arriba (desde el nivel 2).
     if (room.level >= 2 && c === mid(cells)) b.blit(plaque(room.level), bx(c.x0 + 34) - 7, 14);
   }
+  // Encima del relicario (segundo tramo de en medio), un estandarte con el escudo.
+  for (const s of stretchesOf(room, cells.at(-1)!.x1))
+    if (s.kind === 'mid' && s.i === 2) {
+      const x = bx(s.x0 + 26);
+      b.hline(x - 7, 8, 14, W[3]!);
+      b.rect(x - 6, 9, 12, 14, look.crest.field);
+      b.vline(x - 6, 9, 14, look.crest.dark);
+      b.vline(x + 5, 9, 14, look.crest.dark);
+      for (let k = 0; k < 3; k++) b.hline(x - 6 + k, 23 + k, 12 - k * 2, look.crest.field);
+      b.rect(x - 1, 12, 2, 7, P.gold);
+      b.rect(x - 3, 14, 6, 2, P.gold);
+    }
 }
 
 function floor(b: PixelBuffer, room: Room, cells: Cell[]): void {
@@ -187,22 +258,45 @@ function floor(b: PixelBuffer, room: Room, cells: Cell[]): void {
   b.rect(x0 + 2, 2, 22, FLOOR_D - 4, base);
 }
 
+const VOTIVE = (lvl: number) => ({
+  dy: 14,
+  r: 30 + lvl * 8,
+  color: CANDLE,
+  power: 0.35 + lvl * 0.1,
+  flicker: 0.15,
+});
+
+/**
+ * La pequeña: el altar bajo la vidriera, el santo, las velas de los caídos y la pila. Las
+ * anchas suman el púlpito (primer tramo de en medio) y el relicario con el estandarte
+ * (segundo); bajo las otras vidrieras, el reclinatorio y un candelero. Los bancos van
+ * delante de cada tramo.
+ */
 function things(room: Room, w: number): Thing[] {
   const lvl = room.level;
   const cells = cellsOf(room, w);
   const m = mid(cells);
   const t: Thing[] = [lampOver(cells, w)];
-  for (const c of cells) {
-    t.push(at(saint(), c.x0 + 17, WALL));
-    t.push(
-      at(votive(lvl), c.x0 + 46, WALL, 0, {
-        dy: 14,
-        r: 30 + lvl * 8,
-        color: CANDLE,
-        power: 0.35 + lvl * 0.1,
-        flicker: 0.15,
-      }),
-    );
+  for (const s of stretchesOf(room, w)) {
+    if (s.kind === 'left')
+      t.push(
+        ...row(s, [
+          [saint(), WALL],
+          [votive(lvl), WALL, VOTIVE(lvl)],
+        ]),
+      );
+    else if (s.kind === 'mid' && s.i === 1)
+      t.push(
+        ...row(s, [
+          [pulpit(lvl), WALL],
+          [votive(lvl), WALL, VOTIVE(lvl)],
+        ]),
+      );
+    else if (s.kind === 'mid') t.push(...row(s, [[reliquary(), WALL]]));
+    else t.push(at(font(), Math.min(s.x0 + 7, w - 7), WALL));
+    if (s.kind !== 'right') t.push(at(pew(), (s.x0 + s.x1) / 2, FRONT + 2));
+  }
+  cells.forEach((c, j) => {
     if (c === m)
       t.push(
         at(altar(lvl), c.win, WALL, 0, {
@@ -214,12 +308,9 @@ function things(room: Room, w: number): Thing[] {
           flames: [-12, 12].map((dx) => ({ dx, dy: 1, size: 0.3 })),
         }),
       );
-    else t.push(at(kneeler(), c.win, WALL));
-    t.push(at(font(), Math.min(c.win + WIN_HALF + 7, c.x1 - 7), WALL));
-    // Bancos delante, a los lados del pasillo del altar.
-    if (lvl >= 1) t.push(at(pew(), c.x0 + 34, FRONT + 2));
-    if (lvl >= 2 && c !== m) t.push(at(pew(), c.win, FRONT + 2));
-  }
+    else if (j === 0) t.push(at(kneeler(), c.win, WALL));
+    else t.push(at(candleStand(lvl), c.win, WALL, 0, candle(20, 34, 0.4)));
+  });
   return t;
 }
 

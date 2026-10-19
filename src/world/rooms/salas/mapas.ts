@@ -19,6 +19,9 @@ import {
   candle,
   cellsOf,
   lampOver,
+  row,
+  stretchesOf,
+  worldW,
   type RoomArt,
   type Thing,
   type WallCtx,
@@ -167,6 +170,19 @@ function wall(b: PixelBuffer, room: Room, _look: SalonLook, { cells, ruin }: Wal
   }
   const map = bigMap(room.level);
   b.blit(map, Math.round((winL - map.w) / 2), 12);
+  // Encima de la mesa de arena, el mapa de la comarca con sus notas clavadas.
+  for (const s of stretchesOf(room, cells.at(-1)!.x1))
+    if (s.kind === 'mid' && s.i === 2) {
+      const x = bx((s.x0 + s.x1) / 2);
+      const small = Prop.wallMap().crop(4, 0, 28, 24);
+      b.rect(x - 16, 14, 32, 26, W[3]!);
+      b.blit(small, x - 14, 15);
+      for (const [dx, dy] of [
+        [-12, 17],
+        [8, 30],
+      ])
+        b.rect(x + dx!, dy!, 5, 6, P.sand);
+    }
   for (const c of cells) {
     // Sin ventana: la rosa de los vientos pintada donde iría.
     if (!c.glass) {
@@ -180,17 +196,108 @@ function wall(b: PixelBuffer, room: Room, _look: SalonLook, { cells, ruin }: Wal
   }
 }
 
+/** Bola del mundo grande, de pie, con su meridiano de latón. */
+function floorGlobe(): PixelBuffer {
+  return Prop.piece(20, 32, (p) => {
+    p.rect(5, 29, 10, 3, W[3]!);
+    p.vline(10, 20, 9, W[3]!);
+    p.line(4, 28, 10, 22, W[3]!);
+    p.line(16, 28, 10, 22, W[3]!);
+    p.ellipse(10, 10, 9, 9, P.gold);
+    p.ellipse(10, 10, 8, 8, P.ocean);
+    p.ellipse(9, 9, 5, 5, P.sky);
+    p.rect(5, 5, 5, 4, P.leaf);
+    p.rect(11, 11, 4, 4, P.leaf);
+    p.set(7, 13, P.lime);
+    p.ellipse(10, 10, 9, 9, (x, y, d) => (d > 0.8 ? P.gold : p.get(x, y)));
+  });
+}
+
+/** Mesa de arena con el relieve de la comarca, banderitas y una silla (baja). */
+function sandTable(level: number): PixelBuffer {
+  return Prop.piece(34, 20, (p) => {
+    p.rect(0, 9, 34, 3, W[4]!);
+    p.hline(0, 9, 34, W[5]!);
+    p.rect(2, 12, 3, 8, W[3]!);
+    p.rect(29, 12, 3, 8, W[3]!);
+    // El relieve: arena, montes, un río y el bosque.
+    p.rect(2, 6, 30, 3, P.tan);
+    p.hline(2, 6, 30, P.sand);
+    p.poly(
+      [
+        [6, 8],
+        [10, 2],
+        [14, 8],
+      ],
+      P.clay,
+    );
+    p.set(10, 2, P.white);
+    p.line(16, 8, 26, 6, P.sky);
+    p.ellipse(22, 6, 3, 1.5, P.forest);
+    // Banderitas de colores (más con el nivel).
+    const flags: [number, string][] = [
+      [8, P.red],
+      [20, P.ocean],
+      [28, P.gold],
+    ];
+    for (const [x, c] of flags.slice(0, level + 1)) {
+      p.vline(x, 1, 6, P.black);
+      p.rect(x + 1, 1, 3, 2, c);
+    }
+  });
+}
+
+/** Escritorio con el compás, la regla y un tintero (bajo una ventana). */
+function chartDesk(): PixelBuffer {
+  return Prop.piece(24, 16, (p) => {
+    p.rect(0, 6, 24, 3, W[4]!);
+    p.hline(0, 6, 24, W[5]!);
+    p.rect(2, 9, 3, 7, W[3]!);
+    p.rect(19, 9, 3, 7, W[3]!);
+    p.rect(3, 4, 12, 2, P.sand);
+    p.hline(3, 4, 12, P.white);
+    p.line(17, 0, 15, 5, P.fog);
+    p.line(17, 0, 19, 5, P.fog);
+    p.rect(20, 3, 2, 3, P.black);
+    p.hline(4, 3, 9, W[5]!);
+  });
+}
+
+/**
+ * La pequeña: el mapa de la pared con el arcón de rollos, la mesa con el mapa abierto y la
+ * bola del mundo (o el catalejo). Las anchas suman el casillero de los mapas con la bola del
+ * mundo grande (primer tramo de en medio) y la mesa de arena con el relieve de la comarca
+ * (segundo); bajo las otras ventanas, el escritorio del compás y el arcón de cartas.
+ */
 function things(room: Room, w: number): Thing[] {
   const lvl = room.level;
   const cells = cellsOf(room, w);
   const t: Thing[] = [lampOver(cells, w)];
-  for (const c of cells) {
-    t.push(at(c.i === 0 ? scrollChest() : scrollRack(lvl), c.x0 + 33, WALL));
-    t.push(at(mapTable(lvl), c.win, WALL, 0, lvl >= 2 ? candle(14) : undefined));
-    const rx = Math.min(c.win + WIN_HALF + 8, c.x1 - 8.5);
-    if (lvl >= 3 && c.i === 0) t.push(at(telescope(), rx, WALL));
-    else if (lvl >= 2) t.push(at(smallGlobe(), rx, WALL));
+  const under = cells.map((_, j) =>
+    j === 0 ? mapTable(lvl) : j === 1 ? chartDesk() : scrollChest(),
+  );
+  for (const s of stretchesOf(room, w)) {
+    if (s.kind === 'left') t.push(at(scrollChest(), s.x0 + 33, WALL));
+    else if (s.kind === 'mid' && s.i === 1)
+      t.push(
+        ...row(s, [
+          [scrollRack(lvl), WALL],
+          [floorGlobe(), WALL],
+        ]),
+      );
+    else if (s.kind === 'mid') t.push(...row(s, [[sandTable(lvl), WALL - 2]]));
+    else if (lvl >= 2) {
+      // Al lado de lo de la última ventana, sin pisarlo.
+      const img = lvl >= 3 ? telescope() : smallGlobe();
+      const c = cells.at(-1)!;
+      const edge = c.win + worldW(under[cells.length - 1]!, WALL) / 2;
+      const rx = Math.min(Math.max(s.x0 + 8, edge + worldW(img, WALL) / 2 + 1), w - 8.5);
+      t.push(at(img, rx, WALL));
+    }
   }
+  cells.forEach((c, j) =>
+    t.push(at(under[j]!, c.win, WALL, 0, j === 0 && lvl >= 2 ? candle(14) : undefined)),
+  );
   return t;
 }
 

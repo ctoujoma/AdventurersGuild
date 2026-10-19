@@ -13,13 +13,13 @@ import type { SalonLook } from '../salon';
 import {
   FIRE,
   WALL,
-  WIN_HALF,
   W,
   at,
   bx,
   cellsOf,
   fire,
-  type Cell,
+  row,
+  stretchesOf,
   type RoomArt,
   type Thing,
   type WallCtx,
@@ -275,70 +275,170 @@ export function flourSacks(): PixelBuffer {
   });
 }
 
+/** Horno de pan: cúpula de ladrillo sobre su poyo, con la boca (encendida desde el nivel 2). */
+function breadOven(lit: boolean): PixelBuffer {
+  return Prop.piece(34, 34, (p) => {
+    // Cúpula: media elipse de ladrillo encima del poyo.
+    for (let y = 6; y <= 20; y++) {
+      const t = (20 - y) / 14;
+      const hw = Math.round(15 * Math.sqrt(Math.max(0, 1 - t * t)));
+      p.hline(17 - hw, y, hw * 2, P.brick);
+      p.set(17 - hw, y, P.amber);
+      p.set(16 + hw, y, P.rust);
+      if (y % 3 === 0)
+        for (let x = 17 - hw + 2 + (y % 2) * 2; x < 15 + hw; x += 5) p.set(x, y, P.rust);
+    }
+    p.hline(10, 8, 7, P.amber);
+    // Boca y chimenea pequeña.
+    p.ellipse(17, 18, 6, 4, P.black);
+    p.rect(11, 18, 12, 3, P.black);
+    if (lit) {
+      p.hline(13, 20, 8, P.orange);
+      p.set(15, 19, P.gold);
+      p.set(19, 19, P.gold);
+    }
+    p.rect(24, 0, 4, 9, P.slate);
+    p.hline(24, 0, 4, P.steel);
+    // El poyo de piedra.
+    p.rect(0, 20, 34, 2, W[4]!);
+    p.hline(0, 20, 34, W[5]!);
+    stoneWall(p, 0, 22, 34, 12, 'poyo-horno', { ramp: STONE, bw: 6, bh: 4 });
+    // La pala del pan apoyada.
+    p.line(33, 6, 31, 33, W[4]!);
+    p.rect(31, 2, 3, 5, W[5]!);
+  });
+}
+
+/** Tajo del carnicero: tocón con la cuchilla clavada y un buen trozo de carne. */
+function butcherBlock(level: number): PixelBuffer {
+  return Prop.piece(18, 20, (p) => {
+    p.rect(2, 8, 14, 12, W[3]!);
+    p.vline(2, 8, 12, W[4]!);
+    p.vline(15, 8, 12, W[2]!);
+    p.ellipse(9, 8, 7, 2, W[5]!);
+    p.ellipse(9, 8, 4, 1, W[4]!);
+    // Cuchilla clavada.
+    p.rect(11, 3, 5, 4, P.mist);
+    p.hline(11, 3, 5, P.white);
+    p.rect(12, 0, 2, 3, W[2]!);
+    // Carne.
+    p.ellipse(6, 6, 4, 2.5, P.red);
+    p.ellipse(5, 5.5, 2, 1, P.coral);
+    if (level >= 3) p.set(8, 6, P.white);
+  });
+}
+
+/** Mesa de amasar: la masa, el rodillo y harina. */
+function doughTable(level: number): PixelBuffer {
+  return Prop.piece(28, 18, (p) => {
+    p.rect(0, 8, 28, 3, W[5]!);
+    p.hline(0, 8, 28, W[6]!);
+    p.hline(0, 10, 28, W[3]!);
+    p.rect(2, 11, 3, 7, W[3]!);
+    p.rect(23, 11, 3, 7, W[3]!);
+    p.hline(5, 14, 18, W[2]!);
+    for (let x = 3; x < 25; x += 3) p.set(x, 8, P.white);
+    p.ellipse(9, 7, 5, 1.6, P.sand);
+    p.ellipse(8, 6.5, 3, 1, P.white);
+    p.rect(15, 6, 9, 2, W[4]!);
+    p.hline(15, 6, 9, W[5]!);
+    if (level >= 2) loaf(p, 2, 8);
+    if (level >= 3) {
+      // Una empanada.
+      p.ellipse(23, 7, 3, 1.5, P.amber);
+      p.hline(21, 6, 4, P.gold);
+    }
+  });
+}
+
+/** Barra de pared con jamones y ristras (encima del tajo). */
+function hamRail(level: number): PixelBuffer {
+  return Prop.piece(22, 18, (p) => {
+    p.hline(0, 0, 22, P.slate);
+    p.hline(0, 1, 22, P.navy);
+    for (let k = 0; k < Math.min(4, level + 1); k++) {
+      const x = 3 + k * 5;
+      p.vline(x, 2, 2, P.black);
+      if (k % 2 === 0) {
+        p.ellipse(x, 9, 2.4, 4.5, P.brick);
+        p.ellipse(x - 0.5, 8, 1, 2, P.coral);
+        p.set(x, 14, P.sand);
+      } else herbs(p, x - 2, 2, true);
+    }
+  });
+}
+
 // ---------- Pared del fondo ----------
 
 function wall(b: PixelBuffer, room: Room, _look: SalonLook, { cells, ruin }: WallCtx): void {
   if (ruin) return;
   const lvl = room.level;
-  for (const c of cells) {
-    const winL = bx(c.win - WIN_HALF);
-    const winR = bx(c.win + WIN_HALF);
-    if (c.i === 0) {
-      // Los cacharros, entre el fogón y la ventana.
-      b.blit(utensils(lvl), winL - 13, 20);
-    } else if (lvl < 2) {
-      // Sin alacena todavía, un estante con tazones.
-      const sx = bx(c.x0) + 6;
+  const w = cells.at(-1)!.x1;
+  for (const s of stretchesOf(room, w)) {
+    if (s.kind === 'left') b.blit(utensils(lvl), bx(s.x1) - 13, 20);
+    else if (s.kind === 'mid' && s.i === 1 && lvl < 2) {
+      // Sin alacena todavía, un estante con tazones encima de los sacos.
+      const sx = bx((s.x0 + s.x1) / 2) - 11;
       shelf(b, sx, 30, 22);
       for (let k = 0; k < 3; k++) {
         b.ellipse(sx + 4 + k * 7, 28.5, 2.5, 1.5, k % 2 ? P.clay : P.steel);
         b.hline(sx + 2 + k * 7, 27, 5, k % 2 ? P.tan : P.fog);
       }
+    } else if (s.kind === 'mid' && s.i === 2) {
+      // Jamones y ristras encima del tajo.
+      b.blit(hamRail(lvl), bx(s.x0 + 66) - 11, 18);
+    } else if (s.kind === 'right' && bx(s.x1) - bx(s.x0) >= 12) {
+      b.blit(jarShelf(lvl, 0), bx(s.x0) + 2, 18);
     }
-    // A la derecha de la ventana: tarros en el primero y hierbas en los demás (sin ventana,
-    // los tarros van donde iría).
-    if (bx(c.x1) - winR >= 12) {
-      if (c.i === 0) {
-        if (c.glass) b.blit(jarShelf(lvl, c.i), winR + 2, 18);
-      } else
-        for (let k = 0; k < Math.min(2, lvl) && winR + 9 + k * 6 <= bx(c.x1); k++)
-          herbs(b, winR + 3 + k * 6, 10, k % 2 === 1 || lvl >= 3);
-    }
-    // Sin ventana, otro estante de tarros donde iría.
-    if (!c.glass) b.blit(jarShelf(lvl, c.i + 2), bx(c.win) - 5, 20);
   }
+  // Sin ventana, otro estante de tarros donde iría.
+  for (const c of cells) if (!c.glass) b.blit(jarShelf(lvl, c.i + 2), bx(c.win) - 5, 20);
 }
 
 // ---------- En la sala ----------
 
-/** Lo de cada hueco que no es el fogón: la alacena (desde el nivel 2) y los sacos. */
-function cellThings(c: Cell, lvl: number, t: Thing[]) {
-  if (c.i > 0) {
-    if (lvl >= 2) t.push(at(dresser(lvl), c.x0 + 26, WALL));
-    t.push(at(flourSacks(), c.x0 + 57, WALL - 2));
-    t.push(at(sink(lvl), c.win, WALL));
-  } else t.push(at(workTable(lvl), c.win, WALL));
-  // En el rincón de la derecha, el barril del agua (o la escoba en los de en medio).
-  t.push(at(c.i === 0 ? Prop.barrel() : broom(), c.win + WIN_HALF + 7, WALL));
-}
-
+/**
+ * La sala pequeña: el fogón y la mesa de trabajo. Las anchas suman, en el primer tramo de en
+ * medio, la alacena y los sacos de harina y, en el segundo, el horno de pan con el tajo; bajo
+ * las otras ventanas, la pila de fregar y la mesa de amasar.
+ */
 function things(room: Room, w: number): Thing[] {
   const lvl = room.level;
   const t: Thing[] = [
     at(hearth(lvl, true), HEARTH_X, WALL + 2, 0, fire(7, 80 + lvl * 10, FIRE, false)),
   ];
-  for (const c of cellsOf(room, w)) cellThings(c, lvl, t);
+  for (const s of stretchesOf(room, w)) {
+    if (s.kind === 'mid' && s.i === 1)
+      t.push(
+        ...row(s, [
+          ...(lvl >= 2 ? ([[dresser(lvl), WALL]] as [PixelBuffer, number][]) : []),
+          [flourSacks(), WALL - 2],
+        ]),
+      );
+    if (s.kind === 'mid' && s.i === 2)
+      t.push(
+        ...row(s, [
+          [breadOven(lvl >= 2), WALL + 2, lvl >= 2 ? fire(4, 50, FIRE, false) : undefined],
+          [butcherBlock(lvl), WALL],
+        ]),
+      );
+    if (s.kind === 'right') t.push(at(Prop.barrel(), Math.min(s.x0 + 7, w - 9), WALL));
+  }
+  cellsOf(room, w).forEach((c, j) =>
+    t.push(at(j === 0 ? workTable(lvl) : j === 1 ? sink(lvl) : doughTable(lvl), c.win, WALL)),
+  );
   return t;
 }
 
-/** Por reparar: el fogón frío, la mesa rota y una caja; en los demás huecos, sacos rotos. */
+/** Por reparar: el fogón frío, la mesa rota y unas cajas. */
 function ruin(room: Room, w: number): Thing[] {
   const t: Thing[] = [at(hearth(1, false), HEARTH_X, WALL + 2)];
-  for (const c of cellsOf(room, w)) {
-    if (c.i === 0) t.push(at(brokenTable(), c.win, WALL));
-    else t.push(at(Prop.brokenChair(), c.win, WALL - 4));
-    t.push(at(Prop.crate(), c.win + WIN_HALF + 7, WALL));
-  }
+  cellsOf(room, w).forEach((c, j) =>
+    t.push(at(j === 0 ? brokenTable() : Prop.brokenChair(), c.win, j === 0 ? WALL : WALL - 4)),
+  );
+  for (const s of stretchesOf(room, w))
+    if (s.kind === 'mid') t.push(at(Prop.crate(), (s.x0 + s.x1) / 2, WALL));
+  t.push(at(Prop.crate(), w - 9, WALL));
   return t;
 }
 

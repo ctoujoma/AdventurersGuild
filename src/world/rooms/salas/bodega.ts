@@ -13,18 +13,18 @@ import type { SalonLook } from '../salon';
 import {
   FIRE,
   WALL,
-  WIN_HALF,
   W,
   at,
   bx,
   cellsOf,
   fire,
-  type Cell,
+  row,
+  stretchesOf,
   type RoomArt,
   type Thing,
   type WallCtx,
 } from './kit';
-import { sack, web } from './piezas';
+import { sack, shelf, web } from './piezas';
 
 // ---------- Piezas ----------
 
@@ -121,40 +121,86 @@ function hops(b: PixelBuffer, x: number, y: number, n: number) {
   }
 }
 
+/** Tina de fermentar: cuba abierta de duelas con la escalera apoyada y espuma arriba. */
+function fermentTub(level: number): PixelBuffer {
+  return Prop.piece(32, 38, (p) => {
+    p.rect(2, 8, 26, 30, W[3]!);
+    for (let x = 2; x < 28; x += 4) p.vline(x, 8, 30, W[2]!);
+    p.vline(3, 8, 30, W[4]!);
+    for (const y of [12, 24, 34]) {
+      p.hline(1, y, 28, P.slate);
+      p.hline(1, y + 1, 28, P.navy);
+    }
+    p.ellipse(15, 8, 13, 2.5, W[4]!);
+    p.ellipse(15, 8, 11, 1.5, level >= 2 ? P.sand : P.amber);
+    if (level >= 2) for (let x = 6; x < 25; x += 3) p.set(x, 7, P.white);
+    // Escalera apoyada a la derecha.
+    p.line(26, 2, 31, 37, W[4]!);
+    p.line(23, 4, 28, 37, W[4]!);
+    for (let y = 8; y < 36; y += 6) p.hline(24 + Math.floor(y / 7), y, 4, W[5]!);
+  });
+}
+
+/** Mesa de embotellar: botellas, embudo y una caja de botellas llenas. */
+function bottling(level: number): PixelBuffer {
+  return Prop.piece(30, 22, (p) => {
+    p.rect(0, 12, 30, 3, W[4]!);
+    p.hline(0, 12, 30, W[5]!);
+    p.rect(2, 15, 3, 7, W[3]!);
+    p.rect(25, 15, 3, 7, W[3]!);
+    for (let k = 0; k < 2 + level; k++) Prop.bottleOn(p, 2 + k * 5, 12, k + 3);
+    // Embudo.
+    p.rect(22, 6, 6, 2, P.steel);
+    p.rect(24, 8, 2, 4, P.slate);
+    p.hline(22, 6, 6, P.fog);
+  });
+}
+
 // ---------- Pared y sala ----------
 
 function wall(b: PixelBuffer, room: Room, _look: SalonLook, { cells, ruin }: WallCtx): void {
   if (ruin) return;
   const lvl = room.level;
-  for (const c of cells) {
-    const winR = bx(c.win + WIN_HALF);
-    // A la derecha de la ventana: jarras colgadas y el lúpulo.
-    if (bx(c.x1) - winR >= 12) b.blit(mugRack(lvl), winR + 1, 22);
-    if (lvl >= 2 && bx(c.x1) - winR >= 18) hops(b, winR + 13, 20, 3 + lvl);
-    // Sin ventana: una pizarra con las cuentas de la cerveza.
-    if (!c.glass) {
-      const x = bx(c.win) - 8;
-      b.rect(x, 14, 16, 12, W[3]!);
-      b.rect(x + 1, 15, 14, 10, P.black);
-      for (let k = 0; k < 2 + lvl; k++) b.vline(x + 3 + k * 2, 17, 4, P.mist);
-      b.line(x + 2, 20, x + 4 + (2 + lvl) * 2, 18, P.mist);
-      b.hline(x + 3, 23, 8, P.fog);
-    }
+  const w = cells.at(-1)!.x1;
+  for (const s of stretchesOf(room, w)) {
+    // Jarras colgadas en el tramo de la derecha; lúpulo en los de en medio.
+    if (s.kind === 'right' && bx(s.x1) - bx(s.x0) >= 12) b.blit(mugRack(lvl), bx(s.x0) + 1, 22);
+    if (s.kind === 'mid' && lvl >= 2) hops(b, bx(s.x1) - 8, 14, 3 + lvl);
   }
+  // Sin ventana, en su sitio: la pizarra de las cuentas, el letrero de la casa y un estante de
+  // botellas (uno distinto en cada sitio).
+  cells.forEach((c, j) => {
+    if (c.glass) return;
+    const x = bx(c.win);
+    if (j % 3 === 0) {
+      b.rect(x - 8, 14, 16, 12, W[3]!);
+      b.rect(x - 7, 15, 14, 10, P.black);
+      for (let k = 0; k < 2 + lvl; k++) b.vline(x - 5 + k * 2, 17, 4, P.mist);
+      b.line(x - 6, 20, x - 4 + (2 + lvl) * 2, 18, P.mist);
+      b.hline(x - 5, 23, 8, P.fog);
+    } else if (j % 3 === 1) b.blit(brewSign(), x - 9, 12);
+    else {
+      shelf(b, x - 10, 26, 20);
+      for (let k = 0; k < 4; k++) Prop.bottleOn(b, x - 8 + k * 5, 26, k + 1);
+    }
+  });
 }
 
-function cellThings(c: Cell, lvl: number, t: Thing[]) {
-  const left = c.x0 + (c.i === 0 ? 22 : 24);
-  if (c.i === 0) {
-    if (lvl >= 2) t.push(at(kettle(lvl), left, WALL + 2, 0, fire(4, 70, FIRE, false)));
-    // Los barriles, a la derecha de la caldera (o en su sitio, sin ella).
-    t.push(at(lvl >= 2 ? Prop.barrel() : barrels(), lvl >= 2 ? c.x0 + 51 : left, WALL));
-  } else {
-    if (lvl >= 3) t.push(at(Prop.wineRack(), left + 2, WALL));
-    else t.push(at(lvl >= 2 ? barrels() : barley(lvl), left, WALL));
-    if (lvl >= 3) t.push(at(barley(lvl), c.x0 + 60, WALL - 2));
-  }
-  t.push(at(vat(lvl, c.i), c.win, WALL));
+/** Letrero de la casa: una tabla con un barril y una jarra pintados. */
+function brewSign(): PixelBuffer {
+  return Prop.piece(18, 16, (p) => {
+    p.vline(4, 0, 3, P.slate);
+    p.vline(13, 0, 3, P.slate);
+    p.rect(0, 3, 18, 13, W[4]!);
+    p.rect(1, 4, 16, 11, W[3]!);
+    p.hline(0, 3, 18, W[5]!);
+    p.ellipse(6, 9.5, 3.5, 3.5, W[5]!);
+    p.vline(4, 7, 6, P.slate);
+    p.vline(8, 7, 6, P.slate);
+    p.rect(11, 7, 4, 5, P.gold);
+    p.hline(11, 7, 4, P.white);
+    p.vline(15, 8, 3, P.gold);
+  });
 }
 
 /** Barriles apilados: dos abajo y uno encima. */
@@ -167,9 +213,34 @@ function barrels(): PixelBuffer {
   });
 }
 
+/**
+ * La pequeña: la caldera (desde el nivel 2), los barriles y la cuba bajo la ventana. Las anchas
+ * suman la tina de fermentar con la cebada (primer tramo de en medio) y la mesa de embotellar
+ * con el botellero (segundo); bajo la ventana de en medio, barriles apilados.
+ */
 function things(room: Room, w: number): Thing[] {
+  const lvl = room.level;
   const t: Thing[] = [];
-  for (const c of cellsOf(room, w)) cellThings(c, room.level, t);
+  for (const s of stretchesOf(room, w)) {
+    if (s.kind === 'left') {
+      if (lvl >= 2) t.push(at(kettle(lvl), s.x0 + 22, WALL + 2, 0, fire(4, 70, FIRE, false)));
+      t.push(at(lvl >= 2 ? Prop.barrel() : barrels(), lvl >= 2 ? s.x0 + 51 : s.x0 + 22, WALL));
+    } else if (s.kind === 'mid' && s.i === 1)
+      t.push(
+        ...row(s, [
+          [fermentTub(lvl), WALL],
+          [barley(lvl), WALL - 2],
+        ]),
+      );
+    else if (s.kind === 'mid')
+      t.push(
+        ...row(s, [
+          [lvl >= 3 ? Prop.wineRack() : barrels(), WALL],
+          [bottling(lvl), WALL - 2],
+        ]),
+      );
+  }
+  cellsOf(room, w).forEach((c, j) => t.push(at(j === 1 ? barrels() : vat(lvl, j), c.win, WALL)));
   return t;
 }
 
@@ -178,11 +249,12 @@ function ruin(room: Room, w: number): Thing[] {
   const broken = Prop.cask();
   web(broken, 3, 1, 1);
   for (let y = 4; y < 22; y += 3) broken.set(14, y, P.black);
-  return cellsOf(room, w).flatMap((c) => [
-    at(broken, c.win, WALL),
-    at(Prop.barrel(), c.x0 + 20, WALL),
-    at(Prop.brokenChair(), c.x0 + 44, 18),
-  ]);
+  const t: Thing[] = [];
+  for (const c of cellsOf(room, w)) t.push(at(broken, c.win, WALL));
+  for (const s of stretchesOf(room, w))
+    if (s.kind !== 'right')
+      t.push(at(Prop.barrel(), s.x0 + 20, WALL), at(Prop.brokenChair(), s.x0 + 44, 18));
+  return t;
 }
 
 export const bodega: RoomArt = { wall, things, ruin };

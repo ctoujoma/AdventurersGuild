@@ -211,3 +211,50 @@ export const hung = (img: PixelBuffer, x: number, z: number, y = 0, light?: Glow
   hang: true,
   light,
 });
+
+/**
+ * Un tramo de pared entre ventanas (en x del interior, en el mundo): el de la izquierda (hasta
+ * la primera ventana), los de en medio (entre dos ventanas: casi el doble de anchos, donde las
+ * salas anchas ponen lo que la pequeña no tiene) y el de la derecha (estrecho).
+ */
+export interface Stretch {
+  /** 0 el de la izquierda, 1 el primero de en medio… y `room.w` el de la derecha. */
+  i: number;
+  x0: number;
+  x1: number;
+  kind: 'left' | 'mid' | 'right';
+}
+
+export function stretchesOf(room: Room, w: number): Stretch[] {
+  const wins = cellsOf(room, w).map((c) => c.win);
+  const out: Stretch[] = [{ i: 0, x0: 0, x1: wins[0]! - WIN_HALF, kind: 'left' }];
+  for (let k = 0; k + 1 < wins.length; k++)
+    out.push({ i: k + 1, x0: wins[k]! + WIN_HALF, x1: wins[k + 1]! - WIN_HALF, kind: 'mid' });
+  out.push({ i: wins.length, x0: wins.at(-1)! + WIN_HALF, x1: w, kind: 'right' });
+  return out;
+}
+
+/**
+ * Centros para poner seguidas, de izquierda a derecha, piezas de esos anchos (en el mundo) en
+ * un tramo, con el mismo hueco entre ellas y con los bordes.
+ */
+export function spread(x0: number, x1: number, widths: number[]): number[] {
+  const free = x1 - x0 - widths.reduce((a, b) => a + b, 0);
+  const gap = Math.max(0, free / (widths.length + 1));
+  let x = x0 + gap;
+  return widths.map((wd) => {
+    const c = x + wd / 2;
+    x += wd + gap;
+    return c;
+  });
+}
+
+/** Las piezas (con su profundidad) repartidas en un tramo con `spread`. */
+export function row(s: { x0: number; x1: number }, items: [PixelBuffer, number, Glow?][]): Thing[] {
+  const xs = spread(
+    s.x0,
+    s.x1,
+    items.map(([img, z]) => worldW(img, z)),
+  );
+  return items.map(([img, z, light], k) => at(img, xs[k]!, z, 0, light));
+}

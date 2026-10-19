@@ -20,6 +20,7 @@ import {
   candle,
   cellsOf,
   lampOver,
+  stretchesOf,
   worldW,
   type RoomArt,
   type Thing,
@@ -95,53 +96,111 @@ function brokenRack(b: PixelBuffer, x: number, y: number) {
 
 // ---------- Pared y sala ----------
 
-function wall(b: PixelBuffer, _room: Room, look: SalonLook, { cells, ruin }: WallCtx): void {
-  for (const c of cells) {
-    if (ruin) {
-      brokenRack(b, bx(c.x0) + 4, 24);
-      continue;
+/** Bastidor bajo con escudos redondos apoyados (cabe bajo una ventana). */
+function shieldStand(field: string, dark: string): PixelBuffer {
+  return Prop.piece(28, 18, (p) => {
+    p.rect(0, 15, 28, 3, W[3]!);
+    p.hline(0, 15, 28, W[4]!);
+    p.hline(0, 6, 28, W[3]!);
+    for (const [cx, c] of [
+      [6, W[4]!],
+      [14, field],
+      [22, P.steel],
+    ] as const) {
+      p.ellipse(cx, 10, 5.5, 5.5, c === field ? P.gold : P.slate);
+      p.ellipse(cx, 10, 4.5, 4.5, c);
+      if (c === field) p.rect(cx, 6, 4, 9, dark);
+      p.ellipse(cx, 10, 1.2, 1.2, P.fog);
     }
-    const winR = bx(c.win + WIN_HALF);
-    if (bx(c.x1) - winR >= 11) b.blit(kiteShield(look.crest.field, look.crest.dark), winR + 1, 16);
-    // Sin ventana: dos lanzas cruzadas donde iría (por encima de la armadura).
-    if (!c.glass) {
-      const x = bx(c.win);
-      b.line(x - 9, 14, x + 9, 34, W[4]!);
-      b.line(x + 9, 14, x - 9, 34, W[4]!);
-      for (const s of [-1, 1]) {
-        b.hline(x + s * 9 - 1, 13, 3, P.mist);
-        b.set(x + s * 9, 12, P.white);
-      }
-    }
-  }
+  });
 }
 
+function wall(b: PixelBuffer, _room: Room, look: SalonLook, { cells, ruin }: WallCtx): void {
+  const w = cells.at(-1)!.x1;
+  if (ruin) {
+    for (const s of stretchesOf(_room, w)) if (s.kind !== 'right') brokenRack(b, bx(s.x0) + 4, 24);
+    return;
+  }
+  const last = cells.at(-1)!;
+  const winR = bx(last.win + WIN_HALF);
+  if (bx(last.x1) - winR >= 11) b.blit(kiteShield(look.crest.field, look.crest.dark), winR + 1, 16);
+  // Sin ventana, en su sitio: lanzas cruzadas, el pendón del gremio o dos hachas.
+  cells.forEach((c, j) => {
+    if (c.glass) return;
+    const x = bx(c.win);
+    if (j % 3 === 1) {
+      b.hline(x - 7, 12, 14, W[3]!);
+      b.rect(x - 6, 13, 12, 18, look.crest.field);
+      b.vline(x - 6, 13, 18, look.crest.dark);
+      b.vline(x + 5, 13, 18, look.crest.dark);
+      for (let k = 0; k < 3; k++) b.hline(x - 6 + k, 31 + k, 12 - k * 2, look.crest.field);
+      b.rect(x - 2, 18, 4, 5, P.gold);
+      return;
+    }
+    const axe = j % 3 === 2;
+    b.line(x - 9, 14, x + 9, 34, W[4]!);
+    b.line(x + 9, 14, x - 9, 34, W[4]!);
+    for (const sx of [-1, 1]) {
+      if (axe) {
+        b.rect(x + sx * 9 - (sx < 0 ? 0 : 3), 13, 4, 5, P.steel);
+        b.vline(x + sx * 9 + (sx < 0 ? 0 : 0), 13, 5, P.mist);
+      } else {
+        b.hline(x + sx * 9 - 1, 13, 3, P.mist);
+        b.set(x + sx * 9, 12, P.white);
+      }
+    }
+  });
+}
+
+/**
+ * Un estante de equipo por hueco (con los arcones de lo que no cabe debajo). En la pequeña,
+ * a la izquierda; en las anchas, también en cada tramo de en medio, junto a una armadura (el
+ * primero) o al barril de armas (el segundo). Bajo las ventanas: la armadura o el barril, el
+ * bastidor de escudos…
+ */
 function things(room: Room, w: number, look: SalonLook): Thing[] {
   const lvl = room.level;
   const cells = cellsOf(room, w);
   const gear = look.gearRoom === room.id ? look.gear : [];
   const per = RACK_SLOTS[Math.min(lvl, 3)]!;
   const t: Thing[] = [lampOver(cells, w)];
-  // Lo que no cabe en los estantes, en arcones: debajo de cada estante y, si no, bajo la ventana.
   let extra = Math.max(0, gear.length - per * cells.length);
   const chestW = worldW(Prop.chest(), WALL) + 1;
-  for (const c of cells) {
-    const rack = gearRack(gear.slice(c.i * per, (c.i + 1) * per), per);
-    t.push(at(rack, c.x0 + 33, WALL, RACK_Y));
+  let k = 0;
+  const rackAt = (x: number) => {
+    const rack = gearRack(gear.slice(k * per, (k + 1) * per), per);
+    k++;
+    t.push(at(rack, x, WALL, RACK_Y));
     if (extra > 0) {
       // Centrados debajo del estante.
       const n = Math.min(3, Math.ceil(extra / 3));
-      t.push(...gearChests(n * 3, c.x0 + 33 - ((n - 1) * chestW) / 2, 1));
+      t.push(...gearChests(n * 3, x - ((n - 1) * chestW) / 2, 1));
       extra -= n * 3;
     }
+  };
+  const rackW = worldW(gearRack([], per), WALL);
+  for (const s of stretchesOf(room, w)) {
+    if (s.kind === 'left') rackAt(s.x0 + 33);
+    else if (s.kind === 'mid') {
+      const side = s.i === 1 ? Prop.armorStand() : weaponBarrel();
+      const sw = worldW(side, WALL);
+      const gap = (s.x1 - s.x0 - rackW - sw) / 3;
+      if (s.i === 1) {
+        rackAt(s.x0 + gap + rackW / 2);
+        t.push(at(side, s.x1 - gap - sw / 2, WALL));
+      } else {
+        t.push(at(side, s.x0 + gap + sw / 2, WALL));
+        rackAt(s.x1 - gap - rackW / 2);
+      }
+    } else if (lvl >= 2) t.push(at(grindstone(), Math.min(s.x0 + 7, w - 9), WALL - 2));
   }
-  for (const c of cells) {
+  cells.forEach((c, j) => {
     if (extra > 0) {
       t.push(at(Prop.chest(), c.win, WALL), at(Prop.chest(), c.win, WALL, 11));
       extra -= 6;
-    } else t.push(at(lvl >= 2 ? Prop.armorStand() : weaponBarrel(), c.win, WALL));
-    if (lvl >= 2) t.push(at(grindstone(), Math.min(c.win + WIN_HALF + 7, c.x1 - 9), WALL - 2));
-  }
+    } else if (j === 1) t.push(at(shieldStand(look.crest.field, look.crest.dark), c.win, WALL));
+    else t.push(at(lvl >= 2 && j === 0 ? Prop.armorStand() : weaponBarrel(), c.win, WALL));
+  });
   return t;
 }
 

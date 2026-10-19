@@ -13,13 +13,13 @@ import type { SalonLook } from '../salon';
 import {
   FORGE,
   WALL,
-  WIN_HALF,
   W,
   at,
   bx,
   cellsOf,
   fire,
-  type Cell,
+  row,
+  stretchesOf,
   type RoomArt,
   type Thing,
   type WallCtx,
@@ -241,44 +241,154 @@ function horseshoe(): PixelBuffer {
   });
 }
 
+/** Afiladora grande de pedal: la rueda de piedra en su banco, con el asiento. */
+function bigWheel(): PixelBuffer {
+  return Prop.piece(26, 28, (p) => {
+    p.rect(0, 20, 26, 3, W[4]!);
+    p.hline(0, 20, 26, W[5]!);
+    p.rect(1, 23, 3, 5, W[3]!);
+    p.rect(22, 23, 3, 5, W[3]!);
+    p.vline(9, 6, 14, W[3]!);
+    p.vline(17, 6, 14, W[3]!);
+    p.ellipse(13, 10, 9, 9, P.slate);
+    p.ellipse(13, 10, 8, 8, P.steel);
+    p.ellipse(12, 9, 5, 5, P.fog);
+    p.ellipse(13, 10, 1.5, 1.5, P.navy);
+    // Chispas del filo.
+    p.set(4, 4, P.lemon);
+    p.set(2, 6, P.gold);
+    p.set(3, 2, P.orange);
+    // Pedal.
+    p.line(20, 27, 25, 24, W[2]!);
+  });
+}
+
+/** Horno de fundir: torre de ladrillo con el crisol al rojo arriba y la boca abajo. */
+function smelter(lit: boolean): PixelBuffer {
+  return Prop.piece(24, 46, (p) => {
+    p.rect(9, 0, 6, 10, P.slate);
+    p.vline(9, 0, 10, P.steel);
+    stoneWall(p, 1, 8, 22, 38, 'horno-fundir', {
+      ramp: [P.plum, P.rust, P.brick, P.amber],
+      bw: 5,
+      bh: 3,
+    });
+    for (const y of [14, 30]) {
+      p.hline(0, y, 24, P.slate);
+      p.hline(0, y + 1, 24, P.navy);
+    }
+    // Boca del fuego.
+    p.rect(7, 36, 10, 10, P.black);
+    if (lit) {
+      p.hline(8, 44, 8, P.orange);
+      p.hline(9, 43, 6, P.gold);
+      // Crisol al rojo en su ventanuco.
+      p.rect(8, 19, 8, 7, P.black);
+      p.rect(9, 21, 6, 4, P.orange);
+      p.hline(10, 21, 4, P.lemon);
+    } else p.rect(8, 19, 8, 7, P.black);
+  });
+}
+
+/** Montón de mineral y unos lingotes. */
+function ore(): PixelBuffer {
+  return Prop.piece(16, 9, (p) => {
+    p.ellipse(6, 9, 6, 5, P.umber);
+    p.ellipse(5, 8, 4, 3, P.mocha);
+    for (const [x, y] of [
+      [3, 6],
+      [6, 5],
+      [8, 7],
+    ])
+      p.set(x!, y!, P.rust);
+    p.rect(10, 6, 5, 2, P.steel);
+    p.hline(10, 6, 5, P.fog);
+    p.rect(11, 4, 4, 2, P.steel);
+    p.hline(11, 4, 4, P.mist);
+  });
+}
+
+/** Cubo de agua con unas tenazas (bajo una ventana). */
+function waterBucket(): PixelBuffer {
+  return Prop.piece(12, 16, (p) => {
+    p.rect(1, 7, 10, 9, W[3]!);
+    p.vline(1, 7, 9, W[4]!);
+    for (const y of [9, 14]) p.hline(1, y, 10, P.slate);
+    p.hline(2, 7, 8, P.ocean);
+    p.line(4, 0, 6, 7, P.slate);
+    p.line(7, 0, 7, 7, P.steel);
+  });
+}
+
 // ---------- Pared y sala ----------
 
 function wall(b: PixelBuffer, room: Room, _look: SalonLook, { cells, ruin }: WallCtx): void {
   if (ruin) return;
-  for (const c of cells) {
-    // Encima del yunque, las herramientas; en los demás, las hojas acabadas (desde el nivel 2).
-    if (c.i === 0) b.blit(tools(room.level), bx(c.x0 + ANVIL_X) - 10, 24);
-    else if (room.level >= 2) b.blit(blades(room.level), bx(c.x0 + 30) - 12, 16);
-    // Sin ventana, una herradura de la suerte donde iría (con las puntas hacia arriba).
-    if (!c.glass) b.blit(horseshoe(), bx(c.win) - 5, 18);
+  const w = cells.at(-1)!.x1;
+  for (const s of stretchesOf(room, w)) {
+    // Encima del yunque, las herramientas; encima del banco, las hojas acabadas (nivel 2).
+    if (s.kind === 'left') b.blit(tools(room.level), bx(s.x0 + ANVIL_X) - 10, 24);
+    if (s.kind === 'mid' && s.i === 1 && room.level >= 2)
+      b.blit(blades(room.level), bx(s.x0 + 26) - 12, 14);
   }
+  // Sin ventana, en su sitio: la herradura, unas tenazas cruzadas o un escudo sin pintar.
+  cells.forEach((c, j) => {
+    if (c.glass) return;
+    const x = bx(c.win);
+    if (j % 3 === 0) b.blit(horseshoe(), x - 5, 18);
+    else if (j % 3 === 1) {
+      b.line(x - 7, 14, x + 7, 30, P.fog);
+      b.line(x + 7, 14, x - 7, 30, P.steel);
+      b.rect(x - 1, 21, 3, 2, P.slate);
+    } else {
+      b.ellipse(x, 22, 7, 8, P.slate);
+      b.ellipse(x - 0.5, 21.5, 6, 7, P.steel);
+      b.ellipse(x, 22, 1.5, 1.5, P.fog);
+    }
+  });
 }
 
-function cellThings(c: Cell, lvl: number, t: Thing[]) {
-  if (c.i === 0) {
-    t.push(at(forge(lvl, true), c.x0 + FORGE_X, WALL + 2, 0, fire(28, 80 + lvl * 15, FORGE, true)));
-    t.push(at(anvil(lvl), c.x0 + ANVIL_X, WALL));
-  } else t.push(at(bench(lvl), c.x0 + 30, WALL));
-  t.push(at(trough(lvl), c.win - 1, WALL));
-  t.push(at(coal(), Math.min(c.win + WIN_HALF + 7, c.x1 - 9), WALL - 2));
-}
-
+/**
+ * La pequeña: la fragua con el yunque y la artesa. Las anchas suman el banco de trabajo con
+ * la afiladora grande (primer tramo de en medio) y el horno de fundir con el mineral (segundo).
+ */
 function things(room: Room, w: number): Thing[] {
+  const lvl = room.level;
   const t: Thing[] = [];
-  for (const c of cellsOf(room, w)) cellThings(c, room.level, t);
+  for (const s of stretchesOf(room, w)) {
+    if (s.kind === 'left') {
+      t.push(
+        at(forge(lvl, true), s.x0 + FORGE_X, WALL + 2, 0, fire(28, 80 + lvl * 15, FORGE, true)),
+      );
+      t.push(at(anvil(lvl), s.x0 + ANVIL_X, WALL));
+    } else if (s.kind === 'mid' && s.i === 1)
+      t.push(
+        ...row(s, [
+          [bench(lvl), WALL],
+          [bigWheel(), WALL - 2],
+        ]),
+      );
+    else if (s.kind === 'mid')
+      t.push(
+        ...row(s, [
+          [smelter(lvl >= 2), WALL + 2, lvl >= 2 ? fire(22, 60, FORGE, false) : undefined],
+          [ore(), WALL - 2],
+        ]),
+      );
+    else t.push(at(coal(), Math.min(s.x0 + 7, w - 9), WALL - 2));
+  }
+  cellsOf(room, w).forEach((c, j) =>
+    t.push(at(j === 1 ? waterBucket() : trough(lvl), c.win - 1, WALL)),
+  );
   return t;
 }
 
-/** Por reparar: la fragua fría, el yunque oxidado y una caja. */
+/** Por reparar: la fragua fría, el yunque oxidado y unas cajas. */
 function ruin(room: Room, w: number): Thing[] {
-  const t: Thing[] = [];
-  for (const c of cellsOf(room, w)) {
-    if (c.i === 0) {
-      t.push(at(forge(1, false), c.x0 + FORGE_X, WALL + 2));
-      t.push(at(anvil(1, true), c.x0 + ANVIL_X, WALL));
-    }
-    t.push(at(Prop.crate(), c.win, WALL));
-  }
+  const t: Thing[] = [at(forge(1, false), FORGE_X, WALL + 2), at(anvil(1, true), ANVIL_X, WALL)];
+  for (const c of cellsOf(room, w)) t.push(at(Prop.crate(), c.win, WALL));
+  for (const s of stretchesOf(room, w))
+    if (s.kind === 'mid') t.push(at(smelter(false), (s.x0 + s.x1) / 2, WALL + 2));
   return t;
 }
 
