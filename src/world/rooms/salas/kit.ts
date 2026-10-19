@@ -5,11 +5,11 @@
  * `index.ts`.
  */
 import { P, R } from '../../../art/palette';
-import type { PixelBuffer } from '../../../art/pixel';
+import { PixelBuffer } from '../../../art/pixel';
 import * as Prop from '../../props';
 import type { Room } from '../../../core/model';
 import type { SalonLook } from '../salon';
-import { CELL_W, DEPTH, PARTITION } from '../layout';
+import { CELL_W, DEPTH, PARTITION, PITCH, ROOM_H } from '../layout';
 import { BACK, scaleAt } from '../view3d';
 
 export type RGB = [number, number, number];
@@ -178,18 +178,84 @@ export function lantern(): PixelBuffer {
 }
 
 /**
- * El farol de la sala, colgado delante de la ventana del hueco de en medio (allí no tapa nada:
- * con su cadena corta queda por encima del cristal), para las salas con muebles altos a los
- * lados de las ventanas.
+ * Araña de hierro con cuatro velas (la luz del nivel 3): igual de alta que el farol al que
+ * sustituye, con `chain` filas de cadena encima de las velas.
  */
-export function lampOver(cells: Cell[], w: number): Thing {
+export function chandelier(chain: number): PixelBuffer {
+  const c = chain;
+  return Prop.piece(
+    15,
+    c + 7,
+    (p) => {
+      p.vline(7, 0, c + 5, P.black);
+      for (const x of [1, 4, 10, 13]) {
+        p.set(x, c - 1, P.gold);
+        p.set(x, c, P.lemon);
+        p.vline(x, c + 1, 2, P.white);
+        p.hline(x - 1, c + 3, 3, P.steel);
+      }
+      // Los brazos, curvados hacia arriba en las puntas, y el remate de abajo.
+      p.hline(1, c + 4, 13, P.black);
+      p.set(0, c + 3, P.black);
+      p.set(14, c + 3, P.black);
+      p.hline(6, c + 5, 3, P.slate);
+      p.set(7, c + 6, P.black);
+    },
+    'none',
+  );
+}
+
+/** La luz del techo de una sala: el farol o, en el nivel 3, la araña (más fuerte y más lejos). */
+export function ceilingGlow(w: number, level: number, dy: number): Glow {
+  const rich = level >= 3;
+  return {
+    dy,
+    r: Math.round(Math.max(80, w * 0.7) * (rich ? 1.2 : 1)),
+    color: rich ? CANDLE : LANTERN,
+    power: rich ? 1.25 : 1,
+    flicker: rich ? 0.1 : 0.08,
+  };
+}
+
+/**
+ * El farol de la sala (la araña en el nivel 3), colgado delante de la ventana del hueco de en
+ * medio (allí no tapa nada: con su cadena corta queda por encima del cristal), para las salas
+ * con muebles altos a los lados de las ventanas.
+ */
+export function lampOver(cells: Cell[], w: number, level = 1): Thing {
   const c = cells[Math.floor((cells.length - 1) / 2)]!;
-  return hung(lantern(), c.win, MID, 0, {
-    dy: 3,
-    r: Math.max(80, Math.round(w * 0.7)),
-    color: LANTERN,
-    power: 1,
-    flicker: 0.08,
+  return hung(level >= 3 ? chandelier(2) : lantern(), c.win, MID, 0, ceilingGlow(w, level, 3));
+}
+
+/** Aplique de pared: una vela encendida en su brazo de hierro (se pinta en la pared). */
+export function sconce(): PixelBuffer {
+  return Prop.piece(7, 11, (p) => {
+    p.set(3, 0, P.gold);
+    p.set(3, 1, P.lemon);
+    p.rect(2, 2, 3, 4, P.white);
+    p.vline(4, 2, 4, P.mist);
+    p.rect(1, 6, 5, 2, P.steel);
+    p.hline(1, 6, 5, P.fog);
+    p.rect(3, 8, 1, 3, P.slate);
+    p.rect(2, 10, 3, 1, P.slate);
+  });
+}
+
+/** Pinta un aplique en la pared del fondo con la llama en (`x`, `y`) del fondo. */
+export function sconceOn(b: PixelBuffer, x: number, y: number): void {
+  b.blit(sconce(), x - 4, y - 1);
+}
+
+/**
+ * La luz de un aplique pintado en la pared (o de una vela pintada): una figura vacía contra la
+ * pared, a la altura de la llama, que solo pone la luz. `x` e `y` son del fondo (los de
+ * `sconceOn`).
+ */
+export function wallLight(room: Room, x: number, y: number, power = 0.6, r = 50): Thing {
+  const bh = Math.round((room.h * PITCH - (PITCH - ROOM_H)) * BACK);
+  return at(new PixelBuffer(1, 1), x / BACK, WALL, (bh - y) / BACK, {
+    ...candle(0, r, power),
+    flicker: 0.1,
   });
 }
 

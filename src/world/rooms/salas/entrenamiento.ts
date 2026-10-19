@@ -19,7 +19,9 @@ import {
   candle,
   cellsOf,
   row,
+  sconceOn,
   stretchesOf,
+  wallLight,
   type Cell,
   type RoomArt,
   type Thing,
@@ -152,7 +154,11 @@ function armasWall(b: PixelBuffer, room: Room, _look: SalonLook, { cells, ruin }
   if (ruin) return;
   const last = cells.at(-1)!;
   const winR = bx(last.win + WIN_HALF);
-  if (bx(last.x1) - winR >= 9 && room.level < 2) rope(b, winR + 1, 16);
+  if (bx(last.x1) - winR >= 9) {
+    // La cuerda de trepar; desde el nivel 2, en su sitio, un aplique.
+    if (room.level < 2) rope(b, winR + 1, 16);
+    else sconceOn(b, winR + 5, 16);
+  }
   // Sin ventana: la pizarra con las marcas de cada uno.
   for (const c of cells)
     if (!c.glass) {
@@ -298,9 +304,11 @@ function armasThings(room: Room, w: number): Thing[] {
       );
     else if (lvl >= 2) t.push(at(punchBag(), Math.min(s.x0 + 8, w - 8), WALL));
   }
-  cellsOf(room, w).forEach((c, j) =>
-    t.push(at(j === 1 ? pressBench() : weights(lvl), c.win, WALL)),
-  );
+  const cells = cellsOf(room, w);
+  cells.forEach((c, j) => t.push(at(j === 1 ? pressBench() : weights(lvl), c.win, WALL)));
+  // La luz del aplique (ver armasWall).
+  const winR = bx(cells.at(-1)!.win + WIN_HALF);
+  if (lvl >= 2 && bx(cells.at(-1)!.x1) - winR >= 9) t.push(wallLight(room, winR + 5, 16));
   return t;
 }
 
@@ -417,6 +425,8 @@ function tiroWall(b: PixelBuffer, room: Room, _look: SalonLook, { cells, ruin }:
   const last = cells.at(-1)!;
   const winR = bx(last.win + WIN_HALF);
   if (bx(last.x1) - winR >= 10) bowPeg(b, winR + 1, 14, room.level);
+  // Desde el nivel 2, un aplique a la izquierda de la primera ventana (encima de las dianas).
+  if (room.level >= 2) sconceOn(b, bx(cells[0]!.win - WIN_HALF) - 8, 18);
   for (const c of cells) if (!c.glass) b.blit(Prop.dartboard(), bx(c.win) - 7, 14);
 }
 
@@ -534,9 +544,10 @@ function tiroThings(room: Room, w: number): Thing[] {
         ]),
       );
   }
-  cellsOf(room, w).forEach((c, j) =>
-    t.push(at(j === 1 ? fletchBench() : arrowBarrel(lvl), c.win, WALL)),
-  );
+  const cells = cellsOf(room, w);
+  cells.forEach((c, j) => t.push(at(j === 1 ? fletchBench() : arrowBarrel(lvl), c.win, WALL)));
+  // La luz del aplique (ver tiroWall).
+  if (lvl >= 2) t.push(wallLight(room, bx(cells[0]!.win - WIN_HALF) - 8, 18));
   return t;
 }
 

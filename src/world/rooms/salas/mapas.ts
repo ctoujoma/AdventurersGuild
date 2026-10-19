@@ -272,7 +272,7 @@ function chartDesk(): PixelBuffer {
 function things(room: Room, w: number): Thing[] {
   const lvl = room.level;
   const cells = cellsOf(room, w);
-  const t: Thing[] = [lampOver(cells, w)];
+  const t: Thing[] = [lampOver(cells, w, lvl)];
   const under = cells.map((_, j) =>
     j === 0 ? mapTable(lvl) : j === 1 ? chartDesk() : scrollChest(),
   );

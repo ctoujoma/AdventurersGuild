@@ -276,7 +276,7 @@ function things(room: Room, w: number): Thing[] {
   const lvl = room.level;
   const cells = cellsOf(room, w);
   const m = mid(cells);
-  const t: Thing[] = [lampOver(cells, w)];
+  const t: Thing[] = [lampOver(cells, w, lvl)];
   for (const s of stretchesOf(room, w)) {
     if (s.kind === 'left')
       t.push(

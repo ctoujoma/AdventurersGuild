@@ -28,6 +28,7 @@ import {
   fire,
   lampOver,
   stretchesOf,
+  wallLight,
   type Bed,
   type Glow,
   type RoomArt,
@@ -537,7 +538,7 @@ function things(room: Room, w: number): Thing[] {
   const { tiers } = perCell(room);
   const cells = cellsOf(room, w);
   const { bunks, features } = plan(room, w);
-  const t: Thing[] = [lampOver(cells, w)];
+  const t: Thing[] = [lampOver(cells, w, lvl)];
   for (const x of bunks)
     t.push(at(tiers === 1 ? mat() : bunk(quiltOf(room), tiers === 3 ? 3 : 2, style), x, WALL));
   for (const f of features) {
@@ -548,8 +549,11 @@ function things(room: Room, w: number): Thing[] {
   // En el tramo de la derecha: la mesilla con su vela (o la escoba del servicio).
   const last = cells.at(-1)!;
   const rx = Math.min(last.win + WIN_HALF + 7, w - 7);
-  if (style === 'servicio') t.push(at(broom(), rx, WALL));
-  else if (lvl >= 2)
+  if (style === 'servicio') {
+    t.push(at(broom(), rx, WALL));
+    // La vela de la primera repisa (con literas de dos pisos; ver wall).
+    if (tiers === 2 && bunks.length) t.push(wallLight(room, bx(bunks[0]!) + 3, 24, 0.4, 34));
+  } else if (lvl >= 2)
     t.push(at(nightstand(), rx, WALL - 2, 0, { ...candle(14, 30, 0.4), color: CANDLE }));
   return t;
 }

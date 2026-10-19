@@ -10,12 +10,16 @@ import * as Prop from '../../props';
 import type { SalonLook } from '../salon';
 import {
   WALL,
+  WIN_HALF,
   W,
   at,
   bx,
   cellsOf,
   row,
+  sconceOn,
   stretchesOf,
+  wallLight,
+  type Cell,
   type RoomArt,
   type Thing,
   type WallCtx,
@@ -230,6 +234,16 @@ function wall(b: PixelBuffer, room: Room, _look: SalonLook, { cells, ruin }: Wal
       }
     } else b.blit(hangers(room.level), x, 16);
   });
+  // Desde el nivel 2, un aplique a la derecha de la última barra.
+  const sc = sconceSpot(cells);
+  if (!ruin && room.level >= 2 && sc) sconceOn(b, sc[0], sc[1]);
+}
+
+/** Dónde va el aplique (en el fondo): a la derecha del último sitio de ventana, si cabe. */
+function sconceSpot(cells: Cell[]): [number, number] | null {
+  const last = cells.at(-1)!;
+  const winR = bx(last.win + WIN_HALF);
+  return bx(last.x1) - winR >= 10 ? [winR + 6, 20] : null;
 }
 
 /**
@@ -264,7 +278,10 @@ function things(room: Room, w: number): Thing[] {
       );
     else t.push(at(Prop.barrel(), Math.min(s.x0 + 8, w - 9), WALL));
   }
-  cellsOf(room, w).forEach((c, j) => t.push(at(j === 1 ? basket() : crates(lvl, j), c.win, WALL)));
+  const cells = cellsOf(room, w);
+  cells.forEach((c, j) => t.push(at(j === 1 ? basket() : crates(lvl, j), c.win, WALL)));
+  const sc = sconceSpot(cells);
+  if (lvl >= 2 && sc) t.push(wallLight(room, sc[0], sc[1]));
   return t;
 }
 

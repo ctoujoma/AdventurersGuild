@@ -103,13 +103,15 @@ function healerTable(level: number): PixelBuffer {
       p.line(17, 1, 19, 5, W[4]!);
       jar(p, 20, 8, 2);
     }
+    // Desde el nivel 2, una vela; en el 3, también el libro abierto.
+    if (level >= 2) {
+      candleOn(p, 1, 4, 3);
+      p.rect(0, 4, 4, 1, P.steel);
+    }
     if (level >= 3) {
-      // Libro abierto y una vela.
       p.rect(9, 5, 5, 2, P.white);
       p.vline(11, 5, 2, P.fog);
       p.hline(9, 7, 5, P.wine);
-      candleOn(p, 1, 4, 3);
-      p.rect(0, 4, 4, 1, P.steel);
     }
   });
 }
@@ -309,11 +311,11 @@ function things(room: Room, w: number): Thing[] {
   const cotBeds = cotsOf(room, w);
   const cots = cotBeds.map((b) => b.x);
   const table = healerTable(lvl);
-  const tableLight = lvl >= 3 ? candle(16) : undefined;
+  const tableLight = lvl >= 2 ? candle(16) : undefined;
   const cab = Prop.cabinet(lvl >= 3);
   const cabLight: Glow | undefined =
     lvl >= 3 ? { dy: 20, r: 36, color: [140, 255, 200], power: 0.35, flicker: 0.04 } : undefined;
-  const t: Thing[] = [lampOver(cells, w), ...cots.map((x) => at(Prop.cot(), x, WALL))];
+  const t: Thing[] = [lampOver(cells, w, lvl), ...cots.map((x) => at(Prop.cot(), x, WALL))];
   if (room.w === 1) {
     const items: { img: PixelBuffer; light?: Glow }[] = [{ img: table, light: tableLight }];
     if (lvl >= 2) items.push({ img: cab, light: cabLight });

@@ -17,10 +17,11 @@ import {
   CANDLE,
   FIRE,
   FRONT,
-  LANTERN,
   MID,
   WALL,
   WARM,
+  ceilingGlow,
+  chandelier,
   fire,
   type Bed,
   type Glow,
@@ -144,20 +145,15 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
   }
   const lvl = room.level;
   // Farol del techo en cada sala que se usa (salvo las que ponen sus propias luces).
+  // (En las salas con su arte, en el nivel 3, la araña de hierro, igual de alta.)
   if (!art?.ownLamp)
     t.push({
-      img: lamp(),
+      img: art && lvl >= 3 ? chandelier(9) : lamp(),
       x: w / 2,
       z: MID,
       y: 0,
       hang: true,
-      light: {
-        dy: 4,
-        r: Math.max(80, Math.round(w * 0.7)),
-        color: LANTERN,
-        power: 1,
-        flicker: 0.08,
-      },
+      light: ceilingGlow(w, art ? lvl : 1, 4),
     });
   if (art?.things) return [...t, ...art.things(room, w, look)];
   switch (room.type) {

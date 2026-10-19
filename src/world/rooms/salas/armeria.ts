@@ -163,7 +163,7 @@ function things(room: Room, w: number, look: SalonLook): Thing[] {
   const cells = cellsOf(room, w);
   const gear = look.gearRoom === room.id ? look.gear : [];
   const per = RACK_SLOTS[Math.min(lvl, 3)]!;
-  const t: Thing[] = [lampOver(cells, w)];
+  const t: Thing[] = [lampOver(cells, w, lvl)];
   let extra = Math.max(0, gear.length - per * cells.length);
   const chestW = worldW(Prop.chest(), WALL) + 1;
   let k = 0;
