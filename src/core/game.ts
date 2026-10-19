@@ -911,7 +911,7 @@ export function endDay(state: GameState): GameState {
     events.push({ t: `En la barra hay alguien nuevo buscando trabajo: ${c.name}.` });
   }
 
-  // Trabajadores: cogen maña y, desde el día 30, viene gente a pedir trabajo.
+  // Trabajadores: cogen maña y, desde que se paga la deuda, viene gente a pedir trabajo.
   stepWorkers(s, rng, events, visits.total);
 
   // Cadenas de misiones: carta del siguiente cliente cuando toca.
@@ -963,8 +963,9 @@ export function endDay(state: GameState): GameState {
     }
   }
 
-  // Fin de «La deuda»: si está pagada, el gremio es tuyo y empieza la aventura.
-  if (!s.over && s.mode !== 'libre' && s.day > DAYS) {
+  // Fin de «La deuda»: en cuanto está pagada (con el último pago, el día 28), el gremio es tuyo
+  // y empieza la aventura; si se acaba el plazo sin pagarla, se pierde.
+  if (!s.over && s.mode !== 'libre' && (s.paid >= DEBT || s.day > DAYS)) {
     const alive = roster(s).length;
     if (s.paid >= DEBT) {
       s.mode = 'libre';

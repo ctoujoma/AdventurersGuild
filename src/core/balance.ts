@@ -314,7 +314,7 @@ export const HERO_WORK = 2;
 export const NURSE_WORK = 3;
 /** Noches de trabajo por cada punto de Maña que ya se tiene para subir otro. */
 export const SKILL_XP = 5;
-/** Probabilidad base de que alguien pida trabajo cada día (desde el día 30) y cuántos esperan. */
+/** Probabilidad base de que alguien pida trabajo cada día (desde que se paga la deuda) y cuántos esperan. */
 export const SEEKER_CHANCE = 0.2;
 export const MAX_SEEKERS = 3;
 

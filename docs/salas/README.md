@@ -64,8 +64,9 @@ usuario, en GitHub Pages) lo apuntado en «Balance».
 ## Decisiones de diseño ya tomadas (resumen)
 
 - Ancho de 4 a 7 huecos comprando solares; hasta 4 plantas arriba y 6 abajo (excavando).
-- Al empezar: la taberna del tío con todas las salas en su sitio y muchas rotas. Antes del día 30
-  solo se arregla y se mejora; al pagar la deuda (día 30) se abren las obras de verdad.
+- Al empezar: la taberna del tío con todas las salas en su sitio y muchas rotas. Hasta pagar la
+  deuda solo se arregla y se mejora; con el último pago (día 28) el gremio es tuyo y se abren
+  las obras de verdad.
 - Recibidor = entrada y guardia (2 como mucho; su nivel es la puerta). Salón = visitantes y caja.
   Cámara del tesoro = tope del oro (lo que no cabe se pierde) y cerradura.
 - Trabajadores con Maña y oficio; los 3 del pueblo al principio, luego una cama del servicio cada uno.
