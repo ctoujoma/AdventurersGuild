@@ -1,3 +1,4 @@
+import { SCHEDULE } from '../core/balance';
 import { vaultFull } from '../core/vault';
 import { gearInStock, roster } from '../core/game';
 import { hungryTonight } from '../core/larder';
@@ -54,7 +55,7 @@ export const TIPS: readonly Tip[] = [
   },
   {
     id: 'pago',
-    text: 'El día 7 viene Merlo a cobrar 150 monedas, más los salarios. Lo que te falta lo tienes arriba, junto a la campana. Si no llegas, se queda la taberna, gato incluido.',
+    text: `El día ${SCHEDULE[0]!.day} viene Merlo a cobrar ${SCHEDULE[0]!.amount} monedas, más los salarios. Lo que te falta lo tienes arriba, junto a la campana. Si no llegas, se queda la taberna, gato incluido.`,
     when: (s) => s.day >= 4 && s.day < 7 && s.paid === 0,
   },
   {

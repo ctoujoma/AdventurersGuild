@@ -9,6 +9,8 @@ interface Props {
   part: number;
   /** Ya es de noche: se puede cerrar la taberna. */
   canClose: boolean;
+  /** Pasando la noche (con o sin asalto): el reloj de mañana aún no corre. */
+  night?: boolean;
   pace: 1 | 2 | 4;
   onMail: () => void;
   onAway: () => void;
@@ -27,6 +29,7 @@ export function partName(part: number, dusk: number): string {
 /** Barra del día sobre la escena: correo, grupos fuera, el reloj y cerrar la taberna. */
 export function DayBar(p: Props) {
   const dusk = DUSK;
+  const part = p.night ? 1 : p.part;
   return (
     <div class="daybar">
       <button
@@ -49,18 +52,18 @@ export function DayBar(p: Props) {
       </button>
       <button
         class="clock"
-        aria-label={`${partName(p.part, dusk)}. Velocidad ×${p.pace}: toca para cambiarla`}
+        aria-label={`${partName(part, dusk)}. Velocidad ×${p.pace}: toca para cambiarla`}
         data-help="El reloj del día: la caja va entregando lo de la taberna hasta el anochecer. Toca para que corra más rápido."
         onClick={p.onPace}
       >
-        <span class="clock-name">{partName(p.part, dusk)}</span>
+        <span class="clock-name">{partName(part, dusk)}</span>
         <span class="clock-bar" aria-hidden="true">
-          <i style={{ width: `${Math.round(p.part * 100)}%` }} />
+          <i style={{ width: `${Math.round(part * 100)}%` }} />
           <b style={{ left: `${dusk * 100}%` }} />
         </span>
         <span class="clock-pace">×{p.pace}</span>
       </button>
-      {p.canClose ? (
+      {p.night ? null : p.canClose ? (
         <button
           class="btn btn-gold endday"
           data-help="Cierra la taberna y pasa la noche: los grupos avanzan y por la mañana llega el correo."

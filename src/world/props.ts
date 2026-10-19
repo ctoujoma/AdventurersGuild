@@ -1,7 +1,7 @@
 import { Rng } from '../core/rng';
 import { P, R, darker, type Ramp } from '../art/palette';
 import { PixelBuffer, bayer, toHex } from '../art/pixel';
-import { cobweb, planksH, stoneWall } from './paint';
+import { planksH, stoneWall } from './paint';
 
 /**
  * Muebles y objetos de la taberna. Cada pieza se pinta en su propio búfer, recibe un
@@ -1082,10 +1082,6 @@ export function bush(seed: string, w = 22, h = 12): PixelBuffer {
     for (let i = 0; i < 4; i++)
       b.set(rng.int(2, w - 3), rng.int(2, h - 4), rng.chance(0.5) ? P.coral : P.lemon);
   });
-}
-
-export function cobwebAt(b: PixelBuffer, x: number, y: number, size: number, dir: 1 | -1): void {
-  cobweb(b, x, y, size, dir);
 }
 
 export function floorSlab(b: PixelBuffer, x: number, y: number, w: number, seed: string): void {
