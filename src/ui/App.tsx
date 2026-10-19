@@ -838,6 +838,7 @@ export function App() {
             onAway={() => openPanel('fuera')}
             part={clock / DAY_SECONDS}
             canClose={clock >= DUSK * DAY_SECONDS}
+            night={passing}
             pace={settings.pace}
             onPace={() =>
               setSettings({

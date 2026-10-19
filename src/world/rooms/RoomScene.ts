@@ -795,6 +795,25 @@ export class RoomScene {
       ],
       yard,
     );
+    // Dentro del ancho del edificio, donde la planta baja está vacía (un solar sin construir,
+    // a menudo encima de un hueco excavado), también hay terreno: si no, se vería el hueco.
+    const used: [number, number][] = [];
+    for (const { room, rect } of L.rooms)
+      if (room.type !== 'torre' && room.floor <= 0 && room.floor + room.h > 0)
+        used.push([rect.x, rect.x + rect.w]);
+    for (const s of stairCells(L)) if (s.floor === 0) used.push([s.rect.x, s.rect.x + s.rect.w]);
+    used.sort((a, c) => a[0] - c[0]);
+    let gx = L.left;
+    for (const [a, c] of [...used, [L.right, L.right] as [number, number]]) {
+      if (a > gx + 1)
+        this.plane(
+          g,
+          groundTex(Math.round(a - gx), back / 2, false, `solar${Math.round(gx)}`),
+          [at(gx, GROUND, 0), at(a, GROUND, 0), at(a, GROUND, back), at(gx, GROUND, back)],
+          yard,
+        );
+      gx = Math.max(gx, c);
+    }
     this.yard(L, model);
 
     // La torre del vigía, sobre el caballete del tejado que tenga debajo.

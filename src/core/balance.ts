@@ -10,10 +10,10 @@ export const DAYS = 30;
 export const DEBT = 1000;
 /** Pagos mínimos al prestamista. Cada pago incluye los salarios de la semana. */
 export const SCHEDULE: readonly { day: number; amount: number }[] = [
-  { day: 7, amount: 150 },
+  { day: 7, amount: 110 },
   { day: 14, amount: 200 },
-  { day: 21, amount: 250 },
-  { day: 28, amount: 400 },
+  { day: 21, amount: 260 },
+  { day: 28, amount: 430 },
 ];
 
 export const START = {
@@ -61,8 +61,6 @@ export const VET_CAP = [0, 10, 15] as const;
 
 /** Patio de entrenamiento: experiencia por noche descansando, por nivel. */
 export const TRAINING_XP = [0, 6, 12] as const;
-/** Empalizada: lo que suma a la defensa, por nivel. */
-export const PALISADE = [0, 5, 10] as const;
 export const facilityMax = (k: keyof Facilities) => UPGRADE_COST[k].length - 1;
 
 /**

@@ -48,7 +48,7 @@ en tiempo real; hay trabajadores, visitantes, comida, entrenamiento y asaltos sa
 | 9 | Entrenamiento + arrastrar personajes a salas | Hecho (#21) |
 | 10 | Tesoro y asaltos sala a sala | Hecho (#22) |
 | 11 | Arte de cada sala | Salón de muestra, obras rehechas y rondas de pruebas en #23; el resto de salas, encargado (ver [`encargo-arte.md`](encargo-arte.md)) |
-| 12 | Balance y limpieza | Pendiente |
+| 12 | Balance y limpieza | **En curso:** primera tanda en un PR (ver «Balance» abajo) |
 
 **Obras rehechas** (pedido del usuario antes de seguir con el arte): ver
 [`obras-rework.md`](obras-rework.md), con decisiones y progreso punto a punto, incluidas las
@@ -109,9 +109,22 @@ ampliar, mover arrastrando, escaleras por tramos sin límite y cinta con pestañ
   pestañas), `RoomMenu.tsx` (menú-icono junto a la sala), `panels/RoomPanel.tsx` (ficha de
   sala), `drop.ts` (soltar personajes en salas).
 
+## Balance (PR 12)
+
+`npm run sim` juega 300 partidas por estrategia y ahora mide también las salas: caja del salón
+al día, nómina semanal, noches sin cenar, asaltos (ganados y saqueo), oro perdido por tener la
+cámara llena y en qué pago se pierde. Referencia del plan original: estrategia normal ~66 %,
+cauta ~30 %, temeraria ~82 % (con más muertes).
+
+- **Cambio hecho:** el primer pago (día 7) era el que más partidas tumbaba (14 % de la normal,
+  22 % de la cauta), antes de aprender a jugar. Pagos 110 / 200 / 260 / 430 (la deuda sigue
+  siendo 1.000): normal 74 %, cauta 44 %, temeraria 80 %; derrotas del día 7 al 6 %.
+- **Vigilar con partidas de verdad:**
+  - nadie se queda sin cenar en el simulador (los de misión no cenan);
+  - con la cámara llena se pierden ~300 monedas antes del día 30 y ~900 en el modo libre;
+  - en el modo libre sobra dinero si no se construye (el simulador no construye salas).
+
 ## Problemas conocidos
 
 - Las obras rehechas esperan la prueba del usuario (ver «Siguiente» en
   [`obras-rework.md`](obras-rework.md)).
-- Un hueco vacío de planta baja encima de un sótano excavado se ve gris claro por arriba.
-- Durante la noche del asalto, la barra del día enseña ya «Mañana» y «Al anochecer».

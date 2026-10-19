@@ -100,8 +100,6 @@ export const FACADE: Record<
     appeal: 3,
   },
 };
-export const BRAWL_CHANCE = 0.1;
-
 /** El cuervo mensajero lleva la fama del gremio a otros pueblos. */
 export const RAVEN_PRICE = 80;
 export const RAVEN_EVERY = 5;

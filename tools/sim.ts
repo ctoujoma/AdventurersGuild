@@ -6,6 +6,7 @@ import { capacity } from '../src/core/balance';
 import {
   canHire,
   canUpgrade,
+  dayIncome,
   nextPayment,
   reduce,
   newGame,
@@ -127,6 +128,54 @@ function playDay(s: GameState, st: Strategy): GameState {
 
 const value = (h: Hero) => h.attrs.F + h.attrs.D + h.attrs.M + h.lvl * 3;
 
+/** Lo que pasa con las salas: caja del salón, sueldos, cenas, asaltos y oro que no cabe. */
+interface Rooms {
+  /** Por tramo (días 1–10, 11–20, 21–30 y modo libre): suma y días contados. */
+  till: number[];
+  wages: number[];
+  days: number[];
+  hungry: number;
+  raids: number;
+  raidsWon: number;
+  stolen: number;
+  spilt: number[];
+}
+const newRooms = (): Rooms => ({
+  till: [0, 0, 0, 0],
+  wages: [0, 0, 0, 0],
+  days: [0, 0, 0, 0],
+  hungry: 0,
+  raids: 0,
+  raidsWon: 0,
+  stolen: 0,
+  spilt: [0, 0, 0, 0],
+});
+
+/** Juega un día apuntando lo que interesa de las salas. */
+function tracked(s: GameState, st: Strategy, acc: Rooms): GameState {
+  const phase = s.mode === 'libre' ? 3 : Math.min(2, Math.floor((s.day - 1) / 10));
+  acc.till[phase]! += dayIncome(s, s.day);
+  acc.wages[phase]! += salaries(s);
+  acc.days[phase]!++;
+  const seen = s.reports.length;
+  const next = playDay(s, st);
+  for (const e of next.dawn) {
+    if (e.t.startsWith('No hubo comida')) acc.hungry++;
+    const lost = /(\d+) monedas no cabían/.exec(e.t);
+    if (lost) acc.spilt[phase]! += Number(lost[1]);
+  }
+  for (const r of next.reports.slice(0, next.reports.length - seen)) {
+    if (!r.raid) continue;
+    acc.raids++;
+    if (r.raid.won) acc.raidsWon++;
+    for (const c of r.chips) {
+      const m = /Saqueo: −(\d+)/.exec(c.t);
+      if (m) acc.stolen += Number(m[1]);
+    }
+  }
+  return next;
+}
+
 const N = Number(process.argv[2] ?? 300);
 const pct = (n: number, d: number) => `${((100 * n) / Math.max(1, d)).toFixed(0)} %`;
 const FREE_DAYS = Number(process.argv[3] ?? 40);
@@ -151,10 +200,11 @@ for (const st of STRATEGIES) {
     Fracaso: 0,
     Desastre: 0,
   };
+  const rooms = newRooms();
   for (let i = 0; i < N; i++) {
     let s = newGame(`sim-${i}`);
     const start = s.heroes.length;
-    while (!s.over && s.mode !== 'libre') s = playDay(s, st);
+    while (!s.over && s.mode !== 'libre') s = tracked(s, st, rooms);
     if (s.mode === 'libre') {
       wins++;
       golds.push(s.gold);
@@ -162,7 +212,7 @@ for (const st of STRATEGIES) {
       for (let d = 0; d < FREE_DAYS && !s.over; d++) {
         for (const h of s.heroes)
           if (h.request) s = reduce(s, { type: 'answer', id: h.id, yes: true });
-        s = playDay(s, st);
+        s = tracked(s, st, rooms);
       }
       if (s.over) broke++;
       else freeGold.push(s.gold);
@@ -194,5 +244,21 @@ for (const st of STRATEGIES) {
         .map(([k, v]) => `${k} ${pct(v, total)}`)
         .join(' · ')}`,
     );
+  const per = (xs: number[]) =>
+    xs.map((x, k) => (rooms.days[k] ? (x / rooms.days[k]!).toFixed(0) : '–')).join(' / ');
+  console.log(`  caja del salón al día (1–10 / 11–20 / 21–30 / libre): ${per(rooms.till)}`);
+  console.log(`  nómina semanal media (igual): ${per(rooms.wages)}`);
+  console.log(
+    `  por partida: noches sin cenar ${(rooms.hungry / N).toFixed(1)} · asaltos ${(rooms.raids / N).toFixed(1)} (ganados ${pct(rooms.raidsWon, rooms.raids)}, saqueo ${(rooms.stolen / N).toFixed(0)})`,
+  );
+  console.log(
+    `  oro perdido por la cámara llena, por partida (igual): ${rooms.spilt.map((x) => (x / N).toFixed(0)).join(' / ')}`,
+  );
+  if (lossDays.length) {
+    const at = (d: number) => lossDays.filter((x) => x === d).length;
+    console.log(
+      `  derrotas en cada pago (días 7 / 14 / 21 / 28): ${[7, 14, 21, 28].map((d) => pct(at(d), N)).join(' / ')}`,
+    );
+  }
   console.log('');
 }

@@ -1,5 +1,5 @@
 import { Rng } from '../core/rng';
-import { MAP_H, MAP_W, PLACE_INFO, TAVERN, type Terrain } from '../data/places';
+import { MAP_H, MAP_W, PLACE_INFO, TAVERN } from '../data/places';
 import { P } from './palette';
 import { PixelBuffer, bayer } from './pixel';
 
@@ -423,18 +423,6 @@ export function mapBuffer(): PixelBuffer {
   cached = b;
   return b;
 }
-
-/** Símbolo del lugar según su terreno (los marcadores de la interfaz van encima). */
-export const TERRAIN_GLYPH: Record<Terrain, string> = {
-  rio: '≈',
-  pueblo: '⌂',
-  monte: '▲',
-  bosque: '♣',
-  costa: '~',
-  pantano: '≋',
-  campo: '#',
-  ruina: '†',
-};
 
 /**
  * Niebla sobre lo que no se conoce: trama oscura de pergamino lejos de los puntos

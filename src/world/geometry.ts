@@ -79,8 +79,6 @@ export interface Facilities {
   vet?: number;
 }
 
-export const FACILITY_MAX = 3;
-
 export function capacity(dormLevel: number): number {
   return 2 + 2 * dormLevel;
 }

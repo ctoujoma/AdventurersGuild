@@ -296,24 +296,3 @@ export function cobweb(b: PixelBuffer, x: number, y: number, size: number, dir: 
   }
   for (let i = 0; i < size; i += 2) b.set(x + dir * i, y + i, c);
 }
-
-/** Relleno con degradado vertical tramado sobre una rampa. */
-export function gradientV(
-  b: PixelBuffer,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  ramp: Ramp,
-  reverse = false,
-): void {
-  const n = ramp.length - 1;
-  for (let j = 0; j < h; j++) {
-    const t = (reverse ? 1 - j / Math.max(1, h - 1) : j / Math.max(1, h - 1)) * n;
-    for (let i = 0; i < w; i++) {
-      const base = Math.floor(t);
-      const idx = Math.min(n, base + (t - base > bayer(x + i, y + j) ? 1 : 0));
-      b.set(x + i, y + j, ramp[idx]!);
-    }
-  }
-}
