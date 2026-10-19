@@ -29,7 +29,7 @@ import { GROUND } from '../geometry';
 import { Particles } from '../particles';
 import * as Prop from '../props';
 import type { Point, SceneCallbacks, SceneModel } from '../scene';
-import { LANTERN, dummy, furnish, type Glow, type RGB } from './furniture';
+import { LANTERN, dummy, furnish, gearRoom, type Glow, type RGB } from './furniture';
 import { Crowd } from './crowd';
 import { RaidShow } from './raid';
 import { NO_LOOK, type SalonLook } from './salon';
@@ -388,6 +388,7 @@ export class RoomScene {
       model.decor,
       model.trophies,
       model.dog,
+      model.gear,
     ]);
     if (model.visitors) this.crowd.setVisitors(model.visitors);
     if (key === this.key) {
@@ -888,7 +889,14 @@ export class RoomScene {
   private salonLook(): SalonLook {
     const m = this.model;
     if (!m) return NO_LOOK;
-    return { decor: m.decor, crest: m.crest, trophies: m.trophies, dog: m.dog };
+    return {
+      decor: m.decor,
+      crest: m.crest,
+      trophies: m.trophies,
+      dog: m.dog,
+      gear: m.gear,
+      gearRoom: m.building ? gearRoom(m.building) : null,
+    };
   }
 
   /** Zona que alumbran los focos de un hueco: su interior y media pared de cada lado. */

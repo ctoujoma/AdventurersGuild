@@ -4,6 +4,7 @@
  * la barra con sus jarras, las mesas con velas, la chimenea con el escudo, los barriles y la
  * leña. Crece con el nivel del salón y con la decoración que se compra.
  */
+import type { GearView } from '../annex';
 import { trophyIcon } from '../../art/items';
 import { P, R, type Ramp } from '../../art/palette';
 import { PixelBuffer } from '../../art/pixel';
@@ -15,12 +16,17 @@ import * as Prop from '../props';
 const W = R.wood; // [black, plum, bark, rust, oak, clay, tan]
 const DARK: Ramp = [P.black, P.ebony, P.plum, P.bark];
 
-/** Lo que el salón enseña además de su nivel: decoración, escudo, trofeos y el perro. */
+/**
+ * Lo que las salas enseñan de la partida además de su nivel: decoración, escudo, trofeos y el
+ * perro del salón, y el equipo sin dueño con la sala donde se guarda (ver `gearRoom`).
+ */
 export interface SalonLook {
   decor: readonly string[];
   crest: { field: string; dark: string; symbol: string };
   trophies: readonly TrophyIcon[];
   dog: boolean;
+  gear: readonly GearView[];
+  gearRoom: string | null;
 }
 
 export const NO_LOOK: SalonLook = {
@@ -28,6 +34,8 @@ export const NO_LOOK: SalonLook = {
   crest: { field: P.wine, dark: P.plum, symbol: 'jarra' },
   trophies: [],
   dog: false,
+  gear: [],
+  gearRoom: null,
 };
 
 // ---------- Pared del fondo (a la escala del fondo) ----------

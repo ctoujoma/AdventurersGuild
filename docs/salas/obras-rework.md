@@ -190,6 +190,11 @@ Rama: `claude/sharp-mendel-apsm2a` (PR #23 abierto contra `salas`). Cada punto, 
 - [x] 5.5 Pregunta: ¿sin tramo, sin pasillo? Respondida (ver el mensaje al usuario): se puede,
       pero la columna de escalera ocupa todas las plantas (la rejilla es igual en todas), así
       que sin pasillo cada escalera partiría en dos todas las plantas donde no tiene tramo.
-- [ ] 5.6 Pregunta: objetos conseguidos sin verse en ningún sitio. Propuesta hecha al usuario
-      (equipo colgado en la armería por iconos y rareza; sin armería, en arcones apilados en la
-      cámara del tesoro o el recibidor). Esperando su decisión.
+- [x] 5.6 Objetos a la vista (decidido con el usuario): el equipo sin dueño (`gearInStock`, ya en
+      `SceneModel.gear`) va a la sala que da `gearRoom` (`furniture.ts`): en la armería en uso,
+      colgado en un estante por hueco (`gearRack`, 4 huecos a nivel 1 y 8 a nivel 2) y lo que no
+      cabe en arcones; en la armería sin reparar o en obras, todo en arcones (`chestPile`, uno
+      por cada tres); sin armería, arcones en la cámara del tesoro. Tests.
+- [ ] 5.7 Pregunta del usuario: que la escalera solo ocupe sitio en las plantas a las que llega
+      y las salas de las demás plantas se corran. Explicadas las consecuencias y dos opciones
+      (correr las salas de verdad, o que la sala de al lado ocupe el hueco); esperando decisión.
