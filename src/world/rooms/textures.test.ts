@@ -33,6 +33,22 @@ const room = (r: Partial<Room>): Room => ({
 });
 
 describe('texturas de la vista 3D', () => {
+  it('las salas con su arte cambian de acabado al subir de nivel, sin agujeros', () => {
+    for (const [type, floor] of [
+      ['cocina', 0],
+      ['dormitorio', 1],
+      ['bodega', -1],
+      ['bodega', -2],
+    ] as const) {
+      const w = CELL_W - PARTITION;
+      const walls = [1, 2, 3].map((level) => backWall(room({ type, floor, level }), w, ROOM_H));
+      // Los únicos agujeros, los cristales de las ventanas: los mismos en cada nivel.
+      for (const b of walls) expect(holes(b)).toBe(holes(walls[0]!));
+      expect(walls[1]!.data).not.toEqual(walls[0]!.data);
+      expect(walls[2]!.data).not.toEqual(walls[1]!.data);
+    }
+  });
+
   it('la pared del fondo se pinta al tamaño con el que se ve', () => {
     for (const r of [room({}), room({ w: 2 }), room({ w: 2, h: 2 })]) {
       const w = r.w * CELL_W - PARTITION;

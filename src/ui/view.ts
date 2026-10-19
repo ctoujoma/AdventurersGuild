@@ -4,6 +4,7 @@ import { customOf, gearInStock } from '../core/game';
 import { staffBeds, workerTitle } from '../core/workers';
 import { visitorsOf } from '../core/salon';
 import { trainState } from '../core/training';
+import { goldCap } from '../core/vault';
 import { CREST_COLORS } from '../data/custom';
 import { gearOf } from '../core/resolve';
 import type { Member } from '../core/party';
@@ -123,6 +124,7 @@ export function sceneModel(s: GameState): SceneModel {
     visitors: { day: s.day, kinds: visitorOrder(s) },
     gear: gearInStock(s).map((i) => ({ icon: i.icon ?? 'espada', rarity: i.rarity ?? 0 })),
     trophies: s.trophies.map((t) => t.icon),
+    vault: Math.min(1, s.gold / goldCap(s)),
     heroes,
   };
 }

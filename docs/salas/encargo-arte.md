@@ -22,6 +22,65 @@ Orden propuesto (de más a menos visible): recibidor, cocina, dormitorio, bodega
 tesoro, enfermería, capilla, armería, forja, sala de mapas, despensa, sala de armas, sala de
 tiro, biblioteca, dormitorio del servicio, veteranos y torre del vigía.
 
+## Progreso
+
+**Cambio de plan (pedido del usuario):** en vez de una sala por PR, se hizo el arte de todas en
+la misma rama y se enseñan juntas en un artefacto de revisión («Salas del Jarro»: antes y
+después, cada nivel, de día y de noche, ancho 1 y máximo). Si el usuario lo aprueba, ese mismo
+código pasa a producción (PR #28). Estado: **todas hechas; segunda ronda (su feedback) hecha,
+esperando su revisión**.
+
+Segunda ronda (lo que pidió tras ver la galería):
+
+- **Salas anchas sin repetir la pequeña**: `stretchesOf` (kit.ts) da los tramos de pared entre
+  ventanas (izquierda, de en medio y derecha) y `row` reparte piezas en uno con huecos iguales.
+  Cada sala pone lo propio en cada tramo de en medio (horno de pan, secadero, botica…).
+- **Tesoro según el oro**: la escena recibe lo lleno que está la cámara (`SceneModel.vault`, en
+  octavos) y los montones, arcones y pilas crecen con ello.
+- **Acabados por nivel** (`salas/acabados.ts`, para las salas con su arte): nivel 2, yeso fino
+  con cenefa, postes y arrimadero en la madera, zócalo de madera en la piedra, entibos en la
+  cueva; nivel 3, azulejo, pared entelada (cada sala con su color, ver `CLOTH`) o enlucida,
+  sillería de arenisca con cornisa, chapado de piedra, y en el suelo parqué, olambrillas,
+  damero de mármol o losas. Se pinta en el fondo, en los lados y en el suelo, debajo de lo de
+  cada sala, y respeta el alto del zócalo.
+- **Luz**: en el nivel 3, la araña de hierro (`chandelier`) en lugar del farol, igual de alta
+  y más fuerte; en el 2, apliques pintados con su luz (`sconceOn` + `wallLight`, una figura
+  vacía que solo alumbra) donde no había otra (despensa, armas, tiro), la vela de la repisa del
+  servicio y la de la mesa del curandero. Ojo: la escena usa las 16 luces más cercanas al
+  centro de la vista (`MAX_LIGHTS`), así que mejor pocas por sala.
+- **Nivel 4**: pendiente de que el usuario decida (toca reglas y balance).
+
+Cómo está montado (ver `src/world/rooms/salas/`):
+
+- Cada sala en su fichero (`cocina.ts`, `camas.ts` para los tres dormitorios,
+  `entrenamiento.ts` para armas, tiro y biblioteca…), registrada en `salas/index.ts`. Aporta
+  su pared (`wall`), sus muebles (`things`), lo que queda por reparar (`ruin`), su suelo
+  (`floor`) y, si hace falta, sus propias luces (`ownLamp`). El salón sigue en `salon.ts`.
+- `salas/kit.ts`: profundidades, luces, los huecos con su ventana (`cellsOf`: cada hueco tiene
+  a la izquierda de la ventana sitio para lo alto, bajo la ventana solo lo más bajo que el
+  alféizar, `SILL`, y a la derecha algo estrecho), el farol de cadena corta que se cuelga
+  delante de la ventana sin taparla (`lampOver`) y los tipos `Thing`, `Glow` y `Bed`.
+- Las camas que se ven son las que usa la gente: `bedsOf` (camas.ts) y `cotsOf`
+  (enfermeria.ts) mandan en las dos cosas. El servicio acaba con literas de tres pisos: el
+  núcleo le da 6 camas por hueco en el nivel 3.
+- Sin ventanas (bajo tierra, tesoro y despensa), cada sala pone algo en su sitio (una pizarra,
+  un cuadro, la herradura…).
+- `furniture.test.ts` mira todas las salas, niveles y anchos: muebles dentro de la sala, farol
+  encendido y nada alto delante de una ventana.
+
+Notas que sirven para seguir:
+
+- El recibidor solo mide un hueco; sus muebles y los dos de guardia van en `SPOT`
+  (`salas/recibidor.ts`): los de guardia, delante del armero, para no tapar ningún mueble. La
+  puerta de la calle cambia con el nivel (por dentro en `sideTex`, por fuera en
+  `Prop.doorLeaf`).
+- Las piezas finas (astas de lanza) se pintan sin contorno: `Prop.piece` las engorda.
+- Nunca se borra un píxel de la pared del fondo (`clear`): queda transparente y se ve el cielo.
+- Lo colgado delante (a media sala) se mueve con la perspectiva respecto a la pared: cerca de
+  una ventana acaba tapándola; mejor de pie contra la pared.
+- Capturas: `node tools/shots/sala.mjs <carpeta> <tipo> [anchos]` para una sala (con gente) y
+  `tools/shots/galeria.mjs` + `galeria.py` para la galería de todas (ver su README).
+
 ## Cómo está hecho el salón (el modelo a copiar)
 
 Todo el arte se pinta en código sobre `PixelBuffer` (`src/art/pixel.ts`) con la paleta `P`

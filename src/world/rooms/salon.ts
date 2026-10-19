@@ -29,6 +29,8 @@ export interface SalonLook {
   dog: boolean;
   gear: readonly GearView[];
   gearRoom: string | null;
+  /** Lo llena que está la cámara del tesoro (0–1, en octavos para no repintar a cada moneda). */
+  vault: number;
 }
 
 export const NO_LOOK: SalonLook = {
@@ -38,6 +40,7 @@ export const NO_LOOK: SalonLook = {
   dog: false,
   gear: [],
   gearRoom: null,
+  vault: 0,
 };
 
 // ---------- Pared del fondo (a la escala del fondo) ----------

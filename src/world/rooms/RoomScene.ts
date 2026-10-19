@@ -30,6 +30,7 @@ import { Particles } from '../particles';
 import * as Prop from '../props';
 import type { Point, SceneCallbacks, SceneModel } from '../scene';
 import { LANTERN, dummy, furnish, gearRoom, type Glow, type RGB } from './furniture';
+import { towerLampY, watchtower } from './salas/torre';
 import { Crowd } from './crowd';
 import { RaidShow } from './raid';
 import { NO_LOOK, type SalonLook } from './salon';
@@ -76,7 +77,6 @@ import {
   stairBack,
   stairCells,
   themeOf,
-  watchtower,
   type Theme,
 } from './textures';
 import { EYE, eyeOf, frustum, project, scaleAt, type View } from './view3d';
@@ -136,7 +136,12 @@ interface Lamp {
   seed: number;
   /** Los faroles se notan menos de día; el fuego, igual. */
   fire: boolean;
+  /** En una sala a la que no llega el sol (bajo tierra, el tesoro): alumbra igual de día. */
+  deep?: boolean;
 }
+
+/** El oro de la cámara, en octavos: la escena solo se repinta cuando cambia de octavo. */
+const vaultStep = (v = 0) => Math.round(Math.max(0, Math.min(1, v)) * 8);
 
 /** Cifras de 3×5 píxeles para los precios de las marcas de obra. */
 const DIGITS = [
@@ -389,6 +394,7 @@ export class RoomScene {
       model.trophies,
       model.dog,
       model.gear,
+      vaultStep(model.vault),
     ]);
     if (model.visitors) this.crowd.setVisitors(model.visitors);
     if (key === this.key) {
@@ -829,7 +835,7 @@ export class RoomScene {
       this.towerRect = { x: cx - img.w / 2, y: top, w: img.w, h: base - top };
       if (tower.room.level > 0) {
         this.lamps.push({
-          pos: at(cx, base - lift - (img.h - 30) / k, DEPTH / 2 - 8),
+          pos: at(cx, base - lift - (img.h - towerLampY(tower.room.level)) / k, DEPTH / 2 - 8),
           r: 60,
           color: [255, 168, 92],
           power: 0.9,
@@ -864,8 +870,9 @@ export class RoomScene {
       floorTex: floorTex(room, theme, r.w, seed),
       sides,
       floor: room.floor,
-      door: room.type === 'recibidor',
+      door: room.type === 'recibidor' ? room.level : undefined,
       hang: { left: free(room.col), right: free(room.col + room.w - 1) },
+      room,
     });
     // En voladizo (sin nada debajo), la cara de abajo del suelo, que se ve desde el patio.
     if (room.floor > 0) {
@@ -895,7 +902,7 @@ export class RoomScene {
       const x = r.x + th.x;
       const bottom = th.hang ? ceil3 - h - th.y : floor3 + th.y;
       this.figure(this.world, th.img, x, GROUND - bottom, th.z, ambient, sun);
-      if (th.light) this.addLight(th.light, x, bottom, th.z, zone);
+      if (th.light) this.addLight(th.light, x, bottom, th.z, zone, sun < 0.2);
     }
     if (room.works) {
       const k = scaleAt(3);
@@ -915,6 +922,7 @@ export class RoomScene {
       dog: m.dog,
       gear: m.gear,
       gearRoom: m.building ? gearRoom(m.building) : null,
+      vault: vaultStep(m.vault) / 8,
     };
   }
 
@@ -928,7 +936,14 @@ export class RoomScene {
     ];
   }
 
-  private addLight(l: Glow, x: number, bottom: number, z: number, zone: Lamp['zone']): void {
+  private addLight(
+    l: Glow,
+    x: number,
+    bottom: number,
+    z: number,
+    zone: Lamp['zone'],
+    deep = false,
+  ): void {
     const k = scaleAt(z);
     const y = bottom + l.dy / k;
     this.lamps.push({
@@ -940,6 +955,7 @@ export class RoomScene {
       zone,
       seed: Math.round(x * 7 + y * 13),
       fire: l.flicker >= 0.2,
+      deep,
     });
     for (const f of l.flames ?? []) {
       // Tres llamas una dentro de otra: naranja, oro y limón.
@@ -984,9 +1000,12 @@ export class RoomScene {
       floorTex?: PixelBuffer;
       sides: { left: Side[]; right: Side[] };
       floor: number;
-      door?: boolean;
+      /** La puerta de la calle (en el recibidor), con su nivel. */
+      door?: number;
       /** Sin sala debajo del hueco de cada lado (en voladizo). */
       hang?: { left: boolean; right: boolean };
+      /** La sala (para los acabados de sus lados). */
+      room?: Room;
     },
   ): void {
     const g = this.world;
@@ -1014,19 +1033,27 @@ export class RoomScene {
     const doors = (s: Side[]) => s.flatMap((x, i) => (x === 'sala' || x === 'escalera' ? [i] : []));
     this.plane(
       g,
-      sideTex(theme, r.h, doors(o.sides.left), `${seed}i`, o.door ? [0] : []),
+      sideTex(
+        theme,
+        r.h,
+        doors(o.sides.left),
+        `${seed}i`,
+        o.door !== undefined ? [0] : [],
+        o.door,
+        o.room,
+      ),
       [at(x0, yb, 0), at(x0, yb, D), at(x0, yt, D), at(x0, yt, 0)],
       flat,
     );
     this.plane(
       g,
-      mirror(sideTex(theme, r.h, doors(o.sides.right), `${seed}d`)),
+      mirror(sideTex(theme, r.h, doors(o.sides.right), `${seed}d`, [], 1, o.room)),
       [at(x1, yb, D), at(x1, yb, 0), at(x1, yt, 0), at(x1, yt, D)],
       flat,
     );
     // Paredes de fuera, planta a planta, donde el hueco da al aire.
     const outdoor = { ambient: OUTDOOR, sun: 1, dither: 0 };
-    let doorDone = !o.door;
+    let doorDone = o.door === undefined;
     for (const [side, list] of [
       ['left', o.sides.left],
       ['right', o.sides.right],
@@ -1038,7 +1065,7 @@ export class RoomScene {
         const bottom = floorY(f) + (i === 0 && o.hang?.[side] ? SLAB : 0);
         const withDoor = !doorDone && i === 0;
         if (withDoor) doorDone = true;
-        const tex = outerSide(themeOf(f), PITCH, withDoor, `${seed}f${side}${i}`);
+        const tex = outerSide(themeOf(f), PITCH, withDoor, `${seed}f${side}${i}`, o.door);
         if (side === 'left') {
           const x = rect.x - WALL;
           this.plane(
@@ -1269,7 +1296,7 @@ export class RoomScene {
         continue;
       }
       const fl = 1 - l.flicker * noise(Math.floor(t * 9), l.seed);
-      const k = (l.fire ? fireK : lampK) * l.power * fl;
+      const k = (l.deep ? 1 : l.fire ? fireK : lampK) * l.power * fl;
       s.uLightPos.value[i]!.set(l.pos.x, l.pos.y, l.pos.z, l.r);
       s.uLightColor.value[i]!.set(
         (l.color[0] / 255) * k,
