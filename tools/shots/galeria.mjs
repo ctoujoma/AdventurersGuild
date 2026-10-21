@@ -5,7 +5,7 @@
  *
  *   node tools/shots/galeria.mjs <carpeta> [puerto=4173] [tipos=todos]
  *
- * Saca `<tipo>-a<ancho>-n<nivel>-<dia|noche>.png` a zoom 4 (cada píxel del mundo, 4×4); la
+ * Saca `<tipo>-a<ancho>-n<nivel>-<dia|noche>.png` (hasta el nivel 4 en las de `LEVEL4`) a zoom 4 (cada píxel del mundo, 4×4); la
  * cámara del tesoro, con tres cantidades de oro (`tesoro_o10`, `_o50` y `_o100`: lo lleno que
  * está, en %), porque sus montones crecen con él;
  * `tools/shots/galeria.py` los reduce a 1:1 y los junta en láminas para el visor. Se puede
@@ -43,6 +43,15 @@ const SLOTS = {
   torre: [0, 3, 1],
 };
 const types = process.argv[4] ? process.argv[4].split(',') : Object.keys(SLOTS);
+/**
+ * Las salas con el nivel 4 pintado (ART_MAX en src/world/rooms/salas/index.ts): el juego aún no
+ * llega, pero se saca para verlo. Con `SIN_N4=1`, hasta el 3 (para la versión de antes).
+ */
+/** Con `NIVELES=4` (o `2,3`…), solo esos niveles: para rehacer una parte sin sacarlo todo. */
+const ONLY = process.env.NIVELES?.split(',').map(Number);
+const LEVEL4 = process.env.SIN_N4
+  ? []
+  : ['tesoro', 'dormitorio', 'cocina', 'bodega', 'armas', 'tiro', 'biblioteca'];
 const vp = { width: 1920, height: 1080 };
 const ZOOM = 4;
 mkdirSync(out, { recursive: true });
@@ -176,7 +185,8 @@ async function shoot(type, w, level, fill) {
       level,
       fill === undefined
         ? null
-        : Math.round(Math.max(VAULT_STORE[0], VAULT_STORE[level] * w) * fill),
+        : // (Como goldCap: sin cifra para ese nivel, lo mínimo.)
+          Math.round(Math.max(VAULT_STORE[0], (VAULT_STORE[level] ?? 0) * w) * fill),
     ],
   );
   await page.waitForTimeout(1200);
@@ -213,7 +223,9 @@ for (const night of [false, true]) {
     const fills = type === 'tesoro' ? GOLD : [undefined];
     for (const fill of fills)
       for (const w of [...new Set([1, max])])
-        for (const level of [3, 2, 1, 0]) {
+        for (const level of (LEVEL4.includes(type) ? [4, 3, 2, 1, 0] : [3, 2, 1, 0]).filter(
+          (l) => !ONLY || ONLY.includes(l),
+        )) {
           const clip = await shoot(type, w, level, fill);
           const name = fill === undefined ? type : `${type}_o${Math.round(fill * 100)}`;
           const file = `${name}-a${w}-n${level}-${t}.png`;

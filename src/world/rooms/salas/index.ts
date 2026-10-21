@@ -36,3 +36,19 @@ export const ART: Partial<Record<RoomType, RoomArt>> = {
   capilla,
   mapas,
 };
+
+/**
+ * Hasta qué nivel tiene arte cada sala, aunque el juego aún no llegue (solo para verlo en la
+ * galería y comprobarlo en las pruebas): las que hoy acaban en el 2 tienen pintado el 3, y
+ * estas, también el 4.
+ */
+export const ART_MAX: Partial<Record<RoomType, number>> = {
+  tesoro: 4,
+  dormitorio: 4,
+  cocina: 4,
+  bodega: 4,
+  armas: 4,
+  tiro: 4,
+  biblioteca: 4,
+};
+export const artMax = (t: RoomType) => ART_MAX[t] ?? 3;

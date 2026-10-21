@@ -5,7 +5,7 @@ import { furnish, gearRoom } from './furniture';
 import { uncleBuilding } from '../../core/rooms';
 import { NO_LOOK } from './salon';
 import { SPOT } from './salas/recibidor';
-import { ART } from './salas';
+import { ART, artMax } from './salas';
 import { SILL, cellsOf } from './salas/kit';
 import { CELL_W, DEPTH, PARTITION } from './layout';
 import { scaleAt } from './view3d';
@@ -27,7 +27,7 @@ describe('muebles de la vista 3D', () => {
     for (const type of Object.keys(ROOMS) as RoomType[]) {
       if (type === 'torre') continue;
       for (let w = 1; w <= ROOMS[type].maxW; w++)
-        for (const level of [1, 2, 3]) {
+        for (let level = 1; level <= artMax(type); level++) {
           const iw = w * CELL_W - PARTITION;
           const things = furnish(room(type, { w, level }), iw);
           expect(things.some((t) => t.hang && t.light)).toBe(true);
@@ -43,10 +43,10 @@ describe('muebles de la vista 3D', () => {
     }
   });
 
-  it('nada alto delante de una ventana: lo de debajo, más bajo que el alféizar', () => {
+  it('nada alto delante de una ventana: lo de debajo, más bajo que el alféizar (también en los niveles que solo se ven)', () => {
     for (const type of Object.keys(ART) as RoomType[]) {
       for (let w = 1; w <= ROOMS[type].maxW; w++)
-        for (const level of [1, 2, 3]) {
+        for (let level = 1; level <= artMax(type); level++) {
           const r = room(type, { w, level });
           const iw = w * CELL_W - PARTITION;
           const wins = cellsOf(r, iw).map((c) => c.win);

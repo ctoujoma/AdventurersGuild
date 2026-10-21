@@ -32,7 +32,9 @@ export const bunkQuilt = (level: number): Ramp =>
     [P.plum, P.bark, P.rust, P.oak],
     [P.plum, P.wine, P.red, P.coral],
     [P.navy, P.ocean, P.sky, P.mist],
-  ][Math.max(0, Math.min(3, level))]!;
+    // Nivel 4 (solo vista): morada.
+    [P.plum, P.grape, P.rose, P.coral],
+  ][Math.max(0, Math.min(4, level))]!;
 
 export function bunk(level: number): PixelBuffer {
   const quilt = bunkQuilt(level);

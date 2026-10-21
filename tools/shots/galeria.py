@@ -5,8 +5,9 @@ lámina por sala para el visor de la galería, ya a 1:1 (las capturas van a zoom
 Uso: python3 tools/shots/galeria.py <antes> <después> <salida>
 
 Cada lámina tiene, por cada ancho de la sala (1 y el máximo), cuatro filas: antes de día,
-antes de noche, después de día y después de noche; y una columna por nivel (0 a 3). Deja
-también `salas.json` con el tamaño de cada celda y dónde empieza cada bloque. Las variantes
+antes de noche, después de día y después de noche; y una columna por nivel (0 a 3, o a 4 si
+el «después» lo tiene). Deja también `salas.json` con el tamaño de cada celda, dónde empieza
+cada bloque y cuántos niveles tiene (`n`). Las variantes
 del «después» (`tesoro_o50`…) usan el «antes» de su sala si no tienen el suyo.
 """
 
@@ -40,6 +41,7 @@ rooms = sorted({k[0] for k in shots["despues"]})
 info = {}
 for room in rooms:
     widths = sorted({k[1] for k in shots["despues"] if k[0] == room})
+    levels = max(k[2] for k in shots["despues"] if k[0] == room) + 1
     blocks = []
     y = 0
     for w in widths:
@@ -47,18 +49,18 @@ for room in rooms:
             shots[v].get((room, w, lvl, t)) or shots[v].get((room.split("_")[0], w, lvl, t))
             for v in ("antes", "despues")
             for t in ("dia", "noche")
-            for lvl in range(4)
+            for lvl in range(levels)
         ]
         cw = max(c.width for c in cells if c)
         ch = max(c.height for c in cells if c)
-        blocks.append({"w": w, "cw": cw, "ch": ch, "y": y})
+        blocks.append({"w": w, "cw": cw, "ch": ch, "y": y, "n": levels})
         y += ch * 4
-    sheet = Image.new("RGB", (max(b["cw"] * 4 for b in blocks), y), (24, 20, 37))
+    sheet = Image.new("RGB", (max(b["cw"] * levels for b in blocks), y), (24, 20, 37))
     for b in blocks:
         for r, (v, t) in enumerate(
             [("antes", "dia"), ("antes", "noche"), ("despues", "dia"), ("despues", "noche")]
         ):
-            for lvl in range(4):
+            for lvl in range(levels):
                 im = shots[v].get((room, b["w"], lvl, t)) or shots[v].get(
                     (room.split("_")[0], b["w"], lvl, t)
                 )

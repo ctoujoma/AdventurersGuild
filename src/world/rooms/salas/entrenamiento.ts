@@ -56,6 +56,18 @@ function dummy(level: number): PixelBuffer {
       p.ellipse(8, 19, 5, 5.5, P.slate);
       p.ellipse(7, 17.5, 3, 3.5, P.steel);
       p.set(6, 16, P.fog);
+      if (level >= 4) {
+        // Armadura de gala: penacho rojo, hombreras y el peto con filo de oro.
+        p.vline(8, 0, 2, P.red);
+        p.set(9, 0, P.wine);
+        p.set(7, 1, P.red);
+        for (const x of [0, 12]) {
+          p.rect(x, 12, 4, 3, P.steel);
+          p.hline(x, 12, 4, P.fog);
+        }
+        p.hline(4, 24, 9, P.gold);
+        p.vline(8, 15, 9, P.gold);
+      }
     } else {
       // Una cruz pintada donde se golpea.
       p.set(7, 18, P.wine);
@@ -78,10 +90,18 @@ function stickRack(level: number): PixelBuffer {
     const n = Math.min(4, level + 1);
     for (let k = 0; k < n; k++) {
       const x = 4 + k * 3;
-      p.vline(x, 1 + (k % 2) * 2, 25, k % 2 ? W[5]! : W[4]!);
-      if (k % 2 === 0) p.hline(x - 1, 9, 3, W[2]!);
+      // En el nivel 4, espadas de acero con la cruz dorada en lugar de las de madera.
+      const steel = level >= 4 && k % 2 === 0;
+      p.vline(x, 1 + (k % 2) * 2, 25, steel ? P.mist : k % 2 ? W[5]! : W[4]!);
+      if (k % 2 === 0) p.hline(x - 1, 9, 3, steel ? P.gold : W[2]!);
     }
-    if (level >= 2) {
+    if (level >= 4) {
+      // Escudo de acero con la banda del gremio.
+      p.ellipse(9, 18, 5, 5, P.steel);
+      p.ellipse(9, 18, 3.5, 3.5, P.wine);
+      p.line(6, 15, 12, 21, P.gold);
+      p.ellipse(9, 18, 1, 1, P.fog);
+    } else if (level >= 2) {
       // Escudo redondo de prácticas.
       p.ellipse(9, 18, 5, 5, W[4]!);
       p.ellipse(9, 18, 3.5, 3.5, W[5]!);
@@ -182,6 +202,14 @@ function armasFloor(b: PixelBuffer, room: Room): void {
     b.rect(x0, 8, x1 - x0, FLOOR_D - 16, P.clay);
     b.rect(x0 + 1, 9, x1 - x0 - 2, FLOOR_D - 18, room.level >= 3 ? P.wine : P.tan);
     b.hline(x0 + 3, FLOOR_D / 2, x1 - x0 - 6, P.sand);
+    // En el nivel 4, con el borde dorado y el círculo del combate.
+    if (room.level >= 4) {
+      b.rect(x0, 8, x1 - x0, 1, P.gold);
+      b.rect(x0, FLOOR_D - 9, x1 - x0, 1, P.gold);
+      const cx = Math.round((x0 + x1) / 2);
+      b.ellipse(cx, FLOOR_D / 2, 8, 4, P.gold);
+      b.ellipse(cx, FLOOR_D / 2, 7, 3, P.wine);
+    }
   }
 }
 
@@ -331,8 +359,11 @@ export const armas: RoomArt = {
 
 // ---------- Galería de tiro ----------
 
-/** Diana de paja en su caballete, con flechas clavadas (más cuanto más nivel). */
-function target(arrows: number, seed: number): PixelBuffer {
+/**
+ * Diana de paja en su caballete, con flechas clavadas (más cuanto más nivel); la de concurso
+ * (nivel 4), con los anillos de colores y un banderín.
+ */
+function target(arrows: number, seed: number, fancy = false): PixelBuffer {
   return Prop.piece(22, 30, (p) => {
     // Caballete.
     p.line(3, 29, 7, 12, W[3]!);
@@ -345,7 +376,17 @@ function target(arrows: number, seed: number): PixelBuffer {
     p.ellipse(11, 12, 5, 5, P.sand);
     p.ellipse(11, 12, 3, 3, P.red);
     p.ellipse(11, 12, 1.3, 1.3, P.lemon);
-    for (let k = 0; k < 6; k++) p.set(3 + k * 3, 3 + ((k * 7) % 5), P.tan);
+    if (fancy) {
+      p.ellipse(11, 12, 9, 9, P.white);
+      p.ellipse(11, 12, 7.5, 7.5, P.black);
+      p.ellipse(11, 12, 6, 6, P.sky);
+      p.ellipse(11, 12, 4.5, 4.5, P.red);
+      p.ellipse(11, 12, 3, 3, P.gold);
+      p.ellipse(11, 12, 1.3, 1.3, P.lemon);
+      // El banderín en su palo, arriba a la derecha.
+      p.vline(19, 0, 5, W[4]!);
+      p.rect(20, 0, 2, 2, P.red);
+    } else for (let k = 0; k < 6; k++) p.set(3 + k * 3, 3 + ((k * 7) % 5), P.tan);
     // Flechas: el astil sale hacia nosotros (un punto y la pluma).
     const spots: [number, number][] = [
       [10, 11],
@@ -420,8 +461,29 @@ function bowPeg(b: PixelBuffer, x: number, y: number, level: number) {
   }
 }
 
+/** Tablón de honor (nivel 4): tres medallas con su cinta y dos flechas cruzadas. */
+function honorBoard(): PixelBuffer {
+  return Prop.piece(18, 13, (p) => {
+    p.rect(0, 0, 18, 13, W[3]!);
+    p.rect(1, 1, 16, 11, W[2]!);
+    p.hline(0, 0, 18, P.gold);
+    p.line(2, 10, 15, 2, W[5]!);
+    p.line(2, 2, 15, 10, W[5]!);
+    for (const [x, c] of [
+      [4, P.gold],
+      [9, P.fog],
+      [14, P.amber],
+    ] as const) {
+      p.vline(x, 2, 3, P.red);
+      p.ellipse(x, 7, 1.6, 1.6, c);
+    }
+  });
+}
+
 function tiroWall(b: PixelBuffer, room: Room, _look: SalonLook, { cells, ruin }: WallCtx): void {
   if (ruin) return;
+  // Nivel 4: el tablón de honor en el tramo de la izquierda, encima de las dianas.
+  if (room.level >= 4) b.blit(honorBoard(), Math.round(bx(cells[0]!.win - WIN_HALF) / 2) - 16, 14);
   const last = cells.at(-1)!;
   const winR = bx(last.win + WIN_HALF);
   if (bx(last.x1) - winR >= 10) bowPeg(b, winR + 1, 14, room.level);
@@ -433,7 +495,7 @@ function tiroWall(b: PixelBuffer, room: Room, _look: SalonLook, { cells, ruin }:
 function tiroFloor(b: PixelBuffer, room: Room): void {
   // La raya de tiro, delante, de pared a pared.
   for (let x = 2; x < b.w - 2; x += 4)
-    b.hline(x, FLOOR_D - 6, 2, room.level >= 2 ? P.white : P.sand);
+    b.hline(x, FLOOR_D - 6, 2, room.level >= 4 ? P.gold : room.level >= 2 ? P.white : P.sand);
 }
 
 /** Soporte de ballestas: dos ballestas colgadas y los virotes. */
@@ -525,7 +587,7 @@ function tiroThings(room: Room, w: number): Thing[] {
   const t: Thing[] = [];
   for (const s of stretchesOf(room, w)) {
     if (s.kind === 'left') {
-      const items: [PixelBuffer, number][] = [[target(1 + lvl, 0), WALL]];
+      const items: [PixelBuffer, number][] = [[target(1 + lvl, 0, lvl >= 4), WALL]];
       if (lvl >= 3) items.push([knifeBoard(), WALL]);
       else if (lvl >= 2) items.push([target(lvl, 2), WALL]);
       t.push(...row(s, items));
@@ -540,7 +602,7 @@ function tiroThings(room: Room, w: number): Thing[] {
       t.push(
         ...row(s, [
           [bowRack(), WALL],
-          [target(lvl + 1, 3), WALL],
+          [target(lvl + 1, 3, lvl >= 4), WALL],
         ]),
       );
   }
@@ -580,11 +642,19 @@ function bookcase(level: number, seed: number): PixelBuffer {
       p.hline(4, 0, 16, P.gold);
       p.set(12, 0, P.lemon);
     }
+    if (level >= 4) {
+      // Copete tallado con la cartela dorada y los cantos con filete de oro.
+      p.rect(8, 0, 8, 3, P.amber);
+      p.hline(8, 0, 8, P.lemon);
+      p.rect(10, 1, 4, 1, P.rust);
+      p.vline(0, 3, 41, P.amber);
+    }
     const spines = [P.wine, P.ocean, P.forest, P.rust, P.grape, P.amber, P.slate, P.brick];
     let k = seed * 3;
     [14, 28, 42].forEach((sy, row) => {
       p.rect(0, sy, 24, 2, W[4]!);
       p.hline(0, sy, 24, W[5]!);
+      if (level >= 4) p.hline(2, sy + 1, 20, P.amber);
       // Cuántos libros caben en la balda según el nivel.
       const fill = level >= 2 ? 19 : level === 1 ? (row === 1 ? 9 : 14) : row === 2 ? 5 : 0;
       let x = 3;
@@ -607,34 +677,46 @@ function bookcase(level: number, seed: number): PixelBuffer {
   });
 }
 
-/** Pupitre de lectura con un libro abierto (y la vela desde el nivel 2). */
+/**
+ * Pupitre de lectura con un libro abierto (y la vela desde el nivel 2, el reloj de arena en el
+ * 3 y la esfera armilar de latón en el 4).
+ */
 function readingDesk(level: number): PixelBuffer {
-  return Prop.piece(24, 20, (p) => {
-    p.rect(0, 9, 24, 3, W[4]!);
-    p.hline(0, 9, 24, W[5]!);
-    p.hline(0, 11, 24, W[2]!);
-    p.rect(2, 12, 3, 8, W[3]!);
-    p.rect(19, 12, 3, 8, W[3]!);
+  return Prop.piece(24, 24, (p) => {
+    const o = 4;
+    p.rect(0, 9 + o, 24, 3, W[4]!);
+    p.hline(0, 9 + o, 24, W[5]!);
+    p.hline(0, 11 + o, 24, W[2]!);
+    p.rect(2, 12 + o, 3, 8, W[3]!);
+    p.rect(19, 12 + o, 3, 8, W[3]!);
     // Libro abierto.
-    p.rect(7, 6, 10, 3, P.white);
-    p.vline(12, 6, 3, P.fog);
-    p.hline(8, 7, 3, P.fog);
-    p.hline(13, 7, 3, P.fog);
-    p.hline(6, 9, 12, P.wine);
+    p.rect(7, 6 + o, 10, 3, P.white);
+    p.vline(12, 6 + o, 3, P.fog);
+    p.hline(8, 7 + o, 3, P.fog);
+    p.hline(13, 7 + o, 3, P.fog);
+    p.hline(6, 9 + o, 12, P.wine);
     // Pila de libros.
-    p.rect(1, 6, 5, 2, P.ocean);
-    p.rect(2, 4, 4, 2, P.forest);
+    p.rect(1, 6 + o, 5, 2, P.ocean);
+    p.rect(2, 4 + o, 4, 2, P.forest);
     if (level >= 2) {
-      p.rect(19, 7, 4, 2, P.steel);
-      candleOn(p, 20, 7, 4);
+      p.rect(19, 7 + o, 4, 2, P.steel);
+      candleOn(p, 20, 7 + o, 4);
     }
-    if (level >= 3) {
+    if (level >= 4) {
+      // Esfera armilar en su pie, encima de los libros.
+      p.ellipse(3.5, 3, 3, 3, P.amber);
+      p.ellipse(3.5, 3, 2, 2, W[1]!);
+      p.hline(0, 3, 8, P.gold);
+      p.line(1, 1, 6, 5, P.gold);
+      p.set(3, 3, P.sky);
+      p.vline(3, 6, 2, P.amber);
+    } else if (level >= 3) {
       // Reloj de arena.
-      p.hline(1, 0, 4, W[3]!);
-      p.set(2, 1, P.sand);
-      p.set(3, 1, P.sand);
-      p.set(2, 2, P.mist);
-      p.set(3, 3, P.sand);
+      p.hline(1, 0 + o, 4, W[3]!);
+      p.set(2, 1 + o, P.sand);
+      p.set(3, 1 + o, P.sand);
+      p.set(2, 2 + o, P.mist);
+      p.set(3, 3 + o, P.sand);
     }
   });
 }
@@ -706,6 +788,15 @@ function bibliotecaFloor(b: PixelBuffer, room: Room, cells: Cell[]): void {
     b.rect(x0, 9, 44, FLOOR_D - 18, P.deep);
     b.rect(x0 + 1, 10, 42, FLOOR_D - 20, room.level >= 3 ? P.grape : P.forest);
     for (let x = x0 + 3; x < x0 + 42; x += 4) b.set(x, FLOOR_D / 2, P.gold);
+    // Nivel 4: cenefa dorada y flecos.
+    if (room.level >= 4) {
+      b.rect(x0 + 2, 11, 40, 1, P.gold);
+      b.rect(x0 + 2, FLOOR_D - 12, 40, 1, P.gold);
+      for (let y = 10; y < FLOOR_D - 10; y += 2) {
+        b.set(x0 - 1, y, P.sand);
+        b.set(x0 + 44, y, P.sand);
+      }
+    }
   }
 }
 

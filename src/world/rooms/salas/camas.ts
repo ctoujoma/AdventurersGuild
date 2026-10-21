@@ -161,6 +161,21 @@ export function bunk(level: number, tiers: 2 | 3, style: Style): PixelBuffer {
       }
     }
     for (let y = 8; y < h - 10; y += 5) b.hline(21, y, 3, wood[2]!);
+    // Nivel 4: dosel arriba con flecos dorados y las cortinas recogidas en los postes.
+    if (level >= 4 && style === 'tropa') {
+      b.rect(0, 0, 24, 3, quilt[1]!);
+      b.hline(0, 0, 24, quilt[2]!);
+      for (let x = 1; x < 24; x += 2) b.set(x, 3, P.gold);
+      for (const [x, dir] of [
+        [3, 1],
+        [20, -1],
+      ] as const) {
+        b.rect(x, 3, 1, h - 12, quilt[2]!);
+        b.rect(x + dir, 3, 1, 6, quilt[1]!);
+        b.set(x, 14, P.gold);
+        b.set(x, 15, P.gold);
+      }
+    }
   });
 }
 
@@ -267,10 +282,17 @@ function chest(level: number): PixelBuffer {
   });
 }
 
-/** Taburete con una vela encima (la mesilla). */
-function nightstand(): PixelBuffer {
+/** Taburete con una vela encima (la mesilla); en el nivel 4, un candelabro de dos velas. */
+function nightstand(level = 2): PixelBuffer {
   return Prop.piece(9, 16, (b) => {
     b.blit(Prop.stool(), 0, 6);
+    if (level >= 4) {
+      b.rect(1, 4, 7, 1, P.gold);
+      b.vline(4, 4, 2, P.gold);
+      candleOn(b, 1, 4, 3);
+      candleOn(b, 6, 4, 3);
+      return;
+    }
     b.rect(3, 4, 3, 2, P.steel);
     candleOn(b, 3, 4, 3);
   });
@@ -327,6 +349,15 @@ function wardrobe(level: number, style: Style): PixelBuffer {
       p.rect(x + 1, 6, 6, 12, wood[1]!);
       p.rect(x + 1, 21, 6, 12, wood[1]!);
       p.vline(x, 4, 31, wood[3]!);
+    }
+    if (level >= 4 && style !== 'servicio') {
+      // Remate tallado con filete de oro.
+      p.hline(0, 0, 22, P.gold);
+      p.hline(0, 3, 22, P.amber);
+      for (const x of [2, 12]) {
+        p.hline(x + 1, 6, 6, P.amber);
+        p.hline(x + 1, 21, 6, P.amber);
+      }
     }
     const knob = level >= 3 && style !== 'servicio' ? P.gold : P.slate;
     p.set(9, 19, knob);
@@ -493,9 +524,11 @@ function floor(b: PixelBuffer, room: Room): void {
   const vet = room.type === 'veteranos';
   const [edge, base, dot] = vet
     ? [P.bark, P.umber, P.cocoa]
-    : room.level >= 3
-      ? [P.navy, P.ocean, P.gold]
-      : [P.plum, P.wine, P.red];
+    : room.level >= 4
+      ? [P.gold, P.grape, P.lemon]
+      : room.level >= 3
+        ? [P.navy, P.ocean, P.gold]
+        : [P.plum, P.wine, P.red];
   for (const s of stretchesOf(room, b.w)) {
     if (s.kind === 'right') continue;
     const x0 = Math.round(s.x0 + 6);
@@ -503,6 +536,15 @@ function floor(b: PixelBuffer, room: Room): void {
     b.rect(x0, 9, x1 - x0, FLOOR_D - 18, edge);
     b.rect(x0 + 1, 10, x1 - x0 - 2, FLOOR_D - 20, base);
     for (let x = x0 + 3; x < x1 - 2; x += 4) b.set(x, FLOOR_D / 2, dot);
+    // En el nivel 4, con una cenefa dentro y flecos en las puntas.
+    if (room.level >= 4 && !vet) {
+      b.rect(x0 + 3, 12, x1 - x0 - 6, 1, P.rose);
+      b.rect(x0 + 3, FLOOR_D - 13, x1 - x0 - 6, 1, P.rose);
+      for (let y = 10; y < FLOOR_D - 10; y += 2) {
+        b.set(x0 - 1, y, P.sand);
+        b.set(x1, y, P.sand);
+      }
+    }
   }
 }
 
@@ -554,7 +596,12 @@ function things(room: Room, w: number): Thing[] {
     // La vela de la primera repisa (con literas de dos pisos; ver wall).
     if (tiers === 2 && bunks.length) t.push(wallLight(room, bx(bunks[0]!) + 3, 24, 0.4, 34));
   } else if (lvl >= 2)
-    t.push(at(nightstand(), rx, WALL - 2, 0, { ...candle(14, 30, 0.4), color: CANDLE }));
+    t.push(
+      at(nightstand(lvl), rx, WALL - 2, 0, {
+        ...candle(14, lvl >= 4 ? 40 : 30, lvl >= 4 ? 0.6 : 0.4),
+        color: CANDLE,
+      }),
+    );
   return t;
 }
 
