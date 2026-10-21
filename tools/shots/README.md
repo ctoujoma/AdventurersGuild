@@ -14,7 +14,9 @@ Sirven para revisar a ojo los cambios de la escena de salas (no son tests).
 <carpeta> <puerto> [tipos]` para cada uno y luego `python3 tools/shots/galeria.py <antes>
 <después> <salida>`, que deja una lámina por sala y `salas.json` para el visor. La cámara del
    tesoro sale tres veces (`tesoro_o10`, `_o50`, `_o100`: al 10 %, a la mitad y llena), porque su
-   oro crece con lo que guarda; sin «antes» propio, usan el de `tesoro`.
+   oro crece con lo que guarda; sin «antes» propio, usan el de `tesoro`. Las salas con nivel 4
+   pintado (solo vista) salen también a nivel 4; `NIVELES=4` saca solo ese nivel y `SIN_N4=1` se
+   queda en el 3 (para la versión de antes).
 
 El juego deja a mano `window.__game` (`get()`/`set(estado)`) y `window.__scene` (la escena)
 para preparar cualquier situación antes de la captura: subir salas de nivel, provocar un asalto

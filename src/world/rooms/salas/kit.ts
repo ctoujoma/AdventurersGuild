@@ -178,42 +178,50 @@ export function lantern(): PixelBuffer {
 }
 
 /**
- * Araña de hierro con cuatro velas (la luz del nivel 3): igual de alta que el farol al que
- * sustituye, con `chain` filas de cadena encima de las velas.
+ * Araña de hierro con cuatro velas (la luz del nivel 3) o, en el 4, de latón con seis: igual de
+ * alta que el farol al que sustituye, con `chain` filas de cadena encima de las velas.
  */
-export function chandelier(chain: number): PixelBuffer {
+export function chandelier(chain: number, brass = false): PixelBuffer {
   const c = chain;
+  const w = brass ? 21 : 15;
+  const mid = (w - 1) / 2;
+  const arm = brass ? P.amber : P.black;
+  const xs = brass ? [1, 4, 7, 13, 16, 19] : [1, 4, 10, 13];
   return Prop.piece(
-    15,
+    w,
     c + 7,
     (p) => {
-      p.vline(7, 0, c + 5, P.black);
-      for (const x of [1, 4, 10, 13]) {
+      p.vline(mid, 0, c + 5, P.black);
+      for (const x of xs) {
         p.set(x, c - 1, P.gold);
         p.set(x, c, P.lemon);
         p.vline(x, c + 1, 2, P.white);
-        p.hline(x - 1, c + 3, 3, P.steel);
+        p.hline(x - 1, c + 3, 3, brass ? P.gold : P.steel);
       }
       // Los brazos, curvados hacia arriba en las puntas, y el remate de abajo.
-      p.hline(1, c + 4, 13, P.black);
-      p.set(0, c + 3, P.black);
-      p.set(14, c + 3, P.black);
-      p.hline(6, c + 5, 3, P.slate);
-      p.set(7, c + 6, P.black);
+      p.hline(1, c + 4, w - 2, arm);
+      p.set(0, c + 3, arm);
+      p.set(w - 1, c + 3, arm);
+      if (brass) p.hline(2, c + 4, w - 4, P.gold);
+      p.hline(mid - 1, c + 5, 3, brass ? P.gold : P.slate);
+      p.set(mid, c + 6, brass ? P.amber : P.black);
     },
     'none',
   );
 }
 
-/** La luz del techo de una sala: el farol o, en el nivel 3, la araña (más fuerte y más lejos). */
+/**
+ * La luz del techo de una sala: el farol o, en el nivel 3, la araña (más fuerte y más lejos; en
+ * el 4, más todavía).
+ */
 export function ceilingGlow(w: number, level: number, dy: number): Glow {
-  const rich = level >= 3;
+  const k = level >= 4 ? 1.35 : level >= 3 ? 1.2 : 1;
   return {
     dy,
-    r: Math.round(Math.max(80, w * 0.7) * (rich ? 1.2 : 1)),
-    color: rich ? CANDLE : LANTERN,
-    power: rich ? 1.25 : 1,
-    flicker: rich ? 0.1 : 0.08,
+    r: Math.round(Math.max(80, w * 0.7) * k),
+    color: level >= 3 ? CANDLE : LANTERN,
+    power: level >= 4 ? 1.45 : level >= 3 ? 1.25 : 1,
+    flicker: level >= 3 ? 0.1 : 0.08,
   };
 }
 
@@ -224,7 +232,8 @@ export function ceilingGlow(w: number, level: number, dy: number): Glow {
  */
 export function lampOver(cells: Cell[], w: number, level = 1): Thing {
   const c = cells[Math.floor((cells.length - 1) / 2)]!;
-  return hung(level >= 3 ? chandelier(2) : lantern(), c.win, MID, 0, ceilingGlow(w, level, 3));
+  const img = level >= 3 ? chandelier(2, level >= 4) : lantern();
+  return hung(img, c.win, MID, 0, ceilingGlow(w, level, 3));
 }
 
 /** Aplique de pared: una vela encendida en su brazo de hierro (se pinta en la pared). */

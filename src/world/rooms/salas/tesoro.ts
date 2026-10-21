@@ -46,6 +46,25 @@ function vaultDoor(level: number): PixelBuffer {
     p.rect(0, 0, 26, 30, P.slate);
     p.rect(1, 1, 24, 28, P.steel);
     p.hline(1, 1, 24, P.fog);
+    if (level >= 4) {
+      // La de la cámara acorazada: de latón, con aro de oro, la rueda de seis radios y una gema.
+      p.rect(2, 2, 22, 26, P.black);
+      p.ellipse(13, 15, 11, 11, P.amber);
+      p.ellipse(13, 15, 10, 10, P.gold);
+      p.ellipse(13, 15, 8, 8, P.steel);
+      p.ellipse(12, 14, 6, 6, P.fog);
+      for (let a = 0; a < 6; a++) {
+        const t = (a / 6) * Math.PI * 2;
+        p.line(13, 15, Math.round(13 + Math.cos(t) * 6), Math.round(15 + Math.sin(t) * 6), P.amber);
+      }
+      for (let a = 0; a < 16; a++) {
+        const t = (a / 16) * Math.PI * 2;
+        p.set(Math.round(13 + Math.cos(t) * 9.5), Math.round(15 + Math.sin(t) * 9.5), P.lemon);
+      }
+      p.ellipse(13, 15, 2, 2, P.cyan);
+      p.set(12, 14, P.white);
+      return;
+    }
     if (level >= 3) {
       // Redonda, con remaches dorados, la rueda y los cerrojos.
       p.rect(2, 2, 22, 26, P.black);
@@ -218,14 +237,58 @@ function idol(): PixelBuffer {
   });
 }
 
+/** Vitrina en su peana (nivel 4): un cetro y un collar de gemas tras el cristal. */
+function jewelCase(): PixelBuffer {
+  return Prop.piece(16, 28, (p) => {
+    // Peana de mármol.
+    p.rect(2, 18, 12, 10, P.mist);
+    p.vline(2, 18, 10, P.white);
+    p.vline(13, 18, 10, P.fog);
+    p.rect(1, 17, 14, 2, P.gold);
+    // La caja de cristal (se ve el fondo oscuro de terciopelo) con su marco dorado.
+    p.rect(1, 2, 14, 15, P.amber);
+    p.rect(2, 3, 12, 13, P.wine);
+    p.line(3, 4, 6, 4, P.mist);
+    p.line(3, 5, 4, 5, P.mist);
+    // El cetro y el collar.
+    p.line(5, 14, 10, 5, P.gold);
+    p.ellipse(10, 5, 1.5, 1.5, P.cyan);
+    for (const [x, y] of [
+      [4, 9],
+      [5, 11],
+      [7, 12],
+      [9, 12],
+      [11, 11],
+      [12, 9],
+    ])
+      p.set(x!, y!, P.lemon);
+    p.set(8, 13, P.red);
+    p.rect(1, 0, 14, 2, P.gold);
+    p.hline(1, 0, 14, P.lemon);
+  });
+}
+
 /** Repisa de pared con copas y una bandeja de oro (desde el nivel 2). */
 function goblets(level: number): PixelBuffer {
   return Prop.piece(22, 12, (p) => {
     p.rect(0, 10, 22, 2, W[4]!);
     p.hline(0, 10, 22, W[5]!);
-    p.ellipse(5, 5, 4, 4, P.orange);
-    p.ellipse(5, 5, 3, 3, P.gold);
-    p.set(4, 3, P.lemon);
+    if (level < 4) {
+      p.ellipse(5, 5, 4, 4, P.orange);
+      p.ellipse(5, 5, 3, 3, P.gold);
+      p.set(4, 3, P.lemon);
+    }
+    // En el nivel 4, la corona en su cojín en lugar de la bandeja.
+    if (level >= 4) {
+      p.rect(1, 7, 9, 3, P.wine);
+      p.hline(1, 7, 9, P.red);
+      p.rect(2, 3, 7, 4, P.gold);
+      for (const x of [2, 5, 8]) p.set(x, 2, P.gold);
+      p.hline(2, 6, 7, P.orange);
+      p.set(5, 4, P.red);
+      p.set(3, 4, P.cyan);
+      p.set(7, 4, P.cyan);
+    }
     for (const x of [12, 17]) {
       if (x === 17 && level < 3) continue;
       p.rect(x, 3, 3, 3, P.gold);
@@ -264,7 +327,7 @@ function wall(b: PixelBuffer, room: Room, _look: SalonLook, { cells, ruin }: Wal
   const last = cells.at(-1)!;
   const winR = bx(last.win + WIN_HALF);
   if (!ruin && lvl >= 2 && bx(last.x1) - winR >= 8) {
-    b.rect(winR + 3, 28, 5, 2, P.slate);
+    b.rect(winR + 3, 28, 5, 2, lvl >= 4 ? P.gold : P.slate);
     candleOn(b, winR + 4, 28, 4);
   }
 }
@@ -325,7 +388,7 @@ function things(room: Room, w: number, look: SalonLook): Thing[] {
       else
         t.push(
           ...row(s, [
-            [strongbox(), WALL],
+            lvl >= 4 ? [jewelCase(), WALL, SHINE(36, 0.45)] : [strongbox(), WALL],
             [coinStacks(a), WALL - 2, glow(a, 40)],
           ]),
         );

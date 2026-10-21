@@ -76,7 +76,21 @@ export function hearth(level: number, lit: boolean): PixelBuffer {
       p.hline(11, 63, 14, P.slate);
       web(p, 8, 47, 1);
     }
-    if (level >= 2 && lit) {
+    if (level >= 4 && lit) {
+      // El asador: el espetón de lado a lado con el cordero dorándose y la manivela.
+      p.vline(6, 52, 4, P.slate);
+      p.vline(30, 52, 4, P.slate);
+      p.hline(5, 54, 27, P.steel);
+      p.ellipse(18, 54.5, 7, 3.5, P.brick);
+      p.ellipse(17, 53.5, 5.5, 2.2, P.amber);
+      p.hline(14, 52, 6, P.gold);
+      p.set(25, 55, P.sand);
+      p.set(11, 55, P.sand);
+      p.vline(32, 54, 3, P.slate);
+      p.set(33, 56, P.steel);
+      // La grasera debajo.
+      p.rect(11, 59, 14, 1, P.slate);
+    } else if (level >= 2 && lit) {
       // Caldero colgado de su cadena.
       for (let y = 46; y < 52; y++) p.set(18, y, y % 2 ? P.steel : P.slate);
       p.ellipse(18, 56, 6.5, 4.5, P.black);
@@ -140,9 +154,16 @@ export function workTable(level: number): PixelBuffer {
       p.ellipse(29, 6, 2.5, 1.2, P.slate);
       p.hline(27, 5, 5, P.steel);
     }
+    if (level >= 4) {
+      // Una empanada dorada junto al pan.
+      p.ellipse(8, 5, 4.5, 1.8, P.amber);
+      p.ellipse(8, 4.5, 3.5, 1.2, P.gold);
+      p.set(7, 4, P.rust);
+      p.set(9, 4, P.rust);
+    }
     if (level >= 3) {
-      // Pollo asado en su fuente.
-      p.ellipse(15.5, 6, 6, 1.5, P.mist);
+      // Pollo asado en su fuente (de plata en el nivel 4).
+      p.ellipse(15.5, 6, 6, 1.5, level >= 4 ? P.white : P.mist);
       p.ellipse(15.5, 4.5, 4, 2.5, P.amber);
       p.ellipse(14.5, 3.8, 2, 1.2, P.gold);
       p.set(20, 3, P.sand);
@@ -186,6 +207,24 @@ export function utensils(level: number): PixelBuffer {
   });
 }
 
+/** La batería de cobre (nivel 4): cazos y sartenes colgados de una barra, del grande al chico. */
+export function copperRack(): PixelBuffer {
+  return Prop.piece(14, 18, (p) => {
+    p.hline(0, 0, 14, W[3]!);
+    p.hline(0, 1, 14, W[2]!);
+    for (const [x, r, l] of [
+      [3, 2.6, 9],
+      [8, 2, 6],
+      [12, 1.5, 4],
+    ] as const) {
+      p.vline(x, 2, l, P.amber);
+      p.ellipse(x, 2 + l + r, r, r, P.orange);
+      p.ellipse(x - 0.5, 1.5 + l + r, r - 0.8, r - 0.8, P.amber);
+      p.set(Math.round(x - r / 2), Math.round(1 + l + r), P.gold);
+    }
+  });
+}
+
 /** Estante de pared con tarros (y ajos colgando con nivel). */
 export function jarShelf(level: number, seed: number): PixelBuffer {
   return Prop.piece(11, 18, (p) => {
@@ -211,7 +250,12 @@ export function dresser(level: number): PixelBuffer {
     // Platos de pie en el estante de arriba.
     for (let x = 4; x < 26; x += 6) {
       p.ellipse(x + 2.5, 8, 2.8, 2.8, P.fog);
-      p.ellipse(x + 2.5, 8, 2, 2, level >= 3 ? P.sky : P.mist);
+      p.ellipse(x + 2.5, 8, 2, 2, level >= 4 ? P.white : level >= 3 ? P.sky : P.mist);
+      // En el nivel 4, loza fina con el filo de oro.
+      if (level >= 4) {
+        p.set(x + 2, 5, P.gold);
+        p.set(x + 4, 6, P.gold);
+      }
       p.set(x + 2, 7, P.white);
     }
     // Jarras y tazones en el de abajo.
@@ -220,9 +264,10 @@ export function dresser(level: number): PixelBuffer {
     p.hline(5, 15, 4, P.tan);
     p.ellipse(16, 17.5, 3, 1.5, P.steel);
     p.hline(13, 16, 7, P.fog);
-    p.rect(22, 15, 4, 4, P.mist);
-    p.set(21, 16, P.mist);
+    p.rect(22, 15, 4, 4, level >= 4 ? P.fog : P.mist);
+    p.set(21, 16, level >= 4 ? P.fog : P.mist);
     p.hline(22, 15, 4, P.white);
+    if (level >= 4) p.set(23, 14, P.white);
     // Encimera y cuerpo de abajo con sus dos puertas.
     p.rect(0, 24, 30, 3, W[5]!);
     p.hline(0, 26, 30, W[2]!);
@@ -375,7 +420,8 @@ function wall(b: PixelBuffer, room: Room, _look: SalonLook, { cells, ruin }: Wal
   const lvl = room.level;
   const w = cells.at(-1)!.x1;
   for (const s of stretchesOf(room, w)) {
-    if (s.kind === 'left') b.blit(utensils(lvl), bx(s.x1) - 13, 20);
+    if (s.kind === 'left')
+      b.blit(lvl >= 4 ? copperRack() : utensils(lvl), bx(s.x1) - (lvl >= 4 ? 15 : 13), 20);
     else if (s.kind === 'mid' && s.i === 1 && lvl < 2) {
       // Sin alacena todavía, un estante con tazones encima de los sacos.
       const sx = bx((s.x0 + s.x1) / 2) - 11;

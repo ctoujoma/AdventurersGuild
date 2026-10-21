@@ -16,6 +16,7 @@ import {
   W,
   at,
   bx,
+  candle,
   cellsOf,
   fire,
   row,
@@ -24,7 +25,7 @@ import {
   type Thing,
   type WallCtx,
 } from './kit';
-import { sack, shelf, web } from './piezas';
+import { candleOn, sack, shelf, web } from './piezas';
 
 // ---------- Piezas ----------
 
@@ -35,7 +36,22 @@ export function vat(level: number, seed: number): PixelBuffer {
     b.rect(12, 21, 4, 3, P.gold);
     b.set(13, 24, P.lemon);
   }
-  if (level >= 3) {
+  if (level >= 4) {
+    // Cuba de la casa: aros de latón y, tallado en la tapa, el medallón con la jarra.
+    for (let a = 0; a < 90; a++) {
+      const t = (a / 90) * Math.PI * 2;
+      b.set(
+        Math.round(14 + Math.cos(t) * 12 - 0.5),
+        Math.round(13 + Math.sin(t) * 12 - 0.5),
+        P.amber,
+      );
+    }
+    b.ellipse(14, 12, 4.5, 4.5, P.gold);
+    b.ellipse(14, 12, 3.5, 3.5, W[2]!);
+    b.rect(13, 10, 3, 4, P.gold);
+    b.set(16, 11, P.gold);
+    b.hline(13, 10, 3, P.sand);
+  } else if (level >= 3) {
     // Rayas de tiza: las que se llevan sacadas.
     for (let k = 0; k < 3 + (seed % 2); k++) b.vline(16 + k * 2, 9, 4, P.mist);
     b.line(15, 12, 23, 9, P.mist);
@@ -79,6 +95,25 @@ export function kettle(level: number): PixelBuffer {
       // La pala de remover, apoyada.
       p.line(29, 22, 31, 46, W[4]!);
       p.rect(28, 18, 3, 5, W[5]!);
+    }
+  });
+}
+
+/** Mesa de cata (nivel 4): una vela, la botella abierta y dos copas. */
+function tastingTable(): PixelBuffer {
+  return Prop.piece(16, 16, (p) => {
+    p.rect(0, 7, 16, 2, W[4]!);
+    p.hline(0, 7, 16, W[5]!);
+    p.rect(2, 9, 2, 7, W[3]!);
+    p.rect(12, 9, 2, 7, W[3]!);
+    p.hline(4, 13, 8, W[2]!);
+    candleOn(p, 1, 7, 4);
+    Prop.bottleOn(p, 6, 7, 2);
+    for (const x of [10, 13]) {
+      p.rect(x, 3, 2, 2, P.wine);
+      p.set(x, 3, P.mist);
+      p.vline(x, 5, 2, P.mist);
+      p.hline(x - 1, 6, 3, P.mist);
     }
   });
 }
@@ -224,7 +259,8 @@ function things(room: Room, w: number): Thing[] {
   for (const s of stretchesOf(room, w)) {
     if (s.kind === 'left') {
       if (lvl >= 2) t.push(at(kettle(lvl), s.x0 + 22, WALL + 2, 0, fire(4, 70, FIRE, false)));
-      t.push(at(lvl >= 2 ? Prop.barrel() : barrels(), lvl >= 2 ? s.x0 + 51 : s.x0 + 22, WALL));
+      if (lvl >= 4) t.push(at(tastingTable(), s.x0 + 52, WALL, 0, candle(12, 36, 0.5)));
+      else t.push(at(lvl >= 2 ? Prop.barrel() : barrels(), lvl >= 2 ? s.x0 + 51 : s.x0 + 22, WALL));
     } else if (s.kind === 'mid' && s.i === 1)
       t.push(
         ...row(s, [

@@ -38,14 +38,15 @@ describe('texturas de la vista 3D', () => {
       ['cocina', 0],
       ['dormitorio', 1],
       ['bodega', -1],
+      ['tesoro', -1],
       ['bodega', -2],
     ] as const) {
       const w = CELL_W - PARTITION;
-      const walls = [1, 2, 3].map((level) => backWall(room({ type, floor, level }), w, ROOM_H));
+      // (El 4 solo se ve en la galería: el juego aún no llega.)
+      const walls = [1, 2, 3, 4].map((level) => backWall(room({ type, floor, level }), w, ROOM_H));
       // Los únicos agujeros, los cristales de las ventanas: los mismos en cada nivel.
       for (const b of walls) expect(holes(b)).toBe(holes(walls[0]!));
-      expect(walls[1]!.data).not.toEqual(walls[0]!.data);
-      expect(walls[2]!.data).not.toEqual(walls[1]!.data);
+      for (let k = 1; k < walls.length; k++) expect(walls[k]!.data).not.toEqual(walls[k - 1]!.data);
     }
   });
 
