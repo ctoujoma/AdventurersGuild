@@ -1,15 +1,23 @@
 /**
  * La gente que se ve en la escena 3D: una figura plana por persona que anda por las salas y las
  * escaleras, se sienta en el salón, duerme en su cama y sale por el recibidor. Cada figura usa
- * un atlas con todos sus fotogramas (de pie, parpadeo, andando, sentada y en la cama) y la escena
- * solo cambia cuál se ve y dónde está.
+ * un atlas con todos sus fotogramas (de pie, parpadeo, andando, sentada, en la cama y entrenando)
+ * y la escena solo cambia cuál se ve y dónde está.
  */
 import { Group, PlaneGeometry, Vector3, type Mesh, type ShaderMaterial } from 'three';
 import { P } from '../../art/palette';
 import { PixelBuffer, alpha } from '../../art/pixel';
-import { FEET_Y, heroSprites, type HeroSprites } from '../../art/heroes/hero';
+import {
+  FEET_Y,
+  HAND,
+  fightSprites,
+  heroSprites,
+  type FightPose,
+  type HeroSprites,
+} from '../../art/heroes/hero';
 import { bunkQuilt } from '../props';
 import { generateLook, type OutfitId } from '../../art/heroes/look';
+import { WEAPONS, type WeaponId } from '../weapons';
 import type { SceneHero, SceneVisitors } from '../scene';
 import { GROUND } from '../geometry';
 import { Look, mesh, type Shared } from './gl';
@@ -68,8 +76,35 @@ const F = {
   mat: 17,
   down: 18,
   downL: 19,
+  /** Entrenando: golpes (preparado, impulso, golpe), el arco (bajado, apuntando) y leyendo. */
+  drill: 20,
+  drillL: 23,
+  aim: 26,
+  aimL: 28,
+  read: 30,
 } as const;
-const FRAMES = 20;
+const FRAMES = 32;
+
+/** El arma con la que practica cada uno en la sala de armas (en la de tiro, todos con arco). */
+const DRILL_WEAPON: Record<OutfitId, WeaponId> = {
+  guerrero: 'espada',
+  picaro: 'daga',
+  mago: 'baston',
+  clerigo: 'maza',
+  explorador: 'espada',
+  tabernero: 'garrote',
+};
+
+/** Cómo se entrena en cada sala: golpes al aire, tiro con arco o leer. */
+type Drill = 'armas' | 'tiro' | 'biblioteca';
+const DRILLS: Record<string, Drill> = { armas: 'armas', tiro: 'tiro', biblioteca: 'biblioteca' };
+/** Duración de cada vuelta de la animación, en segundos. */
+const DRILL_CYCLE: Record<Drill, number> = { armas: 1.8, tiro: 3, biblioteca: 5 };
+/** En la sala de tiro: cuándo sale la flecha y cuánto tarda en cruzar (dentro de la vuelta). */
+const LOOSE_AT = 2.2;
+const ARROW_TIME = 0.35;
+/** Se entrena mirando a la izquierda, donde las salas tienen el muñeco y las dianas. */
+const DRILL_DIR = -1;
 
 type Tint = readonly [number, number, number];
 
@@ -112,8 +147,63 @@ const hash = (s: string) => {
   return Math.abs(h);
 };
 
+/** Pinta un arma girada `deg` grados con su agarre en (hx, hy), como la pelea pero en píxeles. */
+function stampWeapon(b: PixelBuffer, id: WeaponId, hx: number, hy: number, deg: number): void {
+  const w = WEAPONS[id];
+  const r = (deg * Math.PI) / 180;
+  const c = Math.cos(r);
+  const s = Math.sin(r);
+  const R = Math.ceil(Math.hypot(w.img.w, w.img.h));
+  for (let y = -R; y <= R; y++)
+    for (let x = -R; x <= R; x++) {
+      // Cada píxel de destino mira de qué píxel del arma viene (giro inverso): sin agujeros.
+      const sx = Math.round(c * x + s * y) + w.px;
+      const sy = Math.round(-s * x + c * y) + w.py;
+      if (sx < 0 || sy < 0 || sx >= w.img.w || sy >= w.img.h) continue;
+      const col = w.img.get(sx, sy);
+      const dx = hx + x;
+      const dy = hy + y;
+      if (alpha(col) && dx >= 0 && dy >= 0 && dx < b.w && dy < b.h) b.set(dx, dy, col);
+    }
+}
+
+/** Un fotograma de pelea (mirando a la derecha) con su arma en la mano. */
+function drillCell(
+  pose: Record<FightPose, PixelBuffer>,
+  p: FightPose,
+  id: WeaponId,
+  deg: number,
+): PixelBuffer {
+  const b = new PixelBuffer(CELL, TALL);
+  b.blit(pose[p], 3, 0);
+  stampWeapon(b, id, 3 + HAND[p].x, HAND[p].y, deg);
+  return b;
+}
+
+/** De frente con un libro abierto en las manos (con la hoja a medio pasar, si `turn`). */
+function readCell(front: PixelBuffer, turn: boolean): PixelBuffer {
+  const b = new PixelBuffer(CELL, TALL);
+  b.blit(front, 3, 0);
+  const x = 8;
+  const y = 16;
+  b.rect(x, y, 8, 5, P.wine);
+  b.rect(x + 1, y, 3, 4, P.sand);
+  b.rect(x + 4, y, 3, 4, P.white);
+  b.vline(x + 4, y, 4, P.tan);
+  for (const ry of [y + 1, y + 2]) {
+    b.hline(x + 1, ry, 2, P.clay);
+    b.hline(x + 5, ry, 2, P.mist);
+  }
+  if (turn) {
+    // La hoja de la derecha, levantada hacia la izquierda.
+    b.rect(x + 4, y - 2, 2, 3, P.white);
+    b.set(x + 4, y - 2, P.mist);
+  }
+  return b;
+}
+
 /** Atlas de una persona: todos sus fotogramas uno al lado del otro. */
-function atlas(spr: HeroSprites): PixelBuffer {
+function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
   const b = new PixelBuffer(CELL * FRAMES, TALL);
   const put = (img: PixelBuffer, i: number, dx = 3, flip = false) =>
     b.blit(img, i * CELL + dx, 0, flip);
@@ -125,6 +215,22 @@ function atlas(spr: HeroSprites): PixelBuffer {
     put(w, F.walkL + i, 3, true);
   });
   put(spr.sit, F.sit);
+  // Entrenando: los fotogramas de mirar a la izquierda son los mismos, volteados.
+  const pose = fightSprites(h.look, h.marks);
+  const melee = DRILL_WEAPON[h.look.outfit];
+  const swing = h.look.outfit === 'mago' ? [0, -40, 110] : [30, -45, 125];
+  (['ready', 'windup', 'strike'] as const).forEach((p, i) => {
+    const img = drillCell(pose, p, melee, swing[i]!);
+    put(img, F.drill + i, 0);
+    put(img, F.drillL + i, 0, true);
+  });
+  (['ready', 'thrust'] as const).forEach((p, i) => {
+    const img = drillCell(pose, p, 'arco', i ? 0 : 35);
+    put(img, F.aim + i, 0);
+    put(img, F.aimL + i, 0, true);
+  });
+  put(readCell(spr.idle[0], false), F.read, 0);
+  put(readCell(spr.idle[0], true), F.read + 1, 0);
   // En la cama: la cabeza en la almohada y la manta por encima de los hombros. Las literas
   // tienen la manta del color del nivel; el catre, sábana blanca.
   // (El fotograma empieza 2 píxeles a la izquierda de la litera y 4 del catre.)
@@ -616,7 +722,7 @@ export class Crowd {
   private add(h: SceneHero): void {
     const spr = heroSprites(h.look, h.marks);
     const k = scaleAt(LANES[0]);
-    const img = atlas(spr);
+    const img = atlas(spr, h);
     const mat = this.look.surface(img, [at(0, 0, 0), at(1, 0, 0), at(1, -1, 0), at(0, -1, 0)], {
       ambient: [0.44, 0.38, 0.46],
       sun: 0,
@@ -717,6 +823,52 @@ export class Crowd {
     return a.hero.staff === 'pueblo' || (a.hero.staff === 'casa' && !this.homes.has(a.hero.id));
   }
 
+  /**
+   * Si alguien está entrenando ahora mismo (de día, parado en su sala de entrenamiento): cómo y
+   * por dónde va de la vuelta de su animación (cada uno con su desfase, para que no vayan a la par).
+   */
+  private drillOf(a: Actor): { kind: Drill; p: number } | null {
+    const h = a.hero;
+    if (!h.work || h.status !== 'ok' || h.guard || this.time !== 'day' || this.scripted)
+      return null;
+    if (a.path.length || a.held || a.leaving || a.pose !== 'stand') return null;
+    const job = this.S?.jobs.get(h.work);
+    const kind = job ? DRILLS[job.room.type] : undefined;
+    if (!job || !kind || a.floor !== job.room.floor || a.x < job.x0 - 8 || a.x > job.x1 + 8)
+      return null;
+    return { kind, p: (this.now + (hash(h.id) % 97) / 13) % DRILL_CYCLE[kind] };
+  }
+
+  /** Las flechas en el aire de la sala de tiro (en píxeles de la vista): la punta y hacia dónde va. */
+  arrows(v: View): { x: number; y: number; dir: 1 | -1; k: number }[] {
+    const out: { x: number; y: number; dir: 1 | -1; k: number }[] = [];
+    for (const a of this.actors.values()) {
+      if (a.gone) continue;
+      const d = this.drillOf(a);
+      if (d?.kind !== 'tiro' || d.p < LOOSE_AT || d.p >= LOOSE_AT + ARROW_TIME) continue;
+      const job = this.S!.jobs.get(a.hero.work!)!;
+      const dir = DRILL_DIR;
+      const f = this.frame(a, this.now);
+      const k = scaleAt(f.z);
+      // Sale de la mano que apunta y llega casi a la pared del otro lado.
+      const cx = 3 + HAND.thrust.x;
+      const hx = f.left + (dir > 0 ? cx : CELL - 1 - cx) / k;
+      const hy = f.bottom - (TALL - HAND.thrust.y) / k;
+      // Hasta las dianas, en el primer tramo de la pared.
+      const end = dir > 0 ? job.x1 - 10 : job.x0 + 10;
+      const t = (d.p - LOOSE_AT) / ARROW_TIME;
+      const p = project(v, hx + (end - hx) * t, hy, f.z);
+      out.push({ x: p.x, y: p.y, dir, k: scaleAt(f.z) });
+    }
+    return out;
+  }
+
+  /** Si hay alguien entrenando a la vista (la capa de encima tiene que repintarse). */
+  drilling(): boolean {
+    for (const a of this.actors.values()) if (!a.gone && this.drillOf(a)) return true;
+    return false;
+  }
+
   /** Ya se ha ido a su casa del pueblo: no se ve hasta mañana. */
   private hide(a: Actor): void {
     a.homeward = false;
@@ -732,7 +884,12 @@ export class Crowd {
     const h = a.hero;
     if (!this.S || !h.work || this.time !== 'day' || h.status !== 'ok' || h.guard) return null;
     const mates = [...this.actors.values()].filter((x) => x.hero.work === h.work);
-    return workGoal(this.S, h.work, mates.indexOf(a), mates.length, this.rnd);
+    const g = workGoal(this.S, h.work, mates.indexOf(a), mates.length, this.rnd);
+    const job = this.S.jobs.get(h.work);
+    // En la sala de tiro se apunta desde la mitad de la derecha, lejos de las dianas.
+    if (g && job?.room.type === 'tiro')
+      g.place.x = job.x0 + (job.x1 - job.x0) * 0.5 + (g.place.x - job.x0) * 0.5;
+    return g;
   }
 
   /** Qué hace ahora alguien que está parado. */
@@ -877,6 +1034,19 @@ export class Crowd {
         bottom: top + TALL / k,
         z,
       };
+    }
+    const d = this.drillOf(a);
+    if (d) {
+      // Entrenando en su sala, mirando hacia donde tiene más sitio.
+      const dir = DRILL_DIR;
+      let lunge = 0;
+      if (d.kind === 'armas') {
+        const i = d.p < 0.7 ? 0 : d.p < 1.1 ? 1 : d.p < 1.5 ? 2 : 0;
+        frame = (dir > 0 ? F.drill : F.drillL) + i;
+        if (i === 2) lunge = (dir * 2) / k;
+      } else if (d.kind === 'tiro') frame = (dir > 0 ? F.aim : F.aimL) + (d.p < 1.2 ? 0 : 1);
+      else frame = F.read + (d.p > 4.4 ? 1 : 0);
+      return { frame, left: a.x - CELL / 2 / k + lunge, bottom: top + TALL / k, z };
     }
     if (a.swing) {
       // Golpe: el paso largo de andar, echándose hacia delante.

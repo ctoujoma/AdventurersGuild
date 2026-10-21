@@ -1331,7 +1331,8 @@ export class RoomScene {
       this.raising.length > 0 ||
       !!this.raid ||
       !!this.routePts ||
-      (!this.night && !!this.model?.heroes.some((h) => h.train));
+      (!this.night && !!this.model?.heroes.some((h) => h.train)) ||
+      this.crowd.drilling();
     if (live || this.topLive) {
       const ctx = this.topCtx;
       ctx.clearRect(0, 0, view.vw, view.vh);
@@ -1341,6 +1342,7 @@ export class RoomScene {
       this.scaffolds();
       this.dropMark();
       this.trainBars();
+      this.flyingArrows();
       this.raid?.draw(ctx, view.px, view.py);
       this.particles.draw(ctx, view.px, view.py, t);
       this.floatUp();
@@ -1748,6 +1750,24 @@ export class RoomScene {
       ctx.fillRect(x, y, W, 3);
       ctx.fillStyle = fill >= 1 ? P.lemon : P.lime;
       ctx.fillRect(x, y, Math.max(1, Math.round(W * fill)), 3);
+    }
+  }
+
+  /** Las flechas que cruzan la sala de tiro: astil, punta de hierro y plumas blancas. */
+  private flyingArrows(): void {
+    const { topCtx: ctx, camera } = this;
+    const v: View = { px: camera.px, py: camera.py, vw: camera.vw, vh: camera.vh };
+    for (const a of this.crowd.arrows(v)) {
+      const len = Math.max(5, Math.round(7 * a.k));
+      const x = Math.round(a.x);
+      const y = Math.round(a.y);
+      const tail = x - a.dir * len;
+      ctx.fillStyle = P.oak;
+      ctx.fillRect(Math.min(x, tail), y, len, 1);
+      ctx.fillStyle = P.fog;
+      ctx.fillRect(x - (a.dir > 0 ? 1 : 0), y, 2, 1);
+      ctx.fillStyle = P.white;
+      ctx.fillRect(tail - (a.dir > 0 ? 0 : 1), y - 1, 1, 3);
     }
   }
 
