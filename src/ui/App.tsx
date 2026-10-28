@@ -36,7 +36,6 @@ import { Title } from './Title';
 import { nextTip } from './tips';
 import { canDrag, planDrop } from './drop';
 import { UncleNote } from './UncleNote';
-import { AwayPanel } from './panels/AwayPanel';
 import { GremioPanel } from './panels/GremioPanel';
 import { HeroesPanel, type HeroFilter } from './panels/HeroesPanel';
 import { MailPanel } from './panels/MailPanel';
@@ -952,7 +951,6 @@ export function App() {
                 setQuestId(id);
               }}
             />
-            <AwayPanel game={game} onHero={(id) => setCard(id)} />
           </Panel>
         )}
         {openQuest && (

@@ -16,6 +16,7 @@ import {
   type Terrain,
 } from '../../data/places';
 import { BufferImage } from '../BufferImage';
+import { help } from '../HoldHelp';
 import { Icon, type IconName } from '../icons';
 import { listNames, plural } from '../text';
 
@@ -142,6 +143,8 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
   const [size, setSize] = useState({ w: 1, h: 1 });
   const [view, setView] = useState({ z: 1, x: 0, y: 0 });
   const [info, setInfo] = useState<Info | null>(null);
+  /** La leyenda y la ayuda, plegadas tras el botón «?». */
+  const [legend, setLegend] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const [cardH, setCardH] = useState(0);
   useLayoutEffect(() => {
@@ -698,39 +701,59 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
           >
             <Icon name="home" size={14} />
           </button>
+          <button
+            class={`btn-icon map-help ${legend ? 'is-on' : ''}`}
+            aria-label="Qué es cada cosa"
+            aria-expanded={legend}
+            onClick={() => setLegend(!legend)}
+          >
+            ?
+          </button>
         </div>
       </div>
       {place === 'dock' && cardEl}
-      <ul class="map-legend">
-        <li>
-          <span class="lg-pin">!</span> Encargo
-        </li>
-        <li>
-          <span class="lg-party">2</span> Grupo de viaje
-        </li>
-        <li>
-          <span class="lg-missing">?</span> Desaparecido
-        </li>
-        <li>
-          <i class="lg-route" /> Camino de un grupo
-        </li>
-        <li>
-          <i class="lg-thread" />
-          <span class="lg-step past">
-            <Icon name="check" size={7} />
-          </span>{' '}
-          Historia: paso hecho
-        </li>
-        <li>
-          <i class="lg-thread next" />
-          <span class="lg-step now">2</span> Historia: siguiente paso
-        </li>
-        {threat > 0 && <li class="lg-threat">Amenaza en la comarca: {threat}</li>}
-      </ul>
-      <p class="map-hint">
-        Toca un lugar o un número para ver qué hay; arrastra o pellizca para moverte.
-        {level < 2 && ' La niebla se levanta explorando (la sala de mapas ayuda).'}
-      </p>
+      {threat > 0 && !legend && (
+        <p
+          class="map-threat-line"
+          {...help('Amenaza en la comarca: crece si una historia espera en el tablón.')}
+        >
+          <Icon name="calavera" size={10} /> Amenaza {threat}
+        </p>
+      )}
+      {legend && (
+        <ul class="map-legend">
+          <li>
+            <span class="lg-pin">!</span> Encargo
+          </li>
+          <li>
+            <span class="lg-party">2</span> Grupo de viaje
+          </li>
+          <li>
+            <span class="lg-missing">?</span> Desaparecido
+          </li>
+          <li>
+            <i class="lg-route" /> Camino de un grupo
+          </li>
+          <li>
+            <i class="lg-thread" />
+            <span class="lg-step past">
+              <Icon name="check" size={7} />
+            </span>{' '}
+            Historia: paso hecho
+          </li>
+          <li>
+            <i class="lg-thread next" />
+            <span class="lg-step now">2</span> Historia: siguiente paso
+          </li>
+          {threat > 0 && <li class="lg-threat">Amenaza en la comarca: {threat}</li>}
+        </ul>
+      )}
+      {legend && (
+        <p class="map-hint">
+          Toca un lugar o un número para ver qué hay; arrastra o pellizca para moverte.
+          {level < 2 && ' La niebla se levanta explorando (la sala de mapas ayuda).'}
+        </p>
+      )}
     </div>
   );
 }

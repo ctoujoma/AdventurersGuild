@@ -84,7 +84,7 @@ export function SaveMenu({ game, onLoad, onClose }: Props) {
   };
 
   return (
-    <div class="card-backdrop save-backdrop" onClick={onClose}>
+    <div class="card-backdrop save-backdrop as-sheet" onClick={onClose}>
       <article
         class="herocard savemenu"
         onClick={(e) => e.stopPropagation()}

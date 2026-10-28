@@ -1834,7 +1834,7 @@ button:focus-visible {
 .ev {
   position: relative;
   padding-left: 16px;
-  font-size: var(--t-l);
+  font-size: var(--t-m);
   animation: fadein 0.3s steps(3) both;
 }
 
@@ -2017,7 +2017,7 @@ button:focus-visible {
 .mail-info b {
   font-family: var(--pixel);
   font-weight: 400;
-  font-size: var(--t-l);
+  font-size: var(--t-m);
 }
 
 .mail-side {
@@ -2048,34 +2048,6 @@ button:focus-visible {
   background: var(--wine);
 }
 
-/* ---------- Fuera del gremio ---------- */
-.away {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.away-faces {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  max-width: 112px;
-}
-
-.away-info {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  flex: 1;
-  min-width: 0;
-}
-
-.away-info b {
-  font-family: var(--pixel);
-  font-weight: 400;
-  font-size: var(--t-l);
-}
-
 .track {
   position: relative;
   display: block;
@@ -2084,7 +2056,6 @@ button:focus-visible {
   box-shadow: 0 0 0 2px var(--plum);
 }
 
-.away .track i,
 .meter .track i {
   position: absolute;
   inset: 0 auto 0 0;
@@ -2339,10 +2310,6 @@ button.trait[aria-pressed='true'] {
   font-size: var(--t-m);
   font-style: italic;
   color: var(--rust);
-}
-
-.face {
-  line-height: 0;
 }
 
 /* ---------- Fase 3a: habilidades de clase y moral ---------- */
@@ -2723,6 +2690,29 @@ button.trait[aria-pressed='true'] {
   z-index: 70;
 }
 
+/* Secciones plegables de Ajustes (el glosario). */
+.set-fold summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.set-fold summary::-webkit-details-marker {
+  display: none;
+}
+
+.set-fold summary::before {
+  content: '▸';
+  color: var(--rust);
+}
+
+.set-fold[open] summary::before {
+  content: '▾';
+}
+
 /* ---------- Notas del tío (tutorial) ---------- */
 .uncle-note {
   position: absolute;
@@ -2760,6 +2750,7 @@ button.trait[aria-pressed='true'] {
   margin-top: 2px;
 }
 .uncle-off {
+  min-height: 44px;
   border: 0;
   background: none;
   padding: 0;
@@ -3084,6 +3075,22 @@ button.trait[aria-pressed='true'] {
     transform: translate(-50%, -50%) scale(var(--inv, 1)) translateY(-2px);
   }
 }
+/* El botón «?» del mapa y la amenaza, cuando la leyenda está plegada. */
+.map-help {
+  font-family: var(--pixel);
+  font-size: var(--t-m);
+}
+
+.map-threat-line {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--pixel);
+  font-size: var(--t-s);
+  color: var(--wine);
+}
+
 .map-legend {
   display: flex;
   flex-wrap: wrap;

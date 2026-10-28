@@ -61,7 +61,7 @@ export function SettingsMenu({ settings: s, onChange, onClose, onCheat, onBoss }
     </label>
   );
   return (
-    <div class="card-backdrop save-backdrop" onClick={onClose}>
+    <div class="card-backdrop save-backdrop as-sheet" onClick={onClose}>
       <article class="herocard settings" onClick={(e) => e.stopPropagation()} aria-label="Ajustes">
         <button class="btn-icon herocard-x" aria-label="Cerrar" onClick={onClose}>
           <Icon name="close" size={14} />
@@ -181,18 +181,21 @@ export function SettingsMenu({ settings: s, onChange, onClose, onCheat, onBoss }
               </label>
             </>
           )}
-          <h4 class="qs-sub">Qué es cada cosa</h4>
-          <p class="tiny">
-            Mantén pulsado un botón, un marcador del mapa o una cifra para ver qué es.
-          </p>
-          <dl class="glossary">
-            {GLOSSARY.map((g) => (
-              <div key={g.term}>
-                <dt>{g.term}</dt>
-                <dd>{g.text}</dd>
-              </div>
-            ))}
-          </dl>
+          {/* El glosario, plegado: casi nadie lo lee entero y ocupaba cuatro pantallas. */}
+          <details class="set-fold">
+            <summary class="qs-sub">Qué es cada cosa</summary>
+            <p class="tiny">
+              Mantén pulsado un botón, un marcador del mapa o una cifra para ver qué es.
+            </p>
+            <dl class="glossary">
+              {GLOSSARY.map((g) => (
+                <div key={g.term}>
+                  <dt>{g.term}</dt>
+                  <dd>{g.text}</dd>
+                </div>
+              ))}
+            </dl>
+          </details>
           <p class="tiny set-version">Versión {VERSION}</p>
         </div>
       </article>
