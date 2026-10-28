@@ -18,6 +18,10 @@ Sirven para revisar a ojo los cambios de la escena de salas (no son tests).
    pintado (solo vista) salen también a nivel 4; `NIVELES=4` saca solo ese nivel y `SIN_N4=1` se
    queda en el 3 (para la versión de antes).
 
+6. Interfaz (paneles, fichas y barras): `node tools/shots/ui.mjs <carpeta> [ancho] [alto] [puerto]`
+   recorre todas las pantallas (por ejemplo a `420 860` y `1280 760`) y deja un PNG de cada una
+   y `medidas.json` (cuánto tapa la taberna, letras, tamaños de letra, scroll, tarjetas).
+
 El juego deja a mano `window.__game` (`get()`/`set(estado)`) y `window.__scene` (la escena)
 para preparar cualquier situación antes de la captura: subir salas de nivel, provocar un asalto
 (`s.raid = {…}` y terminar el día), abrir el modo obras, etc.

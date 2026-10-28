@@ -9,6 +9,7 @@ import { beds } from '../../core/rooms';
 import { CLASS_NAMES, MORALE_INFO, statusLabel } from '../../data/labels';
 import { Icon } from '../icons';
 import { Portrait } from '../Portrait';
+import { Tabs } from '../Tabs';
 import { TraitChip } from '../TraitChip';
 import { lookOf, marksOf, workerLook } from '../view';
 
@@ -164,25 +165,20 @@ export function HeroesPanel({
 
   return (
     <>
-      <div class="segmented segmented-3" role="tablist">
-        <button role="tab" aria-selected={filter === 'todos'} onClick={() => setFilter('todos')}>
-          Tus héroes · {roster(game).length}/{cap}
-        </button>
-        <button
-          role="tab"
-          aria-selected={filter === 'candidatos'}
-          onClick={() => setFilter('candidatos')}
-        >
-          En la barra · {cands.length}
-        </button>
-        <button
-          role="tab"
-          aria-selected={filter === 'trabajadores'}
-          onClick={() => setFilter('trabajadores')}
-        >
-          Trabajo · {game.workers.length}/{workerCap(game)}
-        </button>
-      </div>
+      <Tabs
+        label="Héroes"
+        value={filter}
+        onChange={setFilter}
+        tabs={[
+          { id: 'todos', label: 'Héroes', count: `${roster(game).length}/${cap}` },
+          { id: 'candidatos', label: 'Barra', count: cands.length },
+          {
+            id: 'trabajadores',
+            label: 'Trabajo',
+            count: `${game.workers.length}/${workerCap(game)}`,
+          },
+        ]}
+      />
       {filter === 'trabajadores' ? (
         <>
           <p class="panel-note">
