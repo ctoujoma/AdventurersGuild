@@ -48,7 +48,7 @@ export function cheat(state: GameState, kind: Cheat): { state: GameState; note: 
         strength: 8 + rankIndex(s.rep) * 5 + rng.int(0, 4),
         warned: true,
       };
-      return { state: s, note: 'Asalto esta noche: pulsa «Terminar día».' };
+      return { state: s, note: 'Asalto esta noche: pulsa «Cerrar».' };
     case 'historia': {
       const cs = activeChain(s);
       const events: { t: string }[] = [];
