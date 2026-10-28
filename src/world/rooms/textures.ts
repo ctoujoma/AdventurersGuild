@@ -506,6 +506,13 @@ function copyRect(dst: PixelBuffer, src: PixelBuffer, x: number, y: number, w: n
     }
 }
 
+/** Tierra suelta de `w` × `h` (la de los lados del corte, más allá del mundo). */
+export function earthBuf(w: number, h: number): PixelBuffer {
+  const b = new PixelBuffer(w, h);
+  earth(b, 0, 0, w, h);
+  return b;
+}
+
 function earth(b: PixelBuffer, x: number, y: number, w: number, h: number) {
   const rng = new Rng('tierra');
   for (let j = 0; j < h; j++) {

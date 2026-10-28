@@ -15,6 +15,11 @@ export interface CameraWorld {
 export class Camera {
   /** Por defecto, la taberna dibujada con su cielo de más por arriba. */
   world: CameraWorld = { x0: WORLD_X0, x1: WORLD_X1, y0: -SKY_TOP, y1: WORLD_H };
+  /**
+   * Lo que el centro de la vista tiene que poder alcanzar aunque se salga del mundo por un borde
+   * (por ejemplo, para ver de frente una sala de una esquina del edificio).
+   */
+  reach: CameraWorld | null = null;
   x = 0;
   y = 0;
   zoom = 2;
@@ -47,7 +52,14 @@ export class Camera {
     const maxX = this.vw >= w ? minX : x1 - this.vw;
     const minY = this.vh >= h ? y0 + (h - this.vh) / 2 : y0;
     const maxY = this.vh >= h ? minY : y1 - this.vh;
-    return { minX, maxX, minY, maxY };
+    const r = this.reach;
+    if (!r) return { minX, maxX, minY, maxY };
+    return {
+      minX: Math.min(minX, r.x0 - this.vw / 2),
+      maxX: Math.max(maxX, r.x1 - this.vw / 2),
+      minY: Math.min(minY, r.y0 - this.vh / 2),
+      maxY: Math.max(maxY, r.y1 - this.vh / 2),
+    };
   }
 
   clamp(): void {
