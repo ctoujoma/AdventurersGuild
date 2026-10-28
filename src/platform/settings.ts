@@ -14,6 +14,8 @@ export interface Settings {
   calm: boolean;
   /** Vibración en los momentos con peso (si el móvil la tiene). */
   vibrate: boolean;
+  /** Pocas luces en la escena (solo las más cercanas al centro), para móviles lentos. */
+  fewLights: boolean;
   /** Modo prueba: atajos en Ajustes (se abre tocando cinco veces el título). */
   tester: boolean;
 }
@@ -28,6 +30,7 @@ export const DEFAULT_SETTINGS: Settings = {
   bigText: false,
   calm: false,
   vibrate: true,
+  fewLights: false,
   tester: false,
 };
 
@@ -46,6 +49,7 @@ export function parseSettings(raw: unknown): Settings {
     bigText: r.bigText === true,
     calm: r.calm === true,
     vibrate: r.vibrate !== false,
+    fewLights: r.fewLights === true,
     tester: r.tester === true,
   };
 }

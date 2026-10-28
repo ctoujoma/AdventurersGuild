@@ -6,6 +6,7 @@ import { BOSSES } from '../data/bosses';
 import { GLOSSARY } from '../data/glossary';
 import { canVibrate } from '../platform/haptics';
 import type { Settings } from '../platform/settings';
+import { VERSION } from '../version';
 import { Icon } from './icons';
 
 interface Props {
@@ -118,6 +119,15 @@ export function SettingsMenu({ settings: s, onChange, onClose, onCheat, onBoss }
               <span>Vibración en golpes, monedas y asaltos</span>
             </label>
           )}
+          <h4 class="qs-sub">Rendimiento</h4>
+          <label class="set-check">
+            <input
+              type="checkbox"
+              checked={s.fewLights}
+              onChange={(e) => set({ fewLights: e.currentTarget.checked })}
+            />
+            <span>Pocas luces (solo las del centro de la vista), para móviles lentos</span>
+          </label>
           {s.tester && (
             <>
               <h4 class="qs-sub">Modo prueba</h4>
@@ -183,6 +193,7 @@ export function SettingsMenu({ settings: s, onChange, onClose, onCheat, onBoss }
               </div>
             ))}
           </dl>
+          <p class="tiny set-version">Versión {VERSION}</p>
         </div>
       </article>
     </div>

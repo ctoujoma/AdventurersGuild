@@ -12,6 +12,7 @@ import {
   DataTexture,
   DoubleSide,
   Float32BufferAttribute,
+  FloatType,
   FrontSide,
   Mesh,
   NearestFilter,
@@ -20,14 +21,19 @@ import {
   UnsignedByteType,
   Vector2,
   Vector3,
-  Vector4,
   type Side,
   type Texture,
 } from 'three';
 import { P } from '../../art/palette';
 import type { PixelBuffer } from '../../art/pixel';
 
-export const MAX_LIGHTS = 16;
+/**
+ * Focos que caben a la vez: van en una textura (una columna por foco: posición y alcance, color,
+ * zona), así que pueden ser muchos; el shader solo recorre los que haya (`uLightCount`).
+ */
+export const MAX_LIGHTS = 256;
+/** Con «pocas luces» en Ajustes: solo los más cercanos al centro de la vista. */
+export const FEW_LIGHTS = 16;
 
 const rgb = (hex: string) =>
   new Vector3(
@@ -66,9 +72,8 @@ const SURFACE_FRAG = /* glsl */ `
   uniform float uWrap;
   uniform float uDither;
   uniform vec3 uDaylight;
-  uniform vec4 uLightPos[LIGHTS];
-  uniform vec3 uLightColor[LIGHTS];
-  uniform vec4 uLightZone[LIGHTS];
+  uniform highp sampler2D uLights;
+  uniform int uLightCount;
   uniform vec3 uPalette[COLORS];
   uniform vec2 uUvOffset;
   uniform vec2 uUvScale;
@@ -89,16 +94,16 @@ const SURFACE_FRAG = /* glsl */ `
     // Luz del día solo por encima del suelo.
     vec3 light = uAmbient + uDaylight * uSun * step(-0.5, world.y);
     for (int i = 0; i < LIGHTS; i++) {
-      vec4 lp = uLightPos[i];
-      if (lp.w <= 0.0) continue;
-      vec4 z = uLightZone[i];
+      if (i >= uLightCount) break;
+      vec4 z = texelFetch(uLights, ivec2(i, 2), 0);
       if (world.x < z.x || world.x > z.z || world.y < z.y || world.y > z.w) continue;
+      vec4 lp = texelFetch(uLights, ivec2(i, 0), 0);
       vec3 d = lp.xyz - world;
       float dist = length(d);
       float a = clamp(1.0 - dist / lp.w, 0.0, 1.0);
       a = a * a * (3.0 - 2.0 * a);
       float ndl = mix(max(dot(n, d / max(dist, 0.001)), 0.0), 1.0, uWrap);
-      light += uLightColor[i] * a * ndl;
+      light += texelFetch(uLights, ivec2(i, 1), 0).rgb * a * ndl;
     }
     // Sin quemar: lo muy iluminado se queda en un tono claro y no salta a otro color.
     light = min(light, vec3(1.2));
@@ -186,13 +191,27 @@ export interface SurfaceOpts {
   frames?: number;
 }
 
+/** Textura de los focos: fila 0, posición y alcance; 1, color; 2, zona (x0, y0, x1, y1). */
+function lightsTexture(): DataTexture {
+  const t = new DataTexture(
+    new Float32Array(MAX_LIGHTS * 3 * 4),
+    MAX_LIGHTS,
+    3,
+    RGBAFormat,
+    FloatType,
+  );
+  t.magFilter = NearestFilter;
+  t.minFilter = NearestFilter;
+  t.needsUpdate = true;
+  return t;
+}
+
 /** Uniformes que comparten todos los materiales de una escena: día, focos y paleta. */
 export function sharedUniforms() {
   return {
     uDaylight: { value: new Vector3() },
-    uLightPos: { value: Array.from({ length: MAX_LIGHTS }, () => new Vector4()) },
-    uLightColor: { value: Array.from({ length: MAX_LIGHTS }, () => new Vector3()) },
-    uLightZone: { value: Array.from({ length: MAX_LIGHTS }, () => new Vector4()) },
+    uLights: { value: lightsTexture() },
+    uLightCount: { value: 0 },
     uPalette: { value: PALETTE },
   };
 }

@@ -46,8 +46,9 @@ Segunda ronda (lo que pidió tras ver la galería):
 - **Luz**: en el nivel 3, la araña de hierro (`chandelier`) en lugar del farol, igual de alta
   y más fuerte; en el 2, apliques pintados con su luz (`sconceOn` + `wallLight`, una figura
   vacía que solo alumbra) donde no había otra (despensa, armas, tiro), la vela de la repisa del
-  servicio y la de la mesa del curandero. Ojo: la escena usa las 16 luces más cercanas al
-  centro de la vista (`MAX_LIGHTS`), así que mejor pocas por sala.
+  servicio y la de la mesa del curandero. Ojo: la escena enciende todas las luces (hasta
+  `MAX_LIGHTS`), pero con «Pocas luces» en Ajustes solo las 16 más cercanas al centro de la
+  vista (`FEW_LIGHTS`), así que mejor pocas por sala.
 - **Niveles nuevos, solo vista**: el usuario pidió dejarlos pintados sin usarlos en el juego
   para valorarlos. Hay nivel 3 en las salas que hoy acaban en el 2 y nivel 4 en tesoro,
   dormitorio, cocina, bodega, armas, tiro y biblioteca (`ART_MAX` en `salas/index.ts`; los
