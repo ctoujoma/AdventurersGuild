@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEPTH } from './layout';
-import { BACK, EYE, eyeOf, frustum, nativeSize, project, scaleAt } from './view3d';
+import { BACK, EYE, eyeOf, frustum, nativeSize, pinShift, project, scaleAt } from './view3d';
 
 const view = { px: 120, py: 40, vw: 211, vh: 377 };
 
@@ -46,5 +46,32 @@ describe('cámara de la vista 3D', () => {
       const b = project(view, 200 + w, 300, d);
       expect(b.x - a.x).toBeCloseTo(24, 9);
     }
+  });
+
+  it('un mueble anclado queda a píxeles enteros de su pared y no baila al mover la cámara', () => {
+    const wall = { x: 37.5, y: 113 };
+    const z = DEPTH - 6;
+    const k = scaleAt(z);
+    const p = { x: 81.3, y: 140.7 };
+    let last: number | null = null;
+    let steps = 0;
+    for (let px = 0; px < 400; px++) {
+      const v = { ...view, px };
+      const d = pinShift(v, p, k, wall.x, wall.y);
+      const f = project(v, p.x + d.x, p.y + d.y, z);
+      const w = project(v, wall.x, wall.y, DEPTH);
+      const gap = f.x - w.x;
+      expect(gap).toBeCloseTo(Math.round(gap), 6);
+      expect(f.y - w.y).toBeCloseTo(Math.round(f.y - w.y), 6);
+      // La distancia cambia de píxel en píxel y siempre hacia el mismo lado (sin ir y volver).
+      if (last !== null && Math.round(gap) !== last) {
+        expect(Math.round(gap)).toBe(last - 1);
+        steps++;
+      }
+      last = Math.round(gap);
+      // Y nunca se aparta más de medio píxel de donde lo pondría la perspectiva.
+      expect(Math.abs(f.x - project(v, p.x, p.y, z).x)).toBeLessThanOrEqual(0.5 + 1e-9);
+    }
+    expect(steps).toBeGreaterThan(0);
   });
 });

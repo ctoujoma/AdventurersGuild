@@ -19,6 +19,9 @@ import {
 } from '../parallax';
 
 const SKY_FX = 0.15;
+/** Alto de la franja de estrellas (se repite hacia arriba) y ancho de la de las nubes. */
+const STAR_H = 230;
+const CLOUD_W = 900;
 /** La luna, a cierta distancia en x y por encima del horizonte. */
 const MOON = { x: 84, up: 156 } as const;
 /** Lo más alto que sube el sol sobre el horizonte, en píxeles. */
@@ -79,17 +82,24 @@ export class Sky {
     ctx.globalAlpha = 1;
     ctx.fillStyle = P.black;
     ctx.fillRect(0, 0, vw, vh);
-    ctx.drawImage(this.skyC, WORLD_X0 - Math.round(cx * SKY_FX), top);
+    const skyX = WORLD_X0 - Math.round(cx * SKY_FX);
+    tile(ctx, this.skyC, skyX, top, vw);
     ctx.globalAlpha = Math.max(0, 1 - dl.day * 1.4);
-    for (const s of dl.day > 0.7 ? [] : this.starList) {
-      const sx = s.x + WORLD_X0 - Math.round(cx * SKY_FX);
-      const sy = s.y + top;
-      if (sx < 0 || sy < 0 || sx >= vw || sy >= vh) continue;
-      const tw = noise(s.x, Math.floor(t * 1.5 + s.y));
-      if (!s.bright && tw < 0.25) continue;
-      ctx.fillStyle = s.bright && tw > 0.6 ? P.white : tw > 0.5 ? P.mist : P.fog;
-      ctx.fillRect(sx, sy, 1, 1);
-    }
+    // Las estrellas se repiten a lo ancho y, por encima de su franja, también hacia arriba.
+    const w = this.skyC.width;
+    const k0 = Math.floor(-skyX / w);
+    for (let ky = 0; dl.day <= 0.7 && top - ky * STAR_H > -STAR_H; ky++)
+      for (let k = k0; skyX + k * w < vw; k++)
+        for (const s of this.starList) {
+          if (ky > 0 && s.y >= STAR_H) continue;
+          const sx = s.x + skyX + k * w;
+          const sy = s.y + top - ky * STAR_H;
+          if (sx < 0 || sy < 0 || sx >= vw || sy >= vh) continue;
+          const tw = noise(s.x + k * 7 + ky * 13, Math.floor(t * 1.5 + s.y));
+          if (!s.bright && tw < 0.25) continue;
+          ctx.fillStyle = s.bright && tw > 0.6 ? P.white : tw > 0.5 ? P.mist : P.fog;
+          ctx.fillRect(sx, sy, 1, 1);
+        }
     ctx.globalAlpha = 1;
     const moonA = Math.max(0, 1 - dl.day * 1.25);
     if (moonA > 0) {
@@ -102,12 +112,14 @@ export class Sky {
       ctx.globalAlpha = 1;
     }
     this.drawDay(ctx, dl, cx, hz, vw, vh);
+    // Las nubes van y vienen en una franja de CLOUD_W que se repite a lo ancho.
     for (const cl of this.clouds) {
-      const x = ((cl.x + t * cl.speed) % 900) - 60 + WORLD_X0 - cx * 0.2;
-      drawBuffer(ctx, cl.img, x, cl.y + top);
+      const x = ((cl.x + t * cl.speed) % CLOUD_W) - 60 + WORLD_X0 - cx * 0.2;
+      for (let k = Math.floor(-x / CLOUD_W) - 1; x + k * CLOUD_W < vw; k++)
+        drawBuffer(ctx, cl.img, x + k * CLOUD_W, cl.y + top);
     }
     if (nl.warm > 0) this.drawDawn(ctx, nl.warm, hz, vw, vh);
-    for (const { c, l } of this.parallax) ctx.drawImage(c, WORLD_X0 - Math.round(cx * l.fx), top);
+    for (const { c, l } of this.parallax) tile(ctx, c, WORLD_X0 - Math.round(cx * l.fx), top, vw);
     if (dl.day > 0 || dl.dusk > 0) {
       ctx.globalCompositeOperation = 'screen';
       const h = (v: number) => Math.round(v * dl.day + v * 0.4 * dl.dusk);
@@ -189,6 +201,32 @@ export class Sky {
     g.addColorStop(1, `rgba(254, 174, 52, ${0.8 * warm})`);
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, vw, vh);
+  }
+}
+
+/**
+ * Pinta una capa lejana a lo ancho de la vista: copia sí, copia en espejo, para que en las
+ * juntas el monte o el cielo sigan sin un salto (al alejar mucho la cámara, una sola no basta).
+ */
+function tile(
+  ctx: CanvasRenderingContext2D,
+  c: HTMLCanvasElement,
+  x: number,
+  y: number,
+  vw: number,
+) {
+  const w = c.width;
+  for (let k = Math.floor(-x / w); x + k * w < vw; k++) {
+    const at = x + k * w;
+    if (k % 2 === 0) {
+      ctx.drawImage(c, at, y);
+      continue;
+    }
+    ctx.save();
+    ctx.translate(at + w, y);
+    ctx.scale(-1, 1);
+    ctx.drawImage(c, 0, 0);
+    ctx.restore();
   }
 }
 

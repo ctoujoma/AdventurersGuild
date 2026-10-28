@@ -81,12 +81,17 @@ import {
   themeOf,
   type Theme,
 } from './textures';
-import { EYE, eyeOf, frustum, project, scaleAt, type View } from './view3d';
+import { BACK, EYE, LIFT, eyeOf, frustum, pinShift, project, scaleAt, type View } from './view3d';
 
 /** Duración del día de la escena hasta que anochece (el reloj de verdad llega con el día vivo). */
 const DAY_LENGTH = 720;
-/** Terreno de más a cada lado del mundo (lo que la perspectiva deja ver al fondo). */
-const TERRAIN_PAD = 1200;
+/**
+ * Terreno de más a cada lado del mundo: al fondo la perspectiva lo estrecha a la mitad y, con
+ * el zoom más alejado y una esquina en el centro, la vista llega muy lejos.
+ */
+const TERRAIN_PAD = 3200;
+/** Ancho del trozo de terreno o de tierra que se repite hasta allí. */
+const TILE = 512;
 const DAWN_LIGHT = 0.65;
 const NEAR = 20;
 const FAR = EYE + 400;
@@ -116,6 +121,16 @@ const noise = (a: number, b: number) => {
 
 /** Punto del espacio 3D a partir de una x y una y del mundo 2D (y hacia abajo) y una profundidad. */
 const at = (x: number, y: number, depth: number) => new Vector3(x, GROUND - y, -depth);
+
+/** Un mueble anclado: su malla, su esquina de arriba a la izquierda, su escala y su pared. */
+interface Pin {
+  mesh: Mesh;
+  x: number;
+  y: number;
+  k: number;
+  wx: number;
+  wy: number;
+}
 
 export interface Spot {
   id: string;
@@ -207,6 +222,9 @@ export class RoomScene {
   private lamps: Lamp[] = [];
   private towerRect: Rect | null = null;
   private flames: Mesh[] = [];
+  /** Muebles anclados a la pared del fondo de su sala (ver `pin`) y la vista con la que se ajustaron. */
+  private pins: Pin[] = [];
+  private pinnedAt = '';
   private skyCanvas = document.createElement('canvas');
   private skyCtx = this.skyCanvas.getContext('2d')!;
   private skyTex = new CanvasTexture(this.skyCanvas);
@@ -699,6 +717,8 @@ export class RoomScene {
     this.look = new Look(this.shared);
     this.lamps = [];
     this.flames = [];
+    this.pins = [];
+    this.pinnedAt = '';
     this.towerRect = null;
     const b = L.b;
     const g = this.world;
@@ -721,20 +741,20 @@ export class RoomScene {
       { ambient: EARTH, sun: 0 },
     );
     // Más tierra a los lados y negro debajo: al alejar la cámara o centrar una sala de una
-    // esquina, la vista se sale del mundo.
-    const tx0 = F.x - TERRAIN_PAD;
-    const tx1 = fx1 + TERRAIN_PAD;
-    const side = earthBuf(TERRAIN_PAD, fy1 - GROUND);
-    const dark = { ambient: EARTH, sun: 0 };
+    // esquina, la vista se sale del mundo. Un trozo de tierra que se repite (`TILE`).
+    const n = Math.ceil(TERRAIN_PAD / TILE);
+    const tx0 = F.x - n * TILE;
+    const tx1 = fx1 + n * TILE;
+    const dark = { ambient: EARTH, sun: 0, repeat: n };
     this.plane(
       g,
-      side,
+      earthBuf(TILE, fy1 - GROUND, true),
       [at(tx0, fy1, 0), at(F.x, fy1, 0), at(F.x, GROUND, 0), at(tx0, GROUND, 0)],
       dark,
     );
     this.plane(
       g,
-      side,
+      earthBuf(TILE, fy1 - GROUND, false),
       [at(fx1, fy1, 0), at(tx1, fy1, 0), at(tx1, GROUND, 0), at(fx1, GROUND, 0)],
       dark,
     );
@@ -749,7 +769,7 @@ export class RoomScene {
         at(tx1, fy1, 0),
         at(tx0, fy1, 0),
       ],
-      dark,
+      { ambient: EARTH, sun: 0 },
     );
 
     // Salas, escaleras y huecos excavados.
@@ -813,29 +833,33 @@ export class RoomScene {
     // que deja ver la cámara: al fondo la perspectiva lo estrecha y si no se le vería el final.
     const yard = { ambient: OUTDOOR, sun: 1, dither: 0 };
     const back = DEPTH + 2;
-    const x0 = L.x0 - TERRAIN_PAD;
-    const x1 = L.x1 + TERRAIN_PAD;
+    // A los lados, un trozo de patio y otro de hierba que se repiten (`TILE`) hasta muy lejos.
+    const reps = (from: number) => Math.ceil((from + TERRAIN_PAD) / TILE);
+    const nl = reps(L.left - L.x0);
+    const nr = reps(L.x1 - L.right);
+    const x0 = L.left - nl * TILE;
+    const x1 = L.right + nr * TILE;
     this.plane(
       g,
-      groundTex(L.left - x0, YARD_D / 2, true, 'patio'),
+      groundTex(TILE, YARD_D / 2, true, 'patio', false),
       [
         at(x0, GROUND, 0),
         at(L.left, GROUND, 0),
         at(L.left, GROUND, YARD_D),
         at(x0, GROUND, YARD_D),
       ],
-      yard,
+      { ...yard, repeat: nl },
     );
     this.plane(
       g,
-      groundTex(x1 - L.right, YARD_D / 2, false, 'solares'),
+      groundTex(TILE, YARD_D / 2, false, 'solares'),
       [
         at(L.right, GROUND, 0),
         at(x1, GROUND, 0),
         at(x1, GROUND, YARD_D),
         at(L.right, GROUND, YARD_D),
       ],
-      yard,
+      { ...yard, repeat: nr },
     );
     this.plane(
       g,
@@ -912,8 +936,9 @@ export class RoomScene {
     // Sin nada debajo de su primer o último hueco, la pared de fuera baja hasta debajo del forjado.
     const free = (c: number) =>
       room.floor > 0 && !b.rooms.some((o) => this.covers(o, c, room.floor - 1));
+    const back = backWall(room, r.w, r.h, this.salonLook());
     this.box(rect, theme, ambient, sun, seed, {
-      back: backWall(room, r.w, r.h, this.salonLook()),
+      back,
       floorTex: floorTex(room, theme, r.w, seed),
       sides,
       floor: room.floor,
@@ -948,7 +973,7 @@ export class RoomScene {
       const h = th.img.h / k;
       const x = r.x + th.x;
       const bottom = th.hang ? ceil3 - h - th.y : floor3 + th.y;
-      this.figure(this.world, th.img, x, GROUND - bottom, th.z, ambient, sun);
+      this.figure(this.world, th.img, x, GROUND - bottom, th.z, ambient, sun, { r, back });
       if (th.light) this.addLight(th.light, x, bottom, th.z, zone, sun < 0.2);
     }
     if (room.works) {
@@ -1191,6 +1216,7 @@ export class RoomScene {
   }
 
   /** Figura plana a `depth`, al tamaño de su dibujo en pantalla; (x, base) del mundo 2D. */
+  /** Figura plana a `depth`, del tamaño de su dibujo; con `wall`, anclada a esa pared (`pin`). */
   private figure(
     g: Group,
     img: PixelBuffer,
@@ -1199,33 +1225,61 @@ export class RoomScene {
     depth: number,
     ambient: Tint,
     sun: number,
+    wall?: { r: Rect; back: PixelBuffer },
   ): void {
     const k = scaleAt(depth);
     const w = img.w / k;
     const h = img.h / k;
-    this.plane(
-      g,
-      img,
-      [
-        at(x - w / 2, base, depth),
-        at(x + w / 2, base, depth),
-        at(x + w / 2, base - h, depth),
-        at(x - w / 2, base - h, depth),
-      ],
-      {
-        ambient,
-        sun,
-        wrap: 0.6,
-        dither: 0.03,
-      },
+    const corners: Corners = [
+      at(x - w / 2, base, depth),
+      at(x + w / 2, base, depth),
+      at(x + w / 2, base - h, depth),
+      at(x - w / 2, base - h, depth),
+    ];
+    const m = mesh(
+      quad(corners, this.look),
+      this.look.surface(img, corners, { ambient, sun, wrap: 0.6, dither: 0.03 }),
     );
+    g.add(m);
+    if (!wall) return;
+    // El ancla: la junta de téxeles de la pared que cae junto al mueble (vista con la sala en el
+    // centro). Los téxeles de la pared no miden justo un píxel (su ancho se redondea), así que
+    // vale la de al lado y no la esquina de la pared.
+    const { r, back } = wall;
+    const tw = r.w / back.w;
+    const th = r.h / back.h;
+    const ex = r.x + r.w / 2;
+    const ey = r.y + r.h / 2 - LIFT;
+    const xl = x - w / 2;
+    const yt = base - h;
+    const wx = r.x + Math.round((ex + ((xl - ex) * k) / BACK - r.x) / tw) * tw;
+    const wy = r.y + Math.round((ey + ((yt - ey) * k) / BACK - r.y) / th) * th;
+    this.pins.push({ mesh: m, x: xl, y: yt, k, wx, wy });
+  }
+
+  /**
+   * Cada mueble, a un número entero de píxeles de la pared del fondo de su sala. Por su
+   * profundidad, al mover la cámara avanzan a otro paso que la pared (la perspectiva) y, al
+   * redondear cada uno a su píxel por su lado, el mueble bailaba un píxel adelante y atrás contra
+   * la pared. Así la distancia que da la perspectiva se redondea una sola vez y cambia de píxel
+   * en píxel, siempre hacia el mismo lado.
+   */
+  private pin(view: View): void {
+    const key = `${view.px},${view.py},${view.vw},${view.vh}`;
+    if (key === this.pinnedAt) return;
+    this.pinnedAt = key;
+    for (const p of this.pins) {
+      const d = pinShift(view, p, p.k, p.wx, p.wy);
+      p.mesh.position.x = d.x;
+      p.mesh.position.y = -d.y;
+    }
   }
 
   private plane(
     g: Group,
     img: PixelBuffer,
     corners: Corners,
-    o: { ambient: Tint; sun: number; wrap?: number; dither?: number },
+    o: { ambient: Tint; sun: number; wrap?: number; dither?: number; repeat?: number },
   ): ShaderMaterial {
     const m = this.look.surface(img, corners, o);
     g.add(mesh(quad(corners, this.look), m));
@@ -1311,6 +1365,7 @@ export class RoomScene {
     // Cámara: el ojo delante del corte y el encuadre justo de la vista.
     const e = eyeOf(view);
     this.cam3.position.set(e.x, GROUND - e.y, EYE);
+    this.pin(view);
     const f = frustum(view, NEAR);
     this.cam3.projectionMatrix.makePerspective(f.left, f.right, f.top, f.bottom, NEAR, FAR);
     this.cam3.projectionMatrixInverse.copy(this.cam3.projectionMatrix).invert();

@@ -340,7 +340,13 @@ export function roofTiles(len: number, seed: string): PixelBuffer {
 }
 
 /** Tierra de arriba, a los lados del edificio: patio pisado a la izquierda, hierba a la derecha. */
-export function groundTex(w: number, d: number, patio: boolean, seed: string): PixelBuffer {
+export function groundTex(
+  w: number,
+  d: number,
+  patio: boolean,
+  seed: string,
+  road = patio,
+): PixelBuffer {
   const b = new PixelBuffer(w, d);
   const rng = new Rng(seed);
   for (let y = 0; y < d; y++)
@@ -362,7 +368,7 @@ export function groundTex(w: number, d: number, patio: boolean, seed: string): P
               : P.forest,
       );
     }
-  if (patio)
+  if (road)
     for (let x = 0; x < Math.min(w, 26); x++) b.vline(x, 0, d, (x + 1) % 7 ? P.umber : P.mocha);
   return b;
 }
@@ -506,10 +512,17 @@ function copyRect(dst: PixelBuffer, src: PixelBuffer, x: number, y: number, w: n
     }
 }
 
-/** Tierra suelta de `w` × `h` (la de los lados del corte, más allá del mundo). */
-export function earthBuf(w: number, h: number): PixelBuffer {
+/**
+ * Tierra suelta de `w` × `h` (la de los lados del corte, más allá del mundo), con el mismo borde
+ * de arriba que el corte: tierra del patio a la izquierda y hierba a la derecha.
+ */
+export function earthBuf(w: number, h: number, patio: boolean): PixelBuffer {
   const b = new PixelBuffer(w, h);
   earth(b, 0, 0, w, h);
+  for (let x = 0; x < w; x++) {
+    b.vline(x, 0, 3, patio ? P.bark : P.forest);
+    b.set(x, 0, patio ? P.rust : P.leaf);
+  }
   return b;
 }
 

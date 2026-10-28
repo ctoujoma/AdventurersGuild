@@ -17,6 +17,7 @@ import {
   Mesh,
   NearestFilter,
   RGBAFormat,
+  RepeatWrapping,
   ShaderMaterial,
   UnsignedByteType,
   Vector2,
@@ -189,6 +190,8 @@ export interface SurfaceOpts {
   side?: Side;
   /** Fotogramas puestos uno al lado del otro en la textura (se ve uno: `uUvOffset`). */
   frames?: number;
+  /** Veces que la textura se repite a lo ancho del plano (el terreno lejano). */
+  repeat?: number;
 }
 
 /** Textura de los focos: fila 0, posición y alcance; 1, color; 2, zona (x0, y0, x1, y1). */
@@ -227,6 +230,7 @@ export class Look {
   /** Material de un plano con sus esquinas (para saber dónde cae cada téxel en el mundo). */
   surface(b: PixelBuffer, corners: Corners, o: SurfaceOpts): ShaderMaterial {
     const map = this.own(texture(b));
+    if (o.repeat) map.wrapS = RepeatWrapping;
     const [a, br, , d] = corners;
     const u = new Vector3().subVectors(br, a);
     const v = new Vector3().subVectors(d, a);
@@ -244,7 +248,7 @@ export class Look {
           uWrap: { value: o.wrap ?? 0.25 },
           uDither: { value: o.dither ?? 0.035 },
           uUvOffset: { value: new Vector2(0, 0) },
-          uUvScale: { value: new Vector2(1 / (o.frames ?? 1), 1) },
+          uUvScale: { value: new Vector2((o.repeat ?? 1) / (o.frames ?? 1), 1) },
         },
         vertexShader: SURFACE_VERT,
         fragmentShader: SURFACE_FRAG,
