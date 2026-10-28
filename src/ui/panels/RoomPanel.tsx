@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks';
 import { NURSE_WORK, roomMax } from '../../core/balance';
 import { appeal, neighborsOf, seatsOf, visitorList, visitorsOf } from '../../core/salon';
-import { canWork, type Action } from '../../core/game';
+import { canWork, roster, type Action } from '../../core/game';
 import { beerCap, brewAt, cookAt, dailyYield, eatersOf, foodCap } from '../../core/larder';
 import { ATTR_NAMES, gainText, skillGain, trainCap, trainState } from '../../core/training';
 import { LOCK_TIME, MAX_GUARDS, TRAIN_CAP, VAULT_STORE } from '../../core/balance';
@@ -11,8 +11,10 @@ import { doorTime, goldCap, lockTime } from '../../core/vault';
 import { dayPart } from '../../core/game';
 import type { GameState, Room } from '../../core/model';
 import {
+  beds,
   planDemolish,
   planExtend,
+  roomBeds,
   upgradeCostOf,
   worksOpen,
   type ExtendDir,
@@ -467,6 +469,12 @@ export function RoomPanel({ game, roomId, onUpgrade, onLink, onWork, onMove, onA
             {n.text}
           </span>
         ))}
+        {(room.type === 'dormitorio' || room.type === 'veteranos') && room.level > 0 && (
+          <span class="muted">
+            Camas aquí: {roomBeds(room)} · en total: {beds(game.building)} · héroes{' '}
+            {roster(game).length}/{beds(game.building)}
+          </span>
+        )}
         {room.type === 'servicio' && room.level > 0 && (
           <span class="muted">
             Camas del servicio: {staffBeds(game.building)} · trabajadores {game.workers.length}/

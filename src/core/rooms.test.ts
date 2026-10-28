@@ -28,6 +28,7 @@ import {
   extendCostOf,
   facOf,
   problem,
+  roomBeds,
   stairCost,
   uncleBuilding,
   upgradeCostOf,
@@ -134,6 +135,16 @@ describe('obras', () => {
     v = ok(v, { type: 'addStair', at: 3, floor: -2 });
     v = ok(v, { type: 'dig', col: 3, floor: -2 });
     expect(v.building.dug).toContain('3,-2');
+  });
+
+  it('cada dormitorio nuevo suma sus camas al tope de héroes', () => {
+    const s = open();
+    const before = beds(s.building);
+    const t = ok(s, { type: 'build', room: 'dormitorio', col: 1, floor: 2 });
+    expect(beds(t.building)).toBe(before + 2);
+    // El tope es la suma de las camas de cada sala.
+    const sum = t.building.rooms.reduce((n, r) => n + roomBeds(r), 0);
+    expect(sum).toBe(beds(t.building));
   });
 
   it('los tramos de las puntas se quitan (en el borrador, devolviendo todo)', () => {
