@@ -81,6 +81,9 @@ usuario, en GitHub Pages) lo apuntado en «Balance».
 
 ## Mejoras de futuro (apuntadas, sin hacer)
 
+La lista completa de pendientes e ideas (bucle, monetización, amigos, torneos, fachada) está en
+[`../futuro.md`](../futuro.md).
+
 - **Escaleras que solo ocupan sitio donde llegan:** la columna de escalera tendría ancho solo en
   las plantas con rellano y en las demás las salas se juntarían (sin pasillos). Consecuencias
   vistas: el edificio queda escalonado (el hueco mide un tercio de sala: paredes que no casan
