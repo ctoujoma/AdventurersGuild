@@ -58,7 +58,8 @@ export const FACILITY_INFO: Record<
       '3 literas y cortinas',
       '4 literas con colchas, farol y banderines',
     ],
-    effect: (l) => `Caben ${2 + 2 * l} héroes (el ala de veteranos suma más camas)`,
+    // Por hueco: el tope de héroes es la suma de las camas de todos los dormitorios (y veteranos).
+    effect: (l) => `${l + 1} camas por hueco; cada dormitorio suma las suyas`,
   },
   enf: {
     name: 'Enfermería',
@@ -177,7 +178,7 @@ export const FACILITY_INFO: Record<
     effect: (l) =>
       l === 0
         ? 'Sin efecto'
-        : `+${2 * l} camas. Héroes de nivel 4 o más: +${[0, 4, 8][l]} de moral por noche y más tope${l >= 2 ? '; nunca desertan' : ''}`,
+        : `${2 * l} camas por hueco. Héroes de nivel 4 o más: +${[0, 4, 8][l]} de moral por noche y más tope${l >= 2 ? '; nunca desertan' : ''}`,
   },
 };
 

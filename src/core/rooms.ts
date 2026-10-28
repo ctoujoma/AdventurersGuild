@@ -143,15 +143,22 @@ export const syncFac = (s: GameState) => {
   s.fac = facOf(s.building);
 };
 
-/** Camas para héroes: cada hueco de dormitorio da nivel + 1; cada hueco de veteranos, 2 por nivel. */
+/** Camas por hueco en un dormitorio (nivel + 1) o en los cuartos de veteranos (2 por nivel). */
+export function bedsPerCell(type: RoomType, level: number): number {
+  if (type === 'dormitorio') return level > 0 ? level + 1 : 0;
+  if (type === 'veteranos') return 2 * level;
+  return 0;
+}
+
+/** Camas para héroes de una sala (las que está construyendo no cuentan hasta que acaba). */
+export function roomBeds(r: Room): number {
+  const a = active(r);
+  return a.cells * bedsPerCell(r.type, a.level);
+}
+
+/** Camas para héroes de todo el edificio: el tope de héroes del gremio. */
 export function beds(b: Building): number {
-  let n = 0;
-  for (const r of b.rooms) {
-    const a = active(r);
-    if (r.type === 'dormitorio' && a.level > 0) n += a.cells * (a.level + 1);
-    else if (r.type === 'veteranos') n += a.cells * 2 * a.level;
-  }
-  return n;
+  return b.rooms.reduce((n, r) => n + roomBeds(r), 0);
 }
 
 /** Mejorar: lo que pone la tabla para el nivel siguiente, con recargo si es más ancha que la de serie. */

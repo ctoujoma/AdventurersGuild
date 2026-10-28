@@ -1,7 +1,8 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { DEBT, SCHEDULE, facilityMax } from '../../core/balance';
-import { canUpgrade, nextPayment, salaries, upgradeCost } from '../../core/game';
+import { canUpgrade, nextPayment, roster, salaries, upgradeCost } from '../../core/game';
+import { beds } from '../../core/rooms';
 import { defense, notoriety } from '../../core/raids';
 import type { Facilities, GameState } from '../../core/model';
 import { FACILITY_INFO } from '../../data/labels';
@@ -142,7 +143,10 @@ export function GremioPanel({
               <div class="list">{list.map(facility)}</div>
             </section>
           ))}
-          <p class="panel-note">Quien está fuera o herido también ocupa cama.</p>
+          <p class="panel-note">
+            Camas para héroes: {beds(game.building)} (ocupadas {roster(game).length}). Quien está
+            fuera o herido también ocupa cama.
+          </p>
         </>
       )}
 
