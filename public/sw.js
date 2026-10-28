@@ -1,14 +1,17 @@
 /* Service worker: guarda el juego para poder abrirlo sin conexión.
-   La página se pide primero a la red (para recibir las actualizaciones) y, si no hay red,
-   sale de la caché. Los demás archivos llevan su huella en el nombre: caché primero. */
+   Al instalarse guarda de una vez todos los archivos del juego (el build apunta aquí la lista y
+   una huella de la versión: cada versión nueva se baja entera y la vieja se borra), así que basta
+   con abrirlo una vez con conexión. La página se pide primero a la red (para recibir las
+   actualizaciones) y, si no hay red, sale de la caché; lo demás, caché primero. */
 const CACHE = 'jarro-v1';
+const FILES = [];
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches
       .open(CACHE)
-      .then((c) => c.addAll(SHELL))
+      .then((c) => c.addAll([...new Set([...SHELL, ...FILES])]))
       .then(() => self.skipWaiting()),
   );
 });
