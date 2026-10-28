@@ -262,10 +262,10 @@ await page.evaluate(() => {
   const g = window.__game;
   g.set({ ...g.get(), mode: 'deuda' });
 });
-await click('button:has-text("Al anochecer")');
+await click('.daybar .endday');
 await wait(600);
 await shot('70-anochecer');
-await click('button:has-text("Terminar día")');
+await click('.daybar .endday');
 await wait(16000);
 await shot('71-amanecer');
 

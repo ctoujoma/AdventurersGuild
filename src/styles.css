@@ -149,8 +149,8 @@ button:focus-visible {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: calc(env(safe-area-inset-top, 0px) + 6px) 10px 6px;
+  gap: 8px;
+  padding: calc(env(safe-area-inset-top, 0px) + 2px) 6px 2px;
   border-style: solid;
   border-width: 8px 8px 8px;
   border-image: var(--frame-dark) 4 / 8px / 0 stretch;
@@ -208,14 +208,16 @@ button:focus-visible {
 .hud-stats {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 4px;
 }
 
+/* Cada cifra es un botón (toca para saber qué es): 44 px de alto para el dedo. */
 .hud-stat {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 0;
+  gap: 3px;
+  min-height: 44px;
+  padding: 0 4px;
   border: 0;
   background: none;
   cursor: pointer;
@@ -240,26 +242,32 @@ button:focus-visible {
   }
 }
 
+/* El sonido se quita y se pone en Ajustes; en pantallas anchas, también aquí. */
+.hud .hud-sound {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .hud .hud-sound {
+    display: inline-grid;
+  }
+}
+
 /* En un móvil estrecho no caben todas las cifras con su aire: se juntan un poco. */
 @media (max-width: 479px) {
   .hud {
-    gap: 6px;
-    padding-left: 6px;
-    padding-right: 6px;
+    gap: 2px;
+    padding-left: 2px;
+    padding-right: 2px;
   }
 
   .hud-stats {
-    gap: 5px;
+    gap: 0;
   }
 
   .hud-stat {
     gap: 2px;
-    font-size: var(--t-l);
-  }
-
-  .hud .btn-icon {
-    width: 30px;
-    height: 30px;
+    padding: 0 3px;
   }
 }
 
@@ -359,8 +367,8 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 4px 2px;
+  gap: 1px;
+  padding: 2px;
   font-family: var(--pixel);
   font-size: var(--t-s);
   color: var(--fog);
@@ -446,6 +454,13 @@ button:focus-visible {
   flex-direction: column;
   gap: 6px;
   z-index: 3;
+}
+
+/* Con el dedo se acerca pellizcando: − y + solo con ratón. */
+@media (pointer: coarse) {
+  .tool-zoom {
+    display: none;
+  }
 }
 
 .hovertip {
@@ -3482,10 +3497,12 @@ button:focus-visible {
   transition: none !important;
 }
 
-/* ---------- Móvil en horizontal (pantallas bajas) ----------
-   Las pestañas pasan a una columna a la izquierda y el marcador se estrecha, para que la
-   escena y los paneles tengan toda la altura posible. */
-@media (orientation: landscape) and (max-height: 520px) {
+/* ---------- En horizontal ----------
+   En el móvil tumbado y en pantallas anchas las pestañas pasan a una columna a la izquierda;
+   en el móvil tumbado, además, el marcador se estrecha. Así la escena y los paneles (que van
+   en columna a la derecha) tienen toda la altura posible. */
+@media (orientation: landscape) and (max-height: 520px),
+  (orientation: landscape) and (min-width: 900px) {
   .game {
     grid-template-columns: auto 1fr;
     grid-template-rows: auto 1fr;
@@ -3495,6 +3512,25 @@ button:focus-visible {
   }
   .hud {
     grid-area: hud;
+  }
+  .stage {
+    grid-area: stage;
+  }
+  .tabs {
+    grid-area: tabs;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, minmax(0, 96px));
+    align-content: start;
+    padding: 0 0 0 env(safe-area-inset-left, 0px);
+    width: 76px;
+  }
+  .tab {
+    justify-content: center;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .hud {
     padding: calc(env(safe-area-inset-top, 0px) + 1px) calc(env(safe-area-inset-right, 0px) + 8px)
       1px 8px;
     border-width: 6px;
@@ -3505,20 +3541,6 @@ button:focus-visible {
   }
   .hud-name span {
     display: none;
-  }
-  .stage {
-    grid-area: stage;
-  }
-  .tabs {
-    grid-area: tabs;
-    grid-template-columns: 1fr;
-    grid-template-rows: repeat(4, 1fr);
-    padding: 0 0 0 env(safe-area-inset-left, 0px);
-    width: 76px;
-  }
-  .tab {
-    justify-content: center;
-    font-size: var(--t-s);
   }
   .herocard {
     max-height: calc(100% - 8px);
@@ -3946,11 +3968,9 @@ textarea:focus-visible,
 
 /* ---------- Reloj del día ---------- */
 .clock {
-  display: grid;
-  grid-template-columns: auto auto;
+  display: flex;
   align-items: center;
-  column-gap: 6px;
-  row-gap: 3px;
+  gap: 6px;
   min-height: 44px;
   padding: 3px 8px;
   background: rgba(24, 20, 37, 0.5);
@@ -3960,27 +3980,32 @@ textarea:focus-visible,
   cursor: pointer;
 }
 
-.clock-name {
-  font-family: var(--pixel);
-  font-size: var(--t-m);
-  line-height: 1;
-}
-
 .clock-pace {
   font-family: var(--pixel);
   font-size: var(--t-m);
   line-height: 1;
   color: var(--gold);
-  justify-self: end;
 }
 
 .clock-bar {
-  grid-column: 1 / -1;
   position: relative;
-  width: 76px;
+  width: 64px;
   height: 6px;
   background: var(--slate);
   box-shadow: 0 0 0 1px var(--ink);
+}
+
+/* En un móvil estrecho la barra del día no cabe con su aire: reloj más corto y menos hueco. */
+@media (max-width: 400px) {
+  .daybar {
+    gap: 6px;
+  }
+  .clock-bar {
+    width: 36px;
+  }
+  .endday {
+    padding-inline: 6px;
+  }
 }
 
 .clock-bar i {

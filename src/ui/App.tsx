@@ -114,7 +114,7 @@ export function App() {
   const [roomId, setRoomId] = useState<string | null>(null);
   // Partida nueva: el día 1 se abre con la carta del tío.
   const [dawnOpen, setDawnOpen] = useState(!saved);
-  /** La noche está pasando en la escena (entre «Terminar día» y el resumen del amanecer). */
+  /** La noche está pasando en la escena (entre «Cerrar» y el resumen del amanecer). */
   const [passing, setPassing] = useState(false);
   /** Hay un asalto en el patio (se puede saltar). */
   const [raiding, setRaiding] = useState(false);
@@ -686,9 +686,10 @@ export function App() {
           </span>
         )}
         {bubble && <SpeechBubble bubble={bubble} scene={scene} />}
-        {hint && !notice && (
+        {/* La nota del tío ya explica lo mismo: el cartel solo sale sin ella. */}
+        {hint && !notice && !tip && (
           <div class="hint-toast" role="status">
-            Arrastra para recorrer la casa · Toca el salón para ver el tablón
+            Arrastra para mirar · toca el salón
           </div>
         )}
         {notice && (
@@ -697,10 +698,19 @@ export function App() {
           </div>
         )}
         <div class="stage-tools">
-          <button class="btn-icon" aria-label="Alejar" onClick={() => scene.current?.zoomBy(-1)}>
+          {/* En pantallas táctiles se acerca pellizcando: sin − ni +. */}
+          <button
+            class="btn-icon tool-zoom"
+            aria-label="Alejar"
+            onClick={() => scene.current?.zoomBy(-1)}
+          >
             <Icon name="minus" size={16} />
           </button>
-          <button class="btn-icon" aria-label="Acercar" onClick={() => scene.current?.zoomBy(1)}>
+          <button
+            class="btn-icon tool-zoom"
+            aria-label="Acercar"
+            onClick={() => scene.current?.zoomBy(1)}
+          >
             <Icon name="plus" size={16} />
           </button>
           <button

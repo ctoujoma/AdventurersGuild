@@ -24,7 +24,7 @@ export function TabBar({ tab, onTab }: { tab: TabId; onTab: (t: TabId) => void }
           data-help={t.help}
           onClick={() => onTab(t.id)}
         >
-          <Icon name={t.id as IconName} size={28} />
+          <Icon name={t.id as IconName} size={24} />
           <span>{t.label}</span>
         </button>
       ))}
