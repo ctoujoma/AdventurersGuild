@@ -166,9 +166,7 @@ export function useWorks({ game, dispatch, toast, focus, raise, price }: Deps): 
     startPlan: () => {
       setSteps([]);
       setSelected(null);
-      toast(
-        'Modo obras: elige una sala abajo o toca una sala para mejorarla, moverla o ampliarla.',
-      );
+      // El aviso de qué hacer ya está en la cinta de abajo: sin otro arriba.
     },
     undo: () => {
       if (!steps?.length) return;

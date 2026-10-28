@@ -255,11 +255,19 @@ await wait(600);
 await shot('60-obras-cinta');
 await tapRoom('Cocina');
 await shot('61-obras-menu-sala');
+// Apunta una mejora: la cinta enseña cuánto cuesta pagar.
+await click('.room-menu .room-menu-btn');
+await shot('63-obras-apuntada');
 await click('.room-menu button[aria-label="Cerrar"]');
-await click('.ribbon-foot button:has-text("Salas")');
+await click(
+  '.ribbon-foot button[aria-label="Lista de salas"], .ribbon-foot button:has-text("Salas")',
+);
 await shot('62-obras-lista');
 await esc();
-await click('.ribbon-foot button:has-text("Salir")');
+await click('.ribbon-foot .ribbon-exit, .ribbon-foot button:has-text("Salir")');
+// Con obras apuntadas, el segundo toque las descarta.
+if (await page.locator('.ribbon').count())
+  await click('.ribbon-foot .ribbon-exit, .ribbon-foot button:has-text("Descartar")');
 await wait(400);
 
 // 7. Terminar el día y el amanecer.

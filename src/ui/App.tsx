@@ -682,7 +682,8 @@ export function App() {
             {dragTip.text}
           </span>
         )}
-        {hover && !bubble && !dragTip && (
+        {/* Con el menú de obras abierto, su nombre ya está en el menú. */}
+        {hover && !bubble && !dragTip && !(works.planning && works.selected) && (
           <span class="hovertip" style={{ left: `${hover.at.x}px`, top: `${hover.at.y}px` }}>
             {hover.label}
           </span>
@@ -1036,7 +1037,9 @@ export function App() {
         )}
         {game.over && !dawnOpen && screen === 'game' && <GameOver game={game} onNew={restart} />}
       </div>
+      {/* En el modo obras, la cinta manda: sin pestañas, más escena. */}
       <TabBar
+        hidden={works.planning}
         tab={tab}
         onTab={(t) => {
           if (t === 'heroes') setHeroFilter('todos');

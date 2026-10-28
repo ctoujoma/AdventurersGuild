@@ -610,6 +610,32 @@ const ICONS = {
     'kbccccccbk',
     'kkkkkkkkkk',
   ],
+  // Flecha que vuelve: deshacer la última obra.
+  deshacer: [
+    '....kk....',
+    '...kGk....',
+    '..kGGkkkk.',
+    '.kGGGGGGGk',
+    '..kGGkkkGk',
+    '...kGk..Gk',
+    '....kk..Gk',
+    '.......kGk',
+    '...kkkkGk.',
+    '...kGGGk..',
+  ],
+  // Renglones: la lista de salas.
+  lista: [
+    '..........',
+    'kk.kkkkkkk',
+    'Gk.nnnnnnk',
+    'kk.kkkkkkk',
+    '..........',
+    'kk.kkkkkkk',
+    'Gk.nnnnnnk',
+    'kk.kkkkkkk',
+    '..........',
+    '..........',
+  ],
   // Banderines de fiesta: los adornos de la taberna.
   banderin: [
     '..........',
