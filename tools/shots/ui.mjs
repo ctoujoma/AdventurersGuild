@@ -201,7 +201,7 @@ await shot('21-heroes-barra');
 await click(`${TABS} button:nth-child(3)`);
 await shot('22-heroes-trabajo');
 await click(`${TABS} button:nth-child(1)`);
-await click('.hero-row');
+await click(':is(.hero-row, .row-main)');
 await shot('23-ficha-heroe');
 await esc(2);
 
