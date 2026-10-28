@@ -3,10 +3,14 @@ import { itemIcon, trophyIcon } from '../../art/items';
 import { TROPHY_APPEAL, TROPHY_SLOTS } from '../../core/balance';
 import type { GameState, Hero, Item } from '../../core/model';
 import { RARITY_NAMES, itemEffect } from '../../data/items';
+import { CLASS_NAMES } from '../../data/labels';
+import { skill, type SkillId } from '../../core/party';
 import { BufferImage } from '../BufferImage';
 import { help } from '../HoldHelp';
 import { Icon } from '../icons';
+import { Portrait } from '../Portrait';
 import { Tabs } from '../Tabs';
+import { lookOf, marksOf, memberOf } from '../view';
 
 export type ArconTab = 'equipo' | 'tesoros' | 'trofeos';
 
@@ -74,12 +78,11 @@ export function ArconPanel({
         value={tab}
         onChange={onTab}
         tabs={[
-          { id: 'equipo', label: 'Equipo', icon: 'espadas', count: stock.length + worn.length },
-          { id: 'tesoros', label: 'Tesoros', icon: 'coin', count: treasures.length },
+          { id: 'equipo', label: 'Equipo', count: stock.length + worn.length },
+          { id: 'tesoros', label: 'Tesoros', count: treasures.length },
           {
             id: 'trofeos',
             label: 'Trofeos',
-            icon: 'star',
             count: game.trophies.length,
             help: `Caben ${TROPHY_SLOTS} en la pared del salón; cada uno expuesto suma ${TROPHY_APPEAL} de Atractivo y trae más visitantes.`,
           },
@@ -111,20 +114,53 @@ export function ArconPanel({
                   </div>
                 </article>
                 {giving === it.id && (
-                  <div class="arcon-takers" role="group" aria-label={`¿A quién le das ${it.name}?`}>
-                    {takers.map((h) => (
-                      <button
-                        key={h.id}
-                        class="btn btn-wood"
-                        onClick={() => {
-                          onEquip(h.id, it.id);
-                          setGiving(null);
-                        }}
-                      >
-                        {h.name}
-                        {h.item ? ' (cambia)' : ''}
-                      </button>
-                    ))}
+                  <div
+                    class="picks arcon-picks"
+                    role="group"
+                    aria-label={`¿A quién le das ${it.name}?`}
+                  >
+                    {takers.map((h) => {
+                      // Cómo le queda lo que mejora el objeto: de su cifra de ahora a la nueva.
+                      const gains = (Object.keys(it.bonus ?? {}) as SkillId[]).map((k) => {
+                        const now = skill(memberOf(h, game.fac), k);
+                        const then = skill(memberOf({ ...h, item: it }, game.fac), k);
+                        return { k, now, then };
+                      });
+                      return (
+                        <button
+                          key={h.id}
+                          class="pick"
+                          aria-label={[
+                            `Dárselo a ${h.name}`,
+                            `${CLASS_NAMES[h.cls][h.sex]} de nivel ${h.lvl}`,
+                            h.item ? `cambia ${h.item.name}` : 'sin equipo',
+                            ...gains.map((g) => `${g.k} de ${g.now} a ${g.then}`),
+                          ].join('. ')}
+                          onClick={() => {
+                            onEquip(h.id, it.id);
+                            setGiving(null);
+                          }}
+                        >
+                          <Portrait look={lookOf(h)} marks={marksOf(h)} scale={1} alive={false} />
+                          <span class="pick-name" aria-hidden="true">
+                            {h.name.split(' ')[0]}
+                          </span>
+                          <span class="pick-skills" aria-hidden="true">
+                            <span>
+                              {CLASS_NAMES[h.cls][h.sex]} · {h.lvl}
+                            </span>
+                            {gains.map((g) => (
+                              <span key={g.k} class={g.then > g.now ? 'up' : ''}>
+                                {g.k.slice(0, 3)} {g.now} → {g.then}
+                              </span>
+                            ))}
+                            <span class="pick-gear">
+                              {h.item ? `cambia ${h.item.name}` : 'sin equipo'}
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>

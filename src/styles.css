@@ -3720,11 +3720,20 @@ textarea:focus-visible,
 }
 
 /* ---------- Arcón y trofeos ---------- */
-.arcon-takers {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 0 0 8px 48px;
+/* A quién se da un objeto: la rejilla de retratos de «Quién va», con lo que gana cada uno. */
+.arcon-picks {
+  padding: 0 0 10px;
+}
+.pick-skills .up {
+  color: var(--text-good);
+}
+.pick-gear {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--body);
+  color: var(--text-soft);
 }
 .row-group {
   border-bottom: 2px dashed var(--tan);
