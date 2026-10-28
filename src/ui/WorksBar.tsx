@@ -3,6 +3,7 @@ import { ROOM_COST } from '../core/balance';
 import { laxly, stairCost } from '../core/rooms';
 import { ROOMS, type RoomType } from '../data/rooms';
 import { pickTitle, targetsFor } from '../world/rooms/works';
+import { help } from './HoldHelp';
 import { Icon, type IconName } from './icons';
 import type { Works } from './works';
 
@@ -13,12 +14,16 @@ interface Props {
 }
 
 /** Pestañas de la cinta, con sus salas (lo que más se construye, primero) y su icono. */
-const TABS: { name: string; rooms: RoomType[] }[] = [
-  { name: 'Gente', rooms: ['dormitorio', 'servicio', 'enfermeria', 'capilla', 'veteranos'] },
-  { name: 'Comida', rooms: ['cocina', 'bodega', 'despensa'] },
-  { name: 'Entreno', rooms: ['armas', 'tiro', 'biblioteca'] },
-  { name: 'Defensa', rooms: ['armeria', 'forja', 'torre', 'tesoro', 'recibidor'] },
-  { name: 'Gremio', rooms: ['salon', 'mapas'] },
+const TABS: { name: string; icon: IconName; rooms: RoomType[] }[] = [
+  {
+    name: 'Gente',
+    icon: 'cama',
+    rooms: ['dormitorio', 'servicio', 'enfermeria', 'capilla', 'veteranos'],
+  },
+  { name: 'Comida', icon: 'olla', rooms: ['cocina', 'bodega', 'despensa'] },
+  { name: 'Entreno', icon: 'espadas', rooms: ['armas', 'tiro', 'biblioteca'] },
+  { name: 'Defensa', icon: 'escudo', rooms: ['armeria', 'forja', 'torre', 'tesoro', 'recibidor'] },
+  { name: 'Gremio', icon: 'jarra', rooms: ['salon', 'mapas'] },
 ];
 
 const ICON: Record<RoomType, IconName> = {
@@ -77,6 +82,7 @@ function Ribbon({ works: w, onMore }: Props) {
             class={`ribbon-tab ${i === tab ? 'is-on' : ''}`}
             onClick={() => setTab(i)}
           >
+            <Icon name={x.icon} size={14} />
             {x.name}
           </button>
         ))}
@@ -120,38 +126,60 @@ function Ribbon({ works: w, onMore }: Props) {
       <span class="worksbar-text ribbon-text">
         {n ? (
           <>
-            {n} {n === 1 ? 'obra' : 'obras'} · {w.planCost >= 0 ? 'cuesta' : 'recuperas'}{' '}
-            <Icon name="coin" size={10} /> {Math.abs(w.planCost)}
+            {n} {n === 1 ? 'obra apuntada' : 'obras apuntadas'}
+            {w.planCost < 0 && (
+              <>
+                {' '}
+                · recuperas <Icon name="coin" size={10} /> {-w.planCost}
+              </>
+            )}
           </>
         ) : (
-          'Elige una sala abajo o toca una sala de la casa'
+          'Elige una sala abajo o toca una de la casa'
         )}
         {w.issue && <span class="worksbar-issue">{w.issue}</span>}
       </span>
       <div class="ribbon-foot">
-        <button class="btn btn-wood" onClick={onMore}>
-          Salas
-        </button>
-        <button class="btn btn-wood" disabled={!n} onClick={w.undo}>
-          Deshacer
+        <button
+          class="btn-icon"
+          aria-label="Lista de salas"
+          {...help('Lista de salas: todas las salas por planta y las mejoras del patio.')}
+          onClick={onMore}
+        >
+          <Icon name="lista" size={16} />
         </button>
         <button
-          class="btn btn-gold"
+          class="btn-icon"
+          aria-label="Deshacer la última obra"
+          {...help('Deshacer la última obra apuntada.')}
+          disabled={!n}
+          onClick={w.undo}
+        >
+          <Icon name="deshacer" size={16} />
+        </button>
+        <button
+          class="btn btn-gold ribbon-pay"
           disabled={!n || !!w.issue}
           title={w.issue ?? undefined}
+          aria-label={
+            w.planCost >= 0
+              ? `Pagar las obras: ${w.planCost} monedas`
+              : `Pagar las obras: recuperas ${-w.planCost} monedas`
+          }
           onClick={w.pay}
         >
-          Pagar
+          <Icon name="coin" size={14} /> Pagar{n ? ` ${Math.abs(w.planCost)}` : ''}
         </button>
         <button
-          class={`btn ${leaving ? 'btn-red' : 'btn-wood'}`}
+          class={`btn ${leaving ? 'btn-red' : 'btn-wood'} ribbon-exit`}
+          aria-label={leaving ? 'Descartar las obras y salir' : 'Salir del modo obras'}
           onClick={() => {
             // Con obras apuntadas, el primer toque pregunta y el segundo descarta.
             if (!n || leaving) w.discard();
             else setLeaving(true);
           }}
         >
-          {leaving ? '¿Descartar?' : 'Salir'}
+          {leaving ? '¿Descartar?' : <Icon name="close" size={14} />}
         </button>
       </div>
     </div>

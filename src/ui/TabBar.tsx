@@ -13,7 +13,16 @@ const TABS: { id: TabId; label: string; help: string }[] = [
   },
 ];
 
-export function TabBar({ tab, onTab }: { tab: TabId; onTab: (t: TabId) => void }) {
+export function TabBar({
+  tab,
+  onTab,
+  hidden,
+}: {
+  tab: TabId;
+  onTab: (t: TabId) => void;
+  hidden?: boolean;
+}) {
+  if (hidden) return null;
   return (
     <nav class="tabs" aria-label="Secciones">
       {TABS.map((t) => (
