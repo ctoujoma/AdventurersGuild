@@ -21,7 +21,7 @@ import {
   type ShaderMaterial,
 } from 'three';
 import { P } from '../../art/palette';
-import type { PixelBuffer } from '../../art/pixel';
+import { PixelBuffer } from '../../art/pixel';
 import type { Building, RaidResult, Room, RoomYield } from '../../core/model';
 import { ROOMS } from '../../data/rooms';
 import { Camera } from '../camera';
@@ -42,6 +42,7 @@ import {
   PATIO_W,
   PARTITION,
   PITCH,
+  ROOF_H,
   SLAB,
   WALL,
   colX,
@@ -62,6 +63,7 @@ import {
   bare,
   caveBack,
   caveCells,
+  earthBuf,
   ceilingTex,
   facade,
   floorTex,
@@ -84,7 +86,7 @@ import { EYE, eyeOf, frustum, project, scaleAt, type View } from './view3d';
 /** Duración del día de la escena hasta que anochece (el reloj de verdad llega con el día vivo). */
 const DAY_LENGTH = 720;
 /** Terreno de más a cada lado del mundo (lo que la perspectiva deja ver al fondo). */
-const TERRAIN_PAD = 640;
+const TERRAIN_PAD = 1200;
 const DAWN_LIGHT = 0.65;
 const NEAR = 20;
 const FAR = EYE + 400;
@@ -409,6 +411,8 @@ export class RoomScene {
     this.crowd.setPeople(model.heroes);
     if (this.routePts) this.routePts = this.routePoints(this.routeIds.split(' '));
     this.camera.world = { x0: L.x0, x1: L.x1, y0: L.y0, y1: L.y1 };
+    // Cualquier sala puede quedar en el centro (y verse de frente), aunque esté en una esquina.
+    this.camera.reach = { x0: L.left, x1: L.right, y0: floorTop(L.top), y1: floorY(L.deepest) };
     // La torre se toca donde se ve, encima del tejado.
     this.spots = L.rooms.map(({ room, rect }) => ({
       id: `sala:${room.id}`,
@@ -457,10 +461,20 @@ export class RoomScene {
     if (p) this.camera.centerOn(p.x, p.y - 20, false);
   }
 
+  /**
+   * Lo más lejos: lo que llene la pantalla de mundo o, si el edificio ya no cabe, lo justo para
+   * verlo entero (con su tejado y sitio para los botones), sin bajar de un píxel de la pantalla
+   * por píxel del juego (ni de medio de CSS, que se perdería el dibujo).
+   */
   private minZoom(cssW: number, cssH: number): number {
-    const w = this.layout ? this.layout.x1 - this.layout.x0 : 600;
-    const h = this.layout ? this.layout.y1 - this.layout.y0 : 600;
-    return Math.max(1, Math.ceil(Math.max(cssW / w, cssH / h) * 100) / 100);
+    const L = this.layout;
+    if (!L) return 1;
+    const cover = Math.max(cssW / (L.x1 - L.x0), cssH / (L.y1 - L.y0));
+    const w = L.right - L.left + 60;
+    const h = floorY(L.deepest) + SLAB - (floorTop(L.top) - SLAB - ROOF_H) + 140;
+    const fit = Math.min(cssW / w, cssH / h);
+    const px = Math.max(0.5, 1 / (window.devicePixelRatio || 1));
+    return Math.max(px, Math.ceil(Math.min(cover, fit) * 100) / 100);
   }
 
   zoomBy(step: number): void {
@@ -703,6 +717,37 @@ export class RoomScene {
       F.buf.crop(0, cut, F.buf.w, F.buf.h - cut),
       [at(F.x, fy1, 0), at(fx1, fy1, 0), at(fx1, GROUND, 0), at(F.x, GROUND, 0)],
       { ambient: EARTH, sun: 0 },
+    );
+    // Más tierra a los lados y negro debajo: al alejar la cámara o centrar una sala de una
+    // esquina, la vista se sale del mundo.
+    const tx0 = F.x - TERRAIN_PAD;
+    const tx1 = fx1 + TERRAIN_PAD;
+    const side = earthBuf(TERRAIN_PAD, fy1 - GROUND);
+    const dark = { ambient: EARTH, sun: 0 };
+    this.plane(
+      g,
+      side,
+      [at(tx0, fy1, 0), at(F.x, fy1, 0), at(F.x, GROUND, 0), at(tx0, GROUND, 0)],
+      dark,
+    );
+    this.plane(
+      g,
+      side,
+      [at(fx1, fy1, 0), at(tx1, fy1, 0), at(tx1, GROUND, 0), at(fx1, GROUND, 0)],
+      dark,
+    );
+    const black = new PixelBuffer(1, 1);
+    black.set(0, 0, P.black);
+    this.plane(
+      g,
+      black,
+      [
+        at(tx0, fy1 + TERRAIN_PAD, 0),
+        at(tx1, fy1 + TERRAIN_PAD, 0),
+        at(tx1, fy1, 0),
+        at(tx0, fy1, 0),
+      ],
+      dark,
     );
 
     // Salas, escaleras y huecos excavados.
