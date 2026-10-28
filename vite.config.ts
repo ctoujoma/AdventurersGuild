@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
@@ -48,10 +49,26 @@ function precache(): Plugin {
   };
 }
 
+/** Versión que se enseña en el juego: fecha y commit del build (o «dev» sin git). */
+function version(): string {
+  try {
+    const [date, hash] = execSync('git log -1 --format=%cs/%h', {
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+      .toString()
+      .trim()
+      .split('/');
+    return `${date} · ${hash}`;
+  } catch {
+    return 'dev';
+  }
+}
+
 export default defineConfig({
   // Rutas relativas: el mismo build sirve en GitHub Pages, en local y dentro de Capacitor.
   base: './',
   plugins: [preact(), precache()],
+  define: { __VERSION__: JSON.stringify(version()) },
   // three.js va dentro del mismo fichero (el juego se empaqueta en un solo HTML).
   build: { chunkSizeWarningLimit: 1200 },
   test: {

@@ -149,7 +149,10 @@ export function App() {
     audio.setLevels(settings);
     applyLook(settings);
     setHaptics(settings.vibrate);
-    if (scene.current) scene.current.speed = settings.speed;
+    if (scene.current) {
+      scene.current.speed = settings.speed;
+      scene.current.fewLights = settings.fewLights;
+    }
     saveSettings(settings);
   }, [settings]);
   const gameRef = useRef(game);
@@ -618,6 +621,7 @@ export function App() {
             scene.current = s;
             s.setTime(clockRef.current / DAY_SECONDS);
             s.speed = settings.speed;
+            s.fewLights = settings.fewLights;
           }}
           onHotspot={onHotspot}
           onHero={(id, at) => {

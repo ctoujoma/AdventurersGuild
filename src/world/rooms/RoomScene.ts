@@ -34,7 +34,7 @@ import { towerLampY, watchtower } from './salas/torre';
 import { Crowd } from './crowd';
 import { RaidShow } from './raid';
 import { NO_LOOK, type SalonLook } from './salon';
-import { Look, MAX_LIGHTS, mesh, quad, sharedUniforms, type Corners } from './gl';
+import { FEW_LIGHTS, Look, MAX_LIGHTS, mesh, quad, sharedUniforms, type Corners } from './gl';
 import { route, type Place } from './people';
 import {
   CELL_W,
@@ -188,6 +188,8 @@ export function roomLabel(b: Building, id: string): string {
 export class RoomScene {
   readonly camera = new Camera();
   speed = 1;
+  /** «Pocas luces» en Ajustes: solo los focos más cercanos al centro (para móviles lentos). */
+  fewLights = false;
   private renderer: WebGLRenderer;
   private scene = new Scene();
   private cam3 = new PerspectiveCamera();
@@ -1334,22 +1336,23 @@ export class RoomScene {
       .sort(
         (a, b) => Math.hypot(a.pos.x - cx, a.pos.y - cy) - Math.hypot(b.pos.x - cx, b.pos.y - cy),
       );
-    for (let i = 0; i < MAX_LIGHTS; i++) {
-      const l = near[i];
-      if (!l) {
-        s.uLightPos.value[i]!.w = 0;
-        continue;
-      }
+    const n = Math.min(near.length, this.fewLights ? FEW_LIGHTS : MAX_LIGHTS);
+    const tex = s.uLights.value;
+    const data = tex.image.data as unknown as Float32Array;
+    const row = MAX_LIGHTS * 4;
+    for (let i = 0; i < n; i++) {
+      const l = near[i]!;
       const fl = 1 - l.flicker * noise(Math.floor(t * 9), l.seed);
       const k = (l.deep ? 1 : l.fire ? fireK : lampK) * l.power * fl;
-      s.uLightPos.value[i]!.set(l.pos.x, l.pos.y, l.pos.z, l.r);
-      s.uLightColor.value[i]!.set(
-        (l.color[0] / 255) * k,
-        (l.color[1] / 255) * k,
-        (l.color[2] / 255) * k,
+      data.set([l.pos.x, l.pos.y, l.pos.z, l.r], i * 4);
+      data.set(
+        [(l.color[0] / 255) * k, (l.color[1] / 255) * k, (l.color[2] / 255) * k, 0],
+        row + i * 4,
       );
-      s.uLightZone.value[i]!.set(...l.zone);
+      data.set(l.zone, 2 * row + i * 4);
     }
+    s.uLightCount.value = n;
+    tex.needsUpdate = true;
     for (const m of this.flames)
       m.scale.y = m.scale.x * (0.6 + noise(Math.floor(t * 10), m.id) * 0.7);
 

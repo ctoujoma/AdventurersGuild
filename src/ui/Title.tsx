@@ -5,6 +5,7 @@ import { customOf } from '../core/game';
 import { CREST_COLORS, DEFAULT_NAME } from '../data/custom';
 import { crestBoard } from '../world/props';
 import { BufferImage } from './BufferImage';
+import { VERSION } from '../version';
 
 interface Props {
   /** Partida guardada, si la hay. */
@@ -81,7 +82,10 @@ export function Title({ saved, onContinue, onNew, onSaves, onSettings }: Props) 
           )}
         </nav>
       </div>
-      <span class="title-foot">Toca un botón para entrar en la taberna</span>
+      <span class="title-foot">
+        Toca un botón para entrar en la taberna
+        <small class="title-version">Versión {VERSION}</small>
+      </span>
     </div>
   );
 }
