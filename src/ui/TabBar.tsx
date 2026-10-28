@@ -9,7 +9,7 @@ const TABS: { id: TabId; label: string; help: string }[] = [
   {
     id: 'gremio',
     label: 'Gremio',
-    help: 'Mejoras de la casa, la deuda, tu taberna y los ajustes.',
+    help: 'La deuda, la seguridad, las salas, los adornos, el arcón, el libro y los ajustes.',
   },
 ];
 

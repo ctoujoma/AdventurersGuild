@@ -51,7 +51,6 @@ import { WorksBar } from './WorksBar';
 import { RoomMenu } from './RoomMenu';
 import { useWorks } from './works';
 import { LOCKED, worksOpen } from '../core/rooms';
-import type { Pick } from '../world/rooms/works';
 import { ROOMS } from '../data/rooms';
 import { TabBar, type TabId } from './TabBar';
 import { listNames, plural } from './text';
@@ -290,11 +289,6 @@ export function App() {
   }, [showRoute, routeBuilding]);
   /** Las obras se eligen en la escena (si el navegador la ha podido pintar). */
   const roomsLive = !!scene.current;
-  const pickSpot = (p: Pick) => {
-    openPanel(null);
-    if (!works.planning) works.startPlan();
-    works.startPick(p);
-  };
 
   const openPanel = (p: PanelId | null) => {
     if (p === panel) return;
@@ -608,8 +602,13 @@ export function App() {
     }, 250);
     return () => clearInterval(id);
   }, [ticking, settings.pace]);
+  // Lo que se abre desde el gremio (arcón, libro, adornos) deja encendida su pestaña.
   const tab: TabId =
-    panel === 'tablon' || panel === 'heroes' || panel === 'gremio' ? panel : 'taberna';
+    panel === 'tablon' || panel === 'heroes' || panel === 'gremio'
+      ? panel
+      : panel === 'arcon' || panel === 'libro' || panel === 'casa'
+        ? 'gremio'
+        : 'taberna';
 
   return (
     <div class="game">
@@ -847,8 +846,6 @@ export function App() {
                   <ObrasPanel
                     game={works.view}
                     planning={works.planning}
-                    onPick={pickSpot}
-                    onWork={(a) => works.work(a)}
                     onRoom={(id) => {
                       setRoomId(id);
                       openPanel('sala');
@@ -874,7 +871,7 @@ export function App() {
           </Panel>
         )}
         {panel === 'arcon' && (
-          <Panel title="Arcón y trofeos" onClose={() => openPanel(null)}>
+          <Panel title="Arcón" onClose={() => openPanel(null)}>
             <ArconPanel
               game={game}
               tab={arconTab}
@@ -900,7 +897,7 @@ export function App() {
           </Panel>
         )}
         {panel === 'casa' && (
-          <Panel title="Tu taberna" onClose={() => openPanel(null)}>
+          <Panel title="Adornos" onClose={() => openPanel(null)}>
             <TabernaPanel
               game={game}
               onCustom={(patch) => {

@@ -4,6 +4,8 @@ import { TROPHY_APPEAL, TROPHY_SLOTS } from '../../core/balance';
 import type { GameState, Hero, Item } from '../../core/model';
 import { RARITY_NAMES, itemEffect } from '../../data/items';
 import { BufferImage } from '../BufferImage';
+import { help } from '../HoldHelp';
+import { Icon } from '../icons';
 import { Tabs } from '../Tabs';
 
 export type ArconTab = 'equipo' | 'tesoros' | 'trofeos';
@@ -22,9 +24,23 @@ interface Props {
 const isGear = (i: Item) => !!i.kind && i.kind !== 'tesoro';
 const inGuild = (h: Hero) => h.status === 'ok' || h.status === 'herido';
 
+/** Botón de vender: moneda y precio. */
+function Sell({ name, value, onSell }: { name: string; value: number; onSell: () => void }) {
+  return (
+    <button
+      class="btn btn-wood"
+      aria-label={`Vender ${name} por ${value} monedas`}
+      onClick={onSell}
+    >
+      <Icon name="coin" size={12} /> {value}
+    </button>
+  );
+}
+
 /**
- * El arcón del gremio: el equipo (en el tablero de la bodega y el que llevan puesto),
- * los tesoros para vender y los trofeos de la pared de la sala.
+ * El arcón del gremio: el equipo (en el tablero de la bodega y el que llevan puesto), los
+ * tesoros para vender y los trofeos de la pared de la sala. Una fila por cosa; su descripción,
+ * manteniendo pulsado.
  */
 export function ArconPanel({
   game,
@@ -42,6 +58,15 @@ export function ArconPanel({
   const takers = game.heroes.filter(inGuild);
   const [giving, setGiving] = useState<string | null>(null);
 
+  const gear = (it: Item) => (
+    <span class={`row-info rarity-${it.rarity ?? 0}`} {...help(it.desc)}>
+      <b>{it.name}</b>
+      <span class="row-sub">
+        <em>{RARITY_NAMES[it.rarity ?? 0]}</em> · {itemEffect(it)}
+      </span>
+    </span>
+  );
+
   return (
     <>
       <Tabs
@@ -49,9 +74,15 @@ export function ArconPanel({
         value={tab}
         onChange={onTab}
         tabs={[
-          { id: 'equipo', label: 'Equipo', count: stock.length + worn.length },
-          { id: 'tesoros', label: 'Tesoros', count: treasures.length },
-          { id: 'trofeos', label: 'Trofeos', count: game.trophies.length },
+          { id: 'equipo', label: 'Equipo', icon: 'espadas', count: stock.length + worn.length },
+          { id: 'tesoros', label: 'Tesoros', icon: 'coin', count: treasures.length },
+          {
+            id: 'trofeos',
+            label: 'Trofeos',
+            icon: 'star',
+            count: game.trophies.length,
+            help: `Caben ${TROPHY_SLOTS} en la pared del salón; cada uno expuesto suma ${TROPHY_APPEAL} de Atractivo y trae más visitantes.`,
+          },
         ]}
       />
 
@@ -59,85 +90,64 @@ export function ArconPanel({
         <>
           <h3 class="sec-title">En el tablero de la bodega</h3>
           {!stock.length && (
-            <p class="panel-note">
-              No hay equipo libre. Los encargos marcados con «+ objeto» pueden traerlo.
-            </p>
+            <p class="panel-note">Vacío. Los encargos con «+ objeto» pueden traer equipo.</p>
           )}
-          <div class="list">
+          <div class="rows">
             {stock.map((it) => (
-              <article key={it.id} class={`card-paper arcon-item rarity-${it.rarity ?? 0}`}>
-                <div class="arcon-row">
+              <div key={it.id} class="row-group">
+                <article class="row">
                   <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity)} scale={2} />
-                  <div class="facility-info">
-                    <b>{it.name}</b>
-                    <span class="next-level">
-                      {RARITY_NAMES[it.rarity ?? 0]} · {itemEffect(it)}
-                    </span>
-                    <span class="muted">{it.desc}</span>
-                  </div>
-                </div>
-                {giving === it.id ? (
-                  <div class="arcon-give">
-                    <span class="tiny">¿A quién se lo das?</span>
-                    <div class="arcon-takers">
-                      {takers.map((h) => (
-                        <button
-                          key={h.id}
-                          class="btn btn-wood"
-                          onClick={() => {
-                            onEquip(h.id, it.id);
-                            setGiving(null);
-                          }}
-                        >
-                          {h.name}
-                          {h.item ? ' (cambia)' : ''}
-                        </button>
-                      ))}
-                      <button class="btn btn-wood" onClick={() => setGiving(null)}>
-                        Cancelar
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div class="herocard-actions">
+                  {gear(it)}
+                  <div class="row-actions">
                     <button
-                      class="btn btn-gold"
+                      class={`btn ${giving === it.id ? 'btn-gold' : 'btn-wood'}`}
                       disabled={!takers.length}
-                      onClick={() => setGiving(it.id)}
+                      aria-expanded={giving === it.id}
+                      onClick={() => setGiving(giving === it.id ? null : it.id)}
                     >
-                      Dárselo a…
+                      <Icon name="heroe" size={12} /> Dar
                     </button>
-                    <button class="btn btn-wood" onClick={() => onSell(it.id)}>
-                      Vender · {it.value}
-                    </button>
+                    <Sell name={it.name} value={it.value} onSell={() => onSell(it.id)} />
+                  </div>
+                </article>
+                {giving === it.id && (
+                  <div class="arcon-takers" role="group" aria-label={`¿A quién le das ${it.name}?`}>
+                    {takers.map((h) => (
+                      <button
+                        key={h.id}
+                        class="btn btn-wood"
+                        onClick={() => {
+                          onEquip(h.id, it.id);
+                          setGiving(null);
+                        }}
+                      >
+                        {h.name}
+                        {h.item ? ' (cambia)' : ''}
+                      </button>
+                    ))}
                   </div>
                 )}
-              </article>
+              </div>
             ))}
           </div>
 
-          <h3 class="sec-title">Lo que llevan puesto</h3>
+          <h3 class="sec-title">Lo llevan puesto</h3>
           {!worn.length && <p class="panel-note">Nadie lleva equipo todavía.</p>}
-          <div class="list">
+          <div class="rows">
             {worn.map((h) => (
-              <article key={h.id} class={`card-paper arcon-item rarity-${h.item!.rarity ?? 0}`}>
-                <div class="arcon-row">
-                  <BufferImage buf={itemIcon(h.item!.icon ?? 'espada', h.item!.rarity)} scale={2} />
-                  <div class="facility-info">
-                    <b>{h.item!.name}</b>
-                    <span class="next-level">{itemEffect(h.item!)}</span>
-                    <button class="linklike" onClick={() => onHero(h.id)}>
-                      Lo lleva {h.name}
-                      {h.status === 'mision' ? ' (de misión)' : ''}
-                    </button>
-                  </div>
-                </div>
+              <article key={h.id} class="row">
+                <BufferImage buf={itemIcon(h.item!.icon ?? 'espada', h.item!.rarity)} scale={2} />
+                <span class="row-info" {...help(h.item!.desc)}>
+                  <b>{h.item!.name}</b>
+                  <button class="linklike row-sub" onClick={() => onHero(h.id)}>
+                    {h.name}
+                    {h.status === 'mision' ? ' (de misión)' : ''} · {itemEffect(h.item!)}
+                  </button>
+                </span>
                 {inGuild(h) && (
-                  <div class="herocard-actions">
-                    <button class="btn btn-wood" onClick={() => onUnequip(h.id)}>
-                      Devolver al tablero
-                    </button>
-                  </div>
+                  <button class="btn btn-wood" onClick={() => onUnequip(h.id)}>
+                    Quitar
+                  </button>
                 )}
               </article>
             ))}
@@ -148,21 +158,15 @@ export function ArconPanel({
       {tab === 'tesoros' && (
         <>
           {!treasures.length && (
-            <p class="panel-note">
-              El arcón está vacío. Joyas, reliquias y demás cosas de valor acaban aquí para
-              venderlas.
-            </p>
+            <p class="panel-note">Vacío. Joyas, reliquias y demás cosas de valor acaban aquí.</p>
           )}
-          <div class="list">
+          <div class="rows">
             {treasures.map((it) => (
-              <article key={it.id} class="card-paper facility">
-                <div class="facility-info">
+              <article key={it.id} class="row">
+                <span class="row-info" {...help(it.desc)}>
                   <b>{it.name}</b>
-                  <span class="muted">{it.desc}</span>
-                </div>
-                <button class="btn btn-gold" onClick={() => onSell(it.id)}>
-                  Vender · {it.value}
-                </button>
+                </span>
+                <Sell name={it.name} value={it.value} onSell={() => onSell(it.id)} />
               </article>
             ))}
           </div>
@@ -171,27 +175,25 @@ export function ArconPanel({
 
       {tab === 'trofeos' && (
         <>
-          <p class="panel-note">
-            {game.trophies.length
-              ? `Caben ${TROPHY_SLOTS} en la pared del salón; cada uno expuesto suma ${TROPHY_APPEAL} de Atractivo y trae más visitantes.`
-              : 'Un éxito brillante en un encargo peligroso deja un trofeo para la pared de la sala.'}
-          </p>
-          <div class="list">
+          {!game.trophies.length && (
+            <p class="panel-note">
+              Un éxito brillante en un encargo peligroso deja un trofeo para la pared del salón.
+            </p>
+          )}
+          <div class="rows">
             {game.trophies.map((t, i) => (
-              <article key={t.id} class="card-paper facility">
+              <article key={t.id} class="row">
                 <BufferImage buf={trophyIcon(t.icon)} scale={2} />
-                <div class="facility-info">
+                <span
+                  class="row-info"
+                  {...help(`${t.desc} Lo trajeron ${t.who} de ${t.place}, el día ${t.day}.`)}
+                >
                   <b>{t.name}</b>
-                  <span class="next-level">
-                    {i < TROPHY_SLOTS ? 'En la pared de la sala' : 'Guardado: no queda pared'}
+                  <span class="row-sub">
+                    {i < TROPHY_SLOTS ? 'En la pared del salón' : 'Guardado: no queda pared'}
                   </span>
-                  <span class="muted">
-                    {t.desc} Lo trajeron {t.who} de {t.place}, el día {t.day}.
-                  </span>
-                </div>
-                <button class="btn btn-wood" onClick={() => onSellTrophy(t.id)}>
-                  Vender · {t.value}
-                </button>
+                </span>
+                <Sell name={t.name} value={t.value} onSell={() => onSellTrophy(t.id)} />
               </article>
             ))}
           </div>
