@@ -1640,6 +1640,33 @@ button:focus-visible {
   color: var(--text-good);
 }
 
+/* Ficha de sala: nivel arriba, cifras en chapas, atajos y, abajo, mejorar o arreglar. */
+.room-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.room-state {
+  margin: 0;
+  font-family: var(--pixel);
+  font-size: var(--t-m);
+  color: var(--wine);
+}
+
+.room-desc {
+  margin: 0;
+  font-size: var(--t-m);
+}
+
+.room-act {
+  align-self: stretch;
+}
+
+.room-max {
+  align-self: flex-start;
+}
+
 /* Ficha de sala: atajos a los paneles que tienen que ver con ella. */
 .room-links {
   display: flex;
@@ -4213,13 +4240,11 @@ textarea:focus-visible,
   border-radius: 0;
   box-shadow: 0 0 0 2px var(--ink);
 }
+/* Quién trabaja en la sala: una fila por persona, con la papelera para quitarla. */
 .room-crew {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 6px 8px;
-  background: rgba(115, 62, 57, 0.08);
-  box-shadow: 0 0 0 2px var(--tan);
+  gap: 4px;
 }
 .crew-chip {
   display: flex;
@@ -4227,10 +4252,8 @@ textarea:focus-visible,
   justify-content: space-between;
   gap: 8px;
   font-size: var(--t-m);
-}
-.crew-chip .btn {
-  padding: 2px 8px;
-  font-size: var(--t-m);
+  border-bottom: 2px dashed var(--tan);
+  padding: 2px 0;
 }
 .worksbar-issue {
   display: block;
@@ -4360,14 +4383,6 @@ textarea:focus-visible,
 }
 .ribbon .btn {
   min-height: 44px;
-}
-.salon-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 6px 8px;
-  background: rgba(254, 174, 52, 0.12);
-  box-shadow: 0 0 0 2px var(--tan);
 }
 .room-bad {
   color: var(--wine);
