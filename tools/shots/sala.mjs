@@ -46,7 +46,7 @@ if (await start.count()) await start.click();
 await page.waitForTimeout(2500);
 for (let i = 0; i < 4; i++) {
   const close = page.locator(
-    'button:has-text("Abrir la taberna"), button:has-text("Seguir"), button:has-text("Entendido"), button:has-text("Vale")',
+    'button:has-text("Abrir la taberna"), button[aria-label="Abrir la taberna"], button:has-text("Seguir"), button:has-text("Entendido"), button:has-text("Vale")',
   );
   if (await close.count())
     await close

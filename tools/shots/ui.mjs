@@ -142,7 +142,7 @@ await wait(4500);
 
 // 1. Partida nueva: amanecer del día 1, nota del tío y la casa.
 await shot('01-amanecer-dia1');
-await click('button:has-text("Abrir la taberna")');
+await click('button[aria-label="Abrir la taberna"], button:has-text("Abrir la taberna")');
 await wait(800);
 await shot('02-nota-tio');
 await page.evaluate(() => {
@@ -221,6 +221,10 @@ await tab('Gremio');
 await click('button:has-text("Libro de hazañas"), .tile:has-text("Libro")');
 await shot('34-libro');
 await esc();
+await tab('Gremio');
+await click('.tile:has-text("Partidas"), button:has-text("Guardar y cargar")');
+await shot('35-partidas');
+await esc(2);
 
 // 4. Barra del día: correo, carta y mapa.
 await click('button[aria-label^="Correo"]');
@@ -229,6 +233,7 @@ if (await click('.mail')) await shot('41-carta');
 await esc(2);
 await click('button[aria-label^="Fuera"]');
 await shot('42-mapa');
+if (await click('.map-help')) await shot('43-mapa-leyenda');
 await esc();
 
 // 5. Ficha de sala.
