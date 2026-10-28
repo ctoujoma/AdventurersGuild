@@ -610,6 +610,32 @@ const ICONS = {
     'kbccccccbk',
     'kkkkkkkkkk',
   ],
+  // Banderines de fiesta: los adornos de la taberna.
+  banderin: [
+    '..........',
+    '..........',
+    'k........k',
+    'kkkkkkkkkk',
+    'kRRkGGkyyk',
+    'kRRkGGkyyk',
+    '.kRkkGkkyk',
+    '..k..k..k.',
+    '..........',
+    '..........',
+  ],
+  // Pergamino enrollado: guardar y cargar partidas.
+  pergamino: [
+    '.kkkkkkkk.',
+    'kcnnnnnnck',
+    'kcnkkkknck',
+    '.knnnnnnk.',
+    '.knkkkknk.',
+    '.knnnnnnk.',
+    '.knkkknnk.',
+    'kcnnnnnnck',
+    'kcnnnnnnck',
+    '.kkkkkkkk.',
+  ],
   escalera: [
     '.......kkk',
     '.......kck',

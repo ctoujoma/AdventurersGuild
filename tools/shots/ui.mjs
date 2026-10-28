@@ -207,18 +207,18 @@ await esc(2);
 
 await tab('Gremio');
 await shot('30-gremio');
-await click(`${TABS} button:nth-child(2)`);
+await click(`${TABS} button:nth-child(2), .tile:has-text("Salas")`);
 await shot('31-gremio-mejoras');
-await click(`${TABS} button:nth-child(1)`);
-await click('button:has-text("Tu taberna")');
+await click(`${TABS} button:nth-child(1), .back`);
+await click('button:has-text("Tu taberna"), .tile:has-text("Adornos")');
 await shot('32-taberna');
 await esc();
 await tab('Gremio');
-await click('button:has-text("Arcón y trofeos")');
+await click('button:has-text("Arcón y trofeos"), .tile:has-text("Arcón")');
 await shot('33-arcon');
 await esc();
 await tab('Gremio');
-await click('button:has-text("Libro de hazañas")');
+await click('button:has-text("Libro de hazañas"), .tile:has-text("Libro")');
 await shot('34-libro');
 await esc();
 

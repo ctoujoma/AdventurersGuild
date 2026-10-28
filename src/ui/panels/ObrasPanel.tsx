@@ -1,18 +1,12 @@
-import { useMemo, useState } from 'preact/hooks';
-import { DIG_COST, MAX_COLS, PLOT_COST, ROOM_COST, START_COLS, roomMax } from '../../core/balance';
-import { canWork, type Action } from '../../core/game';
+import { roomMax } from '../../core/balance';
 import type { GameState, Room } from '../../core/model';
-import { LOCKED, stairCost, worksOpen } from '../../core/rooms';
-import { ROOMS, type RoomType } from '../../data/rooms';
-import { targetsFor, type Pick } from '../../world/rooms/works';
+import { LOCKED, worksOpen } from '../../core/rooms';
+import { ROOMS } from '../../data/rooms';
 import { Icon } from '../icons';
-import { Tabs } from '../Tabs';
 
 interface Props {
   game: GameState;
   planning: boolean;
-  onPick: (p: Pick) => void;
-  onWork: (a: Action) => void;
   onRoom: (id: string) => void;
   onPlan: () => void;
 }
@@ -33,178 +27,50 @@ function stateOf(r: Room): string {
 }
 
 /**
- * Las obras del gremio: construir salas nuevas, ganar sitio (excavar, solares, escaleras),
- * planear una reforma y la lista de salas por planta.
+ * Las salas del gremio por planta (toca una para ver su ficha) y la entrada al modo obras. Lo de
+ * construir, excavar, el solar y las escaleras se hace en el modo obras, sobre la escena.
  */
-type ObrasTab = 'construir' | 'salas' | 'sitio';
-
-export function ObrasPanel({ game, planning, onPick, onWork, onRoom, onPlan }: Props) {
+export function ObrasPanel({ game, planning, onRoom, onPlan }: Props) {
   const open = worksOpen(game);
-  const [tab, setTab] = useState<ObrasTab>(open ? 'construir' : 'salas');
   const b = game.building;
-  // Qué salas se pueden construir y en cuántos sitios.
-  const menu = useMemo(() => {
-    if (!open) return [];
-    return (Object.keys(ROOMS) as RoomType[])
-      .filter((t) => !(ROOMS[t].unique && b.rooms.some((r) => r.type === t)))
-      .map((t) => ({ t, spots: targetsFor(game, { kind: 'build', type: t }).length }));
-  }, [game, open]);
-  const digs = useMemo(() => (open ? targetsFor(game, { kind: 'dig' }) : []), [game, open]);
-  const stairs = useMemo(() => (open ? targetsFor(game, { kind: 'stair' }) : []), [game, open]);
-  const plotWhy = canWork(game, { type: 'buyPlot' });
   const floors = [...new Set(b.rooms.map((r) => r.floor))].sort((x, y) => y - x);
 
   return (
     <>
-      {!open && <p class="panel-note">{LOCKED} Toca una sala para verla.</p>}
+      {!open && <p class="panel-note">{LOCKED}</p>}
       {open && !planning && (
-        <button class="card-paper libro-link" onClick={onPlan}>
-          <b>Modo obras</b>
-          <span class="muted">
-            Toca en la taberna los huecos para excavar o el solar, elige salas en la cinta de abajo
-            y paga todo al final.
-          </span>
+        <button class="btn btn-gold obras-plan" onClick={onPlan}>
+          <Icon name="martillo" size={16} /> Modo obras
         </button>
       )}
-      {open && (
-        <Tabs
-          label="Obras"
-          value={tab}
-          onChange={setTab}
-          tabs={[
-            { id: 'construir', label: 'Construir' },
-            { id: 'salas', label: 'Salas' },
-            { id: 'sitio', label: 'Más sitio' },
-          ]}
-        />
-      )}
-
-      {tab === 'salas' && (
-        <section>
-          <div class="list">
-            {floors.map((f) => (
-              <div key={f} class="obras-floor">
-                <span class="tiny">{FLOOR_NAME(f)}</span>
-                <div class="obras-rooms">
-                  {b.rooms
-                    .filter((r) => r.floor === f)
-                    .sort((x, y) => x.col - y.col)
-                    .map((r) => (
-                      <button
-                        key={r.id}
-                        class={`card-paper obras-room ${r.level === 0 || r.works ? 'is-off' : ''}`}
-                        onClick={() => onRoom(r.id)}
-                      >
-                        <b>{ROOMS[r.type].name}</b>
-                        <span class="pips" aria-hidden="true">
-                          {Array.from({ length: roomMax(r.type) }, (_, i) => (
-                            <i key={i} class={i < r.level ? 'on' : ''} />
-                          ))}
-                        </span>
-                        <span class="muted">{stateOf(r)}</span>
-                      </button>
-                    ))}
-                </div>
-              </div>
-            ))}
+      <section class="obras-floors">
+        {floors.map((f) => (
+          <div key={f} class="obras-floor">
+            <span class="row-sub">{FLOOR_NAME(f)}</span>
+            <div class="obras-rooms">
+              {b.rooms
+                .filter((r) => r.floor === f)
+                .sort((x, y) => x.col - y.col)
+                .map((r) => (
+                  <button
+                    key={r.id}
+                    class={`obras-room ${r.level === 0 || r.works ? 'is-off' : ''}`}
+                    aria-label={`${ROOMS[r.type].name}, ${stateOf(r)}`}
+                    onClick={() => onRoom(r.id)}
+                  >
+                    <b>{ROOMS[r.type].name}</b>
+                    <span class="pips" aria-hidden="true">
+                      {Array.from({ length: roomMax(r.type) }, (_, i) => (
+                        <i key={i} class={i < r.level ? 'on' : ''} />
+                      ))}
+                    </span>
+                    <span class="row-sub">{stateOf(r)}</span>
+                  </button>
+                ))}
+            </div>
           </div>
-        </section>
-      )}
-      {open && tab === 'construir' && (
-        <section>
-          <div class="obras-build">
-            {menu.map(({ t, spots }) => {
-              const cost = ROOM_COST[t][1]!;
-              const why = spots
-                ? undefined
-                : game.gold < cost
-                  ? `Te faltan ${cost - game.gold} monedas.`
-                  : 'No queda sitio.';
-              return (
-                <button
-                  key={t}
-                  class="card-paper obras-room"
-                  aria-label={`Construir ${ROOMS[t].name} por ${cost} monedas`}
-                  data-help={ROOMS[t].desc}
-                  disabled={!spots}
-                  title={why}
-                  onClick={() => onPick({ kind: 'build', type: t })}
-                >
-                  <b>{ROOMS[t].name}</b>
-                  <span class="muted">{why ?? ROOMS[t].desc}</span>
-                  <span class="obras-cost">
-                    <Icon name="coin" size={10} /> {cost}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {open && tab === 'sitio' && (
-        <section>
-          <div class="list">
-            <article class="card-paper facility">
-              <div class="facility-info">
-                <b>Excavar</b>
-                <span class="muted">
-                  Un hueco más en el sótano, junto a la escalera o a otro excavado. Cuanto más
-                  hondo, más caro.
-                </span>
-              </div>
-              <button
-                class="btn btn-gold"
-                aria-label="Excavar"
-                disabled={!digs.length}
-                title={digs.length ? undefined : 'No queda nada que excavar a tu alcance.'}
-                onClick={() => onPick({ kind: 'dig' })}
-              >
-                <Icon name="coin" size={12} />{' '}
-                {digs.length ? Math.min(...digs.map((d) => d.cost)) : DIG_COST[1]}
-              </button>
-            </article>
-            <article class="card-paper facility">
-              <div class="facility-info">
-                <b>Comprar solar</b>
-                <span class="muted">
-                  {b.cols >= MAX_COLS
-                    ? 'Ya no quedan solares a la venta.'
-                    : 'El solar de la derecha: un hueco más de ancho en todas las plantas.'}
-                </span>
-              </div>
-              {b.cols < MAX_COLS && (
-                <button
-                  class="btn btn-gold"
-                  aria-label={`Comprar solar por ${PLOT_COST[b.cols - START_COLS]} monedas`}
-                  disabled={!!plotWhy}
-                  title={plotWhy ?? undefined}
-                  onClick={() => onWork({ type: 'buyPlot' })}
-                >
-                  <Icon name="coin" size={12} /> {PLOT_COST[b.cols - START_COLS]}
-                </button>
-              )}
-            </article>
-            <article class="card-paper facility">
-              <div class="facility-info">
-                <b>Escalera</b>
-                <span class="muted">
-                  Cada tramo une una planta con la de encima; cada uno cuesta un poco más.
-                </span>
-              </div>
-              <button
-                class="btn btn-gold"
-                aria-label={`Poner un tramo de escalera por ${stairCost(b)} monedas`}
-                disabled={!stairs.length}
-                title={stairs.length ? undefined : 'No cabe en ningún sitio sin cortar una sala.'}
-                onClick={() => onPick({ kind: 'stair' })}
-              >
-                <Icon name="coin" size={12} /> {stairCost(b)}
-              </button>
-            </article>
-          </div>
-        </section>
-      )}
+        ))}
+      </section>
     </>
   );
 }
