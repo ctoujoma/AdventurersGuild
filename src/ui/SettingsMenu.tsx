@@ -1,4 +1,5 @@
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
+import { audio } from '../audio/audio';
 import type { Cheat } from '../core/cheats';
 import type { BossKind } from '../data/bosses';
 import { BOSSES } from '../data/bosses';
@@ -31,6 +32,9 @@ const SPEEDS: Settings['speed'][] = [1, 1.5, 2];
 /** Ajustes: volúmenes, velocidad de la escena, lectura, movimiento y vibración. */
 export function SettingsMenu({ settings: s, onChange, onClose, onCheat, onBoss }: Props) {
   const set = (patch: Partial<Settings>) => onChange({ ...s, ...patch });
+  // Silenciar o no está aquí (en el móvil ya no hay botón arriba).
+  const [sound, setSound] = useState(audio.on);
+  useEffect(() => audio.subscribe(setSound), []);
   // Cinco toques seguidos en el título abren el modo prueba.
   const [taps, setTaps] = useState(0);
   const tapTitle = () => {
@@ -65,6 +69,10 @@ export function SettingsMenu({ settings: s, onChange, onClose, onCheat, onBoss }
           <span class="eyebrow">A tu gusto</span>
           <h3 onClick={tapTitle}>Ajustes</h3>
           <h4 class="qs-sub">Sonido</h4>
+          <label class="set-check">
+            <input type="checkbox" checked={sound} onChange={() => audio.toggle()} />
+            <span>Sonido activado</span>
+          </label>
           {slider('music', 'Música')}
           {slider('sfx', 'Efectos')}
           {slider('ambient', 'Ambiente')}

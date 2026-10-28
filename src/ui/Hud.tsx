@@ -13,7 +13,8 @@ type Tip = 'oro' | 'rep' | 'comida' | 'cerveza' | 'pago' | 'asalto';
 
 /**
  * Barra superior: día, nombre y rango del gremio, oro, reputación, comida, cerveza y próximo pago. Al tocar
- * una cifra sale debajo una línea que explica qué es.
+ * una cifra sale debajo una línea que explica qué es. El sonido está en Ajustes; en pantallas anchas,
+ * también aquí.
  */
 export function Hud({ game, onSettings }: { game: GameState; onSettings: () => void }) {
   const [sound, setSound] = useState(audio.on);
@@ -32,7 +33,7 @@ export function Hud({ game, onSettings }: { game: GameState; onSettings: () => v
   const toggle = (t: Tip) => setTip((cur) => (cur === t ? null : t));
   const left = pay ? pay.day - game.day : 0;
   const nights = game.raid ? Math.max(0, game.raid.day - game.day) : 0;
-  const when = left <= 1 ? 'mañana' : `en ${left} días`;
+  const when = left <= 0 ? 'hoy' : left === 1 ? 'mañana' : `en ${left} días`;
   const made = dailyYield(game);
   const hungry = hungryTonight(game);
   const tips: Record<Tip, string> = {
@@ -108,7 +109,7 @@ export function Hud({ game, onSettings }: { game: GameState; onSettings: () => v
           >
             <Icon name="bell" size={16} />
             <b>{due}</b>
-            <small class="hud-due">día {pay.day}</small>
+            <small class="hud-due">{left <= 0 ? 'hoy' : `${left}d`}</small>
           </button>
         )}
         {game.raid?.warned && (
@@ -119,12 +120,12 @@ export function Hud({ game, onSettings }: { game: GameState; onSettings: () => v
             onClick={() => toggle('asalto')}
           >
             <Icon name="flag" size={16} />
-            <b>{Math.max(0, game.raid.day - game.day)}</b>
-            <small class="hud-due">noches</small>
+            <b>{nights}</b>
+            <small class="hud-due">{nights === 1 ? 'noche' : 'noches'}</small>
           </button>
         )}
         <button
-          class="btn-icon"
+          class="btn-icon hud-sound"
           aria-label={sound ? 'Silenciar' : 'Activar sonido'}
           aria-pressed={sound}
           onClick={() => audio.toggle()}

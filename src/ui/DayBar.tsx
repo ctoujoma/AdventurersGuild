@@ -26,7 +26,10 @@ export function partName(part: number, dusk: number): string {
   return part < dusk / 2 ? 'Mañana' : 'Tarde';
 }
 
-/** Barra del día sobre la escena: correo, grupos fuera, el reloj y cerrar la taberna. */
+/**
+ * Barra del día sobre la escena: correo, grupos fuera, el reloj y una acción: de día, saltar al
+ * anochecer; al anochecer, cerrar la taberna y pasar la noche.
+ */
 export function DayBar(p: Props) {
   const dusk = DUSK;
   const part = p.night ? 1 : p.part;
@@ -56,7 +59,7 @@ export function DayBar(p: Props) {
         data-help="El reloj del día: la caja va entregando lo de la taberna hasta el anochecer. Toca para que corra más rápido."
         onClick={p.onPace}
       >
-        <span class="clock-name">{partName(part, dusk)}</span>
+        <Icon name="reloj" size={14} />
         <span class="clock-bar" aria-hidden="true">
           <i style={{ width: `${Math.round(part * 100)}%` }} />
           <b style={{ left: `${dusk * 100}%` }} />
@@ -66,18 +69,18 @@ export function DayBar(p: Props) {
       {p.night ? null : p.canClose ? (
         <button
           class="btn btn-gold endday"
-          data-help="Cierra la taberna y pasa la noche: los grupos avanzan y por la mañana llega el correo."
+          data-help="Cerrar: cierra la taberna y pasa la noche. Los grupos avanzan y por la mañana llega el correo."
           onClick={p.onEndDay}
         >
-          <Icon name="moon" size={18} /> Terminar día
+          <Icon name="moon" size={18} /> Cerrar
         </button>
       ) : (
         <button
           class="btn btn-wood endday"
-          data-help="Salta al anochecer: la caja entrega lo que queda del día y ya se puede cerrar."
+          data-help="Anochecer: salta al final del día. La caja entrega lo que queda y ya se puede cerrar."
           onClick={p.onDusk}
         >
-          <Icon name="moon" size={18} /> Al anochecer
+          <Icon name="reloj" size={18} /> Anochecer
         </button>
       )}
     </div>
