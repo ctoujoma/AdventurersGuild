@@ -38,6 +38,12 @@
   /* Texto secundario sobre pergamino, con contraste suficiente (≥ 5:1 sobre --sand). */
   --text-soft: #6e4232;
   --text-good: #265c42;
+  /* Cuatro tamaños de letra para toda la interfaz (la pantalla de título usa los suyos):
+     etiquetas y chapas, texto de lectura, botones y nombres, y títulos y cifras grandes. */
+  --t-s: 12px;
+  --t-m: 14px;
+  --t-l: 16px;
+  --t-xl: 22px;
   --pixel: 'Cifras', 'Pixelify Sans', 'Courier New', monospace;
   --body: 'Alegreya Sans', 'Trebuchet MS', sans-serif;
   color-scheme: dark;
@@ -58,7 +64,7 @@ body {
   background: var(--ink);
   color: var(--sand);
   font-family: var(--body);
-  font-size: 16px;
+  font-size: var(--t-l);
   line-height: 1.35;
   /* Alegreya Sans trae cifras «de texto» que suben y bajan: mejor alineadas y de igual ancho. */
   font-variant-numeric: lining-nums tabular-nums;
@@ -163,13 +169,13 @@ button:focus-visible {
 }
 
 .hud-day b {
-  font-size: 26px;
+  font-size: var(--t-xl);
   line-height: 1;
 }
 
 .hud-day small,
 .hud-k {
-  font-size: 12px;
+  font-size: var(--t-s);
   color: var(--fog);
 }
 
@@ -182,12 +188,12 @@ button:focus-visible {
 }
 
 .hud-name b {
-  font-size: 18px;
+  font-size: var(--t-l);
   color: var(--sand);
 }
 
 .hud-name span {
-  font-size: 11px;
+  font-size: var(--t-s);
   color: var(--fog);
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -214,7 +220,7 @@ button:focus-visible {
   background: none;
   cursor: pointer;
   font-family: var(--pixel);
-  font-size: 17px;
+  font-size: var(--t-l);
   color: var(--white);
   font-variant-numeric: tabular-nums;
 }
@@ -248,7 +254,7 @@ button:focus-visible {
 
   .hud-stat {
     gap: 2px;
-    font-size: 15px;
+    font-size: var(--t-l);
   }
 
   .hud .btn-icon {
@@ -271,12 +277,12 @@ button:focus-visible {
 }
 .glossary dt {
   font-family: var(--pixel);
-  font-size: 14px;
+  font-size: var(--t-m);
   color: var(--wine);
 }
 .glossary dd {
   margin: 1px 0 0;
-  font-size: 13.5px;
+  font-size: var(--t-m);
   line-height: 1.4;
 }
 
@@ -293,7 +299,7 @@ button:focus-visible {
   max-width: min(280px, calc(100vw - 24px));
   margin: 0;
   padding: 6px 10px;
-  font-size: 13.5px;
+  font-size: var(--t-m);
   line-height: 1.35;
   background: var(--sand);
   color: var(--plum);
@@ -317,7 +323,7 @@ button:focus-visible {
   max-width: min(320px, calc(100% - 16px));
   margin: 0;
   padding: 6px 10px;
-  font-size: 13.5px;
+  font-size: var(--t-m);
   line-height: 1.35;
   background: var(--sand);
   color: var(--plum);
@@ -331,7 +337,7 @@ button:focus-visible {
 
 .hud-due {
   font-family: var(--pixel);
-  font-size: 10px;
+  font-size: var(--t-s);
   color: var(--fog);
   margin-left: 1px;
 }
@@ -356,7 +362,7 @@ button:focus-visible {
   gap: 2px;
   padding: 4px 2px;
   font-family: var(--pixel);
-  font-size: 13px;
+  font-size: var(--t-s);
   color: var(--fog);
 }
 
@@ -381,7 +387,7 @@ button:focus-visible {
   justify-content: center;
   gap: 5px;
   font-family: var(--pixel);
-  font-size: 15px;
+  font-size: var(--t-l);
   padding: 2px 8px;
   border-style: solid;
   border-width: 8px;
@@ -448,7 +454,7 @@ button:focus-visible {
   pointer-events: none;
   z-index: 3;
   font-family: var(--pixel);
-  font-size: 14px;
+  font-size: var(--t-m);
   padding: 2px 8px;
   background: var(--ink);
   color: var(--lemon);
@@ -466,7 +472,7 @@ button:focus-visible {
   z-index: 4;
   max-width: 230px;
   font-family: var(--body);
-  font-size: 13px;
+  font-size: var(--t-m);
   line-height: 1.3;
   text-align: center;
   padding: 4px 8px;
@@ -492,7 +498,7 @@ button:focus-visible {
   max-width: min(260px, 80vw);
   z-index: 4;
   color: var(--plum);
-  font-size: 15px;
+  font-size: var(--t-l);
   padding: 4px 6px;
   border-style: solid;
   border-width: 10px;
@@ -528,7 +534,7 @@ button:focus-visible {
   transform: translateX(-50%);
   z-index: 3;
   font-family: var(--pixel);
-  font-size: 14px;
+  font-size: var(--t-m);
   text-align: center;
   padding: 4px 10px;
   color: var(--sand);
@@ -550,7 +556,10 @@ button:focus-visible {
   }
 }
 
-/* ---------- Paneles ---------- */
+/* ---------- Paneles ----------
+   Hoja que sube desde abajo y se apoya en las pestañas (sin marco abajo). En horizontal, una
+   columna a la derecha: la taberna sigue a la vista. El marco va a 16 px (el doble de su
+   dibujo) para que los píxeles salgan iguales. */
 .panel {
   position: absolute;
   left: 50%;
@@ -562,9 +571,45 @@ button:focus-visible {
   flex-direction: column;
   z-index: 5;
   border-style: solid;
-  border-width: 16px;
-  border-image: var(--frame-wood) 8 / 16px / 0 round;
+  border-width: 16px 16px 0;
+  border-image: var(--frame-wood) 8 / 16px 16px 0 / 0 round;
   animation: rise 0.22s steps(5);
+}
+
+@media (orientation: landscape) and (min-width: 900px),
+  (orientation: landscape) and (max-height: 520px) {
+  .panel {
+    left: auto;
+    right: 0;
+    top: 0;
+    transform: none;
+    width: min(420px, 60%);
+    max-height: none;
+    border-width: 0 0 0 16px;
+    border-image: var(--frame-wood) 8 / 0 0 0 16px / 0 round;
+    animation-name: rise-side;
+  }
+
+  .panel.panel-leave {
+    animation-name: sink-side;
+  }
+
+  .panel .panel-head {
+    margin: 0 0 0 -4px;
+  }
+}
+
+@keyframes rise-side {
+  from {
+    transform: translateX(40%);
+  }
+}
+
+@keyframes sink-side {
+  to {
+    transform: translateX(45%);
+    opacity: 0;
+  }
 }
 
 .panel-paper {
@@ -590,17 +635,18 @@ button:focus-visible {
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  padding: 6px 8px;
+  min-height: 48px;
+  padding: 2px 2px 2px 10px;
+  margin: -4px -4px 0;
   background: var(--tex-planks) var(--bark);
   background-size: 64px;
-  margin: -4px -4px 0;
   box-shadow: 0 2px 0 var(--ink);
 }
 
 .panel-head h2 {
   margin: 0;
   font-family: var(--pixel);
-  font-size: 22px;
+  font-size: var(--t-xl);
   color: var(--lemon);
   text-shadow: 2px 2px 0 var(--ink);
 }
@@ -615,7 +661,7 @@ button:focus-visible {
 
 .panel-note {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--t-m);
   color: var(--rust);
 }
 
@@ -638,13 +684,13 @@ button:focus-visible {
 .sec-title {
   margin: 0;
   font-family: var(--pixel);
-  font-size: 18px;
+  font-size: var(--t-l);
   color: var(--rust);
 }
 
 .muted {
   color: var(--text-soft);
-  font-size: 14px;
+  font-size: var(--t-m);
 }
 
 .nick {
@@ -655,7 +701,7 @@ button:focus-visible {
 
 .tiny {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--t-m);
   color: var(--text-soft);
 }
 
@@ -677,7 +723,7 @@ button:focus-visible {
 .chal,
 .pill {
   font-family: var(--pixel);
-  font-size: 12px;
+  font-size: var(--t-s);
   padding: 1px 6px;
   background: var(--plum);
   color: var(--sand);
@@ -758,12 +804,12 @@ button:focus-visible {
   justify-content: space-between;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: var(--t-s);
 }
 
 .note-type {
   font-family: var(--pixel);
-  font-size: 12px;
+  font-size: var(--t-s);
   padding: 0 5px;
   color: var(--sand);
   background: var(--rust);
@@ -771,20 +817,20 @@ button:focus-visible {
 
 .note-title {
   font-family: var(--pixel);
-  font-size: 17px;
+  font-size: var(--t-l);
   line-height: 1.15;
   color: var(--plum);
   text-wrap: balance;
 }
 
 .note .client {
-  font-size: 13px;
+  font-size: var(--t-m);
   color: var(--rust);
   font-style: italic;
 }
 
 .note-text {
-  font-size: 14px;
+  font-size: var(--t-m);
 }
 
 .note-foot {
@@ -814,12 +860,12 @@ button:focus-visible {
   align-items: center;
   gap: 4px;
   font-family: var(--pixel);
-  font-size: 16px;
+  font-size: var(--t-l);
 }
 
 .danger {
   font-family: var(--pixel);
-  font-size: 12px;
+  font-size: var(--t-s);
   padding: 0 4px;
   color: var(--white);
   box-shadow: 0 0 0 2px var(--ink);
@@ -842,24 +888,63 @@ button:focus-visible {
 }
 
 /* ---------- Héroes ---------- */
-.segmented {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
+/* Pestañas de un panel (Tabs.tsx): la misma forma en todos. La elegida, como botón dorado;
+   el borde fino de las demás más su relleno ocupa lo mismo, para que nada salte al cambiar. */
+.segs {
+  display: flex;
+  gap: 4px;
 }
 
-.segmented button {
+.seg {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 44px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 8px;
+  border: 2px solid var(--tan);
   font-family: var(--pixel);
-  font-size: 14px;
-  padding: 6px;
-  background: var(--tan);
+  font-size: var(--t-m);
   color: var(--rust);
-  box-shadow: 0 0 0 2px var(--ink);
+  white-space: nowrap;
 }
 
-.segmented button[aria-selected='true'] {
-  background: var(--rust);
-  color: var(--lemon);
+.seg > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.seg-n {
+  font-weight: 400;
+  color: var(--text-soft);
+}
+
+.seg[aria-selected='true'] {
+  padding: 0 2px;
+  border-width: 8px;
+  border-image: var(--btn-gold) 4 fill / 8px / 0 stretch;
+  color: var(--plum);
+}
+
+.seg[aria-selected='true'] .seg-n {
+  color: var(--plum);
+}
+
+.seg-alert {
+  position: absolute;
+  top: -10px;
+  right: -8px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 3px;
+  font-size: var(--t-s);
+  line-height: 18px;
+  color: var(--white);
+  background: var(--red);
+  box-shadow: 0 0 0 2px var(--ink);
 }
 
 .list {
@@ -885,7 +970,7 @@ button:focus-visible {
 
 .hero-info b {
   font-family: var(--pixel);
-  font-size: 17px;
+  font-size: var(--t-l);
 }
 
 .hero-side {
@@ -985,7 +1070,7 @@ button:focus-visible {
 .herocard-id h3 {
   margin: 0;
   font-family: var(--pixel);
-  font-size: 22px;
+  font-size: var(--t-xl);
   line-height: 1.05;
 }
 
@@ -1040,13 +1125,13 @@ button:focus-visible {
 .qs-head h3 {
   margin: 0;
   font-family: var(--pixel);
-  font-size: 21px;
+  font-size: var(--t-xl);
   line-height: 1.1;
   text-wrap: balance;
 }
 
 .eyebrow {
-  font-size: 13px;
+  font-size: var(--t-m);
   color: var(--rust);
   font-style: italic;
 }
@@ -1066,11 +1151,11 @@ button:focus-visible {
 
 .estimate b {
   font-family: var(--pixel);
-  font-size: 20px;
+  font-size: var(--t-xl);
 }
 
 .estimate > span {
-  font-size: 13px;
+  font-size: var(--t-m);
   text-align: right;
 }
 
@@ -1109,7 +1194,7 @@ button:focus-visible {
   align-items: center;
   gap: 8px;
   font-family: var(--pixel);
-  font-size: 13px;
+  font-size: var(--t-m);
 }
 
 .cbar .v {
@@ -1154,7 +1239,7 @@ button:focus-visible {
 .qs-sub {
   margin: 4px 0 0;
   font-family: var(--pixel);
-  font-size: 15px;
+  font-size: var(--t-l);
   font-weight: 400;
 }
 
@@ -1211,17 +1296,17 @@ button:focus-visible {
 
 .pick-info b {
   font-family: var(--pixel);
-  font-size: 16px;
+  font-size: var(--t-l);
   font-weight: 400;
 }
 
 .pick-info .muted {
-  font-size: 13px;
+  font-size: var(--t-m);
 }
 
 .pick-skills {
   font-family: var(--pixel);
-  font-size: 12px;
+  font-size: var(--t-s);
   color: var(--rust);
 }
 
@@ -1240,13 +1325,13 @@ button:focus-visible {
 
 .qs-warn {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--t-m);
   color: var(--wine);
 }
 
 .qs-send {
   padding: 8px 10px;
-  font-size: 16px;
+  font-size: var(--t-l);
   white-space: normal;
 }
 
@@ -1262,12 +1347,12 @@ button:focus-visible {
 .security h3 {
   margin: 0;
   font-family: var(--pixel);
-  font-size: 18px;
+  font-size: var(--t-l);
 }
 
 .debt-num b {
   font-family: var(--pixel);
-  font-size: 26px;
+  font-size: var(--t-xl);
 }
 
 .bar {
@@ -1288,7 +1373,7 @@ button:focus-visible {
   flex-wrap: wrap;
   gap: 6px 10px;
   font-family: var(--pixel);
-  font-size: 13px;
+  font-size: var(--t-m);
   color: var(--text-soft);
 }
 
@@ -1326,11 +1411,11 @@ button:focus-visible {
 
 .facility-info b {
   font-family: var(--pixel);
-  font-size: 17px;
+  font-size: var(--t-l);
 }
 
 .next-level {
-  font-size: 13px;
+  font-size: var(--t-m);
   color: var(--text-good);
 }
 
@@ -1414,7 +1499,7 @@ button:focus-visible {
   display: grid;
   place-items: center;
   font-family: var(--pixel);
-  font-size: 12px;
+  font-size: var(--t-s);
   line-height: 1;
   color: var(--white);
   background: var(--red);
@@ -1428,7 +1513,7 @@ button:focus-visible {
 
 .endday {
   min-height: 44px;
-  font-size: 16px;
+  font-size: var(--t-l);
   padding: 2px 12px;
 }
 
@@ -1517,7 +1602,7 @@ button:focus-visible {
 .dawn-card h2 {
   margin: 0;
   font-family: var(--pixel);
-  font-size: 30px;
+  font-size: var(--t-xl);
   line-height: 1;
 }
 
@@ -1533,7 +1618,7 @@ button:focus-visible {
 .ev {
   position: relative;
   padding-left: 16px;
-  font-size: 15px;
+  font-size: var(--t-l);
   animation: fadein 0.3s steps(3) both;
 }
 
@@ -1595,7 +1680,7 @@ button:focus-visible {
   display: grid;
   place-items: center;
   font-family: var(--pixel);
-  font-size: 16px;
+  font-size: var(--t-l);
   color: var(--coral, #f6757a);
   background: var(--wine);
   border-radius: 50%;
@@ -1608,7 +1693,7 @@ button:focus-visible {
   position: static;
   width: 26px;
   height: 26px;
-  font-size: 13px;
+  font-size: var(--t-m);
   flex: none;
 }
 
@@ -1620,7 +1705,7 @@ button:focus-visible {
 .outcome {
   margin: 0;
   font-family: var(--pixel);
-  font-size: 26px;
+  font-size: var(--t-xl);
   line-height: 1;
 }
 
@@ -1639,7 +1724,7 @@ button:focus-visible {
 .letter-title {
   font-family: var(--pixel);
   font-weight: 400;
-  font-size: 16px;
+  font-size: var(--t-l);
 }
 
 .letter-party {
@@ -1653,7 +1738,7 @@ button:focus-visible {
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
+  font-size: var(--t-s);
 }
 
 .letter-hero.gone .portrait-frame {
@@ -1662,13 +1747,13 @@ button:focus-visible {
 
 .story p {
   margin: 0 0 8px;
-  font-size: 15px;
+  font-size: var(--t-l);
   line-height: 1.45;
 }
 
 .chip {
   font-family: var(--pixel);
-  font-size: 12px;
+  font-size: var(--t-s);
   padding: 1px 6px;
   color: var(--white);
   background: var(--slate);
@@ -1716,7 +1801,7 @@ button:focus-visible {
 .mail-info b {
   font-family: var(--pixel);
   font-weight: 400;
-  font-size: 15px;
+  font-size: var(--t-l);
 }
 
 .mail-side {
@@ -1728,7 +1813,7 @@ button:focus-visible {
 
 .outcome-pill {
   font-family: var(--pixel);
-  font-size: 12px;
+  font-size: var(--t-s);
   padding: 0 6px;
   color: var(--white);
   box-shadow: 0 0 0 2px var(--ink);
@@ -1772,7 +1857,7 @@ button:focus-visible {
 .away-info b {
   font-family: var(--pixel);
   font-weight: 400;
-  font-size: 15px;
+  font-size: var(--t-l);
 }
 
 .track {
@@ -1815,7 +1900,7 @@ button:focus-visible {
   gap: 8px;
   align-items: center;
   font-family: var(--pixel);
-  font-size: 13px;
+  font-size: var(--t-m);
 }
 
 .meter small {
@@ -1854,13 +1939,13 @@ button:focus-visible {
 }
 
 .attr small {
-  font-size: 12px;
+  font-size: var(--t-s);
   color: var(--rust);
 }
 
 .attr b {
   font-family: var(--pixel);
-  font-size: 22px;
+  font-size: var(--t-xl);
   font-weight: 400;
 }
 
@@ -1873,7 +1958,7 @@ button:focus-visible {
 .skill {
   display: flex;
   justify-content: space-between;
-  font-size: 14px;
+  font-size: var(--t-m);
   border-bottom: 1px dashed var(--tan);
 }
 
@@ -1893,13 +1978,13 @@ button:focus-visible {
   grid-template-columns: auto 1fr;
   gap: 8px;
   align-items: start;
-  font-size: 13px;
+  font-size: var(--t-m);
 }
 
 .hist {
   margin: 0;
   padding-left: 18px;
-  font-size: 13px;
+  font-size: var(--t-m);
   color: var(--rust);
 }
 
@@ -1922,7 +2007,7 @@ button:focus-visible {
 /* ---------- Encargos: detalles ---------- */
 .twist {
   padding: 6px 8px;
-  font-size: 14px;
+  font-size: var(--t-m);
   background: rgba(18, 78, 137, 0.15);
   box-shadow: 0 0 0 2px var(--sky);
 }
@@ -1933,7 +2018,7 @@ button:focus-visible {
 
 .note-new {
   font-family: var(--pixel);
-  font-size: 11px;
+  font-size: var(--t-s);
   padding: 0 4px;
   color: var(--white);
   background: var(--red);
@@ -1986,7 +2071,7 @@ button:focus-visible {
 }
 
 .fallen span {
-  font-size: 13px;
+  font-size: var(--t-m);
   font-style: italic;
   color: var(--rust);
 }
@@ -2019,7 +2104,7 @@ button:focus-visible {
 }
 .morale-note {
   margin: 2px 0 0;
-  font-size: 13px;
+  font-size: var(--t-m);
   line-height: 1.25;
 }
 .morale-note b {
@@ -2038,7 +2123,7 @@ button:focus-visible {
   flex-direction: column;
   gap: 6px;
   padding: 8px;
-  font-size: 14px;
+  font-size: var(--t-m);
   background: rgba(247, 118, 34, 0.14);
   box-shadow: 0 0 0 2px var(--orange);
 }
@@ -2054,7 +2139,7 @@ button:focus-visible {
 .perk small {
   grid-column: 1 / -1;
   font-family: var(--pixel);
-  font-size: 11px;
+  font-size: var(--t-s);
   color: var(--text-soft);
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -2064,7 +2149,7 @@ button:focus-visible {
   font-weight: 400;
 }
 .perk span {
-  font-size: 14px;
+  font-size: var(--t-m);
   line-height: 1.25;
 }
 .perks {
@@ -2074,7 +2159,7 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  font-size: 14px;
+  font-size: var(--t-m);
   line-height: 1.25;
   background: rgba(62, 137, 72, 0.12);
   box-shadow: 0 0 0 2px var(--leaf);
@@ -2103,7 +2188,7 @@ button:focus-visible {
 }
 .gear-slot > small {
   font-family: var(--pixel);
-  font-size: 11px;
+  font-size: var(--t-s);
   color: var(--text-soft);
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -2112,7 +2197,7 @@ button:focus-visible {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: var(--t-m);
   line-height: 1.25;
   text-align: left;
 }
@@ -2128,7 +2213,7 @@ button:focus-visible {
 .gear-item em {
   font-style: normal;
   font-family: var(--pixel);
-  font-size: 12px;
+  font-size: var(--t-s);
 }
 .gear-pick {
   padding: 4px 6px;
@@ -2169,7 +2254,7 @@ button:focus-visible {
   color: var(--text-soft);
 }
 .gear-item small {
-  font-size: 13px;
+  font-size: var(--t-m);
 }
 
 /* ---------- Splash del desarrollador ---------- */
@@ -2397,7 +2482,7 @@ button:focus-visible {
 .title-menu .btn {
   width: 100%;
   justify-content: center;
-  font-size: 17px;
+  font-size: var(--t-l);
   padding: 10px 14px;
 }
 @keyframes title-menu {
@@ -2411,7 +2496,7 @@ button:focus-visible {
   flex-direction: column;
   gap: 8px;
   padding: 10px;
-  font-size: 14px;
+  font-size: var(--t-m);
   color: var(--ink);
   background: var(--sand);
   box-shadow: 0 0 0 3px var(--ink);
@@ -2419,7 +2504,7 @@ button:focus-visible {
 .title-foot {
   position: absolute;
   bottom: 14px;
-  font-size: 13px;
+  font-size: var(--t-m);
   color: var(--fog);
   animation: title-menu 380ms ease-out 1100ms both;
 }
@@ -2431,7 +2516,7 @@ button:focus-visible {
   resize: vertical;
   padding: 6px;
   font:
-    12px/1.3 ui-monospace,
+    var(--t-s) / 1.3 ui-monospace,
     monospace;
   color: var(--ink);
   background: var(--sand);
@@ -2470,7 +2555,7 @@ button:focus-visible {
 }
 .uncle-note p {
   margin: 0;
-  font-size: 14.5px;
+  font-size: var(--t-m);
   line-height: 1.3;
 }
 .uncle-actions {
@@ -2484,7 +2569,7 @@ button:focus-visible {
   background: none;
   padding: 0;
   font: inherit;
-  font-size: 13px;
+  font-size: var(--t-m);
   color: var(--text-soft);
   text-decoration: underline;
   cursor: pointer;
@@ -2504,7 +2589,7 @@ button:focus-visible {
 .opening-lead {
   margin: -4px 0 6px;
   font-family: var(--pixel);
-  font-size: 18px;
+  font-size: var(--t-l);
   color: var(--text-soft);
 }
 .arrival {
@@ -2518,18 +2603,18 @@ button:focus-visible {
   flex-direction: column;
   align-items: center;
   padding: 4px;
-  font-size: 13px;
+  font-size: var(--t-m);
   background: rgba(148, 90, 60, 0.12);
   box-shadow: 0 0 0 2px var(--tan);
 }
 .arrival b {
   font-family: var(--pixel);
-  font-size: 20px;
+  font-size: var(--t-xl);
   color: var(--ink);
 }
 .opening-score {
   margin: 4px 0;
-  font-size: 15px;
+  font-size: var(--t-l);
 }
 .opening-score b {
   font-family: var(--pixel);
@@ -2543,10 +2628,10 @@ button:focus-visible {
 .feat b {
   font-family: var(--pixel);
   font-weight: 400;
-  font-size: 16px;
+  font-size: var(--t-l);
 }
 .feat small {
-  font-size: 13px;
+  font-size: var(--t-m);
   color: var(--text-soft);
 }
 .feat .track {
@@ -2574,7 +2659,7 @@ button:focus-visible {
 .records {
   display: grid;
   gap: 4px;
-  font-size: 14px;
+  font-size: var(--t-m);
 }
 .records b {
   font-family: var(--pixel);
@@ -2591,7 +2676,7 @@ button:focus-visible {
 }
 .libro-link b {
   font-family: var(--pixel);
-  font-size: 17px;
+  font-size: var(--t-l);
 }
 .libro-link:hover,
 .libro-link:focus-visible {
@@ -2609,7 +2694,7 @@ button:focus-visible {
   grid-column: 1 / -1;
 }
 .gremio-links .libro-link b {
-  font-size: 15px;
+  font-size: var(--t-l);
 }
 .facility-name {
   display: flex;
@@ -2618,19 +2703,6 @@ button:focus-visible {
   gap: 4px 8px;
 }
 /* Mejoras que ya se pueden pagar. */
-.tab-count {
-  display: inline-grid;
-  place-items: center;
-  min-width: 16px;
-  height: 16px;
-  margin-left: 6px;
-  padding: 0 3px;
-  font-size: 11px;
-  color: var(--white);
-  background: var(--red);
-  box-shadow: 0 0 0 1px var(--ink);
-}
-
 /* ---------- Asaltos ---------- */
 .raid-banner {
   position: absolute;
@@ -2652,14 +2724,14 @@ button:focus-visible {
 }
 .raid-banner b {
   font-weight: 400;
-  font-size: 16px;
+  font-size: var(--t-l);
 }
 .guard-box {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 6px 8px;
-  font-size: 13.5px;
+  font-size: var(--t-m);
   line-height: 1.25;
   background: rgba(58, 68, 102, 0.1);
   box-shadow: 0 0 0 2px var(--steel);
@@ -2767,7 +2839,7 @@ button:focus-visible {
   position: absolute;
   transform: translate(-50%, -50%) scale(var(--inv, 1));
   font-family: var(--pixel);
-  font-size: 10px;
+  font-size: var(--t-s);
   font-style: italic;
   letter-spacing: 0.08em;
   color: var(--wine);
@@ -2778,7 +2850,7 @@ button:focus-visible {
 .map-place small,
 .map-tavern small {
   margin-top: 1px;
-  font-size: 9px;
+  font-size: var(--t-s);
   line-height: 1;
   color: var(--bark);
   white-space: nowrap;
@@ -2814,7 +2886,7 @@ button:focus-visible {
   padding: 0;
   border: 0;
   font-family: var(--pixel);
-  font-size: 11px;
+  font-size: var(--t-s);
   line-height: 1;
   color: var(--sand);
   cursor: pointer;
@@ -2867,7 +2939,7 @@ button:focus-visible {
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 12.5px;
+  font-size: var(--t-s);
   color: var(--text-soft);
 }
 .map-legend li {
@@ -2877,7 +2949,7 @@ button:focus-visible {
 }
 .map-hint {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--t-s);
   color: var(--text-soft);
 }
 .map-legend span {
@@ -2886,7 +2958,7 @@ button:focus-visible {
   width: 13px;
   height: 13px;
   font-family: var(--pixel);
-  font-size: 10px;
+  font-size: var(--t-s);
   color: var(--sand);
 }
 .lg-pin {
@@ -2919,7 +2991,7 @@ button:focus-visible {
   background: var(--sand);
   color: var(--ink);
   box-shadow: inset 0 0 0 1px var(--wine);
-  font-size: 9px;
+  font-size: var(--t-s);
 }
 .lg-step.now {
   background: var(--red);
@@ -2954,7 +3026,7 @@ button:focus-visible {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-family: var(--pixel);
-  font-size: 11px;
+  font-size: var(--t-s);
   color: var(--wine);
 }
 /* Hilo de una historia: tramos hechos continuos con flecha; el que lleva al paso
@@ -3010,7 +3082,7 @@ button:focus-visible {
   z-index: 1;
   width: 15px;
   height: 15px;
-  font-size: 11px;
+  font-size: var(--t-s);
   color: var(--white);
   background: var(--red);
   box-shadow:
@@ -3038,14 +3110,14 @@ button:focus-visible {
   display: flex;
   gap: 6px;
   align-items: flex-start;
-  font-size: 13.5px;
+  font-size: var(--t-m);
 }
 .mc-steps li > span {
   display: flex;
   flex-direction: column;
 }
 .mc-steps small {
-  font-size: 11.5px;
+  font-size: var(--t-s);
   color: var(--text-soft);
 }
 .mc-steps i {
@@ -3058,7 +3130,7 @@ button:focus-visible {
   border-radius: 50%;
   font-style: normal;
   font-family: var(--pixel);
-  font-size: 10px;
+  font-size: var(--t-s);
   background: var(--sand);
   box-shadow: inset 0 0 0 1px var(--wine);
 }
@@ -3089,7 +3161,7 @@ button:focus-visible {
 }
 .event-text {
   margin: 4px 0 10px;
-  font-size: 16px;
+  font-size: var(--t-l);
   line-height: 1.35;
 }
 .event-options {
@@ -3105,7 +3177,7 @@ button:focus-visible {
 }
 .event-options .btn small {
   font-family: var(--body);
-  font-size: 12.5px;
+  font-size: var(--t-s);
   opacity: 0.85;
 }
 .map-threat {
@@ -3145,7 +3217,7 @@ button:focus-visible {
 }
 .tav-name input {
   font-family: var(--pixel);
-  font-size: 17px;
+  font-size: var(--t-l);
   color: var(--ink);
   background: var(--sand);
   border: 0;
@@ -3176,7 +3248,7 @@ button:focus-visible {
 .tav-swatch span {
   position: absolute;
   inset: auto 0 2px;
-  font-size: 10px;
+  font-size: var(--t-s);
   color: var(--sand);
   text-shadow: 1px 1px 0 var(--ink);
 }
@@ -3192,7 +3264,7 @@ button:focus-visible {
 }
 .tav-symbols .btn {
   padding: 4px 10px;
-  font-size: 14px;
+  font-size: var(--t-m);
 }
 .tav-option {
   display: flex;
@@ -3390,13 +3462,15 @@ button:focus-visible {
   height: 22px;
   accent-color: var(--orange);
 }
-/* Letra grande: los paneles y fichas se agrandan un poco. */
-.text-grande .panel-body,
-.text-grande .herocard .qs-scroll,
+/* Letra grande: en paneles y fichas suben los cuatro tamaños (las barras se quedan igual). */
+.text-grande .panel,
+.text-grande .herocard,
 .text-grande .dawn-card,
-.text-grande .note,
 .text-grande .eventcard {
-  zoom: 1.14;
+  --t-s: 13px;
+  --t-m: 16px;
+  --t-l: 18px;
+  --t-xl: 24px;
 }
 /* Menos movimiento, elegido en Ajustes (como prefers-reduced-motion). */
 .calma *,
@@ -3444,11 +3518,7 @@ button:focus-visible {
   }
   .tab {
     justify-content: center;
-    font-size: 12px;
-  }
-  .panel {
-    max-height: calc(100% - 6px);
-    width: min(100%, 760px);
+    font-size: var(--t-s);
   }
   .herocard {
     max-height: calc(100% - 8px);
@@ -3480,11 +3550,6 @@ textarea:focus-visible,
 }
 
 /* ---------- Arcón y trofeos ---------- */
-.arcon-tabs {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
 .arcon-item {
   display: flex;
   flex-direction: column;
@@ -3510,7 +3575,7 @@ textarea:focus-visible,
   border: 0;
   background: none;
   font: inherit;
-  font-size: 14px;
+  font-size: var(--t-m);
   color: var(--text-soft);
   text-decoration: underline;
   text-align: left;
@@ -3551,7 +3616,7 @@ textarea:focus-visible,
   align-items: center;
   gap: 3px;
   font-family: var(--pixel);
-  font-size: 13px;
+  font-size: var(--t-m);
   color: var(--plum);
 }
 .mc-stat[class*='danger-'] {
@@ -3586,7 +3651,7 @@ textarea:focus-visible,
   height: 13px;
   font-style: normal;
   font-family: var(--pixel);
-  font-size: 10px;
+  font-size: var(--t-s);
   color: var(--sand);
   background: var(--plum);
 }
@@ -3601,7 +3666,7 @@ textarea:focus-visible,
 }
 .map-card-title {
   font-family: var(--pixel);
-  font-size: 15px;
+  font-size: var(--t-l);
   padding-right: 22px;
 }
 .map-card-x {
@@ -3638,10 +3703,10 @@ textarea:focus-visible,
   background: var(--gold);
 }
 .map-card-quest b {
-  font-size: 14px;
+  font-size: var(--t-m);
 }
 .map-card-quest span {
-  font-size: 12.5px;
+  font-size: var(--t-s);
   color: var(--text-soft);
 }
 .map-card-heroes {
@@ -3687,7 +3752,7 @@ textarea:focus-visible,
   display: block;
   margin: 2px 0 6px;
   font-family: var(--pixel);
-  font-size: 20px;
+  font-size: var(--t-xl);
   font-weight: 400;
   color: var(--gold);
 }
@@ -3728,7 +3793,7 @@ textarea:focus-visible,
   justify-content: center;
   gap: 4px 12px;
   margin: 0;
-  font-size: 14px;
+  font-size: var(--t-m);
   color: var(--mist);
 }
 .bossfight-party .fate-herido {
@@ -3742,7 +3807,7 @@ textarea:focus-visible,
 .bossfight-result {
   margin: 0;
   font-family: var(--pixel);
-  font-size: 18px;
+  font-size: var(--t-l);
 }
 .bossfight-result.won {
   color: var(--lemon);
@@ -3756,7 +3821,7 @@ textarea:focus-visible,
   }
   .bossfight-name {
     margin: 0 0 4px;
-    font-size: 16px;
+    font-size: var(--t-l);
   }
   .bossfight-foot {
     flex-direction: row;
@@ -3789,7 +3854,7 @@ textarea:focus-visible,
 .tester-note {
   margin: 0 0 8px;
   padding: 4px 8px;
-  font-size: 13.5px;
+  font-size: var(--t-m);
   color: var(--text-good);
   background: rgba(62, 137, 72, 0.12);
   box-shadow: 0 0 0 2px var(--leaf);
@@ -3806,7 +3871,7 @@ textarea:focus-visible,
 .worksbar-text {
   padding: 0 6px;
   font-family: var(--pixel);
-  font-size: 15px;
+  font-size: var(--t-l);
   color: var(--white);
 }
 
@@ -3854,7 +3919,7 @@ textarea:focus-visible,
 
 .obras-room b {
   font-family: var(--pixel);
-  font-size: 15px;
+  font-size: var(--t-l);
 }
 
 .obras-room.is-off {
@@ -3875,7 +3940,7 @@ textarea:focus-visible,
 .obras-cost {
   margin-top: auto;
   font-family: var(--pixel);
-  font-size: 14px;
+  font-size: var(--t-m);
   color: var(--rust);
 }
 
@@ -3897,13 +3962,13 @@ textarea:focus-visible,
 
 .clock-name {
   font-family: var(--pixel);
-  font-size: 14px;
+  font-size: var(--t-m);
   line-height: 1;
 }
 
 .clock-pace {
   font-family: var(--pixel);
-  font-size: 13px;
+  font-size: var(--t-m);
   line-height: 1;
   color: var(--gold);
   justify-self: end;
@@ -3941,9 +4006,6 @@ textarea:focus-visible,
 }
 
 /* ---------- Trabajadores ---------- */
-.segmented-3 {
-  grid-template-columns: 1fr 1fr 1fr;
-}
 .worker-row {
   cursor: default;
 }
@@ -3951,7 +4013,7 @@ textarea:focus-visible,
   justify-self: start;
   max-width: 100%;
   font-family: var(--pixel);
-  font-size: 14px;
+  font-size: var(--t-m);
   padding: 3px 6px;
   color: var(--ink);
   background: var(--tan);
@@ -3972,16 +4034,16 @@ textarea:focus-visible,
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  font-size: 14px;
+  font-size: var(--t-m);
 }
 .crew-chip .btn {
   padding: 2px 8px;
-  font-size: 13px;
+  font-size: var(--t-m);
 }
 .worksbar-issue {
   display: block;
   color: var(--lemon);
-  font-size: 12px;
+  font-size: var(--t-s);
 }
 
 /* ---------- Cinta del modo obras ---------- */
@@ -4016,7 +4078,7 @@ textarea:focus-visible,
   flex: 1 0 auto;
   padding: 4px 8px;
   font-family: var(--pixel);
-  font-size: 13px;
+  font-size: var(--t-m);
   color: var(--tan);
   background: transparent;
   box-shadow: inset 0 -2px 0 rgba(228, 166, 114, 0.35);
@@ -4053,11 +4115,11 @@ textarea:focus-visible,
   margin-bottom: 1px;
 }
 .ribbon-room b {
-  font-size: 13px;
+  font-size: var(--t-m);
   white-space: nowrap;
 }
 .ribbon-room span {
-  font-size: 12px;
+  font-size: var(--t-s);
 }
 .ribbon-room:disabled {
   opacity: 0.45;
@@ -4068,7 +4130,7 @@ textarea:focus-visible,
   gap: 6px;
 }
 .ribbon-text {
-  font-size: 13px;
+  font-size: var(--t-m);
 }
 .ribbon .btn {
   min-height: 34px;
@@ -4131,7 +4193,7 @@ textarea:focus-visible,
 }
 .room-menu-name {
   color: var(--plum);
-  font-size: 13px;
+  font-size: var(--t-m);
 }
 .room-menu-row {
   display: flex;
@@ -4150,7 +4212,7 @@ textarea:focus-visible,
   background: var(--bark);
   border: 2px solid #181425;
   box-shadow: inset 0 2px 0 var(--rust);
-  font-size: 11px;
+  font-size: var(--t-s);
   cursor: pointer;
 }
 .room-menu-btn:active {

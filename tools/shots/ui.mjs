@@ -6,8 +6,11 @@
  *   node tools/shots/ui.mjs <carpeta> [ancho] [alto] [puerto]
  *
  * Deja un PNG por pantalla y `medidas.json`. Prepara la partida con `window.__game` (#debug).
+ * Para comparar antes y después con la misma partida, pasa en `PARTIDA` un JSON guardado
+ * (por ejemplo `window.__game.get()` de un día 1): se carga como partida guardada y no sale
+ * el amanecer del primer día.
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { chromium } from 'playwright';
 
 const out = process.argv[2] ?? 'shots-ui';
@@ -30,12 +33,14 @@ const page = await browser.newPage({
   hasTouch: vp.width < 900,
 });
 page.on('pageerror', (e) => console.log('PAGEERROR', e.stack));
-await page.addInitScript(() => {
+const saved = process.env.PARTIDA ? readFileSync(process.env.PARTIDA, 'utf8') : null;
+await page.addInitScript((game) => {
   localStorage.setItem(
     'jarro:ajustes',
     JSON.stringify({ music: 0, sfx: 0, ambient: 0, speed: 2, pace: 1, tester: true }),
   );
-});
+  if (game) localStorage.setItem('jarro:partida', game);
+}, saved);
 
 const metrics = {};
 const wait = (ms = 450) => page.waitForTimeout(ms);
@@ -107,6 +112,8 @@ const click = async (locator) => {
   await wait(350);
   return true;
 };
+/** Pestañas de los paneles (las de antes y las de Tabs.tsx). */
+const TABS = ':is(.segmented, .arcon-tabs, .segs)';
 const tab = (name) => click(`.tab:has-text("${name}")`);
 /** Toca una sala de la escena por su nombre. */
 const tapRoom = async (prefix) => {
@@ -172,7 +179,8 @@ await page.evaluate(() => {
   const free = s.heroes.filter((h) => h.status === 'ok');
   const q = s.quests[0];
   if (q && free[0]) g.dispatch({ type: 'send', questId: q.id, heroIds: [free[0].id] });
-  g.set({ ...g.get(), tips: ['*'] });
+  // Sin consejos ni eventos pendientes, que taparían los paneles.
+  g.set({ ...g.get(), tips: ['*'], event: null });
 });
 await wait(800);
 await shot('06-casa-dia4');
@@ -188,20 +196,20 @@ await esc(2);
 
 await tab('Héroes');
 await shot('20-heroes');
-await click('.segmented button:nth-child(2)');
+await click(`${TABS} button:nth-child(2)`);
 await shot('21-heroes-barra');
-await click('.segmented button:nth-child(3)');
+await click(`${TABS} button:nth-child(3)`);
 await shot('22-heroes-trabajo');
-await click('.segmented button:nth-child(1)');
+await click(`${TABS} button:nth-child(1)`);
 await click('.hero-row');
 await shot('23-ficha-heroe');
 await esc(2);
 
 await tab('Gremio');
 await shot('30-gremio');
-await click('.arcon-tabs button:nth-child(2)');
+await click(`${TABS} button:nth-child(2)`);
 await shot('31-gremio-mejoras');
-await click('.arcon-tabs button:nth-child(1)');
+await click(`${TABS} button:nth-child(1)`);
 await click('button:has-text("Tu taberna")');
 await shot('32-taberna');
 await esc();

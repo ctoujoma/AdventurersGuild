@@ -8,6 +8,7 @@ import type { Facilities, GameState } from '../../core/model';
 import { FACILITY_INFO } from '../../data/labels';
 import { YARD } from '../../data/rooms';
 import { Icon } from '../icons';
+import { Tabs } from '../Tabs';
 
 interface Props {
   game: GameState;
@@ -95,30 +96,17 @@ export function GremioPanel({
 
   return (
     <>
-      <div class="arcon-tabs" role="tablist" aria-label="Gremio">
-        <button
-          role="tab"
-          aria-selected={tab === 'gremio'}
-          class={`btn ${tab === 'gremio' ? 'btn-gold' : 'btn-wood'}`}
-          onClick={() => setTab('gremio')}
-        >
-          Gremio
-        </button>
-        <button
-          role="tab"
-          aria-selected={tab === 'mejoras'}
-          class={`btn ${tab === 'mejoras' ? 'btn-gold' : 'btn-wood'}`}
-          onClick={() => setTab('mejoras')}
-        >
-          {obras ? (
-            'Obras'
-          ) : (
-            <>
-              Mejoras{affordable.length > 0 && <span class="tab-count">{affordable.length}</span>}
-            </>
-          )}
-        </button>
-      </div>
+      <Tabs
+        label="Gremio"
+        value={tab}
+        onChange={setTab}
+        tabs={[
+          { id: 'gremio', label: 'Gremio' },
+          obras
+            ? { id: 'mejoras', label: 'Obras' }
+            : { id: 'mejoras', label: 'Mejoras', alert: affordable.length },
+        ]}
+      />
 
       {tab === 'mejoras' && obras && (
         <>

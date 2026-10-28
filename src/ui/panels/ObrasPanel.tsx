@@ -6,6 +6,7 @@ import { LOCKED, stairCost, worksOpen } from '../../core/rooms';
 import { ROOMS, type RoomType } from '../../data/rooms';
 import { targetsFor, type Pick } from '../../world/rooms/works';
 import { Icon } from '../icons';
+import { Tabs } from '../Tabs';
 
 interface Props {
   game: GameState;
@@ -66,19 +67,16 @@ export function ObrasPanel({ game, planning, onPick, onWork, onRoom, onPlan }: P
         </button>
       )}
       {open && (
-        <div class="segmented segmented-3" role="tablist">
-          {(
-            [
-              ['construir', 'Construir'],
-              ['salas', 'Salas'],
-              ['sitio', 'Más sitio'],
-            ] as const
-          ).map(([k, label]) => (
-            <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}>
-              {label}
-            </button>
-          ))}
-        </div>
+        <Tabs
+          label="Obras"
+          value={tab}
+          onChange={setTab}
+          tabs={[
+            { id: 'construir', label: 'Construir' },
+            { id: 'salas', label: 'Salas' },
+            { id: 'sitio', label: 'Más sitio' },
+          ]}
+        />
       )}
 
       {tab === 'salas' && (

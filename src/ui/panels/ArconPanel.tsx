@@ -4,6 +4,7 @@ import { TROPHY_APPEAL, TROPHY_SLOTS } from '../../core/balance';
 import type { GameState, Hero, Item } from '../../core/model';
 import { RARITY_NAMES, itemEffect } from '../../data/items';
 import { BufferImage } from '../BufferImage';
+import { Tabs } from '../Tabs';
 
 export type ArconTab = 'equipo' | 'tesoros' | 'trofeos';
 
@@ -40,27 +41,19 @@ export function ArconPanel({
   const worn = game.heroes.filter((h) => h.item && h.status !== 'muerto');
   const takers = game.heroes.filter(inGuild);
   const [giving, setGiving] = useState<string | null>(null);
-  const TABS: [ArconTab, string, number][] = [
-    ['equipo', 'Equipo', stock.length + worn.length],
-    ['tesoros', 'Tesoros', treasures.length],
-    ['trofeos', 'Trofeos', game.trophies.length],
-  ];
 
   return (
     <>
-      <div class="arcon-tabs" role="tablist" aria-label="Arcón">
-        {TABS.map(([id, label, n]) => (
-          <button
-            key={id}
-            role="tab"
-            aria-selected={tab === id}
-            class={`btn ${tab === id ? 'btn-gold' : 'btn-wood'}`}
-            onClick={() => onTab(id)}
-          >
-            {label} · {n}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        label="Arcón"
+        value={tab}
+        onChange={onTab}
+        tabs={[
+          { id: 'equipo', label: 'Equipo', count: stock.length + worn.length },
+          { id: 'tesoros', label: 'Tesoros', count: treasures.length },
+          { id: 'trofeos', label: 'Trofeos', count: game.trophies.length },
+        ]}
+      />
 
       {tab === 'equipo' && (
         <>
