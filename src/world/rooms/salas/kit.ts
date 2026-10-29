@@ -35,6 +35,8 @@ export interface Thing {
   /** Colgado del techo (y se cuenta desde el techo hacia abajo hasta su parte de arriba). */
   hang?: boolean;
   light?: Glow;
+  /** Con volumen: de su silueta salen los lados y la parte de arriba hasta la pared (ver `volume.ts`). */
+  box?: boolean;
 }
 
 /** Filas de la textura del suelo (va a media resolución en profundidad). */
@@ -42,6 +44,8 @@ export const FLOOR_D = DEPTH / 2;
 
 /** Contra la pared del fondo, a media sala y delante. */
 export const WALL = DEPTH - 6;
+/** Lo grande con volumen (hogares, fraguas): más adelante que la pared, con sus lados hasta ella. */
+export const SOLID = DEPTH - 16;
 export const MID = DEPTH / 2;
 export const FRONT = 12;
 
@@ -275,6 +279,12 @@ export const at = (img: PixelBuffer, x: number, z: number, y = 0, light?: Glow):
   z,
   y,
   light,
+});
+
+/** Igual que `at`, con volumen hasta la pared (para hogares y fraguas, a `SOLID`). */
+export const solid = (img: PixelBuffer, x: number, y = 0, light?: Glow): Thing => ({
+  ...at(img, x, SOLID, y, light),
+  box: true,
 });
 
 /** Algo colgado del techo, con su parte de arriba a `y` del techo. */

@@ -19,6 +19,7 @@ import {
   cellsOf,
   fire,
   row,
+  solid,
   stretchesOf,
   type RoomArt,
   type Thing,
@@ -357,9 +358,7 @@ function things(room: Room, w: number): Thing[] {
   const t: Thing[] = [];
   for (const s of stretchesOf(room, w)) {
     if (s.kind === 'left') {
-      t.push(
-        at(forge(lvl, true), s.x0 + FORGE_X, WALL + 2, 0, fire(28, 80 + lvl * 15, FORGE, true)),
-      );
+      t.push(solid(forge(lvl, true), s.x0 + FORGE_X, 0, fire(28, 80 + lvl * 15, FORGE, true)));
       t.push(at(anvil(lvl), s.x0 + ANVIL_X, WALL));
     } else if (s.kind === 'mid' && s.i === 1)
       t.push(
@@ -385,7 +384,7 @@ function things(room: Room, w: number): Thing[] {
 
 /** Por reparar: la fragua fría, el yunque oxidado y unas cajas. */
 function ruin(room: Room, w: number): Thing[] {
-  const t: Thing[] = [at(forge(1, false), FORGE_X, WALL + 2), at(anvil(1, true), ANVIL_X, WALL)];
+  const t: Thing[] = [solid(forge(1, false), FORGE_X), at(anvil(1, true), ANVIL_X, WALL)];
   for (const c of cellsOf(room, w)) t.push(at(Prop.crate(), c.win, WALL));
   for (const s of stretchesOf(room, w))
     if (s.kind === 'mid') t.push(at(smelter(false), (s.x0 + s.x1) / 2, WALL + 2));

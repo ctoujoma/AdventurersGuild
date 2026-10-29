@@ -80,6 +80,11 @@ Notas que sirven para seguir:
   puerta de la calle cambia con el nivel (por dentro en `sideTex`, por fuera en
   `Prop.doorLeaf`).
 - Las piezas finas (astas de lanza) se pintan sin contorno: `Prop.piece` las engorda.
+- **Volumen y profundidad:** lo grande y macizo (hogares, fraguas, chimeneas) va con `solid(...)`
+  en `kit.ts`: a `SOLID` (16 por delante de la pared) y con `box`, que saca de su silueta los
+  lados y la parte de arriba hasta la pared (`volume.ts`; solo los tramos rectos, los bordes
+  inclinados no llevan lado). Las camas van a `BED_Z` (`camas.ts`), algo separadas de la pared.
+  Lo que no es macizo (literas, estanterías con huecos) no debe llevar `box`.
 - Nunca se borra un píxel de la pared del fondo (`clear`): queda transparente y se ve el cielo.
 - Lo colgado delante (a media sala) se mueve con la perspectiva respecto a la pared: cerca de
   una ventana acaba tapándola; mejor de pie contra la pared.

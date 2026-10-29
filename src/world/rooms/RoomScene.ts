@@ -12,6 +12,7 @@ import {
   Group,
   Mesh,
   NearestFilter,
+  Object3D,
   OrthographicCamera,
   PerspectiveCamera,
   PlaneGeometry,
@@ -32,6 +33,7 @@ import type { Point, SceneCallbacks, SceneModel } from '../scene';
 import { LANTERN, dummy, furnish, gearRoom, type Glow, type RGB } from './furniture';
 import { towerLampY, watchtower } from './salas/torre';
 import { Crowd } from './crowd';
+import { faces } from './volume';
 import { RaidShow } from './raid';
 import { NO_LOOK, type SalonLook } from './salon';
 import { FEW_LIGHTS, Look, MAX_LIGHTS, mesh, quad, sharedUniforms, type Corners } from './gl';
@@ -124,7 +126,7 @@ const at = (x: number, y: number, depth: number) => new Vector3(x, GROUND - y, -
 
 /** Un mueble anclado: su malla, su esquina de arriba a la izquierda, su escala y su pared. */
 interface Pin {
-  mesh: Mesh;
+  mesh: Object3D;
   x: number;
   y: number;
   k: number;
@@ -973,7 +975,10 @@ export class RoomScene {
       const h = th.img.h / k;
       const x = r.x + th.x;
       const bottom = th.hang ? ceil3 - h - th.y : floor3 + th.y;
-      this.figure(this.world, th.img, x, GROUND - bottom, th.z, ambient, sun, { r, back });
+      this.figure(this.world, th.img, x, GROUND - bottom, th.z, ambient, sun, {
+        wall: { r, back },
+        box: th.box,
+      });
       if (th.light) this.addLight(th.light, x, bottom, th.z, zone, sun < 0.2);
     }
     if (room.works) {
@@ -1215,8 +1220,10 @@ export class RoomScene {
     }
   }
 
-  /** Figura plana a `depth`, al tamaño de su dibujo en pantalla; (x, base) del mundo 2D. */
-  /** Figura plana a `depth`, del tamaño de su dibujo; con `wall`, anclada a esa pared (`pin`). */
+  /**
+   * Figura plana a `depth`, del tamaño de su dibujo; (x, base) del mundo 2D. Con `wall`, anclada
+   * a esa pared (`pin`); con `box`, con volumen hasta ella (`volume`).
+   */
   private figure(
     g: Group,
     img: PixelBuffer,
@@ -1225,7 +1232,7 @@ export class RoomScene {
     depth: number,
     ambient: Tint,
     sun: number,
-    wall?: { r: Rect; back: PixelBuffer },
+    o: { wall?: { r: Rect; back: PixelBuffer }; box?: boolean } = {},
   ): void {
     const k = scaleAt(depth);
     const w = img.w / k;
@@ -1240,7 +1247,14 @@ export class RoomScene {
       quad(corners, this.look),
       this.look.surface(img, corners, { ambient, sun, wrap: 0.6, dither: 0.03 }),
     );
-    g.add(m);
+    // Con volumen, la cara y sus lados van juntos (y se anclan juntos).
+    const obj = o.box ? new Group() : m;
+    if (o.box) {
+      obj.add(m);
+      this.volume(obj as Group, img, x - w / 2, base - h, depth, ambient, sun);
+    }
+    g.add(obj);
+    const wall = o.wall;
     if (!wall) return;
     // El ancla: la junta de téxeles de la pared que cae junto al mueble (vista con la sala en el
     // centro). Los téxeles de la pared no miden justo un píxel (su ancho se redondea), así que
@@ -1254,7 +1268,57 @@ export class RoomScene {
     const yt = base - h;
     const wx = r.x + Math.round((ex + ((xl - ex) * k) / BACK - r.x) / tw) * tw;
     const wy = r.y + Math.round((ey + ((yt - ey) * k) / BACK - r.y) / th) * th;
-    this.pins.push({ mesh: m, x: xl, y: yt, k, wx, wy });
+    this.pins.push({ mesh: obj, x: xl, y: yt, k, wx, wy });
+  }
+
+  /**
+   * Los lados y la parte de arriba de una figura con volumen: salen de su silueta (`faces`) y van
+   * de su cara hasta la pared del fondo, como una caja. La perspectiva hace que al mover la
+   * cámara se le vea el costado.
+   */
+  private volume(
+    g: Group,
+    img: PixelBuffer,
+    left: number,
+    top: number,
+    depth: number,
+    ambient: Tint,
+    sun: number,
+  ): void {
+    const k = scaleAt(depth);
+    const back = DEPTH - 0.5;
+    // A lo hondo, un téxel cada dos de mundo (se ve muy de lado: no hace falta más).
+    const n = Math.max(2, Math.round((back - depth) / 2));
+    const X = (px: number) => left + px / k;
+    const Y = (py: number) => top + py / k;
+    const opts = { ambient, sun, wrap: 0.6, dither: 0.03 };
+    for (const f of faces(img)) {
+      const len = f.to - f.from;
+      if (f.side === 'top') {
+        const tex = new PixelBuffer(len, n);
+        for (let i = 0; i < len; i++) for (let j = 0; j < n; j++) tex.set(i, j, f.colors[i]!);
+        const y = Y(f.at);
+        const [x0, x1] = [X(f.from), X(f.to)];
+        this.plane(
+          g,
+          tex,
+          [at(x0, y, depth), at(x1, y, depth), at(x1, y, back), at(x0, y, back)],
+          opts,
+        );
+        continue;
+      }
+      const tex = new PixelBuffer(n, len);
+      for (let j = 0; j < len; j++) for (let i = 0; i < n; i++) tex.set(i, j, f.colors[j]!);
+      const x = X(f.at);
+      const [y0, y1] = [Y(f.from), Y(f.to)];
+      // Cada cara mira hacia fuera (las de detrás no se pintan): la izquierda, del fondo hacia
+      // delante; la derecha, de delante hacia el fondo.
+      const corners: Corners =
+        f.side === 'left'
+          ? [at(x, y1, back), at(x, y1, depth), at(x, y0, depth), at(x, y0, back)]
+          : [at(x, y1, depth), at(x, y1, back), at(x, y0, back), at(x, y0, depth)];
+      this.plane(g, tex, corners, opts);
+    }
   }
 
   /**

@@ -376,9 +376,12 @@ export function stage(): PixelBuffer {
  * La chimenea del salón: la de siempre con el tiro más alto y, encima de la repisa, el escudo del
  * gremio entre dos espadas (desde el nivel 2) y lo que se va juntando en la repisa.
  */
-/** La chimenea: a cuánto de la pared de la derecha va su centro y a qué fondo. */
+/**
+ * La chimenea: a cuánto de la pared de la derecha va su centro y a qué fondo (separada de la
+ * pared, con volumen hasta ella: ver `volume.ts`).
+ */
 export const HEARTH_RIGHT = 40;
-export const HEARTH_Z = DEPTH - 4;
+export const HEARTH_Z = DEPTH - 16;
 
 /**
  * Dónde empiezan la chimenea y su tiro vistos en la pared del fondo (de `bw` de ancho), para no

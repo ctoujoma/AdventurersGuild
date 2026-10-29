@@ -27,6 +27,7 @@ import {
   cellsOf,
   fire,
   lampOver,
+  solid,
   stretchesOf,
   wallLight,
   type Bed,
@@ -43,6 +44,8 @@ type Style = 'tropa' | 'servicio' | 'veterano';
 const ROWS = [6, 26, 46] as const;
 /** Alto de una litera de dos pisos (a la que se refieren las filas de `Bed.top`). */
 const BUNK_H = 40;
+/** Las camas, algo separadas de la pared: así se nota la profundidad al mover la cámara. */
+const BED_Z = WALL - 6;
 
 // ---------- Dónde va cada cama ----------
 
@@ -54,8 +57,8 @@ function perCell(room: Room): { n: number; tiers: 1 | 2 | 3 } {
   return { n: lvl >= 2 ? 2 : 1, tiers: 2 };
 }
 
-/** Ancho de una litera (o un jergón) contra la pared, en el mundo. */
-const BUNK_W = 26 / scaleAt(WALL);
+/** Ancho de una litera (o un jergón), en el mundo. */
+const BUNK_W = 26 / scaleAt(BED_Z);
 
 /**
  * Dónde va cada cosa: en el tramo de la izquierda y en cada uno de en medio, las literas de un
@@ -93,12 +96,12 @@ export function bedsOf(room: Room, w: number): Bed[] {
   // La manta del que duerme: la de los veteranos es la mejor y la del servicio, siempre parda.
   const level = quiltOf(room);
   return plan(room, w).bunks.flatMap((x): Bed[] => {
-    if (tiers === 1) return [{ kind: 'jergon', x, z: WALL, top: 0, level }];
+    if (tiers === 1) return [{ kind: 'jergon', x, z: BED_Z, top: 0, level }];
     const h = tiers === 3 ? 60 : BUNK_H;
     return ROWS.slice(0, tiers).map((row) => ({
       kind: 'litera',
       x,
-      z: WALL,
+      z: BED_Z,
       top: row - (h - BUNK_H),
       level,
     }));
@@ -549,15 +552,16 @@ function floor(b: PixelBuffer, room: Room): void {
 }
 
 /** El mueble propio de cada tramo de en medio (el primero y el segundo). */
-function feature(style: Style, k: number, lvl: number): { img: PixelBuffer; light?: Glow } {
-  if (style === 'veterano')
-    return k === 1
-      ? { img: weaponStand() }
-      : { img: smallHearth(style), light: fire(6, 60, FIRE, false) };
+function feature(
+  style: Style,
+  k: number,
+  lvl: number,
+): { img: PixelBuffer; light?: Glow; box?: boolean } {
+  // La chimenea, con volumen (ver `solid`).
+  const hearth = { img: smallHearth(style), light: fire(6, 60, FIRE, false), box: true };
+  if (style === 'veterano') return k === 1 ? { img: weaponStand() } : hearth;
   if (style === 'servicio') return k === 1 ? { img: wardrobe(lvl, style) } : { img: washstand() };
-  return k === 1
-    ? { img: wardrobe(lvl, style) }
-    : { img: smallHearth(style), light: fire(6, 60, FIRE, false) };
+  return k === 1 ? { img: wardrobe(lvl, style) } : hearth;
 }
 
 /** Lo de debajo de cada ventana (bajo), según cuál sea. */
@@ -582,10 +586,10 @@ function things(room: Room, w: number): Thing[] {
   const { bunks, features } = plan(room, w);
   const t: Thing[] = [lampOver(cells, w, lvl)];
   for (const x of bunks)
-    t.push(at(tiers === 1 ? mat() : bunk(quiltOf(room), tiers === 3 ? 3 : 2, style), x, WALL));
+    t.push(at(tiers === 1 ? mat() : bunk(quiltOf(room), tiers === 3 ? 3 : 2, style), x, BED_Z));
   for (const f of features) {
-    const { img, light } = feature(style, f.k, lvl);
-    t.push(at(img, f.x, WALL, 0, light));
+    const { img, light, box } = feature(style, f.k, lvl);
+    t.push(box ? solid(img, f.x, 0, light) : at(img, f.x, WALL, 0, light));
   }
   cells.forEach((c, j) => t.push(at(underWindow(style, j, room), c.win, WALL)));
   // En el tramo de la derecha: la mesilla con su vela (o la escoba del servicio).
