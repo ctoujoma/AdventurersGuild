@@ -55,3 +55,24 @@ export function frustum(v: View, near: number) {
  * mismo que su dibujo (sin que la perspectiva le coma o le duplique píxeles).
  */
 export const nativeSize = (px: number, depth: number) => px / scaleAt(depth);
+
+/**
+ * Lo que hay que correr una figura plana (su esquina de arriba a la izquierda en `p`, a escala
+ * `k`) para que quede a un número entero de píxeles de la pared del fondo de su sala (su
+ * esquina en `wx`, `wy`, a escala BACK). La distancia que da la perspectiva se redondea una vez:
+ * así la figura no baila un píxel contra la pared al mover la cámara.
+ */
+export function pinShift(
+  v: View,
+  p: { x: number; y: number },
+  k: number,
+  wx: number,
+  wy: number,
+): { x: number; y: number } {
+  const e = eyeOf(v);
+  const ax = (wx - e.x) * BACK;
+  const ay = (wy - e.y) * BACK;
+  const dx = Math.round((p.x - e.x) * k - ax);
+  const dy = Math.round((p.y - e.y) * k - ay);
+  return { x: e.x + (ax + dx) / k - p.x, y: e.y + (ay + dy) / k - p.y };
+}
