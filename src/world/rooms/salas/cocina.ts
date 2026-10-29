@@ -19,6 +19,7 @@ import {
   cellsOf,
   fire,
   row,
+  solid,
   stretchesOf,
   type RoomArt,
   type Thing,
@@ -450,9 +451,7 @@ function wall(b: PixelBuffer, room: Room, _look: SalonLook, { cells, ruin }: Wal
  */
 function things(room: Room, w: number): Thing[] {
   const lvl = room.level;
-  const t: Thing[] = [
-    at(hearth(lvl, true), HEARTH_X, WALL + 2, 0, fire(7, 80 + lvl * 10, FIRE, false)),
-  ];
+  const t: Thing[] = [solid(hearth(lvl, true), HEARTH_X, 0, fire(7, 80 + lvl * 10, FIRE, false))];
   for (const s of stretchesOf(room, w)) {
     if (s.kind === 'mid' && s.i === 1)
       t.push(
@@ -478,7 +477,7 @@ function things(room: Room, w: number): Thing[] {
 
 /** Por reparar: el fogón frío, la mesa rota y unas cajas. */
 function ruin(room: Room, w: number): Thing[] {
-  const t: Thing[] = [at(hearth(1, false), HEARTH_X, WALL + 2)];
+  const t: Thing[] = [solid(hearth(1, false), HEARTH_X)];
   cellsOf(room, w).forEach((c, j) =>
     t.push(at(j === 0 ? brokenTable() : Prop.brokenChair(), c.win, j === 0 ? WALL : WALL - 4)),
   );

@@ -12,9 +12,9 @@ revisión crítica y propuestas, **sin decidir**: el usuario elige qué entra y 
   - en el modo libre sobra dinero si no se construye.
 - **Niveles nuevos de salas** (arte hecho, sin activar): precios y efectos propuestos en
   [`salas/niveles-nuevos.md`](salas/niveles-nuevos.md).
-- **Paralaje de los muebles:** los de junto a la pared (`WALL`, 6 por delante) apenas se mueven
-  contra ella. Probar a separarlos más (por ejemplo, 10–12) para que la profundidad se note.
-  Ojo: es cosa del arte; revisar ventanas y `furniture.test.ts`.
+- **Paralaje de los muebles:** las camas ya van separadas de la pared y los hogares y fraguas
+  con volumen (`solid` en `salas/kit.ts`). Falta ver si se hace con más piezas (armarios,
+  alacenas) tras probarlo.
 - **Decisiones abiertas** del plan: nombre del juego, idiomas, modo en tiempo real/idle.
 
 ## 2. Mejoras apuntadas

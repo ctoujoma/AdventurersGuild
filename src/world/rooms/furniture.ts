@@ -164,13 +164,14 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
       add(barrels(), 17, FRONT + 4);
       // En el de dos alturas, el tiro de la chimenea sube hasta el techo.
       const rise = Math.round((room.h - 1) * PITCH * scaleAt(HEARTH_Z));
-      add(
-        salonHearth(lvl, look.crest, big, rise),
-        w - HEARTH_RIGHT,
-        HEARTH_Z,
-        0,
-        fire(10, big ? 120 : 90, FIRE, true),
-      );
+      t.push({
+        img: salonHearth(lvl, look.crest, big, rise),
+        x: w - HEARTH_RIGHT,
+        z: HEARTH_Z,
+        y: 0,
+        light: fire(10, big ? 120 : 90, FIRE, true),
+        box: true,
+      });
       add(logPile(), w - 13, WALL - 12);
       if (look.dog) add(Prop.dog(false), w - 46, FRONT + 6);
       if (decor.includes('tarima')) add(stage(), w - 94, WALL - 2);
