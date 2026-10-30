@@ -14,6 +14,11 @@ export interface Tune {
   step: number;
   /** Corcheas por compás (6 si no se dice). */
   bar: number;
+  /**
+   * Partes en que se divide la melodía (A, B…): cada una suena dos veces seguidas antes de la
+   * siguiente (AABB, como en la música de baile de siempre). 1 si no se dice.
+   */
+  parts: number;
   /** Tema tranquilo: suena más al atardecer. */
   calm?: boolean;
   /** Con bordón (la nota del bajo sostenida, como una zanfona). */
@@ -78,20 +83,24 @@ const DORIAN_A = [9, 11, 0, 2, 4, 6, 7];
 const MAJOR_D = [2, 4, 6, 7, 9, 11, 1];
 const AEOLIAN_E = [4, 6, 7, 9, 11, 0, 2];
 const MAJOR_F = [5, 7, 9, 10, 0, 2, 4];
+const MIXO_A = [9, 11, 1, 2, 4, 6, 7];
+const MAJOR_C = [0, 2, 4, 5, 7, 9, 11];
 
 function tune(
   name: string,
-  o: Omit<Tune, 'name' | 'melody' | 'rests' | 'bass' | 'ostinato' | 'bar'> & {
+  o: Omit<Tune, 'name' | 'melody' | 'rests' | 'bass' | 'ostinato' | 'bar' | 'parts'> & {
     score: string;
     bass: string;
     ostinato?: string;
     bar?: number;
+    parts?: number;
   },
 ): Tune {
-  const { score, bass, ostinato, bar, ...rest } = o;
+  const { score, bass, ostinato, bar, parts, ...rest } = o;
   return {
     name,
     bar: bar ?? 6,
+    parts: parts ?? 1,
     ...parse(score),
     bass: bassOf(bass),
     ostinato: ostinato?.split(/\s+/).map(noteOf),
@@ -106,9 +115,13 @@ export const TUNES = {
     scale: DORIAN_D,
     breath: 24,
     repeats: 2,
+    parts: 2,
     score: `A4 . . F4 G4 A4 | C5 . A4 G4 . F4 | G4 . . E4 F4 G4 | A4 . . . . . |
-            D5 . C5 A4 . G4 | F4 . G4 A4 . C5 | B4 . A4 G4 . E4 | D4 . . . . .`,
-    bass: 'D3 A3 | F3 C3 | C3 G3 | A2 E3 | D3 A3 | F3 C3 | G2 D3 | D3 A2',
+            D5 . C5 A4 . G4 | F4 . G4 A4 . C5 | B4 . A4 G4 . E4 | D4 . . . . . |
+            D5 . . E5 F5 . | E5 . D5 C5 . A4 | C5 . . D5 E5 . | D5 . C5 A4 . . |
+            F5 . E5 D5 . C5 | A4 . C5 D5 . E5 | F5 . E5 D5 . C5 | D5 . . . . -`,
+    bass: `D3 A3 | F3 C3 | C3 G3 | A2 E3 | D3 A3 | F3 C3 | G2 D3 | D3 A2 |
+           D3 A3 | C3 G3 | A2 E3 | D3 A3 | F3 C3 | A2 E3 | C3 G3 | D3 D3`,
   }),
   camino: tune('El camino real', {
     step: 0.25,
@@ -116,6 +129,7 @@ export const TUNES = {
     scale: MIXO_G,
     breath: 18,
     repeats: 2,
+    parts: 2,
     score: `G4 . B4 D5 . B4 | C5 . E5 D5 B4 G4 | A4 . B4 C5 . A4 | B4 G4 . D4 . . |
             G4 . B4 D5 . G5 | F5 . D5 C5 . A4 | B4 . G4 A4 . F4 | G4 . . - . . |
             D5 . . E5 . F5 | G5 . F5 E5 . D5 | C5 . . A4 . C5 | B4 . A4 G4 . . |
@@ -128,11 +142,15 @@ export const TUNES = {
     voice: 'flauta',
     scale: AEOLIAN_A,
     breath: 18,
-    repeats: 2,
+    repeats: 1,
+    parts: 2,
     calm: true,
     score: `E5 . . D5 C5 . | B4 . . A4 . . | C5 . D5 E5 . . | A4 . . . . . |
-            G4 . A4 B4 . . | C5 . B4 A4 . G4 | E4 . . G4 . A4 | A4 . . . . -`,
-    bass: 'A2 E3 | E2 B2 | A2 E3 | A2 E3 | G2 D3 | F2 C3 | E2 B2 | A2 A2',
+            G4 . A4 B4 . . | C5 . B4 A4 . G4 | E4 . . G4 . A4 | A4 . . . . - |
+            A5 . . G5 E5 . | F5 . . E5 . . | D5 . E5 F5 . D5 | E5 . . . . . |
+            C5 . D5 E5 . G5 | F5 . E5 D5 . C5 | B4 . . G4 . B4 | A4 . . . . -`,
+    bass: `A2 E3 | E2 B2 | A2 E3 | A2 E3 | G2 D3 | F2 C3 | E2 B2 | A2 A2 |
+           F2 C3 | D3 A2 | D3 A2 | E2 B2 | A2 E3 | D3 A2 | E2 B2 | A2 A2`,
   }),
   leyenda: tune('Gremio de leyenda', {
     step: 0.27,
@@ -140,9 +158,13 @@ export const TUNES = {
     scale: MIXO_D,
     breath: 18,
     repeats: 2,
+    parts: 2,
     score: `D5 . . A4 . D5 | F#5 . E5 D5 . A4 | B4 . D5 A4 . F#4 | E4 . F#4 A4 . . |
-            D5 . . A4 . D5 | F#5 . A5 G5 . F#5 | E5 . C5 D5 . E5 | D5 . . . . -`,
-    bass: 'D3 A3 | D3 A2 | G2 D3 | A2 E3 | D3 A3 | D3 A2 | C3 G3 | D3 D3',
+            D5 . . A4 . D5 | F#5 . A5 G5 . F#5 | E5 . C5 D5 . E5 | D5 . . . . - |
+            A5 . . G5 . F#5 | G5 . . E5 . C5 | D5 . E5 F#5 . G5 | A5 . . . . . |
+            A5 . G5 F#5 . E5 | D5 . C5 B4 . A4 | B4 . C5 D5 . E5 | D5 . . . . -`,
+    bass: `D3 A3 | D3 A2 | G2 D3 | A2 E3 | D3 A3 | D3 A2 | C3 G3 | D3 D3 |
+           D3 A3 | C3 G3 | D3 A2 | D3 A3 | D3 A2 | G2 D3 | C3 G3 | D3 D3`,
   }),
   antorchas: tune('Antorchas en el camino', {
     step: 0.3,
@@ -188,22 +210,30 @@ export const TUNES = {
     scale: DORIAN_A,
     breath: 8,
     repeats: 2,
+    parts: 2,
     drum: 'X...x...',
     score: `A4 . E4 A4 B4 . C5 D5 | E5 . A5 . G5 E5 D5 B4 | C5 . B4 A4 G4 . E4 G4 | A4 B4 C5 A4 B4 . G4 . |
-            A4 . E4 A4 B4 . C5 D5 | E5 . F#5 G5 A5 . G5 E5 | D5 B4 G4 B4 A4 G4 E4 G4 | A4 . . . - . . .`,
-    bass: 'A2 E3 | A2 E3 | G2 D3 | E2 B2 | A2 E3 | C3 G3 | G2 D3 | A2 A2',
+            A4 . E4 A4 B4 . C5 D5 | E5 . F#5 G5 A5 . G5 E5 | D5 B4 G4 B4 A4 G4 E4 G4 | A4 . . . - . . . |
+            A5 . G5 E5 G5 . E5 D5 | E5 . D5 B4 A4 . G4 B4 | C5 . D5 E5 A5 . E5 D5 | E5 . A5 . E5 . D5 . |
+            A5 . G5 E5 G5 . E5 D5 | C5 D5 E5 C5 D5 . B4 G4 | A4 B4 C5 D5 E5 D5 C5 B4 | A4 . . . - . . .`,
+    bass: `A2 E3 | A2 E3 | G2 D3 | E2 B2 | A2 E3 | C3 G3 | G2 D3 | A2 A2 |
+           A2 E3 | G2 D3 | C3 G3 | A2 E3 | A2 E3 | C3 G3 | G2 D3 | A2 A2`,
   }),
   nana: tune('Nana junto al fuego', {
     step: 0.42,
     voice: 'flauta',
     scale: MAJOR_G,
     breath: 12,
-    repeats: 2,
+    repeats: 1,
+    parts: 2,
     calm: true,
     drone: true,
     score: `D5 . . B4 . G4 | A4 . B4 C5 . A4 | B4 . . G4 . E4 | D4 . . . . - |
-            G4 . A4 B4 . D5 | E5 . D5 C5 . A4 | B4 . G4 A4 . F#4 | G4 . . . . -`,
-    bass: 'G2 D3 | D3 A2 | E2 B2 | D3 A2 | G2 D3 | C3 G2 | D3 A2 | G2 G2',
+            G4 . A4 B4 . D5 | E5 . D5 C5 . A4 | B4 . G4 A4 . F#4 | G4 . . . . - |
+            B4 . . D5 . E5 | D5 . B4 A4 . . | G4 . A4 B4 . A4 | G4 . E4 D4 . . |
+            E4 . G4 A4 . B4 | C5 . B4 A4 . G4 | A4 . . D4 . F#4 | G4 . . . . -`,
+    bass: `G2 D3 | D3 A2 | E2 B2 | D3 A2 | G2 D3 | C3 G2 | D3 A2 | G2 G2 |
+           G2 D3 | G2 D3 | E2 B2 | C3 G2 | C3 G2 | A2 E3 | D3 A2 | G2 G2`,
   }),
   herrero: tune('El martillo del herrero', {
     step: 0.21,
@@ -212,21 +242,29 @@ export const TUNES = {
     scale: MAJOR_D,
     breath: 8,
     repeats: 2,
+    parts: 2,
     drum: 'X..xX..x',
     score: `D4 F#4 A4 D5 . A4 F#4 A4 | B4 . G4 B4 D5 . B4 G4 | A4 . F#4 A4 D5 . E5 F#5 | E5 . C#5 A4 E4 . . - |
-            D4 F#4 A4 D5 . A4 F#4 A4 | G4 . B4 D5 G5 . F#5 E5 | F#5 D5 E5 C#5 D5 B4 A4 F#4 | D5 . A4 . D4 . - .`,
-    bass: 'D3 A2 | G2 D3 | D3 A2 | A2 E3 | D3 A2 | G2 D3 | A2 E3 | D3 D3',
+            D4 F#4 A4 D5 . A4 F#4 A4 | G4 . B4 D5 G5 . F#5 E5 | F#5 D5 E5 C#5 D5 B4 A4 F#4 | D5 . A4 . D4 . - . |
+            F#5 . E5 D5 A4 . D5 F#5 | G5 . F#5 E5 B4 . E5 G5 | F#5 . E5 D5 C#5 . B4 A4 | B4 C#5 D5 E5 F#5 . E5 . |
+            F#5 . E5 D5 A4 . D5 F#5 | G5 . B5 A5 G5 . F#5 E5 | D5 F#5 E5 C#5 D5 A4 F#4 A4 | D5 . . . D4 . - .`,
+    bass: `D3 A2 | G2 D3 | D3 A2 | A2 E3 | D3 A2 | G2 D3 | A2 E3 | D3 D3 |
+           D3 A2 | E3 B2 | D3 A2 | A2 E3 | D3 A2 | G2 D3 | A2 E3 | D3 D3`,
   }),
   lluvia: tune('Lluvia en el tejado', {
     step: 0.38,
     voice: 'laud',
     scale: AEOLIAN_E,
     breath: 14,
-    repeats: 2,
+    repeats: 1,
+    parts: 2,
     calm: true,
     score: `E5 . . B4 . G4 | A4 . B4 G4 . E4 | F#4 . G4 A4 . B4 | B4 . . . . - |
-            E5 . F#5 G5 . E5 | D5 . B4 C5 . A4 | B4 . G4 F#4 . D4 | E4 . . . . -`,
-    bass: 'E2 B2 | A2 E3 | D3 A2 | B2 F#3 | E2 B2 | G2 D3 | D3 A2 | E2 E2',
+            E5 . F#5 G5 . E5 | D5 . B4 C5 . A4 | B4 . G4 F#4 . D4 | E4 . . . . - |
+            G5 . . F#5 . E5 | D5 . . B4 . . | C5 . D5 E5 . G5 | F#5 . . . . - |
+            E5 . D5 B4 . G4 | A4 . B4 C5 . A4 | B4 . A4 G4 . F#4 | E4 . . . . -`,
+    bass: `E2 B2 | A2 E3 | D3 A2 | B2 F#3 | E2 B2 | G2 D3 | D3 A2 | E2 E2 |
+           C3 G2 | G2 D3 | A2 E3 | B2 F#3 | C3 G2 | A2 E3 | B2 F#3 | E2 E2`,
   }),
   zancos: tune('Los zancos de la feria', {
     step: 0.22,
@@ -234,23 +272,31 @@ export const TUNES = {
     scale: MAJOR_G,
     breath: 6,
     repeats: 2,
+    parts: 2,
     drum: 'X..x..',
     shaker: '.x..x.',
     score: `G4 . B4 D5 . B4 | C5 . E5 D5 . B4 | A4 . B4 C5 B4 A4 | B4 . G4 D4 . . |
-            G4 . B4 D5 . G5 | E5 . C5 D5 . B4 | A4 . F#4 A4 . C5 | B4 . G4 G4 . -`,
-    bass: 'G2 D3 | C3 G2 | D3 A2 | G2 D3 | G2 D3 | C3 G2 | D3 A2 | G2 G2',
+            G4 . B4 D5 . G5 | E5 . C5 D5 . B4 | A4 . F#4 A4 . C5 | B4 . G4 G4 . - |
+            D5 . G5 G5 . F#5 | E5 . D5 C5 . B4 | C5 . E5 D5 . B4 | A4 . B4 G4 . E4 |
+            D5 . G5 G5 . A5 | B5 . A5 G5 . E5 | D5 . B4 A4 . F#4 | G4 . . G4 . -`,
+    bass: `G2 D3 | C3 G2 | D3 A2 | G2 D3 | G2 D3 | C3 G2 | D3 A2 | G2 G2 |
+           G2 D3 | C3 G2 | C3 G2 | D3 A2 | G2 D3 | G2 D3 | D3 A2 | G2 G2`,
   }),
   romance: tune('Romance del caballero', {
     step: 0.33,
     voice: 'violin',
     scale: DORIAN_D,
     breath: 12,
-    repeats: 2,
+    repeats: 1,
+    parts: 2,
     calm: true,
     drone: true,
     score: `D5 . . C5 . A4 | F4 . G4 A4 . . | C5 . A4 G4 . F4 | E4 . . D4 . - |
-            A4 . . C5 . D5 | E5 . F5 D5 . C5 | A4 . G4 F4 . E4 | D4 . . . . -`,
-    bass: 'D3 A2 | F2 C3 | C3 G2 | A2 E3 | D3 A2 | C3 G2 | A2 E3 | D3 D3',
+            A4 . . C5 . D5 | E5 . F5 D5 . C5 | A4 . G4 F4 . E4 | D4 . . . . - |
+            F5 . . E5 . D5 | C5 . A4 C5 . . | D5 . C5 A4 . G4 | A4 . . . . - |
+            F4 . G4 A4 . C5 | D5 . E5 F5 . E5 | D5 . C5 A4 . G4 | D4 . . . . -`,
+    bass: `D3 A2 | F2 C3 | C3 G2 | A2 E3 | D3 A2 | C3 G2 | A2 E3 | D3 D3 |
+           D3 A2 | F2 C3 | D3 A2 | A2 E3 | F2 C3 | D3 A2 | C3 G2 | D3 D3`,
   }),
   patio: tune('Mañana en el patio', {
     step: 0.24,
@@ -258,11 +304,46 @@ export const TUNES = {
     voice: 'laud',
     scale: MAJOR_F,
     breath: 8,
-    repeats: 2,
+    repeats: 1,
+    parts: 2,
     drum: 'X...x.x.',
     score: `F4 . A4 C5 . A4 F4 A4 | Bb4 . D5 . C5 . A4 . | G4 . Bb4 D5 . C5 Bb4 G4 | A4 . F4 . C4 . - . |
-            F4 . A4 C5 . F5 E5 D5 | C5 . A4 . Bb4 . G4 . | A4 C5 G4 Bb4 F4 A4 E4 G4 | F4 . . . F4 . - .`,
-    bass: 'F2 C3 | Bb2 F3 | G2 D3 | C3 G2 | F2 C3 | F2 C3 | C3 G2 | F2 F2',
+            F4 . A4 C5 . F5 E5 D5 | C5 . A4 . Bb4 . G4 . | A4 C5 G4 Bb4 F4 A4 E4 G4 | F4 . . . F4 . - . |
+            C5 . D5 C5 A4 . F4 A4 | Bb4 . C5 D5 . C5 Bb4 . | A4 . Bb4 C5 . F5 . . | E5 . D5 C5 . . - . |
+            C5 . D5 C5 A4 . F4 A4 | Bb4 . D5 F5 E5 . D5 C5 | Bb4 A4 G4 A4 Bb4 . G4 E4 | F4 . . . - . . .`,
+    bass: `F2 C3 | Bb2 F3 | G2 D3 | C3 G2 | F2 C3 | F2 C3 | C3 G2 | F2 F2 |
+           F2 C3 | Bb2 F3 | F2 C3 | C3 G2 | F2 C3 | Bb2 F3 | C3 G2 | F2 F2`,
+  }),
+  carreta: tune('La carreta del molinero', {
+    step: 0.23,
+    voice: 'laud',
+    scale: MIXO_A,
+    breath: 8,
+    repeats: 2,
+    parts: 2,
+    drum: 'X..x..',
+    score: `A4 . C#5 E5 . C#5 | D5 . F#5 E5 . C#5 | B4 . C#5 D5 . B4 | A4 . E4 A4 . . |
+            A4 . C#5 E5 . A5 | G5 . E5 D5 . B4 | C#5 . A4 B4 . G4 | A4 . . A4 . - |
+            E5 . A5 A5 . G5 | F#5 . E5 D5 . F#5 | E5 . C#5 A4 . C#5 | B4 . A4 G4 . B4 |
+            E5 . A5 A5 . G5 | F#5 . D5 E5 . C#5 | D5 . B4 G4 . B4 | A4 . . . . -`,
+    bass: `A2 E3 | D3 A2 | G2 D3 | A2 E3 | A2 E3 | G2 D3 | E2 B2 | A2 A2 |
+           A2 E3 | D3 A2 | A2 E3 | G2 D3 | A2 E3 | D3 A2 | G2 D3 | A2 A2`,
+  }),
+  luna: tune('La luna sobre el pozo', {
+    step: 0.4,
+    voice: 'flauta',
+    scale: MAJOR_C,
+    breath: 14,
+    repeats: 1,
+    parts: 2,
+    calm: true,
+    drone: true,
+    score: `E5 . . D5 . C5 | G4 . . . . - | A4 . C5 D5 . E5 | D5 . . . . - |
+            E5 . G5 F5 . E5 | D5 . C5 A4 . G4 | A4 . C5 D5 . B4 | C5 . . . . - |
+            G5 . . E5 . C5 | F5 . . D5 . B4 | E5 . D5 C5 . A4 | G4 . . . . - |
+            A4 . B4 C5 . E5 | D5 . C5 A4 . G4 | F4 . E4 D4 . G4 | C4 . . . . -`,
+    bass: `C3 G2 | G2 D3 | F2 C3 | G2 D3 | C3 G2 | G2 D3 | F2 C3 | C3 C3 |
+           C3 G2 | G2 D3 | A2 E3 | G2 D3 | F2 C3 | F2 C3 | G2 D3 | C3 C3`,
   }),
 } satisfies Record<string, Tune>;
 
@@ -270,7 +351,19 @@ export type TuneId = keyof typeof TUNES;
 
 /** Qué puede sonar en cada ambiente (el motor lo baraja; ver `nextTune` en audio.ts). */
 export const PLAYLISTS: Record<Mood, TuneId[]> = {
-  taberna: ['jarra', 'camino', 'velas', 'molino', 'nana', 'herrero', 'lluvia', 'zancos', 'romance'],
+  taberna: [
+    'jarra',
+    'camino',
+    'velas',
+    'molino',
+    'nana',
+    'herrero',
+    'lluvia',
+    'zancos',
+    'romance',
+    'carreta',
+    'luna',
+  ],
   libre: [
     'leyenda',
     'patio',
@@ -283,6 +376,8 @@ export const PLAYLISTS: Record<Mood, TuneId[]> = {
     'lluvia',
     'zancos',
     'romance',
+    'carreta',
+    'luna',
   ],
   tension: ['antorchas'],
   asalto: ['armas'],

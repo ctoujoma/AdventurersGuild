@@ -149,6 +149,8 @@ export interface Spot {
 /** Un foco: dónde está, hasta dónde llega y la zona a la que alumbra (en 3D, y hacia arriba). */
 interface Lamp {
   pos: Vector3;
+  /** Centro del halo: la llama tal como está dibujada (a la profundidad de su figura). */
+  glow: Vector3;
   r: number;
   color: RGB;
   power: number;
@@ -1000,6 +1002,7 @@ export class RoomScene {
       if (tower.room.level > 0) {
         this.lamps.push({
           pos: at(cx, base - lift - (img.h - towerLampY(tower.room.level)) / k, DEPTH / 2 - 8),
+          glow: at(cx, base - lift - (img.h - towerLampY(tower.room.level)) / k, DEPTH / 2),
           r: 60,
           color: [255, 168, 92],
           power: 0.9,
@@ -1143,6 +1146,7 @@ export class RoomScene {
     const y = bottom + l.dy / k;
     this.lamps.push({
       pos: new Vector3(x, y, -z + 6),
+      glow: new Vector3(x, y, -z),
       r: l.r,
       color: l.color,
       power: l.power,
@@ -1287,6 +1291,23 @@ export class RoomScene {
     const put = (img: PixelBuffer, x: number, depth: number, up = 0) =>
       this.figure(g, img, x, GROUND - up, depth, OUTDOOR, 1);
     put(Prop.well(), px + 40, 70);
+    // Árboles a varias profundidades a los lados: con la perspectiva, cada uno se mueve a su
+    // paso al mover la cámara (los de más al fondo, menos).
+    const trees: [number, number, boolean, number][] = [
+      [px - 40, 36, true, 92],
+      [px - 95, 120, false, 78],
+      [px - 150, 62, true, 84],
+      [px - 210, 180, true, 96],
+      [px - 270, 95, false, 70],
+      [px + 20, 206, false, 74],
+      [L.right + 120, 48, true, 90],
+      [L.right + 175, 150, false, 80],
+      [L.right + 235, 82, true, 76],
+      [L.right + 300, 196, true, 98],
+      [L.right + 360, 120, false, 72],
+    ];
+    for (const [tx, depth, conifer, h] of trees)
+      put(conifer ? Prop.pine(`pino${tx}`, h) : Prop.oakTree(`roble${tx}`, h), tx, depth);
     put(Prop.bush('patio1'), L.left - 30, 12);
     put(Prop.bush('patio2'), L.right + 40, 30);
     put(Prop.bush('patio3'), L.right + 80, 90);
@@ -1314,6 +1335,7 @@ export class RoomScene {
           put(Prop.lampPost(), lx, 24);
           this.lamps.push({
             pos: at(lx, GROUND - 36, 24),
+            glow: at(lx, GROUND - 36, 24),
             r: 50,
             color: LANTERN,
             power: 0.9,
@@ -1326,6 +1348,7 @@ export class RoomScene {
         }
       this.lamps.push({
         pos: at(dx - 8, GROUND - 52, 0),
+        glow: at(dx - 8, GROUND - 51, 4),
         r: 60,
         color: LANTERN,
         power: 1,
@@ -1587,6 +1610,7 @@ export class RoomScene {
         row + i * 4,
       );
       data.set(l.zone, 2 * row + i * 4);
+      data.set([l.glow.x, l.glow.y, l.glow.z, 0], 3 * row + i * 4);
     }
     s.uLightCount.value = n;
     tex.needsUpdate = true;

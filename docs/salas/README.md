@@ -126,10 +126,17 @@ La lista completa de pendientes e ideas (bucle, monetización, amigos, torneos, 
 - **Visitantes** con ropa propia (campesino, mercader, noble y forastero: `OutfitId` en
   `art/heroes/look.ts`); en el retrato usan la de un héroe parecido.
 - **Luces:** cada foco lleva un halo (`haloOf`) que el shader suma antes de pasar a la paleta, así
-  sale tramado; las llamas son una tira de fotogramas (`flame.ts`).
+  sale tramado; su centro (`glow`) va a la profundidad de la llama dibujada, no a la del foco
+  (si no, se corre al mover la cámara). Las llamas son una tira de fotogramas (`flame.ts`).
 - **Música** (`audio/music.ts` y `audio.ts`): los temas se barajan sin repetir, cada vez con otro
   arreglo (tono, tempo, instrumento al frente) y a veces con un silencio entre uno y otro; al
-  atardecer, mejor los tranquilos (`calm`).
+  atardecer, mejor los tranquilos (`calm`). Los de la taberna tienen dos partes (`parts`) y
+  suenan AABB, entre uno y dos minutos cada uno.
+- **Fondo:** cinco capas lejanas con su paralaje (`parallaxLayers`: montañas, colinas, bosque
+  lejano, hilera y arboleda) y árboles de verdad en el terreno a varias profundidades (`yard` en
+  `RoomScene.ts`, con `Prop.pine` y `Prop.oakTree`).
+- Trabajar, charlar o calentarse van con los pies quietos (`fightSprites(…, planted)`): las
+  posturas de pelea abren las piernas y, al alternarlas, parecía que andaban.
 
 ## Balance (PR 12)
 

@@ -897,6 +897,72 @@ export function bush(seed: string, w = 22, h = 12): PixelBuffer {
   });
 }
 
+/**
+ * Un pino: pisos de ramas cada vez más anchos hacia abajo, con la luz por la izquierda, y el
+ * tronco asomando por debajo. `h` es el alto total.
+ */
+export function pine(seed: string, h = 80): PixelBuffer {
+  const w = Math.round(h * 0.5);
+  return piece(w, h, (b) => {
+    const rng = new Rng(seed);
+    const cx = Math.floor(w / 2);
+    const trunk = Math.round(h * 0.12);
+    b.rect(cx - 1, h - trunk, 3, trunk, P.bark);
+    b.vline(cx - 1, h - trunk, trunk, P.rust);
+    const tiers = 5;
+    for (let t = 0; t < tiers; t++) {
+      // Cada piso empieza un poco por encima del final del anterior.
+      const top = Math.round(((h - trunk) * t) / (tiers + 0.6));
+      const bottom = Math.round(((h - trunk) * (t + 1.6)) / (tiers + 0.6));
+      const half = (w / 2 - 1) * ((t + 1.4) / (tiers + 0.4));
+      for (let y = top; y < Math.min(bottom, h - trunk + 2); y++) {
+        const k = (y - top) / Math.max(1, bottom - top);
+        const hw = Math.max(1, Math.round(half * (0.25 + 0.75 * k) + (rng.chance(0.3) ? 1 : 0)));
+        for (let x = cx - hw; x <= cx + hw; x++) {
+          const side = (x - cx) / hw;
+          const edge = y >= bottom - 2;
+          const c = side < -0.45 && !edge ? P.leaf : edge || side > 0.35 ? P.deep : P.forest;
+          b.set(x, y, c);
+        }
+      }
+    }
+  });
+}
+
+/** Un árbol de copa redonda (roble o castaño): racimos de hojas con luz por la izquierda. */
+export function oakTree(seed: string, h = 70): PixelBuffer {
+  const w = Math.round(h * 0.8);
+  return piece(w, h, (b) => {
+    const rng = new Rng(seed);
+    const cx = Math.floor(w / 2);
+    const trunk = Math.round(h * 0.38);
+    // Tronco con dos ramas.
+    b.rect(cx - 2, h - trunk, 5, trunk, P.bark);
+    b.vline(cx - 2, h - trunk, trunk, P.rust);
+    b.line(cx, h - trunk + 2, cx - 7, h - trunk - 6, P.bark);
+    b.line(cx + 1, h - trunk + 4, cx + 8, h - trunk - 4, P.bark);
+    const crown = h - trunk + 4;
+    // Racimos de hojas: más grandes en el centro de la copa y más pequeños por fuera.
+    for (let i = 0; i < 30; i++) {
+      const a = rng.next() * Math.PI * 2;
+      const d = Math.sqrt(rng.next());
+      const x = cx + Math.cos(a) * d * w * 0.34;
+      const y = crown * 0.5 + Math.sin(a) * d * crown * 0.36;
+      const r = (1.15 - d * 0.5) * w * 0.11;
+      b.ellipse(x, y, r, r * 0.9, (px, py) => {
+        const k = (px - x + (py - y)) / r;
+        return k < -0.9 ? P.leaf : py > y + r * 0.35 ? P.deep : P.forest;
+      });
+    }
+    // Brillos de hoja nueva, solo donde ya hay luz.
+    for (let i = 0; i < 40; i++) {
+      const x = rng.int(2, w - 3);
+      const y = rng.int(2, crown);
+      if (b.get(x, y) && toHex(b.get(x, y)) === P.leaf && rng.chance(0.5)) b.set(x, y, P.lime);
+    }
+  });
+}
+
 // ---------- Fachada ----------
 
 /** Maceta de barro con geranios. */

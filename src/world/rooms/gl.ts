@@ -113,7 +113,9 @@ const SURFACE_FRAG = /* glsl */ `
       float ndl = mix(max(dot(n, d / max(dist, 0.001)), 0.0), 1.0, uWrap);
       light += lc.rgb * a * ndl;
       if (lc.a > 0.0) {
-        vec2 ls = cameraPosition.xy + (lp.xy - cameraPosition.xy) * (cameraPosition.z / (cameraPosition.z - lp.z));
+        // El centro, donde se ve la llama dibujada (a su profundidad: si no, se corre al mover).
+        vec3 hp = texelFetch(uLights, ivec2(i, 3), 0).xyz;
+        vec2 ls = cameraPosition.xy + (hp.xy - cameraPosition.xy) * (cameraPosition.z / (cameraPosition.z - hp.z));
         float h = clamp(1.0 - length(seen - ls) / lc.a, 0.0, 1.0);
         halo += lc.rgb * h * h * 0.95;
       }
@@ -218,12 +220,15 @@ export interface SurfaceOpts {
   halo?: number;
 }
 
-/** Textura de los focos: fila 0, posición y alcance; 1, color; 2, zona (x0, y0, x1, y1). */
+/**
+ * Textura de los focos: fila 0, posición y alcance; 1, color y radio del halo; 2, zona (x0, y0,
+ * x1, y1); 3, centro del halo (la llama dibujada, que puede estar a otra profundidad que el foco).
+ */
 function lightsTexture(): DataTexture {
   const t = new DataTexture(
-    new Float32Array(MAX_LIGHTS * 3 * 4),
+    new Float32Array(MAX_LIGHTS * 4 * 4),
     MAX_LIGHTS,
-    3,
+    4,
     RGBAFormat,
     FloatType,
   );
