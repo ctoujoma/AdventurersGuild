@@ -36,7 +36,7 @@ import { applyLook, loadSettings, saveSettings, type Settings } from '../platfor
 import { Splash } from './Splash';
 import { Title } from './Title';
 import { nextTip } from './tips';
-import { canDrag, planDrop } from './drop';
+import { canDrag, planDrop, planTask, type Task } from './drop';
 import { UncleNote } from './UncleNote';
 import { GremioPanel } from './panels/GremioPanel';
 import { HeroesPanel, type HeroFilter } from './panels/HeroesPanel';
@@ -457,6 +457,14 @@ export function App() {
     if (why) return toast(why);
     dispatch({ type: 'assign', who, room });
     audio.play(room ? 'select' : 'deselect');
+  };
+
+  /** Cambiar la tarea de alguien desde la lista de la casa (trabajar, entrenar, guardia, descansar). */
+  const setTask = (who: string, task: Task) => {
+    const d = planTask(gameRef.current, who, task);
+    if (!d.ok) return toast(d.text);
+    for (const a of d.actions) dispatch(a);
+    audio.play(task ? 'select' : 'deselect');
   };
 
   const roomLink = (to: RoomLink) => {
@@ -890,7 +898,7 @@ export function App() {
                 audio.play('close');
                 if (w) toast(`${w.name} recoge sus cosas y se despide.`);
               }}
-              onAssign={assignJob}
+              onTask={setTask}
             />
           </Panel>
         )}

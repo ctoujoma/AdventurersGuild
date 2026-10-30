@@ -4305,6 +4305,121 @@ textarea:focus-visible,
   border-bottom: 2px dashed var(--tan);
   padding: 2px 0;
 }
+/* La casa por tareas: cada grupo con sus huecos (gente u ocupados, y libres). */
+.crew-alerts {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.crew-alert {
+  display: block;
+  width: 100%;
+  min-height: 32px;
+  text-align: left;
+  font-size: var(--t-m);
+  color: var(--ink);
+  padding: 4px 8px;
+  border-left: 4px solid var(--red);
+  background: rgba(228, 59, 68, 0.12);
+}
+button.crew-alert {
+  cursor: pointer;
+}
+.crew-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.crew-h {
+  margin: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--pixel);
+  font-size: var(--t-l);
+  font-weight: 400;
+  color: var(--rust);
+}
+.crew-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 8px;
+}
+.crew-slot {
+  min-width: 0;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 6px 3px 3px;
+  text-align: left;
+  color: var(--ink);
+  background: rgba(228, 166, 114, 0.4);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+.crew-slot.is-hero {
+  box-shadow:
+    0 0 0 2px var(--ink),
+    inset 0 0 0 2px var(--gold);
+}
+.crew-slot.is-sel {
+  background: var(--gold);
+}
+.crew-who {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.crew-who b {
+  font-family: var(--pixel);
+  font-size: var(--t-m);
+  font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.crew-who small,
+.crew-off {
+  font-size: var(--t-s);
+  color: var(--text-soft);
+}
+small.crew-off {
+  color: var(--wine);
+}
+.crew-free {
+  justify-content: center;
+  font-family: var(--pixel);
+  font-size: var(--t-m);
+  color: var(--text-soft);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  outline: 2px dashed var(--oak);
+  outline-offset: -2px;
+  padding: 0 8px;
+}
+select.crew-free {
+  cursor: pointer;
+}
+.crew-detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.crew-detail .job-select {
+  flex: 1;
+  min-width: 0;
+}
+.crew-sure {
+  display: flex;
+  gap: 6px;
+}
 .worksbar-issue {
   display: block;
   color: var(--lemon);
