@@ -6,6 +6,8 @@ import { visitorsOf } from '../core/salon';
 import { trainState } from '../core/training';
 import { goldCap } from '../core/vault';
 import { CREST_COLORS } from '../data/custom';
+import { CLASS_NAMES } from '../data/labels';
+import { ROOMS } from '../data/rooms';
 import { gearOf } from '../core/resolve';
 import type { Member } from '../core/party';
 import type { SceneHero, SceneModel } from '../world/scene';
@@ -70,6 +72,24 @@ function visitorOrder(s: GameState): string[] {
 
 const fullName = (h: Hero) => (h.nick ? `${h.name} ${h.nick}` : h.name);
 
+/** Lo que se lee de alguien al pasar el ratón: clase y nivel, y si está en cama o de guardia. */
+function heroTitle(s: GameState, h: Hero, candidate = false): string {
+  const a = (m: string, f: string) => (h.sex === 'f' ? f : m);
+  const base = `${CLASS_NAMES[h.cls][h.sex]} · nivel ${h.lvl}`;
+  if (candidate) return `${base} · busca trabajo`;
+  if (h.status === 'herido')
+    return `${base} · ${a('herido', 'herida')}, ${h.days} ${h.days === 1 ? 'día' : 'días'} en cama`;
+  if (h.guard) return `${base} · de guardia`;
+  const room = h.job ? s.building.rooms.find((r) => r.id === h.job) : undefined;
+  return room ? `${base} · en ${ROOMS[room.type].name.toLowerCase()}` : base;
+}
+
+/** De un trabajador: su maña y dónde trabaja (o que descansa). */
+function workerHover(s: GameState, w: Worker): string {
+  const room = w.room ? s.building.rooms.find((r) => r.id === w.room) : undefined;
+  return `Maña ${w.skill} · ${room ? `en ${ROOMS[room.type].name.toLowerCase()}` : 'descansa'}`;
+}
+
 /** La barra de entrenamiento de un héroe (si entrena y aún puede subir). */
 function trainBar(s: GameState, h: Hero): SceneHero['train'] {
   const t = trainState(s, h);
@@ -83,6 +103,7 @@ export function sceneModel(s: GameState): SceneModel {
     heroes.push({
       id: h.id,
       name: fullName(h),
+      title: heroTitle(s, h),
       status: h.status,
       look: lookOf(h),
       marks: marksOf(h),
@@ -97,6 +118,7 @@ export function sceneModel(s: GameState): SceneModel {
     heroes.push({
       id: w.id,
       name: workerTitle(w),
+      title: workerHover(s, w),
       status: 'ok',
       look: workerLook(w),
       marks: {},
@@ -107,6 +129,7 @@ export function sceneModel(s: GameState): SceneModel {
     heroes.push({
       id: h.id,
       name: fullName(h),
+      title: heroTitle(s, h, true),
       status: 'candidato',
       look: lookOf(h),
       marks: marksOf(h),

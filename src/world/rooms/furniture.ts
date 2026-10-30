@@ -161,6 +161,7 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
       const decor = look.decor;
       const big = decor.includes('chimenea');
       add(bar(lvl, decor.includes('barril')), 44, WALL - 16);
+      t.at(-1)!.act = 'candidatos';
       add(barrels(), 17, FRONT + 4);
       // En el de dos alturas, el tiro de la chimenea sube hasta el techo.
       const rise = Math.round((room.h - 1) * PITCH * scaleAt(HEARTH_Z));
@@ -171,6 +172,7 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
         y: 0,
         light: fire(10, big ? 120 : 90, FIRE, true),
         box: true,
+        poi: 'warm',
       });
       add(logPile(), w - 13, WALL - 12);
       if (look.dog) add(Prop.dog(false), w - 46, FRONT + 6);

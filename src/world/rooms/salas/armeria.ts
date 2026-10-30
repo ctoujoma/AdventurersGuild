@@ -170,7 +170,7 @@ function things(room: Room, w: number, look: SalonLook): Thing[] {
   const rackAt = (x: number) => {
     const rack = gearRack(gear.slice(k * per, (k + 1) * per), per);
     k++;
-    t.push(at(rack, x, WALL, RACK_Y));
+    t.push({ ...at(rack, x, WALL, RACK_Y), act: 'equipo' });
     if (extra > 0) {
       // Centrados debajo del estante.
       const n = Math.min(3, Math.ceil(extra / 3));

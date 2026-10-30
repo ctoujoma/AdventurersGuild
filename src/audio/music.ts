@@ -1,16 +1,23 @@
 /**
  * Partituras de la taberna. Cada tema es una melodía en compases de 6 corcheas (aire de
- * giga), un bajo por compás y, si acaso, percusión. Se escriben con nombres de nota para
- * que se puedan leer y retocar: «.» alarga la nota anterior y «-» es silencio.
+ * giga) o de 8 (reel, marcha), un bajo por compás y, si acaso, percusión. Se escriben con
+ * nombres de nota para que se puedan leer y retocar: «.» alarga la nota anterior y «-» es
+ * silencio. El motor (audio.ts) los baraja y cambia el arreglo cada vez que suena uno.
  */
 
 export type Mood = 'taberna' | 'libre' | 'tension' | 'asalto' | 'fiesta';
-export type Voice = 'laud' | 'flauta';
+export type Voice = 'laud' | 'flauta' | 'violin';
 
 export interface Tune {
   name: string;
   /** Segundos por corchea. */
   step: number;
+  /** Corcheas por compás (6 si no se dice). */
+  bar: number;
+  /** Tema tranquilo: suena más al atardecer. */
+  calm?: boolean;
+  /** Con bordón (la nota del bajo sostenida, como una zanfona). */
+  drone?: boolean;
   melody: (number | null)[];
   /** Silencios explícitos (el «-»), para no confundirlos con «mantener». */
   rests: Set<number>;
@@ -67,17 +74,24 @@ const MIXO_D = [2, 4, 6, 7, 9, 11, 0];
 const PHRYGIAN_D = [2, 3, 5, 7, 9, 10, 0];
 const MAJOR_G = [7, 9, 11, 0, 2, 4, 6];
 
+const DORIAN_A = [9, 11, 0, 2, 4, 6, 7];
+const MAJOR_D = [2, 4, 6, 7, 9, 11, 1];
+const AEOLIAN_E = [4, 6, 7, 9, 11, 0, 2];
+const MAJOR_F = [5, 7, 9, 10, 0, 2, 4];
+
 function tune(
   name: string,
-  o: Omit<Tune, 'name' | 'melody' | 'rests' | 'bass' | 'ostinato'> & {
+  o: Omit<Tune, 'name' | 'melody' | 'rests' | 'bass' | 'ostinato' | 'bar'> & {
     score: string;
     bass: string;
     ostinato?: string;
+    bar?: number;
   },
 ): Tune {
-  const { score, bass, ostinato, ...rest } = o;
+  const { score, bass, ostinato, bar, ...rest } = o;
   return {
     name,
+    bar: bar ?? 6,
     ...parse(score),
     bass: bassOf(bass),
     ostinato: ostinato?.split(/\s+/).map(noteOf),
@@ -115,6 +129,7 @@ export const TUNES = {
     scale: AEOLIAN_A,
     breath: 18,
     repeats: 2,
+    calm: true,
     score: `E5 . . D5 C5 . | B4 . . A4 . . | C5 . D5 E5 . . | A4 . . . . . |
             G4 . A4 B4 . . | C5 . B4 A4 . G4 | E4 . . G4 . A4 | A4 . . . . -`,
     bass: 'A2 E3 | E2 B2 | A2 E3 | A2 E3 | G2 D3 | F2 C3 | E2 B2 | A2 A2',
@@ -166,14 +181,109 @@ export const TUNES = {
             G5 . D5 B4 . G4 | C5 . E5 D5 . B4 | A4 B4 C5 D5 E5 F#5 | G5 . . G4 . -`,
     bass: 'G2 D3 | C3 G3 | G2 D3 | D3 A2 | G2 D3 | C3 G2 | D3 A2 | G2 G2',
   }),
+  molino: tune('El molino de la ribera', {
+    step: 0.2,
+    bar: 8,
+    voice: 'laud',
+    scale: DORIAN_A,
+    breath: 8,
+    repeats: 2,
+    drum: 'X...x...',
+    score: `A4 . E4 A4 B4 . C5 D5 | E5 . A5 . G5 E5 D5 B4 | C5 . B4 A4 G4 . E4 G4 | A4 B4 C5 A4 B4 . G4 . |
+            A4 . E4 A4 B4 . C5 D5 | E5 . F#5 G5 A5 . G5 E5 | D5 B4 G4 B4 A4 G4 E4 G4 | A4 . . . - . . .`,
+    bass: 'A2 E3 | A2 E3 | G2 D3 | E2 B2 | A2 E3 | C3 G3 | G2 D3 | A2 A2',
+  }),
+  nana: tune('Nana junto al fuego', {
+    step: 0.42,
+    voice: 'flauta',
+    scale: MAJOR_G,
+    breath: 12,
+    repeats: 2,
+    calm: true,
+    drone: true,
+    score: `D5 . . B4 . G4 | A4 . B4 C5 . A4 | B4 . . G4 . E4 | D4 . . . . - |
+            G4 . A4 B4 . D5 | E5 . D5 C5 . A4 | B4 . G4 A4 . F#4 | G4 . . . . -`,
+    bass: 'G2 D3 | D3 A2 | E2 B2 | D3 A2 | G2 D3 | C3 G2 | D3 A2 | G2 G2',
+  }),
+  herrero: tune('El martillo del herrero', {
+    step: 0.21,
+    bar: 8,
+    voice: 'laud',
+    scale: MAJOR_D,
+    breath: 8,
+    repeats: 2,
+    drum: 'X..xX..x',
+    score: `D4 F#4 A4 D5 . A4 F#4 A4 | B4 . G4 B4 D5 . B4 G4 | A4 . F#4 A4 D5 . E5 F#5 | E5 . C#5 A4 E4 . . - |
+            D4 F#4 A4 D5 . A4 F#4 A4 | G4 . B4 D5 G5 . F#5 E5 | F#5 D5 E5 C#5 D5 B4 A4 F#4 | D5 . A4 . D4 . - .`,
+    bass: 'D3 A2 | G2 D3 | D3 A2 | A2 E3 | D3 A2 | G2 D3 | A2 E3 | D3 D3',
+  }),
+  lluvia: tune('Lluvia en el tejado', {
+    step: 0.38,
+    voice: 'laud',
+    scale: AEOLIAN_E,
+    breath: 14,
+    repeats: 2,
+    calm: true,
+    score: `E5 . . B4 . G4 | A4 . B4 G4 . E4 | F#4 . G4 A4 . B4 | B4 . . . . - |
+            E5 . F#5 G5 . E5 | D5 . B4 C5 . A4 | B4 . G4 F#4 . D4 | E4 . . . . -`,
+    bass: 'E2 B2 | A2 E3 | D3 A2 | B2 F#3 | E2 B2 | G2 D3 | D3 A2 | E2 E2',
+  }),
+  zancos: tune('Los zancos de la feria', {
+    step: 0.22,
+    voice: 'flauta',
+    scale: MAJOR_G,
+    breath: 6,
+    repeats: 2,
+    drum: 'X..x..',
+    shaker: '.x..x.',
+    score: `G4 . B4 D5 . B4 | C5 . E5 D5 . B4 | A4 . B4 C5 B4 A4 | B4 . G4 D4 . . |
+            G4 . B4 D5 . G5 | E5 . C5 D5 . B4 | A4 . F#4 A4 . C5 | B4 . G4 G4 . -`,
+    bass: 'G2 D3 | C3 G2 | D3 A2 | G2 D3 | G2 D3 | C3 G2 | D3 A2 | G2 G2',
+  }),
+  romance: tune('Romance del caballero', {
+    step: 0.33,
+    voice: 'violin',
+    scale: DORIAN_D,
+    breath: 12,
+    repeats: 2,
+    calm: true,
+    drone: true,
+    score: `D5 . . C5 . A4 | F4 . G4 A4 . . | C5 . A4 G4 . F4 | E4 . . D4 . - |
+            A4 . . C5 . D5 | E5 . F5 D5 . C5 | A4 . G4 F4 . E4 | D4 . . . . -`,
+    bass: 'D3 A2 | F2 C3 | C3 G2 | A2 E3 | D3 A2 | C3 G2 | A2 E3 | D3 D3',
+  }),
+  patio: tune('Mañana en el patio', {
+    step: 0.24,
+    bar: 8,
+    voice: 'laud',
+    scale: MAJOR_F,
+    breath: 8,
+    repeats: 2,
+    drum: 'X...x.x.',
+    score: `F4 . A4 C5 . A4 F4 A4 | Bb4 . D5 . C5 . A4 . | G4 . Bb4 D5 . C5 Bb4 G4 | A4 . F4 . C4 . - . |
+            F4 . A4 C5 . F5 E5 D5 | C5 . A4 . Bb4 . G4 . | A4 C5 G4 Bb4 F4 A4 E4 G4 | F4 . . . F4 . - .`,
+    bass: 'F2 C3 | Bb2 F3 | G2 D3 | C3 G2 | F2 C3 | F2 C3 | C3 G2 | F2 F2',
+  }),
 } satisfies Record<string, Tune>;
 
 export type TuneId = keyof typeof TUNES;
 
-/** Qué suena en cada ambiente, en orden. */
+/** Qué puede sonar en cada ambiente (el motor lo baraja; ver `nextTune` en audio.ts). */
 export const PLAYLISTS: Record<Mood, TuneId[]> = {
-  taberna: ['jarra', 'camino', 'velas'],
-  libre: ['leyenda', 'camino', 'jarra', 'velas'],
+  taberna: ['jarra', 'camino', 'velas', 'molino', 'nana', 'herrero', 'lluvia', 'zancos', 'romance'],
+  libre: [
+    'leyenda',
+    'patio',
+    'camino',
+    'jarra',
+    'velas',
+    'molino',
+    'nana',
+    'herrero',
+    'lluvia',
+    'zancos',
+    'romance',
+  ],
   tension: ['antorchas'],
   asalto: ['armas'],
   fiesta: ['brindis'],

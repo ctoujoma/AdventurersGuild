@@ -32,7 +32,7 @@ import {
 } from './layout';
 import { ART } from './salas';
 import { PLASTER_FINE, WOOD_FINE, floorFinish, sideFinish, wallFinish } from './salas/acabados';
-import { BLIND, cellsOf, windowX } from './salas/kit';
+import { BLIND, cellsOf, takeWallActs, windowX } from './salas/kit';
 import { streetDoor } from './salas/recibidor';
 import { NO_LOOK, hearthSpan, salonWall, type SalonLook } from './salon';
 import { BACK } from './view3d';
@@ -68,6 +68,7 @@ const CORE = 8;
 
 /** Pared del fondo de una sala de `w`×`h` (interior), ya a la escala del fondo. */
 export function backWall(room: Room, w: number, h: number, look: SalonLook = NO_LOOK): PixelBuffer {
+  takeWallActs();
   const bw = Math.round(w * BACK);
   const bh = Math.round(h * BACK);
   const b = new PixelBuffer(bw, bh);

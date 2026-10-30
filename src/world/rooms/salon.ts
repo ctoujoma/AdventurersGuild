@@ -13,6 +13,7 @@ import { Rng } from '../../core/rng';
 import { stoneWall } from '../paint';
 import * as Prop from '../props';
 import { DEPTH, PITCH, ROOM_H } from './layout';
+import { markWall } from './salas/kit';
 import { BACK, scaleAt } from './view3d';
 
 const W = R.wood; // [black, plum, bark, rust, oak, clay, tan]
@@ -209,7 +210,11 @@ export function salonWall(
   const board = Prop.noticeBoard(Math.min(4, lvl + 1), lvl >= 2);
   const bx = Math.min(Math.round(cell + 6), hearthLeft - board.w - 3);
   const boardOn = room.w > 1 && free(bx, board.w);
-  if (boardOn) b.blit(board, bx, Math.round(floor - 30 - board.h));
+  if (boardOn) {
+    const by = Math.round(floor - 30 - board.h);
+    b.blit(board, bx, by);
+    markWall({ act: 'tablon', x: bx, y: by, w: board.w, h: board.h });
+  }
   // Apliques con vela en los postes (desde el nivel 2).
   if (lvl >= 2)
     for (let x = 36; x < b.w - 40; x += 72)

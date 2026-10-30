@@ -20,7 +20,7 @@ import { generateLook, type OutfitId } from '../../art/heroes/look';
 import { WEAPONS, type WeaponId } from '../weapons';
 import type { SceneHero, SceneVisitors } from '../scene';
 import { GROUND } from '../geometry';
-import { Look, mesh, type Shared } from './gl';
+import { Look, mesh, texture, type Shared } from './gl';
 import { floorY, type RoomsLayout, type Rect } from './layout';
 import {
   LANES,
@@ -38,6 +38,7 @@ import {
   type Spots,
 } from './people';
 import { project, scaleAt, type View } from './view3d';
+import type { BedSpot } from './people';
 
 /** Como mucho, tantas figuras animadas a la vez (y de ellas, tantos visitantes). */
 export const MAX_ACTORS = 30;
@@ -48,10 +49,10 @@ const ARRIVE_SPAN = 0.68;
 const STAY = 0.22;
 /** Pinta de cada tipo de visitante. */
 const VISITOR_LOOK: Record<string, OutfitId> = {
-  campesino: 'explorador',
-  mercader: 'picaro',
-  noble: 'clerigo',
-  espia: 'picaro',
+  campesino: 'campesino',
+  mercader: 'mercader',
+  noble: 'noble',
+  espia: 'forastero',
 };
 const VISITOR_NAME: Record<string, string> = {
   campesino: 'Campesino',
@@ -82,8 +83,108 @@ const F = {
   aim: 26,
   aimL: 28,
   read: 30,
+  /** Incorporado en la cama (al acostarse y al levantarse): litera de cada nivel, catre y jergón. */
+  up: 32,
+  /** Con la herramienta de su puesto: 4 herramientas × (2 tiempos a la derecha, 2 a la izquierda). */
+  tool: 38,
+  /** Calentándose las manos (a la derecha y a la izquierda). */
+  warm: 54,
+  /** Con la jarra en la barra: abajo y bebiendo, a la derecha y a la izquierda. */
+  drink: 56,
+  /** De perfil, quieto (charlando), a la derecha y a la izquierda. */
+  talk: 60,
 } as const;
-const FRAMES = 32;
+const FRAMES = 62;
+/** Filas que baja el dibujo en los fotogramas de incorporado (para que quepa la cabeza). */
+const UP_DROP = 8;
+
+/** Las herramientas de los puestos, en el orden de sus fotogramas. */
+const TOOLS = ['cucharon', 'pala', 'cuenco', 'jarra'] as const;
+
+/**
+ * Cómo se trabaja en cada sala con puestos: la herramienta, las dos posturas (con el giro de la
+ * herramienta) y cuánto dura cada vuelta y su primer tiempo, en segundos.
+ */
+const WORK: Record<
+  string,
+  { tool: number; poses: [FightPose, number][]; cycle: number; split: number }
+> = {
+  // Remover la olla con el cucharón.
+  cocina: {
+    tool: 0,
+    poses: [
+      ['ready', 200],
+      ['strike', 150],
+    ],
+    cycle: 0.9,
+    split: 0.45,
+  },
+  // Remover el mosto con la pala.
+  bodega: {
+    tool: 1,
+    poses: [
+      ['windup', 205],
+      ['strike', 165],
+    ],
+    cycle: 1.6,
+    split: 0.8,
+  },
+  // Acercar un cuenco al herido.
+  enfermeria: {
+    tool: 2,
+    poses: [
+      ['ready', 0],
+      ['thrust', 0],
+    ],
+    cycle: 4,
+    split: 1.8,
+  },
+  // Servir: la jarra en la mano y, de vez en cuando, inclinada sobre la mesa.
+  salon: {
+    tool: 3,
+    poses: [
+      ['ready', 0],
+      ['thrust', 75],
+    ],
+    cycle: 3.4,
+    split: 2,
+  },
+};
+
+/** Lo que dicen al hablar (icono del bocadillo). */
+export type Talk =
+  | 'puntos'
+  | 'exclama'
+  | 'pregunta'
+  | 'jarra'
+  | 'moneda'
+  | 'corazon'
+  | 'nota'
+  | 'espada'
+  | 'pan'
+  | 'risa';
+const CHAT: Talk[] = [
+  'puntos',
+  'exclama',
+  'pregunta',
+  'jarra',
+  'moneda',
+  'nota',
+  'espada',
+  'risa',
+  'corazon',
+];
+/** Los visitantes, sentados, piden y comentan. */
+const ORDER: Talk[] = ['jarra', 'pan', 'moneda', 'puntos', 'risa'];
+/** Lo que dura cada frase de una charla (s). */
+const TURN = 1.6;
+
+/** Un sitio de una sala al que se va a hacer algo (ver `setPois`). */
+export interface Poi extends Place {
+  kind: 'read' | 'warm' | 'pray';
+  /** Medio ancho de lo que hay allí (para ponerse a un lado si hay que mirarlo de lado). */
+  half: number;
+}
 
 /** El arma con la que practica cada uno en la sala de armas (en la de tiro, todos con arco). */
 const DRILL_WEAPON: Record<OutfitId, WeaponId> = {
@@ -93,6 +194,10 @@ const DRILL_WEAPON: Record<OutfitId, WeaponId> = {
   clerigo: 'maza',
   explorador: 'espada',
   tabernero: 'garrote',
+  campesino: 'garrote',
+  mercader: 'daga',
+  noble: 'espada',
+  forastero: 'daga',
 };
 
 /** Cómo se entrena en cada sala: golpes al aire, tiro con arco o leer. */
@@ -139,6 +244,12 @@ interface Actor {
   /** En un asalto: corre más (o menos) para llegar a su hora, y el golpe que está dando (0–1). */
   run?: number;
   swing?: number;
+  /** Acostándose o levantándose: un momento incorporado en la cama (`out`: luego se va). */
+  edge?: { bed: BedSpot; t: number; out: boolean } | null;
+  /** Haciendo algo en un sitio de la sala (leer el tablón, calentarse…) y hacia dónde mira. */
+  poi?: { kind: Poi['kind']; dir: 1 | -1 } | null;
+  /** De charla con alguien: con quién, cuándo empezó (al llegar) y cuándo acaba. */
+  chat?: { with: string; from: number; until: number } | null;
 }
 
 const hash = (s: string) => {
@@ -203,7 +314,7 @@ function readCell(front: PixelBuffer, turn: boolean): PixelBuffer {
 }
 
 /** Atlas de una persona: todos sus fotogramas uno al lado del otro. */
-function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
+export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
   const b = new PixelBuffer(CELL * FRAMES, TALL);
   const put = (img: PixelBuffer, i: number, dx = 3, flip = false) =>
     b.blit(img, i * CELL + dx, 0, flip);
@@ -252,6 +363,67 @@ function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
   b.rect(m + 4, 14, 20, 4, P.clay);
   b.hline(m + 4, 14, 20, P.tan);
   b.hline(m + 4, 17, 20, P.rust);
+  // Incorporado en la cama: lo mismo que acostado pero sentado (de cintura para arriba) con la
+  // manta por las piernas. Todo va `UP_DROP` filas más abajo para que quepa la cabeza.
+  const sitUp = (i: number, sx: number, blanket: (x: number, y: number) => void, top: number) => {
+    const x0 = i * CELL;
+    b.blit(spr.sit, x0 + sx, top + UP_DROP + 5 - spr.sit.h);
+    blanket(x0, UP_DROP);
+  };
+  for (let lvl = 0; lvl < 4; lvl++) {
+    const q = bunkQuilt(lvl);
+    sitUp(
+      F.up + lvl,
+      0,
+      (x, d) => {
+        b.rect(x + 2, 12 + d, 21, 6, q[2]!);
+        b.hline(x + 2, 12 + d, 21, q[3]!);
+        b.hline(x + 2, 17 + d, 21, q[1]!);
+      },
+      12,
+    );
+  }
+  sitUp(
+    F.up + 4,
+    2,
+    (x, d) => {
+      b.rect(x + 4, 14 + d, 20, 4, P.white);
+      b.hline(x + 4, 17 + d, 20, P.mist);
+    },
+    14,
+  );
+  sitUp(
+    F.up + 5,
+    2,
+    (x, d) => {
+      b.rect(x + 4, 14 + d, 20, 4, P.clay);
+      b.hline(x + 4, 14 + d, 20, P.tan);
+      b.hline(x + 4, 17 + d, 20, P.rust);
+    },
+    14,
+  );
+  // En su puesto, con la herramienta (los de la izquierda, volteados).
+  for (const w of Object.values(WORK))
+    w.poses.forEach(([p, deg], i) => {
+      const img = drillCell(pose, p, TOOLS[w.tool], deg);
+      put(img, F.tool + w.tool * 4 + i, 0);
+      put(img, F.tool + w.tool * 4 + 2 + i, 0, true);
+    });
+  // Las manos hacia el fuego.
+  const warm = new PixelBuffer(CELL, TALL);
+  warm.blit(pose.thrust, 3, 0);
+  put(warm, F.warm, 0);
+  put(warm, F.warm + 1, 0, true);
+  // De perfil, quieto: para las charlas.
+  put(pose.ready, F.talk, 3);
+  put(pose.ready, F.talk + 1, 3, true);
+  // En la barra, con la jarra: abajo y a la boca.
+  const mug = drillCell(pose, 'ready', 'jarra', 0);
+  const sip = drillCell(pose, 'up', 'jarra', -70);
+  put(mug, F.drink, 0);
+  put(sip, F.drink + 1, 0);
+  put(mug, F.drink + 2, 0, true);
+  put(sip, F.drink + 3, 0, true);
   // En el suelo, caído: la figura de pie tumbada de lado (la cabeza a un lado o al otro).
   const src = spr.idle[0];
   for (const [i, left] of [
@@ -268,6 +440,32 @@ function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
       }
   return b;
 }
+
+/** Fotograma y sitio de alguien acostado: la figura encima del mueble, alineada con su dibujo. */
+function bedFrame(
+  bed: BedSpot,
+  k: number,
+  z: number,
+): { frame: number; left: number; bottom: number; z: number } {
+  const ground = floorY(bed.floor);
+  if (bed.kind === 'litera') {
+    const left = bed.x - 14 / k;
+    const top = ground - 40 / k + (bed.top - 12) / k;
+    return { frame: F.sleep + bed.level, left, bottom: top + TALL / k, z };
+  }
+  if (bed.kind === 'jergon') {
+    // En el suelo, con la cabeza en un extremo del jergón.
+    const left = bed.x - 15 / k;
+    const top = ground - 5 / k - 12 / k + 1 / k;
+    return { frame: F.mat, left, bottom: top + TALL / k, z };
+  }
+  const left = bed.x - 18 / k;
+  const top = ground - 14 / k - 12 / k + 1 / k;
+  return { frame: F.cot, left, bottom: top + TALL / k, z };
+}
+
+/** Lo que decide el dibujo de alguien (si cambia, hay que rehacer su atlas). */
+const skinOf = (h: SceneHero) => JSON.stringify([h.look, h.marks]);
 
 /** Punto 3D a partir de una x y una y del mundo 2D (y hacia abajo) y una profundidad. */
 const at = (x: number, y: number, depth: number) => new Vector3(x, GROUND - y, -depth);
@@ -293,6 +491,8 @@ export class Crowd {
   private scripted = false;
   /** La hora de la escena en el último fotograma (para saber qué dibujo tiene cada uno). */
   private now = 0;
+  /** Sitios de las salas a los que se va a hacer algo (el tablón, la chimenea, el altar…). */
+  private pois: Poi[] = [];
 
   constructor(
     shared: Shared,
@@ -313,6 +513,9 @@ export class Crowd {
     this.segs = segments(L);
     this.rehome();
     for (const a of this.actors.values()) {
+      a.poi = null;
+      a.chat = null;
+      if (this.stays(a)) continue;
       a.path = [];
       a.goal = null;
       a.seat = null;
@@ -320,6 +523,29 @@ export class Crowd {
       if (!route(L, { x: a.x, floor: a.floor }, this.S.door, this.segs)) this.put(a, this.S.door);
       if (a.pose === 'sit' || a.pose === 'bed') a.pose = 'stand';
     }
+  }
+
+  /**
+   * Tras cambiar el edificio, quien está acostado o sentado sigue igual si su cama o su taburete
+   * siguen en el mismo sitio (la obra ha sido en otra sala).
+   */
+  private stays(a: Actor): boolean {
+    const g = a.goal;
+    if (!g || a.path.length || !this.S) return false;
+    if (a.pose === 'bed') {
+      const home = this.homes.get(a.hero.id);
+      if (!home?.bed || home.place.x !== g.place.x || home.place.floor !== g.place.floor)
+        return false;
+      a.goal = home;
+      return true;
+    }
+    if (a.pose === 'sit') {
+      const seat = this.S.seats.find((s) => s.x === g.place.x && s.floor === g.place.floor);
+      if (!seat || seat.z !== g.z) return false;
+      a.seat = seat;
+      return true;
+    }
+    return false;
   }
 
   /** La gente de la casa: altas, bajas y cambios (sale de misión, vuelve, se hiere…). */
@@ -339,7 +565,11 @@ export class Crowd {
       }
       const was = a.hero.status;
       const work = a.hero.work;
+      // Si ha cambiado su dibujo (equipo nuevo, herido o curado, u otra partida con los mismos
+      // ids), se le rehace: si no, seguía con el de antes hasta que salía y volvía a entrar.
+      const reskin = skinOf(a.hero) !== skinOf(h);
       a.hero = h;
+      if (reskin) this.reskin(a);
       if (work !== h.work && !a.gone && !a.leaving) a.wait = 0;
       if (was === h.status) continue;
       a.goal = null;
@@ -493,6 +723,17 @@ export class Crowd {
         continue;
       }
       if (a.pose === 'sit') a.sat += dt;
+      // Incorporado en la cama un momento: al levantarse no echa a andar hasta acabar.
+      if (a.edge) {
+        a.edge.t -= dt;
+        const out = a.edge.out;
+        if (a.edge.t <= 0) a.edge = null;
+        else if (out) {
+          this.place(a, t);
+          continue;
+        }
+      }
+      if (a.chat && !a.path.length) this.talk(a, t);
       if (a.path.length) this.walk(a, dt);
       else if (a.leaving) {
         if (!a.hero.visitor) this.away.add(a.hero.id);
@@ -557,6 +798,9 @@ export class Crowd {
       a.path = [];
       a.pose = 'stand';
       a.goal = null;
+      a.edge = null;
+      a.poi = null;
+      this.endChat(a);
     }
     // A una profundidad fija la perspectiva es lineal: se deshace con dos puntos.
     const z = this.depth(a);
@@ -592,6 +836,11 @@ export class Crowd {
   setScripted(on: boolean): void {
     if (on === this.scripted) return;
     this.scripted = on;
+    for (const a of this.actors.values()) {
+      a.edge = null;
+      a.poi = null;
+      a.chat = null;
+    }
     if (on) return;
     for (const a of [...this.actors.values()]) {
       if (a.hero.bandit) {
@@ -700,14 +949,69 @@ export class Crowd {
   }
 
   private standUp(a: Actor): void {
+    a.edge = null;
+    a.poi = null;
+    this.endChat(a);
     if (a.pose !== 'bed' && a.pose !== 'sit') return;
     this.seatFree(a);
     a.goal = null;
     a.pose = 'stand';
   }
 
+  /** Los sitios de las salas a los que la gente va a hacer algo (los da la escena al montarse). */
+  setPois(list: Poi[]): void {
+    if (JSON.stringify(list) === JSON.stringify(this.pois)) return;
+    this.pois = list;
+    for (const a of this.actors.values()) a.poi = null;
+  }
+
+  /**
+   * Los bocadillos que se ven ahora: quien habla en cada charla (por turnos) y, de vez en cuando,
+   * los visitantes sentados que piden algo o los héroes que brindan.
+   */
+  bubbles(): { id: string; talk: Talk }[] {
+    const out: { id: string; talk: Talk }[] = [];
+    if (this.time !== 'day' || this.scripted) return out;
+    const t = this.now;
+    for (const a of this.actors.values()) {
+      if (a.gone || a.held) continue;
+      const c = a.chat;
+      if (c && c.from && t >= c.from && t < c.until) {
+        const turn = Math.floor((t - c.from) / TURN);
+        // Habla uno y luego el otro; entre frase y frase, un respiro.
+        const speaker =
+          turn % 2 === 0 ? (a.hero.id < c.with ? a : null) : a.hero.id > c.with ? a : null;
+        if (speaker && (t - c.from) % TURN < TURN * 0.8)
+          out.push({
+            id: a.hero.id,
+            talk: CHAT[(hash(a.hero.id + c.with) + turn * 7) % CHAT.length]!,
+          });
+        continue;
+      }
+      if (a.pose !== 'sit') continue;
+      // Sentados: cada uno a su ritmo, un momento cada poco.
+      const k = (t + (hash(a.hero.id) % 50)) % 11;
+      if (k < 1.4) {
+        const list = a.hero.visitor ? ORDER : (['jarra', 'risa', 'nota'] as Talk[]);
+        out.push({
+          id: a.hero.id,
+          talk: list[(hash(a.hero.id) + Math.floor(t / 11)) % list.length]!,
+        });
+      }
+    }
+    return out;
+  }
+
   nameOf(id: string): string {
     return this.actors.get(id)?.hero.name ?? '';
+  }
+
+  /** Lo que se lee al pasar el ratón: el nombre y, en otra línea, quién es. */
+  hoverOf(id: string): string {
+    const h = this.actors.get(id)?.hero;
+    if (!h) return '';
+    const sub = h.title ?? (h.visitor ? 'De visita en el salón' : '');
+    return sub ? `${h.name}\n${sub}` : h.name;
   }
 
   dispose(): void {
@@ -728,6 +1032,7 @@ export class Crowd {
       sun: 0,
       wrap: 0.6,
       dither: 0.03,
+      halo: 0.3,
       frames: FRAMES,
     });
     // Delante de lo que esté a su misma profundidad (el taburete, la cama).
@@ -786,6 +1091,14 @@ export class Crowd {
     }
   }
 
+  /** Le pone su dibujo de nuevo (el atlas entero), en el mismo material. */
+  private reskin(a: Actor): void {
+    a.img = atlas(heroSprites(a.hero.look, a.hero.marks), a.hero);
+    const u = a.mat.uniforms.map!;
+    (u.value as { dispose(): void }).dispose();
+    u.value = texture(a.img);
+  }
+
   private remove(id: string): void {
     const a = this.actors.get(id);
     if (!a) return;
@@ -821,6 +1134,124 @@ export class Crowd {
   /** Del pueblo y sin cama en el servicio: duerme en su casa. */
   private village(a: Actor): boolean {
     return a.hero.staff === 'pueblo' || (a.hero.staff === 'casa' && !this.homes.has(a.hero.id));
+  }
+
+  /**
+   * Si alguien está trabajando en su puesto ahora mismo (de día, parado en su sala): con qué
+   * herramienta, en qué tiempo de la vuelta y hacia dónde mira.
+   */
+  private jobAnim(a: Actor): { tool: number; pose: number; dir: 1 | -1 } | null {
+    const h = a.hero;
+    if (!h.work || h.status !== 'ok' || h.guard || this.time !== 'day' || this.scripted)
+      return null;
+    if (a.path.length || a.held || a.leaving || a.pose !== 'stand' || a.edge) return null;
+    const job = this.S?.jobs.get(h.work);
+    const w = job ? WORK[job.room.type] : undefined;
+    if (!job || !w || a.floor !== job.room.floor || a.x < job.x0 - 8 || a.x > job.x1 + 8)
+      return null;
+    const p = (this.now + (hash(h.id) % 89) / 11) % w.cycle;
+    // En el salón, hacia la mesa más cercana; en las demás, hacia el centro de la sala.
+    let to = (job.x0 + job.x1) / 2;
+    if (job.room.type === 'salon') {
+      let best = Infinity;
+      for (const s of this.S!.seats)
+        if (s.floor === a.floor && Math.abs(s.x - a.x) < best) {
+          best = Math.abs(s.x - a.x);
+          to = s.x;
+        }
+    }
+    return { tool: w.tool, pose: p < w.split ? 0 : 1, dir: to >= a.x ? 1 : -1 };
+  }
+
+  /** De pie en la barra del salón (y sin otra cosa que hacer): con su jarra. */
+  private atBar(a: Actor): boolean {
+    if (!this.S || a.hero.visitor || a.chat) return false;
+    return this.S.bar.some((b) => b.floor === a.floor && Math.abs(b.x - a.x) < 7);
+  }
+
+  /** Va a hacer algo a un sitio de una sala que nadie está usando (si hay). */
+  private goPoi(a: Actor): boolean {
+    const used = new Set(
+      [...this.actors.values()].filter((x) => x.poi && x !== a).map((x) => Math.round(x.x)),
+    );
+    const free = this.pois.filter((p) => ![-12, 0, 12].some((d) => used.has(Math.round(p.x + d))));
+    const p = free[Math.floor(this.rnd() * free.length)];
+    if (!p) return false;
+    // Para calentarse, a un lado del fuego, mirándolo; para leer o rezar, delante.
+    const side = this.rnd() < 0.5 ? -1 : 1;
+    const x = p.kind === 'warm' ? p.x + side * Math.min(p.half, 14) : p.x + (this.rnd() - 0.5) * 6;
+    const place = { x, floor: p.floor };
+    if (!this.L || !route(this.L, { x: a.x, floor: a.floor }, place, this.segs)) return false;
+    this.go(a, { place, pose: 'stand' });
+    a.poi = { kind: p.kind, dir: side > 0 ? -1 : 1 };
+    a.wait = 7 + this.rnd() * 8;
+    return true;
+  }
+
+  /** Busca a alguien con quien charlar en su misma planta y se acerca a su lado. */
+  private chatWith(a: Actor): boolean {
+    const free = (x: Actor) =>
+      x !== a &&
+      !x.gone &&
+      !x.held &&
+      !x.leaving &&
+      !x.homeward &&
+      !x.chat &&
+      !x.edge &&
+      !x.path.length &&
+      !x.hero.bandit &&
+      (x.pose === 'stand' || x.pose === 'sit') &&
+      x.floor === a.floor &&
+      Math.abs(x.x - a.x) < 220 &&
+      !this.jobAnim(x) &&
+      !this.drillOf(x);
+    const list = [...this.actors.values()].filter(free);
+    const b = list[Math.floor(this.rnd() * list.length)];
+    if (!b || !this.L) return false;
+    const side = a.x < b.x ? -1 : 1;
+    const place = { x: b.x + side * 15, floor: b.floor };
+    if (!route(this.L, { x: a.x, floor: a.floor }, place, this.segs)) return false;
+    this.go(a, { place, pose: 'stand' });
+    a.chat = { with: b.hero.id, from: 0, until: this.now + 20 };
+    // El otro espera: que no se vaya mientras llega.
+    b.wait = Math.max(b.wait, 12);
+    b.chat = { with: a.hero.id, from: 0, until: this.now + 20 };
+    a.wait = 30;
+    return true;
+  }
+
+  /** Charlando: al llegar empieza la conversación; al acabar, cada uno sigue a lo suyo. */
+  private talk(a: Actor, t: number): void {
+    const c = a.chat!;
+    const b = this.actors.get(c.with);
+    if (!b || b.gone || b.held || b.leaving || b.chat?.with !== a.hero.id || t > c.until) {
+      this.endChat(a);
+      return;
+    }
+    if (!c.from) {
+      // Quien va hacia el otro empieza al llegar; el que espera, a la vez.
+      if (b.path.length) return;
+      const len = 5 + this.rnd() * 5;
+      c.from = b.chat!.from = t;
+      b.poi = null;
+      c.until = b.chat!.until = t + len;
+      a.wait = Math.max(a.wait, len + 0.5);
+      b.wait = Math.max(b.wait, len + 0.5);
+    }
+    if (a.pose === 'stand') a.dir = b.x >= a.x ? 1 : -1;
+  }
+
+  /** Acaba la charla de alguien (y la del otro). */
+  private endChat(a: Actor): void {
+    const c = a.chat;
+    if (!c) return;
+    a.chat = null;
+    const b = this.actors.get(c.with);
+    if (b?.chat?.with === a.hero.id) {
+      b.chat = null;
+      b.wait = Math.min(b.wait, 1 + this.rnd() * 2);
+    }
+    a.wait = Math.min(a.wait, 1 + this.rnd() * 2);
   }
 
   /**
@@ -871,6 +1302,8 @@ export class Crowd {
 
   /** Ya se ha ido a su casa del pueblo: no se ve hasta mañana. */
   private hide(a: Actor): void {
+    a.poi = null;
+    this.endChat(a);
     a.homeward = false;
     a.gone = true;
     a.path = [];
@@ -916,6 +1349,12 @@ export class Crowd {
       return;
     }
     const free = h.status === 'ok' && !h.guard && this.time === 'day';
+    // Los libres, a veces, van a charlar con alguien o a hacer algo en un sitio de una sala.
+    if (free && !h.visitor) {
+      const r = this.rnd();
+      if (r < 0.22 && this.chatWith(a)) return;
+      if (r < 0.45 && this.goPoi(a)) return;
+    }
     const g = free ? wander(this.S, this.taken(), this.rnd) : home;
     a.wait = free ? 5 + this.rnd() * 9 : 3 + this.rnd() * 3;
     if (!g) return;
@@ -924,7 +1363,14 @@ export class Crowd {
     this.go(a, g);
   }
 
-  private go(a: Actor, g: Goal): void {
+  private go(a: Actor, g: Goal, keep = false): void {
+    // Si estaba acostado, primero se incorpora un momento.
+    if (a.pose === 'bed' && a.goal?.bed && !this.scripted && !a.held)
+      a.edge = { bed: a.goal.bed, t: 0.9, out: true };
+    if (!keep) {
+      a.poi = null;
+      this.endChat(a);
+    }
     this.seatFree(a);
     const path = this.L ? route(this.L, { x: a.x, floor: a.floor }, g.place, this.segs) : null;
     if (!path) {
@@ -977,12 +1423,17 @@ export class Crowd {
       } else a.x += Math.sign(dx) * step;
     }
     if (!a.path.length) {
-      if (a.goal && !a.leaving) this.arrive(a, a.goal);
-      else a.pose = 'stand';
+      if (a.goal && !a.leaving) {
+        this.arrive(a, a.goal);
+        // Se mete en la cama: primero incorporado y luego se tumba.
+        if (a.goal.pose === 'bed' && a.goal.bed && !this.scripted)
+          a.edge = { bed: a.goal.bed, t: 0.8, out: false };
+      } else a.pose = 'stand';
     }
   }
 
   private depth(a: Actor): number {
+    if (a.edge) return a.edge.bed.z;
     if ((a.pose === 'sit' || a.pose === 'bed') && a.goal?.z !== undefined) return a.goal.z;
     return a.lane;
   }
@@ -991,25 +1442,15 @@ export class Crowd {
   private frame(a: Actor, t: number): { frame: number; left: number; bottom: number; z: number } {
     const z = this.depth(a);
     const k = scaleAt(z);
-    const bed = a.pose === 'bed' ? a.goal?.bed : undefined;
-    if (bed) {
-      // La figura se pone encima del mueble, alineada con su dibujo.
-      const ground = floorY(bed.floor);
-      if (bed.kind === 'litera') {
-        const left = bed.x - 14 / k;
-        const top = ground - 40 / k + (bed.top - 12) / k;
-        return { frame: F.sleep + bed.level, left, bottom: top + TALL / k, z };
-      }
-      if (bed.kind === 'jergon') {
-        // En el suelo, con la cabeza en un extremo del jergón.
-        const left = bed.x - 15 / k;
-        const top = ground - 5 / k - 12 / k + 1 / k;
-        return { frame: F.mat, left, bottom: top + TALL / k, z };
-      }
-      const left = bed.x - 18 / k;
-      const top = ground - 14 / k - 12 / k + 1 / k;
-      return { frame: F.cot, left, bottom: top + TALL / k, z };
+    if (a.edge) {
+      // Incorporado: el fotograma de acostado, con el dibujo `UP_DROP` filas más abajo.
+      const f = bedFrame(a.edge.bed, k, z);
+      const kind = a.edge.bed.kind;
+      const up = kind === 'litera' ? a.edge.bed.level : kind === 'catre' ? 4 : 5;
+      return { ...f, frame: F.up + up, bottom: f.bottom + UP_DROP / k };
     }
+    const bed = a.pose === 'bed' ? a.goal?.bed : undefined;
+    if (bed) return bedFrame(bed, k, z);
     if (a.held) {
       // Colgando del dedo, pataleando un poco.
       const step = Math.floor(t * 8) % 4;
@@ -1047,6 +1488,35 @@ export class Crowd {
       } else if (d.kind === 'tiro') frame = (dir > 0 ? F.aim : F.aimL) + (d.p < 1.2 ? 0 : 1);
       else frame = F.read + (d.p > 4.4 ? 1 : 0);
       return { frame, left: a.x - CELL / 2 / k + lunge, bottom: top + TALL / k, z };
+    }
+    const job = this.jobAnim(a);
+    if (job) {
+      const i = F.tool + job.tool * 4 + (job.dir > 0 ? 0 : 2) + job.pose;
+      return { frame: i, left: a.x - CELL / 2 / k, bottom: top + TALL / k, z };
+    }
+    if (a.pose === 'stand' && !a.path.length && this.time === 'day' && !this.scripted) {
+      const p = (t + (hash(a.hero.id) % 37) / 7) % 6;
+      if (a.poi?.kind === 'warm') frame = a.poi.dir > 0 ? F.warm : F.warm + 1;
+      else if (a.poi)
+        // Leyendo el tablón o el mapa, o rezando: de frente con el papel o el libro.
+        frame = F.read + (p > 5.2 ? 1 : 0);
+      else if (this.atBar(a))
+        // En la barra, un trago de vez en cuando.
+        frame = F.drink + (p > 4.8 ? 1 : 0) + (a.dir > 0 ? 0 : 2);
+      else frame = -1;
+      if (frame >= 0) return { frame, left: a.x - CELL / 2 / k, bottom: top + TALL / k, z };
+    }
+    if (a.chat?.from && !a.path.length && a.pose === 'stand') {
+      // De charla: de perfil, mirando al otro, y con las manos por delante cuando le toca hablar.
+      const speaking = this.bubbles().some((b) => b.id === a.hero.id);
+      const gesture = speaking && (t * 2.5 + hash(a.hero.id)) % 2 < 1;
+      const base = gesture ? F.warm : F.talk;
+      return {
+        frame: base + (a.dir > 0 ? 0 : 1),
+        left: a.x - CELL / 2 / k,
+        bottom: top + TALL / k,
+        z,
+      };
     }
     if (a.swing) {
       // Golpe: el paso largo de andar, echándose hacia delante.

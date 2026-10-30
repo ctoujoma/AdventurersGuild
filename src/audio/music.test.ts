@@ -11,10 +11,11 @@ describe('música', () => {
 
   it('cada tema tiene compases completos y un bajo por compás', () => {
     for (const t of Object.values(TUNES)) {
-      expect(t.melody.length % 6, t.name).toBe(0);
-      expect(t.bass.length, t.name).toBe(t.melody.length / 6);
+      expect(t.melody.length % t.bar, t.name).toBe(0);
+      expect(t.bass.length, t.name).toBe(t.melody.length / t.bar);
       expect(t.melody[0], t.name).not.toBeNull();
-      if (t.drum) expect(t.drum.length).toBe(6);
+      if (t.drum) expect(t.drum.length).toBe(t.bar);
+      if (t.shaker) expect(t.shaker.length).toBe(t.bar);
       // Todas las notas caen dentro de la escala del tema.
       for (const n of t.melody) if (n) expect(t.scale, `${t.name} ${n}`).toContain(n % 12);
     }
@@ -24,6 +25,9 @@ describe('música', () => {
     for (const list of Object.values(PLAYLISTS)) expect(list.length).toBeGreaterThan(0);
     expect(PLAYLISTS.taberna.length).toBeGreaterThanOrEqual(3);
     expect(PLAYLISTS.libre.length).toBeGreaterThan(PLAYLISTS.taberna.length);
+    // Para el atardecer hay temas tranquilos, y para el resto del día, alegres.
+    expect(PLAYLISTS.taberna.filter((id) => TUNES[id].calm).length).toBeGreaterThanOrEqual(3);
+    expect(PLAYLISTS.taberna.filter((id) => !TUNES[id].calm).length).toBeGreaterThanOrEqual(4);
   });
 
   it('las terceras y adornos siguen la escala', () => {

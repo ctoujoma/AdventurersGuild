@@ -92,6 +92,50 @@ export const SIDE_TORSO: Record<OutfitId, Grid> = {
     '.....ccccaaa....',
     ...empty(5),
   ],
+  campesino: [
+    ...empty(10),
+    '.....ccaaaa.....',
+    '....ccccaaaa....',
+    '.....ccccaac....',
+    '.....ccccaac....',
+    '.....AAAAAAA....',
+    '.....CCCCCCC....',
+    '.....CCCCCCC....',
+    ...empty(5),
+  ],
+  mercader: [
+    ...empty(10),
+    '.....aaaaaa.....',
+    '....ccccyycc....',
+    '.....cccccyc....',
+    '.....ccccccc....',
+    '.....cooOoooc...',
+    '.....cccOOccc...',
+    '.....cccccccc...',
+    ...empty(5),
+  ],
+  noble: [
+    ...empty(10),
+    '.....wwwwww.....',
+    '....cccccaaa....',
+    '.....ccccaac....',
+    '.....ccccaac....',
+    '.....AAAAAAA....',
+    '.....ccccaac....',
+    '....cccccaacc...',
+    ...empty(5),
+  ],
+  forastero: [
+    ...empty(10),
+    '....cccccccc....',
+    '...cccccccccc...',
+    '...cCcccccaac...',
+    '...cCccccccccc..',
+    '...cCccccccccc..',
+    '...cCccccccccc..',
+    '...cCccccccccc..',
+    ...empty(5),
+  ],
 };
 
 /** Piernas: de pie y ciclo de paso (contacto, cruce). Filas 17–21. */
@@ -250,7 +294,7 @@ export const SIDE_BEARD: Grid = [
   '........hhhh....',
 ];
 
-export const SIDE_HATS: Record<'sombrero' | 'gorra', Grid> = {
+export const SIDE_HATS: Record<'sombrero' | 'gorra' | 'paja' | 'boina' | 'pluma', Grid> = {
   sombrero: [
     '...cC...........',
     '....ccC.........',
@@ -270,6 +314,36 @@ export const SIDE_HATS: Record<'sombrero' | 'gorra', Grid> = {
     '...cccccccccc...',
     '...ccccccccCCCC.',
     E,
+  ],
+  paja: [
+    '................',
+    '................',
+    '................',
+    '.....zzzzzz.....',
+    '....zzzZzzZz....',
+    '....bbbbbbbb....',
+    '.zzzzzzzzzzzzzz.',
+    '..ZZZZZZZZZZZZ..',
+  ],
+  boina: [
+    '................',
+    '................',
+    '................',
+    '.....bbbbbb.....',
+    '...bbbbbbbbbbb..',
+    '..bbbbbbbbbbbbb.',
+    '...BBBBBBBBBB...',
+    '................',
+  ],
+  pluma: [
+    '...ww...........',
+    '...Mww..........',
+    '....Mww.........',
+    '.....bwbbbb.....',
+    '....bbbbbbbbb...',
+    '....bbbbbbbbbb..',
+    '...BBBBBBBBBBB..',
+    '................',
   ],
 };
 
@@ -351,4 +425,8 @@ export const SIDE_WEAPONS: Record<OutfitId, { back?: Grid; front?: Grid }> = {
     ],
   },
   tabernero: {},
+  campesino: {},
+  mercader: {},
+  noble: {},
+  forastero: {},
 };

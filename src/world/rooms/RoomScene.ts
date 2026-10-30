@@ -32,7 +32,9 @@ import * as Prop from '../props';
 import type { Point, SceneCallbacks, SceneModel } from '../scene';
 import { LANTERN, dummy, furnish, gearRoom, type Glow, type RGB } from './furniture';
 import { towerLampY, watchtower } from './salas/torre';
-import { Crowd } from './crowd';
+import { takeWallActs, type ActId, type PoiKind } from './salas/kit';
+import { Crowd, type Poi, type Talk } from './crowd';
+import { FLAME_FRAMES, FLAME_H, FLAME_W, flameStrip } from './flame';
 import { faces } from './volume';
 import { RaidShow } from './raid';
 import { NO_LOOK, type SalonLook } from './salon';
@@ -157,6 +159,61 @@ interface Lamp {
   fire: boolean;
   /** En una sala a la que no llega el sol (bajo tierra, el tesoro): alumbra igual de día. */
   deep?: boolean;
+  /** Radio (en píxeles de pantalla) del halo que se ve en el aire alrededor de la llama. */
+  halo: number;
+}
+
+/**
+ * El halo de cada luz: grande en los fuegos, mediano en los faroles y las arañas y pequeño en
+ * las velas y los apliques.
+ */
+const haloOf = (r: number, power: number, fire: boolean) =>
+  fire ? 22 : r >= 70 ? Math.round(14 * Math.sqrt(power)) : Math.max(7, Math.round(r / 4));
+
+/** Lo que se lee al pasar el ratón por encima de cada cosa tocable de las salas. */
+const ACT_LABEL: Record<ActId, string> = {
+  tablon: 'Tablón de encargos',
+  mapa: 'Mapa de la comarca',
+  candidatos: 'La barra: quien busca trabajo',
+  equipo: 'Equipo del gremio',
+};
+
+/** Iconos de 7×5 de los bocadillos (k negro, r rojo, w blanco, g oro, y limón, o roble, m plata, t y c pan). */
+const TALK_ICONS: Record<Talk, string[]> = {
+  puntos: ['.......', '.......', '.k.k.k.', '.......', '.......'],
+  exclama: ['...r...', '...r...', '...r...', '.......', '...r...'],
+  pregunta: ['..kkk..', '.....k.', '...kk..', '.......', '...k...'],
+  jarra: ['.www...', '.gggo..', '.gygo..', '.gggo..', '.ggg...'],
+  moneda: ['..ggg..', '.gyggg.', '.gyggg.', '.ggggg.', '..ggg..'],
+  corazon: ['.rr.rr.', 'rrrrrrr', '.rrrrr.', '..rrr..', '...r...'],
+  nota: ['...kk..', '...k.k.', '...k...', '.kkk...', '.kk....'],
+  espada: ['......m', '.....m.', '.o.mm..', '..oo...', '.o.o...'],
+  pan: ['.......', '..ttt..', '.ttttt.', 'ccccccc', '.......'],
+  risa: ['.......', '.k...k.', '.......', '.k...k.', '..kkk..'],
+};
+const TALK_INK: Record<string, string> = {
+  k: P.black,
+  r: P.red,
+  w: P.white,
+  g: P.gold,
+  y: P.lemon,
+  o: P.oak,
+  m: P.fog,
+  t: P.tan,
+  c: P.clay,
+};
+
+/** Una cosa tocable de una sala: su recuadro en el mundo a su profundidad. */
+interface PropSpot {
+  act?: ActId;
+  /** Sitio al que va la gente a hacer algo (sin `act`, no se toca: solo se usa). */
+  poi?: PoiKind;
+  room: string;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  z: number;
 }
 
 /** El oro de la cámara, en octavos: la escena solo se repinta cuando cambia de octavo. */
@@ -224,6 +281,8 @@ export class RoomScene {
   private lamps: Lamp[] = [];
   private towerRect: Rect | null = null;
   private flames: Mesh[] = [];
+  /** La tira de fotogramas de las llamas (la misma para todas). */
+  private flameImg = flameStrip();
   /** Muebles anclados a la pared del fondo de su sala (ver `pin`) y la vista con la que se ajustaron. */
   private pins: Pin[] = [];
   private pinnedAt = '';
@@ -242,6 +301,9 @@ export class RoomScene {
   private particles = new Particles();
   private spots: Spot[] = [];
   private hover: Spot | null = null;
+  /** Lo tocable de las salas (el tablón, el mapa…) y lo que hay bajo el ratón. */
+  private props: PropSpot[] = [];
+  private hoverProp: PropSpot | null = null;
   /** Sitios para una obra: mientras los hay, solo se tocan ellos. */
   private targets: Spot[] | null = null;
   private chosen: string | null = null;
@@ -264,6 +326,8 @@ export class RoomScene {
   private soft = false;
   private model: SceneModel | null = null;
   private key = '';
+  /** El edificio con el que la gente buscó sitio por última vez. */
+  private shape = '';
   private t = 0;
   private dayStart = 0;
   /** Hora del día que lleva el reloj de la partida (0 mañana, 1 noche); manda sobre la propia. */
@@ -301,6 +365,9 @@ export class RoomScene {
   private grabbable: string | null = null;
   private roomDrag: { id: string; x: number; y: number; moved: boolean; rect: Rect } | null = null;
   private pinch = 0;
+  /** Rueda del ratón: lo que se lleva girado y cuándo fue el último salto de zoom. */
+  private wheel = 0;
+  private wheelAt = 0;
   private cssW = 0;
   private cssH = 0;
   private framed = false;
@@ -345,6 +412,7 @@ export class RoomScene {
     this.chosen = chosen;
     this.soft = soft;
     this.hover = null;
+    this.hoverProp = null;
     this.topLive = true;
     // Si no se ven todos, la cámara se aleja lo justo (sin pasarse) y los centra.
     if (soft || !fresh || !list?.length || !this.cssW) return;
@@ -429,7 +497,14 @@ export class RoomScene {
     const L = roomsLayout(b);
     this.layout = L;
     this.rebuild(L, model);
-    this.crowd.setLayout(L);
+    // Solo si cambia el edificio la gente busca sitio de nuevo: un escudo o un adorno nuevos
+    // no sacan a nadie de la cama.
+    const shape = JSON.stringify(b);
+    if (shape !== this.shape) {
+      this.shape = shape;
+      this.crowd.setLayout(L);
+    }
+    this.crowd.setPois(this.poisOf(L));
     this.crowd.setPeople(model.heroes);
     if (this.routePts) this.routePts = this.routePoints(this.routeIds.split(' '));
     this.camera.world = { x0: L.x0, x1: L.x1, y0: L.y0, y1: L.y1 };
@@ -507,6 +582,20 @@ export class RoomScene {
         ? Math.min(6, Math.floor(cur) + 1)
         : Math.max(min, Number.isInteger(cur) ? cur - 1 : Math.floor(cur));
     if (z !== cur) this.resize(this.cssW, this.cssH, z);
+  }
+
+  /** Un paso de zoom dejando quieto el punto del mundo que hay bajo (cssX, cssY). */
+  zoomAt(step: number, cssX: number, cssY: number): void {
+    const before = this.camera.toWorld(cssX, cssY);
+    const z = this.camera.zoom;
+    this.zoomBy(step);
+    if (this.camera.zoom === z) return;
+    const after = this.camera.toWorld(cssX, cssY);
+    this.camera.drag(
+      (after.x - before.x) * this.camera.zoom,
+      (after.y - before.y) * this.camera.zoom,
+      0,
+    );
   }
 
   screenOf(wx: number, wy: number): Point {
@@ -722,6 +811,8 @@ export class RoomScene {
     this.pins = [];
     this.pinnedAt = '';
     this.towerRect = null;
+    this.props = [];
+    this.hoverProp = null;
     const b = L.b;
     const g = this.world;
 
@@ -916,6 +1007,7 @@ export class RoomScene {
           zone: [cx - 60, GROUND - base + lift, cx + 60, GROUND - base + lift + 140],
           seed: 7,
           fire: true,
+          halo: haloOf(60, 0.9, false),
         });
       }
     }
@@ -939,6 +1031,21 @@ export class RoomScene {
     const free = (c: number) =>
       room.floor > 0 && !b.rooms.some((o) => this.covers(o, c, room.floor - 1));
     const back = backWall(room, r.w, r.h, this.salonLook());
+    // Lo tocable que se ha pintado en la pared (en sus píxeles), pasado al mundo.
+    const live = room.level > 0 && !(room.works && room.works.kind !== 'extend');
+    const tx = r.w / back.w;
+    const ty = r.h / back.h;
+    if (live)
+      for (const a of takeWallActs())
+        this.props.push({
+          act: a.act,
+          room: room.id,
+          x0: r.x + a.x * tx,
+          y0: r.y + a.y * ty,
+          x1: r.x + (a.x + a.w) * tx,
+          y1: r.y + (a.y + a.h) * ty,
+          z: DEPTH,
+        });
     this.box(rect, theme, ambient, sun, seed, {
       back,
       floorTex: floorTex(room, theme, r.w, seed),
@@ -979,6 +1086,17 @@ export class RoomScene {
         wall: { r, back },
         box: th.box,
       });
+      if ((th.act || th.poi) && live)
+        this.props.push({
+          act: th.act,
+          poi: th.poi,
+          room: room.id,
+          x0: x - th.img.w / k / 2,
+          y0: GROUND - bottom - h,
+          x1: x + th.img.w / k / 2,
+          y1: GROUND - bottom,
+          z: th.z,
+        });
       if (th.light) this.addLight(th.light, x, bottom, th.z, zone, sun < 0.2);
     }
     if (room.works) {
@@ -1033,32 +1151,30 @@ export class RoomScene {
       seed: Math.round(x * 7 + y * 13),
       fire: l.flicker >= 0.2,
       deep,
+      halo: l.flames?.length
+        ? Math.max(8, Math.round(22 * Math.max(...l.flames.map((f) => f.size))))
+        : haloOf(l.r, l.power, false),
     });
     for (const f of l.flames ?? []) {
-      // Tres llamas una dentro de otra: naranja, oro y limón.
-      const layers: [number, number, string][] = [
-        [12, 5, P.orange],
-        [8, 4, P.gold],
-        [4, 3, P.lemon],
-      ];
-      layers.forEach(([w, h, color], i) => {
-        const m = mesh(
-          quad(
-            [
-              new Vector3(-w / 2, 0, 0),
-              new Vector3(w / 2, 0, 0),
-              new Vector3(w / 2, h, 0),
-              new Vector3(-w / 2, h, 0),
-            ],
-            this.look,
-          ),
-          this.look.flat(color),
-        );
-        m.scale.setScalar(f.size / k);
-        m.position.set(x + f.dx / k, bottom + (f.dy + l.dy - 8) / k, -z + 0.6 + i * 0.05);
-        this.world.add(m);
-        this.flames.push(m);
-      });
+      // Una llama de pixel art que cambia de fotograma (ver `draw`); sin luz: brilla sola.
+      const w = FLAME_W * f.size * 0.9;
+      const h = FLAME_H * f.size * 0.9;
+      const m = mesh(
+        quad(
+          [
+            new Vector3(-w / 2, 0, 0),
+            new Vector3(w / 2, 0, 0),
+            new Vector3(w / 2, h, 0),
+            new Vector3(-w / 2, h, 0),
+          ],
+          this.look,
+        ),
+        this.look.glow(this.flameImg, FLAME_FRAMES),
+      );
+      m.scale.setScalar(1 / k);
+      m.position.set(x + f.dx / k, bottom + (f.dy + l.dy - 8) / k, -z + 0.6);
+      this.world.add(m);
+      this.flames.push(m);
     }
   }
 
@@ -1205,6 +1321,7 @@ export class RoomScene {
             zone: [lx - 60, -SLAB, lx + 60, 140],
             seed: lx,
             fire: false,
+            halo: haloOf(50, 0.9, false),
           });
         }
       this.lamps.push({
@@ -1216,6 +1333,7 @@ export class RoomScene {
         zone: [px - 40, -SLAB, dx + PARTITION / 2, 140],
         seed: 3,
         fire: false,
+        halo: haloOf(60, 1, false),
       });
     }
   }
@@ -1465,15 +1583,20 @@ export class RoomScene {
       const k = (l.deep ? 1 : l.fire ? fireK : lampK) * l.power * fl;
       data.set([l.pos.x, l.pos.y, l.pos.z, l.r], i * 4);
       data.set(
-        [(l.color[0] / 255) * k, (l.color[1] / 255) * k, (l.color[2] / 255) * k, 0],
+        [(l.color[0] / 255) * k, (l.color[1] / 255) * k, (l.color[2] / 255) * k, l.halo],
         row + i * 4,
       );
       data.set(l.zone, 2 * row + i * 4);
     }
     s.uLightCount.value = n;
     tex.needsUpdate = true;
-    for (const m of this.flames)
-      m.scale.y = m.scale.x * (0.6 + noise(Math.floor(t * 10), m.id) * 0.7);
+    // Cada llama, a su aire: otro fotograma y algo más alta o más baja cada poco.
+    for (const m of this.flames) {
+      const tick = Math.floor(t * 9);
+      const u = (m.material as ShaderMaterial).uniforms.uUvOffset!.value;
+      u.x = Math.floor(noise(tick, m.id) * FLAME_FRAMES) / FLAME_FRAMES;
+      m.scale.y = m.scale.x * (0.8 + noise(tick, m.id + 17) * 0.4);
+    }
 
     // El cielo, solo cuando cambia (la cámara se mueve o pasa un rato).
     const skyKey = `${view.px},${view.py},${Math.floor(t * 8)},${view.vw},${view.vh}`;
@@ -1489,6 +1612,7 @@ export class RoomScene {
     const live =
       this.particles.list.length > 0 ||
       !!this.hover ||
+      !!this.hoverProp ||
       !!this.hoverHero ||
       !!this.marker ||
       !!this.targets?.length ||
@@ -1499,7 +1623,8 @@ export class RoomScene {
       !!this.raid ||
       !!this.routePts ||
       (!this.night && !!this.model?.heroes.some((h) => h.train)) ||
-      this.crowd.drilling();
+      this.crowd.drilling() ||
+      this.crowd.bubbles().length > 0;
     if (live || this.topLive) {
       const ctx = this.topCtx;
       ctx.clearRect(0, 0, view.vw, view.vh);
@@ -1509,11 +1634,13 @@ export class RoomScene {
       this.scaffolds();
       this.dropMark();
       this.trainBars();
+      this.talkBubbles();
       this.flyingArrows();
       this.raid?.draw(ctx, view.px, view.py);
       this.particles.draw(ctx, view.px, view.py, t);
       this.floatUp();
       if (this.hover) this.brackets(this.hover.rect);
+      if (this.hoverProp) this.brackets(this.propRect(this.hoverProp, view));
       for (const id of [this.hoverHero, this.marker?.id]) {
         const r = id ? this.heroRect(id) : null;
         if (r) this.brackets(r);
@@ -1681,6 +1808,74 @@ export class RoomScene {
     return room;
   }
 
+  /**
+   * Los sitios a los que la gente va a hacer algo: leer el tablón y los mapas, calentarse en la
+   * chimenea y rezar ante el altar (con la planta de su sala).
+   */
+  private poisOf(L: RoomsLayout): Poi[] {
+    const out: Poi[] = [];
+    for (const p of this.props) {
+      const kind: PoiKind | undefined =
+        p.poi ?? (p.act === 'tablon' || p.act === 'mapa' ? 'read' : undefined);
+      const room = L.rooms.find((r) => r.room.id === p.room)?.room;
+      if (!kind || !room) continue;
+      out.push({ x: (p.x0 + p.x1) / 2, floor: room.floor, kind, half: (p.x1 - p.x0) / 2 });
+    }
+    return out;
+  }
+
+  /** Los bocadillos de quien habla: un globo blanco con su icono encima de la cabeza. */
+  private talkBubbles(): void {
+    const { topCtx: ctx, camera } = this;
+    for (const b of this.crowd.bubbles()) {
+      const r = this.heroRect(b.id);
+      if (!r) continue;
+      const w = 11;
+      const h = 9;
+      const x = Math.round(r.x + r.w / 2 - camera.px - 2);
+      const y = Math.round(r.y - camera.py) - h + 3;
+      ctx.fillStyle = P.black;
+      ctx.fillRect(x - 1, y, w + 2, h);
+      ctx.fillRect(x, y - 1, w, h + 2);
+      ctx.fillRect(x + 1, y + h, 3, 2);
+      ctx.fillStyle = P.white;
+      ctx.fillRect(x, y, w, h);
+      ctx.fillRect(x + 2, y + h, 1, 1);
+      TALK_ICONS[b.talk].forEach((row, j) => {
+        for (let i = 0; i < row.length; i++) {
+          const c = TALK_INK[row[i]!];
+          if (!c) continue;
+          ctx.fillStyle = c;
+          ctx.fillRect(x + 2 + i, y + 2 + j, 1, 1);
+        }
+      });
+    }
+  }
+
+  /** Recuadro de una cosa tocable en el plano de corte (donde se ve con la vista de ahora). */
+  private propRect(p: PropSpot, v: View): Rect {
+    const a = project(v, p.x0, p.y0, p.z);
+    const b = project(v, p.x1, p.y1, p.z);
+    return { x: a.x + v.px, y: a.y + v.py, w: b.x - a.x, h: b.y - a.y };
+  }
+
+  /** La cosa tocable bajo un punto de la pantalla (la de delante), salvo en obras. */
+  private propAt(cssX: number, cssY: number): PropSpot | null {
+    if (this.targets) return null;
+    const { camera } = this;
+    const v: View = { px: camera.px, py: camera.py, vw: camera.vw, vh: camera.vh };
+    const x = camera.px + cssX / camera.zoom;
+    const y = camera.py + cssY / camera.zoom;
+    let best: PropSpot | null = null;
+    for (const p of this.props) {
+      if (!p.act) continue;
+      const r = this.propRect(p, v);
+      if (x < r.x || x >= r.x + r.w || y < r.y || y >= r.y + r.h) continue;
+      if (!best || p.z < best.z) best = p;
+    }
+    return best;
+  }
+
   /** La persona que hay bajo un punto de la pantalla (no mientras se elige sitio para una obra). */
   private heroAt(cssX: number, cssY: number): string | null {
     if (this.targets && !this.soft) return null;
@@ -1696,6 +1891,17 @@ export class RoomScene {
     if (who) {
       const p = this.heroPosition(who);
       this.cb.onHero?.(who, { x: cssX, y: cssY, wx: p?.x ?? w.x, wy: p?.y ?? w.y });
+      return;
+    }
+    const prop = this.propAt(cssX, cssY);
+    if (prop) {
+      this.cb.onSound?.('click', 0.5);
+      this.cb.onHotspot?.(`cosa:${prop.act!}:${prop.room}`, ACT_LABEL[prop.act!], {
+        x: cssX,
+        y: cssY,
+        wx: w.x,
+        wy: w.y,
+      });
       return;
     }
     const h = this.hit(w.x, w.y);
@@ -2015,10 +2221,18 @@ export class RoomScene {
       if (!prev) {
         const who = this.heroAt(p.x, p.y);
         this.hoverHero = who;
+        const prop = who ? null : this.propAt(p.x, p.y);
+        this.hoverProp = prop;
+        if (prop) {
+          this.hover = null;
+          c.style.cursor = 'pointer';
+          this.cb.onHover?.(ACT_LABEL[prop.act!], p);
+          return;
+        }
         if (who) {
           this.hover = null;
           c.style.cursor = 'pointer';
-          this.cb.onHover?.(this.crowd.nameOf(who), p);
+          this.cb.onHover?.(this.crowd.hoverOf(who), p);
           return;
         }
         const w = this.camera.toWorld(p.x, p.y);
@@ -2071,6 +2285,7 @@ export class RoomScene {
         c.style.cursor = 'grabbing';
         this.camera.drag(p.x - prev.x, p.y - prev.y, dt);
         this.hover = null;
+        this.hoverProp = null;
         this.cb.onHover?.(null, null);
       }
     });
@@ -2111,6 +2326,7 @@ export class RoomScene {
     c.addEventListener('pointerleave', () => {
       if (!this.pointers.size) {
         this.hover = null;
+        this.hoverProp = null;
         this.hoverHero = null;
         this.cb.onHover?.(null, null);
       }
@@ -2119,11 +2335,26 @@ export class RoomScene {
       'wheel',
       (e) => {
         e.preventDefault();
-        if (e.ctrlKey) {
-          this.zoomBy(e.deltaY < 0 ? 1 : -1);
+        // La rueda acerca y aleja (hacia donde apunta el ratón); de lado o con mayúsculas, mueve.
+        const side = e.shiftKey ? e.deltaY || e.deltaX : e.deltaX;
+        if (!e.ctrlKey && Math.abs(side) > Math.abs(e.deltaY) * (e.shiftKey ? 0 : 1)) {
+          this.camera.drag(-side, 0, 0);
           return;
         }
-        this.camera.drag(-e.deltaX, -e.deltaY, 0);
+        // Una rueda da saltos de unos 100; un panel táctil, muchos pasitos: se van sumando, y
+        // tras cada paso de zoom se espera un momento (si no, un solo gesto lo cruzaría entero).
+        const unit = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 400 : 1;
+        const now = performance.now();
+        if (now - this.wheelAt < 140) {
+          this.wheel = 0;
+          return;
+        }
+        this.wheel += e.deltaY * unit * (e.ctrlKey ? 4 : 1);
+        if (Math.abs(this.wheel) < 40) return;
+        const p = local(e);
+        this.zoomAt(this.wheel < 0 ? 1 : -1, p.x, p.y);
+        this.wheel = 0;
+        this.wheelAt = now;
       },
       { passive: false },
     );

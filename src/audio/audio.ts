@@ -41,7 +41,15 @@ export type Sfx =
   | 'whoosh';
 
 import { haptic } from '../platform/haptics';
-import { PLAYLISTS, TUNES, scaleStep, type Mood, type Tune, type TuneId } from './music';
+import {
+  PLAYLISTS,
+  TUNES,
+  scaleStep,
+  type Mood,
+  type Tune,
+  type TuneId,
+  type Voice,
+} from './music';
 
 export type { Mood } from './music';
 
@@ -69,7 +77,17 @@ class AudioEngine {
   /** Tras la fiesta, a qué ambiente se vuelve. */
   private returnTo: Mood = 'taberna';
   private cur: { id: TuneId; rep: number } = { id: 'jarra', rep: 0 };
-  private listIdx = 0;
+  /** Lo último que ha sonado (para no repetirlo enseguida). */
+  private played: TuneId[] = [];
+  /**
+   * Cómo se toca esta vez el tema: subido o bajado de tono, algo más rápido o más lento y con
+   * otro instrumento al frente. Así el mismo tema no suena siempre igual.
+   */
+  private arr: { tr: number; tempo: number; lead: Voice } = { tr: 0, tempo: 1, lead: 'laud' };
+  /** Hora del día (0 mañana – 1 noche): al atardecer, temas más tranquilos. */
+  private hour = 0;
+  /** Silencio entre temas: hasta cuándo solo se oye el ambiente. */
+  private restUntil = 0;
   private musicStep = 0;
   private timers: number[] = [];
   private listeners = new Set<(on: boolean) => void>();
@@ -148,10 +166,15 @@ class AudioEngine {
     this.switchMood(mood);
   }
 
+  /** La hora del día (0 mañana – 1 noche): elige temas tranquilos al atardecer. */
+  setHour(part: number): void {
+    this.hour = part;
+  }
+
   private switchMood(mood: Mood): void {
     this.mood = mood;
-    this.listIdx = 0;
-    this.cur = { id: PLAYLISTS[mood][0]!, rep: 0 };
+    this.restUntil = 0;
+    this.start(this.pick(mood));
     this.musicStep = 0;
     const ctx = this.ctx;
     if (!ctx) return;
@@ -424,6 +447,11 @@ class AudioEngine {
   private scheduleMusic(): void {
     const ctx = this.ctx;
     if (!ctx) return;
+    // Un rato sin música entre tema y tema: solo el fuego, el viento y los grillos.
+    if (this.restUntil > ctx.currentTime) {
+      this.nextNote = Math.max(this.nextNote, this.restUntil);
+      return;
+    }
     while (this.nextNote < ctx.currentTime + 0.4) {
       const tune: Tune = TUNES[this.cur.id];
       const len = tune.melody.length;
@@ -431,11 +459,15 @@ class AudioEngine {
       const t = this.nextNote;
       if (s < len) this.playStep(tune, s, t, this.cur.rep);
       this.musicStep++;
-      this.nextNote += tune.step * (s % 6 === 5 ? 1.06 : 1);
+      const step = tune.step / this.arr.tempo;
+      this.nextNote += step * (s % tune.bar === tune.bar - 1 ? 1.06 : 1);
       if (this.musicStep >= len + tune.breath) {
         this.musicStep = 0;
         this.cur.rep++;
-        if (this.cur.rep >= tune.repeats) this.nextTune();
+        if (this.cur.rep >= tune.repeats) {
+          this.nextTune();
+          if (this.restUntil > ctx.currentTime) return;
+        }
       }
     }
   }
@@ -445,9 +477,50 @@ class AudioEngine {
       this.switchMood(this.returnTo);
       return;
     }
-    const list = PLAYLISTS[this.mood];
-    this.listIdx = (this.listIdx + 1) % list.length;
-    this.cur = { id: list[this.listIdx]!, rep: 0 };
+    // En la taberna, a veces se calla un rato antes del siguiente.
+    const quiet = this.mood === 'taberna' || this.mood === 'libre';
+    if (quiet && this.ctx && Math.random() < 0.35)
+      this.restUntil = this.nextNote + 8 + Math.random() * 14;
+    this.start(this.pick(this.mood));
+  }
+
+  /**
+   * El siguiente tema del ambiente: al azar, sin repetir los dos últimos y, al atardecer, mejor
+   * uno tranquilo (y uno alegre por la mañana).
+   */
+  private pick(mood: Mood): TuneId {
+    const list = PLAYLISTS[mood];
+    if (list.length === 1) return list[0]!;
+    const fresh = list.filter((id) => !this.played.slice(-2).includes(id));
+    const pool = fresh.length ? fresh : list;
+    const evening = this.hour > 0.62;
+    const weight = (id: TuneId) => (!!TUNES[id].calm === evening ? 3 : 1);
+    let r = Math.random() * pool.reduce((a, id) => a + weight(id), 0);
+    for (const id of pool) {
+      r -= weight(id);
+      if (r <= 0) return id;
+    }
+    return pool[0]!;
+  }
+
+  /** Empieza un tema con un arreglo nuevo. */
+  private start(id: TuneId): void {
+    const tune = TUNES[id];
+    this.cur = { id, rep: 0 };
+    this.played = [...this.played.slice(-3), id];
+    const urgent = this.mood === 'asalto' || this.mood === 'tension' || this.mood === 'fiesta';
+    const pick = <T>(list: T[]) => list[Math.floor(Math.random() * list.length)]!;
+    // La mitad de las veces, con su instrumento; si no, otro al frente.
+    const others: Voice[] = (['laud', 'flauta', 'violin'] as Voice[]).filter(
+      (v) => v !== tune.voice,
+    );
+    this.arr = urgent
+      ? { tr: 0, tempo: 1, lead: tune.voice }
+      : {
+          tr: pick([0, 0, 0, -2, 2, -3]),
+          tempo: 0.94 + Math.random() * 0.12,
+          lead: Math.random() < 0.5 ? tune.voice : pick(others),
+        };
   }
 
   /** Corcheas que dura la nota en `s` (hasta la siguiente nota o silencio). */
@@ -459,58 +532,71 @@ class AudioEngine {
 
   /**
    * Una corchea del tema. La primera vuelta suena tal cual; las siguientes varían: adornos,
-   * notas de paso, el bajo arpegiado, una segunda voz en terceras o la flauta doblando.
+   * notas de paso, el bajo arpegiado, una segunda voz en terceras o otro instrumento doblando.
+   * Todo va subido o bajado de tono según el arreglo de esta vez (`arr.tr`).
    */
   private playStep(tune: Tune, s: number, t: number, rep: number): void {
     const bus = this.musicBus;
-    const bar = Math.floor(s / 6);
-    const inBar = s % 6;
+    const bar = Math.floor(s / tune.bar);
+    const inBar = s % tune.bar;
     const n = tune.melody[s];
     const vary = rep > 0;
+    const tr = this.arr.tr;
+    const lead = this.arr.lead;
+    const step = tune.step / this.arr.tempo;
     if (n) {
       const len = this.hold(tune, s);
-      const dur = len * tune.step;
-      if (tune.voice === 'flauta') this.flute(n, t, dur, 0.06);
-      else this.pluck(n, t, 0.28, bus);
+      const dur = len * step;
+      this.voice(lead, n + tr, t, dur, 1);
       if (vary && len >= 2 && Math.random() < 0.35) {
         // Adorno: una nota de gracia por encima justo antes.
-        const g = scaleStep(n, tune.scale, 1);
-        if (tune.voice === 'flauta') this.flute(g, t - 0.06, 0.06, 0.035);
-        else this.pluck(g, t - 0.05, 0.12, bus);
+        const g = scaleStep(n, tune.scale, 1) + tr;
+        if (lead === 'laud') this.pluck(g, t - 0.05, 0.12, bus);
+        else this.voice(lead, g, t - 0.06, 0.06, 0.55);
       }
       if (rep % 2 === 1 && len >= 2) {
-        // Segunda vuelta: el otro instrumento dobla las notas largas.
-        if (tune.voice === 'laud') this.flute(n + 12, t, dur * 0.9, 0.025);
-        else this.pluck(scaleStep(n, tune.scale, -2), t, 0.12, bus);
+        // Segunda vuelta: otro instrumento dobla las notas largas.
+        if (lead === 'laud') this.flute(n + tr + 12, t, dur * 0.9, 0.025);
+        else this.pluck(scaleStep(n, tune.scale, -2) + tr, t, 0.12, bus);
       }
-      if (rep >= 2) this.pluck(scaleStep(n, tune.scale, -2), t + 0.01, 0.12, bus);
+      if (rep >= 2) this.pluck(scaleStep(n, tune.scale, -2) + tr, t + 0.01, 0.12, bus);
     } else if (vary && !tune.rests.has(s) && Math.random() < 0.2) {
       // Nota de paso entre dos notas.
       const prev = tune.melody[s - 1];
       const next = tune.melody[s + 1];
       if (prev && next && Math.abs(next - prev) >= 3)
-        this.pluck(scaleStep(prev, tune.scale, Math.sign(next - prev)), t, 0.14, bus);
+        this.pluck(scaleStep(prev, tune.scale, Math.sign(next - prev)) + tr, t, 0.14, bus);
     }
 
     const bass = tune.bass[bar % tune.bass.length]!;
-    if (tune.ostinato) this.pluck(tune.ostinato[inBar % tune.ostinato.length]!, t, 0.13, bus);
+    const half = Math.floor(tune.bar / 2);
+    if (tune.drone && inBar === 0) this.drone(bass[0] + tr, t, tune.bar * step);
+    if (tune.ostinato) this.pluck(tune.ostinato[inBar % tune.ostinato.length]! + tr, t, 0.13, bus);
     else if (rep % 2 === 1) {
       // Bajo arpegiado.
-      if (inBar === 0) this.pluck(bass[0], t, 0.3, bus);
-      if (inBar === 2) this.pluck(bass[1], t, 0.16, bus);
-      if (inBar === 4) this.pluck(bass[0] + 12, t, 0.14, bus);
+      if (inBar === 0) this.pluck(bass[0] + tr, t, 0.3, bus);
+      if (inBar === 2) this.pluck(bass[1] + tr, t, 0.16, bus);
+      if (inBar === 4) this.pluck(bass[0] + tr + 12, t, 0.14, bus);
+      if (inBar === 6) this.pluck(bass[1] + tr, t, 0.12, bus);
     } else {
-      if (inBar === 0) this.pluck(bass[0], t, 0.32, bus);
-      if (inBar === 3) this.pluck(bass[1], t, 0.2, bus);
+      if (inBar === 0) this.pluck(bass[0] + tr, t, 0.32, bus);
+      if (inBar === half) this.pluck(bass[1] + tr, t, 0.2, bus);
     }
-    if (inBar === 0 && bar % 2 === 0 && !tune.ostinato && tune.voice === 'laud')
+    if (inBar === 0 && bar % 2 === 0 && !tune.ostinato && lead === 'laud')
       [bass[0] + 12, bass[0] + 15, bass[0] + 19].forEach((m, i) =>
-        this.pluck(m, t + 0.02 + i * 0.03, 0.08, bus),
+        this.pluck(m + tr, t + 0.02 + i * 0.03, 0.08, bus),
       );
     const d = tune.drum?.[inBar];
     if (d === 'X') this.drum(t, 0.16);
     else if (d === 'x') this.drum(t, 0.08);
     if (tune.shaker?.[inBar] === 'x') this.shaker(t, 0.03);
+  }
+
+  /** Una nota del instrumento que lleva la melodía (`k`: algo más suave para los adornos). */
+  private voice(v: Voice, note: number, t: number, dur: number, k: number): void {
+    if (v === 'flauta') this.flute(note, t, dur, 0.06 * k);
+    else if (v === 'violin') this.fiddle(note, t, dur, 0.05 * k);
+    else this.pluck(note, t, 0.28 * k, this.musicBus);
   }
 
   // ---------- Instrumentos ----------
@@ -576,6 +662,58 @@ class AudioEngine {
     o.stop(end + 0.15);
     vib.stop(end + 0.15);
     this.burst(t, 0.06, vol * 0.4, 'bandpass', f * 2, 2, this.musicBus);
+  }
+
+  /** Violín: sierra suavizada, con el arco que entra despacio y vibrato al sostener. */
+  private fiddle(note: number, t: number, dur: number, vol: number): void {
+    const ctx = this.ctx!;
+    const f = midi(note);
+    const o = ctx.createOscillator();
+    o.type = 'sawtooth';
+    o.frequency.value = f;
+    const vib = ctx.createOscillator();
+    vib.frequency.value = 5.6;
+    const vibAmt = ctx.createGain();
+    vibAmt.gain.setValueAtTime(0, t);
+    vibAmt.gain.linearRampToValueAtTime(f * 0.007, t + Math.min(0.3, dur));
+    vib.connect(vibAmt).connect(o.frequency);
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = Math.min(3200, f * 4);
+    lp.Q.value = 0.7;
+    const g = ctx.createGain();
+    const end = t + Math.max(0.1, dur);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.07);
+    g.gain.setValueAtTime(vol * 0.9, end - 0.05);
+    g.gain.exponentialRampToValueAtTime(0.0005, end + 0.15);
+    o.connect(lp).connect(g).connect(this.musicBus);
+    o.start(t);
+    vib.start(t);
+    o.stop(end + 0.2);
+    vib.stop(end + 0.2);
+  }
+
+  /** Bordón de zanfona: la nota del bajo y su quinta, sostenidas todo el compás, muy bajas. */
+  private drone(note: number, t: number, dur: number): void {
+    const ctx = this.ctx!;
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 520;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.018, t + 0.25);
+    g.gain.setValueAtTime(0.018, t + dur - 0.2);
+    g.gain.linearRampToValueAtTime(0, t + dur + 0.1);
+    lp.connect(g).connect(this.musicBus);
+    for (const m of [note, note + 7]) {
+      const o = ctx.createOscillator();
+      o.type = 'sawtooth';
+      o.frequency.value = midi(m);
+      o.connect(lp);
+      o.start(t);
+      o.stop(t + dur + 0.15);
+    }
   }
 
   /** Pandero: golpe grave y un poco de parche. */

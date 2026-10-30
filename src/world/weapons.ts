@@ -16,7 +16,12 @@ export type WeaponId =
   | 'cuchillo'
   | 'hacha'
   | 'antorcha'
-  | 'escudo';
+  | 'escudo'
+  // Herramientas de los puestos de trabajo (no se pelea con ellas).
+  | 'cucharon'
+  | 'pala'
+  | 'cuenco'
+  | 'jarra';
 
 export interface Weapon {
   img: PixelBuffer;
@@ -129,4 +134,12 @@ export const WEAPONS: Record<WeaponId, Weapon> = {
   ),
   antorcha: grid(['.B.', '.b.', '.b.', '.b.', '.b.', '.B.'], 1, 4),
   escudo: grid(['.SSSS.', 'SrrrrS', 'SrGGrS', 'SrGGrS', 'SrrrrS', '.SrrS.', '..SS..'], 3, 3),
+  cucharon: grid(['.ss.', 'sSSs', '.ss.', '..s.', '..s.', '..s.', '..b.', '..b.'], 2, 6),
+  pala: grid(
+    ['.bb.', 'bBBb', 'bBBb', 'bBBb', '.bb.', '..b.', '..b.', '..b.', '..b.', '..b.', '..B.'],
+    2,
+    9,
+  ),
+  cuenco: grid(['.WW.', 'sWWs', '.ss.'], 1, 2),
+  jarra: grid(['WWW.', 'GGGb', 'GyGb', 'GGGb', 'GGG.'], 3, 2),
 };

@@ -16,7 +16,9 @@ import {
 import { SPRITE_H, SPRITE_W, generateLook, heroSprites, renderHero } from './hero';
 
 // Todos los caracteres que pueden usar las capas de héroes.
-const SLOTS = Object.fromEntries([...'xXhHcCaAmMoOenrvVgGyYkwpPqQ'].map((ch) => [ch, '#000000']));
+const SLOTS = Object.fromEntries(
+  [...'xXhHcCaAmMoOenrvVgGyYkwpPqQzZbB'].map((ch) => [ch, '#000000']),
+);
 
 const named = (prefix: string, rec: Record<string, readonly string[] | undefined>) =>
   Object.fromEntries(Object.entries(rec).flatMap(([k, g]) => (g ? [[`${prefix}:${k}`, g]] : [])));
