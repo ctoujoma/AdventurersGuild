@@ -37,6 +37,7 @@ import type { ComponentChildren } from 'preact';
 import { help } from '../HoldHelp';
 import { Icon, type IconName } from '../icons';
 import { jobRoomName } from '../JobPicker';
+import { isRealTime, left as timeLeft } from '../when';
 
 /** A dónde lleva cada sala: los paneles de siempre que tienen que ver con ella. */
 export type RoomLink =
@@ -232,9 +233,10 @@ function DoorInfo({ game }: { game: GameState }) {
   );
 }
 
-/** «Le faltan unos 3 días» (o «Sube esta noche»). */
-function daysLeft(frac: number, perDay: number): string {
+/** «Le faltan unos 3 días» (o «Sube esta noche»); con el tiempo que corre solo, en minutos. */
+function daysLeft(frac: number, perDay: number, clock: number): string {
   const d = Math.ceil((1 - frac) / perDay - 1e-9);
+  if (isRealTime()) return `Sube en ${timeLeft(Math.max(1, d), clock)}`;
   return d <= 1 ? 'Sube esta noche' : `Le faltan unos ${d} días`;
 }
 
@@ -271,7 +273,7 @@ function TrainInfo({ game, room }: { game: GameState; room: Room }) {
             {!t && <span class="row-sub">fuera hoy</span>}
             {t && !t.capped && (
               <span class="row-sub">
-                {daysLeft(t.frac, t.perDay)}.{' '}
+                {daysLeft(t.frac, t.perDay, game.clock ?? 0)}.{' '}
                 {gain
                   ? `Con ese punto: ${gain}.`
                   : 'Ese punto aún no se notará en las habilidades.'}
@@ -454,7 +456,7 @@ export function RoomPanel({ game, roomId, onUpgrade, onLink, onWork, onMove, onA
   const why = canWork(game, { type: 'upgradeRoom', id: room.id });
   const size = room.w * room.h;
   const state = room.works
-    ? `En obras: estará ${room.works.kind === 'move' ? 'en su sitio' : 'lista'} en ${room.works.nights} ${plural(room.works.nights, 'noche', 'noches')}.`
+    ? `En obras: estará ${room.works.kind === 'move' ? 'en su sitio' : 'lista'} en ${timeLeft(room.works.nights, game.clock ?? 0, 'noche', 'noches')}.`
     : room.level === 0
       ? room.type === 'torre'
         ? 'Solar vacío: hay que levantarla.'

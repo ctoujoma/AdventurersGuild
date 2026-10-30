@@ -275,6 +275,8 @@ export interface RoomYield {
 export interface DawnEvent {
   t: string;
   k?: ChipKind;
+  /** Encabezado (el día, en la carta de «Mientras no estabas»). */
+  head?: boolean;
 }
 
 export interface Custom {
@@ -494,4 +496,6 @@ export interface GameState {
   lastRaid?: RaidResult | null;
   /** Informe de la pelea contra un jefe de esta noche (para el aviso del amanecer). */
   lastFight?: string | null;
+  /** Hora real (ms) de la última vez que se guardó con el juego abierto (tiempo que corre solo). */
+  lastSeen?: number;
 }

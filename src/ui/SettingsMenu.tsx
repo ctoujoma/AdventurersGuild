@@ -174,6 +174,17 @@ export function SettingsMenu({ settings: s, onChange, onClose, onCheat, onBoss }
               <label class="set-check">
                 <input
                   type="checkbox"
+                  checked={s.realTime}
+                  onChange={(e) => set({ realTime: e.currentTarget.checked })}
+                />
+                <span>
+                  Tiempo que corre solo (prueba): la noche cae sola y, con el juego cerrado, la
+                  taberna sigue a un día por hora
+                </span>
+              </label>
+              <label class="set-check">
+                <input
+                  type="checkbox"
                   checked={s.tester}
                   onChange={(e) => set({ tester: e.currentTarget.checked })}
                 />

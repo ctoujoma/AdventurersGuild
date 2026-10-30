@@ -1771,6 +1771,23 @@ button:focus-visible {
   padding: 2px 12px;
 }
 
+/* Tiempo que corre solo: en vez de los botones, cuánto falta para la noche. */
+.daybar-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 2px 12px;
+  font-family: var(--pixel);
+  font-size: var(--t-m);
+  color: var(--sand);
+  white-space: nowrap;
+}
+
+.clock-real {
+  cursor: default;
+}
+
 /* ---------- Amanecer y fin de partida ---------- */
 .dawn {
   position: absolute;
@@ -1889,6 +1906,17 @@ button:focus-visible {
 
 .ev-good::before {
   background: var(--leaf);
+}
+
+/* Encabezado de cada día en la carta de «Mientras no estabas». */
+.ev-head {
+  padding-left: 0;
+  font-family: var(--pixel);
+  color: var(--text-soft);
+}
+
+.ev-head::before {
+  display: none;
 }
 
 .ev-bad {

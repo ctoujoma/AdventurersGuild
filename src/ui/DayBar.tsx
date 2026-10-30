@@ -1,6 +1,7 @@
-import { DUSK } from '../core/balance';
+import { AWAY_DAY_SECONDS, DAY_SECONDS, DUSK } from '../core/balance';
 import { help } from './HoldHelp';
 import { Icon } from './icons';
+import { countdown } from './when';
 
 interface Props {
   unread: number;
@@ -12,6 +13,8 @@ interface Props {
   /** Pasando la noche (con o sin asalto): el reloj de mañana aún no corre. */
   night?: boolean;
   pace: 1 | 2 | 4;
+  /** Tiempo que corre solo: sin acelerar ni cerrar; la barra dice cuánto falta para la noche. */
+  real?: boolean;
   onMail: () => void;
   onAway: () => void;
   onPace: () => void;
@@ -28,11 +31,16 @@ export function partName(part: number, dusk: number): string {
 
 /**
  * Barra del día sobre la escena: correo, grupos fuera, el reloj y una acción: de día, saltar al
- * anochecer; al anochecer, cerrar la taberna y pasar la noche.
+ * anochecer; al anochecer, cerrar la taberna y pasar la noche. Con el tiempo que corre solo, en
+ * vez de la acción, cuánto falta para que anochezca o caiga la noche.
  */
 export function DayBar(p: Props) {
   const dusk = DUSK;
   const part = p.night ? 1 : p.part;
+  // Con el tiempo que corre solo, cuánto falta para el anochecer o para la noche.
+  const toDusk = (dusk - part) * DAY_SECONDS;
+  const toNight = (1 - part) * DAY_SECONDS;
+  const slow = Math.round(AWAY_DAY_SECONDS / DAY_SECONDS);
   return (
     <div class="daybar">
       <button
@@ -53,20 +61,41 @@ export function DayBar(p: Props) {
         <Icon name="flag" size={20} />
         {p.away > 0 && <span class="badge badge-info">{p.away}</span>}
       </button>
-      <button
-        class="clock"
-        aria-label={`${partName(part, dusk)}. Velocidad ×${p.pace}: toca para cambiarla`}
-        data-help="El reloj del día: la caja va entregando lo de la taberna hasta el anochecer. Toca para que corra más rápido."
-        onClick={p.onPace}
-      >
-        <Icon name="reloj" size={14} />
-        <span class="clock-bar" aria-hidden="true">
-          <i style={{ width: `${Math.round(part * 100)}%` }} />
-          <b style={{ left: `${dusk * 100}%` }} />
+      {p.real ? (
+        <span
+          class="clock clock-real"
+          aria-label={partName(part, dusk)}
+          {...help(
+            `El reloj del día corre solo y la noche cae sola. Con el juego cerrado la taberna sigue, ${slow} veces más despacio, y al volver te cuenta lo que ha pasado.`,
+          )}
+        >
+          <Icon name="reloj" size={14} />
+          <span class="clock-bar" aria-hidden="true">
+            <i style={{ width: `${Math.round(part * 100)}%` }} />
+            <b style={{ left: `${dusk * 100}%` }} />
+          </span>
         </span>
-        <span class="clock-pace">×{p.pace}</span>
-      </button>
-      {p.night ? null : p.canClose ? (
+      ) : (
+        <button
+          class="clock"
+          aria-label={`${partName(part, dusk)}. Velocidad ×${p.pace}: toca para cambiarla`}
+          data-help="El reloj del día: la caja va entregando lo de la taberna hasta el anochecer. Toca para que corra más rápido."
+          onClick={p.onPace}
+        >
+          <Icon name="reloj" size={14} />
+          <span class="clock-bar" aria-hidden="true">
+            <i style={{ width: `${Math.round(part * 100)}%` }} />
+            <b style={{ left: `${dusk * 100}%` }} />
+          </span>
+          <span class="clock-pace">×{p.pace}</span>
+        </button>
+      )}
+      {p.night ? null : p.real ? (
+        <span class="daybar-left" aria-live="off">
+          <Icon name={part < dusk ? 'reloj' : 'moon'} size={16} />
+          {part < dusk ? `Anochece en ${countdown(toDusk)}` : `Noche en ${countdown(toNight)}`}
+        </span>
+      ) : p.canClose ? (
         <button
           class="btn btn-gold endday"
           data-help="Cerrar: cierra la taberna y pasa la noche. Los grupos avanzan y por la mañana llega el correo."

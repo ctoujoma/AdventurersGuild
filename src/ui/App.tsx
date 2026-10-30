@@ -3,6 +3,8 @@ import { useBackButton } from '../platform/back';
 import { HoldHelp } from './HoldHelp';
 import { haptic, setHaptics } from '../platform/haptics';
 import { audio, type Mood } from '../audio/audio';
+import { catchUp } from '../core/away';
+import { left, setRealTime } from './when';
 import { canClose, canHire, customOf, newGame, reduce, type Action } from '../core/game';
 import { raidRoute } from '../core/assault';
 import { canAssign, canHireWorker } from '../core/workers';
@@ -114,6 +116,8 @@ export function App() {
   const [dawnOpen, setDawnOpen] = useState(!saved);
   /** La noche está pasando en la escena (entre «Cerrar» y el resumen del amanecer). */
   const [passing, setPassing] = useState(false);
+  /** Días que pasaron con el juego cerrado (la carta del amanecer cuenta «Mientras no estabas»). */
+  const [awayDays, setAwayDays] = useState(0);
   /** Hay un asalto en el patio (se puede saltar). */
   const [raiding, setRaiding] = useState(false);
   /** Pelea contra un jefe de esta noche: el aviso (id del informe) y la pelea abierta. */
@@ -137,6 +141,8 @@ export function App() {
   const [hasGame, setHasGame] = useState(!!saved);
   const [saveMenu, setSaveMenu] = useState(false);
   const [settings, setSettings] = useState<Settings>(loadSettings);
+  // Los plazos se cuentan en minutos con el tiempo que corre solo (ver `when.ts`).
+  setRealTime(settings.realTime);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [records, setRecords] = useState(loadRecords);
   /** Mejor llegada antes de esta partida, para comparar en la apertura. */
@@ -189,7 +195,8 @@ export function App() {
   const commit = (next: GameState) => {
     gameRef.current = next;
     setGame(next);
-    saveGame(next);
+    // Con la hora: al volver, el tiempo que corre solo sabe cuánto ha estado cerrado.
+    saveGame({ ...next, lastSeen: Date.now() });
     setRecords((r) => {
       const m = mergeRecords(r, next);
       if (m !== r) saveRecords(m);
@@ -238,6 +245,56 @@ export function App() {
       audio.play('coin', 0.25);
     }
   };
+  /**
+   * Tiempo que corre solo (en prueba): al volver tras `seconds` reales fuera, se simula lo que
+   * ha pasado (`catchUp`) y, si han pasado días, la carta del amanecer lo cuenta.
+   */
+  const comeBack = (seconds: number) => {
+    if (!settings.realTime || passing) return;
+    dispatch({ type: 'tick', to: clockRef.current });
+    const away = catchUp(gameRef.current, seconds);
+    if (!away.seconds) return;
+    commit(away.state);
+    clockRef.current = away.state.clock ?? 0;
+    setClock(clockRef.current);
+    scene.current?.setTime(clockRef.current / DAY_SECONDS);
+    if (away.days.length) {
+      setPanel(null);
+      setAwayDays(away.days.length);
+      setDawnOpen(true);
+    } else toast('La taberna ha seguido abierta mientras no estabas.');
+  };
+  const comeBackRef = useRef(comeBack);
+  comeBackRef.current = comeBack;
+  // En la pantalla de título no se pone al día: ya lo hará «Continuar» con la hora guardada.
+  const inGame = useRef(false);
+  inGame.current = screen === 'game';
+  // Si se entra directo a la partida (con #debug), se pone al día al arrancar.
+  useEffect(() => {
+    const seen = gameRef.current.lastSeen;
+    if (screen === 'game' && seen) comeBackRef.current((Date.now() - seen) / 1000);
+    // Solo al arrancar.
+  }, []);
+  // Con la pestaña oculta o el juego cerrado, se guarda la hora; al volver, se pone al día.
+  const hiddenAt = useRef<number | null>(null);
+  useEffect(() => {
+    const onHide = () => {
+      if (hiddenAt.current === null) hiddenAt.current = Date.now();
+      saveGame({ ...gameRef.current, lastSeen: Date.now() });
+    };
+    const onVisible = () => {
+      if (document.hidden) return onHide();
+      const t = hiddenAt.current;
+      hiddenAt.current = null;
+      if (t !== null && inGame.current) comeBackRef.current((Date.now() - t) / 1000);
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('pagehide', onHide);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('pagehide', onHide);
+    };
+  }, []);
   const say = (text: string, at: Point) =>
     setBubble({ text, x: at.x, y: at.y, wx: at.wx, wy: at.wy, key: Date.now() });
 
@@ -368,7 +425,7 @@ export function App() {
     setPanel(null);
     scene.current?.focus('puerta');
     toast(
-      `${names} ${plural(ids.length, 'sale', 'salen')} hacia ${q.place}. Vuelta en ${days} ${plural(days, 'día', 'días')}.`,
+      `${names} ${plural(ids.length, 'sale', 'salen')} hacia ${q.place}. Vuelta en ${left(days, clockRef.current)}.`,
     );
   };
 
@@ -502,6 +559,7 @@ export function App() {
   };
 
   const closeDawn = (then?: PanelId) => {
+    setAwayDays(0);
     const returned = sceneGame.missions.some((m) => !game.missions.some((x) => x.id === m.id));
     // Si algún grupo vuelve con éxito, ronda en la barra cuando cruzan la puerta.
     const wins = game.reports.filter(
@@ -608,12 +666,21 @@ export function App() {
     const id = setInterval(() => {
       if (document.hidden) return;
       const before = clockRef.current;
-      const next = Math.min(DAY_SECONDS, before + 0.25 * settings.pace);
+      // Con el tiempo que corre solo no hay acelerar: el reloj es el de verdad.
+      const pace = settings.realTime ? 1 : settings.pace;
+      const next = Math.min(DAY_SECONDS, before + 0.25 * pace);
       if (next === before) return;
       moveClock(next, before);
     }, 250);
     return () => clearInterval(id);
-  }, [ticking, settings.pace]);
+  }, [ticking, settings.pace, settings.realTime]);
+  // Tiempo que corre solo (en prueba): al acabar el día la noche cae sola, cuando no hay nada
+  // abierto delante (un panel o una ficha esperan a que se cierren).
+  useEffect(() => {
+    if (!settings.realTime || !ticking || passing || clock < DAY_SECONDS) return;
+    if (panel || card || questId || works.planning) return;
+    endDay();
+  }, [clock, ticking, passing, panel, card, questId, works.planning, settings.realTime]);
   // Lo que se abre desde el gremio (arcón, libro, adornos) deja encendida su pestaña.
   const tab: TabId =
     panel === 'tablon' || panel === 'heroes' || panel === 'gremio'
@@ -779,6 +846,7 @@ export function App() {
             onMail={() => openPanel('correo')}
             onAway={() => openPanel('fuera')}
             part={clock / DAY_SECONDS}
+            real={settings.realTime}
             canClose={clock >= DUSK * DAY_SECONDS}
             night={passing}
             pace={settings.pace}
@@ -798,6 +866,7 @@ export function App() {
           <Panel title="Tablón de encargos" onClose={() => openPanel(null)} variant="cork">
             <TablonPanel
               quests={game.quests}
+              clock={clock}
               seeAll={game.fac.mapas >= 2}
               onOpen={(id) => {
                 audio.play('open');
@@ -1016,7 +1085,7 @@ export function App() {
               if (!scene.current?.focusHero(cardHero.id))
                 say(
                   cardHero.status === 'mision'
-                    ? `${cardHero.name} está de misión. Vuelve en ${cardHero.days} ${plural(cardHero.days, 'día', 'días')}.`
+                    ? `${cardHero.name} está de misión. Vuelve en ${left(cardHero.days, clockRef.current)}.`
                     : `${cardHero.name} no está en la taberna.`,
                   { x: 160, y: 120 },
                 );
@@ -1026,6 +1095,7 @@ export function App() {
         {dawnOpen && screen === 'game' && (
           <Dawn
             day={game.day}
+            away={awayDays || undefined}
             name={customOf(game).name}
             flavor={game.flavor}
             events={game.dawn}
@@ -1110,6 +1180,8 @@ export function App() {
           onContinue={() => {
             audio.play('open');
             setScreen('game');
+            const seen = gameRef.current.lastSeen;
+            if (seen) comeBack((Date.now() - seen) / 1000);
           }}
           onNew={restart}
           onSaves={() => setSaveMenu(true)}

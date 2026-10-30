@@ -6,6 +6,7 @@ import { earn, spill, vaultNews } from './vault';
 import { FLAVOR } from '../data/stories';
 import {
   MAX_GUARDS,
+  AWAY_RAID,
   BOARD_SIZE,
   CANDIDATE_EVERY,
   DAYS,
@@ -647,7 +648,7 @@ export const dayPart = (s: GameState) => Math.min(1, (s.clock ?? 0) / DAY_SECOND
 export const canClose = (s: GameState) => dayPart(s) >= DUSK;
 
 /** Avanza el reloj y entrega la caja que toque a esa hora (en entregas iguales). */
-function tick(state: GameState, to: number): GameState {
+export function tick(state: GameState, to: number): GameState {
   const clock = Math.min(DAY_SECONDS, Math.max(state.clock ?? 0, to));
   if (clock === (state.clock ?? 0)) return state;
   const s = { ...state, clock };
@@ -661,7 +662,8 @@ function tick(state: GameState, to: number): GameState {
   return s;
 }
 
-export function endDay(state: GameState): GameState {
+/** Pasa la noche y amanece. `away`: con el juego cerrado (menos asaltos; ver `away.ts`). */
+export function endDay(state: GameState, away = false): GameState {
   if (state.over) return state;
   const s = structuredClone(state);
   const rng = new Rng(s.rng);
@@ -871,7 +873,7 @@ export function endDay(state: GameState): GameState {
 
   // Asaltos: chivatazos y, si toca esta noche, la pelea en el patio.
   s.lastRaid = null;
-  const raidReport = stepRaids(s, rng, events);
+  const raidReport = stepRaids(s, rng, events, away ? AWAY_RAID : 1);
   if (raidReport) s.reports.unshift(raidReport);
 
   // Rescates que ya no hacen falta (volvió o cayó).
