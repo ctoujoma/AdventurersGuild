@@ -19,6 +19,8 @@ import {
 } from '../parallax';
 
 const SKY_FX = 0.15;
+/** Las nubes, entre el cielo y las montañas (que van por delante y se mueven algo más). */
+export const CLOUD_FX = 0.17;
 /** Alto de la franja de estrellas (se repite hacia arriba) y ancho de la de las nubes. */
 const STAR_H = 230;
 const CLOUD_W = 900;
@@ -114,7 +116,7 @@ export class Sky {
     this.drawDay(ctx, dl, cx, hz, vw, vh);
     // Las nubes van y vienen en una franja de CLOUD_W que se repite a lo ancho.
     for (const cl of this.clouds) {
-      const x = ((cl.x + t * cl.speed) % CLOUD_W) - 60 + WORLD_X0 - cx * 0.2;
+      const x = ((cl.x + t * cl.speed) % CLOUD_W) - 60 + WORLD_X0 - cx * CLOUD_FX;
       for (let k = Math.floor(-x / CLOUD_W) - 1; x + k * CLOUD_W < vw; k++)
         drawBuffer(ctx, cl.img, x + k * CLOUD_W, cl.y + top);
     }
