@@ -144,6 +144,7 @@ export function sceneModel(s: GameState): SceneModel {
     dog: customOf(s).dog,
     decor: customOf(s).decor ?? [],
     facade: customOf(s).facade ?? [],
+    tints: customOf(s).colors,
     visitors: { day: s.day, kinds: visitorOrder(s) },
     gear: gearInStock(s).map((i) => ({ icon: i.icon ?? 'espada', rarity: i.rarity ?? 0 })),
     trophies: s.trophies.map((t) => t.icon),

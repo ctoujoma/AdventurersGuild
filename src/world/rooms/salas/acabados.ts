@@ -17,6 +17,8 @@ import type { Room } from '../../../core/model';
 import { beam, planksV, plaster, post, stoneWall } from '../../paint';
 import { PITCH, ROOM_H } from '../layout';
 import type { Theme } from '../textures';
+import { tintOf } from './tintes';
+import { TINTS } from '../../../data/custom';
 
 const WOOD_DARK: Ramp = [P.black, P.plum, P.bark, P.rust];
 const WAINSCOT: Ramp = [P.ebony, P.plum, P.bark, P.rust];
@@ -63,7 +65,7 @@ export function wallFinish(b: PixelBuffer, room: Room, theme: Theme, wain: numbe
     else boardsH(b, y0, bw, bh - y0);
     // En el 3, entre los postes, la pared entelada (cada sala con su color) o enlucida.
     if (lvl >= 3) {
-      const cloth = CLOTH[room.type];
+      const cloth = wallCloth(room);
       if (cloth) damask(b, 6, rail - 1, bw, lvl >= 4 ? [cloth[0], cloth[1], P.gold] : cloth);
       else plaster(b, 0, 6, bw, rail - 7, seed, PLASTER_FINE);
     }
@@ -126,7 +128,7 @@ export function sideFinish(b: PixelBuffer, room: Room, theme: Theme, seed: strin
       if (lvl >= 3) tiles(b, 0, yb - 18, w, 18);
     } else if (theme === 'madera') {
       if (lvl >= 3) {
-        const cloth = CLOTH[room.type];
+        const cloth = wallCloth(room);
         if (cloth) damask(b, yt + 7, yb - 17, w, lvl >= 4 ? [cloth[0], cloth[1], P.gold] : cloth);
         else plaster(b, 0, yt + 7, w, ROOM_H - 24, `${seed}${f}`, PLASTER_FINE);
         if (lvl >= 4) {
@@ -243,6 +245,17 @@ const CLOTH: Partial<Record<string, [string, string, string]>> = {
   capilla: [P.grape, P.rose, P.coral],
   enfermeria: [P.mist, P.fog, P.white],
 };
+
+/** La tela de la pared de una sala (si la lleva): la suya o la de su tema de color. */
+function wallCloth(room: Room): [string, string, string] | undefined {
+  const house = CLOTH[room.type];
+  const t = tintOf(room);
+  if (!house || !t) return house;
+  // Fondo del tono oscuro, rombos de la sombra y el punto del medio: así no se parecen los
+  // temas que comparten la sombra (vino, ocre y morado).
+  const [a, b, c] = TINTS[t].ramp;
+  return [b, a, c];
+}
 
 /** Tela de damasco (rombos) de `y0` a `y1`, con filete de oro arriba y abajo. */
 function damask(b: PixelBuffer, y0: number, y1: number, w: number, [bg, ink, dot]: string[]) {

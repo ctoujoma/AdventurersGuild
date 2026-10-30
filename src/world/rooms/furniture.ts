@@ -13,6 +13,10 @@ import { scaleAt } from './view3d';
 import { ART } from './salas';
 import { bedsOf } from './salas/camas';
 import { cotsOf } from './salas/enfermeria';
+import { cloth } from './salas/tintes';
+
+/** Los manteles del salón, granates (o del tema de la sala). */
+const VINO = [P.plum, P.wine, P.red, P.coral] as const;
 import {
   CANDLE,
   FIRE,
@@ -182,7 +186,7 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
         const cards = i === 0 && decor.includes('naipes');
         const candle = lvl >= 2 && !cards;
         add(
-          tableSet(`${room.id}-${i}`, lvl >= 3, candle, cards),
+          tableSet(`${room.id}-${i}`, lvl >= 3 ? cloth(room, VINO) : undefined, candle, cards),
           tx,
           z,
           0,

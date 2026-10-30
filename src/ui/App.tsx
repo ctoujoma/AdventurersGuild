@@ -911,6 +911,9 @@ export function App() {
               }
               onLink={roomLink}
               onAssign={works.planning ? undefined : assignJob}
+              onTint={
+                works.planning ? undefined : (id, tint) => dispatch({ type: 'tint', id, tint })
+              }
             />
           </Panel>
         )}

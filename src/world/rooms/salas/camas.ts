@@ -37,6 +37,7 @@ import {
   type WallCtx,
 } from './kit';
 import { candleOn, web } from './piezas';
+import { cloth } from './tintes';
 
 type Style = 'tropa' | 'servicio' | 'veterano';
 
@@ -111,11 +112,16 @@ export function bedsOf(room: Room, w: number): Bed[] {
 // ---------- Piezas ----------
 
 /**
- * Litera de dos o tres pisos, con la manta del nivel (la misma que lleva quien duerme en
- * ella). La de los veteranos, de madera oscura con remates de latón; la del servicio, tosca.
+ * Litera de dos o tres pisos, con la manta del nivel o del tema de la sala (la misma que lleva
+ * quien duerme en ella). La de los veteranos, de madera oscura con remates de latón; la del
+ * servicio, tosca.
  */
-export function bunk(level: number, tiers: 2 | 3, style: Style): PixelBuffer {
-  const quilt = Prop.bunkQuilt(level);
+export function bunk(
+  level: number,
+  tiers: 2 | 3,
+  style: Style,
+  quilt: Ramp = Prop.bunkQuilt(level),
+): PixelBuffer {
   const h = tiers === 3 ? 60 : BUNK_H;
   const wood: Ramp =
     style === 'veterano'
@@ -273,11 +279,10 @@ function pegs(level: number, style: Style): PixelBuffer {
 }
 
 /** Baúl a los pies (con una manta doblada encima, con nivel). */
-function chest(level: number): PixelBuffer {
+function chest(level: number, q: Ramp = Prop.bunkQuilt(level)): PixelBuffer {
   return Prop.piece(22, 17, (b) => {
     b.blit(Prop.trunk(), 0, 3);
     if (level >= 2) {
-      const q = Prop.bunkQuilt(level);
       b.rect(4, 0, 14, 4, q[2]!);
       b.hline(4, 0, 14, q[3]!);
       b.hline(4, 3, 14, q[1]!);
@@ -486,6 +491,8 @@ function diceTable(): PixelBuffer {
 /** Nivel de la manta (el de `bedsOf`). */
 const quiltOf = (room: Room) =>
   room.type === 'veteranos' ? 3 : room.type === 'servicio' ? 1 : room.level;
+/** Los colores de esa manta: los de su nivel o los del tema de la sala. */
+const quiltRamp = (room: Room): Ramp => cloth(room, Prop.bunkQuilt(quiltOf(room)));
 
 function styleOf(room: Room): Style {
   return room.type === 'servicio' ? 'servicio' : room.type === 'veteranos' ? 'veterano' : 'tropa';
@@ -525,13 +532,15 @@ function wall(b: PixelBuffer, room: Room, look: SalonLook, { cells, ruin }: Wall
 function floor(b: PixelBuffer, room: Room): void {
   if (room.level < 2 || room.type === 'servicio') return;
   const vet = room.type === 'veteranos';
+  // La de la casa, del color de las mantas del nivel (granate, azul, morada); o la del tema.
+  const c = cloth(room, Prop.bunkQuilt(room.level));
   const [edge, base, dot] = vet
     ? [P.bark, P.umber, P.cocoa]
     : room.level >= 4
-      ? [P.gold, P.grape, P.lemon]
+      ? [P.gold, c[1], P.lemon]
       : room.level >= 3
-        ? [P.navy, P.ocean, P.gold]
-        : [P.plum, P.wine, P.red];
+        ? [c[0], c[1], P.gold]
+        : [c[0], c[1], c[2]];
   for (const s of stretchesOf(room, b.w)) {
     if (s.kind === 'right') continue;
     const x0 = Math.round(s.x0 + 6);
@@ -541,8 +550,8 @@ function floor(b: PixelBuffer, room: Room): void {
     for (let x = x0 + 3; x < x1 - 2; x += 4) b.set(x, FLOOR_D / 2, dot);
     // En el nivel 4, con una cenefa dentro y flecos en las puntas.
     if (room.level >= 4 && !vet) {
-      b.rect(x0 + 3, 12, x1 - x0 - 6, 1, P.rose);
-      b.rect(x0 + 3, FLOOR_D - 13, x1 - x0 - 6, 1, P.rose);
+      b.rect(x0 + 3, 12, x1 - x0 - 6, 1, c[2]);
+      b.rect(x0 + 3, FLOOR_D - 13, x1 - x0 - 6, 1, c[2]);
       for (let y = 10; y < FLOOR_D - 10; y += 2) {
         b.set(x0 - 1, y, P.sand);
         b.set(x1, y, P.sand);
@@ -568,14 +577,14 @@ function feature(
 function underWindow(style: Style, j: number, room: Room): PixelBuffer {
   const lvl = room.level;
   if (style === 'veterano') {
-    if (j === 0) return lvl >= 3 ? Prop.armorStand() : chest(3);
-    return j === 1 ? diceTable() : chest(3);
+    if (j === 0) return lvl >= 3 ? Prop.armorStand() : chest(3, quiltRamp(room));
+    return j === 1 ? diceTable() : chest(3, quiltRamp(room));
   }
   if (style === 'servicio') {
     if (j === 0) return lvl < 2 ? bucket() : chest(1);
     return j === 1 ? laundry() : chest(1);
   }
-  return j === 1 ? basinTable() : chest(lvl);
+  return j === 1 ? basinTable() : chest(lvl, quiltRamp(room));
 }
 
 function things(room: Room, w: number): Thing[] {
@@ -586,7 +595,13 @@ function things(room: Room, w: number): Thing[] {
   const { bunks, features } = plan(room, w);
   const t: Thing[] = [lampOver(cells, w, lvl)];
   for (const x of bunks)
-    t.push(at(tiers === 1 ? mat() : bunk(quiltOf(room), tiers === 3 ? 3 : 2, style), x, BED_Z));
+    t.push(
+      at(
+        tiers === 1 ? mat() : bunk(quiltOf(room), tiers === 3 ? 3 : 2, style, quiltRamp(room)),
+        x,
+        BED_Z,
+      ),
+    );
   for (const f of features) {
     const { img, light, box } = feature(style, f.k, lvl);
     t.push(box ? solid(img, f.x, 0, light) : at(img, f.x, WALL, 0, light));

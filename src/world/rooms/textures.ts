@@ -34,6 +34,7 @@ import { ART } from './salas';
 import { PLASTER_FINE, WOOD_FINE, floorFinish, sideFinish, wallFinish } from './salas/acabados';
 import { BLIND, cellsOf, takeWallActs, windowX } from './salas/kit';
 import { streetDoor } from './salas/recibidor';
+import { cloth } from './salas/tintes';
 import { NO_LOOK, hearthSpan, salonWall, type SalonLook } from './salon';
 import { BACK } from './view3d';
 
@@ -190,8 +191,11 @@ export function floorTex(room: Room | null, theme: Theme, w: number, seed: strin
     };
     const art = ART[room.type];
     if (art?.floor) art.floor(b, room, cellsOf(room, w));
-    else if (room.type === 'salon') rug(w - 100, 70, [P.wine, P.red, P.gold]);
-    else if (room.type === 'capilla') rug(w / 2 - 12, 24, [P.wine, P.grape, P.gold]);
+    else if (room.type === 'salon') {
+      // La alfombra roja (o del tema de la sala).
+      const c = cloth(room, [P.plum, P.wine, P.red, P.coral]);
+      rug(w - 100, 70, [c[1], c[2], P.gold]);
+    } else if (room.type === 'capilla') rug(w / 2 - 12, 24, [P.wine, P.grape, P.gold]);
   }
   return b;
 }

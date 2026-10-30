@@ -3475,6 +3475,22 @@ button.trait[aria-pressed='true'] {
     0 0 0 2px var(--ink),
     0 0 0 4px var(--gold);
 }
+.room-tint {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.room-tint .tav-swatches {
+  gap: 6px;
+}
+.room-swatch {
+  width: 32px;
+  height: 32px;
+}
+/* «De la casa»: los colores de siempre de la sala, a rayas. */
+.room-swatch.house {
+  background: repeating-linear-gradient(135deg, #e4a672 0 5px, #945a3c 5px 10px);
+}
 .tav-symbols {
   display: flex;
   gap: 6px;

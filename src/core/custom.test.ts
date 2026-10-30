@@ -28,6 +28,21 @@ describe('tu taberna', () => {
     expect(customOf(s)).toMatchObject({ color: 'mar', symbol: 'dragon' });
   });
 
+  it('cada sala guarda su tema de color, y sin él vuelve a los de la casa', () => {
+    let s = newGame('tintes');
+    const [a, b] = s.building.rooms;
+    s = reduce(s, { type: 'tint', id: a!.id, tint: 'mar' });
+    s = reduce(s, { type: 'tint', id: b!.id, tint: 'ocre' });
+    expect(customOf(s).colors).toEqual({ [a!.id]: 'mar', [b!.id]: 'ocre' });
+    s = reduce(s, { type: 'tint', id: a!.id, tint: null });
+    expect(customOf(s).colors).toEqual({ [b!.id]: 'ocre' });
+    // Una sala que no existe o un tema que no existe no cambian nada.
+    expect(reduce(s, { type: 'tint', id: 'nada', tint: 'mar' })).toBe(s);
+    expect(reduce(s, { type: 'tint', id: b!.id, tint: 'rosa' as never })).toBe(s);
+    // Solo se ve: el oro no cambia.
+    expect(s.gold).toBe(newGame('tintes').gold);
+  });
+
   it('el lacre lleva la inicial de la primera palabra que no es artículo', () => {
     expect(sealInitial('El Jarro Partido')).toBe('J');
     expect(sealInitial('la oca dorada')).toBe('O');

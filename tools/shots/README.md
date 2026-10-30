@@ -18,7 +18,11 @@ Sirven para revisar a ojo los cambios de la escena de salas (no son tests).
    pintado (solo vista) salen también a nivel 4; `NIVELES=4` saca solo ese nivel y `SIN_N4=1` se
    queda en el 3 (para la versión de antes).
 
-6. Interfaz (paneles, fichas y barras): `node tools/shots/ui.mjs <carpeta> [ancho] [alto] [puerto]`
+6. Colores por sala: `node tools/shots/tintes.mjs <carpeta> <tipos> [temas] [zoom]` saca cada
+   sala (al nivel más alto y ancha) con los temas que se le digan (`casa` = sin tema), de día y
+   de noche; con `ESPERA=<ms>`, espera más de noche.
+
+7. Interfaz (paneles, fichas y barras): `node tools/shots/ui.mjs <carpeta> [ancho] [alto] [puerto]`
    recorre todas las pantallas (por ejemplo a `420 860` y `1280 760`) y deja un PNG de cada una
    y `medidas.json` (cuánto tapa la taberna, letras, tamaños de letra, scroll, tarjetas).
 

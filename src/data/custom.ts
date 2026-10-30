@@ -3,6 +3,9 @@
  * son pequeños; lo importante es que la taberna se parezca a quien la lleva.
  */
 
+import { P } from '../art/palette';
+import type { RoomType } from './rooms';
+
 export type CrestColor = 'vino' | 'mar' | 'bosque' | 'oro' | 'noche';
 export type CrestSymbol = 'jarra' | 'espada' | 'llave' | 'estrella' | 'dragon' | 'luna';
 export type StaffId = 'cocinera' | 'bardo' | 'mozo';
@@ -15,6 +18,40 @@ export const CREST_COLORS: Record<CrestColor, { name: string; field: string; dar
   bosque: { name: 'Bosque', field: '#3e8948', dark: '#193c3e' },
   oro: { name: 'Oro', field: '#d77643', dark: '#733e39' },
   noche: { name: 'Noche', field: '#3a4466', dark: '#181425' },
+};
+
+/**
+ * Temas de color de las telas de una sala (mantas, alfombras, cojines, paños y paredes
+ * enteladas): cuatro tonos de la paleta, de la sombra a la luz. Sin tema, cada sala lleva los
+ * suyos de siempre («de la casa»). Solo se ven: no dan ninguna ventaja.
+ */
+export type TintId = 'vino' | 'mar' | 'bosque' | 'ocre' | 'morado' | 'ceniza' | 'lino';
+
+export const TINTS: Record<
+  TintId,
+  { name: string; ramp: readonly [string, string, string, string] }
+> = {
+  vino: { name: 'Vino', ramp: [P.plum, P.wine, P.red, P.coral] },
+  mar: { name: 'Mar', ramp: [P.navy, P.ocean, P.sky, P.mist] },
+  bosque: { name: 'Bosque', ramp: [P.deep, P.forest, P.leaf, P.lime] },
+  ocre: { name: 'Ocre', ramp: [P.plum, P.rust, P.amber, P.gold] },
+  morado: { name: 'Morado', ramp: [P.plum, P.grape, P.rose, P.coral] },
+  ceniza: { name: 'Ceniza', ramp: [P.navy, P.slate, P.steel, P.fog] },
+  lino: { name: 'Lino', ramp: [P.rust, P.clay, P.tan, P.sand] },
+};
+export const TINT_IDS = Object.keys(TINTS) as TintId[];
+
+/** Desde qué nivel lleva telas cada sala (las que no salen aquí no tienen tema de color). */
+export const TINT_FROM: Partial<Record<RoomType, number>> = {
+  salon: 1,
+  recibidor: 2,
+  dormitorio: 1,
+  veteranos: 1,
+  servicio: 2,
+  enfermeria: 1,
+  capilla: 1,
+  biblioteca: 2,
+  armas: 2,
 };
 
 export const CREST_SYMBOLS: Record<CrestSymbol, string> = {

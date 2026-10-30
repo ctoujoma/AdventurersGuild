@@ -29,23 +29,27 @@ import {
   type WallCtx,
 } from './kit';
 import { candleOn, web } from './piezas';
+import { cloth, tintOf, type Cloth } from './tintes';
 
 /** El hueco del altar: el de en medio. */
 const mid = (cells: Cell[]) => cells[Math.floor((cells.length - 1) / 2)]!;
 
 // ---------- Piezas ----------
 
+/** Los paños y cojines, granates (o del tema de la sala). */
+const HOUSE: Cloth = [P.plum, P.wine, P.red, P.coral];
+
 /** Altar de piedra con su paño, el cáliz y las velas (más altas y doradas con nivel). */
-function altar(level: number): PixelBuffer {
+function altar(level: number, c: Cloth = HOUSE): PixelBuffer {
   return Prop.piece(30, 24, (p) => {
     p.rect(1, 10, 28, 14, P.steel);
     p.hline(1, 10, 28, P.mist);
     p.rect(3, 12, 24, 10, P.fog);
     for (let x = 5; x < 26; x += 5) p.vline(x, 12, 10, P.steel);
     // Paño con el borde dorado.
-    p.rect(0, 9, 30, 4, level >= 2 ? P.wine : P.white);
+    p.rect(0, 9, 30, 4, level >= 2 ? c[1] : P.white);
     p.hline(0, 12, 30, level >= 2 ? P.gold : P.mist);
-    p.rect(11, 13, 8, 6, level >= 2 ? P.wine : P.white);
+    p.rect(11, 13, 8, 6, level >= 2 ? c[1] : P.white);
     p.hline(11, 18, 8, P.gold);
     // Cáliz en medio.
     p.rect(14, 4, 3, 3, P.gold);
@@ -125,15 +129,15 @@ function pew(): PixelBuffer {
 }
 
 /** Reclinatorio con un libro de horas. */
-function kneeler(): PixelBuffer {
+function kneeler(c: Cloth = HOUSE): PixelBuffer {
   return Prop.piece(16, 18, (p) => {
     p.rect(1, 4, 14, 3, W[4]!);
     p.hline(1, 4, 14, W[5]!);
     p.rect(3, 7, 2, 11, W[3]!);
     p.rect(11, 7, 2, 11, W[3]!);
-    p.rect(0, 14, 16, 3, P.wine);
-    p.hline(0, 14, 16, P.red);
-    p.rect(5, 2, 6, 2, P.wine);
+    p.rect(0, 14, 16, 3, c[1]);
+    p.hline(0, 14, 16, c[2]);
+    p.rect(5, 2, 6, 2, c[1]);
     p.hline(5, 2, 6, P.white);
   });
 }
@@ -172,7 +176,7 @@ function sun(b: PixelBuffer, x: number, y: number) {
 // ---------- Pared, suelo y sala ----------
 
 /** Púlpito de madera con su escalerilla y el tornavoz. */
-function pulpit(level: number): PixelBuffer {
+function pulpit(level: number, c: Cloth = HOUSE): PixelBuffer {
   return Prop.piece(24, 40, (p) => {
     // Tornavoz arriba.
     p.rect(2, 0, 20, 3, W[3]!);
@@ -188,7 +192,7 @@ function pulpit(level: number): PixelBuffer {
     p.line(0, 39, 6, 25, W[3]!);
     for (let k = 0; k < 4; k++) p.hline(1 + k * 1.5, 37 - k * 3.5, 3, W[4]!);
     // El paño con el escudo (dorado en el nivel 3).
-    p.rect(10, 20, 6, 6, level >= 3 ? P.gold : P.wine);
+    p.rect(10, 20, 6, 6, level >= 3 ? P.gold : c[1]);
     p.set(12, 22, P.lemon);
   });
 }
@@ -253,7 +257,9 @@ function floor(b: PixelBuffer, room: Room, cells: Cell[]): void {
   // La alfombra hasta el altar.
   const c = mid(cells);
   const x0 = Math.round(c.win - 13);
-  const [edge, base] = room.level >= 3 ? [P.gold, P.wine] : [P.wine, P.grape];
+  // Granate con el centro morado (y con cenefa dorada en el 3); o del tema, un tono más oscura.
+  const t = cloth(room, [P.wine, P.grape, P.rose, P.coral]);
+  const [edge, base] = room.level >= 3 ? [P.gold, tintOf(room) ? t[1] : P.wine] : [t[0], t[1]];
   b.rect(x0, 2, 26, FLOOR_D - 4, edge);
   b.rect(x0 + 2, 2, 22, FLOOR_D - 4, base);
 }
@@ -288,7 +294,7 @@ function things(room: Room, w: number): Thing[] {
     else if (s.kind === 'mid' && s.i === 1)
       t.push(
         ...row(s, [
-          [pulpit(lvl), WALL],
+          [pulpit(lvl, cloth(room, HOUSE)), WALL],
           [votive(lvl), WALL, VOTIVE(lvl)],
         ]),
       );
@@ -299,7 +305,7 @@ function things(room: Room, w: number): Thing[] {
   cells.forEach((c, j) => {
     if (c === m)
       t.push({
-        ...at(altar(lvl), c.win, WALL, 0, {
+        ...at(altar(lvl, cloth(room, HOUSE)), c.win, WALL, 0, {
           dy: 14,
           r: 60,
           color: CANDLE,
@@ -309,7 +315,7 @@ function things(room: Room, w: number): Thing[] {
         }),
         poi: 'pray',
       });
-    else if (j === 0) t.push(at(kneeler(), c.win, WALL));
+    else if (j === 0) t.push(at(kneeler(cloth(room, HOUSE)), c.win, WALL));
     else t.push(at(candleStand(lvl), c.win, WALL, 0, candle(20, 34, 0.4)));
   });
   return t;

@@ -135,6 +135,16 @@ La lista completa de pendientes e ideas (bucle, monetización, amigos, torneos, 
 - **Fondo:** cinco capas lejanas con su paralaje (`parallaxLayers`: montañas, colinas, bosque
   lejano, hilera y arboleda) y árboles de verdad en el terreno a varias profundidades (`yard` en
   `RoomScene.ts`, con `Prop.pine` y `Prop.oakTree`).
+- **Colores por sala:** el jugador elige en la ficha de sala (`RoomTint` en
+  `panels/RoomPanel.tsx`) un tema para las telas (`TINTS` en `data/custom.ts`: vino, mar,
+  bosque, ocre, morado, ceniza y lino, cuatro tonos de la paleta) o deja los de la casa. Se
+  guarda en `custom.colors` por id de sala (acción `tint`; sin tocar `SAVE_VERSION`). La escena
+  recibe `SceneModel.tints`, viste cada sala con su tema (`dress` en `salas/tintes.ts`) y cada
+  tela pide sus tonos con `cloth(room, tonos_de_la_casa)`: sin tema, todo sale como antes.
+  Cambian mantas (también la de quien duerme: fotogramas `sleepT`/`upT` del atlas), alfombras,
+  esteras, cojines, manteles, paños del altar y la pared entelada; la madera, la piedra, el
+  metal, los pendones (son del escudo) y la ropa, no. Desde qué nivel lleva telas cada sala:
+  `TINT_FROM`. Capturas: `tools/shots/tintes.mjs`.
 - Trabajar, charlar o calentarse van con los pies quietos (`fightSprites(…, planted)`): las
   posturas de pelea abren las piernas y, al alternarlas, parecía que andaban.
 

@@ -11,6 +11,7 @@ import type { Room } from '../../../core/model';
 import { planksV } from '../../paint';
 import * as Prop from '../../props';
 import type { SalonLook } from '../salon';
+import { cloth, type Cloth } from './tintes';
 import { FLOOR_D, MID, W, WALL, at, bx, hung, type RoomArt, type Thing, type WallCtx } from './kit';
 
 const CLOAKS: Ramp[] = [
@@ -233,8 +234,11 @@ export function streetDoor(b: PixelBuffer, x: number, y: number, level: number, 
 
 // ---------- Muebles de delante ----------
 
-/** Banco de esperar; con nivel, con cojín y unas botas debajo. */
-export function bench(level: number): PixelBuffer {
+const cushion = (level: number): Cloth =>
+  level >= 3 ? [P.plum, P.wine, P.red, P.coral] : [P.deep, P.forest, P.leaf, P.lime];
+
+/** Banco de esperar; con nivel, con cojín (verde y luego rojo, o del tema) y unas botas debajo. */
+export function bench(level: number, c: Cloth = cushion(level)): PixelBuffer {
   return Prop.piece(26, 10, (p) => {
     if (level >= 2) {
       p.rect(9, 6, 3, 4, P.umber);
@@ -249,8 +253,8 @@ export function bench(level: number): PixelBuffer {
     p.rect(2, 4, 3, 6, W[2]!);
     p.rect(21, 4, 3, 6, W[2]!);
     if (level >= 2) {
-      p.rect(3, 0, 10, 2, level >= 3 ? P.wine : P.forest);
-      p.hline(3, 0, 10, level >= 3 ? P.red : P.leaf);
+      p.rect(3, 0, 10, 2, c[1]);
+      p.hline(3, 0, 10, c[2]);
     }
   });
 }
@@ -314,7 +318,12 @@ export function alarmBell(): PixelBuffer {
 function floor(b: PixelBuffer, room: Room) {
   const level = room.level;
   if (level >= 2) {
-    const [edge, base, dot] = level >= 3 ? [P.wine, P.red, P.gold] : [P.deep, P.forest, P.leaf];
+    // Verde y luego roja (o la del tema de la sala).
+    const c = cloth(
+      room,
+      level >= 3 ? [P.plum, P.wine, P.red, P.gold] : [P.black, P.deep, P.forest, P.leaf],
+    );
+    const [edge, base, dot] = [c[1], c[2], level >= 3 ? P.gold : c[3]];
     b.rect(18, 8, 70, FLOOR_D - 16, edge);
     b.rect(19, 9, 68, FLOOR_D - 18, base);
     for (let x = 22; x < 86; x += 5) b.set(x, FLOOR_D / 2, dot);
@@ -330,7 +339,7 @@ function floor(b: PixelBuffer, room: Room) {
 /** Todo pegado a la pared: el suelo de delante es el paso de la puerta y el de los de guardia. */
 function things(room: Room): Thing[] {
   const lvl = room.level;
-  const t: Thing[] = [at(bench(lvl), SPOT.bench, WALL - 4)];
+  const t: Thing[] = [at(bench(lvl, cloth(room, cushion(lvl))), SPOT.bench, WALL - 4)];
   if (lvl >= 2) t.push(at(lectern(lvl), SPOT.lectern, WALL));
   t.push(
     at(lvl >= 3 ? Prop.armorStand() : lvl >= 2 ? Prop.trunk() : Prop.crate(), SPOT.corner, WALL),
