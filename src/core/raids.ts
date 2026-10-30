@@ -79,10 +79,13 @@ function tipoff(s: GameState, rng: Rng, events: DawnEvent[], firstTry: boolean):
   });
 }
 
-/** Programa asaltos, da chivatazos y resuelve el de esta noche. Devuelve el informe, si hay. */
-export function stepRaids(s: GameState, rng: Rng, events: DawnEvent[]): Report | null {
+/**
+ * Programa asaltos, da chivatazos y resuelve el de esta noche. Devuelve el informe, si hay.
+ * `odds` escala la probabilidad de que se fijen en el gremio (menos con el juego cerrado).
+ */
+export function stepRaids(s: GameState, rng: Rng, events: DawnEvent[], odds = 1): Report | null {
   if (!s.raid) {
-    if (!rng.chance(raidChance(s))) return null;
+    if (!rng.chance(raidChance(s) * odds)) return null;
     const strength = 8 + rankIndex(s.rep) * 5 + Math.floor(notoriety(s) / 15) + rng.int(-2, 3);
     s.raid = { day: s.day + rng.int(2, 4), band: rng.pick(BANDS), strength, warned: false };
     tipoff(s, rng, events, true);

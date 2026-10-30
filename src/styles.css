@@ -1891,6 +1891,17 @@ button:focus-visible {
   background: var(--leaf);
 }
 
+/* Encabezado de cada día en la carta de «Mientras no estabas». */
+.ev-head {
+  padding-left: 0;
+  font-family: var(--pixel);
+  color: var(--text-soft);
+}
+
+.ev-head::before {
+  display: none;
+}
+
 .ev-bad {
   color: var(--wine);
 }

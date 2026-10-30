@@ -114,6 +114,16 @@ export const STAIR_STEP = 10;
 export const capacity = (dorm: number, vet = 0) => 2 + 2 * dorm + 2 * vet;
 /** Segundos que dura un día con el juego abierto (a velocidad normal). */
 export const DAY_SECONDS = 300;
+/**
+ * «Tiempo que corre solo» (en prueba, Ajustes › Modo prueba): con el juego cerrado o en segundo
+ * plano el día dura esto en segundos reales (abierto, `DAY_SECONDS`). Al volver se simula de
+ * golpe, hasta `AWAY_MAX_DAYS` días; los asaltos, menos probables (`AWAY_RAID`) y resueltos
+ * solos. Menos de `AWAY_MIN_SECONDS` fuera no cuenta.
+ */
+export const AWAY_DAY_SECONDS = 3600;
+export const AWAY_MAX_DAYS = 8;
+export const AWAY_RAID = 0.4;
+export const AWAY_MIN_SECONDS = 20;
 /** Parte del día desde la que es anochecer y se puede cerrar la taberna. */
 export const DUSK = 0.8;
 /** Entregas en que llega la caja del día, repartidas hasta el anochecer. */

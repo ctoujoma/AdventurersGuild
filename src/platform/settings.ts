@@ -16,6 +16,8 @@ export interface Settings {
   vibrate: boolean;
   /** Pocas luces en la escena (solo las más cercanas al centro), para móviles lentos. */
   fewLights: boolean;
+  /** En prueba: el tiempo corre solo, también con el juego cerrado (ver `core/away.ts`). */
+  realTime: boolean;
   /** Modo prueba: atajos en Ajustes (se abre tocando cinco veces el título). */
   tester: boolean;
 }
@@ -31,6 +33,7 @@ export const DEFAULT_SETTINGS: Settings = {
   calm: false,
   vibrate: true,
   fewLights: false,
+  realTime: false,
   tester: false,
 };
 
@@ -50,6 +53,7 @@ export function parseSettings(raw: unknown): Settings {
     calm: r.calm === true,
     vibrate: r.vibrate !== false,
     fewLights: r.fewLights === true,
+    realTime: r.realTime === true,
     tester: r.tester === true,
   };
 }
