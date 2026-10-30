@@ -375,15 +375,20 @@ export const HAND: Record<FightPose, { x: number; y: number }> = {
 
 const fightCache = new Map<string, Record<FightPose, PixelBuffer>>();
 
+/**
+ * Poses de perfil. En la pelea, el golpe y la estocada van con las piernas abiertas; con
+ * `planted`, todas con los pies quietos (para trabajar o charlar sin que parezca que anda).
+ */
 export function fightSprites(
   look: HeroLook,
   marks: HeroMarks = {},
+  planted = false,
 ): Record<FightPose, PixelBuffer> {
-  const key = JSON.stringify([look, marks]);
+  const key = JSON.stringify([look, marks, planted]);
   const hit = fightCache.get(key);
   if (hit) return hit;
   const pose = (p: FightPose, lunge: boolean) =>
-    selOut(composeSide(look, marks, lunge ? 0 : 'stand', false, p));
+    selOut(composeSide(look, marks, lunge && !planted ? 0 : 'stand', false, p));
   const out = {
     ready: pose('ready', false),
     windup: pose('windup', false),

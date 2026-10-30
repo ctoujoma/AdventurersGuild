@@ -454,13 +454,19 @@ class AudioEngine {
     }
     while (this.nextNote < ctx.currentTime + 0.4) {
       const tune: Tune = TUNES[this.cur.id];
-      const len = tune.melody.length;
+      // Con partes (A, B…), cada una suena dos veces seguidas: una vuelta es AABB.
+      const part = tune.melody.length / tune.parts;
+      const len = tune.parts > 1 ? tune.melody.length * 2 : tune.melody.length;
       const s = this.musicStep;
       const t = this.nextNote;
-      if (s < len) this.playStep(tune, s, t, this.cur.rep);
+      const block = Math.floor(s / part);
+      const idx = tune.parts > 1 ? Math.floor(block / 2) * part + (s % part) : s;
+      // La segunda vez de cada parte ya va con adornos (cuenta como otra vuelta).
+      const rep = tune.parts > 1 ? this.cur.rep * 2 + (block % 2) : this.cur.rep;
+      if (s < len) this.playStep(tune, idx, t, rep);
       this.musicStep++;
       const step = tune.step / this.arr.tempo;
-      this.nextNote += step * (s % tune.bar === tune.bar - 1 ? 1.06 : 1);
+      this.nextNote += step * (idx % tune.bar === tune.bar - 1 ? 1.06 : 1);
       if (this.musicStep >= len + tune.breath) {
         this.musicStep = 0;
         this.cur.rep++;

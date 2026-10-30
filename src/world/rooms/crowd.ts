@@ -85,16 +85,16 @@ const F = {
   read: 30,
   /** Incorporado en la cama (al acostarse y al levantarse): litera de cada nivel, catre y jergón. */
   up: 32,
-  /** Con la herramienta de su puesto: 4 herramientas × (2 tiempos a la derecha, 2 a la izquierda). */
+  /** Con la herramienta de su puesto: 4 herramientas × (4 tiempos a la derecha y 4 a la izquierda). */
   tool: 38,
   /** Calentándose las manos (a la derecha y a la izquierda). */
-  warm: 54,
+  warm: 70,
   /** Con la jarra en la barra: abajo y bebiendo, a la derecha y a la izquierda. */
-  drink: 56,
+  drink: 72,
   /** De perfil, quieto (charlando), a la derecha y a la izquierda. */
-  talk: 60,
+  talk: 76,
 } as const;
-const FRAMES = 62;
+const FRAMES = 78;
 /** Filas que baja el dibujo en los fotogramas de incorporado (para que quepa la cabeza). */
 const UP_DROP = 8;
 
@@ -102,52 +102,50 @@ const UP_DROP = 8;
 const TOOLS = ['cucharon', 'pala', 'cuenco', 'jarra'] as const;
 
 /**
- * Cómo se trabaja en cada sala con puestos: la herramienta, las dos posturas (con el giro de la
- * herramienta) y cuánto dura cada vuelta y su primer tiempo, en segundos.
+ * Cómo se trabaja en cada sala con puestos: la herramienta y los cuatro tiempos de la vuelta
+ * (postura del brazo, giro de la herramienta y lo que dura, en segundos). Siempre con los pies
+ * quietos: solo se mueven el brazo y la herramienta.
  */
-const WORK: Record<
-  string,
-  { tool: number; poses: [FightPose, number][]; cycle: number; split: number }
-> = {
-  // Remover la olla con el cucharón.
+const WORK: Record<string, { tool: number; steps: [FightPose, number, number][] }> = {
+  // Remover la olla con el cucharón, dando vueltas.
   cocina: {
     tool: 0,
-    poses: [
-      ['ready', 200],
-      ['strike', 150],
+    steps: [
+      ['ready', 205, 0.26],
+      ['ready', 182, 0.26],
+      ['strike', 160, 0.26],
+      ['ready', 182, 0.26],
     ],
-    cycle: 0.9,
-    split: 0.45,
   },
-  // Remover el mosto con la pala.
+  // Remover el mosto con la pala, despacio y con fuerza.
   bodega: {
     tool: 1,
-    poses: [
-      ['windup', 205],
-      ['strike', 165],
+    steps: [
+      ['windup', 212, 0.45],
+      ['ready', 192, 0.4],
+      ['strike', 166, 0.45],
+      ['ready', 192, 0.4],
     ],
-    cycle: 1.6,
-    split: 0.8,
   },
-  // Acercar un cuenco al herido.
+  // Acercar un cuenco al herido y ayudarle a beber.
   enfermeria: {
     tool: 2,
-    poses: [
-      ['ready', 0],
-      ['thrust', 0],
+    steps: [
+      ['ready', 0, 1.6],
+      ['thrust', 0, 1.1],
+      ['thrust', -25, 0.7],
+      ['thrust', 0, 0.6],
     ],
-    cycle: 4,
-    split: 1.8,
   },
-  // Servir: la jarra en la mano y, de vez en cuando, inclinada sobre la mesa.
+  // Servir: la jarra en la mano y, de vez en cuando, inclinándola sobre el vaso.
   salon: {
     tool: 3,
-    poses: [
-      ['ready', 0],
-      ['thrust', 75],
+    steps: [
+      ['ready', 0, 1.8],
+      ['thrust', 30, 0.3],
+      ['thrust', 80, 0.9],
+      ['thrust', 30, 0.3],
     ],
-    cycle: 3.4,
-    split: 2,
   },
 };
 
@@ -328,6 +326,8 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
   put(spr.sit, F.sit);
   // Entrenando: los fotogramas de mirar a la izquierda son los mismos, volteados.
   const pose = fightSprites(h.look, h.marks);
+  // Trabajando, charlando o junto al fuego: los pies quietos.
+  const still = fightSprites(h.look, h.marks, true);
   const melee = DRILL_WEAPON[h.look.outfit];
   const swing = h.look.outfit === 'mago' ? [0, -40, 110] : [30, -45, 125];
   (['ready', 'windup', 'strike'] as const).forEach((p, i) => {
@@ -404,22 +404,22 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
   );
   // En su puesto, con la herramienta (los de la izquierda, volteados).
   for (const w of Object.values(WORK))
-    w.poses.forEach(([p, deg], i) => {
-      const img = drillCell(pose, p, TOOLS[w.tool], deg);
-      put(img, F.tool + w.tool * 4 + i, 0);
-      put(img, F.tool + w.tool * 4 + 2 + i, 0, true);
+    w.steps.forEach(([p, deg], i) => {
+      const img = drillCell(still, p, TOOLS[w.tool], deg);
+      put(img, F.tool + w.tool * 8 + i, 0);
+      put(img, F.tool + w.tool * 8 + 4 + i, 0, true);
     });
   // Las manos hacia el fuego.
   const warm = new PixelBuffer(CELL, TALL);
-  warm.blit(pose.thrust, 3, 0);
+  warm.blit(still.thrust, 3, 0);
   put(warm, F.warm, 0);
   put(warm, F.warm + 1, 0, true);
   // De perfil, quieto: para las charlas.
-  put(pose.ready, F.talk, 3);
-  put(pose.ready, F.talk + 1, 3, true);
+  put(still.ready, F.talk, 3);
+  put(still.ready, F.talk + 1, 3, true);
   // En la barra, con la jarra: abajo y a la boca.
-  const mug = drillCell(pose, 'ready', 'jarra', 0);
-  const sip = drillCell(pose, 'up', 'jarra', -70);
+  const mug = drillCell(still, 'ready', 'jarra', 0);
+  const sip = drillCell(still, 'up', 'jarra', -70);
   put(mug, F.drink, 0);
   put(sip, F.drink + 1, 0);
   put(mug, F.drink + 2, 0, true);
@@ -1149,7 +1149,10 @@ export class Crowd {
     const w = job ? WORK[job.room.type] : undefined;
     if (!job || !w || a.floor !== job.room.floor || a.x < job.x0 - 8 || a.x > job.x1 + 8)
       return null;
-    const p = (this.now + (hash(h.id) % 89) / 11) % w.cycle;
+    const cycle = w.steps.reduce((a, s) => a + s[2], 0);
+    let p = (this.now + (hash(h.id) % 89) / 11) % cycle;
+    let pose = 0;
+    while (pose < w.steps.length - 1 && p >= w.steps[pose]![2]) p -= w.steps[pose++]![2];
     // En el salón, hacia la mesa más cercana; en las demás, hacia el centro de la sala.
     let to = (job.x0 + job.x1) / 2;
     if (job.room.type === 'salon') {
@@ -1160,7 +1163,7 @@ export class Crowd {
           to = s.x;
         }
     }
-    return { tool: w.tool, pose: p < w.split ? 0 : 1, dir: to >= a.x ? 1 : -1 };
+    return { tool: w.tool, pose, dir: to >= a.x ? 1 : -1 };
   }
 
   /** De pie en la barra del salón (y sin otra cosa que hacer): con su jarra. */
@@ -1447,7 +1450,8 @@ export class Crowd {
       const f = bedFrame(a.edge.bed, k, z);
       const kind = a.edge.bed.kind;
       const up = kind === 'litera' ? a.edge.bed.level : kind === 'catre' ? 4 : 5;
-      return { ...f, frame: F.up + up, bottom: f.bottom + UP_DROP / k };
+      // El dibujo baja UP_DROP filas en su fotograma, así que el fotograma sube otro tanto.
+      return { ...f, frame: F.up + up, bottom: f.bottom - UP_DROP / k };
     }
     const bed = a.pose === 'bed' ? a.goal?.bed : undefined;
     if (bed) return bedFrame(bed, k, z);
@@ -1491,7 +1495,7 @@ export class Crowd {
     }
     const job = this.jobAnim(a);
     if (job) {
-      const i = F.tool + job.tool * 4 + (job.dir > 0 ? 0 : 2) + job.pose;
+      const i = F.tool + job.tool * 8 + (job.dir > 0 ? 0 : 4) + job.pose;
       return { frame: i, left: a.x - CELL / 2 / k, bottom: top + TALL / k, z };
     }
     if (a.pose === 'stand' && !a.path.length && this.time === 'day' && !this.scripted) {

@@ -159,6 +159,59 @@ export function buildHills(): PixelBuffer {
   return b;
 }
 
+/**
+ * Bosque lejano: muchos abetos pequeños y apretados, en tonos de niebla (lo lejano se ve más
+ * claro). Va entre las colinas y la hilera de árboles.
+ */
+export function buildForest(): PixelBuffer {
+  const b = new PixelBuffer(LAYER_W, WORLD_H);
+  const rng = new Rng('bosque lejano');
+  for (let i = 0; i < 150; i++) {
+    const x = rng.int(-6, LAYER_W + 6);
+    const h = rng.int(10, 22);
+    const base = GROUND + 1;
+    for (let y = 0; y < h; y++) {
+      const w = Math.floor((y / h) * 5) + (y % 4 < 2 ? 1 : 0);
+      for (let dx = -w; dx <= w; dx++)
+        b.set(x + dx, base - h + y, dx < 0 && y % 4 !== 3 ? P.steel : P.slate);
+    }
+  }
+  return b;
+}
+
+/**
+ * Arboleda cercana: pocos árboles grandes y oscuros, en grupos, con el filo de la copa
+ * iluminado por la luna. Es la capa que más se mueve (casi como el mundo).
+ */
+export function buildGrove(): PixelBuffer {
+  const b = new PixelBuffer(LAYER_W, WORLD_H);
+  const rng = new Rng('arboleda cercana');
+  for (let g = 0; g < Math.ceil(LAYER_W / 260); g++) {
+    const gx = g * 260 + rng.int(0, 120);
+    for (let i = 0; i < rng.int(2, 4); i++) {
+      const x = gx + rng.int(-30, 30);
+      const h = rng.int(55, 95);
+      const base = GROUND + 4;
+      if (rng.chance(0.6)) {
+        for (let y = 0; y < h; y++) {
+          const w = Math.floor((y / h) * 15) + (y % 8 < 4 ? 2 : 0);
+          for (let dx = -w; dx <= w; dx++) {
+            const rim = dx === -w && y % 8 < 4;
+            b.set(x + dx, base - h + y, rim ? P.deep : P.black);
+          }
+        }
+      } else {
+        const r = Math.round(h * 0.3);
+        b.ellipse(x, base - h + r, r, r * 0.9, (px, py) =>
+          px - x + (py - (base - h + r)) < -r * 1.05 + bayer(px, py) * 3 ? P.deep : P.black,
+        );
+        b.rect(x - 2, base - h + r * 1.6, 5, h - r * 1.6, P.black);
+      }
+    }
+  }
+  return b;
+}
+
 /** Hilera de árboles oscuros justo detrás del edificio. */
 export function buildTreeline(): PixelBuffer {
   const b = new PixelBuffer(LAYER_W, WORLD_H);
@@ -183,10 +236,13 @@ export function buildTreeline(): PixelBuffer {
   return b;
 }
 
+/** Las capas del fondo, de la más lejana (la que menos se mueve) a la más cercana. */
 export function parallaxLayers(): ParallaxLayer[] {
   return [
     { buf: buildMountains(), fx: 0.25, fy: 0.5 },
-    { buf: buildHills(), fx: 0.5, fy: 0.7 },
-    { buf: buildTreeline(), fx: 0.78, fy: 0.9 },
+    { buf: buildHills(), fx: 0.45, fy: 0.65 },
+    { buf: buildForest(), fx: 0.6, fy: 0.78 },
+    { buf: buildTreeline(), fx: 0.75, fy: 0.88 },
+    { buf: buildGrove(), fx: 0.9, fy: 0.95 },
   ];
 }
