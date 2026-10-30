@@ -4,19 +4,22 @@ import { dangerClass, dangerLabel } from '../../data/labels';
 import { help } from '../HoldHelp';
 import { Icon } from '../icons';
 import { plural } from '../text';
+import { isRealTime, left, shortLeft, shortSpan, span } from '../when';
 
 interface Props {
   quests: Quest[];
   /** Con la sala de mapas a nivel 2 se ve el peligro real. */
   seeAll: boolean;
   onOpen: (id: string) => void;
+  /** Reloj del día, para contar en minutos lo que falta (tiempo que corre solo). */
+  clock?: number;
 }
 
 /**
  * Encargos como notas clavadas en el corcho, con lo justo para elegir: tipo, título, peligro,
  * plazas, días de viaje y paga. El cliente, la historia y los desafíos están en su ficha.
  */
-export function TablonPanel({ quests, seeAll, onOpen }: Props) {
+export function TablonPanel({ quests, seeAll, onOpen, clock = 0 }: Props) {
   if (!quests.length)
     return <p class="panel-note">El tablón está vacío. Mañana llegarán más encargos.</p>;
   return (
@@ -25,9 +28,9 @@ export function TablonPanel({ quests, seeAll, onOpen }: Props) {
         const hidden = q.dangerHidden && !seeAll;
         const chain = q.chain ? chainDef(q.chain.id) : null;
         const expires =
-          q.expires === 1
+          q.expires === 1 && !isRealTime()
             ? 'caduca mañana'
-            : `caduca en ${q.expires} ${plural(q.expires, 'día', 'días')}`;
+            : `caduca en ${left(q.expires, clock)}`;
         return (
           <button
             key={q.id}
@@ -38,7 +41,7 @@ export function TablonPanel({ quests, seeAll, onOpen }: Props) {
               q.title,
               chain ? `${chain.name}, paso ${q.chain!.step + 1} de ${chain.steps.length}` : q.type,
               `peligro ${dangerLabel(q.danger, hidden)}`,
-              `${q.days} ${plural(q.days, 'día', 'días')} de viaje`,
+              `${span(q.days)} de viaje`,
               `hasta ${q.slots} ${plural(q.slots, 'héroe', 'héroes')}`,
               `${q.reward} monedas${q.item ? ' y un objeto' : ''}`,
               chain ? '' : expires,
@@ -64,7 +67,7 @@ export function TablonPanel({ quests, seeAll, onOpen }: Props) {
               {!chain && (
                 <span class={`note-left ${q.expires === 1 ? 'urgent' : ''}`}>
                   <Icon name="reloj" size={10} />
-                  {q.expires}d
+                  {shortLeft(q.expires, clock)}
                 </span>
               )}
             </span>
@@ -73,9 +76,12 @@ export function TablonPanel({ quests, seeAll, onOpen }: Props) {
               <span class={`danger danger-${dangerClass(q.danger, hidden)}`}>
                 {dangerLabel(q.danger, hidden)}
               </span>
-              <span class="note-k" {...help('Días de viaje')}>
+              <span
+                class="note-k"
+                {...help(isRealTime() ? 'Lo que dura el viaje' : 'Días de viaje')}
+              >
                 <Icon name="pasos" size={10} />
-                {q.days}
+                {isRealTime() ? shortSpan(q.days) : q.days}
               </span>
               <span class="note-k" {...help('Héroes que caben')}>
                 <Icon name="heroe" size={10} />

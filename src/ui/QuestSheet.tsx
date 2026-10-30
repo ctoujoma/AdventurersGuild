@@ -12,6 +12,7 @@ import { Icon } from './icons';
 import { Portrait } from './Portrait';
 import { listNames, plural } from './text';
 import { lookOf, marksOf, memberOf } from './view';
+import { span } from './when';
 
 interface Props {
   game: GameState;
@@ -85,9 +86,9 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
               <Icon name="coin" size={12} />
               {q.reward}
             </span>
-            <span class="fact" {...help('Días de viaje con este grupo.')}>
+            <span class="fact" {...help('Lo que dura el viaje con este grupo.')}>
               <Icon name="pasos" size={12} />
-              {days} {plural(days, 'día', 'días')}
+              {span(days)}
             </span>
             <span class="fact" {...help('Héroes elegidos y cuántos caben.')}>
               <Icon name="heroe" size={12} />

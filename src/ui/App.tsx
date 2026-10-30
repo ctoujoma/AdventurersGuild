@@ -4,6 +4,7 @@ import { HoldHelp } from './HoldHelp';
 import { haptic, setHaptics } from '../platform/haptics';
 import { audio, type Mood } from '../audio/audio';
 import { catchUp } from '../core/away';
+import { left, setRealTime } from './when';
 import { canClose, canHire, customOf, newGame, reduce, type Action } from '../core/game';
 import { raidRoute } from '../core/assault';
 import { canAssign, canHireWorker } from '../core/workers';
@@ -140,6 +141,8 @@ export function App() {
   const [hasGame, setHasGame] = useState(!!saved);
   const [saveMenu, setSaveMenu] = useState(false);
   const [settings, setSettings] = useState<Settings>(loadSettings);
+  // Los plazos se cuentan en minutos con el tiempo que corre solo (ver `when.ts`).
+  setRealTime(settings.realTime);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [records, setRecords] = useState(loadRecords);
   /** Mejor llegada antes de esta partida, para comparar en la apertura. */
@@ -422,7 +425,7 @@ export function App() {
     setPanel(null);
     scene.current?.focus('puerta');
     toast(
-      `${names} ${plural(ids.length, 'sale', 'salen')} hacia ${q.place}. Vuelta en ${days} ${plural(days, 'día', 'días')}.`,
+      `${names} ${plural(ids.length, 'sale', 'salen')} hacia ${q.place}. Vuelta en ${left(days, clockRef.current)}.`,
     );
   };
 
@@ -663,12 +666,14 @@ export function App() {
     const id = setInterval(() => {
       if (document.hidden) return;
       const before = clockRef.current;
-      const next = Math.min(DAY_SECONDS, before + 0.25 * settings.pace);
+      // Con el tiempo que corre solo no hay acelerar: el reloj es el de verdad.
+      const pace = settings.realTime ? 1 : settings.pace;
+      const next = Math.min(DAY_SECONDS, before + 0.25 * pace);
       if (next === before) return;
       moveClock(next, before);
     }, 250);
     return () => clearInterval(id);
-  }, [ticking, settings.pace]);
+  }, [ticking, settings.pace, settings.realTime]);
   // Tiempo que corre solo (en prueba): al acabar el día la noche cae sola, cuando no hay nada
   // abierto delante (un panel o una ficha esperan a que se cierren).
   useEffect(() => {
@@ -841,6 +846,7 @@ export function App() {
             onMail={() => openPanel('correo')}
             onAway={() => openPanel('fuera')}
             part={clock / DAY_SECONDS}
+            real={settings.realTime}
             canClose={clock >= DUSK * DAY_SECONDS}
             night={passing}
             pace={settings.pace}
@@ -860,6 +866,7 @@ export function App() {
           <Panel title="Tablón de encargos" onClose={() => openPanel(null)} variant="cork">
             <TablonPanel
               quests={game.quests}
+              clock={clock}
               seeAll={game.fac.mapas >= 2}
               onOpen={(id) => {
                 audio.play('open');
@@ -1078,7 +1085,7 @@ export function App() {
               if (!scene.current?.focusHero(cardHero.id))
                 say(
                   cardHero.status === 'mision'
-                    ? `${cardHero.name} está de misión. Vuelve en ${cardHero.days} ${plural(cardHero.days, 'día', 'días')}.`
+                    ? `${cardHero.name} está de misión. Vuelve en ${left(cardHero.days, clockRef.current)}.`
                     : `${cardHero.name} no está en la taberna.`,
                   { x: 160, y: 120 },
                 );

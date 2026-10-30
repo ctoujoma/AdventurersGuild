@@ -45,6 +45,10 @@ Decidir el modelo de tiempo jugándolo. Va tras un interruptor en Ajustes › Mo
   en `App.tsx`, la hora que se guarda con cada guardado (`lastSeen`), la vuelta tras ocultar la
   pestaña o al continuar, y la noche que cae sola cuando no hay paneles delante. Ojo: los pagos
   siguen contando estando fuera, así que una ausencia larga puede acabar la partida.
+- Con el interruptor, la interfaz también cambia: la barra no tiene «Anochecer», «Cerrar» ni
+  velocidad, y dice cuánto falta para que anochezca o caiga la noche; los plazos (viajes,
+  caducidad, vuelta de los grupos, obras, entrenamiento, pagos, chivatazos) se cuentan en
+  minutos de taberna abierta (`ui/when.ts`).
 - Después: jugarlo unos días, comparar con el modo de ahora y decidir. Si se queda, faltarán
   las cuentas atrás en tiempo real en la interfaz y los avisos en la app de Android
   (notificaciones locales programadas al salir).

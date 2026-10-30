@@ -5,6 +5,7 @@ import { customOf, nextPayment, nextRank, rankOf, salaries } from '../core/game'
 import { beerCap, dailyYield, foodCap, hungryTonight } from '../core/larder';
 import { goldCap, vaultFull } from '../core/vault';
 import { plural } from './text';
+import { isRealTime, left as timeLeft, shortLeft } from './when';
 import type { GameState } from '../core/model';
 import { Counter } from './Counter';
 import { Icon } from './icons';
@@ -33,7 +34,9 @@ export function Hud({ game, onSettings }: { game: GameState; onSettings: () => v
   const toggle = (t: Tip) => setTip((cur) => (cur === t ? null : t));
   const left = pay ? pay.day - game.day : 0;
   const nights = game.raid ? Math.max(0, game.raid.day - game.day) : 0;
-  const when = left <= 0 ? 'hoy' : left === 1 ? 'mañana' : `en ${left} días`;
+  const clock = game.clock ?? 0;
+  const when =
+    left <= 0 ? 'hoy' : left === 1 && !isRealTime() ? 'mañana' : `en ${timeLeft(left, clock)}`;
   const made = dailyYield(game);
   const hungry = hungryTonight(game);
   const tips: Record<Tip, string> = {
@@ -49,7 +52,7 @@ export function Hud({ game, onSettings }: { game: GameState; onSettings: () => v
         ? `Próximo pago, el día ${pay.day} (${when}): ${pay.amount} al prestamista y ${due - pay.amount} en salarios. Total ${due}.${short ? ' Ahora mismo no llega.' : ''}`
         : `Salarios del día ${pay.day} (${when}): ${due} monedas.${short ? ' Ahora mismo no llega.' : ''}`,
     asalto: game.raid
-      ? `Chivatazo: ${game.raid.band} llega en ${nights} ${plural(nights, 'noche', 'noches')}. Prepara las defensas.`
+      ? `Chivatazo: ${game.raid.band} llega en ${isRealTime() ? timeLeft(nights, clock) : `${nights} ${plural(nights, 'noche', 'noches')}`}. Prepara las defensas.`
       : '',
   };
   return (
@@ -109,7 +112,7 @@ export function Hud({ game, onSettings }: { game: GameState; onSettings: () => v
           >
             <Icon name="bell" size={16} />
             <b>{due}</b>
-            <small class="hud-due">{left <= 0 ? 'hoy' : `${left}d`}</small>
+            <small class="hud-due">{left <= 0 ? 'hoy' : shortLeft(left, clock)}</small>
           </button>
         )}
         {game.raid?.warned && (
@@ -120,8 +123,14 @@ export function Hud({ game, onSettings }: { game: GameState; onSettings: () => v
             onClick={() => toggle('asalto')}
           >
             <Icon name="flag" size={16} />
-            <b>{nights}</b>
-            <small class="hud-due">{nights === 1 ? 'noche' : 'noches'}</small>
+            {isRealTime() ? (
+              <b>{shortLeft(nights, clock)}</b>
+            ) : (
+              <>
+                <b>{nights}</b>
+                <small class="hud-due">{nights === 1 ? 'noche' : 'noches'}</small>
+              </>
+            )}
           </button>
         )}
         <button

@@ -16,6 +16,7 @@ import {
   type Terrain,
 } from '../../data/places';
 import { BufferImage } from '../BufferImage';
+import { left, shortLeft, shortSpan, span } from '../when';
 import { help } from '../HoldHelp';
 import { Icon, type IconName } from '../icons';
 import { listNames, plural } from '../text';
@@ -241,8 +242,8 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
   const questsAt = (name: string) => game.quests.filter((q) => q.place === name);
   const missionsTo = (name: string) => game.missions.filter((m) => m.quest.place === name);
   const days = (n: number) => (
-    <Stat icon="reloj" label={`${n} ${plural(n, 'día', 'días')}`}>
-      {n}d
+    <Stat icon="reloj" label={span(n)}>
+      {shortSpan(n)}
     </Stat>
   );
   const questLine = (q: Quest) => {
@@ -343,11 +344,8 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
                 {pos.back ? 'vuelven de ' : 'hacia '}
                 {m.quest.place}
               </Stat>
-              <Stat
-                icon="home"
-                label={`Vuelven en ${m.daysLeft} ${plural(m.daysLeft, 'día', 'días')}`}
-              >
-                {m.daysLeft}d
+              <Stat icon="home" label={`Vuelven en ${left(m.daysLeft, game.clock ?? 0)}`}>
+                {shortLeft(m.daysLeft, game.clock ?? 0)}
               </Stat>
             </span>
             <div class="map-card-heroes">
@@ -663,12 +661,12 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
           {game.raid?.warned && (
             <span
               class="map-raid"
-              data-help={`${game.raid.band} viene hacia la taberna: llega en ${game.raid.day - game.day} noches.`}
+              data-help={`${game.raid.band} viene hacia la taberna: llega en ${left(game.raid.day - game.day, game.clock ?? 0, 'noche', 'noches')}.`}
               style={pct(
                 Math.max(8, TAVERN.x - 14 * Math.max(1, game.raid.day - game.day)),
                 TAVERN.y + 10,
               )}
-              title={`${game.raid.band}: llega en ${game.raid.day - game.day} noches`}
+              title={`${game.raid.band}: llega en ${left(game.raid.day - game.day, game.clock ?? 0, 'noche', 'noches')}`}
             >
               <Icon name="espadas" size={15} />
             </span>
