@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CHAINS } from '../data/chains';
+import { roomMax } from './balance';
 import { cheat, testFight } from './cheats';
 import { activeChain } from './chains';
 import { endDay, newGame } from './game';
@@ -11,7 +12,7 @@ describe('modo prueba', () => {
     expect(rich.gold).toBe(s.gold + 500);
     expect(s.gold).toBe(newGame('prueba').gold);
     expect(cheat(s, 'fama').state.rep).toBe(s.rep + 50);
-    expect(cheat(s, 'obras').state.fac.vet).toBe(2);
+    expect(cheat(s, 'obras').state.fac.vet).toBe(roomMax('veteranos'));
   });
 
   it('prepara un asalto para esta noche', () => {

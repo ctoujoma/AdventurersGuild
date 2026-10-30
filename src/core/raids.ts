@@ -20,6 +20,7 @@ import {
   RAID_BASE,
   RAID_FROM,
   RAID_MAX_CHANCE,
+  TOWER_DETER,
   RAID_NOTORIETY,
   SPY_DAYS,
   SPY_RISK,
@@ -46,7 +47,11 @@ export function raidChance(s: GameState): number {
   if (s.day < RAID_FROM || (s.truce ?? 0) > s.day || s.raid) return 0;
   // Si un espía estudió la casa hace poco, la banda ya sabe por dónde entrar.
   const spied = s.scout !== undefined && s.day - s.scout <= SPY_DAYS ? SPY_RISK : 0;
-  return Math.max(0, Math.min(RAID_MAX_CHANCE, (notoriety(s) - RAID_NOTORIETY) / 600 + spied));
+  const deter = s.fac.torre >= 3 ? TOWER_DETER : 1;
+  return Math.max(
+    0,
+    Math.min(RAID_MAX_CHANCE, ((notoriety(s) - RAID_NOTORIETY) / 600 + spied) * deter),
+  );
 }
 
 const defendersOf = (s: GameState) => s.heroes.filter((h) => h.status === 'ok');

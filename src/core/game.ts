@@ -4,9 +4,11 @@
  */
 import { earn, spill, vaultNews } from './vault';
 import { FLAVOR } from '../data/stories';
+import { checkRank } from './ranks';
 import {
   MAX_GUARDS,
   AWAY_RAID,
+  DORM_REST,
   BOARD_SIZE,
   CANDIDATE_EVERY,
   DAYS,
@@ -355,6 +357,8 @@ export function newGame(seed: string): GameState {
       { t: `Paga la deuda en ${DAYS} días y el gremio será tuyo.`, k: 'good' },
     ],
     mode: 'deuda',
+    // Desde cobre: el primer rango que se gane se anuncia (ver `checkRank`).
+    rankSeen: 0,
     stats: emptyStats(),
     feats: {},
     flavor:
@@ -848,7 +852,12 @@ export function endDay(state: GameState, away = false): GameState {
     if (h.status !== 'ok') continue;
     const vet = h.lvl >= VET_LEVEL ? s.fac.vet : 0;
     const cap = restCap(s.fac.tab) + (has(h, 'bebedor') && s.fac.tab >= 2 ? 10 : 0) + VET_CAP[vet]!;
-    const gain = restMorale(s.fac.tab) + chapelRest(s.fac.cap) + decorMorale + VET_REST[vet]!;
+    const gain =
+      restMorale(s.fac.tab) +
+      chapelRest(s.fac.cap) +
+      decorMorale +
+      VET_REST[vet]! +
+      (DORM_REST[s.fac.dorm] ?? 0);
     if (h.morale < cap) h.morale = Math.min(cap, h.morale + gain);
     if (h.morale < MORALE_QUIT && !has(h, 'leal') && vet < 2 && rng.chance(DESERT_CHANCE)) {
       deserters.push(h);
@@ -993,6 +1002,8 @@ export function endDay(state: GameState, away = false): GameState {
   s.gold = kept.gold;
   s.spilt = kept.spilt;
   vaultNews(s, events);
+  // Si la fama de hoy ha subido el rango, se cuenta con lo que se abre.
+  checkRank(s, events);
 
   s.flavor = rng.pick(FLAVOR);
   s.dawn = events;
