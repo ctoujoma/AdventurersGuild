@@ -39,5 +39,20 @@ hace qué» (artefacto de claude.ai).
 3. **Palabras y cifras:** la chapa de cada héroe dice su tarea; contadores con nombre («5 de 6
    camas»); el desplegable cuenta los huecos libres.
 
-Preguntas abiertas: ¿la lista sustituye a la pestaña Trabajo o va en una pestaña propia abajo?
-¿Los avisos, solo en la lista o también sobre la sala en la escena?
+## Decidido con el usuario
+
+- La lista va en lugar de la pestaña Trabajo de Héroes (ahora «Tareas»), con los avisos arriba
+  y su número en la pestaña.
+- Los tres PR, en el orden de arriba.
+- Los avisos, de momento solo en la lista.
+
+## Pendiente (tarea aparte)
+
+- Avisos también en la escena: un globito sobre la sala sin nadie (y quizá sobre quien no
+  tiene tarea). Toca `src/world/rooms/`: avisar al agente de arte.
+
+## Hecho
+
+- PR 1, la casa: `src/ui/crew.ts` (grupos, avisos y opciones del selector, con tests),
+  `src/ui/panels/CrewList.tsx` (la lista) y `planTask` en `src/ui/drop.ts` (cambiar la tarea,
+  que también usa arrastrar).
