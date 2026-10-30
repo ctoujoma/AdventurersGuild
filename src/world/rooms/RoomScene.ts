@@ -49,6 +49,7 @@ import {
   ROOF_H,
   SLAB,
   WALL,
+  YARD_D,
   colX,
   floorTop,
   floorY,
@@ -99,8 +100,6 @@ const TILE = 512;
 const DAWN_LIGHT = 0.65;
 const NEAR = 20;
 const FAR = EYE + 400;
-/** Fondo del terreno que se ve a los lados y por detrás del edificio. */
-const YARD_D = 220;
 /** Lo que tarda en levantarse una sala al pagar las obras (s). */
 const RAISE = 2.4;
 

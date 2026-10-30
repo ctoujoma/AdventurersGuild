@@ -236,13 +236,18 @@ export function buildTreeline(): PixelBuffer {
   return b;
 }
 
-/** Las capas del fondo, de la más lejana (la que menos se mueve) a la más cercana. */
+/**
+ * Las capas del fondo, de la más lejana (la que menos se mueve) a la más cercana. Todas están
+ * detrás del final del terreno 3D, que con la perspectiva se mueve a algo más de la mitad que la
+ * cámara (`scaleAt(YARD_D)`): si una capa fuese más deprisa, los árboles de detrás adelantarían
+ * a los que hay plantados delante (ver parallax.test.ts).
+ */
 export function parallaxLayers(): ParallaxLayer[] {
   return [
-    { buf: buildMountains(), fx: 0.25, fy: 0.5 },
-    { buf: buildHills(), fx: 0.45, fy: 0.65 },
-    { buf: buildForest(), fx: 0.6, fy: 0.78 },
-    { buf: buildTreeline(), fx: 0.75, fy: 0.88 },
-    { buf: buildGrove(), fx: 0.9, fy: 0.95 },
+    { buf: buildMountains(), fx: 0.2, fy: 0.5 },
+    { buf: buildHills(), fx: 0.27, fy: 0.65 },
+    { buf: buildForest(), fx: 0.35, fy: 0.78 },
+    { buf: buildTreeline(), fx: 0.42, fy: 0.88 },
+    { buf: buildGrove(), fx: 0.48, fy: 0.95 },
   ];
 }

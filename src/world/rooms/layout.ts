@@ -26,6 +26,11 @@ export const WALL = PARTITION / 2;
 export const DEPTH = 60;
 /** El patio, a la izquierda del edificio, y el terreno de la derecha (solares). */
 export const PATIO_W = 200;
+/**
+ * Fondo del terreno que se ve a los lados y por detrás del edificio: ahí acaba el mundo 3D y
+ * empiezan las capas lejanas del cielo (que tienen que moverse más despacio que este borde).
+ */
+export const YARD_D = 220;
 const RIGHT = 120;
 /** Cielo que se deja por encima del tejado o de la torre. */
 const SKY = 120;
