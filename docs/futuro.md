@@ -14,6 +14,10 @@ revisión crítica y propuestas, **sin decidir**: el usuario elige qué entra y 
   decisiones («Rumbo del Jarro»).
 - **Dirección acordada:** partida infinita a lo Fallout Shelter (sin final ni legado entre
   partidas), gratis con cosméticos, anuncios opcionales y donaciones.
+- **Tutorial guiado (entra sí o sí):** pasos que hay que cumplir y lo demás cerrado hasta que
+  toca; dos héroes ya hechos con encargos a su medida, cambiar el nombre a un héroe y, al
+  llegar a la reputación de «La sombra de Hondogrís» (8), el aviso de preparar un buen grupo.
+  Parte de las notas del tío que ya hay (`src/ui/tips.ts`, `UncleNote.tsx`).
 - **Balance con partidas de verdad** (ver «Balance» en [`salas/README.md`](salas/README.md)):
   - nadie se queda sin cenar en el simulador;
   - el oro que se pierde con la cámara del tesoro llena;
