@@ -21,8 +21,9 @@ o está en «Más adelante», no se toca sin preguntar. El detalle de cada idea 
 
 - **Agente principal** (esta conversación): tiempo, núcleo del bucle, combate y amigos.
 - **Agente de interfaz:** auditoría de trabajadores y tareas, menos toques y la parte visual
-  del tutorial.
-- **Agente de arte:** colores por sala, animaciones, escaleras, fachada y sastrería.
+  del tutorial. Encargo: [`encargos/interfaz-trabajadores.md`](encargos/interfaz-trabajadores.md).
+- **Agente de arte:** colores por sala, animaciones, escaleras, fachada y sastrería. Encargo:
+  [`encargos/arte-colores-animaciones.md`](encargos/arte-colores-animaciones.md).
 
 Cada uno en su rama, PR contra `main`, sin pisarse: quien toque fuera de su zona lo dice en
 el PR.
