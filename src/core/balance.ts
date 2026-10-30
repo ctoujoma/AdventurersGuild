@@ -39,25 +39,30 @@ export const START = {
 
 /** Coste de subir a cada nivel (índice = nivel nuevo); el nivel máximo es el último. */
 export const UPGRADE_COST: Record<keyof Facilities, readonly number[]> = {
-  dorm: [0, 80, 170, 420],
+  dorm: [0, 80, 170, 420, 750],
   enf: [0, 100, 230, 450],
   tab: [0, 90, 250, 450, 750],
-  mapas: [0, 120, 340],
-  arm: [0, 150, 380],
-  cap: [0, 110, 320],
-  forja: [0, 180, 360],
+  mapas: [0, 120, 340, 620],
+  arm: [0, 150, 380, 650],
+  cap: [0, 110, 320, 600],
+  forja: [0, 180, 360, 640],
   establo: [0, 140, 300],
   patio: [0, 160, 340],
   empal: [0, 120, 260],
-  torre: [0, 200, 380],
-  vet: [0, 220, 420],
+  torre: [0, 200, 380, 600],
+  vet: [0, 220, 420, 700],
 };
 
 /** Ala de veteranos: a partir de este nivel de héroe se cuenta como veterano. */
 export const VET_LEVEL = 4;
 /** Moral extra por noche y tope de moral extra de los veteranos, por nivel del ala. */
-export const VET_REST = [0, 4, 8] as const;
-export const VET_CAP = [0, 10, 15] as const;
+export const VET_REST = [0, 4, 8, 12] as const;
+export const VET_CAP = [0, 10, 15, 20] as const;
+
+/** Dormitorio de nivel 4 (dosel y alfombras): moral extra por noche para todos los de casa. */
+export const DORM_REST = [0, 0, 0, 0, 2] as const;
+/** Torre de nivel 3 (almenara encendida): las bandas se lo piensan más. */
+export const TOWER_DETER = 0.75;
 
 /** Patio de entrenamiento: experiencia por noche descansando, por nivel. */
 export const TRAINING_XP = [0, 6, 12] as const;
@@ -70,9 +75,9 @@ export const facilityMax = (k: keyof Facilities) => UPGRADE_COST[k].length - 1;
 export const ROOM_COST: Record<RoomType, readonly number[]> = {
   recibidor: [0, 100, 150, 320],
   salon: UPGRADE_COST.tab,
-  cocina: [0, 100, 220, 400],
-  bodega: [0, 100, 220, 400],
-  tesoro: [0, 120, 260, 480],
+  cocina: [0, 100, 220, 400, 750],
+  bodega: [0, 100, 220, 400, 750],
+  tesoro: [0, 120, 260, 480, 900],
   dormitorio: UPGRADE_COST.dorm,
   enfermeria: UPGRADE_COST.enf,
   capilla: UPGRADE_COST.cap,
@@ -83,9 +88,9 @@ export const ROOM_COST: Record<RoomType, readonly number[]> = {
   torre: UPGRADE_COST.torre,
   servicio: [0, 80, 170, 380],
   despensa: [0, 80, 180, 360],
-  armas: [0, 150, 320, 520],
-  tiro: [0, 150, 320, 520],
-  biblioteca: [0, 150, 320, 520],
+  armas: [0, 150, 320, 520, 850],
+  tiro: [0, 150, 320, 520, 850],
+  biblioteca: [0, 150, 320, 520, 850],
 };
 export const roomMax = (t: RoomType) => ROOM_COST[t].length - 1;
 /** Mejorar una sala más ancha que la de serie cuesta este recargo por hueco de más. */
@@ -103,8 +108,8 @@ export const START_COLS = 4;
 export const MAX_COLS = 7;
 /** Precio de cada solar nuevo (índice = solares ya comprados). */
 export const PLOT_COST = [150, 250, 400] as const;
-/** Plantas como máximo sobre el suelo y bajo tierra. */
-export const MAX_UP = 4;
+/** Plantas como máximo sobre el suelo (con el rango más alto) y bajo tierra. */
+export const MAX_UP = 6;
 export const MAX_DOWN = DIG_COST.length - 1;
 /** Precio de un tramo de escalera: el primero y lo que sube con cada tramo que ya hay. */
 export const STAIR_COST = 50;
@@ -142,6 +147,34 @@ export const RANKS: readonly { name: string; at: number }[] = [
   { name: 'oro', at: 180 },
   { name: 'leyenda', at: 300 },
 ];
+
+/**
+ * Lo que abre cada rango del gremio (índice de `RANKS`): las plantas sobre la baja y los niveles
+ * de sala que llegaron después. Los de antes no piden nada, para no quitarle nada a nadie.
+ */
+export const FLOORS_BY_RANK = [4, 4, 5, 6, 6] as const;
+export const LEVEL_RANK: Partial<Record<RoomType, Partial<Record<number, number>>>> = {
+  capilla: { 3: 1 },
+  mapas: { 3: 1 },
+  armeria: { 3: 1 },
+  forja: { 3: 1 },
+  veteranos: { 3: 2 },
+  torre: { 3: 2 },
+  tesoro: { 4: 3 },
+  dormitorio: { 4: 3 },
+  cocina: { 4: 3 },
+  bodega: { 4: 3 },
+  armas: { 4: 4 },
+  tiro: { 4: 4 },
+  biblioteca: { 4: 4 },
+};
+/** Rango que pide un nivel de sala (0: ninguno). */
+export const levelRank = (t: RoomType, level: number) => LEVEL_RANK[t]?.[level] ?? 0;
+/** Plantas sobre la baja que se pueden ocupar con ese rango. */
+export const floorsFor = (rank: number) =>
+  FLOORS_BY_RANK[Math.max(0, Math.min(rank, FLOORS_BY_RANK.length - 1))]!;
+/** Primer rango que abre la planta `f` sobre la baja. */
+export const floorRank = (f: number) => FLOORS_BY_RANK.findIndex((n) => n >= f);
 
 export function rankIndex(rep: number): number {
   let i = 0;
@@ -225,13 +258,16 @@ export const restMorale = (tab: number) => 2 + tab;
 export const restCap = (tab: number) => 55 + 6 * tab;
 /** Capilla: moral extra por noche y probabilidad de que vuelva un desaparecido. */
 export const chapelRest = (cap: number) => 2 * cap;
-export const returnChance = (cap: number) => 0.5 + 0.2 * cap;
+export const RETURN_CHANCE = [0.5, 0.7, 0.85, 0.95] as const;
+export const returnChance = (cap: number) =>
+  RETURN_CHANCE[Math.min(cap, RETURN_CHANCE.length - 1)]!;
 
 /** Armería: lo que suma a cada héroe según su nivel. */
 export const ARMORY: readonly Partial<Record<SkillId, number>>[] = [
   {},
   { Combate: 1 },
   { Combate: 1, Trampas: 1, Supervivencia: 1 },
+  { Combate: 2, Trampas: 1, Supervivencia: 1 },
 ];
 
 /** Probabilidad por noche de que alguien harto se vaya, y de que alguien desanimado pida aumento. */
@@ -273,11 +309,11 @@ export const MAX_GUARDS = 2;
 
 // ---------- Cámara del tesoro ----------
 /** Oro que cabe por hueco de la cámara, según su nivel (el 0 es lo que se esconde sin cámara). */
-export const VAULT_STORE = [300, 1500, 4000, 10000] as const;
+export const VAULT_STORE = [300, 1500, 4000, 10000, 20000] as const;
 /** A partir de esta parte del tope, el juego avisa de que la cámara está casi llena. */
 export const VAULT_WARN = 0.85;
 /** Segundos que tardan los bandidos en abrir la cerradura, según el nivel de la cámara. */
-export const LOCK_TIME = [2, 6, 10, 15] as const;
+export const LOCK_TIME = [2, 6, 10, 15, 20] as const;
 /** Segundos que aguanta la puerta, según el nivel del recibidor. */
 export const DOOR_TIME = [2, 5, 8, 12] as const;
 
@@ -372,4 +408,4 @@ export const TRAIN_RATE = 1;
 /** Progreso que cuesta subir un punto: unos fijos más el valor que ya se tiene. */
 export const TRAIN_COST_BASE = 2;
 /** Hasta dónde se puede entrenar un atributo según el nivel de la sala. */
-export const TRAIN_CAP = [0, 5, 7, 9] as const;
+export const TRAIN_CAP = [0, 5, 7, 9, 11] as const;

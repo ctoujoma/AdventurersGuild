@@ -67,10 +67,13 @@ Decidir el modelo de tiempo jugándolo. Va tras un interruptor en Ajustes › Mo
    objetivos dan tintes, adornos o piezas de fachada, además de oro y fama.
 4. **Rangos que abren cosas:** Cobre, Hierro, Plata, Oro y Leyenda (ya existen, por
    reputación). Cada rango abre algo:
-   - plantas (hasta 6 por encima de la baja);
-   - los niveles nuevos de las salas (arte hecho, ver `salas/niveles-nuevos.md`);
-   - encargos y jefes de más dificultad para cada tramo;
-   - salas nuevas.
+   - plantas, hasta 6 por encima de la baja (hecho);
+   - los niveles nuevos de las salas (hecho, ver `salas/niveles-nuevos.md`), con aviso al
+     amanecer al subir de rango;
+   - encargos y jefes de más dificultad para cada tramo: los encargos sueltos ya suben con el
+     rango; faltan historias con jefe para Plata, Oro y Leyenda (las de ahora piden de 8 a 70
+     de fama);
+   - salas nuevas (la sastrería, cuando llegue).
 5. **Incidentes en la taberna.** Formas de resolverlos:
    - arrastrar héroes (pelea, ladrón, algo en la bodega) o trabajadores (fuego en la cocina,
      barril roto);

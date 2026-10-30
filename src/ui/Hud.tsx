@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
-import { DAYS } from '../core/balance';
+import { DAYS, RANKS } from '../core/balance';
 import { customOf, nextPayment, nextRank, rankOf, salaries } from '../core/game';
 import { beerCap, dailyYield, foodCap, hungryTonight } from '../core/larder';
 import { goldCap, vaultFull } from '../core/vault';
-import { plural } from './text';
+import { listNames, plural } from './text';
+import { rankUnlocks } from '../core/ranks';
 import { isRealTime, left as timeLeft, shortLeft } from './when';
 import type { GameState } from '../core/model';
 import { Counter } from './Counter';
@@ -38,11 +39,12 @@ export function Hud({ game, onSettings }: { game: GameState; onSettings: () => v
   const when =
     left <= 0 ? 'hoy' : left === 1 && !isRealTime() ? 'mañana' : `en ${timeLeft(left, clock)}`;
   const made = dailyYield(game);
+  const opens = nr ? rankUnlocks(RANKS.indexOf(nr)) : [];
   const hungry = hungryTonight(game);
   const tips: Record<Tip, string> = {
     oro: `Oro: ${game.gold} de ${goldCap(game)} que caben en la cámara del tesoro.${vaultFull(game) ? ' Está casi llena: lo que no quepa se perderá. Gasta, mejórala o hazla más grande.' : ''}`,
     rep: nr
-      ? `Reputación: ${game.rep}. Con ${nr.at} el gremio pasa a ser de ${nr.name}: mejores encargos y héroes.`
+      ? `Reputación: ${game.rep}. Con ${nr.at} el gremio pasa a ser de ${nr.name}: mejores encargos y héroes${opens.length ? `, y se abre ${listNames(opens)}` : ''}.`
       : `Reputación: ${game.rep}. Ya sois el gremio más famoso de la comarca.`,
     comida: `Raciones: ${game.food} de ${foodCap(game.building)} que caben. La cocina hace ${made.food} al día; comen los visitantes y cenan los de casa.${hungry ? ` Esta noche ${hungry} se ${hungry === 1 ? 'quedaría' : 'quedarían'} sin cenar.` : ''}`,
     cerveza: `Jarras: ${game.beer} de ${beerCap(game.building)} que caben. La bodega saca ${made.beer} al día y cada visitante se toma una.`,

@@ -21,6 +21,11 @@ import {
   STAIR_STEP,
   START_COLS,
   UPGRADE_COST,
+  RANKS,
+  floorRank,
+  floorsFor,
+  levelRank,
+  rankIndex,
   roomMax,
 } from './balance';
 import type { Building, DawnEvent, Facilities, GameState, Room } from './model';
@@ -143,10 +148,13 @@ export const syncFac = (s: GameState) => {
   s.fac = facOf(s.building);
 };
 
-/** Camas por hueco en un dormitorio (nivel + 1) o en los cuartos de veteranos (2 por nivel). */
+/**
+ * Camas por hueco en un dormitorio (nivel + 1, hasta 4: dos literas) o en los cuartos de
+ * veteranos (2 por nivel, hasta 4). Los niveles de arriba dan otras cosas (ver `DORM_REST`).
+ */
 export function bedsPerCell(type: RoomType, level: number): number {
-  if (type === 'dormitorio') return level > 0 ? level + 1 : 0;
-  if (type === 'veteranos') return 2 * level;
+  if (type === 'dormitorio') return level > 0 ? Math.min(level + 1, 4) : 0;
+  if (type === 'veteranos') return 2 * Math.min(level, 2);
   return 0;
 }
 
@@ -395,11 +403,38 @@ export function mergeRooms(b: Building): void {
 
 function finish(s: GameState, b: Building, cost: number): Plan {
   mergeRooms(b);
-  const e = problem(b);
+  const e = problem(b) ?? rankIssue(s, b);
   if (e) return { error: e };
   // En el borrador el oro se mira al pagarlo todo junto (`planIssue`).
   if (!lax && cost > s.gold) return { error: `Te faltan ${cost - s.gold} monedas.` };
   return { b, cost };
+}
+
+/** «La planta 5 se abre con el rango de plata.» */
+const lockedFloor = (f: number) =>
+  `La planta ${f} se abre con el rango de ${RANKS[floorRank(f)]?.name ?? 'leyenda'}.`;
+
+/**
+ * Lo que el rango del gremio aún no deja hacer en `b`: plantas que no se han abierto. Solo mira
+ * lo nuevo o lo que se ha movido o crecido, para no bloquear obras por lo que ya estaba.
+ */
+function rankIssue(s: GameState, b: Building): string | null {
+  const top = floorsFor(rankIndex(s.rep));
+  const before = s.building;
+  for (const r of b.rooms) {
+    const same = before.rooms.some(
+      (o) => o.id === r.id && o.col === r.col && o.floor === r.floor && o.w === r.w && o.h === r.h,
+    );
+    if (same) continue;
+    // La torre asoma una planta por encima del tejado.
+    const high = r.floor + r.h - 1 - (r.type === 'torre' ? 1 : 0);
+    if (high > top) return lockedFloor(high);
+  }
+  for (const st of b.stairs) {
+    if (before.stairs.some((o) => o.at === st.at && o.floor === st.floor)) continue;
+    if (st.floor + 1 > top) return lockedFloor(st.floor + 1);
+  }
+  return null;
 }
 
 function find(s: GameState, id: string): { b: Building; r: Room } | { error: string } {
@@ -415,6 +450,9 @@ export function planUpgrade(s: GameState, id: string): Plan {
   const { b, r } = got;
   const cost = upgradeCostOf(r);
   if (cost === null) return { error: 'Ya está al máximo.' };
+  const need = levelRank(r.type, r.level + 1);
+  if (need > rankIndex(s.rep))
+    return { error: `El nivel ${r.level + 1} se abre con el rango de ${RANKS[need]!.name}.` };
   r.level++;
   r.spent += cost;
   return finish(s, b, cost);

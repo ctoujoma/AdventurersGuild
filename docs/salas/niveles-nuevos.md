@@ -1,13 +1,23 @@
-# Niveles nuevos de las salas (solo vista)
+# Niveles nuevos de las salas (activados con los rangos)
 
-Hay arte para niveles a los que el juego todavía no llega. Se ven en la galería «Salas del
-Jarro» (y en las pruebas: `ART_MAX` en `src/world/rooms/salas/index.ts`), pero **no se usan**:
-`roomMax` (`ROOM_COST` en `src/core/balance.ts`) sigue igual. Para activar uno hace falta su
-precio y su efecto; las cifras de abajo son una **propuesta** para valorar, no algo decidido.
+Estos niveles ya **están en el juego** y los abre el rango del gremio (`LEVEL_RANK` en
+`src/core/balance.ts`; ver también `core/ranks.ts`):
 
-Al activarlo, en general: añadir el precio a `ROOM_COST`/`UPGRADE_COST`, la cifra del efecto a
-su tabla, revisar los textos de la interfaz que describen cada nivel y los tests del núcleo. No
-hace falta tocar `SAVE_VERSION` (el nivel ya es un número en la partida).
+- **Hierro:** nivel 3 de capilla, sala de mapas, armería y forja.
+- **Plata:** nivel 3 de veteranos y torre del vigía, y la planta 5.
+- **Oro:** nivel 4 de cámara del tesoro, dormitorio, cocina y bodega, y la planta 6.
+- **Leyenda:** nivel 4 de sala de armas, galería de tiro y biblioteca.
+
+Lo que se decidió al activarlos (las tablas de abajo eran la propuesta):
+
+- **Precios y cifras:** los de la propuesta.
+- **Capilla:** la vuelta de los desaparecidos va por tabla (`RETURN_CHANCE`: 0,5 / 0,7 / 0,85 /
+  0,95).
+- **Dormitorio y veteranos:** las camas se quedan en 4 por hueco, que es lo que enseña el arte.
+  El dormitorio 4 da +2 de moral por noche a los de casa (`DORM_REST`).
+- **Torre 3:** con la almenara, los asaltos son menos probables (`TOWER_DETER`).
+
+Los niveles de antes no piden rango, para no quitarle nada a nadie.
 
 ## Nivel 3 en las salas que hoy acaban en el 2
 

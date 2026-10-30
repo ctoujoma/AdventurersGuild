@@ -34,9 +34,14 @@ describe('instalaciones nuevas', () => {
     expect(canHire(s, s.candidates[0]!.id)).toBeNull();
   });
 
-  it('se compran hasta su nivel máximo', () => {
+  it('se compran hasta su nivel máximo (los niveles nuevos, con el rango que piden)', () => {
     let s = newGame('obras');
     s.gold = 5000;
+    for (let i = 0; i < 5; i++) s = reduce(s, { type: 'upgrade', fac: 'cap' });
+    // El nivel 3 de la capilla se abre con el rango de hierro.
+    expect(s.fac.cap).toBe(facilityMax('cap') - 1);
+    expect(canUpgrade(s, 'cap')).toMatch(/hierro/);
+    s = { ...s, rep: 1000 };
     for (let i = 0; i < 5; i++) s = reduce(s, { type: 'upgrade', fac: 'cap' });
     expect(s.fac.cap).toBe(facilityMax('cap'));
     expect(canUpgrade(s, 'cap')).not.toBeNull();

@@ -496,6 +496,8 @@ export interface GameState {
   lastRaid?: RaidResult | null;
   /** Informe de la pelea contra un jefe de esta noche (para el aviso del amanecer). */
   lastFight?: string | null;
+  /** Rango más alto ya anunciado (para avisar al subir; ver `core/ranks.ts`). */
+  rankSeen?: number;
   /** Hora real (ms) de la última vez que se guardó con el juego abierto (tiempo que corre solo). */
   lastSeen?: number;
 }

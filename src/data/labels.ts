@@ -57,9 +57,11 @@ export const FACILITY_INFO: Record<
       '2 literas',
       '3 literas y cortinas',
       '4 literas con colchas, farol y banderines',
+      'Literas con dosel, mantas bordadas y alfombras',
     ],
     // Por hueco: el tope de héroes es la suma de las camas de todos los dormitorios (y veteranos).
-    effect: (l) => `${l + 1} camas por hueco; cada dormitorio suma las suyas`,
+    effect: (l) =>
+      `${Math.min(l + 1, 4)} camas por hueco; cada dormitorio suma las suyas${l >= 4 ? '; +2 de moral por noche a los de casa' : ''}`,
   },
   enf: {
     name: 'Enfermería',
@@ -95,6 +97,7 @@ export const FACILITY_INFO: Record<
       'Un mapa viejo clavado en el desván',
       'Mesa de cartografía y mapas de la comarca',
       'Catalejo, globo y rutas marcadas con hilo rojo',
+      'Gran mapa con rosa de los vientos y damasco verde',
     ],
     effect: (l) =>
       l === 0
@@ -108,13 +111,16 @@ export const FACILITY_INFO: Record<
       'Cuatro espadas oxidadas en la bodega',
       'Armero con lanzas, espadas y escudos',
       'Armaduras, yunque y piedra de afilar',
+      'Tres filas de estantes y paredes de arenisca',
     ],
     effect: (l) =>
       l === 0
         ? 'Cada cual va con lo suyo'
         : l === 1
           ? '+1 Combate a todos'
-          : '+1 Combate, Trampas y Supervivencia a todos',
+          : l === 2
+            ? '+1 Combate, Trampas y Supervivencia a todos'
+            : '+2 Combate y +1 Trampas y Supervivencia a todos',
   },
   cap: {
     name: 'Capilla',
@@ -123,6 +129,7 @@ export const FACILITY_INFO: Record<
       'No hay: se reza donde se puede',
       'Anexo de piedra con altar y una vela por cada caído',
       'Campana, vidriera y bancos',
+      'Más velas, otra fila de caídos y damasco morado',
     ],
     effect: (l) =>
       l === 0
@@ -136,6 +143,7 @@ export const FACILITY_INFO: Record<
       'No hay: el herrero del pueblo cobra caro',
       'Cobertizo con fragua, yunque y fuelle',
       'Fragua grande con chimenea y armero',
+      'Una pieza al rojo en la fragua y paredes de arenisca',
     ],
     effect: (l) => (l === 0 ? 'Sin efecto' : `+${l} al objeto que lleva puesto cada héroe`),
   },
@@ -165,20 +173,30 @@ export const FACILITY_INFO: Record<
   torre: {
     name: 'Torre del vigía',
     room: 'torre',
-    levels: ['No hay', 'Torre de madera con farol', 'Torre alta con campana y estandarte'],
+    levels: [
+      'No hay',
+      'Torre de madera con farol',
+      'Torre alta con campana y estandarte',
+      'Almenara encendida, pendón y bandera',
+    ],
     effect: (l) =>
       l === 0
         ? 'Sin efecto'
-        : `Siempre hay chivatazo de los asaltos${l >= 2 ? '; un encargo más en el tablón' : ''}`,
+        : `Siempre hay chivatazo de los asaltos${l >= 2 ? '; un encargo más en el tablón' : ''}${l >= 3 ? '; con la almenara, las bandas se lo piensan más' : ''}`,
   },
   vet: {
     name: 'Ala de veteranos',
     room: 'veteranos',
-    levels: ['No hay', 'Cuartos con ventana para los veteranos', 'Ala con balcón y sus trofeos'],
+    levels: [
+      'No hay',
+      'Cuartos con ventana para los veteranos',
+      'Ala con balcón y sus trofeos',
+      'Armadura bajo la ventana y damasco granate',
+    ],
     effect: (l) =>
       l === 0
         ? 'Sin efecto'
-        : `${2 * l} camas por hueco. Héroes de nivel 4 o más: +${[0, 4, 8][l]} de moral por noche y más tope${l >= 2 ? '; nunca desertan' : ''}`,
+        : `${2 * Math.min(l, 2)} camas por hueco. Héroes de nivel 4 o más: +${[0, 4, 8, 12][l]} de moral por noche y más tope${l >= 2 ? '; nunca desertan' : ''}`,
   },
 };
 
