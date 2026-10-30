@@ -26,15 +26,17 @@ export function piece(
 // ---------- Dormitorio y enfermería ----------
 
 /** Colores de la manta de una litera según el nivel del dormitorio. */
-export const bunkQuilt = (level: number): Ramp =>
-  [
-    [P.plum, P.bark, P.rust, P.oak],
-    [P.plum, P.bark, P.rust, P.oak],
-    [P.plum, P.wine, P.red, P.coral],
-    [P.navy, P.ocean, P.sky, P.mist],
-    // Nivel 4 (solo vista): morada.
-    [P.plum, P.grape, P.rose, P.coral],
-  ][Math.max(0, Math.min(4, level))]!;
+export const bunkQuilt = (level: number): readonly [string, string, string, string] =>
+  (
+    [
+      [P.plum, P.bark, P.rust, P.oak],
+      [P.plum, P.bark, P.rust, P.oak],
+      [P.plum, P.wine, P.red, P.coral],
+      [P.navy, P.ocean, P.sky, P.mist],
+      // Nivel 4 (solo vista): morada.
+      [P.plum, P.grape, P.rose, P.coral],
+    ] as const
+  )[Math.max(0, Math.min(4, level))]!;
 
 export function bunk(level: number): PixelBuffer {
   const quilt = bunkQuilt(level);
@@ -72,7 +74,8 @@ export function bunk(level: number): PixelBuffer {
   });
 }
 
-export function cot(): PixelBuffer {
+/** Catre con su sábana y una manta doblada a los pies (azul, o la que se le dé). */
+export function cot(quilt: readonly string[] = [P.navy, P.ocean, P.sky, P.mist]): PixelBuffer {
   return piece(28, 14, (b) => {
     b.rect(1, 9, 2, 5, W[3]!);
     b.rect(25, 9, 2, 5, W[3]!);
@@ -83,9 +86,9 @@ export function cot(): PixelBuffer {
     b.hline(0, 6, 28, P.mist);
     b.rect(1, 0, 7, 4, P.white);
     b.hline(1, 3, 7, P.fog);
-    b.rect(20, 2, 8, 5, P.ocean);
-    b.hline(20, 2, 8, P.sky);
-    b.hline(20, 6, 8, P.navy);
+    b.rect(20, 2, 8, 5, quilt[1]!);
+    b.hline(20, 2, 8, quilt[2]!);
+    b.hline(20, 6, 8, quilt[0]!);
   });
 }
 
@@ -147,7 +150,8 @@ export function washbasin(): PixelBuffer {
 
 // ---------- Sala común ----------
 
-export function roundTable(cloth: boolean): PixelBuffer {
+/** Mesa redonda; con mantel, de los tonos `cloth` (de la sombra a la luz). */
+export function roundTable(cloth?: readonly string[]): PixelBuffer {
   return piece(26, 14, (b) => {
     b.rect(11, 4, 4, 8, W[3]!);
     b.vline(11, 4, 8, W[4]!);
@@ -158,11 +162,11 @@ export function roundTable(cloth: boolean): PixelBuffer {
     b.hline(2, 4, 22, W[2]!);
     b.hline(4, 1, 18, W[6]!);
     if (cloth) {
-      b.ellipse(13, 2.5, 13, 2.5, P.coral);
-      b.rect(0, 3, 26, 4, P.red);
-      b.hline(0, 3, 26, P.coral);
-      for (let x = 0; x < 26; x += 4) b.rect(x, 7, 2, 1, P.red);
-      b.hline(0, 6, 26, P.wine);
+      b.ellipse(13, 2.5, 13, 2.5, cloth[3]!);
+      b.rect(0, 3, 26, 4, cloth[2]!);
+      b.hline(0, 3, 26, cloth[3]!);
+      for (let x = 0; x < 26; x += 4) b.rect(x, 7, 2, 1, cloth[2]!);
+      b.hline(0, 6, 26, cloth[1]!);
     }
   });
 }

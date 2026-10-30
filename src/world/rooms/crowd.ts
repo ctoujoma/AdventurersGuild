@@ -16,6 +16,7 @@ import {
   type HeroSprites,
 } from '../../art/heroes/hero';
 import { bunkQuilt } from '../props';
+import { TINTS, TINT_IDS, type TintId } from '../../data/custom';
 import { generateLook, type OutfitId } from '../../art/heroes/look';
 import { WEAPONS, type WeaponId } from '../weapons';
 import type { SceneHero, SceneVisitors } from '../scene';
@@ -66,7 +67,7 @@ const CLIMB = 30;
 /** Fotogramas del atlas (cada uno de CELL × SPRITE de alto). */
 const CELL = 24;
 const TALL = 28;
-const F = {
+export const F = {
   idle: 0,
   blink: 2,
   walk: 3,
@@ -93,8 +94,11 @@ const F = {
   drink: 72,
   /** De perfil, quieto (charlando), a la derecha y a la izquierda. */
   talk: 76,
+  /** En la litera, acostado e incorporado, con la manta de cada tema de color (`TINT_IDS`). */
+  sleepT: 78,
+  upT: 85,
 } as const;
-const FRAMES = 78;
+const FRAMES = 92;
 /** Filas que baja el dibujo en los fotogramas de incorporado (para que quepa la cabeza). */
 const UP_DROP = 8;
 
@@ -345,9 +349,14 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
   // En la cama: la cabeza en la almohada y la manta por encima de los hombros. Las literas
   // tienen la manta del color del nivel; el catre, sábana blanca.
   // (El fotograma empieza 2 píxeles a la izquierda de la litera y 4 del catre.)
-  for (let lvl = 0; lvl < 4; lvl++) {
-    const x = (F.sleep + lvl) * CELL;
-    const q = bunkQuilt(lvl);
+  const quilts = [0, 1, 2, 3].map((lvl) => ({
+    i: F.sleep + lvl,
+    up: F.up + lvl,
+    q: bunkQuilt(lvl),
+  }));
+  TINT_IDS.forEach((id, k) => quilts.push({ i: F.sleepT + k, up: F.upT + k, q: TINTS[id].ramp }));
+  for (const { i, q } of quilts) {
+    const x = i * CELL;
     b.blit(spr.sleep, x, 0);
     b.rect(x + 2, 12, 21, 6, q[2]!);
     b.hline(x + 2, 12, 21, q[3]!);
@@ -370,10 +379,9 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
     b.blit(spr.sit, x0 + sx, top + UP_DROP + 5 - spr.sit.h);
     blanket(x0, UP_DROP);
   };
-  for (let lvl = 0; lvl < 4; lvl++) {
-    const q = bunkQuilt(lvl);
+  for (const { up, q } of quilts) {
     sitUp(
-      F.up + lvl,
+      up,
       0,
       (x, d) => {
         b.rect(x + 2, 12 + d, 21, 6, q[2]!);
@@ -446,12 +454,14 @@ function bedFrame(
   bed: BedSpot,
   k: number,
   z: number,
+  tint?: TintId,
 ): { frame: number; left: number; bottom: number; z: number } {
   const ground = floorY(bed.floor);
   if (bed.kind === 'litera') {
     const left = bed.x - 14 / k;
     const top = ground - 40 / k + (bed.top - 12) / k;
-    return { frame: F.sleep + bed.level, left, bottom: top + TALL / k, z };
+    const frame = tint ? F.sleepT + TINT_IDS.indexOf(tint) : F.sleep + bed.level;
+    return { frame, left, bottom: top + TALL / k, z };
   }
   if (bed.kind === 'jergon') {
     // En el suelo, con la cabeza en un extremo del jergón.
@@ -479,6 +489,7 @@ export class Crowd {
   private S: Spots | null = null;
   private segs: Segments = new Map();
   private homes = new Map<string, Goal>();
+  private tints: Readonly<Record<string, TintId>> = {};
   /** Los que se han ido de misión por la puerta: al volver entran desde el patio. */
   private away = new Set<string>();
   /** De día cada uno va a lo suyo; al atardecer, andando a su cama; de noche, acostados. */
@@ -606,6 +617,11 @@ export class Crowd {
   }
 
   /** Los visitantes de hoy: si cambia el día, los de ayer se van. */
+  /** Temas de color de las salas: la manta de quien duerme en una litera es la de su sala. */
+  setTints(t: Readonly<Record<string, TintId>>): void {
+    this.tints = t;
+  }
+
   setVisitors(v: SceneVisitors): void {
     if (v.day === this.visitors.day && v.kinds.length === this.visitors.kinds.length) return;
     if (v.day !== this.visitors.day)
@@ -1447,14 +1463,20 @@ export class Crowd {
     const k = scaleAt(z);
     if (a.edge) {
       // Incorporado: el fotograma de acostado, con el dibujo `UP_DROP` filas más abajo.
-      const f = bedFrame(a.edge.bed, k, z);
-      const kind = a.edge.bed.kind;
-      const up = kind === 'litera' ? a.edge.bed.level : kind === 'catre' ? 4 : 5;
+      const bed = a.edge.bed;
+      const tint = this.tints[bed.roomId];
+      const f = bedFrame(bed, k, z, tint);
+      const up =
+        bed.kind !== 'litera'
+          ? F.up + (bed.kind === 'catre' ? 4 : 5)
+          : tint
+            ? F.upT + TINT_IDS.indexOf(tint)
+            : F.up + bed.level;
       // El dibujo baja UP_DROP filas en su fotograma, así que el fotograma sube otro tanto.
-      return { ...f, frame: F.up + up, bottom: f.bottom - UP_DROP / k };
+      return { ...f, frame: up, bottom: f.bottom - UP_DROP / k };
     }
     const bed = a.pose === 'bed' ? a.goal?.bed : undefined;
-    if (bed) return bedFrame(bed, k, z);
+    if (bed) return bedFrame(bed, k, z, this.tints[bed.roomId]);
     if (a.held) {
       // Colgando del dedo, pataleando un poco.
       const step = Math.floor(t * 8) % 4;

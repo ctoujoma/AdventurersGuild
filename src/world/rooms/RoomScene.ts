@@ -33,6 +33,7 @@ import type { Point, SceneCallbacks, SceneModel } from '../scene';
 import { LANTERN, dummy, furnish, gearRoom, type Glow, type RGB } from './furniture';
 import { towerLampY, watchtower } from './salas/torre';
 import { takeWallActs, type ActId, type PoiKind } from './salas/kit';
+import { dress } from './salas/tintes';
 import { Crowd, type Poi, type Talk } from './crowd';
 import { FLAME_FRAMES, FLAME_H, FLAME_W, flameStrip } from './flame';
 import { faces } from './volume';
@@ -484,12 +485,14 @@ export class RoomScene {
       model.crest,
       model.facade,
       model.decor,
+      model.tints,
       model.trophies,
       model.dog,
       model.gear,
       vaultStep(model.vault),
     ]);
     if (model.visitors) this.crowd.setVisitors(model.visitors);
+    this.crowd.setTints(model.tints ?? {});
     if (key === this.key) {
       this.crowd.setPeople(model.heroes);
       return;
@@ -1020,7 +1023,9 @@ export class RoomScene {
   }
 
   /** Caja de una sala con sus muebles, sus faroles y, si está en obras, el andamio delante. */
-  private roomBox(room: Room, rect: Rect, b: Building): void {
+  private roomBox(plain: Room, rect: Rect, b: Building): void {
+    // Vestida con su tema de color: el arte de las telas lo lee de ella.
+    const room = dress(plain, this.model?.tints);
     const r = interior(rect);
     const dim = ruined(room) || bare(room);
     const ambient = dim ? ROOM_DIM : room.floor < 0 ? ROOM_DEEP : ROOM_LIT;

@@ -1,7 +1,8 @@
 import { useState } from 'preact/hooks';
 import { NURSE_WORK, roomMax } from '../../core/balance';
 import { appeal, neighborsOf, seatsOf, visitorList, visitorsOf } from '../../core/salon';
-import { canWork, roster, type Action } from '../../core/game';
+import { canWork, customOf, roster, type Action } from '../../core/game';
+import { TINTS, TINT_FROM, TINT_IDS, type TintId } from '../../data/custom';
 import { beerCap, brewAt, cookAt, dailyYield, eatersOf, foodCap } from '../../core/larder';
 import { ATTR_NAMES, gainText, skillGain, trainCap, trainState } from '../../core/training';
 import { LOCK_TIME, MAX_GUARDS, TRAIN_CAP, VAULT_STORE } from '../../core/balance';
@@ -103,6 +104,45 @@ interface Props {
   onMove?: (id: string) => void;
   /** Poner a alguien a trabajar en la sala o quitarlo. */
   onAssign?: (who: string, room: string | null) => void;
+  /** Elegir el tema de color de sus telas (`null`: los de la casa). */
+  onTint?: (room: string, tint: TintId | null) => void;
+}
+
+/** Los colores de las telas de la sala: los de la casa o uno de los temas. */
+function RoomTint({
+  game,
+  room,
+  onTint,
+}: {
+  game: GameState;
+  room: Room;
+  onTint: (room: string, tint: TintId | null) => void;
+}) {
+  const cur = customOf(game).colors?.[room.id] ?? null;
+  const swatch = (id: TintId | null, label: string, bg?: string) => (
+    <button
+      key={id ?? 'casa'}
+      role="radio"
+      aria-checked={cur === id}
+      aria-label={label}
+      title={label}
+      class={`tav-swatch room-swatch ${id ? '' : 'house'} ${cur === id ? 'on' : ''}`}
+      style={bg ? { background: bg } : undefined}
+      onClick={() => onTint(room.id, id)}
+    />
+  );
+  return (
+    <div class="room-tint">
+      <span class="row-sub">Colores de las telas</span>
+      <div class="tav-swatches" role="radiogroup" aria-label="Colores de las telas">
+        {swatch(null, 'De la casa')}
+        {TINT_IDS.map((id) => {
+          const [, d, m, l] = TINTS[id].ramp;
+          return swatch(id, TINTS[id].name, `linear-gradient(${l} 0 30%, ${m} 30% 70%, ${d} 70%)`);
+        })}
+      </div>
+    </div>
+  );
 }
 
 /** Lo que hace hoy la gente que trabaja en una sala. */
@@ -446,7 +486,16 @@ function RoomWorks({
 }
 
 /** Ficha de una sala: para qué sirve, su nivel, arreglarla o mejorarla y sus obras. */
-export function RoomPanel({ game, roomId, onUpgrade, onLink, onWork, onMove, onAssign }: Props) {
+export function RoomPanel({
+  game,
+  roomId,
+  onUpgrade,
+  onLink,
+  onWork,
+  onMove,
+  onAssign,
+  onTint,
+}: Props) {
   const room = game.building.rooms.find((r) => r.id === roomId);
   if (!room) return <p class="panel-note">Esa sala ya no está.</p>;
   const def = ROOMS[room.type];
@@ -520,6 +569,9 @@ export function RoomPanel({ game, roomId, onUpgrade, onLink, onWork, onMove, onA
         </span>
       ))}
       {onAssign && <RoomCrew game={game} room={room} onAssign={onAssign} />}
+      {onTint && !room.works && room.level >= (TINT_FROM[room.type] ?? Infinity) && (
+        <RoomTint game={game} room={room} onTint={onTint} />
+      )}
       {onWork && <RoomWorks game={game} room={room} onWork={onWork} onMove={onMove} />}
       {links.length > 0 && (
         <div class="room-links">

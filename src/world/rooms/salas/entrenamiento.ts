@@ -28,6 +28,7 @@ import {
   type WallCtx,
 } from './kit';
 import { candleOn, web } from './piezas';
+import { cloth, tintOf, type Cloth } from './tintes';
 
 // ---------- Sala de armas ----------
 
@@ -194,13 +195,15 @@ function armasWall(b: PixelBuffer, room: Room, _look: SalonLook, { cells, ruin }
 
 function armasFloor(b: PixelBuffer, room: Room): void {
   if (room.level < 2) return;
-  // Estera de lucha delante de cada tramo.
+  // Estera de lucha delante de cada tramo: de esparto y luego granate (o del tema).
+  const c = cloth(room, [P.plum, P.wine, P.red, P.coral]);
+  const base = room.level >= 3 || tintOf(room) ? c[1] : P.tan;
   for (const s of stretchesOf(room, b.w)) {
     if (s.kind === 'right') continue;
     const x0 = Math.round(s.x0 + 6);
     const x1 = Math.round(s.x1 - 6);
     b.rect(x0, 8, x1 - x0, FLOOR_D - 16, P.clay);
-    b.rect(x0 + 1, 9, x1 - x0 - 2, FLOOR_D - 18, room.level >= 3 ? P.wine : P.tan);
+    b.rect(x0 + 1, 9, x1 - x0 - 2, FLOOR_D - 18, base);
     b.hline(x0 + 3, FLOOR_D / 2, x1 - x0 - 6, P.sand);
     // En el nivel 4, con el borde dorado y el círculo del combate.
     if (room.level >= 4) {
@@ -208,7 +211,7 @@ function armasFloor(b: PixelBuffer, room: Room): void {
       b.rect(x0, FLOOR_D - 9, x1 - x0, 1, P.gold);
       const cx = Math.round((x0 + x1) / 2);
       b.ellipse(cx, FLOOR_D / 2, 8, 4, P.gold);
-      b.ellipse(cx, FLOOR_D / 2, 7, 3, P.wine);
+      b.ellipse(cx, FLOOR_D / 2, 7, 3, base);
     }
   }
 }
@@ -783,10 +786,12 @@ function bibliotecaWall(b: PixelBuffer, room: Room, _look: SalonLook, ctx: WallC
 
 function bibliotecaFloor(b: PixelBuffer, room: Room, cells: Cell[]): void {
   if (room.level < 2) return;
+  // Verde y luego morada (o del tema).
+  const t = cloth(room, [P.deep, room.level >= 3 ? P.grape : P.forest, P.leaf, P.lime]);
   for (const c of cells) {
     const x0 = Math.round(c.win - 22);
-    b.rect(x0, 9, 44, FLOOR_D - 18, P.deep);
-    b.rect(x0 + 1, 10, 42, FLOOR_D - 20, room.level >= 3 ? P.grape : P.forest);
+    b.rect(x0, 9, 44, FLOOR_D - 18, t[0]);
+    b.rect(x0 + 1, 10, 42, FLOOR_D - 20, t[1]);
     for (let x = x0 + 3; x < x0 + 42; x += 4) b.set(x, FLOOR_D / 2, P.gold);
     // Nivel 4: cenefa dorada y flecos.
     if (room.level >= 4) {
@@ -839,15 +844,15 @@ function scrollCabinet(level: number): PixelBuffer {
   });
 }
 
-/** Sillón de orejas con su cojín. */
-function armchair(): PixelBuffer {
+/** Sillón de orejas con su cojín (granate, o del tema de la sala). */
+function armchair(c: Cloth = [P.plum, P.wine, P.red, P.coral]): PixelBuffer {
   return Prop.piece(22, 24, (p) => {
-    p.rect(2, 0, 18, 16, P.wine);
-    p.rect(4, 2, 14, 12, P.red);
-    p.rect(0, 10, 4, 10, P.wine);
-    p.rect(18, 10, 4, 10, P.wine);
-    p.rect(3, 14, 16, 5, P.red);
-    p.hline(3, 14, 16, P.coral);
+    p.rect(2, 0, 18, 16, c[1]);
+    p.rect(4, 2, 14, 12, c[2]);
+    p.rect(0, 10, 4, 10, c[1]);
+    p.rect(18, 10, 4, 10, c[1]);
+    p.rect(3, 14, 16, 5, c[2]);
+    p.hline(3, 14, 16, c[3]);
     p.rect(2, 19, 2, 5, W[2]!);
     p.rect(18, 19, 2, 5, W[2]!);
     p.rect(8, 11, 6, 3, P.gold);
@@ -911,7 +916,7 @@ function bibliotecaThings(room: Room, w: number): Thing[] {
       t.push(
         ...row(s, [
           [bookcase(lvl, 5), WALL],
-          [armchair(), WALL - 3],
+          [armchair(cloth(room, [P.plum, P.wine, P.red, P.coral])), WALL - 3],
           [sideTable(), WALL - 3, candle(16)],
         ]),
       );

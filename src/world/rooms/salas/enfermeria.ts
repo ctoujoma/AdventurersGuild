@@ -29,6 +29,7 @@ import {
   type WallCtx,
 } from './kit';
 import { candleOn, herbs, jar, shelf, web } from './piezas';
+import { cloth } from './tintes';
 
 // ---------- Dónde van los catres ----------
 
@@ -206,9 +207,9 @@ function apothecary(b: PixelBuffer, x0: number, x1: number, level: number): void
 }
 
 /** El emblema del sanador (la copa y la serpiente): pintado, en un paño o en un tapiz con oro. */
-function emblem(b: PixelBuffer, x: number, level: number): void {
+function emblem(b: PixelBuffer, x: number, level: number, tapestry: string = P.leaf): void {
   if (level >= 2) {
-    const cloth = level >= 3 ? P.leaf : P.white;
+    const cloth = level >= 3 ? tapestry : P.white;
     b.hline(x - 10, 9, 21, W[2]!);
     b.rect(x - 9, 10, 19, 24, cloth);
     if (level >= 3) {
@@ -256,7 +257,8 @@ function wall(b: PixelBuffer, room: Room, _look: SalonLook, { cells, ruin }: Wal
     for (const s of stretchesOf(room, w))
       if (s.kind === 'mid') {
         if (s.i === 1) apothecary(b, bx(s.x0) + 4, bx(s.x1) - 4, lvl);
-        else emblem(b, bx((s.x0 + s.x1) / 2), lvl);
+        else
+          emblem(b, bx((s.x0 + s.x1) / 2), lvl, cloth(room, [P.deep, P.leaf, P.lime, P.white])[1]);
       }
   for (const c of cells) {
     const left = bx(c.x0) + 4;
@@ -315,7 +317,10 @@ function things(room: Room, w: number): Thing[] {
   const cab = Prop.cabinet(lvl >= 3);
   const cabLight: Glow | undefined =
     lvl >= 3 ? { dy: 20, r: 36, color: [140, 255, 200], power: 0.35, flicker: 0.04 } : undefined;
-  const t: Thing[] = [lampOver(cells, w, lvl), ...cots.map((x) => at(Prop.cot(), x, WALL))];
+  const t: Thing[] = [
+    lampOver(cells, w, lvl),
+    ...cots.map((x) => at(Prop.cot(cloth(room, [P.navy, P.ocean, P.sky, P.mist])), x, WALL)),
+  ];
   if (room.w === 1) {
     const items: { img: PixelBuffer; light?: Glow }[] = [{ img: table, light: tableLight }];
     if (lvl >= 2) items.push({ img: cab, light: cabLight });

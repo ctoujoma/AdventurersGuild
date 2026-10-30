@@ -1,5 +1,6 @@
 import type { HeroLook, HeroMarks } from '../art/heroes/look';
 import type { Building, ItemIcon, Rarity, TrophyIcon } from '../core/model';
+import type { TintId } from '../data/custom';
 import type { BattleSound } from './battle';
 
 /**
@@ -46,6 +47,8 @@ export interface SceneModel {
   /** Decoración del salón, adornos de la fachada y visitantes de hoy. */
   decor: string[];
   facade?: string[];
+  /** Tema de color de las telas de cada sala (por id). */
+  tints?: Record<string, TintId>;
   visitors?: SceneVisitors;
   /** Equipo sin dueño (armería o arcones) y trofeos del salón. */
   gear: GearView[];

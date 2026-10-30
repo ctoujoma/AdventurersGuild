@@ -3,7 +3,7 @@
  * El núcleo no conoce el DOM ni el arte; el aspecto de cada héroe sale de su `seed`.
  */
 import type { BossKind } from '../data/bosses';
-import type { CrestColor, CrestSymbol, DecorId, FacadeId, StaffId } from '../data/custom';
+import type { CrestColor, CrestSymbol, DecorId, FacadeId, StaffId, TintId } from '../data/custom';
 import type { Trade } from '../data/workers';
 import type { RoomType } from '../data/rooms';
 import type { Attrs, Challenge, ClassId, SkillId, Trait } from './party';
@@ -290,6 +290,8 @@ export interface Custom {
   raven?: boolean;
   /** Día en que se montó la fiesta de la comarca. */
   feast?: number;
+  /** Tema de color de las telas de cada sala (por id); sin él, los de la casa. */
+  colors?: Record<string, TintId>;
 }
 
 export interface PendingEvent {

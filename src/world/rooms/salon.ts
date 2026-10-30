@@ -293,14 +293,14 @@ export function bar(level: number, special: boolean): PixelBuffer {
 /** Una mesa redonda con lo que haya encima: jarras, un plato, una vela, o naipes. */
 export function tableSet(
   seed: string,
-  cloth: boolean,
+  cloth: readonly string[] | undefined,
   candle: boolean,
   cards: boolean,
 ): PixelBuffer {
   return Prop.piece(26, 22, (b) => {
     if (cards) {
       // Mesa de naipes: tapete verde y monedas.
-      b.blit(Prop.roundTable(false), 0, 8);
+      b.blit(Prop.roundTable(), 0, 8);
       b.ellipse(13, 10.5, 12, 2.5, P.forest);
       b.hline(3, 10, 20, P.leaf);
       b.rect(6, 7, 3, 4, P.white);

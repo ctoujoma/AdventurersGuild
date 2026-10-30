@@ -53,10 +53,12 @@ import {
   FEAST_PRICE,
   RAVEN_EVERY,
   RAVEN_PRICE,
+  TINTS,
   decorSlots,
   isFeastDay,
   type DecorId,
   type FacadeId,
+  type TintId,
 } from '../data/custom';
 import type { RoomType } from '../data/rooms';
 import { arrival, checkFeats, checkMonth, emptyStats, startMonth } from './feats';
@@ -149,6 +151,8 @@ export type Action =
   | { type: 'choose'; index: number }
   | { type: 'custom'; patch: Partial<Pick<Custom, 'name' | 'color' | 'symbol'>> }
   | { type: 'buyDog' }
+  /** Tema de color de las telas de una sala (`null`: los de la casa). */
+  | { type: 'tint'; id: string; tint: TintId | null }
   | { type: 'decor'; id: DecorId; on: boolean }
   | { type: 'facade'; id: FacadeId }
   | { type: 'buyRaven' }
@@ -541,6 +545,15 @@ export function reduce(state: GameState, action: Action): GameState {
       const c = customOf(state);
       if (c.dog || state.gold < DOG_PRICE) return state;
       return { ...state, gold: state.gold - DOG_PRICE, custom: { ...c, dog: true } };
+    }
+    case 'tint': {
+      if (!state.building.rooms.some((r) => r.id === action.id)) return state;
+      if (action.tint && !TINTS[action.tint]) return state;
+      const c = customOf(state);
+      const colors = { ...c.colors };
+      if (action.tint) colors[action.id] = action.tint;
+      else delete colors[action.id];
+      return { ...state, custom: { ...c, colors } };
     }
     case 'decor': {
       const c = customOf(state);
