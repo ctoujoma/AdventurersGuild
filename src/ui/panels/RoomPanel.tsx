@@ -40,7 +40,15 @@ import { jobRoomName } from '../JobPicker';
 
 /** A dónde lleva cada sala: los paneles de siempre que tienen que ver con ella. */
 export type RoomLink =
-  'tablon' | 'candidatos' | 'casa' | 'heroes' | 'trabajadores' | 'libro' | 'equipo' | 'tesoros';
+  | 'tablon'
+  | 'candidatos'
+  | 'casa'
+  | 'heroes'
+  | 'trabajadores'
+  | 'libro'
+  | 'fuera'
+  | 'equipo'
+  | 'tesoros';
 
 const WORK = { to: 'trabajadores', label: 'Trabajo', icon: 'martillo' } as const;
 
@@ -58,7 +66,10 @@ const LINKS: Partial<Record<RoomType, { to: RoomLink; label: string; icon: IconN
   recibidor: [{ to: 'heroes', label: 'Guardia', icon: 'escudo' }],
   dormitorio: [{ to: 'heroes', label: 'Héroes', icon: 'heroe' }],
   veteranos: [{ to: 'heroes', label: 'Héroes', icon: 'heroe' }],
-  mapas: [{ to: 'libro', label: 'Libro', icon: 'libro' }],
+  mapas: [
+    { to: 'fuera', label: 'Mapa', icon: 'mapa' },
+    { to: 'libro', label: 'Libro', icon: 'libro' },
+  ],
   armeria: [{ to: 'equipo', label: 'Equipo', icon: 'espadas' }],
   forja: [{ to: 'equipo', label: 'Equipo', icon: 'espadas' }],
   tesoro: [{ to: 'tesoros', label: 'Tesoros', icon: 'coin' }],

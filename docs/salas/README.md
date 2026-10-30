@@ -111,6 +111,26 @@ La lista completa de pendientes e ideas (bucle, monetización, amigos, torneos, 
   pestañas), `RoomMenu.tsx` (menú-icono junto a la sala), `panels/RoomPanel.tsx` (ficha de
   sala), `drop.ts` (soltar personajes en salas).
 
+### Vida en las salas (ronda de pruebas en PC)
+
+- **Cosas tocables:** un mueble (`Thing.act`) o algo pintado en la pared (`markWall` en
+  `salas/kit.ts`, que `backWall` vacía y la escena recoge con `takeWallActs`) abre lo suyo: el
+  tablón, el mapa de la comarca, la barra (candidatos) y el armero (equipo). Al pasar el ratón
+  se marca con las esquinas doradas y su nombre (`ACT_LABEL` en `RoomScene.ts`).
+- **Sitios a los que va la gente** (`Thing.poi` y los tocables de leer): leer el tablón y los
+  mapas, calentarse en la chimenea y rezar en el altar (`goPoi` en `crowd.ts`).
+- **Animaciones** (atlas de `crowd.ts`, `F`): incorporado en la cama al acostarse y al
+  levantarse (`edge`), la herramienta de cada puesto (`WORK`: cucharón, pala, cuenco y jarra),
+  beber en la barra y las charlas con bocadillos (`chatWith`, `bubbles`; los iconos, en
+  `TALK_ICONS`).
+- **Visitantes** con ropa propia (campesino, mercader, noble y forastero: `OutfitId` en
+  `art/heroes/look.ts`); en el retrato usan la de un héroe parecido.
+- **Luces:** cada foco lleva un halo (`haloOf`) que el shader suma antes de pasar a la paleta, así
+  sale tramado; las llamas son una tira de fotogramas (`flame.ts`).
+- **Música** (`audio/music.ts` y `audio.ts`): los temas se barajan sin repetir, cada vez con otro
+  arreglo (tono, tempo, instrumento al frente) y a veces con un silencio entre uno y otro; al
+  atardecer, mejor los tranquilos (`calm`).
+
 ## Balance (PR 12)
 
 `npm run sim` juega 300 partidas por estrategia y ahora mide también las salas: caja del salón

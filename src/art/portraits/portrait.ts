@@ -1,5 +1,5 @@
 import { gearPortraitBack, gearPortraitFront } from '../heroes/gear';
-import type { HeroLook, HeroMarks, OutfitId } from '../heroes/look';
+import type { HeadgearId, HeroLook, HeroMarks, OutfitId } from '../heroes/look';
 import { EYES as EYE_COLORS, HAIR, P, SKIN, type Ramp } from '../palette';
 import { PixelBuffer, alpha } from '../pixel';
 import {
@@ -63,6 +63,35 @@ const CLASS: Record<OutfitId, [Ramp, Ramp]> = {
     [P.rust, P.tan, P.sand, P.white],
     [P.plum, P.bark, P.rust, P.oak],
   ],
+  campesino: [
+    [P.plum, P.bark, P.oak, P.tan],
+    [P.rust, P.tan, P.sand, P.white],
+  ],
+  mercader: [
+    [P.black, P.plum, P.wine, P.red],
+    [P.rust, P.tan, P.sand, P.white],
+  ],
+  noble: [
+    [P.navy, P.ocean, P.sky, P.cyan],
+    [P.rust, P.orange, P.gold, P.lemon],
+  ],
+  forastero: [
+    [P.black, P.navy, P.slate, P.steel],
+    [P.navy, P.slate, P.steel, P.fog],
+  ],
+};
+
+/** Los de fuera usan en el retrato la ropa y el sombrero más parecidos de los héroes. */
+const PORTRAIT_OUTFIT: Partial<Record<OutfitId, keyof typeof OUTFITS>> = {
+  campesino: 'tabernero',
+  mercader: 'tabernero',
+  noble: 'clerigo',
+  forastero: 'picaro',
+};
+const PORTRAIT_HAT: Partial<Record<HeadgearId, keyof typeof HEADGEAR>> = {
+  paja: 'sombrero',
+  boina: 'gorra',
+  pluma: 'gorra',
 };
 
 function slots(look: HeroLook): Slots {
@@ -159,7 +188,8 @@ export function renderPortrait(look: HeroLook, marks: HeroMarks = {}, blink = fa
 
   const c = slots(look);
   const fig = new PixelBuffer(W, H);
-  const hg = marks.injured && look.headgear === 'casco' ? null : look.headgear;
+  const worn = marks.injured && look.headgear === 'casco' ? null : look.headgear;
+  const hg = worn ? (PORTRAIT_HAT[worn] ?? (worn as keyof typeof HEADGEAR)) : null;
   const hair = look.hairStyle;
 
   // Detrás de todo: lo que lleva a la espalda, la melena y la coleta.
@@ -169,7 +199,7 @@ export function renderPortrait(look: HeroLook, marks: HeroMarks = {}, blink = fa
     if (hair === 'coleta') stamp(fig, HAIR_BACK.coleta, c);
   }
   stamp(fig, HEADS[look.sex], c);
-  stamp(fig, OUTFITS[look.outfit], c);
+  stamp(fig, OUTFITS[PORTRAIT_OUTFIT[look.outfit] ?? (look.outfit as keyof typeof OUTFITS)], c);
 
   // Cara.
   const eyes = blink

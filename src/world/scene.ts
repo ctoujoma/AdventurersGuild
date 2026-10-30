@@ -12,6 +12,8 @@ export type HeroStatus = 'ok' | 'herido' | 'mision' | 'candidato';
 export interface SceneHero {
   id: string;
   name: string;
+  /** Lo que se lee debajo del nombre al pasar el ratón (clase y nivel, oficio…). */
+  title?: string;
   status: HeroStatus;
   look: HeroLook;
   marks: HeroMarks;

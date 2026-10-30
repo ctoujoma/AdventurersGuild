@@ -298,8 +298,8 @@ function things(room: Room, w: number): Thing[] {
   }
   cells.forEach((c, j) => {
     if (c === m)
-      t.push(
-        at(altar(lvl), c.win, WALL, 0, {
+      t.push({
+        ...at(altar(lvl), c.win, WALL, 0, {
           dy: 14,
           r: 60,
           color: CANDLE,
@@ -307,7 +307,8 @@ function things(room: Room, w: number): Thing[] {
           flicker: 0.15,
           flames: [-12, 12].map((dx) => ({ dx, dy: 1, size: 0.3 })),
         }),
-      );
+        poi: 'pray',
+      });
     else if (j === 0) t.push(at(kneeler(), c.win, WALL));
     else t.push(at(candleStand(lvl), c.win, WALL, 0, candle(20, 34, 0.4)));
   });

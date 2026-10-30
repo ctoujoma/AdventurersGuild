@@ -37,7 +37,34 @@ export interface Thing {
   light?: Glow;
   /** Con volumen: de su silueta salen los lados y la parte de arriba hasta la pared (ver `volume.ts`). */
   box?: boolean;
+  /** Se puede tocar: al pasar el ratón se marca y al tocarlo abre lo suyo. */
+  act?: ActId;
+  /** Sitio al que la gente va a hacer algo (calentarse las manos, rezar…). */
+  poi?: PoiKind;
 }
+
+/** Lo que se hace en un sitio de una sala: leer (el tablón, el mapa), calentarse o rezar. */
+export type PoiKind = 'read' | 'warm' | 'pray';
+
+/** Lo que abre una cosa de una sala al tocarla (el tablón, el mapa de la comarca…). */
+export type ActId = 'tablon' | 'mapa' | 'candidatos' | 'equipo';
+
+/** Algo tocable pintado en la pared del fondo, en sus píxeles. */
+export interface WallAct {
+  act: ActId;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/**
+ * Lo tocable de la pared que se está pintando: `backWall` lo vacía al empezar y la escena lo
+ * recoge justo después (así las salas no tienen que devolver nada más que su dibujo).
+ */
+const wallActs: WallAct[] = [];
+export const markWall = (a: WallAct) => void wallActs.push(a);
+export const takeWallActs = (): WallAct[] => wallActs.splice(0);
 
 /** Filas de la textura del suelo (va a media resolución en profundidad). */
 export const FLOOR_D = DEPTH / 2;

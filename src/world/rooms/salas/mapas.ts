@@ -19,6 +19,7 @@ import {
   candle,
   cellsOf,
   lampOver,
+  markWall,
   row,
   stretchesOf,
   worldW,
@@ -170,6 +171,7 @@ function wall(b: PixelBuffer, room: Room, _look: SalonLook, { cells, ruin }: Wal
   }
   const map = bigMap(room.level);
   b.blit(map, Math.round((winL - map.w) / 2), 12);
+  markWall({ act: 'mapa', x: Math.round((winL - map.w) / 2), y: 12, w: map.w, h: map.h });
   // Encima de la mesa de arena, el mapa de la comarca con sus notas clavadas.
   for (const s of stretchesOf(room, cells.at(-1)!.x1))
     if (s.kind === 'mid' && s.i === 2) {
@@ -177,6 +179,7 @@ function wall(b: PixelBuffer, room: Room, _look: SalonLook, { cells, ruin }: Wal
       const small = Prop.wallMap().crop(4, 0, 28, 24);
       b.rect(x - 16, 14, 32, 26, W[3]!);
       b.blit(small, x - 14, 15);
+      markWall({ act: 'mapa', x: x - 16, y: 14, w: 32, h: 26 });
       for (const [dx, dy] of [
         [-12, 17],
         [8, 30],
@@ -285,7 +288,8 @@ function things(room: Room, w: number): Thing[] {
           [floorGlobe(), WALL],
         ]),
       );
-    else if (s.kind === 'mid') t.push(...row(s, [[sandTable(lvl), WALL - 2]]));
+    else if (s.kind === 'mid')
+      t.push(...row(s, [[sandTable(lvl), WALL - 2]]).map((x) => ({ ...x, act: 'mapa' as const })));
     else if (lvl >= 2) {
       // Al lado de lo de la última ventana, sin pisarlo.
       const img = lvl >= 3 ? telescope() : smallGlobe();
@@ -295,9 +299,10 @@ function things(room: Room, w: number): Thing[] {
       t.push(at(img, rx, WALL));
     }
   }
-  cells.forEach((c, j) =>
-    t.push(at(under[j]!, c.win, WALL, 0, j === 0 && lvl >= 2 ? candle(14) : undefined)),
-  );
+  cells.forEach((c, j) => {
+    const thing = at(under[j]!, c.win, WALL, 0, j === 0 && lvl >= 2 ? candle(14) : undefined);
+    t.push(j === 0 ? { ...thing, act: 'mapa' } : thing);
+  });
   return t;
 }
 

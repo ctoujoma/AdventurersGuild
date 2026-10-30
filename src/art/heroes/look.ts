@@ -3,9 +3,20 @@ import { Rng } from '../../core/rng';
 import { EYES, HAIR, SKIN } from '../palette';
 
 export type Sex = 'm' | 'f';
-export type OutfitId = 'guerrero' | 'picaro' | 'mago' | 'clerigo' | 'explorador' | 'tabernero';
+export type OutfitId =
+  | 'guerrero'
+  | 'picaro'
+  | 'mago'
+  | 'clerigo'
+  | 'explorador'
+  | 'tabernero'
+  // La gente de fuera que viene al salón (no son héroes ni se contratan).
+  | 'campesino'
+  | 'mercader'
+  | 'noble'
+  | 'forastero';
 export type HairStyle = 'corto' | 'largo' | 'coleta' | 'punta' | 'mono' | 'calvo';
-export type HeadgearId = 'casco' | 'capucha' | 'sombrero' | 'gorra';
+export type HeadgearId = 'casco' | 'capucha' | 'sombrero' | 'gorra' | 'paja' | 'boina' | 'pluma';
 export type FaceShape = 'redonda' | 'cuadrada' | 'alargada';
 export type Brow = 'recta' | 'arqueada' | 'fruncida';
 export type Mouth = 'neutra' | 'sonrisa' | 'mueca' | 'seria';
@@ -43,6 +54,10 @@ const HEADGEAR: Record<OutfitId, [HeadgearId, number] | null> = {
   explorador: ['gorra', 0.55],
   clerigo: null,
   tabernero: null,
+  campesino: ['paja', 0.75],
+  mercader: ['boina', 0.85],
+  noble: ['pluma', 0.8],
+  forastero: ['capucha', 1],
 };
 
 export function generateLook(seed: string, outfit: OutfitId, sex: Sex): HeroLook {

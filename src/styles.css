@@ -468,6 +468,12 @@ button:focus-visible {
   }
 }
 
+.hovertip small {
+  display: block;
+  font-size: var(--t-s);
+  color: var(--sand);
+}
+
 .hovertip {
   position: absolute;
   transform: translate(12px, -28px);

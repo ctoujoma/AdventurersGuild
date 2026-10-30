@@ -29,8 +29,8 @@ import { P } from '../../art/palette';
 import type { PixelBuffer } from '../../art/pixel';
 
 /**
- * Focos que caben a la vez: van en una textura (una columna por foco: posición y alcance, color,
- * zona), así que pueden ser muchos; el shader solo recorre los que haya (`uLightCount`).
+ * Focos que caben a la vez: van en una textura (una columna por foco: posición y alcance, color
+ * y halo, zona), así que pueden ser muchos; el shader solo recorre los que haya (`uLightCount`).
  */
 export const MAX_LIGHTS = 256;
 /** Con «pocas luces» en Ajustes: solo los más cercanos al centro de la vista. */
@@ -72,6 +72,7 @@ const SURFACE_FRAG = /* glsl */ `
   uniform float uSun;
   uniform float uWrap;
   uniform float uDither;
+  uniform float uHalo;
   uniform vec3 uDaylight;
   uniform highp sampler2D uLights;
   uniform int uLightCount;
@@ -94,21 +95,32 @@ const SURFACE_FRAG = /* glsl */ `
     vec3 n = uNormal;
     // Luz del día solo por encima del suelo.
     vec3 light = uAmbient + uDaylight * uSun * step(-0.5, world.y);
+    // El halo de las llamas: la luz que se ve en el aire alrededor de cada una. Se mide en la
+    // pantalla (lo que queda cerca de la llama a la vista, esté delante o detrás) y se suma al
+    // color antes de pasarlo a la paleta, así sale en bandas tramadas y no como un difuminado.
+    vec3 halo = vec3(0.0);
+    vec2 seen = cameraPosition.xy + (world.xy - cameraPosition.xy) * (cameraPosition.z / (cameraPosition.z - world.z));
     for (int i = 0; i < LIGHTS; i++) {
       if (i >= uLightCount) break;
       vec4 z = texelFetch(uLights, ivec2(i, 2), 0);
       if (world.x < z.x || world.x > z.z || world.y < z.y || world.y > z.w) continue;
       vec4 lp = texelFetch(uLights, ivec2(i, 0), 0);
+      vec4 lc = texelFetch(uLights, ivec2(i, 1), 0);
       vec3 d = lp.xyz - world;
       float dist = length(d);
       float a = clamp(1.0 - dist / lp.w, 0.0, 1.0);
       a = a * a * (3.0 - 2.0 * a);
       float ndl = mix(max(dot(n, d / max(dist, 0.001)), 0.0), 1.0, uWrap);
-      light += texelFetch(uLights, ivec2(i, 1), 0).rgb * a * ndl;
+      light += lc.rgb * a * ndl;
+      if (lc.a > 0.0) {
+        vec2 ls = cameraPosition.xy + (lp.xy - cameraPosition.xy) * (cameraPosition.z / (cameraPosition.z - lp.z));
+        float h = clamp(1.0 - length(seen - ls) / lc.a, 0.0, 1.0);
+        halo += lc.rgb * h * h * 0.95;
+      }
     }
     // Sin quemar: lo muy iluminado se queda en un tono claro y no salta a otro color.
     light = min(light, vec3(1.2));
-    vec3 c = tex.rgb * light;
+    vec3 c = tex.rgb * light + min(halo, vec3(0.7)) * uHalo;
     // Tramado pegado al téxel: se mueve con la superficie, no con la pantalla.
     ivec2 t = ivec2(tc);
     int k = (t.x & 3) + (t.y & 3) * 4;
@@ -139,6 +151,16 @@ const FLAT_FRAG = /* glsl */ `
   uniform vec3 uColor;
   void main() {
     gl_FragColor = vec4(uColor, 1.0);
+  }
+`;
+
+const GLOW_FRAG = /* glsl */ `
+  uniform sampler2D map;
+  varying vec2 vUv;
+  void main() {
+    vec4 c = texture2D(map, vUv);
+    if (c.a < 0.5) discard;
+    gl_FragColor = vec4(c.rgb, 1.0);
   }
 `;
 
@@ -192,6 +214,8 @@ export interface SurfaceOpts {
   frames?: number;
   /** Veces que la textura se repite a lo ancho del plano (el terreno lejano). */
   repeat?: number;
+  /** Cuánto halo de las llamas se ve encima (la gente, poco: si no, se queda en blanco). */
+  halo?: number;
 }
 
 /** Textura de los focos: fila 0, posición y alcance; 1, color; 2, zona (x0, y0, x1, y1). */
@@ -247,6 +271,7 @@ export class Look {
           uSun: { value: o.sun },
           uWrap: { value: o.wrap ?? 0.25 },
           uDither: { value: o.dither ?? 0.035 },
+          uHalo: { value: o.halo ?? 1 },
           uUvOffset: { value: new Vector2(0, 0) },
           uUvScale: { value: new Vector2((o.repeat ?? 1) / (o.frames ?? 1), 1) },
         },
@@ -257,7 +282,24 @@ export class Look {
     );
   }
 
-  /** Color plano que brilla por sí solo (las llamas). */
+  /** Dibujo que brilla por sí solo, sin luz ni paleta (las llamas): un fotograma de su tira. */
+  glow(b: PixelBuffer, frames: number): ShaderMaterial {
+    const map = this.own(texture(b));
+    return this.own(
+      new ShaderMaterial({
+        uniforms: {
+          map: { value: map },
+          uUvOffset: { value: new Vector2(0, 0) },
+          uUvScale: { value: new Vector2(1 / frames, 1) },
+        },
+        vertexShader: SURFACE_VERT,
+        fragmentShader: GLOW_FRAG,
+        side: DoubleSide,
+      }),
+    );
+  }
+
+  /** Color plano que brilla por sí solo. */
   flat(hex: string): ShaderMaterial {
     return this.own(
       new ShaderMaterial({

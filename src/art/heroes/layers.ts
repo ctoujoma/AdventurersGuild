@@ -133,6 +133,66 @@ export const OUTFITS = {
     '...oooo..oooo...',
     '...OOOO..OOOO...',
   ],
+  campesino: [
+    ...EMPTY_TOP,
+    '...cccaaaaccc...',
+    '..ccccaaaacccc..',
+    '..aaCccaaccCaa..',
+    '..aaCccaaccCaa..',
+    '..aaAAAAAAAAaa..',
+    '....CCCAACCC....',
+    '....CCCCCCCC....',
+    '....CCC..CCC....',
+    '....CaC..CCC....',
+    '....CCC..CaC....',
+    '...oooo..oooo...',
+    '...OOOO..OOOO...',
+  ],
+  mercader: [
+    ...EMPTY_TOP,
+    '...aaaaaaaaaa...',
+    '..ccccyyyycccc..',
+    '..cCccccyyccCc..',
+    '..cCcccccccccc..',
+    '..aaCcccccccaa..',
+    '...cooooOoooc...',
+    '...cCccOOcccc...',
+    '...cCcc..ccCc...',
+    '....ppp..ppp....',
+    '....ppp..ppp....',
+    '...oooo..oooo...',
+    '...OOOO..OOOO...',
+  ],
+  noble: [
+    ...EMPTY_TOP,
+    '...wwwwwwwwww...',
+    '..cccccccccaac..',
+    '..cCccccccaaCc..',
+    '..cCcccccaacCc..',
+    '..wwccccaaccww..',
+    '....cccaaccc....',
+    '...ccCaacccCc...',
+    '..ccCaacccccCc..',
+    '..cCCcccccccCc..',
+    '..AAAAAAAAAAAA..',
+    '...pp......pp...',
+    '...oo......oo...',
+  ],
+  forastero: [
+    ...EMPTY_TOP,
+    '..cccccccccccc..',
+    '.cccccccccccccc.',
+    '.cCccccccccccCc.',
+    '.cCcccccaaccCcc.',
+    '.cCccccccccccCc.',
+    '.cCccccccccccCc.',
+    '.cCccccccccccCc.',
+    '..CcccccccccCc..',
+    '..CCcccccccCCc..',
+    '...CCCCCCCCCC...',
+    '....oo....oo....',
+    '...OOO....OOO...',
+  ],
 } satisfies Record<OutfitId, Grid>;
 
 export const HAIR = {
@@ -191,7 +251,10 @@ export const BEARD: Grid = [
   '.....hhhhhh.....',
 ];
 
-/** Sombreros: 16×8, se pintan desde 4 filas por encima del cuerpo (las 4 de margen). */
+/**
+ * Sombreros: 16×8, se pintan desde 4 filas por encima del cuerpo (las 4 de margen). El de paja
+ * (z/Z) y la boina o el gorro de pluma (b/B) son de la gente de fuera.
+ */
 export const HATS = {
   sombrero: [
     '.........cC.....',
@@ -211,6 +274,36 @@ export const HATS = {
     '....ccccrccc....',
     '...cccccccccc...',
     '..CCCCCCCCCCCC..',
+    '................',
+  ],
+  paja: [
+    '................',
+    '................',
+    '................',
+    '.....zzzzzz.....',
+    '....zzZzzZzz....',
+    '....bbbbbbbb....',
+    '.zzzzzzzzzzzzzz.',
+    '..ZZZZZZZZZZZZ..',
+  ],
+  boina: [
+    '................',
+    '................',
+    '................',
+    '......bbbbbb....',
+    '....bbbbbbbbbb..',
+    '...bbbbbbbbbbb..',
+    '...BBBBBBBBBB...',
+    '................',
+  ],
+  pluma: [
+    '..........ww....',
+    '.........wwM....',
+    '........wwM.....',
+    '.....bbbwbb.....',
+    '....bbbbbbbbb...',
+    '....bbbbbbbbbb..',
+    '...BBBBBBBBBB...',
     '................',
   ],
 } satisfies Record<string, Grid>;
@@ -309,6 +402,21 @@ export const WEAPONS = {
     '.............ww.',
     '.............ww.',
   ],
+  // Los de fuera no van armados: el campesino lleva un cesto; el mercader, su bolsa.
+  campesino: [
+    ...Array.from({ length: 14 }, () => '................'),
+    '.............vv.',
+    '............vVVv',
+    '............vvvv',
+  ],
+  mercader: [
+    ...Array.from({ length: 14 }, () => '................'),
+    '..y.............',
+    '.yYy............',
+    '.YYY............',
+  ],
+  noble: [],
+  forastero: [],
 } satisfies Record<OutfitId, Grid>;
 
 export const OVERLAYS = {

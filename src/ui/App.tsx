@@ -222,6 +222,7 @@ export function App() {
     clockRef.current = next;
     setClock(next);
     scene.current?.setTime(next / DAY_SECONDS);
+    audio.setHour(next / DAY_SECONDS);
     const open = DUSK * DAY_SECONDS;
     const delivery = (x: number) => Math.floor((Math.min(x, open) / open) * DELIVERIES);
     if (
@@ -301,6 +302,18 @@ export function App() {
 
   const onHotspot = (id: string) => {
     setHint(false);
+    if (id.startsWith('cosa:')) {
+      // Algo de una sala: en obras elige la sala; si no, abre lo suyo.
+      const [, act, room] = id.split(':');
+      if (works.planning) {
+        if (room) works.select(room);
+        return;
+      }
+      if (act === 'tablon') openPanel('tablon');
+      else if (act === 'mapa') openPanel('fuera');
+      else if (act === 'candidatos' || act === 'equipo') roomLink(act);
+      return;
+    }
     if (id.startsWith('obra:')) {
       works.choose(id);
       return;
@@ -685,7 +698,7 @@ export function App() {
         {/* Con el menú de obras abierto, su nombre ya está en el menú. */}
         {hover && !bubble && !dragTip && !(works.planning && works.selected) && (
           <span class="hovertip" style={{ left: `${hover.at.x}px`, top: `${hover.at.y}px` }}>
-            {hover.label}
+            {hover.label.split('\n').map((line, i) => (i ? <small key={i}>{line}</small> : line))}
           </span>
         )}
         {bubble && <SpeechBubble bubble={bubble} scene={scene} />}

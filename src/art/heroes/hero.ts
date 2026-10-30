@@ -129,6 +129,64 @@ const CLASS: Record<OutfitId, Slots> = {
     q: P.sand,
     Q: P.tan,
   },
+  // Chaleco de lana parda sobre camisa cruda, cuerda por cinturón y zuecos.
+  campesino: {
+    c: P.oak,
+    C: P.bark,
+    a: P.sand,
+    A: P.tan,
+    o: P.clay,
+    O: P.rust,
+    p: P.bark,
+    P: P.umber,
+    q: P.sand,
+    Q: P.tan,
+    b: P.wine,
+    B: P.plum,
+  },
+  // Casaca de terciopelo con cuello de piel, cadena de oro y bolsa al cinto.
+  mercader: {
+    c: P.wine,
+    C: P.plum,
+    a: P.sand,
+    A: P.tan,
+    o: P.bark,
+    O: P.ebony,
+    p: P.slate,
+    P: P.navy,
+    q: P.wine,
+    Q: P.plum,
+    b: P.forest,
+    B: P.deep,
+  },
+  // Casaca larga azul con gola blanca, banda de oro y gorro de pluma.
+  noble: {
+    c: P.sky,
+    C: P.ocean,
+    a: P.gold,
+    A: P.lemon,
+    o: P.ebony,
+    O: P.black,
+    p: P.white,
+    P: P.mist,
+    q: P.sky,
+    Q: P.ocean,
+    b: P.navy,
+    B: P.black,
+  },
+  // Capa gris con capucha que le tapa hasta las manos.
+  forastero: {
+    c: P.slate,
+    C: P.navy,
+    a: P.steel,
+    A: P.fog,
+    o: P.ebony,
+    O: P.black,
+    p: P.navy,
+    P: P.black,
+    q: P.slate,
+    Q: P.navy,
+  },
 };
 
 const SHARED: Slots = {
@@ -145,6 +203,9 @@ const SHARED: Slots = {
   y: P.gold,
   Y: P.orange,
   w: P.white,
+  // Paja del sombrero de los campesinos.
+  z: P.sand,
+  Z: P.tan,
 };
 
 function slots(look: HeroLook): Slots {
@@ -229,6 +290,9 @@ function breathe(src: PixelBuffer): PixelBuffer {
 
 type Step = 0 | 1 | 2 | 3;
 
+/** Los que llevan faldón o capa hasta los pies (de perfil, sin piernas). */
+const ROBES: ReadonlySet<OutfitId> = new Set(['mago', 'clerigo', 'noble', 'forastero']);
+
 function composeSide(
   look: HeroLook,
   marks: HeroMarks,
@@ -238,7 +302,7 @@ function composeSide(
 ): PixelBuffer {
   const c = slots(look);
   const b = new PixelBuffer(BODY_W, BODY_H + HEADROOM);
-  const robe = look.outfit === 'mago' || look.outfit === 'clerigo';
+  const robe = ROBES.has(look.outfit);
   const contact = step === 0 || step === 2;
   const bob = contact ? 1 : 0;
   const up = (g: Grid, from = 0) => stamp(b, g.slice(from), c, 0, HEADROOM + from + bob);
