@@ -3,7 +3,7 @@ import type { GameState } from '../core/model';
 import { ATTR_NAMES, trainCap } from '../core/training';
 import { canAssign, hasPosts, isTrainRoom } from '../core/workers';
 import { TRAINS } from '../data/rooms';
-import { jobRoomName } from './JobPicker';
+import { jobRoomName } from './roomName';
 
 /** Lo que pasa si se suelta a alguien en una sala: lo que se hará (y cómo se dice) o por qué no. */
 export type Drop = { ok: true; text: string; actions: Action[] } | { ok: false; text: string };

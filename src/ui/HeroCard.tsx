@@ -1,18 +1,19 @@
 import { useState } from 'preact/hooks';
 import { GUARD_BONUS, VET_LEVEL, XP_PER_LEVEL } from '../core/balance';
 import { PERKS } from '../core/classes';
-import { canHire, gearInStock, guardsFull, requestAmount } from '../core/game';
+import { canHire, gearInStock, requestAmount } from '../core/game';
 import type { GameState, Hero } from '../core/model';
 import { SKILLS, attr, moraleBand, skill } from '../core/party';
 import { CLASS_NAMES, MORALE_INFO, statusLabel } from '../data/labels';
 import { HIDDEN_TRAIT_HINT, TRAIT_INFO, traitLabel } from '../data/traits';
 import { itemIcon } from '../art/items';
 import { RARITY_NAMES, itemEffect } from '../data/items';
-import { ROOMS } from '../data/rooms';
 import { BufferImage } from './BufferImage';
 import { help } from './HoldHelp';
 import { Icon } from './icons';
-import { JobPicker, jobRooms } from './JobPicker';
+import { taskLabel } from './crew';
+import type { Task } from './drop';
+import { TaskSelect } from './panels/CrewList';
 import { Portrait } from './Portrait';
 import { lookOf, marksOf, memberOf } from './view';
 
@@ -27,9 +28,8 @@ interface Props {
   onAnswer: (yes: boolean) => void;
   onEquip: (itemId: string) => void;
   onUnequip: () => void;
-  onGuard: (on: boolean) => void;
-  /** Echar una mano en una sala mientras está en casa (null: deja de trabajar). */
-  onJob?: (room: string | null) => void;
+  /** Cambiar su tarea mientras está en casa (trabajar, entrenar, guardia o descansar). */
+  onTask?: (task: Task) => void;
 }
 
 const ATTRS = [
@@ -38,11 +38,11 @@ const ATTRS = [
   ['M', 'Mente'],
 ] as const;
 
-/** Lo que se ha desplegado debajo de los botones: el trabajo o el equipo. */
+/** Lo que se ha desplegado debajo de los botones: la tarea o el equipo. */
 type Open = 'trabajo' | 'equipo' | null;
 
 /**
- * Ficha de un héroe, como hoja desde abajo: retrato y estado; cuatro botones (guardia, trabajo,
+ * Ficha de un héroe, como hoja desde abajo: retrato y estado; tres botones (su tarea, el
  * equipo y verlo en la taberna); atributos y habilidades; y los rasgos en chapas que se leen
  * con un toque.
  */
@@ -57,8 +57,7 @@ export function HeroCard({
   onAnswer,
   onEquip,
   onUnequip,
-  onGuard,
-  onJob,
+  onTask,
 }: Props) {
   const [open, setOpen] = useState<Open>(null);
   /** Rasgo (o habilidad de clase) cuya explicación se ve. */
@@ -74,10 +73,9 @@ export function HeroCard({
   const moraleK = band === 'animado' ? 'ok' : band === 'normal' ? 'mid' : 'low';
   const perk = PERKS[h.cls];
   const home = !candidate && h.status === 'ok';
-  const canJob = home && !h.guard && !!onJob;
-  const job = canJob && h.job ? jobRooms(game).find((j) => j.room.id === h.job) : undefined;
+  const canTask = home && !!onTask;
+  const task = taskLabel(game, h.id);
   const toggle = (o: Open) => setOpen(open === o ? null : o);
-  const guardFull = !h.guard && guardsFull(game);
   const chips = [
     { id: 'perk', label: perk.name, cls: 'trait-perk', desc: `Habilidad de clase. ${perk.desc}` },
     ...h.traits.map((t) => ({
@@ -115,9 +113,12 @@ export function HeroCard({
                 {candidate ? `${h.fee} + ` : ''}
                 {h.salary}/sem
               </span>
-              <span class={`pill pill-${candidate ? 'candidato' : h.status}`}>
-                {statusLabel(h, candidate)}
-              </span>
+              {/* En casa, lo que hace ya lo dice el botón de su tarea. */}
+              {(candidate || h.status !== 'ok') && (
+                <span class={`pill pill-${candidate ? 'candidato' : h.status}`}>
+                  {statusLabel(h, candidate)}
+                </span>
+              )}
               {!candidate && !gone && (
                 <div class="meters">
                   <div
@@ -176,35 +177,18 @@ export function HeroCard({
 
           {!candidate && !gone && (
             <div class="acts">
-              {home && (
+              {canTask && (
                 <button
-                  class={`act ${h.guard ? 'on' : ''}`}
-                  aria-pressed={!!h.guard}
-                  disabled={guardFull}
-                  {...help(
-                    h.guard
-                      ? `De guardia: no sale de misión, pega +${GUARD_BONUS} y aguanta más si asaltan la taberna; da la alarma. Toca para quitarla.`
-                      : guardFull
-                        ? 'Ya hay dos de guardia en la puerta.'
-                        : 'Guardia: si asaltan la taberna, los de guardia salen al patio y dan la alarma. Caben dos.',
-                  )}
-                  onClick={() => onGuard(!h.guard)}
-                >
-                  <Icon name="escudo" size={18} />
-                  Guardia
-                </button>
-              )}
-              {canJob && (
-                <button
-                  class={`act ${job ? 'on' : ''}`}
+                  class={`act ${task !== 'Descansa' ? 'on' : ''}`}
                   aria-expanded={open === 'trabajo'}
+                  aria-label={`Tarea: ${task}`}
                   {...help(
-                    'Mientras está en casa puede echar una mano en una sala (rinde menos que un trabajador) o entrenar. También puedes llevarlo con el dedo a la sala.',
+                    `Mientras está en casa puede descansar (recupera la moral), echar una mano en una sala (rinde menos que un trabajador), entrenar o hacer guardia (no sale de misión, pega +${GUARD_BONUS} si asaltan y da la alarma; caben dos). También puedes llevarlo con el dedo a la sala.`,
                   )}
                   onClick={() => toggle('trabajo')}
                 >
-                  <Icon name="martillo" size={18} />
-                  <span class="act-label">{job ? ROOMS[job.room.type].name : 'Trabajo'}</span>
+                  <Icon name={h.guard ? 'escudo' : 'martillo'} size={18} />
+                  <span class="act-label">{task}</span>
                 </button>
               )}
               {!candidate && (
@@ -228,8 +212,8 @@ export function HeroCard({
               </button>
             </div>
           )}
-          {open === 'trabajo' && canJob && (
-            <JobPicker game={game} who={h.id} current={h.job} idle="No trabaja" onAssign={onJob!} />
+          {open === 'trabajo' && canTask && (
+            <TaskSelect game={game} who={h.id} name={h.name} onTask={(_, t) => onTask!(t)} />
           )}
           {open === 'equipo' && (
             <div class="gear-slot">

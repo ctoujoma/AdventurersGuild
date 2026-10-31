@@ -7,7 +7,7 @@ import { catchUp } from '../core/away';
 import { left, setRealTime } from './when';
 import { canClose, canHire, customOf, newGame, reduce, type Action } from '../core/game';
 import { raidRoute } from '../core/assault';
-import { canAssign, canHireWorker } from '../core/workers';
+import { canHireWorker } from '../core/workers';
 import { DAY_SECONDS, DELIVERIES, DUSK } from '../core/balance';
 import { DECOR, FACADE } from '../data/custom';
 import { RUMORS, VISITORS, type VisitorKind } from '../data/visitors';
@@ -133,6 +133,11 @@ export function App() {
   const [dragTip, setDragTip] = useState<{ text: string; ok: boolean; at: Point } | null>(null);
   const [focusFac, setFocusFac] = useState<keyof Facilities | null>(null);
   const [heroFilter, setHeroFilter] = useState<HeroFilter>('todos');
+  /** Trabajador tocado en la escena: Tareas lo abre elegido. */
+  const [crewFocus, setCrewFocus] = useState<string | null>(null);
+  useEffect(() => {
+    if (panel !== 'heroes') setCrewFocus(null);
+  }, [panel]);
   const [hint, setHint] = useState(false);
   /** Splash del desarrollador, título y juego. Con #debug se entra directo a la partida. */
   const [screen, setScreen] = useState<'splash' | 'title' | 'game'>(() =>
@@ -452,14 +457,7 @@ export function App() {
     if (w) toast(`${w.name} se queda a trabajar. Empieza ahora mismo.`);
   };
 
-  const assignJob = (who: string, room: string | null) => {
-    const why = canAssign(gameRef.current, who, room);
-    if (why) return toast(why);
-    dispatch({ type: 'assign', who, room });
-    audio.play(room ? 'select' : 'deselect');
-  };
-
-  /** Cambiar la tarea de alguien desde la lista de la casa (trabajar, entrenar, guardia, descansar). */
+  /** Cambiar la tarea de alguien (trabajar, entrenar, guardia, descansar) desde una lista o ficha. */
   const setTask = (who: string, task: Task) => {
     const d = planTask(gameRef.current, who, task);
     if (!d.ok) return toast(d.text);
@@ -729,11 +727,13 @@ export function App() {
               );
               return;
             }
-            // Un trabajador no tiene ficha: dice lo suyo.
+            // Un trabajador no tiene ficha: se abre Tareas con él elegido.
             const w = game.workers.find((x) => x.id === id);
             if (w) {
-              audio.play('click', 0.5);
-              say(`${w.name}: «${w.quote}»`, at);
+              audio.play('open', 0.6);
+              setCrewFocus(w.id);
+              setHeroFilter('trabajadores');
+              openPanel('heroes');
               return;
             }
             audio.play('open', 0.6);
@@ -890,6 +890,7 @@ export function App() {
           <Panel title="Héroes" onClose={() => openPanel(null)}>
             <HeroesPanel
               game={game}
+              focus={crewFocus}
               filter={heroFilter}
               setFilter={setHeroFilter}
               onOpen={(id) => setCard(id)}
@@ -1081,11 +1082,7 @@ export function App() {
             onHire={() => hire(cardHero.id)}
             onFire={() => fire(cardHero.id)}
             onAnswer={(yes) => dispatch({ type: 'answer', id: cardHero.id, yes })}
-            onGuard={(on) => {
-              dispatch({ type: 'guard', id: cardHero.id, on });
-              audio.play(on ? 'select' : 'deselect');
-            }}
-            onJob={works.planning ? undefined : (room) => assignJob(cardHero.id, room)}
+            onTask={works.planning ? undefined : (task) => setTask(cardHero.id, task)}
             onEquip={(itemId) => {
               dispatch({ type: 'equip', heroId: cardHero.id, itemId });
               audio.play('select');

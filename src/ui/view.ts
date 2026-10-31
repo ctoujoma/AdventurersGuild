@@ -7,10 +7,10 @@ import { trainState } from '../core/training';
 import { goldCap } from '../core/vault';
 import { CREST_COLORS } from '../data/custom';
 import { CLASS_NAMES } from '../data/labels';
-import { ROOMS } from '../data/rooms';
 import { gearOf } from '../core/resolve';
 import type { Member } from '../core/party';
 import type { SceneHero, SceneModel } from '../world/scene';
+import { taskLabel } from './crew';
 
 /** Puentes entre el modelo del juego y el arte o la escena. */
 
@@ -72,22 +72,19 @@ function visitorOrder(s: GameState): string[] {
 
 const fullName = (h: Hero) => (h.nick ? `${h.name} ${h.nick}` : h.name);
 
-/** Lo que se lee de alguien al pasar el ratón: clase y nivel, y si está en cama o de guardia. */
+/** Lo que se lee de alguien al pasar el ratón: clase y nivel, y su tarea o si está en cama. */
 function heroTitle(s: GameState, h: Hero, candidate = false): string {
   const a = (m: string, f: string) => (h.sex === 'f' ? f : m);
   const base = `${CLASS_NAMES[h.cls][h.sex]} · nivel ${h.lvl}`;
   if (candidate) return `${base} · busca trabajo`;
   if (h.status === 'herido')
     return `${base} · ${a('herido', 'herida')}, ${h.days} ${h.days === 1 ? 'día' : 'días'} en cama`;
-  if (h.guard) return `${base} · de guardia`;
-  const room = h.job ? s.building.rooms.find((r) => r.id === h.job) : undefined;
-  return room ? `${base} · en ${ROOMS[room.type].name.toLowerCase()}` : base;
+  return `${base} · ${taskLabel(s, h.id).toLowerCase()}`;
 }
 
-/** De un trabajador: su maña y dónde trabaja (o que descansa). */
+/** De un trabajador: su maña y su tarea, con las mismas palabras que Héroes › Tareas. */
 function workerHover(s: GameState, w: Worker): string {
-  const room = w.room ? s.building.rooms.find((r) => r.id === w.room) : undefined;
-  return `Maña ${w.skill} · ${room ? `en ${ROOMS[room.type].name.toLowerCase()}` : 'descansa'}`;
+  return `Maña ${w.skill} · ${taskLabel(s, w.id).toLowerCase()}`;
 }
 
 /** La barra de entrenamiento de un héroe (si entrena y aún puede subir). */
