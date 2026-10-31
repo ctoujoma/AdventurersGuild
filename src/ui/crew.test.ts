@@ -68,7 +68,11 @@ describe('la casa por tareas', () => {
     const cook = s.workers.find((w) => w.trade === 'cocina')!;
     const opts = taskOptions(s, cook.id);
     expect(opts.some((o) => o.task === GUARD)).toBe(false);
-    expect(opts[0]).toMatchObject({ task: null, label: 'Descansa' });
+    expect(opts[0]).toMatchObject({ task: null, label: 'Mandar a descansar' });
+    expect(opts.find((o) => o.task === roomOf(s, 'cocina').id)?.label).toBe('Trabaja en Cocina');
+    expect(opts.find((o) => o.task === roomOf(s, 'bodega').id)?.label).toMatch(
+      /^Poner a trabajar en Bodega · /,
+    );
     expect(opts.find((o) => o.task === roomOf(s, 'cocina').id)?.why).toBeUndefined();
     const [a, b] = s.heroes;
     s = task(s, a!.id, roomOf(s, 'cocina').id);

@@ -929,7 +929,7 @@ export function App() {
           </Panel>
         )}
         {panel === 'heroes' && (
-          <Panel title="Héroes" onClose={() => openPanel(null)}>
+          <Panel title="Héroes y personal" onClose={() => openPanel(null)}>
             <HeroesPanel
               game={game}
               focus={crewFocus}
