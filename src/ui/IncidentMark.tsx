@@ -76,6 +76,7 @@ export function IncidentMark({ game, inc, clock, speed, scene, onAct, onAsk }: P
     <div ref={ref} class={`incident incident-${d.how}`} role="alert">
       <button
         class="incident-btn"
+        data-tut="incidente"
         aria-label={`${d.title}. ${d.ask} Quedan ${secs} s.`}
         onClick={tap}
       >

@@ -38,6 +38,7 @@ export function TablonPanel({ quests, seeAll, onOpen, clock = 0 }: Props) {
         return (
           <button
             key={q.id}
+            data-tut={`quest-${q.id}`}
             class={`note ${q.chain ? 'note-chain' : ''} ${q.rumor ? 'note-rumor' : ''}`}
             style={{ '--tilt': `${(i % 2 ? 1 : -1) * (0.5 + (i % 3) * 0.3)}deg` }}
             onClick={() => onOpen(q.id)}

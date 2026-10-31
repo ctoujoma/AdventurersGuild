@@ -491,6 +491,7 @@ export function RoomPanel({
       {cost !== null ? (
         <button
           class="btn btn-gold room-act"
+          data-tut={`mejorar-${room.type}`}
           aria-label={`${room.level === 0 ? 'Arreglar' : 'Mejorar'} ${def.name} por ${cost} monedas`}
           disabled={!!why}
           title={why ?? undefined}

@@ -48,6 +48,7 @@ export function DayBar(p: Props) {
     <div class="daybar">
       <button
         class="btn-icon daybar-btn"
+        data-tut="correo"
         aria-label={`Correo, ${p.unread} sin leer`}
         {...help('Correo: los informes de los grupos que vuelven y las cartas que llegan.')}
         onClick={p.onMail}

@@ -172,6 +172,7 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
           <div class="qs-who">
             <h4 class="qs-sub">Quién va</h4>
             <button
+              data-tut="sugerir"
               class={`btn btn-wood qs-suggest ${'why' in suggestion ? 'is-off' : ''}`}
               aria-disabled={'why' in suggestion}
               {...help(
@@ -260,6 +261,7 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
         )}
         <button
           class="btn btn-gold qs-send"
+          data-tut="enviar"
           disabled={!party.length || !!blocked}
           aria-label={
             party.length

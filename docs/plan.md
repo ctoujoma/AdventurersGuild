@@ -25,12 +25,15 @@ o está en «Más adelante», no se toca sin preguntar. El detalle de cada idea 
   [`encargos/interfaz-trabajadores.md`](encargos/interfaz-trabajadores.md)), y ahora menos
   toques y cartas del amanecer una a una:
   [`encargos/interfaz-menos-toques.md`](encargos/interfaz-menos-toques.md) (las cartas, junto
-  con revisar cuándo sale la carta). Después, la parte visual de los tutoriales.
+  con revisar cuándo sale la carta). Ahora, la primera vez que se abre el juego:
+  [`encargos/interfaz-primera-vez.md`](encargos/interfaz-primera-vez.md).
 - **Agente de arte:** colores por sala, animaciones y escaleras (hecho:
   [`encargos/arte-colores-animaciones.md`](encargos/arte-colores-animaciones.md)), y ahora
   fachada por partes y preparar la sastrería (hecho:
   [`encargos/arte-fachada-sastreria.md`](encargos/arte-fachada-sastreria.md)). Siguiente:
   dibujar los tres jefes nuevos (fase 5), y luego la tira del encargo en directo (fase 3).
+  Encargo: [`encargos/arte-incidentes-jefes.md`](encargos/arte-incidentes-jefes.md)
+  (incidentes que se ven y responden al tocar, y los jefes).
 
 Para arrancar a cada uno: «Lee `CLAUDE.md`, `docs/plan.md` y `docs/encargos/<encargo>.md`, y
 empieza por el punto 1».
@@ -121,33 +124,30 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
 
 ## Fase 2 · Tutoriales
 
-### 2a · El primero, hasta el primer pago (hecho)
+### 2a · El primero, hasta el primer pago (hecho, rehecho tras la revisión)
 
-Pasos que hay que cumplir, la cámara acercándose a cada cosa, el tiempo saltando cuando no
-queda nada que hacer. Acaba con el primer pago a Merlo (día 7); unos 10 o 15 minutos.
+Revisión del usuario: tenía que bloquear lo demás, no dejar pasar sin hacer el paso, resaltar
+lo que hay que tocar y no romper la inmersión. Ahora:
 
-1. La carta del tío y el salón (cámara al salón).
-2. El tablón: mandar a los dos héroes ya hechos a un encargo corto a su medida.
-3. La barra: contratar a alguien y ponerle nombre a un héroe.
-4. Reparar la enfermería con el dinero de la caja.
-5. Mover a alguien de sala arrastrándolo (un trabajador a la cocina).
-6. «Saltar hasta que vuelvan»: informe, oro y el primer objetivo cumplido.
-7. Entre la vuelta y el día 7:
-   - dar el objeto del botín a un héroe (ficha del héroe);
-   - si alguien vuelve herido, a la cama de la enfermería recién arreglada;
-   - el primer incidente, preparado y fácil (ratas: tocar);
-   - el primer rumor, preparado: tocarlo y mandar al contratado con alguien más;
-   - los objetivos del Gremio (y el Libro).
-8. El pergamino de Merlo: saltar al día 7 y pagar. Fin: «La taberna sigue siendo tuya».
-
-Mientras dura, el reloj está parado (solo avanza con los saltos, y tampoco corre con la
-taberna cerrada) y no hay incidentes ni rumores sueltos (solo los preparados). Si falta dinero
-para la enfermería o el pago, lo pone el tío: el tutorial no acaba en derrota. Hecho en
-`core/tutorial.ts` (pasos, saltos de tiempo y tests) y `ui/TutorialNote.tsx`; las partidas
-nuevas empiezan con él. Falta: candados en lo que aún no toca (mapa, adornos) y que la barra
-diga que el reloj está parado. A los 8 de fama, el aviso de «La sombra de
-Hondogrís». Se puede saltar entero desde el primer paso. Parte de las notas del tío
-(`src/ui/tips.ts`, `UncleNote.tsx`); sus notas de obras se rehacen en el 2b.
+- **Empieza con la carta del tío** (`ui/IntroLetter.tsx`, `LETTER` en `core/tutorial.ts`), en
+  lugar de la carta del día 1: murió, deja la taberna, la deuda y su cuaderno.
+- **Las lecciones son páginas del cuaderno de Fausto** (`ui/TutorialNote.tsx`), escritas para
+  quien viniera detrás; sin retrato. Las notas sueltas del tío (`ui/tips.ts`) también.
+- **Foco que bloquea:** todo queda oscurecido y sin respuesta salvo lo que hay que tocar, con
+  un marco que late (`ui/TutorialFocus.tsx`; a qué apunta cada paso, en `ui/tutorialFocus.ts`
+  con marcas `data-tut` en los botones). Si algo abierto tapa lo que toca, se señala «cerrar».
+  Arrastrar a alguien deja libre la escena.
+- **Sin «Seguir» en los pasos que piden algo:** solo se pasa haciéndolo (el reductor no deja
+  avanzar con el botón).
+- Pasos: el primer encargo (tablón → encargo → «Sugerir» → «Enviar»), contratar en la barra,
+  poner nombre al nuevo, arreglar la enfermería, mover a alguien a la cocina, saltar hasta la
+  vuelta, leer el informe, dar el equipo, el herido (si lo hay), las ratas, el rumor, mandar su
+  encargo, los objetivos, saltar al día 7 y pagar. Si falta dinero (prima, enfermería, pago),
+  aparece entre las hojas del cuaderno.
+- Reloj parado mientras dura; «Ya sé jugar» lo salta entero.
+- Pendiente: que los incidentes se vean y respondan al tocar (encargo de arte), la pantalla de
+  inicio (encargo de interfaz), candados en el mapa y los adornos y que la barra diga que el
+  reloj está parado.
 
 ### 2b · El segundo, las obras (cuando la taberna es tuya)
 

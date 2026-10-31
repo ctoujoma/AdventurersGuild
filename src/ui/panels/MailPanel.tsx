@@ -14,7 +14,12 @@ export function MailPanel({
   return (
     <div class="rows">
       {reports.map((r) => (
-        <button key={r.id} class={`row mail ${r.read ? 'read' : ''}`} onClick={() => onOpen(r.id)}>
+        <button
+          key={r.id}
+          data-tut={r.read ? undefined : 'informe'}
+          class={`row mail ${r.read ? 'read' : ''}`}
+          onClick={() => onOpen(r.id)}
+        >
           <span class={`seal seal-sm ${r.read ? 'seal-read' : ''}`} aria-hidden="true">
             G
           </span>

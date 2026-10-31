@@ -7,8 +7,9 @@ import type { GameState } from '../core/model';
 import { MORALE_LOW } from '../core/party';
 
 /**
- * Tutorial: notas que deja el tío Fausto en los primeros días. Cada una sale una sola vez
- * por partida, cuando se cumple su condición; se pueden apagar todas.
+ * Notas del cuaderno del tío Fausto: lo que dejó escrito para quien heredara la taberna. Cada
+ * una sale una sola vez por partida, cuando se cumple su condición; se pueden apagar todas.
+ * Las primeras (tablón, barra, pago…) las cuenta el tutorial guiado (`core/tutorial.ts`).
  */
 export interface Tip {
   id: string;
@@ -33,12 +34,12 @@ export const TIPS: readonly Tip[] = [
   {
     id: 'noche',
     focus: 'puerta',
-    text: 'Ya se han ido y tardarán unos días en volver. Cuando no tengas nada más que hacer, salta al anochecer y pulsa «Cerrar». Por la mañana llega el correo.',
+    text: 'Cuando un grupo se va, tarda unos días en volver. Por la mañana llega el correo con lo que ha pasado.',
     when: (s) => s.missions.length > 0 && s.day <= 2,
   },
   {
     id: 'carta',
-    text: 'Tienes carta (el sobre de abajo). Cada grupo que vuelve manda su informe. Léelo, que ahí se ve de qué pasta está hecho cada cual.',
+    text: 'Cada grupo que vuelve manda su informe (el sobre de abajo). Léelo, que ahí se ve de qué pasta está hecho cada cual.',
     when: (s) => s.reports.some((r) => !r.read),
   },
   {
@@ -72,20 +73,20 @@ export const TIPS: readonly Tip[] = [
   {
     id: 'equipo',
     focus: 'armeria',
-    text: 'Ha llegado equipo y lo he dejado en la armería (en arcones, mientras no la arregles). Dáselo a alguien desde su ficha. Eso sí, si cae en una misión, el objeto se pierde con él.',
+    text: 'El equipo que traen los grupos se guarda en la armería (en arcones, mientras esté rota). Dáselo a alguien desde su ficha. Eso sí: si cae en una misión, el objeto se pierde con él.',
     when: (s) => gearInStock(s).length > 0,
   },
   {
     id: 'trofeo',
     focus: 'sala',
-    text: '¡Un trofeo! Lo he colgado en la sala. La gente viene a verlo, se toma algo y eso son monedas cada día.',
+    text: 'Los trofeos se cuelgan en el salón. La gente viene a verlos, se toma algo y eso son monedas cada día.',
     when: (s) => s.trophies.length > 0,
   },
   // Al pagar la deuda: las obras se abren y el tío explica cómo encajar las salas.
   {
     id: 'obras',
     focus: 'sala',
-    text: 'La casa ya es tuya del todo, así que se acabaron los apaños: ahora se hace obra de verdad. Toca el martillo, a la derecha, para el modo obras: abajo eliges una sala nueva y luego dónde va. Si tocas una sala, la amplías, la mueves o la tiras.',
+    text: 'Si has pagado a Merlo, la casa es tuya del todo y se acabaron los apaños: ahora se hace obra de verdad. Toca el martillo, a la derecha, para el modo obras: abajo eliges una sala nueva y luego dónde va. Si tocas una sala, la amplías, la mueves o la tiras.',
     when: (s) => sinceOpening(s) >= 0,
   },
   {
