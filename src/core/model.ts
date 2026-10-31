@@ -150,6 +150,17 @@ export interface Quest {
   rescue?: string;
   /** Paso de una cadena de misiones (no caduca ni cuenta para el tablón). */
   chain?: { id: string; step: number };
+  /** Salió de un rumor de la barra (no cuenta para el tablón; botín bueno o legendario). */
+  rumor?: boolean;
+}
+
+/** Un rumor en la barra: se oye un rato y, si se toca a tiempo, abre un encargo especial. */
+export interface Rumor {
+  id: string;
+  text: string;
+  /** Reloj del día (s) en que empieza y en que se pierde. */
+  from: number;
+  until: number;
 }
 
 export interface Mission {
@@ -537,6 +548,8 @@ export interface GameState {
   lastFight?: string | null;
   /** Incidentes en marcha (uno a la vez). */
   incidents?: Incident[];
+  /** Rumor que se oye ahora en la barra (solo con el juego abierto). */
+  rumor?: Rumor;
   /** Lo último que ha pasado con los incidentes, para el aviso de la interfaz (de paso). */
   incidentNews?: { t: string; k: ChipKind }[];
   /** Rango más alto ya anunciado (para avisar al subir; ver `core/ranks.ts`). */

@@ -104,8 +104,10 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
 6. **Revisar el cobro de la deuda** (lo hablado con los agentes de arte e interfaz: Merlo que
    viene a cobrar, con su animación): cuando esté en `main`, comprobar que encaja con el tiempo
    que corre solo, los pagos estando fuera (`dueTonight`), los avisos y los objetivos.
-7. **Rumores de la barra:** un bocadillo brillante sobre una mesa unos segundos; si se toca a
-   tiempo, se abre un encargo especial con botín bueno o legendario.
+7. **Rumores de la barra** (hecho): con el juego abierto, desde el día 2, un bocadillo dorado
+   sobre una mesa del salón unos 15 s. Si se toca a tiempo, sale un encargo marcado «Rumor»
+   (mejor paga, botín bueno o legendario, caduca en 2 días); si no, se pierde sin más. Uno a la
+   vez. `data/rumors.ts`, `core/rumors.ts`, `ui/RumorMark.tsx`; cifras `RUMOR_*`.
 
 ## Fase 2 · Tutorial guiado
 

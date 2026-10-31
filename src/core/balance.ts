@@ -136,6 +136,15 @@ export const AWAY_MIN_SECONDS = 20;
 export const INCIDENT_EVERY = 300;
 export const INCIDENT_FROM_DAY = 2;
 export const INCIDENT_RANK_COST = 5;
+/** Rumores de la barra: cada cuánto (s de reloj, de media), cuánto se oyen y desde qué día. */
+export const RUMOR_EVERY = 420;
+export const RUMOR_SECS = 15;
+export const RUMOR_FROM_DAY = 2;
+/** Lo que paga de más un encargo de rumor, y la parte de legendarios en su botín. */
+export const RUMOR_PAY = 1.4;
+export const RUMOR_LEGEND = 0.3;
+/** Paga mínima de un encargo de rumor, por cada rango (cobre cuenta 1). */
+export const RUMOR_MIN_PAY = 80;
 /** Parte del día desde la que es anochecer y se puede cerrar la taberna. */
 export const DUSK = 0.8;
 /** Entregas en que llega la caja del día, repartidas hasta el anochecer. */

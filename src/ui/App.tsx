@@ -6,6 +6,8 @@ import { audio, type Mood } from '../audio/audio';
 import { catchUp, waitText } from '../core/away';
 import { left, setRealTime } from './when';
 import { IncidentMark } from './IncidentMark';
+import { RumorMark } from './RumorMark';
+import { rumorRoom } from '../core/rumors';
 import { canClose, canHire, customOf, newGame, reduce, type Action } from '../core/game';
 import { hasUnlock } from '../core/goals';
 import type { UnlockId } from '../data/unlocks';
@@ -870,6 +872,20 @@ export function App() {
               }}
             />
           ))}
+        {!passing && !dawnOpen && game.rumor && rumorRoom(game) && (
+          <RumorMark
+            key={game.rumor.id}
+            rumor={game.rumor}
+            room={rumorRoom(game)!}
+            clock={clock}
+            speed={realTime && !canRush ? 1 : settings.pace}
+            scene={scene}
+            onTake={() => {
+              audio.play('coin', 0.6);
+              dispatch({ type: 'rumor' });
+            }}
+          />
+        )}
         {/* La nota del tío ya explica lo mismo: el cartel solo sale sin ella. */}
         {hint && !notice && !tip && (
           <div class="hint-toast" role="status">
