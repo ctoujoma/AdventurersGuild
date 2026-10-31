@@ -5,7 +5,11 @@ export type TabId = 'taberna' | 'tablon' | 'heroes' | 'gremio';
 const TABS: { id: TabId; label: string; help: string }[] = [
   { id: 'taberna', label: 'Taberna', help: 'Vuelve a la escena de la taberna.' },
   { id: 'tablon', label: 'Tablón', help: 'Los encargos que se pueden aceptar y mandar.' },
-  { id: 'heroes', label: 'Héroes', help: 'Tu gente y los que buscan trabajo en la barra.' },
+  {
+    id: 'heroes',
+    label: 'Héroes y personal',
+    help: 'Tus héroes, los trabajadores de la casa con sus tareas y los que buscan trabajo.',
+  },
   {
     id: 'gremio',
     label: 'Gremio',

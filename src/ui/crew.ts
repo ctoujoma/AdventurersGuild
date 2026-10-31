@@ -288,13 +288,23 @@ export function taskOptions(game: GameState, who: string): TaskOption[] {
     const p = task === now ? null : planTask(game, who, task);
     return { task, label, ...(p && !p.ok ? { why: p.text } : {}) };
   };
-  const out = [opt(null, 'Descansa')];
+  // Lo que hace ahora se dice como estado («Trabaja en Salón»); lo demás, como lo que se
+  // le manda («Poner a trabajar en Cocina · 1 libre»).
+  const out = [opt(null, now === null ? 'Descansa' : 'Mandar a descansar')];
   for (const r of postRooms(game)) {
     const attr = TRAINS[r.type];
     if (attr && !hero) continue;
     const name = jobRoomName(game, r);
-    const label = attr ? `Entrena ${ATTR_NAMES[attr]} (${name})` : `Trabaja en ${name}`;
-    out.push(opt(r.id, r.id === now ? label : `${label} · ${freeText(game, r)}`));
+    out.push(
+      opt(
+        r.id,
+        r.id === now
+          ? attr
+            ? `Entrena ${ATTR_NAMES[attr]} (${name})`
+            : `Trabaja en ${name}`
+          : `${attr ? `Poner a entrenar ${ATTR_NAMES[attr]} (${name})` : `Poner a trabajar en ${name}`} · ${freeText(game, r)}`,
+      ),
+    );
   }
   if (hero) {
     const guards = game.heroes.filter((h) => h.status === 'ok' && h.guard).length;
@@ -304,7 +314,7 @@ export function taskOptions(game: GameState, who: string): TaskOption[] {
         GUARD,
         now === GUARD
           ? 'De guardia'
-          : `De guardia · ${left > 0 ? `${left} ${plural(left, 'libre', 'libres')}` : 'llena'}`,
+          : `Poner de guardia · ${left > 0 ? `${left} ${plural(left, 'libre', 'libres')}` : 'llena'}`,
       ),
     );
   }

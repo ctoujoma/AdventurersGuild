@@ -752,6 +752,49 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
           {level < 2 && ' La niebla se levanta explorando (la sala de mapas ayuda).'}
         </p>
       )}
+      <section class="map-trips" aria-label="Grupos fuera">
+        <h3 class="crew-h">
+          <span>Grupos fuera</span>
+          {game.missions.length > 0 && <span class="row-sub">{game.missions.length}</span>}
+        </h3>
+        {game.missions.length ? (
+          <ul class="map-trip-list">
+            {[...game.missions]
+              .sort((a, b) => a.daysLeft - b.daysLeft)
+              .map((m) => {
+                const pos = partyPos(m.quest.place, m.quest.days, m.daysLeft);
+                const done = Math.min(1, Math.max(0, (m.quest.days - m.daysLeft) / m.quest.days));
+                return (
+                  <li key={m.id} class="map-trip">
+                    <button
+                      class="map-trip-main"
+                      aria-label={`${m.quest.title}: verlo en el mapa`}
+                      onClick={() => setInfo({ kind: 'party', id: m.id })}
+                    >
+                      <b>{m.quest.title}</b>
+                      <span class="row-sub">
+                        {pos.back ? 'Vuelven de' : 'Van hacia'} {m.quest.place} · en casa en{' '}
+                        {left(m.daysLeft, game.clock ?? 0)}
+                      </span>
+                      <span class="train-bar" aria-hidden="true">
+                        <i style={{ width: `${Math.round(done * 100)}%` }} />
+                      </span>
+                    </button>
+                    <div class="map-trip-heroes">
+                      {party(m).map((h) => (
+                        <button key={h.id} class="btn btn-wood" onClick={() => onHero(h.id)}>
+                          {h.name}
+                        </button>
+                      ))}
+                    </div>
+                  </li>
+                );
+              })}
+          </ul>
+        ) : (
+          <p class="tiny">No hay ningún grupo fuera. Los encargos se mandan desde el tablón.</p>
+        )}
+      </section>
     </div>
   );
 }

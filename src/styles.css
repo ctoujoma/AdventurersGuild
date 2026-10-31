@@ -371,6 +371,8 @@ button:focus-visible {
   padding: 2px;
   font-family: var(--pixel);
   font-size: var(--t-s);
+  line-height: 1.1;
+  text-align: center;
   color: var(--fog);
 }
 
@@ -3157,6 +3159,57 @@ button.trait[aria-pressed='true'] {
   color: var(--wine);
 }
 
+/* Debajo del mapa, los grupos que están fuera: a dónde van, cuándo vuelven y quiénes son. */
+.map-trips {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+.map-trip-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+.map-trip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 6px 0;
+  border-bottom: 2px dashed var(--tan);
+}
+.map-trip:last-child {
+  border-bottom: 0;
+}
+.map-trip-main {
+  flex: 1 1 200px;
+  min-width: 0;
+  min-height: 44px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+  color: var(--ink);
+}
+.map-trip-main b {
+  font-family: var(--pixel);
+  font-size: var(--t-m);
+  font-weight: 400;
+}
+.map-trip-main .train-bar {
+  flex: none;
+  width: 100%;
+  max-width: 220px;
+  margin-top: 3px;
+}
+.map-trip-heroes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
 .map-legend {
   display: flex;
   flex-wrap: wrap;
