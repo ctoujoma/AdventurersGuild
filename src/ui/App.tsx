@@ -24,6 +24,7 @@ import { DayBar } from './DayBar';
 import { GameOver } from './GameOver';
 import { HeroCard } from './HeroCard';
 import { Hud } from './Hud';
+import { PayDay } from './PayDay';
 import { finishedWorks, gatherAlerts, type Notice } from './alerts';
 import { Icon } from './icons';
 import { Letter } from './Letter';
@@ -140,6 +141,9 @@ export function App() {
   useEffect(() => {
     if (panel !== 'heroes') setCrewFocus(null);
   }, [panel]);
+  /** El cobro del día de pago a la vista, y lo que viene después (el jefe o la carta). */
+  const [paying, setPaying] = useState(false);
+  const payThen = useRef<(() => void) | null>(null);
   /** Salas cuya obra acaba de terminar: la campanita lo dice durante ese día. */
   const [worksDone, setWorksDone] = useState<string[]>([]);
   const prevGame = useRef(game);
@@ -184,8 +188,8 @@ export function App() {
   gameRef.current = game;
 
   useEffect(() => {
-    if (!dawnOpen && !passing) setSceneGame(game);
-  }, [game, dawnOpen, passing]);
+    if (!dawnOpen && !paying && !passing) setSceneGame(game);
+  }, [game, dawnOpen, paying, passing]);
 
   useEffect(() => {
     const unlock = () => audio.unlock();
@@ -577,8 +581,15 @@ export function App() {
       setRaiding(false);
       audio.play('dawn');
       // Si esta noche un grupo ha dado con un jefe, primero el aviso (verlo o no).
-      if (next.lastFight) setBossCall(next.lastFight);
-      else setDawnOpen(true);
+      const open = () => {
+        if (next.lastFight) setBossCall(next.lastFight);
+        else setDawnOpen(true);
+      };
+      // El día de pago, antes de todo, el cobro.
+      if (next.payday?.day === next.day && !next.over) {
+        payThen.current = open;
+        setPaying(true);
+      } else open();
       // Asalto repelido o deuda saldada: suena el brindis.
       if (party) setTimeout(() => audio.fanfare(), 60);
     };
@@ -672,6 +683,7 @@ export function App() {
   const calm =
     screen === 'game' &&
     !dawnOpen &&
+    !paying &&
     !passing &&
     !(game.opening && !game.opening.seen) &&
     !works.pick &&
@@ -758,7 +770,7 @@ export function App() {
         onSettings={() => setSettingsOpen(true)}
         alerts={alerts}
         onAlert={goAlert}
-        quiet={passing || dawnOpen || !!bossCall || !!watching || screen !== 'game'}
+        quiet={passing || paying || dawnOpen || !!bossCall || !!watching || screen !== 'game'}
       />
       <div class="stage">
         <SceneView
@@ -842,6 +854,7 @@ export function App() {
         {bubble && <SpeechBubble bubble={bubble} scene={scene} />}
         {!passing &&
           !dawnOpen &&
+          !paying &&
           (game.incidents ?? []).map((inc) => (
             <IncidentMark
               key={inc.id}
@@ -1191,6 +1204,17 @@ export function App() {
             }}
           />
         )}
+        {paying && screen === 'game' && game.payday && (
+          <PayDay
+            game={game}
+            onClose={() => {
+              setPaying(false);
+              audio.play('close');
+              payThen.current?.();
+              payThen.current = null;
+            }}
+          />
+        )}
         {dawnOpen && screen === 'game' && (
           <Dawn
             day={game.day}
@@ -1203,20 +1227,25 @@ export function App() {
             onMail={() => closeDawn('correo')}
           />
         )}
-        {screen === 'game' && !dawnOpen && !passing && game.opening && !game.opening.seen && (
-          <Opening
-            arrival={game.opening}
-            rooms={roomsLive}
-            best={prevBest}
-            onOpen={() => {
-              audio.play('dawn');
-              dispatch({ type: 'ackOpening' });
-              scene.current?.cheer('barra');
-              toast(`${customOf(game).name} abre sus puertas al mundo. ¡A por la leyenda!`);
-            }}
-            onRetry={restart}
-          />
-        )}
+        {screen === 'game' &&
+          !dawnOpen &&
+          !paying &&
+          !passing &&
+          game.opening &&
+          !game.opening.seen && (
+            <Opening
+              arrival={game.opening}
+              rooms={roomsLive}
+              best={prevBest}
+              onOpen={() => {
+                audio.play('dawn');
+                dispatch({ type: 'ackOpening' });
+                scene.current?.cheer('barra');
+                toast(`${customOf(game).name} abre sus puertas al mundo. ¡A por la leyenda!`);
+              }}
+              onRetry={restart}
+            />
+          )}
         {game.over && !dawnOpen && screen === 'game' && <GameOver game={game} onNew={restart} />}
       </div>
       {/* En el modo obras, la cinta manda: sin pestañas, más escena. */}

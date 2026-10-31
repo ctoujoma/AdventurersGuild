@@ -222,6 +222,9 @@ describe('avance de día', () => {
     const gold = s.gold;
     s = endDay(s);
     expect(s.paid).toBe(first.amount);
+    // Queda apuntado para el cobro del amanecer.
+    expect(s.payday).toMatchObject({ day: first.day, debt: first.amount });
+    expect(s.payday!.wages).toBeGreaterThan(0);
     // La taberna cobra antes de pagar; puede volver alguien con oro, así que basta con la cota.
     expect(s.gold).toBeLessThanOrEqual(gold + 200 - wages - first.amount + 400);
     expect(s.over).toBeNull();
