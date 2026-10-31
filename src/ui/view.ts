@@ -146,6 +146,7 @@ export function sceneModel(s: GameState): SceneModel {
       symbol: customOf(s).symbol,
     },
     dog: customOf(s).dog,
+    raven: !!customOf(s).raven,
     decor: customOf(s).decor ?? [],
     facade: customOf(s).facade ?? [],
     tints: customOf(s).colors,

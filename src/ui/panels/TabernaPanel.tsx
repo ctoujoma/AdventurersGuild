@@ -392,7 +392,7 @@ export function TabernaPanel({
             class={`adorno ${c.raven ? 'on' : ''}`}
             {...help(
               c.raven
-                ? 'Vigila desde el letrero y vuela a otros pueblos con noticias del gremio.'
+                ? 'Vigila desde el letrero y vuela a otros pueblos con noticias del gremio. Si lo tocas, grazna.'
                 : 'Lleva la fama del gremio a otros pueblos.',
             )}
           >

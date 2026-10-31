@@ -36,7 +36,7 @@ import { CANDLE, takeWallActs, type ActId, type PoiKind } from './salas/kit';
 import { FLIGHT_Z, flightArt, goesRight } from './stairs';
 import { dress } from './salas/tintes';
 import { Crowd, type Poi, type Talk } from './crowd';
-import { Pets, type PetId } from './pets';
+import { Pets, type Perch, type PetId } from './pets';
 import { FLAME_FRAMES, FLAME_H, FLAME_W, flameStrip } from './flame';
 import { faces } from './volume';
 import { RaidShow } from './raid';
@@ -283,6 +283,8 @@ export class RoomScene {
   private crowd = new Crowd(this.shared, (x, floor) => this.tintAt(x, floor));
   /** El gato y el perro del salón. */
   private pets = new Pets(this.shared, (x, floor) => this.tintAt(x, floor));
+  /** Donde se posa el cuervo: encima del rótulo (o del farol, si el rótulo va pintado). */
+  private perch: Perch | null = null;
   /** Persona señalada con el ratón y la que se ha buscado desde su ficha (un rato). */
   private hoverHero: string | null = null;
   private marker: { id: string; until: number } | null = null;
@@ -411,6 +413,7 @@ export class RoomScene {
     this.scene.add(this.crowd.group);
     this.scene.add(this.pets.group);
     canvas.addEventListener('webglcontextlost', (e) => e.preventDefault());
+    this.pets.sound = (name, v) => this.cb.onSound?.(name, v);
     this.bindInput();
   }
 
@@ -501,6 +504,7 @@ export class RoomScene {
       model.tints,
       model.trophies,
       model.dog,
+      model.raven,
       model.gear,
       vaultStep(model.vault),
     ]);
@@ -522,6 +526,7 @@ export class RoomScene {
       this.crowd.setLayout(L);
     }
     this.pets.setLayout(L, !!model.dog);
+    this.pets.setRaven(model.raven ? this.perch : null);
     this.crowd.setPois(this.poisOf(L));
     this.crowd.setPeople(model.heroes);
     if (this.routePts) this.routePts = this.routePoints(this.routeIds.split(' '));
@@ -836,6 +841,7 @@ export class RoomScene {
     this.lamps = [];
     this.flames = [];
     this.pins = [];
+    this.perch = null;
     this.pinnedAt = '';
     this.towerRect = null;
     this.props = [];
@@ -1391,9 +1397,31 @@ export class RoomScene {
       // en el hastial (ver `facade`), ninguno aquí.
       const { field, dark, symbol } = model.crest;
       const sign = model.look?.sign ?? 'tablero';
-      if (sign === 'tablero') put(Prop.crestBoard(field, dark, symbol), dx - 22, 6, 54);
-      else if (sign === 'hierro') put(Prop.ironSign(field, dark, symbol), dx - 17, 2, 50);
-      put(Prop.lanternBody(), dx - 8, 4, 46);
+      // El cuervo se posa encima (`ox`, `oy`: dónde, en píxeles del dibujo desde arriba al centro).
+      const perch = (
+        img: PixelBuffer,
+        x: number,
+        depth: number,
+        up: number,
+        ox: number,
+        oy: number,
+      ) => {
+        const k = scaleAt(depth);
+        this.perch = { x: x + ox / k, y: GROUND - up - (img.h - oy) / k, z: depth - 0.5 };
+      };
+      const lantern = Prop.lanternBody();
+      perch(lantern, dx - 8, 4, 46, 0, 1);
+      if (sign === 'tablero') {
+        const img = Prop.crestBoard(field, dark, symbol);
+        put(img, dx - 22, 6, 54);
+        perch(img, dx - 22, 6, 54, 5, 1);
+      } else if (sign === 'hierro') {
+        const img = Prop.ironSign(field, dark, symbol);
+        put(img, dx - 17, 2, 50);
+        // En el brazo de hierro, hacia la punta.
+        perch(img, dx - 17, 2, 50, -8, 3);
+      }
+      put(lantern, dx - 8, 4, 46);
       // La fachada: lo que se ve desde el camino.
       const facade = model.facade ?? [];
       if (facade.includes('letrero')) put(Prop.nameBoard(), dx - 26, 3, 74);
@@ -2048,10 +2076,13 @@ export class RoomScene {
     if (id === 'gato') {
       for (let i = 0; i < 4; i++) this.particles.spawn('heart', x - 4 + i * 2, y - 2 - i * 3);
       this.cb.onSound?.('purr');
-    } else {
+    } else if (id === 'perro') {
       this.particles.spawn('bark', x - 2, y - 6);
       this.particles.spawn('bark', x + 2, y - 4, { max: 0.9 });
       this.cb.onSound?.('bark');
+    } else {
+      for (let i = 0; i < 2; i++) this.particles.spawn('feather', x - 1 + i * 3, y + 2);
+      this.cb.onSound?.('caw');
     }
   }
 

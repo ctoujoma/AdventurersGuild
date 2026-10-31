@@ -254,3 +254,63 @@ export const dogStrip = (): Strip =>
       DOG,
     ),
   ]);
+
+// ---------- Carbón ----------
+
+const RAVEN = { k: P.black, n: P.navy, s: P.slate, w: P.mist, g: P.steel, o: P.rust };
+
+/** Fotogramas del cuervo, en este orden en la tira. */
+export const RAVEN_F = { perch: 0, look: 1, caw: 2, fly: 3 } as const;
+
+const RAVEN_BODY = [
+  '...knnkkkk..',
+  '..knnnkkkkk.',
+  '.kknnkkkkkk.',
+  'kkknkkkkkk..',
+  'kk..kkkkk...',
+  'k.....o.o...',
+];
+
+export const ravenStrip = (): Strip =>
+  strip([
+    // Posado, mirando a la derecha.
+    sprite(['.....kkk....', '....kkkks...', '....kwkkggg.', '....kkkkk...', ...RAVEN_BODY], RAVEN),
+    // Mirando atrás: la cabeza vuelta.
+    sprite(['....kkk.....', '...skkkk....', '.gggkkwk....', '....kkkkk...', ...RAVEN_BODY], RAVEN),
+    // Graznando: el pico abierto y el cuello estirado.
+    sprite(['......kkk...', '.....kkkks..', '.....kwkkgg.', '....kkkkk.gg', ...RAVEN_BODY], RAVEN),
+    // Volando: las alas arriba…
+    sprite(
+      [
+        '...kkk..........',
+        '....kkkk........',
+        '.....knkk.......',
+        '......knnk..kk..',
+        'kk.....kkkkkwkgg',
+        '.kkkknnkkkkkk...',
+        '...kkkkkkk......',
+        '................',
+        '................',
+        '................',
+        '................',
+      ],
+      RAVEN,
+    ),
+    // …y abajo.
+    sprite(
+      [
+        '................',
+        '................',
+        '................',
+        '...........kk...',
+        'kk.....kkkkkwkgg',
+        '.kkkknnkkkkkk...',
+        '...kkkknkkk.....',
+        '.......knk......',
+        '........kn......',
+        '.........k......',
+        '................',
+      ],
+      RAVEN,
+    ),
+  ]);

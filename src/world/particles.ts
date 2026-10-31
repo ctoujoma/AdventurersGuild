@@ -24,6 +24,8 @@ export type PKind =
   | 'cross'
   /** El ladrido del perro: una exclamación que salta. */
   | 'bark'
+  /** Pluma del cuervo: cae meciéndose. */
+  | 'feather'
   | 'coin';
 
 export interface Particle {
@@ -102,6 +104,7 @@ export class Particles {
           p.vy *= 1 - 0.15 * dt;
           break;
         case 'leaf':
+        case 'feather':
           p.vx = Math.sin(t * 2 + p.seed) * 10;
           break;
         case 'drip':
@@ -187,6 +190,11 @@ export class Particles {
           px(ctx, x, y, P.mist);
           if (Math.floor(t * 20 + p.seed) % 2) px(ctx, x + 1, y, P.fog);
           break;
+        case 'feather':
+          px(ctx, x, y, P.black);
+          px(ctx, x + (Math.floor(t * 4 + p.seed) % 2 ? 1 : -1), y, P.navy);
+          px(ctx, x, y - 1, P.navy);
+          break;
         case 'leaf':
           px(ctx, x, y, P.leaf);
           px(ctx, x + (Math.floor(t * 4 + p.seed) % 2 ? 1 : -1), y, P.forest);
@@ -241,4 +249,5 @@ const defaults: Record<PKind, { life: number; vx: number; vy: number }> = {
   coin: { life: 1.2, vx: 10, vy: -20 },
   cross: { life: 2.2, vx: 0, vy: -5 },
   bark: { life: 0.7, vx: 0, vy: -14 },
+  feather: { life: 2.2, vx: 0, vy: 8 },
 };

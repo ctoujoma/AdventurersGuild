@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { alpha } from './pixel';
-import { CAT_F, DOG_F, catStrip, dogStrip, type Strip } from './pets';
+import { CAT_F, DOG_F, RAVEN_F, catStrip, dogStrip, ravenStrip, type Strip } from './pets';
 
 /** Píxeles con algo pintado en un fotograma de la tira. */
 const filled = (s: Strip, i: number) => {
@@ -14,6 +14,7 @@ describe('animales del salón', () => {
   it.each([
     ['gato', catStrip(), Object.values(CAT_F)],
     ['perro', dogStrip(), Object.values(DOG_F)],
+    ['cuervo', ravenStrip(), Object.values(RAVEN_F)],
   ] as const)(
     '%s: cada fotograma tiene dibujo y su gemelo mirando a la izquierda',
     (_, s, used) => {

@@ -15,6 +15,7 @@ export type Sfx =
   | 'hammer'
   | 'purr'
   | 'bark'
+  | 'caw'
   | 'hoot'
   | 'sparks'
   | 'lute'
@@ -241,6 +242,11 @@ class AudioEngine {
         break;
       case 'purr':
         this.purr(t, 1.4, 0.22 * v);
+        break;
+      case 'caw':
+        // «¡Cra, cra!»: al compás del pico del cuervo en la escena.
+        this.kraa(t, 0.08 * v);
+        this.kraa(t + 0.5, 0.07 * v);
         break;
       case 'bark':
         // Dos ladridos, al compás de la boca del perro en la escena.
@@ -855,6 +861,18 @@ class AudioEngine {
     lfo.start(t);
     s.stop(t + dur + 0.05);
     lfo.stop(t + dur + 0.05);
+  }
+
+  /** Un graznido: un tono ronco y nasal que baja un poco, con aire. */
+  private kraa(t: number, vol: number): void {
+    const f = this.ctx!.createBiquadFilter();
+    f.type = 'bandpass';
+    f.frequency.value = 1300;
+    f.Q.value = 2;
+    f.connect(this.sfxBus);
+    this.tone('sawtooth', 820, 640, t, 0.22, vol, f);
+    this.tone('square', 410, 330, t, 0.2, vol * 0.6, f);
+    this.burst(t, 0.18, vol * 0.5, 'bandpass', 1800, 2);
   }
 
   /** Un ladrido: un tono áspero que cae, apagado, con un golpe de aire al principio. */
