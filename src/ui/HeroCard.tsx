@@ -16,6 +16,7 @@ import type { Task } from './drop';
 import { TaskSelect } from './panels/CrewList';
 import { Portrait } from './Portrait';
 import { heroFrame, lookOf, marksOf, memberOf } from './view';
+import { GARMENTS, TINTS, TINT_IDS, type Dress, type GarmentId } from '../data/custom';
 
 interface Props {
   game: GameState;
@@ -30,6 +31,56 @@ interface Props {
   onUnequip: () => void;
   /** Cambiar su tarea mientras está en casa (trabajar, entrenar, guardia o descansar). */
   onTask?: (task: Task) => void;
+  /** Modo prueba: tinte y prenda de la sastrería (la sala vendrá después). */
+  onDress?: (d: Dress) => void;
+}
+
+/** Modo prueba: el tinte de la ropa y la prenda, para ver cómo quedan. */
+function DressTest({ dress, onDress }: { dress: Dress; onDress: (d: Dress) => void }) {
+  return (
+    <div class="room-tint">
+      <span class="row-sub">Sastrería (prueba): tinte</span>
+      <div class="tav-swatches" role="radiogroup" aria-label="Tinte de la ropa">
+        <button
+          role="radio"
+          aria-checked={!dress.dye}
+          aria-label="Sin tinte"
+          title="Sin tinte"
+          class={`tav-swatch room-swatch house ${dress.dye ? '' : 'on'}`}
+          onClick={() => onDress({ ...dress, dye: undefined })}
+        />
+        {TINT_IDS.map((id) => {
+          const [, d, m, l] = TINTS[id].ramp;
+          return (
+            <button
+              key={id}
+              role="radio"
+              aria-checked={dress.dye === id}
+              aria-label={TINTS[id].name}
+              title={TINTS[id].name}
+              class={`tav-swatch room-swatch ${dress.dye === id ? 'on' : ''}`}
+              style={{ background: `linear-gradient(${l} 0 30%, ${m} 30% 70%, ${d} 70%)` }}
+              onClick={() => onDress({ ...dress, dye: id })}
+            />
+          );
+        })}
+      </div>
+      <span class="row-sub">Prenda</span>
+      <div class="tav-symbols" role="radiogroup" aria-label="Prenda">
+        {([undefined, ...(Object.keys(GARMENTS) as GarmentId[])] as const).map((g) => (
+          <button
+            key={g ?? 'nada'}
+            role="radio"
+            aria-checked={dress.garment === g}
+            class={`btn ${dress.garment === g ? 'btn-gold' : 'btn-wood'}`}
+            onClick={() => onDress({ ...dress, garment: g })}
+          >
+            {g ? GARMENTS[g].name : 'Nada'}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 const ATTRS = [
@@ -58,6 +109,7 @@ export function HeroCard({
   onEquip,
   onUnequip,
   onTask,
+  onDress,
 }: Props) {
   const [open, setOpen] = useState<Open>(null);
   /** Rasgo (o habilidad de clase) cuya explicación se ve. */
@@ -151,6 +203,7 @@ export function HeroCard({
             </div>
           </div>
           {candidate && <p class="quote">{h.quote}</p>}
+          {onDress && !candidate && <DressTest dress={h.dress ?? {}} onDress={onDress} />}
           {h.request && !candidate && (
             <div
               class="request"

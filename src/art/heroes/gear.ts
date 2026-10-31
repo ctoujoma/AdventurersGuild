@@ -1,4 +1,5 @@
 import type { ItemIcon, Rarity } from '../../core/model';
+import { TINTS, type TintId } from '../../data/custom';
 import { P } from '../palette';
 import { alpha, type PixelBuffer } from '../pixel';
 
@@ -12,6 +13,8 @@ import { alpha, type PixelBuffer } from '../pixel';
 export interface GearMark {
   icon: ItemIcon;
   rarity: Rarity;
+  /** El tinte del héroe: la capa es de ese color y el metal toma un poco (sombras y filetes). */
+  dye?: TintId;
 }
 
 const METAL = [
@@ -26,6 +29,18 @@ const CAPE = [
   [P.rust, P.amber],
 ] as const;
 const BOOT = [P.umber, P.ocean, P.amber] as const;
+
+/** Metal, brillo y capa de un equipo, teñidos si el héroe lleva tinte. */
+function tones(g: GearMark): {
+  m: readonly [string, string, string];
+  a: string;
+  cape: readonly [string, string];
+} {
+  const base = { m: METAL[g.rarity], a: ACCENT[g.rarity], cape: CAPE[g.rarity] };
+  if (!g.dye) return base;
+  const t = TINTS[g.dye].ramp;
+  return { m: [t[1], base.m[1], base.m[2]], a: t[3], cape: [t[1], t[2]] };
+}
 
 /** Pinta solo donde no hay nada (para lo que va detrás de la figura). */
 function under(b: PixelBuffer, x: number, y: number, c: string): void {
@@ -53,8 +68,7 @@ function line(
 // ---------- Sprite de frente (16×26 antes del contorno) ----------
 
 export function gearFront(b: PixelBuffer, g: GearMark): void {
-  const m = METAL[g.rarity];
-  const a = ACCENT[g.rarity];
+  const { m, a, cape } = tones(g);
   switch (g.icon) {
     case 'coraza':
       for (let y = 13; y <= 17; y++)
@@ -65,7 +79,7 @@ export function gearFront(b: PixelBuffer, g: GearMark): void {
       b.setIfFilled(8, 15, a);
       break;
     case 'capa': {
-      const [dark, light] = CAPE[g.rarity];
+      const [dark, light] = cape;
       for (let y = 12; y <= 23; y++) {
         const w = y < 15 ? 0 : 1;
         under(b, 2 - w, y, dark);
@@ -128,8 +142,7 @@ export function gearFront(b: PixelBuffer, g: GearMark): void {
 // ---------- Sprite de perfil (mirando a la derecha) ----------
 
 export function gearSide(b: PixelBuffer, g: GearMark): void {
-  const m = METAL[g.rarity];
-  const a = ACCENT[g.rarity];
+  const { m, a, cape } = tones(g);
   switch (g.icon) {
     case 'coraza':
       for (let y = 13; y <= 16; y++)
@@ -137,7 +150,7 @@ export function gearSide(b: PixelBuffer, g: GearMark): void {
       b.setIfFilled(9, 14, a);
       break;
     case 'capa': {
-      const [dark, light] = CAPE[g.rarity];
+      const [dark, light] = cape;
       for (let y = 12; y <= 23; y++) {
         under(b, 3, y, dark);
         under(b, 4, y, light);
@@ -180,8 +193,7 @@ export function gearSide(b: PixelBuffer, g: GearMark): void {
 
 /** Lo que va por detrás de la figura del retrato (se pinta antes que la cabeza). */
 export function gearPortraitBack(b: PixelBuffer, g: GearMark): void {
-  const m = METAL[g.rarity];
-  const a = ACCENT[g.rarity];
+  const { m, a, cape } = tones(g);
   switch (g.icon) {
     case 'espada':
       // A la espalda: la empuñadura asoma sobre el hombro y la hoja baja en diagonal por
@@ -210,7 +222,7 @@ export function gearPortraitBack(b: PixelBuffer, g: GearMark): void {
         }
       break;
     case 'capa': {
-      const [dark, light] = CAPE[g.rarity];
+      const [dark, light] = cape;
       for (let y = 36; y < 48; y++)
         for (let x = 0; x < 40; x++) {
           const edge = Math.abs(x - 20) > 18 - (y - 36) * 0.4;
@@ -223,8 +235,7 @@ export function gearPortraitBack(b: PixelBuffer, g: GearMark): void {
 
 /** Lo que va por delante (después de la ropa). */
 export function gearPortraitFront(b: PixelBuffer, g: GearMark): void {
-  const m = METAL[g.rarity];
-  const a = ACCENT[g.rarity];
+  const { m, a } = tones(g);
   const sparkle = (x: number, y: number) => {
     if (g.rarity < 2) return;
     b.set(x, y, P.white);

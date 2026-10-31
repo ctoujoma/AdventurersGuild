@@ -169,6 +169,15 @@ La lista completa de pendientes e ideas (bucle, monetización, amigos, torneos, 
   (`facade`) y los lados (`outerSide`). Sin elegir, todo sale como antes. Encima del hogar del
   salón y de la cocina hay una chimenea con humo (`chimneys`, `puffs` en `RoomScene.ts`; más
   seguido de noche). Capturas: `tools/shots/fachada.mjs`.
+- **Sastrería (preparada, sin sala todavía):** cada héroe puede llevar `dress` (`Dress` en
+  `data/custom.ts`: un tinte de `TINTS` y una prenda de `GARMENTS`: capa, tabardo, faja o
+  bufanda). Se guarda en el héroe (el aspecto no se guarda: sale de la semilla) y `lookOf` lo
+  mezcla en su `HeroLook`. El tinte cambia la tela del traje (`c`, `C`, `q`, `Q`; no la piel, el
+  cuero ni el metal), en el sprite, la pelea y el retrato, y el equipo lo toma un poco (la capa
+  y las sombras del metal: `tones` en `gear.ts`). Las prendas están en `art/heroes/sastre.ts`:
+  la capa va por detrás; el tabardo, la faja y la bufanda, por encima de la armadura. Si la
+  prenda es del color del tinte, toma otro que contraste. Para probar: en el modo prueba, la
+  ficha del héroe tiene un selector (acción `dress`). Hojas: `capturas/sastreria-*.png`.
 - Trabajar, charlar o calentarse van con los pies quietos (`fightSprites(…, planted)`): las
   posturas de pelea abren las piernas y, al alternarlas, parecía que andaban.
 

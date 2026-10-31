@@ -2,6 +2,7 @@ import { HAIR, P, SKIN, darker } from '../palette';
 import { PixelBuffer, alpha, toHex } from '../pixel';
 import type { Grid } from '../sprite';
 import { gearFront, gearSide } from './gear';
+import { dyeOf, garmentFront, garmentSide } from './sastre';
 import {
   ARMS_UP,
   BASE,
@@ -217,8 +218,23 @@ const SHARED: Slots = {
 function slots(look: HeroLook): Slots {
   const skin = SKIN[look.skin] ?? SKIN[0]!;
   const hair = HAIR[look.hairColor] ?? HAIR[0]!;
-  return { ...SHARED, ...CLASS[look.outfit], x: skin[3]!, X: skin[2]!, h: hair[2]!, H: hair[1]! };
+  // Con tinte, la tela del traje (cuerpo y mangas) toma sus tonos; el cuero y el metal, no.
+  const dye = dyeOf(look.dye);
+  const cloth: Slots = dye ? { c: dye[2], C: dye[1], q: dye[2], Q: dye[1] } : {};
+  return {
+    ...SHARED,
+    ...CLASS[look.outfit],
+    ...cloth,
+    x: skin[3]!,
+    X: skin[2]!,
+    h: hair[2]!,
+    H: hair[1]!,
+  };
 }
+
+/** El equipo, con el tinte del héroe (la capa y los filetes lo toman). */
+const gearOf = (look: HeroLook, marks: HeroMarks) =>
+  marks.gear ? { ...marks.gear, dye: look.dye } : undefined;
 
 function stamp(
   buf: PixelBuffer,
@@ -283,9 +299,15 @@ function composeFront(
   }
   if (marks.eyepatch) body(OVERLAYS.parche);
   if (marks.injured && hg !== 'sombrero' && hg !== 'gorra') body(OVERLAYS.venda);
+  // La prenda de la sastrería: la capa, por detrás del equipo; lo demás (tabardo, faja,
+  // bufanda), por encima de la armadura, para que se vea con ella puesta.
+  const cape = look.garment === 'capa';
+  if (cape) garmentFront(b, 'capa', look.dye);
   // Con los brazos en alto, el arma no está en la mano.
   if (!up) body(WEAPONS[look.outfit]);
-  if (marks.gear) gearFront(b, marks.gear);
+  const gear = gearOf(look, marks);
+  if (gear) gearFront(b, gear);
+  if (look.garment && !cape) garmentFront(b, look.garment, look.dye);
   if (up) body(ARMS_UP);
   if (gesture === 'yawn' || gesture === 'cheer') {
     // La boca abierta, bajo la nariz.
@@ -351,6 +373,7 @@ function composeSide(
         : [SIDE_LEGS.contact, SIDE_LEGS.down, SIDE_LEGS.passing, SIDE_LEGS.high][step % 4]!;
   stamp(b, lower, c, 0, HEADROOM + 17, step !== 'stand' && step >= 4);
   up(SIDE_TORSO[look.outfit]);
+  if (look.garment === 'capa') garmentSide(b, 'capa', look.dye, bob);
   if (fight === 'up') stamp(b, SIDE_ARM_UP, c, 0, HEADROOM + 6 + bob);
   else if (fight) {
     const g = {
@@ -386,7 +409,9 @@ function composeSide(
       ),
     );
   if (weapons.front) up(weapons.front);
-  if (marks.gear) gearSide(b, marks.gear);
+  const gear = gearOf(look, marks);
+  if (gear) gearSide(b, gear);
+  if (look.garment && look.garment !== 'capa') garmentSide(b, look.garment, look.dye, bob);
   return b;
 }
 

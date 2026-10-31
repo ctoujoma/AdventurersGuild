@@ -61,6 +61,7 @@ import {
   RAVEN_EVERY,
   RAVEN_PRICE,
   TINTS,
+  GARMENTS,
   ROOFS,
   SIGNS,
   WALLS,
@@ -70,6 +71,7 @@ import {
   type FacadeId,
   type TintId,
   type FacadeLook,
+  type Dress,
 } from '../data/custom';
 import type { RoomType } from '../data/rooms';
 import { arrival, checkFeats, checkMonth, emptyStats, startMonth } from './feats';
@@ -164,6 +166,8 @@ export type Action =
   | { type: 'choose'; index: number }
   | { type: 'custom'; patch: Partial<Pick<Custom, 'name' | 'color' | 'symbol'>> }
   | { type: 'buyDog' }
+  /** Tinte y prenda de un héroe (de momento, solo en el modo prueba). */
+  | { type: 'dress'; heroId: string; dress: Dress }
   /** Tejado, paredes, rótulo o jardineras de la fachada. */
   | { type: 'facadeLook'; patch: FacadeLook }
   /** Tema de color de las telas de una sala (`null`: los de la casa). */
@@ -560,6 +564,16 @@ export function reduce(state: GameState, action: Action): GameState {
       const c = customOf(state);
       if (c.dog || state.gold < DOG_PRICE) return state;
       return { ...state, gold: state.gold - DOG_PRICE, custom: { ...c, dog: true } };
+    }
+    case 'dress': {
+      const d = action.dress;
+      if (d.dye && !TINTS[d.dye]) return state;
+      if (d.garment && !GARMENTS[d.garment]) return state;
+      if (!state.heroes.some((h) => h.id === action.heroId)) return state;
+      return {
+        ...state,
+        heroes: state.heroes.map((h) => (h.id === action.heroId ? { ...h, dress: { ...d } } : h)),
+      };
     }
     case 'facadeLook': {
       const p = action.patch;

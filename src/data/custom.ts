@@ -171,6 +171,24 @@ export const SIGNS: Record<SignId, string> = {
   pintado: 'Pintado',
 };
 
+/**
+ * La sastrería (preparada; la sala vendrá después): un tinte para la ropa del héroe (los temas
+ * de `TINTS`) y una prenda encima del traje. Solo se ve.
+ */
+export type GarmentId = 'capa' | 'tabardo' | 'faja' | 'bufanda';
+export const GARMENTS: Record<GarmentId, { name: string; tint: TintId }> = {
+  capa: { name: 'Capa', tint: 'vino' },
+  tabardo: { name: 'Tabardo', tint: 'mar' },
+  faja: { name: 'Faja', tint: 'ocre' },
+  bufanda: { name: 'Bufanda', tint: 'bosque' },
+};
+
+/** Lo que el héroe lleva de la sastrería. */
+export interface Dress {
+  dye?: TintId;
+  garment?: GarmentId;
+}
+
 /** El cuervo mensajero lleva la fama del gremio a otros pueblos. */
 export const RAVEN_PRICE = 80;
 export const RAVEN_EVERY = 5;

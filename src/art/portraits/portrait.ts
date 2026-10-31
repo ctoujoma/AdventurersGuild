@@ -1,4 +1,5 @@
 import { gearPortraitBack, gearPortraitFront } from '../heroes/gear';
+import { dyeOf, garmentPortrait } from '../heroes/sastre';
 import type { HeadgearId, HeroLook, HeroMarks, OutfitId } from '../heroes/look';
 import { EYES as EYE_COLORS, HAIR, P, SKIN, type Ramp } from '../palette';
 import { PixelBuffer, alpha } from '../pixel';
@@ -98,7 +99,9 @@ function slots(look: HeroLook): Slots {
   const skin = SKIN[look.skin] ?? SKIN[0]!;
   const hair = HAIR[look.hairColor] ?? HAIR[0]!;
   const eye = EYE_COLORS[look.eyes] ?? EYE_COLORS[0]!;
-  const [cloth, trim] = CLASS[look.outfit];
+  // Con tinte, la tela del traje toma sus tonos (los filetes, no).
+  const [own, trim] = CLASS[look.outfit];
+  const cloth = dyeOf(look.dye) ?? own;
   const lip =
     look.sex === 'f' ? ([P.coral, P.rose, P.rose, P.wine][look.skin] ?? P.rose) : skin[1]!;
   return {
@@ -192,8 +195,10 @@ export function renderPortrait(look: HeroLook, marks: HeroMarks = {}, blink = fa
   const hg = worn ? (PORTRAIT_HAT[worn] ?? (worn as keyof typeof HEADGEAR)) : null;
   const hair = look.hairStyle;
 
-  // Detrás de todo: lo que lleva a la espalda, la melena y la coleta.
-  if (marks.gear) gearPortraitBack(fig, marks.gear);
+  // Detrás de todo: lo que lleva a la espalda, la capa, la melena y la coleta.
+  const gear = marks.gear ? { ...marks.gear, dye: look.dye } : undefined;
+  if (gear) gearPortraitBack(fig, gear);
+  if (look.garment) garmentPortrait(fig, look.garment, look.dye, true);
   if (hg !== 'capucha') {
     if (hair === 'largo') stamp(fig, HAIR_BACK.largo, c);
     if (hair === 'coleta') stamp(fig, HAIR_BACK.coleta, c);
@@ -230,7 +235,8 @@ export function renderPortrait(look: HeroLook, marks: HeroMarks = {}, blink = fa
 
   if (marks.eyepatch) stamp(fig, EYEPATCH, c);
   if (marks.injured) stamp(fig, BANDAGE, c);
-  if (marks.gear) gearPortraitFront(fig, marks.gear);
+  if (look.garment) garmentPortrait(fig, look.garment, look.dye, false);
+  if (gear) gearPortraitFront(fig, gear);
 
   // Fondo con halo y contorno oscuro alrededor de la figura.
   const out = backdrop().clone();

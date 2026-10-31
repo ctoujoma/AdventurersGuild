@@ -104,6 +104,35 @@ describe('heroSprites', () => {
   });
 });
 
+describe('sastrería', () => {
+  const look = generateLook('sastre', 'guerrero', 'm');
+  const all = (l: typeof look, m = {}) => {
+    const s = heroSprites(l, m);
+    return [s.idle[0], ...s.walk, renderHero(l, m)].map((b) => b.data.join()).join('|');
+  };
+
+  it('el tinte cambia la ropa y cada prenda se ve, también con la coraza puesta', async () => {
+    const { renderPortrait } = await import('../portraits/portrait');
+    expect(all({ ...look, dye: 'mar' })).not.toBe(all(look));
+    expect(renderPortrait({ ...look, dye: 'mar' }).data).not.toEqual(renderPortrait(look).data);
+    const armor = { gear: { icon: 'coraza' as const, rarity: 0 as const } };
+    for (const garment of ['capa', 'tabardo', 'faja', 'bufanda'] as const) {
+      const g = { ...look, garment };
+      expect(all(g), garment).not.toBe(all(look));
+      expect(all(g, armor), `${garment} con coraza`).not.toBe(all(look, armor));
+      expect(renderPortrait(g).data, garment).not.toEqual(renderPortrait(look).data);
+    }
+  });
+
+  it('la piel no se tiñe', () => {
+    const plain = heroSprites(look).idle[0];
+    const dyed = heroSprites({ ...look, dye: 'mar' }).idle[0];
+    // La cara (filas de la cabeza) es igual con y sin tinte.
+    for (let y = 6; y < 13; y++)
+      for (let x = 4; x < 14; x++) expect(dyed.get(x, y)).toBe(plain.get(x, y));
+  });
+});
+
 describe('equipo visible', () => {
   it('el equipo cambia el sprite y el retrato, y la rareza también', async () => {
     const { renderPortrait } = await import('../portraits/portrait');
