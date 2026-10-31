@@ -1081,6 +1081,55 @@ button:focus-visible {
     0 0 0 4px var(--ink);
 }
 
+/*
+ * Marcos según quién es. Héroes: esquinas en ángulo y marco dorado, con un filete del color de
+ * su clase. Trabajadores: esquinas redondeadas y marco de madera, con el color de su oficio.
+ */
+.portrait-frame.pf-hero {
+  box-shadow:
+    0 0 0 2px var(--pf),
+    0 0 0 4px var(--gold),
+    0 0 0 5px var(--ink);
+}
+.portrait-frame.pf-worker {
+  border-radius: 5px;
+  box-shadow:
+    0 0 0 2px var(--pf),
+    0 0 0 4px var(--oak),
+    0 0 0 5px var(--ink);
+}
+.pf-guerrero {
+  --pf: var(--red);
+}
+.pf-picaro {
+  --pf: #b55088;
+}
+.pf-mago {
+  --pf: var(--sky);
+}
+.pf-clerigo {
+  --pf: var(--white);
+}
+.pf-explorador {
+  --pf: var(--lime);
+}
+.pf-salon {
+  --pf: var(--wine);
+}
+.pf-cocina {
+  --pf: var(--orange);
+}
+/* La bodega, verde lúpulo (el tostado se confunde con la madera). */
+.pf-bodega {
+  --pf: var(--lime);
+}
+.pf-enfermeria {
+  --pf: var(--mist);
+}
+.pf-bardo {
+  --pf: var(--lemon);
+}
+
 .gallery {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));

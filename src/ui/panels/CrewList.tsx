@@ -15,7 +15,7 @@ import type { Task } from '../drop';
 import { help } from '../HoldHelp';
 import { Icon } from '../icons';
 import { Portrait } from '../Portrait';
-import { lookOf, marksOf, workerLook } from '../view';
+import { lookOf, marksOf, workerLook, heroFrame, workerFrame } from '../view';
 
 interface Props {
   game: GameState;
@@ -34,9 +34,11 @@ const toTask = (v: string): Task => v || null;
 /** El retrato de alguien de la casa (trabajador, héroe o quien pide trabajo). */
 function Face({ game, id }: { game: GameState; id: string }) {
   const w = game.workers.find((x) => x.id === id) ?? game.seekers.find((x) => x.id === id);
-  if (w) return <Portrait look={workerLook(w)} scale={1} alive={false} />;
+  if (w) return <Portrait look={workerLook(w)} frame={workerFrame(w)} scale={1} alive={false} />;
   const h = game.heroes.find((x) => x.id === id);
-  return h ? <Portrait look={lookOf(h)} marks={marksOf(h)} scale={1} alive={false} /> : null;
+  return h ? (
+    <Portrait look={lookOf(h)} marks={marksOf(h)} frame={heroFrame(h)} scale={1} alive={false} />
+  ) : null;
 }
 
 /** El desplegable con todo lo que puede hacer alguien (trabajar, entrenar, guardia, descansar). */

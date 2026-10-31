@@ -11,7 +11,7 @@ import { help } from './HoldHelp';
 import { Icon } from './icons';
 import { Portrait } from './Portrait';
 import { listNames, plural } from './text';
-import { lookOf, marksOf, memberOf } from './view';
+import { lookOf, marksOf, memberOf, heroFrame } from './view';
 import { span } from './when';
 
 interface Props {
@@ -172,7 +172,13 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
                     .join('. ')}
                   onClick={() => toggle(h.id)}
                 >
-                  <Portrait look={lookOf(h)} marks={marksOf(h)} scale={1} alive={false} />
+                  <Portrait
+                    look={lookOf(h)}
+                    marks={marksOf(h)}
+                    frame={heroFrame(h)}
+                    scale={1}
+                    alive={false}
+                  />
                   <span class="pick-name" aria-hidden="true">
                     {h.name.split(' ')[0]}
                     {mood > 0 && <span class="mood up"> +</span>}

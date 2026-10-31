@@ -15,7 +15,7 @@ import { taskLabel } from './crew';
 import type { Task } from './drop';
 import { TaskSelect } from './panels/CrewList';
 import { Portrait } from './Portrait';
-import { lookOf, marksOf, memberOf } from './view';
+import { heroFrame, lookOf, marksOf, memberOf } from './view';
 
 interface Props {
   game: GameState;
@@ -102,6 +102,7 @@ export function HeroCard({
             <Portrait
               look={lookOf(h)}
               marks={marksOf(h)}
+              frame={heroFrame(h)}
               scale={2}
               label={`Retrato de ${h.name}`}
             />
