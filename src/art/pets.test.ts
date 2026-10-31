@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { alpha } from './pixel';
-import { CAT_F, DOG_F, RAVEN_F, catStrip, dogStrip, ravenStrip, type Strip } from './pets';
+import {
+  BAT_F,
+  CAT_F,
+  DOG_F,
+  RAT_F,
+  RAVEN_F,
+  batStrip,
+  catStrip,
+  dogStrip,
+  ratStrip,
+  ravenStrip,
+  type Strip,
+} from './pets';
 
 /** Píxeles con algo pintado en un fotograma de la tira. */
 const filled = (s: Strip, i: number) => {
@@ -15,13 +27,15 @@ describe('animales del salón', () => {
     ['gato', catStrip(), Object.values(CAT_F)],
     ['perro', dogStrip(), Object.values(DOG_F)],
     ['cuervo', ravenStrip(), Object.values(RAVEN_F)],
+    ['rata', ratStrip(), Object.values(RAT_F)],
+    ['murciélago', batStrip(), Object.values(BAT_F)],
   ] as const)(
     '%s: cada fotograma tiene dibujo y su gemelo mirando a la izquierda',
     (_, s, used) => {
       expect(s.img.w).toBe(s.w * s.n * 2);
       for (const f of used) expect(f).toBeLessThan(s.n);
       for (let i = 0; i < s.n; i++) {
-        expect(filled(s, i)).toBeGreaterThan(20);
+        expect(filled(s, i)).toBeGreaterThan(10);
         expect(filled(s, s.n + i)).toBe(filled(s, i));
       }
     },

@@ -1,6 +1,7 @@
 /**
  * Los animales de la casa, dibujados a mano: el gato Bigotes (el de siempre, de la taberna del
- * tío) y Tizón, el perro guardián. Cada fotograma es una fila de letras (un color por letra) y
+ * tío), Tizón, el perro guardián, Carbón, el cuervo, y los bichos de las salas rotas (ratas y
+ * murciélagos, también de la taberna de antes). Cada fotograma es una fila de letras (un color por letra) y
  * se le pone su contorno oscuro. Todos miran a la derecha; la escena los voltea.
  */
 import { P, darker } from './palette';
@@ -313,4 +314,31 @@ export const ravenStrip = (): Strip =>
       ],
       RAVEN,
     ),
+  ]);
+
+// ---------- Bichos de las salas rotas ----------
+
+/** Parda (gris, en la sala rota fría y en la piedra de los sótanos, no se veía). */
+const RAT = { g: P.clay, G: P.rust, e: P.black, p: P.coral };
+
+/** La rata (de la taberna de antes): dos pasos corriendo, mirando a la derecha. */
+export const RAT_F = { run: 0 } as const;
+
+export const ratStrip = (): Strip =>
+  strip([
+    sprite(['.....ggg..', 'p..ggggge.', '.pGggggggp', '...g.g.g..'], RAT),
+    sprite(['.....ggg..', '.p.ggggge.', 'p.Gggggggp', '....g.g.g.'], RAT),
+  ]);
+
+/** Pardos con las alas más claras (en negro, a oscuras, no se veían). */
+const BAT = { k: P.rust, K: P.clay, r: P.red };
+
+/** El murciélago: colgado boca abajo y volando (alas arriba y abajo). */
+export const BAT_F = { hang: 0, fly: 1 } as const;
+
+export const batStrip = (): Strip =>
+  strip([
+    sprite(['K...K', 'kkkkk', 'kKkKk', '.kkk.', '.rkr.', '..k..'], BAT),
+    sprite(['k.....k', 'kk...kk', '.kkrkk.', '..kkk..'], BAT),
+    sprite(['..rkr..', '.kkkkk.', 'kk...kk', 'k.....k'], BAT),
   ]);

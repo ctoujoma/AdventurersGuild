@@ -404,8 +404,8 @@ export function App() {
   const onHotspot = (id: string) => {
     setHint(false);
     if (id.startsWith('bicho:')) {
-      // El gato o el perro del salón: ronronea o ladra (en la escena) y dice algo.
-      const lines = PET_LINES[id.slice(6) as keyof typeof PET_LINES];
+      // Un animal de la casa o un bicho de una sala rota: hace lo suyo en la escena y dice algo.
+      const lines = PET_LINES[id.slice(6).split(':')[0] as keyof typeof PET_LINES];
       if (lines && !works.planning) toast(lines[Math.floor(Math.random() * lines.length)]!);
       return;
     }

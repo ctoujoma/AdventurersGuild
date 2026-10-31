@@ -4,20 +4,40 @@
  * guardián (duerme en su sitio, a ratos levanta la cabeza y mueve el rabo). Se pueden tocar: el
  * gato ronronea y el perro se sienta y ladra. Fuera, si se ha comprado, Carbón, el cuervo, posado
  * en el rótulo: mira a un lado y a otro, grazna y a ratos se va volando (a llevar noticias a otros
- * pueblos) y vuelve. Son solo de adorno: no cambian nada del juego.
+ * pueblos) y vuelve. En las salas rotas, bichos: una rata que cruza corriendo (abajo y en la
+ * bodega) y murciélagos colgados del techo (arriba). Son solo de adorno: no cambian nada del juego.
  */
 import { Group, PlaneGeometry, Vector3, type Mesh, type ShaderMaterial } from 'three';
 import { alpha } from '../../art/pixel';
-import { CAT_F, DOG_F, RAVEN_F, catStrip, dogStrip, ravenStrip, type Strip } from '../../art/pets';
+import {
+  BAT_F,
+  CAT_F,
+  DOG_F,
+  RAT_F,
+  RAVEN_F,
+  batStrip,
+  catStrip,
+  dogStrip,
+  ratStrip,
+  ravenStrip,
+  type Strip,
+} from '../../art/pets';
 import type { SoundName } from '../scene';
 import { GROUND } from '../geometry';
 import { Look, mesh, type Shared } from './gl';
 import { floorY, interior, type RoomsLayout } from './layout';
 import { HEARTH_RIGHT } from './salon';
-import { FRONT } from './salas/kit';
+import { FRONT, MID } from './salas/kit';
+import type { Room } from '../../core/model';
 import { project, scaleAt, type View } from './view3d';
 
-export type PetId = 'gato' | 'perro' | 'cuervo';
+/**
+ * Quién es: el gato, el perro, el cuervo o un bicho de una sala rota (`rata:<sala>`,
+ * `murcielago:<sala>:<n>`).
+ */
+export type PetId = string;
+export type PetKind = 'gato' | 'perro' | 'cuervo' | 'rata' | 'murcielago';
+export const kindOf = (id: PetId) => id.split(':')[0] as PetKind;
 
 /** Donde se posa el cuervo (sus patas, en el mundo). */
 export interface Perch {
@@ -42,6 +62,23 @@ const CAT_SPEED = 16;
 const CAT_STEP = 3;
 /** Hasta dónde se va el cuervo al irse volando (arriba a la izquierda, hacia el camino). */
 const RAVEN_AWAY = { dx: -260, dy: -140 };
+/** Las ratas corren por delante de todo; los murciélagos cuelgan de las vigas, a media sala. */
+const RAT_Z = FRONT - 3;
+const BAT_Z = MID;
+const RAT_SPEED = 34;
+/** Como mucho, tantas salas con ratas y tantas con murciélagos (para no llenar la casa). */
+const MAX_RATS = 3;
+const MAX_BATS = 2;
+/** La luz de los bichos: más clara que la de su sala, para que se vean en lo oscuro. */
+const CRITTER_LIGHT = { ambient: [0.62, 0.56, 0.6] as Tint, sun: 0 };
+
+/** Por dónde anda un bicho: de pared a pared de su sala, su suelo y su techo. */
+interface Area {
+  x0: number;
+  x1: number;
+  floor: number;
+  ceil: number;
+}
 
 interface Pet {
   id: PetId;
@@ -54,7 +91,23 @@ interface Pet {
   y?: number;
   z: number;
   dir: 1 | -1;
-  state: 'sleep' | 'sit' | 'walk' | 'rest' | 'bark' | 'perch' | 'look' | 'caw' | 'fly' | 'away';
+  state:
+    | 'sleep'
+    | 'sit'
+    | 'walk'
+    | 'rest'
+    | 'bark'
+    | 'perch'
+    | 'look'
+    | 'caw'
+    | 'fly'
+    | 'away'
+    | 'run'
+    | 'sniff'
+    | 'hang';
+  /** Los bichos: por dónde andan y, los murciélagos, dónde se cuelgan. */
+  area?: Area;
+  hx?: number;
   /** Volando: de dónde a dónde, cuánto lleva y si se va (o vuelve). */
   fly?: {
     x0: number;
@@ -161,8 +214,57 @@ export class Pets {
     }
   }
 
+  /**
+   * Los bichos de las salas rotas: una rata en las de abajo (y en la bodega) y un par de
+   * murciélagos en las de arriba. Los de una sala reparada se van.
+   */
+  setCritters(L: RoomsLayout): void {
+    const broken = (room: Room) => room.level === 0 && !room.works && room.type !== 'torre';
+    const want = new Map<PetId, { area: Area; bat: boolean; hx: number; floor: number }>();
+    let rats = 0;
+    let bats = 0;
+    for (const { room, rect } of L.rooms) {
+      const r = interior(rect);
+      const area: Area = {
+        x0: r.x + 8,
+        x1: r.x + r.w - 8,
+        floor: floorY(room.floor),
+        ceil: r.y,
+      };
+      const cellar = room.type === 'bodega' && room.level > 0;
+      if ((broken(room) && room.floor <= 0) || cellar) {
+        if (rats++ < MAX_RATS)
+          want.set(`rata:${room.id}`, { area, bat: false, hx: 0, floor: room.floor });
+      } else if (broken(room) && bats++ < MAX_BATS)
+        for (let i = 0; i < 2; i++)
+          want.set(`murcielago:${room.id}:${i}`, {
+            area,
+            bat: true,
+            hx: r.x + r.w * (0.3 + i * 0.12),
+            floor: room.floor,
+          });
+    }
+    for (const id of [...this.pets.keys()])
+      if ((kindOf(id) === 'rata' || kindOf(id) === 'murcielago') && !want.has(id)) this.remove(id);
+    for (const [id, w] of want) {
+      const known = this.pets.get(id);
+      const p = known ?? this.add(id, w.bat ? batStrip() : ratStrip(), w.bat ? BAT_Z : RAT_Z);
+      p.area = w.area;
+      p.hx = w.hx;
+      p.floor = w.floor;
+      if (known) continue;
+      if (w.bat) this.hang(p);
+      else this.set(p, 'away', 3 + this.rnd() * 12);
+    }
+  }
+
   update(dt: number, t: number): void {
     this.now = t;
+    for (const p of this.pets.values()) {
+      const k = kindOf(p.id);
+      if (k === 'rata') this.rat(p, dt);
+      else if (k === 'murcielago') this.bat(p, dt, t);
+    }
     const raven = this.pets.get('cuervo');
     if (raven) this.raven(raven, dt);
     const cat = this.pets.get('gato');
@@ -179,9 +281,22 @@ export class Pets {
   touch(id: PetId): { x: number; y: number; z: number } | null {
     const p = this.pets.get(id);
     if (!p) return null;
-    if (id === 'gato') this.set(p, 'sit', 4 + this.rnd() * 3);
-    else if (id === 'perro') this.set(p, 'bark', 1.6);
-    else if (p.state !== 'fly') this.set(p, 'caw', 1);
+    const kind = kindOf(id);
+    if (kind === 'gato') this.set(p, 'sit', 4 + this.rnd() * 3);
+    else if (kind === 'perro') this.set(p, 'bark', 1.6);
+    else if (kind === 'rata') {
+      // Se va corriendo, más deprisa, por el lado más cercano.
+      const a = p.area!;
+      p.target = p.x - a.x0 < a.x1 - p.x ? a.x0 : a.x1;
+      p.dir = p.target > p.x ? 1 : -1;
+      this.set(p, 'run', -1);
+    } else if (kind === 'murcielago') {
+      // Salen volando todos los de la sala.
+      const room = id.split(':')[1];
+      for (const q of this.pets.values())
+        if (kindOf(q.id) === 'murcielago' && q.id.split(':')[1] === room)
+          this.set(q, 'fly', 3.5 + this.rnd());
+    } else if (p.state !== 'fly') this.set(p, 'caw', 1);
     const b = this.box(p);
     return { x: p.x + (p.dir * b.w) / 4, y: b.bottom - b.h, z: p.z };
   }
@@ -201,11 +316,13 @@ export class Pets {
   }
 
   label(id: PetId): string {
-    return id === 'gato'
-      ? 'Bigotes, el gato'
-      : id === 'perro'
-        ? 'Tizón, el perro'
-        : 'Carbón, el cuervo';
+    return {
+      gato: 'Bigotes, el gato',
+      perro: 'Tizón, el perro',
+      cuervo: 'Carbón, el cuervo',
+      rata: 'Una rata',
+      murcielago: 'Murciélagos',
+    }[kindOf(id)];
   }
 
   dispose(): void {
@@ -304,6 +421,72 @@ export class Pets {
     this.set(c, 'walk', 0);
   }
 
+  /** Un murciélago, colgado de su viga. */
+  private hang(p: Pet): void {
+    const a = p.area!;
+    const k = scaleAt(p.z);
+    p.x = p.hx!;
+    p.y = a.ceil + p.strip.h / k;
+    this.set(p, 'hang', 40 + this.rnd() * 60);
+  }
+
+  /**
+   * La rata: escondida; a ratos cruza la sala corriendo, se para a husmear y se mete en otro
+   * agujero. Corriendo, `timer` es lo que falta para pararse (negativo: ya no se para; tocada,
+   * menos de -0,5, y corre más).
+   */
+  private rat(p: Pet, dt: number): void {
+    const a = p.area!;
+    p.timer -= dt;
+    if (p.state === 'away') {
+      if (p.timer > 0) return;
+      const fromLeft = this.rnd() < 0.5;
+      p.x = fromLeft ? a.x0 : a.x1;
+      p.target = fromLeft ? a.x1 : a.x0;
+      p.dir = fromLeft ? 1 : -1;
+      this.set(p, 'run', 0.6 + this.rnd() * 1.5);
+      return;
+    }
+    if (p.state === 'sniff') {
+      if (p.timer <= 0) this.set(p, 'run', -0.1);
+      return;
+    }
+    if (p.state !== 'run') return;
+    if (p.timer <= 0 && p.timer > -0.1 - dt) {
+      this.set(p, 'sniff', 0.8 + this.rnd() * 0.8);
+      return;
+    }
+    const step = RAT_SPEED * (p.timer < -0.5 ? 2.4 : 1) * dt;
+    const left = p.target - p.x;
+    if (Math.abs(left) <= step) this.set(p, 'away', 12 + this.rnd() * 25);
+    else {
+      p.x += Math.sign(left) * step;
+      p.dist += step;
+    }
+  }
+
+  /** Los murciélagos: colgados; si se les molesta (o a ratos), revolotean por la sala y vuelven. */
+  private bat(p: Pet, dt: number, t: number): void {
+    const a = p.area!;
+    p.timer -= dt;
+    if (p.state === 'hang') {
+      if (p.timer <= 0) this.set(p, 'fly', 2 + this.rnd() * 2);
+      return;
+    }
+    if (p.state !== 'fly') return;
+    if (p.timer <= 0) {
+      this.hang(p);
+      return;
+    }
+    const s = (p.hx! * 13) % 7;
+    const cx = (a.x0 + a.x1) / 2;
+    const span = (a.x1 - a.x0) / 2 - 10;
+    const nx = cx + Math.sin(t * 2.2 + s) * span * 0.8 + Math.sin(t * 5.1 + s) * 6;
+    p.dir = nx > p.x ? 1 : -1;
+    p.x = nx;
+    p.y = a.ceil + 22 + Math.cos(t * 1.7 + s) * 12;
+  }
+
   /** Carbón: posado mira a un lado y a otro y grazna; a ratos se va volando y luego vuelve. */
   private raven(r: Pet, dt: number): void {
     const f = r.fly;
@@ -377,7 +560,12 @@ export class Pets {
   /** El fotograma que toca (sin voltear: de 0 a `n`). */
   private frame(p: Pet, t: number): number {
     const age = t - p.since;
-    if (p.id === 'gato') {
+    const kind = kindOf(p.id);
+    if (kind === 'rata')
+      return p.state === 'sniff' ? RAT_F.run : RAT_F.run + (Math.floor(p.dist / 3) % 2);
+    if (kind === 'murcielago')
+      return p.state === 'fly' ? BAT_F.fly + (Math.floor(t * 12 + (p.hx ?? 0)) % 2) : BAT_F.hang;
+    if (kind === 'gato') {
       switch (p.state) {
         case 'walk':
           return CAT_F.walk + (Math.floor(p.dist / CAT_STEP) % 2);
@@ -388,7 +576,7 @@ export class Pets {
           return CAT_F.sleep + (Math.floor(t / 1.4) % 2);
       }
     }
-    if (p.id === 'cuervo') {
+    if (kind === 'cuervo') {
       switch (p.state) {
         case 'fly':
           return RAVEN_F.fly + (Math.floor(t * 8) % 2);
@@ -438,7 +626,9 @@ export class Pets {
     u.uAxisU!.value.set(b.w, 0, 0);
     u.uAxisV!.value.set(0, b.h, 0);
     u.uUvOffset!.value.set(this.cell(p, t) / (p.strip.n * 2), 0);
-    const look = this.tint(p.x, p.floor);
+    // Los bichos, algo más claros que su sala rota (con su luz fría, ni se veían).
+    const critter = kindOf(p.id) === 'rata' || kindOf(p.id) === 'murcielago';
+    const look = critter ? CRITTER_LIGHT : this.tint(p.x, p.floor);
     u.uAmbient!.value.set(...look.ambient);
     u.uSun!.value = look.sun;
   }

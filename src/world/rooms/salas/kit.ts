@@ -22,6 +22,8 @@ export interface Glow {
   /** Fuerza (1 = farol) y cuánto tiembla (0 quieta, 0,3 fuego). */
   power: number;
   flicker: number;
+  /** Igual de fuerte de día que de noche (la luz que entra por un agujero del techo). */
+  steady?: boolean;
   /** Llamas que se ven bailar (fuego de chimenea, fogón o velas). */
   flames?: { dx: number; dy: number; size: number }[];
 }

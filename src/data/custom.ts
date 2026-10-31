@@ -204,7 +204,10 @@ export const DOG_PRICE = 60;
 export const DOG_TIPOFF = 0.25;
 
 /** Lo que pasa al tocar a los animales del salón (se elige una al azar). */
-export const PET_LINES: Record<'gato' | 'perro' | 'cuervo', readonly string[]> = {
+export const PET_LINES: Record<
+  'gato' | 'perro' | 'cuervo' | 'rata' | 'murcielago',
+  readonly string[]
+> = {
   gato: [
     'Bigotes ronronea. Lleva aquí más años que tú.',
     'Bigotes abre un ojo, te mira y lo vuelve a cerrar.',
@@ -225,6 +228,17 @@ export const PET_LINES: Record<'gato' | 'perro' | 'cuervo', readonly string[]> =
     'Carbón ladea la cabeza: espera algo brillante a cambio.',
     'Carbón grazna tu nombre. O algo que se le parece.',
     'Carbón no se fía de los forasteros. De ti, a medias.',
+  ],
+  rata: [
+    'Una rata. Ha salido por el boquete del suelo y por ahí se vuelve.',
+    'La rata te mira, se lo piensa y echa a correr.',
+    'Mientras no se arregle la sala, aquí mandan las ratas.',
+    'Bigotes debería ocuparse de esto. Bigotes no opina lo mismo.',
+  ],
+  murcielago: [
+    'Los murciélagos salen en desbandada y vuelven a colgarse de las vigas.',
+    'Murciélagos en el techo. Con la sala arreglada, buscarían otra casa.',
+    'Un aleteo, un chillido y otra vez quietos, boca abajo.',
   ],
 };
 

@@ -193,6 +193,14 @@ La lista completa de pendientes e ideas (bucle, monetización, amigos, torneos, 
   rótulo (en el tablero, en el brazo del de hierro o, si va pintado, en el farol: `perch` en
   `yard`). Mira atrás, grazna (sonido `caw`) y a ratos se va volando hacia el camino y vuelve al
   rato. Tocado, grazna y suelta un par de plumas (partícula `feather`). Hoja: `capturas/cuervo.png`.
+- **Salas rotas** (`world/rooms/ruina.ts`): además de lo que deja cada sala, una viga caída,
+  escombro y un boquete en el suelo; por encima de tierra, un agujero en el techo por el que
+  entra un rayo de luz fría con polvo (luz `steady`: igual de día que de noche). La sala va
+  apagada y azulada (`ROOM_RUIN`, también para quien pase por ella) y en la pared del fondo
+  está el plano en tiza de los muebles que tendrá al repararla (`chalkPlan`). Bichos (en
+  `pets.ts`): una rata que cruza corriendo en las de abajo y en la bodega, y un par de
+  murciélagos colgados en las de arriba; tocados, chillan y salen corriendo o volando. Hoja:
+  `capturas/rotas.png` (`tools/shots/rotas.mjs`).
 - Trabajar, charlar o calentarse van con los pies quietos (`fightSprites(…, planted)`): las
   posturas de pelea abren las piernas y, al alternarlas, parecía que andaban.
 

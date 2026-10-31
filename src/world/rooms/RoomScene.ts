@@ -31,12 +31,13 @@ import { Particles } from '../particles';
 import * as Prop from '../props';
 import type { Point, SceneCallbacks, SceneModel } from '../scene';
 import { LANTERN, dummy, furnish, gearRoom, type Glow, type RGB } from './furniture';
+import { chalkPlan } from './ruina';
 import { towerLampY, watchtower } from './salas/torre';
 import { CANDLE, takeWallActs, type ActId, type PoiKind } from './salas/kit';
 import { FLIGHT_Z, flightArt, goesRight } from './stairs';
 import { dress } from './salas/tintes';
 import { Crowd, type Poi, type Talk } from './crowd';
-import { Pets, type Perch, type PetId } from './pets';
+import { Pets, kindOf, type Perch, type PetId } from './pets';
 import { FLAME_FRAMES, FLAME_H, FLAME_W, flameStrip } from './flame';
 import { faces } from './volume';
 import { RaidShow } from './raid';
@@ -115,6 +116,8 @@ const OUTDOOR: Tint = [0.3, 0.28, 0.42];
 const ROOM_LIT: Tint = [0.44, 0.38, 0.46];
 const ROOM_DEEP: Tint = [0.42, 0.37, 0.52];
 const ROOM_DIM: Tint = [0.34, 0.31, 0.46];
+/** Sala rota: apagada y fría (azulada), que se distinga de lejos de las que se usan. */
+const ROOM_RUIN: Tint = [0.28, 0.31, 0.46];
 const STAIRS: Tint = [0.4, 0.35, 0.5];
 const CAVE: Tint = [0.3, 0.27, 0.4];
 /** El corte de la tierra y la roca, que se vea aunque no le dé ningún farol. */
@@ -294,6 +297,9 @@ export class RoomScene {
   private smokeAt: { x: number; y: number }[] = [];
   private smokeT = 0;
   private crossT = 0;
+  /** Rayos de luz de las salas rotas (en el mundo) y cada cuánto sale una mota de polvo. */
+  private shafts: { x: number; y0: number; y1: number; z: number }[] = [];
+  private dustT = 0;
   private towerRect: Rect | null = null;
   private flames: Mesh[] = [];
   /** La tira de fotogramas de las llamas (la misma para todas). */
@@ -526,6 +532,7 @@ export class RoomScene {
       this.crowd.setLayout(L);
     }
     this.pets.setLayout(L, !!model.dog);
+    this.pets.setCritters(L);
     this.pets.setRaven(model.raven ? this.perch : null);
     this.crowd.setPois(this.poisOf(L));
     this.crowd.setPeople(model.heroes);
@@ -692,6 +699,17 @@ export class RoomScene {
   /** Luz de fondo donde está alguien: fuera, en una sala o bajo tierra. */
   private tintAt(x: number, floor: number): { ambient: Tint; sun: number } {
     if (x < 0) return { ambient: OUTDOOR, sun: 1 };
+    // En una sala rota, la luz fría de la sala (lo que pasa por ella, a oscuras como ella).
+    const room = this.layout?.rooms.find(
+      ({ room: r, rect }) =>
+        r.level === 0 &&
+        !r.works &&
+        r.type !== 'torre' &&
+        r.floor === floor &&
+        x >= rect.x &&
+        x < rect.x + rect.w,
+    );
+    if (room) return { ambient: ROOM_RUIN, sun: 0.1 };
     if (floor < 0) return { ambient: ROOM_DEEP, sun: 0 };
     return { ambient: ROOM_LIT, sun: 0.25 };
   }
@@ -842,6 +860,7 @@ export class RoomScene {
     this.flames = [];
     this.pins = [];
     this.perch = null;
+    this.shafts = [];
     this.pinnedAt = '';
     this.towerRect = null;
     this.props = [];
@@ -1090,10 +1109,17 @@ export class RoomScene {
     // Vestida con su tema de color: el arte de las telas lo lee de ella.
     const room = dress(plain, this.model?.tints);
     const r = interior(rect);
+    const ruin = ruined(room) && room.type !== 'torre';
     const dim = ruined(room) || bare(room);
-    const ambient = dim ? ROOM_DIM : room.floor < 0 ? ROOM_DEEP : ROOM_LIT;
+    const ambient = ruin ? ROOM_RUIN : dim ? ROOM_DIM : room.floor < 0 ? ROOM_DEEP : ROOM_LIT;
     const sun =
-      room.floor < 0 ? 0 : room.type === 'tesoro' || room.type === 'despensa' ? 0.15 : 0.55;
+      room.floor < 0
+        ? 0
+        : ruin
+          ? 0.25
+          : room.type === 'tesoro' || room.type === 'despensa'
+            ? 0.15
+            : 0.55;
     const theme = themeOf(room.floor);
     const seed = `${room.id}${room.type}`;
     const sides = sidesOf(b, room);
@@ -1167,7 +1193,20 @@ export class RoomScene {
           y1: GROUND - bottom,
           z: th.z,
         });
-      if (th.light) this.addLight(th.light, x, bottom, th.z, zone, sun < 0.2);
+      if (th.light) this.addLight(th.light, x, bottom, th.z, zone, sun < 0.2 || !!th.light.steady);
+      // El rayo de luz de una sala rota: ahí flota el polvo (ver `puffs`).
+      if (th.light?.steady)
+        this.shafts.push({ x, y0: GROUND - bottom - h, y1: GROUND - bottom, z: th.z });
+    }
+    if (ruin) {
+      // El plano en tiza de lo que tendrá al repararla, en la pared del fondo.
+      const plan = chalkPlan(
+        furnish({ ...room, level: 1 }, r.w, this.salonLook()),
+        r.w,
+        r.h,
+        DEPTH - 1,
+      );
+      this.figure(this.world, plan, r.x + r.w / 2, r.y + r.h, DEPTH - 1, ambient, sun);
     }
     if (room.works) {
       const k = scaleAt(3);
@@ -1647,6 +1686,18 @@ export class RoomScene {
 
   /** Humo de las chimeneas: más seguido de noche, cuando se enciende más el fuego. */
   private puffs(dt: number): void {
+    // Motas de polvo que bajan despacio por el rayo de luz de las salas rotas.
+    this.dustT -= dt;
+    if (this.dustT <= 0 && this.shafts.length) {
+      this.dustT = 0.35;
+      const c = this.camera;
+      const view: View = { px: c.px, py: c.py, vw: c.vw, vh: c.vh };
+      for (const s of this.shafts) {
+        const y = s.y0 + 8 + Math.random() * (s.y1 - s.y0 - 16);
+        const p = project(view, s.x + (Math.random() - 0.5) * 14, y, s.z);
+        this.particles.spawn('dust', view.px + p.x, view.py + p.y, { max: 3, vy: 2, vx: 0.6 });
+      }
+    }
     // Una cruz roja que sube, de vez en cuando, sobre cada herido acostado.
     this.crossT -= dt;
     if (this.crossT <= 0) {
@@ -2073,10 +2124,13 @@ export class RoomScene {
     const s = project(view, head.x, head.y, head.z);
     const x = view.px + s.x;
     const y = view.py + s.y;
-    if (id === 'gato') {
+    const kind = kindOf(id);
+    if (kind === 'rata') this.cb.onSound?.('squeak');
+    else if (kind === 'murcielago') this.cb.onSound?.('bats');
+    else if (kind === 'gato') {
       for (let i = 0; i < 4; i++) this.particles.spawn('heart', x - 4 + i * 2, y - 2 - i * 3);
       this.cb.onSound?.('purr');
-    } else if (id === 'perro') {
+    } else if (kind === 'perro') {
       this.particles.spawn('bark', x - 2, y - 6);
       this.particles.spawn('bark', x + 2, y - 4, { max: 0.9 });
       this.cb.onSound?.('bark');
