@@ -3,18 +3,28 @@
  * (ocupados o libres), los que entrenan, la guardia, quien descansa y quien está fuera, y los
  * avisos de lo que pide atención. Solo lee el estado: los cambios van por `planTask`.
  */
-import { MAX_GUARDS, NURSE_WORK } from '../core/balance';
+import {
+  BREW_PER_WORK,
+  CELLAR_COOL,
+  COOK_PER_WORK,
+  HERO_WORK,
+  MAX_GUARDS,
+  NURSE_WORK,
+  SERVE_PER_WORK,
+} from '../core/balance';
+import { dayPart } from '../core/game';
 import { brewAt, cookAt } from '../core/larder';
 import type { GameState, Hero, Room, Worker } from '../core/model';
 import { visitorsOf } from '../core/salon';
 import { plural } from '../core/text';
-import { ATTR_NAMES } from '../core/training';
-import { crewOf, isJobRoom, isTrainRoom, slotsOf, workIn } from '../core/workers';
+import { ATTR_NAMES, gainText, skillGain, trainState } from '../core/training';
+import { crewOf, effortOf, isJobRoom, isTrainRoom, slotsOf, workIn } from '../core/workers';
 import { TRAINS } from '../data/rooms';
 import { TRADES, TRADE_LIST } from '../data/workers';
 import { statusLabel } from '../data/labels';
 import { GUARD, planTask, type Task } from './drop';
 import { jobRoomName } from './JobPicker';
+import { isRealTime, left as timeLeft } from './when';
 
 /** Alguien de la casa en la lista. */
 export interface Member {
@@ -25,6 +35,12 @@ export interface Member {
   hero: boolean;
   /** Trabaja fuera de su oficio (rinde menos). */
   off?: boolean;
+  /** Lo que pone en su sala: «+12 raciones». */
+  gives?: string;
+  /** Cómo va lo que entrena (0–1). */
+  progress?: number;
+  /** Algo más que se lee al elegirlo (lo que gana con el siguiente punto). */
+  more?: string;
 }
 
 /** Un grupo de la lista: una sala con puestos, la guardia, los que descansan o los de fuera. */
@@ -60,6 +76,44 @@ export function crewEffect(game: GameState, room: Room): string {
   }
 }
 
+/** Lo que sale de una sala que produce por cada punto de trabajo (sin cifra en la enfermería). */
+function perWork(room: Room): number {
+  const lv = 0.75 + 0.25 * room.level;
+  switch (room.type) {
+    case 'cocina':
+      return lv * COOK_PER_WORK;
+    case 'bodega':
+      return lv * BREW_PER_WORK * (room.floor < 0 ? CELLAR_COOL : 1);
+    case 'salon':
+      return lv * SERVE_PER_WORK;
+    default:
+      return 0;
+  }
+}
+
+/** «+12 raciones», «+3 jarras» o «Atiende a 2». */
+function givesText(room: Room, n: number): string {
+  if (room.type === 'salon') return `Atiende a ${n}`;
+  return room.type === 'cocina'
+    ? `+${n} ${plural(n, 'ración', 'raciones')}`
+    : `+${n} ${plural(n, 'jarra', 'jarras')}`;
+}
+
+/**
+ * Lo que pone cada uno en su sala, repartido para que la suma dé el total redondeado de la sala
+ * (si cada parte se redondeara por su lado, 5,6 + 2,5 serían 9 jarras en una bodega que saca 8).
+ */
+export function givesAt(room: Room, efforts: number[]): (string | undefined)[] {
+  const k = perWork(room);
+  if (!k) return efforts.map(() => undefined);
+  const raw = efforts.map((e) => e * k);
+  const out = raw.map(Math.floor);
+  let left = Math.round(raw.reduce((a, b) => a + b, 0)) - out.reduce((a, b) => a + b, 0);
+  const order = raw.map((_, i) => i).sort((a, b) => (raw[b]! % 1) - (raw[a]! % 1));
+  for (const i of order) if (left-- > 0) out[i]!++;
+  return out.map((n) => givesText(room, n));
+}
+
 const workerMember = (w: Worker, room?: Room): Member => ({
   id: w.id,
   name: w.name,
@@ -69,6 +123,32 @@ const workerMember = (w: Worker, room?: Room): Member => ({
 });
 
 const heroMember = (h: Hero, sub: string): Member => ({ id: h.id, name: h.name, sub, hero: true });
+
+/** «Faltan unos 3 días» (o «Sube esta noche»); con el tiempo que corre solo, en minutos. */
+export function daysLeft(frac: number, perDay: number, clock: number): string {
+  const d = Math.ceil((1 - frac) / perDay - 1e-9);
+  if (isRealTime()) return `Sube en ${timeLeft(Math.max(1, d), clock)}`;
+  return d <= 1 ? 'Sube esta noche' : `Faltan unos ${d} días`;
+}
+
+/** Un héroe en una sala: entrenando (con su barra) o echando una mano. */
+function heroAt(game: GameState, h: Hero, room: Room): Member {
+  if (h.status !== 'ok') return heroMember(h, 'Fuera hoy');
+  const attr = TRAINS[room.type];
+  if (!attr) return heroMember(h, 'Héroe, echa una mano');
+  const t = trainState(game, h, dayPart(game));
+  const m = heroMember(h, `${ATTR_NAMES[attr]} ${h.attrs[attr]}`);
+  if (!t) return m;
+  if (t.capped)
+    return { ...m, sub: `${m.sub} · en el tope`, more: 'Mejora la sala para que siga.' };
+  const gain = gainText(skillGain(h, attr));
+  return {
+    ...m,
+    gives: daysLeft(t.frac, t.perDay, game.clock ?? 0),
+    progress: t.frac,
+    more: gain ? `Con ese punto: ${gain}.` : 'Ese punto aún no se notará en las habilidades.',
+  };
+}
 
 /** Salas con puestos en uso, en un orden fijo: las que producen y luego las de entrenar. */
 function postRooms(game: GameState): Room[] {
@@ -93,18 +173,18 @@ export function crewGroups(game: GameState): Group[] {
       task: room.id,
       people: [
         ...crew.workers.map((w) => workerMember(w, room)),
-        ...crew.heroes.map((h) =>
-          heroMember(
-            h,
-            h.status !== 'ok'
-              ? 'Fuera hoy'
-              : attr
-                ? `${ATTR_NAMES[attr]} ${h.attrs[attr]}`
-                : 'Héroe, echa una mano',
-          ),
-        ),
+        ...crew.heroes.map((h) => heroAt(game, h, room)),
       ],
     });
+    // Lo que pone cada uno (los héroes de guardia o fuera, nada).
+    const gives = givesAt(room, [
+      ...crew.workers.map((w) => effortOf(w, room.type)),
+      ...crew.heroes.map((h) => (h.status === 'ok' && !h.guard ? HERO_WORK : 0)),
+    ]);
+    if (!train)
+      groups.at(-1)!.people.forEach((m, i) => {
+        m.gives = gives[i];
+      });
   }
   groups.push({
     key: GUARD,

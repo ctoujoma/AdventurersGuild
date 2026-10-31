@@ -1,15 +1,14 @@
 import { useState } from 'preact/hooks';
-import { NURSE_WORK, roomMax } from '../../core/balance';
+import { roomMax } from '../../core/balance';
 import { appeal, neighborsOf, seatsOf, visitorList, visitorsOf } from '../../core/salon';
 import { canWork, customOf, roster, type Action } from '../../core/game';
 import { TINTS, TINT_FROM, TINT_IDS, type TintId } from '../../data/custom';
-import { beerCap, brewAt, cookAt, dailyYield, eatersOf, foodCap } from '../../core/larder';
-import { ATTR_NAMES, gainText, skillGain, trainCap, trainState } from '../../core/training';
-import { LOCK_TIME, MAX_GUARDS, TRAIN_CAP, VAULT_STORE } from '../../core/balance';
+import { beerCap, dailyYield, eatersOf, foodCap } from '../../core/larder';
+import { ATTR_NAMES, trainCap } from '../../core/training';
+import { LOCK_TIME, TRAIN_CAP, VAULT_STORE } from '../../core/balance';
 import { raidRoute, routeTime } from '../../core/assault';
 import { defense } from '../../core/raids';
 import { doorTime, goldCap, lockTime } from '../../core/vault';
-import { dayPart } from '../../core/game';
 import type { GameState, Room } from '../../core/model';
 import {
   beds,
@@ -23,22 +22,14 @@ import {
 import { FACILITY_INFO } from '../../data/labels';
 import { ROOMS, TRAINS, type RoomType } from '../../data/rooms';
 import { listNames, plural } from '../../core/text';
-import {
-  canAssign,
-  crewOf,
-  hasPosts,
-  isTrainRoom,
-  slotsOf,
-  staffBeds,
-  workIn,
-  workerCap,
-  workerTitle,
-} from '../../core/workers';
+import { hasPosts, isTrainRoom, staffBeds, workerCap } from '../../core/workers';
 import type { ComponentChildren } from 'preact';
 import { help } from '../HoldHelp';
 import { Icon, type IconName } from '../icons';
-import { jobRoomName } from '../JobPicker';
-import { isRealTime, left as timeLeft } from '../when';
+import { CrewGroup } from './CrewList';
+import { crewGroups } from '../crew';
+import { GUARD, type Task } from '../drop';
+import { left as timeLeft } from '../when';
 
 /** A dónde lleva cada sala: los paneles de siempre que tienen que ver con ella. */
 export type RoomLink =
@@ -52,7 +43,7 @@ export type RoomLink =
   | 'equipo'
   | 'tesoros';
 
-const WORK = { to: 'trabajadores', label: 'Trabajo', icon: 'martillo' } as const;
+const WORK = { to: 'trabajadores', label: 'Tareas', icon: 'martillo' } as const;
 
 const LINKS: Partial<Record<RoomType, { to: RoomLink; label: string; icon: IconName }[]>> = {
   salon: [
@@ -65,7 +56,6 @@ const LINKS: Partial<Record<RoomType, { to: RoomLink; label: string; icon: IconN
   bodega: [WORK],
   enfermeria: [WORK],
   servicio: [WORK],
-  recibidor: [{ to: 'heroes', label: 'Guardia', icon: 'escudo' }],
   dormitorio: [{ to: 'heroes', label: 'Héroes', icon: 'heroe' }],
   veteranos: [{ to: 'heroes', label: 'Héroes', icon: 'heroe' }],
   mapas: [
@@ -102,8 +92,10 @@ interface Props {
   /** Obras de verdad (ampliar, destruir) y elegir en la escena a dónde mover la sala. */
   onWork?: (a: Action) => void;
   onMove?: (id: string) => void;
-  /** Poner a alguien a trabajar en la sala o quitarlo. */
-  onAssign?: (who: string, room: string | null) => void;
+  /** Cambiar la tarea de alguien (ponerlo en un hueco de la sala o sacarlo). */
+  onTask?: (who: string, task: Task) => void;
+  /** Abrir la ficha de un héroe. */
+  onOpen?: (id: string) => void;
   /** Elegir el tema de color de sus telas (`null`: los de la casa). */
   onTint?: (room: string, tint: TintId | null) => void;
 }
@@ -143,26 +135,6 @@ function RoomTint({
       </div>
     </div>
   );
-}
-
-/** Lo que hace hoy la gente que trabaja en una sala. */
-function crewEffect(game: GameState, room: Room): string {
-  switch (room.type) {
-    case 'salon': {
-      const v = visitorsOf(game, game.day);
-      return `Hoy se atiende a ${v.served} de ${v.total} visitantes.`;
-    }
-    case 'bodega':
-      return `Saca ${Math.round(brewAt(game, room))} jarras al día.`;
-    case 'cocina':
-      return `Hace ${Math.round(cookAt(game, room))} raciones al día.`;
-    case 'enfermeria':
-      return workIn(game, 'enfermeria') >= NURSE_WORK
-        ? 'Los heridos se curan un día antes.'
-        : 'Con más mano, los heridos se curarían un día antes.';
-    default:
-      return '';
-  }
 }
 
 /** El salón por dentro: su Atractivo, las plazas y quién viene hoy. */
@@ -260,151 +232,61 @@ function VaultInfo({ game, room }: { game: GameState; room: Room }) {
   );
 }
 
-/** El recibidor: la puerta y los de guardia. */
+/** El recibidor: cuánto aguanta la puerta (los de guardia, en sus huecos). */
 function DoorInfo({ game }: { game: GameState }) {
-  const guards = game.heroes.filter((h) => h.status === 'ok' && h.guard).length;
   return (
     <div class="chips">
-      <Fact info="Con gente de guardia, la primera pelea es en el patio y dan la voz de alarma en cuanto ven las antorchas. Sin nadie, los bandidos rompen la puerta y entran.">
-        <Icon name="escudo" size={12} /> Guardia {guards}/{MAX_GUARDS}
-      </Fact>
       <Fact info="Cuánto aguanta la puerta a los bandidos.">Puerta {doorTime(game)} s</Fact>
     </div>
   );
 }
 
-/** «Le faltan unos 3 días» (o «Sube esta noche»); con el tiempo que corre solo, en minutos. */
-function daysLeft(frac: number, perDay: number, clock: number): string {
-  const d = Math.ceil((1 - frac) / perDay - 1e-9);
-  if (isRealTime()) return `Sube en ${timeLeft(Math.max(1, d), clock)}`;
-  return d <= 1 ? 'Sube esta noche' : `Le faltan unos ${d} días`;
-}
-
-/** Una sala de entrenamiento: qué se entrena, hasta dónde y cómo va cada uno. */
-function TrainInfo({ game, room }: { game: GameState; room: Room }) {
+/** Una sala de entrenamiento: qué se entrena y hasta dónde (cómo va cada uno, en sus huecos). */
+function TrainInfo({ room }: { room: Room }) {
   const attr = TRAINS[room.type]!;
-  const cap = trainCap(room);
   const next = TRAIN_CAP[room.level + 1];
-  const part = dayPart(game);
-  const here = game.heroes.filter((h) => h.job === room.id);
   return (
-    <>
-      <div class="chips">
-        <Fact
-          info={`Arrastra aquí a un héroe que esté en casa para que entrene. Las habilidades suben solas según su clase.${next ? ` Mejorada, se llega hasta ${next} y se entrena más rápido.` : ''}`}
-        >
-          {ATTR_NAMES[attr]} hasta {cap}
-        </Fact>
-      </div>
-      {here.map((h) => {
-        const t = trainState(game, h, part);
-        const gain = gainText(skillGain(h, attr));
-        return (
-          <span key={h.id} class="train-row">
-            <span>
-              {h.name} · {ATTR_NAMES[attr]} {h.attrs[attr]}
-              {t?.capped ? ' (en el tope)' : ''}
-            </span>
-            {t && !t.capped && (
-              <span class="train-bar" aria-label={`${Math.round(t.frac * 100)} %`}>
-                <i style={{ width: `${Math.round(t.frac * 100)}%` }} />
-              </span>
-            )}
-            {!t && <span class="row-sub">fuera hoy</span>}
-            {t && !t.capped && (
-              <span class="row-sub">
-                {daysLeft(t.frac, t.perDay, game.clock ?? 0)}.{' '}
-                {gain
-                  ? `Con ese punto: ${gain}.`
-                  : 'Ese punto aún no se notará en las habilidades.'}
-              </span>
-            )}
-          </span>
-        );
-      })}
-    </>
+    <div class="chips">
+      <Fact
+        info={`Pon aquí a un héroe que esté en casa para que entrene. Las habilidades suben solas según su clase.${next ? ` Mejorada, se llega hasta ${next} y se entrena más rápido.` : ''}`}
+      >
+        {ATTR_NAMES[attr]} hasta {trainCap(room)}
+      </Fact>
+    </div>
   );
 }
 
-/** Quién trabaja en la sala, quitar a alguien y poner a otro (trabajador o héroe en casa). */
+/**
+ * Los puestos de la sala como huecos (los mismos de Héroes › Tareas): quién está, lo que pone y
+ * los libres para poner a alguien. En el recibidor, los dos de guardia.
+ */
 function RoomCrew({
   game,
   room,
-  onAssign,
+  onTask,
+  onOpen,
 }: {
   game: GameState;
   room: Room;
-  onAssign: (who: string, room: string | null) => void;
+  onTask: (who: string, task: Task) => void;
+  onOpen: (id: string) => void;
 }) {
-  const slots = slotsOf(room);
-  if (!slots) return null;
-  const train = isTrainRoom(room.type);
-  const crew = crewOf(game, room.id);
-  const here = [
-    ...crew.workers.map((w) => ({ id: w.id, name: workerTitle(w), note: `Maña ${w.skill}` })),
-    ...crew.heroes.map((h) => ({
-      id: h.id,
-      name: h.name,
-      note: h.status === 'ok' && !h.guard ? (train ? 'entrena' : 'echa una mano') : 'fuera hoy',
-    })),
-  ];
-  const free = [
-    ...(train ? [] : game.workers)
-      .filter((w) => w.room !== room.id)
-      .map((w) => {
-        const now = game.building.rooms.find((r) => r.id === w.room);
-        return {
-          id: w.id,
-          name: `${workerTitle(w)}${now ? ` (en ${jobRoomName(game, now)})` : ''}`,
-        };
-      }),
-    ...game.heroes
-      .filter((h) => h.job !== room.id && !canAssign(game, h.id, room.id))
-      .map((h) => ({ id: h.id, name: `${h.name} (héroe)` })),
-  ];
+  const [sel, setSel] = useState<string | null>(null);
+  const key = room.type === 'recibidor' ? GUARD : room.id;
+  const g = crewGroups(game).find((x) => x.key === key);
+  if (!g) return null;
+  const title =
+    key === GUARD ? 'De guardia' : isTrainRoom(room.type) ? 'Entrenan aquí' : 'Trabajan aquí';
   return (
-    <section class="room-crew">
-      <h3 class="sec-title">
-        {train ? 'Entrenan' : 'Trabajan'} aquí{' '}
-        <span class="row-sub">
-          {here.length}/{slots}
-        </span>
-      </h3>
-      {crewEffect(game, room) && <span class="row-sub">{crewEffect(game, room)}</span>}
-      {here.map((p) => (
-        <span key={p.id} class="crew-chip">
-          <span>
-            {p.name} <span class="row-sub">· {p.note}</span>
-          </span>
-          <button
-            class="btn-icon"
-            aria-label={`Quitar a ${p.name}`}
-            {...help(`Quitar a ${p.name} de aquí`)}
-            onClick={() => onAssign(p.id, null)}
-          >
-            <Icon name="papelera" size={14} />
-          </button>
-        </span>
-      ))}
-      {here.length < slots && free.length > 0 && (
-        <select
-          class="job-select"
-          value=""
-          aria-label="Poner a trabajar aquí"
-          onChange={(e) => {
-            const v = (e.target as HTMLSelectElement).value;
-            if (v) onAssign(v, room.id);
-          }}
-        >
-          <option value="">{train ? 'Poner a entrenar aquí…' : 'Poner a trabajar aquí…'}</option>
-          {free.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-      )}
-    </section>
+    <CrewGroup
+      game={game}
+      g={g}
+      title={title}
+      sel={sel}
+      setSel={setSel}
+      onOpen={onOpen}
+      onTask={onTask}
+    />
   );
 }
 
@@ -493,7 +375,8 @@ export function RoomPanel({
   onLink,
   onWork,
   onMove,
-  onAssign,
+  onTask,
+  onOpen,
   onTint,
 }: Props) {
   const room = game.building.rooms.find((r) => r.id === roomId);
@@ -534,7 +417,7 @@ export function RoomPanel({
       {room.type === 'salon' && room.level > 0 && <SalonInfo game={game} />}
       {(room.type === 'cocina' || room.type === 'despensa' || room.type === 'bodega') &&
         room.level > 0 && <LarderInfo game={game} room={room} />}
-      {isTrainRoom(room.type) && room.level > 0 && <TrainInfo game={game} room={room} />}
+      {isTrainRoom(room.type) && room.level > 0 && <TrainInfo room={room} />}
       {room.type === 'tesoro' && <VaultInfo game={game} room={room} />}
       {room.type === 'recibidor' && <DoorInfo game={game} />}
       {(room.type === 'dormitorio' || room.type === 'veteranos') && room.level > 0 && (
@@ -568,7 +451,9 @@ export function RoomPanel({
           {n.text}
         </span>
       ))}
-      {onAssign && <RoomCrew game={game} room={room} onAssign={onAssign} />}
+      {onTask && onOpen && (hasPosts(room.type) || room.type === 'recibidor') && (
+        <RoomCrew game={game} room={room} onTask={onTask} onOpen={onOpen} />
+      )}
       {onTint && !room.works && room.level >= (TINT_FROM[room.type] ?? Infinity) && (
         <RoomTint game={game} room={room} onTint={onTint} />
       )}

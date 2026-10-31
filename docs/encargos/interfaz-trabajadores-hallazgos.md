@@ -56,3 +56,7 @@ hace qué» (artefacto de claude.ai).
 - PR 1, la casa: `src/ui/crew.ts` (grupos, avisos y opciones del selector, con tests),
   `src/ui/panels/CrewList.tsx` (la lista) y `planTask` en `src/ui/drop.ts` (cambiar la tarea,
   que también usa arrastrar).
+- PR 2, salas con huecos: la ficha de sala usa los mismos huecos que Tareas (`CrewGroup` en
+  `CrewList.tsx`), con lo que pone cada uno (`givesAt` en `crew.ts`) y la barra de quien
+  entrena dentro de su hueco (ya no se repite arriba). El recibidor enseña sus dos huecos de
+  guardia y pierde el botón que llevaba a la lista de héroes.

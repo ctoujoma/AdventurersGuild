@@ -921,7 +921,8 @@ export function App() {
                   : upgradeRoom(id)
               }
               onLink={roomLink}
-              onAssign={works.planning ? undefined : assignJob}
+              onTask={works.planning ? undefined : setTask}
+              onOpen={(id) => setCard(id)}
               onTint={
                 works.planning ? undefined : (id, tint) => dispatch({ type: 'tint', id, tint })
               }
