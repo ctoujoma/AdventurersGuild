@@ -36,6 +36,12 @@ export function workerLook(w: Worker): HeroLook {
   return l;
 }
 
+/** Marco del retrato de un héroe: dorado, con el color de su clase. */
+export const heroFrame = (h: Pick<Hero, 'cls'>) => `pf-hero pf-${h.cls}`;
+/** Marco del retrato de un trabajador: de madera, con el color de su oficio (o del bardo). */
+export const workerFrame = (w: Pick<Worker, 'trade' | 'village'>) =>
+  `pf-worker pf-${w.village === 'bardo' ? 'bardo' : w.trade}`;
+
 export const marksOf = (h: Hero): HeroMarks => ({
   injured: h.status === 'herido',
   eyepatch: h.traits.some((t) => t.id === 'tuerto'),

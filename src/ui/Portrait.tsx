@@ -10,10 +10,15 @@ interface Props {
   label?: string;
   /** Parpadeo de vez en cuando. */
   alive?: boolean;
+  /**
+   * El marco según quién es (ver `heroFrame` y `workerFrame`): dorado con el color de la
+   * clase para los héroes y de madera con el del oficio para los trabajadores.
+   */
+  frame?: string;
 }
 
 /** Retrato en su marco; si está «vivo», parpadea cada pocos segundos. */
-export function Portrait({ look, marks = {}, scale = 2, label, alive = true }: Props) {
+export function Portrait({ look, marks = {}, scale = 2, label, alive = true, frame }: Props) {
   const [blink, setBlink] = useState(false);
   useEffect(() => {
     if (!alive) return;
@@ -34,7 +39,7 @@ export function Portrait({ look, marks = {}, scale = 2, label, alive = true }: P
     return () => clearTimeout(t);
   }, [alive]);
   return (
-    <span class="portrait-frame">
+    <span class={frame ? `portrait-frame ${frame}` : 'portrait-frame'}>
       <BufferImage buf={renderPortrait(look, marks, blink)} scale={scale} label={label} />
     </span>
   );

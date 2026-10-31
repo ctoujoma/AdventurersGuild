@@ -5,7 +5,7 @@ import { CREST_COLORS, sealInitial } from '../data/custom';
 import { OUTCOME_CLASS } from '../data/labels';
 import { Icon } from './icons';
 import { Portrait } from './Portrait';
-import { lookOf, marksOf } from './view';
+import { lookOf, marksOf, heroFrame } from './view';
 
 interface Props {
   report: Report;
@@ -62,7 +62,13 @@ export function Letter({ report: r, heroes, seal, onClose, onWatch }: Props) {
                 key={h.id}
                 class={`letter-hero ${h.status === 'muerto' || h.status === 'desaparecido' ? 'gone' : ''}`}
               >
-                <Portrait look={lookOf(h)} marks={marksOf(h)} scale={1} alive={false} />
+                <Portrait
+                  look={lookOf(h)}
+                  marks={marksOf(h)}
+                  frame={heroFrame(h)}
+                  scale={1}
+                  alive={false}
+                />
                 <small>{h.name}</small>
               </span>
             ))}
