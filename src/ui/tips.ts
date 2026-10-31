@@ -49,7 +49,7 @@ export const TIPS: readonly Tip[] = [
   },
   {
     id: 'pago',
-    text: `El día ${SCHEDULE[0]!.day} viene Merlo a cobrar ${SCHEDULE[0]!.amount} monedas, más los salarios. Lo que te falta lo tienes arriba, junto a la campana. Si no llegas, se queda la taberna, gato incluido.`,
+    text: `El día ${SCHEDULE[0]!.day} viene Merlo a cobrar ${SCHEDULE[0]!.amount} monedas, más los salarios. Lo que toca pagar lo tienes arriba, en el pergamino. Si no llegas, se queda la taberna, gato incluido.`,
     when: (s) => s.day >= 4 && s.day < 7 && s.paid === 0,
   },
   {
