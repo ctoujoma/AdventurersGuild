@@ -24,6 +24,7 @@ import { DayBar } from './DayBar';
 import { GameOver } from './GameOver';
 import { HeroCard } from './HeroCard';
 import { Hud } from './Hud';
+import { finishedWorks, gatherAlerts, type Notice } from './alerts';
 import { Icon } from './icons';
 import { Letter } from './Letter';
 import { EventCard } from './EventCard';
@@ -139,6 +140,16 @@ export function App() {
   useEffect(() => {
     if (panel !== 'heroes') setCrewFocus(null);
   }, [panel]);
+  /** Salas cuya obra acaba de terminar: la campanita lo dice durante ese día. */
+  const [worksDone, setWorksDone] = useState<string[]>([]);
+  const prevGame = useRef(game);
+  useEffect(() => {
+    const before = prevGame.current;
+    prevGame.current = game;
+    const done = finishedWorks(before, game);
+    if (game.day !== before.day) setWorksDone(done);
+    else if (done.length) setWorksDone((d) => [...d, ...done.filter((id) => !d.includes(id))]);
+  }, [game]);
   const [hint, setHint] = useState(false);
   /** Splash del desarrollador, título y juego. Con #debug se entra directo a la partida. */
   const [screen, setScreen] = useState<'splash' | 'title' | 'game'>(() =>
@@ -718,9 +729,37 @@ export function App() {
         ? 'gremio'
         : 'taberna';
 
+  const alerts = useMemo(
+    () => gatherAlerts(passing ? sceneGame : game, worksDone),
+    [passing ? sceneGame : game, worksDone],
+  );
+  /** Tocar un aviso lleva a donde se arregla. */
+  const goAlert = (n: Notice) => {
+    const g = n.go;
+    if ('room' in g) {
+      setRoomId(g.room);
+      openPanel('sala');
+      scene.current?.focus(g.room);
+      setWorksDone((d) => d.filter((id) => id !== g.room));
+    } else if ('crew' in g) {
+      openPanel('heroes');
+      setHeroFilter('trabajadores');
+      setCrewFocus(g.crew);
+    } else if ('quest' in g) {
+      openPanel('tablon');
+      setQuestId(g.quest);
+    } else openPanel(g.panel);
+  };
+
   return (
     <div class="game">
-      <Hud game={passing ? sceneGame : game} onSettings={() => setSettingsOpen(true)} />
+      <Hud
+        game={passing ? sceneGame : game}
+        onSettings={() => setSettingsOpen(true)}
+        alerts={alerts}
+        onAlert={goAlert}
+        quiet={passing || dawnOpen || !!bossCall || !!watching || screen !== 'game'}
+      />
       <div class="stage">
         <SceneView
           model={model}

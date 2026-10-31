@@ -7,6 +7,7 @@ import type { Sfx } from '../audio/audio';
  */
 const PATTERNS: Partial<Record<Sfx, number | number[]>> = {
   select: 8,
+  bell: [10, 60, 10],
   coin: 14,
   depart: 22,
   build: [20, 40, 20],
