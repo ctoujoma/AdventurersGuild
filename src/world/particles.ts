@@ -20,6 +20,8 @@ export type PKind =
   | 'note'
   | 'zzz'
   | 'puff'
+  /** Cruz roja sobre un herido acostado. */
+  | 'cross'
   | 'coin';
 
 export interface Particle {
@@ -41,6 +43,7 @@ const GLYPHS: Partial<Record<PKind, string[]>> = {
   note: ['..XX', '..X.', '..X.', 'XXX.', 'XX..'],
   zzz: ['XXX', '..X', '.X.', 'XXX'],
   coin: ['.X.', 'XXX', '.X.'],
+  cross: ['..XX..', '..XX..', 'XXXXXX', 'XXXXXX', '..XX..', '..XX..'],
 };
 
 const COLORS: Partial<Record<PKind, string>> = {
@@ -48,6 +51,7 @@ const COLORS: Partial<Record<PKind, string>> = {
   note: P.lemon,
   zzz: P.mist,
   coin: P.lemon,
+  cross: P.red,
 };
 
 export class Particles {
@@ -231,4 +235,5 @@ const defaults: Record<PKind, { life: number; vx: number; vy: number }> = {
   zzz: { life: 2.4, vx: 0, vy: -6 },
   puff: { life: 1.2, vx: 18, vy: -10 },
   coin: { life: 1.2, vx: 10, vy: -20 },
+  cross: { life: 2.2, vx: 0, vy: -5 },
 };

@@ -178,6 +178,10 @@ La lista completa de pendientes e ideas (bucle, monetización, amigos, torneos, 
   la capa va por detrás; el tabardo, la faja y la bufanda, por encima de la armadura. Si la
   prenda es del color del tinte, toma otro que contraste. Para probar: en el modo prueba, la
   ficha del héroe tiene un selector (acción `dress`). Hojas: `capturas/sastreria-*.png`.
+- **Heridos:** van a los catres de la enfermería y, si está rota o no caben (en el nivel 1
+  solo hay uno), a una cama del dormitorio (`homes` en `people.ts`). Estén donde estén, se les
+  pinta acostados con la venda (los sanos, sin ella) y de vez en cuando sube una cruz roja sobre
+  su cabeza (`injured` en `crowd.ts`, partícula `cross`).
 - Trabajar, charlar o calentarse van con los pies quietos (`fightSprites(…, planted)`): las
   posturas de pelea abren las piernas y, al alternarlas, parecía que andaban.
 
