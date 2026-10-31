@@ -28,10 +28,20 @@ o está en «Más adelante», no se toca sin preguntar. El detalle de cada idea 
 Cada uno en su rama, PR contra `main`, sin pisarse: quien toque fuera de su zona lo dice en
 el PR.
 
-## Fase 0 · Prueba del tiempo (hecha; falta jugarla y decidir)
+## Fase 0 · El tiempo (decidido: días que corren solos)
 
-Decidir el modelo de tiempo jugándolo. Va tras un interruptor en Ajustes › Modo prueba
-(«Tiempo que corre solo»), sin cambiar la partida de quien no lo active.
+Decidido con el usuario: el tiempo corre solo, también con el juego cerrado (12 veces más
+despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Ajustes › Modo prueba
+(`classicTime`).
+
+- **Acelerar:** el botón de velocidad sigue mientras dura «La deuda» y en el modo prueba (para
+  probar). Más adelante, quizá de pago.
+- **Pagos estando fuera:** nunca se pierde estando fuera. La víspera de un pago que no llega,
+  la simulación se para a la tarde (`dueTonight` en `core/away.ts`) y la carta lo avisa.
+  Pendiente: en la app de Android, una notificación local el día antes de cada pago.
+- **Escala:** con el juego abierto, un día son 5 minutos (una hora del juego, unos 12 s); cerrado,
+  un día por hora real. Fallout Shelter usa horas reales: si se quiere ese ritmo, se alarga el
+  día (`DAY_SECONDS`).
 
 - El día corre solo: al llegar la noche, cae sola (con su asalto o sin él) y amanece; el
   «Anochecer» queda para dormir antes de tiempo.

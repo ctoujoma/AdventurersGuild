@@ -3,7 +3,7 @@ import { useBackButton } from '../platform/back';
 import { HoldHelp } from './HoldHelp';
 import { haptic, setHaptics } from '../platform/haptics';
 import { audio, type Mood } from '../audio/audio';
-import { catchUp } from '../core/away';
+import { catchUp, waitText } from '../core/away';
 import { left, setRealTime } from './when';
 import { canClose, canHire, customOf, newGame, reduce, type Action } from '../core/game';
 import { raidRoute } from '../core/assault';
@@ -147,7 +147,11 @@ export function App() {
   const [saveMenu, setSaveMenu] = useState(false);
   const [settings, setSettings] = useState<Settings>(loadSettings);
   // Los plazos se cuentan en minutos con el tiempo que corre solo (ver `when.ts`).
-  setRealTime(settings.realTime);
+  // El tiempo corre solo salvo con los días a la antigua (modo prueba).
+  const realTime = !settings.classicTime;
+  setRealTime(realTime);
+  // Acelerar el reloj: mientras dura «La deuda» y en el modo prueba (más adelante, quizá de pago).
+  const canRush = game.mode !== 'libre' || settings.tester;
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [records, setRecords] = useState(loadRecords);
   /** Mejor llegada antes de esta partida, para comparar en la apertura. */
@@ -255,7 +259,7 @@ export function App() {
    * ha pasado (`catchUp`) y, si han pasado días, la carta del amanecer lo cuenta.
    */
   const comeBack = (seconds: number) => {
-    if (!settings.realTime || passing) return;
+    if (!realTime || passing) return;
     dispatch({ type: 'tick', to: clockRef.current });
     const away = catchUp(gameRef.current, seconds);
     if (!away.seconds) return;
@@ -267,7 +271,12 @@ export function App() {
       setPanel(null);
       setAwayDays(away.days.length);
       setDawnOpen(true);
-    } else toast('La taberna ha seguido abierta mientras no estabas.');
+    } else
+      toast(
+        away.waiting
+          ? waitText(away.state, away.waiting)
+          : 'La taberna ha seguido abierta mientras no estabas.',
+      );
   };
   const comeBackRef = useRef(comeBack);
   comeBackRef.current = comeBack;
@@ -675,21 +684,22 @@ export function App() {
     const id = setInterval(() => {
       if (document.hidden) return;
       const before = clockRef.current;
-      // Con el tiempo que corre solo no hay acelerar: el reloj es el de verdad.
-      const pace = settings.realTime ? 1 : settings.pace;
+      // Con el tiempo que corre solo, acelerar solo se puede mientras dura «La deuda» (y en el
+      // modo prueba): luego el reloj es el de verdad.
+      const pace = realTime && !canRush ? 1 : settings.pace;
       const next = Math.min(DAY_SECONDS, before + 0.25 * pace);
       if (next === before) return;
       moveClock(next, before);
     }, 250);
     return () => clearInterval(id);
-  }, [ticking, settings.pace, settings.realTime]);
+  }, [ticking, settings.pace, realTime, canRush]);
   // Tiempo que corre solo (en prueba): al acabar el día la noche cae sola, cuando no hay nada
   // abierto delante (un panel o una ficha esperan a que se cierren).
   useEffect(() => {
-    if (!settings.realTime || !ticking || passing || clock < DAY_SECONDS) return;
+    if (!realTime || !ticking || passing || clock < DAY_SECONDS) return;
     if (panel || card || questId || works.planning) return;
     endDay();
-  }, [clock, ticking, passing, panel, card, questId, works.planning, settings.realTime]);
+  }, [clock, ticking, passing, panel, card, questId, works.planning, realTime]);
   // Lo que se abre desde el gremio (arcón, libro, adornos) deja encendida su pestaña.
   const tab: TabId =
     panel === 'tablon' || panel === 'heroes' || panel === 'gremio'
@@ -857,7 +867,8 @@ export function App() {
             onMail={() => openPanel('correo')}
             onAway={() => openPanel('fuera')}
             part={clock / DAY_SECONDS}
-            real={settings.realTime}
+            real={realTime}
+            rush={canRush}
             canClose={clock >= DUSK * DAY_SECONDS}
             night={passing}
             pace={settings.pace}
