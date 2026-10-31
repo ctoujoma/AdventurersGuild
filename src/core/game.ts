@@ -6,6 +6,13 @@ import { earn, spill, vaultNews } from './vault';
 import { FLAVOR } from '../data/stories';
 import { checkRank } from './ranks';
 import {
+  actOnIncident,
+  failIncidents,
+  incidentIssue,
+  stepIncidents,
+  type IncidentAct,
+} from './incidents';
+import {
   MAX_GUARDS,
   AWAY_RAID,
   DORM_REST,
@@ -124,6 +131,8 @@ export type Action =
   | { type: 'fire'; id: string }
   | { type: 'hireWorker'; id: string }
   | { type: 'fireWorker'; id: string }
+  /** Hacer algo con un incidente: mandar a alguien, pagar, tocar o elegir. */
+  | { type: 'incident'; id: string; act: IncidentAct }
   /** Poner a trabajar a un trabajador o a un héroe en una sala (null: deja de trabajar). */
   | { type: 'assign'; who: string; room: string | null }
   | { type: 'send'; questId: string; heroIds: string[] }
@@ -609,8 +618,21 @@ export function reduce(state: GameState, action: Action): GameState {
       if (state.tips?.includes(action.id)) return state;
       return { ...state, tips: [...(state.tips ?? []), action.id] };
     }
-    case 'tick':
-      return tick(state, action.to);
+    case 'tick': {
+      const next = tick(state, action.to);
+      if (next === state) return state;
+      // Los incidentes solo corren con el juego abierto (la simulación de fuera no pasa por aquí).
+      const news = stepIncidents(next, state.clock ?? 0, next.clock ?? 0);
+      next.incidentNews = news.length ? news : undefined;
+      return next;
+    }
+    case 'incident': {
+      if (incidentIssue(state, action.id, action.act)) return state;
+      const s = structuredClone(state);
+      const n = actOnIncident(s, action.id, action.act);
+      s.incidentNews = n ? [n] : undefined;
+      return s;
+    }
     case 'dusk':
       return tick(state, DUSK * DAY_SECONDS);
     case 'endDay':
@@ -683,8 +705,12 @@ export function tick(state: GameState, to: number): GameState {
 export function endDay(state: GameState, away = false): GameState {
   if (state.over) return state;
   const s = structuredClone(state);
+  // Al caer la noche, el incidente que quede sin resolver sale mal (va a la carta).
+  const pending: DawnEvent[] = [];
+  failIncidents(s, pending);
   const rng = new Rng(s.rng);
-  const events: DawnEvent[] = [];
+  const events: DawnEvent[] = [...pending];
+  s.incidentNews = undefined;
   s.day++;
   stepWorks(s, events);
   tidyJobs(s);

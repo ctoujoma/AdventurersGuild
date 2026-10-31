@@ -73,4 +73,16 @@ describe('arrastrar y soltar en las salas', () => {
     h.attrs.F = TRAIN_CAP[1];
     expect(planDrop(s, h.id, 'arm').text).toMatch(/Mejora la sala/);
   });
+
+  it('si en la sala pasa algo que se arregla mandando a alguien, soltarlo lo arregla', () => {
+    const s = { ...newGame('incidente'), day: 3, clock: 10 };
+    const salon = roomOf(s, 'salon');
+    s.incidents = [{ id: 'i1', kind: 'pelea', room: salon.id, from: 10, until: 50 }];
+    // Un trabajador no vale para una pelea; un héroe, sí.
+    expect(planDrop(s, s.workers[0]!.id, salon.id)).toMatchObject({ ok: false });
+    const h = s.heroes.find((x) => x.status === 'ok')!;
+    const t = drop(s, h.id, salon.id);
+    expect(t.incidents).toEqual([]);
+    expect(t.heroes.find((x) => x.id === h.id)!.job).toBe(h.job);
+  });
 });

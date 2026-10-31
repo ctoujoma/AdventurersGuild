@@ -2,6 +2,7 @@
  * Modelo de la partida. Todo es JSON serializable: guardar es `JSON.stringify(state)`.
  * El núcleo no conoce el DOM ni el arte; el aspecto de cada héroe sale de su `seed`.
  */
+import type { IncidentKind } from '../data/incidents';
 import type { BossKind } from '../data/bosses';
 import type { CrestColor, CrestSymbol, DecorId, FacadeId, StaffId, TintId } from '../data/custom';
 import type { Trade } from '../data/workers';
@@ -272,6 +273,19 @@ export interface RoomYield {
 }
 
 /** Lo que pasó al terminar un día: se enseña en la transición del amanecer. */
+/** Un incidente en marcha en una sala (ver `core/incidents.ts`). */
+export interface Incident {
+  id: string;
+  kind: IncidentKind;
+  /** Id de la sala. */
+  room: string;
+  /** Reloj del día (s) en que empezó y en que sale mal si nadie hace nada. */
+  from: number;
+  until: number;
+  /** Los de tocar: toques que faltan. */
+  taps?: number;
+}
+
 export interface DawnEvent {
   t: string;
   k?: ChipKind;
@@ -498,6 +512,10 @@ export interface GameState {
   lastRaid?: RaidResult | null;
   /** Informe de la pelea contra un jefe de esta noche (para el aviso del amanecer). */
   lastFight?: string | null;
+  /** Incidentes en marcha (uno a la vez). */
+  incidents?: Incident[];
+  /** Lo último que ha pasado con los incidentes, para el aviso de la interfaz (de paso). */
+  incidentNews?: { t: string; k: ChipKind }[];
   /** Rango más alto ya anunciado (para avisar al subir; ver `core/ranks.ts`). */
   rankSeen?: number;
   /** Hora real (ms) de la última vez que se guardó con el juego abierto (tiempo que corre solo). */

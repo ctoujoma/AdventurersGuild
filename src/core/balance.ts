@@ -129,6 +129,13 @@ export const AWAY_DAY_SECONDS = 3600;
 export const AWAY_MAX_DAYS = 8;
 export const AWAY_RAID = 0.4;
 export const AWAY_MIN_SECONDS = 20;
+/**
+ * Incidentes (`core/incidents.ts`): de media uno cada tanto (segundos del reloj del día: uno al
+ * día), desde este día, y lo que sube pagarlos por cada rango.
+ */
+export const INCIDENT_EVERY = 300;
+export const INCIDENT_FROM_DAY = 2;
+export const INCIDENT_RANK_COST = 5;
 /** Parte del día desde la que es anochecer y se puede cerrar la taberna. */
 export const DUSK = 0.8;
 /** Entregas en que llega la caja del día, repartidas hasta el anochecer. */

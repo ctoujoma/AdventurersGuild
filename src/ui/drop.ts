@@ -1,5 +1,7 @@
 import { guardsFull, type Action } from '../core/game';
+import { incidentIn, incidentIssue } from '../core/incidents';
 import type { GameState } from '../core/model';
+import { INCIDENTS } from '../data/incidents';
 import { ATTR_NAMES, trainCap } from '../core/training';
 import { canAssign, hasPosts, isTrainRoom } from '../core/workers';
 import { TRAINS } from '../data/rooms';
@@ -100,6 +102,22 @@ export function planTask(game: GameState, who: string, task: Task): Drop {
 export function planDrop(game: GameState, who: string, roomId: string): Drop {
   const room = game.building.rooms.find((r) => r.id === roomId);
   if (!room) return { ok: false, text: 'Ahí no hay ninguna sala.' };
+  // Si en la sala pasa algo que se arregla mandando a alguien, primero eso.
+  const inc = incidentIn(game, roomId);
+  const how = inc && INCIDENTS[inc.kind].how;
+  if (inc && (how === 'heroe' || how === 'alguien')) {
+    const act = { by: 'who' as const, who };
+    const why = incidentIssue(game, inc.id, act);
+    const name =
+      game.heroes.find((h) => h.id === who)?.name ?? game.workers.find((w) => w.id === who)?.name;
+    return why
+      ? { ok: false, text: why }
+      : {
+          ok: true,
+          text: `${name} va: ${INCIDENTS[inc.kind].title.toLowerCase()}.`,
+          actions: [{ type: 'incident', id: inc.id, act }],
+        };
+  }
   const worker = game.workers.some((x) => x.id === who);
   const rest = worker
     ? room.type === 'servicio' || room.type === 'dormitorio'

@@ -54,15 +54,10 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
 - Cómo está hecho: `core/away.ts` (`catchUp`: simula lo de fuera y junta la carta),
   `endDay(state, away)` (asaltos a `AWAY_RAID`), el interruptor `realTime` en los ajustes y,
   en `App.tsx`, la hora que se guarda con cada guardado (`lastSeen`), la vuelta tras ocultar la
-  pestaña o al continuar, y la noche que cae sola cuando no hay paneles delante. Ojo: los pagos
-  siguen contando estando fuera, así que una ausencia larga puede acabar la partida.
-- Con el interruptor, la interfaz también cambia: la barra no tiene «Anochecer», «Cerrar» ni
-  velocidad, y dice cuánto falta para que anochezca o caiga la noche; los plazos (viajes,
-  caducidad, vuelta de los grupos, obras, entrenamiento, pagos, chivatazos) se cuentan en
-  minutos de taberna abierta (`ui/when.ts`).
-- Después: jugarlo unos días, comparar con el modo de ahora y decidir. Si se queda, faltarán
-  las cuentas atrás en tiempo real en la interfaz y los avisos en la app de Android
-  (notificaciones locales programadas al salir).
+  pestaña o al continuar, y la noche que cae sola cuando no hay paneles delante.
+- La barra no tiene «Cerrar» y dice cuánto falta para que anochezca o caiga la noche; los
+  plazos (viajes, caducidad, vuelta de los grupos, obras, entrenamiento, pagos, chivatazos) se
+  cuentan en minutos de taberna abierta (`ui/when.ts`).
 
 ## Fase 1 · Bucle infinito
 
@@ -92,7 +87,10 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
    - tocar varias veces (ratas);
    - elegir (un noble borracho).
 
-   Sin resolver, empeoran.
+   Sin resolver, salen mal. Hecho: `data/incidents.ts` (los siete), `core/incidents.ts` (reglas
+   y tests), `ui/IncidentMark.tsx` (el aviso sobre la sala) y `ui/drop.ts` (arrastrar a quien
+   lo arregla). Solo con el juego abierto, desde el día 2 y de uno en uno; lo que quede al caer
+   la noche sale mal y va a la carta. Cifras en `balance.ts` (`INCIDENT_*`).
 6. **Rumores de la barra:** un bocadillo brillante sobre una mesa unos segundos; si se toca a
    tiempo, se abre un encargo especial con botín bueno o legendario.
 

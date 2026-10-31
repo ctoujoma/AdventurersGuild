@@ -4659,3 +4659,84 @@ select.crew-free {
   text-align: center;
   opacity: 0.7;
 }
+
+/* ---------- Incidentes: el aviso colgado sobre su sala ---------- */
+.incident {
+  position: absolute;
+  z-index: 5;
+  transform: translate(-50%, -100%);
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  width: max-content;
+  max-width: min(240px, 70vw);
+  animation: pop 0.18s steps(3);
+}
+
+.incident-btn {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 2px 6px;
+  padding: 4px 8px 6px;
+  color: var(--plum);
+  text-align: left;
+  border-style: solid;
+  border-width: 10px;
+  border-image: var(--frame-parchment) 5 fill / 10px / 0 stretch;
+  animation: incident-wobble 1.6s steps(4) infinite;
+}
+
+.incident-text {
+  display: grid;
+  line-height: 1.15;
+}
+
+.incident-text b {
+  font-family: var(--pixel);
+  font-size: var(--t-m);
+  color: var(--wine);
+}
+
+.incident-text small {
+  font-size: var(--t-s);
+  color: var(--text-soft);
+}
+
+.incident-bar {
+  grid-column: 1 / -1;
+  height: 4px;
+  background: var(--sand);
+  box-shadow: 0 0 0 1px var(--bark);
+}
+
+.incident-bar i {
+  display: block;
+  height: 100%;
+  background: var(--red);
+}
+
+.incident-choices {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+@keyframes incident-wobble {
+  0%,
+  70%,
+  100% {
+    transform: translateY(0);
+  }
+  80% {
+    transform: translateY(-2px);
+  }
+  90% {
+    transform: translateY(1px);
+  }
+}
+
+.calma .incident-btn {
+  animation: none;
+}

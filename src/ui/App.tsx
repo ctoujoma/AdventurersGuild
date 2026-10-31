@@ -5,6 +5,7 @@ import { haptic, setHaptics } from '../platform/haptics';
 import { audio, type Mood } from '../audio/audio';
 import { catchUp, waitText } from '../core/away';
 import { left, setRealTime } from './when';
+import { IncidentMark } from './IncidentMark';
 import { canClose, canHire, customOf, newGame, reduce, type Action } from '../core/game';
 import { raidRoute } from '../core/assault';
 import { canHireWorker } from '../core/workers';
@@ -213,8 +214,17 @@ export function App() {
     });
   };
   const dispatch = (a: Action): GameState => {
-    const next = reduce(gameRef.current, a);
-    if (next !== gameRef.current) commit(next);
+    const before = gameRef.current;
+    const next = reduce(before, a);
+    if (next !== before) commit(next);
+    // Lo que pasa con los incidentes (empieza uno, se arregla o sale mal) se avisa al momento.
+    const news = next.incidentNews;
+    if (news?.length && news !== before.incidentNews) {
+      const last = news.at(-1)!;
+      toast(news.map((n) => n.t).join(' '));
+      audio.play(last.k === 'good' ? 'cheer' : last.k === 'bad' ? 'thud' : 'creak', 0.6);
+      haptic(last.k === 'bad' ? 'thud' : 'select');
+    }
     return next;
   };
 
@@ -768,7 +778,8 @@ export function App() {
             const d = room ? planDrop(gameRef.current, id, room) : null;
             if (!d?.ok) return;
             for (const a of d.actions) dispatch(a);
-            toast(d.text);
+            // Un incidente arreglado ya se avisa solo (con lo que ha pasado).
+            if (!d.actions.some((a) => a.type === 'incident')) toast(d.text);
             haptic('select');
           }}
         />
@@ -790,6 +801,26 @@ export function App() {
           </span>
         )}
         {bubble && <SpeechBubble bubble={bubble} scene={scene} />}
+        {!passing &&
+          !dawnOpen &&
+          (game.incidents ?? []).map((inc) => (
+            <IncidentMark
+              key={inc.id}
+              game={game}
+              inc={inc}
+              clock={clock}
+              speed={realTime && !canRush ? 1 : settings.pace}
+              scene={scene}
+              onAct={(act) => {
+                if (act.by === 'tocar') audio.play('squeak', 0.5);
+                dispatch({ type: 'incident', id: inc.id, act });
+              }}
+              onAsk={(text, room) => {
+                toast(text);
+                scene.current?.focus(room);
+              }}
+            />
+          ))}
         {/* La nota del tío ya explica lo mismo: el cartel solo sale sin ella. */}
         {hint && !notice && !tip && (
           <div class="hint-toast" role="status">
