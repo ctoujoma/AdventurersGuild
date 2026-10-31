@@ -33,6 +33,8 @@ interface Props {
   onTask?: (task: Task) => void;
   /** Modo prueba: tinte y prenda de la sastrería (la sala vendrá después). */
   onDress?: (d: Dress) => void;
+  /** Cambiarle el nombre (solo a los de casa). */
+  onRename?: (name: string) => void;
 }
 
 /** Modo prueba: el tinte de la ropa y la prenda, para ver cómo quedan. */
@@ -110,8 +112,11 @@ export function HeroCard({
   onUnequip,
   onTask,
   onDress,
+  onRename,
 }: Props) {
   const [open, setOpen] = useState<Open>(null);
+  /** Escribiendo un nombre nuevo. */
+  const [naming, setNaming] = useState(false);
   /** Rasgo (o habilidad de clase) cuya explicación se ve. */
   const [chip, setChip] = useState<string | null>(null);
   const [history, setHistory] = useState(false);
@@ -159,7 +164,37 @@ export function HeroCard({
               label={`Retrato de ${h.name}`}
             />
             <div class="herocard-id">
-              <h3>{h.name}</h3>
+              {naming ? (
+                <form
+                  class="rename"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const v = (e.currentTarget.elements.namedItem('name') as HTMLInputElement)
+                      .value;
+                    if (v.trim()) onRename?.(v);
+                    setNaming(false);
+                  }}
+                >
+                  <input
+                    name="name"
+                    maxLength={24}
+                    defaultValue={h.name}
+                    autoFocus
+                    aria-label="Nombre"
+                  />
+                  <button class="btn btn-gold">Vale</button>
+                </form>
+              ) : onRename && !candidate ? (
+                <button
+                  class="linklike rename-btn"
+                  aria-label={`Cambiar el nombre de ${h.name}`}
+                  onClick={() => setNaming(true)}
+                >
+                  <h3>{h.name}</h3>
+                </button>
+              ) : (
+                <h3>{h.name}</h3>
+              )}
               {h.nick && <span class="nick">{h.nick}</span>}
               <span class="row-sub">
                 {CLASS_NAMES[h.cls][h.sex]} · nivel {h.lvl} · <Icon name="coin" size={10} />

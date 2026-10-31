@@ -5322,3 +5322,31 @@ select.crew-free {
   color: var(--plum);
   background: var(--lemon);
 }
+
+/* Ficha del héroe: tocar el nombre para cambiarlo. */
+.rename-btn {
+  text-align: left;
+  text-decoration: none;
+}
+.rename-btn h3 {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.rename {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.rename input {
+  min-width: 0;
+  flex: 1;
+  font: inherit;
+  padding: 4px 6px;
+  border: 2px solid var(--oak);
+  background: var(--sand);
+}
+/* Tutorial: la nota del tío con su número de lección. */
+.tutorial-count {
+  font-size: var(--t-s);
+  color: var(--text-soft);
+}

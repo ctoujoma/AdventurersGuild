@@ -44,6 +44,8 @@ import { Title } from './Title';
 import { nextTip } from './tips';
 import { canDrag, planDrop, planTask, type Task } from './drop';
 import { UncleNote } from './UncleNote';
+import { TutorialNote } from './TutorialNote';
+import { tutorialOn, tutorialStep } from '../core/tutorial';
 import { GremioPanel } from './panels/GremioPanel';
 import { HeroesPanel, type HeroFilter } from './panels/HeroesPanel';
 import { MailPanel } from './panels/MailPanel';
@@ -75,7 +77,7 @@ interface Bubble {
   key: number;
 }
 
-const freshGame = () => newGame(Date.now().toString(36));
+const freshGame = () => newGame(Date.now().toString(36), { tutorial: true });
 
 /** Bocadillo de texto anclado a un punto de la escena: se mueve con la cámara. */
 function SpeechBubble({ bubble, scene }: { bubble: Bubble; scene: { current: GameScene | null } }) {
@@ -286,7 +288,8 @@ export function App() {
    * ha pasado (`catchUp`) y, si han pasado días, la carta del amanecer lo cuenta.
    */
   const comeBack = (seconds: number) => {
-    if (!realTime || passing) return;
+    // Mientras dura el tutorial, el tiempo no corre ni con la taberna cerrada.
+    if (!realTime || passing || tutorialOn(gameRef.current)) return;
     dispatch({ type: 'tick', to: clockRef.current });
     const away = catchUp(gameRef.current, seconds);
     if (!away.seconds) return;
@@ -571,17 +574,20 @@ export function App() {
           : 'taberna';
   useEffect(() => audio.setMood(mood), [mood]);
 
-  const endDay = () => {
+  /** Cae la noche (o, en el tutorial, se salta el tiempo hasta lo siguiente que pase). */
+  const endDay = (skip?: 'vuelta' | 'pago') => {
     if (passing) return;
-    dispatch({ type: 'tick', to: clockRef.current });
-    if (!canClose(gameRef.current)) return;
+    if (!skip) {
+      dispatch({ type: 'tick', to: clockRef.current });
+      if (!canClose(gameRef.current)) return;
+    }
     setHint(false);
     setPanel(null);
     setCard(null);
     setQuestId(null);
     setBubble(null);
     const before = gameRef.current;
-    const next = dispatch({ type: 'endDay' });
+    const next = dispatch(skip ? { type: 'tutorial', op: skip } : { type: 'endDay' });
     if (next === before) return;
     const party = next.lastRaid?.won || (next.mode === 'libre' && before.mode !== 'libre');
     const sunrise = () => {
@@ -689,12 +695,21 @@ export function App() {
     !works.pick &&
     !works.planning;
   const pendingEvent = calm && !game.over ? (game.event ?? null) : null;
+  // El tutorial guiado va antes que las notas sueltas del tío (y las sustituye mientras dura).
+  const lesson =
+    calm && !pendingEvent && !card && !questId && !reportId && !panel ? tutorialStep(game) : null;
   const tip =
-    calm && !pendingEvent && !card && !questId && !reportId && !panel ? nextTip(game) : null;
+    calm && !pendingEvent && !card && !questId && !reportId && !panel && !tutorialOn(game)
+      ? nextTip(game)
+      : null;
   // La nota del tío mira hacia lo que explica.
   useEffect(() => {
     if (tip?.focus) scene.current?.focus(tip.focus);
   }, [tip?.id]);
+  useEffect(() => {
+    const at = lesson?.focus?.(gameRef.current);
+    if (at) scene.current?.focus(at);
+  }, [lesson?.id]);
 
   // El reloj del día: corre con el juego abierto, también con un panel delante, y se para en
   // los momentos que piden atención (evento, nota, asalto, amanecer…) y con la pestaña oculta.
@@ -703,6 +718,7 @@ export function App() {
     !game.over &&
     !pendingEvent &&
     !tip &&
+    !tutorialOn(game) &&
     !watching &&
     !bossCall &&
     !settingsOpen &&
@@ -977,7 +993,7 @@ export function App() {
             onDusk={() =>
               moveClock(Math.max(clockRef.current, DUSK * DAY_SECONDS), clockRef.current)
             }
-            onEndDay={endDay}
+            onEndDay={() => endDay()}
           />
         )}
         {panel === 'tablon' && (
@@ -1193,6 +1209,7 @@ export function App() {
             onFire={() => fire(cardHero.id)}
             onAnswer={(yes) => dispatch({ type: 'answer', id: cardHero.id, yes })}
             onTask={works.planning ? undefined : (task) => setTask(cardHero.id, task)}
+            onRename={(name) => dispatch({ type: 'renameHero', id: cardHero.id, name })}
             onDress={
               settings.tester
                 ? (dress) => dispatch({ type: 'dress', heroId: cardHero.id, dress })
@@ -1289,6 +1306,18 @@ export function App() {
             audio.play(i === 0 ? 'coin' : 'close');
             if (next.lastChoice) toast(next.lastChoice);
           }}
+        />
+      )}
+      {lesson && (
+        <TutorialNote
+          game={game}
+          step={lesson}
+          onOk={() => {
+            audio.play('close');
+            dispatch({ type: 'tutorial', op: 'ok' });
+          }}
+          onSkipTime={(to) => endDay(to)}
+          onSkipAll={() => dispatch({ type: 'tutorial', op: 'saltar' })}
         />
       )}
       {tip && (
