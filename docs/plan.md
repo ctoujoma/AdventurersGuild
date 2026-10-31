@@ -19,16 +19,18 @@ o está en «Más adelante», no se toca sin preguntar. El detalle de cada idea 
 
 ## Quién hace qué
 
-- **Agente principal** (esta conversación): tiempo, núcleo del bucle, combate y amigos.
+- **Agente principal** (esta conversación): tiempo, núcleo del bucle, tutoriales, combate,
+  talleres y amigos.
 - **Agente de interfaz:** auditoría de trabajadores y tareas (hecha:
   [`encargos/interfaz-trabajadores.md`](encargos/interfaz-trabajadores.md)), y ahora menos
   toques y cartas del amanecer una a una:
-  [`encargos/interfaz-menos-toques.md`](encargos/interfaz-menos-toques.md). Después, la parte
-  visual del tutorial.
+  [`encargos/interfaz-menos-toques.md`](encargos/interfaz-menos-toques.md) (las cartas, junto
+  con revisar cuándo sale la carta). Después, la parte visual de los tutoriales.
 - **Agente de arte:** colores por sala, animaciones y escaleras (hecho:
   [`encargos/arte-colores-animaciones.md`](encargos/arte-colores-animaciones.md)), y ahora
-  fachada por partes y preparar la sastrería:
-  [`encargos/arte-fachada-sastreria.md`](encargos/arte-fachada-sastreria.md).
+  fachada por partes y preparar la sastrería (hecho:
+  [`encargos/arte-fachada-sastreria.md`](encargos/arte-fachada-sastreria.md)). Siguiente:
+  dibujar los tres jefes nuevos (fase 5), y luego la tira del encargo en directo (fase 3).
 
 Para arrancar a cada uno: «Lee `CLAUDE.md`, `docs/plan.md` y `docs/encargos/<encargo>.md`, y
 empieza por el punto 1».
@@ -105,68 +107,116 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
    y tests), `ui/IncidentMark.tsx` (el aviso sobre la sala) y `ui/drop.ts` (arrastrar a quien
    lo arregla). Solo con el juego abierto, desde el día 2 y de uno en uno; lo que quede al caer
    la noche sale mal y va a la carta. Cifras en `balance.ts` (`INCIDENT_*`).
-6. **Revisar el cobro de la deuda** (lo hablado con los agentes de arte e interfaz: Merlo que
-   viene a cobrar, con su animación): cuando esté en `main`, comprobar que encaja con el tiempo
-   que corre solo, los pagos estando fuera (`dueTonight`), los avisos y los objetivos.
+6. **Revisar el cobro de la deuda** con Merlo (ver «Pendiente de revisar»).
 7. **Rumores de la barra** (hecho): con el juego abierto, desde el día 2, un bocadillo dorado
    sobre una mesa del salón unos 15 s. Si se toca a tiempo, sale un encargo marcado «Rumor»
    (mejor paga, botín bueno o legendario, caduca en 2 días); si no, se pierde sin más. Uno a la
    vez. `data/rumors.ts`, `core/rumors.ts`, `ui/RumorMark.tsx`; cifras `RUMOR_*`.
 
-## Fase 2 · Tutorial guiado
+8. **Entrenamiento con tope por nivel** (revisar): hoy el tope de cada atributo lo pone solo
+   el nivel de la sala (5, 7, 9 y 11; `TRAIN_CAP`) y no el del héroe; al subir de nivel, el
+   atributo principal sube 1 pero sin pasar de 10, así que quien ya está entrenado al máximo
+   no gana nada. Propuesta: tope = el menor entre el de la sala y uno por nivel del héroe
+   (por ejemplo 4 + nivel); subir de nivel sube ese tope y el punto de nivel nunca se pierde.
 
-Propuesta (pendiente del visto bueno): un tutorial corto, con pasos que hay que cumplir y la
-cámara acercándose a cada cosa, que acaba con el primer pago a Merlo (día 7). Con los saltos
-de tiempo, unos 10 o 15 minutos.
+## Fase 2 · Tutoriales
+
+### 2a · El primero, hasta el primer pago (decidido)
+
+Pasos que hay que cumplir, la cámara acercándose a cada cosa, el tiempo saltando cuando no
+queda nada que hacer. Acaba con el primer pago a Merlo (día 7); unos 10 o 15 minutos.
 
 1. La carta del tío y el salón (cámara al salón).
 2. El tablón: mandar a los dos héroes ya hechos a un encargo corto a su medida.
-3. La barra: contratar a alguien (y ponerle nombre a un héroe).
-4. Reparar una sala rota (la enfermería) con el dinero de la caja.
+3. La barra: contratar a alguien y ponerle nombre a un héroe.
+4. Reparar la enfermería con el dinero de la caja.
 5. Mover a alguien de sala arrastrándolo (un trabajador a la cocina).
-6. Saltar hasta que vuelva el grupo (botón «Saltar hasta que vuelvan»): informe, oro y el
-   primer objetivo cumplido.
-7. El pergamino de Merlo: saltar al día 7 y pagar. Fin: «La taberna sigue siendo tuya».
+6. «Saltar hasta que vuelvan»: informe, oro y el primer objetivo cumplido.
+7. Entre la vuelta y el día 7:
+   - dar el objeto del botín a un héroe (ficha del héroe);
+   - si alguien vuelve herido, a la cama de la enfermería recién arreglada;
+   - el primer incidente, preparado y fácil (ratas: tocar);
+   - el primer rumor, preparado: tocarlo y mandar al contratado con alguien más;
+   - los objetivos del Gremio (y el Libro).
+8. El pergamino de Merlo: saltar al día 7 y pagar. Fin: «La taberna sigue siendo tuya».
 
-Mientras dura, sin incidentes ni rumores (salen después, con su nota). Lo que aún no toca
+Mientras dura, sin incidentes ni rumores sueltos (solo los preparados). Lo que aún no toca
 (obras, mapa, adornos) con candado y cuándo se abre. A los 8 de fama, el aviso de «La sombra de
-Hondogrís». Se puede saltar entero desde el primer paso.
+Hondogrís». Se puede saltar entero desde el primer paso. Parte de las notas del tío
+(`src/ui/tips.ts`, `UncleNote.tsx`); sus notas de obras se rehacen en el 2b.
 
-Parte de las notas del tío (`src/ui/tips.ts`, `UncleNote.tsx`).
+### 2b · El segundo, las obras (cuando la taberna es tuya)
 
-Pendiente de revisar: **la carta del amanecer** («Amanece sobre…») salía al cerrar cada día.
-Con el tiempo que corre solo, un día pasa cada 5 minutos y la carta interrumpe. Valorar: un
-aviso pequeño por la mañana con lo importante y la carta entera solo al volver tras una
-ausencia, o cuando pasa algo gordo (un pago, un héroe muerto, un rango).
+Al pagar la deuda: construir una sala nueva, moverla, ampliarla, mejorar otra y excavar un
+hueco, con la cámara en cada paso. Sustituye a las notas de obras de ahora (`obras`, `plano`,
+`excavar`, `servicio`).
 
-## Fase 3 · Combate con decisiones
+## Fase 3 · Combate con decisiones (y encargos en directo)
 
-- Formación, táctica por héroe y objeto antes de la pelea; habilidades por clase con recarga
-  y sinergias; una o dos órdenes en directo como mucho.
-- Jefes en los encargos: aviso de «Dirigir» o «Resolver solo»; si no se contesta, se
-  resuelve solo con las tácticas puestas.
+- **El encargo en directo:** en la ficha de un grupo fuera, una tira dibujada con el grupo de
+  ida, haciendo lo suyo (pelea, exploración, escolta…) y de vuelta, que cuente lo que pasa,
+  como en Fallout Shelter. Sobre ella, momentos que piden decisión: un jefe («Entrar a
+  pelear» o «Resolver solo»; si no se contesta, se resuelve solo), y más adelante incursiones
+  («raids») con varios momentos así.
+- **Pelea interactiva:** arrastrar a un héroe sobre un enemigo para elegir a quién ataca (si no,
+  el de siempre por su táctica); formación, táctica y objeto antes; habilidades por clase con
+  recarga; pocas órdenes en directo.
+- **Críticos con gesto:** cuando un golpe puede ser crítico, sale una marca y hay que hacer un
+  gesto (deslizar, tocar a tiempo) para que entre.
+- **Revisar vida y ataque de los enemigos** (bandidos, esbirros y jefes) para que la pelea
+  interactiva tenga sentido y no se resuelva sola.
 - Después, el torneo de la comarca (armas romas, premio de trofeo).
 
-## Fase 4 · Aspecto y pulido (arte, en paralelo desde ya)
+## Fase 4 · Talleres: fabricar objetos
 
-- Colores por sala: temas para telas, alfombras y detalles (de lo primero).
+- **La forja fabrica armas** y, con salas nuevas, el resto: armaduras (armería o un taller de
+  armero), botas y capas (curtidor o la sastrería), amuletos (la capilla o un taller de
+  alquimia).
+- **Recetas:** unas básicas desde el principio; cada una tarda horas de juego y cuesta oro
+  (y quizá materiales del botín).
+- **Recetas que se ganan:** como premio de encargos e historias, o **desmontando** un objeto
+  para intentar sacar su receta (puede salir o perderse el objeto).
+- Encaja con la sastrería (tintes y prendas) y con los premios que se ven.
+
+## Fase 5 · Aspecto y pulido (arte, en paralelo desde ya)
+
+- Colores por sala, fachada por partes y sastrería preparada (hecho).
+- **Dibujar los tres jefes nuevos** (jabalí de ceniza, Reina de la Cripta, dragona de la
+  Corona Blanca): ahora son otros teñidos.
+- **Cartas del amanecer una a una:** las noticias se descubren de una en una, tocando o solas
+  con ritmo, cada una con su sonido (bien, mal, aviso), y lo gordo (un legendario, subir de
+  rango, una muerte) con brillo; con «Saltar» para verlo todo. Va junto con revisar cuándo
+  sale la carta (ver «Pendiente de revisar»).
 - Otra pasada crítica a las animaciones, y escaleras con mejor arte y personajes que suben
   de verdad.
-- Sastrería: tintes y prendas; el color se ve bajo la armadura y la armadura se tiñe.
-- Fachada por partes.
-- Cartas del amanecer una a una y menos toques.
 
-## Fase 5 · Amigos
+## Fase 6 · Amigos
 
 - Visitar tabernas por enlace (solo mirar).
 - Combate por código contra el grupo de un amigo, que pelea con sus tácticas guardadas.
 
-## Fase 6 · Lanzamiento
+## Fase 7 · Lanzamiento
 
 - Traducciones.
-- App de Android: guardado nativo, avisos, anuncios opcionales, cosméticos y donaciones.
+- App de Android: guardado nativo, avisos (también el del pago de Merlo el día antes),
+  anuncios opcionales, cosméticos y donaciones.
 - Sistema de eventos y novedades periódicas (jefes, encargos, fiestas), y cartas selladas.
 - Lista grande de jefes y encargos para ir ampliando.
+
+## Pendiente de revisar
+
+- **El cobro de la deuda con Merlo** (lo hecho con los agentes de arte e interfaz): que encaje
+  con el tiempo que corre solo, los pagos estando fuera (`dueTonight`), los avisos y los
+  objetivos.
+- **La carta del amanecer** («Amanece sobre…»): con un día cada 5 minutos interrumpe. Valorar
+  un aviso pequeño por la mañana con lo importante, y la carta entera (una a una) al volver
+  tras una ausencia o cuando pasa algo gordo (un pago, una muerte, un rango).
+- **El ritmo del tiempo:** un día son 5 minutos abierto y una hora cerrado; si se quiere más
+  calma, alargar `DAY_SECONDS`.
+- **Objetivos:** más variedad («gana un asalto sin heridos», «sirve 40 jarras»).
+- **Al acabar todas las historias** no llegan más: historias que se repitan o una por
+  temporada.
+- **Entrenamiento** (fase 1, punto 8).
 
 ## Más adelante (valorar)
 
