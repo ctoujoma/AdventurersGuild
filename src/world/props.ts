@@ -921,22 +921,6 @@ export function shield(field: string, dark: string, symbol: string): PixelBuffer
   return b.crop(8, 3, 14, 14);
 }
 
-/** Perro guardián tumbado (dos poses de cola). */
-export function dog(tail: boolean): PixelBuffer {
-  return piece(16, 10, (b) => {
-    b.rect(3, 4, 9, 4, P.cocoa);
-    b.rect(11, 2, 4, 4, P.cocoa);
-    b.set(14, 4, P.black);
-    b.set(12, 3, P.black);
-    b.rect(10, 1, 2, 2, P.umber);
-    b.rect(3, 8, 2, 2, P.umber);
-    b.rect(9, 8, 2, 2, P.umber);
-    b.hline(4, 6, 7, P.clay);
-    if (tail) b.line(3, 4, 0, 1, P.cocoa);
-    else b.line(3, 5, 0, 6, P.cocoa);
-  });
-}
-
 export function bush(seed: string, w = 22, h = 12): PixelBuffer {
   return piece(w, h, (b) => {
     const rng = new Rng(seed);

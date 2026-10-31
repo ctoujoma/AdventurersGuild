@@ -20,14 +20,13 @@ const W = R.wood; // [black, plum, bark, rust, oak, clay, tan]
 const DARK: Ramp = [P.black, P.ebony, P.plum, P.bark];
 
 /**
- * Lo que las salas enseñan de la partida además de su nivel: decoración, escudo, trofeos y el
- * perro del salón, y el equipo sin dueño con la sala donde se guarda (ver `gearRoom`).
+ * Lo que las salas enseñan de la partida además de su nivel: decoración, escudo y trofeos, y el
+ * equipo sin dueño con la sala donde se guarda (ver `gearRoom`). (El perro va aparte: `pets.ts`.)
  */
 export interface SalonLook {
   decor: readonly string[];
   crest: { field: string; dark: string; symbol: string };
   trophies: readonly TrophyIcon[];
-  dog: boolean;
   gear: readonly GearView[];
   gearRoom: string | null;
   /** Lo llena que está la cámara del tesoro (0–1, en octavos para no repintar a cada moneda). */
@@ -38,7 +37,6 @@ export const NO_LOOK: SalonLook = {
   decor: [],
   crest: { field: P.wine, dark: P.plum, symbol: 'jarra' },
   trophies: [],
-  dog: false,
   gear: [],
   gearRoom: null,
   vault: 0,

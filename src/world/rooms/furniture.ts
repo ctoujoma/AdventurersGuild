@@ -179,7 +179,6 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
         poi: 'warm',
       });
       add(logPile(), w - 13, WALL - 12);
-      if (look.dog) add(Prop.dog(false), w - 46, FRONT + 6);
       if (decor.includes('tarima')) add(stage(), w - 94, WALL - 2);
       t.push({ img: larder(), x: 84, z: WALL - 8, y: 0, hang: true });
       tables(room, w).forEach(({ x: tx, z }, i) => {

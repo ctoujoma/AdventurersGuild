@@ -36,6 +36,7 @@ import { CANDLE, takeWallActs, type ActId, type PoiKind } from './salas/kit';
 import { FLIGHT_Z, flightArt, goesRight } from './stairs';
 import { dress } from './salas/tintes';
 import { Crowd, type Poi, type Talk } from './crowd';
+import { Pets, type PetId } from './pets';
 import { FLAME_FRAMES, FLAME_H, FLAME_W, flameStrip } from './flame';
 import { faces } from './volume';
 import { RaidShow } from './raid';
@@ -280,6 +281,8 @@ export class RoomScene {
   private look = new Look(this.shared);
   private keep = new Look(this.shared);
   private crowd = new Crowd(this.shared, (x, floor) => this.tintAt(x, floor));
+  /** El gato y el perro del salón. */
+  private pets = new Pets(this.shared, (x, floor) => this.tintAt(x, floor));
   /** Persona señalada con el ratón y la que se ha buscado desde su ficha (un rato). */
   private hoverHero: string | null = null;
   private marker: { id: string; until: number } | null = null;
@@ -406,6 +409,7 @@ export class RoomScene {
     this.topScene.add(new Mesh(sheet, this.keep.screen(this.topTex, true)));
     this.scene.add(this.world);
     this.scene.add(this.crowd.group);
+    this.scene.add(this.pets.group);
     canvas.addEventListener('webglcontextlost', (e) => e.preventDefault());
     this.bindInput();
   }
@@ -517,6 +521,7 @@ export class RoomScene {
       this.shape = shape;
       this.crowd.setLayout(L);
     }
+    this.pets.setLayout(L, !!model.dog);
     this.crowd.setPois(this.poisOf(L));
     this.crowd.setPeople(model.heroes);
     if (this.routePts) this.routePts = this.routePoints(this.routeIds.split(' '));
@@ -650,6 +655,7 @@ export class RoomScene {
     this.look.dispose();
     this.keep.dispose();
     this.crowd.dispose();
+    this.pets.dispose();
     this.skyTex.dispose();
     this.topTex.dispose();
     this.renderer.dispose();
@@ -1164,7 +1170,7 @@ export class RoomScene {
     }
   }
 
-  /** Lo que el salón enseña de la partida: decoración, escudo, trofeos y el perro. */
+  /** Lo que el salón enseña de la partida: decoración, escudo y trofeos. */
   private salonLook(): SalonLook {
     const m = this.model;
     if (!m) return NO_LOOK;
@@ -1172,7 +1178,6 @@ export class RoomScene {
       decor: m.decor,
       crest: m.crest,
       trophies: m.trophies,
-      dog: m.dog,
       gear: m.gear,
       gearRoom: m.building ? gearRoom(m.building) : null,
       vault: vaultStep(m.vault) / 8,
@@ -1581,6 +1586,7 @@ export class RoomScene {
     this.crowd.setNight(this.night && this.nightP() < 1.6 ? 'night' : tod > 0.82 ? 'dusk' : 'day');
     this.crowd.setClock(this.night ? 1 : tod);
     this.crowd.update(dt, this.t);
+    this.pets.update(dt, this.t);
     this.edgePan(dt);
     if (this.marker && this.t > this.marker.until) this.marker = null;
     this.camera.update(dt);
@@ -2022,6 +2028,33 @@ export class RoomScene {
     return this.crowd.hit(v, cssX / camera.zoom, cssY / camera.zoom);
   }
 
+  /** El animal que hay bajo un punto de la pantalla (no mientras se elige sitio para una obra). */
+  private petAt(cssX: number, cssY: number): PetId | null {
+    if (this.targets) return null;
+    const { camera } = this;
+    const v: View = { px: camera.px, py: camera.py, vw: camera.vw, vh: camera.vh };
+    return this.pets.hit(v, cssX / camera.zoom, cssY / camera.zoom);
+  }
+
+  /** Tocar al gato (ronronea con corazones) o al perro (se sienta y ladra). */
+  private pat(id: PetId): void {
+    const head = this.pets.touch(id);
+    if (!head) return;
+    const c = this.camera;
+    const view: View = { px: c.px, py: c.py, vw: c.vw, vh: c.vh };
+    const s = project(view, head.x, head.y, head.z);
+    const x = view.px + s.x;
+    const y = view.py + s.y;
+    if (id === 'gato') {
+      for (let i = 0; i < 4; i++) this.particles.spawn('heart', x - 4 + i * 2, y - 2 - i * 3);
+      this.cb.onSound?.('purr');
+    } else {
+      this.particles.spawn('bark', x - 2, y - 6);
+      this.particles.spawn('bark', x + 2, y - 4, { max: 0.9 });
+      this.cb.onSound?.('bark');
+    }
+  }
+
   private click(cssX: number, cssY: number): void {
     const w = this.camera.toWorld(cssX, cssY);
     this.lastTap = w;
@@ -2029,6 +2062,17 @@ export class RoomScene {
     if (who) {
       const p = this.heroPosition(who);
       this.cb.onHero?.(who, { x: cssX, y: cssY, wx: p?.x ?? w.x, wy: p?.y ?? w.y });
+      return;
+    }
+    const pet = this.petAt(cssX, cssY);
+    if (pet) {
+      this.pat(pet);
+      this.cb.onHotspot?.(`bicho:${pet}`, this.pets.label(pet), {
+        x: cssX,
+        y: cssY,
+        wx: w.x,
+        wy: w.y,
+      });
       return;
     }
     const prop = this.propAt(cssX, cssY);
@@ -2359,6 +2403,14 @@ export class RoomScene {
       if (!prev) {
         const who = this.heroAt(p.x, p.y);
         this.hoverHero = who;
+        const pet = who ? null : this.petAt(p.x, p.y);
+        if (pet) {
+          this.hover = null;
+          this.hoverProp = null;
+          c.style.cursor = 'pointer';
+          this.cb.onHover?.(this.pets.label(pet), p);
+          return;
+        }
         const prop = who ? null : this.propAt(p.x, p.y);
         this.hoverProp = prop;
         if (prop) {
