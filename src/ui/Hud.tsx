@@ -25,11 +25,13 @@ export function Hud({
   onSettings,
   alerts,
   onAlert,
+  quiet,
 }: {
   game: GameState;
   onSettings: () => void;
   alerts: Notice[];
   onAlert: (n: Notice) => void;
+  quiet?: boolean;
 }) {
   const [sound, setSound] = useState(audio.on);
   useEffect(() => audio.subscribe(setSound), []);
@@ -147,7 +149,7 @@ export function Hud({
             )}
           </button>
         )}
-        <AlertBell alerts={alerts} onGo={onAlert} />
+        <AlertBell alerts={alerts} onGo={onAlert} quiet={quiet} />
         <button
           class="btn-icon hud-sound"
           aria-label={sound ? 'Silenciar' : 'Activar sonido'}

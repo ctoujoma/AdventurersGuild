@@ -758,6 +758,7 @@ export function App() {
         onSettings={() => setSettingsOpen(true)}
         alerts={alerts}
         onAlert={goAlert}
+        quiet={passing || dawnOpen || !!bossCall || !!watching || screen !== 'game'}
       />
       <div class="stage">
         <SceneView

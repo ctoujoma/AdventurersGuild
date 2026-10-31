@@ -10,7 +10,16 @@ const PEEK_MS = 3200;
  * La campanita de avisos, arriba. Lleva su número; cuando llega uno nuevo se balancea, suena y
  * asoma el aviso un momento. Tocarla abre la lista; tocar un aviso lleva a donde se arregla.
  */
-export function AlertBell({ alerts, onGo }: { alerts: Notice[]; onGo: (n: Notice) => void }) {
+export function AlertBell({
+  alerts,
+  onGo,
+  quiet,
+}: {
+  alerts: Notice[];
+  onGo: (n: Notice) => void;
+  /** Hay algo delante (la noche, el cobro, la carta): lo nuevo espera a que se cierre. */
+  quiet?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [peek, setPeek] = useState<Notice | null>(null);
   /** Sube cada vez que llega algo nuevo: reinicia la animación de la campana. */
@@ -23,13 +32,14 @@ export function AlertBell({ alerts, onGo }: { alerts: Notice[]; onGo: (n: Notice
       seen.current = new Set(alerts.map((a) => a.id));
       return;
     }
+    if (quiet) return;
     const fresh = alerts.filter((a) => !seen.current!.has(a.id));
     seen.current = new Set(alerts.map((a) => a.id));
     if (!fresh.length) return;
     setRing((r) => r + 1);
     audio.play('bell', fresh.some((a) => a.k === 'bad') ? 1 : 0.7);
     if (!open) setPeek(fresh[0]!);
-  }, [ids]);
+  }, [ids, quiet]);
   useEffect(() => {
     if (!peek) return;
     const t = setTimeout(() => setPeek(null), PEEK_MS);
