@@ -3540,6 +3540,20 @@ button.trait[aria-pressed='true'] {
 .room-swatch.house {
   background: repeating-linear-gradient(135deg, #e4a672 0 5px, #945a3c 5px 10px);
 }
+.look-parts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.look-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.look-check {
+  font-size: var(--t-m);
+}
 .tav-symbols {
   display: flex;
   gap: 6px;

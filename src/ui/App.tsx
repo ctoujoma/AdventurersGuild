@@ -1054,6 +1054,7 @@ export function App() {
                 audio.play(on ? 'build' : 'close');
                 if (on) toast(`${DECOR[id].name}: ya luce en el salón.`);
               }}
+              onLook={(patch) => dispatch({ type: 'facadeLook', patch })}
               onFacade={(id) => {
                 dispatch({ type: 'facade', id });
                 audio.play('build');

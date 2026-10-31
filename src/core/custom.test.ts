@@ -43,6 +43,17 @@ describe('tu taberna', () => {
     expect(s.gold).toBe(newGame('tintes').gold);
   });
 
+  it('la fachada se elige por partes y solo con piezas que existen', () => {
+    let s = newGame('fachada');
+    expect(customOf(s).look).toBeUndefined();
+    s = reduce(s, { type: 'facadeLook', patch: { roof: 'pizarra' } });
+    s = reduce(s, { type: 'facadeLook', patch: { walls: 'piedra', boxes: true } });
+    expect(customOf(s).look).toEqual({ roof: 'pizarra', walls: 'piedra', boxes: true });
+    expect(reduce(s, { type: 'facadeLook', patch: { roof: 'oro' as never } })).toBe(s);
+    expect(reduce(s, { type: 'facadeLook', patch: { sign: 'neon' as never } })).toBe(s);
+    expect(s.gold).toBe(newGame('fachada').gold);
+  });
+
   it('el lacre lleva la inicial de la primera palabra que no es artículo', () => {
     expect(sealInitial('El Jarro Partido')).toBe('J');
     expect(sealInitial('la oca dorada')).toBe('O');
