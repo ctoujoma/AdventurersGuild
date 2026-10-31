@@ -54,6 +54,17 @@ describe('tu taberna', () => {
     expect(s.gold).toBe(newGame('fachada').gold);
   });
 
+  it('la sastrería guarda el tinte y la prenda de un héroe, solo con lo que existe', () => {
+    let s = newGame('sastre');
+    const h = s.heroes[0]!;
+    s = reduce(s, { type: 'dress', heroId: h.id, dress: { dye: 'mar', garment: 'capa' } });
+    expect(s.heroes[0]!.dress).toEqual({ dye: 'mar', garment: 'capa' });
+    expect(reduce(s, { type: 'dress', heroId: h.id, dress: { dye: 'oro' as never } })).toBe(s);
+    expect(reduce(s, { type: 'dress', heroId: 'nadie', dress: { dye: 'mar' } })).toBe(s);
+    s = reduce(s, { type: 'dress', heroId: h.id, dress: {} });
+    expect(s.heroes[0]!.dress).toEqual({});
+  });
+
   it('el lacre lleva la inicial de la primera palabra que no es artículo', () => {
     expect(sealInitial('El Jarro Partido')).toBe('J');
     expect(sealInitial('la oca dorada')).toBe('O');

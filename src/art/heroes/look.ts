@@ -1,3 +1,4 @@
+import type { GarmentId, TintId } from '../../data/custom';
 import type { GearMark } from './gear';
 import { Rng } from '../../core/rng';
 import { EYES, HAIR, SKIN } from '../palette';
@@ -36,6 +37,9 @@ export interface HeroLook {
   mouth: Mouth;
   freckles: boolean;
   scar: boolean;
+  /** De la sastrería: tinte de la ropa y prenda encima del traje. */
+  dye?: TintId;
+  garment?: GarmentId;
 }
 
 /** Marcas que dependen del estado, no del aspecto. */

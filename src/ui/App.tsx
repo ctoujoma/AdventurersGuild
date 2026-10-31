@@ -1126,6 +1126,11 @@ export function App() {
             onFire={() => fire(cardHero.id)}
             onAnswer={(yes) => dispatch({ type: 'answer', id: cardHero.id, yes })}
             onTask={works.planning ? undefined : (task) => setTask(cardHero.id, task)}
+            onDress={
+              settings.tester
+                ? (dress) => dispatch({ type: 'dress', heroId: cardHero.id, dress })
+                : undefined
+            }
             onEquip={(itemId) => {
               dispatch({ type: 'equip', heroId: cardHero.id, itemId });
               audio.play('select');

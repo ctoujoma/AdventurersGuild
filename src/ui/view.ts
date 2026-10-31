@@ -21,7 +21,8 @@ export function lookOf(h: Hero): HeroLook {
     l = generateLook(h.seed, h.cls, h.sex);
     looks.set(h.seed, l);
   }
-  return l;
+  // Lo de la sastrería, encima (sin guardarlo en la caché: cambia).
+  return h.dress?.dye || h.dress?.garment ? { ...l, ...h.dress } : l;
 }
 
 /** Los trabajadores visten de taberna (el mozo, sin gorro; el bardo, con gorra). */

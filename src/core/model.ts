@@ -8,6 +8,7 @@ import type {
   CrestColor,
   CrestSymbol,
   DecorId,
+  Dress,
   FacadeId,
   FacadeLook,
   StaffId,
@@ -27,6 +28,8 @@ export interface Hero {
   id: string;
   /** Semilla del aspecto (retrato y sprite). */
   seed: string;
+  /** Tinte y prenda de la sastrería (solo se ven). */
+  dress?: Dress;
   name: string;
   nick?: string;
   sex: Sex;
