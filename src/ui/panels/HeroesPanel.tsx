@@ -10,7 +10,7 @@ import { help } from '../HoldHelp';
 import { Icon } from '../icons';
 import { Portrait } from '../Portrait';
 import { Tabs } from '../Tabs';
-import { lookOf, marksOf } from '../view';
+import { lookOf, marksOf, heroFrame } from '../view';
 
 export type HeroFilter = 'todos' | 'candidatos' | 'trabajadores';
 
@@ -66,7 +66,13 @@ export function HeroesPanel({
           aria-label={`${h.name}, ${CLASS_NAMES[h.cls][h.sex]} de nivel ${h.lvl}. ${doing}${flag ? `. ${flag.text}` : ''}. Ver ficha`}
           onClick={() => onOpen(h.id)}
         >
-          <Portrait look={lookOf(h)} marks={marksOf(h)} scale={1} alive={false} />
+          <Portrait
+            look={lookOf(h)}
+            marks={marksOf(h)}
+            frame={heroFrame(h)}
+            scale={1}
+            alive={false}
+          />
           <span class="row-info" aria-hidden="true">
             <b>
               {h.name} {h.nick && <span class="nick">{h.nick}</span>}

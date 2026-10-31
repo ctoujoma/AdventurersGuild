@@ -10,7 +10,7 @@ import { help } from '../HoldHelp';
 import { Icon } from '../icons';
 import { Portrait } from '../Portrait';
 import { Tabs } from '../Tabs';
-import { lookOf, marksOf, memberOf } from '../view';
+import { lookOf, marksOf, memberOf, heroFrame } from '../view';
 
 export type ArconTab = 'equipo' | 'tesoros' | 'trofeos';
 
@@ -141,7 +141,13 @@ export function ArconPanel({
                             setGiving(null);
                           }}
                         >
-                          <Portrait look={lookOf(h)} marks={marksOf(h)} scale={1} alive={false} />
+                          <Portrait
+                            look={lookOf(h)}
+                            marks={marksOf(h)}
+                            frame={heroFrame(h)}
+                            scale={1}
+                            alive={false}
+                          />
                           <span class="pick-name" aria-hidden="true">
                             {h.name.split(' ')[0]}
                           </span>

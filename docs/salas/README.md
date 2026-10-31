@@ -160,6 +160,15 @@ La lista completa de pendientes e ideas (bucle, monetización, amigos, torneos, 
   `climb` en `crowd.ts`): un impulso rápido y un momento quieto, alternando la pierna, y
   justo delante del tramo (`CLIMB_Z`). Las escaleras por tramos («que solo ocupen sitio donde
   llegan») siguen descartadas.
+- **Fachada por partes:** en Adornos › Fachada se elige tejado (teja roja, pizarra, paja,
+  teja verde, tablillas), paredes (tablas, entramado, piedra), rótulo (tablero, de hierro que
+  sale de la pared o pintado en el hastial más ancho) y jardineras bajo los ventanucos. Se
+  guarda en `custom.look` (`FacadeLook`, acción `facadeLook`); solo se ve, los adornos que
+  atraen gente siguen siendo `FACADE`. Los materiales están en `rooms/fachada.ts` (`roofAt`,
+  `wallFill`) y se usan en las vertientes (`roofTiles`), los hastiales y el muro del corte
+  (`facade`) y los lados (`outerSide`). Sin elegir, todo sale como antes. Encima del hogar del
+  salón y de la cocina hay una chimenea con humo (`chimneys`, `puffs` en `RoomScene.ts`; más
+  seguido de noche). Capturas: `tools/shots/fachada.mjs`.
 - Trabajar, charlar o calentarse van con los pies quietos (`fightSprites(…, planted)`): las
   posturas de pelea abren las piernas y, al alternarlas, parecía que andaban.
 

@@ -137,6 +137,40 @@ export const FACADE: Record<
     appeal: 3,
   },
 };
+/**
+ * El aspecto de la fachada por partes (solo se ve; los adornos que atraen gente son `FACADE`).
+ * Sin elegir, lo de siempre: teja roja, tablas y el tablero colgado.
+ */
+export type RoofId = 'teja' | 'pizarra' | 'paja' | 'verde' | 'tablilla';
+export type WallId = 'tablas' | 'entramado' | 'piedra';
+export type SignId = 'tablero' | 'hierro' | 'pintado';
+
+export interface FacadeLook {
+  roof?: RoofId;
+  walls?: WallId;
+  sign?: SignId;
+  /** Jardineras con flores bajo los ventanucos de los hastiales. */
+  boxes?: boolean;
+}
+
+export const ROOFS: Record<RoofId, string> = {
+  teja: 'Teja roja',
+  pizarra: 'Pizarra',
+  paja: 'Paja',
+  verde: 'Teja verde',
+  tablilla: 'Tablillas',
+};
+export const WALLS: Record<WallId, string> = {
+  tablas: 'Tablas',
+  entramado: 'Entramado',
+  piedra: 'Piedra',
+};
+export const SIGNS: Record<SignId, string> = {
+  tablero: 'Tablero',
+  hierro: 'De hierro',
+  pintado: 'Pintado',
+};
+
 /** El cuervo mensajero lleva la fama del gremio a otros pueblos. */
 export const RAVEN_PRICE = 80;
 export const RAVEN_EVERY = 5;

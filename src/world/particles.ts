@@ -7,6 +7,8 @@ export type PKind =
   | 'ember'
   | 'spark'
   | 'smoke'
+  /** Humo de chimenea: una bocanada que crece, sube y se la lleva el viento. */
+  | 'chimney'
   | 'steam'
   | 'dust'
   | 'firefly'
@@ -87,6 +89,10 @@ export class Particles {
         case 'smoke':
           p.vx += 3 * dt;
           break;
+        case 'chimney':
+          p.vx += 4 * dt;
+          p.vy *= 1 - 0.15 * dt;
+          break;
         case 'leaf':
           p.vx = Math.sin(t * 2 + p.seed) * 10;
           break;
@@ -145,6 +151,15 @@ export class Particles {
         case 'steam':
           if (fade(x, y)) px(ctx, x, y, P.mist);
           break;
+        case 'chimney': {
+          // Crece al subir y se deshace en tramado; clara al salir, gris al irse.
+          const r = 1.5 + (1 - k) * 4;
+          for (let j = -Math.ceil(r); j <= Math.ceil(r); j++)
+            for (let i = -Math.ceil(r); i <= Math.ceil(r); i++)
+              if (i * i + j * j <= r * r && fade(x + i, y + j))
+                px(ctx, x + i, y + j, k > 0.7 ? P.mist : k > 0.35 ? P.fog : P.steel);
+          break;
+        }
         case 'dust':
           if ((Math.floor(t * 2 + p.seed) % 3 !== 0 || k > 0.5) && fade(x, y))
             px(ctx, x, y, P.mist);
@@ -203,6 +218,7 @@ const defaults: Record<PKind, { life: number; vx: number; vy: number }> = {
   ember: { life: 1.4, vx: 6, vy: -22 },
   spark: { life: 0.8, vx: 40, vy: -60 },
   smoke: { life: 4, vx: 2, vy: -9 },
+  chimney: { life: 5, vx: 1.5, vy: -11 },
   steam: { life: 1.6, vx: 2, vy: -8 },
   dust: { life: 9, vx: 1, vy: 1.2 },
   firefly: { life: 9999, vx: 0, vy: 0 },

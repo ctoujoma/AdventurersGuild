@@ -820,54 +820,105 @@ export function crestBoard(field: string, dark: string, symbol: string): PixelBu
     b.rect(0, 0, 30, 20, W[4]!);
     b.rect(1, 1, 28, 18, W[3]!);
     b.hline(1, 1, 28, W[5]!);
-    // Escudo.
-    b.rect(8, 3, 14, 11, dark);
-    b.rect(9, 3, 12, 11, field);
-    b.rect(10, 14, 10, 2, field);
-    b.rect(12, 16, 6, 1, field);
-    b.hline(9, 3, 12, P.gold);
-    const s = P.sand;
-    switch (symbol) {
-      case 'jarra':
-        b.rect(12, 6, 5, 6, s);
-        b.rect(17, 7, 2, 1, s);
-        b.rect(18, 8, 1, 2, s);
-        b.line(14, 6, 15, 9, dark);
-        break;
-      case 'espada':
-        b.vline(15, 4, 9, P.white);
-        b.hline(12, 11, 7, P.gold);
-        b.vline(15, 12, 3, s);
-        break;
-      case 'llave':
-        b.ellipse(15, 7, 2.5, 2.5, s);
-        b.set(15, 7, field);
-        b.vline(15, 9, 6, s);
-        b.hline(15, 12, 3, s);
-        b.hline(15, 14, 2, s);
-        break;
-      case 'estrella':
-        b.vline(15, 4, 11, P.lemon);
-        b.hline(10, 9, 11, P.lemon);
-        b.line(12, 6, 18, 12, P.gold);
-        b.line(18, 6, 12, 12, P.gold);
-        break;
-      case 'dragon':
-        b.rect(12, 8, 7, 4, s);
-        b.rect(17, 6, 3, 3, s);
-        b.set(19, 7, dark);
-        b.line(11, 7, 14, 5, s);
-        b.line(12, 12, 11, 14, s);
-        b.line(17, 12, 18, 14, s);
-        break;
-      case 'luna':
-        b.ellipse(15, 9, 4.5, 4.5, s);
-        b.ellipse(17, 8, 3.5, 3.5, field);
-        break;
-    }
+    b.blit(shield(field, dark, symbol), 8, 3);
     b.rect(4, 2, 2, 2, P.gold);
     b.rect(24, 2, 2, 2, P.gold);
   });
+}
+
+/**
+ * Rótulo de hierro: un brazo de forja con su voluta, que sale de la pared (a la derecha), y el
+ * escudo en una tabla colgada de dos cadenas.
+ */
+export function ironSign(field: string, dark: string, symbol: string): PixelBuffer {
+  return piece(34, 32, (b) => {
+    // El brazo, con su arandela en la pared y la voluta de debajo.
+    b.hline(1, 2, 33, P.slate);
+    b.hline(1, 3, 33, P.black);
+    b.rect(31, 0, 3, 7, P.slate);
+    b.set(32, 1, P.fog);
+    b.line(30, 4, 22, 10, P.slate);
+    b.ellipse(19, 9, 3, 2, P.slate);
+    b.ellipse(19, 9, 1.5, 1, P.black);
+    b.set(1, 1, P.fog);
+    // Cadenas.
+    for (const x of [6, 26]) for (let y = 4; y < 10; y++) b.set(x, y, y % 2 ? P.fog : P.slate);
+    // La tabla con el escudo, de borde dorado y con la punta de abajo en pico.
+    b.rect(3, 10, 27, 18, W[3]!);
+    b.rect(4, 11, 25, 16, W[2]!);
+    b.hline(3, 10, 27, P.gold);
+    b.hline(3, 27, 27, P.gold);
+    b.vline(3, 10, 18, P.gold);
+    b.vline(29, 10, 18, P.gold);
+    for (let k = 0; k < 4; k++) b.hline(9 + k * 2, 28 + k, 15 - k * 4, P.gold);
+    b.blit(shield(field, dark, symbol), 10, 12);
+  });
+}
+
+/** Chimenea de piedra sobre el tejado, con su sombrerete. */
+export function chimneyStack(h = 26): PixelBuffer {
+  return piece(12, h, (b) => {
+    for (let y = 3; y < h; y++)
+      for (let x = 1; x < 11; x++) {
+        const row = Math.floor((y - 3) / 3);
+        const joint = y % 3 === 2 || (x + (row % 2 ? 2 : 0)) % 5 === 0;
+        b.set(x, y, joint ? P.navy : x < 3 ? P.fog : x > 8 ? P.slate : P.steel);
+      }
+    b.rect(0, 1, 12, 2, P.slate);
+    b.hline(0, 1, 12, P.fog);
+    b.rect(2, 0, 8, 1, P.black);
+  });
+}
+
+/** El escudo del gremio solo (14 × 14, sin contorno): campo de color, filete dorado y símbolo. */
+export function shield(field: string, dark: string, symbol: string): PixelBuffer {
+  // (Se dibuja en las medidas del letrero y se recorta.)
+  const b = new PixelBuffer(30, 20);
+  b.rect(8, 3, 14, 11, dark);
+  b.rect(9, 3, 12, 11, field);
+  b.rect(10, 14, 10, 2, field);
+  b.rect(12, 16, 6, 1, field);
+  b.hline(9, 3, 12, P.gold);
+  const s = P.sand;
+  switch (symbol) {
+    case 'jarra':
+      b.rect(12, 6, 5, 6, s);
+      b.rect(17, 7, 2, 1, s);
+      b.rect(18, 8, 1, 2, s);
+      b.line(14, 6, 15, 9, dark);
+      break;
+    case 'espada':
+      b.vline(15, 4, 9, P.white);
+      b.hline(12, 11, 7, P.gold);
+      b.vline(15, 12, 3, s);
+      break;
+    case 'llave':
+      b.ellipse(15, 7, 2.5, 2.5, s);
+      b.set(15, 7, field);
+      b.vline(15, 9, 6, s);
+      b.hline(15, 12, 3, s);
+      b.hline(15, 14, 2, s);
+      break;
+    case 'estrella':
+      b.vline(15, 4, 11, P.lemon);
+      b.hline(10, 9, 11, P.lemon);
+      b.line(12, 6, 18, 12, P.gold);
+      b.line(18, 6, 12, 12, P.gold);
+      break;
+    case 'dragon':
+      b.rect(12, 8, 7, 4, s);
+      b.rect(17, 6, 3, 3, s);
+      b.set(19, 7, dark);
+      b.line(11, 7, 14, 5, s);
+      b.line(12, 12, 11, 14, s);
+      b.line(17, 12, 18, 14, s);
+      break;
+    case 'luna':
+      b.ellipse(15, 9, 4.5, 4.5, s);
+      b.ellipse(17, 8, 3.5, 3.5, field);
+      break;
+  }
+  return b.crop(8, 3, 14, 14);
 }
 
 /** Perro guardián tumbado (dos poses de cola). */

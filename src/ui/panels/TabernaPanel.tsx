@@ -7,6 +7,9 @@ import {
   CREST_SYMBOLS,
   DECOR,
   FACADE,
+  ROOFS,
+  SIGNS,
+  WALLS,
   DOG_PRICE,
   FEAST_PRICE,
   RAVEN_PRICE,
@@ -15,6 +18,10 @@ import {
   type CrestColor,
   type DecorId,
   type FacadeId,
+  type FacadeLook,
+  type RoofId,
+  type SignId,
+  type WallId,
   type CrestSymbol,
 } from '../../data/custom';
 import { crestBoard } from '../../world/props';
@@ -29,8 +36,76 @@ interface Props {
   onDog: () => void;
   onDecor: (id: DecorId, on: boolean) => void;
   onFacade: (id: FacadeId) => void;
+  /** El aspecto de la fachada por partes (tejado, paredes, rótulo, jardineras). */
+  onLook: (patch: FacadeLook) => void;
   onRaven: () => void;
   onFeast: () => void;
+}
+
+/** Una fila de opciones (una sola elegida), con su título. */
+function Choice<K extends string>({
+  title,
+  names,
+  value,
+  onPick,
+}: {
+  title: string;
+  names: Record<K, string>;
+  value: K;
+  onPick: (k: K) => void;
+}) {
+  return (
+    <div class="look-row">
+      <span class="row-sub">{title}</span>
+      <div class="tav-symbols" role="radiogroup" aria-label={title}>
+        {(Object.keys(names) as K[]).map((k) => (
+          <button
+            key={k}
+            role="radio"
+            aria-checked={value === k}
+            class={`btn ${value === k ? 'btn-gold' : 'btn-wood'}`}
+            onClick={() => onPick(k)}
+          >
+            {names[k]}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** El aspecto de la fachada, por partes: solo se ve, no atrae a nadie. */
+function FacadeParts({ look, onLook }: { look: FacadeLook; onLook: (p: FacadeLook) => void }) {
+  return (
+    <div class="look-parts">
+      <Choice<RoofId>
+        title="Tejado"
+        names={ROOFS}
+        value={look.roof ?? 'teja'}
+        onPick={(roof) => onLook({ roof })}
+      />
+      <Choice<WallId>
+        title="Paredes"
+        names={WALLS}
+        value={look.walls ?? 'tablas'}
+        onPick={(walls) => onLook({ walls })}
+      />
+      <Choice<SignId>
+        title="Rótulo"
+        names={SIGNS}
+        value={look.sign ?? 'tablero'}
+        onPick={(sign) => onLook({ sign })}
+      />
+      <label class="look-check">
+        <input
+          type="checkbox"
+          checked={!!look.boxes}
+          onChange={(e) => onLook({ boxes: (e.target as HTMLInputElement).checked })}
+        />{' '}
+        Jardineras en los ventanucos
+      </label>
+    </div>
+  );
 }
 
 type AdornoTab = 'letrero' | 'salon' | 'fachada' | 'animales';
@@ -72,6 +147,7 @@ export function TabernaPanel({
   onDog,
   onDecor,
   onFacade,
+  onLook,
   onRaven,
   onFeast,
 }: Props) {
@@ -225,6 +301,7 @@ export function TabernaPanel({
         </>
       )}
 
+      {tab === 'fachada' && <FacadeParts look={c.look ?? {}} onLook={onLook} />}
       {tab === 'fachada' && (
         <div class="adornos">
           {(Object.keys(FACADE) as FacadeId[]).map((k) => {

@@ -39,7 +39,7 @@ import { Crowd, type Poi, type Talk } from './crowd';
 import { FLAME_FRAMES, FLAME_H, FLAME_W, flameStrip } from './flame';
 import { faces } from './volume';
 import { RaidShow } from './raid';
-import { NO_LOOK, type SalonLook } from './salon';
+import { HEARTH_RIGHT, NO_LOOK, type SalonLook } from './salon';
 import { FEW_LIGHTS, Look, MAX_LIGHTS, mesh, quad, sharedUniforms, type Corners } from './gl';
 import { route, type Place } from './people';
 import {
@@ -58,6 +58,7 @@ import {
   focusPoint,
   interior,
   roofLift,
+  roofRuns,
   roomsLayout,
   sidesOf,
   type Rect,
@@ -107,6 +108,8 @@ const RAISE = 2.4;
 
 type Tint = readonly [number, number, number];
 /** Luz de fondo de cada sitio (0–1 por canal): la noche sin faroles. */
+/** Profundidad de las chimeneas del tejado: justo detrás del hastial (que tapa su pie). */
+const CHIMNEY_Z = 8;
 const OUTDOOR: Tint = [0.3, 0.28, 0.42];
 const ROOM_LIT: Tint = [0.44, 0.38, 0.46];
 const ROOM_DEEP: Tint = [0.42, 0.37, 0.52];
@@ -282,6 +285,9 @@ export class RoomScene {
   private marker: { id: string; until: number } | null = null;
   private world = new Group();
   private lamps: Lamp[] = [];
+  /** Bocas de las chimeneas del tejado (en el mundo 2D), por donde sale el humo. */
+  private smokeAt: { x: number; y: number }[] = [];
+  private smokeT = 0;
   private towerRect: Rect | null = null;
   private flames: Mesh[] = [];
   /** La tira de fotogramas de las llamas (la misma para todas). */
@@ -485,6 +491,7 @@ export class RoomScene {
       b,
       model.crest,
       model.facade,
+      model.look,
       model.decor,
       model.tints,
       model.trophies,
@@ -830,7 +837,8 @@ export class RoomScene {
     const g = this.world;
 
     // El plano de corte, en dos: lo de encima del suelo, a la luz del día, y la tierra.
-    const F = facade(L);
+    const look = model.look ?? {};
+    const F = facade(L, look, model.crest);
     const fx1 = F.x + F.buf.w;
     const fy1 = F.y + F.buf.h;
     const cut = GROUND - F.y;
@@ -956,13 +964,13 @@ export class RoomScene {
       const opts = { ambient: OUTDOOR, sun: 1, dither: 0 };
       this.plane(
         g,
-        roofTiles(len, `tejado${run.x0}`),
+        roofTiles(len, `tejado${run.x0}`, look.roof),
         [at(run.x0, eave, d), at(run.x0, eave, 0), at(mid, ridge, 0), at(mid, ridge, d)],
         opts,
       );
       this.plane(
         g,
-        roofTiles(len, `tejado${run.x1}`),
+        roofTiles(len, `tejado${run.x1}`, look.roof),
         [at(run.x1, eave, 0), at(run.x1, eave, d), at(mid, ridge, d), at(mid, ridge, 0)],
         opts,
       );
@@ -1308,7 +1316,14 @@ export class RoomScene {
         const bottom = floorY(f) + (i === 0 && o.hang?.[side] ? SLAB : 0);
         const withDoor = !doorDone && i === 0;
         if (withDoor) doorDone = true;
-        const tex = outerSide(themeOf(f), PITCH, withDoor, `${seed}f${side}${i}`, o.door);
+        const tex = outerSide(
+          themeOf(f),
+          PITCH,
+          withDoor,
+          `${seed}f${side}${i}`,
+          o.door,
+          this.model?.look?.walls,
+        );
         if (side === 'left') {
           const x = rect.x - WALL;
           this.plane(
@@ -1332,6 +1347,7 @@ export class RoomScene {
   /** Lo de fuera: pozo, muñecos, establo, empalizada, el escudo y el farol de la puerta. */
   private yard(L: RoomsLayout, model: SceneModel): void {
     const g = this.world;
+    this.chimneys(L);
     const y = L.b.yard;
     const px = L.patio.x;
     const put = (img: PixelBuffer, x: number, depth: number, up = 0) =>
@@ -1365,7 +1381,12 @@ export class RoomScene {
     const door = L.rooms.find((x) => x.room.type === 'recibidor');
     if (door) {
       const dx = door.rect.x - WALL;
-      put(Prop.crestBoard(model.crest.field, model.crest.dark, model.crest.symbol), dx - 22, 6, 54);
+      // El rótulo: el tablero colgado de siempre, el de hierro que sale de la pared o, pintado
+      // en el hastial (ver `facade`), ninguno aquí.
+      const { field, dark, symbol } = model.crest;
+      const sign = model.look?.sign ?? 'tablero';
+      if (sign === 'tablero') put(Prop.crestBoard(field, dark, symbol), dx - 22, 6, 54);
+      else if (sign === 'hierro') put(Prop.ironSign(field, dark, symbol), dx - 17, 2, 50);
       put(Prop.lanternBody(), dx - 8, 4, 46);
       // La fachada: lo que se ve desde el camino.
       const facade = model.facade ?? [];
@@ -1562,7 +1583,41 @@ export class RoomScene {
     this.edgePan(dt);
     if (this.marker && this.t > this.marker.until) this.marker = null;
     this.camera.update(dt);
+    this.puffs(dt);
     this.particles.update(dt, this.t);
+  }
+
+  /**
+   * Chimeneas sobre el tejado: encima del hogar del salón y de la cocina (si están en uso), cada
+   * una en la vertiente que tenga encima.
+   */
+  private chimneys(L: RoomsLayout): void {
+    this.smokeAt = [];
+    const runs = roofRuns(L);
+    for (const { room, rect } of L.rooms) {
+      if (room.level < 1 || (room.type !== 'salon' && room.type !== 'cocina')) continue;
+      const r = interior(rect);
+      const x = room.type === 'salon' ? r.x + r.w - HEARTH_RIGHT : r.x + r.w * 0.3;
+      const run = runs.find((u) => x > u.x0 + 8 && x < u.x1 - 8);
+      if (!run) continue;
+      const roof = run.base - roofLift(runs, x, run.base);
+      const img = Prop.chimneyStack();
+      const k = scaleAt(CHIMNEY_Z);
+      // Hundida un poco en el tejado: lo de debajo lo tapa el hastial.
+      const base = roof + 10;
+      this.figure(this.world, img, x, base, CHIMNEY_Z, OUTDOOR, 1);
+      this.smokeAt.push({ x, y: base - img.h / k });
+    }
+  }
+
+  /** Humo de las chimeneas: más seguido de noche, cuando se enciende más el fuego. */
+  private puffs(dt: number): void {
+    if (!this.smokeAt.length) return;
+    this.smokeT -= dt;
+    if (this.smokeT > 0) return;
+    this.smokeT = (this.night ? 0.12 : 0.25) * (0.7 + Math.random() * 0.6);
+    for (const p of this.smokeAt)
+      this.particles.spawn('chimney', p.x + (Math.random() - 0.5) * 3, p.y - 1);
   }
 
   /** El asalto: empieza a oscuras, la cámara sigue a los bandidos y, al acabar, sigue la noche. */

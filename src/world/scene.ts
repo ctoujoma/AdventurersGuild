@@ -1,6 +1,6 @@
 import type { HeroLook, HeroMarks } from '../art/heroes/look';
 import type { Building, ItemIcon, Rarity, TrophyIcon } from '../core/model';
-import type { TintId } from '../data/custom';
+import type { FacadeLook, TintId } from '../data/custom';
 import type { BattleSound } from './battle';
 
 /**
@@ -47,6 +47,8 @@ export interface SceneModel {
   /** Decoración del salón, adornos de la fachada y visitantes de hoy. */
   decor: string[];
   facade?: string[];
+  /** Tejado, paredes, rótulo y jardineras de la fachada. */
+  look?: FacadeLook;
   /** Tema de color de las telas de cada sala (por id). */
   tints?: Record<string, TintId>;
   visitors?: SceneVisitors;
