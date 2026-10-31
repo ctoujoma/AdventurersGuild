@@ -429,7 +429,7 @@ const BASE_MOVES: Record<BossBase, Move[]> = {
   ],
 };
 
-/** Los jefes teñidos pelean como el suyo de base. */
+/** Los jefes de las historias nuevas pelean como el suyo de base (con su propio dibujo). */
 const BOSS_MOVES = Object.fromEntries(
   (Object.keys(BOSSES) as BossKind[]).map((k) => [k, BASE_MOVES[bossBase(k)]]),
 ) as Record<BossKind, Move[]>;
