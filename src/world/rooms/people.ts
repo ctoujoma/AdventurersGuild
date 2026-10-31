@@ -291,6 +291,12 @@ export function workGoal(
       const t = tables[Math.floor(rnd() * tables.length)]!;
       return { place: { x: t.x + (rnd() < 0.5 ? -9 : 9), floor }, pose: 'stand' };
     }
+    // Si no, a limpiar la barra.
+    const bar = S.bar.filter((b) => b.floor === floor);
+    if (bar.length && rnd() < 0.6) {
+      const b = bar[Math.floor(rnd() * bar.length)]!;
+      return { place: { x: b.x + (rnd() - 0.5) * 6, floor }, pose: 'stand' };
+    }
   }
   const x = j.x0 + (((k % Math.max(1, n)) + 0.5) * (j.x1 - j.x0)) / Math.max(1, n);
   return { place: { x: x + (rnd() - 0.5) * 8, floor }, pose: 'stand' };

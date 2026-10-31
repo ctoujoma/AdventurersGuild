@@ -161,6 +161,25 @@ export const SIDE_LEGS = {
     '....OO.oooo.....',
     '.......OOOO.....',
   ],
+  /**
+   * Tras apoyar: el peso en la pierna de delante, que ya ha quedado algo más atrás, y el
+   * talón de la de atrás levantado.
+   */
+  down: [
+    '......pppp......',
+    '.....PP.pp......',
+    '....PP...pp.....',
+    '....O....ooo....',
+    '...OO....OOO....',
+  ],
+  /** Impulso: la pierna de apoyo, ya detrás, de puntillas; la otra sube por delante. */
+  high: [
+    '......pppp......',
+    '......ppPP......',
+    '.....pp...PP....',
+    '.....oo....OO...',
+    '.....OO.........',
+  ],
 } satisfies Record<string, Grid>;
 
 /** Faldón de túnica para magos y clérigos (filas 17–21). */

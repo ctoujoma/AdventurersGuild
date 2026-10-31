@@ -21,7 +21,8 @@ export type WeaponId =
   | 'cucharon'
   | 'pala'
   | 'cuenco'
-  | 'jarra';
+  | 'jarra'
+  | 'trapo';
 
 export interface Weapon {
   img: PixelBuffer;
@@ -142,4 +143,6 @@ export const WEAPONS: Record<WeaponId, Weapon> = {
   ),
   cuenco: grid(['.WW.', 'sWWs', '.ss.'], 1, 2),
   jarra: grid(['WWW.', 'GGGb', 'GyGb', 'GGGb', 'GGG.'], 3, 2),
+  // Trapo de secar, doblado en la mano.
+  trapo: grid(['mWW', 'WWm', '.Wm'], 1, 0),
 };

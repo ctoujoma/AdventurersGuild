@@ -32,7 +32,8 @@ import * as Prop from '../props';
 import type { Point, SceneCallbacks, SceneModel } from '../scene';
 import { LANTERN, dummy, furnish, gearRoom, type Glow, type RGB } from './furniture';
 import { towerLampY, watchtower } from './salas/torre';
-import { takeWallActs, type ActId, type PoiKind } from './salas/kit';
+import { CANDLE, takeWallActs, type ActId, type PoiKind } from './salas/kit';
+import { FLIGHT_Z, flightArt, goesRight } from './stairs';
 import { dress } from './salas/tintes';
 import { Crowd, type Poi, type Talk } from './crowd';
 import { FLAME_FRAMES, FLAME_H, FLAME_W, flameStrip } from './flame';
@@ -745,7 +746,9 @@ export class RoomScene {
       );
   }
 
-  cheer(room = 'barra'): void {
+  /** Ronda en la barra: notas y monedas, y los que se dan (`ids`) lo celebran dando saltos. */
+  cheer(room = 'barra', ids: readonly string[] = []): void {
+    this.crowd.celebrate(ids);
     const p = this.layout ? focusPoint(this.layout, room) : null;
     if (!p) return;
     for (let i = 0; i < 12; i++)
@@ -889,11 +892,44 @@ export class RoomScene {
         s.floor >= 0 ? 0.35 : 0,
         `escalera${s.s}${s.floor}`,
         {
-          back: stairBack(themeOf(s.floor), interior(s.rect).w, s.rect.h, s.floor, s.steps),
+          back: stairBack(
+            themeOf(s.floor),
+            interior(s.rect).w,
+            s.rect.h,
+            s.floor,
+            s.steps,
+            s.flight,
+          ),
           sides: { left: [left], right: [right] },
           floor: s.floor,
         },
       );
+      const inner = interior(s.rect);
+      const sun = s.floor >= 0 ? 0.35 : 0;
+      // El tramo que sube desde aquí, a su profundidad (la gente lo pisa justo delante).
+      if (s.flight)
+        this.figure(
+          g,
+          flightArt(s.floor),
+          inner.x + inner.w / 2,
+          floorY(s.floor),
+          FLIGHT_Z,
+          STAIRS,
+          sun,
+        );
+      // La luz del aplique del rellano (pintado en `stairBack`, a 22 del fondo desde arriba).
+      if (s.steps) {
+        const bh = Math.round(s.rect.h * BACK);
+        const bx = goesRight(s.floor) ? 4 : Math.round(inner.w * BACK) - 5;
+        this.addLight(
+          { dy: 0, r: 46, color: CANDLE, power: 0.45, flicker: 0.12 },
+          inner.x + bx / BACK,
+          GROUND - floorY(s.floor) + (bh - 22) / BACK,
+          DEPTH - 6,
+          this.zoneOf(s.rect),
+          sun < 0.2,
+        );
+      }
     }
     for (const c of caveCells(L)) {
       const r = interior(c.rect);

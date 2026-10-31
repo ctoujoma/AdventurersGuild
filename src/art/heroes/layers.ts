@@ -40,6 +40,21 @@ export const BASE: Grid = [
   '................',
 ];
 
+/** Brazos en alto (celebrar o estirarse): manos por encima de la cabeza, a los lados. */
+export const ARMS_UP: Grid = [
+  '................',
+  '................',
+  '................',
+  'xx............xx',
+  'xx............xx',
+  'cc............cc',
+  '.cc..........cc.',
+  '.cC..........Cc.',
+  '..cC........Cc..',
+  '..cc........cc..',
+  '..cc........cc..',
+];
+
 const EMPTY_TOP: Grid = Array.from({ length: 10 }, () => '................');
 
 export const OUTFITS = {

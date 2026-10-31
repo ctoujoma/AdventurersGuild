@@ -22,7 +22,11 @@ Sirven para revisar a ojo los cambios de la escena de salas (no son tests).
    sala (al nivel más alto y ancha) con los temas que se le digan (`casa` = sin tema), de día y
    de noche; con `ESPERA=<ms>`, espera más de noche.
 
-7. Interfaz (paneles, fichas y barras): `node tools/shots/ui.mjs <carpeta> [ancho] [alto] [puerto]`
+7. Gente y escaleras: `node tools/shots/gente.mjs <carpeta> [puerto]` saca el tramo de la planta
+   baja de cerca, a un héroe subiéndolo (un fotograma cada 120 ms) y a todos celebrando en la
+   barra.
+
+8. Interfaz (paneles, fichas y barras): `node tools/shots/ui.mjs <carpeta> [ancho] [alto] [puerto]`
    recorre todas las pantallas (por ejemplo a `420 860` y `1280 760`) y deja un PNG de cada una
    y `medidas.json` (cuánto tapa la taberna, letras, tamaños de letra, scroll, tarjetas).
 

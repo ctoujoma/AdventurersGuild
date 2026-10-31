@@ -10,6 +10,8 @@ import { PixelBuffer, alpha } from '../../art/pixel';
 import {
   FEET_Y,
   HAND,
+  WALK_PX,
+  WALK_STEPS,
   fightSprites,
   heroSprites,
   type FightPose,
@@ -22,7 +24,8 @@ import { WEAPONS, type WeaponId } from '../weapons';
 import type { SceneHero, SceneVisitors } from '../scene';
 import { GROUND } from '../geometry';
 import { Look, mesh, texture, type Shared } from './gl';
-import { floorY, type RoomsLayout, type Rect } from './layout';
+import { PITCH, STAIR_W, floorY, type RoomsLayout, type Rect } from './layout';
+import { CLIMB_Z, STEPS, goesRight, stepAt } from './stairs';
 import {
   LANES,
   homes,
@@ -67,43 +70,66 @@ const CLIMB = 30;
 /** Fotogramas del atlas (cada uno de CELL × SPRITE de alto). */
 const CELL = 24;
 const TALL = 28;
-export const F = {
-  idle: 0,
-  blink: 2,
-  walk: 3,
-  walkL: 7,
-  sit: 11,
-  sleep: 12,
-  cot: 16,
-  mat: 17,
-  down: 18,
-  downL: 19,
+
+/** Las herramientas de los puestos (y el trapo de la barra), en el orden de sus fotogramas. */
+const TOOLS = ['cucharon', 'pala', 'cuenco', 'jarra', 'trapo'] as const;
+
+/** Cuántos fotogramas tiene cada cosa, en el orden del atlas. */
+const SIZES = {
+  idle: 2,
+  blink: 1,
+  /** Andando: los 8 tiempos del paso (`WALK_STEPS`), a la derecha y a la izquierda. */
+  walk: WALK_STEPS,
+  walkL: WALK_STEPS,
+  sit: 1,
+  sleep: 4,
+  cot: 1,
+  mat: 1,
+  down: 1,
+  downL: 1,
   /** Entrenando: golpes (preparado, impulso, golpe), el arco (bajado, apuntando) y leyendo. */
-  drill: 20,
-  drillL: 23,
-  aim: 26,
-  aimL: 28,
-  read: 30,
+  drill: 3,
+  drillL: 3,
+  /** Más golpes: el arma en alto (para el tajo de arriba abajo) y la estocada. */
+  drill2: 2,
+  drill2L: 2,
+  aim: 2,
+  aimL: 2,
+  read: 2,
   /** Incorporado en la cama (al acostarse y al levantarse): litera de cada nivel, catre y jergón. */
-  up: 32,
-  /** Con la herramienta de su puesto: 4 herramientas × (4 tiempos a la derecha y 4 a la izquierda). */
-  tool: 38,
+  up: 6,
+  /** Con la herramienta de su puesto: cada herramienta × (4 tiempos a la derecha y 4 a la izquierda). */
+  tool: TOOLS.length * 8,
   /** Calentándose las manos (a la derecha y a la izquierda). */
-  warm: 70,
+  warm: 2,
   /** Con la jarra en la barra: abajo y bebiendo, a la derecha y a la izquierda. */
-  drink: 72,
+  drink: 4,
   /** De perfil, quieto (charlando), a la derecha y a la izquierda. */
-  talk: 76,
+  talk: 2,
   /** En la litera, acostado e incorporado, con la manta de cada tema de color (`TINT_IDS`). */
-  sleepT: 78,
-  upT: 85,
+  sleepT: TINT_IDS.length,
+  upT: TINT_IDS.length,
+  /** De frente: celebrando (brazos en alto), estirándose y bostezando. */
+  cheer: 1,
+  stretch: 1,
+  yawn: 1,
+  /** Brindando con la jarra en alto, a la derecha y a la izquierda. */
+  toast: 2,
 } as const;
-const FRAMES = 92;
+
+/** Dónde empieza cada cosa en el atlas. */
+export const F = (() => {
+  let at = 0;
+  const out = {} as Record<keyof typeof SIZES, number>;
+  for (const k of Object.keys(SIZES) as (keyof typeof SIZES)[]) {
+    out[k] = at;
+    at += SIZES[k];
+  }
+  return out;
+})();
+const FRAMES = Object.values(SIZES).reduce((a, n) => a + n, 0);
 /** Filas que baja el dibujo en los fotogramas de incorporado (para que quepa la cabeza). */
 const UP_DROP = 8;
-
-/** Las herramientas de los puestos, en el orden de sus fotogramas. */
-const TOOLS = ['cucharon', 'pala', 'cuenco', 'jarra'] as const;
 
 /**
  * Cómo se trabaja en cada sala con puestos: la herramienta y los cuatro tiempos de la vuelta
@@ -139,6 +165,16 @@ const WORK: Record<string, { tool: number; steps: [FightPose, number, number][] 
       ['thrust', 0, 1.1],
       ['thrust', -25, 0.7],
       ['thrust', 0, 0.6],
+    ],
+  },
+  // Limpiar la barra con el trapo: el brazo va y viene por encima del mostrador.
+  barra: {
+    tool: 4,
+    steps: [
+      ['thrust', 0, 0.28],
+      ['strike', 10, 0.28],
+      ['thrust', 0, 0.28],
+      ['ready', 0, 0.5],
     ],
   },
   // Servir: la jarra en la mano y, de vez en cuando, inclinándola sobre el vaso.
@@ -252,7 +288,25 @@ interface Actor {
   poi?: { kind: Poi['kind']; dir: 1 | -1 } | null;
   /** De charla con alguien: con quién, cuándo empezó (al llegar) y cuándo acaba. */
   chat?: { with: string; from: number; until: number } | null;
+  /** Sentándose o levantándose del taburete: lo que falta (en segundos) y hacia dónde. */
+  seatMove?: { t: number; up: boolean } | null;
+  /** Dándose la vuelta al andar: un momento de frente. */
+  turn?: number;
+  /** Celebrando (al volver con éxito): hasta cuándo da saltos con los brazos en alto. */
+  cheer?: number;
+  /**
+   * Subiendo o bajando un tramo: la planta de abajo, la columna (x de su hueco), si sube y por
+   * dónde va (0 = abajo, 1 = arriba).
+   */
+  climb?: { lower: number; sx: number; up: boolean; u: number } | null;
 }
+
+/** Lo que tarda en sentarse o levantarse, y lo que dura la vuelta al cambiar de sentido. */
+const SEAT_TIME = 0.24;
+/** En cada peldaño, la parte del tiempo que se tarda en subirlo (el resto, quieto en él). */
+const LIFT = 0.45;
+const smoothstep = (x: number) => x * x * (3 - 2 * x);
+const TURN_TIME = 0.1;
 
 const hash = (s: string) => {
   let h = 0;
@@ -338,6 +392,11 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
     const img = drillCell(pose, p, melee, swing[i]!);
     put(img, F.drill + i, 0);
     put(img, F.drillL + i, 0, true);
+  });
+  (['up', 'thrust'] as const).forEach((p, i) => {
+    const img = drillCell(pose, p, melee, i ? 90 : -15);
+    put(img, F.drill2 + i, 0);
+    put(img, F.drill2L + i, 0, true);
   });
   (['ready', 'thrust'] as const).forEach((p, i) => {
     const img = drillCell(pose, p, 'arco', i ? 0 : 35);
@@ -432,6 +491,16 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
   put(sip, F.drink + 1, 0);
   put(mug, F.drink + 2, 0, true);
   put(sip, F.drink + 3, 0, true);
+  // Brindando: la jarra bien alta.
+  const toast = new PixelBuffer(CELL, TALL);
+  toast.blit(still.up, 3, 0);
+  stampWeapon(toast, 'jarra', 3 + HAND.up.x + 1, HAND.up.y - 4, 10);
+  put(toast, F.toast, 0);
+  put(toast, F.toast + 1, 0, true);
+  // De frente: celebrando, estirándose y bostezando.
+  put(spr.cheer, F.cheer);
+  put(spr.stretch, F.stretch);
+  put(spr.yawn, F.yawn);
   // En el suelo, caído: la figura de pie tumbada de lado (la cabeza a un lado o al otro).
   const src = spr.idle[0];
   for (const [i, left] of [
@@ -617,6 +686,33 @@ export class Crowd {
   }
 
   /** Los visitantes de hoy: si cambia el día, los de ayer se van. */
+  /**
+   * Los que vuelven con éxito lo celebran: van a la barra (si no tienen otra cosa) y dan
+   * saltitos con los brazos en alto un rato.
+   */
+  celebrate(ids: readonly string[]): void {
+    for (const id of ids) {
+      const a = this.actors.get(id);
+      if (!a || a.gone || a.hero.visitor) continue;
+      a.cheer = this.now + 7;
+      a.wait = 9;
+      const bar = this.S?.bar ?? [];
+      const b = bar[hash(id) % Math.max(1, bar.length)];
+      if (b && !this.scripted && a.pose !== 'bed') this.go(a, { place: b, pose: 'stand' });
+    }
+  }
+
+  /**
+   * Gestos de quien está de pie sin hacer nada, de vez en cuando (cada uno a su hora): unos se
+   * estiran y otros bostezan. Si no le toca, -1.
+   */
+  private gesture(a: Actor, t: number): number {
+    const h = hash(a.hero.id);
+    const g = (t + (h % 53) / 3) % 17;
+    if (g >= 1.5) return -1;
+    return h % 2 ? F.stretch : F.yawn;
+  }
+
   /** Temas de color de las salas: la manta de quien duerme en una litera es la de su sala. */
   setTints(t: Readonly<Record<string, TintId>>): void {
     this.tints = t;
@@ -739,6 +835,17 @@ export class Crowd {
         continue;
       }
       if (a.pose === 'sit') a.sat += dt;
+      if (a.turn) a.turn = Math.max(0, a.turn - dt);
+      // Sentándose o levantándose: al levantarse no echa a andar hasta acabar.
+      if (a.seatMove) {
+        a.seatMove.t -= dt;
+        const up = a.seatMove.up;
+        if (a.seatMove.t <= 0) a.seatMove = null;
+        else if (up) {
+          this.place(a, t);
+          continue;
+        }
+      }
       // Incorporado en la cama un momento: al levantarse no echa a andar hasta acabar.
       if (a.edge) {
         a.edge.t -= dt;
@@ -893,7 +1000,7 @@ export class Crowd {
     const a = this.actors.get(id);
     if (!a || a.gone || a.pose === 'down' || !this.L) return;
     this.standUp(a);
-    const path = route(this.L, { x: a.x, floor: a.floor }, p, this.segs) ?? [p];
+    const path = this.pathTo(a, p) ?? [p];
     let len = 0;
     let x = a.x;
     let f = a.floor;
@@ -929,6 +1036,9 @@ export class Crowd {
   knock(id: string): void {
     const a = this.actors.get(id);
     if (!a) return;
+    // En la escalera, cae al rellano más cercano.
+    const c = a.climb;
+    if (c) this.put(a, { x: a.x, floor: c.lower + (c.u > 0.5 ? 1 : 0) });
     a.path = [];
     a.goal = null;
     a.swing = 0;
@@ -1162,7 +1272,11 @@ export class Crowd {
       return null;
     if (a.path.length || a.held || a.leaving || a.pose !== 'stand' || a.edge) return null;
     const job = this.S?.jobs.get(h.work);
-    const w = job ? WORK[job.room.type] : undefined;
+    // En el salón, junto a la barra, con el trapo.
+    const wiping =
+      job?.room.type === 'salon' &&
+      this.S!.bar.some((b) => b.floor === a.floor && Math.abs(b.x - a.x) < 6);
+    const w = job ? WORK[wiping ? 'barra' : job.room.type] : undefined;
     if (!job || !w || a.floor !== job.room.floor || a.x < job.x0 - 8 || a.x > job.x1 + 8)
       return null;
     const cycle = w.steps.reduce((a, s) => a + s[2], 0);
@@ -1171,7 +1285,8 @@ export class Crowd {
     while (pose < w.steps.length - 1 && p >= w.steps[pose]![2]) p -= w.steps[pose++]![2];
     // En el salón, hacia la mesa más cercana; en las demás, hacia el centro de la sala.
     let to = (job.x0 + job.x1) / 2;
-    if (job.room.type === 'salon') {
+    if (wiping) to = a.x + 1;
+    else if (job.room.type === 'salon') {
       let best = Infinity;
       for (const s of this.S!.seats)
         if (s.floor === a.floor && Math.abs(s.x - a.x) < best) {
@@ -1277,7 +1392,7 @@ export class Crowd {
    * Si alguien está entrenando ahora mismo (de día, parado en su sala de entrenamiento): cómo y
    * por dónde va de la vuelta de su animación (cada uno con su desfase, para que no vayan a la par).
    */
-  private drillOf(a: Actor): { kind: Drill; p: number } | null {
+  private drillOf(a: Actor): { kind: Drill; p: number; n: number } | null {
     const h = a.hero;
     if (!h.work || h.status !== 'ok' || h.guard || this.time !== 'day' || this.scripted)
       return null;
@@ -1286,7 +1401,10 @@ export class Crowd {
     const kind = job ? DRILLS[job.room.type] : undefined;
     if (!job || !kind || a.floor !== job.room.floor || a.x < job.x0 - 8 || a.x > job.x1 + 8)
       return null;
-    return { kind, p: (this.now + (hash(h.id) % 97) / 13) % DRILL_CYCLE[kind] };
+    const t = this.now + (hash(h.id) % 97) / 13;
+    // Cada vuelta, uno de los ejercicios (en la sala de armas: tajo, de arriba abajo o estocada).
+    const n = Math.floor(t / DRILL_CYCLE[kind]) + hash(h.id);
+    return { kind, p: t % DRILL_CYCLE[kind], n };
   }
 
   /** Las flechas en el aire de la sala de tiro (en píxeles de la vista): la punta y hacia dónde va. */
@@ -1386,12 +1504,14 @@ export class Crowd {
     // Si estaba acostado, primero se incorpora un momento.
     if (a.pose === 'bed' && a.goal?.bed && !this.scripted && !a.held)
       a.edge = { bed: a.goal.bed, t: 0.9, out: true };
+    // Si estaba sentado, primero se levanta (el taburete se suelta al empezar).
+    if (a.pose === 'sit' && !this.scripted && !a.held) a.seatMove = { t: SEAT_TIME, up: true };
     if (!keep) {
       a.poi = null;
       this.endChat(a);
     }
     this.seatFree(a);
-    const path = this.L ? route(this.L, { x: a.x, floor: a.floor }, g.place, this.segs) : null;
+    const path = this.pathTo(a, g.place);
     if (!path) {
       // No hay camino (se ha quedado en una sala que ya no está): aparece en su sitio.
       this.put(a, g.place);
@@ -1404,7 +1524,18 @@ export class Crowd {
     if (g.pose === 'sit' && this.S) a.seat = this.S.seats.find((s) => s.x === g.place.x) ?? null;
   }
 
+  /** Camino hasta `p`; a media escalera, acaba antes el tramo en el que está. */
+  private pathTo(a: Actor, p: Place): Place[] | null {
+    if (!this.L) return null;
+    const c = a.climb;
+    const mid = c ? { x: c.sx + STAIR_W / 2, floor: c.up ? c.lower + 1 : c.lower } : null;
+    const rest = route(this.L, mid ?? { x: a.x, floor: a.floor }, p, this.segs);
+    return mid && rest ? [mid, ...rest] : rest;
+  }
+
   private arrive(a: Actor, g: Goal): void {
+    if (g.pose === 'sit' && a.pose !== 'sit' && !this.scripted)
+      a.seatMove = { t: SEAT_TIME, up: false };
     a.pose = g.pose;
     a.goal = g;
     if (g.pose === 'sit' && this.S)
@@ -1415,27 +1546,62 @@ export class Crowd {
     a.x = p.x;
     a.floor = p.floor;
     a.y = floorY(p.floor);
+    a.climb = null;
   }
 
   private walk(a: Actor, dt: number): void {
     const next = a.path[0]!;
     const run = a.run ?? 1;
     if (next.floor !== a.floor) {
-      // Escalera: sube o baja en vertical por el hueco.
-      const ty = floorY(next.floor);
-      const dy = ty - a.y;
-      const step = CLIMB * run * dt;
-      a.dist += step;
-      if (Math.abs(dy) <= step) {
-        a.y = ty;
-        a.floor = next.floor;
-        a.path.shift();
-      } else a.y += Math.sign(dy) * step;
+      // Escalera: primero al pie del tramo (o arriba, si baja) y luego peldaño a peldaño.
+      const up = next.floor > a.floor;
+      const lower = Math.min(a.floor, next.floor);
+      const sx = next.x - STAIR_W / 2;
+      if (!a.climb) {
+        const start = stepAt(sx, lower, up ? 0 : STEPS);
+        const dx = start.x - a.x;
+        const step = SPEED * run * dt;
+        a.dist += step;
+        if (Math.abs(dx) > step) {
+          a.x += Math.sign(dx) * step;
+          a.dir = dx > 0 ? 1 : -1;
+        } else {
+          a.x = start.x;
+          a.climb = { lower, sx, up, u: up ? 0 : 1 };
+        }
+      }
+      const c = a.climb;
+      if (c) {
+        const step = CLIMB * run * dt;
+        a.dist += step;
+        c.u = Math.max(0, Math.min(1, c.u + ((up ? 1 : -1) * step) / PITCH));
+        // Mira hacia donde va el tramo (al bajar, al revés que al subir).
+        a.dir = goesRight(lower) === up ? 1 : -1;
+        const s = c.u * STEPS;
+        const i = Math.min(STEPS - 1, Math.floor(s));
+        const p0 = stepAt(sx, lower, i);
+        const p1 = stepAt(sx, lower, i + 1);
+        // Cada peldaño: un impulso rápido y un momento quieto en él.
+        const f = smoothstep(Math.min(1, (s - i) / LIFT));
+        a.x = p0.x + (p1.x - p0.x) * f;
+        a.y = p0.y + (p1.y - p0.y) * f;
+        if (c.u === (up ? 1 : 0)) {
+          a.climb = null;
+          a.floor = next.floor;
+          a.y = floorY(next.floor);
+          a.path.shift();
+        }
+      }
     } else {
       const dx = next.x - a.x;
       const step = SPEED * run * dt;
       a.dist += step;
-      if (Math.abs(dx) > 0.5) a.dir = dx > 0 ? 1 : -1;
+      if (Math.abs(dx) > 0.5) {
+        const dir = dx > 0 ? 1 : -1;
+        // Al cambiar de sentido, un momento de frente (no en las prisas de un asalto).
+        if (dir !== a.dir && !this.scripted) a.turn = TURN_TIME;
+        a.dir = dir;
+      }
       if (Math.abs(dx) <= step) {
         a.x = next.x;
         a.path.shift();
@@ -1453,6 +1619,12 @@ export class Crowd {
 
   private depth(a: Actor): number {
     if (a.edge) return a.edge.bed.z;
+    if (a.climb) {
+      // Del carril al tramo en el primer peldaño, y de vuelta en el último.
+      const s = a.climb.u * STEPS;
+      const w = Math.min(1, s, STEPS - s);
+      return a.lane + (CLIMB_Z - a.lane) * w;
+    }
     if ((a.pose === 'sit' || a.pose === 'bed') && a.goal?.z !== undefined) return a.goal.z;
     return a.lane;
   }
@@ -1479,13 +1651,18 @@ export class Crowd {
     if (bed) return bedFrame(bed, k, z, this.tints[bed.roomId]);
     if (a.held) {
       // Colgando del dedo, pataleando un poco.
-      const step = Math.floor(t * 8) % 4;
+      const step = Math.floor(t * 12) % WALK_STEPS;
       return {
         frame: F.walk + step,
         left: a.held.x - CELL / 2 / k,
         bottom: a.held.y - FEET_Y / k + TALL / k,
         z,
       };
+    }
+    if (a.pose === 'sit' && a.seatMove) {
+      // Sentándose o levantándose: de pie, doblando las rodillas (baja un par de píxeles).
+      const top = a.y - FEET_Y / k + 2 / k;
+      return { frame: F.idle, left: a.x - CELL / 2 / k, bottom: top + TALL / k, z };
     }
     if (a.pose === 'sit') {
       // Sentado en el taburete: la cintura sobre el asiento.
@@ -1508,12 +1685,34 @@ export class Crowd {
       const dir = DRILL_DIR;
       let lunge = 0;
       if (d.kind === 'armas') {
-        const i = d.p < 0.7 ? 0 : d.p < 1.1 ? 1 : d.p < 1.5 ? 2 : 0;
-        frame = (dir > 0 ? F.drill : F.drillL) + i;
-        if (i === 2) lunge = (dir * 2) / k;
+        const combo = d.n % 3;
+        const hit = d.p >= 1.1 && d.p < 1.5;
+        if (combo === 1) {
+          // De arriba abajo: el arma en alto y el golpe.
+          const up = d.p >= 0.5 && d.p < 1.1;
+          frame = up
+            ? dir > 0
+              ? F.drill2
+              : F.drill2L
+            : (dir > 0 ? F.drill : F.drillL) + (hit ? 2 : 0);
+        } else if (combo === 2) {
+          // Estocada: preparado y a fondo, con el paso largo.
+          const i = d.p >= 0.8 && d.p < 1.4 ? 1 : 0;
+          frame = i ? (dir > 0 ? F.drill2 : F.drill2L) + 1 : dir > 0 ? F.drill : F.drillL;
+          if (i) lunge = (dir * 3) / k;
+        } else {
+          const i = d.p < 0.7 ? 0 : d.p < 1.1 ? 1 : hit ? 2 : 0;
+          frame = (dir > 0 ? F.drill : F.drillL) + i;
+        }
+        if (hit && combo !== 2) lunge = (dir * 2) / k;
       } else if (d.kind === 'tiro') frame = (dir > 0 ? F.aim : F.aimL) + (d.p < 1.2 ? 0 : 1);
       else frame = F.read + (d.p > 4.4 ? 1 : 0);
       return { frame, left: a.x - CELL / 2 / k + lunge, bottom: top + TALL / k, z };
+    }
+    if ((a.cheer ?? 0) > this.now && a.pose === 'stand' && !a.path.length) {
+      // Celebrando: saltitos con los brazos en alto.
+      const hop = Math.abs(Math.sin((t + (hash(a.hero.id) % 7) / 10) * Math.PI * 1.8));
+      return { frame: F.cheer, left: a.x - CELL / 2 / k, bottom: top + (TALL - hop * 4) / k, z };
     }
     const job = this.jobAnim(a);
     if (job) {
@@ -1527,9 +1726,12 @@ export class Crowd {
         // Leyendo el tablón o el mapa, o rezando: de frente con el papel o el libro.
         frame = F.read + (p > 5.2 ? 1 : 0);
       else if (this.atBar(a))
-        // En la barra, un trago de vez en cuando.
-        frame = F.drink + (p > 4.8 ? 1 : 0) + (a.dir > 0 ? 0 : 2);
-      else frame = -1;
+        // En la barra, un trago de vez en cuando y, alguna vez, un brindis con la jarra en alto.
+        frame =
+          p > 2 && p < 2.7 && hash(a.hero.id) % 3 === 0
+            ? F.toast + (a.dir > 0 ? 0 : 1)
+            : F.drink + (p > 4.8 ? 1 : 0) + (a.dir > 0 ? 0 : 2);
+      else frame = this.gesture(a, t);
       if (frame >= 0) return { frame, left: a.x - CELL / 2 / k, bottom: top + TALL / k, z };
     }
     if (a.chat?.from && !a.path.length && a.pose === 'stand') {
@@ -1547,12 +1749,24 @@ export class Crowd {
     if (a.swing) {
       // Golpe: el paso largo de andar, echándose hacia delante.
       const lunge = (a.dir * 3 * Math.sin(a.swing * Math.PI)) / k;
-      frame = (a.dir > 0 ? F.walk : F.walkL) + 1;
+      frame = (a.dir > 0 ? F.walk : F.walkL) + 2;
       return { frame, left: a.x - CELL / 2 / k + lunge, bottom: top + TALL / k, z };
     }
-    if (a.pose === 'walk') {
-      const step = Math.floor(a.dist / 6) % 4;
+    if (a.climb) {
+      // En la escalera: la pierna sube en el impulso y se apoya en el peldaño (alternando).
+      const s = a.climb.u * STEPS;
+      const i = Math.floor(s);
+      const lifting = s - i < LIFT;
+      frame = (a.dir > 0 ? F.walk : F.walkL) + (i % 2 ? 4 : 0) + (lifting ? 3 : 0);
+    } else if (a.pose === 'walk' && a.turn) frame = F.idle;
+    else if (a.pose === 'walk') {
+      // Un tiempo del paso cada `WALK_PX` píxeles: el pie apoyado no patina.
+      const step = Math.floor((a.dist * k) / WALK_PX) % WALK_STEPS;
       frame = (a.dir > 0 ? F.walk : F.walkL) + step;
+    } else if (this.time === 'dusk' && a.pose === 'stand' && !this.scripted) {
+      // Al atardecer, alguno bosteza.
+      const g = (t + (hash(a.hero.id) % 41) / 3) % 11;
+      frame = g < 1.4 ? F.yawn : F.idle + (Math.floor((t + a.blinkAt) * 1.2) % 2);
     } else {
       const blink = (t + a.blinkAt) % 4 < 0.15;
       frame = blink ? F.blink : F.idle + (Math.floor((t + a.blinkAt) * 1.2) % 2);
