@@ -44,6 +44,8 @@ export interface SceneModel {
   /** Escudo del gremio (letrero y tapices) y perro guardián. */
   crest: { field: string; dark: string; symbol: string };
   dog: boolean;
+  /** El cuervo mensajero, posado en el rótulo. */
+  raven?: boolean;
   /** Decoración del salón, adornos de la fachada y visitantes de hoy. */
   decor: string[];
   facade?: string[];
@@ -70,6 +72,7 @@ export type SoundName =
   | 'click'
   | 'purr'
   | 'bark'
+  | 'caw'
   | 'hoot'
   | 'sparks'
   | 'lute'

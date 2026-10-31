@@ -2,11 +2,14 @@
  * Los animales del salón: el gato Bigotes (duerme junto a la chimenea y a ratos se levanta, da
  * una vuelta por la sala, se sienta o se lava y vuelve) y, si se ha comprado, Tizón, el perro
  * guardián (duerme en su sitio, a ratos levanta la cabeza y mueve el rabo). Se pueden tocar: el
- * gato ronronea y el perro se sienta y ladra. Son solo de adorno: no cambian nada del juego.
+ * gato ronronea y el perro se sienta y ladra. Fuera, si se ha comprado, Carbón, el cuervo, posado
+ * en el rótulo: mira a un lado y a otro, grazna y a ratos se va volando (a llevar noticias a otros
+ * pueblos) y vuelve. Son solo de adorno: no cambian nada del juego.
  */
 import { Group, PlaneGeometry, Vector3, type Mesh, type ShaderMaterial } from 'three';
 import { alpha } from '../../art/pixel';
-import { CAT_F, DOG_F, catStrip, dogStrip, type Strip } from '../../art/pets';
+import { CAT_F, DOG_F, RAVEN_F, catStrip, dogStrip, ravenStrip, type Strip } from '../../art/pets';
+import type { SoundName } from '../scene';
 import { GROUND } from '../geometry';
 import { Look, mesh, type Shared } from './gl';
 import { floorY, interior, type RoomsLayout } from './layout';
@@ -14,7 +17,14 @@ import { HEARTH_RIGHT } from './salon';
 import { FRONT } from './salas/kit';
 import { project, scaleAt, type View } from './view3d';
 
-export type PetId = 'gato' | 'perro';
+export type PetId = 'gato' | 'perro' | 'cuervo';
+
+/** Donde se posa el cuervo (sus patas, en el mundo). */
+export interface Perch {
+  x: number;
+  y: number;
+  z: number;
+}
 
 type Tint = readonly [number, number, number];
 
@@ -30,6 +40,8 @@ const DOG_RIGHT = HEARTH_RIGHT + 24;
 /** Velocidad del gato andando (en el mundo, por segundo) y cada cuánto cambia de paso. */
 const CAT_SPEED = 16;
 const CAT_STEP = 3;
+/** Hasta dónde se va el cuervo al irse volando (arriba a la izquierda, hacia el camino). */
+const RAVEN_AWAY = { dx: -260, dy: -140 };
 
 interface Pet {
   id: PetId;
@@ -38,9 +50,21 @@ interface Pet {
   mesh: Mesh;
   x: number;
   floor: number;
+  /** Altura de las patas, si no está en el suelo de su planta (el cuervo). */
+  y?: number;
   z: number;
   dir: 1 | -1;
-  state: 'sleep' | 'sit' | 'walk' | 'rest' | 'bark';
+  state: 'sleep' | 'sit' | 'walk' | 'rest' | 'bark' | 'perch' | 'look' | 'caw' | 'fly' | 'away';
+  /** Volando: de dónde a dónde, cuánto lleva y si se va (o vuelve). */
+  fly?: {
+    x0: number;
+    y0: number;
+    x1: number;
+    y1: number;
+    t: number;
+    dur: number;
+    out: boolean;
+  } | null;
   /** Segundos que le quedan en lo que está haciendo. */
   timer: number;
   /** A dónde va (x y profundidad). */
@@ -63,6 +87,9 @@ export class Pets {
   private range: [number, number] = [0, 0];
   private now = 0;
   private seed = 7;
+  private perch: Perch | null = null;
+  /** Para que se oiga lo que hacen por su cuenta (el graznido). */
+  sound?: (name: SoundName, volume: number) => void;
 
   constructor(
     shared: Shared,
@@ -83,7 +110,8 @@ export class Pets {
         room.type === 'salon' && room.level > 0 && !(room.works && room.works.kind !== 'extend'),
     );
     if (!salon) {
-      for (const id of [...this.pets.keys()]) this.remove(id);
+      this.remove('gato');
+      this.remove('perro');
       return;
     }
     const r = interior(salon.rect);
@@ -112,8 +140,31 @@ export class Pets {
     } else this.remove('perro');
   }
 
+  /** Carbón, posado en el rótulo (o fuera, si no hay cuervo o no hay dónde posarse). */
+  setRaven(perch: Perch | null): void {
+    this.perch = perch;
+    if (!perch) {
+      this.remove('cuervo');
+      return;
+    }
+    const known = this.pets.get('cuervo');
+    const r = known ?? this.add('cuervo', ravenStrip(), perch.z);
+    r.z = perch.z;
+    if (r.state === 'fly' && r.fly && !r.fly.out) {
+      r.fly.x1 = perch.x;
+      r.fly.y1 = perch.y;
+    } else if (r.state !== 'fly' && r.state !== 'away') {
+      r.x = perch.x;
+      r.y = perch.y;
+      r.dir = -1;
+      if (!known) this.set(r, 'perch', 4 + this.rnd() * 6);
+    }
+  }
+
   update(dt: number, t: number): void {
     this.now = t;
+    const raven = this.pets.get('cuervo');
+    if (raven) this.raven(raven, dt);
     const cat = this.pets.get('gato');
     if (cat) this.cat(cat, dt);
     const dog = this.pets.get('perro');
@@ -128,17 +179,18 @@ export class Pets {
   touch(id: PetId): { x: number; y: number; z: number } | null {
     const p = this.pets.get(id);
     if (!p) return null;
-    if (id === 'gato') {
-      this.set(p, 'sit', 4 + this.rnd() * 3);
-    } else this.set(p, 'bark', 1.6);
-    const k = scaleAt(p.z);
-    return { x: p.x + (p.dir * p.strip.w) / 4 / k, y: floorY(p.floor) - p.strip.h / k, z: p.z };
+    if (id === 'gato') this.set(p, 'sit', 4 + this.rnd() * 3);
+    else if (id === 'perro') this.set(p, 'bark', 1.6);
+    else if (p.state !== 'fly') this.set(p, 'caw', 1);
+    const b = this.box(p);
+    return { x: p.x + (p.dir * b.w) / 4, y: b.bottom - b.h, z: p.z };
   }
 
   /** El animal que hay en un punto de la vista (en píxeles de la vista), si hay. */
   hit(v: View, x: number, y: number): PetId | null {
     let best: Pet | null = null;
     for (const p of this.pets.values()) {
+      if (p.state === 'away') continue;
       const r = this.rect(p, v);
       // Un par de píxeles de margen: son pequeños y el dedo no es fino.
       if (x < r.x - 2 || x > r.x + r.w + 2 || y < r.y - 3 || y > r.y + r.h + 1) continue;
@@ -149,7 +201,11 @@ export class Pets {
   }
 
   label(id: PetId): string {
-    return id === 'gato' ? 'Bigotes, el gato' : 'Tizón, el perro';
+    return id === 'gato'
+      ? 'Bigotes, el gato'
+      : id === 'perro'
+        ? 'Tizón, el perro'
+        : 'Carbón, el cuervo';
   }
 
   dispose(): void {
@@ -248,6 +304,67 @@ export class Pets {
     this.set(c, 'walk', 0);
   }
 
+  /** Carbón: posado mira a un lado y a otro y grazna; a ratos se va volando y luego vuelve. */
+  private raven(r: Pet, dt: number): void {
+    const f = r.fly;
+    const p = this.perch;
+    if (r.state === 'fly' && f) {
+      f.t += dt;
+      const u = Math.min(1, f.t / f.dur);
+      // Al irse, despacio al arrancar; al volver, frena al posarse. Y un poco de arco.
+      const e = f.out ? u * u : 1 - (1 - u) * (1 - u);
+      r.x = f.x0 + (f.x1 - f.x0) * e;
+      r.y = f.y0 + (f.y1 - f.y0) * e - Math.sin(u * Math.PI) * 12;
+      r.dir = f.x1 > f.x0 ? 1 : -1;
+      if (u < 1) return;
+      r.fly = null;
+      if (f.out) this.set(r, 'away', 25 + this.rnd() * 30);
+      else {
+        r.dir = -1;
+        this.set(r, 'perch', 5 + this.rnd() * 6);
+      }
+      return;
+    }
+    r.timer -= dt;
+    if (r.timer > 0 || !p) return;
+    if (r.state === 'away') {
+      // De vuelta: entra volando desde el camino.
+      r.fly = {
+        x0: p.x + RAVEN_AWAY.dx,
+        y0: p.y + RAVEN_AWAY.dy,
+        x1: p.x,
+        y1: p.y,
+        t: 0,
+        dur: 3.5,
+        out: false,
+      };
+      r.x = r.fly.x0;
+      r.y = r.fly.y0;
+      this.set(r, 'fly', 0);
+      return;
+    }
+    if (r.state !== 'perch') {
+      this.set(r, 'perch', 4 + this.rnd() * 8);
+      return;
+    }
+    const roll = this.rnd();
+    if (roll < 0.15) {
+      r.fly = {
+        x0: r.x,
+        y0: r.y ?? p.y,
+        x1: p.x + RAVEN_AWAY.dx,
+        y1: p.y + RAVEN_AWAY.dy,
+        t: 0,
+        dur: 3.5,
+        out: true,
+      };
+      this.set(r, 'fly', 0);
+    } else if (roll < 0.4) {
+      this.set(r, 'caw', 1);
+      this.sound?.('caw', 0.35);
+    } else this.set(r, 'look', 1.2 + this.rnd());
+  }
+
   /** Tizón: duerme; a ratos levanta la cabeza y mueve el rabo. Tras ladrar, se queda alerta. */
   private dog(d: Pet, dt: number): void {
     d.timer -= dt;
@@ -271,6 +388,19 @@ export class Pets {
           return CAT_F.sleep + (Math.floor(t / 1.4) % 2);
       }
     }
+    if (p.id === 'cuervo') {
+      switch (p.state) {
+        case 'fly':
+          return RAVEN_F.fly + (Math.floor(t * 8) % 2);
+        case 'look':
+          return RAVEN_F.look;
+        case 'caw':
+          // Dos graznidos: el pico abierto en cada uno.
+          return age % 0.5 < 0.25 ? RAVEN_F.caw : RAVEN_F.perch;
+        default:
+          return RAVEN_F.perch;
+      }
+    }
     switch (p.state) {
       case 'bark':
         // Dos ladridos: la boca abierta en cada uno.
@@ -287,7 +417,7 @@ export class Pets {
   private box(p: Pet): { left: number; bottom: number; w: number; h: number } {
     const k = scaleAt(p.z);
     const w = p.strip.w / k;
-    return { left: p.x - w / 2, bottom: floorY(p.floor), w, h: p.strip.h / k };
+    return { left: p.x - w / 2, bottom: p.y ?? floorY(p.floor), w, h: p.strip.h / k };
   }
 
   /** El fotograma de la tira (los de la izquierda van detrás de los de la derecha). */
@@ -298,6 +428,7 @@ export class Pets {
   }
 
   private place(p: Pet, t: number): void {
+    p.mesh.visible = p.state !== 'away';
     const b = this.box(p);
     const origin = at(b.left, b.bottom, p.z);
     p.mesh.position.copy(origin);

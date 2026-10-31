@@ -189,6 +189,10 @@ La lista completa de pendientes e ideas (bucle, monetización, amigos, torneos, 
   ronronea con corazones y el perro se sienta y ladra (sonido `bark`, partícula `bark`); la
   interfaz saca una frase (`PET_LINES` en `data/custom.ts`). Solo adorno. Hoja:
   `capturas/animales.png`.
+- **Carbón, el cuervo** (si se ha comprado; en `pets.ts` con los otros): posado encima del
+  rótulo (en el tablero, en el brazo del de hierro o, si va pintado, en el farol: `perch` en
+  `yard`). Mira atrás, grazna (sonido `caw`) y a ratos se va volando hacia el camino y vuelve al
+  rato. Tocado, grazna y suelta un par de plumas (partícula `feather`). Hoja: `capturas/cuervo.png`.
 - Trabajar, charlar o calentarse van con los pies quietos (`fightSprites(…, planted)`): las
   posturas de pelea abren las piernas y, al alternarlas, parecía que andaban.
 
