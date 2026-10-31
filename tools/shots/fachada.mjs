@@ -69,7 +69,7 @@ async function prepare(combo, tall) {
         facade: ['flores', 'faroles', 'banderines', 'letrero'],
         look: combo ? { roof, walls, sign } : undefined,
       };
-      if (tall && !s.building.rooms.some((r) => r.floor === 2)) {
+      if (tall) {
         const top = Math.max(...s.building.rooms.map((r) => r.floor + r.h - 1));
         s.building.rooms.push({
           id: 'prueba-alta',
