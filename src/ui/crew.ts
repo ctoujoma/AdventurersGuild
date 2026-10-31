@@ -223,6 +223,8 @@ export function crewGroups(game: GameState): Group[] {
 export interface Alert {
   text: string;
   who?: string;
+  /** La sala de la que se avisa (la que no tiene a nadie). */
+  room?: string;
 }
 
 /** Lo que pide atención: salas sin nadie, trabajadores sin tarea o fuera de su oficio, y quien pide trabajo. */
@@ -232,7 +234,7 @@ export function crewAlerts(game: GameState): Alert[] {
   for (const r of rooms) {
     const c = crewOf(game, r.id);
     if (!c.workers.length && !c.heroes.length)
-      out.push({ text: `${jobRoomName(game, r)}: no trabaja nadie.` });
+      out.push({ text: `${jobRoomName(game, r)}: no trabaja nadie.`, room: r.id });
   }
   const free = (r: Room) => {
     const c = crewOf(game, r.id);

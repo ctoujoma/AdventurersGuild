@@ -20,7 +20,16 @@ historial.
   - el grupo que vuelve ya no sale estirado: la clase `back` chocaba con la del botón volver y
     ahora es `is-back`.
 
-## Siguiente: punto 3, avisos (decidido con el usuario)
+## Hecho: punto 3, avisos (PR aparte)
+
+- `gatherAlerts` en `src/ui/alerts.ts` (con tests) junta todo; `AlertBell.tsx` es la campanita
+  del HUD (número, balanceo y sonido `bell` con lo nuevo, el aviso asoma, lista animada, tocar
+  lleva a la sala, Tareas, el encargo o el panel). `App.tsx` recuerda las obras recién acabadas
+  (`finishedWorks`) durante ese día. El pago del HUD lleva ahora un pergamino.
+
+## Siguiente: el cobro de Merlo (el usuario dijo que sí)
+
+## Antes: punto 3, avisos (decidido con el usuario)
 
 - **Que sea visual y con «juice»:** el usuario quiere que el proyecto, la interfaz incluida,
   tenga gracia y movimiento. Una campanita arriba con su número que salta cuando llega un aviso,

@@ -6,6 +6,7 @@
 
 export type Sfx =
   | 'click'
+  | 'bell'
   | 'tab'
   | 'open'
   | 'close'
@@ -201,6 +202,13 @@ class AudioEngine {
     switch (name) {
       case 'click':
         this.tone('square', 760, 380, t, 0.045, 0.035 * v);
+        break;
+      case 'bell':
+        // Campanilla de aviso: dos golpes, el segundo más agudo, con su eco.
+        this.ping(1568, t, 0.5, 0.07 * v);
+        this.ping(2349, t, 0.35, 0.025 * v);
+        this.ping(2093, t + 0.13, 0.7, 0.07 * v);
+        this.ping(3136, t + 0.13, 0.4, 0.02 * v);
         break;
       case 'tab':
         this.tone('triangle', 620, 620, t, 0.05, 0.06 * v);
