@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { newGame, reduce } from '../core/game';
 import { brewAt } from '../core/larder';
 import type { GameState, Room } from '../core/model';
-import { candidatesFor, crewAlerts, crewGroups, taskOf, taskOptions } from './crew';
+import { candidatesFor, crewAlerts, crewGroups, taskLabel, taskOf, taskOptions } from './crew';
 import { GUARD, planTask, type Task } from './drop';
 
 const roomOf = (s: GameState, type: Room['type']) => s.building.rooms.find((r) => r.type === type)!;
@@ -119,5 +119,18 @@ describe('la casa por tareas', () => {
     s = task(s, s.heroes[0]!.id, bodega.id);
     const jarras = group(s, bodega.id).people.map((p) => Number(p.gives!.match(/\d+/)![0]));
     expect(jarras.reduce((a, b) => a + b, 0)).toBe(Math.round(brewAt(s, bodega)));
+  });
+
+  it('la tarea en dos palabras, para la lista de héroes y la escena', () => {
+    let s = newGame('chapa');
+    const [a, b] = s.heroes;
+    expect(taskLabel(s, a!.id)).toBe('Descansa');
+    s = task(s, a!.id, roomOf(s, 'salon').id);
+    expect(taskLabel(s, a!.id)).toBe('En el salón');
+    s = task(s, a!.id, GUARD);
+    expect(taskLabel(s, a!.id)).toBe('De guardia');
+    expect(taskLabel(s, s.workers.find((w) => w.trade === 'cocina')!.id)).toBe('En la cocina');
+    s = reduce(s, { type: 'send', questId: s.quests[0]!.id, heroIds: [b!.id] });
+    expect(taskLabel(s, b!.id)).toMatch(/^De misión/);
   });
 });

@@ -423,20 +423,23 @@ export function RoomPanel({
       {(room.type === 'dormitorio' || room.type === 'veteranos') && room.level > 0 && (
         <div class="chips">
           <Fact info="Camas de esta sala.">
-            <Icon name="cama" size={12} /> {roomBeds(room)} aquí
+            <Icon name="cama" size={12} /> {roomBeds(room)}{' '}
+            {plural(roomBeds(room), 'cama', 'camas')} aquí
           </Fact>
           <Fact info="Héroes en el gremio y camas en total: quien está fuera o herido también ocupa cama.">
-            <Icon name="heroe" size={12} /> {roster(game).length}/{beds(game.building)}
+            <Icon name="heroe" size={12} /> {roster(game).length} de {beds(game.building)} héroes
           </Fact>
         </div>
       )}
       {room.type === 'servicio' && room.level > 0 && (
         <div class="chips">
           <Fact info="Camas del servicio: una por cada trabajador de más de tres.">
-            <Icon name="cama" size={12} /> {staffBeds(game.building)}
+            <Icon name="cama" size={12} /> {staffBeds(game.building)}{' '}
+            {plural(staffBeds(game.building), 'cama', 'camas')}
           </Fact>
           <Fact info="Trabajadores y cuántos puede haber.">
-            <Icon name="martillo" size={12} /> {game.workers.length}/{workerCap(game)}
+            <Icon name="martillo" size={12} /> {game.workers.length} de {workerCap(game)}{' '}
+            trabajadores
           </Fact>
         </div>
       )}

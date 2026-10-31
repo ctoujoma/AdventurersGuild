@@ -19,11 +19,11 @@ import { visitorsOf } from '../core/salon';
 import { plural } from '../core/text';
 import { ATTR_NAMES, gainText, skillGain, trainState } from '../core/training';
 import { crewOf, effortOf, isJobRoom, isTrainRoom, slotsOf, workIn } from '../core/workers';
-import { TRAINS } from '../data/rooms';
+import { ROOMS, TRAINS } from '../data/rooms';
 import { TRADES, TRADE_LIST } from '../data/workers';
 import { statusLabel } from '../data/labels';
 import { GUARD, planTask, type Task } from './drop';
-import { jobRoomName } from './JobPicker';
+import { jobRoomName } from './roomName';
 import { isRealTime, left as timeLeft } from './when';
 
 /** Alguien de la casa en la lista. */
@@ -120,6 +120,7 @@ const workerMember = (w: Worker, room?: Room): Member => ({
   sub: `${TRADES[w.trade].name[w.sex]} · Maña ${w.skill}`,
   hero: false,
   off: !!room && room.type !== w.trade,
+  more: `«${w.quote}»`,
 });
 
 const heroMember = (h: Hero, sub: string): Member => ({ id: h.id, name: h.name, sub, hero: true });
@@ -333,4 +334,23 @@ export function candidatesFor(game: GameState, task: Task): Member[] {
       );
     }
   return out;
+}
+
+/** «el salón», «la cocina»: la sala con su artículo, para frases cortas. */
+const withArticle = (room: Room) =>
+  `${room.type === 'salon' ? 'el' : 'la'} ${ROOMS[room.type].name.toLowerCase()}`;
+
+/**
+ * La tarea de alguien en dos o tres palabras, para chapas y la escena: «En la cocina», «Entrena
+ * Fuerza», «De guardia» o «Descansa» (los de fuera, su estado: «De misión · 3 d»).
+ */
+export function taskLabel(game: GameState, who: string): string {
+  const h = game.heroes.find((x) => x.id === who);
+  if (h && h.status !== 'ok') return statusLabel(h);
+  const t = taskOf(game, who);
+  if (t === GUARD) return 'De guardia';
+  const room = t ? game.building.rooms.find((r) => r.id === t) : undefined;
+  if (!room) return 'Descansa';
+  const attr = TRAINS[room.type];
+  return attr ? `Entrena ${ATTR_NAMES[attr]}` : `En ${withArticle(room)}`;
 }

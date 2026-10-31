@@ -24,6 +24,8 @@ interface Props {
   onTask: (who: string, task: Task) => void;
   onHire: (id: string) => void;
   onFire: (id: string) => void;
+  /** Alguien a quien elegir al abrir (al tocarlo en la escena). */
+  focus?: string | null;
 }
 
 /** Del valor de un desplegable a la tarea («» es descansar). */
@@ -35,6 +37,36 @@ function Face({ game, id }: { game: GameState; id: string }) {
   if (w) return <Portrait look={workerLook(w)} scale={1} alive={false} />;
   const h = game.heroes.find((x) => x.id === id);
   return h ? <Portrait look={lookOf(h)} marks={marksOf(h)} scale={1} alive={false} /> : null;
+}
+
+/** El desplegable con todo lo que puede hacer alguien (trabajar, entrenar, guardia, descansar). */
+export function TaskSelect({
+  game,
+  who,
+  name,
+  onTask,
+}: {
+  game: GameState;
+  who: string;
+  name: string;
+  onTask: (who: string, task: Task) => void;
+}) {
+  const now = taskOf(game, who);
+  return (
+    <select
+      class="job-select"
+      aria-label={`Tarea de ${name}`}
+      value={now ?? ''}
+      onClick={(e) => e.stopPropagation()}
+      onChange={(e) => onTask(who, toTask((e.target as HTMLSelectElement).value))}
+    >
+      {taskOptions(game, who).map((o) => (
+        <option key={o.task ?? ''} value={o.task ?? ''} disabled={!!o.why} title={o.why}>
+          {o.label}
+        </option>
+      ))}
+    </select>
+  );
 }
 
 /** Lo que se puede hacer con quien está elegido: cambiarle la tarea, ver su ficha o despedirlo. */
@@ -56,24 +88,10 @@ function Detail({
   // Al elegir a alguien desde un aviso, la lista baja hasta él.
   useEffect(() => ref.current?.scrollIntoView?.({ block: 'nearest' }), []);
   const home = !m.hero || game.heroes.some((h) => h.id === m.id && h.status === 'ok');
-  const now = taskOf(game, m.id);
   return (
     <div class="crew-detail" ref={ref}>
       {m.more && <span class="row-sub crew-more">{m.more}</span>}
-      {home && (
-        <select
-          class="job-select"
-          aria-label={`Tarea de ${m.name}`}
-          value={now ?? ''}
-          onChange={(e) => onTask(m.id, toTask((e.target as HTMLSelectElement).value))}
-        >
-          {taskOptions(game, m.id).map((o) => (
-            <option key={o.task ?? ''} value={o.task ?? ''} disabled={!!o.why} title={o.why}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-      )}
+      {home && <TaskSelect game={game} who={m.id} name={m.name} onTask={onTask} />}
       {m.hero ? (
         <button class="btn btn-wood" onClick={() => onOpen(m.id)}>
           Ficha
@@ -217,8 +235,11 @@ export function CrewGroup({
  * la guardia, quien descansa y quien está fuera, con los avisos arriba. Tocar a alguien deja
  * cambiarle la tarea; tocar un hueco libre, elegir a quién poner. Debajo, quien pide trabajo.
  */
-export function CrewList({ game, onOpen, onTask, onHire, onFire }: Props) {
-  const [sel, setSel] = useState<string | null>(null);
+export function CrewList({ game, onOpen, onTask, onHire, onFire, focus }: Props) {
+  const [sel, setSel] = useState<string | null>(focus ?? null);
+  useEffect(() => {
+    if (focus) setSel(focus);
+  }, [focus]);
   const alerts = crewAlerts(game);
   const groups = crewGroups(game);
   return (

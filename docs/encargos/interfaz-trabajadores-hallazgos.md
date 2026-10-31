@@ -60,3 +60,8 @@ hace qué» (artefacto de claude.ai).
   `CrewList.tsx`), con lo que pone cada uno (`givesAt` en `crew.ts`) y la barra de quien
   entrena dentro de su hueco (ya no se repite arriba). El recibidor enseña sus dos huecos de
   guardia y pierde el botón que llevaba a la lista de héroes.
+- PR 3, palabras y cifras: la chapa de cada héroe dice su tarea (`taskLabel` en `crew.ts`, que
+  también usa la escena al pasar el ratón); la ficha del héroe tiene un solo botón «Tarea» con
+  el mismo selector (adiós a Guardia y Trabajo por separado, y a `JobPicker`); contadores con
+  nombre («4 de 4 camas», «5 de 6 trabajadores»); tocar a un trabajador en la escena abre Tareas
+  con él elegido, y su frase se lee ahí.
