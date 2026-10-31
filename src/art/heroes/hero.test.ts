@@ -79,18 +79,22 @@ describe('heroSprites', () => {
 
   it('produce todos los fotogramas con el tamaño esperado', () => {
     const s = heroSprites(look);
-    for (const f of [...s.idle, s.blink, ...s.walk]) {
+    for (const f of [...s.idle, s.blink, ...s.walk, s.cheer, s.stretch, s.yawn]) {
       expect(f.w).toBe(SPRITE_W);
       expect(f.h).toBe(SPRITE_H);
       expect(f.countFilled()).toBeGreaterThan(120);
     }
-    expect(s.walk).toHaveLength(4);
+    expect(s.walk).toHaveLength(8);
     expect(s.sit.h).toBeLessThan(SPRITE_H);
   });
 
   it('el ciclo de paso cambia de fotograma a fotograma', () => {
     const s = heroSprites(look);
-    expect(s.walk[0]!.data.join()).not.toBe(s.walk[1]!.data.join());
+    for (let i = 0; i < s.walk.length; i++)
+      expect(s.walk[i]!.data.join()).not.toBe(s.walk[(i + 1) % s.walk.length]!.data.join());
+    // Los gestos de frente no son el de siempre.
+    for (const g of [s.cheer, s.stretch, s.yawn])
+      expect(g.data.join()).not.toBe(s.idle[0].data.join());
     expect(s.idle[0].data.join()).not.toBe(s.idle[1].data.join());
   });
 

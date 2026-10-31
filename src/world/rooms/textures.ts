@@ -17,6 +17,7 @@ import * as Prop from '../props';
 import {
   CELL_W,
   DEPTH,
+  PARTITION,
   PITCH,
   ROOM_H,
   SLAB,
@@ -32,7 +33,8 @@ import {
 } from './layout';
 import { ART } from './salas';
 import { PLASTER_FINE, WOOD_FINE, floorFinish, sideFinish, wallFinish } from './salas/acabados';
-import { BLIND, cellsOf, takeWallActs, windowX } from './salas/kit';
+import { BLIND, cellsOf, sconceOn, takeWallActs, windowX } from './salas/kit';
+import { RISE, goesRight, stepAt } from './stairs';
 import { streetDoor } from './salas/recibidor';
 import { cloth } from './salas/tintes';
 import { NO_LOOK, hearthSpan, salonWall, type SalonLook } from './salon';
@@ -262,6 +264,7 @@ export function stairBack(
   h: number,
   floor: number,
   steps = true,
+  flight = steps,
 ): PixelBuffer {
   const bw = Math.round(w * BACK);
   const bh = Math.round(h * BACK);
@@ -274,17 +277,30 @@ export function stairBack(
     ambientOcclusion(b, 0, 0, bw, bh, 4, { top: true, bottom: false, left: true, right: true });
     return b;
   }
-  const n = 9;
-  const up = floor % 2 === 0;
-  const rise = (bh - 4) / n;
-  for (let i = 0; i < n; i++) {
-    const sx = Math.round(up ? 1 + (i * (bw - 7)) / (n - 1) : bw - 7 - (i * (bw - 7)) / (n - 1));
-    const sy = Math.round(bh - 4 - i * rise);
-    b.rect(sx, sy, 6, 3, P.oak);
-    b.hline(sx, sy, 6, P.clay);
-    b.hline(sx, sy + 2, 6, P.plum);
+  // Con tramo (los peldaños son una pieza aparte, ver `stairs.ts`): su sombra en la pared y el
+  // pasamanos sujeto con sus palomillas. En el rellano, el aplique que lo alumbra (arriba, en
+  // el lado sin peldaños).
+  if (flight) {
+    const at = (i: number) => {
+      const p = stepAt(0, floor, i);
+      return { x: Math.round((p.x - PARTITION / 2) * BACK), y: Math.round(bh - i * RISE * BACK) };
+    };
+    const last = Math.floor(ROOM_H / RISE);
+    for (let i = 1; i <= last; i++) {
+      const p = at(i);
+      b.hline(p.x - 2, p.y + 3, 5, P.ebony);
+    }
+    const a = at(1);
+    const z = at(last + 1);
+    const rail = 12;
+    b.line(a.x, a.y - rail, z.x, z.y - rail, P.tan);
+    b.line(a.x, a.y - rail + 1, z.x, z.y - rail + 1, P.rust);
+    for (const i of [2, Math.round(last / 2) + 1, last]) {
+      const p = at(i);
+      b.rect(p.x - 1, p.y - rail + 2, 1, 2, P.slate);
+    }
   }
-  b.line(up ? 1 : bw - 2, bh - 14, up ? bw - 2 : 1, 4, P.tan);
+  sconceOn(b, goesRight(floor) ? 4 : bw - 5, 22);
   ambientOcclusion(b, 0, 0, bw, bh, 4, { top: true, bottom: false, left: true, right: true });
   return b;
 }
@@ -389,18 +405,20 @@ export interface Facade {
 }
 
 /**
- * Cada hueco de las columnas de escalera (`s`: el hueco a cuya izquierda va): los rellanos, con
- * sus peldaños, y los pasillos entre dos salas donde no llega ningún tramo.
+ * Cada hueco de las columnas de escalera (`s`: el hueco a cuya izquierda va): los rellanos
+ * (`steps`; con `flight`, de ahí sube un tramo) y los pasillos entre dos salas donde no llega
+ * ningún tramo.
  */
 export const stairCells = (
   L: RoomsLayout,
-): { rect: Rect; floor: number; s: number; steps: boolean }[] =>
+): { rect: Rect; floor: number; s: number; steps: boolean; flight: boolean }[] =>
   L.stairs.flatMap((s) =>
     [...s.floors, ...s.halls].map((f) => ({
       rect: { x: s.x, y: floorTop(f), w: STAIR_W, h: ROOM_H },
       floor: f,
       s: s.at,
       steps: s.floors.includes(f),
+      flight: s.flights.includes(f),
     })),
   );
 

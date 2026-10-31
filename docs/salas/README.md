@@ -145,6 +145,21 @@ La lista completa de pendientes e ideas (bucle, monetización, amigos, torneos, 
   esteras, cojines, manteles, paños del altar y la pared entelada; la madera, la piedra, el
   metal, los pendones (son del escudo) y la ropa, no. Desde qué nivel lleva telas cada sala:
   `TINT_FROM`. Capturas: `tools/shots/tintes.mjs`.
+- **Animaciones (segunda pasada):** el paso tiene 8 tiempos (apoyo, carga, paso e impulso con
+  cada pierna; `SIDE_LEGS` y `WALK_STEPS` en `art/heroes/`) y avanza un tiempo cada `WALK_PX`
+  píxeles recorridos, así el pie apoyado no patina. Al cambiar de sentido, un momento de frente
+  (`turn`); al sentarse o levantarse, un amago de doblar las rodillas (`seatMove`). Gestos de
+  quien está parado: estirarse y bostezar (más al atardecer), brindar en la barra (`toast`);
+  los del salón limpian la barra con el trapo (`WORK.barra`) y en la sala de armas se alternan
+  tres ejercicios (tajo, de arriba abajo y estocada). Al volver con éxito, `RoomScene.cheer(…,
+  ids)` lleva a los del grupo a la barra a dar saltitos con los brazos en alto (`celebrate`).
+  El atlas se ordena solo a partir de `SIZES` en `crowd.ts`.
+- **Escaleras:** cada tramo es una pieza de peldaños abiertos (`stairs.ts`: `flightArt`, a
+  `FLIGHT_Z`), con el pasamanos y la sombra en la pared y un aplique con su luz en cada
+  rellano (`stairBack`). La gente va al pie del tramo y sube peldaño a peldaño (`stepAt`,
+  `climb` en `crowd.ts`): un impulso rápido y un momento quieto, alternando la pierna, y
+  justo delante del tramo (`CLIMB_Z`). Las escaleras por tramos («que solo ocupen sitio donde
+  llegan») siguen descartadas.
 - Trabajar, charlar o calentarse van con los pies quietos (`fightSprites(…, planted)`): las
   posturas de pelea abren las piernas y, al alternarlas, parecía que andaban.
 

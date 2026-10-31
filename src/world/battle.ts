@@ -1526,7 +1526,7 @@ export class Battle {
     cx: number,
     cy: number,
   ): void {
-    const img = f.spr.walk[Math.floor(f.dist / 3.5) % 4]!;
+    const img = f.spr.walk[Math.floor(f.dist / 1.75) % f.spr.walk.length]!;
     const flip = f.target < f.x;
     const x = Math.round(f.x - 9) - cx;
     const y = feet - FEET_Y - cy;

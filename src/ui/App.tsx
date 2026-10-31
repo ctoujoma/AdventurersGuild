@@ -586,7 +586,10 @@ export function App() {
     else if (returned) setTimeout(() => scene.current?.focus('patio'), 30);
     if (wins.length)
       setTimeout(() => {
-        scene.current?.cheer('barra');
+        scene.current?.cheer(
+          'barra',
+          wins.flatMap((r) => r.heroIds),
+        );
         if (!then) scene.current?.focus('barra');
         toast(`¡Ronda para todos! ${wins.map((r) => r.who).join(' y ')} lo celebran en la barra.`);
       }, 5600);

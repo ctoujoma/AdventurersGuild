@@ -3,6 +3,7 @@ import { PixelBuffer, alpha, toHex } from '../pixel';
 import type { Grid } from '../sprite';
 import { gearFront, gearSide } from './gear';
 import {
+  ARMS_UP,
   BASE,
   BEARD,
   BODY_H,
@@ -44,8 +45,13 @@ export interface HeroSprites {
   /** De frente: respiración en dos tiempos. */
   idle: [PixelBuffer, PixelBuffer];
   blink: PixelBuffer;
-  /** De perfil mirando a la derecha: ciclo de 4 pasos. */
+  /** De perfil mirando a la derecha: ciclo de 8 tiempos (ver `Step`). */
   walk: PixelBuffer[];
+  /** De frente con los brazos en alto: celebrando, y estirándose (con los ojos cerrados). */
+  cheer: PixelBuffer;
+  stretch: PixelBuffer;
+  /** De frente, bostezando. */
+  yawn: PixelBuffer;
   /** Sentado tras una mesa: de cintura para arriba. */
   sit: PixelBuffer;
   /** Cabeza con venda para pintarla en la almohada. */
@@ -245,11 +251,15 @@ function headgearOf(look: HeroLook, marks: HeroMarks) {
   return marks.injured && look.headgear === 'casco' ? null : look.headgear;
 }
 
+/** Gestos de frente: celebrar (brazos en alto y boca abierta), estirarse y bostezar. */
+type Gesture = 'cheer' | 'stretch' | 'yawn';
+
 function composeFront(
   look: HeroLook,
   marks: HeroMarks,
   blink: boolean,
   noHat = false,
+  gesture?: Gesture,
 ): PixelBuffer {
   const c = slots(look);
   const b = new PixelBuffer(BODY_W, BODY_H + HEADROOM);
@@ -257,6 +267,11 @@ function composeFront(
   const hg = noHat ? null : headgearOf(look, marks);
   body(blink ? withBlink(BASE, [5, 6]) : BASE);
   body(OUTFITS[look.outfit]);
+  const up = gesture === 'cheer' || gesture === 'stretch';
+  if (up)
+    // Fuera los brazos caídos (mangas y manos): van en alto, encima de todo.
+    for (let y = HEADROOM + 12; y <= HEADROOM + 16; y++)
+      for (const x of [0, 1, 2, 3, 12, 13, 14, 15]) b.clear(x, y);
   if (look.beard && hg !== 'capucha') body(BEARD);
   if (hg === 'capucha') body(HELMS.capucha);
   else if (hg === 'casco') {
@@ -268,8 +283,15 @@ function composeFront(
   }
   if (marks.eyepatch) body(OVERLAYS.parche);
   if (marks.injured && hg !== 'sombrero' && hg !== 'gorra') body(OVERLAYS.venda);
-  body(WEAPONS[look.outfit]);
+  // Con los brazos en alto, el arma no está en la mano.
+  if (!up) body(WEAPONS[look.outfit]);
   if (marks.gear) gearFront(b, marks.gear);
+  if (up) body(ARMS_UP);
+  if (gesture === 'yawn' || gesture === 'cheer') {
+    // La boca abierta, bajo la nariz.
+    b.rect(7, HEADROOM + 7, 2, 2, P.plum);
+    b.set(7, HEADROOM + 8, P.black);
+  }
   return b;
 }
 
@@ -288,7 +310,14 @@ function breathe(src: PixelBuffer): PixelBuffer {
   return out;
 }
 
-type Step = 0 | 1 | 2 | 3;
+/**
+ * Paso: ocho tiempos, cuatro por zancada (apoyo, carga, paso y impulso) y los mismos con la
+ * otra pierna. El cuerpo baja un píxel al apoyar y cargar.
+ */
+type Step = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+export const WALK_STEPS = 8;
+/** Píxeles que avanza la figura en cada tiempo del paso: lo que se corre el pie apoyado. */
+export const WALK_PX = 2;
 
 /** Los que llevan faldón o capa hasta los pies (de perfil, sin piernas). */
 const ROBES: ReadonlySet<OutfitId> = new Set(['mago', 'clerigo', 'noble', 'forastero']);
@@ -303,8 +332,8 @@ function composeSide(
   const c = slots(look);
   const b = new PixelBuffer(BODY_W, BODY_H + HEADROOM);
   const robe = ROBES.has(look.outfit);
-  const contact = step === 0 || step === 2;
-  const bob = contact ? 1 : 0;
+  const phase = step === 'stand' ? -1 : step % 4;
+  const bob = phase === 0 || phase === 1 ? 1 : 0;
   const up = (g: Grid, from = 0) => stamp(b, g.slice(from), c, 0, HEADROOM + from + bob);
   const hg = headgearOf(look, marks);
   const weapons: { back?: Grid; front?: Grid } = fight ? {} : SIDE_WEAPONS[look.outfit];
@@ -318,9 +347,9 @@ function composeSide(
         ? SIDE_ROBE.stand
         : SIDE_LEGS.stand
       : robe
-        ? [SIDE_ROBE.front, SIDE_ROBE.stand, SIDE_ROBE.back, SIDE_ROBE.stand][step]!
-        : [SIDE_LEGS.contact, SIDE_LEGS.passing, SIDE_LEGS.contact, SIDE_LEGS.passing][step]!;
-  stamp(b, lower, c, 0, HEADROOM + 17, step === 2 || step === 3);
+        ? [SIDE_ROBE.front, SIDE_ROBE.stand, SIDE_ROBE.back, SIDE_ROBE.stand][Math.floor(step / 2)]!
+        : [SIDE_LEGS.contact, SIDE_LEGS.down, SIDE_LEGS.passing, SIDE_LEGS.high][step % 4]!;
+  stamp(b, lower, c, 0, HEADROOM + 17, step !== 'stand' && step >= 4);
   up(SIDE_TORSO[look.outfit]);
   if (fight === 'up') stamp(b, SIDE_ARM_UP, c, 0, HEADROOM + 6 + bob);
   else if (fight) {
@@ -335,7 +364,7 @@ function composeSide(
     const arm =
       step === 'stand'
         ? SIDE_ARM.rest
-        : [SIDE_ARM.back, SIDE_ARM.rest, SIDE_ARM.forward, SIDE_ARM.rest][step]!;
+        : [SIDE_ARM.back, SIDE_ARM.rest, SIDE_ARM.forward, SIDE_ARM.rest][Math.floor(step / 2)]!;
     stamp(b, arm, c, 0, HEADROOM + 10 + bob);
   }
   if (look.beard && hg !== 'capucha') up(SIDE_BEARD);
@@ -414,7 +443,12 @@ export function heroSprites(look: HeroLook, marks: HeroMarks = {}): HeroSprites 
   const sprites: HeroSprites = {
     idle: [selOut(front), selOut(breathe(front))],
     blink: selOut(composeFront(look, marks, true)),
-    walk: ([0, 1, 2, 3] as const).map((s) => selOut(composeSide(look, marks, s, false))),
+    walk: ([0, 1, 2, 3, 4, 5, 6, 7] as const).map((s) =>
+      selOut(composeSide(look, marks, s, false)),
+    ),
+    cheer: selOut(composeFront(look, marks, false, false, 'cheer')),
+    stretch: selOut(composeFront(look, marks, true, false, 'stretch')),
+    yawn: selOut(composeFront(look, marks, true, false, 'yawn')),
     sit: selOut(front.crop(0, 0, BODY_W, sitRows)),
     bed: selOut(bedRaw.crop(1, 2, BODY_W - 2, HEADROOM + 10)),
     sleep: selOut(sleepRaw.crop(1, 2, BODY_W - 2, HEADROOM + 10)),
