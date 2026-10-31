@@ -20,18 +20,36 @@ o está en «Más adelante», no se toca sin preguntar. El detalle de cada idea 
 ## Quién hace qué
 
 - **Agente principal** (esta conversación): tiempo, núcleo del bucle, combate y amigos.
-- **Agente de interfaz:** auditoría de trabajadores y tareas, menos toques y la parte visual
-  del tutorial. Encargo: [`encargos/interfaz-trabajadores.md`](encargos/interfaz-trabajadores.md).
-- **Agente de arte:** colores por sala, animaciones, escaleras, fachada y sastrería. Encargo:
-  [`encargos/arte-colores-animaciones.md`](encargos/arte-colores-animaciones.md).
+- **Agente de interfaz:** auditoría de trabajadores y tareas (hecha:
+  [`encargos/interfaz-trabajadores.md`](encargos/interfaz-trabajadores.md)), y ahora menos
+  toques y cartas del amanecer una a una:
+  [`encargos/interfaz-menos-toques.md`](encargos/interfaz-menos-toques.md). Después, la parte
+  visual del tutorial.
+- **Agente de arte:** colores por sala, animaciones y escaleras (hecho:
+  [`encargos/arte-colores-animaciones.md`](encargos/arte-colores-animaciones.md)), y ahora
+  fachada por partes y preparar la sastrería:
+  [`encargos/arte-fachada-sastreria.md`](encargos/arte-fachada-sastreria.md).
+
+Para arrancar a cada uno: «Lee `CLAUDE.md`, `docs/plan.md` y `docs/encargos/<encargo>.md`, y
+empieza por el punto 1».
 
 Cada uno en su rama, PR contra `main`, sin pisarse: quien toque fuera de su zona lo dice en
 el PR.
 
-## Fase 0 · Prueba del tiempo (hecha; falta jugarla y decidir)
+## Fase 0 · El tiempo (decidido: días que corren solos)
 
-Decidir el modelo de tiempo jugándolo. Va tras un interruptor en Ajustes › Modo prueba
-(«Tiempo que corre solo»), sin cambiar la partida de quien no lo active.
+Decidido con el usuario: el tiempo corre solo, también con el juego cerrado (12 veces más
+despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Ajustes › Modo prueba
+(`classicTime`).
+
+- **Acelerar:** el botón de velocidad sigue mientras dura «La deuda» y en el modo prueba (para
+  probar). Más adelante, quizá de pago.
+- **Pagos estando fuera:** nunca se pierde estando fuera. La víspera de un pago que no llega,
+  la simulación se para a la tarde (`dueTonight` en `core/away.ts`) y la carta lo avisa.
+  Pendiente: en la app de Android, una notificación local el día antes de cada pago.
+- **Escala:** con el juego abierto, un día son 5 minutos (una hora del juego, unos 12 s); cerrado,
+  un día por hora real. Fallout Shelter usa horas reales: si se quiere ese ritmo, se alarga el
+  día (`DAY_SECONDS`).
 
 - El día corre solo: al llegar la noche, cae sola (con su asalto o sin él) y amanece; el
   «Anochecer» queda para dormir antes de tiempo.
@@ -44,15 +62,10 @@ Decidir el modelo de tiempo jugándolo. Va tras un interruptor en Ajustes › Mo
 - Cómo está hecho: `core/away.ts` (`catchUp`: simula lo de fuera y junta la carta),
   `endDay(state, away)` (asaltos a `AWAY_RAID`), el interruptor `realTime` en los ajustes y,
   en `App.tsx`, la hora que se guarda con cada guardado (`lastSeen`), la vuelta tras ocultar la
-  pestaña o al continuar, y la noche que cae sola cuando no hay paneles delante. Ojo: los pagos
-  siguen contando estando fuera, así que una ausencia larga puede acabar la partida.
-- Con el interruptor, la interfaz también cambia: la barra no tiene «Anochecer», «Cerrar» ni
-  velocidad, y dice cuánto falta para que anochezca o caiga la noche; los plazos (viajes,
-  caducidad, vuelta de los grupos, obras, entrenamiento, pagos, chivatazos) se cuentan en
-  minutos de taberna abierta (`ui/when.ts`).
-- Después: jugarlo unos días, comparar con el modo de ahora y decidir. Si se queda, faltarán
-  las cuentas atrás en tiempo real en la interfaz y los avisos en la app de Android
-  (notificaciones locales programadas al salir).
+  pestaña o al continuar, y la noche que cae sola cuando no hay paneles delante.
+- La barra no tiene «Cerrar» y dice cuánto falta para que anochezca o caiga la noche; los
+  plazos (viajes, caducidad, vuelta de los grupos, obras, entrenamiento, pagos, chivatazos) se
+  cuentan en minutos de taberna abierta (`ui/when.ts`).
 
 ## Fase 1 · Bucle infinito
 
@@ -82,7 +95,10 @@ Decidir el modelo de tiempo jugándolo. Va tras un interruptor en Ajustes › Mo
    - tocar varias veces (ratas);
    - elegir (un noble borracho).
 
-   Sin resolver, empeoran.
+   Sin resolver, salen mal. Hecho: `data/incidents.ts` (los siete), `core/incidents.ts` (reglas
+   y tests), `ui/IncidentMark.tsx` (el aviso sobre la sala) y `ui/drop.ts` (arrastrar a quien
+   lo arregla). Solo con el juego abierto, desde el día 2 y de uno en uno; lo que quede al caer
+   la noche sale mal y va a la carta. Cifras en `balance.ts` (`INCIDENT_*`).
 6. **Rumores de la barra:** un bocadillo brillante sobre una mesa unos segundos; si se toca a
    tiempo, se abre un encargo especial con botín bueno o legendario.
 

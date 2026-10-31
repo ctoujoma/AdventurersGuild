@@ -13,8 +13,10 @@ interface Props {
   /** Pasando la noche (con o sin asalto): el reloj de mañana aún no corre. */
   night?: boolean;
   pace: 1 | 2 | 4;
-  /** Tiempo que corre solo: sin acelerar ni cerrar; la barra dice cuánto falta para la noche. */
+  /** Tiempo que corre solo: sin cerrar; la barra dice cuánto falta para la noche. */
   real?: boolean;
+  /** Con el tiempo que corre solo, se puede acelerar (mientras dura «La deuda» y en pruebas). */
+  rush?: boolean;
   onMail: () => void;
   onAway: () => void;
   onPace: () => void;
@@ -38,8 +40,9 @@ export function DayBar(p: Props) {
   const dusk = DUSK;
   const part = p.night ? 1 : p.part;
   // Con el tiempo que corre solo, cuánto falta para el anochecer o para la noche.
-  const toDusk = (dusk - part) * DAY_SECONDS;
-  const toNight = (1 - part) * DAY_SECONDS;
+  const speed = p.real && !p.rush ? 1 : p.pace;
+  const toDusk = ((dusk - part) * DAY_SECONDS) / speed;
+  const toNight = ((1 - part) * DAY_SECONDS) / speed;
   const slow = Math.round(AWAY_DAY_SECONDS / DAY_SECONDS);
   return (
     <div class="daybar">
@@ -61,7 +64,7 @@ export function DayBar(p: Props) {
         <Icon name="flag" size={20} />
         {p.away > 0 && <span class="badge badge-info">{p.away}</span>}
       </button>
-      {p.real ? (
+      {p.real && !p.rush ? (
         <span
           class="clock clock-real"
           aria-label={partName(part, dusk)}
@@ -79,7 +82,11 @@ export function DayBar(p: Props) {
         <button
           class="clock"
           aria-label={`${partName(part, dusk)}. Velocidad ×${p.pace}: toca para cambiarla`}
-          data-help="El reloj del día: la caja va entregando lo de la taberna hasta el anochecer. Toca para que corra más rápido."
+          data-help={
+            p.real
+              ? 'El reloj del día corre solo. Mientras pagas la deuda puedes acelerarlo: toca para cambiar la velocidad.'
+              : 'El reloj del día: la caja va entregando lo de la taberna hasta el anochecer. Toca para que corra más rápido.'
+          }
           onClick={p.onPace}
         >
           <Icon name="reloj" size={14} />

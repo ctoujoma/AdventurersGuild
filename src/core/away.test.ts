@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { awaySeconds, catchUp } from './away';
-import { AWAY_DAY_SECONDS, AWAY_MAX_DAYS, AWAY_MIN_SECONDS, DAY_SECONDS } from './balance';
+import { awaySeconds, catchUp, dueTonight } from './away';
+import {
+  AWAY_DAY_SECONDS,
+  AWAY_MAX_DAYS,
+  AWAY_MIN_SECONDS,
+  DAY_SECONDS,
+  DUSK,
+  SCHEDULE,
+} from './balance';
 import { newGame } from './game';
 import { raidChance, stepRaids } from './raids';
 import { Rng } from './rng';
@@ -56,5 +63,21 @@ describe('tiempo que corre solo', () => {
       if (b.raid) away++;
     }
     expect(away).toBeLessThan(home);
+  });
+
+  it('fuera nunca se pierde: la víspera de un pago que no llega, la taberna espera a la tarde', () => {
+    const first = SCHEDULE[0]!;
+    const s = { ...newGame('pago'), day: first.day - 1, clock: 0, gold: 0 };
+    expect(dueTonight(s)).toBeGreaterThan(0);
+    const broke = catchUp(s, AWAY_DAY_SECONDS * 5);
+    expect(broke.state.over).toBeFalsy();
+    expect(broke.state.day).toBe(s.day);
+    expect(broke.state.clock).toBeCloseTo(DUSK * DAY_SECONDS, 6);
+    expect(broke.waiting).toBe(dueTonight(broke.state));
+    // Con dinero, el pago se hace solo y los días siguen.
+    const rich = catchUp({ ...s, gold: 5000 }, AWAY_DAY_SECONDS * 3);
+    expect(rich.waiting).toBeUndefined();
+    expect(rich.state.paid).toBe(s.paid + first.amount);
+    expect(rich.days.length).toBe(3);
   });
 });

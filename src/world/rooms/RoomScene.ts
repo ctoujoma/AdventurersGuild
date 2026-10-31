@@ -603,6 +603,12 @@ export class RoomScene {
     );
   }
 
+  /** Punto del mundo junto al techo de una sala (para colgar de él un aviso), o null. */
+  roomTop(id: string): Point | null {
+    const r = this.layout?.rooms.find((x) => x.room.id === id);
+    return r ? { x: r.rect.x + r.rect.w / 2, y: r.rect.y + 14 } : null;
+  }
+
   screenOf(wx: number, wy: number): Point {
     return this.camera.toScreen(wx, wy);
   }

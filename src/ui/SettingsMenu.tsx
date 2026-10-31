@@ -174,12 +174,12 @@ export function SettingsMenu({ settings: s, onChange, onClose, onCheat, onBoss }
               <label class="set-check">
                 <input
                   type="checkbox"
-                  checked={s.realTime}
-                  onChange={(e) => set({ realTime: e.currentTarget.checked })}
+                  checked={s.classicTime}
+                  onChange={(e) => set({ classicTime: e.currentTarget.checked })}
                 />
                 <span>
-                  Tiempo que corre solo (prueba): la noche cae sola y, con el juego cerrado, la
-                  taberna sigue a un día por hora
+                  Días a la antigua: el día solo corre con el juego abierto y se cierra con
+                  «Anochecer»
                 </span>
               </label>
               <label class="set-check">
