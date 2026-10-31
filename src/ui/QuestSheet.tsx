@@ -6,6 +6,7 @@ import { chainDef } from '../core/chains';
 import { PERKS, partyClasses, tripDays } from '../core/classes';
 import { RISK_LABELS, moraleMod, skill } from '../core/party';
 import { questEstimate } from '../core/resolve';
+import { suggestParty } from '../core/suggest';
 import { CLASS_NAMES, dangerClass, dangerLabel, statusLabel } from '../data/labels';
 import { help } from './HoldHelp';
 import { Icon } from './icons';
@@ -49,6 +50,15 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
   const mage = party.find((h) => h.cls === 'mago');
   const days = tripDays(q, members, game.fac.establo);
   const hideDanger = q.dangerHidden && !mage && game.fac.mapas < 2;
+
+  // El mejor grupo que se puede mandar ahora; el jugador lo cambia si quiere.
+  const suggestion = suggestParty(game, q.id);
+  const suggest = () => {
+    if ('why' in suggestion) return setWarn(suggestion.why);
+    setWarn(null);
+    audio.play('select');
+    setSel(suggestion.ids);
+  };
 
   const toggle = (id: string) => {
     setWarn(null);
@@ -145,7 +155,21 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
             </div>
           )}
 
-          <h4 class="qs-sub">Quién va</h4>
+          <div class="qs-who">
+            <h4 class="qs-sub">Quién va</h4>
+            <button
+              class={`btn btn-wood qs-suggest ${'why' in suggestion ? 'is-off' : ''}`}
+              aria-disabled={'why' in suggestion}
+              {...help(
+                'why' in suggestion
+                  ? suggestion.why
+                  : 'Elige el grupo que mejor sale con los que están en casa. Puedes cambiarlo antes de enviar.',
+              )}
+              onClick={suggest}
+            >
+              <Icon name="star" size={12} /> Sugerir
+            </button>
+          </div>
           <div class="picks">
             {ranked.map((h) => {
               const on = sel.includes(h.id);

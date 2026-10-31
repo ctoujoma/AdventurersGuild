@@ -1409,6 +1409,19 @@ button:focus-visible {
   background: var(--ink);
 }
 
+.qs-who {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.qs-who .qs-sub {
+  margin: 0;
+}
+.qs-suggest.is-off {
+  opacity: 0.55;
+}
 .qs-sub {
   margin: 4px 0 0;
   font-family: var(--pixel);
