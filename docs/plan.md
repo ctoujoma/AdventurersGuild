@@ -20,10 +20,18 @@ o está en «Más adelante», no se toca sin preguntar. El detalle de cada idea 
 ## Quién hace qué
 
 - **Agente principal** (esta conversación): tiempo, núcleo del bucle, combate y amigos.
-- **Agente de interfaz:** auditoría de trabajadores y tareas, menos toques y la parte visual
-  del tutorial. Encargo: [`encargos/interfaz-trabajadores.md`](encargos/interfaz-trabajadores.md).
-- **Agente de arte:** colores por sala, animaciones, escaleras, fachada y sastrería. Encargo:
-  [`encargos/arte-colores-animaciones.md`](encargos/arte-colores-animaciones.md).
+- **Agente de interfaz:** auditoría de trabajadores y tareas (hecha:
+  [`encargos/interfaz-trabajadores.md`](encargos/interfaz-trabajadores.md)), y ahora menos
+  toques y cartas del amanecer una a una:
+  [`encargos/interfaz-menos-toques.md`](encargos/interfaz-menos-toques.md). Después, la parte
+  visual del tutorial.
+- **Agente de arte:** colores por sala, animaciones y escaleras (hecho:
+  [`encargos/arte-colores-animaciones.md`](encargos/arte-colores-animaciones.md)), y ahora
+  fachada por partes y preparar la sastrería:
+  [`encargos/arte-fachada-sastreria.md`](encargos/arte-fachada-sastreria.md).
+
+Para arrancar a cada uno: «Lee `CLAUDE.md`, `docs/plan.md` y `docs/encargos/<encargo>.md`, y
+empieza por el punto 1».
 
 Cada uno en su rama, PR contra `main`, sin pisarse: quien toque fuera de su zona lo dice en
 el PR.
