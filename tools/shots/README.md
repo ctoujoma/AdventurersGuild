@@ -26,6 +26,9 @@ Sirven para revisar a ojo los cambios de la escena de salas (no son tests).
    baja de cerca, a un héroe subiéndolo (un fotograma cada 120 ms) y a todos celebrando en la
    barra.
 
+7b. Animales: `node tools/shots/animales.mjs <carpeta> [puerto]` saca la chimenea del salón de
+cerca con el gato y el perro dormidos, el gato de paseo y los dos tocados.
+
 8. Fachada: `node tools/shots/fachada.mjs <carpeta> [tejado/paredes/rótulo,…]` saca la taberna
    entera con cada combinación, de día y de noche, baja y con una planta de más (`ANCHO` y
    `ALTO` para móvil).

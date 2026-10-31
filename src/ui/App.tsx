@@ -10,7 +10,7 @@ import { canClose, canHire, customOf, newGame, reduce, type Action } from '../co
 import { raidRoute } from '../core/assault';
 import { canHireWorker } from '../core/workers';
 import { DAY_SECONDS, DELIVERIES, DUSK } from '../core/balance';
-import { DECOR, FACADE } from '../data/custom';
+import { DECOR, FACADE, PET_LINES } from '../data/custom';
 import { RUMORS, VISITORS, type VisitorKind } from '../data/visitors';
 import type { BossFight as BossFightRecord, Facilities, GameState } from '../core/model';
 import { FACILITY_INFO } from '../data/labels';
@@ -383,6 +383,12 @@ export function App() {
 
   const onHotspot = (id: string) => {
     setHint(false);
+    if (id.startsWith('bicho:')) {
+      // El gato o el perro del salón: ronronea o ladra (en la escena) y dice algo.
+      const lines = PET_LINES[id.slice(6) as keyof typeof PET_LINES];
+      if (lines && !works.planning) toast(lines[Math.floor(Math.random() * lines.length)]!);
+      return;
+    }
     if (id.startsWith('cosa:')) {
       // Algo de una sala: en obras elige la sala; si no, abre lo suyo.
       const [, act, room] = id.split(':');

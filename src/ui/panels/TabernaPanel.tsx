@@ -330,9 +330,19 @@ export function TabernaPanel({
       {tab === 'animales' && (
         <div class="adornos">
           <article
+            class="adorno on"
+            {...help(
+              'Duerme junto a la chimenea del salón y a ratos da una vuelta. Si lo tocas, ronronea.',
+            )}
+          >
+            <b>Bigotes, el gato</b>
+            <span class="row-sub">Venía con la taberna</span>
+            <span class="pill pill-ok">En casa</span>
+          </article>
+          <article
             class={`adorno ${c.dog ? 'on' : ''}`}
             {...help(
-              `${c.dog ? 'Duerme junto a la puerta y gruñe a quien no conoce.' : 'Ladra a los forasteros y no le teme a nada.'} Si asaltan la taberna, ladra y despierta a todos antes. Y más probabilidad de chivatazo.`,
+              `${c.dog ? 'Duerme en el salón y gruñe a quien no conoce. Si lo tocas, ladra.' : 'Ladra a los forasteros y no le teme a nada.'} Si asaltan la taberna, ladra y despierta a todos antes. Y más probabilidad de chivatazo.`,
             )}
           >
             <b>{c.dog ? 'Tizón, el perro' : 'Perro guardián'}</b>
