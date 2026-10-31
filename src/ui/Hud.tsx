@@ -10,6 +10,8 @@ import { isRealTime, left as timeLeft, shortLeft } from './when';
 import type { GameState } from '../core/model';
 import { Counter } from './Counter';
 import { Icon } from './icons';
+import { AlertBell } from './AlertBell';
+import type { Notice } from './alerts';
 
 type Tip = 'oro' | 'rep' | 'comida' | 'cerveza' | 'pago' | 'asalto';
 
@@ -18,7 +20,19 @@ type Tip = 'oro' | 'rep' | 'comida' | 'cerveza' | 'pago' | 'asalto';
  * una cifra sale debajo una línea que explica qué es. El sonido está en Ajustes; en pantallas anchas,
  * también aquí.
  */
-export function Hud({ game, onSettings }: { game: GameState; onSettings: () => void }) {
+export function Hud({
+  game,
+  onSettings,
+  alerts,
+  onAlert,
+  quiet,
+}: {
+  game: GameState;
+  onSettings: () => void;
+  alerts: Notice[];
+  onAlert: (n: Notice) => void;
+  quiet?: boolean;
+}) {
   const [sound, setSound] = useState(audio.on);
   useEffect(() => audio.subscribe(setSound), []);
   const pay = nextPayment(game);
@@ -112,7 +126,7 @@ export function Hud({ game, onSettings }: { game: GameState; onSettings: () => v
             aria-expanded={tip === 'pago'}
             onClick={() => toggle('pago')}
           >
-            <Icon name="bell" size={16} />
+            <Icon name="pergamino" size={16} />
             <b>{due}</b>
             <small class="hud-due">{left <= 0 ? 'hoy' : shortLeft(left, clock)}</small>
           </button>
@@ -135,6 +149,7 @@ export function Hud({ game, onSettings }: { game: GameState; onSettings: () => v
             )}
           </button>
         )}
+        <AlertBell alerts={alerts} onGo={onAlert} quiet={quiet} />
         <button
           class="btn-icon hud-sound"
           aria-label={sound ? 'Silenciar' : 'Activar sonido'}

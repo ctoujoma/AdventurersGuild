@@ -203,6 +203,24 @@ export const DOG_PRICE = 60;
 /** El perro guardián: olfato para los asaltos (y de noche, ladra y despierta a todos antes). */
 export const DOG_TIPOFF = 0.25;
 
+/** Lo que pasa al tocar a los animales del salón (se elige una al azar). */
+export const PET_LINES: Record<'gato' | 'perro', readonly string[]> = {
+  gato: [
+    'Bigotes ronronea. Lleva aquí más años que tú.',
+    'Bigotes abre un ojo, te mira y lo vuelve a cerrar.',
+    'Bigotes se deja rascar detrás de la oreja. Solo un poco.',
+    'Bigotes te da un cabezazo en la mano. Huele a la cocina.',
+    'Bigotes se estira junto al fuego. El sitio es suyo.',
+  ],
+  perro: [
+    '¡Guau, guau! Tizón mueve el rabo y vuelve a tumbarse.',
+    'Tizón te lame la mano y suspira.',
+    'Tizón ladra a la puerta. No hay nadie… de momento.',
+    'Tizón se pone panza arriba. Menudo perro guardián.',
+    'Tizón levanta las orejas: ha oído algo en el patio.',
+  ],
+};
+
 /** Inicial del lacre: la primera palabra que no sea un artículo («El Jarro Partido» → J). */
 export function sealInitial(name: string): string {
   const words = name.split(/\s+/).filter(Boolean);

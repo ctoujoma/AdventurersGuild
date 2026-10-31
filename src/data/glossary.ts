@@ -4,7 +4,7 @@
 export const GLOSSARY: readonly { term: string; text: string }[] = [
   {
     term: 'Oro y próximo pago',
-    text: 'Lo que hay en la caja. Junto a la campana está lo que toca pagar y qué día: la cuota a Merlo más los salarios de la semana. Si no llega, se acaba la partida.',
+    text: 'Lo que hay en la caja. Junto al pergamino de arriba está lo que toca pagar y qué día: la cuota a Merlo más los salarios de la semana. Si no llega, se acaba la partida.',
   },
   {
     term: 'Reputación y rango',

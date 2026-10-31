@@ -6,6 +6,7 @@
 
 export type Sfx =
   | 'click'
+  | 'bell'
   | 'tab'
   | 'open'
   | 'close'
@@ -13,6 +14,7 @@ export type Sfx =
   | 'build'
   | 'hammer'
   | 'purr'
+  | 'bark'
   | 'hoot'
   | 'sparks'
   | 'lute'
@@ -202,6 +204,13 @@ class AudioEngine {
       case 'click':
         this.tone('square', 760, 380, t, 0.045, 0.035 * v);
         break;
+      case 'bell':
+        // Campanilla de aviso: dos golpes, el segundo más agudo, con su eco.
+        this.ping(1568, t, 0.5, 0.07 * v);
+        this.ping(2349, t, 0.35, 0.025 * v);
+        this.ping(2093, t + 0.13, 0.7, 0.07 * v);
+        this.ping(3136, t + 0.13, 0.4, 0.02 * v);
+        break;
       case 'tab':
         this.tone('triangle', 620, 620, t, 0.05, 0.06 * v);
         this.tone('triangle', 930, 930, t + 0.055, 0.07, 0.06 * v);
@@ -232,6 +241,11 @@ class AudioEngine {
         break;
       case 'purr':
         this.purr(t, 1.4, 0.22 * v);
+        break;
+      case 'bark':
+        // Dos ladridos, al compás de la boca del perro en la escena.
+        this.woof(t, 0.1 * v);
+        this.woof(t + 0.8, 0.09 * v);
         break;
       case 'hoot':
         this.hoot(t, 0.32, 0.12 * v);
@@ -841,6 +855,17 @@ class AudioEngine {
     lfo.start(t);
     s.stop(t + dur + 0.05);
     lfo.stop(t + dur + 0.05);
+  }
+
+  /** Un ladrido: un tono áspero que cae, apagado, con un golpe de aire al principio. */
+  private woof(t: number, vol: number): void {
+    const f = this.ctx!.createBiquadFilter();
+    f.type = 'lowpass';
+    f.frequency.value = 1100;
+    f.connect(this.sfxBus);
+    this.tone('sawtooth', 560, 240, t, 0.16, vol, f);
+    this.tone('square', 280, 150, t, 0.13, vol * 0.5, f);
+    this.burst(t, 0.05, vol * 0.8, 'bandpass', 900, 1.2);
   }
 
   private hoot(t: number, dur: number, vol: number): void {

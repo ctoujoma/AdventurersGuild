@@ -182,6 +182,13 @@ La lista completa de pendientes e ideas (bucle, monetización, amigos, torneos, 
   solo hay uno), a una cama del dormitorio (`homes` en `people.ts`). Estén donde estén, se les
   pinta acostados con la venda (los sanos, sin ella) y de vez en cuando sube una cruz roja sobre
   su cabeza (`injured` en `crowd.ts`, partícula `cross`).
+- **Animales del salón** (`world/rooms/pets.ts`, dibujos en `art/pets.ts`): el gato Bigotes
+  (el de la taberna de antes del PR 12) duerme a la derecha de la chimenea; a ratos se sienta,
+  se lava y da una vuelta por delante de las mesas. Tizón, el perro (si se ha comprado),
+  duerme a la izquierda del fuego y a ratos levanta la cabeza y mueve el rabo. Se tocan: el gato
+  ronronea con corazones y el perro se sienta y ladra (sonido `bark`, partícula `bark`); la
+  interfaz saca una frase (`PET_LINES` en `data/custom.ts`). Solo adorno. Hoja:
+  `capturas/animales.png`.
 - Trabajar, charlar o calentarse van con los pies quietos (`fightSprites(…, planted)`): las
   posturas de pelea abren las piernas y, al alternarlas, parecía que andaban.
 
