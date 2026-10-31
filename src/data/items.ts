@@ -173,6 +173,34 @@ export const GEAR: readonly GearBase[] = [
     bonus: { Combate: 2, Supervivencia: 2 },
     perk: 'guard',
   },
+  {
+    name: 'Capa de piel de ceniza',
+    desc: 'Del jabalí de ceniza. Huele a humo y no deja pasar el frío ni las flechas.',
+    value: 160,
+    kind: 'armadura',
+    rarity: 2,
+    icon: 'capa',
+    bonus: { Supervivencia: 3, Combate: 1 },
+  },
+  {
+    name: 'Cetro de la Reina',
+    desc: 'Frío al tacto. Los muertos que lo oyen golpear el suelo se vuelven a tumbar.',
+    value: 180,
+    kind: 'amuleto',
+    rarity: 2,
+    icon: 'varita',
+    bonus: { Arcano: 4 },
+  },
+  {
+    name: 'Escudo de escama blanca',
+    desc: 'Una sola escama de la dragona de la Corona Blanca, con asa. Ni el fuego ni el hielo la mellan.',
+    value: 200,
+    kind: 'armadura',
+    rarity: 2,
+    icon: 'escudo',
+    bonus: { Combate: 3, Supervivencia: 2 },
+    perk: 'guard',
+  },
 ];
 
 export const TREASURES: readonly GearBase[] = [

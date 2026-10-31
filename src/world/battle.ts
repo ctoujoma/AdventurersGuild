@@ -13,7 +13,7 @@ import {
 } from '../art/heroes/hero';
 import { generateLook } from '../art/heroes/look';
 import type { PixelBuffer } from '../art/pixel';
-import type { BossKind } from '../data/bosses';
+import { BOSSES, bossBase, type BossBase, type BossKind } from '../data/bosses';
 import type { PKind } from './particles';
 import { WEAPONS, type WeaponId } from './weapons';
 
@@ -307,7 +307,7 @@ const bossFrame =
         ? { pose, angle: 0, dx: lerp(-back, lunge, seg(p, at - 0.15, at)) }
         : { pose: 'ready', angle: 0, dx: lunge * (1 - seg(p, at + 0.25, 1)) };
 
-const BOSS_MOVES: Record<BossKind, Move[]> = {
+const BASE_MOVES: Record<BossBase, Move[]> = {
   bestia: [
     // Colmillazo.
     {
@@ -428,6 +428,11 @@ const BOSS_MOVES: Record<BossKind, Move[]> = {
     },
   ],
 };
+
+/** Los jefes teñidos pelean como el suyo de base. */
+const BOSS_MOVES = Object.fromEntries(
+  (Object.keys(BOSSES) as BossKind[]).map((k) => [k, BASE_MOVES[bossBase(k)]]),
+) as Record<BossKind, Move[]>;
 
 export const MOVES: Record<Style, Move[]> = {
   guerrero: [
@@ -825,6 +830,9 @@ const KITS: Record<Style, Kit> = {
   bestia: { main: 'garrote', ready: 0, ranged: false, torch: false },
   ahogado: { main: 'garrote', ready: 0, ranged: false, torch: false },
   sierpe: { main: 'garrote', ready: 0, ranged: false, torch: false },
+  jabali: { main: 'garrote', ready: 0, ranged: false, torch: false },
+  reina: { main: 'garrote', ready: 0, ranged: false, torch: false },
+  dragona: { main: 'garrote', ready: 0, ranged: false, torch: false },
 };
 
 export const BANDIT_TYPES: Style[] = ['bruto', 'navajero', 'arquero', 'incendiario'];

@@ -1,6 +1,6 @@
-import type { BossKind } from '../data/bosses';
+import { BOSSES, bossBase, type BossKind } from '../data/bosses';
 import { P, darker } from './palette';
-import { PixelBuffer, bayer, rampAt, toHex } from './pixel';
+import { PixelBuffer, alpha, bayer, rampAt, rgba, toHex } from './pixel';
 
 /**
  * Los jefes de las historias, grandes y dibujados a mano en código: la bestia de Hondogrís
@@ -542,11 +542,48 @@ function groundOf(b: PixelBuffer): { x: number; y: number } {
   return { x: Math.round(b.w / 2), y: b.h };
 }
 
+/**
+ * Tiñe un dibujo con otra rampa de la paleta según lo claro de cada píxel (el contorno y las
+ * sombras siguen oscuros). Con `keep`, los rojos (ojos, fuego) o los dorados (corona) se quedan.
+ */
+function recolor(
+  b: PixelBuffer,
+  ramp: readonly string[],
+  keep?: 'red' | 'gold',
+  bright = false,
+): PixelBuffer {
+  const out = b.clone();
+  const cols = ramp.map((c) => rgba(c));
+  for (let i = 0; i < out.data.length; i++) {
+    const c = out.data[i]!;
+    if (!alpha(c)) continue;
+    const r = c & 255;
+    const g = (c >> 8) & 255;
+    const bl = (c >> 16) & 255;
+    if (keep === 'red' && r > g + 70 && r > bl + 70) continue;
+    if (keep === 'gold' && r > bl + 60 && g > bl + 30 && r > 150) continue;
+    const l = (0.3 * r + 0.59 * g + 0.11 * bl) / 256;
+    const lum = bright ? Math.sqrt(l) : l;
+    out.data[i] = cols[Math.min(cols.length - 1, Math.floor(lum * cols.length))]!;
+  }
+  return out;
+}
+
 export function bossArt(kind: BossKind): BossArt {
   let a = cache.get(kind);
   if (!a) {
-    const base = kind === 'bestia' ? beastArt() : kind === 'ahogado' ? kingArt() : wyrmArt();
-    a = { ...base, downFoot: groundOf(base.poses.down) };
+    const b = bossBase(kind);
+    const base = b === 'bestia' ? beastArt() : b === 'ahogado' ? kingArt() : wyrmArt();
+    const def = BOSSES[kind];
+    const poses = def.ramp
+      ? (Object.fromEntries(
+          Object.entries(base.poses).map(([k, v]) => [
+            k,
+            recolor(v, def.ramp!, def.keep, def.bright),
+          ]),
+        ) as Record<BossPose, PixelBuffer>)
+      : base.poses;
+    a = { ...base, poses, downFoot: groundOf(base.poses.down) };
     cache.set(kind, a);
   }
   return a;
