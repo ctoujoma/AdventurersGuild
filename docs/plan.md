@@ -121,7 +121,7 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
 
 ## Fase 2 · Tutoriales
 
-### 2a · El primero, hasta el primer pago (decidido)
+### 2a · El primero, hasta el primer pago (hecho)
 
 Pasos que hay que cumplir, la cámara acercándose a cada cosa, el tiempo saltando cuando no
 queda nada que hacer. Acaba con el primer pago a Merlo (día 7); unos 10 o 15 minutos.
@@ -140,8 +140,12 @@ queda nada que hacer. Acaba con el primer pago a Merlo (día 7); unos 10 o 15 mi
    - los objetivos del Gremio (y el Libro).
 8. El pergamino de Merlo: saltar al día 7 y pagar. Fin: «La taberna sigue siendo tuya».
 
-Mientras dura, sin incidentes ni rumores sueltos (solo los preparados). Lo que aún no toca
-(obras, mapa, adornos) con candado y cuándo se abre. A los 8 de fama, el aviso de «La sombra de
+Mientras dura, el reloj está parado (solo avanza con los saltos, y tampoco corre con la
+taberna cerrada) y no hay incidentes ni rumores sueltos (solo los preparados). Si falta dinero
+para la enfermería o el pago, lo pone el tío: el tutorial no acaba en derrota. Hecho en
+`core/tutorial.ts` (pasos, saltos de tiempo y tests) y `ui/TutorialNote.tsx`; las partidas
+nuevas empiezan con él. Falta: candados en lo que aún no toca (mapa, adornos) y que la barra
+diga que el reloj está parado. A los 8 de fama, el aviso de «La sombra de
 Hondogrís». Se puede saltar entero desde el primer paso. Parte de las notas del tío
 (`src/ui/tips.ts`, `UncleNote.tsx`); sus notas de obras se rehacen en el 2b.
 

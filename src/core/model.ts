@@ -17,6 +17,7 @@ import type {
 import type { Trade } from '../data/workers';
 import type { RoomType } from '../data/rooms';
 import type { UnlockId } from '../data/unlocks';
+import type { Tutorial } from './tutorial';
 import type { Attrs, Challenge, ClassId, SkillId, Trait } from './party';
 
 export const SAVE_VERSION = 4;
@@ -548,6 +549,8 @@ export interface GameState {
   lastFight?: string | null;
   /** Incidentes en marcha (uno a la vez). */
   incidents?: Incident[];
+  /** Tutorial guiado (fase 2a): sin él, no hay (partidas viejas o saltado). */
+  tutorial?: Tutorial;
   /** Rumor que se oye ahora en la barra (solo con el juego abierto). */
   rumor?: Rumor;
   /** Lo último que ha pasado con los incidentes, para el aviso de la interfaz (de paso). */

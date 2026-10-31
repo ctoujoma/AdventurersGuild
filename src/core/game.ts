@@ -77,6 +77,7 @@ import type { RoomType } from '../data/rooms';
 import { arrival, checkFeats, emptyStats } from './feats';
 import { checkGoals, tickGoals } from './goals';
 import { stepRumors, takeRumor } from './rumors';
+import { advanceTutorial, easyQuest, finishTutorial, skipTime, tutorialOn } from './tutorial';
 import { stepRaids } from './raids';
 import { advanceChain, bossOf, fightRoster, offerChain } from './chains';
 import { choose, maybeEvent, scaredClients, stepThreat } from './events';
@@ -181,6 +182,8 @@ export type Action =
   /** El reloj del día avanza hasta `to` segundos (y la caja entrega lo que toque). */
   | { type: 'tick'; to: number }
   | { type: 'rumor' }
+  | { type: 'renameHero'; id: string; name: string }
+  | { type: 'tutorial'; op: 'ok' | 'saltar' | 'vuelta' | 'pago' }
   /** Saltar al anochecer. */
   | { type: 'dusk' }
   | { type: 'endDay' };
@@ -334,7 +337,7 @@ export const needsPlan = (s: GameState, a: Action) =>
 
 // ---------- Partida nueva ----------
 
-export function newGame(seed: string): GameState {
+export function newGame(seed: string, opts: { tutorial?: boolean } = {}): GameState {
   const rng = new Rng(seed);
   const s: GameState = {
     version: SAVE_VERSION,
@@ -404,6 +407,10 @@ export function newGame(seed: string): GameState {
     s.workers.push(w);
   }
   for (let i = 0; i < START.quests; i++) s.quests.push(quest(s, rng));
+  if (opts.tutorial) {
+    s.quests[0] = easyQuest(s.quests[0]!, rng);
+    s.tutorial = { step: 0, quest: s.quests[0].id };
+  }
   checkGoals(s, rng, []);
   s.rng = rng.save();
   return s;
@@ -425,6 +432,30 @@ function quest(s: GameState, rng: Rng): Quest {
 // ---------- Acciones ----------
 
 export function reduce(state: GameState, action: Action): GameState {
+  const next = reduceAction(state, action);
+  if (next === state || !tutorialOn(next)) return next;
+  // Tutorial: lo hecho cuenta para el paso en curso, y se pasa al siguiente si toca.
+  const t = structuredClone(next);
+  if (action.type === 'assign') t.tutorial!.moved = true;
+  if (action.type === 'renameHero') t.tutorial!.named = true;
+  const before = t.tutorial!.step;
+  const msgs = advanceTutorial(t);
+  if (
+    t.tutorial!.step === before &&
+    !msgs.length &&
+    action.type !== 'assign' &&
+    action.type !== 'renameHero'
+  )
+    return next;
+  if (msgs.length)
+    t.incidentNews = [
+      ...(t.incidentNews ?? []),
+      ...msgs.map((m) => ({ t: m, k: 'good' as const })),
+    ];
+  return t;
+}
+
+function reduceAction(state: GameState, action: Action): GameState {
   if (state.over && action.type !== 'read' && action.type !== 'tip') return state;
   const plan = planOf(state, action);
   if (plan) {
@@ -657,6 +688,8 @@ export function reduce(state: GameState, action: Action): GameState {
       return { ...state, tips: [...(state.tips ?? []), action.id] };
     }
     case 'tick': {
+      // Mientras dura el tutorial el reloj está parado: solo avanza con los saltos.
+      if (tutorialOn(state)) return state;
       const next = tick(state, action.to);
       if (next === state) return state;
       // Los incidentes solo corren con el juego abierto (la simulación de fuera no pasa por aquí).
@@ -667,6 +700,29 @@ export function reduce(state: GameState, action: Action): GameState {
       const all = [...news, ...g.news.map((n) => ({ t: n.t, k: n.k ?? 'good' }))];
       g.next.incidentNews = all.length ? all : undefined;
       return g.next;
+    }
+    case 'renameHero': {
+      const name = action.name.trim().slice(0, 24);
+      if (!name || !state.heroes.some((h) => h.id === action.id)) return state;
+      return {
+        ...state,
+        heroes: state.heroes.map((h) => (h.id === action.id ? { ...h, name } : h)),
+      };
+    }
+    case 'tutorial': {
+      if (!tutorialOn(state)) return state;
+      const s = structuredClone(state);
+      if (action.op === 'saltar') {
+        finishTutorial(s);
+        return s;
+      }
+      if (action.op === 'ok') {
+        const msgs = advanceTutorial(s, true);
+        if (msgs.length) s.incidentNews = msgs.map((m) => ({ t: m, k: 'good' as const }));
+        return s;
+      }
+      // Saltar el tiempo: hasta que vuelva el grupo, o hasta el pago.
+      return skipTime(s, action.op, (x) => endDay(x), salaries);
     }
     case 'rumor': {
       if (!state.rumor) return state;
