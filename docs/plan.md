@@ -86,9 +86,13 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
    - plantas, hasta 6 por encima de la baja (hecho);
    - los niveles nuevos de las salas (hecho, ver `salas/niveles-nuevos.md`), con aviso al
      amanecer al subir de rango;
-   - encargos y jefes de más dificultad para cada tramo: los encargos sueltos ya suben con el
-     rango; faltan historias con jefe para Plata, Oro y Leyenda (las de ahora piden de 8 a 70
-     de fama);
+   - encargos y jefes de más dificultad para cada tramo (hecho): los encargos sueltos suben con
+     el rango, y hay historias con jefe para cada tramo alto: Plata (la torre, el Rey Ahogado),
+     Oro (la sierpe, el jabalí de ceniza, 250 de fama) y Leyenda (la Reina de la Cripta, 320, y
+     la dragona de la Corona Blanca, 420), con sitios nuevos en los bordes del mapa. Los tres
+     jefes nuevos usan el dibujo de otro teñido (`base` y `ramp` en `data/bosses.ts`): pendiente
+     de arte, dibujarlos propios. Al acabar todas, ya no llegan más: valorar historias que se
+     repitan o una por temporada;
    - salas nuevas (la sastrería, cuando llegue).
 5. **Incidentes en la taberna.** Formas de resolverlos:
    - arrastrar héroes (pelea, ladrón, algo en la bodega) o trabajadores (fuego en la cocina,

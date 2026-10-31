@@ -43,6 +43,16 @@ export const PLACE_INFO: Record<string, { x: number; y: number; terrain: Terrain
   'el paso del Lobo': { x: 182, y: 62, terrain: 'monte' },
   'el monasterio de Peñalta': { x: 248, y: 48, terrain: 'ruina' },
   'la cueva de la Sierpe': { x: 300, y: 34, terrain: 'monte' },
+  // Las historias de oro y leyenda, en los bordes de la comarca.
+  'la aldea de Carbonera': { x: 96, y: 112, terrain: 'pueblo' },
+  'los pinares quemados': { x: 78, y: 78, terrain: 'bosque' },
+  'la loma de Ceniza': { x: 92, y: 42, terrain: 'monte' },
+  'el priorato de Sanvela': { x: 328, y: 204, terrain: 'ruina' },
+  'las catacumbas de Sanvela': { x: 356, y: 230, terrain: 'ruina' },
+  'la cripta de la Reina': { x: 384, y: 256, terrain: 'ruina' },
+  'el refugio de Nevaza': { x: 330, y: 60, terrain: 'monte' },
+  'el lago Helado': { x: 358, y: 38, terrain: 'rio' },
+  'la Corona Blanca': { x: 386, y: 16, terrain: 'monte' },
 };
 
 /** Posición de un lugar (los desconocidos, cerca de la taberna). */
