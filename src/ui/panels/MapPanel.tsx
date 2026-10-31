@@ -624,15 +624,20 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
               </button>
             );
           })}
-          {game.missions.map((m) => {
+          {game.missions.map((m, i) => {
             const pos = partyPos(m.quest.place, m.quest.days, m.daysLeft);
             const party = m.heroIds.map(byId).filter((h): h is Hero => !!h);
+            // Dos grupos en el mismo sitio se ponen uno al lado del otro (si no, se pisan).
+            const near = game.missions.slice(0, i).filter((o) => {
+              const p = partyPos(o.quest.place, o.quest.days, o.daysLeft);
+              return Math.abs(p.x - pos.x) < 14 && Math.abs(p.y - pos.y) < 14;
+            }).length;
             return (
               <button
                 key={m.id}
-                class={`map-party ${pos.back ? 'back' : ''}`}
+                class={`map-party ${pos.back ? 'is-back' : ''}`}
                 data-help={`Grupo de viaje (${party.length}): ${pos.back ? 'vuelve de' : 'va hacia'} ${m.quest.place}. Gris a la vuelta.`}
-                style={pct(pos.x, pos.y)}
+                style={{ ...pct(pos.x, pos.y), '--dx': `${near * 20}px` }}
                 aria-label={`${listNames(party.map((h) => h.name))}: ${pos.back ? 'vuelven de' : 'van hacia'} ${m.quest.place}`}
                 onClick={(e) => {
                   e.stopPropagation();

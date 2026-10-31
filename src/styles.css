@@ -627,6 +627,24 @@ button:focus-visible {
   }
 }
 
+@media (orientation: landscape) and (min-width: 900px) {
+  /* El mapa, más ancho: se ve más comarca y los marcadores se pisan menos. */
+  .panel.panel-wide {
+    width: min(640px, 62%);
+  }
+}
+
+@media (orientation: portrait) {
+  .panel.panel-wide {
+    width: min(100%, 720px);
+  }
+  /* En vertical, el mapa aprovecha el ancho hasta el marco. */
+  .panel-wide .map-viewport {
+    margin-inline: -4px;
+    width: calc(100% + 8px);
+  }
+}
+
 @keyframes rise-side {
   from {
     transform: translateX(40%);
@@ -3135,11 +3153,14 @@ button.trait[aria-pressed='true'] {
   background: var(--grape, #68386c);
 }
 .map-party {
+  /* --dx: a un lado si hay otro grupo en el mismo sitio (en píxeles de pantalla). */
+  transform: translate(calc(-50% + var(--dx, 0px) * var(--inv, 1)), -50%) scale(var(--inv, 1));
   background: var(--sky);
   border-radius: 3px;
   animation: party-bob 1s steps(2) infinite;
 }
-.map-party.back {
+/* «is-back» y no «back»: esa clase ya es la del botón de volver (con 44 px de alto). */
+.map-party.is-back {
   background: var(--steel);
 }
 .map-missing {
@@ -3153,7 +3174,8 @@ button.trait[aria-pressed='true'] {
 @keyframes party-bob {
   50% {
     /* El bote, después de la escala: mismo tamaño y salto con cualquier zoom. */
-    transform: translate(-50%, -50%) scale(var(--inv, 1)) translateY(-2px);
+    transform: translate(calc(-50% + var(--dx, 0px) * var(--inv, 1)), -50%) scale(var(--inv, 1))
+      translateY(-2px);
   }
 }
 /* El botón «?» del mapa y la amenaza, cuando la leyenda está plegada. */

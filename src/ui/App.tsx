@@ -1083,7 +1083,7 @@ export function App() {
           </Panel>
         )}
         {panel === 'fuera' && (
-          <Panel title="La comarca" onClose={() => openPanel(null)}>
+          <Panel title="La comarca" wide onClose={() => openPanel(null)}>
             <MapPanel
               game={game}
               onHero={(id) => setCard(id)}
