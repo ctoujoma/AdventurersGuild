@@ -1,12 +1,14 @@
-import { BOSSES, bossBase, type BossKind } from '../data/bosses';
+import type { BossKind } from '../data/bosses';
 import { P, darker } from './palette';
-import { PixelBuffer, alpha, bayer, rampAt, rgba, toHex } from './pixel';
+import { PixelBuffer, alpha, bayer, rampAt, toHex } from './pixel';
 
 /**
  * Los jefes de las historias, grandes y dibujados a mano en código: la bestia de Hondogrís
- * (un jabalí del tamaño de un carro), el Rey Ahogado (un gigante con corona y ancla) y la
- * sierpe de Sierra Parda (con alas, cuernos y fuego). Miran a la derecha; la pelea los
- * voltea. Cada pose es un búfer aparte con contorno.
+ * (un jabalí del tamaño de un carro), el Rey Ahogado (un gigante con corona y ancla), la
+ * sierpe de Sierra Parda (con alas, cuernos y fuego) y los tres de las historias nuevas: el
+ * jabalí de ceniza (brasas en las grietas y humo), la Reina de la Cripta (de hueso, con corona y
+ * cetro) y la dragona de la Corona Blanca (de hielo, con corona de cuernos). Miran a la derecha;
+ * la pelea los voltea. Cada pose es un búfer aparte con contorno.
  */
 
 export type BossPose = 'ready' | 'windup' | 'strike' | 'up' | 'thrust' | 'down';
@@ -41,9 +43,49 @@ interface BeastPose {
   down?: boolean;
 }
 
-const FUR = [P.black, P.ebony, P.plum, P.umber, P.mocha, P.cocoa];
+/** El pelaje y lo propio de cada jabalí (la bestia de siempre o el de ceniza). */
+interface BeastLook {
+  fur: readonly string[];
+  /** Raya del lomo, hocico (arriba y abajo), patas (claro y oscuro) y ojo (y su brillo). */
+  stripe: string;
+  snout: [string, string];
+  legs: [string, string];
+  eye: [string, string];
+  /** El de ceniza: grietas de brasa en el cuerpo, cerdas encendidas y humo. */
+  embers?: boolean;
+}
 
-function beast(o: BeastPose): PixelBuffer {
+const FUR = [P.black, P.ebony, P.plum, P.umber, P.mocha, P.cocoa];
+const BEAST: BeastLook = {
+  fur: FUR,
+  stripe: P.cocoa,
+  snout: [P.clay, P.skinS],
+  legs: [P.plum, P.ebony],
+  eye: [P.red, P.hot],
+};
+/** El jabalí de ceniza: gris como lo quemado, con las brasas vivas en las grietas. */
+const ASH: BeastLook = {
+  fur: [P.black, P.navy, P.slate, P.steel, P.fog],
+  stripe: P.mist,
+  snout: [P.steel, P.slate],
+  legs: [P.slate, P.navy],
+  eye: [P.orange, P.lemon],
+  embers: true,
+};
+
+/** Una grieta de brasa: línea quebrada naranja con el centro dorado. */
+function crack(b: PixelBuffer, pts: readonly [number, number][], dim: boolean): void {
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const [x0, y0] = pts[i]!;
+    const [x1, y1] = pts[i + 1]!;
+    b.line(x0, y0 + 1, x1, y1 + 1, dim ? P.plum : P.brick);
+    b.line(x0, y0, x1, y1, dim ? P.rust : P.orange);
+    if (!dim) b.set(Math.round((x0 + x1) / 2), Math.round((y0 + y1) / 2), P.gold);
+  }
+}
+
+function beast(o: BeastPose, L: BeastLook = BEAST): PixelBuffer {
+  const FUR = L.fur;
   const b = new PixelBuffer(62, 44);
   const g = 41; // suelo
   const [hx, hy] = o.head;
@@ -57,14 +99,26 @@ function beast(o: BeastPose): PixelBuffer {
       [34, 44],
       [40, 52],
     ] as const) {
-      b.line(x0, g - 6, x1, g - 2, P.ebony);
-      b.line(x0, g - 5, x1, g - 1, P.ebony);
+      b.line(x0, g - 6, x1, g - 2, L.legs[1]);
+      b.line(x0, g - 5, x1, g - 1, L.legs[1]);
       b.set(x1, g - 1, P.black);
     }
     b.ellipse(26, g - 10, 21, 9, (x, y) => rampAt(FUR, 0.25 + shade(y, g - 19, 18) * 0.6, x, y));
-    for (let x = 9; x < 42; x += 3) b.line(x, g - 18, x - 1, g - 21, P.ebony);
+    for (let x = 9; x < 42; x += 3) b.line(x, g - 18, x - 1, g - 21, L.legs[1]);
+    if (L.embers)
+      crack(
+        b,
+        [
+          [12, g - 12],
+          [18, g - 9],
+          [24, g - 13],
+          [31, g - 8],
+          [37, g - 11],
+        ],
+        true,
+      );
     b.ellipse(48, g - 7, 8, 6, (x, y) => rampAt(FUR, 0.3 + shade(y, g - 13, 12) * 0.5, x, y));
-    b.ellipse(55, g - 5, 4, 3, P.skinS);
+    b.ellipse(55, g - 5, 4, 3, L.snout[1]);
     b.line(52, g - 2, 55, g - 3, P.sand);
     b.set(56, g - 4, P.white);
     b.hline(46, g - 9, 3, P.black); // ojo cerrado
@@ -79,8 +133,8 @@ function beast(o: BeastPose): PixelBuffer {
     [42, o.lift],
   ];
   for (const [lx, up] of legs) {
-    b.rect(lx - 2, by + 8, 5, g - by - 9 - up, P.ebony);
-    b.rect(lx - 1, by + 8, 2, g - by - 10 - up, P.plum);
+    b.rect(lx - 2, by + 8, 5, g - by - 9 - up, L.legs[1]);
+    b.rect(lx - 1, by + 8, 2, g - by - 10 - up, L.legs[0]);
     b.rect(lx - 2, g - 2 - up, 5, 2, P.black);
   }
   // Cuerpo con la joroba de los hombros y una raya clara por el lomo.
@@ -88,16 +142,46 @@ function beast(o: BeastPose): PixelBuffer {
   b.ellipse(36, by - 4, 12, 11, (x, y) => rampAt(FUR, 0.2 + shade(y, by - 15, 22) * 0.75, x, y));
   for (let x = 10; x < 44; x++) {
     const top = Math.round(by - 11 - Math.sin(((x - 10) / 34) * Math.PI) * 4);
-    if (bayer(x, 0) < 0.6) b.set(x, top + 2, P.cocoa);
+    if (bayer(x, 0) < 0.6) b.set(x, top + 2, L.stripe);
   }
-  // Cerdas de punta.
+  // El de ceniza: grietas de brasa por el costado y la paletilla, como la tierra quemada.
+  if (L.embers) {
+    const cracks: [number, number][][] = [
+      [
+        [8, by - 1],
+        [12, by + 3],
+        [17, by + 1],
+        [20, by + 5],
+        [27, by + 2],
+        [33, by + 4],
+      ],
+      [
+        [17, by + 1],
+        [19, by - 4],
+      ],
+      [
+        [31, by - 10],
+        [33, by - 6],
+        [38, by - 7],
+        [42, by - 2],
+      ],
+      [
+        [12, by + 8],
+        [18, by + 10],
+        [22, by + 8],
+      ],
+    ];
+    for (const c of cracks) crack(b, c, false);
+  }
+  // Cerdas de punta (en el de ceniza, más largas y con la punta encendida).
   for (let x = 8; x < 46; x += 2) {
     const top = Math.round(by - 11 - Math.sin(((x - 8) / 38) * Math.PI) * 5);
-    const len = 2 + ((x * 7) % 3);
-    b.line(x, top, x - 1, top - len, x % 4 ? P.ebony : P.black);
+    const len = 2 + ((x * 7) % 3) + (L.embers ? 2 : 0);
+    b.line(x, top, x - 1, top - len, x % 4 ? L.legs[1] : P.black);
+    if (L.embers) b.set(x - 1, top - len, x % 6 ? P.orange : P.lemon);
   }
   // Rabo.
-  b.line(4, by - 4, 1, by - 7, P.ebony);
+  b.line(4, by - 4, 1, by - 7, L.legs[1]);
   b.set(0, by - 8, P.black);
   // Cabeza, hocico y boca.
   b.ellipse(hx, hy, 9, 7.5, (x, y) => rampAt(FUR, 0.25 + shade(y, hy - 7, 15) * 0.6, x, y));
@@ -107,9 +191,10 @@ function beast(o: BeastPose): PixelBuffer {
       [hx + 1, hy - 12],
       [hx + 3, hy - 6],
     ],
-    P.umber,
+    L.embers ? P.slate : P.umber,
   );
-  b.ellipse(hx + 8, hy + 2, 4.5, 4, (_x, y) => (y < hy + 1 ? P.clay : P.skinS));
+  if (L.embers) b.set(hx + 1, hy - 11, P.orange);
+  b.ellipse(hx + 8, hy + 2, 4.5, 4, (_x, y) => (y < hy + 1 ? L.snout[0] : L.snout[1]));
   b.set(hx + 10, hy + 1, P.plum);
   b.set(hx + 10, hy + 3, P.plum);
   if (o.jaw > 0) {
@@ -138,20 +223,45 @@ function beast(o: BeastPose): PixelBuffer {
     [hx + 9, hy + 8, P.tan],
   ] as const)
     b.set(x, y, c);
-  // Ojo rojo con brillo.
-  b.rect(hx + 2, hy - 3, 2, 2, P.red);
-  b.set(hx + 3, hy - 3, P.hot);
-  return outline(b);
+  // El de ceniza: un segundo colmillo, más corto, por encima del primero.
+  if (L.embers) {
+    b.set(hx + 9, hy + 4, P.sand);
+    b.set(hx + 10, hy + 3, P.sand);
+    b.set(hx + 11, hy + 2, P.white);
+  }
+  // Ojo con brillo (rojo en la bestia; de brasa en el de ceniza).
+  b.rect(hx + 2, hy - 3, 2, 2, L.eye[0]);
+  b.set(hx + 3, hy - 3, L.eye[1]);
+  const out = outline(b);
+  if (L.embers) smoke(out, by, o.jaw);
+  return out;
 }
 
-function beastArt(): Omit<BossArt, 'downFoot'> {
+/**
+ * El humo del lomo del jabalí de ceniza: bocanadas tramadas que suben, sin contorno y solo
+ * donde no hay dibujo (distintas en cada pose). En el búfer ya contorneado (+1 de margen).
+ */
+function smoke(b: PixelBuffer, by: number, seed: number): void {
+  for (let i = 0; i < 4; i++) {
+    const sx = 15 + i * 9 + (seed % 3);
+    const sy = by - 19 - (i % 2) * 3;
+    for (let y = sy - 3; y <= sy + 3; y++)
+      for (let x = sx - 4; x <= sx + 4; x++) {
+        const d = ((x - sx) / 4) ** 2 + ((y - sy) / 2.5) ** 2;
+        if (d > 1 || alpha(b.get(x, y)) || bayer(x, y) > 0.5 - d * 0.3) continue;
+        b.set(x, y, y < sy ? P.fog : P.steel);
+      }
+  }
+}
+
+function beastArt(L: BeastLook = BEAST): Omit<BossArt, 'downFoot'> {
   const poses: Record<BossPose, PixelBuffer> = {
-    ready: beast({ head: [46, 26], body: 24, jaw: 0, lift: 0 }),
-    windup: beast({ head: [44, 30], body: 26, jaw: 0, lift: 0 }),
-    strike: beast({ head: [49, 23], body: 24, jaw: 4, lift: 3 }),
-    thrust: beast({ head: [50, 28], body: 25, jaw: 2, lift: 0 }),
-    up: beast({ head: [47, 16], body: 21, jaw: 6, lift: 7 }),
-    down: beast({ head: [0, 0], body: 0, jaw: 0, lift: 0, down: true }),
+    ready: beast({ head: [46, 26], body: 24, jaw: 0, lift: 0 }, L),
+    windup: beast({ head: [44, 30], body: 26, jaw: 0, lift: 0 }, L),
+    strike: beast({ head: [49, 23], body: 24, jaw: 4, lift: 3 }, L),
+    thrust: beast({ head: [50, 28], body: 25, jaw: 2, lift: 0 }, L),
+    up: beast({ head: [47, 16], body: 21, jaw: 6, lift: 7 }, L),
+    down: beast({ head: [0, 0], body: 0, jaw: 0, lift: 0, down: true }, L),
   };
   const m = (x: number, y: number) => ({ x: x - 27, y: y - 42 });
   return {
@@ -339,6 +449,167 @@ function kingArt(): Omit<BossArt, 'downFoot'> {
 }
 
 // ---------------------------------------------------------------------------------------
+// La Reina de la Cripta: reina muerta, de hueso, con corona alta, gola, vestido morado hecho
+// jirones, velo negro y un cetro con un orbe que brilla. Las mismas posturas que el Rey
+// Ahogado (el cetro va donde él lleva el ancla), pero no se hunde: se desploma.
+// ---------------------------------------------------------------------------------------
+
+const BONE = [P.slate, P.steel, P.fog, P.mist];
+const GOWN = [P.black, P.plum, P.grape, P.rose];
+const VEIL = [P.black, P.navy, P.slate];
+
+/** Brazo de hueso, fino, del hombro a la mano, con los dedos en garra. */
+function boneArm(b: PixelBuffer, x0: number, y0: number, x1: number, y1: number): void {
+  b.line(x0, y0 + 1, x1, y1 + 1, P.steel);
+  b.line(x0, y0, x1, y1, P.mist);
+  // Codo: un nudo a medio camino.
+  b.set(Math.round((x0 + x1) / 2), Math.round((y0 + y1) / 2), P.fog);
+  for (const [dx, dy] of [
+    [-1, 1],
+    [0, 2],
+    [1, 2],
+    [2, 1],
+  ] as const)
+    b.set(x1 + dx, y1 + dy, P.fog);
+}
+
+/** El cetro: caña dorada de la mano a la punta, con el orbe que brilla en la punta. */
+function scepter(b: PixelBuffer, hx: number, hy: number, tx: number, ty: number): void {
+  const len = Math.hypot(tx - hx, ty - hy);
+  const ux = (tx - hx) / len;
+  const uy = (ty - hy) / len;
+  for (let i = -4; i <= len - 3; i++) {
+    const x = Math.round(hx + ux * i);
+    const y = Math.round(hy + uy * i);
+    b.set(x, y, i % 6 === 0 ? P.orange : P.gold);
+    b.set(Math.round(x - uy), Math.round(y + ux), P.rust);
+  }
+  // Las alas de oro que sujetan el orbe y el orbe, con su brillo.
+  const px = -uy;
+  const py = ux;
+  for (const s of [-1, 1])
+    b.line(tx - ux * 3, ty - uy * 3, tx - ux * 5 + px * s * 4, ty - uy * 5 + py * s * 4, P.gold);
+  b.ellipse(tx, ty, 3.2, 3.2, (x, y) =>
+    (x - tx) * -0.6 + (y - ty) * -0.6 > 0.8 ? P.coral : P.rose,
+  );
+  b.set(Math.round(tx - 1), Math.round(ty - 1), P.white);
+}
+
+function queen(o: KingPose, down = false): PixelBuffer {
+  const b = new PixelBuffer(60, 74);
+  const g = 71;
+  const cx = 26 + o.lean;
+  // El velo negro por la espalda, del pelo hasta la cintura.
+  b.poly(
+    [
+      [cx - 5, 7],
+      [cx + 3, 7],
+      [cx - 3, 46],
+      [cx - 14, 48],
+    ],
+    (x, y) => rampAt(VEIL, 0.15 + (x - (cx - 14)) / 30, x, y),
+  );
+  // El vestido: campana desde la cintura hasta el suelo, con pliegues y el bajo a jirones.
+  b.poly(
+    [
+      [cx - 6, 33],
+      [cx + 6, 33],
+      [cx + 16, g],
+      [cx - 17, g],
+    ],
+    (x, y) => {
+      const fold = (x - cx + 40) % 5 === 0 ? -0.25 : 0;
+      return rampAt(GOWN, 0.25 + (x - (cx - 17)) / 44 + fold, x, y);
+    },
+  );
+  for (let x = cx - 17; x <= cx + 16; x++) {
+    const rag = (x * 7) % 5;
+    for (let y = g - rag; y <= g; y++) b.set(x, y, 0);
+    // El ribete de oro, por encima de los jirones.
+    if (x % 2 === 0) b.set(x, g - 6, P.gold);
+  }
+  // Corpiño, cinturón de oro y la gola blanca por detrás de la cabeza.
+  b.rect(cx - 5, 22, 11, 12, P.plum);
+  b.rect(cx - 2, 23, 5, 10, P.grape);
+  b.hline(cx - 6, 33, 13, P.gold);
+  b.set(cx, 33, P.cyan);
+  b.poly(
+    [
+      [cx - 8, 13],
+      [cx + 9, 13],
+      [cx + 6, 22],
+      [cx - 5, 22],
+    ],
+    (x, y) => ((x + y) % 3 === 0 ? P.fog : P.mist),
+  );
+  // Brazo libre.
+  boneArm(b, cx - 5, 24, o.free[0], o.free[1]);
+  // Cabeza: calavera con las cuencas negras y un brillo violeta dentro, y los dientes.
+  b.ellipse(cx + 1, 14, 5, 6, (x, y) =>
+    rampAt(BONE, 0.85 + (cx - x) * 0.05 + (14 - y) * 0.03, x, y),
+  );
+  b.rect(cx - 1, 11, 3, 3, P.black);
+  b.rect(cx + 3, 11, 3, 3, P.black);
+  b.set(cx, 12, P.rose);
+  b.set(cx + 4, 12, P.rose);
+  b.set(cx + 2, 15, P.slate);
+  for (let x = cx; x < cx + 5; x++) b.set(x, 18, x % 2 ? P.mist : P.slate);
+  // Corona alta, de cinco puntas, con piedras.
+  b.rect(cx - 5, 6, 12, 3, P.gold);
+  b.hline(cx - 5, 8, 12, P.rust);
+  for (const [x, h] of [
+    [cx - 5, 4],
+    [cx - 2, 5],
+    [cx + 1, 6],
+    [cx + 4, 5],
+    [cx + 6, 4],
+  ] as const)
+    b.poly(
+      [
+        [x - 0.5, 6],
+        [x + 0.8, 6 - h],
+        [x + 2, 6],
+      ],
+      P.gold,
+    );
+  b.set(cx + 2, 1, P.lemon);
+  b.set(cx - 3, 7, P.rose);
+  b.set(cx + 1, 7, P.cyan);
+  b.set(cx + 5, 7, P.rose);
+  // Brazo del cetro y el cetro.
+  scepter(b, o.hand[0], o.hand[1], o.tip[0], o.tip[1]);
+  boneArm(b, cx + 5, 24, o.hand[0], o.hand[1]);
+  const out = outline(b);
+  if (!down) return out;
+  // Caída: el mismo dibujo tumbado de espaldas.
+  const lay = new PixelBuffer(out.h, out.w);
+  for (let y = 0; y < out.h; y++)
+    for (let x = 0; x < out.w; x++) {
+      const c = out.get(x, y);
+      if (c) lay.data[(out.w - 1 - x) * lay.w + y] = c;
+    }
+  return lay;
+}
+
+function queenArt(): Omit<BossArt, 'downFoot'> {
+  const king = kingArt();
+  const ready = { hand: [39, 40], tip: [44, 62], free: [17, 40], lean: 0 } as KingPose;
+  return {
+    ...king,
+    poses: {
+      ready: queen(ready),
+      windup: queen({ hand: [14, 30], tip: [6, 52], free: [12, 40], lean: -2 }),
+      strike: queen({ hand: [44, 34], tip: [54, 54], free: [16, 38], lean: 3 }),
+      thrust: queen({ hand: [44, 30], tip: [55, 40], free: [15, 36], lean: 2 }),
+      up: queen({ hand: [38, 12], tip: [43, 4], free: [12, 12], lean: 0 }),
+      down: queen(ready, true),
+    },
+    // No hay agua en la cripta: no se hunde, se desploma.
+    fall: undefined,
+  };
+}
+
+// ---------------------------------------------------------------------------------------
 // La sierpe de Sierra Parda: escamas rojizas, vientre claro, alas de murciélago y cuernos.
 // ---------------------------------------------------------------------------------------
 
@@ -354,7 +625,59 @@ interface WyrmPose {
   down?: boolean;
 }
 
-function wyrm(o: WyrmPose): PixelBuffer {
+/** Las escamas y lo propio de cada sierpe (la de Sierra Parda o la dragona de hielo). */
+interface WyrmLook {
+  scales: readonly string[];
+  wing: readonly string[];
+  belly: [string, string];
+  /** Huesos de las alas (la de atrás y la de delante). */
+  bone: [string, string];
+  /** Manchas y patas, la sombra de las de atrás, el empeine, las púas de la cola y la boca. */
+  dark: string;
+  darker: string;
+  mid: string;
+  spike: string;
+  mouth: string;
+  horn: [string, string];
+  eye: [string, string];
+  /** La dragona de la Corona Blanca: corona de cuernos y carámbanos por el lomo. */
+  crown?: boolean;
+  icicles?: boolean;
+}
+
+const SIERPE: WyrmLook = {
+  scales: SCALES,
+  wing: WING,
+  belly: [P.tan, P.sand],
+  bone: [P.ebony, P.bark],
+  dark: P.wine,
+  darker: P.plum,
+  mid: P.brick,
+  spike: P.wine,
+  mouth: P.red,
+  horn: [P.sand, P.tan],
+  eye: [P.lemon, P.white],
+};
+/** La dragona de la Corona Blanca: escamas de hielo, vientre de nieve y alas escarchadas. */
+const DRAGONA: WyrmLook = {
+  scales: [P.navy, P.ocean, P.steel, P.fog, P.mist],
+  wing: [P.navy, P.ocean, P.sky, P.cyan],
+  belly: [P.mist, P.white],
+  bone: [P.navy, P.slate],
+  dark: P.ocean,
+  darker: P.navy,
+  mid: P.steel,
+  spike: P.cyan,
+  mouth: P.sky,
+  horn: [P.white, P.mist],
+  eye: [P.cyan, P.white],
+  crown: true,
+  icicles: true,
+};
+
+function wyrm(o: WyrmPose, L: WyrmLook = SIERPE): PixelBuffer {
+  const SCALES = L.scales;
+  const WING = L.wing;
   const b = new PixelBuffer(84, 64);
   const g = 61;
   const by = o.body;
@@ -362,8 +685,8 @@ function wyrm(o: WyrmPose): PixelBuffer {
   const body = (x: number, y: number, top: number, h: number) =>
     y > top + h * 0.62
       ? bayer(x, y) < 0.5
-        ? P.tan
-        : P.sand
+        ? L.belly[0]
+        : L.belly[1]
       : rampAt(SCALES, 0.85 - (y - top) / h, x, y);
   // Alas de murciélago: hueso del brazo, tres dedos y membrana festoneada entre ellos.
   const wing = (rootX: number, span: number, dark: boolean) => {
@@ -392,7 +715,7 @@ function wyrm(o: WyrmPose): PixelBuffer {
       w.ellipse(mx + ox, my + oy, r, r * 0.8, 0);
     }
     // Huesos.
-    const bone = dark ? P.ebony : P.bark;
+    const bone = dark ? L.bone[0] : L.bone[1];
     w.line(root[0], root[1], hand[0], hand[1], bone);
     w.line(root[0], root[1] - 1, hand[0], hand[1] - 1, bone);
     for (const t of tips) w.line(hand[0], hand[1], t[0], t[1], bone);
@@ -406,7 +729,7 @@ function wyrm(o: WyrmPose): PixelBuffer {
     const y = by + 4 + Math.sin(k * Math.PI * 1.1) * 7 - (o.down ? -3 : 0);
     const r = 5 * (1 - k) + 1;
     b.ellipse(x, y, r, r * 0.8, (px, py) => body(px, py, y - r, r * 2));
-    if (i % 5 === 2) b.line(x, y - r, x - 2, y - r - 3, P.wine);
+    if (i % 5 === 2) b.line(x, y - r, x - 2, y - r - 3, L.spike);
   }
   // Patas de reptil: muslo recio, espinilla hacia atrás y pie con tres garras. Las del
   // otro lado, más oscuras y un poco desplazadas, dan profundidad.
@@ -424,13 +747,13 @@ function wyrm(o: WyrmPose): PixelBuffer {
         rampAt(SCALES, 0.6 - dim - k * 0.25 + (px < x ? -0.15 : 0), px, py),
       );
     }
-    b.set(kx + 2, ky + 1, far ? P.plum : P.wine);
-    b.set(kx + 3, ky + 2, far ? P.plum : P.wine);
-    b.ellipse(ax + 2, g - 2.5, 4.5, 2, far ? P.plum : P.wine);
-    b.hline(ax, g - 3, 4, far ? P.wine : P.brick);
+    b.set(kx + 2, ky + 1, far ? L.darker : L.dark);
+    b.set(kx + 3, ky + 2, far ? L.darker : L.dark);
+    b.ellipse(ax + 2, g - 2.5, 4.5, 2, far ? L.darker : L.dark);
+    b.hline(ax, g - 3, 4, far ? L.dark : L.mid);
     for (let c = 0; c < 3; c++) {
-      b.set(ax + 4 + c * 2, g - 1, far ? P.tan : P.sand);
-      b.set(ax + 5 + c * 2, g - 1, far ? P.tan : P.white);
+      b.set(ax + 4 + c * 2, g - 1, far ? L.horn[1] : L.horn[0]);
+      b.set(ax + 5 + c * 2, g - 1, far ? L.horn[1] : P.white);
     }
     b.ellipse(lx, by + 5, 6, 7.5, (x, y) => rampAt(SCALES, 0.75 - dim - (y - by) / 22, x, y));
   };
@@ -442,6 +765,14 @@ function wyrm(o: WyrmPose): PixelBuffer {
   }
   // Cuerpo.
   b.ellipse(34, by, 17, 10, (x, y) => body(x, y, by - 10, 20));
+  // La dragona de hielo: carámbanos por el lomo.
+  if (L.icicles && !o.down)
+    for (let x = 22; x <= 46; x += 4) {
+      const top = Math.round(by - 9 - Math.sin(((x - 18) / 32) * Math.PI) * 1.5);
+      const h = 3 + ((x * 3) % 3);
+      b.line(x, top, x, top - h, P.cyan);
+      b.line(x + 1, top, x + 1, top - h + 2, P.white);
+    }
   // Cuello en curva hasta la cabeza.
   for (let i = 0; i <= 12; i++) {
     const k = i / 12;
@@ -467,7 +798,7 @@ function wyrm(o: WyrmPose): PixelBuffer {
       [hx + 11, hy + 4 + o.jaw],
       [hx - 1, hy + 4],
     ],
-    P.wine,
+    L.dark,
   );
   if (o.jaw > 1) {
     b.poly(
@@ -476,22 +807,34 @@ function wyrm(o: WyrmPose): PixelBuffer {
         [hx + 12, hy + 2],
         [hx + 11, hy + 1 + o.jaw],
       ],
-      P.red,
+      L.mouth,
     );
     for (let x = hx + 4; x < hx + 12; x += 3) b.set(x, hy + 2, P.white);
   }
-  b.set(hx + 12, hy - 1, P.plum);
-  for (const [dx, len] of [
-    [-3, 9],
-    [0, 7],
-  ] as const) {
-    b.line(hx + dx, hy - 3, hx + dx - len, hy - 7 - len * 0.3, P.sand);
-    b.line(hx + dx + 1, hy - 3, hx + dx - len + 1, hy - 7 - len * 0.3, P.tan);
+  b.set(hx + 12, hy - 1, L.darker);
+  // Cuernos: un par hacia atrás; la de la Corona Blanca, una corona de cinco en abanico.
+  const horns: readonly (readonly [number, number, number])[] = L.crown
+    ? [
+        [-4, 8, 0.1],
+        [-2, 10, 0.45],
+        [0, 9, 0.8],
+        [2, 7, 1.2],
+        [3, 5, 1.6],
+      ]
+    : [
+        [-3, 9, 0.3],
+        [0, 7, 0.3],
+      ];
+  for (const [dx, len, rise] of horns) {
+    const ex = hx + dx - len * Math.cos(rise * 0.6);
+    const ey = hy - 3 - 4 - len * (0.3 + rise * 0.45);
+    b.line(hx + dx, hy - 3, ex, ey, L.horn[0]);
+    b.line(hx + dx + 1, hy - 3, ex + 1, ey, L.horn[1]);
   }
   if (o.down) b.hline(hx + 1, hy - 1, 3, P.black);
   else {
-    b.rect(hx + 1, hy - 2, 3, 2, P.lemon);
-    b.set(hx + 3, hy - 2, P.white);
+    b.rect(hx + 1, hy - 2, 3, 2, L.eye[0]);
+    b.set(hx + 3, hy - 2, L.eye[1]);
   }
   // Ala de delante.
   if (!o.down) wing(36, 26, false);
@@ -507,14 +850,14 @@ function wyrm(o: WyrmPose): PixelBuffer {
   return outline(b);
 }
 
-function wyrmArt(): Omit<BossArt, 'downFoot'> {
+function wyrmArt(L: WyrmLook = SIERPE): Omit<BossArt, 'downFoot'> {
   const poses: Record<BossPose, PixelBuffer> = {
-    ready: wyrm({ head: [62, 20], jaw: 0, wings: 0.3, body: 40 }),
-    windup: wyrm({ head: [55, 13], jaw: 1, wings: 0.8, body: 39 }),
-    strike: wyrm({ head: [68, 34], jaw: 5, wings: 0.5, body: 40 }),
-    thrust: wyrm({ head: [67, 24], jaw: 6, wings: 0.6, body: 40 }),
-    up: wyrm({ head: [60, 9], jaw: 6, wings: 1, body: 37 }),
-    down: wyrm({ head: [66, 52], jaw: 2, wings: 0, body: 50, down: true }),
+    ready: wyrm({ head: [62, 20], jaw: 0, wings: 0.3, body: 40 }, L),
+    windup: wyrm({ head: [55, 13], jaw: 1, wings: 0.8, body: 39 }, L),
+    strike: wyrm({ head: [68, 34], jaw: 5, wings: 0.5, body: 40 }, L),
+    thrust: wyrm({ head: [67, 24], jaw: 6, wings: 0.6, body: 40 }, L),
+    up: wyrm({ head: [60, 9], jaw: 6, wings: 1, body: 37 }, L),
+    down: wyrm({ head: [66, 52], jaw: 2, wings: 0, body: 50, down: true }, L),
   };
   const m = (x: number, y: number) => ({ x: x - 34, y: y - 62 });
   return {
@@ -542,48 +885,21 @@ function groundOf(b: PixelBuffer): { x: number; y: number } {
   return { x: Math.round(b.w / 2), y: b.h };
 }
 
-/**
- * Tiñe un dibujo con otra rampa de la paleta según lo claro de cada píxel (el contorno y las
- * sombras siguen oscuros). Con `keep`, los rojos (ojos, fuego) o los dorados (corona) se quedan.
- */
-function recolor(
-  b: PixelBuffer,
-  ramp: readonly string[],
-  keep?: 'red' | 'gold',
-  bright = false,
-): PixelBuffer {
-  const out = b.clone();
-  const cols = ramp.map((c) => rgba(c));
-  for (let i = 0; i < out.data.length; i++) {
-    const c = out.data[i]!;
-    if (!alpha(c)) continue;
-    const r = c & 255;
-    const g = (c >> 8) & 255;
-    const bl = (c >> 16) & 255;
-    if (keep === 'red' && r > g + 70 && r > bl + 70) continue;
-    if (keep === 'gold' && r > bl + 60 && g > bl + 30 && r > 150) continue;
-    const l = (0.3 * r + 0.59 * g + 0.11 * bl) / 256;
-    const lum = bright ? Math.sqrt(l) : l;
-    out.data[i] = cols[Math.min(cols.length - 1, Math.floor(lum * cols.length))]!;
-  }
-  return out;
-}
+/** El dibujo de cada jefe (los tres de las historias nuevas, con lo suyo sobre el de su base). */
+const ART: Record<BossKind, () => Omit<BossArt, 'downFoot'>> = {
+  bestia: () => beastArt(),
+  ahogado: kingArt,
+  sierpe: () => wyrmArt(),
+  jabali: () => beastArt(ASH),
+  reina: queenArt,
+  dragona: () => wyrmArt(DRAGONA),
+};
 
 export function bossArt(kind: BossKind): BossArt {
   let a = cache.get(kind);
   if (!a) {
-    const b = bossBase(kind);
-    const base = b === 'bestia' ? beastArt() : b === 'ahogado' ? kingArt() : wyrmArt();
-    const def = BOSSES[kind];
-    const poses = def.ramp
-      ? (Object.fromEntries(
-          Object.entries(base.poses).map(([k, v]) => [
-            k,
-            recolor(v, def.ramp!, def.keep, def.bright),
-          ]),
-        ) as Record<BossPose, PixelBuffer>)
-      : base.poses;
-    a = { ...base, poses, downFoot: groundOf(base.poses.down) };
+    const base = ART[kind]();
+    a = { ...base, downFoot: groundOf(base.poses.down) };
     cache.set(kind, a);
   }
   return a;

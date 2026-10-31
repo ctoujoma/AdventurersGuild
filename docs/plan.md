@@ -92,8 +92,8 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
      el rango, y hay historias con jefe para cada tramo alto: Plata (la torre, el Rey Ahogado),
      Oro (la sierpe, el jabalí de ceniza, 250 de fama) y Leyenda (la Reina de la Cripta, 320, y
      la dragona de la Corona Blanca, 420), con sitios nuevos en los bordes del mapa. Los tres
-     jefes nuevos usan el dibujo de otro teñido (`base` y `ramp` en `data/bosses.ts`): pendiente
-     de arte, dibujarlos propios. Al acabar todas, ya no llegan más: valorar historias que se
+     jefes nuevos pelean como su `base` (`data/bosses.ts`) y tienen su dibujo propio (hecho,
+     `art/bosses.ts`). Al acabar todas, ya no llegan más: valorar historias que se
      repitan o una por temporada;
    - salas nuevas (la sastrería, cuando llegue).
 5. **Incidentes en la taberna.** Formas de resolverlos:
@@ -186,7 +186,8 @@ hueco, con la cámara en cada paso. Sustituye a las notas de obras de ahora (`ob
 
 - Colores por sala, fachada por partes y sastrería preparada (hecho).
 - **Dibujar los tres jefes nuevos** (jabalí de ceniza, Reina de la Cripta, dragona de la
-  Corona Blanca): ahora son otros teñidos.
+  Corona Blanca): hecho, cada uno con su dibujo. Queda que sus golpes y esbirros vayan con
+  ellos (la Reina salpica agua y llama a ahogados; la dragona de hielo echa fuego).
 - **Cartas del amanecer una a una:** las noticias se descubren de una en una, tocando o solas
   con ritmo, cada una con su sonido (bien, mal, aviso), y lo gordo (un legendario, subir de
   rango, una muerte) con brillo; con «Saltar» para verlo todo. Va junto con revisar cuándo
