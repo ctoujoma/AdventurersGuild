@@ -115,20 +115,29 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
 
 ## Fase 2 · Tutorial guiado
 
-Cuando el tiempo y el bucle estén decididos (enseña lo que haya). Pasos que hay que cumplir y
-lo demás cerrado con candado y la explicación de cuándo se abre:
+Propuesta (pendiente del visto bueno): un tutorial corto, con pasos que hay que cumplir y la
+cámara acercándose a cada cosa, que acaba con el primer pago a Merlo (día 7). Con los saltos
+de tiempo, unos 10 o 15 minutos.
 
-- dos héroes ya hechos y encargos a su medida;
-- poner nombre a un héroe;
-- al llegar a la reputación de «La sombra de Hondogrís» (8), el aviso de preparar un buen
-  grupo;
-- la cámara se acerca a lo que toca en cada paso;
-- se puede saltar;
-- cuando no quede nada que hacer (todos fuera, esperando), un botón para pasar al siguiente
-  momento con algo (la vuelta del grupo, el amanecer): un tutorial no debe tener al jugador
-  mirando la taberna mientras se cumplen las primeras misiones.
+1. La carta del tío y el salón (cámara al salón).
+2. El tablón: mandar a los dos héroes ya hechos a un encargo corto a su medida.
+3. La barra: contratar a alguien (y ponerle nombre a un héroe).
+4. Reparar una sala rota (la enfermería) con el dinero de la caja.
+5. Mover a alguien de sala arrastrándolo (un trabajador a la cocina).
+6. Saltar hasta que vuelva el grupo (botón «Saltar hasta que vuelvan»): informe, oro y el
+   primer objetivo cumplido.
+7. El pergamino de Merlo: saltar al día 7 y pagar. Fin: «La taberna sigue siendo tuya».
+
+Mientras dura, sin incidentes ni rumores (salen después, con su nota). Lo que aún no toca
+(obras, mapa, adornos) con candado y cuándo se abre. A los 8 de fama, el aviso de «La sombra de
+Hondogrís». Se puede saltar entero desde el primer paso.
 
 Parte de las notas del tío (`src/ui/tips.ts`, `UncleNote.tsx`).
+
+Pendiente de revisar: **la carta del amanecer** («Amanece sobre…») salía al cerrar cada día.
+Con el tiempo que corre solo, un día pasa cada 5 minutos y la carta interrumpe. Valorar: un
+aviso pequeño por la mañana con lo importante y la carta entera solo al volver tras una
+ausencia, o cuando pasa algo gordo (un pago, un héroe muerto, un rango).
 
 ## Fase 3 · Combate con decisiones
 
