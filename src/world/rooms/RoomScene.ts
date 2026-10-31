@@ -627,6 +627,21 @@ export class RoomScene {
     return r ? { x: r.rect.x + r.rect.w / 2, y: r.rect.y + 14 } : null;
   }
 
+  /** Dónde cae una sala en la pantalla (en píxeles de la página), o null. */
+  roomOnScreen(id: string): { x: number; y: number; w: number; h: number } | null {
+    const r = this.layout?.rooms.find((x) => x.room.id === id);
+    if (!r) return null;
+    const a = this.screenOf(r.rect.x, r.rect.y);
+    const b = this.screenOf(r.rect.x + r.rect.w, r.rect.y + r.rect.h);
+    const c = this.canvas.getBoundingClientRect();
+    return {
+      x: c.left + Math.min(a.x, b.x),
+      y: c.top + Math.min(a.y, b.y),
+      w: Math.abs(b.x - a.x),
+      h: Math.abs(b.y - a.y),
+    };
+  }
+
   screenOf(wx: number, wy: number): Point {
     return this.camera.toScreen(wx, wy);
   }

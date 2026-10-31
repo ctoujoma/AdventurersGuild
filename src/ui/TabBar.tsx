@@ -33,6 +33,7 @@ export function TabBar({
         <button
           key={t.id}
           class="tab"
+          data-tut={`tab-${t.id}`}
           aria-current={tab === t.id ? 'page' : undefined}
           data-help={t.help}
           onClick={() => onTab(t.id)}

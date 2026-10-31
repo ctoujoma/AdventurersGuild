@@ -77,7 +77,14 @@ import type { RoomType } from '../data/rooms';
 import { arrival, checkFeats, emptyStats } from './feats';
 import { checkGoals, tickGoals } from './goals';
 import { stepRumors, takeRumor } from './rumors';
-import { advanceTutorial, easyQuest, finishTutorial, skipTime, tutorialOn } from './tutorial';
+import {
+  advanceTutorial,
+  easyQuest,
+  finishTutorial,
+  skipTime,
+  tutorialOn,
+  tutorialStep,
+} from './tutorial';
 import { stepRaids } from './raids';
 import { advanceChain, bossOf, fightRoster, offerChain } from './chains';
 import { choose, maybeEvent, scaredClients, stepThreat } from './events';
@@ -183,7 +190,7 @@ export type Action =
   | { type: 'tick'; to: number }
   | { type: 'rumor' }
   | { type: 'renameHero'; id: string; name: string }
-  | { type: 'tutorial'; op: 'ok' | 'saltar' | 'vuelta' | 'pago' }
+  | { type: 'tutorial'; op: 'carta' | 'ok' | 'saltar' | 'vuelta' | 'pago' }
   /** Saltar al anochecer. */
   | { type: 'dusk' }
   | { type: 'endDay' };
@@ -410,6 +417,8 @@ export function newGame(seed: string, opts: { tutorial?: boolean } = {}): GameSt
   if (opts.tutorial) {
     s.quests[0] = easyQuest(s.quests[0]!, rng);
     s.tutorial = { step: 0, quest: s.quests[0].id };
+    // La carta del tío sustituye a la del día 1.
+    s.dawn = [];
   }
   checkGoals(s, rng, []);
   s.rng = rng.save();
@@ -704,6 +713,9 @@ function reduceAction(state: GameState, action: Action): GameState {
     case 'renameHero': {
       const name = action.name.trim().slice(0, 24);
       if (!name || !state.heroes.some((h) => h.id === action.id)) return state;
+      // En el tutorial, dejar el nombre como estaba también vale.
+      if (tutorialOn(state) && state.heroes.some((h) => h.id === action.id && h.name === name))
+        return { ...state, tutorial: { ...state.tutorial!, named: true } };
       return {
         ...state,
         heroes: state.heroes.map((h) => (h.id === action.id ? { ...h, name } : h)),
@@ -716,7 +728,13 @@ function reduceAction(state: GameState, action: Action): GameState {
         finishTutorial(s);
         return s;
       }
+      if (action.op === 'carta') {
+        s.tutorial!.letter = true;
+        return s;
+      }
       if (action.op === 'ok') {
+        // Solo se pasa con el botón en las notas que no piden hacer nada.
+        if (tutorialStep(state)?.button !== 'seguir') return state;
         const msgs = advanceTutorial(s, true);
         if (msgs.length) s.incidentNews = msgs.map((m) => ({ t: m, k: 'good' as const }));
         return s;
@@ -1139,7 +1157,8 @@ export function endDay(state: GameState, away = false): GameState {
   if (!s.over) {
     checkFeats(s, rng, events);
     checkGoals(s, rng, events);
-    maybeEvent(s, rng);
+    // Los sucesos al azar esperan a que acabe el tutorial.
+    if (!tutorialOn(s)) maybeEvent(s, rng);
   }
 
   // Lo que no cabe en la cámara del tesoro se pierde.

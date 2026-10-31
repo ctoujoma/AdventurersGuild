@@ -45,6 +45,9 @@ import { nextTip } from './tips';
 import { canDrag, planDrop, planTask, type Task } from './drop';
 import { UncleNote } from './UncleNote';
 import { TutorialNote } from './TutorialNote';
+import { TutorialFocus } from './TutorialFocus';
+import { tutorialFocus } from './tutorialFocus';
+import { IntroLetter } from './IntroLetter';
 import { tutorialOn, tutorialStep } from '../core/tutorial';
 import { GremioPanel } from './panels/GremioPanel';
 import { HeroesPanel, type HeroFilter } from './panels/HeroesPanel';
@@ -696,8 +699,11 @@ export function App() {
     !works.planning;
   const pendingEvent = calm && !game.over ? (game.event ?? null) : null;
   // El tutorial guiado va antes que las notas sueltas del tío (y las sustituye mientras dura).
-  const lesson =
-    calm && !pendingEvent && !card && !questId && !reportId && !panel ? tutorialStep(game) : null;
+  // La lección sigue a la vista con paneles abiertos: señala lo que hay que tocar dentro.
+  const lesson = calm && !pendingEvent ? tutorialStep(game) : null;
+  const lessonFocus = lesson ? tutorialFocus(game, panel) : null;
+  /** Altura de lo que señala el tutorial: la nota se pone en la otra mitad. */
+  const [spotY, setSpotY] = useState<number | null>(null);
   const tip =
     calm && !pendingEvent && !card && !questId && !reportId && !panel && !tutorialOn(game)
       ? nextTip(game)
@@ -1236,7 +1242,16 @@ export function App() {
             }}
           />
         )}
-        {dawnOpen && screen === 'game' && (
+        {dawnOpen && screen === 'game' && game.tutorial && !game.tutorial.letter && (
+          <IntroLetter
+            onOpen={() => {
+              audio.play('open');
+              dispatch({ type: 'tutorial', op: 'carta' });
+              closeDawn();
+            }}
+          />
+        )}
+        {dawnOpen && screen === 'game' && !(game.tutorial && !game.tutorial.letter) && (
           <Dawn
             day={game.day}
             away={awayDays || undefined}
@@ -1308,10 +1323,17 @@ export function App() {
           }}
         />
       )}
+      {lesson && lessonFocus && (
+        <TutorialFocus focus={lessonFocus} scene={scene} onSpot={setSpotY} />
+      )}
       {lesson && (
         <TutorialNote
           game={game}
           step={lesson}
+          ready={
+            !lessonFocus?.note || lessonFocus.targets[0] !== '.gremio-goals' || panel === 'gremio'
+          }
+          up={!lessonFocus?.note && spotY !== null && spotY > innerHeight * 0.5}
           onOk={() => {
             audio.play('close');
             dispatch({ type: 'tutorial', op: 'ok' });
