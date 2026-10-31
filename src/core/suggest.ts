@@ -55,3 +55,42 @@ export function suggestParty(s: GameState, questId: string): Suggestion {
   if (!party.length) return { why: 'Nadie de los que están en casa puede ir a este encargo.' };
   return { ids: party.map((h) => h.id) };
 }
+
+/** El grupo de la última vez, para repetirlo: quién vuelve a ir y a quién se salta (y por qué). */
+export interface Repeat {
+  /** En una historia, el grupo de su paso anterior; si no, el último que salió. */
+  from: 'paso' | 'ultima';
+  ids: string[];
+  /** «Brena sigue herida», «Tom está de guardia»… */
+  skipped: string[];
+}
+
+/** Por qué alguien del grupo de antes no puede ir ahora (null: puede). */
+function busy(h: Hero | undefined): string | null {
+  if (!h) return null;
+  const a = (m: string, f: string) => (h.sex === 'f' ? f : m);
+  if (h.status === 'herido') return `${h.name} sigue ${a('herido', 'herida')}`;
+  if (h.status === 'mision') return `${h.name} está de misión`;
+  if (h.status !== 'ok') return `${h.name} ya no está en el gremio`;
+  if (h.guard) return `${h.name} está de guardia`;
+  return null;
+}
+
+export function repeatParty(s: GameState, questId: string): Repeat | null {
+  const q = s.quests.find((x) => x.id === questId);
+  if (!q) return null;
+  const step = q.chain && s.chains?.find((c) => c.id === q.chain!.id)?.party;
+  const before = step ?? s.lastParty;
+  if (!before?.length) return null;
+  const ids: string[] = [];
+  const skipped: string[] = [];
+  for (const id of before) {
+    const h = s.heroes.find((x) => x.id === id);
+    if (!h) continue; // Despedido: ni se nombra.
+    const why = busy(h);
+    if (why) skipped.push(why);
+    else if (ids.length < q.slots) ids.push(id);
+    else skipped.push(`${h.name} no cabe: este encargo admite ${q.slots}`);
+  }
+  return { from: step ? 'paso' : 'ultima', ids, skipped };
+}

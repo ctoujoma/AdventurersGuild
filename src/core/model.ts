@@ -335,6 +335,8 @@ export interface ChainState {
   status: 'activa' | 'hecha';
   /** Veces que la historia se ha torcido (cada una, el paso vuelve más difícil). */
   twists: number;
+  /** Quién fue al último paso (para mandar al mismo grupo al siguiente). */
+  party?: string[];
 }
 
 export interface Raid {
@@ -515,6 +517,8 @@ export interface GameState {
   lastChoice?: string | null;
   /** Cadenas de misiones empezadas. */
   chains?: ChainState[];
+  /** El último grupo que salió de misión («Como la última vez» en la hoja del encargo). */
+  lastParty?: string[];
   /** Lugares de la comarca ya visitados (levantan la niebla del mapa). */
   explored?: string[];
   /** Día en que un espía de los bandidos estudió la casa (más riesgo de asalto unos días). */
