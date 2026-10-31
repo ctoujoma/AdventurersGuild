@@ -25,12 +25,15 @@ o está en «Más adelante», no se toca sin preguntar. El detalle de cada idea 
   [`encargos/interfaz-trabajadores.md`](encargos/interfaz-trabajadores.md)), y ahora menos
   toques y cartas del amanecer una a una:
   [`encargos/interfaz-menos-toques.md`](encargos/interfaz-menos-toques.md) (las cartas, junto
-  con revisar cuándo sale la carta). Después, la parte visual de los tutoriales.
+  con revisar cuándo sale la carta). Ahora, la primera vez que se abre el juego:
+  [`encargos/interfaz-primera-vez.md`](encargos/interfaz-primera-vez.md).
 - **Agente de arte:** colores por sala, animaciones y escaleras (hecho:
   [`encargos/arte-colores-animaciones.md`](encargos/arte-colores-animaciones.md)), y ahora
   fachada por partes y preparar la sastrería (hecho:
   [`encargos/arte-fachada-sastreria.md`](encargos/arte-fachada-sastreria.md)). Siguiente:
   dibujar los tres jefes nuevos (fase 5), y luego la tira del encargo en directo (fase 3).
+  Encargo: [`encargos/arte-incidentes-jefes.md`](encargos/arte-incidentes-jefes.md)
+  (incidentes que se ven y responden al tocar, y los jefes).
 
 Para arrancar a cada uno: «Lee `CLAUDE.md`, `docs/plan.md` y `docs/encargos/<encargo>.md`, y
 empieza por el punto 1».
