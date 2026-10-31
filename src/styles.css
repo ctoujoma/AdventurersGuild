@@ -5350,3 +5350,328 @@ select.crew-free {
   font-size: var(--t-s);
   color: var(--text-soft);
 }
+
+/* ---------- El cobro del día de pago (Merlo o los salarios) ---------- */
+.payday {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  overflow: hidden;
+}
+
+.payday-dim {
+  position: absolute;
+  inset: 0;
+  background: rgba(24, 20, 37, 0.72);
+  animation: fadein 0.3s ease-out both;
+}
+
+.payday-card {
+  position: relative;
+  width: min(420px, 100%);
+  max-height: 100%;
+  overflow-y: auto;
+  border-style: solid;
+  border-width: 16px;
+  border-image: var(--frame-wood) 8 / 16px / 0 round;
+  background: var(--tex-paper) var(--sand);
+  background-size: 64px;
+  color: var(--plum);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: payday-in 0.45s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+
+/* Al caer el sello, la carta da un respingo. */
+.payday.is-stamp .payday-card {
+  animation: payday-shake 0.3s steps(4) both;
+}
+
+@keyframes payday-in {
+  0% {
+    opacity: 0;
+    transform: translateY(40px) scale(0.85);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes payday-shake {
+  0%,
+  100% {
+    transform: none;
+  }
+  25% {
+    transform: translate(-3px, 2px);
+  }
+  50% {
+    transform: translate(3px, -1px);
+  }
+  75% {
+    transform: translate(-2px, 1px);
+  }
+}
+
+.payday-head {
+  text-align: center;
+}
+
+.payday-head h2 {
+  margin: 0;
+  font: 400 var(--t-xl) / 1.1 var(--pixel);
+  color: var(--bark);
+}
+
+.payday-day {
+  font: var(--t-s) / 1 var(--pixel);
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* La caja a la izquierda, Merlo (o la casa) a la derecha y las monedas saltando entre medias. */
+.payday-stage {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: end;
+  gap: 4px;
+  padding: 8px 4px 4px;
+  min-height: 120px;
+}
+
+.payday-from,
+.payday-to {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font: var(--t-s) / 1.2 var(--body);
+  color: var(--text-soft);
+}
+
+.payday-chest {
+  display: grid;
+  place-items: center;
+}
+
+.payday.is-coins .payday-chest {
+  animation: chest-jolt 0.18s steps(2) 6;
+}
+
+@keyframes chest-jolt {
+  50% {
+    transform: translateY(-3px) rotate(-3deg);
+  }
+}
+
+.payday-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font: var(--t-l) / 1 var(--pixel);
+  color: var(--plum);
+}
+
+.payday-gold .count-down {
+  color: var(--wine);
+}
+
+.payday-merlo {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.payday.is-in .payday-merlo {
+  animation: merlo-in 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) 0.15s both;
+}
+
+@keyframes merlo-in {
+  0% {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* La bolsa de Merlo engorda con cada moneda. */
+.payday-bag {
+  position: absolute;
+  right: -10px;
+  bottom: -4px;
+  display: grid;
+  place-items: center;
+}
+
+.payday.is-coins .payday-bag {
+  animation: bag-gulp 0.2s ease-out 0.45s 5;
+}
+
+@keyframes bag-gulp {
+  50% {
+    transform: scale(1.3);
+  }
+}
+
+.payday-crew {
+  display: flex;
+}
+
+/* Los retratos, montados unos sobre otros como en una foto de grupo. */
+.payday-crew > * + * {
+  margin-left: -12px;
+}
+
+.payday.is-coins .payday-crew > * {
+  animation: bag-gulp 0.25s ease-out 0.6s 3;
+}
+
+.payday-track {
+  position: relative;
+  align-self: stretch;
+  min-width: 60px;
+}
+
+/* Cada moneda: la caja de fuera va de lado a lado; la de dentro sube y baja (un arco). */
+.payday-coin {
+  position: absolute;
+  left: 0;
+  bottom: 24px;
+  animation: coin-x 0.55s linear both;
+  animation-delay: calc(var(--c) * 90ms + 300ms);
+}
+
+.payday-coin i {
+  display: block;
+  animation: coin-y 0.55s both;
+  animation-delay: inherit;
+}
+
+@keyframes coin-x {
+  0% {
+    left: 0;
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    left: calc(100% - 16px);
+    opacity: 0;
+  }
+}
+
+@keyframes coin-y {
+  0% {
+    transform: translateY(0) rotate(0);
+    animation-timing-function: ease-out;
+  }
+  50% {
+    transform: translateY(-56px) rotate(180deg);
+    animation-timing-function: ease-in;
+  }
+  100% {
+    transform: translateY(-8px) rotate(360deg);
+  }
+}
+
+.payday-stamp {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  padding: 2px 12px;
+  font: 400 26px / 1.1 var(--pixel);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--wine);
+  border: 3px solid var(--wine);
+  background: rgba(234, 212, 170, 0.6);
+  transform: translate(-50%, -50%) rotate(-12deg);
+  animation: payday-stamp 0.35s cubic-bezier(0.5, 0, 0.6, 1.6) both;
+  pointer-events: none;
+}
+
+@keyframes payday-stamp {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(3) rotate(-30deg);
+  }
+  100% {
+    opacity: 0.92;
+    transform: translate(-50%, -50%) rotate(-12deg);
+  }
+}
+
+.payday-bill {
+  margin: 0;
+  padding: 6px 8px;
+  list-style: none;
+  display: grid;
+  gap: 2px;
+  font: var(--t-m) / 1.3 var(--body);
+  background: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 0 1px rgba(79, 47, 45, 0.35);
+}
+
+.payday-bill li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.payday-bill b {
+  font: var(--t-m) / 1.3 var(--pixel);
+}
+
+.payday-total {
+  border-top: 1px dashed var(--oak);
+  padding-top: 2px;
+}
+
+.payday-debt .bar i {
+  transition: width 0.9s cubic-bezier(0.3, 1.3, 0.5, 1);
+}
+
+.payday-debt.is-moving .bar {
+  animation: bar-glow 0.9s ease-out;
+}
+
+@keyframes bar-glow {
+  40% {
+    box-shadow:
+      0 0 0 2px var(--ink),
+      0 0 10px 2px var(--gold);
+  }
+}
+
+.payday-says {
+  margin: 0;
+  font: italic var(--t-m) / 1.35 var(--body);
+  animation: note-in 0.25s ease-out both;
+}
+
+.payday-next {
+  margin: 0;
+  font: var(--t-s) / 1.3 var(--body);
+  color: var(--text-soft);
+}
+
+.payday-go {
+  align-self: center;
+  min-width: 140px;
+}
+
+.payday-go.is-waiting {
+  opacity: 0.75;
+}
