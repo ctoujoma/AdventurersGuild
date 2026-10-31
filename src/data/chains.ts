@@ -329,4 +329,132 @@ export const CHAINS: readonly ChainDef[] = [
       },
     },
   },
+  {
+    id: 'ceniza',
+    name: 'El jabalí de ceniza',
+    client: 'Concejo de Carbonera',
+    rep: 250,
+    intro:
+      'Los pinares del oeste arden cada luna llena y en Carbonera dicen que no es el fuego: es un jabalí gris como la ceniza, grande como un carro, que corre delante de las llamas. El concejo ha juntado todo lo que tiene para que alguien lo pare antes de que se queme el pueblo.',
+    steps: [
+      {
+        title: 'Huellas en la ceniza',
+        type: 'Investigar',
+        place: 'la aldea de Carbonera',
+        text: 'En Carbonera nadie duerme. Los carboneros han visto huellas del tamaño de un escudo alrededor de las carboneras. Que lo cuenten todo, aunque tiemblen.',
+        danger: 2,
+      },
+      {
+        title: 'Los pinares quemados',
+        type: 'Explorar',
+        place: 'los pinares quemados',
+        text: 'Las huellas se pierden en los pinares quemados, donde el humo no se va nunca. Hay que encontrar la madriguera sin perderse ni asfixiarse.',
+        danger: 2,
+      },
+      {
+        title: 'El jabalí de ceniza',
+        type: 'Cazar',
+        place: 'la loma de Ceniza',
+        text: 'El jabalí duerme en la loma de Ceniza, sobre las brasas de lo que quemó. Hay que subir con agua, buenas pieles y la espada afilada.',
+        danger: 3,
+        boss: 'jabali',
+      },
+    ],
+    ending:
+      'El jabalí de ceniza no volverá a correr delante del fuego. En Carbonera han vuelto a encender las carboneras, y esta vez solo humean lo que deben.',
+    reward: {
+      gold: 750,
+      rep: 25,
+      item: 'Capa de piel de ceniza',
+      trophy: {
+        name: 'Colmillos del jabalí de ceniza',
+        desc: 'Todavía calientes.',
+        icon: 'colmillos',
+      },
+    },
+  },
+  {
+    id: 'sanvela',
+    name: 'La Reina de la Cripta',
+    client: 'Prior Anselmo de Sanvela',
+    rep: 320,
+    intro:
+      'Bajo el priorato de Sanvela duerme una reina que nadie recuerda. Alguien la ha despertado: los monjes oyen pasos en las catacumbas y los muertos del cementerio no están donde los dejaron. El prior Anselmo pide al gremio más famoso de la comarca que baje por ella.',
+    steps: [
+      {
+        title: 'Los monjes que no duermen',
+        type: 'Escoltar',
+        place: 'el priorato de Sanvela',
+        text: 'Los monjes de Sanvela quieren sacar los libros del priorato antes de que suba lo que hay abajo. Hay que llevarlos hasta el camino con los libros y la cabeza en su sitio.',
+        danger: 2,
+      },
+      {
+        title: 'Las catacumbas de Sanvela',
+        type: 'Limpiar',
+        place: 'las catacumbas de Sanvela',
+        text: 'Las catacumbas están llenas de muertos que se levantan. Hay que abrir paso hasta la puerta de la cripta, y que no se cierre a la espalda.',
+        danger: 3,
+      },
+      {
+        title: 'La Reina de la Cripta',
+        type: 'Limpiar',
+        place: 'la cripta de la Reina',
+        text: 'La Reina espera en su trono con su corte de huesos. Toca devolverla a su sueño, para siempre.',
+        danger: 3,
+        boss: 'reina',
+      },
+    ],
+    ending:
+      'La Reina de la Cripta vuelve a dormir, y esta vez con la puerta tapiada. El prior Anselmo ha mandado grabar el escudo del gremio en la piedra, por si alguien vuelve a tener la tentación.',
+    reward: {
+      gold: 900,
+      rep: 30,
+      item: 'Cetro de la Reina',
+      trophy: {
+        name: 'Corona de la Reina de la Cripta',
+        desc: 'Pesa como una losa.',
+        icon: 'idolo',
+      },
+    },
+  },
+  {
+    id: 'corona',
+    name: 'La dragona de la Corona Blanca',
+    client: 'Los tres pueblos del norte',
+    rep: 420,
+    intro:
+      'Del pico de la Corona Blanca baja un viento que hiela los ríos en verano. Los pastores de Nevaza han visto una dragona blanca sobre el glaciar, y los tres pueblos del norte se han puesto de acuerdo por primera vez en cien años: que vaya el gremio de leyenda.',
+    steps: [
+      {
+        title: 'El refugio de Nevaza',
+        type: 'Escoltar',
+        place: 'el refugio de Nevaza',
+        text: 'El guía de Nevaza es el único que conoce el paso, pero no sube solo después de lo que vio. Hay que llevarlo hasta el refugio, con la nieve hasta la cintura.',
+        danger: 2,
+      },
+      {
+        title: 'El lago Helado',
+        type: 'Explorar',
+        place: 'el lago Helado',
+        text: 'Al pie del glaciar, el lago Helado guarda en el hielo a los que subieron antes. Hay que cruzarlo sin quedarse con ellos.',
+        danger: 3,
+      },
+      {
+        title: 'La dragona de la Corona Blanca',
+        type: 'Cazar',
+        place: 'la Corona Blanca',
+        text: 'La dragona duerme en la cumbre, enroscada sobre un tesoro de siglos. Su aliento hiela la sangre. Es lo más difícil que se ha pedido nunca en el tablón.',
+        danger: 3,
+        boss: 'dragona',
+      },
+    ],
+    ending:
+      'La dragona de la Corona Blanca ha caído y los ríos del norte corren otra vez. Los tres pueblos han hecho una canción con el nombre del gremio, y se canta en todas las tabernas. Hasta en la tuya.',
+    reward: {
+      gold: 1200,
+      rep: 40,
+      item: 'Escudo de escama blanca',
+      trophy: { name: 'Cabeza de la dragona blanca', desc: 'Escarcha la pared.', icon: 'cabeza' },
+    },
+  },
 ];

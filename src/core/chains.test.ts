@@ -134,3 +134,23 @@ describe('cadenas de misiones', () => {
     expect(endDay(after).lastFight).toBeNull();
   });
 });
+
+describe('historias de oro y leyenda', () => {
+  it('hay historia con jefe para cada rango alto, y todo en tierra', async () => {
+    const { RANKS } = await import('./balance');
+    const { coastAt } = await import('../art/map');
+    for (const r of RANKS.slice(2)) {
+      const next = RANKS[RANKS.indexOf(r) + 1]?.at ?? Infinity;
+      const here = CHAINS.filter((c) => c.rep >= r.at && c.rep < next);
+      expect(
+        here.some((c) => c.steps.some((st) => st.boss)),
+        r.name,
+      ).toBe(true);
+    }
+    for (const c of CHAINS)
+      for (const st of c.steps) {
+        const p = PLACE_INFO[st.place]!;
+        expect(p.x, st.place).toBeGreaterThan(coastAt(p.y) + 8);
+      }
+  });
+});
