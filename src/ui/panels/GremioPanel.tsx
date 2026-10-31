@@ -7,6 +7,7 @@ import type { Facilities, GameState } from '../../core/model';
 import { FACILITY_INFO } from '../../data/labels';
 import { YARD } from '../../data/rooms';
 import { help } from '../HoldHelp';
+import { GoalRow } from './LibroPanel';
 import { Icon, type IconName } from '../icons';
 
 interface Props {
@@ -207,6 +208,22 @@ export function GremioPanel({
           </span>
         )}
       </div>
+
+      {game.goals && game.goals.active.length > 0 && (
+        <section class="gremio-goals">
+          <h3 class="sec-title">
+            Objetivos{' '}
+            <button class="linklike" onClick={onLibro}>
+              ver en el Libro
+            </button>
+          </h3>
+          <div class="rows">
+            {game.goals.active.map((g) => (
+              <GoalRow key={g.id} game={game} goal={g} />
+            ))}
+          </div>
+        </section>
+      )}
 
       <div class="tiles">
         {tile(

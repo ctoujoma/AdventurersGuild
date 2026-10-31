@@ -64,8 +64,8 @@ export function Opening({ arrival: a, best, rooms, onOpen, onRetry }: Props) {
             altura, que ahora pagan más.
           </li>
           <li class="ev ev-good">
-            El Libro de hazañas (el libro del desván) premia lo que consigas, y cada mes trae
-            desafíos nuevos.
+            Las hazañas y los objetivos (en el Gremio) dan oro, fama y piezas para la fachada y las
+            telas de las salas.
           </li>
         </ul>
         {retry ? (

@@ -246,7 +246,7 @@ describe('avance de día', () => {
     expect(s.paid).toBe(DEBT);
     expect(s.opening?.seen).toBe(false);
     expect(s.opening!.score).toBeGreaterThan(0);
-    expect(s.month?.goals.length).toBeGreaterThan(0);
+    expect(s.goals?.active.length).toBe(3);
     s = reduce(s, { type: 'ackOpening' });
     expect(s.opening?.seen).toBe(true);
     // Y la partida sigue: los salarios se pagan cada semana.
@@ -268,6 +268,9 @@ describe('el día vivo', () => {
     const s = newGame(seed);
     s.building.rooms.find((r) => r.type === 'salon')!.level = 3;
     s.fac.tab = 3;
+    // Objetivos que no se cumplen, para que no sumen a la caja.
+    const far = { id: 'encargos', text: '', base: 0, target: 999, reward: {} };
+    s.goals = { active: [far, far, far], done: {}, log: [] };
     return s;
   };
 

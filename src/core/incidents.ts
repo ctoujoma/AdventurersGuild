@@ -95,6 +95,7 @@ function lose(s: GameState, inc: Incident): IncidentNews {
 function win(s: GameState, inc: Incident, who: string): IncidentNews {
   const d = INCIDENTS[inc.kind];
   if (d.rep) s.rep += d.rep;
+  if (s.stats) s.stats = { ...s.stats, incidents: (s.stats.incidents ?? 0) + 1 };
   return { t: fill(d.win, { h: who }) + (d.rep ? ` (+${d.rep} reputación)` : ''), k: 'good' };
 }
 

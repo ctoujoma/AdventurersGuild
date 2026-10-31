@@ -7,6 +7,8 @@ import { catchUp, waitText } from '../core/away';
 import { left, setRealTime } from './when';
 import { IncidentMark } from './IncidentMark';
 import { canClose, canHire, customOf, newGame, reduce, type Action } from '../core/game';
+import { hasUnlock } from '../core/goals';
+import type { UnlockId } from '../data/unlocks';
 import { raidRoute } from '../core/assault';
 import { canHireWorker } from '../core/workers';
 import { DAY_SECONDS, DELIVERIES, DUSK } from '../core/balance';
@@ -164,6 +166,8 @@ export function App() {
   setRealTime(realTime);
   // Acelerar el reloj: mientras dura «La deuda» y en el modo prueba (más adelante, quizá de pago).
   const canRush = game.mode !== 'libre' || settings.tester;
+  // Las piezas que se ganan; en el modo prueba, todas.
+  const has = (id: UnlockId) => settings.tester || hasUnlock(game, id);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [records, setRecords] = useState(loadRecords);
   /** Mejor llegada antes de esta partida, para comparar en la apertura. */
@@ -1014,6 +1018,7 @@ export function App() {
               onTint={
                 works.planning ? undefined : (id, tint) => dispatch({ type: 'tint', id, tint })
               }
+              has={has}
             />
           </Panel>
         )}
@@ -1085,6 +1090,7 @@ export function App() {
           <Panel title="Adornos" onClose={() => openPanel(null)}>
             <TabernaPanel
               game={game}
+              has={has}
               onCustom={(patch) => {
                 dispatch({ type: 'custom', patch });
                 audio.play('click');

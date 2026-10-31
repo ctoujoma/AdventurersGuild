@@ -16,6 +16,7 @@ import type {
 } from '../data/custom';
 import type { Trade } from '../data/workers';
 import type { RoomType } from '../data/rooms';
+import type { UnlockId } from '../data/unlocks';
 import type { Attrs, Challenge, ClassId, SkillId, Trait } from './party';
 
 export const SAVE_VERSION = 4;
@@ -410,6 +411,8 @@ export interface Stats {
   lastDeath: number;
   raids: number;
   chains?: number;
+  /** Incidentes de la taberna resueltos. */
+  incidents?: number;
   byType: Partial<Record<QuestType, number>>;
 }
 
@@ -425,21 +428,20 @@ export interface Arrival {
   score: number;
 }
 
-export interface MonthGoal {
+/** Un objetivo en curso: el contador al salir (los de contar), lo que pide y su premio. */
+export interface ActiveGoal {
   id: string;
   text: string;
-  /** Contador de Stats (o 'byType:Cazar') y valor al empezar el mes. */
-  stat: string;
   base: number;
   target: number;
   reward: Reward;
-  done: boolean;
 }
 
-export interface Month {
-  start: number;
-  end: number;
-  goals: MonthGoal[];
+/** Objetivos: los tres en curso, cuántas veces se ha cumplido cada uno y el historial. */
+export interface Goals {
+  active: ActiveGoal[];
+  done: Record<string, number>;
+  log: { day: number; text: string; reward: string }[];
 }
 
 export interface Reward {
@@ -447,6 +449,8 @@ export interface Reward {
   rep?: number;
   /** Rareza del equipo de regalo. */
   item?: Rarity;
+  /** Algo que se ve (pieza de fachada o tema de color). */
+  unlock?: UnlockId;
 }
 
 export type GameOver = { kind: 'victoria' | 'derrota'; text: string; score: number } | null;
@@ -499,8 +503,10 @@ export interface GameState {
   stats?: Stats;
   /** Hazañas: cuántos niveles se han cobrado de cada una. */
   feats?: Record<string, number>;
-  /** Desafíos del mes (modo libre). */
-  month?: Month;
+  /** Objetivos siempre activos (sustituyen a los desafíos del mes). */
+  goals?: Goals;
+  /** Cosas que se ven ganadas con hazañas y objetivos (las de serie no se apuntan). */
+  unlocks?: UnlockId[];
   /** Días de pago seguidos sin poder pagar los salarios (modo libre). */
   unpaid?: number;
   /** Asalto en camino (si `warned`, el jugador lo sabe). */

@@ -1,6 +1,7 @@
 import { chainDef } from '../../core/chains';
-import { goalProgress, rewardText, statValue } from '../../core/feats';
-import type { GameState } from '../../core/model';
+import { rewardText, statValue } from '../../core/feats';
+import { goalProgress } from '../../core/goals';
+import type { ActiveGoal, GameState } from '../../core/model';
 import { FEATS } from '../../data/feats';
 import type { Records } from '../../platform/records';
 
@@ -9,33 +10,47 @@ interface Props {
   records: Records;
 }
 
-/** Libro de hazañas: desafíos del mes, historias, hazañas por niveles, récords y los caídos. */
+/** Un objetivo en curso: qué pide, cuánto lleva y qué da. */
+export function GoalRow({ game, goal }: { game: GameState; goal: ActiveGoal }) {
+  const n = goalProgress(game, goal);
+  return (
+    <article class="feat">
+      <b>{goal.text}</b>
+      <span class="track">
+        <i style={{ width: `${(n / goal.target) * 100}%` }} />
+      </span>
+      <small>
+        {n}/{goal.target} · {rewardText(goal.reward)}
+      </small>
+    </article>
+  );
+}
+
+/** Libro de hazañas: objetivos (y lo cumplido), historias, hazañas por niveles, récords y los caídos. */
 export function LibroPanel({ game, records }: Props) {
-  const m = game.mode === 'libre' ? game.month : undefined;
+  const goals = game.goals;
   return (
     <>
-      {m && (
+      {goals && (
         <section>
-          <h3 class="sec-title">
-            Desafíos del mes{' '}
-            <span class="row-sub">quedan {Math.max(0, m.end - game.day)} días</span>
-          </h3>
+          <h3 class="sec-title">Objetivos</h3>
           <div class="rows">
-            {m.goals.map((g) => {
-              const n = goalProgress(game, g);
-              return (
-                <article key={g.id} class={`feat ${g.done ? 'done' : ''}`}>
-                  <b>{g.text}</b>
-                  <span class="track">
-                    <i style={{ width: `${(n / g.target) * 100}%` }} />
-                  </span>
-                  <small>
-                    {g.done ? 'Cumplido' : `${n}/${g.target}`} · {rewardText(g.reward)}
-                  </small>
-                </article>
-              );
-            })}
+            {goals.active.map((g) => (
+              <GoalRow key={g.id} game={game} goal={g} />
+            ))}
           </div>
+          {goals.log.length > 0 && (
+            <details class="set-fold goal-log">
+              <summary>Cumplidos · {goals.log.length}</summary>
+              <ul>
+                {goals.log.map((l, i) => (
+                  <li key={i}>
+                    <b>Día {l.day}</b> · {l.text} <small>({l.reward})</small>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
         </section>
       )}
 
@@ -137,8 +152,6 @@ export function LibroPanel({ game, records }: Props) {
           </div>
         </section>
       )}
-
-      {!m && <p class="panel-note">Los desafíos del mes empiezan cuando el gremio sea tuyo.</p>}
     </>
   );
 }

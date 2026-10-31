@@ -3,6 +3,8 @@ import { roomMax } from '../../core/balance';
 import { appeal, neighborsOf, seatsOf, visitorList, visitorsOf } from '../../core/salon';
 import { canWork, customOf, roster, type Action } from '../../core/game';
 import { TINTS, TINT_FROM, TINT_IDS, type TintId } from '../../data/custom';
+import { unlockSource } from '../../core/goals';
+import type { UnlockId } from '../../data/unlocks';
 import { beerCap, dailyYield, eatersOf, foodCap } from '../../core/larder';
 import { ATTR_NAMES, trainCap } from '../../core/training';
 import { LOCK_TIME, TRAIN_CAP, VAULT_STORE } from '../../core/balance';
@@ -98,6 +100,8 @@ interface Props {
   onOpen?: (id: string) => void;
   /** Elegir el tema de color de sus telas (`null`: los de la casa). */
   onTint?: (room: string, tint: TintId | null) => void;
+  /** Si se tiene una pieza (los temas de color que faltan salen con candado). */
+  has?: (id: UnlockId) => boolean;
 }
 
 /** Los colores de las telas de la sala: los de la casa o uno de los temas. */
@@ -105,24 +109,36 @@ function RoomTint({
   game,
   room,
   onTint,
+  has,
 }: {
   game: GameState;
   room: Room;
   onTint: (room: string, tint: TintId | null) => void;
+  has: (id: UnlockId) => boolean;
 }) {
   const cur = customOf(game).colors?.[room.id] ?? null;
-  const swatch = (id: TintId | null, label: string, bg?: string) => (
-    <button
-      key={id ?? 'casa'}
-      role="radio"
-      aria-checked={cur === id}
-      aria-label={label}
-      title={label}
-      class={`tav-swatch room-swatch ${id ? '' : 'house'} ${cur === id ? 'on' : ''}`}
-      style={bg ? { background: bg } : undefined}
-      onClick={() => onTint(room.id, id)}
-    />
-  );
+  const [locked, setLocked] = useState<string | null>(null);
+  const swatch = (id: TintId | null, label: string, bg?: string) => {
+    const why = id && cur !== id && !has(`tint:${id}`) ? unlockSource(`tint:${id}`) : null;
+    const text = why ? `${label}. Se gana con: ${why}` : label;
+    return (
+      <button
+        key={id ?? 'casa'}
+        role="radio"
+        aria-checked={cur === id}
+        aria-disabled={!!why}
+        aria-label={text}
+        title={text}
+        class={`tav-swatch room-swatch ${id ? '' : 'house'} ${cur === id ? 'on' : ''} ${why ? 'locked' : ''}`}
+        style={bg ? { background: bg } : undefined}
+        onClick={() => {
+          if (why) return setLocked(`${label}: se gana con ${why}.`);
+          setLocked(null);
+          onTint(room.id, id);
+        }}
+      />
+    );
+  };
   return (
     <div class="room-tint">
       <span class="row-sub">Colores de las telas</span>
@@ -133,6 +149,7 @@ function RoomTint({
           return swatch(id, TINTS[id].name, `linear-gradient(${l} 0 30%, ${m} 30% 70%, ${d} 70%)`);
         })}
       </div>
+      {locked && <small class="lock-why">{locked}</small>}
     </div>
   );
 }
@@ -378,6 +395,7 @@ export function RoomPanel({
   onTask,
   onOpen,
   onTint,
+  has,
 }: Props) {
   const room = game.building.rooms.find((r) => r.id === roomId);
   if (!room) return <p class="panel-note">Esa sala ya no está.</p>;
@@ -458,7 +476,7 @@ export function RoomPanel({
         <RoomCrew game={game} room={room} onTask={onTask} onOpen={onOpen} />
       )}
       {onTint && !room.works && room.level >= (TINT_FROM[room.type] ?? Infinity) && (
-        <RoomTint game={game} room={room} onTint={onTint} />
+        <RoomTint game={game} room={room} onTint={onTint} has={has ?? (() => true)} />
       )}
       {onWork && <RoomWorks game={game} room={room} onWork={onWork} onMove={onMove} />}
       {links.length > 0 && (
