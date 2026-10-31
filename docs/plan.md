@@ -112,7 +112,10 @@ lo demás cerrado con candado y la explicación de cuándo se abre:
 - al llegar a la reputación de «La sombra de Hondogrís» (8), el aviso de preparar un buen
   grupo;
 - la cámara se acerca a lo que toca en cada paso;
-- se puede saltar.
+- se puede saltar;
+- cuando no quede nada que hacer (todos fuera, esperando), un botón para pasar al siguiente
+  momento con algo (la vuelta del grupo, el amanecer): un tutorial no debe tener al jugador
+  mirando la taberna mientras se cumplen las primeras misiones.
 
 Parte de las notas del tío (`src/ui/tips.ts`, `UncleNote.tsx`).
 
