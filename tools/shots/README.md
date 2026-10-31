@@ -29,6 +29,9 @@ Sirven para revisar a ojo los cambios de la escena de salas (no son tests).
 7b. Animales: `node tools/shots/animales.mjs <carpeta> [puerto]` saca la chimenea del salón de
 cerca con el gato y el perro dormidos, el gato de paseo y los dos tocados.
 
+7c. Salas rotas: `node tools/shots/rotas.mjs <carpeta> [puerto]` saca cada sala rota de la
+partida del tío de cerca (con su rata a la vista), sus bichos tocados y la taberna entera.
+
 8. Fachada: `node tools/shots/fachada.mjs <carpeta> [tejado/paredes/rótulo,…]` saca la taberna
    entera con cada combinación, de día y de noche, baja y con una planta de más (`ANCHO` y
    `ALTO` para móvil).

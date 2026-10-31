@@ -44,6 +44,7 @@ import type { FacadeLook, RoofId, WallId } from '../../data/custom';
 type Crest = { field: string; dark: string; symbol: string };
 import { NO_LOOK, hearthSpan, salonWall, type SalonLook } from './salon';
 import { BACK } from './view3d';
+import { ruinFloor } from './ruina';
 
 export type Theme = 'madera' | 'yeso' | 'piedra' | 'cueva';
 export const themeOf = (f: number): Theme =>
@@ -177,6 +178,7 @@ export function floorTex(room: Room | null, theme: Theme, w: number, seed: strin
   else if (theme === 'piedra') stoneWall(b, 0, 0, w, DEEP, seed, { ramp: STONE, bw: 10, bh: 5 });
   else if (theme === 'cueva') stoneWall(b, 0, 0, w, DEEP, seed, { ramp: ROCK, bw: 12, bh: 5 });
   else planksV(b, 0, 0, w, DEEP, seed, room && ruined(room) ? WOOD_DARK : WOOD, 8);
+  if (room && ruined(room) && room.type !== 'torre') ruinFloor(b, seed);
   if (room && !bare(room) && !ruined(room)) {
     if (ART[room.type])
       floorFinish(

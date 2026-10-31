@@ -62,12 +62,13 @@ describe('muebles de la vista 3D', () => {
     }
   });
 
-  it('el fuego tiembla y tiene llamas; las salas rotas o en obras no dan luz', () => {
+  it('el fuego tiembla y tiene llamas; las salas rotas o en obras no dan luz (solo la del agujero del techo)', () => {
     for (const type of ['salon', 'cocina', 'forja'] as const) {
       const fire = furnish(room(type), CELL_W - PARTITION).find((t) => t.light?.flames);
       expect(fire?.light?.flicker).toBeGreaterThanOrEqual(0.2);
     }
-    expect(furnish(room('salon', { level: 0 }), 110).some((t) => t.light)).toBe(false);
+    const broken = furnish(room('salon', { level: 0 }), 110).filter((t) => t.light);
+    expect(broken.every((t) => t.light!.steady && !t.light!.flames)).toBe(true);
     expect(
       furnish(room('salon', { works: { kind: 'build', nights: 1 } }), 110).some((t) => t.light),
     ).toBe(false);

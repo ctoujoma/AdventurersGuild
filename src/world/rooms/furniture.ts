@@ -8,6 +8,7 @@ import { P } from '../../art/palette';
 import { PixelBuffer } from '../../art/pixel';
 import type { Building, Room } from '../../core/model';
 import * as Prop from '../props';
+import { ruinThings } from './ruina';
 import { PITCH } from './layout';
 import { scaleAt } from './view3d';
 import { ART } from './salas';
@@ -139,13 +140,15 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
   const gear = look.gearRoom === room.id ? look.gear : [];
   const art = ART[room.type];
   if (room.level === 0) {
+    // Encima de lo que deja cada sala, el daño (viga caída, escombro, agujero del techo).
+    const damage = room.type === 'torre' ? [] : ruinThings(room, w);
     // (Las salas con su arte guardan ellas mismas el equipo en arcones.)
-    if (art?.ruin) return [...t, ...art.ruin(room, w, look)];
+    if (art?.ruin) return [...t, ...art.ruin(room, w, look), ...damage];
     if (gear.length) chestPile(add, gear.length, 20, 1);
     add(Prop.brokenChair(), slot3(0, 3), FRONT);
     add(Prop.rolledCarpet(), slot3(1, 3), MID);
     add(Prop.crate(), slot3(2, 3), WALL);
-    return t;
+    return [...t, ...damage];
   }
   const lvl = room.level;
   // Farol del techo en cada sala que se usa (salvo las que ponen sus propias luces).
