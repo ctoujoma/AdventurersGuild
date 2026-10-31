@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { newGame, reduce } from '../core/game';
+import { brewAt } from '../core/larder';
 import type { GameState, Room } from '../core/model';
 import { candidatesFor, crewAlerts, crewGroups, taskOf, taskOptions } from './crew';
 import { GUARD, planTask, type Task } from './drop';
@@ -85,5 +86,38 @@ describe('la casa por tareas', () => {
     expect(who).toContain(s.heroes[0]!.id);
     // Los trabajadores no van a la guardia.
     expect(candidatesFor(s, GUARD).every((m) => m.hero)).toBe(true);
+  });
+
+  it('cada uno dice lo que pone en su sala, y quien entrena, cómo va', () => {
+    let s = newGame('pone');
+    const cocina = group(s, roomOf(s, 'cocina').id);
+    // Remedios (Maña 4, en su oficio) en una cocina de nivel 1: 4 × 1,5 × 2 = 12 raciones.
+    expect(cocina.people[0]!.gives).toBe('+12 raciones');
+    s.building.rooms.push({
+      id: 'arm',
+      type: 'armas',
+      col: 4,
+      floor: 0,
+      w: 1,
+      h: 1,
+      level: 1,
+      spent: 0,
+    });
+    const h = s.heroes[0]!;
+    h.attrs.F = 2;
+    s = task(s, h.id, 'arm');
+    const m = group(s, 'arm').people[0]!;
+    expect(m.sub).toBe('Fuerza 2');
+    expect(m.progress).toBeGreaterThanOrEqual(0);
+    expect(m.gives).toMatch(/Sube esta noche|Faltan unos \d+ días/);
+    expect(m.more).toBeTruthy();
+  });
+
+  it('lo que pone cada uno suma lo que saca la sala', () => {
+    let s = newGame('suma');
+    const bodega = roomOf(s, 'bodega');
+    s = task(s, s.heroes[0]!.id, bodega.id);
+    const jarras = group(s, bodega.id).people.map((p) => Number(p.gives!.match(/\d+/)![0]));
+    expect(jarras.reduce((a, b) => a + b, 0)).toBe(Math.round(brewAt(s, bodega)));
   });
 });

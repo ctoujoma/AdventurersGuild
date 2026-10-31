@@ -4406,6 +4406,18 @@ small.crew-off {
 select.crew-free {
   cursor: pointer;
 }
+.crew-who small.crew-gives {
+  color: var(--text-good);
+}
+.crew-who .train-bar {
+  flex: none;
+  width: 100%;
+  max-width: none;
+  margin: 4px 2px 2px 0;
+}
+.crew-more {
+  flex-basis: 100%;
+}
 .crew-detail {
   display: flex;
   flex-wrap: wrap;

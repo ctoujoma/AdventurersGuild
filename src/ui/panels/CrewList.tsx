@@ -2,7 +2,15 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import type { GameState } from '../../core/model';
 import { canHireWorker, workerCap } from '../../core/workers';
 import { TRADES } from '../../data/workers';
-import { candidatesFor, crewAlerts, crewGroups, taskOf, taskOptions, type Member } from '../crew';
+import {
+  candidatesFor,
+  crewAlerts,
+  crewGroups,
+  taskOf,
+  taskOptions,
+  type Group,
+  type Member,
+} from '../crew';
 import type { Task } from '../drop';
 import { help } from '../HoldHelp';
 import { Icon } from '../icons';
@@ -41,7 +49,7 @@ function Detail({
   m: Member;
   onOpen: (id: string) => void;
   onTask: (who: string, task: Task) => void;
-  onFire: (id: string) => void;
+  onFire?: (id: string) => void;
 }) {
   const [sure, setSure] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -51,6 +59,7 @@ function Detail({
   const now = taskOf(game, m.id);
   return (
     <div class="crew-detail" ref={ref}>
+      {m.more && <span class="row-sub crew-more">{m.more}</span>}
       {home && (
         <select
           class="job-select"
@@ -69,7 +78,7 @@ function Detail({
         <button class="btn btn-wood" onClick={() => onOpen(m.id)}>
           Ficha
         </button>
-      ) : sure ? (
+      ) : !onFire ? null : sure ? (
         <span class="crew-sure">
           <button class="btn btn-red" onClick={() => onFire(m.id)}>
             Despedir
@@ -129,6 +138,80 @@ function FreeSlot({
   );
 }
 
+/** Un grupo con sus huecos: la gente (tocar para elegir) y los puestos libres. */
+export function CrewGroup({
+  game,
+  g,
+  title = g.title,
+  sel,
+  setSel,
+  onOpen,
+  onTask,
+  onFire,
+}: {
+  game: GameState;
+  g: Group;
+  /** Otro título (en la ficha de sala: «Trabajan aquí»). */
+  title?: string;
+  sel: string | null;
+  setSel: (id: string | null) => void;
+  onOpen: (id: string) => void;
+  onTask: (who: string, task: Task) => void;
+  onFire?: (id: string) => void;
+}) {
+  const chosen = g.people.find((p) => p.id === sel);
+  const free = g.slots === undefined ? 0 : Math.max(0, g.slots - g.people.length);
+  return (
+    <section class="crew-group" aria-label={title}>
+      <h3 class="crew-h">
+        <span>{title}</span>
+        {g.slots !== undefined && (
+          <span class="row-sub">
+            {g.people.length} de {g.slots}
+          </span>
+        )}
+      </h3>
+      {g.note && <span class="row-sub">{g.note}</span>}
+      <div class="crew-slots">
+        {g.people.map((p) => (
+          <button
+            key={p.id}
+            class={`crew-slot ${p.hero ? 'is-hero' : ''} ${sel === p.id ? 'is-sel' : ''}`}
+            aria-expanded={sel === p.id}
+            onClick={() => setSel(sel === p.id ? null : p.id)}
+          >
+            <Face game={game} id={p.id} />
+            <span class="crew-who">
+              <b>{p.name}</b>
+              <small>{p.sub}</small>
+              {p.off && <small class="crew-off">No es su oficio</small>}
+              {p.gives && <small class="crew-gives">{p.gives}</small>}
+              {p.progress !== undefined && (
+                <span class="train-bar" aria-label={`${Math.round(p.progress * 100)} %`}>
+                  <i style={{ width: `${Math.round(p.progress * 100)}%` }} />
+                </span>
+              )}
+            </span>
+          </button>
+        ))}
+        {Array.from({ length: free }, (_, i) => (
+          <FreeSlot key={i} game={game} task={g.task ?? null} onTask={onTask} />
+        ))}
+      </div>
+      {chosen && (
+        <Detail
+          key={chosen.id}
+          game={game}
+          m={chosen}
+          onOpen={onOpen}
+          onTask={onTask}
+          onFire={onFire}
+        />
+      )}
+    </section>
+  );
+}
+
 /**
  * Quién hace qué en la casa: cada sala con sus puestos (ocupados o libres), los que entrenan,
  * la guardia, quien descansa y quien está fuera, con los avisos arriba. Tocar a alguien deja
@@ -155,57 +238,23 @@ export function CrewList({ game, onOpen, onTask, onHire, onFire }: Props) {
           ))}
         </ul>
       )}
-      {groups.map((g) => {
-        if (!g.people.length && g.slots === undefined) return null;
-        const chosen = g.people.find((p) => p.id === sel);
-        const free = g.slots === undefined ? 0 : Math.max(0, g.slots - g.people.length);
-        return (
-          <section key={g.key} class="crew-group" aria-label={g.title}>
-            <h3 class="crew-h">
-              <span>{g.title}</span>
-              {g.slots !== undefined && (
-                <span class="row-sub">
-                  {g.people.length} de {g.slots}
-                </span>
-              )}
-            </h3>
-            {g.note && <span class="row-sub">{g.note}</span>}
-            <div class="crew-slots">
-              {g.people.map((p) => (
-                <button
-                  key={p.id}
-                  class={`crew-slot ${p.hero ? 'is-hero' : ''} ${sel === p.id ? 'is-sel' : ''}`}
-                  aria-expanded={sel === p.id}
-                  onClick={() => setSel(sel === p.id ? null : p.id)}
-                >
-                  <Face game={game} id={p.id} />
-                  <span class="crew-who">
-                    <b>{p.name}</b>
-                    <small>{p.sub}</small>
-                    {p.off && <small class="crew-off">No es su oficio</small>}
-                  </span>
-                </button>
-              ))}
-              {Array.from({ length: free }, (_, i) => (
-                <FreeSlot key={i} game={game} task={g.task ?? null} onTask={onTask} />
-              ))}
-            </div>
-            {chosen && (
-              <Detail
-                key={chosen.id}
-                game={game}
-                m={chosen}
-                onOpen={onOpen}
-                onTask={onTask}
-                onFire={(id) => {
-                  setSel(null);
-                  onFire(id);
-                }}
-              />
-            )}
-          </section>
-        );
-      })}
+      {groups.map((g) =>
+        !g.people.length && g.slots === undefined ? null : (
+          <CrewGroup
+            key={g.key}
+            game={game}
+            g={g}
+            sel={sel}
+            setSel={setSel}
+            onOpen={onOpen}
+            onTask={onTask}
+            onFire={(id) => {
+              setSel(null);
+              onFire(id);
+            }}
+          />
+        ),
+      )}
       <section class="crew-group" aria-label="Piden trabajo">
         <h3 class="crew-h">
           <span>Piden trabajo</span>
