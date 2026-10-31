@@ -5,7 +5,9 @@
  *   node tools/shots/animales.mjs <carpeta> [puerto=4173]
  *
  * Con el perro comprado, saca la chimenea de cerca: los dos dormidos (`dormidos.png`), el gato de
- * paseo (`paseo.png`) y los dos tocados (`toque-N.png`: corazones y ladrido).
+ * paseo (`paseo.png`) y los dos tocados (`toque-N.png`: corazones y ladrido). Con el cuervo,
+ * el rótulo de cerca con cada modelo (`cuervo-<rótulo>.png`, tocado: `-toque`) y volando
+ * (`cuervo-vuela.png`).
  */
 import { mkdirSync } from 'node:fs';
 import { chromium } from 'playwright';
@@ -55,6 +57,7 @@ const ok = await page.evaluate(() => {
   const g = window.__game;
   g.set({ ...g.get(), tips: ['*'], gold: 999 });
   g.dispatch({ type: 'buyDog' });
+  g.dispatch({ type: 'buyRaven' });
   return !!g.get().custom?.dog;
 });
 await page.waitForTimeout(600);
@@ -104,5 +107,36 @@ if (ok && (await focus())) {
     await page.waitForTimeout(250);
     await page.screenshot({ path: `${out}/toque-${i}.png` });
   }
+  // Carbón en cada rótulo.
+  for (const sign of ['tablero', 'hierro', 'pintado']) {
+    await page.evaluate((sign) => {
+      window.__game.dispatch({ type: 'facadeLook', patch: { sign } });
+    }, sign);
+    await page.waitForTimeout(500);
+    await page.evaluate(() => {
+      const sc = window.__scene;
+      const r = sc.pets.pets.get('cuervo');
+      r.fly = null;
+      r.x = sc.perch.x;
+      r.y = sc.perch.y;
+      r.state = 'perch';
+      r.timer = 99;
+      sc.camera.centerOn(r.x + 20, r.y + 10, false);
+    });
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: `${out}/cuervo-${sign}.png` });
+    await page.evaluate(() => window.__scene.pat('cuervo'));
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: `${out}/cuervo-${sign}-toque.png` });
+  }
+  await page.evaluate(() => {
+    const p = window.__scene.pets;
+    const r = p.pets.get('cuervo');
+    r.state = 'perch';
+    r.timer = 0;
+    p.rnd = () => 0.01;
+  });
+  await page.waitForTimeout(1500);
+  await page.screenshot({ path: `${out}/cuervo-vuela.png` });
 } else console.log('sin salón');
 await browser.close();

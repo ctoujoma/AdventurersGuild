@@ -204,7 +204,7 @@ export const DOG_PRICE = 60;
 export const DOG_TIPOFF = 0.25;
 
 /** Lo que pasa al tocar a los animales del salón (se elige una al azar). */
-export const PET_LINES: Record<'gato' | 'perro', readonly string[]> = {
+export const PET_LINES: Record<'gato' | 'perro' | 'cuervo', readonly string[]> = {
   gato: [
     'Bigotes ronronea. Lleva aquí más años que tú.',
     'Bigotes abre un ojo, te mira y lo vuelve a cerrar.',
@@ -218,6 +218,13 @@ export const PET_LINES: Record<'gato' | 'perro', readonly string[]> = {
     'Tizón ladra a la puerta. No hay nadie… de momento.',
     'Tizón se pone panza arriba. Menudo perro guardián.',
     'Tizón levanta las orejas: ha oído algo en el patio.',
+  ],
+  cuervo: [
+    '¡Cra, cra! Carbón dice que trae noticias, pero no suelta prenda.',
+    'Carbón te mira de lado y se atusa una pluma.',
+    'Carbón ladea la cabeza: espera algo brillante a cambio.',
+    'Carbón grazna tu nombre. O algo que se le parece.',
+    'Carbón no se fía de los forasteros. De ti, a medias.',
   ],
 };
 
