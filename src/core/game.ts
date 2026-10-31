@@ -74,7 +74,9 @@ import {
   type Dress,
 } from '../data/custom';
 import type { RoomType } from '../data/rooms';
-import { arrival, checkFeats, checkMonth, emptyStats, startMonth } from './feats';
+import { arrival, checkFeats, emptyStats } from './feats';
+import { checkGoals, tickGoals } from './goals';
+import { stepRumors, takeRumor } from './rumors';
 import { stepRaids } from './raids';
 import { advanceChain, bossOf, fightRoster, offerChain } from './chains';
 import { choose, maybeEvent, scaredClients, stepThreat } from './events';
@@ -178,6 +180,7 @@ export type Action =
   | { type: 'feast' }
   /** El reloj del día avanza hasta `to` segundos (y la caja entrega lo que toque). */
   | { type: 'tick'; to: number }
+  | { type: 'rumor' }
   /** Saltar al anochecer. */
   | { type: 'dusk' }
   | { type: 'endDay' };
@@ -401,6 +404,7 @@ export function newGame(seed: string): GameState {
     s.workers.push(w);
   }
   for (let i = 0; i < START.quests; i++) s.quests.push(quest(s, rng));
+  checkGoals(s, rng, []);
   s.rng = rng.save();
   return s;
 }
@@ -657,8 +661,19 @@ export function reduce(state: GameState, action: Action): GameState {
       if (next === state) return state;
       // Los incidentes solo corren con el juego abierto (la simulación de fuera no pasa por aquí).
       const news = stepIncidents(next, state.clock ?? 0, next.clock ?? 0);
-      next.incidentNews = news.length ? news : undefined;
-      return next;
+      stepRumors(next, state.clock ?? 0, next.clock ?? 0);
+      // Los objetivos también se cobran en cuanto se cumplen.
+      const g = next.over ? { next, news: [] } : tickGoals(next);
+      const all = [...news, ...g.news.map((n) => ({ t: n.t, k: n.k ?? 'good' }))];
+      g.next.incidentNews = all.length ? all : undefined;
+      return g.next;
+    }
+    case 'rumor': {
+      if (!state.rumor) return state;
+      const s = structuredClone(state);
+      const n = takeRumor(s);
+      s.incidentNews = n ? [n] : undefined;
+      return s;
     }
     case 'incident': {
       if (incidentIssue(state, action.id, action.act)) return state;
@@ -745,6 +760,8 @@ export function endDay(state: GameState, away = false): GameState {
   const rng = new Rng(s.rng);
   const events: DawnEvent[] = [...pending];
   s.incidentNews = undefined;
+  // El rumor que no se ha tocado se pierde con la noche.
+  s.rumor = undefined;
   s.day++;
   stepWorks(s, events);
   tidyJobs(s);
@@ -973,7 +990,7 @@ export function endDay(state: GameState, away = false): GameState {
   s.quests = s.quests.filter((q) => q.expires > 0);
   let fresh = 0;
   while (
-    s.quests.filter((q) => !q.chain && !q.rescue).length <
+    s.quests.filter((q) => !q.chain && !q.rescue && !q.rumor).length <
     BOARD_SIZE(s.fac.tab, s.fac.mapas) + (s.fac.torre >= 2 ? 1 : 0) - scaredClients(s)
   ) {
     s.quests.push(quest(s, rng));
@@ -1054,7 +1071,6 @@ export function endDay(state: GameState, away = false): GameState {
     if (s.paid >= DEBT) {
       s.mode = 'libre';
       s.opening = { ...arrival(s, alive), seen: false };
-      startMonth(s, rng);
       // Con las obras llega también gente a pedir trabajo (y el dormitorio del servicio).
       for (let i = 0; i < 2; i++) addSeeker(s, rng, events);
       events.push({
@@ -1066,7 +1082,7 @@ export function endDay(state: GameState, away = false): GameState {
 
   if (!s.over) {
     checkFeats(s, rng, events);
-    checkMonth(s, rng, events);
+    checkGoals(s, rng, events);
     maybeEvent(s, rng);
   }
 

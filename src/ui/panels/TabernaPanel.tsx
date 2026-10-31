@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'preact/hooks';
 import { customOf } from '../../core/game';
+import { unlockSource } from '../../core/goals';
 import { appeal } from '../../core/salon';
 import type { Custom, GameState } from '../../core/model';
 import {
@@ -24,6 +25,7 @@ import {
   type WallId,
   type CrestSymbol,
 } from '../../data/custom';
+import type { UnlockId } from '../../data/unlocks';
 import { crestBoard } from '../../world/props';
 import { BufferImage } from '../BufferImage';
 import { help } from '../HoldHelp';
@@ -40,6 +42,8 @@ interface Props {
   onLook: (patch: FacadeLook) => void;
   onRaven: () => void;
   onFeast: () => void;
+  /** Si se tiene una pieza (las demás salen con candado y de dónde se ganan). */
+  has: (id: UnlockId) => boolean;
 }
 
 /** Una fila de opciones (una sola elegida), con su título. */
@@ -48,34 +52,57 @@ function Choice<K extends string>({
   names,
   value,
   onPick,
+  lock,
 }: {
   title: string;
   names: Record<K, string>;
   value: K;
   onPick: (k: K) => void;
+  /** De dónde se gana, si aún no se tiene. */
+  lock: (k: K) => string | null;
 }) {
+  const [why, setWhy] = useState<string | null>(null);
   return (
     <div class="look-row">
       <span class="row-sub">{title}</span>
       <div class="tav-symbols" role="radiogroup" aria-label={title}>
-        {(Object.keys(names) as K[]).map((k) => (
-          <button
-            key={k}
-            role="radio"
-            aria-checked={value === k}
-            class={`btn ${value === k ? 'btn-gold' : 'btn-wood'}`}
-            onClick={() => onPick(k)}
-          >
-            {names[k]}
-          </button>
-        ))}
+        {(Object.keys(names) as K[]).map((k) => {
+          const from = value === k ? null : lock(k);
+          return (
+            <button
+              key={k}
+              role="radio"
+              aria-checked={value === k}
+              aria-disabled={!!from}
+              aria-label={from ? `${names[k]}. Se gana con: ${from}` : names[k]}
+              class={`btn ${value === k ? 'btn-gold' : 'btn-wood'} ${from ? 'locked' : ''}`}
+              onClick={() => {
+                if (from) return setWhy(`${names[k]}: se gana con ${from}.`);
+                setWhy(null);
+                onPick(k);
+              }}
+            >
+              {names[k]}
+            </button>
+          );
+        })}
       </div>
+      {why && <small class="lock-why">{why}</small>}
     </div>
   );
 }
 
 /** El aspecto de la fachada, por partes: solo se ve, no atrae a nadie. */
-function FacadeParts({ look, onLook }: { look: FacadeLook; onLook: (p: FacadeLook) => void }) {
+function FacadeParts({
+  look,
+  onLook,
+  has,
+}: {
+  look: FacadeLook;
+  onLook: (p: FacadeLook) => void;
+  has: (id: UnlockId) => boolean;
+}) {
+  const lock = (id: UnlockId) => (has(id) ? null : (unlockSource(id) ?? 'más adelante'));
   return (
     <div class="look-parts">
       <Choice<RoofId>
@@ -83,26 +110,33 @@ function FacadeParts({ look, onLook }: { look: FacadeLook; onLook: (p: FacadeLoo
         names={ROOFS}
         value={look.roof ?? 'teja'}
         onPick={(roof) => onLook({ roof })}
+        lock={(k) => lock(`roof:${k}`)}
       />
       <Choice<WallId>
         title="Paredes"
         names={WALLS}
         value={look.walls ?? 'tablas'}
         onPick={(walls) => onLook({ walls })}
+        lock={(k) => lock(`walls:${k}`)}
       />
       <Choice<SignId>
         title="Rótulo"
         names={SIGNS}
         value={look.sign ?? 'tablero'}
         onPick={(sign) => onLook({ sign })}
+        lock={(k) => lock(`sign:${k}`)}
       />
       <label class="look-check">
         <input
           type="checkbox"
           checked={!!look.boxes}
+          disabled={!look.boxes && !!lock('boxes')}
           onChange={(e) => onLook({ boxes: (e.target as HTMLInputElement).checked })}
         />{' '}
         Jardineras en los ventanucos
+        {!look.boxes && lock('boxes') && (
+          <small class="lock-why">Se gana con: {lock('boxes')}</small>
+        )}
       </label>
     </div>
   );
@@ -150,6 +184,7 @@ export function TabernaPanel({
   onLook,
   onRaven,
   onFeast,
+  has,
 }: Props) {
   const c = customOf(game);
   const decor = c.decor ?? [];
@@ -301,7 +336,7 @@ export function TabernaPanel({
         </>
       )}
 
-      {tab === 'fachada' && <FacadeParts look={c.look ?? {}} onLook={onLook} />}
+      {tab === 'fachada' && <FacadeParts look={c.look ?? {}} onLook={onLook} has={has} />}
       {tab === 'fachada' && (
         <div class="adornos">
           {(Object.keys(FACADE) as FacadeId[]).map((k) => {

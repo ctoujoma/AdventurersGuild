@@ -21,7 +21,12 @@ export const FEATS: readonly FeatDef[] = [
     text: 'Cumple {n} encargos con éxito',
     stat: 'wins',
     tiers: [5, 10, 25, 50],
-    rewards: [{ gold: 40 }, { gold: 80, rep: 3 }, { gold: 150, item: 1 }, { gold: 300, item: 2 }],
+    rewards: [
+      { gold: 40 },
+      { gold: 80, rep: 3, unlock: 'roof:pizarra' },
+      { gold: 150, item: 1, unlock: 'tint:morado' },
+      { gold: 300, item: 2 },
+    ],
   },
   {
     id: 'brillantes',
@@ -29,7 +34,11 @@ export const FEATS: readonly FeatDef[] = [
     text: 'Consigue {n} éxitos brillantes',
     stat: 'brilliant',
     tiers: [3, 10, 25],
-    rewards: [{ rep: 5 }, { gold: 100, item: 1 }, { gold: 250, item: 2 }],
+    rewards: [
+      { rep: 5, unlock: 'sign:pintado' },
+      { gold: 100, item: 1 },
+      { gold: 250, item: 2 },
+    ],
   },
   {
     id: 'trofeos',
@@ -37,7 +46,7 @@ export const FEATS: readonly FeatDef[] = [
     text: 'Consigue {n} trofeos',
     stat: 'trophies',
     tiers: [1, 3, 5],
-    rewards: [{ gold: 50 }, { gold: 120, rep: 5 }, { item: 2 }],
+    rewards: [{ gold: 50, unlock: 'walls:piedra' }, { gold: 120, rep: 5 }, { item: 2 }],
   },
   {
     id: 'veterano',
@@ -45,7 +54,7 @@ export const FEATS: readonly FeatDef[] = [
     text: 'Sube un héroe a nivel {n}',
     stat: 'maxLvl',
     tiers: [3, 5, 8],
-    rewards: [{ gold: 50 }, { item: 1 }, { item: 2 }],
+    rewards: [{ gold: 50 }, { item: 1, unlock: 'roof:verde' }, { item: 2 }],
   },
   {
     id: 'oro',
@@ -53,7 +62,7 @@ export const FEATS: readonly FeatDef[] = [
     text: 'Gana {n} monedas con encargos',
     stat: 'goldEarned',
     tiers: [500, 1500, 4000],
-    rewards: [{ rep: 3 }, { gold: 100 }, { gold: 200, item: 1 }],
+    rewards: [{ rep: 3 }, { gold: 100, unlock: 'tint:ocre' }, { gold: 200, item: 1 }],
   },
   {
     id: 'asaltos',
@@ -61,7 +70,7 @@ export const FEATS: readonly FeatDef[] = [
     text: 'Repele {n} asaltos a la taberna',
     stat: 'raids',
     tiers: [1, 3, 5],
-    rewards: [{ gold: 60 }, { gold: 150, rep: 5 }, { item: 2 }],
+    rewards: [{ gold: 60, unlock: 'sign:hierro' }, { gold: 150, rep: 5 }, { item: 2 }],
   },
   {
     id: 'sinbajas',
@@ -69,59 +78,6 @@ export const FEATS: readonly FeatDef[] = [
     text: 'Pasa {n} días seguidos sin bajas',
     stat: 'safeDays',
     tiers: [10, 20, 40],
-    rewards: [{ gold: 40 }, { gold: 100, rep: 5 }, { item: 2 }],
-  },
-];
-
-/** Plantillas de desafíos del mes (modo libre): objetivo y premio. */
-export const MONTH_POOL: readonly {
-  id: string;
-  text: string;
-  stat: string;
-  target: number;
-  reward: Reward;
-}[] = [
-  { id: 'm-encargos', text: 'Cumple 8 encargos', stat: 'wins', target: 8, reward: { gold: 120 } },
-  {
-    id: 'm-brillantes',
-    text: 'Logra 3 éxitos brillantes',
-    stat: 'brilliant',
-    target: 3,
-    reward: { gold: 80, rep: 5 },
-  },
-  {
-    id: 'm-caza',
-    text: 'Cumple 3 encargos de caza',
-    stat: 'byType:Cazar',
-    target: 3,
-    reward: { item: 1 },
-  },
-  {
-    id: 'm-explorar',
-    text: 'Cumple 3 exploraciones',
-    stat: 'byType:Explorar',
-    target: 3,
-    reward: { item: 1 },
-  },
-  {
-    id: 'm-escolta',
-    text: 'Cumple 3 escoltas',
-    stat: 'byType:Escoltar',
-    target: 3,
-    reward: { gold: 100 },
-  },
-  {
-    id: 'm-oro',
-    text: 'Gana 800 monedas con encargos',
-    stat: 'goldEarned',
-    target: 800,
-    reward: { rep: 8 },
-  },
-  {
-    id: 'm-trofeo',
-    text: 'Consigue un trofeo',
-    stat: 'trophies',
-    target: 1,
-    reward: { item: 2 },
+    rewards: [{ gold: 40, unlock: 'boxes' }, { gold: 100, rep: 5 }, { item: 2 }],
   },
 ];

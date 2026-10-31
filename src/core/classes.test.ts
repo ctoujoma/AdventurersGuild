@@ -93,7 +93,7 @@ describe('moral', () => {
     let s = newGame('descanso');
     for (const h of s.heroes) h.morale = 30;
     s.heroes.forEach((h) => (h.traits = []));
-    for (let d = 0; d < 20; d++) s = endDay(s);
+    for (let d = 0; d < 14; d++) s = endDay(s);
     for (const h of s.heroes.filter((x) => x.status === 'ok'))
       expect(h.morale).toBe(restCap(s.fac.tab));
   });

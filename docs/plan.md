@@ -71,14 +71,16 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
 
 1. **Auditar trabajadores y tareas** (interfaz): quién hace qué, dónde se ve y cómo se
    ordena; ahora es confuso. Antes de sumar sistemas.
-2. **Objetivos siempre activos:**
-   - metas cortas de gestión («sirve 40 jarras», «mejora la cocina a 2», «gana un asalto sin
-     heridos»);
-   - siempre tres, y al cumplir uno sale otro; algunos en serie (la cocina a 2, luego a 3);
-   - sustituyen a los desafíos del mes;
-   - el Libro guarda el historial de lo cumplido (día y premio).
-3. **Premios que se ven:** las hazañas (logros por niveles, encadenados, como ahora) y los
-   objetivos dan tintes, adornos o piezas de fachada, además de oro y fama.
+2. **Objetivos siempre activos** (hecho): siempre tres; al cumplir uno se cobra en el momento y
+   sale otro. Los de contar se repiten pidiendo más; los de salas y los de llegar a algo, una
+   vez y en serie (la cocina a 2, luego a 3; hierro, luego plata). Sustituyen a los desafíos del
+   mes. Se ven en el Gremio, y el Libro guarda lo cumplido (día y premio). Datos en
+   `data/goals.ts`, reglas en `core/goals.ts`. Falta: más variedad («gana un asalto sin
+   heridos», «sirve 40 jarras»).
+3. **Premios que se ven** (hecho): hazañas y objetivos dan piezas de fachada (tejado, paredes,
+   rótulo, jardineras) y temas de color de las salas (`data/unlocks.ts`). Las que no se tienen
+   salen apagadas y dicen de dónde se ganan; en el modo prueba, todas. Falta: tintes y prendas
+   de la sastrería, cuando llegue la sala.
 4. **Rangos que abren cosas:** Cobre, Hierro, Plata, Oro y Leyenda (ya existen, por
    reputación). Cada rango abre algo:
    - plantas, hasta 6 por encima de la baja (hecho);
@@ -99,8 +101,13 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
    y tests), `ui/IncidentMark.tsx` (el aviso sobre la sala) y `ui/drop.ts` (arrastrar a quien
    lo arregla). Solo con el juego abierto, desde el día 2 y de uno en uno; lo que quede al caer
    la noche sale mal y va a la carta. Cifras en `balance.ts` (`INCIDENT_*`).
-6. **Rumores de la barra:** un bocadillo brillante sobre una mesa unos segundos; si se toca a
-   tiempo, se abre un encargo especial con botín bueno o legendario.
+6. **Revisar el cobro de la deuda** (lo hablado con los agentes de arte e interfaz: Merlo que
+   viene a cobrar, con su animación): cuando esté en `main`, comprobar que encaja con el tiempo
+   que corre solo, los pagos estando fuera (`dueTonight`), los avisos y los objetivos.
+7. **Rumores de la barra** (hecho): con el juego abierto, desde el día 2, un bocadillo dorado
+   sobre una mesa del salón unos 15 s. Si se toca a tiempo, sale un encargo marcado «Rumor»
+   (mejor paga, botín bueno o legendario, caduca en 2 días); si no, se pierde sin más. Uno a la
+   vez. `data/rumors.ts`, `core/rumors.ts`, `ui/RumorMark.tsx`; cifras `RUMOR_*`.
 
 ## Fase 2 · Tutorial guiado
 
@@ -112,7 +119,10 @@ lo demás cerrado con candado y la explicación de cuándo se abre:
 - al llegar a la reputación de «La sombra de Hondogrís» (8), el aviso de preparar un buen
   grupo;
 - la cámara se acerca a lo que toca en cada paso;
-- se puede saltar.
+- se puede saltar;
+- cuando no quede nada que hacer (todos fuera, esperando), un botón para pasar al siguiente
+  momento con algo (la vuelta del grupo, el amanecer): un tutorial no debe tener al jugador
+  mirando la taberna mientras se cumplen las primeras misiones.
 
 Parte de las notas del tío (`src/ui/tips.ts`, `UncleNote.tsx`).
 

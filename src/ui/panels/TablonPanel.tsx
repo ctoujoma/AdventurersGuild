@@ -24,7 +24,11 @@ export function TablonPanel({ quests, seeAll, onOpen, clock = 0 }: Props) {
     return <p class="panel-note">El tablón está vacío. Mañana llegarán más encargos.</p>;
   return (
     <div class="notes">
-      {[...quests.filter((q) => q.chain), ...quests.filter((q) => !q.chain)].map((q, i) => {
+      {[
+        ...quests.filter((q) => q.chain),
+        ...quests.filter((q) => q.rumor),
+        ...quests.filter((q) => !q.chain && !q.rumor),
+      ].map((q, i) => {
         const hidden = q.dangerHidden && !seeAll;
         const chain = q.chain ? chainDef(q.chain.id) : null;
         const expires =
@@ -34,12 +38,13 @@ export function TablonPanel({ quests, seeAll, onOpen, clock = 0 }: Props) {
         return (
           <button
             key={q.id}
-            class={`note ${q.chain ? 'note-chain' : ''}`}
+            class={`note ${q.chain ? 'note-chain' : ''} ${q.rumor ? 'note-rumor' : ''}`}
             style={{ '--tilt': `${(i % 2 ? 1 : -1) * (0.5 + (i % 3) * 0.3)}deg` }}
             onClick={() => onOpen(q.id)}
             aria-label={[
               q.title,
               chain ? `${chain.name}, paso ${q.chain!.step + 1} de ${chain.steps.length}` : q.type,
+              q.rumor ? 'de un rumor, con botín especial' : '',
               `peligro ${dangerLabel(q.danger, hidden)}`,
               `${span(q.days)} de viaje`,
               `hasta ${q.slots} ${plural(q.slots, 'héroe', 'héroes')}`,
@@ -63,7 +68,11 @@ export function TablonPanel({ quests, seeAll, onOpen, clock = 0 }: Props) {
               ) : (
                 <span class="note-type">{q.type}</span>
               )}
-              {q.fresh && <span class="note-new">Nuevo</span>}
+              {q.rumor ? (
+                <span class="note-new note-rumor-tag">Rumor</span>
+              ) : (
+                q.fresh && <span class="note-new">Nuevo</span>
+              )}
               {!chain && (
                 <span class={`note-left ${q.expires === 1 ? 'urgent' : ''}`}>
                   <Icon name="reloj" size={10} />

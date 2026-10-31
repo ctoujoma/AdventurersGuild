@@ -1,14 +1,13 @@
 /**
- * Hazañas (logros con niveles), desafíos del mes y resumen de llegada. Todo se evalúa al
- * amanecer sobre el estado ya copiado (aquí se muta) y deja su línea en el resumen.
+ * Hazañas (logros con niveles) y resumen de llegada. Se evalúa al amanecer sobre el estado ya
+ * copiado (aquí se muta) y deja su línea en el resumen. Los objetivos están en `goals.ts`.
  */
-import { FEATS, MONTH_POOL } from '../data/feats';
+import { FEATS } from '../data/feats';
 import { GEAR } from '../data/items';
+import { unlockName } from '../data/unlocks';
 import type { Arrival, DawnEvent, GameState, Rarity, Reward, Stats } from './model';
 import type { Rng } from './rng';
 
-export const MONTH_DAYS = 30;
-export const MONTH_GOALS = 3;
 const ROMAN = ['I', 'II', 'III', 'IV', 'V'];
 
 export function emptyStats(): Stats {
@@ -40,6 +39,7 @@ export function rewardText(r: Reward): string {
   if (r.rep) parts.push(`${r.rep} de reputación`);
   if (r.item !== undefined)
     parts.push(['equipo común', 'equipo bueno', 'equipo legendario'][r.item]!);
+  if (r.unlock) parts.push(unlockName(r.unlock));
   return parts.join(' y ');
 }
 
@@ -47,6 +47,8 @@ export function rewardText(r: Reward): string {
 export function grant(s: GameState, rng: Rng, r: Reward): string {
   if (r.gold) s.gold += r.gold;
   if (r.rep) s.rep += r.rep;
+  if (r.unlock && !(s.unlocks ?? []).includes(r.unlock))
+    s.unlocks = [...(s.unlocks ?? []), r.unlock];
   let extra = '';
   if (r.item !== undefined) {
     const base = rng.pick(GEAR.filter((g) => g.rarity === (r.item as Rarity)));
@@ -69,43 +71,6 @@ export function checkFeats(s: GameState, rng: Rng, events: DawnEvent[]): void {
     s.feats[f.id] = got;
   }
 }
-
-/** Empieza un mes nuevo con desafíos distintos. */
-export function startMonth(s: GameState, rng: Rng): void {
-  const pool = [...MONTH_POOL];
-  const goals = [];
-  for (let i = 0; i < MONTH_GOALS && pool.length; i++) {
-    const g = pool.splice(rng.int(0, pool.length - 1), 1)[0]!;
-    goals.push({ ...g, base: statValue(s, g.stat), done: false });
-  }
-  s.month = { start: s.day, end: s.day + MONTH_DAYS, goals };
-}
-
-/** Avanza los desafíos del mes: premia los cumplidos y renueva al acabar. */
-export function checkMonth(s: GameState, rng: Rng, events: DawnEvent[]): void {
-  if (s.mode !== 'libre') return;
-  if (!s.month) return startMonth(s, rng);
-  for (const g of s.month.goals) {
-    if (g.done || statValue(s, g.stat) - g.base < g.target) continue;
-    g.done = true;
-    events.push({
-      t: `Desafío del mes cumplido: ${g.text}. Premio: ${grant(s, rng, g.reward)}.`,
-      k: 'good',
-    });
-  }
-  if (s.day >= s.month.end) {
-    const done = s.month.goals.filter((g) => g.done).length;
-    events.push({
-      t: `Se acaba el mes: ${done} de ${s.month.goals.length} desafíos cumplidos. Hay desafíos nuevos en el Libro de hazañas.`,
-      k: 'info',
-    });
-    startMonth(s, rng);
-  }
-}
-
-/** Progreso de un desafío del mes. */
-export const goalProgress = (s: GameState, g: { stat: string; base: number; target: number }) =>
-  Math.min(g.target, Math.max(0, statValue(s, g.stat) - g.base));
 
 /** Cómo llega el gremio a la apertura (y su puntuación, para comparar intentos). */
 export function arrival(s: GameState, alive: number): Arrival {
