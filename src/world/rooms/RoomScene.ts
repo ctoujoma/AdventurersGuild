@@ -288,6 +288,7 @@ export class RoomScene {
   /** Bocas de las chimeneas del tejado (en el mundo 2D), por donde sale el humo. */
   private smokeAt: { x: number; y: number }[] = [];
   private smokeT = 0;
+  private crossT = 0;
   private towerRect: Rect | null = null;
   private flames: Mesh[] = [];
   /** La tira de fotogramas de las llamas (la misma para todas). */
@@ -1612,6 +1613,18 @@ export class RoomScene {
 
   /** Humo de las chimeneas: más seguido de noche, cuando se enciende más el fuego. */
   private puffs(dt: number): void {
+    // Una cruz roja que sube, de vez en cuando, sobre cada herido acostado.
+    this.crossT -= dt;
+    if (this.crossT <= 0) {
+      this.crossT = 2.6;
+      // (Las partículas se pintan sin perspectiva: se pasa el punto de la cama a la vista.)
+      const c = this.camera;
+      const view: View = { px: c.px, py: c.py, vw: c.vw, vh: c.vh };
+      for (const p of this.crowd.injured()) {
+        const s = project(view, p.x, p.y, p.z);
+        this.particles.spawn('cross', view.px + s.x - 3, view.py + s.y - 10);
+      }
+    }
     if (!this.smokeAt.length) return;
     this.smokeT -= dt;
     if (this.smokeT > 0) return;

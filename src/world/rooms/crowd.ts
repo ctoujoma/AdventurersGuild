@@ -416,7 +416,8 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
   TINT_IDS.forEach((id, k) => quilts.push({ i: F.sleepT + k, up: F.upT + k, q: TINTS[id].ramp }));
   for (const { i, q } of quilts) {
     const x = i * CELL;
-    b.blit(spr.sleep, x, 0);
+    // El herido, con su venda (aunque no quepa en un catre y duerma en una litera).
+    b.blit(h.marks.injured ? spr.bed : spr.sleep, x, 0);
     b.rect(x + 2, 12, 21, 6, q[2]!);
     b.hline(x + 2, 12, 21, q[3]!);
     b.hline(x + 2, 17, 21, q[1]!);
@@ -427,7 +428,7 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
   b.hline(x + 4, 17, 20, P.mist);
   // En el jergón del servicio: una manta parda de lana.
   const m = F.mat * CELL;
-  b.blit(spr.bed, m, 0);
+  b.blit(h.marks.injured ? spr.bed : spr.sleep, m, 0);
   b.rect(m + 4, 14, 20, 4, P.clay);
   b.hline(m + 4, 14, 20, P.tan);
   b.hline(m + 4, 17, 20, P.rust);
@@ -711,6 +712,22 @@ export class Crowd {
     const g = (t + (h % 53) / 3) % 17;
     if (g >= 1.5) return -1;
     return h % 2 ? F.stretch : F.yawn;
+  }
+
+  /**
+   * Dónde está la cabeza de cada herido acostado (en el mundo 2D), para que la escena le ponga
+   * encima, de vez en cuando, una cruz roja: así se ve quién está herido, también en una cama
+   * del dormitorio.
+   */
+  injured(): { x: number; y: number; z: number }[] {
+    const out: { x: number; y: number; z: number }[] = [];
+    for (const a of this.actors.values()) {
+      if (a.gone || a.hero.status !== 'herido' || a.pose !== 'bed' || a.edge) continue;
+      const f = this.frame(a, this.now);
+      const k = scaleAt(f.z);
+      out.push({ x: f.left + 10 / k, y: f.bottom - TALL / k + 8 / k, z: f.z });
+    }
+    return out;
   }
 
   /** Temas de color de las salas: la manta de quien duerme en una litera es la de su sala. */
