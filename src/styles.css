@@ -1486,7 +1486,17 @@ button:focus-visible {
 .qs-who .qs-sub {
   margin: 0;
 }
-.qs-suggest.is-off {
+.qs-repeat {
+  justify-content: flex-start;
+  max-width: 100%;
+}
+.qs-repeat span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.qs-suggest.is-off,
+.qs-repeat.is-off {
   opacity: 0.55;
 }
 .qs-sub {

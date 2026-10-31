@@ -516,6 +516,10 @@ export function reduce(state: GameState, action: Action): GameState {
       });
       s.quests = s.quests.filter((x) => x.id !== q.id);
       if (!(s.explored ??= []).includes(q.place)) s.explored.push(q.place);
+      // Para repetir el grupo: el último que salió y, en una historia, el de su último paso.
+      s.lastParty = [...action.heroIds];
+      const chain = q.chain && s.chains?.find((c) => c.id === q.chain!.id);
+      if (chain) chain.party = [...action.heroIds];
       return s;
     }
     case 'sell': {

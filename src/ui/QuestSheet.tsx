@@ -6,7 +6,7 @@ import { chainDef } from '../core/chains';
 import { PERKS, partyClasses, tripDays } from '../core/classes';
 import { RISK_LABELS, moraleMod, skill } from '../core/party';
 import { questEstimate } from '../core/resolve';
-import { suggestParty } from '../core/suggest';
+import { repeatParty, suggestParty } from '../core/suggest';
 import { CLASS_NAMES, dangerClass, dangerLabel, statusLabel } from '../data/labels';
 import { help } from './HoldHelp';
 import { Icon } from './icons';
@@ -58,6 +58,20 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
     setWarn(null);
     audio.play('select');
     setSel(suggestion.ids);
+  };
+
+  // El grupo de antes (el del paso anterior de la historia, o el último que salió).
+  const repeat = repeatParty(game, q.id);
+  const repeatNames = listNames(
+    (repeat?.ids ?? []).map((id) => heroes.find((h) => h.id === id)?.name.split(' ')[0] ?? ''),
+  );
+  const again = () => {
+    if (!repeat) return;
+    const why = repeat.skipped.length ? `${repeat.skipped.join('. ')}.` : null;
+    if (!repeat.ids.length) return setWarn(why ?? 'Nadie de aquel grupo puede ir ahora.');
+    audio.play('select');
+    setSel(repeat.ids);
+    setWarn(why);
   };
 
   const toggle = (id: string) => {
@@ -170,6 +184,24 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
               <Icon name="star" size={12} /> Sugerir
             </button>
           </div>
+          {repeat && (
+            <button
+              class={`btn btn-wood qs-repeat ${repeat.ids.length ? '' : 'is-off'}`}
+              aria-disabled={!repeat.ids.length}
+              {...help(
+                repeat.from === 'paso'
+                  ? 'El grupo que hizo el paso anterior de esta historia. Quien no pueda ir se queda.'
+                  : 'El último grupo que salió de misión. Quien no pueda ir se queda.',
+              )}
+              onClick={again}
+            >
+              <Icon name="pasos" size={12} />
+              <span>
+                {repeat.from === 'paso' ? 'Como en el paso anterior' : 'Como la última vez'}
+                {repeatNames ? `: ${repeatNames}` : ''}
+              </span>
+            </button>
+          )}
           <div class="picks">
             {ranked.map((h) => {
               const on = sel.includes(h.id);

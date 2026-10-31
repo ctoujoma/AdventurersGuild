@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { canSend, newGame } from './game';
+import { canSend, newGame, reduce } from './game';
 import type { GameState, Hero } from './model';
-import { suggestParty } from './suggest';
+import { repeatParty, suggestParty } from './suggest';
 
 /** Una partida con los héroes que se le den (copias del primero con cambios). */
 function withHeroes(seed: string, ...changes: Partial<Hero>[]): GameState {
@@ -69,5 +69,36 @@ describe('grupo sugerido', () => {
     s.heroes = s.heroes.filter((h) => !h.guard);
     expect(suggestParty(s, s.quests[0]!.id)).toEqual({ why: 'No hay nadie en casa para ir.' });
     expect(suggestParty(s, 'no-existe')).toMatchObject({ why: expect.stringMatching(/tablón/) });
+  });
+
+  it('como la última vez: repite el grupo y dice a quién se salta', () => {
+    let s = withHeroes('repetir', {}, {}, {});
+    s.quests[1] = { ...s.quests[1]!, slots: 3 };
+    expect(repeatParty(s, s.quests[0]!.id)).toBeNull();
+    s = reduce(s, { type: 'send', questId: s.quests[0]!.id, heroIds: ['x0', 'x1'] });
+    expect(s.lastParty).toEqual(['x0', 'x1']);
+    // Siguen fuera: no puede ir nadie, y lo dice.
+    const q = s.quests[0]!.id;
+    expect(repeatParty(s, q)).toMatchObject({
+      from: 'ultima',
+      ids: [],
+      skipped: ['H0 está de misión', 'H1 está de misión'],
+    });
+    // Vuelven: uno herido.
+    s.heroes[0]!.status = 'ok';
+    s.heroes[1]!.status = 'herido';
+    s.heroes[1]!.sex = 'f';
+    expect(repeatParty(s, q)).toMatchObject({ ids: ['x0'], skipped: ['H1 sigue herida'] });
+  });
+
+  it('en una historia, el grupo de su paso anterior', () => {
+    let s = withHeroes('historia', {}, {}, {});
+    s.chains = [{ id: 'cadena', step: 1, status: 'activa', twists: 0, party: ['x2'] }];
+    s.lastParty = ['x0'];
+    s.quests[0] = { ...s.quests[0]!, chain: { id: 'cadena', step: 1 } };
+    expect(repeatParty(s, s.quests[0]!.id)).toMatchObject({ from: 'paso', ids: ['x2'] });
+    // Al mandar un paso, se apunta en la historia.
+    s = reduce(s, { type: 'send', questId: s.quests[0]!.id, heroIds: ['x0', 'x1'] });
+    expect(s.chains![0]!.party).toEqual(['x0', 'x1']);
   });
 });
