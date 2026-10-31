@@ -37,6 +37,11 @@ import { BLIND, cellsOf, sconceOn, takeWallActs, windowX } from './salas/kit';
 import { RISE, goesRight, stepAt } from './stairs';
 import { streetDoor } from './salas/recibidor';
 import { cloth } from './salas/tintes';
+import { roofAt, wallFill } from './fachada';
+import type { FacadeLook, RoofId, WallId } from '../../data/custom';
+
+/** Los colores y el símbolo del escudo (para pintarlo en la fachada). */
+type Crest = { field: string; dark: string; symbol: string };
 import { NO_LOOK, hearthSpan, salonWall, type SalonLook } from './salon';
 import { BACK } from './view3d';
 
@@ -330,9 +335,12 @@ export function outerSide(
   door: boolean,
   seed: string,
   strength = 1,
+  walls?: WallId,
 ): PixelBuffer {
   const b = new PixelBuffer(DEEP, h);
-  if (theme === 'yeso') {
+  // Con paredes elegidas, todas las plantas iguales; si no, yeso abajo y tablas arriba.
+  if (walls) wallFill(b, 0, 0, DEEP, h, seed, walls);
+  else if (theme === 'yeso') {
     plaster(b, 0, 0, DEEP, h, seed, PLASTER);
     post(b, 0, 0, 3, h, WOOD_DARK);
     post(b, DEEP - 3, 0, 3, h, WOOD_DARK);
@@ -346,16 +354,13 @@ export function outerSide(
 }
 
 /** Tejas de una vertiente (largo × fondo, a media resolución en el fondo). */
-export function roofTiles(len: number, seed: string): PixelBuffer {
+export function roofTiles(len: number, seed: string, roof?: RoofId): PixelBuffer {
   const b = new PixelBuffer(DEEP + 4, len);
   const rng = new Rng(seed);
   for (let y = 0; y < len; y++) {
-    const row = Math.floor(y / 4);
-    for (let x = 0; x < b.w; x++) {
-      const edge = (x + (row % 2 ? 2 : 0)) % 5 === 0;
-      b.set(x, y, y % 4 === 3 ? P.plum : edge ? P.wine : row % 3 === 0 ? P.amber : P.brick);
-    }
-    if (rng.chance(0.08)) b.set(rng.int(0, b.w - 1), y, P.rust);
+    for (let x = 0; x < b.w; x++) b.set(x, y, roofAt(roof, x, y, 4));
+    // Alguna teja desportillada (en la de siempre).
+    if ((roof ?? 'teja') === 'teja' && rng.chance(0.08)) b.set(rng.int(0, b.w - 1), y, P.rust);
   }
   return b;
 }
@@ -438,7 +443,7 @@ export const caveCells = (L: RoomsLayout): { rect: Rect; floor: number; col: num
  * El plano de corte: tierra y roca con los huecos excavados, los muros y forjados entre salas
  * y los hastiales de los tejados. Lo que queda dentro de cada sala se deja transparente.
  */
-export function facade(L: RoomsLayout): Facade {
+export function facade(L: RoomsLayout, look: FacadeLook = {}, crest?: Crest): Facade {
   const runs = roofRuns(L);
   const top = Math.min(GROUND, ...runs.map((r) => r.base - r.h)) - 4;
   const ox = L.x0;
@@ -471,7 +476,7 @@ export function facade(L: RoomsLayout): Facade {
   // Muros y forjados: cada hueco ocupado, con su media pared y sus forjados, de madera arriba
   // y de piedra abajo; luego se vacía el interior.
   const wood = new PixelBuffer(W, H);
-  planksV(wood, 0, 0, W, g + SLAB, 'muros', WOOD_DARK, 6);
+  wallFill(wood, 0, 0, W, g + SLAB, 'muros', look.walls);
   const stone = new PixelBuffer(W, H);
   stoneWall(stone, 0, g, W, H - g, 'sillares', { ramp: STONE, bw: 12, bh: 6 });
   const stairs = stairCells(L);
@@ -523,7 +528,21 @@ export function facade(L: RoomsLayout): Facade {
     for (let j = 0; j < r.h; j++)
       for (let i = 0; i < r.w; i++) buf.clear(r.x - ox + i, r.y - oy + j);
   }
-  for (const run of runs) gable(buf, run.x0 - ox, run.x1 - ox, run.base - oy, run.h);
+  // El escudo pintado, en el hastial más ancho.
+  const big =
+    look.sign === 'pintado' && crest
+      ? runs.reduce((a, r) => (r.x1 - r.x0 > a.x1 - a.x0 ? r : a))
+      : null;
+  for (const run of runs)
+    gable(
+      buf,
+      run.x0 - ox,
+      run.x1 - ox,
+      run.base - oy,
+      run.h,
+      look,
+      run === big ? crest : undefined,
+    );
   return { buf, x: ox, y: oy, runs };
 }
 
@@ -565,31 +584,88 @@ function earth(b: PixelBuffer, x: number, y: number, w: number, h: number) {
   }
 }
 
-/** Hastial de un tejado: pared de tablas con alero de tejas y un ventanuco. */
-function gable(b: PixelBuffer, x0: number, x1: number, base: number, h: number) {
+/**
+ * Hastial de un tejado: pared (tablas, entramado o piedra) con el alero del tejado elegido y un
+ * ventanuco (con jardinera, si se ha elegido); o, si se le da `crest`, el escudo pintado.
+ */
+function gable(
+  b: PixelBuffer,
+  x0: number,
+  x1: number,
+  base: number,
+  h: number,
+  look: FacadeLook = {},
+  crest?: Crest,
+) {
   const mid = (x0 + x1) / 2;
   const half = (x1 - x0) / 2;
   const inside = (x: number, y: number, inset: number) =>
     y <= base + 2 && Math.abs(x - mid) <= half * (1 - (base + 2 - y) / (h + 2)) - inset;
-  const tile = (x: number, y: number) => {
-    const row = Math.floor((y - (base - h)) / 3);
-    return (x + (row % 2 ? 2 : 0)) % 6 === 0 ? P.wine : row % 3 === 0 ? P.amber : P.brick;
-  };
-  const planks = new PixelBuffer(x1 - x0, h + 3);
-  planksV(planks, 0, 0, planks.w, planks.h, `hastial${x0}`, WOOD_DARK, 6);
+  // El alero: el de siempre, fino; los demás, algo más gruesos para que se note el material
+  // (desde delante no se ven las vertientes), y la paja más aún.
+  // (El de siempre se mide en horizontal; los demás, en alto: 5 píxeles, y la paja 8.)
+  const thatch = look.roof === 'paja';
+  const eave =
+    (look.roof ?? 'teja') === 'teja' ? 6 : ((thatch ? 8 : 5) * half) / Math.max(1, h + 2);
+  const tile = (x: number, y: number) => roofAt(look.roof, x, y - Math.floor(base - h), 3);
+  const planks = new PixelBuffer(Math.ceil(x1 - x0) + 1, h + 3);
+  wallFill(planks, 0, 0, planks.w, planks.h, `hastial${x0}`, look.walls);
   for (let y = Math.floor(base - h); y <= base + 2; y++)
     for (let x = Math.floor(x0); x <= x1; x++) {
       if (!inside(x, y, 0)) continue;
-      const c = inside(x, y, 6) ? planks.get(x - x0, y - (base - h)) : tile(x, y);
+      const c = inside(x, y, eave)
+        ? planks.get(x - Math.floor(x0), y - Math.floor(base - h))
+        : tile(x, y);
       if (c) b.set(x, y, c);
     }
   b.line(x0, base + 2, Math.round(mid), base - h, P.black);
   b.line(Math.round(mid), base - h, x1, base + 2, P.black);
+  if (thatch) {
+    // La paja asoma por debajo del alero en flecos, con su sombra en la pared.
+    for (let x = Math.floor(x0); x <= x1; x++) {
+      const t = Math.abs(x - mid) / half;
+      const y = Math.round(base + 2 - (1 - t) * (h + 2)) + eave;
+      if (y > base + 2 || !inside(x, y, eave + 1)) continue;
+      b.set(x, y, (x * 7) % 3 ? P.amber : P.rust);
+      if (inside(x, y + 1, eave + 2)) b.set(x, y + 1, P.plum);
+    }
+  }
+  if (crest && h > 30) {
+    // El escudo pintado, al doble (o a su tamaño, si no cabe).
+    const s = Prop.shield(crest.field, crest.dark, crest.symbol);
+    const big = h > 36 ? 2 : 1;
+    const cy = base - Math.round(h * 0.42);
+    for (let j = 0; j < s.h; j++)
+      for (let i = 0; i < s.w; i++) {
+        const c = s.get(i, j);
+        if (!c) continue;
+        b.rect(
+          Math.round(mid - (s.w * big) / 2) + i * big,
+          Math.round(cy - (s.h * big) / 2) + j * big,
+          big,
+          big,
+          c,
+        );
+      }
+    return;
+  }
   // Ventanuco redondo del desván.
   if (h > 24) {
     const cy = base - Math.round(h * 0.38);
     b.ellipse(mid, cy, 5, 5, P.plum);
     b.ellipse(mid, cy, 3, 3, P.black);
+    if (look.boxes) {
+      // La jardinera: una caja de tablas con geranios.
+      const y = cy + 6;
+      const m = Math.round(mid);
+      b.rect(m - 7, y, 15, 3, P.oak);
+      b.hline(m - 7, y, 15, P.tan);
+      b.hline(m - 7, y + 2, 15, P.rust);
+      for (let k = -6; k <= 6; k += 2) {
+        b.set(m + k, y - 1, P.leaf);
+        b.set(m + k + 1, y - 2, k % 4 ? P.red : P.coral);
+      }
+    }
   }
 }
 

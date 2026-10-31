@@ -4,7 +4,15 @@
  */
 import type { IncidentKind } from '../data/incidents';
 import type { BossKind } from '../data/bosses';
-import type { CrestColor, CrestSymbol, DecorId, FacadeId, StaffId, TintId } from '../data/custom';
+import type {
+  CrestColor,
+  CrestSymbol,
+  DecorId,
+  FacadeId,
+  FacadeLook,
+  StaffId,
+  TintId,
+} from '../data/custom';
 import type { Trade } from '../data/workers';
 import type { RoomType } from '../data/rooms';
 import type { Attrs, Challenge, ClassId, SkillId, Trait } from './party';
@@ -306,6 +314,8 @@ export interface Custom {
   feast?: number;
   /** Tema de color de las telas de cada sala (por id); sin él, los de la casa. */
   colors?: Record<string, TintId>;
+  /** Tejado, paredes, rótulo y jardineras de la fachada (solo se ve). */
+  look?: FacadeLook;
 }
 
 export interface PendingEvent {

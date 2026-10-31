@@ -26,7 +26,11 @@ Sirven para revisar a ojo los cambios de la escena de salas (no son tests).
    baja de cerca, a un héroe subiéndolo (un fotograma cada 120 ms) y a todos celebrando en la
    barra.
 
-8. Interfaz (paneles, fichas y barras): `node tools/shots/ui.mjs <carpeta> [ancho] [alto] [puerto]`
+8. Fachada: `node tools/shots/fachada.mjs <carpeta> [tejado/paredes/rótulo,…]` saca la taberna
+   entera con cada combinación, de día y de noche, baja y con una planta de más (`ANCHO` y
+   `ALTO` para móvil).
+
+9. Interfaz (paneles, fichas y barras): `node tools/shots/ui.mjs <carpeta> [ancho] [alto] [puerto]`
    recorre todas las pantallas (por ejemplo a `420 860` y `1280 760`) y deja un PNG de cada una
    y `medidas.json` (cuánto tapa la taberna, letras, tamaños de letra, scroll, tarjetas).
 
