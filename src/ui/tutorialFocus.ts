@@ -71,6 +71,9 @@ export function tutorialFocus(s: GameState, panel: string | null): Focus | null 
       return panel === 'gremio'
         ? { targets: ['.gremio-goals', T('nota-boton')], note: true }
         : { targets: [T('tab-gremio')] };
+    case 'pago':
+      // Hasta el pago, libre: juntar el dinero con el tablón, la casa… y pasar las noches.
+      return null;
     default:
       return { targets: [T('nota-boton')], note: true };
   }

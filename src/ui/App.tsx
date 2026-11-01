@@ -51,7 +51,7 @@ import { TutorialNote } from './TutorialNote';
 import { TutorialFocus } from './TutorialFocus';
 import { tutorialFocus } from './tutorialFocus';
 import { IntroLetter } from './IntroLetter';
-import { tutorialOn, tutorialStep } from '../core/tutorial';
+import { tutorialOn, tutorialStep, tutorialWait, type TutorialSkip } from '../core/tutorial';
 import { GremioPanel } from './panels/GremioPanel';
 import { HeroesPanel, type HeroFilter } from './panels/HeroesPanel';
 import { MailPanel } from './panels/MailPanel';
@@ -608,7 +608,7 @@ export function App() {
   useEffect(() => audio.setMood(mood), [mood]);
 
   /** Cae la noche (o, en el tutorial, se salta el tiempo hasta lo siguiente que pase). */
-  const endDay = (skip?: 'vuelta' | 'pago') => {
+  const endDay = (skip?: TutorialSkip) => {
     if (passing) return;
     if (!skip) {
       dispatch({ type: 'tick', to: clockRef.current });
@@ -772,7 +772,15 @@ export function App() {
   const pendingEvent = calm && !game.over ? (game.event ?? null) : null;
   // El tutorial guiado va antes que las notas sueltas del tío (y las sustituye mientras dura).
   // La lección sigue a la vista con paneles abiertos: señala lo que hay que tocar dentro.
-  const lesson = calm && !pendingEvent && !introHold ? tutorialStep(game) : null;
+  // En el respiro de antes de un paso no hay nota ni foco: se mira y se trastea a gusto.
+  const wait = calm && !pendingEvent && !introHold ? tutorialWait(game) : 0;
+  useEffect(() => {
+    if (!wait) return;
+    const t = setTimeout(() => dispatch({ type: 'tutorial', op: 'listo' }), wait * 1000);
+    return () => clearTimeout(t);
+  }, [wait, game.tutorial?.step]);
+  const lesson =
+    calm && !pendingEvent && !introHold && !game.tutorial?.wait ? tutorialStep(game) : null;
   const lessonFocus = lesson ? tutorialFocus(game, panel) : null;
   /** Altura de lo que señala el tutorial: la nota se pone en la otra mitad. */
   const [spotY, setSpotY] = useState<number | null>(null);
