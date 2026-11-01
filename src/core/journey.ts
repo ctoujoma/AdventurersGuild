@@ -89,6 +89,15 @@ export const RESOLVE_T = LEGS[2].from + (LEGS[2].to - LEGS[2].from) * 0.95;
 /** Cuándo llega un grupo ante su jefe (del total): ahí se para hasta que el jugador diga. */
 export const BOSS_T = LEGS[2].from + (LEGS[2].to - LEGS[2].from) * 0.6;
 
+/**
+ * Cuándo se resuelve un grupo (del total): con jefe, al llegar a él (y espera al jugador); con
+ * pelea, al acabarla (así la tira enseña cómo acaba de verdad); si no, al acabar lo suyo.
+ */
+export function resolveAt(m: Mission): number {
+  const j = journey(m);
+  return j.boss ? BOSS_T : j.fight ? j.fight.to : RESOLVE_T;
+}
+
 const legOf = (t: number) => LEGS.find((l) => t < l.to) ?? LEGS[LEGS.length - 1]!;
 const legAt = (leg: LegId, at: number) => {
   const l = LEGS.find((x) => x.id === leg)!;
@@ -188,7 +197,7 @@ export function journeyNow(s: GameState, m: Mission): JourneyNow {
     past.push({
       leg: 'faena',
       at: 0.95,
-      t: RESOLVE_T,
+      t: Math.min(t, resolveAt(m)),
       kind: 'aviso',
       text: `Mandan aviso: ${m.done.outcome.toLowerCase()}.${bad ? '' : ' Ya vienen.'}`,
     });

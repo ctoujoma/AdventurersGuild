@@ -130,7 +130,7 @@ import {
 } from './rooms';
 import { Rng } from './rng';
 import { BOSSES } from '../data/bosses';
-import { BOSS_T, RESOLVE_T } from './journey';
+import { resolveAt } from './journey';
 import { missionCombat, runCombat, type Order } from './combat';
 import { listNames, plural } from './text';
 import { stepLarder } from './larder';
@@ -556,6 +556,7 @@ function reduceAction(state: GameState, action: Action): GameState {
       for (const h of party) {
         h.status = 'mision';
         h.days = days;
+        if (h.job) h.jobBefore = h.job;
         delete h.job;
       }
       s.missions.push({
@@ -804,13 +805,19 @@ function reduceAction(state: GameState, action: Action): GameState {
 
 // ---------- Avance de día ----------
 
+/** Vuelve a la sala que tenía antes de salir, si sigue habiendo sitio; si no, descansa. */
+function backToJob(s: GameState, h: Hero): void {
+  if (h.jobBefore && !canAssign(s, h.id, h.jobBefore)) assign(s, h.id, h.jobBefore);
+  delete h.jobBefore;
+}
+
 /**
  * Si un grupo ya ha acabado lo suyo: con `part` la parte del día de ahora (0 al amanecer, ya
- * descontado el día que pasa). Ver `RESOLVE_T` en `journey.ts`.
+ * descontado el día que pasa). Ver `resolveAt` en `journey.ts`.
  */
 function settleDue(m: Mission, part: number): boolean {
   const days = Math.max(1, m.quest.days);
-  const at = bossOf(m.quest) ? BOSS_T : RESOLVE_T;
+  const at = resolveAt(m);
   return (days - m.daysLeft + part) / days >= at - 1e-9;
 }
 
@@ -1064,6 +1071,9 @@ export function endDay(state: GameState, away = false): GameState {
       h.status = f.status;
       h.days = f.days;
       home.push(h.name);
+      // Vuelve a lo que hacía antes de salir, si sigue habiendo sitio (si no, descansa).
+      // (Los heridos, al curarse.)
+      if (h.jobBefore && h.status === 'ok') backToJob(s, h);
     }
     if (m.quest.rescue) {
       const r = s.reports.find((x) => x.id === d.report);
@@ -1086,6 +1096,7 @@ export function endDay(state: GameState, away = false): GameState {
       if (h.days <= 0) {
         h.status = 'ok';
         h.days = 0;
+        if (h.jobBefore) backToJob(s, h);
         events.push({ t: `${h.name} vuelve a estar ${h.sex === 'f' ? 'lista' : 'listo'}.` });
       }
     } else if (h.status === 'desaparecido') {

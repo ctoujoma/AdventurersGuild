@@ -60,6 +60,8 @@ export interface Hero {
   lostAt?: string;
   /** Sala en la que echa una mano o entrena mientras está en casa (id). */
   job?: string;
+  /** La que tenía al salir de encargo: al volver, la recupera si sigue habiendo sitio. */
+  jobBefore?: string;
   /** Progreso de entrenamiento hacia el siguiente punto de cada atributo. */
   train?: Partial<Attrs>;
 }
