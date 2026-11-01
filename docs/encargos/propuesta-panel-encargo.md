@@ -122,7 +122,7 @@ en `art/foes.ts` y no dentro de la tira.
   (trol, el doble de alto). Poses: `idle`/`idle2`, `walk1`/`walk2`, `windup`/`strike`, `hurt` y
   `down`. Miran a la derecha; se pintan por el centro de los pies (`foot`) y traen `chest`
   (dónde dar) y `span` (cuánto ocupan en fila). Sirven tal cual para asaltos y esbirros.
-  Pendiente: un pase de calidad a los que no son bandidos (trasgos, esqueletos, trols…).
+  Hecho: el pase de calidad a los que no son bandidos, pintados a mano (`art/foeSprites.ts`).
 - **La tira:** `ui/QuestStrip.tsx` (el canvas, a escala entera y a unos 10 fotogramas por
   segundo) pinta con `world/tripStrip.ts`; el paisaje está en `art/trip.ts` (por terreno, con la
   taberna en las puntas y lo propio del sitio en medio). Sustituye al hueco `Strip` de

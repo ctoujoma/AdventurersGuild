@@ -7,6 +7,7 @@ import { bufferCanvas, drawBuffer } from '../../art/canvas';
 import { P } from '../../art/palette';
 import { PixelBuffer } from '../../art/pixel';
 import { GROUND, WORLD_X0 } from '../geometry';
+import { hillLife, skyLife, treeLife } from './life';
 import { glowSprite } from '../lighting';
 import {
   MOON_R,
@@ -51,16 +52,15 @@ const noise = (a: number, b: number) => {
 export class Sky {
   private skyC = bufferCanvas(buildSky());
   private moonC = bufferCanvas(buildMoon());
-  private parallax: { c: HTMLCanvasElement; l: ParallaxLayer }[] = parallaxLayers().map((l) => ({
-    c: bufferCanvas(l.buf),
-    l,
-  }));
+  private parallax: { c: HTMLCanvasElement; d: HTMLCanvasElement; l: ParallaxLayer }[] =
+    parallaxLayers().map((l) => ({ c: bufferCanvas(l.buf), d: bufferCanvas(l.day), l }));
   private starList: Star[] = stars();
-  private clouds = [0, 1, 2, 3].map((i) => ({
-    x: i * 170 + 20,
-    y: 30 + ((i * 37) % 80),
+  private clouds = [0, 1, 2, 3, 4, 5].map((i) => ({
+    x: i * 150 + ((i * 53) % 70),
+    y: 24 + ((i * 37) % 96),
     img: cloud(i),
-    speed: 2 + i,
+    day: bufferCanvas(dayCloud(i)),
+    speed: 1.5 + ((i * 7) % 5) * 0.6,
   }));
 
   /**
@@ -114,19 +114,52 @@ export class Sky {
       ctx.globalAlpha = 1;
     }
     this.drawDay(ctx, dl, cx, hz, vw, vh);
-    // Las nubes van y vienen en una franja de CLOUD_W que se repite a lo ancho.
+    // Cuánto se ve el paisaje de día (con sus colores) sobre las siluetas de la noche.
+    const dayK = Math.min(1, dl.day + dl.dusk * 0.6 + nl.warm * 0.5);
+    // Las nubes van y vienen en una franja de CLOUD_W que se repite a lo ancho; de día, blancas.
     for (const cl of this.clouds) {
       const x = ((cl.x + t * cl.speed) % CLOUD_W) - 60 + WORLD_X0 - cx * CLOUD_FX;
-      for (let k = Math.floor(-x / CLOUD_W) - 1; x + k * CLOUD_W < vw; k++)
-        drawBuffer(ctx, cl.img, x + k * CLOUD_W, cl.y + top);
+      for (let k = Math.floor(-x / CLOUD_W) - 1; x + k * CLOUD_W < vw; k++) {
+        if (dayK < 1) {
+          ctx.globalAlpha = 1 - dayK;
+          drawBuffer(ctx, cl.img, x + k * CLOUD_W, cl.y + top);
+        }
+        if (dayK > 0) {
+          ctx.globalAlpha = dayK;
+          ctx.drawImage(cl.day, Math.round(x + k * CLOUD_W), Math.round(cl.y + top));
+        }
+      }
     }
+    ctx.globalAlpha = 1;
     if (nl.warm > 0) this.drawDawn(ctx, nl.warm, hz, vw, vh);
-    for (const { c, l } of this.parallax) tile(ctx, c, WORLD_X0 - Math.round(cx * l.fx), top, vw);
+    const light = { day: dayK, dark: Math.max(nl.dark, 1 - dl.day - dl.dusk) };
+    skyLife(ctx, WORLD_X0 - Math.round(cx * SKY_FX), top, vw, t, light);
+    // El cielo, más claro de día (solo el cielo: el paisaje ya trae sus colores).
     if (dl.day > 0 || dl.dusk > 0) {
       ctx.globalCompositeOperation = 'screen';
       const h = (v: number) => Math.round(v * dl.day + v * 0.4 * dl.dusk);
       ctx.fillStyle = `rgb(${h(70) + Math.round(60 * dl.dusk)}, ${h(105)}, ${h(120)})`;
       ctx.fillRect(0, 0, vw, vh);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+    this.parallax.forEach(({ c, d, l }, i) => {
+      const x = WORLD_X0 - Math.round(cx * l.fx);
+      tile(ctx, c, x, top, vw);
+      if (dayK > 0) {
+        ctx.globalAlpha = dayK;
+        tile(ctx, d, x, top, vw);
+        ctx.globalAlpha = 1;
+      }
+      if (i === 1) hillLife(ctx, x, top, vw, t, light);
+      if (i === 3) treeLife(ctx, x, top, vw, t, light);
+    });
+    // Al atardecer, el paisaje se tiñe de cálido.
+    if (dl.dusk > 0) {
+      ctx.globalCompositeOperation = 'multiply';
+      const d = dl.dusk;
+      ctx.fillStyle = `rgb(255, ${Math.round(255 - 55 * d)}, ${Math.round(255 - 95 * d)})`;
+      ctx.fillRect(0, 0, vw, vh);
+      ctx.globalCompositeOperation = 'source-over';
     }
     if (nl.dark > 0) {
       ctx.globalCompositeOperation = 'multiply';
@@ -230,6 +263,35 @@ function tile(
     ctx.drawImage(c, 0, 0);
     ctx.restore();
   }
+}
+
+/** Nube de día: bultos blancos con la panza gris y la luz arriba. */
+function dayCloud(i: number): PixelBuffer {
+  const big = i % 3 === 0;
+  const b = new PixelBuffer(big ? 70 : 48, big ? 22 : 16);
+  const puffs: [number, number, number][] = big
+    ? [
+        [12, 14, 7],
+        [24, 10, 9],
+        [38, 8, 10],
+        [51, 12, 8],
+        [61, 15, 5],
+      ]
+    : [
+        [10, 10, 6],
+        [20, 7, 7],
+        [31, 9, 6],
+        [39, 11, 4],
+      ];
+  for (const [x, y, r] of puffs)
+    b.ellipse(x + (i % 2) * 3, y, r, r * 0.75, (px, py) => {
+      const u = (py - y) / (r * 0.75);
+      return u < -0.45 ? P.white : u > 0.45 ? P.fog : (px + py) % 7 === 0 ? P.white : P.mist;
+    });
+  // La panza plana y gris.
+  for (let x = 0; x < b.w; x++)
+    for (let y = b.h - 3; y < b.h; y++) if (b.get(x, y) >>> 24) b.set(x, y, P.fog);
+  return b;
 }
 
 function cloud(i: number): PixelBuffer {

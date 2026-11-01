@@ -237,14 +237,21 @@ hueco, con la cámara en cada paso. Sustituye a las notas de obras de ahora (`ob
 - Sistema de eventos y novedades periódicas (jefes, encargos, fiestas), y cartas selladas.
 - Lista grande de jefes y encargos para ir ampliando.
 
+## Hecho hace poco (arte)
+
+- **Encargos repartidos:** la tira deshace el camino y no engaña con el resultado; el mapa, en
+  pergamino o a color según la sala de mapas (`encargos/arte-tira-vuelta-mapa.md`). Lo de
+  interfaz (avisos que se descartan y el mapa grande) también está.
+- **Enemigos pintados a mano** (`art/foeSprites.ts`): trasgos, orcos, esqueletos, trols, lobos,
+  jabalíes, osos, ratas, arañas, limos y espectros.
+- **El fondo, a color y vivo** (`world/parallax.ts`, `world/rooms/life.ts`): las capas lejanas
+  tienen versión de día (montañas con nieve, colinas con campos, aldea, molino y castillo,
+  bosques) que se funde con las siluetas de la noche; pájaros, humo de las chimeneas, aspas del
+  molino, bandera, luciérnagas y estrellas fugaces. En el patio, pradera con flores y matas que
+  mueve el viento a rachas (`art/grass.ts`). Capturas: `tools/shots/fondo.mjs`.
+
 ## Pendiente de revisar
 
-- **Encargos repartidos (feedback de jugar más):** hecho lo de arte: la vuelta de la tira que
-  deshace el camino, el resultado que no engaña y la calidad del mapa (ver
-  `encargos/arte-tira-vuelta-mapa.md`). Pendiente:
-  descartar avisos y el mapa más grande (interfaz, `encargos/interfaz-avisos-mapa.md`). Hechos
-  por el agente principal: la clase y el oficio en el selector de personal, y que al volver
-  recuperen su trabajo; el encargo se resuelve al acabar la pelea de la tira (`resolveAt`).
 - **Pelea contra jefes, perfilarla antes de llevarla a los asaltos** (ver la propuesta en el
   último punto de situación).
 
