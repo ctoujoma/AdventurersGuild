@@ -167,3 +167,28 @@ describe('ante el jefe se espera al jugador', () => {
     expect(s.missions).toHaveLength(0);
   });
 });
+
+describe('al volver, cada uno a lo suyo', () => {
+  it('recupera la sala en que trabajaba si sigue habiendo sitio; si no, descansa', () => {
+    let s = newGame('trabajo');
+    const cocina = s.building.rooms.find((r) => r.type === 'cocina')!;
+    const [a, b] = s.heroes.filter((h) => h.status === 'ok');
+    s = reduce(s, { type: 'assign', who: a!.id, room: cocina.id });
+    s = reduce(s, { type: 'assign', who: b!.id, room: cocina.id });
+    expect(s.heroes.find((h) => h.id === a!.id)!.job).toBe(cocina.id);
+    const q = s.quests[0]!;
+    s = reduce(s, { type: 'send', questId: q.id, heroIds: [a!.id] });
+    expect(s.heroes.find((h) => h.id === a!.id)!.job).toBeUndefined();
+    while (s.missions.length) s = endDay(s);
+    const back = s.heroes.find((h) => h.id === a!.id)!;
+    if (back.status === 'ok') {
+      expect(back.job).toBe(cocina.id);
+      expect(back.jobBefore).toBeUndefined();
+    } else if (back.status === 'herido') {
+      // Herido: la guarda para cuando se cure.
+      expect(back.jobBefore).toBe(cocina.id);
+      while (s.heroes.find((h) => h.id === a!.id)!.status === 'herido') s = endDay(s);
+      expect(s.heroes.find((h) => h.id === a!.id)!.job).toBe(cocina.id);
+    }
+  });
+});

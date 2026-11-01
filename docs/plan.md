@@ -239,6 +239,14 @@ hueco, con la cámara en cada paso. Sustituye a las notas de obras de ahora (`ob
 
 ## Pendiente de revisar
 
+- **Encargos repartidos (feedback de jugar más):** la vuelta de la tira que deshace el camino y
+  el resultado que no engaña, y la calidad del mapa (arte, `encargos/arte-tira-vuelta-mapa.md`);
+  descartar avisos y el mapa más grande (interfaz, `encargos/interfaz-avisos-mapa.md`). Hechos
+  por el agente principal: la clase y el oficio en el selector de personal, y que al volver
+  recuperen su trabajo; el encargo se resuelve al acabar la pelea de la tira (`resolveAt`).
+- **Pelea contra jefes, perfilarla antes de llevarla a los asaltos** (ver la propuesta en el
+  último punto de situación).
+
 - **El cobro de la deuda con Merlo** (lo hecho con los agentes de arte e interfaz): que encaje
   con el tiempo que corre solo, los pagos estando fuera (`dueTonight`), los avisos y los
   objetivos.

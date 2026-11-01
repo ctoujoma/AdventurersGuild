@@ -21,7 +21,7 @@ import { ATTR_NAMES, gainText, skillGain, trainState } from '../core/training';
 import { crewOf, effortOf, isJobRoom, isTrainRoom, slotsOf, workIn } from '../core/workers';
 import { ROOMS, TRAINS } from '../data/rooms';
 import { TRADES, TRADE_LIST } from '../data/workers';
-import { statusLabel } from '../data/labels';
+import { CLASS_NAMES, statusLabel } from '../data/labels';
 import { GUARD, planTask, type Task } from './drop';
 import { jobRoomName } from './roomName';
 import { isRealTime, left as timeLeft } from './when';
@@ -329,21 +329,20 @@ export function candidatesFor(game: GameState, task: Task): Member[] {
   for (const w of game.workers)
     if (taskOf(game, w.id) !== task && planTask(game, w.id, task).ok) {
       const room = game.building.rooms.find((r) => r.id === w.room);
+      // Su oficio y dónde está ahora, para elegir bien.
       out.push({
         ...workerMember(w),
-        sub: room ? `en ${jobRoomName(game, room)}` : 'descansa',
+        sub: `${TRADES[w.trade].name[w.sex]} · ${room ? `en ${jobRoomName(game, room)}` : 'descansa'}`,
       });
     }
   for (const h of game.heroes)
     if (h.status === 'ok' && taskOf(game, h.id) !== task && planTask(game, h.id, task).ok) {
       const t = taskOf(game, h.id);
       const room = game.building.rooms.find((r) => r.id === t);
-      out.push(
-        heroMember(
-          h,
-          t === GUARD ? 'de guardia' : room ? `en ${jobRoomName(game, room)}` : 'descansa',
-        ),
-      );
+      const where =
+        t === GUARD ? 'de guardia' : room ? `en ${jobRoomName(game, room)}` : 'descansa';
+      // La clase y el nivel, que deciden en qué rinde (entrenar, cocinar…).
+      out.push(heroMember(h, `${CLASS_NAMES[h.cls][h.sex]} nv ${h.lvl} · ${where}`));
     }
   return out;
 }
