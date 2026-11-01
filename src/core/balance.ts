@@ -427,3 +427,17 @@ export const TRAIN_RATE = 1;
 export const TRAIN_COST_BASE = 2;
 /** Hasta dónde se puede entrenar un atributo según el nivel de la sala. */
 export const TRAIN_CAP = [0, 5, 7, 9, 11] as const;
+
+/**
+ * Talleres (ver `core/crafting.ts`). Trabajo de un día de referencia: un herrero de Maña 4 en su
+ * oficio y en una forja de nivel 1 (las horas de las recetas cuentan con ese ritmo).
+ */
+export const CRAFT_STD_WORK = 6;
+/** Trabajos a la vez en un taller, por nivel de la sala. */
+export const CRAFT_SLOTS = [0, 1, 1, 2, 2] as const;
+/** Probabilidad de que salga bueno, por nivel de la sala; más con un buen herrero. */
+export const CRAFT_GOOD = [0, 0.15, 0.25, 0.35, 0.45] as const;
+export const CRAFT_GOOD_PER_SKILL = 0.03;
+/** Desmontar: horas que tarda y probabilidad de sacar la receta, por nivel de la sala. */
+export const UNDO_HOURS = 4;
+export const UNDO_CHANCE = [0, 0.5, 0.6, 0.7, 0.8] as const;

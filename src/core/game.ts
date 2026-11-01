@@ -136,6 +136,16 @@ import { missionCombat, runCombat, type Order } from './combat';
 import { listNames, plural } from './text';
 import { stepLarder } from './larder';
 import { stepTraining } from './training';
+import {
+  canCraft,
+  canUndo,
+  cancelCraft,
+  nightCrafts,
+  startCraft,
+  startUndo,
+  stepCrafts,
+} from './crafting';
+import type { RecipeId } from '../data/recipes';
 import { brawlChance, noisyBeds, visitorList, visitorsOf } from './salon';
 import {
   addSeeker,
@@ -151,6 +161,10 @@ import {
 } from './workers';
 
 export type Action =
+  /** Talleres: crear de una receta, desmontar un objeto del arcón o cancelar un trabajo. */
+  | { type: 'craft'; room: string; recipe: RecipeId }
+  | { type: 'undoItem'; room: string; itemId: string }
+  | { type: 'cancelCraft'; id: string }
   | { type: 'hire'; id: string }
   | { type: 'fire'; id: string }
   | { type: 'hireWorker'; id: string }
@@ -717,6 +731,9 @@ function reduceAction(state: GameState, action: Action): GameState {
       if (tutorialFrozen(state)) return state;
       const next = tick(state, action.to);
       if (next === state) return state;
+      const crafted = next.crafts?.length
+        ? stepCrafts(next, Math.min(1, (next.clock ?? 0) / DAY_SECONDS))
+        : [];
       // Los incidentes solo corren con el juego abierto (la simulación de fuera no pasa por aquí).
       // En el tutorial no hay sueltos: los suyos llegan preparados.
       const tut = tutorialOn(state);
@@ -728,7 +745,10 @@ function reduceAction(state: GameState, action: Action): GameState {
       const g = ms.next.over ? { next: ms.next, news: [] } : tickGoals(ms.next);
       const all = [
         ...news,
-        ...[...ms.news, ...g.news].map((n) => ({ t: n.t, k: n.k ?? ('good' as const) })),
+        ...[...crafted, ...ms.news, ...g.news].map((n) => ({
+          t: n.t,
+          k: n.k ?? ('good' as const),
+        })),
       ];
       g.next.incidentNews = all.length ? all : undefined;
       return g.next;
@@ -797,6 +817,24 @@ function reduceAction(state: GameState, action: Action): GameState {
       const d = action.steps ? tryWorks(state, action.steps) : null;
       const plan = d && !('error' in d) ? d.building : action.steps ? state.building : null;
       return { ...state, tutorial: { ...state.tutorial, plan } };
+    }
+    case 'craft': {
+      if (canCraft(state, action.room, action.recipe)) return state;
+      const s = structuredClone(state);
+      startCraft(s, action.room, action.recipe);
+      return s;
+    }
+    case 'undoItem': {
+      if (canUndo(state, action.room, action.itemId)) return state;
+      const s = structuredClone(state);
+      startUndo(s, action.room, action.itemId);
+      return s;
+    }
+    case 'cancelCraft': {
+      if (!state.crafts?.some((c) => c.id === action.id)) return state;
+      const s = structuredClone(state);
+      cancelCraft(s, action.id);
+      return s;
     }
     case 'worksDraft': {
       if (!action.steps?.length) {
@@ -993,6 +1031,8 @@ export function endDay(state: GameState, away = false): GameState {
   const rng = new Rng(s.rng);
   const events: DawnEvent[] = [...pending];
   s.incidentNews = undefined;
+  // Los talleres cuentan lo que quedaba del día (con la gente de hoy, antes de que cambie).
+  events.push(...nightCrafts(s, rng));
   // El rumor que no se ha tocado se pierde con la noche.
   s.rumor = undefined;
   s.day++;

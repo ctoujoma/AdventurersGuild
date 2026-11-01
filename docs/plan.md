@@ -20,10 +20,11 @@ o está en «Más adelante», no se toca sin preguntar. El detalle de cada idea 
 ## Quién hace qué
 
 - **Agente principal** (esta conversación): tiempo, núcleo del bucle, combate, encargos en
-  directo, talleres, amigos y la app.
+  directo, talleres (la forja crea), amigos y la app.
 - **Agente del tutorial:** [`encargos/tutorial.md`](encargos/tutorial.md). Ahora, el de las
   obras (2b).
-- **Agente de arte:** ahora, el fondo y la escena. Hechos: colores, fachada, incidentes, los
+- **Agente de arte:** ahora, el fondo y la escena; después, la forja que trabaja
+  ([`encargos/arte-forja.md`](encargos/arte-forja.md)). Hechos: colores, fachada, incidentes, los
   tres jefes, la tira con los enemigos por familias, la vuelta que deshace el camino y el mapa.
 - **Agente de interfaz:** terminado lo encargado (trabajadores, menos toques, avisos que se
   descartan, el cobro de Merlo, las cartas del amanecer una a una, el mapa grande). Le queda
@@ -197,17 +198,32 @@ sitio (comprar solar o excavar, mover, construir, ampliar, mejorar). De un agent
   `FOE_TUNE` en `core/combat.ts`); faltan los bandidos de los asaltos.
 - Después, el torneo de la comarca (armas romas, premio de trofeo).
 
-## Fase 4 · Talleres: fabricar objetos
+## Fase 4 · Talleres: crear objetos
 
-- **La forja fabrica armas** y, con salas nuevas, el resto: armaduras (armería o un taller de
-  armero), botas y capas (curtidor o la sastrería), amuletos (la capilla o un taller de
-  alquimia).
-- **Recetas:** unas básicas desde el principio; cada una tarda horas de juego y cuesta oro
-  (y quizá materiales del botín).
-- **Recetas que se ganan:** como premio de encargos e historias, o **desmontando** un objeto
-  para intentar sacar su receta (puede salir o perderse el objeto).
-- Encaja con la sastrería (tintes y prendas) y con los premios que se ven.
+Decidido con el usuario: el herrero como oficio nuevo, los legendarios solo del botín y, de
+momento, sin materiales (oro y tiempo). La acción se llama «Crear».
 
+- **La forja (hecho, núcleo y ficha):** sigue afilando el objeto de cada héroe y además crea.
+  Recetas en `data/recipes.ts` (espada, coraza y ganzúas de serie; hacha y escudo se
+  aprenden), reglas en `core/crafting.ts`, ficha en `ui/panels/ForgeInfo.tsx`. Cada trabajo
+  cuesta oro al empezar (se devuelve al cancelar) y tarda horas de juego según quién trabaje
+  (herrero, `trade: 'forja'`; un héroe echa una mano más despacio; sin nadie se para), también
+  con el juego cerrado. Uno a la vez, dos con la forja a nivel 3. Sale «de las buenas» (rareza
+  1) del 15 al 45 % según el nivel, más con mejor herrero. Cifras en `balance.ts` (`CRAFT_*`,
+  `UNDO_*`).
+- **Desmontar (hecho):** un objeto del arcón que enseña una receta que no se sabe; se pierde y,
+  del 50 al 80 % de las veces, se aprende la receta.
+- **Arte (encargado):** [`encargos/arte-forja.md`](encargos/arte-forja.md): herrero,
+  martillar, chispas, temple, bocadillo con la barra.
+- **Falta:** recetas como premio de encargos e historias; más recetas (y un material, «hierro»,
+  si se queda corto).
+- **La sastrería (propuesta, a decidir con el usuario):** una sola sala para la tela y el cuero.
+  Viste (tinte y prenda, solo aspecto: lo preparado por arte, `dress` en el héroe) y crea botas
+  y capas con el mismo sistema que la forja, con su oficio (sastre). Los tintes son los mismos
+  premios que los colores de las salas (`tint:*`, una vez ganado vale para todo y todos); vestir
+  a un héroe cuesta oro y unas horas, y estrenar ropa le sube la moral. No se queda inútil con
+  todos los tintes: cada héroe nuevo hay que vestirlo, crea equipo y las fiestas traen tintes
+  nuevos. Amuletos y varitas, más adelante (capilla o alquimia).
 ## Fase 5 · Aspecto y pulido (arte, en paralelo desde ya)
 
 - Colores por sala, fachada por partes y sastrería preparada (hecho).

@@ -16,6 +16,7 @@ import type {
 } from '../data/custom';
 import type { Trade } from '../data/workers';
 import type { RoomType } from '../data/rooms';
+import type { RecipeId } from '../data/recipes';
 import type { UnlockId } from '../data/unlocks';
 import type { Tutorial } from './tutorial';
 import type { Attrs, Challenge, ClassId, SkillId, Trait } from './party';
@@ -255,6 +256,26 @@ export interface Facilities {
   torre: number;
   /** Ala de veteranos (colgada de la fachada derecha): moral para los de nivel alto. */
   vet: number;
+}
+
+/**
+ * Un trabajo en un taller: crear un objeto de una receta o desmontar uno (`item`) para intentar
+ * sacar su receta. Avanza con el trabajo de la sala (`workAt`), también con el juego cerrado.
+ */
+export interface Craft {
+  id: string;
+  /** El taller (id de sala). */
+  room: string;
+  recipe: RecipeId;
+  /** Trabajo que pide y el que lleva (en unidades de `workAt` por día). */
+  need: number;
+  done: number;
+  /** Parte del día (0–1) hasta la que ya está contado `done`. */
+  at: number;
+  /** Lo pagado al empezar (se devuelve al cancelar). */
+  gold: number;
+  /** El objeto que se desmonta (si es desmontar). */
+  item?: Item;
 }
 
 /** Obra en curso: la sala nueva o movida no funciona hasta que acaba; la ampliada, sí. */
@@ -572,6 +593,10 @@ export interface GameState {
    * al modo obras. Son acciones del reductor (`Action` de `game.ts`).
    */
   worksDraft?: readonly { type: string }[];
+  /** Lo que se está creando o desmontando en los talleres (ver `core/crafting.ts`). */
+  crafts?: Craft[];
+  /** Recetas aprendidas (las de serie no se apuntan). */
+  recipes?: RecipeId[];
   /** Grupo que acaba de llegar ante su jefe con el juego abierto (la interfaz avisa). */
   bossWait?: string | null;
   /** Incidentes en marcha (uno a la vez). */
