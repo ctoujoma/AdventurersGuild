@@ -165,8 +165,8 @@ hueco, con la cámara en cada paso. Sustituye a las notas de obras de ahora (`ob
   luego el encargo, los retratos con su estado, el viaje por partes (ida, llegada, lo suyo,
   vuelta) con la de ahora marcada, y el diario de lo que va pasando. El núcleo da las partes,
   los sucesos con su momento y una semilla, para que se vea igual al cerrar y abrir.
-  **Reparto:** el agente principal hace los datos y la ficha con el hueco; el de arte dibuja la
-  tira (`QuestStrip`). Más adelante, sobre la tira, los momentos que piden decisión: un jefe
+  **Reparto:** el agente principal hace los datos y la ficha con el hueco (hecho:
+  `core/journey.ts`, `ui/TripSheet.tsx`); el de arte dibuja la tira (`QuestStrip`). Más adelante, sobre la tira, los momentos que piden decisión: un jefe
   («Entrar a pelear» o «Resolver solo»; si no se contesta, se resuelve solo) y las incursiones
   («raids») con varios así.
 - **Pelea interactiva:** arrastrar a un héroe sobre un enemigo para elegir a quién ataca (si no,

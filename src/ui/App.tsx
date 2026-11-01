@@ -45,6 +45,7 @@ import { Title } from './Title';
 import { nextTip } from './tips';
 import { canDrag, planDrop, planTask, type Task } from './drop';
 import { UncleNote } from './UncleNote';
+import { TripSheet } from './TripSheet';
 import { TutorialNote } from './TutorialNote';
 import { TutorialFocus } from './TutorialFocus';
 import { tutorialFocus } from './tutorialFocus';
@@ -121,6 +122,8 @@ export function App() {
   /** Lo que ve la escena: durante el amanecer sigue mostrando la noche anterior. */
   const [sceneGame, setSceneGame] = useState(game);
   const [panel, setPanel] = useState<PanelId | null>(null);
+  /** Grupo fuera cuya ficha «Encargo en curso» está abierta. */
+  const [tripId, setTripId] = useState<string | null>(null);
   const [arconTab, setArconTab] = useState<ArconTab>('equipo');
   /** Sala tocada en la vista de salas (su ficha). */
   const [roomId, setRoomId] = useState<string | null>(null);
@@ -697,6 +700,7 @@ export function App() {
     game.heroes.find((h) => h.id === card) ?? game.candidates.find((h) => h.id === card) ?? null;
   const cardIsCandidate = !!cardHero && game.candidates.includes(cardHero);
   const openQuest = game.quests.find((q) => q.id === questId) ?? null;
+  const openTrip = game.missions.find((m) => m.id === tripId) ?? null;
   const report = game.reports.find((r) => r.id === reportId) ?? null;
   const callReport = bossCall ? game.reports.find((r) => r.id === bossCall) : undefined;
   const unread = game.reports.filter((r) => !r.read).length;
@@ -791,6 +795,9 @@ export function App() {
       openPanel('heroes');
       setHeroFilter('trabajadores');
       setCrewFocus(g.crew);
+    } else if ('trip' in g) {
+      audio.play('open');
+      setTripId(g.trip);
     } else if ('quest' in g) {
       openPanel('tablon');
       setQuestId(g.quest);
@@ -1190,6 +1197,10 @@ export function App() {
             <MapPanel
               game={game}
               onHero={(id) => setCard(id)}
+              onTrip={(id) => {
+                audio.play('open');
+                setTripId(id);
+              }}
               onQuest={(id) => {
                 audio.play('open');
                 setQuestId(id);
@@ -1204,6 +1215,15 @@ export function App() {
             quest={openQuest}
             onClose={() => setQuestId(null)}
             onSend={(ids) => send(openQuest.id, ids)}
+          />
+        )}
+        {openTrip && (
+          <TripSheet
+            key={openTrip.id}
+            game={game}
+            mission={openTrip}
+            onClose={() => setTripId(null)}
+            onHero={(id) => setCard(id)}
           />
         )}
         {report && (

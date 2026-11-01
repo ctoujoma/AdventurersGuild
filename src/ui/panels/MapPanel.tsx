@@ -25,6 +25,8 @@ interface Props {
   game: GameState;
   onQuest: (id: string) => void;
   onHero: (id: string) => void;
+  /** Abre la ficha «Encargo en curso» de un grupo fuera. */
+  onTrip: (missionId: string) => void;
 }
 
 const pct = (x: number, y: number) => ({
@@ -107,7 +109,7 @@ function partyPos(place: string, days: number, left: number) {
  * Se puede acercar (rueda, pellizco o botones) y arrastrar; tocar un lugar, un encargo o
  * un grupo abre una ficha flotante dentro del propio mapa.
  */
-export function MapPanel({ game, onQuest, onHero }: Props) {
+export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
   const level = game.fac.mapas;
   const explored = game.explored ?? [];
   const knownRadius = KNOWN_RADIUS + (level >= 1 ? 20 : 0);
@@ -348,6 +350,9 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
                 {shortLeft(m.daysLeft, game.clock ?? 0)}
               </Stat>
             </span>
+            <button class="btn btn-wood" onClick={() => onTrip(m.id)}>
+              Ver el viaje
+            </button>
             <div class="map-card-heroes">
               {party(m).map((h) => (
                 <button key={h.id} class="btn btn-wood" onClick={() => onHero(h.id)}>
@@ -773,8 +778,8 @@ export function MapPanel({ game, onQuest, onHero }: Props) {
                   <li key={m.id} class="map-trip">
                     <button
                       class="map-trip-main"
-                      aria-label={`${m.quest.title}: verlo en el mapa`}
-                      onClick={() => setInfo({ kind: 'party', id: m.id })}
+                      aria-label={`${m.quest.title}: ver el viaje`}
+                      onClick={() => onTrip(m.id)}
                     >
                       <b>{m.quest.title}</b>
                       <span class="row-sub">

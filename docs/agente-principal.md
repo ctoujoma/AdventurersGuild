@@ -54,9 +54,8 @@ Para el agente principal (núcleo, tiempo, tutoriales, combate, talleres, amigos
 
 - En `main`: todo lo anterior, más los golpes de los jefes nuevos del de arte (#72) con su
   propuesta del panel del encargo (`encargos/propuesta-panel-encargo.md`).
-- **Lo siguiente es mío:** los datos del viaje en el núcleo (partes, sucesos con su momento,
-  semilla, día/noche) y la ficha «Encargo en curso» con un hueco para la tira; el de arte hace
-  `QuestStrip` después.
+- Hecha la ficha «Encargo en curso» (`ui/TripSheet.tsx`) con sus datos (`core/journey.ts`):
+  toca al de arte la tira (`QuestStrip`, en el hueco `Strip`).
 - Amanecer, decidido: con la app abierta no hay carta (avisos y, solo lo gordo, carta suelta);
   la pila de cartas, al volver tras tenerla cerrada (plan, «Pendiente de revisar» y fase 5).
 - Interfaz: el título se queda (el usuario no se quejaba de él); corregido en
