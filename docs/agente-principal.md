@@ -50,15 +50,17 @@ Para el agente principal (núcleo, tiempo, tutoriales, combate, talleres, amigos
   `escena:<selector>` cierran antes lo que tape), `ui/IntroLetter.tsx`. Notas sueltas del
   cuaderno: `ui/tips.ts`, `ui/UncleNote.tsx`.
 
-## Dónde lo dejamos (1 de noviembre)
+## Dónde lo dejamos (1 de noviembre, tras el feedback)
 
-- En `main`: todo lo anterior. Último PR: tutorial rehecho (#70).
-- Encargos lanzados a otros agentes: `encargos/arte-incidentes-jefes.md` (incidentes que se ven
-  y responden al tocar; dibujar los tres jefes) y `encargos/interfaz-primera-vez.md` (pantalla de
-  título; el logo del dinosaurio es del usuario y se queda).
-- Sin fusionar en la rama de interfaz: **el cobro de Merlo** (`ui/PayDay.tsx`). Tiene que juntar
-  `main`; luego revisarlo con el tutorial (el salto al día 7) y con `dueTonight`.
-- El usuario va a mandar **feedback pendiente**: integrarlo en el plan antes de seguir.
-- Siguiente, según el plan: 2b (tutorial de obras) o la ficha «Encargo en curso» con la tira
-  (fase 3). Pendientes del tutorial: candados en mapa y adornos, y que la barra diga que el
-  reloj está parado. Ver también «Pendiente de revisar» en el plan.
+- En `main`: todo lo anterior, más los golpes de los jefes nuevos del de arte (#72) con su
+  propuesta del panel del encargo (`encargos/propuesta-panel-encargo.md`).
+- **Lo siguiente es mío:** los datos del viaje en el núcleo (partes, sucesos con su momento,
+  semilla, día/noche) y la ficha «Encargo en curso» con un hueco para la tira; el de arte hace
+  `QuestStrip` después.
+- Amanecer, decidido: con la app abierta no hay carta (avisos y, solo lo gordo, carta suelta);
+  la pila de cartas, al volver tras tenerla cerrada (plan, «Pendiente de revisar» y fase 5).
+- Interfaz: el título se queda (el usuario no se quejaba de él); corregido en
+  `encargos/interfaz-primera-vez.md`. Sigue sin fusionar **el cobro de Merlo** (`ui/PayDay.tsx`):
+  revisarlo con el tutorial (salto al día 7) y `dueTonight` cuando llegue.
+- Después: 2b (tutorial de obras). Pendientes del tutorial: candados en mapa y adornos, y que la
+  barra diga que el reloj está parado.
