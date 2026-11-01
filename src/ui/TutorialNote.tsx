@@ -10,6 +10,8 @@ interface Props {
   ready: boolean;
   /** La nota va arriba si lo que hay que tocar está abajo. */
   up: boolean;
+  /** Lo que hay que tocar está tapado: antes, cerrar lo que hay abierto. */
+  closing?: boolean;
   onOk: () => void;
   /** Saltar el tiempo: hasta que vuelva el grupo, una noche o hasta el pago. */
   onSkipTime: (to: TutorialSkip) => void;
@@ -28,7 +30,16 @@ const LABEL: Record<'seguir' | TutorialSkip, string> = {
  * pasos libres, «Entendido» la pliega en la esquina (su resumen y el botón); al pasar el ratón
  * o al tocarla se lee entera.
  */
-export function TutorialNote({ game, step, ready, up, onOk, onSkipTime, onSkipAll }: Props) {
+export function TutorialNote({
+  game,
+  step,
+  ready,
+  up,
+  closing,
+  onOk,
+  onSkipTime,
+  onSkipAll,
+}: Props) {
   /** Paso cuya nota está plegada; si se lee entera: con el ratón encima o fijada al tocarla. */
   const [folded, setFolded] = useState<string | null>(null);
   const [hover, setHover] = useState(false);
@@ -84,6 +95,11 @@ export function TutorialNote({ game, step, ready, up, onOk, onSkipTime, onSkipAl
         <Icon name="libro" size={12} /> Del cuaderno de Fausto
       </span>
       <p>{step.text(game)}</p>
+      {closing && (
+        <p class="notebook-close">
+          <Icon name="close" size={12} /> Antes, cierra lo que tienes abierto.
+        </p>
+      )}
       <div class="notebook-actions">
         {step.free && (
           <button

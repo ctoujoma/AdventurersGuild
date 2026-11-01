@@ -74,6 +74,10 @@ Segunda ronda (feedback del usuario):
   derecha con su resumen (`short`) y el botón; al pasar el ratón o al tocarla se lee entera.
   En `esperar` el reloj corre (`clock`, `tutorialFrozen`): el grupo puede volver solo.
 - Ratas: la cámara se acerca a la cocina (`zoom`, `RoomScene.closeUp`).
+- Menús que tapan: lo señalado tiene que estar encima de todo (`onTop` en `TutorialFocus`); si
+  lo tapa algo, se marca su ✕ y la nota dice «Antes, cierra lo que tienes abierto». Todos los
+  botones de cerrar llevan `data-tut="cerrar"`; el foco y la nota van por encima de los menús
+  (z-index 75 y 76).
 
 Pendiente que ya estaba apuntado:
 
