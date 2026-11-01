@@ -30,6 +30,13 @@ const MOON = { x: 84, up: 156 } as const;
 /** Lo más alto que sube el sol sobre el horizonte, en píxeles. */
 const SUN_UP = 170;
 
+/**
+ * Cuánto se ha corrido una capa lejana (que se mueve a `f` de la cámara) en una vista que empieza
+ * en `cx` y mide `vw`. Va por el centro de la vista, no por su borde: al acercar o alejar (cambia
+ * `vw` con el mismo centro), lo lejano se queda donde estaba.
+ */
+const pan = (cx: number, vw: number, f: number) => Math.round((cx + vw / 2) * f - vw / 2);
+
 export interface Daylight {
   /** Luz del día (0–1), del atardecer (0–1) y avance del día (0 mañana – 1 noche). */
   day: number;
@@ -84,7 +91,7 @@ export class Sky {
     ctx.globalAlpha = 1;
     ctx.fillStyle = P.black;
     ctx.fillRect(0, 0, vw, vh);
-    const skyX = WORLD_X0 - Math.round(cx * SKY_FX);
+    const skyX = WORLD_X0 - pan(cx, vw, SKY_FX);
     tile(ctx, this.skyC, skyX, top, vw);
     ctx.globalAlpha = Math.max(0, 1 - dl.day * 1.4);
     // Las estrellas se repiten a lo ancho y, por encima de su franja, también hacia arriba.
@@ -108,7 +115,7 @@ export class Sky {
       ctx.globalAlpha = moonA;
       ctx.drawImage(
         this.moonC,
-        Math.round(MOON.x - MOON_R - cx * SKY_FX),
+        Math.round(MOON.x - MOON_R - pan(cx, vw, SKY_FX)),
         Math.round(hz - MOON.up - MOON_R),
       );
       ctx.globalAlpha = 1;
@@ -118,7 +125,7 @@ export class Sky {
     const dayK = Math.min(1, dl.day + dl.dusk * 0.6 + nl.warm * 0.5);
     // Las nubes van y vienen en una franja de CLOUD_W que se repite a lo ancho; de día, blancas.
     for (const cl of this.clouds) {
-      const x = ((cl.x + t * cl.speed) % CLOUD_W) - 60 + WORLD_X0 - cx * CLOUD_FX;
+      const x = ((cl.x + t * cl.speed) % CLOUD_W) - 60 + WORLD_X0 - pan(cx, vw, CLOUD_FX);
       for (let k = Math.floor(-x / CLOUD_W) - 1; x + k * CLOUD_W < vw; k++) {
         if (dayK < 1) {
           ctx.globalAlpha = 1 - dayK;
@@ -133,7 +140,7 @@ export class Sky {
     ctx.globalAlpha = 1;
     if (nl.warm > 0) this.drawDawn(ctx, nl.warm, hz, vw, vh);
     const light = { day: dayK, dark: Math.max(nl.dark, 1 - dl.day - dl.dusk) };
-    skyLife(ctx, WORLD_X0 - Math.round(cx * SKY_FX), top, vw, t, light);
+    skyLife(ctx, WORLD_X0 - pan(cx, vw, SKY_FX), top, vw, t, light);
     // El cielo, más claro de día (solo el cielo: el paisaje ya trae sus colores).
     if (dl.day > 0 || dl.dusk > 0) {
       ctx.globalCompositeOperation = 'screen';
@@ -143,7 +150,7 @@ export class Sky {
       ctx.globalCompositeOperation = 'source-over';
     }
     this.parallax.forEach(({ c, d, l }, i) => {
-      const x = WORLD_X0 - Math.round(cx * l.fx);
+      const x = WORLD_X0 - pan(cx, vw, l.fx);
       tile(ctx, c, x, top, vw);
       if (dayK > 0) {
         ctx.globalAlpha = dayK;
@@ -202,7 +209,7 @@ export class Sky {
     if (sunUp <= 0) return;
     // Sale ya alto por la mañana, cruza y al atardecer baja hasta perderse tras los montes.
     const p = Math.min(1, 0.1 + d.tod * 0.95);
-    const sx = Math.round(300 - 280 * p - cx * SKY_FX);
+    const sx = Math.round(300 - 280 * p - pan(cx, vw, SKY_FX));
     const sy = Math.round(hz - 10 - (Math.sin(Math.PI * p) * 1.15 - 0.15) * SUN_UP);
     if (sy > hz + 20) return;
     const warmSun = d.dusk > 0.3;
