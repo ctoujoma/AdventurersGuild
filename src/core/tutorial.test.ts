@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { SCHEDULE } from './balance';
 import { newGame, reduce } from './game';
 import type { GameState } from './model';
+import { estimate } from './party';
 import { salaries } from './game';
 import {
   STEPS,
@@ -28,6 +29,14 @@ describe('tutorial guiado', () => {
     const q = s.quests.find((x) => x.id === s.tutorial!.quest)!;
     expect(q).toMatchObject({ days: 1, danger: 0, slots: 2 });
     expect(q.item).toBeDefined();
+  });
+
+  it('el primer encargo casi siempre sale con los dos de inicio', () => {
+    for (const seed of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']) {
+      const s = newGame(seed, { tutorial: true });
+      const q = s.quests.find((x) => x.id === s.tutorial!.quest)!;
+      expect(estimate(q.challenges, s.heroes).total).toBeGreaterThanOrEqual(0.85);
+    }
   });
 
   it('el reloj está parado mientras dura', () => {

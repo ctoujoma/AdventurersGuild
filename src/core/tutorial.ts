@@ -6,7 +6,8 @@
 import { INCIDENTS } from '../data/incidents';
 import { GEAR } from '../data/items';
 import { DAY_SECONDS, DUSK, SCHEDULE } from './balance';
-import type { DawnEvent, GameState, Quest } from './model';
+import type { DawnEvent, GameState, Hero, Quest } from './model';
+import { SKILLS, skill } from './party';
 import type { Rng } from './rng';
 import { upgradeCostOf } from './rooms';
 
@@ -250,6 +251,18 @@ export const STEPS: readonly TutorialStep[] = [
       'Ese rumor ya es un encargo, y paga en especie. Manda a quien tengas en casa, aunque vaya solo.',
     skip: (s) => !s.quests.some((q) => q.rumor) || !s.heroes.some((h) => h.status === 'ok'),
     done: (s) => s.missions.some((m) => m.quest.rumor),
+    enter: (s) => {
+      // El del tutorial sale casi siempre, aunque vaya uno solo (el que esté en casa y peor).
+      const q = s.quests.find((x) => x.rumor);
+      const home = s.heroes.filter((h) => h.status === 'ok');
+      if (!q || !home.length) return null;
+      const weakest = home.map((h) => [h]).sort((a, b) => topPower(a) - topPower(b))[0]!;
+      q.challenges = sureChallenge(weakest);
+      q.danger = 0;
+      q.dangerHidden = undefined;
+      q.twist = undefined;
+      return null;
+    },
   },
   {
     id: 'objetivos',
@@ -344,7 +357,18 @@ export function finishTutorial(s: GameState): void {
 }
 
 /** El encargo del primer día, a la medida de los dos héroes: corto, sin peligro y con equipo. */
-export function easyQuest(q: Quest, rng: Rng): Quest {
+/** Fuerza de un grupo en lo que mejor se le da. */
+const powerIn = (heroes: readonly Hero[], k: (typeof SKILLS)[number]) =>
+  heroes.reduce((a, h) => a + skill(h, k), 0);
+const topPower = (heroes: readonly Hero[]) => Math.max(...SKILLS.map((k) => powerIn(heroes, k)));
+
+/** Un solo desafío, en lo que mejor se le da al grupo, que casi siempre sale (≈ 86 %). */
+function sureChallenge(heroes: readonly Hero[]): Quest['challenges'] {
+  const best = [...SKILLS].sort((a, b) => powerIn(heroes, b) - powerIn(heroes, a))[0]!;
+  return [{ skill: best, diff: Math.max(1, Math.min(4, powerIn(heroes, best) - 4)) }];
+}
+
+export function easyQuest(q: Quest, rng: Rng, heroes: readonly Hero[]): Quest {
   const base = rng.pick(GEAR.filter((g) => g.rarity === 0));
   return {
     ...q,
@@ -355,7 +379,7 @@ export function easyQuest(q: Quest, rng: Rng): Quest {
     twist: undefined,
     expires: 5,
     reward: 60,
-    challenges: q.challenges.slice(0, 1).map((c) => ({ ...c, diff: 4 })),
+    challenges: sureChallenge(heroes),
     item: { id: q.item?.id ?? `${q.id}-i`, ...base },
   };
 }

@@ -232,10 +232,10 @@ hueco, con la cámara en cada paso. Sustituye a las notas de obras de ahora (`ob
 - **El cobro de la deuda con Merlo** (lo hecho con los agentes de arte e interfaz): que encaje
   con el tiempo que corre solo, los pagos estando fuera (`dueTonight`), los avisos y los
   objetivos.
-- **La carta del amanecer** («Amanece sobre…»): con la app abierta corta el juego. Decidido
-  (usuario): con la app abierta, nada de carta; el día pasa sin parar y lo que llega sale en
-  avisos pequeños (los chips de ahora), y lo gordo, solo eso, en una carta suelta. La pila de
-  cartas queda para **volver tras tenerla cerrada**, como crónica de lo que se ha perdido.
+- **La carta del amanecer** («Amanece sobre…»): **hecho lo primero:** con la app abierta ya no
+  tapa la pantalla; al amanecer queda un botón «Día N · ver el parte» (borde rojo si hay algo
+  malo) y la carta solo se abre al tocarlo. Sigue entera al volver tras una ausencia, en los
+  saltos del tutorial y al acabar la partida. Falta la pila de cartas (fase 5).
 - **El ritmo del tiempo:** un día son 5 minutos abierto y una hora cerrado; si se quiere más
   calma, alargar `DAY_SECONDS`.
 - **Objetivos:** más variedad («gana un asalto sin heridos», «sirve 40 jarras»).

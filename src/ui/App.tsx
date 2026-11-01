@@ -130,6 +130,10 @@ export function App() {
   const [roomId, setRoomId] = useState<string | null>(null);
   // Partida nueva: el día 1 se abre con la carta del tío.
   const [dawnOpen, setDawnOpen] = useState(!saved);
+  /** Con el juego abierto, el amanecer no tapa la pantalla: queda un botón para ver el parte. */
+  const [dawnChip, setDawnChip] = useState<number | null>(null);
+  /** La carta del amanecer se ha abierto desde ese botón (lo de la escena ya pasó). */
+  const fromChip = useRef(false);
   /** La noche está pasando en la escena (entre «Cerrar» y el resumen del amanecer). */
   const [passing, setPassing] = useState(false);
   /** Días que pasaron con el juego cerrado (la carta del amanecer cuenta «Mientras no estabas»). */
@@ -570,7 +574,7 @@ export function App() {
     !!panel ||
     !!works.pick;
   const closeWatch = () => {
-    if (watching?.dawn) setDawnOpen(true);
+    if (watching?.dawn) setDawnChip(gameRef.current.day);
     setWatching(null);
   };
   const closeTop = () => {
@@ -626,7 +630,9 @@ export function App() {
       // Si esta noche un grupo ha dado con un jefe, primero el aviso (verlo o no).
       const open = () => {
         if (next.lastFight) setBossCall(next.lastFight);
-        else setDawnOpen(true);
+        // En el tutorial (saltos de días) o al acabar, la carta entera; jugando, sin tapar nada.
+        else if (skip || next.over) setDawnOpen(true);
+        else quietDawn(next);
       };
       // El día de pago, antes de todo, el cobro.
       if (next.payday?.day === next.day && !next.over) {
@@ -648,7 +654,35 @@ export function App() {
     }
   };
 
+  /**
+   * Amanece con el juego abierto: lo de la escena pasa ya (lo que hicieron las salas, la ronda
+   * de los que vuelven) y el parte queda en un botón, sin tapar la pantalla.
+   */
+  const quietDawn = (next: GameState) => {
+    setDawnChip(next.day);
+    const made = next.yields;
+    if (made?.length) setTimeout(() => scene.current?.yields(made), 400);
+    const wins = next.reports.filter(
+      (r) => r.day === next.day && r.outcome.startsWith('Éxito') && r.outcome !== 'Éxito parcial',
+    );
+    if (wins.length)
+      setTimeout(() => {
+        scene.current?.cheer(
+          'barra',
+          wins.flatMap((r) => r.heroIds),
+        );
+        toast(`¡Ronda para todos! ${wins.map((r) => r.who).join(' y ')} lo celebran en la barra.`);
+      }, 1200);
+  };
+
   const closeDawn = (then?: PanelId) => {
+    if (fromChip.current) {
+      // Abierta desde el botón: lo de la escena ya pasó al amanecer.
+      fromChip.current = false;
+      setDawnOpen(false);
+      if (then) openPanel(then);
+      return;
+    }
     setAwayDays(0);
     const returned = sceneGame.missions.some((m) => !game.missions.some((x) => x.id === m.id));
     // Si algún grupo vuelve con éxito, ronda en la barra cuando cruzan la puerta.
@@ -1350,6 +1384,24 @@ export function App() {
             onMail={() => closeDawn('correo')}
           />
         )}
+        {screen === 'game' && dawnChip === game.day && !dawnOpen && !passing && (
+          <button
+            class={`dawn-chip ${game.dawn.some((e) => e.k === 'bad') ? 'is-bad' : ''}`}
+            aria-label={`Amanece el día ${game.day}: ver el parte`}
+            onClick={() => {
+              audio.play('open');
+              fromChip.current = true;
+              setDawnChip(null);
+              setDawnOpen(true);
+            }}
+          >
+            <Icon name="letter" size={14} />
+            <span>
+              Día {game.day} · <b>ver el parte</b>
+              {game.dawn.length > 0 && <small> ({game.dawn.length})</small>}
+            </span>
+          </button>
+        )}
         {screen === 'game' &&
           !dawnOpen &&
           !paying &&
@@ -1400,7 +1452,7 @@ export function App() {
           }}
           onLater={() => {
             setBossCall(null);
-            setDawnOpen(true);
+            setDawnChip(game.day);
           }}
         />
       )}

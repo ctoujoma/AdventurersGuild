@@ -5983,3 +5983,40 @@ select.crew-free {
   flex-wrap: wrap;
   gap: 6px;
 }
+
+/* El parte del amanecer con el juego abierto: un botón que no tapa nada. */
+.dawn-chip {
+  position: fixed;
+  left: 12px;
+  bottom: calc(var(--tabbar-h, 64px) + 64px);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: var(--t-s);
+  color: var(--ink);
+  background: var(--sand);
+  border: 0;
+  box-shadow:
+    0 0 0 2px var(--bark),
+    0 3px 0 2px rgba(24, 20, 37, 0.5);
+  cursor: pointer;
+  animation: dawn-chip-in 0.25s steps(4);
+}
+@keyframes dawn-chip-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+.dawn-chip.is-bad {
+  box-shadow:
+    0 0 0 2px var(--wine),
+    0 3px 0 2px rgba(24, 20, 37, 0.5);
+}
+.dawn-chip small {
+  color: var(--text-soft);
+}
