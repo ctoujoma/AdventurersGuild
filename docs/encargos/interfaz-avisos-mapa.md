@@ -20,3 +20,30 @@ escala entera, y que los grupos fuera abran su ficha «Encargo en curso». El di
 agente de arte (`arte-tira-vuelta-mapa.md`): acordad la escala.
 
 Capturas a 420 × 860 y en horizontal, y un PR contra `main`.
+
+## Hecho (interfaz)
+
+**Avisos.**
+- Cada aviso se descarta deslizándolo a un lado o con su «×». Con varios, sale «Descartar todos».
+- Los descartados se guardan aparte, por partida: `jarro:avisos`, con la semilla de la partida. Se olvidan en cuanto el aviso deja de estar, así que si vuelve a pasar, vuelve a avisar.
+- «Ver los N descartados» los devuelve todos.
+- Lo que hace cada tipo al descartarlo está en `hushRule` (`ui/alerts.ts`):
+  - **normales:** no vuelven mientras dure lo mismo;
+  - **el pago que no llega** (`bad`): vuelve al día siguiente, y el propio aviso lo dice;
+  - **el grupo ante su jefe:** no se descarta (no tiene «×» y dice «Se queda hasta que lo veas»).
+
+**Mapa.**
+- Ocupa toda la escena (`Panel full`).
+- En vertical, la lista de grupos va debajo, plegada en una línea con el grupo que vuelve antes.
+- En horizontal, la lista va al lado; plegada, queda en una franja estrecha.
+- La leyenda y la amenaza flotan encima del mapa.
+- Tocar un grupo en el mapa abre directamente su «Encargo en curso».
+
+**La escala, para el agente de arte.**
+- El zoom va a escala entera: 1 píxel del dibujo son ×1…×8 píxeles de pantalla, redondeados a píxeles del aparato. Así no se emborrona.
+- Al abrir sale un nivel más del que cabe entero (en el móvil, ×2), centrado en la taberna.
+- La interfaz toma el tamaño de `mapBuffer()`, no `MAP_W`/`MAP_H`. Si el dibujo pasa a 800 × 560 (2 píxeles por unidad de lugar) para tener más detalle, la interfaz no cambia.
+- Las coordenadas de los lugares siguen en unidades de `MAP_W`/`MAP_H`.
+- Ojo: con el dibujo a 800 × 560, «×1» ya enseñaría 800 px. Entonces convendría bajar el nivel de partida, y lo ajusto yo.
+
+Capturas: [mapa en vertical, antes y después](capturas/mapa-vertical.png), [en horizontal](capturas/mapa-horizontal.png), [avisos](capturas/avisos-descartar.png).

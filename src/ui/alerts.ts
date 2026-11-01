@@ -161,3 +161,38 @@ export function finishedWorks(before: GameState, after: GameState): string[] {
     .filter((r) => r.works && after.building.rooms.some((x) => x.id === r.id && !x.works))
     .map((r) => r.id);
 }
+
+// ---------- Descartar avisos ----------
+
+/** Los avisos descartados: su `id` y el día en que se descartaron. */
+export type Hushed = Record<string, number>;
+
+/**
+ * Qué pasa al descartar: lo normal no vuelve mientras dure lo mismo (mismo `id`); el pago que no
+ * llega vuelve al día siguiente; el grupo ante su jefe no se descarta (espera a que se diga).
+ */
+export function hushRule(a: Notice): 'never' | 'day' | 'while' {
+  if (a.id.startsWith('jefe:')) return 'never';
+  return a.k === 'bad' ? 'day' : 'while';
+}
+
+/** Los avisos que se ven: sin los descartados (los del pago, solo el mismo día). */
+export function shownAlerts(alerts: Notice[], hushed: Hushed, day: number): Notice[] {
+  return alerts.filter((a) => {
+    const at = hushed[a.id];
+    if (at === undefined) return true;
+    const rule = hushRule(a);
+    return rule === 'never' || (rule === 'day' && at < day);
+  });
+}
+
+/**
+ * Olvida los descartes de avisos que ya no están: si vuelve a pasar lo mismo más adelante,
+ * vuelve a avisar. Devuelve el mismo objeto si no cambia nada.
+ */
+export function pruneHushed(hushed: Hushed, alerts: Notice[]): Hushed {
+  const now = new Set(alerts.map((a) => a.id));
+  const keys = Object.keys(hushed);
+  if (keys.every((id) => now.has(id))) return hushed;
+  return Object.fromEntries(keys.filter((id) => now.has(id)).map((id) => [id, hushed[id]!]));
+}

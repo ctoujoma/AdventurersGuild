@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useBackButton } from '../platform/back';
 import { HoldHelp } from './HoldHelp';
 import { haptic, setHaptics } from '../platform/haptics';
+import { loadHushed, saveHushed } from '../platform/hushed';
 import { audio, type Mood } from '../audio/audio';
 import { catchUp, waitText } from '../core/away';
 import { left, setRealTime } from './when';
@@ -31,7 +32,14 @@ import { GameOver } from './GameOver';
 import { HeroCard } from './HeroCard';
 import { Hud } from './Hud';
 import { PayDay } from './PayDay';
-import { finishedWorks, gatherAlerts, type Notice } from './alerts';
+import {
+  finishedWorks,
+  gatherAlerts,
+  pruneHushed,
+  shownAlerts,
+  type Hushed,
+  type Notice,
+} from './alerts';
 import { Icon } from './icons';
 import { Letter } from './Letter';
 import { EventCard } from './EventCard';
@@ -873,10 +881,23 @@ export function App() {
         ? 'gremio'
         : 'taberna';
 
+  const shown = passing ? sceneGame : game;
+  const allAlerts = useMemo(() => gatherAlerts(shown, worksDone), [shown, worksDone]);
+  // Los descartados, por partida. Se olvidan cuando el aviso deja de estar.
+  const [hushed, setHushed] = useState<Hushed>(() => loadHushed(game.seed));
+  useEffect(() => setHushed(loadHushed(game.seed)), [game.seed]);
+  useEffect(() => {
+    if (passing) return;
+    const next = pruneHushed(hushed, allAlerts);
+    if (next !== hushed) setHushed(next);
+  }, [allAlerts]);
+  useEffect(() => saveHushed(game.seed, hushed), [hushed]);
   const alerts = useMemo(
-    () => gatherAlerts(passing ? sceneGame : game, worksDone),
-    [passing ? sceneGame : game, worksDone],
+    () => shownAlerts(allAlerts, hushed, shown.day),
+    [allAlerts, hushed, shown.day],
   );
+  const hush = (ids: string[]) =>
+    setHushed((h) => ({ ...h, ...Object.fromEntries(ids.map((id) => [id, shown.day])) }));
   /** Tocar un aviso lleva a donde se arregla. */
   const goAlert = (n: Notice) => {
     const g = n.go;
@@ -905,6 +926,9 @@ export function App() {
         onSettings={() => setSettingsOpen(true)}
         alerts={alerts}
         onAlert={goAlert}
+        onHush={hush}
+        hushedCount={allAlerts.length - alerts.length}
+        onUnhush={() => setHushed({})}
         quiet={passing || paying || dawnOpen || !!bossCall || !!watching || screen !== 'game'}
       />
       <div class="stage">
@@ -1295,7 +1319,7 @@ export function App() {
           </Panel>
         )}
         {panel === 'fuera' && (
-          <Panel title="La comarca" wide onClose={() => openPanel(null)}>
+          <Panel title="La comarca" full onClose={() => openPanel(null)}>
             <MapPanel
               game={game}
               onHero={(id) => setCard(id)}

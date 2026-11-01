@@ -627,21 +627,31 @@ button:focus-visible {
   }
 }
 
-@media (orientation: landscape) and (min-width: 900px) {
-  /* El mapa, más ancho: se ve más comarca y los marcadores se pisan menos. */
-  .panel.panel-wide {
-    width: min(640px, 62%);
-  }
+/* El mapa: toda la escena. */
+.panel.panel-full {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  transform: none;
+  width: 100%;
+  max-height: none;
+  border-width: 16px 0 0;
+  border-image: var(--frame-wood) 8 / 16px 0 0 / 0 round;
 }
 
-@media (orientation: portrait) {
-  .panel.panel-wide {
-    width: min(100%, 720px);
-  }
-  /* En vertical, el mapa aprovecha el ancho hasta el marco. */
-  .panel-wide .map-viewport {
-    margin-inline: -4px;
-    width: calc(100% + 8px);
+.panel-full .panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 8px 8px max(8px, env(safe-area-inset-bottom));
+}
+
+@media (orientation: landscape) and (min-width: 900px),
+  (orientation: landscape) and (max-height: 520px) {
+  .panel.panel-full {
+    width: 100%;
+    border-width: 0;
   }
 }
 
@@ -3062,13 +3072,16 @@ button.trait[aria-pressed='true'] {
 }
 /* ---------- Mapa de la comarca ---------- */
 .map-wrap {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-bottom: 10px;
 }
 .map-viewport {
   position: relative;
+  flex: 1;
+  min-height: 160px;
   width: 100%;
   box-shadow:
     0 0 0 3px var(--bark),
@@ -3076,14 +3089,16 @@ button.trait[aria-pressed='true'] {
   overflow: hidden;
   touch-action: none;
   cursor: grab;
-  background: var(--tan);
+  /* Lejos, el pergamino queda sobre la mesa. */
+  background: var(--bark);
 }
 .map-viewport:active {
   cursor: grabbing;
 }
 .map {
   position: absolute;
-  inset: 0;
+  left: 0;
+  top: 0;
   transform-origin: 0 0;
 }
 .map .map-layer {
@@ -3101,8 +3116,8 @@ button.trait[aria-pressed='true'] {
 .map-routes .route {
   stroke: var(--ink);
   /* Grosor y trazos en píxeles de pantalla: no engordan al acercar el mapa. */
-  stroke-width: calc(1px * var(--inv, 1));
-  stroke-dasharray: calc(2px * var(--inv, 1)) calc(2px * var(--inv, 1));
+  stroke-width: calc(1px * var(--u, 1));
+  stroke-dasharray: calc(2px * var(--u, 1)) calc(2px * var(--u, 1));
   opacity: 0.75;
 }
 .map-place,
@@ -3253,12 +3268,110 @@ button.trait[aria-pressed='true'] {
   color: var(--wine);
 }
 
-/* Debajo del mapa, los grupos que están fuera: a dónde van, cuándo vuelven y quiénes son. */
-.map-trips {
+/* Encima del mapa, arriba a la izquierda: la amenaza y la leyenda (tras «?»). */
+.map-over {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  right: 6px;
+  z-index: 4;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 6px;
-  margin-top: 6px;
+  pointer-events: none;
+}
+.map-over > * {
+  pointer-events: auto;
+  padding: 4px 8px;
+  background: var(--sand);
+  box-shadow:
+    0 0 0 2px var(--bark),
+    0 0 0 4px var(--ink);
+}
+.map-over > :empty {
+  display: none;
+}
+.map-level {
+  align-self: center;
+  min-width: 28px;
+  padding: 2px 4px;
+  font: var(--t-s) / 1 var(--pixel);
+  text-align: center;
+  color: var(--sand);
+  background: rgba(24, 20, 37, 0.7);
+}
+.map-tools .btn-icon:disabled {
+  opacity: 0.45;
+}
+
+/* La lista de grupos fuera, plegable: plegada, una línea con el que vuelve antes. */
+.map-trips-toggle {
+  width: 100%;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+  text-align: left;
+  color: var(--ink);
+}
+.map-trips-toggle b {
+  flex: none;
+  font: var(--t-m) / 1 var(--pixel);
+  font-weight: 400;
+}
+.map-trips-next {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--t-s);
+  color: var(--text-soft);
+}
+.map-trips-chev {
+  margin-left: auto;
+  font-family: var(--pixel);
+  color: var(--bark);
+}
+.map-wrap.trips-open .map-trips {
+  max-height: 42%;
+  overflow-y: auto;
+}
+
+/* Debajo del mapa, los grupos que están fuera: a dónde van, cuándo vuelven y quiénes son. */
+.map-trips {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* En horizontal, la lista va al lado del mapa. */
+@media (orientation: landscape) {
+  .map-wrap {
+    flex-direction: row;
+  }
+  .map-wrap.trips-open .map-trips {
+    width: min(300px, 38%);
+    max-height: none;
+  }
+  .map-wrap:not(.trips-open) .map-trips {
+    width: 44px;
+  }
+  .map-wrap:not(.trips-open) .map-trips-toggle {
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 4px 0;
+    height: 100%;
+  }
+  .map-wrap:not(.trips-open) .map-trips-toggle b {
+    writing-mode: vertical-rl;
+  }
+  .map-wrap:not(.trips-open) .map-trips-next {
+    display: none;
+  }
 }
 .map-trip-list {
   margin: 0;
@@ -3406,13 +3519,13 @@ button.trait[aria-pressed='true'] {
    siguiente, a trazos que avanzan hacia él. Una historia terminada queda apagada. */
 .map-routes .thread line {
   stroke: var(--red);
-  stroke-width: calc(1.4px * var(--inv, 1));
+  stroke-width: calc(1.4px * var(--u, 1));
 }
 .map-routes .thread path {
   fill: var(--red);
 }
 .map-routes .thread .next line {
-  stroke-dasharray: calc(3px * var(--inv, 1)) calc(2px * var(--inv, 1));
+  stroke-dasharray: calc(3px * var(--u, 1)) calc(2px * var(--u, 1));
   animation: thread-march 0.9s linear infinite;
 }
 .map-routes .thread.done {
@@ -3426,7 +3539,7 @@ button.trait[aria-pressed='true'] {
 }
 @keyframes thread-march {
   to {
-    stroke-dashoffset: calc(-5px * var(--inv, 1));
+    stroke-dashoffset: calc(-5px * var(--u, 1));
   }
 }
 .map-step {
@@ -4088,13 +4201,15 @@ textarea:focus-visible,
   background: var(--plum);
 }
 
-/* Sin sitio dentro del mapa: va debajo, en el flujo del panel. */
+/* Sin sitio junto al punto: abajo, en medio del mapa (encima de los botones). */
 .map-card.docked {
-  position: relative;
-  transform: none;
-  align-self: center;
-  max-width: 100%;
-  margin-top: 4px;
+  left: 50%;
+  top: auto;
+  bottom: 48px;
+  transform: translateX(-50%);
+  max-width: calc(100% - 12px);
+  max-height: calc(100% - 60px);
+  overflow-y: auto;
 }
 .map-card-title {
   font-family: var(--pixel);
@@ -5229,6 +5344,82 @@ select.crew-free {
   margin: 4px 0 2px;
   font: var(--t-m) / 1.3 var(--body);
   color: var(--text-good);
+}
+
+/* Descartar: deslizar el aviso o su «×». Se va hacia el lado al que se desliza. */
+.alerts-list li {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  touch-action: pan-y;
+  /* `translate` aparte del `transform` de la entrada, que se queda puesto al acabar. */
+  translate: var(--dx, 0) 0;
+}
+
+.alerts-list li.is-dragging {
+  transition: none;
+}
+
+.alerts-list li.is-gone {
+  pointer-events: none;
+  animation: alert-gone 0.22s ease-in forwards;
+  animation-delay: calc(var(--g, 0) * 40ms);
+}
+
+@keyframes alert-gone {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    translate: calc(var(--dir, 1) * 110%) 0;
+  }
+}
+
+.alerts-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.alerts-x {
+  flex: none;
+  width: 32px;
+  display: grid;
+  place-items: center;
+  color: var(--bark);
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 0 1px rgba(79, 47, 45, 0.35);
+}
+
+.alerts-x:hover,
+.alerts-x:focus-visible {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.alerts-x:active {
+  transform: scale(0.9);
+}
+
+.alerts-keep {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--t-s);
+  color: var(--text-soft);
+}
+
+.alerts-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 2px dashed var(--tan);
+  font-size: var(--t-s);
+}
+
+.alerts-unhush {
+  margin-left: auto;
 }
 
 /* Libro: lo cumplido de los objetivos, plegado. */
