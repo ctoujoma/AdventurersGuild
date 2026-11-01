@@ -113,3 +113,23 @@ en `art/foes.ts` y no dentro de la tira.
   el viaje» en su ficha del mapa y con el aviso «vuelve esta noche». **El hueco es `Strip`**
   (`.trip-strip`, a todo el ancho y 72 px de alto): de momento pinta el fondo del terreno con
   una marca donde va el grupo. Cámbialo por `<QuestStrip now={now} />`.
+
+## Hecho (agente de arte): la tira y los enemigos
+
+- **Enemigos:** `art/foes.ts`, `foeArt(familia, semilla)`. Las seis familias, con variantes por
+  semilla: bandido (los de los asaltos, `banditLook`, con su arma en la mano), trasgo u orco, bestia (lobo,
+  jabalí u oso), alimaña (rata grande, araña o limo), muerto (esqueleto o espectro) y grande
+  (trol, el doble de alto). Poses: `idle`/`idle2`, `walk1`/`walk2`, `windup`/`strike`, `hurt` y
+  `down`. Miran a la derecha; se pintan por el centro de los pies (`foot`) y traen `chest`
+  (dónde dar) y `span` (cuánto ocupan en fila). Sirven tal cual para asaltos y esbirros.
+  Pendiente: un pase de calidad a los que no son bandidos (trasgos, esqueletos, trols…).
+- **La tira:** `ui/QuestStrip.tsx` (el canvas, a escala entera y a unos 10 fotogramas por
+  segundo) pinta con `world/tripStrip.ts`; el paisaje está en `art/trip.ts` (por terreno, con la
+  taberna en las puntas y lo propio del sitio en medio). Sustituye al hueco `Strip` de
+  `ui/TripSheet.tsx`. Enseña: ida y vuelta andando (los heridos de `fate`, cojeando y a la cola),
+  la hoguera si es de noche por el camino, la llegada, lo suyo (cofre al recuperar o explorar,
+  el carro al escoltar), la pelea con los enemigos de `journey.foe` mientras `fighting`, el jefe
+  en silueta con un «!» si `waiting` y luego caído o el grupo en retirada según `outcome`, los
+  enemigos caídos tras la pelea si ya se sabe que ha ido bien, y los sucesos de `past` como
+  bocadillo (y como marca en la línea).
+- **Capturas:** `tools/shots/tira.mjs` (a 420 × 860).

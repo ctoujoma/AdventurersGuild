@@ -14,10 +14,15 @@ import {
   NOBLE_F,
   blazeStrip,
   brawlStrip,
+  bigPuddle,
+  brokenChair,
   bucket,
   dampStain,
   nobleStrip,
   puddleStrip,
+  ratBreadStrip,
+  scorch,
+  spilledMug,
   taxmanStrip,
   thiefStrip,
   toppledStool,
@@ -64,6 +69,8 @@ const BAR_X = 44;
 /** El noble, al final de la barra (a su derecha). */
 const NOBLE_DX = 48;
 const RAT_SPEED = 30;
+/** Lo que queda en la sala si sale mal (una quemadura, una silla rota…): segundos. */
+const LEFTOVER = 45;
 /** Ratas a la vista como mucho (si faltan más toques, entra otra al irse una). */
 const MAX_RATS = 4;
 const THIEF_SPEED = 9;
@@ -95,6 +102,10 @@ interface Actor {
   dist: number;
   /** Se va de la sala (espantada o al acabar): a qué velocidad, hasta `tx`, y ahí desaparece. */
   flee?: number;
+  /** Lo que queda si sale mal (una quemadura, una silla rota): segundos que dura. */
+  ttl?: number;
+  /** Huyendo con el botín: se le caen monedas. */
+  drops?: boolean;
 }
 
 interface Show {
@@ -113,6 +124,9 @@ interface Show {
   taps?: number;
   /** Ya ha acabado: los que quedan se van de la sala. */
   gone?: boolean;
+  /** Cuándo sale mal (día y segundo del reloj), para saber cómo acabó al irse. */
+  day?: number;
+  until?: number;
 }
 
 const at = (x: number, y: number, depth: number) => new Vector3(x, GROUND - y, -depth);
@@ -147,7 +161,12 @@ export class IncidentArt {
    * Los incidentes de ahora: los nuevos aparecen; los que han acabado se van de la sala (o se
    * deshacen en polvo); y a cada toque a las ratas, una sale corriendo.
    */
-  set(L: RoomsLayout, b: Building, list: readonly SceneIncident[]): void {
+  set(
+    L: RoomsLayout,
+    b: Building,
+    list: readonly SceneIncident[],
+    clock?: { day: number; secs: number },
+  ): void {
     const want = new Map<string, { inc: SceneIncident; r: Rect; floor: number; level: number }>();
     for (const inc of list) {
       const spot = L.rooms.find(({ room }) => room.id === inc.room);
@@ -167,14 +186,18 @@ export class IncidentArt {
         for (const a of s.actors) this.drop(a);
         continue;
       }
-      // Se ha resuelto (o ha salido mal): los que andan se van; lo demás, en polvo.
-      this.leave(s);
+      // Ha acabado: si el reloj ha llegado a su hora (o ya es otro día), ha salido mal.
+      const failed =
+        !!clock && s.until !== undefined && (clock.day !== s.day || clock.secs >= s.until - 0.5);
+      this.leave(s, failed);
       if (s.actors.length) this.shows.set(`${key}#fuera${this.out++}`, s);
     }
     for (const [key, w] of want) {
       const known = this.shows.get(key);
       if (!known) {
         const s = this.build(key, w.inc.kind, w.r, w.floor, w.level, w.inc.taps);
+        s.day = clock?.day;
+        s.until = w.inc.until;
         this.shows.set(key, s);
         continue;
       }
@@ -332,26 +355,113 @@ export class IncidentArt {
     this.sound?.('squeak', 0.5);
   }
 
-  /** Al acabar: los que andan se van por la pared más cercana; lo demás, en polvo. */
-  private leave(s: Show): void {
+  /**
+   * Al acabar. Si sale bien: los que andan se van por la pared más cercana, lo demás en polvo (el
+   * fuego, en vapor) y una chispa de premio. Si sale mal, cada uno a su manera: humo negro y una
+   * quemadura, las ratas con un pan, una silla rota, el ladrón corriendo con el saco, el
+   * recaudador enfadado, un charco grande o la jarra del noble volcada.
+   */
+  private leave(s: Show, failed: boolean): void {
     s.gone = true;
-    const speed = { ratas: RAT_SPEED * 3, ladron: 45, recaudador: 16, noble: 12 }[s.kind as string];
+    s.n = 0;
+    const speeds: Partial<Record<IncidentKind, number>> = failed
+      ? { ratas: RAT_SPEED * 2, ladron: 60, recaudador: 26, noble: 20 }
+      : { ratas: RAT_SPEED * 3, ladron: 45, recaudador: 16, noble: 12 };
+    const speed = speeds[s.kind];
+    const { r, floor } = s;
+    const mid = r.x + r.w / 2;
+    const first = s.actors[0];
     if (s.kind === 'ratas') this.sound?.('squeak', 0.4);
+    if (!failed) {
+      // La chispa de premio, encima de la sala.
+      for (let i = 0; i < 3; i++) this.emit?.('star', mid - 10 + i * 10, r.y + r.h * 0.45, MID);
+      if (s.kind === 'recaudador' && first)
+        this.emit?.('coin', first.x, first.bottom - 26, first.z);
+    }
     for (const a of [...s.actors]) {
       if (speed) {
         this.exit(s, a, speed);
         continue;
       }
-      this.poof(a);
+      // El fuego que sale mal no se apaga con vapor: se ahoga en humo negro.
+      if (!(failed && a.glow)) this.poof(a);
+      // Si sale mal, el taburete de la pelea se queda en el suelo un rato.
+      if (failed && s.kind === 'pelea' && a.cells === 1) {
+        a.ttl = LEFTOVER;
+        continue;
+      }
       this.drop(a);
       s.actors.splice(s.actors.indexOf(a), 1);
+    }
+    if (!failed) return;
+    const keep = (img: PixelBuffer, x: number, z: number) => {
+      const a = this.still(img, x, floor, z);
+      a.ttl = LEFTOVER;
+      s.actors.push(a);
+    };
+    switch (s.kind) {
+      case 'fuego': {
+        const x = r.x + HEARTH_X;
+        for (let i = 0; i < 24; i++)
+          this.emit?.('smoke', x + (this.rnd() - 0.5) * 30, floor - this.rnd() * 30, SOLID - 4, {
+            max: 3 + this.rnd() * 3,
+          });
+        for (let i = 0; i < 6; i++)
+          this.emit?.('chimney', x + (this.rnd() - 0.5) * 20, floor - 20 - this.rnd() * 10, SOLID);
+        keep(scorch(), x + 14, FRONT + 8);
+        break;
+      }
+      case 'ratas':
+        // Cada rata, cambiada por una con un pan en la boca, que se va con él.
+        for (const a of [...s.actors]) {
+          const c = this.figure(this.strip('rata-pan', ratBreadStrip), a.x, a.bottom, a.z);
+          c.critter = true;
+          c.dir = a.dir;
+          c.tx = a.tx;
+          c.flee = a.flee;
+          this.drop(a);
+          s.actors[s.actors.indexOf(a)] = c;
+        }
+        break;
+      case 'pelea':
+        for (let i = 0; i < 8; i++)
+          this.emit?.('puff', mid + (this.rnd() - 0.5) * 30, floor - 6, FRONT);
+        keep(brokenChair(), mid - 14, FRONT + 1);
+        break;
+      case 'ladron':
+        if (first) first.drops = true;
+        break;
+      case 'recaudador':
+        if (first) {
+          const k = scaleAt(first.z);
+          const top = first.bottom - first.strip!.h / k - 4;
+          this.emit?.('bark', first.x - 4, top, first.z);
+          this.emit?.('bark', first.x + 3, top - 3, first.z);
+        }
+        break;
+      case 'gotera':
+        keep(bigPuddle(), r.x + r.w * 0.62 + 6, MID);
+        break;
+      case 'noble':
+        if (first) keep(spilledMug(), first.x + 6, FRONT - 2);
+        break;
     }
   }
 
   /** Los que se van: corren hasta la pared y ahí desaparecen. */
   private runOff(s: Show, dt: number): void {
     for (const a of [...s.actors]) {
+      if (a.ttl !== undefined) {
+        a.ttl -= dt;
+        if (a.ttl > 0) continue;
+        this.poof(a);
+        this.drop(a);
+        s.actors.splice(s.actors.indexOf(a), 1);
+        continue;
+      }
       if (!a.flee) continue;
+      // El ladrón que se escapa va perdiendo monedas.
+      if (a.drops && this.rnd() < dt * 5) this.emit?.('coin', a.x - a.dir * 5, a.bottom - 12, a.z);
       const left = a.tx - a.x;
       const step = a.flee * dt;
       if (Math.abs(left) > step) {

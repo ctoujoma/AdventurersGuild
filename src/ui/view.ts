@@ -156,6 +156,12 @@ export function sceneModel(s: GameState): SceneModel {
     trophies: s.trophies.map((t) => t.icon),
     vault: Math.min(1, s.gold / goldCap(s)),
     heroes,
-    incidents: (s.incidents ?? []).map(({ kind, room, taps }) => ({ kind, room, taps })),
+    incidents: (s.incidents ?? []).map(({ kind, room, taps, until }) => ({
+      kind,
+      room,
+      taps,
+      until,
+    })),
+    clock: { day: s.day, secs: s.clock ?? 0 },
   };
 }

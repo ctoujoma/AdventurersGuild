@@ -1,12 +1,10 @@
-import { useMemo } from 'preact/hooks';
-import { arenaBuffer } from '../art/arenas';
 import { chainDef } from '../core/chains';
 import { eventText, journeyNow, LEGS, type JourneyNow } from '../core/journey';
 import type { GameState, Mission } from '../core/model';
 import { dangerClass, dangerLabel } from '../data/labels';
-import { BufferImage } from './BufferImage';
 import { Icon, type IconName } from './icons';
 import { Portrait } from './Portrait';
+import { QuestStrip } from './QuestStrip';
 import { lookOf, marksOf, heroFrame } from './view';
 import { left } from './when';
 
@@ -32,22 +30,6 @@ const KIND_ICON: Record<JourneyNow['past'][number]['kind'], IconName> = {
   vuelta: 'home',
 };
 
-/**
- * La tira del viaje. Hueco para `QuestStrip` (agente de arte): recibe `now` y nada más. Hasta
- * que llegue, el fondo del terreno con el grupo marcado donde va.
- */
-function Strip({ now }: { now: JourneyNow }) {
-  const back = useMemo(() => arenaBuffer(now.journey.terrain), [now.journey.terrain]);
-  return (
-    <div class={`trip-strip ${now.night ? 'is-night' : ''}`} data-strip>
-      <BufferImage buf={back} scale={1} class="trip-strip-back" />
-      <span class="trip-strip-party" style={{ left: `${Math.round(now.t * 100)}%` }}>
-        <Icon name="pasos" size={12} />
-      </span>
-    </div>
-  );
-}
-
 /** Ficha «Encargo en curso»: la tira, el encargo, quién va, el viaje por partes y su diario. */
 export function TripSheet({ game, mission: m, onClose, onHero, onReport, onBoss }: Props) {
   const now = journeyNow(game, m);
@@ -65,7 +47,7 @@ export function TripSheet({ game, mission: m, onClose, onHero, onReport, onBoss 
           <Icon name="close" size={14} />
         </button>
         <div class="qs-scroll">
-          <Strip now={now} />
+          <QuestStrip now={now} />
           <header class="qs-head">
             <span class="eyebrow">
               {q.chain
