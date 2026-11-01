@@ -74,6 +74,10 @@ Segunda ronda (feedback del usuario):
   derecha con su resumen (`short`) y el botón; al pasar el ratón o al tocarla se lee entera.
   En `esperar` el reloj corre (`clock`, `tutorialFrozen`): el grupo puede volver solo.
 - Ratas: la cámara se acerca a la cocina (`zoom`, `RoomScene.closeUp`).
+- Menús que tapan: lo señalado tiene que estar encima de todo (`onTop` en `TutorialFocus`); si
+  lo tapa algo, se marca su ✕ y la nota dice «Antes, cierra lo que tienes abierto». Todos los
+  botones de cerrar llevan `data-tut="cerrar"`; el foco y la nota van por encima de los menús
+  (z-index 75 y 76).
 
 Pendiente que ya estaba apuntado:
 
@@ -81,4 +85,5 @@ Pendiente que ya estaba apuntado:
 - Que la barra del día diga que el reloj está parado mientras dura el tutorial.
 - El salto de días cuando no queda nada que hacer (ya hay «Saltar hasta que vuelvan» y «Saltar
   al día 7»: revisar con el usuario si basta).
-- Fase 2b: el tutorial de las obras (crear, mover y mejorar salas).
+- Fase 2b, el tutorial de las obras: pasa a otro agente, ver
+  [`tutorial-obras.md`](tutorial-obras.md) (ampliar el salón y la cámara abriendo sitio).

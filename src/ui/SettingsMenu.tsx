@@ -63,7 +63,7 @@ export function SettingsMenu({ settings: s, onChange, onClose, onCheat, onBoss }
   return (
     <div class="card-backdrop save-backdrop as-sheet" onClick={onClose}>
       <article class="herocard settings" onClick={(e) => e.stopPropagation()} aria-label="Ajustes">
-        <button class="btn-icon herocard-x" aria-label="Cerrar" onClick={onClose}>
+        <button class="btn-icon herocard-x" data-tut="cerrar" aria-label="Cerrar" onClick={onClose}>
           <Icon name="close" size={14} />
         </button>
         <div class="qs-scroll">

@@ -6,23 +6,48 @@ import type { GameScene } from './SceneView';
 interface Props {
   focus: Focus;
   scene: { current: GameScene | null };
-  /** Se ha encontrado (o no) dónde está lo que hay que tocar: la nota se aparta. */
-  onSpot?: (y: number | null) => void;
+  /**
+   * Se ha encontrado (o no) dónde está lo que hay que tocar: la nota se aparta. `closing`: lo
+   * que se señala es cerrar algo que tapa (la nota lo dice).
+   */
+  onSpot?: (y: number | null, closing: boolean) => void;
 }
 
 type R = { x: number; y: number; w: number; h: number };
+/** Un sitio encontrado; `close`: es el botón de cerrar algo que tapa lo que se busca. */
+type Spot = R & { close?: boolean };
 const PAD = 6;
 /** Lo que tarda en oscurecerse al cambiar de paso (ms). */
 const DIM_DELAY = 2500;
 /** Marcos que puede haber a la vez (lo principal y lo que también vale, como el tablón). */
 const RINGS = 3;
 
-/** Busca el primer sitio de la lista que se vea en pantalla. */
-function locate(targets: string[], scene: GameScene | null): R | null {
+const CLOSE = '[data-tut="cerrar"]';
+
+/**
+ * Si un elemento se puede tocar: está en pantalla y lo que hay en su centro es él (no un menú
+ * abierto encima). El foco no cuenta, y la nota tampoco (se aparta sola).
+ */
+function onTop(el: HTMLElement, b: DOMRect): boolean {
+  const x = b.left + b.width / 2;
+  const y = b.top + b.height / 2;
+  if (x < 0 || y < 0 || x > innerWidth || y > innerHeight) return false;
+  const hit = document.elementsFromPoint(x, y).find((e) => !e.closest('.tut-focus'));
+  return !hit || el.contains(hit) || hit.contains(el) || !!hit.closest('.notebook, .notebook-mini');
+}
+
+/** El botón de cerrar de lo que esté abierto encima de todo. */
+const closer = () => locate([CLOSE], null);
+
+/**
+ * Busca el primer sitio de la lista que se vea en pantalla y se pueda tocar (lo tapado no
+ * vale). Lo de la escena, con algo abierto encima, es cerrar eso (`close`).
+ */
+function locate(targets: string[], scene: GameScene | null): Spot | null {
   for (const t of targets) {
     // Lo que está en la escena (una sala, un aviso, el tablón): antes hay que cerrar lo que lo tape.
     if (t.startsWith('sala:') || t.startsWith('escena:') || t.startsWith('cosa:')) {
-      const close = locate(['[data-tut="cerrar"]'], null);
+      const close = t === CLOSE ? null : closer();
       if (close) return close;
     }
     if (t.startsWith('escena:')) {
@@ -41,11 +66,13 @@ function locate(targets: string[], scene: GameScene | null): R | null {
         return r;
       continue;
     }
-    // Si hay varios (un panel encima de otro), el último es el de arriba.
+    // Si hay varios (un panel encima de otro), el último es el de arriba; el que esté tapado
+    // por otra cosa no vale.
     const els = [...document.querySelectorAll<HTMLElement>(t)];
     for (const el of els.reverse()) {
       const b = el.getBoundingClientRect();
-      if (b.width > 0 && b.height > 0) return { x: b.left, y: b.top, w: b.width, h: b.height };
+      if (b.width <= 0 || b.height <= 0 || !onTop(el, b)) continue;
+      return { x: b.left, y: b.top, w: b.width, h: b.height, close: t === CLOSE };
     }
   }
   return null;
@@ -75,16 +102,20 @@ export function TutorialFocus({ focus, scene, onSpot }: Props) {
   useEffect(() => {
     let raf = 0;
     let lastY: number | null | undefined;
+    let lastClosing = false;
     let lastClip = '';
     const loop = () => {
       const W = innerWidth;
       const H = innerHeight;
-      const main = locate(focus.targets, scene.current);
-      // Nada a la vista: lo que haya abierto se puede cerrar.
-      const r = main ?? locate(['[data-tut="cerrar"]'], null);
+      // Nada a la vista (o tapado): lo que haya abierto se puede cerrar.
+      const r = locate(focus.targets, scene.current) ?? closer();
+      const closing = !!r?.close;
+      const main = closing ? null : r;
       // Lo que también vale (solo si lo principal está a la vista, sin nada abierto encima).
       const extra = main
-        ? (focus.also ?? []).map((t) => locate([t], scene.current)).filter((x): x is R => !!x)
+        ? (focus.also ?? [])
+            .map((t) => locate([t], scene.current))
+            .filter((x): x is Spot => !!x && !x.close)
         : [];
       const canvas = focus.scene ? document.querySelector('canvas')?.getBoundingClientRect() : null;
       const holes: R[] = canvas
@@ -108,9 +139,10 @@ export function TutorialFocus({ focus, scene, onSpot }: Props) {
         el.style.height = `${p.h}px`;
       });
       const y = r ? r.y + r.h / 2 : null;
-      if (y !== lastY) {
+      if (y !== lastY || closing !== lastClosing) {
         lastY = y;
-        onSpot?.(y);
+        lastClosing = closing;
+        onSpot?.(y, closing);
       }
       raf = requestAnimationFrame(loop);
     };

@@ -97,7 +97,7 @@ export function RoomMenu({
           <Icon name="info" size={20} />
           <span>Info</span>
         </button>
-        <button class="room-menu-btn" aria-label="Cerrar" onClick={onClose}>
+        <button class="room-menu-btn" data-tut="cerrar" aria-label="Cerrar" onClick={onClose}>
           <Icon name="close" size={16} />
           <span>Cerrar</span>
         </button>

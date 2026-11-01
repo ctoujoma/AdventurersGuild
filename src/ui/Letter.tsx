@@ -40,7 +40,7 @@ export function Letter({ report: r, heroes, seal, onClose, onWatch }: Props) {
         onClick={(e) => e.stopPropagation()}
         aria-label={`Informe: ${r.title}`}
       >
-        <button class="btn-icon herocard-x" aria-label="Cerrar" onClick={close}>
+        <button class="btn-icon herocard-x" data-tut="cerrar" aria-label="Cerrar" onClick={close}>
           <Icon name="close" size={14} />
         </button>
         <div class="qs-scroll">

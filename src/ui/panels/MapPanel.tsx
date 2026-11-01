@@ -489,7 +489,12 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
       }
       onPointerDown={(e) => e.stopPropagation()}
     >
-      <button class="btn-icon map-card-x" aria-label="Cerrar" onClick={() => setInfo(null)}>
+      <button
+        class="btn-icon map-card-x"
+        data-tut="cerrar"
+        aria-label="Cerrar"
+        onClick={() => setInfo(null)}
+      >
         <Icon name="close" size={10} />
       </button>
       {card.body}

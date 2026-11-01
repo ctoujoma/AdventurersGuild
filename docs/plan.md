@@ -156,6 +156,9 @@ lo que hay que tocar y no romper la inmersión. Ahora:
 Al pagar la deuda: construir una sala nueva, moverla, ampliarla, mejorar otra y excavar un
 hueco, con la cámara en cada paso. Sustituye a las notas de obras de ahora (`obras`, `plano`,
 `excavar`, `servicio`).
+**Decidido con el usuario:** el jugador amplía el salón y luego la cámara del tesoro, abriendo
+sitio (comprar solar o excavar, mover, construir, ampliar, mejorar). De un agente propio:
+[`encargos/tutorial-obras.md`](encargos/tutorial-obras.md).
 
 ## Fase 3 · Combate con decisiones (y encargos en directo)
 
