@@ -70,6 +70,50 @@ export const WORK: Record<QuestType, readonly string[]> = {
   Limpiar: ['Sacan a los primeros de su madriguera.', 'Se cierran en formación y avanzan.'],
 };
 
+/**
+ * Familias de enemigos de la tira (y, más adelante, de asaltos y esbirros). Cada una, un dibujo
+ * con sus poses. Se saca del texto del encargo; si no dice nada, del tipo.
+ */
+export type FoeKind = 'bandido' | 'trasgo' | 'bestia' | 'alimana' | 'muerto' | 'grande';
+
+export const FOE_NAMES: Record<FoeKind, string> = {
+  bandido: 'bandidos',
+  trasgo: 'trasgos',
+  bestia: 'bestias',
+  alimana: 'alimañas',
+  muerto: 'muertos que no descansan',
+  grande: 'bestias enormes',
+};
+
+/** Palabras del encargo que dicen contra qué se pelea (la primera que case manda). */
+export const FOE_WORDS: readonly (readonly [RegExp, FoeKind])[] = [
+  [/trasgo|orco|kobold|duende/i, 'trasgo'],
+  [/esquelet|espectro|esp[ií]ritu|cripta|maldici|espejo|imita voces|guardi[aá]n/i, 'muerto'],
+  [/trol|grifo/i, 'grande'],
+  [/huargo|warg|lobo|oso|jabal[ií]|perro|gato/i, 'bestia'],
+  [/rata|babosa|limo|avispa|murci[eé]lago|serpiente|ara[ñn]a|se arrastra/i, 'alimana'],
+  [
+    /bandid|salteador|Cardo|desertor|cobrador|Mano Negra|contrabandist|ladr[oó]n|guardias|culto|brujo|bruja|ermita/i,
+    'bandido',
+  ],
+];
+
+export const FOE_BY_TYPE: Record<QuestType, FoeKind> = {
+  Cazar: 'bestia',
+  Escoltar: 'bandido',
+  Explorar: 'alimana',
+  Recuperar: 'bandido',
+  Investigar: 'muerto',
+  Limpiar: 'alimana',
+};
+
+/** La pelea de lo suyo (sin decir cómo acaba). `{foe}`, los enemigos. */
+export const FIGHT = [
+  'Les salen al paso {foe}. ¡A las armas!',
+  'Se lían a golpes con {foe}.',
+  '{h} da la voz: {foe}, y vienen derechos.',
+];
+
 export const ARRIVE = ['Llegan a {sitio}.', 'Por fin, {sitio}.'];
 export const LEAVE = ['Emprenden la vuelta.', 'Recogen y vuelven hacia la taberna.'];
 export const CAMP = [

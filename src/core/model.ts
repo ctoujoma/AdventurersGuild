@@ -169,6 +169,15 @@ export interface Mission {
   quest: Quest;
   heroIds: string[];
   daysLeft: number;
+  /**
+   * Ya se sabe cómo ha ido (se resuelve al acabar lo suyo, no al volver): el informe ya ha
+   * llegado y vuelven con esto. `fates`: cómo vuelve cada uno (los muertos y perdidos, no).
+   */
+  done?: {
+    report: string;
+    outcome: Outcome;
+    fates: Record<string, { status: HeroStatus; days: number }>;
+  };
 }
 
 export type Outcome = 'Éxito brillante' | 'Éxito' | 'Éxito parcial' | 'Fracaso' | 'Desastre';
@@ -549,6 +558,8 @@ export interface GameState {
   lastRaid?: RaidResult | null;
   /** Informe de la pelea contra un jefe de esta noche (para el aviso del amanecer). */
   lastFight?: string | null;
+  /** Pelea contra un jefe que acaba de pasar con el juego abierto (la interfaz avisa). */
+  liveFight?: string | null;
   /** Incidentes en marcha (uno a la vez). */
   incidents?: Incident[];
   /** Tutorial guiado (fase 2a): sin él, no hay (partidas viejas o saltado). */

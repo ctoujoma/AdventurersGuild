@@ -178,18 +178,22 @@ export function BossFight({ fight, onClose }: Props) {
 interface CallProps {
   fight: Fight;
   who: string;
+  /** Con el juego abierto: acaba de pasar (si no, fue esta noche). */
+  live?: boolean;
   onWatch: () => void;
   onLater: () => void;
 }
 
 /** Aviso del amanecer: esta noche un grupo ha dado con el jefe. Verlo o dejarlo para luego. */
-export function BossCall({ fight, who, onWatch, onLater }: CallProps) {
+export function BossCall({ fight, who, live, onWatch, onLater }: CallProps) {
   const boss = BOSSES[fight.boss];
   return (
     <div class="card-backdrop">
       <article class="herocard eventcard bosscall" role="dialog" aria-label="Pelea contra un jefe">
         <div class="qs-scroll">
-          <span class="eyebrow">Esta noche, en {fight.place}…</span>
+          <span class="eyebrow">
+            {live ? 'Ahora mismo' : 'Esta noche'}, en {fight.place}…
+          </span>
           <p class="event-text">
             {who} {fight.heroes.length > 1 ? 'han dado' : 'ha dado'} con {boss.short}.
           </p>

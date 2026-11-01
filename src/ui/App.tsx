@@ -137,6 +137,8 @@ export function App() {
   const [raiding, setRaiding] = useState(false);
   /** Pelea contra un jefe de esta noche: el aviso (id del informe) y la pelea abierta. */
   const [bossCall, setBossCall] = useState<string | null>(null);
+  /** El aviso del jefe es de ahora (con el juego abierto), no del amanecer. */
+  const liveCall = useRef(false);
   const [watching, setWatching] = useState<{ fight: BossFightRecord; dawn: boolean } | null>(null);
   const [card, setCard] = useState<string | null>(null);
   const [questId, setQuestId] = useState<string | null>(null);
@@ -253,6 +255,11 @@ export function App() {
       toast(news.map((n) => n.t).join(' '));
       audio.play(last.k === 'good' ? 'cheer' : last.k === 'bad' ? 'thud' : 'creak', 0.6);
       haptic(last.k === 'bad' ? 'thud' : 'select');
+    }
+    // Un grupo ha dado con su jefe con el juego abierto: el aviso, al momento.
+    if (next.liveFight && next.liveFight !== before.liveFight) {
+      liveCall.current = true;
+      setBossCall(next.liveFight);
     }
     return next;
   };
@@ -606,6 +613,7 @@ export function App() {
       audio.play('dawn');
       // Si esta noche un grupo ha dado con un jefe, primero el aviso (verlo o no).
       const open = () => {
+        liveCall.current = false;
         if (next.lastFight) setBossCall(next.lastFight);
         else setDawnOpen(true);
       };
@@ -1224,6 +1232,10 @@ export function App() {
             mission={openTrip}
             onClose={() => setTripId(null)}
             onHero={(id) => setCard(id)}
+            onReport={(id) => {
+              setTripId(null);
+              setReportId(id);
+            }}
           />
         )}
         {report && (
@@ -1350,14 +1362,15 @@ export function App() {
         <BossCall
           fight={callReport.fight}
           who={callReport.who}
+          live={liveCall.current}
           onWatch={() => {
             setBossCall(null);
             audio.play('horn');
-            setWatching({ fight: callReport.fight!, dawn: true });
+            setWatching({ fight: callReport.fight!, dawn: !liveCall.current });
           }}
           onLater={() => {
             setBossCall(null);
-            setDawnOpen(true);
+            if (!liveCall.current) setDawnOpen(true);
           }}
         />
       )}
