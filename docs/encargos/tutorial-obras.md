@@ -111,3 +111,27 @@ Del modo obras (no es tuyo: es del principal y de interfaz; añade `data-tut` y 
 - Acercar la cámara a la sala de la que se habla.
 - Notas largas plegables en los pasos libres; botones secundarios normales (`btn btn-wood`).
 - Todo se juzga jugándolo en el móvil (420×860), con capturas en el PR.
+
+## Hecho (primera entrega, 1 de noviembre)
+
+- Camino elegido con el usuario: **con solar** y la cámara a 2 de ancho. Comprar el solar
+  (150), mudar la cocina a él (15), ampliar el salón (54), excavar debajo del solar (60) y
+  ampliar la cámara (72): 351 monedas con el salón y la cámara a nivel 1. Test:
+  `core/tutorialObras.test.ts` (también el camino sin solar, 156, que se descartó).
+- Pasos en `core/tutorialObras.ts` (`OBRAS`, ids `o-…`): martillo, solar, mudar, salón,
+  excavar, cámara, pagar y fin (con lo del dormitorio del servicio). Sustituye a las notas
+  `obras`, `plano`, `excavar` y `servicio` (se marcan leídas al acabar; quien juega sin tutorial
+  las sigue viendo).
+- Estado: `tutorial.track = 'obras'`; `tutorial.plan` es el borrador del modo obras (acción
+  `tutorialWorks`, que manda `ui/works.ts` cada vez que cambia; null = modo obras cerrado). El
+  paso en curso es el primero sin hacer: al deshacer o salir sin pagar, vuelve atrás.
+- Empieza al pagar la deuda (`startObras` en `endDay`, tras la carta de la apertura) si la
+  partida empezó con tutorial y no se han apagado los consejos. El cuaderno pone lo que falte
+  para el camino (`obrasCost`) al empezar.
+- En el modo obras solo se deja apuntar la obra del paso (`obrasVeto`, con el porqué).
+- Interfaz: la lección se ve dentro del modo obras (`calm` en `App.tsx`), el foco señala las
+  casillas de la escena (`obra:…`, `RoomScene.targetOnScreen` y `showTarget`), y `data-tut`
+  en el martillo, «Mover» y «Pagar». El menú de la sala no cuenta como algo que tape.
+
+Pendiente de ver con el usuario: si el paso de excavar, con el salón aún elegido, debería
+quitar la selección solo (ahora la nota pide cerrar el menú).

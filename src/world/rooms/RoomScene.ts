@@ -657,6 +657,30 @@ export class RoomScene {
     };
   }
 
+  /** Centra la cámara en una casilla de obra marcada (`obra:…`), si no se ve entera. */
+  showTarget(id: string): void {
+    const r = this.targets?.find((x) => x.id === id)?.rect;
+    if (!r) return;
+    const { px, py, vw, vh } = this.camera;
+    if (r.x >= px && r.x + r.w <= px + vw && r.y >= py && r.y + r.h <= py + vh) return;
+    this.camera.centerOn(r.x + r.w / 2, r.y + r.h / 2);
+  }
+
+  /** Dónde cae en la pantalla una casilla de obra marcada (`obra:…`), en píxeles de la página. */
+  targetOnScreen(id: string): { x: number; y: number; w: number; h: number } | null {
+    const r = this.targets?.find((x) => x.id === id)?.rect;
+    if (!r) return null;
+    const a = this.screenOf(r.x, r.y);
+    const b = this.screenOf(r.x + r.w, r.y + r.h);
+    const c = this.canvas.getBoundingClientRect();
+    return {
+      x: c.left + Math.min(a.x, b.x),
+      y: c.top + Math.min(a.y, b.y),
+      w: Math.abs(b.x - a.x),
+      h: Math.abs(b.y - a.y),
+    };
+  }
+
   /** Dónde cae en la pantalla una cosa tocable (el tablón, la barra…), en píxeles de la página. */
   actOnScreen(act: ActId): { x: number; y: number; w: number; h: number } | null {
     const { camera } = this;

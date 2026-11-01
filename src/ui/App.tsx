@@ -61,6 +61,7 @@ import { TutorialFocus } from './TutorialFocus';
 import { tutorialFocus } from './tutorialFocus';
 import { IntroLetter } from './IntroLetter';
 import {
+  obrasOn,
   tutorialFrozen,
   tutorialOn,
   tutorialStep,
@@ -804,8 +805,8 @@ export function App() {
     !paying &&
     !passing &&
     !(game.opening && !game.opening.seen) &&
-    !works.pick &&
-    !works.planning;
+    // El tutorial de obras se lee dentro del modo obras.
+    (obrasOn(game) || (!works.pick && !works.planning));
   const pendingEvent = calm && !game.over ? (game.event ?? null) : null;
   // El tutorial guiado va antes que las notas sueltas del tío (y las sustituye mientras dura).
   // La lección sigue a la vista con paneles abiertos: señala lo que hay que tocar dentro.
@@ -818,7 +819,15 @@ export function App() {
   }, [wait, game.tutorial?.step]);
   const lesson =
     calm && !pendingEvent && !introHold && !game.tutorial?.wait ? tutorialStep(game) : null;
-  const lessonFocus = lesson ? tutorialFocus(game, panel) : null;
+  const lessonFocus = lesson
+    ? tutorialFocus(game, panel, {
+        planning: works.planning,
+        view: works.view,
+        selected: works.selected,
+        moving: works.pick?.kind === 'move' ? works.pick.id : null,
+        targets: works.targets,
+      })
+    : null;
   /** Altura de lo que señala el tutorial: la nota se pone en la otra mitad. */
   const [spotY, setSpotY] = useState<number | null>(null);
   /** Lo que tapa lo que señala el tutorial hay que cerrarlo antes (la nota lo dice). */
@@ -836,6 +845,11 @@ export function App() {
     if (at && lesson?.zoom) scene.current?.closeUp(at);
     else if (at) scene.current?.focus(at);
   }, [lesson?.id]);
+  // Tutorial de obras: la casilla que hay que tocar (el solar, el «+»…), a la vista.
+  const lessonSpot = lessonFocus?.targets.find((x) => x.startsWith('obra:'));
+  useEffect(() => {
+    if (lessonSpot) scene.current?.showTarget(lessonSpot);
+  }, [lesson?.id, lessonSpot]);
 
   // El reloj del día: corre con el juego abierto, también con un panel delante, y se para en
   // los momentos que piden atención (evento, nota, asalto, amanecer…) y con la pestaña oculta.
@@ -845,6 +859,8 @@ export function App() {
     !pendingEvent &&
     !tip &&
     !tutorialFrozen(game) &&
+    !works.planning &&
+    !works.pick &&
     !watching &&
     !bossCall &&
     !settingsOpen &&
@@ -1094,6 +1110,7 @@ export function App() {
             <button
               class={`btn-icon ${works.planning ? 'is-on' : ''}`}
               aria-label="Modo obras"
+              data-tut="martillo"
               data-help="Modo obras: marca los huecos que se pueden excavar y el solar de al lado, y abajo salen las salas para construir. Todo se apunta y se paga al final."
               onClick={() => {
                 if (works.planning && works.steps.length)
