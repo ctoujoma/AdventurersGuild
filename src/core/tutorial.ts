@@ -16,6 +16,9 @@ import { upgradeCostOf } from './rooms';
  */
 export type TutorialButton = 'seguir' | 'esperar' | 'pago';
 
+/** Saltos de tiempo: hasta que vuelva el grupo, una noche o hasta el pago. */
+export type TutorialSkip = 'vuelta' | 'noche' | 'pago';
+
 export interface TutorialStep {
   id: string;
   /** Lo que dice la nota del cuaderno del tío. */
@@ -29,6 +32,11 @@ export interface TutorialStep {
   skip?: (s: GameState) => boolean;
   /** Al llegar a este paso (prepara el incidente, el rumor o el dinero que falta). */
   enter?: (s: GameState) => string | null;
+  /**
+   * Segundos de respiro antes del paso: sin nota ni foco, para mirar y trastear; lo que el paso
+   * prepara (el incidente, el rumor) llega después. Ver `tutorialWait`.
+   */
+  pause?: number;
 }
 
 /** Estado del tutorial en la partida (sin él, no hay tutorial: partidas viejas o saltado). */
@@ -40,6 +48,8 @@ export interface Tutorial {
   letter?: boolean;
   moved?: boolean;
   named?: boolean;
+  /** El paso en curso aún no ha empezado: es el respiro de antes (`pause`). */
+  wait?: boolean;
 }
 
 const roomOf = (s: GameState, type: string) => s.building.rooms.find((r) => r.type === type);
@@ -48,6 +58,14 @@ const alive = (s: GameState) =>
   s.heroes.filter((h) => h.status !== 'muerto' && h.status !== 'desaparecido');
 const first = (name: string) => name.split(' ')[0]!;
 const firstPay = SCHEDULE[0]!;
+
+/** Sueldos de la semana (como `salaries` en `game.ts`, que importa este módulo). */
+const wages = (s: GameState) =>
+  alive(s).reduce((a, h) => a + h.salary, 0) + s.workers.reduce((a, w) => a + w.salary, 0);
+/** Lo que pide Merlo el primer día de pago: la deuda y los sueldos. */
+export const firstDue = (s: GameState) => firstPay.amount + wages(s);
+/** Ya hay en la caja para el pago: se puede saltar hasta él sin miedo. */
+export const payReady = (s: GameState) => s.gold >= firstDue(s);
 
 /** Lo que cuesta arreglar la enfermería rota (o 0 si no hace falta). */
 const enfCost = (s: GameState) => {
@@ -110,6 +128,8 @@ export const STEPS: readonly TutorialStep[] = [
     text: () =>
       'Con dos espadas no se llega lejos. En la barra siempre hay alguien buscando trabajo: contrata a uno. La prima se paga una vez; el sueldo, cada semana.',
     focus: () => 'barra',
+    // Antes, ver salir al grupo por la puerta.
+    pause: 4,
     done: (s) => alive(s).length > 2,
     enter: (s) => {
       const fee = Math.min(...s.candidates.map((c) => c.fee));
@@ -147,6 +167,7 @@ export const STEPS: readonly TutorialStep[] = [
     text: () =>
       'Cada cual rinde donde lo pones. Coge con el dedo a alguien de la casa y suéltalo en la cocina: con dos en los fogones, más comida.',
     focus: roomId('cocina'),
+    pause: 3,
     done: (s) => !!s.tutorial?.moved,
   },
   {
@@ -184,6 +205,8 @@ export const STEPS: readonly TutorialStep[] = [
     text: () =>
       'Si oyes rascar en la cocina, son ratas. Espántalas antes de que se coman las raciones. Cada día pasa algo así: atiéndelo a tiempo, que luego sale caro.',
     focus: roomId('cocina'),
+    // Un rato de calma antes de que salten las ratas.
+    pause: 8,
     done: (s) => !(s.incidents ?? []).length,
     enter: (s) => {
       const r = roomOf(s, 'cocina');
@@ -207,6 +230,7 @@ export const STEPS: readonly TutorialStep[] = [
     text: () =>
       'En la barra se habla más de la cuenta. Cuando oigas algo que brilla, apúntalo antes de que se pierda: de ahí salen los mejores encargos.',
     focus: roomId('salon'),
+    pause: 6,
     done: (s) => !s.rumor,
     enter: (s) => {
       if (!roomOf(s, 'salon')) return null;
@@ -231,12 +255,17 @@ export const STEPS: readonly TutorialStep[] = [
     id: 'objetivos',
     text: () =>
       'En el Gremio llevo la cuenta de lo que queda por hacer en la casa: siempre tres cosas. Cumplirlas da oro y lustre.',
+    pause: 4,
     button: 'seguir',
   },
   {
     id: 'pago',
-    text: () =>
-      `El día ${firstPay.day} viene Merlo: ${firstPay.amount} monedas, más los sueldos. Ten la caja lista y no le hagas esperar.`,
+    text: (s) => {
+      const head = `El día ${firstPay.day} viene Merlo: ${firstPay.amount} monedas, más ${wages(s)} de sueldos.`;
+      if (payReady(s)) return `${head} Ya tienes la caja lista: no le hagas esperar.`;
+      const left = firstPay.day - s.day;
+      return `${head} Te faltan ${firstDue(s) - s.gold}, y quedan ${left} ${left === 1 ? 'noche' : 'noches'}. La caja del salón deja algo cada noche y el tablón tiene más encargos: ve pasando las noches hasta juntarlo.`;
+    },
     done: (s) => s.paid > 0 || !!s.over,
     button: 'pago',
   },
@@ -274,7 +303,8 @@ export function advanceTutorial(s: GameState, ack = false): string[] {
   let first = true;
   for (let guard = 0; guard < STEPS.length + 1; guard++) {
     const st = tutorialStep(s);
-    if (!st) break;
+    // En el respiro de antes del paso, el paso aún no cuenta.
+    if (!st || s.tutorial!.wait) break;
     const isDone = (first && ack) || st.skip?.(s) || st.done?.(s);
     first = false;
     if (!isDone) break;
@@ -284,12 +314,27 @@ export function advanceTutorial(s: GameState, ack = false): string[] {
       finishTutorial(s);
       break;
     }
-    if (!next.skip?.(s)) {
-      const msg = next.enter?.(s);
-      if (msg) out.push(msg);
+    if (next.skip?.(s)) continue;
+    if (next.pause) {
+      s.tutorial = { ...s.tutorial, wait: true };
+      break;
     }
+    const msg = next.enter?.(s);
+    if (msg) out.push(msg);
   }
   return out;
+}
+
+/** Segundos de respiro que quedan antes del paso en curso (0: ya ha empezado). */
+export const tutorialWait = (s: GameState): number =>
+  s.tutorial?.wait ? (tutorialStep(s)?.pause ?? 0) : 0;
+
+/** Acaba el respiro: empieza el paso (con lo que prepara) y, si ya está hecho, se pasa. */
+export function startStep(s: GameState): string[] {
+  if (!s.tutorial?.wait) return [];
+  s.tutorial = { ...s.tutorial, wait: undefined };
+  const msg = tutorialStep(s)?.enter?.(s);
+  return [...(msg ? [msg] : []), ...advanceTutorial(s)];
 }
 
 /** Acaba el tutorial (o se salta): fuera el paso y las notas del tío que ya ha contado. */
@@ -316,24 +361,25 @@ export function easyQuest(q: Quest, rng: Rng): Quest {
 }
 
 /**
- * Saltar el tiempo desde el tutorial: noche tras noche hasta que vuelva el grupo o hasta el
- * pago. Si la caja no llega al pago, el tío pone lo que falta (el tutorial no acaba en derrota).
- * Junta la carta del amanecer por días, como la de «Mientras no estabas».
+ * Saltar el tiempo desde el tutorial: noche tras noche hasta que vuelva el grupo, una noche o
+ * hasta el pago (este, solo con la caja lista). Si la noche del pago la caja no llega, el tío
+ * pone lo que falta (el tutorial no acaba en derrota). Junta la carta del amanecer por días,
+ * como la de «Mientras no estabas».
  */
 export function skipTime(
   s0: GameState,
-  until: 'vuelta' | 'pago',
+  until: TutorialSkip,
   night: (s: GameState) => GameState,
-  salaries: (s: GameState) => number,
 ): GameState {
+  if (until === 'pago' && !payReady(s0)) return s0;
   let s = s0;
   const events: DawnEvent[] = [];
   const start = s.day;
   for (let i = 0; i < 10; i++) {
     const t = structuredClone(s);
     t.clock = DUSK * DAY_SECONDS;
-    if (t.day + 1 === firstPay.day && until === 'pago') {
-      const due = firstPay.amount + salaries(t);
+    if (t.day + 1 === firstPay.day && tutorialStep(t)?.id === 'pago') {
+      const due = firstDue(t);
       if (t.gold < due) {
         events.push({
           t: `El tío pone ${due - t.gold} monedas para que llegues al pago: «Ya me lo devolverás».`,
@@ -348,7 +394,7 @@ export function skipTime(
     events.push(...s.dawn);
     if (s.over) break;
     if (until === 'vuelta' && !s.missions.length) break;
-    if (until === 'pago' && s.paid > 0) break;
+    if (until === 'noche' || (until === 'pago' && s.paid > 0)) break;
   }
   // Con más de un día, el primero también lleva su encabezado.
   if (events.some((e) => e.head) && !events[0]?.head)

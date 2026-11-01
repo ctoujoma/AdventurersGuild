@@ -51,6 +51,15 @@ notas en el cuaderno de Fausto con «Ya sé jugar», carta del tío al empezar.
 - Letra del cuaderno más grande y, arriba en móvil, más abajo (no pegada al borde).
 - Cambiar el nombre: el foco abarca el campo y su botón (`data-tut="nombre-form"`).
 
+Hecho por el agente del tutorial (PR del respiro y el pago):
+
+- **Respiro** antes de algunos pasos (`pause` en `STEPS`, `tutorialWait`, acción `tutorial`
+  `listo`): unos segundos sin nota ni foco para mirar y trastear; las ratas y el rumor llegan
+  después. Ahora en `barra` (ver salir al grupo), `mover`, `ratas`, `rumor` y `objetivos`.
+- **Pago:** «Saltar al día 7» solo con la caja lista (deuda y sueldos, `payReady`); si falta,
+  la nota dice cuánto y el botón es «Pasar la noche». En ese paso no hay foco: se juega libre
+  (tablón, casa…). La noche del pago, si no llega, el tío sigue poniendo lo que falte.
+
 Pendiente que ya estaba apuntado:
 
 - Candados en el mapa y en los adornos durante el tutorial (que no se pueda ir a otra cosa).

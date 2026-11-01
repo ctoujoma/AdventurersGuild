@@ -1,5 +1,5 @@
 import type { GameState } from '../core/model';
-import type { TutorialStep } from '../core/tutorial';
+import { payReady, type TutorialSkip, type TutorialStep } from '../core/tutorial';
 import { Icon } from './icons';
 
 interface Props {
@@ -10,16 +10,27 @@ interface Props {
   /** La nota va arriba si lo que hay que tocar está abajo. */
   up: boolean;
   onOk: () => void;
-  /** Saltar el tiempo: hasta que vuelva el grupo o hasta el pago. */
-  onSkipTime: (to: 'vuelta' | 'pago') => void;
+  /** Saltar el tiempo: hasta que vuelva el grupo, una noche o hasta el pago. */
+  onSkipTime: (to: TutorialSkip) => void;
   onSkipAll: () => void;
 }
 
-const LABEL = { seguir: 'Seguir', esperar: 'Saltar hasta que vuelvan', pago: 'Saltar al día 7' };
+const LABEL: Record<'seguir' | TutorialSkip, string> = {
+  seguir: 'Seguir',
+  vuelta: 'Saltar hasta que vuelvan',
+  noche: 'Pasar la noche',
+  pago: 'Saltar al día 7',
+};
 
 /** Una página del cuaderno del tío: lo que toca hacer ahora, y su botón si no pide nada. */
 export function TutorialNote({ game, step, ready, up, onOk, onSkipTime, onSkipAll }: Props) {
-  const b = step.button;
+  // Al pago solo se salta con la caja lista; si no, noche a noche (y se juega entre medias).
+  const b =
+    step.button === 'esperar'
+      ? 'vuelta'
+      : step.button === 'pago' && !payReady(game)
+        ? 'noche'
+        : step.button;
   return (
     <aside
       key={step.id}
@@ -36,9 +47,7 @@ export function TutorialNote({ game, step, ready, up, onOk, onSkipTime, onSkipAl
           <button
             class="btn btn-gold"
             data-tut="nota-boton"
-            onClick={() =>
-              b === 'esperar' ? onSkipTime('vuelta') : b === 'pago' ? onSkipTime('pago') : onOk()
-            }
+            onClick={() => (b === 'seguir' ? onOk() : onSkipTime(b))}
           >
             {LABEL[b]}
           </button>
