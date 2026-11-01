@@ -109,6 +109,14 @@ export function SettingsMenu({ settings: s, onChange, onClose, onCheat, onBoss }
             />
             <span>Menos movimiento en la interfaz</span>
           </label>
+          <label class="set-check">
+            <input
+              type="checkbox"
+              checked={s.dawnAll}
+              onChange={(e) => set({ dawnAll: e.currentTarget.checked })}
+            />
+            <span>Carta del amanecer de golpe (sin abrir las noticias una a una)</span>
+          </label>
           {canVibrate() && (
             <label class="set-check">
               <input
