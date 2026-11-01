@@ -47,6 +47,9 @@ historial.
 - `Dawn.tsx`: se abren solas con un ritmo corto (más rato tras lo grande) o tocando; sonido por
   tipo; lo grande con salto, brillo y estrella. «Saltar» lo enseña todo y ofrece «Siempre de
   golpe», que se guarda en Ajustes (`dawnAll`; con «Menos movimiento», también de golpe).
+- Con la app abierta, `main` deja el botón «Día N · ver el parte»: la carta una a una sale al
+  tocarlo; al volver tras una ausencia, en los saltos del tutorial y al acabar, sale sola.
+- Captura: [la carta una a una](capturas/amanecer-una-a-una.png).
 
 ## Antes: punto 3, avisos (decidido con el usuario)
 
