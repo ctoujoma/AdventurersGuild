@@ -501,6 +501,25 @@ export class TripStrip {
       const dx = pose === 'strike' ? -2 : pose === 'hurt' ? 1 : 0;
       const flash = hurt && Math.floor(time * 12) % 2 === 0;
       put(ctx, flash ? tint(img, P.white) : img, x + dx, G + 1, f.foot, img.h - 1, true);
+      // Los bandidos (figuras de héroe), con su arma en la mano, como en la pelea.
+      if (f.hand) {
+        const fp: FightPose =
+          pose === 'windup'
+            ? 'windup'
+            : pose === 'strike'
+              ? 'strike'
+              : pose === 'hurt'
+                ? 'up'
+                : 'ready';
+        const wp = WEAPONS[f.hand.weapon];
+        const hand = HAND[fp];
+        ctx.save();
+        ctx.translate(Math.round(x + dx - (hand.x - 9)), Math.round(G + 1 - (img.h - 1) + hand.y));
+        ctx.scale(-1, 1);
+        ctx.rotate(((f.hand.weapon === 'arco' ? 0 : SWING[fp]) * Math.PI) / 180);
+        ctx.drawImage(bufferCanvas(wp.img), -wp.px, -wp.py);
+        ctx.restore();
+      }
       // El destello del golpe, en el pecho.
       if (hurt) {
         const sx = x - 3;

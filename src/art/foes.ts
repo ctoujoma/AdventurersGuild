@@ -11,8 +11,11 @@
  */
 import { Rng } from '../core/rng';
 import type { FoeKind } from '../data/journey';
-import { P, SKIN, darker } from './palette';
+import { P, darker } from './palette';
 import { PixelBuffer, alpha, toHex } from './pixel';
+import { FEET_Y, fightSprites, heroSprites } from './heroes/hero';
+import { BANDIT_TYPES, banditLook } from '../world/battle';
+import type { WeaponId } from '../world/weapons';
 
 export type { FoeKind };
 
@@ -42,6 +45,11 @@ export interface FoeArt {
   span: number;
   /** El doble de grande que un héroe. */
   big: boolean;
+  /**
+   * Los bandidos son los de los asaltos (`banditLook`): figuras de héroe sin el arma, que se
+   * pinta aparte en la mano (`HAND`), como en la pelea.
+   */
+  hand?: { weapon: WeaponId };
 }
 
 const outline = (b: PixelBuffer) => b.outlined((n) => darker(toHex(n), 3));
@@ -488,29 +496,40 @@ function beastArt(what: string, d: Beast): FoeArt {
   };
 }
 
+/** El arma de cada tipo de bandido de los asaltos. */
+const BANDIT_WEAPON: Record<string, WeaponId> = {
+  bruto: 'garrote',
+  navajero: 'daga',
+  arquero: 'arco',
+  incendiario: 'antorcha',
+};
+
+/** Un bandido de los asaltos: la misma figura que los héroes (y que en la taberna). */
 function bandit(rng: Rng): FoeArt {
-  const skin = pick(rng, SKIN);
-  const cloth = pick(rng, [P.rust, P.wine, P.forest, P.slate, P.umber, P.grape]);
-  const top = rng.next();
-  return humanoidArt('bandido', 'bandido', {
-    h: 26,
-    wide: 7,
-    head: 6,
-    skin: skin[3]!,
-    skinD: skin[2]!,
-    cloth,
-    clothD: darker(cloth, 1),
-    legs: pick(rng, [P.bark, P.navy, P.umber]),
-    boots: P.black,
-    eye: P.black,
-    hood: top < 0.4 ? pick(rng, [P.bark, P.ebony, P.forest]) : undefined,
-    bandana: top >= 0.4 && top < 0.75 ? pick(rng, [P.red, P.black, P.navy]) : undefined,
-    hair: top >= 0.4 ? pick(rng, [P.black, P.rust, P.bark, P.amber]) : undefined,
-    weapon: pick(rng, ['daga', 'espada', 'hacha', 'garrote'] as const),
-    metal: P.fog,
-    wood: P.oak,
-    shield: rng.chance(0.2) ? P.oak : undefined,
-  });
+  const style = pick(rng, BANDIT_TYPES);
+  const { look, marks } = banditLook(style, rng.int(0, 99));
+  const f = fightSprites(look, marks);
+  const walk = heroSprites(look, marks).walk;
+  const poses: Record<FoePose, PixelBuffer> = {
+    idle: f.ready,
+    idle2: f.ready,
+    walk1: walk[0]!,
+    walk2: walk[4]!,
+    windup: f.windup,
+    strike: f.strike,
+    hurt: f.up,
+    down: trim(rotated(f.ready)),
+  };
+  return {
+    kind: 'bandido',
+    what: style,
+    poses,
+    foot: 9,
+    chest: FEET_Y - 14,
+    span: 12,
+    big: false,
+    hand: { weapon: BANDIT_WEAPON[style] ?? 'daga' },
+  };
 }
 
 function goblin(rng: Rng): FoeArt {
@@ -518,7 +537,7 @@ function goblin(rng: Rng): FoeArt {
     // Orco: más alto y ancho, gris verdoso, con colmillos.
     const skin = pick(rng, [P.leaf, P.forest, P.steel]);
     return humanoidArt('trasgo', 'orco', {
-      h: 28,
+      h: 24,
       wide: 9,
       head: 7,
       skin,
@@ -537,7 +556,7 @@ function goblin(rng: Rng): FoeArt {
   }
   const skin = pick(rng, [P.lime, P.leaf]);
   return humanoidArt('trasgo', 'trasgo', {
-    h: 20,
+    h: 18,
     wide: 6,
     head: 7,
     skin,
@@ -651,7 +670,7 @@ function undead(rng: Rng): FoeArt {
     return { kind: 'muerto', what: 'espectro', poses, foot: 11, chest: 16, span: 16, big: false };
   }
   return humanoidArt('muerto', 'esqueleto', {
-    h: 26,
+    h: 22,
     wide: 6,
     head: 6,
     skin: P.mist,
