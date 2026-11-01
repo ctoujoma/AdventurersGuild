@@ -420,7 +420,7 @@ export function newGame(seed: string, opts: { tutorial?: boolean } = {}): GameSt
   }
   for (let i = 0; i < START.quests; i++) s.quests.push(quest(s, rng));
   if (opts.tutorial) {
-    s.quests[0] = easyQuest(s.quests[0]!, rng);
+    s.quests[0] = easyQuest(s.quests[0]!, rng, s.heroes);
     s.tutorial = { step: 0, quest: s.quests[0].id };
     // La carta del tío sustituye a la del día 1.
     s.dawn = [];

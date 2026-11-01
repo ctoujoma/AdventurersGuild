@@ -50,6 +50,8 @@ notas en el cuaderno de Fausto con «Ya sé jugar», carta del tío al empezar.
 - El oscurecido y el marco entran a los 2 s del cambio de paso (`DIM_DELAY`), con fundido.
 - Letra del cuaderno más grande y, arriba en móvil, más abajo (no pegada al borde).
 - Cambiar el nombre: el foco abarca el campo y su botón (`data-tut="nombre-form"`).
+- El primer encargo y el del rumor casi siempre salen (≈ 86 %): un solo desafío en lo que mejor
+  se les da a los de casa (`sureChallenge` en `core/tutorial.ts`).
 
 Pendiente que ya estaba apuntado:
 
