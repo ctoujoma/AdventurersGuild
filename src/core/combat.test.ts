@@ -43,6 +43,40 @@ describe('la pelea contra un jefe', () => {
     expect(again).toEqual(live.result);
   });
 
+  it('repetida con cubrirse y críticos a medias, sale igual (la IA no se mete distinto)', () => {
+    for (const seed of ['r1', 'r2', 'r3']) {
+      const st = setup(seed, 16);
+      const live = new Combat(st, [], false);
+      let covered = 0;
+      while (!live.result) {
+        const h = live.heroes().find((u) => u.hp > 0);
+        // Se cubre solo en el primer aviso y coge solo algunas ocasiones de crítico.
+        if (h && !covered && live.events.some((e) => e.kind === 'warn'))
+          if (live.order({ who: h.id, kind: 'cover' })) covered++;
+        for (const u of live.heroes())
+          if (u.critOpen && live.step % 3 === 0) live.order({ who: u.id, kind: 'crit' });
+        live.tick();
+      }
+      const again = new Combat(st, live.orders, false);
+      expect(again.run()).toEqual(live.result);
+      expect(again.events).toEqual(live.events);
+    }
+  });
+
+  it('coger la ocasión de crítico hace que el golpe entre crítico', () => {
+    const c = new Combat(setup('critico'), [], false);
+    let taken = 0;
+    while (!c.result) {
+      for (const u of c.heroes())
+        if (u.critOpen && !u.critTaken && c.order({ who: u.id, kind: 'crit' })) taken++;
+      c.tick();
+    }
+    const crits = c.events.filter((e) => e.kind === 'crit' && c.unit(e.from)?.side === 'h').length;
+    expect(taken).toBeGreaterThan(0);
+    // Cada ocasión cogida acaba en crítico (salvo la última si la pelea termina antes).
+    expect(crits).toBeGreaterThanOrEqual(taken - 1);
+  });
+
   it('sin tocar nada, la pelea va igual que si se las apañan solos', () => {
     for (const seed of ['x', 'y', 'z']) {
       const st = setup(seed);

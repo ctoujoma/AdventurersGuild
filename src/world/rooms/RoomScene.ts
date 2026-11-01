@@ -7,6 +7,7 @@
  * La cámara es la 2D de siempre (arrastre, inercia, zoom entero y límites): lo que encuadra en
  * el plano de corte es justo lo que se ve, píxel a píxel. Los toques se resuelven ahí mismo.
  */
+import { tinyDigits } from '../../art/digits';
 import {
   CanvasTexture,
   Group,
@@ -229,36 +230,6 @@ interface PropSpot {
 
 /** El oro de la cámara, en octavos: la escena solo se repinta cuando cambia de octavo. */
 const vaultStep = (v = 0) => Math.round(Math.max(0, Math.min(1, v)) * 8);
-
-/** Cifras de 3×5 píxeles para los precios de las marcas de obra. */
-const DIGITS = [
-  '111101101101111',
-  '010110010010111',
-  '111001111100111',
-  '111001111001111',
-  '101101111001001',
-  '111100111001111',
-  '111100111101111',
-  '111001001001001',
-  '111101111101111',
-  '111101111001111',
-];
-
-function tinyDigits(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  x: number,
-  y: number,
-  color: string,
-) {
-  ctx.fillStyle = color;
-  [...text].forEach((ch, i) => {
-    const g = DIGITS[Number(ch)];
-    if (!g) return;
-    for (let k = 0; k < 15; k++)
-      if (g[k] === '1') ctx.fillRect(x + i * 4 + (k % 3), y + Math.floor(k / 3), 1, 1);
-  });
-}
 
 /** Nombre de una sala tal como se enseña al tocarla. */
 export function roomLabel(b: Building, id: string): string {

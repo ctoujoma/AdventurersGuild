@@ -16,6 +16,7 @@ import type { PixelBuffer } from '../art/pixel';
 import type { BossKind } from '../data/bosses';
 import type { PKind } from './particles';
 import { WEAPONS, type WeaponId } from './weapons';
+import { tinyDigits } from '../art/digits';
 
 /**
  * Asalto a la taberna en tiempo real: los bandidos bajan por el camino, los defensores salen
@@ -973,6 +974,9 @@ export class Battle {
   /** En las peleas contra jefes: quién cae antes del final, y cuándo. */
   private doom: { f: Fighter; at: number }[] = [];
   private roared = false;
+  /** En directo: héroes con la ocasión de crítico abierta, y los números de daño que suben. */
+  private chances = new Set<string>();
+  private numbers: { x: number; y: number; t: number; text: string; color: string }[] = [];
 
   constructor(
     private spec: BattleSpec,
@@ -1311,6 +1315,27 @@ export class Battle {
     this.hooks.burst('spark', f.x, this.chest(f), big ? 8 : 3);
   }
 
+  /** Marca (o quita) la ocasión de crítico de un héroe: un rombo que late sobre su cabeza. */
+  setChance(id: string, on: boolean): void {
+    if (on) this.chances.add(id);
+    else this.chances.delete(id);
+  }
+
+  /** Un número que sube desde quien recibe (daño, crítico o cura). */
+  number(id: string, amount: number, kind: 'hit' | 'crit' | 'hurt' | 'heal'): void {
+    const f = this.bySim(id);
+    if (!f) return;
+    const color = { hit: P.white, crit: P.lemon, hurt: P.red, heal: P.lime }[kind];
+    const top = f.art ? f.chestH * 2 : 28;
+    this.numbers.push({
+      x: f.x + (Math.random() - 0.5) * 8,
+      y: this.hooks.feetAt(f.x) - top,
+      t: 0,
+      text: String(Math.max(0, Math.round(amount))),
+      color,
+    });
+  }
+
   /** Dónde está una unidad en el escenario (para tocarla), o null. */
   spot(id: string): { x: number; y: number; w: number; h: number } | null {
     const f = this.bySim(id);
@@ -1418,6 +1443,8 @@ export class Battle {
 
     for (const e of this.effects) e.t += dt;
     this.effects = this.effects.filter((e) => e.t < e.dur);
+    for (const n of this.numbers) n.t += dt;
+    this.numbers = this.numbers.filter((n) => n.t < 0.9);
   }
 
   /** Turno de un luchador: elige ataque, lo ejecuta y descansa un poco. */
@@ -1961,6 +1988,31 @@ export class Battle {
       ctx.fillStyle = c;
       ctx.fillRect(Math.round(x) - cx, Math.round(y) - cy, w, h);
     };
+    // Números de daño: suben y se apagan; con su sombra para leerse sobre cualquier fondo.
+    for (const n of this.numbers) {
+      const x = Math.round(n.x - n.text.length * 2) - cx;
+      const y = Math.round(n.y - n.t * 14) - cy;
+      ctx.globalAlpha = n.t > 0.6 ? (0.9 - n.t) / 0.3 : 1;
+      tinyDigits(ctx, n.text, x + 1, y + 1, P.black);
+      tinyDigits(ctx, n.text, x, y, n.color);
+      ctx.globalAlpha = 1;
+    }
+    // La ocasión de crítico: un rombo amarillo que late sobre la cabeza del héroe.
+    const beat = Math.floor(this.t * 6) % 2;
+    for (const id of this.chances) {
+      const f = this.bySim(id);
+      if (!f || f.state === 'down') continue;
+      const x = Math.round(f.x);
+      const y = this.hooks.feetAt(f.x) - 34 - beat;
+      for (let k = 0; k <= 3; k++) {
+        px(x - k, y + k, P.black, k * 2 + 1, 1);
+        px(x - k, y + 6 - k, P.black, k * 2 + 1, 1);
+      }
+      for (let k = 0; k <= 2; k++) {
+        px(x - k, y + 1 + k, P.lemon, k * 2 + 1, 1);
+        px(x - k, y + 5 - k, P.lemon, k * 2 + 1, 1);
+      }
+    }
     for (const s of this.shots) {
       const dir = Math.sign(s.vx) || 1;
       switch (s.kind) {

@@ -20,9 +20,16 @@ export const STEP = 0.1;
 export const MAX_TIME = 90;
 /** Una habilidad lista que el jugador no usa se lanza sola al cabo de esto (s). */
 export const AUTO_SKILL = 5;
-/** Probabilidad de crítico y cuánto multiplica. */
+/** Probabilidad de crítico de los enemigos y cuánto multiplica. */
 export const CRIT = 0.1;
 export const CRIT_MULT = 1.8;
+/**
+ * Críticos de los héroes, con gesto: tras un golpe, a veces queda abierta la ocasión de un
+ * crítico en el siguiente; si el jugador lo toca a tiempo (orden `crit`), entra. Sin jugador,
+ * la IA acierta esta parte de las veces (en total, como el 10 % de antes).
+ */
+export const CRIT_OPEN = 0.2;
+export const AI_CRIT = 0.5;
 
 export type AbilityId = 'provocar' | 'punalada' | 'bola' | 'curar' | 'andanada';
 
@@ -86,6 +93,9 @@ export interface Unit {
   readyFor?: number;
   /** Provocando: le pegan a él (s que quedan). */
   taunt?: number;
+  /** Ocasión de crítico abierta para su próximo golpe, y si el jugador la ha cogido. */
+  critOpen?: boolean;
+  critTaken?: boolean;
   /** Ataque especial del jefe: lo que falta. */
   special?: number;
   /** De lejos (no se pone delante). */
@@ -97,6 +107,8 @@ export type Order = { step: number; who: string } & (
   | { kind: 'skill' }
   /** ¡Cubríos! (cualquier héroe): el golpe fuerte del jefe que viene hace mucho menos. */
   | { kind: 'cover' }
+  /** Coger la ocasión de crítico de un héroe (tocarlo a tiempo). */
+  | { kind: 'crit' }
 );
 
 /** Cuánto antes avisa el jefe de su golpe fuerte (s), y lo que hace si se cubren. */
@@ -114,6 +126,8 @@ export type CombatEventKind =
   /** El jefe avisa de su golpe fuerte (`WARN` s antes). */
   | 'warn'
   | 'cover'
+  /** Se abre la ocasión de crítico de un héroe (hasta su siguiente golpe). */
+  | 'chance'
   | 'special';
 
 export interface CombatEvent {
@@ -166,7 +180,7 @@ export function heroUnit(h: Member & { id: string; name: string }): Unit {
 }
 
 /** Cuánto pesa el jefe frente a lo que pide el encargo (calibrado con `tools/calib.ts`). */
-export const FOE_TUNE = { hp: 19.6, atk: 0.59, minionHp: 2.4, minionAtk: 0.25 };
+export const FOE_TUNE = { hp: 18.4, atk: 0.555, minionHp: 2.26, minionAtk: 0.235 };
 
 /**
  * El jefe y sus esbirros, según lo que pide el encargo: la dificultad media de sus desafíos
@@ -275,7 +289,9 @@ export class Combat {
 
   /** Orden del jugador para el paso de ahora (se guarda para repetirla). */
   order(
-    o: { who: string } & ({ kind: 'target'; to: string } | { kind: 'skill' } | { kind: 'cover' }),
+    o: { who: string } & (
+      { kind: 'target'; to: string } | { kind: 'skill' } | { kind: 'cover' } | { kind: 'crit' }
+    ),
   ): boolean {
     if (this.result) return false;
     const full = { ...o, step: this.step } as Order;
@@ -292,8 +308,11 @@ export class Combat {
 
   tick(): void {
     if (this.result) return;
-    while (this.pending.length && this.pending[0]!.step <= this.step)
-      this.apply(this.pending.shift()!);
+    // Las órdenes de una pelea ya jugada, en su paso (y cuentan como dadas, igual que en directo).
+    while (this.pending.length && this.pending[0]!.step <= this.step) {
+      const o = this.pending.shift()!;
+      if (this.apply(o)) this.orders.push(o);
+    }
     for (const u of this.units) {
       if (!alive(u)) continue;
       if (u.taunt) u.taunt = Math.max(0, u.taunt - STEP);
@@ -336,8 +355,13 @@ export class Combat {
         u.cool += u.every;
         const to = this.targetOf(u);
         if (to) {
-          const crit = this.rng.chance(CRIT);
+          const crit = u.side === 'h' ? this.heroCrit(u) : this.rng.chance(CRIT);
           this.damage(u, to, u.atk * (0.85 + this.rng.next() * 0.3) * (crit ? CRIT_MULT : 1), crit);
+          // Tras su golpe, a veces queda la ocasión de un crítico en el siguiente.
+          if (u.side === 'h' && alive(u) && this.rng.chance(CRIT_OPEN)) {
+            u.critOpen = true;
+            this.events.push({ step: this.step, kind: 'chance', from: u.id });
+          }
         }
       }
     }
@@ -353,6 +377,11 @@ export class Combat {
   private apply(o: Order): boolean {
     const u = this.unit(o.who);
     if (!u || u.side !== 'h' || !alive(u)) return false;
+    if (o.kind === 'crit') {
+      if (!u.critOpen || u.critTaken) return false;
+      u.critTaken = true;
+      return true;
+    }
     if (o.kind === 'cover') {
       // Solo sirve con el aviso dado: antes de tiempo no se aguanta la guardia.
       const boss = this.foes().find((f) => f.special !== undefined && alive(f));
@@ -371,6 +400,18 @@ export class Combat {
     this.manual.add(u.id);
     this.useSkill(u);
     return true;
+  }
+
+  /** Si el golpe de un héroe entra crítico: la ocasión cogida (o, sin jugador, la IA a veces). */
+  private heroCrit(u: Unit): boolean {
+    if (!u.critOpen) return false;
+    const taken = u.critTaken;
+    u.critOpen = false;
+    u.critTaken = false;
+    if (taken) return true;
+    // Si el jugador nunca toca los críticos, los coge la IA como si no hubiera jugador.
+    const playing = this.orders.some((o) => o.kind === 'crit');
+    return !playing && this.rng.chance(AI_CRIT);
   }
 
   private wantsSkill(u: Unit): boolean {

@@ -189,10 +189,11 @@ hueco, con la cámara en cada paso. Sustituye a las notas de obras de ahora (`ob
   que «Que se las apañen». Determinista: el núcleo la vuelve a jugar con las órdenes y el informe
   la repite igual. Calibrado con `npm run calib`: sola sale como la tirada de antes (≈ 80 %);
   jugando bien, unos 6–8 puntos más.
-  **Falta:** formación, táctica y objeto antes de entrar; números de daño en la escena;
-  llevarla a los asaltos a la taberna.
-- **Críticos con gesto:** cuando un golpe puede ser crítico, sale una marca y hay que hacer un
-  gesto (deslizar, tocar a tiempo) para que entre.
+  **Falta:** formación, táctica y objeto antes de entrar; llevarla a los asaltos a la taberna.
+- **Críticos con gesto (hecho):** tras un golpe, a veces sale un rombo amarillo sobre el héroe;
+  si se toca (el héroe o su ficha) antes de su siguiente golpe, entra crítico. Sin jugador, la
+  IA acierta la mitad (como el 10 % de antes). Números de daño en la escena (cifras de píxel:
+  blanco, amarillo el crítico, rojo el que reciben los héroes, verde las curas).
 - **Vida y ataque de los enemigos:** los de los jefes salen de lo que pide el encargo (hecho,
   `FOE_TUNE` en `core/combat.ts`); faltan los bandidos de los asaltos.
 - Después, el torneo de la comarca (armas romas, premio de trofeo).

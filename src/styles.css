@@ -6026,9 +6026,13 @@ select.crew-free {
 
 /* El parte del amanecer con el juego abierto: un botón que no tapa nada. */
 .dawn-chip {
-  position: fixed;
-  left: 12px;
-  bottom: calc(var(--tabbar-h, 64px) + 64px);
+  /* Encima de la barra del día, en el centro del escenario (sin chocar con las pestañas, que en
+     horizontal van a la izquierda). */
+  position: absolute;
+  left: 50%;
+  bottom: 70px;
+  transform: translateX(-50%);
+  white-space: nowrap;
   z-index: 6;
   display: flex;
   align-items: center;
@@ -6049,7 +6053,7 @@ select.crew-free {
 @keyframes dawn-chip-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translate(-50%, 8px);
   }
 }
 .dawn-chip.is-bad {
@@ -6178,4 +6182,12 @@ select.crew-free {
   font-size: var(--t-s);
   color: var(--fog);
   text-align: center;
+}
+
+.bf-hero.is-chance .bf-hero-main {
+  box-shadow: 0 0 0 2px var(--lemon);
+  animation: tut-btn 0.5s steps(2) infinite;
+}
+.bf-now {
+  color: var(--lemon);
 }
