@@ -7,10 +7,10 @@
 import { P, darker } from './palette';
 import { PixelBuffer, toHex } from './pixel';
 
-type Rows = readonly string[];
+export type Rows = readonly string[];
 
 /** Un fotograma: las filas cortas se rellenan por la derecha; abajo, el contorno. */
-function sprite(rows: Rows, colors: Record<string, string>): PixelBuffer {
+export function sprite(rows: Rows, colors: Record<string, string>): PixelBuffer {
   const w = Math.max(...rows.map((r) => r.length));
   const b = new PixelBuffer(w, rows.length);
   rows.forEach((row, y) => {
@@ -31,7 +31,7 @@ export interface Strip {
 }
 
 /** Pone los fotogramas uno al lado del otro, todos del mismo tamaño y con los pies abajo. */
-function strip(frames: PixelBuffer[]): Strip {
+export function strip(frames: PixelBuffer[]): Strip {
   const w = Math.max(...frames.map((f) => f.w));
   const h = Math.max(...frames.map((f) => f.h));
   const n = frames.length;

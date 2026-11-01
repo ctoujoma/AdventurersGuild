@@ -1,6 +1,7 @@
 import type { HeroLook, HeroMarks } from '../art/heroes/look';
 import type { Building, ItemIcon, Rarity, TrophyIcon } from '../core/model';
 import type { FacadeLook, TintId } from '../data/custom';
+import type { IncidentKind } from '../data/incidents';
 import type { BattleSound } from './battle';
 
 /**
@@ -60,6 +61,16 @@ export interface SceneModel {
   vault?: number;
   trophies: TrophyIcon[];
   heroes: SceneHero[];
+  /** Los incidentes en marcha: se ven en su sala mientras duran (solo dibujo). */
+  incidents?: SceneIncident[];
+}
+
+/** Un incidente tal como lo ve la escena: qué pasa y en qué sala (id). */
+export interface SceneIncident {
+  kind: IncidentKind;
+  room: string;
+  /** Los de tocar (las ratas): toques que faltan. */
+  taps?: number;
 }
 
 /** Equipo sin dueño, con su rareza (se cuelga en la armería o va en arcones). */

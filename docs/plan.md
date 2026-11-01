@@ -145,7 +145,7 @@ lo que hay que tocar y no romper la inmersión. Ahora:
   encargo, los objetivos, saltar al día 7 y pagar. Si falta dinero (prima, enfermería, pago),
   aparece entre las hojas del cuaderno.
 - Reloj parado mientras dura; «Ya sé jugar» lo salta entero.
-- Pendiente: que los incidentes se vean y respondan al tocar (encargo de arte), la pantalla de
+- Los incidentes ya se ven en su sala y las ratas responden al tocar (arte). Pendiente: la pantalla de
   inicio (encargo de interfaz), candados en el mapa y los adornos y que la barra diga que el
   reloj está parado.
 
