@@ -331,6 +331,8 @@ export interface DawnEvent {
   k?: ChipKind;
   /** Encabezado (el día, en la carta de «Mientras no estabas»). */
   head?: boolean;
+  /** Lo bueno de verdad (subir de rango, botín raro, una historia cumplida…): la carta lo abre con brillo. */
+  big?: boolean;
 }
 
 export interface Custom {

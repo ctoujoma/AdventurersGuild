@@ -1080,11 +1080,18 @@ export function endDay(state: GameState, away = false): GameState {
       if (r) rescue(s, m.quest.rescue, r, events);
     }
     const bad = d.outcome === 'Fracaso' || d.outcome === 'Desastre';
+    // Con brillo: un éxito brillante, un jefe vencido o un botín raro que vuelve a casa.
+    const fight = s.reports.find((x) => x.id === d.report)?.fight;
+    const big =
+      !bad &&
+      home.length > 0 &&
+      (d.outcome === 'Éxito brillante' || !!fight?.won || (m.quest.item?.rarity ?? 0) >= 1);
     events.push({
       t: home.length
         ? `${plural(home.length, 'Vuelve', 'Vuelven')} ${listNames(home)} de «${m.quest.title}».`
         : `Del grupo de «${m.quest.title}» no vuelve nadie.`,
       k: bad ? 'bad' : 'good',
+      ...(big ? { big } : {}),
     });
   }
   s.missions = s.missions.filter((x) => x.daysLeft > 0);
@@ -1114,6 +1121,7 @@ export function endDay(state: GameState, away = false): GameState {
         events.push({
           t: `¡${h.name} ha vuelto! Con hambre, lleno de barro y con ganas de contarlo todo.${toughened ? ` Ahora ${h.sex === 'f' ? 'es curtida' : 'es curtido'}: +2 Supervivencia.` : ''}`,
           k: 'good',
+          big: true,
         });
       } else {
         h.status = 'muerto';
@@ -1293,6 +1301,7 @@ export function endDay(state: GameState, away = false): GameState {
       events.push({
         t: `La deuda de tu tío está pagada. ${customOf(s).name} es tuyo: gremio de ${rankOf(s).name}, ${alive} ${plural(alive, 'héroe', 'héroes')} y ${s.gold} monedas en la caja.`,
         k: 'good',
+        big: true,
       });
     } else s.over = { kind: 'derrota', text: 'Se acabó el plazo y la deuda sigue ahí.', score: 0 };
   }
