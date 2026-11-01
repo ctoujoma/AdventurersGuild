@@ -92,6 +92,7 @@ import { generateHero, generateQuest } from './generate';
 import {
   SAVE_VERSION,
   type DawnEvent,
+  type Mission,
   type Facilities,
   type GameState,
   type Hero,
@@ -125,6 +126,7 @@ import {
   type Plan,
 } from './rooms';
 import { Rng } from './rng';
+import { RESOLVE_T } from './journey';
 import { listNames, plural } from './text';
 import { stepLarder } from './larder';
 import { stepTraining } from './training';
@@ -704,9 +706,14 @@ function reduceAction(state: GameState, action: Action): GameState {
       // Los incidentes solo corren con el juego abierto (la simulación de fuera no pasa por aquí).
       const news = stepIncidents(next, state.clock ?? 0, next.clock ?? 0);
       stepRumors(next, state.clock ?? 0, next.clock ?? 0);
+      // Los grupos que acaban lo suyo mandan su informe.
+      const ms = next.over ? { next, news: [] } : tickMissions(next);
       // Los objetivos también se cobran en cuanto se cumplen.
-      const g = next.over ? { next, news: [] } : tickGoals(next);
-      const all = [...news, ...g.news.map((n) => ({ t: n.t, k: n.k ?? 'good' }))];
+      const g = ms.next.over ? { next: ms.next, news: [] } : tickGoals(ms.next);
+      const all = [
+        ...news,
+        ...[...ms.news, ...g.news].map((n) => ({ t: n.t, k: n.k ?? ('good' as const) })),
+      ];
       g.next.incidentNews = all.length ? all : undefined;
       return g.next;
     }
@@ -766,6 +773,69 @@ function reduceAction(state: GameState, action: Action): GameState {
 }
 
 // ---------- Avance de día ----------
+
+/**
+ * Si un grupo ya ha acabado lo suyo: con `part` la parte del día de ahora (0 al amanecer, ya
+ * descontado el día que pasa). Ver `RESOLVE_T` en `journey.ts`.
+ */
+function settleDue(m: Mission, part: number): boolean {
+  const days = Math.max(1, m.quest.days);
+  return (days - m.daysLeft + part) / days >= RESOLVE_T - 1e-9;
+}
+
+/**
+ * Resuelve un encargo al acabar lo suyo: llega el informe (el oro, la fama y el botín, con él)
+ * y el grupo emprende la vuelta con cómo ha quedado cada uno. Los muertos y perdidos, ya no
+ * vuelven. Muta `s`.
+ */
+function settleMission(s: GameState, m: Mission, rng: Rng, events: DawnEvent[]): Report {
+  const boss = bossOf(m.quest);
+  const roster = boss ? fightRoster(s.heroes.filter((h) => m.heroIds.includes(h.id))) : null;
+  const r = resolveMission(s, m, rng);
+  s.reports.unshift(r);
+  if (boss && roster) {
+    // La pelea contra el jefe queda en el informe para verla ahora o más tarde.
+    for (const x of roster) x.fate = s.heroes.find((h) => h.id === x.id)?.status ?? 'muerto';
+    r.fight = {
+      boss,
+      place: m.quest.place,
+      won: r.outcome !== 'Fracaso' && r.outcome !== 'Desastre',
+      heroes: roster,
+    };
+  }
+  if (m.quest.chain) advanceChain(s, rng, m.quest, r, events);
+  const fates: NonNullable<Mission['done']>['fates'] = {};
+  for (const id of m.heroIds) {
+    const h = s.heroes.find((x) => x.id === id);
+    if (!h || (h.status !== 'ok' && h.status !== 'herido')) continue;
+    fates[id] = { status: h.status, days: h.days };
+    h.status = 'mision';
+    h.days = m.daysLeft;
+  }
+  m.done = { report: r.id, outcome: r.outcome, fates };
+  const bad = r.outcome === 'Fracaso' || r.outcome === 'Desastre';
+  events.push({
+    t: `Llega aviso de ${r.who} desde ${m.quest.place}: ${r.outcome.toLowerCase()}.`,
+    k: bad ? 'bad' : 'good',
+  });
+  return r;
+}
+
+/** Con el juego abierto: resuelve los grupos que acaban de terminar lo suyo. Copia si hace falta. */
+export function tickMissions(s: GameState): { next: GameState; news: DawnEvent[] } {
+  const part = Math.min(1, (s.clock ?? 0) / DAY_SECONDS);
+  if (!s.missions.some((m) => !m.done && settleDue(m, part))) return { next: s, news: [] };
+  const next = structuredClone(s);
+  const rng = new Rng(next.rng);
+  const news: DawnEvent[] = [];
+  for (const m of next.missions)
+    if (!m.done && settleDue(m, part)) {
+      const r = settleMission(next, m, rng, news);
+      if (r.fight) next.liveFight = r.id;
+    }
+  next.rng = rng.save();
+  return { next, news };
+}
 
 /** Vuelve un grupo de rescate: si ha ido bien, traen a quien estaba perdido. */
 function rescue(s: GameState, id: string, r: Report, events: DawnEvent[]): void {
@@ -923,27 +993,32 @@ export function endDay(state: GameState, away = false): GameState {
     }
   }
   s.lastFight = null;
-  for (const m of s.missions.filter((x) => x.daysLeft <= 0)) {
-    const boss = bossOf(m.quest);
-    const roster = boss ? fightRoster(s.heroes.filter((h) => m.heroIds.includes(h.id))) : null;
-    const r = resolveMission(s, m, rng);
-    s.reports.unshift(r);
-    if (boss && roster) {
-      // La pelea contra el jefe queda en el informe para verla al amanecer o más tarde.
-      for (const x of roster) x.fate = s.heroes.find((h) => h.id === x.id)?.status ?? 'muerto';
-      r.fight = {
-        boss,
-        place: m.quest.place,
-        won: r.outcome !== 'Fracaso' && r.outcome !== 'Desastre',
-        heroes: roster,
-      };
-      s.lastFight = r.id;
+  s.liveFight = null;
+  // Lo que acabó lo suyo hoy (con el juego cerrado no pasa por el reloj) se resuelve ahora.
+  for (const m of s.missions)
+    if (!m.done && settleDue(m, 0)) {
+      const r = settleMission(s, m, rng, events);
+      if (r.fight) s.lastFight = r.id;
     }
-    if (m.quest.chain) advanceChain(s, rng, m.quest, r, events);
-    if (m.quest.rescue) rescue(s, m.quest.rescue, r, events);
-    const bad = r.outcome === 'Fracaso' || r.outcome === 'Desastre';
+  for (const m of s.missions.filter((x) => x.daysLeft <= 0)) {
+    const d = m.done!;
+    const home: string[] = [];
+    for (const [id, f] of Object.entries(d.fates)) {
+      const h = s.heroes.find((x) => x.id === id);
+      if (!h || h.status !== 'mision') continue;
+      h.status = f.status;
+      h.days = f.days;
+      home.push(h.name);
+    }
+    if (m.quest.rescue) {
+      const r = s.reports.find((x) => x.id === d.report);
+      if (r) rescue(s, m.quest.rescue, r, events);
+    }
+    const bad = d.outcome === 'Fracaso' || d.outcome === 'Desastre';
     events.push({
-      t: `${plural(r.heroIds.length, 'Vuelve', 'Vuelven')} ${r.who}: ${r.outcome.toLowerCase()}.`,
+      t: home.length
+        ? `${plural(home.length, 'Vuelve', 'Vuelven')} ${listNames(home)} de «${m.quest.title}».`
+        : `Del grupo de «${m.quest.title}» no vuelve nadie.`,
       k: bad ? 'bad' : 'good',
     });
   }

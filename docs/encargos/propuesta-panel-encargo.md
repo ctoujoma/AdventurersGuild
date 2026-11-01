@@ -57,10 +57,12 @@ Un componente propio, `QuestStrip` (canvas), que recibe `now: JourneyNow` y nada
   - **Llegada y lo suyo:** según el tipo (buscan, abren un cofre, empujan el carro…).
   - **Pelea** (`now.fighting`, entre `journey.fight.from` y `.to`): aparecen **enemigos** delante
     del grupo y pelean con poses de ataque y golpe; al acabar, los enemigos caen o huyen. Si es
-    `journey.boss`, el jefe con su dibujo de `art/bosses.ts`.
-  - **Heridos:** cojeando o apoyados en otro. Hoy el viaje no sabe quién se hiere hasta el
-    informe; el agente principal lo cambia (ver abajo), y entonces cada héroe de `now.crew` traerá
-    su estado.
+    `journey.boss`, **la pelea no va en la tira** (tiene su pantalla, `ui/BossFight.tsx`): el
+    grupo se para ante la silueta del jefe (`art/bosses.ts`) con un «!» mientras espera y, ya
+    resuelto, el jefe caído o el grupo en retirada.
+  - **Heridos:** cojeando o apoyados en otro. El encargo se resuelve al acabar lo suyo
+    (`RESOLVE_T`); desde ahí cada héroe de `now.crew` trae su `fate` de verdad (`herido`; los
+    `muerto` y `desaparecido` ya no van en la fila) y en `now.past` sale el suceso `aviso`.
 - **Los sucesos** (`now.past`) salen como bocadillo o destello encima en su momento; debajo de
   la tira, la ficha ya lista el diario.
 

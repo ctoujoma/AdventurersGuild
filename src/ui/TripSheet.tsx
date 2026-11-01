@@ -15,6 +15,8 @@ interface Props {
   mission: Mission;
   onClose: () => void;
   onHero: (id: string) => void;
+  /** Abre el informe, cuando ya ha llegado. */
+  onReport: (id: string) => void;
 }
 
 const KIND_ICON: Record<JourneyNow['past'][number]['kind'], IconName> = {
@@ -23,6 +25,7 @@ const KIND_ICON: Record<JourneyNow['past'][number]['kind'], IconName> = {
   faena: 'diana',
   pelea: 'espadas',
   jefe: 'calavera',
+  aviso: 'letter',
   noche: 'moon',
   vuelta: 'home',
 };
@@ -44,7 +47,7 @@ function Strip({ now }: { now: JourneyNow }) {
 }
 
 /** Ficha «Encargo en curso»: la tira, el encargo, quién va, el viaje por partes y su diario. */
-export function TripSheet({ game, mission: m, onClose, onHero }: Props) {
+export function TripSheet({ game, mission: m, onClose, onHero, onReport }: Props) {
   const now = journeyNow(game, m);
   const q = m.quest;
   const heroes = m.heroIds.map((id) => game.heroes.find((h) => h.id === id)).filter((h) => !!h);
@@ -137,7 +140,13 @@ export function TripSheet({ game, mission: m, onClose, onHero }: Props) {
           ) : (
             <p class="tiny">Acaban de salir por la puerta.</p>
           )}
-          <p class="tiny trip-note">Lo que de verdad pase lo contarán al volver, en su informe.</p>
+          {m.done ? (
+            <button class="btn btn-wood trip-note" onClick={() => onReport(m.done!.report)}>
+              <Icon name="letter" size={14} /> Leer el informe
+            </button>
+          ) : (
+            <p class="tiny trip-note">Cuando acaben lo suyo, mandarán aviso con su informe.</p>
+          )}
         </div>
       </article>
     </div>

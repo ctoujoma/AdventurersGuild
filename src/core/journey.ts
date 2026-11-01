@@ -29,7 +29,8 @@ import { Rng } from './rng';
 export type { FoeKind, LegId };
 export { LEGS };
 
-export type JourneyKind = 'camino' | 'llegada' | 'faena' | 'pelea' | 'jefe' | 'noche' | 'vuelta';
+export type JourneyKind =
+  'camino' | 'llegada' | 'faena' | 'pelea' | 'jefe' | 'aviso' | 'noche' | 'vuelta';
 
 /** Un suceso del viaje: en qué parte, en qué punto de ella (0–1) y en qué punto del total. */
 export interface JourneyEvent {
@@ -74,6 +75,12 @@ export interface JourneyNow {
   /** Lo que ya ha pasado, por orden. */
   past: JourneyEvent[];
 }
+
+/**
+ * Cuándo se sabe cómo ha ido (del total): al acabar lo suyo. Ahí se resuelve el encargo y llega
+ * el informe; la vuelta ya enseña cómo viene cada uno.
+ */
+export const RESOLVE_T = LEGS[2].from + (LEGS[2].to - LEGS[2].from) * 0.95;
 
 const legOf = (t: number) => LEGS.find((l) => t < l.to) ?? LEGS[LEGS.length - 1]!;
 const legAt = (leg: LegId, at: number) => {
@@ -163,6 +170,22 @@ export function journeyNow(s: GameState, m: Mission): JourneyNow {
   const t = journeyT(s, m);
   const l = legOf(t);
   const heroes = m.heroIds.map((id) => s.heroes.find((h) => h.id === id)).filter((h) => !!h);
+  const crew = fightRoster(heroes);
+  const past = j.events.filter((e) => e.t <= t);
+  if (m.done) {
+    // Ya se sabe: cada uno, como vuelve (los que no vuelven, como quedaron).
+    for (const c of crew)
+      c.fate = m.done.fates[c.id]?.status ?? heroes.find((h) => h.id === c.id)!.status;
+    const bad = m.done.outcome === 'Fracaso' || m.done.outcome === 'Desastre';
+    past.push({
+      leg: 'faena',
+      at: 0.95,
+      t: RESOLVE_T,
+      kind: 'aviso',
+      text: `Mandan aviso: ${m.done.outcome.toLowerCase()}.${bad ? '' : ' Ya vienen.'}`,
+    });
+    past.sort((a, b) => a.t - b.t);
+  }
   return {
     journey: j,
     t,
@@ -170,8 +193,8 @@ export function journeyNow(s: GameState, m: Mission): JourneyNow {
     legT: Math.max(0, Math.min(1, (t - l.from) / (l.to - l.from))),
     night: (s.clock ?? 0) >= DUSK * DAY_SECONDS,
     fighting: !!j.fight && t >= j.fight.from && t < j.fight.to,
-    crew: fightRoster(heroes),
-    past: j.events.filter((e) => e.t <= t),
+    crew,
+    past,
   };
 }
 

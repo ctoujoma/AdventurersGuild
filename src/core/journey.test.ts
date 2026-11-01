@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DAY_SECONDS } from './balance';
 import { endDay, newGame, reduce } from './game';
-import { eventText, foeOf, journey, journeyNow, LEGS } from './journey';
+import { eventText, foeOf, journey, journeyNow, LEGS, RESOLVE_T } from './journey';
 import type { GameState, Mission, QuestType } from './model';
 
 /** Manda el primer encargo del tablón con los primeros héroes libres. */
@@ -83,5 +83,40 @@ describe('viaje de un grupo fuera', () => {
       const c = journeyNow(s, m);
       expect(c.t).toBeCloseTo(1 / m0.quest.days, 5);
     }
+  });
+});
+
+describe('se resuelve al acabar lo suyo', () => {
+  it('con el juego abierto llega el informe a media vuelta y los héroes siguen fuera', () => {
+    let s = send('faena');
+    const m0 = s.missions[0]!;
+    const reports = s.reports.length;
+    // Avanza día a día hasta pasar el punto de resolver.
+    for (let i = 0; i < 10 && !s.missions[0]?.done; i++) {
+      s = reduce(s, { type: 'tick', to: DAY_SECONDS * 0.79 });
+      if (!s.missions[0]?.done) s = endDay(s);
+    }
+    // El último día, el reloj pasa por lo suyo antes de la noche: aún no han vuelto.
+    const m = s.missions.find((x) => x.id === m0.id)!;
+    expect(m.done).toBeDefined();
+    expect(s.reports.length).toBe(reports + 1);
+    expect(journeyNow(s, m).t).toBeGreaterThanOrEqual(RESOLVE_T - 1e-9);
+    for (const id of Object.keys(m.done!.fates))
+      expect(s.heroes.find((h) => h.id === id)!.status).toBe('mision');
+    expect(journeyNow(s, m).past.some((e) => e.kind === 'aviso')).toBe(true);
+    // Al volver, cada uno como quedó y sin informe nuevo.
+    while (s.missions.some((x) => x.id === m0.id)) s = endDay(s);
+    expect(s.reports.length).toBe(reports + 1);
+    for (const [id, f] of Object.entries(m.done!.fates))
+      expect(s.heroes.find((h) => h.id === id)!.status).toBe(f.status);
+  });
+
+  it('con el juego cerrado se resuelve en la noche y vuelve igual', () => {
+    let s = send('cerrado');
+    const id = s.missions[0]!.id;
+    const reports = s.reports.length;
+    while (s.missions.some((x) => x.id === id)) s = endDay(s);
+    expect(s.reports.length).toBe(reports + 1);
+    expect(s.heroes.some((h) => h.status === 'mision')).toBe(false);
   });
 });

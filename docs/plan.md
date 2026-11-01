@@ -171,11 +171,15 @@ hueco, con la cámara en cada paso. Sustituye a las notas de obras de ahora (`ob
   referencia): los héroes animados encima de la línea de las partes, andando, peleando contra
   enemigos según el encargo (familias de enemigos reutilizables: bandidos, trasgos, bestias,
   alimañas, muertos y grandes) y cojeando si van heridos.
-  **Siguiente del agente principal:** resolver el encargo al llegar a «lo suyo» (no al volver),
-  para que la tira y la ficha enseñen de verdad quién se hiere y qué botín traen; el informe
-  sigue llegando al volver. Más adelante, sobre la tira, los momentos que piden decisión: un jefe
-  («Entrar a pelear» o «Resolver solo»; si no se contesta, se resuelve solo) y las incursiones
-  («raids») con varios así.
+  **Hecho:** el encargo se resuelve al acabar lo suyo, no al volver: llega el informe (con el
+  oro y el botín) «por aviso» y el grupo emprende la vuelta con cómo ha quedado cada uno.
+  **Decidido, el jefe (siguiente):** la pelea contra un jefe **no va en la tira**; tiene su
+  pantalla. Cuando el grupo llega al jefe, el viaje se para y sale un aviso («¡X ante el
+  jefe!»), con la campana y en la ficha: «Ver la pelea» (la pantalla de jefe; en la fase 3,
+  interactiva) o «Que se las apañen» (se resuelve sola y queda en el informe para verla). Si no
+  se contesta, se resuelve sola al caer la noche, y siempre con el juego cerrado: queda
+  pendiente un rato, pero nunca atasca. Mientras espera, la tira enseña al grupo parado ante la
+  silueta del jefe con un «!»; después, el jefe caído o el grupo en retirada.
 - **Pelea interactiva:** arrastrar a un héroe sobre un enemigo para elegir a quién ataca (si no,
   el de siempre por su táctica); formación, táctica y objeto antes; habilidades por clase con
   recarga; pocas órdenes en directo.

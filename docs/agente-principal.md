@@ -55,7 +55,9 @@ Para el agente principal (núcleo, tiempo, tutoriales, combate, talleres, amigos
 - En `main`: todo lo anterior, más los golpes de los jefes nuevos del de arte (#72) con su
   propuesta del panel del encargo (`encargos/propuesta-panel-encargo.md`).
 - Hecha la ficha «Encargo en curso» (`ui/TripSheet.tsx`) con sus datos (`core/journey.ts`):
-  toca al de arte la tira (`QuestStrip`, en el hueco `Strip`).
+  toca al de arte la tira (`QuestStrip`, en el hueco `Strip`). El encargo se resuelve al acabar
+  lo suyo (`settleMission` y `tickMissions` en `game.ts`, `Mission.done`); siguiente mío: el jefe
+  que espera la acción del jugador (decidido en el plan, fase 3).
 - Amanecer, decidido: con la app abierta no hay carta (avisos y, solo lo gordo, carta suelta);
   la pila de cartas, al volver tras tenerla cerrada (plan, «Pendiente de revisar» y fase 5).
 - Interfaz: el título se queda (el usuario no se quejaba de él); corregido en
