@@ -27,7 +27,18 @@ historial.
   lleva a la sala, Tareas, el encargo o el panel). `App.tsx` recuerda las obras recién acabadas
   (`finishedWorks`) durante ese día. El pago del HUD lleva ahora un pergamino.
 
-## Siguiente: el cobro de Merlo (el usuario dijo que sí)
+## Hecho: el cobro de Merlo (PR aparte, tras el de avisos)
+
+- `src/ui/PayDay.tsx`: escena propia antes de la carta del amanecer (decidido con el usuario).
+  Merlo con su retrato, las monedas saltan de la caja a su bolsa, sello «Pagado», la barra de la
+  deuda avanza y una frase suya; con el último pago, «¡Deuda saldada!». En el modo libre, más
+  corto: los salarios van a la gente de la casa. Tocar adelanta; «Seguir» abre la carta.
+- El núcleo apunta `payday` (opcional) al pagar. En `App.tsx`, `paying` va antes del jefe y de
+  la carta.
+- **Para el agente de arte:** Merlo entrando en la taberna a cobrar, y un aspecto suyo propio
+  (hoy sale de `generateLook` con mercader, barba y sombrero).
+
+## Siguiente: punto 4, cartas del amanecer una a una
 
 ## Antes: punto 3, avisos (decidido con el usuario)
 
@@ -58,10 +69,6 @@ historial.
   `src/world/rooms/`: decirlo en el PR.
 - **Para el agente de arte (le pasa el usuario):** el perro tocable y el gato Bigotes de vuelta
   (se quitó con la vista 2D en el PR 12).
-
-## Después: punto 4, cartas del amanecer una a una
-
-Ver el encargo.
 
 ## Trucos de trabajo
 

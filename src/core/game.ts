@@ -1100,6 +1100,7 @@ export function endDay(state: GameState, away = false): GameState {
     if (s.gold >= total) {
       s.gold -= total;
       s.paid += pay.amount;
+      s.payday = { day: s.day, debt: pay.amount, wages };
       events.push({
         t: `Día de pago: ${wages} en salarios y ${pay.amount} al prestamista.`,
         k: 'warn',
@@ -1120,6 +1121,7 @@ export function endDay(state: GameState, away = false): GameState {
     if (s.gold >= wages) {
       s.gold -= wages;
       s.unpaid = 0;
+      if (wages) s.payday = { day: s.day, debt: 0, wages };
       if (wages) events.push({ t: `Día de pago: ${wages} monedas en salarios.`, k: 'warn' });
     } else {
       s.unpaid = (s.unpaid ?? 0) + 1;

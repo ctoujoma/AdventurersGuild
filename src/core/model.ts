@@ -537,6 +537,8 @@ export interface GameState {
   chains?: ChainState[];
   /** El último grupo que salió de misión («Como la última vez» en la hoja del encargo). */
   lastParty?: string[];
+  /** El último pago hecho (cuota a Merlo y salarios): la interfaz enseña el cobro ese amanecer. */
+  payday?: { day: number; debt: number; wages: number };
   /** Lugares de la comarca ya visitados (levantan la niebla del mapa). */
   explored?: string[];
   /** Día en que un espía de los bandidos estudió la casa (más riesgo de asalto unos días). */
