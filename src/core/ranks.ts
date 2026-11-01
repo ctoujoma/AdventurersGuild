@@ -38,5 +38,6 @@ export function checkRank(s: GameState, events: DawnEvent[]): void {
   events.push({
     t: `¡El gremio es ahora de ${RANKS[r]!.name}! Llegan encargos más duros y mejor pagados${opens.length ? `, y se abre ${list(opens)}` : ''}.`,
     k: 'good',
+    big: true,
   });
 }

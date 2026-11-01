@@ -249,12 +249,35 @@ describe('avance de día', () => {
     expect(s.paid).toBe(DEBT);
     expect(s.opening?.seen).toBe(false);
     expect(s.opening!.score).toBeGreaterThan(0);
+    // La noticia de la deuda saldada, con brillo en la carta.
+    expect(s.dawn.find((e) => /deuda de tu tío está pagada/.test(e.t))?.big).toBe(true);
     expect(s.goals?.active.length).toBe(3);
     s = reduce(s, { type: 'ackOpening' });
     expect(s.opening?.seen).toBe(true);
     // Y la partida sigue: los salarios se pagan cada semana.
     for (let i = 0; i < 10; i++) s = endDay({ ...s, gold: s.gold + 500 });
     expect(s.over).toBeNull();
+  });
+
+  it('el grupo que vuelve con un éxito brillante trae brillo a la carta; uno normal, no', () => {
+    const back = (outcome: 'Éxito brillante' | 'Éxito') => {
+      const s = newGame(`brillo-${outcome}`);
+      const h = s.heroes[0]!;
+      const q = { ...s.quests[0]!, item: undefined };
+      h.status = 'mision';
+      // Solo hace falta el informe para ver si hubo jefe (aquí no).
+      s.reports.unshift({ id: 'rb' } as GameState['reports'][number]);
+      s.missions.push({
+        id: 'mb',
+        quest: q,
+        heroIds: [h.id],
+        daysLeft: 1,
+        done: { report: 'rb', outcome, fates: { [h.id]: { status: 'ok', days: 0 } } },
+      });
+      return endDay(s).dawn.find((e) => e.t.includes(q.title));
+    };
+    expect(back('Éxito brillante')?.big).toBe(true);
+    expect(back('Éxito')?.big).toBeUndefined();
   });
 
   it('en modo libre, dos semanas sin pagar salarios es la quiebra', () => {

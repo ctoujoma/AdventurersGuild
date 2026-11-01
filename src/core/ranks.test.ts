@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { RANKS, floorRank, floorsFor, levelRank } from './balance';
 import { canWork, newGame } from './game';
-import type { GameState, Room } from './model';
+import type { DawnEvent, GameState, Room } from './model';
 import { checkRank, rankUnlocks } from './ranks';
 import { raidChance } from './raids';
 import { bedsPerCell, problem } from './rooms';
@@ -46,7 +46,7 @@ describe('rangos que abren cosas', () => {
 
   it('avisa al subir de rango, pero no a las partidas de antes', () => {
     const s = newGame('aviso');
-    const events: { t: string }[] = [];
+    const events: DawnEvent[] = [];
     checkRank(s, events);
     expect(events).toEqual([]);
     expect(s.rankSeen).toBe(0);
@@ -58,6 +58,8 @@ describe('rangos que abren cosas', () => {
     s.rep = RANKS[1]!.at;
     checkRank(s, events);
     expect(events[0]?.t).toMatch(/hierro.*nivel 3/);
+    // Subir de rango es de lo bueno de verdad: la carta del amanecer lo abre con brillo.
+    expect(events[0]?.big).toBe(true);
     checkRank(s, events);
     expect(events).toHaveLength(1);
   });
