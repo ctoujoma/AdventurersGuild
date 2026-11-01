@@ -189,7 +189,9 @@ hueco, con la cámara en cada paso. Sustituye a las notas de obras de ahora (`ob
   que «Que se las apañen». Determinista: el núcleo la vuelve a jugar con las órdenes y el informe
   la repite igual. Calibrado con `npm run calib`: sola sale como la tirada de antes (≈ 80 %);
   jugando bien, unos 6–8 puntos más.
-  **Falta:** formación, táctica y objeto antes de entrar; llevarla a los asaltos a la taberna.
+  **Falta:** llevarla a los asaltos a la taberna (perfilando antes cómo se ve contra jefes).
+  **Formaciones y táctica antes de entrar: para más adelante** (usuario: no complicar; tienen
+  sentido con arena, torneos o peleas entre amigos, no en el asalto de noche).
 - **Críticos con gesto (hecho):** tras un golpe, a veces sale un rombo amarillo sobre el héroe;
   si se toca (el héroe o su ficha) antes de su siguiente golpe, entra crítico. Sin jugador, la
   IA acierta la mitad (como el 10 % de antes). Números de daño en la escena (cifras de píxel:
@@ -231,6 +233,9 @@ hueco, con la cámara en cada paso. Sustituye a las notas de obras de ahora (`ob
 
 ## Fase 7 · Lanzamiento
 
+- **Salvarse de perder viendo anuncios:** si no llega para pagar a Merlo, ofrecer ver anuncios para
+  cubrir ese pago y seguir jugando (con la app de Android y sus anuncios opcionales).
+
 - Traducciones.
 - App de Android: guardado nativo, avisos (también el del pago de Merlo el día antes),
   anuncios opcionales, cosméticos y donaciones.
@@ -245,8 +250,10 @@ hueco, con la cámara en cada paso. Sustituye a las notas de obras de ahora (`ob
   descartar avisos y el mapa más grande (interfaz, `encargos/interfaz-avisos-mapa.md`). Hechos
   por el agente principal: la clase y el oficio en el selector de personal, y que al volver
   recuperen su trabajo; el encargo se resuelve al acabar la pelea de la tira (`resolveAt`).
-- **Pelea contra jefes, perfilarla antes de llevarla a los asaltos** (ver la propuesta en el
-  último punto de situación).
+- **Pelea contra jefes, perfilarla antes de llevarla a los asaltos** (sin formaciones).
+- **Obras:** borrador guardado para luego (hecho). Escaleras planeadas que no dejan seguir
+  planeando sin pagar: falta el caso concreto para reproducirlo (en el núcleo el borrador sí
+  cuenta con ellas).
 
 - **El cobro de la deuda con Merlo** (lo hecho con los agentes de arte e interfaz): que encaje
   con el tiempo que corre solo, los pagos estando fuera (`dueTonight`), los avisos y los

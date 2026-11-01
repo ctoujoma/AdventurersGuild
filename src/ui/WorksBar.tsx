@@ -137,7 +137,12 @@ function Ribbon({ works: w, onMore }: Props) {
         ) : (
           'Elige una sala abajo o toca una de la casa'
         )}
-        {w.issue && <span class="worksbar-issue">{w.issue}</span>}
+        {w.issue && (
+          <span class="worksbar-issue">
+            {w.issue}
+            {w.issue.startsWith('Te faltan') && ' Guárdalo para luego con la ×.'}
+          </span>
+        )}
       </span>
       <div class="ribbon-foot">
         <button
@@ -170,16 +175,26 @@ function Ribbon({ works: w, onMore }: Props) {
         >
           <Icon name="coin" size={14} /> Pagar{n ? ` ${Math.abs(w.planCost)}` : ''}
         </button>
+        {leaving && (
+          <button
+            class="btn btn-wood ribbon-keep"
+            aria-label="Guardar el borrador para luego y salir"
+            {...help('Guarda lo apuntado sin pagar: al volver al modo obras sigue ahí.')}
+            onClick={w.keep}
+          >
+            Guardar
+          </button>
+        )}
         <button
           class={`btn ${leaving ? 'btn-red' : 'btn-wood'} ribbon-exit`}
           aria-label={leaving ? 'Descartar las obras y salir' : 'Salir del modo obras'}
           onClick={() => {
-            // Con obras apuntadas, el primer toque pregunta y el segundo descarta.
+            // Con obras apuntadas, el primer toque pregunta (guardar o descartar).
             if (!n || leaving) w.discard();
             else setLeaving(true);
           }}
         >
-          {leaving ? '¿Descartar?' : <Icon name="close" size={14} />}
+          {leaving ? 'Descartar' : <Icon name="close" size={14} />}
         </button>
       </div>
     </div>

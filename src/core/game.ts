@@ -196,6 +196,8 @@ export type Action =
   /** El reloj del día avanza hasta `to` segundos (y la caja entrega lo que toque). */
   | { type: 'tick'; to: number }
   | { type: 'rumor' }
+  /** Guarda (o, con null, olvida) el borrador de obras para luego. */
+  | { type: 'worksDraft'; steps: Action[] | null }
   /** Un grupo ante su jefe: se resuelve ya (la interfaz enseña la pelea si se quiere ver). */
   | { type: 'boss'; id: string; orders?: Order[] }
   | { type: 'renameHero'; id: string; name: string }
@@ -479,7 +481,14 @@ function reduceAction(state: GameState, action: Action): GameState {
   switch (action.type) {
     case 'works': {
       const next = tryWorks(state, action.steps);
-      return 'error' in next || planIssue(next) ? state : next;
+      if ('error' in next || planIssue(next)) return state;
+      // Pagadas, el borrador guardado (si lo había) ya no hace falta.
+      if (next.worksDraft) {
+        const s = next === state ? { ...next } : next;
+        delete s.worksDraft;
+        return s;
+      }
+      return next;
     }
     case 'hire': {
       if (canHire(state, action.id)) return state;
@@ -779,6 +788,15 @@ function reduceAction(state: GameState, action: Action): GameState {
       s.bossWait = null;
       s.incidentNews = news.map((n) => ({ t: n.t, k: n.k ?? 'good' }));
       return s;
+    }
+    case 'worksDraft': {
+      if (!action.steps?.length) {
+        if (!state.worksDraft) return state;
+        const s = { ...state };
+        delete s.worksDraft;
+        return s;
+      }
+      return { ...state, worksDraft: structuredClone(action.steps) };
     }
     case 'rumor': {
       if (!state.rumor) return state;
