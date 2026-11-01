@@ -130,6 +130,7 @@ import {
 import { Rng } from './rng';
 import { BOSSES } from '../data/bosses';
 import { BOSS_T, RESOLVE_T } from './journey';
+import { missionCombat, runCombat, type Order } from './combat';
 import { listNames, plural } from './text';
 import { stepLarder } from './larder';
 import { stepTraining } from './training';
@@ -195,7 +196,7 @@ export type Action =
   | { type: 'tick'; to: number }
   | { type: 'rumor' }
   /** Un grupo ante su jefe: se resuelve ya (la interfaz enseña la pelea si se quiere ver). */
-  | { type: 'boss'; id: string }
+  | { type: 'boss'; id: string; orders?: Order[] }
   | { type: 'renameHero'; id: string; name: string }
   | { type: 'tutorial'; op: 'carta' | 'ok' | 'saltar' | 'listo' | TutorialSkip }
   /** Saltar al anochecer. */
@@ -774,6 +775,7 @@ function reduceAction(state: GameState, action: Action): GameState {
         s.missions.find((m) => m.id === action.id)!,
         rng,
         news,
+        action.orders,
       );
       s.rng = rng.save();
       s.bossWait = null;
@@ -820,10 +822,19 @@ function settleDue(m: Mission, part: number): boolean {
  * y el grupo emprende la vuelta con cómo ha quedado cada uno. Los muertos y perdidos, ya no
  * vuelven. Muta `s`.
  */
-function settleMission(s: GameState, m: Mission, rng: Rng, events: DawnEvent[]): Report {
+function settleMission(
+  s: GameState,
+  m: Mission,
+  rng: Rng,
+  events: DawnEvent[],
+  orders?: Order[],
+): Report {
   const boss = bossOf(m.quest);
   const roster = boss ? fightRoster(s.heroes.filter((h) => m.heroIds.includes(h.id))) : null;
-  const r = resolveMission(s, m, rng);
+  // Contra un jefe, decide la pelea: la del jugador (con sus órdenes) o la que se apañan solos.
+  const setup = boss ? missionCombat(s, m, boss) : null;
+  const fought = setup ? runCombat(setup, orders) : null;
+  const r = resolveMission(s, m, rng, fought ?? undefined);
   s.reports.unshift(r);
   if (boss && roster) {
     // La pelea contra el jefe queda en el informe para verla ahora o más tarde.
@@ -833,7 +844,9 @@ function settleMission(s: GameState, m: Mission, rng: Rng, events: DawnEvent[]):
       place: m.quest.place,
       won: r.outcome !== 'Fracaso' && r.outcome !== 'Desastre',
       heroes: roster,
+      sim: setup ? { setup, orders: orders ?? [] } : undefined,
     };
+    if (setup && !orders) r.fight.sim!.auto = true;
   }
   if (m.quest.chain) advanceChain(s, rng, m.quest, r, events);
   const fates: NonNullable<Mission['done']>['fates'] = {};

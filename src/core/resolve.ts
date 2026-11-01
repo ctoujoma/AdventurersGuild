@@ -135,7 +135,18 @@ export function levelUp(state: GameState, h: Hero): string[] {
   return out;
 }
 
-export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
+/** Pelea contra un jefe ya jugada (`core/combat.ts`): decide el resultado y quién cae. */
+export interface FightOutcome {
+  won: boolean;
+  downed: readonly string[];
+}
+
+export function resolveMission(
+  state: GameState,
+  m: Mission,
+  rng: Rng,
+  fight?: FightOutcome,
+): Report {
   const q = m.quest;
   const party = m.heroIds
     .map((id) => state.heroes.find((h) => h.id === id))
@@ -197,48 +208,60 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
     else if (high.length) say(rng.pick(HIGH_MORALE), rng.pick(high));
   }
 
-  // Desafíos.
-  const lucky = party.filter((h) => has(h, 'afortunado') || h.item?.perk === 'luck');
-  const warded = party.find((h) => h.item?.perk === 'ward');
-  const jinx = party.some((h) => has(h, 'gafe')) && !warded ? 0.05 : 0;
-  if (warded && party.some((h) => has(h, 'gafe')))
-    say(`El ${lower(warded.item!.name)} de ${warded.name} tuvo a raya la mala suerte del grupo.`);
-  let passes = 0;
-  let sumP = 0;
-  q.challenges.forEach((c, i) => {
-    const diff = c.diff + (q.twist && i === 0 ? TWIST_DIFF : 0);
-    const power = equip(party, state.fac).reduce((a, h) => a + skill(h, c.skill, true), 0);
-    const p = clamp(chance(power, diff) - jinx, 0.03, 0.95);
-    sumP += p;
-    let ok = rng.chance(p);
-    if (!ok && lucky.length) {
-      const lh = lucky.shift()!;
-      ok = rng.chance(p);
-      if (ok) say(`Cuando todo se torcía, la suerte de ${lh.name} lo enderezó.`);
-    }
-    if (ok) passes++;
-    const best = [...party].sort((a, b) => skill(b, c.skill, true) - skill(a, c.skill, true))[0];
-    const k = ok ? 'ok' : 'ko';
-    const pool = rng.chance(0.35)
-      ? CLASS_LINES[best!.cls][k]
-      : [...LINES[c.skill][k], ...MORE_LINES[c.skill][k]];
-    if (ok && (best!.item?.rarity ?? 0) >= 1 && rng.chance(0.4))
-      say(fresh(ITEM_LINES), best, { item: lower(best!.item!.name) });
-    else say(fresh(pool), best);
-  });
-
-  const n = q.challenges.length;
   let outcome: Outcome;
-  if (passes === n) outcome = sumP / n > 0.8 ? 'Éxito brillante' : 'Éxito';
-  else if (passes > 0) outcome = 'Éxito parcial';
-  else {
-    const ambush = rng.chance(DISASTER[q.danger]!);
-    const scout =
-      party.find((h) => h.cls === 'explorador') ?? party.find((h) => h.item?.perk === 'ambush');
-    if (ambush && scout && rng.chance(1 - SCOUT_AMBUSH)) {
-      outcome = 'Fracaso';
-      say(`${scout.name} olió la emboscada a tiempo y los sacó por un barranco. Se salvaron.`);
-    } else outcome = ambush ? 'Desastre' : 'Fracaso';
+  if (fight) {
+    // La pelea contra el jefe lo ha decidido: sin bajas, brillante; todos en el suelo, desastre.
+    const all = fight.downed.length >= party.length;
+    outcome = fight.won
+      ? fight.downed.length
+        ? 'Éxito'
+        : 'Éxito brillante'
+      : all
+        ? 'Desastre'
+        : 'Fracaso';
+  } else {
+    // Desafíos.
+    const lucky = party.filter((h) => has(h, 'afortunado') || h.item?.perk === 'luck');
+    const warded = party.find((h) => h.item?.perk === 'ward');
+    const jinx = party.some((h) => has(h, 'gafe')) && !warded ? 0.05 : 0;
+    if (warded && party.some((h) => has(h, 'gafe')))
+      say(`El ${lower(warded.item!.name)} de ${warded.name} tuvo a raya la mala suerte del grupo.`);
+    let passes = 0;
+    let sumP = 0;
+    q.challenges.forEach((c, i) => {
+      const diff = c.diff + (q.twist && i === 0 ? TWIST_DIFF : 0);
+      const power = equip(party, state.fac).reduce((a, h) => a + skill(h, c.skill, true), 0);
+      const p = clamp(chance(power, diff) - jinx, 0.03, 0.95);
+      sumP += p;
+      let ok = rng.chance(p);
+      if (!ok && lucky.length) {
+        const lh = lucky.shift()!;
+        ok = rng.chance(p);
+        if (ok) say(`Cuando todo se torcía, la suerte de ${lh.name} lo enderezó.`);
+      }
+      if (ok) passes++;
+      const best = [...party].sort((a, b) => skill(b, c.skill, true) - skill(a, c.skill, true))[0];
+      const k = ok ? 'ok' : 'ko';
+      const pool = rng.chance(0.35)
+        ? CLASS_LINES[best!.cls][k]
+        : [...LINES[c.skill][k], ...MORE_LINES[c.skill][k]];
+      if (ok && (best!.item?.rarity ?? 0) >= 1 && rng.chance(0.4))
+        say(fresh(ITEM_LINES), best, { item: lower(best!.item!.name) });
+      else say(fresh(pool), best);
+    });
+
+    const n = q.challenges.length;
+    if (passes === n) outcome = sumP / n > 0.8 ? 'Éxito brillante' : 'Éxito';
+    else if (passes > 0) outcome = 'Éxito parcial';
+    else {
+      const ambush = rng.chance(DISASTER[q.danger]!);
+      const scout =
+        party.find((h) => h.cls === 'explorador') ?? party.find((h) => h.item?.perk === 'ambush');
+      if (ambush && scout && rng.chance(1 - SCOUT_AMBUSH)) {
+        outcome = 'Fracaso';
+        say(`${scout.name} olió la emboscada a tiempo y los sacó por un barranco. Se salvaron.`);
+      } else outcome = ambush ? 'Desastre' : 'Fracaso';
+    }
   }
   say(
     rng.pick(
@@ -314,7 +337,8 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
   let fallen: Hero | null = null;
   let victim: Hero | null = null;
   if (outcome === 'Desastre' || (outcome === 'Fracaso' && rng.chance(FAIL_CASUALTY[q.danger]))) {
-    victim = rng.pick(party);
+    const fallenHere = fight ? party.filter((h) => fight.downed.includes(h.id)) : [];
+    victim = rng.pick(fallenHere.length ? fallenHere : party);
     if (has(victim, 'cobarde')) {
       say(`${victim.name} salió corriendo a la primera señal. No es heroico, pero está vivo.`);
       victim = null;
@@ -391,7 +415,8 @@ export function resolveMission(state: GameState, m: Mission, rng: Rng): Report {
       const armored = h.item?.perk === 'guard' ? 0.5 : 1;
       const risk =
         INJURY[outcome] * (guarded ? mods.guard : 1) * armored + (has(h, 'valiente') ? 0.08 : 0);
-      if (rng.chance(risk)) {
+      // Contra el jefe, se hiere quien cayó en la pelea.
+      if (fight ? fight.downed.includes(h.id) : rng.chance(risk)) {
         h.status = 'herido';
         h.days = rng.int(2, 4);
         say(`${h.name} vuelve ${sx(h, 'herido', 'herida')}: ${h.days} días de reposo.`);

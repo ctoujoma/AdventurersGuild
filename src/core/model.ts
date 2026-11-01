@@ -19,6 +19,7 @@ import type { RoomType } from '../data/rooms';
 import type { UnlockId } from '../data/unlocks';
 import type { Tutorial } from './tutorial';
 import type { Attrs, Challenge, ClassId, SkillId, Trait } from './party';
+import type { CombatSetup, Order } from './combat';
 
 export const SAVE_VERSION = 4;
 
@@ -221,6 +222,8 @@ export interface BossFight {
     /** Cómo quedó tras la pelea. */
     fate: HeroStatus;
   }[];
+  /** La pelea jugada de verdad (`core/combat.ts`): para repetirla igual. Sin ella, la de antes. */
+  sim?: { setup: CombatSetup; orders: Order[]; auto?: boolean };
 }
 
 export interface Fallen {

@@ -23,7 +23,8 @@ import { loadGame, saveGame, webStorage } from '../platform/storage';
 import type { Point } from '../world/scene';
 import { cheat, testFight } from '../core/cheats';
 import { BossCall, BossFight, BossWait } from './BossFight';
-import { bossOf } from '../core/chains';
+import { bossOf, fightRoster } from '../core/chains';
+import { missionCombat } from '../core/combat';
 import { Dawn } from './Dawn';
 import { DayBar } from './DayBar';
 import { GameOver } from './GameOver';
@@ -146,7 +147,12 @@ export function App() {
   const [introHold, setIntroHold] = useState(false);
   /** Grupo ante su jefe cuyo aviso está a la vista (con el juego abierto). */
   const [bossWait, setBossWait] = useState<string | null>(null);
-  const [watching, setWatching] = useState<{ fight: BossFightRecord; dawn: boolean } | null>(null);
+  const [watching, setWatching] = useState<{
+    fight: BossFightRecord;
+    dawn: boolean;
+    /** Se juega: al acabar, las órdenes van al núcleo (el grupo que espera ante el jefe). */
+    play?: string;
+  } | null>(null);
   const [card, setCard] = useState<string | null>(null);
   const [questId, setQuestId] = useState<string | null>(null);
   const [reportId, setReportId] = useState<string | null>(null);
@@ -280,16 +286,32 @@ export function App() {
 
   const toast = (text: string) => setNotice({ text, key: Date.now() });
 
-  /** Ante el jefe: se resuelve ya; con `watch`, se ve la pelea. */
+  /**
+   * Ante el jefe: «Ver la pelea» la juega (el resultado sale de la pelea, con las órdenes del
+   * jugador); «Que se las apañen» la resuelve ya, sola.
+   */
   const facBoss = (id: string, watch: boolean) => {
     setBossWait(null);
-    const next = dispatch({ type: 'boss', id });
-    const m = next.missions.find((x) => x.id === id);
-    const r = m?.done && next.reports.find((x) => x.id === m.done!.report);
-    if (watch && r?.fight) {
+    const s = gameRef.current;
+    const m = s.missions.find((x) => x.id === id);
+    const boss = m && bossOf(m.quest);
+    if (watch && m && boss) {
       audio.play('horn');
-      setWatching({ fight: r.fight, dawn: false });
+      const party = s.heroes.filter((h) => m.heroIds.includes(h.id));
+      setWatching({
+        fight: {
+          boss,
+          place: m.quest.place,
+          won: false,
+          heroes: fightRoster(party),
+          sim: { setup: missionCombat(s, m, boss), orders: [] },
+        },
+        dawn: false,
+        play: id,
+      });
+      return;
     }
+    dispatch({ type: 'boss', id });
   };
 
   /** Reloj del día en la interfaz (el del estado se guarda cada pocos segundos). */
@@ -1469,7 +1491,17 @@ export function App() {
           onLater={() => setBossWait(null)}
         />
       )}
-      {watching && <BossFight fight={watching.fight} onClose={closeWatch} />}
+      {watching && (
+        <BossFight
+          fight={watching.fight}
+          onClose={closeWatch}
+          onResult={
+            watching.play
+              ? (orders) => dispatch({ type: 'boss', id: watching.play!, orders })
+              : undefined
+          }
+        />
+      )}
       {pendingEvent && (
         <EventCard
           event={pendingEvent}
