@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { SCHEDULE, TRAIN_CAP } from '../core/balance';
 import { newGame, salaries } from '../core/game';
 import type { GameState, Room } from '../core/model';
-import { finishedWorks, gatherAlerts } from './alerts';
+import { finishedWorks, gatherAlerts, pruneHushed, shownAlerts, type Notice } from './alerts';
 
 const roomOf = (s: GameState, type: Room['type']) => s.building.rooms.find((r) => r.type === type)!;
 const ids = (s: GameState, done?: string[]) => gatherAlerts(s, done).map((a) => a.id);
@@ -95,5 +95,23 @@ describe('avisos de la campanita', () => {
     expect(ids(after, [r.id])).toContain(`obra:${r.id}`);
     // Si la sala sigue en obras (o ya no está), nada.
     expect(ids(before, [r.id])).not.toContain(`obra:${r.id}`);
+  });
+
+  it('descartar: lo normal no vuelve mientras dure; el pago vuelve al día siguiente; el jefe no se va', () => {
+    const n = (id: string, k: Notice['k'] = 'warn'): Notice => ({
+      id,
+      text: id,
+      k,
+      icon: 'bell',
+      go: { panel: 'tablon' },
+    });
+    const all = [n('pago:10', 'bad'), n('jefe:m1'), n('vacia:r1'), n('vuelve:m2', 'good')];
+    const hushed = { 'pago:10': 5, 'jefe:m1': 5, 'vacia:r1': 5 };
+    const at = (day: number) => shownAlerts(all, hushed, day).map((a) => a.id);
+    expect(at(5)).toEqual(['jefe:m1', 'vuelve:m2']);
+    expect(at(6)).toEqual(['pago:10', 'jefe:m1', 'vuelve:m2']);
+    // Lo que ya no está se olvida: si vuelve a pasar, vuelve a avisar.
+    expect(pruneHushed(hushed, all)).toBe(hushed);
+    expect(pruneHushed(hushed, [all[0]!])).toEqual({ 'pago:10': 5 });
   });
 });
