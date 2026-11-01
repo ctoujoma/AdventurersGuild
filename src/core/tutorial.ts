@@ -10,6 +10,8 @@ import type { DawnEvent, GameState, Hero, Quest } from './model';
 import { SKILLS, skill } from './party';
 import type { Rng } from './rng';
 import { upgradeCostOf } from './rooms';
+import { workerTitle } from './workers';
+import type { Trade } from '../data/workers';
 
 /**
  * El botón de la nota: «Seguir» en las que solo cuentan algo, y los saltos de tiempo. Las que
@@ -38,6 +40,13 @@ export interface TutorialStep {
    * prepara (el incidente, el rumor) llega después. Ver `tutorialWait`.
    */
   pause?: number;
+  /** Paso libre: sin foco, y la nota se puede plegar en una esquina (`short`, su resumen). */
+  free?: boolean;
+  short?: (s: GameState) => string;
+  /** El reloj corre en este paso (lo de fuera pasa solo, como en la partida). */
+  clock?: boolean;
+  /** Al empezar, la cámara se acerca a la sala (`focus`). */
+  zoom?: boolean;
 }
 
 /** Estado del tutorial en la partida (sin él, no hay tutorial: partidas viejas o saltado). */
@@ -81,6 +90,30 @@ export const tutorialQuest = (s: GameState): string | null => {
   if (st === 'mandar') return s.quests.find((q) => q.rumor)?.id ?? null;
   return null;
 };
+
+/** Un héroe en casa, para echar una mano (el último contratado). */
+const homeHero = (s: GameState) => [...s.heroes].reverse().find((h) => h.status === 'ok');
+
+/** Dónde rinde cada oficio (para decirlo al soltar a un trabajador en la cocina). */
+const TRADE_PLACE: Record<Trade, string> = {
+  salon: 'el salón',
+  cocina: 'la cocina',
+  bodega: 'la bodega',
+  enfermeria: 'la enfermería',
+};
+
+/**
+ * Lo que el tutorial no deja hacer ahora, y por qué (null = adelante). En «mover» se pide un
+ * héroe: soltar en la cocina a uno del pueblo lo quitaría de lo suyo.
+ */
+export function tutorialVeto(s: GameState, who: string, room: string | null): string | null {
+  if (tutorialStep(s)?.id !== 'mover' || s.tutorial?.wait) return null;
+  const w = s.workers.find((x) => x.id === who);
+  const r = room ? s.building.rooms.find((x) => x.id === room) : null;
+  if (!w || r?.type !== 'cocina' || w.room === room || w.trade === 'cocina') return null;
+  const h = homeHero(s);
+  return `${workerTitle(w)}: donde rinde es en ${TRADE_PLACE[w.trade]}, no entre fogones. Para la cocina, mejor un héroe${h ? `: prueba con ${first(h.name)}` : ''}.`;
+}
 
 /** El héroe al que dar el equipo: el primero en casa. */
 export const tutorialHero = (s: GameState): string | null =>
@@ -130,7 +163,7 @@ export const STEPS: readonly TutorialStep[] = [
       'Con dos espadas no se llega lejos. En la barra siempre hay alguien buscando trabajo: contrata a uno. La prima se paga una vez; el sueldo, cada semana.',
     focus: () => 'barra',
     // Antes, ver salir al grupo por la puerta.
-    pause: 4,
+    pause: 10,
     done: (s) => alive(s).length > 2,
     enter: (s) => {
       const fee = Math.min(...s.candidates.map((c) => c.fee));
@@ -151,6 +184,7 @@ export const STEPS: readonly TutorialStep[] = [
     text: () =>
       'La enfermería se vino abajo el invierno pasado. Arréglala antes de que alguien vuelva con una flecha en el muslo: en una cama de verdad se cura el doble de rápido.',
     focus: roomId('enfermeria'),
+    pause: 6,
     done: (s) => {
       const r = roomOf(s, 'enfermeria');
       return !r || r.level > 0 || !!r.works;
@@ -165,18 +199,28 @@ export const STEPS: readonly TutorialStep[] = [
   },
   {
     id: 'mover',
-    text: () =>
-      'Cada cual rinde donde lo pones. Coge con el dedo a alguien de la casa y suéltalo en la cocina: con dos en los fogones, más comida.',
+    text: (s) => {
+      const h = homeHero(s);
+      return `Cada cual rinde donde lo pones. Los del pueblo saben su oficio; los héroes, en sus ratos libres, echan una mano donde haga falta: no son cocineros, pero algo ayudan. Coge con el dedo a ${h ? first(h.name) : 'un héroe'} y ${h?.sex === 'f' ? 'suéltala' : 'suéltalo'} en la cocina.`;
+    },
     focus: roomId('cocina'),
-    pause: 3,
-    done: (s) => !!s.tutorial?.moved,
+    pause: 8,
+    done: (s) => {
+      const r = roomOf(s, 'cocina');
+      return !r || s.heroes.some((h) => h.job === r.id);
+    },
+    skip: (s) => !homeHero(s),
   },
   {
     id: 'esperar',
     text: () =>
-      'Con el grupo en el camino no hay más que hacer. No te quedes mirando la puerta: vuelven antes si no se les espera.',
+      'Con el grupo en el camino, la casa es tuya: mírala, toca lo que quieras y deja correr el día. Y si te cansas de esperar, salta hasta que vuelvan.',
+    short: () => 'El grupo está fuera.',
     done: (s) => s.reports.length > 0,
     button: 'esperar',
+    pause: 6,
+    free: true,
+    clock: true,
   },
   {
     id: 'informe',
@@ -207,7 +251,8 @@ export const STEPS: readonly TutorialStep[] = [
       'Si oyes rascar en la cocina, son ratas. Espántalas antes de que se coman las raciones. Cada día pasa algo así: atiéndelo a tiempo, que luego sale caro.',
     focus: roomId('cocina'),
     // Un rato de calma antes de que salten las ratas.
-    pause: 8,
+    pause: 15,
+    zoom: true,
     done: (s) => !(s.incidents ?? []).length,
     enter: (s) => {
       const r = roomOf(s, 'cocina');
@@ -231,7 +276,7 @@ export const STEPS: readonly TutorialStep[] = [
     text: () =>
       'En la barra se habla más de la cuenta. Cuando oigas algo que brilla, apúntalo antes de que se pierda: de ahí salen los mejores encargos.',
     focus: roomId('salon'),
-    pause: 6,
+    pause: 15,
     done: (s) => !s.rumor,
     enter: (s) => {
       if (!roomOf(s, 'salon')) return null;
@@ -268,7 +313,7 @@ export const STEPS: readonly TutorialStep[] = [
     id: 'objetivos',
     text: () =>
       'En el Gremio llevo la cuenta de lo que queda por hacer en la casa: siempre tres cosas. Cumplirlas da oro y lustre.',
-    pause: 4,
+    pause: 10,
     button: 'seguir',
   },
   {
@@ -279,6 +324,12 @@ export const STEPS: readonly TutorialStep[] = [
       const left = firstPay.day - s.day;
       return `${head} Te faltan ${firstDue(s) - s.gold}, y quedan ${left} ${left === 1 ? 'noche' : 'noches'}. La caja del salón deja algo cada noche y el tablón tiene más encargos: ve pasando las noches hasta juntarlo.`;
     },
+    short: (s) =>
+      payReady(s)
+        ? `Merlo, día ${firstPay.day}: caja lista.`
+        : `Merlo, día ${firstPay.day}: faltan ${firstDue(s) - s.gold}.`,
+    pause: 8,
+    free: true,
     done: (s) => s.paid > 0 || !!s.over,
     button: 'pago',
   },
@@ -294,6 +345,11 @@ export const STEPS: readonly TutorialStep[] = [
 export const tutorialStep = (s: GameState): TutorialStep | null =>
   s.tutorial && !s.over ? (STEPS[s.tutorial.step] ?? null) : null;
 export const tutorialOn = (s: GameState) => !!tutorialStep(s);
+/** El reloj está parado por el tutorial (en los pasos con `clock` corre, salvo en el respiro). */
+export const tutorialFrozen = (s: GameState) => {
+  const st = tutorialStep(s);
+  return !!st && (!st.clock || !!s.tutorial?.wait);
+};
 
 /** Las notas del tío que el tutorial ya ha contado (no se repiten al acabar). */
 export const TUTORIAL_TIPS = [

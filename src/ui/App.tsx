@@ -44,14 +44,20 @@ import { applyLook, loadSettings, saveSettings, type Settings } from '../platfor
 import { Splash } from './Splash';
 import { Title } from './Title';
 import { nextTip } from './tips';
-import { canDrag, planDrop, planTask, type Task } from './drop';
+import { canDrag, planDrop, planTask, type Drop, type Task } from './drop';
 import { UncleNote } from './UncleNote';
 import { TripSheet } from './TripSheet';
 import { TutorialNote } from './TutorialNote';
 import { TutorialFocus } from './TutorialFocus';
 import { tutorialFocus } from './tutorialFocus';
 import { IntroLetter } from './IntroLetter';
-import { tutorialOn, tutorialStep, tutorialWait, type TutorialSkip } from '../core/tutorial';
+import {
+  tutorialFrozen,
+  tutorialOn,
+  tutorialStep,
+  tutorialWait,
+  type TutorialSkip,
+} from '../core/tutorial';
 import { GremioPanel } from './panels/GremioPanel';
 import { HeroesPanel, type HeroFilter } from './panels/HeroesPanel';
 import { MailPanel } from './panels/MailPanel';
@@ -155,6 +161,7 @@ export function App() {
   const [hover, setHover] = useState<{ label: string; at: Point } | null>(null);
   /** Llevando a alguien con el dedo: qué pasaría si se suelta ahí. */
   const [dragTip, setDragTip] = useState<{ text: string; ok: boolean; at: Point } | null>(null);
+  const lastDrop = useRef<Drop | null>(null);
   const [focusFac, setFocusFac] = useState<keyof Facilities | null>(null);
   const [heroFilter, setHeroFilter] = useState<HeroFilter>('todos');
   /** Trabajador tocado en la escena: Tareas lo abre elegido. */
@@ -794,7 +801,8 @@ export function App() {
   }, [tip?.id]);
   useEffect(() => {
     const at = lesson?.focus?.(gameRef.current);
-    if (at) scene.current?.focus(at);
+    if (at && lesson?.zoom) scene.current?.closeUp(at);
+    else if (at) scene.current?.focus(at);
   }, [lesson?.id]);
 
   // El reloj del día: corre con el juego abierto, también con un panel delante, y se para en
@@ -804,7 +812,7 @@ export function App() {
     !game.over &&
     !pendingEvent &&
     !tip &&
-    !tutorialOn(game) &&
+    !tutorialFrozen(game) &&
     !watching &&
     !bossCall &&
     !settingsOpen &&
@@ -922,6 +930,7 @@ export function App() {
             setHint(false);
             const d = room ? planDrop(gameRef.current, id, room) : null;
             setDragTip({ text: d?.text ?? 'Suéltalo en una sala.', ok: !!d?.ok, at });
+            lastDrop.current = d;
             return d;
           }}
           onRoomDrag={(id) => works.startPick({ kind: 'move', id })}
@@ -932,7 +941,14 @@ export function App() {
           onDrop={(id, room) => {
             setDragTip(null);
             const d = room ? planDrop(gameRef.current, id, room) : null;
-            if (!d?.ok) return;
+            // En el tutorial, lo que no se deja hacer se explica también al soltar (la escena
+            // suelta sin sala lo que no vale: se mira lo último que se dijo al arrastrar).
+            const last = lastDrop.current;
+            lastDrop.current = null;
+            if (!d?.ok) {
+              if (last && !last.ok && tutorialOn(gameRef.current)) toast(last.text);
+              return;
+            }
             for (const a of d.actions) dispatch(a);
             // Un incidente arreglado ya se avisa solo (con lo que ha pasado).
             if (!d.actions.some((a) => a.type === 'incident')) toast(d.text);

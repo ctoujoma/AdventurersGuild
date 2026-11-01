@@ -62,6 +62,19 @@ Hecho por el agente del tutorial (PR del respiro y el pago):
   la nota dice cuánto y el botón es «Pasar la noche». En ese paso no hay foco: se juega libre
   (tablón, casa…). La noche del pago, si no llega, el tío sigue poniendo lo que falte.
 
+Segunda ronda (feedback del usuario):
+
+- Respiros más largos (6–15 s) y también antes de `enfermeria`, `esperar` y `pago`; el
+  oscurecido entra a los 2,5 s.
+- `mover` pide un **héroe** (echan una mano en sus ratos libres, sin ser cocineros). Soltar en la
+  cocina a uno del pueblo no vale: `tutorialVeto` lo explica al arrastrar y al soltar.
+- `tablon`/`mandar` y `barra` resaltan también la cosa tocable de la sala (`Focus.also`,
+  `cosa:<act>` con `RoomScene.actOnScreen`). El foco es un velo con agujeros (`clip-path`).
+- Pasos libres (`free`: `esperar` y `pago`): sin foco; «Entendido» pliega la nota arriba a la
+  derecha con su resumen (`short`) y el botón; al pasar el ratón o al tocarla se lee entera.
+  En `esperar` el reloj corre (`clock`, `tutorialFrozen`): el grupo puede volver solo.
+- Ratas: la cámara se acerca a la cocina (`zoom`, `RoomScene.closeUp`).
+
 Pendiente que ya estaba apuntado:
 
 - Candados en el mapa y en los adornos durante el tutorial (que no se pueda ir a otra cosa).

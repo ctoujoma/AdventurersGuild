@@ -84,6 +84,7 @@ import {
   skipTime,
   startStep,
   type TutorialSkip,
+  tutorialFrozen,
   tutorialOn,
   tutorialStep,
 } from './tutorial';
@@ -452,17 +453,10 @@ export function reduce(state: GameState, action: Action): GameState {
   if (next === state || !tutorialOn(next)) return next;
   // Tutorial: lo hecho cuenta para el paso en curso, y se pasa al siguiente si toca.
   const t = structuredClone(next);
-  if (action.type === 'assign') t.tutorial!.moved = true;
   if (action.type === 'renameHero') t.tutorial!.named = true;
   const before = t.tutorial!.step;
   const msgs = advanceTutorial(t);
-  if (
-    t.tutorial!.step === before &&
-    !msgs.length &&
-    action.type !== 'assign' &&
-    action.type !== 'renameHero'
-  )
-    return next;
+  if (t.tutorial!.step === before && !msgs.length && action.type !== 'renameHero') return next;
   if (msgs.length)
     t.incidentNews = [
       ...(t.incidentNews ?? []),
@@ -704,13 +698,16 @@ function reduceAction(state: GameState, action: Action): GameState {
       return { ...state, tips: [...(state.tips ?? []), action.id] };
     }
     case 'tick': {
-      // Mientras dura el tutorial el reloj está parado: solo avanza con los saltos.
-      if (tutorialOn(state)) return state;
+      // Mientras dura el tutorial el reloj está parado (salvo en sus pasos libres): solo avanza
+      // con los saltos.
+      if (tutorialFrozen(state)) return state;
       const next = tick(state, action.to);
       if (next === state) return state;
       // Los incidentes solo corren con el juego abierto (la simulación de fuera no pasa por aquí).
-      const news = stepIncidents(next, state.clock ?? 0, next.clock ?? 0);
-      stepRumors(next, state.clock ?? 0, next.clock ?? 0);
+      // En el tutorial no hay sueltos: los suyos llegan preparados.
+      const tut = tutorialOn(state);
+      const news = tut ? [] : stepIncidents(next, state.clock ?? 0, next.clock ?? 0);
+      if (!tut) stepRumors(next, state.clock ?? 0, next.clock ?? 0);
       // Los grupos que acaban lo suyo mandan su informe.
       const ms = next.over ? { next, news: [] } : tickMissions(next);
       // Los objetivos también se cobran en cuanto se cumplen.

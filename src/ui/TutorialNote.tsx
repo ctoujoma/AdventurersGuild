@@ -1,3 +1,4 @@
+import { useState } from 'preact/hooks';
 import type { GameState } from '../core/model';
 import { payReady, type TutorialSkip, type TutorialStep } from '../core/tutorial';
 import { Icon } from './icons';
@@ -22,8 +23,17 @@ const LABEL: Record<'seguir' | TutorialSkip, string> = {
   pago: 'Saltar al día 7',
 };
 
-/** Una página del cuaderno del tío: lo que toca hacer ahora, y su botón si no pide nada. */
+/**
+ * Una página del cuaderno del tío: lo que toca hacer ahora, y su botón si no pide nada. En los
+ * pasos libres, «Entendido» la pliega en la esquina (su resumen y el botón); al pasar el ratón
+ * o al tocarla se lee entera.
+ */
 export function TutorialNote({ game, step, ready, up, onOk, onSkipTime, onSkipAll }: Props) {
+  /** Paso cuya nota está plegada; si se lee entera: con el ratón encima o fijada al tocarla. */
+  const [folded, setFolded] = useState<string | null>(null);
+  const [hover, setHover] = useState(false);
+  const [pinned, setPinned] = useState(false);
+  const peek = hover || pinned;
   // Al pago solo se salta con la caja lista; si no, noche a noche (y se juega entre medias).
   const b =
     step.button === 'esperar'
@@ -31,6 +41,38 @@ export function TutorialNote({ game, step, ready, up, onOk, onSkipTime, onSkipAl
       : step.button === 'pago' && !payReady(game)
         ? 'noche'
         : step.button;
+  const action = b && ready && (
+    <button
+      class="btn btn-gold"
+      data-tut="nota-boton"
+      onClick={() => (b === 'seguir' ? onOk() : onSkipTime(b))}
+    >
+      {LABEL[b]}
+    </button>
+  );
+  if (step.free && folded === step.id)
+    return (
+      <aside
+        key={step.id}
+        class={`notebook-mini ${peek ? 'is-open' : ''}`}
+        role="status"
+        aria-label="Cuaderno de Fausto"
+        // Solo el ratón: en una pantalla táctil, tocar ya abre y cierra.
+        onPointerEnter={(e) => e.pointerType === 'mouse' && setHover(true)}
+        onPointerLeave={(e) => e.pointerType === 'mouse' && setHover(false)}
+      >
+        <button
+          class="notebook-mini-head"
+          aria-expanded={peek}
+          onClick={() => setPinned((p) => !(p || hover))}
+        >
+          <Icon name="libro" size={12} />
+          <span>{step.short?.(game) ?? 'Del cuaderno'}</span>
+        </button>
+        {peek && <p>{step.text(game)}</p>}
+        {action}
+      </aside>
+    );
   return (
     <aside
       key={step.id}
@@ -43,15 +85,19 @@ export function TutorialNote({ game, step, ready, up, onOk, onSkipTime, onSkipAl
       </span>
       <p>{step.text(game)}</p>
       <div class="notebook-actions">
-        {b && ready && (
+        {step.free && (
           <button
-            class="btn btn-gold"
-            data-tut="nota-boton"
-            onClick={() => (b === 'seguir' ? onOk() : onSkipTime(b))}
+            class="btn"
+            onClick={() => {
+              setFolded(step.id);
+              setHover(false);
+              setPinned(false);
+            }}
           >
-            {LABEL[b]}
+            Entendido
           </button>
         )}
+        {action}
         {step.id !== 'fin' && (
           <button class="notebook-skip" onClick={onSkipAll}>
             Ya sé jugar

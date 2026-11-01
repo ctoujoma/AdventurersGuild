@@ -10,7 +10,9 @@ import {
   payReady,
   tutorialHero,
   tutorialOn,
+  tutorialFrozen,
   tutorialStep,
+  tutorialVeto,
   tutorialWait,
 } from './tutorial';
 
@@ -79,10 +81,20 @@ describe('tutorial guiado', () => {
     const enf = s.building.rooms.find((r) => r.type === 'enfermeria')!;
     s = go(reduce(s, { type: 'upgradeRoom', id: enf.id }));
     expect(at(s)).toBe('mover');
+    s = go(s);
     const cocina = s.building.rooms.find((r) => r.type === 'cocina')!;
+    // Uno del pueblo no vale (el tutorial lo explica); un héroe, sí.
     const w = s.workers.find((x) => x.room !== cocina.id)!;
-    s = reduce(s, { type: 'assign', who: w.id, room: cocina.id });
+    expect(tutorialVeto(s, w.id, cocina.id)).toContain(w.name);
+    const h = s.heroes.find((x) => x.status === 'ok')!;
+    expect(tutorialVeto(s, h.id, cocina.id)).toBeNull();
+    s = reduce(s, { type: 'assign', who: h.id, room: cocina.id });
     expect(at(s)).toBe('esperar');
+    // Esperando, el reloj corre (tras el respiro): el grupo puede volver solo.
+    expect(tutorialFrozen(s)).toBe(true);
+    s = go(s);
+    expect(tutorialFrozen(s)).toBe(false);
+    expect(reduce(s, { type: 'tick', to: 100 }).clock).toBe(100);
     s = reduce(s, { type: 'tutorial', op: 'vuelta' });
     expect(s.missions).toHaveLength(0);
     expect(at(s)).toBe('informe');
@@ -110,7 +122,7 @@ describe('tutorial guiado', () => {
     }
     s = go(s);
     expect(at(s)).toBe('objetivos');
-    s = ok(s);
+    s = go(ok(s));
     expect(at(s)).toBe('pago');
     // Al pago se salta con la caja lista; si no, noche a noche.
     for (let i = 0; i < 6 && !payReady(s); i++) s = reduce(s, { type: 'tutorial', op: 'noche' });
