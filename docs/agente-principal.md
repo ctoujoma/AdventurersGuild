@@ -50,22 +50,32 @@ Para el agente principal (núcleo, tiempo, tutoriales, combate, talleres, amigos
   `escena:<selector>` cierran antes lo que tape), `ui/IntroLetter.tsx`. Notas sueltas del
   cuaderno: `ui/tips.ts`, `ui/UncleNote.tsx`.
 
-## Dónde lo dejamos (1 de noviembre, tras el feedback)
+## Dónde lo dejamos (1 de noviembre, antes de compactar)
 
-- En `main`: todo lo anterior, más los golpes de los jefes nuevos del de arte (#72) con su
-  propuesta del panel del encargo (`encargos/propuesta-panel-encargo.md`).
-- Hecha la ficha «Encargo en curso» (`ui/TripSheet.tsx`) con sus datos (`core/journey.ts`):
-  toca al de arte la tira (`QuestStrip`, en el hueco `Strip`). El encargo se resuelve al acabar
-  lo suyo (`settleMission` y `tickMissions` en `game.ts`, `Mission.done`); el jefe espera la acción
-  del jugador (`Mission.waiting`, acción `boss`, `ui/BossFight.tsx` `BossWait`).
-- El tutorial es de un agente propio: `encargos/tutorial.md`.
-- Pelea interactiva contra jefes: `core/combat.ts` (simulación, `missionCombat`), `ui/BossFight.tsx`
-  (en directo con `fight.sim`), `world/battle.ts` (modo `live`), calibrado con `npm run calib`.
-  Siguiente: críticos con gesto (el evento `crit` ya existe).
-- Amanecer, decidido: con la app abierta no hay carta (avisos y, solo lo gordo, carta suelta);
-  la pila de cartas, al volver tras tenerla cerrada (plan, «Pendiente de revisar» y fase 5).
-- Interfaz: el título se queda (el usuario no se quejaba de él); corregido en
-  `encargos/interfaz-primera-vez.md`. Sigue sin fusionar **el cobro de Merlo** (`ui/PayDay.tsx`):
-  revisarlo con el tutorial (salto al día 7) y `dueTonight` cuando llegue.
-- Después: 2b (tutorial de obras). Pendientes del tutorial: candados en mapa y adornos, y que la
-  barra diga que el reloj está parado.
+- **Mapa del código de lo último:**
+  - Encargo en curso: `core/journey.ts` (viaje, sucesos, `resolveAt`, `BOSS_T`), `ui/TripSheet.tsx`,
+    la tira del de arte (`ui/QuestStrip.tsx`, `world/tripStrip.ts`, `art/foes.ts`).
+  - Resolver en la faena: `settleMission`, `tickMissions`, `Mission.done` (informe y `fates`),
+    `jobBefore` (vuelven a su trabajo) en `game.ts`.
+  - Jefe que espera: `Mission.waiting`, `bossWait`, acción `boss` (con `orders`), `BossWait`.
+  - Pelea interactiva: `core/combat.ts` (simulación determinista: `STEP`, órdenes `target`,
+    `skill`, `cover`, `crit`; `FOE_TUNE`; `missionCombat`), `resolveMission(…, fight)`,
+    `world/battle.ts` modo `live` (`setHp`, `aim`, `down`, `end`, `number`, `setChance`),
+    `ui/BossFight.tsx`. Calibrado: `npm run calib` (`tools/calib.ts`).
+  - Amanecer jugando: botón `dawn-chip` (`quietDawn` en `App.tsx`); la pila la hizo interfaz.
+  - Incidentes: reaccionan solos si hay quien (`presentFor`, `INCIDENT_REACT`).
+  - Obras: borrador guardado (`worksDraft`, `keep` en `ui/works.ts`).
+- **Abierto:** PR #90 (borrador de obras y plan al día) sin fusionar al compactar.
+- **Siguiente decidido (usuario conforme):** Android primero. Plan:
+  1. Capacitor (`@capacitor/core`, `cli`, `android`) y una acción de GitHub que compile la APK de
+     depuración y la deje como artefacto descargable (aquí no hay SDK de Android). Luego, la
+     de publicación firmada con secretos del repo.
+  2. Guardado nativo (Preferences/Filesystem), tiempo con la app cerrada (`lastSeen`, eventos
+     `pause`/`resume` de la app) y aviso local la víspera del pago a Merlo.
+  3. Medir el 3D en un Android modesto (el usuario lo prueba; «Pocas luces» en Ajustes) y ajustar.
+  Después: la pelea interactiva en los asaltos (barra de héroes abajo, sin formaciones) y el
+  multijugador sin servidor (código del grupo de un amigo con la pelea determinista; visitar
+  taberna por enlace). Traducciones y talleres, para otros agentes.
+- **Pendiente de revisar con el usuario:** las cartas una a una (lo valora); las escaleras
+  planeadas en obras que «no dejan seguir planeando» (falta su caso concreto: no se reproduce en
+  el núcleo).
