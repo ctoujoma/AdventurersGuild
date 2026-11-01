@@ -19,7 +19,14 @@ quieren el juego o lo desinstalan».
    «Cerrar», que ya no existe). El agente principal la sustituye por una carta del tío (ver
    abajo): no la toques.
 
-## Qué hacer
+## Corrección del usuario (léela antes)
+
+«No me quejaba del menú principal»: la queja era la carta del día 1, que ya está sustituida
+por la carta del tío. **El título se queda como está** salvo arreglos pequeños que el usuario
+pida (por ejemplo, que no asomen la barra y las pestañas detrás). Lo de abajo queda solo como
+ideas, sin hacer nada sin su visto bueno.
+
+## Ideas (no hacer sin preguntar)
 
 - **Título con identidad:** la taberna de verdad de fondo (de noche, con su luz), sin la barra
   ni las pestañas; un logotipo con oficio (pixel art, no texto con sombra genérico); un solo
