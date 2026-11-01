@@ -63,6 +63,8 @@ export interface SceneModel {
   heroes: SceneHero[];
   /** Los incidentes en marcha: se ven en su sala mientras duran (solo dibujo). */
   incidents?: SceneIncident[];
+  /** El día y el reloj (segundos): si un incidente se va con el reloj en su `until`, salió mal. */
+  clock?: { day: number; secs: number };
 }
 
 /** Un incidente tal como lo ve la escena: qué pasa y en qué sala (id). */
@@ -71,6 +73,8 @@ export interface SceneIncident {
   room: string;
   /** Los de tocar (las ratas): toques que faltan. */
   taps?: number;
+  /** Segundo del día en que sale mal si nadie hace nada. */
+  until?: number;
 }
 
 /** Equipo sin dueño, con su rareza (se cuelga en la armería o va en arcones). */

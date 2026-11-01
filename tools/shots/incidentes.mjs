@@ -7,7 +7,8 @@
  * Mete a mano cada incidente en una sala de su tipo (si no la hay en uso, arregla una rota y le
  * cambia el tipo) y saca la sala de cerca (`incidente-<tipo>.png`), dos veces seguidas para ver
  * la animación (`-b`); las ratas, al tocarlas y al acabar (`ratas-toque.png`, `ratas-fin.png`); y
- * al final cómo se va el último al resolverse (`resuelto.png`).
+ * cada uno al salir bien (`bien-<tipo>.png`) y al salir mal (`mal-<tipo>.png`, `-b`), dejando que
+ * llegue su hora; y al final cómo se va el último al resolverse (`resuelto.png`).
  */
 import { mkdirSync } from 'node:fs';
 import { chromium } from 'playwright';
@@ -60,6 +61,8 @@ if (await skip.count())
     .first()
     .click()
     .catch(() => {});
+// (Por si la nota sale tarde: el tutorial para el reloj y así nada llega a salir mal.)
+await page.evaluate(() => window.__game.dispatch({ type: 'tutorial', op: 'saltar' }));
 await page.waitForTimeout(400);
 // Dónde pasa cada uno (ver `data/incidents.ts`).
 const WHERE = {
@@ -129,6 +132,33 @@ for (const [kind, type] of Object.entries(WHERE)) {
     await page.waitForTimeout(150);
     await page.screenshot({ path: `${out}/ratas-fin.png` });
   }
+  // Sale bien (se quita antes de su hora) y sale mal (se deja que llegue su hora).
+  await page.evaluate(() => {
+    const g = window.__game;
+    g.set({ ...g.get(), incidents: [] });
+  });
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: `${out}/bien-${kind}.png` });
+  await page.waitForTimeout(1500);
+  await page.evaluate(
+    ({ kind, id }) => {
+      const g = window.__game;
+      const s = g.get();
+      const now = s.clock ?? 0;
+      g.set({
+        ...s,
+        incidents: [{ id: `y${kind}`, kind, room: id, from: now, until: now + 2, taps: 6 }],
+      });
+    },
+    { kind, id },
+  );
+  await page
+    .waitForFunction(() => !(window.__game.get().incidents ?? []).length, null, { timeout: 15000 })
+    .catch(() => console.log('no ha salido mal a tiempo:', kind));
+  await page.waitForTimeout(250);
+  await page.screenshot({ path: `${out}/mal-${kind}.png` });
+  await page.waitForTimeout(900);
+  await page.screenshot({ path: `${out}/mal-${kind}-b.png` });
 }
 // Resuelto: se deshace en polvo.
 await page.evaluate(() => {

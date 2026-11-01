@@ -331,3 +331,55 @@ export function dampStain(): PixelBuffer {
   b.set(7, 3, P.sky);
   return b;
 }
+
+// ---------- Lo que queda si sale mal ----------
+
+const RAT_BREAD = { g: P.clay, G: P.rust, e: P.black, p: P.coral, b: P.tan, B: P.amber };
+
+/** La rata huyendo con un pan en la boca (dos pasos, como la de siempre). */
+export const ratBreadStrip = (): Strip =>
+  strip([
+    sprite(['.....ggg.bb.', 'p..gggggebBb', '.pGgggggg.b.', '...g.g.g....'], RAT_BREAD),
+    sprite(['.....ggg.bb.', '.p.gggggebBb', 'p.Ggggggg.b.', '....g.g.g...'], RAT_BREAD),
+  ]);
+
+/** La quemadura del suelo tras el fuego: una mancha negra con alguna brasa. */
+export function scorch(): PixelBuffer {
+  const b = new PixelBuffer(30, 5);
+  b.ellipse(15, 2.5, 14.5, 2.5, (x, y, d) =>
+    d > 0.7 ? ((x + y) % 2 ? P.ebony : P.plum) : (x * 3 + y) % 7 ? P.black : P.ebony,
+  );
+  b.set(9, 2, P.orange);
+  b.set(19, 3, P.red);
+  b.set(13, 1, P.brick);
+  return b;
+}
+
+/** La silla rota de la pelea: el asiento partido y las patas sueltas por el suelo. */
+export function brokenChair(): PixelBuffer {
+  return sprite(['......o.....', '.....oO..b..', 'ooooO...b...', 'OOOO...b...b', '..b.bbb...b.'], {
+    o: P.oak,
+    O: P.rust,
+    b: P.bark,
+  });
+}
+
+/** El charco grande de la bodega cuando nadie tapa la gotera. */
+export function bigPuddle(): PixelBuffer {
+  const b = new PixelBuffer(52, 5);
+  b.ellipse(26, 2.5, 25.5, 2.5, (_x, _y, d) => (d > 0.6 ? P.ocean : P.sky));
+  b.hline(10, 1, 3, P.cyan);
+  b.hline(34, 2, 4, P.cyan);
+  b.set(22, 1, P.white);
+  return b;
+}
+
+/** La jarra del noble, volcada, con la cerveza derramada. */
+export function spilledMug(): PixelBuffer {
+  return sprite(['..jjjw......', '.Jjjjww.....', '.Jjjjwffff..', '..jjj.fffff.'], {
+    j: P.oak,
+    J: P.rust,
+    w: P.white,
+    f: P.gold,
+  });
+}

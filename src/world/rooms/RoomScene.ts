@@ -577,7 +577,7 @@ export class RoomScene {
     const L = this.layout;
     const m = this.model;
     if (!L || !m) return;
-    this.incidents.set(L, m.building, m.incidents ?? []);
+    this.incidents.set(L, m.building, m.incidents ?? [], m.clock);
     this.incidentLamps = this.incidents.lights().map((l) => ({
       pos: new Vector3(l.x, GROUND - l.y, -l.z + 6),
       glow: new Vector3(l.x, GROUND - l.y, -l.z),
