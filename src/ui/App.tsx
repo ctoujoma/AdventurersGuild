@@ -1442,6 +1442,11 @@ export function App() {
             flavor={game.flavor}
             events={game.dawn}
             unread={unread}
+            all={settings.dawnAll || settings.calm}
+            onAlways={() => {
+              setSettings((s) => ({ ...s, dawnAll: true }));
+              toast('Hecho: la carta del amanecer saldrá de golpe. Se cambia en Ajustes.');
+            }}
             onClose={() => closeDawn()}
             onMail={() => closeDawn('correo')}
           />

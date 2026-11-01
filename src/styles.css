@@ -3907,24 +3907,9 @@ button.trait[aria-pressed='true'] {
   }
 }
 
-/* Lo que pasó durante la noche aparece línea a línea en el amanecer. */
+/* Cada noticia del amanecer entra al abrirse (de golpe, con su retardo en línea). */
 .dawn-events li {
-  animation: item-in 0.3s ease-out both;
-}
-.dawn-events li:nth-child(1) {
-  animation-delay: 0.7s;
-}
-.dawn-events li:nth-child(2) {
-  animation-delay: 0.85s;
-}
-.dawn-events li:nth-child(3) {
-  animation-delay: 1s;
-}
-.dawn-events li:nth-child(4) {
-  animation-delay: 1.15s;
-}
-.dawn-events li:nth-child(n + 5) {
-  animation-delay: 1.3s;
+  animation: ev-in 0.32s cubic-bezier(0.2, 1.4, 0.4, 1) both;
 }
 
 /* Cartas sin leer: el lacre late un poco. */
@@ -6381,4 +6366,130 @@ select.crew-free {
 }
 .bf-now {
   color: var(--lemon);
+}
+
+/* ---------- La carta del amanecer, una a una ---------- */
+@keyframes ev-in {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Lo bueno de verdad: entra con un salto, brilla y le pasa un destello por encima. */
+.dawn-events li.ev-big {
+  padding: 6px 8px 6px 26px;
+  font-weight: 700;
+  color: var(--plum);
+  background: linear-gradient(90deg, rgba(254, 231, 97, 0.55), rgba(254, 174, 52, 0.25));
+  box-shadow:
+    0 0 0 2px var(--gold),
+    0 0 0 4px var(--bark);
+  overflow: hidden;
+  animation:
+    ev-big-in 0.55s cubic-bezier(0.2, 1.6, 0.4, 1) both,
+    ev-big-glow 1.6s ease-in-out 0.55s 2;
+}
+
+.dawn-events li.ev-big::before {
+  display: none;
+}
+
+.ev-big::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -40%;
+  width: 30%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.85), transparent);
+  transform: skewX(-20deg);
+  animation: ev-shine 0.9s ease-out 0.35s both;
+  pointer-events: none;
+}
+
+.ev-star {
+  position: absolute;
+  left: 6px;
+  top: 7px;
+  animation: ev-star 1.2s ease-in-out infinite;
+}
+
+@keyframes ev-big-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.6) rotate(-2deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.06) rotate(1deg);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes ev-big-glow {
+  50% {
+    box-shadow:
+      0 0 0 2px var(--lemon),
+      0 0 0 4px var(--bark),
+      0 0 14px 4px rgba(254, 231, 97, 0.7);
+  }
+}
+
+@keyframes ev-shine {
+  to {
+    left: 120%;
+  }
+}
+
+@keyframes ev-star {
+  50% {
+    transform: scale(1.3) rotate(20deg);
+  }
+}
+
+.dawn-card {
+  cursor: pointer;
+}
+
+.dawn-tap {
+  margin: 0;
+  font: var(--t-s) / 1 var(--pixel);
+  color: var(--text-soft);
+  text-align: center;
+  animation: blink 1.4s steps(2) infinite;
+}
+
+.dawn-page {
+  margin: 0;
+  font: var(--t-l) / 1.2 var(--pixel);
+  color: var(--bark);
+  animation: ev-in 0.3s ease-out both;
+}
+
+.dawn-page small {
+  font-size: var(--t-s);
+  color: var(--text-soft);
+}
+
+.ev-more summary {
+  cursor: pointer;
+  font-size: var(--t-m);
+  color: var(--text-soft);
+  text-decoration: underline;
+}
+
+.ev-more .dawn-events {
+  margin-top: 4px;
+}
+
+.dawn-always {
+  align-self: center;
+  font-size: var(--t-s);
 }

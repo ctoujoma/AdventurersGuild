@@ -12,6 +12,8 @@ export interface Settings {
   bigText: boolean;
   /** Menos movimiento en la interfaz. */
   calm: boolean;
+  /** La carta del amanecer, todo de golpe (sin abrir las noticias una a una). */
+  dawnAll: boolean;
   /** Vibración en los momentos con peso (si el móvil la tiene). */
   vibrate: boolean;
   /** Pocas luces en la escena (solo las más cercanas al centro), para móviles lentos. */
@@ -34,6 +36,7 @@ export const DEFAULT_SETTINGS: Settings = {
   pace: 1,
   bigText: false,
   calm: false,
+  dawnAll: false,
   vibrate: true,
   fewLights: false,
   classicTime: false,
@@ -54,6 +57,7 @@ export function parseSettings(raw: unknown): Settings {
     pace: r.pace === 2 || r.pace === 4 ? r.pace : 1,
     bigText: r.bigText === true,
     calm: r.calm === true,
+    dawnAll: r.dawnAll === true,
     vibrate: r.vibrate !== false,
     fewLights: r.fewLights === true,
     classicTime: r.classicTime === true,
