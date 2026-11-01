@@ -38,7 +38,18 @@ historial.
 - **Para el agente de arte:** Merlo entrando en la taberna a cobrar, y un aspecto suyo propio
   (hoy sale de `generateLook` con mercader, barba y sombrero).
 
-## Siguiente: punto 4, cartas del amanecer una a una
+## Hecho: punto 4, cartas del amanecer una a una
+
+- El núcleo marca `big` en `DawnEvent` (rango, deuda saldada, historia cumplida, quien vuelve
+  tras desaparecer, misión brillante, jefe vencido o botín raro). PR aparte, pequeño.
+- `src/ui/dawnSteps.ts` (con tests) reparte la carta en pasos: con más de ocho noticias, las
+  pequeñas van juntas al final, plegadas («Y además…»); «Mientras no estabas», un día por página.
+- `Dawn.tsx`: se abren solas con un ritmo corto (más rato tras lo grande) o tocando; sonido por
+  tipo; lo grande con salto, brillo y estrella. «Saltar» lo enseña todo y ofrece «Siempre de
+  golpe», que se guarda en Ajustes (`dawnAll`; con «Menos movimiento», también de golpe).
+- Con la app abierta, `main` deja el botón «Día N · ver el parte»: la carta una a una sale al
+  tocarlo; al volver tras una ausencia, en los saltos del tutorial y al acabar, sale sola.
+- Captura: [la carta una a una](capturas/amanecer-una-a-una.png).
 
 ## Antes: punto 3, avisos (decidido con el usuario)
 

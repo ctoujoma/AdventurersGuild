@@ -170,5 +170,9 @@ export function advanceChain(
   );
   if (def.reward.trophy) r.chips.push({ t: `Trofeo: ${def.reward.trophy.name}`, k: 'good' });
   if (def.reward.revealMap) r.chips.push({ t: 'Mapa completo de la comarca', k: 'good' });
-  events.push({ t: `¡«${def.name}» cumplida! ${def.client} paga y cuenta la hazaña.`, k: 'good' });
+  events.push({
+    t: `¡«${def.name}» cumplida! ${def.client} paga y cuenta la hazaña.`,
+    k: 'good',
+    big: true,
+  });
 }

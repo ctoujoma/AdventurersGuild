@@ -15,8 +15,9 @@ import {
   placeAt,
   type Terrain,
 } from '../../data/places';
+import { audio } from '../../audio/audio';
 import { BufferImage } from '../BufferImage';
-import { left, shortLeft, shortSpan, span } from '../when';
+import { left, shortSpan, span } from '../when';
 import { help } from '../HoldHelp';
 import { Icon, type IconName } from '../icons';
 import { listNames, plural } from '../text';
@@ -73,15 +74,18 @@ function Stat({
     </span>
   );
 }
-const MAX_ZOOM = 6;
-/** Zoom con el que se abre el mapa, centrado en la taberna. */
-const START_ZOOM = 1.7;
+/**
+ * El zoom va a escala entera: cada píxel del dibujo son 1, 2, 3… píxeles de pantalla (redondeado
+ * a píxeles del aparato), así se ve nítido. El dibujo (`mapBuffer`) puede crecer sin tocar esto.
+ */
+const MAX_LEVEL = 8;
+const dpr = () => (typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1);
+/** Píxeles de pantalla (CSS) por píxel del dibujo en cada nivel. */
+const scaleOf = (level: number) => Math.max(1, Math.round(level * dpr())) / dpr();
+/** Redondeo a píxeles del aparato, para que no se emborrone al mover. */
+const snap = (v: number) => Math.round(v * dpr()) / dpr();
 
-type Info =
-  | { kind: 'place'; name: string }
-  | { kind: 'party'; id: string }
-  | { kind: 'chain'; id: string }
-  | { kind: 'tavern' };
+type Info = { kind: 'place'; name: string } | { kind: 'chain'; id: string } | { kind: 'tavern' };
 
 /** Punta de flecha en mitad de un tramo, apuntando hacia su final. */
 function arrow(a: { x: number; y: number }, b: { x: number; y: number }, inv = 1): string {
@@ -107,7 +111,8 @@ function partyPos(place: string, days: number, left: number) {
 /**
  * Mapa de la comarca: encargos, grupos de viaje, desaparecidos y asaltos que se acercan.
  * Se puede acercar (rueda, pellizco o botones) y arrastrar; tocar un lugar, un encargo o
- * un grupo abre una ficha flotante dentro del propio mapa.
+ * un grupo abre una ficha flotante dentro del propio mapa. Ocupa el panel entero; debajo, la lista
+ * de grupos fuera, plegable. Tocar un grupo (en el mapa o en la lista) abre su «Encargo en curso».
  */
 export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
   const level = game.fac.mapas;
@@ -145,8 +150,14 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
 
   // ---------- Zoom y arrastre ----------
   const vp = useRef<HTMLDivElement>(null);
+  const buf = mapBuffer(style);
   const [size, setSize] = useState({ w: 1, h: 1 });
-  const [view, setView] = useState({ z: 1, x: 0, y: 0 });
+  /** `l`: nivel de zoom (entero); `z`: su escala; `x`, `y`: dónde cae la esquina del dibujo. */
+  const [view, setView] = useState({ l: 1, z: 1, x: 0, y: 0 });
+  /** La lista de grupos fuera, plegada (en vertical empieza plegada: el mapa, grande). */
+  const [trips, setTrips] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth > window.innerHeight,
+  );
   const [info, setInfo] = useState<Info | null>(null);
   /** La leyenda y la ayuda, plegadas tras el botón «?». */
   const [legend, setLegend] = useState(false);
@@ -158,33 +169,52 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
   });
   const ptrs = useRef(new Map<number, { x: number; y: number }>());
   const gesture = useRef<{ moved: number; pinch: number; z: number } | null>(null);
+  /** Centra el dibujo si es más pequeño que el visor; si no, que no se salga. */
+  const clampAt = (v: { l: number; z: number; x: number; y: number }, w: number, h: number) => {
+    const mw = buf.w * v.z;
+    const mh = buf.h * v.z;
+    return {
+      ...v,
+      x: snap(mw <= w ? (w - mw) / 2 : Math.min(0, Math.max(w - mw, v.x))),
+      y: snap(mh <= h ? (h - mh) / 2 : Math.min(0, Math.max(h - mh, v.y))),
+    };
+  };
+  const clampView = (v: { l: number; z: number; x: number; y: number }) =>
+    clampAt(v, size.w, size.h);
+  /** El nivel que deja un punto del dibujo en el centro del visor. */
+  const centerOn = (l: number, mx: number, my: number, w: number, h: number) => {
+    const z = scaleOf(l);
+    return clampAt(
+      { l, z, x: w / 2 - (mx / MAP_W) * buf.w * z, y: h / 2 - (my / MAP_H) * buf.h * z },
+      w,
+      h,
+    );
+  };
   useEffect(() => {
     const el = vp.current;
     if (!el) return;
-    const fit = () => setSize({ w: el.clientWidth || 1, h: el.clientHeight || 1 });
-    // Al abrir: acercado y centrado en la taberna (el mapa es mayor que la comarca).
+    const fit = () => {
+      const w = el.clientWidth || 1;
+      const h = el.clientHeight || 1;
+      setSize({ w, h });
+      setView((v) => clampAt(v, w, h));
+    };
+    // Al abrir: un nivel más que el que cabe entero, centrado en la taberna.
     const w = el.clientWidth || 1;
     const h = el.clientHeight || 1;
-    const z = START_ZOOM;
-    setView({
-      z,
-      x: Math.min(0, Math.max(w - w * z, w / 2 - (TAVERN.x / MAP_W) * w * z)),
-      y: Math.min(0, Math.max(h - h * z, h / 2 - (TAVERN.y / MAP_H) * h * z)),
-    });
+    const whole = Math.max(1, Math.floor(Math.min(w / buf.w, h / buf.h)));
+    setView(centerOn(Math.min(MAX_LEVEL, Math.max(2, whole + 1)), TAVERN.x, TAVERN.y, w, h));
     fit();
     const ro = new ResizeObserver(fit);
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
-  const clampView = (v: { z: number; x: number; y: number }) => ({
-    z: v.z,
-    x: Math.min(0, Math.max(size.w - size.w * v.z, v.x)),
-    y: Math.min(0, Math.max(size.h - size.h * v.z, v.y)),
-  });
-  const zoomAt = (factor: number, px: number, py: number) =>
+  const zoomTo = (level: number, px: number, py: number) =>
     setView((v) => {
-      const z = Math.max(1, Math.min(MAX_ZOOM, v.z * factor));
-      return clampView({ z, x: px - ((px - v.x) * z) / v.z, y: py - ((py - v.y) * z) / v.z });
+      const l = Math.max(1, Math.min(MAX_LEVEL, Math.round(level)));
+      if (l === v.l) return v;
+      const z = scaleOf(l);
+      return clampView({ l, z, x: px - ((px - v.x) * z) / v.z, y: py - ((py - v.y) * z) / v.z });
     });
   const local = (e: PointerEvent | WheelEvent) => {
     const r = vp.current!.getBoundingClientRect();
@@ -192,11 +222,11 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
   };
   const onDown = (e: PointerEvent) => {
     ptrs.current.set(e.pointerId, local(e));
-    gesture.current ??= { moved: 0, pinch: 0, z: view.z };
+    gesture.current ??= { moved: 0, pinch: 0, z: view.l };
     if (ptrs.current.size === 2) {
       const [a, b] = [...ptrs.current.values()];
       gesture.current.pinch = Math.hypot(a!.x - b!.x, a!.y - b!.y);
-      gesture.current.z = view.z;
+      gesture.current.z = view.l;
     }
   };
   const onMove = (e: PointerEvent) => {
@@ -208,8 +238,9 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
       const [a, b] = [...ptrs.current.values()];
       const d = Math.hypot(a!.x - b!.x, a!.y - b!.y);
       if (gesture.current.pinch > 0) {
+        // El pellizco salta de nivel entero en nivel entero.
         const target = (gesture.current.z * d) / gesture.current.pinch;
-        zoomAt(target / view.z, (a!.x + b!.x) / 2, (a!.y + b!.y) / 2);
+        zoomTo(target, (a!.x + b!.x) / 2, (a!.y + b!.y) / 2);
       }
       gesture.current.moved += 10;
       return;
@@ -231,16 +262,23 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
     if ((gesture.current?.moved ?? 0) > 4) return;
     fn();
   };
+  /** La rueda suma hasta un «clic» de rueda antes de cambiar de nivel (los paneles táctiles, poco a poco). */
+  const wheel = useRef(0);
   const onWheel = (e: WheelEvent) => {
     e.preventDefault();
+    wheel.current += e.deltaY;
+    if (Math.abs(wheel.current) < 60) return;
     const p = local(e);
-    zoomAt(e.deltaY < 0 ? 1.25 : 0.8, p.x, p.y);
+    zoomTo(view.l + (wheel.current < 0 ? 1 : -1), p.x, p.y);
+    wheel.current = 0;
   };
   // Posición en el visor (px) de un punto del mapa.
   const screen = (mx: number, my: number) => ({
-    x: view.x + (mx / MAP_W) * size.w * view.z,
-    y: view.y + (my / MAP_H) * size.h * view.z,
+    x: view.x + (mx / MAP_W) * buf.w * view.z,
+    y: view.y + (my / MAP_H) * buf.h * view.z,
   });
+  /** Unidades del dibujo (las de los lugares) por píxel de pantalla: grosor de las líneas. */
+  const unit = MAP_W / (buf.w * view.z);
 
   // ---------- Ficha flotante ----------
   const questsAt = (name: string) => game.quests.filter((q) => q.place === name);
@@ -334,38 +372,6 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
         </>
       ),
     };
-  } else if (info?.kind === 'party') {
-    const m = game.missions.find((x) => x.id === info.id);
-    if (m) {
-      const pos = partyPos(m.quest.place, m.quest.days, m.daysLeft);
-      card = {
-        ...screen(pos.x, pos.y),
-        body: (
-          <>
-            <b class="map-card-title">{m.quest.title}</b>
-            <span class="mc-stats">
-              <Stat icon="pasos" label={pos.back ? 'Vuelven de' : 'Van hacia'}>
-                {pos.back ? 'vuelven de ' : 'hacia '}
-                {m.quest.place}
-              </Stat>
-              <Stat icon="home" label={`Vuelven en ${left(m.daysLeft, game.clock ?? 0)}`}>
-                {shortLeft(m.daysLeft, game.clock ?? 0)}
-              </Stat>
-            </span>
-            <button class="btn btn-wood" onClick={() => onTrip(m.id)}>
-              Ver el viaje
-            </button>
-            <div class="map-card-heroes">
-              {party(m).map((h) => (
-                <button key={h.id} class="btn btn-wood" onClick={() => onHero(h.id)}>
-                  {h.name}
-                </button>
-              ))}
-            </div>
-          </>
-        ),
-      };
-    }
   } else if (info?.kind === 'chain') {
     const cs = (game.chains ?? []).find((c) => c.id === info.id);
     if (cs) {
@@ -450,8 +456,9 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
       ),
     };
   }
+  const soonest = [...game.missions].sort((a, b) => a.daysLeft - b.daysLeft)[0];
   // La ficha tiene un ancho fijo; se mide su alto para ver si cabe encima o debajo del punto.
-  // Si no cabe en ningún lado (mapa bajito, en vertical), se acopla debajo del mapa.
+  // Si no cabe en ningún lado (mapa bajito), se acopla abajo, a lo ancho del mapa.
   const cardW = Math.round(Math.min(240, size.w * 0.86));
   const half = cardW / 2 + 4;
   const cardX = card ? Math.max(half, Math.min(size.w - half, card.x)) : 0;
@@ -490,11 +497,10 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
   );
 
   return (
-    <div class="map-wrap">
+    <div class={`map-wrap ${trips ? 'trips-open' : ''}`}>
       <div
         ref={vp}
         class="map-viewport"
-        style={{ aspectRatio: `${MAP_W} / ${MAP_H}` }}
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
@@ -504,17 +510,14 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
         <div
           class="map"
           style={{
+            width: `${buf.w}px`,
+            height: `${buf.h}px`,
             transform: `translate(${view.x}px, ${view.y}px) scale(${view.z})`,
             ['--inv' as string]: String(1 / view.z),
           }}
           onClick={tap(() => setInfo(null))}
         >
-          <BufferImage
-            buf={mapBuffer(style)}
-            scale={1}
-            class="map-layer"
-            label="Mapa de la comarca"
-          />
+          <BufferImage buf={buf} scale={1} class="map-layer" label="Mapa de la comarca" />
           <BufferImage buf={fog} scale={1} class="map-layer" />
           {threat > 0 && threatAt && (
             <span
@@ -528,7 +531,12 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
               aria-hidden="true"
             />
           )}
-          <svg class="map-routes" viewBox={`0 0 ${MAP_W} ${MAP_H}`} aria-hidden="true">
+          <svg
+            class="map-routes"
+            viewBox={`0 0 ${MAP_W} ${MAP_H}`}
+            style={{ ['--u' as string]: String(unit) }}
+            aria-hidden="true"
+          >
             {(game.chains ?? []).map((cs) => {
               const def = chainDef(cs.id);
               const done = cs.status === 'hecha';
@@ -543,7 +551,7 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
                     return (
                       <g key={i} class={next ? 'next' : ''}>
                         <line x1={a.x} y1={a.y} x2={q.x} y2={q.y} />
-                        <path d={arrow(a, q, 1 / view.z)} />
+                        <path d={arrow(a, q, unit)} />
                       </g>
                     );
                   })}
@@ -653,7 +661,7 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
                 aria-label={`${listNames(party.map((h) => h.name))}: ${pos.back ? 'vuelven de' : 'van hacia'} ${m.quest.place}`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  tap(() => setInfo({ kind: 'party', id: m.id }))();
+                  tap(() => onTrip(m.id))();
                 }}
               >
                 {party.length}
@@ -689,30 +697,33 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
             </span>
           )}
         </div>
-        {place !== 'dock' && cardEl}
+        {cardEl}
         <div class="map-tools" onPointerDown={(e) => e.stopPropagation()}>
+          <span class="map-level" aria-label={`Zoom ×${view.l}`}>
+            ×{view.l}
+          </span>
           <button
             class="btn-icon"
             aria-label="Acercar el mapa"
-            onClick={() => zoomAt(1.5, size.w / 2, size.h / 2)}
+            disabled={view.l >= MAX_LEVEL}
+            onClick={() => zoomTo(view.l + 1, size.w / 2, size.h / 2)}
           >
             <Icon name="plus" size={14} />
           </button>
           <button
             class="btn-icon"
             aria-label="Alejar el mapa"
-            onClick={() => zoomAt(1 / 1.5, size.w / 2, size.h / 2)}
+            disabled={view.l <= 1}
+            onClick={() => zoomTo(view.l - 1, size.w / 2, size.h / 2)}
           >
             <Icon name="minus" size={14} />
           </button>
           <button
             class="btn-icon"
             aria-label="Ver la taberna"
-            onClick={() => {
-              const z = Math.max(view.z, 2);
-              const t = { x: (TAVERN.x / MAP_W) * size.w * z, y: (TAVERN.y / MAP_H) * size.h * z };
-              setView(clampView({ z, x: size.w / 2 - t.x, y: size.h / 2 - t.y }));
-            }}
+            onClick={() =>
+              setView(centerOn(Math.max(view.l, 2), TAVERN.x, TAVERN.y, size.w, size.h))
+            }
           >
             <Icon name="home" size={14} />
           </button>
@@ -725,56 +736,74 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
             ?
           </button>
         </div>
+        <div class="map-over" onPointerDown={(e) => e.stopPropagation()}>
+          {threat > 0 && !legend && (
+            <p
+              class="map-threat-line"
+              {...help('Amenaza en la comarca: crece si una historia espera en el tablón.')}
+            >
+              <Icon name="calavera" size={10} /> Amenaza {threat}
+            </p>
+          )}
+          {legend && (
+            <ul class="map-legend">
+              <li>
+                <span class="lg-pin">!</span> Encargo
+              </li>
+              <li>
+                <span class="lg-party">2</span> Grupo de viaje
+              </li>
+              <li>
+                <span class="lg-missing">?</span> Desaparecido
+              </li>
+              <li>
+                <i class="lg-route" /> Camino de un grupo
+              </li>
+              <li>
+                <i class="lg-thread" />
+                <span class="lg-step past">
+                  <Icon name="check" size={7} />
+                </span>{' '}
+                Historia: paso hecho
+              </li>
+              <li>
+                <i class="lg-thread next" />
+                <span class="lg-step now">2</span> Historia: siguiente paso
+              </li>
+              {threat > 0 && <li class="lg-threat">Amenaza en la comarca: {threat}</li>}
+            </ul>
+          )}
+          {legend && (
+            <p class="map-hint">
+              Toca un lugar para ver qué hay y un grupo para ver su viaje; arrastra o pellizca para
+              moverte.
+              {level < 2 && ' La niebla se levanta explorando (la sala de mapas ayuda).'}
+            </p>
+          )}
+        </div>
       </div>
-      {place === 'dock' && cardEl}
-      {threat > 0 && !legend && (
-        <p
-          class="map-threat-line"
-          {...help('Amenaza en la comarca: crece si una historia espera en el tablón.')}
-        >
-          <Icon name="calavera" size={10} /> Amenaza {threat}
-        </p>
-      )}
-      {legend && (
-        <ul class="map-legend">
-          <li>
-            <span class="lg-pin">!</span> Encargo
-          </li>
-          <li>
-            <span class="lg-party">2</span> Grupo de viaje
-          </li>
-          <li>
-            <span class="lg-missing">?</span> Desaparecido
-          </li>
-          <li>
-            <i class="lg-route" /> Camino de un grupo
-          </li>
-          <li>
-            <i class="lg-thread" />
-            <span class="lg-step past">
-              <Icon name="check" size={7} />
-            </span>{' '}
-            Historia: paso hecho
-          </li>
-          <li>
-            <i class="lg-thread next" />
-            <span class="lg-step now">2</span> Historia: siguiente paso
-          </li>
-          {threat > 0 && <li class="lg-threat">Amenaza en la comarca: {threat}</li>}
-        </ul>
-      )}
-      {legend && (
-        <p class="map-hint">
-          Toca un lugar o un número para ver qué hay; arrastra o pellizca para moverte.
-          {level < 2 && ' La niebla se levanta explorando (la sala de mapas ayuda).'}
-        </p>
-      )}
       <section class="map-trips" aria-label="Grupos fuera">
-        <h3 class="crew-h">
-          <span>Grupos fuera</span>
+        <button
+          class="map-trips-toggle"
+          aria-expanded={trips}
+          onClick={() => {
+            audio.play(trips ? 'close' : 'open', 0.6);
+            setTrips(!trips);
+          }}
+        >
+          <Icon name="pasos" size={14} />
+          <b>Grupos fuera</b>
           {game.missions.length > 0 && <span class="row-sub">{game.missions.length}</span>}
-        </h3>
-        {game.missions.length ? (
+          {!trips && soonest && (
+            <span class="map-trips-next">
+              {soonest.quest.title}: en casa en {left(soonest.daysLeft, game.clock ?? 0)}
+            </span>
+          )}
+          <span class="map-trips-chev" aria-hidden="true">
+            {trips ? '▾' : '▴'}
+          </span>
+        </button>
+        {!trips ? null : game.missions.length ? (
           <ul class="map-trip-list">
             {[...game.missions]
               .sort((a, b) => a.daysLeft - b.daysLeft)
