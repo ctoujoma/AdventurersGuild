@@ -6552,3 +6552,24 @@ p.notebook-close {
   align-self: center;
   font-size: var(--t-s);
 }
+
+/* La forja por dentro: trabajos en marcha, recetas y desmontar. */
+.forge {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.forge .row-info .train-bar {
+  flex: none;
+  width: 100%;
+  margin: 4px 0 2px;
+}
+
+.forge-good {
+  color: var(--leaf-dark, #3d6b2a);
+}
+
+.forge-locked {
+  opacity: 0.7;
+}

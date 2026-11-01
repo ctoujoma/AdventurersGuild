@@ -105,6 +105,7 @@ const TRADE_PLACE: Record<Trade, string> = {
   cocina: 'la cocina',
   bodega: 'la bodega',
   enfermeria: 'la enfermería',
+  forja: 'la forja',
 };
 
 /**

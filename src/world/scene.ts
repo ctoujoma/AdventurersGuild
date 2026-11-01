@@ -65,6 +65,26 @@ export interface SceneModel {
   incidents?: SceneIncident[];
   /** El día y el reloj (segundos): si un incidente se va con el reloj en su `until`, salió mal. */
   clock?: { day: number; secs: number };
+  /**
+   * Lo que se está creando o desmontando en los talleres (solo dibujo; cambia en cada tick, así
+   * que no va en la clave que rehace la escena).
+   */
+  crafts?: SceneCraft[];
+}
+
+/** Un trabajo de taller tal como lo ve la escena. */
+export interface SceneCraft {
+  /** El taller (id de sala). */
+  room: string;
+  /** Lo que sale (o lo que se desmonta). */
+  icon: ItemIcon;
+  rarity: Rarity;
+  /** Lo que lleva, de 0 a 1. */
+  frac: number;
+  /** Parado: no hay nadie trabajando en la sala. */
+  stalled: boolean;
+  /** Desmontando un objeto (no creando). */
+  undo: boolean;
 }
 
 /** Un incidente tal como lo ve la escena: qué pasa y en qué sala (id). */
