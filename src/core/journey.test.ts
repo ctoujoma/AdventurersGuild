@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { DAY_SECONDS } from './balance';
 import { endDay, newGame, reduce } from './game';
-import { eventText, journey, journeyNow, LEGS } from './journey';
-import type { GameState } from './model';
+import { eventText, foeOf, journey, journeyNow, LEGS } from './journey';
+import type { GameState, Mission, QuestType } from './model';
 
 /** Manda el primer encargo del tablón con los primeros héroes libres. */
 function send(seed: string): GameState {
@@ -16,6 +16,17 @@ function send(seed: string): GameState {
   expect(t.missions).toHaveLength(1);
   return t;
 }
+
+describe('contra qué se pelea', () => {
+  const q = (type: QuestType, text: string) =>
+    ({ type, title: '', text }) as unknown as Mission['quest'];
+  it('lo dice el texto del encargo y, si no, el tipo', () => {
+    expect(foeOf(q('Escoltar', 'Dicen que son una banda de trasgos.'))).toBe('trasgo');
+    expect(foeOf(q('Limpiar', 'Hay esqueletos que no se están quietos.'))).toBe('muerto');
+    expect(foeOf(q('Cazar', 'Las huellas son de una manada de lobos.'))).toBe('bestia');
+    expect(foeOf(q('Escoltar', 'Un peregrino rico quiere ir a rezar.'))).toBe('bandido');
+  });
+});
 
 describe('viaje de un grupo fuera', () => {
   it('sale siempre igual para el mismo grupo', () => {
@@ -38,6 +49,10 @@ describe('viaje de un grupo fuera', () => {
       expect(j.events.some((e) => e.kind === 'llegada')).toBe(true);
       expect(j.events.some((e) => e.kind === 'vuelta')).toBe(true);
       expect(j.events.filter((e) => e.kind === 'noche')).toHaveLength(j.days - 1);
+      if (j.fight) {
+        expect(j.fight.from).toBeGreaterThanOrEqual(0.5);
+        expect(j.fight.to).toBeLessThanOrEqual(0.75);
+      }
       for (let i = 0; i < j.events.length; i++) {
         const e = j.events[i]!;
         if (i) expect(e.t).toBeGreaterThanOrEqual(j.events[i - 1]!.t);

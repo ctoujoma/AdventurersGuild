@@ -166,7 +166,14 @@ hueco, con la cámara en cada paso. Sustituye a las notas de obras de ahora (`ob
   vuelta) con la de ahora marcada, y el diario de lo que va pasando. El núcleo da las partes,
   los sucesos con su momento y una semilla, para que se vea igual al cerrar y abrir.
   **Reparto:** el agente principal hace los datos y la ficha con el hueco (hecho:
-  `core/journey.ts`, `ui/TripSheet.tsx`); el de arte dibuja la tira (`QuestStrip`). Más adelante, sobre la tira, los momentos que piden decisión: un jefe
+  `core/journey.ts`, `ui/TripSheet.tsx`); el de arte dibuja la tira (`QuestStrip`).
+  **La tira es la línea de tiempo** (usuario, con la exploración de Fallout Shelter de
+  referencia): los héroes animados encima de la línea de las partes, andando, peleando contra
+  enemigos según el encargo (familias de enemigos reutilizables: bandidos, trasgos, bestias,
+  alimañas, muertos y grandes) y cojeando si van heridos.
+  **Siguiente del agente principal:** resolver el encargo al llegar a «lo suyo» (no al volver),
+  para que la tira y la ficha enseñen de verdad quién se hiere y qué botín traen; el informe
+  sigue llegando al volver. Más adelante, sobre la tira, los momentos que piden decisión: un jefe
   («Entrar a pelear» o «Resolver solo»; si no se contesta, se resuelve solo) y las incursiones
   («raids») con varios así.
 - **Pelea interactiva:** arrastrar a un héroe sobre un enemigo para elegir a quién ataca (si no,
@@ -234,6 +241,9 @@ hueco, con la cámara en cada paso. Sustituye a las notas de obras de ahora (`ob
 - **Entrenamiento** (fase 1, punto 8).
 
 ## Más adelante (valorar)
+
+- **Modo exploración** (como en Fallout Shelter): un encargo sin fin; cuanto más tiempo fuera,
+  mejores premios cada cierto tiempo y más peligro, hasta que se les llama de vuelta.
 
 Arena propia, combate en directo entre amigos (código de 5 letras), prestar héroes,
 servidor (me gusta, clasificaciones), estaciones, adornos colocables, gremios rivales,

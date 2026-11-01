@@ -6,17 +6,30 @@
  * El tiempo del viaje va de 0 (sale) a 1 (vuelve, al acabar el último día): cada día es 1/días.
  */
 import { BOSSES, type BossKind } from '../data/bosses';
-import { ARRIVE, CAMP, LEAVE, LEGS, ROAD, WORK, type LegId } from '../data/journey';
+import {
+  ARRIVE,
+  CAMP,
+  FIGHT,
+  FOE_BY_TYPE,
+  FOE_NAMES,
+  FOE_WORDS,
+  LEAVE,
+  LEGS,
+  ROAD,
+  WORK,
+  type FoeKind,
+  type LegId,
+} from '../data/journey';
 import { PLACE_INFO, type Terrain } from '../data/places';
 import { DAY_SECONDS, DUSK } from './balance';
 import { bossOf, fightRoster } from './chains';
 import type { BossFight, GameState, Mission, QuestType } from './model';
 import { Rng } from './rng';
 
-export type { LegId };
+export type { FoeKind, LegId };
 export { LEGS };
 
-export type JourneyKind = 'camino' | 'llegada' | 'faena' | 'jefe' | 'noche' | 'vuelta';
+export type JourneyKind = 'camino' | 'llegada' | 'faena' | 'pelea' | 'jefe' | 'noche' | 'vuelta';
 
 /** Un suceso del viaje: en qué parte, en qué punto de ella (0–1) y en qué punto del total. */
 export interface JourneyEvent {
@@ -38,6 +51,10 @@ export interface Journey {
   place: string;
   days: number;
   boss?: BossKind;
+  /** Contra qué se pelea (la familia de enemigos que dibuja la tira). */
+  foe: FoeKind;
+  /** Cuándo se pelea (del total, 0–1): la tira pone ahí a los enemigos. Sin pelea, nada. */
+  fight?: { from: number; to: number };
   events: JourneyEvent[];
 }
 
@@ -50,6 +67,8 @@ export interface JourneyNow {
   /** De la parte de ahora (0–1). */
   legT: number;
   night: boolean;
+  /** Si ahora están peleando (la tira pone a los enemigos y las poses de pelea). */
+  fighting: boolean;
   /** Quién va, con su aspecto (como en la pelea contra un jefe) y su estado. */
   crew: BossFight['heroes'];
   /** Lo que ya ha pasado, por orden. */
@@ -62,6 +81,15 @@ const legAt = (leg: LegId, at: number) => {
   return l.from + (l.to - l.from) * at;
 };
 
+/** Contra qué se pelea en un encargo: lo que diga su texto o, si no, lo propio del tipo. */
+export function foeOf(q: Mission['quest']): FoeKind {
+  const text = `${q.title} ${q.text}`;
+  return FOE_WORDS.find(([re]) => re.test(text))?.[1] ?? FOE_BY_TYPE[q.type];
+}
+
+/** Los tipos en que siempre hay pelea; en los demás, según el peligro. */
+const FIGHTY = new Set(['Cazar', 'Limpiar', 'Escoltar']);
+
 /** El viaje de un grupo, siempre igual para el mismo grupo. */
 export function journey(m: Mission): Journey {
   const q = m.quest;
@@ -70,11 +98,13 @@ export function journey(m: Mission): Journey {
   const terrain = PLACE_INFO[q.place]?.terrain ?? 'campo';
   const boss = bossOf(q);
   const days = Math.max(1, q.days);
+  const foe = foeOf(q);
   const events: JourneyEvent[] = [];
   const say = (leg: LegId, at: number, kind: JourneyKind, pool: readonly string[]) => {
     let text = rng
       .pick(pool)
       .replace('{sitio}', q.place)
+      .replace('{foe}', FOE_NAMES[foe])
       .replace(/\b(a|de) el\b/g, (_, p: string) => (p === 'a' ? 'al' : 'del'));
     let heroId: string | undefined;
     if (text.includes('{h}')) {
@@ -92,6 +122,7 @@ export function journey(m: Mission): Journey {
   say('llegada', 0.3, 'llegada', ARRIVE);
   const work = WORK[q.type];
   say('faena', 0.15, 'faena', [work[0]!]);
+  let fight: Journey['fight'];
   if (boss) {
     events.push({
       leg: 'faena',
@@ -100,6 +131,11 @@ export function journey(m: Mission): Journey {
       kind: 'jefe',
       text: `Aparece ${BOSSES[boss].name.replace(/^El /, 'el ').replace(/^La /, 'la ')}.`,
     });
+    fight = { from: legAt('faena', 0.6), to: legAt('faena', 0.95) };
+  } else if (FIGHTY.has(q.type) || rng.chance(0.25 + 0.2 * q.danger)) {
+    const at = 0.45 + rng.next() * 0.15;
+    say('faena', at, 'pelea', FIGHT);
+    fight = { from: legAt('faena', at), to: legAt('faena', at + 0.3) };
   } else say('faena', 0.6, 'faena', [work[1]!]);
   say('vuelta', 0.1, 'vuelta', LEAVE);
   if (road.length) say('vuelta', 0.55 + rng.next() * 0.2, 'camino', road);
@@ -111,7 +147,7 @@ export function journey(m: Mission): Journey {
     say(l.id, (t - l.from) / (l.to - l.from), 'noche', CAMP);
   }
   events.sort((a, b) => a.t - b.t);
-  return { seed, type: q.type, terrain, place: q.place, days, boss, events };
+  return { seed, type: q.type, terrain, place: q.place, days, boss, foe, fight, events };
 }
 
 /** Del total del viaje, cuánto lleva ahora (0–1). */
@@ -133,6 +169,7 @@ export function journeyNow(s: GameState, m: Mission): JourneyNow {
     leg: l.id,
     legT: Math.max(0, Math.min(1, (t - l.from) / (l.to - l.from))),
     night: (s.clock ?? 0) >= DUSK * DAY_SECONDS,
+    fighting: !!j.fight && t >= j.fight.from && t < j.fight.to,
     crew: fightRoster(heroes),
     past: j.events.filter((e) => e.t <= t),
   };

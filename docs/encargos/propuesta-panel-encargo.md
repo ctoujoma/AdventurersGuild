@@ -37,21 +37,50 @@ Para que se vea igual al cerrar y abrir el panel, debe ser fija con una semilla:
   un herido, el jefe. La tira los pinta cuando llega ese punto.
 - Si es de **día o de noche** (la hora del juego).
 
-## La tira (agente de arte)
+## La tira (agente de arte), revisada con el usuario
 
-Un componente propio (por ejemplo `QuestStrip`, en un canvas) que recibe esos datos y nada más:
+Referencia del usuario: la exploración de Fallout Shelter (los personajes animados sobre el
+paisaje y, debajo, lo que van encontrando). **La tira es la línea de tiempo:** los héroes van
+dibujados encima de la línea de las partes del viaje y se desplazan por ella. Nuestros sprites
+son pequeños, así que caben todos a lo ancho.
 
-- Una banda ancha y baja (unos 224 × 64 px, a escala entera) con el paisaje del terreno en
-  capas que se mueven a distinto paso. Se reutilizan los fondos de las peleas
-  (`art/arenas.ts`), de día y de noche.
-- **Ida:** el grupo anda de izquierda a derecha, en fila, con las animaciones de andar de la
-  taberna.
-- **Lo suyo:** según el tipo. Pelea contra enemigos genéricos o el jefe (con los sprites de la
-  pelea), exploración (buscan, abren un cofre), escolta (con un carro), etc.
-- **Vuelta:** de derecha a izquierda. Los heridos cojean o van apoyados en otro, y con el botín
-  a cuestas si lo hay.
-- Los sucesos salen como bocadillos o destellos encima, y el jefe con su dibujo de
-  `art/bosses.ts`.
+Un componente propio, `QuestStrip` (canvas), que recibe `now: JourneyNow` y nada más:
+
+- **Banda** a todo el ancho de la ficha (unos 240 × 80 px a escala entera), con el paisaje del
+  terreno detrás (`art/arenas.ts`, de día o de noche según `now.night`) y, abajo, **la línea de
+  las partes** (`LEGS`): a la izquierda la taberna, en medio el sitio, a la derecha la taberna
+  otra vez. Lo pasado, pintado; lo que falta, apagado.
+- **Los héroes** (los sprites de la taberna, con su equipo; `now.crew`), en fila en el punto
+  `now.t` de la línea, mirando a la derecha y avanzando:
+  - **Ida y vuelta:** andando (de noche, sentados junto a una hoguera si toca un suceso
+    `noche`).
+  - **Llegada y lo suyo:** según el tipo (buscan, abren un cofre, empujan el carro…).
+  - **Pelea** (`now.fighting`, entre `journey.fight.from` y `.to`): aparecen **enemigos** delante
+    del grupo y pelean con poses de ataque y golpe; al acabar, los enemigos caen o huyen. Si es
+    `journey.boss`, el jefe con su dibujo de `art/bosses.ts`.
+  - **Heridos:** cojeando o apoyados en otro. Hoy el viaje no sabe quién se hiere hasta el
+    informe; el agente principal lo cambia (ver abajo), y entonces cada héroe de `now.crew` traerá
+    su estado.
+- **Los sucesos** (`now.past`) salen como bocadillo o destello encima en su momento; debajo de
+  la tira, la ficha ya lista el diario.
+
+### Enemigos: una familia de sprites reutilizable
+
+`journey.foe` dice qué familia toca (`data/journey.ts`, sacado del texto del encargo):
+
+| Familia | Qué abarca |
+| --- | --- |
+| `bandido` | bandidos, salteadores, desertores, contrabandistas, cultistas, brujos |
+| `trasgo` | trasgos, orcos, kobolds, duendes |
+| `bestia` | lobos, huargos, osos, jabalíes, perros |
+| `alimana` | ratas, arañas, babosas, limos, avispas, murciélagos, serpientes |
+| `muerto` | esqueletos, espectros, espíritus, guardianes de cripta |
+| `grande` | trols, grifos |
+
+Cada familia, un sprite de tamaño de héroe (el `grande`, el doble) con variantes por semilla
+(color, arma) y poses: quieto, andar, atacar, golpe recibido y caer. Que sirvan después para los
+asaltos a la taberna, los esbirros de los jefes y la pelea interactiva (fase 3), así que mejor
+en `art/foes.ts` y no dentro de la tira.
 
 ## Reparto y orden
 
@@ -71,8 +100,10 @@ Un componente propio (por ejemplo `QuestStrip`, en un canvas) que recibe esos da
   - `night` (si es de noche en la partida);
   - `crew`: quién va, con el mismo aspecto que `BossFight.heroes`;
   - `journey.events`: los sucesos con `leg`, `at` (punto de su parte), `t` (del total) y
-    `kind` (`camino` | `llegada` | `faena` | `jefe` | `noche` | `vuelta`); `past`, los ya
-    pasados. El texto, con `eventText(game, e)`.
+    `kind` (`camino` | `llegada` | `faena` | `pelea` | `jefe` | `noche` | `vuelta`); `past`,
+    los ya pasados. El texto, con `eventText(game, e)`;
+  - `journey.foe` (familia de enemigos), `journey.fight` (`from`–`to` del total, si hay pelea) y
+    `fighting` (si están peleando ahora).
 - Todo sale fijo de la semilla: abrir y cerrar da lo mismo. Son ambiente: el resultado
   (heridos, botín) llega con el informe, así que la tira no debe enseñar heridos ni el final
   de la pelea antes de tiempo.

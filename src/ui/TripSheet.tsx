@@ -21,6 +21,7 @@ const KIND_ICON: Record<JourneyNow['past'][number]['kind'], IconName> = {
   camino: 'pasos',
   llegada: 'banderin',
   faena: 'diana',
+  pelea: 'espadas',
   jefe: 'calavera',
   noche: 'moon',
   vuelta: 'home',
