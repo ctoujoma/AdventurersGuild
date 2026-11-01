@@ -567,6 +567,11 @@ export interface GameState {
   lastRaid?: RaidResult | null;
   /** Informe de la pelea contra un jefe de esta noche (para el aviso del amanecer). */
   lastFight?: string | null;
+  /**
+   * Borrador de obras guardado para luego (las obras apuntadas, sin pagar): se recupera al volver
+   * al modo obras. Son acciones del reductor (`Action` de `game.ts`).
+   */
+  worksDraft?: readonly { type: string }[];
   /** Grupo que acaba de llegar ante su jefe con el juego abierto (la interfaz avisa). */
   bossWait?: string | null;
   /** Incidentes en marcha (uno a la vez). */

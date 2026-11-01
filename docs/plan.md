@@ -19,21 +19,15 @@ o está en «Más adelante», no se toca sin preguntar. El detalle de cada idea 
 
 ## Quién hace qué
 
-- **Agente principal** (esta conversación): tiempo, núcleo del bucle, tutoriales, combate,
-  talleres y amigos.
-- **Agente de interfaz:** auditoría de trabajadores y tareas (hecha:
-  [`encargos/interfaz-trabajadores.md`](encargos/interfaz-trabajadores.md)), y ahora menos
-  toques y cartas del amanecer una a una:
-  [`encargos/interfaz-menos-toques.md`](encargos/interfaz-menos-toques.md) (las cartas, junto
-  con revisar cuándo sale la carta). Ahora, la primera vez que se abre el juego:
-  [`encargos/interfaz-primera-vez.md`](encargos/interfaz-primera-vez.md).
-- **Agente de arte:** colores por sala, animaciones y escaleras (hecho:
-  [`encargos/arte-colores-animaciones.md`](encargos/arte-colores-animaciones.md)), y ahora
-  fachada por partes y preparar la sastrería (hecho:
-  [`encargos/arte-fachada-sastreria.md`](encargos/arte-fachada-sastreria.md)). Siguiente:
-  dibujar los tres jefes nuevos (fase 5), y luego la tira del encargo en directo (fase 3).
-  Encargo: [`encargos/arte-incidentes-jefes.md`](encargos/arte-incidentes-jefes.md)
-  (incidentes que se ven y responden al tocar, y los jefes).
+- **Agente principal** (esta conversación): tiempo, núcleo del bucle, combate, encargos en
+  directo, talleres, amigos y la app.
+- **Agente del tutorial:** [`encargos/tutorial.md`](encargos/tutorial.md). Ahora, el de las
+  obras (2b).
+- **Agente de arte:** ahora, el fondo y la escena. Hechos: colores, fachada, incidentes, los
+  tres jefes, la tira con los enemigos por familias, la vuelta que deshace el camino y el mapa.
+- **Agente de interfaz:** terminado lo encargado (trabajadores, menos toques, avisos que se
+  descartan, el cobro de Merlo, las cartas del amanecer una a una, el mapa grande). Le queda
+  suelto: un globito en la escena sobre la sala sin nadie (con arte).
 
 Para arrancar a cada uno: «Lee `CLAUDE.md`, `docs/plan.md` y `docs/encargos/<encargo>.md`, y
 empieza por el punto 1».
@@ -110,7 +104,7 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
    y tests), `ui/IncidentMark.tsx` (el aviso sobre la sala) y `ui/drop.ts` (arrastrar a quien
    lo arregla). Solo con el juego abierto, desde el día 2 y de uno en uno; lo que quede al caer
    la noche sale mal y va a la carta. Cifras en `balance.ts` (`INCIDENT_*`).
-6. **Revisar el cobro de la deuda** con Merlo (ver «Pendiente de revisar»).
+6. **El cobro de la deuda con Merlo** (hecho; revisado por el usuario: funciona).
 7. **Rumores de la barra** (hecho): con el juego abierto, desde el día 2, un bocadillo dorado
    sobre una mesa del salón unos 15 s. Si se toca a tiempo, sale un encargo marcado «Rumor»
    (mejor paga, botín bueno o legendario, caduca en 2 días); si no, se pierde sin más. Uno a la
@@ -192,7 +186,9 @@ sitio (comprar solar o excavar, mover, construir, ampliar, mejorar). De un agent
   que «Que se las apañen». Determinista: el núcleo la vuelve a jugar con las órdenes y el informe
   la repite igual. Calibrado con `npm run calib`: sola sale como la tirada de antes (≈ 80 %);
   jugando bien, unos 6–8 puntos más.
-  **Falta:** formación, táctica y objeto antes de entrar; llevarla a los asaltos a la taberna.
+  **Falta:** llevarla a los asaltos a la taberna (perfilando antes cómo se ve contra jefes).
+  **Formaciones y táctica antes de entrar: para más adelante** (usuario: no complicar; tienen
+  sentido con arena, torneos o peleas entre amigos, no en el asalto de noche).
 - **Críticos con gesto (hecho):** tras un golpe, a veces sale un rombo amarillo sobre el héroe;
   si se toca (el héroe o su ficha) antes de su siguiente golpe, entra crítico. Sin jugador, la
   IA acierta la mitad (como el 10 % de antes). Números de daño en la escena (cifras de píxel:
@@ -234,6 +230,9 @@ sitio (comprar solar o excavar, mover, construir, ampliar, mejorar). De un agent
 
 ## Fase 7 · Lanzamiento
 
+- **Salvarse de perder viendo anuncios:** si no llega para pagar a Merlo, ofrecer ver anuncios para
+  cubrir ese pago y seguir jugando (con la app de Android y sus anuncios opcionales).
+
 - Traducciones.
 - App de Android: guardado nativo, avisos (también el del pago de Merlo el día antes),
   anuncios opcionales, cosméticos y donaciones.
@@ -242,22 +241,19 @@ sitio (comprar solar o excavar, mover, construir, ampliar, mejorar). De un agent
 
 ## Pendiente de revisar
 
-- **Encargos repartidos (feedback de jugar más):** hecho lo de arte: la vuelta de la tira que
-  deshace el camino, el resultado que no engaña y la calidad del mapa (ver
-  `encargos/arte-tira-vuelta-mapa.md`). Pendiente:
-  descartar avisos y el mapa más grande (interfaz, `encargos/interfaz-avisos-mapa.md`). Hechos
-  por el agente principal: la clase y el oficio en el selector de personal, y que al volver
-  recuperen su trabajo; el encargo se resuelve al acabar la pelea de la tira (`resolveAt`).
-- **Pelea contra jefes, perfilarla antes de llevarla a los asaltos** (ver la propuesta en el
-  último punto de situación).
+- **Feedback de jugar más** (hecho todo): la vuelta de la tira, el resultado que no engaña y el
+  mapa (arte); descartar avisos y el mapa grande (interfaz); la clase en el selector, volver al
+  trabajo y resolver al acabar la pelea de la tira (agente principal).
+- **Pelea contra jefes, perfilarla antes de llevarla a los asaltos** (sin formaciones).
+- **Obras:** borrador guardado para luego (hecho). Escaleras planeadas que no dejan seguir
+  planeando sin pagar: falta el caso concreto para reproducirlo (en el núcleo el borrador sí
+  cuenta con ellas).
 
-- **El cobro de la deuda con Merlo** (lo hecho con los agentes de arte e interfaz): que encaje
-  con el tiempo que corre solo, los pagos estando fuera (`dueTonight`), los avisos y los
-  objetivos.
 - **La carta del amanecer** («Amanece sobre…»): **hecho lo primero:** con la app abierta ya no
   tapa la pantalla; al amanecer queda un botón «Día N · ver el parte» (borde rojo si hay algo
   malo) y la carta solo se abre al tocarlo. Sigue entera al volver tras una ausencia, en los
-  saltos del tutorial y al acabar la partida. Falta la pila de cartas (fase 5).
+  saltos del tutorial y al acabar la partida. Las cartas una a una (pila) las hizo la interfaz:
+  **el usuario sigue valorando si le gustan como están.**
 - **El ritmo del tiempo:** un día son 5 minutos abierto y una hora cerrado; si se quiere más
   calma, alargar `DAY_SECONDS`.
 - **Objetivos:** más variedad («gana un asalto sin heridos», «sirve 40 jarras»).
