@@ -29,6 +29,8 @@ export class Camera {
   private vx = 0;
   private vy = 0;
   private target: { x: number; y: number } | null = null;
+  /** Lo que queda del camino por segundo al ir a un destino (más alto, más lento). */
+  private ease = 0.002;
   dragging = false;
 
   setView(cssW: number, cssH: number, zoom = this.zoom): void {
@@ -91,9 +93,10 @@ export class Camera {
     this.vy = 0;
   }
 
-  centerOn(x: number, y: number, smooth = true): void {
+  centerOn(x: number, y: number, smooth = true, slow = false): void {
     const tx = x - this.vw / 2;
     const ty = y - this.vh / 2;
+    this.ease = slow ? 0.25 : 0.002;
     if (smooth) this.target = { x: tx, y: ty };
     else {
       this.target = null;
@@ -104,13 +107,22 @@ export class Camera {
     this.stopInertia();
   }
 
+  /** Pone la cámara de golpe en un punto (esquina de arriba a la izquierda), dentro de los límites. */
+  jump(x: number, y: number): void {
+    this.target = null;
+    this.x = x;
+    this.y = y;
+    this.stopInertia();
+    this.clamp();
+  }
+
   update(dt: number): void {
     if (this.target) {
       // El destino, dentro de los límites: si no, nunca se llegaría y seguiría tirando.
       const b = this.bounds();
       this.target.x = Math.max(b.minX, Math.min(b.maxX, this.target.x));
       this.target.y = Math.max(b.minY, Math.min(b.maxY, this.target.y));
-      const k = 1 - Math.pow(0.002, dt);
+      const k = 1 - Math.pow(this.ease, dt);
       this.x += (this.target.x - this.x) * k;
       this.y += (this.target.y - this.y) * k;
       if (Math.abs(this.target.x - this.x) < 0.3 && Math.abs(this.target.y - this.y) < 0.3)

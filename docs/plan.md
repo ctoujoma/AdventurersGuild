@@ -124,6 +124,8 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
 
 ## Fase 2 · Tutoriales
 
+De un **agente propio del tutorial** desde el 1 de noviembre: [`encargos/tutorial.md`](encargos/tutorial.md).
+
 ### 2a · El primero, hasta el primer pago (hecho, rehecho tras la revisión)
 
 Revisión del usuario: tenía que bloquear lo demás, no dejar pasar sin hacer el paso, resaltar
@@ -173,13 +175,10 @@ hueco, con la cámara en cada paso. Sustituye a las notas de obras de ahora (`ob
   alimañas, muertos y grandes) y cojeando si van heridos.
   **Hecho:** el encargo se resuelve al acabar lo suyo, no al volver: llega el informe (con el
   oro y el botín) «por aviso» y el grupo emprende la vuelta con cómo ha quedado cada uno.
-  **Decidido, el jefe (siguiente):** la pelea contra un jefe **no va en la tira**; tiene su
-  pantalla. Cuando el grupo llega al jefe, el viaje se para y sale un aviso («¡X ante el
-  jefe!»), con la campana y en la ficha: «Ver la pelea» (la pantalla de jefe; en la fase 3,
-  interactiva) o «Que se las apañen» (se resuelve sola y queda en el informe para verla). Si no
-  se contesta, se resuelve sola al caer la noche, y siempre con el juego cerrado: queda
-  pendiente un rato, pero nunca atasca. Mientras espera, la tira enseña al grupo parado ante la
-  silueta del jefe con un «!»; después, el jefe caído o el grupo en retirada.
+  **Hecho, el jefe que espera:** la pelea contra un jefe no va en la tira. Al llegar al jefe el
+  viaje se para y sale un aviso («Ver la pelea», «Que se las apañen» o «Luego»), también en la
+  campana y en la ficha del viaje. Si no se dice nada, se resuelve al caer la noche (y siempre
+  con el juego cerrado). La tira enseña al grupo parado ante la silueta del jefe (`waiting`).
 - **Pelea interactiva:** arrastrar a un héroe sobre un enemigo para elegir a quién ataca (si no,
   el de siempre por su táctica); formación, táctica y objeto antes; habilidades por clase con
   recarga; pocas órdenes en directo.

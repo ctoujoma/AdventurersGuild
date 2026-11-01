@@ -117,9 +117,20 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
     });
   }
 
+  // Grupos ante su jefe, esperando a que se diga.
+  for (const m of game.missions)
+    if (m.waiting)
+      out.push({
+        id: `jefe:${m.id}`,
+        text: `El grupo de «${m.quest.title}» está ante el jefe: ¿ves la pelea?`,
+        k: 'warn',
+        icon: 'calavera',
+        go: { trip: m.id },
+      });
+
   // Grupos que vuelven al amanecer.
   for (const m of game.missions)
-    if (m.daysLeft <= 1)
+    if (m.daysLeft <= 1 && !m.waiting)
       out.push({
         id: `vuelve:${m.id}`,
         text: `El grupo de «${m.quest.title}» vuelve esta noche.`,

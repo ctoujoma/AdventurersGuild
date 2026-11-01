@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DAY_SECONDS } from './balance';
 import { endDay, newGame, reduce } from './game';
-import { eventText, foeOf, journey, journeyNow, LEGS, RESOLVE_T } from './journey';
+import { BOSS_T, eventText, foeOf, journey, journeyNow, LEGS, RESOLVE_T } from './journey';
 import type { GameState, Mission, QuestType } from './model';
 
 /** Manda el primer encargo del tablón con los primeros héroes libres. */
@@ -118,5 +118,49 @@ describe('se resuelve al acabar lo suyo', () => {
     while (s.missions.some((x) => x.id === id)) s = endDay(s);
     expect(s.reports.length).toBe(reports + 1);
     expect(s.heroes.some((h) => h.status === 'mision')).toBe(false);
+  });
+});
+
+describe('ante el jefe se espera al jugador', () => {
+  /** Un grupo fuera en el paso del jefe de Hondogrís (el cuarto). */
+  const withBoss = (seed: string) => {
+    const s = structuredClone(send(seed));
+    const m = s.missions[0]!;
+    m.quest.chain = { id: 'hondogris', step: 3 };
+    m.quest.days = 1;
+    m.daysLeft = 1;
+    return s;
+  };
+
+  it('con el juego abierto se para, avisa y se resuelve cuando se dice', () => {
+    let s = withBoss('jefe');
+    const id = s.missions[0]!.id;
+    const reports = s.reports.length;
+    s = reduce(s, { type: 'tick', to: DAY_SECONDS * 0.7 });
+    const m = s.missions[0]!;
+    expect(m.waiting).toBe(true);
+    expect(m.done).toBeUndefined();
+    expect(s.bossWait).toBe(id);
+    expect(s.reports.length).toBe(reports);
+    // Parado ante el jefe aunque pase el reloj.
+    s = reduce(s, { type: 'tick', to: DAY_SECONDS * 0.79 });
+    expect(journeyNow(s, s.missions[0]!).t).toBeCloseTo(BOSS_T, 5);
+    expect(s.missions[0]!.done).toBeUndefined();
+    s = reduce(s, { type: 'boss', id });
+    expect(s.missions[0]!.done).toBeDefined();
+    expect(s.missions[0]!.waiting).toBeUndefined();
+    const r = s.reports.find((x) => x.id === s.missions[0]!.done!.report)!;
+    expect(r.fight?.boss).toBe('bestia');
+  });
+
+  it('si no se dice nada, se resuelve al caer la noche', () => {
+    let s = withBoss('noche');
+    s = reduce(s, { type: 'tick', to: DAY_SECONDS * 0.7 });
+    expect(s.missions[0]!.waiting).toBe(true);
+    const reports = s.reports.length;
+    s = endDay(s);
+    expect(s.reports.length).toBe(reports + 1);
+    expect(s.lastFight).toBe(s.reports[0]!.id);
+    expect(s.missions).toHaveLength(0);
   });
 });

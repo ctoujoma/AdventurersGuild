@@ -58,8 +58,8 @@ Un componente propio, `QuestStrip` (canvas), que recibe `now: JourneyNow` y nada
   - **Pelea** (`now.fighting`, entre `journey.fight.from` y `.to`): aparecen **enemigos** delante
     del grupo y pelean con poses de ataque y golpe; al acabar, los enemigos caen o huyen. Si es
     `journey.boss`, **la pelea no va en la tira** (tiene su pantalla, `ui/BossFight.tsx`): el
-    grupo se para ante la silueta del jefe (`art/bosses.ts`) con un «!» mientras espera y, ya
-    resuelto, el jefe caído o el grupo en retirada.
+    grupo se para ante la silueta del jefe (`art/bosses.ts`) con un «!» mientras espera
+    (`now.waiting`) y, ya resuelto (`now.outcome`), el jefe caído o el grupo en retirada.
   - **Heridos:** cojeando o apoyados en otro. El encargo se resuelve al acabar lo suyo
     (`RESOLVE_T`); desde ahí cada héroe de `now.crew` trae su `fate` de verdad (`herido`; los
     `muerto` y `desaparecido` ya no van en la fila) y en `now.past` sale el suceso `aviso`.

@@ -22,7 +22,8 @@ import { loadRecords, mergeRecords, saveRecords } from '../platform/records';
 import { loadGame, saveGame, webStorage } from '../platform/storage';
 import type { Point } from '../world/scene';
 import { cheat, testFight } from '../core/cheats';
-import { BossCall, BossFight } from './BossFight';
+import { BossCall, BossFight, BossWait } from './BossFight';
+import { bossOf } from '../core/chains';
 import { Dawn } from './Dawn';
 import { DayBar } from './DayBar';
 import { GameOver } from './GameOver';
@@ -137,8 +138,10 @@ export function App() {
   const [raiding, setRaiding] = useState(false);
   /** Pelea contra un jefe de esta noche: el aviso (id del informe) y la pelea abierta. */
   const [bossCall, setBossCall] = useState<string | null>(null);
-  /** El aviso del jefe es de ahora (con el juego abierto), no del amanecer. */
-  const liveCall = useRef(false);
+  /** Al empezar con el tutorial: unos segundos para ver la taberna (la cámara entra) antes del cuaderno. */
+  const [introHold, setIntroHold] = useState(false);
+  /** Grupo ante su jefe cuyo aviso está a la vista (con el juego abierto). */
+  const [bossWait, setBossWait] = useState<string | null>(null);
   const [watching, setWatching] = useState<{ fight: BossFightRecord; dawn: boolean } | null>(null);
   const [card, setCard] = useState<string | null>(null);
   const [questId, setQuestId] = useState<string | null>(null);
@@ -256,11 +259,8 @@ export function App() {
       audio.play(last.k === 'good' ? 'cheer' : last.k === 'bad' ? 'thud' : 'creak', 0.6);
       haptic(last.k === 'bad' ? 'thud' : 'select');
     }
-    // Un grupo ha dado con su jefe con el juego abierto: el aviso, al momento.
-    if (next.liveFight && next.liveFight !== before.liveFight) {
-      liveCall.current = true;
-      setBossCall(next.liveFight);
-    }
+    // Un grupo ha llegado ante su jefe con el juego abierto: el aviso, al momento.
+    if (next.bossWait && next.bossWait !== before.bossWait) setBossWait(next.bossWait);
     return next;
   };
 
@@ -275,6 +275,18 @@ export function App() {
   });
 
   const toast = (text: string) => setNotice({ text, key: Date.now() });
+
+  /** Ante el jefe: se resuelve ya; con `watch`, se ve la pelea. */
+  const facBoss = (id: string, watch: boolean) => {
+    setBossWait(null);
+    const next = dispatch({ type: 'boss', id });
+    const m = next.missions.find((x) => x.id === id);
+    const r = m?.done && next.reports.find((x) => x.id === m.done!.report);
+    if (watch && r?.fight) {
+      audio.play('horn');
+      setWatching({ fight: r.fight, dawn: false });
+    }
+  };
 
   /** Reloj del día en la interfaz (el del estado se guarda cada pocos segundos). */
   const clockRef = useRef(game.clock ?? 0);
@@ -613,7 +625,6 @@ export function App() {
       audio.play('dawn');
       // Si esta noche un grupo ha dado con un jefe, primero el aviso (verlo o no).
       const open = () => {
-        liveCall.current = false;
         if (next.lastFight) setBossCall(next.lastFight);
         else setDawnOpen(true);
       };
@@ -709,6 +720,9 @@ export function App() {
   const cardIsCandidate = !!cardHero && game.candidates.includes(cardHero);
   const openQuest = game.quests.find((q) => q.id === questId) ?? null;
   const openTrip = game.missions.find((m) => m.id === tripId) ?? null;
+  const waitMission = bossWait
+    ? (game.missions.find((m) => m.id === bossWait && m.waiting) ?? null)
+    : null;
   const report = game.reports.find((r) => r.id === reportId) ?? null;
   const callReport = bossCall ? game.reports.find((r) => r.id === bossCall) : undefined;
   const unread = game.reports.filter((r) => !r.read).length;
@@ -724,7 +738,7 @@ export function App() {
   const pendingEvent = calm && !game.over ? (game.event ?? null) : null;
   // El tutorial guiado va antes que las notas sueltas del tío (y las sustituye mientras dura).
   // La lección sigue a la vista con paneles abiertos: señala lo que hay que tocar dentro.
-  const lesson = calm && !pendingEvent ? tutorialStep(game) : null;
+  const lesson = calm && !pendingEvent && !introHold ? tutorialStep(game) : null;
   const lessonFocus = lesson ? tutorialFocus(game, panel) : null;
   /** Altura de lo que señala el tutorial: la nota se pone en la otra mitad. */
   const [spotY, setSpotY] = useState<number | null>(null);
@@ -1236,6 +1250,10 @@ export function App() {
               setTripId(null);
               setReportId(id);
             }}
+            onBoss={(watch) => {
+              setTripId(null);
+              facBoss(openTrip.id, watch);
+            }}
           />
         )}
         {report && (
@@ -1304,6 +1322,11 @@ export function App() {
               audio.play('open');
               dispatch({ type: 'tutorial', op: 'carta' });
               closeDawn();
+              // Entrada: de fuera, a la izquierda, hasta el salón; luego el cuaderno.
+              const salon = game.building.rooms.find((r) => r.type === 'salon');
+              if (salon) scene.current?.travelIn(salon.id);
+              setIntroHold(true);
+              setTimeout(() => setIntroHold(false), 3500);
             }}
           />
         )}
@@ -1362,16 +1385,28 @@ export function App() {
         <BossCall
           fight={callReport.fight}
           who={callReport.who}
-          live={liveCall.current}
           onWatch={() => {
             setBossCall(null);
             audio.play('horn');
-            setWatching({ fight: callReport.fight!, dawn: !liveCall.current });
+            setWatching({ fight: callReport.fight!, dawn: true });
           }}
           onLater={() => {
             setBossCall(null);
-            if (!liveCall.current) setDawnOpen(true);
+            setDawnOpen(true);
           }}
+        />
+      )}
+      {waitMission && bossOf(waitMission.quest) && !watching && (
+        <BossWait
+          boss={bossOf(waitMission.quest)!}
+          place={waitMission.quest.place}
+          who={listNames(
+            waitMission.heroIds.map((id) => game.heroes.find((h) => h.id === id)?.name ?? '?'),
+          )}
+          many={waitMission.heroIds.length > 1}
+          onWatch={() => facBoss(waitMission.id, true)}
+          onAuto={() => facBoss(waitMission.id, false)}
+          onLater={() => setBossWait(null)}
         />
       )}
       {watching && <BossFight fight={watching.fight} onClose={closeWatch} />}

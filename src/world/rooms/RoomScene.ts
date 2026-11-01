@@ -695,6 +695,14 @@ export class RoomScene {
     if (p) this.camera.centerOn(p.x, p.y);
   }
 
+  /** La entrada de la partida: la cámara empieza fuera, a la izquierda, y entra despacio hasta la sala. */
+  travelIn(room: string): void {
+    const p = this.layout ? focusPoint(this.layout, room) : null;
+    if (!p) return;
+    this.camera.jump(-1e6, p.y - this.camera.vh / 2);
+    this.camera.centerOn(p.x, p.y, true, true);
+  }
+
   start(): void {
     if (this.raf) return;
     const loop = (now: number) => {
