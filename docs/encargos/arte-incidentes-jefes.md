@@ -6,6 +6,15 @@ Para el agente de arte. Antes, lee [`../../CLAUDE.md`](../../CLAUDE.md), [`../pl
 
 ## 1. Incidentes en la escena, con «juice» (prioridad alta)
 
+> **Estado:** hecho lo que se ve en la sala (`world/rooms/incidents.ts`, dibujos en
+> `art/incidents.ts`, capturas con `tools/shots/incidentes.mjs`). Las ratas responden a cada
+> toque: una huye con polvo y chillido, y si quedan toques entra otra; al acabar, las que quedan
+> se van corriendo. Al acabar, el ladrón, el recaudador y el noble se van por la pared más
+> cercana; lo demás se deshace en polvo (el fuego, en vapor). Falta: el temblor de cámara, que
+> la gente se aparte del fuego y un final distinto si sale mal (la escena no sabe cómo acabó:
+> haría falta que el núcleo lo dijera). Lo dibujado no se toca; si se quiere tocar las ratas en
+> la sala en vez del aviso, lo decide el agente principal.
+
 Los incidentes (`data/incidents.ts`, `core/incidents.ts`) hoy son solo un aviso de texto sobre la
 sala (`ui/IncidentMark.tsx`). El usuario: «el tutorial habla de ratas en la cocina, pero no se
 ven… el botón para espantarlas no da ningún feedback ni juice». Es lo primero que ve un jugador

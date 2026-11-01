@@ -26,6 +26,8 @@ export type PKind =
   | 'bark'
   /** Pluma del cuervo: cae meciéndose. */
   | 'feather'
+  /** Estrella de una pelea: da vueltas encima de la nube y parpadea. */
+  | 'star'
   | 'coin';
 
 export interface Particle {
@@ -129,6 +131,14 @@ export class Particles {
         case 'dust':
           p.vx = Math.sin(t * 0.5 + p.seed) * 1.5;
           break;
+        case 'star': {
+          // En corro, encima de donde ha salido, y subiendo despacio.
+          const a = t * 6 + p.seed;
+          p.ay -= 4 * dt;
+          p.x = p.ax + Math.cos(a) * 7;
+          p.y = p.ay + Math.sin(a) * 2;
+          continue;
+        }
         case 'note':
         case 'zzz':
         case 'heart':
@@ -200,10 +210,32 @@ export class Particles {
           px(ctx, x + (Math.floor(t * 4 + p.seed) % 2 ? 1 : -1), y, P.forest);
           break;
         case 'drip':
+          // Una gota alargada: clara arriba.
           px(ctx, x, y, P.sky);
+          px(ctx, x, y - 1, P.cyan);
           break;
         case 'splash':
           px(ctx, x, y, P.sky);
+          break;
+        case 'star':
+          // Una crucecita amarilla que a ratos se vuelve aspa (parpadea).
+          if (Math.floor(t * 8 + p.seed) % 2) {
+            px(ctx, x, y, P.white);
+            for (const [i, j] of [
+              [-1, 0],
+              [1, 0],
+              [0, -1],
+              [0, 1],
+            ] as const)
+              if (fade(x + i, y + j)) px(ctx, x + i, y + j, P.lemon);
+          } else
+            for (const [i, j] of [
+              [-1, -1],
+              [1, 1],
+              [1, -1],
+              [-1, 1],
+            ] as const)
+              if (fade(x + i, y + j)) px(ctx, x + i, y + j, P.gold);
           break;
         case 'puff':
           for (let j = 0; j < 3; j++)
@@ -250,4 +282,5 @@ const defaults: Record<PKind, { life: number; vx: number; vy: number }> = {
   cross: { life: 2.2, vx: 0, vy: -5 },
   bark: { life: 0.7, vx: 0, vy: -14 },
   feather: { life: 2.2, vx: 0, vy: 8 },
+  star: { life: 1.1, vx: 0, vy: 0 },
 };

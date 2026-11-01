@@ -38,6 +38,7 @@ import { FLIGHT_Z, flightArt, goesRight } from './stairs';
 import { dress } from './salas/tintes';
 import { Crowd, type Poi, type Talk } from './crowd';
 import { Pets, kindOf, type Perch, type PetId } from './pets';
+import { IncidentArt } from './incidents';
 import { FLAME_FRAMES, FLAME_H, FLAME_W, flameStrip } from './flame';
 import { faces } from './volume';
 import { RaidShow } from './raid';
@@ -286,6 +287,9 @@ export class RoomScene {
   private crowd = new Crowd(this.shared, (x, floor) => this.tintAt(x, floor));
   /** El gato y el perro del salón. */
   private pets = new Pets(this.shared, (x, floor) => this.tintAt(x, floor));
+  /** Los incidentes en marcha, dibujados en su sala (y la luz del fuego). */
+  private incidents = new IncidentArt(this.shared, (x, floor) => this.tintAt(x, floor));
+  private incidentLamps: Lamp[] = [];
   /** Donde se posa el cuervo: encima del rótulo (o del farol, si el rótulo va pintado). */
   private perch: Perch | null = null;
   /** Persona señalada con el ratón y la que se ha buscado desde su ficha (un rato). */
@@ -418,6 +422,16 @@ export class RoomScene {
     this.scene.add(this.world);
     this.scene.add(this.crowd.group);
     this.scene.add(this.pets.group);
+    this.scene.add(this.incidents.group);
+    this.incidents.sound = (name, v) => this.cb.onSound?.(name, v);
+    this.incidents.emit = (kind, x, y, z, o = {}) => {
+      // (Las partículas se pintan sin perspectiva: se pasa el punto del mundo a la vista.)
+      const c = this.camera;
+      const view: View = { px: c.px, py: c.py, vw: c.vw, vh: c.vh };
+      const p = project(view, x, y, z);
+      const ay = o.land === undefined ? undefined : view.py + project(view, x, o.land, z).y;
+      this.particles.spawn(kind, view.px + p.x, view.py + p.y, { ...o, ay });
+    };
     canvas.addEventListener('webglcontextlost', (e) => e.preventDefault());
     this.pets.sound = (name, v) => this.cb.onSound?.(name, v);
     this.bindInput();
@@ -518,6 +532,7 @@ export class RoomScene {
     this.crowd.setTints(model.tints ?? {});
     if (key === this.key) {
       this.crowd.setPeople(model.heroes);
+      this.showIncidents();
       return;
     }
     this.key = key;
@@ -536,6 +551,7 @@ export class RoomScene {
     this.pets.setRaven(model.raven ? this.perch : null);
     this.crowd.setPois(this.poisOf(L));
     this.crowd.setPeople(model.heroes);
+    this.showIncidents();
     if (this.routePts) this.routePts = this.routePoints(this.routeIds.split(' '));
     this.camera.world = { x0: L.x0, x1: L.x1, y0: L.y0, y1: L.y1 };
     // Cualquier sala puede quedar en el centro (y verse de frente), aunque esté en una esquina.
@@ -554,6 +570,27 @@ export class RoomScene {
         const before = prev.rooms.find((x) => x.id === r.id);
         if (!before || r.level > before.level || (before.works && !r.works)) this.celebrate(r.id);
       }
+  }
+
+  /** Pone en sus salas los incidentes de ahora (y la luz del fuego) y quita los que acabaron. */
+  private showIncidents(): void {
+    const L = this.layout;
+    const m = this.model;
+    if (!L || !m) return;
+    this.incidents.set(L, m.building, m.incidents ?? []);
+    this.incidentLamps = this.incidents.lights().map((l) => ({
+      pos: new Vector3(l.x, GROUND - l.y, -l.z + 6),
+      glow: new Vector3(l.x, GROUND - l.y, -l.z),
+      r: l.r,
+      color: [...l.color],
+      power: l.power,
+      flicker: l.flicker,
+      zone: this.zoneOf(l.rect),
+      seed: Math.round(l.x * 7 + l.y * 13),
+      fire: true,
+      deep: true,
+      halo: 22,
+    }));
   }
 
   resize(cssW: number, cssH: number, zoom?: number): void {
@@ -683,6 +720,7 @@ export class RoomScene {
     this.keep.dispose();
     this.crowd.dispose();
     this.pets.dispose();
+    this.incidents.dispose();
     this.skyTex.dispose();
     this.topTex.dispose();
     this.renderer.dispose();
@@ -1669,11 +1707,16 @@ export class RoomScene {
     this.crowd.setClock(this.night ? 1 : tod);
     this.crowd.update(dt, this.t);
     this.pets.update(dt, this.t);
+    this.incidents.update(dt, this.t);
     this.edgePan(dt);
     if (this.marker && this.t > this.marker.until) this.marker = null;
     this.camera.update(dt);
     this.puffs(dt);
-    this.particles.update(dt, this.t);
+    // Las gotas de la gotera salpican al caer.
+    this.particles.update(dt, this.t, (p) => {
+      if (p.kind !== 'drip') return;
+      for (let i = 0; i < 3; i++) this.particles.spawn('splash', p.x, p.y - 1);
+    });
   }
 
   /**
@@ -1805,7 +1848,7 @@ export class RoomScene {
     const x1 = view.px + view.vw + 40;
     const y0 = GROUND - (view.py + view.vh + 40);
     const y1 = GROUND - (view.py - 40);
-    const near = this.lamps
+    const near = [...this.lamps, ...this.incidentLamps]
       .filter((l) => l.zone[2] > x0 && l.zone[0] < x1 && l.zone[3] > y0 && l.zone[1] < y1)
       .sort(
         (a, b) => Math.hypot(a.pos.x - cx, a.pos.y - cy) - Math.hypot(b.pos.x - cx, b.pos.y - cy),
