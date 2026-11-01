@@ -40,12 +40,17 @@ npm run build`.
 
 ## En curso
 
-- [ ] **Volumen con grosor** (`volume.ts`): que lo suelto por la sala (arcones, montones de oro,
-      barriles, cubas, calderas) tenga cuerpo de unos píxeles hacia atrás, no solo lo empotrado.
-- [ ] **Tesoro** con ese volumen: montones con grosor y monedas sueltas, destellos que saltan,
-      arcones (alguno abierto), pilas de monedas y el brillo en el suelo.
-- [ ] **Bodega** con ese volumen: caldera, cuba, barriles y botellero con cuerpo; vapor de la
-      caldera, burbujas en la cuba y la gota del grifo.
+- [x] **Volumen con grosor** (`thick` en `salas/kit.ts`, `volume` en `RoomScene.ts`): lo suelto
+      por la sala tiene cuerpo de unos píxeles hacia el fondo (antes, solo lo empotrado, hasta
+      la pared).
+- [x] **Emisores** (`emits` en `salas/kit.ts`): un mueble suelta partículas en una zona de su
+      dibujo (destellos `glint`, vapor, burbujas `bubble`, ascuas). Sirve para la forja y la
+      capilla.
+- [x] **Tesoro**: montones de oro de perfil irregular con monedas, gemas y destellos que
+      saltan; arcones, caja fuerte, ídolo, sacos y mesa de contar con cuerpo.
+- [x] **Bodega**: caldera con vapor y ascuas, tina con burbujas; cubas, barriles, botellero,
+      sacos y mesas con cuerpo.
+- [ ] Visto bueno del usuario (capturas de frente y de lado en el PR #94).
 
 ## Siguiente (en este orden, salvo que el usuario diga otra cosa)
 

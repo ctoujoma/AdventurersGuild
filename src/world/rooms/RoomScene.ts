@@ -30,7 +30,7 @@ import type { Building, RaidResult, Room, RoomYield } from '../../core/model';
 import { ROOMS } from '../../data/rooms';
 import { Camera } from '../camera';
 import { GROUND } from '../geometry';
-import { Particles } from '../particles';
+import { Particles, type PKind } from '../particles';
 import * as Prop from '../props';
 import type { Point, SceneCallbacks, SceneModel } from '../scene';
 import { LANTERN, dummy, furnish, gearRoom, type Glow, type RGB } from './furniture';
@@ -282,6 +282,16 @@ export class RoomScene {
   /** La hierba que mueve el viento: cada mata, con su sitio (el viento pasa por x). */
   private grass: { m: Mesh; x: number; seed: number }[] = [];
   private grassTick = -1;
+  /** Muebles que sueltan partículas (ver `Emit` en `salas/kit.ts`), con su zona en el mundo. */
+  private emitters: {
+    kind: PKind;
+    rate: number;
+    x0: number;
+    y0: number;
+    x1: number;
+    y1: number;
+    z: number;
+  }[] = [];
   /** La tira de fotogramas de las llamas (la misma para todas). */
   private flameImg = flameStrip();
   /** Muebles anclados a la pared del fondo de su sala (ver `pin`) y la vista con la que se ajustaron. */
@@ -948,6 +958,7 @@ export class RoomScene {
     this.lamps = [];
     this.flames = [];
     this.grass = [];
+    this.emitters = [];
     this.pins = [];
     this.perch = null;
     this.shafts = [];
@@ -1270,8 +1281,24 @@ export class RoomScene {
       const bottom = th.hang ? ceil3 - h - th.y : floor3 + th.y;
       this.figure(this.world, th.img, x, GROUND - bottom, th.z, ambient, sun, {
         wall: { r, back },
-        box: th.box,
+        box: th.box || !!th.thick,
+        thick: th.thick,
       });
+      // Lo que suelta (destellos, vapor, burbujas): su zona, ya en el mundo.
+      if (live)
+        for (const e of th.emit ?? []) {
+          const left = x - th.img.w / k / 2;
+          const top = GROUND - bottom - h;
+          this.emitters.push({
+            kind: e.kind,
+            rate: e.rate,
+            x0: left + e.at[0] / k,
+            y0: top + e.at[1] / k,
+            x1: left + e.at[2] / k,
+            y1: top + e.at[3] / k,
+            z: th.z,
+          });
+        }
       if ((th.act || th.poi) && live)
         this.props.push({
           act: th.act,
@@ -1660,7 +1687,7 @@ export class RoomScene {
     depth: number,
     ambient: Tint,
     sun: number,
-    o: { wall?: { r: Rect; back: PixelBuffer }; box?: boolean } = {},
+    o: { wall?: { r: Rect; back: PixelBuffer }; box?: boolean; thick?: number } = {},
   ): void {
     const k = scaleAt(depth);
     const w = img.w / k;
@@ -1679,7 +1706,7 @@ export class RoomScene {
     const obj = o.box ? new Group() : m;
     if (o.box) {
       obj.add(m);
-      this.volume(obj as Group, img, x - w / 2, base - h, depth, ambient, sun);
+      this.volume(obj as Group, img, x - w / 2, base - h, depth, ambient, sun, o.thick);
     }
     g.add(obj);
     const wall = o.wall;
@@ -1712,9 +1739,11 @@ export class RoomScene {
     depth: number,
     ambient: Tint,
     sun: number,
+    thick?: number,
   ): void {
     const k = scaleAt(depth);
-    const back = DEPTH - 0.5;
+    // Hasta la pared (lo empotrado) o, con `thick`, solo ese grosor (lo suelto por la sala).
+    const back = thick ? Math.min(DEPTH - 0.5, depth + thick) : DEPTH - 0.5;
     // A lo hondo, un téxel cada dos de mundo (se ve muy de lado: no hace falta más).
     const n = Math.max(2, Math.round((back - depth) / 2));
     const X = (px: number) => left + px / k;
@@ -1838,6 +1867,22 @@ export class RoomScene {
 
   /** Humo de las chimeneas: más seguido de noche, cuando se enciende más el fuego. */
   private puffs(dt: number): void {
+    // Lo que sueltan los muebles: cada uno a su ritmo, en un punto al azar de su zona.
+    if (this.emitters.length) {
+      const c = this.camera;
+      const view: View = { px: c.px, py: c.py, vw: c.vw, vh: c.vh };
+      for (const e of this.emitters) {
+        if (Math.random() > e.rate * dt) continue;
+        if (e.x1 < view.px - 20 || e.x0 > view.px + view.vw + 20) continue;
+        const p = project(
+          view,
+          e.x0 + Math.random() * (e.x1 - e.x0),
+          e.y0 + Math.random() * (e.y1 - e.y0),
+          e.z,
+        );
+        this.particles.spawn(e.kind, view.px + p.x, view.py + p.y);
+      }
+    }
     // Motas de polvo que bajan despacio por el rayo de luz de las salas rotas.
     this.dustT -= dt;
     if (this.dustT <= 0 && this.shafts.length) {

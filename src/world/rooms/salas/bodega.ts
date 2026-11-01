@@ -25,6 +25,8 @@ import {
   type Thing,
   type WallCtx,
   task,
+  emits,
+  thick,
 } from './kit';
 import { candleOn, sack, shelf, web } from './piezas';
 
@@ -260,12 +262,28 @@ function things(room: Room, w: number): Thing[] {
   for (const s of stretchesOf(room, w)) {
     if (s.kind === 'left') {
       if (lvl >= 2)
-        t.push(task(at(kettle(lvl), s.x0 + 22, WALL + 2, 0, fire(4, 70, FIRE, false)), 'caldera'));
-      if (lvl >= 4) t.push(at(tastingTable(), s.x0 + 52, WALL, 0, candle(12, 36, 0.5)));
+        t.push(
+          task(
+            thick(
+              emits(
+                at(kettle(lvl), s.x0 + 22, WALL + 2, 0, fire(4, 70, FIRE, false)),
+                // Vapor de la cúpula y alguna ascua que salta de la boca del hornillo.
+                { kind: 'steam', rate: 3, at: [8, 29, 24, 33] },
+                { kind: 'ember', rate: 1.2, at: [11, 56, 21, 61] },
+              ),
+              10,
+            ),
+            'caldera',
+          ),
+        );
+      if (lvl >= 4) t.push(thick(at(tastingTable(), s.x0 + 52, WALL, 0, candle(12, 36, 0.5)), 5));
       else
         t.push(
           task(
-            at(lvl >= 2 ? Prop.barrel() : barrels(), lvl >= 2 ? s.x0 + 51 : s.x0 + 22, WALL),
+            thick(
+              at(lvl >= 2 ? Prop.barrel() : barrels(), lvl >= 2 ? s.x0 + 51 : s.x0 + 22, WALL),
+              8,
+            ),
             'barril',
           ),
         );
@@ -274,18 +292,27 @@ function things(room: Room, w: number): Thing[] {
         ...row(s, [
           [fermentTub(lvl), WALL],
           [barley(lvl), WALL - 2],
-        ]).map((x, k) => (k === 0 ? task(x, 'cuba') : x)),
+        ]).map((x, k) =>
+          k === 0
+            ? task(thick(emits(x, { kind: 'bubble', rate: 2.5, at: [5, 6, 25, 9] }), 10), 'cuba')
+            : thick(x, 5),
+        ),
       );
     else if (s.kind === 'mid')
       t.push(
         ...row(s, [
           [lvl >= 3 ? Prop.wineRack() : barrels(), WALL],
           [bottling(lvl), WALL - 2],
-        ]).map((x, k) => (k === 1 ? task(x, 'barril') : x)),
+        ]).map((x, k) => (k === 1 ? task(thick(x, 5), 'barril') : thick(x, k === 0 ? 12 : 5))),
       );
   }
   cellsOf(room, w).forEach((c, j) =>
-    t.push(task(at(j === 1 ? barrels() : vat(lvl, j), c.win, WALL), j === 1 ? 'barril' : 'cuba')),
+    t.push(
+      task(
+        thick(at(j === 1 ? barrels() : vat(lvl, j), c.win, WALL), 10),
+        j === 1 ? 'barril' : 'cuba',
+      ),
+    ),
   );
   return t;
 }

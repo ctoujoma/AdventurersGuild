@@ -39,6 +39,16 @@ export interface Thing {
   light?: Glow;
   /** Con volumen: de su silueta salen los lados y la parte de arriba hasta la pared (ver `volume.ts`). */
   box?: boolean;
+  /**
+   * Con cuerpo de este grosor (en profundidad del mundo) en vez de hasta la pared: lo suelto
+   * por la sala (arcones, montones, barriles, cubas). Ver `thick`.
+   */
+  thick?: number;
+  /**
+   * Lo que suelta de vez en cuando (destellos del oro, vapor, burbujas): qué, cuántos por
+   * segundo y en qué zona de su dibujo (x0, y0, x1, y1 en sus píxeles). Ver `emits`.
+   */
+  emit?: Emit[];
   /** Se puede tocar: al pasar el ratón se marca y al tocarlo abre lo suyo. */
   act?: ActId;
   /** Sitio al que la gente va a hacer algo (calentarse las manos, rezar…). */
@@ -324,6 +334,21 @@ export const solid = (img: PixelBuffer, x: number, y = 0, light?: Glow): Thing =
   ...at(img, x, SOLID, y, light),
   box: true,
 });
+
+export interface Emit {
+  kind: 'glint' | 'steam' | 'bubble' | 'ember';
+  rate: number;
+  at: [number, number, number, number];
+}
+
+/** Un mueble que suelta algo de vez en cuando (en la zona `at` de su dibujo). */
+export const emits = (t: Thing, ...list: Emit[]): Thing => ({
+  ...t,
+  emit: [...(t.emit ?? []), ...list],
+});
+
+/** Con cuerpo: la silueta se estira `d` hacia el fondo (lo suelto por la sala). */
+export const thick = (t: Thing, d: number): Thing => ({ ...t, thick: d });
 
 /** Algo colgado del techo, con su parte de arriba a `y` del techo. */
 export const hung = (img: PixelBuffer, x: number, z: number, y = 0, light?: Glow): Thing => ({
