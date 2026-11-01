@@ -157,11 +157,14 @@ hueco, con la cámara en cada paso. Sustituye a las notas de obras de ahora (`ob
 
 ## Fase 3 · Combate con decisiones (y encargos en directo)
 
-- **El encargo en directo:** en la ficha de un grupo fuera, una tira dibujada con el grupo de
-  ida, haciendo lo suyo (pelea, exploración, escolta…) y de vuelta, que cuente lo que pasa,
-  como en Fallout Shelter. Sobre ella, momentos que piden decisión: un jefe («Entrar a
-  pelear» o «Resolver solo»; si no se contesta, se resuelve solo), y más adelante incursiones
-  («raids») con varios momentos así.
+- **El encargo en directo:** una ficha nueva, «Encargo en curso», que se abre al tocar un grupo
+  fuera (en la lista bajo el mapa, en su marca del mapa o en el botón «Fuera» de la barra).
+  Arriba, el encargo y los retratos del grupo; en medio, **la tira animada** como en Fallout
+  Shelter (el grupo de ida, haciendo lo suyo según el tipo: pelea, exploración, escolta… y de
+  vuelta, avanzando con el tiempo que queda); debajo, el diario de lo que va pasando y cuándo
+  vuelven. La lista bajo el mapa queda como resumen (una fila por grupo con su barra). Sobre la
+  tira, más adelante, los momentos que piden decisión: un jefe («Entrar a pelear» o «Resolver
+  solo»; si no se contesta, se resuelve solo) y las incursiones («raids») con varios así.
 - **Pelea interactiva:** arrastrar a un héroe sobre un enemigo para elegir a quién ataca (si no,
   el de siempre por su táctica); formación, táctica y objeto antes; habilidades por clase con
   recarga; pocas órdenes en directo.
