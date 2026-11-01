@@ -8,6 +8,8 @@
  * el plano de corte es justo lo que se ve, píxel a píxel. Los toques se resuelven ahí mismo.
  */
 import { tinyDigits } from '../../art/digits';
+import { GRASS_FRAMES, grassTuft, type TuftKind } from '../../art/grass';
+import { Rng } from '../../core/rng';
 import {
   CanvasTexture,
   Group,
@@ -277,6 +279,9 @@ export class RoomScene {
   private dustT = 0;
   private towerRect: Rect | null = null;
   private flames: Mesh[] = [];
+  /** La hierba que mueve el viento: cada mata, con su sitio (el viento pasa por x). */
+  private grass: { m: Mesh; x: number; seed: number }[] = [];
+  private grassTick = -1;
   /** La tira de fotogramas de las llamas (la misma para todas). */
   private flameImg = flameStrip();
   /** Muebles anclados a la pared del fondo de su sala (ver `pin`) y la vista con la que se ajustaron. */
@@ -912,6 +917,7 @@ export class RoomScene {
     this.look = new Look(this.shared);
     this.lamps = [];
     this.flames = [];
+    this.grass = [];
     this.pins = [];
     this.perch = null;
     this.shafts = [];
@@ -1475,6 +1481,7 @@ export class RoomScene {
     ];
     for (const [tx, depth, conifer, h] of trees)
       put(conifer ? Prop.pine(`pino${tx}`, h) : Prop.oakTree(`roble${tx}`, h), tx, depth);
+    this.plantGrass(L);
     put(Prop.bush('patio1'), L.left - 30, 12);
     put(Prop.bush('patio2'), L.right + 40, 30);
     put(Prop.bush('patio3'), L.right + 80, 90);
@@ -1559,6 +1566,62 @@ export class RoomScene {
    * Figura plana a `depth`, del tamaño de su dibujo; (x, base) del mundo 2D. Con `wall`, anclada
    * a esa pared (`pin`); con `box`, con volumen hasta ella (`volume`).
    */
+  /**
+   * Matas de hierba por el patio y alrededor, a varias profundidades: en la tierra pisada del
+   * patio, pocas y en los bordes; en la hierba, muchas. Cada una cambia de fotograma con el
+   * viento que pasa por su sitio (ver `draw`).
+   */
+  private plantGrass(L: RoomsLayout): void {
+    const rng = new Rng('matas del patio');
+    const kinds: TuftKind[] = ['mata', 'mata', 'alta', 'flores', 'trebol', 'mata', 'alta'];
+    const art = new Map<string, ReturnType<typeof grassTuft>>();
+    const well = { x: L.patio.x + 40, z: 70 };
+    for (let i = 0; i < 220; i++) {
+      const x = L.left - 460 + rng.next() * (L.right - L.left + 920);
+      const z = 4 + rng.next() * (YARD_D - 30);
+      // Ni dentro del edificio ni encima del pozo.
+      if (x > L.left - 6 && x < L.right + 6 && z < DEPTH + 8) continue;
+      if (Math.hypot(x - well.x, (z - well.z) * 0.6) < 18) continue;
+      // No en el camino de tierra del patio (por delante).
+      if (z > 6 && z < 26 && x < L.left) continue;
+      const kind = kinds[rng.int(0, kinds.length - 1)]!;
+      const key = `${kind}${rng.int(0, 5)}`;
+      let a = art.get(key);
+      if (!a) art.set(key, (a = grassTuft(kind, key)));
+      const k = scaleAt(z);
+      const w = a.w / k;
+      const h = a.h / k;
+      const corners: Corners = [
+        at(x - w / 2, GROUND, z),
+        at(x + w / 2, GROUND, z),
+        at(x + w / 2, GROUND - h, z),
+        at(x - w / 2, GROUND - h, z),
+      ];
+      const m = mesh(
+        quad(corners, this.look),
+        this.look.surface(a.img, corners, {
+          ambient: OUTDOOR,
+          sun: 1,
+          wrap: 0.6,
+          dither: 0.03,
+          frames: GRASS_FRAMES,
+        }),
+      );
+      this.world.add(m);
+      this.grass.push({ m, x, seed: rng.next() });
+    }
+  }
+
+  /** El viento en `x` (más o menos −1 a 2): rachas que cruzan de izquierda a derecha. */
+  private windAt(x: number, t: number): number {
+    return (
+      0.35 +
+      Math.sin(t * 1.15 - x * 0.022) * 0.55 +
+      Math.sin(t * 0.37 - x * 0.007) * 0.75 +
+      Math.max(0, Math.sin(t * 0.21 - x * 0.004)) ** 6 * 1.2
+    );
+  }
+
   private figure(
     g: Group,
     img: PixelBuffer,
@@ -1872,6 +1935,17 @@ export class RoomScene {
     }
     s.uLightCount.value = n;
     tex.needsUpdate = true;
+    // La hierba, con el viento que pasa por su sitio (unas 8 veces por segundo).
+    const gt = Math.floor(t * 8);
+    if (gt !== this.grassTick) {
+      this.grassTick = gt;
+      for (const gr of this.grass) {
+        const w = this.windAt(gr.x, t) + (gr.seed - 0.5) * 0.4;
+        const f = w < -0.4 ? 0 : w < 0.35 ? 1 : w < 1.05 ? 2 : 3;
+        const u = (gr.m.material as ShaderMaterial).uniforms.uUvOffset!.value;
+        u.x = f / GRASS_FRAMES;
+      }
+    }
     // Cada llama, a su aire: otro fotograma y algo más alta o más baja cada poco.
     for (const m of this.flames) {
       const tick = Math.floor(t * 9);

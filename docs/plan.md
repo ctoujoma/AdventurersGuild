@@ -239,8 +239,27 @@ sitio (comprar solar o excavar, mover, construir, ampliar, mejorar). De un agent
 - Sistema de eventos y novedades periódicas (jefes, encargos, fiestas), y cartas selladas.
 - Lista grande de jefes y encargos para ir ampliando.
 
+## Hecho hace poco (arte)
+
+- **Encargos repartidos:** la tira deshace el camino y no engaña con el resultado; el mapa, en
+  pergamino o a color según la sala de mapas (`encargos/arte-tira-vuelta-mapa.md`). Lo de
+  interfaz (avisos que se descartan y el mapa grande) también está.
+- **Enemigos pintados a mano** (`art/foeSprites.ts`): trasgos, orcos, esqueletos, trols, lobos,
+  jabalíes, osos, ratas, arañas, limos y espectros.
+- **El fondo, a color y vivo** (`world/parallax.ts`, `world/rooms/life.ts`): las capas lejanas
+  tienen versión de día (montañas con nieve, colinas con campos, aldea, molino y castillo,
+  bosques) que se funde con las siluetas de la noche; pájaros, humo de las chimeneas, aspas del
+  molino, bandera, luciérnagas y estrellas fugaces. En el patio, pradera con flores y matas que
+  mueve el viento a rachas (`art/grass.ts`). Capturas: `tools/shots/fondo.mjs`.
+
 ## Pendiente de revisar
 
+- **Pelea contra jefes, perfilarla antes de llevarla a los asaltos** (ver la propuesta en el
+  último punto de situación).
+
+- **El cobro de la deuda con Merlo** (lo hecho con los agentes de arte e interfaz): que encaje
+  con el tiempo que corre solo, los pagos estando fuera (`dueTonight`), los avisos y los
+  objetivos.
 - **Feedback de jugar más** (hecho todo): la vuelta de la tira, el resultado que no engaña y el
   mapa (arte); descartar avisos y el mapa grande (interfaz); la clase en el selector, volver al
   trabajo y resolver al acabar la pelea de la tira (agente principal).

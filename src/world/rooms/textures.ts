@@ -367,39 +367,8 @@ export function roofTiles(len: number, seed: string, roof?: RoofId): PixelBuffer
   return b;
 }
 
-/** Tierra de arriba, a los lados del edificio: patio pisado a la izquierda, hierba a la derecha. */
-export function groundTex(
-  w: number,
-  d: number,
-  patio: boolean,
-  seed: string,
-  road = patio,
-): PixelBuffer {
-  const b = new PixelBuffer(w, d);
-  const rng = new Rng(seed);
-  for (let y = 0; y < d; y++)
-    for (let x = 0; x < w; x++) {
-      const n = rng.next();
-      b.set(
-        x,
-        y,
-        patio
-          ? n < 0.12
-            ? P.umber
-            : n > 0.94
-              ? P.cocoa
-              : P.bark
-          : n < 0.1
-            ? P.deep
-            : n > 0.9
-              ? P.leaf
-              : P.forest,
-      );
-    }
-  if (road)
-    for (let x = 0; x < Math.min(w, 26); x++) b.vline(x, 0, d, (x + 1) % 7 ? P.umber : P.mocha);
-  return b;
-}
+/** Tierra de arriba, a los lados del edificio (ver `art/grass.ts`). */
+export { groundTex } from '../../art/grass';
 
 // ---------- La fachada del corte ----------
 
