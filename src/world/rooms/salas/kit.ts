@@ -45,8 +45,17 @@ export interface Thing {
   poi?: PoiKind;
 }
 
-/** Lo que se hace en un sitio de una sala: leer (el tablón, el mapa), calentarse o rezar. */
-export type PoiKind = 'read' | 'warm' | 'pray';
+/**
+ * Lo que se hace en un sitio de una sala: leer (el tablón, el mapa), calentarse o rezar (los
+ * héroes libres); o, para el servicio, cada tarea de su oficio en su mueble: la olla del hogar,
+ * la mesa (picar, amasar), la pila de fregar, el horno, la cuba, el barril y la caldera.
+ */
+export type PoiKind = LeisurePoi | TaskPoi;
+export type LeisurePoi = 'read' | 'warm' | 'pray';
+export type TaskPoi = 'olla' | 'mesa' | 'fregar' | 'horno' | 'cuba' | 'barril' | 'caldera';
+
+/** Un mueble con su sitio de trabajo. */
+export const task = (t: Thing, poi: TaskPoi): Thing => ({ ...t, poi });
 
 /** Lo que abre una cosa de una sala al tocarla (el tablón, el mapa de la comarca…). */
 export type ActId = 'tablon' | 'mapa' | 'candidatos' | 'equipo';

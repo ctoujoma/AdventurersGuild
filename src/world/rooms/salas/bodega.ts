@@ -24,6 +24,7 @@ import {
   type RoomArt,
   type Thing,
   type WallCtx,
+  task,
 } from './kit';
 import { candleOn, sack, shelf, web } from './piezas';
 
@@ -258,25 +259,34 @@ function things(room: Room, w: number): Thing[] {
   const t: Thing[] = [];
   for (const s of stretchesOf(room, w)) {
     if (s.kind === 'left') {
-      if (lvl >= 2) t.push(at(kettle(lvl), s.x0 + 22, WALL + 2, 0, fire(4, 70, FIRE, false)));
+      if (lvl >= 2)
+        t.push(task(at(kettle(lvl), s.x0 + 22, WALL + 2, 0, fire(4, 70, FIRE, false)), 'caldera'));
       if (lvl >= 4) t.push(at(tastingTable(), s.x0 + 52, WALL, 0, candle(12, 36, 0.5)));
-      else t.push(at(lvl >= 2 ? Prop.barrel() : barrels(), lvl >= 2 ? s.x0 + 51 : s.x0 + 22, WALL));
+      else
+        t.push(
+          task(
+            at(lvl >= 2 ? Prop.barrel() : barrels(), lvl >= 2 ? s.x0 + 51 : s.x0 + 22, WALL),
+            'barril',
+          ),
+        );
     } else if (s.kind === 'mid' && s.i === 1)
       t.push(
         ...row(s, [
           [fermentTub(lvl), WALL],
           [barley(lvl), WALL - 2],
-        ]),
+        ]).map((x, k) => (k === 0 ? task(x, 'cuba') : x)),
       );
     else if (s.kind === 'mid')
       t.push(
         ...row(s, [
           [lvl >= 3 ? Prop.wineRack() : barrels(), WALL],
           [bottling(lvl), WALL - 2],
-        ]),
+        ]).map((x, k) => (k === 1 ? task(x, 'barril') : x)),
       );
   }
-  cellsOf(room, w).forEach((c, j) => t.push(at(j === 1 ? barrels() : vat(lvl, j), c.win, WALL)));
+  cellsOf(room, w).forEach((c, j) =>
+    t.push(task(at(j === 1 ? barrels() : vat(lvl, j), c.win, WALL), j === 1 ? 'barril' : 'cuba')),
+  );
   return t;
 }
 
