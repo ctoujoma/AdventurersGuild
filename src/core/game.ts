@@ -82,6 +82,8 @@ import {
   easyQuest,
   finishTutorial,
   skipTime,
+  startStep,
+  type TutorialSkip,
   tutorialOn,
   tutorialStep,
 } from './tutorial';
@@ -195,7 +197,7 @@ export type Action =
   /** Un grupo ante su jefe: se resuelve ya (la interfaz enseña la pelea si se quiere ver). */
   | { type: 'boss'; id: string }
   | { type: 'renameHero'; id: string; name: string }
-  | { type: 'tutorial'; op: 'carta' | 'ok' | 'saltar' | 'vuelta' | 'pago' }
+  | { type: 'tutorial'; op: 'carta' | 'ok' | 'saltar' | 'listo' | TutorialSkip }
   /** Saltar al anochecer. */
   | { type: 'dusk' }
   | { type: 'endDay' };
@@ -749,8 +751,16 @@ function reduceAction(state: GameState, action: Action): GameState {
         if (msgs.length) s.incidentNews = msgs.map((m) => ({ t: m, k: 'good' as const }));
         return s;
       }
-      // Saltar el tiempo: hasta que vuelva el grupo, o hasta el pago.
-      return skipTime(s, action.op, (x) => endDay(x), salaries);
+      if (action.op === 'listo') {
+        // Acaba el respiro de antes del paso: empieza (llegan las ratas, el rumor…).
+        if (!s.tutorial!.wait) return state;
+        const msgs = startStep(s);
+        if (msgs.length) s.incidentNews = msgs.map((m) => ({ t: m, k: 'good' as const }));
+        return s;
+      }
+      // Saltar el tiempo: hasta que vuelva el grupo, una noche o hasta el pago.
+      const t = skipTime(s, action.op, (x) => endDay(x));
+      return t === s ? state : t;
     }
     case 'boss': {
       // Ante el jefe: el jugador dice (verla o que se las apañen); se resuelve ya.
