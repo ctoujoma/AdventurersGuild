@@ -173,6 +173,8 @@ hueco, con la cámara en cada paso. Sustituye a las notas de obras de ahora (`ob
   referencia): los héroes animados encima de la línea de las partes, andando, peleando contra
   enemigos según el encargo (familias de enemigos reutilizables: bandidos, trasgos, bestias,
   alimañas, muertos y grandes) y cojeando si van heridos.
+  **Hecho, la tira** (agente de arte): `ui/QuestStrip.tsx` y los enemigos por familias en
+  `art/foes.ts` (también para asaltos y esbirros).
   **Hecho:** el encargo se resuelve al acabar lo suyo, no al volver: llega el informe (con el
   oro y el botín) «por aviso» y el grupo emprende la vuelta con cómo ha quedado cada uno.
   **Hecho, el jefe que espera:** la pelea contra un jefe no va en la tira. Al llegar al jefe el
