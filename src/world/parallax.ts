@@ -93,9 +93,25 @@ export function stars(): Star[] {
 
 /** Cresta de las montañas: picos marcados (valor absoluto de senos) y algo de detalle. */
 export function ridgeAt(x: number): number {
-  const a = Math.abs(Math.sin(x * 0.013 + 0.4)) * 58;
-  const c = Math.abs(Math.sin(x * 0.029 + 2.1)) * 22;
-  return 238 - a - c - Math.sin(x * 0.11) * 3;
+  // Picos agudos (1 − |sen|: punta arriba, valle redondo abajo) y, con la potencia, flancos
+  // cóncavos que se abren hacia abajo, como los montes de verdad; de tres tamaños.
+  const peak = (f: number, ph: number, p: number) => (1 - Math.abs(Math.sin(x * f + ph))) ** p;
+  // Sobre una base común (la sierra no se corta: collados y hombros entre las cumbres).
+  const base = 18 + Math.sin(x * 0.004 + 1) * 6;
+  const big = peak(0.0105, 0.4, 1.2) * 46;
+  const mid = peak(0.027, 2.1, 1.3) * 22 * (0.55 + big / 90);
+  const small = peak(0.071, 0.7, 1.2) * 7;
+  const h = base + big + mid + small;
+  // En lo alto, la cresta mellada: agujas y muescas de roca (más cuanto más alto).
+  const i = Math.floor(x / 3);
+  const u = x / 3 - i;
+  const crag = (a: number) => {
+    let v = Math.imul(a * 374761393 + 13, 1274126177);
+    v ^= v >>> 13;
+    return ((Math.imul(v, 1103515245) >>> 0) % 1000) / 1000 - 0.5;
+  };
+  const rough = crag(i) + (crag(i + 1) - crag(i)) * u;
+  return 244 - h - rough * 5 * Math.min(1, Math.max(0, h - 20) / 40);
 }
 
 /** Lomo de las colinas. */
@@ -291,52 +307,175 @@ const hash = (x: number, y: number, s = 0) => {
 };
 
 /**
- * Montañas de día: lejos y azuladas (la bruma), con la cara al sol clara y la otra en sombra,
- * cañadas que bajan de los picos, nieve en lo alto y un bosque azulado en el pie.
+ * Las cañadas de las montañas, como en la realidad: a cada lado de cada pico nacen varias en la
+ * cresta, bajan en diagonal y se juntan en un punto; de ahí sigue un solo barranco, que se
+ * pierde en la bruma. Oscuras, con el borde de la izquierda (al sol) más claro.
+ */
+function gullies(b: PixelBuffer): void {
+  const inside = (x: number, y: number) => b.inside(x, y) && b.get(x, y) >>> 24 !== 0;
+  /** Oscurece (`k` < 1) o aclara hacia el blanco (`k` > 1) un píxel ya pintado. */
+  const tone = (x: number, y: number, k: number) => {
+    const c = b.get(x, y);
+    const ch = [c & 255, (c >> 8) & 255, (c >> 16) & 255].map((v) =>
+      Math.round(k < 1 ? v * k : v + (255 - v) * (k - 1)),
+    );
+    b.data[y * b.w + x] = ((255 << 24) | (ch[2]! << 16) | (ch[1]! << 8) | ch[0]!) >>> 0;
+  };
+  const done = new Set<number>();
+  const groove = (
+    x0: number,
+    y0: number,
+    x1: number,
+    y1: number,
+    wide: boolean,
+    fade: number,
+    seed: number,
+  ) => {
+    const n = Math.max(1, Math.abs(x1 - x0), Math.abs(y1 - y0));
+    for (let k = 0; k <= n; k++) {
+      const u = k / n;
+      // En diagonal, algo más derecha arriba, y serpenteando un poco.
+      const wob = Math.sin(u * 9 + seed * 7) * 0.9 * Math.sin(u * Math.PI);
+      const x = Math.round(x0 + (x1 - x0) * u ** 1.15 + wob);
+      const y = Math.round(y0 + (y1 - y0) * u);
+      if (!inside(x, y) || y <= Math.round(ridgeAt(x)) + 1) continue;
+      // Se desvanece hacia abajo (la bruma se la come) y no entra en el bosque.
+      if (bayer(x, y) > 1 - (fade + u * (1 - fade)) * 0.7) continue;
+      if (y > forestAt(x) - 1) continue;
+      const top = Math.round(ridgeAt(x));
+      // En lo alto, la cañada guarda nieve: una franja blanca (como los canales de la foto).
+      if (y - top < snowAt(x, top) * 2.4 && u < 0.6) {
+        for (let w = 0; w < (wide ? 2 : 1); w++)
+          if (inside(x + w, y) && !done.has(y * b.w + x + w)) {
+            done.add(y * b.w + x + w);
+            tone(x + w, y, 1.55);
+          }
+        continue;
+      }
+      for (let w = 0; w < (wide ? 2 : 1); w++) {
+        const key = y * b.w + x + w;
+        if (done.has(key) || !inside(x + w, y)) continue;
+        done.add(key);
+        tone(x + w, y, 0.8);
+      }
+      // El borde de la izquierda, al sol; a la derecha, la sombra del espolón.
+      const lx = x - 1;
+      if (inside(lx, y) && !done.has(y * b.w + lx)) {
+        done.add(y * b.w + lx);
+        tone(lx, y, 1.12);
+      }
+      for (const [dx, k] of [
+        [wide ? 2 : 1, 0.9],
+        [wide ? 3 : 2, 0.95],
+      ] as const) {
+        const key = y * b.w + x + dx;
+        if (inside(x + dx, y) && !done.has(key)) {
+          done.add(key);
+          tone(x + dx, y, k);
+        }
+      }
+    }
+  };
+  // Los picos: donde la cresta es más alta que alrededor.
+  for (let x = 6; x < b.w - 6; x++) {
+    const top = ridgeAt(x);
+    let peak = true;
+    for (let d = 1; d <= 8 && peak; d++)
+      if (ridgeAt(x - d) < top || ridgeAt(x + d) < top) peak = false;
+    if (!peak) continue;
+    const tall = GROUND - top;
+    if (tall < 30) continue;
+    for (const side of [-1, 1]) {
+      const r = (i: number) => hash(x * 2 + (side > 0 ? 1 : 0), i, 21);
+      // Dónde se juntan (cada pico a su manera), y el barranco que sigue.
+      const meet = {
+        x: Math.round(x + side * (8 + tall * (0.14 + r(1) * 0.12))),
+        y: Math.round(top + tall * (0.32 + r(2) * 0.18)),
+      };
+      const end = {
+        x: meet.x + side * Math.round(tall * (0.08 + r(3) * 0.14)),
+        y: Math.round(GROUND - 12 - r(4) * 8),
+      };
+      groove(meet.x, meet.y, end.x, end.y, true, 0.3, r(5));
+      // Las que bajan de la cresta hasta juntarse; alguna llega al barranco más abajo y otra
+      // se queda corta (no todas iguales).
+      const n = 2 + Math.floor(r(6) * 3);
+      let sx = x + side * Math.round(1 + r(7) * 3);
+      for (let k = 0; k < n; k++) {
+        if (r(10 + k) < 0.2) continue;
+        const sy = Math.round(ridgeAt(sx)) + 2;
+        const v = k === n - 1 && r(20 + k) < 0.6 ? 0.3 + r(30 + k) * 0.3 : 0;
+        groove(
+          sx,
+          sy,
+          Math.round(meet.x + (end.x - meet.x) * v),
+          Math.round(meet.y + (end.y - meet.y) * v),
+          false,
+          0,
+          r(40 + k),
+        );
+        sx += side * Math.round(3 + tall * 0.04 + r(50 + k) * 6);
+      }
+    }
+  }
+}
+
+/**
+ * Montañas de día: la misma silueta de la noche, aclarada con la luz azulada del día (como un
+ * `screen` con el azul del cielo) y con bruma que sube del horizonte: lo lejano, pálido.
  */
 export function dayMountains(): PixelBuffer {
-  const b = new PixelBuffer(LAYER_W, WORLD_H);
-  for (let x = 0; x < LAYER_W; x++) {
+  const b = buildMountains();
+  // Primero, en los colores de la noche: la nieve a manchas y el bosque del pie.
+  for (let x = 0; x < b.w; x++) {
     const top = Math.round(ridgeAt(x));
     const slope = ridgeAt(x + 1) - ridgeAt(x - 1);
+    const snow = snowAt(x, top);
+    const wood = forestAt(x);
     for (let y = top; y < GROUND; y++) {
       const depth = y - top;
-      // La luz por la izquierda: la cara que sube hacia la derecha, clara; la otra, en sombra.
-      // Manchas de 2 × 2 (no un damero de píxeles sueltos): se ven como roca, no como grano.
-      const k = -slope * 0.9 + (hash(x >> 1, y >> 1, 7) - 0.5) * 0.3;
-      let c: string =
-        k > 0.45
-          ? P.fog
-          : k > 0.05
-            ? hash(x >> 1, y >> 1, 6) < (k - 0.05) / 0.4
-              ? P.fog
-              : P.steel
-            : k > -0.6
-              ? P.steel
-              : P.slate;
-      // Cañadas: bajan en diagonal desde la cresta, del lado de cada cara.
-      const along = slope < 0 ? x * 2 + depth : x * 2 - depth;
-      if (
-        depth > 3 &&
-        depth < 60 &&
-        (((along % 19) + 19) % 19 === 0 || ((along % 31) + 31) % 31 === 0)
-      )
-        c = c === P.fog ? P.steel : P.slate;
-      // Vetas de roca: algún punto claro suelto en la cara al sol.
-      if (k > 0.45 && hash(x, y, 2) < 0.04) c = P.mist;
-      // Nieve en las cumbres altas, con su borde roto.
-      const snow = 7 - Math.floor((top - 150) / 6) + (hash(x >> 1, 4, 4) < 0.35 ? 2 : 0);
-      if (top < 178 && depth < snow) c = k > -0.2 ? (k > 0.45 ? P.white : P.mist) : P.fog;
-      // Bruma: hacia el horizonte se aclara y se azula.
-      const haze = (y - (GROUND - 46)) / 46;
-      if (haze > 0 && bayer(x + 1, y) < haze * 0.55) c = c === P.slate ? P.steel : P.fog;
-      // El bosque del pie, azulado por la distancia.
-      const foot = GROUND - 12 - Math.round(Math.sin(x * 0.07) * 4 + hash(x >> 1, 3, 5) * 3);
-      if (y > foot) c = (x + y) % 3 === 0 ? P.slate : P.steel;
+      let c: string = depth > 18 && bayer(x, y) < Math.min(1, (depth - 18) / 30) ? P.black : P.navy;
+      // La nieve: más en lo alto, con calvas de roca.
+      if (depth < snow && hash(x >> 1, (y >> 1) + 3, 13) > 0.22 - depth * 0.02)
+        c = slope < 0.2 ? P.white : P.mist;
+      // El filo de la cresta, a la luz.
+      else if (slope < -0.25 && depth < 2) c = P.slate;
+      // El bosque, con las copas en el borde.
+      if (y > wood - ((x >> 1) % 2)) c = (x + y) % 3 === 0 ? P.forest : P.deep;
       b.set(x, y, c);
     }
   }
+  // La luz azulada del día y la bruma.
+  const sky = [207, 233, 242];
+  const tint = [70, 105, 120];
+  for (let y = 0; y < b.h; y++) {
+    // La bruma: algo en todo el monte y más cuanto más cerca del horizonte.
+    const haze = 0.14 + 0.3 * Math.max(0, Math.min(1, (y - (GROUND - 70)) / 70));
+    for (let x = 0; x < b.w; x++) {
+      const c = b.data[y * b.w + x]!;
+      if (!(c >>> 24)) continue;
+      const ch = [c & 255, (c >> 8) & 255, (c >> 16) & 255].map((v, i) => {
+        const lit = 255 - ((255 - v) * (255 - tint[i]!)) / 255;
+        return Math.round(lit + (sky[i]! - lit) * haze);
+      });
+      b.data[y * b.w + x] = ((255 << 24) | (ch[2]! << 16) | (ch[1]! << 8) | ch[0]!) >>> 0;
+    }
+  }
+  gullies(b);
   return b;
+}
+
+/** Hasta dónde baja la nieve desde la cresta (en lo bajo, nada). */
+function snowAt(x: number, top: number): number {
+  if (top > 190) return 0;
+  return Math.round((190 - top) / 3 + hash(x >> 2, 5, 14) * 4);
+}
+
+/** Dónde empieza el bosque del pie de los montes (sube y baja, mellado). */
+function forestAt(x: number): number {
+  return Math.round(
+    GROUND - 66 - Math.sin(x * 0.031 + 1) * 9 - Math.sin(x * 0.11) * 3 - hash(x >> 2, 6, 15) * 4,
+  );
 }
 
 /**
