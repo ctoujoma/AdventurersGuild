@@ -157,7 +157,9 @@ hueco, con la cámara en cada paso. Sustituye a las notas de obras de ahora (`ob
 
 ## Fase 3 · Combate con decisiones (y encargos en directo)
 
-- **El encargo en directo:** en la ficha de un grupo fuera, una tira dibujada con el grupo de
+- **El encargo en directo** (propuesta de panel y reparto:
+  [`encargos/propuesta-panel-encargo.md`](encargos/propuesta-panel-encargo.md)): en la ficha de
+  un grupo fuera, una tira dibujada con el grupo de
   ida, haciendo lo suyo (pelea, exploración, escolta…) y de vuelta, que cuente lo que pasa,
   como en Fallout Shelter. Sobre ella, momentos que piden decisión: un jefe («Entrar a
   pelear» o «Resolver solo»; si no se contesta, se resuelve solo), y más adelante incursiones
@@ -186,8 +188,8 @@ hueco, con la cámara en cada paso. Sustituye a las notas de obras de ahora (`ob
 
 - Colores por sala, fachada por partes y sastrería preparada (hecho).
 - **Dibujar los tres jefes nuevos** (jabalí de ceniza, Reina de la Cripta, dragona de la
-  Corona Blanca): hecho, cada uno con su dibujo. Queda que sus golpes y esbirros vayan con
-  ellos (la Reina salpica agua y llama a ahogados; la dragona de hielo echa fuego).
+  Corona Blanca): hecho, cada uno con su dibujo y sus efectos (brasas, polvo y luz violeta con
+  muertos pálidos, escarcha).
 - **Cartas del amanecer una a una:** las noticias se descubren de una en una, tocando o solas
   con ritmo, cada una con su sonido (bien, mal, aviso), y lo gordo (un legendario, subir de
   rango, una muerte) con brillo; con «Saltar» para verlo todo. Va junto con revisar cuándo

@@ -16,7 +16,10 @@ export interface BossDef {
   /** Frase al ganar y al perder, para el final de la pelea. */
   win: string;
   lose: string;
-  /** Golpes de otro jefe (el dibujo es suyo, sobre el cuerpo del de base: `art/bosses.ts`). */
+  /**
+   * El jefe del que sale: pelea con sus golpes y sobre su cuerpo, pero con sus propios efectos
+   * y su dibujo (`world/battle.ts` y `art/bosses.ts`).
+   */
   base?: BossBase;
 }
 
@@ -67,6 +70,3 @@ export const BOSSES: Record<BossKind, BossDef> = {
     base: 'sierpe',
   },
 };
-
-/** El jefe de base de este (de quien saca los golpes). */
-export const bossBase = (k: BossKind): BossBase => BOSSES[k].base ?? (k as BossBase);

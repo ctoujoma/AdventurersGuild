@@ -68,6 +68,8 @@ export function BossFight({ fight, onClose }: Props) {
         if (!muted) audio.play(name, vol ?? 1);
       },
     });
+    // Para las capturas (`tools/shots/jefes.mjs`): la pelea, a mano desde la consola.
+    if (location.hash === '#debug') (window as unknown as { __battle: Battle }).__battle = b;
     const light = document.createElement('canvas');
     light.width = viewW;
     light.height = ARENA.h;

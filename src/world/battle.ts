@@ -13,7 +13,7 @@ import {
 } from '../art/heroes/hero';
 import { generateLook } from '../art/heroes/look';
 import type { PixelBuffer } from '../art/pixel';
-import { BOSSES, bossBase, type BossBase, type BossKind } from '../data/bosses';
+import type { BossKind } from '../data/bosses';
 import type { PKind } from './particles';
 import { WEAPONS, type WeaponId } from './weapons';
 
@@ -157,8 +157,10 @@ interface Fighter {
   /** Dibujo del jefe (si lo es) y su vida para la barra (0–1). */
   art?: BossArt;
   hp: number;
-  /** Esbirro ahogado: se pinta verdoso y sin antorcha. */
+  /** Esbirro de un jefe (ahogado o muerto de la cripta): se pinta teñido y sin antorcha. */
   ghost?: boolean;
+  /** Su tinte: verdoso (ahogados) o pálido como el hueso (los de la Reina). */
+  ghostTint?: string;
   /** Cuándo cayó (para la animación de muerte del jefe) y si ya ha tocado el suelo. */
   downAt?: number;
   landed?: boolean;
@@ -181,7 +183,18 @@ interface Shot {
 }
 
 type FxKind =
-  'boom' | 'bolt' | 'pillar' | 'halo' | 'ring' | 'shards' | 'stars' | 'shout' | 'flames' | 'slash';
+  | 'boom'
+  | 'bolt'
+  | 'pillar'
+  | 'halo'
+  | 'ring'
+  | 'shards'
+  | 'stars'
+  | 'shout'
+  | 'flames'
+  /** El aliento de la dragona de hielo: como las llamas, en blanco y azul. */
+  | 'frost'
+  | 'slash';
 
 interface Fx {
   kind: FxKind;
@@ -307,132 +320,166 @@ const bossFrame =
         ? { pose, angle: 0, dx: lerp(-back, lunge, seg(p, at - 0.15, at)) }
         : { pose: 'ready', angle: 0, dx: lunge * (1 - seg(p, at + 0.25, 1)) };
 
-const BASE_MOVES: Record<BossBase, Move[]> = {
-  bestia: [
-    // Colmillazo.
-    {
-      dur: 0.9,
-      hits: [0.55],
-      frame: bossFrame(0.55, 'strike'),
-      hit: (b, f) => b.area(f, f.art!.reach + 16, 6, { sound: 'thud', spark: 5 }),
+/**
+ * Los golpes de cada jefe. Los de las historias nuevas pelean como su base, con sus efectos:
+ * el jabalí de ceniza levanta brasas; la Reina de la Cripta golpea con el cetro (polvo y luz
+ * violeta, no agua) y llama a sus muertos; la dragona de hielo escupe escarcha, no fuego. (Lo que
+ * pasa lo decide el núcleo: aquí solo se cuenta.)
+ */
+const beastMoves = (ash: boolean): Move[] => [
+  // Colmillazo.
+  {
+    dur: 0.9,
+    hits: [0.55],
+    frame: bossFrame(0.55, 'strike'),
+    hit: (b, f) => {
+      b.area(f, f.art!.reach + 16, 6, { sound: 'thud', spark: 5 });
+      if (ash) b.burstAt('ember', f.x + f.face * f.art!.reach, b.feet(f) - 10, 6);
     },
-    // Embestida: retrocede, carga y arrolla.
-    {
-      dur: 1.4,
-      hits: [0.5],
-      frame: bossFrame(0.5, 'thrust', 20, 7),
-      hit: (b, f) => {
-        b.area(f, f.art!.reach + 30, 7, { sound: 'thud', puff: true, stun: true });
-        b.burstAt('puff', f.x + f.face * 18, b.feet(f) - 2, 8);
-      },
+  },
+  // Embestida: retrocede, carga y arrolla.
+  {
+    dur: 1.4,
+    hits: [0.5],
+    frame: bossFrame(0.5, 'thrust', 20, 7),
+    hit: (b, f) => {
+      b.area(f, f.art!.reach + 30, 7, {
+        sound: 'thud',
+        puff: true,
+        stun: true,
+        ...(ash ? { tint: P.orange, fire: true } : {}),
+      });
+      b.burstAt('puff', f.x + f.face * 18, b.feet(f) - 2, 8);
+      if (ash) b.burstAt('ember', f.x + f.face * 18, b.feet(f) - 6, 10);
     },
-    // Bramido: se encabrita y aturde a todos.
-    {
-      dur: 1.2,
-      hits: [0.35],
-      frame: (p) => ({ pose: p > 0.2 && p < 0.85 ? 'up' : 'ready', angle: 0 }),
-      hit: (b, f) => {
-        const m = f.art!.mouth.up;
-        b.fx('shout', f.x + f.face * m.x, b.feet(f) + m.y, 0.8, P.sand, 26, undefined, f.face);
-        b.sound('roar');
-        b.stunAround(f, 90, 0.7);
-      },
+  },
+  // Bramido: se encabrita y aturde a todos.
+  {
+    dur: 1.2,
+    hits: [0.35],
+    frame: (p) => ({ pose: p > 0.2 && p < 0.85 ? 'up' : 'ready', angle: 0 }),
+    hit: (b, f) => {
+      const m = f.art!.mouth.up;
+      const c = ash ? P.orange : P.sand;
+      b.fx('shout', f.x + f.face * m.x, b.feet(f) + m.y, 0.8, c, 26, undefined, f.face);
+      b.sound('roar');
+      b.stunAround(f, 90, 0.7);
+      // El de ceniza suelta una nube de brasas del lomo.
+      if (ash) b.burstAt('ember', f.x, b.feet(f) - f.art!.chest - 8, 14);
     },
-  ],
-  ahogado: [
-    // Ancla: la levanta y la deja caer sobre quien tiene delante.
-    {
-      dur: 1.2,
-      hits: [0.6],
-      frame: bossFrame(0.6, 'strike', 3, 1),
-      hit: (b, f) => {
-        const to = f.foe;
-        if (!to) return;
-        b.fx('ring', to.x, b.feet(to) - 1, 0.5, P.sky, 20);
-        b.burstAt('splash', to.x, b.feet(to) - 2, 8);
-        b.areaAt(f, to.x, 16, 7, { sound: 'thud', puff: true, stun: true });
-      },
-    },
-    // Ola: el agua de la laguna barre a todo el grupo.
-    {
-      dur: 1.3,
-      hits: [0.5],
-      frame: (p) => ({ pose: p > 0.15 && p < 0.8 ? 'up' : 'ready', angle: 0 }),
-      hit: (b, f) => {
-        b.fx('ring', f.x, b.feet(f) - 1, 0.9, P.cyan, 80);
-        b.area(f, 110, 3, { tint: P.cyan, freeze: 0.5, sound: 'zap', spark: 2 });
-      },
-    },
-    // Llama a sus ahogados, que se enrabietan.
-    {
-      dur: 1.0,
-      hits: [0.4],
-      when: (b, f) => b.allies(f).length > 1,
-      frame: (p) => ({ pose: p > 0.2 && p < 0.8 ? 'up' : 'ready', angle: 0 }),
-      hit: (b, f) => {
-        const m = f.art!.mouth.up;
-        b.fx('shout', f.x + f.face * 6, b.feet(f) + m.y + 10, 0.7, P.cyan, 22, undefined, f.face);
-        b.sound('roar');
-        for (const a of b.allies(f)) a.rage = 1.8;
-      },
-    },
-  ],
-  sierpe: [
-    // Mordisco.
-    {
-      dur: 0.85,
-      hits: [0.55],
-      frame: bossFrame(0.55, 'strike'),
-      hit: (b, f) => b.strike(f, 6, { sound: 'thud', spark: 5 }),
-    },
-    // Aliento de fuego sobre todo el grupo.
-    {
-      dur: 1.8,
-      hits: [0.3, 0.45, 0.6, 0.75],
-      frame: (p) =>
-        p < 0.22
-          ? { pose: 'windup', angle: 0 }
-          : p < 0.85
-            ? { pose: 'thrust', angle: 0 }
-            : { pose: 'ready', angle: 0 },
-      hit: (b, f, i) => {
-        if (i === 0) {
-          const m = f.art!.mouth.thrust;
-          b.fx(
-            'flames',
-            f.x + f.face * m.x,
-            b.feet(f) + m.y + 2,
-            1.1,
-            P.orange,
-            90,
-            undefined,
-            f.face,
-          );
-          b.sound('whoosh');
-          b.sound('boom', 0.5);
-        }
-        b.area(f, 110, 3, { tint: P.orange, fire: true, spark: 1 });
-      },
-    },
-    // Coletazo: se da la vuelta y barre con la cola.
-    {
-      dur: 1.0,
-      hits: [0.5],
-      frame: (p) => ({
-        pose: p < 0.3 ? 'windup' : 'strike',
-        angle: 0,
-        turn: p > 0.3 && p < 0.75,
-        dx: p > 0.3 && p < 0.75 ? -6 : 0,
-      }),
-      hit: (b, f) => b.area(f, f.art!.reach + 22, 5, { sound: 'thud', puff: true, stun: true }),
-    },
-  ],
-};
+  },
+];
 
-/** Los jefes de las historias nuevas pelean como el suyo de base (con su propio dibujo). */
-const BOSS_MOVES = Object.fromEntries(
-  (Object.keys(BOSSES) as BossKind[]).map((k) => [k, BASE_MOVES[bossBase(k)]]),
-) as Record<BossKind, Move[]>;
+const drownedMoves = (crypt: boolean): Move[] => [
+  // Ancla: la levanta y la deja caer sobre quien tiene delante.
+  {
+    dur: 1.2,
+    hits: [0.6],
+    frame: bossFrame(0.6, 'strike', 3, 1),
+    hit: (b, f) => {
+      const to = f.foe;
+      if (!to) return;
+      b.fx('ring', to.x, b.feet(to) - 1, 0.5, crypt ? P.rose : P.sky, 20);
+      b.burstAt(crypt ? 'puff' : 'splash', to.x, b.feet(to) - 2, 8);
+      b.areaAt(f, to.x, 16, 7, { sound: 'thud', puff: true, stun: true });
+    },
+  },
+  // Ola: el agua de la laguna barre a todo el grupo. (La Reina: un lamento violeta que hiela.)
+  {
+    dur: 1.3,
+    hits: [0.5],
+    frame: (p) => ({ pose: p > 0.15 && p < 0.8 ? 'up' : 'ready', angle: 0 }),
+    hit: (b, f) => {
+      const c = crypt ? P.rose : P.cyan;
+      b.fx('ring', f.x, b.feet(f) - 1, 0.9, c, 80);
+      if (crypt) b.fx('ring', f.x, b.feet(f) - 1, 1.1, P.grape, 60);
+      b.area(f, 110, 3, { tint: c, freeze: 0.5, sound: crypt ? 'holy' : 'zap', spark: 2 });
+    },
+  },
+  // Llama a sus ahogados (la Reina, a sus muertos), que se enrabietan.
+  {
+    dur: 1.0,
+    hits: [0.4],
+    when: (b, f) => b.allies(f).length > 1,
+    frame: (p) => ({ pose: p > 0.2 && p < 0.8 ? 'up' : 'ready', angle: 0 }),
+    hit: (b, f) => {
+      const m = f.art!.mouth.up;
+      const c = crypt ? P.rose : P.cyan;
+      b.fx('shout', f.x + f.face * 6, b.feet(f) + m.y + 10, 0.7, c, 22, undefined, f.face);
+      b.sound('roar');
+      for (const a of b.allies(f)) a.rage = 1.8;
+    },
+  },
+];
+
+const wyrmMoves = (ice: boolean): Move[] => [
+  // Mordisco.
+  {
+    dur: 0.85,
+    hits: [0.55],
+    frame: bossFrame(0.55, 'strike'),
+    hit: (b, f) => b.strike(f, 6, { sound: 'thud', spark: 5 }),
+  },
+  // Aliento de fuego sobre todo el grupo (la dragona de hielo: escarcha que congela).
+  {
+    dur: 1.8,
+    hits: [0.3, 0.45, 0.6, 0.75],
+    frame: (p) =>
+      p < 0.22
+        ? { pose: 'windup', angle: 0 }
+        : p < 0.85
+          ? { pose: 'thrust', angle: 0 }
+          : { pose: 'ready', angle: 0 },
+    hit: (b, f, i) => {
+      if (i === 0) {
+        const m = f.art!.mouth.thrust;
+        b.fx(
+          ice ? 'frost' : 'flames',
+          f.x + f.face * m.x,
+          b.feet(f) + m.y + 2,
+          1.1,
+          ice ? P.cyan : P.orange,
+          90,
+          undefined,
+          f.face,
+        );
+        b.sound('whoosh');
+        b.sound(ice ? 'zap' : 'boom', 0.5);
+      }
+      b.area(
+        f,
+        110,
+        3,
+        ice ? { tint: P.cyan, freeze: 0.6, spark: 1 } : { tint: P.orange, fire: true, spark: 1 },
+      );
+    },
+  },
+  // Coletazo: se da la vuelta y barre con la cola.
+  {
+    dur: 1.0,
+    hits: [0.5],
+    frame: (p) => ({
+      pose: p < 0.3 ? 'windup' : 'strike',
+      angle: 0,
+      turn: p > 0.3 && p < 0.75,
+      dx: p > 0.3 && p < 0.75 ? -6 : 0,
+    }),
+    hit: (b, f) => {
+      b.area(f, f.art!.reach + 22, 5, { sound: 'thud', puff: true, stun: true });
+      if (ice) b.fx('shards', f.x - f.face * 10, b.feet(f) - 6, 0.5, P.cyan, 18);
+    },
+  },
+];
+
+/** Los golpes de cada jefe: los de base y los de las historias nuevas, con sus efectos. */
+const BOSS_MOVES: Record<BossKind, Move[]> = {
+  bestia: beastMoves(false),
+  ahogado: drownedMoves(false),
+  sierpe: wyrmMoves(false),
+  jabali: beastMoves(true),
+  reina: drownedMoves(true),
+  dragona: wyrmMoves(true),
+};
 
 export const MOVES: Record<Style, Move[]> = {
   guerrero: [
@@ -980,6 +1027,7 @@ export class Battle {
         then: 'fight',
       });
       m.ghost = true;
+      m.ghostTint = a.boss === 'reina' ? P.mist : P.leaf;
       minions.push(m);
       this.fighters.push(m);
     }
@@ -1546,8 +1594,9 @@ export class Battle {
     } else ctx.drawImage(bufferCanvas(img), x, y);
     if (f.ghost) {
       ctx.globalAlpha = 0.45;
-      if (flip) ctx.drawImage(tintOf(img, P.leaf), 0, 0);
-      else ctx.drawImage(tintOf(img, P.leaf), x, y);
+      const tint = f.ghostTint ?? P.leaf;
+      if (flip) ctx.drawImage(tintOf(img, tint), 0, 0);
+      else ctx.drawImage(tintOf(img, tint), x, y);
       ctx.globalAlpha = 1;
     }
     ctx.restore();
@@ -1645,7 +1694,7 @@ export class Battle {
         : f.rage > 0 && Math.sin(this.t * 16) > 0
           ? P.red
           : f.ghost
-            ? P.leaf
+            ? (f.ghostTint ?? P.leaf)
             : null;
     const c =
       f.flash > 0 ? tintOf(img, f.tint) : special ? tintOf(img, special) : bufferCanvas(img);
@@ -1990,13 +2039,29 @@ export class Battle {
           }
           break;
         case 'flames':
+        case 'frost': {
+          const ice = e.kind === 'frost';
           for (let i = 0; i < 26; i++) {
             const d = ((i * 37 + Math.floor(e.t * 60)) % 100) / 100;
             const spread = d * 6;
             const fy = y + Math.sin(i * 12.9 + e.t * 30) * spread;
-            px(x + e.dir * d * e.r, fy, d < 0.3 ? P.lemon : d < 0.7 ? P.orange : P.red);
+            const c = ice
+              ? d < 0.3
+                ? P.white
+                : d < 0.7
+                  ? P.cyan
+                  : P.sky
+              : d < 0.3
+                ? P.lemon
+                : d < 0.7
+                  ? P.orange
+                  : P.red;
+            px(x + e.dir * d * e.r, fy, c);
+            // La escarcha deja copos que caen un poco por detrás.
+            if (ice && i % 4 === 0) px(x + e.dir * d * e.r * 0.8, fy + 2 + d * 3, P.mist);
           }
           break;
+        }
         case 'slash':
           for (let i = -5; i <= 5; i++) {
             px(x + i, y + i * e.dir * 0.6, Math.abs(i) < 3 ? P.white : P.mist);
