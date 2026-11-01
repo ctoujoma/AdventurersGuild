@@ -136,6 +136,7 @@ export function colorMap(): PixelBuffer {
       const r = t.road[at(x, y)]!;
       if (!r) continue;
       const w = t.water[at(x, y)]!;
+      if (w && r === SENDA) continue;
       if (w && w !== POOL) {
         // Puente de tablas con barandilla.
         b.set(x, y, P.oak);

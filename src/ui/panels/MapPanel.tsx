@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { MAP_STYLES, fogBuffer, mapBuffer, mapStyle, setMapStyle } from '../../art/map';
+import { fogBuffer, mapBuffer, mapStyleFor } from '../../art/map';
 import { chainDef } from '../../core/chains';
 import { customOf } from '../../core/game';
 import type { GameState, Hero, Quest } from '../../core/model';
@@ -130,8 +130,8 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
     ],
     [fogKey],
   );
-  // La versión del dibujo (provisional, para elegir una).
-  const [style, setStyle] = useState(mapStyle);
+  // El dibujo: pergamino con la sala de mapas rota o a nivel 1; a color desde el nivel 2.
+  const style = mapStyleFor(level);
   const fog = useMemo(() => fogBuffer(seen, style), [seen, style]);
   const regionSeen = (x: number, y: number) =>
     seen.some((k) => Math.hypot(x - k.x, y - k.y) < k.r + 24);
@@ -715,18 +715,6 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
             }}
           >
             <Icon name="home" size={14} />
-          </button>
-          <button
-            class="btn-icon map-style"
-            aria-label={`Versión del mapa: ${style} (cambiar)`}
-            title="Cambiar la versión del dibujo (provisional)"
-            onClick={() => {
-              const next = MAP_STYLES[(MAP_STYLES.indexOf(style) + 1) % MAP_STYLES.length]!;
-              setMapStyle(next);
-              setStyle(next);
-            }}
-          >
-            {style === 'pergamino' ? 'A' : style === 'color' ? 'B' : '0'}
           </button>
           <button
             class={`btn-icon map-help ${legend ? 'is-on' : ''}`}

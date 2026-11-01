@@ -160,19 +160,30 @@ export const ROADS: readonly (readonly Pt[])[] = [
     [322, 150],
     [396, 126],
   ],
+  // Al norte, entre el río y el afluente (lo cruza por un puente), hasta la sierra.
   [
     [198, 146],
-    [202, 120],
-    [204, 94],
-    [212, 60],
-    [222, 4],
+    [208, 126],
+    [218, 108],
+    [226, 80],
+    [226, 44],
+    [232, 4],
   ],
+  // Al poniente, por la orilla sur del río, hasta las salinas.
   [
     [198, 146],
-    [172, 152],
-    [150, 158],
-    [124, 172],
-    [108, 182],
+    [178, 158],
+    [156, 168],
+    [134, 180],
+    [112, 188],
+  ],
+  // Al noroeste: cruza el río junto al molino y sigue por Sotomuro hasta Carbonera.
+  [
+    [198, 146],
+    [186, 140],
+    [164, 124],
+    [130, 112],
+    [96, 112],
   ],
   [
     [198, 146],
@@ -434,7 +445,6 @@ export function terrain(): Terrain {
   lake(358, 40, 12, 6, ICE);
   lake(126, 249, 10, 5, BLACK);
   lake(148, 259, 9, 5.5, LAKE, 2.4);
-  lake(170, 125, 4, 2.5, LAKE);
   // Charcas de la marisma.
   for (let y = 0; y < H; y++)
     for (let x = 0; x < W; x++) {
@@ -495,12 +505,25 @@ export function terrain(): Terrain {
     }),
   );
   Object.values(PLACE_INFO).forEach((p, k) => {
-    let best: Pt = [TAVERN.x, TAVERN.y];
-    let d = Math.hypot(p.x - best[0], p.y - best[1]);
-    for (const q of along) {
+    // Del punto del camino más a mano, contando caro el agua que haya que vadear.
+    const cost = (q: Pt) => {
       const e = Math.hypot(p.x - q[0], p.y - q[1]);
-      if (e < d) [best, d] = [q, e];
+      let wet = 0;
+      for (let k = 1; k < e; k++) {
+        const x = Math.round(q[0] + ((p.x - q[0]) * k) / e);
+        const y = Math.round(q[1] + ((p.y - q[1]) * k) / e);
+        if (water[idx(x, y)]) wet++;
+      }
+      return e + wet * 10;
+    };
+    let best: Pt = [TAVERN.x, TAVERN.y];
+    let c = cost(best);
+    for (const q of along) {
+      if (Math.abs(q[0] - p.x) + Math.abs(q[1] - p.y) > c * 1.5) continue;
+      const e = cost(q);
+      if (e < c) [best, c] = [q, e];
     }
+    const d = Math.hypot(p.x - best[0], p.y - best[1]);
     if (d < 5) return;
     trace([best, [p.x, p.y]], Math.min(3, d / 8), 120 + k, (x, y) => {
       if (inside(x, y) && !road[idx(x, y)]) road[idx(x, y)] = SENDA;

@@ -152,6 +152,7 @@ export function inkMap(): PixelBuffer {
     for (let x = 0; x < W; x++) {
       const r = t.road[at(x, y)]!;
       if (!r) continue;
+      if (t.water[at(x, y)] && r === SENDA) continue;
       if (t.water[at(x, y)] && t.water[at(x, y)] !== POOL) {
         b.set(x, y, P.bark);
         continue;

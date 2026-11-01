@@ -83,23 +83,29 @@ ve nítido a zoom entero (1×, 2×, 3×…). Los iconos tienen 7 px y se leen bi
 mapa pasa a pantalla completa, conviene que el zoom vaya a pasos enteros sobre el tamaño del
 dibujo, no sobre el ancho del panel.
 
-### Dos versiones del mapa, para elegir
+### El mapa en dos versiones, según la sala de mapas
 
-El usuario pidió versiones con más detalle. Las dos comparten la comarca en
-`art/mapTerrain.ts`: altura con sierras y valles, mar con calas, ríos, lagos, marisma, bosques,
-parcelas, caminos y casas. Los iconos de los lugares están en `art/mapIcons.ts`.
+El usuario eligió usar las dos. Con la sala de mapas rota o a nivel 1, el mapa es el pergamino;
+desde el nivel 2, es a color. Así se elige: `mapStyleFor(fac.mapas)` en `art/map.ts`.
 
-- **A, pergamino ilustrado** (`art/mapInk.ts`): tinta y acuarela.
+Las dos comparten la comarca, en `art/mapTerrain.ts`:
+
+- la altura, con sierras y valles;
+- el agua: mar con calas, ríos, lagos y marisma;
+- los bosques, las parcelas y las casas;
+- los caminos, que no van por encima del río y lo cruzan con puentes cortos. Los senderos salen
+  del punto del camino que menos agua cruza, y en el agua son vados.
+
+Los iconos de los lugares están en `art/mapIcons.ts`.
+
+- **Pergamino** (`art/mapInk.ts`): tinta y acuarela.
   - Mar con oleaje y rumbos.
   - Montes a plumilla, bosques árbol a árbol y parcelas rayadas.
   - Marco de leguas.
   - Lo no explorado, con rayado de «tierra ignota».
-- **B, comarca a color** (`art/mapColor.ts`): relieve con luz y sombra.
+- **A color** (`art/mapColor.ts`): relieve con luz y sombra.
   - Mar con espuma, bajíos y alta mar.
   - Copas, surcos y setos.
   - Nubes sobre los Montes de la Niebla.
   - Lo no explorado, bajo un mar de nubes.
-
-Para compararlas en el juego, el botón del mapa (A / B / 0) va pasando por las versiones, y la
-elegida se guarda en `localStorage['jarro:mapa']`. Es provisional: cuando se elija una, se
-quitan el botón, las otras versiones y `oldMap`.
+- Capturas: `node tools/shots/mapa.mjs <carpeta>`.
