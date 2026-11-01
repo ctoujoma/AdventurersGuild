@@ -2741,7 +2741,10 @@ export class RoomScene {
       this.pointers.delete(e.pointerId);
       if (this.pointers.size === 0) {
         this.camera.release();
-        if (wasClick) this.click(p.x, p.y);
+        if (wasClick) {
+          swallowGhostClick(c);
+          this.click(p.x, p.y);
+        }
         this.press = null;
         c.style.cursor = 'grab';
       }
@@ -2791,4 +2794,25 @@ export class RoomScene {
       { passive: false },
     );
   }
+}
+
+/**
+ * Tras un toque en la escena, el navegador manda un «click» al mismo punto. Si el toque ha
+ * abierto algo encima (la ficha de un héroe), ese click cae en lo nuevo: en el fondo, que la
+ * cierra al momento (en horizontal parecía que tocar a un héroe no hacía nada), o en un botón
+ * de la ficha. Se descarta el click que llegue enseguida fuera del lienzo.
+ */
+function swallowGhostClick(canvas: HTMLCanvasElement): void {
+  const stop = (e: MouseEvent) => {
+    if (e.target === canvas) return;
+    e.preventDefault();
+    e.stopPropagation();
+    done();
+  };
+  const done = () => {
+    window.removeEventListener('click', stop, true);
+    clearTimeout(t);
+  };
+  window.addEventListener('click', stop, true);
+  const t = setTimeout(done, 400);
 }

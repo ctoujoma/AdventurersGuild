@@ -46,3 +46,8 @@ pelea de cada jefe (por defecto, los tres nuevos) y la saca a media pelea.
 El juego deja a mano `window.__game` (`get()`/`set(estado)`) y `window.__scene` (la escena)
 para preparar cualquier situación antes de la captura: subir salas de nivel, provocar un asalto
 (`s.raid = {…}` y terminar el día), abrir el modo obras, etc.
+
+9. Tamaños de pantalla: `node tools/shots/tallas.mjs <carpeta> [tamaños] [puerto]` abre las
+   pantallas principales en 13 tamaños (de 320 × 568 a 1366 × 768, en vertical y tumbado) y dice
+   qué botones quedan fuera o recortados; sale con error si queda alguno. Pasarlo tras tocar la
+   barra de arriba, la del día, las pestañas o los paneles.

@@ -101,7 +101,8 @@ export function DayBar(p: Props) {
       {p.night ? null : p.real ? (
         <span class="daybar-left" aria-live="off">
           <Icon name={part < dusk ? 'reloj' : 'moon'} size={16} />
-          {part < dusk ? `Anochece en ${countdown(toDusk)}` : `Noche en ${countdown(toNight)}`}
+          <span class="daybar-word">{part < dusk ? 'Anochece en' : 'Noche en'}</span>
+          {countdown(part < dusk ? toDusk : toNight)}
         </span>
       ) : p.canClose ? (
         <button
