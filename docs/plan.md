@@ -157,13 +157,18 @@ hueco, con la cámara en cada paso. Sustituye a las notas de obras de ahora (`ob
 
 ## Fase 3 · Combate con decisiones (y encargos en directo)
 
-- **El encargo en directo** (propuesta de panel y reparto:
-  [`encargos/propuesta-panel-encargo.md`](encargos/propuesta-panel-encargo.md)): en la ficha de
-  un grupo fuera, una tira dibujada con el grupo de
-  ida, haciendo lo suyo (pelea, exploración, escolta…) y de vuelta, que cuente lo que pasa,
-  como en Fallout Shelter. Sobre ella, momentos que piden decisión: un jefe («Entrar a
-  pelear» o «Resolver solo»; si no se contesta, se resuelve solo), y más adelante incursiones
-  («raids») con varios momentos así.
+- **El encargo en directo** (propuesta del de arte:
+  [`encargos/propuesta-panel-encargo.md`](encargos/propuesta-panel-encargo.md)): una ficha
+  nueva, «Encargo en curso», que se abre al tocar un grupo fuera (en la lista bajo el mapa, en
+  su marca del mapa o en un aviso). Arriba, **la tira animada** como en Fallout Shelter (el
+  grupo de ida, haciendo lo suyo según el tipo: pelea, exploración, escolta… y de vuelta);
+  luego el encargo, los retratos con su estado, el viaje por partes (ida, llegada, lo suyo,
+  vuelta) con la de ahora marcada, y el diario de lo que va pasando. El núcleo da las partes,
+  los sucesos con su momento y una semilla, para que se vea igual al cerrar y abrir.
+  **Reparto:** el agente principal hace los datos y la ficha con el hueco; el de arte dibuja la
+  tira (`QuestStrip`). Más adelante, sobre la tira, los momentos que piden decisión: un jefe
+  («Entrar a pelear» o «Resolver solo»; si no se contesta, se resuelve solo) y las incursiones
+  («raids») con varios así.
 - **Pelea interactiva:** arrastrar a un héroe sobre un enemigo para elegir a quién ataca (si no,
   el de siempre por su táctica); formación, táctica y objeto antes; habilidades por clase con
   recarga; pocas órdenes en directo.
@@ -190,10 +195,12 @@ hueco, con la cámara en cada paso. Sustituye a las notas de obras de ahora (`ob
 - **Dibujar los tres jefes nuevos** (jabalí de ceniza, Reina de la Cripta, dragona de la
   Corona Blanca): hecho, cada uno con su dibujo y sus efectos (brasas, polvo y luz violeta con
   muertos pálidos, escarcha).
-- **Cartas del amanecer una a una:** las noticias se descubren de una en una, tocando o solas
-  con ritmo, cada una con su sonido (bien, mal, aviso), y lo gordo (un legendario, subir de
-  rango, una muerte) con brillo; con «Saltar» para verlo todo. Va junto con revisar cuándo
-  sale la carta (ver «Pendiente de revisar»).
+- **Cartas del amanecer como pila** (ver «Pendiente de revisar»): en pantalla, una pila de
+  cartas que se pasan de una en una (tocando o deslizando), cada una con su sonido (bien, mal,
+  aviso) y lo gordo con brillo; con «Saltar» para verlo todo. Para que no sea pesado, lo menudo
+  se junta en una carta («La taberna»: jarras, raciones, incidentes, objetivos) y solo van
+  aparte los encargos que vuelven y lo importante (un pago, una muerte, un rango, un
+  legendario).
 - Otra pasada crítica a las animaciones, y escaleras con mejor arte y personajes que suben
   de verdad.
 
@@ -215,9 +222,10 @@ hueco, con la cámara en cada paso. Sustituye a las notas de obras de ahora (`ob
 - **El cobro de la deuda con Merlo** (lo hecho con los agentes de arte e interfaz): que encaje
   con el tiempo que corre solo, los pagos estando fuera (`dueTonight`), los avisos y los
   objetivos.
-- **La carta del amanecer** («Amanece sobre…»): con un día cada 5 minutos interrumpe. Valorar
-  un aviso pequeño por la mañana con lo importante, y la carta entera (una a una) al volver
-  tras una ausencia o cuando pasa algo gordo (un pago, una muerte, un rango).
+- **La carta del amanecer** («Amanece sobre…»): con la app abierta corta el juego. Decidido
+  (usuario): con la app abierta, nada de carta; el día pasa sin parar y lo que llega sale en
+  avisos pequeños (los chips de ahora), y lo gordo, solo eso, en una carta suelta. La pila de
+  cartas queda para **volver tras tenerla cerrada**, como crónica de lo que se ha perdido.
 - **El ritmo del tiempo:** un día son 5 minutos abierto y una hora cerrado; si se quiere más
   calma, alargar `DAY_SECONDS`.
 - **Objetivos:** más variedad («gana un asalto sin heridos», «sirve 40 jarras»).
