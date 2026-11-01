@@ -29,7 +29,7 @@ import type { ComponentChildren } from 'preact';
 import { help } from '../HoldHelp';
 import { Icon, type IconName } from '../icons';
 import { CrewGroup } from './CrewList';
-import { ForgeInfo } from './ForgeInfo';
+import { WorkshopInfo } from './WorkshopInfo';
 import { isWorkshop } from '../../core/crafting';
 import { crewGroups } from '../crew';
 import { GUARD, type Task } from '../drop';
@@ -481,7 +481,7 @@ export function RoomPanel({
         <RoomCrew game={game} room={room} onTask={onTask} onOpen={onOpen} />
       )}
       {isWorkshop(room.type) && room.level > 0 && !room.works && (
-        <ForgeInfo game={game} room={room} onAct={onAct} />
+        <WorkshopInfo game={game} room={room} onAct={onAct} />
       )}
       {onTint && !room.works && room.level >= (TINT_FROM[room.type] ?? Infinity) && (
         <RoomTint game={game} room={room} onTint={onTint} has={has ?? (() => true)} />

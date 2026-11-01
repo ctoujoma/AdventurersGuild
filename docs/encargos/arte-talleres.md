@@ -1,4 +1,4 @@
-# Encargo (arte): la forja que trabaja
+# Encargo (arte): los talleres que trabajan (forja, sastrería y alquimia)
 
 Para el agente de arte. Antes de nada, lee [`../../CLAUDE.md`](../../CLAUDE.md),
 [`../plan.md`](../plan.md) (fase 4) y [`../salas/README.md`](../salas/README.md).
@@ -8,7 +8,7 @@ Para el agente de arte. Antes de nada, lee [`../../CLAUDE.md`](../../CLAUDE.md),
 La forja crea objetos (fase 4, primer taller):
 
 - **Recetas** en `src/data/recipes.ts`: espada, coraza y ganzúas de serie; hacha y escudo se
-  aprenden desmontando (o como premio, más adelante). Cada una da un objeto normal o, a veces,
+  aprenden desmontando (o como premio de encargos e historias). Cada una da un objeto normal o, a veces,
   uno «de las buenas» (rareza 1). Nunca legendarios.
 - **Reglas** en `src/core/crafting.ts`: cada trabajo avanza con la gente de la sala (el oficio
   nuevo **herrero/herrera**, `trade: 'forja'`, o un héroe que echa una mano, más despacio).
@@ -42,6 +42,25 @@ La forja crea objetos (fase 4, primer taller):
 6. **Bocadillo sobre la sala** (como el de los incidentes): el icono de lo que se hace y una
    barrita con `frac`; gris si está parado. Que no tape a nadie y que se lea en el móvil.
 7. **Sonidos** si te encaja: martillazo y siseo del temple (`SoundName` en `scene.ts`).
+
+## Las dos salas nuevas (sin arte todavía: salen con el de por defecto)
+
+Tipos `sastreria` y `alquimia` en `src/data/rooms.ts`; registra su arte en
+`src/world/rooms/salas/index.ts` como las demás (un fichero por sala, con `wall`, `things` y
+`ruin`), niveles 1 a 3:
+
+8. **Sastrería:** mesa de cortar con tijeras y patrones, maniquí con una prenda a medio hacer,
+   rollos de tela de colores en un estante (los tintes: `TINTS` en `data/custom.ts`), tinas de
+   tinte con vapor y telas tendidas a secar. Más nivel, más telas y un espejo.
+9. **Taller de alquimia:** alambiques y retortas burbujeando (con luz de color), estantes de
+   frascos, un caldero, hierbas colgadas y un libro abierto en un atril. Más nivel, más luz.
+10. **La sastra o el sastre y la o el alquimista** (`trade: 'sastreria'` y `'alquimia'`): sus
+   figuras y su trabajo (coser, cortar, teñir; remover el caldero, destilar).
+11. **Vestir a un héroe:** mientras dura (`SceneCraft.hero`), el héroe está en la sastrería
+   (ya va solo: su sitio de trabajo pasa a ser la sala). Que se le vea de pie, quieto, junto al
+   maniquí o probándose algo; al acabar ya lleva su tinte y su prenda.
+12. **Bocadillos y animaciones** como en la forja (punto 6), con el dibujo de lo que se crea
+    (botas, capa, amuleto, varita) o, al vestir, una tijera o una prenda.
 
 ## Forma de trabajar
 

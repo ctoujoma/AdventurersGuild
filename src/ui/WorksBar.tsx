@@ -22,7 +22,8 @@ const TABS: { name: string; icon: IconName; rooms: RoomType[] }[] = [
   },
   { name: 'Comida', icon: 'olla', rooms: ['cocina', 'bodega', 'despensa'] },
   { name: 'Entreno', icon: 'espadas', rooms: ['armas', 'tiro', 'biblioteca'] },
-  { name: 'Defensa', icon: 'escudo', rooms: ['armeria', 'forja', 'torre', 'tesoro', 'recibidor'] },
+  { name: 'Defensa', icon: 'escudo', rooms: ['armeria', 'torre', 'tesoro', 'recibidor'] },
+  { name: 'Talleres', icon: 'yunque', rooms: ['forja', 'sastreria', 'alquimia'] },
   { name: 'Gremio', icon: 'jarra', rooms: ['salon', 'mapas'] },
 ];
 
@@ -45,6 +46,8 @@ const ICON: Record<RoomType, IconName> = {
   recibidor: 'puerta',
   salon: 'jarra',
   mapas: 'mapa',
+  sastreria: 'banderin',
+  alquimia: 'vela',
 };
 
 /**

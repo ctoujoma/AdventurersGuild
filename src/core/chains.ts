@@ -3,6 +3,8 @@
  * cada éxito trae el siguiente. Un fracaso tuerce la historia (el paso vuelve más difícil).
  * Al acabar: oro, fama, un objeto legendario y, a veces, un trofeo o el mapa completo.
  */
+import { learnRecipe } from './crafting';
+import { RECIPES } from '../data/recipes';
 import type { BossKind } from '../data/bosses';
 import { CHAINS, type ChainDef } from '../data/chains';
 import { GEAR } from '../data/items';
@@ -149,6 +151,12 @@ export function advanceChain(
   s.rep += def.reward.rep;
   const base = GEAR.find((g) => g.name === def.reward.item);
   if (base) s.inventory.push({ ...base, id: `i${s.uid++}` });
+  // Al acabar una historia, siempre unos planos (si queda algo por aprender).
+  const plan = learnRecipe(s, rng);
+  if (plan) {
+    r.body.push(`Y de recuerdo, unos planos: ya se sabe crear ${RECIPES[plan].many}.`);
+    r.chips.push({ t: `Receta: ${RECIPES[plan].name.toLowerCase()}`, k: 'good' });
+  }
   if (def.reward.trophy) {
     s.trophies.push({
       id: `t${s.uid++}`,

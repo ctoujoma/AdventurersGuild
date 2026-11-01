@@ -266,7 +266,10 @@ export interface Craft {
   id: string;
   /** El taller (id de sala). */
   room: string;
-  recipe: RecipeId;
+  /** Lo que se crea (o cuya receta se busca al desmontar). Sin receta, es vestir (`dress`). */
+  recipe?: RecipeId;
+  /** Vestir a un héroe en la sastrería: quién y cómo queda (el héroe va allí mientras dura). */
+  dress?: { hero: string; to: Dress };
   /** Trabajo que pide y el que lleva (en unidades de `workAt` por día). */
   need: number;
   done: number;

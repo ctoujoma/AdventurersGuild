@@ -85,6 +85,8 @@ export interface SceneCraft {
   stalled: boolean;
   /** Desmontando un objeto (no creando). */
   undo: boolean;
+  /** Vistiendo a un héroe (id): está en la sala mientras dura. */
+  hero?: string;
 }
 
 /** Un incidente tal como lo ve la escena: qué pasa y en qué sala (id). */

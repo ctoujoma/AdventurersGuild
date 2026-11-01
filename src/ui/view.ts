@@ -1,4 +1,4 @@
-import { craftState } from '../core/crafting';
+import { craftState, dressingOf } from '../core/crafting';
 import { RECIPES } from '../data/recipes';
 import { generateLook, type HeroLook, type HeroMarks } from '../art/heroes/look';
 import type { Facilities, GameState, Hero, Item, Worker } from '../core/model';
@@ -114,7 +114,8 @@ export function sceneModel(s: GameState): SceneModel {
       look: lookOf(h),
       marks: marksOf(h),
       guard: !!h.guard,
-      work: h.job,
+      // Mientras lo visten, está en la sastrería.
+      work: dressingOf(s, h.id)?.room ?? h.job,
       train: trainBar(s, h),
     });
   }
@@ -169,11 +170,12 @@ export function sceneModel(s: GameState): SceneModel {
       const st = craftState(s, c);
       return {
         room: c.room,
-        icon: c.item?.icon ?? RECIPES[c.recipe].icon,
+        icon: c.item?.icon ?? (c.recipe ? RECIPES[c.recipe].icon : 'capa'),
         rarity: c.item?.rarity ?? 0,
         frac: st.frac,
         stalled: st.hoursLeft === null,
         undo: !!c.item,
+        hero: c.dress?.hero,
       };
     }),
   };

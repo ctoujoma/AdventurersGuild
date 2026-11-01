@@ -5,9 +5,19 @@
  * sala, se para. Lo que sale va al arcón; a veces sale bueno (más con buen herrero y más nivel).
  * Los legendarios no se crean.
  */
-import { RECIPES, RECIPE_BY_ICON, RECIPE_IDS, type RecipeId } from '../data/recipes';
-import type { RoomType } from '../data/rooms';
 import {
+  RECIPES,
+  RECIPE_BY_ICON,
+  RECIPE_IDS,
+  WORKSHOP_PLACE,
+  type RecipeId,
+} from '../data/recipes';
+import type { RoomType } from '../data/rooms';
+import { GARMENTS, TINTS, type Dress } from '../data/custom';
+import {
+  DRESS_GOLD,
+  DRESS_HOURS,
+  DRESS_MORALE,
   CRAFT_GOOD,
   CRAFT_GOOD_PER_SKILL,
   CRAFT_SLOTS,
@@ -20,6 +30,7 @@ import type { Craft, DawnEvent, GameState, Item, Room } from './model';
 import { Rng } from './rng';
 import { active } from './rooms';
 import { workAt } from './workers';
+import { hasUnlock } from './goals';
 
 /** Las salas que son taller (las que tienen recetas). */
 const SHOPS = new Set<RoomType>(RECIPE_IDS.map((id) => RECIPES[id].room));
@@ -28,6 +39,20 @@ export const isWorkshop = (t: RoomType) => SHOPS.has(t);
 /** Las recetas que se saben: las de serie y las aprendidas. */
 export function knownRecipes(s: GameState): RecipeId[] {
   return RECIPE_IDS.filter((id) => RECIPES[id].free || s.recipes?.includes(id));
+}
+
+/**
+ * Aprende una receta que no se sabe (premio de encargos e historias): mejor una de un taller que
+ * ya se tiene. Devuelve la aprendida, o null si ya se saben todas.
+ */
+export function learnRecipe(s: GameState, rng: Rng): RecipeId | null {
+  const known = knownRecipes(s);
+  const missing = RECIPE_IDS.filter((id) => !known.includes(id));
+  if (!missing.length) return null;
+  const have = missing.filter((id) => s.building.rooms.some((r) => r.type === RECIPES[id].room));
+  const id = rng.pick(have.length ? have : missing);
+  s.recipes = [...(s.recipes ?? []), id];
+  return id;
 }
 
 /** Las recetas de una sala, sabidas o no (las que no, dicen cómo se aprenden). */
@@ -70,7 +95,7 @@ export function undoable(s: GameState, roomId: string): Item[] {
   const r = s.building.rooms.find((x) => x.id === roomId);
   if (!r) return [];
   const known = knownRecipes(s);
-  const busy = new Set((s.crafts ?? []).map((c) => c.recipe));
+  const busy = new Set((s.crafts ?? []).map((c) => c.recipe).filter((r) => !!r));
   return s.inventory.filter((it) => {
     const id = it.icon && RECIPE_BY_ICON[it.icon];
     return !!id && RECIPES[id].room === r.type && !known.includes(id) && !busy.has(id);
@@ -133,9 +158,51 @@ export function cancelCraft(s: GameState, id: string): void {
 }
 
 /** Trabajo que hace un taller en un día entero ahora mismo. */
-export function craftRate(s: GameState, roomId: string): number {
+export function craftRate(s: GameState, roomId: string, c?: Craft): number {
   const r = s.building.rooms.find((x) => x.id === roomId);
+  // Para vestir a alguien, tiene que estar en casa (si sale de encargo o cae herido, se para).
+  if (c?.dress && s.heroes.find((h) => h.id === c.dress!.hero)?.status !== 'ok') return 0;
   return r ? workAt(s, r) : 0;
+}
+
+/** El trabajo de vestir en marcha de un héroe, si lo hay. */
+export const dressingOf = (s: GameState, heroId: string) =>
+  s.crafts?.find((c) => c.dress?.hero === heroId);
+
+const sameDress = (a: Dress = {}, b: Dress = {}) => a.dye === b.dye && a.garment === b.garment;
+
+/** Por qué no se puede vestir a un héroe así en la sastrería (null = se puede). */
+export function canDress(s: GameState, roomId: string, heroId: string, to: Dress): string | null {
+  const why = canStart(s, roomId);
+  if (why) return why;
+  const r = s.building.rooms.find((x) => x.id === roomId)!;
+  if (r.type !== 'sastreria') return 'Eso se hace en la sastrería.';
+  const h = s.heroes.find((x) => x.id === heroId);
+  if (!h) return 'Ya no está en el gremio.';
+  if (h.status !== 'ok') return `${h.name} no está en casa.`;
+  if (dressingOf(s, heroId)) return `A ${h.name} ya le están cosiendo.`;
+  if (to.dye && !TINTS[to.dye]) return 'Ese tinte no existe.';
+  if (to.garment && !GARMENTS[to.garment]) return 'Esa prenda no existe.';
+  if (to.dye && !hasUnlock(s, `tint:${to.dye}`))
+    return `Aún no tenéis el tinte ${TINTS[to.dye].name.toLowerCase()}.`;
+  if (sameDress(h.dress, to)) return 'Ya va así.';
+  if (s.gold < DRESS_GOLD) return `Te faltan ${DRESS_GOLD - s.gold} monedas.`;
+  return null;
+}
+
+/** Empieza a vestir a un héroe (ya comprobado con `canDress`). */
+export function startDress(s: GameState, roomId: string, heroId: string, to: Dress): void {
+  s.gold -= DRESS_GOLD;
+  const c: Craft = {
+    id: `c${s.uid++}`,
+    room: roomId,
+    dress: { hero: heroId, to: { ...to } },
+    need: hoursToWork(DRESS_HOURS),
+    done: 0,
+    at: partOf(s),
+    gold: DRESS_GOLD,
+  };
+  s.crafts = [...(s.crafts ?? []), c];
 }
 
 export interface CraftState {
@@ -148,7 +215,7 @@ export interface CraftState {
 
 /** Cómo va un trabajo ahora (para la ficha y la escena). */
 export function craftState(s: GameState, c: Craft): CraftState {
-  const rate = craftRate(s, c.room);
+  const rate = craftRate(s, c.room, c);
   const done = Math.min(c.need, c.done + rate * Math.max(0, partOf(s) - c.at));
   return {
     craft: c,
@@ -177,13 +244,29 @@ export function undoChance(s: GameState, roomId: string): number {
 
 /** Acaba un trabajo: el objeto al arcón, o la receta (o nada) al desmontar. */
 function finish(s: GameState, c: Craft, rng: Rng, news: DawnEvent[]): void {
+  if (c.dress) {
+    const { hero, to } = c.dress;
+    s.heroes = s.heroes.map((h) =>
+      h.id === hero
+        ? { ...h, dress: { ...to }, morale: Math.min(100, h.morale + DRESS_MORALE) }
+        : h,
+    );
+    const h = s.heroes.find((x) => x.id === hero);
+    if (h)
+      news.push({
+        t: `${h.name} estrena ropa: sale de la sastrería ${h.sex === 'f' ? 'hecha' : 'hecho'} un pincel.`,
+        k: 'good',
+      });
+    return;
+  }
   s.inventory = [...s.inventory];
-  const rc = RECIPES[c.recipe];
+  const rc = RECIPES[c.recipe!];
+  const place = WORKSHOP_PLACE[rc.room] ?? 'el taller';
   if (c.item) {
     if (rng.chance(undoChance(s, c.room))) {
-      s.recipes = [...(s.recipes ?? []), c.recipe];
+      s.recipes = [...(s.recipes ?? []), c.recipe!];
       news.push({
-        t: `Desmontando ${c.item.name}, en la forja han sacado cómo se hace: ya podéis crear ${rc.many}.`,
+        t: `Desmontando ${c.item.name}, en ${place} han sacado cómo se hace: ya podéis crear ${rc.many}.`,
         k: 'good',
       });
     } else news.push({ t: `Han desmontado ${c.item.name}, pero no han sacado nada en claro.` });
@@ -194,8 +277,8 @@ function finish(s: GameState, c: Craft, rng: Rng, news: DawnEvent[]): void {
   s.inventory.push({ ...structuredClone(base), id: `i${s.uid++}` });
   news.push({
     t: good
-      ? `¡La forja ha creado ${base.name}! Ha salido de las buenas. Ya está en el arcón.`
-      : `La forja ha creado ${base.name}. Ya está en el arcón.`,
+      ? `¡En ${place} han creado ${base.name}! Ha salido de las buenas. Ya está en el arcón.`
+      : `En ${place} han creado ${base.name}. Ya está en el arcón.`,
     k: 'good',
   });
 }
@@ -218,7 +301,7 @@ export function stepCrafts(s: GameState, part: number, shared?: Rng): DawnEvent[
       if (c.item) s.inventory = [...s.inventory, c.item];
       continue;
     }
-    c.done += craftRate(s, c.room) * Math.max(0, part - c.at);
+    c.done += craftRate(s, c.room, c) * Math.max(0, part - c.at);
     c.at = part;
     if (c.done >= c.need - 1e-9) finish(s, c, rng, news);
     else keep.push(c);

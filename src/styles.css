@@ -6573,3 +6573,22 @@ p.notebook-close {
 .forge-locked {
   opacity: 0.7;
 }
+
+.dress-heroes,
+.dress-garments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0;
+}
+
+.dress-body {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.dress-opts {
+  flex: 1;
+  min-width: 0;
+}
