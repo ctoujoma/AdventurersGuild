@@ -1,5 +1,8 @@
 import { Rng } from '../core/rng';
 import { MAP_H, MAP_W, PLACE_INFO, TAVERN } from '../data/places';
+import { colorFog, colorMap } from './mapColor';
+import { inkFog, inkMap } from './mapInk';
+import { coastAt } from './mapTerrain';
 import { P } from './palette';
 import { PixelBuffer, bayer, type Color } from './pixel';
 
@@ -14,9 +17,49 @@ let cached: PixelBuffer | null = null;
 
 type Pt = readonly [number, number];
 
-/** Línea de costa: x del agua para cada fila (el mar queda a la izquierda). */
-export function coastAt(y: number): number {
-  return 58 + 10 * Math.sin(y * 0.045) + Math.max(0, y - 130) * 0.55 + 3 * Math.sin(y * 0.2);
+export { coastAt };
+
+/**
+ * Las versiones del mapa, para elegir (provisional, mientras se decide): el pergamino ilustrado
+ * (`mapInk.ts`), la comarca a color (`mapColor.ts`) y la de antes (este archivo).
+ */
+export type MapStyle = 'pergamino' | 'color' | 'actual';
+export const MAP_STYLES: readonly MapStyle[] = ['pergamino', 'color', 'actual'];
+const STYLE_KEY = 'jarro:mapa';
+
+export function mapStyle(): MapStyle {
+  try {
+    const v = localStorage.getItem(STYLE_KEY) as MapStyle | null;
+    if (v && MAP_STYLES.includes(v)) return v;
+  } catch {
+    // Sin almacenamiento: la de por defecto.
+  }
+  return 'pergamino';
+}
+
+export function setMapStyle(s: MapStyle): void {
+  try {
+    localStorage.setItem(STYLE_KEY, s);
+  } catch {
+    // Sin almacenamiento, no se recuerda.
+  }
+}
+
+/** El dibujo de la comarca, en la versión elegida. */
+export function mapBuffer(style: MapStyle = mapStyle()): PixelBuffer {
+  return style === 'color' ? colorMap() : style === 'pergamino' ? inkMap() : oldMap();
+}
+
+/** La niebla de lo no explorado, a juego con la versión. */
+export function fogBuffer(
+  known: readonly { x: number; y: number; r: number }[],
+  style: MapStyle = mapStyle(),
+): PixelBuffer {
+  return style === 'color'
+    ? colorFog(known)
+    : style === 'pergamino'
+      ? inkFog(known)
+      : oldFog(known);
 }
 
 /** Río grande: del norte, por el vado y el molino, hasta el mar junto a las salinas. */
@@ -273,7 +316,7 @@ function whale(b: PixelBuffer, x: number, y: number): void {
   b.set(x, y - 4, P.mist);
 }
 
-export function mapBuffer(): PixelBuffer {
+function oldMap(): PixelBuffer {
   if (cached) return cached;
   const b = new PixelBuffer(MAP_W, MAP_H);
   const rng = new Rng('mapa');
@@ -565,7 +608,7 @@ export function mapBuffer(): PixelBuffer {
  * Niebla sobre lo que no se conoce: trama oscura de pergamino lejos de los puntos
  * conocidos. `known` son centros con su radio.
  */
-export function fogBuffer(known: readonly { x: number; y: number; r: number }[]): PixelBuffer {
+function oldFog(known: readonly { x: number; y: number; r: number }[]): PixelBuffer {
   const b = new PixelBuffer(MAP_W, MAP_H);
   for (let y = 0; y < MAP_H; y++)
     for (let x = 0; x < MAP_W; x++) {

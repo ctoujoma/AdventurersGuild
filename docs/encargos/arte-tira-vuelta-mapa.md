@@ -82,3 +82,24 @@ Capturas a 420 × 860 y en horizontal, y un PR contra `main`.
 ve nítido a zoom entero (1×, 2×, 3×…). Los iconos tienen 7 px y se leen bien desde 2×. Si el
 mapa pasa a pantalla completa, conviene que el zoom vaya a pasos enteros sobre el tamaño del
 dibujo, no sobre el ancho del panel.
+
+### Dos versiones del mapa, para elegir
+
+El usuario pidió versiones con más detalle. Las dos comparten la comarca en
+`art/mapTerrain.ts`: altura con sierras y valles, mar con calas, ríos, lagos, marisma, bosques,
+parcelas, caminos y casas. Los iconos de los lugares están en `art/mapIcons.ts`.
+
+- **A, pergamino ilustrado** (`art/mapInk.ts`): tinta y acuarela.
+  - Mar con oleaje y rumbos.
+  - Montes a plumilla, bosques árbol a árbol y parcelas rayadas.
+  - Marco de leguas.
+  - Lo no explorado, con rayado de «tierra ignota».
+- **B, comarca a color** (`art/mapColor.ts`): relieve con luz y sombra.
+  - Mar con espuma, bajíos y alta mar.
+  - Copas, surcos y setos.
+  - Nubes sobre los Montes de la Niebla.
+  - Lo no explorado, bajo un mar de nubes.
+
+Para compararlas en el juego, el botón del mapa (A / B / 0) va pasando por las versiones, y la
+elegida se guarda en `localStorage['jarro:mapa']`. Es provisional: cuando se elija una, se
+quitan el botón, las otras versiones y `oldMap`.
