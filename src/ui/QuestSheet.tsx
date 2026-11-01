@@ -93,7 +93,7 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
         onClick={(e) => e.stopPropagation()}
         aria-label={`Encargo: ${q.title}`}
       >
-        <button class="btn-icon herocard-x" aria-label="Cerrar" onClick={onClose}>
+        <button class="btn-icon herocard-x" data-tut="cerrar" aria-label="Cerrar" onClick={onClose}>
           <Icon name="close" size={14} />
         </button>
         <div class="qs-scroll">

@@ -821,6 +821,8 @@ export function App() {
   const lessonFocus = lesson ? tutorialFocus(game, panel) : null;
   /** Altura de lo que señala el tutorial: la nota se pone en la otra mitad. */
   const [spotY, setSpotY] = useState<number | null>(null);
+  /** Lo que tapa lo que señala el tutorial hay que cerrarlo antes (la nota lo dice). */
+  const [spotClose, setSpotClose] = useState(false);
   const tip =
     calm && !pendingEvent && !card && !questId && !reportId && !panel && !tutorialOn(game)
       ? nextTip(game)
@@ -1558,7 +1560,14 @@ export function App() {
         />
       )}
       {lesson && lessonFocus && (
-        <TutorialFocus focus={lessonFocus} scene={scene} onSpot={setSpotY} />
+        <TutorialFocus
+          focus={lessonFocus}
+          scene={scene}
+          onSpot={(y, closing) => {
+            setSpotY(y);
+            setSpotClose(closing);
+          }}
+        />
       )}
       {lesson && (
         <TutorialNote
@@ -1568,6 +1577,7 @@ export function App() {
             !lessonFocus?.note || lessonFocus.targets[0] !== '.gremio-goals' || panel === 'gremio'
           }
           up={!lessonFocus?.note && spotY !== null && spotY > innerHeight * 0.5}
+          closing={!!lessonFocus && spotClose}
           onOk={() => {
             audio.play('close');
             dispatch({ type: 'tutorial', op: 'ok' });

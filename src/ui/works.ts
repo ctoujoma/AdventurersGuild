@@ -38,6 +38,8 @@ export interface Works {
   undo: () => void;
   pay: () => void;
   discard: () => void;
+  /** Sale guardando el borrador para luego (se recupera al volver al modo obras). */
+  keep: () => void;
 }
 
 interface Deps {
@@ -164,7 +166,19 @@ export function useWorks({ game, dispatch, toast, focus, raise, price }: Deps): 
       if (id) audio.play('select', 0.6);
     },
     startPlan: () => {
-      setSteps([]);
+      // Si hay un borrador guardado, se sigue donde se dejó (si aún cuadra con la taberna).
+      const saved = (game.worksDraft ?? []) as Action[];
+      if (saved.length) {
+        const d = tryWorks(game, saved);
+        if ('error' in d) {
+          dispatch({ type: 'worksDraft', steps: null });
+          toast('El borrador guardado ya no cuadra con la taberna: se empieza de cero.');
+          setSteps([]);
+        } else {
+          setSteps(saved);
+          toast(`Borrador recuperado: ${saved.length} ${saved.length === 1 ? 'obra' : 'obras'}.`);
+        }
+      } else setSteps([]);
       setSelected(null);
       // El aviso de qué hacer ya está en la cinta de abajo: sin otro arriba.
     },
@@ -198,10 +212,20 @@ export function useWorks({ game, dispatch, toast, focus, raise, price }: Deps): 
       endPick();
     },
     discard: () => {
+      if (game.worksDraft) dispatch({ type: 'worksDraft', steps: null });
       setSteps(null);
       setSelected(null);
       endPick();
       audio.play('close');
+    },
+    keep: () => {
+      if (steps?.length) dispatch({ type: 'worksDraft', steps });
+      setSteps(null);
+      setSelected(null);
+      endPick();
+      audio.play('close');
+      if (steps?.length)
+        toast('Borrador guardado: al volver al modo obras sigue donde lo dejaste.');
     },
   };
 }

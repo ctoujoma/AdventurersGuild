@@ -5858,7 +5858,7 @@ select.crew-free {
 .tut-focus {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: 75; /* por encima de todo menú (Ajustes y guardar van en 70) */
   pointer-events: none;
 }
 .tut-block {
@@ -5908,7 +5908,7 @@ select.crew-free {
   position: fixed;
   left: 50%;
   bottom: calc(var(--tabbar-h, 64px) + 70px);
-  z-index: 51;
+  z-index: 76;
   width: min(420px, calc(100vw - 24px));
   transform: translateX(-50%) rotate(-0.6deg);
   padding: 10px 14px 8px 30px;
@@ -5945,6 +5945,15 @@ select.crew-free {
   line-height: 26px;
   font-style: italic;
 }
+p.notebook-close {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: -2px;
+  color: var(--wine);
+  font-style: normal;
+  font-weight: bold;
+}
 .notebook-actions {
   display: flex;
   flex-wrap: wrap;
@@ -5970,7 +5979,7 @@ select.crew-free {
   position: fixed;
   top: calc(env(safe-area-inset-top, 0px) + 70px);
   right: 56px;
-  z-index: 51;
+  z-index: 76;
   display: flex;
   flex-direction: column;
   align-items: flex-end;

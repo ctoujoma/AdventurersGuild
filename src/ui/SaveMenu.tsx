@@ -90,7 +90,7 @@ export function SaveMenu({ game, onLoad, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
         aria-label="Guardar y cargar partida"
       >
-        <button class="btn-icon herocard-x" aria-label="Cerrar" onClick={onClose}>
+        <button class="btn-icon herocard-x" data-tut="cerrar" aria-label="Cerrar" onClick={onClose}>
           <Icon name="close" size={14} />
         </button>
         <div class="qs-scroll">
