@@ -5675,3 +5675,183 @@ select.crew-free {
 .payday-go.is-waiting {
   opacity: 0.75;
 }
+
+/* ---------- Tutorial: el foco, el cuaderno de Fausto y su carta ---------- */
+
+/* Oscurece y bloquea todo menos lo que hay que tocar (por encima de paneles y fichas). */
+.tut-focus {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+}
+.tut-block {
+  position: fixed;
+  left: 0;
+  top: 0;
+  pointer-events: auto;
+  background: rgba(24, 20, 37, 0.55);
+}
+.tut-scene .tut-block {
+  background: rgba(24, 20, 37, 0.35);
+}
+.tut-ring {
+  position: fixed;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  box-shadow:
+    0 0 0 3px var(--lemon),
+    0 0 0 6px rgba(24, 20, 37, 0.8);
+  animation: tut-ring 1.1s steps(4) infinite;
+}
+@keyframes tut-ring {
+  50% {
+    box-shadow:
+      0 0 0 3px var(--lemon),
+      0 0 0 6px rgba(24, 20, 37, 0.8),
+      0 0 18px 8px rgba(254, 231, 97, 0.55);
+  }
+}
+.calma .tut-ring {
+  animation: none;
+}
+
+/* Una página del cuaderno: papel con renglones, sin retrato (el tío ya no está). */
+.notebook {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--tabbar-h, 64px) + 70px);
+  z-index: 51;
+  width: min(420px, calc(100vw - 24px));
+  transform: translateX(-50%) rotate(-0.6deg);
+  padding: 10px 14px 8px 30px;
+  color: var(--ink);
+  background:
+    linear-gradient(90deg, transparent 20px, rgba(162, 38, 51, 0.35) 20px 21px, transparent 21px),
+    repeating-linear-gradient(transparent 0 21px, rgba(58, 68, 102, 0.18) 21px 22px), var(--sand);
+  box-shadow:
+    0 0 0 2px var(--bark),
+    0 6px 0 2px rgba(24, 20, 37, 0.55);
+  animation: notebook-in 0.25s steps(4);
+}
+.notebook.up {
+  top: calc(env(safe-area-inset-top, 0px) + 64px);
+  bottom: auto;
+}
+@keyframes notebook-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px) rotate(-0.6deg);
+  }
+}
+.notebook-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--t-s);
+  color: var(--rust);
+  font-style: italic;
+}
+.notebook p {
+  margin: 4px 0 6px;
+  font-size: var(--t-m);
+  line-height: 22px;
+  font-style: italic;
+}
+.notebook-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.notebook-skip {
+  margin-left: auto;
+  min-height: 40px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--t-s);
+  color: var(--text-soft);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* La carta del tío: lo primero que se lee, sobre la taberna a oscuras. */
+.intro-letter {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: radial-gradient(ellipse at 50% 60%, rgba(24, 20, 37, 0.55), rgba(24, 20, 37, 0.92));
+  animation: intro-fade 0.8s ease-out both;
+}
+@keyframes intro-fade {
+  from {
+    opacity: 0;
+  }
+}
+.intro-page {
+  width: min(400px, 100%);
+  padding: 22px 22px 18px;
+  color: var(--ink);
+  background: var(--sand);
+  box-shadow:
+    0 0 0 2px var(--bark),
+    0 10px 0 2px rgba(24, 20, 37, 0.6);
+  transform: rotate(0.8deg);
+}
+.intro-head {
+  display: block;
+  margin-bottom: 10px;
+  font-size: var(--t-s);
+  color: var(--rust);
+  font-style: italic;
+  text-align: right;
+}
+.intro-page p,
+.intro-sign {
+  margin: 0 0 10px;
+  font-size: var(--t-m);
+  line-height: 1.5;
+  font-style: italic;
+  animation: intro-line 0.6s ease-out both;
+}
+.intro-sign {
+  display: block;
+  text-align: right;
+  font-family: var(--pixel);
+  font-style: normal;
+  font-size: var(--t-l, 18px);
+  color: var(--bark);
+}
+@keyframes intro-line {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+.intro-go {
+  display: block;
+  margin: 8px auto 0;
+  animation: intro-line 0.6s ease-out 2.4s both;
+}
+.calma .intro-page p,
+.calma .intro-sign,
+.calma .intro-go {
+  animation: none;
+}
+/* El botón de la nota late cuando es lo que hay que tocar. */
+.notebook [data-tut='nota-boton'] {
+  animation: tut-btn 1.1s steps(4) infinite;
+}
+@keyframes tut-btn {
+  50% {
+    box-shadow: 0 0 0 3px var(--lemon);
+  }
+}
+.calma .notebook [data-tut='nota-boton'] {
+  animation: none;
+}

@@ -62,6 +62,7 @@ export function HeroesPanel({
     return (
       <article key={h.id} class="row">
         <button
+          data-tut={`hero-${h.id}`}
           class="row-main"
           aria-label={`${h.name}, ${CLASS_NAMES[h.cls][h.sex]} de nivel ${h.lvl}. ${doing}${flag ? `. ${flag.text}` : ''}. Ver ficha`}
           onClick={() => onOpen(h.id)}
@@ -97,6 +98,7 @@ export function HeroesPanel({
           {candidate && (
             <button
               class="btn btn-gold"
+              data-tut="contratar"
               disabled={!!why}
               title={why ?? `Prima de fichaje: ${h.fee}`}
               aria-label={`Contratar a ${h.name} por ${h.fee} monedas`}

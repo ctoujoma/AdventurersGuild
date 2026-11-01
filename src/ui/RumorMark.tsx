@@ -43,6 +43,7 @@ export function RumorMark({ rumor, room, clock, speed, scene, onTake }: Props) {
     <button
       ref={ref}
       class="rumor"
+      data-tut="rumor"
       style={{ '--left': frac }}
       aria-label={`Un rumor en la barra. Tócalo para apuntarlo. Quedan ${secs} s.`}
       onClick={onTake}

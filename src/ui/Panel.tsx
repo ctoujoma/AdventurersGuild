@@ -27,7 +27,7 @@ export function Panel({ title, onClose, variant = 'paper', wide, children }: Pro
     >
       <header class="panel-head">
         <h2>{title}</h2>
-        <button class="btn-icon" aria-label="Cerrar" onClick={close}>
+        <button class="btn-icon" data-tut="cerrar" aria-label="Cerrar" onClick={close}>
           <Icon name="close" size={14} />
         </button>
       </header>

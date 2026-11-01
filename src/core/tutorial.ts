@@ -10,17 +10,20 @@ import type { DawnEvent, GameState, Quest } from './model';
 import type { Rng } from './rng';
 import { upgradeCostOf } from './rooms';
 
-export type TutorialButton = 'ok' | 'esperar' | 'pago' | 'luego';
+/**
+ * El botón de la nota: «Seguir» en las que solo cuentan algo, y los saltos de tiempo. Las que
+ * piden hacer algo no tienen botón: se pasan haciéndolo.
+ */
+export type TutorialButton = 'seguir' | 'esperar' | 'pago';
 
 export interface TutorialStep {
   id: string;
-  /** Lo que dice el tío. */
+  /** Lo que dice la nota del cuaderno del tío. */
   text: (s: GameState) => string;
-  /** Sala (id) o sitio de la escena al que mirar. */
+  /** Sala (id) o sitio de la escena al que mirar al empezar el paso. */
   focus?: (s: GameState) => string | null;
   /** Hecho: se pasa al siguiente. */
   done?: (s: GameState) => boolean;
-  /** Botón de la nota (sin él, solo se avanza haciendo lo que pide). */
   button?: TutorialButton;
   /** Se salta solo si no tiene sentido (nadie herido, nada que equipar…). */
   skip?: (s: GameState) => boolean;
@@ -33,6 +36,8 @@ export interface Tutorial {
   step: number;
   /** El encargo a la medida de los dos primeros héroes. */
   quest?: string;
+  /** Ya se ha leído la carta del tío (la primera pantalla). */
+  letter?: boolean;
   moved?: boolean;
   named?: boolean;
 }
@@ -41,6 +46,7 @@ const roomOf = (s: GameState, type: string) => s.building.rooms.find((r) => r.ty
 const roomId = (type: string) => (s: GameState) => roomOf(s, type)?.id ?? null;
 const alive = (s: GameState) =>
   s.heroes.filter((h) => h.status !== 'muerto' && h.status !== 'desaparecido');
+const first = (name: string) => name.split(' ')[0]!;
 const firstPay = SCHEDULE[0]!;
 
 /** Lo que cuesta arreglar la enfermería rota (o 0 si no hace falta). */
@@ -49,20 +55,38 @@ const enfCost = (s: GameState) => {
   return r && r.level === 0 ? (upgradeCostOf(r) ?? 0) : 0;
 };
 
+/** El encargo del tutorial que toca mandar ahora: el primero, o el del rumor. */
+export const tutorialQuest = (s: GameState): string | null => {
+  const st = tutorialStep(s)?.id;
+  if (st === 'tablon') return s.tutorial?.quest ?? null;
+  if (st === 'mandar') return s.quests.find((q) => q.rumor)?.id ?? null;
+  return null;
+};
+
+/** El héroe al que dar el equipo: el primero en casa. */
+export const tutorialHero = (s: GameState): string | null =>
+  s.heroes.find((h) => h.status === 'ok' || h.status === 'herido')?.id ?? null;
+
+/**
+ * La carta que deja el tío: es lo primero que se lee al empezar (en lugar de la carta del día 1).
+ */
+export const LETTER = {
+  head: 'Hondovado, a la entrada del invierno',
+  body: [
+    'Sobrino:',
+    'Si te llega esta carta, es que ya no estoy y El Jarro Partido es tuyo. Con la taberna te dejo dos aventureros que no cobran mucho, al gato y mil monedas de deuda con Merlo, el prestamista, que cobra cada siete días y no perdona ni una.',
+    'Debajo de la barra tienes mi cuaderno. Lo fui escribiendo para quien viniera detrás: léelo con calma y haz lo que pone, que a mí me costó años aprenderlo.',
+  ],
+  sign: 'Fausto',
+};
+
 export const STEPS: readonly TutorialStep[] = [
-  {
-    id: 'hola',
-    text: () =>
-      'Sobrino: esta es tu taberna, con sus deudas. Te enseño lo justo para el primer pago a Merlo, el día 7. Si ya sabes cómo va, sáltate las lecciones.',
-    focus: roomId('salon'),
-    button: 'ok',
-  },
   {
     id: 'tablon',
     text: (s) => {
       const q = s.quests.find((x) => x.id === s.tutorial?.quest);
-      const names = alive(s).map((h) => h.name.split(' ')[0]);
-      return `El tablón de encargos está en el salón: toca la sala y ábrelo. Manda a ${names.join(' y ')} a «${q?.title ?? 'el primer encargo'}», que está a su medida.`;
+      const names = alive(s).map((h) => first(h.name));
+      return `Lo primero, el tablón. De los encargos come esta casa. Hay uno fácil, «${q?.title ?? 'el primero'}»: manda a ${names.join(' y ')}, que saben hacerlo.`;
     },
     focus: roomId('salon'),
     done: (s) => s.missions.length > 0,
@@ -70,21 +94,27 @@ export const STEPS: readonly TutorialStep[] = [
   {
     id: 'barra',
     text: () =>
-      'Con dos no se llega lejos. En la barra esperan aventureros que buscan trabajo: toca la barra del salón y contrata a uno. Mira la prima y el sueldo, que se pagan.',
+      'Con dos espadas no se llega lejos. En la barra siempre hay alguien buscando trabajo: contrata a uno. La prima se paga una vez; el sueldo, cada semana.',
     focus: () => 'barra',
     done: (s) => alive(s).length > 2,
+    enter: (s) => {
+      const fee = Math.min(...s.candidates.map((c) => c.fee));
+      if (!Number.isFinite(fee) || s.gold >= fee) return null;
+      const gift = fee - s.gold;
+      s.gold += gift;
+      return `En la caja de puros de la barra había ${gift} monedas: «Para la primera prima».`;
+    },
   },
   {
     id: 'nombre',
     text: () =>
-      'A los tuyos, ponles nombre si quieres: abre la ficha de un héroe (en «Héroes») y toca su nombre para cambiarlo.',
+      'Los aventureros llegan con el nombre que les puso su madre, y a veces no les pega. Abre la ficha del nuevo y toca su nombre: déjalo o cámbialo, pero que sea de la casa.',
     done: (s) => !!s.tutorial?.named,
-    button: 'luego',
   },
   {
     id: 'enfermeria',
     text: () =>
-      'Media casa está rota desde que me fui. Empieza por la enfermería, arriba: tócala y arréglala. Los heridos se curan antes en una cama de verdad.',
+      'La enfermería se vino abajo el invierno pasado. Arréglala antes de que alguien vuelva con una flecha en el muslo: en una cama de verdad se cura el doble de rápido.',
     focus: roomId('enfermeria'),
     done: (s) => {
       const r = roomOf(s, 'enfermeria');
@@ -95,49 +125,50 @@ export const STEPS: readonly TutorialStep[] = [
       if (!cost || s.gold >= cost) return null;
       const gift = cost - s.gold;
       s.gold += gift;
-      return `El tío te deja ${gift} monedas para la enfermería: «No me lo agradezcas, devuélvemelo».`;
+      return `Entre las hojas del cuaderno había ${gift} monedas, con una nota: «Para la enfermería. No te las bebas».`;
     },
   },
   {
     id: 'mover',
     text: () =>
-      'La gente se cambia de sitio con el dedo: coge a alguien de la casa y suéltalo en otra sala (por ejemplo, a Tobías en la cocina, que hoy hay poco en la barra).',
+      'Cada cual rinde donde lo pones. Coge con el dedo a alguien de la casa y suéltalo en la cocina: con dos en los fogones, más comida.',
     focus: roomId('cocina'),
     done: (s) => !!s.tutorial?.moved,
-    button: 'luego',
   },
   {
     id: 'esperar',
     text: () =>
-      'Ya no queda nada que hacer hasta que vuelva el grupo. No hace falta esperar mirando: salta hasta que vuelvan.',
+      'Con el grupo en el camino no hay más que hacer. No te quedes mirando la puerta: vuelven antes si no se les espera.',
     done: (s) => s.reports.length > 0,
     button: 'esperar',
   },
   {
     id: 'informe',
     text: () =>
-      'Han vuelto. Cada grupo manda su informe: toca el sobre de abajo y léelo, que ahí se ve de qué pasta está hecho cada cual.',
+      'Cada grupo que vuelve trae su informe. Léelo entero: ahí se ve de qué pasta está hecho cada cual.',
     done: (s) => s.reports.some((r) => r.read),
   },
   {
     id: 'equipo',
-    text: (s) =>
-      `Han traído ${s.inventory.find((i) => i.kind !== 'tesoro')?.name ?? 'algo de equipo'}. Abre la ficha de un héroe y dáselo: lo que lleva puesto se nota en el encargo.`,
-    skip: (s) => !s.inventory.some((i) => i.kind !== 'tesoro'),
+    text: (s) => {
+      const it = s.inventory.find((i) => i.kind !== 'tesoro');
+      const h = s.heroes.find((x) => x.id === tutorialHero(s));
+      return `Lo que traen, mejor puesto que en un arcón. Dale ${it ? `«${it.name}»` : 'el equipo'} a ${h ? first(h.name) : 'alguien'}: ficha, «Equipo».`;
+    },
+    skip: (s) => !s.inventory.some((i) => i.kind !== 'tesoro') || !tutorialHero(s),
     done: (s) => !s.inventory.some((i) => i.kind !== 'tesoro'),
-    button: 'luego',
   },
   {
     id: 'herido',
     text: (s) =>
-      `${alive(s).find((h) => h.status === 'herido')?.name ?? 'Alguien'} ha vuelto herido. Se cura solo con los días, y más deprisa con la enfermería arreglada. Mientras, no puede salir.`,
+      `${first(alive(s).find((h) => h.status === 'herido')?.name ?? 'Alguien')} ha vuelto herido. No puede salir hasta que se cure: se cura solo con los días, antes con la enfermería.`,
     skip: (s) => !s.heroes.some((h) => h.status === 'herido'),
-    button: 'ok',
+    button: 'seguir',
   },
   {
     id: 'ratas',
     text: () =>
-      '¡Ratas en la cocina! Toca el aviso hasta espantarlas. Pasan cosas así cada día: una pelea, un ladrón, el recaudador… Si no se atienden a tiempo, salen caras.',
+      'Si oyes rascar en la cocina, son ratas. Espántalas antes de que se coman las raciones. Cada día pasa algo así: atiéndelo a tiempo, que luego sale caro.',
     focus: roomId('cocina'),
     done: (s) => !(s.incidents ?? []).length,
     enter: (s) => {
@@ -160,7 +191,7 @@ export const STEPS: readonly TutorialStep[] = [
   {
     id: 'rumor',
     text: () =>
-      'Escucha: en el salón se oye algo (el bocadillo dorado). Tócalo antes de que se pierda: los rumores traen encargos con buen botín.',
+      'En la barra se habla más de la cuenta. Cuando oigas algo que brilla, apúntalo antes de que se pierda: de ahí salen los mejores encargos.',
     focus: roomId('salon'),
     done: (s) => !s.rumor,
     enter: (s) => {
@@ -178,29 +209,28 @@ export const STEPS: readonly TutorialStep[] = [
   {
     id: 'mandar',
     text: () =>
-      'Ese encargo está en el tablón, marcado «Rumor». Manda al que has contratado, con alguien más si puede ir.',
-    skip: (s) => !s.quests.some((q) => q.rumor) && !s.missions.some((m) => m.quest.rumor),
+      'Ese rumor ya es un encargo, y paga en especie. Manda a quien tengas en casa, aunque vaya solo.',
+    skip: (s) => !s.quests.some((q) => q.rumor) || !s.heroes.some((h) => h.status === 'ok'),
     done: (s) => s.missions.some((m) => m.quest.rumor),
-    button: 'luego',
   },
   {
     id: 'objetivos',
     text: () =>
-      'En «Gremio» (abajo a la derecha) tienes siempre tres objetivos, que dan oro y cosas para la casa. Y en el Libro, lo que has cumplido.',
-    button: 'ok',
+      'En el Gremio llevo la cuenta de lo que queda por hacer en la casa: siempre tres cosas. Cumplirlas da oro y lustre.',
+    button: 'seguir',
   },
   {
     id: 'pago',
     text: () =>
-      `El día ${firstPay.day} viene Merlo a cobrar ${firstPay.amount} monedas, más los sueldos: lo tienes arriba, en el pergamino. Salta hasta ese día y paga.`,
+      `El día ${firstPay.day} viene Merlo: ${firstPay.amount} monedas, más los sueldos. Ten la caja lista y no le hagas esperar.`,
     done: (s) => s.paid > 0 || !!s.over,
     button: 'pago',
   },
   {
     id: 'fin',
     text: () =>
-      'Merlo se va contando monedas. La taberna sigue siendo tuya… de momento. Desde ahora el tiempo corre solo, también con la taberna cerrada. Ya sabes lo básico: lo demás te lo iré contando.',
-    button: 'ok',
+      'Si has llegado hasta aquí, la taberna sigue siendo tuya. El resto del cuaderno son recetas y cuentas pendientes: lo irás leyendo cuando toque.',
+    button: 'seguir',
   },
 ];
 
@@ -210,7 +240,16 @@ export const tutorialStep = (s: GameState): TutorialStep | null =>
 export const tutorialOn = (s: GameState) => !!tutorialStep(s);
 
 /** Las notas del tío que el tutorial ya ha contado (no se repiten al acabar). */
-export const TUTORIAL_TIPS = ['tablon', 'noche', 'carta', 'barra', 'pago', 'trabajo', 'gremio'];
+export const TUTORIAL_TIPS = [
+  'tablon',
+  'noche',
+  'carta',
+  'barra',
+  'pago',
+  'trabajo',
+  'gremio',
+  'equipo',
+];
 
 /**
  * Avanza el tutorial mientras el paso actual esté hecho (o no tenga sentido), y prepara el

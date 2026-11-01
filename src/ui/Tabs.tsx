@@ -29,6 +29,7 @@ export function Tabs<T extends string>({ tabs, value, onChange, label }: Props<T
           key={t.id}
           role="tab"
           class="seg"
+          data-tut={`seg-${t.id}`}
           aria-selected={value === t.id}
           onClick={() => onChange(t.id)}
           {...(t.help ? help(t.help) : {})}

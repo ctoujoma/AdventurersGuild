@@ -151,7 +151,7 @@ export function HeroCard({
         onClick={(e) => e.stopPropagation()}
         aria-label={`Ficha de ${h.name}`}
       >
-        <button class="btn-icon herocard-x" aria-label="Cerrar" onClick={onClose}>
+        <button class="btn-icon herocard-x" data-tut="cerrar" aria-label="Cerrar" onClick={onClose}>
           <Icon name="close" size={14} />
         </button>
         <div class="qs-scroll">
@@ -182,10 +182,13 @@ export function HeroCard({
                     autoFocus
                     aria-label="Nombre"
                   />
-                  <button class="btn btn-gold">Vale</button>
+                  <button class="btn btn-gold" data-tut="nombre-ok">
+                    Vale
+                  </button>
                 </form>
               ) : onRename && !candidate ? (
                 <button
+                  data-tut="nombre"
                   class="linklike rename-btn"
                   aria-label={`Cambiar el nombre de ${h.name}`}
                   onClick={() => setNaming(true)}
@@ -282,6 +285,7 @@ export function HeroCard({
               )}
               {!candidate && (
                 <button
+                  data-tut="equipo"
                   class={`act ${h.item ? 'on' : ''}`}
                   aria-expanded={open === 'equipo'}
                   aria-label={h.item ? `Equipo: ${h.item.name}` : 'Equipo'}
@@ -333,6 +337,7 @@ export function HeroCard({
                   <button
                     key={it.id}
                     class={`gear-item gear-pick rarity-${it.rarity ?? 0}`}
+                    data-tut="equipar"
                     onClick={() => {
                       setOpen(null);
                       onEquip(it.id);
