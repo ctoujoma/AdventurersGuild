@@ -872,6 +872,12 @@ export class RoomScene {
       );
   }
 
+  /** Dónde saltan en pantalla las monedas de la caja (las de `pay`), en píxeles CSS. */
+  payPoint(): Point | null {
+    const p = this.layout ? focusPoint(this.layout, 'barra') : null;
+    return p ? this.camera.toScreen(p.x - 30, p.y + 5) : null;
+  }
+
   /** Ronda en la barra: notas y monedas, y los que se dan (`ids`) lo celebran dando saltos. */
   cheer(room = 'barra', ids: readonly string[] = []): void {
     this.crowd.celebrate(ids);

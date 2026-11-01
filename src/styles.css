@@ -6552,3 +6552,30 @@ p.notebook-close {
   align-self: center;
   font-size: var(--t-s);
 }
+
+/* Monedas que vuelan de la caja al oro de arriba (`ui/coinFlight.ts`) y el saltito del contador. */
+.coin-fly {
+  position: fixed;
+  z-index: 60;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+  background: var(--gold);
+  border: 2px solid var(--rust);
+  border-radius: 50%;
+  box-shadow:
+    inset 2px 2px 0 var(--lemon),
+    inset -2px -2px 0 #d77643,
+    0 0 0 1px var(--ink),
+    0 0 8px 2px rgb(254 231 97 / 55%);
+}
+
+.hud-stat.is-bump {
+  animation: gold-bump 0.22s cubic-bezier(0.3, 1.8, 0.5, 1);
+}
+
+@keyframes gold-bump {
+  40% {
+    transform: scale(1.12) translateY(-1px);
+  }
+}
