@@ -87,7 +87,7 @@ export function TutorialNote({ game, step, ready, up, onOk, onSkipTime, onSkipAl
       <div class="notebook-actions">
         {step.free && (
           <button
-            class="btn"
+            class="btn btn-wood"
             onClick={() => {
               setFolded(step.id);
               setHover(false);
