@@ -159,8 +159,11 @@ describe('ante el jefe se espera al jugador', () => {
     expect(s.missions[0]!.waiting).toBe(true);
     const reports = s.reports.length;
     s = endDay(s);
-    expect(s.reports.length).toBe(reports + 1);
-    expect(s.lastFight).toBe(s.reports[0]!.id);
+    // El informe de la pelea (y, si se gana, la carta del final de la historia).
+    expect(s.reports.length).toBeGreaterThan(reports);
+    const fight = s.reports.find((r) => r.fight);
+    expect(s.lastFight).toBe(fight?.id);
+    expect(fight?.fight?.sim?.auto).toBe(true);
     expect(s.missions).toHaveLength(0);
   });
 });

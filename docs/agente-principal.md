@@ -59,6 +59,9 @@ Para el agente principal (núcleo, tiempo, tutoriales, combate, talleres, amigos
   lo suyo (`settleMission` y `tickMissions` en `game.ts`, `Mission.done`); el jefe espera la acción
   del jugador (`Mission.waiting`, acción `boss`, `ui/BossFight.tsx` `BossWait`).
 - El tutorial es de un agente propio: `encargos/tutorial.md`.
+- Pelea interactiva contra jefes: `core/combat.ts` (simulación, `missionCombat`), `ui/BossFight.tsx`
+  (en directo con `fight.sim`), `world/battle.ts` (modo `live`), calibrado con `npm run calib`.
+  Siguiente: críticos con gesto (el evento `crit` ya existe).
 - Amanecer, decidido: con la app abierta no hay carta (avisos y, solo lo gordo, carta suelta);
   la pila de cartas, al volver tras tenerla cerrada (plan, «Pendiente de revisar» y fase 5).
 - Interfaz: el título se queda (el usuario no se quejaba de él); corregido en

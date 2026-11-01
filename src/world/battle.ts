@@ -36,6 +36,11 @@ export interface BattleSpec {
   defenders: { id: string; look: HeroLook; marks: HeroMarks; hurt: boolean }[];
   /** Pelea contra un jefe en su guarida, de `width` píxeles de ancho. */
   arena?: { boss: BossKind; minions: number; width: number };
+  /**
+   * En directo (la pelea de verdad, `core/combat.ts`): aquí solo se pinta. La vida, quién cae,
+   * a quién pega cada uno y el desenlace los dice la simulación (`setHp`, `down`, `aim`, `end`).
+   */
+  live?: boolean;
 }
 
 export type BattleSound =
@@ -958,8 +963,8 @@ export class Battle {
   readonly hidden: Set<string>;
   /** Cuándo empiezan los golpes, cuándo se decide y cuánto dura. */
   readonly fightAt: number;
-  readonly outcomeAt: number;
-  readonly duration: number;
+  outcomeAt: number;
+  duration: number;
   private fighters: Fighter[] = [];
   private shots: Shot[] = [];
   private effects: Fx[] = [];
@@ -976,8 +981,8 @@ export class Battle {
     this.hidden = new Set(spec.defenders.map((d) => d.id));
     const times = spec.arena ? ARENA_TIMES : { fight: 4.6, outcome: 9.2, end: BATTLE_TIME };
     this.fightAt = times.fight;
-    this.outcomeAt = times.outcome;
-    this.duration = times.end;
+    this.outcomeAt = spec.live ? Infinity : times.outcome;
+    this.duration = spec.live ? Infinity : times.end;
     if (spec.arena) {
       this.setupArena(spec.arena);
       return;
@@ -1186,8 +1191,10 @@ export class Battle {
       // El jefe apenas se mueve con los golpes, pero la barra baja (sin llegar al final
       // antes de tiempo: el desenlace ya está escrito).
       to.knock += dir * power * 0.25;
-      const floor = !this.spec.won ? 0.45 : this.t < this.outcomeAt ? 0.12 : 0;
-      to.hp = Math.max(floor, to.hp - power * 0.016);
+      if (!this.spec.live) {
+        const floor = !this.spec.won ? 0.45 : this.t < this.outcomeAt ? 0.12 : 0;
+        to.hp = Math.max(floor, to.hp - power * 0.016);
+      }
     } else {
       to.knock += dir * (shielded ? power * 0.3 : power);
       if (o.stun && !shielded) to.stun = 0.55;
@@ -1255,6 +1262,71 @@ export class Battle {
       out.push({ x: e.follow?.x ?? e.x, y: e.y - (big ? 10 : 0), r: big ? 46 : 30, color: c });
     }
     return out;
+  }
+
+  // ---------- En directo (la simulación manda) ----------
+
+  /** El luchador de una unidad de la simulación: héroe por id, `jefe` y `esbirro-N`. */
+  private bySim(id: string): Fighter | undefined {
+    if (id === 'jefe') return this.fighters.find((f) => f.art);
+    const m = /^esbirro-(\d+)$/.exec(id);
+    if (m) return this.fighters.filter((f) => f.ghost)[Number(m[1])];
+    return this.fighters.find((f) => f.id === id);
+  }
+
+  /** Vida (0–1) de una unidad, para las barras. */
+  setHp(id: string, frac: number): void {
+    const f = this.bySim(id);
+    if (f) f.hp = frac;
+  }
+
+  /** A quién pega ahora (se ve en la animación). */
+  aim(id: string, to: string): void {
+    const f = this.bySim(id);
+    const t = this.bySim(to);
+    if (f && t && this.alive(t)) f.foe = t;
+  }
+
+  /** Cae una unidad (no el jefe: ese cae en el desenlace). */
+  down(id: string): void {
+    const f = this.bySim(id);
+    if (!f || f.art || f.state === 'down') return;
+    f.flash = 0.25;
+    f.tint = P.white;
+    f.knock += f.side === 'd' ? -12 : 10;
+    f.move = undefined;
+    this.hooks.burst('spark', f.x, this.chest(f), 8);
+    this.fx('slash', f.x, this.chest(f), 0.25, P.white, 0);
+    this.sound('thud');
+    f.state = 'down';
+    f.downAt = this.t;
+  }
+
+  /** Un golpe de verdad: destello y chispas en quien lo recibe. */
+  flashHit(id: string, big: boolean): void {
+    const f = this.bySim(id);
+    if (!f || f.state === 'down') return;
+    f.flash = big ? 0.18 : 0.09;
+    f.tint = big ? P.lemon : P.white;
+    this.hooks.burst('spark', f.x, this.chest(f), big ? 8 : 3);
+  }
+
+  /** Dónde está una unidad en el escenario (para tocarla), o null. */
+  spot(id: string): { x: number; y: number; w: number; h: number } | null {
+    const f = this.bySim(id);
+    if (!f || f.state === 'down' || f.state === 'gone') return null;
+    const half = f.art ? f.art.reach : 7;
+    const h = f.art ? f.chestH * 2 : 26;
+    const feet = this.hooks.feetAt(f.x);
+    return { x: f.x - half, y: feet - h, w: half * 2, h };
+  }
+
+  /** Se acabó: el desenlace se cuenta y la escena dura un poco más. */
+  end(won: boolean): void {
+    if (this.resolved) return;
+    this.spec.won = won;
+    this.outcomeAt = this.t;
+    this.duration = this.t + 4;
   }
 
   /** Salta al final (el resultado no cambia). */

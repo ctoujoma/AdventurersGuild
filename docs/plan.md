@@ -179,13 +179,20 @@ hueco, con la cámara en cada paso. Sustituye a las notas de obras de ahora (`ob
   viaje se para y sale un aviso («Ver la pelea», «Que se las apañen» o «Luego»), también en la
   campana y en la ficha del viaje. Si no se dice nada, se resuelve al caer la noche (y siempre
   con el juego cerrado). La tira enseña al grupo parado ante la silueta del jefe (`waiting`).
-- **Pelea interactiva:** arrastrar a un héroe sobre un enemigo para elegir a quién ataca (si no,
-  el de siempre por su táctica); formación, táctica y objeto antes; habilidades por clase con
-  recarga; pocas órdenes en directo.
+- **Pelea interactiva (primera versión hecha, contra jefes):** la pelea es de verdad
+  (`core/combat.ts`): vida, ataque y defensa, cada uno a su ritmo, y una habilidad por clase con
+  recarga (Provocar, Puñalada, Bola de fuego, Curar, Andanada). El jefe avisa antes de su golpe
+  fuerte y «¡Cubríos!» a tiempo lo deja en un tercio. El jugador arrastra (o toca) a un héroe
+  hasta un enemigo para elegir su blanco, lanza habilidades y se cubre; sin tocar nada, va igual
+  que «Que se las apañen». Determinista: el núcleo la vuelve a jugar con las órdenes y el informe
+  la repite igual. Calibrado con `npm run calib`: sola sale como la tirada de antes (≈ 80 %);
+  jugando bien, unos 6–8 puntos más.
+  **Falta:** formación, táctica y objeto antes de entrar; números de daño en la escena;
+  llevarla a los asaltos a la taberna.
 - **Críticos con gesto:** cuando un golpe puede ser crítico, sale una marca y hay que hacer un
   gesto (deslizar, tocar a tiempo) para que entre.
-- **Revisar vida y ataque de los enemigos** (bandidos, esbirros y jefes) para que la pelea
-  interactiva tenga sentido y no se resuelva sola.
+- **Vida y ataque de los enemigos:** los de los jefes salen de lo que pide el encargo (hecho,
+  `FOE_TUNE` en `core/combat.ts`); faltan los bandidos de los asaltos.
 - Después, el torneo de la comarca (armas romas, premio de trofeo).
 
 ## Fase 4 · Talleres: fabricar objetos
