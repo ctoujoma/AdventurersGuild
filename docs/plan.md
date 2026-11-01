@@ -239,8 +239,9 @@ hueco, con la cámara en cada paso. Sustituye a las notas de obras de ahora (`ob
 
 ## Pendiente de revisar
 
-- **Encargos repartidos (feedback de jugar más):** la vuelta de la tira que deshace el camino y
-  el resultado que no engaña, y la calidad del mapa (arte, `encargos/arte-tira-vuelta-mapa.md`);
+- **Encargos repartidos (feedback de jugar más):** hecho lo de arte: la vuelta de la tira que
+  deshace el camino, el resultado que no engaña y la calidad del mapa (ver
+  `encargos/arte-tira-vuelta-mapa.md`). Pendiente:
   descartar avisos y el mapa más grande (interfaz, `encargos/interfaz-avisos-mapa.md`). Hechos
   por el agente principal: la clase y el oficio en el selector de personal, y que al volver
   recuperen su trabajo; el encargo se resuelve al acabar la pelea de la tira (`resolveAt`).

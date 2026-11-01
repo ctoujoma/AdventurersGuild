@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'preact/hooks';
-import { fogBuffer, mapBuffer } from '../../art/map';
+import { fogBuffer, mapBuffer, mapStyleFor } from '../../art/map';
 import { chainDef } from '../../core/chains';
 import { customOf } from '../../core/game';
 import type { GameState, Hero, Quest } from '../../core/model';
@@ -135,7 +135,9 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
     ],
     [fogKey],
   );
-  const fog = useMemo(() => fogBuffer(seen), [seen]);
+  // El dibujo: pergamino con la sala de mapas rota o a nivel 1; a color desde el nivel 2.
+  const style = mapStyleFor(level);
+  const fog = useMemo(() => fogBuffer(seen, style), [seen, style]);
   const regionSeen = (x: number, y: number) =>
     seen.some((k) => Math.hypot(x - k.x, y - k.y) < k.r + 24);
   const byId = (id: string) => game.heroes.find((h) => h.id === id);
@@ -148,7 +150,7 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
 
   // ---------- Zoom y arrastre ----------
   const vp = useRef<HTMLDivElement>(null);
-  const buf = mapBuffer();
+  const buf = mapBuffer(style);
   const [size, setSize] = useState({ w: 1, h: 1 });
   /** `l`: nivel de zoom (entero); `z`: su escala; `x`, `y`: dónde cae la esquina del dibujo. */
   const [view, setView] = useState({ l: 1, z: 1, x: 0, y: 0 });
