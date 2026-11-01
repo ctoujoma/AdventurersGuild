@@ -64,6 +64,8 @@ interface HeroView {
   /** Carga de la habilidad (0–1; 1 lista). */
   charge: number;
   target?: string;
+  /** Ocasión de crítico abierta (y no cogida): ¡ahora! */
+  chance: boolean;
 }
 
 const viewOf = (c: Combat): HeroView[] =>
@@ -74,6 +76,7 @@ const viewOf = (c: Combat): HeroView[] =>
     skill: u.ability,
     charge: u.ability ? 1 - (u.charge ?? 0) / ABILITIES[u.ability].every : 0,
     target: u.target,
+    chance: !!u.critOpen && !u.critTaken && u.hp > 0,
   }));
 
 /**
@@ -134,7 +137,12 @@ export function BossFight({ fight, onClose, onResult }: Props) {
       if (!combat) return;
       for (; seen < combat.events.length; seen++) {
         const e = combat.events[seen]!;
-        if ((e.kind === 'hit' || e.kind === 'crit') && e.to) b.flashHit(e.to, e.kind === 'crit');
+        if ((e.kind === 'hit' || e.kind === 'crit') && e.to) {
+          b.flashHit(e.to, e.kind === 'crit');
+          const toHero = combat.unit(e.to)?.side === 'h';
+          b.number(e.to, e.amount ?? 0, e.kind === 'crit' ? 'crit' : toHero ? 'hurt' : 'hit');
+          if (e.kind === 'crit' && !toHero && !muted) audio.play('zap', 0.7);
+        } else if (e.kind === 'heal' && e.to) b.number(e.to, e.amount ?? 0, 'heal');
         else if (e.kind === 'down' && e.to) b.down(e.to);
         else if (e.kind === 'warn') {
           setWarn(true);
@@ -144,10 +152,13 @@ export function BossFight({ fight, onClose, onResult }: Props) {
           if (!muted) audio.play(e.amount ? 'thud' : 'boom', 0.9);
         } else if (e.kind === 'cover' && !muted) audio.play('swing', 0.8);
         else if (e.kind === 'heal' && !muted) audio.play('holy', 0.6);
+        else if (e.kind === 'chance' && playing && !muted) audio.play('swing', 0.35);
       }
       for (const u of combat.units) {
         b.setHp(u.id, u.hp / u.max);
         if (u.target) b.aim(u.id, u.target);
+        // La ocasión de crítico solo se marca si la puede coger el jugador.
+        if (u.side === 'h') b.setChance(u.id, playing && !!u.critOpen && !u.critTaken && u.hp > 0);
       }
       if (combat.result && !reported) {
         reported = true;
@@ -264,6 +275,31 @@ export function BossFight({ fight, onClose, onResult }: Props) {
     return null;
   };
 
+  /** Héroe con la ocasión de crítico abierta en un punto de la pantalla (con margen). */
+  const chanceAt = (clientX: number, clientY: number): string | null => {
+    const c = canvas.current;
+    const b = battleRef.current;
+    const combat = combatRef.current;
+    if (!c || !b || !combat) return null;
+    const r = c.getBoundingClientRect();
+    const x = ((clientX - r.left) / r.width) * viewW;
+    const y = ((clientY - r.top) / r.height) * ARENA.h;
+    for (const h of combat.heroes()) {
+      if (!h.critOpen || h.critTaken || h.hp <= 0) continue;
+      const s = b.spot(h.id);
+      // El rombo va sobre la cabeza: se cuenta también un poco por encima.
+      if (s && x >= s.x - 6 && x <= s.x + s.w + 6 && y >= s.y - 16 && y <= s.y + s.h) return h.id;
+    }
+    return null;
+  };
+
+  const takeCrit = (id: string) => {
+    if (order({ who: id, kind: 'crit' })) {
+      audio.play('coin', 0.6);
+      haptic('thud');
+    }
+  };
+
   const order = (o: Parameters<Combat['order']>[0]) => {
     const ok = combatRef.current?.order(o) ?? false;
     if (ok) {
@@ -314,7 +350,11 @@ export function BossFight({ fight, onClose, onResult }: Props) {
             width: `min(100%, ${((viewW / ARENA.h) * 56).toFixed(1)}vh)`,
           }}
           onPointerDown={(e) => {
-            if (!playing || !chosen) return;
+            if (!playing) return;
+            // Tocar a un héroe con su ocasión de crítico: entra.
+            const hero = chanceAt(e.clientX, e.clientY);
+            if (hero) return takeCrit(hero);
+            if (!chosen) return;
             const to = foeAt(e.clientX, e.clientY);
             if (to) {
               order({ who: chosen, kind: 'target', to });
@@ -342,7 +382,7 @@ export function BossFight({ fight, onClose, onResult }: Props) {
             return (
               <li
                 key={h.id}
-                class={`bf-hero ${h.hp <= 0 ? 'is-down' : ''} ${chosen === h.id ? 'is-chosen' : ''}`}
+                class={`bf-hero ${h.hp <= 0 ? 'is-down' : ''} ${chosen === h.id ? 'is-chosen' : ''} ${playing && h.chance ? 'is-chance' : ''}`}
               >
                 <button
                   class="bf-hero-main"
@@ -351,9 +391,14 @@ export function BossFight({ fight, onClose, onResult }: Props) {
                   onPointerDown={() => {
                     if (playing && h.hp > 0) drag.current = h.id;
                   }}
-                  onClick={() => setChosen(chosen === h.id ? null : h.id)}
+                  onClick={() =>
+                    h.chance ? takeCrit(h.id) : setChosen(chosen === h.id ? null : h.id)
+                  }
                 >
-                  <span class="bf-hero-name">{h.name}</span>
+                  <span class="bf-hero-name">
+                    {h.name}
+                    {playing && h.chance && <b class="bf-now"> ¡Ahora!</b>}
+                  </span>
                   <span class="bf-hp" aria-hidden="true">
                     <i style={{ width: `${Math.round(h.hp * 100)}%` }} />
                   </span>
@@ -381,7 +426,7 @@ export function BossFight({ fight, onClose, onResult }: Props) {
         <p class="bossfight-hint">
           {chosen
             ? 'Toca un enemigo para que vaya a por él.'
-            : 'Arrastra a un héroe hasta un enemigo (o tócalo y luego al enemigo). Cuando el jefe avise, ¡cubríos!'}
+            : 'Arrastra a un héroe hasta un enemigo (o tócalo y luego al enemigo). Si sale un rombo sobre un héroe, tócalo a tiempo: golpe crítico. Cuando el jefe avise, ¡cubríos!'}
         </p>
       )}
       <footer class="bossfight-foot">

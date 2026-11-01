@@ -54,6 +54,31 @@ describe('incidentes', () => {
     expect(t.incidentNews?.[0]?.t).toContain(hero.name);
   });
 
+  it('si ya hay quien sepa arreglarlo en la sala, se pone a ello solo', () => {
+    const s = withIncident('pelea');
+    const hero = s.heroes.find((h) => h.status === 'ok')!;
+    s.heroes = s.heroes.map((h) => (h.id === hero.id ? { ...h, job: s.incidents![0]!.room } : h));
+    const news = stepIncidents(s, 10, 11);
+    expect(s.incidents).toHaveLength(1);
+    const later = stepIncidents(s, 11, 14);
+    expect(s.incidents).toEqual([]);
+    expect(later[0]?.t).toContain(hero.name);
+    expect(news).toEqual([]);
+  });
+
+  it('no salen donde ya hay quien lo arreglaría', () => {
+    const s = { ...newGame('atendida'), day: 3, clock: 0 };
+    const cocina = s.building.rooms.find((r) => r.type === 'cocina')!;
+    expect(s.workers.some((w) => w.room === cocina.id)).toBe(true);
+    for (let i = 0; i < 80; i++) {
+      const t = structuredClone(s);
+      t.rng = i * 7919;
+      stepIncidents(t, 0, INCIDENT_EVERY);
+      const inc = t.incidents?.[0];
+      if (inc?.kind === 'fuego') expect(inc.room).not.toBe(cocina.id);
+    }
+  });
+
   it('fuego: vale cualquiera de la casa', () => {
     const s = withIncident('fuego');
     const t = reduce(s, { type: 'incident', id: 'i1', act: { by: 'who', who: s.workers[0]!.id } });

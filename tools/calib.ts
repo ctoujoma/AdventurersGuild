@@ -35,6 +35,7 @@ function smart(setup: CombatSetup): boolean {
   while (!c.result) {
     const first = c.heroes().find((h) => h.hp > 0);
     if (first) c.order({ who: first.id, kind: 'cover' });
+    for (const u of c.heroes()) if (u.critOpen) c.order({ who: u.id, kind: 'crit' });
     for (const u of c.heroes()) {
       if (u.hp <= 0 || u.charge! > 0) continue;
       const hs = c.heroes().filter((h) => h.hp > 0);

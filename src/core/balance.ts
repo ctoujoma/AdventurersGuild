@@ -135,6 +135,8 @@ export const AWAY_MIN_SECONDS = 20;
  */
 export const INCIDENT_EVERY = 300;
 export const INCIDENT_FROM_DAY = 2;
+/** Si ya hay quien sepa arreglarlo en la sala, se pone a ello solo al cabo de esto (s). */
+export const INCIDENT_REACT = 3;
 export const INCIDENT_RANK_COST = 5;
 /** Rumores de la barra: cada cuánto (s de reloj, de media), cuánto se oyen y desde qué día. */
 export const RUMOR_EVERY = 420;

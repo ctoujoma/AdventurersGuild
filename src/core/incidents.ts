@@ -10,6 +10,7 @@ import {
   DUSK,
   INCIDENT_EVERY,
   INCIDENT_FROM_DAY,
+  INCIDENT_REACT,
   INCIDENT_RANK_COST,
   rankIndex,
 } from './balance';
@@ -36,9 +37,13 @@ export const incidentIn = (s: GameState, roomId: string) =>
 /** Salas donde puede pasar cada incidente ahora mismo (en uso). */
 function places(s: GameState, kind: IncidentKind): string[] {
   const types = INCIDENTS[kind].rooms;
-  return s.building.rooms
-    .filter((r) => types.includes(r.type) && active(r).level > 0)
-    .map((r) => r.id);
+  return (
+    s.building.rooms
+      .filter((r) => types.includes(r.type) && active(r).level > 0)
+      // Donde ya hay quien lo arreglaría solo, no pasa (ahí se nota tener la sala atendida).
+      .filter((r) => !presentFor(s, { kind, room: r.id }))
+      .map((r) => r.id)
+  );
 }
 
 /**
@@ -47,6 +52,15 @@ function places(s: GameState, kind: IncidentKind): string[] {
  */
 export function stepIncidents(s: GameState, from: number, to: number): IncidentNews[] {
   const news: IncidentNews[] = [];
+  // Quien ya está en la sala y sabe arreglarlo se pone a ello solo (sin que haya que arrastrarlo).
+  for (const inc of [...(s.incidents ?? [])]) {
+    if (to < inc.from + INCIDENT_REACT) continue;
+    const who = presentFor(s, inc);
+    if (who) {
+      done(s, inc);
+      news.push(win(s, inc, who));
+    }
+  }
   const list = s.incidents ?? [];
   for (const inc of list.filter((i) => i.until <= to)) news.push(lose(s, inc));
   s.incidents = list.filter((i) => i.until > to);
@@ -75,6 +89,19 @@ export function stepIncidents(s: GameState, from: number, to: number): IncidentN
   }
   s.rng = rng.save();
   return news;
+}
+
+/**
+ * Quien está ya en la sala del incidente y lo puede arreglar (su nombre), o null: un héroe en
+ * casa con su tarea en esa sala, o, si vale cualquiera, también el personal de la sala.
+ */
+export function presentFor(s: GameState, inc: Pick<Incident, 'kind' | 'room'>): string | null {
+  const how = INCIDENTS[inc.kind].how;
+  if (how !== 'heroe' && how !== 'alguien') return null;
+  const hero = s.heroes.find((h) => h.status === 'ok' && h.job === inc.room);
+  if (hero) return hero.name;
+  if (how === 'alguien') return s.workers.find((w) => w.room === inc.room)?.name ?? null;
+  return null;
 }
 
 /** Sale mal: se pierde lo que diga y se cuenta. */
