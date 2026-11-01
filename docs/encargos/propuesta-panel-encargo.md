@@ -59,3 +59,24 @@ Un componente propio (por ejemplo `QuestStrip`, en un canvas) que recibe esos da
    con un hueco para la tira.
 2. Agente de arte: `QuestStrip` y sus capturas, enchufado en ese hueco.
 3. Después: los momentos de decisión sobre la tira (fase 3).
+
+## Hecho (agente principal): los datos y la ficha
+
+- **Núcleo:** `core/journey.ts` (frases en `data/journey.ts`). `journeyNow(game, mission)` da
+  un `JourneyNow` con todo lo que pide la tira:
+  - `journey.seed`, `journey.type`, `journey.terrain`, `journey.place`, `journey.days`,
+    `journey.boss` (si es el paso de una historia con jefe);
+  - `t` (del total, 0–1), `leg` (`ida` | `llegada` | `faena` | `vuelta`) y `legT` (0–1 de esa
+    parte); las partes y sus trozos, en `LEGS`;
+  - `night` (si es de noche en la partida);
+  - `crew`: quién va, con el mismo aspecto que `BossFight.heroes`;
+  - `journey.events`: los sucesos con `leg`, `at` (punto de su parte), `t` (del total) y
+    `kind` (`camino` | `llegada` | `faena` | `jefe` | `noche` | `vuelta`); `past`, los ya
+    pasados. El texto, con `eventText(game, e)`.
+- Todo sale fijo de la semilla: abrir y cerrar da lo mismo. Son ambiente: el resultado
+  (heridos, botín) llega con el informe, así que la tira no debe enseñar heridos ni el final
+  de la pelea antes de tiempo.
+- **Ficha:** `ui/TripSheet.tsx`. Se abre al tocar un grupo en la lista bajo el mapa, con «Ver
+  el viaje» en su ficha del mapa y con el aviso «vuelve esta noche». **El hueco es `Strip`**
+  (`.trip-strip`, a todo el ancho y 72 px de alto): de momento pinta el fondo del terreno con
+  una marca donde va el grupo. Cámbialo por `<QuestStrip now={now} />`.

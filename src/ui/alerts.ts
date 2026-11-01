@@ -18,6 +18,7 @@ export type Go =
   | { room: string }
   | { crew: string | null }
   | { quest: string }
+  | { trip: string }
   | { panel: 'tablon' | 'fuera' | 'gremio' };
 
 export interface Notice {
@@ -124,7 +125,7 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
         text: `El grupo de «${m.quest.title}» vuelve esta noche.`,
         k: 'good',
         icon: 'banderin',
-        go: { panel: 'fuera' },
+        go: { trip: m.id },
       });
 
   // Obras recién acabadas.

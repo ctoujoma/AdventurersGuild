@@ -5855,3 +5855,105 @@ select.crew-free {
 .calma .notebook [data-tut='nota-boton'] {
   animation: none;
 }
+
+/* Ficha «Encargo en curso»: la tira arriba (hueco para QuestStrip), quién va, el viaje por
+   partes y lo que ha pasado. */
+.trip-strip {
+  position: relative;
+  margin: -4px -4px 8px;
+  height: 72px;
+  overflow: hidden;
+  background: var(--navy);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+.trip-strip-back {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  image-rendering: pixelated;
+}
+.trip-strip.is-night .trip-strip-back {
+  filter: brightness(0.45) saturate(0.7) hue-rotate(-15deg);
+}
+.trip-strip-party {
+  position: absolute;
+  bottom: 8px;
+  transform: translateX(-50%);
+  padding: 2px 3px;
+  color: var(--ink);
+  background: var(--lemon);
+  box-shadow: 0 0 0 2px var(--ink);
+  transition: left 0.6s linear;
+}
+.trip-crew {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+.trip-crew .pick {
+  width: 64px;
+}
+.trip-legs {
+  display: flex;
+  gap: 4px;
+  margin: 8px 0 10px;
+  padding: 0;
+  list-style: none;
+}
+.trip-leg {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.trip-leg-bar {
+  position: relative;
+  height: 8px;
+  background: var(--slate);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+.trip-leg-bar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--leaf);
+}
+.trip-leg.is-now .trip-leg-bar i {
+  background: var(--gold);
+}
+.trip-leg-name {
+  overflow: hidden;
+  font-size: 11px;
+  color: var(--text-soft);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.trip-leg.is-now .trip-leg-name {
+  font-weight: bold;
+  color: var(--ink);
+}
+.trip-log {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 4px 0;
+  padding: 0;
+  list-style: none;
+}
+.trip-ev {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.trip-ev .icon {
+  flex: none;
+  margin-top: 2px;
+}
+.trip-ev-jefe {
+  font-weight: bold;
+  color: var(--wine);
+}
+.trip-note {
+  margin-top: 8px;
+}
