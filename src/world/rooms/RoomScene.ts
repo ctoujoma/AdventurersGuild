@@ -686,6 +686,28 @@ export class RoomScene {
     };
   }
 
+  /** Dónde cae en la pantalla una cosa tocable (el tablón, la barra…), en píxeles de la página. */
+  actOnScreen(act: ActId): { x: number; y: number; w: number; h: number } | null {
+    const { camera } = this;
+    const v: View = { px: camera.px, py: camera.py, vw: camera.vw, vh: camera.vh };
+    const p = this.props.find((x) => x.act === act);
+    if (!p) return null;
+    const r = this.propRect(p, v);
+    const c = this.canvas.getBoundingClientRect();
+    return {
+      x: c.left + (r.x - camera.px) * camera.zoom,
+      y: c.top + (r.y - camera.py) * camera.zoom,
+      w: r.w * camera.zoom,
+      h: r.h * camera.zoom,
+    };
+  }
+
+  /** De cerca: un paso de zoom si la cámara está lejos, y centrada en la sala. */
+  closeUp(room: string, zoom = 3): void {
+    if (this.camera.zoom < zoom) this.resize(this.cssW, this.cssH, zoom);
+    this.focus(room);
+  }
+
   screenOf(wx: number, wy: number): Point {
     return this.camera.toScreen(wx, wy);
   }

@@ -14,6 +14,8 @@ export interface Focus {
   scene?: boolean;
   /** El botón de la nota es lo que hay que tocar. */
   note?: boolean;
+  /** Otros sitios que también valen y se resaltan a la vez (el tablón de la sala). */
+  also?: string[];
 }
 
 const T = (id: string) => `[data-tut="${id}"]`;
@@ -42,10 +44,12 @@ export function tutorialFocus(s: GameState, panel: string | null): Focus | null 
       return { targets: [T('nota-boton')], note: true, scene: true };
     case 'tablon':
     case 'mandar':
-      return { targets: send(tutorialQuest(s)) };
+      // El tablón también se abre tocándolo en la sala.
+      return { targets: send(tutorialQuest(s)), also: panel ? [] : ['cosa:tablon'] };
     case 'barra':
       return {
         targets: [`${T('contratar')}:not([disabled])`, T('seg-candidatos'), T('tab-heroes')],
+        also: panel ? [] : ['cosa:candidatos'],
       };
     case 'nombre': {
       // El último contratado (el que sigue en casa).
@@ -71,8 +75,9 @@ export function tutorialFocus(s: GameState, panel: string | null): Focus | null 
       return panel === 'gremio'
         ? { targets: ['.gremio-goals', T('nota-boton')], note: true }
         : { targets: [T('tab-gremio')] };
+    case 'esperar':
     case 'pago':
-      // Hasta el pago, libre: juntar el dinero con el tablón, la casa… y pasar las noches.
+      // Pasos libres: se mira y se toca lo que se quiera (el grupo vuelve, se junta el dinero).
       return null;
     default:
       return { targets: [T('nota-boton')], note: true };

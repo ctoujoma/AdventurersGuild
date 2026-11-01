@@ -5687,8 +5687,7 @@ select.crew-free {
 }
 .tut-block {
   position: fixed;
-  left: 0;
-  top: 0;
+  inset: 0;
   pointer-events: auto;
   background: rgba(24, 20, 37, 0);
   transition: background-color 0.8s ease;
@@ -5772,6 +5771,7 @@ select.crew-free {
 }
 .notebook-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
@@ -5786,6 +5786,62 @@ select.crew-free {
   color: var(--text-soft);
   text-decoration: underline;
   cursor: pointer;
+}
+
+/* La nota plegada de los pasos libres: arriba a la derecha (junto a los botones de la
+   cámara), con su resumen y el botón; al pasar el ratón o al tocarla se lee entera. */
+.notebook-mini {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 70px);
+  right: 56px;
+  z-index: 51;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  max-width: min(240px, calc(100vw - 72px));
+  padding: 6px 8px;
+  color: var(--ink);
+  background: var(--sand);
+  box-shadow:
+    0 0 0 2px var(--ink),
+    0 3px 0 2px rgba(24, 20, 37, 0.5);
+  transform: rotate(-0.6deg);
+  animation: notebook-mini-in 0.3s ease-out;
+}
+.notebook-mini.is-open {
+  max-width: min(340px, calc(100vw - 72px));
+}
+@keyframes notebook-mini-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) rotate(-0.6deg);
+  }
+}
+.notebook-mini-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  border: 0;
+  padding: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--t-m);
+  font-style: italic;
+  color: var(--rust);
+  text-align: right;
+  cursor: pointer;
+}
+.notebook-mini p {
+  margin: 0;
+  font-size: calc(var(--t-m) + 2px);
+  line-height: 24px;
+  font-style: italic;
+  text-align: left;
+}
+.notebook-mini .btn {
+  min-height: 36px;
 }
 
 /* La carta del tío: lo primero que se lee, sobre la taberna a oscuras. */

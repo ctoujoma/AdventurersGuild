@@ -4,6 +4,7 @@ import type { GameState } from '../core/model';
 import { INCIDENTS } from '../data/incidents';
 import { ATTR_NAMES, trainCap } from '../core/training';
 import { canAssign, hasPosts, isTrainRoom } from '../core/workers';
+import { tutorialVeto } from '../core/tutorial';
 import { TRAINS } from '../data/rooms';
 import { jobRoomName } from './roomName';
 
@@ -41,7 +42,7 @@ export function planTask(game: GameState, who: string, task: Task): Drop {
     const name = jobRoomName(game, room);
     if (!hasPosts(room.type)) return { ok: false, text: `En ${name} no hay trabajo.` };
     if (w.room === task) return { ok: false, text: `${w.name} ya trabaja aquí.` };
-    const why = canAssign(game, who, task);
+    const why = tutorialVeto(game, who, task) ?? canAssign(game, who, task);
     if (why) return { ok: false, text: why };
     return {
       ok: true,
