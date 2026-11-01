@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useState } from 'preact/hooks';
 import { audio, type Sfx } from '../audio/audio';
 import { planIssue, tryWorks, type Action } from '../core/game';
 import { laxly } from '../core/rooms';
+import { obrasOn, tutorialStep } from '../core/tutorial';
+import { obrasVeto } from '../core/tutorialObras';
 import type { GameState, Room } from '../core/model';
 import { ROOMS } from '../data/rooms';
 import { targetsFor, type Pick, type Target } from '../world/rooms/works';
@@ -109,7 +111,24 @@ export function useWorks({ game, dispatch, toast, focus, raise, price }: Deps): 
     [view, JSON.stringify(active)],
   );
 
+  // Tutorial de obras: el cuaderno sigue el borrador (y sabe si el modo obras está abierto).
+  const teaching = obrasOn(game);
+  useEffect(() => {
+    if (!teaching) return;
+    const was = game.tutorial?.plan;
+    if (!steps && was === null) return;
+    dispatch({ type: 'tutorialWorks', steps });
+  }, [teaching, JSON.stringify(steps)]);
+
   const work = (a: Action): boolean => {
+    // En el tutorial de obras, solo la obra del paso (y se dice por qué).
+    const st = teaching && !game.tutorial?.wait ? tutorialStep(game) : null;
+    const veto = st ? obrasVeto(game, st, a) : null;
+    if (veto) {
+      toast(veto);
+      audio.play('deselect');
+      return false;
+    }
     // Fuera del modo obras, una obra lo abre con ella ya apuntada.
     const list = [...(steps ?? []), a];
     const next = tryWorks(game, list);

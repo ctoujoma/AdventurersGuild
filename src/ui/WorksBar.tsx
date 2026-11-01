@@ -164,6 +164,7 @@ function Ribbon({ works: w, onMore }: Props) {
         </button>
         <button
           class="btn btn-gold ribbon-pay"
+          data-tut="pagar"
           disabled={!n || !!w.issue}
           title={w.issue ?? undefined}
           aria-label={

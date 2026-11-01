@@ -114,7 +114,7 @@ export function TutorialNote({
           </button>
         )}
         {action}
-        {step.id !== 'fin' && (
+        {step.id !== 'fin' && step.id !== 'o-fin' && (
           <button class="notebook-skip" onClick={onSkipAll}>
             Ya sé jugar
           </button>

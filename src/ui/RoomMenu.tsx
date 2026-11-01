@@ -78,7 +78,12 @@ export function RoomMenu({
           </span>
         </button>
         {!def.fixed && (
-          <button class="room-menu-btn" aria-label="Mover" onClick={() => onMove(roomId)}>
+          <button
+            class="room-menu-btn"
+            aria-label="Mover"
+            data-tut="mover"
+            onClick={() => onMove(roomId)}
+          >
             <Icon name="mover" size={20} />
             <span>Mover</span>
           </button>

@@ -1,3 +1,4 @@
+import type { Action } from '../core/game';
 import type { GameState } from '../core/model';
 import { tutorialHero, tutorialQuest, tutorialStep } from '../core/tutorial';
 
@@ -18,6 +19,17 @@ export interface Focus {
   also?: string[];
 }
 
+/** Lo del modo obras que necesita el tutorial de obras para señalar. */
+export interface WorksSpots {
+  planning: boolean;
+  /** El borrador (lo que se ve en la escena). */
+  view: GameState;
+  selected: string | null;
+  /** Sala que se está moviendo (sus sitios están marcados). */
+  moving: string | null;
+  targets: { id: string; action: Action; blocked?: string }[];
+}
+
 const T = (id: string) => `[data-tut="${id}"]`;
 const room = (s: GameState, type: string) => {
   const r = s.building.rooms.find((x) => x.type === type);
@@ -34,9 +46,70 @@ const send = (q: string | null) =>
 const heroCard = (id: string | null) =>
   id ? [T(`hero-${id}`), T('seg-todos'), T('tab-heroes')] : [T('tab-heroes')];
 
-export function tutorialFocus(s: GameState, panel: string | null): Focus | null {
+/** La casilla marcada en la escena que hace esta obra (`obra:…`), si está. */
+const spot = (w: WorksSpots | undefined, ok: (a: Action) => boolean) => {
+  const t = w?.targets.find((x) => !x.blocked && ok(x.action));
+  return t ? [t.id] : [];
+};
+
+/**
+ * Obras: elegir la sala (tocándola) y luego su casilla o su botón. Con otra cosa a medias
+ * (moviendo otra sala), la nota pide cerrarla.
+ */
+function obras(s: GameState, st: string, w: WorksSpots | undefined): Focus | null {
+  const v = w?.view ?? s;
+  const id = (type: string) => v.building.rooms.find((r) => r.type === type)?.id ?? '';
+  const plot = v.building.cols - 1;
+  const grow = (type: string): Focus => {
+    const r = id(type);
+    if (w?.selected === r)
+      return {
+        targets: spot(w, (a) => a.type === 'extend' && a.id === r && a.dir === 'right'),
+      };
+    return { targets: [`sala:${r}`, T('cerrar')] };
+  };
+  switch (st) {
+    case 'o-martillo':
+      return { targets: [T('martillo')] };
+    case 'o-solar':
+      return { targets: [...spot(w, (a) => a.type === 'buyPlot'), T('cerrar')] };
+    case 'o-mudar': {
+      const r = id('cocina');
+      if (w?.moving === r)
+        return {
+          targets: spot(w, (a) => a.type === 'move' && a.col === plot && a.floor === 0),
+          scene: true,
+        };
+      // Con la cocina elegida vale «Mover» o cogerla con el dedo.
+      if (w?.selected === r) return { targets: [T('mover')], also: [`sala:${r}`] };
+      return { targets: [`sala:${r}`, T('cerrar')] };
+    }
+    case 'o-salon':
+      return grow('salon');
+    case 'o-excavar':
+      return {
+        targets: [
+          ...spot(w, (a) => a.type === 'dig' && a.col === plot && a.floor < 0),
+          T('cerrar'),
+        ],
+      };
+    case 'o-camara':
+      return grow('tesoro');
+    case 'o-pagar':
+      return { targets: [T('pagar')] };
+    default:
+      return { targets: [T('nota-boton')], note: true };
+  }
+}
+
+export function tutorialFocus(
+  s: GameState,
+  panel: string | null,
+  works?: WorksSpots,
+): Focus | null {
   const st = tutorialStep(s);
   if (!st) return null;
+  if (st.id.startsWith('o-')) return obras(s, st.id, works);
   switch (st.id) {
     case 'casa':
     case 'dinero':

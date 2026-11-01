@@ -6,11 +6,12 @@
 import { INCIDENTS } from '../data/incidents';
 import { GEAR } from '../data/items';
 import { DAY_SECONDS, DUSK, SCHEDULE } from './balance';
-import type { DawnEvent, GameState, Hero, Quest } from './model';
+import type { Building, DawnEvent, GameState, Hero, Quest } from './model';
 import { SKILLS, skill } from './party';
 import type { Rng } from './rng';
 import { upgradeCostOf } from './rooms';
 import { workerTitle } from './workers';
+import { OBRAS, OBRAS_TIPS } from './tutorialObras';
 import type { Trade } from '../data/workers';
 
 /**
@@ -60,6 +61,10 @@ export interface Tutorial {
   named?: boolean;
   /** El paso en curso aún no ha empezado: es el respiro de antes (`pause`). */
   wait?: boolean;
+  /** Qué tutorial: el primero (sin nada) o el de las obras, al pagar la deuda. */
+  track?: 'obras';
+  /** Obras: el borrador del modo obras tal como queda (null: el modo obras está cerrado). */
+  plan?: Building | null;
 }
 
 const roomOf = (s: GameState, type: string) => s.building.rooms.find((r) => r.type === type);
@@ -341,9 +346,24 @@ export const STEPS: readonly TutorialStep[] = [
   },
 ];
 
+/** Los pasos del tutorial en marcha: el primero o el de las obras. */
+const stepsOf = (s: GameState): readonly TutorialStep[] =>
+  s.tutorial?.track === 'obras' ? OBRAS : STEPS;
+
 /** Si el tutorial está en marcha (y en qué paso). */
 export const tutorialStep = (s: GameState): TutorialStep | null =>
-  s.tutorial && !s.over ? (STEPS[s.tutorial.step] ?? null) : null;
+  s.tutorial && !s.over ? (stepsOf(s)[s.tutorial.step] ?? null) : null;
+/** El tutorial de obras está en marcha. */
+export const obrasOn = (s: GameState) => s.tutorial?.track === 'obras' && tutorialOn(s);
+
+/**
+ * Al pagar la deuda empieza el tutorial de obras, si se jugó con el primero (aunque se saltara)
+ * y no se han apagado los consejos. Va después de la carta de la apertura (con su respiro).
+ */
+export function startObras(s: GameState): void {
+  if (!s.tutorial || s.tutorial.track || s.tips?.includes('*')) return;
+  s.tutorial = { step: 0, track: 'obras', letter: true, wait: true };
+}
 export const tutorialOn = (s: GameState) => !!tutorialStep(s);
 /** El reloj está parado por el tutorial (en los pasos con `clock` corre, salvo en el respiro). */
 export const tutorialFrozen = (s: GameState) => {
@@ -368,6 +388,7 @@ export const TUTORIAL_TIPS = [
  * siguiente. Muta `s` (una copia). Devuelve lo que haya que avisar.
  */
 export function advanceTutorial(s: GameState, ack = false): string[] {
+  if (s.tutorial?.track === 'obras') return advanceObras(s, ack);
   const out: string[] = [];
   let first = true;
   for (let guard = 0; guard < STEPS.length + 1; guard++) {
@@ -394,6 +415,23 @@ export function advanceTutorial(s: GameState, ack = false): string[] {
   return out;
 }
 
+/**
+ * Obras: el paso en curso es el primero sin hacer (se vuelve atrás si se deshace una obra o se
+ * sale del modo obras sin pagar). El último solo se pasa con su botón.
+ */
+function advanceObras(s: GameState, ack: boolean): string[] {
+  const t = s.tutorial!;
+  if (t.wait || s.over) return [];
+  const last = OBRAS.length - 1;
+  if (ack && t.step === last) {
+    finishTutorial(s);
+    return [];
+  }
+  const i = OBRAS.findIndex((st, k) => k === last || !st.done?.(s));
+  if (i !== t.step) s.tutorial = { ...t, step: i };
+  return [];
+}
+
 /** Segundos de respiro que quedan antes del paso en curso (0: ya ha empezado). */
 export const tutorialWait = (s: GameState): number =>
   s.tutorial?.wait ? (tutorialStep(s)?.pause ?? 0) : 0;
@@ -408,8 +446,9 @@ export function startStep(s: GameState): string[] {
 
 /** Acaba el tutorial (o se salta): fuera el paso y las notas del tío que ya ha contado. */
 export function finishTutorial(s: GameState): void {
-  s.tutorial = { ...(s.tutorial ?? { step: 0 }), step: STEPS.length };
-  s.tips = [...new Set([...(s.tips ?? []), ...TUTORIAL_TIPS])];
+  const obras = s.tutorial?.track === 'obras';
+  s.tutorial = { ...(s.tutorial ?? { step: 0 }), step: stepsOf(s).length, plan: undefined };
+  s.tips = [...new Set([...(s.tips ?? []), ...(obras ? OBRAS_TIPS : TUTORIAL_TIPS)])];
 }
 
 /** El encargo del primer día, a la medida de los dos héroes: corto, sin peligro y con equipo. */

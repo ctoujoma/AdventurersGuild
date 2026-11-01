@@ -81,6 +81,7 @@ import {
   advanceTutorial,
   easyQuest,
   finishTutorial,
+  startObras,
   skipTime,
   startStep,
   type TutorialSkip,
@@ -198,6 +199,8 @@ export type Action =
   | { type: 'rumor' }
   /** Guarda (o, con null, olvida) el borrador de obras para luego. */
   | { type: 'worksDraft'; steps: Action[] | null }
+  /** Tutorial de obras: el borrador del modo obras (null al cerrarlo). */
+  | { type: 'tutorialWorks'; steps: Action[] | null }
   /** Un grupo ante su jefe: se resuelve ya (la interfaz enseña la pelea si se quiere ver). */
   | { type: 'boss'; id: string; orders?: Order[] }
   | { type: 'renameHero'; id: string; name: string }
@@ -789,6 +792,12 @@ function reduceAction(state: GameState, action: Action): GameState {
       s.incidentNews = news.map((n) => ({ t: n.t, k: n.k ?? 'good' }));
       return s;
     }
+    case 'tutorialWorks': {
+      if (state.tutorial?.track !== 'obras' || !tutorialOn(state)) return state;
+      const d = action.steps ? tryWorks(state, action.steps) : null;
+      const plan = d && !('error' in d) ? d.building : action.steps ? state.building : null;
+      return { ...state, tutorial: { ...state.tutorial, plan } };
+    }
     case 'worksDraft': {
       if (!action.steps?.length) {
         if (!state.worksDraft) return state;
@@ -1314,6 +1323,8 @@ export function endDay(state: GameState, away = false): GameState {
     if (s.paid >= DEBT) {
       s.mode = 'libre';
       s.opening = { ...arrival(s, alive), seen: false };
+      // Tras la carta de la apertura, el cuaderno enseña a hacer obra (`core/tutorialObras.ts`).
+      startObras(s);
       // Con las obras llega también gente a pedir trabajo (y el dormitorio del servicio).
       for (let i = 0; i < 2; i++) addSeeker(s, rng, events);
       events.push({

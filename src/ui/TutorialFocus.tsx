@@ -36,8 +36,11 @@ function onTop(el: HTMLElement, b: DOMRect): boolean {
   return !hit || el.contains(hit) || hit.contains(el) || !!hit.closest('.notebook, .notebook-mini');
 }
 
-/** El botón de cerrar de lo que esté abierto encima de todo. */
-const closer = () => locate([CLOSE], null);
+/**
+ * El botón de cerrar de lo que esté abierto encima de todo. El menú de obras de una sala no
+ * cuenta: no tapa nada (tocar otra sala lo cambia).
+ */
+const closer = () => locate([`${CLOSE}:not(.room-menu *)`], null);
 
 /**
  * Busca el primer sitio de la lista que se vea en pantalla y se pueda tocar (lo tapado no
@@ -60,6 +63,13 @@ function locate(targets: string[], scene: GameScene | null): Spot | null {
       if (r && r.w > 0) return r;
       continue;
     }
+    if (t.startsWith('obra:')) {
+      // Una casilla de obra marcada en la escena (comprar el solar, el «+» de ampliar…).
+      const r = scene?.targetOnScreen(t);
+      if (r && r.w > 0 && r.x + r.w > 0 && r.x < innerWidth && r.y + r.h > 0 && r.y < innerHeight)
+        return r;
+      continue;
+    }
     if (t.startsWith('cosa:')) {
       const r = scene?.actOnScreen(t.slice(5) as ActId);
       if (r && r.w > 0 && r.x + r.w > 0 && r.x < innerWidth && r.y + r.h > 0 && r.y < innerHeight)
@@ -72,7 +82,7 @@ function locate(targets: string[], scene: GameScene | null): Spot | null {
     for (const el of els.reverse()) {
       const b = el.getBoundingClientRect();
       if (b.width <= 0 || b.height <= 0 || !onTop(el, b)) continue;
-      return { x: b.left, y: b.top, w: b.width, h: b.height, close: t === CLOSE };
+      return { x: b.left, y: b.top, w: b.width, h: b.height, close: t.startsWith(CLOSE) };
     }
   }
   return null;
