@@ -4,7 +4,7 @@ import { bufferCanvas } from '../art/canvas';
 import { generateLook } from '../art/heroes/look';
 import { audio } from '../audio/audio';
 import type { BossFight as Fight } from '../core/model';
-import { BOSSES } from '../data/bosses';
+import { BOSSES, type BossKind } from '../data/bosses';
 import { PLACE_INFO } from '../data/places';
 import { Battle } from '../world/battle';
 import { lightSprite } from '../world/lighting';
@@ -205,6 +205,47 @@ export function BossCall({ fight, who, live, onWatch, onLater }: CallProps) {
             <button class="btn btn-wood" onClick={onLater}>
               <span>Ahora no</span>
               <small>Queda en el informe para verla luego</small>
+            </button>
+          </div>
+        </div>
+      </article>
+    </div>
+  );
+}
+
+interface WaitProps {
+  boss: BossKind;
+  place: string;
+  who: string;
+  many: boolean;
+  onWatch: () => void;
+  onAuto: () => void;
+  onLater: () => void;
+}
+
+/** Con el juego abierto: un grupo ha llegado ante su jefe y espera a que el jugador diga. */
+export function BossWait({ boss, place, who, many, onWatch, onAuto, onLater }: WaitProps) {
+  const b = BOSSES[boss];
+  return (
+    <div class="card-backdrop">
+      <article class="herocard eventcard bosscall" role="dialog" aria-label="Un grupo ante su jefe">
+        <div class="qs-scroll">
+          <span class="eyebrow">Ahora mismo, en {place}…</span>
+          <p class="event-text">
+            {who} {many ? 'han dado' : 'ha dado'} con {b.short}. Esperan a que digas.
+          </p>
+          <div class="event-options">
+            <button class="btn btn-gold" onClick={onWatch}>
+              <span>Ver la pelea</span>
+              <small>Desde el principio</small>
+            </button>
+            <button class="btn btn-wood" onClick={onAuto}>
+              <span>Que se las apañen</span>
+              <small>Se resuelve sola y queda en el informe</small>
+            </button>
+            <button class="btn btn-wood" onClick={onLater}>
+              <span>Luego</span>
+              <small>Esperan hasta la noche; si no, se las apañan</small>
             </button>
           </div>
         </div>

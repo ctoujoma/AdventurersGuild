@@ -126,7 +126,8 @@ import {
   type Plan,
 } from './rooms';
 import { Rng } from './rng';
-import { RESOLVE_T } from './journey';
+import { BOSSES } from '../data/bosses';
+import { BOSS_T, RESOLVE_T } from './journey';
 import { listNames, plural } from './text';
 import { stepLarder } from './larder';
 import { stepTraining } from './training';
@@ -191,6 +192,8 @@ export type Action =
   /** El reloj del día avanza hasta `to` segundos (y la caja entrega lo que toque). */
   | { type: 'tick'; to: number }
   | { type: 'rumor' }
+  /** Un grupo ante su jefe: se resuelve ya (la interfaz enseña la pelea si se quiere ver). */
+  | { type: 'boss'; id: string }
   | { type: 'renameHero'; id: string; name: string }
   | { type: 'tutorial'; op: 'carta' | 'ok' | 'saltar' | 'vuelta' | 'pago' }
   /** Saltar al anochecer. */
@@ -749,6 +752,24 @@ function reduceAction(state: GameState, action: Action): GameState {
       // Saltar el tiempo: hasta que vuelva el grupo, o hasta el pago.
       return skipTime(s, action.op, (x) => endDay(x), salaries);
     }
+    case 'boss': {
+      // Ante el jefe: el jugador dice (verla o que se las apañen); se resuelve ya.
+      const m0 = state.missions.find((m) => m.id === action.id);
+      if (!m0?.waiting) return state;
+      const s = structuredClone(state);
+      const rng = new Rng(s.rng);
+      const news: DawnEvent[] = [];
+      settleMission(
+        s,
+        s.missions.find((m) => m.id === action.id)!,
+        rng,
+        news,
+      );
+      s.rng = rng.save();
+      s.bossWait = null;
+      s.incidentNews = news.map((n) => ({ t: n.t, k: n.k ?? 'good' }));
+      return s;
+    }
     case 'rumor': {
       if (!state.rumor) return state;
       const s = structuredClone(state);
@@ -780,7 +801,8 @@ function reduceAction(state: GameState, action: Action): GameState {
  */
 function settleDue(m: Mission, part: number): boolean {
   const days = Math.max(1, m.quest.days);
-  return (days - m.daysLeft + part) / days >= RESOLVE_T - 1e-9;
+  const at = bossOf(m.quest) ? BOSS_T : RESOLVE_T;
+  return (days - m.daysLeft + part) / days >= at - 1e-9;
 }
 
 /**
@@ -812,6 +834,7 @@ function settleMission(s: GameState, m: Mission, rng: Rng, events: DawnEvent[]):
     h.status = 'mision';
     h.days = m.daysLeft;
   }
+  m.waiting = undefined;
   m.done = { report: r.id, outcome: r.outcome, fates };
   const bad = r.outcome === 'Fracaso' || r.outcome === 'Desastre';
   events.push({
@@ -821,18 +844,30 @@ function settleMission(s: GameState, m: Mission, rng: Rng, events: DawnEvent[]):
   return r;
 }
 
-/** Con el juego abierto: resuelve los grupos que acaban de terminar lo suyo. Copia si hace falta. */
+/**
+ * Con el juego abierto: resuelve los grupos que acaban de terminar lo suyo; los que llegan ante
+ * su jefe se paran a esperar al jugador (si no dice nada, se resuelve en la noche). Copia si
+ * hace falta.
+ */
 export function tickMissions(s: GameState): { next: GameState; news: DawnEvent[] } {
   const part = Math.min(1, (s.clock ?? 0) / DAY_SECONDS);
-  if (!s.missions.some((m) => !m.done && settleDue(m, part))) return { next: s, news: [] };
+  if (!s.missions.some((m) => !m.done && !m.waiting && settleDue(m, part)))
+    return { next: s, news: [] };
   const next = structuredClone(s);
   const rng = new Rng(next.rng);
   const news: DawnEvent[] = [];
-  for (const m of next.missions)
-    if (!m.done && settleDue(m, part)) {
-      const r = settleMission(next, m, rng, news);
-      if (r.fight) next.liveFight = r.id;
-    }
+  for (const m of next.missions) {
+    if (m.done || m.waiting || !settleDue(m, part)) continue;
+    const boss = bossOf(m.quest);
+    if (boss) {
+      m.waiting = true;
+      next.bossWait = m.id;
+      news.push({
+        t: `El grupo de «${m.quest.title}» ha dado con ${BOSSES[boss].short}: espera a que digas.`,
+        k: 'warn',
+      });
+    } else settleMission(next, m, rng, news);
+  }
   next.rng = rng.save();
   return { next, news };
 }
@@ -993,7 +1028,7 @@ export function endDay(state: GameState, away = false): GameState {
     }
   }
   s.lastFight = null;
-  s.liveFight = null;
+  s.bossWait = null;
   // Lo que acabó lo suyo hoy (con el juego cerrado no pasa por el reloj) se resuelve ahora.
   for (const m of s.missions)
     if (!m.done && settleDue(m, 0)) {

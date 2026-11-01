@@ -167,6 +167,7 @@ export function HeroCard({
               {naming ? (
                 <form
                   class="rename"
+                  data-tut="nombre-form"
                   onSubmit={(e) => {
                     e.preventDefault();
                     const v = (e.currentTarget.elements.namedItem('name') as HTMLInputElement)

@@ -82,6 +82,20 @@ export const LETTER = {
 
 export const STEPS: readonly TutorialStep[] = [
   {
+    id: 'casa',
+    text: () =>
+      'Esto es El Jarro Partido, de arriba abajo. Cada hueco es una sala y cada sala hace lo suyo: en el salón se sirve, la cocina saca las raciones, la bodega da la cerveza y los héroes duermen en los dormitorios. Arrastra para mirarla entera.',
+    focus: roomId('salon'),
+    button: 'seguir',
+  },
+  {
+    id: 'dinero',
+    text: () =>
+      'El dinero entra por dos puertas. Una es la caja del salón: lo que gastan los clientes va llegando durante el día, y más si hay raciones y cerveza. La otra son los encargos del tablón, que pagan mucho más pero piden héroes y días fuera. Con las dos se paga a Merlo.',
+    focus: roomId('salon'),
+    button: 'seguir',
+  },
+  {
     id: 'tablon',
     text: (s) => {
       const q = s.quests.find((x) => x.id === s.tutorial?.quest);

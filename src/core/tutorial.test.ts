@@ -11,7 +11,9 @@ describe('tutorial guiado', () => {
   it('solo con la opción, y con un primer encargo fácil para los dos héroes', () => {
     expect(tutorialOn(newGame('sin'))).toBe(false);
     const s = newGame('con', { tutorial: true });
-    expect(at(s)).toBe('tablon');
+    expect(at(s)).toBe('casa');
+    expect(at(ok(s))).toBe('dinero');
+    expect(at(ok(ok(s)))).toBe('tablon');
     const q = s.quests.find((x) => x.id === s.tutorial!.quest)!;
     expect(q).toMatchObject({ days: 1, danger: 0, slots: 2 });
     expect(q.item).toBeDefined();
@@ -29,7 +31,7 @@ describe('tutorial guiado', () => {
   });
 
   it('las notas que piden algo no se pasan con el botón', () => {
-    const s = newGame('boton', { tutorial: true });
+    const s = ok(ok(newGame('boton', { tutorial: true })));
     expect(at(s)).toBe('tablon');
     expect(ok(s)).toBe(s);
   });
@@ -39,6 +41,9 @@ describe('tutorial guiado', () => {
     expect(s.dawn).toEqual([]);
     s = reduce(s, { type: 'tutorial', op: 'carta' });
     expect(s.tutorial!.letter).toBe(true);
+    // Antes del tablón, la casa y de dónde sale el dinero.
+    expect(at(s)).toBe('casa');
+    s = ok(ok(s));
     expect(at(s)).toBe('tablon');
     const heroes = s.heroes.map((h) => h.id);
     s = reduce(s, { type: 'send', questId: s.tutorial!.quest!, heroIds: heroes });

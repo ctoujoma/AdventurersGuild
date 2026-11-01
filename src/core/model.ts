@@ -173,6 +173,8 @@ export interface Mission {
    * Ya se sabe cómo ha ido (se resuelve al acabar lo suyo, no al volver): el informe ya ha
    * llegado y vuelven con esto. `fates`: cómo vuelve cada uno (los muertos y perdidos, no).
    */
+  /** Ante el jefe, esperando a que el jugador diga (ver la pelea o que se las apañen). */
+  waiting?: boolean;
   done?: {
     report: string;
     outcome: Outcome;
@@ -558,8 +560,8 @@ export interface GameState {
   lastRaid?: RaidResult | null;
   /** Informe de la pelea contra un jefe de esta noche (para el aviso del amanecer). */
   lastFight?: string | null;
-  /** Pelea contra un jefe que acaba de pasar con el juego abierto (la interfaz avisa). */
-  liveFight?: string | null;
+  /** Grupo que acaba de llegar ante su jefe con el juego abierto (la interfaz avisa). */
+  bossWait?: string | null;
   /** Incidentes en marcha (uno a la vez). */
   incidents?: Incident[];
   /** Tutorial guiado (fase 2a): sin él, no hay (partidas viejas o saltado). */

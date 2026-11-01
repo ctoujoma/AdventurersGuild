@@ -5690,10 +5690,21 @@ select.crew-free {
   left: 0;
   top: 0;
   pointer-events: auto;
+  background: rgba(24, 20, 37, 0);
+  transition: background-color 0.8s ease;
+}
+.tut-focus.is-dim .tut-block {
   background: rgba(24, 20, 37, 0.55);
 }
-.tut-scene .tut-block {
+.tut-focus.is-dim.tut-scene .tut-block {
   background: rgba(24, 20, 37, 0.35);
+}
+.tut-focus .tut-ring {
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.tut-focus.is-dim .tut-ring {
+  opacity: 1;
 }
 .tut-ring {
   position: fixed;
@@ -5729,14 +5740,14 @@ select.crew-free {
   color: var(--ink);
   background:
     linear-gradient(90deg, transparent 20px, rgba(162, 38, 51, 0.35) 20px 21px, transparent 21px),
-    repeating-linear-gradient(transparent 0 21px, rgba(58, 68, 102, 0.18) 21px 22px), var(--sand);
+    repeating-linear-gradient(transparent 0 25px, rgba(58, 68, 102, 0.18) 25px 26px), var(--sand);
   box-shadow:
     0 0 0 2px var(--bark),
     0 6px 0 2px rgba(24, 20, 37, 0.55);
   animation: notebook-in 0.25s steps(4);
 }
 .notebook.up {
-  top: calc(env(safe-area-inset-top, 0px) + 64px);
+  top: calc(env(safe-area-inset-top, 0px) + 104px);
   bottom: auto;
 }
 @keyframes notebook-in {
@@ -5755,8 +5766,8 @@ select.crew-free {
 }
 .notebook p {
   margin: 4px 0 6px;
-  font-size: var(--t-m);
-  line-height: 22px;
+  font-size: calc(var(--t-m) + 3px);
+  line-height: 26px;
   font-style: italic;
 }
 .notebook-actions {
@@ -5956,4 +5967,19 @@ select.crew-free {
 }
 .trip-note {
   margin-top: 8px;
+}
+
+.trip-boss {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0;
+  padding: 8px;
+  background: rgba(162, 38, 51, 0.12);
+  box-shadow: 0 0 0 2px var(--wine);
+}
+.trip-boss-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }

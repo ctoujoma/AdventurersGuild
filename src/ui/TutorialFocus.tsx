@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import type { Focus } from './tutorialFocus';
 import type { GameScene } from './SceneView';
 
@@ -11,6 +11,8 @@ interface Props {
 
 type R = { x: number; y: number; w: number; h: number };
 const PAD = 6;
+/** Lo que tarda en oscurecerse al cambiar de paso (ms). */
+const DIM_DELAY = 2000;
 
 /** Busca el primer sitio de la lista que se vea en pantalla. */
 function locate(targets: string[], scene: GameScene | null): R | null {
@@ -52,6 +54,14 @@ export function TutorialFocus({ focus, scene, onSpot }: Props) {
   const right = useRef<HTMLDivElement>(null);
   const ring = useRef<HTMLDivElement>(null);
   const key = focus.targets.join('|') + (focus.scene ? '+escena' : '');
+  // Al cambiar de paso, primero se ve la pantalla tal cual; el oscurecido y el marco entran
+  // al cabo de un momento (lo de fuera ya está bloqueado desde el principio).
+  const [dim, setDim] = useState(false);
+  useEffect(() => {
+    setDim(false);
+    const t = setTimeout(() => setDim(true), DIM_DELAY);
+    return () => clearTimeout(t);
+  }, [key]);
   useEffect(() => {
     let raf = 0;
     let lastY: number | null | undefined;
@@ -100,7 +110,10 @@ export function TutorialFocus({ focus, scene, onSpot }: Props) {
     return () => cancelAnimationFrame(raf);
   }, [key]);
   return (
-    <div class={`tut-focus ${focus.scene ? 'tut-scene' : ''}`} aria-hidden="true">
+    <div
+      class={`tut-focus ${focus.scene ? 'tut-scene' : ''} ${dim ? 'is-dim' : ''}`}
+      aria-hidden="true"
+    >
       <div ref={top} class="tut-block" />
       <div ref={bottom} class="tut-block" />
       <div ref={left} class="tut-block" />

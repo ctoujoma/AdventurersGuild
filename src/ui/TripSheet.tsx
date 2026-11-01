@@ -17,6 +17,8 @@ interface Props {
   onHero: (id: string) => void;
   /** Abre el informe, cuando ya ha llegado. */
   onReport: (id: string) => void;
+  /** Ante el jefe: verla (`true`) o que se las apañen. */
+  onBoss: (watch: boolean) => void;
 }
 
 const KIND_ICON: Record<JourneyNow['past'][number]['kind'], IconName> = {
@@ -47,7 +49,7 @@ function Strip({ now }: { now: JourneyNow }) {
 }
 
 /** Ficha «Encargo en curso»: la tira, el encargo, quién va, el viaje por partes y su diario. */
-export function TripSheet({ game, mission: m, onClose, onHero, onReport }: Props) {
+export function TripSheet({ game, mission: m, onClose, onHero, onReport, onBoss }: Props) {
   const now = journeyNow(game, m);
   const q = m.quest;
   const heroes = m.heroIds.map((id) => game.heroes.find((h) => h.id === id)).filter((h) => !!h);
@@ -139,6 +141,20 @@ export function TripSheet({ game, mission: m, onClose, onHero, onReport }: Props
             </ul>
           ) : (
             <p class="tiny">Acaban de salir por la puerta.</p>
+          )}
+          {m.waiting && (
+            <div class="trip-boss" role="status">
+              <b>Están ante el jefe y esperan a que digas.</b>
+              <div class="trip-boss-actions">
+                <button class="btn btn-gold" onClick={() => onBoss(true)}>
+                  Ver la pelea
+                </button>
+                <button class="btn btn-wood" onClick={() => onBoss(false)}>
+                  Que se las apañen
+                </button>
+              </div>
+              <span class="tiny">Si no dices nada, se las apañan al caer la noche.</span>
+            </div>
           )}
           {m.done ? (
             <button class="btn btn-wood trip-note" onClick={() => onReport(m.done!.report)}>

@@ -36,6 +36,10 @@ export function tutorialFocus(s: GameState, panel: string | null): Focus | null 
   const st = tutorialStep(s);
   if (!st) return null;
   switch (st.id) {
+    case 'casa':
+    case 'dinero':
+      // Se mira la casa (y se puede arrastrar); se sigue con el botón de la nota.
+      return { targets: [T('nota-boton')], note: true, scene: true };
     case 'tablon':
     case 'mandar':
       return { targets: send(tutorialQuest(s)) };
@@ -46,7 +50,8 @@ export function tutorialFocus(s: GameState, panel: string | null): Focus | null 
     case 'nombre': {
       // El último contratado (el que sigue en casa).
       const h = [...s.heroes].reverse().find((x) => x.status === 'ok')?.id ?? null;
-      return { targets: [T('nombre-ok'), T('nombre'), ...heroCard(h)] };
+      // El campo y su botón juntos: hay que poder escribir.
+      return { targets: [T('nombre-form'), T('nombre'), ...heroCard(h)] };
     }
     case 'enfermeria':
       return {

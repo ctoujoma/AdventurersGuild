@@ -23,7 +23,7 @@ import {
 import { PLACE_INFO, type Terrain } from '../data/places';
 import { DAY_SECONDS, DUSK } from './balance';
 import { bossOf, fightRoster } from './chains';
-import type { BossFight, GameState, Mission, QuestType } from './model';
+import type { BossFight, GameState, Mission, Outcome, QuestType } from './model';
 import { Rng } from './rng';
 
 export type { FoeKind, LegId };
@@ -68,8 +68,12 @@ export interface JourneyNow {
   /** De la parte de ahora (0–1). */
   legT: number;
   night: boolean;
-  /** Si ahora están peleando (la tira pone a los enemigos y las poses de pelea). */
+  /** Si ahora están peleando (la tira pone a los enemigos y las poses de pelea; con jefe, no). */
   fighting: boolean;
+  /** Parados ante el jefe, esperando a que el jugador diga. */
+  waiting: boolean;
+  /** Ya resuelto: cómo fue (la vuelta lo enseña; con jefe, caído o en retirada). */
+  outcome?: Outcome;
   /** Quién va, con su aspecto (como en la pelea contra un jefe) y su estado. */
   crew: BossFight['heroes'];
   /** Lo que ya ha pasado, por orden. */
@@ -81,6 +85,9 @@ export interface JourneyNow {
  * el informe; la vuelta ya enseña cómo viene cada uno.
  */
 export const RESOLVE_T = LEGS[2].from + (LEGS[2].to - LEGS[2].from) * 0.95;
+
+/** Cuándo llega un grupo ante su jefe (del total): ahí se para hasta que el jugador diga. */
+export const BOSS_T = LEGS[2].from + (LEGS[2].to - LEGS[2].from) * 0.6;
 
 const legOf = (t: number) => LEGS.find((l) => t < l.to) ?? LEGS[LEGS.length - 1]!;
 const legAt = (leg: LegId, at: number) => {
@@ -167,7 +174,8 @@ export function journeyT(s: GameState, m: Mission): number {
 /** El viaje de un grupo en este momento de la partida. */
 export function journeyNow(s: GameState, m: Mission): JourneyNow {
   const j = journey(m);
-  const t = journeyT(s, m);
+  // Ante el jefe, el viaje se para hasta que se resuelva.
+  const t = m.waiting ? Math.min(BOSS_T, journeyT(s, m)) : journeyT(s, m);
   const l = legOf(t);
   const heroes = m.heroIds.map((id) => s.heroes.find((h) => h.id === id)).filter((h) => !!h);
   const crew = fightRoster(heroes);
@@ -192,7 +200,9 @@ export function journeyNow(s: GameState, m: Mission): JourneyNow {
     leg: l.id,
     legT: Math.max(0, Math.min(1, (t - l.from) / (l.to - l.from))),
     night: (s.clock ?? 0) >= DUSK * DAY_SECONDS,
-    fighting: !!j.fight && t >= j.fight.from && t < j.fight.to,
+    fighting: !m.waiting && !j.boss && !!j.fight && t >= j.fight.from && t < j.fight.to,
+    waiting: !!m.waiting,
+    outcome: m.done?.outcome,
     crew,
     past,
   };
