@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'preact/hooks';
 import type { JourneyNow } from '../core/journey';
-import { STRIP_H, TripStrip } from '../world/tripStrip';
+import { STRIP_H, TripStrip, homeFrom } from '../world/tripStrip';
 
 /** Ancho de la tira en píxeles del dibujo, más o menos: la escala sale de cuánto cabe. */
 const AIM_W = 200;
@@ -58,8 +58,10 @@ export function QuestStrip({ now }: { now: JourneyNow }) {
     ? 'El grupo, parado ante el jefe'
     : now.fighting
       ? 'El grupo, peleando'
-      : now.leg === 'vuelta'
-        ? 'El grupo, de vuelta a casa'
+      : now.t >= homeFrom(now).back
+        ? homeFrom(now).fast
+          ? 'El grupo, en retirada'
+          : 'El grupo, de vuelta a casa'
         : now.leg === 'ida'
           ? 'El grupo, de camino'
           : 'El grupo, en el sitio';

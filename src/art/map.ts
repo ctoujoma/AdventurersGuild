@@ -1,7 +1,7 @@
 import { Rng } from '../core/rng';
 import { MAP_H, MAP_W, PLACE_INFO, TAVERN } from '../data/places';
 import { P } from './palette';
-import { PixelBuffer, bayer } from './pixel';
+import { PixelBuffer, bayer, type Color } from './pixel';
 
 /**
  * El mapa de la comarca en pixel art, como un pergamino de cartógrafo: costa con líneas
@@ -37,7 +37,8 @@ const BROOK: readonly Pt[] = [
   [250, 54],
   [234, 90],
   [220, 112],
-  [200, 116],
+  [204, 115],
+  [194, 117],
 ];
 
 /** Caminos reales desde la taberna (los senderos a cada lugar se trazan aparte). */
@@ -146,6 +147,81 @@ function house(b: PixelBuffer, x: number, y: number, roof: string): void {
   b.set(x + 2, y - 2, P.rust);
 }
 
+function deadTree(b: PixelBuffer, x: number, y: number): void {
+  b.vline(x, y - 4, 5, P.bark);
+  b.set(x - 1, y - 3, P.bark);
+  b.set(x + 1, y - 2, P.bark);
+  b.set(x - 2, y - 4, P.umber);
+  b.set(x + 2, y - 3, P.umber);
+}
+
+/** Un dibujito de 7 × 7 como mucho, de abajo arriba, con su paleta. */
+function icon(b: PixelBuffer, x: number, y: number, rows: string[], pal: Record<string, Color>) {
+  const h = rows.length;
+  rows.forEach((row, j) => {
+    const w = row.length;
+    for (let i = 0; i < w; i++) {
+      const c = pal[row[i]!];
+      if (c) b.set(x - (w >> 1) + i, y - h + 1 + j, c);
+    }
+  });
+}
+
+const STONE = { k: P.bark, s: P.fog, S: P.steel, d: P.black, w: P.mist };
+
+/**
+ * El icono de cada lugar, encima de su punto (el marcador de la interfaz queda al pie): la
+ * torre, la ermita o el cementerio, la boca de la cueva o de la mina, el molino, el granero…
+ */
+function placeIcon(b: PixelBuffer, name: string, x: number, y: number, t: string): void {
+  const at = y - 3;
+  if (/torre/.test(name))
+    icon(b, x, at, ['.s.s.', '.sSs.', '.sS..', '.sSs.', '.sdS.', 'kkkkk'], STONE);
+  else if (/ermita|priorato|monasterio/.test(name))
+    icon(b, x, at, ['...w...', '..www..', '.sssss.', 'kSSSSSk', '.sSdSs.', '.sSdSs.'], {
+      ...STONE,
+      k: P.rust,
+      S: P.brick,
+    });
+  else if (/cementerio|catacumbas|cripta/.test(name))
+    icon(b, x, at, ['.w...w.', 'www.www', '.s...s.', '.s.w.s.', '...s...', 'kkkkkkk'], STONE);
+  else if (/mina/.test(name))
+    icon(b, x, at, ['ooooooo', 'o.ddd.o', 'o.ddd.o', 'o.ddd.o', 'kkkkkkk'], { ...STONE, o: P.oak });
+  else if (/cueva|desfiladero|paso|riscos|loma|Corona|refugio/.test(name))
+    icon(b, x, at, ['..sss..', '.ssSSs.', 'ssdddSs', 'sdddddS', 'kkkkkkk'], STONE);
+  else if (/molino/.test(name))
+    icon(b, x, at, ['w.w.w', '.www.', 'wwSww', '.sSs.', '.sds.'], {
+      ...STONE,
+      w: P.sand,
+      S: P.oak,
+    });
+  else if (/puente/.test(name))
+    icon(b, x, at, ['kkkkk', 'k...k', 'k.r.k', 'k...k'], { k: P.bark, r: P.tan });
+  else if (/granero/.test(name))
+    icon(b, x, at, ['..rrr..', '.rRRRr.', 'rRRRRRr', '.RwdwR.', '.RRdRR.'], {
+      r: P.wine,
+      R: P.brick,
+      w: P.sand,
+      d: P.bark,
+    });
+  else if (/campamento/.test(name))
+    icon(b, x, at, ['...w...', '..wsw..', '.wsdsw.', 'wssdssw'], {
+      w: P.sand,
+      s: P.tan,
+      d: P.bark,
+    });
+  else if (/salinas/.test(name))
+    icon(b, x, at, ['.w..w.', 'www.ww', 'kkkkkk'], { w: P.white, k: P.fog });
+  else if (/casa|posada|mesón/.test(name))
+    icon(b, x, at, ['..rr..', '.rrrr.', 'rrrrrr', '.sdss.', '.sdss.'], {
+      r: P.brick,
+      s: P.sand,
+      d: P.bark,
+    });
+  else if (t === 'pantano')
+    icon(b, x, at, ['.g.g.', '.g.gg', 'g.g.g', 'ddddd'], { g: P.leaf, d: P.deep });
+}
+
 /** Rosa de los vientos de ocho puntas con la N. */
 function compass(b: PixelBuffer, cx: number, cy: number, r: number): void {
   for (let a = 0; a < 8; a++) {
@@ -215,7 +291,7 @@ export function mapBuffer(): PixelBuffer {
         Math.sin(x * 0.011 - y * 0.017) * 0.6;
       let c: string = P.sand;
       // Manchas de humedad: tramadas y suaves, que no parezcan regiones.
-      if (stain > 1.35 && bayer(x, y) < Math.min(0.45, (stain - 1.35) * 1.2)) c = P.tan;
+      if (stain > 1.7 && bayer(x, y) < Math.min(0.15, (stain - 1.7) * 0.5)) c = P.tan;
       if ((x * 7 + y * 13) % 97 === 0) c = P.tan;
       if (edge < 7 && bayer(x, y) < (7 - edge) / 7) c = edge < 3 ? P.clay : P.tan;
       b.set(x, y, c);
@@ -223,8 +299,7 @@ export function mapBuffer(): PixelBuffer {
   for (let i = 0; i < 40; i++) {
     const x = rng.int(8, MAP_W - 9);
     const y = rng.int(8, MAP_H - 9);
-    b.set(x, y, P.clay);
-    if (rng.chance(0.4)) b.set(x + 1, y, P.tan);
+    if (rng.chance(0.4)) b.set(x, y, P.tan);
   }
 
   // Mar al poniente y al suroeste, con franja clara junto a la orilla.
@@ -280,6 +355,13 @@ export function mapBuffer(): PixelBuffer {
   for (let i = 0; i < 9; i++) peaks.push([rng.int(64, 110), rng.int(24, 64), rng.int(6, 10)]);
   for (let i = 0; i < 8; i++) peaks.push([rng.int(352, 390), rng.int(80, 200), rng.int(4, 7)]);
   peaks.sort((a, c) => a[1] - c[1]);
+  // Las faldas: una mancha tramada bajo cada pico que une la sierra (relieve).
+  for (const [x, y, h] of peaks)
+    b.ellipse(x + 1, y + 1, h * 1.5, h * 0.55, (px, py) => {
+      const lit = px < x;
+      if (wet(px, py) || py < y - 1 || bayer(px, py) >= (lit ? 0.12 : 0.3)) return b.get(px, py);
+      return lit ? P.tan : P.clay;
+    });
   for (const [x, y, h] of peaks) mountain(b, x, y, h, h >= 9);
   // Lomas sueltas por la comarca.
   for (let i = 0; i < 22; i++) {
@@ -289,24 +371,50 @@ export function mapBuffer(): PixelBuffer {
   }
 
   // Bosques: Sotomuro (frondoso), el del este y pinares al pie de la sierra.
-  const grove = (cx: number, cy: number, r: number, n: number, kind: 'round' | 'pine' | 'mix') => {
+  const grove = (
+    cx: number,
+    cy: number,
+    r: number,
+    n: number,
+    kind: 'round' | 'pine' | 'mix' | 'burnt',
+  ) => {
+    const trees: [number, number, boolean][] = [];
     for (let i = 0; i < n; i++) {
       const a = rng.next() * Math.PI * 2;
       const d = Math.sqrt(rng.next()) * r;
       const x = Math.round(cx + Math.cos(a) * d * 1.3);
       const y = Math.round(cy + Math.sin(a) * d);
       if (wet(x, y)) continue;
-      const pineHere = kind === 'pine' || (kind === 'mix' && rng.chance(0.4));
-      if (pineHere) pine(b, x, y);
-      else roundTree(b, x, y);
+      trees.push([x, y, kind === 'pine' || (kind === 'mix' && rng.chance(0.4))]);
     }
+    // El suelo del bosque: una mancha que los une, con el borde más oscuro.
+    const floor = new Set<number>();
+    for (const [x, y] of trees)
+      for (let dy = -4; dy <= 1; dy++)
+        for (let dx = -3; dx <= 3; dx++)
+          if (Math.abs(dx) + Math.abs(dy + 1) < 5 && !wet(x + dx, y + dy))
+            floor.add((y + dy) * MAP_W + x + dx);
+    const burnt = kind === 'burnt';
+    for (const k of floor) {
+      const x = k % MAP_W;
+      const y = Math.floor(k / MAP_W);
+      const edge = [1, -1, MAP_W, -MAP_W].some((o) => !floor.has(k + o));
+      if (!b.inside(x, y)) continue;
+      if (edge) b.set(x, y, burnt ? P.umber : P.forest);
+      else if (bayer(x, y) < 0.5) b.set(x, y, burnt ? P.mocha : P.leaf);
+    }
+    trees.sort((a, c) => a[1] - c[1]);
+    for (const [x, y, p] of trees)
+      if (burnt) deadTree(b, x, y);
+      else if (p) pine(b, x, y);
+      else roundTree(b, x, y);
   };
   grove(124, 122, 22, 90, 'round');
   grove(338, 156, 28, 110, 'mix');
   grove(286, 70, 18, 40, 'pine');
   grove(140, 74, 12, 22, 'pine');
   grove(300, 236, 12, 20, 'round');
-  grove(86, 82, 10, 16, 'pine');
+  grove(80, 80, 9, 14, 'burnt');
 
   // Marismas y el pantano de las ranas: charcos y juncos.
   for (let i = 0; i < 80; i++) {
@@ -337,21 +445,43 @@ export function mapBuffer(): PixelBuffer {
   fields(214, 206, 4, 3);
   fields(258, 236, 6, 3);
 
-  // Ríos: el grande se ensancha hacia el mar.
-  walk(RIVER, 1.2, (x, y) => {
-    const wide = y > 150 ? 2 : 1;
-    for (let k = 0; k <= wide; k++) {
-      b.set(x + k, y, k === 0 ? P.ocean : P.sky);
-      water[y * MAP_W + x + k] = 1;
-    }
-    if (y % 5 === 0) b.set(x + 1, y, P.mist);
-  });
+  // Ríos (el grande se ensancha hacia el mar) y lagos; luego, la orilla perfilada.
+  const wetDisk = (x: number, y: number, r: number) => {
+    for (let dy = -r; dy <= r; dy++)
+      for (let dx = -r; dx <= r; dx++)
+        if (dx * dx + dy * dy <= r * r + r && b.inside(x + dx, y + dy)) {
+          water[(y + dy) * MAP_W + x + dx] = 1;
+          b.set(x + dx, y + dy, P.sky);
+        }
+  };
+  walk(RIVER, 1.2, (x, y) => wetDisk(x, y, y > 150 ? 2 : 1));
   walk(BROOK, 1, (x, y) => {
     b.set(x, y, P.sky);
     water[y * MAP_W + x] = 1;
   });
+  const lake = (cx: number, cy: number, rx: number, ry: number, c: string) =>
+    b.ellipse(cx, cy, rx, ry, (x, y) => {
+      water[y * MAP_W + x] = 1;
+      return c;
+    });
+  lake(358, 40, 11, 5, P.mist);
+  lake(128, 248, 9, 5, P.ocean);
+  lake(148, 259, 7, 4, P.sky);
+  // La orilla: donde el agua toca tierra, más oscura; brillos sueltos en el agua.
+  for (let y = 1; y < MAP_H - 1; y++)
+    for (let x = Math.ceil(coastAt(y)) + 2; x < MAP_W - 1; x++) {
+      if (!wet(x, y)) continue;
+      const shore = !wet(x - 1, y) || !wet(x + 1, y) || !wet(x, y - 1) || !wet(x, y + 1);
+      if (shore) b.set(x, y, P.ocean);
+      else if ((x * 5 + y * 3) % 13 === 0) b.set(x, y, P.mist);
+    }
+  // El lago Helado, con el hielo agrietado.
+  b.ellipse(358, 40, 9, 3.5, P.mist);
+  b.hline(352, 39, 4, P.white);
+  b.hline(359, 41, 5, P.fog);
 
   // Caminos reales: tierra a doble trazo y puentes donde cruzan el agua.
+  const roadAt: Pt[] = [];
   for (const road of ROADS)
     walk(road, 0.8, (x, y, i) => {
       if (!b.inside(x, y)) return;
@@ -361,17 +491,22 @@ export function mapBuffer(): PixelBuffer {
         b.set(x, y + 1, P.oak);
         return;
       }
-      if (i % 4 !== 3) b.set(x, y, P.oak);
-      if (i % 6 === 0 && !wet(x, y + 1)) b.set(x, y + 1, P.cocoa);
+      b.set(x, y, P.oak);
+      if (!wet(x, y + 1)) b.set(x, y + 1, i % 3 ? P.cocoa : P.oak);
+      roadAt.push([x, y]);
     });
-  // Senderos a cada lugar.
+  // Senderos: de cada lugar al camino real más cercano, a trazos.
   for (const p of Object.values(PLACE_INFO)) {
-    const n = Math.max(Math.abs(p.x - TAVERN.x), Math.abs(p.y - TAVERN.y));
-    for (let k = 4; k < n - 3; k += 3) {
-      const x = Math.round(TAVERN.x + ((p.x - TAVERN.x) * k) / n);
-      const y = Math.round(TAVERN.y + ((p.y - TAVERN.y) * k) / n);
-      if (!wet(x, y)) b.set(x, y, P.cocoa);
+    let best: Pt = [TAVERN.x, TAVERN.y];
+    let d = Math.hypot(p.x - best[0], p.y - best[1]);
+    for (const q of roadAt) {
+      const e = Math.hypot(p.x - q[0], p.y - q[1]);
+      if (e < d) [best, d] = [q, e];
     }
+    if (d < 6) continue;
+    walk([best, [p.x, p.y]], 0.6, (x, y, i) => {
+      if (i % 3 !== 2 && b.inside(x, y) && !wet(x, y)) b.set(x, y, P.cocoa);
+    });
   }
 
   // Aldeas: casitas con tejado rojo o pizarra según el lugar.
@@ -384,6 +519,8 @@ export function mapBuffer(): PixelBuffer {
   village(TAVERN.x - 10, TAVERN.y + 8, 2, P.brick);
   village(326, 124, 3, P.slate);
   village(186, 262, 3, P.brick);
+
+  for (const [name, p] of Object.entries(PLACE_INFO)) placeIcon(b, name, p.x, p.y, p.terrain);
 
   compass(b, rose[0], rose[1], 14);
 

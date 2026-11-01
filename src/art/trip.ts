@@ -208,6 +208,16 @@ export function chest(open: boolean): PixelBuffer {
   );
 }
 
+/** El botín a la espalda, al volver: un saco atado (con oro asomando si fue brillante). */
+export function loot(rich: boolean): PixelBuffer {
+  return sprite(
+    rich
+      ? ['..yk..', '.ykky.', 'sSSSSs', 'sSSSSs', 'sSSSSs', '.ssss.']
+      : ['..kk..', '..kk..', '.sSSs.', 'sSSSSs', 'sSSSSs', '.ssss.'],
+    { s: P.umber, S: P.tan, k: P.bark, y: P.lemon },
+  );
+}
+
 /** El río, de `from` hacia abajo, con las piedras del vado en el camino. */
 function ford(b: PixelBuffer, mid: number, from: number): void {
   for (let y = from; y < LAND_H; y++) {
@@ -358,10 +368,9 @@ export function tripLand(
   if (terrain === 'rio') ford(b, Math.round((site[0] + site[1]) / 2), 46);
   // Matas sueltas al borde del camino.
   for (let x = 4; x < w; x += rng.int(5, 11)) b.set(x, G - 4, l.grassD);
-  // La taberna en los dos extremos.
+  // La taberna, a la izquierda: se sale de ella y se vuelve a ella por el mismo camino.
   const tav = tinyTavern();
   b.blit(tav, 0, G - tav.h + 1);
-  b.blit(tav, w - tav.w, G - tav.h + 1, true);
   cache.set(key, b);
   return b;
 }

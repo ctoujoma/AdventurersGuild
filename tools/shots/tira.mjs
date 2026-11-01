@@ -6,7 +6,8 @@
  *
  * Mete a mano un grupo fuera y abre su ficha; luego cambia el momento del viaje y saca cada
  * uno: de ida (`ida.png`), peleando (`pelea.png`), ante el jefe (`jefe.png`), el jefe caído
- * (`jefe-caido.png`), en retirada (`retirada.png`), de vuelta con heridos (`vuelta.png`), de noche
+ * (`jefe-caido.png`), en retirada ante el jefe (`retirada.png`), el final de la pelea
+ * (`pelea-ganada.png`, `pelea-perdida.png`), la vuelta según cómo fue (`vuelta-*.png`), de noche
  * (`noche.png`), haciendo lo suyo (`faena.png`) y, de cerca, solo la tira (`tira-*.png`).
  */
 import { mkdirSync } from 'node:fs';
@@ -104,7 +105,12 @@ async function trip(o) {
               fates: Object.fromEntries(
                 ids.map((id, i) => [
                   id,
-                  { status: i < (o.hurt ?? 0) ? 'herido' : 'ok', days: i < (o.hurt ?? 0) ? 3 : 0 },
+                  i === o.lost
+                    ? { status: 'muerto', days: 0 }
+                    : {
+                        status: i < (o.hurt ?? 0) ? 'herido' : 'ok',
+                        days: i < (o.hurt ?? 0) ? 3 : 0,
+                      },
                 ]),
               ),
             }
@@ -175,8 +181,18 @@ await shot('jefe-caido');
 await trip({ t: 0.72, boss: true, outcome: 'Fracaso', hurt: 2 });
 await shot('retirada');
 
-await trip({ t: 0.86, outcome: 'Éxito parcial', hurt: 2 });
-await shot('vuelta');
+// El final de la pelea y la vuelta, según cómo fue (la pelea de los lobos acaba hacia 0,66).
+for (const [name, o] of [
+  ['pelea-ganada', { t: 0.735, outcome: 'Éxito' }],
+  ['pelea-perdida', { t: 0.735, outcome: 'Fracaso', hurt: 1 }],
+  ['vuelta-brillante', { t: 0.86, outcome: 'Éxito brillante' }],
+  ['vuelta-parcial', { t: 0.86, outcome: 'Éxito parcial', hurt: 1 }],
+  ['vuelta', { t: 0.8, outcome: 'Fracaso', hurt: 2 }],
+  ['vuelta-desastre', { t: 0.86, outcome: 'Desastre', hurt: 1, lost: 2 }],
+]) {
+  await trip(o);
+  await shot(name);
+}
 
 await trip({ t: 0.28, days: 3, night: true });
 await shot('noche');
