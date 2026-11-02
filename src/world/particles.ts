@@ -28,7 +28,11 @@ export type PKind =
   | 'feather'
   /** Estrella de una pelea: da vueltas encima de la nube y parpadea. */
   | 'star'
-  | 'coin';
+  | 'coin'
+  /** Destello del oro: nace como un punto, se abre en cruz y se apaga, sin moverse. */
+  | 'glint'
+  /** Burbuja de la cuba: sube un poco, se hincha y revienta. */
+  | 'bubble';
 
 export interface Particle {
   kind: PKind;
@@ -209,6 +213,33 @@ export class Particles {
           px(ctx, x, y, P.leaf);
           px(ctx, x + (Math.floor(t * 4 + p.seed) % 2 ? 1 : -1), y, P.forest);
           break;
+        case 'glint': {
+          // Punto, cruz pequeña, cruz grande con el centro blanco, y otra vez punto.
+          const u = 1 - k;
+          const r = u < 0.25 || u > 0.8 ? 0 : u < 0.4 || u > 0.65 ? 1 : 2;
+          px(ctx, x, y, P.white);
+          for (let i = 1; i <= r; i++) {
+            const c = i === r ? P.lemon : P.white;
+            px(ctx, x - i, y, c);
+            px(ctx, x + i, y, c);
+            px(ctx, x, y - i, c);
+            px(ctx, x, y + i, c);
+          }
+          break;
+        }
+        case 'bubble':
+          // Un aro que crece; al final, revienta en dos gotitas.
+          if (k > 0.2) {
+            const s = k > 0.6 ? 1 : 2;
+            px(ctx, x, y - s, P.tan);
+            px(ctx, x - s, y, P.tan);
+            px(ctx, x + s, y, P.sand);
+            if (s > 1) px(ctx, x, y + 1, P.tan);
+          } else {
+            px(ctx, x - 2, y - 1, P.sand);
+            px(ctx, x + 2, y - 1, P.sand);
+          }
+          break;
         case 'drip':
           // Una gota alargada: clara arriba.
           px(ctx, x, y, P.sky);
@@ -283,4 +314,6 @@ const defaults: Record<PKind, { life: number; vx: number; vy: number }> = {
   bark: { life: 0.7, vx: 0, vy: -14 },
   feather: { life: 2.2, vx: 0, vy: 8 },
   star: { life: 1.1, vx: 0, vy: 0 },
+  glint: { life: 0.7, vx: 0, vy: 0 },
+  bubble: { life: 0.9, vx: 0, vy: -3 },
 };

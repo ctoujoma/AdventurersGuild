@@ -13,6 +13,7 @@ import type { SalonLook } from '../salon';
 import {
   FIRE,
   WALL,
+  FREE,
   W,
   at,
   bx,
@@ -24,6 +25,11 @@ import {
   type RoomArt,
   type Thing,
   type WallCtx,
+  task,
+  emits,
+  thick,
+  round,
+  type Round,
 } from './kit';
 import { candleOn, sack, shelf, web } from './piezas';
 
@@ -238,6 +244,28 @@ function brewSign(): PixelBuffer {
   });
 }
 
+/** La cuba tumbada (`Prop.cask`) y el barril de pie (`Prop.barrel`), como cilindros de verdad. */
+const CASK: Round = {
+  axis: 'fondo',
+  cx: 14,
+  cy: 13,
+  r: 12.5,
+  len: 16,
+  wood: W[4]!,
+  dark: W[3]!,
+  hoop: P.slate,
+};
+const BARREL: Round = {
+  axis: 'pie',
+  cx: 6,
+  cy: 7.5,
+  r: 6,
+  len: 15,
+  wood: W[4]!,
+  dark: W[3]!,
+  hoop: P.slate,
+};
+
 /** Barriles apilados: dos abajo y uno encima. */
 function barrels(): PixelBuffer {
   return Prop.piece(26, 28, (b) => {
@@ -258,25 +286,58 @@ function things(room: Room, w: number): Thing[] {
   const t: Thing[] = [];
   for (const s of stretchesOf(room, w)) {
     if (s.kind === 'left') {
-      if (lvl >= 2) t.push(at(kettle(lvl), s.x0 + 22, WALL + 2, 0, fire(4, 70, FIRE, false)));
-      if (lvl >= 4) t.push(at(tastingTable(), s.x0 + 52, WALL, 0, candle(12, 36, 0.5)));
-      else t.push(at(lvl >= 2 ? Prop.barrel() : barrels(), lvl >= 2 ? s.x0 + 51 : s.x0 + 22, WALL));
+      if (lvl >= 2)
+        t.push(
+          task(
+            thick(
+              emits(
+                at(kettle(lvl), s.x0 + 22, FREE, 0, fire(4, 70, FIRE, false)),
+                // Vapor de la cúpula y alguna ascua que salta de la boca del hornillo.
+                { kind: 'steam', rate: 3, at: [8, 29, 24, 33] },
+                { kind: 'ember', rate: 1.2, at: [11, 56, 21, 61] },
+              ),
+              10,
+            ),
+            'caldera',
+          ),
+        );
+      if (lvl >= 4) t.push(thick(at(tastingTable(), s.x0 + 52, FREE, 0, candle(12, 36, 0.5)), 5));
+      else
+        t.push(
+          task(
+            lvl >= 2
+              ? round(at(Prop.barrel(), s.x0 + 51, FREE), BARREL)
+              : thick(at(barrels(), s.x0 + 22, FREE), 8),
+            'barril',
+          ),
+        );
     } else if (s.kind === 'mid' && s.i === 1)
       t.push(
         ...row(s, [
-          [fermentTub(lvl), WALL],
-          [barley(lvl), WALL - 2],
-        ]),
+          [fermentTub(lvl), FREE],
+          [barley(lvl), FREE - 2],
+        ]).map((x, k) =>
+          k === 0
+            ? task(thick(emits(x, { kind: 'bubble', rate: 2.5, at: [5, 6, 25, 9] }), 10), 'cuba')
+            : thick(x, 5),
+        ),
       );
     else if (s.kind === 'mid')
       t.push(
         ...row(s, [
-          [lvl >= 3 ? Prop.wineRack() : barrels(), WALL],
-          [bottling(lvl), WALL - 2],
-        ]),
+          [lvl >= 3 ? Prop.wineRack() : barrels(), lvl >= 3 ? WALL : FREE],
+          [bottling(lvl), FREE - 2],
+        ]).map((x, k) => (k === 1 ? task(thick(x, 5), 'barril') : thick(x, k === 0 ? 12 : 5))),
       );
   }
-  cellsOf(room, w).forEach((c, j) => t.push(at(j === 1 ? barrels() : vat(lvl, j), c.win, WALL)));
+  cellsOf(room, w).forEach((c, j) =>
+    t.push(
+      task(
+        j === 1 ? thick(at(barrels(), c.win, FREE), 10) : round(at(vat(lvl, j), c.win, FREE), CASK),
+        j === 1 ? 'barril' : 'cuba',
+      ),
+    ),
+  );
   return t;
 }
 

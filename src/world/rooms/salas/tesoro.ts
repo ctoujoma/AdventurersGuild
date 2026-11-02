@@ -13,8 +13,11 @@ import * as Prop from '../../props';
 import type { SalonLook } from '../salon';
 import { gearChests } from './equipo';
 import {
+  emits,
+  thick,
   GOLD,
   WALL,
+  FREE,
   WIN_HALF,
   W,
   at,
@@ -112,36 +115,88 @@ function vaultDoor(level: number): PixelBuffer {
 }
 
 /**
- * Montón de monedas: un cerro de capas de monedas (cada una, una rayita con su brillo arriba y
- * su sombra abajo), con destellos y monedas sueltas al pie. `amount` (0–1) dice lo grande que es.
+ * Montón de monedas: un cerro de perfil irregular (no una media luna), con la luz arriba a la
+ * izquierda y la sombra abajo a la derecha, cubierto de monedas sueltas (cada una, un óvalo con
+ * su brillo y su canto), alguna de pie, gemas en los grandes y monedas rodadas al pie. `amount`
+ * (0–1) dice lo grande que es; `seed`, que no salgan todos iguales.
  */
-export function goldPile(amount: number, wide = 1): PixelBuffer {
+export function goldPile(amount: number, wide = 1, seed = 0): PixelBuffer {
   const a = Math.max(0, Math.min(1, amount));
   const w = Math.round((14 + a * 16) * wide);
   const h = Math.round(3 + a * 13 * Math.min(1.4, wide));
-  return Prop.piece(w + 6, h + 3, (p) => {
-    const cx = (w + 6) / 2;
+  const rnd = (() => {
+    let n = (seed * 9301 + Math.round(a * 1000) * 49297 + w * 233) % 233280;
+    return () => (n = (n * 9301 + 49297) % 233280) / 233280;
+  })();
+  const W = w + 8;
+  return Prop.piece(W, h + 4, (p) => {
+    const cx = W / 2;
     const base = h + 1;
-    // Cuerpo del cerro, de la sombra a la luz.
-    p.ellipse(cx, base, w / 2, h, P.brick);
-    p.ellipse(cx - 0.5, base, w / 2 - 1, h - 1, P.orange);
-    p.ellipse(cx - 1.5, base - 0.5, w / 2 - 3, h - 2.5, P.gold);
-    // Monedas en filas: rayita de oro claro con su borde oscuro debajo.
-    for (let y = base - h + 2; y < base; y += 2)
-      for (let x = 1 + ((y >> 1) % 2) * 2; x < w + 5; x += 4) {
-        if (p.get(x, y) === 0 || p.get(x + 2, y) === 0) continue;
-        p.hline(x, y, 2, P.lemon);
-        p.set(x, y + 1, P.orange);
-        p.set(x + 1, y + 1, P.brick);
+    // El perfil: un cerro con dos o tres jorobas (no una elipse).
+    const bumps = [0, 1, 2].map(() => ({ x: (rnd() - 0.5) * w * 0.5, k: 0.15 + rnd() * 0.2 }));
+    const raw = (x: number) => {
+      const u = (x - cx) / (w / 2);
+      if (Math.abs(u) >= 1) return 0;
+      let v = Math.pow(1 - u * u, 0.65);
+      for (const b of bumps)
+        v += b.k * Math.exp(-(((x - cx - b.x) / (w * 0.18)) ** 2)) * (1 - u * u);
+      return v;
+    };
+    // Que la cumbre llegue justo arriba (sin meseta).
+    let peak = 0;
+    for (let x = 0; x < W; x++) peak = Math.max(peak, raw(x));
+    const topAt = (x: number) => base - (raw(x) / peak) * h;
+    const RAMP = [P.brick, P.amber, P.orange, P.gold, P.gold, P.lemon];
+    for (let x = 0; x < W; x++) {
+      const t = topAt(x);
+      for (let y = Math.ceil(t); y <= base; y++) {
+        // La luz: más arriba y más a la izquierda, más clara; con trama en el paso.
+        const lit = 0.6 - ((x - cx) / w) * 1.1 - ((y - t) / (h + 1)) * 0.45;
+        const d = ((x * 7 + y * 13) % 5) / 5 - 0.4;
+        let i = Math.round((lit + d * 0.2) * 4 + 1.6);
+        // El borde de la derecha y el de abajo, en sombra (le da bulto).
+        if (y >= base - 1 || x > cx + w * 0.38) i -= 1;
+        i = Math.max(0, Math.min(RAMP.length - 1, i));
+        p.set(x, y, RAMP[i]!);
       }
-    // Destellos.
-    p.set(Math.round(cx - w / 5), base - h + 2, P.white);
-    if (a > 0.5) p.set(Math.round(cx + w / 6), base - Math.round(h * 0.6), P.white);
-    // Monedas sueltas al pie.
-    for (const dx of [-w / 2 - 1, w / 2 + 1, -w / 3, w / 2.5]) {
-      const x = Math.round(cx + dx);
-      p.hline(x - 1, base + 1, 2, P.gold);
-      p.set(x, base, P.lemon);
+    }
+    // Las monedas sueltas por encima: de atrás adelante, más brillantes arriba a la izquierda.
+    const coins: [number, number][] = [];
+    for (let i = 0; i < Math.round(w * h * 0.07) + 3; i++) {
+      const x = Math.round(cx + (rnd() - 0.5) * w * 0.95);
+      const t = topAt(x);
+      if (t >= base - 1) continue;
+      coins.push([x, Math.round(t + rnd() * (base - t - 1))]);
+    }
+    coins.sort((c, d) => c[1] - d[1]);
+    for (const [x, y] of coins) {
+      const lit = x < cx + w * 0.1 && y < base - h * 0.35;
+      if (rnd() < 0.12) {
+        // De canto: una rayita de pie.
+        p.vline(x, y - 1, 2, lit ? P.lemon : P.gold);
+        p.set(x + 1, y, P.amber);
+        continue;
+      }
+      p.hline(x - 1, y, 3, lit ? P.lemon : P.gold);
+      p.set(x - 1, y, lit ? P.gold : P.orange);
+      p.hline(x - 1, y + 1, 3, P.amber);
+      if (lit && rnd() < 0.4) p.set(x, y, P.white);
+    }
+    // Gemas en los montones grandes.
+    if (a > 0.5)
+      for (const c of [P.red, P.cyan, P.lime].slice(0, a > 0.8 ? 3 : 1)) {
+        const x = Math.round(cx + (rnd() - 0.5) * w * 0.6);
+        const y = Math.round(topAt(x) + 1 + rnd() * h * 0.3);
+        p.rect(x, y, 2, 2, c);
+        p.set(x, y, P.white);
+      }
+    // Monedas rodadas por el suelo, al pie.
+    for (const dx of [-w / 2 - 2, w / 2 + 2, -w / 3, w / 2.4, -w / 1.7]) {
+      const x = Math.round(cx + dx + (rnd() - 0.5) * 2);
+      if (x < 1 || x > W - 3) continue;
+      p.hline(x - 1, base + 1, 3, P.gold);
+      p.set(x, base + 1, P.lemon);
+      p.hline(x - 1, base + 2, 3, P.amber);
     }
   });
 }
@@ -299,6 +354,22 @@ function goblets(level: number): PixelBuffer {
   });
 }
 
+/** Un montón de oro con cuerpo (hacia el fondo) y destellos que saltan (más, cuanto más oro). */
+function pileBody(t: Thing, a: number): Thing {
+  const w = t.img.w;
+  const h = t.img.h;
+  return thick(
+    emits(t, { kind: 'glint', rate: 0.5 + a * 1.6, at: [3, 1, w - 3, Math.max(2, h - 4)] }),
+    Math.round(6 + a * 6),
+  );
+}
+
+/** Un arcón con cuerpo; si tiene oro, con algún destello asomando. */
+function chestBody(t: Thing, a: number): Thing {
+  const body = thick(t, 9);
+  return a > 0 ? emits(body, { kind: 'glint', rate: 0.2 + a * 0.6, at: [3, 2, 15, 8] }) : body;
+}
+
 // ---------- Pared y sala ----------
 
 function wall(b: PixelBuffer, room: Room, _look: SalonLook, { cells, ruin }: WallCtx): void {
@@ -370,34 +441,49 @@ function things(room: Room, w: number, look: SalonLook): Thing[] {
       else
         t.push(
           ...row(s, [
-            [goldChest(fill.c0!, lvl >= 3), WALL, glow(fill.c0!, 30)],
-            [goldChest(fill.c1!, lvl >= 3), WALL],
-          ]),
+            [goldChest(fill.c0!, lvl >= 3), FREE, glow(fill.c0!, 30)],
+            [goldChest(fill.c1!, lvl >= 3), FREE],
+          ]).map((x, k) => chestBody(x, k === 0 ? fill.c0! : fill.c1!)),
         );
     } else if (s.kind === 'right') {
-      if (fill.sacks! > 0) t.push(at(coinSack(), Math.min(s.x0 + 8.5, w - 9), WALL - 2));
+      if (fill.sacks! > 0) t.push(thick(at(coinSack(), Math.min(s.x0 + 8.5, w - 9), FREE - 2), 5));
     } else if (s.kind === 'mid') {
       const a = fill[`m${s.i}`]!;
       if (s.i === 1)
         t.push(
           ...row(s, [
-            ...(lvl >= 3 ? ([[idol(), WALL]] as [PixelBuffer, number][]) : []),
-            [a > 0 ? goldPile(a, 1.5) : strongbox(), WALL, glow(a, 60)],
-          ]),
+            ...(lvl >= 3 ? ([[idol(), FREE]] as [PixelBuffer, number][]) : []),
+            [a > 0 ? goldPile(a, 1.5, s.i) : strongbox(), FREE, glow(a, 60)],
+          ]).map((x, k, all) =>
+            k === all.length - 1 && a > 0
+              ? pileBody(x, a)
+              : thick(
+                  lvl >= 3 && k === 0
+                    ? emits(x, { kind: 'glint', rate: 0.3, at: [2, 0, 12, 14] })
+                    : x,
+                  8,
+                ),
+          ),
         );
       else
         t.push(
           ...row(s, [
-            lvl >= 4 ? [jewelCase(), WALL, SHINE(36, 0.45)] : [strongbox(), WALL],
-            [coinStacks(a), WALL - 2, glow(a, 40)],
-          ]),
+            lvl >= 4 ? [jewelCase(), FREE, SHINE(36, 0.45)] : [strongbox(), FREE],
+            [coinStacks(a), FREE - 2, glow(a, 40)],
+          ]).map((x, k) =>
+            k === 0
+              ? thick(x, 9)
+              : a > 0
+                ? thick(emits(x, { kind: 'glint', rate: 0.25 + a * 0.5, at: [2, 2, 26, 12] }), 6)
+                : thick(x, 6),
+          ),
         );
     }
   }
   // Debajo de la caja fuerte y de las repisas (más bajo que ellas): los montones.
   cells.forEach((c, j) => {
     const a = fill[`w${j}`]!;
-    if (a > 0) t.push(at(goldPile(a, 0.8), c.win, WALL, 0, glow(a, 50)));
+    if (a > 0) t.push(pileBody(at(goldPile(a, 0.8, j + 7), c.win, FREE, 0, glow(a, 50)), a));
   });
   return t;
 }

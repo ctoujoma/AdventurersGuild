@@ -39,14 +39,35 @@ export interface Thing {
   light?: Glow;
   /** Con volumen: de su silueta salen los lados y la parte de arriba hasta la pared (ver `volume.ts`). */
   box?: boolean;
+  /**
+   * Con cuerpo de este grosor (en profundidad del mundo) en vez de hasta la pared: lo suelto
+   * por la sala (arcones, montones, barriles, cubas). Ver `thick`.
+   */
+  thick?: number;
+  /** Un cilindro de verdad (cubas, barriles): ver `Round`. */
+  round?: Round;
+  /**
+   * Lo que suelta de vez en cuando (destellos del oro, vapor, burbujas): qué, cuántos por
+   * segundo y en qué zona de su dibujo (x0, y0, x1, y1 en sus píxeles). Ver `emits`.
+   */
+  emit?: Emit[];
   /** Se puede tocar: al pasar el ratón se marca y al tocarlo abre lo suyo. */
   act?: ActId;
   /** Sitio al que la gente va a hacer algo (calentarse las manos, rezar…). */
   poi?: PoiKind;
 }
 
-/** Lo que se hace en un sitio de una sala: leer (el tablón, el mapa), calentarse o rezar. */
-export type PoiKind = 'read' | 'warm' | 'pray';
+/**
+ * Lo que se hace en un sitio de una sala: leer (el tablón, el mapa), calentarse o rezar (los
+ * héroes libres); o, para el servicio, cada tarea de su oficio en su mueble: la olla del hogar,
+ * la mesa (picar, amasar), la pila de fregar, el horno, la cuba, el barril y la caldera.
+ */
+export type PoiKind = LeisurePoi | TaskPoi;
+export type LeisurePoi = 'read' | 'warm' | 'pray';
+export type TaskPoi = 'olla' | 'mesa' | 'fregar' | 'horno' | 'cuba' | 'barril' | 'caldera';
+
+/** Un mueble con su sitio de trabajo. */
+export const task = (t: Thing, poi: TaskPoi): Thing => ({ ...t, poi });
 
 /** Lo que abre una cosa de una sala al tocarla (el tablón, el mapa de la comarca…). */
 export type ActId = 'tablon' | 'mapa' | 'candidatos' | 'equipo';
@@ -73,6 +94,12 @@ export const FLOOR_D = DEPTH / 2;
 
 /** Contra la pared del fondo, a media sala y delante. */
 export const WALL = DEPTH - 6;
+/**
+ * Lo suelto por la sala (arcones, montones, cubas, barriles, calderas): bien separado de la
+ * pared, con suelo detrás; con su grosor (`thick`), no llega a tocarla y, al mover la cámara,
+ * se mueve contra ella como algo de verdad.
+ */
+export const FREE = DEPTH - 20;
 /** Lo grande con volumen (hogares, fraguas): más adelante que la pared, con sus lados hasta ella. */
 export const SOLID = DEPTH - 16;
 export const MID = DEPTH / 2;
@@ -315,6 +342,42 @@ export const solid = (img: PixelBuffer, x: number, y = 0, light?: Glow): Thing =
   ...at(img, x, SOLID, y, light),
   box: true,
 });
+
+/**
+ * Un cilindro de verdad detrás del dibujo: tumbado (`fondo`: la tapa redonda mira a la cámara y
+ * el cuerpo se va hacia el fondo) o de pie (`pie`: el eje es vertical y el frente coincide con
+ * el dibujo). Centro y radio en píxeles del dibujo; `len`, lo largo (tumbado, en profundidad del
+ * mundo) o lo alto (de pie, en píxeles del dibujo, centrado en `cy`). Duelas y aros con los
+ * colores que se le den.
+ */
+export interface Round {
+  axis: 'fondo' | 'pie';
+  cx: number;
+  cy: number;
+  r: number;
+  len: number;
+  wood: string;
+  dark: string;
+  hoop: string;
+}
+
+/** Un mueble que es un cilindro de verdad (ver `Round`). */
+export const round = (t: Thing, r: Round): Thing => ({ ...t, round: r });
+
+export interface Emit {
+  kind: 'glint' | 'steam' | 'bubble' | 'ember';
+  rate: number;
+  at: [number, number, number, number];
+}
+
+/** Un mueble que suelta algo de vez en cuando (en la zona `at` de su dibujo). */
+export const emits = (t: Thing, ...list: Emit[]): Thing => ({
+  ...t,
+  emit: [...(t.emit ?? []), ...list],
+});
+
+/** Con cuerpo: la silueta se estira `d` hacia el fondo (lo suelto por la sala). */
+export const thick = (t: Thing, d: number): Thing => ({ ...t, thick: d });
 
 /** Algo colgado del techo, con su parte de arriba a `y` del techo. */
 export const hung = (img: PixelBuffer, x: number, z: number, y = 0, light?: Glow): Thing => ({

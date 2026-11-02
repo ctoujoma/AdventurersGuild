@@ -197,6 +197,19 @@ class AudioEngine {
 
   play(name: Sfx, volume = 1): void {
     haptic(name);
+    // Cada vez, un pelo más agudo o más grave: lo que se repite (monedas, clics) no cansa.
+    this.detune = 1 + (Math.random() - 0.5) * 0.08;
+    try {
+      this.sfx(name, volume);
+    } finally {
+      this.detune = 1;
+    }
+  }
+
+  /** Cuánto se afinan arriba o abajo los efectos que suenan ahora (ver `play`). */
+  private detune = 1;
+
+  private sfx(name: Sfx, volume: number): void {
     const ctx = this.ctx;
     if (!ctx || !this.enabled) return;
     const t = ctx.currentTime + 0.005;
@@ -780,8 +793,9 @@ class AudioEngine {
     const ctx = this.ctx!;
     const o = ctx.createOscillator();
     o.type = type;
-    o.frequency.setValueAtTime(f0, t);
-    o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t + dur);
+    const k = this.detune;
+    o.frequency.setValueAtTime(f0 * k, t);
+    o.frequency.exponentialRampToValueAtTime(Math.max(20, f1 * k), t + dur);
     const g = ctx.createGain();
     g.gain.setValueAtTime(0, t);
     g.gain.linearRampToValueAtTime(vol, t + 0.005);
@@ -808,7 +822,7 @@ class AudioEngine {
     const s = this.noiseSource();
     const f = ctx.createBiquadFilter();
     f.type = type;
-    f.frequency.value = freq;
+    f.frequency.value = freq * this.detune;
     f.Q.value = q;
     const g = ctx.createGain();
     g.gain.setValueAtTime(vol, t);

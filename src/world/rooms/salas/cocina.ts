@@ -24,6 +24,7 @@ import {
   type RoomArt,
   type Thing,
   type WallCtx,
+  task,
 } from './kit';
 import { herbs, jar, loaf, sack, shelf, web } from './piezas';
 
@@ -451,7 +452,9 @@ function wall(b: PixelBuffer, room: Room, _look: SalonLook, { cells, ruin }: Wal
  */
 function things(room: Room, w: number): Thing[] {
   const lvl = room.level;
-  const t: Thing[] = [solid(hearth(lvl, true), HEARTH_X, 0, fire(7, 80 + lvl * 10, FIRE, false))];
+  const t: Thing[] = [
+    task(solid(hearth(lvl, true), HEARTH_X, 0, fire(7, 80 + lvl * 10, FIRE, false)), 'olla'),
+  ];
   for (const s of stretchesOf(room, w)) {
     if (s.kind === 'mid' && s.i === 1)
       t.push(
@@ -460,17 +463,22 @@ function things(room: Room, w: number): Thing[] {
           [flourSacks(), WALL - 2],
         ]),
       );
-    if (s.kind === 'mid' && s.i === 2)
-      t.push(
-        ...row(s, [
-          [breadOven(lvl >= 2), WALL + 2, lvl >= 2 ? fire(4, 50, FIRE, false) : undefined],
-          [butcherBlock(lvl), WALL],
-        ]),
-      );
+    if (s.kind === 'mid' && s.i === 2) {
+      const [oven, block] = row(s, [
+        [breadOven(lvl >= 2), WALL + 2, lvl >= 2 ? fire(4, 50, FIRE, false) : undefined],
+        [butcherBlock(lvl), WALL],
+      ]);
+      t.push(task(oven!, 'horno'), task(block!, 'mesa'));
+    }
     if (s.kind === 'right') t.push(at(Prop.barrel(), Math.min(s.x0 + 7, w - 9), WALL));
   }
   cellsOf(room, w).forEach((c, j) =>
-    t.push(at(j === 0 ? workTable(lvl) : j === 1 ? sink(lvl) : doughTable(lvl), c.win, WALL)),
+    t.push(
+      task(
+        at(j === 0 ? workTable(lvl) : j === 1 ? sink(lvl) : doughTable(lvl), c.win, WALL),
+        j === 1 ? 'fregar' : 'mesa',
+      ),
+    ),
   );
   return t;
 }

@@ -90,6 +90,7 @@ export function Hud({
       </div>
       <div class="hud-stats">
         <button
+          data-gold
           class={`hud-stat ${game.gold >= goldCap(game) ? 'danger' : vaultFull(game) ? 'warn' : ''}`}
           aria-label={tips.oro}
           aria-expanded={tip === 'oro'}

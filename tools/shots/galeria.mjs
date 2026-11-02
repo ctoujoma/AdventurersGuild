@@ -5,6 +5,7 @@
  *
  *   node tools/shots/galeria.mjs <carpeta> [puerto=4173] [tipos=todos]
  *
+ * Con `LADO=<px>`, la cámara se corre a un lado para ver los costados de lo que tiene cuerpo.
  * Saca `<tipo>-a<ancho>-n<nivel>-<dia|noche>.png` (hasta el nivel 4 en las de `LEVEL4`) a zoom 4 (cada píxel del mundo, 4×4); la
  * cámara del tesoro, con tres cantidades de oro (`tesoro_o10`, `_o50` y `_o100`: lo lleno que
  * está, en %), porque sus montones crecen con él;
@@ -74,6 +75,7 @@ await page.addInitScript(() => {
   );
 });
 await page.goto(`http://localhost:${port}/#debug`);
+await page.evaluate((lado) => (window.__lado = lado), Number(process.env.LADO ?? 0));
 await page.waitForTimeout(4500);
 await page.mouse.click(vp.width / 2, vp.height / 2);
 await page.waitForTimeout(800);
@@ -82,7 +84,7 @@ if (await start.count()) await start.click();
 await page.waitForTimeout(2500);
 for (let i = 0; i < 4; i++) {
   const close = page.locator(
-    'button:has-text("Abrir la taberna"), button[aria-label="Abrir la taberna"], button:has-text("Seguir"), button:has-text("Entendido"), button:has-text("Vale")',
+    'button:has-text("Entrar en la taberna"), button:has-text("Abrir la taberna"), button[aria-label="Abrir la taberna"], button:has-text("Seguir"), button:has-text("Entendido"), button:has-text("Vale")',
   );
   if (await close.count())
     await close
@@ -195,7 +197,8 @@ async function shoot(type, w, level, fill) {
     sc.resize(sc.cssW, sc.cssH, zoom);
     const sp = sc.spots.find((x) => x.id === `sala:${window.__sala}`);
     const r = sp.rect;
-    sc.camera.centerOn(r.x + r.w / 2, r.y + r.h / 2, false);
+    // Con `LADO`, la cámara corrida a un lado: se ven los costados de lo que tiene cuerpo.
+    sc.camera.centerOn(r.x + r.w / 2 + Number(window.__lado ?? 0), r.y + r.h / 2, false);
     // Con sus muros (8) y forjados (16) alrededor, y un poco de lo de al lado.
     const m = { x: 12, y: 20 };
     const a = sc.screenOf(r.x - m.x, r.y - m.y);

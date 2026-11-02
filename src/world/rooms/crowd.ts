@@ -42,7 +42,8 @@ import {
   type Spots,
 } from './people';
 import { project, scaleAt, type View } from './view3d';
-import type { BedSpot } from './people';
+import { FAR_Z, NEAR_Z, type BedSpot } from './people';
+import type { PoiKind, TaskPoi } from './salas/kit';
 
 /** Como mucho, tantas figuras animadas a la vez (y de ellas, tantos visitantes). */
 export const MAX_ACTORS = 30;
@@ -65,6 +66,8 @@ const VISITOR_NAME: Record<string, string> = {
   espia: 'Forastero callado',
 };
 const SPEED = 36;
+/** Lo deprisa que se va hacia dentro o hacia fuera (más despacio que de lado: se ve en escorzo). */
+const Z_SPEED = 14;
 const CLIMB = 30;
 
 /** Fotogramas del atlas (cada uno de CELL × SPRITE de alto). */
@@ -72,71 +75,20 @@ const CELL = 24;
 const TALL = 28;
 
 /** Las herramientas de los puestos (y el trapo de la barra), en el orden de sus fotogramas. */
-const TOOLS = ['cucharon', 'pala', 'cuenco', 'jarra', 'trapo'] as const;
+const TOOLS = ['cucharon', 'pala', 'cuenco', 'jarra', 'trapo', 'cuchillo', 'antorcha'] as const;
 
-/** Cuántos fotogramas tiene cada cosa, en el orden del atlas. */
-const SIZES = {
-  idle: 2,
-  blink: 1,
-  /** Andando: los 8 tiempos del paso (`WALK_STEPS`), a la derecha y a la izquierda. */
-  walk: WALK_STEPS,
-  walkL: WALK_STEPS,
-  sit: 1,
-  sleep: 4,
-  cot: 1,
-  mat: 1,
-  down: 1,
-  downL: 1,
-  /** Entrenando: golpes (preparado, impulso, golpe), el arco (bajado, apuntando) y leyendo. */
-  drill: 3,
-  drillL: 3,
-  /** Más golpes: el arma en alto (para el tajo de arriba abajo) y la estocada. */
-  drill2: 2,
-  drill2L: 2,
-  aim: 2,
-  aimL: 2,
-  read: 2,
-  /** Incorporado en la cama (al acostarse y al levantarse): litera de cada nivel, catre y jergón. */
-  up: 6,
-  /** Con la herramienta de su puesto: cada herramienta × (4 tiempos a la derecha y 4 a la izquierda). */
-  tool: TOOLS.length * 8,
-  /** Calentándose las manos (a la derecha y a la izquierda). */
-  warm: 2,
-  /** Con la jarra en la barra: abajo y bebiendo, a la derecha y a la izquierda. */
-  drink: 4,
-  /** De perfil, quieto (charlando), a la derecha y a la izquierda. */
-  talk: 2,
-  /** En la litera, acostado e incorporado, con la manta de cada tema de color (`TINT_IDS`). */
-  sleepT: TINT_IDS.length,
-  upT: TINT_IDS.length,
-  /** De frente: celebrando (brazos en alto), estirándose y bostezando. */
-  cheer: 1,
-  stretch: 1,
-  yawn: 1,
-  /** Brindando con la jarra en alto, a la derecha y a la izquierda. */
-  toast: 2,
-} as const;
-
-/** Dónde empieza cada cosa en el atlas. */
-export const F = (() => {
-  let at = 0;
-  const out = {} as Record<keyof typeof SIZES, number>;
-  for (const k of Object.keys(SIZES) as (keyof typeof SIZES)[]) {
-    out[k] = at;
-    at += SIZES[k];
-  }
-  return out;
-})();
-const FRAMES = Object.values(SIZES).reduce((a, n) => a + n, 0);
-/** Filas que baja el dibujo en los fotogramas de incorporado (para que quepa la cabeza). */
-const UP_DROP = 8;
+/** Un trabajo: la herramienta y los cuatro tiempos (postura del brazo, giro y duración). */
+interface Work {
+  tool: number;
+  steps: [FightPose, number, number][];
+}
 
 /**
  * Cómo se trabaja en cada sala con puestos: la herramienta y los cuatro tiempos de la vuelta
  * (postura del brazo, giro de la herramienta y lo que dura, en segundos). Siempre con los pies
  * quietos: solo se mueven el brazo y la herramienta.
  */
-const WORK: Record<string, { tool: number; steps: [FightPose, number, number][] }> = {
+const WORK = {
   // Remover la olla con el cucharón, dando vueltas.
   cocina: {
     tool: 0,
@@ -187,7 +139,149 @@ const WORK: Record<string, { tool: number; steps: [FightPose, number, number][] 
       ['thrust', 30, 0.3],
     ],
   },
+  // Las tareas de las rutinas (ver `TASKS`): picar en la mesa con el cuchillo…
+  picar: {
+    tool: 5,
+    steps: [
+      ['up', 150, 0.18],
+      ['strike', 175, 0.16],
+      ['up', 150, 0.18],
+      ['strike', 175, 0.22],
+    ],
+  },
+  // … probar el guiso con el cucharón…
+  probar: {
+    tool: 0,
+    steps: [
+      ['ready', 200, 0.6],
+      ['up', -40, 0.5],
+      ['up', -55, 0.9],
+      ['ready', 200, 0.6],
+    ],
+  },
+  // … meter y sacar el pan del horno con la pala…
+  hornear: {
+    tool: 1,
+    steps: [
+      ['ready', 70, 0.6],
+      ['thrust', 85, 0.7],
+      ['thrust', 95, 0.5],
+      ['ready', 70, 0.7],
+    ],
+  },
+  // … llenar la jarra en el grifo del barril…
+  llenar: {
+    tool: 3,
+    steps: [
+      ['thrust', 0, 1.2],
+      ['thrust', 8, 0.9],
+      ['ready', 0, 0.5],
+      ['thrust', 0, 0.6],
+    ],
+  },
+  // … fregar en la pila con el trapo…
+  fregar: {
+    tool: 4,
+    steps: [
+      ['thrust', 0, 0.25],
+      ['strike', 15, 0.25],
+      ['thrust', 0, 0.25],
+      ['strike', 15, 0.3],
+    ],
+  },
+  // … y echar un leño al fuego.
+  lena: {
+    tool: 6,
+    steps: [
+      ['ready', 90, 0.7],
+      ['thrust', 95, 0.45],
+      ['ready', 80, 0.5],
+      ['ready', 80, 0.8],
+    ],
+  },
+} satisfies Record<string, Work>;
+
+type WorkId = keyof typeof WORK;
+/** Dónde va cada trabajo en el atlas (cada uno, su tira de 8: 4 a la derecha y 4 a la izquierda). */
+const SLOT = Object.fromEntries(Object.keys(WORK).map((k, i) => [k, i])) as Record<WorkId, number>;
+
+/**
+ * Las rutinas del servicio en la cocina y la bodega: en cada mueble se hace una de estas cosas,
+ * y se va turnando de mueble en mueble con algún rato quieto en medio (ver `taskTurn`).
+ */
+const TASKS: Record<TaskPoi, WorkId[]> = {
+  olla: ['cocina', 'cocina', 'probar'],
+  mesa: ['picar'],
+  fregar: ['fregar'],
+  horno: ['hornear', 'lena'],
+  cuba: ['bodega'],
+  barril: ['llenar'],
+  caldera: ['bodega', 'lena'],
 };
+const ROUTINE = new Set(['cocina', 'bodega']);
+const LEISURE = new Set<PoiKind>(['read', 'warm', 'pray']);
+
+/** Cuántos fotogramas tiene cada cosa, en el orden del atlas. */
+const SIZES = {
+  idle: 2,
+  blink: 1,
+  /** Andando: los 8 tiempos del paso (`WALK_STEPS`), a la derecha y a la izquierda. */
+  walk: WALK_STEPS,
+  walkL: WALK_STEPS,
+  sit: 1,
+  sleep: 4,
+  cot: 1,
+  mat: 1,
+  down: 1,
+  downL: 1,
+  /** Entrenando: golpes (preparado, impulso, golpe), el arco (bajado, apuntando) y leyendo. */
+  drill: 3,
+  drillL: 3,
+  /** Más golpes: el arma en alto (para el tajo de arriba abajo) y la estocada. */
+  drill2: 2,
+  drill2L: 2,
+  aim: 2,
+  aimL: 2,
+  read: 2,
+  /** Incorporado en la cama (al acostarse y al levantarse): litera de cada nivel, catre y jergón. */
+  up: 6,
+  /** Con la herramienta de su puesto: cada trabajo × (4 tiempos a la derecha y 4 a la izquierda). */
+  tool: Object.keys(WORK).length * 8,
+  /** Calentándose las manos (a la derecha y a la izquierda). */
+  warm: 2,
+  /** Con la jarra en la barra: abajo y bebiendo, a la derecha y a la izquierda. */
+  drink: 4,
+  /** De perfil, quieto (charlando), a la derecha y a la izquierda. */
+  talk: 2,
+  /** En la litera, acostado e incorporado, con la manta de cada tema de color (`TINT_IDS`). */
+  sleepT: TINT_IDS.length,
+  upT: TINT_IDS.length,
+  /** De frente: celebrando (brazos en alto), estirándose y bostezando. */
+  cheer: 1,
+  stretch: 1,
+  yawn: 1,
+  /** Brindando con la jarra en alto, a la derecha y a la izquierda. */
+  toast: 2,
+} as const;
+
+/** Dónde empieza cada cosa en el atlas. */
+export const F = (() => {
+  let at = 0;
+  const out = {} as Record<keyof typeof SIZES, number>;
+  for (const k of Object.keys(SIZES) as (keyof typeof SIZES)[]) {
+    out[k] = at;
+    at += SIZES[k];
+  }
+  return out;
+})();
+const FRAMES = Object.values(SIZES).reduce((a, n) => a + n, 0);
+/**
+ * Ancho del atlas en píxeles: va en una sola fila, así que no puede pasar de lo que aguanta una
+ * textura en cualquier móvil (4096). Si se pasa, hay que partirlo en dos filas.
+ */
+export const ATLAS_W = CELL * FRAMES;
+/** Filas que baja el dibujo en los fotogramas de incorporado (para que quepa la cabeza). */
+const UP_DROP = 8;
 
 /** Lo que dicen al hablar (icono del bocadillo). */
 export type Talk =
@@ -219,7 +313,9 @@ const TURN = 1.6;
 
 /** Un sitio de una sala al que se va a hacer algo (ver `setPois`). */
 export interface Poi extends Place {
-  kind: 'read' | 'warm' | 'pray';
+  kind: PoiKind;
+  /** Profundidad del mueble (para ponerse delante de él). */
+  z?: number;
   /** Medio ancho de lo que hay allí (para ponerse a un lado si hay que mirarlo de lado). */
   half: number;
 }
@@ -262,6 +358,9 @@ interface Actor {
   y: number;
   floor: number;
   lane: number;
+  /** La de siempre (su carril) y hacia dónde va ahora (cambia poco a poco al andar). */
+  home: number;
+  laneTo?: number;
   path: Place[];
   goal: Goal | null;
   pose: 'stand' | 'walk' | 'sit' | 'bed' | 'down';
@@ -286,6 +385,8 @@ interface Actor {
   edge?: { bed: BedSpot; t: number; out: boolean } | null;
   /** Haciendo algo en un sitio de la sala (leer el tablón, calentarse…) y hacia dónde mira. */
   poi?: { kind: Poi['kind']; dir: 1 | -1 } | null;
+  /** En la rutina de su oficio: el mueble (`at`, su x), lo que hace y hacia dónde mira. */
+  task?: { at: number; work: WorkId; face: 1 | -1 } | null;
   /** De charla con alguien: con quién, cuándo empezó (al llegar) y cuándo acaba. */
   chat?: { with: string; from: number; until: number } | null;
   /** Sentándose o levantándose del taburete: lo que falta (en segundos) y hacia dónde. */
@@ -471,12 +572,13 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
     14,
   );
   // En su puesto, con la herramienta (los de la izquierda, volteados).
-  for (const w of Object.values(WORK))
+  Object.values(WORK).forEach((w: Work, slot) =>
     w.steps.forEach(([p, deg], i) => {
-      const img = drillCell(still, p, TOOLS[w.tool], deg);
-      put(img, F.tool + w.tool * 8 + i, 0);
-      put(img, F.tool + w.tool * 8 + 4 + i, 0, true);
-    });
+      const img = drillCell(still, p, TOOLS[w.tool]!, deg);
+      put(img, F.tool + slot * 8 + i, 0);
+      put(img, F.tool + slot * 8 + 4 + i, 0, true);
+    }),
+  );
   // Las manos hacia el fuego.
   const warm = new PixelBuffer(CELL, TALL);
   warm.blit(still.thrust, 3, 0);
@@ -874,7 +976,7 @@ export class Crowd {
         }
       }
       if (a.chat && !a.path.length) this.talk(a, t);
-      if (a.path.length) this.walk(a, dt);
+      if (a.path.length || (a.pose === 'walk' && this.sliding(a))) this.walk(a, dt);
       else if (a.leaving) {
         if (!a.hero.visitor) this.away.add(a.hero.id);
         this.remove(a.hero.id);
@@ -1195,6 +1297,7 @@ export class Crowd {
       y: floorY(start.floor),
       floor: start.floor,
       lane: LANES[hash(h.id) % LANES.length]!,
+      home: LANES[hash(h.id) % LANES.length]!,
       path: [],
       goal: null,
       pose: 'stand',
@@ -1283,17 +1386,29 @@ export class Crowd {
    * Si alguien está trabajando en su puesto ahora mismo (de día, parado en su sala): con qué
    * herramienta, en qué tiempo de la vuelta y hacia dónde mira.
    */
-  private jobAnim(a: Actor): { tool: number; pose: number; dir: 1 | -1 } | null {
+  private jobAnim(a: Actor): { slot: number; pose: number; dir: 1 | -1 } | null {
     const h = a.hero;
     if (!h.work || h.status !== 'ok' || h.guard || this.time !== 'day' || this.scripted)
       return null;
     if (a.path.length || a.held || a.leaving || a.pose !== 'stand' || a.edge) return null;
     const job = this.S?.jobs.get(h.work);
+    // En la cocina y la bodega, lo que toque de su rutina (o nada, en el rato quieto).
+    if (job && ROUTINE.has(job.room.type)) {
+      const tk = a.task;
+      if (!tk || Math.abs(a.x - tk.at) > 16) return null;
+      const w: Work = WORK[tk.work];
+      const cycle = w.steps.reduce((s, x) => s + x[2], 0);
+      let p = (this.now + (hash(h.id) % 89) / 11) % cycle;
+      let pose = 0;
+      while (pose < w.steps.length - 1 && p >= w.steps[pose]![2]) p -= w.steps[pose++]![2];
+      return { slot: SLOT[tk.work], pose, dir: tk.face };
+    }
     // En el salón, junto a la barra, con el trapo.
     const wiping =
       job?.room.type === 'salon' &&
       this.S!.bar.some((b) => b.floor === a.floor && Math.abs(b.x - a.x) < 6);
-    const w = job ? WORK[wiping ? 'barra' : job.room.type] : undefined;
+    const key = (wiping ? 'barra' : job?.room.type) as WorkId | undefined;
+    const w: Work | undefined = key && key in WORK ? WORK[key] : undefined;
     if (!job || !w || a.floor !== job.room.floor || a.x < job.x0 - 8 || a.x > job.x1 + 8)
       return null;
     const cycle = w.steps.reduce((a, s) => a + s[2], 0);
@@ -1311,7 +1426,7 @@ export class Crowd {
           to = s.x;
         }
     }
-    return { tool: w.tool, pose, dir: to >= a.x ? 1 : -1 };
+    return { slot: SLOT[key!], pose, dir: to >= a.x ? 1 : -1 };
   }
 
   /** De pie en la barra del salón (y sin otra cosa que hacer): con su jarra. */
@@ -1320,12 +1435,52 @@ export class Crowd {
     return this.S.bar.some((b) => b.floor === a.floor && Math.abs(b.x - a.x) < 7);
   }
 
+  /**
+   * La rutina del servicio en la cocina y la bodega: de mueble en mueble (la olla, la mesa, el
+   * horno, la cuba, el barril…), haciendo en cada uno lo suyo un rato y, a veces, un rato quieto
+   * en medio. Devuelve si se ha encargado (si no, el puesto de siempre).
+   */
+  private taskTurn(a: Actor): boolean {
+    const j = this.S?.jobs.get(a.hero.work!);
+    if (!j || !ROUTINE.has(j.room.type) || !this.L) return false;
+    const spots = this.pois.filter(
+      (p) =>
+        !LEISURE.has(p.kind) && p.floor === j.room.floor && p.x >= j.x0 - 24 && p.x <= j.x1 + 24,
+    );
+    if (!spots.length) return false;
+    // Un rato quieto entre tarea y tarea: se seca la frente, mira alrededor.
+    if (a.task && this.rnd() < 0.3) {
+      a.task = null;
+      a.wait = 2 + this.rnd() * 3;
+      return true;
+    }
+    const busy = new Set(
+      [...this.actors.values()].filter((x) => x !== a && x.task).map((x) => Math.round(x.task!.at)),
+    );
+    const free = spots.filter((p) => !busy.has(Math.round(p.x)) && p.x !== a.task?.at);
+    const pool = free.length ? free : spots;
+    const p = pool[Math.floor(this.rnd() * pool.length)]!;
+    const works = TASKS[p.kind as TaskPoi];
+    const work = works[Math.floor(this.rnd() * works.length)]!;
+    // A un lado del mueble, mirándolo.
+    const side = this.rnd() < 0.5 ? -1 : 1;
+    const x = p.x + side * Math.min(p.half * 0.45, 9) + (this.rnd() - 0.5) * 2;
+    const place = { x, floor: p.floor };
+    if (!route(this.L, { x: a.x, floor: a.floor }, place, this.segs)) return false;
+    this.go(a, { place, pose: 'stand', stand: p.z !== undefined ? p.z - 10 : undefined });
+    a.task = { at: p.x, work, face: side > 0 ? -1 : 1 };
+    a.wait = 6 + this.rnd() * 8;
+    return true;
+  }
+
   /** Va a hacer algo a un sitio de una sala que nadie está usando (si hay). */
   private goPoi(a: Actor): boolean {
     const used = new Set(
       [...this.actors.values()].filter((x) => x.poi && x !== a).map((x) => Math.round(x.x)),
     );
-    const free = this.pois.filter((p) => ![-12, 0, 12].some((d) => used.has(Math.round(p.x + d))));
+    const free = this.pois.filter(
+      (p) => LEISURE.has(p.kind) && ![-12, 0, 12].some((d) => used.has(Math.round(p.x + d))),
+    );
     const p = free[Math.floor(this.rnd() * free.length)];
     if (!p) return false;
     // Para calentarse, a un lado del fuego, mirándolo; para leer o rezar, delante.
@@ -1333,7 +1488,7 @@ export class Crowd {
     const x = p.kind === 'warm' ? p.x + side * Math.min(p.half, 14) : p.x + (this.rnd() - 0.5) * 6;
     const place = { x, floor: p.floor };
     if (!this.L || !route(this.L, { x: a.x, floor: a.floor }, place, this.segs)) return false;
-    this.go(a, { place, pose: 'stand' });
+    this.go(a, { place, pose: 'stand', stand: p.z !== undefined ? p.z - 10 : undefined });
     a.poi = { kind: p.kind, dir: side > 0 ? -1 : 1 };
     a.wait = 7 + this.rnd() * 8;
     return true;
@@ -1362,7 +1517,7 @@ export class Crowd {
     const side = a.x < b.x ? -1 : 1;
     const place = { x: b.x + side * 15, floor: b.floor };
     if (!route(this.L, { x: a.x, floor: a.floor }, place, this.segs)) return false;
-    this.go(a, { place, pose: 'stand' });
+    this.go(a, { place, pose: 'stand', stand: b.lane + (this.rnd() - 0.5) * 3 });
     a.chat = { with: b.hero.id, from: 0, until: this.now + 20 };
     // El otro espera: que no se vaya mientras llega.
     b.wait = Math.max(b.wait, 12);
@@ -1495,6 +1650,8 @@ export class Crowd {
     }
     const home = this.homes.get(h.id);
     const job = this.workOf(a);
+    if (!job) a.task = null;
+    if (job && this.taskTurn(a)) return;
     if (job) {
       // En el salón van de mesa en mesa; en las demás salas, cada uno a lo suyo.
       a.wait = 4 + this.rnd() * 8;
@@ -1510,6 +1667,8 @@ export class Crowd {
       if (r < 0.45 && this.goPoi(a)) return;
     }
     const g = free ? wander(this.S, this.taken(), this.rnd) : home;
+    // Paseando, a cualquier profundidad de la sala (por delante de los muebles).
+    if (free && g && g.pose === 'stand') g.stand = NEAR_Z + this.rnd() * 18;
     a.wait = free ? 5 + this.rnd() * 9 : 3 + this.rnd() * 3;
     if (!g) return;
     // Si ya está ahí, se queda.
@@ -1538,6 +1697,9 @@ export class Crowd {
     a.goal = g;
     a.path = path;
     a.pose = 'walk';
+    // De pie, a la profundidad que pida el destino o, si no pide ninguna, a la suya de siempre.
+    a.laneTo =
+      g.pose === 'stand' ? Math.max(NEAR_Z, Math.min(FAR_Z, g.stand ?? a.home)) : undefined;
     if (g.pose === 'sit' && this.S) a.seat = this.S.seats.find((s) => s.x === g.place.x) ?? null;
   }
 
@@ -1567,6 +1729,12 @@ export class Crowd {
   }
 
   private walk(a: Actor, dt: number): void {
+    this.slide(a, dt);
+    if (!a.path.length) {
+      // Ya en su x: le queda ponerse a su profundidad (da unos pasos hacia dentro o fuera).
+      if (!this.sliding(a)) this.reach(a);
+      return;
+    }
     const next = a.path[0]!;
     const run = a.run ?? 1;
     if (next.floor !== a.floor) {
@@ -1624,14 +1792,33 @@ export class Crowd {
         a.path.shift();
       } else a.x += Math.sign(dx) * step;
     }
-    if (!a.path.length) {
-      if (a.goal && !a.leaving) {
-        this.arrive(a, a.goal);
-        // Se mete en la cama: primero incorporado y luego se tumba.
-        if (a.goal.pose === 'bed' && a.goal.bed && !this.scripted)
-          a.edge = { bed: a.goal.bed, t: 0.8, out: false };
-      } else a.pose = 'stand';
-    }
+    if (!a.path.length && !this.sliding(a)) this.reach(a);
+  }
+
+  /** Ha llegado (en x y en profundidad): se pone como pide su destino. */
+  private reach(a: Actor): void {
+    if (a.goal && !a.leaving) {
+      this.arrive(a, a.goal);
+      // Se mete en la cama: primero incorporado y luego se tumba.
+      if (a.goal.pose === 'bed' && a.goal.bed && !this.scripted)
+        a.edge = { bed: a.goal.bed, t: 0.8, out: false };
+    } else a.pose = 'stand';
+  }
+
+  /** Si aún le falta ponerse a su profundidad. */
+  private sliding(a: Actor): boolean {
+    return a.laneTo !== undefined && !a.climb && Math.abs(a.lane - a.laneTo) > 0.4;
+  }
+
+  /** Mientras anda, se va acercando a la profundidad de su destino (en diagonal). */
+  private slide(a: Actor, dt: number): void {
+    if (a.laneTo === undefined || a.climb || this.scripted) return;
+    const dz = a.laneTo - a.lane;
+    const step = Z_SPEED * (a.run ?? 1) * dt;
+    if (Math.abs(dz) <= step) a.lane = a.laneTo;
+    else a.lane += Math.sign(dz) * step;
+    // Andando solo hacia dentro o fuera, el paso sigue (si no, patinaría).
+    if (!a.path.length) a.dist += Math.min(step, Math.abs(dz));
   }
 
   private depth(a: Actor): number {
@@ -1733,7 +1920,7 @@ export class Crowd {
     }
     const job = this.jobAnim(a);
     if (job) {
-      const i = F.tool + job.tool * 8 + (job.dir > 0 ? 0 : 4) + job.pose;
+      const i = F.tool + job.slot * 8 + (job.dir > 0 ? 0 : 4) + job.pose;
       return { frame: i, left: a.x - CELL / 2 / k, bottom: top + TALL / k, z };
     }
     if (a.pose === 'stand' && !a.path.length && this.time === 'day' && !this.scripted) {

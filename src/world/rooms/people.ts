@@ -20,6 +20,9 @@ export type Segments = Map<number, [number, number][]>;
 
 /** Profundidades por las que se anda (cada uno la suya, para que no se tapen del todo). */
 export const LANES = [16, 21, 26] as const;
+/** Lo más adelante y lo más al fondo a lo que se pone uno de pie dentro de una sala. */
+export const NEAR_Z = 13;
+export const FAR_Z = 44;
 
 /** Por dónde se sale al patio y dónde se pierde uno de vista al irse de misión. */
 export const outside = (): Place => ({ x: -PATIO_W + 24, floor: 0 });
@@ -198,6 +201,8 @@ export interface Goal {
   pose: Pose;
   /** Profundidad al llegar (la del taburete o la cama). */
   z?: number;
+  /** De pie: a qué profundidad se queda (delante de su mueble, junto a quien charla…). */
+  stand?: number;
   bed?: BedSpot;
 }
 

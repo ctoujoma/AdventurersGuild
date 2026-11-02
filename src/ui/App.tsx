@@ -1,3 +1,4 @@
+import { flyCoins } from './coinFlight';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useBackButton } from '../platform/back';
 import { HoldHelp } from './HoldHelp';
@@ -352,6 +353,14 @@ export function App() {
     if (after.gold > gold) {
       scene.current?.pay();
       audio.play('coin', 0.25);
+      // Las monedas vuelan de la caja al oro de arriba; cada una que llega, tintinea.
+      const p = scene.current?.payPoint();
+      const stage = document.querySelector('.stage');
+      if (p && stage) {
+        const r = stage.getBoundingClientRect();
+        const n = Math.min(8, Math.max(3, Math.ceil((after.gold - gold) / 5)));
+        flyCoins({ x: r.left + p.x, y: r.top + p.y }, n, () => audio.play('coin', 0.09));
+      }
     }
   };
   /**
