@@ -20,10 +20,11 @@ o está en «Más adelante», no se toca sin preguntar. El detalle de cada idea 
 ## Quién hace qué
 
 - **Agente principal** (esta conversación): tiempo, núcleo del bucle, combate, encargos en
-  directo, talleres, amigos y la app.
+  directo, talleres (la forja crea), amigos y la app.
 - **Agente del tutorial:** [`encargos/tutorial.md`](encargos/tutorial.md). Ahora, el de las
   obras (2b).
-- **Agente de arte:** ahora, el fondo y la escena. Hechos: colores, fachada, incidentes, los
+- **Agente de arte:** ahora, el fondo y la escena; después, los talleres
+  ([`encargos/arte-talleres.md`](encargos/arte-talleres.md)). Hechos: colores, fachada, incidentes, los
   tres jefes, la tira con los enemigos por familias, la vuelta que deshace el camino y el mapa.
 - **Agente de interfaz:** terminado lo encargado (trabajadores, menos toques, avisos que se
   descartan, el cobro de Merlo, las cartas del amanecer una a una, el mapa grande). Le queda
@@ -78,8 +79,8 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
    heridos», «sirve 40 jarras»).
 3. **Premios que se ven** (hecho): hazañas y objetivos dan piezas de fachada (tejado, paredes,
    rótulo, jardineras) y temas de color de las salas (`data/unlocks.ts`). Las que no se tienen
-   salen apagadas y dicen de dónde se ganan; en el modo prueba, todas. Falta: tintes y prendas
-   de la sastrería, cuando llegue la sala.
+   salen apagadas y dicen de dónde se ganan; en el modo prueba, todas. Los mismos tintes visten
+   a los héroes en la sastrería (hecho).
 4. **Rangos que abren cosas:** Cobre, Hierro, Plata, Oro y Leyenda (ya existen, por
    reputación). Cada rango abre algo:
    - plantas, hasta 6 por encima de la baja (hecho);
@@ -92,7 +93,7 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
      jefes nuevos pelean como su `base` (`data/bosses.ts`) y tienen su dibujo propio (hecho,
      `art/bosses.ts`). Al acabar todas, ya no llegan más: valorar historias que se
      repitan o una por temporada;
-   - salas nuevas (la sastrería, cuando llegue).
+   - salas nuevas: la sastrería (Hierro) y el taller de alquimia (Plata) (hecho).
 5. **Incidentes en la taberna.** Formas de resolverlos:
    - arrastrar héroes (pelea, ladrón, algo en la bodega) o trabajadores (fuego en la cocina,
      barril roto);
@@ -197,16 +198,37 @@ sitio (comprar solar o excavar, mover, construir, ampliar, mejorar). De un agent
   `FOE_TUNE` en `core/combat.ts`); faltan los bandidos de los asaltos.
 - Después, el torneo de la comarca (armas romas, premio de trofeo).
 
-## Fase 4 · Talleres: fabricar objetos
+## Fase 4 · Talleres: crear objetos (hecho el núcleo y las fichas; falta el arte)
 
-- **La forja fabrica armas** y, con salas nuevas, el resto: armaduras (armería o un taller de
-  armero), botas y capas (curtidor o la sastrería), amuletos (la capilla o un taller de
-  alquimia).
-- **Recetas:** unas básicas desde el principio; cada una tarda horas de juego y cuesta oro
-  (y quizá materiales del botín).
-- **Recetas que se ganan:** como premio de encargos e historias, o **desmontando** un objeto
-  para intentar sacar su receta (puede salir o perderse el objeto).
-- Encaja con la sastrería (tintes y prendas) y con los premios que se ven.
+Decidido con el usuario: un oficio por taller, los legendarios solo del botín y, de momento, sin
+materiales (oro y tiempo). La acción se llama «Crear».
+
+- **Tres talleres** con el mismo sistema (`core/crafting.ts`, recetas en `data/recipes.ts`,
+  ficha en `ui/panels/WorkshopInfo.tsx`):
+  - **Forja** (la de siempre, que además sigue afilando el objeto de cada héroe): espada,
+    coraza y ganzúas de serie; hacha y escudo se aprenden. Oficio: herrero/herrera.
+  - **Sastrería** (sala nueva, se abre con el rango de Hierro): botas de serie, capa se aprende.
+    Además **viste**: tinte y prenda para un héroe en casa (15 monedas, unas 4 h); el héroe va a
+    la sastrería mientras le cosen y al estrenar sube la moral. Los tintes son los premios de
+    siempre (`tint:*`, hazañas y objetivos): uno ganado vale para las salas y para todos los
+    héroes. Prendas: capa, tabardo, faja y bufanda, todas desde el principio. Oficio: sastre/sastra.
+  - **Taller de alquimia** (sala nueva, rango de Plata): amuleto de serie, varita se aprende.
+    Oficio: alquimista.
+- **Cómo va un trabajo:** oro al empezar (se devuelve al cancelar), horas de juego según quién
+  trabaje (el del oficio; un héroe echa una mano más despacio; sin nadie se para), también con
+  el juego cerrado. Uno a la vez; dos con el taller a nivel 3. Sale «de las buenas» (rareza 1)
+  del 15 al 45 % según el nivel y la maña. Cifras en `balance.ts` (`CRAFT_*`, `UNDO_*`,
+  `DRESS_*`, `RECIPE_FIND`).
+- **Recetas que se ganan:** desmontando un objeto del arcón (se pierde; del 50 al 80 % sale la
+  receta), un 20 % de los éxitos brillantes traen planos y cada historia acabada, siempre.
+- **Quién viene a pedir trabajo:** desde que se paga la deuda (antes bastan los tres del
+  pueblo). Una sala con oficio y sin nadie de él: a la mañana siguiente viene alguien de ese
+  oficio («se corre la voz»), si hay cama en el servicio. Además, cada noche, un 20 % (más con
+  más visitantes, hasta un 60 %) viene alguien, casi siempre de una sala que lo necesita;
+  esperan tres como mucho.
+- **Arte (encargado):** [`encargos/arte-talleres.md`](encargos/arte-talleres.md): las dos salas
+  nuevas, los oficios, las animaciones de trabajo y vestir.
+- **Más adelante:** más recetas, y un material («hierro», «tela»…) si se queda corto.
 
 ## Fase 5 · Aspecto y pulido (arte, en paralelo desde ya)
 

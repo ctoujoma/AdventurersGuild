@@ -1231,6 +1231,7 @@ export function App() {
                 works.planning ? undefined : (id, tint) => dispatch({ type: 'tint', id, tint })
               }
               has={has}
+              onAct={works.planning ? undefined : dispatch}
             />
           </Panel>
         )}

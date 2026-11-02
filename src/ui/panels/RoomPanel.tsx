@@ -29,6 +29,8 @@ import type { ComponentChildren } from 'preact';
 import { help } from '../HoldHelp';
 import { Icon, type IconName } from '../icons';
 import { CrewGroup } from './CrewList';
+import { WorkshopInfo } from './WorkshopInfo';
+import { isWorkshop } from '../../core/crafting';
 import { crewGroups } from '../crew';
 import { GUARD, type Task } from '../drop';
 import { left as timeLeft } from '../when';
@@ -102,6 +104,8 @@ interface Props {
   onTint?: (room: string, tint: TintId | null) => void;
   /** Si se tiene una pieza (los temas de color que faltan salen con candado). */
   has?: (id: UnlockId) => boolean;
+  /** Lo que se hace en la sala (crear y desmontar en los talleres). Sin él, solo se mira. */
+  onAct?: (a: Action) => void;
 }
 
 /** Los colores de las telas de la sala: los de la casa o uno de los temas. */
@@ -396,6 +400,7 @@ export function RoomPanel({
   onOpen,
   onTint,
   has,
+  onAct,
 }: Props) {
   const room = game.building.rooms.find((r) => r.id === roomId);
   if (!room) return <p class="panel-note">Esa sala ya no está.</p>;
@@ -474,6 +479,9 @@ export function RoomPanel({
       ))}
       {onTask && onOpen && (hasPosts(room.type) || room.type === 'recibidor') && (
         <RoomCrew game={game} room={room} onTask={onTask} onOpen={onOpen} />
+      )}
+      {isWorkshop(room.type) && room.level > 0 && !room.works && (
+        <WorkshopInfo game={game} room={room} onAct={onAct} />
       )}
       {onTint && !room.works && room.level >= (TINT_FROM[room.type] ?? Infinity) && (
         <RoomTint game={game} room={room} onTint={onTint} has={has ?? (() => true)} />

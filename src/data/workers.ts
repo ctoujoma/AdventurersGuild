@@ -6,7 +6,8 @@ import type { Sex } from '../core/model';
 import type { StaffId } from './custom';
 
 /** Oficio: el de la sala en la que rinde más. */
-export type Trade = 'salon' | 'cocina' | 'bodega' | 'enfermeria';
+export type Trade =
+  'salon' | 'cocina' | 'bodega' | 'enfermeria' | 'forja' | 'sastreria' | 'alquimia';
 
 export const TRADES: Record<Trade, { name: Record<Sex, string>; job: string; gives: string }> = {
   salon: {
@@ -28,6 +29,21 @@ export const TRADES: Record<Trade, { name: Record<Sex, string>; job: string; giv
     name: { m: 'Enfermero', f: 'Enfermera' },
     job: 'Cuida a los heridos',
     gives: 'los heridos se curan antes',
+  },
+  forja: {
+    name: { m: 'Herrero', f: 'Herrera' },
+    job: 'Trabaja en la forja',
+    gives: 'crea armas y armaduras',
+  },
+  sastreria: {
+    name: { m: 'Sastre', f: 'Sastra' },
+    job: 'Cose en la sastrería',
+    gives: 'viste a los héroes y crea botas y capas',
+  },
+  alquimia: {
+    name: { m: 'Alquimista', f: 'Alquimista' },
+    job: 'Trabaja en el taller de alquimia',
+    gives: 'crea amuletos y varitas',
   },
 };
 

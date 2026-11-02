@@ -69,9 +69,9 @@ npm run build`.
    (el mapa, los alfileres y el catalejo), despensa (la cocinera viene a por cosas), tesoro
    (contar monedas), capilla (arrodillarse y encender velas), recibidor (la ronda del guardia).
 4. **La forja que trabaja**: el encargo [`encargos/arte-forja.md`](encargos/arte-forja.md)
-   (herrero, martillar con chispas, fuelle, templar, bocadillo del trabajo). **Depende** del
-   código de la forja del agente principal (rama `claude/sharp-mendel-apsm2a`): empezar cuando
-   esté en `main`.
+   (herrero, martillar con chispas, fuelle, templar, bocadillo del trabajo). El código de la
+   forja ya está en `main` (PR #95 y #96, con la sastrería y el taller de alquimia): se puede
+   empezar.
 5. **La capilla**: la luz de las vidrieras cayendo en color sobre el suelo, incienso y velas.
 6. **Grosor en el resto de salas**: cocina (horno, mesas, aparador), despensa (estanterías y
    cajas a varias profundidades), capilla, mapas, armería, enfermería y dormitorios.
