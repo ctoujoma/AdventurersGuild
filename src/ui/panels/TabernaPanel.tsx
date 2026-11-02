@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useState } from 'preact/hooks';
 import { customOf } from '../../core/game';
 import { unlockSource } from '../../core/goals';
 import { appeal } from '../../core/salon';
@@ -8,6 +8,9 @@ import {
   CREST_SYMBOLS,
   DECOR,
   FACADE,
+  GARDEN_EDGES,
+  GARDEN_GROUNDS,
+  GARDEN_PIECES,
   ROOFS,
   SIGNS,
   WALLS,
@@ -20,12 +23,17 @@ import {
   type DecorId,
   type FacadeId,
   type FacadeLook,
+  type GardenEdgeId,
+  type GardenGroundId,
+  type GardenLook,
+  type GardenPieceId,
   type RoofId,
   type SignId,
   type WallId,
   type CrestSymbol,
 } from '../../data/custom';
 import type { UnlockId } from '../../data/unlocks';
+import { GARDEN_W } from '../../core/balance';
 import { crestBoard } from '../../world/props';
 import { BufferImage } from '../BufferImage';
 import { help } from '../HoldHelp';
@@ -40,6 +48,10 @@ interface Props {
   onFacade: (id: FacadeId) => void;
   /** El aspecto de la fachada por partes (tejado, paredes, rótulo, jardineras). */
   onLook: (patch: FacadeLook) => void;
+  /** El aspecto del jardín (solo con el patio trasero). */
+  onGarden: (patch: GardenLook) => void;
+  /** Con la pestaña del jardín abierta, la cámara lo enseña sobre el panel (vista previa). */
+  onGardenView: (on: boolean) => void;
   onRaven: () => void;
   onFeast: () => void;
   /** Si se tiene una pieza (las demás salen con candado y de dónde se ganan). */
@@ -142,7 +154,82 @@ function FacadeParts({
   );
 }
 
-type AdornoTab = 'letrero' | 'salon' | 'fachada' | 'animales';
+/** Sin nada elegido (pieza o borde). */
+const NADA = 'nada';
+const free = () => null;
+
+/** El jardín del patio trasero: suelo, una pieza por trozo, borde, faroles y claustro. */
+function GardenParts({ look, onLook }: { look: GardenLook; onLook: (p: GardenLook) => void }) {
+  const slots = look.slots ?? [];
+  const pieces = { [NADA]: 'Nada', ...GARDEN_PIECES } as Record<GardenPieceId | 'nada', string>;
+  const edges = { [NADA]: 'Ninguno', ...GARDEN_EDGES } as Record<GardenEdgeId | 'nada', string>;
+  const SIDE = ['Izquierda', 'En medio', 'Derecha'];
+  const [at, setAt] = useState(0);
+  return (
+    <div class="look-parts">
+      <Choice<GardenGroundId>
+        title="Suelo"
+        names={GARDEN_GROUNDS}
+        value={look.ground ?? 'hierba'}
+        onPick={(ground) => onLook({ ground })}
+        lock={free}
+      />
+      <div class="look-row">
+        <span class="row-sub">Trozo del jardín</span>
+        <div class="tav-symbols" role="radiogroup" aria-label="Trozo del jardín">
+          {Array.from({ length: GARDEN_W }, (_, i) => (
+            <button
+              key={i}
+              role="radio"
+              aria-checked={at === i}
+              class={`btn ${at === i ? 'btn-gold' : 'btn-wood'}`}
+              onClick={() => setAt(i)}
+            >
+              {SIDE[i] ?? `Trozo ${i + 1}`}
+              <small>{slots[i] ? ` · ${GARDEN_PIECES[slots[i]!]}` : ''}</small>
+            </button>
+          ))}
+        </div>
+      </div>
+      <Choice<GardenPieceId | 'nada'>
+        title={`Pieza (${(SIDE[at] ?? '').toLowerCase()})`}
+        names={pieces}
+        value={slots[at] ?? NADA}
+        onPick={(k) => {
+          const next = Array.from({ length: GARDEN_W }, (_, j) => slots[j] ?? null);
+          next[at] = k === NADA ? null : k;
+          onLook({ slots: next });
+        }}
+        lock={free}
+      />
+      <Choice<GardenEdgeId | 'nada'>
+        title="Borde"
+        names={edges}
+        value={look.edge ?? NADA}
+        onPick={(k) => onLook({ edge: k === NADA ? undefined : k })}
+        lock={free}
+      />
+      <label class="look-check">
+        <input
+          type="checkbox"
+          checked={!!look.lamps}
+          onChange={(e) => onLook({ lamps: (e.target as HTMLInputElement).checked })}
+        />{' '}
+        Faroles
+      </label>
+      <label class="look-check">
+        <input
+          type="checkbox"
+          checked={!!look.cloister}
+          onChange={(e) => onLook({ cloister: (e.target as HTMLInputElement).checked })}
+        />{' '}
+        Claustro (soportales con arcos)
+      </label>
+    </div>
+  );
+}
+
+type AdornoTab = 'letrero' | 'salon' | 'fachada' | 'jardin' | 'animales';
 
 /** Precio en un botón dorado: moneda y cifra. */
 function Buy({
@@ -182,6 +269,8 @@ export function TabernaPanel({
   onDecor,
   onFacade,
   onLook,
+  onGarden,
+  onGardenView,
   onRaven,
   onFeast,
   has,
@@ -196,6 +285,7 @@ export function TabernaPanel({
     feastToday && c.feast !== game.day ? 'salon' : 'letrero',
   );
   const [name, setName] = useState(c.name);
+  useEffect(() => onGardenView(tab === 'jardin'), [tab]);
   const col = CREST_COLORS[c.color];
   const board = useMemo(() => crestBoard(col.field, col.dark, c.symbol), [c.color, c.symbol]);
   const commit = () => {
@@ -221,6 +311,7 @@ export function TabernaPanel({
             label: 'Fachada',
             help: `La fachada da Atractivo (ahora ${appeal(game)}): trae más visitantes.`,
           },
+          ...(game.building.wing ? [{ id: 'jardin' as const, label: 'Jardín' }] : []),
           { id: 'animales', label: 'Animales' },
         ]}
       />
@@ -336,6 +427,7 @@ export function TabernaPanel({
         </>
       )}
 
+      {tab === 'jardin' && <GardenParts look={c.garden ?? {}} onLook={onGarden} />}
       {tab === 'fachada' && <FacadeParts look={c.look ?? {}} onLook={onLook} has={has} />}
       {tab === 'fachada' && (
         <div class="adornos">

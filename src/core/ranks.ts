@@ -4,7 +4,7 @@
  * aviso del amanecer al subir de rango.
  */
 import { ROOMS, type RoomType } from '../data/rooms';
-import { FLOORS_BY_RANK, LEVEL_RANK, RANKS, rankIndex } from './balance';
+import { FLOORS_BY_RANK, LEVEL_RANK, RANKS, WING_RANK, rankIndex } from './balance';
 import type { DawnEvent, GameState } from './model';
 
 /** Lo que abre el rango `r`, dicho para el jugador: «la planta 5», «nivel 3 de la capilla»… */
@@ -16,6 +16,7 @@ export function rankUnlocks(r: number): string[] {
   for (const [type, levels] of Object.entries(LEVEL_RANK) as [RoomType, Record<number, number>][])
     for (const [level, need] of Object.entries(levels))
       if (need === r) out.push(`el nivel ${level} de ${ROOMS[type].name.toLowerCase()}`);
+  if (r === WING_RANK) out.push('el patio trasero');
   return out;
 }
 

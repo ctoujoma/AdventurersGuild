@@ -4826,7 +4826,8 @@ select.crew-free {
 .ribbon-room span {
   font-size: var(--t-s);
 }
-.ribbon-room:disabled {
+.ribbon-room:disabled,
+.ribbon-room.is-off {
   opacity: 0.45;
 }
 /* Pie: lista y deshacer (iconos), pagar (la acción principal) y salir. */
@@ -5399,7 +5400,8 @@ select.crew-free {
 
 @keyframes alert-gone {
   0% {
-    opacity: 1;
+    opacity: var(--o, 1);
+    translate: var(--dx, 0) 0;
   }
   100% {
     opacity: 0;
@@ -6660,4 +6662,11 @@ p.notebook-close {
 .craft-mark.is-stalled {
   filter: grayscale(1);
   opacity: 0.75;
+}
+
+/* Panel bajo: deja ver la escena encima (la vista previa del jardín). */
+@media (orientation: portrait) {
+  .panel.panel-low {
+    max-height: 48%;
+  }
 }

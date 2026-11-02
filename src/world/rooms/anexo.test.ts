@@ -8,6 +8,7 @@ import {
   PARTITION,
   WALL,
   colX,
+  focusPoint,
   gardenRect,
   gardenSlots,
   roofRuns,
@@ -86,7 +87,10 @@ describe('el anexo en el modo obras', () => {
     s.mode = 'libre';
     s.gold = 99999;
     s.rep = RANKS[WING_RANK]!.at;
-    const kinds = (st: GameState) => targetsFor(st, { kind: 'expand' }).map((t) => t.action.type);
+    const kinds = (st: GameState) =>
+      targetsFor(st, { kind: 'expand' })
+        .filter((t) => !t.blocked)
+        .map((t) => t.action.type);
     expect(kinds(s)).not.toContain('buyWing');
     while (s.building.cols < MAX_COLS) s = reduce(s, { type: 'buyPlot' });
     expect(kinds(s)).toContain('buyWing');
@@ -101,5 +105,21 @@ describe('el anexo en el modo obras', () => {
     );
     expect(spots.some((a) => a.col === WING_COL && a.floor === 0)).toBe(true);
     expect(spots.some((a) => a.col >= MAX_COLS && a.col < WING_COL)).toBe(false);
+  });
+});
+
+describe('el anexo para la cámara', () => {
+  it('tiene su punto para saltar a él', () => {
+    let s = newGame('salto');
+    s.mode = 'libre';
+    s.gold = 99999;
+    s.rep = RANKS[WING_RANK]!.at;
+    expect(focusPoint(roomsLayout(s.building), 'anexo')).toBeNull();
+    while (s.building.cols < MAX_COLS) s = reduce(s, { type: 'buyPlot' });
+    s = reduce(s, { type: 'buyWing' });
+    const L = roomsLayout(s.building);
+    const p = focusPoint(L, 'anexo')!;
+    expect(p.x).toBeGreaterThan(focusPoint(L, 'sala')!.x);
+    expect(p.x).toBeLessThan(L.right);
   });
 });

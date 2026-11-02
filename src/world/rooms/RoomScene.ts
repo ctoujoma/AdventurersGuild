@@ -67,6 +67,7 @@ import {
   PARTITION,
   PITCH,
   ROOF_H,
+  ROOM_H,
   SLAB,
   WALL,
   YARD_D,
@@ -773,6 +774,39 @@ export class RoomScene {
   focus(room: string): void {
     const p = this.layout ? focusPoint(this.layout, room) : null;
     if (p) this.camera.centerOn(p.x, p.y);
+  }
+
+  /**
+   * El botón de casa: a la sala; con anexo, si ya se está mirando la sala, salta al anexo (y
+   * desde el anexo, de vuelta), que con los dos edificios el camino arrastrando es largo.
+   */
+  home(): void {
+    const L = this.layout;
+    const sala = L ? focusPoint(L, 'sala') : null;
+    const anexo = L ? focusPoint(L, 'anexo') : null;
+    if (!sala) return;
+    const cx = this.camera.x + this.camera.vw / 2;
+    const near = Math.abs(cx - sala.x) < this.camera.vw / 4;
+    const p = anexo && near ? anexo : sala;
+    this.camera.centerOn(p.x, p.y);
+  }
+
+  /**
+   * Como `focus`, pero con el sitio en la franja de arriba que deja un panel abierto (`seen`:
+   * la parte de la vista, de 0 a 1, que queda sin tapar).
+   */
+  focusTop(name: string, seen: number): void {
+    const p = this.layout ? focusPoint(this.layout, name) : null;
+    if (!p) return;
+    // El suelo del sitio, un poco por encima del borde del panel.
+    const dy = this.camera.vh * (0.5 - Math.max(0.1, seen)) + ROOM_H / 2 + 6;
+    this.camera.lift = dy;
+    this.camera.centerOn(p.x, p.y + dy);
+  }
+
+  /** Al cerrar el panel, la cámara vuelve a sus límites. */
+  releaseTop(): void {
+    this.camera.unlift();
   }
 
   /** La entrada de la partida: la cámara empieza fuera, a la izquierda, y entra despacio hasta la sala. */

@@ -8,11 +8,13 @@ interface Props {
   variant?: 'paper' | 'cork';
   /** Toda la escena, de arriba abajo (el mapa). */
   full?: boolean;
+  /** Más bajo, para ver la escena encima (vista previa del jardín). */
+  low?: boolean;
   children: ComponentChildren;
 }
 
 /** Panel que sube sobre la escena: marco de madera y fondo de pergamino o corcho. */
-export function Panel({ title, onClose, variant = 'paper', full, children }: Props) {
+export function Panel({ title, onClose, variant = 'paper', full, low, children }: Props) {
   // Al cerrar, baja antes de desaparecer.
   const [leaving, setLeaving] = useState(false);
   const close = () => {
@@ -22,7 +24,7 @@ export function Panel({ title, onClose, variant = 'paper', full, children }: Pro
   };
   return (
     <section
-      class={`panel panel-${variant} ${full ? 'panel-full' : ''} ${leaving ? 'panel-leave' : ''}`}
+      class={`panel panel-${variant} ${full ? 'panel-full' : ''} ${low ? 'panel-low' : ''} ${leaving ? 'panel-leave' : ''}`}
       aria-label={title}
     >
       <header class="panel-head">

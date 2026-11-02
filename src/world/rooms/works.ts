@@ -4,7 +4,7 @@
  * escalera, con su rectángulo en el corte del edificio. Lógica pura: la escena los marca y la
  * interfaz decide qué hacer con el que se toque.
  */
-import { MAX_DOWN, MAX_UP } from '../../core/balance';
+import { MAX_COLS, MAX_DOWN, MAX_UP } from '../../core/balance';
 import type { Action } from '../../core/game';
 import type { GameState, Room } from '../../core/model';
 import {
@@ -15,6 +15,7 @@ import {
   planPlot,
   planStair,
   planWing,
+  LOCKED,
   planUnstair,
   isShaft,
   roomAt,
@@ -102,6 +103,27 @@ export function pickTitle(s: GameState, pick: Pick): string {
     case 'grow':
       return 'Toca un «+» para ampliar la sala';
   }
+}
+
+/**
+ * Por qué no sale ningún sitio para construir `type`: el motivo que más se repite entre los
+ * huecos (el rango, si es eso, va primero).
+ */
+export function whyNoSpot(s: GameState, type: RoomType): string {
+  const b = s.building;
+  const seen = new Map<string, number>();
+  const note = (p: Plan) => {
+    if ('error' in p) seen.set(p.error, (seen.get(p.error) ?? 0) + 1);
+  };
+  const own = ROOMS[type].unique ? b.rooms.find((r) => r.type === type) : undefined;
+  if (own) for (const d of ['left', 'right', 'up'] as const) note(planExtend(s, own.id, d));
+  else {
+    const hi = type === 'torre' ? MAX_UP + 1 : MAX_UP;
+    for (let f = -MAX_DOWN; f <= hi; f++)
+      for (let c = 0; c < spanOf(b); c++) if (!roomAt(b, c, f)) note(planBuild(s, type, c, f));
+  }
+  const all = [...seen].sort((x, y) => y[1] - x[1]).map(([e]) => e);
+  return all.find((e) => /rango/.test(e)) ?? all[0] ?? 'No queda ningún sitio donde hacerlo.';
 }
 
 /** Los sitios donde se puede hacer la obra elegida, con lo que cuesta cada uno. */
@@ -209,7 +231,21 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
       // Con el edificio a todo lo ancho, en ese hueco se compra el patio trasero.
       const plot = { x: roomsLayout(b).right + 4, y: floorTop(0), w: CELL_W - 8, h: ROOM_H };
       add(planPlot(s), plot, 'Comprar solar', { type: 'buyPlot' });
-      add(planWing(s), plot, 'Comprar el patio trasero', { type: 'buyWing' });
+      const wing = planWing(s);
+      add(wing, plot, 'Comprar el patio trasero', { type: 'buyWing' });
+      // Si aún no se puede, se enseña con candado y el porqué (más allá del solar, si lo hay).
+      if ('error' in wing && !b.wing && wing.error !== LOCKED) {
+        const at = b.cols < MAX_COLS ? { ...plot, x: plot.x + CELL_W } : plot;
+        const why = wing.error;
+        out.push({
+          id: `obra:${out.length}`,
+          rect: at,
+          label: why,
+          cost: 0,
+          action: { type: 'buyWing' },
+          blocked: why,
+        });
+      }
       break;
     }
     case 'dig':

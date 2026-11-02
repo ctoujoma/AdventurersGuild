@@ -20,6 +20,8 @@ export class Camera {
    * (por ejemplo, para ver de frente una sala de una esquina del edificio).
    */
   reach: CameraWorld | null = null;
+  /** Bajada de más (en mundo) para dejar algo a la vista sobre un panel; 0 normalmente. */
+  lift = 0;
   x = 0;
   y = 0;
   zoom = 2;
@@ -55,12 +57,12 @@ export class Camera {
     const minY = this.vh >= h ? y0 + (h - this.vh) / 2 : y0;
     const maxY = this.vh >= h ? minY : y1 - this.vh;
     const r = this.reach;
-    if (!r) return { minX, maxX, minY, maxY };
+    if (!r) return { minX, maxX, minY, maxY: maxY + this.lift };
     return {
       minX: Math.min(minX, r.x0 - this.vw / 2),
       maxX: Math.max(maxX, r.x1 - this.vw / 2),
       minY: Math.min(minY, r.y0 - this.vh / 2),
-      maxY: Math.max(maxY, r.y1 - this.vh / 2),
+      maxY: Math.max(maxY, r.y1 - this.vh / 2) + this.lift,
     };
   }
 
@@ -105,6 +107,14 @@ export class Camera {
       this.clamp();
     }
     this.stopInertia();
+  }
+
+  /** Quita la bajada de más y vuelve, suave, a los límites de siempre. */
+  unlift(): void {
+    if (!this.lift) return;
+    this.lift = 0;
+    this.target = { x: this.x, y: this.y };
+    this.ease = 0.002;
   }
 
   /** Pone la cámara de golpe en un punto (esquina de arriba a la izquierda), dentro de los límites. */
