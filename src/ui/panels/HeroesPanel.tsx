@@ -1,7 +1,7 @@
 import { canHire, roster, salaries } from '../../core/game';
 import type { GameState, Hero } from '../../core/model';
 import type { Task } from '../drop';
-import { CrewList } from './CrewList';
+import { CrewList, SeekerList } from './CrewList';
 import { crewAlerts, taskLabel } from '../crew';
 import { moraleBand } from '../../core/party';
 import { beds } from '../../core/rooms';
@@ -130,8 +130,8 @@ export function HeroesPanel({
             id: 'candidatos',
             label: 'Barra',
             icon: 'jarra',
-            count: cands.length,
-            help: 'Buscan trabajo en la barra. Cada uno esconde un rasgo (¿?) que se sabe tras su primera misión.',
+            count: cands.length + game.seekers.length,
+            help: 'Buscan trabajo en la barra: héroes (cada uno esconde un rasgo, ¿?, que se sabe tras su primera misión) y trabajadores para la casa.',
           },
           {
             id: 'trabajadores',
@@ -143,14 +143,7 @@ export function HeroesPanel({
         ]}
       />
       {filter === 'trabajadores' ? (
-        <CrewList
-          game={game}
-          onOpen={onOpen}
-          onTask={onTask}
-          onHire={onHireWorker}
-          onFire={onFireWorker}
-          focus={focus}
-        />
+        <CrewList game={game} onOpen={onOpen} onTask={onTask} onFire={onFireWorker} focus={focus} />
       ) : filter === 'todos' ? (
         <>
           <div class="rows">{mine.map((h) => row(h, false))}</div>
@@ -164,8 +157,17 @@ export function HeroesPanel({
         </>
       ) : (
         <>
-          <div class="rows">{cands.map((h) => row(h, true))}</div>
-          {!cands.length && <p class="panel-note">Hoy no hay nadie buscando trabajo.</p>}
+          <section class="crew-group" aria-label="Héroes que buscan gremio">
+            <h3 class="crew-h">
+              <span>Héroes</span>
+              <span class="row-sub">
+                {roster(game).length} de {cap} camas
+              </span>
+            </h3>
+            <div class="rows">{cands.map((h) => row(h, true))}</div>
+            {!cands.length && <p class="panel-note">Hoy no hay ningún héroe buscando gremio.</p>}
+          </section>
+          <SeekerList game={game} onHire={onHireWorker} />
         </>
       )}
     </>
