@@ -136,8 +136,20 @@ npm run build`.
    rango, acabar una historia, pagar la deuda).
 9. **El anexo y el jardín** (patio trasero, núcleo ya hecho): bajo tierra del jardín, puertas al
    jardín, sus piezas y el claustro. Encargo:
-   [`encargos/arte-anexo-jardin.md`](encargos/arte-anexo-jardin.md). Si el usuario no dice
-   otra cosa, va detrás de lo de arriba.
+   [`encargos/arte-anexo-jardin.md`](encargos/arte-anexo-jardin.md). El usuario lo ha pedido
+   antes que lo de arriba. Por puntos:
+   - [x] 1. Bajo tierra (`facade` en `textures.ts`): la roca solo bajo el edificio; bajo el
+         jardín, tierra con su borde de hierba como la de fuera; bajo el anexo, cimientos de
+         sillares con zarpa, solo donde hay sala o escalera en la planta baja (sus solares
+         vacíos, tierra). Capturas en `capturas/anexo/`.
+   - [ ] 2. Puertas al jardín en las salas de la planta baja que dan a él.
+   - [ ] 3. El jardín liso (hierba del patio, sin la maleza del terreno).
+   - [ ] 4. Las piezas de `GardenLook`.
+   - [ ] 5. El claustro.
+   - [ ] 6. Que no se cuelen árboles ni arbustos en el jardín ni en el anexo.
+   - [ ] Visto bueno del usuario.
+
+   Capturas: `node tools/shots/anexo.mjs <carpeta>`.
 
 ## Lo que ha dicho el usuario (para no repetir errores)
 
