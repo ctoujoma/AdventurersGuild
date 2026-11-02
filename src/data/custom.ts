@@ -172,6 +172,45 @@ export const SIGNS: Record<SignId, string> = {
 };
 
 /**
+ * El jardín de entre el edificio y el anexo (al comprar el patio trasero). Solo se ve: el
+ * suelo, una pieza en cada hueco del jardín (de izquierda a derecha, `GARDEN_W` como mucho),
+ * el borde de delante, faroles y, con `cloister`, soportales con arcos pegados a las dos
+ * fachadas que dan al jardín (el claustro). Sin elegir, hierba y nada más.
+ */
+export type GardenGroundId = 'hierba' | 'grava' | 'losas';
+export type GardenPieceId = 'fuente' | 'pozo' | 'arbol' | 'estatua' | 'banco' | 'huerto' | 'flores';
+export type GardenEdgeId = 'seto' | 'flores' | 'verja';
+
+export interface GardenLook {
+  ground?: GardenGroundId;
+  /** Lo que hay en cada hueco del jardín, de izquierda a derecha (null: nada). */
+  slots?: (GardenPieceId | null)[];
+  edge?: GardenEdgeId;
+  lamps?: boolean;
+  cloister?: boolean;
+}
+
+export const GARDEN_GROUNDS: Record<GardenGroundId, string> = {
+  hierba: 'Hierba',
+  grava: 'Grava',
+  losas: 'Losas',
+};
+export const GARDEN_PIECES: Record<GardenPieceId, string> = {
+  fuente: 'Fuente',
+  pozo: 'Pozo',
+  arbol: 'Árbol',
+  estatua: 'Estatua',
+  banco: 'Banco',
+  huerto: 'Huerto',
+  flores: 'Macizo de flores',
+};
+export const GARDEN_EDGES: Record<GardenEdgeId, string> = {
+  seto: 'Seto',
+  flores: 'Flores',
+  verja: 'Verja',
+};
+
+/**
  * La sastrería (preparada; la sala vendrá después): un tinte para la ropa del héroe (los temas
  * de `TINTS`) y una prenda encima del traje. Solo se ve.
  */

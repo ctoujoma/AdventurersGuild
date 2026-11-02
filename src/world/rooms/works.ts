@@ -14,9 +14,11 @@ import {
   planMove,
   planPlot,
   planStair,
+  planWing,
   planUnstair,
   isShaft,
   roomAt,
+  spanOf,
   type ExtendDir,
   type Plan,
 } from '../../core/rooms';
@@ -137,7 +139,7 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
       }
       const hi = pick.type === 'torre' ? MAX_UP + 1 : MAX_UP;
       for (const f of floors(-MAX_DOWN, hi))
-        for (let c = 0; c < b.cols; c++) {
+        for (let c = 0; c < spanOf(b); c++) {
           if (roomAt(b, c, f)) continue;
           const plan = planBuild(s, pick.type, c, f);
           // Junto a una igual y del mismo nivel no sale otra sala: se amplía la de al lado.
@@ -157,7 +159,7 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
       const name = ROOMS[r.type].name;
       const hi = r.type === 'torre' ? MAX_UP + 1 : MAX_UP;
       for (const f of floors(-MAX_DOWN, hi))
-        for (let c = 0; c + r.w <= b.cols; c++) {
+        for (let c = 0; c + r.w <= spanOf(b); c++) {
           if (c === r.col && f === r.floor) continue;
           const plan = planMove(s, r.id, c, f);
           add(plan, roomRect(b, { ...r, col: c, floor: f }), `Mover ${name.toLowerCase()}`, {
@@ -179,7 +181,7 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
         [
           'right',
           roomRect(b, { ...r, col: r.col + r.w, w: 1 }),
-          r.col + r.w < b.cols && r.w < def.maxW,
+          r.col + r.w < spanOf(b) && r.w < def.maxW,
         ],
         [
           'up',
@@ -203,14 +205,11 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
     case 'expand': {
       const dig = targetsFor(s, { kind: 'dig' });
       out.push(...dig);
-      // El solar de al lado: el hueco de la planta baja a la derecha del edificio.
-      const plot = planPlot(s);
-      if (!('error' in plot)) {
-        const L = roomsLayout(b);
-        add(plot, { x: L.right + 4, y: floorTop(0), w: CELL_W - 8, h: ROOM_H }, 'Comprar solar', {
-          type: 'buyPlot',
-        });
-      }
+      // El solar de al lado: el hueco de la planta baja a la derecha del edificio (o del anexo).
+      // Con el edificio a todo lo ancho, en ese hueco se compra el patio trasero.
+      const plot = { x: roomsLayout(b).right + 4, y: floorTop(0), w: CELL_W - 8, h: ROOM_H };
+      add(planPlot(s), plot, 'Comprar solar', { type: 'buyPlot' });
+      add(planWing(s), plot, 'Comprar el patio trasero', { type: 'buyWing' });
       break;
     }
     case 'dig':
@@ -220,7 +219,7 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
       break;
     case 'stair': {
       // Cada tramo, de la mitad de su rellano de abajo a la del de arriba (no se pisan).
-      for (let at = 1; at <= b.cols; at++) {
+      for (let at = 1; at <= spanOf(b); at++) {
         const x = isShaft(b, at) ? stairX(b, at) : colX(b, at) - STAIR_W / 2;
         for (const f of floors(-MAX_DOWN, MAX_UP - 1)) {
           const y = floorTop(f + 1) + ROOM_H / 2;

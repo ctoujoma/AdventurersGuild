@@ -88,6 +88,7 @@ const SOUND: Partial<Record<Action['type'], Sfx>> = {
   addStair: 'creak',
   removeStair: 'thud',
   buyPlot: 'coin',
+  buyWing: 'coin',
 };
 
 export function useWorks({ game, dispatch, toast, focus, raise, price }: Deps): Works {

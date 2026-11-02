@@ -14,6 +14,7 @@ import {
   MAX_DOWN,
   MAX_UP,
   MOVE_COST,
+  NOT_IN_WING,
   PLOT_COST,
   ROOM_COST,
   ROOM_SIZE_COST,
@@ -21,6 +22,12 @@ import {
   STAIR_STEP,
   START_COLS,
   UPGRADE_COST,
+  WING_COL,
+  WING_COST,
+  WING_MAX,
+  WING_PLOT_COST,
+  WING_RANK,
+  WING_START,
   RANKS,
   floorRank,
   floorsFor,
@@ -75,6 +82,23 @@ export function uncleBuilding(): Building {
 }
 
 // ---------- Consultas ----------
+
+/** Huecos de la cuadrícula: el edificio y, si hay anexo, el jardín y el anexo. */
+export const spanOf = (b: Building) => (b.wing ? WING_COL + b.wing : b.cols);
+
+/** El hueco `c` es del anexo. */
+export const inWing = (b: Building, c: number) =>
+  !!b.wing && c >= WING_COL && c < WING_COL + b.wing;
+
+/** El hueco `c` es del jardín de entre los dos edificios (ahí no se construye). */
+export const inGarden = (b: Building, c: number) => !!b.wing && c >= b.cols && c < WING_COL;
+
+/** En el hueco `c` se puede construir: es del edificio o del anexo. */
+export const onLot = (b: Building, c: number) => (c >= 0 && c < b.cols) || inWing(b, c);
+
+/** Cabe una columna de escalera a la izquierda del hueco `at` (también al borde de cada edificio). */
+const stairFits = (b: Building, at: number) =>
+  (at >= 1 && at <= b.cols) || (!!b.wing && at >= WING_COL && at <= WING_COL + b.wing);
 
 /** Columnas de escalera (la que va a la izquierda del hueco `x`), de izquierda a derecha. */
 export const shafts = (b: Building): number[] =>
@@ -230,8 +254,10 @@ export function problem(b: Building): string | null {
   const flights = new Set<string>();
   for (const s of b.stairs) {
     const k = key(s.at, s.floor);
-    if (s.at < 1 || s.at > b.cols || s.floor < -MAX_DOWN || s.floor >= MAX_UP || flights.has(k))
+    if (!stairFits(b, s.at) || s.floor < -MAX_DOWN || s.floor >= MAX_UP || flights.has(k))
       return 'Esa escalera no cabe ahí.';
+    // Bajo el anexo no se excava: su escalera no baja de la planta baja.
+    if (s.at >= WING_COL && s.floor < 0) return 'Bajo el anexo no se excava.';
     flights.add(k);
   }
   const cols = shafts(b);
@@ -241,8 +267,15 @@ export function problem(b: Building): string | null {
     const d = ROOMS[r.type];
     if (r.w < 1 || r.w > d.maxW || r.h < 1 || r.h > d.maxH) return `${d.name}: no crece tanto.`;
     const roof = r.type === 'torre' ? MAX_UP + 1 : MAX_UP;
-    if (r.col < 0 || r.col + r.w > b.cols || r.floor < -MAX_DOWN || r.floor + r.h - 1 > roof)
-      return 'No cabe en el solar.';
+    if (r.floor < -MAX_DOWN || r.floor + r.h - 1 > roof) return 'No cabe en el solar.';
+    for (let c = r.col; c < r.col + r.w; c++) {
+      if (inGarden(b, c)) return 'En el jardín no se construye.';
+      if (!onLot(b, c)) return 'No cabe en el solar.';
+    }
+    if (inWing(b, r.col)) {
+      if (r.floor < 0) return 'Bajo el anexo no se excava.';
+      if (NOT_IN_WING.includes(r.type)) return `${d.name}: no va en el anexo.`;
+    }
     if (d.place === 'baja' && r.floor !== 0) return `${d.name}: va en la planta baja.`;
     if (r.type === 'recibidor' && r.col !== 0) return 'El recibidor va junto al patio.';
     if (cols.some((x) => x > r.col && x < r.col + r.w))
@@ -321,15 +354,33 @@ function cutOff(b: Building, at: Map<string, Room>): Room | null {
       const f = todo.pop()!;
       if (landed.has(key(x, f))) continue;
       landed.add(key(x, f));
+      if (opens(x, f)) toGarden();
       visit(at.get(key(x - 1, f)), f);
       visit(at.get(key(x, f)), f);
       if (hasStair(b, x, f)) todo.push(f + 1);
       if (hasStair(b, x, f - 1)) todo.push(f - 1);
     }
   };
+  // El jardín, entre el edificio y el anexo: se cruza por la planta baja. Se entra por la sala
+  // que da a él o por el rellano de una escalera al borde (sin rellano, la escalera tapa el paso).
+  let garden = false;
+  const toGarden = () => {
+    if (garden) return;
+    garden = true;
+    for (const [x, c] of [
+      [b.cols, b.cols - 1],
+      [WING_COL, WING_COL],
+    ] as const) {
+      if (!isShaft(b, x)) visit(at.get(key(c, 0)), 0);
+      climb(x, 0);
+    }
+  };
+  const opens = (x: number, f: number) =>
+    f === 0 && (inGarden(b, x - 1) || inGarden(b, x)) && (!isShaft(b, x) || landing(b, x, 0));
   const side = (x: number, c: number, f: number) => {
     visit(at.get(key(c, f)), f);
     climb(x, f);
+    if (opens(x, f)) toGarden();
   };
   while (queue.length) {
     const r = queue.shift()!;
@@ -348,8 +399,8 @@ function cutOff(b: Building, at: Map<string, Room>): Room | null {
 export function freeSpot(b: Building, type: RoomType): { col: number; floor: number } | null {
   const floors = [0, 1, 2, 3, 4, 5, -1, -2, -3, -4, -5, -6];
   for (const floor of floors)
-    for (let col = 0; col < b.cols; col++) {
-      if (roomAt(b, col, floor)) continue;
+    for (let col = 0; col < spanOf(b); col++) {
+      if (roomAt(b, col, floor) || !onLot(b, col)) continue;
       const test = { ...b, rooms: [...b.rooms, newRoom(b, type, col, floor)] };
       if (!problem(test)) return { col, floor };
     }
@@ -558,14 +609,38 @@ export function planDig(s: GameState, col: number, floor: number): Plan {
   return finish(s, b, cost);
 }
 
-/** Comprar el solar de la derecha: un hueco más de ancho en todas las plantas. */
+/**
+ * Comprar el solar de la derecha: un hueco más de ancho en todas las plantas. Con el edificio a
+ * todo lo ancho, los solares que quedan son los del anexo (a su derecha).
+ */
 export function planPlot(s: GameState): Plan {
   if (!worksOpen(s)) return { error: LOCKED };
   const b = structuredClone(s.building);
-  if (b.cols >= MAX_COLS) return { error: 'No quedan solares a la venta.' };
-  const cost = PLOT_COST[b.cols - START_COLS]!;
-  b.cols++;
+  if (b.cols < MAX_COLS) {
+    const cost = PLOT_COST[b.cols - START_COLS]!;
+    b.cols++;
+    return finish(s, b, cost);
+  }
+  if (!b.wing) return { error: 'Para seguir creciendo, compra el patio trasero.' };
+  if (b.wing >= WING_MAX) return { error: 'No quedan solares a la venta.' };
+  const cost = WING_PLOT_COST[b.wing - WING_START]!;
+  b.wing++;
   return finish(s, b, cost);
+}
+
+/**
+ * Comprar el patio trasero: un anexo de `WING_START` huecos a la derecha, con el jardín en medio.
+ * Se construye en él como en el edificio (con sus escaleras y sus plantas), pero no se excava.
+ */
+export function planWing(s: GameState): Plan {
+  if (!worksOpen(s)) return { error: LOCKED };
+  const b = structuredClone(s.building);
+  if (b.wing) return { error: 'Ya tienes el patio trasero.' };
+  if (b.cols < MAX_COLS) return { error: 'Primero, los solares de al lado.' };
+  if (rankIndex(s.rep) < WING_RANK)
+    return { error: `Se abre con el rango de ${RANKS[WING_RANK]!.name}.` };
+  b.wing = WING_START;
+  return finish(s, b, WING_COST);
 }
 
 /**

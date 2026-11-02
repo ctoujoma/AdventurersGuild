@@ -64,6 +64,9 @@ usuario, en GitHub Pages) lo apuntado en «Balance».
 ## Decisiones de diseño ya tomadas (resumen)
 
 - Ancho de 4 a 7 huecos comprando solares; hasta 4 plantas arriba y 6 abajo (excavando).
+- Patio trasero (con los 7 huecos y el rango de plata): un anexo desde el hueco 10, con un
+  jardín de 3 huecos en medio que no se construye y por el que se cruza en la planta baja.
+  Bajo el anexo no se excava. Ver «Patio trasero» en [`../plan.md`](../plan.md).
 - Al empezar: la taberna del tío con todas las salas en su sitio y muchas rotas. Hasta pagar la
   deuda solo se arregla y se mejora; con el último pago (día 28) el gremio es tuyo y se abren
   las obras de verdad.
@@ -97,6 +100,7 @@ La lista completa de pendientes e ideas (bucle, monetización, amigos, torneos, 
 
 - `src/data/rooms.ts`: catálogo de salas (tamaños, únicas, `keep`, `fixed`).
 - `src/core/rooms.ts`: reglas de obra (`plan…` devuelve el edificio como quedaría y el coste;
+  el anexo y el jardín: `spanOf`, `inWing`, `inGarden`, `onLot`, `planWing`;
   `problem()` valida; `laxly()` deja salas sin paso; `drafting()` es el borrador del modo obras;
   `MUST` = obligatorias; escaleras por tramos: `shafts`, `landing`, `stairLinks`, `stairCost`).
 - `src/core/game.ts`: estado, `reduce`, `endDay`, `tryWorks` (el borrador) y `planIssue`.

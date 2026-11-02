@@ -1,6 +1,6 @@
 import type { HeroLook, HeroMarks } from '../art/heroes/look';
 import type { Building, ItemIcon, Rarity, TrophyIcon } from '../core/model';
-import type { FacadeLook, TintId } from '../data/custom';
+import type { FacadeLook, GardenLook, TintId } from '../data/custom';
 import type { IncidentKind } from '../data/incidents';
 import type { BattleSound } from './battle';
 
@@ -52,6 +52,8 @@ export interface SceneModel {
   facade?: string[];
   /** Tejado, paredes, rótulo y jardineras de la fachada. */
   look?: FacadeLook;
+  /** El jardín de entre el edificio y el anexo (si lo hay: `building.wing`). */
+  garden?: GardenLook;
   /** Tema de color de las telas de cada sala (por id). */
   tints?: Record<string, TintId>;
   visitors?: SceneVisitors;

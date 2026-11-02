@@ -25,6 +25,7 @@ import {
   DUSK,
   DEBT,
   DESERT_CHANCE,
+  GARDEN_W,
   MAX_CANDIDATES,
   RAISE_AMOUNT,
   RAISE_CHANCE,
@@ -72,6 +73,10 @@ import {
   type FacadeId,
   type TintId,
   type FacadeLook,
+  type GardenLook,
+  GARDEN_EDGES,
+  GARDEN_GROUNDS,
+  GARDEN_PIECES,
   type Dress,
 } from '../data/custom';
 import type { RoomType } from '../data/rooms';
@@ -119,6 +124,7 @@ import {
   planFacility,
   planMove,
   planPlot,
+  planWing,
   planStair,
   planUnstair,
   planUpgrade,
@@ -189,6 +195,7 @@ export type Action =
   | { type: 'demolish'; id: string }
   | { type: 'dig'; col: number; floor: number }
   | { type: 'buyPlot' }
+  | { type: 'buyWing' }
   | { type: 'addStair'; at: number; floor: number }
   | { type: 'removeStair'; at: number; floor: number }
   /** Varias obras seguidas (las del modo plano): se hacen todas o ninguna. */
@@ -209,6 +216,7 @@ export type Action =
   | { type: 'dress'; heroId: string; dress: Dress }
   /** Tejado, paredes, rótulo o jardineras de la fachada. */
   | { type: 'facadeLook'; patch: FacadeLook }
+  | { type: 'gardenLook'; patch: GardenLook }
   /** Tema de color de las telas de una sala (`null`: los de la casa). */
   | { type: 'tint'; id: string; tint: TintId | null }
   | { type: 'decor'; id: DecorId; on: boolean }
@@ -326,6 +334,8 @@ function planOf(s: GameState, a: Action): Plan | null {
       return planDig(s, a.col, a.floor);
     case 'buyPlot':
       return planPlot(s);
+    case 'buyWing':
+      return planWing(s);
     case 'addStair':
       return planStair(s, a.at, a.floor);
     case 'removeStair':
@@ -668,6 +678,19 @@ function reduceAction(state: GameState, action: Action): GameState {
       if (!ok) return state;
       const c = customOf(state);
       return { ...state, custom: { ...c, look: { ...c.look, ...p } } };
+    }
+    case 'gardenLook': {
+      // Sin anexo no hay jardín que adornar.
+      if (!state.building.wing) return state;
+      const p = action.patch;
+      const ok =
+        (p.ground === undefined || p.ground in GARDEN_GROUNDS) &&
+        (p.edge === undefined || p.edge in GARDEN_EDGES) &&
+        (p.slots === undefined ||
+          (p.slots.length <= GARDEN_W && p.slots.every((x) => x === null || x in GARDEN_PIECES)));
+      if (!ok) return state;
+      const c = customOf(state);
+      return { ...state, custom: { ...c, garden: { ...c.garden, ...p } } };
     }
     case 'tint': {
       if (!state.building.rooms.some((r) => r.id === action.id)) return state;

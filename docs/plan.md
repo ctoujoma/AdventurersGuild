@@ -29,6 +29,9 @@ o está en «Más adelante», no se toca sin preguntar. El detalle de cada idea 
 - **Agente de interfaz:** terminado lo encargado (trabajadores, menos toques, avisos que se
   descartan, el cobro de Merlo, las cartas del amanecer una a una, el mapa grande). Le queda
   suelto: un globito en la escena sobre la sala sin nadie (con arte).
+- **Patio trasero** (anexo y jardín, núcleo hecho): encargos de arte
+  ([`encargos/arte-anexo-jardin.md`](encargos/arte-anexo-jardin.md)) y de interfaz
+  ([`encargos/interfaz-anexo-jardin.md`](encargos/interfaz-anexo-jardin.md)).
 
 Para arrancar a cada uno: «Lee `CLAUDE.md`, `docs/plan.md` y `docs/encargos/<encargo>.md`, y
 empieza por el punto 1».
@@ -244,6 +247,30 @@ materiales (oro y tiempo). La acción se llama «Crear».
   legendario).
 - Otra pasada crítica a las animaciones, y escaleras con mejor arte y personajes que suben
   de verdad.
+
+## Patio trasero: el anexo y el jardín (núcleo hecho)
+
+Pedido del usuario: un segundo edificio a la derecha de la taberna, con un hueco sin construir
+en medio, para que los edificios salgan más interesantes (y, más adelante, pasarelas).
+
+- **Decidido:** con el edificio a todo lo ancho (7 huecos) y el rango de plata se compra el
+  **patio trasero** (1.200): un **anexo** de 3 huecos que empieza en el hueco 10, con un
+  **jardín de 3 huecos** en medio donde no se construye. En el anexo se construye igual que en
+  el edificio (no hace falta diferenciarlo; `NOT_IN_WING` en `balance.ts` por si un día se
+  quieren prohibir salas), pero **no se excava**. Crece con solares hasta 5 huecos. Al anexo
+  se llega por la planta baja, cruzando el jardín. El jardín se adorna (`GardenLook`: suelo,
+  una pieza por trozo, borde, faroles y claustro); solo se ve.
+- **Hecho (núcleo):** `Building.wing`, `planWing` (acción `buyWing`), `planPlot` sigue por el
+  anexo, reglas en `problem` y paso por el jardín en `cutOff` (`core/rooms.ts`), la escena ya
+  lo coloca (`gardenRect`, `gardenSlots` en `layout.ts`; suelo para andar en `people.ts`;
+  sitios de obra en `works.ts`) y la acción `gardenLook`. Sin tocar `SAVE_VERSION`. Tests en
+  `core/wing.test.ts` y `world/rooms/anexo.test.ts`; capturas con `tools/shots/anexo.mjs`.
+- **Encargos:** arte, [`encargos/arte-anexo-jardin.md`](encargos/arte-anexo-jardin.md) (bajo
+  tierra, puertas al jardín, piezas, claustro); interfaz,
+  [`encargos/interfaz-anexo-jardin.md`](encargos/interfaz-anexo-jardin.md) (aviso con candado
+  para comprarlo, cámara en el móvil, Adornos › Jardín).
+- **Después (sin decidir):** pasarelas entre los dos edificios sobre el jardín; si las piezas
+  del jardín se desbloquean o se pagan; el tutorial de obras no lo menciona.
 
 ## Fase 6 · Amigos
 
