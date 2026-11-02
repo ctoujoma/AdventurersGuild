@@ -27,14 +27,17 @@ export function lookOf(h: Hero): HeroLook {
   return h.dress?.dye || h.dress?.garment ? { ...l, ...h.dress } : l;
 }
 
-/** Los trabajadores visten de taberna (el mozo, sin gorro; el bardo, con gorra). */
+/**
+ * Los trabajadores visten de taberna (el mozo, sin gorro; el bardo, con gorra); los del taller,
+ * de su oficio (el herrero, con su mandil de cuero).
+ */
 export function workerLook(w: Worker): HeroLook {
-  let l = looks.get(w.seed);
+  let l = looks.get(`${w.seed}:${w.trade}`);
   if (!l) {
-    l = generateLook(w.seed, 'tabernero', w.sex);
+    l = generateLook(w.seed, w.trade === 'forja' ? 'herrero' : 'tabernero', w.sex);
     if (w.village === 'bardo') l = { ...l, headgear: 'gorra' };
     if (w.village === 'mozo') l = { ...l, headgear: null };
-    looks.set(w.seed, l);
+    looks.set(`${w.seed}:${w.trade}`, l);
   }
   return l;
 }

@@ -43,7 +43,7 @@ import { Crowd, type Poi, type Talk } from './crowd';
 import { Pets, kindOf, type Perch, type PetId } from './pets';
 import { IncidentArt } from './incidents';
 import { FLAME_FRAMES, FLAME_H, FLAME_W, flameStrip } from './flame';
-import { faces } from './volume';
+import { faces, sideTexel, type Mat } from './volume';
 import { RaidShow } from './raid';
 import { HEARTH_RIGHT, NO_LOOK, type SalonLook } from './salon';
 import { FEW_LIGHTS, Look, MAX_LIGHTS, mesh, quad, sharedUniforms, type Corners } from './gl';
@@ -1284,6 +1284,7 @@ export class RoomScene {
         box: th.box || !!th.thick,
         thick: th.thick,
         round: th.round,
+        mat: th.mat,
       });
       // Lo que suelta (destellos, vapor, burbujas): su zona, ya en el mundo.
       if (live)
@@ -1688,7 +1689,13 @@ export class RoomScene {
     depth: number,
     ambient: Tint,
     sun: number,
-    o: { wall?: { r: Rect; back: PixelBuffer }; box?: boolean; thick?: number; round?: Round } = {},
+    o: {
+      wall?: { r: Rect; back: PixelBuffer };
+      box?: boolean;
+      thick?: number;
+      round?: Round;
+      mat?: Mat;
+    } = {},
   ): void {
     const k = scaleAt(depth);
     const w = img.w / k;
@@ -1708,7 +1715,7 @@ export class RoomScene {
     if (o.box || o.round) obj.add(m);
     if (o.round) this.cylinder(obj as Group, o.round, x - w / 2, base - h, depth, k, ambient, sun);
     else if (o.box)
-      this.volume(obj as Group, img, x - w / 2, base - h, depth, ambient, sun, o.thick);
+      this.volume(obj as Group, img, x - w / 2, base - h, depth, ambient, sun, o.thick, o.mat);
     g.add(obj);
     const wall = o.wall;
     if (!wall) return;
@@ -1741,6 +1748,7 @@ export class RoomScene {
     ambient: Tint,
     sun: number,
     thick?: number,
+    mat?: Mat,
   ): void {
     const k = scaleAt(depth);
     // Hasta la pared (lo empotrado) o, con `thick`, solo ese grosor (lo suelto por la sala).
@@ -1754,7 +1762,8 @@ export class RoomScene {
       const len = f.to - f.from;
       if (f.side === 'top') {
         const tex = new PixelBuffer(len, n);
-        for (let i = 0; i < len; i++) for (let j = 0; j < n; j++) tex.set(i, j, f.colors[i]!);
+        for (let i = 0; i < len; i++)
+          for (let j = 0; j < n; j++) tex.set(i, j, sideTexel(f.colors[i]!, i, j, n, mat));
         const y = Y(f.at);
         const [x0, x1] = [X(f.from), X(f.to)];
         this.plane(
@@ -1766,7 +1775,12 @@ export class RoomScene {
         continue;
       }
       const tex = new PixelBuffer(n, len);
-      for (let j = 0; j < len; j++) for (let i = 0; i < n; i++) tex.set(i, j, f.colors[j]!);
+      // A lo hondo, de delante (0) al fondo (n): en la izquierda, la textura va al revés.
+      for (let j = 0; j < len; j++)
+        for (let i = 0; i < n; i++) {
+          const d = f.side === 'left' ? n - 1 - i : i;
+          tex.set(i, j, sideTexel(f.colors[j]!, j, d, n, mat));
+        }
       const x = X(f.at);
       const [y0, y1] = [Y(f.from), Y(f.to)];
       // Cada cara mira hacia fuera (las de detrás no se pintan): la izquierda, del fondo hacia

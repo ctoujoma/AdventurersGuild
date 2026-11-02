@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { P } from '../../art/palette';
 import { PixelBuffer } from '../../art/pixel';
-import { faces } from './volume';
+import { faces, sideTexel } from './volume';
 
 /** Una chimenea de juguete: base ancha (filas 6–11) y tiro estrecho encima (filas 0–5). */
 function chimney(): PixelBuffer {
@@ -56,5 +56,21 @@ describe('volumen de las figuras', () => {
     for (let y = 0; y < 12; y++)
       b.rect(6 - Math.floor(y / 2), y, 2 + Math.floor(y / 2) * 2, 1, P.clay);
     expect(faces(b).filter((x) => x.side === 'left')).toEqual([]);
+  });
+});
+
+describe('costados pintados', () => {
+  const oak = 0xff3c5a94; // P.oak en ABGR
+  const r = (c: number) => c & 255;
+
+  it('hacia el fondo, más oscuro (la sombra junto a la pared)', () => {
+    expect(r(sideTexel(oak, 0, 0, 10))).toBeGreaterThan(r(sideTexel(oak, 0, 9, 10)));
+  });
+
+  it('la madera lleva las juntas de las tablas; lo de siempre no', () => {
+    const plain = [0, 1, 2, 3, 4, 5].map((j) => r(sideTexel(oak, 1, j, 40)));
+    const wood = [0, 1, 2, 3, 4, 5].map((j) => r(sideTexel(oak, 1, j, 40, 'madera')));
+    expect(wood[2]).toBeLessThan(plain[2]! - 10);
+    expect(wood[5]).toBeLessThan(plain[5]! - 10);
   });
 });

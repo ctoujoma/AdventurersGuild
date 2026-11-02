@@ -136,6 +136,19 @@ const CLASS: Record<OutfitId, Slots> = {
     q: P.sand,
     Q: P.tan,
   },
+  // Herrero: camisa oscura sin mangas, mandil de cuero, guantes y botas.
+  herrero: {
+    c: P.slate,
+    C: P.navy,
+    a: P.mocha,
+    A: P.bark,
+    o: P.bark,
+    O: P.ebony,
+    p: P.umber,
+    P: P.ebony,
+    q: P.umber,
+    Q: P.bark,
+  },
   // Chaleco de lana parda sobre camisa cruda, cuerda por cinturón y zuecos.
   campesino: {
     c: P.oak,

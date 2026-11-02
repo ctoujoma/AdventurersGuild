@@ -4,6 +4,7 @@
  * cuando está por reparar). Cada sala va en su fichero de esta carpeta y se registra en
  * `index.ts`.
  */
+import type { Mat } from '../volume';
 import { P, R } from '../../../art/palette';
 import { PixelBuffer } from '../../../art/pixel';
 import * as Prop from '../../props';
@@ -44,6 +45,8 @@ export interface Thing {
    * por la sala (arcones, montones, barriles, cubas). Ver `thick`.
    */
   thick?: number;
+  /** De qué es (su costado se pinta según eso): ver `Mat` en `volume.ts`. */
+  mat?: Mat;
   /** Un cilindro de verdad (cubas, barriles): ver `Round`. */
   round?: Round;
   /**
@@ -341,6 +344,8 @@ export const at = (img: PixelBuffer, x: number, z: number, y = 0, light?: Glow):
 export const solid = (img: PixelBuffer, x: number, y = 0, light?: Glow): Thing => ({
   ...at(img, x, SOLID, y, light),
   box: true,
+  // Lo empotrado (hogares, fraguas) es de obra.
+  mat: 'piedra',
 });
 
 /**
@@ -376,8 +381,12 @@ export const emits = (t: Thing, ...list: Emit[]): Thing => ({
   emit: [...(t.emit ?? []), ...list],
 });
 
-/** Con cuerpo: la silueta se estira `d` hacia el fondo (lo suelto por la sala). */
-export const thick = (t: Thing, d: number): Thing => ({ ...t, thick: d });
+/** Con cuerpo: la silueta se estira `d` hacia el fondo (lo suelto por la sala), de `mat`. */
+export const thick = (t: Thing, d: number, mat?: Mat): Thing => ({
+  ...t,
+  thick: d,
+  mat: mat ?? t.mat,
+});
 
 /** Algo colgado del techo, con su parte de arriba a `y` del techo. */
 export const hung = (img: PixelBuffer, x: number, z: number, y = 0, light?: Glow): Thing => ({
