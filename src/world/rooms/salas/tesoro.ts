@@ -361,12 +361,13 @@ function pileBody(t: Thing, a: number): Thing {
   return thick(
     emits(t, { kind: 'glint', rate: 0.5 + a * 1.6, at: [3, 1, w - 3, Math.max(2, h - 4)] }),
     Math.round(6 + a * 6),
+    'oro',
   );
 }
 
 /** Un arcón con cuerpo; si tiene oro, con algún destello asomando. */
 function chestBody(t: Thing, a: number): Thing {
-  const body = thick(t, 9);
+  const body = thick(t, 9, 'madera');
   return a > 0 ? emits(body, { kind: 'glint', rate: 0.2 + a * 0.6, at: [3, 2, 15, 8] }) : body;
 }
 
@@ -462,6 +463,8 @@ function things(room: Room, w: number, look: SalonLook): Thing[] {
                     ? emits(x, { kind: 'glint', rate: 0.3, at: [2, 0, 12, 14] })
                     : x,
                   8,
+                  // El ídolo, en su peana de piedra; si no, la caja fuerte de hierro.
+                  lvl >= 3 && k === 0 ? 'piedra' : 'metal',
                 ),
           ),
         );
@@ -472,10 +475,14 @@ function things(room: Room, w: number, look: SalonLook): Thing[] {
             [coinStacks(a), FREE - 2, glow(a, 40)],
           ]).map((x, k) =>
             k === 0
-              ? thick(x, 9)
+              ? thick(x, 9, 'metal')
               : a > 0
-                ? thick(emits(x, { kind: 'glint', rate: 0.25 + a * 0.5, at: [2, 2, 26, 12] }), 6)
-                : thick(x, 6),
+                ? thick(
+                    emits(x, { kind: 'glint', rate: 0.25 + a * 0.5, at: [2, 2, 26, 12] }),
+                    6,
+                    'madera',
+                  )
+                : thick(x, 6, 'madera'),
           ),
         );
     }

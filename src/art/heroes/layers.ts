@@ -148,6 +148,22 @@ export const OUTFITS = {
     '...oooo..oooo...',
     '...OOOO..OOOO...',
   ],
+  // Herrero: los brazos al aire, el mandil de cuero hasta las rodillas y guantes.
+  herrero: [
+    ...EMPTY_TOP,
+    '...xcccccccccx..',
+    '..xxxaaaaaaxxx..',
+    '..xXxaaaaaaxXx..',
+    '..xXxaaaaaaxXx..',
+    '..qQAAAAAAAAQq..',
+    '....aaaaaaaa....',
+    '....aaaaaaaa....',
+    '....aaAaaAaa....',
+    '....OOO..OOO....',
+    '....OOO..OOO....',
+    '...oooo..oooo...',
+    '...OOOO..OOOO...',
+  ],
   campesino: [
     ...EMPTY_TOP,
     '...cccaaaaccc...',
@@ -416,6 +432,14 @@ export const WEAPONS = {
     ...Array.from({ length: 13 }, () => '................'),
     '.............ww.',
     '.............ww.',
+  ],
+  // El martillo en la mano.
+  herrero: [
+    ...Array.from({ length: 12 }, () => '................'),
+    '............MMm.',
+    '............mmm.',
+    '.............v..',
+    '.............v..',
   ],
   // Los de fuera no van armados: el campesino lleva un cesto; el mercader, su bolsa.
   campesino: [

@@ -297,17 +297,19 @@ function things(room: Room, w: number): Thing[] {
                 { kind: 'ember', rate: 1.2, at: [11, 56, 21, 61] },
               ),
               10,
+              'piedra',
             ),
             'caldera',
           ),
         );
-      if (lvl >= 4) t.push(thick(at(tastingTable(), s.x0 + 52, FREE, 0, candle(12, 36, 0.5)), 5));
+      if (lvl >= 4)
+        t.push(thick(at(tastingTable(), s.x0 + 52, FREE, 0, candle(12, 36, 0.5)), 5, 'madera'));
       else
         t.push(
           task(
             lvl >= 2
               ? round(at(Prop.barrel(), s.x0 + 51, FREE), BARREL)
-              : thick(at(barrels(), s.x0 + 22, FREE), 8),
+              : thick(at(barrels(), s.x0 + 22, FREE), 8, 'madera'),
             'barril',
           ),
         );
@@ -318,7 +320,10 @@ function things(room: Room, w: number): Thing[] {
           [barley(lvl), FREE - 2],
         ]).map((x, k) =>
           k === 0
-            ? task(thick(emits(x, { kind: 'bubble', rate: 2.5, at: [5, 6, 25, 9] }), 10), 'cuba')
+            ? task(
+                thick(emits(x, { kind: 'bubble', rate: 2.5, at: [5, 6, 25, 9] }), 10, 'madera'),
+                'cuba',
+              )
             : thick(x, 5),
         ),
       );
@@ -327,13 +332,17 @@ function things(room: Room, w: number): Thing[] {
         ...row(s, [
           [lvl >= 3 ? Prop.wineRack() : barrels(), lvl >= 3 ? WALL : FREE],
           [bottling(lvl), FREE - 2],
-        ]).map((x, k) => (k === 1 ? task(thick(x, 5), 'barril') : thick(x, k === 0 ? 12 : 5))),
+        ]).map((x, k) =>
+          k === 1 ? task(thick(x, 5, 'madera'), 'barril') : thick(x, k === 0 ? 12 : 5, 'madera'),
+        ),
       );
   }
   cellsOf(room, w).forEach((c, j) =>
     t.push(
       task(
-        j === 1 ? thick(at(barrels(), c.win, FREE), 10) : round(at(vat(lvl, j), c.win, FREE), CASK),
+        j === 1
+          ? thick(at(barrels(), c.win, FREE), 10, 'madera')
+          : round(at(vat(lvl, j), c.win, FREE), CASK),
         j === 1 ? 'barril' : 'cuba',
       ),
     ),

@@ -57,6 +57,9 @@ npm run build`.
 - [x] **La gente se mueve en profundidad**: la profundidad (`lane`) cambia al andar hacia la del
       destino (`stand` en `Goal`): delante de su mueble, a la altura de quien charla o, paseando,
       a cualquier profundidad; si solo le falta profundidad, da unos pasos hacia dentro o fuera.
+- [x] **Costados pintados, no estirados** (`sideTexel` y `Mat` en `volume.ts`): el costado de
+      cada mueble se pinta según su material (madera con juntas, oro con monedas, piedra con
+      sillares, metal con remaches) y se oscurece hacia el fondo. Lo empotrado es de piedra.
 - [ ] Visto bueno del usuario (capturas de frente y de lado en el PR #94).
 
 ## Siguiente (en este orden, salvo que el usuario diga otra cosa)
@@ -68,10 +71,32 @@ npm run build`.
 3. **Rutinas y sitios para las salas sin nada que hacer**: armería (afilar en la muela), mapas
    (el mapa, los alfileres y el catalejo), despensa (la cocinera viene a por cosas), tesoro
    (contar monedas), capilla (arrodillarse y encender velas), recibidor (la ronda del guardia).
-4. **La forja que trabaja**: el encargo [`encargos/arte-forja.md`](encargos/arte-forja.md)
-   (herrero, martillar con chispas, fuelle, templar, bocadillo del trabajo). El código de la
-   forja ya está en `main` (PR #95 y #96, con la sastrería y el taller de alquimia): se puede
-   empezar.
+4. **Los talleres que trabajan** (forja, sastrería y alquimia): el encargo
+   [`encargos/arte-talleres.md`](encargos/arte-talleres.md) (antes `arte-forja.md`). El código
+   ya está en `main` (PR #96): aquí se hace que se vea. Por puntos:
+   - [x] 1. El herrero y la herrera: traje `herrero` (camisa oscura sin mangas, mandil de cuero,
+         guantes y martillo) para los de `trade: 'forja'` (`workerLook` en `ui/view.ts`).
+   - [ ] 2. Animaciones en la forja: martillar en el yunque con chispas, avivar el fuelle,
+         templar en la artesa con vapor; un héroe que echa una mano, martillar.
+   - [ ] 3. Forja encendida (brasas vivas, más luz, la pieza al rojo en el yunque) o parada.
+   - [ ] 4. Al acabar: la pieza un momento en el yunque con brillo (más si es de las buenas).
+   - [ ] 5. Desmontar en el banco: trozos y chispas; si sale la receta, un pergamino que sube.
+   - [ ] 6. Bocadillo sobre la sala con el icono y la barrita de `frac` (gris si está parado).
+   - [ ] 7. Sonidos: martillazo y siseo del temple.
+   - [ ] 8. Sala de la sastrería (`sastreria`): mesa de cortar, maniquí, rollos de tela con los
+         tintes, tinas de tinte con vapor, telas tendidas; más nivel, más telas y un espejo.
+   - [ ] 9. Sala de alquimia (`alquimia`): alambiques y retortas burbujeando con luz de color,
+         frascos, caldero, hierbas colgadas, libro en el atril; más nivel, más luz.
+   - [ ] 10. Sastra o sastre y alquimista: figuras y trabajo (coser, cortar, teñir; remover el
+         caldero, destilar).
+   - [ ] 11. Vestir a un héroe (lo pide el usuario): va a la sastrería, se queda junto al
+         maniquí o el espejo, y la sastra le toma medidas, le prueba la tela y le cose el bajo.
+   - [ ] 12. Bocadillos y animaciones como en la forja, con el dibujo de lo que se crea.
+
+   Para preparar la forja en el navegador (`#debug`): forja a nivel 1, un trabajador con
+   `trade: 'forja'` y `room` la forja, y `__game.dispatch({ type: 'craft', room: <id>, recipe:
+'espada' })`. No tocar `core/` ni la ficha; si falta un dato en `SceneCraft`, pedirlo en el PR.
+
 5. **La capilla**: la luz de las vidrieras cayendo en color sobre el suelo, incienso y velas.
 6. **Grosor en el resto de salas**: cocina (horno, mesas, aparador), despensa (estanterías y
    cajas a varias profundidades), capilla, mapas, armería, enfermería y dormitorios.
@@ -93,5 +118,8 @@ npm run build`.
 - **Animaciones:** que no repitan un gesto todo el día (la cocina parecía que fregaba).
 - **Mapa:** le gustaron las dos versiones; se usan las dos según la sala de mapas.
 - **Bandidos de la tira:** los mismos de los asaltos, a escala de héroe (no gigantes).
+- **3D:** lo suelto, separado de la pared (si no, «se nota al desplazar la cámara»); en los
+  costados, textura pintada según el material, nunca los píxeles del frente estirados; lo
+  cilíndrico (cubas, barriles), cilindros de verdad.
 - **Forma de trabajar:** pide capturas siempre; avisa si algo queda pendiente o si hay que
   coordinarse con otro agente.

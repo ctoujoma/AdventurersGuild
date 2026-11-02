@@ -328,6 +328,7 @@ const DRILL_WEAPON: Record<OutfitId, WeaponId> = {
   clerigo: 'maza',
   explorador: 'espada',
   tabernero: 'garrote',
+  herrero: 'garrote',
   campesino: 'garrote',
   mercader: 'daga',
   noble: 'espada',

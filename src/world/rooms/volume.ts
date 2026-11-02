@@ -130,3 +130,47 @@ function shade(c: number, k: number): number {
   const b = Math.round(((c >> 16) & 255) * k);
   return ((255 << 24) | (b << 16) | (g << 8) | r) >>> 0;
 }
+
+/** De qué es un mueble: su costado (y su tapa) se pinta según eso, no se estira el dibujo. */
+export type Mat = 'madera' | 'oro' | 'piedra' | 'metal';
+
+const hash = (a: number, b: number) => {
+  let h = Math.imul(a * 374761393 + b * 668265263, 1274126177);
+  h ^= h >>> 13;
+  return ((Math.imul(h, 1103515245) >>> 0) % 1000) / 1000;
+};
+
+/** Un color (ABGR) aclarado hacia el blanco (`k` > 0). */
+function light(c: number, k: number): number {
+  const f = (v: number) => Math.round(v + (255 - v) * k);
+  return ((255 << 24) | (f((c >> 16) & 255) << 16) | (f((c >> 8) & 255) << 8) | f(c & 255)) >>> 0;
+}
+
+/**
+ * Un téxel del costado de un mueble: `c` es el color del borde del dibujo en esa fila (o
+ * columna), `i` su posición a lo largo del borde y `j` (de `n`) lo hondo hacia el fondo. Hacia el
+ * fondo se oscurece algo (la sombra junto a la pared) y, según el material, lleva lo suyo: las
+ * juntas de las tablas, las monedas sueltas, los sillares o los remaches.
+ */
+export function sideTexel(c: number, i: number, j: number, n: number, mat?: Mat): number {
+  let k = 1 - (j / Math.max(1, n)) * 0.2;
+  switch (mat) {
+    case 'madera':
+      if (j % 3 === 2) k *= 0.8;
+      else if (hash(i >> 1, j) < 0.08) k *= 0.88;
+      break;
+    case 'oro': {
+      const h = hash(i, j);
+      if (h < 0.1) return light(shade(c, 1), 0.45);
+      if (h < 0.22) k *= 0.82;
+      break;
+    }
+    case 'piedra':
+      if (j % 4 === 0 || (i + (j >> 2) * 3) % 6 === 0) k *= 0.78;
+      break;
+    case 'metal':
+      if (j % 4 === 1 && i % 4 === 1) return light(shade(c, 1), 0.35);
+      break;
+  }
+  return shade(c, k);
+}

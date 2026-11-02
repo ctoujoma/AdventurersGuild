@@ -11,6 +11,8 @@ export type OutfitId =
   | 'clerigo'
   | 'explorador'
   | 'tabernero'
+  // Los oficios de los talleres (trabajadores): el herrero, con mandil de cuero y los brazos al aire.
+  | 'herrero'
   // La gente de fuera que viene al salón (no son héroes ni se contratan).
   | 'campesino'
   | 'mercader'
@@ -58,6 +60,7 @@ const HEADGEAR: Record<OutfitId, [HeadgearId, number] | null> = {
   explorador: ['gorra', 0.55],
   clerigo: null,
   tabernero: null,
+  herrero: null,
   campesino: ['paja', 0.75],
   mercader: ['boina', 0.85],
   noble: ['pluma', 0.8],
