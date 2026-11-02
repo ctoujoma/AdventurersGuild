@@ -148,7 +148,12 @@ npm run build`.
          la del recibidor) y por fuera; con escalera al borde, en su rellano; si la escalera no
          tiene rellano abajo, no hay puerta (como `opens` en `cutOff`). Opción `garden` de `box`
          en `RoomScene.ts`.
-   - [ ] 3. El jardín liso (hierba del patio, sin la maleza del terreno).
+   - [x] 3. El jardín liso: césped segado en franjas (`lawnTex` en
+         `art/grass.ts`) con un camino de tierra pisada de una puerta a la otra (hacia
+         `WALK_Z`); sin las matas al viento ni las flores del terreno. No llega al fondo (el
+         usuario): acaba en `LAWN_D` con un borde sin segar (al fondo, y a los lados donde ya no
+         hay edificios) y de ahí a los árboles, el terreno con sus matas.
+         Ojo: en las texturas del suelo, la fila 0 es la del fondo.
    - [ ] 4. Las piezas de `GardenLook`.
    - [ ] 5. El claustro.
    - [ ] 6. Que no se cuelen árboles ni arbustos en el jardín ni en el anexo.

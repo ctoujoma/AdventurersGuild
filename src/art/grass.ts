@@ -147,3 +147,75 @@ export function groundTex(
       }
   return b;
 }
+
+/**
+ * El césped del jardín (entre el edificio y el anexo): hierba corta y pareja, con las pasadas
+ * de la siega en franjas, y un camino de tierra pisada de una puerta a la otra entre las
+ * profundidades `z0` y `z1` del mundo (la textura va a media resolución y su fila 0 es la del
+ * fondo). Sin las matas ni las flores del terreno: está cuidado. No llega al fondo del terreno:
+ * acaba en un borde de hierba sin segar, irregular, al fondo y, más allá de la profundidad
+ * `open` (donde se acaban los edificios de los lados), también a los lados.
+ */
+export function lawnTex(
+  w: number,
+  d: number,
+  seed: string,
+  z0: number,
+  z1: number,
+  open: number,
+): PixelBuffer {
+  const b = new PixelBuffer(w, d);
+  const rng = new Rng(seed);
+  const STRIPE = 14;
+  // El borde sin segar: de fondo (en filas) y de lado (en columnas), que ondula.
+  const backRim = (x: number) => 4 + Math.sin(x * 0.11) * 2 + Math.sin(x * 0.031 + 1) * 1.5;
+  const sideRim = (y: number, k: number) => 7 + Math.sin(y * 0.37 + k) * 2.5;
+  const openRow = d - open / 2;
+  const rim = (x: number, y: number) =>
+    y < backRim(x) || (y < openRow && (x < sideRim(y, 0) || x >= w - sideRim(y, 3)));
+  // Las filas del camino.
+  const r0 = d - z1 / 2;
+  const r1 = d - z0 / 2;
+  for (let y = 0; y < d; y++)
+    for (let x = 0; x < w; x++) {
+      const n = rng.next();
+      if (rim(x, y)) {
+        // Hierba sin segar, con su florecilla; y el canto del césped recortado, más oscuro.
+        let col: string = n < 0.14 ? P.deep : n > 0.84 ? P.leaf : P.forest;
+        if (n > 0.975) col = P.lime;
+        if (n > 0.993) col = rng.chance(0.5) ? P.lemon : P.white;
+        b.set(x, y, col);
+        continue;
+      }
+      if (rim(x - 1, y) || rim(x + 1, y) || rim(x, y - 1)) {
+        b.set(x, y, n < 0.6 ? P.deep : P.forest);
+        continue;
+      }
+      // El borde del camino ondula un poco y la hierba lo invade a mordiscos.
+      const a = r0 + Math.sin(x * 0.07) * 1.2 + (n > 0.9 ? 1 : 0);
+      const c = r1 + Math.sin(x * 0.05 + 2) * 1.2 - (n < 0.1 ? 1 : 0);
+      if (y >= a && y < c) {
+        // Tierra pisada: más gastada por el medio, con guijarros.
+        const mid = Math.abs(y - (a + c) / 2) / ((c - a) / 2);
+        let col: string = mid > 0.8 && n > 0.6 ? P.forest : n < 0.18 ? P.umber : P.bark;
+        if (n > 0.93) col = P.mocha;
+        if (n > 0.985) col = P.steel;
+        b.set(x, y, col);
+        continue;
+      }
+      // Franjas de la siega: una algo más clara que la otra.
+      const light = Math.floor((x + Math.round(Math.sin(y * 0.3))) / STRIPE) % 2 === 0;
+      let col: string = light ? (n > 0.4 ? P.leaf : P.forest) : n > 0.9 ? P.leaf : P.forest;
+      if (n < 0.015) col = P.deep;
+      if (n > 0.997) col = P.lime;
+      b.set(x, y, col);
+    }
+  // Unas pocas margaritas, lejos del camino.
+  for (let i = 0; i < (w * d) / 400; i++) {
+    const x = rng.int(0, w - 1);
+    const y = rng.int(0, d - 1);
+    if ((y >= r0 - 1 && y <= r1) || rim(x, y)) continue;
+    b.set(x, y, rng.chance(0.7) ? P.white : P.lemon);
+  }
+  return b;
+}
