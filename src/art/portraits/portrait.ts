@@ -69,6 +69,15 @@ const CLASS: Record<OutfitId, [Ramp, Ramp]> = {
     [P.black, P.navy, P.slate, P.steel],
     [P.ebony, P.bark, P.umber, P.mocha],
   ],
+  // Sastre: el chaleco de vino sobre la camisa clara; alquimista: la túnica verde.
+  sastre: [
+    [P.plum, P.wine, P.red, P.coral],
+    [P.steel, P.fog, P.mist, P.white],
+  ],
+  alquimista: [
+    [P.black, P.deep, P.forest, P.leaf],
+    [P.rust, P.tan, P.sand, P.white],
+  ],
   campesino: [
     [P.plum, P.bark, P.oak, P.tan],
     [P.rust, P.tan, P.sand, P.white],
@@ -92,6 +101,8 @@ const PORTRAIT_OUTFIT: Partial<Record<OutfitId, keyof typeof OUTFITS>> = {
   campesino: 'tabernero',
   mercader: 'tabernero',
   herrero: 'tabernero',
+  sastre: 'tabernero',
+  alquimista: 'clerigo',
   noble: 'clerigo',
   forastero: 'picaro',
 };

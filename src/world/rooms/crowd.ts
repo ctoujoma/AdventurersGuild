@@ -18,6 +18,7 @@ import {
   type HeroSprites,
 } from '../../art/heroes/hero';
 import { bunkQuilt } from '../props';
+import { HEADROOM } from '../../art/heroes/layers';
 import { TINTS, TINT_IDS, type TintId } from '../../data/custom';
 import { generateLook, type OutfitId } from '../../art/heroes/look';
 import { WEAPONS, type WeaponId } from '../weapons';
@@ -86,12 +87,22 @@ const TOOLS = [
   'martillo',
   'tenaza',
   'lima',
+  'tijera',
+  'aguja',
+  'cinta',
+  'tela',
+  'palo',
+  'frasco',
+  'maja',
+  'pluma',
 ] as const;
 
 /** Un trabajo: la herramienta y los cuatro tiempos (postura del brazo, giro y duración). */
 interface Work {
   tool: number;
   steps: [FightPose, number, number][];
+  /** De rodillas (coser el bajo): las piernas dobladas y el cuerpo más abajo. */
+  crouch?: boolean;
 }
 
 /**
@@ -240,6 +251,107 @@ const WORK = {
       ['strike', 95, 0.26],
     ],
   },
+  // La sastrería: cortar en la mesa con las tijeras (tres tijeretazos y mirar)…
+  cortar: {
+    tool: 10,
+    steps: [
+      ['thrust', 75, 0.2],
+      ['thrust', 95, 0.16],
+      ['thrust', 75, 0.2],
+      ['ready', 40, 0.7],
+    ],
+  },
+  // … medir con la cinta (arriba, abajo y la mano extendida)…
+  medir: {
+    tool: 12,
+    steps: [
+      ['up', 0, 0.8],
+      ['ready', 0, 0.6],
+      ['thrust', 10, 0.9],
+      ['ready', 0, 0.6],
+    ],
+  },
+  // … coser en el maniquí (la aguja entra y se tira del hilo hacia arriba)…
+  coser: {
+    tool: 11,
+    steps: [
+      ['thrust', 30, 0.4],
+      ['thrust', 10, 0.25],
+      ['up', -25, 0.35],
+      ['thrust', 30, 0.45],
+    ],
+  },
+  // … coser el bajo, de rodillas…
+  bajo: {
+    tool: 11,
+    crouch: true,
+    steps: [
+      ['thrust', 20, 0.45],
+      ['thrust', 5, 0.3],
+      ['ready', -20, 0.4],
+      ['thrust', 20, 0.4],
+    ],
+  },
+  // … probar la tela por encima (al héroe que se viste)…
+  prueba: {
+    tool: 13,
+    steps: [
+      ['up', -10, 1],
+      ['thrust', 0, 0.9],
+      ['up', -10, 0.7],
+      ['ready', 0, 0.6],
+    ],
+  },
+  // … y teñir: remover la tela en la tina con el palo.
+  tenir: {
+    tool: 14,
+    steps: [
+      ['windup', 212, 0.5],
+      ['ready', 192, 0.45],
+      ['strike', 166, 0.5],
+      ['ready', 192, 0.45],
+    ],
+  },
+  // La alquimia: remover el caldero con el palo, despacio y en círculo…
+  remover: {
+    tool: 14,
+    steps: [
+      ['ready', 205, 0.45],
+      ['ready', 182, 0.45],
+      ['strike', 160, 0.45],
+      ['ready', 182, 0.45],
+    ],
+  },
+  // … destilar: mirar el frasco al trasluz y verter gota a gota…
+  destilar: {
+    tool: 15,
+    steps: [
+      ['up', 0, 1.1],
+      ['thrust', 20, 0.8],
+      ['thrust', 70, 0.9],
+      ['thrust', 20, 0.6],
+    ],
+  },
+  // … moler las hierbas en el mortero…
+  moler: {
+    tool: 16,
+    steps: [
+      ['strike', 170, 0.22],
+      ['thrust', 175, 0.22],
+      ['strike', 170, 0.22],
+      ['thrust', 175, 0.3],
+    ],
+  },
+  // … y apuntar en el libro del atril con la pluma.
+  apuntar: {
+    tool: 17,
+    steps: [
+      ['thrust', 80, 0.5],
+      ['thrust', 95, 0.3],
+      ['thrust', 85, 0.4],
+      ['ready', 60, 0.9],
+    ],
+  },
   // … y echar un leño al fuego.
   lena: {
     tool: 6,
@@ -272,10 +384,38 @@ const TASKS: Record<TaskPoi, WorkId[]> = {
   yunque: ['martillar', 'martillar'],
   artesa: ['templar'],
   banco: ['limar'],
+  corte: ['cortar', 'cortar', 'medir'],
+  maniqui: ['coser', 'coser', 'bajo'],
+  tinte: ['tenir'],
+  caldero: ['remover', 'remover', 'moler'],
+  alambique: ['destilar'],
+  atril: ['apuntar'],
 };
-const ROUTINE = new Set(['cocina', 'bodega', 'forja']);
+const ROUTINE = new Set(['cocina', 'bodega', 'forja', 'sastreria', 'alquimia']);
 /** Los talleres: solo trabajan (y con su rutina) mientras hay un trabajo en marcha. */
-const WORKSHOP = new Set(['forja']);
+const WORKSHOP = new Set(['forja', 'sastreria', 'alquimia']);
+/** Dónde se desmonta, por orden: el banco de la forja o, si no hay, el mueble de cada taller. */
+const UNDO_AT: TaskPoi[] = ['banco', 'yunque', 'corte', 'alambique'];
+/** Lo que vestir a un héroe pide a quien cose: medirle, probarle la tela y coserle el bajo. */
+const FITTING: WorkId[] = ['medir', 'prueba', 'bajo', 'prueba'];
+/**
+ * Los golpes que se notan en la sala (con su efecto y su sonido, ver `hits`): en qué tiempo de
+ * la vuelta, qué es y dónde (el mueble de la tarea).
+ */
+const HITS: Partial<Record<WorkId, Hit['kind']>> = {
+  martillar: 'martillo',
+  templar: 'temple',
+  cortar: 'tijera',
+  tenir: 'tinte',
+  remover: 'remover',
+  destilar: 'gota',
+};
+export interface Hit {
+  x: number;
+  y: number;
+  z: number;
+  kind: 'martillo' | 'temple' | 'tijera' | 'tinte' | 'remover' | 'gota';
+}
 const LEISURE = new Set<PoiKind>(['read', 'warm', 'pray']);
 
 /** Cuántos fotogramas tiene cada cosa, en el orden del atlas. */
@@ -388,6 +528,8 @@ const DRILL_WEAPON: Record<OutfitId, WeaponId> = {
   explorador: 'espada',
   tabernero: 'garrote',
   herrero: 'garrote',
+  sastre: 'garrote',
+  alquimista: 'baston',
   campesino: 'garrote',
   mercader: 'daga',
   noble: 'espada',
@@ -507,6 +649,28 @@ function drillCell(
   const b = new PixelBuffer(CELL, TALL);
   b.blit(pose[p], 3, 0);
   stampWeapon(b, id, 3 + HAND[p].x, HAND[p].y, deg);
+  return b;
+}
+
+/**
+ * De rodillas: el cuerpo baja y las piernas se doblan (se queda con una de cada dos filas de
+ * las piernas, apretadas abajo).
+ */
+function crouchCell(src: PixelBuffer): PixelBuffer {
+  const b = new PixelBuffer(CELL, TALL);
+  const hip = HEADROOM + 17;
+  const legs = TALL - hip;
+  const drop = Math.floor(legs / 2);
+  for (let y = 0; y < hip; y++)
+    for (let x = 0; x < CELL; x++) {
+      const c = src.get(x, y);
+      if (c) b.set(x, y + drop, c);
+    }
+  for (let k = 0; k < legs - drop; k++)
+    for (let x = 0; x < CELL; x++) {
+      const c = src.get(x, hip + k * 2 + 1) || src.get(x, hip + k * 2);
+      if (c) b.set(x, hip + drop + k, c);
+    }
   return b;
 }
 
@@ -636,7 +800,8 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
   // En su puesto, con la herramienta (los de la izquierda, volteados).
   Object.values(WORK).forEach((w: Work, slot) =>
     w.steps.forEach(([p, deg], i) => {
-      const img = drillCell(still, p, TOOLS[w.tool]!, deg);
+      const cell = drillCell(still, p, TOOLS[w.tool]!, deg);
+      const img = w.crouch ? crouchCell(cell) : cell;
       put(img, F.tool + slot * 8 + i, 0);
       put(img, F.tool + slot * 8 + 4 + i, 0, true);
     }),
@@ -1304,13 +1469,28 @@ export class Crowd {
   }
 
   /** Los trabajos de taller en marcha, por sala (la escena los da en cada fotograma). */
-  private crafts = new Map<string, { undo: boolean; stalled: boolean }>();
+  private crafts = new Map<string, { undo: boolean; stalled: boolean; hero?: string }>();
+  /** Los héroes a los que están vistiendo, y en qué sala. */
+  private dressing = new Map<string, string>();
   /** Golpes que han sonado este fotograma (martillazo en el yunque, temple en la artesa). */
-  hits: { x: number; y: number; z: number; kind: 'martillo' | 'temple' }[] = [];
+  hits: Hit[] = [];
 
-  setCrafts(list: readonly { room: string; undo: boolean; stalled: boolean }[]): void {
+  setCrafts(
+    list: readonly { room: string; undo: boolean; stalled: boolean; hero?: string }[],
+  ): void {
     this.crafts.clear();
-    for (const c of list) this.crafts.set(c.room, { undo: c.undo, stalled: c.stalled });
+    this.dressing.clear();
+    // Con dos a la vez en la sala: se desmonta si los dos son desmontar, parado si los dos lo
+    // están, y se viste si se viste a alguien.
+    for (const c of list) {
+      const was = this.crafts.get(c.room);
+      this.crafts.set(c.room, {
+        undo: c.undo && (was?.undo ?? true),
+        stalled: c.stalled && (was?.stalled ?? true),
+        hero: was?.hero ?? c.hero,
+      });
+      if (c.hero) this.dressing.set(c.hero, c.room);
+    }
   }
 
   /** Los sitios de las salas a los que la gente va a hacer algo (los da la escena al montarse). */
@@ -1515,14 +1695,10 @@ export class Crowd {
       while (pose < w.steps.length - 1 && p >= w.steps[pose]![2]) p -= w.steps[pose++]![2];
       // El golpe en el yunque o la pieza en el agua: una vez por vuelta (chispas, vapor y sonido).
       const turn = Math.floor(tt / cycle);
-      if (pose === 1 && (tk.work === 'martillar' || tk.work === 'templar') && a.hitAt !== turn) {
+      const hit = HITS[tk.work];
+      if (pose === 1 && hit && a.hitAt !== turn) {
         a.hitAt = turn;
-        this.hits.push({
-          x: tk.at,
-          y: floorY(a.floor),
-          z: a.lane,
-          kind: tk.work === 'martillar' ? 'martillo' : 'temple',
-        });
+        this.hits.push({ x: tk.at, y: floorY(a.floor), z: a.lane, kind: hit });
       }
       return { slot: SLOT[tk.work], pose, dir: tk.face };
     }
@@ -1572,12 +1748,50 @@ export class Crowd {
       a.wait = 4 + this.rnd() * 4;
       return true;
     }
+    const inRoom = (p: Poi) => p.floor === j.room.floor && p.x >= j.x0 - 24 && p.x <= j.x1 + 24;
     const here = this.pois.filter(
-      (p) =>
-        !LEISURE.has(p.kind) && p.floor === j.room.floor && p.x >= j.x0 - 24 && p.x <= j.x1 + 24,
+      (p) => !LEISURE.has(p.kind) && p.kind !== 'probador' && inRoom(p),
     );
-    // Desmontando, al banco (en la pequeña, que no tiene, al yunque); creando, a todo lo demás.
-    const undoAt = here.some((p) => p.kind === 'banco') ? 'banco' : 'yunque';
+    // Vistiendo a un héroe: él, de pie en el probador (junto al maniquí o al espejo); quien
+    // cose, a su lado, trabajando sobre él (le mide, le prueba la tela, le cose el bajo).
+    const fit = this.pois.find((p) => p.kind === 'probador' && inRoom(p));
+    if (this.dressing.get(a.hero.id) === j.room.id) {
+      if (!fit) return false;
+      if (Math.abs(a.x - fit.x) > 2 || a.floor !== fit.floor) {
+        const place = { x: fit.x, floor: fit.floor };
+        if (!route(this.L, { x: a.x, floor: a.floor }, place, this.segs)) return false;
+        this.go(a, { place, pose: 'stand', stand: fit.z !== undefined ? fit.z - 10 : undefined });
+      }
+      a.task = null;
+      a.wait = 5;
+      return true;
+    }
+    const who = craft?.hero ? this.actors.get(craft.hero) : undefined;
+    if (
+      fit &&
+      who &&
+      !who.gone &&
+      !who.path.length &&
+      who.floor === fit.floor &&
+      Math.abs(who.x - fit.x) < 4 &&
+      this.rnd() < 0.85
+    ) {
+      const side = this.rnd() < 0.5 ? -1 : 1;
+      const place = { x: who.x + side * 11, floor: fit.floor };
+      if (route(this.L, { x: a.x, floor: a.floor }, place, this.segs)) {
+        this.go(a, { place, pose: 'stand', stand: fit.z !== undefined ? fit.z - 10 : undefined });
+        a.task = {
+          at: who.x,
+          work: FITTING[Math.floor(this.rnd() * FITTING.length)]!,
+          face: side > 0 ? -1 : 1,
+        };
+        a.wait = 5 + this.rnd() * 5;
+        return true;
+      }
+    }
+    // Desmontando, al banco (donde no lo hay, al yunque, la mesa de cortar o el alambique);
+    // creando, a todo lo demás.
+    const undoAt = UNDO_AT.find((k) => here.some((p) => p.kind === k));
     const spots = here.filter(
       (p) => !WORKSHOP.has(j.room.type) || (craft!.undo ? p.kind === undoAt : p.kind !== 'banco'),
     );

@@ -1074,10 +1074,11 @@ export function App() {
         {!passing &&
           !dawnOpen &&
           !paying &&
-          (model.crafts ?? []).map((c) => (
+          (model.crafts ?? []).map((c, i, all) => (
             <CraftMark
-              key={c.room}
+              key={c.id}
               craft={c}
+              slot={all.slice(0, i).filter((x) => x.room === c.room).length}
               scene={scene}
               aside={(game.incidents ?? []).some((i) => i.room === c.room)}
             />

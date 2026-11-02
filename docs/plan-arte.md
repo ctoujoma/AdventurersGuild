@@ -82,24 +82,33 @@ npm run build`.
          ver al héroe que echa una mano (usa la misma rutina si su `work` es la forja).
    - [x] 3. Forja encendida (brasas, más luz, la barra al rojo en el yunque) o parada (menos
          luz, la barra apagada). Sin trabajo, la fragua a media luz.
-   - [x] 4. Al acabar: la pieza un momento en el yunque con brillo (dorado y monedas si es de
-         las buenas). Al cancelar sale lo mismo: la escena no distingue. **Ya está el dato:**
-         `SceneCraft.id` y `SceneModel.craftEnds` (cómo acabó cada uno: `hecho` con su
-         `rarity`, `cancelado`, `receta`, `nada`, `vestido`).
-   - [~] 5. Desmontar en el banco (en la forja pequeña, en el yunque): polvo y chispas. Falta el
-         pergamino que sube si sale la receta: **el dato ya está** (`craftEnds`, `how: 'receta'`).
+   - [x] 4. Al acabar (#100, y con `craftEnds` en este PR): la pieza un momento en el yunque
+         con brillo (dorado y monedas solo si sale de las buenas); al cancelar, nada. En los
+         otros talleres, el dibujo de lo que se ha hecho sube sobre su mesa y se apaga.
+   - [x] 5. Desmontar en el banco (o, donde no hay, en el yunque, la mesa de cortar o el
+         alambique): polvo y chispas; si sale la receta, un pergamino que sube y se deshace
+         (partícula `scroll`).
    - [x] 6. Bocadillo sobre la sala con el icono y la barrita de `frac` (gris si está parado,
-         azul si se desmonta; se aparta si hay un incidente): `ui/CraftMark.tsx`.
+         azul si se desmonta; se aparta si hay un incidente; dos trabajos, uno al lado del
+         otro): `ui/CraftMark.tsx`.
    - [x] 7. Sonidos: martillazo (`hammer`) y siseo del temple (`hiss`), solo si se ve la sala.
-   - [ ] 8. Sala de la sastrería (`sastreria`): mesa de cortar, maniquí, rollos de tela con los
-         tintes, tinas de tinte con vapor, telas tendidas; más nivel, más telas y un espejo.
-   - [ ] 9. Sala de alquimia (`alquimia`): alambiques y retortas burbujeando con luz de color,
-         frascos, caldero, hierbas colgadas, libro en el atril; más nivel, más luz.
-   - [ ] 10. Sastra o sastre y alquimista: figuras y trabajo (coser, cortar, teñir; remover el
-         caldero, destilar).
-   - [ ] 11. Vestir a un héroe (lo pide el usuario): va a la sastrería, se queda junto al
-         maniquí o el espejo, y la sastra le toma medidas, le prueba la tela y le cose el bajo.
-   - [ ] 12. Bocadillos y animaciones como en la forja, con el dibujo de lo que se crea.
+   - [x] 8. Sastrería (`salas/sastreria.ts`): maniquí con la prenda a medio hacer (entera en el
+         3), mesa de cortar con tela, tiza, tijeras y acerico, tina de tinte con vapor, rollos
+         de los tintes y carretes en la pared, patrones, telas tendidas y, en el 3 (o en las
+         anchas desde el 2), el espejo.
+   - [x] 9. Alquimia (`salas/alquimia.ts`): la mesa del alambique (matraz, serpentín y
+         retortas burbujeando, con luz verde o azul que se aviva con trabajo), el caldero en sus
+         trébedes con fuego, el atril con el libro, estantes de frascos y hierbas colgadas.
+   - [x] 10. Sastre y alquimista: trajes `sastre` (chaleco rojo, cinta al cuello, tijeras) y
+         `alquimista` (túnica verde, cinto con frascos). Trabajos: cortar, medir, coser, coser
+         el bajo de rodillas (`crouch`), probar la tela, teñir; remover, moler, destilar y
+         apuntar en el libro.
+   - [x] 11. Vestir a un héroe: se queda de pie en el `probador` (junto al maniquí o delante
+         del espejo) y quien cose trabaja a su lado: le mide, le prueba la tela y le cose el bajo.
+         Al acabar, destellos a su alrededor.
+   - [x] 12. Bocadillos como en la forja (las tijeras al vestir) y golpes con efecto: tijeretazo,
+         burbujas del tinte y del caldero, la gota del alambique.
+   - [ ] Visto bueno del usuario (PR de los talleres).
 
    Para preparar la forja en el navegador (`#debug`): forja a nivel 1, un trabajador con
    `trade: 'forja'` y `room` la forja, y `__game.dispatch({ type: 'craft', room: <id>, recipe:

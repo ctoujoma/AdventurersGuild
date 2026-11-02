@@ -1,6 +1,6 @@
 import { craftState, dressingOf } from '../core/crafting';
 import { RECIPES } from '../data/recipes';
-import { generateLook, type HeroLook, type HeroMarks } from '../art/heroes/look';
+import { generateLook, type HeroLook, type HeroMarks, type OutfitId } from '../art/heroes/look';
 import type { Facilities, GameState, Hero, Item, Worker } from '../core/model';
 import { customOf, gearInStock } from '../core/game';
 import { staffBeds, workerTitle } from '../core/workers';
@@ -27,6 +27,13 @@ export function lookOf(h: Hero): HeroLook {
   return h.dress?.dye || h.dress?.garment ? { ...l, ...h.dress } : l;
 }
 
+/** El traje de cada oficio de taller (los demás, de taberna). */
+const TRADE_LOOK: Partial<Record<Worker['trade'], OutfitId>> = {
+  forja: 'herrero',
+  sastreria: 'sastre',
+  alquimia: 'alquimista',
+};
+
 /**
  * Los trabajadores visten de taberna (el mozo, sin gorro; el bardo, con gorra); los del taller,
  * de su oficio (el herrero, con su mandil de cuero).
@@ -34,7 +41,7 @@ export function lookOf(h: Hero): HeroLook {
 export function workerLook(w: Worker): HeroLook {
   let l = looks.get(`${w.seed}:${w.trade}`);
   if (!l) {
-    l = generateLook(w.seed, w.trade === 'forja' ? 'herrero' : 'tabernero', w.sex);
+    l = generateLook(w.seed, TRADE_LOOK[w.trade] ?? 'tabernero', w.sex);
     if (w.village === 'bardo') l = { ...l, headgear: 'gorra' };
     if (w.village === 'mozo') l = { ...l, headgear: null };
     looks.set(`${w.seed}:${w.trade}`, l);

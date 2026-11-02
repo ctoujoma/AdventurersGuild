@@ -35,6 +35,8 @@ const SLOTS = {
   mapas: [1, 2, 3],
   armeria: [1, -1, 3],
   forja: [1, -1, 3],
+  sastreria: [1, 1, 3],
+  alquimia: [1, 1, 3],
   despensa: [1, -1, 3],
   armas: [1, 1, 3],
   tiro: [1, 1, 3],
@@ -93,6 +95,8 @@ for (let i = 0; i < 4; i++) {
       .catch(() => {});
   await page.waitForTimeout(500);
 }
+// Sin la libreta del tutorial, que tapa la parte de abajo.
+await page.addStyleTag({ content: '.notebook, .notebook-mini { display: none !important; }' });
 // La partida de partida (para rehacerla en cada captura), sin gente, sin polvo de obras y con
 // el reloj parado a media mañana.
 await page.evaluate(() => {

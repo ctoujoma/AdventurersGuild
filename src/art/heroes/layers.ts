@@ -164,6 +164,38 @@ export const OUTFITS = {
     '...oooo..oooo...',
     '...OOOO..OOOO...',
   ],
+  // Sastre: el chaleco largo con la cinta de medir colgando del cuello.
+  sastre: [
+    ...EMPTY_TOP,
+    '...cccccccccc...',
+    '..cccaayyaaccc..',
+    '..cCcayaayacCc..',
+    '..cCcayaayacCc..',
+    '..cCAAAAAAAACc..',
+    '....aaaaaaaa....',
+    '....aAaaaaAa....',
+    '....OOO..OOO....',
+    '....OOO..OOO....',
+    '....OOO..OOO....',
+    '...oooo..oooo...',
+    '...OOOO..OOOO...',
+  ],
+  // Alquimista: túnica hasta los pies, las mangas remangadas y el cinto con dos frascos.
+  alquimista: [
+    ...EMPTY_TOP,
+    '...cccccccccc...',
+    '..ccccaaaacccc..',
+    '..cCcccaacccCc..',
+    '..cCcccccccCcc..',
+    '..xxAAgAAgAAxx..',
+    '....cccccccc....',
+    '...cCccccccCc...',
+    '...cCccccccCc...',
+    '..ccCccccccCcc..',
+    '..cCCccccccCCc..',
+    '..CCCCCCCCCCCC..',
+    '...oo......oo...',
+  ],
   campesino: [
     ...EMPTY_TOP,
     '...cccaaaaccc...',
@@ -440,6 +472,19 @@ export const WEAPONS = {
     '............mmm.',
     '.............v..',
     '.............v..',
+  ],
+  // Las tijeras en la mano; el frasco con su líquido.
+  sastre: [
+    ...Array.from({ length: 12 }, () => '................'),
+    '............M.M.',
+    '.............M..',
+    '............r.r.',
+  ],
+  alquimista: [
+    ...Array.from({ length: 12 }, () => '................'),
+    '.............M..',
+    '............gGg.',
+    '............ggg.',
   ],
   // Los de fuera no van armados: el campesino lleva un cesto; el mercader, su bolsa.
   campesino: [
