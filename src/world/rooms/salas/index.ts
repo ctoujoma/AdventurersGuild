@@ -17,6 +17,8 @@ import { tesoro } from './tesoro';
 import { cocina } from './cocina';
 import { despensa } from './despensa';
 import { recibidor } from './recibidor';
+import { alquimia } from './alquimia';
+import { sastreria } from './sastreria';
 
 export const ART: Partial<Record<RoomType, RoomArt>> = {
   recibidor,
@@ -35,6 +37,8 @@ export const ART: Partial<Record<RoomType, RoomArt>> = {
   biblioteca,
   capilla,
   mapas,
+  sastreria,
+  alquimia,
 };
 
 /**

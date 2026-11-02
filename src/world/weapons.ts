@@ -26,7 +26,16 @@ export type WeaponId =
   // Los del taller de la forja.
   | 'martillo'
   | 'tenaza'
-  | 'lima';
+  | 'lima'
+  // Los de la sastrería y la alquimia.
+  | 'tijera'
+  | 'aguja'
+  | 'cinta'
+  | 'tela'
+  | 'palo'
+  | 'frasco'
+  | 'maja'
+  | 'pluma';
 
 export interface Weapon {
   img: PixelBuffer;
@@ -125,6 +134,22 @@ export const WEAPONS: Record<WeaponId, Weapon> = {
   // Tenazas con una pieza al rojo en la punta.
   tenaza: grid(['oR.', 'Ro.', 's.s', 's.s', '.s.', 's.s', 's.s'], 1, 5),
   // Lima de desbastar.
+  // Tijeras de sastre (las hojas arriba, los ojos abajo).
+  tijera: grid(['m.m', 'm.m', '.S.', 'o.o', 'ooo'], 1, 3),
+  // Aguja con su hilo rojo colgando.
+  aguja: grid(['.W', '.m', 'Rm', 'R.', 'R.'], 1, 1),
+  // La cinta de medir, con sus marcas, colgando de la mano.
+  cinta: grid(['y', 'G', 'y', 'G', 'y', 'G', 'y'], 0, 0),
+  // Un retal de tela (para probarla por encima).
+  tela: grid(['rrrr', 'rRRr', 'rRrr', 'rRRr', 'rrr.'], 1, 0),
+  // Palo de teñir o de remover, con la punta manchada.
+  palo: grid(['b', 'b', 'b', 'b', 'b', 'B', 'c'], 0, 2),
+  // Frasco de cristal con un líquido de color.
+  frasco: grid(['.s.', '.s.', 'sCs', 'ccc', '.c.'], 1, 2),
+  // La maja del mortero.
+  maja: grid(['b', 'b', 'b', 'S', 'S'], 0, 1),
+  // Pluma de escribir.
+  pluma: grid(['W.', 'Wm', '.m', '.B'], 1, 3),
   lima: grid(['.s', 'Ss', 'Ss', 'Ss', 'bB', 'b.'], 0, 4),
   hacha: grid(
     [

@@ -65,8 +65,12 @@ export interface Thing {
  * héroes libres); o, para el servicio, cada tarea de su oficio en su mueble: la olla del hogar,
  * la mesa (picar, amasar), la pila de fregar, el horno, la cuba, el barril y la caldera.
  */
-export type PoiKind = LeisurePoi | TaskPoi;
+export type PoiKind = LeisurePoi | TaskPoi | 'probador';
 export type LeisurePoi = 'read' | 'warm' | 'pray';
+/**
+ * `probador`: donde se queda de pie el héroe al que visten en la sastrería (junto al maniquí o
+ * al espejo).
+ */
 export type TaskPoi =
   | 'olla'
   | 'mesa'
@@ -79,7 +83,15 @@ export type TaskPoi =
   | 'fuelle'
   | 'yunque'
   | 'artesa'
-  | 'banco';
+  | 'banco'
+  // La sastrería: la mesa de cortar, el maniquí y la tina de tinte.
+  | 'corte'
+  | 'maniqui'
+  | 'tinte'
+  // La alquimia: el caldero, el alambique y el atril con el libro.
+  | 'caldero'
+  | 'alambique'
+  | 'atril';
 
 /** Un mueble con su sitio de trabajo. */
 export const task = (t: Thing, poi: TaskPoi): Thing => ({ ...t, poi });

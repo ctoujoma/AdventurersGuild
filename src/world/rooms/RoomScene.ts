@@ -25,21 +25,29 @@ import {
   type ShaderMaterial,
 } from 'three';
 import { P } from '../../art/palette';
-import { PixelBuffer } from '../../art/pixel';
+import { PixelBuffer, bayer, toHex } from '../../art/pixel';
 import type { Building, RaidResult, Room, RoomYield } from '../../core/model';
 import { ROOMS } from '../../data/rooms';
 import { Camera } from '../camera';
 import { GROUND } from '../geometry';
 import { Particles, type PKind } from '../particles';
 import * as Prop from '../props';
-import type { Point, SceneCallbacks, SceneCraft, SceneModel } from '../scene';
+import type {
+  Point,
+  SceneCallbacks,
+  SceneCraft,
+  SceneCraftEnd,
+  SceneModel,
+  SoundName,
+} from '../scene';
+import { itemIcon } from '../../art/items';
 import { LANTERN, dummy, furnish, gearRoom, type Glow, type RGB } from './furniture';
 import { chalkPlan } from './ruina';
 import { towerLampY, watchtower } from './salas/torre';
 import { CANDLE, takeWallActs, type ActId, type PoiKind, type Round } from './salas/kit';
 import { FLIGHT_Z, flightArt, goesRight } from './stairs';
 import { dress } from './salas/tintes';
-import { Crowd, type Poi, type Talk } from './crowd';
+import { Crowd, type Hit, type Poi, type Talk } from './crowd';
 import { Pets, kindOf, type Perch, type PetId } from './pets';
 import { IncidentArt } from './incidents';
 import { FLAME_FRAMES, FLAME_H, FLAME_W, flameStrip } from './flame';
@@ -230,6 +238,22 @@ interface PropSpot {
   z: number;
 }
 
+/**
+ * Las luces de los talleres que se avivan con trabajo (ver `workshop`): el fuego de la forja y
+ * los alambiques de la alquimia, por lo mucho que tiemblan.
+ */
+const WORK_FIRE: Partial<Record<string, number>> = { forja: 0.2, alquimia: 0.14 };
+
+/** Lo que pasa en la sala con cada golpe de la gente (ver `Hit` en crowd.ts): dónde y qué suena. */
+const HIT_AT: Record<Hit['kind'], { poi: PoiKind; v: number; sound?: SoundName }> = {
+  martillo: { poi: 'yunque', v: 0.1, sound: 'hammer' },
+  temple: { poi: 'artesa', v: 0.2, sound: 'hiss' },
+  tijera: { poi: 'corte', v: 0.2 },
+  tinte: { poi: 'tinte', v: 0.2 },
+  remover: { poi: 'caldero', v: 0.15 },
+  gota: { poi: 'alambique', v: 0.45 },
+};
+
 /** El oro de la cámara, en octavos: la escena solo se repinta cuando cambia de octavo. */
 const vaultStep = (v = 0) => Math.round(Math.max(0, Math.min(1, v)) * 8);
 
@@ -286,8 +310,19 @@ export class RoomScene {
   private forgeLamps: { room: string; lamp: Lamp; base: number }[] = [];
   /** Los trabajos de taller de antes (para saber cuál acaba de terminar). */
   private crafted = new Map<string, SceneCraft>();
-  /** Las piezas recién acabadas, que se quedan un momento brillando en el yunque. */
-  private finished = new Map<string, { until: number; rarity: number }>();
+  /**
+   * Las piezas recién acabadas: en la forja, un momento en el yunque brillando; en los demás
+   * talleres, el dibujo de lo que se ha hecho, que sube un poco sobre su mesa y se apaga.
+   */
+  private finished: {
+    room: string;
+    at: number;
+    until: number;
+    rarity: number;
+    icon: SceneCraft['icon'];
+    x: number;
+    y: number;
+  }[] = [];
   /** Muebles que sueltan partículas (ver `Emit` en `salas/kit.ts`), con su zona en el mundo. */
   private emitters: {
     kind: PKind;
@@ -569,7 +604,7 @@ export class RoomScene {
     const L = this.layout;
     const m = this.model;
     if (!L || !m) return;
-    this.workshop(m.crafts ?? []);
+    this.workshop(m.crafts ?? [], m.craftEnds ?? []);
     this.incidents.set(L, m.building, m.incidents ?? [], m.clock);
     this.incidentLamps = this.incidents.lights().map((l) => ({
       pos: new Vector3(l.x, GROUND - l.y, -l.z + 6),
@@ -893,15 +928,31 @@ export class RoomScene {
    * Los talleres: la gente sabe qué se hace en cada uno (y trabaja solo con trabajo); la fragua
    * se aviva con trabajo y se apaga sin él; al acabar, la pieza brilla en el yunque.
    */
-  private workshop(list: SceneCraft[]): void {
+  private workshop(list: SceneCraft[], ends: readonly SceneCraftEnd[]): void {
     this.crowd.setCrafts(list);
-    const now = new Map(list.map((c) => [c.room, c]));
+    const now = new Map(list.map((c) => [c.id, c]));
     for (const f of this.forgeLamps) {
-      const c = now.get(f.room);
-      f.lamp.power = f.base * (!c ? 0.55 : c.stalled ? 0.75 : 1.35);
+      const here = list.filter((c) => c.room === f.room);
+      const lit = here.some((c) => !c.stalled);
+      f.lamp.power = f.base * (!here.length ? 0.55 : lit ? 1.35 : 0.75);
     }
-    for (const [room, c] of this.crafted) if (!now.has(room)) this.craftDone(c);
+    // Lo que ya no está: según cómo acabó (cancelado, o sin saberlo, no se celebra nada).
+    for (const [id, c] of this.crafted)
+      if (!now.has(id)) {
+        const end = ends.find((e) => e.id === id);
+        if (end && end.how !== 'cancelado') this.craftDone(c, end);
+      }
     this.crafted = now;
+  }
+
+  /** Dónde se ve lo que se crea en cada taller: el yunque, la mesa de cortar, el alambique. */
+  private doneSpot(room: string): PropSpot | undefined {
+    return (
+      this.spotOf(room, 'yunque') ??
+      this.spotOf(room, 'corte') ??
+      this.spotOf(room, 'alambique') ??
+      this.spotOf(room, 'caldero')
+    );
   }
 
   /** El sitio de un mueble de trabajo de una sala (el yunque, el banco…), si lo hay. */
@@ -911,7 +962,7 @@ export class RoomScene {
 
   /** Donde se desmonta: el banco, o el yunque en la forja pequeña (que no tiene). */
   private benchOf(room: string): PropSpot | undefined {
-    return this.spotOf(room, 'banco') ?? this.spotOf(room, 'yunque');
+    return this.spotOf(room, 'banco') ?? this.doneSpot(room);
   }
 
   /** Un punto de un mueble (de 0 a 1 en su ancho y su alto) en la vista, para las partículas. */
@@ -922,28 +973,58 @@ export class RoomScene {
     return { x: view.px + s.x, y: view.py + s.y };
   }
 
-  /** Acaba un trabajo: la pieza brilla en el yunque (más, si es de las buenas); desmontada, polvo. */
-  private craftDone(c: SceneCraft): void {
-    const spot = c.undo ? this.benchOf(c.room) : this.spotOf(c.room, 'yunque');
+  /**
+   * Acaba un trabajo, según cómo (`craftEnds`): hecho, la pieza brilla (más, y con monedas, si
+   * es de las buenas); desmontado, se deshace en polvo y chispas y, si sale la receta, sube un
+   * pergamino; vestido, destellos alrededor del héroe.
+   */
+  private craftDone(c: SceneCraft, end: SceneCraftEnd): void {
+    if (end.how === 'vestido') {
+      const w = c.hero ? this.crowd.where(c.hero) : null;
+      if (!w) return;
+      for (let i = 0; i < 12; i++)
+        this.particles.spawn(
+          'glint',
+          w.x + (Math.random() - 0.5) * 16,
+          w.y - 4 - Math.random() * 24,
+          { max: 0.5 + Math.random() * 0.7 },
+        );
+      this.cb.onSound?.('coin', 0.35);
+      return;
+    }
+    const spot = c.undo ? this.benchOf(c.room) : this.doneSpot(c.room);
     if (!spot) return;
     const p = this.onProp(spot, 0.5, 0.15);
     if (c.undo) {
       for (let i = 0; i < 12; i++)
         this.particles.spawn('puff', p.x + (Math.random() - 0.5) * 16, p.y + Math.random() * 6);
       for (let i = 0; i < 8; i++) this.particles.spawn('spark', p.x, p.y);
+      if (end.how === 'receta') {
+        this.particles.spawn('scroll', p.x - 3, p.y - 6);
+        this.cb.onSound?.('coin', 0.4);
+      }
       return;
     }
-    this.finished.set(c.room, { until: this.t + (c.rarity >= 1 ? 2.6 : 1.8), rarity: c.rarity });
-    const n = c.rarity >= 1 ? 16 : 7;
+    const good = (end.rarity ?? 0) >= 1;
+    this.finished.push({
+      room: c.room,
+      at: this.t,
+      until: this.t + (good ? 2.6 : 1.8),
+      rarity: end.rarity ?? 0,
+      icon: c.icon,
+      x: p.x,
+      y: p.y,
+    });
+    const n = good ? 16 : 7;
     for (let i = 0; i < n; i++)
       this.particles.spawn(
         'glint',
-        p.x + (Math.random() - 0.5) * (c.rarity >= 1 ? 28 : 14),
-        p.y - Math.random() * (c.rarity >= 1 ? 18 : 8),
+        p.x + (Math.random() - 0.5) * (good ? 28 : 14),
+        p.y - Math.random() * (good ? 18 : 8),
         { max: 0.5 + Math.random() * 0.6 },
       );
-    if (c.rarity >= 1) for (let i = 0; i < 10; i++) this.particles.spawn('coin', p.x, p.y);
-    this.cb.onSound?.('coin', c.rarity >= 1 ? 0.6 : 0.3);
+    if (good) for (let i = 0; i < 10; i++) this.particles.spawn('coin', p.x, p.y);
+    this.cb.onSound?.('coin', good ? 0.6 : 0.3);
   }
 
   /**
@@ -952,13 +1033,18 @@ export class RoomScene {
    */
   private hotPieces(): void {
     const { topCtx: ctx, camera } = this;
-    for (const [room, f] of this.finished) {
-      if (this.t > f.until || this.crafted.has(room)) {
-        this.finished.delete(room);
+    this.finished = this.finished.filter((f) => this.t <= f.until);
+    for (const f of this.finished) {
+      const spot = this.spotOf(f.room, 'yunque');
+      if (!spot) {
+        // En los demás talleres: el dibujo de lo que se ha hecho sube un poco y se apaga.
+        const k = (this.t - f.at) / (f.until - f.at);
+        const x = Math.round(f.x - camera.px) - 6;
+        const y = Math.round(f.y - camera.py - 14 - k * 10);
+        this.paintFading(itemIcon(f.icon, f.rarity as 0 | 1), x, y, 1 - Math.max(0, k - 0.6) / 0.4);
         continue;
       }
-      const spot = this.spotOf(room, 'yunque');
-      if (!spot) continue;
+      if ([...this.crafted.values()].some((c) => c.room === f.room && !c.undo)) continue;
       const wy = spot.y0 + (spot.y1 - spot.y0) * 0.12;
       if (this.crowd.covers((spot.x0 + spot.x1) / 2, wy, spot.z)) continue;
       const p = this.onProp(spot, 0.5, 0.12);
@@ -996,6 +1082,18 @@ export class RoomScene {
         ctx.fillRect(x + 2 + (Math.floor(this.t * 3) % 3), y, 1, 1);
       }
     }
+  }
+
+  /** Pinta un dibujo en la capa de arriba, deshaciéndose en tramado con `k` (1 entero, 0 nada). */
+  private paintFading(img: PixelBuffer, x: number, y: number, k: number): void {
+    const ctx = this.topCtx;
+    for (let j = 0; j < img.h; j++)
+      for (let i = 0; i < img.w; i++) {
+        const c = img.get(i, j);
+        if (!c || bayer(x + i, y + j) >= k) continue;
+        ctx.fillStyle = toHex(c);
+        ctx.fillRect(x + i, y + j, 1, 1);
+      }
   }
 
   /** Dónde saltan en pantalla las monedas de la caja (las de `pay`), en píxeles CSS. */
@@ -1432,7 +1530,7 @@ export class RoomScene {
       if (th.light) {
         this.addLight(th.light, x, bottom, th.z, zone, sun < 0.2 || !!th.light.steady);
         // El fuego de los talleres: más vivo con trabajo, bajo sin él (ver `workshop`).
-        if (room.type === 'forja' && th.light.flicker >= 0.2)
+        if (WORK_FIRE[room.type] !== undefined && th.light.flicker >= WORK_FIRE[room.type]!)
           this.forgeLamps.push({ room: room.id, lamp: this.lamps.at(-1)!, base: th.light.power });
       }
       // El rayo de luz de una sala rota: ahí flota el polvo (ver `puffs`).
@@ -2101,24 +2199,29 @@ export class RoomScene {
         for (let i = 0; i < 3; i++) this.particles.spawn('spark', p.x, p.y);
       }
     }
-    // Los golpes de la gente: martillazo (chispas) o temple (vapor), con su sonido si se ven.
+    // Los golpes de la gente: martillazo (chispas), temple (vapor), tijeretazo (hilachas), tinte
+    // y caldero (burbujas y vapor), la gota del alambique (destello); con su sonido si se ven.
     for (const h of this.crowd.hits.splice(0)) {
       const room = this.layout?.rooms.find(
         (r) => r.rect.x <= h.x && h.x <= r.rect.x + r.rect.w && floorY(r.room.floor) === h.y,
       )?.room.id;
-      const spot = room
-        ? this.spotOf(room, h.kind === 'martillo' ? 'yunque' : 'artesa')
-        : undefined;
+      const at = HIT_AT[h.kind];
+      const spot = room ? this.spotOf(room, at.poi) : undefined;
       if (!spot) continue;
-      const p = this.onProp(spot, 0.5, h.kind === 'martillo' ? 0.1 : 0.2);
-      if (h.kind === 'martillo') {
-        for (let i = 0; i < 9; i++) this.particles.spawn('spark', p.x, p.y);
-      } else
-        for (let i = 0; i < 14; i++)
-          this.particles.spawn('steam', p.x + (Math.random() - 0.5) * 10, p.y);
+      const p = this.onProp(spot, 0.5, at.v);
+      const spread = (k: PKind, n: number, w: number) => {
+        for (let i = 0; i < n; i++) this.particles.spawn(k, p.x + (Math.random() - 0.5) * w, p.y);
+      };
+      if (h.kind === 'martillo') spread('spark', 9, 0);
+      else if (h.kind === 'temple') spread('steam', 14, 10);
+      else if (h.kind === 'tijera') spread('dust', 3, 6);
+      else if (h.kind === 'tinte' || h.kind === 'remover') {
+        spread('bubble', 3, 12);
+        spread('steam', 5, 12);
+      } else this.particles.spawn('glint', p.x, p.y, { max: 0.6 });
       const c = this.camera;
-      if (p.x > c.px && p.x < c.px + c.vw && p.y > c.py && p.y < c.py + c.vh)
-        this.cb.onSound?.(h.kind === 'martillo' ? 'hammer' : 'hiss', 0.35);
+      if (at.sound && p.x > c.px && p.x < c.px + c.vw && p.y > c.py && p.y < c.py + c.vh)
+        this.cb.onSound?.(at.sound, 0.35);
     }
     // Lo que sueltan los muebles: cada uno a su ritmo, en un punto al azar de su zona.
     if (this.emitters.length) {

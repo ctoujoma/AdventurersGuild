@@ -176,3 +176,17 @@ export function trophyIcon(icon: TrophyIcon): PixelBuffer {
     }
   });
 }
+
+/** Las tijeras de la sastrería (el bocadillo de vestir a un héroe), 12×12. */
+export function scissorsIcon(): PixelBuffer {
+  return make('i:tijeras', 12, 12, (b) => {
+    // Las dos hojas cruzadas y los ojos de los dedos abajo.
+    b.line(2, 1, 7, 7, P.mist);
+    b.line(3, 1, 8, 6, P.white);
+    b.line(9, 1, 4, 7, P.fog);
+    b.line(10, 1, 5, 6, P.mist);
+    b.set(6, 6, P.slate);
+    b.ellipse(3, 9, 2, 2, (_x, _y, d) => (d > 0.3 ? P.red : 0));
+    b.ellipse(8, 9, 2, 2, (_x, _y, d) => (d > 0.3 ? P.red : 0));
+  });
+}

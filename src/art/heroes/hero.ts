@@ -149,6 +149,32 @@ const CLASS: Record<OutfitId, Slots> = {
     q: P.umber,
     Q: P.bark,
   },
+  // Sastre: camisa cruda, chaleco rojo con la cinta de medir al cuello y calzas oscuras.
+  sastre: {
+    c: P.sand,
+    C: P.tan,
+    a: P.red,
+    A: P.wine,
+    o: P.bark,
+    O: P.navy,
+    p: P.bark,
+    P: P.plum,
+    q: P.mist,
+    Q: P.fog,
+  },
+  // Alquimista: túnica verde hasta los pies, pañuelo crudo y el cinto de cuero con frascos.
+  alquimista: {
+    c: P.forest,
+    C: P.deep,
+    a: P.sand,
+    A: P.bark,
+    o: P.bark,
+    O: P.black,
+    p: P.umber,
+    P: P.ebony,
+    q: P.forest,
+    Q: P.deep,
+  },
   // Chaleco de lana parda sobre camisa cruda, cuerda por cinturón y zuecos.
   campesino: {
     c: P.oak,

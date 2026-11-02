@@ -32,7 +32,9 @@ export type PKind =
   /** Destello del oro: nace como un punto, se abre en cruz y se apaga, sin moverse. */
   | 'glint'
   /** Burbuja de la cuba: sube un poco, se hincha y revienta. */
-  | 'bubble';
+  | 'bubble'
+  /** El pergamino de una receta aprendida: sube meciéndose y se desvanece. */
+  | 'scroll';
 
 export interface Particle {
   kind: PKind;
@@ -143,6 +145,9 @@ export class Particles {
           p.y = p.ay + Math.sin(a) * 2;
           continue;
         }
+        case 'scroll':
+          p.vx = Math.sin(t * 2.5 + p.seed) * 4;
+          break;
         case 'note':
         case 'zzz':
         case 'heart':
@@ -240,6 +245,29 @@ export class Particles {
             px(ctx, x + 2, y - 1, P.sand);
           }
           break;
+        case 'scroll': {
+          // Enrollado arriba y abajo, con unas líneas de tinta y el sello rojo; al final, tramado.
+          const g = [
+            '.TTTTT.',
+            'TSSSSST',
+            '.SXXXS.',
+            '.SSSSS.',
+            '.SXXRS.',
+            '.SSSSS.',
+            'TSSSSST',
+            '.TTTTT.',
+          ];
+          const ink: Record<string, string> = { T: P.tan, S: P.sand, X: P.clay, R: P.red };
+          const show = k > 0.35 ? () => true : fade;
+          g.forEach((row, j) => {
+            for (let i = 0; i < row.length; i++) {
+              const c = ink[row[i]!];
+              if (c && show(x + i, y + j)) px(ctx, x + i, y + j, c);
+            }
+          });
+          if (k > 0.5 && Math.floor(t * 6 + p.seed) % 3 === 0) px(ctx, x + 7, y - 1, P.white);
+          break;
+        }
         case 'drip':
           // Una gota alargada: clara arriba.
           px(ctx, x, y, P.sky);
@@ -316,4 +344,5 @@ const defaults: Record<PKind, { life: number; vx: number; vy: number }> = {
   star: { life: 1.1, vx: 0, vy: 0 },
   glint: { life: 0.7, vx: 0, vy: 0 },
   bubble: { life: 0.9, vx: 0, vy: -3 },
+  scroll: { life: 2.6, vx: 0, vy: -9 },
 };
