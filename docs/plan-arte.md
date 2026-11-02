@@ -62,7 +62,7 @@ npm run build`.
       sillares, metal con remaches) y se oscurece hacia el fondo. Lo empotrado es de piedra.
 - [ ] Visto bueno del usuario (capturas de frente y de lado en el PR #94).
 
-- [x] **Feedback del usuario tras los talleres** (PR de este pase):
+- [x] **Feedback del usuario tras los talleres** (#104):
   - la gente anda por delante de lo suelto (`WALK_Z` en `crowd.ts`): solo entra más al fondo al
     llegar a su sitio, y al irse primero sale (nadie atraviesa un barril ni un arcón);
   - la cocina remueve en una olla de verdad (`stewPot`, suelta junto al hogar) con el cucharón en
