@@ -430,14 +430,11 @@ export function facade(L: RoomsLayout, look: FacadeLook = {}, crest?: Crest): Fa
   // la de fuera, y bajo el anexo, sus cimientos (no se excava).
   const garden = L.garden;
   const main = garden ? garden.x - ox : right;
-  // Roca bajo el edificio.
-  stoneWall(buf, left, g + SLAB, main - left, H - g - SLAB, 'roca', {
-    ramp: [P.black, P.navy, P.slate, P.steel],
-    bw: 20,
-    bh: 12,
-  });
+  // Roca bajo el edificio: asoma por los lados en escalones, cada hilada algo más ancha que la
+  // de encima, como una zarpa que lo asienta.
+  const inRock = rockBase(buf, left, main, g + SLAB);
   for (let y = g + 4 * PITCH; y < H; y++)
-    for (let x = left; x < main; x++) if ((x + y) % 3 === 0) buf.set(x, y, P.black);
+    for (let x = 0; x < W; x++) if ((x + y) % 3 === 0 && inRock(x, y)) buf.set(x, y, P.black);
   // Los cimientos, solo bajo lo que está construido en la planta baja del anexo (sus solares
   // vacíos son tierra, como el jardín).
   const built = garden ? groundSpans(L, garden.x + garden.w) : [];
@@ -524,6 +521,48 @@ export function facade(L: RoomsLayout, look: FacadeLook = {}, crest?: Crest): Fa
       run === big ? crest : undefined,
     );
   return { buf, x: ox, y: oy, runs };
+}
+
+/**
+ * La roca de debajo del edificio, de `x0` a `x1` y desde `y` hacia abajo, que asoma por los lados
+ * en escalones (uno por hilada, hasta `REACH`). Devuelve si un punto cae en ella.
+ */
+function rockBase(b: PixelBuffer, x0: number, x1: number, y: number) {
+  const BH = 12;
+  const REACH = 22;
+  const rng = new Rng('zarpa-roca');
+  const rows = Math.ceil((b.h - y) / BH);
+  // Lo que sale cada hilada por la izquierda y por la derecha.
+  const out = Array.from({ length: rows }, (_, i) =>
+    [0, 1].map(() => Math.min(REACH, 4 + i * 6 + rng.int(-1, 2))),
+  ) as [number, number][];
+  const row = (yy: number) => out[Math.min(rows - 1, Math.floor((yy - y) / BH))]!;
+  const inside = (x: number, yy: number) => {
+    if (yy < y || yy >= b.h) return false;
+    const [l, r] = row(yy);
+    return x >= x0 - l && x < x1 + r;
+  };
+  const rock = new PixelBuffer(b.w, b.h);
+  stoneWall(rock, x0 - REACH - 4, y, x1 - x0 + 2 * REACH + 8, b.h - y, 'roca', {
+    ramp: [P.black, P.navy, P.slate, P.steel],
+    bw: 20,
+    bh: BH,
+  });
+  for (let yy = y; yy < b.h; yy++)
+    for (let x = Math.max(0, x0 - REACH); x < Math.min(b.w, x1 + REACH); x++)
+      if (inside(x, yy)) b.set(x, yy, rock.get(x, yy));
+  // Cada escalón: el canto de arriba, a la luz, y el lado de fuera, en sombra.
+  for (let i = 0; i < rows; i++) {
+    const top = y + i * BH;
+    const [l, r] = out[i]!;
+    const [pl, pr] = i ? out[i - 1]! : [0, 0];
+    if (l > pl) b.hline(x0 - l, top, l - pl, P.steel);
+    if (r > pr) b.hline(x1 + pr, top, r - pr, P.steel);
+    const h = Math.min(BH, b.h - top);
+    b.vline(x0 - l, top + 1, h - 1, P.black);
+    b.vline(x1 + r - 1, top + 1, h - 1, P.black);
+  }
+  return inside;
 }
 
 /**
