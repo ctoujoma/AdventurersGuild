@@ -108,7 +108,7 @@ npm run build`.
          Al acabar, destellos a su alrededor.
    - [x] 12. Bocadillos como en la forja (las tijeras al vestir) y golpes con efecto: tijeretazo,
          burbujas del tinte y del caldero, la gota del alambique.
-   - [ ] Visto bueno del usuario (PR de los talleres).
+   - [ ] Visto bueno del usuario (#102).
 
    Para preparar la forja en el navegador (`#debug`): forja a nivel 1, un trabajador con
    `trade: 'forja'` y `room` la forja, y `__game.dispatch({ type: 'craft', room: <id>, recipe:
