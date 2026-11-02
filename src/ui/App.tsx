@@ -141,6 +141,8 @@ export function App() {
   /** Lo que ve la escena: durante el amanecer sigue mostrando la noche anterior. */
   const [sceneGame, setSceneGame] = useState(game);
   const [panel, setPanel] = useState<PanelId | null>(null);
+  /** La pestaña del jardín abierta en Adornos: panel bajo y la cámara en el jardín. */
+  const [gardenView, setGardenView] = useState(false);
   /** Grupo fuera cuya ficha «Encargo en curso» está abierta. */
   const [tripId, setTripId] = useState<string | null>(null);
   const [arconTab, setArconTab] = useState<ArconTab>('equipo');
@@ -303,6 +305,22 @@ export function App() {
   });
 
   const toast = (text: string) => setNotice({ text, key: Date.now() });
+
+  /** La parte de la escena (de 0 a 1, desde arriba) que no tapa el panel abierto. */
+  const uncovered = () => {
+    const stage = document.querySelector('.stage')?.getBoundingClientRect();
+    const top = document.querySelector('.panel')?.getBoundingClientRect().top;
+    if (!stage || top === undefined || !stage.height) return 0.5;
+    return Math.min(1, Math.max(0, (top - stage.top) / stage.height));
+  };
+
+  // Fuera de Adornos, la cámara vuelve a sus límites (la vista previa del jardín la baja).
+  useEffect(() => {
+    if (panel !== 'casa') {
+      scene.current?.releaseTop();
+      setGardenView(false);
+    }
+  }, [panel]);
 
   /**
    * Ante el jefe: «Ver la pelea» la juega (el resultado sale de la pelea, con las órdenes del
@@ -1317,7 +1335,7 @@ export function App() {
           </Panel>
         )}
         {panel === 'casa' && (
-          <Panel title="Adornos" onClose={() => openPanel(null)}>
+          <Panel title="Adornos" low={gardenView} onClose={() => openPanel(null)}>
             <TabernaPanel
               game={game}
               has={has}
@@ -1336,10 +1354,13 @@ export function App() {
                 if (on) toast(`${DECOR[id].name}: ya luce en el salón.`);
               }}
               onLook={(patch) => dispatch({ type: 'facadeLook', patch })}
-              onGarden={(patch) => {
-                dispatch({ type: 'gardenLook', patch });
-                // Se mira el jardín para ver el cambio.
-                scene.current?.focusTop('jardin');
+              onGarden={(patch) => dispatch({ type: 'gardenLook', patch })}
+              onGardenView={(on) => {
+                setGardenView(on);
+                return on
+                  ? // Tras la entrada del panel, que se mide ya en su sitio.
+                    setTimeout(() => scene.current?.focusTop('jardin', uncovered()), 350)
+                  : scene.current?.releaseTop();
               }}
               onFacade={(id) => {
                 dispatch({ type: 'facade', id });

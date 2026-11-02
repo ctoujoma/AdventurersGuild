@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'preact/hooks';
+import { useEffect, useMemo, useState } from 'preact/hooks';
 import { customOf } from '../../core/game';
 import { unlockSource } from '../../core/goals';
 import { appeal } from '../../core/salon';
@@ -50,6 +50,8 @@ interface Props {
   onLook: (patch: FacadeLook) => void;
   /** El aspecto del jardín (solo con el patio trasero). */
   onGarden: (patch: GardenLook) => void;
+  /** Con la pestaña del jardín abierta, la cámara lo enseña sobre el panel (vista previa). */
+  onGardenView: (on: boolean) => void;
   onRaven: () => void;
   onFeast: () => void;
   /** Si se tiene una pieza (las demás salen con candado y de dónde se ganan). */
@@ -268,6 +270,7 @@ export function TabernaPanel({
   onFacade,
   onLook,
   onGarden,
+  onGardenView,
   onRaven,
   onFeast,
   has,
@@ -282,6 +285,7 @@ export function TabernaPanel({
     feastToday && c.feast !== game.day ? 'salon' : 'letrero',
   );
   const [name, setName] = useState(c.name);
+  useEffect(() => onGardenView(tab === 'jardin'), [tab]);
   const col = CREST_COLORS[c.color];
   const board = useMemo(() => crestBoard(col.field, col.dark, c.symbol), [c.color, c.symbol]);
   const commit = () => {

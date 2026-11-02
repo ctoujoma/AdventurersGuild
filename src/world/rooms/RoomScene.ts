@@ -66,6 +66,7 @@ import {
   PARTITION,
   PITCH,
   ROOF_H,
+  ROOM_H,
   SLAB,
   WALL,
   YARD_D,
@@ -787,10 +788,22 @@ export class RoomScene {
     this.camera.centerOn(p.x, p.y);
   }
 
-  /** Como `focus`, pero dejando el sitio arriba, a la vista sobre un panel abierto. */
-  focusTop(name: string): void {
+  /**
+   * Como `focus`, pero con el sitio en la franja de arriba que deja un panel abierto (`seen`:
+   * la parte de la vista, de 0 a 1, que queda sin tapar).
+   */
+  focusTop(name: string, seen: number): void {
     const p = this.layout ? focusPoint(this.layout, name) : null;
-    if (p) this.camera.centerOn(p.x, p.y + this.camera.vh * 0.3);
+    if (!p) return;
+    // El suelo del sitio, un poco por encima del borde del panel.
+    const dy = this.camera.vh * (0.5 - Math.max(0.1, seen)) + ROOM_H / 2 + 6;
+    this.camera.lift = dy;
+    this.camera.centerOn(p.x, p.y + dy);
+  }
+
+  /** Al cerrar el panel, la cámara vuelve a sus límites. */
+  releaseTop(): void {
+    this.camera.unlift();
   }
 
   /** La entrada de la partida: la cámara empieza fuera, a la izquierda, y entra despacio hasta la sala. */

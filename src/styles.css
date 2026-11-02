@@ -6663,3 +6663,10 @@ p.notebook-close {
   filter: grayscale(1);
   opacity: 0.75;
 }
+
+/* Panel bajo: deja ver la escena encima (la vista previa del jardín). */
+@media (orientation: portrait) {
+  .panel.panel-low {
+    max-height: 48%;
+  }
+}
