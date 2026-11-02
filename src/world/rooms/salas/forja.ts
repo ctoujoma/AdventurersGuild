@@ -378,7 +378,7 @@ function things(room: Room, w: number): Thing[] {
     else if (s.kind === 'mid')
       t.push(
         ...row(s, [
-          [smelter(lvl >= 2), WALL + 2, lvl >= 2 ? fire(22, 60, FORGE, false) : undefined],
+          [smelter(lvl >= 2), WALL + 2, lvl >= 2 ? fire(4, 60, FORGE, false) : undefined],
           [ore(), WALL - 2],
         ]),
       );

@@ -50,6 +50,11 @@ export interface Thing {
   /** Un cilindro de verdad (cubas, barriles): ver `Round`. */
   round?: Round;
   /**
+   * Un montón de verdad (el oro del tesoro): un cuerpo de revolución con la silueta del dibujo,
+   * que de frente se ve igual que él y de lado tiene su forma. Ver `mound`.
+   */
+  mound?: boolean;
+  /**
    * Lo que suelta de vez en cuando (destellos del oro, vapor, burbujas): qué, cuántos por
    * segundo y en qué zona de su dibujo (x0, y0, x1, y1 en sus píxeles). Ver `emits`.
    */
@@ -389,6 +394,9 @@ export interface Round {
   dark: string;
   hoop: string;
 }
+
+/** Un montón de verdad (ver `Thing.mound`). */
+export const mound = (t: Thing): Thing => ({ ...t, mound: true });
 
 /** Un mueble que es un cilindro de verdad (ver `Round`). */
 export const round = (t: Thing, r: Round): Thing => ({ ...t, round: r });

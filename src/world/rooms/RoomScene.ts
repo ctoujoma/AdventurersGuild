@@ -11,7 +11,10 @@ import { tinyDigits } from '../../art/digits';
 import { GRASS_FRAMES, grassTuft, type TuftKind } from '../../art/grass';
 import { Rng } from '../../core/rng';
 import {
+  BufferGeometry,
   CanvasTexture,
+  DoubleSide,
+  Float32BufferAttribute,
   Group,
   Mesh,
   NearestFilter,
@@ -24,8 +27,8 @@ import {
   WebGLRenderer,
   type ShaderMaterial,
 } from 'three';
-import { P } from '../../art/palette';
-import { PixelBuffer, bayer, toHex } from '../../art/pixel';
+import { P, darker } from '../../art/palette';
+import { PixelBuffer, bayer, rgba, toHex } from '../../art/pixel';
 import type { Building, RaidResult, Room, RoomYield } from '../../core/model';
 import { ROOMS } from '../../data/rooms';
 import { Camera } from '../camera';
@@ -1499,6 +1502,7 @@ export class RoomScene {
         box: th.box || !!th.thick,
         thick: th.thick,
         round: th.round,
+        mound: th.mound,
         mat: th.mat,
       });
       // Lo que suelta (destellos, vapor, burbujas): su zona, ya en el mundo.
@@ -1914,6 +1918,7 @@ export class RoomScene {
       box?: boolean;
       thick?: number;
       round?: Round;
+      mound?: boolean;
       mat?: Mat;
     } = {},
   ): void {
@@ -1926,10 +1931,13 @@ export class RoomScene {
       at(x + w / 2, base - h, depth),
       at(x - w / 2, base - h, depth),
     ];
-    const m = mesh(
-      quad(corners, this.look),
-      this.look.surface(img, corners, { ambient, sun, wrap: 0.6, dither: 0.03 }),
-    );
+    // Un montón: en vez de la figura plana, su cuerpo de revolución (ver `mound`).
+    const m = o.mound
+      ? this.mound(img, corners, x - w / 2, base - h, depth, k, ambient, sun)
+      : mesh(
+          quad(corners, this.look),
+          this.look.surface(img, corners, { ambient, sun, wrap: 0.6, dither: 0.03 }),
+        );
     // Con volumen, la cara y sus lados van juntos (y se anclan juntos).
     const obj = o.box || o.round ? new Group() : m;
     if (o.box || o.round) obj.add(m);
@@ -2112,6 +2120,95 @@ export class RoomScene {
       ],
       opts,
     );
+  }
+
+  /**
+   * Un montón de verdad: cada fila del dibujo es un aro (de su ancho, con su centro) alrededor de
+   * un eje vertical, aplastado en profundidad para no llegar a la pared. La mitad de delante
+   * lleva el dibujo tal cual, visto de frente (así de frente se ve igual que la figura plana); la
+   * de atrás, el mismo oro algo más oscuro (es lo que asoma por arriba y por los lados).
+   */
+  private mound(
+    img: PixelBuffer,
+    corners: Corners,
+    left: number,
+    top: number,
+    depth: number,
+    k: number,
+    ambient: Tint,
+    sun: number,
+  ): Group {
+    const K = 14;
+    const rows: { c: number; r: number }[] = [];
+    let t0 = img.h;
+    for (let y = 0; y < img.h; y++) {
+      let x0 = -1;
+      let x1 = -1;
+      for (let x = 0; x < img.w; x++)
+        if (img.get(x, y)) {
+          if (x0 < 0) x0 = x;
+          x1 = x + 1;
+        }
+      if (x0 >= 0) t0 = Math.min(t0, y);
+      rows.push(x0 < 0 ? { c: img.w / 2, r: 0 } : { c: (x0 + x1) / 2, r: (x1 - x0) / 2 });
+    }
+    const rMax = Math.max(1, ...rows.map((r) => r.r));
+    // Lo hondo: casi como ancho, pero sin pasar de la pared del fondo.
+    const rz = Math.min((rMax * 0.6) / k, (DEPTH - 0.5 - depth) / 2);
+    const zc = depth + rz;
+    const g = new Group();
+    const half = (front: boolean, tex: PixelBuffer) => {
+      const pos: number[] = [];
+      const uv: number[] = [];
+      const idx: number[] = [];
+      // Las juntas entre filas: la de arriba de la primera fila sale en punta.
+      for (let b = t0; b <= img.h; b++) {
+        const row = rows[Math.min(img.h - 1, b)]!;
+        const up = rows[Math.max(t0, b - 1)]!;
+        const r = b === t0 ? row.r * 0.4 : Math.max(row.r, up.r);
+        const c = b === t0 ? row.c : (row.c + up.c) / 2;
+        for (let i = 0; i <= K; i++) {
+          // De la izquierda a la derecha, por delante o por detrás.
+          const a = Math.PI * (1 - i / K);
+          const px = c + r * Math.cos(a);
+          const dz = (r / rMax) * rz * Math.sin(a);
+          pos.push(left + px / k, top + b / k, front ? zc - dz : zc + dz);
+          // El color, un poco hacia dentro del borde: el contorno del dibujo no se estira por
+          // el costado (de frente apenas se nota).
+          const tx = c + Math.max(0, r - 0.7) * Math.cos(a);
+          uv.push(Math.max(0, Math.min(1, tx / img.w)), 1 - b / img.h);
+        }
+      }
+      const n = K + 1;
+      for (let b = 0; b < img.h - t0; b++)
+        for (let i = 0; i < K; i++) {
+          const p = b * n + i;
+          idx.push(p, p + n, p + 1, p + 1, p + n, p + n + 1);
+        }
+      const geo = new BufferGeometry();
+      geo.setAttribute(
+        'position',
+        new Float32BufferAttribute(
+          pos.map((v, j) => (j % 3 === 1 ? GROUND - v : j % 3 === 2 ? -v : v)),
+          3,
+        ),
+      );
+      geo.setAttribute('uv', new Float32BufferAttribute(uv, 2));
+      geo.setIndex(idx);
+      const m = this.look.surface(tex, corners, {
+        ambient,
+        sun,
+        wrap: 0.6,
+        dither: 0.03,
+        side: DoubleSide,
+      });
+      g.add(mesh(this.look.own(geo), m));
+    };
+    half(true, img);
+    const dark = img.clone();
+    dark.map((c) => (c ? rgba(darker(toHex(c), 1)) : 0));
+    half(false, dark);
+    return g;
   }
 
   private plane(

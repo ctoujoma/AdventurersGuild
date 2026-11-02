@@ -69,6 +69,15 @@ const VISITOR_NAME: Record<string, string> = {
 const SPEED = 36;
 /** Lo deprisa que se va hacia dentro o hacia fuera (más despacio que de lado: se ve en escorzo). */
 const Z_SPEED = 14;
+/**
+ * Lo más al fondo por lo que se anda de un lado a otro de la sala: por delante de todo lo suelto
+ * (que empieza en `FREE`, 40). Más al fondo (los muebles de la pared) solo se entra al llegar,
+ * dando unos pasos hacia dentro; y al irse, primero se sale hacia fuera. Así nadie atraviesa
+ * un barril ni un arcón.
+ */
+const WALK_Z = 32;
+/** A cuánto del sitio (en x) se empieza a entrar a su profundidad. */
+const STEP_IN = 10;
 const CLIMB = 30;
 
 /** Fotogramas del atlas (cada uno de CELL × SPRITE de alto). */
@@ -95,12 +104,15 @@ const TOOLS = [
   'frasco',
   'maja',
   'pluma',
+  'atizador',
+  'sorbo',
 ] as const;
 
 /** Un trabajo: la herramienta y los cuatro tiempos (postura del brazo, giro y duración). */
 interface Work {
   tool: number;
-  steps: [FightPose, number, number][];
+  /** Cada tiempo: postura, giro, duración y, si cambia en ese tiempo, otra herramienta. */
+  steps: [FightPose, number, number, number?][];
   /** De rodillas (coser el bajo): las piernas dobladas y el cuerpo más abajo. */
   crouch?: boolean;
 }
@@ -114,11 +126,13 @@ const WORK = {
   // Remover la olla con el cucharón, dando vueltas.
   cocina: {
     tool: 0,
+    // El brazo adelantado y el cucharón en diagonal, metido en la olla hasta el borde, dando
+    // vueltas (más adentro y más afuera).
     steps: [
-      ['ready', 205, 0.26],
-      ['ready', 182, 0.26],
-      ['strike', 160, 0.26],
-      ['ready', 182, 0.26],
+      ['thrust', 112, 0.3],
+      ['thrust', 126, 0.28],
+      ['thrust', 140, 0.3],
+      ['thrust', 126, 0.28],
     ],
   },
   // Remover el mosto con la pala, despacio y con fuerza.
@@ -175,22 +189,27 @@ const WORK = {
   probar: {
     tool: 0,
     steps: [
-      ['ready', 200, 0.6],
-      ['up', -40, 0.5],
-      ['up', -55, 0.9],
-      ['ready', 200, 0.6],
+      // Lo saca de la olla y se lo lleva a la boca: casi de frente a la cara, de perfil solo
+      // se ve el cazo y un poco del mango (el cucharón en escorzo).
+      ['thrust', 130, 0.6],
+      ['up', 0, 0.5, 19],
+      ['up', -10, 0.9, 19],
+      ['thrust', 130, 0.6],
     ],
   },
   // … meter y sacar el pan del horno con la pala…
   hornear: {
     tool: 1,
+    // El brazo adelantado y la pala algo hacia arriba: la punta entra por la boca del horno,
+    // que está más alta que la mano.
     steps: [
-      ['ready', 70, 0.6],
-      ['thrust', 85, 0.7],
-      ['thrust', 95, 0.5],
-      ['ready', 70, 0.7],
+      ['ready', 60, 0.6],
+      ['thrust', 70, 0.7],
+      ['thrust', 78, 0.5],
+      ['thrust', 66, 0.7],
     ],
   },
+
   // … llenar la jarra en el grifo del barril…
   llenar: {
     tool: 3,
@@ -305,21 +324,22 @@ const WORK = {
   // … y teñir: remover la tela en la tina con el palo.
   tenir: {
     tool: 14,
+    // El palo, con la punta manchada hacia abajo, dentro de la tina (el brazo en alto).
     steps: [
-      ['windup', 212, 0.5],
-      ['ready', 192, 0.45],
-      ['strike', 166, 0.5],
-      ['ready', 192, 0.45],
+      ['up', -18, 0.5],
+      ['up', 0, 0.45],
+      ['up', 18, 0.5],
+      ['up', 0, 0.45],
     ],
   },
   // La alquimia: remover el caldero con el palo, despacio y en círculo…
   remover: {
     tool: 14,
     steps: [
-      ['ready', 205, 0.45],
-      ['ready', 182, 0.45],
-      ['strike', 160, 0.45],
-      ['ready', 182, 0.45],
+      ['up', 15, 0.45],
+      ['up', 0, 0.45],
+      ['up', -15, 0.45],
+      ['up', 0, 0.45],
     ],
   },
   // … destilar: mirar el frasco al trasluz y verter gota a gota…
@@ -352,6 +372,26 @@ const WORK = {
       ['ready', 60, 0.9],
     ],
   },
+  // La bodega: dar con el mazo en el tonel, para oír por el sonido cuánto queda…
+  golpear: {
+    tool: 7,
+    steps: [
+      ['thrust', 55, 0.35],
+      ['thrust', 95, 0.12],
+      ['thrust', 60, 0.3],
+      ['ready', 20, 0.9],
+    ],
+  },
+  // … y atizar el fuego del hornillo de la caldera, abajo.
+  atizar: {
+    tool: 18,
+    steps: [
+      ['ready', 105, 0.5],
+      ['ready', 125, 0.35],
+      ['ready', 110, 0.4],
+      ['ready', 125, 0.35],
+    ],
+  },
   // … y echar un leño al fuego.
   lena: {
     tool: 6,
@@ -365,6 +405,8 @@ const WORK = {
 } satisfies Record<string, Work>;
 
 type WorkId = keyof typeof WORK;
+/** Los trabajos, en el orden del atlas (para las pruebas y para verlos sueltos). */
+export const WORK_IDS = Object.keys(WORK) as WorkId[];
 /** Dónde va cada trabajo en el atlas (cada uno, su tira de 8: 4 a la derecha y 4 a la izquierda). */
 const SLOT = Object.fromEntries(Object.keys(WORK).map((k, i) => [k, i])) as Record<WorkId, number>;
 
@@ -377,9 +419,10 @@ const TASKS: Record<TaskPoi, WorkId[]> = {
   mesa: ['picar'],
   fregar: ['fregar'],
   horno: ['hornear', 'lena'],
-  cuba: ['bodega'],
+  // La cuba es un tonel cerrado con grifo: se llena la jarra o se le da con el mazo.
+  cuba: ['llenar', 'golpear'],
   barril: ['llenar'],
-  caldera: ['bodega', 'lena'],
+  caldera: ['atizar', 'lena'],
   fuelle: ['avivar'],
   yunque: ['martillar', 'martillar'],
   artesa: ['templar'],
@@ -799,8 +842,8 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
   );
   // En su puesto, con la herramienta (los de la izquierda, volteados).
   Object.values(WORK).forEach((w: Work, slot) =>
-    w.steps.forEach(([p, deg], i) => {
-      const cell = drillCell(still, p, TOOLS[w.tool]!, deg);
+    w.steps.forEach(([p, deg, , tool], i) => {
+      const cell = drillCell(still, p, TOOLS[tool ?? w.tool]!, deg);
       const img = w.crouch ? crouchCell(cell) : cell;
       put(img, F.tool + slot * 8 + i, 0);
       put(img, F.tool + slot * 8 + 4 + i, 0, true);
@@ -2127,6 +2170,11 @@ export class Crowd {
         }
       }
     } else {
+      // Desde un mueble de la pared: primero sale hacia fuera (sin moverse de lado).
+      if (!this.scripted && !a.climb && a.lane > WALK_Z + 0.5 && this.crossing(a)) {
+        a.dist += Z_SPEED * run * dt;
+        return;
+      }
       const dx = next.x - a.x;
       const step = SPEED * run * dt;
       a.dist += step;
@@ -2159,12 +2207,27 @@ export class Crowd {
     return a.laneTo !== undefined && !a.climb && Math.abs(a.lane - a.laneTo) > 0.4;
   }
 
-  /** Mientras anda, se va acercando a la profundidad de su destino (en diagonal). */
+  /** Si aún le queda camino de lado a lado (y no solo unos pasos hasta su sitio). */
+  private crossing(a: Actor): boolean {
+    const next = a.path[0];
+    if (!next) return false;
+    return a.path.length > 1 || next.floor !== a.floor || Math.abs(next.x - a.x) > STEP_IN;
+  }
+
+  /**
+   * Mientras anda, se va acercando a la profundidad de su destino (en diagonal), pero sin pasar
+   * de `WALK_Z` hasta que está cerca de su sitio.
+   */
   private slide(a: Actor, dt: number): void {
-    if (a.laneTo === undefined || a.climb || this.scripted) return;
-    const dz = a.laneTo - a.lane;
+    if (a.climb || this.scripted) return;
+    // (Sin profundidad que pedir, como al ir a sentarse, se queda en la suya; pero de lado a
+    // lado, tampoco más al fondo de `WALK_Z`.)
+    const goal = a.laneTo ?? a.lane;
+    const to = this.crossing(a) ? Math.min(goal, WALK_Z) : goal;
+    const dz = to - a.lane;
+    if (!dz) return;
     const step = Z_SPEED * (a.run ?? 1) * dt;
-    if (Math.abs(dz) <= step) a.lane = a.laneTo;
+    if (Math.abs(dz) <= step) a.lane = to;
     else a.lane += Math.sign(dz) * step;
     // Andando solo hacia dentro o fuera, el paso sigue (si no, patinaría).
     if (!a.path.length) a.dist += Math.min(step, Math.abs(dz));

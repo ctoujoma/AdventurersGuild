@@ -109,23 +109,26 @@ function still(level: number): PixelBuffer {
   });
 }
 
-/** El caldero de hierro en sus trébedes, con el fuego debajo y el brebaje morado. */
+/**
+ * El caldero de hierro en sus trébedes bajas, con el fuego debajo y el brebaje morado (verde en
+ * el nivel 3). El borde, a la altura a la que llega el palo de quien remueve.
+ */
 function cauldron(level: number): PixelBuffer {
-  return Prop.piece(24, 24, (p) => {
+  return Prop.piece(24, 20, (p) => {
     // Las trébedes.
-    p.line(3, 23, 7, 8, P.slate);
-    p.line(20, 23, 16, 8, P.slate);
+    p.line(3, 19, 6, 8, P.slate);
+    p.line(20, 19, 17, 8, P.slate);
     p.hline(5, 8, 14, P.steel);
     // El fuego y las brasas.
-    p.ellipse(12, 22, 6, 2, P.black);
-    for (let x = 8; x < 17; x += 2) p.set(x, 21, x % 4 ? P.orange : P.gold);
-    p.set(11, 19, P.lemon);
-    p.set(13, 20, P.orange);
+    p.ellipse(12, 18.5, 6, 1.5, P.black);
+    for (let x = 8; x < 17; x += 2) p.set(x, 18, x % 4 ? P.orange : P.gold);
+    p.set(11, 16, P.lemon);
+    p.set(13, 17, P.orange);
     // El caldero: barriga negra con su brillo, el borde y las asas.
-    p.ellipse(12, 12, 9, 7, P.black);
-    p.ellipse(12, 12, 8, 6, P.navy);
-    p.ellipse(9, 10, 3, 2, P.slate);
-    p.set(8, 9, P.steel);
+    p.ellipse(12, 10, 9, 6, P.black);
+    p.ellipse(12, 10, 8, 5, P.navy);
+    p.ellipse(9, 9, 3, 2, P.slate);
+    p.set(8, 8, P.steel);
     p.rect(3, 5, 18, 2, P.slate);
     p.hline(3, 5, 18, P.fog);
     p.set(2, 6, P.slate);
@@ -136,7 +139,7 @@ function cauldron(level: number): PixelBuffer {
     p.hline(6, 3, 12, c[2]);
     p.set(9, 3, c[3]);
     p.set(14, 2, c[3]);
-    // El cucharón de palo dentro.
+    // El palo de remover, dentro.
     p.line(16, 0, 13, 5, W[4]!);
   });
 }
