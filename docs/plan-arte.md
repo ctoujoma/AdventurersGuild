@@ -141,8 +141,13 @@ npm run build`.
    - [x] 1. Bajo tierra (`facade` en `textures.ts`): la roca solo bajo el edificio; bajo el
          jardín, tierra con su borde de hierba como la de fuera; bajo el anexo, cimientos de
          sillares con zarpa, solo donde hay sala o escalera en la planta baja (sus solares
-         vacíos, tierra). Capturas en `capturas/anexo/`.
-   - [ ] 2. Puertas al jardín en las salas de la planta baja que dan a él.
+         vacíos, tierra). Capturas en `capturas/anexo/` (#105).
+   - [x] 1b. La roca asoma por los lados del edificio en escalones (`rockBase`), cada hilada
+         algo más ancha, hasta 22 píxeles: que se vea que lo asienta (el usuario, tras #105).
+   - [x] 2. Puertas al jardín: la sala de la planta baja que da a él la tiene por dentro (como
+         la del recibidor) y por fuera; con escalera al borde, en su rellano; si la escalera no
+         tiene rellano abajo, no hay puerta (como `opens` en `cutOff`). Opción `garden` de `box`
+         en `RoomScene.ts`.
    - [ ] 3. El jardín liso (hierba del patio, sin la maleza del terreno).
    - [ ] 4. Las piezas de `GardenLook`.
    - [ ] 5. El claustro.

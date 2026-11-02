@@ -10,6 +10,7 @@
 import { tinyDigits } from '../../art/digits';
 import { GRASS_FRAMES, grassTuft, type TuftKind } from '../../art/grass';
 import { Rng } from '../../core/rng';
+import { inGarden, isShaft } from '../../core/rooms';
 import {
   BufferGeometry,
   CanvasTexture,
@@ -1267,6 +1268,11 @@ export class RoomScene {
           ),
           sides: { left: [left], right: [right] },
           floor: s.floor,
+          // En el rellano de la planta baja de una escalera al borde, la puerta al jardín.
+          garden: {
+            left: s.floor === 0 && s.steps && inGarden(b, s.s - 1),
+            right: s.floor === 0 && s.steps && inGarden(b, s.s),
+          },
         },
       );
       const inner = interior(s.rect);
@@ -1446,6 +1452,9 @@ export class RoomScene {
     const free = (c: number) =>
       room.floor > 0 && !b.rooms.some((o) => this.covers(o, c, room.floor - 1));
     const back = backWall(room, r.w, r.h, this.salonLook());
+    // Puerta al jardín en la planta baja, si no hay en medio una escalera sin rellano (que tapa
+    // el paso; con rellano, la puerta va en ella). Como `opens` en `cutOff` (`core/rooms.ts`).
+    const gate = (c: number, x: number) => room.floor === 0 && inGarden(b, c) && !isShaft(b, x);
     // Lo tocable que se ha pintado en la pared (en sus píxeles), pasado al mundo.
     const live = room.level > 0 && !(room.works && room.works.kind !== 'extend');
     const tx = r.w / back.w;
@@ -1467,6 +1476,10 @@ export class RoomScene {
       sides,
       floor: room.floor,
       door: room.type === 'recibidor' ? room.level : undefined,
+      garden: {
+        left: gate(room.col - 1, room.col),
+        right: gate(room.col + room.w, room.col + room.w),
+      },
       hang: { left: free(room.col), right: free(room.col + room.w - 1) },
       room,
     });
@@ -1647,6 +1660,8 @@ export class RoomScene {
       floor: number;
       /** La puerta de la calle (en el recibidor), con su nivel. */
       door?: number;
+      /** La puerta al jardín de la planta baja, de cada lado. */
+      garden?: { left: boolean; right: boolean };
       /** Sin sala debajo del hueco de cada lado (en voladizo). */
       hang?: { left: boolean; right: boolean };
       /** La sala (para los acabados de sus lados). */
@@ -1683,7 +1698,7 @@ export class RoomScene {
         r.h,
         doors(o.sides.left),
         `${seed}i`,
-        o.door !== undefined ? [0] : [],
+        o.door !== undefined || o.garden?.left ? [0] : [],
         o.door,
         o.room,
       ),
@@ -1692,7 +1707,17 @@ export class RoomScene {
     );
     this.plane(
       g,
-      mirror(sideTex(theme, r.h, doors(o.sides.right), `${seed}d`, [], 1, o.room)),
+      mirror(
+        sideTex(
+          theme,
+          r.h,
+          doors(o.sides.right),
+          `${seed}d`,
+          o.garden?.right ? [0] : [],
+          1,
+          o.room,
+        ),
+      ),
       [at(x1, yb, D), at(x1, yb, 0), at(x1, yt, 0), at(x1, yt, D)],
       flat,
     );
@@ -1708,14 +1733,14 @@ export class RoomScene {
         const f = o.floor + i;
         const top = floorTop(f) - SLAB;
         const bottom = floorY(f) + (i === 0 && o.hang?.[side] ? SLAB : 0);
-        const withDoor = !doorDone && i === 0;
-        if (withDoor) doorDone = true;
+        const street = !doorDone && i === 0;
+        if (street) doorDone = true;
         const tex = outerSide(
           themeOf(f),
           PITCH,
-          withDoor,
+          street || (i === 0 && !!o.garden?.[side]),
           `${seed}f${side}${i}`,
-          o.door,
+          street ? o.door : 1,
           this.model?.look?.walls,
         );
         if (side === 'left') {
