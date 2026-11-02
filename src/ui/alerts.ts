@@ -17,6 +17,8 @@ import { jobRoomName } from './roomName';
 export type Go =
   | { room: string }
   | { crew: string | null }
+  /** La barra: quien busca trabajo (héroes y trabajadores). */
+  | { barra: true }
   | { quest: string }
   | { trip: string }
   | { panel: 'tablon' | 'fuera' | 'gremio' };
@@ -93,7 +95,18 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
       go: { panel: 'tablon' },
     });
 
-  // La casa: salas sin nadie, gente sin tarea o fuera de su oficio, quien pide trabajo.
+  // Trabajadores que piden trabajo: se contratan en la barra.
+  const n = game.seekers.length;
+  if (n)
+    out.push({
+      id: 'piden',
+      text: `${n} ${n === 1 ? 'trabajador pide' : 'trabajadores piden'} trabajo en la barra.`,
+      k: 'info',
+      icon: 'jarra',
+      go: { barra: true },
+    });
+
+  // La casa: salas sin nadie, gente sin tarea o fuera de su oficio.
   for (const a of crewAlerts(game))
     out.push({
       id: a.room ? `vacia:${a.room}` : a.who ? `tarea:${a.who}` : 'piden',

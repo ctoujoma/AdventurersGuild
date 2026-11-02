@@ -227,7 +227,7 @@ export interface Alert {
   room?: string;
 }
 
-/** Lo que pide atención: salas sin nadie, trabajadores sin tarea o fuera de su oficio, y quien pide trabajo. */
+/** Lo que pide atención: salas sin nadie, trabajadores sin tarea o fuera de su oficio. */
 export function crewAlerts(game: GameState): Alert[] {
   const out: Alert[] = [];
   const rooms = postRooms(game).filter((r) => isJobRoom(r.type));
@@ -254,8 +254,6 @@ export function crewAlerts(game: GameState): Alert[] {
         who: w.id,
       });
   }
-  const n = game.seekers.length;
-  if (n) out.push({ text: `${n} ${plural(n, 'pide', 'piden')} trabajo.` });
   return out;
 }
 

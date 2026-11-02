@@ -22,7 +22,6 @@ interface Props {
   /** Abre la ficha de un héroe. */
   onOpen: (id: string) => void;
   onTask: (who: string, task: Task) => void;
-  onHire: (id: string) => void;
   onFire: (id: string) => void;
   /** Alguien a quien elegir al abrir (al tocarlo en la escena). */
   focus?: string | null;
@@ -235,9 +234,10 @@ export function CrewGroup({
 /**
  * Quién hace qué en la casa: cada sala con sus puestos (ocupados o libres), los que entrenan,
  * la guardia, quien descansa y quien está fuera, con los avisos arriba. Tocar a alguien deja
- * cambiarle la tarea; tocar un hueco libre, elegir a quién poner. Debajo, quien pide trabajo.
+ * cambiarle la tarea; tocar un hueco libre, elegir a quién poner. Quien pide trabajo está en la
+ * barra (`SeekerList`).
  */
-export function CrewList({ game, onOpen, onTask, onHire, onFire, focus }: Props) {
+export function CrewList({ game, onOpen, onTask, onFire, focus }: Props) {
   const [sel, setSel] = useState<string | null>(focus ?? null);
   useEffect(() => {
     if (focus) setSel(focus);
@@ -278,46 +278,52 @@ export function CrewList({ game, onOpen, onTask, onHire, onFire, focus }: Props)
           />
         ),
       )}
-      <section class="crew-group" aria-label="Piden trabajo">
-        <h3 class="crew-h">
-          <span>Piden trabajo</span>
-          <span class="row-sub">
-            {game.workers.length} de {workerCap(game)} trabajadores
-          </span>
-        </h3>
-        {game.seekers.map((w) => {
-          const why = canHireWorker(game, w.id);
-          return (
-            <article key={w.id} class="row" {...help(`«${w.quote}»`)}>
-              <Face game={game} id={w.id} />
-              <span class="row-info">
-                <b>{w.name}</b>
-                <span class="row-sub">
-                  {TRADES[w.trade].name[w.sex]} · Maña {w.skill} · <Icon name="coin" size={10} />
-                  {w.salary}/sem
-                </span>
-                {why && <small class="crew-off">{why}</small>}
-              </span>
-              <button
-                class="btn btn-gold"
-                disabled={!!why}
-                title={why ?? undefined}
-                aria-label={`Contratar a ${w.name} por ${w.fee} monedas`}
-                onClick={() => onHire(w.id)}
-              >
-                Contratar · <Icon name="coin" size={12} /> {w.fee}
-              </button>
-            </article>
-          );
-        })}
-        {!game.seekers.length && (
-          <p class="panel-note">
-            {game.mode === 'libre'
-              ? 'Hoy no ha venido nadie a pedir trabajo.'
-              : 'Cuando el gremio sea tuyo, vendrá gente del pueblo a pedir trabajo.'}
-          </p>
-        )}
-      </section>
     </>
+  );
+}
+
+/** Quien viene a pedir trabajo de cocinero, herrero…: se contrata en la barra. */
+export function SeekerList({ game, onHire }: { game: GameState; onHire: (id: string) => void }) {
+  return (
+    <section class="crew-group" aria-label="Trabajadores que piden trabajo">
+      <h3 class="crew-h">
+        <span>Trabajadores</span>
+        <span class="row-sub">
+          {game.workers.length} de {workerCap(game)} trabajadores
+        </span>
+      </h3>
+      {game.seekers.map((w) => {
+        const why = canHireWorker(game, w.id);
+        return (
+          <article key={w.id} class="row" {...help(`«${w.quote}»`)}>
+            <Face game={game} id={w.id} />
+            <span class="row-info">
+              <b>{w.name}</b>
+              <span class="row-sub">
+                {TRADES[w.trade].name[w.sex]} · Maña {w.skill} · <Icon name="coin" size={10} />
+                {w.salary}/sem
+              </span>
+              {why && <small class="crew-off">{why}</small>}
+            </span>
+            <button
+              class="btn btn-gold"
+              disabled={!!why}
+              title={why ?? undefined}
+              aria-label={`Contratar a ${w.name} por ${w.fee} monedas`}
+              onClick={() => onHire(w.id)}
+            >
+              Contratar · <Icon name="coin" size={12} /> {w.fee}
+            </button>
+          </article>
+        );
+      })}
+      {!game.seekers.length && (
+        <p class="panel-note">
+          {game.mode === 'libre'
+            ? 'Hoy no ha venido nadie a pedir trabajo.'
+            : 'Cuando el gremio sea tuyo, vendrá gente del pueblo a pedir trabajo.'}
+        </p>
+      )}
+    </section>
   );
 }
