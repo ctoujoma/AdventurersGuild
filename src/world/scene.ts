@@ -70,10 +70,27 @@ export interface SceneModel {
    * que no va en la clave que rehace la escena).
    */
   crafts?: SceneCraft[];
+  /**
+   * Cómo acabaron los últimos trabajos (por `id`): cuando uno sale de `crafts`, aquí está si se
+   * hizo (y de qué rareza salió), si se sacó la receta al desmontar, si se vistió al héroe o si
+   * se canceló. Se guardan los últimos ocho.
+   */
+  craftEnds?: SceneCraftEnd[];
+}
+
+/** Cómo acabó un trabajo de taller. */
+export interface SceneCraftEnd {
+  id: string;
+  room: string;
+  how: 'hecho' | 'receta' | 'nada' | 'vestido' | 'cancelado';
+  /** Con `hecho`: 0 normal, 1 de las buenas. */
+  rarity?: Rarity;
 }
 
 /** Un trabajo de taller tal como lo ve la escena. */
 export interface SceneCraft {
+  /** Para saber, cuando desaparece, cómo acabó (`SceneModel.craftEnds`). */
+  id: string;
   /** El taller (id de sala). */
   room: string;
   /** Lo que sale (o lo que se desmonta). */

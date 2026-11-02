@@ -172,6 +172,7 @@ export function sceneModel(s: GameState): SceneModel {
     crafts: (s.crafts ?? []).map((c) => {
       const st = craftState(s, c);
       return {
+        id: c.id,
         room: c.room,
         icon: c.item?.icon ?? (c.recipe ? RECIPES[c.recipe].icon : 'capa'),
         rarity: c.item?.rarity ?? 0,
@@ -181,5 +182,6 @@ export function sceneModel(s: GameState): SceneModel {
         hero: c.dress?.hero,
       };
     }),
+    craftEnds: s.craftLog,
   };
 }
