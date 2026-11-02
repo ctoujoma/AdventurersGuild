@@ -8,7 +8,7 @@
  * el plano de corte es justo lo que se ve, píxel a píxel. Los toques se resuelven ahí mismo.
  */
 import { tinyDigits } from '../../art/digits';
-import { GRASS_FRAMES, grassTuft, type TuftKind } from '../../art/grass';
+import { GRASS_FRAMES, grassTuft, lawnTex, type TuftKind } from '../../art/grass';
 import { Rng } from '../../core/rng';
 import { inGarden, isShaft } from '../../core/rooms';
 import {
@@ -1365,17 +1365,26 @@ export class RoomScene {
       ],
       { ...yard, repeat: nr },
     );
-    this.plane(
-      g,
-      groundTex(L.right - L.left, (YARD_D - back) / 2, false, 'huerto'),
-      [
-        at(L.left, GROUND, back),
-        at(L.right, GROUND, back),
-        at(L.right, GROUND, YARD_D),
-        at(L.left, GROUND, YARD_D),
-      ],
-      yard,
-    );
+    // Detrás del edificio, la hierba del terreno; detrás del jardín, su césped (más abajo).
+    const garden = L.garden;
+    const behind: [number, number][] = garden
+      ? [
+          [L.left, garden.x],
+          [garden.x + garden.w, L.right],
+        ]
+      : [[L.left, L.right]];
+    for (const [a, c] of behind)
+      this.plane(
+        g,
+        groundTex(
+          Math.round(c - a),
+          (YARD_D - back) / 2,
+          false,
+          a === L.left ? 'huerto' : 'huerto2',
+        ),
+        [at(a, GROUND, back), at(c, GROUND, back), at(c, GROUND, YARD_D), at(a, GROUND, YARD_D)],
+        yard,
+      );
     // Dentro del ancho del edificio, donde la planta baja está vacía (un solar sin construir,
     // a menudo encima de un hueco excavado), también hay terreno: si no, se vería el hueco.
     const used: [number, number][] = [];
@@ -1383,6 +1392,19 @@ export class RoomScene {
       if (room.type !== 'torre' && room.floor <= 0 && room.floor + room.h > 0)
         used.push([rect.x, rect.x + rect.w]);
     for (const s of stairCells(L)) if (s.floor === 0) used.push([s.rect.x, s.rect.x + s.rect.w]);
+    // El jardín, aparte y hasta el fondo como el patio: césped cuidado con el camino pisado de
+    // una puerta a la otra (las puertas están hacia `WALK_Z`, por donde cruza la gente).
+    if (garden) {
+      const gx0 = garden.x;
+      const gx1 = garden.x + garden.w;
+      this.plane(
+        g,
+        lawnTex(Math.round(gx1 - gx0), YARD_D / 2, 'jardin', 16, 42),
+        [at(gx0, GROUND, 0), at(gx1, GROUND, 0), at(gx1, GROUND, YARD_D), at(gx0, GROUND, YARD_D)],
+        yard,
+      );
+      used.push([gx0, gx1]);
+    }
     used.sort((a, c) => a[0] - c[0]);
     let gx = L.left;
     for (const [a, c] of [...used, [L.right, L.right] as [number, number]]) {
@@ -1887,8 +1909,9 @@ export class RoomScene {
     for (let i = 0; i < 220; i++) {
       const x = L.left - 460 + rng.next() * (L.right - L.left + 920);
       const z = 4 + rng.next() * (YARD_D - 30);
-      // Ni dentro del edificio ni encima del pozo.
+      // Ni dentro del edificio, ni en el jardín (está segado), ni encima del pozo.
       if (x > L.left - 6 && x < L.right + 6 && z < DEPTH + 8) continue;
+      if (L.garden && x > L.garden.x - 6 && x < L.garden.x + L.garden.w + 6) continue;
       if (Math.hypot(x - well.x, (z - well.z) * 0.6) < 18) continue;
       // No en el camino de tierra del patio (por delante).
       if (z > 6 && z < 26 && x < L.left) continue;

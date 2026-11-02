@@ -147,3 +147,48 @@ export function groundTex(
       }
   return b;
 }
+
+/**
+ * El césped del jardín (entre el edificio y el anexo): hierba corta y pareja, con las pasadas
+ * de la siega en franjas, y un camino de tierra pisada de una puerta a la otra entre las
+ * profundidades `z0` y `z1` del mundo (la textura va a media resolución y su fila 0 es la del
+ * fondo). Sin las matas ni las flores del terreno: está cuidado.
+ */
+export function lawnTex(w: number, d: number, seed: string, z0: number, z1: number): PixelBuffer {
+  const b = new PixelBuffer(w, d);
+  const rng = new Rng(seed);
+  const STRIPE = 14;
+  // Las filas del camino.
+  const r0 = d - z1 / 2;
+  const r1 = d - z0 / 2;
+  for (let y = 0; y < d; y++)
+    for (let x = 0; x < w; x++) {
+      const n = rng.next();
+      // El borde del camino ondula un poco y la hierba lo invade a mordiscos.
+      const a = r0 + Math.sin(x * 0.07) * 1.2 + (n > 0.9 ? 1 : 0);
+      const c = r1 + Math.sin(x * 0.05 + 2) * 1.2 - (n < 0.1 ? 1 : 0);
+      if (y >= a && y < c) {
+        // Tierra pisada: más gastada por el medio, con guijarros.
+        const mid = Math.abs(y - (a + c) / 2) / ((c - a) / 2);
+        let col: string = mid > 0.8 && n > 0.6 ? P.forest : n < 0.18 ? P.umber : P.bark;
+        if (n > 0.93) col = P.mocha;
+        if (n > 0.985) col = P.steel;
+        b.set(x, y, col);
+        continue;
+      }
+      // Franjas de la siega: una algo más clara que la otra.
+      const light = Math.floor((x + Math.round(Math.sin(y * 0.3))) / STRIPE) % 2 === 0;
+      let col: string = light ? (n > 0.4 ? P.leaf : P.forest) : n > 0.9 ? P.leaf : P.forest;
+      if (n < 0.015) col = P.deep;
+      if (n > 0.997) col = P.lime;
+      b.set(x, y, col);
+    }
+  // Unas pocas margaritas, lejos del camino.
+  for (let i = 0; i < (w * d) / 400; i++) {
+    const x = rng.int(0, w - 1);
+    const y = rng.int(0, d - 1);
+    if (y >= r0 - 1 && y <= r1) continue;
+    b.set(x, y, rng.chance(0.7) ? P.white : P.lemon);
+  }
+  return b;
+}
