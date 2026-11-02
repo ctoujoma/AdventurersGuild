@@ -86,7 +86,10 @@ describe('el anexo en el modo obras', () => {
     s.mode = 'libre';
     s.gold = 99999;
     s.rep = RANKS[WING_RANK]!.at;
-    const kinds = (st: GameState) => targetsFor(st, { kind: 'expand' }).map((t) => t.action.type);
+    const kinds = (st: GameState) =>
+      targetsFor(st, { kind: 'expand' })
+        .filter((t) => !t.blocked)
+        .map((t) => t.action.type);
     expect(kinds(s)).not.toContain('buyWing');
     while (s.building.cols < MAX_COLS) s = reduce(s, { type: 'buyPlot' });
     expect(kinds(s)).toContain('buyWing');
