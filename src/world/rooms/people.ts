@@ -36,8 +36,9 @@ export function segments(L: RoomsLayout): Segments {
   for (const { room, rect } of L.rooms)
     if (room.type !== 'torre') push(room.floor, rect.x, rect.x + rect.w);
   for (const s of L.stairs) for (const f of [...s.floors, ...s.halls]) push(f, s.x, s.x + STAIR_W);
-  // El patio, delante del recibidor.
+  // El patio, delante del recibidor, y el jardín de entre los dos edificios.
   push(0, -PATIO_W, 0);
+  if (L.garden) push(0, L.garden.x, L.garden.x + L.garden.w);
   const out: Segments = new Map();
   for (const [f, list] of raw) {
     list.sort((a, b) => a[0] - b[0]);

@@ -4,9 +4,9 @@
  * dibujan lo que diga este fichero.
  */
 import type { RoomType } from '../../data/rooms';
-import { MAX_DOWN, MAX_UP } from '../../core/balance';
+import { GARDEN_W, MAX_DOWN, MAX_UP, WING_COL } from '../../core/balance';
 import type { Building, Room } from '../../core/model';
-import { isShaft, landing, shafts } from '../../core/rooms';
+import { isShaft, landing, shafts, spanOf } from '../../core/rooms';
 import { GROUND } from '../geometry';
 
 /** Paredes entre salas: la mitad del grosor cae dentro de cada hueco. */
@@ -67,6 +67,11 @@ export interface RoomsLayout {
   /** Columnas de escalera, de izquierda a derecha. */
   stairs: Shaft[];
   patio: Rect;
+  /**
+   * El jardín entre el edificio y el anexo (si se ha comprado el patio trasero), de la cara de
+   * fuera de un muro a la del otro y a la altura de la planta baja. Por él se anda (planta 0).
+   */
+  garden: Rect | null;
 }
 
 /** Una columna de escalera: dónde va, sus tramos, sus rellanos y sus pasillos. */
@@ -97,7 +102,25 @@ export const colX = (b: Building, c: number) =>
 export const stairX = (b: Building, s: number) =>
   WALL + s * CELL_W + STAIR_W * stairsBefore(b, s, false);
 
-export const innerWidth = (b: Building) => b.cols * CELL_W + shafts(b).length * STAIR_W;
+export const innerWidth = (b: Building) => spanOf(b) * CELL_W + shafts(b).length * STAIR_W;
+
+/** El jardín de entre los dos edificios (sin anexo, no hay). */
+export function gardenRect(b: Building): Rect | null {
+  if (!b.wing) return null;
+  const x = colX(b, b.cols) + WALL;
+  return { x, y: floorTop(0), w: stairX(b, WING_COL) - WALL - x, h: ROOM_H };
+}
+
+/**
+ * Los huecos del jardín, de izquierda a derecha, para las piezas de `GardenLook.slots` (el
+ * jardín partido en `GARDEN_W` trozos iguales; sin anexo, ninguno).
+ */
+export function gardenSlots(b: Building): Rect[] {
+  const g = gardenRect(b);
+  if (!g) return [];
+  const w = g.w / GARDEN_W;
+  return Array.from({ length: GARDEN_W }, (_, i) => ({ ...g, x: g.x + i * w, w }));
+}
 
 export function roomRect(b: Building, r: Room): Rect {
   const y = floorTop(r.floor + r.h - 1);
@@ -149,6 +172,7 @@ export function roomsLayout(b: Building): RoomsLayout {
     rooms: b.rooms.map((room) => ({ room, rect: roomRect(b, room) })),
     stairs: shafts(b).map((at) => shaftOf(b, at)),
     patio: { x: -PATIO_W, y: floorTop(0), w: PATIO_W, h: ROOM_H },
+    garden: gardenRect(b),
   };
 }
 
@@ -215,7 +239,7 @@ export function roofRuns(L: RoomsLayout): RoofRun[] {
         .filter((o) => o.room.type !== 'torre' && o.rect.x < x + w && o.rect.x + o.rect.w > x)
         .map((o) => o.room.floor + o.room.h - 1),
     );
-  for (let c = 0; c < L.b.cols; c++)
+  for (let c = 0; c < spanOf(L.b); c++)
     segs.push({ x: colX(L.b, c), w: CELL_W, top: topOf(colX(L.b, c), CELL_W) });
   for (const s of L.stairs)
     segs.push({ x: s.x, w: STAIR_W, top: Math.max(-99, ...s.floors, ...s.halls) });

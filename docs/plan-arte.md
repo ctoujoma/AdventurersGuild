@@ -122,6 +122,10 @@ npm run build`.
    hojas al viento) y el sonido de cada sala al acercar la cámara.
 8. **«Juice» de la interfaz**: botones con peso y ceremonia en las recompensas grandes (subir de
    rango, acabar una historia, pagar la deuda).
+9. **El anexo y el jardín** (patio trasero, núcleo ya hecho): bajo tierra del jardín, puertas al
+   jardín, sus piezas y el claustro. Encargo:
+   [`encargos/arte-anexo-jardin.md`](encargos/arte-anexo-jardin.md). Si el usuario no dice
+   otra cosa, va detrás de lo de arriba.
 
 ## Lo que ha dicho el usuario (para no repetir errores)
 

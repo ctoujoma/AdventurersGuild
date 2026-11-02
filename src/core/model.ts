@@ -11,6 +11,7 @@ import type {
   Dress,
   FacadeId,
   FacadeLook,
+  GardenLook,
   StaffId,
   TintId,
 } from '../data/custom';
@@ -330,8 +331,13 @@ export interface Stair {
 
 /** El edificio: salas, escaleras, lo excavado y lo que hay en el patio. */
 export interface Building {
-  /** Ancho en huecos, sin contar las escaleras. */
+  /** Ancho en huecos del edificio principal, sin contar las escaleras. */
   cols: number;
+  /**
+   * Huecos del anexo, si se ha comprado (empieza en el hueco `WING_COL`; entre los dos, el
+   * jardín). Sin él, no hay anexo: las partidas de antes no lo traen.
+   */
+  wing?: number;
   /** Tramos de escalera, sin límite (como los ascensores de Fallout Shelter). */
   stairs: Stair[];
   /** Huecos excavados bajo tierra, como «hueco,planta». */
@@ -386,6 +392,8 @@ export interface Custom {
   colors?: Record<string, TintId>;
   /** Tejado, paredes, rótulo y jardineras de la fachada (solo se ve). */
   look?: FacadeLook;
+  /** El jardín de entre el edificio y el anexo (solo se ve). */
+  garden?: GardenLook;
 }
 
 export interface PendingEvent {

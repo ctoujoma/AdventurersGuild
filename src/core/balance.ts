@@ -110,6 +110,23 @@ export const START_COLS = 4;
 export const MAX_COLS = 7;
 /** Precio de cada solar nuevo (índice = solares ya comprados). */
 export const PLOT_COST = [150, 250, 400] as const;
+/**
+ * El anexo («patio trasero»): un segundo edificio a la derecha, con un jardín en medio en el
+ * que no se construye. Se compra con el edificio ya a todo lo ancho, empieza en el hueco
+ * `WING_COL` (así el jardín mide `GARDEN_W` huecos) y no se excava bajo él.
+ */
+export const GARDEN_W = 3;
+export const WING_COL = MAX_COLS + GARDEN_W;
+/** Huecos del anexo al comprarlo y como mucho (los de más, con solares como los de siempre). */
+export const WING_START = 3;
+export const WING_MAX = 5;
+/** Rango que pide (índice de `RANKS`: plata) y lo que cuesta. */
+export const WING_RANK = 2;
+export const WING_COST = 1200;
+/** Precio de cada solar del anexo (índice = los ya comprados). */
+export const WING_PLOT_COST = [500, 650] as const;
+/** Salas que no se pueden poner en el anexo (de momento, ninguna: es igual que el edificio). */
+export const NOT_IN_WING: readonly RoomType[] = [];
 /** Plantas como máximo sobre el suelo (con el rango más alto) y bajo tierra. */
 export const MAX_UP = 6;
 export const MAX_DOWN = DIG_COST.length - 1;

@@ -246,7 +246,8 @@ describe('obras', () => {
     let s = open();
     for (let i = 0; i < 3; i++) s = ok(s, { type: 'buyPlot' });
     expect(s.building.cols).toBe(7);
-    no(s, { type: 'buyPlot' }, /solares/);
+    // Con el edificio a todo lo ancho, se sigue por el patio trasero (ver `wing.test.ts`).
+    no(s, { type: 'buyPlot' }, /patio trasero/);
   });
 
   it('el modo plano paga varias obras de una vez, o ninguna si una falla', () => {
