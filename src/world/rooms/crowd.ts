@@ -42,7 +42,7 @@ import {
   type Spots,
 } from './people';
 import { project, scaleAt, type View } from './view3d';
-import type { BedSpot } from './people';
+import { FAR_Z, NEAR_Z, type BedSpot } from './people';
 import type { PoiKind, TaskPoi } from './salas/kit';
 
 /** Como mucho, tantas figuras animadas a la vez (y de ellas, tantos visitantes). */
@@ -66,6 +66,8 @@ const VISITOR_NAME: Record<string, string> = {
   espia: 'Forastero callado',
 };
 const SPEED = 36;
+/** Lo deprisa que se va hacia dentro o hacia fuera (más despacio que de lado: se ve en escorzo). */
+const Z_SPEED = 14;
 const CLIMB = 30;
 
 /** Fotogramas del atlas (cada uno de CELL × SPRITE de alto). */
@@ -312,6 +314,8 @@ const TURN = 1.6;
 /** Un sitio de una sala al que se va a hacer algo (ver `setPois`). */
 export interface Poi extends Place {
   kind: PoiKind;
+  /** Profundidad del mueble (para ponerse delante de él). */
+  z?: number;
   /** Medio ancho de lo que hay allí (para ponerse a un lado si hay que mirarlo de lado). */
   half: number;
 }
@@ -354,6 +358,9 @@ interface Actor {
   y: number;
   floor: number;
   lane: number;
+  /** La de siempre (su carril) y hacia dónde va ahora (cambia poco a poco al andar). */
+  home: number;
+  laneTo?: number;
   path: Place[];
   goal: Goal | null;
   pose: 'stand' | 'walk' | 'sit' | 'bed' | 'down';
@@ -969,7 +976,7 @@ export class Crowd {
         }
       }
       if (a.chat && !a.path.length) this.talk(a, t);
-      if (a.path.length) this.walk(a, dt);
+      if (a.path.length || (a.pose === 'walk' && this.sliding(a))) this.walk(a, dt);
       else if (a.leaving) {
         if (!a.hero.visitor) this.away.add(a.hero.id);
         this.remove(a.hero.id);
@@ -1290,6 +1297,7 @@ export class Crowd {
       y: floorY(start.floor),
       floor: start.floor,
       lane: LANES[hash(h.id) % LANES.length]!,
+      home: LANES[hash(h.id) % LANES.length]!,
       path: [],
       goal: null,
       pose: 'stand',
@@ -1459,7 +1467,7 @@ export class Crowd {
     const x = p.x + side * Math.min(p.half * 0.45, 9) + (this.rnd() - 0.5) * 2;
     const place = { x, floor: p.floor };
     if (!route(this.L, { x: a.x, floor: a.floor }, place, this.segs)) return false;
-    this.go(a, { place, pose: 'stand' });
+    this.go(a, { place, pose: 'stand', stand: p.z !== undefined ? p.z - 10 : undefined });
     a.task = { at: p.x, work, face: side > 0 ? -1 : 1 };
     a.wait = 6 + this.rnd() * 8;
     return true;
@@ -1480,7 +1488,7 @@ export class Crowd {
     const x = p.kind === 'warm' ? p.x + side * Math.min(p.half, 14) : p.x + (this.rnd() - 0.5) * 6;
     const place = { x, floor: p.floor };
     if (!this.L || !route(this.L, { x: a.x, floor: a.floor }, place, this.segs)) return false;
-    this.go(a, { place, pose: 'stand' });
+    this.go(a, { place, pose: 'stand', stand: p.z !== undefined ? p.z - 10 : undefined });
     a.poi = { kind: p.kind, dir: side > 0 ? -1 : 1 };
     a.wait = 7 + this.rnd() * 8;
     return true;
@@ -1509,7 +1517,7 @@ export class Crowd {
     const side = a.x < b.x ? -1 : 1;
     const place = { x: b.x + side * 15, floor: b.floor };
     if (!route(this.L, { x: a.x, floor: a.floor }, place, this.segs)) return false;
-    this.go(a, { place, pose: 'stand' });
+    this.go(a, { place, pose: 'stand', stand: b.lane + (this.rnd() - 0.5) * 3 });
     a.chat = { with: b.hero.id, from: 0, until: this.now + 20 };
     // El otro espera: que no se vaya mientras llega.
     b.wait = Math.max(b.wait, 12);
@@ -1659,6 +1667,8 @@ export class Crowd {
       if (r < 0.45 && this.goPoi(a)) return;
     }
     const g = free ? wander(this.S, this.taken(), this.rnd) : home;
+    // Paseando, a cualquier profundidad de la sala (por delante de los muebles).
+    if (free && g && g.pose === 'stand') g.stand = NEAR_Z + this.rnd() * 18;
     a.wait = free ? 5 + this.rnd() * 9 : 3 + this.rnd() * 3;
     if (!g) return;
     // Si ya está ahí, se queda.
@@ -1687,6 +1697,9 @@ export class Crowd {
     a.goal = g;
     a.path = path;
     a.pose = 'walk';
+    // De pie, a la profundidad que pida el destino o, si no pide ninguna, a la suya de siempre.
+    a.laneTo =
+      g.pose === 'stand' ? Math.max(NEAR_Z, Math.min(FAR_Z, g.stand ?? a.home)) : undefined;
     if (g.pose === 'sit' && this.S) a.seat = this.S.seats.find((s) => s.x === g.place.x) ?? null;
   }
 
@@ -1716,6 +1729,12 @@ export class Crowd {
   }
 
   private walk(a: Actor, dt: number): void {
+    this.slide(a, dt);
+    if (!a.path.length) {
+      // Ya en su x: le queda ponerse a su profundidad (da unos pasos hacia dentro o fuera).
+      if (!this.sliding(a)) this.reach(a);
+      return;
+    }
     const next = a.path[0]!;
     const run = a.run ?? 1;
     if (next.floor !== a.floor) {
@@ -1773,14 +1792,33 @@ export class Crowd {
         a.path.shift();
       } else a.x += Math.sign(dx) * step;
     }
-    if (!a.path.length) {
-      if (a.goal && !a.leaving) {
-        this.arrive(a, a.goal);
-        // Se mete en la cama: primero incorporado y luego se tumba.
-        if (a.goal.pose === 'bed' && a.goal.bed && !this.scripted)
-          a.edge = { bed: a.goal.bed, t: 0.8, out: false };
-      } else a.pose = 'stand';
-    }
+    if (!a.path.length && !this.sliding(a)) this.reach(a);
+  }
+
+  /** Ha llegado (en x y en profundidad): se pone como pide su destino. */
+  private reach(a: Actor): void {
+    if (a.goal && !a.leaving) {
+      this.arrive(a, a.goal);
+      // Se mete en la cama: primero incorporado y luego se tumba.
+      if (a.goal.pose === 'bed' && a.goal.bed && !this.scripted)
+        a.edge = { bed: a.goal.bed, t: 0.8, out: false };
+    } else a.pose = 'stand';
+  }
+
+  /** Si aún le falta ponerse a su profundidad. */
+  private sliding(a: Actor): boolean {
+    return a.laneTo !== undefined && !a.climb && Math.abs(a.lane - a.laneTo) > 0.4;
+  }
+
+  /** Mientras anda, se va acercando a la profundidad de su destino (en diagonal). */
+  private slide(a: Actor, dt: number): void {
+    if (a.laneTo === undefined || a.climb || this.scripted) return;
+    const dz = a.laneTo - a.lane;
+    const step = Z_SPEED * (a.run ?? 1) * dt;
+    if (Math.abs(dz) <= step) a.lane = a.laneTo;
+    else a.lane += Math.sign(dz) * step;
+    // Andando solo hacia dentro o fuera, el paso sigue (si no, patinaría).
+    if (!a.path.length) a.dist += Math.min(step, Math.abs(dz));
   }
 
   private depth(a: Actor): number {

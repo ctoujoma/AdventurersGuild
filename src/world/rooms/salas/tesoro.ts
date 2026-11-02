@@ -17,6 +17,7 @@ import {
   thick,
   GOLD,
   WALL,
+  FREE,
   WIN_HALF,
   W,
   at,
@@ -440,19 +441,19 @@ function things(room: Room, w: number, look: SalonLook): Thing[] {
       else
         t.push(
           ...row(s, [
-            [goldChest(fill.c0!, lvl >= 3), WALL, glow(fill.c0!, 30)],
-            [goldChest(fill.c1!, lvl >= 3), WALL],
+            [goldChest(fill.c0!, lvl >= 3), FREE, glow(fill.c0!, 30)],
+            [goldChest(fill.c1!, lvl >= 3), FREE],
           ]).map((x, k) => chestBody(x, k === 0 ? fill.c0! : fill.c1!)),
         );
     } else if (s.kind === 'right') {
-      if (fill.sacks! > 0) t.push(thick(at(coinSack(), Math.min(s.x0 + 8.5, w - 9), WALL - 2), 5));
+      if (fill.sacks! > 0) t.push(thick(at(coinSack(), Math.min(s.x0 + 8.5, w - 9), FREE - 2), 5));
     } else if (s.kind === 'mid') {
       const a = fill[`m${s.i}`]!;
       if (s.i === 1)
         t.push(
           ...row(s, [
-            ...(lvl >= 3 ? ([[idol(), WALL]] as [PixelBuffer, number][]) : []),
-            [a > 0 ? goldPile(a, 1.5, s.i) : strongbox(), WALL, glow(a, 60)],
+            ...(lvl >= 3 ? ([[idol(), FREE]] as [PixelBuffer, number][]) : []),
+            [a > 0 ? goldPile(a, 1.5, s.i) : strongbox(), FREE, glow(a, 60)],
           ]).map((x, k, all) =>
             k === all.length - 1 && a > 0
               ? pileBody(x, a)
@@ -467,8 +468,8 @@ function things(room: Room, w: number, look: SalonLook): Thing[] {
       else
         t.push(
           ...row(s, [
-            lvl >= 4 ? [jewelCase(), WALL, SHINE(36, 0.45)] : [strongbox(), WALL],
-            [coinStacks(a), WALL - 2, glow(a, 40)],
+            lvl >= 4 ? [jewelCase(), FREE, SHINE(36, 0.45)] : [strongbox(), FREE],
+            [coinStacks(a), FREE - 2, glow(a, 40)],
           ]).map((x, k) =>
             k === 0
               ? thick(x, 9)
@@ -482,7 +483,7 @@ function things(room: Room, w: number, look: SalonLook): Thing[] {
   // Debajo de la caja fuerte y de las repisas (más bajo que ellas): los montones.
   cells.forEach((c, j) => {
     const a = fill[`w${j}`]!;
-    if (a > 0) t.push(pileBody(at(goldPile(a, 0.8, j + 7), c.win, WALL, 0, glow(a, 50)), a));
+    if (a > 0) t.push(pileBody(at(goldPile(a, 0.8, j + 7), c.win, FREE, 0, glow(a, 50)), a));
   });
   return t;
 }

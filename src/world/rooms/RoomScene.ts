@@ -36,7 +36,7 @@ import type { Point, SceneCallbacks, SceneModel } from '../scene';
 import { LANTERN, dummy, furnish, gearRoom, type Glow, type RGB } from './furniture';
 import { chalkPlan } from './ruina';
 import { towerLampY, watchtower } from './salas/torre';
-import { CANDLE, takeWallActs, type ActId, type PoiKind } from './salas/kit';
+import { CANDLE, takeWallActs, type ActId, type PoiKind, type Round } from './salas/kit';
 import { FLIGHT_Z, flightArt, goesRight } from './stairs';
 import { dress } from './salas/tintes';
 import { Crowd, type Poi, type Talk } from './crowd';
@@ -1283,6 +1283,7 @@ export class RoomScene {
         wall: { r, back },
         box: th.box || !!th.thick,
         thick: th.thick,
+        round: th.round,
       });
       // Lo que suelta (destellos, vapor, burbujas): su zona, ya en el mundo.
       if (live)
@@ -1687,7 +1688,7 @@ export class RoomScene {
     depth: number,
     ambient: Tint,
     sun: number,
-    o: { wall?: { r: Rect; back: PixelBuffer }; box?: boolean; thick?: number } = {},
+    o: { wall?: { r: Rect; back: PixelBuffer }; box?: boolean; thick?: number; round?: Round } = {},
   ): void {
     const k = scaleAt(depth);
     const w = img.w / k;
@@ -1703,11 +1704,11 @@ export class RoomScene {
       this.look.surface(img, corners, { ambient, sun, wrap: 0.6, dither: 0.03 }),
     );
     // Con volumen, la cara y sus lados van juntos (y se anclan juntos).
-    const obj = o.box ? new Group() : m;
-    if (o.box) {
-      obj.add(m);
+    const obj = o.box || o.round ? new Group() : m;
+    if (o.box || o.round) obj.add(m);
+    if (o.round) this.cylinder(obj as Group, o.round, x - w / 2, base - h, depth, k, ambient, sun);
+    else if (o.box)
       this.volume(obj as Group, img, x - w / 2, base - h, depth, ambient, sun, o.thick);
-    }
     g.add(obj);
     const wall = o.wall;
     if (!wall) return;
@@ -1794,6 +1795,89 @@ export class RoomScene {
       p.mesh.position.x = d.x;
       p.mesh.position.y = -d.y;
     }
+  }
+
+  /**
+   * Un cilindro de verdad detrás del dibujo (cubas tumbadas, barriles de pie): caras alrededor,
+   * con sus duelas y aros, que la luz sombrea según hacia dónde miran. Al mover la cámara se ve
+   * el cuerpo redondo; el dibujo sigue delante (la tapa o el frente pintados).
+   */
+  private cylinder(
+    g: Group,
+    c: Round,
+    left: number,
+    top: number,
+    depth: number,
+    k: number,
+    ambient: Tint,
+    sun: number,
+  ): void {
+    const K = 16;
+    const R = c.r / k;
+    const cx = left + c.cx / k;
+    const cy = top + c.cy / k;
+    const opts = { ambient, sun, wrap: 0.35, dither: 0.03 };
+    // Duelas (una clara y otra oscura) y aros, a lo largo del eje.
+    const staves = (i: number, n: number, hoops: number[]) => {
+      const t = new PixelBuffer(2, n);
+      for (let j = 0; j < n; j++) {
+        const u = j / Math.max(1, n - 1);
+        const hoop = hoops.some((hp) => Math.abs(u - hp) < 0.6 / n + 0.02);
+        const col = hoop ? c.hoop : i % 2 ? c.dark : c.wood;
+        t.set(0, j, col);
+        t.set(1, j, hoop ? c.hoop : c.dark);
+      }
+      return t;
+    };
+    if (c.axis === 'fondo') {
+      const z0 = depth + 0.3;
+      const z1 = depth + c.len;
+      const n = Math.max(6, Math.round(c.len));
+      const P = (a: number) => [cx + R * Math.cos(a), cy - R * Math.sin(a)] as const;
+      for (let i = 0; i < K; i++) {
+        const [x0, y0] = P((i / K) * Math.PI * 2);
+        const [x1, y1] = P(((i + 1) / K) * Math.PI * 2);
+        this.plane(
+          g,
+          staves(i, n, [0.12, 0.88]),
+          [at(x1, y1, z0), at(x0, y0, z0), at(x0, y0, z1), at(x1, y1, z1)],
+          opts,
+        );
+      }
+      return;
+    }
+    // De pie: el frente toca el dibujo; el centro, un radio más al fondo.
+    const zc = depth + R + 0.3;
+    const yt = cy - c.len / 2 / k;
+    const yb = cy + c.len / 2 / k;
+    const n = Math.max(6, Math.round(c.len));
+    const P = (a: number) => [cx + R * Math.cos(a), zc + R * Math.sin(a)] as const;
+    for (let i = 0; i < K; i++) {
+      const [x0, z0] = P((i / K) * Math.PI * 2);
+      const [x1, z1] = P(((i + 1) / K) * Math.PI * 2);
+      this.plane(
+        g,
+        staves(i, n, [0.2, 0.75]),
+        [at(x0, yb, z0), at(x1, yb, z1), at(x1, yt, z1), at(x0, yt, z0)],
+        opts,
+      );
+    }
+    // La tapa de arriba: un redondel de madera con su borde.
+    const s = Math.max(4, Math.round(c.r * 2));
+    const lid = new PixelBuffer(s, s);
+    lid.ellipse(s / 2, s / 2, s / 2, s / 2, c.dark);
+    lid.ellipse(s / 2, s / 2, s / 2 - 1, s / 2 - 1, c.wood);
+    this.plane(
+      g,
+      lid,
+      [
+        at(cx - R, yt, zc - R),
+        at(cx + R, yt, zc - R),
+        at(cx + R, yt, zc + R),
+        at(cx - R, yt, zc + R),
+      ],
+      opts,
+    );
   }
 
   private plane(
@@ -2250,7 +2334,13 @@ export class RoomScene {
         p.poi ?? (p.act === 'tablon' || p.act === 'mapa' ? 'read' : undefined);
       const room = L.rooms.find((r) => r.room.id === p.room)?.room;
       if (!kind || !room) continue;
-      out.push({ x: (p.x0 + p.x1) / 2, floor: room.floor, kind, half: (p.x1 - p.x0) / 2 });
+      out.push({
+        x: (p.x0 + p.x1) / 2,
+        floor: room.floor,
+        kind,
+        half: (p.x1 - p.x0) / 2,
+        z: p.z,
+      });
     }
     return out;
   }

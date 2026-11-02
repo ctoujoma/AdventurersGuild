@@ -50,14 +50,19 @@ npm run build`.
       saltan; arcones, caja fuerte, ídolo, sacos y mesa de contar con cuerpo.
 - [x] **Bodega**: caldera con vapor y ascuas, tina con burbujas; cubas, barriles, botellero,
       sacos y mesas con cuerpo.
+- [x] **Separado de la pared** (`FREE` en `salas/kit.ts`): lo suelto, con suelo detrás (el
+      usuario: «sigue pegado a la pared y se nota al desplazar la cámara»).
+- [x] **Cilindros de verdad** (`round` en `salas/kit.ts`, `cylinder` en `RoomScene.ts`): la cuba
+      tumbada y el barril de pie, con 16 caras, duelas y aros.
+- [x] **La gente se mueve en profundidad**: la profundidad (`lane`) cambia al andar hacia la del
+      destino (`stand` en `Goal`): delante de su mueble, a la altura de quien charla o, paseando,
+      a cualquier profundidad; si solo le falta profundidad, da unos pasos hacia dentro o fuera.
 - [ ] Visto bueno del usuario (capturas de frente y de lado en el PR #94).
 
 ## Siguiente (en este orden, salvo que el usuario diga otra cosa)
 
-1. **La gente se mueve en profundidad**: que la profundidad de cada uno (hoy, un carril fijo de
-   tres: `LANES` en `people.ts`) cambie poco a poco mientras anda, hacia la de su destino. Así
-   se acercan al mueble en el que trabajan, pasean por toda la sala y se cruzan por delante y
-   por detrás. Con el paso de perfil (andan en diagonal). Toca `crowd.ts`.
+1. **Más cilindros y cuerpos de verdad**: los barriles apilados, las mesas (tablero y patas), el
+   horno de pan (cúpula) y la caldera (cúpula de cobre) con la misma idea que `round`.
 2. **Atlas de la gente en dos filas**: va en una sola fila y ya mide 3960 de 4096 px (un test lo
    vigila). Hace falta antes de añadir gestos nuevos (martillear, afilar, arrodillarse…).
 3. **Rutinas y sitios para las salas sin nada que hacer**: armería (afilar en la muela), mapas

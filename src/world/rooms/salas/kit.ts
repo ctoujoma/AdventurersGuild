@@ -44,6 +44,8 @@ export interface Thing {
    * por la sala (arcones, montones, barriles, cubas). Ver `thick`.
    */
   thick?: number;
+  /** Un cilindro de verdad (cubas, barriles): ver `Round`. */
+  round?: Round;
   /**
    * Lo que suelta de vez en cuando (destellos del oro, vapor, burbujas): qué, cuántos por
    * segundo y en qué zona de su dibujo (x0, y0, x1, y1 en sus píxeles). Ver `emits`.
@@ -92,6 +94,12 @@ export const FLOOR_D = DEPTH / 2;
 
 /** Contra la pared del fondo, a media sala y delante. */
 export const WALL = DEPTH - 6;
+/**
+ * Lo suelto por la sala (arcones, montones, cubas, barriles, calderas): bien separado de la
+ * pared, con suelo detrás; con su grosor (`thick`), no llega a tocarla y, al mover la cámara,
+ * se mueve contra ella como algo de verdad.
+ */
+export const FREE = DEPTH - 20;
 /** Lo grande con volumen (hogares, fraguas): más adelante que la pared, con sus lados hasta ella. */
 export const SOLID = DEPTH - 16;
 export const MID = DEPTH / 2;
@@ -334,6 +342,27 @@ export const solid = (img: PixelBuffer, x: number, y = 0, light?: Glow): Thing =
   ...at(img, x, SOLID, y, light),
   box: true,
 });
+
+/**
+ * Un cilindro de verdad detrás del dibujo: tumbado (`fondo`: la tapa redonda mira a la cámara y
+ * el cuerpo se va hacia el fondo) o de pie (`pie`: el eje es vertical y el frente coincide con
+ * el dibujo). Centro y radio en píxeles del dibujo; `len`, lo largo (tumbado, en profundidad del
+ * mundo) o lo alto (de pie, en píxeles del dibujo, centrado en `cy`). Duelas y aros con los
+ * colores que se le den.
+ */
+export interface Round {
+  axis: 'fondo' | 'pie';
+  cx: number;
+  cy: number;
+  r: number;
+  len: number;
+  wood: string;
+  dark: string;
+  hoop: string;
+}
+
+/** Un mueble que es un cilindro de verdad (ver `Round`). */
+export const round = (t: Thing, r: Round): Thing => ({ ...t, round: r });
 
 export interface Emit {
   kind: 'glint' | 'steam' | 'bubble' | 'ember';
