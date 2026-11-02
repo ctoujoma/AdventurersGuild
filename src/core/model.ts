@@ -281,6 +281,18 @@ export interface Craft {
   item?: Item;
 }
 
+/** Cómo acabó un trabajo de taller (por su id). */
+export interface CraftEnd {
+  id: string;
+  room: string;
+  /**
+   * hecho: salió un objeto (`rarity` 1 si es de las buenas); receta o nada: al desmontar;
+   * vestido: el héroe estrena ropa; cancelado: se canceló o el taller ya no está.
+   */
+  how: 'hecho' | 'receta' | 'nada' | 'vestido' | 'cancelado';
+  rarity?: Rarity;
+}
+
 /** Obra en curso: la sala nueva o movida no funciona hasta que acaba; la ampliada, sí. */
 export interface Works {
   kind: 'build' | 'extend' | 'move';
@@ -598,6 +610,11 @@ export interface GameState {
   worksDraft?: readonly { type: string }[];
   /** Lo que se está creando o desmontando en los talleres (ver `core/crafting.ts`). */
   crafts?: Craft[];
+  /**
+   * Los últimos trabajos de taller que han terminado (acabados o cancelados), para que la escena
+   * sepa cómo acabó el que desaparece de `crafts`. Solo los más recientes.
+   */
+  craftLog?: CraftEnd[];
   /** Recetas aprendidas (las de serie no se apuntan). */
   recipes?: RecipeId[];
   /** Grupo que acaba de llegar ante su jefe con el juego abierto (la interfaz avisa). */

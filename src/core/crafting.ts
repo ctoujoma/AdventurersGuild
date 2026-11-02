@@ -26,7 +26,7 @@ import {
   UNDO_CHANCE,
   UNDO_HOURS,
 } from './balance';
-import type { Craft, DawnEvent, GameState, Item, Room } from './model';
+import type { Craft, CraftEnd, DawnEvent, GameState, Item, Rarity, Room } from './model';
 import { Rng } from './rng';
 import { active } from './rooms';
 import { workAt } from './workers';
@@ -147,12 +147,23 @@ export function startUndo(s: GameState, roomId: string, itemId: string): void {
   s.crafts = [...(s.crafts ?? []), c];
 }
 
+/** Cuántos finales de trabajo se recuerdan para la escena. */
+const LOG_KEEP = 8;
+
+/** Apunta cómo acabó un trabajo (para la escena). */
+function logEnd(s: GameState, c: Craft, how: CraftEnd['how'], rarity?: Rarity): void {
+  const e: CraftEnd = { id: c.id, room: c.room, how };
+  if (rarity !== undefined) e.rarity = rarity;
+  s.craftLog = [...(s.craftLog ?? []), e].slice(-LOG_KEEP);
+}
+
 /** Cancela un trabajo: se devuelve lo pagado (o el objeto, si se desmontaba). */
 export function cancelCraft(s: GameState, id: string): void {
   const c = s.crafts?.find((x) => x.id === id);
   if (!c) return;
   s.gold += c.gold;
   if (c.item) s.inventory.push(c.item);
+  logEnd(s, c, 'cancelado');
   s.crafts = s.crafts!.filter((x) => x !== c);
   if (!s.crafts.length) delete s.crafts;
 }
@@ -251,6 +262,7 @@ function finish(s: GameState, c: Craft, rng: Rng, news: DawnEvent[]): void {
         ? { ...h, dress: { ...to }, morale: Math.min(100, h.morale + DRESS_MORALE) }
         : h,
     );
+    logEnd(s, c, 'vestido');
     const h = s.heroes.find((x) => x.id === hero);
     if (h)
       news.push({
@@ -265,16 +277,21 @@ function finish(s: GameState, c: Craft, rng: Rng, news: DawnEvent[]): void {
   if (c.item) {
     if (rng.chance(undoChance(s, c.room))) {
       s.recipes = [...(s.recipes ?? []), c.recipe!];
+      logEnd(s, c, 'receta');
       news.push({
         t: `Desmontando ${c.item.name}, en ${place} han sacado cómo se hace: ya podéis crear ${rc.many}.`,
         k: 'good',
       });
-    } else news.push({ t: `Han desmontado ${c.item.name}, pero no han sacado nada en claro.` });
+    } else {
+      logEnd(s, c, 'nada');
+      news.push({ t: `Han desmontado ${c.item.name}, pero no han sacado nada en claro.` });
+    }
     return;
   }
   const good = rng.chance(goodChance(s, c.room));
   const base = good ? rc.good : rc.common;
   s.inventory.push({ ...structuredClone(base), id: `i${s.uid++}` });
+  logEnd(s, c, 'hecho', base.rarity ?? 0);
   news.push({
     t: good
       ? `¡En ${place} han creado ${base.name}! Ha salido de las buenas. Ya está en el arcón.`
@@ -299,6 +316,7 @@ export function stepCrafts(s: GameState, part: number, shared?: Rng): DawnEvent[
       // El taller ya no está: se devuelve lo pagado o el objeto.
       s.gold += c.gold;
       if (c.item) s.inventory = [...s.inventory, c.item];
+      logEnd(s, c, 'cancelado');
       continue;
     }
     c.done += craftRate(s, c.room, c) * Math.max(0, part - c.at);

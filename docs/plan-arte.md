@@ -83,9 +83,11 @@ npm run build`.
    - [x] 3. Forja encendida (brasas, más luz, la barra al rojo en el yunque) o parada (menos
          luz, la barra apagada). Sin trabajo, la fragua a media luz.
    - [x] 4. Al acabar: la pieza un momento en el yunque con brillo (dorado y monedas si es de
-         las buenas). Al cancelar sale lo mismo: la escena no distingue (pedido en el PR).
+         las buenas). Al cancelar sale lo mismo: la escena no distingue. **Ya está el dato:**
+         `SceneCraft.id` y `SceneModel.craftEnds` (cómo acabó cada uno: `hecho` con su
+         `rarity`, `cancelado`, `receta`, `nada`, `vestido`).
    - [~] 5. Desmontar en el banco (en la forja pequeña, en el yunque): polvo y chispas. Falta el
-         pergamino que sube si sale la receta: pide un dato en `SceneCraft` (pedido en el PR).
+         pergamino que sube si sale la receta: **el dato ya está** (`craftEnds`, `how: 'receta'`).
    - [x] 6. Bocadillo sobre la sala con el icono y la barrita de `frac` (gris si está parado,
          azul si se desmonta; se aparta si hay un incidente): `ui/CraftMark.tsx`.
    - [x] 7. Sonidos: martillazo (`hammer`) y siseo del temple (`hiss`), solo si se ve la sala.

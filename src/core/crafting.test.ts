@@ -286,3 +286,27 @@ describe('quién viene a pedir trabajo', () => {
     expect('error' in plan && plan.error).toMatch(/rango/);
   });
 });
+
+describe('cómo acaba cada trabajo (para la escena)', () => {
+  it('se apunta si se hizo (con su rareza), si se canceló o qué salió al desmontar', () => {
+    const { s, forge } = withForge('final', 3);
+    let t = reduce(s, { type: 'craft', room: forge, recipe: 'espada' });
+    const made = t.crafts![0]!.id;
+    t = reduce(t, { type: 'craft', room: forge, recipe: 'coraza' });
+    const gone = t.crafts![1]!.id;
+    t = reduce(t, { type: 'cancelCraft', id: gone });
+    expect(t.craftLog?.find((e) => e.id === gone)?.how).toBe('cancelado');
+    t = endDay(t, true);
+    const end = t.craftLog!.find((e) => e.id === made)!;
+    expect(end.how).toBe('hecho');
+    const it = t.inventory.find((i) => i.icon === 'espada')!;
+    expect(end.rarity).toBe(it.rarity);
+    // Desmontar: receta o nada.
+    t.inventory.push({ ...RECIPES.hacha.good, id: 'i-h' });
+    t = reduce(t, { type: 'undoItem', room: forge, itemId: 'i-h' });
+    const undo = t.crafts![0]!.id;
+    t = endDay(t, true);
+    expect(['receta', 'nada']).toContain(t.craftLog?.find((e) => e.id === undo)?.how);
+    expect(t.craftLog!.length).toBeLessThanOrEqual(8);
+  });
+});
