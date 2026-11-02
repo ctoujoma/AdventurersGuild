@@ -787,6 +787,12 @@ export class RoomScene {
     this.camera.centerOn(p.x, p.y);
   }
 
+  /** Como `focus`, pero dejando el sitio arriba, a la vista sobre un panel abierto. */
+  focusTop(name: string): void {
+    const p = this.layout ? focusPoint(this.layout, name) : null;
+    if (p) this.camera.centerOn(p.x, p.y + this.camera.vh * 0.3);
+  }
+
   /** La entrada de la partida: la cámara empieza fuera, a la izquierda, y entra despacio hasta la sala. */
   travelIn(room: string): void {
     const p = this.layout ? focusPoint(this.layout, room) : null;

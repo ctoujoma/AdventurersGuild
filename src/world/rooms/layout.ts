@@ -216,6 +216,7 @@ export function focusPoint(L: RoomsLayout, name: string): Point | null {
   if (byId) return centerOf(byId.rect);
   const kind = LEGACY[name] ?? name;
   if (kind === 'patio') return centerOf(L.patio);
+  if (name === 'jardin') return L.garden ? centerOf(L.garden) : null;
   // El anexo: la mitad de su planta baja (sin anexo, no hay).
   if (name === 'anexo' && L.b.wing) {
     const x = colX(L.b, WING_COL);

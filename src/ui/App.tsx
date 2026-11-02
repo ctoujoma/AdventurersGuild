@@ -1336,6 +1336,11 @@ export function App() {
                 if (on) toast(`${DECOR[id].name}: ya luce en el salón.`);
               }}
               onLook={(patch) => dispatch({ type: 'facadeLook', patch })}
+              onGarden={(patch) => {
+                dispatch({ type: 'gardenLook', patch });
+                // Se mira el jardín para ver el cambio.
+                scene.current?.focusTop('jardin');
+              }}
               onFacade={(id) => {
                 dispatch({ type: 'facade', id });
                 audio.play('build');
