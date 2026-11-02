@@ -105,6 +105,27 @@ export function pickTitle(s: GameState, pick: Pick): string {
   }
 }
 
+/**
+ * Por qué no sale ningún sitio para construir `type`: el motivo que más se repite entre los
+ * huecos (el rango, si es eso, va primero).
+ */
+export function whyNoSpot(s: GameState, type: RoomType): string {
+  const b = s.building;
+  const seen = new Map<string, number>();
+  const note = (p: Plan) => {
+    if ('error' in p) seen.set(p.error, (seen.get(p.error) ?? 0) + 1);
+  };
+  const own = ROOMS[type].unique ? b.rooms.find((r) => r.type === type) : undefined;
+  if (own) for (const d of ['left', 'right', 'up'] as const) note(planExtend(s, own.id, d));
+  else {
+    const hi = type === 'torre' ? MAX_UP + 1 : MAX_UP;
+    for (let f = -MAX_DOWN; f <= hi; f++)
+      for (let c = 0; c < spanOf(b); c++) if (!roomAt(b, c, f)) note(planBuild(s, type, c, f));
+  }
+  const all = [...seen].sort((x, y) => y[1] - x[1]).map(([e]) => e);
+  return all.find((e) => /rango/.test(e)) ?? all[0] ?? 'No queda ningún sitio donde hacerlo.';
+}
+
 /** Los sitios donde se puede hacer la obra elegida, con lo que cuesta cada uno. */
 export function targetsFor(s: GameState, pick: Pick): Target[] {
   const b = s.building;

@@ -67,15 +67,15 @@ export function AlertBell({
 
   // ---------- Descartar ----------
   /** Los que se están yendo: hacia dónde y en qué orden. */
-  const [gone, setGone] = useState<Record<string, { dir: number; i: number }>>({});
+  const [gone, setGone] = useState<Record<string, { dir: number; i: number; dx?: number }>>({});
   const [drag, setDrag] = useState<{ id: string; dx: number } | null>(null);
   const start = useRef<{ id: string; x: number; y: number; swiping: boolean } | null>(null);
   /** Tras deslizar, el toque que sigue no cuenta como «ir al aviso». */
   const swiped = useRef(false);
-  const dismiss = (ids: string[], dir = 1) => {
+  const dismiss = (ids: string[], dir = 1, dx?: number) => {
     if (!ids.length) return;
     audio.play('deselect', 0.7);
-    setGone((g) => ({ ...g, ...Object.fromEntries(ids.map((id, i) => [id, { dir, i }])) }));
+    setGone((g) => ({ ...g, ...Object.fromEntries(ids.map((id, i) => [id, { dir, i, dx }])) }));
     setTimeout(
       () => {
         onHush(ids);
@@ -110,7 +110,7 @@ export function AlertBell({
             swiped.current = true;
             const dx = e.clientX - s.x;
             setDrag(null);
-            if (Math.abs(dx) >= SWIPE) dismiss([a.id], Math.sign(dx));
+            if (Math.abs(dx) >= SWIPE) dismiss([a.id], Math.sign(dx), dx);
           },
           onPointerCancel: () => {
             start.current = null;
@@ -165,6 +165,8 @@ export function AlertBell({
                 {alerts.map((a, i) => {
                   const g = gone[a.id];
                   const dx = drag?.id === a.id ? drag.dx : 0;
+                  // Al soltar, se va desde donde se dejó (no vuelve a su sitio antes).
+                  const from = g?.dx ?? 0;
                   const keep = hushRule(a) === 'never';
                   return (
                     <li
@@ -172,10 +174,11 @@ export function AlertBell({
                       class={`${g ? 'is-gone' : ''} ${dx ? 'is-dragging' : ''}`}
                       style={{
                         '--i': i,
-                        '--dx': `${dx}px`,
+                        '--dx': `${dx || from}px`,
                         '--dir': g?.dir ?? 1,
                         '--g': g?.i ?? 0,
-                        opacity: dx ? Math.max(0.3, 1 - Math.abs(dx) / (SWIPE * 2.2)) : undefined,
+                        '--o': Math.max(0.3, 1 - Math.abs(dx || from) / (SWIPE * 2.2)),
+                        opacity: dx ? 'var(--o)' : undefined,
                       }}
                       {...swipe(a)}
                     >

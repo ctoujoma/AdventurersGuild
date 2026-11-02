@@ -18,6 +18,8 @@ export interface Works {
   view: GameState;
   planning: boolean;
   steps: Action[];
+  /** Un aviso corto abajo (por qué no se puede algo). */
+  toast: (text: string) => void;
   /** Lo que cuesta el borrador hasta ahora (negativo si se recupera oro). */
   planCost: number;
   /** Lo que impide pagar el borrador (salas sin paso, una que falta, el oro…). */
@@ -151,6 +153,7 @@ export function useWorks({ game, dispatch, toast, focus, raise, price }: Deps): 
 
   return {
     view,
+    toast,
     planning: !!steps,
     steps: steps ?? [],
     planCost: game.gold - view.gold,

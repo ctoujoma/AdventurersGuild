@@ -1127,7 +1127,8 @@ export function App() {
           <button
             class="btn-icon"
             aria-label="Volver a la sala"
-            onClick={() => scene.current?.focus('sala')}
+            data-help="Vuelve a la sala. Con el patio trasero, tócalo otra vez para ir al anexo (y de vuelta)."
+            onClick={() => scene.current?.home()}
           >
             <Icon name="home" size={16} />
           </button>

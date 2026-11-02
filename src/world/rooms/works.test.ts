@@ -4,7 +4,8 @@ import { canWork, newGame, reduce, type Action } from '../../core/game';
 import type { GameState } from '../../core/model';
 import { roomAt } from '../../core/rooms';
 import { colX, floorTop } from './layout';
-import { targetsFor } from './works';
+import { targetsFor, whyNoSpot } from './works';
+import { ROOMS, type RoomType } from '../../data/rooms';
 
 function open(): GameState {
   const s = newGame('sitios');
@@ -113,5 +114,16 @@ describe('el patio trasero en «ganar sitio»', () => {
     expect(wing(s)!.blocked).toBeUndefined();
     s = reduce(s, { type: 'buyWing' });
     expect(wing(s)).toBeUndefined();
+  });
+});
+
+describe('por qué no hay sitio', () => {
+  it('una sala de rango alto dice el rango', () => {
+    const s = open();
+    const locked = (Object.keys(ROOMS) as RoomType[]).find(
+      (t) => targetsFor(s, { kind: 'build', type: t }).length === 0,
+    );
+    if (!locked) return;
+    expect(whyNoSpot(s, locked)).toBeTruthy();
   });
 });

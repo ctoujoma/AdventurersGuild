@@ -772,6 +772,21 @@ export class RoomScene {
     if (p) this.camera.centerOn(p.x, p.y);
   }
 
+  /**
+   * El botón de casa: a la sala; con anexo, si ya se está mirando la sala, salta al anexo (y
+   * desde el anexo, de vuelta), que con los dos edificios el camino arrastrando es largo.
+   */
+  home(): void {
+    const L = this.layout;
+    const sala = L ? focusPoint(L, 'sala') : null;
+    const anexo = L ? focusPoint(L, 'anexo') : null;
+    if (!sala) return;
+    const cx = this.camera.x + this.camera.vw / 2;
+    const near = Math.abs(cx - sala.x) < this.camera.vw / 4;
+    const p = anexo && near ? anexo : sala;
+    this.camera.centerOn(p.x, p.y);
+  }
+
   /** La entrada de la partida: la cámara empieza fuera, a la izquierda, y entra despacio hasta la sala. */
   travelIn(room: string): void {
     const p = this.layout ? focusPoint(this.layout, room) : null;

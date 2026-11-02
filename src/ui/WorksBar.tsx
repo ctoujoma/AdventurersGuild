@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'preact/hooks';
 import { ROOM_COST } from '../core/balance';
 import { laxly, stairCost } from '../core/rooms';
 import { ROOMS, type RoomType } from '../data/rooms';
-import { pickTitle, targetsFor } from '../world/rooms/works';
+import { pickTitle, targetsFor, whyNoSpot } from '../world/rooms/works';
+import { audio } from '../audio/audio';
 import { help } from './HoldHelp';
 import { Icon, type IconName } from './icons';
 import type { Works } from './works';
@@ -65,7 +66,13 @@ function Ribbon({ works: w, onMore }: Props) {
           const list = targetsFor(w.view, { kind: 'build', type: t });
           const grow = !!ROOMS[t].unique && b.rooms.some((r) => r.type === t);
           const cost = grow && list.length ? Math.min(...list.map((x) => x.cost)) : ROOM_COST[t][1];
-          return { t, spots: list.length, grow, cost };
+          return {
+            t,
+            spots: list.length,
+            grow,
+            cost,
+            why: list.length ? '' : whyNoSpot(w.view, t),
+          };
         }),
       ),
     [w.view, tab],
@@ -91,14 +98,20 @@ function Ribbon({ works: w, onMore }: Props) {
         ))}
       </div>
       <div class="ribbon-rooms">
-        {items.map(({ t, spots, grow, cost }) => (
+        {items.map(({ t, spots, grow, cost, why }) => (
           <button
             key={t}
-            class="ribbon-room"
-            disabled={!spots}
+            class={`ribbon-room ${spots ? '' : 'is-off'}`}
+            aria-disabled={!spots}
             data-help={ROOMS[t].desc}
             aria-label={`${grow ? 'Ampliar' : 'Construir'} ${ROOMS[t].name} por ${cost} monedas`}
-            onClick={() => w.startPick({ kind: 'build', type: t })}
+            onClick={() => {
+              // Sin sitio, se dice por qué (el rango, falta excavar…).
+              if (!spots) {
+                w.toast(why);
+                audio.play('deselect');
+              } else w.startPick({ kind: 'build', type: t });
+            }}
           >
             <Icon name={ICON[t]} size={20} />
             <b>
