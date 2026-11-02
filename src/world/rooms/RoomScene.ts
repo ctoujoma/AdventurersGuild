@@ -118,6 +118,8 @@ const DAY_LENGTH = 720;
 const TERRAIN_PAD = 3200;
 /** Ancho del trozo de terreno o de tierra que se repite hasta allí. */
 const TILE = 512;
+/** Hasta dónde llega el césped del jardín; de ahí a los árboles, el terreno. */
+const LAWN_D = 140;
 const DAWN_LIGHT = 0.65;
 const NEAR = 20;
 const FAR = EYE + 400;
@@ -1365,24 +1367,26 @@ export class RoomScene {
       ],
       { ...yard, repeat: nr },
     );
-    // Detrás del edificio, la hierba del terreno; detrás del jardín, su césped (más abajo).
+    // Detrás del edificio, la hierba del terreno; en el jardín, su césped (más abajo) hasta
+    // `LAWN_D`, y de ahí a los árboles, el terreno otra vez.
     const garden = L.garden;
-    const behind: [number, number][] = garden
+    const behind: [number, number, number][] = garden
       ? [
-          [L.left, garden.x],
-          [garden.x + garden.w, L.right],
+          [L.left, garden.x, back],
+          [garden.x, garden.x + garden.w, LAWN_D],
+          [garden.x + garden.w, L.right, back],
         ]
-      : [[L.left, L.right]];
-    for (const [a, c] of behind)
+      : [[L.left, L.right, back]];
+    for (const [a, c, z] of behind)
       this.plane(
         g,
         groundTex(
           Math.round(c - a),
-          (YARD_D - back) / 2,
+          (YARD_D - z) / 2,
           false,
-          a === L.left ? 'huerto' : 'huerto2',
+          a === L.left ? 'huerto' : `huerto${a}`,
         ),
-        [at(a, GROUND, back), at(c, GROUND, back), at(c, GROUND, YARD_D), at(a, GROUND, YARD_D)],
+        [at(a, GROUND, z), at(c, GROUND, z), at(c, GROUND, YARD_D), at(a, GROUND, YARD_D)],
         yard,
       );
     // Dentro del ancho del edificio, donde la planta baja está vacía (un solar sin construir,
@@ -1392,15 +1396,15 @@ export class RoomScene {
       if (room.type !== 'torre' && room.floor <= 0 && room.floor + room.h > 0)
         used.push([rect.x, rect.x + rect.w]);
     for (const s of stairCells(L)) if (s.floor === 0) used.push([s.rect.x, s.rect.x + s.rect.w]);
-    // El jardín, aparte y hasta el fondo como el patio: césped cuidado con el camino pisado de
-    // una puerta a la otra (las puertas están hacia `WALK_Z`, por donde cruza la gente).
+    // El jardín, aparte: césped cuidado con el camino pisado de una puerta a la otra (las
+    // puertas están hacia `WALK_Z`, por donde cruza la gente), que acaba en un borde sin segar.
     if (garden) {
       const gx0 = garden.x;
       const gx1 = garden.x + garden.w;
       this.plane(
         g,
-        lawnTex(Math.round(gx1 - gx0), YARD_D / 2, 'jardin', 16, 42),
-        [at(gx0, GROUND, 0), at(gx1, GROUND, 0), at(gx1, GROUND, YARD_D), at(gx0, GROUND, YARD_D)],
+        lawnTex(Math.round(gx1 - gx0), LAWN_D / 2, 'jardin', 16, 42, back),
+        [at(gx0, GROUND, 0), at(gx1, GROUND, 0), at(gx1, GROUND, LAWN_D), at(gx0, GROUND, LAWN_D)],
         yard,
       );
       used.push([gx0, gx1]);
@@ -1909,9 +1913,10 @@ export class RoomScene {
     for (let i = 0; i < 220; i++) {
       const x = L.left - 460 + rng.next() * (L.right - L.left + 920);
       const z = 4 + rng.next() * (YARD_D - 30);
-      // Ni dentro del edificio, ni en el jardín (está segado), ni encima del pozo.
+      // Ni dentro del edificio, ni en el césped del jardín (sí en su borde), ni encima del pozo.
       if (x > L.left - 6 && x < L.right + 6 && z < DEPTH + 8) continue;
-      if (L.garden && x > L.garden.x - 6 && x < L.garden.x + L.garden.w + 6) continue;
+      const lawn = L.garden && x > L.garden.x + 8 && x < L.garden.x + L.garden.w - 8;
+      if (lawn && z < LAWN_D - 10) continue;
       if (Math.hypot(x - well.x, (z - well.z) * 0.6) < 18) continue;
       // No en el camino de tierra del patio (por delante).
       if (z > 6 && z < 26 && x < L.left) continue;
