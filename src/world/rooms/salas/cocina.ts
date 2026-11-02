@@ -12,7 +12,10 @@ import * as Prop from '../../props';
 import type { SalonLook } from '../salon';
 import {
   FIRE,
+  FREE,
   WALL,
+  emits,
+  thick,
   W,
   at,
   bx,
@@ -453,7 +456,16 @@ function wall(b: PixelBuffer, room: Room, _look: SalonLook, { cells, ruin }: Wal
 function things(room: Room, w: number): Thing[] {
   const lvl = room.level;
   const t: Thing[] = [
-    task(solid(hearth(lvl, true), HEARTH_X, 0, fire(7, 80 + lvl * 10, FIRE, false)), 'olla'),
+    solid(hearth(lvl, true), HEARTH_X, 0, fire(7, 80 + lvl * 10, FIRE, false)),
+    // La olla del guiso, suelta al lado del hogar: ahí se remueve y se prueba.
+    task(
+      emits(thick(at(stewPot(lvl), HEARTH_X + 30, FREE), 8, 'metal'), {
+        kind: 'steam',
+        rate: 2.5,
+        at: [5, 2, 17, 4],
+      }),
+      'olla',
+    ),
   ];
   for (const s of stretchesOf(room, w)) {
     if (s.kind === 'mid' && s.i === 1)
@@ -481,6 +493,43 @@ function things(room: Room, w: number): Thing[] {
     ),
   );
   return t;
+}
+
+/**
+ * La olla del guiso en su fogón bajo, suelta delante de la pared: un aro de piedras con las
+ * brasas y, encima, la olla de hierro con el guiso y el cucharón. El borde queda a la altura a
+ * la que llega el cucharón de quien remueve (de pie, con el brazo adelantado).
+ */
+function stewPot(level: number): PixelBuffer {
+  return Prop.piece(22, 14, (p) => {
+    // El aro de piedras y las brasas.
+    for (const x of [0, 4, 15, 19]) {
+      p.rect(x, 11, 3, 3, P.slate);
+      p.hline(x, 11, 3, P.steel);
+    }
+    p.rect(3, 12, 16, 2, P.black);
+    for (let x = 4; x < 18; x += 2) p.set(x, 12, x % 4 ? P.orange : P.gold);
+    p.set(9, 11, P.lemon);
+    p.set(13, 11, P.orange);
+    // La olla: la barriga negra con su brillo y las asas.
+    p.ellipse(11, 8, 8, 4, P.black);
+    p.ellipse(11, 8, 7, 3.5, P.navy);
+    p.ellipse(8, 7, 2.5, 1.5, P.slate);
+    p.set(2, 6, P.slate);
+    p.set(20, 6, P.slate);
+    p.rect(3, 4, 16, 2, P.slate);
+    p.hline(3, 4, 16, P.fog);
+    // El guiso por dentro (con algo de verdura desde el nivel 2) y el cucharón.
+    p.hline(5, 4, 12, P.rust);
+    p.hline(6, 3, 10, P.clay);
+    p.set(8, 3, P.tan);
+    if (level >= 2) {
+      p.set(11, 3, P.leaf);
+      p.set(13, 3, P.orange);
+    }
+    p.line(17, 0, 14, 4, W[4]!);
+    p.set(17, 0, W[5]!);
+  });
 }
 
 /** Por reparar: el fogón frío, la mesa rota y unas cajas. */

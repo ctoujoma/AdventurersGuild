@@ -35,7 +35,10 @@ export type WeaponId =
   | 'palo'
   | 'frasco'
   | 'maja'
-  | 'pluma';
+  | 'pluma'
+  | 'atizador'
+  // El cucharón visto en escorzo (casi de frente), al probar el guiso.
+  | 'sorbo';
 
 export interface Weapon {
   img: PixelBuffer;
@@ -148,6 +151,10 @@ export const WEAPONS: Record<WeaponId, Weapon> = {
   frasco: grid(['.s.', '.s.', 'sCs', 'ccc', '.c.'], 1, 2),
   // La maja del mortero.
   maja: grid(['b', 'b', 'b', 'S', 'S'], 0, 1),
+  // El atizador de hierro, con su gancho.
+  atizador: grid(['s.', 'sS', '.S', '.S', '.S', '.S', '.b', '.B'], 1, 6),
+  // El cucharón en escorzo: el cazo junto a la boca y un poco del mango hacia la mano.
+  sorbo: grid(['.sS', 'bs.'], 0, 1),
   // Pluma de escribir.
   pluma: grid(['W.', 'Wm', '.m', '.B'], 1, 3),
   lima: grid(['.s', 'Ss', 'Ss', 'Ss', 'bB', 'b.'], 0, 4),

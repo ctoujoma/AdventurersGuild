@@ -62,6 +62,18 @@ npm run build`.
       sillares, metal con remaches) y se oscurece hacia el fondo. Lo empotrado es de piedra.
 - [ ] Visto bueno del usuario (capturas de frente y de lado en el PR #94).
 
+- [x] **Feedback del usuario tras los talleres** (PR de este pase):
+  - la gente anda por delante de lo suelto (`WALK_Z` en `crowd.ts`): solo entra más al fondo al
+    llegar a su sitio, y al irse primero sale (nadie atraviesa un barril ni un arcón);
+  - la cocina remueve en una olla de verdad (`stewPot`, suelta junto al hogar) con el cucharón en
+    el borde; al probar, el cucharón en escorzo (`sorbo`), sin tapar la cara;
+  - la bodega ya no remueve toneles cerrados: llena del grifo, da con el mazo (`golpear`) y atiza
+    el hornillo de la caldera (`atizar`); la pala del pan, a la altura de la boca del horno;
+  - teñir y remover el caldero, con el palo en la tina desde arriba (caldero más bajo);
+  - la llama del horno de fundir, en su boca;
+  - los montones de oro, cuerpos de revolución (`mound` en `salas/kit.ts`, `mound` en
+    `RoomScene.ts`): de frente, igual que el dibujo; de lado, un montón.
+
 ## Siguiente (en este orden, salvo que el usuario diga otra cosa)
 
 1. **Más cilindros y cuerpos de verdad**: los barriles apilados, las mesas (tablero y patas), el
@@ -135,6 +147,10 @@ npm run build`.
 - **Animaciones:** que no repitan un gesto todo el día (la cocina parecía que fregaba).
 - **Mapa:** le gustaron las dos versiones; se usan las dos según la sala de mapas.
 - **Bandidos de la tira:** los mismos de los asaltos, a escala de héroe (no gigantes).
+- **Gestos:** la herramienta, a la altura de lo que se trabaja (nada de remover a la altura de
+  los pies); lo que se acerca a la cara, en escorzo y sin taparla; nada de remover lo que está
+  cerrado.
+- **Profundidad:** nadie puede pasar por dentro de un mueble (dibujo delante, cuerpo detrás).
 - **3D:** lo suelto, separado de la pared (si no, «se nota al desplazar la cámara»); en los
   costados, textura pintada según el material, nunca los píxeles del frente estirados; lo
   cilíndrico (cubas, barriles), cilindros de verdad.

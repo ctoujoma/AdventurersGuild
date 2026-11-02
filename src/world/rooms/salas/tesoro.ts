@@ -14,6 +14,7 @@ import type { SalonLook } from '../salon';
 import { gearChests } from './equipo';
 import {
   emits,
+  mound,
   thick,
   GOLD,
   WALL,
@@ -358,10 +359,9 @@ function goblets(level: number): PixelBuffer {
 function pileBody(t: Thing, a: number): Thing {
   const w = t.img.w;
   const h = t.img.h;
-  return thick(
+  // Un montón de verdad (de revolución), no una silueta estirada hacia el fondo.
+  return mound(
     emits(t, { kind: 'glint', rate: 0.5 + a * 1.6, at: [3, 1, w - 3, Math.max(2, h - 4)] }),
-    Math.round(6 + a * 6),
-    'oro',
   );
 }
 
