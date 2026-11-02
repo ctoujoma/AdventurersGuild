@@ -933,6 +933,9 @@ export function App() {
       openPanel('sala');
       scene.current?.focus(g.room);
       setWorksDone((d) => d.filter((id) => id !== g.room));
+    } else if ('barra' in g) {
+      openPanel('heroes');
+      setHeroFilter('candidatos');
     } else if ('crew' in g) {
       openPanel('heroes');
       setHeroFilter('trabajadores');

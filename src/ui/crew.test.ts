@@ -58,9 +58,13 @@ describe('la casa por tareas', () => {
     s = task(s, cook.id, roomOf(s, 'salon').id);
     expect(crewAlerts(s).find((a) => a.who === cook.id)?.text).toMatch(/rendiría más en Cocina/);
     expect(group(s, roomOf(s, 'salon').id).people.find((p) => p.id === cook.id)!.off).toBe(true);
-    // Quien pide trabajo.
+    // Quien pide trabajo ya no avisa aquí: está en la barra.
     s = { ...s, seekers: [{ ...s.workers[0]!, id: 'w99' }] };
-    expect(crewAlerts(s).map((a) => a.text)).toContain('1 pide trabajo.');
+    expect(
+      crewAlerts(s)
+        .map((a) => a.text)
+        .join(' '),
+    ).not.toMatch(/pide trabajo/);
   });
 
   it('el selector: los trabajadores no entrenan ni hacen guardia; lo lleno no se puede', () => {
