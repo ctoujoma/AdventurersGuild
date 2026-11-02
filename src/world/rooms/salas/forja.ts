@@ -12,6 +12,9 @@ import * as Prop from '../../props';
 import type { SalonLook } from '../salon';
 import {
   FORGE,
+  FREE,
+  task,
+  thick,
   WALL,
   W,
   at,
@@ -358,14 +361,19 @@ function things(room: Room, w: number): Thing[] {
   const t: Thing[] = [];
   for (const s of stretchesOf(room, w)) {
     if (s.kind === 'left') {
-      t.push(solid(forge(lvl, true), s.x0 + FORGE_X, 0, fire(28, 80 + lvl * 15, FORGE, true)));
-      t.push(at(anvil(lvl), s.x0 + ANVIL_X, WALL));
+      t.push(
+        task(
+          solid(forge(lvl, true), s.x0 + FORGE_X, 0, fire(28, 80 + lvl * 15, FORGE, true)),
+          'fuelle',
+        ),
+      );
+      t.push(task(thick(at(anvil(lvl), s.x0 + ANVIL_X, FREE), 7, 'metal'), 'yunque'));
     } else if (s.kind === 'mid' && s.i === 1)
       t.push(
         ...row(s, [
-          [bench(lvl), WALL],
-          [bigWheel(), WALL - 2],
-        ]),
+          [bench(lvl), FREE],
+          [bigWheel(), FREE - 2],
+        ]).map((x, k) => (k === 0 ? task(thick(x, 8, 'madera'), 'banco') : thick(x, 4, 'madera'))),
       );
     else if (s.kind === 'mid')
       t.push(
@@ -377,7 +385,11 @@ function things(room: Room, w: number): Thing[] {
     else t.push(at(coal(), Math.min(s.x0 + 7, w - 9), WALL - 2));
   }
   cellsOf(room, w).forEach((c, j) =>
-    t.push(at(j === 1 ? waterBucket() : trough(lvl), c.win - 1, WALL)),
+    t.push(
+      j === 1
+        ? thick(at(waterBucket(), c.win - 1, FREE), 5, 'madera')
+        : task(thick(at(trough(lvl), c.win - 1, FREE), 8, 'madera'), 'artesa'),
+    ),
   );
   return t;
 }

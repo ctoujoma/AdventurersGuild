@@ -66,8 +66,8 @@ npm run build`.
 
 1. **Más cilindros y cuerpos de verdad**: los barriles apilados, las mesas (tablero y patas), el
    horno de pan (cúpula) y la caldera (cúpula de cobre) con la misma idea que `round`.
-2. **Atlas de la gente en dos filas**: va en una sola fila y ya mide 3960 de 4096 px (un test lo
-   vigila). Hace falta antes de añadir gestos nuevos (martillear, afilar, arrodillarse…).
+2. [x] **Atlas de la gente en dos filas**: se dibuja en una tira y se pliega (`fold` en
+   `crowd.ts`); hay sitio para gestos nuevos.
 3. **Rutinas y sitios para las salas sin nada que hacer**: armería (afilar en la muela), mapas
    (el mapa, los alfileres y el catalejo), despensa (la cocinera viene a por cosas), tesoro
    (contar monedas), capilla (arrodillarse y encender velas), recibidor (la ronda del guardia).
@@ -76,13 +76,19 @@ npm run build`.
    ya está en `main` (PR #96): aquí se hace que se vea. Por puntos:
    - [x] 1. El herrero y la herrera: traje `herrero` (camisa oscura sin mangas, mandil de cuero,
          guantes y martillo) para los de `trade: 'forja'` (`workerLook` en `ui/view.ts`).
-   - [ ] 2. Animaciones en la forja: martillar en el yunque con chispas, avivar el fuelle,
-         templar en la artesa con vapor; un héroe que echa una mano, martillar.
-   - [ ] 3. Forja encendida (brasas vivas, más luz, la pieza al rojo en el yunque) o parada.
-   - [ ] 4. Al acabar: la pieza un momento en el yunque con brillo (más si es de las buenas).
-   - [ ] 5. Desmontar en el banco: trozos y chispas; si sale la receta, un pergamino que sube.
-   - [ ] 6. Bocadillo sobre la sala con el icono y la barrita de `frac` (gris si está parado).
-   - [ ] 7. Sonidos: martillazo y siseo del temple.
+   - [x] 2. Animaciones en la forja: martillar en el yunque (de costado, con chispas), avivar el
+         fuelle, templar en la artesa con vapor (`martillar`, `avivar`, `templar`, `limar` en
+         `crowd.ts`; herramientas `martillo`, `tenaza` y `lima`). Sin trabajo, quietos. Falta
+         ver al héroe que echa una mano (usa la misma rutina si su `work` es la forja).
+   - [x] 3. Forja encendida (brasas, más luz, la barra al rojo en el yunque) o parada (menos
+         luz, la barra apagada). Sin trabajo, la fragua a media luz.
+   - [x] 4. Al acabar: la pieza un momento en el yunque con brillo (dorado y monedas si es de
+         las buenas). Al cancelar sale lo mismo: la escena no distingue (pedido en el PR).
+   - [~] 5. Desmontar en el banco (en la forja pequeña, en el yunque): polvo y chispas. Falta el
+         pergamino que sube si sale la receta: pide un dato en `SceneCraft` (pedido en el PR).
+   - [x] 6. Bocadillo sobre la sala con el icono y la barrita de `frac` (gris si está parado,
+         azul si se desmonta; se aparta si hay un incidente): `ui/CraftMark.tsx`.
+   - [x] 7. Sonidos: martillazo (`hammer`) y siseo del temple (`hiss`), solo si se ve la sala.
    - [ ] 8. Sala de la sastrería (`sastreria`): mesa de cortar, maniquí, rollos de tela con los
          tintes, tinas de tinte con vapor, telas tendidas; más nivel, más telas y un espejo.
    - [ ] 9. Sala de alquimia (`alquimia`): alambiques y retortas burbujeando con luz de color,

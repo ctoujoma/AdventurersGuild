@@ -1,3 +1,4 @@
+import { CraftMark } from './CraftMark';
 import { flyCoins } from './coinFlight';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useBackButton } from '../platform/back';
@@ -1065,6 +1066,17 @@ export function App() {
                 toast(text);
                 scene.current?.focus(room);
               }}
+            />
+          ))}
+        {!passing &&
+          !dawnOpen &&
+          !paying &&
+          (model.crafts ?? []).map((c) => (
+            <CraftMark
+              key={c.room}
+              craft={c}
+              scene={scene}
+              aside={(game.incidents ?? []).some((i) => i.room === c.room)}
             />
           ))}
         {!passing && !dawnOpen && game.rumor && rumorRoom(game) && (

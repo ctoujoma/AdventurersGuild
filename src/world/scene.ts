@@ -119,6 +119,10 @@ export type SoundName =
   | 'bats'
   | 'build'
   | 'hammer'
+  /** El siseo del temple: la pieza al rojo dentro del agua. */
+  | 'hiss'
+  /** La pieza acabada brilla en el yunque. */
+  | 'coin'
   | 'drip'
   | 'cheer'
   | BattleSound;
