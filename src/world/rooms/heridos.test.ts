@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { generateLook, heroSprites } from '../../art/heroes/hero';
 import type { SceneHero } from '../scene';
-import { F, atlas } from './crowd';
+import { F, atlas, cellOf } from './crowd';
 
 const look = generateLook('herido', 'guerrero', 'm');
 const person = (injured: boolean) => {
@@ -17,11 +17,12 @@ const person = (injured: boolean) => {
   };
   return atlas(heroSprites(look, marks), h as SceneHero);
 };
-/** Los píxeles de un fotograma del atlas (24 de ancho). */
+/** Los píxeles de un fotograma del atlas (24 × 28, en su celda de la rejilla). */
 const cell = (img: ReturnType<typeof person>, i: number) => {
+  const [x0, y0] = cellOf(i);
   const out: number[] = [];
-  for (let y = 0; y < img.h; y++)
-    for (let x = i * 24; x < i * 24 + 24; x++) out.push(img.data[y * img.w + x]!);
+  for (let y = y0; y < y0 + 28; y++)
+    for (let x = x0; x < x0 + 24; x++) out.push(img.data[y * img.w + x]!);
   return out.join(',');
 };
 

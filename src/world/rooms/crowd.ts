@@ -276,10 +276,12 @@ export const F = (() => {
 })();
 const FRAMES = Object.values(SIZES).reduce((a, n) => a + n, 0);
 /**
- * Ancho del atlas en píxeles: va en una sola fila, así que no puede pasar de lo que aguanta una
- * textura en cualquier móvil (4096). Si se pasa, hay que partirlo en dos filas.
+ * El atlas va en `ROWS` filas (se dibuja en una tira y se pliega, ver `fold`): su ancho no puede
+ * pasar de lo que aguanta una textura en cualquier móvil (4096).
  */
-export const ATLAS_W = CELL * FRAMES;
+const ROWS = 2;
+const COLS = Math.ceil(FRAMES / ROWS);
+export const ATLAS_W = CELL * COLS;
 /** Filas que baja el dibujo en los fotogramas de incorporado (para que quepa la cabeza). */
 const UP_DROP = 8;
 
@@ -619,7 +621,37 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
         const dy = TALL - 2 - src.w + x;
         if (dy >= 0 && dy < TALL) b.data[dy * b.w + i * CELL + dx] = c;
       }
-  return b;
+  return fold(b);
+}
+
+/**
+ * Pliega la tira de fotogramas (una fila, como se dibuja) en la rejilla del atlas: `ROWS` filas
+ * de `COLS` celdas. Así cabe en una textura de cualquier móvil aunque crezca.
+ */
+function fold(strip: PixelBuffer): PixelBuffer {
+  const out = new PixelBuffer(CELL * COLS, TALL * ROWS);
+  for (let i = 0; i < FRAMES; i++) {
+    const cx = (i % COLS) * CELL;
+    const cy = Math.floor(i / COLS) * TALL;
+    for (let y = 0; y < TALL; y++)
+      for (let x = 0; x < CELL; x++)
+        out.data[(cy + y) * out.w + cx + x] = strip.data[y * strip.w + i * CELL + x]!;
+  }
+  return out;
+}
+
+/** Esquina de arriba a la izquierda del fotograma `f` en el atlas, en píxeles. */
+export const cellOf = (f: number): [number, number] => [
+  (f % COLS) * CELL,
+  Math.floor(f / COLS) * TALL,
+];
+
+/** Dónde cae el fotograma `f` en el atlas, en coordenadas de textura (abajo a la izquierda). */
+function uvOf(f: number): [number, number] {
+  const col = f % COLS;
+  const row = Math.floor(f / COLS);
+  // La textura va al revés en vertical (la fila 0 del dibujo, arriba del todo).
+  return [col / COLS, (ROWS - 1 - row) / ROWS];
 }
 
 /** Fotograma y sitio de alguien acostado: la figura encima del mueble, alineada con su dibujo. */
@@ -1021,7 +1053,8 @@ export class Crowd {
         const qx = px + dx;
         const qy = py + dy;
         if (qx < 0 || qx >= CELL || qy < 0 || qy >= TALL) continue;
-        if (alpha(a.img.get(f.frame * CELL + qx, qy))) return true;
+        const [cx, cy] = cellOf(f.frame);
+        if (alpha(a.img.get(cx + qx, cy + qy))) return true;
       }
     return false;
   }
@@ -1279,8 +1312,9 @@ export class Crowd {
       wrap: 0.6,
       dither: 0.03,
       halo: 0.3,
-      frames: FRAMES,
     });
+    // Un fotograma de la rejilla: 1/COLS de ancho y 1/ROWS de alto.
+    mat.uniforms.uUvScale!.value.set(1 / COLS, 1 / ROWS);
     // Delante de lo que esté a su misma profundidad (el taburete, la cama).
     mat.polygonOffset = true;
     mat.polygonOffsetFactor = -1;
@@ -1991,7 +2025,7 @@ export class Crowd {
     u.uOrigin!.value.copy(origin);
     u.uAxisU!.value.set(w, 0, 0);
     u.uAxisV!.value.set(0, h, 0);
-    u.uUvOffset!.value.set(f.frame / FRAMES, 0);
+    u.uUvOffset!.value.set(...uvOf(f.frame));
     const look = this.tint(a.x, a.floor);
     u.uAmbient!.value.set(...look.ambient);
     u.uSun!.value = look.sun;
