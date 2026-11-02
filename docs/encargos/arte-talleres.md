@@ -56,9 +56,14 @@ Tipos `sastreria` y `alquimia` en `src/data/rooms.ts`; registra su arte en
    frascos, un caldero, hierbas colgadas y un libro abierto en un atril. Más nivel, más luz.
 10. **La sastra o el sastre y la o el alquimista** (`trade: 'sastreria'` y `'alquimia'`): sus
    figuras y su trabajo (coser, cortar, teñir; remover el caldero, destilar).
-11. **Vestir a un héroe:** mientras dura (`SceneCraft.hero`), el héroe está en la sastrería
-   (ya va solo: su sitio de trabajo pasa a ser la sala). Que se le vea de pie, quieto, junto al
-   maniquí o probándose algo; al acabar ya lleva su tinte y su prenda.
+11. **Vestir a un héroe** (lo pide el usuario expresamente): mientras dura (`SceneCraft.hero`),
+    el héroe **camina hasta la sastrería** (eso ya pasa: su sitio de trabajo pasa a ser la sala,
+    de día) y se queda **de pie en un sitio propio, junto al maniquí o un espejo**, no en un
+    puesto de trabajo cualquiera. **La sastra o el sastre trabaja sobre él o ella:** le toma
+    medidas con la cinta, le prueba la tela por encima, cose de rodillas el bajo. Si no hay
+    nadie del oficio y lo hace un héroe que echa una mano, lo mismo. Al acabar, un brillo y ya
+    lleva su tinte y su prenda (el aspecto cambia solo, `lookOf`). Si hace falta que la escena
+    sepa dónde poner a cada uno, pide el dato en el PR.
 12. **Bocadillos y animaciones** como en la forja (punto 6), con el dibujo de lo que se crea
     (botas, capa, amuleto, varita) o, al vestir, una tijera o una prenda.
 
