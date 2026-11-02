@@ -66,7 +66,7 @@ npm run build`.
 
 1. **Más cilindros y cuerpos de verdad**: los barriles apilados, las mesas (tablero y patas), el
    horno de pan (cúpula) y la caldera (cúpula de cobre) con la misma idea que `round`.
-2. [x] **Atlas de la gente en dos filas**: se dibuja en una tira y se pliega (`fold` en
+2. [x] **Atlas de la gente en dos filas** (#100): se dibuja en una tira y se pliega (`fold` en
    `crowd.ts`); hay sitio para gestos nuevos.
 3. **Rutinas y sitios para las salas sin nada que hacer**: armería (afilar en la muela), mapas
    (el mapa, los alfileres y el catalejo), despensa (la cocinera viene a por cosas), tesoro
@@ -76,7 +76,7 @@ npm run build`.
    ya está en `main` (PR #96): aquí se hace que se vea. Por puntos:
    - [x] 1. El herrero y la herrera: traje `herrero` (camisa oscura sin mangas, mandil de cuero,
          guantes y martillo) para los de `trade: 'forja'` (`workerLook` en `ui/view.ts`).
-   - [x] 2. Animaciones en la forja: martillar en el yunque (de costado, con chispas), avivar el
+   - [x] 2. (#100) Animaciones en la forja: martillar en el yunque (de costado, con chispas), avivar el
          fuelle, templar en la artesa con vapor (`martillar`, `avivar`, `templar`, `limar` en
          `crowd.ts`; herramientas `martillo`, `tenaza` y `lima`). Sin trabajo, quietos. Falta
          ver al héroe que echa una mano (usa la misma rutina si su `work` es la forja).
