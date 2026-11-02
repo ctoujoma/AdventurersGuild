@@ -23,7 +23,9 @@ export type RoomType =
   | 'despensa'
   | 'armas'
   | 'tiro'
-  | 'biblioteca';
+  | 'biblioteca'
+  | 'sastreria'
+  | 'alquimia';
 
 /** Dónde puede ir: en la planta baja, encima de otra sala (la torre) o en cualquier planta. */
 export type RoomPlace = 'baja' | 'tejado' | 'libre';
@@ -188,6 +190,22 @@ export const ROOMS: Record<RoomType, RoomDef> = {
     maxW: 3,
     maxH: 1,
     place: 'libre',
+  },
+  sastreria: {
+    name: 'Sastrería',
+    desc: 'Tiñe y viste a los héroes, y crea botas y capas.',
+    maxW: 3,
+    maxH: 1,
+    place: 'libre',
+    unique: true,
+  },
+  alquimia: {
+    name: 'Taller de alquimia',
+    desc: 'Crea amuletos y varitas.',
+    maxW: 3,
+    maxH: 1,
+    place: 'libre',
+    unique: true,
   },
 };
 

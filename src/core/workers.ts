@@ -193,7 +193,12 @@ export function villageCrew(s: GameState): Worker[] {
 }
 
 /** Alguien que viene a pedir trabajo. */
-export function generateWorker(rng: Rng, id: string, usedNames: readonly string[]): Worker {
+export function generateWorker(
+  rng: Rng,
+  id: string,
+  usedNames: readonly string[],
+  trades: readonly Trade[] = TRADE_LIST,
+): Worker {
   const sex = rng.chance(0.5) ? 'm' : 'f';
   let name = '';
   for (let tries = 0; tries < 20; tries++) {
@@ -207,7 +212,7 @@ export function generateWorker(rng: Rng, id: string, usedNames: readonly string[
     name,
     sex,
     skill,
-    trade: rng.pick(TRADE_LIST),
+    trade: rng.pick(trades.length ? trades : TRADE_LIST),
     xp: 0,
     salary: 3 + skill,
     fee: 5 + skill * 4,
@@ -218,9 +223,21 @@ export function generateWorker(rng: Rng, id: string, usedNames: readonly string[
 const namesIn = (s: GameState) =>
   [...s.heroes, ...s.candidates, ...s.workers, ...s.seekers].map((x) => x.name);
 
+/**
+ * De qué oficios viene la gente a pedir trabajo: de las salas que hay (en uso). Dos de cada
+ * tres veces, de una sala que aún no tiene a nadie de su oficio (se corre la voz).
+ */
+export function seekerTrades(s: GameState, rng: Rng): Trade[] {
+  const open = TRADE_LIST.filter((t) =>
+    s.building.rooms.some((r) => r.type === t && active(r).level > 0),
+  );
+  const empty = open.filter((t) => !s.workers.some((w) => w.trade === t));
+  return empty.length && rng.chance(2 / 3) ? empty : open;
+}
+
 /** Llega alguien a pedir trabajo; si ya esperan muchos, el primero se cansa. */
 export function addSeeker(s: GameState, rng: Rng, events: DawnEvent[]): void {
-  const w = generateWorker(rng, `w${s.uid++}`, namesIn(s));
+  const w = generateWorker(rng, `w${s.uid++}`, namesIn(s), seekerTrades(s, rng));
   if (s.seekers.length >= MAX_SEEKERS) {
     const left = s.seekers.shift()!;
     events.push({ t: `${left.name} se cansó de esperar trabajo y se fue a otra posada.` });
@@ -243,8 +260,22 @@ export function stepWorkers(s: GameState, rng: Rng, events: DawnEvent[], visitor
     w.skill++;
     events.push({ t: `${w.name} le ha cogido el truco al trabajo: Maña ${w.skill}.`, k: 'good' });
   }
-  if (s.mode === 'libre' && rng.chance(Math.min(0.6, SEEKER_CHANCE + visitors * 0.02)))
-    addSeeker(s, rng, events);
+  if (s.mode !== 'libre') return;
+  // Una sala nueva sin nadie de su oficio: se corre la voz y viene alguien a la mañana siguiente.
+  const lack = TRADE_LIST.find(
+    (t) =>
+      s.building.rooms.some((r) => r.type === t && active(r).level > 0) &&
+      !s.workers.some((w) => w.trade === t) &&
+      !s.seekers.some((w) => w.trade === t),
+  );
+  if (lack && s.workers.length < workerCap(s)) {
+    const w = generateWorker(rng, `w${s.uid++}`, namesIn(s), [lack]);
+    s.seekers.push(w);
+    if (s.seekers.length > MAX_SEEKERS) s.seekers.shift();
+    events.push({
+      t: `Se ha corrido la voz: viene a pedir trabajo ${workerTitle(w)} (Maña ${w.skill}).`,
+    });
+  } else if (rng.chance(Math.min(0.6, SEEKER_CHANCE + visitors * 0.02))) addSeeker(s, rng, events);
 }
 
 /** Por qué no se puede contratar a alguien que pide trabajo (null = se puede). */

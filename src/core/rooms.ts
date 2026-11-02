@@ -464,6 +464,8 @@ export function planUpgrade(s: GameState, id: string): Plan {
  */
 export function planBuild(s: GameState, type: RoomType, col: number, floor: number): Plan {
   if (!worksOpen(s)) return { error: LOCKED };
+  const rank = levelRank(type, 1);
+  if (rank > rankIndex(s.rep)) return { error: `Se abre con el rango de ${RANKS[rank]!.name}.` };
   const b = structuredClone(s.building);
   const fresh: Room = newRoom(b, type, col, floor);
   const next = b.rooms.find(

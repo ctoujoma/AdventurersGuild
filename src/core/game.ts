@@ -20,6 +20,7 @@ import {
   CANDIDATE_EVERY,
   DAYS,
   DAY_SECONDS,
+  RECIPE_FIND,
   DELIVERIES,
   DUSK,
   DEBT,
@@ -138,6 +139,10 @@ import { stepLarder } from './larder';
 import { stepTraining } from './training';
 import {
   canCraft,
+  canDress,
+  knownRecipes,
+  learnRecipe,
+  startDress,
   canUndo,
   cancelCraft,
   nightCrafts,
@@ -145,7 +150,7 @@ import {
   startUndo,
   stepCrafts,
 } from './crafting';
-import type { RecipeId } from '../data/recipes';
+import { RECIPES, RECIPE_IDS, type RecipeId } from '../data/recipes';
 import { brawlChance, noisyBeds, visitorList, visitorsOf } from './salon';
 import {
   addSeeker,
@@ -165,6 +170,8 @@ export type Action =
   | { type: 'craft'; room: string; recipe: RecipeId }
   | { type: 'undoItem'; room: string; itemId: string }
   | { type: 'cancelCraft'; id: string }
+  /** Sastrería: vestir a un héroe (tinte y prenda). */
+  | { type: 'dressAt'; room: string; heroId: string; dress: Dress }
   | { type: 'hire'; id: string }
   | { type: 'fire'; id: string }
   | { type: 'hireWorker'; id: string }
@@ -830,6 +837,12 @@ function reduceAction(state: GameState, action: Action): GameState {
       startUndo(s, action.room, action.itemId);
       return s;
     }
+    case 'dressAt': {
+      if (canDress(state, action.room, action.heroId, action.dress)) return state;
+      const s = structuredClone(state);
+      startDress(s, action.room, action.heroId, action.dress);
+      return s;
+    }
     case 'cancelCraft': {
       if (!state.crafts?.some((c) => c.id === action.id)) return state;
       const s = structuredClone(state);
@@ -918,6 +931,17 @@ function settleMission(
     if (setup && !orders) r.fight.sim!.auto = true;
   }
   if (m.quest.chain) advanceChain(s, rng, m.quest, r, events);
+  // Un éxito brillante a veces trae los planos de algo que no se sabía hacer.
+  if (
+    r.outcome === 'Éxito brillante' &&
+    knownRecipes(s).length < RECIPE_IDS.length &&
+    rng.chance(RECIPE_FIND)
+  ) {
+    const id = learnRecipe(s, rng)!;
+    const rc = RECIPES[id];
+    r.body.push(`Entre lo que traen hay unos planos: ya se sabe crear ${rc.many}.`);
+    r.chips.push({ t: `Receta: ${rc.name.toLowerCase()}`, k: 'good' });
+  }
   const fates: NonNullable<Mission['done']>['fates'] = {};
   for (const id of m.heroIds) {
     const h = s.heroes.find((x) => x.id === id);

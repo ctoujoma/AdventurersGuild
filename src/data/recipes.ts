@@ -7,7 +7,15 @@ import type { ItemIcon, ItemKind } from '../core/model';
 import type { GearBase } from './items';
 import type { RoomType } from './rooms';
 
-export type RecipeId = 'espada' | 'coraza' | 'ganzuas' | 'hacha' | 'escudo';
+export type RecipeId =
+  'espada' | 'coraza' | 'ganzuas' | 'hacha' | 'escudo' | 'botas' | 'capa' | 'amuleto' | 'varita';
+
+/** Los talleres, para las frases («en la sastrería»). */
+export const WORKSHOP_PLACE: Partial<Record<RoomType, string>> = {
+  forja: 'la forja',
+  sastreria: 'la sastrería',
+  alquimia: 'el taller de alquimia',
+};
 
 export interface Recipe {
   name: string;
@@ -174,6 +182,122 @@ export const RECIPES: Record<RecipeId, Recipe> = {
       icon: 'escudo',
       bonus: { Combate: 2 },
       perk: 'guard',
+    },
+  },
+  botas: {
+    name: 'Botas',
+    one: 'unas botas',
+    many: 'botas',
+    room: 'sastreria',
+    icon: 'botas',
+    kind: 'herramienta',
+    gold: 20,
+    hours: 6,
+    free: true,
+    common: {
+      name: 'Botas de la casa',
+      desc: 'Cuero curtido y suela doble. Aguantan el barro.',
+      value: 18,
+      kind: 'herramienta',
+      rarity: 0,
+      icon: 'botas',
+      bonus: { Supervivencia: 1 },
+    },
+    good: {
+      name: 'Botas de caña alta',
+      desc: 'Cosidas a medida. Se camina con ellas un día entero sin una ampolla.',
+      value: 44,
+      kind: 'herramienta',
+      rarity: 1,
+      icon: 'botas',
+      bonus: { Supervivencia: 2 },
+    },
+  },
+  capa: {
+    name: 'Capa',
+    one: 'una capa',
+    many: 'capas',
+    room: 'sastreria',
+    icon: 'capa',
+    kind: 'herramienta',
+    gold: 30,
+    hours: 8,
+    common: {
+      name: 'Capa de viaje',
+      desc: 'Lana gruesa con capucha. Quita el frío y la lluvia.',
+      value: 24,
+      kind: 'herramienta',
+      rarity: 0,
+      icon: 'capa',
+      bonus: { Supervivencia: 1 },
+    },
+    good: {
+      name: 'Capa encerada',
+      desc: 'Del color del monte. Quien la lleva se pierde entre los árboles.',
+      value: 48,
+      kind: 'herramienta',
+      rarity: 1,
+      icon: 'capa',
+      bonus: { Supervivencia: 1 },
+      perk: 'ambush',
+    },
+  },
+  amuleto: {
+    name: 'Amuleto',
+    one: 'un amuleto',
+    many: 'amuletos',
+    room: 'alquimia',
+    icon: 'amuleto',
+    kind: 'amuleto',
+    gold: 30,
+    hours: 8,
+    free: true,
+    common: {
+      name: 'Amuleto de la casa',
+      desc: 'Una piedra con agujero y unas hierbas. Algo hace.',
+      value: 20,
+      kind: 'amuleto',
+      rarity: 0,
+      icon: 'amuleto',
+      bonus: { Arcano: 1 },
+    },
+    good: {
+      name: 'Amuleto bendecido',
+      desc: 'Pasó tres noches en la capilla. Los malos agüeros no se le acercan.',
+      value: 46,
+      kind: 'amuleto',
+      rarity: 1,
+      icon: 'amuleto',
+      bonus: { Arcano: 1 },
+      perk: 'ward',
+    },
+  },
+  varita: {
+    name: 'Varita',
+    one: 'una varita',
+    many: 'varitas',
+    room: 'alquimia',
+    icon: 'varita',
+    kind: 'arma',
+    gold: 45,
+    hours: 12,
+    common: {
+      name: 'Varita de avellano',
+      desc: 'Recta y con su runa. Chisporrotea un poco.',
+      value: 26,
+      kind: 'arma',
+      rarity: 0,
+      icon: 'varita',
+      bonus: { Arcano: 1 },
+    },
+    good: {
+      name: 'Varita de fresno tallado',
+      desc: 'Tallada a la luz de la luna, como manda el libro.',
+      value: 50,
+      kind: 'arma',
+      rarity: 1,
+      icon: 'varita',
+      bonus: { Arcano: 2 },
     },
   },
 };

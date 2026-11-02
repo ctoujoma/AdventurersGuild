@@ -1,7 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { RECIPES } from '../data/recipes';
-import { DAY_SECONDS } from './balance';
-import { canCraft, canUndo, craftState, goodChance, knownRecipes, undoable } from './crafting';
+import { DAY_SECONDS, DRESS_GOLD } from './balance';
+import { Rng } from './rng';
+import { planBuild } from './rooms';
+import {
+  canCraft,
+  canDress,
+  canUndo,
+  craftState,
+  dressingOf,
+  goodChance,
+  knownRecipes,
+  learnRecipe,
+  undoable,
+} from './crafting';
 import { endDay, newGame, reduce } from './game';
 import type { GameState, Worker } from './model';
 
@@ -32,7 +44,7 @@ function withForge(seed: string, level = 1, skill = 4): { s: GameState; forge: s
 describe('la forja crea objetos', () => {
   it('se saben las recetas de serie y las demás no', () => {
     const s = newGame('recetas');
-    expect(knownRecipes(s)).toEqual(['espada', 'coraza', 'ganzuas']);
+    expect(knownRecipes(s)).toEqual(['espada', 'coraza', 'ganzuas', 'botas', 'amuleto']);
   });
 
   it('crear cobra al empezar y deja el objeto en el arcón al acabar', () => {
@@ -54,7 +66,7 @@ describe('la forja crea objetos', () => {
     expect(t.inventory).toHaveLength(inv + 1);
     const it = t.inventory.at(-1)!;
     expect([RECIPES.espada.common.name, RECIPES.espada.good.name]).toContain(it.name);
-    expect(t.incidentNews?.some((n) => /forja ha creado/.test(n.t))).toBe(true);
+    expect(t.incidentNews?.some((n) => /han creado/.test(n.t))).toBe(true);
   });
 
   it('con el juego cerrado sigue avanzando en las noches', () => {
@@ -63,7 +75,7 @@ describe('la forja crea objetos', () => {
     t = endDay(t, true);
     expect(t.crafts).toBeUndefined();
     expect(t.inventory.some((i) => i.icon === 'coraza')).toBe(true);
-    expect(t.dawn.some((e) => /forja ha creado/.test(e.t))).toBe(true);
+    expect(t.dawn.some((e) => /han creado/.test(e.t))).toBe(true);
   });
 
   it('sin nadie en la sala se para; un héroe echa una mano, más despacio', () => {
@@ -154,5 +166,123 @@ describe('desmontar para sacar la receta', () => {
     const t = reduce(s, { type: 'undoItem', room: forge, itemId: 'i-hacha' });
     const u = reduce(t, { type: 'cancelCraft', id: t.crafts![0]!.id });
     expect(u.inventory.some((x) => x.id === 'i-hacha')).toBe(true);
+  });
+});
+
+/** Partida con un taller nuevo (sastrería o alquimia) a nivel 1, en un hueco de la planta baja. */
+function withShop(seed: string, type: 'sastreria' | 'alquimia', trade = true) {
+  const s = newGame(seed);
+  const room = {
+    id: `prueba-${type}`,
+    type,
+    col: s.building.cols,
+    floor: 0,
+    w: 1,
+    h: 1,
+    level: 1,
+    spent: 0,
+  };
+  s.building.cols++;
+  s.building.rooms.push(room);
+  if (trade)
+    s.workers.push({
+      id: `w-${type}`,
+      seed: type,
+      name: 'Lía',
+      sex: 'f',
+      skill: 4,
+      trade: type,
+      xp: 0,
+      salary: 5,
+      fee: 0,
+      room: room.id,
+      quote: '',
+    });
+  s.gold = 500;
+  return { s, room: room.id };
+}
+
+describe('la sastrería viste a los héroes', () => {
+  it('cobra, lleva al héroe a la sala y al acabar estrena ropa con más moral', () => {
+    const { s, room } = withShop('vestir', 'sastreria');
+    const h = s.heroes.find((x) => x.status === 'ok')!;
+    h.morale = 50;
+    let t = reduce(s, {
+      type: 'dressAt',
+      room,
+      heroId: h.id,
+      dress: { dye: 'vino', garment: 'faja' },
+    });
+    expect(t.gold).toBe(s.gold - DRESS_GOLD);
+    expect(dressingOf(t, h.id)?.room).toBe(room);
+    t = endDay(t, true);
+    const x = t.heroes.find((y) => y.id === h.id)!;
+    expect(x.dress).toEqual({ dye: 'vino', garment: 'faja' });
+    expect(x.morale).toBeGreaterThan(50);
+    expect(t.dawn.some((e) => /estrena ropa/.test(e.t))).toBe(true);
+  });
+
+  it('solo con los tintes que se tienen, a uno en casa y no a quien ya va así', () => {
+    const { s, room } = withShop('tintes', 'sastreria');
+    const h = s.heroes.find((x) => x.status === 'ok')!;
+    expect(canDress(s, room, h.id, { dye: 'mar' })).toMatch(/Aún no tenéis/);
+    expect(canDress(s, room, h.id, {})).toMatch(/Ya va así/);
+    expect(canDress({ ...s, unlocks: ['tint:mar'] }, room, h.id, { dye: 'mar' })).toBeNull();
+    const away = structuredClone(s);
+    away.heroes.find((x) => x.id === h.id)!.status = 'mision';
+    expect(canDress(away, room, h.id, { dye: 'vino' })).toMatch(/no está en casa/);
+  });
+
+  it('crea botas de serie; en la alquimia, amuletos', () => {
+    const a = withShop('botas', 'sastreria');
+    expect(canCraft(a.s, a.room, 'botas')).toBeNull();
+    expect(canCraft(a.s, a.room, 'espada')).toMatch(/no se hace/);
+    const b = withShop('amuletos', 'alquimia');
+    const t = endDay(reduce(b.s, { type: 'craft', room: b.room, recipe: 'amuleto' }), true);
+    expect(t.inventory.some((i) => i.icon === 'amuleto')).toBe(true);
+  });
+});
+
+describe('recetas como premio', () => {
+  it('se aprende una que no se sabe, mejor de un taller que se tiene', () => {
+    const { s } = withShop('premio', 'alquimia', false);
+    // Hay forja (rota) y alquimia, pero no sastrería: la capa, no.
+    for (let i = 0; i < 3; i++) {
+      const id = learnRecipe(s, new Rng(`x${i}`))!;
+      expect(['hacha', 'escudo', 'varita']).toContain(id);
+      expect(knownRecipes(s)).toContain(id);
+    }
+    expect(learnRecipe(s, new Rng('z'))).toBe('capa');
+    s.recipes = ['hacha', 'escudo', 'capa', 'varita'];
+    expect(learnRecipe(s, new Rng('y'))).toBeNull();
+  });
+});
+
+describe('quién viene a pedir trabajo', () => {
+  it('con un taller sin nadie de su oficio, viene alguien de ese oficio', () => {
+    const { s } = withShop('voz', 'alquimia', false);
+    s.mode = 'libre';
+    // Camas de sobra en el servicio para poder contratar.
+    s.building.rooms.push({
+      id: 'serv',
+      type: 'servicio',
+      col: s.building.cols,
+      floor: 0,
+      w: 3,
+      h: 1,
+      level: 3,
+      spent: 0,
+    });
+    s.building.cols += 3;
+    s.seekers = [];
+    const t = endDay(s, true);
+    expect(t.seekers.some((w) => w.trade === 'alquimia')).toBe(true);
+  });
+
+  it('las salas nuevas se abren con su rango', () => {
+    const s = newGame('rango');
+    s.mode = 'libre';
+    const plan = planBuild(s, 'alquimia', 0, 3);
+    expect('error' in plan && plan.error).toMatch(/rango/);
   });
 });

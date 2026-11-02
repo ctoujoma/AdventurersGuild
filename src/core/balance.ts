@@ -91,6 +91,8 @@ export const ROOM_COST: Record<RoomType, readonly number[]> = {
   armas: [0, 150, 320, 520, 850],
   tiro: [0, 150, 320, 520, 850],
   biblioteca: [0, 150, 320, 520, 850],
+  sastreria: [0, 160, 340, 620],
+  alquimia: [0, 220, 420, 700],
 };
 export const roomMax = (t: RoomType) => ROOM_COST[t].length - 1;
 /** Mejorar una sala más ancha que la de serie cuesta este recargo por hueco de más. */
@@ -185,6 +187,9 @@ export const LEVEL_RANK: Partial<Record<RoomType, Partial<Record<number, number>
   armas: { 4: 4 },
   tiro: { 4: 4 },
   biblioteca: { 4: 4 },
+  // Las salas nuevas se abren con un rango (construirlas es su nivel 1).
+  sastreria: { 1: 1, 3: 2 },
+  alquimia: { 1: 2, 3: 3 },
 };
 /** Rango que pide un nivel de sala (0: ninguno). */
 export const levelRank = (t: RoomType, level: number) => LEVEL_RANK[t]?.[level] ?? 0;
@@ -441,3 +446,9 @@ export const CRAFT_GOOD_PER_SKILL = 0.03;
 /** Desmontar: horas que tarda y probabilidad de sacar la receta, por nivel de la sala. */
 export const UNDO_HOURS = 4;
 export const UNDO_CHANCE = [0, 0.5, 0.6, 0.7, 0.8] as const;
+/** Vestir a un héroe en la sastrería: lo que cuesta, lo que tarda y la moral que da estrenar. */
+export const DRESS_GOLD = 15;
+export const DRESS_HOURS = 4;
+export const DRESS_MORALE = 8;
+/** Probabilidad de que un encargo con éxito brillante traiga los planos de una receta. */
+export const RECIPE_FIND = 0.2;
