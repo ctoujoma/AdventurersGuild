@@ -22,7 +22,11 @@ export type WeaponId =
   | 'pala'
   | 'cuenco'
   | 'jarra'
-  | 'trapo';
+  | 'trapo'
+  // Los del taller de la forja.
+  | 'martillo'
+  | 'tenaza'
+  | 'lima';
 
 export interface Weapon {
   img: PixelBuffer;
@@ -116,6 +120,12 @@ export const WEAPONS: Record<WeaponId, Weapon> = {
     8,
   ),
   cuchillo: grid(['.W', 'mS', 'mS', 'uu', 'B.'], 1, 3),
+  // Martillo de herrero: cabeza de hierro y mango corto.
+  martillo: grid(['SmmS', 'SSSS', '.b..', '.b..', '.b..', '.B..'], 1, 4),
+  // Tenazas con una pieza al rojo en la punta.
+  tenaza: grid(['oR.', 'Ro.', 's.s', 's.s', '.s.', 's.s', 's.s'], 1, 5),
+  // Lima de desbastar.
+  lima: grid(['.s', 'Ss', 'Ss', 'Ss', 'bB', 'b.'], 0, 4),
   hacha: grid(
     [
       '.SS..',

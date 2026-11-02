@@ -67,7 +67,19 @@ export interface Thing {
  */
 export type PoiKind = LeisurePoi | TaskPoi;
 export type LeisurePoi = 'read' | 'warm' | 'pray';
-export type TaskPoi = 'olla' | 'mesa' | 'fregar' | 'horno' | 'cuba' | 'barril' | 'caldera';
+export type TaskPoi =
+  | 'olla'
+  | 'mesa'
+  | 'fregar'
+  | 'horno'
+  | 'cuba'
+  | 'barril'
+  | 'caldera'
+  // La forja: avivar la fragua con el fuelle, martillar en el yunque, templar y el banco.
+  | 'fuelle'
+  | 'yunque'
+  | 'artesa'
+  | 'banco';
 
 /** Un mueble con su sitio de trabajo. */
 export const task = (t: Thing, poi: TaskPoi): Thing => ({ ...t, poi });

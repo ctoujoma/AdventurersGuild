@@ -13,6 +13,7 @@ export type Sfx =
   | 'coin'
   | 'build'
   | 'hammer'
+  | 'hiss'
   | 'purr'
   | 'bark'
   | 'caw'
@@ -269,6 +270,11 @@ class AudioEngine {
       case 'hoot':
         this.hoot(t, 0.32, 0.12 * v);
         this.hoot(t + 0.5, 0.55, 0.12 * v);
+        break;
+      case 'hiss':
+        // El temple: un soplo de ruido agudo que se apaga despacio.
+        this.burst(t, 0.7, 0.05 * v, 'highpass', 3200);
+        this.burst(t + 0.05, 0.5, 0.03 * v, 'bandpass', 1800, 2);
         break;
       case 'sparks':
         for (let i = 0; i < 18; i++) this.crackle(t + Math.random() * 0.5, 0.25 * v);

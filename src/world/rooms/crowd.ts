@@ -75,7 +75,18 @@ const CELL = 24;
 const TALL = 28;
 
 /** Las herramientas de los puestos (y el trapo de la barra), en el orden de sus fotogramas. */
-const TOOLS = ['cucharon', 'pala', 'cuenco', 'jarra', 'trapo', 'cuchillo', 'antorcha'] as const;
+const TOOLS = [
+  'cucharon',
+  'pala',
+  'cuenco',
+  'jarra',
+  'trapo',
+  'cuchillo',
+  'antorcha',
+  'martillo',
+  'tenaza',
+  'lima',
+] as const;
 
 /** Un trabajo: la herramienta y los cuatro tiempos (postura del brazo, giro y duración). */
 interface Work {
@@ -189,6 +200,46 @@ const WORK = {
       ['strike', 15, 0.3],
     ],
   },
+  // La forja: martillar en el yunque (alto, golpe seco y otra vez arriba)…
+  martillar: {
+    tool: 7,
+    steps: [
+      ['up', -20, 0.32],
+      ['strike', 150, 0.12],
+      ['strike', 160, 0.16],
+      ['ready', 60, 0.3],
+    ],
+  },
+  // … avivar la fragua con el fuelle (empujar abajo y soltar)…
+  avivar: {
+    tool: 8,
+    steps: [
+      ['ready', 90, 0.45],
+      ['thrust', 120, 0.35],
+      ['thrust', 130, 0.35],
+      ['ready', 90, 0.45],
+    ],
+  },
+  // … templar: la pieza al rojo, dentro del agua y fuera…
+  templar: {
+    tool: 8,
+    steps: [
+      ['ready', 100, 0.6],
+      ['thrust', 165, 0.9],
+      ['thrust', 170, 0.7],
+      ['up', 60, 0.6],
+    ],
+  },
+  // … y limar en el banco (o desmontar una pieza).
+  limar: {
+    tool: 9,
+    steps: [
+      ['thrust', 80, 0.22],
+      ['strike', 95, 0.22],
+      ['thrust', 80, 0.22],
+      ['strike', 95, 0.26],
+    ],
+  },
   // … y echar un leño al fuego.
   lena: {
     tool: 6,
@@ -217,8 +268,14 @@ const TASKS: Record<TaskPoi, WorkId[]> = {
   cuba: ['bodega'],
   barril: ['llenar'],
   caldera: ['bodega', 'lena'],
+  fuelle: ['avivar'],
+  yunque: ['martillar', 'martillar'],
+  artesa: ['templar'],
+  banco: ['limar'],
 };
-const ROUTINE = new Set(['cocina', 'bodega']);
+const ROUTINE = new Set(['cocina', 'bodega', 'forja']);
+/** Los talleres: solo trabajan (y con su rutina) mientras hay un trabajo en marcha. */
+const WORKSHOP = new Set(['forja']);
 const LEISURE = new Set<PoiKind>(['read', 'warm', 'pray']);
 
 /** Cuántos fotogramas tiene cada cosa, en el orden del atlas. */
@@ -276,10 +333,12 @@ export const F = (() => {
 })();
 const FRAMES = Object.values(SIZES).reduce((a, n) => a + n, 0);
 /**
- * Ancho del atlas en píxeles: va en una sola fila, así que no puede pasar de lo que aguanta una
- * textura en cualquier móvil (4096). Si se pasa, hay que partirlo en dos filas.
+ * El atlas va en `ROWS` filas (se dibuja en una tira y se pliega, ver `fold`): su ancho no puede
+ * pasar de lo que aguanta una textura en cualquier móvil (4096).
  */
-export const ATLAS_W = CELL * FRAMES;
+const ROWS = 2;
+const COLS = Math.ceil(FRAMES / ROWS);
+export const ATLAS_W = CELL * COLS;
 /** Filas que baja el dibujo en los fotogramas de incorporado (para que quepa la cabeza). */
 const UP_DROP = 8;
 
@@ -388,6 +447,8 @@ interface Actor {
   poi?: { kind: Poi['kind']; dir: 1 | -1 } | null;
   /** En la rutina de su oficio: el mueble (`at`, su x), lo que hace y hacia dónde mira. */
   task?: { at: number; work: WorkId; face: 1 | -1 } | null;
+  /** La última vuelta en que sonó su golpe (ver `hits`). */
+  hitAt?: number;
   /** De charla con alguien: con quién, cuándo empezó (al llegar) y cuándo acaba. */
   chat?: { with: string; from: number; until: number } | null;
   /** Sentándose o levantándose del taburete: lo que falta (en segundos) y hacia dónde. */
@@ -619,7 +680,37 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
         const dy = TALL - 2 - src.w + x;
         if (dy >= 0 && dy < TALL) b.data[dy * b.w + i * CELL + dx] = c;
       }
-  return b;
+  return fold(b);
+}
+
+/**
+ * Pliega la tira de fotogramas (una fila, como se dibuja) en la rejilla del atlas: `ROWS` filas
+ * de `COLS` celdas. Así cabe en una textura de cualquier móvil aunque crezca.
+ */
+function fold(strip: PixelBuffer): PixelBuffer {
+  const out = new PixelBuffer(CELL * COLS, TALL * ROWS);
+  for (let i = 0; i < FRAMES; i++) {
+    const cx = (i % COLS) * CELL;
+    const cy = Math.floor(i / COLS) * TALL;
+    for (let y = 0; y < TALL; y++)
+      for (let x = 0; x < CELL; x++)
+        out.data[(cy + y) * out.w + cx + x] = strip.data[y * strip.w + i * CELL + x]!;
+  }
+  return out;
+}
+
+/** Esquina de arriba a la izquierda del fotograma `f` en el atlas, en píxeles. */
+export const cellOf = (f: number): [number, number] => [
+  (f % COLS) * CELL,
+  Math.floor(f / COLS) * TALL,
+];
+
+/** Dónde cae el fotograma `f` en el atlas, en coordenadas de textura (abajo a la izquierda). */
+function uvOf(f: number): [number, number] {
+  const col = f % COLS;
+  const row = Math.floor(f / COLS);
+  // La textura va al revés en vertical (la fila 0 del dibujo, arriba del todo).
+  return [col / COLS, (ROWS - 1 - row) / ROWS];
 }
 
 /** Fotograma y sitio de alguien acostado: la figura encima del mueble, alineada con su dibujo. */
@@ -1021,7 +1112,8 @@ export class Crowd {
         const qx = px + dx;
         const qy = py + dy;
         if (qx < 0 || qx >= CELL || qy < 0 || qy >= TALL) continue;
-        if (alpha(a.img.get(f.frame * CELL + qx, qy))) return true;
+        const [cx, cy] = cellOf(f.frame);
+        if (alpha(a.img.get(cx + qx, cy + qy))) return true;
       }
     return false;
   }
@@ -1189,6 +1281,13 @@ export class Crowd {
     return { x: a.x, floor: a.floor, y: a.y, moving: a.path.length > 0, down: a.pose === 'down' };
   }
 
+  /** Si alguien está delante (más cerca que `z`) de un punto del mundo y lo tapa. */
+  covers(x: number, y: number, z: number): boolean {
+    for (const a of this.actors.values())
+      if (!a.gone && a.lane < z && Math.abs(a.x - x) < 7 && y <= a.y && y >= a.y - 26) return true;
+    return false;
+  }
+
   /** Desaparece de la escena (un bandido que se pierde por el camino). */
   vanish(id: string): void {
     this.remove(id);
@@ -1202,6 +1301,16 @@ export class Crowd {
     this.seatFree(a);
     a.goal = null;
     a.pose = 'stand';
+  }
+
+  /** Los trabajos de taller en marcha, por sala (la escena los da en cada fotograma). */
+  private crafts = new Map<string, { undo: boolean; stalled: boolean }>();
+  /** Golpes que han sonado este fotograma (martillazo en el yunque, temple en la artesa). */
+  hits: { x: number; y: number; z: number; kind: 'martillo' | 'temple' }[] = [];
+
+  setCrafts(list: readonly { room: string; undo: boolean; stalled: boolean }[]): void {
+    this.crafts.clear();
+    for (const c of list) this.crafts.set(c.room, { undo: c.undo, stalled: c.stalled });
   }
 
   /** Los sitios de las salas a los que la gente va a hacer algo (los da la escena al montarse). */
@@ -1279,8 +1388,9 @@ export class Crowd {
       wrap: 0.6,
       dither: 0.03,
       halo: 0.3,
-      frames: FRAMES,
     });
+    // Un fotograma de la rejilla: 1/COLS de ancho y 1/ROWS de alto.
+    mat.uniforms.uUvScale!.value.set(1 / COLS, 1 / ROWS);
     // Delante de lo que esté a su misma profundidad (el taburete, la cama).
     mat.polygonOffset = true;
     mat.polygonOffsetFactor = -1;
@@ -1399,9 +1509,21 @@ export class Crowd {
       if (!tk || Math.abs(a.x - tk.at) > 16) return null;
       const w: Work = WORK[tk.work];
       const cycle = w.steps.reduce((s, x) => s + x[2], 0);
-      let p = (this.now + (hash(h.id) % 89) / 11) % cycle;
+      const tt = this.now + (hash(h.id) % 89) / 11;
+      let p = tt % cycle;
       let pose = 0;
       while (pose < w.steps.length - 1 && p >= w.steps[pose]![2]) p -= w.steps[pose++]![2];
+      // El golpe en el yunque o la pieza en el agua: una vez por vuelta (chispas, vapor y sonido).
+      const turn = Math.floor(tt / cycle);
+      if (pose === 1 && (tk.work === 'martillar' || tk.work === 'templar') && a.hitAt !== turn) {
+        a.hitAt = turn;
+        this.hits.push({
+          x: tk.at,
+          y: floorY(a.floor),
+          z: a.lane,
+          kind: tk.work === 'martillar' ? 'martillo' : 'temple',
+        });
+      }
       return { slot: SLOT[tk.work], pose, dir: tk.face };
     }
     // En el salón, junto a la barra, con el trapo.
@@ -1444,9 +1566,20 @@ export class Crowd {
   private taskTurn(a: Actor): boolean {
     const j = this.S?.jobs.get(a.hero.work!);
     if (!j || !ROUTINE.has(j.room.type) || !this.L) return false;
-    const spots = this.pois.filter(
+    const craft = this.crafts.get(j.room.id);
+    if (WORKSHOP.has(j.room.type) && !craft) {
+      a.task = null;
+      a.wait = 4 + this.rnd() * 4;
+      return true;
+    }
+    const here = this.pois.filter(
       (p) =>
         !LEISURE.has(p.kind) && p.floor === j.room.floor && p.x >= j.x0 - 24 && p.x <= j.x1 + 24,
+    );
+    // Desmontando, al banco (en la pequeña, que no tiene, al yunque); creando, a todo lo demás.
+    const undoAt = here.some((p) => p.kind === 'banco') ? 'banco' : 'yunque';
+    const spots = here.filter(
+      (p) => !WORKSHOP.has(j.room.type) || (craft!.undo ? p.kind === undoAt : p.kind !== 'banco'),
     );
     if (!spots.length) return false;
     // Un rato quieto entre tarea y tarea: se seca la frente, mira alrededor.
@@ -1463,9 +1596,10 @@ export class Crowd {
     const p = pool[Math.floor(this.rnd() * pool.length)]!;
     const works = TASKS[p.kind as TaskPoi];
     const work = works[Math.floor(this.rnd() * works.length)]!;
-    // A un lado del mueble, mirándolo.
+    // A un lado del mueble, mirándolo (al yunque, de costado, para que se vea el golpe).
     const side = this.rnd() < 0.5 ? -1 : 1;
-    const x = p.x + side * Math.min(p.half * 0.45, 9) + (this.rnd() - 0.5) * 2;
+    const off = p.kind === 'yunque' ? p.half + 3 : Math.min(p.half * 0.45, 9);
+    const x = p.x + side * off + (this.rnd() - 0.5) * 2;
     const place = { x, floor: p.floor };
     if (!route(this.L, { x: a.x, floor: a.floor }, place, this.segs)) return false;
     this.go(a, { place, pose: 'stand', stand: p.z !== undefined ? p.z - 10 : undefined });
@@ -1991,7 +2125,7 @@ export class Crowd {
     u.uOrigin!.value.copy(origin);
     u.uAxisU!.value.set(w, 0, 0);
     u.uAxisV!.value.set(0, h, 0);
-    u.uUvOffset!.value.set(f.frame / FRAMES, 0);
+    u.uUvOffset!.value.set(...uvOf(f.frame));
     const look = this.tint(a.x, a.floor);
     u.uAmbient!.value.set(...look.ambient);
     u.uSun!.value = look.sun;
