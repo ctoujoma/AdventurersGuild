@@ -442,66 +442,113 @@ export function edgeArt(e: GardenEdgeId, w: number): PixelBuffer {
 
 /** Lo que sale el claustro de cada fachada hacia el jardín. */
 export const CLOISTER_W = 24;
+/** Radio de las columnas (son cilindros de verdad, ver `RoomScene.cloister`). */
+export const COL_R = 3;
+/** Del forjado de arriba a donde arrancan los arcos. */
+export const SPRING = 18;
+/** Alto del antepecho de las galerías de arriba. */
+export const PARAPET = 12;
 
-/** Piedra clara de las columnas y los arcos. */
-const ASHLAR = [STONE[2]!, STONE[3]!, STONE[4]!, STONE[5]!] as const;
+/** Piedra caliza clara de columnas y arcos: [sombra, oscura, media, clara, luz]. */
+export const LIME = [P.slate, P.steel, P.fog, P.mist, P.white] as const;
 
 /**
- * El frente de una planta del claustro (`w` × `h`, la planta con su forjado arriba): el arco
- * entre la fachada (a la izquierda) y la columna (a la derecha), con el antepecho de balaustres
- * en las plantas altas (`up`).
+ * El frente de una planta del claustro (`w` × `h`: la planta entera, con su forjado arriba), lo
+ * que no es columna: la viga, la enjuta de sillares con el arco de medio punto (dovelas y clave)
+ * entre la pilastra pegada a la fachada (a la izquierda) y la columna (a la derecha), y el
+ * antepecho de balaustres en las plantas altas (`up`). Lo demás, transparente.
  */
 export function cloisterEnd(w: number, h: number, up: boolean, slab: number): PixelBuffer {
   const b = new PixelBuffer(w, h);
-  const COL = 5;
-  const spring = slab + 16;
-  const r = (w - COL) / 2;
-  const cx = r - 0.5;
-  // La enjuta de sillares sobre el arco y la viga del forjado.
-  stoneWall(b, 0, slab, w, spring - slab, 'enjuta', { ramp: STONE, bw: 6, bh: 4 });
-  beamBand(b, 0, 0, w, slab);
-  // El hueco del arco: medio punto y, debajo, abierto hasta el suelo (o hasta el antepecho).
-  const bottom = up ? h - 12 : h;
-  for (let y = slab; y < bottom; y++)
-    for (let x = 0; x < w - COL; x++) {
-      const dy = spring - y;
-      if (dy <= 0 || Math.hypot(x - cx, dy) <= r) b.clear(x, y);
-    }
-  // Las dovelas: el canto del arco, más claro.
-  for (let a = 0; a <= Math.PI; a += 0.08) {
-    const x = Math.round(cx + Math.cos(a) * (r + 0.6));
-    const y = Math.round(spring - Math.sin(a) * (r + 0.6));
-    if (x >= 0 && x < w) b.set(x, y, ASHLAR[3]);
-  }
-  // La columna con su capitel y su basa.
-  column(b, w - COL, spring, COL, bottom - spring);
-  if (up) balustrade(b, 0, h - 12, w - COL, 12);
+  const PIL = 3;
+  const spring = slab + SPRING;
+  const colX = w - COL_R - 1;
+  const r = (colX - PIL) / 2;
+  arcade(b, [PIL - 0.5, colX], spring, r, r, slab);
+  // La pilastra: media columna pegada a la fachada.
+  b.rect(0, spring - 1, PIL, h - spring + 1, LIME[2]);
+  b.vline(0, spring, h - spring, LIME[3]);
+  b.vline(PIL - 1, spring, h - spring, LIME[1]);
+  b.rect(0, spring - 3, PIL + 1, 2, LIME[3]);
+  if (up) balustrade(b, PIL, h - PARAPET, w - PIL);
   return b;
 }
 
 /**
  * El costado de una planta del claustro, visto desde el jardín (fondo × alto, el fondo a media
- * resolución; x = 0 junto al corte): arcos entre columnas a lo hondo.
+ * resolución; x = 0 junto al corte): la viga, las enjutas y los arcos entre las columnas, que
+ * están en `cols` (a lo hondo, en columnas de la textura). Abajo, transparente (las columnas
+ * van aparte) salvo el antepecho de las galerías de arriba.
  */
-export function cloisterSide(d: number, h: number, up: boolean, slab: number): PixelBuffer {
+export function cloisterSide(
+  d: number,
+  h: number,
+  up: boolean,
+  slab: number,
+  cols: number[],
+): PixelBuffer {
   const b = new PixelBuffer(d, h);
-  const BAY = 10;
-  const COL = 2;
-  const spring = slab + 14;
-  beamBand(b, 0, 0, d, slab);
-  stoneWall(b, 0, slab, d, spring - slab, 'enjuta costado', { ramp: STONE, bw: 5, bh: 4 });
-  const bottom = up ? h - 12 : h;
-  for (let x0 = 0; x0 < d; x0 += BAY) {
-    const r = (BAY - COL) / 2;
-    const cx = x0 + COL + r - 0.5;
-    for (let y = slab; y < bottom; y++)
-      for (let x = x0 + COL; x < Math.min(d, x0 + BAY); x++) {
-        const dy = spring - y;
-        if (dy <= 0 || Math.hypot(x - cx, dy * 1.4) <= r) b.clear(x, y);
+  const spring = slab + SPRING;
+  // Los arcos van de columna a columna; a lo hondo, la textura va a media resolución (el arco,
+  // de medio punto en el mundo, aquí es una elipse el doble de alta que ancha).
+  const ru = ((cols[1] ?? d) - (cols[0] ?? 0)) / 2;
+  arcade(b, cols, spring, ru, ru * 2, slab);
+  if (up) balustrade(b, 0, h - PARAPET, d);
+  return b;
+}
+
+/**
+ * La viga del forjado, la enjuta de sillares y los arcos entre los apoyos `at` (en x), que
+ * arrancan en `spring` con radios `rx` (a lo ancho) y `ry` (a lo alto).
+ */
+function arcade(
+  b: PixelBuffer,
+  at: number[],
+  spring: number,
+  rx: number,
+  ry: number,
+  slab: number,
+) {
+  const w = b.w;
+  stoneWall(b, 0, slab, w, spring - slab, `enjuta${w}`, { ramp: [...LIME], bw: 6, bh: 4 });
+  beam(b, 0, 0, w, slab);
+  // La sombra de la viga sobre la piedra.
+  b.hline(0, slab, w, LIME[0]);
+  for (let k = 0; k + 1 < at.length; k++) {
+    const cx = (at[k]! + at[k + 1]!) / 2;
+    const RING = Math.max(2, Math.round(rx * 0.35));
+    for (let y = slab + 1; y < spring + 1; y++)
+      for (let x = Math.floor(cx - rx - RING); x <= Math.ceil(cx + rx + RING); x++) {
+        if (x < 0 || x >= w) continue;
+        const dx = (x + 0.5 - cx) / rx;
+        const dy = (spring - y + 0.5) / ry;
+        const t = Math.hypot(dx, dy);
+        if (t <= 1) b.clear(x, y);
+        else if (t <= 1 + RING / rx) {
+          // Las dovelas: cada una de su tono, la clave arriba más clara; el canto de dentro, en
+          // sombra (el intradós).
+          const a = Math.atan2(dy, dx);
+          const seg = Math.floor((a / Math.PI) * 7);
+          const key = Math.abs(a - Math.PI / 2) < 0.2;
+          const inner = t < 1 + 0.9 / rx;
+          b.set(x, y, inner ? LIME[1] : key ? LIME[4] : seg % 2 ? LIME[3] : LIME[2]);
+        } else if (t <= 1 + (RING + 1) / rx) b.set(x, y, LIME[1]);
       }
-    column(b, x0, spring, COL, bottom - spring);
   }
-  if (up) balustrade(b, 0, h - 12, d, 12);
+  // Bajo el arranque, abierto (las columnas son de verdad).
+  for (let y = spring + 1; y < b.h; y++) for (let x = 0; x < w; x++) b.clear(x, y);
+  // La imposta, una moldura sobre cada apoyo.
+  for (const x of at) b.rect(Math.round(x) - 2, spring - 1, 5, 2, LIME[3]);
+}
+
+/** El techo de los soportales: tablas con vigas a lo hondo (ancho × fondo a media resolución). */
+export function cloisterCeiling(w: number, d: number): PixelBuffer {
+  const b = new PixelBuffer(w, d);
+  for (let y = 0; y < d; y++)
+    for (let x = 0; x < w; x++) {
+      const joist = y % 5 === 0;
+      b.set(x, y, joist ? W[1]! : x % 4 === 0 ? W[1]! : W[2]!);
+    }
   return b;
 }
 
@@ -514,31 +561,104 @@ export function galleryFloor(w: number, d: number): PixelBuffer {
   return b;
 }
 
-/** La viga del forjado de cada planta, con sus cabezas de vigueta. */
-function beamBand(b: PixelBuffer, x: number, y: number, w: number, h: number) {
+/**
+ * El testero del tejadillo, delante (`w` × `h`): el canto de las tejas por la vertiente, de la
+ * fachada (arriba a la izquierda) al alero (abajo a la derecha), la tabla del alero y, debajo, la
+ * sombra; lo de encima de la vertiente, transparente.
+ */
+export function eaveEnd(w: number, h: number, tile: string, dark: string): PixelBuffer {
+  const b = new PixelBuffer(w, h);
+  for (let x = 0; x < w; x++) {
+    const y0 = Math.round(((h - 4) * x) / Math.max(1, w - 1));
+    b.set(x, y0, tile);
+    b.set(x, y0 + 1, dark);
+    for (let y = y0 + 2; y < Math.min(h, y0 + 4); y++) b.set(x, y, W[2]!);
+  }
+  b.rect(w - 3, h - 4, 3, 4, W[3]!);
+  return b;
+}
+
+function beam(b: PixelBuffer, x: number, y: number, w: number, h: number) {
   b.rect(x, y, w, h, W[2]!);
   b.hline(x, y, w, W[1]!);
   b.hline(x, y + 1, w, W[4]!);
-  b.hline(x, y + h - 1, w, W[1]!);
-  for (let i = x + 2; i < x + w - 2; i += 7) b.rect(i, y + 4, 3, h - 7, W[3]!);
-}
-
-function column(b: PixelBuffer, x: number, y: number, w: number, h: number) {
-  b.rect(x, y, w, h, ASHLAR[1]);
-  b.vline(x, y, h, ASHLAR[2]);
-  if (w > 2) b.vline(x + w - 1, y, h, ASHLAR[0]);
-  // Capitel y basa, algo más anchos.
-  b.rect(x - (w > 2 ? 1 : 0), y - 2, w + (w > 2 ? 2 : 0), 2, ASHLAR[3]);
-  b.rect(x - (w > 2 ? 1 : 0), y + h - 2, w + (w > 2 ? 2 : 0), 2, ASHLAR[2]);
-}
-
-/** El antepecho de una galería de arriba: pasamanos, balaustres y zócalo. */
-function balustrade(b: PixelBuffer, x: number, y: number, w: number, h: number) {
-  b.rect(x, y, w, 2, ASHLAR[3]);
-  b.rect(x, y + h - 3, w, 3, ASHLAR[1]);
-  b.hline(x, y + h - 3, w, ASHLAR[2]);
-  for (let i = x + 1; i < x + w - 1; i += 3) {
-    b.vline(i, y + 2, h - 5, ASHLAR[2]);
-    b.set(i, y + 5, ASHLAR[3]);
+  b.hline(x, y + h - 2, w, W[1]!);
+  b.hline(x, y + h - 1, w, P.black);
+  // Las cabezas de las viguetas.
+  for (let i = x + 2; i < x + w - 2; i += 6) {
+    b.rect(i, y + 4, 3, h - 8, W[3]!);
+    b.hline(i, y + 4, 3, W[4]!);
   }
+}
+
+/** El antepecho de una galería de arriba: pasamanos, balaustres torneados y zócalo. */
+function balustrade(b: PixelBuffer, x: number, y: number, w: number) {
+  const h = PARAPET;
+  b.rect(x, y, w, 2, LIME[3]);
+  b.hline(x, y, w, LIME[4]);
+  b.hline(x, y + 2, w, LIME[0]);
+  b.rect(x, y + h - 3, w, 3, LIME[2]);
+  b.hline(x, y + h - 3, w, LIME[3]);
+  b.hline(x, y + h - 1, w, LIME[1]);
+  for (let i = x + 1; i < x + w - 1; i += 4) {
+    // Cuello, panza y cuello: el balaustre torneado.
+    for (let j = y + 3; j < y + h - 3; j++) {
+      const u = (j - (y + 3)) / (h - 6);
+      const fat = u > 0.3 && u < 0.75;
+      b.set(i, j, LIME[2]);
+      if (fat) {
+        b.set(i - 1, j, LIME[3]);
+        b.set(i + 1, j, LIME[1]);
+      }
+    }
+  }
+}
+
+// ---------- Setos ----------
+
+/**
+ * La cara de un seto recortado (`w` × `h`), como el de delante: en tramos de `seg` con su hueco
+ * y las esquinas redondeadas, el lomo a la luz, las hojas más oscuras hacia abajo y la sombra al
+ * pie.
+ */
+export function hedgeFace(w: number, h: number, seed: string, seg = 46): PixelBuffer {
+  const b = new PixelBuffer(w, h);
+  const rng = new Rng(`cara de seto ${seed}`);
+  for (let x = 0; x < w; x++) {
+    const u = x % seg;
+    if (u >= seg - 2) continue;
+    const corner = u === 0 || u === seg - 3 ? 2 : u === 1 || u === seg - 4 ? 1 : 0;
+    const top = corner + (rng.chance(0.12) ? -1 : 0);
+    for (let y = Math.max(0, top); y < h; y++) {
+      const n = rng.next();
+      const v = y / h;
+      let c: string =
+        y <= top ? (n < 0.5 ? P.lime : P.leaf) : v < 0.25 ? P.leaf : v < 0.8 ? P.forest : P.deep;
+      if (n < 0.1 && y > top + 1) c = P.deep;
+      else if (n > 0.93 && v < 0.6) c = P.leaf;
+      b.set(x, y, c);
+    }
+    // La sombra de la base y el borde de cada tramo, más oscuro.
+    b.set(x, h - 1, P.black);
+    if (u === 0 || u === seg - 3) for (let y = top + 2; y < h - 1; y++) b.set(x, y, P.deep);
+  }
+  return b;
+}
+
+/**
+ * Una cara de seto recortado (`w` × `h`): hojas apretadas, más claras arriba y con algún hueco
+ * oscuro; con `top`, la copa vista desde arriba (más luz).
+ */
+export function leafTex(w: number, h: number, seed: string, top = false): PixelBuffer {
+  const b = new PixelBuffer(w, h);
+  const rng = new Rng(`seto-${seed}`);
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      const n = rng.next();
+      const up = top ? 1 : 1 - y / Math.max(1, h);
+      const c =
+        n < 0.12 ? P.deep : n < 0.5 - up * 0.25 ? P.forest : n > 0.94 && up > 0.5 ? P.lime : P.leaf;
+      b.set(x, y, c);
+    }
+  return b;
 }
