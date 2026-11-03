@@ -173,6 +173,12 @@ npm run build`.
          verdad (`pillar`: cilindros de 10 caras con luz, capitel y basa con `block`), arcos con
          dovelas, clave e intradós en sombra y con grosor (dos caras), pilastra en la fachada,
          techo de vigas, balaustres torneados, y el tejadillo con su tabla de alero y testero.
+   - [x] 5d. El tejado del claustro (el usuario: «que quede bien con el resto»): es el faldón del
+         edificio que da al jardín, que sigue con su pendiente y sus tejas hasta pasar los arcos,
+         con el mismo canto de tejas delante que el hastial (`eaveFront`); lo de la planta de
+         arriba que quedaría por encima se recorta por la línea del tejado. La viga del forjado
+         es la del corte (con el alma oscura solo entre plantas) y el techo, el de las salas
+         (`ceilingTex`).
    - [x] 5c. Con borde de seto, setos también al fondo del césped y a los lados donde ya no hay
          edificios (`backHedges`, con cara, lomo y testeros; `hedgeFace` como el de delante).
    - [ ] 6. Que no se cuelen árboles ni arbustos en el jardín ni en el anexo.

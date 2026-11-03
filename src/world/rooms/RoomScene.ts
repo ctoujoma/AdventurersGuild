@@ -28,7 +28,7 @@ import {
   WebGLRenderer,
   type ShaderMaterial,
 } from 'three';
-import { P, R, darker } from '../../art/palette';
+import { P, darker } from '../../art/palette';
 import { PixelBuffer, bayer, rgba, toHex } from '../../art/pixel';
 import type { Building, RaidResult, Room, RoomYield } from '../../core/model';
 import { ROOMS } from '../../data/rooms';
@@ -52,7 +52,6 @@ import { CANDLE, takeWallActs, type ActId, type PoiKind, type Round } from './sa
 import { FLIGHT_Z, flightArt, goesRight } from './stairs';
 import { dress } from './salas/tintes';
 import { Crowd, type Hit, type Poi, type Talk } from './crowd';
-import { roofAt } from './fachada';
 import {
   CLOISTER_W,
   COL_R,
@@ -63,10 +62,9 @@ import {
   LAMP_Z,
   PIECE_Z,
   VERGE_Z,
-  cloisterCeiling,
   cloisterEnd,
   cloisterSide,
-  eaveEnd,
+  eaveFront,
   hedgeFace,
   leafTex,
   edgeArt,
@@ -2083,13 +2081,37 @@ export class RoomScene {
             : [at(x, yb, D), at(x, yb, 0), at(x, yt, 0), at(x, yt, D)],
           o,
         );
+      // El tejado: el faldón del edificio que da al jardín sigue, con la misma pendiente y las
+      // mismas tejas, hasta pasar los arcos; delante, el mismo canto de tejas que el hastial. Si
+      // ese faldón no está a la altura del claustro (no debería pasar), un tejadillo propio.
+      const roof = model.look?.roof;
+      const base = floorTop(top) - SLAB;
+      const run = roofRuns(L).find(
+        (r) => r.base === base && Math.abs((s === 1 ? r.x1 - 6 : r.x0 + 6) - xw) < 1.5,
+      );
+      const xr = run ? (s === 1 ? run.x1 : run.x0) : xw;
+      const yr = run ? base + 2 : base - 9;
+      const slope = run ? (run.h + 2) / ((run.x1 - run.x0) / 2) : 11 / (CLOISTER_W + 5);
+      const xe = xa + s * 5;
+      const ye = yr + slope * Math.abs(xe - xr);
+      const d = D + 6;
+      // La línea del tejado en cada x (lo de la planta de arriba que quede por encima, fuera).
+      const roofY = (x: number) => yr + slope * s * (x - xr);
+      const underRoof = (img: PixelBuffer, xAt: (i: number) => number, yt: number) => {
+        for (let i = 0; i < img.w; i++) {
+          const cut = Math.ceil(roofY(xAt(i)) - yt);
+          for (let j = 0; j < Math.min(img.h, cut); j++) img.clear(i, j);
+        }
+        return img;
+      };
       for (let f = 0; f <= top; f++) {
         const yt = floorTop(f) - SLAB;
         const yb = floorY(f);
         const up = f > 0;
         const spring = yt + SLAB + SPRING;
         // Delante, el arco: la cara de fuera a la luz y la de dentro, más honda, en sombra.
-        const end = flip(cloisterEnd(CLOISTER_W, PITCH, up, SLAB));
+        let end = flip(cloisterEnd(CLOISTER_W, PITCH, up, SLAB, f < top));
+        if (f === top) end = underRoof(end, (i) => x0 + i + 0.5, yt);
         this.plane(g, end, [at(x0, yb, 0), at(x1, yb, 0), at(x1, yt, 0), at(x0, yt, 0)], lit);
         this.plane(g, end, [at(x0, yb, T), at(x1, yb, T), at(x1, yt, T), at(x0, yt, T)], deep);
         // De lado, igual: fuera, a la luz; dentro (hacia la fachada), en sombra.
@@ -2099,9 +2121,12 @@ export class RoomScene {
           up,
           SLAB,
           zs.map((z) => z / 2),
+          f < top,
         );
-        sideAt(side, xa, yb, yt, shade);
-        sideAt(side, xa - s * T, yb, yt, deep);
+        const cropAt = (x: number) =>
+          f === top ? underRoof(side.crop(0, 0, side.w, side.h), () => x, yt) : side;
+        sideAt(cropAt(xa), xa, yb, yt, shade);
+        sideAt(cropAt(xa - s * T), xa - s * T, yb, yt, deep);
         // Las columnas, con su basa y su capitel.
         for (const z of zs) {
           const base = up ? yb - PARAPET + 2 : yb;
@@ -2129,7 +2154,7 @@ export class RoomScene {
         const ceil = yt + SLAB;
         this.plane(
           g,
-          cloisterCeiling(CLOISTER_W, D / 2),
+          ceilingTex(themeOf(f), CLOISTER_W, `claustro${xw}${f}`),
           [at(x0, ceil, D), at(x1, ceil, D), at(x1, ceil, 0), at(x0, ceil, 0)],
           deep,
         );
@@ -2141,37 +2166,25 @@ export class RoomScene {
             shade,
           );
       }
-      // El tejadillo: de la fachada (arriba) a fuera del arco (abajo), con las tejas del edificio,
-      // su tabla de alero a lo largo y el testero delante.
-      const roof = model.look?.roof;
-      const ridge = floorTop(top) - SLAB - 9;
-      const eave = floorTop(top) - SLAB + 2;
-      const xe = xa + s * 5;
-      const len = Math.round(Math.hypot(xe - xw, eave - ridge));
       this.plane(
         g,
-        roofTiles(len, `tejadillo${xw}`, roof),
+        roofTiles(Math.round(Math.hypot(xe - xr, ye - yr)), `claustro${xw}`, roof),
         s === 1
-          ? [at(xe, eave, D + 2), at(xe, eave, -2), at(xw, ridge, -2), at(xw, ridge, D + 2)]
-          : [at(xe, eave, -2), at(xe, eave, D + 2), at(xw, ridge, D + 2), at(xw, ridge, -2)],
+          ? [at(xe, ye, 0), at(xe, ye, d), at(xr, yr, d), at(xr, yr, 0)]
+          : [at(xe, ye, d), at(xe, ye, 0), at(xr, yr, 0), at(xr, yr, d)],
         lit,
       );
-      const fascia = new PixelBuffer(D / 2 + 2, 3);
-      fascia.rect(0, 0, fascia.w, 3, R.wood[3]!);
-      fascia.hline(0, 2, fascia.w, R.wood[1]!);
-      sideAt(fascia, xe, eave + 3, eave, lit);
-      const ew = Math.round(Math.abs(xe - xw));
-      const eh = Math.round(eave - ridge) + 4;
-      const tip = roofAt(roof, 0, 0, 3);
-      const endImg = flip(eaveEnd(ew, eh, tip, R.wood[1]!));
+      const ew = Math.round(Math.abs(xe - xr));
+      const band = eaveFront(ew, ye - yr, roof);
+      const [ex0, ex1] = s === 1 ? [xr, xe] : [xe, xr];
       this.plane(
         g,
-        endImg,
+        flip(band),
         [
-          at(Math.min(xw, xe), ridge + eh, -2),
-          at(Math.max(xw, xe), ridge + eh, -2),
-          at(Math.max(xw, xe), ridge, -2),
-          at(Math.min(xw, xe), ridge, -2),
+          at(ex0, yr - 1 + band.h, -0.3),
+          at(ex1, yr - 1 + band.h, -0.3),
+          at(ex1, yr - 1, -0.3),
+          at(ex0, yr - 1, -0.3),
         ],
         lit,
       );
