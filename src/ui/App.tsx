@@ -306,6 +306,13 @@ export function App() {
 
   const toast = (text: string) => setNotice({ text, key: Date.now() });
 
+  /** El panel abierto va a un lado y no ocupa todo el ancho de la escena. */
+  const sidePanel = () => {
+    const stage = document.querySelector('.stage')?.getBoundingClientRect();
+    const panel = document.querySelector('.panel')?.getBoundingClientRect();
+    return !!stage && !!panel && panel.width < stage.width * 0.7;
+  };
+
   /** La parte de la escena (de 0 a 1, desde arriba) que no tapa el panel abierto. */
   const uncovered = () => {
     const stage = document.querySelector('.stage')?.getBoundingClientRect();
@@ -1360,7 +1367,11 @@ export function App() {
                 setGardenView(on);
                 return on
                   ? // Tras la entrada del panel, que se mide ya en su sitio.
-                    setTimeout(() => scene.current?.focusTop('jardin', uncovered()), 350)
+                    setTimeout(() => {
+                      // Con el panel a un lado (pantalla horizontal) no tapa nada: se enfoca sin más.
+                      if (sidePanel()) scene.current?.focus('jardin');
+                      else scene.current?.focusTop('jardin', uncovered());
+                    }, 350)
                   : scene.current?.releaseTop();
               }}
               onFacade={(id) => {
