@@ -95,7 +95,9 @@ npm run build`.
     distancias distintas y riostras variadas; sillería en hiladas de alto distinto); en corte
     (el grueso alrededor de cada sala), `wallSection` enseña lo de dentro del muro (forros y
     travesaños por la testa; revoco, barro con zarzo y carreras; dos hojas de sillar con
-    mampuesto; los sótanos, igual en piedra oscura);
+    mampuesto; los sótanos, igual en piedra oscura). El corte ocupa todo el grueso, de fuera de
+    la sala hasta su hueco (`WALL + PARTITION / 2`): antes, por dentro asomaba el dibujo de
+    frente (el usuario);
   - iconos (`ui/icons.tsx`): las piezas del jardín y el claustro en Obras, los suelos y bordes
     (antes, colores planos), el farol, las pestañas de Adornos (con cinco, el icono va encima de
     la palabra para que quepa) y del Arcón, y los rótulos; tejados y paredes con una muestra de

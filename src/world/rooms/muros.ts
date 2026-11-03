@@ -329,7 +329,7 @@ function endGrain(b: PixelBuffer, x: number, y: number, w: number, h: number) {
 
 /** Tablas en corte: forro de fuera, cámara oscura con los travesaños por la testa y forro de dentro. */
 function boardSection(b: PixelBuffer, y: number, w: number, h: number, col: (i: number) => number) {
-  const skin = 2;
+  const skin = Math.max(2, Math.round(w / 6));
   for (let yy = y; yy < y + h; yy++)
     for (let i = 0; i < w; i++) {
       const xx = col(i);
@@ -361,8 +361,9 @@ function daubSection(
   for (let yy = y; yy < y + h; yy++)
     for (let i = 0; i < w; i++) {
       const xx = col(i);
+      // El revoco: más grueso por fuera que por dentro.
       if (i === 0 || i === w - 1) b.set(xx, yy, P.sand);
-      else if (i === 1 || i === w - 2) b.set(xx, yy, P.skinS);
+      else if (i === 1 || i === w - 2 || (w > 10 && i === 2)) b.set(xx, yy, P.skinS);
       else {
         // El barro con paja.
         const n = hash(xx, yy, 6);
@@ -371,7 +372,7 @@ function daubSection(
     }
   // El zarzo: las varas, cortadas, en zigzag de un lado al otro.
   for (let k = 0, yy = y + 3; yy < y + h - 2; k++, yy += 5) {
-    const i = 2 + (k % 2 ? w - 6 : 0) + (k % 4 === 1 ? 1 : 0);
+    const i = 3 + (k % 2 ? w - 8 : 0) + (k % 4 === 1 ? 1 : 0);
     const xx = Math.min(col(i), col(i + 1));
     b.rect(xx, yy, 2, 2, P.bark);
     b.set(xx, yy, P.oak);
@@ -410,7 +411,7 @@ function rubbleSection(
   // Las hojas de sillar, por hiladas de 7: una más honda y otra menos.
   for (const side of [0, 1])
     for (let k = 0, yy = y; yy < y + h; k++, yy += 7) {
-      const deep = (k + side) % 2 ? 3 : 2;
+      const deep = Math.round(w * ((k + side) % 2 ? 0.36 : 0.22));
       const yh = Math.min(6, y + h - yy - 1);
       if (yh <= 0) continue;
       for (let i = 0; i < deep; i++) {

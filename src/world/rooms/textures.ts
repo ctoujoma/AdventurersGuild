@@ -483,10 +483,12 @@ export function facade(L: RoomsLayout, look: FacadeLook = {}, crest?: Crest): Fa
     const w = rect.w + 2 * WALL;
     const h = rect.h + 2 * SLAB;
     copyRect(buf, floor >= 0 ? wood : stone, x, y, w, h);
-    // El grueso del muro a los dos lados, en corte (lo de dentro del muro, no su cara).
+    // El grueso del muro a los dos lados, en corte (lo de dentro del muro, no su cara): de fuera
+    // de la sala hasta donde empieza su hueco (`interior`), WALL + PARTITION / 2.
     const kind = floor >= 0 ? (look.walls ?? 'tablas') : 'sotano';
-    wallSection(buf, x, y + SLAB, WALL, h - 2 * SLAB, true, kind);
-    wallSection(buf, x + w - WALL, y + SLAB, WALL, h - 2 * SLAB, false, kind);
+    const thick = WALL + PARTITION / 2;
+    wallSection(buf, x, y + SLAB, thick, h - 2 * SLAB, true, kind);
+    wallSection(buf, x + w - thick, y + SLAB, thick, h - 2 * SLAB, false, kind);
     if (floor >= 0) {
       beam(buf, x, y, w, SLAB, WOOD_DARK);
       beam(buf, x, y + h - SLAB, w, SLAB, WOOD_DARK);
