@@ -127,3 +127,16 @@ describe('por qué no hay sitio', () => {
     expect(whyNoSpot(s, locked)).toBeTruthy();
   });
 });
+
+describe('huecos libres sin sala', () => {
+  it('se marcan al comprar un solar y al derribar una sala, sin tacharlos', () => {
+    let s = open();
+    const free = () => targetsFor(s, { kind: 'expand' }).filter((t) => t.info);
+    const before = free().length;
+    s = reduce(s, { type: 'buyPlot' });
+    expect(free().length).toBe(before + 1);
+    const gone = s.building.rooms.find((x) => x.type === 'cocina')!;
+    s = reduce(s, { type: 'demolish', id: gone.id });
+    expect(free().length).toBeGreaterThan(before + 1);
+  });
+});
