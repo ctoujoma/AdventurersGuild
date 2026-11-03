@@ -154,8 +154,33 @@ npm run build`.
          usuario): acaba en `LAWN_D` con un borde sin segar (al fondo, y a los lados donde ya no
          hay edificios) y de ahí a los árboles, el terreno con sus matas.
          Ojo: en las texturas del suelo, la fila 0 es la del fondo.
-   - [ ] 4. Las piezas de `GardenLook`.
-   - [ ] 5. El claustro.
+   - [x] 4. Las piezas de `GardenLook` (`rooms/jardin.ts`, puestas por `gardenArt` en
+         `RoomScene.ts`): suelo de grava o losas (`paintGround`, sin llegar al borde sin segar)
+         con un lecho bajo cada pieza; fuente, pozo, árbol, estatua, banco, huerto (bancales con
+         hileras de coles, lechugas, zanahorias y judías) y macizo de flores, a `PIECE_Z`
+         (detrás de la gente); borde de delante bajo (seto, flores, verja) para no taparla;
+         faroles entre trozo y trozo con su halo. `model.garden` entra en la clave de
+         reconstruir la escena (antes, cambiar el jardín no se veía hasta otro cambio).
+   - [x] 4b. El borde de delante (el usuario: «parece una cinta que tapa el camino»): el camino
+         va más delante (por donde pisa la gente), el canto del césped tiene un fleco de
+         briznas (`verge`) y el seto va en tramos y con cuerpo (`box`, se le ve el lomo).
+   - [x] 5. El claustro (`cloister` en `RoomScene.ts`; `cloisterEnd`, `cloisterSide` en
+         `jardin.ts`): soportales de piedra de `CLOISTER_W` pegados a cada fachada del jardín, a
+         todo el fondo, con tantas plantas como tenga ese edificio junto al jardín (las de
+         arriba, galerías con suelo de tablas y antepecho de balaustres) y un tejadillo con las
+         tejas del edificio. Debajo, losas; el borde de delante va entre arco y arco.
+   - [x] 5b. Pasada de calidad del claustro (el usuario: «podría mejorar mucho»): columnas de
+         verdad (`pillar`: cilindros de 10 caras con luz, capitel y basa con `block`), arcos con
+         dovelas, clave e intradós en sombra y con grosor (dos caras), pilastra en la fachada,
+         techo de vigas, balaustres torneados, y el tejadillo con su tabla de alero y testero.
+   - [x] 5d. El tejado del claustro (el usuario: «que quede bien con el resto»): es el faldón del
+         edificio que da al jardín, que sigue con su pendiente y sus tejas hasta pasar los arcos,
+         con el mismo canto de tejas delante que el hastial (`eaveFront`); lo de la planta de
+         arriba que quedaría por encima se recorta por la línea del tejado. La viga del forjado
+         es la del corte (con el alma oscura solo entre plantas) y el techo, el de las salas
+         (`ceilingTex`).
+   - [x] 5c. Con borde de seto, setos también al fondo del césped y a los lados donde ya no hay
+         edificios (`backHedges`, con cara, lomo y testeros; `hedgeFace` como el de delante).
    - [ ] 6. Que no se cuelen árboles ni arbustos en el jardín ni en el anexo.
    - [ ] Visto bueno del usuario.
 
