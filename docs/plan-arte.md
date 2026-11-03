@@ -154,7 +154,13 @@ npm run build`.
          usuario): acaba en `LAWN_D` con un borde sin segar (al fondo, y a los lados donde ya no
          hay edificios) y de ahí a los árboles, el terreno con sus matas.
          Ojo: en las texturas del suelo, la fila 0 es la del fondo.
-   - [ ] 4. Las piezas de `GardenLook`.
+   - [x] 4. Las piezas de `GardenLook` (`rooms/jardin.ts`, puestas por `gardenArt` en
+         `RoomScene.ts`): suelo de grava o losas (`paintGround`, sin llegar al borde sin segar)
+         con un lecho bajo cada pieza; fuente, pozo, árbol, estatua, banco, huerto (bancales con
+         hileras de coles, lechugas, zanahorias y judías) y macizo de flores, a `PIECE_Z`
+         (detrás de la gente); borde de delante bajo (seto, flores, verja) para no taparla;
+         faroles entre trozo y trozo con su halo. `model.garden` entra en la clave de
+         reconstruir la escena (antes, cambiar el jardín no se veía hasta otro cambio).
    - [ ] 5. El claustro.
    - [ ] 6. Que no se cuelen árboles ni arbustos en el jardín ni en el anexo.
    - [ ] Visto bueno del usuario.

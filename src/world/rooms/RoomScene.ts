@@ -52,6 +52,7 @@ import { CANDLE, takeWallActs, type ActId, type PoiKind, type Round } from './sa
 import { FLIGHT_Z, flightArt, goesRight } from './stairs';
 import { dress } from './salas/tintes';
 import { Crowd, type Hit, type Poi, type Talk } from './crowd';
+import { EDGE_Z, LAMP_Z, PIECE_Z, edgeArt, paintGround, pieceArt } from './jardin';
 import { Pets, kindOf, type Perch, type PetId } from './pets';
 import { IncidentArt } from './incidents';
 import { FLAME_FRAMES, FLAME_H, FLAME_W, flameStrip } from './flame';
@@ -72,6 +73,7 @@ import {
   WALL,
   YARD_D,
   colX,
+  gardenSlots,
   floorTop,
   floorY,
   focusPoint,
@@ -556,6 +558,7 @@ export class RoomScene {
       model.crest,
       model.facade,
       model.look,
+      model.garden,
       model.decor,
       model.tints,
       model.trophies,
@@ -1437,9 +1440,20 @@ export class RoomScene {
     if (garden) {
       const gx0 = garden.x;
       const gx1 = garden.x + garden.w;
+      // El suelo elegido y el lecho de cada pieza (ver `jardin.ts`).
+      const lawn = lawnTex(Math.round(gx1 - gx0), LAWN_D / 2, 'jardin', 16, 42, back);
+      const gl = model.garden ?? {};
+      paintGround(
+        lawn,
+        gl.ground ?? 'hierba',
+        gl.slots ?? [],
+        gardenSlots(b).map((r) => r.x + r.w / 2 - gx0),
+        back,
+        LAWN_D,
+      );
       this.plane(
         g,
-        lawnTex(Math.round(gx1 - gx0), LAWN_D / 2, 'jardin', 16, 42, back),
+        lawn,
         [at(gx0, GROUND, 0), at(gx1, GROUND, 0), at(gx1, GROUND, LAWN_D), at(gx0, GROUND, LAWN_D)],
         yard,
       );
@@ -1856,6 +1870,7 @@ export class RoomScene {
     put(Prop.bush('patio2'), L.right + 40, 30);
     put(Prop.bush('patio3'), L.right + 80, 90);
     for (let i = 0; i < Math.min(2, y.patio); i++) put(dummy(), px + 110 + i * 30, 40 + i * 16);
+    this.gardenArt(L, model);
     if (y.establo > 0) put(stable(y.establo), px + 120, 150);
     if (y.empal > 0)
       for (let x = px; x < L.left - 20; x += 38)
@@ -1930,6 +1945,52 @@ export class RoomScene {
         halo: haloOf(60, 1, false),
       });
     }
+  }
+
+  /**
+   * Lo que se pone en el jardín (`GardenLook`): una pieza en cada trozo, detrás de por donde
+   * cruza la gente; el borde de delante, bajo; y, con `lamps`, un farol entre trozo y trozo,
+   * con su halo.
+   */
+  private gardenArt(L: RoomsLayout, model: SceneModel): void {
+    const garden = L.garden;
+    const look = model.garden;
+    if (!garden || !look) return;
+    const g = this.world;
+    const slots = gardenSlots(L.b);
+    (look.slots ?? []).forEach((p, i) => {
+      const r = slots[i];
+      if (!p || !r) return;
+      for (const { img, dz } of pieceArt(p, `${i}`))
+        this.figure(g, img, r.x + r.w / 2, GROUND, PIECE_Z + dz, OUTDOOR, 1);
+    });
+    if (look.edge)
+      this.figure(
+        g,
+        edgeArt(look.edge, Math.round(garden.w * scaleAt(EDGE_Z))),
+        garden.x + garden.w / 2,
+        GROUND,
+        EDGE_Z,
+        OUTDOOR,
+        1,
+      );
+    if (look.lamps)
+      for (const r of slots.slice(1)) {
+        const lx = r.x;
+        this.figure(g, Prop.lampPost(), lx, GROUND, LAMP_Z, OUTDOOR, 1);
+        this.lamps.push({
+          pos: at(lx, GROUND - 36, LAMP_Z),
+          glow: at(lx, GROUND - 36, LAMP_Z),
+          r: 72,
+          color: LANTERN,
+          power: 1.1,
+          flicker: 0.1,
+          zone: [lx - 80, -SLAB, lx + 80, 140],
+          seed: lx,
+          fire: false,
+          halo: haloOf(60, 1, false),
+        });
+      }
   }
 
   /**
