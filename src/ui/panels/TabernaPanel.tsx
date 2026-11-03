@@ -1,3 +1,4 @@
+import type { ComponentChild } from 'preact';
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { customOf } from '../../core/game';
 import { unlockSource } from '../../core/goals';
@@ -34,7 +35,8 @@ import type { UnlockId } from '../../data/unlocks';
 import { crestBoard } from '../../world/props';
 import { BufferImage } from '../BufferImage';
 import { help } from '../HoldHelp';
-import { Icon } from '../icons';
+import { Icon, type IconName } from '../icons';
+import { roofTile, wallTile } from '../lookTiles';
 import { Tabs } from '../Tabs';
 
 interface Props {
@@ -64,6 +66,7 @@ function Choice<K extends string>({
   value,
   onPick,
   lock,
+  art,
 }: {
   title: string;
   names: Record<K, string>;
@@ -71,6 +74,8 @@ function Choice<K extends string>({
   onPick: (k: K) => void;
   /** De dónde se gana, si aún no se tiene. */
   lock: (k: K) => string | null;
+  /** La muestra o el icono de cada opción, delante del nombre. */
+  art?: (k: K) => ComponentChild;
 }) {
   const [why, setWhy] = useState<string | null>(null);
   return (
@@ -86,13 +91,14 @@ function Choice<K extends string>({
               aria-checked={value === k}
               aria-disabled={!!from}
               aria-label={from ? `${names[k]}. Se gana con: ${from}` : names[k]}
-              class={`btn ${value === k ? 'btn-gold' : 'btn-wood'} ${from ? 'locked' : ''}`}
+              class={`btn ${value === k ? 'btn-gold' : 'btn-wood'} ${from ? 'locked' : ''} ${art ? 'look-pick' : ''}`}
               onClick={() => {
                 if (from) return setWhy(`${names[k]}: se gana con ${from}.`);
                 setWhy(null);
                 onPick(k);
               }}
             >
+              {art?.(k)}
               {names[k]}
             </button>
           );
@@ -122,6 +128,7 @@ function FacadeParts({
         value={look.roof ?? 'teja'}
         onPick={(roof) => onLook({ roof })}
         lock={(k) => lock(`roof:${k}`)}
+        art={(k) => <BufferImage buf={roofTile(k)} scale={2} />}
       />
       <Choice<WallId>
         title="Paredes"
@@ -129,6 +136,7 @@ function FacadeParts({
         value={look.walls ?? 'tablas'}
         onPick={(walls) => onLook({ walls })}
         lock={(k) => lock(`walls:${k}`)}
+        art={(k) => <BufferImage buf={wallTile(k)} scale={2} />}
       />
       <Choice<SignId>
         title="Rótulo"
@@ -136,6 +144,7 @@ function FacadeParts({
         value={look.sign ?? 'tablero'}
         onPick={(sign) => onLook({ sign })}
         lock={(k) => lock(`sign:${k}`)}
+        art={(k) => <Icon name={k} size={20} />}
       />
       <label class="look-check">
         <input
@@ -156,17 +165,17 @@ function FacadeParts({
 /** Sin nada elegido (pieza o borde). */
 const NADA = 'nada';
 
-/** Color de muestra de cada suelo y borde (hasta que haya dibujo). */
-const SWATCH: Record<string, string> = {
-  hierba: '#5fa040',
-  grava: '#b7ab96',
-  losas: '#a49a8c',
-  seto: '#2f6b34',
-  flores: '#d9587a',
-  verja: '#3a3a3a',
+/** El dibujo de cada suelo y borde (sin dibujo, «ninguno»: rayado). */
+const SWATCH: Record<string, IconName> = {
+  hierba: 'hierba',
+  grava: 'grava',
+  losas: 'losas',
+  seto: 'seto',
+  flores: 'macizo',
+  verja: 'verja',
 };
 
-/** Una fila de muestras de color, una sola elegida. */
+/** Una fila de muestras con su dibujo, una sola elegida. */
 function Swatches<K extends string>({
   title,
   names,
@@ -190,9 +199,10 @@ function Swatches<K extends string>({
             aria-label={names[k]}
             data-help={names[k]}
             class={`swatch ${value === k ? 'is-on' : ''} ${SWATCH[k] ? '' : 'is-none'}`}
-            style={SWATCH[k] ? { background: SWATCH[k] } : undefined}
             onClick={() => onPick(k)}
-          />
+          >
+            {SWATCH[k] && <Icon name={SWATCH[k]} size={34} />}
+          </button>
         ))}
       </div>
     </div>
@@ -234,7 +244,7 @@ function GardenParts({
         aria-pressed={!!look.lamps}
         onClick={() => onLook({ lamps: !look.lamps })}
       >
-        <Icon name="vela" size={16} /> Faroles
+        <Icon name="farol" size={16} /> Faroles
       </button>
       <button class="garden-works" onClick={onWorks}>
         <Icon name="martillo" size={20} />
@@ -318,20 +328,24 @@ export function TabernaPanel({
         value={tab}
         onChange={setTab}
         tabs={[
-          { id: 'letrero', label: 'Letrero' },
+          { id: 'letrero', label: 'Letrero', icon: 'letrero' },
           {
             id: 'salon',
             label: 'Salón',
+            icon: 'jarra',
             alert: feastToday && c.feast !== game.day ? 1 : 0,
             help: 'Decoración del salón: un hueco más por cada nivel del salón. Y la fiesta de la comarca, cada 10 días.',
           },
           {
             id: 'fachada',
             label: 'Fachada',
+            icon: 'taberna',
             help: `La fachada da Atractivo (ahora ${appeal(game)}): trae más visitantes.`,
           },
-          ...(game.building.wing ? [{ id: 'jardin' as const, label: 'Jardín' }] : []),
-          { id: 'animales', label: 'Animales' },
+          ...(game.building.wing
+            ? [{ id: 'jardin' as const, label: 'Jardín', icon: 'arbol' as const }]
+            : []),
+          { id: 'animales', label: 'Animales', icon: 'pata' },
         ]}
       />
 

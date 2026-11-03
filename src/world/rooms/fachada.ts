@@ -4,15 +4,10 @@
  * del suelo, los hastiales y los lados que dan al aire). Sin elegir, lo de siempre: teja roja y
  * tablas.
  */
-import { P, type Ramp } from '../../art/palette';
+import { P } from '../../art/palette';
 import type { PixelBuffer } from '../../art/pixel';
 import type { RoofId, WallId } from '../../data/custom';
-import { beam, planksV, plaster, post, stoneWall } from '../paint';
-
-const WOOD_DARK: Ramp = [P.black, P.plum, P.bark, P.rust];
-const PLASTER: Ramp = [P.clay, P.skinS, P.skin, P.sand, P.white];
-/** Piedra de fuera: más clara y cálida que la de los sótanos. */
-const ASHLAR: Ramp = [P.plum, P.slate, P.steel, P.fog, P.mist];
+import { wallFace } from './muros';
 
 /** Ruido fijo por píxel (0–1). */
 const noise = (x: number, y: number) => {
@@ -61,8 +56,8 @@ export function roofAt(roof: RoofId = 'teja', x: number, y: number, row: number)
 }
 
 /**
- * Pared de fuera en un trozo del búfer: tablas (lo de siempre), entramado (vigas oscuras con
- * yeso entre medias y cruces en algunos paños) o sillería de piedra.
+ * Pared de fuera, de frente, en un trozo del búfer (ver `wallFace` en `muros.ts`): tablas (lo de
+ * siempre), entramado o sillería.
  */
 export function wallFill(
   b: PixelBuffer,
@@ -73,27 +68,5 @@ export function wallFill(
   seed: string,
   walls: WallId = 'tablas',
 ): void {
-  if (w <= 0 || h <= 0) return;
-  if (walls === 'piedra') {
-    stoneWall(b, x, y, w, h, seed, { ramp: ASHLAR, bw: 14, bh: 7 });
-    return;
-  }
-  if (walls !== 'entramado') {
-    planksV(b, x, y, w, h, seed, WOOD_DARK, 6);
-    return;
-  }
-  plaster(b, x, y, w, h, seed, PLASTER);
-  // Las vigas: postes cada 24, carreras cada 30 y una cruz en uno de cada tres paños.
-  for (let j = 0; j * 30 < h; j++) {
-    const yy = y + j * 30;
-    for (let i = 0; i * 24 < w; i++) {
-      const xx = x + i * 24;
-      if ((i + j) % 3 === 1) {
-        b.line(xx + 3, yy + 3, Math.min(x + w - 1, xx + 23), Math.min(y + h - 1, yy + 29), P.bark);
-        b.line(xx + 4, yy + 3, Math.min(x + w - 1, xx + 24), Math.min(y + h - 1, yy + 29), P.plum);
-      }
-    }
-  }
-  for (let i = 0; i * 24 < w; i++) post(b, x + i * 24, y, 3, h, WOOD_DARK);
-  for (let j = 0; j * 30 < h; j++) beam(b, x, y + j * 30, w, 3, WOOD_DARK);
+  wallFace(b, x, y, w, h, seed, walls);
 }

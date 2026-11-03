@@ -58,24 +58,9 @@ let lastTab = 0;
 /** Las piezas del jardín y el claustro, con su icono (gratis de momento). */
 const GARDEN_TILES: [GardenPieceId | 'claustro', string, IconName][] = [
   ...(Object.keys(GARDEN_PIECES) as GardenPieceId[]).map(
-    (k) =>
-      [
-        k,
-        GARDEN_PIECES[k],
-        (
-          {
-            fuente: 'agua',
-            pozo: 'olla',
-            arbol: 'bosque',
-            estatua: 'escudo',
-            banco: 'cama',
-            huerto: 'campo',
-            flores: 'vela',
-          } as const
-        )[k],
-      ] as [GardenPieceId, string, IconName],
+    (k) => [k, GARDEN_PIECES[k], k] as [GardenPieceId, string, IconName],
   ),
-  ['claustro', 'Claustro', 'puerta'],
+  ['claustro', 'Claustro', 'claustro'],
 ];
 
 /**
@@ -144,7 +129,7 @@ function Ribbon({ works: w, onMore }: Props) {
             class={`ribbon-tab ${garden ? 'is-on' : ''}`}
             onClick={() => setTab(TABS.length)}
           >
-            <Icon name="bosque" size={14} />
+            <Icon name="arbol" size={14} />
             Jardín
           </button>
         )}
