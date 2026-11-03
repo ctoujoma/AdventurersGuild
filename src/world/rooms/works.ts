@@ -4,7 +4,7 @@
  * escalera, con su rectángulo en el corte del edificio. Lógica pura: la escena los marca y la
  * interfaz decide qué hacer con el que se toque.
  */
-import { MAX_COLS, MAX_DOWN, MAX_UP } from '../../core/balance';
+import { MAX_COLS, MAX_DOWN, MAX_UP, GARDEN_W, WING_COL, WING_START } from '../../core/balance';
 import type { Action } from '../../core/game';
 import type { GameState, Room } from '../../core/model';
 import {
@@ -57,6 +57,8 @@ export interface Target {
   action: Action;
   /** Casilla que se enseña tachada: por qué no se puede (y no hace nada al tocarla). */
   blocked?: string;
+  /** Con `blocked`: no está prohibido, solo se enseña el sitio (sin tachar). */
+  info?: boolean;
 }
 
 const cell = (s: GameState, c: number, f: number): Rect => ({
@@ -231,21 +233,45 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
       // Con el edificio a todo lo ancho, en ese hueco se compra el patio trasero.
       const plot = { x: roomsLayout(b).right + 4, y: floorTop(0), w: CELL_W - 8, h: ROOM_H };
       add(planPlot(s), plot, 'Comprar solar', { type: 'buyPlot' });
+      // El patio trasero se marca con el jardín: 3 huecos de ancho y 2 plantas de alto, para que se
+      // vea que no es un solar más.
+      const fake = { ...b, cols: MAX_COLS, wing: WING_START };
+      const x0 = colX(fake, MAX_COLS) + 4;
+      const yard = {
+        x: x0,
+        y: floorTop(1),
+        w: GARDEN_W * CELL_W - 8,
+        h: floorTop(0) + ROOM_H - floorTop(1),
+      };
       const wing = planWing(s);
-      add(wing, plot, 'Comprar el patio trasero', { type: 'buyWing' });
-      // Si aún no se puede, se enseña con candado y el porqué (más allá del solar, si lo hay).
+      add(wing, yard, 'Comprar el patio trasero', { type: 'buyWing' });
+      // Si aún no se puede, se enseña con candado y el porqué.
       if ('error' in wing && !b.wing && wing.error !== LOCKED) {
-        const at = b.cols < MAX_COLS ? { ...plot, x: plot.x + CELL_W } : plot;
         const why = wing.error;
         out.push({
           id: `obra:${out.length}`,
-          rect: at,
+          rect: yard,
           label: why,
           cost: 0,
           action: { type: 'buyWing' },
           blocked: why,
         });
       }
+      // El anexo vacío no se dibuja: se marcan sus huecos libres de la planta baja.
+      if (b.wing)
+        for (let c = WING_COL; c < spanOf(b); c++) {
+          if (roomAt(b, c, 0)) continue;
+          const why = 'Anexo libre: elige una sala en la barra de abajo para construir aquí.';
+          out.push({
+            id: `obra:${out.length}`,
+            rect: cell(s, c, 0),
+            label: why,
+            cost: 0,
+            action: { type: 'build', room: 'despensa', col: c, floor: 0 },
+            blocked: why,
+            info: true,
+          });
+        }
       break;
     }
     case 'dig':

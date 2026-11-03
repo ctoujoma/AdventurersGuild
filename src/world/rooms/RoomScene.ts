@@ -171,6 +171,8 @@ export interface Spot {
   blocked?: boolean;
   /** Obra que quita algo (un tramo de escalera): en coral, con lo que devuelve. */
   remove?: boolean;
+  /** Solo para enseñar un sitio (el anexo libre): borde claro, sin cruz. */
+  info?: boolean;
 }
 
 /** Un foco: dónde está, hasta dónde llega y la zona a la que alumbra (en 3D, y hacia arriba). */
@@ -2639,6 +2641,22 @@ export class RoomScene {
       const w = Math.round(s.rect.w) - 4;
       const h = Math.round(s.rect.h) - 4;
       const on = s.id === this.chosen;
+      if (s.info) {
+        // Un sitio que solo se enseña: borde claro de puntos, sin cruz.
+        ctx.globalAlpha = 0.1;
+        ctx.fillStyle = P.mist;
+        ctx.fillRect(x, y, w, h);
+        ctx.globalAlpha = 1;
+        for (let i = beat; i < w; i += 4) {
+          ctx.fillRect(x + i, y, 2, 1);
+          ctx.fillRect(x + i, y + h - 1, 2, 1);
+        }
+        for (let i = beat; i < h; i += 4) {
+          ctx.fillRect(x, y + i, 1, 2);
+          ctx.fillRect(x + w - 1, y + i, 1, 2);
+        }
+        continue;
+      }
       if (s.blocked) {
         // Tachada: borde rojo de puntos y una cruz en medio.
         ctx.globalAlpha = 0.12;
