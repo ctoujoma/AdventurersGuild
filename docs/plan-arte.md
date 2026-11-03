@@ -193,7 +193,16 @@ npm run build`.
          flores con cuerpo; verja de barrotes, sin grueso). Y el jardín, menos hondo (el
          usuario): el césped llega a `LAWN_D` = 118 (antes 140); las piezas, a `PIECE_Z` = 62,
          siguen detrás de la gente, y el huerto, más apretado.
-   - [ ] 6. Que no se cuelen árboles ni arbustos en el jardín ni en el anexo.
+   - [x] 6. Que no se cuelen: los árboles y arbustos del patio y del terreno de la derecha
+         (`yardTrees`, `yardBushes`) y dónde salen las matas (`tuftAllowed`) van en
+         `rooms/patio.ts`, contados desde `L.left`/`L.right` (que ya cuentan el anexo y sus
+         solares); `patio.test.ts` lo comprueba con el anexo de 3, 4 y 5 huecos.
+   - [x] 7. El claustro por partes (lo pide el usuario, sin núcleo todavía): `cloisterParts` en
+         `jardin.ts` lee `GardenLook.cloister` como `true` (entero) o
+         `{ edificio?: n | true, anexo?: n | true }` (plantas de cada lado desde la baja; 0 o
+         sin poner, ese lado no). Si un lado se queda más bajo que su edificio, lleva su
+         tejadillo propio contra la fachada. Para venderlo por partes, al núcleo le basta con
+         cambiar el tipo de `cloister` en `data/custom.ts` y validarlo en `gardenLook`.
    - [ ] Visto bueno del usuario.
 
    Capturas: `node tools/shots/anexo.mjs <carpeta>`.

@@ -53,8 +53,11 @@ import { CANDLE, takeWallActs, type ActId, type PoiKind, type Round } from './sa
 import { FLIGHT_Z, flightArt, goesRight } from './stairs';
 import { dress } from './salas/tintes';
 import { Crowd, type Hit, type Poi, type Talk } from './crowd';
+import { LAWN_D, tuftAllowed, yardBushes, yardTrees } from './patio';
 import {
   CLOISTER_W,
+  cloisterParts,
+  type CloisterParts,
   COL_R,
   EDGE_Z,
   LIME,
@@ -149,8 +152,6 @@ const DAY_LENGTH = 720;
 const TERRAIN_PAD = 3200;
 /** Ancho del trozo de terreno o de tierra que se repite hasta allí. */
 const TILE = 512;
-/** Hasta dónde llega el césped del jardín; de ahí a los árboles, el terreno. */
-const LAWN_D = 118;
 const DAWN_LIGHT = 0.65;
 const NEAR = 20;
 const FAR = EYE + 400;
@@ -1485,6 +1486,7 @@ export class RoomScene {
       // El suelo elegido y el lecho de cada pieza (ver `jardin.ts`).
       const lawn = lawnTex(Math.round(gx1 - gx0), LAWN_D / 2, 'jardin', 8, 36, back);
       const gl = model.garden ?? {};
+      const parts = cloisterParts(gl.cloister);
       paintGround(
         lawn,
         gl.ground ?? 'hierba',
@@ -1492,7 +1494,8 @@ export class RoomScene {
         gardenSlots(b).map((r) => r.x + r.w / 2 - gx0),
         back,
         LAWN_D,
-        gl.cloister ? DEPTH : 0,
+        parts.edificio || parts.anexo ? DEPTH : 0,
+        parts,
       );
       this.plane(
         g,
@@ -1894,27 +1897,15 @@ export class RoomScene {
     const put = (img: PixelBuffer, x: number, depth: number, up = 0) =>
       this.figure(g, img, x, GROUND - up, depth, OUTDOOR, 1);
     put(Prop.well(), px + 40, 70);
-    // Árboles a varias profundidades a los lados: con la perspectiva, cada uno se mueve a su
-    // paso al mover la cámara (los de más al fondo, menos).
-    const trees: [number, number, boolean, number][] = [
-      [px - 40, 36, true, 92],
-      [px - 95, 120, false, 78],
-      [px - 150, 62, true, 84],
-      [px - 210, 180, true, 96],
-      [px - 270, 95, false, 70],
-      [px + 20, 206, false, 74],
-      [L.right + 120, 48, true, 90],
-      [L.right + 175, 150, false, 80],
-      [L.right + 235, 82, true, 76],
-      [L.right + 300, 196, true, 98],
-      [L.right + 360, 120, false, 72],
-    ];
-    for (const [tx, depth, conifer, h] of trees)
-      put(conifer ? Prop.pine(`pino${tx}`, h) : Prop.oakTree(`roble${tx}`, h), tx, depth);
+    // Árboles y arbustos a los lados (ver `patio.ts`: nada cae en el jardín ni en el anexo).
+    for (const t of yardTrees(L))
+      put(
+        t.conifer ? Prop.pine(`pino${t.x}`, t.h) : Prop.oakTree(`roble${t.x}`, t.h),
+        t.x,
+        t.depth,
+      );
     this.plantGrass(L);
-    put(Prop.bush('patio1'), L.left - 30, 12);
-    put(Prop.bush('patio2'), L.right + 40, 30);
-    put(Prop.bush('patio3'), L.right + 80, 90);
+    for (const bu of yardBushes(L)) put(Prop.bush(bu.seed), bu.x, bu.depth);
     for (let i = 0; i < Math.min(2, y.patio); i++) put(dummy(), px + 110 + i * 30, 40 + i * 16);
     this.gardenArt(L, model);
     if (y.establo > 0) put(stable(y.establo), px + 120, 150);
@@ -2003,17 +1994,12 @@ export class RoomScene {
     if (!garden) return;
     const g = this.world;
     // El canto del césped, delante del todo; con claustro, entre sus arcos (bajo ellos hay losas).
-    const inset = model.garden?.cloister ? CLOISTER_W : 0;
-    const span = garden.w - 2 * inset;
-    this.figure(
-      g,
-      verge(Math.round(span * scaleAt(VERGE_Z))),
-      garden.x + garden.w / 2,
-      GROUND,
-      VERGE_Z,
-      OUTDOOR,
-      1,
-    );
+    const parts = cloisterParts(model.garden?.cloister);
+    const il = parts.edificio ? CLOISTER_W : 0;
+    const ir = parts.anexo ? CLOISTER_W : 0;
+    const span = garden.w - il - ir;
+    const mid = garden.x + il + span / 2;
+    this.figure(g, verge(Math.round(span * scaleAt(VERGE_Z))), mid, GROUND, VERGE_Z, OUTDOOR, 1);
     const look = model.garden;
     if (!look) return;
     const slots = gardenSlots(L.b);
@@ -2027,7 +2013,7 @@ export class RoomScene {
       this.figure(
         g,
         edgeArt(look.edge, Math.round(span * scaleAt(EDGE_Z))),
-        garden.x + garden.w / 2,
+        mid,
         GROUND,
         EDGE_Z,
         OUTDOOR,
@@ -2036,7 +2022,7 @@ export class RoomScene {
         // través).
         look.edge === 'verja' ? {} : { box: true, thick: 6 },
       );
-    if (look.cloister) this.cloister(L, model);
+    if (parts.edificio || parts.anexo) this.cloister(L, model, parts);
     if (look.edge) this.backEdge(garden, look.edge);
     if (look.lamps)
       for (const r of slots.slice(1)) {
@@ -2064,7 +2050,7 @@ export class RoomScene {
    * arcos delante y de lado con su grosor (dos caras), el techo de vigas y, en las de arriba, el
    * suelo de la galería y el antepecho. Encima, un tejadillo con las tejas del edificio.
    */
-  private cloister(L: RoomsLayout, model: SceneModel): void {
+  private cloister(L: RoomsLayout, model: SceneModel, parts: CloisterParts): void {
     const garden = L.garden;
     if (!garden) return;
     const g = this.world;
@@ -2089,8 +2075,11 @@ export class RoomScene {
       const floors = new Set(
         cells.filter((c) => touch(c.rect) && c.floor >= 0).map((c) => c.floor),
       );
+      // Las plantas de este lado: las que tenga el edificio junto al jardín, seguidas desde la
+      // baja, y no más de las que se hayan hecho (`parts`).
+      const want = s === 1 ? parts.edificio : parts.anexo;
       let top = -1;
-      while (floors.has(top + 1)) top++;
+      while (floors.has(top + 1) && top + 1 < want) top++;
       if (top < 0) continue;
       const xa = xw + s * CLOISTER_W;
       const xc = xa - s * (COL_R + 1);
@@ -2108,15 +2097,16 @@ export class RoomScene {
         );
       // El tejado: el faldón del edificio que da al jardín sigue, con la misma pendiente y las
       // mismas tejas, hasta pasar los arcos; delante, el mismo canto de tejas que el hastial. Si
-      // ese faldón no está a la altura del claustro (no debería pasar), un tejadillo propio.
+      // el claustro se queda más bajo que el edificio (hecho por partes), un tejadillo propio
+      // contra la fachada, con las mismas tejas.
       const roof = model.look?.roof;
       const base = floorTop(top) - SLAB;
       const run = roofRuns(L).find(
         (r) => r.base === base && Math.abs((s === 1 ? r.x1 - 6 : r.x0 + 6) - xw) < 1.5,
       );
       const xr = run ? (s === 1 ? run.x1 : run.x0) : xw;
-      const yr = run ? base + 2 : base - 9;
-      const slope = run ? (run.h + 2) / ((run.x1 - run.x0) / 2) : 11 / (CLOISTER_W + 5);
+      const yr = run ? base + 2 : base - 16;
+      const slope = run ? (run.h + 2) / ((run.x1 - run.x0) / 2) : 18 / (CLOISTER_W + 5);
       const xe = xa + s * 5;
       const ye = yr + slope * Math.abs(xe - xr);
       const d = D + 6;
@@ -2453,17 +2443,10 @@ export class RoomScene {
     const rng = new Rng('matas del patio');
     const kinds: TuftKind[] = ['mata', 'mata', 'alta', 'flores', 'trebol', 'mata', 'alta'];
     const art = new Map<string, ReturnType<typeof grassTuft>>();
-    const well = { x: L.patio.x + 40, z: 70 };
     for (let i = 0; i < 220; i++) {
       const x = L.left - 460 + rng.next() * (L.right - L.left + 920);
       const z = 4 + rng.next() * (YARD_D - 30);
-      // Ni dentro del edificio, ni en el césped del jardín (sí en su borde), ni encima del pozo.
-      if (x > L.left - 6 && x < L.right + 6 && z < DEPTH + 8) continue;
-      const lawn = L.garden && x > L.garden.x + 8 && x < L.garden.x + L.garden.w - 8;
-      if (lawn && z < LAWN_D - 10) continue;
-      if (Math.hypot(x - well.x, (z - well.z) * 0.6) < 18) continue;
-      // No en el camino de tierra del patio (por delante).
-      if (z > 6 && z < 26 && x < L.left) continue;
+      if (!tuftAllowed(L, x, z)) continue;
       const kind = kinds[rng.int(0, kinds.length - 1)]!;
       const key = `${kind}${rng.int(0, 5)}`;
       let a = art.get(key);

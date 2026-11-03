@@ -42,6 +42,7 @@ export function paintGround(
   open: number,
   lawnD: number,
   cloister = 0,
+  sides: CloisterParts = { edificio: 1, anexo: 1 },
 ): void {
   const { w, h: d } = b;
   const rowOf = (z: number) => d - z / 2;
@@ -65,7 +66,7 @@ export function paintGround(
   if (cloister)
     for (let y = Math.floor(rowOf(cloister)); y < d; y++)
       for (let x = 0; x < w; x++)
-        if (x < CLOISTER_W || x >= w - CLOISTER_W)
+        if ((sides.edificio && x < CLOISTER_W) || (sides.anexo && x >= w - CLOISTER_W))
           b.set(x, y, x === CLOISTER_W - 1 || x === w - CLOISTER_W ? STONE[2]! : flag(x, y, rng));
   // Los lechos: tierra, hierba o piedra bajo cada pieza.
   pieces.forEach((p, i) => {
@@ -441,6 +442,33 @@ export function edgeArt(e: GardenEdgeId, w: number): PixelBuffer {
 }
 
 // ---------- El claustro ----------
+
+/**
+ * El claustro por partes: cuántas plantas lleva cada lado, de la planta baja hacia arriba (0: ese
+ * lado no tiene). `edificio`: el de la fachada del edificio (a la izquierda del jardín); `anexo`,
+ * el de la del anexo. Nunca pasa de las plantas que tenga ese edificio junto al jardín.
+ */
+export interface CloisterParts {
+  edificio: number;
+  anexo: number;
+}
+
+/**
+ * Las partes del claustro a partir de lo que diga `GardenLook.cloister`: `true` (hoy), entero;
+ * un objeto `{ edificio, anexo }` con las plantas de cada lado (o `true` para todas), esas.
+ * Así el núcleo puede venderlo por partes sin tocar el arte.
+ */
+export function cloisterParts(v: unknown): CloisterParts {
+  const ALL = 99;
+  if (v === true) return { edificio: ALL, anexo: ALL };
+  if (!v || typeof v !== 'object') return { edificio: 0, anexo: 0 };
+  const o = v as Record<string, unknown>;
+  const n = (k: string) => {
+    const x = o[k];
+    return x === true ? ALL : typeof x === 'number' && x > 0 ? Math.floor(x) : 0;
+  };
+  return { edificio: n('edificio'), anexo: n('anexo') };
+}
 
 /** Lo que sale el claustro de cada fachada hacia el jardín. */
 export const CLOISTER_W = 24;
