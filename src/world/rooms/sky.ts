@@ -3,12 +3,22 @@
  * estrellas, luna, sol, nubes, las capas lejanas con su paralaje y los colores del día, del
  * atardecer y del amanecer. Por las ventanas de las salas se ve este mismo cielo.
  */
-import { bufferCanvas, drawBuffer } from '../../art/canvas';
+import { bufferCanvas } from '../../art/canvas';
+import {
+  PHASES,
+  SKY_BANDS,
+  bank,
+  cirrus,
+  cumulus,
+  paintCloud,
+  skyStrip,
+  sunSprite,
+  type SkyPhase,
+} from '../../art/clouds';
 import { P } from '../../art/palette';
 import { PixelBuffer } from '../../art/pixel';
 import { GROUND, WORLD_X0 } from '../geometry';
 import { hillLife, skyLife, treeLife } from './life';
-import { glowSprite } from '../lighting';
 import {
   MOON_R,
   buildMoon,
@@ -20,11 +30,69 @@ import {
 } from '../parallax';
 
 const SKY_FX = 0.15;
-/** Las nubes, entre el cielo y las montañas (que van por delante y se mueven algo más). */
-export const CLOUD_FX = 0.17;
-/** Alto de la franja de estrellas (se repite hacia arriba) y ancho de la de las nubes. */
+/**
+ * Las nubes, entre el cielo y las montañas (que van por delante y se mueven algo más): esto es
+ * lo más rápido que va una capa de nubes, la de los cúmulos grandes.
+ */
+export const CLOUD_FX = 0.185;
+/** Alto de la franja de estrellas (se repite hacia arriba). */
 const STAR_H = 230;
-const CLOUD_W = 900;
+/** Alto de las tiras del cielo de día (con el horizonte en GROUND, como las capas). */
+const STRIP_H = GROUND + 40;
+const STRIP_W = 256;
+
+/**
+ * Las capas de nubes: cada una en una franja de `band` de ancho que se repite, a `fx` de la
+ * cámara. Arriba, los cirros (velos altos, casi quietos); en medio, los cúmulos grandes; abajo,
+ * bancos tendidos y pequeños (lejos), que asoman entre los montes. `y` es la panza, contada
+ * en la capa (con el horizonte en GROUND).
+ */
+interface CloudSpec {
+  kind: 'cirrus' | 'cumulus' | 'bank';
+  w: number;
+  h: number;
+  x: number;
+  y: number;
+  tower?: number;
+}
+const CLOUD_LAYERS: { fx: number; band: number; speed: number; list: CloudSpec[] }[] = [
+  {
+    fx: 0.152,
+    band: 1500,
+    speed: 0.5,
+    list: [
+      { kind: 'cirrus', w: 220, h: 22, x: 40, y: 70 },
+      { kind: 'cirrus', w: 160, h: 18, x: 520, y: 46 },
+      { kind: 'cirrus', w: 260, h: 26, x: 900, y: 92 },
+      { kind: 'cirrus', w: 140, h: 16, x: 1290, y: 58 },
+    ],
+  },
+  {
+    fx: 0.162,
+    band: 1100,
+    speed: 0.9,
+    list: [
+      { kind: 'bank', w: 96, h: 20, x: 20, y: 196 },
+      { kind: 'bank', w: 64, h: 16, x: 230, y: 186 },
+      { kind: 'bank', w: 120, h: 22, x: 420, y: 200 },
+      { kind: 'bank', w: 70, h: 16, x: 690, y: 190 },
+      { kind: 'bank', w: 104, h: 20, x: 880, y: 198 },
+    ],
+  },
+  {
+    fx: CLOUD_FX,
+    band: 1300,
+    speed: 1.8,
+    list: [
+      { kind: 'cumulus', w: 170, h: 62, x: 0, y: 150, tower: 0.85 },
+      { kind: 'cumulus', w: 96, h: 38, x: 260, y: 110, tower: 0.5 },
+      { kind: 'cumulus', w: 140, h: 46, x: 470, y: 160, tower: 0.4 },
+      { kind: 'cumulus', w: 70, h: 28, x: 700, y: 96, tower: 0.55 },
+      { kind: 'cumulus', w: 190, h: 56, x: 860, y: 140, tower: 0.6 },
+      { kind: 'cumulus', w: 84, h: 30, x: 1140, y: 120, tower: 0.45 },
+    ],
+  },
+];
 /** La luna, a cierta distancia en x y por encima del horizonte. */
 const MOON = { x: 84, up: 156 } as const;
 /** Lo más alto que sube el sol sobre el horizonte, en píxeles. */
@@ -62,13 +130,29 @@ export class Sky {
   private parallax: { c: HTMLCanvasElement; d: HTMLCanvasElement; l: ParallaxLayer }[] =
     parallaxLayers().map((l) => ({ c: bufferCanvas(l.buf), d: bufferCanvas(l.day), l }));
   private starList: Star[] = stars();
-  private clouds = [0, 1, 2, 3, 4, 5].map((i) => ({
-    x: i * 150 + ((i * 53) % 70),
-    y: 24 + ((i * 37) % 96),
-    img: cloud(i),
-    day: bufferCanvas(dayCloud(i)),
-    speed: 1.5 + ((i * 7) % 5) * 0.6,
+  private cloudLayers = CLOUD_LAYERS.map((l, li) => ({
+    ...l,
+    list: l.list.map((c, i) => {
+      const seed = `nube-${li}-${i}`;
+      const shape =
+        c.kind === 'cumulus'
+          ? cumulus(seed, c.w, c.h, c.tower)
+          : c.kind === 'bank'
+            ? bank(seed, c.w, c.h)
+            : null;
+      const img = {} as Record<SkyPhase, HTMLCanvasElement>;
+      for (const ph of PHASES)
+        img[ph] = bufferCanvas(shape ? paintCloud(shape, ph) : cirrus(seed, c.w, c.h, ph));
+      // Cada una a su paso: unas algo más deprisa que otras.
+      return { ...c, img, speed: l.speed * (0.8 + ((i * 7) % 5) * 0.1) };
+    }),
   }));
+  private strips = {
+    day: bufferCanvas(wide(skyStrip(SKY_BANDS.day, STRIP_H, 30, GROUND - 20))),
+    dusk: bufferCanvas(wide(skyStrip(SKY_BANDS.dusk, STRIP_H, 10, GROUND - 25))),
+    dawn: bufferCanvas(wide(skyStrip(SKY_BANDS.dawn, STRIP_H, 10, GROUND - 25))),
+  };
+  private sun = { day: bufferCanvas(sunSprite(false)), low: bufferCanvas(sunSprite(true)) };
 
   /**
    * Pinta el cielo de una vista que empieza en la x `cx` del mundo. `hz` es la altura en la vista
@@ -120,35 +204,41 @@ export class Sky {
       );
       ctx.globalAlpha = 1;
     }
-    this.drawDay(ctx, dl, cx, hz, vw, vh);
-    // Cuánto se ve el paisaje de día (con sus colores) sobre las siluetas de la noche.
-    const dayK = Math.min(1, dl.day + dl.dusk * 0.6 + nl.warm * 0.5);
-    // Las nubes van y vienen en una franja de CLOUD_W que se repite a lo ancho; de día, blancas.
-    for (const cl of this.clouds) {
-      const x = ((cl.x + t * cl.speed) % CLOUD_W) - 60 + WORLD_X0 - pan(cx, vw, CLOUD_FX);
-      for (let k = Math.floor(-x / CLOUD_W) - 1; x + k * CLOUD_W < vw; k++) {
-        if (dayK < 1) {
-          ctx.globalAlpha = 1 - dayK;
-          drawBuffer(ctx, cl.img, x + k * CLOUD_W, cl.y + top);
-        }
-        if (dayK > 0) {
-          ctx.globalAlpha = dayK;
-          ctx.drawImage(cl.day, Math.round(x + k * CLOUD_W), Math.round(cl.y + top));
+    // Encima de la noche, el cielo de cada luz (opaco): día, atardecer y alba.
+    this.strip(ctx, this.strips.day, dl.day, top, vw, vh);
+    this.strip(ctx, this.strips.dusk, dl.dusk, top, vw, vh);
+    this.strip(ctx, this.strips.dawn, nl.warm, top, vw, vh);
+    this.drawSun(ctx, dl, cx, hz, vw);
+    // Las nubes, de la capa de más lejos a la de más cerca: la de noche debajo (opaca, tapa las
+    // estrellas) y encima, la de cada luz con su peso.
+    const wt: Record<SkyPhase, number> = {
+      night: 1,
+      day: Math.min(1, dl.day),
+      dusk: dl.dusk,
+      dawn: nl.warm,
+    };
+    for (const l of this.cloudLayers) {
+      const x0 = WORLD_X0 - pan(cx, vw, l.fx);
+      for (const cl of l.list) {
+        const x = ((cl.x + t * cl.speed) % l.band) - cl.w + x0;
+        const y = Math.round(cl.y - cl.h + top);
+        if (y > vh || y + cl.h < 0) continue;
+        for (let k = Math.floor(-(x + cl.w) / l.band); x + k * l.band < vw; k++) {
+          const at = Math.round(x + k * l.band);
+          if (at + cl.w < 0) continue;
+          for (const ph of PHASES) {
+            if (wt[ph] <= 0.01) continue;
+            ctx.globalAlpha = wt[ph];
+            ctx.drawImage(cl.img[ph], at, y);
+          }
         }
       }
     }
     ctx.globalAlpha = 1;
-    if (nl.warm > 0) this.drawDawn(ctx, nl.warm, hz, vw, vh);
+    // Cuánto se ve el paisaje de día (con sus colores) sobre las siluetas de la noche.
+    const dayK = Math.min(1, dl.day + dl.dusk * 0.6 + nl.warm * 0.5);
     const light = { day: dayK, dark: Math.max(nl.dark, 1 - dl.day - dl.dusk) };
     skyLife(ctx, WORLD_X0 - pan(cx, vw, SKY_FX), top, vw, t, light);
-    // El cielo, más claro de día (solo el cielo: el paisaje ya trae sus colores).
-    if (dl.day > 0 || dl.dusk > 0) {
-      ctx.globalCompositeOperation = 'screen';
-      const h = (v: number) => Math.round(v * dl.day + v * 0.4 * dl.dusk);
-      ctx.fillStyle = `rgb(${h(70) + Math.round(60 * dl.dusk)}, ${h(105)}, ${h(120)})`;
-      ctx.fillRect(0, 0, vw, vh);
-      ctx.globalCompositeOperation = 'source-over';
-    }
     this.parallax.forEach(({ c, d, l }, i) => {
       const x = WORLD_X0 - pan(cx, vw, l.fx);
       tile(ctx, c, x, top, vw);
@@ -177,73 +267,56 @@ export class Sky {
     ctx.globalCompositeOperation = 'source-over';
   }
 
-  /** Cielo de día por encima del de noche: azul, con el sol cruzando. */
-  private drawDay(
+  /**
+   * Una tira de cielo (`STRIP_W` de ancho, con el horizonte en GROUND) a lo ancho de la vista,
+   * con `a` de peso; por encima de la tira, su primer color.
+   */
+  private strip(
     ctx: CanvasRenderingContext2D,
-    d: Daylight,
-    cx: number,
-    hz: number,
+    c: HTMLCanvasElement,
+    a: number,
+    top: number,
     vw: number,
     vh: number,
   ): void {
-    const horizon = hz - 40;
-    if (d.day > 0) {
-      ctx.globalAlpha = d.day;
-      const g = ctx.createLinearGradient(0, horizon - 230, 0, horizon + 10);
-      g.addColorStop(0, '#3b7fc4');
-      g.addColorStop(0.65, '#7fbde6');
-      g.addColorStop(1, '#cfe9f2');
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, vw, vh);
-      ctx.globalAlpha = 1;
-    }
-    if (d.dusk > 0) {
-      const g = ctx.createLinearGradient(0, horizon - 200, 0, horizon + 20);
-      g.addColorStop(0, 'rgba(104, 56, 108, 0)');
-      g.addColorStop(0.55, `rgba(232, 110, 120, ${0.5 * d.dusk})`);
-      g.addColorStop(1, `rgba(247, 118, 34, ${0.75 * d.dusk})`);
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, vw, vh);
-    }
+    if (a <= 0.01) return;
+    ctx.globalAlpha = Math.min(1, a);
+    if (top > 0) ctx.drawImage(c, 0, 0, STRIP_W, 1, 0, 0, vw, top);
+    for (let x = 0; x < vw; x += STRIP_W) ctx.drawImage(c, x, top);
+    const below = top + c.height;
+    if (below < vh) ctx.drawImage(c, 0, c.height - 1, STRIP_W, 1, 0, below, vw, vh - below);
+    ctx.globalAlpha = 1;
+  }
+
+  /** El sol, que cruza: blanco y amarillo a mediodía; grande, naranja y rayado al ponerse. */
+  private drawSun(ctx: CanvasRenderingContext2D, d: Daylight, cx: number, hz: number, vw: number) {
     const sunUp = Math.max(d.day, d.dusk);
     if (sunUp <= 0) return;
     // Sale ya alto por la mañana, cruza y al atardecer baja hasta perderse tras los montes.
     const p = Math.min(1, 0.1 + d.tod * 0.95);
     const sx = Math.round(300 - 280 * p - pan(cx, vw, SKY_FX));
     const sy = Math.round(hz - 10 - (Math.sin(Math.PI * p) * 1.15 - 0.15) * SUN_UP);
-    if (sy > hz + 20) return;
-    const warmSun = d.dusk > 0.3;
-    ctx.globalAlpha = Math.min(1, sunUp * 1.3);
-    ctx.globalCompositeOperation = 'lighter';
-    ctx.drawImage(
-      glowSprite(30, warmSun ? [254, 140, 52] : [255, 240, 180], 0.55),
-      sx - 30,
-      sy - 30,
-    );
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = warmSun ? P.orange : P.lemon;
-    for (let y = -8; y <= 8; y++) {
-      const w = Math.floor(Math.sqrt(64 - y * y));
-      ctx.fillRect(sx - w, sy + y, w * 2 + 1, 1);
+    if (sy > hz + 30) return;
+    const a = Math.min(1, sunUp * 1.3);
+    const low = Math.min(1, Math.max(0, (d.dusk - 0.2) / 0.5));
+    for (const [img, k] of [
+      [this.sun.day, 1 - low],
+      [this.sun.low, low],
+    ] as const) {
+      if (k <= 0) continue;
+      ctx.globalAlpha = a * k;
+      ctx.drawImage(img, sx - (img.width >> 1), sy - (img.height >> 1));
     }
     ctx.globalAlpha = 1;
   }
+}
 
-  private drawDawn(
-    ctx: CanvasRenderingContext2D,
-    warm: number,
-    hz: number,
-    vw: number,
-    vh: number,
-  ): void {
-    const horizon = hz - 40;
-    const g = ctx.createLinearGradient(0, horizon - 200, 0, horizon + 20);
-    g.addColorStop(0, 'rgba(90, 60, 120, 0)');
-    g.addColorStop(0.55, `rgba(232, 110, 120, ${0.45 * warm})`);
-    g.addColorStop(1, `rgba(254, 174, 52, ${0.8 * warm})`);
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, vw, vh);
-  }
+/** Ensancha una tira de cielo de 4 a `STRIP_W` (se repite el tramado). */
+function wide(b: PixelBuffer): PixelBuffer {
+  const o = new PixelBuffer(STRIP_W, b.h);
+  for (let y = 0; y < b.h; y++)
+    for (let x = 0; x < STRIP_W; x++) o.data[y * STRIP_W + x] = b.get(x & 3, y);
+  return o;
 }
 
 /**
@@ -270,48 +343,4 @@ function tile(
     ctx.drawImage(c, 0, 0);
     ctx.restore();
   }
-}
-
-/** Nube de día: bultos blancos con la panza gris y la luz arriba. */
-function dayCloud(i: number): PixelBuffer {
-  const big = i % 3 === 0;
-  const b = new PixelBuffer(big ? 70 : 48, big ? 22 : 16);
-  const puffs: [number, number, number][] = big
-    ? [
-        [12, 14, 7],
-        [24, 10, 9],
-        [38, 8, 10],
-        [51, 12, 8],
-        [61, 15, 5],
-      ]
-    : [
-        [10, 10, 6],
-        [20, 7, 7],
-        [31, 9, 6],
-        [39, 11, 4],
-      ];
-  for (const [x, y, r] of puffs)
-    b.ellipse(x + (i % 2) * 3, y, r, r * 0.75, (px, py) => {
-      const u = (py - y) / (r * 0.75);
-      return u < -0.45 ? P.white : u > 0.45 ? P.fog : (px + py) % 7 === 0 ? P.white : P.mist;
-    });
-  // La panza plana y gris.
-  for (let x = 0; x < b.w; x++)
-    for (let y = b.h - 3; y < b.h; y++) if (b.get(x, y) >>> 24) b.set(x, y, P.fog);
-  return b;
-}
-
-function cloud(i: number): PixelBuffer {
-  const b = new PixelBuffer(46, 14);
-  const puffs: [number, number, number][] = [
-    [10, 9, 6],
-    [20, 6, 7],
-    [31, 8, 6],
-    [38, 10, 4],
-  ];
-  for (const [x, y, r] of puffs)
-    b.ellipse(x + (i % 2) * 3, y, r, r * 0.75, (_px, py) =>
-      py < y - r * 0.3 ? P.fog : py > y + 1 ? P.navy : P.slate,
-    );
-  return b;
 }

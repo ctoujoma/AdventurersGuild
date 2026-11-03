@@ -78,11 +78,12 @@ export function ArconPanel({
         value={tab}
         onChange={onTab}
         tabs={[
-          { id: 'equipo', label: 'Equipo', count: stock.length + worn.length },
-          { id: 'tesoros', label: 'Tesoros', count: treasures.length },
+          { id: 'equipo', label: 'Equipo', icon: 'espadas', count: stock.length + worn.length },
+          { id: 'tesoros', label: 'Tesoros', icon: 'cofre', count: treasures.length },
           {
             id: 'trofeos',
             label: 'Trofeos',
+            icon: 'trofeo',
             count: game.trophies.length,
             help: `Caben ${TROPHY_SLOTS} en la pared del salón; cada uno expuesto suma ${TROPHY_APPEAL} de Atractivo y trae más visitantes.`,
           },

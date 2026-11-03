@@ -81,6 +81,28 @@ npm run build`.
       gozne al fondo del hueco cuando alguien pasa (`swingDoors`, con `Crowd.near`): se abre
       hacia el lado contrario del que viene y se cierra sola.
 
+- [x] **Cielo, paredes e iconos** (el usuario: «una seria pasada de calidad al cielo», «las
+      paredes se ven cutres y repetitivas», «iconos para la personalización del jardín»):
+  - el cielo (`art/clouds.ts`, `rooms/sky.ts`): franjas tramadas en vez de degradado liso, con su
+    tira para el día, el atardecer y el alba (`skyStrip`); el sol con halo en anillos y, al
+    ponerse, cruzado por franjas; nubes en tres capas con su paralaje (cirros altos, cúmulos y
+    bancos bajos que asoman entre los montes), cada una pintada con la luz de cada hora (de día
+    desde arriba, al atardecer y al alba desde el sol bajo, de noche con la luna). La luz sale
+    del volumen entero de la nube, no de cada bulto (el usuario: «parecen un gusano»); los
+    bultos solo marcan la coliflor de la cima;
+  - las paredes (`rooms/muros.ts`): de frente (hastiales y costados), `wallFace` sin repetirse
+    (tablas de ancho y tono desiguales con tapajuntas, empalmes y clavos; entramado con postes a
+    distancias distintas y riostras variadas; sillería en hiladas de alto distinto); en corte
+    (el grueso alrededor de cada sala), `wallSection` enseña lo de dentro del muro (forros y
+    travesaños por la testa; revoco, barro con zarzo y carreras; dos hojas de sillar con
+    mampuesto; los sótanos, igual en piedra oscura);
+  - iconos (`ui/icons.tsx`): las piezas del jardín y el claustro en Obras, los suelos y bordes
+    (antes, colores planos), el farol, las pestañas de Adornos (con cinco, el icono va encima de
+    la palabra para que quepa) y del Arcón, y los rótulos; tejados y paredes con una muestra de
+    su dibujo de verdad (`ui/lookTiles.ts`).
+  - [ ] Visto bueno del usuario. Capturas en `capturas/cielo/`, `capturas/muros/` y
+        `capturas/iconos/`.
+
 ## Siguiente (en este orden, salvo que el usuario diga otra cosa)
 
 1. **Más cilindros y cuerpos de verdad**: los barriles apilados, las mesas (tablero y patas), el
@@ -214,6 +236,8 @@ npm run build`.
   diagonal y que confluyan, nunca rectas en vertical.
 - **Fondo:** «se verá durante muchas horas: que sea entretenido y lindo»; el fondo no puede
   moverse al hacer zoom.
+- **Nubes:** nada de bolas sombreadas una a una (parecen «un gusano o un zurullo»): una sola
+  masa con la luz por franjas y los bultos solo en el contorno de arriba.
 - **Salas:** demasiado plano y demasiado pintado en la pared; quiere cosas que resalten, con
   cuerpo (el oro del tesoro, los hornos de la bodega).
 - **Animaciones:** que no repitan un gesto todo el día (la cocina parecía que fregaba).

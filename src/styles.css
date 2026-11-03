@@ -998,6 +998,12 @@ button:focus-visible {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Con cinco pestañas o más, el icono encima de la palabra (al lado no cabe). */
+.segs:has(> .seg:nth-child(5)) .seg {
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 3px;
+}
 
 .seg-n {
   font-weight: 400;
@@ -3780,6 +3786,13 @@ button.trait[aria-pressed='true'] {
 .tav-symbols .btn {
   padding: 2px 10px;
   font-size: var(--t-m);
+}
+/* Con muestra del material o icono delante del nombre. */
+.tav-symbols .btn.look-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 4px;
 }
 
 /* Adornos: baldosas con nombre, lo que dan y el precio. */
@@ -6686,10 +6699,13 @@ p.notebook-close {
   gap: 6px;
 }
 .swatch {
+  display: grid;
+  place-items: center;
   width: 40px;
   height: 40px;
   padding: 0;
   border: 3px solid var(--tan);
+  background: var(--tan);
   cursor: pointer;
 }
 .swatch.is-none {
