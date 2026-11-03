@@ -106,6 +106,12 @@ npm run build`.
   - [ ] Visto bueno del usuario. Capturas en `capturas/cielo/`, `capturas/muros/` y
         `capturas/iconos/`.
 
+## Estudio: estilo «Cast n Chill»
+
+Pedido del usuario: ver si el pixel art puede ir hacia ese estilo. Pruebas, viabilidad y plan
+por fases en [`estilo-cnc.md`](estilo-cnc.md) (visor: `capturas/estilo-cnc/index.html`).
+Pendiente de que el usuario decida si se sigue y por qué fase.
+
 ## Siguiente (en este orden, salvo que el usuario diga otra cosa)
 
 1. **Más cilindros y cuerpos de verdad**: los barriles apilados, las mesas (tablero y patas), el
