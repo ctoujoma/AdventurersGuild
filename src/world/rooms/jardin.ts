@@ -13,7 +13,7 @@ import { roofAt } from './fachada';
 import { oakTree, piece, well } from '../props';
 
 /** Profundidad del pie de las piezas de los trozos (detrás de la gente que cruza). */
-export const PIECE_Z = 70;
+export const PIECE_Z = 62;
 /** Profundidad del borde de delante. */
 export const EDGE_Z = 2;
 /** Profundidad del canto del césped (delante del borde). */
@@ -108,7 +108,7 @@ export function paintGround(
         // Bancales: surcos de tierra a lo ancho, con su cerco de tablas.
         const x0 = Math.round(cx - 44);
         const x1 = Math.round(cx + 44);
-        const y0 = Math.floor(rowOf(PIECE_Z + 44));
+        const y0 = Math.floor(rowOf(PIECE_Z + 34));
         const y1 = Math.ceil(rowOf(PIECE_Z - 14));
         for (let y = y0; y <= y1; y++)
           for (let x = x0; x <= x1; x++) {
@@ -184,7 +184,7 @@ export function pieceArt(p: GardenPieceId, seed: string): { img: PixelBuffer; dz
       return [{ img: bench(), dz: 0 }];
     case 'huerto':
       // Una hilera por bancal, de delante hacia el fondo.
-      return [-6, 8, 22, 36].map((dz, i) => ({ img: cropRow(76, `${seed}${i}`, i), dz }));
+      return [-6, 5, 16, 27].map((dz, i) => ({ img: cropRow(76, `${seed}${i}`, i), dz }));
     case 'flores':
       return [0, 12].map((dz, i) => ({ img: flowerRow(i ? 58 : 70, `${seed}${i}`), dz }));
   }
@@ -659,5 +659,54 @@ export function leafTex(w: number, h: number, seed: string, top = false): PixelB
         n < 0.12 ? P.deep : n < 0.5 - up * 0.25 ? P.forest : n > 0.94 && up > 0.5 ? P.lime : P.leaf;
       b.set(x, y, c);
     }
+  return b;
+}
+
+/**
+ * La cara de un macizo de flores corrido (`w` × `h`): el lomo de hojas que ondula y, por encima
+ * y en la cara, flores de varios colores; la sombra al pie. Con `top`, visto desde arriba.
+ */
+export function flowerFace(w: number, h: number, seed: string, top = false): PixelBuffer {
+  const b = new PixelBuffer(w, h);
+  const rng = new Rng(`macizo corrido ${seed}`);
+  for (let x = 0; x < w; x++) {
+    const t = top ? 0 : Math.round(1 + Math.sin(x * 0.35) * 0.8 + rng.int(0, 1));
+    for (let y = t; y < h; y++) {
+      const v = (y - t) / Math.max(1, h - t);
+      b.set(x, y, top || v < 0.3 ? P.leaf : v < 0.8 ? P.forest : P.deep);
+    }
+    if (!top) b.set(x, h - 1, P.black);
+  }
+  for (let i = 0; i < w * (top ? 1.2 : 0.6); i++) {
+    const x = rng.int(0, w - 2);
+    const y = rng.int(0, top ? h - 1 : Math.max(1, h - 3));
+    if (!b.get(x, y)) continue;
+    const [a, c] = BLOOM[rng.int(0, BLOOM.length - 1)]!;
+    b.set(x, y, a);
+    if (rng.chance(0.5)) b.set(x + 1, y, c);
+  }
+  return b;
+}
+
+/**
+ * Una cara de verja de hierro (`w` × `h`): barrotes cada `bar` con punta de lanza entre dos
+ * travesaños y, cada `post`, un pilar de piedra; lo demás, transparente.
+ */
+export function railFace(w: number, h: number, bar: number, post: number): PixelBuffer {
+  const b = new PixelBuffer(w, h);
+  for (let x = 1; x < w - 1; x += bar) {
+    b.vline(x, 2, h - 2, P.navy);
+    b.set(x, 1, P.slate);
+    b.set(x, 0, P.steel);
+  }
+  b.hline(0, 4, w, P.slate);
+  b.hline(0, h - 4, w, P.slate);
+  b.hline(0, h - 3, w, P.navy);
+  const pw = Math.max(2, Math.round((6 * bar) / 4));
+  for (let x = 0; x < w; x += post) {
+    const px = Math.min(x, w - pw);
+    stoneWall(b, px, 3, pw, h - 3, `pilar${x}`, { ramp: STONE, bw: pw, bh: 4 });
+    b.rect(px, 2, pw, 2, STONE[4]!);
+  }
   return b;
 }

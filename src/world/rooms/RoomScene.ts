@@ -32,6 +32,7 @@ import { P, darker } from '../../art/palette';
 import { PixelBuffer, bayer, rgba, toHex } from '../../art/pixel';
 import type { Building, RaidResult, Room, RoomYield } from '../../core/model';
 import { ROOMS } from '../../data/rooms';
+import type { GardenEdgeId } from '../../data/custom';
 import { Camera } from '../camera';
 import { GROUND } from '../geometry';
 import { Particles, type PKind } from '../particles';
@@ -65,12 +66,14 @@ import {
   cloisterEnd,
   cloisterSide,
   eaveFront,
+  flowerFace,
   hedgeFace,
   leafTex,
   edgeArt,
   galleryFloor,
   paintGround,
   pieceArt,
+  railFace,
   verge,
 } from './jardin';
 import { Pets, kindOf, type Perch, type PetId } from './pets';
@@ -142,7 +145,7 @@ const TERRAIN_PAD = 3200;
 /** Ancho del trozo de terreno o de tierra que se repite hasta allí. */
 const TILE = 512;
 /** Hasta dónde llega el césped del jardín; de ahí a los árboles, el terreno. */
-const LAWN_D = 140;
+const LAWN_D = 118;
 const DAWN_LIGHT = 0.65;
 const NEAR = 20;
 const FAR = EYE + 400;
@@ -2012,7 +2015,7 @@ export class RoomScene {
         look.edge === 'verja' ? {} : { box: true, thick: 6 },
       );
     if (look.cloister) this.cloister(L, model);
-    if (look.edge === 'seto') this.backHedges(garden);
+    if (look.edge) this.backEdge(garden, look.edge);
     if (look.lamps)
       for (const r of slots.slice(1)) {
         const lx = r.x;
@@ -2263,32 +2266,45 @@ export class RoomScene {
   }
 
   /**
-   * Los setos del fondo del jardín (con borde de seto, para que cierre igual que por delante): uno
-   * a lo ancho, al fondo del césped, y a cada lado desde donde se acaba el edificio; con cuerpo
-   * (cara, lomo y testeros).
+   * El borde del fondo del jardín, igual que el de delante para que cierre igual: uno a lo ancho,
+   * al fondo del césped, y a cada lado desde donde se acaba el edificio. El seto y las flores,
+   * con cuerpo (cara, lomo y testeros); la verja, de barrotes que dejan ver a través.
    */
-  private backHedges(garden: Rect): void {
+  private backEdge(garden: Rect, edge: GardenEdgeId): void {
     const g = this.world;
-    const H = 14;
-    const T = 8;
+    const H = edge === 'flores' ? 9 : 14;
+    // Lo que entra cada lado; la verja, sin grueso.
+    const T = edge === 'verja' ? 0 : 8;
     const zb = LAWN_D - 18;
     const o = { ambient: OUTDOOR, sun: 1, dither: 0 };
     const top = GROUND - H;
     const xl = garden.x + 2;
     const xr = garden.x + garden.w - 2;
+    // La cara, de `w` (`side`: a lo hondo, a media resolución) y el lomo, de `w` × `d`.
+    const face = (w: number, seed: string, side: boolean) =>
+      edge === 'seto'
+        ? hedgeFace(w, H, seed, side ? 23 : 46)
+        : edge === 'flores'
+          ? flowerFace(w, H, seed)
+          : side
+            ? railFace(w, H, 2, 31)
+            : railFace(w, H, 4, 62);
+    const lid = (w: number, d: number, seed: string) =>
+      edge === 'seto' ? leafTex(w, d, seed, true) : flowerFace(w, d, seed, true);
     // Al fondo: la cara que mira al jardín y el lomo.
     this.plane(
       g,
-      hedgeFace(Math.round(xr - xl), H, 'fondo'),
+      face(Math.round(xr - xl), 'fondo', false),
       [at(xl, GROUND, zb), at(xr, GROUND, zb), at(xr, top, zb), at(xl, top, zb)],
       o,
     );
-    this.plane(
-      g,
-      leafTex(Math.round(xr - xl), T / 2, 'fondo lomo', true),
-      [at(xl, top, zb), at(xr, top, zb), at(xr, top, zb + T), at(xl, top, zb + T)],
-      o,
-    );
+    if (T)
+      this.plane(
+        g,
+        lid(Math.round(xr - xl), T / 2, 'fondo lomo'),
+        [at(xl, top, zb), at(xr, top, zb), at(xr, top, zb + T), at(xl, top, zb + T)],
+        o,
+      );
     // A los lados, desde el fondo de los edificios hasta el del fondo.
     const z0 = DEPTH + 4;
     const len = Math.round((zb - z0) / 2);
@@ -2296,25 +2312,28 @@ export class RoomScene {
       [xl, xl + T],
       [xr, xr - T],
     ] as const) {
-      const right = xi < xo;
+      const right = xo === xr;
       this.plane(
         g,
-        hedgeFace(len, H, `lado${xo}`, 23),
+        face(len, `lado${xo}`, true),
         right
           ? [at(xi, GROUND, zb), at(xi, GROUND, z0), at(xi, top, z0), at(xi, top, zb)]
           : [at(xi, GROUND, z0), at(xi, GROUND, zb), at(xi, top, zb), at(xi, top, z0)],
         { ...o, sun: 0.7 },
       );
+      if (!T) continue;
       const [a, c] = right ? [xi, xo] : [xo, xi];
       this.plane(
         g,
-        leafTex(Math.round(c - a), T, `lado lomo${xo}`, true),
+        lid(Math.round(c - a), T, `lado lomo${xo}`),
         [at(a, top, z0), at(c, top, z0), at(c, top, zb), at(a, top, zb)],
         o,
       );
       this.plane(
         g,
-        hedgeFace(Math.round(c - a), H, `testero${xo}`, 99),
+        edge === 'seto'
+          ? hedgeFace(Math.round(c - a), H, `testero${xo}`, 99)
+          : flowerFace(Math.round(c - a), H, `testero${xo}`),
         [at(a, GROUND, z0), at(c, GROUND, z0), at(c, top, z0), at(a, top, z0)],
         o,
       );

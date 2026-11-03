@@ -181,6 +181,11 @@ npm run build`.
          (`ceilingTex`).
    - [x] 5c. Con borde de seto, setos también al fondo del césped y a los lados donde ya no hay
          edificios (`backHedges`, con cara, lomo y testeros; `hedgeFace` como el de delante).
+   - [x] 5e. El borde del fondo, para todos (el usuario: «lo mismo con flores y verja»):
+         `backEdge` pone al fondo y a los lados el mismo borde que delante (seto o macizo de
+         flores con cuerpo; verja de barrotes, sin grueso). Y el jardín, menos hondo (el
+         usuario): el césped llega a `LAWN_D` = 118 (antes 140); las piezas, a `PIECE_Z` = 62,
+         siguen detrás de la gente, y el huerto, más apretado.
    - [ ] 6. Que no se cuelen árboles ni arbustos en el jardín ni en el anexo.
    - [ ] Visto bueno del usuario.
 
