@@ -74,6 +74,13 @@ npm run build`.
   - los montones de oro, cuerpos de revolución (`mound` en `salas/kit.ts`, `mound` en
     `RoomScene.ts`): de frente, igual que el dibujo; de lado, un montón.
 
+- [x] **Puertas entre salas de verdad** (el usuario: «se ve un cuadrado negro… puertas que se
+      abran sería maravilloso»): el hueco de `sideTex` es transparente (`DOOR_U0`…`DOOR_U1`,
+      `DOOR_H`) y, por el grueso del tabique, `doorway` pone el umbral, el dintel, la jamba del
+      fondo (con el acabado de la pared, `doorJamb`) y la hoja (`doorPanel`), que gira sobre su
+      gozne al fondo del hueco cuando alguien pasa (`swingDoors`, con `Crowd.near`): se abre
+      hacia el lado contrario del que viene y se cierra sola.
+
 ## Siguiente (en este orden, salvo que el usuario diga otra cosa)
 
 1. **Más cilindros y cuerpos de verdad**: los barriles apilados, las mesas (tablero y patas), el

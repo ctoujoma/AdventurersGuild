@@ -1490,6 +1490,17 @@ export class Crowd {
   }
 
   /** Si alguien está delante (más cerca que `z`) de un punto del mundo y lo tapa. */
+  /** La x de quien esté más cerca de `x` en la planta `floor` (a menos de `r`), o null. */
+  near(x: number, floor: number, r: number): number | null {
+    let best: number | null = null;
+    for (const a of this.actors.values()) {
+      if (a.gone || a.floor !== floor || a.pose === 'bed') continue;
+      const d = Math.abs(a.x - x);
+      if (d < r && (best === null || d < Math.abs(best - x))) best = a.x;
+    }
+    return best;
+  }
+
   covers(x: number, y: number, z: number): boolean {
     for (const a of this.actors.values())
       if (!a.gone && a.lane < z && Math.abs(a.x - x) < 7 && y <= a.y && y >= a.y - 26) return true;
