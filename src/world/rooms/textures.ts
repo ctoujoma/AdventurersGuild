@@ -227,9 +227,16 @@ export function ceilingTex(theme: Theme, w: number, seed: string): PixelBuffer {
   return b;
 }
 
+/** El hueco de las puertas entre salas: de `DOOR_U0` a `DOOR_U1` a lo hondo (a media
+ * resolución: en el mundo, el doble) y `DOOR_H` de alto. */
+export const DOOR_U0 = 10;
+export const DOOR_U1 = 19;
+export const DOOR_H = 46;
+
 /**
  * Pared de un lado (fondo × alto, el fondo a media resolución; x = 0 junto al corte). Lleva
- * puerta en cada planta (contada desde abajo) que da a otra sala o a la escalera.
+ * puerta en cada planta (contada desde abajo) que da a otra sala o a la escalera: un hueco de
+ * verdad (transparente) con su marco.
  */
 export function sideTex(
   theme: Theme,
@@ -252,15 +259,20 @@ export function sideTex(
   else stoneWall(b, 0, 0, DEEP, h, seed, { ramp: ROCK, bw: 9, bh: 8 });
   // Los acabados de la sala, como en su pared del fondo.
   if (room && !bare(room) && !ruined(room) && ART[room.type]) sideFinish(b, room, theme, seed);
+  // El marco de cada puerta a la sala de al lado; el hueco se abre después de la sombra.
   for (const f of doors) {
     const y = h - f * PITCH;
-    b.rect(8, y - 50, 13, 50, P.plum);
-    b.rect(9, y - 48, 11, 48, P.bark);
-    b.rect(10, y - 46, 9, 46, P.black);
+    b.rect(DOOR_U0 - 2, y - DOOR_H - 4, DOOR_U1 - DOOR_U0 + 4, DOOR_H + 4, P.plum);
+    b.rect(DOOR_U0 - 1, y - DOOR_H - 2, DOOR_U1 - DOOR_U0 + 2, DOOR_H + 2, P.bark);
   }
   // La puerta de la calle, cerrada; más fuerte cuanto más nivel tiene el recibidor.
   for (const f of front) streetDoor(b, 6, h - f * PITCH - 54, strength, seed);
   ambientOcclusion(b, 0, 0, DEEP, h, 3, { top: true, bottom: true, left: false, right: true });
+  // El hueco: se ve el paso, con su hoja (ver `doorway` en RoomScene.ts).
+  for (const f of doors) {
+    const y = h - f * PITCH;
+    for (let j = y - DOOR_H; j < y; j++) for (let i = DOOR_U0; i < DOOR_U1; i++) b.clear(i, j);
+  }
   return b;
 }
 
@@ -774,4 +786,34 @@ export function palisade(tall: number): PixelBuffer {
       p.set(x + 2, 1, P.oak);
     }
   });
+}
+
+// ---------- El paso de las puertas entre salas ----------
+
+/** La jamba del fondo del paso (`w` × `DOOR_H`): con el acabado de la pared y su canto. */
+export function doorJamb(theme: Theme, w: number, seed: string): PixelBuffer {
+  const b = new PixelBuffer(w, DOOR_H);
+  if (theme === 'yeso') plaster(b, 0, 0, w, DOOR_H, seed, PLASTER);
+  else if (theme === 'madera') planksV(b, 0, 0, w, DOOR_H, seed, WOOD_DARK, 4);
+  else
+    stoneWall(b, 0, 0, w, DOOR_H, seed, { ramp: theme === 'piedra' ? CELLAR : ROCK, bw: 6, bh: 5 });
+  b.vline(0, 0, DOOR_H, P.bark);
+  b.vline(w - 1, 0, DOOR_H, P.bark);
+  ambientOcclusion(b, 0, 0, w, DOOR_H, 3, { top: true, bottom: false, left: true, right: true });
+  return b;
+}
+
+/** La hoja de la puerta entre salas: tablas de roble con dos herrajes y el tirador. */
+export function doorPanel(): PixelBuffer {
+  const w = (DOOR_U1 - DOOR_U0) * 2;
+  const b = new PixelBuffer(w, DOOR_H);
+  planksV(b, 0, 0, w, DOOR_H, 'hoja', [P.plum, P.rust, P.oak, P.clay], 4);
+  b.vline(0, 0, DOOR_H, P.rust);
+  b.vline(w - 1, 0, DOOR_H, P.plum);
+  for (const y of [7, DOOR_H - 9]) {
+    b.rect(1, y, w - 2, 2, P.slate);
+    b.hline(1, y, w - 2, P.steel);
+  }
+  b.rect(3, 24, 2, 3, P.gold);
+  return b;
 }

@@ -32,6 +32,7 @@ import { P, darker } from '../../art/palette';
 import { PixelBuffer, bayer, rgba, toHex } from '../../art/pixel';
 import type { Building, RaidResult, Room, RoomYield } from '../../core/model';
 import { ROOMS } from '../../data/rooms';
+import type { GardenEdgeId } from '../../data/custom';
 import { Camera } from '../camera';
 import { GROUND } from '../geometry';
 import { Particles, type PKind } from '../particles';
@@ -65,12 +66,14 @@ import {
   cloisterEnd,
   cloisterSide,
   eaveFront,
+  flowerFace,
   hedgeFace,
   leafTex,
   edgeArt,
   galleryFloor,
   paintGround,
   pieceArt,
+  railFace,
   verge,
 } from './jardin';
 import { Pets, kindOf, type Perch, type PetId } from './pets';
@@ -123,6 +126,11 @@ import {
   roofTiles,
   ruined,
   scaffold,
+  DOOR_H,
+  DOOR_U0,
+  DOOR_U1,
+  doorJamb,
+  doorPanel,
   sideTex,
   stable,
   stairBack,
@@ -142,7 +150,7 @@ const TERRAIN_PAD = 3200;
 /** Ancho del trozo de terreno o de tierra que se repite hasta allí. */
 const TILE = 512;
 /** Hasta dónde llega el césped del jardín; de ahí a los árboles, el terreno. */
-const LAWN_D = 140;
+const LAWN_D = 118;
 const DAWN_LIGHT = 0.65;
 const NEAR = 20;
 const FAR = EYE + 400;
@@ -195,6 +203,17 @@ export interface Spot {
   remove?: boolean;
   /** Solo para enseñar un sitio (el anexo libre): borde claro, sin cruz. */
   info?: boolean;
+}
+
+/** La hoja de una puerta entre salas: gira sobre su gozne (al fondo del hueco) hacia `dir`. */
+interface Door {
+  mesh: Mesh;
+  mat: ShaderMaterial;
+  xm: number;
+  yb: number;
+  floor: number;
+  open: number;
+  dir: 1 | -1;
 }
 
 /** Un foco: dónde está, hasta dónde llega y la zona a la que alumbra (en 3D, y hacia arriba). */
@@ -386,6 +405,8 @@ export class RoomScene {
   private hover: Spot | null = null;
   /** Lo tocable de las salas (el tablón, el mapa…) y lo que hay bajo el ratón. */
   private props: PropSpot[] = [];
+  /** Las hojas de las puertas entre salas, que se abren cuando alguien pasa (ver `doorway`). */
+  private doors: Door[] = [];
   private hoverProp: PropSpot | null = null;
   /** Sitios para una obra: mientras los hay, solo se tocan ellos. */
   private targets: Spot[] | null = null;
@@ -1245,6 +1266,7 @@ export class RoomScene {
     this.pinnedAt = '';
     this.towerRect = null;
     this.props = [];
+    this.doors = [];
     this.hoverProp = null;
     const b = L.b;
     const g = this.world;
@@ -1818,6 +1840,9 @@ export class RoomScene {
       [at(x1, yb, D), at(x1, yb, 0), at(x1, yt, 0), at(x1, yt, D)],
       flat,
     );
+    // El paso de cada puerta a la sala de la derecha (la de la izquierda la pone esa sala).
+    for (const i of doors(o.sides.right))
+      this.doorway(x1, x1 + PARTITION, floorY(o.floor + i), o.floor + i, theme, ambient, sun);
     // Paredes de fuera, planta a planta, donde el hueco da al aire.
     const outdoor = { ambient: OUTDOOR, sun: 1, dither: 0 };
     let doorDone = o.door === undefined;
@@ -2012,7 +2037,7 @@ export class RoomScene {
         look.edge === 'verja' ? {} : { box: true, thick: 6 },
       );
     if (look.cloister) this.cloister(L, model);
-    if (look.edge === 'seto') this.backHedges(garden);
+    if (look.edge) this.backEdge(garden, look.edge);
     if (look.lamps)
       for (const r of slots.slice(1)) {
         const lx = r.x;
@@ -2191,6 +2216,84 @@ export class RoomScene {
     }
   }
 
+  /**
+   * El paso de una puerta entre dos salas, por el grueso del tabique (de `xa` a `xb`): el umbral,
+   * el dintel, la jamba del fondo y la hoja, que gira sobre su gozne cuando pasa alguien.
+   */
+  private doorway(
+    xa: number,
+    xb: number,
+    yb: number,
+    floor: number,
+    theme: Theme,
+    ambient: Tint,
+    sun: number,
+  ): void {
+    const g = this.world;
+    const zf = DOOR_U0 * 2;
+    const zh = DOOR_U1 * 2;
+    const yt = yb - DOOR_H;
+    const o = { ambient, sun, dither: 0 };
+    const w = Math.round(xb - xa);
+    const sill = new PixelBuffer(w, (zh - zf) / 2);
+    for (let y = 0; y < sill.h; y++)
+      for (let x = 0; x < w; x++) sill.set(x, y, x % 5 === 0 ? P.rust : P.oak);
+    this.plane(g, sill, [at(xa, yb, zf), at(xb, yb, zf), at(xb, yb, zh), at(xa, yb, zh)], o);
+    const dark = new PixelBuffer(w, 1);
+    dark.hline(0, 0, w, P.ebony);
+    this.plane(g, dark, [at(xa, yt, zh), at(xb, yt, zh), at(xb, yt, zf), at(xa, yt, zf)], o);
+    this.plane(
+      g,
+      doorJamb(theme, w, `jamba${xa}${floor}`),
+      [at(xa, yb, zh), at(xb, yb, zh), at(xb, yt, zh), at(xa, yt, zh)],
+      o,
+    );
+    // La hoja, cerrada: en medio del grueso, de la jamba de delante al gozne.
+    const xm = (xa + xb) / 2;
+    const corners: Corners = [at(xm, yb, zf), at(xm, yb, zh), at(xm, yt, zh), at(xm, yt, zf)];
+    const mat = this.look.surface(doorPanel(), corners, { ...o, side: DoubleSide });
+    const mesh = new Mesh(quad(corners, this.look), mat);
+    mesh.frustumCulled = false;
+    g.add(mesh);
+    this.doors.push({ mesh, mat, xm, yb, floor, open: 0, dir: 1 });
+  }
+
+  /** Abre las puertas por las que pasa alguien (hacia el lado contrario del que viene). */
+  private swingDoors(dt: number): void {
+    const zh = DOOR_U1 * 2;
+    const len = (DOOR_U1 - DOOR_U0) * 2;
+    for (const d of this.doors) {
+      const who = this.crowd.near(d.xm, d.floor, 16);
+      if (who !== null && d.open < 0.05) d.dir = who < d.xm ? 1 : -1;
+      const target = who === null ? 0 : 1;
+      let next = d.open + (target - d.open) * Math.min(1, dt * 6);
+      if (Math.abs(next - target) < 0.003) next = target;
+      if (next === d.open) continue;
+      d.open = next;
+      const a = d.open * 1.4;
+      const xf = d.xm + d.dir * len * Math.sin(a);
+      const zfree = zh - len * Math.cos(a);
+      const yt = d.yb - DOOR_H;
+      const c: Corners = [
+        at(xf, d.yb, zfree),
+        at(d.xm, d.yb, zh),
+        at(d.xm, yt, zh),
+        at(xf, yt, zfree),
+      ];
+      const pos = d.mesh.geometry.getAttribute('position') as Float32BufferAttribute;
+      c.forEach((v, i) => pos.setXYZ(i, v.x, v.y, v.z));
+      pos.needsUpdate = true;
+      const u = d.mat.uniforms;
+      const [p0, p1, , p3] = c;
+      (u.uOrigin!.value as Vector3).copy(p0);
+      (u.uAxisU!.value as Vector3).subVectors(p1, p0);
+      (u.uAxisV!.value as Vector3).subVectors(p3, p0);
+      (u.uNormal!.value as Vector3)
+        .crossVectors(u.uAxisU!.value as Vector3, u.uAxisV!.value as Vector3)
+        .normalize();
+    }
+  }
+
   /** Una columna de piedra de verdad: un cilindro de caras con la luz por delante a la izquierda. */
   private pillar(g: Group, cx: number, cz: number, r: number, yt: number, yb: number): void {
     const K = 10;
@@ -2263,32 +2366,45 @@ export class RoomScene {
   }
 
   /**
-   * Los setos del fondo del jardín (con borde de seto, para que cierre igual que por delante): uno
-   * a lo ancho, al fondo del césped, y a cada lado desde donde se acaba el edificio; con cuerpo
-   * (cara, lomo y testeros).
+   * El borde del fondo del jardín, igual que el de delante para que cierre igual: uno a lo ancho,
+   * al fondo del césped, y a cada lado desde donde se acaba el edificio. El seto y las flores,
+   * con cuerpo (cara, lomo y testeros); la verja, de barrotes que dejan ver a través.
    */
-  private backHedges(garden: Rect): void {
+  private backEdge(garden: Rect, edge: GardenEdgeId): void {
     const g = this.world;
-    const H = 14;
-    const T = 8;
+    const H = edge === 'flores' ? 9 : 14;
+    // Lo que entra cada lado; la verja, sin grueso.
+    const T = edge === 'verja' ? 0 : 8;
     const zb = LAWN_D - 18;
     const o = { ambient: OUTDOOR, sun: 1, dither: 0 };
     const top = GROUND - H;
     const xl = garden.x + 2;
     const xr = garden.x + garden.w - 2;
+    // La cara, de `w` (`side`: a lo hondo, a media resolución) y el lomo, de `w` × `d`.
+    const face = (w: number, seed: string, side: boolean) =>
+      edge === 'seto'
+        ? hedgeFace(w, H, seed, side ? 23 : 46)
+        : edge === 'flores'
+          ? flowerFace(w, H, seed)
+          : side
+            ? railFace(w, H, 2, 31)
+            : railFace(w, H, 4, 62);
+    const lid = (w: number, d: number, seed: string) =>
+      edge === 'seto' ? leafTex(w, d, seed, true) : flowerFace(w, d, seed, true);
     // Al fondo: la cara que mira al jardín y el lomo.
     this.plane(
       g,
-      hedgeFace(Math.round(xr - xl), H, 'fondo'),
+      face(Math.round(xr - xl), 'fondo', false),
       [at(xl, GROUND, zb), at(xr, GROUND, zb), at(xr, top, zb), at(xl, top, zb)],
       o,
     );
-    this.plane(
-      g,
-      leafTex(Math.round(xr - xl), T / 2, 'fondo lomo', true),
-      [at(xl, top, zb), at(xr, top, zb), at(xr, top, zb + T), at(xl, top, zb + T)],
-      o,
-    );
+    if (T)
+      this.plane(
+        g,
+        lid(Math.round(xr - xl), T / 2, 'fondo lomo'),
+        [at(xl, top, zb), at(xr, top, zb), at(xr, top, zb + T), at(xl, top, zb + T)],
+        o,
+      );
     // A los lados, desde el fondo de los edificios hasta el del fondo.
     const z0 = DEPTH + 4;
     const len = Math.round((zb - z0) / 2);
@@ -2296,25 +2412,28 @@ export class RoomScene {
       [xl, xl + T],
       [xr, xr - T],
     ] as const) {
-      const right = xi < xo;
+      const right = xo === xr;
       this.plane(
         g,
-        hedgeFace(len, H, `lado${xo}`, 23),
+        face(len, `lado${xo}`, true),
         right
           ? [at(xi, GROUND, zb), at(xi, GROUND, z0), at(xi, top, z0), at(xi, top, zb)]
           : [at(xi, GROUND, z0), at(xi, GROUND, zb), at(xi, top, zb), at(xi, top, z0)],
         { ...o, sun: 0.7 },
       );
+      if (!T) continue;
       const [a, c] = right ? [xi, xo] : [xo, xi];
       this.plane(
         g,
-        leafTex(Math.round(c - a), T, `lado lomo${xo}`, true),
+        lid(Math.round(c - a), T, `lado lomo${xo}`),
         [at(a, top, z0), at(c, top, z0), at(c, top, zb), at(a, top, zb)],
         o,
       );
       this.plane(
         g,
-        hedgeFace(Math.round(c - a), H, `testero${xo}`, 99),
+        edge === 'seto'
+          ? hedgeFace(Math.round(c - a), H, `testero${xo}`, 99)
+          : flowerFace(Math.round(c - a), H, `testero${xo}`),
         [at(a, GROUND, z0), at(c, GROUND, z0), at(c, top, z0), at(a, top, z0)],
         o,
       );
@@ -2704,6 +2823,7 @@ export class RoomScene {
 
   private update(dt: number): void {
     this.t += dt;
+    this.swingDoors(dt);
     if (this.night) this.raidStep(dt);
     if (this.night) {
       const p = this.nightP();
