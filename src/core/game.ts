@@ -26,6 +26,7 @@ import {
   DEBT,
   DESERT_CHANCE,
   GARDEN_W,
+  MAX_UP,
   MAX_CANDIDATES,
   RAISE_AMOUNT,
   RAISE_CHANCE,
@@ -687,7 +688,17 @@ function reduceAction(state: GameState, action: Action): GameState {
         (p.ground === undefined || p.ground in GARDEN_GROUNDS) &&
         (p.edge === undefined || p.edge in GARDEN_EDGES) &&
         (p.slots === undefined ||
-          (p.slots.length <= GARDEN_W && p.slots.every((x) => x === null || x in GARDEN_PIECES)));
+          (p.slots.length <= GARDEN_W && p.slots.every((x) => x === null || x in GARDEN_PIECES))) &&
+        (p.cloister === undefined ||
+          typeof p.cloister === 'boolean' ||
+          (typeof p.cloister === 'object' &&
+            Object.entries(p.cloister).every(
+              ([k, n]) =>
+                (k === 'edificio' || k === 'anexo') &&
+                Number.isInteger(n) &&
+                n >= 0 &&
+                n <= MAX_UP + 1,
+            )));
       if (!ok) return state;
       const c = customOf(state);
       return { ...state, custom: { ...c, garden: { ...c.garden, ...p } } };

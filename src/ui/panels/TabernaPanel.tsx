@@ -10,7 +10,6 @@ import {
   FACADE,
   GARDEN_EDGES,
   GARDEN_GROUNDS,
-  GARDEN_PIECES,
   ROOFS,
   SIGNS,
   WALLS,
@@ -26,14 +25,12 @@ import {
   type GardenEdgeId,
   type GardenGroundId,
   type GardenLook,
-  type GardenPieceId,
   type RoofId,
   type SignId,
   type WallId,
   type CrestSymbol,
 } from '../../data/custom';
 import type { UnlockId } from '../../data/unlocks';
-import { GARDEN_W } from '../../core/balance';
 import { crestBoard } from '../../world/props';
 import { BufferImage } from '../BufferImage';
 import { help } from '../HoldHelp';
@@ -50,6 +47,8 @@ interface Props {
   onLook: (patch: FacadeLook) => void;
   /** El aspecto del jardín (solo con el patio trasero). */
   onGarden: (patch: GardenLook) => void;
+  /** Abre el modo obras en la pestaña del jardín (piezas y claustro). */
+  onGardenWorks: () => void;
   /** Con la pestaña del jardín abierta, la cámara lo enseña sobre el panel (vista previa). */
   onGardenView: (on: boolean) => void;
   onRaven: () => void;
@@ -156,75 +155,94 @@ function FacadeParts({
 
 /** Sin nada elegido (pieza o borde). */
 const NADA = 'nada';
-const free = () => null;
 
-/** El jardín del patio trasero: suelo, una pieza por trozo, borde, faroles y claustro. */
-function GardenParts({ look, onLook }: { look: GardenLook; onLook: (p: GardenLook) => void }) {
-  const slots = look.slots ?? [];
-  const pieces = { [NADA]: 'Nada', ...GARDEN_PIECES } as Record<GardenPieceId | 'nada', string>;
+/** Color de muestra de cada suelo y borde (hasta que haya dibujo). */
+const SWATCH: Record<string, string> = {
+  hierba: '#5fa040',
+  grava: '#b7ab96',
+  losas: '#a49a8c',
+  seto: '#2f6b34',
+  flores: '#d9587a',
+  verja: '#3a3a3a',
+};
+
+/** Una fila de muestras de color, una sola elegida. */
+function Swatches<K extends string>({
+  title,
+  names,
+  value,
+  onPick,
+}: {
+  title: string;
+  names: Record<K, string>;
+  value: K;
+  onPick: (k: K) => void;
+}) {
+  return (
+    <div class="look-row">
+      <span class="row-sub">{title}</span>
+      <div class="swatches" role="radiogroup" aria-label={title}>
+        {(Object.keys(names) as K[]).map((k) => (
+          <button
+            key={k}
+            role="radio"
+            aria-checked={value === k}
+            aria-label={names[k]}
+            data-help={names[k]}
+            class={`swatch ${value === k ? 'is-on' : ''} ${SWATCH[k] ? '' : 'is-none'}`}
+            style={SWATCH[k] ? { background: SWATCH[k] } : undefined}
+            onClick={() => onPick(k)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * El jardín del patio trasero, solo el aspecto: suelo, borde y faroles. Las piezas y el claustro
+ * se construyen en el modo obras (el enlace de abajo lo abre en su pestaña).
+ */
+function GardenParts({
+  look,
+  onLook,
+  onWorks,
+}: {
+  look: GardenLook;
+  onLook: (p: GardenLook) => void;
+  onWorks: () => void;
+}) {
   const edges = { [NADA]: 'Ninguno', ...GARDEN_EDGES } as Record<GardenEdgeId | 'nada', string>;
-  const SIDE = ['Izquierda', 'En medio', 'Derecha'];
-  const [at, setAt] = useState(0);
   return (
     <div class="look-parts">
-      <Choice<GardenGroundId>
-        title="Suelo"
-        names={GARDEN_GROUNDS}
-        value={look.ground ?? 'hierba'}
-        onPick={(ground) => onLook({ ground })}
-        lock={free}
-      />
-      <div class="look-row">
-        <span class="row-sub">Trozo del jardín</span>
-        <div class="tav-symbols" role="radiogroup" aria-label="Trozo del jardín">
-          {Array.from({ length: GARDEN_W }, (_, i) => (
-            <button
-              key={i}
-              role="radio"
-              aria-checked={at === i}
-              class={`btn ${at === i ? 'btn-gold' : 'btn-wood'}`}
-              onClick={() => setAt(i)}
-            >
-              {SIDE[i] ?? `Trozo ${i + 1}`}
-              <small>{slots[i] ? ` · ${GARDEN_PIECES[slots[i]!]}` : ''}</small>
-            </button>
-          ))}
-        </div>
+      <div class="swatch-pair">
+        <Swatches<GardenGroundId>
+          title="Suelo"
+          names={GARDEN_GROUNDS}
+          value={look.ground ?? 'hierba'}
+          onPick={(ground) => onLook({ ground })}
+        />
+        <Swatches<GardenEdgeId | 'nada'>
+          title="Borde"
+          names={edges}
+          value={look.edge ?? NADA}
+          onPick={(k) => onLook({ edge: k === NADA ? undefined : k })}
+        />
       </div>
-      <Choice<GardenPieceId | 'nada'>
-        title={`Pieza (${(SIDE[at] ?? '').toLowerCase()})`}
-        names={pieces}
-        value={slots[at] ?? NADA}
-        onPick={(k) => {
-          const next = Array.from({ length: GARDEN_W }, (_, j) => slots[j] ?? null);
-          next[at] = k === NADA ? null : k;
-          onLook({ slots: next });
-        }}
-        lock={free}
-      />
-      <Choice<GardenEdgeId | 'nada'>
-        title="Borde"
-        names={edges}
-        value={look.edge ?? NADA}
-        onPick={(k) => onLook({ edge: k === NADA ? undefined : k })}
-        lock={free}
-      />
-      <label class="look-check">
-        <input
-          type="checkbox"
-          checked={!!look.lamps}
-          onChange={(e) => onLook({ lamps: (e.target as HTMLInputElement).checked })}
-        />{' '}
-        Faroles
-      </label>
-      <label class="look-check">
-        <input
-          type="checkbox"
-          checked={!!look.cloister}
-          onChange={(e) => onLook({ cloister: (e.target as HTMLInputElement).checked })}
-        />{' '}
-        Claustro (soportales con arcos)
-      </label>
+      <button
+        class={`btn ${look.lamps ? 'btn-gold' : 'btn-wood'} look-toggle`}
+        aria-pressed={!!look.lamps}
+        onClick={() => onLook({ lamps: !look.lamps })}
+      >
+        <Icon name="vela" size={16} /> Faroles
+      </button>
+      <button class="garden-works" onClick={onWorks}>
+        <Icon name="martillo" size={20} />
+        <span>
+          <b>Piezas y claustro, en Obras</b>
+          <small>Fuente, árboles, banco… y el claustro planta a planta.</small>
+        </span>
+      </button>
     </div>
   );
 }
@@ -271,6 +289,7 @@ export function TabernaPanel({
   onLook,
   onGarden,
   onGardenView,
+  onGardenWorks,
   onRaven,
   onFeast,
   has,
@@ -427,7 +446,9 @@ export function TabernaPanel({
         </>
       )}
 
-      {tab === 'jardin' && <GardenParts look={c.garden ?? {}} onLook={onGarden} />}
+      {tab === 'jardin' && (
+        <GardenParts look={c.garden ?? {}} onLook={onGarden} onWorks={onGardenWorks} />
+      )}
       {tab === 'fachada' && <FacadeParts look={c.look ?? {}} onLook={onLook} has={has} />}
       {tab === 'fachada' && (
         <div class="adornos">

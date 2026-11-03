@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'preact/hooks';
 import { ROOM_COST } from '../core/balance';
 import { laxly, stairCost } from '../core/rooms';
+import { GARDEN_PIECES, type GardenPieceId } from '../data/custom';
 import { ROOMS, type RoomType } from '../data/rooms';
 import { pickTitle, targetsFor, whyNoSpot } from '../world/rooms/works';
 import { audio } from '../audio/audio';
@@ -51,17 +52,57 @@ const ICON: Record<RoomType, IconName> = {
   alquimia: 'vela',
 };
 
+/** La última pestaña de la cinta (la cinta se rehace al volver de elegir sitio). */
+let lastTab = 0;
+
+/** Las piezas del jardín y el claustro, con su icono (gratis de momento). */
+const GARDEN_TILES: [GardenPieceId | 'claustro', string, IconName][] = [
+  ...(Object.keys(GARDEN_PIECES) as GardenPieceId[]).map(
+    (k) =>
+      [
+        k,
+        GARDEN_PIECES[k],
+        (
+          {
+            fuente: 'agua',
+            pozo: 'olla',
+            arbol: 'bosque',
+            estatua: 'escudo',
+            banco: 'cama',
+            huerto: 'campo',
+            flores: 'vela',
+          } as const
+        )[k],
+      ] as [GardenPieceId, string, IconName],
+  ),
+  ['claustro', 'Claustro', 'puerta'],
+];
+
 /**
  * Cinta del modo obras, como en un refugio: las salas que se pueden construir en una fila que
  * se desliza, la escalera y, debajo, lo que lleva el plano con deshacer, pagar y salir.
  */
 function Ribbon({ works: w, onMore }: Props) {
   const b = w.view.building;
-  const [tab, setTab] = useState(0);
+  // Al volver de elegir sitio, la misma pestaña; si se llega eligiendo algo del jardín (desde
+  // Adornos), la suya.
+  const [tab, pickTab] = useState(
+    w.pick?.kind === 'garden'
+      ? TABS.length
+      : w.gardenOpen
+        ? lastTab
+        : Math.min(lastTab, TABS.length - 1),
+  );
+  const setTab = (i: number) => {
+    lastTab = i;
+    pickTab(i);
+  };
+  // La pestaña del jardín va la última, solo con el patio trasero pagado.
+  const garden = w.gardenOpen && tab === TABS.length;
   const items = useMemo(
     () =>
       laxly(() =>
-        TABS[tab]!.rooms.map((t) => {
+        (TABS[tab]?.rooms ?? []).map((t) => {
           // Las únicas que ya están se amplían desde aquí (a los lados y, el salón, hacia arriba).
           const list = targetsFor(w.view, { kind: 'build', type: t });
           const grow = !!ROOMS[t].unique && b.rooms.some((r) => r.type === t);
@@ -96,8 +137,40 @@ function Ribbon({ works: w, onMore }: Props) {
             {x.name}
           </button>
         ))}
+        {w.gardenOpen && (
+          <button
+            role="tab"
+            aria-selected={garden}
+            class={`ribbon-tab ${garden ? 'is-on' : ''}`}
+            onClick={() => setTab(TABS.length)}
+          >
+            <Icon name="bosque" size={14} />
+            Jardín
+          </button>
+        )}
       </div>
       <div class="ribbon-rooms">
+        {garden &&
+          GARDEN_TILES.map(([k, name, icon]) => (
+            <button
+              key={k}
+              class={`ribbon-room ${w.pick?.kind === 'garden' && w.pick.piece === k ? 'is-on' : ''}`}
+              data-help={
+                k === 'claustro'
+                  ? 'Soportales con arcos pegados a cada fachada del jardín, planta a planta.'
+                  : 'Toca un trozo del jardín para ponerla (o quitarla).'
+              }
+              aria-label={`${name}, gratis`}
+              onClick={() => {
+                lastTab = TABS.length;
+                w.startPick({ kind: 'garden', piece: k });
+              }}
+            >
+              <Icon name={icon} size={20} />
+              <b>{name}</b>
+              <span>Gratis</span>
+            </button>
+          ))}
         {items.map(({ t, spots, grow, cost, why }) => (
           <button
             key={t}
@@ -123,7 +196,7 @@ function Ribbon({ works: w, onMore }: Props) {
             </span>
           </button>
         ))}
-        {TABS[tab]!.name === 'Gremio' && (
+        {TABS[tab]?.name === 'Gremio' && (
           <button
             class="ribbon-room"
             disabled={!stairs}

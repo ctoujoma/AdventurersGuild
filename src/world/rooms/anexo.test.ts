@@ -123,3 +123,51 @@ describe('el anexo para la cámara', () => {
     expect(p.x).toBeLessThan(L.right);
   });
 });
+
+describe('el jardín en el modo obras', () => {
+  function yard(): GameState {
+    let s = newGame('jardin-obras');
+    s.mode = 'libre';
+    s.gold = 99999;
+    s.rep = RANKS[WING_RANK]!.at;
+    while (s.building.cols < MAX_COLS) s = reduce(s, { type: 'buyPlot' });
+    s = reduce(s, { type: 'buyWing' });
+    // La planta baja seguida hasta el jardín y una sala en el anexo (con paso por el jardín).
+    for (let c = 4; c <= WING_COL; c++)
+      if (c < s.building.cols || c === WING_COL)
+        s = reduce(s, { type: 'build', room: 'despensa', col: c, floor: 0 });
+    return s;
+  }
+  const apply = (s: GameState, t: { action: Action }) => reduce(s, t.action);
+
+  it('una pieza: un sitio por trozo, y tocar la misma la quita', () => {
+    let s = yard();
+    const list = targetsFor(s, { kind: 'garden', piece: 'fuente' });
+    expect(list).toHaveLength(GARDEN_W);
+    s = apply(s, list[1]!);
+    expect(s.custom?.garden?.slots).toEqual([null, 'fuente', null]);
+    const again = targetsFor(s, { kind: 'garden', piece: 'fuente' })[1]!;
+    expect(again.label).toMatch(/Quitar/);
+    s = apply(s, again);
+    expect(s.custom?.garden?.slots).toEqual([null, null, null]);
+  });
+
+  it('el claustro se hace planta a planta, de abajo arriba, en cada lado', () => {
+    let s = yard();
+    const free = () =>
+      targetsFor(s, { kind: 'garden', piece: 'claustro' }).filter((t) => !t.blocked);
+    expect(free().length).toBe(2);
+    s = apply(s, free()[0]!);
+    expect(s.custom?.garden?.cloister).toEqual({ edificio: 1, anexo: 0 });
+    // Ahora ese lado ofrece quitarla; el otro, la planta baja.
+    expect(free().some((t) => /Quitar/.test(t.label))).toBe(true);
+  });
+
+  it('el núcleo no deja plantas raras en el claustro', () => {
+    const s = yard();
+    const bad = reduce(s, { type: 'gardenLook', patch: { cloister: { edificio: -1 } } });
+    expect(bad.custom?.garden?.cloister).toBeUndefined();
+    const ok = reduce(s, { type: 'gardenLook', patch: { cloister: { anexo: 2 } } });
+    expect(ok.custom?.garden?.cloister).toEqual({ anexo: 2 });
+  });
+});

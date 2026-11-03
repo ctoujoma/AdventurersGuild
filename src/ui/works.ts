@@ -20,6 +20,8 @@ export interface Works {
   steps: Action[];
   /** Un aviso corto abajo (por qué no se puede algo). */
   toast: (text: string) => void;
+  /** El patio trasero ya está pagado: el jardín se puede adornar desde aquí. */
+  gardenOpen: boolean;
   /** Lo que cuesta el borrador hasta ahora (negativo si se recupera oro). */
   planCost: number;
   /** Lo que impide pagar el borrador (salas sin paso, una que falta, el oro…). */
@@ -154,6 +156,7 @@ export function useWorks({ game, dispatch, toast, focus, raise, price }: Deps): 
   return {
     view,
     toast,
+    gardenOpen: !!game.building.wing,
     planning: !!steps,
     steps: steps ?? [],
     planCost: game.gold - view.gold,
@@ -174,6 +177,13 @@ export function useWorks({ game, dispatch, toast, focus, raise, price }: Deps): 
       if (t.blocked) {
         toast(t.blocked);
         audio.play('deselect');
+        return;
+      }
+      // El jardín no va en el borrador: es gratis y se pone al momento (y sigue marcado).
+      if (t.action.type === 'gardenLook') {
+        if (!game.building.wing) return toast('Primero paga el patio trasero.');
+        dispatch(t.action);
+        audio.play('build', 0.7);
         return;
       }
       // Excavar, ampliar y la escalera siguen marcados (se encadenan); lo demás acaba al hacerlo.
