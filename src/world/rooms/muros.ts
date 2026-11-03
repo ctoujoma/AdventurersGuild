@@ -362,19 +362,20 @@ function daubSection(
     for (let i = 0; i < w; i++) {
       const xx = col(i);
       // El revoco: más grueso por fuera que por dentro.
-      if (i === 0 || i === w - 1) b.set(xx, yy, P.sand);
-      else if (i === 1 || i === w - 2 || (w > 10 && i === 2)) b.set(xx, yy, P.skinS);
+      // Un tono por debajo de la cara (en el corte no da el sol: si no, deslumbra).
+      if (i === 0 || i === w - 1) b.set(xx, yy, P.skinS);
+      else if (i === 1 || i === w - 2 || (w > 10 && i === 2)) b.set(xx, yy, P.clay);
       else {
         // El barro con paja.
         const n = hash(xx, yy, 6);
-        b.set(xx, yy, n < 0.12 ? P.tan : n > 0.9 ? P.rust : P.clay);
+        b.set(xx, yy, n < 0.1 ? P.clay : n > 0.88 ? P.bark : P.rust);
       }
     }
   // El zarzo: las varas, cortadas, en zigzag de un lado al otro.
   for (let k = 0, yy = y + 3; yy < y + h - 2; k++, yy += 5) {
     const i = 3 + (k % 2 ? w - 8 : 0) + (k % 4 === 1 ? 1 : 0);
     const xx = Math.min(col(i), col(i + 1));
-    b.rect(xx, yy, 2, 2, P.bark);
+    b.rect(xx, yy, 2, 2, P.plum);
     b.set(xx, yy, P.oak);
   }
   // Las carreras, por la testa, cada 30.
