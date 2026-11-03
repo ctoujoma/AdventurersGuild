@@ -4,7 +4,7 @@
  * escalera, con su rectángulo en el corte del edificio. Lógica pura: la escena los marca y la
  * interfaz decide qué hacer con el que se toque.
  */
-import { MAX_COLS, MAX_DOWN, MAX_UP, GARDEN_W, WING_COL, WING_START } from '../../core/balance';
+import { MAX_COLS, MAX_DOWN, MAX_UP, GARDEN_W, WING_START } from '../../core/balance';
 import type { Action } from '../../core/game';
 import type { GameState, Room } from '../../core/model';
 import {
@@ -17,7 +17,10 @@ import {
   planWing,
   LOCKED,
   planUnstair,
+  inGarden,
+  inWing,
   isShaft,
+  onLot,
   roomAt,
   spanOf,
   type ExtendDir,
@@ -126,6 +129,32 @@ export function whyNoSpot(s: GameState, type: RoomType): string {
   }
   const all = [...seen].sort((x, y) => y[1] - x[1]).map(([e]) => e);
   return all.find((e) => /rango/.test(e)) ?? all[0] ?? 'No queda ningún sitio donde hacerlo.';
+}
+
+/**
+ * Los huecos ya comprados y sin sala: la planta baja del solar (no el jardín), lo excavado y, en
+ * las plantas de arriba, los que quedan con salas a los dos lados y sala debajo.
+ */
+export function freeCells(b: GameState['building']): [number, number][] {
+  const out: [number, number][] = [];
+  const span = spanOf(b);
+  for (let c = 0; c < span; c++)
+    if (onLot(b, c) && !inGarden(b, c) && !roomAt(b, c, 0)) out.push([c, 0]);
+  for (const k of b.dug) {
+    const [c, f] = k.split(',').map(Number) as [number, number];
+    if (!roomAt(b, c, f)) out.push([c, f]);
+  }
+  for (let f = 1; f <= MAX_UP; f++)
+    for (let c = 0; c < span; c++) {
+      if (roomAt(b, c, f) || !roomAt(b, c, f - 1)) continue;
+      const room = (x: number) => !!roomAt(b, x, f) && roomAt(b, x, f)!.type !== 'torre';
+      let left = false;
+      let right = false;
+      for (let x = c - 1; x >= 0 && !left; x--) left = room(x);
+      for (let x = c + 1; x < span && !right; x++) right = room(x);
+      if (left && right) out.push([c, f]);
+    }
+  return out;
 }
 
 /** Los sitios donde se puede hacer la obra elegida, con lo que cuesta cada uno. */
@@ -257,21 +286,22 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
           blocked: why,
         });
       }
-      // El anexo vacío no se dibuja: se marcan sus huecos libres de la planta baja.
-      if (b.wing)
-        for (let c = WING_COL; c < spanOf(b); c++) {
-          if (roomAt(b, c, 0)) continue;
-          const why = 'Anexo libre: elige una sala en la barra de abajo para construir aquí.';
-          out.push({
-            id: `obra:${out.length}`,
-            rect: cell(s, c, 0),
-            label: why,
-            cost: 0,
-            action: { type: 'build', room: 'despensa', col: c, floor: 0 },
-            blocked: why,
-            info: true,
-          });
-        }
+      // Los huecos vacíos no se dibujan: se marcan los que ya son tuyos y no tienen sala (la
+      // planta baja del solar y del anexo, lo excavado y los que quedan entre salas al derribar).
+      for (const [c, f] of freeCells(b)) {
+        const why = inWing(b, c)
+          ? 'Anexo libre: elige una sala en la barra de abajo para construir aquí.'
+          : 'Hueco libre: elige una sala en la barra de abajo para construir aquí.';
+        out.push({
+          id: `obra:${out.length}`,
+          rect: cell(s, c, f),
+          label: why,
+          cost: 0,
+          action: { type: 'build', room: 'despensa', col: c, floor: f },
+          blocked: why,
+          info: true,
+        });
+      }
       break;
     }
     case 'dig':
