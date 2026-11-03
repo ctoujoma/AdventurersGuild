@@ -468,6 +468,7 @@ export function App() {
             rect: t.rect,
             label: t.blocked ? t.label : `${t.label} · ${Math.abs(t.cost)}`,
             blocked: !!t.blocked,
+            info: !!t.info,
             remove: t.cost < 0,
           }))
         : null,
