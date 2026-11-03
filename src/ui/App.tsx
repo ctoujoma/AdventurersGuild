@@ -473,7 +473,10 @@ export function App() {
         ? works.targets.map((t) => ({
             id: t.id,
             rect: t.rect,
-            label: t.blocked ? t.label : `${t.label} · ${Math.abs(t.cost)}`,
+            label:
+              t.blocked || t.action.type === 'gardenLook'
+                ? t.label
+                : `${t.label} · ${Math.abs(t.cost)}`,
             blocked: !!t.blocked,
             info: !!t.info,
             remove: t.cost < 0,
@@ -1363,6 +1366,11 @@ export function App() {
               }}
               onLook={(patch) => dispatch({ type: 'facadeLook', patch })}
               onGarden={(patch) => dispatch({ type: 'gardenLook', patch })}
+              onGardenWorks={() => {
+                openPanel(null);
+                works.startPlan();
+                works.startPick({ kind: 'garden', piece: 'fuente' });
+              }}
               onGardenView={(on) => {
                 setGardenView(on);
                 return on

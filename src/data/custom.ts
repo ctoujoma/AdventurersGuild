@@ -187,7 +187,16 @@ export interface GardenLook {
   slots?: (GardenPieceId | null)[];
   edge?: GardenEdgeId;
   lamps?: boolean;
-  cloister?: boolean;
+  /**
+   * El claustro: `true`, entero (partidas de antes); o por partes, las plantas hechas de cada
+   * lado desde la baja (`edificio`, `anexo`; 0 o sin poner, ese lado nada).
+   */
+  cloister?: boolean | CloisterLook;
+}
+
+export interface CloisterLook {
+  edificio?: number;
+  anexo?: number;
 }
 
 export const GARDEN_GROUNDS: Record<GardenGroundId, string> = {

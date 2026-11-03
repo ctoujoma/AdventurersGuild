@@ -4,8 +4,8 @@
  * escalera, con su rectángulo en el corte del edificio. Lógica pura: la escena los marca y la
  * interfaz decide qué hacer con el que se toque.
  */
-import { MAX_COLS, MAX_DOWN, MAX_UP, GARDEN_W, WING_START } from '../../core/balance';
-import type { Action } from '../../core/game';
+import { GARDEN_W, MAX_COLS, MAX_DOWN, MAX_UP, WING_COL, WING_START } from '../../core/balance';
+import { customOf, type Action } from '../../core/game';
 import type { GameState, Room } from '../../core/model';
 import {
   planBuild,
@@ -25,7 +25,9 @@ import {
   type ExtendDir,
   type Plan,
 } from '../../core/rooms';
+import { GARDEN_PIECES, type GardenLook, type GardenPieceId } from '../../data/custom';
 import { ROOMS, type RoomType } from '../../data/rooms';
+import { CLOISTER_W, cloisterParts, type CloisterParts } from './jardin';
 import {
   CELL_W,
   PITCH,
@@ -37,6 +39,8 @@ import {
   roomRect,
   roomsLayout,
   type Rect,
+  gardenRect,
+  gardenSlots,
 } from './layout';
 
 /** Qué se está eligiendo en la escena. */
@@ -47,6 +51,8 @@ export type Pick =
   | { kind: 'stair' }
   /** Ganar sitio tocando la escena: los huecos que se pueden excavar y el solar de al lado. */
   | { kind: 'expand' }
+  /** Poner una pieza en un trozo del jardín, o el claustro planta a planta. */
+  | { kind: 'garden'; piece: GardenPieceId | 'claustro' }
   /** Ampliar una sala elegida: casillas a los lados y encima (si crece en alto). */
   | { kind: 'grow'; id: string };
 
@@ -106,6 +112,10 @@ export function pickTitle(s: GameState, pick: Pick): string {
       return 'Toca un hueco para excavarlo o el solar para comprarlo';
     case 'grow':
       return 'Toca un «+» para ampliar la sala';
+    case 'garden':
+      return pick.piece === 'claustro'
+        ? 'Claustro: toca una planta de cada lado'
+        : `Elige dónde poner: ${GARDEN_PIECES[pick.piece].toLowerCase()}`;
   }
 }
 
@@ -153,6 +163,72 @@ export function freeCells(b: GameState['building']): [number, number][] {
       for (let x = c + 1; x < span && !right; x++) right = room(x);
       if (left && right) out.push([c, f]);
     }
+  return out;
+}
+
+/**
+ * Las plantas de cada lado del jardín donde cabe el claustro: las que tenga ese edificio pegadas
+ * al jardín, seguidas desde la baja.
+ */
+export function cloisterRoom(b: GameState['building']): CloisterParts {
+  const up = (c: number) => {
+    let n = 0;
+    while (n <= MAX_UP && roomAt(b, c, n) && roomAt(b, c, n)!.type !== 'torre') n++;
+    return n;
+  };
+  return { edificio: up(b.cols - 1), anexo: up(WING_COL) };
+}
+
+/** Los sitios del jardín: los 3 trozos para una pieza, o las plantas del claustro. */
+function gardenTargets(s: GameState, piece: GardenPieceId | 'claustro'): Target[] {
+  const b = s.building;
+  const g = gardenRect(b);
+  if (!g) return [];
+  const look = customOf(s).garden ?? {};
+  const out: Target[] = [];
+  const push = (rect: Rect, label: string, patch: GardenLook, blocked?: string) =>
+    out.push({
+      id: `obra:${out.length}`,
+      rect,
+      label,
+      cost: 0,
+      action: { type: 'gardenLook', patch },
+      ...(blocked ? { blocked } : {}),
+    });
+  if (piece !== 'claustro') {
+    const name = GARDEN_PIECES[piece].toLowerCase();
+    gardenSlots(b).forEach((rect, i) => {
+      const slots = Array.from({ length: GARDEN_W }, (_, j) => look.slots?.[j] ?? null);
+      const now = slots[i];
+      slots[i] = now === piece ? null : piece;
+      const label =
+        now === piece
+          ? `Quitar ${name}`
+          : now
+            ? `Cambiar ${GARDEN_PIECES[now].toLowerCase()} por ${name}`
+            : `Poner ${name}`;
+      push(rect, label, { slots });
+    });
+    return out;
+  }
+  const room = cloisterRoom(b);
+  const had = cloisterParts(look.cloister);
+  const now = {
+    edificio: Math.min(had.edificio, room.edificio),
+    anexo: Math.min(had.anexo, room.anexo),
+  };
+  for (const side of ['edificio', 'anexo'] as const) {
+    const x = side === 'edificio' ? g.x : g.x + g.w - CLOISTER_W;
+    for (let f = 0; f < room[side]; f++) {
+      const rect = { x, y: floorTop(f), w: CLOISTER_W, h: ROOM_H };
+      const n = now[side];
+      const set = (k: number) => ({ cloister: { ...now, [side]: k } });
+      if (f === n) push(rect, `Claustro: ${f ? `planta ${f}` : 'planta baja'}`, set(f + 1));
+      else if (f === n - 1) push(rect, 'Quitar esta planta del claustro', set(f));
+      else if (f > n)
+        push(rect, 'Primero la planta de abajo.', set(n), 'Primero la planta de abajo.');
+    }
+  }
   return out;
 }
 
@@ -301,6 +377,9 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
       }
       break;
     }
+    case 'garden':
+      out.push(...gardenTargets(s, pick.piece));
+      break;
     case 'dig':
       for (const f of floors(-MAX_DOWN, -1))
         for (let c = 0; c < b.cols; c++)

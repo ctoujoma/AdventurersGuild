@@ -4819,6 +4819,10 @@ select.crew-free {
 .ribbon-room .icon {
   margin-bottom: 1px;
 }
+/* La pieza del jardín elegida, en dorado. */
+.ribbon-room.is-on {
+  background: var(--gold);
+}
 .ribbon-room b {
   font-size: var(--t-m);
   white-space: nowrap;
@@ -6669,4 +6673,54 @@ p.notebook-close {
   .panel.panel-low {
     max-height: 48%;
   }
+}
+
+/* Adornos › Jardín: muestras de color, faroles y el enlace a obras. */
+.swatch-pair {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+}
+.swatches {
+  display: flex;
+  gap: 6px;
+}
+.swatch {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 3px solid var(--tan);
+  cursor: pointer;
+}
+.swatch.is-none {
+  background: repeating-linear-gradient(45deg, #f6ead0 0 6px, #e2cfa8 6px 12px);
+}
+.swatch.is-on {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+.look-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.garden-works {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+  background: #f6ead0;
+  border: 2px dashed var(--bark);
+  cursor: pointer;
+}
+.garden-works span {
+  display: flex;
+  flex-direction: column;
+}
+.garden-works small {
+  opacity: 0.8;
 }
