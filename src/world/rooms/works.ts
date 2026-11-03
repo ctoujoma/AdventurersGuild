@@ -18,7 +18,6 @@ import {
   LOCKED,
   planUnstair,
   inGarden,
-  inWing,
   isShaft,
   onLot,
   roomAt,
@@ -289,9 +288,7 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
       // Los huecos vacíos no se dibujan: se marcan los que ya son tuyos y no tienen sala (la
       // planta baja del solar y del anexo, lo excavado y los que quedan entre salas al derribar).
       for (const [c, f] of freeCells(b)) {
-        const why = inWing(b, c)
-          ? 'Anexo libre: elige una sala en la barra de abajo para construir aquí.'
-          : 'Hueco libre: elige una sala en la barra de abajo para construir aquí.';
+        const why = 'Disponible: ¡elige una sala!';
         out.push({
           id: `obra:${out.length}`,
           rect: cell(s, c, f),
