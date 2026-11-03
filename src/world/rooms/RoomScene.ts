@@ -8,8 +8,9 @@
  * el plano de corte es justo lo que se ve, píxel a píxel. Los toques se resuelven ahí mismo.
  */
 import { tinyDigits } from '../../art/digits';
-import { GRASS_FRAMES, grassTuft, type TuftKind } from '../../art/grass';
+import { GRASS_FRAMES, grassTuft, lawnTex, type TuftKind } from '../../art/grass';
 import { Rng } from '../../core/rng';
+import { inGarden, isShaft } from '../../core/rooms';
 import {
   BufferGeometry,
   CanvasTexture,
@@ -118,6 +119,8 @@ const DAY_LENGTH = 720;
 const TERRAIN_PAD = 3200;
 /** Ancho del trozo de terreno o de tierra que se repite hasta allí. */
 const TILE = 512;
+/** Hasta dónde llega el césped del jardín; de ahí a los árboles, el terreno. */
+const LAWN_D = 140;
 const DAWN_LIGHT = 0.65;
 const NEAR = 20;
 const FAR = EYE + 400;
@@ -1303,6 +1306,11 @@ export class RoomScene {
           ),
           sides: { left: [left], right: [right] },
           floor: s.floor,
+          // En el rellano de la planta baja de una escalera al borde, la puerta al jardín.
+          garden: {
+            left: s.floor === 0 && s.steps && inGarden(b, s.s - 1),
+            right: s.floor === 0 && s.steps && inGarden(b, s.s),
+          },
         },
       );
       const inner = interior(s.rect);
@@ -1395,17 +1403,28 @@ export class RoomScene {
       ],
       { ...yard, repeat: nr },
     );
-    this.plane(
-      g,
-      groundTex(L.right - L.left, (YARD_D - back) / 2, false, 'huerto'),
-      [
-        at(L.left, GROUND, back),
-        at(L.right, GROUND, back),
-        at(L.right, GROUND, YARD_D),
-        at(L.left, GROUND, YARD_D),
-      ],
-      yard,
-    );
+    // Detrás del edificio, la hierba del terreno; en el jardín, su césped (más abajo) hasta
+    // `LAWN_D`, y de ahí a los árboles, el terreno otra vez.
+    const garden = L.garden;
+    const behind: [number, number, number][] = garden
+      ? [
+          [L.left, garden.x, back],
+          [garden.x, garden.x + garden.w, LAWN_D],
+          [garden.x + garden.w, L.right, back],
+        ]
+      : [[L.left, L.right, back]];
+    for (const [a, c, z] of behind)
+      this.plane(
+        g,
+        groundTex(
+          Math.round(c - a),
+          (YARD_D - z) / 2,
+          false,
+          a === L.left ? 'huerto' : `huerto${a}`,
+        ),
+        [at(a, GROUND, z), at(c, GROUND, z), at(c, GROUND, YARD_D), at(a, GROUND, YARD_D)],
+        yard,
+      );
     // Dentro del ancho del edificio, donde la planta baja está vacía (un solar sin construir,
     // a menudo encima de un hueco excavado), también hay terreno: si no, se vería el hueco.
     const used: [number, number][] = [];
@@ -1413,6 +1432,19 @@ export class RoomScene {
       if (room.type !== 'torre' && room.floor <= 0 && room.floor + room.h > 0)
         used.push([rect.x, rect.x + rect.w]);
     for (const s of stairCells(L)) if (s.floor === 0) used.push([s.rect.x, s.rect.x + s.rect.w]);
+    // El jardín, aparte: césped cuidado con el camino pisado de una puerta a la otra (las
+    // puertas están hacia `WALK_Z`, por donde cruza la gente), que acaba en un borde sin segar.
+    if (garden) {
+      const gx0 = garden.x;
+      const gx1 = garden.x + garden.w;
+      this.plane(
+        g,
+        lawnTex(Math.round(gx1 - gx0), LAWN_D / 2, 'jardin', 16, 42, back),
+        [at(gx0, GROUND, 0), at(gx1, GROUND, 0), at(gx1, GROUND, LAWN_D), at(gx0, GROUND, LAWN_D)],
+        yard,
+      );
+      used.push([gx0, gx1]);
+    }
     used.sort((a, c) => a[0] - c[0]);
     let gx = L.left;
     for (const [a, c] of [...used, [L.right, L.right] as [number, number]]) {
@@ -1482,6 +1514,9 @@ export class RoomScene {
     const free = (c: number) =>
       room.floor > 0 && !b.rooms.some((o) => this.covers(o, c, room.floor - 1));
     const back = backWall(room, r.w, r.h, this.salonLook());
+    // Puerta al jardín en la planta baja, si no hay en medio una escalera sin rellano (que tapa
+    // el paso; con rellano, la puerta va en ella). Como `opens` en `cutOff` (`core/rooms.ts`).
+    const gate = (c: number, x: number) => room.floor === 0 && inGarden(b, c) && !isShaft(b, x);
     // Lo tocable que se ha pintado en la pared (en sus píxeles), pasado al mundo.
     const live = room.level > 0 && !(room.works && room.works.kind !== 'extend');
     const tx = r.w / back.w;
@@ -1503,6 +1538,10 @@ export class RoomScene {
       sides,
       floor: room.floor,
       door: room.type === 'recibidor' ? room.level : undefined,
+      garden: {
+        left: gate(room.col - 1, room.col),
+        right: gate(room.col + room.w, room.col + room.w),
+      },
       hang: { left: free(room.col), right: free(room.col + room.w - 1) },
       room,
     });
@@ -1683,6 +1722,8 @@ export class RoomScene {
       floor: number;
       /** La puerta de la calle (en el recibidor), con su nivel. */
       door?: number;
+      /** La puerta al jardín de la planta baja, de cada lado. */
+      garden?: { left: boolean; right: boolean };
       /** Sin sala debajo del hueco de cada lado (en voladizo). */
       hang?: { left: boolean; right: boolean };
       /** La sala (para los acabados de sus lados). */
@@ -1719,7 +1760,7 @@ export class RoomScene {
         r.h,
         doors(o.sides.left),
         `${seed}i`,
-        o.door !== undefined ? [0] : [],
+        o.door !== undefined || o.garden?.left ? [0] : [],
         o.door,
         o.room,
       ),
@@ -1728,7 +1769,17 @@ export class RoomScene {
     );
     this.plane(
       g,
-      mirror(sideTex(theme, r.h, doors(o.sides.right), `${seed}d`, [], 1, o.room)),
+      mirror(
+        sideTex(
+          theme,
+          r.h,
+          doors(o.sides.right),
+          `${seed}d`,
+          o.garden?.right ? [0] : [],
+          1,
+          o.room,
+        ),
+      ),
       [at(x1, yb, D), at(x1, yb, 0), at(x1, yt, 0), at(x1, yt, D)],
       flat,
     );
@@ -1744,14 +1795,14 @@ export class RoomScene {
         const f = o.floor + i;
         const top = floorTop(f) - SLAB;
         const bottom = floorY(f) + (i === 0 && o.hang?.[side] ? SLAB : 0);
-        const withDoor = !doorDone && i === 0;
-        if (withDoor) doorDone = true;
+        const street = !doorDone && i === 0;
+        if (street) doorDone = true;
         const tex = outerSide(
           themeOf(f),
           PITCH,
-          withDoor,
+          street || (i === 0 && !!o.garden?.[side]),
           `${seed}f${side}${i}`,
-          o.door,
+          street ? o.door : 1,
           this.model?.look?.walls,
         );
         if (side === 'left') {
@@ -1898,8 +1949,10 @@ export class RoomScene {
     for (let i = 0; i < 220; i++) {
       const x = L.left - 460 + rng.next() * (L.right - L.left + 920);
       const z = 4 + rng.next() * (YARD_D - 30);
-      // Ni dentro del edificio ni encima del pozo.
+      // Ni dentro del edificio, ni en el césped del jardín (sí en su borde), ni encima del pozo.
       if (x > L.left - 6 && x < L.right + 6 && z < DEPTH + 8) continue;
+      const lawn = L.garden && x > L.garden.x + 8 && x < L.garden.x + L.garden.w - 8;
+      if (lawn && z < LAWN_D - 10) continue;
       if (Math.hypot(x - well.x, (z - well.z) * 0.6) < 18) continue;
       // No en el camino de tierra del patio (por delante).
       if (z > 6 && z < 26 && x < L.left) continue;

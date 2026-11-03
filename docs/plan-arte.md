@@ -136,8 +136,30 @@ npm run build`.
    rango, acabar una historia, pagar la deuda).
 9. **El anexo y el jardín** (patio trasero, núcleo ya hecho): bajo tierra del jardín, puertas al
    jardín, sus piezas y el claustro. Encargo:
-   [`encargos/arte-anexo-jardin.md`](encargos/arte-anexo-jardin.md). Si el usuario no dice
-   otra cosa, va detrás de lo de arriba.
+   [`encargos/arte-anexo-jardin.md`](encargos/arte-anexo-jardin.md). El usuario lo ha pedido
+   antes que lo de arriba. Por puntos:
+   - [x] 1. Bajo tierra (`facade` en `textures.ts`): la roca solo bajo el edificio; bajo el
+         jardín, tierra con su borde de hierba como la de fuera; bajo el anexo, cimientos de
+         sillares con zarpa, solo donde hay sala o escalera en la planta baja (sus solares
+         vacíos, tierra). Capturas en `capturas/anexo/` (#105).
+   - [x] 1b. La roca asoma por los lados del edificio en escalones (`rockBase`), cada hilada
+         algo más ancha, hasta 22 píxeles: que se vea que lo asienta (el usuario, tras #105).
+   - [x] 2. Puertas al jardín: la sala de la planta baja que da a él la tiene por dentro (como
+         la del recibidor) y por fuera; con escalera al borde, en su rellano; si la escalera no
+         tiene rellano abajo, no hay puerta (como `opens` en `cutOff`). Opción `garden` de `box`
+         en `RoomScene.ts`.
+   - [x] 3. El jardín liso: césped segado en franjas (`lawnTex` en
+         `art/grass.ts`) con un camino de tierra pisada de una puerta a la otra (hacia
+         `WALK_Z`); sin las matas al viento ni las flores del terreno. No llega al fondo (el
+         usuario): acaba en `LAWN_D` con un borde sin segar (al fondo, y a los lados donde ya no
+         hay edificios) y de ahí a los árboles, el terreno con sus matas.
+         Ojo: en las texturas del suelo, la fila 0 es la del fondo.
+   - [ ] 4. Las piezas de `GardenLook`.
+   - [ ] 5. El claustro.
+   - [ ] 6. Que no se cuelen árboles ni arbustos en el jardín ni en el anexo.
+   - [ ] Visto bueno del usuario.
+
+   Capturas: `node tools/shots/anexo.mjs <carpeta>`.
 
 ## Lo que ha dicho el usuario (para no repetir errores)
 

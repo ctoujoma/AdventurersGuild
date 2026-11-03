@@ -426,18 +426,24 @@ export function facade(L: RoomsLayout, look: FacadeLook = {}, crest?: Crest): Fa
   const left = L.left - ox;
   const right = L.right - ox;
   earth(buf, 0, g, W, H - g);
-  // Roca bajo el edificio.
-  stoneWall(buf, left, g + SLAB, right - left, H - g - SLAB, 'roca', {
-    ramp: [P.black, P.navy, P.slate, P.steel],
-    bw: 20,
-    bh: 12,
-  });
+  // Con patio trasero, el edificio acaba donde empieza el jardín: bajo el jardín, tierra como
+  // la de fuera, y bajo el anexo, sus cimientos (no se excava).
+  const garden = L.garden;
+  const main = garden ? garden.x - ox : right;
+  // Roca bajo el edificio: asoma por los lados en escalones, cada hilada algo más ancha que la
+  // de encima, como una zarpa que lo asienta.
+  const inRock = rockBase(buf, left, main, g + SLAB);
   for (let y = g + 4 * PITCH; y < H; y++)
-    for (let x = left; x < right; x++) if ((x + y) % 3 === 0) buf.set(x, y, P.black);
-  // Borde de hierba y del camino a ras de suelo.
+    for (let x = 0; x < W; x++) if ((x + y) % 3 === 0 && inRock(x, y)) buf.set(x, y, P.black);
+  // Los cimientos, solo bajo lo que está construido en la planta baja del anexo (sus solares
+  // vacíos son tierra, como el jardín).
+  const built = garden ? groundSpans(L, garden.x + garden.w) : [];
+  for (const [a, c] of built) footing(buf, a - ox, c - ox, g + SLAB);
+  // Borde de hierba y del camino a ras de suelo (también en el jardín y los solares del anexo).
   for (let x = 0; x < W; x++) {
-    if (x >= left && x < right) continue;
     const wx = x + ox;
+    const yard = x >= main && !built.some(([a, c]) => wx >= a && wx < c);
+    if (x >= left && x < right && !yard) continue;
     const road = wx < L.patio.x + 26;
     const patio = wx < 0;
     buf.vline(x, g, 3, road ? P.umber : patio ? P.bark : P.forest);
@@ -515,6 +521,92 @@ export function facade(L: RoomsLayout, look: FacadeLook = {}, crest?: Crest): Fa
       run === big ? crest : undefined,
     );
   return { buf, x: ox, y: oy, runs };
+}
+
+/**
+ * La roca de debajo del edificio, de `x0` a `x1` y desde `y` hacia abajo, que asoma por los lados
+ * en escalones (uno por hilada, hasta `REACH`). Devuelve si un punto cae en ella.
+ */
+function rockBase(b: PixelBuffer, x0: number, x1: number, y: number) {
+  const BH = 12;
+  const REACH = 22;
+  const rng = new Rng('zarpa-roca');
+  const rows = Math.ceil((b.h - y) / BH);
+  // Lo que sale cada hilada por la izquierda y por la derecha.
+  const out = Array.from({ length: rows }, (_, i) =>
+    [0, 1].map(() => Math.min(REACH, 4 + i * 6 + rng.int(-1, 2))),
+  ) as [number, number][];
+  const row = (yy: number) => out[Math.min(rows - 1, Math.floor((yy - y) / BH))]!;
+  const inside = (x: number, yy: number) => {
+    if (yy < y || yy >= b.h) return false;
+    const [l, r] = row(yy);
+    return x >= x0 - l && x < x1 + r;
+  };
+  const rock = new PixelBuffer(b.w, b.h);
+  stoneWall(rock, x0 - REACH - 4, y, x1 - x0 + 2 * REACH + 8, b.h - y, 'roca', {
+    ramp: [P.black, P.navy, P.slate, P.steel],
+    bw: 20,
+    bh: BH,
+  });
+  for (let yy = y; yy < b.h; yy++)
+    for (let x = Math.max(0, x0 - REACH); x < Math.min(b.w, x1 + REACH); x++)
+      if (inside(x, yy)) b.set(x, yy, rock.get(x, yy));
+  // Cada escalón: el canto de arriba, a la luz, y el lado de fuera, en sombra.
+  for (let i = 0; i < rows; i++) {
+    const top = y + i * BH;
+    const [l, r] = out[i]!;
+    const [pl, pr] = i ? out[i - 1]! : [0, 0];
+    if (l > pl) b.hline(x0 - l, top, l - pl, P.steel);
+    if (r > pr) b.hline(x1 + pr, top, r - pr, P.steel);
+    const h = Math.min(BH, b.h - top);
+    b.vline(x0 - l, top + 1, h - 1, P.black);
+    b.vline(x1 + r - 1, top + 1, h - 1, P.black);
+  }
+  return inside;
+}
+
+/**
+ * Tramos de la planta baja con sala o escalera desde `x0` hacia la derecha, de la cara de fuera
+ * de un muro a la del otro y juntando los que se tocan.
+ */
+function groundSpans(L: RoomsLayout, x0: number): [number, number][] {
+  const spans: [number, number][] = [
+    ...L.rooms
+      .filter(({ room: r }) => r.type !== 'torre' && r.floor <= 0 && r.floor + r.h > 0)
+      .map(({ rect }) => rect),
+    ...stairCells(L)
+      .filter((s) => s.floor === 0)
+      .map((s) => s.rect),
+  ]
+    .filter((r) => r.x >= x0)
+    .map((r): [number, number] => [r.x - WALL, r.x + r.w + WALL])
+    .sort((a, c) => a[0] - c[0]);
+  const out: [number, number][] = [];
+  for (const s of spans) {
+    const last = out[out.length - 1];
+    if (last && s[0] <= last[1] + 1) last[1] = Math.max(last[1], s[1]);
+    else out.push(s);
+  }
+  return out;
+}
+
+/**
+ * Los cimientos del anexo, de `x0` a `x1` y desde `y` hacia abajo: tres hiladas de sillares
+ * y la zarpa (una más, algo más ancha que el muro), con la sombra que dejan en la tierra.
+ */
+function footing(b: PixelBuffer, x0: number, x1: number, y: number) {
+  const ramp: Ramp = [P.black, P.navy, P.slate, P.steel, P.fog];
+  const BH = 8;
+  const ROWS = 3;
+  const ZARPA = 4;
+  const zy = y + ROWS * BH;
+  stoneWall(b, x0, y, x1 - x0, ROWS * BH, 'cimientos', { ramp, bw: 18, bh: BH });
+  stoneWall(b, x0 - ZARPA, zy, x1 - x0 + 2 * ZARPA, BH, 'zarpa', { ramp, bw: 22, bh: BH });
+  // El canto de la zarpa, al aire, y la sombra de debajo.
+  b.hline(x0 - ZARPA, zy, ZARPA, P.steel);
+  b.hline(x1, zy, ZARPA, P.steel);
+  b.hline(x0 - ZARPA, zy + BH, x1 - x0 + 2 * ZARPA, P.black);
+  for (let x = x0 - ZARPA + 1; x < x1 + ZARPA; x += 2) b.set(x, zy + BH + 1, P.black);
 }
 
 function copyRect(dst: PixelBuffer, src: PixelBuffer, x: number, y: number, w: number, h: number) {
