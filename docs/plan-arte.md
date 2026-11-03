@@ -161,7 +161,14 @@ npm run build`.
          (detrás de la gente); borde de delante bajo (seto, flores, verja) para no taparla;
          faroles entre trozo y trozo con su halo. `model.garden` entra en la clave de
          reconstruir la escena (antes, cambiar el jardín no se veía hasta otro cambio).
-   - [ ] 5. El claustro.
+   - [x] 4b. El borde de delante (el usuario: «parece una cinta que tapa el camino»): el camino
+         va más delante (por donde pisa la gente), el canto del césped tiene un fleco de
+         briznas (`verge`) y el seto va en tramos y con cuerpo (`box`, se le ve el lomo).
+   - [x] 5. El claustro (`cloister` en `RoomScene.ts`; `cloisterEnd`, `cloisterSide` en
+         `jardin.ts`): soportales de piedra de `CLOISTER_W` pegados a cada fachada del jardín, a
+         todo el fondo, con tantas plantas como tenga ese edificio junto al jardín (las de
+         arriba, galerías con suelo de tablas y antepecho de balaustres) y un tejadillo con las
+         tejas del edificio. Debajo, losas; el borde de delante va entre arco y arco.
    - [ ] 6. Que no se cuelen árboles ni arbustos en el jardín ni en el anexo.
    - [ ] Visto bueno del usuario.
 

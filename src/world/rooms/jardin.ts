@@ -15,6 +15,8 @@ import { oakTree, piece, well } from '../props';
 export const PIECE_Z = 70;
 /** Profundidad del borde de delante. */
 export const EDGE_Z = 2;
+/** Profundidad del canto del césped (delante del borde). */
+export const VERGE_Z = 0.5;
 /** Profundidad de los faroles, entre trozo y trozo. */
 export const LAMP_Z = 50;
 
@@ -37,6 +39,7 @@ export function paintGround(
   slots: number[],
   open: number,
   lawnD: number,
+  cloister = 0,
 ): void {
   const { w, h: d } = b;
   const rowOf = (z: number) => d - z / 2;
@@ -56,6 +59,12 @@ export function paintGround(
         b.set(x, y, edge ? STONE[2]! : ground === 'grava' ? gravel(y, rng) : flag(x, y, rng));
       }
   }
+  // Bajo los soportales del claustro (`cloister`: su fondo), losas a cada lado.
+  if (cloister)
+    for (let y = Math.floor(rowOf(cloister)); y < d; y++)
+      for (let x = 0; x < w; x++)
+        if (x < CLOISTER_W || x >= w - CLOISTER_W)
+          b.set(x, y, x === CLOISTER_W - 1 || x === w - CLOISTER_W ? STONE[2]! : flag(x, y, rng));
   // Los lechos: tierra, hierba o piedra bajo cada pieza.
   pieces.forEach((p, i) => {
     const cx = slots[i];
@@ -339,21 +348,68 @@ export function flowerRow(w: number, seed: string, h = 11): PixelBuffer {
 
 // ---------- El borde de delante ----------
 
+/**
+ * El canto de delante del césped, donde lo corta la vista: briznas de distinto alto que
+ * asoman sobre el corte (y alguna florecilla), para que no se vea como una cinta plana.
+ */
+export function verge(w: number): PixelBuffer {
+  return piece(
+    w,
+    6,
+    (b) => {
+      const rng = new Rng('canto del jardin');
+      for (let x = 0; x < w; x++) {
+        if (rng.chance(0.25)) continue;
+        const h = rng.weighted([
+          [1, 2],
+          [2, 4],
+          [3, 3],
+          [4, 2],
+          [5, 1],
+        ] as const);
+        const lean = rng.chance(0.3) ? (rng.chance(0.5) ? -1 : 1) : 0;
+        for (let j = 0; j < h; j++) {
+          const top = j === h - 1;
+          const px = x + (top && h > 2 ? lean : 0);
+          b.set(px, 5 - j, j === 0 ? P.deep : top ? (rng.chance(0.4) ? P.lime : P.leaf) : P.forest);
+        }
+        if (h >= 3 && rng.chance(0.03)) b.set(x, 5 - h, rng.chance(0.6) ? P.white : P.lemon);
+      }
+    },
+    'none',
+  );
+}
+
 /** El borde de delante, de `w` de largo: seto recortado, flores o verja de hierro. */
 export function edgeArt(e: GardenEdgeId, w: number): PixelBuffer {
   switch (e) {
     case 'seto':
-      // Un seto bajo, recortado: el lomo de arriba a la luz y alguna ramita que se escapa.
-      return piece(w, 7, (b) => {
+      // Un seto bajo y recortado, en tramos con su hueco y las esquinas redondeadas; el lomo a la
+      // luz. Lleva grosor (ver `gardenArt`): de arriba se le ve la copa.
+      return piece(w, 6, (b) => {
         const rng = new Rng('seto');
-        for (let x = 0; x < w; x++)
-          for (let y = 1; y < 7; y++) {
+        const SEG = 46;
+        for (let x = 0; x < w; x++) {
+          const u = x % SEG;
+          if (u >= SEG - 2) continue;
+          // Las esquinas del tramo, redondeadas; arriba, alguna mata más alta.
+          const corner = u === 0 || u === SEG - 3 ? 1 : 0;
+          const top = corner + (rng.chance(0.15) ? -1 : 0);
+          for (let y = Math.max(0, top + 1); y < 6; y++) {
             const n = rng.next();
             const c =
-              y === 1 ? (n < 0.5 ? P.lime : P.leaf) : y < 3 ? P.leaf : n < 0.3 ? P.deep : P.forest;
+              y <= top + 1
+                ? n < 0.5
+                  ? P.lime
+                  : P.leaf
+                : y < 3
+                  ? P.leaf
+                  : n < 0.35
+                    ? P.deep
+                    : P.forest;
             b.set(x, y, c);
           }
-        for (let x = 3; x < w; x += rng.int(5, 9)) b.set(x, 0, P.leaf);
+        }
       });
     case 'flores':
       return flowerRow(w, 'borde', 8);
@@ -379,5 +435,110 @@ export function edgeArt(e: GardenEdgeId, w: number): PixelBuffer {
         },
         'none',
       );
+  }
+}
+
+// ---------- El claustro ----------
+
+/** Lo que sale el claustro de cada fachada hacia el jardín. */
+export const CLOISTER_W = 24;
+
+/** Piedra clara de las columnas y los arcos. */
+const ASHLAR = [STONE[2]!, STONE[3]!, STONE[4]!, STONE[5]!] as const;
+
+/**
+ * El frente de una planta del claustro (`w` × `h`, la planta con su forjado arriba): el arco
+ * entre la fachada (a la izquierda) y la columna (a la derecha), con el antepecho de balaustres
+ * en las plantas altas (`up`).
+ */
+export function cloisterEnd(w: number, h: number, up: boolean, slab: number): PixelBuffer {
+  const b = new PixelBuffer(w, h);
+  const COL = 5;
+  const spring = slab + 16;
+  const r = (w - COL) / 2;
+  const cx = r - 0.5;
+  // La enjuta de sillares sobre el arco y la viga del forjado.
+  stoneWall(b, 0, slab, w, spring - slab, 'enjuta', { ramp: STONE, bw: 6, bh: 4 });
+  beamBand(b, 0, 0, w, slab);
+  // El hueco del arco: medio punto y, debajo, abierto hasta el suelo (o hasta el antepecho).
+  const bottom = up ? h - 12 : h;
+  for (let y = slab; y < bottom; y++)
+    for (let x = 0; x < w - COL; x++) {
+      const dy = spring - y;
+      if (dy <= 0 || Math.hypot(x - cx, dy) <= r) b.clear(x, y);
+    }
+  // Las dovelas: el canto del arco, más claro.
+  for (let a = 0; a <= Math.PI; a += 0.08) {
+    const x = Math.round(cx + Math.cos(a) * (r + 0.6));
+    const y = Math.round(spring - Math.sin(a) * (r + 0.6));
+    if (x >= 0 && x < w) b.set(x, y, ASHLAR[3]);
+  }
+  // La columna con su capitel y su basa.
+  column(b, w - COL, spring, COL, bottom - spring);
+  if (up) balustrade(b, 0, h - 12, w - COL, 12);
+  return b;
+}
+
+/**
+ * El costado de una planta del claustro, visto desde el jardín (fondo × alto, el fondo a media
+ * resolución; x = 0 junto al corte): arcos entre columnas a lo hondo.
+ */
+export function cloisterSide(d: number, h: number, up: boolean, slab: number): PixelBuffer {
+  const b = new PixelBuffer(d, h);
+  const BAY = 10;
+  const COL = 2;
+  const spring = slab + 14;
+  beamBand(b, 0, 0, d, slab);
+  stoneWall(b, 0, slab, d, spring - slab, 'enjuta costado', { ramp: STONE, bw: 5, bh: 4 });
+  const bottom = up ? h - 12 : h;
+  for (let x0 = 0; x0 < d; x0 += BAY) {
+    const r = (BAY - COL) / 2;
+    const cx = x0 + COL + r - 0.5;
+    for (let y = slab; y < bottom; y++)
+      for (let x = x0 + COL; x < Math.min(d, x0 + BAY); x++) {
+        const dy = spring - y;
+        if (dy <= 0 || Math.hypot(x - cx, dy * 1.4) <= r) b.clear(x, y);
+      }
+    column(b, x0, spring, COL, bottom - spring);
+  }
+  if (up) balustrade(b, 0, h - 12, d, 12);
+  return b;
+}
+
+/** El suelo de una galería de arriba: tablas a lo hondo (ancho × fondo a media resolución). */
+export function galleryFloor(w: number, d: number): PixelBuffer {
+  const b = new PixelBuffer(w, d);
+  for (let y = 0; y < d; y++)
+    for (let x = 0; x < w; x++)
+      b.set(x, y, x % 6 === 0 ? W[1]! : (x * 7 + y * 3) % 13 === 0 ? W[2]! : W[3]!);
+  return b;
+}
+
+/** La viga del forjado de cada planta, con sus cabezas de vigueta. */
+function beamBand(b: PixelBuffer, x: number, y: number, w: number, h: number) {
+  b.rect(x, y, w, h, W[2]!);
+  b.hline(x, y, w, W[1]!);
+  b.hline(x, y + 1, w, W[4]!);
+  b.hline(x, y + h - 1, w, W[1]!);
+  for (let i = x + 2; i < x + w - 2; i += 7) b.rect(i, y + 4, 3, h - 7, W[3]!);
+}
+
+function column(b: PixelBuffer, x: number, y: number, w: number, h: number) {
+  b.rect(x, y, w, h, ASHLAR[1]);
+  b.vline(x, y, h, ASHLAR[2]);
+  if (w > 2) b.vline(x + w - 1, y, h, ASHLAR[0]);
+  // Capitel y basa, algo más anchos.
+  b.rect(x - (w > 2 ? 1 : 0), y - 2, w + (w > 2 ? 2 : 0), 2, ASHLAR[3]);
+  b.rect(x - (w > 2 ? 1 : 0), y + h - 2, w + (w > 2 ? 2 : 0), 2, ASHLAR[2]);
+}
+
+/** El antepecho de una galería de arriba: pasamanos, balaustres y zócalo. */
+function balustrade(b: PixelBuffer, x: number, y: number, w: number, h: number) {
+  b.rect(x, y, w, 2, ASHLAR[3]);
+  b.rect(x, y + h - 3, w, 3, ASHLAR[1]);
+  b.hline(x, y + h - 3, w, ASHLAR[2]);
+  for (let i = x + 1; i < x + w - 1; i += 3) {
+    b.vline(i, y + 2, h - 5, ASHLAR[2]);
+    b.set(i, y + 5, ASHLAR[3]);
   }
 }

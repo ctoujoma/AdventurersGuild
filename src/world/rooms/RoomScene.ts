@@ -52,7 +52,20 @@ import { CANDLE, takeWallActs, type ActId, type PoiKind, type Round } from './sa
 import { FLIGHT_Z, flightArt, goesRight } from './stairs';
 import { dress } from './salas/tintes';
 import { Crowd, type Hit, type Poi, type Talk } from './crowd';
-import { EDGE_Z, LAMP_Z, PIECE_Z, edgeArt, paintGround, pieceArt } from './jardin';
+import {
+  CLOISTER_W,
+  EDGE_Z,
+  LAMP_Z,
+  PIECE_Z,
+  VERGE_Z,
+  cloisterEnd,
+  cloisterSide,
+  edgeArt,
+  galleryFloor,
+  paintGround,
+  pieceArt,
+  verge,
+} from './jardin';
 import { Pets, kindOf, type Perch, type PetId } from './pets';
 import { IncidentArt } from './incidents';
 import { FLAME_FRAMES, FLAME_H, FLAME_W, flameStrip } from './flame';
@@ -1441,7 +1454,7 @@ export class RoomScene {
       const gx0 = garden.x;
       const gx1 = garden.x + garden.w;
       // El suelo elegido y el lecho de cada pieza (ver `jardin.ts`).
-      const lawn = lawnTex(Math.round(gx1 - gx0), LAWN_D / 2, 'jardin', 16, 42, back);
+      const lawn = lawnTex(Math.round(gx1 - gx0), LAWN_D / 2, 'jardin', 8, 36, back);
       const gl = model.garden ?? {};
       paintGround(
         lawn,
@@ -1450,6 +1463,7 @@ export class RoomScene {
         gardenSlots(b).map((r) => r.x + r.w / 2 - gx0),
         back,
         LAWN_D,
+        gl.cloister ? DEPTH : 0,
       );
       this.plane(
         g,
@@ -1954,9 +1968,22 @@ export class RoomScene {
    */
   private gardenArt(L: RoomsLayout, model: SceneModel): void {
     const garden = L.garden;
-    const look = model.garden;
-    if (!garden || !look) return;
+    if (!garden) return;
     const g = this.world;
+    // El canto del césped, delante del todo; con claustro, entre sus arcos (bajo ellos hay losas).
+    const inset = model.garden?.cloister ? CLOISTER_W : 0;
+    const span = garden.w - 2 * inset;
+    this.figure(
+      g,
+      verge(Math.round(span * scaleAt(VERGE_Z))),
+      garden.x + garden.w / 2,
+      GROUND,
+      VERGE_Z,
+      OUTDOOR,
+      1,
+    );
+    const look = model.garden;
+    if (!look) return;
     const slots = gardenSlots(L.b);
     (look.slots ?? []).forEach((p, i) => {
       const r = slots[i];
@@ -1967,13 +1994,17 @@ export class RoomScene {
     if (look.edge)
       this.figure(
         g,
-        edgeArt(look.edge, Math.round(garden.w * scaleAt(EDGE_Z))),
+        edgeArt(look.edge, Math.round(span * scaleAt(EDGE_Z))),
         garden.x + garden.w / 2,
         GROUND,
         EDGE_Z,
         OUTDOOR,
         1,
+        // El seto y las flores, con cuerpo: de arriba se les ve el lomo (la verja, no: se ve a
+        // través).
+        look.edge === 'verja' ? {} : { box: true, thick: 6 },
       );
+    if (look.cloister) this.cloister(L, model);
     if (look.lamps)
       for (const r of slots.slice(1)) {
         const lx = r.x;
@@ -1991,6 +2022,82 @@ export class RoomScene {
           halo: haloOf(60, 1, false),
         });
       }
+  }
+
+  /**
+   * El claustro: soportales de piedra pegados a las dos fachadas que dan al jardín, de
+   * `CLOISTER_W` de ancho y a todo el fondo, con tantas plantas como tenga cada edificio junto
+   * al jardín (las de arriba, galerías con antepecho) y un tejadillo encima.
+   */
+  private cloister(L: RoomsLayout, model: SceneModel): void {
+    const garden = L.garden;
+    if (!garden) return;
+    const g = this.world;
+    const D = DEPTH;
+    const lit = { ambient: OUTDOOR, sun: 1, dither: 0 };
+    const shade = { ambient: OUTDOOR, sun: 0.6, dither: 0 };
+    const cells = [
+      ...L.rooms
+        .filter(({ room }) => room.type !== 'torre')
+        .flatMap(({ room, rect }) =>
+          Array.from({ length: room.h }, (_, i) => ({ rect, floor: room.floor + i })),
+        ),
+      ...stairCells(L).map((c) => ({ rect: c.rect, floor: c.floor })),
+    ];
+    for (const s of [1, -1] as const) {
+      const xw = s === 1 ? garden.x : garden.x + garden.w;
+      const touch = (r: Rect) => Math.abs(s === 1 ? r.x + r.w + WALL - xw : r.x - WALL - xw) < 1;
+      const floors = new Set(
+        cells.filter((c) => touch(c.rect) && c.floor >= 0).map((c) => c.floor),
+      );
+      let top = -1;
+      while (floors.has(top + 1)) top++;
+      if (top < 0) continue;
+      const xa = xw + s * CLOISTER_W;
+      const [x0, x1] = s === 1 ? [xw, xa] : [xa, xw];
+      for (let f = 0; f <= top; f++) {
+        const yt = floorTop(f) - SLAB;
+        const yb = floorY(f);
+        const up = f > 0;
+        const end = cloisterEnd(CLOISTER_W, PITCH, up, SLAB);
+        this.plane(
+          g,
+          s === 1 ? end : mirror(end),
+          [at(x0, yb, 0), at(x1, yb, 0), at(x1, yt, 0), at(x0, yt, 0)],
+          lit,
+        );
+        const side = cloisterSide(D / 2, PITCH, up, SLAB);
+        this.plane(
+          g,
+          s === 1 ? side : mirror(side),
+          s === 1
+            ? [at(xa, yb, 0), at(xa, yb, D), at(xa, yt, D), at(xa, yt, 0)]
+            : [at(xa, yb, D), at(xa, yb, 0), at(xa, yt, 0), at(xa, yt, D)],
+          shade,
+        );
+        if (up)
+          this.plane(
+            g,
+            galleryFloor(CLOISTER_W, D / 2),
+            [at(x0, yb, 0), at(x1, yb, 0), at(x1, yb, D), at(x0, yb, D)],
+            shade,
+          );
+      }
+      // El tejadillo: de la fachada (arriba) a fuera del arco (abajo), con las tejas del edificio.
+      const ridge = floorTop(top) - SLAB - 8;
+      const eave = floorTop(top) - SLAB + 3;
+      const xe = xa + s * 4;
+      const len = Math.round(Math.hypot(xe - xw, eave - ridge));
+      const tiles = roofTiles(len, `tejadillo${xw}`, model.look?.roof);
+      this.plane(
+        g,
+        tiles,
+        s === 1
+          ? [at(xe, eave, D + 2), at(xe, eave, 0), at(xw, ridge, 0), at(xw, ridge, D + 2)]
+          : [at(xe, eave, 0), at(xe, eave, D + 2), at(xw, ridge, D + 2), at(xw, ridge, 0)],
+        lit,
+      );
+    }
   }
 
   /**
