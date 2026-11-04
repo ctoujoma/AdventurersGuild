@@ -84,12 +84,14 @@ npm run build`.
 - [x] **Cielo, paredes e iconos** (el usuario: «una seria pasada de calidad al cielo», «las
       paredes se ven cutres y repetitivas», «iconos para la personalización del jardín»):
   - el cielo (`art/clouds.ts`, `rooms/sky.ts`): franjas tramadas en vez de degradado liso, con su
-    tira para el día, el atardecer y el alba (`skyStrip`); el sol con halo en anillos y, al
-    ponerse, cruzado por franjas; nubes en tres capas con su paralaje (cirros altos, cúmulos y
+    tira para el día, el atardecer y el alba (`skyStrip`); nubes en tres capas con su paralaje (cirros altos, cúmulos y
     bancos bajos que asoman entre los montes), cada una pintada con la luz de cada hora (de día
     desde arriba, al atardecer y al alba desde el sol bajo, de noche con la luna). La luz sale
     del volumen entero de la nube, no de cada bulto (el usuario: «parecen un gusano»); los
-    bultos solo marcan la coliflor de la cima;
+    bultos solo marcan la coliflor de la cima. Por encima de la franja de siempre (al alejar
+    del todo se veía cielo vacío), `upperLayers` pone nubes cada vez más escasas, pequeñas y
+    transparentes (`fadeAt`), sobre todo cirros, hasta que el cielo queda limpio. El sol, el de
+    antes (halo suave y disco): el nuevo no gustó;
   - las paredes (`rooms/muros.ts`): de frente (hastiales y costados), `wallFace` sin repetirse
     (tablas de ancho y tono desiguales con tapajuntas, empalmes y clavos; entramado con postes a
     distancias distintas y riostras variadas; sillería en hiladas de alto distinto); en corte
@@ -256,7 +258,8 @@ npm run build`.
 - **Fondo:** «se verá durante muchas horas: que sea entretenido y lindo»; el fondo no puede
   moverse al hacer zoom.
 - **Nubes:** nada de bolas sombreadas una a una (parecen «un gusano o un zurullo»): una sola
-  masa con la luz por franjas y los bultos solo en el contorno de arriba.
+  masa con la luz por franjas y los bultos solo en el contorno de arriba. Que se acaben poco a
+  poco hacia arriba, nunca de golpe. El sol, el de antes (halo suave y disco).
 - **Salas:** demasiado plano y demasiado pintado en la pared; quiere cosas que resalten, con
   cuerpo (el oro del tesoro, los hornos de la bodega).
 - **Animaciones:** que no repitan un gesto todo el día (la cocina parecía que fregaba).

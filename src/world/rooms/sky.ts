@@ -12,13 +12,14 @@ import {
   cumulus,
   paintCloud,
   skyStrip,
-  sunSprite,
   type SkyPhase,
 } from '../../art/clouds';
 import { P } from '../../art/palette';
 import { PixelBuffer } from '../../art/pixel';
 import { GROUND, WORLD_X0 } from '../geometry';
 import { hillLife, skyLife, treeLife } from './life';
+import { glowSprite } from '../lighting';
+import { Rng } from '../../core/rng';
 import {
   MOON_R,
   buildMoon,
@@ -55,6 +56,51 @@ interface CloudSpec {
   y: number;
   tower?: number;
 }
+/**
+ * Por encima de la franja de siempre (al alejar del todo se ve mucho cielo): más nubes cada vez
+ * más escasas, pequeñas y transparentes hacia arriba (`fade`), y sobre todo cirros, hasta que el
+ * cielo se queda limpio. Así no hay un corte: se van acabando.
+ */
+const TOP = 40;
+const FADE_H = 620;
+const fadeAt = (y: number) => (y >= TOP ? 1 : Math.max(0, 1 - (TOP - y) / FADE_H));
+
+function upperLayers(): { fx: number; band: number; speed: number; list: CloudSpec[] }[] {
+  const rng = new Rng('nubes-altas');
+  const cumuli: CloudSpec[] = [];
+  const cirri: CloudSpec[] = [];
+  for (let y = TOP - 10; y > TOP - FADE_H; y -= 46) {
+    const f = fadeAt(y);
+    // Cúmulos: menos y más pequeños cuanto más arriba.
+    const n = Math.round(f * f * 4 + rng.next() * 0.8);
+    for (let k = 0; k < n; k++) {
+      const w = Math.round((50 + rng.next() * 90) * (0.55 + 0.45 * f));
+      cumuli.push({
+        kind: 'cumulus',
+        w,
+        h: Math.round(w * (0.3 + rng.next() * 0.08)),
+        x: rng.int(0, 1300),
+        y: y + rng.int(-14, 14),
+        tower: 0.35 + rng.next() * 0.4,
+      });
+    }
+    // Cirros: los que más aguantan arriba.
+    const m = Math.round(f * 2 + rng.next() * 0.9);
+    for (let k = 0; k < m; k++)
+      cirri.push({
+        kind: 'cirrus',
+        w: 120 + rng.int(0, 160),
+        h: 16 + rng.int(0, 10),
+        x: rng.int(0, 1500),
+        y: y + rng.int(-20, 20),
+      });
+  }
+  return [
+    { fx: 0.15, band: 1500, speed: 0.45, list: cirri },
+    { fx: 0.178, band: 1300, speed: 1.6, list: cumuli },
+  ];
+}
+
 const CLOUD_LAYERS: { fx: number; band: number; speed: number; list: CloudSpec[] }[] = [
   {
     fx: 0.152,
@@ -130,7 +176,7 @@ export class Sky {
   private parallax: { c: HTMLCanvasElement; d: HTMLCanvasElement; l: ParallaxLayer }[] =
     parallaxLayers().map((l) => ({ c: bufferCanvas(l.buf), d: bufferCanvas(l.day), l }));
   private starList: Star[] = stars();
-  private cloudLayers = CLOUD_LAYERS.map((l, li) => ({
+  private cloudLayers = [...upperLayers(), ...CLOUD_LAYERS].map((l, li) => ({
     ...l,
     list: l.list.map((c, i) => {
       const seed = `nube-${li}-${i}`;
@@ -144,7 +190,7 @@ export class Sky {
       for (const ph of PHASES)
         img[ph] = bufferCanvas(shape ? paintCloud(shape, ph) : cirrus(seed, c.w, c.h, ph));
       // Cada una a su paso: unas algo más deprisa que otras.
-      return { ...c, img, speed: l.speed * (0.8 + ((i * 7) % 5) * 0.1) };
+      return { ...c, img, fade: fadeAt(c.y), speed: l.speed * (0.8 + ((i * 7) % 5) * 0.1) };
     }),
   }));
   private strips = {
@@ -152,7 +198,6 @@ export class Sky {
     dusk: bufferCanvas(wide(skyStrip(SKY_BANDS.dusk, STRIP_H, 10, GROUND - 25))),
     dawn: bufferCanvas(wide(skyStrip(SKY_BANDS.dawn, STRIP_H, 10, GROUND - 25))),
   };
-  private sun = { day: bufferCanvas(sunSprite(false)), low: bufferCanvas(sunSprite(true)) };
 
   /**
    * Pinta el cielo de una vista que empieza en la x `cx` del mundo. `hz` es la altura en la vista
@@ -226,9 +271,13 @@ export class Sky {
         for (let k = Math.floor(-(x + cl.w) / l.band); x + k * l.band < vw; k++) {
           const at = Math.round(x + k * l.band);
           if (at + cl.w < 0) continue;
+          // Las de arriba, transparentes: la de noche ya no va opaca debajo (si no, oscurece).
+          const lit = Math.min(1, wt.day + wt.dusk + wt.dawn);
           for (const ph of PHASES) {
-            if (wt[ph] <= 0.01) continue;
-            ctx.globalAlpha = wt[ph];
+            const a =
+              cl.fade >= 1 ? wt[ph] : cl.fade * (ph === 'night' ? Math.max(0, 1 - lit) : wt[ph]);
+            if (a <= 0.01) continue;
+            ctx.globalAlpha = a;
             ctx.drawImage(cl.img[ph], at, y);
           }
         }
@@ -296,16 +345,21 @@ export class Sky {
     const p = Math.min(1, 0.1 + d.tod * 0.95);
     const sx = Math.round(300 - 280 * p - pan(cx, vw, SKY_FX));
     const sy = Math.round(hz - 10 - (Math.sin(Math.PI * p) * 1.15 - 0.15) * SUN_UP);
-    if (sy > hz + 30) return;
-    const a = Math.min(1, sunUp * 1.3);
-    const low = Math.min(1, Math.max(0, (d.dusk - 0.2) / 0.5));
-    for (const [img, k] of [
-      [this.sun.day, 1 - low],
-      [this.sun.low, low],
-    ] as const) {
-      if (k <= 0) continue;
-      ctx.globalAlpha = a * k;
-      ctx.drawImage(img, sx - (img.width >> 1), sy - (img.height >> 1));
+    if (sy > hz + 20) return;
+    // El de siempre: un halo suave y el disco, limón de día y naranja al atardecer.
+    const warmSun = d.dusk > 0.3;
+    ctx.globalAlpha = Math.min(1, sunUp * 1.3);
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.drawImage(
+      glowSprite(30, warmSun ? [254, 140, 52] : [255, 240, 180], 0.55),
+      sx - 30,
+      sy - 30,
+    );
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = warmSun ? P.orange : P.lemon;
+    for (let y = -8; y <= 8; y++) {
+      const w = Math.floor(Math.sqrt(64 - y * y));
+      ctx.fillRect(sx - w, sy + y, w * 2 + 1, 1);
     }
     ctx.globalAlpha = 1;
   }
