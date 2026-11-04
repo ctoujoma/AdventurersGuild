@@ -106,6 +106,22 @@ npm run build`.
   - [ ] Visto bueno del usuario. Capturas en `capturas/cielo/`, `capturas/muros/` y
         `capturas/iconos/`.
 
+- [x] **Cinco paredes más** (`rooms/materiales.ts`, el usuario las eligió de una prueba):
+      troncos (rodajas con anillos en corte), ladrillo (con hilada de tizones; en corte, dos
+      ladrillos trabados), tapial (tongadas, cajones y mechinales; en corte, las agujas), lajas
+      de pizarra y encalado (cal vieja crema, no blanca: «parecía nevado»). La lluvia, el musgo y
+      la humedad de abajo, solo en las paredes que llegan al suelo (no en los hastiales). Van de
+      serie (`FREE` en `data/unlocks.ts`) hasta que se decida de qué hazaña u objetivo salen.
+      El encalado, con calvas de borde roto sacadas de un ruido suave (no círculos); el tapial,
+      un tono más oscuro, con cajones de alto y largo desiguales, remiendos y churretes.
+- [x] **Paredes de los lados a resolución completa** (el usuario: «quedan muy estiradas en
+      ángulo»): no era la cámara, era la textura. `sideTex` y `outerSide` iban a media
+      resolución en el fondo (DEEP, 30 píxeles para 60 de fondo: cada píxel, el doble de ancho
+      que de alto); ahora van a `SIDE_W` = DEPTH. Lo de tamaño fijo (puertas) se dibuja a media
+      resolución y se ensancha (`overHalf`), así mide lo mismo. Suelos, techos y tejados siguen
+      a media resolución en el fondo.
+  - [ ] Visto bueno del usuario. Capturas en `capturas/muros/` (`materiales.png` y cada una).
+
 ## Siguiente (en este orden, salvo que el usuario diga otra cosa)
 
 1. **Más cilindros y cuerpos de verdad**: los barriles apilados, las mesas (tablero y patas), el

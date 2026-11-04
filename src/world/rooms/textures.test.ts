@@ -14,7 +14,7 @@ import {
   roofRuns,
   roomsLayout,
 } from './layout';
-import { DEEP, backWall, caveCells, facade, sideTex, stairCells, type Facade } from './textures';
+import { SIDE_W, backWall, caveCells, facade, sideTex, stairCells, type Facade } from './textures';
 import { BACK } from './view3d';
 
 const holes = (b: PixelBuffer) => b.data.filter((c) => alpha(c) === 0).length;
@@ -72,10 +72,10 @@ describe('texturas de la vista 3D', () => {
   it('las paredes de los lados llevan puerta solo en las plantas que dan a otra sala', () => {
     const h = 2 * PITCH - (PITCH - ROOM_H);
     const b = sideTex('yeso', h, [0], 'prueba');
-    expect(b.w).toBe(DEEP);
-    const door = (y: number) => b.get(14, y);
-    expect(door(h - 10)).not.toBe(sideTex('yeso', h, [], 'prueba').get(14, h - 10));
-    expect(door(h - PITCH - 10)).toBe(sideTex('yeso', h, [], 'prueba').get(14, h - PITCH - 10));
+    expect(b.w).toBe(SIDE_W);
+    const door = (y: number) => b.get(28, y);
+    expect(door(h - 10)).not.toBe(sideTex('yeso', h, [], 'prueba').get(28, h - 10));
+    expect(door(h - PITCH - 10)).toBe(sideTex('yeso', h, [], 'prueba').get(28, h - PITCH - 10));
   });
 
   it('el corte deja ver dentro de las salas y tapa la tierra, los muros y los forjados', () => {

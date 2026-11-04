@@ -20,6 +20,12 @@ export type UnlockId =
 export const FREE: readonly UnlockId[] = [
   'roof:teja',
   'walls:tablas',
+  // De momento de serie (falta decidir de qué hazaña u objetivo salen).
+  'walls:troncos',
+  'walls:ladrillo',
+  'walls:tapial',
+  'walls:pizarra',
+  'walls:encalado',
   'sign:tablero',
   'tint:vino',
   'tint:bosque',
