@@ -127,6 +127,15 @@ export function SettingsMenu({ settings: s, onChange, onClose, onCheat, onBoss }
               <span>Vibración en golpes, monedas y asaltos</span>
             </label>
           )}
+          <h4 class="qs-sub">Imagen</h4>
+          <label class="set-check">
+            <input
+              type="checkbox"
+              checked={s.moodLight}
+              onChange={(e) => set({ moodLight: e.currentTarget.checked })}
+            />
+            <span>Luz con ambiente: salas más oscuras y charcos de luz de fuegos y faroles</span>
+          </label>
           <h4 class="qs-sub">Rendimiento</h4>
           <label class="set-check">
             <input

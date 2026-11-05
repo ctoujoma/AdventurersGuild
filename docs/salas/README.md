@@ -129,6 +129,13 @@ La lista completa de pendientes e ideas (bucle, monetización, amigos, torneos, 
   `TALK_ICONS`).
 - **Visitantes** con ropa propia (campesino, mercader, noble y forastero: `OutfitId` en
   `art/heroes/look.ts`); en el retrato usan la de un héroe parecido.
+- **Luz con ambiente** (Ajustes › Imagen, `moodLight`): la luz de fondo de las salas por
+  `MOOD_AMBIENT` (sin bajar de 0,2, para que las rotas y el sótano se lean) y los focos por
+  `MOOD_LAMPS`, en `RoomScene.ts`; así quedan charcos de luz. Las rotas y las vacías no bajan
+  (`NO_MOOD` en `gl.ts`). Sin marcar, la de siempre. El halo de los focos solo se pinta dentro
+  de la sala: antes asomaba por los forjados. En la
+  misma pasada hay una prueba de sombras y luz de borde (`lit` en `gl.ts`), apagada: se enciende
+  desde la consola (`window.__shadows`, `__dbg`); ver [`../estilo-cnc.md`](../estilo-cnc.md).
 - **Luces:** cada foco lleva un halo (`haloOf`) que el shader suma antes de pasar a la paleta, así
   sale tramado; su centro (`glow`) va a la profundidad de la llama dibujada, no a la del foco
   (si no, se corre al mover la cámara). Las llamas son una tira de fotogramas (`flame.ts`).

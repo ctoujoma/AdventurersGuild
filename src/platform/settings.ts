@@ -19,6 +19,11 @@ export interface Settings {
   /** Pocas luces en la escena (solo las más cercanas al centro), para móviles lentos. */
   fewLights: boolean;
   /**
+   * Luz con ambiente: las salas con menos luz de fondo y los fuegos, faroles y velas más
+   * fuertes (charcos de luz). Sin marcar, la luz de siempre.
+   */
+  moodLight: boolean;
+  /**
    * Días a la antigua (modo prueba): el día solo corre con el juego abierto y se cierra con
    * «Anochecer». Lo normal es que el tiempo corra solo, también cerrado (ver `core/away.ts`).
    */
@@ -39,6 +44,7 @@ export const DEFAULT_SETTINGS: Settings = {
   dawnAll: false,
   vibrate: true,
   fewLights: false,
+  moodLight: false,
   classicTime: false,
   tester: false,
 };
@@ -60,6 +66,7 @@ export function parseSettings(raw: unknown): Settings {
     dawnAll: r.dawnAll === true,
     vibrate: r.vibrate !== false,
     fewLights: r.fewLights === true,
+    moodLight: r.moodLight === true,
     classicTime: r.classicTime === true,
     tester: r.tester === true,
   };

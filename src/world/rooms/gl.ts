@@ -14,6 +14,7 @@ import {
   Float32BufferAttribute,
   FloatType,
   FrontSide,
+  Matrix4,
   Mesh,
   NearestFilter,
   RGBAFormat,
@@ -27,6 +28,7 @@ import {
 } from 'three';
 import { P } from '../../art/palette';
 import type { PixelBuffer } from '../../art/pixel';
+import { SLAB } from './layout';
 
 /**
  * Focos que caben a la vez: van en una textura (una columna por foco: posición y alcance, color
@@ -79,7 +81,43 @@ const SURFACE_FRAG = /* glsl */ `
   uniform vec3 uPalette[COLORS];
   uniform vec2 uUvOffset;
   uniform vec2 uUvScale;
+  // Sombras de los focos (prueba): profundidad de la escena vista desde la cámara.
+  uniform sampler2D uDepth;
+  uniform float uShadows;
+  uniform mat4 uProj;
+  uniform float uRim;
+  uniform float uAmbK;
+  uniform float uMood;
   varying vec2 vUv;
+  float distAt(float d) {
+    // Profundidad del búfer (0-1) a distancia a la cámara.
+    float ndc = d * 2.0 - 1.0;
+    return uProj[3][2] / (ndc + uProj[2][2]);
+  }
+  // Cuánto llega la luz de lp a world: se avanza por la pantalla hacia el foco y, si en algún
+  // punto lo que se ve está más cerca de la cámara que el rayo (y no mucho más), hay sombra.
+  float lit(vec3 world, vec3 lp0) {
+    vec3 lp = lp0;
+    if (uShadows < 0.5) return 1.0;
+    float shade = 1.0;
+    lp.z += 16.0;  // el foco, algo hacia delante: el fuego va metido en el hogar
+    vec4 c0 = uProj * viewMatrix * vec4(world, 1.0);
+    float d0 = distAt(c0.z / c0.w * 0.5 + 0.5);
+    for (int s = 1; s < 14; s++) {
+      float t = float(s) / 16.0;
+      vec3 p = mix(world, lp, t);
+      vec4 c = uProj * viewMatrix * vec4(p, 1.0);
+      vec3 n = c.xyz / c.w;
+      vec2 uv = n.xy * 0.5 + 0.5;
+      if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) continue;
+      float scene = distAt(texture2D(uDepth, uv).r);
+      float ray = distAt(n.z * 0.5 + 0.5);
+      float gap = ray - scene;
+      // Lo que está a la misma profundidad que el punto de partida es su propia superficie.
+      if (gap > 1.0 && gap < 9.0 && abs(scene - d0) > 2.0) shade = min(shade, 0.15 + 0.7 * t);
+    }
+    return shade;
+  }
   const float BAYER[16] = float[16](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.);
   void main() {
     vec4 tex = texture2D(map, vUv);
@@ -94,11 +132,14 @@ const SURFACE_FRAG = /* glsl */ `
     vec3 world = uOrigin + uAxisU * local.x + uAxisV * local.y;
     vec3 n = uNormal;
     // Luz del día solo por encima del suelo.
-    vec3 light = uAmbient + uDaylight * uSun * step(-0.5, world.y);
+    // Con «luz con ambiente», menos luz de fondo dentro (las salas sin focos no bajan de 0.2).
+    vec3 amb = uSun < 0.99 && uAmbK < 1.0 && uMood > 0.5 ? max(uAmbient * uAmbK, min(uAmbient, vec3(0.2))) : uAmbient;
+    vec3 light = amb + uDaylight * uSun * step(-0.5, world.y);
     // El halo de las llamas: la luz que se ve en el aire alrededor de cada una. Se mide en la
     // pantalla (lo que queda cerca de la llama a la vista, esté delante o detrás) y se suma al
     // color antes de pasarlo a la paleta, así sale en bandas tramadas y no como un difuminado.
     vec3 halo = vec3(0.0);
+    float dbg = 0.0;
     vec2 seen = cameraPosition.xy + (world.xy - cameraPosition.xy) * (cameraPosition.z / (cameraPosition.z - world.z));
     for (int i = 0; i < LIGHTS; i++) {
       if (i >= uLightCount) break;
@@ -111,8 +152,18 @@ const SURFACE_FRAG = /* glsl */ `
       float a = clamp(1.0 - dist / lp.w, 0.0, 1.0);
       a = a * a * (3.0 - 2.0 * a);
       float ndl = mix(max(dot(n, d / max(dist, 0.001)), 0.0), 1.0, uWrap);
+      if (a > 0.02) { float sh = lit(world, lp.xyz); a *= sh; if (uShadows > 1.5 && sh < 0.9) dbg = 1.0; }
+      // Luz de borde en las figuras: el canto que da al foco, si al lado no hay nada pintado.
+      if (uShadows > 0.5 && uRim > 0.0 && a > 0.02) {
+        vec2 dir = vec2(dot(d, uAxisU) / dot(uAxisU, uAxisU), dot(d, uAxisV) / dot(uAxisV, uAxisV));
+        vec2 off = sign(dir) * step(0.3 * max(abs(dir.x), abs(dir.y)), abs(dir)) / size;
+        float nb = texture2D(map, uvc + off).a;
+        if (nb < 0.5) light += lc.rgb * a * uRim;
+      }
       light += lc.rgb * a * ndl;
-      if (lc.a > 0.0) {
+      // El halo, solo dentro de la sala: la zona incluye los forjados (su canto recibe luz), pero
+      // el halo del foco de abajo no debe verse a través del suelo.
+      if (lc.a > 0.0 && world.y > z.y + ${SLAB.toFixed(1)} && world.y < z.w - ${SLAB.toFixed(1)}) {
         // El centro, donde se ve la llama dibujada (a su profundidad: si no, se corre al mover).
         vec3 hp = texelFetch(uLights, ivec2(i, 3), 0).xyz;
         vec2 ls = cameraPosition.xy + (hp.xy - cameraPosition.xy) * (cameraPosition.z / (cameraPosition.z - hp.z));
@@ -139,7 +190,7 @@ const SURFACE_FRAG = /* glsl */ `
         best = uPalette[i];
       }
     }
-    gl_FragColor = vec4(best, 1.0);
+    gl_FragColor = vec4(dbg > 0.5 ? vec3(1.0, 0.0, 1.0) : best, 1.0);
   }
 `;
 
@@ -245,8 +296,31 @@ export function sharedUniforms() {
     uLights: { value: lightsTexture() },
     uLightCount: { value: 0 },
     uPalette: { value: PALETTE },
+    uDepth: { value: NO_DEPTH as Texture },
+    uShadows: { value: 0 },
+    uProj: { value: new Matrix4() },
+    uAmbK: { value: 1 },
   };
 }
+
+/**
+ * Luces de fondo que no bajan con «luz con ambiente» (las salas rotas y las vacías, que ya son
+ * oscuras): la escena las apunta aquí.
+ */
+export const NO_MOOD = new WeakSet<object>();
+
+/** Sin profundidad (la primera pasada): todo «lejos», nada hace sombra. */
+const NO_DEPTH = (() => {
+  const t = new DataTexture(
+    new Uint8Array([255, 255, 255, 255]),
+    1,
+    1,
+    RGBAFormat,
+    UnsignedByteType,
+  );
+  t.needsUpdate = true;
+  return t;
+})();
 
 export type Shared = ReturnType<typeof sharedUniforms>;
 
@@ -277,6 +351,8 @@ export class Look {
           uWrap: { value: o.wrap ?? 0.25 },
           uDither: { value: o.dither ?? 0.035 },
           uHalo: { value: o.halo ?? 1 },
+          uRim: { value: (o.wrap ?? 0.25) >= 0.5 ? 0.9 : 0 },
+          uMood: { value: NO_MOOD.has(o.ambient) ? 0 : 1 },
           uUvOffset: { value: new Vector2(0, 0) },
           uUvScale: { value: new Vector2((o.repeat ?? 1) / (o.frames ?? 1), 1) },
         },

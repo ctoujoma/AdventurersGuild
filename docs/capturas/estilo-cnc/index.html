@@ -1,0 +1,165 @@
+<title>Jarro al estilo lago</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Literata:opsz,wght@7..72,400;7..72,600&display=swap">
+<style>
+  /* Una sola mirada, de noche junto al lago: papel oscuro azulado, ámbar de ventana encendida. */
+  :root {
+    --bg: #161a26;
+    --panel: #1f2434;
+    --line: #333a50;
+    --fg: #e6e1d6;
+    --muted: #a3a6b4;
+    --amber: #f2b544;
+    --mist: #b4a6cc;
+    --display: 'Pixelify Sans', 'Courier New', monospace;
+    --body: 'Literata', Georgia, serif;
+    color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--fg); font: 17px/1.6 var(--body); }
+  .wrap {
+    max-width: 1000px; margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 32px 64px;
+    display: grid; gap: 40px;
+  }
+  h1, h2 { font-family: var(--display); font-weight: 700; text-wrap: balance; margin: 0; letter-spacing: .01em; }
+  h1 { font-size: clamp(30px, 6vw, 52px); line-height: 1.05; color: var(--amber); }
+  h2 { font-size: clamp(22px, 3.6vw, 30px); color: var(--fg); }
+  p { margin: 0; max-width: 65ch; }
+  .lead { color: var(--muted); font-size: 18px; }
+  .tag { font-family: var(--display); font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--mist); }
+  section { display: grid; gap: 14px; }
+  img { display: block; width: 100%; height: auto; image-rendering: pixelated; border-radius: 3px; }
+  figure { margin: 0; display: grid; gap: 6px; }
+  figcaption { font-size: 14px; color: var(--muted); }
+  .hours { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .hours button {
+    font-family: var(--display); font-size: 15px; background: var(--panel); color: var(--fg);
+    border: 1px solid var(--line); border-radius: 3px; padding: 6px 12px; cursor: pointer;
+  }
+  .hours button[aria-pressed="true"] { border-color: var(--amber); color: var(--amber); }
+  .bar { display: flex; gap: 8px; flex-wrap: wrap; }
+  .cmp { position: relative; overflow: hidden; border-radius: 3px; touch-action: none; cursor: ew-resize; user-select: none; }
+  .cmp img { border-radius: 0; }
+  .cmp .top { position: absolute; inset: 0; clip-path: inset(0 0 0 var(--cut, 50%)); }
+  .cmp .knob { position: absolute; top: 0; bottom: 0; left: var(--cut, 50%); width: 2px; background: var(--amber); }
+  .cmp .lbl { position: absolute; top: 8px; font-family: var(--display); font-size: 13px; background: #0009; color: var(--fg); padding: 2px 8px; border-radius: 2px; }
+  .cmp .l { left: 8px; } .cmp .r { right: 8px; }
+  .cmp:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { font-family: var(--display); font-weight: 500; color: var(--mist); }
+  .tbl { overflow-x: auto; }
+  ol { margin: 0; padding-left: 1.3em; display: grid; gap: 8px; max-width: 70ch; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--amber); padding: 16px 18px; border-radius: 3px; display: grid; gap: 8px; }
+  .verdict strong { color: var(--amber); }
+  @media (max-width: 560px) { .hours { grid-template-columns: 1fr; } }
+</style>
+
+<div class="wrap">
+  <header style="display:grid;gap:12px">
+    <span class="tag">El Jarro Partido · pruebas de estilo</span>
+    <h1>¿El gremio con la luz de un lago de otoño?</h1>
+    <p class="lead">Tres pruebas para medir si el pixel art del juego puede ir hacia el estilo de las referencias: un paisaje nuevo pintado por código, solo cambiar la paleta, y el paisaje nuevo detrás del juego de hoy.</p>
+  </header>
+
+  <section>
+    <span class="tag">Prueba A · paisaje de cero</span>
+    <h2>Capas con bruma, abetos por pisos y un lago que refleja</h2>
+    <div class="bar" role="group" aria-label="Hora del paisaje">
+      <button type="button" id="h-otono" aria-pressed="true" data-h="a-otono-paralaje.gif">Otoño (animado)</button>
+      <button type="button" id="h-alba" aria-pressed="false" data-h="a-alba.png">Alba violeta</button>
+      <button type="button" id="h-ocaso" aria-pressed="false" data-h="a-ocaso.png">Ocaso</button>
+      <button type="button" id="h-noche" aria-pressed="false" data-h="a-noche.png">Noche</button>
+    </div>
+    <figure>
+      <img id="hour" src="a-otono-paralaje.gif" alt="Paisaje de otoño con montes nevados, bosque, la taberna en la orilla y su reflejo en el lago" width="960" height="540">
+      <figcaption>480×270 píxeles, 64 colores sin trama. Cinco capas con su paralaje: la cámara se mueve, el agua tiembla y el humo sube.</figcaption>
+    </figure>
+  </section>
+
+  <section>
+    <span class="tag">Prueba B · solo la paleta</span>
+    <h2>Menos croma y negros azulados: más suave, pero el mismo dibujo</h2>
+    <div class="cmp" id="cmp-b" tabindex="0" role="slider" aria-label="Comparar paleta de hoy y paleta nueva" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+      <img src="hoy-tarde.png" alt="La taberna hoy, al atardecer" width="1280" height="760">
+      <img class="top" src="b-tarde.png" alt="La misma escena con la paleta nueva" width="1280" height="760">
+      <div class="knob"></div><span class="lbl l">Hoy</span><span class="lbl r">Paleta nueva</span>
+    </div>
+    <p>Es lo que haría el shader cambiando la paleta (un cambio pequeño). Ayuda a que todo respire, pero el tramado en cuadrícula, los contornos oscuros y las formas siguen siendo los de hoy.</p>
+  </section>
+
+  <section>
+    <span class="tag">Prueba C · el fondo nuevo en el juego</span>
+    <h2>El paisaje A detrás del patio de hoy</h2>
+    <div class="cmp" id="cmp-c" tabindex="0" role="slider" aria-label="Comparar el patio de hoy con el fondo nuevo" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+      <img src="hoy-patio.png" alt="El patio hoy, a mediodía" width="1280" height="760">
+      <img class="top" src="c-patio.png" alt="El patio con el fondo nuevo y la paleta nueva" width="1280" height="760">
+      <div class="knob"></div><span class="lbl l">Hoy</span><span class="lbl r">Fondo nuevo</span>
+    </div>
+    <p>El cielo del juego se pintó en magenta para recortarlo y poner detrás el paisaje A. Es la primera fase tal cual. Se nota el choque: los árboles redondos del patio y el pozo siguen en el estilo viejo, y el píxel del fondo es algo más grande.</p>
+  </section>
+
+  <section>
+    <span class="tag">Diagnóstico</span>
+    <h2>Qué separa el juego de las referencias</h2>
+    <div class="tbl">
+      <table>
+        <thead><tr><th></th><th>Jarro hoy</th><th>Referencias</th></tr></thead>
+        <tbody>
+          <tr><th>Paleta</th><td>Endesga 32, saturada, negro puro</td><td>Tonos apagados y emparentados, sin negro; cada hora con su gama</td></tr>
+          <tr><th>Profundidad</th><td>Por el dibujo</td><td>Perspectiva atmosférica: lo lejano se funde con la bruma</td></tr>
+          <tr><th>Sombreado</th><td>Trama Bayer en cielo, montes y luces</td><td>Racimos de color; bandas de borde mellado</td></tr>
+          <tr><th>Contorno</th><td>Oscuro casi en todo</td><td>Casi ninguno: la forma la da la luz</td></tr>
+          <tr><th>Luz</th><td>Ambiente y focos</td><td>Un sol bajo que manda, con borde de luz</td></tr>
+          <tr><th>Agua</th><td>No hay</td><td>Espejo roto en franjas y brillos que tiemblan</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <span class="tag">Viabilidad</span>
+    <div class="verdict">
+      <p><strong>Sí para el fondo y el exterior; caro para el resto.</strong></p>
+      <p>A favor: el arte ya es código y todo pasa por una paleta en el shader, y el fondo ya va por capas con paralaje, así que se cambia capa a capa sin tocar las salas. En contra: salas, muebles, gente, retratos y fachada son cientos de piezas dibujadas para la paleta de hoy, con contorno y trama; pasarlas es rehacerlas una a una, y mientras convivan los dos estilos se notará.</p>
+    </div>
+    <h2>Plan por fases</h2>
+    <ol>
+      <li><b>Paleta y luz por hora.</b> Unos 64 tonos apagados y un gradeo por hora en el shader. Un PR.</li>
+      <li><b>Fondo nuevo.</b> Pasar el generador de A al juego: cielo, nubes, montes, bosques y un lago o río lejano con reflejo. Dos o tres PR; lo que más cambia y lo que menos arriesga.</li>
+      <li><b>Patio y fachada.</b> Árboles, pozo, hierba y cercas en el estilo nuevo; fachada sin trama y con luz de borde. Uno o dos PR.</li>
+      <li><b>Salas.</b> Quitar la trama, aflojar contornos, luz en racimos. Un PR cada dos o tres salas: lo más largo.</li>
+      <li><b>Gente y retratos.</b> Los sprites ya tienen un tamaño parecido; basta con color y contorno. Los retratos, solo si se quiere subir su resolución.</li>
+    </ol>
+    <p>Recomendación: hacer 1, 2 y 3 y decidir con eso delante si seguir con 4 y 5.</p>
+  </section>
+</div>
+
+<script>
+  const hour = document.getElementById('hour');
+  const btns = document.querySelectorAll('[data-h]');
+  btns.forEach((b) => b.addEventListener('click', () => {
+    hour.src = b.dataset.h;
+    btns.forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+  }));
+  for (const el of document.querySelectorAll('.cmp')) {
+    const set = (p) => {
+      p = Math.max(0, Math.min(100, p));
+      el.style.setProperty('--cut', p + '%');
+      el.setAttribute('aria-valuenow', String(Math.round(p)));
+    };
+    const at = (e) => { const r = el.getBoundingClientRect(); set(((e.clientX - r.left) / r.width) * 100); };
+    let on = false;
+    el.addEventListener('pointerdown', (e) => { on = true; el.setPointerCapture(e.pointerId); at(e); });
+    el.addEventListener('pointermove', (e) => on && at(e));
+    el.addEventListener('pointerup', () => (on = false));
+    el.addEventListener('keydown', (e) => {
+      const v = Number(el.getAttribute('aria-valuenow'));
+      if (e.key === 'ArrowLeft') set(v - 5);
+      if (e.key === 'ArrowRight') set(v + 5);
+    });
+  }
+</script>

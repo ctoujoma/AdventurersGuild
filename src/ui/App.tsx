@@ -230,6 +230,7 @@ export function App() {
     if (scene.current) {
       scene.current.speed = settings.speed;
       scene.current.fewLights = settings.fewLights;
+      scene.current.moodLight = settings.moodLight;
     }
     saveSettings(settings);
   }, [settings]);
@@ -999,6 +1000,7 @@ export function App() {
             s.setTime(clockRef.current / DAY_SECONDS);
             s.speed = settings.speed;
             s.fewLights = settings.fewLights;
+            s.moodLight = settings.moodLight;
           }}
           onHotspot={onHotspot}
           onHero={(id, at) => {

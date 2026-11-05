@@ -26,6 +26,9 @@ import {
   Scene,
   Vector3,
   WebGLRenderer,
+  WebGLRenderTarget,
+  DepthTexture,
+  UnsignedIntType,
   type ShaderMaterial,
 } from 'three';
 import { P, darker } from '../../art/palette';
@@ -85,7 +88,16 @@ import { FLAME_FRAMES, FLAME_H, FLAME_W, flameStrip } from './flame';
 import { faces, sideTexel, type Mat } from './volume';
 import { RaidShow } from './raid';
 import { HEARTH_RIGHT, NO_LOOK, type SalonLook } from './salon';
-import { FEW_LIGHTS, Look, MAX_LIGHTS, mesh, quad, sharedUniforms, type Corners } from './gl';
+import {
+  FEW_LIGHTS,
+  Look,
+  MAX_LIGHTS,
+  NO_MOOD,
+  mesh,
+  quad,
+  sharedUniforms,
+  type Corners,
+} from './gl';
 import { route, type Place } from './people';
 import {
   CELL_W,
@@ -163,11 +175,20 @@ type Tint = readonly [number, number, number];
 /** Profundidad de las chimeneas del tejado: justo detrás del hastial (que tapa su pie). */
 const CHIMNEY_Z = 8;
 const OUTDOOR: Tint = [0.3, 0.28, 0.42];
+/**
+ * Luz con ambiente (Ajustes): la luz de fondo de las salas se multiplica por esto y los focos
+ * por `MOOD_LAMPS`, así quedan charcos de luz alrededor de fuegos, faroles y velas.
+ */
+const MOOD_AMBIENT = 0.6;
+const MOOD_LAMPS = 1.5;
 const ROOM_LIT: Tint = [0.44, 0.38, 0.46];
 const ROOM_DEEP: Tint = [0.42, 0.37, 0.52];
 const ROOM_DIM: Tint = [0.34, 0.31, 0.46];
 /** Sala rota: apagada y fría (azulada), que se distinga de lejos de las que se usan. */
 const ROOM_RUIN: Tint = [0.28, 0.31, 0.46];
+// Las rotas y las vacías se quedan con su luz con «luz con ambiente».
+NO_MOOD.add(ROOM_RUIN);
+NO_MOOD.add(ROOM_DIM);
 const STAIRS: Tint = [0.4, 0.35, 0.5];
 const CAVE: Tint = [0.3, 0.27, 0.4];
 /** El corte de la tierra y la roca, que se vea aunque no le dé ningún farol. */
@@ -323,6 +344,8 @@ export class RoomScene {
   speed = 1;
   /** «Pocas luces» en Ajustes: solo los focos más cercanos al centro (para móviles lentos). */
   fewLights = false;
+  /** Luz con ambiente (Ajustes): menos luz de fondo en las salas y focos más fuertes. */
+  moodLight = false;
   private renderer: WebGLRenderer;
   private scene = new Scene();
   private cam3 = new PerspectiveCamera();
@@ -330,6 +353,9 @@ export class RoomScene {
   /** Materiales del edificio (se rehacen con él) y los de las láminas de pantalla. */
   /** Día y focos: los mismos para el edificio, las láminas y la gente. */
   private shared = sharedUniforms();
+  /** Prueba de sombras: la profundidad de la escena, de una primera pasada. */
+  private depthRT: WebGLRenderTarget | null = null;
+  private noDepth = this.shared.uDepth.value;
   private look = new Look(this.shared);
   private keep = new Look(this.shared);
   private crowd = new Crowd(this.shared, (x, floor) => this.tintAt(x, floor));
@@ -3013,8 +3039,10 @@ export class RoomScene {
       0.76 * dl.day + 0.12 * dl.dusk + 0.18 * moon + 0.12 * nl.warm,
       0.72 * dl.day + 0.32 * moon * (1 - 0.4 * nl.dark),
     );
-    const lampK = 0.3 + 0.7 * (1 - dl.day);
-    const fireK = 0.6 + 0.4 * (1 - dl.day);
+    const boost =
+      (window as unknown as { __lampK?: number }).__lampK ?? (this.moodLight ? MOOD_LAMPS : 1);
+    const lampK = (0.3 + 0.7 * (1 - dl.day)) * boost;
+    const fireK = (0.6 + 0.4 * (1 - dl.day)) * boost;
     const cx = view.px + view.vw / 2;
     const cy = GROUND - (view.py + view.vh / 2);
     const x0 = view.px - 40;
@@ -3116,10 +3144,37 @@ export class RoomScene {
     }
 
     const r = this.renderer;
+    // Primera pasada (prueba de sombras): la escena a una textura, solo por su profundidad.
+    const w = window as unknown as { __shadows?: boolean; __ambK?: number; __lampK?: number };
+    // Prueba de luz (estudio del estilo nuevo), apagada salvo que se pida desde la consola.
+    const shadows = w.__shadows === true;
+    this.shared.uAmbK.value = w.__ambK ?? (this.moodLight ? MOOD_AMBIENT : 1);
+    if (shadows) {
+      const { vw, vh } = this.camera;
+      if (!this.depthRT || this.depthRT.width !== vw || this.depthRT.height !== vh) {
+        this.depthRT?.dispose();
+        const dt = new DepthTexture(vw, vh);
+        dt.type = UnsignedIntType;
+        this.depthRT = new WebGLRenderTarget(vw, vh, { depthTexture: dt, depthBuffer: true });
+      }
+      this.shared.uShadows.value = 0;
+      this.shared.uDepth.value =
+        this.shared.uDepth.value === this.depthRT.depthTexture
+          ? this.noDepth
+          : this.shared.uDepth.value;
+      r.setRenderTarget(this.depthRT);
+      r.clear();
+      r.render(this.scene, this.cam3);
+      r.setRenderTarget(null);
+      this.shared.uShadows.value = (window as unknown as { __dbg?: boolean }).__dbg ? 2 : 1;
+      this.shared.uDepth.value = this.depthRT.depthTexture;
+      this.shared.uProj.value.copy(this.cam3.projectionMatrix);
+    } else this.shared.uShadows.value = 0;
     r.clear();
     r.render(this.skyScene, this.flat);
     r.clearDepth();
     r.render(this.scene, this.cam3);
+    if (shadows) this.shared.uDepth.value = this.noDepth;
     if (live) r.render(this.topScene, this.flat);
   }
 
