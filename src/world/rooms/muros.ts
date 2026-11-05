@@ -10,11 +10,25 @@
  *   abierto): lo de dentro del muro. Tablas: dos forros y la cámara con los travesaños vistos
  *   por la testa; entramado: el revoco, el barro con el zarzo y las carreras por la testa;
  *   piedra: dos caras de sillar y el relleno de mampuesto.
+ *
+ * Troncos, ladrillo, tapial, lajas y encalado, en `materiales.ts`.
  */
 import { Rng } from '../../core/rng';
 import { P } from '../../art/palette';
 import type { PixelBuffer } from '../../art/pixel';
 import type { WallId } from '../../data/custom';
+import {
+  brickFace,
+  brickSection,
+  limeFace,
+  limeSection,
+  logsFace,
+  logsSection,
+  rammedFace,
+  rammedSection,
+  slateFace,
+  slateSection,
+} from './materiales';
 
 /** Ruido fijo por píxel (0–1). */
 const hash = (x: number, y: number, s = 0) => {
@@ -37,6 +51,11 @@ export function wallFace(
   if (w <= 0 || h <= 0) return;
   if (walls === 'piedra') ashlarFace(b, x, y, w, h, seed);
   else if (walls === 'entramado') timberFace(b, x, y, w, h, seed);
+  else if (walls === 'troncos') logsFace(b, x, y, w, h, seed);
+  else if (walls === 'ladrillo') brickFace(b, x, y, w, h, seed);
+  else if (walls === 'tapial') rammedFace(b, x, y, w, h, seed);
+  else if (walls === 'pizarra') slateFace(b, x, y, w, h, seed);
+  else if (walls === 'encalado') limeFace(b, x, y, w, h, seed);
   else boardFace(b, x, y, w, h, seed);
 }
 
@@ -313,6 +332,11 @@ export function wallSection(
   const col = (i: number) => (outLeft ? x + i : x + w - 1 - i);
   if (walls === 'piedra' || walls === 'sotano') rubbleSection(b, x, y, w, h, col, walls);
   else if (walls === 'entramado') daubSection(b, x, y, w, h, col);
+  else if (walls === 'troncos') logsSection(b, x, y, w, h);
+  else if (walls === 'ladrillo') brickSection(b, x, y, w, h);
+  else if (walls === 'tapial') rammedSection(b, x, y, w, h, col);
+  else if (walls === 'pizarra') slateSection(b, x, y, w, h);
+  else if (walls === 'encalado') limeSection(b, x, y, w, h, col);
   else boardSection(b, y, w, h, col);
 }
 

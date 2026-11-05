@@ -84,12 +84,14 @@ npm run build`.
 - [x] **Cielo, paredes e iconos** (el usuario: «una seria pasada de calidad al cielo», «las
       paredes se ven cutres y repetitivas», «iconos para la personalización del jardín»):
   - el cielo (`art/clouds.ts`, `rooms/sky.ts`): franjas tramadas en vez de degradado liso, con su
-    tira para el día, el atardecer y el alba (`skyStrip`); el sol con halo en anillos y, al
-    ponerse, cruzado por franjas; nubes en tres capas con su paralaje (cirros altos, cúmulos y
+    tira para el día, el atardecer y el alba (`skyStrip`); nubes en tres capas con su paralaje (cirros altos, cúmulos y
     bancos bajos que asoman entre los montes), cada una pintada con la luz de cada hora (de día
     desde arriba, al atardecer y al alba desde el sol bajo, de noche con la luna). La luz sale
     del volumen entero de la nube, no de cada bulto (el usuario: «parecen un gusano»); los
-    bultos solo marcan la coliflor de la cima;
+    bultos solo marcan la coliflor de la cima. Por encima de la franja de siempre (al alejar
+    del todo se veía cielo vacío), `upperLayers` pone nubes cada vez más escasas, pequeñas y
+    transparentes (`fadeAt`), sobre todo cirros, hasta que el cielo queda limpio. El sol, el de
+    antes (halo suave y disco): el nuevo no gustó;
   - las paredes (`rooms/muros.ts`): de frente (hastiales y costados), `wallFace` sin repetirse
     (tablas de ancho y tono desiguales con tapajuntas, empalmes y clavos; entramado con postes a
     distancias distintas y riostras variadas; sillería en hiladas de alto distinto); en corte
@@ -106,11 +108,28 @@ npm run build`.
   - [ ] Visto bueno del usuario. Capturas en `capturas/cielo/`, `capturas/muros/` y
         `capturas/iconos/`.
 
+- [x] **Cinco paredes más** (`rooms/materiales.ts`, el usuario las eligió de una prueba):
+      troncos (rodajas con anillos en corte), ladrillo (con hilada de tizones; en corte, dos
+      ladrillos trabados), tapial (tongadas, cajones y mechinales; en corte, las agujas), lajas
+      de pizarra y encalado (cal vieja crema, no blanca: «parecía nevado»). La lluvia, el musgo y
+      la humedad de abajo, solo en las paredes que llegan al suelo (no en los hastiales). Van de
+      serie (`FREE` en `data/unlocks.ts`) hasta que se decida de qué hazaña u objetivo salen.
+      El encalado, con calvas de borde roto sacadas de un ruido suave (no círculos); el tapial,
+      un tono más oscuro, con cajones de alto y largo desiguales, remiendos y churretes.
+- [x] **Paredes de los lados a resolución completa** (el usuario: «quedan muy estiradas en
+      ángulo»): no era la cámara, era la textura. `sideTex` y `outerSide` iban a media
+      resolución en el fondo (DEEP, 30 píxeles para 60 de fondo: cada píxel, el doble de ancho
+      que de alto); ahora van a `SIDE_W` = DEPTH. Lo de tamaño fijo (puertas) se dibuja a media
+      resolución y se ensancha (`overHalf`), así mide lo mismo. Suelos, techos y tejados siguen
+      a media resolución en el fondo.
+  - [ ] Visto bueno del usuario. Capturas en `capturas/muros/` (`materiales.png` y cada una).
+
 ## Estudio: estilo «Cast n Chill»
 
 Pedido del usuario: ver si el pixel art puede ir hacia ese estilo. Pruebas, viabilidad y plan
 por fases en [`estilo-cnc.md`](estilo-cnc.md) (visor: `capturas/estilo-cnc/index.html`).
-Pendiente de que el usuario decida si se sigue y por qué fase.
+Hecho de momento: el ajuste «Luz con ambiente» (Ajustes › Imagen) y una prueba de sombras en el
+shader, apagada. Siguiente: el plan para el mejor efecto posible, con el usuario.
 
 ## Siguiente (en este orden, salvo que el usuario diga otra cosa)
 
@@ -246,7 +265,8 @@ Pendiente de que el usuario decida si se sigue y por qué fase.
 - **Fondo:** «se verá durante muchas horas: que sea entretenido y lindo»; el fondo no puede
   moverse al hacer zoom.
 - **Nubes:** nada de bolas sombreadas una a una (parecen «un gusano o un zurullo»): una sola
-  masa con la luz por franjas y los bultos solo en el contorno de arriba.
+  masa con la luz por franjas y los bultos solo en el contorno de arriba. Que se acaben poco a
+  poco hacia arriba, nunca de golpe. El sol, el de antes (halo suave y disco).
 - **Salas:** demasiado plano y demasiado pintado en la pared; quiere cosas que resalten, con
   cuerpo (el oro del tesoro, los hornos de la bodega).
 - **Animaciones:** que no repitan un gesto todo el día (la cocina parecía que fregaba).

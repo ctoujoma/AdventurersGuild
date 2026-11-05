@@ -53,6 +53,27 @@ export const themeOf = (f: number): Theme =>
 
 /** Filas del suelo, del techo y de los lados (media resolución en profundidad). */
 export const DEEP = DEPTH / 2;
+/**
+ * Ancho de las paredes de los lados (las que van hacia el fondo): a resolución completa, un
+ * píxel por unidad de fondo. A media resolución (DEEP) cada píxel salía el doble de ancho que
+ * de alto, y en ángulo se notaba estirado.
+ */
+export const SIDE_W = DEPTH;
+
+/**
+ * Pinta encima de `b` (a resolución completa) lo dibujado en `half` a media resolución en el
+ * fondo, con cada píxel al doble de ancho: las piezas de tamaño fijo (puertas) siguen igual de
+ * grandes que antes.
+ */
+function overHalf(b: PixelBuffer, half: PixelBuffer): void {
+  for (let y = 0; y < half.h; y++)
+    for (let x = 0; x < half.w; x++) {
+      const c = half.data[y * half.w + x]!;
+      if (!(c >>> 24)) continue;
+      b.data[y * b.w + 2 * x] = c;
+      if (2 * x + 1 < b.w) b.data[y * b.w + 2 * x + 1] = c;
+    }
+}
 
 /** Sala sin muebles todavía (se está levantando o mudando) y sala rota. */
 export const bare = (r: Room) => !!r.works && r.works.kind !== 'extend';
@@ -248,31 +269,41 @@ export function sideTex(
   strength = 1,
   room?: Room,
 ): PixelBuffer {
-  const b = new PixelBuffer(DEEP, h);
+  const W = SIDE_W;
+  const b = new PixelBuffer(W, h);
   if (theme === 'yeso') {
-    plaster(b, 0, 0, DEEP, h, seed, PLASTER);
+    plaster(b, 0, 0, W, h, seed, PLASTER);
     for (let f = 0; f * PITCH < h; f++) {
       const y = h - f * PITCH;
-      planksV(b, 0, y - 18, DEEP, 18, seed, WAINSCOT, 5);
+      planksV(b, 0, y - 18, W, 18, seed, WAINSCOT, 5);
     }
-  } else if (theme === 'madera') planksV(b, 0, 0, DEEP, h, seed, WOOD_DARK, 7);
-  else if (theme === 'piedra') stoneWall(b, 0, 0, DEEP, h, seed, { ramp: CELLAR, bw: 8, bh: 7 });
-  else stoneWall(b, 0, 0, DEEP, h, seed, { ramp: ROCK, bw: 9, bh: 8 });
+  } else if (theme === 'madera') planksV(b, 0, 0, W, h, seed, WOOD_DARK, 7);
+  else if (theme === 'piedra') stoneWall(b, 0, 0, W, h, seed, { ramp: CELLAR, bw: 12, bh: 7 });
+  else stoneWall(b, 0, 0, W, h, seed, { ramp: ROCK, bw: 14, bh: 8 });
   // Los acabados de la sala, como en su pared del fondo.
   if (room && !bare(room) && !ruined(room) && ART[room.type]) sideFinish(b, room, theme, seed);
-  // El marco de cada puerta a la sala de al lado; el hueco se abre después de la sombra.
+  // El marco de cada puerta a la sala de al lado (DOOR_U0…DOOR_U1 van a media resolución); el
+  // hueco se abre después de la sombra.
+  const u0 = 2 * DOOR_U0;
+  const u1 = 2 * DOOR_U1;
   for (const f of doors) {
     const y = h - f * PITCH;
-    b.rect(DOOR_U0 - 2, y - DOOR_H - 4, DOOR_U1 - DOOR_U0 + 4, DOOR_H + 4, P.plum);
-    b.rect(DOOR_U0 - 1, y - DOOR_H - 2, DOOR_U1 - DOOR_U0 + 2, DOOR_H + 2, P.bark);
+    b.rect(u0 - 3, y - DOOR_H - 4, u1 - u0 + 6, DOOR_H + 4, P.plum);
+    b.rect(u0 - 2, y - DOOR_H - 2, u1 - u0 + 4, DOOR_H + 2, P.bark);
   }
-  // La puerta de la calle, cerrada; más fuerte cuanto más nivel tiene el recibidor.
-  for (const f of front) streetDoor(b, 6, h - f * PITCH - 54, strength, seed);
-  ambientOcclusion(b, 0, 0, DEEP, h, 3, { top: true, bottom: true, left: false, right: true });
+  // La puerta de la calle, cerrada; más fuerte cuanto más nivel tiene el recibidor. Se dibuja a
+  // media resolución y se ensancha (así mide lo mismo que antes).
+  if (front.length) {
+    const half = new PixelBuffer(DEEP, h);
+    for (const f of front) streetDoor(half, 6, h - f * PITCH - 54, strength, seed);
+    overHalf(b, half);
+  }
+  ambientOcclusion(b, 0, 0, W, h, 3, { top: true, bottom: true, left: false, right: true });
+  ambientOcclusion(b, 0, 0, W, h, 6, { top: false, bottom: false, left: false, right: true });
   // El hueco: se ve el paso, con su hoja (ver `doorway` en RoomScene.ts).
   for (const f of doors) {
     const y = h - f * PITCH;
-    for (let j = y - DOOR_H; j < y; j++) for (let i = DOOR_U0; i < DOOR_U1; i++) b.clear(i, j);
+    for (let j = y - DOOR_H; j < y; j++) for (let i = u0; i < u1; i++) b.clear(i, j);
   }
   return b;
 }
@@ -352,18 +383,22 @@ export function outerSide(
   strength = 1,
   walls?: WallId,
 ): PixelBuffer {
-  const b = new PixelBuffer(DEEP, h);
+  const W = SIDE_W;
+  const b = new PixelBuffer(W, h);
   // Con paredes elegidas, todas las plantas iguales; si no, yeso abajo y tablas arriba.
-  if (walls) wallFill(b, 0, 0, DEEP, h, seed, walls);
+  if (walls) wallFill(b, 0, 0, W, h, seed, walls);
   else if (theme === 'yeso') {
-    plaster(b, 0, 0, DEEP, h, seed, PLASTER);
+    plaster(b, 0, 0, W, h, seed, PLASTER);
     post(b, 0, 0, 3, h, WOOD_DARK);
-    post(b, DEEP - 3, 0, 3, h, WOOD_DARK);
-  } else planksV(b, 0, 0, DEEP, h, seed, WOOD_DARK, 6);
-  for (let y = 0; y < h; y += PITCH) beam(b, 0, y, DEEP, SLAB, WOOD_DARK);
+    post(b, W - 3, 0, 3, h, WOOD_DARK);
+  } else planksV(b, 0, 0, W, h, seed, WOOD_DARK, 6);
+  for (let y = 0; y < h; y += PITCH) beam(b, 0, y, W, SLAB, WOOD_DARK);
+  // La puerta, a media resolución y ensanchada (mide lo mismo que antes).
   if (door) {
-    b.rect(8, h - 50, 16, 50, P.plum);
-    b.blit(Prop.doorLeaf(strength), 10, h - 49);
+    const half = new PixelBuffer(DEEP, h);
+    half.rect(8, h - 50, 16, 50, P.plum);
+    half.blit(Prop.doorLeaf(strength), 10, h - 49);
+    overHalf(b, half);
   }
   return b;
 }

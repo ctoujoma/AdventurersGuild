@@ -142,7 +142,8 @@ export const FACADE: Record<
  * Sin elegir, lo de siempre: teja roja, tablas y el tablero colgado.
  */
 export type RoofId = 'teja' | 'pizarra' | 'paja' | 'verde' | 'tablilla';
-export type WallId = 'tablas' | 'entramado' | 'piedra';
+export type WallId =
+  'tablas' | 'entramado' | 'piedra' | 'troncos' | 'ladrillo' | 'tapial' | 'pizarra' | 'encalado';
 export type SignId = 'tablero' | 'hierro' | 'pintado';
 
 export interface FacadeLook {
@@ -164,6 +165,11 @@ export const WALLS: Record<WallId, string> = {
   tablas: 'Tablas',
   entramado: 'Entramado',
   piedra: 'Piedra',
+  troncos: 'Troncos',
+  ladrillo: 'Ladrillo',
+  tapial: 'Tapial',
+  pizarra: 'Lajas',
+  encalado: 'Encalado',
 };
 export const SIGNS: Record<SignId, string> = {
   tablero: 'Tablero',
