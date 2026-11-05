@@ -26,6 +26,9 @@ import {
   Scene,
   Vector3,
   WebGLRenderer,
+  WebGLRenderTarget,
+  DepthTexture,
+  UnsignedIntType,
   type ShaderMaterial,
 } from 'three';
 import { P, darker } from '../../art/palette';
@@ -330,6 +333,9 @@ export class RoomScene {
   /** Materiales del edificio (se rehacen con él) y los de las láminas de pantalla. */
   /** Día y focos: los mismos para el edificio, las láminas y la gente. */
   private shared = sharedUniforms();
+  /** Prueba de sombras: la profundidad de la escena, de una primera pasada. */
+  private depthRT: WebGLRenderTarget | null = null;
+  private noDepth = this.shared.uDepth.value;
   private look = new Look(this.shared);
   private keep = new Look(this.shared);
   private crowd = new Crowd(this.shared, (x, floor) => this.tintAt(x, floor));
@@ -3013,8 +3019,9 @@ export class RoomScene {
       0.76 * dl.day + 0.12 * dl.dusk + 0.18 * moon + 0.12 * nl.warm,
       0.72 * dl.day + 0.32 * moon * (1 - 0.4 * nl.dark),
     );
-    const lampK = 0.3 + 0.7 * (1 - dl.day);
-    const fireK = 0.6 + 0.4 * (1 - dl.day);
+    const boost = (window as unknown as { __lampK?: number }).__lampK ?? 1;
+    const lampK = (0.3 + 0.7 * (1 - dl.day)) * boost;
+    const fireK = (0.6 + 0.4 * (1 - dl.day)) * boost;
     const cx = view.px + view.vw / 2;
     const cy = GROUND - (view.py + view.vh / 2);
     const x0 = view.px - 40;
@@ -3116,10 +3123,37 @@ export class RoomScene {
     }
 
     const r = this.renderer;
+    // Primera pasada (prueba de sombras): la escena a una textura, solo por su profundidad.
+    const w = window as unknown as { __shadows?: boolean; __ambK?: number; __lampK?: number };
+    // Prueba de luz (estudio del estilo nuevo), apagada salvo que se pida desde la consola.
+    const shadows = w.__shadows === true;
+    this.shared.uAmbK.value = w.__ambK ?? 1;
+    if (shadows) {
+      const { vw, vh } = this.camera;
+      if (!this.depthRT || this.depthRT.width !== vw || this.depthRT.height !== vh) {
+        this.depthRT?.dispose();
+        const dt = new DepthTexture(vw, vh);
+        dt.type = UnsignedIntType;
+        this.depthRT = new WebGLRenderTarget(vw, vh, { depthTexture: dt, depthBuffer: true });
+      }
+      this.shared.uShadows.value = 0;
+      this.shared.uDepth.value =
+        this.shared.uDepth.value === this.depthRT.depthTexture
+          ? this.noDepth
+          : this.shared.uDepth.value;
+      r.setRenderTarget(this.depthRT);
+      r.clear();
+      r.render(this.scene, this.cam3);
+      r.setRenderTarget(null);
+      this.shared.uShadows.value = (window as unknown as { __dbg?: boolean }).__dbg ? 2 : 1;
+      this.shared.uDepth.value = this.depthRT.depthTexture;
+      this.shared.uProj.value.copy(this.cam3.projectionMatrix);
+    } else this.shared.uShadows.value = 0;
     r.clear();
     r.render(this.skyScene, this.flat);
     r.clearDepth();
     r.render(this.scene, this.cam3);
+    if (shadows) this.shared.uDepth.value = this.noDepth;
     if (live) r.render(this.topScene, this.flat);
   }
 
