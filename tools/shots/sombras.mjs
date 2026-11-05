@@ -15,7 +15,6 @@ import { chromium } from 'playwright';
 
 const out = process.argv[2] ?? 'shots';
 const vp = { width: Number(process.argv[3] ?? 1280), height: Number(process.argv[4] ?? 760) };
-const zoom = Number(process.argv[5] ?? 2);
 mkdirSync(out, { recursive: true });
 const browser = await chromium.launch({
   executablePath: process.env.CHROME ?? '/opt/pw-browsers/chromium',

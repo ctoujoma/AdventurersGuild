@@ -166,6 +166,12 @@ type Tint = readonly [number, number, number];
 /** Profundidad de las chimeneas del tejado: justo detrás del hastial (que tapa su pie). */
 const CHIMNEY_Z = 8;
 const OUTDOOR: Tint = [0.3, 0.28, 0.42];
+/**
+ * Luz con ambiente (Ajustes): la luz de fondo de las salas se multiplica por esto y los focos
+ * por `MOOD_LAMPS`, así quedan charcos de luz alrededor de fuegos, faroles y velas.
+ */
+const MOOD_AMBIENT = 0.6;
+const MOOD_LAMPS = 1.5;
 const ROOM_LIT: Tint = [0.44, 0.38, 0.46];
 const ROOM_DEEP: Tint = [0.42, 0.37, 0.52];
 const ROOM_DIM: Tint = [0.34, 0.31, 0.46];
@@ -326,6 +332,8 @@ export class RoomScene {
   speed = 1;
   /** «Pocas luces» en Ajustes: solo los focos más cercanos al centro (para móviles lentos). */
   fewLights = false;
+  /** Luz con ambiente (Ajustes): menos luz de fondo en las salas y focos más fuertes. */
+  moodLight = false;
   private renderer: WebGLRenderer;
   private scene = new Scene();
   private cam3 = new PerspectiveCamera();
@@ -3019,7 +3027,8 @@ export class RoomScene {
       0.76 * dl.day + 0.12 * dl.dusk + 0.18 * moon + 0.12 * nl.warm,
       0.72 * dl.day + 0.32 * moon * (1 - 0.4 * nl.dark),
     );
-    const boost = (window as unknown as { __lampK?: number }).__lampK ?? 1;
+    const boost =
+      (window as unknown as { __lampK?: number }).__lampK ?? (this.moodLight ? MOOD_LAMPS : 1);
     const lampK = (0.3 + 0.7 * (1 - dl.day)) * boost;
     const fireK = (0.6 + 0.4 * (1 - dl.day)) * boost;
     const cx = view.px + view.vw / 2;
@@ -3127,7 +3136,7 @@ export class RoomScene {
     const w = window as unknown as { __shadows?: boolean; __ambK?: number; __lampK?: number };
     // Prueba de luz (estudio del estilo nuevo), apagada salvo que se pida desde la consola.
     const shadows = w.__shadows === true;
-    this.shared.uAmbK.value = w.__ambK ?? 1;
+    this.shared.uAmbK.value = w.__ambK ?? (this.moodLight ? MOOD_AMBIENT : 1);
     if (shadows) {
       const { vw, vh } = this.camera;
       if (!this.depthRT || this.depthRT.width !== vw || this.depthRT.height !== vh) {

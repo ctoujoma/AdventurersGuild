@@ -91,3 +91,11 @@ python3 tools/estilo/regradeo.py captura.png salida.png tarde      # tarde, dia,
 
 `compose.py` necesita una captura con el cielo en magenta (`<dir de los .py> <captura> <hora
 del paisaje> <salida> <escala> <y del horizonte> <gradeo|no>`).
+
+## En el juego (después de las pruebas)
+
+- Ajustes › Imagen › «Luz con ambiente»: menos luz de fondo en las salas y focos más fuertes.
+  Es lo más barato y lo que más acerca el aspecto (charcos de luz con los sprites de hoy).
+- Prueba de sombras en espacio de pantalla y luz de borde, en el shader, apagada por defecto:
+  funciona, pero se ve poco con piezas planas pegadas a la pared, la paleta Endesga y su trama.
+  Capturas con `node tools/shots/sombras.mjs <carpeta>`.
