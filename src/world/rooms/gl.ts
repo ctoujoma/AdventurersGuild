@@ -28,6 +28,7 @@ import {
 } from 'three';
 import { P } from '../../art/palette';
 import type { PixelBuffer } from '../../art/pixel';
+import { SLAB } from './layout';
 
 /**
  * Focos que caben a la vez: van en una textura (una columna por foco: posición y alcance, color
@@ -86,6 +87,7 @@ const SURFACE_FRAG = /* glsl */ `
   uniform mat4 uProj;
   uniform float uRim;
   uniform float uAmbK;
+  uniform float uMood;
   varying vec2 vUv;
   float distAt(float d) {
     // Profundidad del búfer (0-1) a distancia a la cámara.
@@ -131,7 +133,7 @@ const SURFACE_FRAG = /* glsl */ `
     vec3 n = uNormal;
     // Luz del día solo por encima del suelo.
     // Con «luz con ambiente», menos luz de fondo dentro (las salas sin focos no bajan de 0.2).
-    vec3 amb = uSun < 0.99 && uAmbK < 1.0 ? max(uAmbient * uAmbK, min(uAmbient, vec3(0.2))) : uAmbient;
+    vec3 amb = uSun < 0.99 && uAmbK < 1.0 && uMood > 0.5 ? max(uAmbient * uAmbK, min(uAmbient, vec3(0.2))) : uAmbient;
     vec3 light = amb + uDaylight * uSun * step(-0.5, world.y);
     // El halo de las llamas: la luz que se ve en el aire alrededor de cada una. Se mide en la
     // pantalla (lo que queda cerca de la llama a la vista, esté delante o detrás) y se suma al
@@ -159,7 +161,9 @@ const SURFACE_FRAG = /* glsl */ `
         if (nb < 0.5) light += lc.rgb * a * uRim;
       }
       light += lc.rgb * a * ndl;
-      if (lc.a > 0.0) {
+      // El halo, solo dentro de la sala: la zona incluye los forjados (su canto recibe luz), pero
+      // el halo del foco de abajo no debe verse a través del suelo.
+      if (lc.a > 0.0 && world.y > z.y + ${SLAB.toFixed(1)} && world.y < z.w - ${SLAB.toFixed(1)}) {
         // El centro, donde se ve la llama dibujada (a su profundidad: si no, se corre al mover).
         vec3 hp = texelFetch(uLights, ivec2(i, 3), 0).xyz;
         vec2 ls = cameraPosition.xy + (hp.xy - cameraPosition.xy) * (cameraPosition.z / (cameraPosition.z - hp.z));
@@ -299,6 +303,12 @@ export function sharedUniforms() {
   };
 }
 
+/**
+ * Luces de fondo que no bajan con «luz con ambiente» (las salas rotas y las vacías, que ya son
+ * oscuras): la escena las apunta aquí.
+ */
+export const NO_MOOD = new WeakSet<object>();
+
 /** Sin profundidad (la primera pasada): todo «lejos», nada hace sombra. */
 const NO_DEPTH = (() => {
   const t = new DataTexture(
@@ -342,6 +352,7 @@ export class Look {
           uDither: { value: o.dither ?? 0.035 },
           uHalo: { value: o.halo ?? 1 },
           uRim: { value: (o.wrap ?? 0.25) >= 0.5 ? 0.9 : 0 },
+          uMood: { value: NO_MOOD.has(o.ambient) ? 0 : 1 },
           uUvOffset: { value: new Vector2(0, 0) },
           uUvScale: { value: new Vector2((o.repeat ?? 1) / (o.frames ?? 1), 1) },
         },
