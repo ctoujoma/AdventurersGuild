@@ -28,7 +28,7 @@ import {
   type Texture,
 } from 'three';
 import { P } from '../../art/palette';
-import type { PixelBuffer } from '../../art/pixel';
+import { bevelRelief, type PixelBuffer } from '../../art/pixel';
 import { PARTITION, SLAB } from './layout';
 
 /**
@@ -369,9 +369,8 @@ const SCREEN_FRAG = /* glsl */ `
 `;
 
 /** El relieve de un búfer como textura (en el rojo), con la misma orientación que su color. */
-function reliefTexture(b: PixelBuffer): DataTexture {
+function reliefTexture(b: PixelBuffer, r: Uint8Array): DataTexture {
   const rgba = new Uint8Array(b.w * b.h * 4);
-  const r = b.relief!;
   for (let i = 0; i < r.length; i++) rgba[i * 4] = r[i]!;
   const t = new DataTexture(rgba, b.w, b.h, RGBAFormat, UnsignedByteType);
   t.flipY = true;
@@ -416,6 +415,8 @@ export interface SurfaceOpts {
   repeat?: number;
   /** Cuánto halo de las llamas se ve encima (la gente, poco: si no, se queda en blanco). */
   halo?: number;
+  /** Relieve de bisel sacado del contorno (para la luz con ambiente; ver `bevelRelief`). */
+  bevel?: boolean;
 }
 
 /**
@@ -479,6 +480,7 @@ export class Look {
   surface(b: PixelBuffer, corners: Corners, o: SurfaceOpts): ShaderMaterial {
     const map = this.own(texture(b));
     if (o.repeat) map.wrapS = RepeatWrapping;
+    const relief = o.bevel ? bevelRelief(b) : b.relief;
     const [a, br, , d] = corners;
     const u = new Vector3().subVectors(br, a);
     const v = new Vector3().subVectors(d, a);
@@ -497,8 +499,8 @@ export class Look {
           uDither: { value: o.dither ?? 0.035 },
           uHalo: { value: o.halo ?? 1 },
           uRim: { value: (o.wrap ?? 0.25) >= 0.5 ? 0.9 : 0 },
-          uRelief: { value: b.relief ? this.own(reliefTexture(b)) : NO_DEPTH },
-          uHasRelief: { value: b.relief ? 1 : 0 },
+          uRelief: { value: relief ? this.own(reliefTexture(b, relief)) : NO_DEPTH },
+          uHasRelief: { value: relief ? 1 : 0 },
           uUvOffset: { value: new Vector2(0, 0) },
           uUvScale: { value: new Vector2((o.repeat ?? 1) / (o.frames ?? 1), 1) },
         },

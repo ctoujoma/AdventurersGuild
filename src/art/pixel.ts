@@ -54,6 +54,52 @@ export function rampAt(
   return ramp[Math.min(n, base + step)]!;
 }
 
+/**
+ * Relieve de bisel para lo que no lo pinta (muebles, chimeneas, rótulos): cada píxel sale tanto
+ * como lejos está del borde de la figura (hasta `max`), y las líneas oscuras de dentro (el
+ * contorno de las piezas) se hunden uno. Si la figura ya tiene relieve, se suma a él.
+ */
+export function bevelRelief(b: PixelBuffer, max = 3): Uint8Array {
+  const { w, h, data } = b;
+  const d = new Uint8Array(w * h);
+  for (let i = 0; i < d.length; i++) d[i] = alpha(data[i]!) ? max : 0;
+  // Distancia (en damero) al hueco más cercano, en dos pasadas; el borde de la textura cuenta
+  // como hueco.
+  const at = (x: number, y: number) => (x < 0 || y < 0 || x >= w || y >= h ? 0 : d[y * w + x]!);
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      if (!d[i]) continue;
+      d[i] = Math.min(
+        d[i]!,
+        at(x - 1, y) + 1,
+        at(x, y - 1) + 1,
+        at(x - 1, y - 1) + 1,
+        at(x + 1, y - 1) + 1,
+      );
+    }
+  for (let y = h - 1; y >= 0; y--)
+    for (let x = w - 1; x >= 0; x--) {
+      const i = y * w + x;
+      if (!d[i]) continue;
+      d[i] = Math.min(
+        d[i]!,
+        at(x + 1, y) + 1,
+        at(x, y + 1) + 1,
+        at(x + 1, y + 1) + 1,
+        at(x - 1, y + 1) + 1,
+      );
+    }
+  for (let i = 0; i < d.length; i++) {
+    const c = data[i]!;
+    if (!d[i]) continue;
+    const lum = (c & 0xff) * 0.3 + ((c >>> 8) & 0xff) * 0.59 + ((c >>> 16) & 0xff) * 0.11;
+    if (d[i]! > 1 && lum < 48) d[i] = d[i]! - 1;
+    if (b.relief) d[i] = Math.min(255, d[i]! + b.relief[i]!);
+  }
+  return d;
+}
+
 export class PixelBuffer {
   readonly data: Uint32Array;
   /**
