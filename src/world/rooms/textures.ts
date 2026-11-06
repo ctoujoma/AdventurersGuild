@@ -37,7 +37,7 @@ import { BLIND, cellsOf, sconceOn, takeWallActs, windowX } from './salas/kit';
 import { RISE, goesRight, stepAt } from './stairs';
 import { streetDoor } from './salas/recibidor';
 import { cloth } from './salas/tintes';
-import { roofAt, wallFill } from './fachada';
+import { roofAt, roofRelief, wallFill } from './fachada';
 import { wallSection } from './muros';
 import type { FacadeLook, RoofId, WallId } from '../../data/custom';
 
@@ -408,10 +408,14 @@ export function roofTiles(len: number, seed: string, roof?: RoofId): PixelBuffer
   const b = new PixelBuffer(DEEP + 4, len);
   const rng = new Rng(seed);
   for (let y = 0; y < len; y++) {
-    for (let x = 0; x < b.w; x++) b.set(x, y, roofAt(roof, x, y, 4));
+    for (let x = 0; x < b.w; x++) {
+      b.level = roofRelief(roof, x, y, 4);
+      b.set(x, y, roofAt(roof, x, y, 4));
+    }
     // Alguna teja desportillada (en la de siempre).
     if ((roof ?? 'teja') === 'teja' && rng.chance(0.08)) b.set(rng.int(0, b.w - 1), y, P.rust);
   }
+  b.level = 0;
   return b;
 }
 
@@ -738,7 +742,9 @@ function gable(
       const py = y - Math.floor(base - h);
       const c = wall ? planks.get(px, py) : tile(x, y);
       // Relieve: la pared, el suyo; el alero vuela por delante (más cuanto más fuera).
-      b.level = wall ? planks.reliefAt(px, py) : inside(x, y, 2) ? 7 : 8;
+      b.level = wall
+        ? planks.reliefAt(px, py)
+        : 5 + roofRelief(look.roof, x, y - Math.floor(base - h), 3);
       if (c) b.set(x, y, c);
     }
   b.level = 8;

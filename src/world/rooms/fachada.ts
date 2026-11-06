@@ -20,6 +20,17 @@ const noise = (x: number, y: number) => {
  * Color del tejado en un píxel de una vertiente o del alero (`row`: alto de cada hilada). Teja
  * roja o verde con sus juntas, pizarra en escamas, paja en mechones y tablillas de madera.
  */
+/**
+ * Relieve de las tejas (0–255, ver `PixelBuffer.relief`): cada hilera sale más por abajo, donde
+ * monta sobre la de debajo, y la línea de sombra queda hundida.
+ */
+export function roofRelief(roof: RoofId = 'teja', x: number, y: number, row: number): number {
+  const k = y % row;
+  if (roof === 'paja') return 3 + Math.round(Math.sin(x * 0.7 + Math.floor(y / row)) + 1);
+  if (k === row - 1) return 1;
+  return 2 + k;
+}
+
 export function roofAt(roof: RoofId = 'teja', x: number, y: number, row: number): string {
   const r = Math.floor(y / row);
   const shadow = y % row === row - 1;

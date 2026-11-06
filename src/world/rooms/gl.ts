@@ -89,6 +89,7 @@ const SURFACE_FRAG = /* glsl */ `
   uniform float uAmbK;
   // Color sin paleta ni trama (luz con ambiente): la luz va en bandas de borde mellado.
   uniform float uBands;
+  uniform float uZonePad;
   // Sol con dirección (luz con ambiente): de dónde viene y cuánto manda (0 = la luz de siempre).
   uniform vec3 uSunDir;
   uniform float uSunK;
@@ -132,6 +133,8 @@ const SURFACE_FRAG = /* glsl */ `
   // salientes (marchando por la textura hacia el sol) y el borde de luz en los cantos.
   vec3 sunlight(vec3 n, vec2 uvc, vec2 size) {
     if (!gl_FrontFacing) n = -n;
+    float lum = max(max(uDaylight.r, uDaylight.g), uDaylight.b);
+    float warmth = clamp((uDaylight.r - uDaylight.b) * 3.0, 0.0, 1.0);
     vec3 U = normalize(uAxisU);
     vec3 V = normalize(uAxisV);
     float shadow = 1.0;
@@ -152,8 +155,8 @@ const SURFACE_FRAG = /* glsl */ `
           if (hk - h0 > fk * slope + 0.5) { shadow = 0.35; break; }
         }
         // Canto que da al sol: el vecino de ese lado está más bajo (o no hay nada).
-        vec2 nb = uvc + dir / size;
-        if (texture2D(map, nb).a < 0.5 || relAt(nb) < h0 - 0.5) rim = 0.5;
+        vec2 nb = uvc + vec2(floor(dir.x * 1.5 + 0.5), floor(dir.y * 1.5 + 0.5)) / size;
+        if (texture2D(map, nb).a < 0.5 || relAt(nb) < h0 - 0.5) rim = 0.5 + warmth * 0.4;
       }
     } else {
       vec2 sd = vec2(dot(uSunDir, uAxisU) / dot(uAxisU, uAxisU), dot(uSunDir, uAxisV) / dot(uAxisV, uAxisV));
@@ -163,8 +166,9 @@ const SURFACE_FRAG = /* glsl */ `
     float face = clamp(0.55 + 0.9 * dot(n, uSunDir), 0.15, 1.45) * shadow;
     // El color del sol, algo más saturado que el del día (dorado al atardecer); la sombra, del
     // color del cielo (violácea).
-    float lum = max(max(uDaylight.r, uDaylight.g), uDaylight.b);
     vec3 sunC = mix(uDaylight, uDaylight * uDaylight / max(lum, 0.01) * 1.15, 0.6);
+    // A la hora dorada (el día tira a rojo), el sol se vuelve naranja intenso.
+    sunC = mix(sunC, vec3(1.0, 0.6, 0.28) * lum * 1.4, warmth * 0.65);
     vec3 sky = vec3(0.5, 0.52, 0.9) * lum * 0.55;
     vec3 sun = sunC * (face + rim * shadow) + sky * (1.0 - clamp(face, 0.0, 1.0));
     return mix(uDaylight, sun, uSunK);
@@ -196,7 +200,9 @@ const SURFACE_FRAG = /* glsl */ `
     for (int i = 0; i < LIGHTS; i++) {
       if (i >= uLightCount) break;
       vec4 z = texelFetch(uLights, ivec2(i, 2), 0);
-      if (world.x < z.x || world.x > z.z || world.y < z.y || world.y > z.w) continue;
+      // Con luz con ambiente, la zona se ensancha al grueso del muro: de noche, el corte
+      // alrededor de una sala encendida recibe su luz.
+      if (world.x < z.x - uZonePad || world.x > z.z + uZonePad || world.y < z.y || world.y > z.w) continue;
       vec4 lp = texelFetch(uLights, ivec2(i, 0), 0);
       vec4 lc = texelFetch(uLights, ivec2(i, 1), 0);
       vec3 d = lp.xyz - world;
@@ -380,6 +386,7 @@ export function sharedUniforms() {
     uProj: { value: new Matrix4() },
     uAmbK: { value: 1 },
     uBands: { value: 0 },
+    uZonePad: { value: 0 },
     uSunDir: { value: new Vector3(0, 1, 0) },
     uSunK: { value: 0 },
   };

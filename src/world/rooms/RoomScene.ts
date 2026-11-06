@@ -3153,6 +3153,7 @@ export class RoomScene {
     this.shared.uSunDir.value.copy(sunDir.normalize());
     this.shared.uSunK.value = this.moodLight ? 1 : 0;
     this.shared.uBands.value = (w.__bands ?? this.moodLight) ? 1 : 0;
+    this.shared.uZonePad.value = this.moodLight ? WALL + PARTITION / 2 : 0;
     if (shadows) {
       const { vw, vh } = this.camera;
       if (!this.depthRT || this.depthRT.width !== vw || this.depthRT.height !== vh) {
