@@ -198,7 +198,9 @@ const SURFACE_FRAG = /* glsl */ `
     // Luz del día solo por encima del suelo.
     // Con «luz con ambiente», menos luz de fondo dentro de las salas.
     vec3 amb = uSun < 0.99 ? uAmbient * uAmbK : uAmbient;
-    vec3 light = amb + uDaylight * uSun * step(-0.5, world.y);
+    // Dentro, con luz con ambiente, el día llega menos a toda la sala: entra por las ventanas.
+    float dayIn = uSun < 0.99 ? uAmbK : 1.0;
+    vec3 light = amb + uDaylight * uSun * dayIn * step(-0.5, world.y);
     if (uSunK > 0.0 && uSun > 0.99 && world.y > -0.5) light = amb + sunlight(n, uvc, size);
     // El halo de las llamas: la luz que se ve en el aire alrededor de cada una. Se mide en la
     // pantalla (lo que queda cerca de la llama a la vista, esté delante o detrás) y se suma al
@@ -231,7 +233,7 @@ const SURFACE_FRAG = /* glsl */ `
       }
       if (a > 0.02) { float sh = lit(world, lp.xyz); a *= sh; if (uShadows > 1.5 && sh < 0.9) dbg = 1.0; }
       // Luz de borde en las figuras: el canto que da al foco, si al lado no hay nada pintado.
-      if (uShadows > 0.5 && uRim > 0.0 && a > 0.02) {
+      if ((uShadows > 0.5 || uSunK > 0.0) && uRim > 0.0 && a > 0.02) {
         vec2 dir = vec2(dot(d, uAxisU) / dot(uAxisU, uAxisU), dot(d, uAxisV) / dot(uAxisV, uAxisV));
         vec2 off = sign(dir) * step(0.3 * max(abs(dir.x), abs(dir.y)), abs(dir)) / size;
         float nb = texture2D(map, uvc + off).a;

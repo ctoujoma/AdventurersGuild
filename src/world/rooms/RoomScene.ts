@@ -118,6 +118,7 @@ import {
 import { Sky, type Daylight, type NightLight } from './sky';
 import {
   backWall,
+  takeWindows,
   bare,
   caveBack,
   caveCells,
@@ -243,6 +244,8 @@ interface Lamp {
   deep?: boolean;
   /** Radio (en píxeles de pantalla) del halo que se ve en el aire alrededor de la llama. */
   halo: number;
+  /** La luz que entra por una ventana (luz con ambiente): sigue al sol y no tiene halo. */
+  sun?: boolean;
 }
 
 /**
@@ -1588,6 +1591,30 @@ export class RoomScene {
     const free = (c: number) =>
       room.floor > 0 && !b.rooms.some((o) => this.covers(o, c, room.floor - 1));
     const back = backWall(room, r.w, r.h, this.salonLook());
+    // La luz que entra por cada ventana: un foco del color del día un poco por delante de la
+    // pared, a la altura del alféizar (solo se enciende con luz con ambiente y de día).
+    const panes = takeWindows();
+    if (room.floor >= 0)
+      for (const p of panes) {
+        const at = new Vector3(
+          r.x + p.x * (r.w / back.w),
+          GROUND - (r.y + p.y * (r.h / back.h)) + 2,
+          -(DEPTH - 16),
+        );
+        this.lamps.push({
+          pos: at,
+          glow: at.clone(),
+          r: 95,
+          color: [255, 226, 180],
+          power: 1.3,
+          flicker: 0,
+          zone: this.zoneOf(rect),
+          seed: 0,
+          fire: false,
+          halo: 0,
+          sun: true,
+        });
+      }
     // Puerta al jardín en la planta baja, si no hay en medio una escalera sin rellano (que tapa
     // el paso; con rellano, la puerta va en ella). Como `opens` en `cutOff` (`core/rooms.ts`).
     const gate = (c: number, x: number) => room.floor === 0 && inGarden(b, c) && !isShaft(b, x);
@@ -3031,6 +3058,9 @@ export class RoomScene {
       (window as unknown as { __lampK?: number }).__lampK ?? (this.moodLight ? MOOD_LAMPS : 1);
     const lampK = (0.3 + 0.7 * (1 - dl.day)) * boost;
     const fireK = (0.6 + 0.4 * (1 - dl.day)) * boost;
+    // La luz de las ventanas (luz con ambiente): llena de día, algo menos al atardecer, nada de
+    // noche; su color, el del día (más dorado al atardecer).
+    const sunLampK = this.moodLight ? Math.max(dl.day, dl.dusk * 0.8) : 0;
     const cx = view.px + view.vw / 2;
     const cy = GROUND - (view.py + view.vh / 2);
     const x0 = view.px - 40;
@@ -3039,6 +3069,7 @@ export class RoomScene {
     const y1 = GROUND - (view.py - 40);
     const near = [...this.lamps, ...this.incidentLamps]
       .filter((l) => l.zone[2] > x0 && l.zone[0] < x1 && l.zone[3] > y0 && l.zone[1] < y1)
+      .filter((l) => !l.sun || sunLampK > 0.02)
       .sort(
         (a, b) => Math.hypot(a.pos.x - cx, a.pos.y - cy) - Math.hypot(b.pos.x - cx, b.pos.y - cy),
       );
@@ -3049,12 +3080,12 @@ export class RoomScene {
     for (let i = 0; i < n; i++) {
       const l = near[i]!;
       const fl = 1 - l.flicker * noise(Math.floor(t * 9), l.seed);
-      const k = (l.deep ? 1 : l.fire ? fireK : lampK) * l.power * fl;
+      const k = (l.sun ? sunLampK : l.deep ? 1 : l.fire ? fireK : lampK) * l.power * fl;
       data.set([l.pos.x, l.pos.y, l.pos.z, l.r], i * 4);
-      data.set(
-        [(l.color[0] / 255) * k, (l.color[1] / 255) * k, (l.color[2] / 255) * k, l.halo],
-        row + i * 4,
-      );
+      const c = l.sun
+        ? [1, 0.88 - 0.3 * dl.dusk, 0.7 - 0.38 * dl.dusk]
+        : [l.color[0] / 255, l.color[1] / 255, l.color[2] / 255];
+      data.set([c[0]! * k, c[1]! * k, c[2]! * k, l.halo], row + i * 4);
       data.set(l.zone, 2 * row + i * 4);
       data.set([l.glow.x, l.glow.y, l.glow.z, 0], 3 * row + i * 4);
     }

@@ -162,6 +162,13 @@ export function backWall(room: Room, w: number, h: number, look: SalonLook = NO_
   return b;
 }
 
+/**
+ * Las ventanas que se acaban de pintar en una pared del fondo (centro y alféizar, en píxeles del
+ * búfer): la escena las recoge tras `backWall` para poner la luz que entra por ellas.
+ */
+const windowsDrawn: { x: number; y: number }[] = [];
+export const takeWindows = () => windowsDrawn.splice(0);
+
 /** Ventana de cuarterones centrada en `cx`: el cristal se deja transparente (se ve el cielo). */
 function windowAt(b: PixelBuffer, cx: number, y: number, room: Room, ruin: boolean) {
   const w = 16;
@@ -171,6 +178,7 @@ function windowAt(b: PixelBuffer, cx: number, y: number, room: Room, ruin: boole
   b.rect(x - 2, y - 2, w + 4, h + 4, P.bark);
   const stained = room.type === 'capilla';
   const glass = [P.rose, P.gold, P.sky, P.grape];
+  if (!ruin) windowsDrawn.push({ x: cx, y: y + h });
   for (let j = 0; j < h; j++)
     for (let i = 0; i < w; i++)
       if (stained) b.set(x + i, y + j, glass[(Math.floor(i / 4) + Math.floor(j / 5)) % 4]!);
