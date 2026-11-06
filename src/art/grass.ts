@@ -104,11 +104,13 @@ export function groundTex(
     for (let x = 0; x < w; x++) {
       const n = rng.next();
       let c: string;
-      // El patio: hierba con un camino de tierra pisada de lado a lado (por delante) y calvas.
+      // El patio: hierba con un camino de tierra pisada de lado a lado (por delante, a la altura
+      // de la puerta: la fila 0 de la textura es la del fondo) y calvas.
+      const f = d - 1 - y;
       const path =
         patio &&
-        y > 3 + Math.sin(x * 0.09) * 1.5 &&
-        y < 13 + Math.sin(x * 0.05 + 1) * 2 + (n > 0.8 ? 1 : 0);
+        f > 3 + Math.sin(x * 0.09) * 1.5 &&
+        f < 13 + Math.sin(x * 0.05 + 1) * 2 + (n > 0.8 ? 1 : 0);
       const bald = patio && Math.sin(x * 0.13) * Math.sin(y * 0.21 + x * 0.02) > 0.82;
       if (path || bald) {
         c = n < 0.14 ? P.umber : n > 0.95 ? P.cocoa : n > 0.9 ? P.mocha : P.bark;
