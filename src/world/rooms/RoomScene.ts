@@ -389,6 +389,11 @@ export class RoomScene {
   private grass: { m: Mesh; x: number; seed: number }[] = [];
   /** Lo de fuera en dos estilos: el de siempre y el de «luz con ambiente» (se ve uno). */
   private styled: { classic: Group; mood: Group }[] = [];
+  /**
+   * Mientras se monta algo de fuera (el jardín), lo que se pinta en `world` con `figure` o
+   * `plane` va por duplicado: tal cual a `classic` y, en el estilo de luz con ambiente, a `mood`.
+   */
+  private dual: { classic: Group; mood: Group } | null = null;
   private grassTick = -1;
   /** El fuego de cada forja, para avivarlo o bajarlo según haya trabajo (ver `workshop`). */
   private forgeLamps: { room: string; lamp: Lamp; base: number }[] = [];
@@ -2099,6 +2104,21 @@ export class RoomScene {
    * con su halo.
    */
   private gardenArt(L: RoomsLayout, model: SceneModel): void {
+    if (!L.garden) return;
+    const classic = new Group();
+    const mood = new Group();
+    this.world.add(classic, mood);
+    this.styled.push({ classic, mood });
+    this.dual = { classic, mood };
+    try {
+      this.gardenPieces(L, model);
+    } finally {
+      this.dual = null;
+    }
+  }
+
+  /** El jardín: su canto, las piezas, el borde, el claustro y los faroles. */
+  private gardenPieces(L: RoomsLayout, model: SceneModel): void {
     const garden = L.garden;
     if (!garden) return;
     const g = this.world;
@@ -2663,6 +2683,15 @@ export class RoomScene {
       mat?: Mat;
     } = {},
   ): void {
+    // Por duplicado (ver `dual`): la de siempre y la de luz con ambiente.
+    const d = this.dual;
+    if (d && g === this.world) {
+      this.dual = null;
+      this.figure(d.classic, img, x, base, depth, ambient, sun, o);
+      this.figure(d.mood, softened(moodTuft(img)), x, base, depth, ambient, sun, o);
+      this.dual = d;
+      return;
+    }
     const k = scaleAt(depth);
     const w = img.w / k;
     const h = img.h / k;
@@ -2677,7 +2706,14 @@ export class RoomScene {
       ? this.mound(img, corners, x - w / 2, base - h, depth, k, ambient, sun)
       : mesh(
           quad(corners, this.look),
-          this.look.surface(img, corners, { ambient, sun, wrap: 0.6, dither: 0.03, bevel: true }),
+          this.look.surface(img, corners, {
+            ambient,
+            sun,
+            wrap: 0.6,
+            dither: 0.03,
+            bevel: true,
+            outdoor: ambient === OUTDOOR,
+          }),
         );
     // Con volumen, la cara y sus lados van juntos (y se anclan juntos).
     const obj = o.box || o.round ? new Group() : m;
@@ -2958,7 +2994,15 @@ export class RoomScene {
     corners: Corners,
     o: { ambient: Tint; sun: number; wrap?: number; dither?: number; repeat?: number },
   ): ShaderMaterial {
-    const m = this.look.surface(img, corners, o);
+    const d = this.dual;
+    if (d && g === this.world) {
+      this.dual = null;
+      this.plane(d.mood, softened(moodGround(img), false), corners, o);
+      const m = this.plane(d.classic, img, corners, o);
+      this.dual = d;
+      return m;
+    }
+    const m = this.look.surface(img, corners, { ...o, outdoor: o.ambient === OUTDOOR });
     g.add(mesh(quad(corners, this.look), m));
     return m;
   }

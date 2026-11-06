@@ -98,6 +98,7 @@ const SURFACE_FRAG = /* glsl */ `
   // Sol con dirección (luz con ambiente): de dónde viene y cuánto manda (0 = la luz de siempre).
   uniform vec3 uSunDir;
   uniform float uSunK;
+  uniform float uOutdoor;
   // La sombra del edificio fuera: cajas (x0, x1, alto) entre las profundidades uBoxZ (z del
   // mundo) y la dirección hacia el sol para la sombra (más de lado que la del sombreado).
   uniform vec4 uBox[${MAX_BOXES}];
@@ -242,9 +243,11 @@ const SURFACE_FRAG = /* glsl */ `
     vec3 n = uNormal;
     // Luz del día solo por encima del suelo.
     // Con «luz con ambiente», menos luz de fondo dentro de las salas.
-    vec3 amb = uSun < 0.99 ? uAmbient * uAmbK : uAmbient;
+    // (Lo de fuera a la sombra, como el claustro, no: uOutdoor.)
+    bool inside = uSun < 0.99 && uOutdoor < 0.5;
+    vec3 amb = inside ? uAmbient * uAmbK : uAmbient;
     // Dentro, con luz con ambiente, el día llega menos a toda la sala: entra por las ventanas.
-    float dayIn = uSun < 0.99 ? uAmbK : 1.0;
+    float dayIn = inside ? uAmbK : 1.0;
     vec3 light = amb + uDaylight * uSun * dayIn * step(-0.5, world.y);
     if (uSunK > 0.0 && uSun > 0.99 && world.y > -0.5) {
       // A la sombra del edificio: sin el sol directo, con la luz fría del cielo.
@@ -485,6 +488,8 @@ export interface SurfaceOpts {
   halo?: number;
   /** Relieve de bisel sacado del contorno (para la luz con ambiente; ver `bevelRelief`). */
   bevel?: boolean;
+  /** Fuera aunque le llegue menos sol (la luz con ambiente no la trata como interior). */
+  outdoor?: boolean;
 }
 
 /**
@@ -570,6 +575,7 @@ export class Look {
           uWrap: { value: o.wrap ?? 0.25 },
           uDither: { value: o.dither ?? 0.035 },
           uHalo: { value: o.halo ?? 1 },
+          uOutdoor: { value: o.outdoor ? 1 : 0 },
           uRim: { value: (o.wrap ?? 0.25) >= 0.5 ? 0.9 : 0 },
           uRelief: { value: relief ? this.own(reliefTexture(b, relief)) : NO_DEPTH },
           uHasRelief: { value: relief ? 1 : 0 },

@@ -130,9 +130,21 @@ el rendimiento en un móvil de verdad; la fase 5.
   unos 6 s; el reflejo ondula, cruzan ondas claras muy suaves y cada destello aparece y se apaga
   a su paso.
 
-Lo que falta: de noche, la luz de las ventanas hacia fuera (patio y fachada); el jardín y sus
-piezas en el estilo nuevo; medir el rendimiento en un móvil de verdad; la vista desde
+Lo que falta: de noche, la luz de las ventanas hacia fuera (ver más abajo); medir el rendimiento en un móvil de verdad; la vista desde
 fuera al alejar (abajo); la fase 5.
+
+## Hecho después (PR #124)
+
+- El jardín y sus piezas al estilo nuevo: mientras se monta el jardín (`gardenArt`), todo lo que
+  se pinta va por duplicado (`dual` en `RoomScene.ts`): las figuras (piezas, canto, borde,
+  faroles) con los verdes apagados y sin contorno; las superficies (seto, lomos, claustro) con
+  los verdes apagados y algo menos saturadas. Captura: `capturas/luz-ambiente/jardin.png` (mañana
+  y tarde, sin y con el ajuste).
+- Con el ajuste, lo de fuera a la sombra (soportales del claustro, `sun < 1` con la luz de fondo
+  de fuera) ya no se oscurece como si fuera dentro (`uOutdoor`).
+- La luz de las ventanas hacia fuera, de noche: no hay ventanas en los muros de los lados, así
+  que queda para la vista desde fuera; mientras, cabría el charco de luz de la puerta y el farol
+  en el patio y el óculo del hastial encendido (pendiente de que el usuario lo decida).
 
 ## Idea: hogueras lejanas en el bosque de noche
 
