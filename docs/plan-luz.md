@@ -5,8 +5,8 @@ el juego, «sea con shaders o como sea». La fachada es lo que menos encaja hoy.
 
 ## Dónde estamos
 
-- Hecho (PR #118): ajuste «Luz con ambiente» (salas a ×0,45 de luz de fondo y focos a ×1,6;
-  las rotas, oscuras) y el halo de los focos ya no atraviesa los forjados.
+- Hecho (PR #118): ajuste «Luz con ambiente» (salas a ×0,45 de luz de fondo y focos a ×1,6) y
+  el halo de los focos ya no atraviesa los forjados. En el #119, las rotas también oscuras.
 - Probado y apagado: sombras en espacio de pantalla y luz de borde (`lit` en `gl.ts`). Funcionan
   a medias: las piezas son planos finos pegados a la pared y la sombra apenas se ve; el fuego,
   metido en el hogar, oscurece de más.
@@ -29,18 +29,31 @@ juego, sin depender de la profundidad de pantalla (y sin sus fallos):
   borde de luz donde el relieve cae del lado del sol.
 - Sin relieve (lo que aún no lo tenga), la superficie se ve como hoy.
 
-## Hecho de la fase 1 (primer paso)
+## Hecho (PR #119, todo dentro de «Luz con ambiente»; sin el ajuste, el juego como antes)
 
-- `PixelBuffer` con relieve (`relief`, pintado con `level`); lo pintan las tablas, el entramado y
-  la sillería (`muros.ts`) y el hastial (alero, óculo, jardinera) en `textures.ts`, y viaja al
-  corte de la fachada.
-- En el shader (`sunlight` en `gl.ts`), con «Luz con ambiente»: sol con dirección por hora
-  (`uSunDir`: sale por la derecha, se pone por la izquierda), normal del relieve, sombra
-  arrojada marchando por la textura y borde de luz; cara al sol dorada, sombra violácea.
-- Se nota en el hastial (tapajuntas con luz y sombra, la sombra del alero), pero aún no da la
-  luz dorada de las pruebas: la paleta Endesga se come los matices (fase 2) y faltan tejados,
-  chimeneas, muros en corte y los lados con relieve. Capturas:
-  `capturas/luz-ambiente/fachada-relieve.png`.
+Capturas en `capturas/luz-ambiente/` (`<hora>-taberna.png`, `<hora>-salon.png`: arriba la luz de
+siempre, abajo con el ajuste; `fachada.png`: mañana y tarde), con `tools/shots/luz.mjs`.
+
+- **Fase 1 (fachada).** `PixelBuffer` con relieve (`relief`, pintado con `level`: lo de encima
+  tapa lo de debajo). Lo pintan las tablas, el entramado y la sillería (`muros.ts`), las cinco
+  paredes de `materiales.ts`, las vigas, postes, tablas y sillares de `paint.ts` (también dentro),
+  las tejas (`roofRelief` en `fachada.ts`) y el hastial (alero, óculo, jardinera). En el shader
+  (`sunlight` y `reliefShadow` en `gl.ts`): sol con dirección por hora (`uSunDir`: sale por la
+  derecha, se pone por la izquierda), normal del relieve, sombra arrojada marchando por la
+  textura, borde de luz en los cantos que dan al sol; cara al sol cálida (naranja intenso a la
+  hora dorada) y sombra violácea. De noche, la luz de cada sala alcanza el grueso del muro en
+  corte que la rodea (`uZonePad`).
+- **Fase 2 (color).** Sin paleta Endesga ni trama en cuadrícula (`uBands`): la intensidad de la
+  luz en siete escalones con el borde mellado en grumos de 2 téxeles fijos a la superficie, el
+  halo en cinco anillos y el color pintado algo menos saturado.
+- **Fase 3 (dentro, primeros pasos).** El relieve también con los 8 focos más cercanos al centro
+  de la vista (sillares de la chimenea, vigas). Luz que entra por cada ventana (`takeWindows` en
+  `textures.ts`): un foco del color del día delante de ella, lleno de día, dorado al atardecer y
+  apagado de noche; el día que llegaba igual a toda la sala baja al ×0,45. Luz de borde de los
+  focos en la gente.
+
+Lo que falta: relieve en chimeneas, rótulo, faroles y muebles (son figuras aparte); el rayo de sol
+visible en el aire con polvo; el fondo (fase 4); medir el rendimiento en un móvil de verdad.
 
 ## Fases (cada una, un PR con capturas antes y después, dentro de «Luz con ambiente»)
 
