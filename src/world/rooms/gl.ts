@@ -87,6 +87,8 @@ const SURFACE_FRAG = /* glsl */ `
   uniform mat4 uProj;
   uniform float uRim;
   uniform float uAmbK;
+  // Color sin paleta ni trama (luz con ambiente): la luz va en bandas de borde mellado.
+  uniform float uBands;
   // Sol con dirección (luz con ambiente): de dónde viene y cuánto manda (0 = la luz de siempre).
   uniform vec3 uSunDir;
   uniform float uSunK;
@@ -123,6 +125,7 @@ const SURFACE_FRAG = /* glsl */ `
     }
     return shade;
   }
+  float hash2(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
   float relAt(vec2 uv) { return texture2D(uRelief, uv).r * 255.0; }
   // La luz del sol fuera, con su dirección: cara al sol, más y más cálida; de espaldas, la del
   // cielo, fría. Con relieve, además, la normal de cada píxel, la sombra que arrojan los
@@ -223,6 +226,19 @@ const SURFACE_FRAG = /* glsl */ `
     // Sin quemar: lo muy iluminado se queda en un tono claro y no salta a otro color.
     light = min(light, vec3(1.2));
     vec3 c = tex.rgb * light + min(halo, vec3(0.7)) * uHalo;
+    if (uBands > 0.5) {
+      // Sin paleta ni trama: la intensidad de la luz va en escalones (el tono se queda) y el
+      // borde de cada escalón se mella en grumos de 2 téxeles, fijos a la superficie.
+      float lum = max(max(light.r, light.g), light.b);
+      float jit = (hash2(floor(tc / 2.0) + uOrigin.xy) - 0.5) * 0.45;
+      float q = max(floor(lum * 7.0 + 0.5 + jit), 0.0) / 7.0;
+      vec3 L = lum > 0.001 ? light / lum * q : vec3(0.0);
+      // El color de lo pintado, algo menos saturado (los tonos de Endesga gritan).
+      vec3 alb = mix(vec3(dot(tex.rgb, vec3(0.3, 0.59, 0.11))), tex.rgb, 0.86);
+      vec3 hq = max(floor(min(halo, vec3(0.7)) * 5.0 + jit), vec3(0.0)) / 5.0;
+      gl_FragColor = vec4(min(alb * L + hq * uHalo, vec3(1.0)), 1.0);
+      return;
+    }
     // Tramado pegado al téxel: se mueve con la superficie, no con la pantalla.
     ivec2 t = ivec2(tc);
     int k = (t.x & 3) + (t.y & 3) * 4;
@@ -363,6 +379,7 @@ export function sharedUniforms() {
     uShadows: { value: 0 },
     uProj: { value: new Matrix4() },
     uAmbK: { value: 1 },
+    uBands: { value: 0 },
     uSunDir: { value: new Vector3(0, 1, 0) },
     uSunK: { value: 0 },
   };

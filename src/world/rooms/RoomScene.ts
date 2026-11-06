@@ -3133,7 +3133,12 @@ export class RoomScene {
 
     const r = this.renderer;
     // Primera pasada (prueba de sombras): la escena a una textura, solo por su profundidad.
-    const w = window as unknown as { __shadows?: boolean; __ambK?: number; __lampK?: number };
+    const w = window as unknown as {
+      __shadows?: boolean;
+      __ambK?: number;
+      __lampK?: number;
+      __bands?: boolean;
+    };
     // Prueba de luz (estudio del estilo nuevo), apagada salvo que se pida desde la consola.
     const shadows = w.__shadows === true;
     this.shared.uAmbK.value = w.__ambK ?? (this.moodLight ? MOOD_AMBIENT : 1);
@@ -3147,6 +3152,7 @@ export class RoomScene {
       : new Vector3(-0.45, 0.75, 0.6);
     this.shared.uSunDir.value.copy(sunDir.normalize());
     this.shared.uSunK.value = this.moodLight ? 1 : 0;
+    this.shared.uBands.value = (w.__bands ?? this.moodLight) ? 1 : 0;
     if (shadows) {
       const { vw, vh } = this.camera;
       if (!this.depthRT || this.depthRT.width !== vw || this.depthRT.height !== vh) {
