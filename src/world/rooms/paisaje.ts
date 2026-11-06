@@ -49,7 +49,7 @@ function value(x: number, y: number, s: number): number {
   return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
 }
 /** Ruido fractal en 0–1: `sx` y `sy`, el tamaño de los grumos más grandes. */
-function fbm(x: number, y: number, sx: number, sy: number, s: number, oct = 3): number {
+export function fbm(x: number, y: number, sx: number, sy: number, s: number, oct = 3): number {
   let v = 0;
   let amp = 0.5;
   let tot = 0;
@@ -265,24 +265,34 @@ export function farForestCnc(): { day: PixelBuffer; night: PixelBuffer } {
     night.data[i] = pack(mixc(ramp(NIGHTC, v), NIGHT.haze, hz * 0.6));
   };
   const ridge = (x: number) => GROUND - 70 - fbmW(x, 0, 60, 1, 41) * 12;
-  // La masa del bosque, con grumos.
-  for (let x = 0; x < W; x++)
-    for (let y = Math.ceil(ridge(x)); y < H; y++)
-      put(x, y, 0.3 + (fbmW(x, y, 3, 2, 43, 2) - 0.5) * 0.9, 0.45 + (y - ridge(x)) * 0.006);
-  // Los abetos, de 2 en 2, por pisos que caen en punta; lo alto de cada piso, a la luz.
-  for (let x = 0; x < W; x += 2) {
-    const h = 6 + Math.floor(h2(x, 3, 45) * 9);
-    const cx = x + (h2(x, 4, 45) - 0.5) * 2;
-    const base = Math.round(ridge(x)) + 3;
-    const tiers = Math.max(2, Math.round(h / 4));
-    for (let y = base - h; y <= base; y++) {
-      const t = (y - (base - h)) / h;
-      const tt = (t * tiers) % 1;
-      const half = (0.4 + t * h * 0.36) * (0.55 + 0.45 * tt);
-      for (let dx = -Math.ceil(half); dx <= Math.ceil(half); dx++) {
-        if (Math.abs(dx) > half + (h2(x + dx, y, 47) - 0.5) * 1.2) continue;
-        const v = 0.45 + (tt < 0.5 ? 0.22 : -0.1) + (dx < 0 ? -0.12 : 0.08);
-        put(cx + dx, y, v, 0.4 + (1 - t) * 0.08);
+  // Filas de abetos de atrás adelante: la de arriba, la más lejana (pequeña y con más bruma); las
+  // de abajo, más cerca (más grandes y nítidas), tapan a las de detrás. Debajo de cada fila, la
+  // masa del bosque en sombra, para que no se vean huecos.
+  const ROWS = 4;
+  for (let r = 0; r < ROWS; r++) {
+    const k = r / (ROWS - 1);
+    const lift = r * 6;
+    const hz = 0.55 - k * 0.3;
+    const step = 2 + r;
+    for (let x = 0; x < W; x++) {
+      const top = Math.ceil(ridge(x) + lift + 4);
+      for (let y = top; y < Math.min(H, top + 8); y++)
+        put(x, y, 0.22 + (fbmW(x, y, 3, 2, 43 + r, 2) - 0.5) * 0.4, hz + 0.05);
+    }
+    for (let x = (r * 7) % step; x < W; x += step) {
+      const h = Math.round((5 + h2(x, 3 + r, 45) * 7) * (1 + k * 0.7));
+      const cx = x + (h2(x, 4 + r, 45) - 0.5) * step;
+      const base = Math.round(ridge(x) + lift) + 4;
+      const tiers = Math.max(2, Math.round(h / 4));
+      for (let y = base - h; y <= base; y++) {
+        const t = (y - (base - h)) / h;
+        const tt = (t * tiers) % 1;
+        const half = (0.4 + t * h * 0.34) * (0.55 + 0.45 * tt);
+        for (let dx = -Math.ceil(half); dx <= Math.ceil(half); dx++) {
+          if (Math.abs(dx) > half + (h2(x + dx, y, 47 + r) - 0.5) * 1.2) continue;
+          const v = 0.42 + (tt < 0.5 ? 0.2 : -0.12) + (dx < 0 ? -0.1 : 0.08) - k * 0.06;
+          put(cx + dx, y, v, hz + (1 - t) * 0.05);
+        }
       }
     }
   }
@@ -319,33 +329,35 @@ export function groveCnc(
 }
 
 /**
- * Quita el tramado de una capa: cada píxel que casi no se repite a su alrededor (un cuadro del
- * ajedrez del tramado) toma el color que más hay en su entorno. Salen grumos en vez de tramas.
+ * Quita el tramado de una capa: donde un píxel no se parece a ninguno de sus cuatro vecinos (un
+ * cuadro del ajedrez del tramado, o un punto suelto) toma la media de su entorno de 3 × 3. El
+ * tramado se vuelve un tono liso intermedio, como un degradado en bandas.
  */
 export function untrammed(src: PixelBuffer): PixelBuffer {
   const b = src.clone();
   const { w, h } = src;
   const d = src.data;
-  const counts = new Map<number, number>();
   for (let y = 1; y < h - 1; y++)
     for (let x = 1; x < w - 1; x++) {
-      const c = d[y * w + x]!;
+      const i = y * w + x;
+      const c = d[i]!;
       if (!(c >>> 24)) continue;
-      counts.clear();
+      const nb = [d[i - 1]!, d[i + 1]!, d[i - w]!, d[i + w]!];
+      if (nb.some((n) => n === c || !(n >>> 24))) continue;
+      let r = 0;
+      let g = 0;
+      let bl = 0;
+      let n = 0;
       for (let j = -1; j <= 1; j++)
-        for (let i = -1; i <= 1; i++) {
-          const n = d[(y + j) * w + x + i]!;
-          if (n >>> 24) counts.set(n, (counts.get(n) ?? 0) + 1);
+        for (let k = -1; k <= 1; k++) {
+          const q = d[i + j * w + k]!;
+          if (!(q >>> 24)) continue;
+          r += q & 255;
+          g += (q >> 8) & 255;
+          bl += (q >> 16) & 255;
+          n++;
         }
-      if ((counts.get(c) ?? 0) > 3) continue;
-      let best = c;
-      let most = 0;
-      for (const [k, v] of counts)
-        if (v > most) {
-          most = v;
-          best = k;
-        }
-      b.data[y * w + x] = best;
+      b.data[i] = pack([r / n, g / n, bl / n]);
     }
   return b;
 }

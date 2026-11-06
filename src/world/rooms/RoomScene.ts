@@ -58,6 +58,7 @@ import { dress } from './salas/tintes';
 import { Crowd, type Hit, type Poi, type Talk } from './crowd';
 import { LAWN_D, tuftAllowed, yardBushes, yardTrees } from './patio';
 import { bushCnc, oakCnc, pineCnc } from './arboles';
+import { moodGround, moodTuft } from './suelo';
 import {
   CLOISTER_W,
   cloisterParts,
@@ -1445,6 +1446,16 @@ export class RoomScene {
     // El terreno de arriba: patio, hierba y lo de detrás del edificio. Va mucho más allá de lo
     // que deja ver la cámara: al fondo la perspectiva lo estrecha y si no se le vería el final.
     const yard = { ambient: OUTDOOR, sun: 1, dither: 0 };
+    // Cada trozo de suelo, en los dos estilos: el de siempre y el de «luz con ambiente».
+    const groundC = new Group();
+    const groundM = new Group();
+    g.add(groundC, groundM);
+    this.styled.push({ classic: groundC, mood: groundM });
+    let gi = 0;
+    const ground = (tex: PixelBuffer, corners: Corners, o: typeof yard & { repeat?: number }) => {
+      this.plane(groundC, tex, corners, o);
+      this.plane(groundM, moodGround(tex, gi++), corners, o);
+    };
     const back = DEPTH + 2;
     // A los lados, un trozo de patio y otro de hierba que se repiten (`TILE`) hasta muy lejos.
     const reps = (from: number) => Math.ceil((from + TERRAIN_PAD) / TILE);
@@ -1452,8 +1463,7 @@ export class RoomScene {
     const nr = reps(L.x1 - L.right);
     const x0 = L.left - nl * TILE;
     const x1 = L.right + nr * TILE;
-    this.plane(
-      g,
+    ground(
       groundTex(TILE, YARD_D / 2, true, 'patio', false),
       [
         at(x0, GROUND, 0),
@@ -1463,8 +1473,7 @@ export class RoomScene {
       ],
       { ...yard, repeat: nl },
     );
-    this.plane(
-      g,
+    ground(
       groundTex(TILE, YARD_D / 2, false, 'solares'),
       [
         at(L.right, GROUND, 0),
@@ -1485,8 +1494,7 @@ export class RoomScene {
         ]
       : [[L.left, L.right, back]];
     for (const [a, c, z] of behind)
-      this.plane(
-        g,
+      ground(
         groundTex(
           Math.round(c - a),
           (YARD_D - z) / 2,
@@ -1522,8 +1530,7 @@ export class RoomScene {
         parts.edificio || parts.anexo ? DEPTH : 0,
         parts,
       );
-      this.plane(
-        g,
+      ground(
         lawn,
         [at(gx0, GROUND, 0), at(gx1, GROUND, 0), at(gx1, GROUND, LAWN_D), at(gx0, GROUND, LAWN_D)],
         yard,
@@ -1534,8 +1541,7 @@ export class RoomScene {
     let gx = L.left;
     for (const [a, c] of [...used, [L.right, L.right] as [number, number]]) {
       if (a > gx + 1)
-        this.plane(
-          g,
+        ground(
           groundTex(Math.round(a - gx), back / 2, false, `solar${Math.round(gx)}`),
           [at(gx, GROUND, 0), at(a, GROUND, 0), at(a, GROUND, back), at(gx, GROUND, back)],
           yard,
@@ -1977,7 +1983,7 @@ export class RoomScene {
         t.x,
         t.depth,
       );
-    this.plantGrass(L);
+    this.plantGrass(L, classic, mood);
     for (const bu of yardBushes(L)) both(Prop.bush(bu.seed), bushCnc(bu.seed), bu.x, bu.depth);
     for (let i = 0; i < Math.min(2, y.patio); i++) put(dummy(), px + 110 + i * 30, 40 + i * 16);
     this.gardenArt(L, model);
@@ -2512,7 +2518,8 @@ export class RoomScene {
    * patio, pocas y en los bordes; en la hierba, muchas. Cada una cambia de fotograma con el
    * viento que pasa por su sitio (ver `draw`).
    */
-  private plantGrass(L: RoomsLayout): void {
+  private plantGrass(L: RoomsLayout, classic: Group, mood: Group): void {
+    const moodArt = new Map<string, PixelBuffer>();
     const rng = new Rng('matas del patio');
     const kinds: TuftKind[] = ['mata', 'mata', 'alta', 'flores', 'trebol', 'mata', 'alta'];
     const art = new Map<string, ReturnType<typeof grassTuft>>();
@@ -2533,18 +2540,24 @@ export class RoomScene {
         at(x + w / 2, GROUND - h, z),
         at(x - w / 2, GROUND - h, z),
       ];
-      const m = mesh(
-        quad(corners, this.look),
-        this.look.surface(a.img, corners, {
-          ambient: OUTDOOR,
-          sun: 1,
-          wrap: 0.6,
-          dither: 0.03,
-          frames: GRASS_FRAMES,
-        }),
-      );
-      this.world.add(m);
-      this.grass.push({ m, x, seed: rng.next() });
+      const seed = rng.next();
+      for (const [img, to] of [
+        [a.img, classic],
+        [moodArt.get(key) ?? moodArt.set(key, moodTuft(a.img)).get(key)!, mood],
+      ] as const) {
+        const m = mesh(
+          quad(corners, this.look),
+          this.look.surface(img, corners, {
+            ambient: OUTDOOR,
+            sun: 1,
+            wrap: 0.6,
+            dither: 0.03,
+            frames: GRASS_FRAMES,
+          }),
+        );
+        to.add(m);
+        this.grass.push({ m, x, seed });
+      }
     }
   }
 
