@@ -18,6 +18,7 @@ import { P } from '../../art/palette';
 import { PixelBuffer } from '../../art/pixel';
 import { GROUND, WORLD_X0 } from '../geometry';
 import { hillLife, skyLife, treeLife } from './life';
+import { hazed, mountainsCnc, skyStripCnc } from './paisaje';
 import { glowSprite } from '../lighting';
 import { Rng } from '../../core/rng';
 import {
@@ -198,6 +199,39 @@ export class Sky {
     dusk: bufferCanvas(wide(skyStrip(SKY_BANDS.dusk, STRIP_H, 10, GROUND - 25))),
     dawn: bufferCanvas(wide(skyStrip(SKY_BANDS.dawn, STRIP_H, 10, GROUND - 25))),
   };
+  /** Con «luz con ambiente», el fondo nuevo (ver `paisaje.ts`). */
+  mood = false;
+  private cncCache?: {
+    strips: { day: HTMLCanvasElement; dusk: HTMLCanvasElement; dawn: HTMLCanvasElement };
+    right: HTMLCanvasElement;
+    left: HTMLCanvasElement;
+    night: HTMLCanvasElement;
+    dusk: HTMLCanvasElement;
+    dawn: HTMLCanvasElement;
+    day: HTMLCanvasElement[];
+  };
+  /** Se pinta la primera vez que hace falta. */
+  private get cnc() {
+    if (!this.cncCache) {
+      const m = mountainsCnc();
+      // Las capas de delante, apagadas por la bruma cuanto más lejos.
+      const HAZE = [0, 0.3, 0.2, 0.1, 0.04];
+      this.cncCache = {
+        strips: {
+          day: bufferCanvas(skyStripCnc(SKY_BANDS.day, STRIP_W, STRIP_H, 30, GROUND - 20)),
+          dusk: bufferCanvas(skyStripCnc(SKY_BANDS.dusk, STRIP_W, STRIP_H, 10, GROUND - 25)),
+          dawn: bufferCanvas(skyStripCnc(SKY_BANDS.dawn, STRIP_W, STRIP_H, 10, GROUND - 25)),
+        },
+        right: bufferCanvas(m.right),
+        left: bufferCanvas(m.left),
+        night: bufferCanvas(m.night),
+        dusk: bufferCanvas(m.dusk),
+        dawn: bufferCanvas(m.dawn),
+        day: this.parallax.map(({ l }, i) => bufferCanvas(hazed(l.day, HAZE[i] ?? 0))),
+      };
+    }
+    return this.cncCache;
+  }
 
   /**
    * Pinta el cielo de una vista que empieza en la x `cx` del mundo. `hz` es la altura en la vista
@@ -250,9 +284,10 @@ export class Sky {
       ctx.globalAlpha = 1;
     }
     // Encima de la noche, el cielo de cada luz (opaco): día, atardecer y alba.
-    this.strip(ctx, this.strips.day, dl.day, top, vw, vh);
-    this.strip(ctx, this.strips.dusk, dl.dusk, top, vw, vh);
-    this.strip(ctx, this.strips.dawn, nl.warm, top, vw, vh);
+    const strips = this.mood ? this.cnc.strips : this.strips;
+    this.strip(ctx, strips.day, dl.day, top, vw, vh);
+    this.strip(ctx, strips.dusk, dl.dusk, top, vw, vh);
+    this.strip(ctx, strips.dawn, nl.warm, top, vw, vh);
     this.drawSun(ctx, dl, cx, hz, vw);
     // Las nubes, de la capa de más lejos a la de más cerca: la de noche debajo (opaca, tapa las
     // estrellas) y encima, la de cada luz con su peso.
@@ -290,10 +325,36 @@ export class Sky {
     skyLife(ctx, WORLD_X0 - pan(cx, vw, SKY_FX), top, vw, t, light);
     this.parallax.forEach(({ c, d, l }, i) => {
       const x = WORLD_X0 - pan(cx, vw, l.fx);
+      if (this.mood && i === 0) {
+        // Los montes nuevos: la cara al sol pasa de la derecha (mañana) a la izquierda (tarde).
+        const m = this.cnc;
+        repeat(ctx, m.night, x, top, vw);
+        if (dayK > 0) {
+          const p = Math.min(1, 0.1 + dl.tod * 0.95);
+          const wl = Math.min(1, Math.max(0, (p - 0.35) / 0.3));
+          ctx.globalAlpha = dayK;
+          repeat(ctx, m.right, x, top, vw);
+          if (wl > 0) {
+            ctx.globalAlpha = dayK * wl;
+            repeat(ctx, m.left, x, top, vw);
+          }
+          // Y la luz rosada del ocaso y del alba en las cumbres.
+          for (const [c, a] of [
+            [m.dusk, dl.dusk],
+            [m.dawn, nl.warm],
+          ] as const)
+            if (a > 0.01) {
+              ctx.globalAlpha = Math.min(1, a);
+              repeat(ctx, c, x, top, vw);
+            }
+          ctx.globalAlpha = 1;
+        }
+        return;
+      }
       tile(ctx, c, x, top, vw);
       if (dayK > 0) {
         ctx.globalAlpha = dayK;
-        tile(ctx, d, x, top, vw);
+        tile(ctx, this.mood ? this.cnc.day[i]! : d, x, top, vw);
         ctx.globalAlpha = 1;
       }
       if (i === 1) hillLife(ctx, x, top, vw, t, light);
@@ -397,4 +458,16 @@ function tile(
     ctx.drawImage(c, 0, 0);
     ctx.restore();
   }
+}
+
+/** Como `tile`, pero sin espejo (para las capas que ya se repiten sin junta). */
+function repeat(
+  ctx: CanvasRenderingContext2D,
+  c: HTMLCanvasElement,
+  x: number,
+  y: number,
+  vw: number,
+) {
+  const w = c.width;
+  for (let k = Math.floor(-x / w); x + k * w < vw; k++) ctx.drawImage(c, x + k * w, y);
 }

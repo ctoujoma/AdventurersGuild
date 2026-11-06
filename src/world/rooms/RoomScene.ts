@@ -3143,6 +3143,7 @@ export class RoomScene {
       this.skyAt = skyKey;
       // El horizonte: donde acaba el terreno, al fondo (con la perspectiva, sube y baja con la cámara).
       const hz = project(view, view.px + view.vw / 2, GROUND, YARD_D).y;
+      this.sky.mood = this.moodLight;
       this.sky.draw(this.skyCtx, view.px, view.vw, view.vh, t, dl, nl, hz);
       this.skyTex.needsUpdate = true;
     }
