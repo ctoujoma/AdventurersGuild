@@ -90,7 +90,16 @@ import { FLAME_FRAMES, FLAME_H, FLAME_W, flameStrip } from './flame';
 import { faces, sideTexel, type Mat } from './volume';
 import { RaidShow } from './raid';
 import { HEARTH_RIGHT, NO_LOOK, type SalonLook } from './salon';
-import { FEW_LIGHTS, Look, MAX_LIGHTS, mesh, quad, sharedUniforms, type Corners } from './gl';
+import {
+  FEW_LIGHTS,
+  Look,
+  MAX_BOXES,
+  MAX_LIGHTS,
+  mesh,
+  quad,
+  sharedUniforms,
+  type Corners,
+} from './gl';
 import { route, type Place } from './people';
 import {
   CELL_W,
@@ -1452,6 +1461,7 @@ export class RoomScene {
     g.add(groundC, groundM);
     this.styled.push({ classic: groundC, mood: groundM });
     let gi = 0;
+    this.shadowBoxes(L);
     const ground = (tex: PixelBuffer, corners: Corners, o: typeof yard & { repeat?: number }) => {
       this.plane(groundC, tex, corners, o);
       this.plane(groundM, moodGround(tex, gi++), corners, o);
@@ -1633,8 +1643,13 @@ export class RoomScene {
         const sy = r.h / back.h;
         const mat = this.look.shaft();
         const u = mat.uniforms;
-        u.uTop!.value.set(r.x + (p.x - p.w / 2) * sx, GROUND - (r.y + p.top * sy), -(DEPTH - 1));
-        u.uW!.value = p.w * sx;
+        // Un píxel más ancho por cada lado que la ventana: la luz se abre un poco al entrar.
+        u.uTop!.value.set(
+          r.x + (p.x - p.w / 2) * sx - 1,
+          GROUND - (r.y + p.top * sy),
+          -(DEPTH - 1),
+        );
+        u.uW!.value = p.w * sx + 2;
         u.uDrop!.value = r.y + r.h - (r.y + p.top * sy);
         u.uIn!.value = DEPTH * 0.55;
         const beam = new Mesh(this.unitPlane, mat);
@@ -2518,6 +2533,44 @@ export class RoomScene {
    * patio, pocas y en los bordes; en la hierba, muchas. Cada una cambia de fotograma con el
    * viento que pasa por su sitio (ver `draw`).
    */
+  /**
+   * El edificio como cajas para su sombra fuera (luz con ambiente): el perfil de lo alto (cada
+   * sala sobre el suelo, la de arriba con el tejado) en tramos de igual altura.
+   */
+  private shadowBoxes(L: RoomsLayout): void {
+    const x0 = Math.floor(L.left - WALL);
+    const x1 = Math.ceil(L.right + WALL);
+    const top = new Float32Array(Math.max(0, x1 - x0));
+    for (const { room, rect } of L.rooms) {
+      if (room.floor < 0) continue;
+      const above = L.rooms.some(
+        (o) => o.rect.y < rect.y && o.rect.x < rect.x + rect.w && o.rect.x + o.rect.w > rect.x,
+      );
+      const h = GROUND - rect.y + (above ? 0 : Math.max(24, rect.w * 0.22));
+      for (let x = Math.floor(rect.x - WALL); x < rect.x + rect.w + WALL; x++)
+        if (x >= x0 && x < x1) top[x - x0] = Math.max(top[x - x0]!, h);
+    }
+    let runs: [number, number, number][] = [];
+    for (let x = 0; x < top.length; x++) {
+      const h = top[x]!;
+      const last = runs[runs.length - 1];
+      if (last && Math.abs(last[2] - h) < 1) last[1] = x0 + x + 1;
+      else if (h > 0) runs.push([x0 + x, x0 + x + 1, h]);
+    }
+    // Si son muchos tramos, se juntan los vecinos más parecidos (con el más alto).
+    while (runs.length > MAX_BOXES) {
+      let k = 0;
+      for (let i = 1; i < runs.length - 1; i++)
+        if (Math.abs(runs[i]![2] - runs[i + 1]![2]) < Math.abs(runs[k]![2] - runs[k + 1]![2]))
+          k = i;
+      const [a, c] = [runs[k]!, runs[k + 1]!];
+      runs = [...runs.slice(0, k), [a[0], c[1], Math.max(a[2], c[2])], ...runs.slice(k + 2)];
+    }
+    runs.forEach((r, i) => this.shared.uBox.value[i]!.set(r[0], r[1], r[2], 0));
+    this.shared.uBoxN.value = runs.length;
+    this.shared.uBoxZ.value.set(-DEPTH, 0);
+  }
+
   private plantGrass(L: RoomsLayout, classic: Group, mood: Group): void {
     const moodArt = new Map<string, PixelBuffer>();
     const rng = new Rng('matas del patio');
@@ -3114,6 +3167,7 @@ export class RoomScene {
       u.uK!.value = sunLampK;
       u.uSlant!.value = -sd.x * 0.7;
       u.uColor!.value.set(1, 0.88 - 0.3 * dl.dusk, 0.7 - 0.38 * dl.dusk);
+      u.uTime!.value = performance.now() / 1000;
     }
     const cx = view.px + view.vw / 2;
     const cy = GROUND - (view.py + view.vh / 2);
@@ -3241,6 +3295,12 @@ export class RoomScene {
       ? new Vector3(1 - 2 * p, 0.2 + 0.9 * Math.sin(Math.PI * p), 0.6)
       : new Vector3(-0.45, 0.75, 0.6);
     this.shared.uSunDir.value.copy(sunDir.normalize());
+    // La sombra del edificio, con el sol de lado del todo (si viene algo de delante, cae casi
+    // toda detrás, donde no se ve): se tiende junto a la taberna, a su misma profundidad. Nunca
+    // más larga que lo que da un sol a 0,3 de alto.
+    const sh = this.shared.uShadowDir.value;
+    if (this.moodLight && sunUp) sh.set(sunDir.x, Math.max(0.3, sunDir.y), 0).normalize();
+    else sh.set(0, 0, 0);
     this.shared.uSunK.value = this.moodLight ? 1 : 0;
     this.shared.uBands.value = (w.__bands ?? this.moodLight) ? 1 : 0;
     this.shared.uZonePad.value = this.moodLight ? WALL + PARTITION / 2 : 0;

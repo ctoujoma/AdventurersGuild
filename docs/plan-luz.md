@@ -104,6 +104,21 @@ el rendimiento en un móvil de verdad; la fase 5.
   abajo, más cerca, tapan a las de detrás.
 - Colinas sin el tramado en ajedrez (cada cuadro, la media de su entorno).
 
+## Hecho después (PR siguiente al #122)
+
+- La sombra de la taberna fuera, según la hora (`buildingShadow` en `gl.ts`): el edificio como
+  cajas (el perfil de lo alto de las salas, con el tejado; `shadowBoxes` en `RoomScene.ts`) y,
+  para cada punto de fuera, un rayo hacia el sol. Cae de lado (el sol de la sombra no tiene
+  componente hacia delante: si no, se iba detrás, donde no se ve), corta a mediodía y larga al
+  atardecer; lo que queda dentro (suelo, árboles, gente) pierde el sol y toma la luz fría del
+  cielo. Borde mellado. Captura: `capturas/luz-ambiente/sombra.png` (mañana y tarde).
+- El rayo de sol de las ventanas, un píxel más ancho por cada lado.
+- Polvo en los rayos de sol: motas de un píxel que bajan despacio, se mecen y titilan.
+
+Lo que falta: de noche, la luz de las ventanas hacia fuera (patio y fachada); pozo, letrero y
+muñecos del patio en el estilo nuevo; medir el rendimiento en un móvil de verdad; la vista desde
+fuera al alejar (abajo); la fase 5.
+
 ## Idea: la taberna vista desde fuera al alejar del todo
 
 Con el zoom más alejado (o uno más, añadido para esto), dibujar la taberna con el corte tapado:
