@@ -95,7 +95,8 @@ el rendimiento en un móvil de verdad; la fase 5.
 
 - Suelo y hierba de toda la escena (`suelo.ts`): las texturas de siempre pasadas al estilo nuevo
   (grumos de verdes apagados que siguen lo que había: camino, calvas, franjas de siega y bordes;
-  tierra en tonos de tierra; flores y piedras apagadas; relieve en la hierba), y las matas con
+  tierra en tonos de tierra; flores y piedras apagadas; sin relieve, que en un suelo plano dejaba
+  una raya de sombra en el borde del camino), y las matas con
   los verdes apagados.
 - El camino de tierra del patio va delante, a la altura de la puerta (estaba al fondo: la fila 0
   de la textura es la del fondo). Arreglo para todos, también sin el ajuste.

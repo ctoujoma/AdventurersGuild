@@ -5,12 +5,11 @@ import { groundTex } from './textures';
 import { moodGround } from './suelo';
 
 describe('suelo (luz con ambiente)', () => {
-  it('no deja ningún verde de la paleta de siempre y le pone relieve a la hierba', () => {
+  it('no deja ningún verde de la paleta de siempre', () => {
     const src = groundTex(64, 40, true, 'prueba');
     const out = moodGround(src);
     const old = new Set([P.deep, P.forest, P.leaf, P.lime].map(rgba));
     expect(out.data.some((c) => old.has(c))).toBe(false);
-    expect(out.relief).not.toBeNull();
   });
 
   it('la tierra sigue siendo tierra (el camino no se pierde)', () => {

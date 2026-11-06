@@ -2,8 +2,8 @@
  * El suelo y la hierba con «luz con ambiente» (ver `docs/plan-luz.md`): las mismas texturas de
  * siempre (`art/grass.ts`), pasadas al estilo nuevo. El ruido de píxel a píxel en verdes vivos
  * pasa a grumos de verdes apagados que siguen lo que había (el camino, las calvas, las franjas de
- * la siega y el borde sin segar se quedan donde estaban), la tierra a tonos de tierra y todo con
- * algo de relieve, para que el sol le dé.
+ * la siega y el borde sin segar se quedan donde estaban), y la tierra a tonos de tierra. Sin relieve:
+ * en un suelo plano, el escalón entre la hierba y el camino dejaba una raya de sombra.
  */
 import { P } from '../../art/palette';
 import { PixelBuffer, rgba } from '../../art/pixel';
@@ -80,17 +80,13 @@ export function moodGround(src: PixelBuffer, seed = 0): PixelBuffer {
         const v = 0.42 * avg(x, y, 1) + 0.42 * clump + 0.16 * grain;
         // Alguna brizna clara suelta y alguna mata oscura.
         const t = grain > 0.96 ? v + 0.22 : grain < 0.04 ? v - 0.2 : v;
-        out.level = 1 + Math.round(clump * 3);
         out.set(x, y, pick(GRASS, t));
       } else if (k === 2) {
-        out.level = 0;
         out.set(x, y, pick(DIRT, 0.5 * avg(x, y, 2) + 0.35 * clump + 0.15 * grain));
       } else {
-        out.level = 2;
         out.set(x, y, SWAP_IN.get(c) ?? c);
       }
     }
-  out.level = 0;
   return out;
 }
 
