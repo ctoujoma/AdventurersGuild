@@ -114,7 +114,8 @@ el rendimiento en un móvil de verdad; la fase 5.
   cielo. Borde mellado. Captura: `capturas/luz-ambiente/sombra.png` (mañana y tarde).
 - El rayo de sol de las ventanas, como la luz de verdad: sale del alféizar, entre la recta que
   pasa por la esquina de arriba de la ventana del lado contrario al sol y la que pasa por la de
-  abajo del lado del sol (más ancho cuanto más bajo el sol).
+  abajo del lado del sol; con el sol de lado se inclina hasta casi 45° (tan ancho como la
+  diagonal de la ventana). Para revisarlo: `window.__beamDbg = true` lo pinta en magenta.
 - Polvo en los rayos de sol: motas de un píxel que bajan despacio, se mecen y titilan.
 - Pozo, rótulo, farol, muñecos, cuadra y empalizada sin contorno oscuro y algo apagados
   (`softened` en `suelo.ts`).
@@ -124,6 +125,9 @@ el rendimiento en un móvil de verdad; la fase 5.
 - Un lago entre el bosque lejano y las colinas (en la capa del bosque): refleja los árboles de la
   orilla, ondulados y apagados, con rayas de brillo; se ve donde bajan las colinas. La masa del
   bosque va detrás de todos los árboles y la orilla, al pie de la última fila.
+- El agua del lago se mueve (sutil, que está lejos): 8 fotogramas fundidos que dan la vuelta en
+  unos 6 s; el reflejo ondula, cruzan ondas claras muy suaves y cada destello aparece y se apaga
+  a su paso.
 
 Lo que falta: de noche, la luz de las ventanas hacia fuera (patio y fachada); el jardín y sus
 piezas en el estilo nuevo; medir el rendimiento en un móvil de verdad; la vista desde

@@ -243,6 +243,9 @@ export function hazed(src: PixelBuffer, amt: number, desat = 0.25): PixelBuffer 
 
 // ---------- Bosque lejano ----------
 
+/** Fotogramas del agua del lago (dan la vuelta). */
+export const LAKE_FRAMES = 8;
+
 /** El bosque lejano, entre los montes y las colinas: se mueve algo más que los montes. */
 export const FAR_FOREST_FX = 0.235;
 
@@ -250,7 +253,11 @@ export const FAR_FOREST_FX = 0.235;
  * Una franja de abetos pequeños por pisos, apagados por la bruma (de día) o casi negros (de
  * noche), con la misma silueta. Se repite sin junta.
  */
-export function farForestCnc(): { day: PixelBuffer; night: PixelBuffer } {
+export function farForestCnc(): {
+  day: PixelBuffer;
+  night: PixelBuffer;
+  lake: { y0: number; day: PixelBuffer[]; night: PixelBuffer[] };
+} {
   const W = LAYER_W;
   const H = GROUND + 4;
   const day = new PixelBuffer(W, H);
@@ -300,36 +307,60 @@ export function farForestCnc(): { day: PixelBuffer; night: PixelBuffer } {
       }
     }
   }
-  // El lago, de la orilla del bosque al horizonte: refleja los árboles (algo ondulados, más
-  // apagados y oscuros), y de lejos, el cielo; con rayas de brillo. Se ve donde bajan las colinas.
+  // El lago, de la orilla del bosque al horizonte: refleja los árboles (ondulados, más apagados
+  // y oscuros) y, de lejos, el cielo; con destellos. Se ve donde bajan las colinas. Va aparte, en
+  // `LAKE_FRAMES` fotogramas que dan la vuelta: el reflejo ondula despacio, unas ondas claras
+  // muy suaves cruzan y cada destello aparece y se apaga a su paso.
   const WATER_DAY = ['#6f8fae', '#86a4c0', '#9fb9d2'].map(hex);
   const WATER_NIGHT = ['#18213c', '#1f2a4a', '#2a3759'].map(hex);
   const SHINE_DAY = hex('#d8e6f2');
   const SHINE_NIGHT = hex('#56679a');
   const unpack = (c: number): RGB => [c & 255, (c >> 8) & 255, (c >> 16) & 255];
-  for (let x = 0; x < W; x++) {
-    const shore = shoreAt(x);
-    for (let y = shore; y < H; y++) {
-      const dy = y - shore;
-      const i = y * W + x;
-      const sx = (((x + Math.round(Math.sin(dy * 1.3 + x * 0.05) * 1.2)) % W) + W) % W;
-      const sy = shore - 1 - Math.round(dy * 1.2);
-      const shine = h2(Math.floor((x + dy * 5) / 4), dy, 91) > 0.93;
-      for (const [buf, water, sh, hz] of [
-        [day, WATER_DAY, SHINE_DAY, DAY.haze],
-        [night, WATER_NIGHT, SHINE_NIGHT, NIGHT.haze],
-      ] as const) {
-        let c = ramp(water as RGB[], 0.85 - dy / 40);
-        const src = sy >= 0 ? buf.data[sy * W + sx]! : 0;
-        if (src >>> 24 && dy < 26) c = mixc(mixc(unpack(src), c, 0.45), [0, 0, 0], 0.12);
-        if (shine) c = mixc(c, sh as RGB, 0.7);
-        // La orilla: una raya oscura bajo los árboles.
-        if (dy === 0) c = mixc(c, [20, 30, 30], 0.35);
-        buf.data[i] = pack(mixc(c, hz as RGB, 0.18));
+  let y0 = H;
+  for (let x = 0; x < W; x++) y0 = Math.min(y0, shoreAt(x));
+  const LH = H - y0;
+  const lake = {
+    y0,
+    day: Array.from({ length: LAKE_FRAMES }, () => new PixelBuffer(W, LH)),
+    night: Array.from({ length: LAKE_FRAMES }, () => new PixelBuffer(W, LH)),
+  };
+  for (let f = 0; f < LAKE_FRAMES; f++) {
+    const ph = (f / LAKE_FRAMES) * Math.PI * 2;
+    for (let x = 0; x < W; x++) {
+      const shore = shoreAt(x);
+      for (let y = shore; y < H; y++) {
+        const dy = y - shore;
+        const wob = Math.sin(dy * 1.3 + x * 0.05 + ph) * (0.6 + dy / 25);
+        const sx = (((x + Math.round(wob)) % W) + W) % W;
+        const sy = shore - 1 - Math.round(dy * 1.2);
+        const cell = Math.floor((x + dy * 5) / 3);
+        const lit =
+          h2(cell, dy, 91) > 0.9 ? Math.max(0, Math.cos(ph + h2(cell, dy, 93) * 6.28)) ** 3 : 0;
+        const ripple = Math.sin(dy * 0.9 - ph + x * 0.01) > 0.9 ? 0.1 : 0;
+        for (const [src, out, water, sh, hz] of [
+          [day, lake.day[f]!, WATER_DAY, SHINE_DAY, DAY.haze],
+          [night, lake.night[f]!, WATER_NIGHT, SHINE_NIGHT, NIGHT.haze],
+        ] as const) {
+          let c = ramp(water as RGB[], 0.85 - dy / 40);
+          const r = sy >= 0 ? src.data[sy * W + sx]! : 0;
+          if (r >>> 24 && dy < 26) c = mixc(mixc(unpack(r), c, 0.45), [0, 0, 0], 0.12);
+          c = mixc(c, sh as RGB, ripple + lit * 0.55);
+          // La orilla: una raya oscura bajo los árboles.
+          if (dy === 0) c = mixc(c, [20, 30, 30], 0.35);
+          out.data[(y - y0) * W + x] = pack(mixc(c, hz as RGB, 0.18));
+        }
       }
     }
   }
-  return { day, night };
+  // En la capa, el primer fotograma (lo de debajo del agua animada).
+  for (let y = y0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const c = lake.day[0]!.data[(y - y0) * W + x]!;
+      if (!(c >>> 24)) continue;
+      day.data[y * W + x] = c;
+      night.data[y * W + x] = lake.night[0]!.data[(y - y0) * W + x]!;
+    }
+  return { day, night, lake };
 }
 
 // ---------- Arboledas y colinas ----------

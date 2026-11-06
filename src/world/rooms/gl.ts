@@ -363,12 +363,15 @@ const SHAFT_VERT = /* glsl */ `
 const SHAFT_FRAG = /* glsl */ `
   uniform vec3 uColor;
   uniform float uTime;
+  uniform float uDbg;
   uniform float uK;
   uniform float uW;
   uniform float uDrop;
   varying vec2 vUv;
   void main() {
-    float edge = smoothstep(0.0, 0.3, vUv.x) * smoothstep(1.0, 0.7, vUv.x);
+    // Para revisar por dónde va (desde la consola, window.__beamDbg): todo el rayo en magenta.
+    if (uDbg > 0.5) { gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0); return; }
+    float edge = smoothstep(0.0, 0.1, vUv.x) * smoothstep(1.0, 0.9, vUv.x);
     float fall = pow(1.0 - vUv.y, 0.9);
     vec2 cell = floor(vUv * vec2(uW, uDrop) / 2.0);
     float jit = fract(sin(dot(cell, vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
@@ -601,6 +604,7 @@ export class Look {
           uSlant: { value: 0 },
           uIn: { value: 30 },
           uTime: { value: 0 },
+          uDbg: { value: 0 },
         },
         vertexShader: SHAFT_VERT,
         fragmentShader: SHAFT_FRAG,

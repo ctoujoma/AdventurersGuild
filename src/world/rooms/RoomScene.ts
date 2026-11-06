@@ -3186,7 +3186,8 @@ export class RoomScene {
       b.visible = sunLampK > 0.02;
       const u = (b.material as ShaderMaterial).uniforms;
       u.uK!.value = sunLampK;
-      const slant = -sd.x * 0.7;
+      // Inclinación (x por cada píxel que baja): con el sol de lado, hasta casi 45°.
+      const slant = Math.max(-0.95, Math.min(0.95, -sd.x * 1.5));
       u.uSlant!.value = slant;
       // El rayo, como la luz de verdad: entre la recta que pasa por la esquina de arriba de la
       // ventana del lado contrario al sol y la que pasa por la de abajo del lado del sol. En el
@@ -3198,6 +3199,7 @@ export class RoomScene {
       u.uW!.value = win.w + add;
       u.uColor!.value.set(1, 0.88 - 0.3 * dl.dusk, 0.7 - 0.38 * dl.dusk);
       u.uTime!.value = performance.now() / 1000;
+      u.uDbg!.value = (window as unknown as { __beamDbg?: boolean }).__beamDbg ? 1 : 0;
     }
     const cx = view.px + view.vw / 2;
     const cy = GROUND - (view.py + view.vh / 2);
