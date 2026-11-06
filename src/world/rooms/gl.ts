@@ -131,33 +131,42 @@ const SURFACE_FRAG = /* glsl */ `
   // La luz del sol fuera, con su dirección: cara al sol, más y más cálida; de espaldas, la del
   // cielo, fría. Con relieve, además, la normal de cada píxel, la sombra que arrojan los
   // salientes (marchando por la textura hacia el sol) y el borde de luz en los cantos.
+  // El relieve frente a una luz que llega por L (unitario, en el mundo): cambia n por la normal
+  // del relieve, devuelve la sombra que arrojan los salientes (marchando por la textura hacia la
+  // luz) y pone rim a 1 si el píxel es un canto que da a la luz.
+  float reliefShadow(inout vec3 n, vec2 uvc, vec2 size, vec3 L, out float rim) {
+    rim = 0.0;
+    vec3 n0 = n;
+    vec3 U = normalize(uAxisU);
+    vec3 V = normalize(uAxisV);
+    float h0 = relAt(uvc);
+    float dx = relAt(uvc + vec2(1.0, 0.0) / size) - relAt(uvc - vec2(1.0, 0.0) / size);
+    float dy = relAt(uvc + vec2(0.0, 1.0) / size) - relAt(uvc - vec2(0.0, 1.0) / size);
+    n = normalize(n - (U * dx + V * dy) * 0.3);
+    vec2 sd = vec2(dot(L, U), dot(L, V));
+    float lsd = length(sd);
+    if (lsd < 0.05) return 1.0;
+    vec2 dir = sd / lsd;
+    float slope = max(dot(L, n0), 0.05) / lsd;
+    float shadow = 1.0;
+    for (int k = 1; k <= 16; k++) {
+      float fk = float(k);
+      float hk = relAt(uvc + dir * fk / size);
+      if (hk - h0 > fk * slope + 0.5) { shadow = 0.35; break; }
+    }
+    vec2 nb = uvc + vec2(floor(dir.x * 1.5 + 0.5), floor(dir.y * 1.5 + 0.5)) / size;
+    if (texture2D(map, nb).a < 0.5 || relAt(nb) < h0 - 0.5) rim = 1.0;
+    return shadow;
+  }
   vec3 sunlight(vec3 n, vec2 uvc, vec2 size) {
     if (!gl_FrontFacing) n = -n;
     float lum = max(max(uDaylight.r, uDaylight.g), uDaylight.b);
     float warmth = clamp((uDaylight.r - uDaylight.b) * 3.0, 0.0, 1.0);
-    vec3 U = normalize(uAxisU);
-    vec3 V = normalize(uAxisV);
     float shadow = 1.0;
     float rim = 0.0;
     if (uHasRelief > 0.5) {
-      float h0 = relAt(uvc);
-      float dx = relAt(uvc + vec2(1.0, 0.0) / size) - relAt(uvc - vec2(1.0, 0.0) / size);
-      float dy = relAt(uvc + vec2(0.0, 1.0) / size) - relAt(uvc - vec2(0.0, 1.0) / size);
-      n = normalize(n - (U * dx + V * dy) * 0.3);
-      vec2 sd = vec2(dot(uSunDir, U), dot(uSunDir, V));
-      float lsd = length(sd);
-      if (lsd > 0.05) {
-        vec2 dir = sd / lsd;
-        float slope = max(dot(uSunDir, gl_FrontFacing ? uNormal : -uNormal), 0.05) / lsd;
-        for (int k = 1; k <= 16; k++) {
-          float fk = float(k);
-          float hk = relAt(uvc + dir * fk / size);
-          if (hk - h0 > fk * slope + 0.5) { shadow = 0.35; break; }
-        }
-        // Canto que da al sol: el vecino de ese lado está más bajo (o no hay nada).
-        vec2 nb = uvc + vec2(floor(dir.x * 1.5 + 0.5), floor(dir.y * 1.5 + 0.5)) / size;
-        if (texture2D(map, nb).a < 0.5 || relAt(nb) < h0 - 0.5) rim = 0.5 + warmth * 0.4;
-      }
+      shadow = reliefShadow(n, uvc, size, uSunDir, rim);
+      rim *= 0.5 + warmth * 0.4;
     } else {
       vec2 sd = vec2(dot(uSunDir, uAxisU) / dot(uAxisU, uAxisU), dot(uSunDir, uAxisV) / dot(uAxisV, uAxisV));
       vec2 off = sign(sd) * step(0.3 * max(abs(sd.x), abs(sd.y)), abs(sd)) / size;
@@ -210,6 +219,16 @@ const SURFACE_FRAG = /* glsl */ `
       float a = clamp(1.0 - dist / lp.w, 0.0, 1.0);
       a = a * a * (3.0 - 2.0 * a);
       float ndl = mix(max(dot(n, d / max(dist, 0.001)), 0.0), 1.0, uWrap);
+      // Con luz con ambiente y relieve: la normal del relieve, la sombra de los salientes hacia
+      // el foco y el canto encendido.
+      // (Solo los 8 focos más cercanos al centro de la vista: van ordenados así.)
+      if (uSunK > 0.0 && uHasRelief > 0.5 && a > 0.02 && i < 8) {
+        vec3 nr = gl_FrontFacing ? n : -n;
+        float rimL;
+        float sh = reliefShadow(nr, uvc, size, d / max(dist, 0.001), rimL);
+        ndl = mix(max(dot(nr, d / max(dist, 0.001)), 0.0), 1.0, uWrap * 0.6) * sh;
+        light += lc.rgb * a * rimL * 0.35 * sh;
+      }
       if (a > 0.02) { float sh = lit(world, lp.xyz); a *= sh; if (uShadows > 1.5 && sh < 0.9) dbg = 1.0; }
       // Luz de borde en las figuras: el canto que da al foco, si al lado no hay nada pintado.
       if (uShadows > 0.5 && uRim > 0.0 && a > 0.02) {
