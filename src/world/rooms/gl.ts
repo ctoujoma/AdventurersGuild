@@ -28,8 +28,8 @@ import {
   type Texture,
 } from 'three';
 import { P } from '../../art/palette';
-import type { PixelBuffer } from '../../art/pixel';
-import { SLAB } from './layout';
+import { bevelRelief, type PixelBuffer } from '../../art/pixel';
+import { PARTITION, SLAB } from './layout';
 
 /**
  * Focos que caben a la vez: van en una textura (una columna por foco: posición y alcance, color
@@ -241,9 +241,10 @@ const SURFACE_FRAG = /* glsl */ `
         if (nb < 0.5) light += lc.rgb * a * uRim;
       }
       light += lc.rgb * a * ndl;
-      // El halo, solo dentro de la sala: la zona incluye los forjados (su canto recibe luz), pero
-      // el halo del foco de abajo no debe verse a través del suelo.
-      if (lc.a > 0.0 && world.y > z.y + ${SLAB.toFixed(1)} && world.y < z.w - ${SLAB.toFixed(1)}) {
+      // El halo, solo en el aire de la sala: la zona incluye los forjados (su canto recibe luz) y
+      // media pared de cada lado; el halo no debe verse en ellos ni a través de ellos.
+      if (lc.a > 0.0 && world.x > z.x + ${(PARTITION / 2 - 1).toFixed(1)} && world.x < z.z - ${(PARTITION / 2 - 1).toFixed(1)} &&
+          world.y > z.y + ${SLAB.toFixed(1)} && world.y < z.w - ${SLAB.toFixed(1)}) {
         // El centro, donde se ve la llama dibujada (a su profundidad: si no, se corre al mover).
         vec3 hp = texelFetch(uLights, ivec2(i, 3), 0).xyz;
         vec2 ls = cameraPosition.xy + (hp.xy - cameraPosition.xy) * (cameraPosition.z / (cameraPosition.z - hp.z));
@@ -368,9 +369,8 @@ const SCREEN_FRAG = /* glsl */ `
 `;
 
 /** El relieve de un búfer como textura (en el rojo), con la misma orientación que su color. */
-function reliefTexture(b: PixelBuffer): DataTexture {
+function reliefTexture(b: PixelBuffer, r: Uint8Array): DataTexture {
   const rgba = new Uint8Array(b.w * b.h * 4);
-  const r = b.relief!;
   for (let i = 0; i < r.length; i++) rgba[i * 4] = r[i]!;
   const t = new DataTexture(rgba, b.w, b.h, RGBAFormat, UnsignedByteType);
   t.flipY = true;
@@ -415,6 +415,8 @@ export interface SurfaceOpts {
   repeat?: number;
   /** Cuánto halo de las llamas se ve encima (la gente, poco: si no, se queda en blanco). */
   halo?: number;
+  /** Relieve de bisel sacado del contorno (para la luz con ambiente; ver `bevelRelief`). */
+  bevel?: boolean;
 }
 
 /**
@@ -478,6 +480,7 @@ export class Look {
   surface(b: PixelBuffer, corners: Corners, o: SurfaceOpts): ShaderMaterial {
     const map = this.own(texture(b));
     if (o.repeat) map.wrapS = RepeatWrapping;
+    const relief = o.bevel ? bevelRelief(b) : b.relief;
     const [a, br, , d] = corners;
     const u = new Vector3().subVectors(br, a);
     const v = new Vector3().subVectors(d, a);
@@ -496,8 +499,8 @@ export class Look {
           uDither: { value: o.dither ?? 0.035 },
           uHalo: { value: o.halo ?? 1 },
           uRim: { value: (o.wrap ?? 0.25) >= 0.5 ? 0.9 : 0 },
-          uRelief: { value: b.relief ? this.own(reliefTexture(b)) : NO_DEPTH },
-          uHasRelief: { value: b.relief ? 1 : 0 },
+          uRelief: { value: relief ? this.own(reliefTexture(b, relief)) : NO_DEPTH },
+          uHasRelief: { value: relief ? 1 : 0 },
           uUvOffset: { value: new Vector2(0, 0) },
           uUvScale: { value: new Vector2((o.repeat ?? 1) / (o.frames ?? 1), 1) },
         },

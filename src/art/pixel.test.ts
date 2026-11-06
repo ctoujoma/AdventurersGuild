@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { P } from './palette';
-import { PixelBuffer, rgba, toHex } from './pixel';
+import { bevelRelief, PixelBuffer, rgba, toHex } from './pixel';
 
 describe('PixelBuffer', () => {
   it('convierte colores ida y vuelta', () => {
@@ -58,5 +58,18 @@ describe('relieve', () => {
     const c = new PixelBuffer(4, 4);
     c.blit(b, 1, 0);
     expect(c.reliefAt(3, 2)).toBe(5);
+  });
+});
+
+describe('bevelRelief', () => {
+  it('sale más cuanto más lejos del borde y hunde las líneas oscuras', () => {
+    const b = new PixelBuffer(7, 7);
+    b.rect(0, 0, 7, 7, '#c08040');
+    b.set(3, 2, '#101010');
+    const r = bevelRelief(b);
+    expect(r[0]).toBe(1);
+    expect(r[1 * 7 + 1]).toBe(2);
+    expect(r[3 * 7 + 3]).toBe(3);
+    expect(r[2 * 7 + 3]).toBe(2);
   });
 });

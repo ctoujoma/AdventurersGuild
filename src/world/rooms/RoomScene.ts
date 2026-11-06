@@ -2575,7 +2575,7 @@ export class RoomScene {
       ? this.mound(img, corners, x - w / 2, base - h, depth, k, ambient, sun)
       : mesh(
           quad(corners, this.look),
-          this.look.surface(img, corners, { ambient, sun, wrap: 0.6, dither: 0.03 }),
+          this.look.surface(img, corners, { ambient, sun, wrap: 0.6, dither: 0.03, bevel: true }),
         );
     // Con volumen, la cara y sus lados van juntos (y se anclan juntos).
     const obj = o.box || o.round ? new Group() : m;
@@ -3143,6 +3143,7 @@ export class RoomScene {
       this.skyAt = skyKey;
       // El horizonte: donde acaba el terreno, al fondo (con la perspectiva, sube y baja con la cámara).
       const hz = project(view, view.px + view.vw / 2, GROUND, YARD_D).y;
+      this.sky.mood = this.moodLight;
       this.sky.draw(this.skyCtx, view.px, view.vw, view.vh, t, dl, nl, hz);
       this.skyTex.needsUpdate = true;
     }
