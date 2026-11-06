@@ -88,16 +88,7 @@ import { FLAME_FRAMES, FLAME_H, FLAME_W, flameStrip } from './flame';
 import { faces, sideTexel, type Mat } from './volume';
 import { RaidShow } from './raid';
 import { HEARTH_RIGHT, NO_LOOK, type SalonLook } from './salon';
-import {
-  FEW_LIGHTS,
-  Look,
-  MAX_LIGHTS,
-  NO_MOOD,
-  mesh,
-  quad,
-  sharedUniforms,
-  type Corners,
-} from './gl';
+import { FEW_LIGHTS, Look, MAX_LIGHTS, mesh, quad, sharedUniforms, type Corners } from './gl';
 import { route, type Place } from './people';
 import {
   CELL_W,
@@ -179,16 +170,13 @@ const OUTDOOR: Tint = [0.3, 0.28, 0.42];
  * Luz con ambiente (Ajustes): la luz de fondo de las salas se multiplica por esto y los focos
  * por `MOOD_LAMPS`, así quedan charcos de luz alrededor de fuegos, faroles y velas.
  */
-const MOOD_AMBIENT = 0.6;
-const MOOD_LAMPS = 1.5;
+const MOOD_AMBIENT = 0.45;
+const MOOD_LAMPS = 1.6;
 const ROOM_LIT: Tint = [0.44, 0.38, 0.46];
 const ROOM_DEEP: Tint = [0.42, 0.37, 0.52];
 const ROOM_DIM: Tint = [0.34, 0.31, 0.46];
 /** Sala rota: apagada y fría (azulada), que se distinga de lejos de las que se usan. */
 const ROOM_RUIN: Tint = [0.28, 0.31, 0.46];
-// Las rotas y las vacías se quedan con su luz con «luz con ambiente».
-NO_MOOD.add(ROOM_RUIN);
-NO_MOOD.add(ROOM_DIM);
 const STAIRS: Tint = [0.4, 0.35, 0.5];
 const CAVE: Tint = [0.3, 0.27, 0.4];
 /** El corte de la tierra y la roca, que se vea aunque no le dé ningún farol. */
