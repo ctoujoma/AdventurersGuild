@@ -26,6 +26,8 @@ o está en «Más adelante», no se toca sin preguntar. El detalle de cada idea 
 - **Agente de arte:** ahora, el fondo y la escena; después, los talleres
   ([`encargos/arte-talleres.md`](encargos/arte-talleres.md)). Hechos: colores, fachada, incidentes, los
   tres jefes, la tira con los enemigos por familias, la vuelta que deshace el camino y el mapa.
+  Encargado también: que lo que pasa se vea pasar ([`encargos/arte-movimiento.md`](encargos/arte-movimiento.md):
+  auditoría, contratar andando, el ladrón que huye de verdad, el rótulo que se balancea).
 - **Agente de interfaz:** terminado lo encargado (trabajadores, menos toques, avisos que se
   descartan, el cobro de Merlo, las cartas del amanecer una a una, el mapa grande). Le queda
   suelto: un globito en la escena sobre la sala sin nadie (con arte).
@@ -190,7 +192,9 @@ sitio (comprar solar o excavar, mover, construir, ampliar, mejorar). De un agent
   que «Que se las apañen». Determinista: el núcleo la vuelve a jugar con las órdenes y el informe
   la repite igual. Calibrado con `npm run calib`: sola sale como la tirada de antes (≈ 80 %);
   jugando bien, unos 6–8 puntos más.
-  **Falta:** llevarla a los asaltos a la taberna (perfilando antes cómo se ve contra jefes).
+  **Falta:** llevarla a los asaltos a la taberna. Propuesta para decidir:
+  [`propuesta-asaltos.md`](propuesta-asaltos.md) (mover a la gente por la taberna, vida a la
+  vista, la pelea de cada sala con las reglas de los jefes).
   **Formaciones y táctica antes de entrar: para más adelante** (usuario: no complicar; tienen
   sentido con arena, torneos o peleas entre amigos, no en el asalto de noche).
 - **Críticos con gesto (hecho):** tras un golpe, a veces sale un rombo amarillo sobre el héroe;
@@ -302,6 +306,11 @@ en medio, para que los edificios salgan más interesantes (y, más adelante, pas
   mueve el viento a rachas (`art/grass.ts`). Capturas: `tools/shots/fondo.mjs`.
 
 ## Pendiente de revisar
+
+- **Asaltos en directo:** decidir la propuesta ([`propuesta-asaltos.md`](propuesta-asaltos.md)),
+  y con ella si arrastrar a alguien le hace ir andando en lugar de aparecer allí.
+- **Hecho (6 de noviembre):** la velocidad x2/x4 también acelera la escena, y la sastrería no
+  cose hasta que llega el héroe.
 
 - **Pelea contra jefes, perfilarla antes de llevarla a los asaltos** (ver la propuesta en el
   último punto de situación).

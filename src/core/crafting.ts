@@ -18,6 +18,7 @@ import {
   DRESS_GOLD,
   DRESS_HOURS,
   DRESS_MORALE,
+  DRESS_WALK,
   CRAFT_GOOD,
   CRAFT_GOOD_PER_SKILL,
   CRAFT_SLOTS,
@@ -210,7 +211,8 @@ export function startDress(s: GameState, roomId: string, heroId: string, to: Dre
     dress: { hero: heroId, to: { ...to } },
     need: hoursToWork(DRESS_HOURS),
     done: 0,
-    at: partOf(s),
+    // No se cose hasta que llega: se empieza a contar cuando le ha dado tiempo a ir andando.
+    at: partOf(s) + DRESS_WALK / 24,
     gold: DRESS_GOLD,
   };
   s.crafts = [...(s.crafts ?? []), c];
@@ -222,6 +224,8 @@ export interface CraftState {
   frac: number;
   /** Horas de juego que le quedan al ritmo de ahora; null si está parado (nadie trabaja). */
   hoursLeft: number | null;
+  /** Aún no ha empezado: el héroe va de camino a la sastrería. */
+  walking: boolean;
 }
 
 /** Cómo va un trabajo ahora (para la ficha y la escena). */
@@ -232,6 +236,7 @@ export function craftState(s: GameState, c: Craft): CraftState {
     craft: c,
     frac: c.need > 0 ? done / c.need : 1,
     hoursLeft: rate > 0 ? ((c.need - done) / rate) * 24 : null,
+    walking: c.at > partOf(s) + 1e-9,
   };
 }
 
@@ -320,7 +325,8 @@ export function stepCrafts(s: GameState, part: number, shared?: Rng): DawnEvent[
       continue;
     }
     c.done += craftRate(s, c.room, c) * Math.max(0, part - c.at);
-    c.at = part;
+    // Si aún no había empezado (el héroe de camino), se sigue esperando.
+    c.at = Math.max(c.at, part);
     if (c.done >= c.need - 1e-9) finish(s, c, rng, news);
     else keep.push(c);
   }

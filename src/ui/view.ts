@@ -188,6 +188,7 @@ export function sceneModel(s: GameState): SceneModel {
         stalled: st.hoursLeft === null,
         undo: !!c.item,
         hero: c.dress?.hero,
+        walking: st.walking || undefined,
       };
     }),
     craftEnds: s.craftLog,

@@ -347,6 +347,13 @@ export function roomLabel(b: Building, id: string): string {
 export class RoomScene {
   readonly camera = new Camera();
   speed = 1;
+  /**
+   * El ritmo del reloj (x1, x2, x4): la gente, las puertas y los efectos van a ese ritmo para que
+   * lo que se ve no se quede atrás del reloj. La cámara y la noche del asalto, no.
+   */
+  pace = 1;
+  /** Segundos de mundo vistos (corren con `pace`). */
+  private wt = 0;
   /** «Pocas luces» en Ajustes: solo los focos más cercanos al centro (para móviles lentos). */
   fewLights = false;
   /** Luz con ambiente (Ajustes): menos luz de fondo en las salas y focos más fuertes. */
@@ -3105,7 +3112,10 @@ export class RoomScene {
 
   private update(dt: number): void {
     this.t += dt;
-    this.swingDoors(dt);
+    // De noche (el asalto) todo va a su ritmo; de día, la gente sigue al reloj.
+    const w = this.night ? dt : dt * this.pace;
+    this.wt += w;
+    this.swingDoors(w);
     if (this.night) this.raidStep(dt);
     if (this.night) {
       const p = this.nightP();
@@ -3123,15 +3133,17 @@ export class RoomScene {
     const tod = this.clockTod ?? Math.min(1, (this.t - this.dayStart) / DAY_LENGTH);
     this.crowd.setNight(this.night && this.nightP() < 1.6 ? 'night' : tod > 0.82 ? 'dusk' : 'day');
     this.crowd.setClock(this.night ? 1 : tod);
-    this.crowd.update(dt, this.t);
-    this.pets.update(dt, this.t);
-    this.incidents.update(dt, this.t);
+    // A x4 un fotograma son muchos pasos: se anda en trozos para no saltarse las esquinas.
+    const parts = Math.max(1, Math.ceil(w / 0.05));
+    for (let i = 1; i <= parts; i++) this.crowd.update(w / parts, this.wt - w + (w * i) / parts);
+    this.pets.update(w, this.wt);
+    this.incidents.update(w, this.wt);
     this.edgePan(dt);
     if (this.marker && this.t > this.marker.until) this.marker = null;
     this.camera.update(dt);
-    this.puffs(dt);
+    this.puffs(w);
     // Las gotas de la gotera salpican al caer.
-    this.particles.update(dt, this.t, (p) => {
+    this.particles.update(w, this.t, (p) => {
       if (p.kind !== 'drip') return;
       for (let i = 0; i < 3; i++) this.particles.spawn('splash', p.x, p.y - 1);
     });
