@@ -150,7 +150,7 @@ export const MILL_X = 150;
 export const millBase = () => Math.round(hillAt(MILL_X)) + 2;
 export const millHub = () => ({ x: MILL_X + 4, y: millBase() - 17 });
 
-interface Tree {
+export interface Tree {
   x: number;
   h: number;
   conifer: boolean;
@@ -165,7 +165,7 @@ function forestTrees(): Tree[] {
   }));
 }
 
-function treelineTrees(): Tree[] {
+export function treelineTrees(): Tree[] {
   const rng = new Rng('arboleda');
   return Array.from({ length: 60 }, () => ({
     x: rng.int(-10, LAYER_W + 10),
@@ -174,7 +174,7 @@ function treelineTrees(): Tree[] {
   }));
 }
 
-function groveTrees(): Tree[] {
+export function groveTrees(): Tree[] {
   const rng = new Rng('arboleda cercana');
   const out: Tree[] = [];
   for (let g = 0; g < Math.ceil(LAYER_W / 260); g++) {
