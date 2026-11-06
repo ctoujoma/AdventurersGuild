@@ -371,6 +371,9 @@ export class RoomScene {
   private dustT = 0;
   private towerRect: Rect | null = null;
   private flames: Mesh[] = [];
+  /** Rayos de sol de las ventanas (luz con ambiente). */
+  private sunbeams: Mesh[] = [];
+  private unitPlane = new PlaneGeometry(1, 1);
   /** La hierba que mueve el viento: cada mata, con su sitio (el viento pasa por x). */
   private grass: { m: Mesh; x: number; seed: number }[] = [];
   private grassTick = -1;
@@ -1275,6 +1278,7 @@ export class RoomScene {
     this.look = new Look(this.shared);
     this.lamps = [];
     this.flames = [];
+    this.sunbeams = [];
     this.grass = [];
     this.emitters = [];
     this.forgeLamps = [];
@@ -1614,6 +1618,20 @@ export class RoomScene {
           halo: 0,
           sun: true,
         });
+        // El rayo en el aire: de la ventana al suelo de la sala.
+        const sx = r.w / back.w;
+        const sy = r.h / back.h;
+        const mat = this.look.shaft();
+        const u = mat.uniforms;
+        u.uTop!.value.set(r.x + (p.x - p.w / 2) * sx, GROUND - (r.y + p.top * sy), -(DEPTH - 1));
+        u.uW!.value = p.w * sx;
+        u.uDrop!.value = r.y + r.h - (r.y + p.top * sy);
+        u.uIn!.value = DEPTH * 0.55;
+        const beam = new Mesh(this.unitPlane, mat);
+        beam.frustumCulled = false;
+        beam.visible = false;
+        this.world.add(beam);
+        this.sunbeams.push(beam);
       }
     // Puerta al jardín en la planta baja, si no hay en medio una escalera sin rellano (que tapa
     // el paso; con rellano, la puerta va en ella). Como `opens` en `cutOff` (`core/rooms.ts`).
@@ -3061,6 +3079,15 @@ export class RoomScene {
     // La luz de las ventanas (luz con ambiente): llena de día, algo menos al atardecer, nada de
     // noche; su color, el del día (más dorado al atardecer).
     const sunLampK = this.moodLight ? Math.max(dl.day, dl.dusk * 0.8) : 0;
+    // Los rayos de sol de las ventanas: se inclinan al contrario del sol y toman su color.
+    const sd = this.shared.uSunDir.value;
+    for (const b of this.sunbeams) {
+      b.visible = sunLampK > 0.02;
+      const u = (b.material as ShaderMaterial).uniforms;
+      u.uK!.value = sunLampK;
+      u.uSlant!.value = -sd.x * 0.7;
+      u.uColor!.value.set(1, 0.88 - 0.3 * dl.dusk, 0.7 - 0.38 * dl.dusk);
+    }
     const cx = view.px + view.vw / 2;
     const cy = GROUND - (view.py + view.vh / 2);
     const x0 = view.px - 40;

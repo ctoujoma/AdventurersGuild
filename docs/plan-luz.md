@@ -50,10 +50,11 @@ siempre, abajo con el ajuste; `fachada.png`: mañana y tarde), con `tools/shots/
   de la vista (sillares de la chimenea, vigas). Luz que entra por cada ventana (`takeWindows` en
   `textures.ts`): un foco del color del día delante de ella, lleno de día, dorado al atardecer y
   apagado de noche; el día que llegaba igual a toda la sala baja al ×0,45. Luz de borde de los
-  focos en la gente.
+  focos en la gente. Y el rayo de sol en el aire (`shaft` en `gl.ts`): una lámina aditiva en
+  bandas de la ventana al suelo, inclinada al contrario del sol.
 
 Lo que falta: relieve en chimeneas, rótulo, faroles y muebles (son figuras aparte); el rayo de sol
-visible en el aire con polvo; el fondo (fase 4); medir el rendimiento en un móvil de verdad.
+el polvo en los rayos de sol; el fondo (fase 4); medir el rendimiento en un móvil de verdad.
 
 ## Fases (cada una, un PR con capturas antes y después, dentro de «Luz con ambiente»)
 

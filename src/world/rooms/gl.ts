@@ -8,6 +8,7 @@
  * con la pantalla, y la imagen no «bulle» al mover la cámara.
  */
 import {
+  AdditiveBlending,
   BufferGeometry,
   DataTexture,
   DoubleSide,
@@ -286,6 +287,45 @@ const SURFACE_FRAG = /* glsl */ `
   }
 `;
 
+/**
+ * Rayo de sol que entra por una ventana (luz con ambiente): una lámina que baja de la ventana al
+ * suelo, inclinada al contrario del sol y acercándose a la cámara, en bandas sin degradado.
+ */
+const SHAFT_VERT = /* glsl */ `
+  uniform vec3 uTop;
+  uniform float uW;
+  uniform float uDrop;
+  uniform float uSlant;
+  uniform float uIn;
+  varying vec2 vUv;
+  void main() {
+    vUv = vec2(uv.x, 1.0 - uv.y);
+    vec3 p = vec3(
+      uTop.x + vUv.x * uW + vUv.y * uDrop * uSlant,
+      uTop.y - vUv.y * uDrop,
+      uTop.z + vUv.y * uIn
+    );
+    gl_Position = projectionMatrix * viewMatrix * vec4(p, 1.0);
+  }
+`;
+
+const SHAFT_FRAG = /* glsl */ `
+  uniform vec3 uColor;
+  uniform float uK;
+  uniform float uW;
+  uniform float uDrop;
+  varying vec2 vUv;
+  void main() {
+    float edge = smoothstep(0.0, 0.3, vUv.x) * smoothstep(1.0, 0.7, vUv.x);
+    float fall = pow(1.0 - vUv.y, 0.9);
+    vec2 cell = floor(vUv * vec2(uW, uDrop) / 2.0);
+    float jit = fract(sin(dot(cell, vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
+    float i = floor(edge * fall * uK * 4.0 + jit * 0.6) / 4.0;
+    if (i <= 0.0) discard;
+    gl_FragColor = vec4(uColor * i * 0.5, 1.0);
+  }
+`;
+
 const FLAT_VERT = /* glsl */ `
   void main() {
     gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
@@ -480,6 +520,29 @@ export class Look {
         },
         vertexShader: SURFACE_VERT,
         fragmentShader: GLOW_FRAG,
+        side: DoubleSide,
+      }),
+    );
+  }
+
+  /** Rayo de sol de una ventana (ver `SHAFT_VERT`); la escena le pone dónde y cuánto. */
+  shaft(): ShaderMaterial {
+    return this.own(
+      new ShaderMaterial({
+        uniforms: {
+          uColor: { value: new Vector3(1, 0.9, 0.7) },
+          uK: { value: 0 },
+          uTop: { value: new Vector3() },
+          uW: { value: 16 },
+          uDrop: { value: 60 },
+          uSlant: { value: 0 },
+          uIn: { value: 30 },
+        },
+        vertexShader: SHAFT_VERT,
+        fragmentShader: SHAFT_FRAG,
+        transparent: true,
+        depthWrite: false,
+        blending: AdditiveBlending,
         side: DoubleSide,
       }),
     );
