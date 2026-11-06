@@ -98,6 +98,8 @@ const SURFACE_FRAG = /* glsl */ `
   // Sol con dirección (luz con ambiente): de dónde viene y cuánto manda (0 = la luz de siempre).
   uniform vec3 uSunDir;
   uniform float uSunK;
+  uniform float uOutdoor;
+  uniform float uFade;
   // La sombra del edificio fuera: cajas (x0, x1, alto) entre las profundidades uBoxZ (z del
   // mundo) y la dirección hacia el sol para la sombra (más de lado que la del sombreado).
   uniform vec4 uBox[${MAX_BOXES}];
@@ -235,6 +237,11 @@ const SURFACE_FRAG = /* glsl */ `
     // cámara, se desplaza entero en vez de cambiar de tono a medio camino.
     vec2 size = vec2(textureSize(map, 0));
     vec2 tc = floor(vUv * size);
+    // Fundido por tramas (la tapa de la vista desde fuera): cada téxel aparece a su turno.
+    if (uFade < 0.999) {
+      int bi = int(mod(tc.x, 4.0)) + 4 * int(mod(tc.y, 4.0));
+      if ((BAYER[bi] + 0.5) / 16.0 > uFade) discard;
+    }
     vec2 uvc = (tc + 0.5) / size;
     // En un atlas de fotogramas, la posición dentro del fotograma que se ve.
     vec2 local = (uvc - uUvOffset) / uUvScale;
@@ -242,9 +249,11 @@ const SURFACE_FRAG = /* glsl */ `
     vec3 n = uNormal;
     // Luz del día solo por encima del suelo.
     // Con «luz con ambiente», menos luz de fondo dentro de las salas.
-    vec3 amb = uSun < 0.99 ? uAmbient * uAmbK : uAmbient;
+    // (Lo de fuera a la sombra, como el claustro, no: uOutdoor.)
+    bool inside = uSun < 0.99 && uOutdoor < 0.5;
+    vec3 amb = inside ? uAmbient * uAmbK : uAmbient;
     // Dentro, con luz con ambiente, el día llega menos a toda la sala: entra por las ventanas.
-    float dayIn = uSun < 0.99 ? uAmbK : 1.0;
+    float dayIn = inside ? uAmbK : 1.0;
     vec3 light = amb + uDaylight * uSun * dayIn * step(-0.5, world.y);
     if (uSunK > 0.0 && uSun > 0.99 && world.y > -0.5) {
       // A la sombra del edificio: sin el sol directo, con la luz fría del cielo.
@@ -363,12 +372,24 @@ const SHAFT_VERT = /* glsl */ `
 const SHAFT_FRAG = /* glsl */ `
   uniform vec3 uColor;
   uniform float uTime;
+  uniform float uDbg;
+  uniform float uSlantF;
+  uniform vec2 uWin;
   uniform float uK;
   uniform float uW;
   uniform float uDrop;
   varying vec2 vUv;
   void main() {
-    float edge = smoothstep(0.0, 0.3, vUv.x) * smoothstep(1.0, 0.7, vUv.x);
+    // La forma: la ventana (uWin: ancho y alto) arrastrada en la dirección del sol. El plano es
+    // el paralelogramo que la contiene (desde lo alto de la ventana); en el alto de la ventana,
+    // del lado al que cae el rayo, se recorta por el canto de la ventana.
+    float u = vUv.x * uW;
+    if (uSlantF > 0.0) u = uW - u;
+    float d = vUv.y * uDrop;
+    if (d < uWin.y && u > uWin.x + abs(uSlantF) * d) discard;
+    // Para revisar por dónde va (desde la consola, window.__beamDbg): todo el rayo en magenta.
+    if (uDbg > 0.5) { gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0); return; }
+    float edge = smoothstep(0.0, 0.1, vUv.x) * smoothstep(1.0, 0.9, vUv.x);
     float fall = pow(1.0 - vUv.y, 0.9);
     vec2 cell = floor(vUv * vec2(uW, uDrop) / 2.0);
     float jit = fract(sin(dot(cell, vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
@@ -398,10 +419,18 @@ const FLAT_FRAG = /* glsl */ `
 
 const GLOW_FRAG = /* glsl */ `
   uniform sampler2D map;
+  uniform float uFade;
   varying vec2 vUv;
+  const float BAYER[16] = float[16](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.);
   void main() {
     vec4 c = texture2D(map, vUv);
     if (c.a < 0.5) discard;
+    // Fundido por tramas (las ventanas encendidas de la vista desde fuera).
+    if (uFade < 0.999) {
+      vec2 tc = floor(vUv * vec2(textureSize(map, 0)));
+      int bi = int(mod(tc.x, 4.0)) + 4 * int(mod(tc.y, 4.0));
+      if ((BAYER[bi] + 0.5) / 16.0 > uFade) discard;
+    }
     gl_FragColor = vec4(c.rgb, 1.0);
   }
 `;
@@ -473,6 +502,8 @@ export interface SurfaceOpts {
   halo?: number;
   /** Relieve de bisel sacado del contorno (para la luz con ambiente; ver `bevelRelief`). */
   bevel?: boolean;
+  /** Fuera aunque le llegue menos sol (la luz con ambiente no la trata como interior). */
+  outdoor?: boolean;
 }
 
 /**
@@ -558,6 +589,8 @@ export class Look {
           uWrap: { value: o.wrap ?? 0.25 },
           uDither: { value: o.dither ?? 0.035 },
           uHalo: { value: o.halo ?? 1 },
+          uOutdoor: { value: o.outdoor ? 1 : 0 },
+          uFade: { value: 1 },
           uRim: { value: (o.wrap ?? 0.25) >= 0.5 ? 0.9 : 0 },
           uRelief: { value: relief ? this.own(reliefTexture(b, relief)) : NO_DEPTH },
           uHasRelief: { value: relief ? 1 : 0 },
@@ -580,6 +613,7 @@ export class Look {
           map: { value: map },
           uUvOffset: { value: new Vector2(0, 0) },
           uUvScale: { value: new Vector2(1 / frames, 1) },
+          uFade: { value: 1 },
         },
         vertexShader: SURFACE_VERT,
         fragmentShader: GLOW_FRAG,
@@ -601,6 +635,9 @@ export class Look {
           uSlant: { value: 0 },
           uIn: { value: 30 },
           uTime: { value: 0 },
+          uDbg: { value: 0 },
+          uSlantF: { value: 0 },
+          uWin: { value: new Vector2(16, 20) },
         },
         vertexShader: SHAFT_VERT,
         fragmentShader: SHAFT_FRAG,

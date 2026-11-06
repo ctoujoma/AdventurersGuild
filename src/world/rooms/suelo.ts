@@ -122,9 +122,10 @@ export function moodTuft(src: PixelBuffer): PixelBuffer {
 /**
  * Una pieza de fuera (pozo, rótulo, muñecos, cuadra…) sin el contorno oscuro y con los colores
  * algo apagados: cada píxel del borde que es mucho más oscuro que el de dentro toma el color de
- * dentro, un poco más oscuro. La forma la da la luz, no la raya.
+ * dentro, un poco más oscuro. La forma la da la luz, no la raya. Sin `outline` (superficies,
+ * no figuras recortadas), solo se apagan los colores.
  */
-export function softened(src: PixelBuffer): PixelBuffer {
+export function softened(src: PixelBuffer, outline = true): PixelBuffer {
   const out = src.clone();
   const { w, h, data } = src;
   const lum = (c: number) => (c & 255) * 0.3 + ((c >> 8) & 255) * 0.59 + ((c >> 16) & 255) * 0.11;
@@ -133,7 +134,7 @@ export function softened(src: PixelBuffer): PixelBuffer {
   for (let y = 0; y < h; y++)
     for (let x = 0; x < w; x++) {
       const c = data[y * w + x]!;
-      if (!(c >>> 24)) continue;
+      if (!outline || !(c >>> 24)) continue;
       const nb: [number, number][] = [
         [1, 0],
         [-1, 0],

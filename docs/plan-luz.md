@@ -112,9 +112,11 @@ el rendimiento en un móvil de verdad; la fase 5.
   componente hacia delante: si no, se iba detrás, donde no se ve), corta a mediodía y larga al
   atardecer; lo que queda dentro (suelo, árboles, gente) pierde el sol y toma la luz fría del
   cielo. Borde mellado. Captura: `capturas/luz-ambiente/sombra.png` (mañana y tarde).
-- El rayo de sol de las ventanas, como la luz de verdad: sale del alféizar, entre la recta que
-  pasa por la esquina de arriba de la ventana del lado contrario al sol y la que pasa por la de
-  abajo del lado del sol (más ancho cuanto más bajo el sol).
+- El rayo de sol de las ventanas, como la luz de verdad: la ventana entera arrastrada hacia donde
+  cae la luz (desde lo alto de la ventana, entre la recta que pasa por la esquina de arriba del
+  lado contrario al sol y la que pasa por la de abajo del lado del sol; el shader recorta lo que
+  sobra en el alto de la ventana). Con el sol de lado se inclina hasta casi 45°. Para revisarlo:
+  `window.__beamDbg = true` lo pinta en magenta.
 - Polvo en los rayos de sol: motas de un píxel que bajan despacio, se mecen y titilan.
 - Pozo, rótulo, farol, muñecos, cuadra y empalizada sin contorno oscuro y algo apagados
   (`softened` en `suelo.ts`).
@@ -124,19 +126,52 @@ el rendimiento en un móvil de verdad; la fase 5.
 - Un lago entre el bosque lejano y las colinas (en la capa del bosque): refleja los árboles de la
   orilla, ondulados y apagados, con rayas de brillo; se ve donde bajan las colinas. La masa del
   bosque va detrás de todos los árboles y la orilla, al pie de la última fila.
+- El agua del lago se mueve (sutil, que está lejos): 8 fotogramas fundidos que dan la vuelta en
+  unos 6 s; el reflejo ondula, cruzan ondas claras muy suaves y cada destello aparece y se apaga
+  a su paso.
 
-Lo que falta: de noche, la luz de las ventanas hacia fuera (patio y fachada); el jardín y sus
-piezas en el estilo nuevo; medir el rendimiento en un móvil de verdad; la vista desde
+Lo que falta: de noche, la luz de las ventanas hacia fuera (ver más abajo); medir el rendimiento en un móvil de verdad; la vista desde
 fuera al alejar (abajo); la fase 5.
 
-## Idea: la taberna vista desde fuera al alejar del todo
+## Hecho después (PR #124)
 
-Con el zoom más alejado (o uno más, añadido para esto), dibujar la taberna con el corte tapado:
-reaparece la «tapa» (los muros de delante, que hoy son transparentes al jugador) y se ve la
-taberna desde el exterior, como una casa de verdad en el paisaje. Para eso, a las salas se les
-añaden ventanas también por ese lado (encendidas de noche, con la luz de cada sala), y la tapa
-se funde al acercar. Encaja con la luz con ambiente: de noche, la casa como islas de luz cálida
-en las ventanas.
+- El jardín y sus piezas al estilo nuevo: mientras se monta el jardín (`gardenArt`), todo lo que
+  se pinta va por duplicado (`dual` en `RoomScene.ts`): las figuras (piezas, canto, borde,
+  faroles) con los verdes apagados y sin contorno; las superficies (seto, lomos, claustro) con
+  los verdes apagados y algo menos saturadas. Captura: `capturas/luz-ambiente/jardin.png` (mañana
+  y tarde, sin y con el ajuste).
+- Con el ajuste, lo de fuera a la sombra (soportales del claustro, `sun < 1` con la luz de fondo
+  de fuera) ya no se oscurece como si fuera dentro (`uOutdoor`).
+- De noche, con el ajuste: un charco de luz cálida en el patio delante de la puerta del
+  recibidor y el óculo de cada hastial encendido (con su halo). Son focos «de noche» (`night` en
+  `Lamp`): se encienden al oscurecer.
+
+## Para más adelante: ventanas en los muros que dan fuera
+
+Añadir una ventana a todas las paredes que den al exterior (las de los lados del edificio, sean
+de una sala o de una escalera): suelen ser paredes vacías, sin muebles, y si no hay puerta cabe
+una ventana. De día, su luz entraría como la de las del fondo (foco de sol y rayo); de noche, se
+verían encendidas desde fuera (y con la vista desde fuera, de abajo, darían luz al patio).
+
+## Idea: hogueras lejanas en el bosque de noche
+
+De noche, de vez en cuando, una lucecita cálida en el bosque lejano o en las arboledas, como si
+alguien acampara con una hoguera: un punto que titila (con un halo pequeño y, si se ve, un hilo
+de humo), que aparece un rato y se apaga. Pocas y al azar, para que sorprendan.
+
+## Hecho: la taberna vista desde fuera al alejar del todo
+
+Con el ajuste, con el zoom al mínimo, un paso más de alejar pone la «tapa» y uno de acercar la
+quita; entra y sale con un fundido por tramas (`uFade`). La tapa (`outsideFace` en
+`textures.ts`) es el plano de corte con los huecos cerrados: por encima del suelo, la pared de
+fuera con una ventana por columna y planta (la escalera, una estrecha; el recibidor, la puerta
+de la calle); por debajo, la tierra. El cristal es transparente (se ve la sala de verdad) y de
+noche se enciende (una capa cálida detrás de la tapa, cada sala con su tono, algunas más
+tenues). Va delante del corte, sin la luz ni el halo de las salas en su cara de fuera. Captura:
+`capturas/luz-ambiente/fuera.png` (el corte; y desde fuera de día, al atardecer y de noche).
+
+Lo que falta en esta vista: las ventanas de los muros de los lados (ver arriba); el sótano, que
+desde fuera es tierra oscura; quizá un poco de luz de las ventanas en la pared de debajo.
 
 ## Fases (cada una, un PR con capturas antes y después, dentro de «Luz con ambiente»)
 

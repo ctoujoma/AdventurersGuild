@@ -152,6 +152,7 @@ import {
   sideTex,
   stable,
   stairBack,
+  outsideFace,
   stairCells,
   themeOf,
   type Theme,
@@ -257,6 +258,8 @@ interface Lamp {
   halo: number;
   /** La luz que entra por una ventana (luz con ambiente): sigue al sol y no tiene halo. */
   sun?: boolean;
+  /** Solo de noche y con luz con ambiente (la puerta encendida, el óculo del hastial). */
+  night?: boolean;
 }
 
 /**
@@ -389,6 +392,20 @@ export class RoomScene {
   private grass: { m: Mesh; x: number; seed: number }[] = [];
   /** Lo de fuera en dos estilos: el de siempre y el de «luz con ambiente» (se ve uno). */
   private styled: { classic: Group; mood: Group }[] = [];
+  /**
+   * Mientras se monta algo de fuera (el jardín), lo que se pinta en `world` con `figure` o
+   * `plane` va por duplicado: tal cual a `classic` y, en el estilo de luz con ambiente, a `mood`.
+   */
+  private dual: { classic: Group; mood: Group } | null = null;
+  /**
+   * La vista desde fuera (luz con ambiente): con el zoom al mínimo, un paso más de alejar pone la
+   * tapa (`cover`) y uno de acercar la quita; `coverFade` la funde de 0 a 1.
+   */
+  private outside = false;
+  private coverFade = 0;
+  private cover: Mesh | null = null;
+  private coverGlass: Mesh | null = null;
+  private coverAt = 0;
   private grassTick = -1;
   /** El fuego de cada forja, para avivarlo o bajarlo según haya trabajo (ver `workshop`). */
   private forgeLamps: { room: string; lamp: Lamp; base: number }[] = [];
@@ -759,6 +776,15 @@ export class RoomScene {
   zoomBy(step: number): void {
     const min = this.minZoom(this.cssW, this.cssH);
     const cur = this.camera.zoom;
+    // La vista desde fuera: un paso más allá del zoom mínimo (y al acercar, se quita primero).
+    if (this.moodLight && step < 0 && cur <= min) {
+      this.outside = true;
+      return;
+    }
+    if (this.outside && step > 0) {
+      this.outside = false;
+      return;
+    }
     const z =
       step > 0
         ? Math.min(6, Math.floor(cur) + 1)
@@ -1310,9 +1336,67 @@ export class RoomScene {
     // El plano de corte, en dos: lo de encima del suelo, a la luz del día, y la tierra.
     const look = model.look ?? {};
     const F = facade(L, look, model.crest);
+    // De noche (luz con ambiente), el óculo de cada hastial encendido (el desván tiene luz): un
+    // brillo cálido con su halo, delante de la fachada. Como en `gable` (textures.ts): en los
+    // hastiales de más de 24 de alto, salvo el del escudo pintado.
+    const painted =
+      look.sign === 'pintado' && model.crest
+        ? F.runs.reduce((a, r) => (r.x1 - r.x0 > a.x1 - a.x0 ? r : a))
+        : null;
+    for (const run of F.runs) {
+      if (run.h <= 24 || run === painted) continue;
+      const ox = (run.x0 + run.x1) / 2;
+      const oy = run.base - Math.round(run.h * 0.38);
+      this.lamps.push({
+        pos: at(ox, oy, -10),
+        glow: at(ox, oy, 0),
+        r: 26,
+        color: [255, 196, 120],
+        power: 1.1,
+        flicker: 0.08,
+        zone: [ox - 34, GROUND - (oy + 34), ox + 34, GROUND - (oy - 34)],
+        seed: Math.round(ox),
+        fire: false,
+        halo: 9,
+        night: true,
+      });
+    }
     const fx1 = F.x + F.buf.w;
     const fy1 = F.y + F.buf.h;
     const cut = GROUND - F.y;
+    // La tapa de la vista desde fuera (luz con ambiente, al alejar del todo): delante del corte,
+    // sin la luz ni el halo de las salas en su cara de fuera (`wrap` 0, `halo` 0). Aparece con
+    // un fundido por tramas (`uFade`, ver `outside`).
+    {
+      const { buf: img, glass } = outsideFace(L, look, F);
+      const corners: Corners = [
+        at(F.x, fy1, -0.6),
+        at(fx1, fy1, -0.6),
+        at(fx1, F.y, -0.6),
+        at(F.x, F.y, -0.6),
+      ];
+      const mat = this.look.surface(img, corners, {
+        ambient: OUTDOOR,
+        sun: 1,
+        wrap: 0,
+        halo: 0,
+        outdoor: true,
+      });
+      mat.uniforms.uFade!.value = this.coverFade;
+      this.cover = mesh(quad(corners, this.look), mat);
+      this.cover.visible = this.coverFade > 0.01;
+      g.add(this.cover);
+      // De noche, el cristal encendido, justo detrás de la tapa (brilla por sí solo).
+      const gc: Corners = [
+        at(F.x, fy1, -0.3),
+        at(fx1, fy1, -0.3),
+        at(fx1, F.y, -0.3),
+        at(F.x, F.y, -0.3),
+      ];
+      this.coverGlass = mesh(quad(gc, this.look), this.look.glow(glass, 1));
+      this.coverGlass.visible = false;
+      g.add(this.coverGlass);
+    }
     this.plane(
       g,
       F.buf.crop(0, 0, F.buf.w, cut),
@@ -1651,11 +1735,12 @@ export class RoomScene {
         const sy = r.h / back.h;
         const mat = this.look.shaft();
         const u = mat.uniforms;
-        // Sale del alféizar (por arriba, la ventana ya brilla): el ancho y la x dependen de la
-        // inclinación del sol, se ponen en cada fotograma (ver `sunbeams`).
-        u.uTop!.value.set(r.x + (p.x - p.w / 2) * sx, GROUND - (r.y + p.y * sy), -(DEPTH - 1));
+        // Sale de lo alto de la ventana: el ancho y la x dependen de la inclinación del sol, se
+        // ponen en cada fotograma (ver `sunbeams`).
+        u.uTop!.value.set(r.x + (p.x - p.w / 2) * sx, GROUND - (r.y + p.top * sy), -(DEPTH - 1));
         u.uW!.value = p.w * sx;
-        u.uDrop!.value = r.h - p.y * sy;
+        u.uDrop!.value = r.h - p.top * sy;
+        u.uWin!.value.set(p.w * sx, (p.y - p.top) * sy);
         u.uIn!.value = DEPTH * 0.55;
         const beam = new Mesh(this.unitPlane, mat);
         beam.userData.win = {
@@ -2089,6 +2174,21 @@ export class RoomScene {
         fire: false,
         halo: haloOf(60, 1, false),
       });
+      // De noche (luz con ambiente), la puerta encendida: un charco de luz cálida en el patio,
+      // delante de ella.
+      this.lamps.push({
+        pos: at(dx - 14, GROUND - 34, 14),
+        glow: at(dx - 14, GROUND - 34, 14),
+        r: 110,
+        color: [255, 190, 112],
+        power: 3,
+        flicker: 0.05,
+        zone: [dx - 140, -SLAB, dx + PARTITION / 2, 140],
+        seed: 5,
+        fire: false,
+        halo: 0,
+        night: true,
+      });
     }
   }
 
@@ -2098,6 +2198,21 @@ export class RoomScene {
    * con su halo.
    */
   private gardenArt(L: RoomsLayout, model: SceneModel): void {
+    if (!L.garden) return;
+    const classic = new Group();
+    const mood = new Group();
+    this.world.add(classic, mood);
+    this.styled.push({ classic, mood });
+    this.dual = { classic, mood };
+    try {
+      this.gardenPieces(L, model);
+    } finally {
+      this.dual = null;
+    }
+  }
+
+  /** El jardín: su canto, las piezas, el borde, el claustro y los faroles. */
+  private gardenPieces(L: RoomsLayout, model: SceneModel): void {
     const garden = L.garden;
     if (!garden) return;
     const g = this.world;
@@ -2662,6 +2777,15 @@ export class RoomScene {
       mat?: Mat;
     } = {},
   ): void {
+    // Por duplicado (ver `dual`): la de siempre y la de luz con ambiente.
+    const d = this.dual;
+    if (d && g === this.world) {
+      this.dual = null;
+      this.figure(d.classic, img, x, base, depth, ambient, sun, o);
+      this.figure(d.mood, softened(moodTuft(img)), x, base, depth, ambient, sun, o);
+      this.dual = d;
+      return;
+    }
     const k = scaleAt(depth);
     const w = img.w / k;
     const h = img.h / k;
@@ -2676,7 +2800,14 @@ export class RoomScene {
       ? this.mound(img, corners, x - w / 2, base - h, depth, k, ambient, sun)
       : mesh(
           quad(corners, this.look),
-          this.look.surface(img, corners, { ambient, sun, wrap: 0.6, dither: 0.03, bevel: true }),
+          this.look.surface(img, corners, {
+            ambient,
+            sun,
+            wrap: 0.6,
+            dither: 0.03,
+            bevel: true,
+            outdoor: ambient === OUTDOOR,
+          }),
         );
     // Con volumen, la cara y sus lados van juntos (y se anclan juntos).
     const obj = o.box || o.round ? new Group() : m;
@@ -2957,7 +3088,15 @@ export class RoomScene {
     corners: Corners,
     o: { ambient: Tint; sun: number; wrap?: number; dither?: number; repeat?: number },
   ): ShaderMaterial {
-    const m = this.look.surface(img, corners, o);
+    const d = this.dual;
+    if (d && g === this.world) {
+      this.dual = null;
+      this.plane(d.mood, softened(moodGround(img), false), corners, o);
+      const m = this.plane(d.classic, img, corners, o);
+      this.dual = d;
+      return m;
+    }
+    const m = this.look.surface(img, corners, { ...o, outdoor: o.ambient === OUTDOOR });
     g.add(mesh(quad(corners, this.look), m));
     return m;
   }
@@ -3180,24 +3319,29 @@ export class RoomScene {
     // La luz de las ventanas (luz con ambiente): llena de día, algo menos al atardecer, nada de
     // noche; su color, el del día (más dorado al atardecer).
     const sunLampK = this.moodLight ? Math.max(dl.day, dl.dusk * 0.8) : 0;
+    // Las luces de noche de fuera (luz con ambiente): se encienden al oscurecer.
+    const nightK = this.moodLight ? Math.max(0, Math.min(1, 1 - dl.day * 1.4 - dl.dusk * 0.5)) : 0;
     // Los rayos de sol de las ventanas: se inclinan al contrario del sol y toman su color.
     const sd = this.shared.uSunDir.value;
     for (const b of this.sunbeams) {
       b.visible = sunLampK > 0.02;
       const u = (b.material as ShaderMaterial).uniforms;
       u.uK!.value = sunLampK;
-      const slant = -sd.x * 0.7;
+      // Inclinación (x por cada píxel que baja): con el sol de lado, hasta casi 45°.
+      const slant = Math.max(-0.95, Math.min(0.95, -sd.x * 1.5));
       u.uSlant!.value = slant;
-      // El rayo, como la luz de verdad: entre la recta que pasa por la esquina de arriba de la
-      // ventana del lado contrario al sol y la que pasa por la de abajo del lado del sol. En el
-      // alféizar, tan ancho como la ventana más lo que se inclina en su alto (con el sol bajo,
-      // más ancho), corrido hacia donde cae.
+      // El rayo, como la luz de verdad: la ventana entera arrastrada hacia donde cae la luz,
+      // entre la recta que pasa por la esquina de arriba del lado contrario al sol y la que pasa
+      // por la de abajo del lado del sol (el shader recorta lo que sobra en el alto de la
+      // ventana). Desde lo alto de la ventana, el paralelogramo que la contiene.
       const win = b.userData.win as { x0: number; w: number; h: number };
       const add = Math.abs(slant) * win.h;
-      u.uTop!.value.x = slant < 0 ? win.x0 - add : win.x0;
+      u.uTop!.value.x = slant < 0 ? win.x0 : win.x0 - add;
       u.uW!.value = win.w + add;
+      u.uSlantF!.value = slant;
       u.uColor!.value.set(1, 0.88 - 0.3 * dl.dusk, 0.7 - 0.38 * dl.dusk);
       u.uTime!.value = performance.now() / 1000;
+      u.uDbg!.value = (window as unknown as { __beamDbg?: boolean }).__beamDbg ? 1 : 0;
     }
     const cx = view.px + view.vw / 2;
     const cy = GROUND - (view.py + view.vh / 2);
@@ -3207,7 +3351,7 @@ export class RoomScene {
     const y1 = GROUND - (view.py - 40);
     const near = [...this.lamps, ...this.incidentLamps]
       .filter((l) => l.zone[2] > x0 && l.zone[0] < x1 && l.zone[3] > y0 && l.zone[1] < y1)
-      .filter((l) => !l.sun || sunLampK > 0.02)
+      .filter((l) => (!l.sun || sunLampK > 0.02) && (!l.night || nightK > 0.02))
       .sort(
         (a, b) => Math.hypot(a.pos.x - cx, a.pos.y - cy) - Math.hypot(b.pos.x - cx, b.pos.y - cy),
       );
@@ -3218,7 +3362,8 @@ export class RoomScene {
     for (let i = 0; i < n; i++) {
       const l = near[i]!;
       const fl = 1 - l.flicker * noise(Math.floor(t * 9), l.seed);
-      const k = (l.sun ? sunLampK : l.deep ? 1 : l.fire ? fireK : lampK) * l.power * fl;
+      const k =
+        (l.sun ? sunLampK : l.night ? nightK : l.deep ? 1 : l.fire ? fireK : lampK) * l.power * fl;
       data.set([l.pos.x, l.pos.y, l.pos.z, l.r], i * 4);
       const c = l.sun
         ? [1, 0.88 - 0.3 * dl.dusk, 0.7 - 0.38 * dl.dusk]
@@ -3325,6 +3470,30 @@ export class RoomScene {
       ? new Vector3(1 - 2 * p, 0.2 + 0.9 * Math.sin(Math.PI * p), 0.6)
       : new Vector3(-0.45, 0.75, 0.6);
     this.shared.uSunDir.value.copy(sunDir.normalize());
+    // La tapa de la vista desde fuera, fundiéndose hacia lo que toca (en unos 0,4 s).
+    {
+      const now = performance.now() / 1000;
+      const dt = Math.min(0.1, Math.max(0, now - this.coverAt));
+      this.coverAt = now;
+      if (!this.moodLight || this.camera.zoom > this.minZoom(this.cssW, this.cssH))
+        this.outside = false;
+      const want = this.outside ? 1 : 0;
+      const f = this.coverFade + Math.sign(want - this.coverFade) * dt * 2.5;
+      this.coverFade = Math.max(
+        0,
+        Math.min(1, want > this.coverFade ? Math.min(f, 1) : Math.max(f, 0)),
+      );
+      if (this.cover) {
+        this.cover.visible = this.coverFade > 0.01;
+        (this.cover.material as ShaderMaterial).uniforms.uFade!.value = this.coverFade;
+      }
+      if (this.coverGlass) {
+        const dln = this.daylight();
+        const lit = this.coverFade * Math.max(0, Math.min(1, 1 - dln.day * 1.4 - dln.dusk * 0.5));
+        this.coverGlass.visible = lit > 0.01;
+        (this.coverGlass.material as ShaderMaterial).uniforms.uFade!.value = lit;
+      }
+    }
     // La sombra del edificio, con el sol de lado del todo (si viene algo de delante, cae casi
     // toda detrás, donde no se ve): se tiende junto a la taberna, a su misma profundidad. Nunca
     // más larga que lo que da un sol a 0,3 de alto.

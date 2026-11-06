@@ -20,6 +20,7 @@ import { GROUND, WORLD_X0 } from '../geometry';
 import { hillLife, skyLife, treeLife } from './life';
 import {
   FAR_FOREST_FX,
+  LAKE_FRAMES,
   farForestCnc,
   groveCnc,
   hazed,
@@ -219,6 +220,7 @@ export class Sky {
     dusk: HTMLCanvasElement;
     dawn: HTMLCanvasElement;
     woods: { day: HTMLCanvasElement; night: HTMLCanvasElement };
+    lake: { y0: number; day: HTMLCanvasElement[]; night: HTMLCanvasElement[] };
     day: HTMLCanvasElement[];
     /** Las capas que cambian también de noche (las arboledas); las demás, las de siempre. */
     nights: (HTMLCanvasElement | null)[];
@@ -238,9 +240,16 @@ export class Sky {
         night: bufferCanvas(m.night),
         dusk: bufferCanvas(m.dusk),
         dawn: bufferCanvas(m.dawn),
-        woods: (() => {
+        ...(() => {
           const f = farForestCnc();
-          return { day: bufferCanvas(f.day), night: bufferCanvas(f.night) };
+          return {
+            woods: { day: bufferCanvas(f.day), night: bufferCanvas(f.night) },
+            lake: {
+              y0: f.lake.y0,
+              day: f.lake.day.map(bufferCanvas),
+              night: f.lake.night.map(bufferCanvas),
+            },
+          };
         })(),
         ...this.moodLayers(),
       };
@@ -384,10 +393,23 @@ export class Sky {
         }
         // Delante, el bosque lejano con su bruma.
         const fx = WORLD_X0 - pan(cx, vw, FAR_FOREST_FX);
+        // El agua del lago, de fotograma en fotograma (fundidos: no salta).
+        const lk = (t / 0.75) % LAKE_FRAMES;
+        const f0 = Math.floor(lk);
+        const f1 = (f0 + 1) % LAKE_FRAMES;
+        const water = (set: HTMLCanvasElement[], a: number) => {
+          ctx.globalAlpha = a;
+          repeat(ctx, set[f0]!, fx, top + m.lake.y0, vw);
+          ctx.globalAlpha = a * (lk - f0);
+          repeat(ctx, set[f1]!, fx, top + m.lake.y0, vw);
+          ctx.globalAlpha = 1;
+        };
         repeat(ctx, m.woods.night, fx, top, vw);
+        water(m.lake.night, 1);
         if (dayK > 0) {
           ctx.globalAlpha = dayK;
           repeat(ctx, m.woods.day, fx, top, vw);
+          water(m.lake.day, dayK);
           ctx.globalAlpha = 1;
         }
         return;
