@@ -73,14 +73,27 @@ export function moodGround(src: PixelBuffer, seed = 0): PixelBuffer {
       const i = y * w + x;
       const c = data[i]!;
       if (!(c >>> 24)) continue;
-      const k = kind[i]!;
+      let k = kind[i]!;
+      // Las flores y piedras de un píxel (titilan al mover la cámara): toman lo que las rodea,
+      // hierba o tierra. Las flores van aparte, en matas con su viento.
+      if (!k) {
+        let g = 0;
+        let d = 0;
+        for (let j = -1; j <= 1; j++)
+          for (let q = -1; q <= 1; q++) {
+            const xx = x + q;
+            const yy = y + j;
+            if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
+            const kk = kind[yy * w + xx];
+            if (kk === 1) g++;
+            else if (kk === 2) d++;
+          }
+        if (g + d >= 5) k = g >= d ? 1 : 2;
+      }
       const clump = fbm(x + seed * 131, y, 7, 3, 61);
       const grain = hash(x >> 1, y);
       if (k === 1) {
-        const v = 0.42 * avg(x, y, 1) + 0.42 * clump + 0.16 * grain;
-        // Alguna brizna clara suelta y alguna mata oscura.
-        const t = grain > 0.96 ? v + 0.22 : grain < 0.04 ? v - 0.2 : v;
-        out.set(x, y, pick(GRASS, t));
+        out.set(x, y, pick(GRASS, 0.42 * avg(x, y, 1) + 0.42 * clump + 0.16 * grain));
       } else if (k === 2) {
         out.set(x, y, pick(DIRT, 0.5 * avg(x, y, 2) + 0.35 * clump + 0.15 * grain));
       } else {

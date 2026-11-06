@@ -116,6 +116,11 @@ el rendimiento en un móvil de verdad; la fase 5.
 - Polvo en los rayos de sol: motas de un píxel que bajan despacio, se mecen y titilan.
 - Pozo, rótulo, farol, muñecos, cuadra y empalizada sin contorno oscuro y algo apagados
   (`softened` en `suelo.ts`).
+- Hierba: el suelo de los lados ya no se repite (con el ajuste va entero a lo ancho); sin
+  florecillas ni briznas de un píxel (titilaban al mover la cámara) y, a cambio, 140 matas de
+  flores más con su viento.
+- Un lago entre el bosque lejano y las colinas (en la capa del bosque): refleja los árboles de la
+  orilla, ondulados y apagados, con rayas de brillo; se ve donde bajan las colinas.
 
 Lo que falta: de noche, la luz de las ventanas hacia fuera (patio y fachada); el jardín y sus
 piezas en el estilo nuevo; medir el rendimiento en un móvil de verdad; la vista desde

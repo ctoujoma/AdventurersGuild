@@ -1464,7 +1464,15 @@ export class RoomScene {
     this.shadowBoxes(L);
     const ground = (tex: PixelBuffer, corners: Corners, o: typeof yard & { repeat?: number }) => {
       this.plane(groundC, tex, corners, o);
-      this.plane(groundM, moodGround(tex, gi++), corners, o);
+      // Con luz con ambiente, sin repetir: la textura entera a lo ancho (los grumos de la hierba
+      // dejan ver la repetición).
+      const rep = o.repeat ?? 1;
+      let wide = tex;
+      if (rep > 1) {
+        wide = new PixelBuffer(tex.w * rep, tex.h);
+        for (let k = 0; k < rep; k++) wide.blit(tex, k * tex.w, 0);
+      }
+      this.plane(groundM, moodGround(wide, gi++), corners, { ...o, repeat: undefined });
     };
     const back = DEPTH + 2;
     // A los lados, un trozo de patio y otro de hierba que se repiten (`TILE`) hasta muy lejos.
@@ -2580,11 +2588,15 @@ export class RoomScene {
     const rng = new Rng('matas del patio');
     const kinds: TuftKind[] = ['mata', 'mata', 'alta', 'flores', 'trebol', 'mata', 'alta'];
     const art = new Map<string, ReturnType<typeof grassTuft>>();
-    for (let i = 0; i < 220; i++) {
+    // Las 220 de siempre y, con luz con ambiente, 140 matas de flores más (el suelo ya no lleva
+    // florecillas de un píxel).
+    for (let i = 0; i < 360; i++) {
+      const extra = i >= 220;
       const x = L.left - 460 + rng.next() * (L.right - L.left + 920);
       const z = 4 + rng.next() * (YARD_D - 30);
       if (!tuftAllowed(L, x, z)) continue;
-      const kind = kinds[rng.int(0, kinds.length - 1)]!;
+      const pickKind = kinds[rng.int(0, kinds.length - 1)]!;
+      const kind: TuftKind = extra ? 'flores' : pickKind;
       const key = `${kind}${rng.int(0, 5)}`;
       let a = art.get(key);
       if (!a) art.set(key, (a = grassTuft(kind, key)));
@@ -2598,10 +2610,13 @@ export class RoomScene {
         at(x - w / 2, GROUND - h, z),
       ];
       const seed = rng.next();
-      for (const [img, to] of [
-        [a.img, classic],
-        [moodArt.get(key) ?? moodArt.set(key, moodTuft(a.img)).get(key)!, mood],
-      ] as const) {
+      const moodImg = moodArt.get(key) ?? moodArt.set(key, moodTuft(a.img)).get(key)!;
+      for (const [img, to] of extra
+        ? ([[moodImg, mood]] as const)
+        : ([
+            [a.img, classic],
+            [moodImg, mood],
+          ] as const)) {
         const m = mesh(
           quad(corners, this.look),
           this.look.surface(img, corners, {
