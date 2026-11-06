@@ -72,10 +72,13 @@ export function logsFace(b: PixelBuffer, x: number, y: number, w: number, h: num
         ]!;
       for (let j = 0; j < d; j++) {
         const u = j / (d - 1);
+        // Relieve del cilindro: sale más por el medio.
+        b.level = 1 + Math.round(4 * Math.sin(Math.PI * u));
         // Cilindro: luz arriba, sombra abajo.
         b.hline(lx, ly + j, len, u < 0.18 ? lt : u < 0.55 ? mid : u < 0.82 ? dk : belly);
       }
       // Veta a lo largo, nudos y alguna grieta de secado.
+      b.level = 4;
       for (let k = 0; k < Math.ceil(len / 8); k++) {
         const gx = lx + rng.int(0, Math.max(0, len - 6));
         const gy = ly + 2 + rng.int(0, d - 4);
@@ -101,7 +104,8 @@ export function logsFace(b: PixelBuffer, x: number, y: number, w: number, h: num
       }
       lx += len;
     }
-    // El relleno entre tronco y tronco: barro con musgo.
+    // El relleno entre tronco y tronco: barro con musgo (hundido).
+    b.level = 0;
     for (let xx = x; xx < x + w; xx++) {
       const n = hash(xx, ly, 3);
       b.set(xx, ly + d, n < 0.22 ? P.forest : n < 0.3 ? P.leaf : n < 0.7 ? P.black : P.ebony);
@@ -158,7 +162,9 @@ export function brickFace(
   seed: string,
 ) {
   const rng = new Rng(`ladrillo-${seed}`);
+  b.level = 0;
   b.rect(x, y, w, h, P.skinS);
+  b.level = 2;
   for (let row = 0, by = y; by < y + h; row++, by += 5) {
     // Cada seis hiladas, una de tizones (ladrillos de testa, más cortos).
     const header = row % 6 === 5;
@@ -186,7 +192,11 @@ export function brickFace(
         for (let yy = by + 2; yy < by + Math.min(4, yh + 1); yy++)
           if (hash(xx, yy, 1) < 0.12) b.set(xx, yy, dk);
       // Alguno mellado en una esquina.
-      if (rng.chance(0.15)) b.set(rng.chance(0.5) ? x0 : x1 - 1, by + 1, P.skinS);
+      if (rng.chance(0.15)) {
+        b.level = 0;
+        b.set(rng.chance(0.5) ? x0 : x1 - 1, by + 1, P.skinS);
+        b.level = 2;
+      }
     }
   }
 }
@@ -240,6 +250,7 @@ export function rammedFace(
     const t = pick();
     for (let k = 2 + rng.int(0, 2); k > 0; k--) layer.push(t);
   }
+  b.level = 2;
   for (let yy = y; yy < y + h; yy++) {
     const base = layer[yy - y]!;
     for (let xx = x; xx < x + w; xx++) {
@@ -261,6 +272,7 @@ export function rammedFace(
   for (let cy = y; cy < y + h;) {
     const ch = 16 + rng.int(0, 5);
     const jy = cy + ch - 1;
+    b.level = 0;
     if (jy < y + h) {
       b.hline(x, jy, w, P.bark);
       if (jy + 1 < y + h) b.hline(x, jy + 1, w, P.clay);
@@ -272,7 +284,9 @@ export function rammedFace(
         const rw = 3 + rng.int(0, 5);
         const rh = 2 + rng.int(0, 3);
         const ry = cy + rng.int(2, Math.max(2, ch - rh - 2));
+        b.level = 3;
         b.rect(cx + 1, ry, Math.min(rw, x + w - cx - 1), Math.min(rh, y + h - ry), P.rust);
+        b.level = 0;
       }
     }
     for (let mx = x + rng.int(4, 16); mx < x + w - 3 && jy < y + h; mx += 16 + rng.int(0, 18)) {
@@ -283,6 +297,7 @@ export function rammedFace(
         b.vline(mx + 1, jy + 2, Math.min(2 + rng.int(0, 5), y + h - jy - 2), P.rust);
     }
     cy += ch;
+    b.level = 2;
   }
   // Abajo, la lluvia que salpica la deja más oscura y comida.
   for (let yy = grounded(h) ? Math.max(y, y + h - 8) : y + h; yy < y + h; yy++)
@@ -324,7 +339,9 @@ export function slateFace(
   seed: string,
 ) {
   const rng = new Rng(`lajas-${seed}`);
+  b.level = 0;
   b.rect(x, y, w, h, P.black);
+  b.level = 2;
   for (let ly = y; ly < y + h;) {
     const lh = Math.min(2 + rng.int(0, 2), y + h - ly);
     for (let lx = x - rng.int(0, 12); lx < x + w;) {
@@ -377,8 +394,10 @@ const LIME = { mid: P.sand, dk: P.skin, deep: P.skinS, edge: P.clay };
 
 export function limeFace(b: PixelBuffer, x: number, y: number, w: number, h: number, seed: string) {
   const rng = new Rng(`cal-${seed}`);
-  // Debajo, el mampuesto: piedras desiguales en su mortero.
+  // Debajo, el mampuesto: piedras desiguales en su mortero (la cal va encima, 2 más arriba).
+  b.level = 0;
   b.rect(x, y, w, h, P.plum);
+  b.level = 1;
   for (let sy = y; sy < y + h; sy += 5)
     for (let sx = x - rng.int(0, 6); sx < x + w;) {
       const sw = 5 + rng.int(0, 6);
@@ -399,6 +418,7 @@ export function limeFace(b: PixelBuffer, x: number, y: number, w: number, h: num
     const low = (yy - y) / h;
     return n > 0.84 - low * 0.14;
   };
+  b.level = 3;
   for (let yy = y; yy < y + h; yy++)
     for (let xx = x; xx < x + w; xx++) {
       if (bald(xx, yy)) continue;

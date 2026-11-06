@@ -37,7 +37,7 @@ import { BLIND, cellsOf, sconceOn, takeWallActs, windowX } from './salas/kit';
 import { RISE, goesRight, stepAt } from './stairs';
 import { streetDoor } from './salas/recibidor';
 import { cloth } from './salas/tintes';
-import { roofAt, wallFill } from './fachada';
+import { roofAt, roofRelief, wallFill } from './fachada';
 import { wallSection } from './muros';
 import type { FacadeLook, RoofId, WallId } from '../../data/custom';
 
@@ -162,6 +162,13 @@ export function backWall(room: Room, w: number, h: number, look: SalonLook = NO_
   return b;
 }
 
+/**
+ * Las ventanas que se acaban de pintar en una pared del fondo (centro y alféizar, en píxeles del
+ * búfer): la escena las recoge tras `backWall` para poner la luz que entra por ellas.
+ */
+const windowsDrawn: { x: number; y: number; top: number; w: number }[] = [];
+export const takeWindows = () => windowsDrawn.splice(0);
+
 /** Ventana de cuarterones centrada en `cx`: el cristal se deja transparente (se ve el cielo). */
 function windowAt(b: PixelBuffer, cx: number, y: number, room: Room, ruin: boolean) {
   const w = 16;
@@ -171,6 +178,7 @@ function windowAt(b: PixelBuffer, cx: number, y: number, room: Room, ruin: boole
   b.rect(x - 2, y - 2, w + 4, h + 4, P.bark);
   const stained = room.type === 'capilla';
   const glass = [P.rose, P.gold, P.sky, P.grape];
+  if (!ruin) windowsDrawn.push({ x: cx, y: y + h, top: y, w });
   for (let j = 0; j < h; j++)
     for (let i = 0; i < w; i++)
       if (stained) b.set(x + i, y + j, glass[(Math.floor(i / 4) + Math.floor(j / 5)) % 4]!);
@@ -408,10 +416,14 @@ export function roofTiles(len: number, seed: string, roof?: RoofId): PixelBuffer
   const b = new PixelBuffer(DEEP + 4, len);
   const rng = new Rng(seed);
   for (let y = 0; y < len; y++) {
-    for (let x = 0; x < b.w; x++) b.set(x, y, roofAt(roof, x, y, 4));
+    for (let x = 0; x < b.w; x++) {
+      b.level = roofRelief(roof, x, y, 4);
+      b.set(x, y, roofAt(roof, x, y, 4));
+    }
     // Alguna teja desportillada (en la de siempre).
     if ((roof ?? 'teja') === 'teja' && rng.chance(0.08)) b.set(rng.int(0, b.w - 1), y, P.rust);
   }
+  b.level = 0;
   return b;
 }
 
@@ -667,7 +679,10 @@ function copyRect(dst: PixelBuffer, src: PixelBuffer, x: number, y: number, w: n
   for (let j = Math.max(0, y); j < Math.min(dst.h, y + h); j++)
     for (let i = Math.max(0, x); i < Math.min(dst.w, x + w); i++) {
       const c = src.data[j * src.w + i]!;
-      if (c) dst.data[j * dst.w + i] = c;
+      if (!c) continue;
+      dst.data[j * dst.w + i] = c;
+      const r = src.reliefAt(i, j);
+      if (r || dst.relief) dst.lift(j * dst.w + i, r);
     }
 }
 
@@ -730,13 +745,20 @@ function gable(
   for (let y = Math.floor(base - h); y <= base + 2; y++)
     for (let x = Math.floor(x0); x <= x1; x++) {
       if (!inside(x, y, 0)) continue;
-      const c = inside(x, y, eave)
-        ? planks.get(x - Math.floor(x0), y - Math.floor(base - h))
-        : tile(x, y);
+      const wall = inside(x, y, eave);
+      const px = x - Math.floor(x0);
+      const py = y - Math.floor(base - h);
+      const c = wall ? planks.get(px, py) : tile(x, y);
+      // Relieve: la pared, el suyo; el alero vuela por delante (más cuanto más fuera).
+      b.level = wall
+        ? planks.reliefAt(px, py)
+        : 5 + roofRelief(look.roof, x, y - Math.floor(base - h), 3);
       if (c) b.set(x, y, c);
     }
+  b.level = 8;
   b.line(x0, base + 2, Math.round(mid), base - h, P.black);
   b.line(Math.round(mid), base - h, x1, base + 2, P.black);
+  b.level = 0;
   if (thatch) {
     // La paja asoma por debajo del alero en flecos, con su sombra en la pared.
     for (let x = Math.floor(x0); x <= x1; x++) {
@@ -769,8 +791,11 @@ function gable(
   // Ventanuco redondo del desván.
   if (h > 24) {
     const cy = base - Math.round(h * 0.38);
+    b.level = 4;
     b.ellipse(mid, cy, 5, 5, P.plum);
+    b.level = 0;
     b.ellipse(mid, cy, 3, 3, P.black);
+    b.level = 5;
     if (look.boxes) {
       // La jardinera: una caja de tablas con geranios.
       const y = cy + 6;
@@ -783,6 +808,7 @@ function gable(
         b.set(m + k + 1, y - 2, k % 4 ? P.red : P.coral);
       }
     }
+    b.level = 0;
   }
 }
 

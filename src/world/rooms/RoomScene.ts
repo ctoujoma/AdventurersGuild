@@ -88,16 +88,7 @@ import { FLAME_FRAMES, FLAME_H, FLAME_W, flameStrip } from './flame';
 import { faces, sideTexel, type Mat } from './volume';
 import { RaidShow } from './raid';
 import { HEARTH_RIGHT, NO_LOOK, type SalonLook } from './salon';
-import {
-  FEW_LIGHTS,
-  Look,
-  MAX_LIGHTS,
-  NO_MOOD,
-  mesh,
-  quad,
-  sharedUniforms,
-  type Corners,
-} from './gl';
+import { FEW_LIGHTS, Look, MAX_LIGHTS, mesh, quad, sharedUniforms, type Corners } from './gl';
 import { route, type Place } from './people';
 import {
   CELL_W,
@@ -127,6 +118,7 @@ import {
 import { Sky, type Daylight, type NightLight } from './sky';
 import {
   backWall,
+  takeWindows,
   bare,
   caveBack,
   caveCells,
@@ -179,16 +171,13 @@ const OUTDOOR: Tint = [0.3, 0.28, 0.42];
  * Luz con ambiente (Ajustes): la luz de fondo de las salas se multiplica por esto y los focos
  * por `MOOD_LAMPS`, así quedan charcos de luz alrededor de fuegos, faroles y velas.
  */
-const MOOD_AMBIENT = 0.6;
-const MOOD_LAMPS = 1.5;
+const MOOD_AMBIENT = 0.45;
+const MOOD_LAMPS = 1.6;
 const ROOM_LIT: Tint = [0.44, 0.38, 0.46];
 const ROOM_DEEP: Tint = [0.42, 0.37, 0.52];
 const ROOM_DIM: Tint = [0.34, 0.31, 0.46];
 /** Sala rota: apagada y fría (azulada), que se distinga de lejos de las que se usan. */
 const ROOM_RUIN: Tint = [0.28, 0.31, 0.46];
-// Las rotas y las vacías se quedan con su luz con «luz con ambiente».
-NO_MOOD.add(ROOM_RUIN);
-NO_MOOD.add(ROOM_DIM);
 const STAIRS: Tint = [0.4, 0.35, 0.5];
 const CAVE: Tint = [0.3, 0.27, 0.4];
 /** El corte de la tierra y la roca, que se vea aunque no le dé ningún farol. */
@@ -255,6 +244,8 @@ interface Lamp {
   deep?: boolean;
   /** Radio (en píxeles de pantalla) del halo que se ve en el aire alrededor de la llama. */
   halo: number;
+  /** La luz que entra por una ventana (luz con ambiente): sigue al sol y no tiene halo. */
+  sun?: boolean;
 }
 
 /**
@@ -380,6 +371,9 @@ export class RoomScene {
   private dustT = 0;
   private towerRect: Rect | null = null;
   private flames: Mesh[] = [];
+  /** Rayos de sol de las ventanas (luz con ambiente). */
+  private sunbeams: Mesh[] = [];
+  private unitPlane = new PlaneGeometry(1, 1);
   /** La hierba que mueve el viento: cada mata, con su sitio (el viento pasa por x). */
   private grass: { m: Mesh; x: number; seed: number }[] = [];
   private grassTick = -1;
@@ -1284,6 +1278,7 @@ export class RoomScene {
     this.look = new Look(this.shared);
     this.lamps = [];
     this.flames = [];
+    this.sunbeams = [];
     this.grass = [];
     this.emitters = [];
     this.forgeLamps = [];
@@ -1600,6 +1595,44 @@ export class RoomScene {
     const free = (c: number) =>
       room.floor > 0 && !b.rooms.some((o) => this.covers(o, c, room.floor - 1));
     const back = backWall(room, r.w, r.h, this.salonLook());
+    // La luz que entra por cada ventana: un foco del color del día un poco por delante de la
+    // pared, a la altura del alféizar (solo se enciende con luz con ambiente y de día).
+    const panes = takeWindows();
+    if (room.floor >= 0)
+      for (const p of panes) {
+        const at = new Vector3(
+          r.x + p.x * (r.w / back.w),
+          GROUND - (r.y + p.y * (r.h / back.h)) + 2,
+          -(DEPTH - 16),
+        );
+        this.lamps.push({
+          pos: at,
+          glow: at.clone(),
+          r: 95,
+          color: [255, 226, 180],
+          power: 1.3,
+          flicker: 0,
+          zone: this.zoneOf(rect),
+          seed: 0,
+          fire: false,
+          halo: 0,
+          sun: true,
+        });
+        // El rayo en el aire: de la ventana al suelo de la sala.
+        const sx = r.w / back.w;
+        const sy = r.h / back.h;
+        const mat = this.look.shaft();
+        const u = mat.uniforms;
+        u.uTop!.value.set(r.x + (p.x - p.w / 2) * sx, GROUND - (r.y + p.top * sy), -(DEPTH - 1));
+        u.uW!.value = p.w * sx;
+        u.uDrop!.value = r.y + r.h - (r.y + p.top * sy);
+        u.uIn!.value = DEPTH * 0.55;
+        const beam = new Mesh(this.unitPlane, mat);
+        beam.frustumCulled = false;
+        beam.visible = false;
+        this.world.add(beam);
+        this.sunbeams.push(beam);
+      }
     // Puerta al jardín en la planta baja, si no hay en medio una escalera sin rellano (que tapa
     // el paso; con rellano, la puerta va en ella). Como `opens` en `cutOff` (`core/rooms.ts`).
     const gate = (c: number, x: number) => room.floor === 0 && inGarden(b, c) && !isShaft(b, x);
@@ -3043,6 +3076,18 @@ export class RoomScene {
       (window as unknown as { __lampK?: number }).__lampK ?? (this.moodLight ? MOOD_LAMPS : 1);
     const lampK = (0.3 + 0.7 * (1 - dl.day)) * boost;
     const fireK = (0.6 + 0.4 * (1 - dl.day)) * boost;
+    // La luz de las ventanas (luz con ambiente): llena de día, algo menos al atardecer, nada de
+    // noche; su color, el del día (más dorado al atardecer).
+    const sunLampK = this.moodLight ? Math.max(dl.day, dl.dusk * 0.8) : 0;
+    // Los rayos de sol de las ventanas: se inclinan al contrario del sol y toman su color.
+    const sd = this.shared.uSunDir.value;
+    for (const b of this.sunbeams) {
+      b.visible = sunLampK > 0.02;
+      const u = (b.material as ShaderMaterial).uniforms;
+      u.uK!.value = sunLampK;
+      u.uSlant!.value = -sd.x * 0.7;
+      u.uColor!.value.set(1, 0.88 - 0.3 * dl.dusk, 0.7 - 0.38 * dl.dusk);
+    }
     const cx = view.px + view.vw / 2;
     const cy = GROUND - (view.py + view.vh / 2);
     const x0 = view.px - 40;
@@ -3051,6 +3096,7 @@ export class RoomScene {
     const y1 = GROUND - (view.py - 40);
     const near = [...this.lamps, ...this.incidentLamps]
       .filter((l) => l.zone[2] > x0 && l.zone[0] < x1 && l.zone[3] > y0 && l.zone[1] < y1)
+      .filter((l) => !l.sun || sunLampK > 0.02)
       .sort(
         (a, b) => Math.hypot(a.pos.x - cx, a.pos.y - cy) - Math.hypot(b.pos.x - cx, b.pos.y - cy),
       );
@@ -3061,12 +3107,12 @@ export class RoomScene {
     for (let i = 0; i < n; i++) {
       const l = near[i]!;
       const fl = 1 - l.flicker * noise(Math.floor(t * 9), l.seed);
-      const k = (l.deep ? 1 : l.fire ? fireK : lampK) * l.power * fl;
+      const k = (l.sun ? sunLampK : l.deep ? 1 : l.fire ? fireK : lampK) * l.power * fl;
       data.set([l.pos.x, l.pos.y, l.pos.z, l.r], i * 4);
-      data.set(
-        [(l.color[0] / 255) * k, (l.color[1] / 255) * k, (l.color[2] / 255) * k, l.halo],
-        row + i * 4,
-      );
+      const c = l.sun
+        ? [1, 0.88 - 0.3 * dl.dusk, 0.7 - 0.38 * dl.dusk]
+        : [l.color[0] / 255, l.color[1] / 255, l.color[2] / 255];
+      data.set([c[0]! * k, c[1]! * k, c[2]! * k, l.halo], row + i * 4);
       data.set(l.zone, 2 * row + i * 4);
       data.set([l.glow.x, l.glow.y, l.glow.z, 0], 3 * row + i * 4);
     }
@@ -3145,10 +3191,27 @@ export class RoomScene {
 
     const r = this.renderer;
     // Primera pasada (prueba de sombras): la escena a una textura, solo por su profundidad.
-    const w = window as unknown as { __shadows?: boolean; __ambK?: number; __lampK?: number };
+    const w = window as unknown as {
+      __shadows?: boolean;
+      __ambK?: number;
+      __lampK?: number;
+      __bands?: boolean;
+    };
     // Prueba de luz (estudio del estilo nuevo), apagada salvo que se pida desde la consola.
     const shadows = w.__shadows === true;
     this.shared.uAmbK.value = w.__ambK ?? (this.moodLight ? MOOD_AMBIENT : 1);
+    // El sol con dirección (luz con ambiente): sale por la derecha y se pone por la izquierda,
+    // como el del cielo, y viene algo de delante; de noche, la luna, alta y de lado.
+    const dl0 = this.daylight();
+    const p = Math.min(1, 0.1 + dl0.tod * 0.95);
+    const sunUp = Math.max(dl0.day, dl0.dusk) > 0.05;
+    const sunDir = sunUp
+      ? new Vector3(1 - 2 * p, 0.2 + 0.9 * Math.sin(Math.PI * p), 0.6)
+      : new Vector3(-0.45, 0.75, 0.6);
+    this.shared.uSunDir.value.copy(sunDir.normalize());
+    this.shared.uSunK.value = this.moodLight ? 1 : 0;
+    this.shared.uBands.value = (w.__bands ?? this.moodLight) ? 1 : 0;
+    this.shared.uZonePad.value = this.moodLight ? WALL + PARTITION / 2 : 0;
     if (shadows) {
       const { vw, vh } = this.camera;
       if (!this.depthRT || this.depthRT.width !== vw || this.depthRT.height !== vh) {

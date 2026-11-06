@@ -129,7 +129,7 @@ npm run build`.
 Pedido del usuario: ver si el pixel art puede ir hacia ese estilo. Pruebas, viabilidad y plan
 por fases en [`estilo-cnc.md`](estilo-cnc.md) (visor: `capturas/estilo-cnc/index.html`).
 Hecho de momento: el ajuste «Luz con ambiente» (Ajustes › Imagen) y una prueba de sombras en el
-shader, apagada. Siguiente: el plan para el mejor efecto posible, con el usuario.
+shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con relieve).
 
 ## Siguiente (en este orden, salvo que el usuario diga otra cosa)
 

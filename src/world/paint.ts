@@ -21,7 +21,10 @@ export function stoneWall(
   const bw = opts.bw ?? 10;
   const bh = opts.bh ?? 6;
   const rng = new Rng(seed);
+  // Relieve: la llaga, al nivel de la pared; cada piedra sale 2.
+  const lv = b.level;
   b.rect(x, y, w, h, ramp[1]!);
+  b.level = lv + 2;
   for (let row = 0, by = y; by < y + h; row++, by += bh) {
     const off = row % 2 ? -Math.floor(bw / 2) : 0;
     for (let bx = x + off; bx < x + w; bx += bw) {
@@ -59,6 +62,7 @@ export function stoneWall(
       }
     }
   }
+  b.level = lv;
 }
 
 /** Tablones verticales con veta, nudos y clavos. */
@@ -73,11 +77,17 @@ export function planksV(
   pw = 7,
 ): void {
   const rng = new Rng(seed);
+  const lv0 = b.level;
   for (let px = x, i = 0; px < x + w; px += pw, i++) {
     const ww = Math.min(pw, x + w - px);
     const tone = 1 + ((i * 7 + rng.int(0, 1)) % 2);
+    // Relieve: cada tabla a su altura (unas salen algo más) y la junta hundida.
+    const lv = b.level;
+    b.level = lv + 2 + (i % 3 === 1 ? 1 : 0);
     b.rect(px, y, ww, h, ramp[tone]!);
+    b.level = lv;
     b.vline(px, y, h, ramp[0]!);
+    b.level = lv + 2 + (i % 3 === 1 ? 1 : 0);
     if (ww > 2) b.vline(px + 1, y, h, ramp[Math.min(ramp.length - 1, tone + 1)]!);
     // Veta.
     for (let k = 0; k < Math.floor(h / 6); k++) {
@@ -94,6 +104,7 @@ export function planksV(
     b.set(px + Math.floor(ww / 2), y + 1, P.black);
     b.set(px + Math.floor(ww / 2), y + h - 2, P.black);
   }
+  b.level = lv0;
 }
 
 /** Yeso: tono plano con motas sueltas y pinceladas cortas; en ruinas, grietas y boquetes. */
@@ -165,10 +176,16 @@ export function beam(
   h: number,
   ramp: Ramp = [P.black, P.plum, P.bark, P.rust],
 ): void {
+  // Relieve: la viga sale 3 de la pared, con los cantos algo más bajos (redondeados).
+  const lv = b.level;
+  b.level = lv + 3;
   b.rect(x, y, w, h, ramp[2]!);
+  b.level = lv + 2;
   b.hline(x, y, w, ramp[3]!);
   b.hline(x, y + h - 1, w, ramp[0]!);
+  b.level = lv + 3;
   if (h > 3) b.hline(x, y + h - 2, w, ramp[1]!);
+  b.level = lv;
 }
 
 export function post(
@@ -179,10 +196,15 @@ export function post(
   h: number,
   ramp: Ramp = [P.black, P.plum, P.bark, P.rust],
 ): void {
+  const lv = b.level;
+  b.level = lv + 3;
   b.rect(x, y, w, h, ramp[2]!);
+  b.level = lv + 2;
   b.vline(x, y, h, ramp[3]!);
   b.vline(x + w - 1, y, h, ramp[0]!);
+  b.level = lv + 3;
   if (w > 3) b.vline(x + w - 2, y, h, ramp[1]!);
+  b.level = lv;
 }
 
 /** Oscurece hacia los bordes de una habitación con tramado (oclusión ambiental). */

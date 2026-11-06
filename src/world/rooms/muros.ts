@@ -49,6 +49,21 @@ export function wallFace(
   walls: WallId = 'tablas',
 ): void {
   if (w <= 0 || h <= 0) return;
+  // Relieve (luz con ambiente): cada pintor pone la altura de lo que pinta; aquí se deja a 0.
+  const level = b.level;
+  paintWall(b, x, y, w, h, seed, walls);
+  b.level = level;
+}
+
+function paintWall(
+  b: PixelBuffer,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  seed: string,
+  walls: WallId,
+): void {
   if (walls === 'piedra') ashlarFace(b, x, y, w, h, seed);
   else if (walls === 'entramado') timberFace(b, x, y, w, h, seed);
   else if (walls === 'troncos') logsFace(b, x, y, w, h, seed);
@@ -91,6 +106,7 @@ function boardFace(b: PixelBuffer, x: number, y: number, w: number, h: number, s
     let ty = y;
     while (ty < y + h) {
       const len = Math.min(30 + rng.int(0, 60), y + h - ty);
+      b.level = 2;
       b.rect(px, ty, bw, len, mid);
       // Veta larga.
       for (let k = 0; k < Math.ceil(len / 10); k++) {
@@ -113,9 +129,11 @@ function boardFace(b: PixelBuffer, x: number, y: number, w: number, h: number, s
       }
       ty += len + 1;
     }
-    // La luz por la izquierda y la junta por la derecha.
+    // La luz por la izquierda y la junta por la derecha (la junta, algo hundida).
     b.vline(px, y, h, lt);
+    b.level = 1;
     b.vline(px + bw - 1, y, h, dk);
+    b.level = 2;
     // Abajo, más oscura (le salpica la lluvia).
     for (let yy = Math.max(y, y + h - 10); yy < y + h; yy++)
       for (let xx = px; xx < px + bw; xx++)
@@ -124,6 +142,7 @@ function boardFace(b: PixelBuffer, x: number, y: number, w: number, h: number, s
     i++;
     // El tapajuntas, encima de la junta (no en todas: unas van solo a tope).
     if (px < x + w - 1 && i % 3 !== 0) {
+      b.level = 4;
       b.vline(px - 1, y, h, P.rust);
       b.vline(px, y, h, P.bark);
       b.vline(px + 1, y, h, P.black);
@@ -169,6 +188,7 @@ function timberFace(b: PixelBuffer, x: number, y: number, w: number, h: number, 
             [3, 2],
           ] as const)
         ]!;
+      b.level = 0;
       b.rect(x0, y0, x1 - x0, y1 - y0, mid);
       for (let yy = y0; yy < y1; yy++)
         for (let xx = x0; xx < x1; xx++) {
@@ -201,6 +221,7 @@ function timberFace(b: PixelBuffer, x: number, y: number, w: number, h: number, 
         ['v', 1],
       ] as const);
       const brace = (ax: number, ay: number, bx: number, by: number) => {
+        b.level = 3;
         b.line(ax, ay, bx, by, P.bark);
         b.line(ax + 1, ay, bx + 1, by, P.rust);
         b.line(ax + 2, ay, bx + 2, by, P.plum);
@@ -219,6 +240,7 @@ function timberFace(b: PixelBuffer, x: number, y: number, w: number, h: number, 
       }
     }
   // La madera, encima: postes y carreras con su luz, su veta y las clavijas en los cruces.
+  b.level = 4;
   for (const px of posts) {
     if (px >= x + w) continue;
     b.rect(px, y, 3, h, P.bark);
@@ -248,7 +270,9 @@ const STONES: readonly (readonly [string, string, string])[] = [
 /** Sillería: hiladas de alto desigual, sillares de largo variado y biselados, con su mella. */
 function ashlarFace(b: PixelBuffer, x: number, y: number, w: number, h: number, seed: string) {
   const rng = new Rng(`sillar-${seed}`);
+  b.level = 0;
   b.rect(x, y, w, h, P.plum);
+  b.level = 3;
   let by = y;
   while (by < y + h) {
     const ch = rng.weighted([

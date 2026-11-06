@@ -56,6 +56,13 @@ export function rampAt(
 
 export class PixelBuffer {
   readonly data: Uint32Array;
+  /**
+   * Relieve (opcional): cuánto sale cada píxel de su plano, 0–255. Lo usa la luz con ambiente
+   * para sombrear y arrojar sombras. Se pinta con `level`: todo lo que se dibuja a continuación
+   * queda a esa altura (así, lo que se pinta encima también tapa el relieve de debajo).
+   */
+  relief: Uint8Array | null = null;
+  level = 0;
 
   constructor(
     readonly w: number,
@@ -75,11 +82,31 @@ export class PixelBuffer {
   set(x: number, y: number, color: Color): void {
     x |= 0;
     y |= 0;
-    if (this.inside(x, y)) this.data[y * this.w + x] = rgba(color);
+    if (!this.inside(x, y)) return;
+    const i = y * this.w + x;
+    this.data[i] = rgba(color);
+    this.lift(i, this.level);
   }
 
   clear(x: number, y: number): void {
-    if (this.inside(x, y)) this.data[y * this.w + x] = 0;
+    if (!this.inside(x, y)) return;
+    const i = y * this.w + x;
+    this.data[i] = 0;
+    this.lift(i, 0);
+  }
+
+  /** Relieve de un píxel (0 si no hay). */
+  reliefAt(x: number, y: number): number {
+    return this.relief && this.inside(x, y) ? this.relief[y * this.w + x]! : 0;
+  }
+
+  /** Pone el relieve de un índice (crea el búfer la primera vez que hace falta). */
+  lift(i: number, v: number): void {
+    if (this.relief) this.relief[i] = v;
+    else if (v) {
+      this.relief = new Uint8Array(this.w * this.h);
+      this.relief[i] = v;
+    }
   }
 
   /** Pinta solo si el píxel ya está ocupado (para sombrear dentro de una forma). */
@@ -93,7 +120,13 @@ export class PixelBuffer {
     const y0 = Math.max(0, y | 0);
     const x1 = Math.min(this.w, (x + w) | 0);
     const y1 = Math.min(this.h, (y + h) | 0);
-    for (let j = y0; j < y1; j++) this.data.fill(c, j * this.w + x0, j * this.w + Math.max(x0, x1));
+    for (let j = y0; j < y1; j++) {
+      this.data.fill(c, j * this.w + x0, j * this.w + Math.max(x0, x1));
+      if (this.relief || this.level) {
+        this.lift(j * this.w + x0, this.level);
+        this.relief!.fill(this.level, j * this.w + x0, j * this.w + Math.max(x0, x1));
+      }
+    }
   }
 
   hline(x: number, y: number, w: number, color: Color): void {
@@ -191,7 +224,11 @@ export class PixelBuffer {
         const c = src.data[y * src.w + (flip ? src.w - 1 - x : x)]!;
         if (!alpha(c)) continue;
         const tx = dx + x;
-        if (tx >= 0 && tx < this.w) this.data[ty * this.w + tx] = c;
+        if (tx >= 0 && tx < this.w) {
+          this.data[ty * this.w + tx] = c;
+          const r = src.relief ? src.relief[y * src.w + (flip ? src.w - 1 - x : x)]! : 0;
+          if (this.relief || r) this.lift(ty * this.w + tx, r);
+        }
       }
     }
   }
@@ -199,6 +236,7 @@ export class PixelBuffer {
   clone(): PixelBuffer {
     const b = new PixelBuffer(this.w, this.h);
     b.data.set(this.data);
+    if (this.relief) b.relief = this.relief.slice();
     return b;
   }
 
@@ -206,6 +244,11 @@ export class PixelBuffer {
     const b = new PixelBuffer(w, h);
     for (let j = 0; j < h; j++)
       for (let i = 0; i < w; i++) b.data[j * w + i] = this.get(x + i, y + j);
+    if (this.relief) {
+      b.relief = new Uint8Array(w * h);
+      for (let j = 0; j < h; j++)
+        for (let i = 0; i < w; i++) b.relief[j * w + i] = this.reliefAt(x + i, y + j);
+    }
     return b;
   }
 

@@ -8,6 +8,7 @@
  * con la pantalla, y la imagen no «bulle» al mover la cámara.
  */
 import {
+  AdditiveBlending,
   BufferGeometry,
   DataTexture,
   DoubleSide,
@@ -87,7 +88,15 @@ const SURFACE_FRAG = /* glsl */ `
   uniform mat4 uProj;
   uniform float uRim;
   uniform float uAmbK;
-  uniform float uMood;
+  // Color sin paleta ni trama (luz con ambiente): la luz va en bandas de borde mellado.
+  uniform float uBands;
+  uniform float uZonePad;
+  // Sol con dirección (luz con ambiente): de dónde viene y cuánto manda (0 = la luz de siempre).
+  uniform vec3 uSunDir;
+  uniform float uSunK;
+  // Relieve de la textura (cuánto sale cada píxel, en píxeles: rojo × 255).
+  uniform sampler2D uRelief;
+  uniform float uHasRelief;
   varying vec2 vUv;
   float distAt(float d) {
     // Profundidad del búfer (0-1) a distancia a la cámara.
@@ -118,6 +127,62 @@ const SURFACE_FRAG = /* glsl */ `
     }
     return shade;
   }
+  float hash2(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+  float relAt(vec2 uv) { return texture2D(uRelief, uv).r * 255.0; }
+  // La luz del sol fuera, con su dirección: cara al sol, más y más cálida; de espaldas, la del
+  // cielo, fría. Con relieve, además, la normal de cada píxel, la sombra que arrojan los
+  // salientes (marchando por la textura hacia el sol) y el borde de luz en los cantos.
+  // El relieve frente a una luz que llega por L (unitario, en el mundo): cambia n por la normal
+  // del relieve, devuelve la sombra que arrojan los salientes (marchando por la textura hacia la
+  // luz) y pone rim a 1 si el píxel es un canto que da a la luz.
+  float reliefShadow(inout vec3 n, vec2 uvc, vec2 size, vec3 L, out float rim) {
+    rim = 0.0;
+    vec3 n0 = n;
+    vec3 U = normalize(uAxisU);
+    vec3 V = normalize(uAxisV);
+    float h0 = relAt(uvc);
+    float dx = relAt(uvc + vec2(1.0, 0.0) / size) - relAt(uvc - vec2(1.0, 0.0) / size);
+    float dy = relAt(uvc + vec2(0.0, 1.0) / size) - relAt(uvc - vec2(0.0, 1.0) / size);
+    n = normalize(n - (U * dx + V * dy) * 0.3);
+    vec2 sd = vec2(dot(L, U), dot(L, V));
+    float lsd = length(sd);
+    if (lsd < 0.05) return 1.0;
+    vec2 dir = sd / lsd;
+    float slope = max(dot(L, n0), 0.05) / lsd;
+    float shadow = 1.0;
+    for (int k = 1; k <= 16; k++) {
+      float fk = float(k);
+      float hk = relAt(uvc + dir * fk / size);
+      if (hk - h0 > fk * slope + 0.5) { shadow = 0.35; break; }
+    }
+    vec2 nb = uvc + vec2(floor(dir.x * 1.5 + 0.5), floor(dir.y * 1.5 + 0.5)) / size;
+    if (texture2D(map, nb).a < 0.5 || relAt(nb) < h0 - 0.5) rim = 1.0;
+    return shadow;
+  }
+  vec3 sunlight(vec3 n, vec2 uvc, vec2 size) {
+    if (!gl_FrontFacing) n = -n;
+    float lum = max(max(uDaylight.r, uDaylight.g), uDaylight.b);
+    float warmth = clamp((uDaylight.r - uDaylight.b) * 3.0, 0.0, 1.0);
+    float shadow = 1.0;
+    float rim = 0.0;
+    if (uHasRelief > 0.5) {
+      shadow = reliefShadow(n, uvc, size, uSunDir, rim);
+      rim *= 0.5 + warmth * 0.4;
+    } else {
+      vec2 sd = vec2(dot(uSunDir, uAxisU) / dot(uAxisU, uAxisU), dot(uSunDir, uAxisV) / dot(uAxisV, uAxisV));
+      vec2 off = sign(sd) * step(0.3 * max(abs(sd.x), abs(sd.y)), abs(sd)) / size;
+      if (texture2D(map, uvc + off).a < 0.5) rim = 0.5;
+    }
+    float face = clamp(0.55 + 0.9 * dot(n, uSunDir), 0.15, 1.45) * shadow;
+    // El color del sol, algo más saturado que el del día (dorado al atardecer); la sombra, del
+    // color del cielo (violácea).
+    vec3 sunC = mix(uDaylight, uDaylight * uDaylight / max(lum, 0.01) * 1.15, 0.6);
+    // A la hora dorada (el día tira a rojo), el sol se vuelve naranja intenso.
+    sunC = mix(sunC, vec3(1.0, 0.6, 0.28) * lum * 1.4, warmth * 0.65);
+    vec3 sky = vec3(0.5, 0.52, 0.9) * lum * 0.55;
+    vec3 sun = sunC * (face + rim * shadow) + sky * (1.0 - clamp(face, 0.0, 1.0));
+    return mix(uDaylight, sun, uSunK);
+  }
   const float BAYER[16] = float[16](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.);
   void main() {
     vec4 tex = texture2D(map, vUv);
@@ -132,9 +197,12 @@ const SURFACE_FRAG = /* glsl */ `
     vec3 world = uOrigin + uAxisU * local.x + uAxisV * local.y;
     vec3 n = uNormal;
     // Luz del día solo por encima del suelo.
-    // Con «luz con ambiente», menos luz de fondo dentro (las salas sin focos no bajan de 0.2).
-    vec3 amb = uSun < 0.99 && uAmbK < 1.0 && uMood > 0.5 ? max(uAmbient * uAmbK, min(uAmbient, vec3(0.2))) : uAmbient;
-    vec3 light = amb + uDaylight * uSun * step(-0.5, world.y);
+    // Con «luz con ambiente», menos luz de fondo dentro de las salas.
+    vec3 amb = uSun < 0.99 ? uAmbient * uAmbK : uAmbient;
+    // Dentro, con luz con ambiente, el día llega menos a toda la sala: entra por las ventanas.
+    float dayIn = uSun < 0.99 ? uAmbK : 1.0;
+    vec3 light = amb + uDaylight * uSun * dayIn * step(-0.5, world.y);
+    if (uSunK > 0.0 && uSun > 0.99 && world.y > -0.5) light = amb + sunlight(n, uvc, size);
     // El halo de las llamas: la luz que se ve en el aire alrededor de cada una. Se mide en la
     // pantalla (lo que queda cerca de la llama a la vista, esté delante o detrás) y se suma al
     // color antes de pasarlo a la paleta, así sale en bandas tramadas y no como un difuminado.
@@ -144,7 +212,9 @@ const SURFACE_FRAG = /* glsl */ `
     for (int i = 0; i < LIGHTS; i++) {
       if (i >= uLightCount) break;
       vec4 z = texelFetch(uLights, ivec2(i, 2), 0);
-      if (world.x < z.x || world.x > z.z || world.y < z.y || world.y > z.w) continue;
+      // Con luz con ambiente, la zona se ensancha al grueso del muro: de noche, el corte
+      // alrededor de una sala encendida recibe su luz.
+      if (world.x < z.x - uZonePad || world.x > z.z + uZonePad || world.y < z.y || world.y > z.w) continue;
       vec4 lp = texelFetch(uLights, ivec2(i, 0), 0);
       vec4 lc = texelFetch(uLights, ivec2(i, 1), 0);
       vec3 d = lp.xyz - world;
@@ -152,9 +222,19 @@ const SURFACE_FRAG = /* glsl */ `
       float a = clamp(1.0 - dist / lp.w, 0.0, 1.0);
       a = a * a * (3.0 - 2.0 * a);
       float ndl = mix(max(dot(n, d / max(dist, 0.001)), 0.0), 1.0, uWrap);
+      // Con luz con ambiente y relieve: la normal del relieve, la sombra de los salientes hacia
+      // el foco y el canto encendido.
+      // (Solo los 8 focos más cercanos al centro de la vista: van ordenados así.)
+      if (uSunK > 0.0 && uHasRelief > 0.5 && a > 0.02 && i < 8) {
+        vec3 nr = gl_FrontFacing ? n : -n;
+        float rimL;
+        float sh = reliefShadow(nr, uvc, size, d / max(dist, 0.001), rimL);
+        ndl = mix(max(dot(nr, d / max(dist, 0.001)), 0.0), 1.0, uWrap * 0.6) * sh;
+        light += lc.rgb * a * rimL * 0.35 * sh;
+      }
       if (a > 0.02) { float sh = lit(world, lp.xyz); a *= sh; if (uShadows > 1.5 && sh < 0.9) dbg = 1.0; }
       // Luz de borde en las figuras: el canto que da al foco, si al lado no hay nada pintado.
-      if (uShadows > 0.5 && uRim > 0.0 && a > 0.02) {
+      if ((uShadows > 0.5 || uSunK > 0.0) && uRim > 0.0 && a > 0.02) {
         vec2 dir = vec2(dot(d, uAxisU) / dot(uAxisU, uAxisU), dot(d, uAxisV) / dot(uAxisV, uAxisV));
         vec2 off = sign(dir) * step(0.3 * max(abs(dir.x), abs(dir.y)), abs(dir)) / size;
         float nb = texture2D(map, uvc + off).a;
@@ -174,6 +254,19 @@ const SURFACE_FRAG = /* glsl */ `
     // Sin quemar: lo muy iluminado se queda en un tono claro y no salta a otro color.
     light = min(light, vec3(1.2));
     vec3 c = tex.rgb * light + min(halo, vec3(0.7)) * uHalo;
+    if (uBands > 0.5) {
+      // Sin paleta ni trama: la intensidad de la luz va en escalones (el tono se queda) y el
+      // borde de cada escalón se mella en grumos de 2 téxeles, fijos a la superficie.
+      float lum = max(max(light.r, light.g), light.b);
+      float jit = (hash2(floor(tc / 2.0) + uOrigin.xy) - 0.5) * 0.45;
+      float q = max(floor(lum * 7.0 + 0.5 + jit), 0.0) / 7.0;
+      vec3 L = lum > 0.001 ? light / lum * q : vec3(0.0);
+      // El color de lo pintado, algo menos saturado (los tonos de Endesga gritan).
+      vec3 alb = mix(vec3(dot(tex.rgb, vec3(0.3, 0.59, 0.11))), tex.rgb, 0.86);
+      vec3 hq = max(floor(min(halo, vec3(0.7)) * 5.0 + jit), vec3(0.0)) / 5.0;
+      gl_FragColor = vec4(min(alb * L + hq * uHalo, vec3(1.0)), 1.0);
+      return;
+    }
     // Tramado pegado al téxel: se mueve con la superficie, no con la pantalla.
     ivec2 t = ivec2(tc);
     int k = (t.x & 3) + (t.y & 3) * 4;
@@ -191,6 +284,45 @@ const SURFACE_FRAG = /* glsl */ `
       }
     }
     gl_FragColor = vec4(dbg > 0.5 ? vec3(1.0, 0.0, 1.0) : best, 1.0);
+  }
+`;
+
+/**
+ * Rayo de sol que entra por una ventana (luz con ambiente): una lámina que baja de la ventana al
+ * suelo, inclinada al contrario del sol y acercándose a la cámara, en bandas sin degradado.
+ */
+const SHAFT_VERT = /* glsl */ `
+  uniform vec3 uTop;
+  uniform float uW;
+  uniform float uDrop;
+  uniform float uSlant;
+  uniform float uIn;
+  varying vec2 vUv;
+  void main() {
+    vUv = vec2(uv.x, 1.0 - uv.y);
+    vec3 p = vec3(
+      uTop.x + vUv.x * uW + vUv.y * uDrop * uSlant,
+      uTop.y - vUv.y * uDrop,
+      uTop.z + vUv.y * uIn
+    );
+    gl_Position = projectionMatrix * viewMatrix * vec4(p, 1.0);
+  }
+`;
+
+const SHAFT_FRAG = /* glsl */ `
+  uniform vec3 uColor;
+  uniform float uK;
+  uniform float uW;
+  uniform float uDrop;
+  varying vec2 vUv;
+  void main() {
+    float edge = smoothstep(0.0, 0.3, vUv.x) * smoothstep(1.0, 0.7, vUv.x);
+    float fall = pow(1.0 - vUv.y, 0.9);
+    vec2 cell = floor(vUv * vec2(uW, uDrop) / 2.0);
+    float jit = fract(sin(dot(cell, vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
+    float i = floor(edge * fall * uK * 4.0 + jit * 0.6) / 4.0;
+    if (i <= 0.0) discard;
+    gl_FragColor = vec4(uColor * i * 0.5, 1.0);
   }
 `;
 
@@ -234,6 +366,20 @@ const SCREEN_FRAG = /* glsl */ `
     gl_FragColor = c;
   }
 `;
+
+/** El relieve de un búfer como textura (en el rojo), con la misma orientación que su color. */
+function reliefTexture(b: PixelBuffer): DataTexture {
+  const rgba = new Uint8Array(b.w * b.h * 4);
+  const r = b.relief!;
+  for (let i = 0; i < r.length; i++) rgba[i * 4] = r[i]!;
+  const t = new DataTexture(rgba, b.w, b.h, RGBAFormat, UnsignedByteType);
+  t.flipY = true;
+  t.magFilter = NearestFilter;
+  t.minFilter = NearestFilter;
+  t.generateMipmaps = false;
+  t.needsUpdate = true;
+  return t;
+}
 
 /** Textura sin suavizado sacada de un búfer (la fila de arriba del búfer, arriba). */
 export function texture(b: PixelBuffer): DataTexture {
@@ -300,14 +446,12 @@ export function sharedUniforms() {
     uShadows: { value: 0 },
     uProj: { value: new Matrix4() },
     uAmbK: { value: 1 },
+    uBands: { value: 0 },
+    uZonePad: { value: 0 },
+    uSunDir: { value: new Vector3(0, 1, 0) },
+    uSunK: { value: 0 },
   };
 }
-
-/**
- * Luces de fondo que no bajan con «luz con ambiente» (las salas rotas y las vacías, que ya son
- * oscuras): la escena las apunta aquí.
- */
-export const NO_MOOD = new WeakSet<object>();
 
 /** Sin profundidad (la primera pasada): todo «lejos», nada hace sombra. */
 const NO_DEPTH = (() => {
@@ -352,7 +496,8 @@ export class Look {
           uDither: { value: o.dither ?? 0.035 },
           uHalo: { value: o.halo ?? 1 },
           uRim: { value: (o.wrap ?? 0.25) >= 0.5 ? 0.9 : 0 },
-          uMood: { value: NO_MOOD.has(o.ambient) ? 0 : 1 },
+          uRelief: { value: b.relief ? this.own(reliefTexture(b)) : NO_DEPTH },
+          uHasRelief: { value: b.relief ? 1 : 0 },
           uUvOffset: { value: new Vector2(0, 0) },
           uUvScale: { value: new Vector2((o.repeat ?? 1) / (o.frames ?? 1), 1) },
         },
@@ -375,6 +520,29 @@ export class Look {
         },
         vertexShader: SURFACE_VERT,
         fragmentShader: GLOW_FRAG,
+        side: DoubleSide,
+      }),
+    );
+  }
+
+  /** Rayo de sol de una ventana (ver `SHAFT_VERT`); la escena le pone dónde y cuánto. */
+  shaft(): ShaderMaterial {
+    return this.own(
+      new ShaderMaterial({
+        uniforms: {
+          uColor: { value: new Vector3(1, 0.9, 0.7) },
+          uK: { value: 0 },
+          uTop: { value: new Vector3() },
+          uW: { value: 16 },
+          uDrop: { value: 60 },
+          uSlant: { value: 0 },
+          uIn: { value: 30 },
+        },
+        vertexShader: SHAFT_VERT,
+        fragmentShader: SHAFT_FRAG,
+        transparent: true,
+        depthWrite: false,
+        blending: AdditiveBlending,
         side: DoubleSide,
       }),
     );
