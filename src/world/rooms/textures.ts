@@ -667,7 +667,10 @@ function copyRect(dst: PixelBuffer, src: PixelBuffer, x: number, y: number, w: n
   for (let j = Math.max(0, y); j < Math.min(dst.h, y + h); j++)
     for (let i = Math.max(0, x); i < Math.min(dst.w, x + w); i++) {
       const c = src.data[j * src.w + i]!;
-      if (c) dst.data[j * dst.w + i] = c;
+      if (!c) continue;
+      dst.data[j * dst.w + i] = c;
+      const r = src.reliefAt(i, j);
+      if (r || dst.relief) dst.lift(j * dst.w + i, r);
     }
 }
 
@@ -730,13 +733,18 @@ function gable(
   for (let y = Math.floor(base - h); y <= base + 2; y++)
     for (let x = Math.floor(x0); x <= x1; x++) {
       if (!inside(x, y, 0)) continue;
-      const c = inside(x, y, eave)
-        ? planks.get(x - Math.floor(x0), y - Math.floor(base - h))
-        : tile(x, y);
+      const wall = inside(x, y, eave);
+      const px = x - Math.floor(x0);
+      const py = y - Math.floor(base - h);
+      const c = wall ? planks.get(px, py) : tile(x, y);
+      // Relieve: la pared, el suyo; el alero vuela por delante (más cuanto más fuera).
+      b.level = wall ? planks.reliefAt(px, py) : inside(x, y, 2) ? 7 : 8;
       if (c) b.set(x, y, c);
     }
+  b.level = 8;
   b.line(x0, base + 2, Math.round(mid), base - h, P.black);
   b.line(Math.round(mid), base - h, x1, base + 2, P.black);
+  b.level = 0;
   if (thatch) {
     // La paja asoma por debajo del alero en flecos, con su sombra en la pared.
     for (let x = Math.floor(x0); x <= x1; x++) {
@@ -769,8 +777,11 @@ function gable(
   // Ventanuco redondo del desván.
   if (h > 24) {
     const cy = base - Math.round(h * 0.38);
+    b.level = 4;
     b.ellipse(mid, cy, 5, 5, P.plum);
+    b.level = 0;
     b.ellipse(mid, cy, 3, 3, P.black);
+    b.level = 5;
     if (look.boxes) {
       // La jardinera: una caja de tablas con geranios.
       const y = cy + 6;
@@ -783,6 +794,7 @@ function gable(
         b.set(m + k + 1, y - 2, k % 4 ? P.red : P.coral);
       }
     }
+    b.level = 0;
   }
 }
 

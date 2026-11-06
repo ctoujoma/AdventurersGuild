@@ -3137,6 +3137,16 @@ export class RoomScene {
     // Prueba de luz (estudio del estilo nuevo), apagada salvo que se pida desde la consola.
     const shadows = w.__shadows === true;
     this.shared.uAmbK.value = w.__ambK ?? (this.moodLight ? MOOD_AMBIENT : 1);
+    // El sol con dirección (luz con ambiente): sale por la derecha y se pone por la izquierda,
+    // como el del cielo, y viene algo de delante; de noche, la luna, alta y de lado.
+    const dl0 = this.daylight();
+    const p = Math.min(1, 0.1 + dl0.tod * 0.95);
+    const sunUp = Math.max(dl0.day, dl0.dusk) > 0.05;
+    const sunDir = sunUp
+      ? new Vector3(1 - 2 * p, 0.2 + 0.9 * Math.sin(Math.PI * p), 0.6)
+      : new Vector3(-0.45, 0.75, 0.6);
+    this.shared.uSunDir.value.copy(sunDir.normalize());
+    this.shared.uSunK.value = this.moodLight ? 1 : 0;
     if (shadows) {
       const { vw, vh } = this.camera;
       if (!this.depthRT || this.depthRT.width !== vw || this.depthRT.height !== vh) {

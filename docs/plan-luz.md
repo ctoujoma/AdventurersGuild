@@ -29,6 +29,19 @@ juego, sin depender de la profundidad de pantalla (y sin sus fallos):
   borde de luz donde el relieve cae del lado del sol.
 - Sin relieve (lo que aún no lo tenga), la superficie se ve como hoy.
 
+## Hecho de la fase 1 (primer paso)
+
+- `PixelBuffer` con relieve (`relief`, pintado con `level`); lo pintan las tablas, el entramado y
+  la sillería (`muros.ts`) y el hastial (alero, óculo, jardinera) en `textures.ts`, y viaja al
+  corte de la fachada.
+- En el shader (`sunlight` en `gl.ts`), con «Luz con ambiente»: sol con dirección por hora
+  (`uSunDir`: sale por la derecha, se pone por la izquierda), normal del relieve, sombra
+  arrojada marchando por la textura y borde de luz; cara al sol dorada, sombra violácea.
+- Se nota en el hastial (tapajuntas con luz y sombra, la sombra del alero), pero aún no da la
+  luz dorada de las pruebas: la paleta Endesga se come los matices (fase 2) y faltan tejados,
+  chimeneas, muros en corte y los lados con relieve. Capturas:
+  `capturas/luz-ambiente/fachada-relieve.png`.
+
 ## Fases (cada una, un PR con capturas antes y después, dentro de «Luz con ambiente»)
 
 1. **Fachada y exterior con relieve** (lo primero: es lo que no encaja).

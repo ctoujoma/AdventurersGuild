@@ -87,6 +87,12 @@ const SURFACE_FRAG = /* glsl */ `
   uniform mat4 uProj;
   uniform float uRim;
   uniform float uAmbK;
+  // Sol con dirección (luz con ambiente): de dónde viene y cuánto manda (0 = la luz de siempre).
+  uniform vec3 uSunDir;
+  uniform float uSunK;
+  // Relieve de la textura (cuánto sale cada píxel, en píxeles: rojo × 255).
+  uniform sampler2D uRelief;
+  uniform float uHasRelief;
   varying vec2 vUv;
   float distAt(float d) {
     // Profundidad del búfer (0-1) a distancia a la cámara.
@@ -117,6 +123,49 @@ const SURFACE_FRAG = /* glsl */ `
     }
     return shade;
   }
+  float relAt(vec2 uv) { return texture2D(uRelief, uv).r * 255.0; }
+  // La luz del sol fuera, con su dirección: cara al sol, más y más cálida; de espaldas, la del
+  // cielo, fría. Con relieve, además, la normal de cada píxel, la sombra que arrojan los
+  // salientes (marchando por la textura hacia el sol) y el borde de luz en los cantos.
+  vec3 sunlight(vec3 n, vec2 uvc, vec2 size) {
+    if (!gl_FrontFacing) n = -n;
+    vec3 U = normalize(uAxisU);
+    vec3 V = normalize(uAxisV);
+    float shadow = 1.0;
+    float rim = 0.0;
+    if (uHasRelief > 0.5) {
+      float h0 = relAt(uvc);
+      float dx = relAt(uvc + vec2(1.0, 0.0) / size) - relAt(uvc - vec2(1.0, 0.0) / size);
+      float dy = relAt(uvc + vec2(0.0, 1.0) / size) - relAt(uvc - vec2(0.0, 1.0) / size);
+      n = normalize(n - (U * dx + V * dy) * 0.3);
+      vec2 sd = vec2(dot(uSunDir, U), dot(uSunDir, V));
+      float lsd = length(sd);
+      if (lsd > 0.05) {
+        vec2 dir = sd / lsd;
+        float slope = max(dot(uSunDir, gl_FrontFacing ? uNormal : -uNormal), 0.05) / lsd;
+        for (int k = 1; k <= 16; k++) {
+          float fk = float(k);
+          float hk = relAt(uvc + dir * fk / size);
+          if (hk - h0 > fk * slope + 0.5) { shadow = 0.35; break; }
+        }
+        // Canto que da al sol: el vecino de ese lado está más bajo (o no hay nada).
+        vec2 nb = uvc + dir / size;
+        if (texture2D(map, nb).a < 0.5 || relAt(nb) < h0 - 0.5) rim = 0.5;
+      }
+    } else {
+      vec2 sd = vec2(dot(uSunDir, uAxisU) / dot(uAxisU, uAxisU), dot(uSunDir, uAxisV) / dot(uAxisV, uAxisV));
+      vec2 off = sign(sd) * step(0.3 * max(abs(sd.x), abs(sd.y)), abs(sd)) / size;
+      if (texture2D(map, uvc + off).a < 0.5) rim = 0.5;
+    }
+    float face = clamp(0.55 + 0.9 * dot(n, uSunDir), 0.15, 1.45) * shadow;
+    // El color del sol, algo más saturado que el del día (dorado al atardecer); la sombra, del
+    // color del cielo (violácea).
+    float lum = max(max(uDaylight.r, uDaylight.g), uDaylight.b);
+    vec3 sunC = mix(uDaylight, uDaylight * uDaylight / max(lum, 0.01) * 1.15, 0.6);
+    vec3 sky = vec3(0.5, 0.52, 0.9) * lum * 0.55;
+    vec3 sun = sunC * (face + rim * shadow) + sky * (1.0 - clamp(face, 0.0, 1.0));
+    return mix(uDaylight, sun, uSunK);
+  }
   const float BAYER[16] = float[16](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.);
   void main() {
     vec4 tex = texture2D(map, vUv);
@@ -134,6 +183,7 @@ const SURFACE_FRAG = /* glsl */ `
     // Con «luz con ambiente», menos luz de fondo dentro de las salas.
     vec3 amb = uSun < 0.99 ? uAmbient * uAmbK : uAmbient;
     vec3 light = amb + uDaylight * uSun * step(-0.5, world.y);
+    if (uSunK > 0.0 && uSun > 0.99 && world.y > -0.5) light = amb + sunlight(n, uvc, size);
     // El halo de las llamas: la luz que se ve en el aire alrededor de cada una. Se mide en la
     // pantalla (lo que queda cerca de la llama a la vista, esté delante o detrás) y se suma al
     // color antes de pasarlo a la paleta, así sale en bandas tramadas y no como un difuminado.
@@ -234,6 +284,20 @@ const SCREEN_FRAG = /* glsl */ `
   }
 `;
 
+/** El relieve de un búfer como textura (en el rojo), con la misma orientación que su color. */
+function reliefTexture(b: PixelBuffer): DataTexture {
+  const rgba = new Uint8Array(b.w * b.h * 4);
+  const r = b.relief!;
+  for (let i = 0; i < r.length; i++) rgba[i * 4] = r[i]!;
+  const t = new DataTexture(rgba, b.w, b.h, RGBAFormat, UnsignedByteType);
+  t.flipY = true;
+  t.magFilter = NearestFilter;
+  t.minFilter = NearestFilter;
+  t.generateMipmaps = false;
+  t.needsUpdate = true;
+  return t;
+}
+
 /** Textura sin suavizado sacada de un búfer (la fila de arriba del búfer, arriba). */
 export function texture(b: PixelBuffer): DataTexture {
   const t = new DataTexture(
@@ -299,6 +363,8 @@ export function sharedUniforms() {
     uShadows: { value: 0 },
     uProj: { value: new Matrix4() },
     uAmbK: { value: 1 },
+    uSunDir: { value: new Vector3(0, 1, 0) },
+    uSunK: { value: 0 },
   };
 }
 
@@ -345,6 +411,8 @@ export class Look {
           uDither: { value: o.dither ?? 0.035 },
           uHalo: { value: o.halo ?? 1 },
           uRim: { value: (o.wrap ?? 0.25) >= 0.5 ? 0.9 : 0 },
+          uRelief: { value: b.relief ? this.own(reliefTexture(b)) : NO_DEPTH },
+          uHasRelief: { value: b.relief ? 1 : 0 },
           uUvOffset: { value: new Vector2(0, 0) },
           uUvScale: { value: new Vector2((o.repeat ?? 1) / (o.frames ?? 1), 1) },
         },
