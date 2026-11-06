@@ -18,7 +18,7 @@ import { P } from '../../art/palette';
 import { PixelBuffer } from '../../art/pixel';
 import { GROUND, WORLD_X0 } from '../geometry';
 import { hillLife, skyLife, treeLife } from './life';
-import { hazed, mountainsCnc, skyStripCnc } from './paisaje';
+import { FAR_FOREST_FX, farForestCnc, hazed, mountainsCnc, skyStripCnc } from './paisaje';
 import { glowSprite } from '../lighting';
 import { Rng } from '../../core/rng';
 import {
@@ -208,6 +208,7 @@ export class Sky {
     night: HTMLCanvasElement;
     dusk: HTMLCanvasElement;
     dawn: HTMLCanvasElement;
+    woods: { day: HTMLCanvasElement; night: HTMLCanvasElement };
     day: HTMLCanvasElement[];
   };
   /** Se pinta la primera vez que hace falta. */
@@ -227,6 +228,10 @@ export class Sky {
         night: bufferCanvas(m.night),
         dusk: bufferCanvas(m.dusk),
         dawn: bufferCanvas(m.dawn),
+        woods: (() => {
+          const f = farForestCnc();
+          return { day: bufferCanvas(f.day), night: bufferCanvas(f.night) };
+        })(),
         day: this.parallax.map(({ l }, i) => bufferCanvas(hazed(l.day, HAZE[i] ?? 0))),
       };
     }
@@ -347,6 +352,14 @@ export class Sky {
               ctx.globalAlpha = Math.min(1, a);
               repeat(ctx, c, x, top, vw);
             }
+          ctx.globalAlpha = 1;
+        }
+        // Delante, el bosque lejano con su bruma.
+        const fx = WORLD_X0 - pan(cx, vw, FAR_FOREST_FX);
+        repeat(ctx, m.woods.night, fx, top, vw);
+        if (dayK > 0) {
+          ctx.globalAlpha = dayK;
+          repeat(ctx, m.woods.day, fx, top, vw);
           ctx.globalAlpha = 1;
         }
         return;

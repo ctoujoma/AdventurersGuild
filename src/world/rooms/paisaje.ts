@@ -290,3 +290,51 @@ export function hazed(src: PixelBuffer, amt: number, desat = 0.25): PixelBuffer 
   }
   return b;
 }
+
+// ---------- Bosque lejano ----------
+
+/** El bosque lejano, entre los montes y las colinas: se mueve algo más que los montes. */
+export const FAR_FOREST_FX = 0.235;
+
+/**
+ * Una franja de abetos pequeños por pisos, apagados por la bruma (de día) o casi negros (de
+ * noche), con la misma silueta. Se repite sin junta.
+ */
+export function farForestCnc(): { day: PixelBuffer; night: PixelBuffer } {
+  const W = LAYER_W;
+  const H = GROUND + 4;
+  const day = new PixelBuffer(W, H);
+  const night = new PixelBuffer(W, H);
+  const DAYC = ['#3e5a5a', '#4f6d66', '#678274', '#83977f'].map(hex);
+  const NIGHTC = ['#151d33', '#1a2440', '#212c4a', '#2a3656'].map(hex);
+  const put = (x: number, y: number, v: number, hz: number) => {
+    const xi = ((Math.round(x) % W) + W) % W;
+    if (y < 0 || y >= H) return;
+    const i = y * W + xi;
+    day.data[i] = pack(mixc(ramp(DAYC, v), DAY.haze, hz));
+    night.data[i] = pack(mixc(ramp(NIGHTC, v), NIGHT.haze, hz * 0.6));
+  };
+  const ridge = (x: number) => GROUND - 70 - fbmW(x, 0, 60, 1, 41) * 12;
+  // La masa del bosque, con grumos.
+  for (let x = 0; x < W; x++)
+    for (let y = Math.ceil(ridge(x)); y < H; y++)
+      put(x, y, 0.3 + (fbmW(x, y, 3, 2, 43, 2) - 0.5) * 0.9, 0.45 + (y - ridge(x)) * 0.006);
+  // Los abetos, de 2 en 2, por pisos que caen en punta; lo alto de cada piso, a la luz.
+  for (let x = 0; x < W; x += 2) {
+    const h = 6 + Math.floor(h2(x, 3, 45) * 9);
+    const cx = x + (h2(x, 4, 45) - 0.5) * 2;
+    const base = Math.round(ridge(x)) + 3;
+    const tiers = Math.max(2, Math.round(h / 4));
+    for (let y = base - h; y <= base; y++) {
+      const t = (y - (base - h)) / h;
+      const tt = (t * tiers) % 1;
+      const half = (0.4 + t * h * 0.36) * (0.55 + 0.45 * tt);
+      for (let dx = -Math.ceil(half); dx <= Math.ceil(half); dx++) {
+        if (Math.abs(dx) > half + (h2(x + dx, y, 47) - 0.5) * 1.2) continue;
+        const v = 0.45 + (tt < 0.5 ? 0.22 : -0.1) + (dx < 0 ? -0.12 : 0.08);
+        put(cx + dx, y, v, 0.4 + (1 - t) * 0.08);
+      }
+    }
+  }
+  return { day, night };
+}
