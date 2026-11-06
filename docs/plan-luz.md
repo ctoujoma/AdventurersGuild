@@ -112,9 +112,9 @@ el rendimiento en un móvil de verdad; la fase 5.
   componente hacia delante: si no, se iba detrás, donde no se ve), corta a mediodía y larga al
   atardecer; lo que queda dentro (suelo, árboles, gente) pierde el sol y toma la luz fría del
   cielo. Borde mellado. Captura: `capturas/luz-ambiente/sombra.png` (mañana y tarde).
-- El rayo de sol de las ventanas, entre la recta que pasa por la esquina de arriba de la ventana
-  del lado del sol y la que pasa por la de abajo del otro lado: más estrecho cuanto más bajo el
-  sol.
+- El rayo de sol de las ventanas, como la luz de verdad: sale del alféizar, entre la recta que
+  pasa por la esquina de arriba de la ventana del lado contrario al sol y la que pasa por la de
+  abajo del lado del sol (más ancho cuanto más bajo el sol).
 - Polvo en los rayos de sol: motas de un píxel que bajan despacio, se mecen y titilan.
 - Pozo, rótulo, farol, muñecos, cuadra y empalizada sin contorno oscuro y algo apagados
   (`softened` en `suelo.ts`).

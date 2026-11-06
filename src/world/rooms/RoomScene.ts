@@ -1651,11 +1651,11 @@ export class RoomScene {
         const sy = r.h / back.h;
         const mat = this.look.shaft();
         const u = mat.uniforms;
-        // Dónde está la ventana: el ancho y la x del rayo dependen de la inclinación del sol (se
-        // ponen en cada fotograma; ver `sunbeams`).
-        u.uTop!.value.set(r.x + (p.x - p.w / 2) * sx, GROUND - (r.y + p.top * sy), -(DEPTH - 1));
+        // Sale del alféizar (por arriba, la ventana ya brilla): el ancho y la x dependen de la
+        // inclinación del sol, se ponen en cada fotograma (ver `sunbeams`).
+        u.uTop!.value.set(r.x + (p.x - p.w / 2) * sx, GROUND - (r.y + p.y * sy), -(DEPTH - 1));
         u.uW!.value = p.w * sx;
-        u.uDrop!.value = r.y + r.h - (r.y + p.top * sy);
+        u.uDrop!.value = r.h - p.y * sy;
         u.uIn!.value = DEPTH * 0.55;
         const beam = new Mesh(this.unitPlane, mat);
         beam.userData.win = {
@@ -3188,13 +3188,14 @@ export class RoomScene {
       u.uK!.value = sunLampK;
       const slant = -sd.x * 0.7;
       u.uSlant!.value = slant;
-      // El rayo, entre la recta que pasa por la esquina de arriba de la ventana del lado del sol
-      // y la que pasa por la de abajo del otro lado: tan ancho como la ventana menos lo que se
-      // inclina en su alto (con el sol bajo, más estrecho).
+      // El rayo, como la luz de verdad: entre la recta que pasa por la esquina de arriba de la
+      // ventana del lado contrario al sol y la que pasa por la de abajo del lado del sol. En el
+      // alféizar, tan ancho como la ventana más lo que se inclina en su alto (con el sol bajo,
+      // más ancho), corrido hacia donde cae.
       const win = b.userData.win as { x0: number; w: number; h: number };
-      const cut = Math.min(win.w - 4, Math.abs(slant) * win.h);
-      u.uTop!.value.x = slant < 0 ? win.x0 + cut : win.x0;
-      u.uW!.value = win.w - cut;
+      const add = Math.abs(slant) * win.h;
+      u.uTop!.value.x = slant < 0 ? win.x0 - add : win.x0;
+      u.uW!.value = win.w + add;
       u.uColor!.value.set(1, 0.88 - 0.3 * dl.dusk, 0.7 - 0.38 * dl.dusk);
       u.uTime!.value = performance.now() / 1000;
     }
