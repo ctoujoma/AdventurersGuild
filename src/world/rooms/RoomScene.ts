@@ -58,7 +58,7 @@ import { dress } from './salas/tintes';
 import { Crowd, type Hit, type Poi, type Talk } from './crowd';
 import { LAWN_D, tuftAllowed, yardBushes, yardTrees } from './patio';
 import { bushCnc, oakCnc, pineCnc } from './arboles';
-import { moodGround, moodTuft } from './suelo';
+import { moodGround, moodTuft, softened } from './suelo';
 import {
   CLOISTER_W,
   cloisterParts,
@@ -1978,15 +1978,19 @@ export class RoomScene {
     this.chimneys(L);
     const y = L.b.yard;
     const px = L.patio.x;
-    const put = (img: PixelBuffer, x: number, depth: number, up = 0) =>
-      this.figure(g, img, x, GROUND - up, depth, OUTDOOR, 1);
-    put(Prop.well(), px + 40, 70);
-    // Árboles y arbustos a los lados (ver `patio.ts`: nada cae en el jardín ni en el anexo), en
-    // los dos estilos: el de siempre y, con luz con ambiente, el de `arboles.ts`.
+    // Todo lo de fuera, en los dos estilos: el de siempre y, con luz con ambiente, suavizado
+    // (`softened`) o, los árboles, el de `arboles.ts`.
     const classic = new Group();
     const mood = new Group();
     g.add(classic, mood);
     this.styled.push({ classic, mood });
+    const soft = new Map<PixelBuffer, PixelBuffer>();
+    const put = (img: PixelBuffer, x: number, depth: number, up = 0) => {
+      this.figure(classic, img, x, GROUND - up, depth, OUTDOOR, 1);
+      if (!soft.has(img)) soft.set(img, softened(img));
+      this.figure(mood, soft.get(img)!, x, GROUND - up, depth, OUTDOOR, 1);
+    };
+    put(Prop.well(), px + 40, 70);
     const both = (a: PixelBuffer, b: PixelBuffer, x: number, depth: number) => {
       this.figure(classic, a, x, GROUND, depth, OUTDOOR, 1);
       this.figure(mood, b, x, GROUND, depth, OUTDOOR, 1);

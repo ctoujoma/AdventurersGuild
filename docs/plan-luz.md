@@ -114,9 +114,11 @@ el rendimiento en un móvil de verdad; la fase 5.
   cielo. Borde mellado. Captura: `capturas/luz-ambiente/sombra.png` (mañana y tarde).
 - El rayo de sol de las ventanas, un píxel más ancho por cada lado.
 - Polvo en los rayos de sol: motas de un píxel que bajan despacio, se mecen y titilan.
+- Pozo, rótulo, farol, muñecos, cuadra y empalizada sin contorno oscuro y algo apagados
+  (`softened` en `suelo.ts`).
 
-Lo que falta: de noche, la luz de las ventanas hacia fuera (patio y fachada); pozo, letrero y
-muñecos del patio en el estilo nuevo; medir el rendimiento en un móvil de verdad; la vista desde
+Lo que falta: de noche, la luz de las ventanas hacia fuera (patio y fachada); el jardín y sus
+piezas en el estilo nuevo; medir el rendimiento en un móvil de verdad; la vista desde
 fuera al alejar (abajo); la fase 5.
 
 ## Idea: la taberna vista desde fuera al alejar del todo
