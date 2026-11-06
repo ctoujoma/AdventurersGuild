@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { P } from '../../art/palette';
 import { PixelBuffer, rgba } from '../../art/pixel';
 import { groundTex } from './textures';
-import { moodGround } from './suelo';
+import { moodGround, softened } from './suelo';
 
 describe('suelo (luz con ambiente)', () => {
   it('no deja ningún verde de la paleta de siempre', () => {
@@ -29,5 +29,16 @@ describe('el camino del patio', () => {
         [P.umber, P.bark, P.mocha, P.cocoa].map(rgba).includes(c),
       ).length;
     expect(dirt(40 - 8)).toBeGreaterThan(dirt(8));
+  });
+});
+
+describe('piezas de fuera suavizadas', () => {
+  it('el contorno oscuro toma el tono de dentro', () => {
+    const b = new PixelBuffer(6, 6);
+    b.rect(0, 0, 6, 6, '#101010');
+    b.rect(1, 1, 4, 4, '#c08040');
+    const out = softened(b);
+    const c = out.get(0, 3);
+    expect(c & 255).toBeGreaterThan(0x60);
   });
 });

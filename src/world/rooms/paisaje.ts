@@ -269,16 +269,20 @@ export function farForestCnc(): { day: PixelBuffer; night: PixelBuffer } {
   // de abajo, más cerca (más grandes y nítidas), tapan a las de detrás. Debajo de cada fila, la
   // masa del bosque en sombra, para que no se vean huecos.
   const ROWS = 4;
+  // La orilla del lago: al pie de la última fila.
+  const shoreAt = (x: number) => Math.ceil(ridge(x) + 6 * (ROWS - 1) + 6);
+  // Primero la masa del bosque, por detrás de todos los árboles (de la primera fila a la orilla),
+  // con la bruma de la fila que le toca.
+  for (let x = 0; x < W; x++)
+    for (let y = Math.ceil(ridge(x) + 4); y < Math.min(H, shoreAt(x)); y++) {
+      const k = Math.min(1, (y - ridge(x) - 4) / (6 * (ROWS - 1)));
+      put(x, y, 0.3 + (fbmW(x, y, 3, 2, 43, 2) - 0.5) * 0.35, 0.6 - k * 0.3);
+    }
   for (let r = 0; r < ROWS; r++) {
     const k = r / (ROWS - 1);
     const lift = r * 6;
     const hz = 0.55 - k * 0.3;
     const step = 2 + r;
-    for (let x = 0; x < W; x++) {
-      const top = Math.ceil(ridge(x) + lift + 4);
-      for (let y = top; y < Math.min(H, top + 8); y++)
-        put(x, y, 0.22 + (fbmW(x, y, 3, 2, 43 + r, 2) - 0.5) * 0.4, hz + 0.05);
-    }
     for (let x = (r * 7) % step; x < W; x += step) {
       const h = Math.round((5 + h2(x, 3 + r, 45) * 7) * (1 + k * 0.7));
       const cx = x + (h2(x, 4 + r, 45) - 0.5) * step;
@@ -293,6 +297,35 @@ export function farForestCnc(): { day: PixelBuffer; night: PixelBuffer } {
           const v = 0.42 + (tt < 0.5 ? 0.2 : -0.12) + (dx < 0 ? -0.1 : 0.08) - k * 0.06;
           put(cx + dx, y, v, hz + (1 - t) * 0.05);
         }
+      }
+    }
+  }
+  // El lago, de la orilla del bosque al horizonte: refleja los árboles (algo ondulados, más
+  // apagados y oscuros), y de lejos, el cielo; con rayas de brillo. Se ve donde bajan las colinas.
+  const WATER_DAY = ['#6f8fae', '#86a4c0', '#9fb9d2'].map(hex);
+  const WATER_NIGHT = ['#18213c', '#1f2a4a', '#2a3759'].map(hex);
+  const SHINE_DAY = hex('#d8e6f2');
+  const SHINE_NIGHT = hex('#56679a');
+  const unpack = (c: number): RGB => [c & 255, (c >> 8) & 255, (c >> 16) & 255];
+  for (let x = 0; x < W; x++) {
+    const shore = shoreAt(x);
+    for (let y = shore; y < H; y++) {
+      const dy = y - shore;
+      const i = y * W + x;
+      const sx = (((x + Math.round(Math.sin(dy * 1.3 + x * 0.05) * 1.2)) % W) + W) % W;
+      const sy = shore - 1 - Math.round(dy * 1.2);
+      const shine = h2(Math.floor((x + dy * 5) / 4), dy, 91) > 0.93;
+      for (const [buf, water, sh, hz] of [
+        [day, WATER_DAY, SHINE_DAY, DAY.haze],
+        [night, WATER_NIGHT, SHINE_NIGHT, NIGHT.haze],
+      ] as const) {
+        let c = ramp(water as RGB[], 0.85 - dy / 40);
+        const src = sy >= 0 ? buf.data[sy * W + sx]! : 0;
+        if (src >>> 24 && dy < 26) c = mixc(mixc(unpack(src), c, 0.45), [0, 0, 0], 0.12);
+        if (shine) c = mixc(c, sh as RGB, 0.7);
+        // La orilla: una raya oscura bajo los árboles.
+        if (dy === 0) c = mixc(c, [20, 30, 30], 0.35);
+        buf.data[i] = pack(mixc(c, hz as RGB, 0.18));
       }
     }
   }

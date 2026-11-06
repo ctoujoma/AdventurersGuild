@@ -73,14 +73,27 @@ export function moodGround(src: PixelBuffer, seed = 0): PixelBuffer {
       const i = y * w + x;
       const c = data[i]!;
       if (!(c >>> 24)) continue;
-      const k = kind[i]!;
+      let k = kind[i]!;
+      // Las flores y piedras de un píxel (titilan al mover la cámara): toman lo que las rodea,
+      // hierba o tierra. Las flores van aparte, en matas con su viento.
+      if (!k) {
+        let g = 0;
+        let d = 0;
+        for (let j = -1; j <= 1; j++)
+          for (let q = -1; q <= 1; q++) {
+            const xx = x + q;
+            const yy = y + j;
+            if (xx < 0 || yy < 0 || xx >= w || yy >= h) continue;
+            const kk = kind[yy * w + xx];
+            if (kk === 1) g++;
+            else if (kk === 2) d++;
+          }
+        if (g + d >= 5) k = g >= d ? 1 : 2;
+      }
       const clump = fbm(x + seed * 131, y, 7, 3, 61);
       const grain = hash(x >> 1, y);
       if (k === 1) {
-        const v = 0.42 * avg(x, y, 1) + 0.42 * clump + 0.16 * grain;
-        // Alguna brizna clara suelta y alguna mata oscura.
-        const t = grain > 0.96 ? v + 0.22 : grain < 0.04 ? v - 0.2 : v;
-        out.set(x, y, pick(GRASS, t));
+        out.set(x, y, pick(GRASS, 0.42 * avg(x, y, 1) + 0.42 * clump + 0.16 * grain));
       } else if (k === 2) {
         out.set(x, y, pick(DIRT, 0.5 * avg(x, y, 2) + 0.35 * clump + 0.15 * grain));
       } else {
@@ -103,5 +116,57 @@ export function moodTuft(src: PixelBuffer): PixelBuffer {
     const c = out.data[i]!;
     out.data[i] = TUFT.get(c) ?? SWAP_IN.get(c) ?? c;
   }
+  return out;
+}
+
+/**
+ * Una pieza de fuera (pozo, rótulo, muñecos, cuadra…) sin el contorno oscuro y con los colores
+ * algo apagados: cada píxel del borde que es mucho más oscuro que el de dentro toma el color de
+ * dentro, un poco más oscuro. La forma la da la luz, no la raya.
+ */
+export function softened(src: PixelBuffer): PixelBuffer {
+  const out = src.clone();
+  const { w, h, data } = src;
+  const lum = (c: number) => (c & 255) * 0.3 + ((c >> 8) & 255) * 0.59 + ((c >> 16) & 255) * 0.11;
+  const op = (x: number, y: number) =>
+    x >= 0 && y >= 0 && x < w && y < h && data[y * w + x]! >>> 24 ? data[y * w + x]! : 0;
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      const c = data[y * w + x]!;
+      if (!(c >>> 24)) continue;
+      const nb: [number, number][] = [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ];
+      if (!nb.some(([i, j]) => !op(x + i, y + j))) continue;
+      // El vecino de dentro más claro.
+      let inner = 0;
+      for (const [i, j] of nb) {
+        const n = op(x + i, y + j);
+        if (n && lum(n) > lum(inner)) inner = n;
+      }
+      if (!inner || lum(c) > lum(inner) * 0.7) continue;
+      const k = 0.78;
+      out.data[y * w + x] =
+        ((255 << 24) |
+          (Math.round(((inner >> 16) & 255) * k) << 16) |
+          (Math.round(((inner >> 8) & 255) * k) << 8) |
+          Math.round((inner & 255) * k)) >>>
+        0;
+    }
+  // Los colores, algo menos saturados (como los de `moodGround`).
+  for (let i = 0; i < out.data.length; i++) {
+    const c = out.data[i]!;
+    if (!(c >>> 24)) continue;
+    const r = c & 255;
+    const g = (c >> 8) & 255;
+    const b = (c >> 16) & 255;
+    const l = r * 0.3 + g * 0.59 + b * 0.11;
+    const m = (v: number) => Math.round(v + (l - v) * 0.22);
+    out.data[i] = ((255 << 24) | (m(b) << 16) | (m(g) << 8) | m(r)) >>> 0;
+  }
+  if (src.relief) out.relief = src.relief.slice();
   return out;
 }

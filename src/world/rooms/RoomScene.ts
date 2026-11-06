@@ -58,7 +58,7 @@ import { dress } from './salas/tintes';
 import { Crowd, type Hit, type Poi, type Talk } from './crowd';
 import { LAWN_D, tuftAllowed, yardBushes, yardTrees } from './patio';
 import { bushCnc, oakCnc, pineCnc } from './arboles';
-import { moodGround, moodTuft } from './suelo';
+import { moodGround, moodTuft, softened } from './suelo';
 import {
   CLOISTER_W,
   cloisterParts,
@@ -90,7 +90,16 @@ import { FLAME_FRAMES, FLAME_H, FLAME_W, flameStrip } from './flame';
 import { faces, sideTexel, type Mat } from './volume';
 import { RaidShow } from './raid';
 import { HEARTH_RIGHT, NO_LOOK, type SalonLook } from './salon';
-import { FEW_LIGHTS, Look, MAX_LIGHTS, mesh, quad, sharedUniforms, type Corners } from './gl';
+import {
+  FEW_LIGHTS,
+  Look,
+  MAX_BOXES,
+  MAX_LIGHTS,
+  mesh,
+  quad,
+  sharedUniforms,
+  type Corners,
+} from './gl';
 import { route, type Place } from './people';
 import {
   CELL_W,
@@ -1452,9 +1461,18 @@ export class RoomScene {
     g.add(groundC, groundM);
     this.styled.push({ classic: groundC, mood: groundM });
     let gi = 0;
+    this.shadowBoxes(L);
     const ground = (tex: PixelBuffer, corners: Corners, o: typeof yard & { repeat?: number }) => {
       this.plane(groundC, tex, corners, o);
-      this.plane(groundM, moodGround(tex, gi++), corners, o);
+      // Con luz con ambiente, sin repetir: la textura entera a lo ancho (los grumos de la hierba
+      // dejan ver la repetición).
+      const rep = o.repeat ?? 1;
+      let wide = tex;
+      if (rep > 1) {
+        wide = new PixelBuffer(tex.w * rep, tex.h);
+        for (let k = 0; k < rep; k++) wide.blit(tex, k * tex.w, 0);
+      }
+      this.plane(groundM, moodGround(wide, gi++), corners, { ...o, repeat: undefined });
     };
     const back = DEPTH + 2;
     // A los lados, un trozo de patio y otro de hierba que se repiten (`TILE`) hasta muy lejos.
@@ -1633,11 +1651,18 @@ export class RoomScene {
         const sy = r.h / back.h;
         const mat = this.look.shaft();
         const u = mat.uniforms;
-        u.uTop!.value.set(r.x + (p.x - p.w / 2) * sx, GROUND - (r.y + p.top * sy), -(DEPTH - 1));
+        // Sale del alféizar (por arriba, la ventana ya brilla): el ancho y la x dependen de la
+        // inclinación del sol, se ponen en cada fotograma (ver `sunbeams`).
+        u.uTop!.value.set(r.x + (p.x - p.w / 2) * sx, GROUND - (r.y + p.y * sy), -(DEPTH - 1));
         u.uW!.value = p.w * sx;
-        u.uDrop!.value = r.y + r.h - (r.y + p.top * sy);
+        u.uDrop!.value = r.h - p.y * sy;
         u.uIn!.value = DEPTH * 0.55;
         const beam = new Mesh(this.unitPlane, mat);
+        beam.userData.win = {
+          x0: r.x + (p.x - p.w / 2) * sx,
+          w: p.w * sx,
+          h: (p.y - p.top) * sy,
+        };
         beam.frustumCulled = false;
         beam.visible = false;
         this.world.add(beam);
@@ -1963,15 +1988,19 @@ export class RoomScene {
     this.chimneys(L);
     const y = L.b.yard;
     const px = L.patio.x;
-    const put = (img: PixelBuffer, x: number, depth: number, up = 0) =>
-      this.figure(g, img, x, GROUND - up, depth, OUTDOOR, 1);
-    put(Prop.well(), px + 40, 70);
-    // Árboles y arbustos a los lados (ver `patio.ts`: nada cae en el jardín ni en el anexo), en
-    // los dos estilos: el de siempre y, con luz con ambiente, el de `arboles.ts`.
+    // Todo lo de fuera, en los dos estilos: el de siempre y, con luz con ambiente, suavizado
+    // (`softened`) o, los árboles, el de `arboles.ts`.
     const classic = new Group();
     const mood = new Group();
     g.add(classic, mood);
     this.styled.push({ classic, mood });
+    const soft = new Map<PixelBuffer, PixelBuffer>();
+    const put = (img: PixelBuffer, x: number, depth: number, up = 0) => {
+      this.figure(classic, img, x, GROUND - up, depth, OUTDOOR, 1);
+      if (!soft.has(img)) soft.set(img, softened(img));
+      this.figure(mood, soft.get(img)!, x, GROUND - up, depth, OUTDOOR, 1);
+    };
+    put(Prop.well(), px + 40, 70);
     const both = (a: PixelBuffer, b: PixelBuffer, x: number, depth: number) => {
       this.figure(classic, a, x, GROUND, depth, OUTDOOR, 1);
       this.figure(mood, b, x, GROUND, depth, OUTDOOR, 1);
@@ -2518,16 +2547,58 @@ export class RoomScene {
    * patio, pocas y en los bordes; en la hierba, muchas. Cada una cambia de fotograma con el
    * viento que pasa por su sitio (ver `draw`).
    */
+  /**
+   * El edificio como cajas para su sombra fuera (luz con ambiente): el perfil de lo alto (cada
+   * sala sobre el suelo, la de arriba con el tejado) en tramos de igual altura.
+   */
+  private shadowBoxes(L: RoomsLayout): void {
+    const x0 = Math.floor(L.left - WALL);
+    const x1 = Math.ceil(L.right + WALL);
+    const top = new Float32Array(Math.max(0, x1 - x0));
+    for (const { room, rect } of L.rooms) {
+      if (room.floor < 0) continue;
+      const above = L.rooms.some(
+        (o) => o.rect.y < rect.y && o.rect.x < rect.x + rect.w && o.rect.x + o.rect.w > rect.x,
+      );
+      const h = GROUND - rect.y + (above ? 0 : Math.max(24, rect.w * 0.22));
+      for (let x = Math.floor(rect.x - WALL); x < rect.x + rect.w + WALL; x++)
+        if (x >= x0 && x < x1) top[x - x0] = Math.max(top[x - x0]!, h);
+    }
+    let runs: [number, number, number][] = [];
+    for (let x = 0; x < top.length; x++) {
+      const h = top[x]!;
+      const last = runs[runs.length - 1];
+      if (last && Math.abs(last[2] - h) < 1) last[1] = x0 + x + 1;
+      else if (h > 0) runs.push([x0 + x, x0 + x + 1, h]);
+    }
+    // Si son muchos tramos, se juntan los vecinos más parecidos (con el más alto).
+    while (runs.length > MAX_BOXES) {
+      let k = 0;
+      for (let i = 1; i < runs.length - 1; i++)
+        if (Math.abs(runs[i]![2] - runs[i + 1]![2]) < Math.abs(runs[k]![2] - runs[k + 1]![2]))
+          k = i;
+      const [a, c] = [runs[k]!, runs[k + 1]!];
+      runs = [...runs.slice(0, k), [a[0], c[1], Math.max(a[2], c[2])], ...runs.slice(k + 2)];
+    }
+    runs.forEach((r, i) => this.shared.uBox.value[i]!.set(r[0], r[1], r[2], 0));
+    this.shared.uBoxN.value = runs.length;
+    this.shared.uBoxZ.value.set(-DEPTH, 0);
+  }
+
   private plantGrass(L: RoomsLayout, classic: Group, mood: Group): void {
     const moodArt = new Map<string, PixelBuffer>();
     const rng = new Rng('matas del patio');
     const kinds: TuftKind[] = ['mata', 'mata', 'alta', 'flores', 'trebol', 'mata', 'alta'];
     const art = new Map<string, ReturnType<typeof grassTuft>>();
-    for (let i = 0; i < 220; i++) {
+    // Las 220 de siempre y, con luz con ambiente, 140 matas de flores más (el suelo ya no lleva
+    // florecillas de un píxel).
+    for (let i = 0; i < 360; i++) {
+      const extra = i >= 220;
       const x = L.left - 460 + rng.next() * (L.right - L.left + 920);
       const z = 4 + rng.next() * (YARD_D - 30);
       if (!tuftAllowed(L, x, z)) continue;
-      const kind = kinds[rng.int(0, kinds.length - 1)]!;
+      const pickKind = kinds[rng.int(0, kinds.length - 1)]!;
+      const kind: TuftKind = extra ? 'flores' : pickKind;
       const key = `${kind}${rng.int(0, 5)}`;
       let a = art.get(key);
       if (!a) art.set(key, (a = grassTuft(kind, key)));
@@ -2541,10 +2612,13 @@ export class RoomScene {
         at(x - w / 2, GROUND - h, z),
       ];
       const seed = rng.next();
-      for (const [img, to] of [
-        [a.img, classic],
-        [moodArt.get(key) ?? moodArt.set(key, moodTuft(a.img)).get(key)!, mood],
-      ] as const) {
+      const moodImg = moodArt.get(key) ?? moodArt.set(key, moodTuft(a.img)).get(key)!;
+      for (const [img, to] of extra
+        ? ([[moodImg, mood]] as const)
+        : ([
+            [a.img, classic],
+            [moodImg, mood],
+          ] as const)) {
         const m = mesh(
           quad(corners, this.look),
           this.look.surface(img, corners, {
@@ -3112,8 +3186,18 @@ export class RoomScene {
       b.visible = sunLampK > 0.02;
       const u = (b.material as ShaderMaterial).uniforms;
       u.uK!.value = sunLampK;
-      u.uSlant!.value = -sd.x * 0.7;
+      const slant = -sd.x * 0.7;
+      u.uSlant!.value = slant;
+      // El rayo, como la luz de verdad: entre la recta que pasa por la esquina de arriba de la
+      // ventana del lado contrario al sol y la que pasa por la de abajo del lado del sol. En el
+      // alféizar, tan ancho como la ventana más lo que se inclina en su alto (con el sol bajo,
+      // más ancho), corrido hacia donde cae.
+      const win = b.userData.win as { x0: number; w: number; h: number };
+      const add = Math.abs(slant) * win.h;
+      u.uTop!.value.x = slant < 0 ? win.x0 - add : win.x0;
+      u.uW!.value = win.w + add;
       u.uColor!.value.set(1, 0.88 - 0.3 * dl.dusk, 0.7 - 0.38 * dl.dusk);
+      u.uTime!.value = performance.now() / 1000;
     }
     const cx = view.px + view.vw / 2;
     const cy = GROUND - (view.py + view.vh / 2);
@@ -3241,6 +3325,12 @@ export class RoomScene {
       ? new Vector3(1 - 2 * p, 0.2 + 0.9 * Math.sin(Math.PI * p), 0.6)
       : new Vector3(-0.45, 0.75, 0.6);
     this.shared.uSunDir.value.copy(sunDir.normalize());
+    // La sombra del edificio, con el sol de lado del todo (si viene algo de delante, cae casi
+    // toda detrás, donde no se ve): se tiende junto a la taberna, a su misma profundidad. Nunca
+    // más larga que lo que da un sol a 0,3 de alto.
+    const sh = this.shared.uShadowDir.value;
+    if (this.moodLight && sunUp) sh.set(sunDir.x, Math.max(0.3, sunDir.y), 0).normalize();
+    else sh.set(0, 0, 0);
     this.shared.uSunK.value = this.moodLight ? 1 : 0;
     this.shared.uBands.value = (w.__bands ?? this.moodLight) ? 1 : 0;
     this.shared.uZonePad.value = this.moodLight ? WALL + PARTITION / 2 : 0;

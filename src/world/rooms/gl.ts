@@ -24,12 +24,16 @@ import {
   UnsignedByteType,
   Vector2,
   Vector3,
+  Vector4,
   type Side,
   type Texture,
 } from 'three';
 import { P } from '../../art/palette';
 import { bevelRelief, type PixelBuffer } from '../../art/pixel';
 import { PARTITION, SLAB } from './layout';
+
+/** Cajas con las que se calcula la sombra del edificio fuera. */
+export const MAX_BOXES = 16;
 
 /**
  * Focos que caben a la vez: van en una textura (una columna por foco: posición y alcance, color
@@ -94,6 +98,12 @@ const SURFACE_FRAG = /* glsl */ `
   // Sol con dirección (luz con ambiente): de dónde viene y cuánto manda (0 = la luz de siempre).
   uniform vec3 uSunDir;
   uniform float uSunK;
+  // La sombra del edificio fuera: cajas (x0, x1, alto) entre las profundidades uBoxZ (z del
+  // mundo) y la dirección hacia el sol para la sombra (más de lado que la del sombreado).
+  uniform vec4 uBox[${MAX_BOXES}];
+  uniform int uBoxN;
+  uniform vec2 uBoxZ;
+  uniform vec3 uShadowDir;
   // Relieve de la textura (cuánto sale cada píxel, en píxeles: rojo × 255).
   uniform sampler2D uRelief;
   uniform float uHasRelief;
@@ -183,6 +193,40 @@ const SURFACE_FRAG = /* glsl */ `
     vec3 sun = sunC * (face + rim * shadow) + sky * (1.0 - clamp(face, 0.0, 1.0));
     return mix(uDaylight, sun, uSunK);
   }
+  // Cuánto tapa el edificio el sol en world (0: nada, 1: del todo): se lanza el rayo hacia el sol
+  // y se mira si cruza alguna caja antes de pasar por encima de ella. El borde, mellado.
+  float buildingShadow(vec3 world, vec2 tc) {
+    if (uBoxN == 0 || uShadowDir.y < 0.05) return 0.0;
+    vec3 D = uShadowDir;
+    vec3 P0 = world;
+    P0.xz += (vec2(hash2(floor(tc / 2.0) + uOrigin.xy), hash2(floor(tc / 2.0) + uOrigin.zx)) - 0.5) * 3.0;
+    for (int i = 0; i < ${MAX_BOXES}; i++) {
+      if (i >= uBoxN) break;
+      vec4 b = uBox[i];
+      // Lo que está dentro de la caja es el propio edificio.
+      if (P0.x > b.x && P0.x < b.y && P0.z > uBoxZ.x && P0.z < uBoxZ.y) return 0.0;
+      float tMax = (b.z - P0.y) / D.y;
+      if (tMax <= 0.0) continue;
+      float t0 = 0.0;
+      float t1 = tMax;
+      if (abs(D.x) < 1e-4) { if (P0.x < b.x || P0.x > b.y) continue; }
+      else {
+        float a = (b.x - P0.x) / D.x;
+        float c = (b.y - P0.x) / D.x;
+        t0 = max(t0, min(a, c));
+        t1 = min(t1, max(a, c));
+      }
+      if (abs(D.z) < 1e-4) { if (P0.z < uBoxZ.x || P0.z > uBoxZ.y) continue; }
+      else {
+        float a = (uBoxZ.x - P0.z) / D.z;
+        float c = (uBoxZ.y - P0.z) / D.z;
+        t0 = max(t0, min(a, c));
+        t1 = min(t1, max(a, c));
+      }
+      if (t0 <= t1) return 1.0;
+    }
+    return 0.0;
+  }
   const float BAYER[16] = float[16](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.);
   void main() {
     vec4 tex = texture2D(map, vUv);
@@ -202,7 +246,13 @@ const SURFACE_FRAG = /* glsl */ `
     // Dentro, con luz con ambiente, el día llega menos a toda la sala: entra por las ventanas.
     float dayIn = uSun < 0.99 ? uAmbK : 1.0;
     vec3 light = amb + uDaylight * uSun * dayIn * step(-0.5, world.y);
-    if (uSunK > 0.0 && uSun > 0.99 && world.y > -0.5) light = amb + sunlight(n, uvc, size);
+    if (uSunK > 0.0 && uSun > 0.99 && world.y > -0.5) {
+      // A la sombra del edificio: sin el sol directo, con la luz fría del cielo.
+      float bs = buildingShadow(world, tc);
+      vec3 sl = sunlight(n, uvc, size);
+      float lum = max(max(uDaylight.r, uDaylight.g), uDaylight.b);
+      light = amb + mix(sl, vec3(0.42, 0.46, 0.66) * lum * 0.75 + sl * 0.12, bs);
+    }
     // El halo de las llamas: la luz que se ve en el aire alrededor de cada una. Se mide en la
     // pantalla (lo que queda cerca de la llama a la vista, esté delante o detrás) y se suma al
     // color antes de pasarlo a la paleta, así sale en bandas tramadas y no como un difuminado.
@@ -312,6 +362,7 @@ const SHAFT_VERT = /* glsl */ `
 
 const SHAFT_FRAG = /* glsl */ `
   uniform vec3 uColor;
+  uniform float uTime;
   uniform float uK;
   uniform float uW;
   uniform float uDrop;
@@ -322,8 +373,13 @@ const SHAFT_FRAG = /* glsl */ `
     vec2 cell = floor(vUv * vec2(uW, uDrop) / 2.0);
     float jit = fract(sin(dot(cell, vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
     float i = floor(edge * fall * uK * 4.0 + jit * 0.6) / 4.0;
-    if (i <= 0.0) discard;
-    gl_FragColor = vec4(uColor * i * 0.5, 1.0);
+    // El polvo: motas de un píxel que flotan despacio (bajan y se mecen) y titilan.
+    vec2 px = floor(vUv * vec2(uW, uDrop) + vec2(sin(uTime * 0.3 + vUv.y * 6.0) * 1.5, -uTime * 2.0));
+    float seed = fract(sin(dot(px, vec2(41.31, 289.17))) * 15731.743);
+    float tw = 0.5 + 0.5 * sin(uTime * 2.0 + seed * 40.0);
+    float mote = step(0.978, seed) * tw * edge * uK;
+    if (i <= 0.0 && mote < 0.3) discard;
+    gl_FragColor = vec4(uColor * (max(i, 0.0) * 0.5 + mote * 0.8), 1.0);
   }
 `;
 
@@ -452,6 +508,10 @@ export function sharedUniforms() {
     uZonePad: { value: 0 },
     uSunDir: { value: new Vector3(0, 1, 0) },
     uSunK: { value: 0 },
+    uBox: { value: Array.from({ length: MAX_BOXES }, () => new Vector4()) },
+    uBoxN: { value: 0 },
+    uBoxZ: { value: new Vector2() },
+    uShadowDir: { value: new Vector3(0, 1, 0) },
   };
 }
 
@@ -540,6 +600,7 @@ export class Look {
           uDrop: { value: 60 },
           uSlant: { value: 0 },
           uIn: { value: 30 },
+          uTime: { value: 0 },
         },
         vertexShader: SHAFT_VERT,
         fragmentShader: SHAFT_FRAG,
