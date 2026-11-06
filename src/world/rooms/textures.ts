@@ -885,3 +885,90 @@ export function doorPanel(): PixelBuffer {
   b.rect(3, 24, 2, 3, P.gold);
   return b;
 }
+
+/**
+ * La «tapa» de la vista desde fuera (luz con ambiente, al alejar del todo): el plano de corte
+ * (`facade`) con los huecos de las salas cerrados, como se ve la taberna desde el camino. Por
+ * encima del suelo, la pared de fuera con una ventana por columna y planta (la escalera, una
+ * estrecha; el recibidor, la puerta de la calle); por debajo, la tierra. El cristal se deja
+ * transparente: a través se ve la sala de verdad (y de noche, su luz).
+ */
+export function outsideFace(
+  L: RoomsLayout,
+  look: FacadeLook,
+  F: Facade,
+): { buf: PixelBuffer; glass: PixelBuffer } {
+  const b = F.buf.clone();
+  // El cristal de cada ventana encendido (de noche): cálido, más claro abajo (la luz de la sala
+  // sube del suelo y de las mesas), cada sala con su tono.
+  const glass = new PixelBuffer(b.w, b.h);
+  const rng = new Rng('ventanas-fuera');
+  const ox = F.x;
+  const oy = F.y;
+  const g = GROUND - oy;
+  const wall = new PixelBuffer(b.w, b.h);
+  wallFill(wall, 0, 0, b.w, g + SLAB, 'fuera', look.walls);
+  const dirt = new PixelBuffer(b.w, b.h);
+  earth(dirt, 0, g, b.w, b.h - g);
+  const fill = (r: Rect) => {
+    const x0 = Math.round(r.x - ox);
+    const y0 = Math.round(r.y - oy);
+    for (let y = y0; y < y0 + r.h; y++)
+      for (let x = x0; x < x0 + r.w; x++) {
+        if (!b.inside(x, y) || b.get(x, y)) continue;
+        const src = y < g ? wall : dirt;
+        b.level = src.reliefAt(x, y);
+        b.set(x, y, src.get(x, y));
+      }
+    b.level = 0;
+  };
+  // Una ventana de `w` × `h` con su marco, el alféizar, la cruz y el cristal transparente.
+  const window = (cx: number, top: number, w: number, h: number) => {
+    const x = Math.round(cx - ox - w / 2);
+    const y = Math.round(top - oy);
+    const warm = rng.chance(0.15) ? ['#7a4a2a', '#9a5e30'] : ['#e0974a', '#ffd27a'];
+    for (let j = 0; j < h; j++)
+      for (let i = 0; i < w; i++)
+        glass.set(x + i, y + j, j > h * 0.45 || (i + j) % 7 === 0 ? warm[1]! : warm[0]!);
+    b.level = 3;
+    b.rect(x - 2, y - 2, w + 4, h + 4, P.bark);
+    b.hline(x - 2, y - 2, w + 4, P.umber);
+    b.rect(x - 3, y + h + 2, w + 6, 2, P.oak);
+    b.level = 0;
+    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) b.clear(x + i, y + j);
+    b.level = 2;
+    b.vline(x + Math.floor(w / 2), y, h, P.bark);
+    b.hline(x, y + Math.floor(h / 2), w, P.bark);
+    b.level = 0;
+  };
+  const rooms = L.rooms.filter(({ room }) => room.type !== 'torre');
+  for (const { rect } of rooms) fill(interior(rect));
+  for (const c of [...stairCells(L), ...caveCells(L)]) fill(interior(c.rect));
+  for (const { room, rect } of rooms) {
+    if (room.floor < 0) continue;
+    for (let f = 0; f < room.h; f++)
+      for (let c = 0; c < room.w; c++) {
+        const cx = rect.x + c * CELL_W + CELL_W / 2;
+        const top = floorTop(room.floor + f);
+        if (room.type === 'recibidor' && f === 0 && c === 0) {
+          // La puerta de la calle: dos hojas de tablas con su dintel, a ras del suelo.
+          const x = Math.round(cx - ox - 11);
+          const y = Math.round(top + ROOM_H - 36 - oy);
+          b.level = 3;
+          b.rect(x - 3, y - 3, 28, 39, P.umber);
+          b.level = 1;
+          planksV(b, x, y, 22, 36, 'puerta-calle', [P.plum, P.bark, P.rust, P.oak], 6);
+          b.vline(x + 11, y, 36, P.bark);
+          b.level = 3;
+          b.rect(x + 7, y + 18, 2, 2, P.gold);
+          b.rect(x + 13, y + 18, 2, 2, P.gold);
+          b.level = 0;
+          continue;
+        }
+        window(cx, top + 26, 16, 20);
+      }
+  }
+  for (const s of stairCells(L))
+    if (s.floor >= 0) window(s.rect.x + s.rect.w / 2, s.rect.y + 30, 8, 14);
+  return { buf: b, glass };
+}

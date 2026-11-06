@@ -14,7 +14,16 @@ import {
   roofRuns,
   roomsLayout,
 } from './layout';
-import { SIDE_W, backWall, caveCells, facade, sideTex, stairCells, type Facade } from './textures';
+import {
+  SIDE_W,
+  backWall,
+  caveCells,
+  facade,
+  outsideFace,
+  sideTex,
+  stairCells,
+  type Facade,
+} from './textures';
 import { BACK } from './view3d';
 
 const holes = (b: PixelBuffer) => b.data.filter((c) => alpha(c) === 0).length;
@@ -76,6 +85,28 @@ describe('texturas de la vista 3D', () => {
     const door = (y: number) => b.get(28, y);
     expect(door(h - 10)).not.toBe(sideTex('yeso', h, [], 'prueba').get(28, h - 10));
     expect(door(h - PITCH - 10)).toBe(sideTex('yeso', h, [], 'prueba').get(28, h - PITCH - 10));
+  });
+
+  it('la vista desde fuera cierra las salas y deja el cristal de cada ventana', () => {
+    const L = roomsLayout(uncleBuilding());
+    const F = facade(L);
+    const { buf, glass } = outsideFace(L, {}, F);
+    const O: Facade = { ...F, buf };
+    let panes = 0;
+    for (const { room: r, rect } of L.rooms) {
+      if (r.type === 'torre') continue;
+      const i = interior(rect);
+      // Cerrada a un lado de la ventana (de pared por arriba del suelo, de tierra por debajo).
+      expect(solid(O, i.x + 6, i.y + i.h / 2)).toBe(true);
+      if (r.floor < 0) continue;
+      // Y en la ventana, el cristal: hueco en la tapa y encendido en `glass`.
+      const cx = rect.x + CELL_W / 2 - 3;
+      const cy = floorTop(r.floor) + 26 + 3;
+      if (r.type === 'recibidor') continue;
+      expect(solid(O, cx, cy)).toBe(false);
+      if (alpha(glass.get(Math.round(cx - F.x), Math.round(cy - F.y)))) panes++;
+    }
+    expect(panes).toBeGreaterThan(0);
   });
 
   it('el corte deja ver dentro de las salas y tapa la tierra, los muros y los forjados', () => {

@@ -99,6 +99,7 @@ const SURFACE_FRAG = /* glsl */ `
   uniform vec3 uSunDir;
   uniform float uSunK;
   uniform float uOutdoor;
+  uniform float uFade;
   // La sombra del edificio fuera: cajas (x0, x1, alto) entre las profundidades uBoxZ (z del
   // mundo) y la dirección hacia el sol para la sombra (más de lado que la del sombreado).
   uniform vec4 uBox[${MAX_BOXES}];
@@ -236,6 +237,11 @@ const SURFACE_FRAG = /* glsl */ `
     // cámara, se desplaza entero en vez de cambiar de tono a medio camino.
     vec2 size = vec2(textureSize(map, 0));
     vec2 tc = floor(vUv * size);
+    // Fundido por tramas (la tapa de la vista desde fuera): cada téxel aparece a su turno.
+    if (uFade < 0.999) {
+      int bi = int(mod(tc.x, 4.0)) + 4 * int(mod(tc.y, 4.0));
+      if ((BAYER[bi] + 0.5) / 16.0 > uFade) discard;
+    }
     vec2 uvc = (tc + 0.5) / size;
     // En un atlas de fotogramas, la posición dentro del fotograma que se ve.
     vec2 local = (uvc - uUvOffset) / uUvScale;
@@ -413,10 +419,18 @@ const FLAT_FRAG = /* glsl */ `
 
 const GLOW_FRAG = /* glsl */ `
   uniform sampler2D map;
+  uniform float uFade;
   varying vec2 vUv;
+  const float BAYER[16] = float[16](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.);
   void main() {
     vec4 c = texture2D(map, vUv);
     if (c.a < 0.5) discard;
+    // Fundido por tramas (las ventanas encendidas de la vista desde fuera).
+    if (uFade < 0.999) {
+      vec2 tc = floor(vUv * vec2(textureSize(map, 0)));
+      int bi = int(mod(tc.x, 4.0)) + 4 * int(mod(tc.y, 4.0));
+      if ((BAYER[bi] + 0.5) / 16.0 > uFade) discard;
+    }
     gl_FragColor = vec4(c.rgb, 1.0);
   }
 `;
@@ -576,6 +590,7 @@ export class Look {
           uDither: { value: o.dither ?? 0.035 },
           uHalo: { value: o.halo ?? 1 },
           uOutdoor: { value: o.outdoor ? 1 : 0 },
+          uFade: { value: 1 },
           uRim: { value: (o.wrap ?? 0.25) >= 0.5 ? 0.9 : 0 },
           uRelief: { value: relief ? this.own(reliefTexture(b, relief)) : NO_DEPTH },
           uHasRelief: { value: relief ? 1 : 0 },
@@ -598,6 +613,7 @@ export class Look {
           map: { value: map },
           uUvOffset: { value: new Vector2(0, 0) },
           uUvScale: { value: new Vector2(1 / frames, 1) },
+          uFade: { value: 1 },
         },
         vertexShader: SURFACE_VERT,
         fragmentShader: GLOW_FRAG,

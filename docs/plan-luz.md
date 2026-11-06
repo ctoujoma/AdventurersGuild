@@ -159,14 +159,19 @@ De noche, de vez en cuando, una lucecita cálida en el bosque lejano o en las ar
 alguien acampara con una hoguera: un punto que titila (con un halo pequeño y, si se ve, un hilo
 de humo), que aparece un rato y se apaga. Pocas y al azar, para que sorprendan.
 
-## Idea: la taberna vista desde fuera al alejar del todo
+## Hecho: la taberna vista desde fuera al alejar del todo
 
-Con el zoom más alejado (o uno más, añadido para esto), dibujar la taberna con el corte tapado:
-reaparece la «tapa» (los muros de delante, que hoy son transparentes al jugador) y se ve la
-taberna desde el exterior, como una casa de verdad en el paisaje. Para eso, a las salas se les
-añaden ventanas también por ese lado (encendidas de noche, con la luz de cada sala), y la tapa
-se funde al acercar. Encaja con la luz con ambiente: de noche, la casa como islas de luz cálida
-en las ventanas.
+Con el ajuste, con el zoom al mínimo, un paso más de alejar pone la «tapa» y uno de acercar la
+quita; entra y sale con un fundido por tramas (`uFade`). La tapa (`outsideFace` en
+`textures.ts`) es el plano de corte con los huecos cerrados: por encima del suelo, la pared de
+fuera con una ventana por columna y planta (la escalera, una estrecha; el recibidor, la puerta
+de la calle); por debajo, la tierra. El cristal es transparente (se ve la sala de verdad) y de
+noche se enciende (una capa cálida detrás de la tapa, cada sala con su tono, algunas más
+tenues). Va delante del corte, sin la luz ni el halo de las salas en su cara de fuera. Captura:
+`capturas/luz-ambiente/fuera.png` (el corte; y desde fuera de día, al atardecer y de noche).
+
+Lo que falta en esta vista: las ventanas de los muros de los lados (ver arriba); el sótano, que
+desde fuera es tierra oscura; quizá un poco de luz de las ventanas en la pared de debajo.
 
 ## Fases (cada una, un PR con capturas antes y después, dentro de «Luz con ambiente»)
 

@@ -152,6 +152,7 @@ import {
   sideTex,
   stable,
   stairBack,
+  outsideFace,
   stairCells,
   themeOf,
   type Theme,
@@ -396,6 +397,15 @@ export class RoomScene {
    * `plane` va por duplicado: tal cual a `classic` y, en el estilo de luz con ambiente, a `mood`.
    */
   private dual: { classic: Group; mood: Group } | null = null;
+  /**
+   * La vista desde fuera (luz con ambiente): con el zoom al mínimo, un paso más de alejar pone la
+   * tapa (`cover`) y uno de acercar la quita; `coverFade` la funde de 0 a 1.
+   */
+  private outside = false;
+  private coverFade = 0;
+  private cover: Mesh | null = null;
+  private coverGlass: Mesh | null = null;
+  private coverAt = 0;
   private grassTick = -1;
   /** El fuego de cada forja, para avivarlo o bajarlo según haya trabajo (ver `workshop`). */
   private forgeLamps: { room: string; lamp: Lamp; base: number }[] = [];
@@ -766,6 +776,15 @@ export class RoomScene {
   zoomBy(step: number): void {
     const min = this.minZoom(this.cssW, this.cssH);
     const cur = this.camera.zoom;
+    // La vista desde fuera: un paso más allá del zoom mínimo (y al acercar, se quita primero).
+    if (this.moodLight && step < 0 && cur <= min) {
+      this.outside = true;
+      return;
+    }
+    if (this.outside && step > 0) {
+      this.outside = false;
+      return;
+    }
     const z =
       step > 0
         ? Math.min(6, Math.floor(cur) + 1)
@@ -1345,6 +1364,39 @@ export class RoomScene {
     const fx1 = F.x + F.buf.w;
     const fy1 = F.y + F.buf.h;
     const cut = GROUND - F.y;
+    // La tapa de la vista desde fuera (luz con ambiente, al alejar del todo): delante del corte,
+    // sin la luz ni el halo de las salas en su cara de fuera (`wrap` 0, `halo` 0). Aparece con
+    // un fundido por tramas (`uFade`, ver `outside`).
+    {
+      const { buf: img, glass } = outsideFace(L, look, F);
+      const corners: Corners = [
+        at(F.x, fy1, -0.6),
+        at(fx1, fy1, -0.6),
+        at(fx1, F.y, -0.6),
+        at(F.x, F.y, -0.6),
+      ];
+      const mat = this.look.surface(img, corners, {
+        ambient: OUTDOOR,
+        sun: 1,
+        wrap: 0,
+        halo: 0,
+        outdoor: true,
+      });
+      mat.uniforms.uFade!.value = this.coverFade;
+      this.cover = mesh(quad(corners, this.look), mat);
+      this.cover.visible = this.coverFade > 0.01;
+      g.add(this.cover);
+      // De noche, el cristal encendido, justo detrás de la tapa (brilla por sí solo).
+      const gc: Corners = [
+        at(F.x, fy1, -0.3),
+        at(fx1, fy1, -0.3),
+        at(fx1, F.y, -0.3),
+        at(F.x, F.y, -0.3),
+      ];
+      this.coverGlass = mesh(quad(gc, this.look), this.look.glow(glass, 1));
+      this.coverGlass.visible = false;
+      g.add(this.coverGlass);
+    }
     this.plane(
       g,
       F.buf.crop(0, 0, F.buf.w, cut),
@@ -3418,6 +3470,30 @@ export class RoomScene {
       ? new Vector3(1 - 2 * p, 0.2 + 0.9 * Math.sin(Math.PI * p), 0.6)
       : new Vector3(-0.45, 0.75, 0.6);
     this.shared.uSunDir.value.copy(sunDir.normalize());
+    // La tapa de la vista desde fuera, fundiéndose hacia lo que toca (en unos 0,4 s).
+    {
+      const now = performance.now() / 1000;
+      const dt = Math.min(0.1, Math.max(0, now - this.coverAt));
+      this.coverAt = now;
+      if (!this.moodLight || this.camera.zoom > this.minZoom(this.cssW, this.cssH))
+        this.outside = false;
+      const want = this.outside ? 1 : 0;
+      const f = this.coverFade + Math.sign(want - this.coverFade) * dt * 2.5;
+      this.coverFade = Math.max(
+        0,
+        Math.min(1, want > this.coverFade ? Math.min(f, 1) : Math.max(f, 0)),
+      );
+      if (this.cover) {
+        this.cover.visible = this.coverFade > 0.01;
+        (this.cover.material as ShaderMaterial).uniforms.uFade!.value = this.coverFade;
+      }
+      if (this.coverGlass) {
+        const dln = this.daylight();
+        const lit = this.coverFade * Math.max(0, Math.min(1, 1 - dln.day * 1.4 - dln.dusk * 0.5));
+        this.coverGlass.visible = lit > 0.01;
+        (this.coverGlass.material as ShaderMaterial).uniforms.uFade!.value = lit;
+      }
+    }
     // La sombra del edificio, con el sol de lado del todo (si viene algo de delante, cae casi
     // toda detrás, donde no se ve): se tiende junto a la taberna, a su misma profundidad. Nunca
     // más larga que lo que da un sol a 0,3 de alto.
