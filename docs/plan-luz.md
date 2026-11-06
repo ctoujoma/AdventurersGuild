@@ -53,8 +53,27 @@ siempre, abajo con el ajuste; `fachada.png`: mañana y tarde), con `tools/shots/
   focos en la gente. Y el rayo de sol en el aire (`shaft` en `gl.ts`): una lámina aditiva en
   bandas de la ventana al suelo, inclinada al contrario del sol.
 
-Lo que falta: relieve en chimeneas, rótulo, faroles y muebles (son figuras aparte); el rayo de sol
-el polvo en los rayos de sol; el fondo (fase 4); medir el rendimiento en un móvil de verdad.
+## Hecho después (PR siguiente al #119)
+
+Capturas al día en `capturas/luz-ambiente/`; `fondo.png`: de arriba abajo, sin el ajuste por la
+mañana, con él por la mañana, al ocaso y el patio.
+
+- El halo de las luces, solo en el aire de su sala: ya no se ve en los muros ni a través de ellos
+  (la zona de un foco incluye media pared de cada lado; el halo se queda dentro).
+- **Fase 3.** Relieve de bisel en todas las figuras que no lo pintan (muebles, chimeneas,
+  rótulo, faroles): `bevelRelief` en `pixel.ts`, sale de lo lejos que está cada píxel del borde y
+  hunde las líneas oscuras de dentro.
+- **Fase 4 (fondo).** `paisaje.ts` (de la prueba A): dos sierras grandes con nieve, espinazo,
+  surcos y bruma hacia el pie; la cara al sol pasa de la derecha (mañana) a la izquierda (tarde);
+  al ocaso y al alba, nieve rosa y naranja (alpenglow); de noche, siluetas con la nieve a la
+  luna. Un bosque lejano de abetos con bruma entre los montes y las colinas. El cielo en bandas de
+  borde mellado (sin trama) y las capas de delante algo apagadas por la bruma. Las capas nuevas se
+  repiten sin espejo (periódicas a lo ancho). Se pintan la primera vez que se pone el ajuste
+  (unos 150 ms).
+
+Lo que falta: el polvo en los rayos de sol; de noche, la luz de las ventanas hacia fuera (patio y
+fachada); los árboles del patio y las colinas en el estilo nuevo (siguen los de Endesga); medir
+el rendimiento en un móvil de verdad; la fase 5.
 
 ## Fases (cada una, un PR con capturas antes y después, dentro de «Luz con ambiente»)
 
