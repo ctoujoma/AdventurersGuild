@@ -29,7 +29,7 @@ import {
 } from 'three';
 import { P } from '../../art/palette';
 import type { PixelBuffer } from '../../art/pixel';
-import { SLAB } from './layout';
+import { PARTITION, SLAB } from './layout';
 
 /**
  * Focos que caben a la vez: van en una textura (una columna por foco: posición y alcance, color
@@ -241,9 +241,10 @@ const SURFACE_FRAG = /* glsl */ `
         if (nb < 0.5) light += lc.rgb * a * uRim;
       }
       light += lc.rgb * a * ndl;
-      // El halo, solo dentro de la sala: la zona incluye los forjados (su canto recibe luz), pero
-      // el halo del foco de abajo no debe verse a través del suelo.
-      if (lc.a > 0.0 && world.y > z.y + ${SLAB.toFixed(1)} && world.y < z.w - ${SLAB.toFixed(1)}) {
+      // El halo, solo en el aire de la sala: la zona incluye los forjados (su canto recibe luz) y
+      // media pared de cada lado; el halo no debe verse en ellos ni a través de ellos.
+      if (lc.a > 0.0 && world.x > z.x + ${(PARTITION / 2 - 1).toFixed(1)} && world.x < z.z - ${(PARTITION / 2 - 1).toFixed(1)} &&
+          world.y > z.y + ${SLAB.toFixed(1)} && world.y < z.w - ${SLAB.toFixed(1)}) {
         // El centro, donde se ve la llama dibujada (a su profundidad: si no, se corre al mover).
         vec3 hp = texelFetch(uLights, ivec2(i, 3), 0).xyz;
         vec2 ls = cameraPosition.xy + (hp.xy - cameraPosition.xy) * (cameraPosition.z / (cameraPosition.z - hp.z));
