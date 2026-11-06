@@ -112,10 +112,11 @@ el rendimiento en un móvil de verdad; la fase 5.
   componente hacia delante: si no, se iba detrás, donde no se ve), corta a mediodía y larga al
   atardecer; lo que queda dentro (suelo, árboles, gente) pierde el sol y toma la luz fría del
   cielo. Borde mellado. Captura: `capturas/luz-ambiente/sombra.png` (mañana y tarde).
-- El rayo de sol de las ventanas, como la luz de verdad: sale del alféizar, entre la recta que
-  pasa por la esquina de arriba de la ventana del lado contrario al sol y la que pasa por la de
-  abajo del lado del sol; con el sol de lado se inclina hasta casi 45° (tan ancho como la
-  diagonal de la ventana). Para revisarlo: `window.__beamDbg = true` lo pinta en magenta.
+- El rayo de sol de las ventanas, como la luz de verdad: la ventana entera arrastrada hacia donde
+  cae la luz (desde lo alto de la ventana, entre la recta que pasa por la esquina de arriba del
+  lado contrario al sol y la que pasa por la de abajo del lado del sol; el shader recorta lo que
+  sobra en el alto de la ventana). Con el sol de lado se inclina hasta casi 45°. Para revisarlo:
+  `window.__beamDbg = true` lo pinta en magenta.
 - Polvo en los rayos de sol: motas de un píxel que bajan despacio, se mecen y titilan.
 - Pozo, rótulo, farol, muñecos, cuadra y empalizada sin contorno oscuro y algo apagados
   (`softened` en `suelo.ts`).
@@ -132,6 +133,12 @@ el rendimiento en un móvil de verdad; la fase 5.
 Lo que falta: de noche, la luz de las ventanas hacia fuera (patio y fachada); el jardín y sus
 piezas en el estilo nuevo; medir el rendimiento en un móvil de verdad; la vista desde
 fuera al alejar (abajo); la fase 5.
+
+## Idea: hogueras lejanas en el bosque de noche
+
+De noche, de vez en cuando, una lucecita cálida en el bosque lejano o en las arboledas, como si
+alguien acampara con una hoguera: un punto que titila (con un halo pequeño y, si se ve, un hilo
+de humo), que aparece un rato y se apaga. Pocas y al azar, para que sorprendan.
 
 ## Idea: la taberna vista desde fuera al alejar del todo
 

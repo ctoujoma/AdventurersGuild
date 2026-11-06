@@ -364,11 +364,20 @@ const SHAFT_FRAG = /* glsl */ `
   uniform vec3 uColor;
   uniform float uTime;
   uniform float uDbg;
+  uniform float uSlantF;
+  uniform vec2 uWin;
   uniform float uK;
   uniform float uW;
   uniform float uDrop;
   varying vec2 vUv;
   void main() {
+    // La forma: la ventana (uWin: ancho y alto) arrastrada en la dirección del sol. El plano es
+    // el paralelogramo que la contiene (desde lo alto de la ventana); en el alto de la ventana,
+    // del lado al que cae el rayo, se recorta por el canto de la ventana.
+    float u = vUv.x * uW;
+    if (uSlantF > 0.0) u = uW - u;
+    float d = vUv.y * uDrop;
+    if (d < uWin.y && u > uWin.x + abs(uSlantF) * d) discard;
     // Para revisar por dónde va (desde la consola, window.__beamDbg): todo el rayo en magenta.
     if (uDbg > 0.5) { gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0); return; }
     float edge = smoothstep(0.0, 0.1, vUv.x) * smoothstep(1.0, 0.9, vUv.x);
@@ -605,6 +614,8 @@ export class Look {
           uIn: { value: 30 },
           uTime: { value: 0 },
           uDbg: { value: 0 },
+          uSlantF: { value: 0 },
+          uWin: { value: new Vector2(16, 20) },
         },
         vertexShader: SHAFT_VERT,
         fragmentShader: SHAFT_FRAG,

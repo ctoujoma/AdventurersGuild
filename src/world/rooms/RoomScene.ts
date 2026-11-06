@@ -1651,11 +1651,12 @@ export class RoomScene {
         const sy = r.h / back.h;
         const mat = this.look.shaft();
         const u = mat.uniforms;
-        // Sale del alféizar (por arriba, la ventana ya brilla): el ancho y la x dependen de la
-        // inclinación del sol, se ponen en cada fotograma (ver `sunbeams`).
-        u.uTop!.value.set(r.x + (p.x - p.w / 2) * sx, GROUND - (r.y + p.y * sy), -(DEPTH - 1));
+        // Sale de lo alto de la ventana: el ancho y la x dependen de la inclinación del sol, se
+        // ponen en cada fotograma (ver `sunbeams`).
+        u.uTop!.value.set(r.x + (p.x - p.w / 2) * sx, GROUND - (r.y + p.top * sy), -(DEPTH - 1));
         u.uW!.value = p.w * sx;
-        u.uDrop!.value = r.h - p.y * sy;
+        u.uDrop!.value = r.h - p.top * sy;
+        u.uWin!.value.set(p.w * sx, (p.y - p.top) * sy);
         u.uIn!.value = DEPTH * 0.55;
         const beam = new Mesh(this.unitPlane, mat);
         beam.userData.win = {
@@ -3189,14 +3190,15 @@ export class RoomScene {
       // Inclinación (x por cada píxel que baja): con el sol de lado, hasta casi 45°.
       const slant = Math.max(-0.95, Math.min(0.95, -sd.x * 1.5));
       u.uSlant!.value = slant;
-      // El rayo, como la luz de verdad: entre la recta que pasa por la esquina de arriba de la
-      // ventana del lado contrario al sol y la que pasa por la de abajo del lado del sol. En el
-      // alféizar, tan ancho como la ventana más lo que se inclina en su alto (con el sol bajo,
-      // más ancho), corrido hacia donde cae.
+      // El rayo, como la luz de verdad: la ventana entera arrastrada hacia donde cae la luz,
+      // entre la recta que pasa por la esquina de arriba del lado contrario al sol y la que pasa
+      // por la de abajo del lado del sol (el shader recorta lo que sobra en el alto de la
+      // ventana). Desde lo alto de la ventana, el paralelogramo que la contiene.
       const win = b.userData.win as { x0: number; w: number; h: number };
       const add = Math.abs(slant) * win.h;
-      u.uTop!.value.x = slant < 0 ? win.x0 - add : win.x0;
+      u.uTop!.value.x = slant < 0 ? win.x0 : win.x0 - add;
       u.uW!.value = win.w + add;
+      u.uSlantF!.value = slant;
       u.uColor!.value.set(1, 0.88 - 0.3 * dl.dusk, 0.7 - 0.38 * dl.dusk);
       u.uTime!.value = performance.now() / 1000;
       u.uDbg!.value = (window as unknown as { __beamDbg?: boolean }).__beamDbg ? 1 : 0;
