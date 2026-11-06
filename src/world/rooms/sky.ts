@@ -18,15 +18,25 @@ import { P } from '../../art/palette';
 import { PixelBuffer } from '../../art/pixel';
 import { GROUND, WORLD_X0 } from '../geometry';
 import { hillLife, skyLife, treeLife } from './life';
-import { FAR_FOREST_FX, farForestCnc, hazed, mountainsCnc, skyStripCnc } from './paisaje';
+import {
+  FAR_FOREST_FX,
+  farForestCnc,
+  groveCnc,
+  hazed,
+  mountainsCnc,
+  skyStripCnc,
+  untrammed,
+} from './paisaje';
 import { glowSprite } from '../lighting';
 import { Rng } from '../../core/rng';
 import {
   MOON_R,
   buildMoon,
   buildSky,
+  groveTrees,
   parallaxLayers,
   stars,
+  treelineTrees,
   type ParallaxLayer,
   type Star,
 } from '../parallax';
@@ -210,13 +220,13 @@ export class Sky {
     dawn: HTMLCanvasElement;
     woods: { day: HTMLCanvasElement; night: HTMLCanvasElement };
     day: HTMLCanvasElement[];
+    /** Las capas que cambian también de noche (las arboledas); las demás, las de siempre. */
+    nights: (HTMLCanvasElement | null)[];
   };
   /** Se pinta la primera vez que hace falta. */
   private get cnc() {
     if (!this.cncCache) {
       const m = mountainsCnc();
-      // Las capas de delante, apagadas por la bruma cuanto más lejos.
-      const HAZE = [0, 0.3, 0.2, 0.1, 0.04];
       this.cncCache = {
         strips: {
           day: bufferCanvas(skyStripCnc(SKY_BANDS.day, STRIP_W, STRIP_H, 30, GROUND - 20)),
@@ -232,10 +242,28 @@ export class Sky {
           const f = farForestCnc();
           return { day: bufferCanvas(f.day), night: bufferCanvas(f.night) };
         })(),
-        day: this.parallax.map(({ l }, i) => bufferCanvas(hazed(l.day, HAZE[i] ?? 0))),
+        ...this.moodLayers(),
       };
     }
     return this.cncCache;
+  }
+
+  /**
+   * Las capas de delante con luz con ambiente: las colinas sin tramado y las arboledas con los
+   * árboles nuevos; todas apagadas por la bruma cuanto más lejos.
+   */
+  private moodLayers() {
+    const HAZE = [0, 0.3, 0.2, 0.1, 0.04];
+    const groves: Record<number, { day: PixelBuffer; night: PixelBuffer }> = {
+      3: groveCnc(treelineTrees(), GROUND + 2, 0.12),
+      4: groveCnc(groveTrees(), GROUND + 4, 0.03),
+    };
+    return {
+      day: this.parallax.map(({ l }, i) =>
+        bufferCanvas(groves[i]?.day ?? hazed(i === 1 ? untrammed(l.day) : l.day, HAZE[i] ?? 0)),
+      ),
+      nights: this.parallax.map((_, i) => (groves[i] ? bufferCanvas(groves[i].night) : null)),
+    };
   }
 
   /**
@@ -364,10 +392,13 @@ export class Sky {
         }
         return;
       }
-      tile(ctx, c, x, top, vw);
+      const night = this.mood ? this.cnc.nights[i] : null;
+      if (night) repeat(ctx, night, x, top, vw);
+      else tile(ctx, c, x, top, vw);
       if (dayK > 0) {
         ctx.globalAlpha = dayK;
-        tile(ctx, this.mood ? this.cnc.day[i]! : d, x, top, vw);
+        if (night) repeat(ctx, this.cnc.day[i]!, x, top, vw);
+        else tile(ctx, this.mood ? this.cnc.day[i]! : d, x, top, vw);
         ctx.globalAlpha = 1;
       }
       if (i === 1) hillLife(ctx, x, top, vw, t, light);

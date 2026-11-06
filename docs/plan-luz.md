@@ -75,6 +75,31 @@ Lo que falta: el polvo en los rayos de sol; de noche, la luz de las ventanas hac
 fachada); los árboles del patio y las colinas en el estilo nuevo (siguen los de Endesga); medir
 el rendimiento en un móvil de verdad; la fase 5.
 
+## Hecho después (PR siguiente al #120)
+
+- Montes: vuelven a la silueta de siempre (`ridgeAt`: sierra continua, cumbres de tres tamaños,
+  collados y cresta mellada; los nuevos eran casi triángulos) con la textura nueva encima (cara de
+  luz y de sombra según hacia dónde baja la cresta, surcos, nieve por altura y bruma), y detrás
+  otra sierra más alta y brumosa.
+- Árboles del patio en el estilo nuevo (`arboles.ts`): abetos rama a rama (cada una con su largo,
+  caída y lado; con huecos y la punta algo torcida), robles en racimos (algunos de otoño) y
+  matas; sin contorno y con relieve, así el sol del shader les da la cara de cada hora. Los de
+  siempre siguen ahí, ocultos, y vuelven sin el ajuste.
+- Fondo: las arboledas cercanas con esos mismos árboles (de noche, su silueta en azules) y las
+  colinas sin tramado (`untrammed`).
+- Pendiente de los árboles: el usuario los ve aún algo previsibles; los abetos ya van rama a
+  rama, pero se pueden variar más (abetos jóvenes, secos, inclinados, de dos puntas) y mezclar
+  especies (alerces, abedules).
+
+## Idea: la taberna vista desde fuera al alejar del todo
+
+Con el zoom más alejado (o uno más, añadido para esto), dibujar la taberna con el corte tapado:
+reaparece la «tapa» (los muros de delante, que hoy son transparentes al jugador) y se ve la
+taberna desde el exterior, como una casa de verdad en el paisaje. Para eso, a las salas se les
+añaden ventanas también por ese lado (encendidas de noche, con la luz de cada sala), y la tapa
+se funde al acercar. Encaja con la luz con ambiente: de noche, la casa como islas de luz cálida
+en las ventanas.
+
 ## Fases (cada una, un PR con capturas antes y después, dentro de «Luz con ambiente»)
 
 1. **Fachada y exterior con relieve** (lo primero: es lo que no encaja).

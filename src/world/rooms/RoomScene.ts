@@ -57,6 +57,7 @@ import { FLIGHT_Z, flightArt, goesRight } from './stairs';
 import { dress } from './salas/tintes';
 import { Crowd, type Hit, type Poi, type Talk } from './crowd';
 import { LAWN_D, tuftAllowed, yardBushes, yardTrees } from './patio';
+import { bushCnc, oakCnc, pineCnc } from './arboles';
 import {
   CLOISTER_W,
   cloisterParts,
@@ -376,6 +377,8 @@ export class RoomScene {
   private unitPlane = new PlaneGeometry(1, 1);
   /** La hierba que mueve el viento: cada mata, con su sitio (el viento pasa por x). */
   private grass: { m: Mesh; x: number; seed: number }[] = [];
+  /** Lo de fuera en dos estilos: el de siempre y el de «luz con ambiente» (se ve uno). */
+  private styled: { classic: Group; mood: Group }[] = [];
   private grassTick = -1;
   /** El fuego de cada forja, para avivarlo o bajarlo según haya trabajo (ver `workshop`). */
   private forgeLamps: { room: string; lamp: Lamp; base: number }[] = [];
@@ -1280,6 +1283,7 @@ export class RoomScene {
     this.flames = [];
     this.sunbeams = [];
     this.grass = [];
+    this.styled = [];
     this.emitters = [];
     this.forgeLamps = [];
     this.pins = [];
@@ -1956,15 +1960,25 @@ export class RoomScene {
     const put = (img: PixelBuffer, x: number, depth: number, up = 0) =>
       this.figure(g, img, x, GROUND - up, depth, OUTDOOR, 1);
     put(Prop.well(), px + 40, 70);
-    // Árboles y arbustos a los lados (ver `patio.ts`: nada cae en el jardín ni en el anexo).
+    // Árboles y arbustos a los lados (ver `patio.ts`: nada cae en el jardín ni en el anexo), en
+    // los dos estilos: el de siempre y, con luz con ambiente, el de `arboles.ts`.
+    const classic = new Group();
+    const mood = new Group();
+    g.add(classic, mood);
+    this.styled.push({ classic, mood });
+    const both = (a: PixelBuffer, b: PixelBuffer, x: number, depth: number) => {
+      this.figure(classic, a, x, GROUND, depth, OUTDOOR, 1);
+      this.figure(mood, b, x, GROUND, depth, OUTDOOR, 1);
+    };
     for (const t of yardTrees(L))
-      put(
+      both(
         t.conifer ? Prop.pine(`pino${t.x}`, t.h) : Prop.oakTree(`roble${t.x}`, t.h),
+        t.conifer ? pineCnc(`pino${t.x}`, t.h) : oakCnc(`roble${t.x}`, t.h),
         t.x,
         t.depth,
       );
     this.plantGrass(L);
-    for (const bu of yardBushes(L)) put(Prop.bush(bu.seed), bu.x, bu.depth);
+    for (const bu of yardBushes(L)) both(Prop.bush(bu.seed), bushCnc(bu.seed), bu.x, bu.depth);
     for (let i = 0; i < Math.min(2, y.patio); i++) put(dummy(), px + 110 + i * 30, 40 + i * 16);
     this.gardenArt(L, model);
     if (y.establo > 0) put(stable(y.establo), px + 120, 150);
@@ -3144,6 +3158,10 @@ export class RoomScene {
       // El horizonte: donde acaba el terreno, al fondo (con la perspectiva, sube y baja con la cámara).
       const hz = project(view, view.px + view.vw / 2, GROUND, YARD_D).y;
       this.sky.mood = this.moodLight;
+      for (const st of this.styled) {
+        st.classic.visible = !this.moodLight;
+        st.mood.visible = this.moodLight;
+      }
       this.sky.draw(this.skyCtx, view.px, view.vw, view.vh, t, dl, nl, hz);
       this.skyTex.needsUpdate = true;
     }

@@ -5,10 +5,10 @@
  * borde mellado en vez de tramado; y las capas de delante, algo más apagadas por la bruma
  * cuanto más lejos. Sale de la prueba A (`tools/estilo/paisaje.py`).
  */
-import { Rng } from '../../core/rng';
 import { PixelBuffer, rgba } from '../../art/pixel';
 import { GROUND } from '../geometry';
-import { LAYER_W } from '../parallax';
+import { LAYER_W, ridgeAt, type Tree } from '../parallax';
+import { oakCnc, pineCnc } from './arboles';
 
 type RGB = [number, number, number];
 
@@ -101,57 +101,27 @@ const DUSK: Tones = {
 
 // ---------- Montes ----------
 
-interface Peak {
-  x: number;
-  y: number;
-  wl: number;
-  wr: number;
-  base: number;
-  hz: number;
-  seed: number;
-}
+/**
+ * Una cresta repetible a lo ancho de la capa: al final se funde con la de antes del principio.
+ */
+const periodic = (f: (x: number) => number) => (x: number) => {
+  const k = (x - (LAYER_W - 96)) / 96;
+  return k <= 0 ? f(x) : f(x) + (f(x - LAYER_W) - f(x)) * smooth(Math.min(1, k));
+};
 
-/** Dos sierras: la de atrás, más alta y con más bruma; la de delante, más baja. */
-function ranges(): Peak[][] {
-  const rng = new Rng('paisaje-montes');
-  const out: Peak[][] = [];
-  const specs = [
-    { gap: [150, 300], y: [72, 150], w: [90, 220], base: GROUND - 20, hz: 0.24 },
-    { gap: [100, 230], y: [150, 200], w: [60, 150], base: GROUND - 10, hz: 0.1 },
-  ];
-  specs.forEach((sp, li) => {
-    const list: Peak[] = [];
-    for (let x = rng.next() * 80; x < LAYER_W - 60;) {
-      list.push({
-        x,
-        y: sp.y[0]! + rng.next() * (sp.y[1]! - sp.y[0]!),
-        wl: sp.w[0]! + rng.next() * (sp.w[1]! - sp.w[0]!),
-        wr: sp.w[0]! + rng.next() * (sp.w[1]! - sp.w[0]!),
-        base: sp.base,
-        hz: sp.hz,
-        seed: li * 100 + list.length,
-      });
-      x += sp.gap[0]! + rng.next() * (sp.gap[1]! - sp.gap[0]!);
-    }
-    // Con sus copias a un ancho de capa a cada lado: se repite sin junta.
-    out.push([
-      ...list,
-      ...list.map((q) => ({ ...q, x: q.x - LAYER_W })),
-      ...list.map((q) => ({ ...q, x: q.x + LAYER_W })),
-    ]);
-  });
-  return out;
-}
-
-/** La cresta de un pico en la x (con su mella), o Infinity si no llega. */
-function ridgeOf(p: Peak, x: number): number {
-  const left = x < p.x;
-  const d = Math.abs(x - p.x) / (left ? p.wl : p.wr);
-  if (d > 1.6) return Infinity;
-  const s = p.seed * 7 + (left ? 1 : 2);
-  const jag = (fbmW(x, 0, 7, 1, s) - 0.5) * 6 + (fbmW(x, 0, 30, 1, s + 3) - 0.5) * 10;
-  return p.y + (p.base - p.y) * d ** 0.8 + jag * Math.min(1, d * 3);
-}
+/**
+ * Las dos sierras, con la forma de las de siempre (`ridgeAt`: cumbres de tres tamaños sobre una
+ * base común, collados y la cresta mellada): delante, la de siempre; detrás, otra más alta y con
+ * más bruma, desplazada para que sus cumbres no coincidan.
+ */
+const RANGES = [
+  {
+    ridge: periodic((x) => 244 - (244 - ridgeAt(x * 0.8 + 517)) * 1.3 - 8),
+    hz: 0.26,
+    seed: 1,
+  },
+  { ridge: periodic((x) => ridgeAt(x)), hz: 0.06, seed: 2 },
+];
 
 export interface MountainSet {
   /** De día, con el sol por la derecha (mañana) y por la izquierda (tarde); y de noche. */
@@ -163,7 +133,7 @@ export interface MountainSet {
   dawn: PixelBuffer;
 }
 
-/** Las dos sierras, en una pasada: las tres versiones tienen la misma silueta y se funden. */
+/** Las dos sierras, en una pasada: las cinco versiones tienen la misma silueta y se funden. */
 export function mountainsCnc(): MountainSet {
   const W = LAYER_W;
   const H = GROUND + 4;
@@ -174,71 +144,51 @@ export function mountainsCnc(): MountainSet {
     dusk: new PixelBuffer(W, H),
     dawn: new PixelBuffer(W, H),
   };
-  // El serpenteo del espinazo de cada pico, por filas.
-  const spines = new Map<number, Float32Array>();
-  const driftOf = (p: Peak) => {
-    let d = spines.get(p.seed);
-    if (!d) {
-      d = new Float32Array(H);
-      for (let y = 0; y < H; y++) d[y] = (fbm(0, y, 1, 18, p.seed + 9) - 0.5) * 30;
-      spines.set(p.seed, d);
-    }
-    return d;
-  };
-  for (const list of ranges()) {
+  for (const R of RANGES) {
+    const top = new Float32Array(W + 64);
+    for (let x = -32; x < W + 32; x++) top[x + 32] = R.ridge(((x % W) + W) % W);
+    const ridge = (x: number) => top[Math.max(0, Math.min(W + 63, Math.round(x) + 32))]!;
     for (let x = 0; x < W; x++) {
-      // De quién es la cresta en esta x: el pico que más sube.
-      let top = Infinity;
-      let p: Peak | null = null;
-      for (const q of list) {
-        const r = ridgeOf(q, x);
-        if (r < top) {
-          top = r;
-          p = q;
-        }
-      }
-      if (!p) continue;
-      const span = p.base - p.y;
-      // La nieve, hasta media ladera y nunca por debajo de cierta altura.
-      const snowBase = Math.min(
-        p.y + span * (0.42 + (fbmW(x, 0, 12, 1, p.seed + 5) - 0.5) * 0.35),
-        172 + (fbmW(x, 0, 20, 1, 4) - 0.5) * 16,
-      );
-      const y0 = Math.max(0, Math.ceil(top));
-      const drift = driftOf(p);
+      const y0 = Math.max(0, Math.ceil(ridge(x)));
       for (let y = y0; y < H; y++) {
-        // El espinazo baja del pico serpenteando: a un lado una cara, al otro la otra.
-        const spine = p.x + drift[y]! * clamp01((y - p.y) / 40);
-        const left = x < spine;
-        // Surcos a lo largo de la ladera.
-        const ang = Math.atan2(span, left ? p.wl : p.wr);
-        const u = (left ? 1 : -1) * (x - p.x) * Math.sin(ang) + (y - p.y) * Math.cos(ang);
-        const g =
-          fbm(u * 0.9, 0, 5, 1, p.seed + 11) * 0.7 + fbmW(x, y, 3, 12, p.seed + 13, 2) * 0.3;
-        const sub = fbmW(x, y, 14, 14, p.seed + 17, 2) - 0.5;
-        const snowy = y < snowBase + (g - 0.5) * 22 && !(g < 0.3 && y > p.y + 6);
+        const d = y - ridge(x);
+        // La cara: hacia dónde baja la cresta cerca de aquí (cuanto más abajo, más ancho se
+        // mira: las caras grandes del monte), con el espinazo serpenteando.
+        const r = 2 + d * 0.55;
+        const xs = x + (fbmW(x, y, 9, 9, R.seed + 3, 2) - 0.5) * Math.min(d, 30) * 0.5;
+        const slope = ridge(xs + r) - ridge(xs - r);
+        // slope > 0: la cresta baja hacia la derecha, la cara mira a la derecha.
+        const right = slope > 0;
+        // Surcos a lo largo de la ladera (en diagonal, bajando hacia fuera).
+        const u = x - (right ? 1 : -1) * d * 0.9;
+        const g = fbmW(u, 0, 5, 1, R.seed + 11) * 0.7 + fbmW(x, y, 3, 12, R.seed + 13, 2) * 0.3;
+        const sub = fbmW(x, y, 14, 14, R.seed + 17, 2) - 0.5;
+        // La nieve, por encima de una línea que sube y baja; con calvas de roca.
+        const snowline = 186 + (fbmW(x, 0, 24, 1, R.seed + 5) - 0.5) * 22 + (g - 0.5) * 18;
+        const snowy = y < snowline && !(g < 0.3 && d > 5);
         // La bruma, más hacia el pie y en la sierra de atrás.
         const amt = Math.min(
           0.92,
           Math.max(
             0,
-            clamp01(((y - (p.y + span * 0.45)) / span) * 1.2) * 0.7 +
-              p.hz +
-              (fbmW(x, y, 50, 6, p.seed + 19, 2) - 0.5) * 0.25,
+            clamp01((y - 196) / 70) * 0.65 + R.hz + (fbmW(x, y, 50, 6, R.seed + 19, 2) - 0.5) * 0.2,
           ),
         );
+        // Lo más llano (la cresta de un collado), con la luz de arriba.
+        const flat = Math.abs(slope) < r * 0.15;
         const paint = (t: Tones, lit: boolean) => {
+          const l = flat ? 0.5 : lit ? 0.68 : 0.28;
           const c = snowy
-            ? ramp(t.snow, (lit ? 0.8 : 0.35) + (g - 0.5) * 0.35)
-            : ramp(t.mount, (lit ? 0.66 : 0.3) + (g - 0.5) * 0.55 + sub * 0.25);
+            ? ramp(t.snow, l + 0.12 + (g - 0.5) * 0.35)
+            : ramp(t.mount, l + (g - 0.5) * 0.5 + sub * 0.25);
           return pack(mixc(c, t.haze, amt));
         };
         const i = y * W + x;
-        set.right.data[i] = paint(DAY, !left);
-        set.left.data[i] = paint(DAY, left);
-        set.night.data[i] = paint(NIGHT, left);
-        set.dusk.data[i] = paint(DUSK, left);
-        set.dawn.data[i] = paint(DUSK, !left);
+        set.right.data[i] = paint(DAY, right);
+        set.left.data[i] = paint(DAY, !right);
+        set.night.data[i] = paint(NIGHT, !right);
+        set.dusk.data[i] = paint(DUSK, !right);
+        set.dawn.data[i] = paint(DUSK, right);
       }
     }
   }
@@ -337,4 +287,65 @@ export function farForestCnc(): { day: PixelBuffer; night: PixelBuffer } {
     }
   }
   return { day, night };
+}
+
+// ---------- Arboledas y colinas ----------
+
+/**
+ * Una arboleda del fondo con los árboles nuevos (`arboles.ts`), a su pie en `base`: de día,
+ * apagada por la bruma (`amt`); de noche, la misma silueta en azules oscuros.
+ */
+export function groveCnc(
+  trees: readonly Tree[],
+  base: number,
+  amt: number,
+): { day: PixelBuffer; night: PixelBuffer } {
+  const W = LAYER_W;
+  const day = new PixelBuffer(W, base + 2);
+  for (const t of trees) {
+    const img = t.conifer ? pineCnc(`fondo${t.x}`, t.h) : oakCnc(`fondo${t.x}`, t.h);
+    // Repetido a un ancho de capa a cada lado: la capa se repite sin junta.
+    for (const k of [-W, 0, W]) day.blit(img, Math.round(t.x + k - img.w / 2), base - img.h);
+  }
+  const night = new PixelBuffer(W, day.h);
+  const NC = ['#0f1628', '#141c32', '#1a243e', '#222e4c'].map(hex);
+  for (let i = 0; i < day.data.length; i++) {
+    const c = day.data[i]!;
+    if (!(c >>> 24)) continue;
+    const l = ((c & 255) * 0.3 + ((c >> 8) & 255) * 0.59 + ((c >> 16) & 255) * 0.11) / 255;
+    night.data[i] = pack(ramp(NC, l * 1.6));
+  }
+  return { day: hazed(day, amt, 0.1), night };
+}
+
+/**
+ * Quita el tramado de una capa: cada píxel que casi no se repite a su alrededor (un cuadro del
+ * ajedrez del tramado) toma el color que más hay en su entorno. Salen grumos en vez de tramas.
+ */
+export function untrammed(src: PixelBuffer): PixelBuffer {
+  const b = src.clone();
+  const { w, h } = src;
+  const d = src.data;
+  const counts = new Map<number, number>();
+  for (let y = 1; y < h - 1; y++)
+    for (let x = 1; x < w - 1; x++) {
+      const c = d[y * w + x]!;
+      if (!(c >>> 24)) continue;
+      counts.clear();
+      for (let j = -1; j <= 1; j++)
+        for (let i = -1; i <= 1; i++) {
+          const n = d[(y + j) * w + x + i]!;
+          if (n >>> 24) counts.set(n, (counts.get(n) ?? 0) + 1);
+        }
+      if ((counts.get(c) ?? 0) > 3) continue;
+      let best = c;
+      let most = 0;
+      for (const [k, v] of counts)
+        if (v > most) {
+          most = v;
+          best = k;
+        }
+      b.data[y * w + x] = best;
+    }
+  return b;
 }
