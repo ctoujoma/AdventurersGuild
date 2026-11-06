@@ -142,9 +142,16 @@ fuera al alejar (abajo); la fase 5.
   y tarde, sin y con el ajuste).
 - Con el ajuste, lo de fuera a la sombra (soportales del claustro, `sun < 1` con la luz de fondo
   de fuera) ya no se oscurece como si fuera dentro (`uOutdoor`).
-- La luz de las ventanas hacia fuera, de noche: no hay ventanas en los muros de los lados, así
-  que queda para la vista desde fuera; mientras, cabría el charco de luz de la puerta y el farol
-  en el patio y el óculo del hastial encendido (pendiente de que el usuario lo decida).
+- De noche, con el ajuste: un charco de luz cálida en el patio delante de la puerta del
+  recibidor y el óculo de cada hastial encendido (con su halo). Son focos «de noche» (`night` en
+  `Lamp`): se encienden al oscurecer.
+
+## Para más adelante: ventanas en los muros que dan fuera
+
+Añadir una ventana a todas las paredes que den al exterior (las de los lados del edificio, sean
+de una sala o de una escalera): suelen ser paredes vacías, sin muebles, y si no hay puerta cabe
+una ventana. De día, su luz entraría como la de las del fondo (foco de sol y rayo); de noche, se
+verían encendidas desde fuera (y con la vista desde fuera, de abajo, darían luz al patio).
 
 ## Idea: hogueras lejanas en el bosque de noche
 

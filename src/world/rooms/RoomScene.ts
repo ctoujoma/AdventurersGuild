@@ -257,6 +257,8 @@ interface Lamp {
   halo: number;
   /** La luz que entra por una ventana (luz con ambiente): sigue al sol y no tiene halo. */
   sun?: boolean;
+  /** Solo de noche y con luz con ambiente (la puerta encendida, el óculo del hastial). */
+  night?: boolean;
 }
 
 /**
@@ -1315,6 +1317,31 @@ export class RoomScene {
     // El plano de corte, en dos: lo de encima del suelo, a la luz del día, y la tierra.
     const look = model.look ?? {};
     const F = facade(L, look, model.crest);
+    // De noche (luz con ambiente), el óculo de cada hastial encendido (el desván tiene luz): un
+    // brillo cálido con su halo, delante de la fachada. Como en `gable` (textures.ts): en los
+    // hastiales de más de 24 de alto, salvo el del escudo pintado.
+    const painted =
+      look.sign === 'pintado' && model.crest
+        ? F.runs.reduce((a, r) => (r.x1 - r.x0 > a.x1 - a.x0 ? r : a))
+        : null;
+    for (const run of F.runs) {
+      if (run.h <= 24 || run === painted) continue;
+      const ox = (run.x0 + run.x1) / 2;
+      const oy = run.base - Math.round(run.h * 0.38);
+      this.lamps.push({
+        pos: at(ox, oy, -10),
+        glow: at(ox, oy, 0),
+        r: 26,
+        color: [255, 196, 120],
+        power: 1.1,
+        flicker: 0.08,
+        zone: [ox - 34, GROUND - (oy + 34), ox + 34, GROUND - (oy - 34)],
+        seed: Math.round(ox),
+        fire: false,
+        halo: 9,
+        night: true,
+      });
+    }
     const fx1 = F.x + F.buf.w;
     const fy1 = F.y + F.buf.h;
     const cut = GROUND - F.y;
@@ -2094,6 +2121,21 @@ export class RoomScene {
         seed: 3,
         fire: false,
         halo: haloOf(60, 1, false),
+      });
+      // De noche (luz con ambiente), la puerta encendida: un charco de luz cálida en el patio,
+      // delante de ella.
+      this.lamps.push({
+        pos: at(dx - 14, GROUND - 34, 14),
+        glow: at(dx - 14, GROUND - 34, 14),
+        r: 110,
+        color: [255, 190, 112],
+        power: 3,
+        flicker: 0.05,
+        zone: [dx - 140, -SLAB, dx + PARTITION / 2, 140],
+        seed: 5,
+        fire: false,
+        halo: 0,
+        night: true,
       });
     }
   }
@@ -3225,6 +3267,8 @@ export class RoomScene {
     // La luz de las ventanas (luz con ambiente): llena de día, algo menos al atardecer, nada de
     // noche; su color, el del día (más dorado al atardecer).
     const sunLampK = this.moodLight ? Math.max(dl.day, dl.dusk * 0.8) : 0;
+    // Las luces de noche de fuera (luz con ambiente): se encienden al oscurecer.
+    const nightK = this.moodLight ? Math.max(0, Math.min(1, 1 - dl.day * 1.4 - dl.dusk * 0.5)) : 0;
     // Los rayos de sol de las ventanas: se inclinan al contrario del sol y toman su color.
     const sd = this.shared.uSunDir.value;
     for (const b of this.sunbeams) {
@@ -3255,7 +3299,7 @@ export class RoomScene {
     const y1 = GROUND - (view.py - 40);
     const near = [...this.lamps, ...this.incidentLamps]
       .filter((l) => l.zone[2] > x0 && l.zone[0] < x1 && l.zone[3] > y0 && l.zone[1] < y1)
-      .filter((l) => !l.sun || sunLampK > 0.02)
+      .filter((l) => (!l.sun || sunLampK > 0.02) && (!l.night || nightK > 0.02))
       .sort(
         (a, b) => Math.hypot(a.pos.x - cx, a.pos.y - cy) - Math.hypot(b.pos.x - cx, b.pos.y - cy),
       );
@@ -3266,7 +3310,8 @@ export class RoomScene {
     for (let i = 0; i < n; i++) {
       const l = near[i]!;
       const fl = 1 - l.flicker * noise(Math.floor(t * 9), l.seed);
-      const k = (l.sun ? sunLampK : l.deep ? 1 : l.fire ? fireK : lampK) * l.power * fl;
+      const k =
+        (l.sun ? sunLampK : l.night ? nightK : l.deep ? 1 : l.fire ? fireK : lampK) * l.power * fl;
       data.set([l.pos.x, l.pos.y, l.pos.z, l.r], i * 4);
       const c = l.sun
         ? [1, 0.88 - 0.3 * dl.dusk, 0.7 - 0.38 * dl.dusk]
