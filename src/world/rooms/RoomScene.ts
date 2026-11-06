@@ -1651,16 +1651,18 @@ export class RoomScene {
         const sy = r.h / back.h;
         const mat = this.look.shaft();
         const u = mat.uniforms;
-        // Un píxel más ancho por cada lado que la ventana: la luz se abre un poco al entrar.
-        u.uTop!.value.set(
-          r.x + (p.x - p.w / 2) * sx - 1,
-          GROUND - (r.y + p.top * sy),
-          -(DEPTH - 1),
-        );
-        u.uW!.value = p.w * sx + 2;
+        // Dónde está la ventana: el ancho y la x del rayo dependen de la inclinación del sol (se
+        // ponen en cada fotograma; ver `sunbeams`).
+        u.uTop!.value.set(r.x + (p.x - p.w / 2) * sx, GROUND - (r.y + p.top * sy), -(DEPTH - 1));
+        u.uW!.value = p.w * sx;
         u.uDrop!.value = r.y + r.h - (r.y + p.top * sy);
         u.uIn!.value = DEPTH * 0.55;
         const beam = new Mesh(this.unitPlane, mat);
+        beam.userData.win = {
+          x0: r.x + (p.x - p.w / 2) * sx,
+          w: p.w * sx,
+          h: (p.y - p.top) * sy,
+        };
         beam.frustumCulled = false;
         beam.visible = false;
         this.world.add(beam);
@@ -3184,7 +3186,15 @@ export class RoomScene {
       b.visible = sunLampK > 0.02;
       const u = (b.material as ShaderMaterial).uniforms;
       u.uK!.value = sunLampK;
-      u.uSlant!.value = -sd.x * 0.7;
+      const slant = -sd.x * 0.7;
+      u.uSlant!.value = slant;
+      // El rayo, entre la recta que pasa por la esquina de arriba de la ventana del lado del sol
+      // y la que pasa por la de abajo del otro lado: tan ancho como la ventana menos lo que se
+      // inclina en su alto (con el sol bajo, más estrecho).
+      const win = b.userData.win as { x0: number; w: number; h: number };
+      const cut = Math.min(win.w - 4, Math.abs(slant) * win.h);
+      u.uTop!.value.x = slant < 0 ? win.x0 + cut : win.x0;
+      u.uW!.value = win.w - cut;
       u.uColor!.value.set(1, 0.88 - 0.3 * dl.dusk, 0.7 - 0.38 * dl.dusk);
       u.uTime!.value = performance.now() / 1000;
     }
