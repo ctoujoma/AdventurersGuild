@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RECIPES } from '../data/recipes';
-import { DAY_SECONDS, DRESS_GOLD } from './balance';
+import { DAY_SECONDS, DRESS_GOLD, DRESS_WALK } from './balance';
 import { Rng } from './rng';
 import { planBuild } from './rooms';
 import {
@@ -12,6 +12,7 @@ import {
   goodChance,
   knownRecipes,
   learnRecipe,
+  stepCrafts,
   undoable,
 } from './crafting';
 import { endDay, newGame, reduce } from './game';
@@ -220,6 +221,25 @@ describe('la sastrería viste a los héroes', () => {
     expect(x.dress).toEqual({ dye: 'vino', garment: 'faja' });
     expect(x.morale).toBeGreaterThan(50);
     expect(t.dawn.some((e) => /estrena ropa/.test(e.t))).toBe(true);
+  });
+
+  it('no se cose hasta que el héroe ha tenido tiempo de llegar a la sala', () => {
+    const { s, room } = withShop('camino', 'sastreria');
+    const h = s.heroes.find((x) => x.status === 'ok')!;
+    s.clock = DAY_SECONDS * 0.3;
+    const t = reduce(s, { type: 'dressAt', room, heroId: h.id, dress: { dye: 'vino' } });
+    const c = dressingOf(t, h.id)!;
+    expect(craftState(t, c).walking).toBe(true);
+    // Media hora después sigue de camino y sin nada cosido.
+    const half = { ...t, clock: t.clock! + DAY_SECONDS * (DRESS_WALK / 2 / 24) };
+    stepCrafts(half, half.clock! / DAY_SECONDS);
+    const mid = dressingOf(half, h.id)!;
+    expect(mid.done).toBe(0);
+    expect(craftState(half, mid).walking).toBe(true);
+    // Pasado el camino, ya avanza.
+    const later = { ...half, clock: t.clock! + DAY_SECONDS * ((DRESS_WALK + 1) / 24) };
+    stepCrafts(later, later.clock! / DAY_SECONDS);
+    expect(dressingOf(later, h.id)!.done).toBeGreaterThan(0);
   });
 
   it('solo con los tintes que se tienen, a uno en casa y no a quien ya va así', () => {

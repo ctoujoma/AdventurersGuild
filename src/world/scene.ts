@@ -106,6 +106,8 @@ export interface SceneCraft {
   undo: boolean;
   /** Vistiendo a un héroe (id): está en la sala mientras dura. */
   hero?: string;
+  /** Aún no se cose: el héroe va de camino a la sala (el sastre le espera). */
+  walking?: boolean;
 }
 
 /** Un incidente tal como lo ve la escena: qué pasa y en qué sala (id). */

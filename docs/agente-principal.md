@@ -69,3 +69,14 @@ Para el agente principal (núcleo, tiempo, tutoriales, combate, talleres, amigos
   revisarlo con el tutorial (salto al día 7) y `dueTonight` cuando llegue.
 - Después: 2b (tutorial de obras). Pendientes del tutorial: candados en mapa y adornos, y que la
   barra diga que el reloj está parado.
+
+## Dónde lo dejamos (6 de noviembre)
+
+- Mientras tanto, otros agentes: el patio trasero (anexo y jardín), la interfaz y mucho arte
+  (luz con ambiente, `docs/plan-luz.md`).
+- Hecho: `RoomScene.pace` (la escena va al ritmo del reloj) y `DRESS_WALK` (la sastrería espera
+  al héroe; `CraftState.walking`, `SceneCraft.walking`).
+- Encargado al de arte: [`encargos/arte-movimiento.md`](encargos/arte-movimiento.md).
+- Esperando al usuario: [`propuesta-asaltos.md`](propuesta-asaltos.md) (la pelea de los asaltos
+  y arrastrar andando). Después de eso, a lo nuestro: núcleo con órdenes en `core/assault.ts`.
+- La APK, cuando el usuario diga que el arte ha acabado.

@@ -65,7 +65,7 @@ export function WorkshopInfo({
           pedir trabajo de {smith}, contrátalo (hace falta cama en el dormitorio del servicio).
         </span>
       )}
-      {jobs.map(({ craft: c, frac, hoursLeft }) => {
+      {jobs.map(({ craft: c, frac, hoursLeft, walking }) => {
         const rc = c.recipe ? RECIPES[c.recipe] : null;
         const who = c.dress && game.heroes.find((h) => h.id === c.dress!.hero);
         const what = who
@@ -90,7 +90,9 @@ export function WorkshopInfo({
                   ? who && who.status !== 'ok'
                     ? `Parado: ${who.name} no está en casa.`
                     : `Parado: pon a un ${smith} (o a un héroe) a trabajar aquí.`
-                  : `Le quedan ${hours(hoursLeft)}.`}
+                  : walking && who
+                    ? `${who.name} viene de camino.`
+                    : `Le quedan ${hours(hoursLeft)}.`}
               </span>
             </span>
             {onAct && (

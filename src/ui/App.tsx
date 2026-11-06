@@ -910,6 +910,11 @@ export function App() {
     setClock(clockRef.current);
     scene.current?.setTime(clockRef.current / DAY_SECONDS);
   }, [game.day, game.seed]);
+  // La escena va al ritmo del reloj: a x2 o x4 la gente también anda (y trabaja) más deprisa.
+  const pace = ticking ? (realTime && !canRush ? 1 : settings.pace) : 1;
+  useEffect(() => {
+    if (scene.current) scene.current.pace = pace;
+  }, [pace]);
   useEffect(() => {
     if (!ticking) return;
     const id = setInterval(() => {
@@ -999,6 +1004,7 @@ export function App() {
             scene.current = s;
             s.setTime(clockRef.current / DAY_SECONDS);
             s.speed = settings.speed;
+            s.pace = pace;
             s.fewLights = settings.fewLights;
             s.moodLight = settings.moodLight;
           }}
