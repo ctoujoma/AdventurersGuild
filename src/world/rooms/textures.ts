@@ -37,6 +37,7 @@ import { BLIND, cellsOf, sconceOn, takeWallActs, windowX } from './salas/kit';
 import { RISE, goesRight, stepAt } from './stairs';
 import { streetDoor } from './salas/recibidor';
 import { cloth } from './salas/tintes';
+import { beamEnds, ivy, ladder, pickDetails, rainBarrel, shadeAt, woodpile } from './detalles';
 import { ageWall } from './envejecer';
 import { roofAt, roofRelief, wallFill } from './fachada';
 import { wallSection } from './muros';
@@ -956,8 +957,11 @@ export function outsideFace(
   L: RoomsLayout,
   look: FacadeLook,
   F: Facade,
+  seed = 'fuera',
 ): { buf: PixelBuffer; glass: PixelBuffer } {
   const b = F.buf.clone();
+  /** Centros de las ventanas y la puerta (en el búfer), para no tapar ninguna. */
+  const openings: { x: number; y: number }[] = [];
   // El cristal de cada ventana encendido (de noche): cálido, más claro abajo (la luz de la sala
   // sube del suelo y de las mesas), cada sala con su tono.
   const glass = new PixelBuffer(b.w, b.h);
@@ -1014,6 +1018,7 @@ export function outsideFace(
   ) => {
     const x = Math.round(cx - ox - w / 2);
     const y = Math.round(top - oy);
+    openings.push({ x: cx - ox, y: y + h / 2 });
     const r = w / 2;
     // El hueco: un rectángulo o, el de arco, con medio círculo arriba.
     const inside = (i: number, j: number) => {
@@ -1126,8 +1131,85 @@ export function outsideFace(
     sills.push({ x: x - 2, y: drip, w: w + 4 });
   };
   const rooms = L.rooms.filter(({ room }) => room.type !== 'torre');
-  for (const { rect } of rooms) fill(interior(rect));
-  for (const c of [...stairCells(L), ...caveCells(L)]) fill(interior(c.rect));
+  // Bajo tierra, el hueco de cada sala se rellena de tierra (los muros de piedra, como estaban).
+  for (const { room, rect } of rooms) if (room.floor < 0) fill(interior(rect));
+  for (const c of [...stairCells(L), ...caveCells(L)]) if (c.floor < 0) fill(interior(c.rect));
+  // Por encima, la pared de fuera tapa toda la silueta del edificio: el hueco de cada sala y
+  // también el grueso de los muros y los forjados (que en la vista de siempre se ven en corte).
+  // Debajo de un tejado, se respetan las tres filas del alero del hastial.
+  const above = [
+    ...rooms.filter(({ room }) => room.floor >= 0).map(({ rect }) => rect),
+    ...stairCells(L)
+      .filter((c) => c.floor >= 0)
+      .map((c) => c.rect),
+  ];
+  const runs = roofRuns(L);
+  const underRoof = (r: Rect) =>
+    runs.some((u) => u.base === r.y - SLAB && u.x0 < r.x + r.w && u.x1 > r.x);
+  const stone = look.walls === 'piedra' || look.walls === 'pizarra' || look.walls === 'ladrillo';
+  const bands: { x0: number; x1: number; y: number }[] = [];
+  for (const r of above) {
+    const x0 = Math.round(r.x - WALL - ox);
+    const x1 = Math.round(r.x + r.w + WALL - ox);
+    const y0 = Math.round(r.y - SLAB - oy) + (underRoof(r) ? 3 : 0);
+    for (let y = Math.max(0, y0); y < Math.min(g, r.y + r.h + SLAB - oy); y++)
+      for (let x = Math.max(0, x0); x < Math.min(b.w, x1); x++) {
+        const src = y >= g - PLINTH ? plinth : wall;
+        b.level = src.reliefAt(x, y);
+        b.set(x, y, src.get(x, y));
+      }
+    bands.push({ x0, x1, y: y0 + (underRoof(r) ? 0 : 4) });
+  }
+  b.level = 0;
+  // En cada forjado, una viga corrida maciza (madera) o una cornisa de piedra, con su sombra.
+  const BAND = 8;
+  for (const { x0, x1, y } of bands) {
+    for (let x = x0; x < x1; x++) {
+      shadeAt(b, x, y + BAND);
+      shadeAt(b, x, y + BAND + 1);
+    }
+    if (stone) {
+      b.level = 4;
+      b.rect(x0, y, x1 - x0, BAND, P.steel);
+      b.hline(x0, y, x1 - x0, P.mist);
+      b.hline(x0, y + 1, x1 - x0, P.fog);
+      b.hline(x0, y + BAND - 2, x1 - x0, P.slate);
+      b.hline(x0, y + BAND - 1, x1 - x0, P.black);
+      for (let x = x0 + 3; x < x1; x += 11 + ((x * 7) % 5)) b.vline(x, y + 2, BAND - 3, P.navy);
+    } else beam(b, x0, y, x1 - x0, BAND, WOOD_DARK);
+    b.level = 0;
+  }
+  // En las esquinas del edificio, un cantonero (madera) o los sillares de esquina (piedra).
+  const edge = (x: number) => Math.abs(x - (L.left - ox)) < 1 || Math.abs(x - (L.right - ox)) < 1;
+  for (const r of above) {
+    const x0 = Math.round(r.x - WALL - ox);
+    const x1 = Math.round(r.x + r.w + WALL - ox);
+    const y0 = Math.round(r.y - SLAB - oy) + (underRoof(r) ? 3 : 0);
+    const y1 = Math.min(g - PLINTH, Math.round(r.y + r.h + SLAB - oy));
+    for (const [ex, side] of [
+      [x0, 1],
+      [x1 - 5, -1],
+    ] as const) {
+      if (!edge(side === 1 ? x0 : x1)) continue;
+      b.level = 5;
+      if (stone)
+        for (let y = y0; y < y1; y += 6) {
+          const long = ((y - y0) / 6) % 2 === 0;
+          const w = long ? 9 : 5;
+          const xx = side === 1 ? x0 : x1 - w;
+          b.rect(xx, y, w, 5, P.steel);
+          b.hline(xx, y, w, P.fog);
+          b.hline(xx, y + 5, w, P.navy);
+        }
+      else {
+        b.rect(ex, y0, 5, y1 - y0, P.rust);
+        b.vline(ex, y0, y1 - y0, P.oak);
+        b.vline(ex + 4, y0, y1 - y0, P.bark);
+        for (let y = y0; y < y1; y++) shadeAt(b, side === 1 ? ex + 5 : ex - 1, y);
+      }
+      b.level = 0;
+    }
+  }
   for (const { room, rect } of rooms) {
     if (room.floor < 0) continue;
     for (let f = 0; f < room.h; f++)
@@ -1138,6 +1220,7 @@ export function outsideFace(
           // La puerta de la calle: dos hojas de tablas con su dintel, a ras del suelo.
           const x = Math.round(cx - ox - 11);
           const y = Math.round(top + ROOM_H - 36 - oy);
+          openings.push({ x: cx - ox, y: y + 18 });
           b.level = 3;
           b.rect(x - 3, y - 3, 28, 39, P.umber);
           b.level = 1;
@@ -1163,6 +1246,10 @@ export function outsideFace(
   }
   for (const s of stairCells(L))
     if (s.floor >= 0) window(s.rect.x + s.rect.w / 2, s.rect.y + 30, 8, 14, 'cuarterones');
+  // Las testas de las vigas en cada forjado (el de encima de cada sala), con su sombra.
+  const beams = new Rng(`vigas-${seed}`);
+  if (!stone)
+    for (const { x0, x1, y } of bands) beamEnds(b, x0 + 6, x1 - 6, y, BAND, beams, () => false);
   // Y todo, envejecido: la humedad del pie, los churretes bajo alféizares y aleros, paños y el
   // sol en lo alto (ver `envejecer.ts`).
   let top = 0;
@@ -1173,6 +1260,25 @@ export function outsideFace(
     sills,
     eaves: roofRuns(L).map((r) => ({ x0: r.x0 - ox, x1: r.x1 - ox, y: r.base - oy + 1 })),
   });
+  // Los detalles sueltos, fijos por partida: los huecos de la planta baja libres de ventanas y
+  // de la puerta (separados entre sí), y la hiedra en una esquina.
+  const left = L.left - ox;
+  const right = L.right - ox;
+  const low = openings.filter((o) => o.y > g - ROOM_H);
+  const gaps: number[] = [];
+  for (let x = left + 26; x < right - 26; x += 4)
+    if (low.every((o) => Math.abs(o.x - x) > 38) && gaps.every((v) => Math.abs(v - x) > 56))
+      gaps.push(x);
+  const d = pickDetails(seed, gaps, { left, right });
+  const rng2 = new Rng(`detalles-pinta-${seed}`);
+  const foot = g - PLINTH;
+  if (d.pile !== null) woodpile(b, Math.round(d.pile - 22), g, rng2);
+  if (d.barrel !== null) {
+    const run = roofRuns(L).find((r) => d.barrel! + ox > r.x0 + 8 && d.barrel! + ox < r.x1 - 8);
+    if (run) rainBarrel(b, Math.round(d.barrel), run.base - oy + 3, g);
+  }
+  if (d.ladder !== null) ladder(b, Math.round(d.ladder - 8), g, 62);
+  if (d.ivy) ivy(b, Math.round(d.ivy.x), foot + 6, g - ROOM_H - 40, d.ivy.dir, rng2);
   return { buf: b, glass };
 }
 

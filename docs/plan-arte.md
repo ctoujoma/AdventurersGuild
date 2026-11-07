@@ -103,7 +103,17 @@ npm run build`.
         pintadas de verde, azul o granate; alguna cerrada), uno por sala; con dintel, alféizar y
         a veces jardinera con flores; las del salón, más grandes (22 × 28, de seis paños). El
         cristal encendido de noche sigue la forma de cada una.
-  - [ ] 6. Vigas. — [ ] 7. Detalles. — [ ] 8. Resto.
+  - [x] 6. Testas de viga en cada forjado de la tapa (`beamEnds` en `rooms/detalles.ts`): a
+        saltos (alguna pareja, huecos largos), con anillos y su sombra debajo y al lado.
+  - [x] 7. Detalles sueltos, fijos por partida (la semilla, `pickDetails`), en los huecos de la
+        planta baja libres de ventanas y puerta: hiedra en una esquina, leña bajo un tejadillo,
+        la bajante con su tonel de lluvia y una escalera apoyada (no siempre salen todos).
+  - [x] Pared continua (el usuario: «sigue viéndose las paredes seccionadas, con hueco… y los
+        suelos»): la tapa cubre toda la silueta del edificio con la pared de fuera, también el
+        grueso de los muros y los forjados; en cada forjado, una viga corrida maciza (o una
+        cornisa de piedra en piedra, pizarra y ladrillo) con su sombra, y cantoneros (o sillares
+        de esquina) en las esquinas.
+  - [ ] 8. Resto de materiales.
         Capturas en `capturas/fachada-envejecida/`.
 
 - [x] **Volumen con grosor** (`thick` en `salas/kit.ts`, `volume` en `RoomScene.ts`): lo suelto
