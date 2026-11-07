@@ -60,11 +60,12 @@ Segunda pasada (lo que quedaba, también hecho):
 | --- | --- | --- |
 | Tarea nueva (trabajar o entrenar) | Contaba el día entero para quien estuviera apuntado al caer la noche, aunque llegase a las 23:59 | Va de camino (`walk`) y cuenta desde que llega (`since`, con la misma acción `arrived`); al caer la noche, cada uno suma solo la parte del día que ha estado allí (cocina, bodega, enfermería, salón y entrenamiento: `workAt`, `shiftShare`). Los talleres, que van con el reloj, cuentan a quien está ahora (`workAt(…, true)`). Tope si nadie avisa: `JOB_WALK` (2 h). Al pasar el ratón: «(de camino)» |
 | Incidente: mandar a alguien | Se arreglaba al soltarlo | Va corriendo (`SceneHero.goTo`) y se arregla al llegar (`Incident.coming`, `arriveIncident`); mientras va, no sale mal. Tope si nadie avisa: `INCIDENT_WALK` (25 s de reloj) |
-| Arrastrar a alguien a una sala | Aparecía donde se soltaba | Sale de donde estaba y va a paso ligero, con cuatro esquinas que laten en la sala de destino hasta que llega (`headingMarks`) |
+| Arrastrar a alguien a una sala | Aparecía donde se soltaba | Sale de donde estaba y va corriendo, con cuatro esquinas que laten en la sala de destino hasta que llega (`headingMarks`) |
 | El ladrón pillado | Huía solo | Quien le ha pillado le persigue hasta la puerta o el pie de la escalera y vuelve a lo suyo (`IncidentArt.onFlee` → `Crowd.chase`) |
 | Tras una obra, sin camino | Aparecía en la puerta | Aparece en el sitio con camino más cercano de su planta (`Crowd.rescue`); solo si no hay, en la puerta |
 | Al que visten en la sastrería | Su tarea seguía contando | No cuenta mientras le visten |
 
 Queda para el agente de arte: la marca de destino definitiva (silueta o banderín con el icono de
-la tarea), los puntos 2 (el sastre que mide y prueba), 5 (el rótulo) y los golpes del héroe al
-alcanzar al ladrón.
+la tarea), el punto 2 (el sastre que mide y prueba) y el 5 (el rótulo). Los golpes al alcanzar al
+ladrón no: llegarán con el combate nuevo de los asaltos (ver
+[`../propuesta-asaltos.md`](../propuesta-asaltos.md)).

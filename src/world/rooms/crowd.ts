@@ -67,9 +67,12 @@ const VISITOR_NAME: Record<string, string> = {
   espia: 'Forastero callado',
 };
 const SPEED = 36;
-/** Paso ligero: quien se manda a una sala arrastrándolo, y corriendo, quien va a un incidente. */
-const BRISK = 1.6;
-const RUSH = 1.9;
+/**
+ * Quien se manda a una sala arrastrándolo va corriendo (se le ha mandado algo, no va de paseo);
+ * a un incidente, aún más deprisa.
+ */
+const BRISK = 2.2;
+const RUSH = 2.5;
 /** Lo deprisa que se va hacia dentro o hacia fuera (más despacio que de lado: se ve en escorzo). */
 const Z_SPEED = 14;
 /**
