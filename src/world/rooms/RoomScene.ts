@@ -3541,8 +3541,9 @@ export class RoomScene {
     }
     const raid = this.raid;
     if (!raid) return;
+    // Sigue corriendo aunque haya acabado: los números y los efectos acaban de subir y apagarse.
+    raid.update(dt);
     if (!raid.done) {
-      raid.update(dt);
       const f = raid.focus();
       if (f && !this.pointers.size) this.camera.centerOn(f.x, f.y);
       return;

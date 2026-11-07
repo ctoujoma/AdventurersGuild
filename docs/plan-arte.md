@@ -153,6 +153,25 @@ npm run build`.
         3,5 s). Al arrastrar, el de muestra, más tenue.
   Capturas en `capturas/movimiento/`.
 
+- [ ] **La pelea de los asaltos, en directo** ([`encargos/arte-asaltos.md`](encargos/arte-asaltos.md)).
+      Un PR por punto, desde la rama `claude/raid-combat-system-nkzv5y`.
+  - [x] 1. Golpes por clase (`raidFx.ts`, `blowOf` y `blowFrame` en `crowd.ts`): el guerrero
+        tajo (arma en alto y abajo, con el rastro blanco), el pícaro estocada (a fondo, con la
+        raya), el clérigo mazazo (estrella y polvo en el suelo), el explorador flecha y el mago
+        rayo azul que vuelan hasta el blanco (el número y la caída salen al llegar; a distancia,
+        se quedan a `RANGED_REACH`). Habilidades: Provocar (arma en alto y ondas), Puñalada (aspa
+        roja), Bola de fuego (chispas en el bastón, una bola a cada bandido y explosión), Curar
+        (columna de luz y halo sobre el curado) y Andanada (dos flechas seguidas). Los bandidos,
+        por su traje (el bruto tajo, el navajero estocada, el arquero flecha). El crítico, una
+        estrella blanca. Los números de varios golpes al mismo, a los lados; y al acabar ya no se
+        quedan congelados (el asalto sigue corriendo hasta que se quita). El duelo del ladrón ya
+        usa el gesto de la clase (`strike` sin golpe).
+  - [ ] 2. Caer con el saco. — [ ] 3. La marca de destino (ya está, ver «Que lo que pasa se vea
+        pasar», 6). — [ ] 4. Luz en lo oscuro (sin ella, en la bodega y el sótano apenas se ven los
+        gestos). — [ ] 5. El duelo del ladrón. — [ ] 6. La cámara lenta. — [ ] 7. La tira.
+  Capturas: `node tools/shots/asalto.mjs <carpeta>` (`LENTO=0.2` a cámara lenta, `RECORTE=480x300`
+  solo el centro, `NIVEL` y `FUERZA` para que dure más). En `capturas/asaltos/`.
+
 ## Estudio: estilo «Cast n Chill»
 
 Pedido del usuario: ver si el pixel art puede ir hacia ese estilo. Pruebas, viabilidad y plan

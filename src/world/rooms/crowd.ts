@@ -587,6 +587,25 @@ const DRILL_WEAPON: Record<OutfitId, WeaponId> = {
   forastero: 'daga',
 };
 
+/**
+ * El golpe que da cada uno en una pelea (asalto o ladrón): tajo con la espada, estocada rápida
+ * con la daga, mazazo de arriba abajo, disparo con el arco y conjuro con el bastón. `grito`: el
+ * arma en alto (Provocar, o el clérigo que cura).
+ */
+export type Blow = 'tajo' | 'estocada' | 'maza' | 'tiro' | 'conjuro' | 'grito';
+const BLOW: Partial<Record<OutfitId, Blow>> = {
+  guerrero: 'tajo',
+  noble: 'tajo',
+  picaro: 'estocada',
+  mercader: 'estocada',
+  forastero: 'estocada',
+  mago: 'conjuro',
+  alquimista: 'conjuro',
+  clerigo: 'maza',
+  explorador: 'tiro',
+};
+export const blowOf = (outfit: OutfitId): Blow => BLOW[outfit] ?? 'maza';
+
 /** Cómo se entrena en cada sala: golpes al aire, tiro con arco o leer. */
 type Drill = 'armas' | 'tiro' | 'biblioteca';
 const DRILLS: Record<string, Drill> = { armas: 'armas', tiro: 'tiro', biblioteca: 'biblioteca' };
@@ -638,6 +657,8 @@ interface Actor {
   /** En un asalto: corre más (o menos) para llegar a su hora, y el golpe que está dando (0–1). */
   run?: number;
   swing?: number;
+  /** Qué golpe es (ver `Blow`). */
+  blow?: Blow;
   /** Acostándose o levantándose: un momento incorporado en la cama (`out`: luego se va). */
   edge?: { bed: BedSpot; t: number; out: boolean } | null;
   /** Haciendo algo en un sitio de la sala (leer el tablón, calentarse…) y hacia dónde mira. */
@@ -1338,6 +1359,8 @@ export class Crowd {
         this.place(a, t);
         continue;
       }
+      // El golpe que está dando (el grito y la cura se sostienen más).
+      if (a.swing) a.swing = Math.max(0, a.swing - dt * (a.blow === 'grito' ? 1.4 : 3));
       if (this.scripted) {
         if (a.path.length) this.walk(a, dt);
         else if ((a.leaving || a.homeward) && !a.hero.bandit) {
@@ -1346,7 +1369,6 @@ export class Crowd {
           else this.hide(a);
           continue;
         }
-        if (a.swing) a.swing = Math.max(0, a.swing - dt * 3);
         this.place(a, t);
         continue;
       }
@@ -1622,12 +1644,18 @@ export class Crowd {
     a.pose = 'down';
   }
 
-  /** Da un golpe hacia un lado. */
-  strike(id: string, dir: 1 | -1): void {
+  /** Da un golpe hacia un lado (el de su clase si no se dice cuál). */
+  strike(id: string, dir: 1 | -1, blow?: Blow): void {
     const a = this.actors.get(id);
     if (!a || a.pose === 'down') return;
     a.dir = dir;
     a.swing = 1;
+    a.blow = blow ?? blowOf(a.hero.look.outfit);
+  }
+
+  /** El traje de alguien (para saber cómo pelea). */
+  outfit(id: string): OutfitId | null {
+    return this.actors.get(id)?.hero.look.outfit ?? null;
   }
 
   /** Se acerca un poco (para ponerse cara a cara con quien pelea). */
@@ -2533,6 +2561,10 @@ export class Crowd {
         z,
       };
     }
+    if (a.swing && a.blow && !a.path.length) {
+      const b = this.blowFrame(a.blow, 1 - a.swing, a.dir);
+      return { frame: b.frame, left: a.x - CELL / 2 / k + b.lunge / k, bottom: top + TALL / k, z };
+    }
     const d = this.drillOf(a);
     if (d) {
       // Entrenando en su sala, mirando hacia donde tiene más sitio.
@@ -2600,12 +2632,6 @@ export class Crowd {
         z,
       };
     }
-    if (a.swing) {
-      // Golpe: el paso largo de andar, echándose hacia delante.
-      const lunge = (a.dir * 3 * Math.sin(a.swing * Math.PI)) / k;
-      frame = (a.dir > 0 ? F.walk : F.walkL) + 2;
-      return { frame, left: a.x - CELL / 2 / k + lunge, bottom: top + TALL / k, z };
-    }
     if (a.climb) {
       // En la escalera: la pierna sube en el impulso y se apoya en el peldaño (alternando).
       const s = a.climb.u * STEPS;
@@ -2626,6 +2652,40 @@ export class Crowd {
       frame = blink ? F.blink : F.idle + (Math.floor((t + a.blinkAt) * 1.2) % 2);
     }
     return { frame, left: a.x - CELL / 2 / k, bottom: top + TALL / k, z };
+  }
+
+  /** El fotograma de un golpe según por dónde va (`p`, de 0 a 1) y el paso hacia delante. */
+  private blowFrame(blow: Blow, p: number, dir: 1 | -1): { frame: number; lunge: number } {
+    const drill = dir > 0 ? F.drill : F.drillL;
+    const up = dir > 0 ? F.drill2 : F.drill2L;
+    const aim = dir > 0 ? F.aim : F.aimL;
+    const step = (n: number, from: number) =>
+      dir * n * Math.sin(Math.min(1, Math.max(0, (p - from) / (1 - from))) * Math.PI);
+    switch (blow) {
+      case 'tajo':
+        // El arma en alto, el tajo con el paso largo y de vuelta en guardia.
+        return p < 0.3
+          ? { frame: up, lunge: -dir }
+          : { frame: drill + (p < 0.8 ? 2 : 0), lunge: step(3, 0.3) };
+      case 'maza':
+        // Más despacio arriba y el golpe seco, sin tanto paso.
+        return p < 0.45
+          ? { frame: up, lunge: -dir }
+          : { frame: drill + (p < 0.85 ? 2 : 1), lunge: step(2, 0.45) };
+      case 'estocada':
+        // Recogido un instante y a fondo, con el paso más largo.
+        return p < 0.15
+          ? { frame: drill, lunge: -dir }
+          : { frame: p < 0.75 ? up + 1 : drill, lunge: step(4, 0.15) };
+      case 'tiro':
+        // Apuntando, suelta y baja el arco; un poco hacia atrás por el tirón.
+        return { frame: aim + (p < 0.65 ? 1 : 0), lunge: p < 0.3 ? -dir : 0 };
+      case 'conjuro':
+        // El bastón en alto y hacia delante (sale el hechizo).
+        return { frame: p < 0.4 ? up : up + 1, lunge: p < 0.4 ? 0 : step(1, 0.4) };
+      case 'grito':
+        return { frame: up, lunge: 0 };
+    }
   }
 
   private place(a: Actor, t: number): void {
