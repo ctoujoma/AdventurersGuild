@@ -76,7 +76,18 @@ noche, sin acostarse (en el núcleo no dormir no les cuesta nada: recuperan mora
 agente de arte: un par de taburetes en el recibidor donde se les vea sentados; de madrugada,
 cabeceando con unas «zzz»; de día, jugando a las cartas o a los dados entre ellos.
 
-Queda para el agente de arte: la marca de destino definitiva (silueta o banderín con el icono de
-la tarea), el punto 2 (el sastre que mide y prueba) y el 5 (el rótulo). Los golpes al alcanzar al
+Hecho (arte, 7 de noviembre): en el recibidor, delante del armero, dos taburetes y entre ellos un
+barril de pie que hace de mesa, con el mazo, una carta boca arriba y las monedas apostadas
+(`cardBarrel`, `SPOT.guards`/`game`/`guardZ` en `salas/recibidor.ts`). Los de guardia se sientan
+en ellos día y noche (`homes` en `people.ts`: `pose: 'sit'`). De día juegan: cada uno, a su ritmo,
+planta la carta con un respingo y los dos dados ruedan por la tapa (alguna mano, salta una
+moneda), con sus bocadillos de apostar, reír y protestar. De madrugada cabecean: con los ojos
+cerrados (`sitZ`, sacado del parpadeo con el párpado en rayita), se van hundiendo y se despiertan
+de golpe, soltando unas «zzz» (`guardBeat`, `guards` en `crowd.ts`; `guardGame` en
+`RoomScene.ts`). Capturas: `node tools/shots/guardia.mjs <carpeta>`; en `capturas/guardia/`.
+
+Lo que quedaba para el agente de arte está hecho: la marca de destino definitiva (el banderín
+con el icono de la tarea, #127), el punto 2 (el sastre que mide y prueba), el 5 (el rótulo) y la
+guardia (arriba). Los golpes al alcanzar al
 ladrón no: llegarán con el combate nuevo de los asaltos (ver
 [`../propuesta-asaltos.md`](../propuesta-asaltos.md)).

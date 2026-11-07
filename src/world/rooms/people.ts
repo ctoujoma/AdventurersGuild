@@ -147,8 +147,9 @@ export interface Spots {
   seats: SeatSpot[];
   /** De pie en la barra (los candidatos esperan aquí). */
   bar: Place[];
-  /** Los dos de guardia, en el recibidor. */
+  /** Los dos de guardia, en el recibidor (sus taburetes, a `guardZ`). */
   guard: Place[];
+  guardZ: number;
   /** Salas en uso a las que se puede ir a dar una vuelta. */
   rooms: { room: Room; x0: number; x1: number }[];
   /** Puerta de la calle, por dentro. */
@@ -166,6 +167,7 @@ export function spots(L: RoomsLayout): Spots {
     seats: [],
     bar: [],
     guard: [],
+    guardZ: SPOT.guardZ,
     rooms: [],
     door: { x: 12, floor: 0 },
   };
@@ -174,7 +176,7 @@ export function spots(L: RoomsLayout): Spots {
     const i = interior(rect);
     if (room.type === 'recibidor') {
       out.door = { x: i.x + 10, floor: 0 };
-      // Delante del armero (ver `SPOT` en recibidor.ts).
+      // En sus taburetes, delante del armero (ver `SPOT` en recibidor.ts).
       out.guard = SPOT.guards.map((gx) => ({ x: i.x + gx, floor: 0 }));
     }
     if (!inUse(room)) continue;
@@ -242,7 +244,8 @@ export function homes(people: readonly Resident[], S: Spots): Map<string, Goal> 
   }
   for (const p of people.filter((x) => x.status === 'ok' && !x.staff)) {
     if (p.guard && g < S.guard.length) {
-      out.set(p.id, { place: S.guard[g++]!, pose: 'stand' });
+      // Sentados en su taburete, día y noche (no se acuestan).
+      out.set(p.id, { place: S.guard[g++]!, pose: 'sit', z: S.guardZ });
       continue;
     }
     const b = free.shift();

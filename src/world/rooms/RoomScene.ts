@@ -165,11 +165,14 @@ import {
   type Theme,
 } from './textures';
 import { BACK, EYE, LIFT, eyeOf, frustum, pinShift, project, scaleAt, type View } from './view3d';
+import { GAME_TOP, SPOT } from './salas/recibidor';
 
 /** Duración del día de la escena hasta que anochece (el reloj de verdad llega con el día vivo). */
 const DAY_LENGTH = 720;
 /** Cámara lenta del asalto mientras se arrastra a alguien (parte del ritmo normal). */
 const RAID_SLOW = 0.3;
+/** Lo que ruedan los dados de los de guardia al tirarlos (s). */
+const DICE_ROLL = 0.5;
 /** Hasta dónde llega la luz de cada antorcha del asalto. */
 const RAID_TORCH_R = 95;
 /** Al acabar el asalto, segundos que sigue de noche antes de amanecer. */
@@ -3894,7 +3897,8 @@ export class RoomScene {
       !!this.routePts ||
       (!this.night && !!this.model?.heroes.some((h) => h.train)) ||
       this.crowd.drilling() ||
-      this.crowd.bubbles().length > 0;
+      this.crowd.bubbles().length > 0 ||
+      this.crowd.guards().length > 0;
     if (live || this.topLive) {
       const ctx = this.topCtx;
       ctx.clearRect(0, 0, view.vw, view.vh);
@@ -3907,6 +3911,7 @@ export class RoomScene {
       if (this.coverFade < 0.5) {
         this.trainBars();
         this.talkBubbles();
+        this.guardGame();
         this.flyingArrows();
         this.raid?.draw(ctx, view.px, view.py, view);
         this.drawDuels(ctx, view.px, view.py);
@@ -4196,6 +4201,75 @@ export class RoomScene {
   }
 
   /** Los bocadillos de quien habla: un globo blanco con su icono encima de la cabeza. */
+  /** Los de guardia ya vistos plantar carta (para tirar los dados una vez por golpe). */
+  private guardSlams = new Set<string>();
+  /** Cuándo se tiraron los dados por última vez, y cuántas tiradas van (alguna se gana). */
+  private diceAt = -9;
+  private diceN = 0;
+  /** Cuándo soltó cada uno de guardia sus últimas «zzz». */
+  private snoreAt = new Map<string, number>();
+
+  /**
+   * El puesto de los de guardia: de día, al plantar uno la carta, los dos dados ruedan por la
+   * tapa del barril y se quedan (alguna vez salta una moneda: alguien gana la mano); de
+   * madrugada, quien cabecea suelta unas «zzz».
+   */
+  private guardGame(): void {
+    const L = this.layout;
+    const list = this.crowd.guards();
+    if (!L || !list.length) return;
+    const desk = L.rooms.find((r) => r.room.type === 'recibidor');
+    if (!desk) return;
+    const { camera } = this;
+    const v: View = { px: camera.px, py: camera.py, vw: camera.vw, vh: camera.vh };
+    const t = this.wt;
+    const tx = interior(desk.rect).x + SPOT.game;
+    const ty = floorY(0) - GAME_TOP;
+    const tz = SPOT.guardZ - 1;
+    for (const g of list) {
+      if (g.night) {
+        if (!g.dozing) continue;
+        if (t - (this.snoreAt.get(g.id) ?? -9) < 1.3) continue;
+        this.snoreAt.set(g.id, t);
+        const p = project(v, g.x + 4, g.y - 31, g.z);
+        this.particles.spawn('zzz', v.px + p.x, v.py + p.y);
+        continue;
+      }
+      if (!g.slam) {
+        this.guardSlams.delete(g.id);
+        continue;
+      }
+      if (this.guardSlams.has(g.id)) continue;
+      this.guardSlams.add(g.id);
+      this.diceAt = t;
+      if (++this.diceN % 3 === 0) {
+        const p = project(v, tx, ty - 2, tz);
+        this.particles.spawn('coin', v.px + p.x, v.py + p.y);
+      }
+    }
+    // Los dados: ruedan medio segundo dando botes y se quedan quietos.
+    const ctx = this.topCtx;
+    const age = t - this.diceAt;
+    for (const [i, base] of [-2, 1].entries()) {
+      const rolling = age < DICE_ROLL;
+      const dx = rolling ? base - 3 + (age / DICE_ROLL) * 3 + i : base;
+      const dy = rolling ? -Math.abs(Math.sin(age * 16 + i)) * 2 : 0;
+      const p = project(v, tx + dx, ty + dy, tz);
+      const x = Math.round(p.x);
+      const y = Math.round(p.y);
+      if (x < -4 || y < -4 || x > v.vw + 4 || y > v.vh + 4) continue;
+      // Un dado de 2×2 con su sombra debajo (sin contorno: a esta escala parecería un ojo).
+      ctx.fillStyle = P.bark;
+      ctx.fillRect(x, y + 2, 2, 1);
+      ctx.fillStyle = P.white;
+      ctx.fillRect(x, y, 2, 2);
+      // El punto del dado (cambia mientras rueda).
+      ctx.fillStyle = P.wine;
+      const face = rolling ? Math.floor(age * 20 + i) % 4 : (this.diceN + i) % 4;
+      ctx.fillRect(x + (face & 1), y + (face >> 1), 1, 1);
+    }
+  }
+
   private talkBubbles(): void {
     const { topCtx: ctx, camera } = this;
     for (const b of this.crowd.bubbles()) {
