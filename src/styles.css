@@ -6758,3 +6758,8 @@ p.notebook-close {
   color: var(--sand);
   text-align: center;
 }
+.raid-crew-hint.is-end {
+  font-family: var(--pixel);
+  font-size: var(--t-l);
+  color: var(--gold);
+}

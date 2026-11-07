@@ -164,6 +164,8 @@ export function App() {
   const [raiding, setRaiding] = useState(false);
   /** El asalto de esta noche se juega en directo (se puede mover a la gente). */
   const [raidLive, setRaidLive] = useState(false);
+  const raidLiveRef = useRef(false);
+  raidLiveRef.current = raidLive;
   /** Pelea contra un jefe de esta noche: el aviso (id del informe) y la pelea abierta. */
   const [bossCall, setBossCall] = useState<string | null>(null);
   /** Al empezar con el tutorial: unos segundos para ver la taberna (la cámara entra) antes del cuaderno. */
@@ -402,6 +404,9 @@ export function App() {
     // Mientras dura el tutorial, el tiempo no corre ni con la taberna cerrada.
     if (!realTime || passing || tutorialOn(gameRef.current)) return;
     dispatch({ type: 'tick', to: clockRef.current });
+    // A medio asalto en directo no se pone al día: la pelea se queda en pausa y sigue al volver
+    // (si no, la noche pasaría dos veces).
+    if (raidLiveRef.current) return;
     const away = catchUp(gameRef.current, seconds);
     if (!away.seconds) return;
     commit(away.state);
@@ -710,11 +715,13 @@ export function App() {
       setPassing(true);
       setRaiding(true);
       setRaidLive(true);
+      raidLiveRef.current = true;
       audio.play('horn');
       scene.current.raidNight(
         { plan: live.plan() },
         () => {
           setRaidLive(false);
+          raidLiveRef.current = false;
           dispatch({ type: 'raidFought', result: live.result ?? live.run() });
           const next = dispatch({ type: 'endDay' });
           dawnAfter(before, next, skip)();

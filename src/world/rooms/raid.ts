@@ -99,6 +99,8 @@ export class RaidShow {
   private lock: { t0: number; dur: number; area: Area } | null = null;
   private lastHit = 0;
   private slot = new Map<string, number>();
+  /** De qué lado llegan los bandidos a cada sala (-1 izquierda, 1 derecha). */
+  private side = new Map<string, number>();
   /** Vida de cada uno (si el plan la trae) y la de al empezar. */
   private hp = new Map<string, number>();
   private max = new Map<string, number>();
@@ -135,6 +137,16 @@ export class RaidShow {
     }
     this.areas.set('patio', { x0: -PATIO_W + 40, x1: -24, floor: 0 });
     this.areas.set('fuera', { x0: -PATIO_W + 2, x1: -PATIO_W + 10, floor: 0 });
+    // En cada sala, los bandidos se quedan del lado por el que llegan y los nuestros enfrente.
+    const path = ['fuera', 'patio', ...plan.route];
+    const mid = (n: string) => {
+      const a = this.areas.get(n);
+      return a ? (a.x0 + a.x1) / 2 : 0;
+    };
+    for (let i = 1; i < path.length; i++) {
+      const d = mid(path[i - 1]!) - mid(path[i]!);
+      this.side.set(path[i]!, d > 0 ? 1 : -1);
+    }
     const bandits = Object.keys(plan.start).filter(isBandit);
     bandits.forEach((id, i) => {
       const { look, marks } = banditLook(BANDIT_TYPES[i % BANDIT_TYPES.length]!, i);
@@ -638,7 +650,8 @@ export class RaidShow {
     const k = this.slot.get(id) ?? 0;
     const mid = (a.x0 + a.x1) / 2;
     const spread = Math.min(8, (a.x1 - a.x0) / 6);
-    const x = mid + (isBandit(id) ? 1 : -1) * (4 + (k % 4) * spread);
+    const s = this.side.get(node) ?? -1;
+    const x = mid + (isBandit(id) ? s : -s) * (4 + (k % 4) * spread);
     return { x: Math.max(a.x0, Math.min(a.x1, x)), floor: a.floor };
   }
 
