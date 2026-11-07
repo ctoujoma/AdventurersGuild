@@ -93,7 +93,7 @@ import { FLAME_FRAMES, FLAME_H, FLAME_W, flameStrip } from './flame';
 import { faces, sideTexel, type Mat } from './volume';
 import { RaidShow, isBandit } from './raid';
 import { DAY_SECONDS, WORK_END } from '../../core/balance';
-import { napping } from '../../core/incidents';
+import { catHunts, napping } from '../../core/incidents';
 import type { Assault } from '../../core/assault';
 import { HEARTH_RIGHT, NO_LOOK, type SalonLook } from './salon';
 import {
@@ -569,6 +569,8 @@ export class RoomScene {
   /** Va a cámara lenta (ver `RAID_SLOW`). */
   private slowed = false;
   private raidPlan: RaidResult['plan'] | null = null;
+  /** Si el asalto que se ve acaba bien (en directo se sabe al acabar). */
+  private raidWon: boolean | undefined;
   /** El asalto que se juega en directo esta noche (si lo hay). */
   private raidLive: Assault | null = null;
   /** Zoom de antes del asalto (durante la pelea se acerca un poco). */
@@ -923,6 +925,14 @@ export class RoomScene {
     if (!L || !m) return;
     this.workshop(m.crafts ?? [], m.craftEnds ?? []);
     this.incidents.set(L, m.building, m.incidents ?? [], m.clock, m.incidentEnds);
+    // Ratas en una sala de la planta del salón: el gato va a cazarlas.
+    const rats = (m.incidents ?? []).find(
+      (i) => i.kind === 'ratas' && catHunts(m.building, i.room),
+    );
+    const den = rats ? L.rooms.find((r) => r.room.id === rats.room) : undefined;
+    this.pets.setHunt(
+      den ? [interior(den.rect).x + 14, interior(den.rect).x + interior(den.rect).w - 14] : null,
+    );
     this.incidentLamps = this.incidents.lights().map((l) => ({
       pos: new Vector3(l.x, GROUND - l.y, -l.z + 6),
       glow: new Vector3(l.x, GROUND - l.y, -l.z),
@@ -1218,12 +1228,17 @@ export class RoomScene {
    * Noche con asalto: al oscurecer llegan los bandidos y se ve la pelea sala a sala tal como la
    * ha decidido el núcleo; al acabar (o al saltarla), amanece.
    */
-  raidNight(raid: Pick<RaidResult, 'plan'>, done: () => void, live?: Assault): void {
+  raidNight(
+    raid: Pick<RaidResult, 'plan'> & { won?: boolean },
+    done: () => void,
+    live?: Assault,
+  ): void {
     if (!raid.plan || !this.layout) {
       live?.run();
       return this.nightfall(done);
     }
     this.raidPlan = raid.plan;
+    this.raidWon = raid.won;
     this.raidLive = live ?? null;
     this.nightfall(done, 2.6, Infinity);
   }
@@ -3790,6 +3805,8 @@ export class RoomScene {
       );
       this.raidPlan = null;
       this.raidLive = null;
+      // Con asalto no se acuesta a nadie de golpe (ni al acabar): cada uno va a lo suyo andando.
+      n.out = true;
       this.raidZoom = this.camera.zoom;
       const z = Math.min(6, Math.max(3, Math.floor(this.camera.zoom) + 1));
       if (this.cssW && z !== this.camera.zoom) this.resize(this.cssW, this.cssH, z);
@@ -3807,6 +3824,13 @@ export class RoomScene {
     if (n.hold === Infinity) n.hold = Math.max(0, this.t - n.start - 0.5 * n.dur) + RAID_AFTER;
     if (this.nightP() >= 0.85) {
       this.crowd.setScripted(false);
+      // Repelido: los que lo han defendido y siguen en pie lo celebran donde están.
+      const won = raid.live ? raid.live.result?.escaped === 0 : this.raidWon;
+      if (won) {
+        this.crowd.cheerHere(raid.defenders());
+        this.cb.onSound?.('cheer');
+      }
+      this.raidWon = undefined;
       this.raid = null;
       if (this.raidZoom !== null && this.cssW) this.resize(this.cssW, this.cssH, this.raidZoom);
       this.raidZoom = null;

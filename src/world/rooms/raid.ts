@@ -195,6 +195,11 @@ export class RaidShow {
     return this.live.result ? this.live.result.plan.end : Infinity;
   }
 
+  /** Los de la casa que han defendido (los del plan que no son bandidos). */
+  defenders(): string[] {
+    return Object.keys(this.plan.start).filter((id) => !isBandit(id));
+  }
+
   get done(): boolean {
     return this.t >= this.end + 0.5;
   }

@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { INCIDENTS } from '../data/incidents';
-import { DAY_SECONDS, GUARD_NAP, INCIDENT_EVERY } from './balance';
+import {
+  CAT_EVERY,
+  CAT_FIRST,
+  DAY_SECONDS,
+  GUARD_HOLD,
+  GUARD_NAP,
+  INCIDENT_EVERY,
+  INCIDENT_REACT,
+} from './balance';
 import { endDay, newGame, reduce } from './game';
-import { incidentCost, incidentIssue, napping, stepIncidents } from './incidents';
+import { catHunts, incidentCost, incidentIssue, napping, stepIncidents } from './incidents';
 import type { GameState, Incident } from './model';
 
 /** Partida en el día 3 con un incidente puesto a mano en la primera sala de su tipo. */
@@ -196,5 +204,43 @@ describe('incidentes', () => {
     stepIncidents(s, s.clock - 1, s.clock);
     expect(s.gold).toBeLessThan(500);
     expect(s.incidentLog?.at(-1)).toMatchObject({ how: 'cuela', guard: g.id });
+  });
+
+  it('pelea: el de guardia deja la puerta y va a separarlos solo', () => {
+    const s = withIncident('pelea', 'guardia-pelea');
+    const g = s.heroes.find((h) => h.status === 'ok')!;
+    g.guard = true;
+    const at = 10 + INCIDENT_REACT;
+    const news = stepIncidents(s, at - 1, at);
+    expect(s.incidents?.[0]?.coming?.who).toBe(g.id);
+    expect(news.some((n) => n.t.includes(g.name))).toBe(true);
+    // Al llegar la separa.
+    const room = s.incidents![0]!.room;
+    const t = reduce(s, { type: 'arrived', heroId: g.id, room });
+    expect(t.incidents).toEqual([]);
+  });
+
+  it('recaudador: el de guardia le entretiene y da más tiempo (una vez)', () => {
+    const s = withIncident('recaudador', 'guardia-tasa');
+    const g = s.heroes.find((h) => h.status === 'ok')!;
+    g.guard = true;
+    const until = s.incidents![0]!.until;
+    const at = 10 + INCIDENT_REACT;
+    stepIncidents(s, at - 1, at);
+    expect(s.incidents![0]!.until).toBe(until + GUARD_HOLD);
+    expect(s.incidents![0]!.held).toBe(g.id);
+    stepIncidents(s, at, at + 1);
+    expect(s.incidents![0]!.until).toBe(until + GUARD_HOLD);
+  });
+
+  it('ratas: el gato caza alguna si la sala está en la planta del salón', () => {
+    const s = withIncident('ratas', 'gato');
+    const inc = s.incidents![0]!;
+    // En la cocina, junto al salón (planta baja).
+    inc.room = s.building.rooms.find((r) => r.type === 'cocina')!.id;
+    expect(catHunts(s.building, inc.room)).toBe(true);
+    const taps = inc.taps!;
+    stepIncidents(s, 10, 10 + CAT_FIRST + CAT_EVERY);
+    expect(s.incidents![0]!.taps).toBe(taps - 2);
   });
 });

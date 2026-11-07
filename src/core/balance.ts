@@ -514,5 +514,10 @@ export const THIEF_ESCAPE = 8;
  * que huye se le cuela. Con dos de guardia se turnan: siempre hay uno despierto.
  */
 export const GUARD_NAP = [0.48, 0.58] as const;
+/** El recaudador en la puerta: segundos de más que le entretiene el de guardia. */
+export const GUARD_HOLD = 20;
+/** Las ratas: el gato llega a los tantos segundos y caza una cada tantos. */
+export const CAT_FIRST = 6;
+export const CAT_EVERY = 10;
 /** Probabilidad de que un encargo con éxito brillante traiga los planos de una receta. */
 export const RECIPE_FIND = 0.2;

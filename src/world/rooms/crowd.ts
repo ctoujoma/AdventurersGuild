@@ -1714,6 +1714,22 @@ export class Crowd {
     if (a.pose === 'walk') a.pose = 'stand';
   }
 
+  /**
+   * Han ganado (un asalto): los que siguen en pie dan saltos con los brazos en alto donde están
+   * y luego cada uno va a lo suyo andando.
+   */
+  cheerHere(ids: readonly string[]): void {
+    for (const id of ids) {
+      const a = this.actors.get(id);
+      if (!a || a.gone || a.pose === 'down' || a.hero.bandit) continue;
+      a.path = [];
+      a.goal = null;
+      a.pose = 'stand';
+      a.cheer = this.now + 4;
+      a.wait = 4 + this.rnd();
+    }
+  }
+
   /** Se levanta de la cama (o de la silla) de un salto. */
   wake(id: string): void {
     const a = this.actors.get(id);
