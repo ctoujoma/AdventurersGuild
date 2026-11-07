@@ -122,7 +122,8 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
 
 8. **Entrenamiento con tope por nivel** (hecho): el tope de cada atributo es el menor entre el
    de la sala (5, 7, 9 y 11; `TRAIN_CAP`) y el del héroe (3 + 2 por nivel: el de nivel N llega a lo de la sala de nivel N;
-   `TRAIN_HERO_BASE`, `TRAIN_PER_LEVEL`). Al
+   `TRAIN_HERO_BASE`, `TRAIN_PER_LEVEL`), y 2 más en el atributo principal de su clase
+   (`TRAIN_MAIN_BONUS`: el guerrero novato entrena Fuerza hasta 7). Al
    llegar al tope se dice cuál manda («mejora la sala» o «hasta subir de nivel»). Subir de nivel
    da +1 al atributo principal y nunca se pierde (hasta `ATTR_MAX`, 15).
 
@@ -342,6 +343,10 @@ en medio, para que los edificios salgan más interesantes (y, más adelante, pas
   temporada.
 
 ## Más adelante (valorar)
+
+- **Atributos hasta 20** para veteranos y el juego muy avanzado (hoy `ATTR_MAX` es 15 y las salas
+  llegan a 11): haría falta un tope de sala más alto (un nivel 5 o una sala de maestros) y que la
+  dificultad de lo más alto lo pida.
 
 - **Modo exploración** (como en Fallout Shelter): un encargo sin fin; cuanto más tiempo fuera,
   mejores premios cada cierto tiempo y más peligro, hasta que se les llama de vuelta.

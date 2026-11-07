@@ -460,6 +460,8 @@ export const TRAIN_CAP = [0, 5, 7, 9, 11] as const;
  */
 export const TRAIN_HERO_BASE = 3;
 export const TRAIN_PER_LEVEL = 2;
+/** El atributo principal de su clase (Fuerza del guerrero…) llega a tanto más. */
+export const TRAIN_MAIN_BONUS = 2;
 /** Tope de un atributo (el punto de subir de nivel llega hasta aquí, aunque no se entrene). */
 export const ATTR_MAX = 15;
 

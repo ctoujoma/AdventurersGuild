@@ -103,14 +103,27 @@ describe('entrenamiento', () => {
     const s = gym(4);
     const h = s.heroes[0]!;
     h.lvl = 2;
-    h.attrs.F = TRAIN_HERO_BASE + 2 * TRAIN_PER_LEVEL;
-    expect(trainState(s, h)).toMatchObject({ capped: true, by: 'nivel', cap: 7 });
+    // Un guerrero en la sala de armas: la Fuerza es lo suyo (2 más).
+    h.attrs.F = TRAIN_HERO_BASE + 2 * TRAIN_PER_LEVEL + 2;
+    expect(trainState(s, h)).toMatchObject({ capped: true, by: 'nivel', cap: 9 });
     const events: { t: string }[] = [];
     h.train = { F: 99 };
     stepTraining(s, events);
-    expect(h.attrs.F).toBe(7);
+    expect(h.attrs.F).toBe(9);
     h.lvl = 3;
-    expect(trainState(s, h)).toMatchObject({ capped: false, cap: 9 });
+    expect(trainState(s, h)).toMatchObject({ capped: false, cap: 11 });
+  });
+
+  it('en el atributo principal de su clase llega a 2 más que en los otros', () => {
+    const s = gym(4);
+    const h = s.heroes[0]!;
+    expect(h.cls).toBe('guerrero');
+    h.lvl = 1;
+    h.attrs.F = 5;
+    // Fuerza es lo suyo: hasta 7 en la sala de armas (en lo demás, hasta 5).
+    expect(trainState(s, h)).toMatchObject({ capped: false, cap: 7 });
+    h.attrs.F = 7;
+    expect(trainState(s, h)).toMatchObject({ capped: true, by: 'nivel', cap: 7 });
   });
 
   it('el punto de subir de nivel no se pierde aunque el atributo pase de 10', () => {

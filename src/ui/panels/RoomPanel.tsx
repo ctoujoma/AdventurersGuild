@@ -11,6 +11,7 @@ import {
   LOCK_TIME,
   TRAIN_CAP,
   TRAIN_HERO_BASE,
+  TRAIN_MAIN_BONUS,
   TRAIN_PER_LEVEL,
   VAULT_STORE,
 } from '../../core/balance';
@@ -275,7 +276,7 @@ function TrainInfo({ room }: { room: Room }) {
   return (
     <div class="chips">
       <Fact
-        info={`Pon aquí a un héroe que esté en casa para que entrene. Las habilidades suben solas según su clase. Cada héroe llega como mucho a ${TRAIN_HERO_BASE} más ${TRAIN_PER_LEVEL} por nivel.${next ? ` Mejorada, se llega hasta ${next} y se entrena más rápido.` : ''}`}
+        info={`Pon aquí a un héroe que esté en casa para que entrene. Las habilidades suben solas según su clase. Cada héroe llega como mucho a ${TRAIN_HERO_BASE} más ${TRAIN_PER_LEVEL} por nivel (${TRAIN_MAIN_BONUS} más en el atributo principal de su clase).${next ? ` Mejorada, se llega hasta ${next} y se entrena más rápido.` : ''}`}
       >
         {ATTR_NAMES[attr]} hasta {trainCap(room)}
       </Fact>

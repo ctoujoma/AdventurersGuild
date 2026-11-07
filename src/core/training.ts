@@ -2,17 +2,20 @@
  * Entrenamiento: los héroes que se quedan en casa entrenan un atributo en la sala de armas
  * (Fuerza), la galería de tiro (Destreza) o la biblioteca (Mente). Cada día suma progreso según
  * el nivel de la sala; al completarlo sube un punto, hasta el tope: el menor entre el de la sala
- * y el del héroe (`TRAIN_HERO_BASE` + `TRAIN_PER_LEVEL` por nivel). Las habilidades suben solas, según lo que pese
- * ese atributo en la clase.
+ * y el del héroe (`TRAIN_HERO_BASE` + `TRAIN_PER_LEVEL` por nivel, y `TRAIN_MAIN_BONUS` más en el
+ * atributo principal de su clase). Las habilidades suben solas, según lo que pese ese atributo en
+ * la clase.
  */
 import { TRAINS } from '../data/rooms';
 import {
   TRAIN_CAP,
   TRAIN_COST_BASE,
   TRAIN_HERO_BASE,
+  TRAIN_MAIN_BONUS,
   TRAIN_PER_LEVEL,
   TRAIN_RATE,
 } from './balance';
+import { MAIN_ATTR } from './resolve';
 import type { DawnEvent, GameState, Hero, Room } from './model';
 import { SKILLS, skill, type AttrId, type SkillId } from './party';
 import { active } from './rooms';
@@ -23,13 +26,21 @@ export const ATTR_NAMES: Record<AttrId, string> = { F: 'Fuerza', D: 'Destreza', 
 /** Hasta dónde llega el atributo entrenando en esta sala. */
 export const trainCap = (r: Room) => TRAIN_CAP[active(r).level] ?? TRAIN_CAP[TRAIN_CAP.length - 1];
 
-/** Hasta dónde llega entrenando este héroe, por su nivel (sube dos con cada nivel). */
-export const heroCap = (h: Pick<Hero, 'lvl'>) => TRAIN_HERO_BASE + TRAIN_PER_LEVEL * h.lvl;
+/**
+ * Hasta dónde llega entrenando este héroe un atributo: por su nivel (dos más con cada nivel) y,
+ * en el principal de su clase, `TRAIN_MAIN_BONUS` más.
+ */
+export const heroCap = (h: Pick<Hero, 'lvl' | 'cls'>, a: AttrId) =>
+  TRAIN_HERO_BASE + TRAIN_PER_LEVEL * h.lvl + (MAIN_ATTR[h.cls] === a ? TRAIN_MAIN_BONUS : 0);
 
 /** El tope de verdad para un héroe en una sala, y quién lo pone (la sala o su nivel). */
-export function capFor(h: Pick<Hero, 'lvl'>, r: Room): { cap: number; by: 'sala' | 'nivel' } {
+export function capFor(
+  h: Pick<Hero, 'lvl' | 'cls'>,
+  r: Room,
+): { cap: number; by: 'sala' | 'nivel' } {
   const room = trainCap(r);
-  const hero = heroCap(h);
+  const attr = TRAINS[r.type];
+  const hero = attr ? heroCap(h, attr) : room;
   return hero < room ? { cap: hero, by: 'nivel' } : { cap: room, by: 'sala' };
 }
 
