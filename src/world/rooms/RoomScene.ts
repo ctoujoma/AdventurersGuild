@@ -58,6 +58,7 @@ import { FLIGHT_Z, flightArt, goesRight } from './stairs';
 import { dress } from './salas/tintes';
 import { Crowd, WALK_Z, type Hit, type Poi, type Talk } from './crowd';
 import { drawGoal, goalIcon, type GoalIcon } from './goalMark';
+import { clothOf } from '../../art/heroes/hero';
 import { LAWN_D, tuftAllowed, yardBushes, yardTrees } from './patio';
 import { bushCnc, oakCnc, pineCnc } from './arboles';
 import { moodGround, moodTuft, softened } from './suelo';
@@ -2266,7 +2267,21 @@ export class RoomScene {
         // En el brazo de hierro, hacia la punta.
         perch(arm, dx - 17, 2, 50, -8, 3);
       }
+      // El farol, siempre por delante del rótulo (al balancearse, la tabla viene hacia delante y
+      // lo atravesaría): se pinta después y sin que lo tape lo que tenga delante.
+      const before = [classic.children.length, mood.children.length];
       put(lantern, dx - 8, 4, 46);
+      for (const [g, n] of [
+        [classic, before[0]!],
+        [mood, before[1]!],
+      ] as const)
+        for (const o of g.children.slice(n))
+          o.traverse((m) => {
+            const mat = (m as Mesh).material as ShaderMaterial | undefined;
+            if (!mat) return;
+            mat.depthTest = false;
+            m.renderOrder = 5;
+          });
       // La fachada: lo que se ve desde el camino.
       const facade = model.facade ?? [];
       if (facade.includes('letrero')) put(Prop.nameBoard(), dx - 26, 3, 74);
@@ -4444,7 +4459,7 @@ export class RoomScene {
             pts: d.from ? this.wayTo(d.from, { x: gx, floor: r.room.floor }) : null,
           };
         if (d.trail.pts) this.trace(d.trail.pts, 0.5, 0);
-        this.goalAt(gx, r.room.floor, this.goalIconFor(d.id, r.room), 0, 0.55, true);
+        this.goalAt(d.id, gx, r.room.floor, this.goalIconFor(d.id, r.room), 0, 0.55, true);
       }
     }
     this.trails();
@@ -4519,6 +4534,7 @@ export class RoomScene {
 
   /** Un banderín en un sitio del suelo (pies, en el plano de corte), al paso de la gente. */
   private goalAt(
+    id: string,
     x: number,
     floor: number,
     icon: GoalIcon,
@@ -4529,7 +4545,11 @@ export class RoomScene {
     const { camera } = this;
     const v: View = { px: camera.px, py: camera.py, vw: camera.vw, vh: camera.vh };
     const p = project(v, x, floorY(floor), WALK_Z);
-    const { field, dark } = this.model?.crest ?? { field: P.red, dark: P.wine };
+    // Del color de su ropa (el de su clase o su tinte); si no se le encuentra, el del gremio.
+    const h = this.model?.heroes.find((x) => x.id === id);
+    const { field, dark } = h
+      ? clothOf(h.look)
+      : (this.model?.crest ?? { field: P.red, dark: P.wine });
     drawGoal(this.topCtx, { x: p.x, y: p.y, t: this.t, age, alpha, icon, field, dark, preview });
   }
 
@@ -4564,7 +4584,7 @@ export class RoomScene {
         this.goals.delete(id);
         continue;
       }
-      this.goalAt(g.x, g.floor, g.icon, age, k);
+      this.goalAt(id, g.x, g.floor, g.icon, age, k);
     }
   }
 

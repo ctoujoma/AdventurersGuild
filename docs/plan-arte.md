@@ -137,8 +137,9 @@ npm run build`.
         péndulo con roce que se apaga en unos 3 s (`hangSign`, `swingSign` en `RoomScene.ts`);
         más claro al ir hacia atrás (mira al cielo). Cadenas (`chain`) al tocarlo y crujido en
         cada vuelta fuerte; el cuervo grazna. El de hierro, en dos partes: el brazo fijo y la
-        tabla con las cadenas colgando (`ironSignParts` en `props.ts`).
-  - [x] 6. La marca de destino (`goalMark.ts`): un banderín con el color del gremio y el icono
+        tabla con las cadenas colgando (`ironSignParts` en `props.ts`). El farol, siempre por delante (el
+        usuario: «atraviesa el farol»): se pinta el último y sin prueba de profundidad.
+  - [x] 6. La marca de destino (`goalMark.ts`): un banderín con el color de su ropa y el icono
         de lo que va a hacer (arreglar lo que pasa, descansar, guardia o el de la sala), clavado
         en el suelo a un lado de donde va. Al arrastrar, uno tenue de muestra donde caerá; al
         soltar, cae, rebota y deja una onda en el suelo; se queda hasta que llega
@@ -146,6 +147,10 @@ npm run build`.
         destellos. Ya va corriendo (lo del principal en `crowd.drop`), así que dura todo el
         camino. Sustituye a las cuatro esquinas provisionales (`headingMarks`, quitado); en el
         asalto en directo, el mismo banderín con la espada.
+  - [x] 6c. El color del banderín (el usuario): el de la ropa de quien va (`clothOf` en
+        `art/heroes/hero.ts`): el de su clase u oficio (guerrero rojo, pícaro morado, mago azul,
+        clérigo blanco, explorador verde…) o el de su tinte de la sastrería. Sobre tela clara, el
+        icono va oscuro. Hoja con todos: `capturas/movimiento/banderines-colores.png`.
   - [x] 6b. El camino (el usuario: «un trazado con el camino que harán y que desaparezca a los
         pocos segundos»): al soltar, un punteado amarillo que avanza por el suelo, por puertas y
         escaleras (`route`), de donde estaba hasta el banderín (`wayTo`, `trace`); entero un
