@@ -659,6 +659,10 @@ interface Actor {
   swing?: number;
   /** Qué golpe es (ver `Blow`). */
   blow?: Blow;
+  /** En guardia (peleando): hasta cuándo (reloj de la escena). */
+  guard?: number;
+  /** Encajando un golpe: lo que le queda (s) y hacia dónde le echa. */
+  hurt?: { t: number; push: 1 | -1 };
   /** Cayendo por un golpe: cuánto lleva (s) y hacia dónde le echa. */
   fall?: { t: number; push: 1 | -1 };
   /** Acostándose o levantándose: un momento incorporado en la cama (`out`: luego se va). */
@@ -688,6 +692,8 @@ interface Actor {
 
 /** La caída: lo que dura, lo que echa hacia atrás y la parte en que aún se tambalea de pie. */
 const FALL_TIME = 0.45;
+/** Lo que dura el gesto de encajar un golpe. */
+const HURT_TIME = 0.25;
 const FALL_PUSH = 6;
 const STAGGER = 0.3;
 /** Lo que tarda en sentarse o levantarse, y lo que dura la vuelta al cambiar de sentido. */
@@ -1374,6 +1380,10 @@ export class Crowd {
         a.x += a.fall.push * FALL_PUSH * (ease(t1) - ease(t0));
         if (t1 >= 1) a.fall = undefined;
       }
+      if (a.hurt) {
+        a.hurt.t -= dt;
+        if (a.hurt.t <= 0) a.hurt = undefined;
+      }
       // El golpe que está dando (el grito y la cura se sostienen más).
       if (a.swing) a.swing = Math.max(0, a.swing - dt * (a.blow === 'grito' ? 1.4 : 3));
       if (this.scripted) {
@@ -1673,6 +1683,22 @@ export class Crowd {
     a.dir = dir;
     a.swing = 1;
     a.blow = blow ?? blowOf(a.hero.look.outfit);
+  }
+
+  /** En guardia, de perfil hacia `dir` con el arma lista, durante `dur` segundos. */
+  guardUp(id: string, dir: 1 | -1, dur = 0.3): void {
+    const a = this.actors.get(id);
+    if (!a || a.pose !== 'stand') return;
+    a.guard = this.now + dur;
+    if (!a.swing && !a.hurt) a.dir = dir;
+  }
+
+  /** Encaja un golpe: recula un poco, de perfil y echado hacia atrás (`dur` segundos). */
+  flinch(id: string, push: 1 | -1, dur = HURT_TIME): void {
+    const a = this.actors.get(id);
+    if (!a || a.pose === 'down' || a.pose === 'bed' || a.pose === 'sit') return;
+    a.hurt = { t: dur, push };
+    a.dir = push > 0 ? -1 : 1;
   }
 
   /** El traje de alguien (para saber cómo pelea). */
@@ -2621,10 +2647,28 @@ export class Crowd {
         z,
       };
     }
+    if (a.hurt && !a.path.length && !a.swing) {
+      // Encajando un golpe: de perfil, echado hacia atrás (más al principio).
+      const back = (a.hurt.push * Math.min(1, a.hurt.t / HURT_TIME) * 2) / k;
+      return {
+        frame: a.dir > 0 ? F.talk : F.talk + 1,
+        left: a.x - CELL / 2 / k + back,
+        bottom: top + TALL / k,
+        z,
+      };
+    }
     if (a.swing && a.blow && !a.path.length) {
       const b = this.blowFrame(a.blow, 1 - a.swing, a.dir);
       return { frame: b.frame, left: a.x - CELL / 2 / k + b.lunge / k, bottom: top + TALL / k, z };
     }
+    if ((a.guard ?? 0) > this.now && !a.path.length && a.pose === 'stand')
+      // En guardia: el arma lista, de perfil hacia quien pelea.
+      return {
+        frame: a.dir > 0 ? F.drill : F.drillL,
+        left: a.x - CELL / 2 / k,
+        bottom: top + TALL / k,
+        z,
+      };
     const d = this.drillOf(a);
     if (d) {
       // Entrenando en su sala, mirando hacia donde tiene más sitio.

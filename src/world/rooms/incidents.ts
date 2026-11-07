@@ -24,6 +24,8 @@ import {
   scorch,
   spilledMug,
   taxmanStrip,
+  THIEF_FIGHT,
+  thiefFightStrip,
   thiefStrip,
   toppledStool,
 } from '../../art/incidents';
@@ -140,7 +142,16 @@ interface Show {
   until?: number;
   /** El duelo con el ladrón: si le gana el héroe (si no, se escapa aunque no sea su hora). */
   duelWon?: boolean;
+  /**
+   * Peleando con quien ha llegado: dónde está el héroe, el último golpe (la cuchillada del
+   * ladrón o el que encaja) y cuánto hace.
+   */
+  fight?: { hero: number; beat: 'stab' | 'hurt' | null; t: number };
 }
+
+/** El forcejeo: a qué distancia del héroe se pone el ladrón y lo que dura cada golpe (s). */
+const DUEL_GAP = 15;
+const DUEL_BEAT = 0.28;
 
 const at = (x: number, y: number, depth: number) => new Vector3(x, GROUND - y, -depth);
 
@@ -241,6 +252,44 @@ export class IncidentArt {
       if (a) return { x: a.x, y: a.bottom, floor: s.level };
     }
     return null;
+  }
+
+  /**
+   * El duelo con el ladrón (lo da la escena en cada fotograma): dónde está el héroe y, si toca,
+   * el golpe nuevo (`stab`: el ladrón acuchilla; `hurt`: encaja uno). Deja de pasear, se pone
+   * cara a cara y forcejea.
+   */
+  duel(room: string, hero: number, beat?: 'stab' | 'hurt'): void {
+    for (const s of this.shows.values()) {
+      if (s.kind !== 'ladron' || s.gone || !s.key.includes(`:${room}:`)) continue;
+      const a0 = s.actors[0];
+      if (!a0) return;
+      if (!s.fight) {
+        s.fight = { hero, beat: null, t: 0 };
+        this.restrip(s, a0, 'ladron-pelea', thiefFightStrip);
+      }
+      s.fight.hero = hero;
+      const a = s.actors[0]!;
+      if (!beat) return;
+      s.fight.beat = beat;
+      s.fight.t = 0;
+      // La cuchillada se echa encima; el golpe que encaja le hace recular.
+      a.x += a.dir * (beat === 'stab' ? 3 : -2);
+      if (beat === 'stab') this.sound?.('swing', 0.5);
+      return;
+    }
+  }
+
+  /** Cambia la figura de alguien por otra tira (el ladrón, de pasear a pelear y al revés). */
+  private restrip(s: Show, a: Actor, name: string, make: () => Strip): Actor {
+    const c = this.figure(this.strip(name, make), a.x, a.bottom, a.z);
+    c.dir = a.dir;
+    c.tx = a.tx;
+    c.wait = a.wait;
+    c.dist = a.dist;
+    this.drop(a);
+    s.actors[s.actors.indexOf(a)] = c;
+    return c;
   }
 
   /** Las luces de los incidentes (el fuego alumbra su cocina). */
@@ -441,6 +490,9 @@ export class IncidentArt {
     const speed = speeds[s.kind];
     const { r, floor } = s;
     const mid = r.x + r.w / 2;
+    // Si estaba peleando, vuelve a la figura de correr con el saco.
+    if (s.fight && s.actors[0]) this.restrip(s, s.actors[0], 'ladron', thiefStrip);
+    s.fight = undefined;
     const first = s.actors[0];
     if (s.kind === 'ratas') this.sound?.('squeak', 0.4);
     if (!failed) {
@@ -743,8 +795,27 @@ export class IncidentArt {
         break;
       }
       case 'ladron': {
-        // De puntillas de un lado a otro; al llegar, se para, mira atrás y se le cae una moneda.
         const a = A[0]!;
+        const f = s.fight;
+        if (f) {
+          // Forcejeando: cara a cara con el héroe, a su distancia, meciéndose adelante y atrás;
+          // con cada golpe, la cuchillada o el gesto de encajarlo.
+          f.t += dt;
+          a.dir = f.hero >= a.x ? 1 : -1;
+          const sway = Math.sin(t * 5.5) * 1.5;
+          const want = f.hero - a.dir * (DUEL_GAP + sway);
+          const step = 18 * dt;
+          if (Math.abs(want - a.x) > step) a.x += Math.sign(want - a.x) * step;
+          const hit = f.beat && f.t < DUEL_BEAT ? f.beat : null;
+          a.frame =
+            hit === 'stab'
+              ? THIEF_FIGHT.stab
+              : hit === 'hurt'
+                ? THIEF_FIGHT.hurt
+                : THIEF_FIGHT.guard;
+          break;
+        }
+        // De puntillas de un lado a otro; al llegar, se para, mira atrás y se le cae una moneda.
         if (a.wait > 0) {
           a.wait -= dt;
           if (a.wait < 0.8) a.dir = a.tx > a.x ? 1 : -1;

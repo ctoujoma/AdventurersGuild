@@ -121,6 +121,8 @@ const THIEF = {
   g: P.gold,
   k: P.black,
   b: P.bark,
+  m: P.mist,
+  w: P.white,
 };
 
 const THIEF_TOP: Rows = [
@@ -144,6 +146,78 @@ export const thiefStrip = (): Strip =>
     sprite([...THIEF_TOP, '......cc.cc...', '.....bb...bb..', '.....k.....k..'], THIEF),
     sprite([...THIEF_TOP, '......ccccc...', '.......bbb....', '.......kk.....'], THIEF),
   ]);
+
+/**
+ * Peleando con quien le ha pillado (mirando a la derecha): en guardia con la daga por delante y
+ * las piernas abiertas, la cuchillada a fondo (echado hacia delante, el brazo estirado y el paso
+ * largo) y encajando un golpe (la cabeza atrás, los ojos cerrados y la daga recogida).
+ */
+export const thiefFightStrip = (): Strip =>
+  strip([
+    sprite(
+      [
+        '.......hhh......',
+        '......hcccc.....',
+        '.....hccCCcc....',
+        '.....hcCfefc....',
+        '.....ccCfff.....',
+        '..gs.ccCCf......',
+        '.sssscccccc.....',
+        'ssSsscccccccfmw.',
+        'sSSsscccccc.....',
+        'sSSsscCcccc.....',
+        '.sSs.cCcccc.....',
+        '..s..cCccccc....',
+        '.....cc..cc.....',
+        '....bb....bb....',
+        '....k......k....',
+      ],
+      THIEF,
+    ),
+    sprite(
+      [
+        '........hhh.....',
+        '.......hcccc....',
+        '......hccCCcc...',
+        '......hcCfefc...',
+        '......ccCfff....',
+        '..gs..ccCCf.....',
+        '.sssscccccc.....',
+        'ssSssccccccccfmw',
+        'sSSsscccccc.....',
+        'sSSsscCcccc.....',
+        '.sSs.cCcccc.....',
+        '..s..cCccccc....',
+        '.....cc...cc....',
+        '....bb.....bb...',
+        '....k.......k...',
+      ],
+      THIEF,
+    ),
+    sprite(
+      [
+        '......hhh.......',
+        '.....hcccc......',
+        '....hccCCcc.....',
+        '....hcCfSfc.....',
+        '....ccCfff......',
+        '..gsccCCf.......',
+        '.sssscccccc.....',
+        'ssSsscccccfm....',
+        'sSSsscccccc.....',
+        'sSSsscCcccc.....',
+        '.sSs.cCcccc.....',
+        '..s..cCccccc....',
+        '......ccccc.....',
+        '.......bbb......',
+        '.......kk.......',
+      ],
+      THIEF,
+    ),
+  ]);
+
+/** Fotogramas de `thiefFightStrip`. */
+export const THIEF_FIGHT = { guard: 0, stab: 1, hurt: 2 } as const;
 
 // ---------- El recaudador ----------
 
