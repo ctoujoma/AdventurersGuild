@@ -93,6 +93,7 @@ import { FLAME_FRAMES, FLAME_H, FLAME_W, flameStrip } from './flame';
 import { faces, sideTexel, type Mat } from './volume';
 import { RaidShow, isBandit } from './raid';
 import { DAY_SECONDS, WORK_END } from '../../core/balance';
+import { napping } from '../../core/incidents';
 import type { Assault } from '../../core/assault';
 import { HEARTH_RIGHT, NO_LOOK, type SalonLook } from './salon';
 import {
@@ -643,7 +644,7 @@ export class RoomScene {
     canvas.addEventListener('webglcontextlost', (e) => e.preventDefault());
     this.pets.sound = (name, v) => this.cb.onSound?.(name, v);
     this.crowd.onArrive = (id, room) => this.cb.onArrive?.(id, room);
-    this.incidents.onFlee = (x, level, to) => this.crowd.chase(x, level, to);
+    this.incidents.onBlock = (x, level, to) => this.crowd.chase(x, level, to);
     this.bindInput();
   }
 
@@ -919,7 +920,7 @@ export class RoomScene {
     const m = this.model;
     if (!L || !m) return;
     this.workshop(m.crafts ?? [], m.craftEnds ?? []);
-    this.incidents.set(L, m.building, m.incidents ?? [], m.clock);
+    this.incidents.set(L, m.building, m.incidents ?? [], m.clock, m.incidentEnds);
     this.incidentLamps = this.incidents.lights().map((l) => ({
       pos: new Vector3(l.x, GROUND - l.y, -l.z + 6),
       glow: new Vector3(l.x, GROUND - l.y, -l.z),
@@ -3545,6 +3546,14 @@ export class RoomScene {
     const parts = Math.max(1, Math.ceil(w / 0.05));
     for (let i = 1; i <= parts; i++) this.crowd.update(w / parts, this.wt - w + (w * i) / parts);
     this.pets.update(w, this.wt);
+    // La siesta del de guardia (la misma cuenta que el núcleo): cabecea en su taburete.
+    const guards = this.model?.heroes.filter((h) => h.guard && h.status === 'ok') ?? [];
+    this.crowd.napper = this.night
+      ? null
+      : napping(
+          guards.map((h) => h.id),
+          this.clockTod ?? 0,
+        );
     this.incidents.update(w, this.wt);
     this.edgePan(dt);
     this.swingSign(dt);

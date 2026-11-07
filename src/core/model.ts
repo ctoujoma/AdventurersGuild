@@ -404,6 +404,19 @@ export interface DuelHit {
   crit?: boolean;
 }
 
+/**
+ * Cómo acabó un incidente (para que la escena lo enseñe igual): bien o mal; con el ladrón que
+ * se escapa, además, si le cerró el paso el de guardia en la puerta (`puerta`, con su id) o si
+ * se le coló porque cabeceaba (`cuela`).
+ */
+export interface IncidentEnd {
+  id: string;
+  kind: IncidentKind;
+  room: string;
+  how: 'bien' | 'mal' | 'puerta' | 'cuela';
+  guard?: string;
+}
+
 export interface Duel {
   who: string;
   at: number;
@@ -694,6 +707,8 @@ export interface GameState {
    * sepa cómo acabó el que desaparece de `crafts`. Solo los más recientes.
    */
   craftLog?: CraftEnd[];
+  /** Los últimos incidentes que han acabado, y cómo (ver `IncidentEnd`). */
+  incidentLog?: IncidentEnd[];
   /** Recetas aprendidas (las de serie no se apuntan). */
   recipes?: RecipeId[];
   /** Grupo que acaba de llegar ante su jefe con el juego abierto (la interfaz avisa). */
