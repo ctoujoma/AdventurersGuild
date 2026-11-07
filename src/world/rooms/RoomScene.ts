@@ -292,6 +292,12 @@ interface Lamp {
  * El halo de cada luz: grande en los fuegos, mediano en los faroles y las arañas y pequeño en
  * las velas y los apliques.
  */
+/**
+ * Lo alto del farol en su poste (`Prop.lampPost`, 40 de alto: el centro del cristal, a 34 del
+ * suelo en el dibujo). En el mundo se divide por `scaleAt` de su profundidad, como el dibujo.
+ */
+const LANTERN_UP = 34;
+
 const haloOf = (r: number, power: number, fire: boolean) =>
   fire ? 22 : r >= 70 ? Math.round(14 * Math.sqrt(power)) : Math.max(7, Math.round(r / 4));
 
@@ -2384,8 +2390,8 @@ export class RoomScene {
         for (const lx of [px + 70, px + 150]) {
           put(Prop.lampPost(), lx, 24);
           this.lamps.push({
-            pos: at(lx, GROUND - 36, 24),
-            glow: at(lx, GROUND - 36, 24),
+            pos: at(lx, GROUND - LANTERN_UP / scaleAt(24), 24),
+            glow: at(lx, GROUND - LANTERN_UP / scaleAt(24), 24),
             r: 50,
             color: LANTERN,
             power: 0.9,
@@ -2488,8 +2494,8 @@ export class RoomScene {
         const lx = r.x;
         this.figure(g, Prop.lampPost(), lx, GROUND, LAMP_Z, OUTDOOR, 1);
         this.lamps.push({
-          pos: at(lx, GROUND - 36, LAMP_Z),
-          glow: at(lx, GROUND - 36, LAMP_Z),
+          pos: at(lx, GROUND - LANTERN_UP / scaleAt(LAMP_Z), LAMP_Z),
+          glow: at(lx, GROUND - LANTERN_UP / scaleAt(LAMP_Z), LAMP_Z),
           r: 72,
           color: LANTERN,
           power: 1.1,
