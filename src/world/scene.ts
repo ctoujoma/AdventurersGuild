@@ -1,5 +1,5 @@
 import type { HeroLook, HeroMarks } from '../art/heroes/look';
-import type { Building, Duel, ItemIcon, Rarity, TrophyIcon } from '../core/model';
+import type { Building, Duel, IncidentEnd, ItemIcon, Rarity, TrophyIcon } from '../core/model';
 import type { FacadeLook, GardenLook, TintId } from '../data/custom';
 import type { IncidentKind } from '../data/incidents';
 import type { BattleSound } from './battle';
@@ -80,6 +80,8 @@ export interface SceneModel {
    * se canceló. Se guardan los últimos ocho.
    */
   craftEnds?: SceneCraftEnd[];
+  /** Cómo acabaron los últimos incidentes: bien, mal, el de guardia le paró o se le coló. */
+  incidentEnds?: readonly IncidentEnd[];
 }
 
 /** Cómo acabó un trabajo de taller. */
@@ -114,6 +116,8 @@ export interface SceneCraft {
 
 /** Un incidente tal como lo ve la escena: qué pasa y en qué sala (id). */
 export interface SceneIncident {
+  /** Para saber, cuando desaparece, cómo acabó (`SceneModel.incidentEnds`). */
+  id?: string;
   kind: IncidentKind;
   room: string;
   /** Los de tocar (las ratas): toques que faltan. */

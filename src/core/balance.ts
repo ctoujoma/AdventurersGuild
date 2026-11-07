@@ -509,5 +509,10 @@ export const INCIDENT_WALK = 25;
 export const THIEF_HP = 20;
 export const THIEF_HP_RANK = 10;
 export const THIEF_ESCAPE = 8;
+/**
+ * La siesta del de guardia (partes del día): después de comer cabecea en su taburete y el ladrón
+ * que huye se le cuela. Con dos de guardia se turnan: siempre hay uno despierto.
+ */
+export const GUARD_NAP = [0.48, 0.58] as const;
 /** Probabilidad de que un encargo con éxito brillante traiga los planos de una receta. */
 export const RECIPE_FIND = 0.2;

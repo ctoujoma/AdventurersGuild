@@ -70,6 +70,9 @@ Segunda pasada (lo que quedaba, también hecho):
 | El gato, tras una obra | Si iba andando, aparecía junto al fuego | Vuelve andando |
 | Talleres al atardecer y de madrugada | Seguían avanzando de 0 a 1 del día, aunque al atardecer todos se van a dormir y por la mañana aún no han llegado | Solo se trabaja en la **jornada** (`WORK_START`–`WORK_END`, la misma hora a la que la escena los manda a la cama): a media tarea, de noche se para y a la mañana sigue. Igual con la cocina, la bodega, la enfermería y el entrenamiento (`workedIn`). Un día entero de jornada rinde lo mismo que antes el día entero (balance igual); la ficha del taller enseña las horas de reloj de verdad (`clockHours`) |
 | Mandar a vestir a última hora | El tope de espera saltaba de noche y por la mañana se cosía sin el héroe | Le esperan a la mañana siguiente: va a primera hora y se cose al llegar |
+| El ladrón que se escapa y la guardia | Salía por el recibidor como si nada, aunque hubiera alguien de guardia | El de guardia le cierra el paso: pelea con él (las cuentas del duelo) y, si gana, el botín se queda (`IncidentEnd.how = 'puerta'`); en la escena el ladrón para en el recibidor, el de guardia sale a su encuentro y cae allí. A la hora de la siesta (`GUARD_NAP`) el de guardia, si está solo, cabecea en su taburete y se le cuela (`cuela`); con dos se turnan (`napping`, la misma cuenta en el núcleo y en la escena) |
+| El ladrón vencido en la cámara | Tras ganarle el duelo, salía corriendo de la casa | Cae allí mismo, con estrellas y el botín que salta |
+| Cómo acabó un incidente | La escena lo adivinaba por el reloj | Lo dice el núcleo (`incidentLog` → `SceneModel.incidentEnds`) |
 
 **La guardia** (decidido con el usuario, 7 de noviembre): los de guardia siguen en la puerta día y
 noche, sin acostarse (en el núcleo no dormir no les cuesta nada: recuperan moral igual). Para el

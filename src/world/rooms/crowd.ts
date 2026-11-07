@@ -1072,6 +1072,8 @@ export class Crowd {
   private now = 0;
   /** Sitios de las salas a los que se va a hacer algo (el tablón, la chimenea, el altar…). */
   private pois: Poi[] = [];
+  /** El de guardia que cabecea ahora a la hora de la siesta (lo dice la escena con `napping`). */
+  napper: string | null = null;
   /** Ya se ha puesto a la gente una vez: quien aparece después, llega andando. */
   private ready = false;
   /**
@@ -1171,6 +1173,7 @@ export class Crowd {
       (a) => !a.hero.visitor && !a.hero.bandit && !heroes.some((x) => x.id === a.hero.id),
     );
     const walkOut = lost.length <= 2;
+    const redo: Actor[] = [];
     for (const [id, a] of this.actors) {
       if (a.hero.visitor) continue;
       const h = heroes.find((x) => x.id === id);
@@ -1202,7 +1205,8 @@ export class Crowd {
       // Tarea nueva (o de guardia): va ya, sin acabar antes el paseo que llevaba.
       if ((work !== h.work || goTo !== h.goTo || !guard !== !h.guard) && !a.gone && !a.leaving) {
         a.wait = 0;
-        if (was === h.status && !a.climb && !a.held && !this.scripted) this.decide(a);
+        // (Decide cuando ya se sabe su sitio nuevo: el de guardia, la puerta; ver abajo.)
+        if (was === h.status && !a.climb && !a.held && !this.scripted) redo.push(a);
       }
       if (was === h.status) continue;
       a.goal = null;
@@ -1230,6 +1234,7 @@ export class Crowd {
     for (const h of fresh) this.add(h, walkIn);
     if (this.S) this.ready = true;
     this.rehome();
+    for (const a of redo) this.decide(a);
     // Quien ya tiene cama en el servicio deja de irse al pueblo (si es de noche, viene mañana).
     for (const a of this.actors.values()) {
       if (!a.gone || this.village(a) || this.time === 'night') continue;
@@ -1820,7 +1825,9 @@ export class Crowd {
     if (!this.S.guard.some((p) => p.x === a.goal?.place.x && p.floor === a.goal.place.floor))
       return null;
     const off = (hash(a.hero.id) % 97) / 13;
-    if (this.time === 'day') {
+    // A la hora de la siesta, el que cabecea (el núcleo deja que se le cuele el ladrón) se pinta
+    // como de madrugada.
+    if (this.time === 'day' && this.napper !== a.hero.id) {
       const p = (this.now + off) % GAME_CYCLE;
       return { night: false, slam: p < 0.22, nod: 0, dozing: false };
     }

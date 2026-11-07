@@ -31,7 +31,7 @@ import {
 } from '../../art/incidents';
 import { ratStrip, type Strip } from '../../art/pets';
 import type { PixelBuffer } from '../../art/pixel';
-import type { Building } from '../../core/model';
+import type { Building, IncidentEnd } from '../../core/model';
 import type { IncidentKind } from '../../data/incidents';
 import type { PKind, Particle } from '../particles';
 import type { SceneIncident, SoundName } from '../scene';
@@ -119,10 +119,16 @@ interface Actor {
   route?: { x: number; y: number; level: number; z: number }[];
   /** Planta en la que está, si ha salido de la sala de su incidente. */
   level?: number;
+  /** Huyendo, le espera el de guardia al final del camino (en el recibidor): allí cae. */
+  blocked?: boolean;
+  /** Ya ha avisado al de guardia de que llega. */
+  warned?: boolean;
 }
 
 interface Show {
   key: string;
+  /** El id del incidente en la partida (para saber cómo acabó). */
+  id?: string;
   kind: IncidentKind;
   r: Rect;
   floor: number;
@@ -170,10 +176,10 @@ export class IncidentArt {
   private out = 0;
   private L: RoomsLayout | null = null;
   /**
-   * El ladrón pillado echa a correr: desde dónde (x y planta) y por dónde sale de la sala, para
-   * que quien le ha pillado le persiga un trecho.
+   * El ladrón que huye llega al recibidor y el de guardia le cierra el paso: dónde (x y planta),
+   * para que el de guardia salga a por él.
    */
-  onFlee?: (x: number, level: number, to: { x: number; floor: number }) => void;
+  onBlock?: (x: number, level: number, to: { x: number; floor: number }) => void;
 
   constructor(
     shared: Shared,
@@ -196,6 +202,7 @@ export class IncidentArt {
     b: Building,
     list: readonly SceneIncident[],
     clock?: { day: number; secs: number },
+    ends: readonly IncidentEnd[] = [],
   ): void {
     this.L = L;
     const want = new Map<string, { inc: SceneIncident; r: Rect; floor: number; level: number }>();
@@ -217,20 +224,24 @@ export class IncidentArt {
         for (const a of s.actors) this.drop(a);
         continue;
       }
-      // Ha acabado: si el reloj ha llegado a su hora (o ya es otro día), ha salido mal.
-      const failed =
-        s.duelWon !== undefined
+      // Ha acabado: cómo, lo dice el núcleo (`ends`); si no se sabe, si el reloj ha llegado a su
+      // hora (o ya es otro día), ha salido mal.
+      const end = s.id ? ends.find((e) => e.id === s.id) : undefined;
+      const failed = end
+        ? end.how !== 'bien'
+        : s.duelWon !== undefined
           ? !s.duelWon
           : !!clock &&
             s.until !== undefined &&
             (clock.day !== s.day || clock.secs >= s.until - 0.5);
-      this.leave(s, failed);
+      this.leave(s, failed, end?.how === 'puerta');
       if (s.actors.length) this.shows.set(`${key}#fuera${this.out++}`, s);
     }
     for (const [key, w] of want) {
       const known = this.shows.get(key);
       if (!known) {
         const s = this.build(key, w.inc.kind, w.r, w.floor, w.level, w.inc.taps);
+        s.id = w.inc.id;
         s.day = clock?.day;
         s.until = w.inc.until;
         this.shows.set(key, s);
@@ -434,7 +445,7 @@ export class IncidentArt {
    * Por dónde se escapa alguien de la casa: el camino de la gente (puertas, escaleras peldaño a
    * peldaño y el recibidor) hasta el patio y un poco más allá, por el camino.
    */
-  private escape(s: Show, a: Actor, speed: number, caught = false): boolean {
+  private escape(s: Show, a: Actor, speed: number, block = false): boolean {
     const path = this.L ? route(this.L, { x: a.x, floor: s.level }, outside()) : null;
     if (!path) return false;
     const pts: NonNullable<Actor['route']> = [];
@@ -454,16 +465,36 @@ export class IncidentArt {
     }
     const end = pts.at(-1)!;
     pts.push({ ...end, x: end.x - 60 });
-    if (caught) {
-      // Un trecho: hasta donde sale de la sala (la puerta o el pie de la escalera).
-      const out = pts.find((q) => q.level !== s.level || q.x < s.r.x || q.x > s.r.x + s.r.w);
-      const to = out ?? pts[0]!;
-      this.onFlee?.(a.x, s.level, { x: to.x, floor: to.level });
+    // El de guardia le espera en el recibidor: el camino acaba en medio de la sala.
+    const hall = block ? this.L?.rooms.find((x) => x.room.type === 'recibidor') : undefined;
+    if (hall) {
+      // El primer tramo que cruza el medio del recibidor (en su planta): ahí se para.
+      const cx = hall.rect.x + hall.rect.w / 2;
+      let prev = { x: a.x, level: s.level };
+      for (let i = 0; i < pts.length; i++) {
+        const q = pts[i]!;
+        const lo = Math.min(prev.x, q.x);
+        const hi = Math.max(prev.x, q.x);
+        if (q.level === hall.room.floor && prev.level === q.level && lo <= cx && cx <= hi) {
+          pts.splice(i, pts.length - i, { ...q, x: cx, z: a.z });
+          a.blocked = true;
+          break;
+        }
+        prev = q;
+      }
     }
     a.route = pts;
     a.flee = speed;
     a.wait = 0;
     return true;
+  }
+
+  /** Le pillan: estrellas de la pelea y el botín que vuelve (monedas que saltan). */
+  private caught(a: Actor): void {
+    for (let i = 0; i < 5; i++)
+      this.emit?.('star', a.x + (this.rnd() - 0.5) * 14, a.bottom - 18 - this.rnd() * 8, a.z);
+    for (let i = 0; i < 6; i++) this.emit?.('coin', a.x, a.bottom - 14, a.z);
+    this.sound?.('coin', 0.5);
   }
 
   /** Un toque a las ratas: una sale corriendo, con su chillido y una nube de polvo. */
@@ -481,7 +512,7 @@ export class IncidentArt {
    * quemadura, las ratas con un pan, una silla rota, el ladrón corriendo con el saco, el
    * recaudador enfadado, un charco grande o la jarra del noble volcada.
    */
-  private leave(s: Show, failed: boolean): void {
+  private leave(s: Show, failed: boolean, blocked = false): void {
     s.gone = true;
     s.n = 0;
     const speeds: Partial<Record<IncidentKind, number>> = failed
@@ -502,9 +533,18 @@ export class IncidentArt {
         this.emit?.('coin', first.x, first.bottom - 26, first.z);
     }
     for (const a of [...s.actors]) {
+      // Al ladrón vencido en la cámara se le pilla allí mismo: cae, no sale corriendo.
+      if (s.kind === 'ladron' && !failed) {
+        this.poof(a);
+        this.caught(a);
+        this.drop(a);
+        s.actors.splice(s.actors.indexOf(a), 1);
+        continue;
+      }
       if (speed) {
-        // El ladrón no se esfuma en la puerta: sale de la casa corriendo.
-        if (!(s.kind === 'ladron' && this.escape(s, a, speed, !failed))) this.exit(s, a, speed);
+        // El ladrón no se esfuma en la puerta: sale de la casa corriendo (o hasta el recibidor,
+        // si le espera el de guardia).
+        if (!(s.kind === 'ladron' && this.escape(s, a, speed, blocked))) this.exit(s, a, speed);
         continue;
       }
       // El fuego que sale mal no se apaga con vapor: se ahoga en humo negro.
@@ -587,8 +627,15 @@ export class IncidentArt {
       // El ladrón que se escapa va perdiendo monedas.
       if (a.drops && this.rnd() < dt * 5) this.emit?.('coin', a.x - a.dir * 5, a.bottom - 12, a.z);
       if (a.route) {
+        // Ya ve al de guardia: este sale a su encuentro.
+        if (a.blocked && !a.warned && a.route.length === 1) {
+          a.warned = true;
+          const q = a.route[0]!;
+          this.onBlock?.(q.x, q.level, { x: q.x + 10, floor: q.level });
+        }
         if (this.follow(a, a.flee * dt)) continue;
         this.poof(a);
+        if (a.blocked) this.caught(a);
         this.drop(a);
         s.actors.splice(s.actors.indexOf(a), 1);
         continue;

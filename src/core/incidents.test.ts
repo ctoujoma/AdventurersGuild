@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { INCIDENTS } from '../data/incidents';
-import { INCIDENT_EVERY } from './balance';
+import { DAY_SECONDS, GUARD_NAP, INCIDENT_EVERY } from './balance';
 import { endDay, newGame, reduce } from './game';
-import { incidentCost, incidentIssue, stepIncidents } from './incidents';
+import { incidentCost, incidentIssue, napping, stepIncidents } from './incidents';
 import type { GameState, Incident } from './model';
 
 /** Partida en el día 3 con un incidente puesto a mano en la primera sala de su tipo. */
@@ -164,5 +164,37 @@ describe('incidentes', () => {
     const next = endDay(s);
     expect(next.incidents).toEqual([]);
     expect(next.dawn.some((e) => e.t.includes('gotera'))).toBe(true);
+  });
+
+  it('el ladrón que se escapa se topa con la guardia en la puerta', () => {
+    const s = withIncident('ladron', 'puerta');
+    const g = s.heroes.find((h) => h.status === 'ok')!;
+    g.guard = true;
+    // Un guardia curtido: le gana seguro.
+    g.lvl = 8;
+    g.attrs = { F: 12, D: 12, M: 8 };
+    const inc = s.incidents![0]!;
+    const news = stepIncidents(s, inc.until - 1, inc.until);
+    expect(s.incidents).toEqual([]);
+    expect(s.gold).toBe(500);
+    expect(s.incidentLog?.at(-1)).toMatchObject({ how: 'puerta', guard: g.id });
+    expect(news.some((n) => n.t.includes(g.name) && /cierra el paso/.test(n.t))).toBe(true);
+  });
+
+  it('a la hora de la siesta, el de guardia solo cabecea y se le cuela; con dos, se turnan', () => {
+    const nap = (GUARD_NAP[0] + GUARD_NAP[1]) / 2 - 0.01;
+    expect(napping(['a'], 0.3)).toBeNull();
+    expect(napping(['a'], nap)).toBe('a');
+    expect(napping(['a', 'b'], nap)).toBe('a');
+    expect(napping(['a', 'b'], GUARD_NAP[1] - 0.01)).toBe('b');
+    const s = withIncident('ladron', 'siesta');
+    const g = s.heroes.find((h) => h.status === 'ok')!;
+    g.guard = true;
+    const inc = s.incidents![0]!;
+    s.clock = nap * DAY_SECONDS;
+    inc.until = s.clock;
+    stepIncidents(s, s.clock - 1, s.clock);
+    expect(s.gold).toBeLessThan(500);
+    expect(s.incidentLog?.at(-1)).toMatchObject({ how: 'cuela', guard: g.id });
   });
 });

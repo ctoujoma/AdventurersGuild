@@ -13,13 +13,14 @@ import {
   INCIDENT_FROM_DAY,
   INCIDENT_REACT,
   INCIDENT_RANK_COST,
+  GUARD_NAP,
   THIEF_ESCAPE,
   THIEF_HP,
   THIEF_HP_RANK,
   rankIndex,
 } from './balance';
 import { CRIT, CRIT_MULT, heroUnit } from './combat';
-import type { ChipKind, DawnEvent, Duel, DuelHit, GameState, Incident } from './model';
+import type { ChipKind, DawnEvent, Duel, DuelHit, GameState, Incident, IncidentEnd } from './model';
 import { equip } from './resolve';
 import { Rng } from './rng';
 import { active } from './rooms';
@@ -83,14 +84,14 @@ export function stepIncidents(s: GameState, from: number, to: number): IncidentN
     if (to < inc.from + INCIDENT_REACT) continue;
     const who = presentFor(s, inc);
     if (who) {
-      done(s, inc);
+      done(s, inc, 'bien');
       news.push(win(s, inc, who));
     }
   }
   // Sale mal al acabarse el tiempo, salvo que alguien vaya ya de camino.
   const list = s.incidents ?? [];
   const late = (i: Incident) => i.until <= to && !i.coming && !i.duel;
-  for (const inc of list.filter(late)) news.push(lose(s, inc));
+  for (const inc of list.filter(late)) news.push(fail(s, inc));
   s.incidents = list.filter((i) => !late(i));
   // Uno a la vez, desde el segundo día y con tiempo de resolverlo antes de que anochezca.
   if (s.day < INCIDENT_FROM_DAY || s.incidents.length || s.over) return news;
@@ -159,7 +160,7 @@ export function arriveIncident(s: GameState, who: string, room: string): Inciden
 function reach(s: GameState, inc: Incident, who: string): IncidentNews | null {
   const duel = inc.kind === 'ladron' ? thiefDuel(s, who, inc.id, s.clock ?? 0) : null;
   if (!duel) {
-    done(s, inc);
+    done(s, inc, 'bien');
     return win(s, inc, nameOf(s, who));
   }
   s.incidents = (s.incidents ?? []).map((i) => (i === inc ? { ...i, coming: undefined, duel } : i));
@@ -169,10 +170,63 @@ function reach(s: GameState, inc: Incident, who: string): IncidentNews | null {
 /** Acaba el duelo con el ladrón: le pilla o se escapa con el oro. */
 function settleDuel(s: GameState, inc: Incident): IncidentNews {
   const d = inc.duel!;
-  done(s, inc);
-  if (d.won) return win(s, inc, nameOf(s, d.who));
-  const n = lose(s, inc);
+  if (d.won) {
+    done(s, inc, 'bien');
+    return win(s, inc, nameOf(s, d.who));
+  }
+  const n = fail(s, inc);
   return { ...n, t: `${nameOf(s, d.who)} no puede con él. ${n.t}` };
+}
+
+/**
+ * El de guardia que mira la puerta ahora (parte del día `part`), si hay alguien despierto. A la
+ * hora de la siesta, si está solo, cabecea; si son dos, se turnan (cabecea uno y luego el otro).
+ * Pura con los ids para que la escena enseñe lo mismo.
+ */
+export function napping(guards: readonly string[], part: number): string | null {
+  const [a, b] = GUARD_NAP;
+  if (!guards.length || part < a || part >= b) return null;
+  if (guards.length === 1) return guards[0]!;
+  return part < (a + b) / 2 ? guards[0]! : guards[1]!;
+}
+
+/** Los de guardia ahora en la puerta (en el orden de la lista de héroes). */
+const guardsOf = (s: GameState) =>
+  s.heroes.filter((h) => h.status === 'ok' && h.guard).map((h) => h.id);
+
+/**
+ * Sale mal. El ladrón que se escapa tiene que salir por el recibidor: si hay alguien de guardia
+ * despierto, le cierra el paso (pelea con él, con las mismas cuentas que el duelo) y, si gana,
+ * no se pierde nada. Si cabecea, se le cuela.
+ */
+function fail(s: GameState, inc: Incident): IncidentNews {
+  const guards = guardsOf(s);
+  if (inc.kind !== 'ladron' || !guards.length) {
+    done(s, inc, 'mal');
+    return lose(s, inc);
+  }
+  const part = Math.min(1, (s.clock ?? 0) / DAY_SECONDS);
+  const nap = napping(guards, part);
+  const awake = guards.find((g) => g !== nap);
+  if (!awake) {
+    done(s, inc, 'cuela', nap!);
+    const n = lose(s, inc);
+    return { ...n, t: `${nameOf(s, nap!)} cabeceaba en la puerta y se le cuela. ${n.t}` };
+  }
+  const duel = thiefDuel(s, awake, `${inc.id}-puerta`, s.clock ?? 0);
+  if (duel?.won) {
+    done(s, inc, 'puerta', awake);
+    const d = INCIDENTS[inc.kind];
+    if (d.rep) s.rep += d.rep;
+    if (s.stats) s.stats = { ...s.stats, incidents: (s.stats.incidents ?? 0) + 1 };
+    return {
+      t: `${nameOf(s, awake)}, de guardia, le cierra el paso en la puerta y recupera el botín.${d.rep ? ` (+${d.rep} reputación)` : ''}`,
+      k: 'good',
+    };
+  }
+  done(s, inc, 'mal');
+  const n = lose(s, inc);
+  return { ...n, t: `Ni ${nameOf(s, awake)}, de guardia, le para. ${n.t}` };
 }
 
 /**
@@ -239,8 +293,12 @@ function win(s: GameState, inc: Incident, who: string): IncidentNews {
   return { t: fill(d.win, { h: who }) + (d.rep ? ` (+${d.rep} reputación)` : ''), k: 'good' };
 }
 
-const done = (s: GameState, inc: Incident) => {
+/** Se acaba: fuera de la lista y, para la escena, cómo acabó (los últimos). */
+const done = (s: GameState, inc: Incident, how: IncidentEnd['how'] = 'bien', guard?: string) => {
   s.incidents = (s.incidents ?? []).filter((i) => i.id !== inc.id);
+  const e: IncidentEnd = { id: inc.id, kind: inc.kind, room: inc.room, how };
+  if (guard) e.guard = guard;
+  s.incidentLog = [...(s.incidentLog ?? []), e].slice(-6);
 };
 
 /** Lo que hace el jugador con un incidente: quién va, pagar, tocar o qué elige. */
@@ -319,7 +377,7 @@ export function failIncidents(s: GameState, events: DawnEvent[]): void {
       events.push(n ?? settleDuel(s, now!));
       continue;
     }
-    events.push(lose(s, inc));
+    events.push(fail(s, inc));
   }
   s.incidents = [];
 }
