@@ -79,7 +79,14 @@ npm run build`.
         balancea solo con las rachas; cruzan hojas por el patio (no por dentro de las salas); el
         sonido del viento sube. La lluvia y la nieve ya se inclinaban con él. GIF en
         `capturas/clima/fase4/`.
-  - [ ] 5. Tormenta.
+  - [x] 5. Tormenta: con tormenta, cada rato un relámpago (`stepStorm`, `lightning`): el
+        destello en escalones (fogonazo, respiro, otro y se apaga; con «menos movimiento», más
+        flojo) que baña lo de fuera, entra por las ventanas y aclara las gotas; el rayo en el
+        cielo, a tirones de dos píxeles con ramas, tapado abajo por los montes (`drawBolt`); y el
+        trueno con retraso (chasquido si cae cerca y retumbo que va y viene, `audio.thunder`).
+        «Relámpago» en el modo prueba. Capturas y GIF en `capturas/clima/fase5/`.
+  - [ ] Más adelante: valorar un ciclo de estaciones (apuntado en
+        [`plan-clima.md`](plan-clima.md)).
 
 - [x] **Volumen con grosor** (`thick` en `salas/kit.ts`, `volume` en `RoomScene.ts`): lo suelto
       por la sala tiene cuerpo de unos píxeles hacia el fondo (antes, solo lo empotrado, hasta

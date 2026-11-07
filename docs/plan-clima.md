@@ -61,6 +61,23 @@ todo lo que eso cambia a la vista: el cielo, la luz, el patio, los tejados y la 
 6. **(Opcional, con el núcleo)** Las estaciones (otoño con hojas, invierno con más nieve) y el
    efecto del clima en el juego.
 
+## Pendiente de valorar: un ciclo de estaciones
+
+Lo pidió el usuario al acabar el clima («apunta para más tarde valorar hacer un ciclo de
+estaciones»). Sin decidir aún; ideas para cuando se mire:
+
+- **Qué marca la estación:** el día de la partida (por ejemplo, 7 u 8 días por estación), sin
+  tocar el núcleo si es solo de aspecto (como `weatherAt`); si cambia la partida (cosechas,
+  caminos cerrados, frío), con el agente principal.
+- **El tiempo por estación:** en `weatherAt`, el reparto de tipos de día según la estación (más
+  nieve en invierno, más lluvia en otoño, más despejado en verano).
+- **Lo que se ve:** la hierba y los árboles del patio y del fondo con su color (verde, dorado y
+  rojo en otoño, ramas peladas en invierno, flores en primavera); hojas que caen en otoño (ya
+  hay hojas al viento); la nieve posada más tiempo en invierno; los días más cortos en invierno
+  (el reloj del día es del núcleo: ojo).
+- **Ya preparado:** la nieve posada y el fondo nevado (`snowyCanvas`), las hojas al viento
+  (`stepWind`) y el manto de nubes. Faltaría pintar las variantes de color de árboles y prados.
+
 ## Riesgos
 
 - **Rendimiento en el móvil:** la lluvia a pantalla completa tiene que ir en un shader con muy

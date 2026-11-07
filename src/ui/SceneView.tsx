@@ -57,6 +57,7 @@ export function SceneView(props: Props) {
       onSound: (name, vol) => audio.play(name, vol),
       onFrame: (p) => audio.listen(p),
       onWeather: (w) => audio.weather(w),
+      onThunder: (delay, power) => audio.thunder(delay, power),
       onSlow: (on) => {
         setSlow(on);
         audio.setSlow(on);

@@ -548,6 +548,11 @@ export class RoomScene {
   private glass: Mesh[] = [];
   /** Los árboles del patio que mece el viento: su uniforme, dónde están y lo altos que son. */
   private swayers: { u: { value: number }; x: number; k: number; seed: number }[] = [];
+  /** «Menos movimiento» (Ajustes): los relámpagos, más suaves. */
+  calm = false;
+  /** El último relámpago: cuándo fue (segundos de `performance`), dónde cae el rayo y el siguiente. */
+  private bolt: { at: number; fx: number; seed: number } | null = null;
+  private boltNext = 6;
   private leafT = 0;
   private topLive = false;
   private sky = new Sky();
@@ -1582,7 +1587,7 @@ export class RoomScene {
       u.uCover!.value = this.coverFade > 0.5 ? 1 : 0;
       u.uSplash!.value = this.fewLights ? 0 : 1;
       // Del color de la luz que hay: gris claro de día, azul apagado de noche.
-      const lum = 0.36 + 0.64 * day;
+      const lum = Math.min(1.3, 0.36 + 0.64 * day + this.flashK() * 0.6);
       u.uColor!.value.set(0.72 * lum, 0.77 * lum, (0.86 * lum + 0.06) * (1 - day * 0.06));
       u.uHead!.value.set(0.88 * lum, 0.91 * lum, 0.96 * lum + 0.04);
       u.uFlake!.value.set(0.97 * lum + 0.03, 0.98 * lum + 0.02, lum * 0.96 + 0.06);
@@ -3371,6 +3376,57 @@ export class RoomScene {
         p.life = 0;
   }
 
+  /**
+   * La tormenta: cada rato (más seguido cuanto más fuerte), un relámpago. Con «luz con ambiente»
+   * y solo con tormenta.
+   */
+  private stepStorm(dt: number): void {
+    const k = this.moodLight ? this.wx.storm : 0;
+    if (k < 0.2) return;
+    this.boltNext -= dt;
+    if (this.boltNext > 0) return;
+    this.boltNext = (5 + Math.random() * 14) / (0.4 + k);
+    this.lightning(0.6 + 0.4 * k);
+  }
+
+  /**
+   * Un relámpago ya (también desde el modo prueba): el destello, el rayo en el cielo en algún
+   * sitio de la vista y, con retraso (lo lejos que cae), el trueno.
+   */
+  lightning(power = 1): void {
+    this.bolt = {
+      at: performance.now() / 1000,
+      fx: 0.12 + Math.random() * 0.76,
+      seed: Math.random(),
+    };
+    const delay = 0.5 + Math.random() * 2.6;
+    this.cb.onThunder?.(delay, power * (1 - delay / 4));
+  }
+
+  /**
+   * Lo fuerte del destello ahora (0–1), en escalones: un fogonazo, un respiro, otro más corto y
+   * se apaga. Con «menos movimiento», bastante más flojo.
+   */
+  private flashK(): number {
+    if (!this.bolt) return 0;
+    // Para las capturas: el destello fijo desde la consola.
+    const fixed = (window as unknown as { __flash?: number }).__flash;
+    if (fixed !== undefined) return fixed;
+    const u = performance.now() / 1000 - this.bolt.at;
+    const k =
+      u < 0.07
+        ? 1
+        : u < 0.14
+          ? 0.25
+          : u < 0.22
+            ? 0.75
+            : u < 0.5
+              ? 0.5 * (1 - (u - 0.22) / 0.28)
+              : 0;
+    if (k <= 0) return 0;
+    return (Math.ceil(k * 4) / 4) * (this.calm ? 0.4 : 1);
+  }
+
   /** El viento en `x` (más o menos −1 a 2): rachas que cruzan de izquierda a derecha. */
   private windAt(x: number, t: number): number {
     return (
@@ -3880,6 +3936,7 @@ export class RoomScene {
     this.incidents.update(w, this.wt);
     this.edgePan(dt);
     this.stepWind(dt);
+    this.stepStorm(dt);
     this.swingSign(dt);
     if (this.marker && this.t > this.marker.until) this.marker = null;
     this.camera.update(dt);
@@ -4122,6 +4179,9 @@ export class RoomScene {
         new Vector3(1 + 0.08 * this.snowCover, 1 + 0.1 * this.snowCover, 1 + 0.16 * this.snowCover),
       );
     this.shared.uSunHide.value = hide;
+    // El destello del relámpago: una luz blanca y lila que lo baña todo un instante.
+    const fk = this.flashK();
+    if (fk > 0) s.uDaylight.value.add(new Vector3(0.6 * fk, 0.6 * fk, 0.8 * fk));
     const boost =
       (window as unknown as { __lampK?: number }).__lampK ?? (this.moodLight ? MOOD_LAMPS : 1);
     const lampK = (0.3 + 0.7 * (1 - dl.day)) * boost;
@@ -4129,12 +4189,16 @@ export class RoomScene {
     // La luz de las ventanas (luz con ambiente): llena de día, algo menos al atardecer, nada de
     // noche; su color, el del día (más dorado al atardecer).
     // Con nublado, la luz de las ventanas baja y se enfría; los rayos de sol se apagan.
-    const sunLampK = this.moodLight ? Math.max(dl.day, dl.dusk * 0.8) * (1 - 0.6 * hide) : 0;
+    // Con un relámpago, las ventanas se encienden de blanco un instante (también de noche).
+    const sunLampK = this.moodLight
+      ? Math.max(Math.max(dl.day, dl.dusk * 0.8) * (1 - 0.6 * hide), fk * 1.1)
+      : 0;
     const beamK = sunLampK * (1 - hide) * (1 - hide);
+    const cool = Math.max(hide, fk);
     const sunC = [
-      1 - 0.12 * hide,
-      (0.88 - 0.3 * dl.dusk) * (1 - hide) + 0.9 * hide,
-      (0.7 - 0.38 * dl.dusk) * (1 - hide) + 0.98 * hide,
+      1 - 0.12 * cool,
+      (0.88 - 0.3 * dl.dusk) * (1 - cool) + 0.9 * cool,
+      (0.7 - 0.38 * dl.dusk) * (1 - cool) + 0.98 * cool,
     ] as const;
     // Las luces de noche de fuera (luz con ambiente): se encienden al oscurecer, y con niebla.
     const nightK = this.moodLight
@@ -4238,8 +4302,9 @@ export class RoomScene {
     // El cielo, solo cuando cambia (la cámara se mueve o pasa un rato).
     // El manto del nublado se pinta poco a poco, unas pocas nubes por fotograma.
     this.sky.weather = { cloud: wx.cloud, fog: wx.fog, rain: wx.rain, snow: this.snowCover };
+    this.sky.flash = this.bolt && fk > 0 ? { k: fk, fx: this.bolt.fx, seed: this.bolt.seed } : null;
     if (this.moodLight && this.sky.buildDeck()) this.skyAt = '';
-    const skyKey = `${view.px},${view.py},${Math.floor(t * 8)},${view.vw},${view.vh},${Math.round(wx.cloud * 40)},${Math.round(wx.fog * 40)},${Math.round(wx.rain * 40)},${Math.round(this.snowCover * 8)}`;
+    const skyKey = `${view.px},${view.py},${Math.floor(t * 8)},${view.vw},${view.vh},${Math.round(wx.cloud * 40)},${Math.round(wx.fog * 40)},${Math.round(wx.rain * 40)},${Math.round(this.snowCover * 8)},${Math.round(fk * 8)}`;
     if (skyKey !== this.skyAt) {
       this.skyAt = skyKey;
       // El horizonte: donde acaba el terreno, al fondo (con la perspectiva, sube y baja con la cámara).

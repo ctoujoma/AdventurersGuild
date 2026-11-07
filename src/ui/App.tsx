@@ -241,6 +241,7 @@ export function App() {
       scene.current.fewLights = settings.fewLights;
       scene.current.moodLight = settings.moodLight;
       scene.current.weatherMode = settings.weather;
+      scene.current.calm = settings.calm;
     }
     saveSettings(settings);
   }, [settings]);
@@ -1050,6 +1051,7 @@ export function App() {
             s.fewLights = settings.fewLights;
             s.moodLight = settings.moodLight;
             s.weatherMode = settings.weather;
+            s.calm = settings.calm;
             s.forceWeather = forcedWeather;
           }}
           onHotspot={onHotspot}
@@ -1778,6 +1780,7 @@ export function App() {
             return r.note;
           }}
           weather={forcedWeather}
+          onLightning={() => scene.current?.lightning()}
           onWeather={(k) => {
             setForcedWeather(k);
             if (scene.current) scene.current.forceWeather = k;

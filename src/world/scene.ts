@@ -189,6 +189,8 @@ export interface SceneCallbacks {
    * a 1, y cuánto de lo que se ve es fuera (0: mirando dentro de las salas).
    */
   onWeather?(w: { rain: number; wind: number; storm: number; outside: number }): void;
+  /** Un relámpago: el trueno, dentro de `delay` segundos, con fuerza `power` (0–1). */
+  onThunder?(delay: number, power: number): void;
   /** Entra o sale la cámara lenta (arrastrando a alguien en el asalto en directo). */
   onSlow?(on: boolean): void;
 }

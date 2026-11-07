@@ -8,6 +8,8 @@
  * Con `TRANSICION=<tiempo>`, además, una tira de la vista desde fuera pasando de despejado a ese
  * tiempo (`transicion-NN.png`, cada poco; para un GIF).
  * Con `FOTOGRAMAS=<n>`, de cada captura salen además n fotogramas seguidos (`…-fNN.png`).
+ * Con `RAYO=1`, además, un relámpago paso a paso (`…-rNN.png`: antes, el fogonazo, el respiro,
+ * el segundo y cómo se apaga), con el destello fijado desde la consola (`__flash`).
  * `HORAS` elige las horas (`manana,tarde,noche`; por defecto `dia,noche`), `ANCHO` y `ALTO` la
  * ventana y `PUERTO` el puerto. Saca `<tiempo>-<vista>-<hora>.png`.
  */
@@ -90,6 +92,24 @@ const weather = (k) =>
 /** La captura y, con `FOTOGRAMAS`, unos cuantos fotogramas seguidos (para un GIF). */
 const shoot = async (name) => {
   await page.screenshot({ path: `${out}/${name}.png` });
+  if (process.env.RAYO) {
+    const seq = [0, 1, 0.25, 0.75, 0.5, 0.25, 0];
+    for (let i = 0; i < seq.length; i++) {
+      await page.evaluate((k) => {
+        const s = window.__scene;
+        s.boltNext = 1e9;
+        s.bolt = { at: 0, fx: 0.72, seed: 0.42 };
+        window.__flash = k;
+        s.skyAt = '';
+      }, seq[i]);
+      await page.waitForTimeout(250);
+      await page.screenshot({ path: `${out}/${name}-r${String(i).padStart(2, '0')}.png` });
+    }
+    await page.evaluate(() => {
+      delete window.__flash;
+      window.__scene.bolt = null;
+    });
+  }
   for (let i = 0; i < Number(process.env.FOTOGRAMAS ?? 0); i++) {
     await page.waitForTimeout(90);
     await page.screenshot({ path: `${out}/${name}-f${String(i).padStart(2, '0')}.png` });

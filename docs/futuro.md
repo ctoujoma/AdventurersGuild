@@ -169,8 +169,9 @@ entrenamiento ganarían sentido.
   - jardineras, faroles, humo en la chimenea.
 - **El exterior cuenta la partida:** establo con caballo, huerto detrás, pozo, empalizada que
   crece, el patio de entreno con dianas, y las ventanas encendidas de noche como postal.
-- **Estaciones y tiempo:** lluvia, nieve en el tejado, árboles de otoño, adornos de fiesta.
-  Ambiente y marca del paso del tiempo.
+- **Estaciones y tiempo:** el tiempo ya está (lluvia, nieve, niebla, viento y tormenta, ver
+  [`plan-clima.md`](plan-clima.md)). Queda por valorar el ciclo de estaciones (árboles de otoño,
+  invierno con más nieve, adornos de fiesta): apuntado en `plan-clima.md`.
 - **Dentro:**
   - el color de la tela de cada sala (ya existe `CLOTH`) a elección;
   - variantes de muebles;

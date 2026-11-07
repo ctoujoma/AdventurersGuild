@@ -20,6 +20,7 @@ interface Props {
   /** Modo prueba: el tiempo forzado (null: el que toque) y cómo cambiarlo. */
   weather?: WeatherKind | null;
   onWeather?: (k: WeatherKind | null) => void;
+  onLightning?: () => void;
 }
 
 const CHEATS: { kind: Cheat; label: string }[] = [
@@ -43,6 +44,7 @@ export function SettingsMenu({
   onBoss,
   weather,
   onWeather,
+  onLightning,
 }: Props) {
   const set = (patch: Partial<Settings>) => onChange({ ...s, ...patch });
   // Silenciar o no está aquí (en el móvil ya no hay botón arriba).
@@ -212,6 +214,11 @@ export function SettingsMenu({
                     ))}
                   </select>
                 </label>
+              )}
+              {onLightning && (
+                <button class="btn btn-wood" onClick={onLightning}>
+                  Relámpago
+                </button>
               )}
               <p class="tiny">
                 Ver una pelea contra un jefe con los héroes de casa (no cambia nada):

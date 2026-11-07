@@ -175,6 +175,35 @@ const FOG_BANKS: Partial<Record<number, { y: number; k: number; which: number; d
   4: { y: GROUND + 34, k: 0.6, which: 2, drift: 3 },
 };
 
+/**
+ * El rayo: baja a tirones desde la panza de las nubes hasta el horizonte, en escalones de dos
+ * píxeles, con un par de ramas. El tronco, blanco y de dos de ancho, con un borde lila.
+ */
+function drawBolt(
+  ctx: CanvasRenderingContext2D,
+  f: { fx: number; seed: number },
+  vw: number,
+  top: number,
+): void {
+  const rng = new Rng(`rayo-${f.seed}`);
+  const pts: { x: number; y: number; branch: boolean }[] = [];
+  const walk = (x: number, y: number, y1: number, branch: boolean) => {
+    while (y < y1) {
+      pts.push({ x, y, branch });
+      y += 2;
+      if (rng.next() < 0.5) x += (rng.next() < 0.5 ? -2 : 2) * (branch || rng.next() < 0.7 ? 1 : 2);
+      if (!branch && rng.next() < 0.05) walk(x, y, Math.min(y1, y + 14 + rng.int(0, 20)), true);
+    }
+  };
+  walk(Math.round((f.fx * vw) / 2) * 2, Math.max(0, top + GROUND - 460), top + GROUND - 8, false);
+  ctx.fillStyle = '#b8b6ee';
+  for (const p of pts) if (!p.branch) ctx.fillRect(p.x - 2, p.y, 6, 2);
+  for (const p of pts) {
+    ctx.fillStyle = p.branch ? '#c8c6f2' : '#ffffff';
+    ctx.fillRect(p.x, p.y, p.branch ? 1 : 2, 2);
+  }
+}
+
 const smoothstep = (a: number, b: number, x: number) => {
   const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
   return t * t * (3 - 2 * t);
@@ -243,6 +272,8 @@ export class Sky {
   mood = false;
   /** El tiempo (ver `weather.ts`): nubes (0–1) y niebla (0–1). */
   weather = { cloud: 0, fog: 0, rain: 0, snow: 0 };
+  /** Un relámpago en curso: lo fuerte (0–1), dónde cae (fracción del ancho de la vista) y su forma. */
+  flash: { k: number; fx: number; seed: number } | null = null;
   /** Las capas del paisaje nevadas (se pintan la primera vez que hace falta). */
   private snowy = new Map<HTMLCanvasElement, HTMLCanvasElement>();
   private snowOf(c: HTMLCanvasElement): HTMLCanvasElement {
@@ -475,6 +506,8 @@ export class Sky {
       }
       ctx.globalAlpha = 1;
     }
+    // El rayo, entre las nubes y los montes (que tapan donde cae).
+    if (this.flash && this.flash.k >= 0.5) drawBolt(ctx, this.flash, vw, top);
     // La bruma y la niebla, del color de la hora: tras cada capa del paisaje, un velo encima de
     // todo lo de detrás (así lo lejano se pierde más). Y bancos de niebla entre capas.
     const litH = Math.min(1, wt.day + wt.dusk + wt.dawn);
@@ -633,6 +666,24 @@ export class Sky {
       ctx.fillRect(0, 0, vw, vh);
     }
     ctx.globalCompositeOperation = 'source-over';
+    // El rayo otra vez, encima del tinte de la noche (que lo apagaba), solo por encima de los
+    // montes: abajo se queda el de antes, tapado por ellos.
+    if (this.flash && this.flash.k >= 0.5) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, vw, top + GROUND - 130);
+      ctx.clip();
+      drawBolt(ctx, this.flash, vw, top);
+      ctx.restore();
+    }
+    // El fogonazo: todo más claro y lila un instante (después del tinte de la noche).
+    if (this.flash && this.flash.k > 0) {
+      ctx.globalCompositeOperation = 'lighter';
+      const k = this.flash.k;
+      ctx.fillStyle = `rgb(${Math.round(70 * k)}, ${Math.round(72 * k)}, ${Math.round(110 * k)})`;
+      ctx.fillRect(0, 0, vw, vh);
+      ctx.globalCompositeOperation = 'source-over';
+    }
   }
 
   /**
