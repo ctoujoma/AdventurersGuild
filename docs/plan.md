@@ -311,8 +311,8 @@ en medio, para que los edificios salgan más interesantes (y, más adelante, pas
 
 ## Pendiente de revisar
 
-- **Asaltos en directo** (hechos): probarlos y decir si se quiere cámara lenta al arrastrar o
-  premio por jugarlo bien.
+- **Asaltos en directo** (hechos, con cámara lenta al arrastrar y el objetivo «sin heridos»):
+  falta su arte ([`encargos/arte-asaltos.md`](encargos/arte-asaltos.md)).
 - **Hecho (6 de noviembre):** la velocidad x2/x4 también acelera la escena, y la sastrería no
   cose hasta que llega el héroe.
 

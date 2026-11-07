@@ -163,6 +163,8 @@ import { BACK, EYE, LIFT, eyeOf, frustum, pinShift, project, scaleAt, type View 
 
 /** Duración del día de la escena hasta que anochece (el reloj de verdad llega con el día vivo). */
 const DAY_LENGTH = 720;
+/** Cámara lenta del asalto mientras se arrastra a alguien (parte del ritmo normal). */
+const RAID_SLOW = 0.3;
 /**
  * Terreno de más a cada lado del mundo: al fondo la perspectiva lo estrecha a la mitad y, con
  * el zoom más alejado y una esquina en el centro, la vista llega muy lejos.
@@ -3192,10 +3194,12 @@ export class RoomScene {
   private update(dt: number): void {
     this.t += dt;
     // De noche (el asalto) todo va a su ritmo; de día, la gente sigue al reloj.
-    const w = this.night ? dt : dt * this.pace;
+    // En el asalto en directo, mientras se arrastra a alguien, todo va a cámara lenta.
+    const slow = this.night && this.drag?.moved && this.liveRaid ? RAID_SLOW : 1;
+    const w = this.night ? dt * slow : dt * this.pace;
     this.wt += w;
     this.swingDoors(w);
-    if (this.night) this.raidStep(dt);
+    if (this.night) this.raidStep(dt * slow);
     if (this.night) {
       const p = this.nightP();
       if (p >= 0.85 && this.night.done) {

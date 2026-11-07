@@ -41,6 +41,31 @@ describe('objetivos', () => {
     expect(s.goals!.active).toHaveLength(GOAL_SLOTS);
   });
 
+  it('asalto sin heridos: cuenta al repelerlo sin que nadie caiga, y no sale antes de los asaltos', () => {
+    const early = newGame('limpio-pronto');
+    expect(early.goals!.active.some((g) => g.id === 'asalto-limpio')).toBe(false);
+    const s = structuredClone(newGame('limpio'));
+    s.day = 20;
+    s.raid = { day: 20, band: 'unos rateros', strength: 8, warned: true };
+    const hero = s.heroes.find((h) => h.status === 'ok')!.id;
+    const plan = { route: [], start: {}, steps: [], end: 1 };
+    const clean = {
+      plan,
+      fell: [],
+      fought: [hero],
+      downed: 2,
+      escaped: 0,
+      stolen: 0,
+      recovered: 0,
+    };
+    const won = endDay(reduce({ ...s, tips: ['*'] }, { type: 'raidFought', result: clean }));
+    expect(won.stats!.cleanRaids).toBe(1);
+    // Con un herido ya no cuenta.
+    const hurt = { ...clean, fell: [hero] };
+    const t = endDay(reduce({ ...s, tips: ['*'] }, { type: 'raidFought', result: hurt }));
+    expect(t.stats!.cleanRaids ?? 0).toBe(0);
+  });
+
   it('con el juego abierto se cobran en el reloj', () => {
     const s = structuredClone(newGame('reloj'));
     s.goals!.active[0] = { id: 'jarras', text: 'x', base: 0, target: 30, reward: { gold: 30 } };
