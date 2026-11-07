@@ -214,11 +214,15 @@ Hecho:
 4. **El barril de los guardias, más adelante** (`SPOT.gameZ`); los dados ruedan sobre él.
 5. **Motas del rayo:** más (unas diez por rayo) y más claras. Cada una se ve un rato largo en
    vez de un destello, y su brillo apenas baja al amanecer.
-6. **Clima:** el plan está en [`plan-clima.md`](plan-clima.md).
+6. **Clima:** el plan está en [`plan-clima.md`](plan-clima.md) y el encargo para otro agente, en
+   [`encargos/arte-clima.md`](encargos/arte-clima.md).
 7. **El espejo de la sastrería:** el volumen toma el color de sus costados 3 píxeles hacia
    dentro, y el marco solo medía 2, así que los costados salían del color del cristal. Ahora
    el marco mide 4.
-8. **Fachada:** la auditoría está en [`auditoria-fachada.md`](auditoria-fachada.md).
+8. **Fachada:** la auditoría está en [`auditoria-fachada.md`](auditoria-fachada.md) y el encargo, en
+   [`encargos/arte-fachada-envejecida.md`](encargos/arte-fachada-envejecida.md).
+9. **Motas, otra vez:** había muchas y brillaban demasiado. Ahora son menos (`step(0.975)`),
+   con la mitad de brillo y visibles menos rato.
 
 ## Fases (cada una, un PR con capturas antes y después, dentro de «Luz con ambiente»)
 
