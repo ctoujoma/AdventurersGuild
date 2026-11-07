@@ -103,7 +103,12 @@ npm run build`.
         pintadas de verde, azul o granate; alguna cerrada), uno por sala; con dintel, alféizar y
         a veces jardinera con flores; las del salón, más grandes (22 × 28, de seis paños). El
         cristal encendido de noche sigue la forma de cada una.
-  - [ ] 6. Vigas. — [ ] 7. Detalles. — [ ] 8. Resto.
+  - [x] 6. Testas de viga en cada forjado de la tapa (`beamEnds` en `rooms/detalles.ts`): a
+        saltos (alguna pareja, huecos largos), con anillos y su sombra debajo y al lado.
+  - [x] 7. Detalles sueltos, fijos por partida (la semilla, `pickDetails`), en los huecos de la
+        planta baja libres de ventanas y puerta: hiedra en una esquina, leña bajo un tejadillo,
+        la bajante con su tonel de lluvia y una escalera apoyada (no siempre salen todos).
+  - [ ] 8. Resto de materiales.
         Capturas en `capturas/fachada-envejecida/`.
 
 - [x] **Volumen con grosor** (`thick` en `salas/kit.ts`, `volume` en `RoomScene.ts`): lo suelto

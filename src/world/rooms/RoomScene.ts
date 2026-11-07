@@ -1781,7 +1781,7 @@ export class RoomScene {
     // sin la luz ni el halo de las salas en su cara de fuera (`wrap` 0, `halo` 0). Aparece con
     // un fundido por tramas (`uFade`, ver `outside`).
     {
-      const { buf: img, glass } = outsideFace(L, look, F);
+      const { buf: img, glass } = outsideFace(L, look, F, model.seed);
       const corners: Corners = [
         at(F.x, fy1, -0.6),
         at(fx1, fy1, -0.6),
