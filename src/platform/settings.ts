@@ -44,7 +44,7 @@ export const DEFAULT_SETTINGS: Settings = {
   dawnAll: false,
   vibrate: true,
   fewLights: false,
-  moodLight: false,
+  moodLight: true,
   classicTime: false,
   tester: false,
 };
@@ -66,7 +66,7 @@ export function parseSettings(raw: unknown): Settings {
     dawnAll: r.dawnAll === true,
     vibrate: r.vibrate !== false,
     fewLights: r.fewLights === true,
-    moodLight: r.moodLight === true,
+    moodLight: r.moodLight !== false,
     classicTime: r.classicTime === true,
     tester: r.tester === true,
   };

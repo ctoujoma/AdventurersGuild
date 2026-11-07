@@ -53,7 +53,7 @@ import { itemIcon } from '../../art/items';
 import { LANTERN, dummy, furnish, gearRoom, type Glow, type RGB } from './furniture';
 import { chalkPlan } from './ruina';
 import { towerLampY, watchtower } from './salas/torre';
-import { CANDLE, takeWallActs, type ActId, type PoiKind, type Round } from './salas/kit';
+import { BLIND, CANDLE, takeWallActs, type ActId, type PoiKind, type Round } from './salas/kit';
 import { FLIGHT_Z, flightArt, goesRight } from './stairs';
 import { dress } from './salas/tintes';
 import { Crowd, WALK_Z, type Hit, type Poi, type Talk } from './crowd';
@@ -155,6 +155,8 @@ import {
   doorJamb,
   doorPanel,
   sideTex,
+  sideReveal,
+  SIDE_WIN,
   stable,
   stairBack,
   outsideFace,
@@ -2224,6 +2226,20 @@ export class RoomScene {
       flat,
     );
     const doors = (s: Side[]) => s.flatMap((x, i) => (x === 'sala' || x === 'escalera' ? [i] : []));
+    // Ventanas a la calle en los muros de los lados: cada planta que da al aire y no tiene la
+    // puerta de la calle o la del jardín (ni en las salas sin ventanas).
+    const blind = !!o.room && (BLIND.has(o.room.type) || o.room.type === 'torre');
+    const wins = (side: 'left' | 'right') =>
+      blind
+        ? []
+        : o.sides[side].flatMap((x, i) =>
+            x !== 'aire' ||
+            (i === 0 && ((side === 'left' && o.door !== undefined) || !!o.garden?.[side]))
+              ? []
+              : [i],
+          );
+    const winL = wins('left');
+    const winR = wins('right');
     this.plane(
       g,
       sideTex(
@@ -2234,6 +2250,7 @@ export class RoomScene {
         o.door !== undefined || o.garden?.left ? [0] : [],
         o.door,
         o.room,
+        winL,
       ),
       [at(x0, yb, 0), at(x0, yb, D), at(x0, yt, D), at(x0, yt, 0)],
       flat,
@@ -2249,6 +2266,7 @@ export class RoomScene {
           o.garden?.right ? [0] : [],
           1,
           o.room,
+          winR,
         ),
       ),
       [at(x1, yb, D), at(x1, yb, 0), at(x1, yt, 0), at(x1, yt, D)],
@@ -2299,14 +2317,24 @@ export class RoomScene {
         const bottom = floorY(f) + (i === 0 && o.hang?.[side] ? SLAB : 0);
         const street = !doorDone && i === 0;
         if (street) doorDone = true;
+        const hasWin = (side === 'left' ? winL : winR).includes(i);
         const tex = outerSide(
           themeOf(f),
-          PITCH,
+          bottom - top,
           street || (i === 0 && !!o.garden?.[side]),
           `${seed}f${side}${i}`,
           street ? o.door : 1,
           this.model?.look?.walls,
+          hasWin ? (o.room && ruined(o.room) ? 'tablas' : 'cristal') : undefined,
         );
+        if (hasWin && !(o.room && ruined(o.room)))
+          this.sideOpening(
+            side,
+            side === 'left' ? rect.x - WALL : x1,
+            top + SLAB,
+            themeOf(f),
+            `${seed}${side}${i}`,
+          );
         if (side === 'left') {
           const x = rect.x - WALL;
           this.plane(
@@ -2325,6 +2353,49 @@ export class RoomScene {
           );
         }
       });
+  }
+
+  /**
+   * El grosor del muro en una ventana de los lados (de `xa` a `xa + 2·WALL`, del muro de fuera
+   * a la cara de dentro): las dos jambas, el dintel y el alféizar; y, de día, la luz que entra
+   * (un foco de sol junto a la ventana, como las del fondo).
+   */
+  private sideOpening(
+    side: 'left' | 'right',
+    xa: number,
+    top: number,
+    theme: Theme,
+    seed: string,
+  ): void {
+    const { u0, u1 } = SIDE_WIN;
+    const y0 = top + SIDE_WIN.top;
+    const y1 = y0 + SIDE_WIN.h;
+    const xb = xa + 2 * WALL;
+    const tex = sideReveal(theme, seed);
+    const o = { ambient: ROOM_LIT, sun: 0.4, dither: 0 };
+    const add = (c: Corners) => {
+      const m = this.look.surface(tex, c, { ...o, side: DoubleSide });
+      this.world.add(mesh(quad(c, this.look), m));
+    };
+    add([at(xa, y1, u0), at(xb, y1, u0), at(xb, y0, u0), at(xa, y0, u0)]);
+    add([at(xa, y1, u1), at(xb, y1, u1), at(xb, y0, u1), at(xa, y0, u1)]);
+    add([at(xa, y0, u0), at(xb, y0, u0), at(xb, y0, u1), at(xa, y0, u1)]);
+    add([at(xa, y1, u0), at(xb, y1, u0), at(xb, y1, u1), at(xa, y1, u1)]);
+    // La luz que entra, un poco hacia dentro de la sala (solo de día y con luz con ambiente).
+    const pos = at(side === 'left' ? xb + 8 : xa - 8, y1 - 2, (u0 + u1) / 2);
+    this.lamps.push({
+      pos,
+      glow: pos.clone(),
+      r: 70,
+      color: [255, 226, 180],
+      power: 1,
+      flicker: 0,
+      zone: [Math.min(xa, xb) - 120, GROUND - y1 - 70, Math.max(xa, xb) + 120, GROUND - y0 + 60],
+      seed: 0,
+      fire: false,
+      halo: 0,
+      sun: true,
+    });
   }
 
   /** Lo de fuera: pozo, muñecos, establo, empalizada, el escudo y el farol de la puerta. */

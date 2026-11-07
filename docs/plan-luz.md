@@ -197,6 +197,20 @@ Hecho:
 
 Siguiente: ventanas en los muros de los lados (ver «Para más adelante»).
 
+## Feedback del usuario (ronda de las ventanas de los lados)
+
+Por hacer:
+
+1. Ventanas en los muros de los lados.
+2. «Luz con ambiente», activado por defecto.
+3. Apartar las camas de las paredes en todas las salas con camas.
+4. El barril de los guardias de la puerta, un poco más adelante (más cerca de la cámara).
+5. Motas de polvo en el rayo: antes demasiado, ahora no se ven.
+6. Planificar un sistema de clima (lluvia, niebla, nieve…) con todo su efecto visual.
+7. El espejo de la sastrería se sale de su marco por los lados si se mira con ángulo.
+8. Auditoría de las texturas de la fachada (paredes de fuera): más calidad y variedad dentro de
+   la propia textura, que se ve muy repetida en la vista desde fuera.
+
 ## Fases (cada una, un PR con capturas antes y después, dentro de «Luz con ambiente»)
 
 1. **Fachada y exterior con relieve** (lo primero: es lo que no encaja).
