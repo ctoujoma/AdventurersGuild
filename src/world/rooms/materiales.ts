@@ -174,11 +174,11 @@ export function brickFace(
       const [dk, mid, lt] =
         BRICK[
           rng.weighted([
-            [0, 4],
-            [1, 3],
-            [2, 1.5],
-            [3, 0.6],
-            [4, 0.3],
+            [0, 8],
+            [1, 2.5],
+            [2, 1],
+            [3, 0.3],
+            [4, 0.25],
           ] as const)
         ]!;
       const x0 = Math.max(x, bx + 1);
@@ -190,7 +190,7 @@ export function brickFace(
       if (yh === 4) b.hline(x0 + 1, by + 4, x1 - x0 - 1, dk);
       for (let xx = x0; xx < x1; xx++)
         for (let yy = by + 2; yy < by + Math.min(4, yh + 1); yy++)
-          if (hash(xx, yy, 1) < 0.12) b.set(xx, yy, dk);
+          if (hash(xx, yy, 1) < 0.05) b.set(xx, yy, dk);
       // Alguno mellado en una esquina.
       if (rng.chance(0.15)) {
         b.level = 0;
@@ -257,7 +257,7 @@ export function rammedFace(
       // La tongada no es recta: ondula y se mezcla con la de al lado.
       const wob = smooth(xx, yy, 9, 13) > 0.62 ? layer[Math.min(h - 1, yy - y + 1)]! : base;
       const n = hash(xx, yy, 4);
-      b.set(xx, yy, n < 0.06 ? P.bark : n > 0.985 ? P.tan : wob);
+      b.set(xx, yy, n < 0.025 ? P.bark : n > 0.99 ? P.tan : wob);
     }
   }
   // Alguna piedra metida en la tierra.
@@ -416,7 +416,9 @@ export function limeFace(b: PixelBuffer, x: number, y: number, w: number, h: num
   const bald = (xx: number, yy: number) => {
     const n = smooth(xx + off, yy * 1.6, 16, 11) * 0.86 + smooth(xx + off, yy, 4, 12) * 0.14;
     const low = (yy - y) / h;
-    return n > 0.84 - low * 0.14;
+    // Donde se cae la cal: unos pocos rodales (más abajo, donde roza y moja); fuera, casi nada.
+    const zone = smooth(xx + off, yy, 70, 13);
+    return n > 0.84 - low * 0.14 + (zone < 0.58 ? 0.12 : 0) - (zone > 0.78 ? 0.05 : 0);
   };
   b.level = 3;
   for (let yy = y; yy < y + h; yy++)
@@ -434,7 +436,7 @@ export function limeFace(b: PixelBuffer, x: number, y: number, w: number, h: num
       }
       // Brochazos largos y tendidos, apenas un tono más tostados (nada de blanco: parece nieve).
       const st = hash(Math.floor((xx - x) / 9), yy - y, 7);
-      b.set(xx, yy, st > 0.78 ? LIME.dk : st < 0.04 ? LIME.deep : LIME.mid);
+      b.set(xx, yy, st > 0.88 ? LIME.dk : st < 0.02 ? LIME.deep : LIME.mid);
     }
   // La humedad que sube: un zócalo más oscuro, tramado hacia arriba.
   for (let yy = grounded(h) ? Math.max(y, y + h - 12) : y + h; yy < y + h; yy++)

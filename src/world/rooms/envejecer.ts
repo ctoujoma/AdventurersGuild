@@ -7,8 +7,14 @@
  */
 import { P } from '../../art/palette';
 import type { PixelBuffer } from '../../art/pixel';
+import type { WallId } from '../../data/custom';
 
-type Step = 'dark' | 'light' | 'warm' | 'pale';
+/**
+ * Hacia dónde mueve un escalón: lo oscuro, lo claro, lo cálido, lo pálido (el sol) o lo sucio
+ * (más oscuro y más apagado: el hollín y la mugre, que nunca dejan un color más vivo).
+ */
+type Step = 'dark' | 'light' | 'warm' | 'pale' | 'grime';
+const STEPS: readonly Step[] = ['dark', 'light', 'warm', 'pale', 'grime'];
 
 const PAL: [number, number, number][] = Object.values(P).map((h) => {
   const v = parseInt(h.slice(1), 16);
@@ -35,10 +41,13 @@ function hueOf([r, g, b]: [number, number, number]): [number, number] {
 function kin(a: [number, number, number], b: [number, number, number], s: Step): boolean {
   const [ha, ca] = hueOf(a);
   const [hb, cb] = hueOf(b);
+  // Lo sucio no aviva el color (algo de margen: los cremas no tienen otro escalón) ni vuelve
+  // gris lo que tiene color (un crema sucio no es lila).
+  if (s === 'grime' && (cb > ca + 0.1 || (cb <= 0.12 && ca > 0.15))) return false;
   if (ca <= 0.12) return cb <= 0.22;
-  if (cb <= 0.12) return s === 'pale' || s === 'dark';
+  if (cb <= 0.12) return s === 'pale' || s === 'dark' || s === 'grime';
   const dh = Math.min(Math.abs(ha - hb), 360 - Math.abs(ha - hb));
-  return dh <= (s === 'dark' ? 40 : 26) && Math.abs(ca - cb) <= 0.22;
+  return dh <= (s === 'dark' || s === 'grime' ? 40 : 26) && Math.abs(ca - cb) <= 0.22;
 }
 
 /** El color de la paleta más cercano a `t` que no sea el propio (si ninguno se acerca, el mismo). */
@@ -69,7 +78,7 @@ function nearest(
 
 /** Un escalón de `c` (ABGR, como en `PixelBuffer`) hacia lo oscuro, lo claro, lo cálido o lo pálido. */
 export function step(c: number, s: Step): number {
-  const key = ((c & 0xffffff) * 4 + ['dark', 'light', 'warm', 'pale'].indexOf(s)) >>> 0;
+  const key = (c & 0xffffff) * 8 + STEPS.indexOf(s);
   const hit = cache.get(key);
   if (hit !== undefined) return (hit | (c & 0xff000000)) >>> 0;
   const r = c & 255;
@@ -84,11 +93,17 @@ export function step(c: number, s: Step): number {
         ? [r * 1.16 + 10, g * 1.14 + 8, b * 1.06 + 4]
         : s === 'warm'
           ? [r * 1.1 + 14, g * 1.02 + 2, b * 0.82]
-          : [
-              (l + (r - l) * 0.6) * 1.12 + 8,
-              (l + (g - l) * 0.6) * 1.12 + 8,
-              (l + (b - l) * 0.6) * 1.1 + 10,
-            ];
+          : s === 'grime'
+            ? [
+                (l + (r - l) * 0.55) * 0.78,
+                (l + (g - l) * 0.55) * 0.76,
+                (l + (b - l) * 0.55) * 0.8 + 6,
+              ]
+            : [
+                (l + (r - l) * 0.6) * 1.12 + 8,
+                (l + (g - l) * 0.6) * 1.12 + 8,
+                (l + (b - l) * 0.6) * 1.1 + 10,
+              ];
   const n = nearest([r, g, b], t, s);
   const out = n[0] | (n[1] << 8) | (n[2] << 16);
   cache.set(key, out);
@@ -133,7 +148,34 @@ export interface AgeOpts {
   sills?: { x: number; y: number; w: number }[];
   /** Aleros: churretes que bajan desde `y`, de `x0` a `x1`. */
   eaves?: { x0: number; x1: number; y: number }[];
+  /** El material: cada uno envejece a su manera (ver `PROFILE`). Por defecto, tablas. */
+  walls?: WallId;
 }
+
+/**
+ * Cómo envejece cada material: los umbrales del ruido de paños (más oscuro si queda por debajo
+ * de `dark`, más claro por encima de `light`, más cálido por encima de `warm`; un umbral fuera
+ * de 0–1 lo apaga) y el escalón de lo oscuro. La madera se oscurece y se calienta; el ladrillo,
+ * el tapial y la cal se ensucian (sin volverse más rojos ni más naranjas; el ladrillo, sin
+ * aclarar, que salta al amarillo); la piedra, pocos paños
+ * y sin calor (sobre gris oscuro, un paño grande parece una sombra).
+ */
+interface Profile {
+  dark: number;
+  light: number;
+  warm: number;
+  dk: Step;
+}
+const PROFILE: Record<WallId, Profile> = {
+  tablas: { dark: 0.27, light: 0.76, warm: 0.84, dk: 'dark' },
+  entramado: { dark: 0.22, light: 2, warm: 2, dk: 'grime' },
+  troncos: { dark: 0.2, light: 0.8, warm: 0.9, dk: 'dark' },
+  ladrillo: { dark: 0.19, light: 2, warm: 2, dk: 'grime' },
+  tapial: { dark: 0.22, light: 0.86, warm: 2, dk: 'grime' },
+  piedra: { dark: 0.18, light: 0.82, warm: 2, dk: 'dark' },
+  pizarra: { dark: 0.17, light: 0.8, warm: 2, dk: 'dark' },
+  encalado: { dark: 0.2, light: 2, warm: 2, dk: 'grime' },
+};
 
 /** Envejece lo pintado en el trozo (x, y, w, h) del búfer. */
 export function ageWall(
@@ -146,6 +188,7 @@ export function ageWall(
   o: AgeOpts = {},
 ): void {
   const s = seedOf(seed);
+  const pr = PROFILE[o.walls ?? 'tablas'];
   const top = o.top ?? y;
   const span = Math.max(1, (o.ground ?? y + h) - top);
   const x1 = Math.min(b.w, x + w);
@@ -171,12 +214,12 @@ export function ageWall(
       const n = smooth(xx, yy, 30, 84, s) * 0.72 + smooth(xx, yy, 11, 34, s + 1) * 0.28 + j;
       const warm = smooth(xx, yy, 44, 96, s + 2) + j;
       if (o.ground !== undefined && yy >= o.ground - wet && yy < o.ground) {
-        put(xx, yy, 'dark');
-        if (yy >= o.ground - wet * 0.45) put(xx, yy, 'dark');
+        put(xx, yy, pr.dk);
+        if (yy >= o.ground - wet * 0.45) put(xx, yy, pr.dk);
       } else if (yy < sun) put(xx, yy, 'pale');
-      else if (n < 0.27) put(xx, yy, 'dark');
-      else if (n > 0.76) put(xx, yy, 'light');
-      else if (warm > 0.84) put(xx, yy, 'warm');
+      else if (n < pr.dark) put(xx, yy, pr.dk);
+      else if (n > pr.light) put(xx, yy, 'light');
+      else if (warm > pr.warm) put(xx, yy, 'warm');
     }
   }
   // Churretes: bajo cada alféizar y bajo el alero, rayas oscuras de largo desigual.
@@ -186,7 +229,7 @@ export function ageWall(
       const l = 3 + Math.floor(hash(xx, salt, s + 8) * len);
       for (let k = 0; k < l; k++) {
         const yy = Math.round(from) + k;
-        if (yy >= 0 && yy < y1) put(xx, yy, 'dark');
+        if (yy >= 0 && yy < y1) put(xx, yy, pr.dk);
       }
     }
   };

@@ -3242,6 +3242,10 @@ export class RoomScene {
       for (let x = Math.floor(rect.x - WALL); x < rect.x + rect.w + WALL; x++)
         if (x >= x0 && x < x1) top[x - x0] = Math.max(top[x - x0]!, h);
     }
+    // La escalera también es edificio (si no, su columna queda fuera y le cae sombra mellada).
+    for (const { floor, rect } of stairCells(L))
+      for (let x = Math.floor(rect.x - WALL); x < rect.x + rect.w + WALL && floor >= 0; x++)
+        if (x >= x0 && x < x1) top[x - x0] = Math.max(top[x - x0]!, GROUND - rect.y);
     let runs: [number, number, number][] = [];
     for (let x = 0; x < top.length; x++) {
       const h = top[x]!;
