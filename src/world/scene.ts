@@ -23,6 +23,8 @@ export interface SceneHero {
   guard?: boolean;
   /** Sala en la que trabaja de día (id). */
   work?: string;
+  /** Va corriendo a esta sala (id) a arreglar algo (un incidente); manda sobre `work`. */
+  goTo?: string;
   /** Trabajador: duerme en el dormitorio del servicio o se va a dormir al pueblo. */
   staff?: 'casa' | 'pueblo';
   /** Visitante del salón: entra, se sienta un rato y se va. */
@@ -165,6 +167,8 @@ export interface SceneCallbacks {
   onDragOver?(id: string, room: string | null, at: Point): { ok: boolean } | null;
   /** Al soltar: la sala (si vale) o null si se suelta en un sitio que no sirve. */
   onDrop?(id: string, room: string | null): void;
+  /** Alguien ha llegado andando a la sala de su tarea (la sastrería empieza a coser). */
+  onArrive?(id: string, room: string): void;
   /** Modo obras: se empieza a arrastrar la sala elegida (para moverla) y se suelta fuera de sitio. */
   onRoomDrag?(id: string): void;
   onRoomDrop?(): void;

@@ -12,7 +12,9 @@ function gym(level = 1): GameState {
   s.building.rooms.push(r);
   const h = s.heroes[0]!;
   h.attrs.F = 3;
-  return reduce(s, { type: 'assign', who: h.id, room: 'arm' });
+  // Asignado y ya en la sala (al amanecer): cuenta el día entero.
+  const t = reduce(s, { type: 'assign', who: h.id, room: 'arm' });
+  return reduce(t, { type: 'arrived', heroId: h.id, room: 'arm' });
 }
 
 describe('entrenamiento', () => {
@@ -43,6 +45,32 @@ describe('entrenamiento', () => {
     const t = gym();
     t.heroes[0]!.train = { F: cost - 1 };
     expect(endDay(t).heroes[0]!.attrs.F).toBe(4);
+  });
+
+  it('quien llega a media tarde entrena solo lo que queda de día', () => {
+    const s = newGame('tarde');
+    s.building.rooms.push({
+      id: 'arm',
+      type: 'armas',
+      col: 4,
+      floor: 0,
+      w: 1,
+      h: 1,
+      level: 1,
+      spent: 0,
+    });
+    s.clock = 150;
+    const h = s.heroes[0]!;
+    h.attrs.F = 3;
+    const t = reduce(reduce(s, { type: 'assign', who: h.id, room: 'arm' }), {
+      type: 'arrived',
+      heroId: h.id,
+      room: 'arm',
+    });
+    const full = gym();
+    stepTraining(full, []);
+    stepTraining(t, []);
+    expect(t.heroes[0]!.train!.F).toBeCloseTo(full.heroes[0]!.train!.F! / 2);
   });
 
   it('el atributo no pasa del tope de la sala: hay que mejorarla', () => {

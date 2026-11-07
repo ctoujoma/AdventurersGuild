@@ -8,8 +8,10 @@ import { FIRST_NAMES } from '../data/names';
 import type { StaffId } from '../data/custom';
 import { TRAINS, type RoomType } from '../data/rooms';
 import {
+  DAY_SECONDS,
   HERO_WORK,
   JOB_SLOTS,
+  JOB_WALK,
   MAX_SEEKERS,
   NURSE_WORK,
   SEEKER_CHANCE,
@@ -70,14 +72,38 @@ const used = (s: GameState, roomId: string) => {
 export const effortOf = (w: Worker, type: RoomType) =>
   w.skill * (w.trade === type ? TRADE_BONUS : 1);
 
-/** Trabajo de hoy en una sala: la gente que hay y el nivel de la sala. */
-export function workAt(s: GameState, r: Room): number {
+/** Parte del día que ha pasado (0 al amanecer, 1 al caer la noche). */
+export const dayPartOf = (s: GameState) => Math.min(1, (s.clock ?? 0) / DAY_SECONDS);
+
+type OnShift = Pick<Worker, 'walk' | 'since'>;
+
+/** Desde qué parte de hoy cuenta alguien en su sala (0: todo el día). */
+export const shiftStart = (x: OnShift) => x.walk ?? x.since ?? 0;
+
+/** Si aún va de camino a su sala ahora mismo. */
+export const onWay = (s: GameState, x: OnShift) => x.walk !== undefined && dayPartOf(s) < x.walk;
+
+/** La parte del día que habrá estado en su sala al caer la noche (0–1). */
+export const shiftShare = (x: OnShift) => Math.max(0, Math.min(1, 1 - shiftStart(x)));
+
+/**
+ * Trabajo en una sala: la gente que tiene y el nivel. Por defecto, el del día entero (cada uno
+ * cuenta la parte del día que ha estado allí); con `now`, el de ahora mismo (quien va de camino
+ * aún no cuenta): lo usan los talleres, que avanzan con el reloj.
+ */
+export function workAt(s: GameState, r: Room, now = false): number {
   if (!isJobRoom(r.type) || slotsOf(r) === 0) return 0;
+  const k = (x: OnShift) => (now ? (onWay(s, x) ? 0 : 1) : shiftShare(x));
   let n = 0;
-  for (const w of s.workers) if (w.room === r.id) n += effortOf(w, r.type);
-  for (const h of s.heroes) if (h.job === r.id && h.status === 'ok' && !h.guard) n += HERO_WORK;
+  for (const w of s.workers) if (w.room === r.id) n += effortOf(w, r.type) * k(w);
+  for (const h of s.heroes)
+    if (h.job === r.id && h.status === 'ok' && !h.guard && !dressing(s, h.id))
+      n += HERO_WORK * k(h);
   return n * (0.75 + 0.25 * r.level);
 }
+
+/** Al que visten en la sastrería no está en su sala. */
+const dressing = (s: GameState, id: string) => !!s.crafts?.some((c) => c.dress?.hero === id);
 
 /** Trabajo de hoy en todas las salas de un tipo. */
 export const workIn = (s: GameState, type: Trade) =>
@@ -114,18 +140,50 @@ export function canAssign(s: GameState, who: string, room: string | null): strin
   return null;
 }
 
-/** Pone a alguien a trabajar en una sala (o lo quita). El estado ya es una copia. */
+/**
+ * Pone a alguien a trabajar en una sala (o lo quita). El estado ya es una copia. Con sala nueva
+ * va de camino: cuenta desde que llega (`arrivedAt`) o, como mucho, en `JOB_WALK` horas.
+ */
 export function assign(s: GameState, who: string, room: string | null): void {
-  const w = s.workers.find((x) => x.id === who);
-  if (w) {
-    if (room) w.room = room;
-    else delete w.room;
-    return;
+  const x: (Worker | Hero) | undefined =
+    s.workers.find((w) => w.id === who) ?? s.heroes.find((h) => h.id === who);
+  if (!x) return;
+  const was = 'trade' in x ? x.room : x.job;
+  if ('trade' in x) {
+    if (room) x.room = room;
+    else delete x.room;
+  } else if (room) x.job = room;
+  else delete x.job;
+  if (was === (room ?? undefined)) return;
+  delete x.since;
+  if (room) x.walk = dayPartOf(s) + JOB_WALK / 24;
+  else delete x.walk;
+}
+
+/**
+ * La escena dice que alguien ha llegado a una sala: si iba de camino a trabajar o entrenar allí,
+ * empieza a contar ya. Devuelve si ha cambiado algo. El estado ya es una copia.
+ */
+export function arrivedAt(s: GameState, who: string, room: string): boolean {
+  const i = s.workers.findIndex((w) => w.id === who && w.room === room && w.walk !== undefined);
+  const j = s.heroes.findIndex((h) => h.id === who && h.job === room && h.walk !== undefined);
+  if (i < 0 && j < 0) return false;
+  const start = <T extends OnShift>(x: T): T => {
+    const out = { ...x, since: Math.min(x.walk!, dayPartOf(s)) };
+    delete out.walk;
+    return out;
+  };
+  if (i >= 0) s.workers = s.workers.map((w, k) => (k === i ? start(w) : w));
+  else s.heroes = s.heroes.map((h, k) => (k === j ? start(h) : h));
+  return true;
+}
+
+/** Al acabar la noche, mañana cuentan todos desde el principio. El estado ya es una copia. */
+export function newShift(s: GameState): void {
+  for (const x of [...s.workers, ...s.heroes]) {
+    delete x.walk;
+    delete x.since;
   }
-  const h = s.heroes.find((x) => x.id === who);
-  if (!h) return;
-  if (room) h.job = room;
-  else delete h.job;
 }
 
 /** Sala con puesto libre para alguien: la de su oficio y, si no, la que tenga sitio. */

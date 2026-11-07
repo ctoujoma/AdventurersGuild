@@ -64,6 +64,13 @@ export interface Hero {
   job?: string;
   /** La que tenía al salir de encargo: al volver, la recupera si sigue habiendo sitio. */
   jobBefore?: string;
+  /**
+   * Va de camino a su sala (tarea nueva): no cuenta hasta que llega (acción `arrived`) o, si
+   * nadie lo dice, hasta esta parte del día. Se borra al llegar y cada noche.
+   */
+  walk?: number;
+  /** Parte de hoy desde la que cuenta en su sala (llegó a media jornada). Se borra cada noche. */
+  since?: number;
   /** Progreso de entrenamiento hacia el siguiente punto de cada atributo. */
   train?: Partial<Attrs>;
 }
@@ -85,6 +92,13 @@ export interface Worker {
   fee: number;
   /** Sala en la que trabaja (id); sin sala, descansa. */
   room?: string;
+  /**
+   * Va de camino a su sala (tarea nueva): no cuenta hasta que llega (acción `arrived`) o, si
+   * nadie lo dice, hasta esta parte del día. Se borra al llegar y cada noche.
+   */
+  walk?: number;
+  /** Parte de hoy desde la que cuenta en su sala (llegó a media jornada). Se borra cada noche. */
+  since?: number;
   /** Uno de los tres del pueblo que ya trabajaban para tu tío. */
   village?: StaffId;
   quote: string;
@@ -276,6 +290,11 @@ export interface Craft {
   done: number;
   /** Parte del día (0–1) hasta la que ya está contado `done`. */
   at: number;
+  /**
+   * Vestir: el héroe aún no ha llegado a la sala. Se empieza cuando la escena dice que ha llegado
+   * (acción `arrived`) o, si no lo dice (sin escena, con la app cerrada), al llegar a `at`.
+   */
+  wait?: true;
   /** Lo pagado al empezar (se devuelve al cancelar). */
   gold: number;
   /** El objeto que se desmonta (si es desmontar). */
@@ -366,6 +385,11 @@ export interface Incident {
   until: number;
   /** Los de tocar: toques que faltan. */
   taps?: number;
+  /**
+   * Alguien va de camino a arreglarlo: se arregla cuando llega (acción `arrived`) o, si nadie lo
+   * dice, a los `at` segundos del reloj. Mientras va, no sale mal.
+   */
+  coming?: { who: string; at: number };
 }
 
 export interface DawnEvent {

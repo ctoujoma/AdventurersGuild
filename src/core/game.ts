@@ -7,6 +7,7 @@ import { FLAVOR } from '../data/stories';
 import { checkRank } from './ranks';
 import {
   actOnIncident,
+  arriveIncident,
   failIncidents,
   incidentIssue,
   stepIncidents,
@@ -146,6 +147,7 @@ import { stepLarder } from './larder';
 import { stepTraining } from './training';
 import {
   canCraft,
+  arrive,
   canDress,
   knownRecipes,
   learnRecipe,
@@ -162,6 +164,8 @@ import { brawlChance, noisyBeds, visitorList, visitorsOf } from './salon';
 import {
   addSeeker,
   assign,
+  arrivedAt,
+  newShift,
   bardPlaying,
   canAssign,
   canHireWorker,
@@ -179,6 +183,8 @@ export type Action =
   | { type: 'cancelCraft'; id: string }
   /** Sastrería: vestir a un héroe (tinte y prenda). */
   | { type: 'dressAt'; room: string; heroId: string; dress: Dress }
+  /** La escena: un héroe ha llegado andando a una sala (la sastrería empieza a coser). */
+  | { type: 'arrived'; heroId: string; room: string }
   | { type: 'hire'; id: string }
   | { type: 'fire'; id: string }
   | { type: 'hireWorker'; id: string }
@@ -550,8 +556,10 @@ function reduceAction(state: GameState, action: Action): GameState {
       const w = s.seekers.find((x) => x.id === action.id)!;
       s.gold -= w.fee;
       s.seekers = s.seekers.filter((x) => x !== w);
-      w.room = freeRoomFor(s, w.trade)?.id;
       s.workers.push(w);
+      // Va andando desde la barra: empieza a contar cuando llega.
+      const room = freeRoomFor(s, w.trade)?.id;
+      if (room) assign(s, w.id, room);
       return s;
     }
     case 'fireWorker': {
@@ -877,6 +885,15 @@ function reduceAction(state: GameState, action: Action): GameState {
       startDress(s, action.room, action.heroId, action.dress);
       return s;
     }
+    case 'arrived': {
+      const s = { ...state };
+      // Quien llega a su sala: se viste, empieza a contar su tarea o arregla el incidente.
+      const dressed = arrive(s, action.heroId, action.room);
+      const shift = arrivedAt(s, action.heroId, action.room);
+      const n = arriveIncident(s, action.heroId, action.room);
+      if (n) s.incidentNews = [n];
+      return dressed || shift || n ? s : state;
+    }
     case 'cancelCraft': {
       if (!state.crafts?.some((c) => c.id === action.id)) return state;
       const s = structuredClone(state);
@@ -919,7 +936,11 @@ function reduceAction(state: GameState, action: Action): GameState {
 
 /** Vuelve a la sala que tenía antes de salir, si sigue habiendo sitio; si no, descansa. */
 function backToJob(s: GameState, h: Hero): void {
-  if (h.jobBefore && !canAssign(s, h.id, h.jobBefore)) assign(s, h.id, h.jobBefore);
+  if (h.jobBefore && !canAssign(s, h.id, h.jobBefore)) {
+    assign(s, h.id, h.jobBefore);
+    // Hoy no estaba (fuera o en cama): no cuenta; mañana, el día entero.
+    h.walk = 1;
+  }
   delete h.jobBefore;
 }
 
@@ -1448,6 +1469,8 @@ export function endDay(state: GameState, away = false): GameState {
   // Si la fama de hoy ha subido el rango, se cuenta con lo que se abre.
   checkRank(s, events);
 
+  // Mañana cada uno cuenta en su sala desde el principio del día.
+  newShift(s);
   s.flavor = rng.pick(FLAVOR);
   s.dawn = events;
   s.rng = rng.save();

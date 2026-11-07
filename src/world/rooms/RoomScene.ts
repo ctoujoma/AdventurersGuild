@@ -381,6 +381,8 @@ export class RoomScene {
   /** Persona señalada con el ratón y la que se ha buscado desde su ficha (un rato). */
   private hoverHero: string | null = null;
   private marker: { id: string; until: number } | null = null;
+  /** A dónde va quien se ha soltado en una sala (la marca dura hasta que llega). */
+  private heading = new Map<string, { room: string; until: number }>();
   private world = new Group();
   private lamps: Lamp[] = [];
   /** Bocas de las chimeneas del tejado (en el mundo 2D), por donde sale el humo. */
@@ -571,6 +573,8 @@ export class RoomScene {
     };
     canvas.addEventListener('webglcontextlost', (e) => e.preventDefault());
     this.pets.sound = (name, v) => this.cb.onSound?.(name, v);
+    this.crowd.onArrive = (id, room) => this.cb.onArrive?.(id, room);
+    this.incidents.onFlee = (x, level, to) => this.crowd.chase(x, level, to);
     this.bindInput();
   }
 
@@ -2483,7 +2487,7 @@ export class RoomScene {
     const zh = DOOR_U1 * 2;
     const len = (DOOR_U1 - DOOR_U0) * 2;
     for (const d of this.doors) {
-      const who = this.crowd.near(d.xm, d.floor, 16);
+      const who = this.crowd.near(d.xm, d.floor, 16) ?? this.incidents.near(d.xm, d.floor, 16);
       if (who !== null && d.open < 0.05) d.dir = who < d.xm ? 1 : -1;
       const target = who === null ? 0 : 1;
       let next = d.open + (target - d.open) * Math.min(1, dt * 6);
@@ -3188,6 +3192,22 @@ export class RoomScene {
         for (let i = 0; i < 3; i++) this.particles.spawn('spark', p.x, p.y);
       }
     }
+    // Recién contratado: destellos y unas monedas que saltan sobre él, en la barra.
+    for (const id of this.crowd.hired.splice(0)) {
+      const w = this.crowd.where(id);
+      if (!w) continue;
+      for (let i = 0; i < 10; i++)
+        this.particles.spawn(
+          'glint',
+          w.x + (Math.random() - 0.5) * 18,
+          w.y - 6 - Math.random() * 22,
+          {
+            max: 0.5 + Math.random() * 0.6,
+          },
+        );
+      for (let i = 0; i < 5; i++) this.particles.spawn('coin', w.x, w.y - 26);
+      this.cb.onSound?.('coin', 0.4);
+    }
     // Los golpes de la gente: martillazo (chispas), temple (vapor), tijeretazo (hilachas), tinte
     // y caldero (burbujas y vapor), la gota del alambique (destello); con su sonido si se ven.
     for (const h of this.crowd.hits.splice(0)) {
@@ -3427,6 +3447,7 @@ export class RoomScene {
       !!this.hoverProp ||
       !!this.hoverHero ||
       !!this.marker ||
+      this.heading.size > 0 ||
       !!this.targets?.length ||
       this.floats.length > 0 ||
       !!this.drag?.moved ||
@@ -3445,6 +3466,7 @@ export class RoomScene {
       this.roomGhost();
       this.scaffolds();
       this.dropMark();
+      this.headingMarks();
       this.trainBars();
       this.talkBubbles();
       this.flyingArrows();
@@ -3901,6 +3923,7 @@ export class RoomScene {
       const w = this.camera.toWorld(d.x, d.y);
       const x = Math.max(r.rect.x + 12, Math.min(r.rect.x + r.rect.w - 12, w.x));
       this.crowd.drop(d.id, { x, floor: r.room.floor });
+      this.heading.set(d.id, { room: d.room!, until: this.t + 45 });
       this.cb.onDrop?.(d.id, d.room);
       this.cb.onSound?.('build', 0.5);
     } else {
@@ -4117,6 +4140,39 @@ export class RoomScene {
     ctx.fillRect(x, y + h - 1, w, 1);
     ctx.fillRect(x, y, 1, h);
     ctx.fillRect(x + w - 1, y, 1, h);
+  }
+
+  /**
+   * La sala a la que va quien se ha soltado: un marco que late hasta que llega (o se cansa de
+   * esperar), para que se vea a dónde va mientras cruza la casa.
+   */
+  private headingMarks(): void {
+    const { topCtx: ctx, camera } = this;
+    for (const [id, h] of this.heading) {
+      const r = this.layout?.rooms.find((x) => x.room.id === h.room);
+      if (!r || this.t > h.until || this.crowd.arrived(id, h.room)) {
+        this.heading.delete(id);
+        continue;
+      }
+      const x = Math.round(r.rect.x - camera.px) + 1;
+      const y = Math.round(r.rect.y - camera.py) + 1;
+      const w = Math.round(r.rect.w) - 2;
+      const hh = Math.round(r.rect.h) - 2;
+      ctx.globalAlpha = 0.55 + 0.35 * Math.sin(this.t * 6);
+      ctx.fillStyle = P.lime;
+      // Las cuatro esquinas, como un visor sobre la sala.
+      const k = Math.min(16, w / 4, hh / 4);
+      for (const [cx, cy, dx, dy] of [
+        [x, y, 1, 1],
+        [x + w - 1, y, -1, 1],
+        [x, y + hh - 1, 1, -1],
+        [x + w - 1, y + hh - 1, -1, -1],
+      ] as const) {
+        ctx.fillRect(dx > 0 ? cx : cx - k + 1, dy > 0 ? cy : cy - 1, k, 2);
+        ctx.fillRect(dx > 0 ? cx : cx - 1, dy > 0 ? cy : cy - k + 1, 2, k);
+      }
+      ctx.globalAlpha = 1;
+    }
   }
 
   /** Llevando a alguien cerca del borde, la cámara se desliza hacia allí. */

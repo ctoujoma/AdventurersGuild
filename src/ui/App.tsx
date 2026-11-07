@@ -1047,6 +1047,15 @@ export function App() {
             lastDrop.current = d;
             return d;
           }}
+          onArrive={(id, room) => {
+            // Solo importa si algo espera a que llegue: vestirle, su tarea nueva o un incidente.
+            const g = gameRef.current;
+            const waits =
+              g.crafts?.some((c) => c.wait && c.dress?.hero === id) ||
+              [...g.heroes, ...g.workers].some((x) => x.id === id && x.walk !== undefined) ||
+              g.incidents?.some((i) => i.coming?.who === id);
+            if (waits) dispatch({ type: 'arrived', heroId: id, room });
+          }}
           onRoomDrag={(id) => works.startPick({ kind: 'move', id })}
           onRoomDrop={() => {
             works.cancelPick();
