@@ -61,6 +61,25 @@ interface Float {
 }
 const FLOAT_LIFE = 0.9;
 
+/** Un saco soltado: de la espalda (x0, y0) al suelo (x1, y1), con el oro que llevaba. */
+interface Drop {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  t0: number;
+  gold: number;
+  push: 1 | -1;
+  /** Las monedas desparramadas alrededor (corrimiento desde el saco). */
+  coins: { dx: number; dy: number }[];
+}
+/** Lo que tarda el saco en caer al suelo (en segundos del asalto). */
+const DROP_TIME = 0.45;
+/** Lo que tarda en caer quien recibe el golpe de gracia (como `FALL_TIME` en `crowd.ts`). */
+const LAND_TIME = 0.4 * RAID_SPEED;
+/** Las estrellas del aturdido, sobre los bandidos (los nuestros, mientras estén en el suelo). */
+const DAZE_TIME = 3;
+
 export class RaidShow {
   /** Segundos de asalto que ya se han visto. */
   t = 0;
@@ -68,6 +87,14 @@ export class RaidShow {
   private areas = new Map<string, Area>();
   private fights = new Set<string>();
   private sacks = new Map<string, number>();
+  /** Los sacos que han soltado los bandidos al caer: vuelan, caen al suelo y se quedan. */
+  private drops: Drop[] = [];
+  /** Quién le pegó por última vez a cada uno (para saber hacia dónde cae). */
+  private lastFrom = new Map<string, string>();
+  /** Cuándo cayó cada uno (las estrellas del aturdido). */
+  private downAt = new Map<string, number>();
+  /** Cosas para dentro de un rato (el golpe contra el suelo al acabar de caer). */
+  private soon: { t: number; fn: () => void }[] = [];
   private door: { t0: number; dur: number; x: number } | null = null;
   private lock: { t0: number; dur: number; area: Area } | null = null;
   private lastHit = 0;
@@ -185,6 +212,9 @@ export class RaidShow {
     while (this.next < steps.length && steps[this.next]!.t <= this.t)
       this.apply(steps[this.next++]!, false);
     this.fx.update(dt * RAID_SPEED);
+    const due = this.soon.filter((x) => x.t <= this.t);
+    this.soon = this.soon.filter((x) => x.t > this.t);
+    for (const x of due) x.fn();
     this.brawl(dt);
     // La puerta: golpes y astillas mientras aguanta.
     if (this.door && Math.floor(this.t * 2.5) !== Math.floor((this.t - dt * RAID_SPEED) * 2.5)) {
@@ -202,6 +232,7 @@ export class RaidShow {
     const steps = this.plan.steps;
     while (this.next < steps.length) this.apply(steps[this.next++]!, true);
     this.skipping = false;
+    this.soon = [];
     this.t = this.end + 0.5;
     this.floats = [];
     this.chances.clear();
@@ -215,17 +246,10 @@ export class RaidShow {
     for (const [id, gold] of this.sacks) {
       const w = this.crowd.where(id);
       if (!w || w.down || gold <= 0) continue;
-      const x = Math.round(w.x - px) + 3;
-      const y = Math.round(w.y - py) - 24;
-      ctx.fillStyle = P.black;
-      ctx.fillRect(x - 1, y - 1, 7, 7);
-      ctx.fillStyle = P.tan;
-      ctx.fillRect(x, y + 1, 5, 4);
-      ctx.fillStyle = P.clay;
-      ctx.fillRect(x + 1, y, 3, 1);
-      ctx.fillStyle = P.lemon;
-      ctx.fillRect(x + 2, y + 2, 1, 1);
+      sack(ctx, Math.round(w.x - px) + 3, Math.round(w.y - py) - 24, false);
     }
+    this.drawDrops(ctx, px, py);
+    this.drawDazed(ctx, px, py);
     const bar = (cx: number, top: number, k: number, color: string) => {
       const W = 24;
       const x = Math.round(cx - px - W / 2);
@@ -345,6 +369,7 @@ export class RaidShow {
         this.crowd.vanish(s.id);
         break;
       case 'hit':
+        this.lastFrom.set(s.id, s.from);
         this.hp.set(s.id, Math.max(0, (this.hp.get(s.id) ?? 0) - s.amount));
         if (skip) break;
         this.chances.delete(s.from);
@@ -483,12 +508,128 @@ export class RaidShow {
   /** Cae (un defensor herido o un bandido, que suelta lo que lleva). */
   private fallen(s: FallStep, skip: boolean): void {
     const w = this.crowd.where(s.id);
-    this.crowd.knock(s.id);
+    const by = this.crowd.where(this.lastFrom.get(s.id) ?? '');
+    // Le echa hacia el lado contrario de quien le pegó.
+    const push: 1 | -1 = !w || !by || w.x >= by.x ? 1 : -1;
+    const carried = this.sacks.get(s.id) ?? 0;
     this.sacks.delete(s.id);
-    if (skip || !w) return;
-    this.hooks.burst('puff', w.x, w.y - 4, 5);
-    if (s.k === 'down' && s.gold > 0) this.hooks.burst('coin', w.x, w.y - 10, 10);
-    this.hooks.sound('thud', 0.9);
+    const gold = s.k === 'down' ? Math.max(s.gold, carried) : 0;
+    if (w && gold > 0) this.drop(w, push, gold, skip);
+    if (skip || !w) {
+      this.crowd.knock(s.id);
+      return;
+    }
+    this.crowd.knock(s.id, push);
+    this.downAt.set(s.id, this.t);
+    this.hooks.sound('swing', 0.4);
+    // El golpe contra el suelo, al acabar de caer: polvo y ruido sordo.
+    this.soon.push({
+      t: this.t + LAND_TIME,
+      fn: () => {
+        const at = this.crowd.where(s.id);
+        if (!at) return;
+        this.hooks.burst('dust', at.x, at.y - 2, 6);
+        this.hooks.burst('puff', at.x + push * 4, at.y - 3, 3);
+        this.hooks.sound('thud', 0.9);
+      },
+    });
+  }
+
+  /** El saco sale despedido de la espalda, cae al suelo y se desparrama el oro. */
+  private drop(w: { x: number; y: number }, push: 1 | -1, gold: number, skip: boolean): void {
+    const n = Math.min(7, 2 + Math.round(gold / 15));
+    const coins = Array.from({ length: n }, (_, i) => ({
+      dx: push * (3 + ((i * 5) % 9)) - push * (i % 3) * 2,
+      dy: -((i * 3) % 3),
+    }));
+    const d: Drop = {
+      x0: w.x + 3,
+      y0: w.y - 24,
+      x1: w.x + push * 14,
+      // A la altura a la que se ve tendido (los pies van un poco más abajo, por la profundidad).
+      y1: w.y - 4,
+      t0: skip ? this.t - DROP_TIME - 2 : this.t,
+      gold,
+      push,
+      coins,
+    };
+    this.drops.push(d);
+    if (skip) return;
+    this.soon.push({
+      t: this.t + DROP_TIME,
+      fn: () => {
+        this.hooks.burst('coin', d.x1 + push * 3, d.y1 - 4, Math.min(12, 4 + n));
+        this.hooks.sound('coin', 0.7);
+      },
+    });
+  }
+
+  /** Los sacos soltados: en el aire, girando; en el suelo, abiertos con el oro alrededor. */
+  private drawDrops(ctx: CanvasRenderingContext2D, px: number, py: number): void {
+    for (const d of this.drops) {
+      const k = Math.min(1, (this.t - d.t0) / DROP_TIME);
+      if (k < 1) {
+        const x = d.x0 + (d.x1 - d.x0) * k;
+        const y = d.y0 + (d.y1 - 5 - d.y0) * k - Math.sin(k * Math.PI) * 10;
+        sack(ctx, Math.round(x - px) - 2, Math.round(y - py), false);
+        continue;
+      }
+      const x = Math.round(d.x1 - px);
+      const y = Math.round(d.y1 - py);
+      // Las monedas salen rodando del saco (en el primer medio segundo) y se quedan.
+      const roll = Math.min(1, (this.t - d.t0 - DROP_TIME) / 0.5);
+      for (const c of d.coins) {
+        const cx = x + Math.round(c.dx * roll);
+        const cy = y - 1 + c.dy;
+        ctx.fillStyle = P.black;
+        ctx.fillRect(cx - 1, cy - 1, 4, 3);
+        ctx.fillStyle = P.gold;
+        ctx.fillRect(cx, cy, 2, 1);
+        ctx.fillStyle = P.lemon;
+        ctx.fillRect(cx, cy, 1, 1);
+      }
+      sack(ctx, x - 6, y - 6, true, d.push);
+      // Cuánto oro vuelve: el número sube y se apaga.
+      const up = (this.t - d.t0 - DROP_TIME) / (1.4 * RAID_SPEED);
+      if (up < 1) {
+        const text = String(d.gold);
+        const tx = x - text.length * 2 + 2;
+        const ty = Math.round(y - 14 - up * 10);
+        ctx.globalAlpha = up > 0.7 ? 1 - (up - 0.7) / 0.3 : 1;
+        ctx.fillStyle = P.black;
+        ctx.fillRect(tx - 5, ty, 4, 4);
+        ctx.fillStyle = P.gold;
+        ctx.fillRect(tx - 4, ty + 1, 2, 2);
+        ctx.fillStyle = P.lemon;
+        ctx.fillRect(tx - 4, ty + 1, 1, 1);
+        tinyDigits(ctx, text, tx + 1, ty + 1, P.black);
+        tinyDigits(ctx, text, tx, ty, P.lemon);
+        ctx.globalAlpha = 1;
+      }
+    }
+  }
+
+  /** Estrellas que giran sobre la cabeza de quien está tendido (aturdido, no muerto). */
+  private drawDazed(ctx: CanvasRenderingContext2D, px: number, py: number): void {
+    for (const [id, t0] of this.downAt) {
+      const lie = this.crowd.lying(id);
+      const w = this.crowd.where(id);
+      if (!lie || !w) continue;
+      const age = (this.t - t0) / RAID_SPEED;
+      if (!lie.landed || (isBandit(id) && age > DAZE_TIME)) continue;
+      const hx = w.x + lie.head * 8;
+      const hy = w.y - 9;
+      for (let i = 0; i < 3; i++) {
+        const a = age * 5 + (i * Math.PI * 2) / 3;
+        const sx = Math.round(hx + Math.cos(a) * 4 - px);
+        const sy = Math.round(hy + Math.sin(a) * 1.5 - py);
+        ctx.fillStyle = P.gold;
+        ctx.fillRect(sx - 1, sy, 3, 1);
+        ctx.fillRect(sx, sy - 1, 1, 3);
+        ctx.fillStyle = P.lemon;
+        ctx.fillRect(sx, sy, 1, 1);
+      }
+    }
   }
 
   /** Un sitio dentro de una sala para cada uno (que no se amontonen todos en el mismo punto). */
@@ -539,6 +680,54 @@ export class RaidShow {
           this.crowd.nudge(u.id, dir * Math.min(Math.abs(dx) - reach + 1, 40 * dt));
       }
       if (!any && !here.some((u) => u.w!.moving)) this.fights.delete(node);
+    }
+  }
+}
+
+/** El saco tumbado y abierto: contorno, tela, luz, sombra, el cordel y el oro que asoma. */
+const OPEN_SACK = [
+  '..kkkkk.....',
+  '.kssttTk....',
+  'kstttttckk..',
+  'ktttttTcgok.',
+  'kttttTTcggok',
+  '.kTTTTTkkkk.',
+];
+const SACK_INK: Record<string, string> = {
+  k: P.black,
+  t: P.tan,
+  s: P.sand,
+  T: P.clay,
+  c: P.rust,
+  g: P.gold,
+  o: P.lemon,
+};
+
+/**
+ * Un saco de botín: a la espalda (cerrado, con la boca atada) o en el suelo (tumbado y abierto
+ * hacia `open`, con el oro asomando).
+ */
+function sack(ctx: CanvasRenderingContext2D, x: number, y: number, open: boolean, dir = 1): void {
+  if (!open) {
+    ctx.fillStyle = P.black;
+    ctx.fillRect(x - 1, y - 1, 7, 7);
+    ctx.fillStyle = P.tan;
+    ctx.fillRect(x, y + 1, 5, 4);
+    ctx.fillStyle = P.clay;
+    ctx.fillRect(x + 1, y, 3, 1);
+    ctx.fillRect(x, y + 4, 5, 1);
+    ctx.fillStyle = P.lemon;
+    ctx.fillRect(x + 2, y + 2, 1, 1);
+    return;
+  }
+  // Tumbado, con la boca hacia `dir` (el dibujo mira a la derecha y se voltea).
+  for (let r = 0; r < OPEN_SACK.length; r++) {
+    const row = OPEN_SACK[r]!;
+    for (let c = 0; c < row.length; c++) {
+      const col = SACK_INK[row[c]!];
+      if (!col) continue;
+      ctx.fillStyle = col;
+      ctx.fillRect(dir > 0 ? x + c : x + row.length - 1 - c, y + r, 1, 1);
     }
   }
 }
