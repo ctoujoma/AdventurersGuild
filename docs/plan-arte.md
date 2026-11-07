@@ -88,6 +88,18 @@ npm run build`.
   - [ ] Más adelante: valorar un ciclo de estaciones (apuntado en
         [`plan-clima.md`](plan-clima.md)).
 
+- [ ] **La fachada, menos repetida** ([`encargos/arte-fachada-envejecida.md`](encargos/arte-fachada-envejecida.md)):
+  - [x] 1. Capa de envejecimiento (`rooms/envejecer.ts`, `ageWall`), para todos los materiales:
+        paños alargados más oscuros, claros o cálidos, la humedad del pie mellada, churretes
+        bajo alféizares y aleros y lo alto más pálido. Cada cambio, un escalón de la paleta del
+        mismo tono y saturación (`step`); el relieve no se toca. En la tapa de la vista desde
+        fuera, los hastiales y los costados.
+  - [x] 2. Tablas de 4 a 9 sin ritmo, tapajuntas a saltos, menos tablas nuevas y algún remiendo
+        en horizontal o diagonal (`patch` en `muros.ts`).
+  - [x] 3. Clavos oscuros y sueltos (no en filas).
+  - [ ] 4. Zócalo. — [ ] 5. Ventanas. — [ ] 6. Vigas. — [ ] 7. Detalles. — [ ] 8. Resto.
+        Capturas en `capturas/fachada-envejecida/`.
+
 - [x] **Volumen con grosor** (`thick` en `salas/kit.ts`, `volume` en `RoomScene.ts`): lo suelto
       por la sala tiene cuerpo de unos píxeles hacia el fondo (antes, solo lo empotrado, hasta
       la pared).
