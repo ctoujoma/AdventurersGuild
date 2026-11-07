@@ -71,6 +71,11 @@ Segunda pasada (lo que quedaba, también hecho):
 | Talleres al atardecer y de madrugada | Seguían avanzando de 0 a 1 del día, aunque al atardecer todos se van a dormir y por la mañana aún no han llegado | Solo se trabaja en la **jornada** (`WORK_START`–`WORK_END`, la misma hora a la que la escena los manda a la cama): a media tarea, de noche se para y a la mañana sigue. Igual con la cocina, la bodega, la enfermería y el entrenamiento (`workedIn`). Un día entero de jornada rinde lo mismo que antes el día entero (balance igual); la ficha del taller enseña las horas de reloj de verdad (`clockHours`) |
 | Mandar a vestir a última hora | El tope de espera saltaba de noche y por la mañana se cosía sin el héroe | Le esperan a la mañana siguiente: va a primera hora y se cose al llegar |
 
+**La guardia** (decidido con el usuario, 7 de noviembre): los de guardia siguen en la puerta día y
+noche, sin acostarse (en el núcleo no dormir no les cuesta nada: recuperan moral igual). Para el
+agente de arte: un par de taburetes en el recibidor donde se les vea sentados; de madrugada,
+cabeceando con unas «zzz»; de día, jugando a las cartas o a los dados entre ellos.
+
 Queda para el agente de arte: la marca de destino definitiva (silueta o banderín con el icono de
 la tarea), el punto 2 (el sastre que mide y prueba) y el 5 (el rótulo). Los golpes al alcanzar al
 ladrón no: llegarán con el combate nuevo de los asaltos (ver

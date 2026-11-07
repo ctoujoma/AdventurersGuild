@@ -81,7 +81,7 @@ import {
   GARDEN_PIECES,
   type Dress,
 } from '../data/custom';
-import type { RoomType } from '../data/rooms';
+import { ROOMS, type RoomType } from '../data/rooms';
 import { arrival, checkFeats, emptyStats } from './feats';
 import { checkGoals, tickGoals } from './goals';
 import { stepRumors, takeRumor } from './rumors';
@@ -942,13 +942,31 @@ function reduceAction(state: GameState, action: Action): GameState {
 
 // ---------- Avance de día ----------
 
-/** Vuelve a la sala que tenía antes de salir, si sigue habiendo sitio; si no, descansa. */
-function backToJob(s: GameState, h: Hero): void {
-  if (h.jobBefore && !canAssign(s, h.id, h.jobBefore)) {
+/**
+ * Vuelve a lo que hacía antes de salir o de caer herido (la guardia o su sala), si sigue
+ * habiendo sitio; si no, descansa, y se cuenta en el amanecer para que se le pueda recolocar.
+ */
+function backToJob(s: GameState, h: Hero, events: DawnEvent[]): void {
+  if (h.guardBefore) {
+    delete h.guardBefore;
+    if (!guardsFull(s)) {
+      h.guard = true;
+      delete h.jobBefore;
+      return;
+    }
+    events.push({ t: `${h.name} no puede volver a la guardia: ya hay dos en la puerta.` });
+  }
+  if (!h.jobBefore) return;
+  const why = canAssign(s, h.id, h.jobBefore);
+  const room = s.building.rooms.find((r) => r.id === h.jobBefore);
+  if (!why) {
     assign(s, h.id, h.jobBefore);
     // Hoy no estaba (fuera o en cama): no cuenta; mañana, el día entero.
     h.walk = 1;
-  }
+  } else if (room)
+    events.push({
+      t: `${h.name} no puede volver a ${ROOMS[room.type].name.toLowerCase()}: ${why.charAt(0).toLowerCase()}${why.slice(1)}`,
+    });
   delete h.jobBefore;
 }
 
@@ -1227,7 +1245,7 @@ export function endDay(state: GameState, away = false): GameState {
       home.push(h.name);
       // Vuelve a lo que hacía antes de salir, si sigue habiendo sitio (si no, descansa).
       // (Los heridos, al curarse.)
-      if (h.jobBefore && h.status === 'ok') backToJob(s, h);
+      if ((h.jobBefore || h.guardBefore) && h.status === 'ok') backToJob(s, h, events);
     }
     if (m.quest.rescue) {
       const r = s.reports.find((x) => x.id === d.report);
@@ -1257,7 +1275,7 @@ export function endDay(state: GameState, away = false): GameState {
       if (h.days <= 0) {
         h.status = 'ok';
         h.days = 0;
-        if (h.jobBefore) backToJob(s, h);
+        if (h.jobBefore || h.guardBefore) backToJob(s, h, events);
         events.push({ t: `${h.name} vuelve a estar ${h.sex === 'f' ? 'lista' : 'listo'}.` });
       }
     } else if (h.status === 'desaparecido') {

@@ -177,3 +177,32 @@ describe('trabajadores', () => {
     expect(w.salary).toBe(3 + w.skill);
   });
 });
+
+describe('vuelta al trabajo tras caer herido', () => {
+  it('al curarse vuelve a su sala o a la guardia; si ya no hay sitio, se avisa', () => {
+    const s = newGame('vuelta');
+    const cocina = roomOf(s, 'cocina');
+    const [a, b] = s.heroes;
+    a!.status = 'herido';
+    a!.days = 1;
+    a!.jobBefore = cocina.id;
+    b!.status = 'herido';
+    b!.days = 1;
+    b!.guardBefore = true;
+    const t = endDay(s);
+    expect(t.heroes.find((h) => h.id === a!.id)!.job).toBe(cocina.id);
+    expect(t.heroes.find((h) => h.id === b!.id)!.guard).toBe(true);
+    // Con la cocina llena (su cocinero y otro héroe), no vuelve y se cuenta.
+    const full = newGame('llena');
+    const k = roomOf(full, 'cocina');
+    const [c, e] = full.heroes;
+    expect(full.workers.filter((w) => w.room === k.id).length + 1).toBe(slotsOf(k));
+    c!.job = k.id;
+    e!.status = 'herido';
+    e!.days = 1;
+    e!.jobBefore = k.id;
+    const u = endDay(full);
+    expect(u.heroes.find((h) => h.id === e!.id)!.job).toBeUndefined();
+    expect(u.dawn.some((x) => x.t.includes(e!.name) && /no puede volver/.test(x.t))).toBe(true);
+  });
+});

@@ -64,6 +64,8 @@ export interface Hero {
   job?: string;
   /** La que tenía al salir de encargo: al volver, la recupera si sigue habiendo sitio. */
   jobBefore?: string;
+  /** Estaba de guardia al caer herido: al curarse, vuelve a la puerta si queda sitio. */
+  guardBefore?: boolean;
   /**
    * Va de camino a su sala (tarea nueva): no cuenta hasta que llega (acción `arrived`) o, si
    * nadie lo dice, hasta esta parte del día. Se borra al llegar y cada noche.
