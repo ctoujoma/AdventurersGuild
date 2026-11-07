@@ -7,6 +7,14 @@
  * La cámara es la 2D de siempre (arrastre, inercia, zoom entero y límites): lo que encuadra en
  * el plano de corte es justo lo que se ve, píxel a píxel. Los toques se resuelven ahí mismo.
  */
+import {
+  MAX_GLOWS,
+  emptyMask,
+  glassMaterial,
+  rainMask,
+  rainMaterial,
+  rainSurfaces,
+} from './lluvia';
 import { CLEAR, approach, weatherAt, weatherOf, type Weather, type WeatherKind } from '../weather';
 import { tinyDigits } from '../../art/digits';
 import { GRASS_FRAMES, grassTuft, lawnTex, type TuftKind } from '../../art/grass';
@@ -26,6 +34,7 @@ import {
   PlaneGeometry,
   Scene,
   Vector3,
+  Vector4,
   WebGLRenderer,
   WebGLRenderTarget,
   DepthTexture,
@@ -406,6 +415,9 @@ export class RoomScene {
   /** El tiempo que se ve: se acerca poco a poco al que toca (nunca cambia de golpe). */
   private wx: Weather = CLEAR;
   private wxAt = 0;
+  /** Lo mojado de fuera: se moja deprisa con lluvia y se seca despacio. */
+  private wetness = 0;
+  private wxSaid = 0;
   private renderer: WebGLRenderer;
   private scene = new Scene();
   private cam3 = new PerspectiveCamera();
@@ -525,6 +537,13 @@ export class RoomScene {
   private topCtx = this.top.getContext('2d')!;
   private topTex = new CanvasTexture(this.top);
   private topScene = new Scene();
+  /** La lluvia: la capa de lejos va con el cielo; las de cerca, en su lámina tras lo 3D. */
+  private rainMask = emptyMask();
+  private rainFar = rainMaterial(false, this.rainMask);
+  private rainNear = rainMaterial(true, this.rainMask);
+  private rainScene = new Scene();
+  /** Las gotas de los cristales de las ventanas del fondo. */
+  private glass: Mesh[] = [];
   private topLive = false;
   private sky = new Sky();
   private layout: RoomsLayout | null = null;
@@ -642,6 +661,8 @@ export class RoomScene {
     const sheet = this.keep.own(new PlaneGeometry(2, 2));
     this.skyScene.add(new Mesh(sheet, this.keep.screen(this.skyTex, false)));
     this.topScene.add(new Mesh(sheet, this.keep.screen(this.topTex, true)));
+    this.skyScene.add(new Mesh(sheet, this.keep.own(this.rainFar)));
+    this.rainScene.add(new Mesh(sheet, this.keep.own(this.rainNear)));
     this.scene.add(this.world);
     this.scene.add(this.crowd.group);
     this.scene.add(this.pets.group);
@@ -765,6 +786,7 @@ export class RoomScene {
     const L = roomsLayout(b);
     this.layout = L;
     this.rebuild(L, model);
+    this.setRain(L);
     // Solo si cambia el edificio la gente busca sitio de nuevo: un escudo o un adorno nuevos
     // no sacan a nadie de la cama.
     const shape = JSON.stringify(b);
@@ -1184,6 +1206,7 @@ export class RoomScene {
     this.incidents.dispose();
     this.skyTex.dispose();
     this.topTex.dispose();
+    this.rainMask.dispose();
     this.renderer.dispose();
   }
 
@@ -1519,6 +1542,80 @@ export class RoomScene {
     this.cb.onSound?.('build');
   }
 
+  /** Dónde no llueve (las salas), dónde salpica y qué aleros gotean: cambia con el edificio. */
+  private setRain(L: RoomsLayout): void {
+    const { tex, at } = rainMask(L);
+    this.rainMask.dispose();
+    this.rainMask = tex;
+    this.shared.uRainMask.value = tex;
+    this.shared.uRainMaskAt.value.copy(at);
+    const { segs, eaves } = rainSurfaces(L);
+    for (const m of [this.rainFar, this.rainNear]) {
+      const u = m.uniforms;
+      u.uMask!.value = tex;
+      u.uMaskAt!.value.copy(at);
+      segs.forEach((v, i) => (u.uSeg!.value as Vector4[])[i]!.copy(v));
+      u.uSegN!.value = segs.length;
+      eaves.forEach((v, i) => (u.uEave!.value as Vector4[])[i]!.copy(v));
+      u.uEaveN!.value = eaves.length;
+    }
+  }
+
+  /** La lluvia de este fotograma: lo fuerte, el viento y lo que se ve (sin máscara desde fuera). */
+  private stepRain(view: View, wx: Weather): boolean {
+    const on = wx.rain > 0.01;
+    const dl = this.daylight();
+    const day = Math.min(1, dl.day + dl.dusk * 0.6);
+    for (const m of [this.rainFar, this.rainNear]) {
+      const u = m.uniforms;
+      u.uView!.value.set(view.px, view.py, view.vw, view.vh);
+      u.uTime!.value = performance.now() / 1000;
+      u.uRain!.value = wx.rain;
+      u.uSlant!.value = 0.22 + wx.wind * 0.4;
+      u.uCover!.value = this.coverFade > 0.5 ? 1 : 0;
+      u.uSplash!.value = this.fewLights ? 0 : 1;
+      // Del color de la luz que hay: gris claro de día, azul apagado de noche.
+      const lum = 0.36 + 0.64 * day;
+      u.uColor!.value.set(0.72 * lum, 0.77 * lum, (0.86 * lum + 0.06) * (1 - day * 0.06));
+      u.uHead!.value.set(0.88 * lum, 0.91 * lum, 0.96 * lum + 0.04);
+      // Los faroles de fuera encendidos (de noche o con niebla), los de la vista.
+      const glows = u.uGlow!.value as Vector4[];
+      const gc = u.uGlowC!.value as Vector3[];
+      let n = 0;
+      const k = Math.max(0, Math.min(1, 1 - day * 1.4)) * (this.moodLight ? 1 : 0);
+      for (const l of this.lamps) {
+        if (n >= MAX_GLOWS || k <= 0.02 || !l.outdoor) continue;
+        const x = l.pos.x;
+        const y = GROUND - l.pos.y;
+        if (x < view.px - 60 || x > view.px + view.vw + 60) continue;
+        glows[n]!.set(x, y, 38, k);
+        gc[n]!.set(1, 0.78, 0.42);
+        n++;
+      }
+      u.uGlowN!.value = n;
+    }
+    this.rainFar.visible = on;
+    this.shared.uWetCover.value = this.coverFade > 0.5 ? 1 : 0;
+    // Los charcos: sin «pocas luces». Reflejan el cielo de la hora (gris de día, oscuro de noche).
+    this.shared.uPuddle.value = this.fewLights ? 0 : 1;
+    this.shared.uClock.value = performance.now() / 1000;
+    this.shared.uSkyRefl.value.set(
+      0.12 + (0.5 + 0.12 * dl.dusk) * day,
+      0.14 + 0.5 * day,
+      0.24 + 0.5 * day,
+    );
+    const wet = this.moodLight ? this.wetness : 0;
+    for (const g of this.glass) {
+      g.visible = wet > 0.02;
+      if (!g.visible) continue;
+      const u = (g.material as ShaderMaterial).uniforms;
+      u.uTime!.value = performance.now() / 1000;
+      u.uWet!.value = wet;
+      u.uRain!.value = wx.rain;
+    }
+    return on;
+  }
+
   /** El tiempo que se ve ahora (ver `weather.ts`). */
   get weather(): Weather {
     return this.wx;
@@ -1539,6 +1636,24 @@ export class RoomScene {
     const dt = this.wxAt ? Math.min(0.5, now - this.wxAt) : 1e3;
     this.wxAt = now;
     this.wx = approach(this.wx, target, dt, WEATHER_TAU);
+    const wetTo = Math.min(1, this.wx.rain * 1.6);
+    const k = 1 - Math.exp(-Math.min(dt, 0.5) / (wetTo > this.wetness ? 12 : 90));
+    this.wetness = dt > 100 ? wetTo : this.wetness + (wetTo - this.wetness) * k;
+    this.shared.uWet.value = this.moodLight ? this.wetness : 0;
+    // Al sonido, cuatro veces por segundo: lo que hace y si se mira fuera o dentro.
+    if (now - this.wxSaid > 0.25 && this.layout) {
+      this.wxSaid = now;
+      const L = this.layout;
+      const cx = this.camera.px + this.camera.vw / 2;
+      const cy = this.camera.py + this.camera.vh / 2;
+      const outside = this.coverFade > 0.5 || cx < L.left || cx > L.right || cy > GROUND ? 1 : 0.35;
+      this.cb.onWeather?.({
+        rain: this.wx.rain,
+        wind: this.wx.wind,
+        storm: this.wx.storm,
+        outside: cy > GROUND ? 0.15 : outside,
+      });
+    }
     return this.wx;
   }
 
@@ -1591,6 +1706,7 @@ export class RoomScene {
     this.haloSprites = new Map();
     this.flames = [];
     this.sunbeams = [];
+    this.glass = [];
     this.grass = [];
     this.styled = [];
     this.emitters = [];
@@ -2035,6 +2151,20 @@ export class RoomScene {
         beam.visible = false;
         this.world.add(beam);
         this.sunbeams.push(beam);
+        // Las gotas en el cristal (con lluvia): una lámina pegada a la ventana, por dentro.
+        const gw = p.w * sx;
+        const gh = (p.y - p.top) * sy;
+        const gm = this.look.own(glassMaterial(gw, gh, this.glass.length * 7.3 + r.x * 0.1));
+        const glass = new Mesh(this.unitPlane, gm);
+        glass.scale.set(gw, gh, 1);
+        glass.position.set(
+          r.x + (p.x - p.w / 2) * sx + gw / 2,
+          GROUND - (r.y + p.top * sy) - gh / 2,
+          -(DEPTH - 0.5),
+        );
+        glass.visible = false;
+        this.world.add(glass);
+        this.glass.push(glass);
       }
     // Puerta al jardín en la planta baja, si no hay en medio una escalera sin rellano (que tapa
     // el paso; con rellano, la puerta va en ella). Como `opens` en `cutOff` (`core/rooms.ts`).
@@ -3898,7 +4028,15 @@ export class RoomScene {
       0.72 * dl.day + 0.32 * moon * (1 - 0.4 * nl.dark),
     );
     // Bajo las nubes, la luz más apagada y fría.
-    s.uDaylight.value.multiply(new Vector3(1 - 0.2 * hide, 1 - 0.16 * hide, 1 - 0.08 * hide));
+    // Con lluvia, más aún (y algo más azul).
+    const wet = wx.rain;
+    s.uDaylight.value.multiply(
+      new Vector3(
+        (1 - 0.2 * hide) * (1 - 0.32 * wet),
+        (1 - 0.16 * hide) * (1 - 0.3 * wet),
+        (1 - 0.08 * hide) * (1 - 0.24 * wet),
+      ),
+    );
     this.shared.uSunHide.value = hide;
     const boost =
       (window as unknown as { __lampK?: number }).__lampK ?? (this.moodLight ? MOOD_LAMPS : 1);
@@ -4015,9 +4153,9 @@ export class RoomScene {
 
     // El cielo, solo cuando cambia (la cámara se mueve o pasa un rato).
     // El manto del nublado se pinta poco a poco, unas pocas nubes por fotograma.
-    this.sky.weather = { cloud: wx.cloud, fog: wx.fog };
+    this.sky.weather = { cloud: wx.cloud, fog: wx.fog, rain: wx.rain };
     if (this.moodLight && this.sky.buildDeck()) this.skyAt = '';
-    const skyKey = `${view.px},${view.py},${Math.floor(t * 8)},${view.vw},${view.vh},${Math.round(wx.cloud * 40)},${Math.round(wx.fog * 40)}`;
+    const skyKey = `${view.px},${view.py},${Math.floor(t * 8)},${view.vw},${view.vh},${Math.round(wx.cloud * 40)},${Math.round(wx.fog * 40)},${Math.round(wx.rain * 40)}`;
     if (skyKey !== this.skyAt) {
       this.skyAt = skyKey;
       // El horizonte: donde acaba el terreno, al fondo (con la perspectiva, sube y baja con la cámara).
@@ -4156,10 +4294,12 @@ export class RoomScene {
       this.shared.uDepth.value = this.depthRT.depthTexture;
       this.shared.uProj.value.copy(this.cam3.projectionMatrix);
     } else this.shared.uShadows.value = 0;
+    const raining = this.stepRain(view, wx);
     r.clear();
     r.render(this.skyScene, this.flat);
     r.clearDepth();
     r.render(this.scene, this.cam3);
+    if (raining) r.render(this.rainScene, this.flat);
     if (shadows) this.shared.uDepth.value = this.noDepth;
     if (live) r.render(this.topScene, this.flat);
   }

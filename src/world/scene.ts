@@ -184,6 +184,11 @@ export interface SceneCallbacks {
   onRoomDrop?(): void;
   onSound?(name: SoundName, volume?: number): void;
   onFrame?(listener: Point): void;
+  /**
+   * El tiempo que hace, unas veces por segundo (para el sonido): lluvia, viento y tormenta de 0
+   * a 1, y cuánto de lo que se ve es fuera (0: mirando dentro de las salas).
+   */
+  onWeather?(w: { rain: number; wind: number; storm: number; outside: number }): void;
   /** Entra o sale la cámara lenta (arrastrando a alguien en el asalto en directo). */
   onSlow?(on: boolean): void;
 }
