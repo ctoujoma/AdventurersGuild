@@ -98,6 +98,8 @@ const SURFACE_FRAG = /* glsl */ `
   // Sol con dirección (luz con ambiente): de dónde viene y cuánto manda (0 = la luz de siempre).
   uniform vec3 uSunDir;
   uniform float uSunK;
+  // Lo tapado que está el sol por el tiempo (nublado, niebla): luz plana y sin sombra.
+  uniform float uSunHide;
   uniform float uOutdoor;
   uniform float uFade;
   // La sombra del edificio fuera: cajas (x0, x1, alto) entre las profundidades uBoxZ (z del
@@ -193,7 +195,7 @@ const SURFACE_FRAG = /* glsl */ `
     sunC = mix(sunC, vec3(1.0, 0.6, 0.28) * lum * 1.4, warmth * 0.65);
     vec3 sky = vec3(0.5, 0.52, 0.9) * lum * 0.55;
     vec3 sun = sunC * (face + rim * shadow) + sky * (1.0 - clamp(face, 0.0, 1.0));
-    return mix(uDaylight, sun, uSunK);
+    return mix(uDaylight, sun, uSunK * (1.0 - uSunHide * 0.85));
   }
   // Cuánto tapa el edificio el sol en world (0: nada, 1: del todo): se lanza el rayo hacia el sol
   // y se mira si cruza alguna caja antes de pasar por encima de ella. El borde, mellado.
@@ -257,7 +259,7 @@ const SURFACE_FRAG = /* glsl */ `
     vec3 light = amb + uDaylight * uSun * dayIn * step(-0.5, world.y);
     if (uSunK > 0.0 && uSun > 0.99 && world.y > -0.5) {
       // A la sombra del edificio: sin el sol directo, con la luz fría del cielo.
-      float bs = buildingShadow(world, tc);
+      float bs = buildingShadow(world, tc) * (1.0 - uSunHide);
       vec3 sl = sunlight(n, uvc, size);
       float lum = max(max(uDaylight.r, uDaylight.g), uDaylight.b);
       light = amb + mix(sl, vec3(0.42, 0.46, 0.66) * lum * 0.75 + sl * 0.12, bs);
@@ -564,6 +566,7 @@ export function sharedUniforms() {
     uZonePad: { value: 0 },
     uSunDir: { value: new Vector3(0, 1, 0) },
     uSunK: { value: 0 },
+    uSunHide: { value: 0 },
     uBox: { value: Array.from({ length: MAX_BOXES }, () => new Vector4()) },
     uBoxN: { value: 0 },
     uBoxZ: { value: new Vector2() },

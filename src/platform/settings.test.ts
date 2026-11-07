@@ -18,6 +18,9 @@ describe('ajustes', () => {
     expect(parseSettings({}).moodLight).toBe(true);
     expect(parseSettings({ moodLight: 'no' }).moodLight).toBe(true);
     expect(parseSettings({ moodLight: false }).moodLight).toBe(false);
+    expect(parseSettings({}).weather).toBe('normal');
+    expect(parseSettings({ weather: 'clear' }).weather).toBe('clear');
+    expect(parseSettings({ weather: 'sol' }).weather).toBe('normal');
   });
 
   it('la vibración viene puesta y solo se quita a propósito', () => {

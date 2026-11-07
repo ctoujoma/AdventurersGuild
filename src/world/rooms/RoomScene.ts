@@ -7,6 +7,7 @@
  * La cámara es la 2D de siempre (arrastre, inercia, zoom entero y límites): lo que encuadra en
  * el plano de corte es justo lo que se ve, píxel a píxel. Los toques se resuelven ahí mismo.
  */
+import { CLEAR, approach, weatherAt, weatherOf, type Weather, type WeatherKind } from '../weather';
 import { tinyDigits } from '../../art/digits';
 import { GRASS_FRAMES, grassTuft, lawnTex, type TuftKind } from '../../art/grass';
 import { Rng } from '../../core/rng';
@@ -204,6 +205,8 @@ const OUTDOOR: Tint = [0.3, 0.28, 0.42];
  */
 const MOOD_AMBIENT = 0.45;
 const MOOD_LAMPS = 1.6;
+/** Lo que tarda el tiempo que se ve en acercarse al que toca (segundos; ver `approach`). */
+const WEATHER_TAU = 10;
 const ROOM_LIT: Tint = [0.44, 0.38, 0.46];
 const ROOM_DEEP: Tint = [0.42, 0.37, 0.52];
 const ROOM_DIM: Tint = [0.34, 0.31, 0.46];
@@ -396,6 +399,13 @@ export class RoomScene {
   fewLights = false;
   /** Luz con ambiente (Ajustes): menos luz de fondo en las salas y focos más fuertes. */
   moodLight = false;
+  /** Clima (Ajustes): el que toque o siempre despejado. Solo con luz con ambiente. */
+  weatherMode: 'normal' | 'clear' = 'normal';
+  /** Modo prueba: un tiempo fijo (null: el que toque por la semilla, el día y la hora). */
+  forceWeather: WeatherKind | null = null;
+  /** El tiempo que se ve: se acerca poco a poco al que toca (nunca cambia de golpe). */
+  private wx: Weather = CLEAR;
+  private wxAt = 0;
   private renderer: WebGLRenderer;
   private scene = new Scene();
   private cam3 = new PerspectiveCamera();
@@ -1507,6 +1517,29 @@ export class RoomScene {
     for (let i = 0; i < 10; i++)
       this.particles.spawn('coin', p.x + (Math.random() - 0.5) * 60, p.y + Math.random() * 20);
     this.cb.onSound?.('build');
+  }
+
+  /** El tiempo que se ve ahora (ver `weather.ts`). */
+  get weather(): Weather {
+    return this.wx;
+  }
+
+  /** Acerca el tiempo que se ve al que toca: la semilla, el día y la hora (de noche, la última). */
+  private stepWeather(dl: Daylight): Weather {
+    const m = this.model;
+    const target =
+      !this.moodLight || this.weatherMode === 'clear'
+        ? CLEAR
+        : this.forceWeather
+          ? weatherOf(this.forceWeather)
+          : m?.seed && m.clock
+            ? weatherAt(m.seed, m.clock.day, this.night ? 1 : dl.tod)
+            : CLEAR;
+    const now = performance.now() / 1000;
+    const dt = this.wxAt ? Math.min(0.5, now - this.wxAt) : 1e3;
+    this.wxAt = now;
+    this.wx = approach(this.wx, target, dt, WEATHER_TAU);
+    return this.wx;
   }
 
   /** Luz del día (0–1), del atardecer (0–1) y avance del día (0 mañana – 1 noche). */
@@ -3844,6 +3877,9 @@ export class RoomScene {
     const t = this.t;
     const dl = this.daylight();
     const nl = this.nightLight();
+    const wx = this.stepWeather(dl);
+    // Lo tapado que está el sol: con el cielo cubierto o con niebla, luz plana, sin rayos ni sombra.
+    const hide = Math.max(smooth(Math.max(0, Math.min(1, (wx.cloud - 0.5) / 0.45))), wx.fog * 0.9);
 
     // Cámara: el ojo delante del corte y el encuadre justo de la vista.
     const e = eyeOf(view);
@@ -3861,21 +3897,33 @@ export class RoomScene {
       0.76 * dl.day + 0.12 * dl.dusk + 0.18 * moon + 0.12 * nl.warm,
       0.72 * dl.day + 0.32 * moon * (1 - 0.4 * nl.dark),
     );
+    // Bajo las nubes, la luz más apagada y fría.
+    s.uDaylight.value.multiply(new Vector3(1 - 0.2 * hide, 1 - 0.16 * hide, 1 - 0.08 * hide));
+    this.shared.uSunHide.value = hide;
     const boost =
       (window as unknown as { __lampK?: number }).__lampK ?? (this.moodLight ? MOOD_LAMPS : 1);
     const lampK = (0.3 + 0.7 * (1 - dl.day)) * boost;
     const fireK = (0.6 + 0.4 * (1 - dl.day)) * boost;
     // La luz de las ventanas (luz con ambiente): llena de día, algo menos al atardecer, nada de
     // noche; su color, el del día (más dorado al atardecer).
-    const sunLampK = this.moodLight ? Math.max(dl.day, dl.dusk * 0.8) : 0;
-    // Las luces de noche de fuera (luz con ambiente): se encienden al oscurecer.
-    const nightK = this.moodLight ? Math.max(0, Math.min(1, 1 - dl.day * 1.4 - dl.dusk * 0.5)) : 0;
+    // Con nublado, la luz de las ventanas baja y se enfría; los rayos de sol se apagan.
+    const sunLampK = this.moodLight ? Math.max(dl.day, dl.dusk * 0.8) * (1 - 0.6 * hide) : 0;
+    const beamK = sunLampK * (1 - hide) * (1 - hide);
+    const sunC = [
+      1 - 0.12 * hide,
+      (0.88 - 0.3 * dl.dusk) * (1 - hide) + 0.9 * hide,
+      (0.7 - 0.38 * dl.dusk) * (1 - hide) + 0.98 * hide,
+    ] as const;
+    // Las luces de noche de fuera (luz con ambiente): se encienden al oscurecer, y con niebla.
+    const nightK = this.moodLight
+      ? Math.max(0, Math.min(1, Math.max(1 - dl.day * 1.4 - dl.dusk * 0.5, wx.fog * 0.85)))
+      : 0;
     // Los rayos de sol de las ventanas: se inclinan al contrario del sol y toman su color.
     const sd = this.shared.uSunDir.value;
     for (const b of this.sunbeams) {
-      b.visible = sunLampK > 0.02;
+      b.visible = beamK > 0.02;
       const u = (b.material as ShaderMaterial).uniforms;
-      u.uK!.value = sunLampK;
+      u.uK!.value = beamK;
       // Inclinación (x por cada píxel que baja): con el sol de lado, hasta casi 45°.
       const slant = Math.max(-0.95, Math.min(0.95, -sd.x * 1.5));
       u.uSlant!.value = slant;
@@ -3914,9 +3962,7 @@ export class RoomScene {
       const k =
         (l.sun ? sunLampK : l.night ? nightK : l.deep ? 1 : l.fire ? fireK : lampK) * l.power * fl;
       data.set([l.pos.x, l.pos.y, l.pos.z, l.r], i * 4);
-      const c = l.sun
-        ? [1, 0.88 - 0.3 * dl.dusk, 0.7 - 0.38 * dl.dusk]
-        : [l.color[0] / 255, l.color[1] / 255, l.color[2] / 255];
+      const c = l.sun ? sunC : [l.color[0] / 255, l.color[1] / 255, l.color[2] / 255];
       data.set(
         [c[0]! * k, c[1]! * k, c[2]! * k, l.outdoor && this.moodLight ? 0 : l.halo],
         row + i * 4,
@@ -3968,7 +4014,10 @@ export class RoomScene {
     }
 
     // El cielo, solo cuando cambia (la cámara se mueve o pasa un rato).
-    const skyKey = `${view.px},${view.py},${Math.floor(t * 8)},${view.vw},${view.vh}`;
+    // El manto del nublado se pinta poco a poco, unas pocas nubes por fotograma.
+    this.sky.weather = { cloud: wx.cloud, fog: wx.fog };
+    if (this.moodLight && this.sky.buildDeck()) this.skyAt = '';
+    const skyKey = `${view.px},${view.py},${Math.floor(t * 8)},${view.vw},${view.vh},${Math.round(wx.cloud * 40)},${Math.round(wx.fog * 40)}`;
     if (skyKey !== this.skyAt) {
       this.skyAt = skyKey;
       // El horizonte: donde acaba el terreno, al fondo (con la perspectiva, sube y baja con la cámara).

@@ -40,6 +40,20 @@ npm run build`.
 
 ## En curso
 
+- [ ] **El clima** ([`encargos/arte-clima.md`](encargos/arte-clima.md)). Pruebas de dirección en
+      `capturas/clima/pruebas/` (el usuario: «se ve genial»).
+  - [x] 1. El estado y el cielo: `weatherAt` en `world/weather.ts` (semilla, día y hora; casi
+        siempre despejado o algo nublado, nunca dos días de lluvia seguidos) y, en la escena,
+        el tiempo que se ve se acerca al que toca en unos 10 s (`approach`). Manto de nubes
+        (`rooms/manto.ts`): cúmulos y bancos de `art/clouds.ts` con rampas grises, en filas, que
+        salen por turnos según las nubes y se pintan unas pocas por fotograma; cielo gris por
+        franjas; bruma tras cada capa del paisaje y bancos de niebla; sin sol, estrellas ni luna
+        con el cielo cubierto. Luz: `uSunHide` en `gl.ts` (sin sol directo ni sombra del
+        edificio), sin rayos ni foco de sol en las ventanas y los faroles encendidos con niebla.
+        Ajuste «Clima: normal / siempre despejado» y «Forzar el tiempo» en el modo prueba.
+        Capturas en `capturas/clima/fase1/` (`tools/shots/clima.mjs`).
+  - [ ] 2. Lluvia. — [ ] 3. Nieve. — [ ] 4. Viento. — [ ] 5. Tormenta.
+
 - [x] **Volumen con grosor** (`thick` en `salas/kit.ts`, `volume` en `RoomScene.ts`): lo suelto
       por la sala tiene cuerpo de unos píxeles hacia el fondo (antes, solo lo empotrado, hasta
       la pared).

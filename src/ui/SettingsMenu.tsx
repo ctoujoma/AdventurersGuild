@@ -6,6 +6,7 @@ import { BOSSES } from '../data/bosses';
 import { GLOSSARY } from '../data/glossary';
 import { canVibrate } from '../platform/haptics';
 import type { Settings } from '../platform/settings';
+import { WEATHER_KINDS, WEATHER_LABEL, type WeatherKind } from '../world/weather';
 import { VERSION } from '../version';
 import { Icon } from './icons';
 
@@ -16,6 +17,9 @@ interface Props {
   /** Modo prueba: atajos y peleas contra jefes. */
   onCheat: (kind: Cheat) => string;
   onBoss: (boss: BossKind, won: boolean) => void;
+  /** Modo prueba: el tiempo forzado (null: el que toque) y cómo cambiarlo. */
+  weather?: WeatherKind | null;
+  onWeather?: (k: WeatherKind | null) => void;
 }
 
 const CHEATS: { kind: Cheat; label: string }[] = [
@@ -31,7 +35,15 @@ const CHEATS: { kind: Cheat; label: string }[] = [
 const SPEEDS: Settings['speed'][] = [1, 1.5, 2];
 
 /** Ajustes: volúmenes, velocidad de la escena, lectura, movimiento y vibración. */
-export function SettingsMenu({ settings: s, onChange, onClose, onCheat, onBoss }: Props) {
+export function SettingsMenu({
+  settings: s,
+  onChange,
+  onClose,
+  onCheat,
+  onBoss,
+  weather,
+  onWeather,
+}: Props) {
   const set = (patch: Partial<Settings>) => onChange({ ...s, ...patch });
   // Silenciar o no está aquí (en el móvil ya no hay botón arriba).
   const [sound, setSound] = useState(audio.on);
@@ -136,6 +148,24 @@ export function SettingsMenu({ settings: s, onChange, onClose, onCheat, onBoss }
             />
             <span>Luz con ambiente: salas más oscuras y charcos de luz de fuegos y faroles</span>
           </label>
+          {s.moodLight && (
+            <div class="set-row">
+              <span>Clima</span>
+              <div class="set-choices" role="radiogroup" aria-label="Clima">
+                {(['normal', 'clear'] as const).map((v) => (
+                  <button
+                    key={v}
+                    role="radio"
+                    aria-checked={s.weather === v}
+                    class={`btn ${s.weather === v ? 'btn-gold' : 'btn-wood'}`}
+                    onClick={() => set({ weather: v })}
+                  >
+                    {v === 'normal' ? 'Normal' : 'Siempre despejado'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <h4 class="qs-sub">Rendimiento</h4>
           <label class="set-check">
             <input
@@ -164,6 +194,24 @@ export function SettingsMenu({ settings: s, onChange, onClose, onCheat, onBoss }
                 <p class="tester-note" role="status">
                   {note}
                 </p>
+              )}
+              {onWeather && (
+                <label class="set-row">
+                  <span>Forzar el tiempo</span>
+                  <select
+                    value={weather ?? ''}
+                    onChange={(e) =>
+                      onWeather((e.currentTarget.value || null) as WeatherKind | null)
+                    }
+                  >
+                    <option value="">El que toque</option>
+                    {WEATHER_KINDS.map((k) => (
+                      <option key={k} value={k}>
+                        {WEATHER_LABEL[k]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               )}
               <p class="tiny">
                 Ver una pelea contra un jefe con los héroes de casa (no cambia nada):
