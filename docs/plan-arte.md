@@ -40,6 +40,11 @@ npm run build`.
 
 ## En curso
 
+- [ ] **El clima** ([`encargos/arte-clima.md`](encargos/arte-clima.md)): pruebas de dirección en
+      `capturas/clima/pruebas/` (pintadas encima de capturas reales, capa a capa; el manto de
+      nubes, con `cumulus`/`bank` de `art/clouds.ts` y rampas grises). Esperando el visto bueno
+      antes de la fase 1.
+
 - [x] **Volumen con grosor** (`thick` en `salas/kit.ts`, `volume` en `RoomScene.ts`): lo suelto
       por la sala tiene cuerpo de unos píxeles hacia el fondo (antes, solo lo empotrado, hasta
       la pared).
