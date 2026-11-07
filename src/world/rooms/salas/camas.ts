@@ -45,8 +45,8 @@ type Style = 'tropa' | 'servicio' | 'veterano';
 const ROWS = [6, 26, 46] as const;
 /** Alto de una litera de dos pisos (a la que se refieren las filas de `Bed.top`). */
 const BUNK_H = 40;
-/** Las camas, algo separadas de la pared: así se nota la profundidad al mover la cámara. */
-const BED_Z = WALL - 6;
+/** Las camas, separadas de la pared: así se nota la profundidad al mover la cámara. */
+const BED_Z = WALL - 12;
 
 // ---------- Dónde va cada cama ----------
 
@@ -73,7 +73,8 @@ function plan(room: Room, w: number): { bunks: number[]; features: { x: number; 
   for (const s of stretchesOf(room, w)) {
     if (s.kind === 'right') continue;
     if (s.kind === 'left') {
-      const a = s.x0 + 2;
+      // Separadas también de la pared de la izquierda.
+      const a = s.x0 + 8;
       const b = s.x1 - 1;
       for (let k = 0; k < n; k++) bunks.push(a + ((b - a) * (k + 0.5)) / n);
       continue;

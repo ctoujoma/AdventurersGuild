@@ -276,6 +276,7 @@ export function sideTex(
   front: number[] = [],
   strength = 1,
   room?: Room,
+  windows: number[] = [],
 ): PixelBuffer {
   const W = SIDE_W;
   const b = new PixelBuffer(W, h);
@@ -313,6 +314,9 @@ export function sideTex(
   }
   ambientOcclusion(b, 0, 0, W, h, 3, { top: true, bottom: true, left: false, right: true });
   ambientOcclusion(b, 0, 0, W, h, 6, { top: false, bottom: false, left: false, right: true });
+  // Las ventanas a la calle, planta a planta (tras la sombra: el cristal queda hueco).
+  const boarded = !!room && ruined(room);
+  for (const f of windows) sideWindow(b, h - f * PITCH - ROOM_H, boarded, true);
   // El hueco: se ve el paso, con su hoja (ver `doorway` en RoomScene.ts).
   for (const f of doors) {
     const y = h - f * PITCH;
@@ -395,6 +399,7 @@ export function outerSide(
   seed: string,
   strength = 1,
   walls?: WallId,
+  window?: 'cristal' | 'tablas',
 ): PixelBuffer {
   const W = SIDE_W;
   const b = new PixelBuffer(W, h);
@@ -413,6 +418,49 @@ export function outerSide(
     half.blit(Prop.doorLeaf(strength), 10, h - 49);
     overHalf(b, half);
   }
+  // La ventana de la planta (por fuera, el mismo hueco que por dentro; arriba, el forjado).
+  if (window) sideWindow(b, SLAB, window === 'tablas', false);
+  return b;
+}
+
+/**
+ * Ventana de un muro de los lados (en `sideTex` y `outerSide`): el mismo hueco por dentro y
+ * por fuera, en medio del fondo (`SIDE_WIN`), desde lo alto de la planta (`top`). El cristal se
+ * deja transparente: se ve lo de fuera (o, desde fuera, la sala); tapiada, con tablas.
+ */
+export const SIDE_WIN = { u0: 23, u1: 37, top: 22, h: 25 };
+function sideWindow(b: PixelBuffer, top: number, boarded: boolean, inside: boolean) {
+  const { u0, u1 } = SIDE_WIN;
+  const w = u1 - u0;
+  const y = top + SIDE_WIN.top;
+  const h = SIDE_WIN.h;
+  b.rect(u0 - 3, y - 3, w + 6, h + 6, P.plum);
+  b.rect(u0 - 2, y - 2, w + 4, h + 4, P.bark);
+  if (boarded) {
+    planksV(b, u0, y, w, h, `tablas${top}`, WOOD_DARK, 4);
+    b.line(u0, y + 3, u1 - 1, y + h - 6, P.oak);
+    b.line(u0, y + h - 4, u1 - 1, y + 5, P.oak);
+    return;
+  }
+  for (let j = 0; j < h; j++) for (let i = u0; i < u1; i++) b.clear(i, y + j);
+  // Los cuarterones (finos, para que se vea a través) y el alféizar.
+  b.vline(u0 + Math.floor(w / 2), y, h, P.bark);
+  b.hline(u0, y + Math.floor(h / 2), w, P.bark);
+  b.hline(u0 - 4, y + h + 3, w + 8, P.oak);
+  b.hline(u0 - 4, y + h + 4, w + 8, P.plum);
+  // Por fuera, una jardinera; por dentro, el alféizar solo.
+  if (!inside) {
+    b.rect(u0 + 1, y + h + 5, w - 2, 4, P.brick);
+    for (let i = u0 + 2; i < u1 - 2; i += 3) b.set(i, y + h + 4, i % 2 ? P.leaf : P.lime);
+  }
+}
+
+/** El grosor del muro en el hueco de una ventana de los lados (jambas, dintel y alféizar). */
+export function sideReveal(theme: Theme, seed: string): PixelBuffer {
+  const b = new PixelBuffer(16, 32);
+  if (theme === 'yeso') plaster(b, 0, 0, 16, 32, seed, PLASTER);
+  else planksV(b, 0, 0, 16, 32, seed, WOOD_DARK, 5);
+  ambientOcclusion(b, 0, 0, 16, 32, 3, { top: false, bottom: false, left: true, right: true });
   return b;
 }
 

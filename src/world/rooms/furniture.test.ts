@@ -104,7 +104,7 @@ describe('muebles de la vista 3D', () => {
         const half = t.img.w / scaleAt(t.z) / 2;
         if (t.x + half > win[0]! && t.x - half < win[1]!) expect(t.img.h).toBeLessThanOrEqual(32);
         // Los de guardia están delante del armero: ahí solo su puesto (taburetes y barril).
-        if (t.z < SPOT.guardZ - 1 || t.z > SPOT.guardZ)
+        if (t.z !== SPOT.gameZ && t.z !== SPOT.guardZ)
           for (const g of SPOT.guards) expect(Math.abs(t.x - g), `${level}`).toBeGreaterThan(half);
       }
       // Un taburete en cada puesto.

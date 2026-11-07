@@ -33,8 +33,12 @@ import { cloth } from './tintes';
 
 // ---------- Dónde van los catres ----------
 
-/** Ancho de un catre en el mundo, contra la pared. */
-const COT_W = Prop.cot().w / scaleAt(WALL);
+/** Los catres, separados de la pared del fondo (que no parezcan pegados a ella). */
+const COT_Z = WALL - 8;
+/** Ancho de un catre en el mundo. */
+const COT_W = Prop.cot().w / scaleAt(COT_Z);
+/** Lo que se separa de la pared de los lados el catre que va contra ella. */
+const SIDE_GAP = 6;
 
 /**
  * Catres: uno por nivel y hueco de más (tres como mucho), contra la pared (son bajos: caben
@@ -44,14 +48,14 @@ const COT_W = Prop.cot().w / scaleAt(WALL);
  */
 export function cotsOf(room: Room, w: number): Bed[] {
   const n = Math.min(3, room.level + room.w - 1);
-  const cot = (x: number): Bed => ({ kind: 'catre', x, z: WALL, top: 3, level: room.level });
+  const cot = (x: number): Bed => ({ kind: 'catre', x, z: COT_Z, top: 3, level: room.level });
   if (room.w > 1) {
     const wins = cellsOf(room, w).map((c) => c.win);
-    const xs = n > wins.length ? [COT_W / 2 + 1, ...wins] : wins.slice(0, n);
+    const xs = n > wins.length ? [COT_W / 2 + SIDE_GAP, ...wins] : wins.slice(0, n);
     return xs.map(cot);
   }
-  const a = COT_W / 2 + 1;
-  const b = w - COT_W / 2 - 1;
+  const a = COT_W / 2 + SIDE_GAP;
+  const b = w - COT_W / 2 - SIDE_GAP;
   return Array.from({ length: n }, (_, i) => cot(n === 1 ? w / 2 : a + ((b - a) * i) / (n - 1)));
 }
 
@@ -319,7 +323,7 @@ function things(room: Room, w: number): Thing[] {
     lvl >= 3 ? { dy: 20, r: 36, color: [140, 255, 200], power: 0.35, flicker: 0.04 } : undefined;
   const t: Thing[] = [
     lampOver(cells, w, lvl),
-    ...cots.map((x) => at(Prop.cot(cloth(room, [P.navy, P.ocean, P.sky, P.mist])), x, WALL)),
+    ...cots.map((x) => at(Prop.cot(cloth(room, [P.navy, P.ocean, P.sky, P.mist])), x, COT_Z)),
   ];
   if (room.w === 1) {
     const items: { img: PixelBuffer; light?: Glow }[] = [{ img: table, light: tableLight }];

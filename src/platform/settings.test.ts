@@ -14,10 +14,10 @@ describe('ajustes', () => {
     expect(bad).toEqual({ ...DEFAULT_SETTINGS, music: 1, sfx: 0 });
   });
 
-  it('la luz con ambiente viene quitada y solo se pone a propósito', () => {
-    expect(parseSettings({}).moodLight).toBe(false);
-    expect(parseSettings({ moodLight: 'sí' }).moodLight).toBe(false);
-    expect(parseSettings({ moodLight: true }).moodLight).toBe(true);
+  it('la luz con ambiente viene puesta y solo se quita a propósito', () => {
+    expect(parseSettings({}).moodLight).toBe(true);
+    expect(parseSettings({ moodLight: 'no' }).moodLight).toBe(true);
+    expect(parseSettings({ moodLight: false }).moodLight).toBe(false);
   });
 
   it('la vibración viene puesta y solo se quita a propósito', () => {
