@@ -56,6 +56,7 @@ export function SceneView(props: Props) {
       onRoomDrop: () => handlers.current.onRoomDrop?.(),
       onSound: (name, vol) => audio.play(name, vol),
       onFrame: (p) => audio.listen(p),
+      onWeather: (w) => audio.weather(w),
       onSlow: (on) => {
         setSlow(on);
         audio.setSlow(on);

@@ -19,6 +19,7 @@ import {
   Mesh,
   NearestFilter,
   RGBAFormat,
+  RedFormat,
   RepeatWrapping,
   ShaderMaterial,
   UnsignedByteType,
@@ -30,7 +31,12 @@ import {
 } from 'three';
 import { P } from '../../art/palette';
 import { bevelRelief, type PixelBuffer } from '../../art/pixel';
+import { GROUND } from '../geometry';
 import { PARTITION, SLAB } from './layout';
+
+/** Máscara de lluvia vacía (hasta que hay edificio). */
+const DRY = new DataTexture(new Uint8Array(1), 1, 1, RedFormat, UnsignedByteType);
+DRY.needsUpdate = true;
 
 /** Cajas con las que se calcula la sombra del edificio fuera. */
 export const MAX_BOXES = 16;
@@ -100,6 +106,22 @@ const SURFACE_FRAG = /* glsl */ `
   uniform float uSunK;
   // Lo tapado que está el sol por el tiempo (nublado, niebla): luz plana y sin sombra.
   uniform float uSunHide;
+  // Lo mojado que está lo de fuera (lluvia): más oscuro y con brillos en lo que mira arriba.
+  uniform float uWet;
+  // Dónde no llueve (las salas y su corte; ver lluvia.ts): ahí no se moja. Desde fuera, sí.
+  uniform sampler2D uRainMask;
+  uniform vec4 uRainMaskAt;
+  uniform float uWetCover;
+  // Charcos en el suelo de fuera (sin «pocas luces»): reflejan el cielo (uSkyRefl) y les caen gotas.
+  uniform float uPuddle;
+  uniform vec3 uSkyRefl;
+  uniform float uClock;
+  bool dryAt(vec3 world) {
+    if (uWetCover > 0.5) return false;
+    vec2 m = vec2(floor(world.x), floor(${GROUND.toFixed(1)} - world.y)) - uRainMaskAt.xy;
+    if (m.x < 0.0 || m.y < 0.0 || m.x >= uRainMaskAt.z || m.y >= uRainMaskAt.w) return false;
+    return texelFetch(uRainMask, ivec2(m), 0).r > 0.5;
+  }
   uniform float uOutdoor;
   uniform float uFade;
   // La sombra del edificio fuera: cajas (x0, x1, alto) entre las profundidades uBoxZ (z del
@@ -143,6 +165,22 @@ const SURFACE_FRAG = /* glsl */ `
   }
   float hash2(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
   float relAt(vec2 uv) { return texture2D(uRelief, uv).r * 255.0; }
+  float vnoise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash2(i), hash2(i + vec2(1.0, 0.0)), f.x),
+      mix(hash2(i + vec2(0.0, 1.0)), hash2(i + vec2(1.0, 1.0)), f.x), f.y);
+  }
+  // Cuánto charco hay en un punto del suelo (0 nada, 1 dentro, 0.5 el borde), por téxeles.
+  // Solo en la franja de delante (el camino de tierra), alargados a lo ancho.
+  float puddleAt(vec3 world) {
+    vec2 p = floor(world.xz);
+    if (p.y < -20.0 || p.y > -1.0) return 0.0;
+    float n = vnoise(p / vec2(30.0, 7.0)) * 0.8 + vnoise(p / vec2(8.0, 3.0) + 17.0) * 0.2;
+    float th = 0.76 - 0.12 * uWet;
+    return n > th + 0.03 ? 1.0 : n > th ? 0.5 : 0.0;
+  }
   // La luz del sol fuera, con su dirección: cara al sol, más y más cálida; de espaldas, la del
   // cielo, fría. Con relieve, además, la normal de cada píxel, la sombra que arrojan los
   // salientes (marchando por la textura hacia el sol) y el borde de luz en los cantos.
@@ -325,8 +363,30 @@ const SURFACE_FRAG = /* glsl */ `
       vec3 L = lum > 0.001 ? light / lum * q : vec3(0.0);
       // El color de lo pintado, algo menos saturado (los tonos de Endesga gritan).
       vec3 alb = mix(vec3(dot(tex.rgb, vec3(0.3, 0.59, 0.11))), tex.rgb, 0.86);
+      if (uWet > 0.01 && !inside && world.y > -0.5 && !dryAt(world)) {
+        alb *= mix(vec3(1.0), vec3(0.7, 0.74, 0.82), uWet);
+        // El canto de arriba de cada saliente: un brillo del cielo, en téxeles sueltos.
+        // Solo con relieve pintado y un salto claro (no en el bisel de las figuras ni en la hierba).
+        vec2 up = uvc + vec2(0.0, 1.0 / size.y);
+        bool edge = uHasRelief > 0.5 && texture2D(map, up).a > 0.5 && relAt(up) < relAt(uvc) - 3.0;
+        if (edge && hash2(tc + uOrigin.xy) < 0.55) alb = mix(alb, vec3(0.78, 0.83, 0.92), 0.5 * uWet);
+      }
       vec3 hq = max(floor(min(halo, vec3(0.7)) * 5.0 + jit), vec3(0.0)) / 5.0;
-      gl_FragColor = vec4(min(alb * L + hq * uHalo, vec3(1.0)), 1.0);
+      vec3 outC = alb * L + hq * uHalo;
+      if (uPuddle > 0.5 && uWet > 0.2 && !inside && uNormal.y > 0.9 && abs(world.y) < 1.0 &&
+          !dryAt(world)) {
+        float pd = puddleAt(world);
+        if (pd > 0.75) {
+          // El cielo reflejado y la luz de los faroles, más viva en el agua; en el borde del
+          // fondo, el brillo del cielo a ras.
+          bool far = puddleAt(world - vec3(0.0, 0.0, 1.0)) < 0.75;
+          outC = mix(alb * L * 0.4, uSkyRefl, far ? 0.85 : 0.45) + hq * uHalo * 1.4;
+          // Las gotas que caen: un téxel claro que se enciende y se apaga.
+          float k = hash2(tc + floor(uClock * 7.0) * 1.37);
+          if (k < 0.05 * uWet) outC = mix(outC, vec3(0.85, 0.89, 0.95), 0.6);
+        } else if (pd > 0.25) outC *= 0.62;
+      }
+      gl_FragColor = vec4(min(outC, vec3(1.0)), 1.0);
       return;
     }
     // Tramado pegado al téxel: se mueve con la superficie, no con la pantalla.
@@ -567,6 +627,13 @@ export function sharedUniforms() {
     uSunDir: { value: new Vector3(0, 1, 0) },
     uSunK: { value: 0 },
     uSunHide: { value: 0 },
+    uWet: { value: 0 },
+    uRainMask: { value: DRY },
+    uRainMaskAt: { value: new Vector4() },
+    uWetCover: { value: 0 },
+    uPuddle: { value: 1 },
+    uSkyRefl: { value: new Vector3(0.5, 0.55, 0.65) },
+    uClock: { value: 0 },
     uBox: { value: Array.from({ length: MAX_BOXES }, () => new Vector4()) },
     uBoxN: { value: 0 },
     uBoxZ: { value: new Vector2() },

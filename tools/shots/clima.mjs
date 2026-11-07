@@ -7,6 +7,7 @@
  *
  * Con `TRANSICION=<tiempo>`, además, una tira de la vista desde fuera pasando de despejado a ese
  * tiempo (`transicion-NN.png`, cada poco; para un GIF).
+ * Con `FOTOGRAMAS=<n>`, de cada captura salen además n fotogramas seguidos (`…-fNN.png`).
  * `HORAS` elige las horas (`manana,tarde,noche`; por defecto `dia,noche`), `ANCHO` y `ALTO` la
  * ventana y `PUERTO` el puerto. Saca `<tiempo>-<vista>-<hora>.png`.
  */
@@ -86,6 +87,14 @@ const weather = (k) =>
     s.forceWeather = k;
     s.wxAt = 0;
   }, k);
+/** La captura y, con `FOTOGRAMAS`, unos cuantos fotogramas seguidos (para un GIF). */
+const shoot = async (name) => {
+  await page.screenshot({ path: `${out}/${name}.png` });
+  for (let i = 0; i < Number(process.env.FOTOGRAMAS ?? 0); i++) {
+    await page.waitForTimeout(90);
+    await page.screenshot({ path: `${out}/${name}-f${String(i).padStart(2, '0')}.png` });
+  }
+};
 const settle = async () => {
   await page.waitForTimeout(300);
   await page.evaluate(() => {
@@ -109,7 +118,7 @@ for (const h of hours.filter((h) => h !== 'noche'))
     for (const v of views) {
       await frame(v);
       await settle();
-      await page.screenshot({ path: `${out}/${k}-${v}-${h}.png` });
+      await shoot(`${k}-${v}-${h}`);
     }
   }
 const to = process.env.TRANSICION;
@@ -125,9 +134,13 @@ if (to) {
   }
 }
 if (hours.includes('noche')) {
-  await page.evaluate(() => window.__scene.nightfall(() => {}, 30));
+  await page.evaluate(() => {
+    const s = window.__scene;
+    s.shotTime(0.6);
+    s.nightfall(() => {}, 30);
+  });
   // Hasta que oscurece del todo; y la noche, quieta mientras se saca todo.
-  await page.waitForFunction(() => window.__scene.daylight().day < 0.01, null, { timeout: 60000 });
+  await page.waitForFunction(() => window.__scene.daylight().day < 0.01, null, { timeout: 240000 });
   await page.waitForTimeout(1500);
   await page.evaluate(() => (window.__scene.night.hold = 1e6));
   for (const k of kinds) {
@@ -135,7 +148,7 @@ if (hours.includes('noche')) {
     for (const v of views) {
       await frame(v);
       await settle();
-      await page.screenshot({ path: `${out}/${k}-${v}-noche.png` });
+      await shoot(`${k}-${v}-noche`);
     }
   }
 }

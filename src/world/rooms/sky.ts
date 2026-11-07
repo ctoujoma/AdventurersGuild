@@ -241,7 +241,7 @@ export class Sky {
   /** Con «luz con ambiente», el fondo nuevo (ver `paisaje.ts`). */
   mood = false;
   /** El tiempo (ver `weather.ts`): nubes (0–1) y niebla (0–1). */
-  weather = { cloud: 0, fog: 0 };
+  weather = { cloud: 0, fog: 0, rain: 0 };
   /** El manto del nublado, por orden de turno (las primeras en salir, primero). */
   private deck = deckLayout().sort((a, b) => a.rank - b.rank);
   private deckBuilt = 0;
@@ -564,6 +564,15 @@ export class Sky {
       if (i === 3) treeLife(ctx, x, top, vw, t, light);
       veil(i, l.fx);
     });
+    // Con lluvia, todo más oscuro (el manto cargado).
+    if (this.weather.rain > 0.01) {
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.globalAlpha = Math.min(1, this.weather.rain * 0.75);
+      ctx.fillStyle = '#7d879e';
+      ctx.fillRect(0, 0, vw, vh);
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
+    }
     // Con el cielo cubierto o niebla, todo con menos color (la luz es plana).
     const gray = ov * 0.4 + fog * 0.35;
     if (gray > 0.01) {

@@ -80,6 +80,9 @@ class AudioEngine {
   private levels = { music: 1, sfx: 1, ambient: 1 };
   private fireGain!: GainNode;
   private crickets!: GainNode;
+  /** La lluvia: un ruido siseante y su filtro (cerrado mirando dentro de las salas). */
+  private rainGain?: GainNode;
+  private rainLp?: BiquadFilterNode;
   private noise!: AudioBuffer;
   private strings = new Map<number, AudioBuffer>();
   private enabled = true;
@@ -435,6 +438,16 @@ class AudioEngine {
     }
   }
 
+  /** El tiempo que hace (lo manda la escena): la lluvia, más o menos fuerte y apagada. */
+  weather(w: { rain: number; wind: number; storm: number; outside: number }): void {
+    if (!this.ctx || !this.rainGain || !this.rainLp) return;
+    const now = this.ctx.currentTime;
+    this.rainGain.gain.setTargetAtTime(w.rain * 0.22 * (0.45 + 0.55 * w.outside), now, 0.6);
+    this.rainLp.frequency.setTargetAtTime(900 + 4200 * w.outside, now, 0.4);
+    // Con lluvia, los grillos se callan.
+    this.crickets.gain.setTargetAtTime(0.02 * (1 - Math.min(1, w.rain * 2)), now, 1);
+  }
+
   // ---------- Arranque y ambiente ----------
 
   private boot(): void {
@@ -490,6 +503,26 @@ class AudioEngine {
     lfo.start();
     wind.connect(wf).connect(wg);
     wind.start();
+
+    // Lluvia: siseo agudo (paso alto) que se apaga con un paso bajo si se mira dentro, y un
+    // rumor grave debajo. Callada hasta que llueve (ver `weather`).
+    this.rainGain = this.gain(0, this.ambientBus);
+    this.rainLp = ctx.createBiquadFilter();
+    this.rainLp.type = 'lowpass';
+    this.rainLp.frequency.value = 5000;
+    const hiss = this.noiseSource(true);
+    const hp = ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = 700;
+    hiss.connect(hp).connect(this.rainLp).connect(this.rainGain);
+    hiss.start();
+    const body = this.noiseSource(true);
+    const bp = ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 380;
+    bp.Q.value = 0.6;
+    body.connect(bp).connect(this.gain(0.6, this.rainGain));
+    body.start();
 
     // Grillos: dos osciladores con trinos programados.
     this.crickets = this.gain(0.02, this.ambientBus);

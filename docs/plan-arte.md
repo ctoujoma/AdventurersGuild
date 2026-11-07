@@ -52,7 +52,18 @@ npm run build`.
         edificio), sin rayos ni foco de sol en las ventanas y los faroles encendidos con niebla.
         Ajuste «Clima: normal / siempre despejado» y «Forzar el tiempo» en el modo prueba.
         Capturas en `capturas/clima/fase1/` (`tools/shots/clima.mjs`).
-  - [ ] 2. Lluvia. — [ ] 3. Nieve. — [ ] 4. Viento. — [ ] 5. Tormenta.
+  - [x] 2. Lluvia (`rooms/lluvia.ts`): las gotas en un shader de pantalla, por téxeles y en
+        escalera diagonal; la capa de lejos va con el cielo (se ve entre los árboles y por las
+        ventanas) y las dos de cerca por delante de lo 3D con una máscara de las salas (dentro
+        no llueve; desde fuera, sí). Salpicaduras en el suelo y las vertientes y goteo de los
+        aleros (en el mismo shader). Lo de fuera se moja (`uWet`, se seca despacio): más oscuro,
+        brillos en los cantos con relieve y charcos en el camino de delante que reflejan el
+        cielo y la luz de los faroles. Gotas en los cristales de las ventanas del fondo, vistas
+        desde dentro. De noche, las gotas azuladas y cálidas junto a los faroles. Con «pocas
+        luces», sin salpicaduras ni charcos. Sonido de lluvia (apagado mirando dentro) y los
+        grillos callan. Capturas en `capturas/clima/fase2/`. Falta: las ventanas de los lados y
+        medir en un móvil.
+  - [ ] 3. Nieve. — [ ] 4. Viento. — [ ] 5. Tormenta.
 
 - [x] **Volumen con grosor** (`thick` en `salas/kit.ts`, `volume` en `RoomScene.ts`): lo suelto
       por la sala tiene cuerpo de unos píxeles hacia el fondo (antes, solo lo empotrado, hasta
