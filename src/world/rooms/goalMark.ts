@@ -106,7 +106,7 @@ export interface GoalDraw {
   /** Cuánto se ve (0–1): se funde al llegar y, de muestra, va tenue. */
   alpha: number;
   icon: GoalIcon;
-  /** El color de la tela y el de su sombra: los del escudo del gremio. */
+  /** El color de la tela y el de su sombra: los de la ropa de quien va (ver `clothOf`). */
   field: string;
   dark: string;
   /** De muestra (mientras se lleva a alguien): sin clavarse ni onda en el suelo. */
@@ -160,6 +160,10 @@ export function drawGoal(ctx: CanvasRenderingContext2D, g: GoalDraw): void {
   // La tela: cada columna baja o sube con la onda (más hacia la punta), con un pico hacia
   // dentro en el borde de la punta (dos puntas).
   const { field, dark } = g;
+  // El icono, claro sobre tela oscura y oscuro sobre tela clara (el clérigo, el tabernero…).
+  const light = lum(field) > 0.55;
+  const ink = light ? P.navy : P.white;
+  const inkShade = light ? P.slate : dark;
   const edge = P.black;
   const lift = (c: number) =>
     Math.round(Math.sin(g.t * 7 - c * 0.7) * (c / CLOTH_W) * 1.8 + (c / CLOTH_W) * 1.2);
@@ -184,7 +188,7 @@ export function drawGoal(ctx: CanvasRenderingContext2D, g: GoalDraw): void {
     for (let r = 0; r < 7; r++) {
       const ch = rows[r]![c];
       if (ch === '.') continue;
-      ctx.fillStyle = ch === '#' ? P.white : dark;
+      ctx.fillStyle = ch === '#' ? ink : ch === 'o' ? inkShade : field;
       ctx.fillRect(x + 4 + c, dy + r, 1, 1);
     }
   }
@@ -212,4 +216,10 @@ function ring(
     seen.add(k);
     ctx.fillRect(px, py, 1, 1);
   }
+}
+
+/** Lo claro que es un color (0–1, a ojo: el verde pesa más). */
+function lum(hex: string): number {
+  const n = parseInt(hex.slice(1), 16);
+  return (0.3 * ((n >> 16) & 255) + 0.59 * ((n >> 8) & 255) + 0.11 * (n & 255)) / 255;
 }

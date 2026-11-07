@@ -254,6 +254,17 @@ const SHARED: Slots = {
   Z: P.tan,
 };
 
+/**
+ * El color de la ropa de alguien (la tela del traje): el de su clase u oficio o, si le han teñido
+ * en la sastrería, el del tinte. El claro y su sombra.
+ */
+export function clothOf(look: HeroLook): { field: string; dark: string } {
+  const dye = dyeOf(look.dye);
+  if (dye) return { field: dye[2], dark: dye[1] };
+  const c = CLASS[look.outfit] ?? CLASS.tabernero;
+  return { field: c.c!, dark: c.C! };
+}
+
 function slots(look: HeroLook): Slots {
   const skin = SKIN[look.skin] ?? SKIN[0]!;
   const hair = HAIR[look.hairColor] ?? HAIR[0]!;
