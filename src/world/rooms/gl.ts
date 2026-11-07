@@ -396,17 +396,17 @@ const SHAFT_FRAG = /* glsl */ `
     float jit = fract(sin(dot(cell, vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
     float i = floor(edge * fall * uK * 4.0 + jit * 0.6) / 4.0;
     // El polvo: motas de un píxel que flotan despacio, cada columna a su paso (bajan y se
-    // mecen), cada rayo con las suyas (uSeed); cada mota aparece y se apaga a su ritmo. Pocas y
-    // tenues.
+    // mecen), cada rayo con las suyas (uSeed); cada mota aparece y se apaga a su ritmo. Las
+    // justas para verse.
     vec2 gp = vUv * vec2(uW, uDrop);
     float col = floor(gp.x / 2.0);
     float sp = 0.5 + fract(sin(col * 12.9898 + uSeed) * 43758.5453) * 1.3;
     vec2 px = floor(vec2(gp.x + sin(uTime * 0.27 + col * 1.7) * 1.2, gp.y - uTime * sp));
     float seed = fract(sin(dot(px + uSeed, vec2(41.31, 289.17))) * 15731.743);
-    float tw = pow(max(0.0, sin(uTime * 0.7 + seed * 60.0)), 2.0);
-    float mote = step(0.988, seed) * tw * edge * uK;
-    if (i <= 0.0 && mote < 0.15) discard;
-    gl_FragColor = vec4(uColor * (max(i, 0.0) * 0.5 + mote * 0.35), 1.0);
+    float tw = smoothstep(0.0, 0.6, sin(uTime * 0.7 + seed * 60.0));
+    float mote = step(0.94, seed) * tw * edge * min(1.0, uK * 2.0);
+    if (i <= 0.0 && mote < 0.1) discard;
+    gl_FragColor = vec4(uColor * (max(i, 0.0) * 0.5 + mote * 0.9), 1.0);
   }
 `;
 

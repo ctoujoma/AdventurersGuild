@@ -47,6 +47,8 @@ export const SPOT = {
   guards: [35, 59],
   game: 47,
   guardZ: FRONT + 8,
+  /** El barril, algo por delante de los taburetes (más cerca de la cámara). */
+  gameZ: FRONT + 2,
 } as const;
 
 /** Lo alto de la tapa del barril de jugar (donde caen las cartas y ruedan los dados). */
@@ -373,7 +375,7 @@ function things(room: Room): Thing[] {
   // El puesto de los de guardia: dos taburetes y el barril de jugar entre ellos.
   for (const x of SPOT.guards) t.push(at(Prop.stool(), x, SPOT.guardZ));
   // El barril, un poco por delante de los taburetes: es la mesa que tienen ante las rodillas.
-  t.push(at(cardBarrel(), SPOT.game, SPOT.guardZ - 1));
+  t.push(at(cardBarrel(), SPOT.game, SPOT.gameZ));
   return t;
 }
 

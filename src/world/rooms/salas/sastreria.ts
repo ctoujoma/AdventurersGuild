@@ -198,26 +198,31 @@ function line(n: number, w: number, first: number): PixelBuffer {
   );
 }
 
-/** Espejo de cuerpo entero en su bastidor, con el reflejo y su brillo en diagonal. */
+/**
+ * Espejo de cuerpo entero en su bastidor, con el reflejo y su brillo en diagonal. El bastidor
+ * mide 4 píxeles por los lados y por arriba: el volumen (`thick`) toma el color de sus costados
+ * de 3 píxeles hacia dentro, y así sale de la madera y no del cristal.
+ */
 function mirror(): PixelBuffer {
-  return Prop.piece(12, 38, (p) => {
+  return Prop.piece(14, 38, (p) => {
     // Bastidor y patas.
-    p.rect(0, 2, 12, 30, W[3]!);
-    p.hline(0, 2, 12, W[5]!);
+    p.rect(0, 2, 14, 30, W[3]!);
+    p.hline(0, 2, 14, W[5]!);
     p.vline(0, 2, 30, W[4]!);
-    p.rect(1, 32, 2, 6, W[3]!);
-    p.rect(9, 32, 2, 6, W[3]!);
-    p.hline(0, 37, 12, W[2]!);
-    p.rect(4, 0, 4, 2, P.gold);
+    p.rect(3, 5, 8, 25, W[2]!);
+    p.rect(1, 32, 3, 6, W[3]!);
+    p.rect(10, 32, 3, 6, W[3]!);
+    p.hline(0, 37, 14, W[2]!);
+    p.rect(5, 0, 4, 2, P.gold);
     // El cristal: frío arriba, con el suelo reflejado abajo.
-    p.rect(2, 4, 8, 26, P.mist);
-    p.rect(2, 4, 8, 8, P.white);
-    p.rect(2, 24, 8, 6, P.fog);
-    p.hline(2, 29, 8, P.steel);
+    p.rect(4, 6, 6, 23, P.mist);
+    p.rect(4, 6, 6, 7, P.white);
+    p.rect(4, 24, 6, 5, P.fog);
+    p.hline(4, 28, 6, P.steel);
     // El brillo.
-    p.line(3, 12, 6, 8, P.white);
-    p.line(3, 16, 8, 10, P.white);
-    p.set(8, 22, P.white);
+    p.line(5, 13, 8, 9, P.white);
+    p.line(5, 17, 9, 13, P.white);
+    p.set(9, 22, P.white);
   });
 }
 
@@ -350,7 +355,7 @@ function things(room: Room, w: number): Thing[] {
       }
     } else if (lvl >= 3 && cells.length === 1) {
       // En la pequeña, el espejo va en el rincón de la derecha.
-      t.push(thick(at(mirror(), w - 7.5, WALL - 4), 3, 'madera'));
+      t.push(thick(at(mirror(), w - 9, WALL - 7), 3, 'madera'));
       fit = w - 18;
     } else t.push(thick(at(basket(), Math.min(s.x0 + 8, w - 9), FREE + 4), 5, 'madera'));
   }

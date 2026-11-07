@@ -4296,7 +4296,7 @@ export class RoomScene {
     const t = this.wt;
     const tx = interior(desk.rect).x + SPOT.game;
     const ty = floorY(0) - GAME_TOP;
-    const tz = SPOT.guardZ - 1;
+    const tz = SPOT.gameZ;
     for (const g of list) {
       if (g.night) {
         if (!g.dozing) continue;

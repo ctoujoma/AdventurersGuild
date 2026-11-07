@@ -199,17 +199,26 @@ Siguiente: ventanas en los muros de los lados (ver «Para más adelante»).
 
 ## Feedback del usuario (ronda de las ventanas de los lados)
 
-Por hacer:
+Hecho:
 
-1. Ventanas en los muros de los lados.
-2. «Luz con ambiente», activado por defecto.
-3. Apartar las camas de las paredes en todas las salas con camas.
-4. El barril de los guardias de la puerta, un poco más adelante (más cerca de la cámara).
-5. Motas de polvo en el rayo: antes demasiado, ahora no se ven.
-6. Planificar un sistema de clima (lluvia, niebla, nieve…) con todo su efecto visual.
-7. El espejo de la sastrería se sale de su marco por los lados si se mira con ángulo.
-8. Auditoría de las texturas de la fachada (paredes de fuera): más calidad y variedad dentro de
-   la propia textura, que se ve muy repetida en la vista desde fuera.
+1. **Ventanas en los muros de los lados:** en cada planta que da al aire, sin puerta de la calle
+   ni del jardín. Están en la cara de dentro (`sideTex`) y en la de fuera (`outerSide`, con
+   jardinera). Entre las dos va el grosor del muro (`sideOpening`: jambas, dintel y
+   alféizar), y el cristal es hueco, así que desde dentro se ve el patio y desde fuera la
+   sala. De día entra su foco de sol. En las salas en ruina va tapiada con tablas; en las
+   salas sin ventanas (`BLIND`) y en la torre no hay. Sin rayo: el del fondo va pegado a su
+   pared y no vale para esta.
+2. **«Luz con ambiente», activada por defecto.** Si alguien la quitó a mano, se respeta.
+3. **Camas separadas de las paredes:** las literas, del fondo (`BED_Z`) y de la pared de la
+   izquierda; y los catres de la enfermería, del fondo y de los lados (`COT_Z`, `SIDE_GAP`).
+4. **El barril de los guardias, más adelante** (`SPOT.gameZ`); los dados ruedan sobre él.
+5. **Motas del rayo:** más (unas diez por rayo) y más claras. Cada una se ve un rato largo en
+   vez de un destello, y su brillo apenas baja al amanecer.
+6. **Clima:** el plan está en [`plan-clima.md`](plan-clima.md).
+7. **El espejo de la sastrería:** el volumen toma el color de sus costados 3 píxeles hacia
+   dentro, y el marco solo medía 2, así que los costados salían del color del cristal. Ahora
+   el marco mide 4.
+8. **Fachada:** la auditoría está en [`auditoria-fachada.md`](auditoria-fachada.md).
 
 ## Fases (cada una, un PR con capturas antes y después, dentro de «Luz con ambiente»)
 
