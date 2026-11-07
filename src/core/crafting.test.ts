@@ -88,6 +88,9 @@ describe('la forja crea objetos', () => {
     expect(craftState(t, t.crafts![0]!).frac).toBe(0);
     const hero = t.heroes.find((h) => h.status === 'ok')!;
     t = reduce(t, { type: 'assign', who: hero.id, room: forge });
+    // Va de camino: hasta que llega, sigue parado.
+    expect(craftState(t, t.crafts![0]!).hoursLeft).toBeNull();
+    t = reduce(t, { type: 'arrived', heroId: hero.id, room: forge });
     const left = craftState(t, t.crafts![0]!).hoursLeft!;
     expect(left).toBeGreaterThan(RECIPES.ganzuas.hours);
   });
@@ -240,6 +243,23 @@ describe('la sastrería viste a los héroes', () => {
     const later = { ...half, clock: t.clock! + DAY_SECONDS * ((DRESS_WALK + 1) / 24) };
     stepCrafts(later, later.clock! / DAY_SECONDS);
     expect(dressingOf(later, h.id)!.done).toBeGreaterThan(0);
+  });
+
+  it('se empieza a coser en cuanto la escena dice que el héroe ha llegado', () => {
+    const { s, room } = withShop('llega', 'sastreria');
+    const h = s.heroes.find((x) => x.status === 'ok')!;
+    s.clock = DAY_SECONDS * 0.3;
+    const t = reduce(s, { type: 'dressAt', room, heroId: h.id, dress: { dye: 'vino' } });
+    // Llegar a otra sala no cuenta.
+    expect(reduce(t, { type: 'arrived', heroId: h.id, room: 'otra' })).toBe(t);
+    const soon = { ...t, clock: t.clock! + DAY_SECONDS * (0.2 / 24) };
+    const a = reduce(soon, { type: 'arrived', heroId: h.id, room });
+    expect(craftState(a, dressingOf(a, h.id)!).walking).toBe(false);
+    const later = { ...a, clock: a.clock! + DAY_SECONDS * (0.3 / 24) };
+    stepCrafts(later, later.clock! / DAY_SECONDS);
+    expect(dressingOf(later, h.id)!.done).toBeGreaterThan(0);
+    // Avisar otra vez no cambia nada.
+    expect(reduce(a, { type: 'arrived', heroId: h.id, room })).toBe(a);
   });
 
   it('solo con los tintes que se tienen, a uno en casa y no a quien ya va así', () => {

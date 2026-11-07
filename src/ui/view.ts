@@ -3,7 +3,7 @@ import { RECIPES } from '../data/recipes';
 import { generateLook, type HeroLook, type HeroMarks, type OutfitId } from '../art/heroes/look';
 import type { Facilities, GameState, Hero, Item, Worker } from '../core/model';
 import { customOf, gearInStock } from '../core/game';
-import { staffBeds, workerTitle } from '../core/workers';
+import { onWay, staffBeds, workerTitle } from '../core/workers';
 import { visitorsOf } from '../core/salon';
 import { trainState } from '../core/training';
 import { goldCap } from '../core/vault';
@@ -98,12 +98,12 @@ function heroTitle(s: GameState, h: Hero, candidate = false): string {
   if (candidate) return `${base} · busca trabajo`;
   if (h.status === 'herido')
     return `${base} · ${a('herido', 'herida')}, ${h.days} ${h.days === 1 ? 'día' : 'días'} en cama`;
-  return `${base} · ${taskLabel(s, h.id).toLowerCase()}`;
+  return `${base} · ${taskLabel(s, h.id).toLowerCase()}${onWay(s, h) ? ' (de camino)' : ''}`;
 }
 
 /** De un trabajador: su maña y su tarea, con las mismas palabras que Héroes › Tareas. */
 function workerHover(s: GameState, w: Worker): string {
-  return `Maña ${w.skill} · ${taskLabel(s, w.id).toLowerCase()}`;
+  return `Maña ${w.skill} · ${taskLabel(s, w.id).toLowerCase()}${onWay(s, w) ? ' (de camino)' : ''}`;
 }
 
 /** La barra de entrenamiento de un héroe (si entrena y aún puede subir). */
@@ -114,6 +114,8 @@ function trainBar(s: GameState, h: Hero): SceneHero['train'] {
 
 export function sceneModel(s: GameState): SceneModel {
   const heroes: SceneHero[] = [];
+  // Quien va a arreglar un incidente corre a esa sala.
+  const goTo = (id: string) => s.incidents?.find((i) => i.coming?.who === id)?.room;
   for (const h of s.heroes) {
     if (h.status === 'muerto' || h.status === 'desaparecido') continue;
     heroes.push({
@@ -126,6 +128,7 @@ export function sceneModel(s: GameState): SceneModel {
       guard: !!h.guard,
       // Mientras lo visten, está en la sastrería.
       work: dressingOf(s, h.id)?.room ?? h.job,
+      goTo: goTo(h.id),
       train: trainBar(s, h),
     });
   }
@@ -140,6 +143,7 @@ export function sceneModel(s: GameState): SceneModel {
       look: workerLook(w),
       marks: {},
       work: w.room,
+      goTo: goTo(w.id),
       staff: beds-- > 0 ? 'casa' : 'pueblo',
     });
   for (const h of s.candidates)
@@ -150,6 +154,16 @@ export function sceneModel(s: GameState): SceneModel {
       status: 'candidato',
       look: lookOf(h),
       marks: marksOf(h),
+    });
+  // Los trabajadores que buscan casa también esperan en la barra: al contratarlos, van andando.
+  for (const w of s.seekers)
+    heroes.push({
+      id: w.id,
+      name: workerTitle(w),
+      title: `Maña ${w.skill} · busca trabajo`,
+      status: 'candidato',
+      look: workerLook(w),
+      marks: {},
     });
   return {
     building: s.building,
@@ -170,11 +184,12 @@ export function sceneModel(s: GameState): SceneModel {
     trophies: s.trophies.map((t) => t.icon),
     vault: Math.min(1, s.gold / goldCap(s)),
     heroes,
-    incidents: (s.incidents ?? []).map(({ kind, room, taps, until }) => ({
+    incidents: (s.incidents ?? []).map(({ kind, room, taps, until, duel }) => ({
       kind,
       room,
       taps,
       until,
+      duel,
     })),
     clock: { day: s.day, secs: s.clock ?? 0 },
     crafts: (s.crafts ?? []).map((c) => {

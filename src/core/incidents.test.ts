@@ -48,10 +48,53 @@ describe('incidentes', () => {
     const worker = s.workers[0]!;
     expect(incidentIssue(s, 'i1', { by: 'who', who: worker.id })).toMatch(/héroe/);
     const hero = s.heroes.find((h) => h.status === 'ok')!;
-    const t = reduce(s, { type: 'incident', id: 'i1', act: { by: 'who', who: hero.id } });
+    const sent = reduce(s, { type: 'incident', id: 'i1', act: { by: 'who', who: hero.id } });
+    // Va andando: se arregla cuando llega a la sala (lo dice la escena).
+    expect(sent.incidents?.[0]?.coming?.who).toBe(hero.id);
+    expect(incidentIssue(sent, 'i1', { by: 'who', who: hero.id })).toMatch(/Ya va/);
+    const room = s.incidents![0]!.room;
+    expect(reduce(sent, { type: 'arrived', heroId: hero.id, room: 'otra' })).toBe(sent);
+    const t = reduce(sent, { type: 'arrived', heroId: hero.id, room });
     expect(t.incidents).toEqual([]);
     expect(t.rep).toBe(s.rep + (INCIDENTS.pelea.rep ?? 0));
     expect(t.incidentNews?.[0]?.t).toContain(hero.name);
+  });
+
+  it('ladrón: al llegar el héroe se pelean, golpe a golpe; al acabar, le pilla o se escapa', () => {
+    const s = withIncident('ladron');
+    const hero = s.heroes.find((h) => h.status === 'ok')!;
+    const room = s.incidents![0]!.room;
+    const sent = reduce(s, { type: 'incident', id: 'i1', act: { by: 'who', who: hero.id } });
+    const t = reduce(sent, { type: 'arrived', heroId: hero.id, room });
+    const duel = t.incidents?.[0]?.duel;
+    expect(duel?.who).toBe(hero.id);
+    expect(duel!.hits.length).toBeGreaterThan(2);
+    // Cada golpe quita vida: quien gana deja al otro a cero.
+    const dealt = duel!.hits.filter((h) => h.by === 'h').reduce((a, h) => a + h.amount, 0);
+    expect(dealt >= duel!.hp.l).toBe(duel!.won);
+    // Mientras pelean no sale mal, aunque se pase su hora.
+    const late = structuredClone(t);
+    expect(stepIncidents(late, 10, duel!.at + duel!.end - 0.2)).toEqual([]);
+    expect(late.incidents).toHaveLength(1);
+    const news = stepIncidents(late, 10, duel!.at + duel!.end);
+    expect(late.incidents).toEqual([]);
+    expect(news[0]?.k).toBe(duel!.won ? 'good' : 'bad');
+  });
+
+  it('mientras alguien va de camino no sale mal; si nadie dice que llega, se da por llegado', () => {
+    const s = withIncident('pelea');
+    const hero = s.heroes.find((h) => h.status === 'ok')!;
+    const inc = s.incidents![0]!;
+    const sent = reduce(s, { type: 'incident', id: 'i1', act: { by: 'who', who: hero.id } });
+    const at = sent.incidents![0]!.coming!.at;
+    const u = structuredClone(sent);
+    // Pasada su hora, sigue ahí (va de camino)…
+    stepIncidents(u, inc.until - 1, Math.min(at - 1, inc.until + 1));
+    if (at - 1 > inc.until) expect(u.incidents).toHaveLength(1);
+    // …y a su hora de llegada, arreglado.
+    const news = stepIncidents(u, at - 1, at);
+    expect(u.incidents).toEqual([]);
+    expect(news.some((n) => n.t.includes(hero.name))).toBe(true);
   });
 
   it('si ya hay quien sepa arreglarlo en la sala, se pone a ello solo', () => {
@@ -81,8 +124,10 @@ describe('incidentes', () => {
 
   it('fuego: vale cualquiera de la casa', () => {
     const s = withIncident('fuego');
-    const t = reduce(s, { type: 'incident', id: 'i1', act: { by: 'who', who: s.workers[0]!.id } });
-    expect(t.incidents).toEqual([]);
+    const w = s.workers[0]!;
+    const t = reduce(s, { type: 'incident', id: 'i1', act: { by: 'who', who: w.id } });
+    const done = reduce(t, { type: 'arrived', heroId: w.id, room: s.incidents![0]!.room });
+    expect(done.incidents).toEqual([]);
   });
 
   it('recaudador: se paga (y sube con el rango); sin dinero, no', () => {

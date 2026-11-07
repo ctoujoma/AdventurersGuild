@@ -67,6 +67,12 @@ const VISITOR_NAME: Record<string, string> = {
   espia: 'Forastero callado',
 };
 const SPEED = 36;
+/**
+ * Quien se manda a una sala arrastrándolo va corriendo (se le ha mandado algo, no va de paseo);
+ * a un incidente, aún más deprisa.
+ */
+const BRISK = 2.2;
+const RUSH = 2.5;
 /** Lo deprisa que se va hacia dentro o hacia fuera (más despacio que de lado: se ve en escorzo). */
 const Z_SPEED = 14;
 /**
@@ -596,6 +602,10 @@ type Tint = readonly [number, number, number];
 
 interface Actor {
   hero: SceneHero;
+  /** La sala de trabajo a la que ya se ha dicho que ha llegado (`onArrive`). */
+  told?: string;
+  /** Ya no es de la casa (despedido, o candidato que se va): sale por la puerta y desaparece. */
+  quit?: boolean;
   /** Sus fotogramas (para tocarle solo donde se le ve). */
   img: PixelBuffer;
   mat: ShaderMaterial;
@@ -980,6 +990,11 @@ export class Crowd {
   private now = 0;
   /** Sitios de las salas a los que se va a hacer algo (el tablón, la chimenea, el altar…). */
   private pois: Poi[] = [];
+  /**
+   * Alguien ha llegado andando a la sala de su tarea (una vez por tarea): así lo que depende de
+   * que esté allí (vestirle en la sastrería) empieza cuando se le ve llegar y no antes.
+   */
+  onArrive?: (id: string, room: string) => void;
 
   constructor(
     shared: Shared,
@@ -1007,9 +1022,24 @@ export class Crowd {
       a.goal = null;
       a.seat = null;
       a.wait = this.rnd() * 2;
-      if (!route(L, { x: a.x, floor: a.floor }, this.S.door, this.segs)) this.put(a, this.S.door);
+      if (!route(L, { x: a.x, floor: a.floor }, this.S.door, this.segs))
+        this.put(a, this.rescue(a));
       if (a.pose === 'sit' || a.pose === 'bed') a.pose = 'stand';
     }
+  }
+
+  /**
+   * Tras una obra, quien se ha quedado sin camino (en una sala que ya no está) aparece en el
+   * sitio con camino más cercano de su planta; si no hay ninguno, en la puerta.
+   */
+  private rescue(a: Actor): Place {
+    let best: Place | null = null;
+    for (const [x0, x1] of this.segs.get(a.floor) ?? []) {
+      const p = { x: Math.max(x0 + 8, Math.min(x1 - 8, a.x)), floor: a.floor };
+      if (best && Math.abs(p.x - a.x) >= Math.abs(best.x - a.x)) continue;
+      if (route(this.L!, p, this.S!.door, this.segs)) best = p;
+    }
+    return best ?? this.S!.door;
   }
 
   /**
@@ -1041,9 +1071,25 @@ export class Crowd {
       h.guard ? 0 : h.status === 'herido' ? 1 : h.status === 'ok' ? 2 : 3;
     const home = heroes.filter((h) => h.status !== 'mision').sort((a, b) => order(a) - order(b));
     const shown = new Set(home.slice(0, MAX_ACTORS).map((h) => h.id));
+    // Los que se van de la casa (despedidos, o candidatos que se cansan de esperar) salen
+    // andando por la puerta; si se van muchos a la vez (otra partida), se quitan sin más.
+    const lost = [...this.actors.values()].filter(
+      (a) => !a.hero.visitor && !a.hero.bandit && !heroes.some((x) => x.id === a.hero.id),
+    );
+    const walkOut = lost.length <= 2;
     for (const [id, a] of this.actors) {
       if (a.hero.visitor) continue;
       const h = heroes.find((x) => x.id === id);
+      if (!h && a.quit) continue;
+      if (!h && walkOut && !a.gone && !a.held && this.S) {
+        a.quit = true;
+        a.leaving = true;
+        a.goal = null;
+        a.seat = null;
+        a.task = null;
+        this.go(a, { place: outside(), pose: 'stand' });
+        continue;
+      }
       // El que acaba de salir de misión sigue hasta la puerta aunque ya no esté en casa.
       const going = h?.status === 'mision' && (a.leaving || a.hero.status === 'ok');
       if (!h || (!shown.has(id) && !going)) {
@@ -1052,12 +1098,18 @@ export class Crowd {
       }
       const was = a.hero.status;
       const work = a.hero.work;
+      const guard = a.hero.guard;
+      const goTo = a.hero.goTo;
       // Si ha cambiado su dibujo (equipo nuevo, herido o curado, u otra partida con los mismos
       // ids), se le rehace: si no, seguía con el de antes hasta que salía y volvía a entrar.
       const reskin = skinOf(a.hero) !== skinOf(h);
       a.hero = h;
       if (reskin) this.reskin(a);
-      if (work !== h.work && !a.gone && !a.leaving) a.wait = 0;
+      // Tarea nueva (o de guardia): va ya, sin acabar antes el paseo que llevaba.
+      if ((work !== h.work || goTo !== h.goTo || !guard !== !h.guard) && !a.gone && !a.leaving) {
+        a.wait = 0;
+        if (was === h.status && !a.climb && !a.held && !this.scripted) this.decide(a);
+      }
       if (was === h.status) continue;
       a.goal = null;
       a.path = [];
@@ -1066,8 +1118,14 @@ export class Crowd {
         // Coge sus cosas y sale por el recibidor hasta perderse en el patio.
         a.leaving = true;
         this.go(a, { place: outside(), pose: 'stand' });
-      } else if (was === 'mision' || was === 'candidato') {
-        if (was === 'mision') this.put(a, outside());
+      } else if (was === 'candidato') {
+        // Contratado: da un salto de alegría en la barra y de ahí va andando a lo suyo.
+        a.cheer = this.now + 1.4;
+        a.wait = 1.4;
+        a.pose = 'stand';
+        this.hired.push(id);
+      } else if (was === 'mision') {
+        this.put(a, outside());
         a.wait = 0;
       }
     }
@@ -1282,15 +1340,71 @@ export class Crowd {
       if (a.chat && !a.path.length) this.talk(a, t);
       if (a.path.length || (a.pose === 'walk' && this.sliding(a))) this.walk(a, dt);
       else if (a.leaving) {
-        if (!a.hero.visitor) this.away.add(a.hero.id);
+        if (!a.hero.visitor && !a.quit) this.away.add(a.hero.id);
         this.remove(a.hero.id);
         continue;
       } else if (a.homeward) {
         this.hide(a);
         continue;
       } else if ((a.wait -= dt) <= 0) this.decide(a);
+      this.tell(a);
       this.place(a, t);
     }
+  }
+
+  /**
+   * Si está parado dentro de la sala de su tarea y aún no se ha dicho, lo dice. Si sale de ella
+   * (a dormir, a cenar), se olvida: al volver lo dirá otra vez.
+   */
+  private tell(a: Actor): void {
+    // La sala a la que corre (un incidente) o, si no, la de su tarea.
+    const w = a.hero.goTo ?? a.hero.work;
+    if (!w || !this.inRoom(a, w)) {
+      a.told = undefined;
+      return;
+    }
+    if (a.told === w || a.path.length || a.pose === 'walk') return;
+    a.told = w;
+    this.onArrive?.(a.hero.id, w);
+  }
+
+  /** Si alguien está dentro de una sala (en su planta de abajo, entre sus paredes). */
+  private inRoom(a: Actor, room: string): boolean {
+    const r = this.L?.rooms.find((x) => x.room.id === room);
+    return !!r && a.floor === r.room.floor && a.x >= r.rect.x && a.x <= r.rect.x + r.rect.w;
+  }
+
+  /** Un sitio en medio de una sala, para ir a ella. */
+  private roomPlace(room: string): Place | null {
+    const r = this.L?.rooms.find((x) => x.room.id === room);
+    if (!r) return null;
+    const x = r.rect.x + r.rect.w / 2 + (this.rnd() - 0.5) * Math.min(30, r.rect.w / 3);
+    return { x, floor: r.room.floor };
+  }
+
+  /** Si alguien ya ha llegado a una sala y está parado en ella (para quitar la marca). */
+  arrived(id: string, room: string): boolean {
+    const a = this.actors.get(id);
+    if (!a || a.gone) return true;
+    return !a.held && !a.path.length && a.pose !== 'walk' && this.inRoom(a, room);
+  }
+
+  /**
+   * Quien ha pillado al ladrón le persigue un trecho (hasta `to`) y luego vuelve a lo suyo: el
+   * héroe que está en la sala más cerca de `x`.
+   */
+  chase(x: number, floor: number, to: Place): void {
+    let best: Actor | null = null;
+    for (const a of this.actors.values()) {
+      if (a.gone || a.held || a.leaving || a.hero.visitor || a.hero.bandit || a.hero.staff)
+        continue;
+      if (a.hero.status !== 'ok' || a.floor !== floor || Math.abs(a.x - x) > 80) continue;
+      if (!best || Math.abs(a.x - x) < Math.abs(best.x - x)) best = a;
+    }
+    if (!best || this.scripted) return;
+    this.go(best, { place: to, pose: 'stand' });
+    best.run = RUSH;
+    best.wait = 2.5;
   }
 
   /**
@@ -1300,7 +1414,7 @@ export class Crowd {
   hit(v: View, x: number, y: number): string | null {
     let best: { id: string; z: number; solid: boolean } | null = null;
     for (const a of this.actors.values()) {
-      if (a.gone) continue;
+      if (a.gone || a.quit) continue;
       const r = this.rectOf(a, v);
       if (!r || x < r.x || x > r.x + r.w || y < r.y || y > r.y + r.h) continue;
       const z = this.depth(a);
@@ -1365,9 +1479,12 @@ export class Crowd {
     const a = this.actors.get(id);
     if (!a?.held) return;
     a.held = null;
-    // Donde cae se queda un momento (le llega su tarea nueva) y luego va a lo suyo.
-    if (p) this.put(a, p);
-    a.wait = p ? 0.8 : 0;
+    a.wait = 0;
+    if (!p) return;
+    // No aparece allí: sale de donde estaba y va a paso ligero (le llega su tarea por el camino).
+    this.go(a, { place: p, pose: 'stand' });
+    a.run = BRISK;
+    a.wait = 0.5;
   }
 
   /** Quien está a la vista ahora mismo (ni fuera, ni en el pueblo, ni cogido con el dedo). */
@@ -1535,6 +1652,8 @@ export class Crowd {
   private dressing = new Map<string, string>();
   /** Golpes que han sonado este fotograma (martillazo en el yunque, temple en la artesa). */
   hits: Hit[] = [];
+  /** Los que acaban de contratarse (la escena les pone el destello y las monedas). */
+  hired: string[] = [];
 
   setCrafts(
     list: readonly {
@@ -2103,6 +2222,16 @@ export class Crowd {
       this.go(a, { place: outside(), pose: 'stand' });
       return;
     }
+    // A arreglar algo: corriendo a esa sala y allí se queda hasta que se arregla.
+    const to = h.goTo ? this.roomPlace(h.goTo) : null;
+    if (to && h.status === 'ok') {
+      a.task = null;
+      a.wait = 2;
+      if (this.inRoom(a, h.goTo!)) return;
+      this.go(a, { place: to, pose: 'stand' });
+      a.run = Math.max(a.run ?? 1, RUSH);
+      return;
+    }
     const home = this.homes.get(h.id);
     const job = this.workOf(a);
     if (!job) a.task = null;
@@ -2257,6 +2386,7 @@ export class Crowd {
 
   /** Ha llegado (en x y en profundidad): se pone como pide su destino. */
   private reach(a: Actor): void {
+    if (!this.scripted) a.run = undefined;
     if (a.goal && !a.leaving) {
       this.arrive(a, a.goal);
       // Se mete en la cama: primero incorporado y luego se tumba.

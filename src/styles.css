@@ -6740,3 +6740,21 @@ p.notebook-close {
 .garden-works small {
   opacity: 0.8;
 }
+
+/* El asalto en directo: la tira de los que defienden, abajo. */
+.raid-crew {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  z-index: 8;
+  padding: 6px;
+  background: color-mix(in srgb, var(--ink) 86%, transparent);
+  box-shadow: 0 0 0 2px var(--wine);
+}
+.raid-crew-hint {
+  margin: 0 0 4px;
+  font-size: var(--t-s);
+  color: var(--sand);
+  text-align: center;
+}

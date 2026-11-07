@@ -2,9 +2,16 @@
  * El asalto en la escena de salas: reproduce, paso a paso, la pelea que ya ha decidido el núcleo
  * (core/assault.ts). Los bandidos llegan por el camino, aporrean la puerta, recorren las salas
  * hasta la cámara, fuerzan la cerradura y salen con sus sacos; los nuestros se levantan de la
- * cama y corren a cortarles el paso. Aquí solo se mueve a la gente y se pintan los golpes.
+ * cama y corren a cortarles el paso. Aquí se mueve a la gente y se pintan los golpes, con la
+ * vida de cada uno y el daño de cada golpe.
+ *
+ * En directo (`live`), la pelea se va jugando a la vez que se ve y el jugador da órdenes:
+ * arrastrar a un héroe a una sala, tocar a un bandido (a por él) o a un héroe (crítico o
+ * habilidad).
  */
 import { P } from '../../art/palette';
+import { tinyDigits } from '../../art/digits';
+import type { Assault } from '../../core/assault';
 import type { RaidPlan, RaidStep } from '../../core/model';
 import { BANDIT_TYPES, banditLook } from '../battle';
 import type { PKind } from '../particles';
@@ -27,7 +34,16 @@ interface Area {
   floor: number;
 }
 
-const isBandit = (id: string) => /^b\d+$/.test(id);
+export const isBandit = (id: string) => /^b\d+$/.test(id);
+
+/** Un número de daño (o de cura) que sube y se apaga. */
+interface Float {
+  id: string;
+  text: string;
+  color: string;
+  t0: number;
+}
+const FLOAT_LIFE = 0.9;
 
 export class RaidShow {
   /** Segundos de asalto que ya se han visto. */
@@ -38,16 +54,26 @@ export class RaidShow {
   private sacks = new Map<string, number>();
   private door: { t0: number; dur: number; x: number } | null = null;
   private lock: { t0: number; dur: number; area: Area } | null = null;
-  private beat = new Map<string, number>();
   private lastHit = 0;
   private slot = new Map<string, number>();
+  /** Vida de cada uno (si el plan la trae) y la de al empezar. */
+  private hp = new Map<string, number>();
+  private max = new Map<string, number>();
+  private floats: Float[] = [];
+  private chances = new Set<string>();
 
   constructor(
     private plan: RaidPlan,
     L: RoomsLayout,
     private crowd: Crowd,
     private hooks: RaidHooks,
+    /** El asalto en marcha, si se juega en directo. */
+    readonly live: Assault | null = null,
   ) {
+    for (const [id, n] of Object.entries(plan.hp ?? {})) {
+      this.hp.set(id, n);
+      this.max.set(id, n);
+    }
     for (const { room, rect } of L.rooms) {
       if (room.type === 'torre') continue;
       const i = interior(rect);
@@ -65,13 +91,52 @@ export class RaidShow {
     for (const id of Object.keys(plan.start)) if (!isBandit(id)) this.slot.set(id, k++);
   }
 
+  /** Segundo en que acaba (en directo, mientras no ha acabado, todavía no se sabe). */
+  private get end(): number {
+    if (!this.live) return this.plan.end;
+    return this.live.result ? this.live.result.plan.end : Infinity;
+  }
+
   get done(): boolean {
-    return this.t >= this.plan.end + 0.5;
+    return this.t >= this.end + 0.5;
   }
 
   /** Lo que queda por ver, en segundos de reloj (para alargar la noche lo justo). */
   get left(): number {
-    return Math.max(0, this.plan.end + 0.5 - this.t) / RAID_SPEED;
+    return Math.max(0, this.end + 0.5 - this.t) / RAID_SPEED;
+  }
+
+  /** Vida de alguien ahora (0–1) y si está en pie; null si no se sabe. */
+  health(id: string): { hp: number; max: number } | null {
+    const max = this.max.get(id);
+    return max ? { hp: this.hp.get(id) ?? max, max } : null;
+  }
+
+  /** En directo: suelta a un héroe en una sala (va corriendo y se queda allí). */
+  send(id: string, room: string): boolean {
+    return !!this.live?.order({ kind: 'move', who: id, to: room });
+  }
+
+  /** En directo: los nuestros que están en la sala de ese bandido van a por él. */
+  aim(bandit: string): boolean {
+    const live = this.live;
+    const b = live?.unit(bandit);
+    if (!live || !b || b.down || b.gone || b.to) return false;
+    let any = false;
+    for (const d of live.defs())
+      if (!d.down && !d.to && d.node === b.node)
+        any = live.order({ kind: 'target', who: d.id, to: bandit }) || any;
+    if (any) this.hooks.sound('click', 0.6);
+    return any;
+  }
+
+  /** En directo: tocar a un héroe coge su crítico si lo tiene abierto; si no, su habilidad. */
+  tap(id: string): 'crit' | 'skill' | null {
+    const live = this.live;
+    if (!live) return null;
+    if (live.order({ kind: 'crit', who: id })) return 'crit';
+    if (live.order({ kind: 'skill', who: id })) return 'skill';
+    return null;
   }
 
   /** Dónde mirar: el grupo de bandidos que sigue en pie (o null si ya no queda ninguno). */
@@ -86,6 +151,9 @@ export class RaidShow {
 
   update(dt: number): void {
     this.t += dt * RAID_SPEED;
+    // En directo, la pelea se juega hasta el segundo que se ve.
+    const live = this.live;
+    if (live) while (!live.result && live.t < this.t) live.tick();
     const steps = this.plan.steps;
     while (this.next < steps.length && steps[this.next]!.t <= this.t)
       this.apply(steps[this.next++]!, false);
@@ -99,9 +167,13 @@ export class RaidShow {
 
   /** Se salta lo que queda: cada uno, directamente a donde acaba. */
   finish(): void {
+    // En directo, el resto se lo apañan solos.
+    this.live?.run();
     const steps = this.plan.steps;
     while (this.next < steps.length) this.apply(steps[this.next++]!, true);
-    this.t = this.plan.end + 0.5;
+    this.t = this.end + 0.5;
+    this.floats = [];
+    this.chances.clear();
     this.door = null;
     this.lock = null;
     this.fights.clear();
@@ -134,6 +206,47 @@ export class RaidShow {
       ctx.fillStyle = color;
       ctx.fillRect(x, y, Math.max(1, Math.round(W * Math.min(1, k))), 3);
     };
+    // La vida de cada uno que está en pie, sobre la cabeza.
+    for (const [id, max] of this.max) {
+      const w = this.crowd.where(id);
+      const hp = this.hp.get(id) ?? max;
+      if (!w || w.down || hp <= 0) continue;
+      const x = Math.round(w.x - px) - 6;
+      const y = Math.round(w.y - py) - 31;
+      const fill = Math.max(1, Math.round((12 * hp) / max));
+      ctx.fillStyle = P.black;
+      ctx.fillRect(x - 1, y - 1, 14, 4);
+      ctx.fillStyle = P.steel;
+      ctx.fillRect(x, y, 12, 2);
+      ctx.fillStyle = isBandit(id) ? P.red : hp / max < 0.35 ? P.gold : P.lime;
+      ctx.fillRect(x, y, fill, 2);
+    }
+    // La ocasión de crítico: un rombo amarillo que late (tocar al héroe para cogerlo).
+    const beat = Math.floor(this.t * 6) % 2;
+    for (const id of this.chances) {
+      const w = this.crowd.where(id);
+      if (!w || w.down) continue;
+      const x = Math.round(w.x - px);
+      const y = Math.round(w.y - py) - 40 - beat;
+      ctx.fillStyle = P.black;
+      ctx.fillRect(x - 2, y - 1, 5, 7);
+      ctx.fillStyle = P.lemon;
+      ctx.fillRect(x - 1, y + 1, 3, 3);
+      ctx.fillRect(x, y, 1, 5);
+    }
+    // Los números de daño (y de cura) suben y se apagan.
+    this.floats = this.floats.filter((f) => this.t - f.t0 < FLOAT_LIFE * RAID_SPEED);
+    for (const f of this.floats) {
+      const w = this.crowd.where(f.id);
+      if (!w) continue;
+      const k = (this.t - f.t0) / (FLOAT_LIFE * RAID_SPEED);
+      const x = Math.round(w.x - px - f.text.length * 2);
+      const y = Math.round(w.y - py - 36 - k * 10);
+      ctx.globalAlpha = k > 0.7 ? 1 - (k - 0.7) / 0.3 : 1;
+      tinyDigits(ctx, f.text, x + 1, y + 1, P.black);
+      tinyDigits(ctx, f.text, x, y, f.color);
+      ctx.globalAlpha = 1;
+    }
     if (this.door) bar(this.door.x, floorY(0) - 70, (this.t - this.door.t0) / this.door.dur, P.red);
     if (this.lock) {
       const a = this.lock.area;
@@ -203,6 +316,47 @@ export class RaidShow {
         this.sacks.delete(s.id);
         this.crowd.vanish(s.id);
         break;
+      case 'hit': {
+        this.hp.set(s.id, Math.max(0, (this.hp.get(s.id) ?? 0) - s.amount));
+        if (skip) break;
+        this.chances.delete(s.from);
+        const a = this.crowd.where(s.from);
+        const b = this.crowd.where(s.id);
+        if (a && b) {
+          const dir = b.x >= a.x ? 1 : -1;
+          this.crowd.strike(s.from, dir);
+          this.hooks.burst('spark', b.x - dir * 3, b.y - 14, s.crit ? 6 : 3);
+        }
+        this.floats.push({
+          id: s.id,
+          text: String(s.amount),
+          color: s.crit ? P.lemon : isBandit(s.id) ? P.white : P.red,
+          t0: this.t,
+        });
+        if (this.t - this.lastHit > 0.2) {
+          this.lastHit = this.t;
+          this.hooks.sound('hit', s.crit ? 0.9 : 0.5);
+        }
+        break;
+      }
+      case 'heal':
+        this.hp.set(
+          s.id,
+          Math.min(this.max.get(s.id) ?? Infinity, (this.hp.get(s.id) ?? 0) + s.amount),
+        );
+        if (!skip)
+          this.floats.push({ id: s.id, text: String(s.amount), color: P.lime, t0: this.t });
+        break;
+      case 'chance':
+        if (!skip) this.chances.add(s.id);
+        break;
+      case 'skill': {
+        if (skip) break;
+        const w = this.crowd.where(s.id);
+        if (w) this.hooks.burst(s.skill === 'curar' ? 'glint' : 'star', w.x, w.y - 18, 8);
+        this.hooks.sound('swing', 0.9);
+        break;
+      }
     }
   }
 
@@ -242,18 +396,8 @@ export class RaidShow {
         );
         const dx = foe.w!.x - u.w!.x;
         const dir = dx >= 0 ? 1 : -1;
-        if (Math.abs(dx) > 11) {
-          this.crowd.nudge(u.id, dir * Math.min(Math.abs(dx) - 10, 40 * dt));
-          continue;
-        }
-        if (this.t < (this.beat.get(u.id) ?? 0)) continue;
-        this.beat.set(u.id, this.t + 0.7 + ((u.id.charCodeAt(u.id.length - 1) * 37) % 50) / 100);
-        this.crowd.strike(u.id, dir);
-        if (this.t - this.lastHit > 0.25) {
-          this.lastHit = this.t;
-          this.hooks.burst('spark', u.w!.x + dir * 6, u.w!.y - 14, 3);
-          this.hooks.sound('hit', 0.5);
-        }
+        // Se arriman; los golpes los dan los pasos `hit` (los de verdad).
+        if (Math.abs(dx) > 11) this.crowd.nudge(u.id, dir * Math.min(Math.abs(dx) - 10, 40 * dt));
       }
       if (!any && !here.some((u) => u.w!.moving)) this.fights.delete(node);
     }

@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { LOCK_TIME, VAULT_STORE } from './balance';
-import { YARD, assaultSetup, raidGraph, raidRoute, simulate, type AssaultSetup } from './assault';
+import {
+  Assault,
+  YARD,
+  assaultSetup,
+  raidGraph,
+  raidRoute,
+  simulate,
+  type AssaultSetup,
+} from './assault';
 import { endDay, guardsFull, newGame, reduce } from './game';
 import type { GameState } from './model';
 import { Rng } from './rng';
@@ -128,5 +136,47 @@ describe('el asalto sala a sala', () => {
     // Quien cae, cae herido (no muere) y deja la guardia.
     for (const id of next.lastRaid!.hurt)
       expect(next.heroes.find((h) => h.id === id)).toMatchObject({ status: 'herido' });
+  });
+
+  it('cada uno tiene su vida y cada golpe quita lo suyo', () => {
+    const s = newGame('golpes');
+    s.gold = 300;
+    const r = simulate(assaultSetup(s, 20, new Rng('g')), 'g');
+    const hits = r.plan.steps.filter((x) => x.k === 'hit');
+    expect(hits.length).toBeGreaterThan(5);
+    // Nadie pierde más vida de la que tiene: quien cae, cae con su última vida gastada.
+    const left: Record<string, number> = { ...r.plan.hp };
+    for (const h of hits) if (h.k === 'hit') left[h.id]! -= h.amount;
+    for (const x of r.plan.steps)
+      if (x.k === 'fall' || x.k === 'down') expect(left[x.id]).toBeLessThanOrEqual(0);
+  });
+
+  it('con órdenes: el héroe va a la sala que se le dice y se repite igual', () => {
+    const s = newGame('ordenes');
+    const vault = roomOf(s, 'tesoro').id;
+    const set = assaultSetup(s, 20, new Rng('o'));
+    const a = new Assault(set, 'o');
+    const hero = a.defs().find((d) => !d.worker)!;
+    a.tick();
+    expect(a.order({ kind: 'move', who: hero.id, to: vault })).toBe(true);
+    // A una sala que no existe, no.
+    expect(a.order({ kind: 'move', who: hero.id, to: 'nada' })).toBe(false);
+    const r = a.run();
+    const moves = r.plan.steps.filter((x) => x.k === 'move' && x.ids.includes(hero.id));
+    expect(moves.at(-1)).toMatchObject({ to: vault });
+    // Con las mismas órdenes, lo mismo.
+    const again = simulate(set, 'o', a.orders);
+    expect(again.plan.steps).toEqual(r.plan.steps);
+  });
+
+  it('jugado en directo, el anochecer usa lo que pasó', () => {
+    const s = newGame('directo');
+    s.day = 20;
+    s.raid = { day: 20, band: 'los Hermanos Cuervo', strength: 20, warned: true };
+    const fake = simulate(assaultSetup(s, 20, new Rng('z')), 'z');
+    const fought = reduce({ ...s, tips: ['*'] }, { type: 'raidFought', result: fake });
+    const next = endDay(fought);
+    expect(next.lastRaid?.plan).toEqual(fake.plan);
+    expect(next.raidLive).toBeUndefined();
   });
 });

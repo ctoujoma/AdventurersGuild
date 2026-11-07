@@ -371,15 +371,19 @@ export const RAID_WAKE_DOG = 1.5;
 /** Con gente de guardia, dan la voz de alarma en cuanto ven las antorchas por el camino. */
 export const RAID_ALARM = 1;
 export const RAID_SPOT = 4;
-/** Vida de cada uno: héroes, trabajadores y bandidos. */
-export const HERO_HP = 12;
-/** Los de guardia están vestidos y armados: aguantan más. */
-export const GUARD_HP = 18;
-export const WORKER_HP = 8;
-export const BANDIT_HP = 12;
-/** Daño por segundo por punto de fuerza, y fuerza de cada bandido por punto de la banda. */
-export const FIGHT_RATE = 0.35;
-export const BANDIT_POWER = 0.75;
+/**
+ * La pelea: cada uno con su vida y sus golpes, con las cuentas de la pelea contra jefes
+ * (`core/combat.ts`). Paso de la simulación (s). Los héroes, su vida de siempre (`heroUnit`);
+ * los de guardia, vestidos y armados, aguantan más (multiplica).
+ */
+export const RAID_STEP = 0.1;
+export const GUARD_HP = 1.5;
+/** Vida de los trabajadores y de cada bandido. */
+export const WORKER_HP = 20;
+export const BANDIT_HP = 38;
+/** Daño de cada golpe de un bandido por punto de fuerza de la banda (repartida), y su ritmo. */
+export const BANDIT_POWER = 1.9;
+export const BANDIT_EVERY = 1.4;
 /** Oro que carga cada bandido: unos fijos más la fuerza de la banda. */
 export const BANDIT_CARRY = 40;
 /** Lo que se tarda en cargar los sacos. */
@@ -467,7 +471,24 @@ export const UNDO_CHANCE = [0, 0.5, 0.6, 0.7, 0.8] as const;
 export const DRESS_GOLD = 15;
 export const DRESS_HOURS = 4;
 export const DRESS_MORALE = 8;
-/** Horas de juego que se deja al héroe para llegar a la sastrería antes de empezar a coser. */
-export const DRESS_WALK = 1;
+/**
+ * Vestir empieza cuando el héroe llega a la sastrería (lo dice la escena); si nadie lo dice (sin
+ * escena o con la app cerrada), a las tantas horas de juego como mucho.
+ */
+export const DRESS_WALK = 2;
+/**
+ * Lo mismo con una tarea nueva (trabajar o entrenar): cuenta desde que llega a la sala o, si
+ * nadie lo dice, a las tantas horas de juego como mucho.
+ */
+export const JOB_WALK = 2;
+/** Segundos de reloj que se le dan a quien va a un incidente para llegar (si nadie lo dice). */
+export const INCIDENT_WALK = 25;
+/**
+ * El ladrón de la cámara pelea con quien llega: su vida (más por rango) y lo que aguanta antes de
+ * escaparse con el oro (s).
+ */
+export const THIEF_HP = 20;
+export const THIEF_HP_RANK = 10;
+export const THIEF_ESCAPE = 8;
 /** Probabilidad de que un encargo con éxito brillante traiga los planos de una receta. */
 export const RECIPE_FIND = 0.2;

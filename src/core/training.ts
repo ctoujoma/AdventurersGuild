@@ -9,7 +9,7 @@ import { TRAIN_CAP, TRAIN_COST_BASE, TRAIN_RATE } from './balance';
 import type { DawnEvent, GameState, Hero, Room } from './model';
 import { SKILLS, skill, type AttrId, type SkillId } from './party';
 import { active } from './rooms';
-import { slotsOf } from './workers';
+import { shiftShare, shiftStart, slotsOf } from './workers';
 
 export const ATTR_NAMES: Record<AttrId, string> = { F: 'Fuerza', D: 'Destreza', M: 'Mente' };
 
@@ -51,7 +51,9 @@ export function trainState(s: GameState, h: Hero, part = 0): TrainState | null {
   const cost = trainCost(h, t.attr);
   const capped = value >= cap;
   const perDay = capped ? 0 : trainRate(t.room) / cost;
-  const frac = capped ? 0 : Math.min(1, (h.train?.[t.attr] ?? 0) / cost + perDay * part);
+  // Cuenta la parte del día que lleva en la sala (quien llegó tarde, o aún va, menos).
+  const here = Math.max(0, part - shiftStart(h));
+  const frac = capped ? 0 : Math.min(1, (h.train?.[t.attr] ?? 0) / cost + perDay * here);
   return { attr: t.attr, value, cap, frac, perDay, capped };
 }
 
@@ -78,7 +80,8 @@ export function stepTraining(s: GameState, events: DawnEvent[]): void {
     const cap = trainCap(t.room);
     if (h.attrs[t.attr] >= cap) continue;
     const train = (h.train ??= {});
-    let p = (train[t.attr] ?? 0) + trainRate(t.room);
+    // Solo la parte del día que ha estado allí (si llegó a media jornada, menos).
+    let p = (train[t.attr] ?? 0) + trainRate(t.room) * shiftShare(h);
     while (p >= trainCost(h, t.attr) && h.attrs[t.attr] < cap) {
       p -= trainCost(h, t.attr);
       const gain = gainText(skillGain(h, t.attr));

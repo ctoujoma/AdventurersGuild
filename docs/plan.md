@@ -27,7 +27,11 @@ o está en «Más adelante», no se toca sin preguntar. El detalle de cada idea 
   ([`encargos/arte-talleres.md`](encargos/arte-talleres.md)). Hechos: colores, fachada, incidentes, los
   tres jefes, la tira con los enemigos por familias, la vuelta que deshace el camino y el mapa.
   Encargado también: que lo que pasa se vea pasar ([`encargos/arte-movimiento.md`](encargos/arte-movimiento.md):
-  auditoría, contratar andando, el ladrón que huye de verdad, el rótulo que se balancea).
+  auditoría, contratar andando, el ladrón que huye de verdad, el rótulo que se balancea). Hecho
+  ya: la auditoría, la sastrería que empieza al llegar el héroe, contratar y despedir andando y el
+  ladrón que huye por la casa, arrastrar andando, las tareas e incidentes que empiezan al llegar
+  y la persecución (ver las tablas del encargo); quedan el rótulo, la marca de destino definitiva
+  y el arte del sastre.
 - **Agente de interfaz:** terminado lo encargado (trabajadores, menos toques, avisos que se
   descartan, el cobro de Merlo, las cartas del amanecer una a una, el mapa grande). Le queda
   suelto: un globito en la escena sobre la sala sin nadie (con arte).
@@ -192,9 +196,9 @@ sitio (comprar solar o excavar, mover, construir, ampliar, mejorar). De un agent
   que «Que se las apañen». Determinista: el núcleo la vuelve a jugar con las órdenes y el informe
   la repite igual. Calibrado con `npm run calib`: sola sale como la tirada de antes (≈ 80 %);
   jugando bien, unos 6–8 puntos más.
-  **Falta:** llevarla a los asaltos a la taberna. Propuesta para decidir:
-  [`propuesta-asaltos.md`](propuesta-asaltos.md) (mover a la gente por la taberna, vida a la
-  vista, la pelea de cada sala con las reglas de los jefes).
+  **Hecho, los asaltos en directo** ([`propuesta-asaltos.md`](propuesta-asaltos.md)): vida y
+  daño por golpe, mover a la gente por la taberna, blanco, habilidades y críticos; y el ladrón
+  de la cámara pelea. Arte: [`encargos/arte-asaltos.md`](encargos/arte-asaltos.md).
   **Formaciones y táctica antes de entrar: para más adelante** (usuario: no complicar; tienen
   sentido con arena, torneos o peleas entre amigos, no en el asalto de noche).
 - **Críticos con gesto (hecho):** tras un golpe, a veces sale un rombo amarillo sobre el héroe;
@@ -307,8 +311,8 @@ en medio, para que los edificios salgan más interesantes (y, más adelante, pas
 
 ## Pendiente de revisar
 
-- **Asaltos en directo:** decidir la propuesta ([`propuesta-asaltos.md`](propuesta-asaltos.md)),
-  y con ella si arrastrar a alguien le hace ir andando en lugar de aparecer allí.
+- **Asaltos en directo** (hechos): probarlos y decir si se quiere cámara lenta al arrastrar o
+  premio por jugarlo bien.
 - **Hecho (6 de noviembre):** la velocidad x2/x4 también acelera la escena, y la sastrería no
   cose hasta que llega el héroe.
 

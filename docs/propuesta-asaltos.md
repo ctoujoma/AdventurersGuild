@@ -54,6 +54,26 @@ críticos con rombo).
 - **Arte:** barras de vida y números en la escena, caídas, la marca de destino, la persecución
   con los sacos y los golpes por clase. Se le encarga cuando el usuario dé el visto bueno.
 
+## Hecho (7 de noviembre)
+
+- **Vida y daño de verdad:** cada uno con su vida (los héroes, la de la pelea contra jefes; los
+  de guardia, un 50 % más; trabajadores y bandidos, la suya) y cada golpe quita lo suyo
+  (ataque menos media defensa, ±15 %, críticos ×1,8). Habilidades de clase y críticos con rombo,
+  como contra jefes. `core/assault.ts` (`Assault`), cifras en `balance.ts` (`RAID_STEP`,
+  `BANDIT_*`, `WORKER_HP`, `GUARD_HP`).
+- **En directo:** al caer la noche con asalto y la escena a la vista, se juega: arrastrar a un
+  héroe a una sala (va corriendo y se queda), tocar a un bandido (los de esa sala van a por
+  él), tocar a un héroe o su botón (crítico o habilidad). Abajo, la tira con la vida y la
+  habilidad de cada uno. «Que se las apañen» lo acaba solo. Al acabar, el anochecer usa lo que
+  ha pasado (acción `raidFought`). Con el juego cerrado, se juega solo, como siempre.
+- **Calibrado** con `npm run sim`: sin jugar, se ganan algo más que antes (85–90 % frente a
+  82–87 %); jugando, más.
+- **El ladrón de la cámara pelea:** al llegar el héroe, un duelo golpe a golpe (`thiefDuel`,
+  `Incident.duel`); si no le tumba en 8 s, se escapa con el oro. Más duro con el rango
+  (`THIEF_*`): al principio se le pilla casi siempre; en oro, la mitad con héroes novatos.
+- Sin cámara lenta al arrastrar y sin premio extra por ahora (se pueden añadir).
+- Arte: [`encargos/arte-asaltos.md`](encargos/arte-asaltos.md).
+
 ## Para decidir
 
 1. ¿Cámara lenta mientras se arrastra a alguien, o el tiempo sigue a su ritmo?
@@ -63,3 +83,5 @@ críticos con rombo).
    aparecer allí? Va de la mano: en el asalto tiene que correr, y es mejor que de día haga lo
    mismo. Propuesta: sí, de día **andando a paso ligero** con la marca en el destino, y la tarea
    empieza al llegar (en los incidentes, la pelea o el ladrón empiezan cuando llega).
+   **Decidido y hecho** (7 de noviembre): así funciona ya de día (ver
+   [`encargos/arte-movimiento.md`](encargos/arte-movimiento.md)).

@@ -40,3 +40,32 @@ Lo que ya ha hecho el agente principal (no tocarlo, usarlo):
    de la lógica (`crowd.drop`, la tarea al llegar); a arte le tocará la marca.
 
 Rama propia, PR contra `main`. Si se toca `crowd.ts` o `App.tsx`, decirlo en el PR.
+
+## Auditoría (7 de noviembre) y lo arreglado
+
+Recorrido de los momentos en que alguien aparece, desaparece o algo empieza sin que se vea.
+
+| Momento | Antes | Ahora |
+| --- | --- | --- |
+| Vestir en la sastrería | Empezaba a coser tras 1 h fija, llegase o no el héroe | Empieza **cuando la escena le ve llegar** a la sala (`Crowd.onArrive` → acción `arrived` → `arrive()` en `core/crafting.ts`). `Craft.wait` marca que aún va de camino; si nadie avisa (sin 3D, app cerrada), empieza a las `DRESS_WALK` (2 h) como mucho. Mientras, el sastre le espera junto al probador sin coser |
+| Contratar a un trabajador | No estaba en la escena hasta contratarlo y aparecía en su sala | Los trabajadores que buscan casa esperan en la barra (como los héroes candidatos; si no caben, a su lado). Al contratarlo da un salto de alegría con destellos y monedas y va andando a su sala |
+| Contratar a un héroe | Iba andando, sin más | Igual que el trabajador: salto, destellos y monedas |
+| Despedir (héroe o trabajador), candidato que se va | Se esfumaba donde estuviera | Sale andando por la puerta y se pierde en el patio |
+| Cambiar de tarea o de guardia | Acababa antes el paseo que llevaba (hasta 15 s); la guardia no se notaba hasta su siguiente decisión | Va ya a lo nuevo |
+| El ladrón del tesoro | Corría a 45–60 y desaparecía al llegar a la pared de la cámara | Huye por el camino de la gente: sala a sala, las escaleras, el recibidor y el patio hasta el camino, a 44–50 (quien anda va a 36), perdiendo monedas si se sale con la suya; las puertas se le abren |
+
+Segunda pasada (lo que quedaba, también hecho):
+
+| Momento | Antes | Ahora |
+| --- | --- | --- |
+| Tarea nueva (trabajar o entrenar) | Contaba el día entero para quien estuviera apuntado al caer la noche, aunque llegase a las 23:59 | Va de camino (`walk`) y cuenta desde que llega (`since`, con la misma acción `arrived`); al caer la noche, cada uno suma solo la parte del día que ha estado allí (cocina, bodega, enfermería, salón y entrenamiento: `workAt`, `shiftShare`). Los talleres, que van con el reloj, cuentan a quien está ahora (`workAt(…, true)`). Tope si nadie avisa: `JOB_WALK` (2 h). Al pasar el ratón: «(de camino)» |
+| Incidente: mandar a alguien | Se arreglaba al soltarlo | Va corriendo (`SceneHero.goTo`) y se arregla al llegar (`Incident.coming`, `arriveIncident`); mientras va, no sale mal. Tope si nadie avisa: `INCIDENT_WALK` (25 s de reloj) |
+| Arrastrar a alguien a una sala | Aparecía donde se soltaba | Sale de donde estaba y va corriendo, con cuatro esquinas que laten en la sala de destino hasta que llega (`headingMarks`) |
+| El ladrón pillado | Huía solo | Quien le ha pillado le persigue hasta la puerta o el pie de la escalera y vuelve a lo suyo (`IncidentArt.onFlee` → `Crowd.chase`) |
+| Tras una obra, sin camino | Aparecía en la puerta | Aparece en el sitio con camino más cercano de su planta (`Crowd.rescue`); solo si no hay, en la puerta |
+| Al que visten en la sastrería | Su tarea seguía contando | No cuenta mientras le visten |
+
+Queda para el agente de arte: la marca de destino definitiva (silueta o banderín con el icono de
+la tarea), el punto 2 (el sastre que mide y prueba) y el 5 (el rótulo). Los golpes al alcanzar al
+ladrón no: llegarán con el combate nuevo de los asaltos (ver
+[`../propuesta-asaltos.md`](../propuesta-asaltos.md)).

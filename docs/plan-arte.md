@@ -142,9 +142,10 @@ npm run build`.
         de lo que va a hacer (arreglar lo que pasa, descansar, guardia o el de la sala), clavado
         en el suelo a un lado de donde va. Al arrastrar, uno tenue de muestra donde caerá; al
         soltar, cae, rebota y deja una onda en el suelo; se queda hasta que llega
-        (`Crowd.where` en su sitio y parado; al menos 1,1 s) y se funde con unos destellos. Hoy
-        se le pone allí de golpe, así que dura ese momento; cuando vaya andando (núcleo,
-        `crowd.drop`) dura todo el camino sin tocar nada más.
+        (`Crowd.arrived` en la sala, o parado en su sitio; al menos 1,1 s) y se funde con unos
+        destellos. Ya va corriendo (lo del principal en `crowd.drop`), así que dura todo el
+        camino. Sustituye a las cuatro esquinas provisionales (`headingMarks`, quitado); en el
+        asalto en directo, el mismo banderín con la espada.
   - [x] 6b. El camino (el usuario: «un trazado con el camino que harán y que desaparezca a los
         pocos segundos»): al soltar, un punteado amarillo que avanza por el suelo, por puertas y
         escaleras (`route`), de donde estaba hasta el banderín (`wayTo`, `trace`); entero un

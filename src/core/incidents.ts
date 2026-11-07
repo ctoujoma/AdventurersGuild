@@ -6,17 +6,24 @@
  */
 import { INCIDENTS, type IncidentKind } from '../data/incidents';
 import {
+  INCIDENT_WALK,
   DAY_SECONDS,
   DUSK,
   INCIDENT_EVERY,
   INCIDENT_FROM_DAY,
   INCIDENT_REACT,
   INCIDENT_RANK_COST,
+  THIEF_ESCAPE,
+  THIEF_HP,
+  THIEF_HP_RANK,
   rankIndex,
 } from './balance';
-import type { ChipKind, DawnEvent, GameState, Incident } from './model';
+import { CRIT, CRIT_MULT, heroUnit } from './combat';
+import type { ChipKind, DawnEvent, Duel, DuelHit, GameState, Incident } from './model';
+import { equip } from './resolve';
 import { Rng } from './rng';
 import { active } from './rooms';
+import { onWay } from './workers';
 
 /** Lo último que ha pasado con los incidentes, para el aviso de la interfaz. */
 export type IncidentNews = { t: string; k: ChipKind };
@@ -52,8 +59,27 @@ function places(s: GameState, kind: IncidentKind): string[] {
  */
 export function stepIncidents(s: GameState, from: number, to: number): IncidentNews[] {
   const news: IncidentNews[] = [];
-  // Quien ya está en la sala y sabe arreglarlo se pone a ello solo (sin que haya que arrastrarlo).
   for (const inc of [...(s.incidents ?? [])]) {
+    const c = inc.coming;
+    if (c) {
+      // Quien iba de camino ya no puede ir (ha salido, se ha herido, se ha ido): vuelve a correr.
+      if (!canGo(s, inc, c.who)) {
+        s.incidents = s.incidents!.map((i) => (i === inc ? { ...i, coming: undefined } : i));
+        continue;
+      }
+      // Si nadie dice que ha llegado (sin escena o con la app cerrada), se da por llegado.
+      if (to >= c.at) {
+        const n = reach(s, inc, c.who);
+        if (n) news.push(n);
+      }
+      continue;
+    }
+    // La pelea con el ladrón: al acabar, le pilla o se escapa.
+    if (inc.duel) {
+      if (to >= inc.duel.at + inc.duel.end) news.push(settleDuel(s, inc));
+      continue;
+    }
+    // Quien ya está en la sala y sabe arreglarlo se pone a ello solo (sin que haya que arrastrarlo).
     if (to < inc.from + INCIDENT_REACT) continue;
     const who = presentFor(s, inc);
     if (who) {
@@ -61,9 +87,11 @@ export function stepIncidents(s: GameState, from: number, to: number): IncidentN
       news.push(win(s, inc, who));
     }
   }
+  // Sale mal al acabarse el tiempo, salvo que alguien vaya ya de camino.
   const list = s.incidents ?? [];
-  for (const inc of list.filter((i) => i.until <= to)) news.push(lose(s, inc));
-  s.incidents = list.filter((i) => i.until > to);
+  const late = (i: Incident) => i.until <= to && !i.coming && !i.duel;
+  for (const inc of list.filter(late)) news.push(lose(s, inc));
+  s.incidents = list.filter((i) => !late(i));
   // Uno a la vez, desde el segundo día y con tiempo de resolverlo antes de que anochezca.
   if (s.day < INCIDENT_FROM_DAY || s.incidents.length || s.over) return news;
   const rng = new Rng(s.rng);
@@ -98,10 +126,95 @@ export function stepIncidents(s: GameState, from: number, to: number): IncidentN
 export function presentFor(s: GameState, inc: Pick<Incident, 'kind' | 'room'>): string | null {
   const how = INCIDENTS[inc.kind].how;
   if (how !== 'heroe' && how !== 'alguien') return null;
-  const hero = s.heroes.find((h) => h.status === 'ok' && h.job === inc.room);
+  // Quien aún va de camino a su sala no está allí.
+  const hero = s.heroes.find((h) => h.status === 'ok' && h.job === inc.room && !onWay(s, h));
   if (hero) return hero.name;
-  if (how === 'alguien') return s.workers.find((w) => w.room === inc.room)?.name ?? null;
+  if (how === 'alguien')
+    return s.workers.find((w) => w.room === inc.room && !onWay(s, w))?.name ?? null;
   return null;
+}
+
+/** El nombre de alguien de la casa (héroe o trabajador). */
+const nameOf = (s: GameState, id: string) =>
+  s.heroes.find((h) => h.id === id)?.name ?? s.workers.find((w) => w.id === id)?.name ?? 'Alguien';
+
+/** Si alguien puede ir a arreglar un incidente (héroe en casa o, si vale cualquiera, trabajador). */
+function canGo(s: GameState, inc: Incident, who: string): boolean {
+  const how = INCIDENTS[inc.kind].how;
+  if (s.heroes.some((h) => h.id === who && h.status === 'ok')) return true;
+  return how === 'alguien' && s.workers.some((w) => w.id === who);
+}
+
+/**
+ * La escena dice que alguien ha llegado a una sala: si iba a arreglar el incidente de allí, lo
+ * arregla. El estado ya es una copia (se copia la lista). Devuelve la noticia, si la hay.
+ */
+export function arriveIncident(s: GameState, who: string, room: string): IncidentNews | null {
+  const inc = s.incidents?.find((i) => i.room === room && i.coming?.who === who);
+  if (!inc) return null;
+  return reach(s, inc, who);
+}
+
+/** Llega quien iba: lo arregla; al ladrón, primero hay que ganarle la pelea. */
+function reach(s: GameState, inc: Incident, who: string): IncidentNews | null {
+  const duel = inc.kind === 'ladron' ? thiefDuel(s, who, inc.id, s.clock ?? 0) : null;
+  if (!duel) {
+    done(s, inc);
+    return win(s, inc, nameOf(s, who));
+  }
+  s.incidents = (s.incidents ?? []).map((i) => (i === inc ? { ...i, coming: undefined, duel } : i));
+  return null;
+}
+
+/** Acaba el duelo con el ladrón: le pilla o se escapa con el oro. */
+function settleDuel(s: GameState, inc: Incident): IncidentNews {
+  const d = inc.duel!;
+  done(s, inc);
+  if (d.won) return win(s, inc, nameOf(s, d.who));
+  const n = lose(s, inc);
+  return { ...n, t: `${nameOf(s, d.who)} no puede con él. ${n.t}` };
+}
+
+/**
+ * La pelea con el ladrón, golpe a golpe (con las cuentas de la pelea contra jefes): si el héroe
+ * lo tumba antes de que pasen `THIEF_ESCAPE` segundos, le pilla; si no, se escapa. Más duro con
+ * cada rango. Determinista con la semilla del incidente.
+ */
+export function thiefDuel(s: GameState, who: string, seed: string, at: number): Duel | null {
+  const h = s.heroes.find((x) => x.id === who && x.status === 'ok');
+  if (!h) return null;
+  const u = heroUnit({ ...equip([h], s.fac)[0]!, id: h.id, name: h.name });
+  const rank = rankIndex(s.rep);
+  const thief = { hp: THIEF_HP + THIEF_HP_RANK * rank, atk: 3 + 1.5 * rank, every: 1.1, def: 1 };
+  const rng = new Rng(`ladron-${seed}`);
+  let hh = u.max;
+  let lh = thief.hp;
+  let ch = u.every * 0.5;
+  let cl = thief.every * 0.8;
+  const hits: DuelHit[] = [];
+  let t = 0;
+  for (; t < THIEF_ESCAPE && lh > 0 && hh > 0; t = Math.round((t + 0.1) * 10) / 10) {
+    ch -= 0.1;
+    cl -= 0.1;
+    if (ch <= 0) {
+      ch += u.every;
+      const crit = rng.chance(CRIT);
+      const raw = u.atk * (0.85 + rng.next() * 0.3) * (crit ? CRIT_MULT : 1);
+      const amount = Math.min(lh, Math.max(1, Math.round(raw - thief.def * 0.5)));
+      lh -= amount;
+      hits.push({ t, by: 'h', amount, crit: crit || undefined });
+    }
+    if (cl <= 0 && lh > 0) {
+      cl += thief.every;
+      const amount = Math.min(
+        hh,
+        Math.max(1, Math.round(thief.atk * (0.85 + rng.next() * 0.3) - u.def * 0.5)),
+      );
+      hh -= amount;
+      hits.push({ t, by: 'l', amount });
+    }
+  }
+  return { who, at, end: t + 0.6, won: lh <= 0, hits, hp: { h: u.max, l: thief.hp } };
 }
 
 /** Sale mal: se pierde lo que diga y se cuenta. */
@@ -141,12 +254,11 @@ export function incidentIssue(s: GameState, id: string, act: IncidentAct): strin
   const d = INCIDENTS[inc.kind];
   if (act.by === 'who') {
     if (d.how !== 'heroe' && d.how !== 'alguien') return d.ask;
-    const hero = s.heroes.find((h) => h.id === act.who && h.status === 'ok');
-    const worker = s.workers.find((w) => w.id === act.who);
-    if (!hero && !(worker && d.how === 'alguien'))
+    if (!canGo(s, inc, act.who))
       return d.how === 'heroe'
         ? 'Para esto hace falta un héroe.'
         : 'Tiene que ser alguien de casa.';
+    if (inc.coming) return `Ya va ${nameOf(s, inc.coming.who)}.`;
     return null;
   }
   if (act.by === 'pagar') {
@@ -166,12 +278,11 @@ export function actOnIncident(s: GameState, id: string, act: IncidentAct): Incid
   const inc = (s.incidents ?? []).find((i) => i.id === id)!;
   const d = INCIDENTS[inc.kind];
   if (act.by === 'who') {
-    const name =
-      s.heroes.find((h) => h.id === act.who)?.name ??
-      s.workers.find((w) => w.id === act.who)?.name ??
-      'Alguien';
-    done(s, inc);
-    return win(s, inc, name);
+    // Va andando: se arregla cuando llega (`arriveIncident`); mientras, no sale mal.
+    s.incidents = s.incidents!.map((i) =>
+      i === inc ? { ...i, coming: { who: act.who, at: (s.clock ?? 0) + INCIDENT_WALK } } : i,
+    );
+    return null;
   }
   if (act.by === 'pagar') {
     s.gold -= incidentCost(s, inc);
@@ -192,8 +303,23 @@ export function actOnIncident(s: GameState, id: string, act: IncidentAct): Incid
   return { t: c.text + rep, k: (c.rep ?? 0) >= 0 ? 'good' : 'warn' };
 }
 
-/** Al caer la noche, lo que quede sin resolver sale mal y va a la carta del amanecer. */
+/**
+ * Al caer la noche, lo que quede sin resolver sale mal y va a la carta del amanecer (si alguien
+ * iba ya de camino, llega y lo arregla).
+ */
 export function failIncidents(s: GameState, events: DawnEvent[]): void {
-  for (const inc of s.incidents ?? []) events.push(lose(s, inc));
+  for (const inc of [...(s.incidents ?? [])]) {
+    if (inc.duel) {
+      events.push(settleDuel(s, inc));
+      continue;
+    }
+    if (inc.coming && canGo(s, inc, inc.coming.who)) {
+      const n = reach(s, inc, inc.coming.who);
+      const now = s.incidents?.find((i) => i.id === inc.id);
+      events.push(n ?? settleDuel(s, now!));
+      continue;
+    }
+    events.push(lose(s, inc));
+  }
   s.incidents = [];
 }

@@ -90,7 +90,9 @@ import { Pets, kindOf, type Perch, type PetId } from './pets';
 import { IncidentArt } from './incidents';
 import { FLAME_FRAMES, FLAME_H, FLAME_W, flameStrip } from './flame';
 import { faces, sideTexel, type Mat } from './volume';
-import { RaidShow } from './raid';
+import { RaidShow, isBandit } from './raid';
+import { DAY_SECONDS } from '../../core/balance';
+import type { Assault } from '../../core/assault';
 import { HEARTH_RIGHT, NO_LOOK, type SalonLook } from './salon';
 import {
   FEW_LIGHTS,
@@ -394,7 +396,7 @@ export class RoomScene {
    */
   private goals = new Map<
     string,
-    { x: number; floor: number; icon: GoalIcon; t0: number; out?: number }
+    { room: string; x: number; floor: number; icon: GoalIcon; t0: number; out?: number }
   >();
   private perch: Perch | null = null;
   /**
@@ -536,6 +538,8 @@ export class RoomScene {
   /** El asalto de esta noche: espera a que oscurezca y luego se ve entero (o se salta). */
   private raid: RaidShow | null = null;
   private raidPlan: RaidResult['plan'] | null = null;
+  /** El asalto que se juega en directo esta noche (si lo hay). */
+  private raidLive: Assault | null = null;
   /** Zoom de antes del asalto (durante la pelea se acerca un poco). */
   private raidZoom: number | null = null;
   /** Por dónde entrarían los bandidos hasta la cámara: puntos del camino (en el mundo). */
@@ -610,6 +614,8 @@ export class RoomScene {
     };
     canvas.addEventListener('webglcontextlost', (e) => e.preventDefault());
     this.pets.sound = (name, v) => this.cb.onSound?.(name, v);
+    this.crowd.onArrive = (id, room) => this.cb.onArrive?.(id, room);
+    this.incidents.onFlee = (x, level, to) => this.crowd.chase(x, level, to);
     this.bindInput();
   }
 
@@ -747,6 +753,66 @@ export class RoomScene {
         const before = prev.rooms.find((x) => x.id === r.id);
         if (!before || r.level > before.level || (before.works && !r.works)) this.celebrate(r.id);
       }
+  }
+
+  /** Golpes del duelo con el ladrón ya enseñados (por sala). */
+  private duelShown = new Map<string, number>();
+
+  /**
+   * La pelea con el ladrón: cada golpe a su segundo del reloj (quien ha llegado ataca y el ladrón
+   * responde), con la vida de los dos encima y los números de daño.
+   */
+  private drawDuels(ctx: CanvasRenderingContext2D, px: number, py: number): void {
+    const list = (this.model?.incidents ?? []).filter((i) => i.duel);
+    for (const room of [...this.duelShown.keys()])
+      if (!list.some((i) => i.room === room)) this.duelShown.delete(room);
+    if (!list.length) return;
+    const secs = (this.clockTod ?? 0) * DAY_SECONDS;
+    for (const inc of list) {
+      const d = inc.duel!;
+      const thief = this.incidents.thiefAt(inc.room);
+      const hero = this.crowd.where(d.who);
+      if (!thief || !hero) continue;
+      const now = secs - d.at;
+      const shown = this.duelShown.get(inc.room) ?? 0;
+      const past = d.hits.filter((h) => h.t <= now);
+      // Los golpes nuevos: el héroe atiza (con chispas) y suena.
+      for (const h of past.slice(shown)) {
+        if (h.by === 'h') {
+          this.crowd.strike(d.who, thief.x >= hero.x ? 1 : -1);
+          for (let i = 0; i < (h.crit ? 6 : 3); i++)
+            this.particles.spawn('spark', thief.x + (Math.random() - 0.5) * 6, thief.y - 14);
+        } else for (let i = 0; i < 2; i++) this.particles.spawn('spark', hero.x, hero.y - 14);
+        this.cb.onSound?.('hit', h.crit ? 0.9 : 0.5);
+      }
+      this.duelShown.set(inc.room, past.length);
+      const lost = (by: 'h' | 'l') =>
+        past.filter((h) => h.by !== by).reduce((a, h) => a + h.amount, 0);
+      const bar = (x: number, y: number, k: number, color: string) => {
+        const X = Math.round(x - px) - 6;
+        const Y = Math.round(y - py) - 31;
+        ctx.fillStyle = P.black;
+        ctx.fillRect(X - 1, Y - 1, 14, 4);
+        ctx.fillStyle = P.steel;
+        ctx.fillRect(X, Y, 12, 2);
+        ctx.fillStyle = color;
+        ctx.fillRect(X, Y, Math.max(0, Math.round(12 * k)), 2);
+      };
+      bar(hero.x, hero.y, 1 - lost('h') / d.hp.h, P.lime);
+      bar(thief.x, thief.y, 1 - lost('l') / d.hp.l, P.red);
+      // Los números de los golpes del último segundo, subiendo.
+      for (const h of past) {
+        const k = now - h.t;
+        if (k > 0.9) continue;
+        const at = h.by === 'h' ? thief : hero;
+        const text = String(h.amount);
+        const X = Math.round(at.x - px - text.length * 2);
+        const Y = Math.round(at.y - py - 36 - k * 10);
+        const color = h.crit ? P.lemon : h.by === 'h' ? P.white : P.red;
+        tinyDigits(ctx, text, X + 1, Y + 1, P.black);
+        tinyDigits(ctx, text, X, Y, color);
+      }
+    }
   }
 
   /** Pone en sus salas los incidentes de ahora (y la luz del fuego) y quita los que acabaron. */
@@ -1051,16 +1117,27 @@ export class RoomScene {
    * Noche con asalto: al oscurecer llegan los bandidos y se ve la pelea sala a sala tal como la
    * ha decidido el núcleo; al acabar (o al saltarla), amanece.
    */
-  raidNight(raid: Pick<RaidResult, 'plan'>, done: () => void): void {
-    if (!raid.plan || !this.layout) return this.nightfall(done);
+  raidNight(raid: Pick<RaidResult, 'plan'>, done: () => void, live?: Assault): void {
+    if (!raid.plan || !this.layout) {
+      live?.run();
+      return this.nightfall(done);
+    }
     this.raidPlan = raid.plan;
+    this.raidLive = live ?? null;
     this.nightfall(done, 2.6, Infinity);
+  }
+
+  /** El asalto en directo que se está viendo (para la tira de retratos), si lo hay. */
+  get liveRaid(): RaidShow | null {
+    return this.raid?.live ? this.raid : null;
   }
 
   skipRaid(): void {
     if (this.raid) this.raid.finish();
     else if (this.raidPlan && this.night) {
-      // Aún no había empezado: se da por visto y amanece.
+      // Aún no había empezado: se da por visto (en directo, se lo apañan solos) y amanece.
+      this.raidLive?.run();
+      this.raidLive = null;
       this.raidPlan = null;
       this.night.hold = 0;
     }
@@ -2525,7 +2602,7 @@ export class RoomScene {
     const zh = DOOR_U1 * 2;
     const len = (DOOR_U1 - DOOR_U0) * 2;
     for (const d of this.doors) {
-      const who = this.crowd.near(d.xm, d.floor, 16);
+      const who = this.crowd.near(d.xm, d.floor, 16) ?? this.incidents.near(d.xm, d.floor, 16);
       if (who !== null && d.open < 0.05) d.dir = who < d.xm ? 1 : -1;
       const target = who === null ? 0 : 1;
       let next = d.open + (target - d.open) * Math.min(1, dt * 6);
@@ -3334,6 +3411,22 @@ export class RoomScene {
         for (let i = 0; i < 3; i++) this.particles.spawn('spark', p.x, p.y);
       }
     }
+    // Recién contratado: destellos y unas monedas que saltan sobre él, en la barra.
+    for (const id of this.crowd.hired.splice(0)) {
+      const w = this.crowd.where(id);
+      if (!w) continue;
+      for (let i = 0; i < 10; i++)
+        this.particles.spawn(
+          'glint',
+          w.x + (Math.random() - 0.5) * 18,
+          w.y - 6 - Math.random() * 22,
+          {
+            max: 0.5 + Math.random() * 0.6,
+          },
+        );
+      for (let i = 0; i < 5; i++) this.particles.spawn('coin', w.x, w.y - 26);
+      this.cb.onSound?.('coin', 0.4);
+    }
     // Los golpes de la gente: martillazo (chispas), temple (vapor), tijeretazo (hilachas), tinte
     // y caldero (burbujas y vapor), la gota del alambique (destello); con su sonido si se ven.
     for (const h of this.crowd.hits.splice(0)) {
@@ -3412,18 +3505,25 @@ export class RoomScene {
     const dark = this.t - n.start >= 0.35 * n.dur;
     if (this.raidPlan && dark && this.layout) {
       this.crowd.setScripted(true);
-      this.raid = new RaidShow(this.raidPlan, this.layout, this.crowd, {
-        burst: (kind, x, y, k) => {
-          for (let i = 0; i < k; i++)
-            this.particles.spawn(
-              kind,
-              x + (Math.random() - 0.5) * 8,
-              y + (Math.random() - 0.5) * 6,
-            );
+      this.raid = new RaidShow(
+        this.raidPlan,
+        this.layout,
+        this.crowd,
+        {
+          burst: (kind, x, y, k) => {
+            for (let i = 0; i < k; i++)
+              this.particles.spawn(
+                kind,
+                x + (Math.random() - 0.5) * 8,
+                y + (Math.random() - 0.5) * 6,
+              );
+          },
+          sound: (name, v) => this.cb.onSound?.(name, v ?? 1),
         },
-        sound: (name, v) => this.cb.onSound?.(name, v ?? 1),
-      });
+        this.raidLive,
+      );
       this.raidPlan = null;
+      this.raidLive = null;
       this.raidZoom = this.camera.zoom;
       const z = Math.min(6, Math.max(3, Math.floor(this.camera.zoom) + 1));
       if (this.cssW && z !== this.camera.zoom) this.resize(this.cssW, this.cssH, z);
@@ -3597,6 +3697,7 @@ export class RoomScene {
       this.talkBubbles();
       this.flyingArrows();
       this.raid?.draw(ctx, view.px, view.py);
+      this.drawDuels(ctx, view.px, view.py);
       this.hotPieces();
       this.particles.draw(ctx, view.px, view.py, t);
       this.floatUp();
@@ -3977,6 +4078,16 @@ export class RoomScene {
   private click(cssX: number, cssY: number): void {
     const w = this.camera.toWorld(cssX, cssY);
     this.lastTap = w;
+    // En el asalto en directo: tocar a un bandido (a por él) o a uno de los nuestros (crítico o
+    // habilidad). Nada de abrir fichas.
+    const live = this.liveRaid;
+    if (live) {
+      const id = this.heroAt(cssX, cssY);
+      if (!id) return;
+      if (isBandit(id)) live.aim(id);
+      else if (live.tap(id)) this.cb.onSound?.('click', 0.8);
+      return;
+    }
     const who = this.heroAt(cssX, cssY);
     if (who) {
       const p = this.heroPosition(who);
@@ -4038,7 +4149,7 @@ export class RoomScene {
     const v: View = { px: camera.px, py: camera.py, vw: camera.vw, vh: camera.vh };
     this.crowd.hold(d.id, v, p.x / camera.zoom, p.y / camera.zoom);
     d.room = this.roomAt(p.x, p.y);
-    d.ok = !!this.cb.onDragOver?.(d.id, d.room, p)?.ok;
+    d.ok = this.liveRaid ? !!d.room : !!this.cb.onDragOver?.(d.id, d.room, p)?.ok;
     this.hover = null;
     this.cb.onHover?.(null, null);
   }
@@ -4048,6 +4159,30 @@ export class RoomScene {
     const d = this.drag;
     this.drag = null;
     if (!d) return;
+    // En el asalto: la orden de ir a esa sala (va corriendo por su camino y se queda allí).
+    const live = this.liveRaid;
+    if (live) {
+      this.crowd.drop(d.id, null);
+      if (d.room && live.send(d.id, d.room)) {
+        const r = this.layout?.rooms.find((x) => x.room.id === d.room);
+        if (r) {
+          // A plantar cara: el banderín con la espada y el camino por el que va corriendo.
+          const wx = this.camera.toWorld(d.x, d.y).x;
+          const x = Math.max(r.rect.x + 12, Math.min(r.rect.x + r.rect.w - 12, wx));
+          const way = d.from ? this.wayTo(d.from, { x, floor: r.room.floor }) : null;
+          if (way) this.paths.push({ pts: way, t0: this.t });
+          this.goals.set(d.id, {
+            room: r.room.id,
+            x,
+            floor: r.room.floor,
+            icon: 'espada',
+            t0: this.t,
+          });
+        }
+        this.cb.onSound?.('build', 0.5);
+      }
+      return;
+    }
     const r = d.ok && d.room ? this.layout?.rooms.find((x) => x.room.id === d.room) : undefined;
     if (r) {
       const w = this.camera.toWorld(d.x, d.y);
@@ -4056,6 +4191,7 @@ export class RoomScene {
       const way = d.from ? this.wayTo(d.from, { x, floor: r.room.floor }) : null;
       if (way) this.paths.push({ pts: way, t0: this.t });
       this.goals.set(d.id, {
+        room: r.room.id,
         x,
         floor: r.room.floor,
         icon: this.goalIconFor(d.id, r.room),
@@ -4067,6 +4203,13 @@ export class RoomScene {
       this.crowd.drop(d.id, null);
       this.cb.onDrop?.(d.id, null);
     }
+  }
+
+  /** A quién se puede coger en el asalto en directo: a los nuestros que siguen en pie. */
+  private raidGrab(p: Point): string | null {
+    const id = this.heroAt(p.x, p.y);
+    const u = id ? this.liveRaid?.live?.unit(id) : undefined;
+    return u && u.side === 'd' && !u.down ? id : null;
   }
 
   /** La casilla de mudanza bajo un punto de la pantalla (si es válida). */
@@ -4392,7 +4535,9 @@ export class RoomScene {
         continue;
       }
       const age = this.t - g.t0;
-      const here = !at.moving && at.floor === g.floor && Math.abs(at.x - g.x) < 8;
+      const here =
+        this.crowd.arrived(id, g.room) ||
+        (!at.moving && at.floor === g.floor && Math.abs(at.x - g.x) < 8);
       if (g.out === undefined && (here || age > 90) && age > GOAL_MIN) {
         g.out = this.t;
         // Al llegar, unos destellos donde estaba el banderín.
@@ -4439,10 +4584,17 @@ export class RoomScene {
         this.press = { x: p.x, y: p.y, moved: false, time: performance.now() };
         this.camera.stopInertia();
         // Sobre alguien que se puede coger, el dedo lo lleva; si no, mueve la cámara.
-        const who = this.targets || this.raid ? null : this.heroAt(p.x, p.y);
+        const live = this.liveRaid;
+        const who = this.targets
+          ? null
+          : live
+            ? this.raidGrab(p)
+            : this.raid
+              ? null
+              : this.heroAt(p.x, p.y);
         const w = this.camera.toWorld(p.x, p.y);
         const grab = this.grabbable ? this.roomRect(this.grabbable) : null;
-        if (who && this.cb.canDrag?.(who))
+        if (who && (live || this.cb.canDrag?.(who)))
           this.drag = {
             id: who,
             x: p.x,

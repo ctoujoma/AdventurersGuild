@@ -35,8 +35,10 @@ import type { PKind, Particle } from '../particles';
 import type { SceneIncident, SoundName } from '../scene';
 import { GROUND } from '../geometry';
 import { Look, mesh, type Shared } from './gl';
-import { floorY, interior, type Rect, type RoomsLayout } from './layout';
+import { STAIR_W, floorY, interior, type Rect, type RoomsLayout } from './layout';
+import { outside, route } from './people';
 import { FIRE, FRONT, MID, SOLID } from './salas/kit';
+import { CLIMB_Z, STEPS, stepAt } from './stairs';
 import { scaleAt } from './view3d';
 
 /** Una luz del incidente (el fuego), en el mundo 2D. */
@@ -74,6 +76,11 @@ const LEFTOVER = 45;
 /** Ratas a la vista como mucho (si faltan más toques, entra otra al irse una). */
 const MAX_RATS = 4;
 const THIEF_SPEED = 9;
+/**
+ * El ladrón que se escapa corre por la casa (sala a sala, por las escaleras y el recibidor)
+ * hasta el patio: algo más deprisa que quien anda, pero que se le pueda seguir con la vista.
+ */
+const THIEF_RUN = { caught: 44, away: 50 };
 /** Las ratas, como las de las salas rotas: más claras que la sala, para que se vean. */
 const CRITTER: Tint = [0.62, 0.56, 0.6];
 /** Lo menos que se alumbra a los demás (en las salas oscuras, si no, no se les ve). */
@@ -106,6 +113,10 @@ interface Actor {
   ttl?: number;
   /** Huyendo con el botín: se le caen monedas. */
   drops?: boolean;
+  /** Huyendo por la casa: los puntos que le quedan (con su planta y su profundidad). */
+  route?: { x: number; y: number; level: number; z: number }[];
+  /** Planta en la que está, si ha salido de la sala de su incidente. */
+  level?: number;
 }
 
 interface Show {
@@ -127,6 +138,8 @@ interface Show {
   /** Cuándo sale mal (día y segundo del reloj), para saber cómo acabó al irse. */
   day?: number;
   until?: number;
+  /** El duelo con el ladrón: si le gana el héroe (si no, se escapa aunque no sea su hora). */
+  duelWon?: boolean;
 }
 
 const at = (x: number, y: number, depth: number) => new Vector3(x, GROUND - y, -depth);
@@ -144,6 +157,12 @@ export class IncidentArt {
   /** El chillido de las ratas al espantarlas. */
   sound?: (name: SoundName, volume: number) => void;
   private out = 0;
+  private L: RoomsLayout | null = null;
+  /**
+   * El ladrón pillado echa a correr: desde dónde (x y planta) y por dónde sale de la sala, para
+   * que quien le ha pillado le persiga un trecho.
+   */
+  onFlee?: (x: number, level: number, to: { x: number; floor: number }) => void;
 
   constructor(
     shared: Shared,
@@ -167,6 +186,7 @@ export class IncidentArt {
     list: readonly SceneIncident[],
     clock?: { day: number; secs: number },
   ): void {
+    this.L = L;
     const want = new Map<string, { inc: SceneIncident; r: Rect; floor: number; level: number }>();
     for (const inc of list) {
       const spot = L.rooms.find(({ room }) => room.id === inc.room);
@@ -188,7 +208,11 @@ export class IncidentArt {
       }
       // Ha acabado: si el reloj ha llegado a su hora (o ya es otro día), ha salido mal.
       const failed =
-        !!clock && s.until !== undefined && (clock.day !== s.day || clock.secs >= s.until - 0.5);
+        s.duelWon !== undefined
+          ? !s.duelWon
+          : !!clock &&
+            s.until !== undefined &&
+            (clock.day !== s.day || clock.secs >= s.until - 0.5);
       this.leave(s, failed);
       if (s.actors.length) this.shows.set(`${key}#fuera${this.out++}`, s);
     }
@@ -205,7 +229,18 @@ export class IncidentArt {
       if (known.kind === 'ratas' && w.inc.taps !== undefined && known.taps !== undefined)
         for (let i = w.inc.taps; i < known.taps; i++) this.scare(known);
       known.taps = w.inc.taps;
+      if (w.inc.duel) known.duelWon = w.inc.duel.won;
     }
+  }
+
+  /** Dónde está el ladrón de una sala (para la pelea con quien ha llegado), si lo hay. */
+  thiefAt(room: string): { x: number; y: number; floor: number } | null {
+    for (const s of this.shows.values()) {
+      if (s.kind !== 'ladron' || s.gone || !s.key.includes(`:${room}:`)) continue;
+      const a = s.actors[0];
+      if (a) return { x: a.x, y: a.bottom, floor: s.level };
+    }
+    return null;
   }
 
   /** Las luces de los incidentes (el fuego alumbra su cocina). */
@@ -346,6 +381,42 @@ export class IncidentArt {
     a.wait = 0;
   }
 
+  /**
+   * Por dónde se escapa alguien de la casa: el camino de la gente (puertas, escaleras peldaño a
+   * peldaño y el recibidor) hasta el patio y un poco más allá, por el camino.
+   */
+  private escape(s: Show, a: Actor, speed: number, caught = false): boolean {
+    const path = this.L ? route(this.L, { x: a.x, floor: s.level }, outside()) : null;
+    if (!path) return false;
+    const pts: NonNullable<Actor['route']> = [];
+    let f = s.level;
+    for (const q of path) {
+      if (q.floor !== f) {
+        // Un tramo: del pie al final, a la profundidad de quien sube.
+        const up = q.floor > f;
+        const lower = Math.min(f, q.floor);
+        const sx = q.x - STAIR_W / 2;
+        const p0 = stepAt(sx, lower, up ? 0 : STEPS);
+        const p1 = stepAt(sx, lower, up ? STEPS : 0);
+        pts.push({ x: p0.x, y: floorY(f), level: f, z: CLIMB_Z });
+        pts.push({ x: p1.x, y: floorY(q.floor), level: q.floor, z: CLIMB_Z });
+        f = q.floor;
+      } else pts.push({ x: q.x, y: floorY(f), level: f, z: a.z });
+    }
+    const end = pts.at(-1)!;
+    pts.push({ ...end, x: end.x - 60 });
+    if (caught) {
+      // Un trecho: hasta donde sale de la sala (la puerta o el pie de la escalera).
+      const out = pts.find((q) => q.level !== s.level || q.x < s.r.x || q.x > s.r.x + s.r.w);
+      const to = out ?? pts[0]!;
+      this.onFlee?.(a.x, s.level, { x: to.x, floor: to.level });
+    }
+    a.route = pts;
+    a.flee = speed;
+    a.wait = 0;
+    return true;
+  }
+
   /** Un toque a las ratas: una sale corriendo, con su chillido y una nube de polvo. */
   private scare(s: Show): void {
     const a = s.actors.find((x) => !x.flee);
@@ -365,8 +436,8 @@ export class IncidentArt {
     s.gone = true;
     s.n = 0;
     const speeds: Partial<Record<IncidentKind, number>> = failed
-      ? { ratas: RAT_SPEED * 2, ladron: 60, recaudador: 26, noble: 20 }
-      : { ratas: RAT_SPEED * 3, ladron: 45, recaudador: 16, noble: 12 };
+      ? { ratas: RAT_SPEED * 2, ladron: THIEF_RUN.away, recaudador: 26, noble: 20 }
+      : { ratas: RAT_SPEED * 3, ladron: THIEF_RUN.caught, recaudador: 16, noble: 12 };
     const speed = speeds[s.kind];
     const { r, floor } = s;
     const mid = r.x + r.w / 2;
@@ -380,7 +451,8 @@ export class IncidentArt {
     }
     for (const a of [...s.actors]) {
       if (speed) {
-        this.exit(s, a, speed);
+        // El ladrón no se esfuma en la puerta: sale de la casa corriendo.
+        if (!(s.kind === 'ladron' && this.escape(s, a, speed, !failed))) this.exit(s, a, speed);
         continue;
       }
       // El fuego que sale mal no se apaga con vapor: se ahoga en humo negro.
@@ -462,6 +534,13 @@ export class IncidentArt {
       if (!a.flee) continue;
       // El ladrón que se escapa va perdiendo monedas.
       if (a.drops && this.rnd() < dt * 5) this.emit?.('coin', a.x - a.dir * 5, a.bottom - 12, a.z);
+      if (a.route) {
+        if (this.follow(a, a.flee * dt)) continue;
+        this.poof(a);
+        this.drop(a);
+        s.actors.splice(s.actors.indexOf(a), 1);
+        continue;
+      }
       const left = a.tx - a.x;
       const step = a.flee * dt;
       if (Math.abs(left) > step) {
@@ -475,6 +554,44 @@ export class IncidentArt {
       this.drop(a);
       s.actors.splice(s.actors.indexOf(a), 1);
     }
+  }
+
+  /** Avanza `step` por su camino; false si ya ha llegado al final. */
+  private follow(a: Actor, step: number): boolean {
+    const r = a.route!;
+    a.dist += step;
+    while (step > 0 && r.length) {
+      const q = r[0]!;
+      const dx = q.x - a.x;
+      const dy = q.y - a.bottom;
+      const d = Math.hypot(dx, dy);
+      if (Math.abs(dx) > 0.01) a.dir = dx > 0 ? 1 : -1;
+      if (d <= step) {
+        a.x = q.x;
+        a.bottom = q.y;
+        a.z = q.z;
+        a.level = q.level;
+        r.shift();
+        step -= d;
+        continue;
+      }
+      const k = step / d;
+      a.x += dx * k;
+      a.bottom += dy * k;
+      a.z += (q.z - a.z) * k;
+      step = 0;
+    }
+    const n = a.strip?.n ?? 1;
+    a.frame = n > 1 ? Math.floor(a.dist / 3) % n : 0;
+    return r.length > 0;
+  }
+
+  /** Quien huye por la casa cerca de una puerta (su x), para que la escena la abra. */
+  near(x: number, floor: number, r: number): number | null {
+    for (const s of this.shows.values())
+      for (const a of s.actors)
+        if (a.route && (a.level ?? s.level) === floor && Math.abs(a.x - x) < r) return a.x;
+    return null;
   }
 
   /** Lo que se pone en la sala para cada incidente. */
@@ -697,7 +814,7 @@ export class IncidentArt {
     u.uAxisU!.value.set(w, 0, 0);
     u.uAxisV!.value.set(0, h, 0);
     // La luz de su sala, algo más clara (en las salas oscuras no se les veía).
-    const room = this.tint(a.x, s.level);
+    const room = this.tint(a.x, a.level ?? s.level);
     const amb = a.critter ? CRITTER : room.ambient.map((c, i) => Math.max(c, LIFT[i]!));
     u.uAmbient!.value.set(amb[0]!, amb[1]!, amb[2]!);
     u.uSun!.value = room.sun;

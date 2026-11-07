@@ -21,7 +21,7 @@ import type { RecipeId } from '../data/recipes';
 import type { UnlockId } from '../data/unlocks';
 import type { Tutorial } from './tutorial';
 import type { Attrs, Challenge, ClassId, SkillId, Trait } from './party';
-import type { CombatSetup, Order } from './combat';
+import type { AbilityId, CombatSetup, Order } from './combat';
 
 export const SAVE_VERSION = 4;
 
@@ -64,6 +64,13 @@ export interface Hero {
   job?: string;
   /** La que tenía al salir de encargo: al volver, la recupera si sigue habiendo sitio. */
   jobBefore?: string;
+  /**
+   * Va de camino a su sala (tarea nueva): no cuenta hasta que llega (acción `arrived`) o, si
+   * nadie lo dice, hasta esta parte del día. Se borra al llegar y cada noche.
+   */
+  walk?: number;
+  /** Parte de hoy desde la que cuenta en su sala (llegó a media jornada). Se borra cada noche. */
+  since?: number;
   /** Progreso de entrenamiento hacia el siguiente punto de cada atributo. */
   train?: Partial<Attrs>;
 }
@@ -85,6 +92,13 @@ export interface Worker {
   fee: number;
   /** Sala en la que trabaja (id); sin sala, descansa. */
   room?: string;
+  /**
+   * Va de camino a su sala (tarea nueva): no cuenta hasta que llega (acción `arrived`) o, si
+   * nadie lo dice, hasta esta parte del día. Se borra al llegar y cada noche.
+   */
+  walk?: number;
+  /** Parte de hoy desde la que cuenta en su sala (llegó a media jornada). Se borra cada noche. */
+  since?: number;
   /** Uno de los tres del pueblo que ya trabajaban para tu tío. */
   village?: StaffId;
   quote: string;
@@ -276,6 +290,11 @@ export interface Craft {
   done: number;
   /** Parte del día (0–1) hasta la que ya está contado `done`. */
   at: number;
+  /**
+   * Vestir: el héroe aún no ha llegado a la sala. Se empieza cuando la escena dice que ha llegado
+   * (acción `arrived`) o, si no lo dice (sin escena, con la app cerrada), al llegar a `at`.
+   */
+  wait?: true;
   /** Lo pagado al empezar (se devuelve al cancelar). */
   gold: number;
   /** El objeto que se desmonta (si es desmontar). */
@@ -366,6 +385,32 @@ export interface Incident {
   until: number;
   /** Los de tocar: toques que faltan. */
   taps?: number;
+  /**
+   * Alguien va de camino a arreglarlo: se arregla cuando llega (acción `arrived`) o, si nadie lo
+   * dice, a los `at` segundos del reloj. Mientras va, no sale mal.
+   */
+  coming?: { who: string; at: number };
+  /** El ladrón: al llegar el héroe se pelean; acaba a los `end` segundos de `at`. */
+  duel?: Duel;
+}
+
+/** Un golpe del duelo con el ladrón: el héroe (`h`) o el ladrón (`l`), y cuánto quita. */
+export interface DuelHit {
+  t: number;
+  by: 'h' | 'l';
+  amount: number;
+  crit?: boolean;
+}
+
+export interface Duel {
+  who: string;
+  at: number;
+  end: number;
+  /** Si le pilla (el ladrón cae) o se escapa. */
+  won: boolean;
+  hits: DuelHit[];
+  /** Vida al empezar del héroe y del ladrón. */
+  hp: { h: number; l: number };
 }
 
 export interface DawnEvent {
@@ -461,7 +506,25 @@ export type RaidStep =
   /** Un bandido carga su saco. */
   | { t: number; k: 'loot'; id: string; gold: number }
   /** Un bandido se pierde por el camino con lo que lleva. */
-  | { t: number; k: 'escape'; id: string; gold: number };
+  | { t: number; k: 'escape'; id: string; gold: number }
+  /** Un golpe: quién, a quién y cuánta vida le quita. */
+  | { t: number; k: 'hit'; from: string; id: string; amount: number; crit?: boolean }
+  /** Habilidad de un héroe y curas. */
+  | { t: number; k: 'skill'; id: string; skill: AbilityId }
+  | { t: number; k: 'heal'; from: string; id: string; amount: number }
+  /** Ocasión de crítico de un héroe (hasta su siguiente golpe). */
+  | { t: number; k: 'chance'; id: string };
+
+/** Lo que sale de un asalto jugado (core/assault.ts). */
+export interface AssaultOutcome {
+  plan: RaidPlan;
+  fell: string[];
+  fought: string[];
+  downed: number;
+  escaped: number;
+  stolen: number;
+  recovered: number;
+}
 
 export interface RaidPlan {
   /** Camino de los bandidos: del recibidor a la cámara (ids de sala). */
@@ -471,6 +534,8 @@ export interface RaidPlan {
   steps: RaidStep[];
   /** Segundo en el que acaba todo. */
   end: number;
+  /** Vida de cada uno al empezar (los informes viejos no la traen). */
+  hp?: Record<string, number>;
 }
 
 /** Contadores de la partida: hazañas, desafíos y récords. */
@@ -609,6 +674,8 @@ export interface GameState {
   spilt?: number;
   /** Último asalto, para verlo en la escena al amanecer. */
   lastRaid?: RaidResult | null;
+  /** El asalto de esta noche, jugado en directo (lo usa el anochecer en lugar de jugarlo solo). */
+  raidLive?: { day: number; result: AssaultOutcome };
   /** Informe de la pelea contra un jefe de esta noche (para el aviso del amanecer). */
   lastFight?: string | null;
   /**

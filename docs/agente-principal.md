@@ -74,9 +74,23 @@ Para el agente principal (núcleo, tiempo, tutoriales, combate, talleres, amigos
 
 - Mientras tanto, otros agentes: el patio trasero (anexo y jardín), la interfaz y mucho arte
   (luz con ambiente, `docs/plan-luz.md`).
-- Hecho: `RoomScene.pace` (la escena va al ritmo del reloj) y `DRESS_WALK` (la sastrería espera
-  al héroe; `CraftState.walking`, `SceneCraft.walking`).
+- Hecho: `RoomScene.pace` (la escena va al ritmo del reloj) y la sastrería que espera al héroe:
+  empieza cuando la escena le ve llegar (`Crowd.onArrive` → acción `arrived`, `Craft.wait`;
+  `DRESS_WALK` es solo el tope si nadie avisa). Auditoría de movimiento en
+  [`encargos/arte-movimiento.md`](encargos/arte-movimiento.md).
+- Coherencia de la gente: toda tarea cuenta desde que se llega (`Hero/Worker.walk` y `since`,
+  `workAt`, `shiftShare`, `newShift` cada noche) y los incidentes se arreglan al llegar quien va
+  (`Incident.coming`). Arrastrar = ir andando a paso ligero.
 - Encargado al de arte: [`encargos/arte-movimiento.md`](encargos/arte-movimiento.md).
 - Esperando al usuario: [`propuesta-asaltos.md`](propuesta-asaltos.md) (la pelea de los asaltos
   y arrastrar andando). Después de eso, a lo nuestro: núcleo con órdenes en `core/assault.ts`.
 - La APK, cuando el usuario diga que el arte ha acabado.
+
+## Dónde lo dejamos (7 de noviembre)
+
+- Hechos los asaltos en directo y el duelo con el ladrón (ver `propuesta-asaltos.md`, «Hecho»).
+  Núcleo: `core/assault.ts` (`Assault`, `raidSeed`), acción `raidFought`, `GameState.raidLive`;
+  escena: `RaidShow.live`, `RoomScene.liveRaid`, `drawDuels`; interfaz: `ui/RaidCrew.tsx`, y
+  `App.tsx` (`endDay` juega el asalto antes de amanecer; `dawnAfter`).
+- Probado con `node_modules/.cache/jarro-shots/asalto.mjs` y `ladron.mjs` (pueden no existir).
+- Encargado al de arte: `encargos/arte-asaltos.md`.
