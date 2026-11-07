@@ -94,7 +94,6 @@ function boardFace(b: PixelBuffer, x: number, y: number, w: number, h: number, s
   const rails: number[] = [];
   for (let ry = y + 6 + rng.int(0, 8); ry < y + h; ry += 26 + rng.int(0, 8)) rails.push(ry);
   let px = x;
-  let i = 0;
   let batten = false;
   while (px < x + w) {
     // De 4 a 9: casi todas de 5 a 7, alguna estrecha y alguna ancha.
@@ -155,7 +154,6 @@ function boardFace(b: PixelBuffer, x: number, y: number, w: number, h: number, s
       for (let xx = px; xx < px + bw; xx++)
         if (hash(xx, yy) < (yy - (y + h - 10)) / 14) b.set(xx, yy, dk);
     px += bw;
-    i++;
     // El tapajuntas, encima de la junta, a saltos (unas juntas van solo a tope, a veces dos o
     // tres seguidas). Los clavos, oscuros y sueltos: no en todas las carreras ni a la misma altura.
     if (px < x + w - 1 && rng.chance(batten ? 0.45 : 0.7)) {
