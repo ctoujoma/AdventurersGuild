@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RECIPES } from '../data/recipes';
-import { DAY_SECONDS, DRESS_GOLD, DRESS_WALK } from './balance';
+import { DAY_SECONDS, DRESS_GOLD, DRESS_WALK, WORK_END, WORK_START } from './balance';
 import { Rng } from './rng';
 import { planBuild } from './rooms';
 import {
@@ -14,6 +14,7 @@ import {
   learnRecipe,
   stepCrafts,
   undoable,
+  clockHours,
 } from './crafting';
 import { endDay, newGame, reduce } from './game';
 import type { GameState, Worker } from './model';
@@ -55,8 +56,8 @@ describe('la forja crea objetos', () => {
     let t = reduce(s, { type: 'craft', room: forge, recipe: 'espada' });
     expect(t.gold).toBe(gold - RECIPES.espada.gold);
     expect(t.crafts).toHaveLength(1);
-    // Con un herrero normal, la espada (8 h) tarda un tercio del día.
-    expect(craftState(t, t.crafts![0]!).hoursLeft).toBeCloseTo(8, 5);
+    // Con un herrero normal, la espada (8 h de trabajo) es un tercio de la jornada.
+    expect(craftState(t, t.crafts![0]!).hoursLeft).toBeCloseTo(clockHours(8), 5);
     t = reduce(t, { type: 'tick', to: DAY_SECONDS * 0.2 });
     expect(t.crafts).toHaveLength(1);
     const half = craftState(t, t.crafts![0]!);
@@ -68,6 +69,47 @@ describe('la forja crea objetos', () => {
     const it = t.inventory.at(-1)!;
     expect([RECIPES.espada.common.name, RECIPES.espada.good.name]).toContain(it.name);
     expect(t.incidentNews?.some((n) => /han creado/.test(n.t))).toBe(true);
+  });
+
+  it('solo se trabaja en la jornada: de noche se para y a la mañana sigue', () => {
+    const { s, forge } = withForge('jornada');
+    // Solo un héroe echando una mano: va despacio y dura más de un día.
+    s.workers = s.workers.filter((w) => w.trade !== 'forja');
+    const hero = s.heroes.find((h) => h.status === 'ok')!;
+    let t = reduce(s, { type: 'assign', who: hero.id, room: forge });
+    t = reduce(t, { type: 'arrived', heroId: hero.id, room: forge });
+    t = reduce(t, { type: 'craft', room: forge, recipe: 'coraza' });
+    // A media tarde ya va algo; pasada la hora de dormir, ya no avanza más.
+    t = reduce(t, { type: 'tick', to: DAY_SECONDS * WORK_END });
+    const atDusk = craftState(t, t.crafts![0]!).frac;
+    expect(atDusk).toBeGreaterThan(0);
+    t = reduce(t, { type: 'tick', to: DAY_SECONDS * 0.99 });
+    expect(craftState(t, t.crafts![0]!).frac).toBeCloseTo(atDusk, 5);
+    // Al día siguiente, antes de que lleguen tampoco; luego, sigue donde lo dejó.
+    t = endDay(t);
+    expect(craftState(t, t.crafts![0]!).frac).toBeCloseTo(atDusk, 5);
+    t = reduce(t, { type: 'tick', to: DAY_SECONDS * WORK_START * 0.9 });
+    expect(craftState(t, t.crafts![0]!).frac).toBeCloseTo(atDusk, 5);
+    t = reduce(t, { type: 'tick', to: DAY_SECONDS * 0.3 });
+    // (Si ya ha acabado, también ha seguido.)
+    const c = t.crafts?.[0];
+    expect(c ? craftState(t, c).frac : 1).toBeGreaterThan(atDusk);
+  });
+
+  it('a quien se manda a vestir a última hora le esperan a la mañana siguiente', () => {
+    const { s, room } = withShop('tarde', 'sastreria');
+    const h = s.heroes.find((x) => x.status === 'ok')!;
+    s.clock = DAY_SECONDS * 0.79;
+    let t = reduce(s, { type: 'dressAt', room, heroId: h.id, dress: { dye: 'vino' } });
+    t = endDay(t);
+    // Por la noche no se ha dado por llegado: sigue esperando y sin coser.
+    const c = dressingOf(t, h.id)!;
+    expect(c.wait).toBe(true);
+    expect(c.done).toBe(0);
+    // Por la mañana va a la sastrería; al llegar, se cose.
+    const now = { ...t, clock: DAY_SECONDS * 0.1 };
+    const a = reduce(now, { type: 'arrived', heroId: h.id, room });
+    expect(dressingOf(a, h.id)!.wait).toBeUndefined();
   });
 
   it('con el juego cerrado sigue avanzando en las noches', () => {

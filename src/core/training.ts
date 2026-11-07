@@ -19,7 +19,7 @@ import { MAIN_ATTR } from './resolve';
 import type { DawnEvent, GameState, Hero, Room } from './model';
 import { SKILLS, skill, type AttrId, type SkillId } from './party';
 import { active } from './rooms';
-import { shiftShare, shiftStart, slotsOf } from './workers';
+import { shiftShare, shiftStart, slotsOf, workedIn } from './workers';
 
 export const ATTR_NAMES: Record<AttrId, string> = { F: 'Fuerza', D: 'Destreza', M: 'Mente' };
 
@@ -86,8 +86,8 @@ export function trainState(s: GameState, h: Hero, part = 0): TrainState | null {
   const cost = trainCost(h, t.attr);
   const capped = value >= cap;
   const perDay = capped ? 0 : trainRate(t.room) / cost;
-  // Cuenta la parte del día que lleva en la sala (quien llegó tarde, o aún va, menos).
-  const here = Math.max(0, part - shiftStart(h));
+  // Cuenta la parte de la jornada que lleva en la sala (quien llegó tarde, o aún va, menos).
+  const here = workedIn(shiftStart(h), part);
   const frac = capped ? 0 : Math.min(1, (h.train?.[t.attr] ?? 0) / cost + perDay * here);
   return { attr: t.attr, value, cap, frac, perDay, capped, by };
 }

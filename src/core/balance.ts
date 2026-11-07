@@ -168,6 +168,14 @@ export const RUMOR_LEGEND = 0.3;
 export const RUMOR_MIN_PAY = 80;
 /** Parte del día desde la que es anochecer y se puede cerrar la taberna. */
 export const DUSK = 0.8;
+/**
+ * La jornada (partes del día): de cuando llegan a su puesto por la mañana a cuando se van a
+ * dormir (la escena manda a todos a la cama a esa hora). Fuera de ella, nadie trabaja: los
+ * talleres no avanzan y la cocina, la bodega o el entrenamiento no suman. Un día entero de
+ * jornada rinde lo mismo que antes rendía el día entero.
+ */
+export const WORK_START = 0.05;
+export const WORK_END = 0.82;
 /** Entregas en que llega la caja del día, repartidas hasta el anochecer. */
 export const DELIVERIES = 8;
 /** Trofeos: cuántos caben en la pared del salón, el Atractivo de cada uno y la fama al conseguirlos. */

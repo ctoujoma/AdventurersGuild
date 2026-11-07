@@ -10,7 +10,7 @@ import { levelUp } from './resolve';
 import { endDay, newGame, reduce } from './game';
 import type { GameState, Room } from './model';
 import { skillGain, stepTraining, trainState, trainingOf } from './training';
-import { canAssign } from './workers';
+import { canAssign, workedIn } from './workers';
 
 /** Partida con una sala de armas de nivel `level` y el primer héroe (guerrero) entrenando en ella. */
 function gym(level = 1): GameState {
@@ -44,7 +44,7 @@ describe('entrenamiento', () => {
     expect(h.attrs.F).toBe(3);
     expect(trainState(s, h)!.frac).toBeCloseTo((cost - 1) / cost);
     // La barra también avanza con el día.
-    expect(trainState(s, h, 0.5)!.frac).toBeCloseTo((cost - 0.5) / cost);
+    expect(trainState(s, h, 0.5)!.frac).toBeCloseTo((cost - 1 + workedIn(0, 0.5)) / cost);
     stepTraining(s, events);
     expect(h.attrs.F).toBe(4);
     expect(events.at(-1)!.t).toMatch(/Fuerza 4/);
@@ -77,7 +77,7 @@ describe('entrenamiento', () => {
     const full = gym();
     stepTraining(full, []);
     stepTraining(t, []);
-    expect(t.heroes[0]!.train!.F).toBeCloseTo(full.heroes[0]!.train!.F! / 2);
+    expect(t.heroes[0]!.train!.F).toBeCloseTo(full.heroes[0]!.train!.F! * workedIn(0.5, 1));
   });
 
   it('el atributo no pasa del tope de la sala: hay que mejorarla', () => {

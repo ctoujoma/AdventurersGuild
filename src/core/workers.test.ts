@@ -17,6 +17,7 @@ import {
   workerCap,
   onWay,
   workAt,
+  workedIn,
 } from './workers';
 
 const roomOf = (s: GameState, type: Room['type']) => s.building.rooms.find((r) => r.type === type)!;
@@ -87,7 +88,7 @@ describe('trabajadores', () => {
     expect(workAt(sent, salon, true)).toBe(workAt(s, salon, true));
     const t = reduce(sent, { type: 'arrived', heroId: h.id, room: salon.id });
     expect(onWay(t, t.heroes[0]!)).toBe(false);
-    expect(workIn(t, 'salon')).toBeCloseTo(before + HERO_WORK / 2);
+    expect(workIn(t, 'salon')).toBeCloseTo(before + HERO_WORK * workedIn(0.5, 1));
     // A la mañana siguiente, el día entero.
     expect(endDay(t).heroes[0]!.since).toBeUndefined();
   });
