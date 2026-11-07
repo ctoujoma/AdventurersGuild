@@ -81,7 +81,7 @@ const Z_SPEED = 14;
  * dando unos pasos hacia dentro; y al irse, primero se sale hacia fuera. Así nadie atraviesa
  * un barril ni un arcón.
  */
-const WALK_Z = 32;
+export const WALK_Z = 32;
 /** A cuánto del sitio (en x) se empieza a entrar a su profundidad. */
 const STEP_IN = 10;
 const CLIMB = 30;
@@ -447,6 +447,8 @@ const WORKSHOP = new Set(['forja', 'sastreria', 'alquimia']);
 const UNDO_AT: TaskPoi[] = ['banco', 'yunque', 'corte', 'alambique'];
 /** Lo que vestir a un héroe pide a quien cose: medirle, probarle la tela y coserle el bajo. */
 const FITTING: WorkId[] = ['medir', 'prueba', 'bajo', 'prueba'];
+/** Lo primero al llegar el héroe al probador, por orden: medirle, probarle la tela y coserle. */
+const FIRST_FIT: WorkId[] = ['medir', 'prueba', 'bajo'];
 /**
  * Los golpes que se notan en la sala (con su efecto y su sonido, ver `hits`): en qué tiempo de
  * la vuelta, qué es y dónde (el mueble de la tarea).
@@ -642,6 +644,8 @@ interface Actor {
   poi?: { kind: Poi['kind']; dir: 1 | -1 } | null;
   /** En la rutina de su oficio: el mueble (`at`, su x), lo que hace y hacia dónde mira. */
   task?: { at: number; work: WorkId; face: 1 | -1 } | null;
+  /** Vistiendo a un héroe: cuántas tareas lleva con él desde que llegó (ver `FIRST_FIT`). */
+  fit?: number;
   /** La última vuelta en que sonó su golpe (ver `hits`). */
   hitAt?: number;
   /** De charla con alguien: con quién, cuándo empezó (al llegar) y cuándo acaba. */
@@ -1950,39 +1954,36 @@ export class Crowd {
       return true;
     }
     const who = craft?.hero ? this.actors.get(craft.hero) : undefined;
-    // El héroe aún no ha llegado: quien cose le espera junto al probador, sin empezar.
-    if (fit && craft?.walking) {
-      const place = { x: fit.x + 12, floor: fit.floor };
-      if (Math.abs(a.x - place.x) > 4 || a.floor !== place.floor) {
-        if (!route(this.L, { x: a.x, floor: a.floor }, place, this.segs)) return false;
-        this.go(a, { place, pose: 'stand', stand: fit.z !== undefined ? fit.z - 10 : undefined });
-      }
-      a.task = null;
-      a.wait = 1.5;
-      return true;
-    }
-    if (
-      fit &&
-      who &&
+    const ready =
+      !!fit &&
+      !!who &&
       !who.gone &&
       !who.path.length &&
       who.floor === fit.floor &&
-      Math.abs(who.x - fit.x) < 4 &&
-      this.rnd() < 0.85
-    ) {
-      const side = this.rnd() < 0.5 ? -1 : 1;
-      const place = { x: who.x + side * 11, floor: fit.floor };
+      Math.abs(who.x - fit.x) < 4;
+    // El héroe aún va de camino: quien cose le espera junto al probador, mirando por donde
+    // llega y preparando la cinta (no cose hasta que está aquí).
+    if (fit && craft?.hero && !ready && (craft.walking || (who && !who.gone))) {
+      a.fit = 0;
+      if (this.awaitFitting(a, fit, who)) return true;
+    }
+    if (fit && ready && (a.fit! < FIRST_FIT.length || this.rnd() < 0.85)) {
+      // Al llegar: primero le mide, luego le prueba la tela y le cose el bajo; después, a ratos
+      // cualquiera de las tres (y alguna vez, a la mesa o al maniquí).
+      const n = a.fit ?? 0;
+      const work =
+        n < FIRST_FIT.length ? FIRST_FIT[n]! : FITTING[Math.floor(this.rnd() * FITTING.length)]!;
+      const side = n > 0 && a.task?.at === who!.x ? -a.task.face : this.rnd() < 0.5 ? -1 : 1;
+      const place = { x: who!.x + side * 11, floor: fit.floor };
       if (route(this.L, { x: a.x, floor: a.floor }, place, this.segs)) {
         this.go(a, { place, pose: 'stand', stand: fit.z !== undefined ? fit.z - 10 : undefined });
-        a.task = {
-          at: who.x,
-          work: FITTING[Math.floor(this.rnd() * FITTING.length)]!,
-          face: side > 0 ? -1 : 1,
-        };
-        a.wait = 5 + this.rnd() * 5;
+        a.task = { at: who!.x, work, face: side > 0 ? -1 : 1 };
+        a.fit = n + 1;
+        a.wait = n < FIRST_FIT.length ? 5 + this.rnd() * 2 : 5 + this.rnd() * 5;
         return true;
       }
     }
+    if (!craft?.hero) a.fit = 0;
     // Desmontando, al banco (donde no lo hay, al yunque, la mesa de cortar o el alambique);
     // creando, a todo lo demás.
     const undoAt = UNDO_AT.find((k) => here.some((p) => p.kind === k));
@@ -2013,6 +2014,36 @@ export class Crowd {
     this.go(a, { place, pose: 'stand', stand: p.z !== undefined ? p.z - 10 : undefined });
     a.task = { at: p.x, work, face: side > 0 ? -1 : 1 };
     a.wait = 6 + this.rnd() * 8;
+    return true;
+  }
+
+  /**
+   * Esperando al héroe que viene a vestirse: a un lado del probador, el que da a por donde llega
+   * (hacia él si está en la planta; si no, hacia la escalera de su camino), mirando hacia allí; a
+   * ratos estira la cinta de medir y a ratos solo mira. Vuelve a mirar cada poco (por si llega).
+   */
+  private awaitFitting(a: Actor, fit: Poi, who: Actor | undefined): boolean {
+    if (!this.L) return false;
+    let toward = a.x;
+    if (who && !who.gone) {
+      if (who.floor === fit.floor) toward = who.x;
+      else {
+        const way = route(this.L, { x: fit.x, floor: fit.floor }, who, this.segs);
+        toward = way?.find((q) => Math.abs(q.x - fit.x) > 2)?.x ?? who.x;
+      }
+    }
+    const side: 1 | -1 = toward >= fit.x ? 1 : -1;
+    const place = { x: fit.x + side * 11, floor: fit.floor };
+    if (a.floor !== fit.floor || Math.abs(a.x - place.x) > 2) {
+      if (!route(this.L, { x: a.x, floor: a.floor }, place, this.segs)) return false;
+      this.go(a, { place, pose: 'stand', stand: fit.z !== undefined ? fit.z - 10 : undefined });
+      a.task = null;
+      a.wait = 0.3;
+      return true;
+    }
+    a.dir = side;
+    a.task = this.rnd() < 0.5 ? { at: a.x, work: 'medir', face: side } : null;
+    a.wait = 1.5 + this.rnd() * 1.5;
     return true;
   }
 

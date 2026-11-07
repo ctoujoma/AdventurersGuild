@@ -22,6 +22,7 @@ export type Sfx =
   | 'lute'
   | 'splash'
   | 'creak'
+  | 'chain'
   | 'squeak'
   | 'bats'
   | 'drip'
@@ -288,6 +289,17 @@ class AudioEngine {
         break;
       case 'creak':
         this.creak(t, 0.5, 0.05 * v);
+        break;
+      case 'chain':
+        // Cadenas que tintinean (eslabones que chocan, cada vez más flojo) y el crujido del gancho.
+        for (let i = 0; i < 5; i++)
+          this.ping(
+            2300 + Math.random() * 900,
+            t + i * 0.07 + Math.random() * 0.03,
+            0.05,
+            (0.035 - i * 0.005) * v,
+          );
+        this.creak(t + 0.05, 0.35, 0.035 * v);
         break;
       case 'squeak':
         this.tone('sine', 2600, 3300, t, 0.06, 0.04 * v);
