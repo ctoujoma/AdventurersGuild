@@ -2,7 +2,7 @@ import { guardsFull, type Action } from '../core/game';
 import { incidentIn, incidentIssue } from '../core/incidents';
 import type { GameState } from '../core/model';
 import { INCIDENTS } from '../data/incidents';
-import { ATTR_NAMES, trainCap } from '../core/training';
+import { ATTR_NAMES, capFor } from '../core/training';
 import { canAssign, hasPosts, isTrainRoom } from '../core/workers';
 import { tutorialVeto } from '../core/tutorial';
 import { TRAINS } from '../data/rooms';
@@ -85,11 +85,14 @@ export function planTask(game: GameState, who: string, task: Task): Drop {
   actions.push({ type: 'assign', who, room: task });
   if (isTrainRoom(room.type)) {
     const attr = TRAINS[room.type]!;
-    const cap = trainCap(room);
+    const { cap, by } = capFor(h, room);
     if (h.attrs[attr] >= cap)
       return {
         ok: false,
-        text: `${h.name} ya tiene ${ATTR_NAMES[attr]} ${h.attrs[attr]}: aquí no aprende más. Mejora la sala.`,
+        text:
+          by === 'sala'
+            ? `${h.name} ya tiene ${ATTR_NAMES[attr]} ${h.attrs[attr]}: aquí no aprende más. Mejora la sala.`
+            : `${h.name} ya tiene ${ATTR_NAMES[attr]} ${h.attrs[attr]}: no aprende más hasta subir de nivel.`,
       };
     return { ok: true, text: `${h.name} entrenará ${ATTR_NAMES[attr]} aquí.`, actions };
   }

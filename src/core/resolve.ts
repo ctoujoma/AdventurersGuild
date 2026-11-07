@@ -39,6 +39,7 @@ import {
   TWIST_DIFF,
   XP,
   XP_PER_LEVEL,
+  ATTR_MAX,
   rankIndex,
 } from './balance';
 import { fill, generateQuest } from './generate';
@@ -121,7 +122,8 @@ export function levelUp(state: GameState, h: Hero): string[] {
     h.xp -= XP_PER_LEVEL;
     h.lvl++;
     const a = MAIN_ATTR[h.cls];
-    h.attrs[a] = Math.min(10, h.attrs[a] + 1);
+    // El punto de nivel nunca se pierde (aunque ya esté muy entrenado).
+    h.attrs[a] = Math.min(ATTR_MAX, h.attrs[a] + 1);
     h.salary += levelRaise(h.lvl);
     out.push(`${h.name} sube a nivel ${h.lvl}`);
     const st = (state.stats ??= emptyStats());
