@@ -694,12 +694,21 @@ export class RaidShow {
       const t = this.torchAt(id);
       if (!t) continue;
       const f = Math.floor(this.t * 9 + t.seed) % 3;
+      // Sin contorno (como el resto con luz con ambiente): la llama en capas, de fuera adentro
+      // (rojo apagado, naranja, núcleo claro), con un resplandor tenue alrededor.
+      const glowAt = (x: number, y: number, w: number, h: number) => {
+        ctx.globalAlpha = 0.28;
+        dot(x, y, '#ffb35c', w, h);
+        ctx.globalAlpha = 1;
+      };
       if (t.down) {
         // Tumbada: el palo a lo largo del suelo y una llama baja.
-        dot(t.x - 4, t.y + 1, P.black, 7, 3);
-        dot(t.x - 3, t.y + 2, P.oak, 5, 1);
-        dot(t.x - 1, t.y - 1 - (f === 1 ? 1 : 0), P.orange, 2, 2);
-        dot(t.x - 1, t.y, P.lemon);
+        dot(t.x - 3, t.y + 2, '#5a3d2b', 6, 1);
+        dot(t.x - 3, t.y + 3, '#3b281d', 6, 1);
+        glowAt(t.x - 3, t.y - 3, 6, 5);
+        dot(t.x - 1, t.y - 1 - (f === 1 ? 1 : 0), '#d0522c', 3, 2);
+        dot(t.x, t.y - (f === 1 ? 1 : 0), '#f39a3a', 1, 1);
+        dot(t.x, t.y + 1, '#ffe3a0');
         continue;
       }
       // En la mano, donde se ve la figura (con la perspectiva no cae justo sobre sus pies en el
@@ -714,16 +723,20 @@ export class RaidShow {
         // La base de la llama, un palo por encima de la mano.
         t.y = py + r.y + r.h * (pose.front ? TORCH_HAND_FRONT : TORCH_HAND_SIDE) - TORCH_STICK;
       }
-      dot(t.x - 1, t.y + 2, P.black, 3, 9);
-      dot(t.x, t.y + 3, P.oak, 1, 7);
-      dot(t.x, t.y + 3, P.umber, 1, 1);
+      // El palo, con su cara de sombra, y la cabeza de trapo quemado.
+      dot(t.x, t.y + 3, '#7a5236', 1, 8);
+      dot(t.x + 1, t.y + 4, '#4a3324', 1, 7);
+      dot(t.x, t.y + 2, '#3b2a22', 2, 2);
       const h = 4 + (f === 2 ? 1 : 0);
-      const lean = f === 1 ? 1 : 0;
-      dot(t.x - 1, t.y + 3 - h, P.black, 4, h + 1);
-      dot(t.x - 1 + lean, t.y + 3 - h + 1, P.red, 2, h - 1);
-      dot(t.x, t.y + 3 - h + 1, P.orange, 2, h - 1);
-      dot(t.x, t.y + 3 - h + 2, P.lemon, 1, h - 2);
-      if (f === 0) dot(t.x + lean, t.y + 1 - h, P.orange);
+      const lean = f === 1 ? 1 : f === 2 ? -1 : 0;
+      glowAt(t.x - 2, t.y + 1 - h - 2, 6, h + 4);
+      dot(t.x - 1, t.y + 2 - h + 1, '#c4472a', 3, h);
+      dot(t.x - 1 + lean, t.y + 2 - h, '#c4472a', 2, 1);
+      dot(t.x, t.y + 2 - h + 1, '#f2902f', 2, h - 1);
+      dot(t.x + lean, t.y + 2 - h, '#f2902f', 1, 1);
+      dot(t.x, t.y + 2 - h + 2, '#ffe1a0', 1, h - 2);
+      // Una chispa que sube, de vez en cuando.
+      if (f === 0) dot(t.x + lean, t.y - h - 1, '#ffcf70');
     }
   }
 

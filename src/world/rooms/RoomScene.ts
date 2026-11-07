@@ -158,6 +158,8 @@ import {
   stable,
   stairBack,
   outsideFace,
+  STREET_LEAF,
+  streetLeaf,
   stairCells,
   themeOf,
   type Theme,
@@ -257,6 +259,8 @@ interface Door {
   floor: number;
   open: number;
   dir: 1 | -1;
+  /** La de la calle: su gozne (a lo hondo), su ancho y su alto, y siempre se abre hacia dentro. */
+  street?: { zh: number; len: number; h: number };
 }
 
 /** Un foco: dónde está, hasta dónde llega y la zona a la que alumbra (en 3D, y hacia arriba). */
@@ -280,6 +284,8 @@ interface Lamp {
   sun?: boolean;
   /** Solo de noche y con luz con ambiente (la puerta encendida, el óculo del hastial). */
   night?: boolean;
+  /** Un farol de fuera: su halo, con luz con ambiente, flota delante de él (`haloSprites`). */
+  outdoor?: boolean;
 }
 
 /**
@@ -448,6 +454,8 @@ export class RoomScene {
    * La vista desde fuera (luz con ambiente): con el zoom al mínimo, un paso más de alejar pone la
    * tapa (`cover`) y uno de acercar la quita; `coverFade` la funde de 0 a 1.
    */
+  /** El halo de cada farol de fuera, delante de él (luz con ambiente; ver `outdoor`). */
+  private haloSprites = new Map<Lamp, Mesh>();
   private outside = false;
   private coverFade = 0;
   private cover: Mesh | null = null;
@@ -835,10 +843,17 @@ export class RoomScene {
       const room = L.rooms.find(
         ({ room: r, rect }) => r.floor === l.floor && l.x >= rect.x && l.x < rect.x + rect.w,
       );
-      // Fuera (el patio y el camino): hasta donde llegue la luz.
+      // Fuera (el patio y el camino): hasta donde llegue la luz, pero no dentro del edificio
+      // (si no, su luz y su halo se verían a través del muro).
+      const out = l.x < L.left ? L.left - WALL : l.x > L.right ? L.right + WALL : null;
       const zone: Lamp['zone'] = room
         ? this.zoneOf(room.rect)
-        : [l.x - 140, GROUND - (floorY(l.floor) + 12), l.x + 140, GROUND - (floorY(l.floor) - 140)];
+        : [
+            out !== null && l.x > L.right ? Math.max(l.x - 140, out) : l.x - 140,
+            GROUND - (floorY(l.floor) + 12),
+            out !== null && l.x < L.left ? Math.min(l.x + 140, out) : l.x + 140,
+            GROUND - (floorY(l.floor) - 140),
+          ];
       const z = WALK_Z - 6;
       return {
         pos: new Vector3(l.x, GROUND - l.y, -z + 6),
@@ -1480,6 +1495,7 @@ export class RoomScene {
     this.look.dispose();
     this.look = new Look(this.shared);
     this.lamps = [];
+    this.haloSprites = new Map();
     this.flames = [];
     this.sunbeams = [];
     this.grass = [];
@@ -1711,17 +1727,20 @@ export class RoomScene {
     this.styled.push({ classic: groundC, mood: groundM });
     let gi = 0;
     this.shadowBoxes(L);
-    const ground = (tex: PixelBuffer, corners: Corners, o: typeof yard & { repeat?: number }) => {
+    // `wide`: con luz con ambiente, el suelo que se repite se pinta entero a lo ancho, cada
+    // trozo con su ruido (si no, se ve la repetición).
+    const ground = (
+      tex: PixelBuffer,
+      corners: Corners,
+      o: typeof yard & { repeat?: number },
+      wide?: () => PixelBuffer,
+    ) => {
       this.plane(groundC, tex, corners, o);
-      // Con luz con ambiente, sin repetir: la textura entera a lo ancho (los grumos de la hierba
-      // dejan ver la repetición).
-      const rep = o.repeat ?? 1;
-      let wide = tex;
-      if (rep > 1) {
-        wide = new PixelBuffer(tex.w * rep, tex.h);
-        for (let k = 0; k < rep; k++) wide.blit(tex, k * tex.w, 0);
-      }
-      this.plane(groundM, moodGround(wide, gi++), corners, { ...o, repeat: undefined });
+      const src = wide ? wide() : tex;
+      this.plane(groundM, moodGround(src, gi++), corners, {
+        ...o,
+        repeat: wide ? undefined : o.repeat,
+      });
     };
     const back = DEPTH + 2;
     // A los lados, un trozo de patio y otro de hierba que se repiten (`TILE`) hasta muy lejos.
@@ -1739,6 +1758,7 @@ export class RoomScene {
         at(x0, GROUND, YARD_D),
       ],
       { ...yard, repeat: nl },
+      () => groundTex(TILE * nl, YARD_D / 2, true, 'patio-ancho', false),
     );
     ground(
       groundTex(TILE, YARD_D / 2, false, 'solares'),
@@ -1749,6 +1769,7 @@ export class RoomScene {
         at(L.right, GROUND, YARD_D),
       ],
       { ...yard, repeat: nr },
+      () => groundTex(TILE * nr, YARD_D / 2, false, 'solares-ancho'),
     );
     // Detrás del edificio, la hierba del terreno; en el jardín, su césped (más abajo) hasta
     // `LAWN_D`, y de ahí a los árboles, el terreno otra vez.
@@ -1840,6 +1861,7 @@ export class RoomScene {
           seed: 7,
           fire: true,
           halo: haloOf(60, 0.9, false),
+          outdoor: true,
         });
       }
     }
@@ -1904,9 +1926,12 @@ export class RoomScene {
         // ponen en cada fotograma (ver `sunbeams`).
         u.uTop!.value.set(r.x + (p.x - p.w / 2) * sx, GROUND - (r.y + p.top * sy), -(DEPTH - 1));
         u.uW!.value = p.w * sx;
-        u.uDrop!.value = r.h - p.top * sy;
+        // No llega al suelo: se apaga antes (dos tercios del alto que queda).
+        u.uDrop!.value = (r.h - p.top * sy) * 0.66;
         u.uWin!.value.set(p.w * sx, (p.y - p.top) * sy);
-        u.uIn!.value = DEPTH * 0.55;
+        // Casi pegado a la pared del fondo: si avanza mucho hacia la cámara, la perspectiva lo
+        // tuerce y lo despega de la ventana cuanto más lejos del centro de la pantalla.
+        u.uIn!.value = 4;
         const beam = new Mesh(this.unitPlane, mat);
         beam.userData.win = {
           x0: r.x + (p.x - p.w / 2) * sx,
@@ -2187,6 +2212,34 @@ export class RoomScene {
       [at(x1, yb, D), at(x1, yb, 0), at(x1, yt, 0), at(x1, yt, D)],
       flat,
     );
+    // La hoja de la puerta de la calle, sobre su hueco: gira hacia dentro cuando pasa alguien.
+    if (o.door !== undefined) {
+      const { z0, z1, h } = STREET_LEAF;
+      const xm = x0 + 0.4;
+      const corners: Corners = [
+        at(xm, yb, z0),
+        at(xm, yb, z1),
+        at(xm, yb - h, z1),
+        at(xm, yb - h, z0),
+      ];
+      const mat = this.look.surface(streetLeaf(o.door, `${seed}i`), corners, {
+        ...flat,
+        side: DoubleSide,
+      });
+      const leaf = new Mesh(quad(corners, this.look), mat);
+      leaf.frustumCulled = false;
+      g.add(leaf);
+      this.doors.push({
+        mesh: leaf,
+        mat,
+        xm,
+        yb,
+        floor: o.floor,
+        open: 0,
+        dir: 1,
+        street: { zh: z1, len: z1 - z0, h },
+      });
+    }
     // El paso de cada puerta a la sala de la derecha (la de la izquierda la pone esa sala).
     for (const i of doors(o.sides.right))
       this.doorway(x1, x1 + PARTITION, floorY(o.floor + i), o.floor + i, theme, ambient, sun);
@@ -2341,6 +2394,7 @@ export class RoomScene {
             seed: lx,
             fire: false,
             halo: haloOf(50, 0.9, false),
+            outdoor: true,
           });
         }
       this.lamps.push({
@@ -2354,6 +2408,7 @@ export class RoomScene {
         seed: 3,
         fire: false,
         halo: haloOf(60, 1, false),
+        outdoor: true,
       });
       // De noche (luz con ambiente), la puerta encendida: un charco de luz cálida en el patio,
       // delante de ella.
@@ -2443,6 +2498,7 @@ export class RoomScene {
           seed: lx,
           fire: false,
           halo: haloOf(60, 1, false),
+          outdoor: true,
         });
       }
   }
@@ -2658,20 +2714,23 @@ export class RoomScene {
     const len = (DOOR_U1 - DOOR_U0) * 2;
     for (const d of this.doors) {
       const who = this.crowd.near(d.xm, d.floor, 16) ?? this.incidents.near(d.xm, d.floor, 16);
-      if (who !== null && d.open < 0.05) d.dir = who < d.xm ? 1 : -1;
+      if (who !== null && d.open < 0.05 && !d.street) d.dir = who < d.xm ? 1 : -1;
       const target = who === null ? 0 : 1;
       let next = d.open + (target - d.open) * Math.min(1, dt * 6);
       if (Math.abs(next - target) < 0.003) next = target;
       if (next === d.open) continue;
       d.open = next;
-      const a = d.open * 1.4;
-      const xf = d.xm + d.dir * len * Math.sin(a);
-      const zfree = zh - len * Math.cos(a);
-      const yt = d.yb - DOOR_H;
+      // (La de la calle se abre menos: abierta del todo taparía medio recibidor.)
+      const a = d.open * (d.street ? 1.0 : 1.4);
+      const L = d.street?.len ?? len;
+      const zH = d.street?.zh ?? zh;
+      const xf = d.xm + d.dir * L * Math.sin(a);
+      const zfree = zH - L * Math.cos(a);
+      const yt = d.yb - (d.street?.h ?? DOOR_H);
       const c: Corners = [
         at(xf, d.yb, zfree),
-        at(d.xm, d.yb, zh),
-        at(d.xm, yt, zh),
+        at(d.xm, d.yb, zH),
+        at(d.xm, yt, zH),
         at(xf, yt, zfree),
       ];
       const pos = d.mesh.geometry.getAttribute('position') as Float32BufferAttribute;
@@ -2879,6 +2938,43 @@ export class RoomScene {
     runs.forEach((r, i) => this.shared.uBox.value[i]!.set(r[0], r[1], r[2], 0));
     this.shared.uBoxN.value = runs.length;
     this.shared.uBoxZ.value.set(-DEPTH, 0);
+  }
+
+  /** El halo de un farol de fuera: un disco en anillos, de su color, delante de la llama. */
+  private haloSprite(l: Lamp): Mesh {
+    const R = Math.round(l.halo * 2.8);
+    const img = new PixelBuffer(R * 2, R * 2);
+    for (let y = 0; y < R * 2; y++)
+      for (let x = 0; x < R * 2; x++) {
+        const d = Math.hypot(x + 0.5 - R, y + 0.5 - R) / R;
+        if (d >= 1) continue;
+        const v = Math.floor((1 - d) ** 1.6 * 4) / 4;
+        if (v <= 0) continue;
+        const k = v * 0.7;
+        img.set(
+          x,
+          y,
+          rgba(
+            `#${l.color
+              .map((c) =>
+                Math.round(c * k)
+                  .toString(16)
+                  .padStart(2, '0'),
+              )
+              .join('')}`,
+          ),
+        );
+      }
+    const g = l.glow;
+    const corners: Corners = [
+      new Vector3(g.x - R, g.y - R, g.z + 2),
+      new Vector3(g.x + R, g.y - R, g.z + 2),
+      new Vector3(g.x + R, g.y + R, g.z + 2),
+      new Vector3(g.x - R, g.y + R, g.z + 2),
+    ];
+    const m = mesh(quad(corners, this.look), this.look.halo(img));
+    m.visible = false;
+    return m;
   }
 
   private plantGrass(L: RoomsLayout, classic: Group, mood: Group): void {
@@ -3689,11 +3785,30 @@ export class RoomScene {
       const c = l.sun
         ? [1, 0.88 - 0.3 * dl.dusk, 0.7 - 0.38 * dl.dusk]
         : [l.color[0] / 255, l.color[1] / 255, l.color[2] / 255];
-      data.set([c[0]! * k, c[1]! * k, c[2]! * k, l.halo], row + i * 4);
+      data.set(
+        [c[0]! * k, c[1]! * k, c[2]! * k, l.outdoor && this.moodLight ? 0 : l.halo],
+        row + i * 4,
+      );
       data.set(l.zone, 2 * row + i * 4);
       data.set([l.glow.x, l.glow.y, l.glow.z, 0], 3 * row + i * 4);
     }
     s.uLightCount.value = n;
+    // Los halos de los faroles de fuera (con luz con ambiente): flotan delante y se suman a lo
+    // de detrás, sea lo que sea; así no se cortan donde se acaba lo que hay alrededor.
+    for (const l of this.lamps) {
+      if (!l.outdoor || !l.halo) continue;
+      let m = this.haloSprites.get(l);
+      if (!m) {
+        m = this.haloSprite(l);
+        this.haloSprites.set(l, m);
+        this.world.add(m);
+      }
+      m.visible = this.moodLight;
+      if (!m.visible) continue;
+      const fl = 1 - l.flicker * noise(Math.floor(t * 9), l.seed);
+      (m.material as ShaderMaterial).uniforms.uK!.value =
+        (0.12 + 0.88 * (1 - dl.day)) * Math.min(1.2, l.power) * fl;
+    }
     tex.needsUpdate = true;
     // La hierba, con el viento que pasa por su sitio (unas 8 veces por segundo).
     const gt = Math.floor(t * 8);
@@ -3756,14 +3871,17 @@ export class RoomScene {
       this.roomGhost();
       this.scaffolds();
       this.dropMark();
-      this.trainBars();
-      this.talkBubbles();
-      this.flyingArrows();
-      this.raid?.draw(ctx, view.px, view.py, view);
-      this.drawDuels(ctx, view.px, view.py);
-      this.hotPieces();
-      this.particles.draw(ctx, view.px, view.py, t);
-      this.floatUp();
+      // Con la tapa de la vista desde fuera, lo de dentro de las salas no se ve a través.
+      if (this.coverFade < 0.5) {
+        this.trainBars();
+        this.talkBubbles();
+        this.flyingArrows();
+        this.raid?.draw(ctx, view.px, view.py, view);
+        this.drawDuels(ctx, view.px, view.py);
+        this.hotPieces();
+        this.particles.draw(ctx, view.px, view.py, t);
+        this.floatUp();
+      }
       if (this.hover) this.brackets(this.hover.rect);
       if (this.hoverProp) this.brackets(this.propRect(this.hoverProp, view));
       for (const id of [this.hoverHero, this.marker?.id]) {

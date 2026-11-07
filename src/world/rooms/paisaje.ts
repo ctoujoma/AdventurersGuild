@@ -253,7 +253,7 @@ export const FAR_FOREST_FX = 0.235;
  * Una franja de abetos pequeños por pisos, apagados por la bruma (de día) o casi negros (de
  * noche), con la misma silueta. Se repite sin junta.
  */
-export function farForestCnc(): {
+export function farForestCnc(behind?: { day: PixelBuffer; night: PixelBuffer }): {
   day: PixelBuffer;
   night: PixelBuffer;
   lake: { y0: number; day: PixelBuffer[]; night: PixelBuffer[] };
@@ -337,13 +337,19 @@ export function farForestCnc(): {
         const lit =
           h2(cell, dy, 91) > 0.9 ? Math.max(0, Math.cos(ph + h2(cell, dy, 93) * 6.28)) ** 3 : 0;
         const ripple = Math.sin(dy * 0.9 - ph + x * 0.01) > 0.9 ? 0.1 : 0;
-        for (const [src, out, water, sh, hz] of [
-          [day, lake.day[f]!, WATER_DAY, SHINE_DAY, DAY.haze],
-          [night, lake.night[f]!, WATER_NIGHT, SHINE_NIGHT, NIGHT.haze],
+        for (const [src, back, out, water, sh, hz] of [
+          [day, behind?.day, lake.day[f]!, WATER_DAY, SHINE_DAY, DAY.haze],
+          [night, behind?.night, lake.night[f]!, WATER_NIGHT, SHINE_NIGHT, NIGHT.haze],
         ] as const) {
           let c = ramp(water as RGB[], 0.85 - dy / 40);
-          const r = sy >= 0 ? src.data[sy * W + sx]! : 0;
-          if (r >>> 24 && dy < 26) c = mixc(mixc(unpack(r), c, 0.45), [0, 0, 0], 0.12);
+          // El reflejo: el bosque de la orilla y, más abajo, las montañas de detrás (algo más
+          // tenues cuanto más lejos de la orilla).
+          let r = sy >= 0 ? src.data[sy * W + sx]! : 0;
+          if (!(r >>> 24) && back && sy >= 0) r = back.data[sy * W + sx]!;
+          if (r >>> 24) {
+            const k = 0.45 + Math.min(0.3, dy / 120);
+            c = mixc(mixc(unpack(r), c, k), [0, 0, 0], 0.12);
+          }
           c = mixc(c, sh as RGB, ripple + lit * 0.55);
           // La orilla: una raya oscura bajo los árboles.
           if (dy === 0) c = mixc(c, [20, 30, 30], 0.35);

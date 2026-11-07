@@ -173,6 +173,30 @@ tenues). Va delante del corte, sin la luz ni el halo de las salas en su cara de 
 Lo que falta en esta vista: las ventanas de los muros de los lados (ver arriba); el sótano, que
 desde fuera es tierra oscura; quizá un poco de luz de las ventanas en la pared de debajo.
 
+## Feedback del usuario (ronda de la vista desde fuera)
+
+Hecho:
+
+1. El rayo de sol se separaba de la ventana en los bordes de la pantalla: avanzaba mucho hacia
+   la cámara y la perspectiva lo torcía. Ahora va casi pegado a la pared del fondo (`uIn` 4):
+   mismo ángulo y pegado a la ventana estés donde estés.
+2. El rayo, más corto (dos tercios de lo que queda hasta el suelo).
+3. El lago refleja, sutil, el bosque de la orilla y, más abajo, las montañas de detrás.
+4. El halo de las farolas del patio (y del jardín, el farol de la puerta y el de la torre) ya no
+   se corta: con el ajuste, flota delante del farol como un disco en anillos que se suma a lo de
+   detrás, sea suelo o cielo (`haloSprite`).
+5. Motas de polvo: menos, más tenues y menos repetitivas (cada columna a su paso, cada rayo con
+   su semilla, cada mota aparece y se apaga a su ritmo).
+6. La hierba de los lados ya no se repite: se pinta entera a lo ancho, cada trozo con su ruido.
+7. La puerta de la calle se abre como las demás: la hoja (`streetLeaf`) gira hacia dentro cuando
+   pasa alguien; en la pared queda el marco y el hueco.
+8. La antorcha de los bandidos: sin contorno negro (llama en capas con núcleo claro y un
+   resplandor tenue); fuera del edificio, su luz y su halo ya no entran en las salas; y con la
+   tapa de la vista desde fuera, lo que se pinta encima de las salas (antorchas, bocadillos,
+   barras, partículas) no se ve a través.
+
+Siguiente: ventanas en los muros de los lados (ver «Para más adelante»).
+
 ## Fases (cada una, un PR con capturas antes y después, dentro de «Luz con ambiente»)
 
 1. **Fachada y exterior con relieve** (lo primero: es lo que no encaja).

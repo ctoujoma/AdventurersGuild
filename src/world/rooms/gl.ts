@@ -372,6 +372,7 @@ const SHAFT_VERT = /* glsl */ `
 const SHAFT_FRAG = /* glsl */ `
   uniform vec3 uColor;
   uniform float uTime;
+  uniform float uSeed;
   uniform float uDbg;
   uniform float uSlantF;
   uniform vec2 uWin;
@@ -394,13 +395,18 @@ const SHAFT_FRAG = /* glsl */ `
     vec2 cell = floor(vUv * vec2(uW, uDrop) / 2.0);
     float jit = fract(sin(dot(cell, vec2(12.9898, 78.233))) * 43758.5453) - 0.5;
     float i = floor(edge * fall * uK * 4.0 + jit * 0.6) / 4.0;
-    // El polvo: motas de un píxel que flotan despacio (bajan y se mecen) y titilan.
-    vec2 px = floor(vUv * vec2(uW, uDrop) + vec2(sin(uTime * 0.3 + vUv.y * 6.0) * 1.5, -uTime * 2.0));
-    float seed = fract(sin(dot(px, vec2(41.31, 289.17))) * 15731.743);
-    float tw = 0.5 + 0.5 * sin(uTime * 2.0 + seed * 40.0);
-    float mote = step(0.978, seed) * tw * edge * uK;
-    if (i <= 0.0 && mote < 0.3) discard;
-    gl_FragColor = vec4(uColor * (max(i, 0.0) * 0.5 + mote * 0.8), 1.0);
+    // El polvo: motas de un píxel que flotan despacio, cada columna a su paso (bajan y se
+    // mecen), cada rayo con las suyas (uSeed); cada mota aparece y se apaga a su ritmo. Pocas y
+    // tenues.
+    vec2 gp = vUv * vec2(uW, uDrop);
+    float col = floor(gp.x / 2.0);
+    float sp = 0.5 + fract(sin(col * 12.9898 + uSeed) * 43758.5453) * 1.3;
+    vec2 px = floor(vec2(gp.x + sin(uTime * 0.27 + col * 1.7) * 1.2, gp.y - uTime * sp));
+    float seed = fract(sin(dot(px + uSeed, vec2(41.31, 289.17))) * 15731.743);
+    float tw = pow(max(0.0, sin(uTime * 0.7 + seed * 60.0)), 2.0);
+    float mote = step(0.988, seed) * tw * edge * uK;
+    if (i <= 0.0 && mote < 0.15) discard;
+    gl_FragColor = vec4(uColor * (max(i, 0.0) * 0.5 + mote * 0.35), 1.0);
   }
 `;
 
@@ -432,6 +438,17 @@ const GLOW_FRAG = /* glsl */ `
       if ((BAYER[bi] + 0.5) / 16.0 > uFade) discard;
     }
     gl_FragColor = vec4(c.rgb, 1.0);
+  }
+`;
+
+const HALO_FRAG = /* glsl */ `
+  uniform sampler2D map;
+  uniform float uK;
+  varying vec2 vUv;
+  void main() {
+    vec4 c = texture2D(map, vUv);
+    if (c.a < 0.5 || uK <= 0.0) discard;
+    gl_FragColor = vec4(c.rgb * uK, 1.0);
   }
 `;
 
@@ -622,6 +639,29 @@ export class Look {
     );
   }
 
+  /**
+   * Halo de un farol de fuera, flotando delante de él: un disco que se suma a lo de detrás (sea
+   * superficie o cielo), en anillos (`uK`: cuánto brilla).
+   */
+  halo(b: PixelBuffer): ShaderMaterial {
+    const map = this.own(texture(b));
+    return this.own(
+      new ShaderMaterial({
+        uniforms: {
+          map: { value: map },
+          uK: { value: 0 },
+          uUvOffset: { value: new Vector2(0, 0) },
+          uUvScale: { value: new Vector2(1, 1) },
+        },
+        vertexShader: SURFACE_VERT,
+        fragmentShader: HALO_FRAG,
+        transparent: true,
+        depthWrite: false,
+        blending: AdditiveBlending,
+      }),
+    );
+  }
+
   /** Rayo de sol de una ventana (ver `SHAFT_VERT`); la escena le pone dónde y cuánto. */
   shaft(): ShaderMaterial {
     return this.own(
@@ -635,6 +675,7 @@ export class Look {
           uSlant: { value: 0 },
           uIn: { value: 30 },
           uTime: { value: 0 },
+          uSeed: { value: Math.random() * 100 },
           uDbg: { value: 0 },
           uSlantF: { value: 0 },
           uWin: { value: new Vector2(16, 20) },
