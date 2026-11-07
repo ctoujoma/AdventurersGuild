@@ -145,6 +145,11 @@ npm run build`.
         (`Crowd.where` en su sitio y parado; al menos 1,1 s) y se funde con unos destellos. Hoy
         se le pone allí de golpe, así que dura ese momento; cuando vaya andando (núcleo,
         `crowd.drop`) dura todo el camino sin tocar nada más.
+  - [x] 6b. El camino (el usuario: «un trazado con el camino que harán y que desaparezca a los
+        pocos segundos»): al soltar, un punteado amarillo que avanza por el suelo, por puertas y
+        escaleras (`route`), de donde estaba hasta el banderín (`wayTo`, `trace`); entero un
+        rato y luego se borra desde donde salió hacia el banderín y se apaga (`TRAIL_LIFE` =
+        3,5 s). Al arrastrar, el de muestra, más tenue.
   Capturas en `capturas/movimiento/`.
 
 ## Estudio: estilo «Cast n Chill»

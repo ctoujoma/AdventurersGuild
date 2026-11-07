@@ -211,6 +211,8 @@ const at = (x: number, y: number, depth: number) => new Vector3(x, GROUND - y, -
 const SIGN_W = 6.5;
 /** Lo que se queda al menos el banderín de destino (aunque ya esté allí: hoy se le pone). */
 const GOAL_MIN = 1.1;
+/** Lo que dura el camino de quien se manda a un sitio (luego se borra). */
+const TRAIL_LIFE = 3.5;
 const SIGN_DAMP = 1.5;
 const SIGN_KNOCK = 4.2;
 const SIGN_SPIN_MAX = 6;
@@ -551,7 +553,15 @@ export class RoomScene {
     moved: boolean;
     room: string | null;
     ok: boolean;
+    /** De dónde se le ha cogido (sus pies) y el camino de muestra hasta donde caería. */
+    from?: Place | null;
+    trail?: { key: string; pts: Place[] | null };
   } | null = null;
+  /**
+   * Los caminos de quien se acaba de mandar a un sitio: de donde estaba hasta el banderín, por
+   * puertas y escaleras; se borran solos en unos segundos (ver `trails`).
+   */
+  private paths: { pts: Place[]; t0: number }[] = [];
   /** Modo obras: la sala elegida, que se puede coger para moverla, y la que se lleva con el dedo. */
   private grabbable: string | null = null;
   private roomDrag: { id: string; x: number; y: number; moved: boolean; rect: Rect } | null = null;
@@ -3567,6 +3577,7 @@ export class RoomScene {
       this.floats.length > 0 ||
       !!this.drag?.moved ||
       this.goals.size > 0 ||
+      this.paths.length > 0 ||
       !!this.roomDrag?.moved ||
       this.raising.length > 0 ||
       !!this.raid ||
@@ -4042,6 +4053,8 @@ export class RoomScene {
       const w = this.camera.toWorld(d.x, d.y);
       const x = Math.max(r.rect.x + 12, Math.min(r.rect.x + r.rect.w - 12, w.x));
       this.crowd.drop(d.id, { x, floor: r.room.floor });
+      const way = d.from ? this.wayTo(d.from, { x, floor: r.room.floor }) : null;
+      if (way) this.paths.push({ pts: way, t0: this.t });
       this.goals.set(d.id, {
         x,
         floor: r.room.floor,
@@ -4269,10 +4282,73 @@ export class RoomScene {
       if (d.ok) {
         const wx = this.camera.toWorld(d.x, d.y).x;
         const gx = Math.max(r.rect.x + 12, Math.min(r.rect.x + r.rect.w - 12, wx));
+        const key = `${r.room.id}:${Math.round(gx / 6)}`;
+        if (d.trail?.key !== key)
+          d.trail = {
+            key,
+            pts: d.from ? this.wayTo(d.from, { x: gx, floor: r.room.floor }) : null,
+          };
+        if (d.trail.pts) this.trace(d.trail.pts, 0.5, 0);
         this.goalAt(gx, r.room.floor, this.goalIconFor(d.id, r.room), 0, 0.55, true);
       }
     }
+    this.trails();
     this.goalMarks();
+  }
+
+  /** El camino de un sitio a otro, con el de salida delante (null si no se puede llegar). */
+  private wayTo(from: Place, to: Place): Place[] | null {
+    const L = this.layout;
+    const way = L ? route(L, from, to) : null;
+    return way ? [{ x: from.x, floor: from.floor }, ...way] : null;
+  }
+
+  /**
+   * Los caminos de quien se ha mandado a un sitio: un rato enteros y luego se van borrando desde
+   * donde salió hacia el banderín (como si se lo comiera quien va andando) y apagando.
+   */
+  private trails(): void {
+    this.paths = this.paths.filter((p) => this.t - p.t0 < TRAIL_LIFE);
+    for (const p of this.paths) {
+      const k = (this.t - p.t0) / TRAIL_LIFE;
+      const cut = k < 0.45 ? 0 : (k - 0.45) / 0.55;
+      this.trace(p.pts, k < 0.75 ? 1 : 1 - (k - 0.75) / 0.25, cut);
+    }
+  }
+
+  /**
+   * Un camino punteado por el suelo (al paso de la gente), con los puntos que avanzan hacia el
+   * final; `cut` (0–1): lo que ya se ha borrado desde el principio.
+   */
+  private trace(pts: Place[], alpha: number, cut: number): void {
+    const { topCtx: ctx, camera } = this;
+    const v: View = { px: camera.px, py: camera.py, vw: camera.vw, vh: camera.vh };
+    const sp = pts.map((q) => project(v, q.x, floorY(q.floor), WALK_Z));
+    let total = 0;
+    for (let k = 1; k < sp.length; k++)
+      total += Math.hypot(sp[k]!.x - sp[k - 1]!.x, sp[k]!.y - sp[k - 1]!.y);
+    const from = total * cut;
+    const shift = Math.floor(this.t * 14) % 6;
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, alpha);
+    let walked = 0;
+    for (let k = 1; k < sp.length; k++) {
+      const a = sp[k - 1]!;
+      const b = sp[k]!;
+      const len = Math.hypot(b.x - a.x, b.y - a.y);
+      for (let d = 0; d < len; d++) {
+        const at = walked + d;
+        if (at < from || (at - shift + 6) % 6 >= 3) continue;
+        const x = Math.round(a.x + ((b.x - a.x) * d) / len);
+        const y = Math.round(a.y + ((b.y - a.y) * d) / len) - 1;
+        ctx.fillStyle = P.black;
+        ctx.fillRect(x - 1, y - 1, 3, 3);
+        ctx.fillStyle = P.lemon;
+        ctx.fillRect(x, y, 1, 1);
+      }
+      walked += len;
+    }
+    ctx.restore();
   }
 
   /**
@@ -4367,7 +4443,15 @@ export class RoomScene {
         const w = this.camera.toWorld(p.x, p.y);
         const grab = this.grabbable ? this.roomRect(this.grabbable) : null;
         if (who && this.cb.canDrag?.(who))
-          this.drag = { id: who, x: p.x, y: p.y, moved: false, room: null, ok: false };
+          this.drag = {
+            id: who,
+            x: p.x,
+            y: p.y,
+            moved: false,
+            room: null,
+            ok: false,
+            from: this.crowd.where(who),
+          };
         else if (
           grab &&
           w.x >= grab.x &&
