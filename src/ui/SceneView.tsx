@@ -35,6 +35,8 @@ function roomScene(canvas: HTMLCanvasElement, cb: SceneCallbacks): RoomScene | n
 export function SceneView(props: Props) {
   const { model, onReady, paused } = props;
   const [failed, setFailed] = useState(false);
+  /** A cámara lenta: los bordes más oscuros y la imagen con menos color (ver `.scene.slow`). */
+  const [slow, setSlow] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const scene = useRef<GameScene | null>(null);
@@ -54,6 +56,10 @@ export function SceneView(props: Props) {
       onRoomDrop: () => handlers.current.onRoomDrop?.(),
       onSound: (name, vol) => audio.play(name, vol),
       onFrame: (p) => audio.listen(p),
+      onSlow: (on) => {
+        setSlow(on);
+        audio.setSlow(on);
+      },
     };
     const s = roomScene(canvas.current!, callbacks);
     if (!s) {
@@ -74,6 +80,7 @@ export function SceneView(props: Props) {
     const vis = () => (document.hidden ? s.stop() : s.start());
     document.addEventListener('visibilitychange', vis);
     return () => {
+      audio.setSlow(false);
       ro.disconnect();
       s.dispose();
       document.removeEventListener('visibilitychange', vis);
@@ -92,7 +99,7 @@ export function SceneView(props: Props) {
   }, [paused]);
 
   return (
-    <div class="scene" ref={wrap}>
+    <div class={slow ? 'scene slow' : 'scene'} ref={wrap}>
       <canvas
         ref={canvas}
         class="pixel scene-canvas"

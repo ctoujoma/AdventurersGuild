@@ -178,4 +178,6 @@ export interface SceneCallbacks {
   onRoomDrop?(): void;
   onSound?(name: SoundName, volume?: number): void;
   onFrame?(listener: Point): void;
+  /** Entra o sale la cámara lenta (arrastrando a alguien en el asalto en directo). */
+  onSlow?(on: boolean): void;
 }
