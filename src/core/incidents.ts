@@ -37,6 +37,7 @@ import { equip } from './resolve';
 import { Rng } from './rng';
 import { active } from './rooms';
 import { onWay } from './workers';
+import { bump } from './feats';
 
 /** Lo último que ha pasado con los incidentes, para el aviso de la interfaz. */
 export type IncidentNews = { t: string; k: ChipKind };
@@ -294,7 +295,8 @@ function fail(s: GameState, inc: Incident): IncidentNews {
     done(s, inc, 'puerta', awake);
     const d = INCIDENTS[inc.kind];
     if (d.rep) s.rep += d.rep;
-    if (s.stats) s.stats = { ...s.stats, incidents: (s.stats.incidents ?? 0) + 1 };
+    bump(s, 'incidents');
+    bump(s, 'thieves');
     return {
       t: `${nameOf(s, awake)}, de guardia, le cierra el paso en la puerta y recupera el botín.${d.rep ? ` (+${d.rep} reputación)` : ''}`,
       k: 'good',
@@ -365,7 +367,8 @@ function lose(s: GameState, inc: Incident): IncidentNews {
 function win(s: GameState, inc: Incident, who: string): IncidentNews {
   const d = INCIDENTS[inc.kind];
   if (d.rep) s.rep += d.rep;
-  if (s.stats) s.stats = { ...s.stats, incidents: (s.stats.incidents ?? 0) + 1 };
+  bump(s, 'incidents');
+  if (inc.kind === 'ladron') bump(s, 'thieves');
   return { t: fill(d.win, { h: who }) + (d.rep ? ` (+${d.rep} reputación)` : ''), k: 'good' };
 }
 

@@ -20,6 +20,7 @@ import { generateQuest } from './generate';
 import type { ChipKind, GameState, Quest } from './model';
 import { Rng } from './rng';
 import { active } from './rooms';
+import { bump } from './feats';
 
 /** Sala donde se oye (el salón en uso), si hay. */
 export const rumorRoom = (s: GameState) =>
@@ -77,6 +78,7 @@ export function takeRumor(s: GameState): { t: string; k: ChipKind } | null {
   s.rng = rng.save();
   s.quests = [...s.quests, q];
   s.rumor = undefined;
+  bump(s, 'rumors');
   return {
     t: `Lo apuntas: «${q.title}» ya está en el tablón, con ${q.item!.name} de botín.`,
     k: 'good',

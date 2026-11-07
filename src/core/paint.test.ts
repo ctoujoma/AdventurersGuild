@@ -79,6 +79,7 @@ describe('el taller del pintor', () => {
     t = endDay(t, true);
     expect(paintingOf(t, room)).toBeUndefined();
     expect(customOf(t).colors?.[room]).toBe('mar');
+    expect(t.stats?.painted).toBe(1);
     expect(painterAt(t, 'w-pintor')).toBeNull();
     expect(t.dawn.some((e) => /ha acabado de pintar/.test(e.t))).toBe(true);
   });

@@ -34,6 +34,7 @@ import { Rng } from './rng';
 import { active } from './rooms';
 import { workAt, workedIn } from './workers';
 import { hasUnlock, unlockSource } from './goals';
+import { bump } from './feats';
 
 /** Las salas que son taller (las que tienen recetas). */
 const SHOPS = new Set<RoomType>(RECIPE_IDS.map((id) => RECIPES[id].room));
@@ -325,6 +326,7 @@ function finish(s: GameState, c: Craft, rng: Rng, news: DawnEvent[]): void {
         : h,
     );
     logEnd(s, c, 'vestido');
+    bump(s, 'dressed');
     const h = s.heroes.find((x) => x.id === hero);
     if (h)
       news.push({
@@ -354,6 +356,7 @@ function finish(s: GameState, c: Craft, rng: Rng, news: DawnEvent[]): void {
   const base = good ? rc.good : rc.common;
   s.inventory.push({ ...structuredClone(base), id: `i${s.uid++}` });
   logEnd(s, c, 'hecho', base.rarity ?? 0);
+  bump(s, 'crafted');
   news.push({
     t: good
       ? `¡En ${place} han creado ${base.name}! Ha salido de las buenas. Ya está en el arcón.`
