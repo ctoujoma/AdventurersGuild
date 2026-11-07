@@ -73,6 +73,10 @@ Segunda pasada (lo que quedaba, también hecho):
 | El ladrón que se escapa y la guardia | Salía por el recibidor como si nada, aunque hubiera alguien de guardia | El de guardia le cierra el paso: pelea con él (las cuentas del duelo) y, si gana, el botín se queda (`IncidentEnd.how = 'puerta'`); en la escena el ladrón para en el recibidor, el de guardia sale a su encuentro y cae allí. A la hora de la siesta (`GUARD_NAP`) el de guardia, si está solo, cabecea en su taburete y se le cuela (`cuela`); con dos se turnan (`napping`, la misma cuenta en el núcleo y en la escena) |
 | El ladrón vencido en la cámara | Tras ganarle el duelo, salía corriendo de la casa | Cae allí mismo, con estrellas y el botín que salta |
 | Cómo acabó un incidente | La escena lo adivinaba por el reloj | Lo dice el núcleo (`incidentLog` → `SceneModel.incidentEnds`) |
+| Pelea en el salón con alguien de guardia | Había que arrastrar a alguien | El de guardia (despierto) deja la puerta, va andando y la separa al llegar; luego vuelve |
+| El recaudador en la puerta | Esperaba lo mismo con o sin guardia | El de guardia le entretiene: `GUARD_HOLD` segundos más para pagar (una vez) |
+| Ratas en la cocina (u otra sala de la planta del salón) | Solo las espantaba el jugador | El gato va a cazarlas (`catHunts`, la misma cuenta en el núcleo y en la escena): caza una a los `CAT_FIRST` s y otra cada `CAT_EVERY`; acecha de un lado a otro de la sala y al acabar vuelve al fuego |
+| Acabar un asalto ganado | Se acostaba a todos de golpe (el «a negro» de las noches sin asalto se colaba al acabar) y nadie lo celebraba | Nadie salta de sitio; los defensores que siguen en pie dan saltos donde han peleado (`Crowd.cheerHere`) y luego van a lo suyo andando |
 
 **La guardia** (decidido con el usuario, 7 de noviembre): los de guardia siguen en la puerta día y
 noche, sin acostarse (en el núcleo no dormir no les cuesta nada: recuperan moral igual). Para el

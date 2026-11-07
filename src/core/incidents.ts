@@ -13,6 +13,9 @@ import {
   INCIDENT_FROM_DAY,
   INCIDENT_REACT,
   INCIDENT_RANK_COST,
+  CAT_EVERY,
+  CAT_FIRST,
+  GUARD_HOLD,
   GUARD_NAP,
   THIEF_ESCAPE,
   THIEF_HP,
@@ -20,7 +23,16 @@ import {
   rankIndex,
 } from './balance';
 import { CRIT, CRIT_MULT, heroUnit } from './combat';
-import type { ChipKind, DawnEvent, Duel, DuelHit, GameState, Incident, IncidentEnd } from './model';
+import type {
+  Building,
+  ChipKind,
+  DawnEvent,
+  Duel,
+  DuelHit,
+  GameState,
+  Incident,
+  IncidentEnd,
+} from './model';
 import { equip } from './resolve';
 import { Rng } from './rng';
 import { active } from './rooms';
@@ -80,6 +92,9 @@ export function stepIncidents(s: GameState, from: number, to: number): IncidentN
       if (to >= inc.duel.at + inc.duel.end) news.push(settleDuel(s, inc));
       continue;
     }
+    const help = helpers(s, inc, to);
+    if (help) news.push(help);
+    if (!s.incidents?.some((i) => i.id === inc.id && !i.coming)) continue;
     // Quien ya está en la sala y sabe arreglarlo se pone a ello solo (sin que haya que arrastrarlo).
     if (to < inc.from + INCIDENT_REACT) continue;
     const who = presentFor(s, inc);
@@ -132,6 +147,67 @@ export function presentFor(s: GameState, inc: Pick<Incident, 'kind' | 'room'>): 
   if (hero) return hero.name;
   if (how === 'alguien')
     return s.workers.find((w) => w.room === inc.room && !onWay(s, w))?.name ?? null;
+  return null;
+}
+
+/** Quien está de guardia y despierto ahora (no cabecea), si hay alguien. */
+function awakeGuard(s: GameState, to: number): string | null {
+  const guards = guardsOf(s);
+  const nap = napping(guards, Math.min(1, to / DAY_SECONDS));
+  return guards.find((g) => g !== nap) ?? null;
+}
+
+/**
+ * Si el gato puede cazar en una sala: vive en el salón (en uso) y va a las salas de su misma
+ * planta. Pura con el edificio para que la escena lo mande a la misma sala.
+ */
+export function catHunts(b: Building, roomId: string): boolean {
+  const salon = b.rooms.find(
+    (r) => r.type === 'salon' && r.level > 0 && !(r.works && r.works.kind !== 'extend'),
+  );
+  const room = b.rooms.find((r) => r.id === roomId);
+  return !!salon && !!room && room.floor === salon.floor;
+}
+
+/**
+ * La casa se ayuda sola: el de guardia (despierto) va a separar la pelea del salón y entretiene
+ * al recaudador en la puerta; el gato caza las ratas de las salas de su planta. Devuelve la
+ * noticia, si la hay. Muta `s` (una copia).
+ */
+function helpers(s: GameState, inc: Incident, to: number): IncidentNews | null {
+  const set = (patch: Partial<Incident>) => {
+    s.incidents = s.incidents!.map((i) => (i.id === inc.id ? { ...i, ...patch } : i));
+  };
+  if (to < inc.from + INCIDENT_REACT) return null;
+  if (inc.kind === 'pelea') {
+    const g = awakeGuard(s, to);
+    if (!g) return null;
+    // Deja la puerta un momento: va andando y la separa al llegar (como si se le mandara).
+    set({ coming: { who: g, at: to + INCIDENT_WALK } });
+    return { t: `${nameOf(s, g)} deja la puerta un momento para ir a separarlos.`, k: 'info' };
+  }
+  if (inc.kind === 'recaudador' && !inc.held) {
+    const g = awakeGuard(s, to);
+    if (!g) return null;
+    set({ held: g, until: inc.until + GUARD_HOLD });
+    return {
+      t: `${nameOf(s, g)}, de guardia, entretiene al recaudador en la puerta: hay algo más de tiempo.`,
+      k: 'info',
+    };
+  }
+  if (inc.kind === 'ratas' && catHunts(s.building, inc.room)) {
+    let at = inc.cat ?? inc.from + CAT_FIRST;
+    let taps = inc.taps ?? 0;
+    while (to >= at && taps > 0) {
+      taps--;
+      at += CAT_EVERY;
+    }
+    if (taps <= 0) {
+      done(s, inc, 'bien');
+      return { t: 'El gato acaba con las últimas ratas. Fuera ratas: no queda ni una.', k: 'good' };
+    }
+    if (taps !== inc.taps || at !== inc.cat) set({ taps, cat: at });
+  }
   return null;
 }
 

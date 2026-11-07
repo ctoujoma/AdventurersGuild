@@ -394,6 +394,10 @@ export interface Incident {
   coming?: { who: string; at: number };
   /** El ladrón: al llegar el héroe se pelean; acaba a los `end` segundos de `at`. */
   duel?: Duel;
+  /** El recaudador: el de guardia (id) le entretiene en la puerta (ya se ha alargado el plazo). */
+  held?: string;
+  /** Las ratas: el gato caza una al llegar a este segundo del reloj (y luego otra, y otra). */
+  cat?: number;
 }
 
 /** Un golpe del duelo con el ladrón: el héroe (`h`) o el ladrón (`l`), y cuánto quita. */

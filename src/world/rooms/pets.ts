@@ -138,6 +138,8 @@ export class Pets {
   /** Dónde duerme el gato y por dónde puede andar (en el mundo). */
   private home = 0;
   private range: [number, number] = [0, 0];
+  /** Ratas en una sala de su planta: el gato va allí y acecha de un lado a otro (x de y a). */
+  private hunt: [number, number] | null = null;
   private now = 0;
   private seed = 7;
   private perch: Perch | null = null;
@@ -175,7 +177,9 @@ export class Pets {
     // Si la obra ha sido en otra sala, cada uno sigue a lo suyo; si no, vuelve a su sitio.
     const [a, b] = this.range;
     const cat = this.pets.get('gato') ?? this.add('gato', catStrip(), CAT_Z);
-    if (cat.state === 'walk' && cat.floor === floor && cat.x >= a && cat.x <= b) {
+    if (this.hunt && cat.floor === floor) {
+      // De caza en otra sala de la planta: sigue a lo suyo.
+    } else if (cat.state === 'walk' && cat.floor === floor && cat.x >= a && cat.x <= b) {
       // Iba andando y el salón sigue ahí: vuelve andando a su sitio junto al fuego.
       cat.target = Math.max(a, Math.min(b, this.home));
       cat.tz = CAT_Z;
@@ -391,19 +395,41 @@ export class Pets {
     p.since = this.now;
   }
 
+  /**
+   * Ratas en una sala de la planta del salón (la misma cuenta que el núcleo, `catHunts`): el gato
+   * va allí a cazarlas; con null, vuelve a lo suyo.
+   */
+  setHunt(area: [number, number] | null): void {
+    const was = this.hunt;
+    this.hunt = area;
+    const c = this.pets.get('gato');
+    // Solo al empezar o acabar la caza (la escena lo dice a cada cambio del modelo).
+    if (!c || (!was && !area) || (was && area && was[0] === area[0])) return;
+    // Se despierta y va (o vuelve al fuego) ya.
+    c.timer = 0;
+    if (c.state === 'walk') this.set(c, 'sit', 0);
+    if (!area) {
+      c.target = this.home;
+      c.tz = CAT_Z;
+      this.set(c, 'walk', 0);
+    }
+  }
+
   /** Bigotes: duerme, se sienta un rato (a veces se lava), da una vuelta y vuelve al fuego. */
   private cat(c: Pet, dt: number): void {
     c.timer -= dt;
     if (c.state === 'walk') {
-      // En línea recta hacia su sitio (de lado y hacia delante o hacia el fuego a la vez).
+      // En línea recta hacia su sitio (de lado y hacia delante o hacia el fuego a la vez); de
+      // caza, al trote.
       const dx = c.target - c.x;
       const dz = c.tz - c.z;
       const left = Math.hypot(dx, dz);
-      const step = CAT_SPEED * dt;
+      const step = CAT_SPEED * (this.hunt ? 2.2 : 1) * dt;
       if (left <= step) {
         c.x = c.target;
         c.z = c.tz;
-        if (Math.abs(c.x - this.home) < 1) this.set(c, 'sleep', 25 + this.rnd() * 30);
+        if (this.hunt) this.set(c, 'sit', 0.8 + this.rnd() * 1.5);
+        else if (Math.abs(c.x - this.home) < 1) this.set(c, 'sleep', 25 + this.rnd() * 30);
         else this.set(c, 'sit', 4 + this.rnd() * 5);
       } else {
         c.x += (dx / left) * step;
@@ -414,6 +440,14 @@ export class Pets {
       return;
     }
     if (c.timer > 0) return;
+    // De caza: de un lado a otro de la sala de las ratas, parándose a acechar.
+    if (this.hunt) {
+      const [a, b] = this.hunt;
+      c.target = a + this.rnd() * (b - a);
+      c.tz = CAT_WALK_Z;
+      this.set(c, 'walk', 0);
+      return;
+    }
     if (c.state === 'sleep') {
       this.set(c, 'sit', 3);
       return;
