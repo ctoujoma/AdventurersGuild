@@ -19,13 +19,14 @@ export interface Weather {
 }
 
 export type WeatherKind =
-  'despejado' | 'nubes' | 'nublado' | 'niebla' | 'lluvia' | 'tormenta' | 'nieve';
+  'despejado' | 'nubes' | 'nublado' | 'niebla' | 'viento' | 'lluvia' | 'tormenta' | 'nieve';
 
 export const WEATHER_KINDS: readonly WeatherKind[] = [
   'despejado',
   'nubes',
   'nublado',
   'niebla',
+  'viento',
   'lluvia',
   'tormenta',
   'nieve',
@@ -36,6 +37,7 @@ export const WEATHER_LABEL: Record<WeatherKind, string> = {
   nubes: 'Algo nublado',
   nublado: 'Nublado',
   niebla: 'Niebla',
+  viento: 'Viento',
   lluvia: 'Lluvia',
   tormenta: 'Tormenta',
   nieve: 'Nieve',
@@ -56,6 +58,8 @@ export function weatherOf(kind: WeatherKind): Weather {
       return W({ cloud: 1, wind: 0.3 });
     case 'niebla':
       return W({ cloud: 0.85, fog: 1, wind: 0 });
+    case 'viento':
+      return W({ cloud: 0.4, wind: 0.9 });
     case 'lluvia':
       return W({ cloud: 1, rain: 0.7, wind: 0.35 });
     case 'tormenta':
@@ -79,7 +83,8 @@ function hash(seed: string, day: number, salt: number): number {
 function rawKind(seed: string, day: number): WeatherKind {
   if (day <= 1) return 'despejado';
   const r = hash(seed, day, 1);
-  if (r < 0.4) return 'despejado';
+  if (r < 0.35) return 'despejado';
+  if (r < 0.4) return 'viento';
   if (r < 0.65) return 'nubes';
   if (r < 0.77) return 'nublado';
   if (r < 0.85) return 'niebla';
@@ -133,6 +138,11 @@ function rawAt(seed: string, day: number, tod: number): Weather {
         ? lerp(1, 0.45, smooth(a + 0.2, a + 0.45, t))
         : lerp(0.55, 1, smooth(a - 0.15, a + 0.1, t));
       return W({ cloud: c + wave * 0.5, wind: wind + 0.15 });
+    }
+    case 'viento': {
+      // Rachas que suben y bajan a lo largo del día, con nubes que corren.
+      const gust = 0.7 + 0.25 * Math.sin((t * (2 + j(6)) + j(7)) * Math.PI * 2);
+      return W({ cloud: 0.3 + j(5) * 0.2 + wave, wind: gust });
     }
     case 'niebla': {
       // Niebla de madrugada que se levanta a media mañana; luego, algunas nubes.

@@ -70,6 +70,8 @@ const COLORS: Partial<Record<PKind, string>> = {
 
 export class Particles {
   list: Particle[] = [];
+  /** El viento (0–1): tumba el humo y lleva las hojas. */
+  wind = 0;
   private n = 0;
 
   spawn(
@@ -108,12 +110,13 @@ export class Particles {
           p.vx += 3 * dt;
           break;
         case 'chimney':
-          p.vx += 4 * dt;
-          p.vy *= 1 - 0.15 * dt;
+          // Con viento, el humo se tumba: corre de lado y apenas sube.
+          p.vx += (4 + this.wind * 70) * dt;
+          p.vy *= 1 - (0.15 + this.wind * 1.6) * dt;
           break;
         case 'leaf':
         case 'feather':
-          p.vx = Math.sin(t * 2 + p.seed) * 10;
+          p.vx = Math.sin(t * 2 + p.seed) * 10 + this.wind * 75;
           break;
         case 'drip':
           p.vy += 200 * dt;
@@ -160,8 +163,16 @@ export class Particles {
     this.list = this.list.filter((p) => p.life > 0);
   }
 
-  draw(ctx: CanvasRenderingContext2D, camX: number, camY: number, t: number): void {
+  /** Con `only`, solo esas clases (por ejemplo, lo de fuera en la vista desde fuera). */
+  draw(
+    ctx: CanvasRenderingContext2D,
+    camX: number,
+    camY: number,
+    t: number,
+    only?: readonly PKind[],
+  ): void {
     for (const p of this.list) {
+      if (only && !only.includes(p.kind)) continue;
       const x = Math.round(p.x - camX);
       const y = Math.round(p.y - camY);
       const k = p.life / p.max; // 1 → 0
