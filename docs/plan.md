@@ -84,8 +84,11 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
    sale otro. Los de contar se repiten pidiendo más; los de salas y los de llegar a algo, una
    vez y en serie (la cocina a 2, luego a 3; hierro, luego plata). Sustituyen a los desafíos del
    mes. Se ven en el Gremio, y el Libro guarda lo cumplido (día y premio). Datos en
-   `data/goals.ts`, reglas en `core/goals.ts`. Falta: más variedad («gana un asalto sin
-   heridos», «sirve 40 jarras»).
+   `data/goals.ts`, reglas en `core/goals.ts`. Más variedad (hecho, 8 de noviembre): asaltos sin
+   heridos, ladrones tumbados, rumores apuntados, historias completadas, objetos creados, héroes
+   vestidos, salas pintadas, puntos entrenados (estos cuatro, solo con su sala en uso: `needs`),
+   los seis tipos de encargo, un héroe a nivel 5 y 8, 15 y 30 días sin bajas, y más salas a nivel 2
+   (forja, sastrería, alquimia, pintor, mapas, armería). Contadores nuevos en `Stats` (`bump`).
 3. **Premios que se ven** (hecho): hazañas y objetivos dan piezas de fachada (tejado, paredes,
    rótulo, jardineras) y temas de color de las salas (`data/unlocks.ts`). Las que no se tienen
    salen apagadas y dicen de dónde se ganan; en el modo prueba, todas. Los mismos tintes visten

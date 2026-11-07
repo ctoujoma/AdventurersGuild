@@ -127,6 +127,51 @@ describe('objetivos', () => {
     expect(t.goals!.active).toHaveLength(GOAL_SLOTS);
   });
 
+  it('los de taller, sastrería, pintor o entrenar solo salen con la sala en uso', () => {
+    const s = structuredClone(newGame('sin talleres'));
+    s.day = 10;
+    const needy = ['talleres', 'vestir', 'pintar', 'entrenar'];
+    for (let i = 0; i < 40; i++) {
+      s.goals!.active = [];
+      checkGoals(s, new Rng(i), []);
+      for (const id of needy) expect(s.goals!.active.map((g) => g.id)).not.toContain(id);
+    }
+    s.building.rooms.push({
+      id: 'p1',
+      type: 'pintor',
+      col: s.building.cols,
+      floor: 0,
+      w: 1,
+      h: 1,
+      level: 1,
+      spent: 0,
+    });
+    let seen = false;
+    for (let i = 0; i < 80 && !seen; i++) {
+      s.goals!.active = [];
+      checkGoals(s, new Rng(i), []);
+      seen = s.goals!.active.some((g) => g.id === 'pintar');
+    }
+    expect(seen).toBe(true);
+  });
+
+  it('los contadores nuevos suben con lo que pasa en la taberna', () => {
+    const s = structuredClone(newGame('contadores'));
+    s.goals!.active[0] = { id: 'ladrones', text: 'x', base: 0, target: 1, reward: { gold: 5 } };
+    s.goals!.active[1] = { id: 'sin-bajas', text: 'y', base: 0, target: 15, reward: { gold: 5 } };
+    s.goals!.active[2] = { id: 'nivel-5', text: 'z', base: 0, target: 5, reward: { gold: 5 } };
+    expect(goalProgress(s, s.goals!.active[0]!)).toBe(0);
+    s.stats = { ...s.stats!, thieves: 1 };
+    expect(goalProgress(s, s.goals!.active[0]!)).toBe(1);
+    s.day = s.stats.lastDeath + 15;
+    expect(goalProgress(s, s.goals!.active[1]!)).toBe(15);
+    s.heroes[0]!.lvl = 5;
+    expect(goalProgress(s, s.goals!.active[2]!)).toBe(5);
+    const out: { t: string }[] = [];
+    checkGoals(s, new Rng(1), out);
+    expect(out.filter((e) => e.t.startsWith('Objetivo cumplido'))).toHaveLength(3);
+  });
+
   it('los de llegar a algo van en serie', () => {
     const s = structuredClone(newGame('en serie'));
     for (let i = 0; i < 30; i++) {

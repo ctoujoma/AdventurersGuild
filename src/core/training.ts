@@ -20,6 +20,7 @@ import type { DawnEvent, GameState, Hero, Room } from './model';
 import { SKILLS, skill, type AttrId, type SkillId } from './party';
 import { active } from './rooms';
 import { assign, shiftShare, shiftStart, slotsOf, workedIn } from './workers';
+import { bump } from './feats';
 
 export const ATTR_NAMES: Record<AttrId, string> = { F: 'Fuerza', D: 'Destreza', M: 'Mente' };
 
@@ -146,6 +147,7 @@ export function stepTraining(s: GameState, events: DawnEvent[]): void {
       p -= trainCost(h, t.attr);
       const gain = gainText(skillGain(h, t.attr));
       h.attrs[t.attr]++;
+      bump(s, 'trained');
       h.history.push(`Día ${s.day - 1} · Entrenando: ${ATTR_NAMES[t.attr]} ${h.attrs[t.attr]}`);
       events.push({
         t: `${h.name} ha entrenado: ${ATTR_NAMES[t.attr]} ${h.attrs[t.attr]}${gain ? ` (${gain})` : ''}.`,

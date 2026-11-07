@@ -6,7 +6,7 @@
  */
 import type { QuestType, Reward } from '../core/model';
 import type { RoomType } from './rooms';
-import { RAID_FROM } from '../core/balance';
+import { INCIDENT_FROM_DAY, RAID_FROM, RUMOR_FROM_DAY } from '../core/balance';
 
 export type GoalDef =
   | {
@@ -21,6 +21,8 @@ export type GoalDef =
       reward: Reward;
       /** No sale antes de este día (los asaltos, desde `RAID_FROM`). */
       fromDay?: number;
+      /** Solo sale con alguna de estas salas en uso (los talleres, el pintor…). */
+      needs?: readonly RoomType[];
     }
   | {
       id: string;
@@ -33,8 +35,11 @@ export type GoalDef =
   | {
       id: string;
       text: string;
-      /** Llegar a tener: jarras, raciones, trabajadores, héroes o reputación. */
-      have: 'beer' | 'food' | 'workers' | 'heroes' | 'rep';
+      /**
+       * Llegar a tener: jarras, raciones, trabajadores, héroes, reputación, un héroe de ese nivel
+       * (`level`) o días seguidos sin bajas (`safe`).
+       */
+      have: 'beer' | 'food' | 'workers' | 'heroes' | 'rep' | 'level' | 'safe';
       n: number;
       reward: Reward;
       /** Sale después de cumplir este otro (en serie). */
@@ -68,6 +73,12 @@ const ROOM_GOALS: [RoomType, number, Reward][] = [
   ['tiro', 2, { gold: 40, item: 0 }],
   ['biblioteca', 2, { gold: 40, item: 0 }],
   ['capilla', 2, { gold: 50, rep: 2 }],
+  ['forja', 2, { gold: 60 }],
+  ['sastreria', 2, { gold: 80 }],
+  ['alquimia', 2, { gold: 80 }],
+  ['pintor', 2, { gold: 60 }],
+  ['mapas', 2, { gold: 50, rep: 2 }],
+  ['armeria', 2, { gold: 50, item: 1 }],
 ];
 
 export const GOALS: readonly GoalDef[] = [
@@ -112,9 +123,74 @@ export const GOALS: readonly GoalDef[] = [
     reward: { gold: 60, rep: 3 },
     fromDay: RAID_FROM,
   },
+  {
+    id: 'ladrones',
+    text: 'Tumba a {n} ladrones',
+    stat: 'thieves',
+    n: 1,
+    step: 1,
+    reward: { gold: 50 },
+    fromDay: INCIDENT_FROM_DAY,
+  },
+  {
+    id: 'rumores',
+    text: 'Apunta {n} rumores de la barra',
+    stat: 'rumors',
+    n: 2,
+    step: 1,
+    reward: { gold: 40 },
+    fromDay: RUMOR_FROM_DAY,
+  },
+  {
+    id: 'historias',
+    text: 'Completa {n} historias',
+    stat: 'chains',
+    n: 1,
+    step: 1,
+    reward: { gold: 80, rep: 3 },
+  },
+  {
+    id: 'talleres',
+    text: 'Crea {n} objetos en los talleres',
+    stat: 'crafted',
+    n: 2,
+    step: 2,
+    reward: { gold: 50 },
+    needs: ['forja', 'sastreria', 'alquimia'],
+  },
+  {
+    id: 'vestir',
+    text: 'Viste a {n} héroes en la sastrería',
+    stat: 'dressed',
+    n: 1,
+    step: 1,
+    reward: { rep: 2 },
+    needs: ['sastreria'],
+  },
+  {
+    id: 'pintar',
+    text: 'Pinta {n} salas',
+    stat: 'painted',
+    n: 1,
+    step: 1,
+    reward: { gold: 40 },
+    needs: ['pintor'],
+  },
+  {
+    id: 'entrenar',
+    text: 'Gana {n} puntos entrenando',
+    stat: 'trained',
+    n: 2,
+    step: 2,
+    reward: { gold: 40 },
+    needs: ['armas', 'tiro', 'biblioteca'],
+  },
   byType('Cazar', 'Cumple {n} encargos de caza', 2, { gold: 50 }),
   byType('Explorar', 'Cumple {n} exploraciones', 2, { gold: 50 }),
   byType('Escoltar', 'Cumple {n} escoltas', 2, { gold: 50 }),
+  byType('Recuperar', 'Recupera {n} cosas perdidas', 2, { gold: 50 }),
+  byType('Investigar', 'Resuelve {n} investigaciones', 2, { gold: 50 }),
+  byType('Limpiar', 'Limpia {n} guaridas', 2, { gold: 50 }),
   ...ROOM_GOALS.map(([room, level, reward]): GoalDef => ({
     id: `${room}-${level}`,
     text: `{sala} a nivel ${level}`,
@@ -159,6 +235,36 @@ export const GOALS: readonly GoalDef[] = [
     have: 'heroes',
     n: 8,
     reward: { gold: 80, item: 1 },
+  },
+  {
+    id: 'nivel-5',
+    text: 'Que un héroe llegue a nivel {n}',
+    have: 'level',
+    n: 5,
+    reward: { gold: 60 },
+  },
+  {
+    id: 'nivel-8',
+    after: 'nivel-5',
+    text: 'Que un héroe llegue a nivel {n}',
+    have: 'level',
+    n: 8,
+    reward: { gold: 120, item: 2 },
+  },
+  {
+    id: 'sin-bajas',
+    text: 'Pasa {n} días seguidos sin bajas',
+    have: 'safe',
+    n: 15,
+    reward: { gold: 60, rep: 2 },
+  },
+  {
+    id: 'sin-bajas-30',
+    after: 'sin-bajas',
+    text: 'Pasa {n} días seguidos sin bajas',
+    have: 'safe',
+    n: 30,
+    reward: { gold: 120, rep: 4 },
   },
   {
     id: 'hierro',

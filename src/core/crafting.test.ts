@@ -266,6 +266,7 @@ describe('la sastrería viste a los héroes', () => {
     const x = t.heroes.find((y) => y.id === h.id)!;
     expect(x.dress).toEqual({ dye: 'vino', garment: 'faja' });
     expect(x.morale).toBeGreaterThan(50);
+    expect(t.stats?.dressed).toBe(1);
     expect(t.dawn.some((e) => /estrena ropa/.test(e.t))).toBe(true);
   });
 

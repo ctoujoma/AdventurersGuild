@@ -593,6 +593,18 @@ export interface Stats {
   chains?: number;
   /** Incidentes de la taberna resueltos. */
   incidents?: number;
+  /** Ladrones tumbados (en la cámara o en la puerta). */
+  thieves?: number;
+  /** Rumores de la barra apuntados. */
+  rumors?: number;
+  /** Objetos creados en los talleres. */
+  crafted?: number;
+  /** Héroes vestidos en la sastrería. */
+  dressed?: number;
+  /** Salas pintadas. */
+  painted?: number;
+  /** Puntos de atributo ganados entrenando. */
+  trained?: number;
   byType: Partial<Record<QuestType, number>>;
 }
 

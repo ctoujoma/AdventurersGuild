@@ -24,6 +24,16 @@ export function emptyStats(): Stats {
   };
 }
 
+/** Contadores que se suman de uno en uno (ver `bump`). */
+export type Counter =
+  'incidents' | 'thieves' | 'rumors' | 'crafted' | 'dressed' | 'painted' | 'trained' | 'cleanRaids';
+
+/** Suma `n` a un contador de la partida. */
+export function bump(s: GameState, key: Counter, n = 1): void {
+  const st = s.stats ?? emptyStats();
+  s.stats = { ...st, [key]: (st[key] ?? 0) + n };
+}
+
 /** Valor de un contador: un campo de Stats, 'safeDays' o 'byType:<tipo>'. */
 export function statValue(s: GameState, key: string): number {
   const st = s.stats ?? emptyStats();

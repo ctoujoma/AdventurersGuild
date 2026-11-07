@@ -22,6 +22,7 @@ import type { DawnEvent, GameState, Paint, Room } from './model';
 import { active } from './rooms';
 import { ROOMS } from '../data/rooms';
 import { effortOf, workedIn } from './workers';
+import { bump } from './feats';
 
 const partOf = (s: GameState) => Math.min(1, (s.clock ?? 0) / DAY_SECONDS);
 
@@ -194,6 +195,7 @@ export function stepPaints(s: GameState, part: number): DawnEvent[] {
     if (p.tint) colors[p.room] = p.tint;
     else delete colors[p.room];
     s.custom = { ...c, colors };
+    bump(s, 'painted');
     const w = s.workers.find((x) => x.id === p.painter);
     const color = p.tint ? TINTS[p.tint].name.toLowerCase() : 'los colores de la casa';
     news.push({
