@@ -3759,7 +3759,7 @@ export class RoomScene {
       this.trainBars();
       this.talkBubbles();
       this.flyingArrows();
-      this.raid?.draw(ctx, view.px, view.py);
+      this.raid?.draw(ctx, view.px, view.py, view);
       this.drawDuels(ctx, view.px, view.py);
       this.hotPieces();
       this.particles.draw(ctx, view.px, view.py, t);

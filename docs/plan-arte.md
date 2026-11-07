@@ -186,7 +186,10 @@ npm run build`.
         la llama que baila y alguna chispa. Es un foco de verdad (`RAID_TORCH_R`, cálido, con
         parpadeo y halo) que le sigue y alumbra la sala en la que está y a quien pelea alrededor:
         en la cámara del tesoro y el sótano ya se ve la pelea. Si cae, la antorcha queda en el
-        suelo, tumbada y alumbrando menos.
+        suelo, tumbada y alumbrando menos. Va en la mano, donde se ve la figura (`screenRect`, por
+        la perspectiva) y según cómo se la ve (`Crowd.pose`): de frente, por fuera del costado
+        contrario al enemigo; de perfil, tras la espalda (el usuario: «parece que la tiene en
+        mitad de la cara»).
   - [ ] 5. El duelo del ladrón. — [ ] 6. La cámara lenta. — [ ] 7. La tira.
   Capturas: `node tools/shots/asalto.mjs <carpeta>` (`LENTO=0.2` a cámara lenta, `RECORTE=480x300`
   solo el centro, `NIVEL` y `FUERZA` para que dure más). En `capturas/asaltos/`.

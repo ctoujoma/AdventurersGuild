@@ -21,6 +21,7 @@ import { blowOf, type Blow, type Crowd } from './crowd';
 import { PATIO_W, floorY, interior, type RoomsLayout } from './layout';
 import type { Place } from './people';
 import { RaidFx, type FxKind } from './raidFx';
+import type { View } from './view3d';
 
 type HitStep = Extract<RaidStep, { k: 'hit' }>;
 type FallStep = Extract<RaidStep, { k: 'fall' | 'down' }>;
@@ -77,6 +78,16 @@ interface Drop {
 const DROP_TIME = 0.45;
 /** Lo que tarda en caer quien recibe el golpe de gracia (como `FALL_TIME` en `crowd.ts`). */
 const LAND_TIME = 0.4 * RAID_SPEED;
+/**
+ * La antorcha en la mano: píxeles hacia dentro desde el borde de la figura (de frente, por fuera;
+ * de perfil, metida tras la espalda), altura de la mano (parte del alto, desde arriba) y largo
+ * del palo.
+ */
+const TORCH_OUT = -2;
+const TORCH_BACK = 0;
+const TORCH_HAND_FRONT = 0.62;
+const TORCH_HAND_SIDE = 0.56;
+const TORCH_STICK = 9;
 /** Lleva antorcha uno de cada tantos bandidos (el primero siempre). */
 const TORCH_EVERY = 3;
 
@@ -300,14 +311,15 @@ export class RaidShow {
   }
 
   /** Sacos a cuestas, la barra de la puerta y la de la cerradura (en la lámina de delante). */
-  draw(ctx: CanvasRenderingContext2D, px: number, py: number): void {
+  /** `view`: la vista (para poner lo que se lleva en la mano donde se ve la figura). */
+  draw(ctx: CanvasRenderingContext2D, px: number, py: number, view?: View): void {
     for (const [id, gold] of this.sacks) {
       const w = this.crowd.where(id);
       if (!w || w.down || gold <= 0) continue;
       sack(ctx, Math.round(w.x - px) + 3, Math.round(w.y - py) - 24, false);
     }
     this.drawDrops(ctx, px, py);
-    this.drawTorches(ctx, px, py);
+    this.drawTorches(ctx, px, py, view);
     this.drawDazed(ctx, px, py);
     const bar = (cx: number, top: number, k: number, color: string) => {
       const W = 24;
@@ -673,7 +685,7 @@ export class RaidShow {
    * Las antorchas: el palo en la mano de atrás, en alto, con la llama que baila; en el suelo,
    * tumbada y con la llama más baja.
    */
-  private drawTorches(ctx: CanvasRenderingContext2D, px: number, py: number): void {
+  private drawTorches(ctx: CanvasRenderingContext2D, px: number, py: number, view?: View): void {
     const dot = (x: number, y: number, c: string, w = 1, h = 1) => {
       ctx.fillStyle = c;
       ctx.fillRect(Math.round(x - px), Math.round(y - py), w, h);
@@ -690,7 +702,18 @@ export class RaidShow {
         dot(t.x - 1, t.y, P.lemon);
         continue;
       }
-      // En alto: el palo baja hasta la mano y la llama crece y mengua.
+      // En la mano, donde se ve la figura (con la perspectiva no cae justo sobre sus pies en el
+      // mundo). De frente, los brazos caen a los costados: la antorcha, por fuera del cuerpo en
+      // el lado contrario al enemigo. De perfil, en la mano de atrás: tras la espalda.
+      const r = view ? this.crowd.screenRect(id, view) : null;
+      const pose = this.crowd.pose(id);
+      if (r && pose) {
+        const away = pose.front ? -(t.dir ?? 1) : -pose.dir;
+        const inset = pose.front ? TORCH_OUT : TORCH_BACK;
+        t.x = px + (away < 0 ? r.x + inset : r.x + r.w - 1 - inset);
+        // La base de la llama, un palo por encima de la mano.
+        t.y = py + r.y + r.h * (pose.front ? TORCH_HAND_FRONT : TORCH_HAND_SIDE) - TORCH_STICK;
+      }
       dot(t.x - 1, t.y + 2, P.black, 3, 9);
       dot(t.x, t.y + 3, P.oak, 1, 7);
       dot(t.x, t.y + 3, P.umber, 1, 1);

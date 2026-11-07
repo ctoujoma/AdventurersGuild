@@ -1703,6 +1703,26 @@ export class Crowd {
     return { head: a.dir > 0 ? -1 : 1, landed: !a.fall };
   }
 
+  /**
+   * Cómo se le ve ahora: de frente (quieto, parpadeando, celebrando…) o de perfil (andando,
+   * golpeando, charlando), y hacia dónde mira el dibujo. Para poner lo que lleva en la mano.
+   */
+  pose(id: string): { front: boolean; dir: 1 | -1 } | null {
+    const a = this.actors.get(id);
+    if (!a || a.gone || a.pose === 'down' || a.pose === 'bed' || a.pose === 'sit') return null;
+    const f = this.frame(a, this.now).frame;
+    const front =
+      f === F.idle ||
+      f === F.idle + 1 ||
+      f === F.blink ||
+      f === F.cheer ||
+      f === F.stretch ||
+      f === F.yawn ||
+      f === F.read ||
+      f === F.read + 1;
+    return { front, dir: a.dir };
+  }
+
   /** Si alguien está delante (más cerca que `z`) de un punto del mundo y lo tapa. */
   /** La x de quien esté más cerca de `x` en la planta `floor` (a menos de `r`), o null. */
   near(x: number, floor: number, r: number): number | null {
