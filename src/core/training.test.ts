@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DAY_SECONDS,
   TRAIN_CAP,
   TRAIN_COST_BASE,
   TRAIN_HERO_BASE,
@@ -66,7 +67,7 @@ describe('entrenamiento', () => {
       level: 1,
       spent: 0,
     });
-    s.clock = 150;
+    s.clock = DAY_SECONDS / 2;
     const h = s.heroes[0]!;
     h.attrs.F = 3;
     const t = reduce(reduce(s, { type: 'assign', who: h.id, room: 'arm' }), {

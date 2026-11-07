@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_SETTINGS, parseSettings } from './settings';
+import { DEFAULT_SETTINGS, MOOD_LIGHT_V, parseSettings } from './settings';
 
 describe('ajustes', () => {
   it('rellena lo que falta y corrige lo que viene mal', () => {
@@ -17,7 +17,9 @@ describe('ajustes', () => {
   it('la luz con ambiente viene puesta y solo se quita a propósito', () => {
     expect(parseSettings({}).moodLight).toBe(true);
     expect(parseSettings({ moodLight: 'no' }).moodLight).toBe(true);
-    expect(parseSettings({ moodLight: false }).moodLight).toBe(false);
+    // Quien la tenía apagada de antes la ve encendida una vez; luego, si la apaga, se queda así.
+    expect(parseSettings({ moodLight: false }).moodLight).toBe(true);
+    expect(parseSettings({ moodLight: false, moodLightV: MOOD_LIGHT_V }).moodLight).toBe(false);
     expect(parseSettings({}).weather).toBe('normal');
     expect(parseSettings({ weather: 'clear' }).weather).toBe('clear');
     expect(parseSettings({ weather: 'sol' }).weather).toBe('normal');

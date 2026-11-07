@@ -45,3 +45,15 @@ día). Lo demás espera a que decidas:
 1. ¿Alargamos la noche al doble (360 s el día entero) o la dejamos en los 54 s de ahora y solo
    ponemos el botón?
 2. ¿El botón acelera a x8 o salta directamente al amanecer?
+
+## Decidido y hecho (8 de noviembre)
+
+- **Noche al doble:** `DAY_SECONDS` 360, `WORK_END` 0,7, `DUSK` 0,68: unos 250 s de jornada (como
+  antes) y unos 108 s de noche. La luz de la escena se estira con la jornada y la noche se hace
+  cerrada en su primera parte (`lightTod` en `RoomScene.ts`).
+- **«Pasar la noche» a x16** (`NIGHT_RUSH`): de noche, en la barra del día, siempre (también en
+  modo libre); se apaga con el día nuevo. Si hay asalto, empieza a su ritmo.
+- **Los menús no paran la noche:** con un panel o una ficha abiertos el reloj sigue y la noche cae
+  igual (se cierran). Solo el modo obras la hace esperar.
+- **El acelerador del día llega a x8** (x1, x2, x4, x8; como antes, en «La deuda» y en modo prueba).
+- `INCIDENT_WALK` pasa a 30 s (2 horas con el día nuevo).

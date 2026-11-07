@@ -7,7 +7,7 @@ export interface Settings {
   /** Velocidad de la escena: noches, asaltos y paseos. */
   speed: 1 | 1.5 | 2;
   /** Lo rápido que corre el reloj del día (se cambia desde la barra del día). */
-  pace: 1 | 2 | 4;
+  pace: 1 | 2 | 4 | 8;
   /** Letra más grande en paneles y fichas. */
   bigText: boolean;
   /** Menos movimiento en la interfaz. */
@@ -23,6 +23,11 @@ export interface Settings {
    * fuertes (charcos de luz). Sin marcar, la luz de siempre.
    */
   moodLight: boolean;
+  /**
+   * Versión de la luz con ambiente que ya se ha visto: al pasar a `MOOD_LIGHT_V` se enciende una
+   * vez para todos (quien la tenía apagada la ve), y luego se puede volver a apagar.
+   */
+  moodLightV: number;
   /** Clima (con luz con ambiente): el que toque cada día o siempre despejado. */
   weather: 'normal' | 'clear';
   /**
@@ -35,6 +40,8 @@ export interface Settings {
 }
 
 const KEY = 'jarro:ajustes';
+/** Sube esto para volver a encender la luz con ambiente a todos una vez (8 de noviembre: 1). */
+export const MOOD_LIGHT_V = 1;
 export const DEFAULT_SETTINGS: Settings = {
   music: 1,
   sfx: 1,
@@ -47,6 +54,7 @@ export const DEFAULT_SETTINGS: Settings = {
   vibrate: true,
   fewLights: false,
   moodLight: true,
+  moodLightV: MOOD_LIGHT_V,
   weather: 'normal',
   classicTime: false,
   tester: false,
@@ -63,13 +71,14 @@ export function parseSettings(raw: unknown): Settings {
     sfx: clamp01(r.sfx, 1),
     ambient: clamp01(r.ambient, 1),
     speed: r.speed === 1.5 || r.speed === 2 ? r.speed : 1,
-    pace: r.pace === 2 || r.pace === 4 ? r.pace : 1,
+    pace: r.pace === 2 || r.pace === 4 || r.pace === 8 ? r.pace : 1,
     bigText: r.bigText === true,
     calm: r.calm === true,
     dawnAll: r.dawnAll === true,
     vibrate: r.vibrate !== false,
     fewLights: r.fewLights === true,
-    moodLight: r.moodLight !== false,
+    moodLight: r.moodLight !== false || r.moodLightV !== MOOD_LIGHT_V,
+    moodLightV: MOOD_LIGHT_V,
     weather: r.weather === 'clear' ? 'clear' : 'normal',
     classicTime: r.classicTime === true,
     tester: r.tester === true,
