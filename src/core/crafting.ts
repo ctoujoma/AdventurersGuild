@@ -19,6 +19,8 @@ import {
   DRESS_HOURS,
   DRESS_MORALE,
   DRESS_WALK,
+  WORK_END,
+  WORK_START,
   CRAFT_GOOD,
   CRAFT_GOOD_PER_SKILL,
   CRAFT_SLOTS,
@@ -30,7 +32,7 @@ import {
 import type { Craft, CraftEnd, DawnEvent, GameState, Item, Rarity, Room } from './model';
 import { Rng } from './rng';
 import { active } from './rooms';
-import { workAt } from './workers';
+import { workAt, workedIn } from './workers';
 import { hasUnlock } from './goals';
 
 /** Las salas que son taller (las que tienen recetas). */
@@ -66,6 +68,12 @@ export const craftsIn = (s: GameState, roomId: string) =>
 export const craftSlots = (r: Room) => CRAFT_SLOTS[active(r).level] ?? CRAFT_SLOTS.at(-1)!;
 
 const hoursToWork = (h: number) => (h / 24) * CRAFT_STD_WORK;
+
+/**
+ * Lo que tarda de verdad, en horas de reloj, algo de `h` horas de trabajo: el trabajo de un día
+ * entero se hace en la jornada (de noche no se trabaja), así que va algo más deprisa.
+ */
+export const clockHours = (h: number) => h * (WORK_END - WORK_START);
 
 /** Por qué no se puede empezar algo en un taller (null = se puede). */
 function canStart(s: GameState, roomId: string): string | null {
@@ -233,11 +241,12 @@ export interface CraftState {
 /** Cómo va un trabajo ahora (para la ficha y la escena). */
 export function craftState(s: GameState, c: Craft): CraftState {
   const rate = craftRate(s, c.room, c);
-  const done = Math.min(c.need, c.done + rate * Math.max(0, partOf(s) - c.at));
+  const done = Math.min(c.need, c.done + rate * workedIn(c.at, partOf(s)));
   return {
     craft: c,
     frac: c.need > 0 ? done / c.need : 1,
-    hoursLeft: rate > 0 ? ((c.need - done) / rate) * 24 : null,
+    // Horas de jornada (de noche no se trabaja).
+    hoursLeft: rate > 0 ? ((c.need - done) / rate) * 24 * (WORK_END - WORK_START) : null,
     walking: !!c.wait && c.at > partOf(s) + 1e-9,
   };
 }
@@ -326,9 +335,15 @@ export function stepCrafts(s: GameState, part: number, shared?: Rng): DawnEvent[
       logEnd(s, c, 'cancelado');
       continue;
     }
-    // Si aún no había empezado (el héroe de camino), se sigue esperando.
-    if (c.wait && part >= c.at) delete c.wait;
-    c.done += craftRate(s, c.room, c) * Math.max(0, part - c.at);
+    // El héroe aún va de camino: se le sigue esperando. Si nadie dice que ha llegado, se da por llegado a su hora (si cae dentro de la jornada;
+    // si no, le esperan a la mañana siguiente).
+    if (c.wait && part >= c.at && c.at < WORK_END) delete c.wait;
+    if (c.wait) {
+      keep.push(c);
+      continue;
+    }
+    // Solo avanza en la jornada, con quien está en la sala.
+    c.done += craftRate(s, c.room, c) * workedIn(c.at, part);
     c.at = Math.max(c.at, part);
     if (c.done >= c.need - 1e-9) finish(s, c, rng, news);
     else keep.push(c);
@@ -343,7 +358,8 @@ export function stepCrafts(s: GameState, part: number, shared?: Rng): DawnEvent[
 export function nightCrafts(s: GameState, rng: Rng): DawnEvent[] {
   const news = stepCrafts(s, 1, rng);
   // Quien aún iba de camino a la sastrería, va por la mañana (con el mismo margen).
-  for (const c of s.crafts ?? []) c.at = c.wait ? DRESS_WALK / 24 : 0;
+  // Quien aún no había llegado (se le mandó a última hora), va por la mañana a primera hora.
+  for (const c of s.crafts ?? []) c.at = c.wait ? WORK_START + DRESS_WALK / 24 : 0;
   return news;
 }
 

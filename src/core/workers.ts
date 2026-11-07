@@ -12,6 +12,8 @@ import {
   HERO_WORK,
   JOB_SLOTS,
   JOB_WALK,
+  WORK_END,
+  WORK_START,
   MAX_SEEKERS,
   NURSE_WORK,
   SEEKER_CHANCE,
@@ -83,8 +85,22 @@ export const shiftStart = (x: OnShift) => x.walk ?? x.since ?? 0;
 /** Si aún va de camino a su sala ahora mismo. */
 export const onWay = (s: GameState, x: OnShift) => x.walk !== undefined && dayPartOf(s) < x.walk;
 
-/** La parte del día que habrá estado en su sala al caer la noche (0–1). */
-export const shiftShare = (x: OnShift) => Math.max(0, Math.min(1, 1 - shiftStart(x)));
+/**
+ * La parte de la jornada que cae entre las partes del día `a` y `b` (0–1: 1 es la jornada
+ * entera). Lo que pasa antes de que lleguen por la mañana o cuando ya se han ido a dormir no
+ * cuenta.
+ */
+export const workedIn = (a: number, b: number) =>
+  Math.max(0, Math.min(b, WORK_END) - Math.max(a, WORK_START)) / (WORK_END - WORK_START);
+
+/** Si ahora es hora de trabajar (de la jornada). */
+export const onDuty = (s: GameState) => {
+  const p = dayPartOf(s);
+  return p >= WORK_START && p < WORK_END;
+};
+
+/** La parte de la jornada que habrá estado en su sala al caer la noche (0–1). */
+export const shiftShare = (x: OnShift) => workedIn(shiftStart(x), 1);
 
 /**
  * Trabajo en una sala: la gente que tiene y el nivel. Por defecto, el del día entero (cada uno

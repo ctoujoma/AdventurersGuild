@@ -10,6 +10,7 @@ import {
   canCraft,
   canDress,
   canUndo,
+  clockHours,
   craftSlots,
   craftState,
   craftsIn,
@@ -126,7 +127,7 @@ export function WorkshopInfo({
               <span class="row-info">
                 <b>{rc.common.name}</b>
                 <span class="row-sub">
-                  {itemEffect({ ...rc.common, id })} · {hours(rc.hours)}
+                  {itemEffect({ ...rc.common, id })} · {hours(clockHours(rc.hours))}
                 </span>
                 <span class="row-sub forge-good">
                   De las buenas: {rc.good.name} ({itemEffect({ ...rc.good, id })})
@@ -210,8 +211,8 @@ function DressPicker({
       <h4 class="sec-title">Vestir</h4>
       <span class="row-sub">
         Cambia el color de la ropa y añade una prenda. El héroe viene aquí mientras le cosen (unas{' '}
-        {DRESS_HOURS} h) y estrenar le sube la moral. Los tintes nuevos se ganan con hazañas y
-        objetivos.
+        {Math.round(clockHours(DRESS_HOURS))} h) y estrenar le sube la moral. Los tintes nuevos se
+        ganan con hazañas y objetivos.
       </span>
       {!home.length && <span class="row-sub">No hay nadie en casa.</span>}
       <div class="dress-heroes" role="radiogroup" aria-label="A quién vestir">

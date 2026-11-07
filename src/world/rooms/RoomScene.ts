@@ -92,7 +92,7 @@ import { IncidentArt } from './incidents';
 import { FLAME_FRAMES, FLAME_H, FLAME_W, flameStrip } from './flame';
 import { faces, sideTexel, type Mat } from './volume';
 import { RaidShow, isBandit } from './raid';
-import { DAY_SECONDS } from '../../core/balance';
+import { DAY_SECONDS, WORK_END } from '../../core/balance';
 import type { Assault } from '../../core/assault';
 import { HEARTH_RIGHT, NO_LOOK, type SalonLook } from './salon';
 import {
@@ -3415,7 +3415,10 @@ export class RoomScene {
     }
     // A la cama: al atardecer van andando y de noche ya están acostados.
     const tod = this.clockTod ?? Math.min(1, (this.t - this.dayStart) / DAY_LENGTH);
-    this.crowd.setNight(this.night && this.nightP() < 1.6 ? 'night' : tod > 0.82 ? 'dusk' : 'day');
+    // La jornada acaba a la misma hora que en el núcleo (`WORK_END`): ahí se van a dormir.
+    this.crowd.setNight(
+      this.night && this.nightP() < 1.6 ? 'night' : tod > WORK_END ? 'dusk' : 'day',
+    );
     this.crowd.setClock(this.night ? 1 : tod);
     // A x4 un fotograma son muchos pasos: se anda en trozos para no saltarse las esquinas.
     const parts = Math.max(1, Math.ceil(w / 0.05));
@@ -4426,7 +4429,7 @@ export class RoomScene {
   /** Encima de quien entrena, su barra: se va llenando a lo largo del día. */
   private trainBars(): void {
     const tod = this.clockTod ?? 0;
-    if (this.night || tod > 0.82) return;
+    if (this.night || tod > WORK_END) return;
     const { topCtx: ctx, camera } = this;
     for (const h of this.crowd.visible()) {
       if (!h.train) continue;
