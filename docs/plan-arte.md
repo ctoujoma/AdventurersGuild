@@ -156,6 +156,11 @@ npm run build`.
         escaleras (`route`), de donde estaba hasta el banderín (`wayTo`, `trace`); entero un
         rato y luego se borra desde donde salió hacia el banderín y se apaga (`TRAIL_LIFE` =
         3,5 s). Al arrastrar, el de muestra, más tenue.
+  - [x] 7. La guardia (decidido con el usuario: en la puerta día y noche, sin acostarse): dos
+        taburetes y un barril de jugar en el recibidor; de día, a las cartas y los dados (el
+        respingo al plantar la carta, los dados que ruedan, una moneda alguna mano, bocadillos);
+        de madrugada, cabeceando con los ojos cerrados y unas «zzz». Detalle en el encargo;
+        capturas en `capturas/guardia/` (`tools/shots/guardia.mjs`).
   Capturas en `capturas/movimiento/`.
 
 - [ ] **La pelea de los asaltos, en directo** ([`encargos/arte-asaltos.md`](encargos/arte-asaltos.md)).

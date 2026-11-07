@@ -79,6 +79,9 @@ describe('la gente de la casa', () => {
     );
     expect(h.get('a')?.bed?.kind).toBe('catre');
     expect(h.get('b')?.place).toEqual(S.guard[0]);
+    // Sentado en su taburete del puesto, día y noche.
+    expect(h.get('b')?.pose).toBe('sit');
+    expect(h.get('b')?.z).toBe(S.guardZ);
     expect(h.get('c')?.bed?.kind).toBe('litera');
     expect(h.get('d')?.place).toEqual(S.bar[0]);
     expect(h.has('e')).toBe(false);

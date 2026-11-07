@@ -510,6 +510,8 @@ const SIZES = {
   yawn: 1,
   /** Brindando con la jarra en alto, a la derecha y a la izquierda. */
   toast: 2,
+  /** Sentado con los ojos cerrados (el de guardia que cabecea de madrugada). */
+  sitZ: 1,
 } as const;
 
 /** Dónde empieza cada cosa en el atlas. */
@@ -556,6 +558,8 @@ const CHAT: Talk[] = [
   'risa',
   'corazon',
 ];
+/** Los de guardia, jugando: lo que apuestan, lo que ríen y lo que protestan. */
+const GAME: Talk[] = ['moneda', 'risa', 'exclama', 'moneda', 'pregunta'];
 /** Los visitantes, sentados, piden y comentan. */
 const ORDER: Talk[] = ['jarra', 'pan', 'moneda', 'puntos', 'risa'];
 /** Lo que dura cada frase de una charla (s). */
@@ -692,6 +696,9 @@ interface Actor {
 
 /** La caída: lo que dura, lo que echa hacia atrás y la parte en que aún se tambalea de pie. */
 const FALL_TIME = 0.45;
+/** Los de guardia: cada cuánto planta uno la carta (de día) y cada cuánto cabecea (de noche). */
+const GAME_CYCLE = 3.4;
+const NOD_CYCLE = 4.6;
 /** Lo que dura el gesto de encajar un golpe. */
 const HURT_TIME = 0.25;
 const FALL_PUSH = 6;
@@ -786,6 +793,47 @@ function readCell(front: PixelBuffer, turn: boolean): PixelBuffer {
   return b;
 }
 
+/**
+ * Sentado con los ojos cerrados: lo que cambia del fotograma quieto al de parpadear (los ojos),
+ * puesto en el de sentado, con el párpado alargado en una rayita. La cabeza del sentado no está a la misma altura: se busca cuántas
+ * filas se mueve comparando la cabeza (las filas de arriba) y se ponen ahí.
+ */
+function dozing(spr: HeroSprites): PixelBuffer {
+  const { sit, blink } = spr;
+  const idle = spr.idle[0];
+  const out = sit.clone();
+  const w = Math.min(idle.w, sit.w, blink.w);
+  const HEAD = 12;
+  let best = 0;
+  let shift = 0;
+  for (let dy = -8; dy <= 8; dy++) {
+    let same = 0;
+    for (let y = 0; y < HEAD; y++)
+      for (let x = 0; x < w; x++) {
+        const c = idle.get(x, y);
+        if (alpha(c) && y + dy >= 0 && y + dy < sit.h && sit.get(x, y + dy) === c) same++;
+      }
+    if (same > best) {
+      best = same;
+      shift = dy;
+    }
+  }
+  for (let y = 0; y < Math.min(idle.h, blink.h); y++)
+    for (let x = 0; x < w; x++) {
+      const a = idle.get(x, y);
+      const b = blink.get(x, y);
+      const sy = y + shift;
+      if (a !== b && sy >= 0 && sy < sit.h && sit.get(x, sy) === a) {
+        out.set(x, sy, b);
+        // El párpado: el ojo de abajo se alarga hacia fuera en una rayita (– –), que a esta
+        // escala un punto solo sigue pareciendo un ojo abierto.
+        const ox = x < w / 2 ? x - 1 : x + 1;
+        if (sy + 1 < sit.h && sit.get(ox, sy + 1) === b) out.set(ox, sy + 1, a);
+      }
+    }
+  return out;
+}
+
 /** Atlas de una persona: todos sus fotogramas uno al lado del otro. */
 export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
   const b = new PixelBuffer(CELL * FRAMES, TALL);
@@ -799,6 +847,7 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
     put(w, F.walkL + i, 3, true);
   });
   put(spr.sit, F.sit);
+  put(dozing(spr), F.sitZ);
   // Entrenando: los fotogramas de mirar a la izquierda son los mismos, volteados.
   const pose = fightSprites(h.look, h.marks);
   // Trabajando, charlando o junto al fuego: los pies quietos.
@@ -1092,6 +1141,16 @@ export class Crowd {
       return true;
     }
     if (a.pose === 'sit') {
+      // El de guardia, en su taburete del recibidor (no es un sitio del salón).
+      const home = this.homes.get(a.hero.id);
+      if (
+        home?.pose === 'sit' &&
+        home.place.x === g.place.x &&
+        home.place.floor === g.place.floor
+      ) {
+        a.goal = home;
+        return true;
+      }
       const seat = this.S.seats.find((s) => s.x === g.place.x && s.floor === g.place.floor);
       if (!seat || seat.z !== g.z) return false;
       a.seat = seat;
@@ -1749,6 +1808,62 @@ export class Crowd {
     return { front, dir: a.dir };
   }
 
+  /**
+   * El de guardia sentado en su puesto: de día, si está plantando la carta (`slam`, un momento
+   * de cada `GAME_CYCLE`); de noche, cuánto se ha hundido cabeceando (`nod`, en píxeles) y si
+   * está dormido (`dozing`). Null si no está sentado en su taburete.
+   */
+  private guardBeat(
+    a: Actor,
+  ): { night: boolean; slam: boolean; nod: number; dozing: boolean } | null {
+    if (!a.hero.guard || a.pose !== 'sit' || a.path.length || a.seatMove || !this.S) return null;
+    if (!this.S.guard.some((p) => p.x === a.goal?.place.x && p.floor === a.goal.place.floor))
+      return null;
+    const off = (hash(a.hero.id) % 97) / 13;
+    if (this.time === 'day') {
+      const p = (this.now + off) % GAME_CYCLE;
+      return { night: false, slam: p < 0.22, nod: 0, dozing: false };
+    }
+    const p = ((this.now + off) % NOD_CYCLE) / NOD_CYCLE;
+    return {
+      night: true,
+      slam: false,
+      nod: p < 0.85 ? Math.floor((p / 0.85) * 3) : 0,
+      dozing: p < 0.85,
+    };
+  }
+
+  /**
+   * Los de guardia sentados en su puesto (la escena pinta los dados que ruedan cuando plantan la
+   * carta y las «zzz» de quien cabecea de madrugada): dónde, y qué está pasando.
+   */
+  guards(): {
+    id: string;
+    x: number;
+    y: number;
+    z: number;
+    night: boolean;
+    slam: boolean;
+    dozing: boolean;
+  }[] {
+    const out = [];
+    for (const a of this.actors.values()) {
+      if (a.gone) continue;
+      const g = this.guardBeat(a);
+      if (g)
+        out.push({
+          id: a.hero.id,
+          x: a.x,
+          y: a.y,
+          z: a.lane,
+          night: g.night,
+          slam: g.slam,
+          dozing: g.dozing,
+        });
+    }
+    return out;
+  }
+
   /** Si alguien está delante (más cerca que `z`) de un punto del mundo y lo tapa. */
   /** La x de quien esté más cerca de `x` en la planta `floor` (a menos de `r`), o null. */
   near(x: number, floor: number, r: number): number | null {
@@ -1853,7 +1968,11 @@ export class Crowd {
       // Sentados: cada uno a su ritmo, un momento cada poco.
       const k = (t + (hash(a.hero.id) % 50)) % 11;
       if (k < 1.4) {
-        const list = a.hero.visitor ? ORDER : (['jarra', 'risa', 'nota'] as Talk[]);
+        const list = a.hero.visitor
+          ? ORDER
+          : a.hero.guard
+            ? GAME
+            : (['jarra', 'risa', 'nota'] as Talk[]);
         out.push({
           id: a.hero.id,
           talk: list[(hash(a.hero.id) + Math.floor(t / 11)) % list.length]!,
@@ -2622,9 +2741,13 @@ export class Crowd {
       return { frame: F.idle, left: a.x - CELL / 2 / k, bottom: top + TALL / k, z };
     }
     if (a.pose === 'sit') {
-      // Sentado en el taburete: la cintura sobre el asiento.
+      // Sentado en el taburete: la cintura sobre el asiento. El de guardia, de día, da un
+      // respingo al plantar la carta; de noche, cabecea (se va hundiendo y se despierta de golpe).
       const top = a.y - (10 - 2 + 23) / k;
-      return { frame: F.sit, left: a.x - CELL / 2 / k, bottom: top + TALL / k, z };
+      const g = this.guardBeat(a);
+      const dy = g ? (g.night ? g.nod : g.slam ? -1 : 0) : 0;
+      const frame = g?.dozing ? F.sitZ : F.sit;
+      return { frame, left: a.x - CELL / 2 / k, bottom: top + (TALL + dy) / k, z };
     }
     const top = a.y - FEET_Y / k;
     let frame: number;

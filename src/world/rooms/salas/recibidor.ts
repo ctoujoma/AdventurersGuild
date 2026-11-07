@@ -12,7 +12,19 @@ import { planksV } from '../../paint';
 import * as Prop from '../../props';
 import type { SalonLook } from '../salon';
 import { cloth, type Cloth } from './tintes';
-import { FLOOR_D, MID, W, WALL, at, bx, hung, type RoomArt, type Thing, type WallCtx } from './kit';
+import {
+  FLOOR_D,
+  FRONT,
+  MID,
+  W,
+  WALL,
+  at,
+  bx,
+  hung,
+  type RoomArt,
+  type Thing,
+  type WallCtx,
+} from './kit';
 
 const CLOAKS: Ramp[] = [
   [P.plum, P.wine, P.red, P.coral],
@@ -22,10 +34,23 @@ const CLOAKS: Ramp[] = [
 
 /**
  * Dónde va cada cosa (x en el interior de la sala, en el mundo). El banco, bajo el perchero;
- * los dos de guardia, delante del armero (que va en la pared, sin muebles delante); el atril y
- * lo del rincón, bajo la ventana (más bajos que el alféizar); la campana, junto a la puerta.
+ * los dos de guardia, sentados en sus taburetes delante del armero, con el barril de jugar a las
+ * cartas entre los dos (`game`), todo por delante de por donde pasa la gente (`guardZ`); el
+ * atril y lo del rincón, bajo la ventana (más bajos que el alféizar); la campana, junto a la
+ * puerta.
  */
-export const SPOT = { bench: 17, lectern: 71, corner: 96, bell: 12, guards: [38, 57] } as const;
+export const SPOT = {
+  bench: 17,
+  lectern: 71,
+  corner: 96,
+  bell: 12,
+  guards: [35, 59],
+  game: 47,
+  guardZ: FRONT + 8,
+} as const;
+
+/** Lo alto de la tapa del barril de jugar (donde caen las cartas y ruedan los dados). */
+export const GAME_TOP = 14;
 
 // ---------- Pared del fondo (a la escala del fondo) ----------
 
@@ -345,7 +370,44 @@ function things(room: Room): Thing[] {
     at(lvl >= 3 ? Prop.armorStand() : lvl >= 2 ? Prop.trunk() : Prop.crate(), SPOT.corner, WALL),
   );
   if (lvl >= 2) t.push(hung(alarmBell(), SPOT.bell, MID));
+  // El puesto de los de guardia: dos taburetes y el barril de jugar entre ellos.
+  for (const x of SPOT.guards) t.push(at(Prop.stool(), x, SPOT.guardZ));
+  // El barril, un poco por delante de los taburetes: es la mesa que tienen ante las rodillas.
+  t.push(at(cardBarrel(), SPOT.game, SPOT.guardZ - 1));
   return t;
+}
+
+/**
+ * Barril de pie que hace de mesa a los de guardia: duelas, dos aros y la tapa con la partida a
+ * medias (un montón de cartas, una boca arriba y unas monedas apostadas). Los dados los pinta la
+ * escena, que ruedan.
+ */
+export function cardBarrel(): PixelBuffer {
+  return Prop.piece(11, GAME_TOP + 1, (b) => {
+    // La tapa, vista un poco desde arriba.
+    b.rect(1, 0, 9, 3, W[4]!);
+    b.hline(2, 0, 7, W[5]!);
+    b.hline(1, 2, 9, W[2]!);
+    // El cuerpo: duelas que abomban un poco, con luz a la izquierda.
+    for (let y = 3; y <= GAME_TOP; y++) {
+      const belly = y > 4 && y < GAME_TOP - 1 ? 0 : 1;
+      b.hline(belly, y, 11 - 2 * belly, W[3]!);
+      b.set(belly, y, W[2]!);
+      b.set(10 - belly, y, W[1]!);
+      for (const x of [3, 6, 8]) b.set(x, y, W[2]!);
+      b.set(2, y, W[4]!);
+    }
+    for (const y of [4, GAME_TOP - 2]) b.hline(0, y, 11, P.slate);
+    for (const y of [4, GAME_TOP - 2]) b.set(1, y, P.fog);
+    b.hline(1, GAME_TOP, 9, W[1]!);
+    // Sobre la tapa: el mazo, una carta boca arriba y dos monedas.
+    b.rect(2, 0, 2, 2, P.mist);
+    b.set(2, 0, P.white);
+    b.rect(5, 1, 2, 2, P.white);
+    b.set(5, 1, P.red);
+    b.set(8, 1, P.gold);
+    b.set(8, 0, P.lemon);
+  });
 }
 
 export const recibidor: RoomArt = { wall, things, floor };

@@ -94,7 +94,7 @@ describe('muebles de la vista 3D', () => {
     expect(gearRoom(b)).toBe(b.rooms.find((r) => r.type === 'tesoro')!.id);
   });
 
-  it('recibidor: nada pasa del alféizar bajo la ventana ni se pone delante del armero', () => {
+  it('recibidor: nada pasa del alféizar bajo la ventana y delante del armero solo está el puesto de guardia', () => {
     const iw = CELL_W - PARTITION;
     // La ventana del hueco, vista en el fondo (de 65 a 95) y lo que mide hasta el alféizar.
     const win = [65, 95];
@@ -103,9 +103,13 @@ describe('muebles de la vista 3D', () => {
       for (const t of things) {
         const half = t.img.w / scaleAt(t.z) / 2;
         if (t.x + half > win[0]! && t.x - half < win[1]!) expect(t.img.h).toBeLessThanOrEqual(32);
-        // Los de guardia están delante del armero: ahí no hay muebles.
-        for (const g of SPOT.guards) expect(Math.abs(t.x - g), `${level}`).toBeGreaterThan(half);
+        // Los de guardia están delante del armero: ahí solo su puesto (taburetes y barril).
+        if (t.z < SPOT.guardZ - 1 || t.z > SPOT.guardZ)
+          for (const g of SPOT.guards) expect(Math.abs(t.x - g), `${level}`).toBeGreaterThan(half);
       }
+      // Un taburete en cada puesto.
+      for (const g of SPOT.guards)
+        expect(things.some((t) => t.x === g && t.z === SPOT.guardZ)).toBe(true);
     }
   });
 });
