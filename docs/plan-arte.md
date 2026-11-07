@@ -210,7 +210,14 @@ npm run build`.
         hacia el azul de la noche y la imagen pierde color (CSS, con transición); todo suena
         apagado, como bajo el agua (un filtro de graves en el bus general), con un soplo al entrar.
         Al soltar, vuelve.
-  - [ ] 7. La tira.
+  - [x] 7. La tira (`RaidCrew.tsx`, `.rc-*` en `styles.css`): una tarjeta por defensor, con el
+        retrato pequeño (`Portrait` a escala 1, con el marco de su clase), la vida (dorada si le
+        queda poca) y la carga de la habilidad (una cinta dorada con su nombre cuando está lista).
+        Un solo botón por tarjeta (antes, dos que hacían lo mismo): coge el crítico o lanza la
+        habilidad. Crítico abierto: el marco late en amarillo con un rombo; corriendo, «»»; en el
+        suelo, en gris. Hasta seis en una fila (en el móvil de 390, antes eran tres filas que
+        tapaban la pelea). Capturas en `capturas/asaltos/` (`tira-antes-despues.png`,
+        `tira-estados.png`).
   - [ ] **Pedido al núcleo (el usuario):** si el ladrón gana el duelo, huye por la puerta principal
         (recibidor y patio, `escape` en `incidents.ts`). Que los de guardia despiertos en las salas
         por las que pasa le puedan cortar el paso y darle un golpe: una última ocasión de recuperar
