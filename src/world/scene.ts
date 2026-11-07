@@ -136,6 +136,8 @@ export type SoundName =
   | 'lute'
   | 'splash'
   | 'creak'
+  /** Las cadenas del rótulo, al darle un golpe. */
+  | 'chain'
   | 'squeak'
   | 'bats'
   | 'build'

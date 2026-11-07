@@ -855,6 +855,34 @@ export function ironSign(field: string, dark: string, symbol: string): PixelBuff
   });
 }
 
+/**
+ * El rótulo de hierro en dos partes, para que la tabla se balancee: el brazo (fijo, con su
+ * voluta) y lo que cuelga (las cadenas y la tabla, desde donde se enganchan: 4 píxeles por
+ * debajo de arriba). `hook`: dónde se cuelga, en x del dibujo entero.
+ */
+export function ironSignParts(
+  field: string,
+  dark: string,
+  symbol: string,
+): { arm: PixelBuffer; board: PixelBuffer; hook: number } {
+  const full = ironSign(field, dark, symbol);
+  const arm = new PixelBuffer(full.w, full.h);
+  const board = new PixelBuffer(full.w, full.h - 4);
+  if (full.relief) {
+    arm.relief = new Uint8Array(arm.w * arm.h);
+    board.relief = new Uint8Array(board.w * board.h);
+  }
+  for (let y = 0; y < full.h; y++)
+    for (let x = 0; x < full.w; x++) {
+      const i = y * full.w + x;
+      const hangs = y >= 10 || (y >= 4 && (x === 6 || x === 26));
+      const [to, j] = hangs ? [board, (y - 4) * full.w + x] : [arm, i];
+      to.data[j] = full.data[i]!;
+      if (to.relief && full.relief) to.relief[j] = full.relief[i]!;
+    }
+  return { arm, board, hook: 16 };
+}
+
 /** Chimenea de piedra sobre el tejado, con su sombrerete. */
 export function chimneyStack(h = 26): PixelBuffer {
   return piece(12, h, (b) => {

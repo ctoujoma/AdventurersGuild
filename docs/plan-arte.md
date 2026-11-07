@@ -124,6 +124,29 @@ npm run build`.
       a media resolución en el fondo.
   - [ ] Visto bueno del usuario. Capturas en `capturas/muros/` (`materiales.png` y cada una).
 
+- [ ] **Que lo que pasa se vea pasar** ([`encargos/arte-movimiento.md`](encargos/arte-movimiento.md)):
+  - [ ] 1. Auditoría.
+  - [x] 2. Sastrería: con el héroe de camino (`walking`, o aún sin llegar al probador), quien
+        cose le espera a un lado del probador, el que da a por donde llega, mirándolo y
+        estirando la cinta a ratos (`awaitFitting` en `crowd.ts`); no cose hasta que llega.
+        Entonces, por orden, le mide, le prueba la tela y le cose el bajo (`FIRST_FIT`); luego
+        como antes.
+  - [ ] 3. Contratar andando. — [ ] 4. El ladrón que huye sala a sala.
+  - [x] 5. El rótulo: se toca (zona nueva, `signAt`; no quita ninguna) y se balancea **hacia
+        atrás y hacia delante** sobre su gancho (el usuario: «no en los costados»), como un
+        péndulo con roce que se apaga en unos 3 s (`hangSign`, `swingSign` en `RoomScene.ts`);
+        más claro al ir hacia atrás (mira al cielo). Cadenas (`chain`) al tocarlo y crujido en
+        cada vuelta fuerte; el cuervo grazna. El de hierro, en dos partes: el brazo fijo y la
+        tabla con las cadenas colgando (`ironSignParts` en `props.ts`).
+  - [x] 6. La marca de destino (`goalMark.ts`): un banderín con el color del gremio y el icono
+        de lo que va a hacer (arreglar lo que pasa, descansar, guardia o el de la sala), clavado
+        en el suelo a un lado de donde va. Al arrastrar, uno tenue de muestra donde caerá; al
+        soltar, cae, rebota y deja una onda en el suelo; se queda hasta que llega
+        (`Crowd.where` en su sitio y parado; al menos 1,1 s) y se funde con unos destellos. Hoy
+        se le pone allí de golpe, así que dura ese momento; cuando vaya andando (núcleo,
+        `crowd.drop`) dura todo el camino sin tocar nada más.
+  Capturas en `capturas/movimiento/`.
+
 ## Estudio: estilo «Cast n Chill»
 
 Pedido del usuario: ver si el pixel art puede ir hacia ese estilo. Pruebas, viabilidad y plan

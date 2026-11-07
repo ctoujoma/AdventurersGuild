@@ -35,6 +35,7 @@ import { P, darker } from '../../art/palette';
 import { PixelBuffer, bayer, rgba, toHex } from '../../art/pixel';
 import type { Building, RaidResult, Room, RoomYield } from '../../core/model';
 import { ROOMS } from '../../data/rooms';
+import { INCIDENTS } from '../../data/incidents';
 import type { GardenEdgeId } from '../../data/custom';
 import { Camera } from '../camera';
 import { GROUND } from '../geometry';
@@ -55,7 +56,8 @@ import { towerLampY, watchtower } from './salas/torre';
 import { CANDLE, takeWallActs, type ActId, type PoiKind, type Round } from './salas/kit';
 import { FLIGHT_Z, flightArt, goesRight } from './stairs';
 import { dress } from './salas/tintes';
-import { Crowd, type Hit, type Poi, type Talk } from './crowd';
+import { Crowd, WALK_Z, type Hit, type Poi, type Talk } from './crowd';
+import { drawGoal, goalIcon, type GoalIcon } from './goalMark';
 import { LAWN_D, tuftAllowed, yardBushes, yardTrees } from './patio';
 import { bushCnc, oakCnc, pineCnc } from './arboles';
 import { moodGround, moodTuft, softened } from './suelo';
@@ -205,6 +207,13 @@ const noise = (a: number, b: number) => {
 
 /** Punto del espacio 3D a partir de una x y una y del mundo 2D (y hacia abajo) y una profundidad. */
 const at = (x: number, y: number, depth: number) => new Vector3(x, GROUND - y, -depth);
+/** El rótulo que se balancea: pulso propio (rad/s), roce, empujón de un toque y tope. */
+const SIGN_W = 6.5;
+/** Lo que se queda al menos el banderín de destino (aunque ya esté allí: hoy se le pone). */
+const GOAL_MIN = 1.1;
+const SIGN_DAMP = 1.5;
+const SIGN_KNOCK = 4.2;
+const SIGN_SPIN_MAX = 6;
 
 /** Un mueble anclado: su malla, su esquina de arriba a la izquierda, su escala y su pared. */
 interface Pin {
@@ -377,7 +386,27 @@ export class RoomScene {
   private incidents = new IncidentArt(this.shared, (x, floor) => this.tintAt(x, floor));
   private incidentLamps: Lamp[] = [];
   /** Donde se posa el cuervo: encima del rótulo (o del farol, si el rótulo va pintado). */
+  /**
+   * Las marcas de destino (ver `goalMark.ts`): a quién se ha soltado, dónde (pies, en el plano
+   * de corte) y con qué icono; cuándo se clavó y, al llegar, cuándo empezó a fundirse.
+   */
+  private goals = new Map<
+    string,
+    { x: number; floor: number; icon: GoalIcon; t0: number; out?: number }
+  >();
   private perch: Perch | null = null;
+  /**
+   * El rótulo que cuelga (ver `hangSign`): sus dos versiones (de siempre y con ambiente), giran
+   * sobre el gancho; dónde se toca (en el plano de corte) y cómo se balancea (ángulo y velocidad).
+   */
+  private sign: {
+    pivots: Group[];
+    shades: { u: Vector3; base: Vector3 }[];
+    rect: Rect;
+    depth: number;
+    angle: number;
+    spin: number;
+  } | null = null;
   /** Persona señalada con el ratón y la que se ha buscado desde su ficha (un rato). */
   private hoverHero: string | null = null;
   private marker: { id: string; until: number } | null = null;
@@ -1331,6 +1360,7 @@ export class RoomScene {
     this.forgeLamps = [];
     this.pins = [];
     this.perch = null;
+    this.sign = null;
     this.shafts = [];
     this.pinnedAt = '';
     this.towerRect = null;
@@ -2135,13 +2165,15 @@ export class RoomScene {
       perch(lantern, dx - 8, 4, 46, 0, 1);
       if (sign === 'tablero') {
         const img = Prop.crestBoard(field, dark, symbol);
-        put(img, dx - 22, 6, 54);
+        this.hangSign(classic, mood, soft, img, dx - 22, 6, 54, img.w / 2);
         perch(img, dx - 22, 6, 54, 5, 1);
       } else if (sign === 'hierro') {
-        const img = Prop.ironSign(field, dark, symbol);
-        put(img, dx - 17, 2, 50);
+        // El brazo, fijo; la tabla con sus cadenas, colgando (se balancea al tocarla).
+        const { arm, board, hook } = Prop.ironSignParts(field, dark, symbol);
+        put(arm, dx - 17, 2, 50);
+        this.hangSign(classic, mood, soft, board, dx - 17, 2, 50, hook);
         // En el brazo de hierro, hacia la punta.
-        perch(img, dx - 17, 2, 50, -8, 3);
+        perch(arm, dx - 17, 2, 50, -8, 3);
       }
       put(lantern, dx - 8, 4, 46);
       // La fachada: lo que se ve desde el camino.
@@ -2767,6 +2799,109 @@ export class RoomScene {
     );
   }
 
+  /**
+   * El rótulo colgado de su gancho (`hook`: x del dibujo donde se engancha, arriba del todo), en
+   * las dos versiones, dentro de un pivote que gira sobre ese punto: al tocarlo se balancea.
+   */
+  private hangSign(
+    classic: Group,
+    mood: Group,
+    soft: Map<PixelBuffer, PixelBuffer>,
+    img: PixelBuffer,
+    x: number,
+    depth: number,
+    up: number,
+    hook: number,
+  ): void {
+    const k = scaleAt(depth);
+    const base = GROUND - up;
+    const left = x - img.w / 2 / k;
+    const top = base - img.h / k;
+    const pin = at(left + hook / k, top, depth);
+    if (!soft.has(img)) soft.set(img, softened(img));
+    const pivots: Group[] = [];
+    for (const [g, pic] of [
+      [classic, img],
+      [mood, soft.get(img)!],
+    ] as const) {
+      // El pivote, en el gancho; dentro, la figura en su sitio de siempre.
+      const pivot = new Group();
+      pivot.position.copy(pin);
+      const inner = new Group();
+      inner.position.copy(pin).negate();
+      pivot.add(inner);
+      g.add(pivot);
+      this.figure(inner, pic, x, base, depth, OUTDOOR, 1);
+      pivots.push(pivot);
+    }
+    // Su luz de fondo, para aclararla al ir hacia atrás (mira al cielo) y oscurecerla al venir.
+    const shades: { u: Vector3; base: Vector3 }[] = [];
+    for (const p of pivots)
+      p.traverse((o) => {
+        const u = ((o as Mesh).material as ShaderMaterial | undefined)?.uniforms?.uAmbient;
+        if (u) shades.push({ u: u.value as Vector3, base: (u.value as Vector3).clone() });
+      });
+    this.sign = {
+      pivots,
+      shades,
+      rect: { x: left, y: top, w: img.w / k, h: img.h / k },
+      depth,
+      angle: 0,
+      spin: 0,
+    };
+  }
+
+  /** Si un punto de la pantalla cae en el rótulo que cuelga (con algo de margen, para el dedo). */
+  private signAt(cssX: number, cssY: number): boolean {
+    const s = this.sign;
+    if (!s || this.targets || this.raid) return false;
+    const { camera } = this;
+    const v: View = { px: camera.px, py: camera.py, vw: camera.vw, vh: camera.vh };
+    const p0 = project(v, s.rect.x - 2, s.rect.y, s.depth);
+    const p1 = project(v, s.rect.x + s.rect.w + 2, s.rect.y + s.rect.h + 3, s.depth);
+    const x = cssX / camera.zoom;
+    const y = cssY / camera.zoom;
+    return x >= p0.x && x < p1.x && y >= p0.y && y < p1.y;
+  }
+
+  /**
+   * Un golpe al rótulo: se va hacia atrás (hacia la pared del fondo) y vuelve hacia delante,
+   * como una tabla colgada de su gancho (más si ya iba hacia atrás), con un tintineo de cadenas;
+   * si el cuervo estaba encima, grazna.
+   */
+  private knockSign(): void {
+    const s = this.sign;
+    if (!s) return;
+    s.spin = Math.min(SIGN_SPIN_MAX, Math.max(s.spin, 0) + SIGN_KNOCK);
+    this.cb.onSound?.('chain', 0.7);
+    this.pets.touch('cuervo');
+  }
+
+  /** El rótulo, como un péndulo con roce: unas oscilaciones que se apagan en unos 3 s. */
+  private swingSign(dt: number): void {
+    const s = this.sign;
+    if (!s || (!s.angle && !s.spin)) return;
+    const was = s.spin;
+    // Paso a paso (a pocos fotogramas por segundo, el péndulo se desbocaría).
+    const n = Math.max(1, Math.ceil(dt / (1 / 120)));
+    const h = dt / n;
+    for (let i = 0; i < n; i++) {
+      s.spin += (-SIGN_W * SIGN_W * s.angle - SIGN_DAMP * s.spin) * h;
+      s.angle += s.spin * h;
+    }
+    // En cada vuelta con fuerza, un crujido de las cadenas.
+    if (Math.sign(was) !== Math.sign(s.spin) && Math.abs(s.angle) > 0.08)
+      this.cb.onSound?.('creak', Math.min(0.6, Math.abs(s.angle) * 2));
+    if (Math.abs(s.angle) < 0.004 && Math.abs(s.spin) < 0.03) {
+      s.angle = 0;
+      s.spin = 0;
+    }
+    // Sobre el eje del gancho, paralelo a la fachada: la tabla va hacia atrás y hacia delante.
+    for (const p of s.pivots) p.rotation.x = s.angle;
+    const lit = Math.max(0.7, Math.min(1.35, 1 + s.angle * 0.9));
+    for (const sh of s.shades) sh.u.copy(sh.base).multiplyScalar(lit);
+  }
+
   private figure(
     g: Group,
     img: PixelBuffer,
@@ -3139,6 +3274,7 @@ export class RoomScene {
     this.pets.update(w, this.wt);
     this.incidents.update(w, this.wt);
     this.edgePan(dt);
+    this.swingSign(dt);
     if (this.marker && this.t > this.marker.until) this.marker = null;
     this.camera.update(dt);
     this.puffs(w);
@@ -3430,6 +3566,7 @@ export class RoomScene {
       !!this.targets?.length ||
       this.floats.length > 0 ||
       !!this.drag?.moved ||
+      this.goals.size > 0 ||
       !!this.roomDrag?.moved ||
       this.raising.length > 0 ||
       !!this.raid ||
@@ -3846,6 +3983,10 @@ export class RoomScene {
       });
       return;
     }
+    if (this.signAt(cssX, cssY)) {
+      this.knockSign();
+      return;
+    }
     const prop = this.propAt(cssX, cssY);
     if (prop) {
       this.cb.onSound?.('click', 0.5);
@@ -3901,6 +4042,12 @@ export class RoomScene {
       const w = this.camera.toWorld(d.x, d.y);
       const x = Math.max(r.rect.x + 12, Math.min(r.rect.x + r.rect.w - 12, w.x));
       this.crowd.drop(d.id, { x, floor: r.room.floor });
+      this.goals.set(d.id, {
+        x,
+        floor: r.room.floor,
+        icon: this.goalIconFor(d.id, r.room),
+        t0: this.t,
+      });
       this.cb.onDrop?.(d.id, d.room);
       this.cb.onSound?.('build', 0.5);
     } else {
@@ -4101,22 +4248,91 @@ export class RoomScene {
   private dropMark(): void {
     const d = this.drag;
     const r = d?.room ? this.layout?.rooms.find((x) => x.room.id === d.room) : undefined;
-    if (!d || !r) return;
-    const { topCtx: ctx, camera } = this;
-    const x = Math.round(r.rect.x - camera.px) + 1;
-    const y = Math.round(r.rect.y - camera.py) + 1;
-    const w = Math.round(r.rect.w) - 2;
-    const h = Math.round(r.rect.h) - 2;
-    const c = d.ok ? P.lime : P.red;
-    ctx.globalAlpha = 0.12;
-    ctx.fillStyle = c;
-    ctx.fillRect(x, y, w, h);
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = c;
-    ctx.fillRect(x, y, w, 1);
-    ctx.fillRect(x, y + h - 1, w, 1);
-    ctx.fillRect(x, y, 1, h);
-    ctx.fillRect(x + w - 1, y, 1, h);
+    if (d && r) {
+      const { topCtx: ctx, camera } = this;
+      const x = Math.round(r.rect.x - camera.px) + 1;
+      const y = Math.round(r.rect.y - camera.py) + 1;
+      const w = Math.round(r.rect.w) - 2;
+      const h = Math.round(r.rect.h) - 2;
+      const c = d.ok ? P.lime : P.red;
+      ctx.globalAlpha = d.ok ? 0.08 : 0.12;
+      ctx.fillStyle = c;
+      ctx.fillRect(x, y, w, h);
+      ctx.globalAlpha = d.ok ? 0.6 : 1;
+      ctx.fillStyle = c;
+      ctx.fillRect(x, y, w, 1);
+      ctx.fillRect(x, y + h - 1, w, 1);
+      ctx.fillRect(x, y, 1, h);
+      ctx.fillRect(x + w - 1, y, 1, h);
+      ctx.globalAlpha = 1;
+      // Si vale, el banderín de muestra donde caerá (tenue y flotando).
+      if (d.ok) {
+        const wx = this.camera.toWorld(d.x, d.y).x;
+        const gx = Math.max(r.rect.x + 12, Math.min(r.rect.x + r.rect.w - 12, wx));
+        this.goalAt(gx, r.room.floor, this.goalIconFor(d.id, r.room), 0, 0.55, true);
+      }
+    }
+    this.goalMarks();
+  }
+
+  /**
+   * El icono del banderín: lo que pasa en la sala (si se arregla mandando a alguien), descansar
+   * o lo de la sala.
+   */
+  private goalIconFor(id: string, room: Room): GoalIcon {
+    const inc = this.model?.incidents?.find((i) => i.room === room.id);
+    const how = inc ? INCIDENTS[inc.kind].how : null;
+    const worker = !!this.model?.heroes.find((h) => h.id === id)?.staff;
+    return goalIcon(room.type, { incident: how === 'heroe' || how === 'alguien', worker });
+  }
+
+  /** Un banderín en un sitio del suelo (pies, en el plano de corte), al paso de la gente. */
+  private goalAt(
+    x: number,
+    floor: number,
+    icon: GoalIcon,
+    age: number,
+    alpha: number,
+    preview = false,
+  ): void {
+    const { camera } = this;
+    const v: View = { px: camera.px, py: camera.py, vw: camera.vw, vh: camera.vh };
+    const p = project(v, x, floorY(floor), WALK_Z);
+    const { field, dark } = this.model?.crest ?? { field: P.red, dark: P.wine };
+    drawGoal(this.topCtx, { x: p.x, y: p.y, t: this.t, age, alpha, icon, field, dark, preview });
+  }
+
+  /**
+   * Las marcas de destino de quien se ha soltado: el banderín sigue clavado hasta que llega (al
+   * menos un momento, para que se vea dónde) y entonces se funde. Si deja de verse (se va de
+   * misión, lo cogen otra vez…), se quita.
+   */
+  private goalMarks(): void {
+    const FADE = 0.4;
+    for (const [id, g] of this.goals) {
+      const at = this.crowd.where(id);
+      if (!at || this.drag?.id === id) {
+        this.goals.delete(id);
+        continue;
+      }
+      const age = this.t - g.t0;
+      const here = !at.moving && at.floor === g.floor && Math.abs(at.x - g.x) < 8;
+      if (g.out === undefined && (here || age > 90) && age > GOAL_MIN) {
+        g.out = this.t;
+        // Al llegar, unos destellos donde estaba el banderín.
+        const { camera } = this;
+        const v: View = { px: camera.px, py: camera.py, vw: camera.vw, vh: camera.vh };
+        const p = project(v, g.x, floorY(g.floor), WALK_Z);
+        for (let i = 0; i < 3; i++)
+          this.particles.spawn('glint', v.px + p.x - 4 + i * 4, v.py + p.y - 30 + i * 4);
+      }
+      const k = g.out === undefined ? 1 : 1 - (this.t - g.out) / FADE;
+      if (k <= 0) {
+        this.goals.delete(id);
+        continue;
+      }
+      this.goalAt(g.x, g.floor, g.icon, age, k);
+    }
   }
 
   /** Llevando a alguien cerca del borde, la cámara se desliza hacia allí. */
