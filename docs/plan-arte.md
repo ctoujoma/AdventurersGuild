@@ -166,7 +166,15 @@ npm run build`.
         estrella blanca. Los números de varios golpes al mismo, a los lados; y al acabar ya no se
         quedan congelados (el asalto sigue corriendo hasta que se quita). El duelo del ladrón ya
         usa el gesto de la clase (`strike` sin golpe).
-  - [ ] 2. Caer con el saco. — [ ] 3. La marca de destino (ya está, ver «Que lo que pasa se vea
+  - [x] 2. Caer (`knock(id, push)` y `lying` en `crowd.ts`; `fallen`, `drop` en `raid.ts`): quien
+        recibe el golpe de gracia se tambalea hacia atrás con los ojos cerrados, cae de espaldas
+        hacia el lado contrario de quien le pegó (unos píxeles, con un rebote) y al tocar el suelo
+        levanta polvo y suena. Se queda tendido con estrellas girando sobre la cabeza (los
+        nuestros, mientras estén en el suelo; los bandidos, 3 s). El bandido que llevaba oro
+        suelta el saco: sale despedido de la espalda, cae tumbado y abierto, las monedas saltan y
+        se desparraman, y sube lo recuperado con su moneda. Los sacos se quedan hasta que acaba la
+        noche. (`SACO=1` en `asalto.mjs` hace caer a uno con 40 de oro, para verlo.)
+  - [ ] 3. La marca de destino (ya está, ver «Que lo que pasa se vea
         pasar», 6). — [ ] 4. Luz en lo oscuro (sin ella, en la bodega y el sótano apenas se ven los
         gestos). — [ ] 5. El duelo del ladrón. — [ ] 6. La cámara lenta. — [ ] 7. La tira.
   Capturas: `node tools/shots/asalto.mjs <carpeta>` (`LENTO=0.2` a cámara lenta, `RECORTE=480x300`

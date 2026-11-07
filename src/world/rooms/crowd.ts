@@ -659,6 +659,8 @@ interface Actor {
   swing?: number;
   /** Qué golpe es (ver `Blow`). */
   blow?: Blow;
+  /** Cayendo por un golpe: cuánto lleva (s) y hacia dónde le echa. */
+  fall?: { t: number; push: 1 | -1 };
   /** Acostándose o levantándose: un momento incorporado en la cama (`out`: luego se va). */
   edge?: { bed: BedSpot; t: number; out: boolean } | null;
   /** Haciendo algo en un sitio de la sala (leer el tablón, calentarse…) y hacia dónde mira. */
@@ -684,6 +686,10 @@ interface Actor {
   climb?: { lower: number; sx: number; up: boolean; u: number } | null;
 }
 
+/** La caída: lo que dura, lo que echa hacia atrás y la parte en que aún se tambalea de pie. */
+const FALL_TIME = 0.45;
+const FALL_PUSH = 6;
+const STAGGER = 0.3;
 /** Lo que tarda en sentarse o levantarse, y lo que dura la vuelta al cambiar de sentido. */
 const SEAT_TIME = 0.24;
 /** En cada peldaño, la parte del tiempo que se tarda en subirlo (el resto, quieto en él). */
@@ -1359,6 +1365,15 @@ export class Crowd {
         this.place(a, t);
         continue;
       }
+      // Cayendo: el golpe le echa unos píxeles hacia atrás.
+      if (a.fall) {
+        const t0 = Math.min(1, a.fall.t / FALL_TIME);
+        a.fall.t += dt;
+        const t1 = Math.min(1, a.fall.t / FALL_TIME);
+        const ease = (u: number) => 1 - (1 - u) ** 2;
+        a.x += a.fall.push * FALL_PUSH * (ease(t1) - ease(t0));
+        if (t1 >= 1) a.fall = undefined;
+      }
       // El golpe que está dando (el grito y la cura se sostienen más).
       if (a.swing) a.swing = Math.max(0, a.swing - dt * (a.blow === 'grito' ? 1.4 : 3));
       if (this.scripted) {
@@ -1631,10 +1646,17 @@ export class Crowd {
     if (a) this.standUp(a);
   }
 
-  /** Cae al suelo. */
-  knock(id: string): void {
+  /**
+   * Cae al suelo. Con `push` (hacia dónde le echa el golpe), con su gesto: se tambalea hacia
+   * atrás, se va al suelo de espaldas con un rebote y se queda tendido.
+   */
+  knock(id: string, push?: 1 | -1): void {
     const a = this.actors.get(id);
     if (!a) return;
+    if (push && a.pose !== 'down') {
+      a.fall = { t: 0, push };
+      a.dir = push > 0 ? -1 : 1;
+    }
     // En la escalera, cae al rellano más cercano.
     const c = a.climb;
     if (c) this.put(a, { x: a.x, floor: c.lower + (c.u > 0.5 ? 1 : 0) });
@@ -1672,6 +1694,13 @@ export class Crowd {
     const a = this.actors.get(id);
     if (!a || a.gone) return null;
     return { x: a.x, floor: a.floor, y: a.y, moving: a.path.length > 0, down: a.pose === 'down' };
+  }
+
+  /** Tendido en el suelo: hacia qué lado tiene la cabeza (y si ya ha acabado de caer). */
+  lying(id: string): { head: 1 | -1; landed: boolean } | null {
+    const a = this.actors.get(id);
+    if (!a || a.gone || a.pose !== 'down') return null;
+    return { head: a.dir > 0 ? -1 : 1, landed: !a.fall };
   }
 
   /** Si alguien está delante (más cerca que `z`) de un punto del mundo y lo tapa. */
@@ -2554,10 +2583,21 @@ export class Crowd {
     const top = a.y - FEET_Y / k;
     let frame: number;
     if (a.pose === 'down') {
+      const p = a.fall ? a.fall.t / FALL_TIME : 1;
+      if (p < STAGGER)
+        // Se tambalea: de pie, echado hacia atrás (con los ojos cerrados).
+        return {
+          frame: F.blink,
+          left: a.x - CELL / 2 / k,
+          bottom: top + (TALL + Math.round(p * 4)) / k,
+          z,
+        };
+      // Al suelo, con un rebote al tocarlo.
+      const hop = p < 1 ? Math.round(Math.sin(((p - STAGGER) / (1 - STAGGER)) * Math.PI) * 3) : 0;
       return {
         frame: a.dir > 0 ? F.down : F.downL,
         left: a.x - CELL / 2 / k,
-        bottom: top + TALL / k,
+        bottom: top + (TALL - hop) / k,
         z,
       };
     }

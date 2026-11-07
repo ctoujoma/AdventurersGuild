@@ -57,12 +57,12 @@ await page.evaluate(() => window.__game.dispatch({ type: 'tutorial', op: 'saltar
 await page.waitForTimeout(400);
 // Un héroe de cada clase, en casa y sanos; y el asalto, esta noche.
 const n = await page.evaluate(
-  ({ lvl, strength }) => {
+  ({ lvl, strength, many }) => {
     const g = window.__game;
     const s = g.get();
     const CLS = ['guerrero', 'picaro', 'mago', 'clerigo', 'explorador', 'guerrero'];
     const base = s.heroes[0] ?? s.candidates?.[0];
-    const heroes = CLS.map((cls, i) => ({
+    const heroes = CLS.slice(0, many).map((cls, i) => ({
       ...base,
       ...(s.heroes[i] ?? {}),
       id: `prueba${i}`,
@@ -84,7 +84,11 @@ const n = await page.evaluate(
     });
     return heroes.length;
   },
-  { lvl: Number(process.env.NIVEL ?? 1), strength: Number(process.env.FUERZA ?? 9) },
+  {
+    lvl: Number(process.env.NIVEL ?? 1),
+    strength: Number(process.env.FUERZA ?? 9),
+    many: Number(process.env.HEROES ?? 6),
+  },
 );
 console.log('héroes', n);
 await page.waitForTimeout(800);
@@ -117,8 +121,28 @@ const clip = cw
   ? { x: (vp.width - cw) / 2, y: (vp.height - ch) / 2 - 40, width: cw, height: ch }
   : undefined;
 let k = 0;
+// Para ver caer a un bandido con su saco (`SACO=1`): al empezar, el primero cae con 40 de oro.
+if (process.env.SACO)
+  await page.evaluate(
+    () =>
+      new Promise((done) => {
+        const go = () => {
+          const r = window.__scene.raid;
+          if (!r || r.t < 1) return setTimeout(go, 50);
+          const id = Object.keys(r.plan.start).find((x) => /^b\d+$/.test(x));
+          r.sacks.set(id, 40);
+          r.fallen({ t: r.t, k: 'down', id, gold: 40 }, false);
+          done();
+        };
+        go();
+      }),
+  );
 for (let t = 0; t < TOTAL; t += CADA) {
   await page.waitForTimeout(CADA);
   await page.screenshot({ path: `${out}/a${String(k++).padStart(3, '0')}.png`, clip });
 }
+console.log(
+  'sacos soltados',
+  await page.evaluate(() => window.__scene.raid?.drops?.length ?? 'sin asalto'),
+);
 await browser.close();
