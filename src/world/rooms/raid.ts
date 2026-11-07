@@ -115,6 +115,10 @@ export class RaidShow {
   private lock: { t0: number; dur: number; area: Area } | null = null;
   private lastHit = 0;
   private slot = new Map<string, number>();
+  /** De qué lado llegan los bandidos a cada sala (-1 izquierda, 1 derecha). */
+  private side = new Map<string, number>();
+  /** Dónde está (o a dónde va) cada uno: para saber por qué lado entra en cada sala. */
+  private at = new Map<string, string>();
   /** Vida de cada uno (si el plan la trae) y la de al empezar. */
   private hp = new Map<string, number>();
   private max = new Map<string, number>();
@@ -151,6 +155,17 @@ export class RaidShow {
     }
     this.areas.set('patio', { x0: -PATIO_W + 40, x1: -24, floor: 0 });
     this.areas.set('fuera', { x0: -PATIO_W + 2, x1: -PATIO_W + 10, floor: 0 });
+    // En cada sala, los bandidos se quedan del lado por el que llegan y los nuestros enfrente.
+    const path = ['fuera', 'patio', ...plan.route];
+    const mid = (n: string) => {
+      const a = this.areas.get(n);
+      return a ? (a.x0 + a.x1) / 2 : 0;
+    };
+    for (let i = 1; i < path.length; i++) {
+      const d = mid(path[i - 1]!) - mid(path[i]!);
+      this.side.set(path[i]!, d > 0 ? 1 : -1);
+    }
+    for (const [id, node] of Object.entries(plan.start)) this.at.set(id, node);
     const bandits = Object.keys(plan.start).filter(isBandit);
     bandits.forEach((id, i) => {
       const { look, marks } = banditLook(BANDIT_TYPES[i % BANDIT_TYPES.length]!, i);
@@ -361,7 +376,8 @@ export class RaidShow {
     switch (s.k) {
       case 'move':
         for (const id of s.ids) {
-          const p = this.placeOf(s.to, id);
+          const p = this.placeOf(s.to, id, this.at.get(id));
+          this.at.set(id, s.to);
           if (skip) this.crowd.warp(id, p);
           else this.crowd.runTo(id, p, Math.max(0.2, (s.t + s.dur - this.t) / RAID_SPEED));
         }
@@ -712,12 +728,35 @@ export class RaidShow {
   }
 
   /** Un sitio dentro de una sala para cada uno (que no se amontonen todos en el mismo punto). */
-  private placeOf(node: string, id: string): Place {
+  /**
+   * Dónde se para alguien que llega a una sala (desde `from`): del lado por el que entra; si ya
+   * hay enemigos dentro, delante del más cercano por ese lado, cara a cara. Sin saber de dónde
+   * viene (al empezar), los bandidos del lado por el que llegan y los nuestros enfrente.
+   */
+  private placeOf(node: string, id: string, from?: string): Place {
     const a = this.areas.get(node) ?? this.areas.get('patio')!;
     const k = this.slot.get(id) ?? 0;
     const mid = (a.x0 + a.x1) / 2;
     const spread = Math.min(8, (a.x1 - a.x0) / 6);
-    const x = mid + (isBandit(id) ? 1 : -1) * (4 + (k % 4) * spread);
+    const prev = from && from !== node ? this.areas.get(from) : undefined;
+    const d = prev ? (prev.x0 + prev.x1) / 2 - mid : 0;
+    // El lado por el que entra (por una escalera justo encima o debajo, el de siempre).
+    const fallback = (this.side.get(node) ?? -1) * (isBandit(id) ? 1 : -1);
+    const entry = Math.abs(d) > 4 ? Math.sign(d) : fallback;
+    const foes = [...this.at]
+      .filter(([o, n]) => n === node && o !== id && isBandit(o) !== isBandit(id))
+      .map(([o]) => this.crowd.where(o))
+      // Solo los que ya están dentro (no los que aún vienen de camino).
+      .filter(
+        (w): w is NonNullable<typeof w> =>
+          !!w && !w.down && w.floor === a.floor && w.x > a.x0 - 8 && w.x < a.x1 + 8,
+      );
+    let x: number;
+    if (foes.length) {
+      // El enemigo más metido hacia el lado por el que entra: se planta delante de él.
+      const front = foes.reduce((b, w) => (w.x * entry > b.x * entry ? w : b));
+      x = front.x + entry * (10 + (k % 3) * 6);
+    } else x = mid + entry * (4 + (k % 4) * spread);
     return { x: Math.max(a.x0, Math.min(a.x1, x)), floor: a.floor };
   }
 

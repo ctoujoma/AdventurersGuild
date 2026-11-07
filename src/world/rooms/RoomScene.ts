@@ -170,6 +170,8 @@ const DAY_LENGTH = 720;
 const RAID_SLOW = 0.3;
 /** Hasta dónde llega la luz de cada antorcha del asalto. */
 const RAID_TORCH_R = 95;
+/** Al acabar el asalto, segundos que sigue de noche antes de amanecer. */
+const RAID_AFTER = 3;
 /**
  * Terreno de más a cada lado del mundo: al fondo la perspectiva lo estrecha a la mitad y, con
  * el zoom más alejado y una esquina en el centro, la vista llega muy lejos.
@@ -3597,8 +3599,8 @@ export class RoomScene {
       if (f && !this.pointers.size) this.camera.centerOn(f.x, f.y);
       return;
     }
-    // Se acabó: la noche sigue su curso hasta el amanecer.
-    if (n.hold === Infinity) n.hold = Math.max(0, this.t - n.start - 0.5 * n.dur);
+    // Se acabó: sigue de noche un rato (se ve cómo ha acabado) y luego amanece poco a poco.
+    if (n.hold === Infinity) n.hold = Math.max(0, this.t - n.start - 0.5 * n.dur) + RAID_AFTER;
     if (this.nightP() >= 0.85) {
       this.crowd.setScripted(false);
       this.raid = null;
