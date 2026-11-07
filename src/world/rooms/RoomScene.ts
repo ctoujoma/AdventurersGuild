@@ -560,6 +560,8 @@ export class RoomScene {
   } | null = null;
   /** El asalto de esta noche: espera a que oscurezca y luego se ve entero (o se salta). */
   private raid: RaidShow | null = null;
+  /** Va a cámara lenta (ver `RAID_SLOW`). */
+  private slowed = false;
   private raidPlan: RaidResult['plan'] | null = null;
   /** El asalto que se juega en directo esta noche (si lo hay). */
   private raidLive: Assault | null = null;
@@ -3503,6 +3505,11 @@ export class RoomScene {
     // De noche (el asalto) todo va a su ritmo; de día, la gente sigue al reloj.
     // En el asalto en directo, mientras se arrastra a alguien, todo va a cámara lenta.
     const slow = this.night && this.drag?.moved && this.liveRaid ? RAID_SLOW : 1;
+    // Se avisa al entrar y al salir (la interfaz oscurece los bordes y apaga el sonido).
+    if (slow < 1 !== this.slowed) {
+      this.slowed = slow < 1;
+      this.cb.onSlow?.(this.slowed);
+    }
     const w = this.night ? dt * slow : dt * this.pace;
     this.wt += w;
     this.swingDoors(w);

@@ -145,6 +145,34 @@ button:focus-visible {
   display: block;
   cursor: grab;
   touch-action: none;
+  transition: filter 0.25s ease-out;
+}
+
+/*
+ * Cámara lenta (arrastrando a alguien en el asalto): los bordes se oscurecen hacia un azul de
+ * noche y la imagen pierde algo de color; vuelve al soltar.
+ */
+.scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 48%,
+    rgb(24 20 37 / 0.35) 72%,
+    rgb(24 20 37 / 0.78) 100%
+  );
+  opacity: 0;
+  transition: opacity 0.25s ease-out;
+}
+
+.scene.slow::after {
+  opacity: 1;
+}
+
+.scene.slow .scene-canvas {
+  filter: saturate(0.55) brightness(0.95);
 }
 
 /* ---------- Barra superior ---------- */

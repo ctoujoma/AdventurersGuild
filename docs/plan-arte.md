@@ -200,7 +200,20 @@ npm run build`.
         doblado un momento y él sale corriendo con el saco, soltando monedas, sin que nadie le
         persiga (ya era así). Capturas: `node tools/shots/ladron.mjs <carpeta>` (`GANA=0`,
         `CLASE`); en `capturas/ladron/`.
-  - [ ] 6. La cámara lenta. — [ ] 7. La tira.
+  - [x] 6. La cámara lenta (`onSlow` en `RoomScene.ts`, `.scene.slow` en `styles.css`,
+        `audio.setSlow`): mientras se arrastra a alguien en el asalto, los bordes se oscurecen
+        hacia el azul de la noche y la imagen pierde color (CSS, con transición); todo suena
+        apagado, como bajo el agua (un filtro de graves en el bus general), con un soplo al entrar.
+        Al soltar, vuelve.
+  - [ ] 7. La tira.
+  - [ ] **Pedido al núcleo (el usuario):** si el ladrón gana el duelo, huye por la puerta principal
+        (recibidor y patio, `escape` en `incidents.ts`). Que los de guardia despiertos en las salas
+        por las que pasa le puedan cortar el paso y darle un golpe: una última ocasión de recuperar
+        lo robado. Es una regla (lo que se recupera), así que la decide el principal en
+        `core/incidents.ts`; al arte le basta con saber, en `Incident.duel` o al lado, quién le
+        sale al paso, en qué sala, cuándo y si le para (y cuánto se recupera). Con eso: el guardia
+        le corta el paso, forcejeo corto, y o suelta el saco (con las monedas, como en el asalto) o
+        se zafa y sigue corriendo.
   Capturas: `node tools/shots/asalto.mjs <carpeta>` (`LENTO=0.2` a cámara lenta, `RECORTE=480x300`
   solo el centro, `NIVEL` y `FUERZA` para que dure más). En `capturas/asaltos/`.
 

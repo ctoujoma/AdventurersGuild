@@ -64,9 +64,15 @@ const FIRE = { x: 346, y: 272 };
 
 const midi = (n: number) => 440 * Math.pow(2, (n - 69) / 12);
 
+/** El filtro de la cámara lenta: frecuencia de corte abierto y cerrado (Hz). */
+const SLOW_OPEN = 20000;
+const SLOW_SHUT = 700;
+
 class AudioEngine {
   private ctx: AudioContext | null = null;
   private master!: GainNode;
+  private slowLp?: BiquadFilterNode;
+  private slowed = false;
   private sfxBus!: GainNode;
   private musicBus!: GainNode;
   private ambientBus!: GainNode;
@@ -169,6 +175,21 @@ class AudioEngine {
     }
     if (mood === 'fiesta') this.returnTo = this.mood;
     this.switchMood(mood);
+  }
+
+  /**
+   * Cámara lenta: todo suena apagado y lejano, como bajo el agua (un filtro de graves sobre todo
+   * lo que suena), con un soplo al entrar; al salir, se abre otra vez.
+   */
+  setSlow(on: boolean): void {
+    if (on === this.slowed) return;
+    this.slowed = on;
+    const ctx = this.ctx;
+    if (!ctx || !this.slowLp) return;
+    const f = this.slowLp.frequency;
+    f.cancelScheduledValues(ctx.currentTime);
+    f.setTargetAtTime(on ? SLOW_SHUT : SLOW_OPEN, ctx.currentTime, on ? 0.06 : 0.12);
+    if (on) this.play('whoosh', 0.35);
   }
 
   /** La hora del día (0 mañana – 1 noche): elige temas tranquilos al atardecer. */
@@ -426,7 +447,11 @@ class AudioEngine {
     this.master = ctx.createGain();
     this.master.gain.value = 0.9;
     const comp = ctx.createDynamicsCompressor();
-    this.master.connect(comp).connect(ctx.destination);
+    // El filtro de la cámara lenta: abierto del todo salvo mientras dura (ver `setSlow`).
+    this.slowLp = ctx.createBiquadFilter();
+    this.slowLp.type = 'lowpass';
+    this.slowLp.frequency.value = SLOW_OPEN;
+    this.master.connect(this.slowLp).connect(comp).connect(ctx.destination);
     this.sfxBus = this.gain(this.levels.sfx, this.master);
     this.musicBus = this.gain(this.musicLevel(), this.master);
     this.ambientBus = this.gain(this.levels.ambient, this.master);
