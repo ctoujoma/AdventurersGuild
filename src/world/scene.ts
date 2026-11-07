@@ -1,5 +1,5 @@
 import type { HeroLook, HeroMarks } from '../art/heroes/look';
-import type { Building, ItemIcon, Rarity, TrophyIcon } from '../core/model';
+import type { Building, Duel, ItemIcon, Rarity, TrophyIcon } from '../core/model';
 import type { FacadeLook, GardenLook, TintId } from '../data/custom';
 import type { IncidentKind } from '../data/incidents';
 import type { BattleSound } from './battle';
@@ -120,6 +120,8 @@ export interface SceneIncident {
   taps?: number;
   /** Segundo del día en que sale mal si nadie hace nada. */
   until?: number;
+  /** La pelea con el ladrón, golpe a golpe (segundos del reloj desde `at`). */
+  duel?: Duel;
 }
 
 /** Equipo sin dueño, con su rareza (se cuelga en la armería o va en arcones). */

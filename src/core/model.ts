@@ -21,7 +21,7 @@ import type { RecipeId } from '../data/recipes';
 import type { UnlockId } from '../data/unlocks';
 import type { Tutorial } from './tutorial';
 import type { Attrs, Challenge, ClassId, SkillId, Trait } from './party';
-import type { CombatSetup, Order } from './combat';
+import type { AbilityId, CombatSetup, Order } from './combat';
 
 export const SAVE_VERSION = 4;
 
@@ -390,6 +390,27 @@ export interface Incident {
    * dice, a los `at` segundos del reloj. Mientras va, no sale mal.
    */
   coming?: { who: string; at: number };
+  /** El ladrón: al llegar el héroe se pelean; acaba a los `end` segundos de `at`. */
+  duel?: Duel;
+}
+
+/** Un golpe del duelo con el ladrón: el héroe (`h`) o el ladrón (`l`), y cuánto quita. */
+export interface DuelHit {
+  t: number;
+  by: 'h' | 'l';
+  amount: number;
+  crit?: boolean;
+}
+
+export interface Duel {
+  who: string;
+  at: number;
+  end: number;
+  /** Si le pilla (el ladrón cae) o se escapa. */
+  won: boolean;
+  hits: DuelHit[];
+  /** Vida al empezar del héroe y del ladrón. */
+  hp: { h: number; l: number };
 }
 
 export interface DawnEvent {
@@ -485,7 +506,25 @@ export type RaidStep =
   /** Un bandido carga su saco. */
   | { t: number; k: 'loot'; id: string; gold: number }
   /** Un bandido se pierde por el camino con lo que lleva. */
-  | { t: number; k: 'escape'; id: string; gold: number };
+  | { t: number; k: 'escape'; id: string; gold: number }
+  /** Un golpe: quién, a quién y cuánta vida le quita. */
+  | { t: number; k: 'hit'; from: string; id: string; amount: number; crit?: boolean }
+  /** Habilidad de un héroe y curas. */
+  | { t: number; k: 'skill'; id: string; skill: AbilityId }
+  | { t: number; k: 'heal'; from: string; id: string; amount: number }
+  /** Ocasión de crítico de un héroe (hasta su siguiente golpe). */
+  | { t: number; k: 'chance'; id: string };
+
+/** Lo que sale de un asalto jugado (core/assault.ts). */
+export interface AssaultOutcome {
+  plan: RaidPlan;
+  fell: string[];
+  fought: string[];
+  downed: number;
+  escaped: number;
+  stolen: number;
+  recovered: number;
+}
 
 export interface RaidPlan {
   /** Camino de los bandidos: del recibidor a la cámara (ids de sala). */
@@ -495,6 +534,8 @@ export interface RaidPlan {
   steps: RaidStep[];
   /** Segundo en el que acaba todo. */
   end: number;
+  /** Vida de cada uno al empezar (los informes viejos no la traen). */
+  hp?: Record<string, number>;
 }
 
 /** Contadores de la partida: hazañas, desafíos y récords. */
@@ -633,6 +674,8 @@ export interface GameState {
   spilt?: number;
   /** Último asalto, para verlo en la escena al amanecer. */
   lastRaid?: RaidResult | null;
+  /** El asalto de esta noche, jugado en directo (lo usa el anochecer en lugar de jugarlo solo). */
+  raidLive?: { day: number; result: AssaultOutcome };
   /** Informe de la pelea contra un jefe de esta noche (para el aviso del amanecer). */
   lastFight?: string | null;
   /**

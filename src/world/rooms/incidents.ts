@@ -138,6 +138,8 @@ interface Show {
   /** Cuándo sale mal (día y segundo del reloj), para saber cómo acabó al irse. */
   day?: number;
   until?: number;
+  /** El duelo con el ladrón: si le gana el héroe (si no, se escapa aunque no sea su hora). */
+  duelWon?: boolean;
 }
 
 const at = (x: number, y: number, depth: number) => new Vector3(x, GROUND - y, -depth);
@@ -206,7 +208,11 @@ export class IncidentArt {
       }
       // Ha acabado: si el reloj ha llegado a su hora (o ya es otro día), ha salido mal.
       const failed =
-        !!clock && s.until !== undefined && (clock.day !== s.day || clock.secs >= s.until - 0.5);
+        s.duelWon !== undefined
+          ? !s.duelWon
+          : !!clock &&
+            s.until !== undefined &&
+            (clock.day !== s.day || clock.secs >= s.until - 0.5);
       this.leave(s, failed);
       if (s.actors.length) this.shows.set(`${key}#fuera${this.out++}`, s);
     }
@@ -223,7 +229,18 @@ export class IncidentArt {
       if (known.kind === 'ratas' && w.inc.taps !== undefined && known.taps !== undefined)
         for (let i = w.inc.taps; i < known.taps; i++) this.scare(known);
       known.taps = w.inc.taps;
+      if (w.inc.duel) known.duelWon = w.inc.duel.won;
     }
+  }
+
+  /** Dónde está el ladrón de una sala (para la pelea con quien ha llegado), si lo hay. */
+  thiefAt(room: string): { x: number; y: number; floor: number } | null {
+    for (const s of this.shows.values()) {
+      if (s.kind !== 'ladron' || s.gone || !s.key.includes(`:${room}:`)) continue;
+      const a = s.actors[0];
+      if (a) return { x: a.x, y: a.bottom, floor: s.level };
+    }
+    return null;
   }
 
   /** Las luces de los incidentes (el fuego alumbra su cocina). */

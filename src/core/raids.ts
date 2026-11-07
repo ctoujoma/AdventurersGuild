@@ -26,12 +26,20 @@ import {
   SPY_RISK,
   rankIndex,
 } from './balance';
-import { YARD, assaultSetup, banditCount, holdOdds, likelyStrength, simulate } from './assault';
+import {
+  YARD,
+  assaultSetup,
+  banditCount,
+  holdOdds,
+  likelyStrength,
+  raidSeed,
+  simulate,
+} from './assault';
 import { THREAT_RAIDS, threatOf } from './events';
 import { emptyStats } from './feats';
 import { fill } from './generate';
 import type { DawnEvent, GameState, Report } from './model';
-import type { Rng } from './rng';
+import { Rng } from './rng';
 import { listNames } from './text';
 
 /** Fama más riqueza a la vista: lo que atrae a los bandidos. */
@@ -107,7 +115,11 @@ function resolveRaid(s: GameState, rng: Rng, events: DawnEvent[]): Report {
   const raid = s.raid!;
   s.raid = null;
   const stats = (s.stats ??= emptyStats());
-  const fight = simulate(assaultSetup(s, raid.strength, rng), rng);
+  // Jugado en directo esta noche: lo que pasó. Si no, se juega solo (con su semilla).
+  const live = s.raidLive?.result ?? null;
+  delete s.raidLive;
+  const seed = new Rng(raidSeed(s));
+  const fight = live ?? simulate(assaultSetup(s, raid.strength, seed), seed);
   const ds = s.heroes.filter((h) => fight.fought.includes(h.id));
   const fallen = new Set(fight.fell);
   const names = ds.length ? listNames(ds.map((h) => h.name)) : 'nadie';

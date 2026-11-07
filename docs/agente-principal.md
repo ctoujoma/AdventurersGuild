@@ -85,3 +85,12 @@ Para el agente principal (núcleo, tiempo, tutoriales, combate, talleres, amigos
 - Esperando al usuario: [`propuesta-asaltos.md`](propuesta-asaltos.md) (la pelea de los asaltos
   y arrastrar andando). Después de eso, a lo nuestro: núcleo con órdenes en `core/assault.ts`.
 - La APK, cuando el usuario diga que el arte ha acabado.
+
+## Dónde lo dejamos (7 de noviembre)
+
+- Hechos los asaltos en directo y el duelo con el ladrón (ver `propuesta-asaltos.md`, «Hecho»).
+  Núcleo: `core/assault.ts` (`Assault`, `raidSeed`), acción `raidFought`, `GameState.raidLive`;
+  escena: `RaidShow.live`, `RoomScene.liveRaid`, `drawDuels`; interfaz: `ui/RaidCrew.tsx`, y
+  `App.tsx` (`endDay` juega el asalto antes de amanecer; `dawnAfter`).
+- Probado con `node_modules/.cache/jarro-shots/asalto.mjs` y `ladron.mjs` (pueden no existir).
+- Encargado al de arte: `encargos/arte-asaltos.md`.
