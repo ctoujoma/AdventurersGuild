@@ -142,7 +142,7 @@ export function whyNoSpot(s: GameState, type: RoomType): string {
 
 /**
  * Los huecos ya comprados y sin sala: la planta baja del solar (no el jardín), lo excavado y, en
- * las plantas de arriba, los que quedan con salas a los dos lados y sala debajo.
+ * las plantas de arriba, los que tienen sala debajo y salas a los dos lados o sala encima.
  */
 export function freeCells(b: GameState['building']): [number, number][] {
   const out: [number, number][] = [];
@@ -161,7 +161,8 @@ export function freeCells(b: GameState['building']): [number, number][] {
       let right = false;
       for (let x = c - 1; x >= 0 && !left; x--) left = room(x);
       for (let x = c + 1; x < span && !right; x++) right = room(x);
-      if (left && right) out.push([c, f]);
+      // Con sala encima también es un hueco de la casa (al mover o derribar una del borde).
+      if ((left && right) || roomAt(b, c, f + 1)) out.push([c, f]);
     }
   return out;
 }

@@ -55,6 +55,20 @@ describe('sitios para las obras', () => {
     }
     expect(targetsFor(s, { kind: 'move', id: 'nada' })).toHaveLength(0);
   });
+
+  it('al mover la enfermería, su hueco del borde se marca libre y se puede construir', () => {
+    let s = open();
+    s = reduce(s, { type: 'buyPlot' });
+    const enf = s.building.rooms.find((r) => r.type === 'enfermeria')!;
+    const was = { col: enf.col, floor: enf.floor };
+    s = reduce(s, { type: 'move', id: enf.id, col: s.building.cols - 1, floor: 0 });
+    expect(roomAt(s.building, was.col, was.floor)).toBeUndefined();
+    const free = targetsFor(s, { kind: 'expand' }).filter((t) => t.info);
+    const at = (t: { action: Action }) => t.action as Extract<Action, { type: 'build' }>;
+    expect(free.some((t) => at(t).col === was.col && at(t).floor === was.floor)).toBe(true);
+    const build = targetsFor(s, { kind: 'build', type: 'dormitorio' });
+    expect(build.some((t) => at(t).col === was.col && at(t).floor === was.floor)).toBe(true);
+  });
 });
 
 describe('ganar sitio tocando la escena', () => {
