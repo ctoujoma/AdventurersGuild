@@ -2940,31 +2940,9 @@ export class RoomScene {
     this.shared.uBoxZ.value.set(-DEPTH, 0);
   }
 
-  /** El halo de un farol de fuera: un disco en anillos, de su color, delante de la llama. */
+  /** El halo de un farol de fuera, delante de la llama (del radio de su halo). */
   private haloSprite(l: Lamp): Mesh {
-    const R = Math.round(l.halo * 2.8);
-    const img = new PixelBuffer(R * 2, R * 2);
-    for (let y = 0; y < R * 2; y++)
-      for (let x = 0; x < R * 2; x++) {
-        const d = Math.hypot(x + 0.5 - R, y + 0.5 - R) / R;
-        if (d >= 1) continue;
-        const v = Math.floor((1 - d) ** 1.6 * 4) / 4;
-        if (v <= 0) continue;
-        const k = v * 0.7;
-        img.set(
-          x,
-          y,
-          rgba(
-            `#${l.color
-              .map((c) =>
-                Math.round(c * k)
-                  .toString(16)
-                  .padStart(2, '0'),
-              )
-              .join('')}`,
-          ),
-        );
-      }
+    const R = l.halo;
     const g = l.glow;
     const corners: Corners = [
       new Vector3(g.x - R, g.y - R, g.z + 2),
@@ -2972,7 +2950,7 @@ export class RoomScene {
       new Vector3(g.x + R, g.y + R, g.z + 2),
       new Vector3(g.x - R, g.y + R, g.z + 2),
     ];
-    const m = mesh(quad(corners, this.look), this.look.halo(img));
+    const m = mesh(quad(corners, this.look), this.look.halo(R * 2));
     m.visible = false;
     return m;
   }
@@ -3794,7 +3772,8 @@ export class RoomScene {
     }
     s.uLightCount.value = n;
     // Los halos de los faroles de fuera (con luz con ambiente): flotan delante y se suman a lo
-    // de detrás, sea lo que sea; así no se cortan donde se acaba lo que hay alrededor.
+    // de detrás, sea lo que sea (también el cielo); así no se cortan donde se acaba lo que hay
+    // alrededor. Mismo cálculo que el de las superficies.
     for (const l of this.lamps) {
       if (!l.outdoor || !l.halo) continue;
       let m = this.haloSprites.get(l);
@@ -3805,9 +3784,14 @@ export class RoomScene {
       }
       m.visible = this.moodLight;
       if (!m.visible) continue;
+      // Como en la textura de los focos: su color por su fuerza (la de los faroles, `lampK`).
       const fl = 1 - l.flicker * noise(Math.floor(t * 9), l.seed);
-      (m.material as ShaderMaterial).uniforms.uK!.value =
-        (0.12 + 0.88 * (1 - dl.day)) * Math.min(1.2, l.power) * fl;
+      const k = (l.night ? nightK : l.fire ? fireK : lampK) * l.power * fl;
+      (m.material as ShaderMaterial).uniforms.uColor!.value.set(
+        (l.color[0] / 255) * k,
+        (l.color[1] / 255) * k,
+        (l.color[2] / 255) * k,
+      );
     }
     tex.needsUpdate = true;
     // La hierba, con el viento que pasa por su sitio (unas 8 veces por segundo).

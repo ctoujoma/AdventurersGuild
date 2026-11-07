@@ -182,9 +182,9 @@ Hecho:
    mismo ángulo y pegado a la ventana estés donde estés.
 2. El rayo, más corto (dos tercios de lo que queda hasta el suelo).
 3. El lago refleja, sutil, el bosque de la orilla y, más abajo, las montañas de detrás.
-4. El halo de las farolas del patio (y del jardín, el farol de la puerta y el de la torre) ya no
-   se corta: con el ajuste, flota delante del farol como un disco en anillos que se suma a lo de
-   detrás, sea suelo o cielo (`haloSprite`).
+4. El halo de las farolas del jardín (y del patio, el farol de la puerta y el de la torre) ya no
+   se corta: con el ajuste, flota delante del farol y se suma a lo de detrás, sea suelo o cielo,
+   con el mismo cálculo que el halo de las superficies (`haloSprite`, `HALO_FRAG`).
 5. Motas de polvo: menos, más tenues y menos repetitivas (cada columna a su paso, cada rayo con
    su semilla, cada mota aparece y se apaga a su ritmo).
 6. La hierba de los lados ya no se repite: se pinta entera a lo ancho, cada trozo con su ruido.

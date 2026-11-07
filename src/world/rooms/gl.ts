@@ -442,13 +442,21 @@ const GLOW_FRAG = /* glsl */ `
 `;
 
 const HALO_FRAG = /* glsl */ `
-  uniform sampler2D map;
-  uniform float uK;
+  // El mismo halo que se pinta en las superficies (ver SURFACE_FRAG): cae con el cuadrado de la
+  // distancia y va en cinco escalones con el borde mellado en grumos de 2 téxeles.
+  uniform vec3 uColor;
+  uniform float uSize;
   varying vec2 vUv;
+  float hash2(vec2 p) { return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
   void main() {
-    vec4 c = texture2D(map, vUv);
-    if (c.a < 0.5 || uK <= 0.0) discard;
-    gl_FragColor = vec4(c.rgb * uK, 1.0);
+    vec2 tc = floor(vUv * uSize);
+    float d = length((tc + 0.5) / uSize - 0.5) * 2.0;
+    float h = clamp(1.0 - d, 0.0, 1.0);
+    vec3 halo = uColor * h * h * 0.95;
+    float jit = (hash2(floor(tc / 2.0)) - 0.5) * 0.45;
+    vec3 hq = max(floor(min(halo, vec3(0.7)) * 5.0 + jit), vec3(0.0)) / 5.0;
+    if (max(max(hq.r, hq.g), hq.b) <= 0.0) discard;
+    gl_FragColor = vec4(hq, 1.0);
   }
 `;
 
@@ -640,16 +648,15 @@ export class Look {
   }
 
   /**
-   * Halo de un farol de fuera, flotando delante de él: un disco que se suma a lo de detrás (sea
-   * superficie o cielo), en anillos (`uK`: cuánto brilla).
+   * Halo de un farol de fuera, flotando delante de él: se suma a lo de detrás (sea superficie o
+   * cielo), igual que el de las superficies (`uColor`: el color de la luz por su fuerza).
    */
-  halo(b: PixelBuffer): ShaderMaterial {
-    const map = this.own(texture(b));
+  halo(size: number): ShaderMaterial {
     return this.own(
       new ShaderMaterial({
         uniforms: {
-          map: { value: map },
-          uK: { value: 0 },
+          uColor: { value: new Vector3() },
+          uSize: { value: size },
           uUvOffset: { value: new Vector2(0, 0) },
           uUvScale: { value: new Vector2(1, 1) },
         },
