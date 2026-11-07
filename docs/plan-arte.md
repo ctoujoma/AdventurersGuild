@@ -137,7 +137,8 @@ npm run build`.
         péndulo con roce que se apaga en unos 3 s (`hangSign`, `swingSign` en `RoomScene.ts`);
         más claro al ir hacia atrás (mira al cielo). Cadenas (`chain`) al tocarlo y crujido en
         cada vuelta fuerte; el cuervo grazna. El de hierro, en dos partes: el brazo fijo y la
-        tabla con las cadenas colgando (`ironSignParts` en `props.ts`).
+        tabla con las cadenas colgando (`ironSignParts` en `props.ts`). El farol, siempre por delante (el
+        usuario: «atraviesa el farol»): se pinta el último y sin prueba de profundidad.
   - [x] 6. La marca de destino (`goalMark.ts`): un banderín con el color de su ropa y el icono
         de lo que va a hacer (arreglar lo que pasa, descansar, guardia o el de la sala), clavado
         en el suelo a un lado de donde va. Al arrastrar, uno tenue de muestra donde caerá; al

@@ -2267,7 +2267,21 @@ export class RoomScene {
         // En el brazo de hierro, hacia la punta.
         perch(arm, dx - 17, 2, 50, -8, 3);
       }
+      // El farol, siempre por delante del rótulo (al balancearse, la tabla viene hacia delante y
+      // lo atravesaría): se pinta después y sin que lo tape lo que tenga delante.
+      const before = [classic.children.length, mood.children.length];
       put(lantern, dx - 8, 4, 46);
+      for (const [g, n] of [
+        [classic, before[0]!],
+        [mood, before[1]!],
+      ] as const)
+        for (const o of g.children.slice(n))
+          o.traverse((m) => {
+            const mat = (m as Mesh).material as ShaderMaterial | undefined;
+            if (!mat) return;
+            mat.depthTest = false;
+            m.renderOrder = 5;
+          });
       // La fachada: lo que se ve desde el camino.
       const facade = model.facade ?? [];
       if (facade.includes('letrero')) put(Prop.nameBoard(), dx - 26, 3, 74);
