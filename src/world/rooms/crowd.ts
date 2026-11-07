@@ -2036,6 +2036,7 @@ export class Crowd {
       wrap: 0.6,
       dither: 0.03,
       halo: 0.3,
+      noWeather: true,
     });
     // Un fotograma de la rejilla: 1/COLS de ancho y 1/ROWS de alto.
     mat.uniforms.uUvScale!.value.set(1 / COLS, 1 / ROWS);

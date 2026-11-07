@@ -160,3 +160,55 @@ export const FOG_COLOR: Record<SkyPhase, string> = {
   dawn: '#c0afbb',
   night: '#2c3350',
 };
+
+/** Rampa de la nieve en el paisaje, de la sombra a la luz. */
+const SNOW_RAMP: [number, number, number][] = [
+  [125, 138, 166],
+  [163, 175, 196],
+  [201, 210, 223],
+  [232, 237, 243],
+  [255, 255, 255],
+];
+
+/**
+ * Una capa del paisaje, nevada: lo verde claro (prados, colinas) se cubre de nieve con la
+ * sombra del dibujo de debajo; lo verde oscuro (los bosques) se queda, algo más frío; y en el
+ * canto de arriba de todo, un copete blanco de uno o dos píxeles.
+ */
+export function snowyCanvas(src: HTMLCanvasElement): HTMLCanvasElement {
+  const w = src.width;
+  const h = src.height;
+  const out = document.createElement('canvas');
+  out.width = w;
+  out.height = h;
+  const sctx = src.getContext('2d');
+  const octx = out.getContext('2d');
+  if (!sctx || !octx || !w || !h) return out;
+  const img = sctx.getImageData(0, 0, w, h);
+  const d = img.data;
+  const a = (x: number, y: number) => (y < 0 ? 0 : d[(y * w + x) * 4 + 3]!);
+  const res = octx.createImageData(w, h);
+  const o = res.data;
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      if (d[i + 3]! < 128) continue;
+      const r = d[i]!;
+      const g = d[i + 1]!;
+      const b = d[i + 2]!;
+      const l = r * 0.3 + g * 0.59 + b * 0.11;
+      let c: [number, number, number] = [r, g, b];
+      const green = g > r * 1.02 && g > b * 0.95;
+      if (a(x, y - 1) < 128) c = SNOW_RAMP[4]!;
+      else if (a(x, y - 2) < 128 && ((x * 7 + y * 3) & 3) !== 0) c = SNOW_RAMP[3]!;
+      else if (green && l > 70) c = SNOW_RAMP[Math.max(1, Math.min(4, Math.round((l - 50) / 40)))]!;
+      else if (green) c = [r * 0.8 + 30, g * 0.8 + 32, b * 0.8 + 44];
+      // Los tejados de las casas lejanas y lo marrón que mira arriba, ya cubiertos por el copete.
+      o[i] = c[0];
+      o[i + 1] = c[1];
+      o[i + 2] = c[2];
+      o[i + 3] = 255;
+    }
+  octx.putImageData(res, 0, 0);
+  return out;
+}

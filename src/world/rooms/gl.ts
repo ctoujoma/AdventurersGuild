@@ -114,6 +114,9 @@ const SURFACE_FRAG = /* glsl */ `
   uniform float uWetCover;
   // Charcos en el suelo de fuera (sin «pocas luces»): reflejan el cielo (uSkyRefl) y les caen gotas.
   uniform float uPuddle;
+  // La nieve posada (0–1): manchas que crecen en lo plano y copetes en lo que mira arriba.
+  uniform float uSnowCover;
+  uniform float uNoWeather;
   uniform vec3 uSkyRefl;
   uniform float uClock;
   bool dryAt(vec3 world) {
@@ -363,7 +366,8 @@ const SURFACE_FRAG = /* glsl */ `
       vec3 L = lum > 0.001 ? light / lum * q : vec3(0.0);
       // El color de lo pintado, algo menos saturado (los tonos de Endesga gritan).
       vec3 alb = mix(vec3(dot(tex.rgb, vec3(0.3, 0.59, 0.11))), tex.rgb, 0.86);
-      if (uWet > 0.01 && !inside && world.y > -0.5 && !dryAt(world)) {
+      bool weathered = uNoWeather < 0.5 && !inside && world.y > -0.5 && !dryAt(world);
+      if (uWet > 0.01 && weathered) {
         alb *= mix(vec3(1.0), vec3(0.7, 0.74, 0.82), uWet);
         // El canto de arriba de cada saliente: un brillo del cielo, en téxeles sueltos.
         // Solo con relieve pintado y un salto claro (no en el bisel de las figuras ni en la hierba).
@@ -372,8 +376,29 @@ const SURFACE_FRAG = /* glsl */ `
         if (edge && hash2(tc + uOrigin.xy) < 0.55) alb = mix(alb, vec3(0.78, 0.83, 0.92), 0.5 * uWet);
       }
       vec3 hq = max(floor(min(halo, vec3(0.7)) * 5.0 + jit), vec3(0.0)) / 5.0;
+      if (uSnowCover > 0.01 && weathered) {
+        vec3 snowA = vec3(0.86, 0.89, 0.95);
+        vec3 snowB = vec3(0.74, 0.79, 0.88);
+        if (uNormal.y > 0.3) {
+          // Lo plano (el patio, los tejados): la nieve cubre a manchas que se van juntando.
+          vec2 p = floor(world.xz);
+          float n = vnoise(p / vec2(16.0, 5.0)) * 0.7 + hash2(floor(tc / 2.0) + uOrigin.xy) * 0.3;
+          if (n < uSnowCover * 1.3 - 0.05) alb = n < uSnowCover * 1.3 - 0.2 ? snowA : snowB;
+        } else if (hash2(vec2(tc.x, uOrigin.x)) > 0.12) {
+          // De pie: un copete en el canto de arriba de cada cosa (uno o dos téxeles, según lo
+          // que lleve nevando).
+          float deep = uSnowCover > 0.55 ? 2.0 : 1.0;
+          for (int k = 1; k <= 2; k++) {
+            if (float(k) > deep) break;
+            vec2 up = uvc + vec2(0.0, float(k) / size.y);
+            bool top = texture2D(map, up).a < 0.5 ||
+              (uHasRelief > 0.5 && relAt(up) < relAt(uvc) - 3.0);
+            if (top) { alb = k == 1 ? snowA : snowB; break; }
+          }
+        }
+      }
       vec3 outC = alb * L + hq * uHalo;
-      if (uPuddle > 0.5 && uWet > 0.2 && !inside && uNormal.y > 0.9 && abs(world.y) < 1.0 &&
+      if (uPuddle > 0.5 && uWet > 0.2 && uSnowCover < 0.3 && !inside && uNormal.y > 0.9 && abs(world.y) < 1.0 &&
           !dryAt(world)) {
         float pd = puddleAt(world);
         if (pd > 0.75) {
@@ -574,6 +599,8 @@ export function texture(b: PixelBuffer): DataTexture {
 export type Corners = [Vector3, Vector3, Vector3, Vector3];
 
 export interface SurfaceOpts {
+  /** Lo que anda (gente y animales): ni se moja ni se le posa la nieve. */
+  noWeather?: boolean;
   /** Luz de fondo de la superficie (0–1 por canal) y cuánta luz del día le llega. */
   ambient: readonly [number, number, number];
   sun: number;
@@ -632,6 +659,7 @@ export function sharedUniforms() {
     uRainMaskAt: { value: new Vector4() },
     uWetCover: { value: 0 },
     uPuddle: { value: 1 },
+    uSnowCover: { value: 0 },
     uSkyRefl: { value: new Vector3(0.5, 0.55, 0.65) },
     uClock: { value: 0 },
     uBox: { value: Array.from({ length: MAX_BOXES }, () => new Vector4()) },
@@ -685,6 +713,7 @@ export class Look {
           uDither: { value: o.dither ?? 0.035 },
           uHalo: { value: o.halo ?? 1 },
           uOutdoor: { value: o.outdoor ? 1 : 0 },
+          uNoWeather: { value: o.noWeather ? 1 : 0 },
           uFade: { value: 1 },
           uRim: { value: (o.wrap ?? 0.25) >= 0.5 ? 0.9 : 0 },
           uRelief: { value: relief ? this.own(reliefTexture(b, relief)) : NO_DEPTH },

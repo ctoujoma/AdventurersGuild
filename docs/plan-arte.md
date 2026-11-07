@@ -63,7 +63,16 @@ npm run build`.
         luces», sin salpicaduras ni charcos. Sonido de lluvia (apagado mirando dentro) y los
         grillos callan. Capturas en `capturas/clima/fase2/`. Falta: las ventanas de los lados y
         medir en un móvil.
-  - [ ] 3. Nieve. — [ ] 4. Viento. — [ ] 5. Tormenta.
+  - [x] 3. Nieve: los copos en el mismo shader que la lluvia (`flakes` en `rooms/lluvia.ts`),
+        en tres capas que se mecen (los de cerca, de 2 × 2). La nieve posada (`uSnowCover` en
+        `gl.ts`) crece mientras nieva y se funde despacio al despejar, dejándolo mojado: en lo
+        plano (patio, tejados), a manchas que se juntan; de pie, un copete en el canto de arriba
+        de cada cosa (vigas, alféizares, copas, hierba); la gente y los animales, no
+        (`noWeather`). El paisaje del fondo, nevado (`snowyCanvas` en `rooms/manto.ts`, se pinta
+        la primera vez), también de noche. El cielo, blanquecino; la luz, algo más clara y fría;
+        el humo de las chimeneas, más espeso; sin luciérnagas. Capturas en
+        `capturas/clima/fase3/`.
+  - [ ] 4. Viento. — [ ] 5. Tormenta.
 
 - [x] **Volumen con grosor** (`thick` en `salas/kit.ts`, `volume` en `RoomScene.ts`): lo suelto
       por la sala tiene cuerpo de unos píxeles hacia el fondo (antes, solo lo empotrado, hasta
