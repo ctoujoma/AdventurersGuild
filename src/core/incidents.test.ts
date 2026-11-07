@@ -60,6 +60,27 @@ describe('incidentes', () => {
     expect(t.incidentNews?.[0]?.t).toContain(hero.name);
   });
 
+  it('ladrón: al llegar el héroe se pelean, golpe a golpe; al acabar, le pilla o se escapa', () => {
+    const s = withIncident('ladron');
+    const hero = s.heroes.find((h) => h.status === 'ok')!;
+    const room = s.incidents![0]!.room;
+    const sent = reduce(s, { type: 'incident', id: 'i1', act: { by: 'who', who: hero.id } });
+    const t = reduce(sent, { type: 'arrived', heroId: hero.id, room });
+    const duel = t.incidents?.[0]?.duel;
+    expect(duel?.who).toBe(hero.id);
+    expect(duel!.hits.length).toBeGreaterThan(2);
+    // Cada golpe quita vida: quien gana deja al otro a cero.
+    const dealt = duel!.hits.filter((h) => h.by === 'h').reduce((a, h) => a + h.amount, 0);
+    expect(dealt >= duel!.hp.l).toBe(duel!.won);
+    // Mientras pelean no sale mal, aunque se pase su hora.
+    const late = structuredClone(t);
+    expect(stepIncidents(late, 10, duel!.at + duel!.end - 0.2)).toEqual([]);
+    expect(late.incidents).toHaveLength(1);
+    const news = stepIncidents(late, 10, duel!.at + duel!.end);
+    expect(late.incidents).toEqual([]);
+    expect(news[0]?.k).toBe(duel!.won ? 'good' : 'bad');
+  });
+
   it('mientras alguien va de camino no sale mal; si nadie dice que llega, se da por llegado', () => {
     const s = withIncident('pelea');
     const hero = s.heroes.find((h) => h.status === 'ok')!;

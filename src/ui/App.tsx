@@ -14,7 +14,8 @@ import { rumorRoom } from '../core/rumors';
 import { canClose, canHire, customOf, newGame, reduce, type Action } from '../core/game';
 import { hasUnlock } from '../core/goals';
 import type { UnlockId } from '../data/unlocks';
-import { raidRoute } from '../core/assault';
+import { Assault, assaultSetup, raidRoute, raidSeed } from '../core/assault';
+import { Rng } from '../core/rng';
 import { canHireWorker } from '../core/workers';
 import { DAY_SECONDS, DELIVERIES, DUSK } from '../core/balance';
 import { DECOR, FACADE, PET_LINES } from '../data/custom';
@@ -78,6 +79,7 @@ import { TabernaPanel } from './panels/TabernaPanel';
 import { ArconPanel, type ArconTab } from './panels/ArconPanel';
 import { QuestSheet } from './QuestSheet';
 import { SceneView, type GameScene } from './SceneView';
+import { RaidCrew } from './RaidCrew';
 import { RoomPanel, type RoomLink } from './panels/RoomPanel';
 import { ObrasPanel } from './panels/ObrasPanel';
 import { WorksBar } from './WorksBar';
@@ -160,6 +162,8 @@ export function App() {
   const [awayDays, setAwayDays] = useState(0);
   /** Hay un asalto en el patio (se puede saltar). */
   const [raiding, setRaiding] = useState(false);
+  /** El asalto de esta noche se juega en directo (se puede mover a la gente). */
+  const [raidLive, setRaidLive] = useState(false);
   /** Pelea contra un jefe de esta noche: el aviso (id del informe) y la pelea abierta. */
   const [bossCall, setBossCall] = useState<string | null>(null);
   /** Al empezar con el tutorial: unos segundos para ver la taberna (la cámara entra) antes del cuaderno. */
@@ -698,8 +702,44 @@ export function App() {
     setQuestId(null);
     setBubble(null);
     const before = gameRef.current;
+    // Asalto esta noche con la escena a la vista: se juega en directo y, al acabar, amanece.
+    const due = before.raid && before.raid.day <= before.day;
+    if (!skip && due && scene.current && !before.over) {
+      const rng = new Rng(raidSeed(before));
+      const live = new Assault(assaultSetup(before, before.raid!.strength, rng), rng);
+      setPassing(true);
+      setRaiding(true);
+      setRaidLive(true);
+      audio.play('horn');
+      scene.current.raidNight(
+        { plan: live.plan() },
+        () => {
+          setRaidLive(false);
+          dispatch({ type: 'raidFought', result: live.result ?? live.run() });
+          const next = dispatch({ type: 'endDay' });
+          dawnAfter(before, next, skip)();
+        },
+        live,
+      );
+      return;
+    }
     const next = dispatch(skip ? { type: 'tutorial', op: skip } : { type: 'endDay' });
     if (next === before) return;
+    const sunrise = dawnAfter(before, next, skip);
+    if (!scene.current) return sunrise();
+    setPassing(true);
+    if (next.lastRaid) {
+      setRaiding(true);
+      audio.play('horn');
+      scene.current.raidNight(next.lastRaid, sunrise);
+    } else {
+      audio.play('night');
+      scene.current.nightfall(sunrise);
+    }
+  };
+
+  /** Lo que pasa al amanecer, tras la noche (con su asalto o sin él). */
+  const dawnAfter = (before: GameState, next: GameState, skip?: TutorialSkip) => {
     const party = next.lastRaid?.won || (next.mode === 'libre' && before.mode !== 'libre');
     const sunrise = () => {
       setPassing(false);
@@ -720,16 +760,7 @@ export function App() {
       // Asalto repelido o deuda saldada: suena el brindis.
       if (party) setTimeout(() => audio.fanfare(), 60);
     };
-    if (!scene.current) return sunrise();
-    setPassing(true);
-    if (next.lastRaid) {
-      setRaiding(true);
-      audio.play('horn');
-      scene.current.raidNight(next.lastRaid, sunrise);
-    } else {
-      audio.play('night');
-      scene.current.nightfall(sunrise);
-    }
+    return sunrise;
   };
 
   /**
@@ -1613,10 +1644,11 @@ export function App() {
         <div class="raid-banner" role="status">
           <b>¡Asalto a la taberna!</b>
           <button class="btn btn-wood" onClick={() => scene.current?.skipRaid()}>
-            Saltar
+            {raidLive ? 'Que se las apañen' : 'Saltar'}
           </button>
         </div>
       )}
+      {raidLive && <RaidCrew game={game} scene={scene} />}
       {bossCall && callReport?.fight && (
         <BossCall
           fight={callReport.fight}

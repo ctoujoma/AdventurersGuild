@@ -124,6 +124,35 @@ npm run build`.
       a media resolución en el fondo.
   - [ ] Visto bueno del usuario. Capturas en `capturas/muros/` (`materiales.png` y cada una).
 
+- [ ] **Que lo que pasa se vea pasar** ([`encargos/arte-movimiento.md`](encargos/arte-movimiento.md)):
+  - [ ] 1. Auditoría.
+  - [x] 2. Sastrería: con el héroe de camino (`walking`, o aún sin llegar al probador), quien
+        cose le espera a un lado del probador, el que da a por donde llega, mirándolo y
+        estirando la cinta a ratos (`awaitFitting` en `crowd.ts`); no cose hasta que llega.
+        Entonces, por orden, le mide, le prueba la tela y le cose el bajo (`FIRST_FIT`); luego
+        como antes.
+  - [ ] 3. Contratar andando. — [ ] 4. El ladrón que huye sala a sala.
+  - [x] 5. El rótulo: se toca (zona nueva, `signAt`; no quita ninguna) y se balancea **hacia
+        atrás y hacia delante** sobre su gancho (el usuario: «no en los costados»), como un
+        péndulo con roce que se apaga en unos 3 s (`hangSign`, `swingSign` en `RoomScene.ts`);
+        más claro al ir hacia atrás (mira al cielo). Cadenas (`chain`) al tocarlo y crujido en
+        cada vuelta fuerte; el cuervo grazna. El de hierro, en dos partes: el brazo fijo y la
+        tabla con las cadenas colgando (`ironSignParts` en `props.ts`).
+  - [x] 6. La marca de destino (`goalMark.ts`): un banderín con el color del gremio y el icono
+        de lo que va a hacer (arreglar lo que pasa, descansar, guardia o el de la sala), clavado
+        en el suelo a un lado de donde va. Al arrastrar, uno tenue de muestra donde caerá; al
+        soltar, cae, rebota y deja una onda en el suelo; se queda hasta que llega
+        (`Crowd.arrived` en la sala, o parado en su sitio; al menos 1,1 s) y se funde con unos
+        destellos. Ya va corriendo (lo del principal en `crowd.drop`), así que dura todo el
+        camino. Sustituye a las cuatro esquinas provisionales (`headingMarks`, quitado); en el
+        asalto en directo, el mismo banderín con la espada.
+  - [x] 6b. El camino (el usuario: «un trazado con el camino que harán y que desaparezca a los
+        pocos segundos»): al soltar, un punteado amarillo que avanza por el suelo, por puertas y
+        escaleras (`route`), de donde estaba hasta el banderín (`wayTo`, `trace`); entero un
+        rato y luego se borra desde donde salió hacia el banderín y se apaga (`TRAIL_LIFE` =
+        3,5 s). Al arrastrar, el de muestra, más tenue.
+  Capturas en `capturas/movimiento/`.
+
 ## Estudio: estilo «Cast n Chill»
 
 Pedido del usuario: ver si el pixel art puede ir hacia ese estilo. Pruebas, viabilidad y plan
