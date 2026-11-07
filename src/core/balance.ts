@@ -92,6 +92,7 @@ export const ROOM_COST: Record<RoomType, readonly number[]> = {
   tiro: [0, 150, 320, 520, 850],
   biblioteca: [0, 150, 320, 520, 850],
   sastreria: [0, 160, 340, 620],
+  pintor: [0, 140, 300, 520],
   alquimia: [0, 220, 420, 700],
 };
 export const roomMax = (t: RoomType) => ROOM_COST[t].length - 1;
@@ -215,6 +216,7 @@ export const LEVEL_RANK: Partial<Record<RoomType, Partial<Record<number, number>
   // Las salas nuevas se abren con un rango (construirlas es su nivel 1).
   sastreria: { 1: 1, 3: 2 },
   alquimia: { 1: 2, 3: 3 },
+  pintor: { 1: 1, 3: 2 },
 };
 /** Rango que pide un nivel de sala (0: ninguno). */
 export const levelRank = (t: RoomType, level: number) => LEVEL_RANK[t]?.[level] ?? 0;
@@ -334,7 +336,7 @@ export const levelRaise = (lvl: number) => (lvl <= 5 ? 2 * lvl : 5 * lvl);
  * (`FREE_PAY_RANK` más por rango), para que los sueldos de los veteranos no se coman la caja.
  */
 export const FREE_PAY = 0.5;
-export const FREE_PAY_RANK = 0.35;
+export const FREE_PAY_RANK = 0.1;
 /** Caché de veterano: al llegar a estos niveles piden un plus fijo. */
 export const CACHE: Readonly<Record<number, number>> = { 5: 15, 8: 30 };
 export const CACHE_REFUSE_MORALE = -25;
@@ -497,6 +499,16 @@ export const DRESS_MORALE = 8;
  * escena o con la app cerrada), a las tantas horas de juego como mucho.
  */
 export const DRESS_WALK = 2;
+/**
+ * Pintar una sala (ver `core/paint.ts`): lo que cuesta y las horas de jornada que tarda por cada
+ * hueco que mide (a ritmo de un pintor de Maña 4 en un taller de nivel 1), y lo que se le espera
+ * como mucho si nadie dice que ha llegado.
+ */
+export const PAINT_GOLD = 20;
+export const PAINT_HOURS = 3;
+export const PAINT_WALK = 2;
+/** Pintores trabajando a la vez, por nivel del taller. */
+export const PAINT_SLOTS = [0, 1, 1, 2] as const;
 /**
  * Lo mismo con una tarea nueva (trabajar o entrenar): cuenta desde que llega a la sala o, si
  * nadie lo dice, a las tantas horas de juego como mucho.

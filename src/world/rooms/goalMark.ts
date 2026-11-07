@@ -26,7 +26,8 @@ export type GoalIcon =
   | 'diana'
   | 'libro'
   | 'tijeras'
-  | 'frasco';
+  | 'frasco'
+  | 'brocha';
 
 /**
  * Los iconos, de 7 × 7: `#` el color claro, `o` el de la sombra (más oscuro), `.` nada. Se leen
@@ -51,6 +52,7 @@ const ICONS: Record<GoalIcon, string[]> = {
   libro: ['.......', '###.###', '#o#.#o#', '###.###', '#o#.#o#', '###.###', '.......'],
   tijeras: ['#....#.', '.#..#..', '..##...', '..##...', '.o..o..', 'o.o.o.o', '.o...o.'],
   frasco: ['..###..', '...#...', '...#...', '..#.#..', '.#ooo#.', '#ooooo#', '.#####.'],
+  brocha: ['.....##', '....##.', '...##..', '..#....', '.###...', '#ooo#..', '.ooo...'],
 };
 
 /** El icono de cada sala (lo que se hace en ella). */
@@ -75,6 +77,7 @@ const ROOM_ICON: Record<RoomType, GoalIcon> = {
   biblioteca: 'libro',
   sastreria: 'tijeras',
   alquimia: 'frasco',
+  pintor: 'brocha',
 };
 
 /**

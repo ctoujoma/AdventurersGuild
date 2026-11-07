@@ -146,6 +146,8 @@ import { missionCombat, runCombat, type Order } from './combat';
 import { listNames, plural } from './text';
 import { stepLarder } from './larder';
 import { stepTraining } from './training';
+import { customOf } from './custom';
+import { arrivePaint, cancelPaint, nightPaints, startPaint, stepPaints } from './paint';
 import {
   canCraft,
   arrive,
@@ -182,6 +184,9 @@ export type Action =
   | { type: 'craft'; room: string; recipe: RecipeId }
   | { type: 'undoItem'; room: string; itemId: string }
   | { type: 'cancelCraft'; id: string }
+  /** Pintar una sala de un color (null: los de la casa), con el pintor del taller. */
+  | { type: 'paint'; room: string; tint: TintId | null }
+  | { type: 'cancelPaint'; id: string }
   /** Sastrería: vestir a un héroe (tinte y prenda). */
   | { type: 'dressAt'; room: string; heroId: string; dress: Dress }
   /** La escena: un héroe ha llegado andando a una sala (la sastrería empieza a coser). */
@@ -258,14 +263,7 @@ export const roster = (s: GameState) =>
 export const salaries = (s: GameState) =>
   roster(s).reduce((a, h) => a + h.salary, 0) + s.workers.reduce((a, w) => a + w.salary, 0);
 
-/** La taberna tal como la ha dejado el jugador (o como la dejó el tío). */
-export const customOf = (s: GameState): Custom =>
-  s.custom ?? {
-    name: DEFAULT_NAME,
-    color: 'vino',
-    symbol: 'jarra',
-    dog: false,
-  };
+export { customOf };
 export const rankOf = (s: GameState) => RANKS[rankIndex(s.rep)]!;
 export const nextRank = (s: GameState) => RANKS[rankIndex(s.rep) + 1] ?? null;
 /** Próximo pago: cuota de la deuda más salarios, o solo salarios en modo libre. */
@@ -783,9 +781,11 @@ function reduceAction(state: GameState, action: Action): GameState {
       if (tutorialFrozen(state)) return state;
       const next = tick(state, action.to);
       if (next === state) return state;
-      const crafted = next.crafts?.length
-        ? stepCrafts(next, Math.min(1, (next.clock ?? 0) / DAY_SECONDS))
-        : [];
+      const part = Math.min(1, (next.clock ?? 0) / DAY_SECONDS);
+      const crafted = [
+        ...(next.crafts?.length ? stepCrafts(next, part) : []),
+        ...(next.paints?.length ? stepPaints(next, part) : []),
+      ];
       // Los incidentes solo corren con el juego abierto (la simulación de fuera no pasa por aquí).
       // En el tutorial no hay sueltos: los suyos llegan preparados.
       const tut = tutorialOn(state);
@@ -897,10 +897,22 @@ function reduceAction(state: GameState, action: Action): GameState {
       // Quien llega a su sala: se viste, empieza a contar su tarea o arregla el incidente.
       const dressed = arrive(s, action.heroId, action.room);
       const shift = arrivedAt(s, action.heroId, action.room);
+      // El pintor que llega a la sala que va a pintar (también se avisa con su id).
+      const painter = arrivePaint(s, action.heroId, action.room);
       const n = arriveIncident(s, action.heroId, action.room);
       if (n) s.incidentNews = [n];
       // Con el ladrón no se arregla aún: empieza la pelea (cambia la lista).
-      return dressed || shift || n || s.incidents !== state.incidents ? s : state;
+      return dressed || shift || painter || n || s.incidents !== state.incidents ? s : state;
+    }
+    case 'paint': {
+      const s = structuredClone(state);
+      return startPaint(s, action.room, action.tint) ? s : state;
+    }
+    case 'cancelPaint': {
+      if (!state.paints?.some((p) => p.id === action.id)) return state;
+      const s = structuredClone(state);
+      cancelPaint(s, action.id);
+      return s;
     }
     case 'cancelCraft': {
       if (!state.crafts?.some((c) => c.id === action.id)) return state;
@@ -1138,6 +1150,7 @@ export function endDay(state: GameState, away = false): GameState {
   s.incidentNews = undefined;
   // Los talleres cuentan lo que quedaba del día (con la gente de hoy, antes de que cambie).
   events.push(...nightCrafts(s, rng));
+  events.push(...nightPaints(s));
   // El rumor que no se ha tocado se pierde con la noche.
   s.rumor = undefined;
   s.day++;
