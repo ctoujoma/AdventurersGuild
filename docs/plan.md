@@ -120,11 +120,10 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
    (mejor paga, botín bueno o legendario, caduca en 2 días); si no, se pierde sin más. Uno a la
    vez. `data/rumors.ts`, `core/rumors.ts`, `ui/RumorMark.tsx`; cifras `RUMOR_*`.
 
-8. **Entrenamiento con tope por nivel** (revisar): hoy el tope de cada atributo lo pone solo
-   el nivel de la sala (5, 7, 9 y 11; `TRAIN_CAP`) y no el del héroe; al subir de nivel, el
-   atributo principal sube 1 pero sin pasar de 10, así que quien ya está entrenado al máximo
-   no gana nada. Propuesta: tope = el menor entre el de la sala y uno por nivel del héroe
-   (por ejemplo 4 + nivel); subir de nivel sube ese tope y el punto de nivel nunca se pierde.
+8. **Entrenamiento con tope por nivel** (hecho): el tope de cada atributo es el menor entre el
+   de la sala (5, 7, 9 y 11; `TRAIN_CAP`) y el del héroe (4 + su nivel; `TRAIN_HERO_BASE`). Al
+   llegar al tope se dice cuál manda («mejora la sala» o «hasta subir de nivel»). Subir de nivel
+   da +1 al atributo principal y nunca se pierde (hasta `ATTR_MAX`, 15).
 
 ## Fase 2 · Tutoriales
 
@@ -340,7 +339,6 @@ en medio, para que los edificios salgan más interesantes (y, más adelante, pas
 - **Objetivos:** más variedad («gana un asalto sin heridos», «sirve 40 jarras»).
 - **Al acabar todas las historias** no llegan más: historias que se repitan o una por
   temporada.
-- **Entrenamiento** (fase 1, punto 8).
 
 ## Más adelante (valorar)
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { TRAIN_CAP, TRAIN_COST_BASE } from './balance';
+import { TRAIN_CAP, TRAIN_COST_BASE, TRAIN_HERO_BASE, XP_PER_LEVEL } from './balance';
+import { levelUp } from './resolve';
 import { endDay, newGame, reduce } from './game';
 import type { GameState, Room } from './model';
 import { skillGain, stepTraining, trainState, trainingOf } from './training';
@@ -77,17 +78,42 @@ describe('entrenamiento', () => {
     const s = gym(1);
     const h = s.heroes[0]!;
     h.attrs.F = TRAIN_CAP[1];
-    expect(trainState(s, h)).toMatchObject({ capped: true, perDay: 0 });
+    h.lvl = 5;
+    expect(trainState(s, h)).toMatchObject({ capped: true, perDay: 0, by: 'sala' });
     stepTraining(s, []);
     expect(h.attrs.F).toBe(TRAIN_CAP[1]);
     const better = gym(2);
     better.heroes[0]!.attrs.F = TRAIN_CAP[1];
+    better.heroes[0]!.lvl = 5;
     expect(trainState(better, better.heroes[0]!)!.capped).toBe(false);
     // Una sala mejor también entrena más rápido.
     const fast = gym(2);
     expect(trainState(fast, fast.heroes[0]!)!.perDay).toBeGreaterThan(
       trainState(s, { ...h, attrs: { ...h.attrs, F: 3 } })!.perDay,
     );
+  });
+
+  it('tampoco pasa del tope del héroe (4 + su nivel); al subir de nivel, sigue', () => {
+    const s = gym(4);
+    const h = s.heroes[0]!;
+    h.lvl = 2;
+    h.attrs.F = TRAIN_HERO_BASE + 2;
+    expect(trainState(s, h)).toMatchObject({ capped: true, by: 'nivel', cap: 6 });
+    const events: { t: string }[] = [];
+    h.train = { F: 99 };
+    stepTraining(s, events);
+    expect(h.attrs.F).toBe(6);
+    h.lvl = 3;
+    expect(trainState(s, h)).toMatchObject({ capped: false, cap: 7 });
+  });
+
+  it('el punto de subir de nivel no se pierde aunque el atributo pase de 10', () => {
+    const s = gym();
+    const h = s.heroes[0]!;
+    h.attrs.F = 10;
+    h.xp = XP_PER_LEVEL;
+    levelUp(s, h);
+    expect(h.attrs.F).toBe(11);
   });
 
   it('las habilidades suben solas según la clase', () => {

@@ -141,7 +141,11 @@ function heroAt(game: GameState, h: Hero, room: Room): Member {
   const m = heroMember(h, `${ATTR_NAMES[attr]} ${h.attrs[attr]}`);
   if (!t) return m;
   if (t.capped)
-    return { ...m, sub: `${m.sub} · en el tope`, more: 'Mejora la sala para que siga.' };
+    return {
+      ...m,
+      sub: `${m.sub} · en el tope`,
+      more: t.by === 'sala' ? 'Mejora la sala para que siga.' : 'Seguirá cuando suba de nivel.',
+    };
   const gain = gainText(skillGain(h, attr));
   return {
     ...m,

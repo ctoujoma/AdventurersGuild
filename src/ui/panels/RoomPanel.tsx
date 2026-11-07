@@ -7,7 +7,7 @@ import { unlockSource } from '../../core/goals';
 import type { UnlockId } from '../../data/unlocks';
 import { beerCap, dailyYield, eatersOf, foodCap } from '../../core/larder';
 import { ATTR_NAMES, trainCap } from '../../core/training';
-import { LOCK_TIME, TRAIN_CAP, VAULT_STORE } from '../../core/balance';
+import { LOCK_TIME, TRAIN_CAP, TRAIN_HERO_BASE, VAULT_STORE } from '../../core/balance';
 import { raidRoute, routeTime } from '../../core/assault';
 import { defense } from '../../core/raids';
 import { doorTime, goldCap, lockTime } from '../../core/vault';
@@ -269,7 +269,7 @@ function TrainInfo({ room }: { room: Room }) {
   return (
     <div class="chips">
       <Fact
-        info={`Pon aquí a un héroe que esté en casa para que entrene. Las habilidades suben solas según su clase.${next ? ` Mejorada, se llega hasta ${next} y se entrena más rápido.` : ''}`}
+        info={`Pon aquí a un héroe que esté en casa para que entrene. Las habilidades suben solas según su clase. Cada héroe llega como mucho a ${TRAIN_HERO_BASE} más su nivel.${next ? ` Mejorada, se llega hasta ${next} y se entrena más rápido.` : ''}`}
       >
         {ATTR_NAMES[attr]} hasta {trainCap(room)}
       </Fact>
