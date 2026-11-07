@@ -156,6 +156,11 @@ export class IncidentArt {
   sound?: (name: SoundName, volume: number) => void;
   private out = 0;
   private L: RoomsLayout | null = null;
+  /**
+   * El ladrón pillado echa a correr: desde dónde (x y planta) y por dónde sale de la sala, para
+   * que quien le ha pillado le persiga un trecho.
+   */
+  onFlee?: (x: number, level: number, to: { x: number; floor: number }) => void;
 
   constructor(
     shared: Shared,
@@ -363,7 +368,7 @@ export class IncidentArt {
    * Por dónde se escapa alguien de la casa: el camino de la gente (puertas, escaleras peldaño a
    * peldaño y el recibidor) hasta el patio y un poco más allá, por el camino.
    */
-  private escape(s: Show, a: Actor, speed: number): boolean {
+  private escape(s: Show, a: Actor, speed: number, caught = false): boolean {
     const path = this.L ? route(this.L, { x: a.x, floor: s.level }, outside()) : null;
     if (!path) return false;
     const pts: NonNullable<Actor['route']> = [];
@@ -383,6 +388,12 @@ export class IncidentArt {
     }
     const end = pts.at(-1)!;
     pts.push({ ...end, x: end.x - 60 });
+    if (caught) {
+      // Un trecho: hasta donde sale de la sala (la puerta o el pie de la escalera).
+      const out = pts.find((q) => q.level !== s.level || q.x < s.r.x || q.x > s.r.x + s.r.w);
+      const to = out ?? pts[0]!;
+      this.onFlee?.(a.x, s.level, { x: to.x, floor: to.level });
+    }
     a.route = pts;
     a.flee = speed;
     a.wait = 0;
@@ -424,7 +435,7 @@ export class IncidentArt {
     for (const a of [...s.actors]) {
       if (speed) {
         // El ladrón no se esfuma en la puerta: sale de la casa corriendo.
-        if (!(s.kind === 'ladron' && this.escape(s, a, speed))) this.exit(s, a, speed);
+        if (!(s.kind === 'ladron' && this.escape(s, a, speed, !failed))) this.exit(s, a, speed);
         continue;
       }
       // El fuego que sale mal no se apaga con vapor: se ahoga en humo negro.

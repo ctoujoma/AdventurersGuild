@@ -78,6 +78,9 @@ Para el agente principal (núcleo, tiempo, tutoriales, combate, talleres, amigos
   empieza cuando la escena le ve llegar (`Crowd.onArrive` → acción `arrived`, `Craft.wait`;
   `DRESS_WALK` es solo el tope si nadie avisa). Auditoría de movimiento en
   [`encargos/arte-movimiento.md`](encargos/arte-movimiento.md).
+- Coherencia de la gente: toda tarea cuenta desde que se llega (`Hero/Worker.walk` y `since`,
+  `workAt`, `shiftShare`, `newShift` cada noche) y los incidentes se arreglan al llegar quien va
+  (`Incident.coming`). Arrastrar = ir andando a paso ligero.
 - Encargado al de arte: [`encargos/arte-movimiento.md`](encargos/arte-movimiento.md).
 - Esperando al usuario: [`propuesta-asaltos.md`](propuesta-asaltos.md) (la pelea de los asaltos
   y arrastrar andando). Después de eso, a lo nuestro: núcleo con órdenes en `core/assault.ts`.

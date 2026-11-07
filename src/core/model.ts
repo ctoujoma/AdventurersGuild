@@ -64,6 +64,13 @@ export interface Hero {
   job?: string;
   /** La que tenía al salir de encargo: al volver, la recupera si sigue habiendo sitio. */
   jobBefore?: string;
+  /**
+   * Va de camino a su sala (tarea nueva): no cuenta hasta que llega (acción `arrived`) o, si
+   * nadie lo dice, hasta esta parte del día. Se borra al llegar y cada noche.
+   */
+  walk?: number;
+  /** Parte de hoy desde la que cuenta en su sala (llegó a media jornada). Se borra cada noche. */
+  since?: number;
   /** Progreso de entrenamiento hacia el siguiente punto de cada atributo. */
   train?: Partial<Attrs>;
 }
@@ -85,6 +92,13 @@ export interface Worker {
   fee: number;
   /** Sala en la que trabaja (id); sin sala, descansa. */
   room?: string;
+  /**
+   * Va de camino a su sala (tarea nueva): no cuenta hasta que llega (acción `arrived`) o, si
+   * nadie lo dice, hasta esta parte del día. Se borra al llegar y cada noche.
+   */
+  walk?: number;
+  /** Parte de hoy desde la que cuenta en su sala (llegó a media jornada). Se borra cada noche. */
+  since?: number;
   /** Uno de los tres del pueblo que ya trabajaban para tu tío. */
   village?: StaffId;
   quote: string;
@@ -371,6 +385,11 @@ export interface Incident {
   until: number;
   /** Los de tocar: toques que faltan. */
   taps?: number;
+  /**
+   * Alguien va de camino a arreglarlo: se arregla cuando llega (acción `arrived`) o, si nadie lo
+   * dice, a los `at` segundos del reloj. Mientras va, no sale mal.
+   */
+  coming?: { who: string; at: number };
 }
 
 export interface DawnEvent {

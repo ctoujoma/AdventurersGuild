@@ -63,3 +63,5 @@ críticos con rombo).
    aparecer allí? Va de la mano: en el asalto tiene que correr, y es mejor que de día haga lo
    mismo. Propuesta: sí, de día **andando a paso ligero** con la marca en el destino, y la tarea
    empieza al llegar (en los incidentes, la pelea o el ladrón empiezan cuando llega).
+   **Decidido y hecho** (7 de noviembre): así funciona ya de día (ver
+   [`encargos/arte-movimiento.md`](encargos/arte-movimiento.md)).

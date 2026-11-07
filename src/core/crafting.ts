@@ -174,7 +174,8 @@ export function craftRate(s: GameState, roomId: string, c?: Craft): number {
   const r = s.building.rooms.find((x) => x.id === roomId);
   // Para vestir a alguien, tiene que estar en casa (si sale de encargo o cae herido, se para).
   if (c?.dress && s.heroes.find((h) => h.id === c.dress!.hero)?.status !== 'ok') return 0;
-  return r ? workAt(s, r) : 0;
+  // Avanza con el reloj: cuenta quien está ahora en la sala (no quien va de camino).
+  return r ? workAt(s, r, true) : 0;
 }
 
 /** El trabajo de vestir en marcha de un héroe, si lo hay. */

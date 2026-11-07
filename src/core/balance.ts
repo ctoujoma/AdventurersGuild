@@ -472,5 +472,12 @@ export const DRESS_MORALE = 8;
  * escena o con la app cerrada), a las tantas horas de juego como mucho.
  */
 export const DRESS_WALK = 2;
+/**
+ * Lo mismo con una tarea nueva (trabajar o entrenar): cuenta desde que llega a la sala o, si
+ * nadie lo dice, a las tantas horas de juego como mucho.
+ */
+export const JOB_WALK = 2;
+/** Segundos de reloj que se le dan a quien va a un incidente para llegar (si nadie lo dice). */
+export const INCIDENT_WALK = 25;
 /** Probabilidad de que un encargo con éxito brillante traiga los planos de una receta. */
 export const RECIPE_FIND = 0.2;

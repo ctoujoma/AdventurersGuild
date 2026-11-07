@@ -67,6 +67,9 @@ const VISITOR_NAME: Record<string, string> = {
   espia: 'Forastero callado',
 };
 const SPEED = 36;
+/** Paso ligero: quien se manda a una sala arrastrándolo, y corriendo, quien va a un incidente. */
+const BRISK = 1.6;
+const RUSH = 1.9;
 /** Lo deprisa que se va hacia dentro o hacia fuera (más despacio que de lado: se ve en escorzo). */
 const Z_SPEED = 14;
 /**
@@ -1012,9 +1015,24 @@ export class Crowd {
       a.goal = null;
       a.seat = null;
       a.wait = this.rnd() * 2;
-      if (!route(L, { x: a.x, floor: a.floor }, this.S.door, this.segs)) this.put(a, this.S.door);
+      if (!route(L, { x: a.x, floor: a.floor }, this.S.door, this.segs))
+        this.put(a, this.rescue(a));
       if (a.pose === 'sit' || a.pose === 'bed') a.pose = 'stand';
     }
+  }
+
+  /**
+   * Tras una obra, quien se ha quedado sin camino (en una sala que ya no está) aparece en el
+   * sitio con camino más cercano de su planta; si no hay ninguno, en la puerta.
+   */
+  private rescue(a: Actor): Place {
+    let best: Place | null = null;
+    for (const [x0, x1] of this.segs.get(a.floor) ?? []) {
+      const p = { x: Math.max(x0 + 8, Math.min(x1 - 8, a.x)), floor: a.floor };
+      if (best && Math.abs(p.x - a.x) >= Math.abs(best.x - a.x)) continue;
+      if (route(this.L!, p, this.S!.door, this.segs)) best = p;
+    }
+    return best ?? this.S!.door;
   }
 
   /**
@@ -1074,13 +1092,14 @@ export class Crowd {
       const was = a.hero.status;
       const work = a.hero.work;
       const guard = a.hero.guard;
+      const goTo = a.hero.goTo;
       // Si ha cambiado su dibujo (equipo nuevo, herido o curado, u otra partida con los mismos
       // ids), se le rehace: si no, seguía con el de antes hasta que salía y volvía a entrar.
       const reskin = skinOf(a.hero) !== skinOf(h);
       a.hero = h;
       if (reskin) this.reskin(a);
       // Tarea nueva (o de guardia): va ya, sin acabar antes el paseo que llevaba.
-      if ((work !== h.work || !guard !== !h.guard) && !a.gone && !a.leaving) {
+      if ((work !== h.work || goTo !== h.goTo || !guard !== !h.guard) && !a.gone && !a.leaving) {
         a.wait = 0;
         if (was === h.status && !a.climb && !a.held && !this.scripted) this.decide(a);
       }
@@ -1331,16 +1350,54 @@ export class Crowd {
    * (a dormir, a cenar), se olvida: al volver lo dirá otra vez.
    */
   private tell(a: Actor): void {
-    const w = a.hero.work;
-    const j = w ? this.S?.jobs.get(w) : undefined;
-    const inside = !!j && a.floor === j.room.floor && a.x >= j.x0 - 16 && a.x <= j.x1 + 16;
-    if (!inside) {
+    // La sala a la que corre (un incidente) o, si no, la de su tarea.
+    const w = a.hero.goTo ?? a.hero.work;
+    if (!w || !this.inRoom(a, w)) {
       a.told = undefined;
       return;
     }
     if (a.told === w || a.path.length || a.pose === 'walk') return;
     a.told = w;
-    this.onArrive?.(a.hero.id, w!);
+    this.onArrive?.(a.hero.id, w);
+  }
+
+  /** Si alguien está dentro de una sala (en su planta de abajo, entre sus paredes). */
+  private inRoom(a: Actor, room: string): boolean {
+    const r = this.L?.rooms.find((x) => x.room.id === room);
+    return !!r && a.floor === r.room.floor && a.x >= r.rect.x && a.x <= r.rect.x + r.rect.w;
+  }
+
+  /** Un sitio en medio de una sala, para ir a ella. */
+  private roomPlace(room: string): Place | null {
+    const r = this.L?.rooms.find((x) => x.room.id === room);
+    if (!r) return null;
+    const x = r.rect.x + r.rect.w / 2 + (this.rnd() - 0.5) * Math.min(30, r.rect.w / 3);
+    return { x, floor: r.room.floor };
+  }
+
+  /** Si alguien ya ha llegado a una sala y está parado en ella (para quitar la marca). */
+  arrived(id: string, room: string): boolean {
+    const a = this.actors.get(id);
+    if (!a || a.gone) return true;
+    return !a.held && !a.path.length && a.pose !== 'walk' && this.inRoom(a, room);
+  }
+
+  /**
+   * Quien ha pillado al ladrón le persigue un trecho (hasta `to`) y luego vuelve a lo suyo: el
+   * héroe que está en la sala más cerca de `x`.
+   */
+  chase(x: number, floor: number, to: Place): void {
+    let best: Actor | null = null;
+    for (const a of this.actors.values()) {
+      if (a.gone || a.held || a.leaving || a.hero.visitor || a.hero.bandit || a.hero.staff)
+        continue;
+      if (a.hero.status !== 'ok' || a.floor !== floor || Math.abs(a.x - x) > 80) continue;
+      if (!best || Math.abs(a.x - x) < Math.abs(best.x - x)) best = a;
+    }
+    if (!best || this.scripted) return;
+    this.go(best, { place: to, pose: 'stand' });
+    best.run = RUSH;
+    best.wait = 2.5;
   }
 
   /**
@@ -1415,9 +1472,12 @@ export class Crowd {
     const a = this.actors.get(id);
     if (!a?.held) return;
     a.held = null;
-    // Donde cae se queda un momento (le llega su tarea nueva) y luego va a lo suyo.
-    if (p) this.put(a, p);
-    a.wait = p ? 0.8 : 0;
+    a.wait = 0;
+    if (!p) return;
+    // No aparece allí: sale de donde estaba y va a paso ligero (le llega su tarea por el camino).
+    this.go(a, { place: p, pose: 'stand' });
+    a.run = BRISK;
+    a.wait = 0.5;
   }
 
   /** Quien está a la vista ahora mismo (ni fuera, ni en el pueblo, ni cogido con el dedo). */
@@ -2128,6 +2188,16 @@ export class Crowd {
       this.go(a, { place: outside(), pose: 'stand' });
       return;
     }
+    // A arreglar algo: corriendo a esa sala y allí se queda hasta que se arregla.
+    const to = h.goTo ? this.roomPlace(h.goTo) : null;
+    if (to && h.status === 'ok') {
+      a.task = null;
+      a.wait = 2;
+      if (this.inRoom(a, h.goTo!)) return;
+      this.go(a, { place: to, pose: 'stand' });
+      a.run = Math.max(a.run ?? 1, RUSH);
+      return;
+    }
     const home = this.homes.get(h.id);
     const job = this.workOf(a);
     if (!job) a.task = null;
@@ -2282,6 +2352,7 @@ export class Crowd {
 
   /** Ha llegado (en x y en profundidad): se pone como pide su destino. */
   private reach(a: Actor): void {
+    if (!this.scripted) a.run = undefined;
     if (a.goal && !a.leaving) {
       this.arrive(a, a.goal);
       // Se mete en la cama: primero incorporado y luego se tumba.

@@ -29,7 +29,9 @@ o está en «Más adelante», no se toca sin preguntar. El detalle de cada idea 
   Encargado también: que lo que pasa se vea pasar ([`encargos/arte-movimiento.md`](encargos/arte-movimiento.md):
   auditoría, contratar andando, el ladrón que huye de verdad, el rótulo que se balancea). Hecho
   ya: la auditoría, la sastrería que empieza al llegar el héroe, contratar y despedir andando y el
-  ladrón que huye por la casa (ver la tabla del encargo); quedan el rótulo y el arte del sastre.
+  ladrón que huye por la casa, arrastrar andando, las tareas e incidentes que empiezan al llegar
+  y la persecución (ver las tablas del encargo); quedan el rótulo, la marca de destino definitiva
+  y el arte del sastre.
 - **Agente de interfaz:** terminado lo encargado (trabajadores, menos toques, avisos que se
   descartan, el cobro de Merlo, las cartas del amanecer una a una, el mapa grande). Le queda
   suelto: un globito en la escena sobre la sala sin nadie (con arte).

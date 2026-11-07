@@ -23,6 +23,8 @@ export interface SceneHero {
   guard?: boolean;
   /** Sala en la que trabaja de día (id). */
   work?: string;
+  /** Va corriendo a esta sala (id) a arreglar algo (un incidente); manda sobre `work`. */
+  goTo?: string;
   /** Trabajador: duerme en el dormitorio del servicio o se va a dormir al pueblo. */
   staff?: 'casa' | 'pueblo';
   /** Visitante del salón: entra, se sienta un rato y se va. */

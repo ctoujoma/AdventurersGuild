@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HERO_WORK, SKILL_XP } from './balance';
+import { DAY_SECONDS, HERO_WORK, SKILL_XP } from './balance';
 import { serveCap, visitorsOf } from './salon';
 import { dailyYield } from './larder';
 import { dayIncome, endDay, newGame, reduce, salaries } from './game';
@@ -15,6 +15,8 @@ import {
   tidyJobs,
   workIn,
   workerCap,
+  onWay,
+  workAt,
 } from './workers';
 
 const roomOf = (s: GameState, type: Room['type']) => s.building.rooms.find((r) => r.type === type)!;
@@ -60,7 +62,9 @@ describe('trabajadores', () => {
     const salon = roomOf(s, 'salon');
     const h = s.heroes[0]!;
     const before = workIn(s, 'salon');
-    const t = reduce(s, { type: 'assign', who: h.id, room: salon.id });
+    const asg = reduce(s, { type: 'assign', who: h.id, room: salon.id });
+    // Al llegar a la sala cuenta el día entero (aquí, al amanecer).
+    const t = reduce(asg, { type: 'arrived', heroId: h.id, room: salon.id });
     expect(workIn(t, 'salon')).toBe(before + HERO_WORK);
     // De guardia o de misión deja el trabajo.
     const g = reduce(t, { type: 'guard', id: h.id, on: true });
@@ -69,6 +73,23 @@ describe('trabajadores', () => {
     const q = t.quests[0]!;
     const sent = reduce(t, { type: 'send', questId: q.id, heroIds: [h.id] });
     expect(sent.heroes[0]!.job).toBeUndefined();
+  });
+
+  it('quien cambia de sala cuenta desde que llega; quien llega tarde, solo lo que queda de día', () => {
+    const s = { ...newGame('llega'), clock: DAY_SECONDS / 2 };
+    const salon = roomOf(s, 'salon');
+    const h = s.heroes[0]!;
+    const before = workIn(s, 'salon');
+    const sent = reduce(s, { type: 'assign', who: h.id, room: salon.id });
+    const walking = sent.heroes[0]!;
+    expect(onWay(sent, walking)).toBe(true);
+    // Para los talleres, de camino aún no cuenta; para el día, solo desde que llegue.
+    expect(workAt(sent, salon, true)).toBe(workAt(s, salon, true));
+    const t = reduce(sent, { type: 'arrived', heroId: h.id, room: salon.id });
+    expect(onWay(t, t.heroes[0]!)).toBe(false);
+    expect(workIn(t, 'salon')).toBeCloseTo(before + HERO_WORK / 2);
+    // A la mañana siguiente, el día entero.
+    expect(endDay(t).heroes[0]!.since).toBeUndefined();
   });
 
   it('cada sala tiene dos puestos por hueco y no admite más', () => {
@@ -88,10 +109,12 @@ describe('trabajadores', () => {
     const h = s.heroes[0]!;
     h.status = 'herido';
     h.days = 6;
-    const nurse = reduce(s, {
-      type: 'assign',
-      who: village(s, 'mozo').id,
-      room: roomOf(s, 'enfermeria').id,
+    const mozo = village(s, 'mozo').id;
+    const inf = roomOf(s, 'enfermeria').id;
+    const nurse = reduce(reduce(s, { type: 'assign', who: mozo, room: inf }), {
+      type: 'arrived',
+      heroId: mozo,
+      room: inf,
     });
     const days = (x: GameState) => x.heroes.find((y) => y.id === h.id)!.days;
     expect(days(endDay(nurse))).toBe(days(endDay(s)) - 1);

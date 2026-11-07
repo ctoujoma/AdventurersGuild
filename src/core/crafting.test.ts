@@ -88,6 +88,9 @@ describe('la forja crea objetos', () => {
     expect(craftState(t, t.crafts![0]!).frac).toBe(0);
     const hero = t.heroes.find((h) => h.status === 'ok')!;
     t = reduce(t, { type: 'assign', who: hero.id, room: forge });
+    // Va de camino: hasta que llega, sigue parado.
+    expect(craftState(t, t.crafts![0]!).hoursLeft).toBeNull();
+    t = reduce(t, { type: 'arrived', heroId: hero.id, room: forge });
     const left = craftState(t, t.crafts![0]!).hoursLeft!;
     expect(left).toBeGreaterThan(RECIPES.ganzuas.hours);
   });

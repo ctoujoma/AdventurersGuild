@@ -82,7 +82,7 @@ describe('arrastrar y soltar en las salas', () => {
     expect(planDrop(s, s.workers[0]!.id, salon.id)).toMatchObject({ ok: false });
     const h = s.heroes.find((x) => x.status === 'ok')!;
     const t = drop(s, h.id, salon.id);
-    expect(t.incidents).toEqual([]);
+    expect(t.incidents?.[0]?.coming?.who).toBe(h.id);
     expect(t.heroes.find((x) => x.id === h.id)!.job).toBe(h.job);
   });
 });
