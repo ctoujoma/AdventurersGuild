@@ -131,7 +131,7 @@ describe('entrenamiento', () => {
     h.attrs.F = 6;
     h.train = { F: 99 };
     expect(cappedTrainees(s)).toHaveLength(0);
-    const events: { t: string; k?: string }[] = [];
+    const events: { t: string }[] = [];
     stepTraining(s, events);
     expect(h.attrs.F).toBe(7);
     expect(h.job).toBeUndefined();

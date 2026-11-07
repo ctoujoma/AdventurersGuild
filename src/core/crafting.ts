@@ -33,7 +33,7 @@ import type { Craft, CraftEnd, DawnEvent, GameState, Item, Rarity, Room } from '
 import { Rng } from './rng';
 import { active } from './rooms';
 import { workAt, workedIn } from './workers';
-import { hasUnlock } from './goals';
+import { hasUnlock, unlockSource } from './goals';
 
 /** Las salas que son taller (las que tienen recetas). */
 const SHOPS = new Set<RoomType>(RECIPE_IDS.map((id) => RECIPES[id].room));
@@ -209,6 +209,52 @@ export function canDress(s: GameState, roomId: string, heroId: string, to: Dress
   if (sameDress(h.dress, to)) return 'Ya va así.';
   if (s.gold < DRESS_GOLD) return `Te faltan ${DRESS_GOLD - s.gold} monedas.`;
   return null;
+}
+
+/**
+ * Cómo está una opción de ropa para un héroe, para la ficha (cada tinte o prenda con su estado):
+ * - `ok`: se puede, en `room` (la sastrería libre); al elegirla, acción `dressAt`.
+ * - `same`: ya va así. `lock`: aún no la tenéis (`why` dice de dónde sale).
+ * - `gold`: falta dinero. `none`: no hay sastrería en uso. `away`: no está en casa.
+ * - `sewing`: ya le están cosiendo. `busy`: la sastrería está con otro trabajo (`hoursLeft`).
+ */
+export type DressStatus =
+  | { state: 'ok'; room: string; cost: number }
+  | { state: 'same' | 'lock' | 'gold' | 'none' | 'away' | 'sewing'; why: string; cost: number }
+  | { state: 'busy'; why: string; cost: number; room: string; hoursLeft: number | null };
+
+export function dressStatus(s: GameState, heroId: string, to: Dress): DressStatus {
+  const cost = DRESS_GOLD;
+  const h = s.heroes.find((x) => x.id === heroId);
+  if (!h) return { state: 'away', why: 'Ya no está en el gremio.', cost };
+  if (sameDress(h.dress, to)) return { state: 'same', why: 'Ya va así.', cost };
+  if (to.dye && !hasUnlock(s, `tint:${to.dye}`)) {
+    const from = unlockSource(`tint:${to.dye}`);
+    return { state: 'lock', why: from ? `Se consigue con: ${from}.` : 'Aún no lo tenéis.', cost };
+  }
+  const rooms = s.building.rooms.filter((r) => r.type === 'sastreria' && active(r).level > 0);
+  if (!rooms.length) return { state: 'none', why: 'Hace falta una sastrería.', cost };
+  if (h.status !== 'ok') return { state: 'away', why: `${h.name} no está en casa.`, cost };
+  if (dressingOf(s, heroId))
+    return { state: 'sewing', why: `A ${h.name} ya le están cosiendo.`, cost };
+  const free = rooms.find((r) => !canStart(s, r.id));
+  if (!free) {
+    const r = rooms[0]!;
+    const c = craftsIn(s, r.id)[0];
+    const who = c?.dress ? s.heroes.find((x) => x.id === c.dress!.hero)?.name : undefined;
+    const left = c ? craftState(s, c).hoursLeft : null;
+    const what = who ? `está con ${who}` : 'está ocupada';
+    const when = left === null ? '' : `: acaba en ${Math.max(1, Math.ceil(left))} h`;
+    return {
+      state: 'busy',
+      why: `La sastrería ${what}${when}.`,
+      cost,
+      room: r.id,
+      hoursLeft: left,
+    };
+  }
+  if (s.gold < cost) return { state: 'gold', why: `Te faltan ${cost - s.gold} monedas.`, cost };
+  return { state: 'ok', room: free.id, cost };
 }
 
 /** Empieza a vestir a un héroe (ya comprobado con `canDress`). */

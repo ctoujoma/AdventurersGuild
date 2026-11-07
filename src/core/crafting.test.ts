@@ -6,6 +6,7 @@ import { planBuild } from './rooms';
 import {
   canCraft,
   canDress,
+  dressStatus,
   canUndo,
   craftState,
   dressingOf,
@@ -313,6 +314,28 @@ describe('la sastrería viste a los héroes', () => {
     const away = structuredClone(s);
     away.heroes.find((x) => x.id === h.id)!.status = 'mision';
     expect(canDress(away, room, h.id, { dye: 'vino' })).toMatch(/no está en casa/);
+  });
+
+  it('la ficha sabe cómo está cada opción: libre, bloqueada, sin dinero u ocupada', () => {
+    const { s, room } = withShop('ficha', 'sastreria');
+    const [h, o] = s.heroes.filter((x) => x.status === 'ok');
+    expect(dressStatus(s, h!.id, { dye: 'vino' })).toEqual({ state: 'ok', room, cost: DRESS_GOLD });
+    expect(dressStatus(s, h!.id, {}).state).toBe('same');
+    expect(dressStatus(s, h!.id, { dye: 'mar' })).toMatchObject({ state: 'lock' });
+    expect(dressStatus({ ...s, gold: 3 }, h!.id, { dye: 'vino' })).toMatchObject({
+      state: 'gold',
+      why: `Te faltan ${DRESS_GOLD - 3} monedas.`,
+    });
+    const sin = {
+      ...s,
+      building: { ...s.building, rooms: s.building.rooms.filter((r) => r.id !== room) },
+    };
+    expect(dressStatus(sin, h!.id, { dye: 'vino' }).state).toBe('none');
+    const t = reduce(s, { type: 'dressAt', room, heroId: h!.id, dress: { dye: 'vino' } });
+    expect(dressStatus(t, h!.id, { dye: 'bosque' }).state).toBe('sewing');
+    const busy = dressStatus(t, o!.id, { dye: 'vino' });
+    expect(busy).toMatchObject({ state: 'busy', room });
+    expect(busy.state === 'busy' && busy.why).toMatch(new RegExp(`está con ${h!.name}`));
   });
 
   it('crea botas de serie; en la alquimia, amuletos', () => {
