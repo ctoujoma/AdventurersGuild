@@ -125,7 +125,19 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
    `TRAIN_HERO_BASE`, `TRAIN_PER_LEVEL`), y 2 más en el atributo principal de su clase
    (`TRAIN_MAIN_BONUS`: el guerrero novato entrena Fuerza hasta 7). Al
    llegar al tope se dice cuál manda («mejora la sala» o «hasta subir de nivel»). Subir de nivel
-   da +1 al atributo principal y nunca se pierde (hasta `ATTR_MAX`, 15).
+   da +1 al atributo principal y nunca se pierde (hasta `ATTR_MAX`, 15). Quien llega al tope deja
+   la sala al amanecer, con aviso (`cappedTrainees` para avisar en directo: interfaz).
+9. **Más oro en modo libre** (hecho, 7 de noviembre): los encargos pagaban menos cuanto más alto el
+   rango (×0,5 en cobre, ×0,25 en oro y leyenda) y la nómina de los veteranos se comía la caja.
+   Ahora ×0,5 en todos (`FREE_PAY`), y por encima del nivel 5 la subida de sueldo es 4 × nivel
+   (`levelRaise`). `npm run oro` da paga, nómina y neto por rango.
+10. **El taller del pintor** (núcleo hecho; interfaz y arte, ver `encargos/pintor.md`): sala y oficio
+    nuevos; los colores de las salas se cambian pintándolas, y el trabajo empieza al llegar el
+    pintor.
+11. **Ropa con candados** (núcleo hecho; interfaz, ver `encargos/interfaz-plazos-ficha.md`): la
+    ficha encarga la ropa a la sastrería (`dressStatus`), en lugar de cambiarla gratis.
+12. **La noche** (para decidir: [`propuesta-tiempo.md`](propuesta-tiempo.md)): más larga y con
+    «Pasar la noche» a x8.
 
 ## Fase 2 · Tutoriales
 

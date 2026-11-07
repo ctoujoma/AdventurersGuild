@@ -9,7 +9,7 @@ import {
 import { levelUp } from './resolve';
 import { endDay, newGame, reduce } from './game';
 import type { GameState, Room } from './model';
-import { skillGain, stepTraining, trainState, trainingOf } from './training';
+import { cappedTrainees, skillGain, stepTraining, trainState, trainingOf } from './training';
 import { canAssign, workedIn } from './workers';
 
 /** Partida con una sala de armas de nivel `level` y el primer héroe (guerrero) entrenando en ella. */
@@ -86,8 +86,14 @@ describe('entrenamiento', () => {
     h.attrs.F = TRAIN_CAP[1];
     h.lvl = 5;
     expect(trainState(s, h)).toMatchObject({ capped: true, perDay: 0, by: 'sala' });
-    stepTraining(s, []);
+    const room = h.job;
+    const said: { t: string }[] = [];
+    stepTraining(s, said);
     expect(h.attrs.F).toBe(TRAIN_CAP[1]);
+    // Sin nada que aprender, deja la sala y se avisa de por qué.
+    expect(h.job).toBeUndefined();
+    expect(said.at(-1)!.t).toMatch(/deja .*ya no aprende más Fuerza.*mejorar la sala/);
+    h.job = room;
     const better = gym(2);
     better.heroes[0]!.attrs.F = TRAIN_CAP[1];
     better.heroes[0]!.lvl = 5;
@@ -108,10 +114,31 @@ describe('entrenamiento', () => {
     expect(trainState(s, h)).toMatchObject({ capped: true, by: 'nivel', cap: 9 });
     const events: { t: string }[] = [];
     h.train = { F: 99 };
+    const room = h.job;
     stepTraining(s, events);
     expect(h.attrs.F).toBe(9);
+    expect(h.job).toBeUndefined();
+    expect(events.at(-1)!.t).toMatch(/subir de nivel/);
+    h.job = room;
     h.lvl = 3;
     expect(trainState(s, h)).toMatchObject({ capped: false, cap: 11 });
+  });
+
+  it('quien llega al tope esa noche sube el punto, deja la sala y se avisa', () => {
+    const s = gym(4);
+    const h = s.heroes[0]!;
+    h.lvl = 1;
+    h.attrs.F = 6;
+    h.train = { F: 99 };
+    expect(cappedTrainees(s)).toHaveLength(0);
+    const events: { t: string }[] = [];
+    stepTraining(s, events);
+    expect(h.attrs.F).toBe(7);
+    expect(h.job).toBeUndefined();
+    expect(events.map((e) => e.t)).toEqual([
+      expect.stringMatching(/ha entrenado: Fuerza 7/),
+      expect.stringMatching(/deja la sala de armas/),
+    ]);
   });
 
   it('en el atributo principal de su clase llega a 2 más que en los otros', () => {

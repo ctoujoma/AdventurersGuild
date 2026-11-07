@@ -92,6 +92,7 @@ export const ROOM_COST: Record<RoomType, readonly number[]> = {
   tiro: [0, 150, 320, 520, 850],
   biblioteca: [0, 150, 320, 520, 850],
   sastreria: [0, 160, 340, 620],
+  pintor: [0, 140, 300, 520],
   alquimia: [0, 220, 420, 700],
 };
 export const roomMax = (t: RoomType) => ROOM_COST[t].length - 1;
@@ -176,6 +177,11 @@ export const DUSK = 0.8;
  */
 export const WORK_START = 0.05;
 export const WORK_END = 0.82;
+/**
+ * La noche: desde que se van a dormir (`WORK_END`) hasta que acaba el día. «Pasar la noche»
+ * hace correr el reloj `NIGHT_RUSH` veces más deprisa hasta el amanecer (ver `nightLeft`).
+ */
+export const NIGHT_RUSH = 8;
 /** Entregas en que llega la caja del día, repartidas hasta el anochecer. */
 export const DELIVERIES = 8;
 /** Trofeos: cuántos caben en la pared del salón, el Atractivo de cada uno y la fama al conseguirlos. */
@@ -215,6 +221,7 @@ export const LEVEL_RANK: Partial<Record<RoomType, Partial<Record<number, number>
   // Las salas nuevas se abren con un rango (construirlas es su nivel 1).
   sastreria: { 1: 1, 3: 2 },
   alquimia: { 1: 2, 3: 3 },
+  pintor: { 1: 1, 3: 2 },
 };
 /** Rango que pide un nivel de sala (0: ninguno). */
 export const levelRank = (t: RoomType, level: number) => LEVEL_RANK[t]?.[level] ?? 0;
@@ -325,12 +332,15 @@ export const RAISE_AMOUNT = 3;
 export const RAISE_MORALE = 25;
 
 // ---------- Veteranos y modo libre ----------
-/** Lo que sube el salario al alcanzar un nivel: más cuanto más alto. */
-/** Subida de sueldo al subir de nivel: los veteranos (nivel 6 o más) piden bastante más. */
-export const levelRaise = (lvl: number) => (lvl <= 5 ? 2 * lvl : 5 * lvl);
+/**
+ * Subida de sueldo al subir de nivel: los veteranos (nivel 6 o más) piden bastante más (4 por
+ * nivel; antes 5, y con plantillas grandes la nómina se comía lo que pagan los encargos).
+ */
+export const levelRaise = (lvl: number) => (lvl <= 5 ? 2 * lvl : 4 * lvl);
 /**
  * Modo libre: hay otros gremios pujando por los encargos y la comarca paga menos que en los
- * apuros de la deuda (multiplicador base, antes del descuento por rango).
+ * apuros de la deuda. Es lo mismo en todos los rangos (antes bajaba con el rango hasta la mitad
+ * y, en oro y leyenda, los sueldos de los veteranos se comían la caja): `npm run oro`.
  */
 export const FREE_PAY = 0.5;
 /** Caché de veterano: al llegar a estos niveles piden un plus fijo. */
@@ -495,6 +505,16 @@ export const DRESS_MORALE = 8;
  * escena o con la app cerrada), a las tantas horas de juego como mucho.
  */
 export const DRESS_WALK = 2;
+/**
+ * Pintar una sala (ver `core/paint.ts`): lo que cuesta y las horas de jornada que tarda por cada
+ * hueco que mide (a ritmo de un pintor de Maña 4 en un taller de nivel 1), y lo que se le espera
+ * como mucho si nadie dice que ha llegado.
+ */
+export const PAINT_GOLD = 20;
+export const PAINT_HOURS = 3;
+export const PAINT_WALK = 2;
+/** Pintores trabajando a la vez, por nivel del taller. */
+export const PAINT_SLOTS = [0, 1, 1, 2] as const;
 /**
  * Lo mismo con una tarea nueva (trabajar o entrenar): cuenta desde que llega a la sala o, si
  * nadie lo dice, a las tantas horas de juego como mucho.

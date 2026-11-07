@@ -94,3 +94,8 @@ Para el agente principal (núcleo, tiempo, tutoriales, combate, talleres, amigos
   `App.tsx` (`endDay` juega el asalto antes de amanecer; `dawnAfter`).
 - Probado con `node_modules/.cache/jarro-shots/asalto.mjs` y `ladron.mjs` (pueden no existir).
 - Encargado al de arte: `encargos/arte-asaltos.md`.
+- Tras los asaltos, el núcleo de los encargos del 7 de noviembre: bug del hueco (`freeCells`),
+  oro en modo libre (`FREE_PAY`, `levelRaise`, `npm run oro`), tope de entrenamiento
+  (`cappedTrainees`), ropa con candados (`dressStatus`), el taller del pintor (`core/paint.ts`) y la
+  auditoría del tiempo (`propuesta-tiempo.md`, pendiente de decidir). Lo que queda de interfaz y
+  arte, al final de cada encargo en `encargos/`.

@@ -7,7 +7,7 @@ import type { StaffId } from './custom';
 
 /** Oficio: el de la sala en la que rinde más. */
 export type Trade =
-  'salon' | 'cocina' | 'bodega' | 'enfermeria' | 'forja' | 'sastreria' | 'alquimia';
+  'salon' | 'cocina' | 'bodega' | 'enfermeria' | 'forja' | 'sastreria' | 'alquimia' | 'pintor';
 
 export const TRADES: Record<Trade, { name: Record<Sex, string>; job: string; gives: string }> = {
   salon: {
@@ -44,6 +44,11 @@ export const TRADES: Record<Trade, { name: Record<Sex, string>; job: string; giv
     name: { m: 'Alquimista', f: 'Alquimista' },
     job: 'Trabaja en el taller de alquimia',
     gives: 'crea amuletos y varitas',
+  },
+  pintor: {
+    name: { m: 'Pintor', f: 'Pintora' },
+    job: 'Trabaja en el taller del pintor',
+    gives: 'pinta las salas del color que elijas',
   },
 };
 

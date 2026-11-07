@@ -25,7 +25,8 @@ export type RoomType =
   | 'tiro'
   | 'biblioteca'
   | 'sastreria'
-  | 'alquimia';
+  | 'alquimia'
+  | 'pintor';
 
 /** Dónde puede ir: en la planta baja, encima de otra sala (la torre) o en cualquier planta. */
 export type RoomPlace = 'baja' | 'tejado' | 'libre';
@@ -203,6 +204,14 @@ export const ROOMS: Record<RoomType, RoomDef> = {
     name: 'Taller de alquimia',
     desc: 'Crea amuletos y varitas.',
     maxW: 3,
+    maxH: 1,
+    place: 'libre',
+    unique: true,
+  },
+  pintor: {
+    name: 'Taller del pintor',
+    desc: 'El pintor pinta las salas del color que elijas.',
+    maxW: 2,
     maxH: 1,
     place: 'libre',
     unique: true,

@@ -173,7 +173,7 @@ export function generateQuest(
     Math.round(
       (sum *
         REWARD_PER_POINT *
-        (free ? Math.max(FREE_PAY / 2, FREE_PAY - 0.1 * rank) : 1 - 0.08 * rank) *
+        (free ? FREE_PAY : 1 - 0.08 * rank) *
         (1 + 0.22 * danger) *
         (0.85 + 0.12 * days)) /
         5,

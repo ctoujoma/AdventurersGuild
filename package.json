@@ -14,6 +14,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "sim": "esbuild tools/sim.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/sim/sim.mjs --log-level=warning && node node_modules/.cache/sim/sim.mjs",
+    "oro": "esbuild tools/oro.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/sim/oro.mjs --log-level=warning && node node_modules/.cache/sim/oro.mjs",
     "calib": "esbuild tools/calib.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/sim/calib.mjs --log-level=warning && node node_modules/.cache/sim/calib.mjs"
   },
   "dependencies": {

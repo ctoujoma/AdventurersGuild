@@ -30,3 +30,27 @@ acción `tint` en `core/game.ts`) y cambia al momento. Los temas que faltan ya s
   poco a poco (por franjas, de un lado al otro) hasta acabar, y unas gotas o un destello al
   terminar. Mientras va de camino, nada cambia.
 - Poner al día `docs/plan-arte.md`.
+
+## Hecho en el núcleo (agente principal, 7 de noviembre)
+
+Lo que queda es la interfaz y la escena:
+
+- **Sala `pintor`** («Taller del pintor», única, hasta 2 huecos, en la pestaña Talleres; se abre con
+  hierro, `ROOM_COST.pintor`) y **oficio `pintor`** (Pintor/Pintora; al construir el taller viene
+  uno a pedir trabajo, como con las demás salas).
+- **Pintar** (`core/paint.ts`): acción `paint` `{ room, tint }` (null: los colores de la casa) y
+  `cancelPaint` `{ id }`. Cuesta `PAINT_GOLD` por hueco de la sala y tarda `PAINT_HOURS` de jornada
+  por hueco con un pintor de Maña 4. Un trabajo por pintor (hasta `PAINT_SLOTS` por nivel del
+  taller). Al acabar, la sala cambia de color y la carta lo dice.
+- **Para la ficha de la sala:** `paintStatus(s, roomId, tint)` da el estado de cada color: `ok`,
+  `same`, `lock` (con de dónde sale), `none` (no hay taller), `nobody` (no hay pintor),
+  `painting` (ya la están pintando), `busy` (pintores ocupados) o `gold`. La acción `tint` (gratis,
+  al momento) se queda solo para el modo prueba.
+- **Para la escena:** `painterAt(s, workerId)` dice a qué sala ha ido un pintor (llevarle allí en
+  lugar de a su taller); al llegar, despachar `arrived` con su id (`heroId: workerId`) y la sala, y
+  empieza. Si nadie avisa, empieza a las `PAINT_WALK` horas. `paintingOf(s, roomId)` y
+  `paintState(s, p)` dan el trabajo de una sala y cómo va (`frac` 0–1 para pintar por franjas,
+  `walking`, `hoursLeft`). Si se despide al pintor, se le cambia de sala o se derriba algo, el
+  trabajo se cancela y se devuelve lo pagado.
+- Falta también el icono de la cinta de obras (ahora `pintado`) y el banderín (`brocha`, en
+  `goalMark.ts`), por si arte los quiere cambiar.

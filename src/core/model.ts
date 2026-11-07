@@ -279,6 +279,26 @@ export interface Facilities {
  * Un trabajo en un taller: crear un objeto de una receta o desmontar uno (`item`) para intentar
  * sacar su receta. Avanza con el trabajo de la sala (`workAt`), también con el juego cerrado.
  */
+/** Una sala que se está pintando (ver `core/paint.ts`). */
+export interface Paint {
+  id: string;
+  /** El taller del pintor y el pintor (trabajador) que ha ido. */
+  shop: string;
+  painter: string;
+  /** La sala que se pinta y el color nuevo (null: los de la casa). */
+  room: string;
+  tint: TintId | null;
+  /** Trabajo que pide y el que lleva (como en los talleres). */
+  need: number;
+  done: number;
+  /** Parte del día hasta la que está contado `done` (o, con `wait`, hasta cuándo se le espera). */
+  at: number;
+  /** El pintor aún va de camino (empieza al llegar: acción `arrived`). */
+  wait?: true;
+  /** Lo pagado (se devuelve al cancelar). */
+  gold: number;
+}
+
 export interface Craft {
   id: string;
   /** El taller (id de sala). */
@@ -706,6 +726,8 @@ export interface GameState {
   worksDraft?: readonly { type: string }[];
   /** Lo que se está creando o desmontando en los talleres (ver `core/crafting.ts`). */
   crafts?: Craft[];
+  /** Las salas que se están pintando. */
+  paints?: Paint[];
   /**
    * Los últimos trabajos de taller que han terminado (acabados o cancelados), para que la escena
    * sepa cómo acabó el que desaparece de `crafts`. Solo los más recientes.
