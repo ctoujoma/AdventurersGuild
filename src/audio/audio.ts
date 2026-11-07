@@ -456,6 +456,49 @@ class AudioEngine {
     this.crickets.gain.setTargetAtTime(0.02 * (1 - Math.min(1, w.rain * 2)), now, 1);
   }
 
+  /**
+   * Un trueno dentro de `delay` segundos: si cae cerca (poco retraso), un chasquido seco
+   * primero; luego el retumbo grave, que va y viene y se apaga en unos segundos.
+   */
+  thunder(delay: number, power: number): void {
+    if (!this.ctx) return;
+    const ctx = this.ctx;
+    const t0 = ctx.currentTime + Math.max(0, delay);
+    const p = Math.max(0.15, Math.min(1, power));
+    if (delay < 1.2) {
+      const crack = this.noiseSource();
+      const bp = ctx.createBiquadFilter();
+      bp.type = 'bandpass';
+      bp.frequency.value = 1400;
+      bp.Q.value = 0.7;
+      const g = this.gain(0, this.ambientBus);
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(0.5 * p, t0 + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.35);
+      crack.connect(bp).connect(g);
+      crack.start(t0);
+      crack.stop(t0 + 0.4);
+    }
+    const rumble = this.noiseSource(true);
+    const lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(320, t0);
+    lp.frequency.exponentialRampToValueAtTime(90, t0 + 3.5);
+    const g = this.gain(0, this.ambientBus);
+    const len = 2.8 + p * 2;
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(0.9 * p, t0 + 0.12);
+    // Va y viene: unos cuantos golpes de retumbo antes de apagarse.
+    for (let i = 1; i < 6; i++) {
+      const at = t0 + 0.12 + (i * len) / 7;
+      g.gain.linearRampToValueAtTime(0.9 * p * (1 - i / 6) * (0.5 + Math.random() * 0.5), at);
+    }
+    g.gain.linearRampToValueAtTime(0, t0 + len);
+    rumble.connect(lp).connect(g);
+    rumble.start(t0);
+    rumble.stop(t0 + len + 0.1);
+  }
+
   // ---------- Arranque y ambiente ----------
 
   private boot(): void {

@@ -56,4 +56,4 @@ para preparar cualquier situación antes de la captura: subir salas de nivel, pr
     (`despejado,nubes,nublado,niebla`, …) y saca la vista desde fuera, el patio y una sala con
     ventana, de día y de noche (`HORAS=manana,dia,tarde,noche`); con `TRANSICION=nublado`, una
     tira de la vista desde fuera pasando de despejado a ese tiempo, para un GIF. Con `FOTOGRAMAS=<n>`, de cada
-    captura salen n fotogramas seguidos (lluvia, para GIF).
+    captura salen n fotogramas seguidos (lluvia, para GIF). Con `RAYO=1`, un relámpago paso a paso.
