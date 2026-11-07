@@ -1,5 +1,7 @@
-import { useState } from 'preact/hooks';
-import { GUARD_BONUS, VET_LEVEL, XP_PER_LEVEL } from '../core/balance';
+import { useEffect, useState } from 'preact/hooks';
+import { DRESS_GOLD, GUARD_BONUS, VET_LEVEL, XP_PER_LEVEL } from '../core/balance';
+import { craftState, dressStatus, dressingOf } from '../core/crafting';
+import { hasUnlock, unlockSource } from '../core/goals';
 import { PERKS } from '../core/classes';
 import { canHire, gearInStock, requestAmount } from '../core/game';
 import type { GameState, Hero } from '../core/model';
@@ -14,9 +16,10 @@ import { Icon } from './icons';
 import { taskLabel } from './crew';
 import type { Task } from './drop';
 import { TaskSelect } from './panels/CrewList';
+import { Tabs } from './Tabs';
 import { Portrait } from './Portrait';
 import { heroFrame, lookOf, marksOf, memberOf } from './view';
-import { GARMENTS, TINTS, TINT_IDS, type Dress, type GarmentId } from '../data/custom';
+import { GARMENTS, TINTS, TINT_IDS, type Dress, type GarmentId, type TintId } from '../data/custom';
 
 interface Props {
   game: GameState;
@@ -31,56 +34,135 @@ interface Props {
   onUnequip: () => void;
   /** Cambiar su tarea mientras está en casa (trabajar, entrenar, guardia o descansar). */
   onTask?: (task: Task) => void;
-  /** Modo prueba: tinte y prenda de la sastrería (la sala vendrá después). */
+  /** Encargar ropa nueva a la sastrería (acción `dressAt`): va andando y el sastre le viste. */
+  onDressAt?: (room: string, d: Dress) => void;
+  /** Modo prueba: probar la ropa gratis y al momento (acción `dress`). */
   onDress?: (d: Dress) => void;
+  /** La cámara le sigue mientras está abierto «Ropa y colores» (`false`: suelta). */
+  onFollow?: (on: boolean) => void;
   /** Cambiarle el nombre (solo a los de casa). */
   onRename?: (name: string) => void;
 }
 
-/** Modo prueba: el tinte de la ropa y la prenda, para ver cómo quedan. */
-function DressTest({ dress, onDress }: { dress: Dress; onDress: (d: Dress) => void }) {
+/**
+ * «Ropa y colores»: se elige tinte y prenda (el retrato enseña cómo quedaría) y se encarga a la
+ * sastrería. Los tintes que no se tienen salen con candado y de dónde se ganan; abajo, si se
+ * puede pagar y la sastrería está libre, o por qué no.
+ */
+function DressMenu({
+  game,
+  hero: h,
+  draft,
+  setDraft,
+  onDressAt,
+  onDress,
+}: {
+  game: GameState;
+  hero: Hero;
+  draft: Dress;
+  setDraft: (d: Dress) => void;
+  onDressAt?: (room: string, d: Dress) => void;
+  onDress?: (d: Dress) => void;
+}) {
+  const [locked, setLocked] = useState<string | null>(null);
+  const st = dressStatus(game, h.id, draft);
+  const sewing = dressingOf(game, h.id);
+  const sw = sewing ? craftState(game, sewing) : null;
+  const swatch = (id: TintId | undefined, label: string, bg?: string) => {
+    const why = id && !hasUnlock(game, `tint:${id}`) ? unlockSource(`tint:${id}`) : null;
+    const lock = id && !hasUnlock(game, `tint:${id}`);
+    const text = lock ? `${label}. ${why ? `Se gana con: ${why}` : 'Aún no lo tenéis'}` : label;
+    return (
+      <button
+        key={id ?? 'nada'}
+        role="radio"
+        aria-checked={draft.dye === id}
+        aria-disabled={!!lock}
+        aria-label={text}
+        title={text}
+        class={`tav-swatch room-swatch ${id ? '' : 'house'} ${draft.dye === id ? 'on' : ''} ${lock ? 'locked' : ''}`}
+        style={bg ? { background: bg } : undefined}
+        onClick={() => {
+          if (lock)
+            return setLocked(`${label}: ${why ? `se gana con ${why}` : 'aún no lo tenéis'}.`);
+          setLocked(null);
+          setDraft({ ...draft, dye: id });
+        }}
+      >
+        {lock && <Icon name="candado" size={10} />}
+      </button>
+    );
+  };
+  const noTailor =
+    st.state === 'ok' && !game.workers.some((w) => w.room === st.room && w.trade === 'sastreria');
   return (
-    <div class="room-tint">
-      <span class="row-sub">Sastrería (prueba): tinte</span>
+    <div class="room-tint dress-menu">
+      <span class="row-sub">Tinte de la ropa</span>
       <div class="tav-swatches" role="radiogroup" aria-label="Tinte de la ropa">
-        <button
-          role="radio"
-          aria-checked={!dress.dye}
-          aria-label="Sin tinte"
-          title="Sin tinte"
-          class={`tav-swatch room-swatch house ${dress.dye ? '' : 'on'}`}
-          onClick={() => onDress({ ...dress, dye: undefined })}
-        />
+        {swatch(undefined, 'Sin tinte')}
         {TINT_IDS.map((id) => {
           const [, d, m, l] = TINTS[id].ramp;
-          return (
-            <button
-              key={id}
-              role="radio"
-              aria-checked={dress.dye === id}
-              aria-label={TINTS[id].name}
-              title={TINTS[id].name}
-              class={`tav-swatch room-swatch ${dress.dye === id ? 'on' : ''}`}
-              style={{ background: `linear-gradient(${l} 0 30%, ${m} 30% 70%, ${d} 70%)` }}
-              onClick={() => onDress({ ...dress, dye: id })}
-            />
-          );
+          return swatch(id, TINTS[id].name, `linear-gradient(${l} 0 30%, ${m} 30% 70%, ${d} 70%)`);
         })}
       </div>
+      {locked && <small class="lock-why">{locked}</small>}
       <span class="row-sub">Prenda</span>
       <div class="tav-symbols" role="radiogroup" aria-label="Prenda">
         {([undefined, ...(Object.keys(GARMENTS) as GarmentId[])] as const).map((g) => (
           <button
             key={g ?? 'nada'}
             role="radio"
-            aria-checked={dress.garment === g}
-            class={`btn ${dress.garment === g ? 'btn-gold' : 'btn-wood'}`}
-            onClick={() => onDress({ ...dress, garment: g })}
+            aria-checked={draft.garment === g}
+            class={`btn ${draft.garment === g ? 'btn-gold' : 'btn-wood'}`}
+            onClick={() => setDraft({ ...draft, garment: g })}
           >
             {g ? GARMENTS[g].name : 'Nada'}
           </button>
         ))}
       </div>
+      {sw ? (
+        <p class="dress-state" role="status">
+          {sw.walking
+            ? `${h.name} va de camino a la sastrería.`
+            : sw.hoursLeft === null
+              ? `${h.name} espera en la sastrería: no hay quien cosa.`
+              : `Le están cosiendo: acaba en ${Math.max(1, Math.ceil(sw.hoursLeft))} h.`}
+        </p>
+      ) : st.state === 'ok' ? (
+        <>
+          <button
+            class="btn btn-gold dress-go"
+            onClick={() => onDressAt?.(st.room, draft)}
+            disabled={!onDressAt}
+          >
+            <Icon name="coin" size={12} /> Encargar a la sastrería · {st.cost}
+          </button>
+          <small class="lock-why">
+            {noTailor
+              ? 'No hay sastre en la sastrería: no avanzará hasta que pongas a alguien.'
+              : `${h.name} irá andando y el sastre le vestirá.`}
+          </small>
+        </>
+      ) : st.state === 'same' ? (
+        <small class="lock-why">Así va ahora. Elige otro tinte o prenda.</small>
+      ) : (
+        <>
+          <button class="btn btn-wood dress-go locked" disabled>
+            {st.state === 'lock' ? (
+              <Icon name="candado" size={12} />
+            ) : (
+              <Icon name="coin" size={12} />
+            )}{' '}
+            Encargar a la sastrería · {DRESS_GOLD}
+          </button>
+          <small class="lock-why">{st.why}</small>
+        </>
+      )}
+      {onDress && st.state !== 'same' && (
+        <button class="btn btn-wood dress-go" onClick={() => onDress(draft)}>
+          Probar gratis (modo prueba)
+        </button>
+      )}
     </div>
   );
 }
@@ -111,10 +193,23 @@ export function HeroCard({
   onEquip,
   onUnequip,
   onTask,
+  onDressAt,
   onDress,
+  onFollow,
   onRename,
 }: Props) {
   const [open, setOpen] = useState<Open>(null);
+  /** La ropa que se está mirando en «Ropa y colores» (el retrato la enseña). */
+  const [draft, setDraft] = useState<Dress>(h.dress ?? {});
+  /** Pestaña: la ficha de siempre o «Ropa y colores». */
+  const [view, setView] = useState<'ficha' | 'ropa'>('ficha');
+  const dressing = view === 'ropa';
+  // La cámara le sigue mientras se mira la ropa; al cerrar (o al irse la ficha), suelta.
+  useEffect(() => {
+    if (!dressing) return;
+    onFollow?.(true);
+    return () => onFollow?.(false);
+  }, [dressing]);
   /** Escribiendo un nombre nuevo. */
   const [naming, setNaming] = useState(false);
   /** Rasgo (o habilidad de clase) cuya explicación se ve. */
@@ -157,7 +252,7 @@ export function HeroCard({
         <div class="qs-scroll">
           <div class="herocard-top">
             <Portrait
-              look={lookOf(h)}
+              look={lookOf(dressing ? { ...h, dress: draft } : h)}
               marks={marksOf(h)}
               frame={heroFrame(h)}
               scale={2}
@@ -241,163 +336,196 @@ export function HeroCard({
               )}
             </div>
           </div>
-          {candidate && <p class="quote">{h.quote}</p>}
-          {onDress && !candidate && <DressTest dress={h.dress ?? {}} onDress={onDress} />}
-          {h.request && !candidate && (
-            <div
-              class="request"
-              role="status"
-              {...help(
-                h.request === 'cache'
-                  ? `«Nivel ${h.lvl}. Ya no soy un cualquiera, y mi precio tampoco.» Si se lo niegas, se lo tomará muy mal.`
-                  : '«Con lo que me pagas no me llega ni para la cerveza.»',
-              )}
-            >
-              <span>
-                <b>{h.request === 'cache' ? 'Pide su caché de veterano' : 'Pide un aumento'}</b>: +
-                {requestAmount(h)} por semana.
-              </span>
-              <div class="herocard-actions">
-                <button class="btn btn-gold" onClick={() => onAnswer(true)}>
-                  <Icon name="coin" size={12} /> {h.salary + requestAmount(h)}/sem
-                </button>
-                <button class="btn btn-wood" onClick={() => onAnswer(false)}>
-                  No
-                </button>
-              </div>
-            </div>
-          )}
-
           {!candidate && !gone && (
-            <div class="acts">
-              {canTask && (
-                <button
-                  class={`act ${task !== 'Descansa' ? 'on' : ''}`}
-                  aria-expanded={open === 'trabajo'}
-                  aria-label={`Tarea: ${task}`}
+            <Tabs
+              label={`Ficha de ${h.name}`}
+              value={view}
+              onChange={(v) => {
+                if (v === 'ropa' && !dressing) setDraft(h.dress ?? {});
+                setView(v);
+              }}
+              tabs={[
+                { id: 'ficha', label: 'Ficha', icon: 'heroe' },
+                { id: 'ropa', label: 'Ropa y colores', icon: 'tijeras' },
+              ]}
+            />
+          )}
+          {candidate && <p class="quote">{h.quote}</p>}
+          {dressing && (
+            <DressMenu
+              game={game}
+              hero={h}
+              draft={draft}
+              setDraft={setDraft}
+              onDressAt={onDressAt}
+              onDress={onDress}
+            />
+          )}
+          {!dressing && (
+            <>
+              {h.request && !candidate && (
+                <div
+                  class="request"
+                  role="status"
                   {...help(
-                    `Mientras está en casa puede descansar (recupera la moral), echar una mano en una sala (rinde menos que un trabajador), entrenar o hacer guardia (no sale de misión, pega +${GUARD_BONUS} si asaltan y da la alarma; caben dos). También puedes llevarlo con el dedo a la sala.`,
+                    h.request === 'cache'
+                      ? `«Nivel ${h.lvl}. Ya no soy un cualquiera, y mi precio tampoco.» Si se lo niegas, se lo tomará muy mal.`
+                      : '«Con lo que me pagas no me llega ni para la cerveza.»',
                   )}
-                  onClick={() => toggle('trabajo')}
                 >
-                  <Icon name={h.guard ? 'escudo' : 'martillo'} size={18} />
-                  <span class="act-label">{task}</span>
-                </button>
-              )}
-              {!candidate && (
-                <button
-                  data-tut="equipo"
-                  class={`act ${h.item ? 'on' : ''}`}
-                  aria-expanded={open === 'equipo'}
-                  aria-label={h.item ? `Equipo: ${h.item.name}` : 'Equipo'}
-                  onClick={() => toggle('equipo')}
-                >
-                  {h.item ? (
-                    <BufferImage buf={itemIcon(h.item.icon ?? 'espada', h.item.rarity)} scale={1} />
-                  ) : (
-                    <Icon name="cofre" size={18} />
-                  )}
-                  Equipo
-                </button>
-              )}
-              <button class="act" onClick={onLocate} {...help('Ver dónde está en la taberna.')}>
-                <Icon name="home" size={18} />
-                Ver
-              </button>
-            </div>
-          )}
-          {open === 'trabajo' && canTask && (
-            <TaskSelect game={game} who={h.id} name={h.name} onTask={(_, t) => onTask!(t)} />
-          )}
-          {open === 'equipo' && (
-            <div class="gear-slot">
-              {h.item ? (
-                <div class={`gear-item rarity-${h.item.rarity ?? 0}`}>
-                  <BufferImage buf={itemIcon(h.item.icon ?? 'espada', h.item.rarity)} scale={2} />
                   <span>
-                    <b>{h.item.name}</b>
-                    <small>
-                      <em>{RARITY_NAMES[h.item.rarity ?? 0]}</em> · {itemEffect(h.item)}
-                    </small>
+                    <b>{h.request === 'cache' ? 'Pide su caché de veterano' : 'Pide un aumento'}</b>
+                    : +{requestAmount(h)} por semana.
                   </span>
-                  {canGear && (
-                    <button class="btn btn-wood" onClick={onUnequip}>
-                      Quitar
+                  <div class="herocard-actions">
+                    <button class="btn btn-gold" onClick={() => onAnswer(true)}>
+                      <Icon name="coin" size={12} /> {h.salary + requestAmount(h)}/sem
+                    </button>
+                    <button class="btn btn-wood" onClick={() => onAnswer(false)}>
+                      No
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {!candidate && !gone && (
+                <div class="acts">
+                  {canTask && (
+                    <button
+                      class={`act ${task !== 'Descansa' ? 'on' : ''}`}
+                      aria-expanded={open === 'trabajo'}
+                      aria-label={`Tarea: ${task}`}
+                      {...help(
+                        `Mientras está en casa puede descansar (recupera la moral), echar una mano en una sala (rinde menos que un trabajador), entrenar o hacer guardia (no sale de misión, pega +${GUARD_BONUS} si asaltan y da la alarma; caben dos). También puedes llevarlo con el dedo a la sala.`,
+                      )}
+                      onClick={() => toggle('trabajo')}
+                    >
+                      <Icon name={h.guard ? 'escudo' : 'martillo'} size={18} />
+                      <span class="act-label">{task}</span>
                     </button>
                   )}
+                  {!candidate && (
+                    <button
+                      data-tut="equipo"
+                      class={`act ${h.item ? 'on' : ''}`}
+                      aria-expanded={open === 'equipo'}
+                      aria-label={h.item ? `Equipo: ${h.item.name}` : 'Equipo'}
+                      onClick={() => toggle('equipo')}
+                    >
+                      {h.item ? (
+                        <BufferImage
+                          buf={itemIcon(h.item.icon ?? 'espada', h.item.rarity)}
+                          scale={1}
+                        />
+                      ) : (
+                        <Icon name="cofre" size={18} />
+                      )}
+                      Equipo
+                    </button>
+                  )}
+                  <button class="act" onClick={onLocate} {...help('Ver dónde está en la taberna.')}>
+                    <Icon name="home" size={18} />
+                    Ver
+                  </button>
                 </div>
-              ) : (
-                <span class="row-sub">
-                  {stock.length
-                    ? 'Sin equipo. Elige uno del tablero de la bodega:'
-                    : 'Sin equipo. Los encargos con «+ objeto» pueden traerlo.'}
-                </span>
               )}
-              {canGear &&
-                stock.map((it) => (
-                  <button
-                    key={it.id}
-                    class={`gear-item gear-pick rarity-${it.rarity ?? 0}`}
-                    data-tut="equipar"
-                    onClick={() => {
-                      setOpen(null);
-                      onEquip(it.id);
-                    }}
-                  >
-                    <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity)} scale={2} />
-                    <span>
-                      <b>{it.name}</b>
-                      <small>
-                        <em>{RARITY_NAMES[it.rarity ?? 0]}</em> · {itemEffect(it)}
-                      </small>
+              {open === 'trabajo' && canTask && (
+                <TaskSelect game={game} who={h.id} name={h.name} onTask={(_, t) => onTask!(t)} />
+              )}
+              {open === 'equipo' && (
+                <div class="gear-slot">
+                  {h.item ? (
+                    <div class={`gear-item rarity-${h.item.rarity ?? 0}`}>
+                      <BufferImage
+                        buf={itemIcon(h.item.icon ?? 'espada', h.item.rarity)}
+                        scale={2}
+                      />
+                      <span>
+                        <b>{h.item.name}</b>
+                        <small>
+                          <em>{RARITY_NAMES[h.item.rarity ?? 0]}</em> · {itemEffect(h.item)}
+                        </small>
+                      </span>
+                      {canGear && (
+                        <button class="btn btn-wood" onClick={onUnequip}>
+                          Quitar
+                        </button>
+                      )}
+                    </div>
+                  ) : (
+                    <span class="row-sub">
+                      {stock.length
+                        ? 'Sin equipo. Elige uno del tablero de la bodega:'
+                        : 'Sin equipo. Los encargos con «+ objeto» pueden traerlo.'}
                     </span>
+                  )}
+                  {canGear &&
+                    stock.map((it) => (
+                      <button
+                        key={it.id}
+                        class={`gear-item gear-pick rarity-${it.rarity ?? 0}`}
+                        data-tut="equipar"
+                        onClick={() => {
+                          setOpen(null);
+                          onEquip(it.id);
+                        }}
+                      >
+                        <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity)} scale={2} />
+                        <span>
+                          <b>{it.name}</b>
+                          <small>
+                            <em>{RARITY_NAMES[it.rarity ?? 0]}</em> · {itemEffect(it)}
+                          </small>
+                        </span>
+                      </button>
+                    ))}
+                </div>
+              )}
+
+              <div class="attrs">
+                {ATTRS.map(([k, label]) => (
+                  <div key={k} class="attr">
+                    <b>{attr(m, k)}</b>
+                    <small>{label}</small>
+                  </div>
+                ))}
+              </div>
+              <div class="skills">
+                {SKILLS.map((s) => (
+                  <span key={s} class="skill">
+                    <span>{s}</span>
+                    <b>{skill(m, s)}</b>
+                  </span>
+                ))}
+              </div>
+              <div class="chips">
+                {chips.map((c) => (
+                  <button
+                    key={c.id}
+                    class={`trait ${c.cls}`}
+                    aria-pressed={chip === c.id}
+                    onClick={() => setChip(chip === c.id ? null : c.id)}
+                  >
+                    {c.label}
                   </button>
                 ))}
-            </div>
-          )}
-
-          <div class="attrs">
-            {ATTRS.map(([k, label]) => (
-              <div key={k} class="attr">
-                <b>{attr(m, k)}</b>
-                <small>{label}</small>
               </div>
-            ))}
-          </div>
-          <div class="skills">
-            {SKILLS.map((s) => (
-              <span key={s} class="skill">
-                <span>{s}</span>
-                <b>{skill(m, s)}</b>
-              </span>
-            ))}
-          </div>
-          <div class="chips">
-            {chips.map((c) => (
-              <button
-                key={c.id}
-                class={`trait ${c.cls}`}
-                aria-pressed={chip === c.id}
-                onClick={() => setChip(chip === c.id ? null : c.id)}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
-          {shown && (
-            <p class="chip-desc" role="status">
-              <b>{shown.label}.</b> {shown.desc}
-            </p>
-          )}
-          {history && h.history.length > 0 && (
-            <ul class="hist">
-              {h.history.map((x, i) => (
-                <li key={i}>{x}</li>
-              ))}
-            </ul>
+              {shown && (
+                <p class="chip-desc" role="status">
+                  <b>{shown.label}.</b> {shown.desc}
+                </p>
+              )}
+              {history && h.history.length > 0 && (
+                <ul class="hist">
+                  {h.history.map((x, i) => (
+                    <li key={i}>{x}</li>
+                  ))}
+                </ul>
+              )}
+            </>
           )}
         </div>
-        {confirm ? (
+        {dressing ? null : confirm ? (
           <div class="confirm">
             <span>¿Despedir a {h.name}? Se va hoy y no vuelve.</span>
             <div class="herocard-actions">

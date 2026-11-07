@@ -40,7 +40,7 @@ import { WorkshopInfo } from './WorkshopInfo';
 import { isWorkshop } from '../../core/crafting';
 import { crewGroups } from '../crew';
 import { GUARD, type Task } from '../drop';
-import { left as timeLeft } from '../when';
+import { dawnIn } from '../when';
 
 /** A dónde lleva cada sala: los paneles de siempre que tienen que ver con ella. */
 export type RoomLink =
@@ -418,7 +418,7 @@ export function RoomPanel({
   const why = canWork(game, { type: 'upgradeRoom', id: room.id });
   const size = room.w * room.h;
   const state = room.works
-    ? `En obras: estará ${room.works.kind === 'move' ? 'en su sitio' : 'lista'} en ${timeLeft(room.works.nights, game.clock ?? 0, 'noche', 'noches')}.`
+    ? `En obras: estará ${room.works.kind === 'move' ? 'en su sitio' : 'lista'} ${dawnIn(room.works.nights)}.`
     : room.level === 0
       ? room.type === 'torre'
         ? 'Solar vacío: hay que levantarla.'

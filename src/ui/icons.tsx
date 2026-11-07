@@ -950,6 +950,30 @@ const ICONS = {
     '..kggRRk..',
     '...kkkk...',
   ],
+  candado: [
+    '...kkkk...',
+    '..kssssk..',
+    '.ksk..ksk.',
+    '.ks....sk.',
+    'kkkkkkkkkk',
+    'kggggggggk',
+    'kgggkkgggk',
+    'kGggkkgggk',
+    'kGgggggggk',
+    'kkkkkkkkkk',
+  ],
+  tijeras: [
+    'kk......kk',
+    'ksk....ksk',
+    '.ksk..ksk.',
+    '..kskksk..',
+    '...kssk...',
+    '..kRkkRk..',
+    '.kRk..kRk.',
+    'kRk....kRk',
+    'kRk....kRk',
+    '.kk....kk.',
+  ],
 } satisfies Record<string, string[]>;
 
 export type IconName = keyof typeof ICONS;

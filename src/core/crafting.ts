@@ -164,6 +164,8 @@ const LOG_KEEP = 8;
 function logEnd(s: GameState, c: Craft, how: CraftEnd['how'], rarity?: Rarity): void {
   const e: CraftEnd = { id: c.id, room: c.room, how };
   if (rarity !== undefined) e.rarity = rarity;
+  if (c.item && c.recipe && (how === 'receta' || how === 'nada'))
+    e.undo = { item: c.item.name, recipe: c.recipe, day: s.day };
   s.craftLog = [...(s.craftLog ?? []), e].slice(-LOG_KEEP);
 }
 

@@ -847,7 +847,8 @@ function reduceAction(state: GameState, action: Action): GameState {
       return t === s ? state : t;
     }
     case 'raidFought': {
-      if (!state.raid || state.raid.day > state.day) return state;
+      // Se juega la noche de antes de `raid.day` (el `endDay` de esa noche lo resuelve).
+      if (!state.raid || state.raid.day > state.day + 1) return state;
       return { ...state, raidLive: { day: state.day, result: action.result } };
     }
     case 'boss': {

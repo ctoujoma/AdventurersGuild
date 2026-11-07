@@ -1,14 +1,15 @@
 /**
  * Los avisos de la campanita: lo que pide atención y se olvida. Los de la casa (`crewAlerts`),
  * los encargos que caducan, los grupos que vuelven, los heridos sin quien los cure, el pago que
- * no llega, las obras recién acabadas y quien entrena sin poder subir más. Los incidentes no:
- * ya flotan sobre su sala.
+ * no llega, las obras recién acabadas, quien entrena sin poder subir más y lo que salió de
+ * desmontar un objeto. Los incidentes no: ya flotan sobre su sala.
  */
 import { nextPayment, salaries } from '../core/game';
 import type { ChipKind, GameState } from '../core/model';
 import { listNames, plural } from '../core/text';
-import { ATTR_NAMES, trainState, trainingOf } from '../core/training';
+import { ATTR_NAMES, cappedTrainees } from '../core/training';
 import { nurseBonus } from '../core/workers';
+import { RECIPES } from '../data/recipes';
 import { crewAlerts } from './crew';
 import type { IconName } from './icons';
 import { jobRoomName } from './roomName';
@@ -116,22 +117,16 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
       go: a.room ? { room: a.room } : { crew: a.who ?? null },
     });
 
-  // Quien entrena y ya no sube: hace falta mejorar la sala o cambiarle la tarea.
-  for (const h of game.heroes) {
-    const t = trainState(game, h);
-    const at = trainingOf(game, h);
-    if (!t?.capped || !at) continue;
+  // Quien entrena y ya no sube: sale al llegar (la campanita lo enseña) y lleva a sus tareas,
+  // para mandarle a otra cosa. Quedarse no le sirve: al amanecer se va a descansar solo.
+  for (const { hero: h, room, attr, by } of cappedTrainees(game))
     out.push({
-      id: `tope:${h.id}`,
-      text:
-        t.by === 'sala'
-          ? `${h.name} ya no sube ${ATTR_NAMES[t.attr]} en ${jobRoomName(game, at.room)}: mejora la sala o cámbiale la tarea.`
-          : `${h.name} ya no sube ${ATTR_NAMES[t.attr]} hasta subir de nivel: cámbiale la tarea.`,
-      k: 'info',
+      id: `tope:${h.id}:${room.id}`,
+      text: `${h.name} ya no aprende más ${ATTR_NAMES[attr]} en ${jobRoomName(game, room)}: ${by === 'sala' ? 'mejora la sala' : 'tiene que subir de nivel'}. Mándale a otra cosa; si no, al amanecer se irá a descansar.`,
+      k: 'warn',
       icon: 'diana',
-      go: { room: at.room.id },
+      go: { crew: h.id },
     });
-  }
 
   // Grupos ante su jefe, esperando a que se diga.
   for (const m of game.missions)
@@ -154,6 +149,22 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
         icon: 'banderin',
         go: { trip: m.id },
       });
+
+  // Lo que ha salido de desmontar un objeto (hoy o anoche): si se aprendió a hacerlo o no.
+  for (const e of game.craftLog ?? []) {
+    if (!e.undo || e.undo.day < game.day - 1) continue;
+    const rc = RECIPES[e.undo.recipe];
+    const learnt = e.how === 'receta';
+    out.push({
+      id: `desmonta:${e.id}`,
+      text: learnt
+        ? `Desmontando ${e.undo.item} han sacado cómo se hace: ya podéis crear ${rc.many}.`
+        : `Han desmontado ${e.undo.item}, pero no han sacado nada en claro.`,
+      k: learnt ? 'good' : 'info',
+      icon: 'yunque',
+      go: rooms.some((r) => r.id === e.room) ? { room: e.room } : { panel: 'gremio' },
+    });
+  }
 
   // Obras recién acabadas.
   for (const id of done) {
