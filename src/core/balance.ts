@@ -330,9 +330,11 @@ export const RAISE_MORALE = 25;
 export const levelRaise = (lvl: number) => (lvl <= 5 ? 2 * lvl : 5 * lvl);
 /**
  * Modo libre: hay otros gremios pujando por los encargos y la comarca paga menos que en los
- * apuros de la deuda (multiplicador base, antes del descuento por rango).
+ * apuros de la deuda (multiplicador en cobre). Con cada rango el gremio cobra más por su fama
+ * (`FREE_PAY_RANK` más por rango), para que los sueldos de los veteranos no se coman la caja.
  */
 export const FREE_PAY = 0.5;
+export const FREE_PAY_RANK = 0.35;
 /** Caché de veterano: al llegar a estos niveles piden un plus fijo. */
 export const CACHE: Readonly<Record<number, number>> = { 5: 15, 8: 30 };
 export const CACHE_REFUSE_MORALE = -25;
