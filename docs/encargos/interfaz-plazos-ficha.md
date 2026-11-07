@@ -1,0 +1,41 @@
+# Encargo de interfaz: plazos en días, ficha con candados, aviso de tope
+
+Feedback del usuario (7 de noviembre). Rama propia, PR contra `main`. Ir punto por punto, con
+capturas.
+
+## 1. Los plazos, en días de juego
+
+Con el tiempo que corre solo (por defecto), `ui/when.ts` (`left`, `span`, `shortLeft`) dice los
+plazos en minutos reales: «llega en 12 min». Para el asalto no tiene sentido: tiene que decir
+**«esta noche»**, **«mañana por la noche»** o **«en 3 noches»** (mapa, `MapPanel.tsx` ~694, y
+donde más salga el asalto). Revisar el resto de usos (vuelta de misión, caducidad del tablón,
+ficha del héroe en `App.tsx`) y pasarlos también a días u «hoy / mañana», salvo que algo pida de
+verdad minutos (decidirlo y decirlo en el PR). Los tests de `when.test.ts`, al día.
+
+## 2. Personalizar al héroe: con candados y por la sastrería
+
+Ahora en la ficha (`HeroCard.tsx`, el bloque «Sastrería (prueba): tinte») se toca un color o una
+prenda y cambia gratis, al momento.
+
+- Llevarlo a un **submenú de la ficha** («Ropa y colores»). Mientras está abierto, **la cámara
+  sigue al personaje** (hará falta un `follow(id)` en `RoomScene`; si ya hay algo para centrar,
+  usarlo).
+- Cada opción enseña su estado: **libre** (ya es suya), **bloqueada por no tenerla** (candado y de
+  dónde sale, como hacen los temas de color de las salas con `unlockSource` en `RoomPanel.tsx`)
+  o **bloqueada por dinero** (cuesta `DRESS_GOLD` y no llega).
+- Si se tiene y se puede pagar: el botón **crea el encargo en la sastrería** (la acción que ya
+  usa el trabajo de vestir, `core/crafting.ts`); el héroe va andando y el sastre le viste. Si la
+  sastrería está ocupada o no hay sastre, decirlo («La sastrería está con Bruna: acaba en 2 h»).
+  Sin sastrería, decir que hace falta.
+- Lo de probar gratis, solo en el modo prueba.
+
+## 3. Entrenar al máximo: que se note
+
+En una sala de entrenamiento, al llegar al tope (`capFor` en `core/training.ts`: por sala o por
+nivel), la barra desaparece y el héroe se queda sin aviso. Que haya feedback: un aviso al
+llegar («Bruna ya no aprende más Fuerza aquí: sube de nivel o mejora la sala», con `capHint`),
+la barra llena con «Al máximo» en la ficha de la sala y un marcador sobre él en la escena. Y que
+se pueda mandarle a otra cosa desde el aviso. Si quedarse ahí aún le sirve de algo, decirlo; si
+no, proponer en el PR que se vaya a descansar solo.
+
+Si tocas `App.tsx` o `RoomScene.ts`, dilo en el PR (otros agentes también los tocan).
