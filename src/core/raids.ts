@@ -203,6 +203,9 @@ function resolveRaid(s: GameState, rng: Rng, events: DawnEvent[]): Report {
   for (const h of hurt) {
     h.status = 'herido';
     h.days = rng.int(2, 3);
+    // Lo que hacía, para volver a ello al curarse.
+    if (h.job) h.jobBefore = h.job;
+    if (h.guard) h.guardBefore = true;
     delete h.guard;
     delete h.job;
     chips.push({
