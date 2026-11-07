@@ -503,6 +503,8 @@ export class RoomScene {
     /** Segundos de más a oscuras (mientras dura un asalto, hasta que acabe). */
     hold: number;
     done: (() => void) | null;
+    /** Ya se ha acostado a quien no llegó a tiempo (al quedar a negro). */
+    out?: boolean;
   } | null = null;
   /** El asalto de esta noche: espera a que oscurezca y luego se ve entero (o se salta). */
   private raid: RaidShow | null = null;
@@ -3123,6 +3125,11 @@ export class RoomScene {
     if (this.night) this.raidStep(dt);
     if (this.night) {
       const p = this.nightP();
+      // A negro (sin asalto): quien no ha llegado a la cama se acuesta ahora, sin que se vea.
+      if (p >= 0.35 && !this.night.out && !this.raidPlan && !this.raid) {
+        this.night.out = true;
+        this.crowd.lightsOut();
+      }
       if (p >= 0.85 && this.night.done) {
         const done = this.night.done;
         this.night.done = null;

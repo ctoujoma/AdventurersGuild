@@ -64,6 +64,10 @@ Segunda pasada (lo que quedaba, también hecho):
 | El ladrón pillado | Huía solo | Quien le ha pillado le persigue hasta la puerta o el pie de la escalera y vuelve a lo suyo (`IncidentArt.onFlee` → `Crowd.chase`) |
 | Tras una obra, sin camino | Aparecía en la puerta | Aparece en el sitio con camino más cercano de su planta (`Crowd.rescue`); solo si no hay, en la puerta |
 | Al que visten en la sastrería | Su tarea seguía contando | No cuenta mientras le visten |
+| Caer la noche (acabar el día antes de hora) | Todos aparecían en su cama, los visitantes y los del pueblo se esfumaban, con la pantalla aún encendida | Van corriendo a la cama y los visitantes y los del pueblo salen por la puerta; quien no ha llegado cuando la pantalla está a negro se acuesta entonces (`Crowd.lightsOut`). Con asalto, cada uno sigue su camino hasta que el asalto le mueve |
+| Acabar el asalto | Aparecían en su cama | Vuelven andando |
+| Llegar nuevo (candidatos de cada mañana, quien se une) | Aparecía ya en la barra o en su sitio | Entra por el patio; si llega de noche, viene por la mañana. Al cargar otra partida, cada uno ya está en su sitio |
+| El gato, tras una obra | Si iba andando, aparecía junto al fuego | Vuelve andando |
 
 Queda para el agente de arte: la marca de destino definitiva (silueta o banderín con el icono de
 la tarea), el punto 2 (el sastre que mide y prueba) y el 5 (el rótulo). Los golpes al alcanzar al

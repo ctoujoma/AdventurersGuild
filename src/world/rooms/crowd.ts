@@ -986,6 +986,8 @@ export class Crowd {
   private now = 0;
   /** Sitios de las salas a los que se va a hacer algo (el tablón, la chimenea, el altar…). */
   private pois: Poi[] = [];
+  /** Ya se ha puesto a la gente una vez: quien aparece después, llega andando. */
+  private ready = false;
   /**
    * Alguien ha llegado andando a la sala de su tarea (una vez por tarea): así lo que depende de
    * que esté allí (vestirle en la sastrería) empieza cuando se le ve llegar y no antes.
@@ -1125,24 +1127,20 @@ export class Crowd {
         a.wait = 0;
       }
     }
-    for (const h of home) {
-      if (!shown.has(h.id) || this.actors.has(h.id)) continue;
-      this.add(h);
-    }
+    // Quien llega nuevo con la partida en marcha (un candidato, alguien que se une) entra por la
+    // puerta; si llegan muchos a la vez (al cargar otra partida), ya están en su sitio.
+    const fresh = home.filter((h) => shown.has(h.id) && !this.actors.has(h.id));
+    const walkIn = this.ready && fresh.length <= 3;
+    for (const h of fresh) this.add(h, walkIn);
+    if (this.S) this.ready = true;
     this.rehome();
-    // Quien ya tiene cama en el servicio deja de irse al pueblo.
+    // Quien ya tiene cama en el servicio deja de irse al pueblo (si es de noche, viene mañana).
     for (const a of this.actors.values()) {
-      if (!a.gone || this.village(a)) continue;
+      if (!a.gone || this.village(a) || this.time === 'night') continue;
       a.gone = false;
       a.mesh.visible = true;
-      const g = this.homes.get(a.hero.id);
-      if (this.time === 'night' && g) {
-        this.put(a, g.place);
-        this.arrive(a, g);
-      } else {
-        this.put(a, outside());
-        a.wait = 0;
-      }
+      this.put(a, outside());
+      a.wait = 0;
     }
   }
 
@@ -1278,19 +1276,50 @@ export class Crowd {
       for (const a of this.actors.values()) a.wait = this.rnd() * 3;
       return;
     }
+    // Cae la noche: nadie aparece en su cama. Quien no está acostado va corriendo; los visitantes
+    // y los del pueblo salen por la puerta. Si al quedar a oscuras alguien no ha llegado, se le
+    // acuesta entonces (`lightsOut`), sin que se vea.
+    if (this.scripted) return;
     for (const a of [...this.actors.values()]) {
-      if (a.hero.visitor) {
+      if (a.gone || (a.leaving && !a.hero.visitor)) continue;
+      if (a.hero.visitor || this.village(a)) {
+        if (a.hero.visitor) a.leaving = true;
+        else a.homeward = true;
+        a.goal = null;
+        this.go(a, { place: outside(), pose: 'stand' });
+        a.run = RUSH;
+        continue;
+      }
+      const g = this.homes.get(a.hero.id);
+      if (!g || (a.pose === 'bed' && !a.path.length)) continue;
+      this.go(a, g);
+      a.run = RUSH;
+    }
+  }
+
+  /**
+   * Ya está todo a oscuras: quien aún no ha llegado a su cama se acuesta y quien salía ya se ha
+   * ido. Sin asalto la pantalla está a negro, así que no se ve; con asalto no se llama (cada uno
+   * sigue su camino hasta que el asalto le mueve).
+   */
+  lightsOut(): void {
+    if (this.scripted) return;
+    for (const a of [...this.actors.values()]) {
+      if (a.gone) continue;
+      if (a.leaving) {
+        if (!a.hero.visitor && !a.quit) this.away.add(a.hero.id);
         this.remove(a.hero.id);
         continue;
       }
-      if (a.leaving || a.gone) continue;
-      if (this.village(a)) {
+      if (a.homeward) {
         this.hide(a);
         continue;
       }
       const g = this.homes.get(a.hero.id);
-      if (!g) continue;
+      if (!g || (a.pose === 'bed' && !a.path.length)) continue;
+      this.standUp(a);
       a.path = [];
+      a.run = undefined;
       this.seatFree(a);
       this.put(a, g.place);
       this.arrive(a, g);
@@ -1307,6 +1336,12 @@ export class Crowd {
       }
       if (this.scripted) {
         if (a.path.length) this.walk(a, dt);
+        else if ((a.leaving || a.homeward) && !a.hero.bandit) {
+          // Salía por la puerta antes del asalto: ya se ha ido.
+          if (a.leaving) this.remove(a.hero.id);
+          else this.hide(a);
+          continue;
+        }
         if (a.swing) a.swing = Math.max(0, a.swing - dt * 3);
         this.place(a, t);
         continue;
@@ -1513,8 +1548,9 @@ export class Crowd {
       if (a.gone) continue;
       const g = this.homes.get(a.hero.id);
       if (this.time === 'night' && g) {
-        this.put(a, g.place);
-        this.arrive(a, g);
+        // Acabado el asalto, cada uno vuelve andando a la cama.
+        a.pose = 'stand';
+        this.go(a, g);
       } else {
         a.pose = 'stand';
         a.goal = null;
@@ -1741,7 +1777,7 @@ export class Crowd {
 
   // ---------- Por dentro ----------
 
-  private add(h: SceneHero): void {
+  private add(h: SceneHero, walkIn = false): void {
     const spr = heroSprites(h.look, h.marks);
     const k = scaleAt(LANES[0]);
     const img = atlas(spr, h);
@@ -1787,6 +1823,15 @@ export class Crowd {
     };
     this.actors.set(h.id, a);
     if (h.visitor || h.bandit) return;
+    if (walkIn && this.S && !this.away.has(h.id)) {
+      // Llega de fuera: de día entra por el patio; de noche, viene por la mañana.
+      if (this.time === 'night') this.hide(a);
+      else {
+        this.put(a, outside());
+        a.wait = 0;
+      }
+      return;
+    }
     if (this.village(a) && this.time !== 'day') {
       // De noche, los del pueblo están en su casa.
       this.hide(a);
