@@ -52,6 +52,7 @@ import { LibroPanel } from './panels/LibroPanel';
 import { MapPanel } from './panels/MapPanel';
 import { SaveMenu } from './SaveMenu';
 import { SettingsMenu } from './SettingsMenu';
+import type { WeatherKind } from '../world/weather';
 import { applyLook, loadSettings, saveSettings, type Settings } from '../platform/settings';
 import { Splash } from './Splash';
 import { Title } from './Title';
@@ -224,6 +225,8 @@ export function App() {
   // Las piezas que se ganan; en el modo prueba, todas.
   const has = (id: UnlockId) => settings.tester || hasUnlock(game, id);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  /** Modo prueba: el tiempo forzado (solo en esta sesión). */
+  const [forcedWeather, setForcedWeather] = useState<WeatherKind | null>(null);
   const [records, setRecords] = useState(loadRecords);
   /** Mejor llegada antes de esta partida, para comparar en la apertura. */
   const [prevBest] = useState(() => loadRecords().bestArrival);
@@ -237,6 +240,7 @@ export function App() {
       scene.current.speed = settings.speed;
       scene.current.fewLights = settings.fewLights;
       scene.current.moodLight = settings.moodLight;
+      scene.current.weatherMode = settings.weather;
     }
     saveSettings(settings);
   }, [settings]);
@@ -1045,6 +1049,8 @@ export function App() {
             s.pace = pace;
             s.fewLights = settings.fewLights;
             s.moodLight = settings.moodLight;
+            s.weatherMode = settings.weather;
+            s.forceWeather = forcedWeather;
           }}
           onHotspot={onHotspot}
           onHero={(id, at) => {
@@ -1770,6 +1776,11 @@ export function App() {
             }
             audio.play('coin');
             return r.note;
+          }}
+          weather={forcedWeather}
+          onWeather={(k) => {
+            setForcedWeather(k);
+            if (scene.current) scene.current.forceWeather = k;
           }}
           onBoss={(boss, won) => {
             const fight = testFight(gameRef.current, boss, won);

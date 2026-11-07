@@ -236,11 +236,14 @@ function shapeOf(w: number, h: number, puffs: Puff[], bottom: (x: number) => num
   return { w, h, n, ao, rim, belly: bellyA };
 }
 
-/** La nube iluminada con la luz de `phase`. */
-export function paintCloud(s: CloudShape, phase: SkyPhase): PixelBuffer {
+/** La nube iluminada con la luz de `phase` (con otra rampa, por ejemplo la gris del nublado). */
+export function paintCloud(
+  s: CloudShape,
+  phase: SkyPhase,
+  ramp: readonly string[] = CLOUD_RAMP[phase],
+): PixelBuffer {
   const b = new PixelBuffer(s.w, s.h);
   const [lx, ly, lz] = norm(LIGHT[phase]);
-  const ramp = CLOUD_RAMP[phase];
   const low = phase === 'dusk' || phase === 'dawn';
   for (let y = 0; y < s.h; y++)
     for (let x = 0; x < s.w; x++) {

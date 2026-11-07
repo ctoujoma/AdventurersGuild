@@ -29,6 +29,16 @@ import {
   untrammed,
 } from './paisaje';
 import { glowSprite } from '../lighting';
+import {
+  DECK_BAND,
+  FOG_COLOR,
+  GREY_BANDS,
+  HAZE,
+  deckAlpha,
+  deckLayout,
+  fogBank,
+  paintDeckCloud,
+} from './manto';
 import { Rng } from '../../core/rng';
 import {
   MOON_R,
@@ -151,6 +161,24 @@ const CLOUD_LAYERS: { fx: number; band: number; speed: number; list: CloudSpec[]
     ],
   },
 ];
+/** Velo de bruma tras cada capa del paisaje: con el cielo cubierto y con niebla. */
+const VEIL = [0.12, 0.08, 0.07, 0.05, 0.04];
+const FOG_VEIL = [0.32, 0.18, 0.18, 0.14, 0.1];
+/**
+ * Bancos de niebla tras algunas capas: su alto (borde de arriba, con el horizonte en GROUND),
+ * cuánto se ven, cuál de los tres y su deriva (píxeles por segundo).
+ */
+const FOG_BANKS: Partial<Record<number, { y: number; k: number; which: number; drift: number }>> = {
+  0: { y: GROUND - 34, k: 1, which: 0, drift: 1.2 },
+  2: { y: GROUND + 6, k: 0.85, which: 1, drift: 2 },
+  4: { y: GROUND + 34, k: 0.6, which: 2, drift: 3 },
+};
+
+const smoothstep = (a: number, b: number, x: number) => {
+  const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+};
+
 /** La luna, a cierta distancia en x y por encima del horizonte. */
 const MOON = { x: 84, up: 156 } as const;
 /** Lo más alto que sube el sol sobre el horizonte, en píxeles. */
@@ -212,6 +240,44 @@ export class Sky {
   };
   /** Con «luz con ambiente», el fondo nuevo (ver `paisaje.ts`). */
   mood = false;
+  /** El tiempo (ver `weather.ts`): nubes (0–1) y niebla (0–1). */
+  weather = { cloud: 0, fog: 0 };
+  /** El manto del nublado, por orden de turno (las primeras en salir, primero). */
+  private deck = deckLayout().sort((a, b) => a.rank - b.rank);
+  private deckBuilt = 0;
+  private greyCache?: Record<SkyPhase, HTMLCanvasElement>;
+  private fogCache?: Record<SkyPhase, HTMLCanvasElement[]>;
+
+  /**
+   * Pinta unas pocas nubes más del manto (hasta `ms` milisegundos), si las nubes ya piden
+   * alguna que falta. Devuelve si pintó alguna (para volver a dibujar el cielo).
+   */
+  buildDeck(ms = 4): boolean {
+    const want = this.deck.findIndex((c) => deckAlpha(this.weather.cloud + 0.06, c.rank) <= 0);
+    const need = want < 0 ? this.deck.length : want;
+    if (this.deckBuilt >= need) return false;
+    const t0 = performance.now();
+    while (this.deckBuilt < need && performance.now() - t0 < ms)
+      paintDeckCloud(this.deck[this.deckBuilt++]!);
+    return true;
+  }
+
+  private get grey() {
+    this.greyCache ??= Object.fromEntries(
+      PHASES.map((ph) => [
+        ph,
+        bufferCanvas(skyStripCnc(GREY_BANDS[ph], STRIP_W, STRIP_H, 10, GROUND - 10)),
+      ]),
+    ) as Record<SkyPhase, HTMLCanvasElement>;
+    return this.greyCache;
+  }
+
+  private get fogBanks() {
+    this.fogCache ??= Object.fromEntries(
+      PHASES.map((ph) => [ph, [0, 1, 2].map((i) => fogBank(`niebla-${i}`, FOG_COLOR[ph]))]),
+    ) as Record<SkyPhase, HTMLCanvasElement[]>;
+    return this.fogCache;
+  }
   private cncCache?: {
     strips: { day: HTMLCanvasElement; dusk: HTMLCanvasElement; dawn: HTMLCanvasElement };
     right: HTMLCanvasElement;
@@ -298,11 +364,14 @@ export class Sky {
     ctx.fillRect(0, 0, vw, vh);
     const skyX = WORLD_X0 - pan(cx, vw, SKY_FX);
     tile(ctx, this.skyC, skyX, top, vw);
-    ctx.globalAlpha = Math.max(0, 1 - dl.day * 1.4);
+    // Lo cubierto del cielo: con el manto entero no se ven el sol, la luna ni las estrellas.
+    const { cloud, fog } = this.weather;
+    const ov = smoothstep(0.55, 0.95, cloud);
+    ctx.globalAlpha = Math.max(0, 1 - dl.day * 1.4) * (1 - ov);
     // Las estrellas se repiten a lo ancho y, por encima de su franja, también hacia arriba.
     const w = this.skyC.width;
     const k0 = Math.floor(-skyX / w);
-    for (let ky = 0; dl.day <= 0.7 && top - ky * STAR_H > -STAR_H; ky++)
+    for (let ky = 0; dl.day <= 0.7 && ov < 0.99 && top - ky * STAR_H > -STAR_H; ky++)
       for (let k = k0; skyX + k * w < vw; k++)
         for (const s of this.starList) {
           if (ky > 0 && s.y >= STAR_H) continue;
@@ -315,7 +384,7 @@ export class Sky {
           ctx.fillRect(sx, sy, 1, 1);
         }
     ctx.globalAlpha = 1;
-    const moonA = Math.max(0, 1 - dl.day * 1.25);
+    const moonA = Math.max(0, 1 - dl.day * 1.25) * (1 - ov);
     if (moonA > 0) {
       ctx.globalAlpha = moonA;
       ctx.drawImage(
@@ -330,7 +399,16 @@ export class Sky {
     this.strip(ctx, strips.day, dl.day, top, vw, vh);
     this.strip(ctx, strips.dusk, dl.dusk, top, vw, vh);
     this.strip(ctx, strips.dawn, nl.warm, top, vw, vh);
-    this.drawSun(ctx, dl, cx, hz, vw);
+    // Encima, el cielo gris del nublado con la luz de cada hora.
+    if (ov > 0.01) {
+      const g = this.grey;
+      const lit0 = Math.min(1, dl.day + dl.dusk + nl.warm);
+      this.strip(ctx, g.night, ov * (1 - lit0), top, vw, vh);
+      this.strip(ctx, g.day, ov * dl.day, top, vw, vh);
+      this.strip(ctx, g.dusk, ov * dl.dusk, top, vw, vh);
+      this.strip(ctx, g.dawn, ov * nl.warm, top, vw, vh);
+    }
+    if (ov < 0.99) this.drawSun(ctx, dl, cx, hz, vw, 1 - ov);
     // Las nubes, de la capa de más lejos a la de más cerca: la de noche debajo (opaca, tapa las
     // estrellas) y encima, la de cada luz con su peso.
     const wt: Record<SkyPhase, number> = {
@@ -352,7 +430,8 @@ export class Sky {
           const lit = Math.min(1, wt.day + wt.dusk + wt.dawn);
           for (const ph of PHASES) {
             const a =
-              cl.fade >= 1 ? wt[ph] : cl.fade * (ph === 'night' ? Math.max(0, 1 - lit) : wt[ph]);
+              (cl.fade >= 1 ? wt[ph] : cl.fade * (ph === 'night' ? Math.max(0, 1 - lit) : wt[ph])) *
+              (1 - ov);
             if (a <= 0.01) continue;
             ctx.globalAlpha = a;
             ctx.drawImage(cl.img[ph], at, y);
@@ -361,6 +440,63 @@ export class Sky {
       }
     }
     ctx.globalAlpha = 1;
+    // El manto del nublado: cada nube, si ya le toca y está pintada.
+    if (cloud > 0.25) {
+      const lit = Math.min(1, wt.day + wt.dusk + wt.dawn);
+      for (let i = 0; i < this.deckBuilt; i++) {
+        const cl = this.deck[i]!;
+        const a = deckAlpha(cloud, cl.rank);
+        if (a <= 0) break;
+        const x0 = WORLD_X0 - pan(cx, vw, cl.fx);
+        const x = ((cl.x + t * cl.speed) % DECK_BAND) - cl.w + x0;
+        const y = Math.round(cl.y - cl.h + top);
+        if (y > vh || y + cl.h < 0) continue;
+        for (let k = Math.floor(-(x + cl.w) / DECK_BAND); x + k * DECK_BAND < vw; k++) {
+          const at = Math.round(x + k * DECK_BAND);
+          if (at + cl.w < 0) continue;
+          for (const ph of PHASES) {
+            const pa = a * (ph === 'night' ? Math.max(0, 1 - lit) : wt[ph]);
+            if (pa <= 0.01) continue;
+            ctx.globalAlpha = Math.min(1, pa);
+            ctx.drawImage(cl.img![ph], at, y);
+          }
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+    // La bruma y la niebla, del color de la hora: tras cada capa del paisaje, un velo encima de
+    // todo lo de detrás (así lo lejano se pierde más). Y bancos de niebla entre capas.
+    const litH = Math.min(1, wt.day + wt.dusk + wt.dawn);
+    const sumH = wt.day + wt.dusk + wt.dawn || 1;
+    const haze = [0, 1, 2].map(
+      (c) =>
+        HAZE.night[c]! * (1 - litH) +
+        ((HAZE.day[c]! * wt.day + HAZE.dusk[c]! * wt.dusk + HAZE.dawn[c]! * wt.dawn) * litH) / sumH,
+    );
+    const veil = (i: number, fx: number) => {
+      const a = ov * VEIL[i]! + fog * FOG_VEIL[i]!;
+      if (a > 0.005) {
+        ctx.globalAlpha = Math.min(1, a);
+        ctx.fillStyle = `rgb(${haze.map(Math.round).join(',')})`;
+        ctx.fillRect(0, 0, vw, vh);
+        ctx.globalAlpha = 1;
+      }
+      const fb = FOG_BANKS[i];
+      if (!fb || fog <= 0.01) return;
+      const banks = this.fogBanks;
+      const bx = WORLD_X0 - pan(cx, vw, fx) + t * fb.drift;
+      const by = top + fb.y;
+      for (const ph of PHASES) {
+        const pa = fog * fb.k * (ph === 'night' ? 1 - litH : wt[ph]);
+        if (pa <= 0.01) continue;
+        ctx.globalAlpha = Math.min(1, pa);
+        const c = banks[ph][fb.which]!;
+        repeat(ctx, c, bx, by, vw);
+        // Lo de debajo del banco, tan espeso como su parte de abajo.
+        if (by + c.height < vh) ctx.drawImage(c, 0, c.height - 1, 1, 1, 0, by + c.height, vw, vh);
+      }
+      ctx.globalAlpha = 1;
+    };
     // Cuánto se ve el paisaje de día (con sus colores) sobre las siluetas de la noche.
     const dayK = Math.min(1, dl.day + dl.dusk * 0.6 + nl.warm * 0.5);
     const light = { day: dayK, dark: Math.max(nl.dark, 1 - dl.day - dl.dusk) };
@@ -412,6 +548,7 @@ export class Sky {
           water(m.lake.day, dayK);
           ctx.globalAlpha = 1;
         }
+        veil(i, l.fx);
         return;
       }
       const night = this.mood ? this.cnc.nights[i] : null;
@@ -425,11 +562,23 @@ export class Sky {
       }
       if (i === 1) hillLife(ctx, x, top, vw, t, light);
       if (i === 3) treeLife(ctx, x, top, vw, t, light);
+      veil(i, l.fx);
     });
+    // Con el cielo cubierto o niebla, todo con menos color (la luz es plana).
+    const gray = ov * 0.4 + fog * 0.35;
+    if (gray > 0.01) {
+      ctx.globalCompositeOperation = 'saturation';
+      ctx.globalAlpha = Math.min(1, gray);
+      ctx.fillStyle = '#808080';
+      ctx.fillRect(0, 0, vw, vh);
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
+    }
     // Al atardecer, el paisaje se tiñe de cálido.
     if (dl.dusk > 0) {
       ctx.globalCompositeOperation = 'multiply';
-      const d = dl.dusk;
+      // Con el sol tapado (nublado, niebla), menos dorado.
+      const d = dl.dusk * (1 - 0.65 * Math.max(ov, fog));
       ctx.fillStyle = `rgb(255, ${Math.round(255 - 55 * d)}, ${Math.round(255 - 95 * d)})`;
       ctx.fillRect(0, 0, vw, vh);
       ctx.globalCompositeOperation = 'source-over';
@@ -465,7 +614,14 @@ export class Sky {
   }
 
   /** El sol, que cruza: blanco y amarillo a mediodía; grande, naranja y rayado al ponerse. */
-  private drawSun(ctx: CanvasRenderingContext2D, d: Daylight, cx: number, hz: number, vw: number) {
+  private drawSun(
+    ctx: CanvasRenderingContext2D,
+    d: Daylight,
+    cx: number,
+    hz: number,
+    vw: number,
+    k = 1,
+  ) {
     const sunUp = Math.max(d.day, d.dusk);
     if (sunUp <= 0) return;
     // Sale ya alto por la mañana, cruza y al atardecer baja hasta perderse tras los montes.
@@ -475,7 +631,7 @@ export class Sky {
     if (sy > hz + 20) return;
     // El de siempre: un halo suave y el disco, limón de día y naranja al atardecer.
     const warmSun = d.dusk > 0.3;
-    ctx.globalAlpha = Math.min(1, sunUp * 1.3);
+    ctx.globalAlpha = Math.min(1, sunUp * 1.3) * k;
     ctx.globalCompositeOperation = 'lighter';
     ctx.drawImage(
       glowSprite(30, warmSun ? [254, 140, 52] : [255, 240, 180], 0.55),

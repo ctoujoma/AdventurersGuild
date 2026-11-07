@@ -194,6 +194,7 @@ export function sceneModel(s: GameState): SceneModel {
     })),
     incidentEnds: s.incidentLog,
     clock: { day: s.day, secs: s.clock ?? 0 },
+    seed: s.seed,
     crafts: (s.crafts ?? []).map((c) => {
       const st = craftState(s, c);
       return {

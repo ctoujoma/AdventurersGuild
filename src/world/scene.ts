@@ -69,6 +69,8 @@ export interface SceneModel {
   incidents?: SceneIncident[];
   /** El día y el reloj (segundos): si un incidente se va con el reloj en su `until`, salió mal. */
   clock?: { day: number; secs: number };
+  /** La semilla de la partida: de ella sale el tiempo que hace (ver `weather.ts`). */
+  seed?: string;
   /**
    * Lo que se está creando o desmontando en los talleres (solo dibujo; cambia en cada tick, así
    * que no va en la clave que rehace la escena).

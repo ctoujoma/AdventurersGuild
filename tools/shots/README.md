@@ -51,3 +51,8 @@ para preparar cualquier situación antes de la captura: subir salas de nivel, pr
    pantallas principales en 13 tamaños (de 320 × 568 a 1366 × 768, en vertical y tumbado) y dice
    qué botones quedan fuera o recortados; sale con error si queda alguno. Pasarlo tras tocar la
    barra de arriba, la del día, las pestañas o los paneles.
+
+10. Clima: `node tools/shots/clima.mjs <carpeta> [tiempos] [vistas]` fuerza cada tiempo
+    (`despejado,nubes,nublado,niebla`, …) y saca la vista desde fuera, el patio y una sala con
+    ventana, de día y de noche (`HORAS=manana,dia,tarde,noche`); con `TRANSICION=nublado`, una
+    tira de la vista desde fuera pasando de despejado a ese tiempo, para un GIF.

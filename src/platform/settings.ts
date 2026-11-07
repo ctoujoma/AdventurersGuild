@@ -23,6 +23,8 @@ export interface Settings {
    * fuertes (charcos de luz). Sin marcar, la luz de siempre.
    */
   moodLight: boolean;
+  /** Clima (con luz con ambiente): el que toque cada día o siempre despejado. */
+  weather: 'normal' | 'clear';
   /**
    * Días a la antigua (modo prueba): el día solo corre con el juego abierto y se cierra con
    * «Anochecer». Lo normal es que el tiempo corra solo, también cerrado (ver `core/away.ts`).
@@ -45,6 +47,7 @@ export const DEFAULT_SETTINGS: Settings = {
   vibrate: true,
   fewLights: false,
   moodLight: true,
+  weather: 'normal',
   classicTime: false,
   tester: false,
 };
@@ -67,6 +70,7 @@ export function parseSettings(raw: unknown): Settings {
     vibrate: r.vibrate !== false,
     fewLights: r.fewLights === true,
     moodLight: r.moodLight !== false,
+    weather: r.weather === 'clear' ? 'clear' : 'normal',
     classicTime: r.classicTime === true,
     tester: r.tester === true,
   };
