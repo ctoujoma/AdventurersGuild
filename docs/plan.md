@@ -121,7 +121,8 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
    vez. `data/rumors.ts`, `core/rumors.ts`, `ui/RumorMark.tsx`; cifras `RUMOR_*`.
 
 8. **Entrenamiento con tope por nivel** (hecho): el tope de cada atributo es el menor entre el
-   de la sala (5, 7, 9 y 11; `TRAIN_CAP`) y el del héroe (4 + su nivel; `TRAIN_HERO_BASE`). Al
+   de la sala (5, 7, 9 y 11; `TRAIN_CAP`) y el del héroe (3 + 2 por nivel: el de nivel N llega a lo de la sala de nivel N;
+   `TRAIN_HERO_BASE`, `TRAIN_PER_LEVEL`). Al
    llegar al tope se dice cuál manda («mejora la sala» o «hasta subir de nivel»). Subir de nivel
    da +1 al atributo principal y nunca se pierde (hasta `ATTR_MAX`, 15).
 

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { TRAIN_CAP, TRAIN_COST_BASE, TRAIN_HERO_BASE, XP_PER_LEVEL } from './balance';
+import {
+  TRAIN_CAP,
+  TRAIN_COST_BASE,
+  TRAIN_HERO_BASE,
+  TRAIN_PER_LEVEL,
+  XP_PER_LEVEL,
+} from './balance';
 import { levelUp } from './resolve';
 import { endDay, newGame, reduce } from './game';
 import type { GameState, Room } from './model';
@@ -93,18 +99,18 @@ describe('entrenamiento', () => {
     );
   });
 
-  it('tampoco pasa del tope del héroe (4 + su nivel); al subir de nivel, sigue', () => {
+  it('tampoco pasa del tope del héroe (3 + 2 por nivel); al subir de nivel, sigue', () => {
     const s = gym(4);
     const h = s.heroes[0]!;
     h.lvl = 2;
-    h.attrs.F = TRAIN_HERO_BASE + 2;
-    expect(trainState(s, h)).toMatchObject({ capped: true, by: 'nivel', cap: 6 });
+    h.attrs.F = TRAIN_HERO_BASE + 2 * TRAIN_PER_LEVEL;
+    expect(trainState(s, h)).toMatchObject({ capped: true, by: 'nivel', cap: 7 });
     const events: { t: string }[] = [];
     h.train = { F: 99 };
     stepTraining(s, events);
-    expect(h.attrs.F).toBe(6);
+    expect(h.attrs.F).toBe(7);
     h.lvl = 3;
-    expect(trainState(s, h)).toMatchObject({ capped: false, cap: 7 });
+    expect(trainState(s, h)).toMatchObject({ capped: false, cap: 9 });
   });
 
   it('el punto de subir de nivel no se pierde aunque el atributo pase de 10', () => {

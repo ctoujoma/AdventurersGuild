@@ -454,10 +454,12 @@ export const TRAIN_COST_BASE = 2;
 /** Hasta dónde se puede entrenar un atributo según el nivel de la sala. */
 export const TRAIN_CAP = [0, 5, 7, 9, 11] as const;
 /**
- * Y hasta dónde según el héroe: esto más su nivel (un novato no pasa de 5 entrenando; con cada
- * nivel, uno más). Manda el menor de los dos topes.
+ * Y hasta dónde según el héroe: esto más `TRAIN_PER_LEVEL` por nivel (un novato no pasa de 5;
+ * con cada nivel, dos más: el héroe de nivel N llega a lo de la sala de nivel N). Manda el menor
+ * de los dos topes.
  */
-export const TRAIN_HERO_BASE = 4;
+export const TRAIN_HERO_BASE = 3;
+export const TRAIN_PER_LEVEL = 2;
 /** Tope de un atributo (el punto de subir de nivel llega hasta aquí, aunque no se entrene). */
 export const ATTR_MAX = 15;
 
