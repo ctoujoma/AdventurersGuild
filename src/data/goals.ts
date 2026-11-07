@@ -6,6 +6,7 @@
  */
 import type { QuestType, Reward } from '../core/model';
 import type { RoomType } from './rooms';
+import { RAID_FROM } from '../core/balance';
 
 export type GoalDef =
   | {
@@ -18,6 +19,8 @@ export type GoalDef =
       /** Cuánto más pide cada vez que se repite. */
       step: number;
       reward: Reward;
+      /** No sale antes de este día (los asaltos, desde `RAID_FROM`). */
+      fromDay?: number;
     }
   | {
       id: string;
@@ -99,6 +102,15 @@ export const GOALS: readonly GoalDef[] = [
     n: 2,
     step: 2,
     reward: { gold: 30 },
+  },
+  {
+    id: 'asalto-limpio',
+    text: 'Asaltos repelidos sin heridos: {n}',
+    stat: 'cleanRaids',
+    n: 1,
+    step: 1,
+    reward: { gold: 60, rep: 3 },
+    fromDay: RAID_FROM,
   },
   byType('Cazar', 'Cumple {n} encargos de caza', 2, { gold: 50 }),
   byType('Explorar', 'Cumple {n} exploraciones', 2, { gold: 50 }),

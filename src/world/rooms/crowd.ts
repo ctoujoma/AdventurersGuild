@@ -587,6 +587,25 @@ const DRILL_WEAPON: Record<OutfitId, WeaponId> = {
   forastero: 'daga',
 };
 
+/**
+ * El golpe que da cada uno en una pelea (asalto o ladrón): tajo con la espada, estocada rápida
+ * con la daga, mazazo de arriba abajo, disparo con el arco y conjuro con el bastón. `grito`: el
+ * arma en alto (Provocar, o el clérigo que cura).
+ */
+export type Blow = 'tajo' | 'estocada' | 'maza' | 'tiro' | 'conjuro' | 'grito';
+const BLOW: Partial<Record<OutfitId, Blow>> = {
+  guerrero: 'tajo',
+  noble: 'tajo',
+  picaro: 'estocada',
+  mercader: 'estocada',
+  forastero: 'estocada',
+  mago: 'conjuro',
+  alquimista: 'conjuro',
+  clerigo: 'maza',
+  explorador: 'tiro',
+};
+export const blowOf = (outfit: OutfitId): Blow => BLOW[outfit] ?? 'maza';
+
 /** Cómo se entrena en cada sala: golpes al aire, tiro con arco o leer. */
 type Drill = 'armas' | 'tiro' | 'biblioteca';
 const DRILLS: Record<string, Drill> = { armas: 'armas', tiro: 'tiro', biblioteca: 'biblioteca' };
@@ -638,6 +657,8 @@ interface Actor {
   /** En un asalto: corre más (o menos) para llegar a su hora, y el golpe que está dando (0–1). */
   run?: number;
   swing?: number;
+  /** Qué golpe es (ver `Blow`). */
+  blow?: Blow;
   /** Acostándose o levantándose: un momento incorporado en la cama (`out`: luego se va). */
   edge?: { bed: BedSpot; t: number; out: boolean } | null;
   /** Haciendo algo en un sitio de la sala (leer el tablón, calentarse…) y hacia dónde mira. */
@@ -990,6 +1011,8 @@ export class Crowd {
   private now = 0;
   /** Sitios de las salas a los que se va a hacer algo (el tablón, la chimenea, el altar…). */
   private pois: Poi[] = [];
+  /** Ya se ha puesto a la gente una vez: quien aparece después, llega andando. */
+  private ready = false;
   /**
    * Alguien ha llegado andando a la sala de su tarea (una vez por tarea): así lo que depende de
    * que esté allí (vestirle en la sastrería) empieza cuando se le ve llegar y no antes.
@@ -1129,24 +1152,20 @@ export class Crowd {
         a.wait = 0;
       }
     }
-    for (const h of home) {
-      if (!shown.has(h.id) || this.actors.has(h.id)) continue;
-      this.add(h);
-    }
+    // Quien llega nuevo con la partida en marcha (un candidato, alguien que se une) entra por la
+    // puerta; si llegan muchos a la vez (al cargar otra partida), ya están en su sitio.
+    const fresh = home.filter((h) => shown.has(h.id) && !this.actors.has(h.id));
+    const walkIn = this.ready && fresh.length <= 3;
+    for (const h of fresh) this.add(h, walkIn);
+    if (this.S) this.ready = true;
     this.rehome();
-    // Quien ya tiene cama en el servicio deja de irse al pueblo.
+    // Quien ya tiene cama en el servicio deja de irse al pueblo (si es de noche, viene mañana).
     for (const a of this.actors.values()) {
-      if (!a.gone || this.village(a)) continue;
+      if (!a.gone || this.village(a) || this.time === 'night') continue;
       a.gone = false;
       a.mesh.visible = true;
-      const g = this.homes.get(a.hero.id);
-      if (this.time === 'night' && g) {
-        this.put(a, g.place);
-        this.arrive(a, g);
-      } else {
-        this.put(a, outside());
-        a.wait = 0;
-      }
+      this.put(a, outside());
+      a.wait = 0;
     }
   }
 
@@ -1282,19 +1301,50 @@ export class Crowd {
       for (const a of this.actors.values()) a.wait = this.rnd() * 3;
       return;
     }
+    // Cae la noche: nadie aparece en su cama. Quien no está acostado va corriendo; los visitantes
+    // y los del pueblo salen por la puerta. Si al quedar a oscuras alguien no ha llegado, se le
+    // acuesta entonces (`lightsOut`), sin que se vea.
+    if (this.scripted) return;
     for (const a of [...this.actors.values()]) {
-      if (a.hero.visitor) {
+      if (a.gone || (a.leaving && !a.hero.visitor)) continue;
+      if (a.hero.visitor || this.village(a)) {
+        if (a.hero.visitor) a.leaving = true;
+        else a.homeward = true;
+        a.goal = null;
+        this.go(a, { place: outside(), pose: 'stand' });
+        a.run = RUSH;
+        continue;
+      }
+      const g = this.homes.get(a.hero.id);
+      if (!g || (a.pose === 'bed' && !a.path.length)) continue;
+      this.go(a, g);
+      a.run = RUSH;
+    }
+  }
+
+  /**
+   * Ya está todo a oscuras: quien aún no ha llegado a su cama se acuesta y quien salía ya se ha
+   * ido. Sin asalto la pantalla está a negro, así que no se ve; con asalto no se llama (cada uno
+   * sigue su camino hasta que el asalto le mueve).
+   */
+  lightsOut(): void {
+    if (this.scripted) return;
+    for (const a of [...this.actors.values()]) {
+      if (a.gone) continue;
+      if (a.leaving) {
+        if (!a.hero.visitor && !a.quit) this.away.add(a.hero.id);
         this.remove(a.hero.id);
         continue;
       }
-      if (a.leaving || a.gone) continue;
-      if (this.village(a)) {
+      if (a.homeward) {
         this.hide(a);
         continue;
       }
       const g = this.homes.get(a.hero.id);
-      if (!g) continue;
+      if (!g || (a.pose === 'bed' && !a.path.length)) continue;
+      this.standUp(a);
       a.path = [];
+      a.run = undefined;
       this.seatFree(a);
       this.put(a, g.place);
       this.arrive(a, g);
@@ -1309,9 +1359,16 @@ export class Crowd {
         this.place(a, t);
         continue;
       }
+      // El golpe que está dando (el grito y la cura se sostienen más).
+      if (a.swing) a.swing = Math.max(0, a.swing - dt * (a.blow === 'grito' ? 1.4 : 3));
       if (this.scripted) {
         if (a.path.length) this.walk(a, dt);
-        if (a.swing) a.swing = Math.max(0, a.swing - dt * 3);
+        else if ((a.leaving || a.homeward) && !a.hero.bandit) {
+          // Salía por la puerta antes del asalto: ya se ha ido.
+          if (a.leaving) this.remove(a.hero.id);
+          else this.hide(a);
+          continue;
+        }
         this.place(a, t);
         continue;
       }
@@ -1517,8 +1574,9 @@ export class Crowd {
       if (a.gone) continue;
       const g = this.homes.get(a.hero.id);
       if (this.time === 'night' && g) {
-        this.put(a, g.place);
-        this.arrive(a, g);
+        // Acabado el asalto, cada uno vuelve andando a la cama.
+        a.pose = 'stand';
+        this.go(a, g);
       } else {
         a.pose = 'stand';
         a.goal = null;
@@ -1586,12 +1644,18 @@ export class Crowd {
     a.pose = 'down';
   }
 
-  /** Da un golpe hacia un lado. */
-  strike(id: string, dir: 1 | -1): void {
+  /** Da un golpe hacia un lado (el de su clase si no se dice cuál). */
+  strike(id: string, dir: 1 | -1, blow?: Blow): void {
     const a = this.actors.get(id);
     if (!a || a.pose === 'down') return;
     a.dir = dir;
     a.swing = 1;
+    a.blow = blow ?? blowOf(a.hero.look.outfit);
+  }
+
+  /** El traje de alguien (para saber cómo pelea). */
+  outfit(id: string): OutfitId | null {
+    return this.actors.get(id)?.hero.look.outfit ?? null;
   }
 
   /** Se acerca un poco (para ponerse cara a cara con quien pelea). */
@@ -1745,7 +1809,7 @@ export class Crowd {
 
   // ---------- Por dentro ----------
 
-  private add(h: SceneHero): void {
+  private add(h: SceneHero, walkIn = false): void {
     const spr = heroSprites(h.look, h.marks);
     const k = scaleAt(LANES[0]);
     const img = atlas(spr, h);
@@ -1791,6 +1855,15 @@ export class Crowd {
     };
     this.actors.set(h.id, a);
     if (h.visitor || h.bandit) return;
+    if (walkIn && this.S && !this.away.has(h.id)) {
+      // Llega de fuera: de día entra por el patio; de noche, viene por la mañana.
+      if (this.time === 'night') this.hide(a);
+      else {
+        this.put(a, outside());
+        a.wait = 0;
+      }
+      return;
+    }
     if (this.village(a) && this.time !== 'day') {
       // De noche, los del pueblo están en su casa.
       this.hide(a);
@@ -2488,6 +2561,10 @@ export class Crowd {
         z,
       };
     }
+    if (a.swing && a.blow && !a.path.length) {
+      const b = this.blowFrame(a.blow, 1 - a.swing, a.dir);
+      return { frame: b.frame, left: a.x - CELL / 2 / k + b.lunge / k, bottom: top + TALL / k, z };
+    }
     const d = this.drillOf(a);
     if (d) {
       // Entrenando en su sala, mirando hacia donde tiene más sitio.
@@ -2555,12 +2632,6 @@ export class Crowd {
         z,
       };
     }
-    if (a.swing) {
-      // Golpe: el paso largo de andar, echándose hacia delante.
-      const lunge = (a.dir * 3 * Math.sin(a.swing * Math.PI)) / k;
-      frame = (a.dir > 0 ? F.walk : F.walkL) + 2;
-      return { frame, left: a.x - CELL / 2 / k + lunge, bottom: top + TALL / k, z };
-    }
     if (a.climb) {
       // En la escalera: la pierna sube en el impulso y se apoya en el peldaño (alternando).
       const s = a.climb.u * STEPS;
@@ -2581,6 +2652,40 @@ export class Crowd {
       frame = blink ? F.blink : F.idle + (Math.floor((t + a.blinkAt) * 1.2) % 2);
     }
     return { frame, left: a.x - CELL / 2 / k, bottom: top + TALL / k, z };
+  }
+
+  /** El fotograma de un golpe según por dónde va (`p`, de 0 a 1) y el paso hacia delante. */
+  private blowFrame(blow: Blow, p: number, dir: 1 | -1): { frame: number; lunge: number } {
+    const drill = dir > 0 ? F.drill : F.drillL;
+    const up = dir > 0 ? F.drill2 : F.drill2L;
+    const aim = dir > 0 ? F.aim : F.aimL;
+    const step = (n: number, from: number) =>
+      dir * n * Math.sin(Math.min(1, Math.max(0, (p - from) / (1 - from))) * Math.PI);
+    switch (blow) {
+      case 'tajo':
+        // El arma en alto, el tajo con el paso largo y de vuelta en guardia.
+        return p < 0.3
+          ? { frame: up, lunge: -dir }
+          : { frame: drill + (p < 0.8 ? 2 : 0), lunge: step(3, 0.3) };
+      case 'maza':
+        // Más despacio arriba y el golpe seco, sin tanto paso.
+        return p < 0.45
+          ? { frame: up, lunge: -dir }
+          : { frame: drill + (p < 0.85 ? 2 : 1), lunge: step(2, 0.45) };
+      case 'estocada':
+        // Recogido un instante y a fondo, con el paso más largo.
+        return p < 0.15
+          ? { frame: drill, lunge: -dir }
+          : { frame: p < 0.75 ? up + 1 : drill, lunge: step(4, 0.15) };
+      case 'tiro':
+        // Apuntando, suelta y baja el arco; un poco hacia atrás por el tirón.
+        return { frame: aim + (p < 0.65 ? 1 : 0), lunge: p < 0.3 ? -dir : 0 };
+      case 'conjuro':
+        // El bastón en alto y hacia delante (sale el hechizo).
+        return { frame: p < 0.4 ? up : up + 1, lunge: p < 0.4 ? 0 : step(1, 0.4) };
+      case 'grito':
+        return { frame: up, lunge: 0 };
+    }
   }
 
   private place(a: Actor, t: number): void {

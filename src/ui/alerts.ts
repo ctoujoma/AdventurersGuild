@@ -123,7 +123,10 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
     if (!t?.capped || !at) continue;
     out.push({
       id: `tope:${h.id}`,
-      text: `${h.name} ya no sube ${ATTR_NAMES[t.attr]} en ${jobRoomName(game, at.room)}: mejora la sala o cámbiale la tarea.`,
+      text:
+        t.by === 'sala'
+          ? `${h.name} ya no sube ${ATTR_NAMES[t.attr]} en ${jobRoomName(game, at.room)}: mejora la sala o cámbiale la tarea.`
+          : `${h.name} ya no sube ${ATTR_NAMES[t.attr]} hasta subir de nivel: cámbiale la tarea.`,
       k: 'info',
       icon: 'diana',
       go: { room: at.room.id },

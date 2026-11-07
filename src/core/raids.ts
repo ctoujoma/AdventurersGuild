@@ -170,6 +170,7 @@ function resolveRaid(s: GameState, rng: Rng, events: DawnEvent[]): Report {
     s.rep += 4;
     s.truce = s.day + truce;
     stats.raids++;
+    if (ds.length && !hurt.length) stats.cleanRaids = (stats.cleanRaids ?? 0) + 1;
     body.push(fill(rng.pick(RAID_WON), { band: raid.band }));
     chips.push(
       { t: 'Asalto repelido', k: 'good' },

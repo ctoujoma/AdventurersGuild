@@ -175,7 +175,12 @@ export class Pets {
     // Si la obra ha sido en otra sala, cada uno sigue a lo suyo; si no, vuelve a su sitio.
     const [a, b] = this.range;
     const cat = this.pets.get('gato') ?? this.add('gato', catStrip(), CAT_Z);
-    if (cat.floor !== floor || cat.x < a || cat.x > b || cat.state === 'walk') {
+    if (cat.state === 'walk' && cat.floor === floor && cat.x >= a && cat.x <= b) {
+      // Iba andando y el salón sigue ahí: vuelve andando a su sitio junto al fuego.
+      cat.target = Math.max(a, Math.min(b, this.home));
+      cat.tz = CAT_Z;
+      cat.dir = cat.target > cat.x ? 1 : -1;
+    } else if (cat.floor !== floor || cat.x < a || cat.x > b) {
       cat.floor = floor;
       cat.x = this.home;
       cat.z = CAT_Z;

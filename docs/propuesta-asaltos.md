@@ -71,7 +71,10 @@ críticos con rombo).
 - **El ladrón de la cámara pelea:** al llegar el héroe, un duelo golpe a golpe (`thiefDuel`,
   `Incident.duel`); si no le tumba en 8 s, se escapa con el oro. Más duro con el rango
   (`THIEF_*`): al principio se le pilla casi siempre; en oro, la mitad con héroes novatos.
-- Sin cámara lenta al arrastrar y sin premio extra por ahora (se pueden añadir).
+- **Decidido y hecho (7 de noviembre):** cámara lenta mientras se arrastra a alguien en el asalto
+  (`RAID_SLOW` en `RoomScene.ts`, un 30 % del ritmo) y un objetivo nuevo, «Asaltos repelidos
+  sin heridos» (`asalto-limpio` en `data/goals.ts`, contador `Stats.cleanRaids`; sale desde el
+  día de los asaltos, 60 monedas y 3 de reputación).
 - Arte: [`encargos/arte-asaltos.md`](encargos/arte-asaltos.md).
 
 ## Para decidir

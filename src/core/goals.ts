@@ -40,7 +40,7 @@ export function goalProgress(s: GameState, g: ActiveGoal): number {
 /** Si un objetivo puede salir ahora: no repetido (salvo los de contar) y que aún no esté hecho. */
 function available(s: GameState, d: GoalDef, goals: Goals): boolean {
   if (goals.active.some((g) => g.id === d.id)) return false;
-  if ('stat' in d) return true;
+  if ('stat' in d) return s.day >= (d.fromDay ?? 0);
   if (goals.done[d.id]) return false;
   if ('room' in d) {
     // La sala ya está, un nivel por debajo, y el siguiente se puede hacer con el rango de ahora.

@@ -549,6 +549,8 @@ export interface Stats {
   /** Último día con una baja (muerte); para «días sin bajas». */
   lastDeath: number;
   raids: number;
+  /** Asaltos repelidos sin que nadie caiga herido. */
+  cleanRaids?: number;
   chains?: number;
   /** Incidentes de la taberna resueltos. */
   incidents?: number;
