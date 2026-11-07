@@ -30,10 +30,21 @@ export function RaidCrew({
   scene: { current: GameScene | null };
 }) {
   const [rows, setRows] = useState<Row[]>([]);
+  const [end, setEnd] = useState<string | null>(null);
   useEffect(() => {
     const read = () => {
       const live = scene.current?.liveRaid?.live;
       if (!live) return setRows([]);
+      const r = live.result;
+      setEnd(
+        !r
+          ? null
+          : !r.escaped
+            ? '¡Los habéis echado!'
+            : r.stolen > 0
+              ? `Se escapan con ${r.stolen} monedas.`
+              : 'Se escapan, pero sin el oro.',
+      );
       setRows(
         live
           .defs()
@@ -62,8 +73,8 @@ export function RaidCrew({
   const tap = (id: string) => scene.current?.liveRaid?.tap(id);
   return (
     <div class="raid-crew">
-      <p class="raid-crew-hint">
-        Arrastra a los tuyos a una sala · toca a un bandido para ir a por él
+      <p class={`raid-crew-hint ${end ? 'is-end' : ''}`}>
+        {end ?? 'Arrastra a los tuyos a una sala · toca a un bandido para ir a por él'}
       </p>
       <ul class="bossfight-crew" aria-label="Los que defienden la taberna">
         {rows.map((h) => {
