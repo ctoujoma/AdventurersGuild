@@ -778,6 +778,8 @@ export class RoomScene {
       }
   }
 
+  /** Duelos con el ladrón ya empezados (la cámara ya ha ido) y acabados (`<sala>#fin`). */
+  private duelSeen = new Set<string>();
   /** Golpes del duelo con el ladrón ya enseñados (por sala). */
   private duelShown = new Map<string, number>();
 
@@ -789,6 +791,8 @@ export class RoomScene {
     const list = (this.model?.incidents ?? []).filter((i) => i.duel);
     for (const room of [...this.duelShown.keys()])
       if (!list.some((i) => i.room === room)) this.duelShown.delete(room);
+    for (const key of [...this.duelSeen])
+      if (!list.some((i) => i.room === key.split('#')[0])) this.duelSeen.delete(key);
     if (!list.length) return;
     const secs = (this.clockTod ?? 0) * DAY_SECONDS;
     for (const inc of list) {
@@ -797,18 +801,45 @@ export class RoomScene {
       const hero = this.crowd.where(d.who);
       if (!thief || !hero) continue;
       const now = secs - d.at;
+      // Al empezar, la cámara va a la pelea (si no se está moviendo con el dedo).
+      if (!this.duelSeen.has(inc.room)) {
+        this.duelSeen.add(inc.room);
+        if (!this.pointers.size && now < 1) this.camera.centerOn(thief.x, thief.y - 20);
+      }
       const shown = this.duelShown.get(inc.room) ?? 0;
       const past = d.hits.filter((h) => h.t <= now);
-      // Los golpes nuevos: el héroe atiza (con chispas) y suena.
+      const dir = thief.x >= hero.x ? 1 : -1;
+      // Los golpes nuevos: el héroe atiza y el ladrón lo encaja, o el ladrón acuchilla y el
+      // héroe recula; chispas donde da y su sonido.
+      let beat: 'stab' | 'hurt' | undefined;
       for (const h of past.slice(shown)) {
         if (h.by === 'h') {
-          this.crowd.strike(d.who, thief.x >= hero.x ? 1 : -1);
+          this.crowd.strike(d.who, dir);
+          beat = 'hurt';
           for (let i = 0; i < (h.crit ? 6 : 3); i++)
             this.particles.spawn('spark', thief.x + (Math.random() - 0.5) * 6, thief.y - 14);
-        } else for (let i = 0; i < 2; i++) this.particles.spawn('spark', hero.x, hero.y - 14);
+        } else {
+          beat = 'stab';
+          this.crowd.flinch(d.who, dir > 0 ? -1 : 1);
+          for (let i = 0; i < 3; i++)
+            this.particles.spawn(
+              'spark',
+              hero.x + dir * 3,
+              hero.y - 14 + (Math.random() - 0.5) * 4,
+            );
+        }
         this.cb.onSound?.('hit', h.crit ? 0.9 : 0.5);
       }
+      this.incidents.duel(inc.room, hero.x, beat);
+      // En guardia mientras el ladrón siga ahí (hasta que el núcleo cierra el incidente).
+      this.crowd.guardUp(d.who, dir);
       this.duelShown.set(inc.room, past.length);
+      // Si gana el ladrón: el héroe se queda doblado un momento y él se va corriendo (sin que le
+      // persigan, ver `IncidentArt.leave`).
+      if (!d.won && now >= d.end - 0.6 && !this.duelSeen.has(`${inc.room}#fin`)) {
+        this.duelSeen.add(`${inc.room}#fin`);
+        this.crowd.flinch(d.who, dir > 0 ? -1 : 1, 0.9);
+      }
       const lost = (by: 'h' | 'l') =>
         past.filter((h) => h.by !== by).reduce((a, h) => a + h.amount, 0);
       const bar = (x: number, y: number, k: number, color: string) => {
@@ -3852,6 +3883,7 @@ export class RoomScene {
       !!this.roomDrag?.moved ||
       this.raising.length > 0 ||
       !!this.raid ||
+      !!this.model?.incidents?.some((i) => i.duel) ||
       !!this.routePts ||
       (!this.night && !!this.model?.heroes.some((h) => h.train)) ||
       this.crowd.drilling() ||

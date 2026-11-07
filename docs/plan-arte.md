@@ -190,7 +190,17 @@ npm run build`.
         la perspectiva) y según cómo se la ve (`Crowd.pose`): de frente, por fuera del costado
         contrario al enemigo; de perfil, tras la espalda (el usuario: «parece que la tiene en
         mitad de la cara»).
-  - [ ] 5. El duelo del ladrón. — [ ] 6. La cámara lenta. — [ ] 7. La tira.
+  - [x] 5. El duelo del ladrón (`duel` en `incidents.ts`, `thiefFightStrip` en
+        `art/incidents.ts`, `guardUp` y `flinch` en `crowd.ts`, `drawDuels` en `RoomScene.ts`): al
+        empezar, la cámara va a la pelea. El ladrón deja de pasear y se pone cara a cara con el
+        héroe (a `DUEL_GAP`), meciéndose; tres dibujos nuevos: en guardia con la daga, la
+        cuchillada a fondo (se echa encima) y encajando un golpe (la cabeza atrás, recula). El
+        héroe, en guardia de perfil con el arma lista mientras el ladrón siga ahí; da su golpe de
+        clase y, con cada cuchillada, recula (`flinch`). Si gana el ladrón, el héroe se queda
+        doblado un momento y él sale corriendo con el saco, soltando monedas, sin que nadie le
+        persiga (ya era así). Capturas: `node tools/shots/ladron.mjs <carpeta>` (`GANA=0`,
+        `CLASE`); en `capturas/ladron/`.
+  - [ ] 6. La cámara lenta. — [ ] 7. La tira.
   Capturas: `node tools/shots/asalto.mjs <carpeta>` (`LENTO=0.2` a cámara lenta, `RECORTE=480x300`
   solo el centro, `NIVEL` y `FUERZA` para que dure más). En `capturas/asaltos/`.
 
