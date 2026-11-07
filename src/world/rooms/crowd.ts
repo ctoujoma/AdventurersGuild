@@ -1802,6 +1802,16 @@ export class Crowd {
     return { x: a.x, floor: a.floor, y: a.y, moving: a.path.length > 0, down: a.pose === 'down' };
   }
 
+  /**
+   * Lo que le queda por andar a alguien: desde sus pies (donde está ahora, también a media
+   * escalera) por cada punto de su camino. Null si no se le ve o ya no va a ningún sitio.
+   */
+  pathOf(id: string): { x: number; y: number }[] | null {
+    const a = this.actors.get(id);
+    if (!a || a.gone || a.held || !a.path.length) return null;
+    return [{ x: a.x, y: a.y }, ...a.path.map((q) => ({ x: q.x, y: floorY(q.floor) }))];
+  }
+
   /** Tendido en el suelo: hacia qué lado tiene la cabeza (y si ya ha acabado de caer). */
   lying(id: string): { head: 1 | -1; landed: boolean } | null {
     const a = this.actors.get(id);

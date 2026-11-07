@@ -96,6 +96,20 @@ const SIDE = -12;
 const CLOTH_W = 13;
 const CLOTH_H = 11;
 
+/**
+ * Lo que ocupa el banderín clavado con los pies en (x, y), en píxeles de la vista, con algo de
+ * margen para el dedo: del palo a la punta de la tela y del remate al suelo.
+ */
+export function goalBox(x: number, y: number): { x: number; y: number; w: number; h: number } {
+  const pad = 3;
+  return {
+    x: Math.round(x) + SIDE - pad,
+    y: Math.round(y) - POLE - 2 - pad,
+    w: CLOTH_W + 4 + pad * 2,
+    h: POLE + 4 + pad * 2,
+  };
+}
+
 export interface GoalDraw {
   /** Los pies del banderín, en píxeles de la vista. */
   x: number;

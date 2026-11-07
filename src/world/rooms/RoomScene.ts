@@ -67,7 +67,7 @@ import { BLIND, CANDLE, takeWallActs, type ActId, type PoiKind, type Round } fro
 import { FLIGHT_Z, flightArt, goesRight } from './stairs';
 import { dress } from './salas/tintes';
 import { Crowd, WALK_Z, type Hit, type Poi, type Talk } from './crowd';
-import { drawGoal, goalIcon, type GoalIcon } from './goalMark';
+import { drawGoal, goalBox, goalIcon, type GoalIcon } from './goalMark';
 import { clothOf } from '../../art/heroes/hero';
 import { LAWN_D, tuftAllowed, yardBushes, yardTrees } from './patio';
 import { bushCnc, oakCnc, pineCnc } from './arboles';
@@ -637,7 +637,7 @@ export class RoomScene {
    * Los caminos de quien se acaba de mandar a un sitio: de donde estaba hasta el banderín, por
    * puertas y escaleras; se borran solos en unos segundos (ver `trails`).
    */
-  private paths: { pts: Place[]; t0: number }[] = [];
+  private paths: { id: string; t0: number }[] = [];
   /** Modo obras: la sala elegida, que se puede coger para moverla, y la que se lleva con el dedo. */
   private grabbable: string | null = null;
   private roomDrag: { id: string; x: number; y: number; moved: boolean; rect: Rect } | null = null;
@@ -4812,7 +4812,10 @@ export class RoomScene {
     const live = this.liveRaid;
     if (live) {
       const id = this.heroAt(cssX, cssY);
-      if (!id) return;
+      if (!id) {
+        this.tapGoal(cssX, cssY);
+        return;
+      }
       if (isBandit(id)) live.aim(id);
       else if (live.tap(id)) this.cb.onSound?.('click', 0.8);
       return;
@@ -4823,6 +4826,8 @@ export class RoomScene {
       this.cb.onHero?.(who, { x: cssX, y: cssY, wx: p?.x ?? w.x, wy: p?.y ?? w.y });
       return;
     }
+    // Un banderín: su camino otra vez (antes que la sala que hay detrás).
+    if (this.tapGoal(cssX, cssY)) return;
     const pet = this.petAt(cssX, cssY);
     if (pet) {
       this.pat(pet);
@@ -4898,8 +4903,7 @@ export class RoomScene {
           // A plantar cara: el banderín con la espada y el camino por el que va corriendo.
           const wx = this.camera.toWorld(d.x, d.y).x;
           const x = Math.max(r.rect.x + 12, Math.min(r.rect.x + r.rect.w - 12, wx));
-          const way = d.from ? this.wayTo(d.from, { x, floor: r.room.floor }) : null;
-          if (way) this.paths.push({ pts: way, t0: this.t });
+          this.showPath(d.id);
           this.goals.set(d.id, {
             room: r.room.id,
             x,
@@ -4917,8 +4921,7 @@ export class RoomScene {
       const w = this.camera.toWorld(d.x, d.y);
       const x = Math.max(r.rect.x + 12, Math.min(r.rect.x + r.rect.w - 12, w.x));
       this.crowd.drop(d.id, { x, floor: r.room.floor });
-      const way = d.from ? this.wayTo(d.from, { x, floor: r.room.floor }) : null;
-      if (way) this.paths.push({ pts: way, t0: this.t });
+      this.showPath(d.id);
       this.goals.set(d.id, {
         room: r.room.id,
         x,
@@ -5160,7 +5163,11 @@ export class RoomScene {
             key,
             pts: d.from ? this.wayTo(d.from, { x: gx, floor: r.room.floor }) : null,
           };
-        if (d.trail.pts) this.trace(d.trail.pts, 0.5, 0);
+        if (d.trail.pts)
+          this.trace(
+            d.trail.pts.map((q) => ({ x: q.x, y: floorY(q.floor) })),
+            0.5,
+          );
         this.goalAt(d.id, gx, r.room.floor, this.goalIconFor(d.id, r.room), 0, 0.55, true);
       }
     }
@@ -5175,31 +5182,58 @@ export class RoomScene {
     return way ? [{ x: from.x, floor: from.floor }, ...way] : null;
   }
 
+  /** Enseña unos segundos el camino de alguien que va a su banderín (o lo vuelve a empezar). */
+  private showPath(id: string): void {
+    this.paths = this.paths.filter((p) => p.id !== id);
+    this.paths.push({ id, t0: this.t });
+  }
+
+  /** El banderín (de quién) que hay bajo un punto de la pantalla, si hay. */
+  private goalHit(cssX: number, cssY: number): string | null {
+    const { camera } = this;
+    const v: View = { px: camera.px, py: camera.py, vw: camera.vw, vh: camera.vh };
+    const x = cssX / camera.zoom;
+    const y = cssY / camera.zoom;
+    for (const [id, g] of this.goals) {
+      if (g.out !== undefined) continue;
+      const p = project(v, g.x, floorY(g.floor), WALK_Z);
+      const b = goalBox(p.x, p.y);
+      if (x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h) return id;
+    }
+    return null;
+  }
+
+  /** Tocar un banderín: vuelve a enseñar el camino de quien va hacia él. */
+  private tapGoal(cssX: number, cssY: number): boolean {
+    const id = this.goalHit(cssX, cssY);
+    if (!id) return false;
+    this.showPath(id);
+    this.cb.onSound?.('click', 0.5);
+    return true;
+  }
+
   /**
-   * Los caminos de quien se ha mandado a un sitio: un rato enteros y luego se van borrando desde
-   * donde salió hacia el banderín (como si se lo comiera quien va andando) y apagando.
+   * Los caminos de quien va a su banderín: lo que le queda por andar, desde sus pies (se acorta
+   * según avanza), un rato y luego se apaga. Si ha llegado o ya no va, se quita.
    */
   private trails(): void {
-    this.paths = this.paths.filter((p) => this.t - p.t0 < TRAIL_LIFE);
+    this.paths = this.paths.filter((p) => this.t - p.t0 < TRAIL_LIFE && this.goals.has(p.id));
     for (const p of this.paths) {
+      const pts = this.crowd.pathOf(p.id);
+      if (!pts) continue;
       const k = (this.t - p.t0) / TRAIL_LIFE;
-      const cut = k < 0.45 ? 0 : (k - 0.45) / 0.55;
-      this.trace(p.pts, k < 0.75 ? 1 : 1 - (k - 0.75) / 0.25, cut);
+      this.trace(pts, k < 0.7 ? 1 : 1 - (k - 0.7) / 0.3);
     }
   }
 
   /**
-   * Un camino punteado por el suelo (al paso de la gente), con los puntos que avanzan hacia el
-   * final; `cut` (0–1): lo que ya se ha borrado desde el principio.
+   * Un camino punteado por el suelo (al paso de la gente; pies: x e y en el plano de corte), con
+   * los puntos que avanzan hacia el final.
    */
-  private trace(pts: Place[], alpha: number, cut: number): void {
+  private trace(pts: { x: number; y: number }[], alpha: number): void {
     const { topCtx: ctx, camera } = this;
     const v: View = { px: camera.px, py: camera.py, vw: camera.vw, vh: camera.vh };
-    const sp = pts.map((q) => project(v, q.x, floorY(q.floor), WALK_Z));
-    let total = 0;
-    for (let k = 1; k < sp.length; k++)
-      total += Math.hypot(sp[k]!.x - sp[k - 1]!.x, sp[k]!.y - sp[k - 1]!.y);
-    const from = total * cut;
+    const sp = pts.map((q) => project(v, q.x, q.y, WALK_Z));
     const shift = Math.floor(this.t * 14) % 6;
     ctx.save();
     ctx.globalAlpha = Math.max(0, alpha);
@@ -5210,7 +5244,7 @@ export class RoomScene {
       const len = Math.hypot(b.x - a.x, b.y - a.y);
       for (let d = 0; d < len; d++) {
         const at = walked + d;
-        if (at < from || (at - shift + 6) % 6 >= 3) continue;
+        if ((at - shift + 6) % 6 >= 3) continue;
         const x = Math.round(a.x + ((b.x - a.x) * d) / len);
         const y = Math.round(a.y + ((b.y - a.y) * d) / len) - 1;
         ctx.fillStyle = P.black;
