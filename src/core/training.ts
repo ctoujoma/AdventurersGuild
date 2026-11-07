@@ -6,7 +6,7 @@
  * atributo principal de su clase). Las habilidades suben solas, según lo que pese ese atributo en
  * la clase.
  */
-import { TRAINS } from '../data/rooms';
+import { ROOMS, TRAINS } from '../data/rooms';
 import {
   TRAIN_CAP,
   TRAIN_COST_BASE,
@@ -19,7 +19,7 @@ import { MAIN_ATTR } from './resolve';
 import type { DawnEvent, GameState, Hero, Room } from './model';
 import { SKILLS, skill, type AttrId, type SkillId } from './party';
 import { active } from './rooms';
-import { shiftShare, shiftStart, slotsOf, workedIn } from './workers';
+import { assign, shiftShare, shiftStart, slotsOf, workedIn } from './workers';
 
 export const ATTR_NAMES: Record<AttrId, string> = { F: 'Fuerza', D: 'Destreza', M: 'Mente' };
 
@@ -107,13 +107,38 @@ export function skillGain(h: Hero, a: AttrId): Partial<Record<SkillId, number>> 
 export const gainText = (g: Partial<Record<SkillId, number>>) =>
   (Object.entries(g) as [SkillId, number][]).map(([k, n]) => `${k} +${n}`).join(', ');
 
-/** La noche de quien entrena: suma el progreso del día y, si lo completa, sube un punto. */
+/** Quien sigue en una sala de entrenamiento sin poder subir más (para avisar en directo). */
+export function cappedTrainees(
+  s: GameState,
+): { hero: Hero; room: Room; attr: AttrId; by: 'sala' | 'nivel' }[] {
+  const out: { hero: Hero; room: Room; attr: AttrId; by: 'sala' | 'nivel' }[] = [];
+  for (const h of s.heroes) {
+    const t = trainingOf(s, h);
+    if (!t) continue;
+    const { cap, by } = capFor(h, t.room);
+    if (h.attrs[t.attr] >= cap) out.push({ hero: h, room: t.room, attr: t.attr, by });
+  }
+  return out;
+}
+
+/** «Bruna deja la sala de armas: ya no aprende más Fuerza ahí. Para seguir, …» */
+export const capLeaveText = (h: Hero, r: Room, a: AttrId, by: 'sala' | 'nivel') =>
+  `${h.name} deja la ${ROOMS[r.type].name.toLowerCase()}: ya no aprende más ${ATTR_NAMES[a]} ahí. ${capHint(by)}`;
+
+/**
+ * La noche de quien entrena: suma el progreso del día y, si lo completa, sube un punto. Quien
+ * llega al tope (o ya estaba en él) deja la sala y se va a descansar, con un aviso.
+ */
 export function stepTraining(s: GameState, events: DawnEvent[]): void {
   for (const h of s.heroes) {
     const t = trainingOf(s, h);
     if (!t) continue;
     const { cap, by } = capFor(h, t.room);
-    if (h.attrs[t.attr] >= cap) continue;
+    if (h.attrs[t.attr] >= cap) {
+      assign(s, h.id, null);
+      events.push({ t: capLeaveText(h, t.room, t.attr, by), k: 'warn' });
+      continue;
+    }
     const train = (h.train ??= {});
     // Solo la parte del día que ha estado allí (si llegó a media jornada, menos).
     let p = (train[t.attr] ?? 0) + trainRate(t.room) * shiftShare(h);
@@ -122,12 +147,15 @@ export function stepTraining(s: GameState, events: DawnEvent[]): void {
       const gain = gainText(skillGain(h, t.attr));
       h.attrs[t.attr]++;
       h.history.push(`Día ${s.day - 1} · Entrenando: ${ATTR_NAMES[t.attr]} ${h.attrs[t.attr]}`);
-      const top = h.attrs[t.attr] >= cap;
       events.push({
-        t: `${h.name} ha entrenado: ${ATTR_NAMES[t.attr]} ${h.attrs[t.attr]}${gain ? ` (${gain})` : ''}.${top ? ` ${capHint(by)}` : ''}`,
+        t: `${h.name} ha entrenado: ${ATTR_NAMES[t.attr]} ${h.attrs[t.attr]}${gain ? ` (${gain})` : ''}.`,
         k: 'good',
       });
     }
     train[t.attr] = h.attrs[t.attr] >= cap ? 0 : p;
+    if (h.attrs[t.attr] >= cap) {
+      assign(s, h.id, null);
+      events.push({ t: capLeaveText(h, t.room, t.attr, by), k: 'warn' });
+    }
   }
 }
