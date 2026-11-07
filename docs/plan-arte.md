@@ -72,7 +72,14 @@ npm run build`.
         la primera vez), también de noche. El cielo, blanquecino; la luz, algo más clara y fría;
         el humo de las chimeneas, más espeso; sin luciérnagas. Capturas en
         `capturas/clima/fase3/`.
-  - [ ] 4. Viento. — [ ] 5. Tormenta.
+  - [x] 4. Viento: tipo de día nuevo «viento» (rachas que suben y bajan). Con el viento que
+        haga: la hierba se agita más y se tumba (`gust`); los árboles del patio se mecen
+        (`uSway` en el vértice, en píxeles enteros: lo de arriba se corre, lo de abajo no); el
+        humo de las chimeneas se tumba (`Particles.wind`) y ya se ve desde fuera; el rótulo se
+        balancea solo con las rachas; cruzan hojas por el patio (no por dentro de las salas); el
+        sonido del viento sube. La lluvia y la nieve ya se inclinaban con él. GIF en
+        `capturas/clima/fase4/`.
+  - [ ] 5. Tormenta.
 
 - [x] **Volumen con grosor** (`thick` en `salas/kit.ts`, `volume` en `RoomScene.ts`): lo suelto
       por la sala tiene cuerpo de unos píxeles hacia el fondo (antes, solo lo empotrado, hasta

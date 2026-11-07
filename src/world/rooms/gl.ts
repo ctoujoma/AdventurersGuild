@@ -66,10 +66,14 @@ const PALETTE = [...new Set<string>(Object.values(P))].filter((c) => !OFF.has(c)
 const SURFACE_VERT = /* glsl */ `
   uniform vec2 uUvOffset;
   uniform vec2 uUvScale;
+  // El viento (árboles): cuánto se corre lo de arriba, en píxeles del mundo (lo de abajo, nada).
+  uniform float uSway;
   varying vec2 vUv;
   void main() {
     vUv = uUvOffset + uv * uUvScale;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    vec3 p = position;
+    p.x += uSway * uv.y;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
   }
 `;
 
@@ -719,6 +723,7 @@ export class Look {
           uRelief: { value: relief ? this.own(reliefTexture(b, relief)) : NO_DEPTH },
           uHasRelief: { value: relief ? 1 : 0 },
           uUvOffset: { value: new Vector2(0, 0) },
+          uSway: { value: 0 },
           uUvScale: { value: new Vector2((o.repeat ?? 1) / (o.frames ?? 1), 1) },
         },
         vertexShader: SURFACE_VERT,
@@ -736,6 +741,7 @@ export class Look {
         uniforms: {
           map: { value: map },
           uUvOffset: { value: new Vector2(0, 0) },
+          uSway: { value: 0 },
           uUvScale: { value: new Vector2(1 / frames, 1) },
           uFade: { value: 1 },
         },
@@ -757,6 +763,7 @@ export class Look {
           uColor: { value: new Vector3() },
           uSize: { value: size },
           uUvOffset: { value: new Vector2(0, 0) },
+          uSway: { value: 0 },
           uUvScale: { value: new Vector2(1, 1) },
         },
         vertexShader: SURFACE_VERT,

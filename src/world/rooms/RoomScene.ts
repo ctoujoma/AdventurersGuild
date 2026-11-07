@@ -546,6 +546,9 @@ export class RoomScene {
   private rainScene = new Scene();
   /** Las gotas de los cristales de las ventanas del fondo. */
   private glass: Mesh[] = [];
+  /** Los árboles del patio que mece el viento: su uniforme, dónde están y lo altos que son. */
+  private swayers: { u: { value: number }; x: number; k: number; seed: number }[] = [];
+  private leafT = 0;
   private topLive = false;
   private sky = new Sky();
   private layout: RoomsLayout | null = null;
@@ -1721,6 +1724,7 @@ export class RoomScene {
     this.flames = [];
     this.sunbeams = [];
     this.glass = [];
+    this.swayers = [];
     this.grass = [];
     this.styled = [];
     this.emitters = [];
@@ -2614,13 +2618,21 @@ export class RoomScene {
       this.figure(classic, a, x, GROUND, depth, OUTDOOR, 1);
       this.figure(mood, b, x, GROUND, depth, OUTDOOR, 1);
     };
-    for (const t of yardTrees(L))
+    for (const t of yardTrees(L)) {
+      const n0 = classic.children.length;
+      const n1 = mood.children.length;
       both(
         t.conifer ? Prop.pine(`pino${t.x}`, t.h) : Prop.oakTree(`roble${t.x}`, t.h),
         t.conifer ? pineCnc(`pino${t.x}`, t.h) : oakCnc(`roble${t.x}`, t.h),
         t.x,
         t.depth,
       );
+      // Los árboles se mecen con el viento (ver `stepWind`): los altos, más.
+      for (const m of [...classic.children.slice(n0), ...mood.children.slice(n1)]) {
+        const u = m instanceof Mesh ? (m.material as ShaderMaterial).uniforms?.uSway : undefined;
+        if (u) this.swayers.push({ u, x: t.x, k: t.h / 80, seed: t.x * 0.37 });
+      }
+    }
     this.plantGrass(L, classic, mood);
     for (const bu of yardBushes(L)) both(Prop.bush(bu.seed), bushCnc(bu.seed), bu.x, bu.depth);
     for (let i = 0; i < Math.min(2, y.patio); i++) put(dummy(), px + 110 + i * 30, 40 + i * 16);
@@ -3311,6 +3323,54 @@ export class RoomScene {
     }
   }
 
+  /**
+   * El viento en `x` con el tiempo que hace: con calma, el de siempre; con viento, rachas más
+   * fuertes y la hierba tumbada hacia un lado.
+   */
+  private gust(x: number, t: number): number {
+    const W = this.moodLight ? this.wx.wind : 0.15;
+    const k = 0.6 + 1.6 * W;
+    return 0.35 + (this.windAt(x, t * (0.8 + W)) - 0.35) * k + Math.max(0, W - 0.3) * 1.2;
+  }
+
+  /**
+   * Lo que mueve el viento en cada fotograma: los árboles (en píxeles enteros, para que el
+   * dibujo no se emborrone), el humo, el rótulo y las hojas que cruzan el patio.
+   */
+  private stepWind(dt: number): void {
+    const W = this.moodLight ? this.wx.wind : 0;
+    const t = this.t;
+    for (const s of this.swayers) {
+      const g = this.gust(s.x, t + s.seed) - 0.35;
+      s.u.value = Math.round(g * (0.4 + 2.4 * W) * s.k);
+    }
+    this.particles.wind = W;
+    // El rótulo: con rachas, se balancea solo (empujones al ritmo del viento en su sitio).
+    const sg = this.sign;
+    if (sg && W > 0.3) {
+      const push = Math.max(0, this.gust(this.layout?.left ?? 0, t) - 0.6);
+      sg.spin += push * (W - 0.3) * 1.6 * dt;
+    }
+    // Hojas sueltas que cruzan el patio (no por dentro de las salas: ahí se acaban).
+    const L = this.layout;
+    if (!L) return;
+    if (W > 0.45) {
+      this.leafT -= dt;
+      if (this.leafT <= 0) {
+        this.leafT = (0.5 + Math.random()) / (1 + W * 4);
+        const c = this.camera;
+        this.particles.spawn('leaf', c.px - 4, c.py + Math.random() * c.vh * 0.8, {
+          vy: 4 + Math.random() * 10,
+          max: 12,
+        });
+      }
+    }
+    const open = this.coverFade > 0.5;
+    for (const p of this.particles.list)
+      if (p.kind === 'leaf' && (p.y > GROUND || (!open && p.x > L.left && p.x < L.right)))
+        p.life = 0;
+  }
+
   /** El viento en `x` (más o menos −1 a 2): rachas que cruzan de izquierda a derecha. */
   private windAt(x: number, t: number): number {
     return (
@@ -3819,6 +3879,7 @@ export class RoomScene {
         );
     this.incidents.update(w, this.wt);
     this.edgePan(dt);
+    this.stepWind(dt);
     this.swingSign(dt);
     if (this.marker && this.t > this.marker.until) this.marker = null;
     this.camera.update(dt);
@@ -4160,7 +4221,7 @@ export class RoomScene {
     if (gt !== this.grassTick) {
       this.grassTick = gt;
       for (const gr of this.grass) {
-        const w = this.windAt(gr.x, t) + (gr.seed - 0.5) * 0.4;
+        const w = this.gust(gr.x, t) + (gr.seed - 0.5) * 0.4;
         const f = w < -0.4 ? 0 : w < 0.35 ? 1 : w < 1.05 ? 2 : 3;
         const u = (gr.m.material as ShaderMaterial).uniforms.uUvOffset!.value;
         u.x = f / GRASS_FRAMES;
@@ -4232,7 +4293,7 @@ export class RoomScene {
         this.hotPieces();
         this.particles.draw(ctx, view.px, view.py, t);
         this.floatUp();
-      }
+      } else this.particles.draw(ctx, view.px, view.py, t, ['chimney', 'leaf']);
       if (this.hover) this.brackets(this.hover.rect);
       if (this.hoverProp) this.brackets(this.propRect(this.hoverProp, view));
       for (const id of [this.hoverHero, this.marker?.id]) {

@@ -82,6 +82,8 @@ class AudioEngine {
   private crickets!: GainNode;
   /** La lluvia: un ruido siseante y su filtro (cerrado mirando dentro de las salas). */
   private rainGain?: GainNode;
+  /** El viento de fondo: sube con el que hace. */
+  private windGain?: GainNode;
   private rainLp?: BiquadFilterNode;
   private noise!: AudioBuffer;
   private strings = new Map<number, AudioBuffer>();
@@ -444,6 +446,12 @@ class AudioEngine {
     const now = this.ctx.currentTime;
     this.rainGain.gain.setTargetAtTime(w.rain * 0.22 * (0.45 + 0.55 * w.outside), now, 0.6);
     this.rainLp.frequency.setTargetAtTime(900 + 4200 * w.outside, now, 0.4);
+    // El viento: un susurro con calma; con rachas, un soplo que se oye (menos mirando dentro).
+    this.windGain?.gain.setTargetAtTime(
+      0.02 + Math.max(0, w.wind - 0.2) * 0.16 * (0.5 + 0.5 * w.outside),
+      now,
+      0.8,
+    );
     // Con lluvia, los grillos se callan.
     this.crickets.gain.setTargetAtTime(0.02 * (1 - Math.min(1, w.rain * 2)), now, 1);
   }
@@ -496,6 +504,7 @@ class AudioEngine {
     wf.type = 'lowpass';
     wf.frequency.value = 420;
     const wg = this.gain(0.025, this.ambientBus);
+    this.windGain = wg;
     const lfo = ctx.createOscillator();
     lfo.frequency.value = 0.07;
     const lfoAmt = this.gain(0.018);
