@@ -403,10 +403,10 @@ const SHAFT_FRAG = /* glsl */ `
     float sp = 0.5 + fract(sin(col * 12.9898 + uSeed) * 43758.5453) * 1.3;
     vec2 px = floor(vec2(gp.x + sin(uTime * 0.27 + col * 1.7) * 1.2, gp.y - uTime * sp));
     float seed = fract(sin(dot(px + uSeed, vec2(41.31, 289.17))) * 15731.743);
-    float tw = smoothstep(0.0, 0.6, sin(uTime * 0.7 + seed * 60.0));
-    float mote = step(0.94, seed) * tw * edge * min(1.0, uK * 2.0);
+    float tw = smoothstep(0.2, 0.9, sin(uTime * 0.7 + seed * 60.0));
+    float mote = step(0.975, seed) * tw * edge * min(1.0, uK * 2.0);
     if (i <= 0.0 && mote < 0.1) discard;
-    gl_FragColor = vec4(uColor * (max(i, 0.0) * 0.5 + mote * 0.9), 1.0);
+    gl_FragColor = vec4(uColor * (max(i, 0.0) * 0.5 + mote * 0.45), 1.0);
   }
 `;
 
