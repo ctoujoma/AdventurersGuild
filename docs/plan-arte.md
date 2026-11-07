@@ -108,6 +108,11 @@ npm run build`.
   - [x] 7. Detalles sueltos, fijos por partida (la semilla, `pickDetails`), en los huecos de la
         planta baja libres de ventanas y puerta: hiedra en una esquina, leña bajo un tejadillo,
         la bajante con su tonel de lluvia y una escalera apoyada (no siempre salen todos).
+  - [x] Pared continua (el usuario: «sigue viéndose las paredes seccionadas, con hueco… y los
+        suelos»): la tapa cubre toda la silueta del edificio con la pared de fuera, también el
+        grueso de los muros y los forjados; en cada forjado, una viga corrida maciza (o una
+        cornisa de piedra en piedra, pizarra y ladrillo) con su sombra, y cantoneros (o sillares
+        de esquina) en las esquinas.
   - [ ] 8. Resto de materiales.
         Capturas en `capturas/fachada-envejecida/`.
 

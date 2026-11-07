@@ -10,7 +10,7 @@ import type { PixelBuffer } from '../../art/pixel';
 import { step } from './envejecer';
 
 /** Oscurece un escalón lo ya pintado (la sombra de algo que sale de la pared). */
-function shade(b: PixelBuffer, x: number, y: number) {
+export function shadeAt(b: PixelBuffer, x: number, y: number) {
   if (!b.inside(x, y)) return;
   const i = y * b.w + x;
   const c = b.data[i]!;
@@ -42,10 +42,10 @@ export function beamEnds(
       const bh = h + 2;
       // La sombra: debajo (dos filas) y a la derecha (una columna), en la pared.
       for (let i = 1; i <= w + 1; i++) {
-        shade(b, xx + i, top + bh);
-        shade(b, xx + i, top + bh + 1);
+        shadeAt(b, xx + i, top + bh);
+        shadeAt(b, xx + i, top + bh + 1);
       }
-      for (let j = 1; j < bh; j++) shade(b, xx + w, top + j);
+      for (let j = 1; j < bh; j++) shadeAt(b, xx + w, top + j);
       b.level = 6;
       b.rect(xx, top, w, bh, P.rust);
       b.hline(xx, top, w, P.oak);
@@ -113,7 +113,7 @@ export function woodpile(b: PixelBuffer, x: number, ground: number, rng: Rng): v
   const r = 3;
   // El tejadillo: tablas inclinadas sobre dos palos, y su sombra en la pared.
   const roofY = ground - rows * 6 - 9;
-  for (let i = 0; i < w + 6; i++) for (let j = 1; j <= 3; j++) shade(b, x - 3 + i, roofY + 2 + j);
+  for (let i = 0; i < w + 6; i++) for (let j = 1; j <= 3; j++) shadeAt(b, x - 3 + i, roofY + 2 + j);
   b.level = 4;
   b.vline(x - 2, roofY + 2, ground - roofY - 2, P.bark);
   b.vline(x + w + 1, roofY + 2, ground - roofY - 2, P.bark);
@@ -159,7 +159,7 @@ export function rainBarrel(b: PixelBuffer, x: number, top: number, ground: numbe
     b.set(x, y, P.slate);
     b.set(x + 1, y, P.slate);
     b.set(x + 2, y, P.navy);
-    shade(b, x + 3, y);
+    shadeAt(b, x + 3, y);
     if ((y - top) % 22 === 10) {
       b.hline(x - 2, y, 6, P.navy);
     }
@@ -168,7 +168,7 @@ export function rainBarrel(b: PixelBuffer, x: number, top: number, ground: numbe
   b.set(x - 1, by - 1, P.slate);
   b.set(x, by - 2, P.slate);
   // La sombra del tonel en la pared.
-  for (let j = 2; j < bh; j++) shade(b, bx + bw, by + j);
+  for (let j = 2; j < bh; j++) shadeAt(b, bx + bw, by + j);
   b.level = 5;
   for (let j = 0; j < bh; j++) {
     // Algo más ancho en medio (la panza).
@@ -193,13 +193,13 @@ export function ladder(b: PixelBuffer, x: number, ground: number, h: number): vo
     const off = Math.round((lean * j) / h);
     const yy = ground - 1 - j;
     // La sombra a la derecha de cada larguero.
-    shade(b, x + off + 1, yy);
-    shade(b, x + off + w + 1, yy);
+    shadeAt(b, x + off + 1, yy);
+    shadeAt(b, x + off + w + 1, yy);
     b.set(x + off, yy, P.oak);
     b.set(x + off + w, yy, P.rust);
     if (j % 6 === 3) {
       b.hline(x + off + 1, yy, w - 1, P.clay);
-      for (let i = 1; i < w; i++) shade(b, x + off + i, yy + 1);
+      for (let i = 1; i < w; i++) shadeAt(b, x + off + i, yy + 1);
     }
   }
   b.level = 0;
