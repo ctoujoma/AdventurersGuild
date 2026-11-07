@@ -210,23 +210,34 @@ function patch(b: PixelBuffer, x: number, y: number, w: number, h: number, rng: 
 
 /** Tonos del yeso de cada paño: unos más blancos, otros tostados por el sol o el humo. */
 const LIME: readonly (readonly [string, string, string])[] = [
+  [P.skin, P.sand, P.sand],
   [P.skinS, P.skin, P.sand],
-  [P.skinS, P.sand, P.white],
   [P.clay, P.skinS, P.skin],
-  [P.skinS, P.skin, P.skin],
+  [P.skin, P.sand, P.white],
 ];
 
 /** Entramado: postes y carreras de roble con yeso entre medias; cada paño, a su manera. */
 function timberFace(b: PixelBuffer, x: number, y: number, w: number, h: number, seed: string) {
   const rng = new Rng(`entramado-${seed}`);
   const rails: number[] = [y];
-  for (let ry = y + 26 + rng.int(0, 8); ry < y + h - 6; ry += 28 + rng.int(0, 8)) rails.push(ry);
+  for (let ry = y + 28 + rng.int(0, 10); ry < y + h - 8; ry += 30 + rng.int(0, 12)) rails.push(ry);
   rails.push(y + h);
-  const posts: number[] = [x];
-  for (let px = x + 16 + rng.int(0, 10); px < x + w - 8; px += 16 + rng.int(0, 12)) posts.push(px);
-  posts.push(x + w);
+  // Los postes, de tramo en tramo (de carrera a carrera) y cada tramo con los suyos: así no sale
+  // una rejilla. Algún tramo con un poste que sigue al de abajo (los que cargan).
+  const tiers: number[][] = [];
+  for (let r = 0; r + 1 < rails.length; r++) {
+    const below = tiers[r - 1] ?? [];
+    const posts: number[] = [x];
+    for (let px = x + 18 + rng.int(0, 14); px < x + w - 10; px += 20 + rng.int(0, 18)) {
+      const keep = below.find((q) => Math.abs(q - px) < 8);
+      posts.push(keep !== undefined && rng.chance(0.6) ? keep : px);
+    }
+    posts.push(x + w);
+    tiers.push([...new Set(posts)].sort((a, c) => a - c));
+  }
   // Los paños: yeso con su tono, una sombra junto a la madera de arriba y alguna mancha.
-  for (let r = 0; r + 1 < rails.length; r++)
+  for (let r = 0; r + 1 < rails.length; r++) {
+    const posts = tiers[r]!;
     for (let c = 0; c + 1 < posts.length; c++) {
       const x0 = posts[c]!;
       const x1 = posts[c + 1]!;
@@ -235,19 +246,20 @@ function timberFace(b: PixelBuffer, x: number, y: number, w: number, h: number, 
       const [dk, mid, lt] =
         LIME[
           rng.weighted([
-            [0, 4],
+            [0, 6],
             [1, 2],
-            [2, 1],
-            [3, 2],
+            [2, 0.5],
+            [3, 1],
           ] as const)
         ]!;
       b.level = 0;
       b.rect(x0, y0, x1 - x0, y1 - y0, mid);
+      // Pocas motas (de lejos, muchas se leen como un granulado).
       for (let yy = y0; yy < y1; yy++)
         for (let xx = x0; xx < x1; xx++) {
           const n = hash(xx, yy);
-          if (n > 0.97) b.set(xx, yy, dk);
-          else if (n < 0.04) b.set(xx, yy, lt);
+          if (n > 0.99) b.set(xx, yy, dk);
+          else if (n < 0.012) b.set(xx, yy, lt);
         }
       // Sombra bajo la carrera y junto al poste de la izquierda.
       b.hline(x0, y0 + 3, x1 - x0, dk);
@@ -267,11 +279,11 @@ function timberFace(b: PixelBuffer, x: number, y: number, w: number, h: number, 
       }
       // La riostra del paño.
       const kind = rng.weighted([
-        ['none', 5],
+        ['none', 6],
         ['/', 2],
         ['\\', 2],
-        ['x', 1.2],
-        ['v', 1],
+        ['x', 0.8],
+        ['v', 0.8],
       ] as const);
       const brace = (ax: number, ay: number, bx: number, by: number) => {
         b.level = 3;
@@ -292,22 +304,29 @@ function timberFace(b: PixelBuffer, x: number, y: number, w: number, h: number, 
         brace(mx, iy1, ix1 - 2, iy0);
       }
     }
+  }
   // La madera, encima: postes y carreras con su luz, su veta y las clavijas en los cruces.
   b.level = 4;
-  for (const px of posts) {
-    if (px >= x + w) continue;
-    b.rect(px, y, 3, h, P.bark);
-    b.vline(px, y, h, P.rust);
-    b.vline(px + 2, y, h, P.plum);
-    for (let yy = y; yy < y + h; yy++) if (hash(px, yy, 3) < 0.12) b.set(px + 1, yy, P.plum);
+  for (let r = 0; r + 1 < rails.length; r++) {
+    const y0 = rails[r]!;
+    const th = rails[r + 1]! - y0;
+    for (const px of tiers[r]!) {
+      if (px >= x + w) continue;
+      b.rect(px, y0, 3, th, P.bark);
+      b.vline(px, y0, th, P.rust);
+      b.vline(px + 2, y0, th, P.plum);
+      for (let yy = y0; yy < y0 + th; yy++) if (hash(px, yy, 3) < 0.12) b.set(px + 1, yy, P.plum);
+    }
   }
-  for (const ry of rails) {
+  for (const [r, ry] of rails.entries()) {
     if (ry >= y + h) continue;
     b.rect(x, ry, w, 3, P.bark);
     b.hline(x, ry, w, P.rust);
     b.hline(x, ry + 2, w, P.plum);
     for (let xx = x; xx < x + w; xx++) if (hash(xx, ry, 5) < 0.12) b.set(xx, ry + 1, P.plum);
-    for (const px of posts) if (px < x + w) b.set(px + 1, ry + 1, P.black);
+    // Las clavijas, donde llega un poste (de arriba o de abajo).
+    for (const px of [...(tiers[r - 1] ?? []), ...(tiers[r] ?? [])])
+      if (px < x + w) b.set(px + 1, ry + 1, P.black);
   }
 }
 

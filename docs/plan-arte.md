@@ -113,8 +113,14 @@ npm run build`.
         grueso de los muros y los forjados; en cada forjado, una viga corrida maciza (o una
         cornisa de piedra en piedra, pizarra y ladrillo) con su sombra, y cantoneros (o sillares
         de esquina) en las esquinas.
-  - [ ] 8. Resto de materiales.
-        Capturas en `capturas/fachada-envejecida/`.
+  - [x] 8. Resto de materiales: cada uno envejece a su manera (`PROFILE` en `envejecer.ts`,
+        con un escalón nuevo, `grime`, que oscurece sin avivar el color): ladrillo, tapial y cal
+        se ensucian (antes salían manchas rojas, naranjas o lilas); piedra, pizarra y troncos,
+        menos paños oscuros (parecían siluetas). Entramado con postes de tramo en tramo (no una
+        rejilla), paños algo más anchos y yeso crema con pocas motas; ladrillo casi de un tono;
+        tapial con menos motas; la cal se cae en unos pocos rodales. Y la escalera entra en las
+        cajas de la sombra del edificio (`shadowBoxes`): su columna salía tramada.
+        Capturas en `capturas/fachada-envejecida/` (el repaso, en `repaso/`).
 
 - [x] **Volumen con grosor** (`thick` en `salas/kit.ts`, `volume` en `RoomScene.ts`): lo suelto
       por la sala tiene cuerpo de unos píxeles hacia el fondo (antes, solo lo empotrado, hasta

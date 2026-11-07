@@ -409,7 +409,7 @@ export function outerSide(
   if (walls) {
     wallFill(b, 0, 0, W, h, seed, walls);
     // Envejecido: paños y la humedad del pie (ver `envejecer.ts`).
-    ageWall(b, 0, 0, W, h, seed, { ground: h, top: -h });
+    ageWall(b, 0, 0, W, h, seed, { ground: h, top: -h, walls });
   } else if (theme === 'yeso') {
     plaster(b, 0, 0, W, h, seed, PLASTER);
     post(b, 0, 0, 3, h, WOOD_DARK);
@@ -801,7 +801,7 @@ function gable(
   const planks = new PixelBuffer(Math.ceil(x1 - x0) + 1, h + 3);
   wallFill(planks, 0, 0, planks.w, planks.h, `hastial${x0}`, look.walls);
   // Envejecido: paños y lo alto, pálido por el sol (ver `envejecer.ts`).
-  ageWall(planks, 0, 0, planks.w, planks.h, `hastial${x0}`, { top: 0 });
+  ageWall(planks, 0, 0, planks.w, planks.h, `hastial${x0}`, { top: 0, walls: look.walls });
   for (let y = Math.floor(base - h); y <= base + 2; y++)
     for (let x = Math.floor(x0); x <= x1; x++) {
       if (!inside(x, y, 0)) continue;
@@ -1255,6 +1255,7 @@ export function outsideFace(
   let top = 0;
   while (top < g && !b.data.subarray(top * b.w, (top + 1) * b.w).some((c) => c >>> 24)) top++;
   ageWall(b, 0, 0, b.w, g, 'fuera', {
+    walls: look.walls,
     ground: g,
     top,
     sills,
