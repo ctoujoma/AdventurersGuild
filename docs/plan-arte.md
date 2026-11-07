@@ -179,11 +179,22 @@ npm run build`.
         suelta el saco: sale despedido de la espalda, cae tumbado y abierto, las monedas saltan y
         se desparraman, y sube lo recuperado con su moneda. Los sacos se quedan hasta que acaba la
         noche. (`SACO=1` en `asalto.mjs` hace caer a uno con 40 de oro, para verlo.)
-  - [ ] 3. La marca de destino (ya está, ver «Que lo que pasa se vea
-        pasar», 6). — [ ] 4. Luz en lo oscuro (sin ella, en la bodega y el sótano apenas se ven los
-        gestos). — [ ] 5. El duelo del ladrón. — [ ] 6. La cámara lenta. — [ ] 7. La tira.
+  - [x] 3. La marca de destino: ya estaba (#127, ver «Que lo que pasa se vea pasar», 6): al
+        soltar a un héroe en el asalto en directo, el banderín con la espada y el camino.
+  - [x] 4. Luz en lo oscuro (`lights`, `drawTorches` en `raid.ts`; `raidLamps` en `RoomScene.ts`):
+        uno de cada tres bandidos (el primero siempre) lleva una antorcha en la mano de atrás, con
+        la llama que baila y alguna chispa. Es un foco de verdad (`RAID_TORCH_R`, cálido, con
+        parpadeo y halo) que le sigue y alumbra la sala en la que está y a quien pelea alrededor:
+        en la cámara del tesoro y el sótano ya se ve la pelea. Si cae, la antorcha queda en el
+        suelo, tumbada y alumbrando menos.
+  - [ ] 5. El duelo del ladrón. — [ ] 6. La cámara lenta. — [ ] 7. La tira.
   Capturas: `node tools/shots/asalto.mjs <carpeta>` (`LENTO=0.2` a cámara lenta, `RECORTE=480x300`
   solo el centro, `NIVEL` y `FUERZA` para que dure más). En `capturas/asaltos/`.
+
+- [ ] **Tarea aparte (a valorar más adelante, el usuario):** unificar los efectos de la pelea de
+      jefes (`world/battle.ts`: proyectiles y efectos dentro de la clase) y los del asalto
+      (`world/rooms/raidFx.ts`, una versión a escala de sala escrita aparte) en un módulo común,
+      para no tener el código repetido y que una mejora sirva para los dos.
 
 ## Estudio: estilo «Cast n Chill»
 

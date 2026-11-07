@@ -168,6 +168,8 @@ import { BACK, EYE, LIFT, eyeOf, frustum, pinShift, project, scaleAt, type View 
 const DAY_LENGTH = 720;
 /** Cámara lenta del asalto mientras se arrastra a alguien (parte del ritmo normal). */
 const RAID_SLOW = 0.3;
+/** Hasta dónde llega la luz de cada antorcha del asalto. */
+const RAID_TORCH_R = 95;
 /**
  * Terreno de más a cada lado del mundo: al fondo la perspectiva lo estrecha a la mitad y, con
  * el zoom más alejado y una esquina en el centro, la vista llega muy lejos.
@@ -818,6 +820,38 @@ export class RoomScene {
         tinyDigits(ctx, text, X, Y, color);
       }
     }
+  }
+
+  /**
+   * Las antorchas de los bandidos en el asalto: un fuego que les sigue y alumbra la sala en la
+   * que están (y a quien pelea alrededor). Es lo que deja ver la pelea en la bodega o el sótano.
+   */
+  private raidLamps(): Lamp[] {
+    const L = this.layout;
+    if (!this.raid || !L) return [];
+    return this.raid.lights().map((l) => {
+      const room = L.rooms.find(
+        ({ room: r, rect }) => r.floor === l.floor && l.x >= rect.x && l.x < rect.x + rect.w,
+      );
+      // Fuera (el patio y el camino): hasta donde llegue la luz.
+      const zone: Lamp['zone'] = room
+        ? this.zoneOf(room.rect)
+        : [l.x - 140, GROUND - (floorY(l.floor) + 12), l.x + 140, GROUND - (floorY(l.floor) - 140)];
+      const z = WALK_Z - 6;
+      return {
+        pos: new Vector3(l.x, GROUND - l.y, -z + 6),
+        glow: new Vector3(l.x, GROUND - l.y, -z),
+        r: RAID_TORCH_R,
+        color: [255, 168, 92],
+        power: 1.25 * l.power,
+        flicker: 0.35,
+        zone,
+        seed: l.seed,
+        fire: true,
+        deep: true,
+        halo: l.power < 1 ? 10 : 16,
+      };
+    });
   }
 
   /** Pone en sus salas los incidentes de ahora (y la luz del fuego) y quita los que acabaron. */
@@ -3634,7 +3668,7 @@ export class RoomScene {
     const x1 = view.px + view.vw + 40;
     const y0 = GROUND - (view.py + view.vh + 40);
     const y1 = GROUND - (view.py - 40);
-    const near = [...this.lamps, ...this.incidentLamps]
+    const near = [...this.lamps, ...this.incidentLamps, ...this.raidLamps()]
       .filter((l) => l.zone[2] > x0 && l.zone[0] < x1 && l.zone[3] > y0 && l.zone[1] < y1)
       .filter((l) => (!l.sun || sunLampK > 0.02) && (!l.night || nightK > 0.02))
       .sort(

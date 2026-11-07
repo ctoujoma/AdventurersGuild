@@ -77,6 +77,20 @@ interface Drop {
 const DROP_TIME = 0.45;
 /** Lo que tarda en caer quien recibe el golpe de gracia (como `FALL_TIME` en `crowd.ts`). */
 const LAND_TIME = 0.4 * RAID_SPEED;
+/** Lleva antorcha uno de cada tantos bandidos (el primero siempre). */
+const TORCH_EVERY = 3;
+
+/** Una luz de la pelea: la antorcha de un bandido (en alto o, si ha caído, en el suelo). */
+export interface RaidLight {
+  x: number;
+  y: number;
+  floor: number;
+  /** Fuerza (1 en alto; menos en el suelo). */
+  power: number;
+  /** Para que cada una parpadee a su aire. */
+  seed: number;
+}
+
 /** Las estrellas del aturdido, sobre los bandidos (los nuestros, mientras estén en el suelo). */
 const DAZE_TIME = 3;
 
@@ -95,6 +109,8 @@ export class RaidShow {
   private downAt = new Map<string, number>();
   /** Cosas para dentro de un rato (el golpe contra el suelo al acabar de caer). */
   private soon: { t: number; fn: () => void }[] = [];
+  /** Los bandidos que llevan antorcha. */
+  private torches: string[] = [];
   private door: { t0: number; dur: number; x: number } | null = null;
   private lock: { t0: number; dur: number; area: Area } | null = null;
   private lastHit = 0;
@@ -140,6 +156,8 @@ export class RaidShow {
       const { look, marks } = banditLook(BANDIT_TYPES[i % BANDIT_TYPES.length]!, i);
       this.slot.set(id, i);
       this.crowd.addBandit(id, look, marks, this.placeOf('fuera', id));
+      // Uno de cada tres lleva antorcha: es la luz de la pelea en las salas a oscuras.
+      if (i % TORCH_EVERY === 0) this.torches.push(id);
     });
     let k = 0;
     for (const id of Object.keys(plan.start)) if (!isBandit(id)) this.slot.set(id, k++);
@@ -193,6 +211,28 @@ export class RaidShow {
     return null;
   }
 
+  /** Las antorchas que siguen encendidas: dónde está la llama y cuánto alumbra. */
+  lights(): RaidLight[] {
+    const out: RaidLight[] = [];
+    for (const id of this.torches) {
+      const t = this.torchAt(id);
+      if (t) out.push({ x: t.x, y: t.y, floor: t.floor, power: t.down ? 0.6 : 1, seed: t.seed });
+    }
+    return out;
+  }
+
+  /** Dónde está la llama de una antorcha (en la mano, o en el suelo junto a quien la llevaba). */
+  private torchAt(id: string) {
+    const w = this.crowd.where(id);
+    if (!w) return null;
+    const seed = (this.slot.get(id) ?? 0) * 7 + 3;
+    const lie = this.crowd.lying(id);
+    if (w.down && lie)
+      return { x: w.x - lie.head * 9, y: w.y - 3, floor: w.floor, down: true, seed };
+    const dir = this.facing(id);
+    return { x: w.x - dir * 8, y: w.y - 25, floor: w.floor, down: false, seed, dir };
+  }
+
   /** Dónde mirar: el grupo de bandidos que sigue en pie (o null si ya no queda ninguno). */
   focus(): { x: number; y: number } | null {
     for (const id of this.slot.keys()) {
@@ -215,6 +255,9 @@ export class RaidShow {
     const due = this.soon.filter((x) => x.t <= this.t);
     this.soon = this.soon.filter((x) => x.t > this.t);
     for (const x of due) x.fn();
+    // Las antorchas sueltan alguna chispa.
+    if (Math.random() < dt * 6)
+      for (const l of this.lights()) if (l.power >= 1) this.hooks.burst('ember', l.x, l.y - 4, 1);
     this.brawl(dt);
     // La puerta: golpes y astillas mientras aguanta.
     if (this.door && Math.floor(this.t * 2.5) !== Math.floor((this.t - dt * RAID_SPEED) * 2.5)) {
@@ -249,6 +292,7 @@ export class RaidShow {
       sack(ctx, Math.round(w.x - px) + 3, Math.round(w.y - py) - 24, false);
     }
     this.drawDrops(ctx, px, py);
+    this.drawTorches(ctx, px, py);
     this.drawDazed(ctx, px, py);
     const bar = (cx: number, top: number, k: number, color: string) => {
       const W = 24;
@@ -606,6 +650,41 @@ export class RaidShow {
         tinyDigits(ctx, text, tx, ty, P.lemon);
         ctx.globalAlpha = 1;
       }
+    }
+  }
+
+  /**
+   * Las antorchas: el palo en la mano de atrás, en alto, con la llama que baila; en el suelo,
+   * tumbada y con la llama más baja.
+   */
+  private drawTorches(ctx: CanvasRenderingContext2D, px: number, py: number): void {
+    const dot = (x: number, y: number, c: string, w = 1, h = 1) => {
+      ctx.fillStyle = c;
+      ctx.fillRect(Math.round(x - px), Math.round(y - py), w, h);
+    };
+    for (const id of this.torches) {
+      const t = this.torchAt(id);
+      if (!t) continue;
+      const f = Math.floor(this.t * 9 + t.seed) % 3;
+      if (t.down) {
+        // Tumbada: el palo a lo largo del suelo y una llama baja.
+        dot(t.x - 4, t.y + 1, P.black, 7, 3);
+        dot(t.x - 3, t.y + 2, P.oak, 5, 1);
+        dot(t.x - 1, t.y - 1 - (f === 1 ? 1 : 0), P.orange, 2, 2);
+        dot(t.x - 1, t.y, P.lemon);
+        continue;
+      }
+      // En alto: el palo baja hasta la mano y la llama crece y mengua.
+      dot(t.x - 1, t.y + 2, P.black, 3, 9);
+      dot(t.x, t.y + 3, P.oak, 1, 7);
+      dot(t.x, t.y + 3, P.umber, 1, 1);
+      const h = 4 + (f === 2 ? 1 : 0);
+      const lean = f === 1 ? 1 : 0;
+      dot(t.x - 1, t.y + 3 - h, P.black, 4, h + 1);
+      dot(t.x - 1 + lean, t.y + 3 - h + 1, P.red, 2, h - 1);
+      dot(t.x, t.y + 3 - h + 1, P.orange, 2, h - 1);
+      dot(t.x, t.y + 3 - h + 2, P.lemon, 1, h - 2);
+      if (f === 0) dot(t.x + lean, t.y + 1 - h, P.orange);
     }
   }
 
