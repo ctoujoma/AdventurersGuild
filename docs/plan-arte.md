@@ -223,6 +223,10 @@ npm run build`.
         destellos. Ya va corriendo (lo del principal en `crowd.drop`), así que dura todo el
         camino. Sustituye a las cuatro esquinas provisionales (`headingMarks`, quitado); en el
         asalto en directo, el mismo banderín con la espada.
+  - [x] 6d. El camino, desde el héroe (el usuario): lo que le queda por andar (`Crowd.pathOf`,
+        desde sus pies, también a media escalera), así que arranca donde está y se acorta según
+        avanza. Tocar el banderín (`goalHit`, `goalBox`) lo vuelve a enseñar unos segundos
+        (también en el asalto en directo). Capturas: `camino-corriendo.png`, `camino-toque.png`.
   - [x] 6c. El color del banderín (el usuario): el de la ropa de quien va (`clothOf` en
         `art/heroes/hero.ts`): el de su clase u oficio (guerrero rojo, pícaro morado, mago azul,
         clérigo blanco, explorador verde…) o el de su tinte de la sastrería. Sobre tela clara, el
