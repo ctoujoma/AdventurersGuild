@@ -241,7 +241,7 @@ export class Sky {
         dusk: bufferCanvas(m.dusk),
         dawn: bufferCanvas(m.dawn),
         ...(() => {
-          const f = farForestCnc();
+          const f = farForestCnc({ day: m.right, night: m.night });
           return {
             woods: { day: bufferCanvas(f.day), night: bufferCanvas(f.night) },
             lake: {

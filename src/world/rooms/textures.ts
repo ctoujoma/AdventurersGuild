@@ -299,11 +299,16 @@ export function sideTex(
     b.rect(u0 - 3, y - DOOR_H - 4, u1 - u0 + 6, DOOR_H + 4, P.plum);
     b.rect(u0 - 2, y - DOOR_H - 2, u1 - u0 + 4, DOOR_H + 2, P.bark);
   }
-  // La puerta de la calle, cerrada; más fuerte cuanto más nivel tiene el recibidor. Se dibuja a
-  // media resolución y se ensancha (así mide lo mismo que antes).
+  // La puerta de la calle: aquí, el marco y el hueco oscuro; la hoja va aparte (`streetLeaf`) y
+  // se abre cuando pasa alguien (ver `swingDoors` en RoomScene.ts). A media resolución y
+  // ensanchada (así mide lo mismo que antes).
   if (front.length) {
     const half = new PixelBuffer(DEEP, h);
-    for (const f of front) streetDoor(half, 6, h - f * PITCH - 54, strength, seed);
+    for (const f of front) {
+      const y = h - f * PITCH - 54;
+      half.rect(6, y, 17, 54, strength > 0 ? P.plum : P.black);
+      half.rect(7, y + 2, 15, 52, '#1c140f');
+    }
     overHalf(b, half);
   }
   ambientOcclusion(b, 0, 0, W, h, 3, { top: true, bottom: true, left: false, right: true });
@@ -971,4 +976,23 @@ export function outsideFace(
   for (const s of stairCells(L))
     if (s.floor >= 0) window(s.rect.x + s.rect.w / 2, s.rect.y + 30, 8, 14);
   return { buf: b, glass };
+}
+
+/** Dónde va la hoja de la puerta de la calle en la pared del recibidor (a lo hondo y de alto). */
+export const STREET_LEAF = { z0: 14, z1: 44, h: 52 } as const;
+
+/**
+ * La hoja de la puerta de la calle (más fuerte cuanto más nivel tiene el recibidor), a lo ancho
+ * de `STREET_LEAF` (de z0 a z1) y `STREET_LEAF.h` de alto.
+ */
+export function streetLeaf(strength: number, seed: string): PixelBuffer {
+  const half = new PixelBuffer(17, 54);
+  streetDoor(half, 0, 0, strength, seed);
+  const b = new PixelBuffer(STREET_LEAF.z1 - STREET_LEAF.z0, STREET_LEAF.h);
+  for (let y = 0; y < b.h; y++)
+    for (let x = 0; x < b.w; x++) {
+      const c = half.get(Math.min(16, 1 + Math.floor((x * 15) / b.w)), y + 2);
+      if (c) b.set(x, y, c);
+    }
+  return b;
 }
