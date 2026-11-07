@@ -39,3 +39,18 @@ se pueda mandarle a otra cosa desde el aviso. Si quedarse ahí aún le sirve de 
 no, proponer en el PR que se vaya a descansar solo.
 
 Si tocas `App.tsx` o `RoomScene.ts`, dilo en el PR (otros agentes también los tocan).
+
+## Hecho en el núcleo (agente principal, 7 de noviembre)
+
+- **Ropa (punto 2):** `dressStatus(s, heroId, dress)` en `core/crafting.ts` dice cómo está cada
+  opción: `ok` (con la `room` de la sastrería libre: se despacha `dressAt` con ella), `same`, `lock`
+  (con de dónde sale en `why`), `gold`, `none` (no hay sastrería), `away`, `sewing` (ya le están
+  cosiendo) y `busy` («La sastrería está con Bruna: acaba en 2 h», con `hoursLeft`). Las prendas no
+  tienen candado; los tintes sí. La acción `dress` (gratis, al momento) se queda solo para el modo
+  prueba: la ficha normal no debe usarla.
+- **Tope de entrenamiento (punto 3):** quien llega al tope **deja la sala al amanecer** y la carta lo
+  dice («Bruna deja la sala de armas: ya no aprende más Fuerza ahí. Para seguir, …»). Para el aviso
+  en directo, `cappedTrainees(s)` en `core/training.ts` da quién sigue en una sala sin poder subir
+  (con `by`: `sala` o `nivel`), y `capLeaveText` el texto. Falta en la interfaz: el aviso al llegar,
+  «Al máximo» en la ficha de la sala y el marcador en la escena; y no dejar soltar ahí a alguien que
+  ya está al tope (o avisarlo al soltar).

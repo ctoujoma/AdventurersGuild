@@ -41,6 +41,7 @@ import {
   VET_CAP,
   VET_LEVEL,
   VET_REST,
+  WORK_END,
   UNPAID_LIMIT,
   UNPAID_MORALE,
   SCHEDULE,
@@ -1124,6 +1125,12 @@ export const dayPart = (s: GameState) => Math.min(1, (s.clock ?? 0) / DAY_SECOND
 export const canClose = (s: GameState) => dayPart(s) >= DUSK;
 
 /** Avanza el reloj y entrega la caja que toque a esa hora (en entregas iguales). */
+/** Segundos de reloj que quedan de noche (0 si aún es de día o ya ha acabado el día). */
+export function nightLeft(s: GameState): number {
+  const clock = s.clock ?? 0;
+  return clock >= WORK_END * DAY_SECONDS ? Math.max(0, DAY_SECONDS - clock) : 0;
+}
+
 export function tick(state: GameState, to: number): GameState {
   const clock = Math.min(DAY_SECONDS, Math.max(state.clock ?? 0, to));
   if (clock === (state.clock ?? 0)) return state;

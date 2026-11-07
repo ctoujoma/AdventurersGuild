@@ -28,3 +28,14 @@ Los testers dicen que, ya avanzados, apenas llegan a pagar sueldos y no pueden m
   `docs/plan.md`).
 - No tocar los asaltos: su fuerza depende del oro (`notoriety`, `gold/40`), así que comprobar
   que no se disparan, y si lo hacen, decirlo.
+
+## Hecho (agente principal, 7 de noviembre)
+
+1. **El hueco:** el núcleo sí dejaba construir; el fallo era de la escena. En el modo obras, un hueco
+   vacío de una planta de arriba solo se marcaba como libre si tenía sala a los dos lados, y el de
+   la enfermería está en el borde: no salía marcado y tocarlo no hacía nada. Ahora también se marca
+   si tiene sala encima (`freeCells` en `world/rooms/works.ts`, con su test).
+2. **El oro:** en modo libre la paga de los encargos **bajaba con el rango** (×0,5 en cobre hasta
+   ×0,25 en oro y leyenda) mientras la nómina de los veteranos se disparaba. Ahora es ×0,5 en todos
+   los rangos (`FREE_PAY`) y la subida de sueldo por encima del nivel 5 es 4 × nivel en lugar de 5
+   (`levelRaise`). `npm run oro` da la cuenta por rango; las cifras, en el PR.

@@ -27,3 +27,10 @@ Recorrer cómo pasa el tiempo y apuntar en `docs/propuesta-tiempo.md` lo que no 
   cambiar (el día con el juego cerrado).
 
 Si toca el núcleo (`game.ts`, `balance.ts`) o `App.tsx`, decirlo en el PR.
+
+## Hecho (agente principal, 7 de noviembre)
+
+La auditoría y la propuesta están en [`../propuesta-tiempo.md`](../propuesta-tiempo.md), pendientes de
+que el usuario decida. Ya en el núcleo: `NIGHT_RUSH` (x8) y `nightLeft(s)`. Lo que falta, cuando se
+decida: el reloj de la noche en el núcleo (si se alarga) y, en la interfaz, el botón «Pasar la noche»
+en la barra del día (de noche, el reloj de `App.tsx` corre a `NIGHT_RUSH`).

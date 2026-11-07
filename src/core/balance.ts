@@ -177,6 +177,11 @@ export const DUSK = 0.8;
  */
 export const WORK_START = 0.05;
 export const WORK_END = 0.82;
+/**
+ * La noche: desde que se van a dormir (`WORK_END`) hasta que acaba el día. «Pasar la noche»
+ * hace correr el reloj `NIGHT_RUSH` veces más deprisa hasta el amanecer (ver `nightLeft`).
+ */
+export const NIGHT_RUSH = 8;
 /** Entregas en que llega la caja del día, repartidas hasta el anochecer. */
 export const DELIVERIES = 8;
 /** Trofeos: cuántos caben en la pared del salón, el Atractivo de cada uno y la fama al conseguirlos. */
@@ -327,16 +332,17 @@ export const RAISE_AMOUNT = 3;
 export const RAISE_MORALE = 25;
 
 // ---------- Veteranos y modo libre ----------
-/** Lo que sube el salario al alcanzar un nivel: más cuanto más alto. */
-/** Subida de sueldo al subir de nivel: los veteranos (nivel 6 o más) piden bastante más. */
-export const levelRaise = (lvl: number) => (lvl <= 5 ? 2 * lvl : 5 * lvl);
+/**
+ * Subida de sueldo al subir de nivel: los veteranos (nivel 6 o más) piden bastante más (4 por
+ * nivel; antes 5, y con plantillas grandes la nómina se comía lo que pagan los encargos).
+ */
+export const levelRaise = (lvl: number) => (lvl <= 5 ? 2 * lvl : 4 * lvl);
 /**
  * Modo libre: hay otros gremios pujando por los encargos y la comarca paga menos que en los
- * apuros de la deuda (multiplicador en cobre). Con cada rango el gremio cobra más por su fama
- * (`FREE_PAY_RANK` más por rango), para que los sueldos de los veteranos no se coman la caja.
+ * apuros de la deuda. Es lo mismo en todos los rangos (antes bajaba con el rango hasta la mitad
+ * y, en oro y leyenda, los sueldos de los veteranos se comían la caja): `npm run oro`.
  */
 export const FREE_PAY = 0.5;
-export const FREE_PAY_RANK = 0.1;
 /** Caché de veterano: al llegar a estos niveles piden un plus fijo. */
 export const CACHE: Readonly<Record<number, number>> = { 5: 15, 8: 30 };
 export const CACHE_REFUSE_MORALE = -25;
