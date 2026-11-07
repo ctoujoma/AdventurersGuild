@@ -97,7 +97,13 @@ npm run build`.
   - [x] 2. Tablas de 4 a 9 sin ritmo, tapajuntas a saltos, menos tablas nuevas y algún remiendo
         en horizontal o diagonal (`patch` en `muros.ts`).
   - [x] 3. Clavos oscuros y sueltos (no en filas).
-  - [ ] 4. Zócalo. — [ ] 5. Ventanas. — [ ] 6. Vigas. — [ ] 7. Detalles. — [ ] 8. Resto.
+  - [x] 4. Zócalo de piedra en la planta baja de la tapa (`PLINTH` en `textures.ts`): tres
+        hiladas con musgo abajo y una albardilla que sale. (Los costados, aún sin él.)
+  - [x] 5. Ventanas de la tapa: tres modelos (cuarterones, arco con clave y contraventanas
+        pintadas de verde, azul o granate; alguna cerrada), uno por sala; con dintel, alféizar y
+        a veces jardinera con flores; las del salón, más grandes (22 × 28, de seis paños). El
+        cristal encendido de noche sigue la forma de cada una.
+  - [ ] 6. Vigas. — [ ] 7. Detalles. — [ ] 8. Resto.
         Capturas en `capturas/fachada-envejecida/`.
 
 - [x] **Volumen con grosor** (`thick` en `salas/kit.ts`, `volume` en `RoomScene.ts`): lo suelto

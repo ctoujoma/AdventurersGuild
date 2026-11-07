@@ -969,38 +969,161 @@ export function outsideFace(
   wallFill(wall, 0, 0, b.w, g + SLAB, 'fuera', look.walls);
   const dirt = new PixelBuffer(b.w, b.h);
   earth(dirt, 0, g, b.w, b.h - g);
+  // El zócalo de piedra de la planta baja: tres hiladas con musgo abajo y una albardilla encima
+  // que sale un poco (la madera no toca la tierra).
+  const plinth = new PixelBuffer(b.w, b.h);
+  stoneWall(plinth, 0, g - PLINTH + 2, b.w, PLINTH - 2, 'zocalo', {
+    ramp: [P.black, P.navy, P.slate, P.steel, P.fog],
+    bw: 13,
+    bh: 6,
+    moss: 7,
+  });
+  plinth.level = 4;
+  plinth.hline(0, g - PLINTH, b.w, P.fog);
+  plinth.hline(0, g - PLINTH + 1, b.w, P.slate);
+  for (let x = 0; x < b.w; x += 9 + (x % 5)) plinth.set(x, g - PLINTH + 1, P.navy);
+  plinth.level = 0;
+  // Bajo la albardilla, su sombra en la pared.
   const fill = (r: Rect) => {
     const x0 = Math.round(r.x - ox);
     const y0 = Math.round(r.y - oy);
     for (let y = y0; y < y0 + r.h; y++)
       for (let x = x0; x < x0 + r.w; x++) {
         if (!b.inside(x, y) || b.get(x, y)) continue;
-        const src = y < g ? wall : dirt;
+        const src = y >= g ? dirt : y >= g - PLINTH ? plinth : wall;
         b.level = src.reliefAt(x, y);
         b.set(x, y, src.get(x, y));
       }
     b.level = 0;
   };
   const sills: { x: number; y: number; w: number }[] = [];
-  // Una ventana de `w` × `h` con su marco, el alféizar, la cruz y el cristal transparente.
-  const window = (cx: number, top: number, w: number, h: number) => {
+  /**
+   * Una ventana de `w` × `h` (el cristal), de uno de tres modelos: de cuarterones, de arco o con
+   * contraventanas abiertas (alguna, cerrada). Con su marco, el dintel, el alféizar y, a veces,
+   * una jardinera. El cristal se deja transparente (se ve la sala) y en `glass`, encendido.
+   */
+  const window = (
+    cx: number,
+    top: number,
+    w: number,
+    h: number,
+    kind: WindowKind,
+    box = false,
+    shut = false,
+    paint: readonly [string, string, string] = SHUTTERS[0]!,
+  ) => {
     const x = Math.round(cx - ox - w / 2);
     const y = Math.round(top - oy);
+    const r = w / 2;
+    // El hueco: un rectángulo o, el de arco, con medio círculo arriba.
+    const inside = (i: number, j: number) => {
+      if (i < 0 || j < 0 || i >= w || j >= h) return false;
+      if (kind !== 'arco' || j >= r) return true;
+      const dx = i + 0.5 - r;
+      const dy = j + 0.5 - r;
+      return dx * dx + dy * dy <= r * r;
+    };
+    const near = (i: number, j: number, d: number) => {
+      for (let v = -d; v <= d; v++)
+        for (let u = -d; u <= d; u++) if (inside(i + u, j + v)) return true;
+      return false;
+    };
     const warm = rng.chance(0.15) ? ['#7a4a2a', '#9a5e30'] : ['#e0974a', '#ffd27a'];
-    for (let j = 0; j < h; j++)
-      for (let i = 0; i < w; i++)
-        glass.set(x + i, y + j, j > h * 0.45 || (i + j) % 7 === 0 ? warm[1]! : warm[0]!);
+    const flower = rng.pick([
+      [P.red, P.gold],
+      [P.coral, P.white],
+      [P.rose, P.lemon],
+    ] as const);
+    // El marco (dos de grueso, más claro arriba) siguiendo el hueco.
     b.level = 3;
-    b.rect(x - 2, y - 2, w + 4, h + 4, P.bark);
-    b.hline(x - 2, y - 2, w + 4, P.umber);
+    for (let j = -3; j < h + 2; j++)
+      for (let i = -3; i < w + 3; i++)
+        if (!inside(i, j) && near(i, j, 2))
+          b.set(x + i, y + j, near(i, j + 1, 2) && !near(i, j - 1, 2) ? P.umber : P.bark);
+    // El dintel: una viga encima que sobresale; en la de arco, la clave.
+    b.level = 4;
+    if (kind === 'arco') {
+      b.rect(x + Math.floor(r) - 2, y - 5, 4, 4, P.oak);
+      b.hline(x + Math.floor(r) - 2, y - 5, 4, P.tan);
+    } else {
+      b.rect(x - 5, y - 6, w + 10, 3, P.rust);
+      b.hline(x - 5, y - 6, w + 10, P.oak);
+      b.hline(x - 4, y - 3, w + 8, P.black);
+    }
+    // El alféizar.
     b.rect(x - 3, y + h + 2, w + 6, 2, P.oak);
-    sills.push({ x: x - 2, y: y + h + 4, w: w + 4 });
+    b.hline(x - 3, y + h + 4, w + 6, P.black);
     b.level = 0;
-    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) b.clear(x + i, y + j);
-    b.level = 2;
-    b.vline(x + Math.floor(w / 2), y, h, P.bark);
-    b.hline(x, y + Math.floor(h / 2), w, P.bark);
-    b.level = 0;
+    if (!shut) {
+      for (let j = 0; j < h; j++)
+        for (let i = 0; i < w; i++)
+          if (inside(i, j)) {
+            glass.set(x + i, y + j, j > h * 0.45 || (i + j) % 7 === 0 ? warm[1]! : warm[0]!);
+            b.clear(x + i, y + j);
+          }
+      // Los parteluces: cruz; los de cuarterones, más paños si es grande; el de arco, el pie.
+      b.level = 2;
+      const mid = x + Math.floor(w / 2);
+      b.vline(mid, y, h, P.bark);
+      const rows = kind === 'cuarterones' && h >= 24 ? 3 : 2;
+      for (let k = 1; k < rows; k++) {
+        const yy = kind === 'arco' ? y + Math.round(r) : y + Math.round((h * k) / rows);
+        for (let i = 0; i < w; i++) if (inside(i, yy - y)) b.set(x + i, yy, P.bark);
+      }
+      if (kind === 'cuarterones' && w >= 20)
+        for (const xx of [x + Math.floor(w / 4), x + Math.floor((3 * w) / 4)])
+          b.vline(xx, y, h, P.bark);
+      b.level = 0;
+    }
+    // Las contraventanas: abiertas a los lados o, alguna, cerradas encima del cristal.
+    if (kind === 'contra') {
+      const sw = Math.ceil(w / 2) + 1;
+      const [dk, mid, lt] = paint;
+      const leaf = (lx: number) => {
+        b.level = 3;
+        // Tablas pintadas (verticales, de tres), con su contorno y la Z de los travesaños.
+        for (let i = 0; i < sw; i++) {
+          const k = i % 3;
+          b.vline(lx + i, y - 1, h + 2, k === 0 ? dk : k === 1 ? lt : mid);
+        }
+        b.hline(lx, y + 2, sw, lt);
+        b.hline(lx, y + h - 3, sw, lt);
+        b.line(lx, y + h - 3, lx + sw - 1, y + 2, dk);
+        b.level = 4;
+        b.hline(lx, y - 2, sw, P.black);
+        b.hline(lx, y + h + 1, sw, P.black);
+        b.vline(lx - 1, y - 2, h + 4, P.black);
+        b.vline(lx + sw, y - 2, h + 4, P.black);
+        b.level = 0;
+      };
+      if (shut) {
+        leaf(x);
+        leaf(x + w - sw);
+      } else {
+        leaf(x - sw - 4);
+        leaf(x + w + 4);
+      }
+    }
+    // La jardinera: un cajón bajo el alféizar con matas y flores que asoman por encima.
+    let drip = y + h + 5;
+    if (box) {
+      b.level = 4;
+      b.rect(x - 3, y + h + 5, w + 6, 5, P.rust);
+      b.hline(x - 3, y + h + 5, w + 6, P.oak);
+      b.hline(x - 3, y + h + 9, w + 6, P.black);
+      b.vline(x - 3, y + h + 5, 5, P.black);
+      b.vline(x + w + 2, y + h + 5, 5, P.black);
+      b.level = 5;
+      for (let i = -2; i < w + 2; i++) {
+        const k = (i * 7 + x * 3) % 6;
+        const hgt = k % 3 === 0 ? 3 : 2;
+        for (let d = 0; d < hgt; d++) b.set(x + i, y + h + 4 - d, d === 0 ? P.forest : P.leaf);
+        if (k === 1 || k === 4) b.set(x + i, y + h + 4 - hgt, flower[(i + x) & 1]!);
+      }
+      b.level = 0;
+      drip = y + h + 10;
+    }
+    sills.push({ x: x - 2, y: drip, w: w + 4 });
   };
   const rooms = L.rooms.filter(({ room }) => room.type !== 'torre');
   for (const { rect } of rooms) fill(interior(rect));
@@ -1026,11 +1149,20 @@ export function outsideFace(
           b.level = 0;
           continue;
         }
-        window(cx, top + 26, 16, 20);
+        // Cada sala, su modelo (todas sus ventanas iguales); las del salón, más grandes. Pocas
+        // jardineras y alguna contraventana cerrada (nunca en el salón).
+        const pick = roomRng(room.id);
+        const kind = WINDOW_KINDS[Math.floor(pick * WINDOW_KINDS.length) % WINDOW_KINDS.length]!;
+        const big = room.type === 'salon';
+        const box = rng.chance(f === 0 ? 0.45 : 0.3);
+        const shut = kind === 'contra' && !big && rng.chance(0.18);
+        const paint = SHUTTERS[Math.floor(pick * 97) % SHUTTERS.length]!;
+        if (big) window(cx, top + 18, 22, 28, kind, box, false, paint);
+        else window(cx, top + 24, 16, 22, kind, box, shut, paint);
       }
   }
   for (const s of stairCells(L))
-    if (s.floor >= 0) window(s.rect.x + s.rect.w / 2, s.rect.y + 30, 8, 14);
+    if (s.floor >= 0) window(s.rect.x + s.rect.w / 2, s.rect.y + 30, 8, 14, 'cuarterones');
   // Y todo, envejecido: la humedad del pie, los churretes bajo alféizares y aleros, paños y el
   // sol en lo alto (ver `envejecer.ts`).
   let top = 0;
@@ -1042,6 +1174,24 @@ export function outsideFace(
     eaves: roofRuns(L).map((r) => ({ x0: r.x0 - ox, x1: r.x1 - ox, y: r.base - oy + 1 })),
   });
   return { buf: b, glass };
+}
+
+/** Los modelos de ventana de la vista desde fuera. */
+type WindowKind = 'cuarterones' | 'arco' | 'contra';
+const WINDOW_KINDS: readonly WindowKind[] = ['cuarterones', 'arco', 'contra'];
+/** Colores de las contraventanas pintadas (sombra, cuerpo, luz). */
+const SHUTTERS: readonly (readonly [string, string, string])[] = [
+  [P.deep, P.forest, P.leaf],
+  [P.navy, P.ocean, P.sky],
+  [P.plum, P.wine, P.brick],
+];
+/** Alto del zócalo de piedra de la planta baja (con la albardilla). */
+const PLINTH = 20;
+/** Un número fijo (0–1) para cada sala. */
+function roomRng(id: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < id.length; i++) h = Math.imul(h ^ id.charCodeAt(i), 16777619);
+  return ((h >>> 0) % 1000) / 1000;
 }
 
 /** Dónde va la hoja de la puerta de la calle en la pared del recibidor (a lo hondo y de alto). */
