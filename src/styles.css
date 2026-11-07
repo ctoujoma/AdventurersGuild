@@ -6791,3 +6791,140 @@ p.notebook-close {
   font-size: var(--t-l);
   color: var(--gold);
 }
+
+/*
+ * Las tarjetas de los que defienden: el retrato pequeño con su marco, la vida y la carga de la
+ * habilidad (dorada y con su nombre cuando está lista). Una fila de hasta seis, que en el móvil
+ * se aprietan sin pasar a otra línea.
+ */
+.rc-list {
+  /* Las columnas, una por defensor y hasta seis (las pone RaidCrew). */
+  display: grid;
+  justify-content: center;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rc-card {
+  min-width: 0;
+}
+.rc-hit {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  width: 100%;
+  padding: 5px 2px 3px;
+  font: inherit;
+  color: var(--sand);
+  background: var(--navy);
+  border: 0;
+  box-shadow: 0 0 0 2px var(--slate);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.rc-face {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  line-height: 0;
+}
+.rc-hp,
+.rc-skill {
+  position: relative;
+  display: block;
+  height: 5px;
+  background: var(--plum);
+}
+.rc-hp i,
+.rc-skill i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--lime);
+  transition: width 120ms steps(3);
+}
+/* Con poca vida, la barra en dorado (como sobre la cabeza en la escena). */
+.rc-hp.is-low i {
+  background: var(--gold);
+}
+.rc-skill {
+  height: 4px;
+  background: var(--ink);
+}
+.rc-skill i {
+  background: rgba(254, 174, 52, 0.55);
+}
+.rc-skill span {
+  display: none;
+}
+.rc-name {
+  overflow: hidden;
+  font-size: 10px;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+/* Habilidad lista: la barra se vuelve una cinta dorada con el nombre, y la tarjeta brilla. */
+.rc-card.is-ready .rc-hit {
+  box-shadow: 0 0 0 2px var(--gold);
+}
+.rc-card.is-ready .rc-skill {
+  height: 11px;
+  background: var(--gold);
+}
+.rc-card.is-ready .rc-skill i {
+  display: none;
+}
+.rc-card.is-ready .rc-skill span {
+  display: block;
+  overflow: hidden;
+  font-size: 9px;
+  line-height: 11px;
+  color: var(--ink);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+/* Crítico abierto: el marco late en amarillo y un rombo sobre el retrato. */
+.rc-card.is-chance .rc-hit {
+  box-shadow: 0 0 0 2px var(--lemon);
+  animation: tut-btn 0.5s steps(2) infinite;
+}
+.rc-now {
+  position: absolute;
+  top: -3px;
+  right: 2px;
+  width: 7px;
+  height: 7px;
+  background: var(--lemon);
+  box-shadow: 0 0 0 1px var(--ink);
+  transform: rotate(45deg);
+}
+.rc-run {
+  position: absolute;
+  bottom: 1px;
+  right: 3px;
+  font-style: normal;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--lemon);
+  text-shadow: 1px 1px 0 var(--ink);
+}
+/* En el suelo: en gris y apagado. */
+.rc-card.is-down .rc-hit {
+  cursor: default;
+}
+.rc-card.is-down .rc-face {
+  filter: grayscale(1) brightness(0.6);
+}
+.rc-card.is-down .rc-name {
+  color: var(--fog);
+}
+/* En el móvil, la pista en una línea más corta. */
+@media (max-width: 520px) {
+  .raid-crew-hint {
+    font-size: 11px;
+  }
+}
