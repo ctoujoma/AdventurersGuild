@@ -179,4 +179,16 @@ describe('el asalto sala a sala', () => {
     expect(next.lastRaid?.plan).toEqual(fake.plan);
     expect(next.raidLive).toBeUndefined();
   });
+
+  it('el asalto cae la noche en que falta uno para `raid.day` y se puede jugar en directo', () => {
+    const s = newGame('directo');
+    s.day = 19;
+    s.raid = { day: 20, band: 'los Hermanos Cuervo', strength: 20, warned: true };
+    const fake = simulate(assaultSetup(s, 20, new Rng('z')), 'z');
+    const fought = reduce({ ...s, tips: ['*'] }, { type: 'raidFought', result: fake });
+    expect(fought.raidLive).toBeDefined();
+    const next = endDay(fought);
+    expect(next.raid).toBeNull();
+    expect(next.lastRaid?.plan).toEqual(fake.plan);
+  });
 });

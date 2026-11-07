@@ -333,6 +333,8 @@ export interface CraftEnd {
    */
   how: 'hecho' | 'receta' | 'nada' | 'vestido' | 'cancelado';
   rarity?: Rarity;
+  /** Al desmontar: el objeto, lo que se aprende (si sale) y el día, para el aviso de la campanita. */
+  undo?: { item: string; recipe: RecipeId; day: number };
 }
 
 /** Obra en curso: la sala nueva o movida no funciona hasta que acaba; la ampliada, sí. */

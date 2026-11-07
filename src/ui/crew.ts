@@ -24,7 +24,6 @@ import { TRADES, TRADE_LIST } from '../data/workers';
 import { CLASS_NAMES, statusLabel } from '../data/labels';
 import { GUARD, planTask, type Task } from './drop';
 import { jobRoomName } from './roomName';
-import { isRealTime, left as timeLeft } from './when';
 
 /** Alguien de la casa en la lista. */
 export interface Member {
@@ -39,6 +38,8 @@ export interface Member {
   gives?: string;
   /** Cómo va lo que entrena (0–1). */
   progress?: number;
+  /** Ya no aprende más en esa sala (la barra, llena, y «Al máximo»). */
+  maxed?: boolean;
   /** Algo más que se lee al elegirlo (lo que gana con el siguiente punto). */
   more?: string;
 }
@@ -125,10 +126,9 @@ const workerMember = (w: Worker, room?: Room): Member => ({
 
 const heroMember = (h: Hero, sub: string): Member => ({ id: h.id, name: h.name, sub, hero: true });
 
-/** «Faltan unos 3 días» (o «Sube esta noche»); con el tiempo que corre solo, en minutos. */
-export function daysLeft(frac: number, perDay: number, clock: number): string {
+/** «Faltan unos 3 días» (o «Sube esta noche»). */
+export function daysLeft(frac: number, perDay: number): string {
   const d = Math.ceil((1 - frac) / perDay - 1e-9);
-  if (isRealTime()) return `Sube en ${timeLeft(Math.max(1, d), clock)}`;
   return d <= 1 ? 'Sube esta noche' : `Faltan unos ${d} días`;
 }
 
@@ -143,13 +143,15 @@ function heroAt(game: GameState, h: Hero, room: Room): Member {
   if (t.capped)
     return {
       ...m,
-      sub: `${m.sub} · en el tope`,
-      more: t.by === 'sala' ? 'Mejora la sala para que siga.' : 'Seguirá cuando suba de nivel.',
+      gives: 'Al máximo',
+      progress: 1,
+      maxed: true,
+      more: `${t.by === 'sala' ? 'Aquí ya no aprende más: mejora la sala para que siga.' : 'Ya no aprende más hasta subir de nivel.'} Si se queda, al amanecer se irá a descansar.`,
     };
   const gain = gainText(skillGain(h, attr));
   return {
     ...m,
-    gives: daysLeft(t.frac, t.perDay, game.clock ?? 0),
+    gives: daysLeft(t.frac, t.perDay),
     progress: t.frac,
     more: gain ? `Con ese punto: ${gain}.` : 'Ese punto aún no se notará en las habilidades.',
   };
@@ -295,6 +297,8 @@ export function taskOptions(game: GameState, who: string): TaskOption[] {
   // Lo que hace ahora se dice como estado («Trabaja en Salón»); lo demás, como lo que se
   // le manda («Poner a trabajar en Cocina · 1 libre»).
   const out = [opt(null, now === null ? 'Descansa' : 'Mandar a descansar')];
+  const h = game.heroes.find((x) => x.id === who);
+  const capped = (r: Room) => !!h && !!trainState(game, h)?.capped && h.job === r.id;
   for (const r of postRooms(game)) {
     const attr = TRAINS[r.type];
     if (attr && !hero) continue;
@@ -304,7 +308,7 @@ export function taskOptions(game: GameState, who: string): TaskOption[] {
         r.id,
         r.id === now
           ? attr
-            ? `Entrena ${ATTR_NAMES[attr]} (${name})`
+            ? `Entrena ${ATTR_NAMES[attr]} (${name})${capped(r) ? ' · al máximo' : ''}`
             : `Trabaja en ${name}`
           : `${attr ? `Poner a entrenar ${ATTR_NAMES[attr]} (${name})` : `Poner a trabajar en ${name}`} · ${freeText(game, r)}`,
       ),

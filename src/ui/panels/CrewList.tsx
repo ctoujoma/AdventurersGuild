@@ -204,9 +204,12 @@ export function CrewGroup({
               <b>{p.name}</b>
               <small>{p.sub}</small>
               {p.off && <small class="crew-off">No es su oficio</small>}
-              {p.gives && <small class="crew-gives">{p.gives}</small>}
+              {p.gives && <small class={`crew-gives ${p.maxed ? 'is-max' : ''}`}>{p.gives}</small>}
               {p.progress !== undefined && (
-                <span class="train-bar" aria-label={`${Math.round(p.progress * 100)} %`}>
+                <span
+                  class={`train-bar ${p.maxed ? 'is-max' : ''}`}
+                  aria-label={p.maxed ? 'Al máximo' : `${Math.round(p.progress * 100)} %`}
+                >
                   <i style={{ width: `${Math.round(p.progress * 100)}%` }} />
                 </span>
               )}

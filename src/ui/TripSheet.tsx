@@ -6,7 +6,7 @@ import { Icon, type IconName } from './icons';
 import { Portrait } from './Portrait';
 import { QuestStrip } from './QuestStrip';
 import { lookOf, marksOf, heroFrame } from './view';
-import { left } from './when';
+import { dawnIn } from './when';
 
 interface Props {
   game: GameState;
@@ -63,7 +63,7 @@ export function TripSheet({ game, mission: m, onClose, onHero, onReport, onBoss 
             </span>
             <span class="fact">
               <Icon name="home" size={12} />
-              en casa en {left(m.daysLeft, game.clock ?? 0)}
+              en casa {dawnIn(m.daysLeft)}
             </span>
             <span class={`danger danger-${dangerClass(q.danger, false)}`}>
               Peligro {dangerLabel(q.danger, false)}

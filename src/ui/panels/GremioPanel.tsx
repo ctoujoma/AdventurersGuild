@@ -7,6 +7,7 @@ import type { Facilities, GameState } from '../../core/model';
 import { FACILITY_INFO } from '../../data/labels';
 import { YARD } from '../../data/rooms';
 import { help } from '../HoldHelp';
+import { nightIn } from '../when';
 import { GoalRow } from './LibroPanel';
 import { Icon, type IconName } from '../icons';
 
@@ -178,8 +179,7 @@ export function GremioPanel({
       <div class="chips gremio-safe">
         {game.raid?.warned && (
           <span class="fact fact-alert" role="status">
-            <Icon name="flag" size={12} /> {game.raid.band}: {nights}{' '}
-            {nights === 1 ? 'noche' : 'noches'}
+            <Icon name="flag" size={12} /> {game.raid.band}: {nightIn(nights)}
           </span>
         )}
         {!game.raid?.warned && (game.truce ?? 0) > game.day && (

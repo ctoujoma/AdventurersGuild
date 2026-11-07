@@ -4945,6 +4945,10 @@ select.crew-free {
   inset: 0 auto 0 0;
   background: var(--leaf);
 }
+/* Al tope del entrenamiento: la barra llena (verde, que se vea también en la tarjeta elegida). */
+.crew-gives.is-max {
+  font-weight: bold;
+}
 
 /* Menú de obras de la sala elegida, encima de ella en la escena. */
 .room-menu {
@@ -5524,9 +5528,24 @@ select.crew-free {
   color: var(--text-soft);
 }
 .tav-swatch.locked {
+  position: relative;
   opacity: 0.3;
   cursor: not-allowed;
   filter: grayscale(0.6);
+}
+.tav-swatch.locked .icon {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+}
+/* «Ropa y colores» en la ficha del héroe. */
+.dress-menu .dress-go {
+  margin-top: 8px;
+}
+.dress-state {
+  margin: 8px 0 0;
+  font-size: var(--t-s);
+  color: var(--text-soft);
 }
 .gremio-goals {
   margin: 8px 0;

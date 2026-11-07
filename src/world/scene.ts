@@ -31,8 +31,11 @@ export interface SceneHero {
   visitor?: boolean;
   /** Bandido de un asalto (solo de noche, mientras dura). */
   bandit?: boolean;
-  /** Entrenando: cómo va la barra al empezar el día (0–1) y cuánto sube en un día entero. */
-  train?: { at: number; perDay: number };
+  /**
+   * Entrenando: cómo va la barra al empezar el día (0–1) y cuánto sube en un día entero. Con
+   * `max`, ya no aprende más ahí (tope de la sala o de su nivel): barra llena y una marca.
+   */
+  train?: { at: number; perDay: number; max?: boolean };
 }
 
 /** Los visitantes de hoy, en orden de llegada (la escena los hace entrar a lo largo del día). */

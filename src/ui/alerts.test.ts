@@ -82,7 +82,43 @@ describe('avisos de la campanita', () => {
     const h = s.heroes[0]!;
     h.job = sala.id;
     h.attrs.F = TRAIN_CAP[sala.level]!;
-    expect(gatherAlerts(s).find((a) => a.id === `tope:${h.id}`)?.go).toEqual({ room: sala.id });
+    // Lleva a sus tareas, para mandarle a otra cosa.
+    const a = gatherAlerts(s).find((x) => x.id === `tope:${h.id}:${sala.id}`);
+    expect(a?.go).toEqual({ crew: h.id });
+    expect(a?.text).toContain('mejora la sala');
+  });
+
+  it('lo que salió de desmontar un objeto, hoy o anoche', () => {
+    const s = newGame('desmonta');
+    const forja = roomOf(s, 'forja');
+    s.craftLog = [
+      {
+        id: 'c1',
+        room: forja.id,
+        how: 'receta',
+        undo: { item: 'Hacha vieja', recipe: 'hacha', day: s.day - 1 },
+      },
+      {
+        id: 'c2',
+        room: forja.id,
+        how: 'nada',
+        undo: { item: 'Daga', recipe: 'hacha', day: s.day },
+      },
+      {
+        id: 'c3',
+        room: forja.id,
+        how: 'nada',
+        undo: { item: 'Otra', recipe: 'hacha', day: s.day - 3 },
+      },
+    ];
+    const a = gatherAlerts(s);
+    expect(a.find((x) => x.id === 'desmonta:c1')).toMatchObject({
+      k: 'good',
+      go: { room: forja.id },
+    });
+    expect(a.find((x) => x.id === 'desmonta:c1')?.text).toContain('ya podéis crear');
+    expect(a.find((x) => x.id === 'desmonta:c2')?.text).toContain('nada en claro');
+    expect(a.some((x) => x.id === 'desmonta:c3')).toBe(false);
   });
 
   it('la obra terminada se avisa mientras la interfaz la recuerde', () => {

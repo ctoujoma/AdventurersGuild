@@ -473,6 +473,8 @@ export class RoomScene {
   /** Persona señalada con el ratón y la que se ha buscado desde su ficha (un rato). */
   private hoverHero: string | null = null;
   private marker: { id: string; until: number } | null = null;
+  /** A quién sigue la cámara (la ficha del héroe con «Ropa y colores» abierto). */
+  private following: string | null = null;
   private world = new Group();
   private lamps: Lamp[] = [];
   /** Bocas de las chimeneas del tejado (en el mundo 2D), por donde sale el humo. */
@@ -1243,6 +1245,22 @@ export class RoomScene {
     this.camera.centerOn(p.x, p.y + 14);
     this.marker = { id, until: this.t + 4 };
     return true;
+  }
+
+  /**
+   * La cámara sigue a alguien hasta que se pase `null` (o deje de verse). Va un poco por
+   * debajo de él, para que quede en la parte de arriba, a la vista sobre la ficha.
+   */
+  follow(id: string | null): void {
+    this.following = id;
+    this.stepFollow();
+  }
+
+  private stepFollow(): void {
+    if (!this.following) return;
+    const p = this.heroPosition(this.following);
+    if (!p) return;
+    this.camera.centerOn(p.x, p.y + this.camera.vh * 0.22);
   }
 
   /** Recuadro de alguien en coordenadas del plano de corte (lo que tapa en pantalla). */
@@ -3953,6 +3971,7 @@ export class RoomScene {
     this.stepStorm(dt);
     this.swingSign(dt);
     if (this.marker && this.t > this.marker.until) this.marker = null;
+    this.stepFollow();
     this.camera.update(dt);
     this.puffs(w);
     // Las gotas de la gotera salpican al caer.
@@ -5125,6 +5144,15 @@ export class RoomScene {
       ctx.fillRect(x, y, W, 3);
       ctx.fillStyle = fill >= 1 ? P.lemon : P.lime;
       ctx.fillRect(x, y, Math.max(1, Math.round(W * fill)), 3);
+      // Al tope: una estrella que parpadea al lado de la barra («ya no aprende más aquí»).
+      if (h.train.max && Math.floor(this.t * 2) % 2 === 0) {
+        const sx = x + W + 3;
+        ctx.fillStyle = P.black;
+        ctx.fillRect(sx - 2, y - 1, 5, 5);
+        ctx.fillStyle = P.lemon;
+        ctx.fillRect(sx - 1, y + 1, 3, 1);
+        ctx.fillRect(sx, y, 1, 3);
+      }
     }
   }
 

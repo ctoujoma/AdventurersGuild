@@ -54,3 +54,16 @@ Si tocas `App.tsx` o `RoomScene.ts`, dilo en el PR (otros agentes también los t
   (con `by`: `sala` o `nivel`), y `capLeaveText` el texto. Falta en la interfaz: el aviso al llegar,
   «Al máximo» en la ficha de la sala y el marcador en la escena; y no dejar soltar ahí a alguien que
   ya está al tope (o avisarlo al soltar).
+
+## Hecho en la interfaz (7 de noviembre)
+
+- **Plazos (1):** `ui/when.ts` ya no cuenta en minutos: `dawnIn` («hoy», «mañana», «pasado
+  mañana», «en 4 días») para vueltas, obras, notas y pagos, y `nightIn` («esta noche», «mañana por
+  la noche»…) para el asalto. Solo la barra del día sigue en minutos (`countdown`). Arreglado de
+  paso: el asalto en directo miraba un día tarde (`App.tsx` y `raidFought`) y nunca se jugaba.
+- **Ropa (2):** pestañas en la ficha del héroe («Ficha» y «Ropa y colores»); la cámara le sigue
+  (`RoomScene.follow`) mientras está abierta. Encarga con `dressAt`; «Probar gratis», solo en el
+  modo prueba.
+- **Tope (3):** aviso en la campanita (lleva a Tareas con él), «Al máximo» con la barra llena en
+  la ficha de la sala y en el selector de tareas, y una estrella junto a su barra en la escena.
+- **Extra:** aviso con lo que salió de desmontar un objeto (`CraftEnd.undo`).

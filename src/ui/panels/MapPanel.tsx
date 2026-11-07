@@ -17,7 +17,7 @@ import {
 } from '../../data/places';
 import { audio } from '../../audio/audio';
 import { BufferImage } from '../BufferImage';
-import { left, shortSpan, span } from '../when';
+import { dawnIn, nightIn, shortSpan, span } from '../when';
 import { help } from '../HoldHelp';
 import { Icon, type IconName } from '../icons';
 import { listNames, plural } from '../text';
@@ -691,12 +691,12 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
           {game.raid?.warned && (
             <span
               class="map-raid"
-              data-help={`${game.raid.band} viene hacia la taberna: llega en ${left(game.raid.day - game.day, game.clock ?? 0, 'noche', 'noches')}.`}
+              data-help={`${game.raid.band} viene hacia la taberna: llega ${nightIn(game.raid.day - game.day)}.`}
               style={pct(
                 Math.max(8, TAVERN.x - 14 * Math.max(1, game.raid.day - game.day)),
                 TAVERN.y + 10,
               )}
-              title={`${game.raid.band}: llega en ${left(game.raid.day - game.day, game.clock ?? 0, 'noche', 'noches')}`}
+              title={`${game.raid.band}: llega ${nightIn(game.raid.day - game.day)}`}
             >
               <Icon name="espadas" size={15} />
             </span>
@@ -801,7 +801,7 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
           {game.missions.length > 0 && <span class="row-sub">{game.missions.length}</span>}
           {!trips && soonest && (
             <span class="map-trips-next">
-              {soonest.quest.title}: en casa en {left(soonest.daysLeft, game.clock ?? 0)}
+              {soonest.quest.title}: en casa {dawnIn(soonest.daysLeft)}
             </span>
           )}
           <span class="map-trips-chev" aria-hidden="true">
@@ -824,8 +824,8 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
                     >
                       <b>{m.quest.title}</b>
                       <span class="row-sub">
-                        {pos.back ? 'Vuelven de' : 'Van hacia'} {m.quest.place} · en casa en{' '}
-                        {left(m.daysLeft, game.clock ?? 0)}
+                        {pos.back ? 'Vuelven de' : 'Van hacia'} {m.quest.place} · en casa{' '}
+                        {dawnIn(m.daysLeft)}
                       </span>
                       <span class="train-bar" aria-hidden="true">
                         <i style={{ width: `${Math.round(done * 100)}%` }} />

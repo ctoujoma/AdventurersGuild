@@ -4,22 +4,20 @@ import { dangerClass, dangerLabel } from '../../data/labels';
 import { help } from '../HoldHelp';
 import { Icon } from '../icons';
 import { plural } from '../text';
-import { isRealTime, left, shortLeft, shortSpan, span } from '../when';
+import { dawnIn, shortDawn, span } from '../when';
 
 interface Props {
   quests: Quest[];
   /** Con la sala de mapas a nivel 2 se ve el peligro real. */
   seeAll: boolean;
   onOpen: (id: string) => void;
-  /** Reloj del día, para contar en minutos lo que falta (tiempo que corre solo). */
-  clock?: number;
 }
 
 /**
  * Encargos como notas clavadas en el corcho, con lo justo para elegir: tipo, título, peligro,
  * plazas, días de viaje y paga. El cliente, la historia y los desafíos están en su ficha.
  */
-export function TablonPanel({ quests, seeAll, onOpen, clock = 0 }: Props) {
+export function TablonPanel({ quests, seeAll, onOpen }: Props) {
   if (!quests.length)
     return <p class="panel-note">El tablón está vacío. Mañana llegarán más encargos.</p>;
   return (
@@ -31,10 +29,7 @@ export function TablonPanel({ quests, seeAll, onOpen, clock = 0 }: Props) {
       ].map((q, i) => {
         const hidden = q.dangerHidden && !seeAll;
         const chain = q.chain ? chainDef(q.chain.id) : null;
-        const expires =
-          q.expires === 1 && !isRealTime()
-            ? 'caduca mañana'
-            : `caduca en ${left(q.expires, clock)}`;
+        const expires = `caduca ${dawnIn(q.expires)}`;
         return (
           <button
             key={q.id}
@@ -77,7 +72,7 @@ export function TablonPanel({ quests, seeAll, onOpen, clock = 0 }: Props) {
               {!chain && (
                 <span class={`note-left ${q.expires === 1 ? 'urgent' : ''}`}>
                   <Icon name="reloj" size={10} />
-                  {shortLeft(q.expires, clock)}
+                  {shortDawn(q.expires)}
                 </span>
               )}
             </span>
@@ -86,12 +81,9 @@ export function TablonPanel({ quests, seeAll, onOpen, clock = 0 }: Props) {
               <span class={`danger danger-${dangerClass(q.danger, hidden)}`}>
                 {dangerLabel(q.danger, hidden)}
               </span>
-              <span
-                class="note-k"
-                {...help(isRealTime() ? 'Lo que dura el viaje' : 'Días de viaje')}
-              >
+              <span class="note-k" {...help('Días de viaje')}>
                 <Icon name="pasos" size={10} />
-                {isRealTime() ? shortSpan(q.days) : q.days}
+                {q.days}
               </span>
               <span class="note-k" {...help('Héroes que caben')}>
                 <Icon name="heroe" size={10} />

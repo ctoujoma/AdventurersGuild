@@ -106,10 +106,11 @@ function workerHover(s: GameState, w: Worker): string {
   return `Maña ${w.skill} · ${taskLabel(s, w.id).toLowerCase()}${onWay(s, w) ? ' (de camino)' : ''}`;
 }
 
-/** La barra de entrenamiento de un héroe (si entrena y aún puede subir). */
+/** La barra de entrenamiento de un héroe (si entrena); al tope, llena y marcada. */
 function trainBar(s: GameState, h: Hero): SceneHero['train'] {
   const t = trainState(s, h);
-  return t && !t.capped ? { at: t.frac, perDay: t.perDay } : undefined;
+  if (!t) return undefined;
+  return t.capped ? { at: 1, perDay: 0, max: true } : { at: t.frac, perDay: t.perDay };
 }
 
 export function sceneModel(s: GameState): SceneModel {

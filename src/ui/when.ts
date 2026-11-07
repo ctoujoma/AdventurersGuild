@@ -1,49 +1,48 @@
 /**
- * Cómo se dicen los plazos. Normalmente en días (o noches); con el tiempo que corre solo (en
- * prueba, ver `core/away.ts`), en minutos de taberna abierta, que es lo que el jugador vive:
- * un día dura `DAY_SECONDS`. Con el juego cerrado va más despacio, y eso lo explica la barra.
+ * Cómo se dicen los plazos: siempre en días de juego («mañana», «en 3 días», «esta noche»),
+ * también con el tiempo que corre solo. Un día dura `DAY_SECONDS`, pero contarlo en minutos
+ * reales confunde (el reloj corre más deprisa de noche y más despacio con el juego cerrado);
+ * los minutos solo salen en la cuenta atrás de la barra del día.
  */
-import { DAY_SECONDS } from '../core/balance';
 
-let real = false;
+const days = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
-/** Lo pone la App en cada pintada, según los ajustes. */
-export function setRealTime(on: boolean): void {
-  real = on;
-}
-
-export const isRealTime = () => real;
-
-/** Lo que dura algo de `n` días desde la mañana (un viaje que aún no ha salido). */
+/** Lo que dura algo de `n` días (un viaje que aún no ha salido): «3 días». */
 export function span(n: number, one = 'día', many = 'días'): string {
-  return real ? minutes(n * DAY_SECONDS) : `${n} ${n === 1 ? one : many}`;
+  return days(n, one, many);
 }
 
-/** Lo que falta para algo que pasa dentro de `n` amaneceres, con el reloj del día en `clock`. */
-export function left(n: number, clock: number, one = 'día', many = 'días'): string {
-  if (!real) return `${n} ${n === 1 ? one : many}`;
-  return minutes(Math.max(0, n - 1) * DAY_SECONDS + Math.max(0, DAY_SECONDS - clock));
-}
-
-/** Lo mismo en corto, para las fichas del mapa: «3d» o «14m». */
-export function shortLeft(n: number, clock: number): string {
-  if (!real) return `${n}d`;
-  const sec = Math.max(0, n - 1) * DAY_SECONDS + Math.max(0, DAY_SECONDS - clock);
-  return `${Math.max(1, Math.ceil(sec / 60))}m`;
-}
-
+/** En corto, para fichas y notas: «3d». */
 export function shortSpan(n: number): string {
-  return real ? `${Math.max(1, Math.ceil((n * DAY_SECONDS) / 60))}m` : `${n}d`;
+  return `${n}d`;
 }
 
-/** Segundos a «12 min», «1 h 5 min» o «un minuto». */
-export function minutes(sec: number): string {
-  const m = Math.max(1, Math.ceil(sec / 60));
-  if (m === 1) return 'un minuto';
-  if (m < 60) return `${m} min`;
-  const h = Math.floor(m / 60);
-  const r = m % 60;
-  return r ? `${h} h ${r} min` : `${h} h`;
+/**
+ * Cuándo pasa algo que llega dentro de `n` amaneceres (vuelta de misión, obra lista, nota que
+ * caduca, pago): «hoy», «mañana», «pasado mañana» o «en 4 días».
+ */
+export function dawnIn(n: number): string {
+  if (n <= 0) return 'hoy';
+  if (n === 1) return 'mañana';
+  if (n === 2) return 'pasado mañana';
+  return `en ${n} días`;
+}
+
+/** Lo mismo en corto, para notas y cifras: «hoy» o «3d». */
+export function shortDawn(n: number): string {
+  return n <= 0 ? 'hoy' : `${n}d`;
+}
+
+/**
+ * Cuándo llega algo que pasa de noche (el asalto). `n` es `raid.day - day`: el núcleo lo
+ * resuelve al acabar la noche en que falta uno, así que 1 (o menos) es esta noche.
+ */
+export function nightIn(n: number): string {
+  if (n <= 1) return 'esta noche';
+  if (n === 2) return 'mañana por la noche';
+  if (n === 3) return 'pasado mañana por la noche';
+  // Contando esta noche como la primera, igual que el chivatazo («unas 4 noches»).
+  return `en ${n} noches`;
 }
 
 /** Cuenta atrás corta para la barra del día: «1:05». */

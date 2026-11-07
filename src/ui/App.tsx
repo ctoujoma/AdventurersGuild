@@ -7,7 +7,7 @@ import { haptic, setHaptics } from '../platform/haptics';
 import { loadHushed, saveHushed } from '../platform/hushed';
 import { audio, type Mood } from '../audio/audio';
 import { catchUp, waitText } from '../core/away';
-import { left, setRealTime } from './when';
+import { dawnIn } from './when';
 import { IncidentMark } from './IncidentMark';
 import { RumorMark } from './RumorMark';
 import { rumorRoom } from '../core/rumors';
@@ -216,10 +216,8 @@ export function App() {
   const [hasGame, setHasGame] = useState(!!saved);
   const [saveMenu, setSaveMenu] = useState(false);
   const [settings, setSettings] = useState<Settings>(loadSettings);
-  // Los plazos se cuentan en minutos con el tiempo que corre solo (ver `when.ts`).
   // El tiempo corre solo salvo con los días a la antigua (modo prueba).
   const realTime = !settings.classicTime;
-  setRealTime(realTime);
   // Acelerar el reloj: mientras dura «La deuda» y en el modo prueba (más adelante, quizá de pago).
   const canRush = game.mode !== 'libre' || settings.tester;
   // Las piezas que se ganan; en el modo prueba, todas.
@@ -600,7 +598,7 @@ export function App() {
     setPanel(null);
     scene.current?.focus('puerta');
     toast(
-      `${names} ${plural(ids.length, 'sale', 'salen')} hacia ${q.place}. Vuelta en ${left(days, clockRef.current)}.`,
+      `${names} ${plural(ids.length, 'sale', 'salen')} hacia ${q.place}. Vuelta ${dawnIn(days)}.`,
     );
   };
 
@@ -713,7 +711,8 @@ export function App() {
     setBubble(null);
     const before = gameRef.current;
     // Asalto esta noche con la escena a la vista: se juega en directo y, al acabar, amanece.
-    const due = before.raid && before.raid.day <= before.day;
+    // El núcleo lo resuelve en el `endDay` que deja `day` en `raid.day`, o sea, la noche de antes.
+    const due = before.raid && before.raid.day <= before.day + 1;
     if (!skip && due && scene.current && !before.over) {
       const rng = new Rng(raidSeed(before));
       const live = new Assault(assaultSetup(before, before.raid!.strength, rng), rng);
@@ -1301,7 +1300,6 @@ export function App() {
           <Panel title="Tablón de encargos" onClose={() => openPanel(null)} variant="cork">
             <TablonPanel
               quests={game.quests}
-              clock={clock}
               seeAll={game.fac.mapas >= 2}
               onOpen={(id) => {
                 audio.play('open');
@@ -1550,11 +1548,16 @@ export function App() {
             onAnswer={(yes) => dispatch({ type: 'answer', id: cardHero.id, yes })}
             onTask={works.planning ? undefined : (task) => setTask(cardHero.id, task)}
             onRename={(name) => dispatch({ type: 'renameHero', id: cardHero.id, name })}
+            onDressAt={(room, dress) => {
+              dispatch({ type: 'dressAt', room, heroId: cardHero.id, dress });
+              audio.play('select');
+            }}
             onDress={
               settings.tester
                 ? (dress) => dispatch({ type: 'dress', heroId: cardHero.id, dress })
                 : undefined
             }
+            onFollow={(on) => scene.current?.follow(on ? cardHero.id : null)}
             onEquip={(itemId) => {
               dispatch({ type: 'equip', heroId: cardHero.id, itemId });
               audio.play('select');
@@ -1569,7 +1572,7 @@ export function App() {
               if (!scene.current?.focusHero(cardHero.id))
                 say(
                   cardHero.status === 'mision'
-                    ? `${cardHero.name} está de misión. Vuelve en ${left(cardHero.days, clockRef.current)}.`
+                    ? `${cardHero.name} está de misión. Vuelve ${dawnIn(cardHero.days)}.`
                     : `${cardHero.name} no está en la taberna.`,
                   { x: 160, y: 120 },
                 );
