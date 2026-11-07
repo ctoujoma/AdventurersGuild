@@ -34,7 +34,10 @@ este encargo es para que se vea bien. Ir punto por punto, con capturas, y poner 
 5. **El ladrón:** que pelee de verdad con el héroe (un forcejeo, golpes de vuelta), que la
    cámara vaya a la cámara del tesoro al empezar y, si gana el ladrón (`duel.won` falso), que
    huya sin que le persigan. Hoy solo se ven las barras y los números.
-6. **La tira de retratos** (`RaidCrew`): con el retrato pequeño (`Portrait`) y que quepa bien en
+6. **La cámara lenta:** mientras se arrastra a alguien en el asalto, todo va a un 30 %
+   (`RAID_SLOW`). Que se note: los bordes de la pantalla algo más oscuros o desaturados y un
+   leve cambio en el sonido si se puede, que vuelve al soltar.
+7. **La tira de retratos** (`RaidCrew`): con el retrato pequeño (`Portrait`) y que quepa bien en
    el móvil con seis héroes (con la de interfaz si hace falta).
 
 Rama propia, PR contra `main`. Si se toca `crowd.ts`, `RoomScene.ts` o `App.tsx`, decirlo en el PR.
