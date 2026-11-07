@@ -3,3 +3,5 @@ dist
 *.log
 .DS_Store
 coverage
+# Guiones de capturas locales (ver tools/shots/README.md)
+tools/shots/_*.mjs

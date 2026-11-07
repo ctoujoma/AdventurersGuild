@@ -83,23 +83,38 @@ const BOARDS: readonly (readonly [string, string, string])[] = [
   [P.bark, P.rust, P.cocoa],
 ];
 
-/** Tablas en vertical con tapajuntas: cada una con su ancho, su tono, su veta y sus empalmes. */
+/**
+ * Tablas en vertical con tapajuntas: cada una con su ancho (de 4 a 9, sin ritmo), su tono, su
+ * veta y sus empalmes; tapajuntas a saltos, alguna tabla nueva más clara, clavos sueltos y
+ * oscuros (no en filas) y algún remiendo de tablas en horizontal o en diagonal.
+ */
 function boardFace(b: PixelBuffer, x: number, y: number, w: number, h: number, seed: string) {
   const rng = new Rng(`tablas-${seed}`);
   // Las carreras de detrás (donde van los clavos), cada 26–34.
   const rails: number[] = [];
   for (let ry = y + 6 + rng.int(0, 8); ry < y + h; ry += 26 + rng.int(0, 8)) rails.push(ry);
   let px = x;
-  let i = 0;
+  let batten = false;
   while (px < x + w) {
-    const bw = Math.min(5 + rng.int(0, 3), x + w - px);
+    // De 4 a 9: casi todas de 5 a 7, alguna estrecha y alguna ancha.
+    const bw = Math.min(
+      rng.weighted([
+        [4, 1],
+        [5, 3],
+        [6, 4],
+        [7, 3],
+        [8, 1.2],
+        [9, 0.7],
+      ] as const),
+      x + w - px,
+    );
     // La mayoría gastadas; alguna cambiada hace poco, más clara.
     const tone = rng.weighted([
       [0, 2],
       [1, 5],
       [2, 3],
       [3, 2],
-      [4, i % 7 === 3 ? 4 : 0.4],
+      [4, 0.7],
     ] as const);
     const [dk, mid, lt] = BOARDS[tone]!;
     // La tabla, por trozos: se empalma a alturas distintas.
@@ -139,20 +154,58 @@ function boardFace(b: PixelBuffer, x: number, y: number, w: number, h: number, s
       for (let xx = px; xx < px + bw; xx++)
         if (hash(xx, yy) < (yy - (y + h - 10)) / 14) b.set(xx, yy, dk);
     px += bw;
-    i++;
-    // El tapajuntas, encima de la junta (no en todas: unas van solo a tope).
-    if (px < x + w - 1 && i % 3 !== 0) {
+    // El tapajuntas, encima de la junta, a saltos (unas juntas van solo a tope, a veces dos o
+    // tres seguidas). Los clavos, oscuros y sueltos: no en todas las carreras ni a la misma altura.
+    if (px < x + w - 1 && rng.chance(batten ? 0.45 : 0.7)) {
+      batten = true;
       b.level = 4;
       b.vline(px - 1, y, h, P.rust);
       b.vline(px, y, h, P.bark);
       b.vline(px + 1, y, h, P.black);
       for (const ry of rails) {
-        b.set(px - 1, ry, P.fog);
-        b.set(px - 1, ry + 1, P.black);
+        if (!rng.chance(0.45)) continue;
+        const ny = ry + rng.int(-1, 1);
+        b.set(px, ny, P.black);
+        b.set(px - 1, ny, P.plum);
       }
       px += 1;
-    } else for (const ry of rails) b.set(px - 2, ry, P.slate);
+    } else {
+      batten = false;
+      for (const ry of rails) if (rng.chance(0.2)) b.set(px - 2, ry + rng.int(-1, 1), P.plum);
+    }
   }
+  // Remiendos: algún paño rehecho con tablas en horizontal o en diagonal, con su marco.
+  const n = Math.round((w * h) / 40000 + rng.next() * 0.8);
+  for (let k = 0; k < n; k++) {
+    const pw = 12 + rng.int(0, 14);
+    const ph = 14 + rng.int(0, 16);
+    if (w < pw + 8 || h < ph + 8) break;
+    patch(b, x + rng.int(2, w - pw - 2), y + rng.int(2, h - ph - 2), pw, ph, rng);
+  }
+}
+
+/** Un remiendo de tablas en horizontal o en diagonal, un poco por encima de la pared. */
+function patch(b: PixelBuffer, x: number, y: number, w: number, h: number, rng: Rng) {
+  const diag = rng.chance(0.4);
+  const tones = [0, 1, 2, 3].map(() => BOARDS[rng.int(1, 4)]!);
+  b.level = 3;
+  for (let yy = y; yy < y + h; yy++)
+    for (let xx = x; xx < x + w; xx++) {
+      const u = diag ? xx - x + (yy - y) : yy - y;
+      const band = Math.floor(u / 5);
+      const [dk, mid, lt] = tones[((band % 4) + 4) % 4]!;
+      const at = ((u % 5) + 5) % 5;
+      b.set(xx, yy, at === 4 ? P.black : at === 0 ? lt : hash(xx, yy, 7) > 0.9 ? dk : mid);
+    }
+  // El marco: una tabla oscura alrededor, algo más saliente.
+  b.level = 4;
+  b.hline(x - 1, y - 1, w + 2, P.bark);
+  b.hline(x - 1, y + h, w + 2, P.black);
+  b.vline(x - 1, y, h, P.bark);
+  b.vline(x + w, y, h, P.black);
+  b.set(x, y, P.black);
+  b.set(x + w - 1, y + h - 1, P.black);
+  b.level = 2;
 }
 
 /** Tonos del yeso de cada paño: unos más blancos, otros tostados por el sol o el humo. */

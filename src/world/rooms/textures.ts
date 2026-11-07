@@ -37,6 +37,7 @@ import { BLIND, cellsOf, sconceOn, takeWallActs, windowX } from './salas/kit';
 import { RISE, goesRight, stepAt } from './stairs';
 import { streetDoor } from './salas/recibidor';
 import { cloth } from './salas/tintes';
+import { ageWall } from './envejecer';
 import { roofAt, roofRelief, wallFill } from './fachada';
 import { wallSection } from './muros';
 import type { FacadeLook, RoofId, WallId } from '../../data/custom';
@@ -404,8 +405,11 @@ export function outerSide(
   const W = SIDE_W;
   const b = new PixelBuffer(W, h);
   // Con paredes elegidas, todas las plantas iguales; si no, yeso abajo y tablas arriba.
-  if (walls) wallFill(b, 0, 0, W, h, seed, walls);
-  else if (theme === 'yeso') {
+  if (walls) {
+    wallFill(b, 0, 0, W, h, seed, walls);
+    // Envejecido: paños y la humedad del pie (ver `envejecer.ts`).
+    ageWall(b, 0, 0, W, h, seed, { ground: h, top: -h });
+  } else if (theme === 'yeso') {
     plaster(b, 0, 0, W, h, seed, PLASTER);
     post(b, 0, 0, 3, h, WOOD_DARK);
     post(b, W - 3, 0, 3, h, WOOD_DARK);
@@ -795,6 +799,8 @@ function gable(
   const tile = (x: number, y: number) => roofAt(look.roof, x, y - Math.floor(base - h), 3);
   const planks = new PixelBuffer(Math.ceil(x1 - x0) + 1, h + 3);
   wallFill(planks, 0, 0, planks.w, planks.h, `hastial${x0}`, look.walls);
+  // Envejecido: paños y lo alto, pálido por el sol (ver `envejecer.ts`).
+  ageWall(planks, 0, 0, planks.w, planks.h, `hastial${x0}`, { top: 0 });
   for (let y = Math.floor(base - h); y <= base + 2; y++)
     for (let x = Math.floor(x0); x <= x1; x++) {
       if (!inside(x, y, 0)) continue;
@@ -975,6 +981,7 @@ export function outsideFace(
       }
     b.level = 0;
   };
+  const sills: { x: number; y: number; w: number }[] = [];
   // Una ventana de `w` × `h` con su marco, el alféizar, la cruz y el cristal transparente.
   const window = (cx: number, top: number, w: number, h: number) => {
     const x = Math.round(cx - ox - w / 2);
@@ -987,6 +994,7 @@ export function outsideFace(
     b.rect(x - 2, y - 2, w + 4, h + 4, P.bark);
     b.hline(x - 2, y - 2, w + 4, P.umber);
     b.rect(x - 3, y + h + 2, w + 6, 2, P.oak);
+    sills.push({ x: x - 2, y: y + h + 4, w: w + 4 });
     b.level = 0;
     for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) b.clear(x + i, y + j);
     b.level = 2;
@@ -1023,6 +1031,16 @@ export function outsideFace(
   }
   for (const s of stairCells(L))
     if (s.floor >= 0) window(s.rect.x + s.rect.w / 2, s.rect.y + 30, 8, 14);
+  // Y todo, envejecido: la humedad del pie, los churretes bajo alféizares y aleros, paños y el
+  // sol en lo alto (ver `envejecer.ts`).
+  let top = 0;
+  while (top < g && !b.data.subarray(top * b.w, (top + 1) * b.w).some((c) => c >>> 24)) top++;
+  ageWall(b, 0, 0, b.w, g, 'fuera', {
+    ground: g,
+    top,
+    sills,
+    eaves: roofRuns(L).map((r) => ({ x0: r.x0 - ox, x1: r.x1 - ox, y: r.base - oy + 1 })),
+  });
   return { buf: b, glass };
 }
 
