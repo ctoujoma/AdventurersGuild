@@ -571,6 +571,7 @@ export class RoomScene {
     };
     canvas.addEventListener('webglcontextlost', (e) => e.preventDefault());
     this.pets.sound = (name, v) => this.cb.onSound?.(name, v);
+    this.crowd.onArrive = (id, room) => this.cb.onArrive?.(id, room);
     this.bindInput();
   }
 
@@ -2483,7 +2484,7 @@ export class RoomScene {
     const zh = DOOR_U1 * 2;
     const len = (DOOR_U1 - DOOR_U0) * 2;
     for (const d of this.doors) {
-      const who = this.crowd.near(d.xm, d.floor, 16);
+      const who = this.crowd.near(d.xm, d.floor, 16) ?? this.incidents.near(d.xm, d.floor, 16);
       if (who !== null && d.open < 0.05) d.dir = who < d.xm ? 1 : -1;
       const target = who === null ? 0 : 1;
       let next = d.open + (target - d.open) * Math.min(1, dt * 6);
@@ -3187,6 +3188,22 @@ export class RoomScene {
         const p = this.onProp(bench, 0.3 + Math.random() * 0.4, 0.2);
         for (let i = 0; i < 3; i++) this.particles.spawn('spark', p.x, p.y);
       }
+    }
+    // Recién contratado: destellos y unas monedas que saltan sobre él, en la barra.
+    for (const id of this.crowd.hired.splice(0)) {
+      const w = this.crowd.where(id);
+      if (!w) continue;
+      for (let i = 0; i < 10; i++)
+        this.particles.spawn(
+          'glint',
+          w.x + (Math.random() - 0.5) * 18,
+          w.y - 6 - Math.random() * 22,
+          {
+            max: 0.5 + Math.random() * 0.6,
+          },
+        );
+      for (let i = 0; i < 5; i++) this.particles.spawn('coin', w.x, w.y - 26);
+      this.cb.onSound?.('coin', 0.4);
     }
     // Los golpes de la gente: martillazo (chispas), temple (vapor), tijeretazo (hilachas), tinte
     // y caldero (burbujas y vapor), la gota del alambique (destello); con su sonido si se ven.

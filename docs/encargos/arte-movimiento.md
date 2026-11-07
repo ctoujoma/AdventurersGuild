@@ -40,3 +40,28 @@ Lo que ya ha hecho el agente principal (no tocarlo, usarlo):
    de la lógica (`crowd.drop`, la tarea al llegar); a arte le tocará la marca.
 
 Rama propia, PR contra `main`. Si se toca `crowd.ts` o `App.tsx`, decirlo en el PR.
+
+## Auditoría (7 de noviembre) y lo arreglado
+
+Recorrido de los momentos en que alguien aparece, desaparece o algo empieza sin que se vea.
+
+| Momento | Antes | Ahora |
+| --- | --- | --- |
+| Vestir en la sastrería | Empezaba a coser tras 1 h fija, llegase o no el héroe | Empieza **cuando la escena le ve llegar** a la sala (`Crowd.onArrive` → acción `arrived` → `arrive()` en `core/crafting.ts`). `Craft.wait` marca que aún va de camino; si nadie avisa (sin 3D, app cerrada), empieza a las `DRESS_WALK` (2 h) como mucho. Mientras, el sastre le espera junto al probador sin coser |
+| Contratar a un trabajador | No estaba en la escena hasta contratarlo y aparecía en su sala | Los trabajadores que buscan casa esperan en la barra (como los héroes candidatos; si no caben, a su lado). Al contratarlo da un salto de alegría con destellos y monedas y va andando a su sala |
+| Contratar a un héroe | Iba andando, sin más | Igual que el trabajador: salto, destellos y monedas |
+| Despedir (héroe o trabajador), candidato que se va | Se esfumaba donde estuviera | Sale andando por la puerta y se pierde en el patio |
+| Cambiar de tarea o de guardia | Acababa antes el paseo que llevaba (hasta 15 s); la guardia no se notaba hasta su siguiente decisión | Va ya a lo nuevo |
+| El ladrón del tesoro | Corría a 45–60 y desaparecía al llegar a la pared de la cámara | Huye por el camino de la gente: sala a sala, las escaleras, el recibidor y el patio hasta el camino, a 44–50 (quien anda va a 36), perdiendo monedas si se sale con la suya; las puertas se le abren |
+
+Queda (sin hacer):
+
+- **Arrastrar a alguien:** sigue apareciendo donde se suelta (lo lleva el dedo, así que se ve).
+  Si se decide que vaya andando (ver [`../propuesta-asaltos.md`](../propuesta-asaltos.md), punto 3),
+  la tarea debería empezar con `onArrive` como la sastrería.
+- **El héroe que persigue al ladrón** un trecho: no hecho (el ladrón ya huye de verdad).
+- **Entrenar y talleres:** el entrenamiento y lo que se crea en la forja o la alquimia cuentan
+  desde que se manda, no desde que llega quien trabaja. Se nota poco (los talleres ya tienen a
+  su gente dentro); si molesta, se hace como la sastrería con `onArrive`.
+- **Obras:** quien se queda sin camino tras una obra aparece en la puerta.
+- Puntos 2 (el sastre que mide y prueba al llegar, más arte), 5 (el rótulo) y 6, como arriba.

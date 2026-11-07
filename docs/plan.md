@@ -27,7 +27,9 @@ o está en «Más adelante», no se toca sin preguntar. El detalle de cada idea 
   ([`encargos/arte-talleres.md`](encargos/arte-talleres.md)). Hechos: colores, fachada, incidentes, los
   tres jefes, la tira con los enemigos por familias, la vuelta que deshace el camino y el mapa.
   Encargado también: que lo que pasa se vea pasar ([`encargos/arte-movimiento.md`](encargos/arte-movimiento.md):
-  auditoría, contratar andando, el ladrón que huye de verdad, el rótulo que se balancea).
+  auditoría, contratar andando, el ladrón que huye de verdad, el rótulo que se balancea). Hecho
+  ya: la auditoría, la sastrería que empieza al llegar el héroe, contratar y despedir andando y el
+  ladrón que huye por la casa (ver la tabla del encargo); quedan el rótulo y el arte del sastre.
 - **Agente de interfaz:** terminado lo encargado (trabajadores, menos toques, avisos que se
   descartan, el cobro de Merlo, las cartas del amanecer una a una, el mapa grande). Le queda
   suelto: un globito en la escena sobre la sala sin nadie (con arte).

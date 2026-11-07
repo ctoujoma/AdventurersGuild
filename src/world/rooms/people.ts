@@ -248,9 +248,15 @@ export function homes(people: readonly Resident[], S: Spots): Map<string, Goal> 
     const b = free.shift();
     if (b) out.set(p.id, bed(b));
   }
+  // Los que buscan trabajo (héroes y trabajadores) esperan en la barra; si no caben, a su lado.
+  const last = S.bar.at(-1);
   let c = 0;
-  for (const p of people.filter((x) => x.status === 'candidato'))
-    if (c < S.bar.length) out.set(p.id, { place: S.bar[c++]!, pose: 'stand' });
+  for (const p of people.filter((x) => x.status === 'candidato')) {
+    const place =
+      S.bar[c] ?? (last ? { x: last.x + 14 * (c - S.bar.length + 1), floor: last.floor } : null);
+    c++;
+    if (place) out.set(p.id, { place, pose: 'stand' });
+  }
   return out;
 }
 

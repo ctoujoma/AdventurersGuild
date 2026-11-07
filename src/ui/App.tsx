@@ -1047,6 +1047,11 @@ export function App() {
             lastDrop.current = d;
             return d;
           }}
+          onArrive={(id, room) => {
+            // Solo importa si alguien le espera allí (vestirle en la sastrería).
+            if (gameRef.current.crafts?.some((c) => c.wait && c.dress?.hero === id))
+              dispatch({ type: 'arrived', heroId: id, room });
+          }}
           onRoomDrag={(id) => works.startPick({ kind: 'move', id })}
           onRoomDrop={() => {
             works.cancelPick();

@@ -151,6 +151,16 @@ export function sceneModel(s: GameState): SceneModel {
       look: lookOf(h),
       marks: marksOf(h),
     });
+  // Los trabajadores que buscan casa también esperan en la barra: al contratarlos, van andando.
+  for (const w of s.seekers)
+    heroes.push({
+      id: w.id,
+      name: workerTitle(w),
+      title: `Maña ${w.skill} · busca trabajo`,
+      status: 'candidato',
+      look: workerLook(w),
+      marks: {},
+    });
   return {
     building: s.building,
     crest: {

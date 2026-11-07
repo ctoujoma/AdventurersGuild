@@ -84,6 +84,19 @@ describe('la gente de la casa', () => {
     expect(h.has('e')).toBe(false);
   });
 
+  it('los que buscan trabajo y no caben en la barra esperan a su lado', () => {
+    const S = spots(L0());
+    const many = Array.from({ length: S.bar.length + 2 }, (_, i) => ({
+      id: `c${i}`,
+      status: 'candidato' as const,
+    }));
+    const h = homes(many, S);
+    expect(h.size).toBe(many.length);
+    const extra = h.get(`c${S.bar.length + 1}`)!.place;
+    expect(extra.floor).toBe(S.bar[0]!.floor);
+    expect(extra.x).toBeGreaterThan(S.bar.at(-1)!.x);
+  });
+
   it('de día se va al salón o a dar una vuelta por las salas en uso', () => {
     const S = spots(L0());
     let i = 0;

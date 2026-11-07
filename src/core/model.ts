@@ -276,6 +276,11 @@ export interface Craft {
   done: number;
   /** Parte del día (0–1) hasta la que ya está contado `done`. */
   at: number;
+  /**
+   * Vestir: el héroe aún no ha llegado a la sala. Se empieza cuando la escena dice que ha llegado
+   * (acción `arrived`) o, si no lo dice (sin escena, con la app cerrada), al llegar a `at`.
+   */
+  wait?: true;
   /** Lo pagado al empezar (se devuelve al cancelar). */
   gold: number;
   /** El objeto que se desmonta (si es desmontar). */

@@ -211,8 +211,9 @@ export function startDress(s: GameState, roomId: string, heroId: string, to: Dre
     dress: { hero: heroId, to: { ...to } },
     need: hoursToWork(DRESS_HOURS),
     done: 0,
-    // No se cose hasta que llega: se empieza a contar cuando le ha dado tiempo a ir andando.
+    // No se cose hasta que llega (`arrived`); si nadie avisa, cuando le ha dado tiempo de sobra.
     at: partOf(s) + DRESS_WALK / 24,
+    wait: true,
     gold: DRESS_GOLD,
   };
   s.crafts = [...(s.crafts ?? []), c];
@@ -236,7 +237,7 @@ export function craftState(s: GameState, c: Craft): CraftState {
     craft: c,
     frac: c.need > 0 ? done / c.need : 1,
     hoursLeft: rate > 0 ? ((c.need - done) / rate) * 24 : null,
-    walking: c.at > partOf(s) + 1e-9,
+    walking: !!c.wait && c.at > partOf(s) + 1e-9,
   };
 }
 
@@ -324,8 +325,9 @@ export function stepCrafts(s: GameState, part: number, shared?: Rng): DawnEvent[
       logEnd(s, c, 'cancelado');
       continue;
     }
-    c.done += craftRate(s, c.room, c) * Math.max(0, part - c.at);
     // Si aún no había empezado (el héroe de camino), se sigue esperando.
+    if (c.wait && part >= c.at) delete c.wait;
+    c.done += craftRate(s, c.room, c) * Math.max(0, part - c.at);
     c.at = Math.max(c.at, part);
     if (c.done >= c.need - 1e-9) finish(s, c, rng, news);
     else keep.push(c);
@@ -339,6 +341,20 @@ export function stepCrafts(s: GameState, part: number, shared?: Rng): DawnEvent[
 /** Al pasar la noche: lo que quedaba del día y, para el día nuevo, se empieza a contar de cero. */
 export function nightCrafts(s: GameState, rng: Rng): DawnEvent[] {
   const news = stepCrafts(s, 1, rng);
-  for (const c of s.crafts ?? []) c.at = 0;
+  // Quien aún iba de camino a la sastrería, va por la mañana (con el mismo margen).
+  for (const c of s.crafts ?? []) c.at = c.wait ? DRESS_WALK / 24 : 0;
   return news;
+}
+
+/**
+ * La escena dice que un héroe ha llegado a una sala: si allí le esperaban para vestirle, se
+ * empieza a coser ya. Devuelve si ha cambiado algo.
+ */
+export function arrive(s: GameState, heroId: string, roomId: string): boolean {
+  const c = s.crafts?.find((x) => x.dress?.hero === heroId && x.room === roomId && x.wait);
+  if (!c) return false;
+  const now: Craft = { ...c, at: Math.min(c.at, partOf(s)) };
+  delete now.wait;
+  s.crafts = s.crafts!.map((x) => (x === c ? now : x));
+  return true;
 }

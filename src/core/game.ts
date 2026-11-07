@@ -146,6 +146,7 @@ import { stepLarder } from './larder';
 import { stepTraining } from './training';
 import {
   canCraft,
+  arrive,
   canDress,
   knownRecipes,
   learnRecipe,
@@ -179,6 +180,8 @@ export type Action =
   | { type: 'cancelCraft'; id: string }
   /** Sastrería: vestir a un héroe (tinte y prenda). */
   | { type: 'dressAt'; room: string; heroId: string; dress: Dress }
+  /** La escena: un héroe ha llegado andando a una sala (la sastrería empieza a coser). */
+  | { type: 'arrived'; heroId: string; room: string }
   | { type: 'hire'; id: string }
   | { type: 'fire'; id: string }
   | { type: 'hireWorker'; id: string }
@@ -876,6 +879,10 @@ function reduceAction(state: GameState, action: Action): GameState {
       const s = structuredClone(state);
       startDress(s, action.room, action.heroId, action.dress);
       return s;
+    }
+    case 'arrived': {
+      const s = { ...state };
+      return arrive(s, action.heroId, action.room) ? s : state;
     }
     case 'cancelCraft': {
       if (!state.crafts?.some((c) => c.id === action.id)) return state;

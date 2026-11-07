@@ -594,6 +594,10 @@ type Tint = readonly [number, number, number];
 
 interface Actor {
   hero: SceneHero;
+  /** La sala de trabajo a la que ya se ha dicho que ha llegado (`onArrive`). */
+  told?: string;
+  /** Ya no es de la casa (despedido, o candidato que se va): sale por la puerta y desaparece. */
+  quit?: boolean;
   /** Sus fotogramas (para tocarle solo donde se le ve). */
   img: PixelBuffer;
   mat: ShaderMaterial;
@@ -976,6 +980,11 @@ export class Crowd {
   private now = 0;
   /** Sitios de las salas a los que se va a hacer algo (el tablón, la chimenea, el altar…). */
   private pois: Poi[] = [];
+  /**
+   * Alguien ha llegado andando a la sala de su tarea (una vez por tarea): así lo que depende de
+   * que esté allí (vestirle en la sastrería) empieza cuando se le ve llegar y no antes.
+   */
+  onArrive?: (id: string, room: string) => void;
 
   constructor(
     shared: Shared,
@@ -1037,9 +1046,25 @@ export class Crowd {
       h.guard ? 0 : h.status === 'herido' ? 1 : h.status === 'ok' ? 2 : 3;
     const home = heroes.filter((h) => h.status !== 'mision').sort((a, b) => order(a) - order(b));
     const shown = new Set(home.slice(0, MAX_ACTORS).map((h) => h.id));
+    // Los que se van de la casa (despedidos, o candidatos que se cansan de esperar) salen
+    // andando por la puerta; si se van muchos a la vez (otra partida), se quitan sin más.
+    const lost = [...this.actors.values()].filter(
+      (a) => !a.hero.visitor && !a.hero.bandit && !heroes.some((x) => x.id === a.hero.id),
+    );
+    const walkOut = lost.length <= 2;
     for (const [id, a] of this.actors) {
       if (a.hero.visitor) continue;
       const h = heroes.find((x) => x.id === id);
+      if (!h && a.quit) continue;
+      if (!h && walkOut && !a.gone && !a.held && this.S) {
+        a.quit = true;
+        a.leaving = true;
+        a.goal = null;
+        a.seat = null;
+        a.task = null;
+        this.go(a, { place: outside(), pose: 'stand' });
+        continue;
+      }
       // El que acaba de salir de misión sigue hasta la puerta aunque ya no esté en casa.
       const going = h?.status === 'mision' && (a.leaving || a.hero.status === 'ok');
       if (!h || (!shown.has(id) && !going)) {
@@ -1048,12 +1073,17 @@ export class Crowd {
       }
       const was = a.hero.status;
       const work = a.hero.work;
+      const guard = a.hero.guard;
       // Si ha cambiado su dibujo (equipo nuevo, herido o curado, u otra partida con los mismos
       // ids), se le rehace: si no, seguía con el de antes hasta que salía y volvía a entrar.
       const reskin = skinOf(a.hero) !== skinOf(h);
       a.hero = h;
       if (reskin) this.reskin(a);
-      if (work !== h.work && !a.gone && !a.leaving) a.wait = 0;
+      // Tarea nueva (o de guardia): va ya, sin acabar antes el paseo que llevaba.
+      if ((work !== h.work || !guard !== !h.guard) && !a.gone && !a.leaving) {
+        a.wait = 0;
+        if (was === h.status && !a.climb && !a.held && !this.scripted) this.decide(a);
+      }
       if (was === h.status) continue;
       a.goal = null;
       a.path = [];
@@ -1062,8 +1092,14 @@ export class Crowd {
         // Coge sus cosas y sale por el recibidor hasta perderse en el patio.
         a.leaving = true;
         this.go(a, { place: outside(), pose: 'stand' });
-      } else if (was === 'mision' || was === 'candidato') {
-        if (was === 'mision') this.put(a, outside());
+      } else if (was === 'candidato') {
+        // Contratado: da un salto de alegría en la barra y de ahí va andando a lo suyo.
+        a.cheer = this.now + 1.4;
+        a.wait = 1.4;
+        a.pose = 'stand';
+        this.hired.push(id);
+      } else if (was === 'mision') {
+        this.put(a, outside());
         a.wait = 0;
       }
     }
@@ -1278,15 +1314,33 @@ export class Crowd {
       if (a.chat && !a.path.length) this.talk(a, t);
       if (a.path.length || (a.pose === 'walk' && this.sliding(a))) this.walk(a, dt);
       else if (a.leaving) {
-        if (!a.hero.visitor) this.away.add(a.hero.id);
+        if (!a.hero.visitor && !a.quit) this.away.add(a.hero.id);
         this.remove(a.hero.id);
         continue;
       } else if (a.homeward) {
         this.hide(a);
         continue;
       } else if ((a.wait -= dt) <= 0) this.decide(a);
+      this.tell(a);
       this.place(a, t);
     }
+  }
+
+  /**
+   * Si está parado dentro de la sala de su tarea y aún no se ha dicho, lo dice. Si sale de ella
+   * (a dormir, a cenar), se olvida: al volver lo dirá otra vez.
+   */
+  private tell(a: Actor): void {
+    const w = a.hero.work;
+    const j = w ? this.S?.jobs.get(w) : undefined;
+    const inside = !!j && a.floor === j.room.floor && a.x >= j.x0 - 16 && a.x <= j.x1 + 16;
+    if (!inside) {
+      a.told = undefined;
+      return;
+    }
+    if (a.told === w || a.path.length || a.pose === 'walk') return;
+    a.told = w;
+    this.onArrive?.(a.hero.id, w!);
   }
 
   /**
@@ -1296,7 +1350,7 @@ export class Crowd {
   hit(v: View, x: number, y: number): string | null {
     let best: { id: string; z: number; solid: boolean } | null = null;
     for (const a of this.actors.values()) {
-      if (a.gone) continue;
+      if (a.gone || a.quit) continue;
       const r = this.rectOf(a, v);
       if (!r || x < r.x || x > r.x + r.w || y < r.y || y > r.y + r.h) continue;
       const z = this.depth(a);
@@ -1523,14 +1577,25 @@ export class Crowd {
   }
 
   /** Los trabajos de taller en marcha, por sala (la escena los da en cada fotograma). */
-  private crafts = new Map<string, { undo: boolean; stalled: boolean; hero?: string }>();
+  private crafts = new Map<
+    string,
+    { undo: boolean; stalled: boolean; hero?: string; walking?: boolean }
+  >();
   /** Los héroes a los que están vistiendo, y en qué sala. */
   private dressing = new Map<string, string>();
   /** Golpes que han sonado este fotograma (martillazo en el yunque, temple en la artesa). */
   hits: Hit[] = [];
+  /** Los que acaban de contratarse (la escena les pone el destello y las monedas). */
+  hired: string[] = [];
 
   setCrafts(
-    list: readonly { room: string; undo: boolean; stalled: boolean; hero?: string }[],
+    list: readonly {
+      room: string;
+      undo: boolean;
+      stalled: boolean;
+      hero?: string;
+      walking?: boolean;
+    }[],
   ): void {
     this.crafts.clear();
     this.dressing.clear();
@@ -1542,6 +1607,7 @@ export class Crowd {
         undo: c.undo && (was?.undo ?? true),
         stalled: c.stalled && (was?.stalled ?? true),
         hero: was?.hero ?? c.hero,
+        walking: was?.hero ? was.walking : c.walking,
       });
       if (c.hero) this.dressing.set(c.hero, c.room);
     }
@@ -1821,6 +1887,17 @@ export class Crowd {
       return true;
     }
     const who = craft?.hero ? this.actors.get(craft.hero) : undefined;
+    // El héroe aún no ha llegado: quien cose le espera junto al probador, sin empezar.
+    if (fit && craft?.walking) {
+      const place = { x: fit.x + 12, floor: fit.floor };
+      if (Math.abs(a.x - place.x) > 4 || a.floor !== place.floor) {
+        if (!route(this.L, { x: a.x, floor: a.floor }, place, this.segs)) return false;
+        this.go(a, { place, pose: 'stand', stand: fit.z !== undefined ? fit.z - 10 : undefined });
+      }
+      a.task = null;
+      a.wait = 1.5;
+      return true;
+    }
     if (
       fit &&
       who &&
