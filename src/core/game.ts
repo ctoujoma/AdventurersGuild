@@ -103,6 +103,7 @@ import { choose, maybeEvent, scaredClients, stepThreat } from './events';
 import { generateHero, generateQuest } from './generate';
 import {
   SAVE_VERSION,
+  type AssaultOutcome,
   type DawnEvent,
   type Mission,
   type Facilities,
@@ -239,6 +240,8 @@ export type Action =
   | { type: 'tutorialWorks'; steps: Action[] | null }
   /** Un grupo ante su jefe: se resuelve ya (la interfaz enseña la pelea si se quiere ver). */
   | { type: 'boss'; id: string; orders?: Order[] }
+  /** El asalto de esta noche, jugado en directo: lo usa el anochecer. */
+  | { type: 'raidFought'; result: AssaultOutcome }
   | { type: 'renameHero'; id: string; name: string }
   | { type: 'tutorial'; op: 'carta' | 'ok' | 'saltar' | 'listo' | TutorialSkip }
   /** Saltar al anochecer. */
@@ -842,6 +845,10 @@ function reduceAction(state: GameState, action: Action): GameState {
       const t = skipTime(s, action.op, (x) => endDay(x));
       return t === s ? state : t;
     }
+    case 'raidFought': {
+      if (!state.raid || state.raid.day > state.day) return state;
+      return { ...state, raidLive: { day: state.day, result: action.result } };
+    }
     case 'boss': {
       // Ante el jefe: el jugador dice (verla o que se las apañen); se resuelve ya.
       const m0 = state.missions.find((m) => m.id === action.id);
@@ -892,7 +899,8 @@ function reduceAction(state: GameState, action: Action): GameState {
       const shift = arrivedAt(s, action.heroId, action.room);
       const n = arriveIncident(s, action.heroId, action.room);
       if (n) s.incidentNews = [n];
-      return dressed || shift || n ? s : state;
+      // Con el ladrón no se arregla aún: empieza la pelea (cambia la lista).
+      return dressed || shift || n || s.incidents !== state.incidents ? s : state;
     }
     case 'cancelCraft': {
       if (!state.crafts?.some((c) => c.id === action.id)) return state;

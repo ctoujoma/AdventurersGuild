@@ -13,9 +13,14 @@ import {
   INCIDENT_FROM_DAY,
   INCIDENT_REACT,
   INCIDENT_RANK_COST,
+  THIEF_ESCAPE,
+  THIEF_HP,
+  THIEF_HP_RANK,
   rankIndex,
 } from './balance';
-import type { ChipKind, DawnEvent, GameState, Incident } from './model';
+import { CRIT, CRIT_MULT, heroUnit } from './combat';
+import type { ChipKind, DawnEvent, Duel, DuelHit, GameState, Incident } from './model';
+import { equip } from './resolve';
 import { Rng } from './rng';
 import { active } from './rooms';
 import { onWay } from './workers';
@@ -64,9 +69,14 @@ export function stepIncidents(s: GameState, from: number, to: number): IncidentN
       }
       // Si nadie dice que ha llegado (sin escena o con la app cerrada), se da por llegado.
       if (to >= c.at) {
-        done(s, inc);
-        news.push(win(s, inc, nameOf(s, c.who)));
+        const n = reach(s, inc, c.who);
+        if (n) news.push(n);
       }
+      continue;
+    }
+    // La pelea con el ladrón: al acabar, le pilla o se escapa.
+    if (inc.duel) {
+      if (to >= inc.duel.at + inc.duel.end) news.push(settleDuel(s, inc));
       continue;
     }
     // Quien ya está en la sala y sabe arreglarlo se pone a ello solo (sin que haya que arrastrarlo).
@@ -79,7 +89,7 @@ export function stepIncidents(s: GameState, from: number, to: number): IncidentN
   }
   // Sale mal al acabarse el tiempo, salvo que alguien vaya ya de camino.
   const list = s.incidents ?? [];
-  const late = (i: Incident) => i.until <= to && !i.coming;
+  const late = (i: Incident) => i.until <= to && !i.coming && !i.duel;
   for (const inc of list.filter(late)) news.push(lose(s, inc));
   s.incidents = list.filter((i) => !late(i));
   // Uno a la vez, desde el segundo día y con tiempo de resolverlo antes de que anochezca.
@@ -142,8 +152,69 @@ function canGo(s: GameState, inc: Incident, who: string): boolean {
 export function arriveIncident(s: GameState, who: string, room: string): IncidentNews | null {
   const inc = s.incidents?.find((i) => i.room === room && i.coming?.who === who);
   if (!inc) return null;
+  return reach(s, inc, who);
+}
+
+/** Llega quien iba: lo arregla; al ladrón, primero hay que ganarle la pelea. */
+function reach(s: GameState, inc: Incident, who: string): IncidentNews | null {
+  const duel = inc.kind === 'ladron' ? thiefDuel(s, who, inc.id, s.clock ?? 0) : null;
+  if (!duel) {
+    done(s, inc);
+    return win(s, inc, nameOf(s, who));
+  }
+  s.incidents = (s.incidents ?? []).map((i) => (i === inc ? { ...i, coming: undefined, duel } : i));
+  return null;
+}
+
+/** Acaba el duelo con el ladrón: le pilla o se escapa con el oro. */
+function settleDuel(s: GameState, inc: Incident): IncidentNews {
+  const d = inc.duel!;
   done(s, inc);
-  return win(s, inc, nameOf(s, who));
+  if (d.won) return win(s, inc, nameOf(s, d.who));
+  const n = lose(s, inc);
+  return { ...n, t: `${nameOf(s, d.who)} no puede con él. ${n.t}` };
+}
+
+/**
+ * La pelea con el ladrón, golpe a golpe (con las cuentas de la pelea contra jefes): si el héroe
+ * lo tumba antes de que pasen `THIEF_ESCAPE` segundos, le pilla; si no, se escapa. Más duro con
+ * cada rango. Determinista con la semilla del incidente.
+ */
+export function thiefDuel(s: GameState, who: string, seed: string, at: number): Duel | null {
+  const h = s.heroes.find((x) => x.id === who && x.status === 'ok');
+  if (!h) return null;
+  const u = heroUnit({ ...equip([h], s.fac)[0]!, id: h.id, name: h.name });
+  const rank = rankIndex(s.rep);
+  const thief = { hp: THIEF_HP + THIEF_HP_RANK * rank, atk: 3 + 1.5 * rank, every: 1.1, def: 1 };
+  const rng = new Rng(`ladron-${seed}`);
+  let hh = u.max;
+  let lh = thief.hp;
+  let ch = u.every * 0.5;
+  let cl = thief.every * 0.8;
+  const hits: DuelHit[] = [];
+  let t = 0;
+  for (; t < THIEF_ESCAPE && lh > 0 && hh > 0; t = Math.round((t + 0.1) * 10) / 10) {
+    ch -= 0.1;
+    cl -= 0.1;
+    if (ch <= 0) {
+      ch += u.every;
+      const crit = rng.chance(CRIT);
+      const raw = u.atk * (0.85 + rng.next() * 0.3) * (crit ? CRIT_MULT : 1);
+      const amount = Math.min(lh, Math.max(1, Math.round(raw - thief.def * 0.5)));
+      lh -= amount;
+      hits.push({ t, by: 'h', amount, crit: crit || undefined });
+    }
+    if (cl <= 0 && lh > 0) {
+      cl += thief.every;
+      const amount = Math.min(
+        hh,
+        Math.max(1, Math.round(thief.atk * (0.85 + rng.next() * 0.3) - u.def * 0.5)),
+      );
+      hh -= amount;
+      hits.push({ t, by: 'l', amount });
+    }
+  }
+  return { who, at, end: t + 0.6, won: lh <= 0, hits, hp: { h: u.max, l: thief.hp } };
 }
 
 /** Sale mal: se pierde lo que diga y se cuenta. */
@@ -237,11 +308,18 @@ export function actOnIncident(s: GameState, id: string, act: IncidentAct): Incid
  * iba ya de camino, llega y lo arregla).
  */
 export function failIncidents(s: GameState, events: DawnEvent[]): void {
-  for (const inc of s.incidents ?? [])
-    events.push(
-      inc.coming && canGo(s, inc, inc.coming.who)
-        ? win(s, inc, nameOf(s, inc.coming.who))
-        : lose(s, inc),
-    );
+  for (const inc of [...(s.incidents ?? [])]) {
+    if (inc.duel) {
+      events.push(settleDuel(s, inc));
+      continue;
+    }
+    if (inc.coming && canGo(s, inc, inc.coming.who)) {
+      const n = reach(s, inc, inc.coming.who);
+      const now = s.incidents?.find((i) => i.id === inc.id);
+      events.push(n ?? settleDuel(s, now!));
+      continue;
+    }
+    events.push(lose(s, inc));
+  }
   s.incidents = [];
 }
