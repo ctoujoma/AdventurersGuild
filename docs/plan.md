@@ -136,8 +136,7 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
     pintor.
 11. **Ropa con candados** (núcleo hecho; interfaz, ver `encargos/interfaz-plazos-ficha.md`): la
     ficha encarga la ropa a la sastrería (`dressStatus`), en lugar de cambiarla gratis.
-12. **La noche** (para decidir: [`propuesta-tiempo.md`](propuesta-tiempo.md)): más larga y con
-    «Pasar la noche» a x8.
+12. **La noche** (hecho, 8 de noviembre: ver [`propuesta-tiempo.md`](propuesta-tiempo.md)): al doble, con «Pasar la noche» a x16; los menús ya no paran el reloj y el día acelera hasta x8.
 
 ## Fase 2 · Tutoriales
 

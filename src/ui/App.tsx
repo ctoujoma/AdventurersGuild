@@ -17,7 +17,7 @@ import type { UnlockId } from '../data/unlocks';
 import { Assault, assaultSetup, raidRoute, raidSeed } from '../core/assault';
 import { Rng } from '../core/rng';
 import { canHireWorker } from '../core/workers';
-import { DAY_SECONDS, DELIVERIES, DUSK } from '../core/balance';
+import { DAY_SECONDS, DELIVERIES, DUSK, NIGHT_RUSH, WORK_END } from '../core/balance';
 import { DECOR, FACADE, PET_LINES } from '../data/custom';
 import { RUMORS, VISITORS, type VisitorKind } from '../data/visitors';
 import type { BossFight as BossFightRecord, Facilities, GameState } from '../core/model';
@@ -936,6 +936,15 @@ export function App() {
 
   // El reloj del día: corre con el juego abierto, también con un panel delante, y se para en
   // los momentos que piden atención (evento, nota, asalto, amanecer…) y con la pestaña oculta.
+  // «Pasar la noche»: de noche, el reloj corre a x16 hasta el amanecer (se apaga con el día nuevo).
+  const [nightRush, setNightRush] = useState(false);
+  useEffect(() => setNightRush(false), [game.day]);
+  const isNight = clock >= WORK_END * DAY_SECONDS;
+  // Con el tiempo que corre solo, acelerar el día solo se puede mientras dura «La deuda» (y en el
+  // modo prueba): luego el reloj es el de verdad. La noche se puede pasar siempre.
+  const clockPace = nightRush && isNight ? NIGHT_RUSH : realTime && !canRush ? 1 : settings.pace;
+  const paceRef = useRef(clockPace);
+  paceRef.current = clockPace;
   const ticking =
     calm &&
     !game.over &&
@@ -953,8 +962,8 @@ export function App() {
     setClock(clockRef.current);
     scene.current?.setTime(clockRef.current / DAY_SECONDS);
   }, [game.day, game.seed]);
-  // La escena va al ritmo del reloj: a x2 o x4 la gente también anda (y trabaja) más deprisa.
-  const pace = ticking ? (realTime && !canRush ? 1 : settings.pace) : 1;
+  // La escena va al ritmo del reloj: a x2, x4 u x8 la gente también anda (y trabaja) más deprisa.
+  const pace = ticking ? clockPace : 1;
   useEffect(() => {
     if (scene.current) scene.current.pace = pace;
   }, [pace]);
@@ -963,22 +972,19 @@ export function App() {
     const id = setInterval(() => {
       if (document.hidden) return;
       const before = clockRef.current;
-      // Con el tiempo que corre solo, acelerar solo se puede mientras dura «La deuda» (y en el
-      // modo prueba): luego el reloj es el de verdad.
-      const pace = realTime && !canRush ? 1 : settings.pace;
-      const next = Math.min(DAY_SECONDS, before + 0.25 * pace);
+      const next = Math.min(DAY_SECONDS, before + 0.25 * paceRef.current);
       if (next === before) return;
       moveClock(next, before);
     }, 250);
     return () => clearInterval(id);
-  }, [ticking, settings.pace, realTime, canRush]);
-  // Tiempo que corre solo (en prueba): al acabar el día la noche cae sola, cuando no hay nada
-  // abierto delante (un panel o una ficha esperan a que se cierren).
+  }, [ticking]);
+  // Tiempo que corre solo: al acabar el día la noche cae sola, aunque haya un panel o una ficha
+  // abiertos (se cierran); solo el modo obras la hace esperar.
   useEffect(() => {
     if (!realTime || !ticking || passing || clock < DAY_SECONDS) return;
-    if (panel || card || questId || works.planning) return;
+    if (works.planning) return;
     endDay();
-  }, [clock, ticking, passing, panel, card, questId, works.planning, realTime]);
+  }, [clock, ticking, passing, works.planning, realTime]);
   // Lo que se abre desde el gremio (arcón, libro, adornos) deja encendida su pestaña.
   const tab: TabId =
     panel === 'tablon' || panel === 'heroes' || panel === 'gremio'
@@ -1151,7 +1157,7 @@ export function App() {
               game={game}
               inc={inc}
               clock={clock}
-              speed={realTime && !canRush ? 1 : settings.pace}
+              speed={clockPace}
               scene={scene}
               onAct={(act) => {
                 if (act.by === 'tocar') audio.play('squeak', 0.5);
@@ -1181,7 +1187,7 @@ export function App() {
             rumor={game.rumor}
             room={rumorRoom(game)!}
             clock={clock}
-            speed={realTime && !canRush ? 1 : settings.pace}
+            speed={clockPace}
             scene={scene}
             onTake={() => {
               audio.play('coin', 0.6);
@@ -1273,10 +1279,16 @@ export function App() {
             canClose={clock >= DUSK * DAY_SECONDS}
             night={passing}
             pace={settings.pace}
+            rushing={nightRush}
+            onRushNight={() => {
+              audio.play('select', 0.5);
+              setNightRush(!nightRush);
+            }}
             onPace={() =>
               setSettings({
                 ...settings,
-                pace: settings.pace === 1 ? 2 : settings.pace === 2 ? 4 : 1,
+                pace:
+                  settings.pace === 1 ? 2 : settings.pace === 2 ? 4 : settings.pace === 4 ? 8 : 1,
               })
             }
             onDusk={() =>

@@ -182,6 +182,16 @@ import { GAME_TOP, SPOT } from './salas/recibidor';
 
 /** Duración del día de la escena hasta que anochece (el reloj de verdad llega con el día vivo). */
 const DAY_LENGTH = 720;
+/**
+ * La hora del reloj, llevada a la curva de luz (hecha para una jornada hasta 0,82): la jornada se
+ * estira hasta `WORK_END` y la noche se hace oscura en su primera parte (luego, noche cerrada).
+ */
+function lightTod(tod: number): number {
+  if (tod <= WORK_END) return (tod / WORK_END) * 0.82;
+  const dark = WORK_END + 0.1;
+  if (tod <= dark) return 0.82 + ((tod - WORK_END) / (dark - WORK_END)) * 0.15;
+  return 0.97 + ((tod - dark) / (1 - dark)) * 0.03;
+}
 /** Cámara lenta del asalto mientras se arrastra a alguien (parte del ritmo normal). */
 const RAID_SLOW = 0.3;
 /** Lo que ruedan los dados de los de guardia al tirarlos (s). */
@@ -1688,7 +1698,7 @@ export class RoomScene {
       if (p < 0.9) return { day: 0, dusk: 0, tod: 0 };
       return { day: smooth(Math.min(1, (p - 0.9) / 0.9)) * DAWN_LIGHT, dusk: 0, tod: 0 };
     }
-    const tod = this.clockTod ?? Math.min(1, (this.t - this.dayStart) / DAY_LENGTH);
+    const tod = lightTod(this.clockTod ?? Math.min(1, (this.t - this.dayStart) / DAY_LENGTH));
     const k = (a: number, b: number) => Math.max(0, Math.min(1, (tod - a) / (b - a)));
     const day =
       tod < 0.12 ? DAWN_LIGHT + (1 - DAWN_LIGHT) * smooth(k(0, 0.12)) : 1 - smooth(k(0.6, 0.95));

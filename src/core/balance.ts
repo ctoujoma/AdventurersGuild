@@ -137,8 +137,11 @@ export const STAIR_STEP = 10;
 
 /** Camas: las de los dormitorios y, con el ala de veteranos, dos más por nivel. */
 export const capacity = (dorm: number, vet = 0) => 2 + 2 * dorm + 2 * vet;
-/** Segundos que dura un día con el juego abierto (a velocidad normal). */
-export const DAY_SECONDS = 300;
+/**
+ * Segundos que dura un día con el juego abierto (a velocidad normal): unos 250 de jornada y
+ * unos 108 de noche (desde `WORK_END`).
+ */
+export const DAY_SECONDS = 360;
 /**
  * «Tiempo que corre solo» (en prueba, Ajustes › Modo prueba): con el juego cerrado o en segundo
  * plano el día dura esto en segundos reales (abierto, `DAY_SECONDS`). Al volver se simula de
@@ -168,7 +171,7 @@ export const RUMOR_LEGEND = 0.3;
 /** Paga mínima de un encargo de rumor, por cada rango (cobre cuenta 1). */
 export const RUMOR_MIN_PAY = 80;
 /** Parte del día desde la que es anochecer y se puede cerrar la taberna. */
-export const DUSK = 0.8;
+export const DUSK = 0.68;
 /**
  * La jornada (partes del día): de cuando llegan a su puesto por la mañana a cuando se van a
  * dormir (la escena manda a todos a la cama a esa hora). Fuera de ella, nadie trabaja: los
@@ -176,12 +179,12 @@ export const DUSK = 0.8;
  * jornada rinde lo mismo que antes rendía el día entero.
  */
 export const WORK_START = 0.05;
-export const WORK_END = 0.82;
+export const WORK_END = 0.7;
 /**
  * La noche: desde que se van a dormir (`WORK_END`) hasta que acaba el día. «Pasar la noche»
  * hace correr el reloj `NIGHT_RUSH` veces más deprisa hasta el amanecer (ver `nightLeft`).
  */
-export const NIGHT_RUSH = 8;
+export const NIGHT_RUSH = 16;
 /** Entregas en que llega la caja del día, repartidas hasta el anochecer. */
 export const DELIVERIES = 8;
 /** Trofeos: cuántos caben en la pared del salón, el Atractivo de cada uno y la fama al conseguirlos. */
@@ -521,7 +524,7 @@ export const PAINT_SLOTS = [0, 1, 1, 2] as const;
  */
 export const JOB_WALK = 2;
 /** Segundos de reloj que se le dan a quien va a un incidente para llegar (si nadie lo dice). */
-export const INCIDENT_WALK = 25;
+export const INCIDENT_WALK = 30;
 /**
  * El ladrón de la cámara pelea con quien llega: su vida (más por rango) y lo que aguanta antes de
  * escaparse con el oro (s).

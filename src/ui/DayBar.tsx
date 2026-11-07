@@ -1,4 +1,4 @@
-import { AWAY_DAY_SECONDS, DAY_SECONDS, DUSK } from '../core/balance';
+import { AWAY_DAY_SECONDS, DAY_SECONDS, DUSK, NIGHT_RUSH, WORK_END } from '../core/balance';
 import { help } from './HoldHelp';
 import { Icon } from './icons';
 import { countdown } from './when';
@@ -12,7 +12,10 @@ interface Props {
   canClose: boolean;
   /** Pasando la noche (con o sin asalto): el reloj de mañana aún no corre. */
   night?: boolean;
-  pace: 1 | 2 | 4;
+  pace: 1 | 2 | 4 | 8;
+  /** «Pasar la noche» puesto: de noche el reloj corre a `NIGHT_RUSH`. */
+  rushing?: boolean;
+  onRushNight?: () => void;
   /** Tiempo que corre solo: sin cerrar; la barra dice cuánto falta para la noche. */
   real?: boolean;
   /** Con el tiempo que corre solo, se puede acelerar (mientras dura «La deuda» y en pruebas). */
@@ -26,7 +29,7 @@ interface Props {
 
 /** Nombre de la hora del día, para el reloj de la barra. */
 export function partName(part: number, dusk: number): string {
-  if (part >= 1) return 'Noche';
+  if (part >= WORK_END) return 'Noche';
   if (part >= dusk) return 'Anochecer';
   return part < dusk / 2 ? 'Mañana' : 'Tarde';
 }
@@ -40,9 +43,11 @@ export function DayBar(p: Props) {
   const dusk = DUSK;
   const part = p.night ? 1 : p.part;
   // Con el tiempo que corre solo, cuánto falta para el anochecer o para la noche.
-  const speed = p.real && !p.rush ? 1 : p.pace;
+  const night = part >= WORK_END;
+  const speed = night && p.rushing ? NIGHT_RUSH : p.real && !p.rush ? 1 : p.pace;
   const toDusk = ((dusk - part) * DAY_SECONDS) / speed;
-  const toNight = ((1 - part) * DAY_SECONDS) / speed;
+  const toNight = ((WORK_END - part) * DAY_SECONDS) / speed;
+  const toDawn = ((1 - part) * DAY_SECONDS) / speed;
   const slow = Math.round(AWAY_DAY_SECONDS / DAY_SECONDS);
   return (
     <div class="daybar">
@@ -98,7 +103,23 @@ export function DayBar(p: Props) {
           <span class="clock-pace">×{p.pace}</span>
         </button>
       )}
-      {p.night ? null : p.real ? (
+      {p.night ? null : night && p.onRushNight && (p.real || !p.canClose) ? (
+        <button
+          class={`btn ${p.rushing ? 'btn-gold' : 'btn-wood'} endday`}
+          aria-pressed={!!p.rushing}
+          data-help={`Pasar la noche: el reloj corre ×${NIGHT_RUSH} hasta el amanecer. Si hay asalto, empieza a su ritmo.`}
+          onClick={p.onRushNight}
+        >
+          <Icon name="moon" size={18} />
+          {p.rushing ? (
+            <>
+              ×{NIGHT_RUSH} · {countdown(toDawn)}
+            </>
+          ) : (
+            <>Pasar la noche</>
+          )}
+        </button>
+      ) : p.real ? (
         <span class="daybar-left" aria-live="off">
           <Icon name={part < dusk ? 'reloj' : 'moon'} size={16} />
           <span class="daybar-word">{part < dusk ? 'Anochece en' : 'Noche en'}</span>
