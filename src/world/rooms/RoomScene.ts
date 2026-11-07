@@ -417,6 +417,8 @@ export class RoomScene {
   private wxAt = 0;
   /** Lo mojado de fuera: se moja deprisa con lluvia y se seca despacio. */
   private wetness = 0;
+  /** Lo cubierto de nieve que está lo de fuera (0–1). */
+  private snowCover = 0;
   private wxSaid = 0;
   private renderer: WebGLRenderer;
   private scene = new Scene();
@@ -1563,7 +1565,7 @@ export class RoomScene {
 
   /** La lluvia de este fotograma: lo fuerte, el viento y lo que se ve (sin máscara desde fuera). */
   private stepRain(view: View, wx: Weather): boolean {
-    const on = wx.rain > 0.01;
+    const on = wx.rain > 0.01 || wx.snow > 0.01;
     const dl = this.daylight();
     const day = Math.min(1, dl.day + dl.dusk * 0.6);
     for (const m of [this.rainFar, this.rainNear]) {
@@ -1571,6 +1573,8 @@ export class RoomScene {
       u.uView!.value.set(view.px, view.py, view.vw, view.vh);
       u.uTime!.value = performance.now() / 1000;
       u.uRain!.value = wx.rain;
+      u.uSnow!.value = wx.snow;
+      u.uWind!.value = wx.wind;
       u.uSlant!.value = 0.22 + wx.wind * 0.4;
       u.uCover!.value = this.coverFade > 0.5 ? 1 : 0;
       u.uSplash!.value = this.fewLights ? 0 : 1;
@@ -1578,6 +1582,7 @@ export class RoomScene {
       const lum = 0.36 + 0.64 * day;
       u.uColor!.value.set(0.72 * lum, 0.77 * lum, (0.86 * lum + 0.06) * (1 - day * 0.06));
       u.uHead!.value.set(0.88 * lum, 0.91 * lum, 0.96 * lum + 0.04);
+      u.uFlake!.value.set(0.97 * lum + 0.03, 0.98 * lum + 0.02, lum * 0.96 + 0.06);
       // Los faroles de fuera encendidos (de noche o con niebla), los de la vista.
       const glows = u.uGlow!.value as Vector4[];
       const gc = u.uGlowC!.value as Vector3[];
@@ -1636,10 +1641,19 @@ export class RoomScene {
     const dt = this.wxAt ? Math.min(0.5, now - this.wxAt) : 1e3;
     this.wxAt = now;
     this.wx = approach(this.wx, target, dt, WEATHER_TAU);
-    const wetTo = Math.min(1, this.wx.rain * 1.6);
-    const k = 1 - Math.exp(-Math.min(dt, 0.5) / (wetTo > this.wetness ? 12 : 90));
+    // La nieve posada: crece mientras nieva (en un minuto y pico, hasta cubrirlo todo) y, al
+    // parar, se funde despacio; mientras se funde, lo de fuera queda mojado.
+    const step = Math.min(dt, 0.5);
+    if (dt > 100) this.snowCover = this.wx.snow > 0.05 ? 1 : 0;
+    else if (this.wx.snow > 0.05)
+      this.snowCover = Math.min(1, this.snowCover + (step * this.wx.snow) / 70);
+    else this.snowCover = Math.max(0, this.snowCover - step / 150);
+    const melting = this.wx.snow < 0.05 && this.snowCover > 0.02 ? 0.7 : 0;
+    const wetTo = Math.max(Math.min(1, this.wx.rain * 1.6), melting);
+    const k = 1 - Math.exp(-step / (wetTo > this.wetness ? 12 : 90));
     this.wetness = dt > 100 ? wetTo : this.wetness + (wetTo - this.wetness) * k;
     this.shared.uWet.value = this.moodLight ? this.wetness : 0;
+    this.shared.uSnowCover.value = this.moodLight ? this.snowCover : 0;
     // Al sonido, cuatro veces por segundo: lo que hace y si se mira fuera o dentro.
     if (now - this.wxSaid > 0.25 && this.layout) {
       this.wxSaid = now;
@@ -3938,9 +3952,13 @@ export class RoomScene {
     if (!this.smokeAt.length) return;
     this.smokeT -= dt;
     if (this.smokeT > 0) return;
-    this.smokeT = (this.night ? 0.12 : 0.25) * (0.7 + Math.random() * 0.6);
-    for (const p of this.smokeAt)
+    // Con nieve (hace frío: el fuego de dentro, más vivo), el humo sale más espeso.
+    const cold = this.moodLight ? Math.max(this.wx.snow, this.snowCover * 0.6) : 0;
+    this.smokeT = (this.night ? 0.12 : 0.25) * (0.7 + Math.random() * 0.6) * (1 - 0.5 * cold);
+    for (const p of this.smokeAt) {
       this.particles.spawn('chimney', p.x + (Math.random() - 0.5) * 3, p.y - 1);
+      if (cold > 0.3) this.particles.spawn('chimney', p.x + (Math.random() - 0.5) * 6, p.y - 3);
+    }
   }
 
   /** El asalto: empieza a oscuras, la cámara sigue a los bandidos y, al acabar, sigue la noche. */
@@ -4037,6 +4055,11 @@ export class RoomScene {
         (1 - 0.08 * hide) * (1 - 0.24 * wet),
       ),
     );
+    // La nieve en el suelo devuelve luz: algo más claro y frío.
+    if (this.snowCover > 0.01)
+      s.uDaylight.value.multiply(
+        new Vector3(1 + 0.08 * this.snowCover, 1 + 0.1 * this.snowCover, 1 + 0.16 * this.snowCover),
+      );
     this.shared.uSunHide.value = hide;
     const boost =
       (window as unknown as { __lampK?: number }).__lampK ?? (this.moodLight ? MOOD_LAMPS : 1);
@@ -4153,9 +4176,9 @@ export class RoomScene {
 
     // El cielo, solo cuando cambia (la cámara se mueve o pasa un rato).
     // El manto del nublado se pinta poco a poco, unas pocas nubes por fotograma.
-    this.sky.weather = { cloud: wx.cloud, fog: wx.fog, rain: wx.rain };
+    this.sky.weather = { cloud: wx.cloud, fog: wx.fog, rain: wx.rain, snow: this.snowCover };
     if (this.moodLight && this.sky.buildDeck()) this.skyAt = '';
-    const skyKey = `${view.px},${view.py},${Math.floor(t * 8)},${view.vw},${view.vh},${Math.round(wx.cloud * 40)},${Math.round(wx.fog * 40)},${Math.round(wx.rain * 40)}`;
+    const skyKey = `${view.px},${view.py},${Math.floor(t * 8)},${view.vw},${view.vh},${Math.round(wx.cloud * 40)},${Math.round(wx.fog * 40)},${Math.round(wx.rain * 40)},${Math.round(this.snowCover * 8)}`;
     if (skyKey !== this.skyAt) {
       this.skyAt = skyKey;
       // El horizonte: donde acaba el terreno, al fondo (con la perspectiva, sube y baja con la cámara).

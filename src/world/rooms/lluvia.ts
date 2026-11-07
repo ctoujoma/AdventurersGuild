@@ -1,5 +1,5 @@
 /**
- * La lluvia: una lámina a pantalla completa, calculada en el shader por téxeles del mundo (sin
+ * La lluvia y la nieve: una lámina a pantalla completa, calculada en el shader por téxeles del mundo (sin
  * líneas finas: cada gota es una escalera de téxeles en diagonal). Va en dos pasadas: la capa de
  * lejos, por detrás de todo lo 3D (se ve entre los árboles y por las ventanas), y las dos de cerca
  * por delante, con una máscara para que no llueva dentro de las salas ni bajo tierra. En la de
@@ -35,6 +35,9 @@ const FRAG = /* glsl */ `
   uniform vec4 uView;      // px, py, vw, vh (mundo)
   uniform float uTime;
   uniform float uRain;     // 0–1
+  uniform float uSnow;     // 0–1: copos en vez de gotas
+  uniform float uWind;     // 0–1: los copos derivan de lado
+  uniform vec3 uFlake;
   uniform float uSlant;    // téxeles en x por cada uno que baja
   uniform float uNear;     // 1: las capas de cerca (con máscara); 0: la de lejos
   uniform float uCover;    // la tapa de la vista desde fuera: sin máscara de salas
@@ -75,6 +78,21 @@ const FRAG = /* glsl */ `
     return lv >= len - 1.0 ? 2.0 : 1.0;
   }
 
+  // Una capa de copos: en celdas de cell.x × cell.y, como mucho uno de big téxeles de lado que
+  // cae despacio y se mece a un lado y a otro (sin salirse de su celda).
+  float flakes(vec2 q, vec2 cell, float dens, float speed, float sway, float big, float seed) {
+    float v = q.y - floor(uTime * speed);
+    float u = q.x - floor(uTime * speed * uWind * 0.8);
+    vec2 c = floor(vec2(u, v) / cell);
+    float h = h21(c + seed);
+    if (h > dens) return 0.0;
+    float ox = sway + floor(h21(c + seed + 7.1) * (cell.x - 2.0 * sway - big + 1.0));
+    float oy = floor(h21(c + seed + 13.3) * (cell.y - big + 1.0));
+    float sw = floor(sin(uTime * (0.9 + h * 0.8) + h * 40.0) * sway + 0.5);
+    vec2 d = vec2(u - c.x * cell.x - ox - sw, v - c.y * cell.y - oy);
+    return d.x >= 0.0 && d.y >= 0.0 && d.x < big && d.y < big ? 1.0 : 0.0;
+  }
+
   void main() {
     // El téxel de la pantalla y su sitio en el mundo (y hacia abajo).
     vec2 f = floor(vec2(vUv.x * uView.z, (1.0 - vUv.y) * uView.w));
@@ -84,8 +102,12 @@ const FRAG = /* glsl */ `
     if (uNear < 0.5) {
       // Lejos: más pequeñas, tenues y lentas; con su paralaje (se mueven menos que el mundo).
       vec2 q = f + floor(uView.xy * 0.6);
-      float d = drops(q, vec2(4.0, 15.0), 0.62 * uRain + 0.1, 2.0, 3.0, 55.0, 1.0);
-      if (d > 0.0) a = 0.36 + 0.1 * (d - 1.0);
+      if (uSnow > 0.01) {
+        if (flakes(q, vec2(5.0, 7.0), 0.5 * uSnow, 8.0, 1.0, 1.0, 1.0) > 0.0) { a = 0.6; col = uFlake * 0.88; }
+      } else {
+        float d = drops(q, vec2(4.0, 15.0), 0.62 * uRain + 0.1, 2.0, 3.0, 55.0, 1.0);
+        if (d > 0.0) a = 0.36 + 0.1 * (d - 1.0);
+      }
     } else {
       if (w.y >= ${GROUND.toFixed(1)}) discard;
       // Dentro de las salas no llueve (salvo con la tapa de la vista desde fuera).
@@ -93,6 +115,15 @@ const FRAG = /* glsl */ `
       if (uCover < 0.5 && m.x >= 0.0 && m.y >= 0.0 && m.x < uMaskAt.z && m.y < uMaskAt.w &&
           texelFetch(uMask, ivec2(m), 0).r > 0.5) discard;
       vec2 q1 = f + floor(uView.xy * 0.8);
+      if (uSnow > 0.01) {
+        // Copos: los de cerca, de 2 × 2 y más deprisa; los de en medio, de uno.
+        if (flakes(w, vec2(17.0, 19.0), 0.38 * uSnow, 21.0, 2.0, 2.0, 43.0) > 0.0) a = 1.0;
+        else if (flakes(q1, vec2(8.0, 10.0), 0.45 * uSnow, 13.0, 1.0, 1.0, 21.0) > 0.0) a = 0.9;
+        if (a > 0.0) { col = uFlake; a *= min(1.0, uSnow * 1.6); }
+        if (a < 0.01) discard;
+        gl_FragColor = vec4(col, a);
+        return;
+      }
       float d1 = drops(q1, vec2(6.0, 22.0), 0.55 * uRain + 0.05, 3.0, 4.0, 80.0, 21.0);
       vec2 q2 = w;
       float d2 = drops(q2, vec2(11.0, 34.0), 0.5 * uRain, 4.0, 6.0, 115.0, 43.0);
@@ -156,7 +187,7 @@ const FRAG = /* glsl */ `
         a = min(1.0, a + k * 0.25);
       }
     }
-    a *= min(1.0, uRain * 1.6);
+    a *= min(1.0, max(uRain, uSnow) * 1.6);
     if (a < 0.01) discard;
     gl_FragColor = vec4(col, a);
   }
@@ -169,6 +200,9 @@ export function rainMaterial(near: boolean, mask: DataTexture): ShaderMaterial {
       uView: { value: new Vector4() },
       uTime: { value: 0 },
       uRain: { value: 0 },
+      uSnow: { value: 0 },
+      uWind: { value: 0 },
+      uFlake: { value: new Vector3(1, 1, 1) },
       uSlant: { value: 0.34 },
       uNear: { value: near ? 1 : 0 },
       uCover: { value: 0 },

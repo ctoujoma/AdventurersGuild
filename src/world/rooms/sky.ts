@@ -38,6 +38,7 @@ import {
   deckLayout,
   fogBank,
   paintDeckCloud,
+  snowyCanvas,
 } from './manto';
 import { Rng } from '../../core/rng';
 import {
@@ -241,7 +242,17 @@ export class Sky {
   /** Con «luz con ambiente», el fondo nuevo (ver `paisaje.ts`). */
   mood = false;
   /** El tiempo (ver `weather.ts`): nubes (0–1) y niebla (0–1). */
-  weather = { cloud: 0, fog: 0, rain: 0 };
+  weather = { cloud: 0, fog: 0, rain: 0, snow: 0 };
+  /** Las capas del paisaje nevadas (se pintan la primera vez que hace falta). */
+  private snowy = new Map<HTMLCanvasElement, HTMLCanvasElement>();
+  private snowOf(c: HTMLCanvasElement): HTMLCanvasElement {
+    let s = this.snowy.get(c);
+    if (!s) {
+      s = snowyCanvas(c);
+      this.snowy.set(c, s);
+    }
+    return s;
+  }
   /** El manto del nublado, por orden de turno (las primeras en salir, primero). */
   private deck = deckLayout().sort((a, b) => a.rank - b.rank);
   private deckBuilt = 0;
@@ -497,6 +508,7 @@ export class Sky {
       }
       ctx.globalAlpha = 1;
     };
+    const snowK = Math.ceil(Math.min(1, this.weather.snow * 1.2) * 4) / 4;
     // Cuánto se ve el paisaje de día (con sus colores) sobre las siluetas de la noche.
     const dayK = Math.min(1, dl.day + dl.dusk * 0.6 + nl.warm * 0.5);
     const light = { day: dayK, dark: Math.max(nl.dark, 1 - dl.day - dl.dusk) };
@@ -548,6 +560,11 @@ export class Sky {
           water(m.lake.day, dayK);
           ctx.globalAlpha = 1;
         }
+        if (snowK > 0) {
+          ctx.globalAlpha = snowK * Math.max(dayK, 0.8);
+          repeat(ctx, this.snowOf(m.woods.day), fx, top, vw);
+          ctx.globalAlpha = 1;
+        }
         veil(i, l.fx);
         return;
       }
@@ -560,10 +577,27 @@ export class Sky {
         else tile(ctx, this.mood ? this.cnc.day[i]! : d, x, top, vw);
         ctx.globalAlpha = 1;
       }
+      // Con nieve posada, la misma capa nevada encima (por cuartos: no se funde en degradado).
+      // También de noche: el tinte de la noche, al final, la oscurece.
+      if (snowK > 0 && this.mood) {
+        ctx.globalAlpha = snowK * Math.max(dayK, 0.8);
+        if (night) repeat(ctx, this.snowOf(this.cnc.day[i]!), x, top, vw);
+        else tile(ctx, this.snowOf(this.cnc.day[i]!), x, top, vw);
+        ctx.globalAlpha = 1;
+      }
       if (i === 1) hillLife(ctx, x, top, vw, t, light);
-      if (i === 3) treeLife(ctx, x, top, vw, t, light);
+      // Sin luciérnagas con lluvia, nieve o niebla.
+      if (i === 3 && this.weather.rain + this.weather.snow + fog < 0.05)
+        treeLife(ctx, x, top, vw, t, light);
       veil(i, l.fx);
     });
+    // Con nieve, el cielo blanquecino.
+    if (this.weather.snow > 0.01) {
+      ctx.globalAlpha = Math.min(1, this.weather.snow) * 0.22;
+      ctx.fillStyle = '#d8dee9';
+      ctx.fillRect(0, 0, vw, vh);
+      ctx.globalAlpha = 1;
+    }
     // Con lluvia, todo más oscuro (el manto cargado).
     if (this.weather.rain > 0.01) {
       ctx.globalCompositeOperation = 'multiply';

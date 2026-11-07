@@ -353,6 +353,7 @@ export class Pets {
         wrap: 0.6,
         dither: 0.03,
         halo: 0.3,
+        noWeather: true,
         frames: strip.n * 2,
       },
     );
