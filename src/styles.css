@@ -2402,6 +2402,46 @@ button:focus-visible {
   filter: grayscale(0.8) brightness(0.75);
 }
 
+/* El botón de equipo: sus tres ranuras en pequeño (llenas con su aro de rareza o la silueta). */
+.act-slots {
+  display: flex;
+  gap: 2px;
+}
+.act-slot {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border-style: solid;
+  border-width: 6px;
+  border-image: var(--frame-slot-0) 6 fill / 6px / 0 stretch;
+}
+.act-slot.rarity-1 {
+  border-image-source: var(--frame-slot-1);
+}
+.act-slot.rarity-2 {
+  border-image-source: var(--frame-slot-2);
+}
+.act-slot.is-empty {
+  border-image: none;
+  border: 1px dashed rgba(234, 212, 170, 0.45);
+  background: rgba(24, 20, 37, 0.25);
+}
+.act.on .act-slot.is-empty {
+  border-color: rgba(62, 39, 49, 0.4);
+  background: rgba(62, 39, 49, 0.12);
+}
+.act-slot.is-empty canvas {
+  opacity: 0.45;
+}
+.act-slot canvas {
+  width: 16px;
+  height: 16px;
+  margin: -3px;
+}
+
 .act-label {
   max-width: 100%;
   overflow: hidden;

@@ -549,22 +549,32 @@ export function HeroCard({
                       class={`act ${wornShown ? 'on' : ''}`}
                       aria-expanded={open === 'equipo'}
                       aria-label={
-                        worn.length ? `Equipo: ${worn.map(itemName).join(', ')}` : 'Equipo'
+                        worn.length
+                          ? `Equipo (${worn.length} de ${SLOTS.length}): ${worn.map(itemName).join(', ')}`
+                          : 'Equipo: no lleva nada'
                       }
                       onClick={() => toggle('equipo')}
                     >
-                      {wornShown ? (
-                        <BufferImage
-                          buf={itemIcon(
-                            wornShown.icon ?? 'espada',
-                            wornShown.rarity,
-                            wornShown.plus,
-                          )}
-                          scale={1}
-                        />
-                      ) : (
-                        <Icon name="cofre" size={18} />
-                      )}
+                      <span class="act-slots" aria-hidden="true">
+                        {SLOTS.map((sl) => {
+                          const it = h.worn?.[sl];
+                          return (
+                            <span
+                              key={sl}
+                              class={`act-slot ${it ? `rarity-${it.rarity ?? 0}` : 'is-empty'}`}
+                            >
+                              <BufferImage
+                                buf={
+                                  it
+                                    ? itemIcon(it.icon ?? SILHOUETTE[sl], it.rarity, it.plus)
+                                    : slotIcon(sl, 16)
+                                }
+                                scale={1}
+                              />
+                            </span>
+                          );
+                        })}
+                      </span>
                       Equipo
                     </button>
                   )}
