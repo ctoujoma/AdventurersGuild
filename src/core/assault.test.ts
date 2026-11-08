@@ -48,6 +48,22 @@ describe('la cámara del tesoro', () => {
     expect(s.heroes.filter((h) => h.guard)).toHaveLength(2);
     expect(guardsFull(s)).toBe(true);
   });
+
+  it('en la cámara caben otros dos de guardia, aparte de los de la puerta', () => {
+    let s = newGame('guardias-camara');
+    s.heroes.push({ ...s.heroes[0]!, id: 'h3' }, { ...s.heroes[0]!, id: 'h4' });
+    s = reduce(s, { type: 'guard', id: s.heroes[0]!.id, on: true });
+    for (const h of s.heroes.slice(1))
+      s = reduce(s, { type: 'guard', id: h.id, on: true, post: 'tesoro' });
+    expect(s.heroes.filter((h) => h.guard && !h.post)).toHaveLength(1);
+    expect(s.heroes.filter((h) => h.post === 'tesoro')).toHaveLength(2);
+    expect(guardsFull(s)).toBe(false);
+    expect(guardsFull(s, 'tesoro')).toBe(true);
+    // Al dejar la guardia se olvida el puesto.
+    const id = s.heroes[1]!.id;
+    s = reduce(s, { type: 'guard', id, on: false });
+    expect(s.heroes[1]!.post).toBeUndefined();
+  });
 });
 
 describe('el asalto sala a sala', () => {
@@ -95,6 +111,39 @@ describe('el asalto sala a sala', () => {
     expect(r.plan.steps.some((x) => x.k === 'broke')).toBe(false);
     expect(r.escaped).toBe(0);
     expect(r.downed).toBe(set.bandits.length);
+  });
+
+  it('los de guardia en la cámara esperan allí despiertos: la última defensa', () => {
+    const s = newGame('ultima');
+    s.gold = 300;
+    const h = s.heroes.find((x) => x.status === 'ok')!;
+    h.guard = true;
+    h.post = 'tesoro';
+    const vault = roomOf(s, 'tesoro').id;
+    const set = assaultSetup(s, 20, new Rng('x'));
+    const d = set.defenders.find((x) => x.id === h.id)!;
+    expect(d).toMatchObject({ at: vault, vault: true, wake: 0 });
+    expect(d.guard).toBeFalsy();
+    // Sin la alarma de la puerta: los demás despiertan con el jaleo.
+    expect(set.arrive).toBe(
+      assaultSetup(
+        { ...s, heroes: s.heroes.map((x) => ({ ...x, guard: undefined, post: undefined })) },
+        20,
+        new Rng('x'),
+      ).arrive,
+    );
+    // Uno fuerte en la cámara: no sale de ella y allí para a todos.
+    const only = setup(s, {
+      defenders: [{ id: 'k', power: 80, hp: 200, at: vault, vault: true, wake: 0 }],
+      door: 1,
+    });
+    const r = simulate(only, new Rng('d'));
+    const moves = r.plan.steps.filter((x) => x.k === 'move' && x.ids.includes('k'));
+    expect(moves).toEqual([]);
+    expect(r.plan.steps.some((x) => x.k === 'wake' && x.id === 'k')).toBe(false);
+    expect(r.plan.steps.find((x) => x.k === 'fight')).toMatchObject({ at: vault });
+    expect(r.escaped).toBe(0);
+    expect(r.stolen).toBe(0);
   });
 
   it('los que duermen acuden; si paran a los bandidos al salir, el oro se recupera', () => {

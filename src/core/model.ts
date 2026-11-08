@@ -60,13 +60,15 @@ export interface Hero {
   worn?: Gear;
   /** De guardia: no sale de misión y defiende mejor la taberna. */
   guard?: boolean;
+  /** Dónde hace la guardia: sin esto, en la puerta; `tesoro`, en la cámara (patrulla dentro). */
+  post?: 'tesoro';
   /** Dónde se le perdió la pista (si está desaparecido). */
   lostAt?: string;
   /** Sala en la que echa una mano o entrena mientras está en casa (id). */
   job?: string;
   /** La que tenía al salir de encargo: al volver, la recupera si sigue habiendo sitio. */
   jobBefore?: string;
-  /** Estaba de guardia al caer herido: al curarse, vuelve a la puerta si queda sitio. */
+  /** Estaba de guardia al caer herido: al curarse, vuelve a su puesto (`post`) si queda sitio. */
   guardBefore?: boolean;
   /**
    * Va de camino a su sala (tarea nueva): no cuenta hasta que llega (acción `arrived`) o, si

@@ -924,6 +924,8 @@ export class RoomScene {
       if (!this.duelSeen.has(inc.room)) {
         this.duelSeen.add(inc.room);
         if (!this.pointers.size && now < 1) this.camera.centerOn(thief.x, thief.y - 20);
+        // El de guardia en la cámara estaba de ronda: se planta delante del ladrón.
+        this.crowd.engage(d.who, thief.x, thief.floor);
       }
       const shown = this.duelShown.get(inc.room) ?? 0;
       const past = d.hits.filter((h) => h.t <= now);

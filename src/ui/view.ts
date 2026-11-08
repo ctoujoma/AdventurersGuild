@@ -133,7 +133,8 @@ export function sceneModel(s: GameState): SceneModel {
       status: h.status,
       look: lookOf(h),
       marks: marksOf(h),
-      guard: !!h.guard,
+      guard: !!h.guard && !h.post,
+      vault: (h.guard && h.post === 'tesoro') || undefined,
       // Mientras lo visten, está en la sastrería.
       work: dressingOf(s, h.id)?.room ?? h.job,
       goTo: goTo(h.id),

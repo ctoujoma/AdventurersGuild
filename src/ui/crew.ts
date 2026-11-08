@@ -22,7 +22,9 @@ import { crewOf, effortOf, isJobRoom, isTrainRoom, slotsOf, workIn } from '../co
 import { ROOMS, TRAINS } from '../data/rooms';
 import { TRADES, TRADE_LIST } from '../data/workers';
 import { CLASS_NAMES, statusLabel } from '../data/labels';
-import { GUARD, planTask, type Task } from './drop';
+import { GUARD, GUARD_VAULT, planTask, type Task } from './drop';
+import { guardsAt } from '../core/guards';
+import { vaultOf } from '../core/vault';
 import { jobRoomName } from './roomName';
 
 /** Alguien de la casa en la lista. */
@@ -199,10 +201,17 @@ export function crewGroups(game: GameState): Group[] {
     note: 'En la puerta: no salen de misión y dan la alarma si asaltan.',
     slots: MAX_GUARDS,
     task: GUARD,
-    people: game.heroes
-      .filter((h) => h.status === 'ok' && h.guard)
-      .map((h) => heroMember(h, 'Héroe')),
+    people: guardsAt(game, 'puerta').map((h) => heroMember(h, 'Héroe')),
   });
+  if (vaultOf(game))
+    groups.push({
+      key: GUARD_VAULT,
+      title: 'De guardia en la cámara',
+      note: 'Patrullan el tesoro: se echan encima del ladrón y son la última defensa si asaltan.',
+      slots: MAX_GUARDS,
+      task: GUARD_VAULT,
+      people: guardsAt(game, 'tesoro').map((h) => heroMember(h, 'Héroe')),
+    });
   const idle = [
     ...game.workers.filter((w) => !w.room).map((w) => workerMember(w)),
     ...game.heroes
@@ -276,7 +285,7 @@ export function taskOf(game: GameState, who: string): Task {
   const w = game.workers.find((x) => x.id === who);
   if (w) return w.room ?? null;
   const h = game.heroes.find((x) => x.id === who);
-  return h?.guard ? GUARD : (h?.job ?? null);
+  return h?.guard ? (h.post === 'tesoro' ? GUARD_VAULT : GUARD) : (h?.job ?? null);
 }
 
 /** Puestos libres en una sala, para el selector. */
@@ -315,8 +324,7 @@ export function taskOptions(game: GameState, who: string): TaskOption[] {
     );
   }
   if (hero) {
-    const guards = game.heroes.filter((h) => h.status === 'ok' && h.guard).length;
-    const left = MAX_GUARDS - guards;
+    const left = MAX_GUARDS - guardsAt(game, 'puerta').length;
     out.push(
       opt(
         GUARD,
@@ -325,6 +333,17 @@ export function taskOptions(game: GameState, who: string): TaskOption[] {
           : `Poner de guardia · ${left > 0 ? `${left} ${plural(left, 'libre', 'libres')}` : 'llena'}`,
       ),
     );
+    if (vaultOf(game)) {
+      const n = MAX_GUARDS - guardsAt(game, 'tesoro').length;
+      out.push(
+        opt(
+          GUARD_VAULT,
+          now === GUARD_VAULT
+            ? 'De guardia en la cámara'
+            : `Poner de guardia en la cámara · ${n > 0 ? `${n} ${plural(n, 'libre', 'libres')}` : 'llena'}`,
+        ),
+      );
+    }
   }
   return out;
 }
@@ -346,7 +365,13 @@ export function candidatesFor(game: GameState, task: Task): Member[] {
       const t = taskOf(game, h.id);
       const room = game.building.rooms.find((r) => r.id === t);
       const where =
-        t === GUARD ? 'de guardia' : room ? `en ${jobRoomName(game, room)}` : 'descansa';
+        t === GUARD
+          ? 'de guardia'
+          : t === GUARD_VAULT
+            ? 'de guardia en la cámara'
+            : room
+              ? `en ${jobRoomName(game, room)}`
+              : 'descansa';
       // La clase y el nivel, que deciden en qué rinde (entrenar, cocinar…).
       out.push(heroMember(h, `${CLASS_NAMES[h.cls][h.sex]} nv ${h.lvl} · ${where}`));
     }
@@ -366,6 +391,7 @@ export function taskLabel(game: GameState, who: string): string {
   if (h && h.status !== 'ok') return statusLabel(h);
   const t = taskOf(game, who);
   if (t === GUARD) return 'De guardia';
+  if (t === GUARD_VAULT) return 'Guarda la cámara';
   const room = t ? game.building.rooms.find((r) => r.id === t) : undefined;
   if (!room) return 'Descansa';
   const attr = TRAINS[room.type];

@@ -1228,7 +1228,7 @@ export class Crowd {
   /** La gente de la casa: altas, bajas y cambios (sale de misión, vuelve, se hiere…). */
   setPeople(heroes: readonly SceneHero[]): void {
     const order = (h: SceneHero) =>
-      h.guard ? 0 : h.status === 'herido' ? 1 : h.status === 'ok' ? 2 : 3;
+      h.guard || h.vault ? 0 : h.status === 'herido' ? 1 : h.status === 'ok' ? 2 : 3;
     const home = heroes.filter((h) => h.status !== 'mision').sort((a, b) => order(a) - order(b));
     const shown = new Set(home.slice(0, MAX_ACTORS).map((h) => h.id));
     // Los que se van de la casa (despedidos, o candidatos que se cansan de esperar) salen
@@ -1260,6 +1260,7 @@ export class Crowd {
       const was = a.hero.status;
       const work = a.hero.work;
       const guard = a.hero.guard;
+      const vault = a.hero.vault;
       const goTo = a.hero.goTo;
       // Si ha cambiado su dibujo (equipo nuevo, herido o curado, u otra partida con los mismos
       // ids), se le rehace: si no, seguía con el de antes hasta que salía y volvía a entrar.
@@ -1267,7 +1268,8 @@ export class Crowd {
       a.hero = h;
       if (reskin) this.reskin(a);
       // Tarea nueva (o de guardia): va ya, sin acabar antes el paseo que llevaba.
-      if ((work !== h.work || goTo !== h.goTo || !guard !== !h.guard) && !a.gone && !a.leaving) {
+      const post = !guard !== !h.guard || !vault !== !h.vault;
+      if ((work !== h.work || goTo !== h.goTo || post) && !a.gone && !a.leaving) {
         a.wait = 0;
         // (Decide cuando ya se sabe su sitio nuevo: el de guardia, la puerta; ver abajo.)
         if (was === h.status && !a.climb && !a.held && !this.scripted) redo.push(a);
@@ -1520,7 +1522,7 @@ export class Crowd {
         continue;
       }
       const g = this.homes.get(a.hero.id);
-      if (!g || (a.pose === 'bed' && !a.path.length)) continue;
+      if (!g || (a.pose === 'bed' && !a.path.length) || this.inVault(a)) continue;
       this.go(a, g);
       a.run = RUSH;
     }
@@ -1545,7 +1547,7 @@ export class Crowd {
         continue;
       }
       const g = this.homes.get(a.hero.id);
-      if (!g || (a.pose === 'bed' && !a.path.length)) continue;
+      if (!g || (a.pose === 'bed' && !a.path.length) || this.inVault(a)) continue;
       this.standUp(a);
       a.path = [];
       a.run = undefined;
@@ -1907,7 +1909,23 @@ export class Crowd {
     const a = this.actors.get(id);
     if (!a || a.pose !== 'stand') return;
     a.guard = this.now + dur;
+    // Mientras pelea no se va a otra cosa.
+    a.wait = Math.max(a.wait, 1);
     if (!a.swing && !a.hurt) a.dir = dir;
+  }
+
+  /** Se planta a pelear con quien está en `x`: si no lo tiene al lado, va corriendo hasta él. */
+  engage(id: string, x: number, floor: number): void {
+    const a = this.actors.get(id);
+    if (!a || a.gone || a.held || this.scripted || !this.L) return;
+    if (a.floor === floor && Math.abs(a.x - x) <= 14 && !a.path.length) return;
+    const side = a.floor === floor && a.x < x ? -1 : 1;
+    const place = { x: x + side * 11, floor };
+    if (!route(this.L, { x: a.x, floor: a.floor }, place, this.segs)) return;
+    a.task = null;
+    this.go(a, { place, pose: 'stand' });
+    a.run = RUSH;
+    a.wait = 2;
   }
 
   /** Encaja un golpe: recula un poco, de perfil y echado hacia atrás (`dur` segundos). */
@@ -2242,7 +2260,7 @@ export class Crowd {
       return;
     }
     // Al aparecer de día ya está en algún sitio de la casa; de noche, en su cama.
-    if (this.S && h.status === 'ok' && !h.guard && this.time === 'day') {
+    if (this.S && h.status === 'ok' && !h.guard && !h.vault && this.time === 'day') {
       const g = this.workOf(a) ?? wander(this.S, this.taken(), this.rnd);
       if (g && route(this.L!, start, g.place, this.segs)) {
         this.put(a, g.place);
@@ -2279,6 +2297,7 @@ export class Crowd {
         id: a.hero.id,
         status: a.hero.status,
         guard: a.hero.guard,
+        vault: a.hero.vault,
         staff: a.hero.staff,
       }));
     this.homes = homes(people, this.S);
@@ -2674,6 +2693,8 @@ export class Crowd {
       a.run = Math.max(a.run ?? 1, RUSH);
       return;
     }
+    // De guardia en la cámara: da vueltas por ella, de día y de noche (no se acuesta).
+    if (h.vault && h.status === 'ok' && this.patrol(a)) return;
     // El pintor que tiene una sala que pintar, a ella.
     if (this.paintTurn(a)) return;
     const home = this.homes.get(h.id);
@@ -2702,6 +2723,31 @@ export class Crowd {
     // Si ya está ahí, se queda.
     if (Math.abs(g.place.x - a.x) < 4 && g.place.floor === a.floor && g.pose === a.pose) return;
     this.go(a, g);
+  }
+
+  /** El de guardia en la cámara ya está dentro (de noche sigue con su ronda). */
+  private inVault(a: Actor): boolean {
+    const v = this.S?.vault;
+    return !!a.hero.vault && !!v && a.floor === v.floor && a.x >= v.x0 - 4 && a.x <= v.x1 + 4;
+  }
+
+  /** Un paseo por la cámara del tesoro: a otro punto de la sala, a paso tranquilo; a ratos, quieto. */
+  private patrol(a: Actor): boolean {
+    const v = this.S?.vault;
+    if (!v || !this.L) return false;
+    const inside = this.inVault(a);
+    a.task = null;
+    a.wait = 3 + this.rnd() * 5;
+    // Ya dentro, a veces se queda mirando un rato.
+    if (inside && this.rnd() < 0.3) return true;
+    let x = v.x0 + this.rnd() * (v.x1 - v.x0);
+    // Que el paseo se note: al menos un trecho desde donde está.
+    if (inside && Math.abs(x - a.x) < 14)
+      x = a.x < (v.x0 + v.x1) / 2 ? v.x1 - this.rnd() * 10 : v.x0 + this.rnd() * 10;
+    const place = { x, floor: v.floor };
+    if (!route(this.L, { x: a.x, floor: a.floor }, place, this.segs)) return false;
+    this.go(a, { place, pose: 'stand', stand: NEAR_Z + this.rnd() * 18 });
+    return true;
   }
 
   private go(a: Actor, g: Goal, keep = false): void {

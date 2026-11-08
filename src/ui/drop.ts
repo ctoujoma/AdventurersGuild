@@ -1,4 +1,5 @@
-import { guardsFull, type Action } from '../core/game';
+import type { Action } from '../core/game';
+import { postIssue, postOf, type Post } from '../core/guards';
 import { incidentIn, incidentIssue } from '../core/incidents';
 import type { GameState } from '../core/model';
 import { INCIDENTS } from '../data/incidents';
@@ -11,9 +12,14 @@ import { jobRoomName } from './roomName';
 /** Lo que pasa si se suelta a alguien en una sala: lo que se hará (y cómo se dice) o por qué no. */
 export type Drop = { ok: true; text: string; actions: Action[] } | { ok: false; text: string };
 
-/** La tarea de alguien: el id de una sala, la guardia o nada (descansa). */
+/** La tarea de alguien: el id de una sala, la guardia (en la puerta o en la cámara) o nada. */
 export const GUARD = 'guardia';
+export const GUARD_VAULT = 'guardia-tesoro';
 export type Task = string | null;
+
+/** El puesto de guardia de una tarea (o null si no es de guardia). */
+export const postOfTask = (t: Task): Post | null =>
+  t === GUARD ? 'puerta' : t === GUARD_VAULT ? 'tesoro' : null;
 
 /** Se puede coger a quien está en casa: los trabajadores y los héroes que no han salido. */
 export function canDrag(game: GameState, who: string): boolean {
@@ -36,7 +42,7 @@ export function planTask(game: GameState, who: string, task: Task): Drop {
         actions: [{ type: 'assign', who, room: null }],
       };
     }
-    if (task === GUARD) return { ok: false, text: 'La guardia es cosa de los héroes.' };
+    if (postOfTask(task)) return { ok: false, text: 'La guardia es cosa de los héroes.' };
     const room = game.building.rooms.find((r) => r.id === task);
     if (!room) return { ok: false, text: 'Esa sala ya no está.' };
     const name = jobRoomName(game, room);
@@ -53,13 +59,22 @@ export function planTask(game: GameState, who: string, task: Task): Drop {
   const h = game.heroes.find((x) => x.id === who);
   if (!h) return { ok: false, text: 'Ya no está en la taberna.' };
   if (h.status !== 'ok') return { ok: false, text: `${h.name} no está en casa.` };
-  if (task === GUARD) {
-    if (h.guard) return { ok: false, text: `${h.name} ya está de guardia.` };
-    if (guardsFull(game)) return { ok: false, text: 'Ya hay dos de guardia en la puerta.' };
+  const post = postOfTask(task);
+  if (post) {
+    if (h.guard && postOf(h) === post)
+      return { ok: false, text: `${h.name} ya está de guardia aquí.` };
+    const why = postIssue(game, post);
+    if (why) return { ok: false, text: why };
+    // De un puesto a otro: deja el de antes.
+    const actions: Action[] = h.guard ? [{ type: 'guard', id: who, on: false }] : [];
+    actions.push({ type: 'guard', id: who, on: true, ...(post === 'tesoro' ? { post } : {}) });
     return {
       ok: true,
-      text: `${h.name} se pone de guardia en la puerta.`,
-      actions: [{ type: 'guard', id: who, on: true }],
+      text:
+        post === 'tesoro'
+          ? `${h.name} se pone de guardia en la cámara del tesoro.`
+          : `${h.name} se pone de guardia en la puerta.`,
+      actions,
     };
   }
   if (task === null) {
@@ -128,5 +143,6 @@ export function planDrop(game: GameState, who: string, roomId: string): Drop {
     : room.type === 'dormitorio' || room.type === 'veteranos';
   if (rest) return planTask(game, who, null);
   if (room.type === 'recibidor' && !worker) return planTask(game, who, GUARD);
+  if (room.type === 'tesoro' && !worker) return planTask(game, who, GUARD_VAULT);
   return planTask(game, who, roomId);
 }

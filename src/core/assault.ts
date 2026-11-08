@@ -173,6 +173,8 @@ export interface Defender {
   /** Sala en la que está al empezar (los de guardia, en el recibidor). */
   at: string;
   guard?: boolean;
+  /** De guardia en la cámara: despierto y sin moverse de ella (la última defensa). */
+  vault?: boolean;
   /** Los trabajadores no corren a pelear: solo se defienden si llegan a su sala. */
   worker?: boolean;
   /** Segundo en que se despierta y sale corriendo. */
@@ -236,27 +238,34 @@ export function assaultSetup(s: GameState, strength: number, rng: Rng): AssaultS
 
   const home = s.heroes.filter((h) => h.status === 'ok');
   const armed = equip(home, s.fac);
-  const guards = new Set(home.filter((h) => h.guard).slice(0, MAX_GUARDS));
-  const sleepers = home.filter((h) => !guards.has(h));
+  const guards = new Set(home.filter((h) => h.guard && !h.post).slice(0, MAX_GUARDS));
+  const vaultRoom = rooms.find((r) => r.type === 'tesoro')?.id;
+  const keepers = new Set(
+    vaultRoom ? home.filter((h) => h.guard && h.post === 'tesoro').slice(0, MAX_GUARDS) : [],
+  );
+  const sleepers = home.filter((h) => !guards.has(h) && !keepers.has(h));
   // Los de guardia dan la voz de alarma; si no, despierta el jaleo (o el perro, antes).
   const wake = guards.size ? RAID_ALARM : dog ? RAID_WAKE_DOG : RAID_WAKE;
   const defenders: Defender[] = home.map((h, i) => {
+    const vault = keepers.has(h);
     const guard = guards.has(h);
+    const armedUp = guard || vault;
     const k = sleepers.indexOf(h);
     const bed = beds[Math.floor((k * beds.length) / Math.max(1, sleepers.length))];
     // Las mismas cuentas que contra los jefes; los de guardia, vestidos y armados.
     const u = heroUnit({ ...armed[i]!, id: h.id, name: h.name });
     return {
       id: h.id,
-      power: u.atk + (guard ? GUARD_BONUS : 0),
-      hp: Math.round(u.max * (guard ? GUARD_HP : 1)),
+      power: u.atk + (armedUp ? GUARD_BONUS : 0),
+      hp: Math.round(u.max * (armedUp ? GUARD_HP : 1)),
       def: u.def,
       every: u.every,
       ability: u.ability,
       ranged: u.ranged,
-      at: guard ? door : (bed?.id ?? salon),
+      at: guard ? door : vault ? vaultRoom! : (bed?.id ?? salon),
       guard,
-      wake: guard ? 0 : wake + rng.next() * (wake < RAID_WAKE ? 1 : 2),
+      ...(vault ? { vault } : {}),
+      wake: armedUp ? 0 : wake + rng.next() * (wake < RAID_WAKE ? 1 : 2),
     };
   });
   // Los trabajadores con cama en el servicio duermen en casa; los del pueblo no están de noche.
@@ -412,7 +421,9 @@ export class Assault {
         cool: (d.every ?? 1.3) * (0.4 + 0.1 * (i % 4)),
         node: d.at,
         wake: d.wake,
-        awake: false,
+        // Los de la cámara están despiertos y no se mueven de allí (salvo que se les mande).
+        awake: !!d.vault,
+        ...(d.vault ? { hold: d.at } : {}),
         guard: !!d.guard,
         worker: !!d.worker,
         ranged: !!d.ranged,

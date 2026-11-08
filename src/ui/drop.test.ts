@@ -43,10 +43,12 @@ describe('arrastrar y soltar en las salas', () => {
       text: expect.stringMatching(/puestos/),
     });
     expect(planDrop(s, a!.id, roomOf(s, 'enfermeria').id).text).toMatch(/en uso/);
-    expect(planDrop(s, a!.id, roomOf(s, 'tesoro').id).text).toMatch(/nada que hacer/);
+    // En la cámara, de guardia (solo los héroes).
+    expect(planDrop(s, a!.id, roomOf(s, 'tesoro').id).text).toMatch(/guardia en la cámara/);
     // Los trabajadores no entrenan ni hacen guardia.
     const cook = s.workers[0]!;
     expect(planDrop(s, cook.id, roomOf(s, 'recibidor').id).ok).toBe(false);
+    expect(planDrop(s, cook.id, roomOf(s, 'tesoro').id).ok).toBe(false);
     // De misión no se le puede coger.
     const sent = reduce(s, { type: 'send', questId: s.quests[0]!.id, heroIds: [a!.id] });
     expect(canDrag(sent, a!.id)).toBe(false);
