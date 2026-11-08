@@ -28,7 +28,7 @@ const TABS: { name: string; icon: IconName; rooms: RoomType[] }[] = [
   {
     name: 'Talleres',
     icon: 'yunque',
-    rooms: ['forja', 'sastreria', 'alquimia', 'pintor', 'almacen'],
+    rooms: ['forja', 'sastreria', 'alquimia', 'pintor'],
   },
   { name: 'Gremio', icon: 'jarra', rooms: ['salon', 'mapas', 'almacen'] },
 ];
