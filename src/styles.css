@@ -5538,6 +5538,23 @@ select.crew-free {
   inset: 0;
   margin: auto;
 }
+/* Colores de una sala: el de ahora, con un borde de puntos; el trabajo del pintor en marcha. */
+.room-swatch.is-now:not(.on) {
+  outline: 2px dotted var(--ink);
+  outline-offset: 1px;
+}
+.paint-job {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 8px;
+}
+.paint-job .train-bar {
+  flex: none;
+  width: 100%;
+  max-width: 220px;
+}
 /* «Ropa y colores» en la ficha del héroe. */
 .dress-menu .dress-go {
   margin-top: 8px;

@@ -68,3 +68,15 @@ Ronda 2 (pedido del usuario): **pintar no empieza hasta que el pintor llega** a 
 sigue esperando y por la mañana vuelve a ir); `PAINT_WALK` solo vale con el juego cerrado
 (`endDay(s, true)`, `nightPaints(s, unseen)`), donde no hay escena que lo diga. `walking` es ya
 «aún no ha llegado». Ojo: la sastrería (`DRESS_WALK`) sigue con el plazo de antes.
+
+## Hecho en la interfaz (8 de noviembre)
+
+- **Ficha de la sala** (`RoomTint` en `RoomPanel.tsx`): se elige un color y se ve su estado con
+  `paintStatus` (candado y de dónde sale, falta dinero, sin taller, sin pintor, ocupado; sin
+  taller o sin pintor se dice aunque esté elegido el color de ahora). El botón «Pintar de … ·
+  precio» despacha `paint`; el trabajo en marcha sale con su barra (`paintState`), si va de camino
+  o cuántas horas le quedan, y «Cancelar · devuelve …» (`cancelPaint`). El color de ahora lleva un
+  borde de puntos.
+- **`tint` gratis, solo en el modo prueba** («Probar gratis»; en prueba se pueden elegir también
+  los que tienen candado).
+- **Escena:** ya la dejó hecha arte (arriba); no hacía falta nada provisional.

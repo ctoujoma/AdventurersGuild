@@ -1348,9 +1348,10 @@ export function App() {
               onTask={works.planning ? undefined : setTask}
               onOpen={(id) => setCard(id)}
               onTint={
-                works.planning ? undefined : (id, tint) => dispatch({ type: 'tint', id, tint })
+                works.planning || !settings.tester
+                  ? undefined
+                  : (id, tint) => dispatch({ type: 'tint', id, tint })
               }
-              has={has}
               onAct={works.planning ? undefined : dispatch}
             />
           </Panel>

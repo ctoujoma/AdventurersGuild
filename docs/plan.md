@@ -141,6 +141,10 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
     ficha encarga la ropa a la sastrería (`dressStatus`), en lugar de cambiarla gratis.
 12. **La noche** (hecho, 8 de noviembre: ver [`propuesta-tiempo.md`](propuesta-tiempo.md)): al doble, con «Pasar la noche» a x16; los menús ya no paran el reloj y el día acelera hasta x8.
 
+13. **Sucesos nocturnos, expediciones sin fin y equipo con sentido** (para decidir:
+    [`propuesta-noche-expedicion-equipo.md`](propuesta-noche-expedicion-equipo.md)). Las
+    expediciones, apuntadas para después.
+
 ## Fase 2 · Tutoriales
 
 De un **agente propio del tutorial** desde el 1 de noviembre: [`encargos/tutorial.md`](encargos/tutorial.md).
