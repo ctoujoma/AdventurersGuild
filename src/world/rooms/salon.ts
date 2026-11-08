@@ -187,7 +187,7 @@ function braces(b: PixelBuffer, x0: number, x1: number, top: number, bottom: num
  * Lo propio del salón en la pared del fondo (`b` ya lleva el yeso, el zócalo y las ventanas):
  * la alacena detrás de la barra, el tablón, tornapuntas, trofeos, tapices, apliques y ristras.
  * `windows` son las x (en el fondo) de las ventanas de cada planta, de arriba abajo; `cell` lo
- * que mide un hueco en el fondo. Devuelve lo que va encima de la cenefa pintada (los pendones).
+ * que mide un hueco en el fondo. Devuelve lo que va encima de la cenefa pintada (pendones y trofeos).
  */
 export function salonWall(
   b: PixelBuffer,
@@ -252,16 +252,22 @@ export function salonWall(
     for (const x of spots) b.blit(tapestry(look.crest.field, look.crest.dark), x - 5, 4);
   }
   // Trofeos de las misiones, en fila arriba (en el de dos alturas, a media pared de arriba).
+  const shelf: number[] = [];
   let x = 8;
   const ty = tall ? Math.round(low * 0.45) : 4;
-  for (const t of look.trophies.slice(0, 6)) {
+  for (let i = 0; i < Math.min(6, look.trophies.length); i++) {
     while (x < b.w - 70 && !clear(x, 14)) x += 6;
     if (x >= b.w - 70) break;
-    b.blit(trophyIcon(t), x, ty);
+    shelf.push(x);
     x += 18;
   }
-  // Los pendones cuelgan por delante de la cenefa (que se pinta después).
-  return hang;
+  const hangTrophies = () => shelf.forEach((x, i) => b.blit(trophyIcon(look.trophies[i]!), x, ty));
+  hangTrophies();
+  // Pendones y trofeos cuelgan por delante de la cenefa (que se pinta después).
+  return () => {
+    hang();
+    hangTrophies();
+  };
 }
 
 // ---------- Muebles de delante ----------
