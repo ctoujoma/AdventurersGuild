@@ -2418,10 +2418,16 @@ button:focus-visible {
   border-width: 6px;
   border-image: var(--frame-slot-0) 6 fill / 6px / 0 stretch;
 }
-.act-slot.rarity-1 {
+.act-slot.tier-1 {
+  border-image-source: var(--frame-slot-t1);
+}
+.act-slot.tier-2 {
   border-image-source: var(--frame-slot-1);
 }
-.act-slot.rarity-2 {
+.act-slot.tier-3 {
+  border-image-source: var(--frame-slot-t3);
+}
+.act-slot.tier-4 {
   border-image-source: var(--frame-slot-2);
 }
 .act-slot.is-empty {
@@ -2649,6 +2655,19 @@ button.trait[aria-pressed='true'] {
 .rarity-2 em,
 .facility.rarity-2 .next-level {
   color: var(--grape, #68386c);
+}
+/* El nombre del nivel de un objeto, del color de su marco (verde, azul, morado, oro oscuro). */
+.tier-1 em {
+  color: var(--leaf);
+}
+.tier-2 em {
+  color: var(--ocean);
+}
+.tier-3 em {
+  color: var(--grape);
+}
+.tier-4 em {
+  color: #be4a2f;
 }
 .facility.rarity-2 {
   box-shadow:
@@ -7176,10 +7195,16 @@ p.notebook-close {
   border-width: 12px;
   border-image: var(--frame-slot-0) 6 fill / 12px / 0 stretch;
 }
-.doll-slot.rarity-1:not(.is-empty) {
+.doll-slot.tier-1:not(.is-empty) {
+  border-image-source: var(--frame-slot-t1);
+}
+.doll-slot.tier-2:not(.is-empty) {
   border-image-source: var(--frame-slot-1);
 }
-.doll-slot.rarity-2:not(.is-empty) {
+.doll-slot.tier-3:not(.is-empty) {
+  border-image-source: var(--frame-slot-t3);
+}
+.doll-slot.tier-4:not(.is-empty) {
   border-image-source: var(--frame-slot-2);
   box-shadow: 0 0 8px rgba(254, 174, 52, 0.5);
 }
@@ -7259,10 +7284,16 @@ p.notebook-close {
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
-.item-tile.rarity-1 {
+.item-tile.tier-1 {
+  border-image-source: var(--frame-slot-t1);
+}
+.item-tile.tier-2 {
   border-image-source: var(--frame-slot-1);
 }
-.item-tile.rarity-2 {
+.item-tile.tier-3 {
+  border-image-source: var(--frame-slot-t3);
+}
+.item-tile.tier-4 {
   border-image-source: var(--frame-slot-2);
   box-shadow: 0 0 8px rgba(254, 174, 52, 0.5);
 }
@@ -7392,11 +7423,17 @@ p.notebook-close {
   font-weight: 700;
   color: var(--text-soft);
 }
-.item-tip.rarity-1 .item-tip-head em {
+.item-tip.tier-1 .item-tip-head em {
+  color: var(--leaf);
+}
+.item-tip.tier-2 .item-tip-head em {
   color: var(--ocean);
 }
-.item-tip.rarity-2 .item-tip-head em {
+.item-tip.tier-3 .item-tip-head em {
   color: var(--grape);
+}
+.item-tip.tier-4 .item-tip-head em {
+  color: #be4a2f;
 }
 .item-tip-icon {
   display: flex;
@@ -7413,10 +7450,16 @@ p.notebook-close {
   width: 32px;
   height: 32px;
 }
-.item-tip-icon.rarity-1 {
+.item-tip-icon.tier-1 {
+  box-shadow: 0 0 0 2px var(--leaf);
+}
+.item-tip-icon.tier-2 {
   box-shadow: 0 0 0 2px var(--ocean);
 }
-.item-tip-icon.rarity-2 {
+.item-tip-icon.tier-3 {
+  box-shadow: 0 0 0 2px var(--grape);
+}
+.item-tip-icon.tier-4 {
   box-shadow:
     0 0 0 2px var(--gold),
     0 0 8px rgba(254, 174, 52, 0.55);

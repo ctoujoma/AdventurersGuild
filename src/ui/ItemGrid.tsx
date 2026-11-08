@@ -4,6 +4,7 @@
  * más grande) y quién lo lleva (su inicial). Un toque corto la elige; manteniendo pulsado (o con
  * el ratón encima) sale un recuadro con todo lo demás.
  */
+import { tierOf } from '../art/tiers';
 import { createPortal } from 'preact/compat';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { temperCost } from '../core/crafting';
@@ -78,7 +79,7 @@ function ItemTile({
   return (
     <button
       ref={ref}
-      class={`item-tile rarity-${it.rarity ?? 0} ${selected ? 'is-sel' : ''}`}
+      class={`item-tile tier-${tierOf(it.rarity)} ${selected ? 'is-sel' : ''}`}
       aria-label={label}
       aria-pressed={selected}
       onPointerDown={(ev) => {
@@ -152,9 +153,9 @@ function ItemTip({ e, at }: { e: GridEntry; at: DOMRect }) {
     ? { left: `${left}px`, top: `${at.bottom + 10}px`, width: `${W}px` }
     : { left: `${left}px`, bottom: `${innerHeight - at.top + 10}px`, width: `${W}px` };
   return (
-    <div class={`item-tip rarity-${it.rarity ?? 0}`} role="tooltip" style={style}>
+    <div class={`item-tip tier-${tierOf(it.rarity)}`} role="tooltip" style={style}>
       <div class="item-tip-head">
-        <span class={`item-tip-icon rarity-${it.rarity ?? 0}`}>
+        <span class={`item-tip-icon tier-${tierOf(it.rarity)}`}>
           <ItemImage icon={it.icon ?? 'espada'} rarity={it.rarity} name={it.name} scale={2} />
         </span>
         <span>

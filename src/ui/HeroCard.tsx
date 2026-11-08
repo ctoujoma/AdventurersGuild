@@ -1,3 +1,4 @@
+import { tierOf } from '../art/tiers';
 import { useEffect, useState } from 'preact/hooks';
 import { DRESS_GOLD, GUARD_BONUS, VET_LEVEL, XP_PER_LEVEL } from '../core/balance';
 import { craftState, dressStatus, dressingOf } from '../core/crafting';
@@ -233,7 +234,7 @@ function GearDoll({
               role="radio"
               aria-checked={sel === sl}
               aria-label={`${SLOT_NAMES[sl]}: ${it ? itemName(it) : 'nada'}`}
-              class={`doll-slot rarity-${it?.rarity ?? 0} ${it ? '' : 'is-empty'} ${sel === sl ? 'is-sel' : ''}`}
+              class={`doll-slot tier-${tierOf(it?.rarity)} ${it ? '' : 'is-empty'} ${sel === sl ? 'is-sel' : ''}`}
               onClick={() => setSel(sel === sl ? null : sl)}
             >
               {it ? (
@@ -251,7 +252,7 @@ function GearDoll({
       {sel && (
         <div class="doll-pick">
           {was ? (
-            <div class={`gear-item rarity-${was.rarity ?? 0}`}>
+            <div class={`gear-item tier-${tierOf(was.rarity)}`}>
               <ItemImage {...itemProps(was)} scale={2} />
               <span>
                 <b>{itemName(was)}</b>
@@ -278,7 +279,7 @@ function GearDoll({
             />
           )}
           {canGear && picked && (
-            <div class={`gear-item doll-try rarity-${picked.rarity ?? 0}`}>
+            <div class={`gear-item doll-try tier-${tierOf(picked.rarity)}`}>
               <span>
                 <b>{itemName(picked)}</b>
                 <small class="doll-deltas">{deltaText(deltas(picked))}</small>
@@ -559,7 +560,7 @@ export function HeroCard({
                           return (
                             <span
                               key={sl}
-                              class={`act-slot ${it ? `rarity-${it.rarity ?? 0}` : 'is-empty'}`}
+                              class={`act-slot ${it ? `tier-${tierOf(it.rarity)}` : 'is-empty'}`}
                             >
                               <BufferImage
                                 buf={

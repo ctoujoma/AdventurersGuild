@@ -203,8 +203,11 @@ export function installPixelUi(): void {
   root.setProperty('--frame-wood', dataUrl(woodFrame()));
   root.setProperty('--frame-parchment', dataUrl(parchment()));
   root.setProperty('--frame-dark', dataUrl(darkPanel()));
+  // Marcos de los objetos, uno por nivel (`art/tiers.ts`): gris, verde, azul, morado y oro.
   root.setProperty('--frame-slot-0', dataUrl(slotFrame(P.slate, P.steel, P.fog)));
+  root.setProperty('--frame-slot-t1', dataUrl(slotFrame(P.forest, P.leaf, P.lime)));
   root.setProperty('--frame-slot-1', dataUrl(slotFrame(P.ocean, P.sky, P.mist)));
+  root.setProperty('--frame-slot-t3', dataUrl(slotFrame(P.plum, P.grape, P.rose)));
   root.setProperty('--frame-slot-2', dataUrl(slotFrame(P.orange, P.gold, P.lemon)));
   root.setProperty('--btn-gold', dataUrl(button(P.gold, P.lemon, P.orange, false)));
   root.setProperty('--btn-gold-down', dataUrl(button(P.orange, P.lemon, P.brick, true)));
