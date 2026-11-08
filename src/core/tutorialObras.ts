@@ -170,7 +170,7 @@ export const OBRAS: readonly TutorialStep[] = [
   {
     id: 'o-fin',
     text: () =>
-      'Así se hace sitio: solar, mudanza, ampliar y excavar. Hacia arriba también se crece, pero cada planta solo sobresale un hueco de la de abajo. Y ahora viene gente del pueblo a pedir trabajo (en «Héroes», pestaña «Trabajo»): cada uno necesita su cama, así que antes construye el dormitorio del servicio. Otra cosa: el hierro, el cuero y la tela que traen los encargos se amontonan en un rincón de la bodega, y lo que no cabe se malvende. Un almacén (en la pestaña «Talleres») los guarda.',
+      'Así se hace sitio: solar, mudanza, ampliar y excavar. Hacia arriba también se crece, pero cada planta solo sobresale un hueco de la de abajo. Y ahora viene gente del pueblo a pedir trabajo (en «Héroes», pestaña «Trabajo»): cada uno necesita su cama, así que antes construye el dormitorio del servicio. Otra cosa: el hierro, el cuero y la tela que traen los encargos se amontonan en un rincón de la bodega, y lo que no cabe se malvende. Un almacén (en la pestaña «Gremio») los guarda.',
     button: 'seguir',
   },
 ];

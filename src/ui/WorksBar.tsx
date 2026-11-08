@@ -30,7 +30,7 @@ const TABS: { name: string; icon: IconName; rooms: RoomType[] }[] = [
     icon: 'yunque',
     rooms: ['forja', 'sastreria', 'alquimia', 'pintor', 'almacen'],
   },
-  { name: 'Gremio', icon: 'jarra', rooms: ['salon', 'mapas'] },
+  { name: 'Gremio', icon: 'jarra', rooms: ['salon', 'mapas', 'almacen'] },
 ];
 
 const ICON: Record<RoomType, IconName> = {

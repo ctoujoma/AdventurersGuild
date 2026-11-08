@@ -17,7 +17,7 @@ decidido»). El núcleo ya está; esto es lo que falta. Rama propia, PR contra `
   suyo al volver (`QUEST_MATERIAL`, 1–3 según cómo salga: chip «+2 cuero» en el informe). Sin
   almacén caben 10 de cada; lo que no cabe se vende solo y el informe lo dice, con el aviso de
   construir el almacén (o de que se podrá al pagar la deuda).
-- **Almacén** (sala `almacen`, en la pestaña Talleres): guarda más por nivel y por hueco.
+- **Almacén** (sala `almacen`, en la pestaña Gremio): guarda más por nivel y por hueco.
 - **Recetas con materiales** (`RECIPES[x].mats`): espada larga, cota de malla, escudo tachonado,
   ganzúas templadas, botas de cuero y capa forrada. `canCraft` dice lo que falta («Faltan 2 de
   hierro: sale limpiando guaridas e investigando»).
