@@ -329,73 +329,197 @@ function rackPlain(icon: ItemIcon, rarity: Rarity): PixelBuffer {
   });
 }
 
+/**
+ * Placa de madera de los trofeos (escudo con el canto vivo y veta), de `x0` a `x1` y de `y0`
+ * a `y1`, con relieve bajo: la luz viene de arriba a la izquierda.
+ */
+function plaque(b: PixelBuffer, x0: number, y0: number, x1: number, y1: number): void {
+  b.level = 1;
+  b.rect(x0, y0, x1 - x0 + 1, y1 - y0 + 1, P.oak);
+  b.hline(x0, y0, x1 - x0 + 1, P.clay);
+  b.vline(x0, y0, y1 - y0 + 1, P.clay);
+  b.hline(x0, y1, x1 - x0 + 1, P.rust);
+  b.vline(x1, y0, y1 - y0 + 1, P.rust);
+  // Veta.
+  for (let x = x0 + 2; x < x1 - 1; x += 3) b.set(x, y0 + 1 + ((x * 7) % (y1 - y0 - 1)), P.cocoa);
+  b.set(x1, y0, P.oak);
+}
+
+/** Los trofeos del salón (14×14 antes del contorno), con volumen y relieve. */
 export function trophyIcon(icon: TrophyIcon): PixelBuffer {
   return make(`t:${icon}`, 14, 14, (b) => {
     switch (icon) {
-      case 'cabeza':
-        // Placa de madera y cabeza de bestia con orejas y colmillos.
-        b.rect(3, 9, 8, 5, P.oak);
-        b.hline(3, 9, 8, P.clay);
-        b.rect(3, 2, 8, 7, P.umber);
-        b.rect(2, 0, 2, 3, P.umber);
-        b.rect(10, 0, 2, 3, P.umber);
-        b.rect(5, 6, 4, 4, P.cocoa);
-        b.set(4, 4, P.lemon);
-        b.set(9, 4, P.lemon);
+      case 'cabeza': {
+        // Escudo de madera y cabeza de oso: orejas, hocico claro, ojos y colmillos.
+        plaque(b, 2, 8, 11, 13);
+        b.clear(2, 13);
+        b.clear(11, 13);
+        b.level = 4;
+        b.ellipse(6.5, 5.5, 4.5, 4.5, (_x, _y, d) => (d > 0.15 ? P.umber : P.mocha));
+        b.level = 3;
+        b.rect(2, 0, 3, 3, P.umber);
+        b.rect(9, 0, 3, 3, P.umber);
+        b.set(3, 1, P.cocoa);
+        b.set(10, 1, P.cocoa);
+        b.level = 4;
+        b.rect(3, 3, 3, 2, P.mocha);
+        b.set(3, 3, P.cocoa);
+        b.set(4, 3, P.cocoa);
+        b.vline(10, 4, 5, P.bark);
+        b.hline(4, 10, 6, P.bark);
+        b.set(5, 5, P.black);
+        b.set(8, 5, P.black);
+        b.set(5, 4, P.gold);
+        b.set(8, 4, P.gold);
+        b.level = 5;
+        b.rect(5, 7, 4, 3, P.cocoa);
+        b.hline(5, 7, 4, P.clay);
+        b.rect(6, 7, 2, 1, P.black);
+        b.set(6, 7, P.steel);
         b.set(5, 10, P.white);
-        b.set(8, 10, P.white);
-        b.rect(6, 6, 2, 1, P.black);
+        b.set(8, 10, P.mist);
+        b.set(5, 11, P.sand);
+        b.set(8, 11, P.sand);
         break;
-      case 'colmillos':
-        b.rect(1, 9, 12, 4, P.oak);
-        b.hline(1, 9, 12, P.clay);
-        b.line(3, 9, 5, 1, P.sand);
-        b.line(4, 9, 5, 2, P.white);
-        b.line(10, 9, 8, 1, P.sand);
-        b.line(9, 9, 8, 2, P.white);
+      }
+      case 'colmillos': {
+        // Dos colmillos curvos de marfil sobre una tabla, con abrazaderas de latón.
+        plaque(b, 0, 10, 13, 13);
+        b.level = 4;
+        const tusk = (xs: number[], light: number) =>
+          xs.forEach((x, k) => {
+            const y = 9 - k;
+            b.set(x, y, P.sand);
+            b.set(x + light, y, k < 6 ? P.white : P.sand);
+            if (k < 5) b.set(x - light, y, P.tan);
+          });
+        tusk([3, 3, 3, 4, 4, 5, 5, 6, 7], 1);
+        tusk([10, 10, 10, 9, 9, 8, 8, 7, 6], -1);
+        b.set(7, 1, P.mist);
+        b.set(6, 1, P.mist);
+        b.level = 2;
+        b.hline(2, 10, 3, P.gold);
+        b.hline(9, 10, 3, P.gold);
+        b.set(2, 10, P.orange);
+        b.set(11, 10, P.orange);
         break;
-      case 'estandarte':
-        b.vline(1, 0, 14, P.oak);
-        b.hline(1, 1, 11, P.oak);
-        b.rect(2, 2, 10, 9, P.wine);
-        b.rect(2, 11, 3, 2, P.wine);
-        b.rect(9, 11, 3, 2, P.wine);
-        b.rect(5, 4, 4, 4, P.black);
-        b.set(6, 5, P.red);
-        b.set(7, 5, P.red);
+      }
+      case 'estandarte': {
+        // Estandarte enemigo capturado: asta con remate, tela con pliegues y desgarros.
+        b.level = 3;
+        b.vline(1, 1, 13, P.oak);
+        b.vline(2, 1, 13, P.bark);
+        b.set(1, 0, P.gold);
+        b.set(2, 0, P.orange);
+        b.hline(3, 1, 10, P.bark);
+        b.level = 2;
+        b.rect(3, 2, 10, 9, P.wine);
+        // Pliegues: claros y sombras verticales.
+        b.vline(4, 2, 9, P.red);
+        b.vline(11, 2, 9, P.plum);
+        b.vline(12, 2, 9, P.plum);
+        b.hline(3, 2, 10, P.red);
+        // Las puntas, rasgadas.
+        b.rect(3, 11, 3, 2, P.wine);
+        b.set(4, 11, P.red);
+        b.set(3, 13, P.wine);
+        b.rect(10, 11, 3, 2, P.wine);
+        b.set(12, 11, P.plum);
+        b.set(11, 13, P.plum);
+        b.set(7, 11, P.plum);
+        // El emblema: calavera negra con ojos rojos.
+        b.level = 3;
+        b.rect(6, 4, 4, 3, P.black);
+        b.hline(7, 7, 2, P.black);
+        b.set(7, 5, P.hot);
+        b.set(8, 5, P.hot);
+        b.set(6, 4, P.navy);
         break;
-      case 'calavera':
-        b.rect(3, 1, 8, 7, P.sand);
+      }
+      case 'calavera': {
+        // Calavera de un gran enemigo con su corona, sobre una peana de madera.
+        plaque(b, 2, 11, 11, 13);
+        b.level = 4;
+        b.ellipse(6.5, 5, 4.5, 4, (x, y) => (x > 8 ? P.tan : P.sand));
+        b.set(4, 2, P.white);
+        b.set(3, 3, P.white);
         b.rect(4, 8, 6, 3, P.sand);
-        b.rect(4, 4, 2, 2, P.black);
-        b.rect(8, 4, 2, 2, P.black);
-        b.set(7, 7, P.black);
+        b.vline(9, 8, 3, P.tan);
         b.hline(4, 10, 6, P.tan);
-        b.rect(3, 0, 8, 1, P.gold);
-        b.set(4, 0, P.lemon);
-        b.rect(2, 12, 10, 2, P.oak);
+        b.set(5, 9, P.clay);
+        b.set(7, 9, P.clay);
+        b.rect(4, 5, 2, 2, P.black);
+        b.rect(8, 5, 2, 2, P.black);
+        b.set(4, 5, P.plum);
+        b.set(8, 5, P.plum);
+        b.set(6, 7, P.black);
+        b.set(7, 7, P.black);
+        // La corona.
+        b.level = 5;
+        b.hline(3, 1, 8, P.gold);
+        b.hline(3, 2, 8, P.orange);
+        b.set(3, 1, P.lemon);
+        for (const x of [3, 6, 7, 10]) b.set(x, 0, P.gold);
+        b.set(6, 2, P.red);
         break;
-      case 'idolo':
-        b.rect(4, 1, 6, 10, P.leaf);
-        b.rect(3, 3, 8, 3, P.leaf);
-        b.rect(5, 2, 2, 8, P.lime);
-        b.set(5, 4, P.lemon);
-        b.set(8, 4, P.lemon);
-        b.rect(6, 7, 2, 1, P.forest);
+      }
+      case 'idolo': {
+        // Ídolo de jade en su peana de piedra: brillo arriba a la izquierda, ojos de oro.
+        b.level = 2;
         b.rect(2, 11, 10, 3, P.steel);
         b.hline(2, 11, 10, P.fog);
+        b.set(2, 11, P.mist);
+        b.hline(2, 13, 10, P.slate);
+        b.vline(11, 11, 3, P.slate);
+        b.level = 4;
+        b.rect(4, 1, 6, 10, P.leaf);
+        b.rect(3, 3, 8, 3, P.leaf);
+        b.vline(4, 1, 10, P.lime);
+        b.hline(4, 1, 5, P.lime);
+        b.vline(9, 1, 10, P.forest);
+        b.vline(10, 3, 3, P.forest);
+        b.hline(4, 10, 6, P.forest);
+        b.set(5, 2, P.mist);
+        b.level = 5;
+        b.set(5, 4, P.gold);
+        b.set(8, 4, P.gold);
+        b.set(5, 5, P.forest);
+        b.set(8, 5, P.forest);
+        b.rect(6, 7, 2, 2, P.deep);
+        b.hline(5, 9, 4, P.forest);
         break;
-      case 'mascara':
-        b.rect(3, 2, 8, 9, P.white);
-        b.rect(2, 4, 10, 4, P.white);
-        b.rect(4, 4, 2, 2, P.black);
-        b.rect(8, 4, 2, 2, P.black);
-        b.line(4, 8, 6, 9, P.wine);
-        b.line(7, 9, 9, 8, P.wine);
-        b.vline(7, 1, 2, P.gold);
+      }
+      case 'mascara': {
+        // Máscara ceremonial: esmalte blanco con sombra a la derecha, pinturas y penacho.
+        b.level = 4;
+        b.rect(3, 3, 8, 8, P.white);
+        b.rect(2, 4, 10, 5, P.white);
+        b.rect(4, 11, 6, 1, P.mist);
+        b.vline(11, 4, 5, P.fog);
+        b.vline(10, 3, 9, P.mist);
+        b.hline(3, 10, 8, P.mist);
+        b.rect(4, 5, 2, 2, P.black);
+        b.rect(8, 5, 2, 2, P.black);
+        b.set(4, 7, P.sky);
+        b.set(9, 7, P.sky);
+        b.set(3, 6, P.coral);
+        b.set(10, 6, P.coral);
+        b.level = 5;
+        b.hline(5, 9, 4, P.wine);
+        b.set(4, 8, P.wine);
+        b.set(9, 8, P.wine);
+        // Penacho de plumas y diadema.
         b.hline(3, 2, 8, P.gold);
+        b.set(3, 2, P.lemon);
+        b.vline(7, 0, 2, P.red);
+        b.vline(5, 0, 2, P.orange);
+        b.vline(9, 0, 2, P.orange);
+        b.set(6, 1, P.gold);
+        b.set(8, 1, P.gold);
         break;
+      }
     }
+    b.level = 0;
   });
 }
 
