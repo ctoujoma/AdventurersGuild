@@ -7462,3 +7462,17 @@ p.notebook-close {
   padding: 8px;
   background: var(--sand);
 }
+
+.name-tavern {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.name-tavern-input {
+  font: var(--t-l) / 1.2 var(--pixel);
+  padding: 8px;
+  color: var(--plum);
+  background: var(--sand);
+  border: 0;
+  box-shadow: 0 0 0 3px var(--ink);
+}

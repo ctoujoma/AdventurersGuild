@@ -698,6 +698,11 @@ export interface GameState {
   over: GameOver;
   /** Notas del tutorial ya leídas ('*' = sin consejos). */
   tips?: string[];
+  /**
+   * Toca pedir nombre a la taberna (se pide al pagar la deuda, y una vez a las partidas de antes
+   * de que existiera el aviso) si aún lleva el de serie.
+   */
+  askName?: boolean;
   /** «La deuda» (30 días) o modo libre tras pagarla. */
   mode?: 'deuda' | 'libre';
   /** Resumen de la llegada a la apertura; se enseña una vez al pagar la deuda. */
