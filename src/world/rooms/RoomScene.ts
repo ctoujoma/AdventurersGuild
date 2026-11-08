@@ -23,6 +23,7 @@ import { inGarden, isShaft } from '../../core/rooms';
 import {
   BufferGeometry,
   CanvasTexture,
+  DataTexture,
   DoubleSide,
   Float32BufferAttribute,
   Group,
@@ -46,7 +47,8 @@ import { PixelBuffer, bayer, rgba, toHex } from '../../art/pixel';
 import type { Building, RaidResult, Room, RoomYield } from '../../core/model';
 import { ROOMS } from '../../data/rooms';
 import { INCIDENTS } from '../../data/incidents';
-import type { GardenEdgeId } from '../../data/custom';
+import { TINTS, type GardenEdgeId, type TintId } from '../../data/custom';
+import { paintOver, stripeOf } from './pintura';
 import { Camera } from '../camera';
 import { GROUND } from '../geometry';
 import { Particles, type PKind } from '../particles';
@@ -57,6 +59,7 @@ import type {
   SceneCraft,
   SceneCraftEnd,
   SceneModel,
+  ScenePaint,
   SoundName,
 } from '../scene';
 import { itemIcon } from '../../art/items';
@@ -66,7 +69,7 @@ import { towerLampY, watchtower } from './salas/torre';
 import { BLIND, CANDLE, takeWallActs, type ActId, type PoiKind, type Round } from './salas/kit';
 import { FLIGHT_Z, flightArt, goesRight } from './stairs';
 import { dress } from './salas/tintes';
-import { Crowd, WALK_Z, type Hit, type Poi, type Talk } from './crowd';
+import { Crowd, WALK_Z, type Hit, type PaintSpan, type Poi, type Talk } from './crowd';
 import { drawGoal, goalBox, goalIcon, type GoalIcon } from './goalMark';
 import { clothOf } from '../../art/heroes/hero';
 import { LAWN_D, tuftAllowed, yardBushes, yardTrees } from './patio';
@@ -515,6 +518,30 @@ export class RoomScene {
   /** Los trabajos de taller de antes (para saber cuál acaba de terminar). */
   private crafted = new Map<string, SceneCraft>();
   /**
+   * Las paredes que se están pintando (por sala): sus texturas (la clásica y la de «luz con
+   * ambiente»), cada una con el dibujo del color nuevo, y por qué franja va (ver `pintura.ts`).
+   */
+  private walls = new Map<
+    string,
+    {
+      maps: { tex: DataTexture; fresh: Uint8Array }[];
+      w: number;
+      h: number;
+      /** La pared, en el mundo (para las gotas al acabar). */
+      x0: number;
+      x1: number;
+      y0: number;
+      y1: number;
+      at: string;
+    }
+  >();
+  /** Lo que se pintaba antes (para saber cuál acaba de terminar). */
+  private painted = new Map<string, ScenePaint>();
+  /** Las salas recién pintadas que aún gotean (ver `dripPaint`). */
+  private drips: { box: Rect; ramp: readonly string[]; until: number }[] = [];
+  /** Los materiales de la última pared del fondo puesta (ver `box`). */
+  private backMats: { mat: ShaderMaterial; mood: boolean }[] = [];
+  /**
    * Las piezas recién acabadas: en la forja, un momento en el yunque brillando; en los demás
    * talleres, el dibujo de lo que se ha hecho, que sube un poco sobre su mesa y se apaga.
    */
@@ -796,6 +823,7 @@ export class RoomScene {
       model.raven,
       model.gear,
       vaultStep(model.vault),
+      (model.paints ?? []).map((p) => [p.room, p.tint]),
     ]);
     if (model.visitors) this.crowd.setVisitors(model.visitors);
     this.crowd.setTints(model.tints ?? {});
@@ -978,6 +1006,7 @@ export class RoomScene {
     const m = this.model;
     if (!L || !m) return;
     this.workshop(m.crafts ?? [], m.craftEnds ?? []);
+    this.painting(m.paints ?? [], m.tints ?? {});
     this.incidents.set(L, m.building, m.incidents ?? [], m.clock, m.incidentEnds);
     // Ratas en una sala de la planta del salón: el gato va a cazarlas.
     const rats = (m.incidents ?? []).find(
@@ -1401,6 +1430,76 @@ export class RoomScene {
     this.crafted = now;
   }
 
+  /**
+   * Las salas que se pintan: la pared del fondo pasa al color nuevo por franjas según lo que
+   * lleva (mientras el pintor va de camino, nada); el pintor lo sabe para ponerse en la franja.
+   * Al acabar (la sala ya es de ese color), gotas de pintura que caen por la pared y destellos.
+   */
+  private painting(list: ScenePaint[], tints: Readonly<Record<string, TintId>>): void {
+    const spans: PaintSpan[] = [];
+    for (const p of list) {
+      const wall = this.walls.get(p.room);
+      if (!wall) continue;
+      spans.push({ ...p, x0: wall.x0, x1: wall.x1, w: wall.w });
+      if (p.walking) continue;
+      const s = stripeOf(p.frac, wall.w);
+      const at = `${s.full}:${Math.floor(s.part * 12)}`;
+      if (at === wall.at) continue;
+      wall.at = at;
+      for (const m of wall.maps) {
+        const img = m.tex.image as unknown as { data: Uint8Array };
+        paintOver(img.data, m.fresh, wall.w, wall.h, s);
+        m.tex.needsUpdate = true;
+      }
+    }
+    this.crowd.setPaints(spans);
+    const now = new Map(list.map((p) => [p.id, p]));
+    for (const [id, p] of this.painted)
+      if (!now.has(id) && (tints[p.room] ?? null) === p.tint) this.paintDone(p);
+    this.painted = now;
+  }
+
+  /** Acaba de pintarse una sala: gotas del color nuevo que caen por la pared y unos destellos. */
+  private paintDone(p: ScenePaint): void {
+    const r = this.layout?.rooms.find((x) => x.room.id === p.room);
+    if (!r) return;
+    const box = interior(r.rect);
+    const ramp = p.tint ? TINTS[p.tint].ramp : ([P.bark, P.rust, P.clay, P.tan] as const);
+    this.drips.push({ box, ramp, until: this.t + 2.6 });
+    for (let i = 0; i < 10; i++) {
+      const g = this.onWall(box.x + Math.random() * box.w, box.y + Math.random() * box.h * 0.8);
+      this.particles.spawn('glint', g.x, g.y, { max: 0.5 + Math.random() * 0.7 });
+    }
+    this.cb.onSound?.('coin', 0.3);
+  }
+
+  /** Un punto de la pared del fondo (en el mundo) en la vista, para las partículas. */
+  private onWall(x: number, y: number): { x: number; y: number } {
+    const c = this.camera;
+    const view: View = { px: c.px, py: c.py, vw: c.vw, vh: c.vh };
+    const s = project(view, x, y, DEPTH - 1);
+    return { x: view.px + s.x, y: view.py + s.y };
+  }
+
+  /** Las gotas de la pintura recién acabada: van cayendo de la cenefa, a ratos, un par de segundos. */
+  private dripPaint(dt: number): void {
+    this.drips = this.drips.filter((d) => d.until > this.t);
+    for (const d of this.drips) {
+      const n = Math.random() < dt * 12 ? 1 : 0;
+      for (let i = 0; i < n; i++) {
+        const x = d.box.x + 6 + Math.random() * (d.box.w - 12);
+        const top = this.onWall(x, d.box.y + 6 + Math.random() * 6);
+        const floor = this.onWall(x, d.box.y + d.box.h - 1);
+        this.particles.spawn('paint', top.x, top.y, {
+          vy: 4 + Math.random() * 10,
+          ay: floor.y,
+          max: 4,
+          c: d.ramp[1 + Math.floor(Math.random() * 3)],
+        });
+      }
+    }
+  }
+
   /** Dónde se ve lo que se crea en cada taller: el yunque, la mesa de cortar, el alambique. */
   private doneSpot(room: string): PropSpot | undefined {
     return (
@@ -1762,6 +1861,7 @@ export class RoomScene {
     this.styled = [];
     this.emitters = [];
     this.forgeLamps = [];
+    this.walls.clear();
     this.pins = [];
     this.perch = null;
     this.sign = null;
@@ -2153,6 +2253,13 @@ export class RoomScene {
     // Sin nada debajo de su primer o último hueco, la pared de fuera baja hasta debajo del forjado.
     const free = (c: number) =>
       room.floor > 0 && !b.rooms.some((o) => this.covers(o, c, room.floor - 1));
+    // Si se está pintando, la pared del color nuevo (antes que la de ahora: las dos dejan
+    // ventanas y cosas tocables, y valen las de la de ahora).
+    const job = this.model?.paints?.find((p) => p.room === room.id);
+    const fresh = job
+      ? backWall(dress(plain, job.tint ? { [plain.id]: job.tint } : {}), r.w, r.h, this.salonLook())
+      : null;
+    if (fresh) takeWindows();
     const back = backWall(room, r.w, r.h, this.salonLook());
     // La luz que entra por cada ventana: un foco del color del día un poco por delante de la
     // pared, a la altura del alféizar (solo se enciende con luz con ambiente y de día).
@@ -2248,6 +2355,25 @@ export class RoomScene {
       hang: { left: free(room.col), right: free(room.col + room.w - 1) },
       room,
     });
+    if (fresh && job) {
+      const mood = softened(moodGround(fresh), false);
+      this.walls.set(room.id, {
+        maps: this.backMats.map(({ mat, mood: m }) => {
+          const b = m ? mood : fresh;
+          return {
+            tex: mat.uniforms.map!.value as DataTexture,
+            fresh: new Uint8Array(b.data.buffer, b.data.byteOffset, b.data.byteLength),
+          };
+        }),
+        w: back.w,
+        h: back.h,
+        x0: r.x,
+        x1: r.x + r.w,
+        y0: r.y,
+        y1: r.y + r.h,
+        at: '',
+      });
+    }
     // En voladizo (sin nada debajo), la cara de abajo del suelo, que se ve desde el patio.
     if (room.floor > 0) {
       const under = { ambient: OUTDOOR, sun: 0.6, dither: 0 };
@@ -2442,7 +2568,14 @@ export class RoomScene {
     const D = DEPTH;
     const opts = { ambient, sun };
     const flat = { ambient, sun, dither: 0 };
-    this.plane(g, o.back, [at(x0, yb, D), at(x1, yb, D), at(x1, yt, D), at(x0, yt, D)], opts);
+    this.backMats = [];
+    this.plane(
+      g,
+      o.back,
+      [at(x0, yb, D), at(x1, yb, D), at(x1, yt, D), at(x0, yt, D)],
+      opts,
+      this.backMats,
+    );
     this.plane(
       g,
       o.floorTex ?? floorTex(null, theme, r.w, seed),
@@ -3899,17 +4032,21 @@ export class RoomScene {
     img: PixelBuffer,
     corners: Corners,
     o: { ambient: Tint; sun: number; wrap?: number; dither?: number; repeat?: number },
+    /** Si se da, se le añaden los materiales hechos (con la luz con ambiente, son dos). */
+    out?: { mat: ShaderMaterial; mood: boolean }[],
   ): ShaderMaterial {
     const d = this.dual;
     if (d && g === this.world) {
       this.dual = null;
-      this.plane(d.mood, softened(moodGround(img), false), corners, o);
+      const soft = this.plane(d.mood, softened(moodGround(img), false), corners, o);
       const m = this.plane(d.classic, img, corners, o);
       this.dual = d;
+      out?.push({ mat: soft, mood: true }, { mat: m, mood: false });
       return m;
     }
     const m = this.look.surface(img, corners, { ...o, outdoor: o.ambient === OUTDOOR });
     g.add(mesh(quad(corners, this.look), m));
+    out?.push({ mat: m, mood: false });
     return m;
   }
 
@@ -3974,10 +4111,11 @@ export class RoomScene {
     this.stepFollow();
     this.camera.update(dt);
     this.puffs(w);
-    // Las gotas de la gotera salpican al caer.
+    this.dripPaint(w);
+    // Las gotas de la gotera (y las de pintura) salpican al caer.
     this.particles.update(w, this.t, (p) => {
-      if (p.kind !== 'drip') return;
-      for (let i = 0; i < 3; i++) this.particles.spawn('splash', p.x, p.y - 1);
+      if (p.kind !== 'drip' && p.kind !== 'paint') return;
+      for (let i = 0; i < 3; i++) this.particles.spawn('splash', p.x, p.y - 1, { c: p.c });
     });
   }
 

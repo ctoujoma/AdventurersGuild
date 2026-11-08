@@ -16,6 +16,8 @@ export type PKind =
   | 'leaf'
   | 'drip'
   | 'splash'
+  /** Gota de pintura (de su color, `c`): cae como la de agua y salpica de su color. */
+  | 'paint'
   | 'heart'
   | 'note'
   | 'zzz'
@@ -48,6 +50,8 @@ export interface Particle {
   /** Centro de órbita o datos extra. */
   ax: number;
   ay: number;
+  /** El color, en las que lo llevan (la pintura). */
+  c?: string;
 }
 
 const GLYPHS: Partial<Record<PKind, string[]>> = {
@@ -78,7 +82,7 @@ export class Particles {
     kind: PKind,
     x: number,
     y: number,
-    o: Partial<Pick<Particle, 'vx' | 'vy' | 'max' | 'ax' | 'ay'>> = {},
+    o: Partial<Pick<Particle, 'vx' | 'vy' | 'max' | 'ax' | 'ay' | 'c'>> = {},
   ): void {
     if (this.list.length > 600) return;
     const max = o.max ?? defaults[kind].life * (0.7 + Math.random() * 0.6);
@@ -93,6 +97,7 @@ export class Particles {
       seed: this.n++ % 997,
       ax: o.ax ?? x,
       ay: o.ay ?? y,
+      c: o.c,
     });
   }
 
@@ -119,6 +124,7 @@ export class Particles {
           p.vx = Math.sin(t * 2 + p.seed) * 10 + this.wind * 75;
           break;
         case 'drip':
+        case 'paint':
           p.vy += 200 * dt;
           if (p.y >= p.ay) {
             p.life = 0;
@@ -285,7 +291,13 @@ export class Particles {
           px(ctx, x, y - 1, P.cyan);
           break;
         case 'splash':
-          px(ctx, x, y, P.sky);
+          px(ctx, x, y, p.c ?? P.sky);
+          break;
+        case 'paint':
+          // Una gota alargada del color de la pintura, con su brillo arriba.
+          px(ctx, x, y, p.c ?? P.red);
+          px(ctx, x, y - 1, p.c ?? P.red);
+          px(ctx, x, y - 2, P.white);
           break;
         case 'star':
           // Una crucecita amarilla que a ratos se vuelve aspa (parpadea).
@@ -343,6 +355,7 @@ const defaults: Record<PKind, { life: number; vx: number; vy: number }> = {
   moth: { life: 9999, vx: 0, vy: 0 },
   leaf: { life: 9, vx: 0, vy: 9 },
   drip: { life: 3, vx: 0, vy: 0 },
+  paint: { life: 3, vx: 0, vy: 0 },
   splash: { life: 0.35, vx: 20, vy: -25 },
   heart: { life: 1.8, vx: 0, vy: -12 },
   note: { life: 2.2, vx: 0, vy: -14 },

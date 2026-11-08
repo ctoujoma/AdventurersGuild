@@ -50,7 +50,7 @@ const ICON: Record<RoomType, IconName> = {
   mapas: 'mapa',
   sastreria: 'banderin',
   alquimia: 'vela',
-  pintor: 'pintado',
+  pintor: 'brocha',
 };
 
 /** La última pestaña de la cinta (la cinta se rehace al volver de elegir sitio). */

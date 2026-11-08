@@ -32,7 +32,14 @@ import {
   type RoomsLayout,
 } from './layout';
 import { ART } from './salas';
-import { PLASTER_FINE, WOOD_FINE, floorFinish, sideFinish, wallFinish } from './salas/acabados';
+import {
+  PLASTER_FINE,
+  WOOD_FINE,
+  floorFinish,
+  sideFinish,
+  tintBand,
+  wallFinish,
+} from './salas/acabados';
 import { BLIND, cellsOf, sconceOn, takeWallActs, windowX } from './salas/kit';
 import { RISE, goesRight, stepAt } from './stairs';
 import { streetDoor } from './salas/recibidor';
@@ -131,6 +138,18 @@ export function backWall(room: Room, w: number, h: number, look: SalonLook = NO_
   for (let j = 1; j < room.h; j++)
     beam(b, 0, Math.round((j * PITCH - SLAB) * BACK), bw, room.type === 'salon' ? 2 : 4, WOOD_DARK);
   beam(b, 0, 0, bw, 3, WOOD_DARK);
+  // Con tema de color, la cenefa pintada de su color bajo la viga de arriba (en el salón, encima
+  // de lo suyo, más abajo: si no, la tapan las guirnaldas).
+  const band = !bare(room) && !ruin;
+  // Una cenefa por planta (bajo la viga de cada una) y la raya del zócalo, abajo.
+  const bands = [
+    4,
+    ...Array.from(
+      { length: room.h - 1 },
+      (_, j) => Math.round(((j + 1) * PITCH - SLAB) * BACK) + 5,
+    ),
+  ];
+  if (band && room.type !== 'salon') tintBand(b, room, theme, fine, bands, bh - wain - 6);
   // Ventanas planta a planta (de arriba abajo), en las mismas columnas en todas. En el salón
   // se quita la columna que cae detrás de la chimenea (o de su tiro, que sube hasta el techo).
   const { hearthLeft } = hearthSpan(bw);
@@ -149,6 +168,7 @@ export function backWall(room: Room, w: number, h: number, look: SalonLook = NO_
       art.wall(b, room, look, { cells: cellsOf(room, w), wain, top: bh - wain - 3, ruin });
     else if (!ruin && room.type === 'salon') salonWall(b, room, look, windows, CELL_BACK, wain);
   }
+  if (band && room.type === 'salon') tintBand(b, room, theme, fine, bands, bh - wain - 6);
   if (ruin) {
     cobweb(b, 1, 1, 8, 1);
     cobweb(b, bw - 2, 1, 6, -1);

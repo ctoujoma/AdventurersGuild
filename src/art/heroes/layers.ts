@@ -196,6 +196,22 @@ export const OUTFITS = {
     '..CCCCCCCCCCCC..',
     '...oo......oo...',
   ],
+  // Pintor: la bata hasta las rodillas, abotonada, con manchas de pintura de colores.
+  pintor: [
+    ...EMPTY_TOP,
+    '...cccccccccc...',
+    '..cccaaaaaaccc..',
+    '..cCcccMcrccCc..',
+    '..cCcyccMcccCc..',
+    '..xxccccMcccxx..',
+    '...cccccMcgcc...',
+    '...cCcrccccCc...',
+    '...cCccccycCc...',
+    '...CCCCCCCCCC...',
+    '....OOO..OOO....',
+    '...oooo..oooo...',
+    '...OOOO..OOOO...',
+  ],
   campesino: [
     ...EMPTY_TOP,
     '...cccaaaaccc...',
@@ -485,6 +501,15 @@ export const WEAPONS = {
     '.............M..',
     '............gGg.',
     '............ggg.',
+  ],
+  // La brocha, con las cerdas mojadas.
+  pintor: [
+    ...Array.from({ length: 11 }, () => '................'),
+    '............rr..',
+    '............rr..',
+    '............MM..',
+    '.............v..',
+    '.............v..',
   ],
   // Los de fuera no van armados: el campesino lleva un cesto; el mercader, su bolsa.
   campesino: [

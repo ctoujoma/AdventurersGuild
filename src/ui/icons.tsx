@@ -938,6 +938,19 @@ const ICONS = {
     'k...kkkkk.',
     'k.........',
   ],
+  // La brocha del pintor (la sala del pintor, en Obras), con las cerdas mojadas y una gota.
+  brocha: [
+    '......kkk.',
+    '.....kctk.',
+    '....kctk..',
+    '...ksmk...',
+    '..kRRRk...',
+    '.kRCRRk...',
+    'kRRRRk....',
+    'kRRRk..k..',
+    '.kRk..kRk.',
+    '..k...kk..',
+  ],
   pintado: [
     'kkkkkkkkkk',
     'kRRRRggggk',

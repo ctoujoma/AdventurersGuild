@@ -175,6 +175,21 @@ const CLASS: Record<OutfitId, Slots> = {
     q: P.forest,
     Q: P.deep,
   },
+  // Pintor: bata clara manchada de pintura sobre camisa azul, boina de vino y zapatos.
+  pintor: {
+    c: P.mist,
+    C: P.fog,
+    a: P.ocean,
+    A: P.navy,
+    o: P.bark,
+    O: P.umber,
+    p: P.umber,
+    P: P.ebony,
+    q: P.mist,
+    Q: P.fog,
+    b: P.wine,
+    B: P.plum,
+  },
   // Chaleco de lana parda sobre camisa cruda, cuerda por cinturón y zuecos.
   campesino: {
     c: P.oak,

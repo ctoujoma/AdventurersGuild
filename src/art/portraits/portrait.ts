@@ -78,6 +78,11 @@ const CLASS: Record<OutfitId, [Ramp, Ramp]> = {
     [P.black, P.deep, P.forest, P.leaf],
     [P.rust, P.tan, P.sand, P.white],
   ],
+  // Pintor: la bata clara y la camisa azul.
+  pintor: [
+    [P.slate, P.fog, P.mist, P.white],
+    [P.navy, P.ocean, P.sky, P.cyan],
+  ],
   campesino: [
     [P.plum, P.bark, P.oak, P.tan],
     [P.rust, P.tan, P.sand, P.white],
@@ -103,6 +108,7 @@ const PORTRAIT_OUTFIT: Partial<Record<OutfitId, keyof typeof OUTFITS>> = {
   herrero: 'tabernero',
   sastre: 'tabernero',
   alquimista: 'clerigo',
+  pintor: 'tabernero',
   noble: 'clerigo',
   forastero: 'picaro',
 };
