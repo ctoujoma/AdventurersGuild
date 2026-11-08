@@ -504,14 +504,14 @@ export const DRESS_GOLD = 15;
 export const DRESS_HOURS = 4;
 export const DRESS_MORALE = 8;
 /**
- * Vestir empieza cuando el héroe llega a la sastrería (lo dice la escena); si nadie lo dice (sin
- * escena o con la app cerrada), a las tantas horas de juego como mucho.
+ * Vestir empieza cuando el héroe llega a la sastrería (lo dice la escena); solo con el juego
+ * cerrado (sin escena que lo diga) se le da por llegado a las tantas horas de juego.
  */
 export const DRESS_WALK = 2;
 /**
  * Pintar una sala (ver `core/paint.ts`): lo que cuesta y las horas de jornada que tarda por cada
- * hueco que mide (a ritmo de un pintor de Maña 4 en un taller de nivel 1), y lo que se le espera
- * como mucho si nadie dice que ha llegado.
+ * hueco que mide (a ritmo de un pintor de Maña 4 en un taller de nivel 1), y, con el juego
+ * cerrado (sin escena que diga que ha llegado), las horas que tarda en llegar.
  */
 export const PAINT_GOLD = 20;
 export const PAINT_HOURS = 3;

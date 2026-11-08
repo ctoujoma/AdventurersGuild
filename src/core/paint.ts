@@ -1,7 +1,8 @@
 /**
  * El taller del pintor: los colores de las telas de cada sala se cambian pintándolas. Se elige
  * el color, se paga y un pintor del taller va a la sala; no empieza hasta que llega (lo dice la
- * escena con la acción `arrived`, o como mucho a las `PAINT_WALK` horas) y trabaja en la jornada,
+ * escena con la acción `arrived`: lo que pasa, pasa de verdad; solo con el juego cerrado, sin
+ * escena que lo diga, se le da por llegado a las `PAINT_WALK` horas) y trabaja en la jornada,
  * a su ritmo, hasta acabar. Entonces la sala cambia de color. Mientras, el pintor no está en su
  * taller: la escena le lleva a la sala que pinta (`painterAt`) y enseña cómo va (`paintState`).
  */
@@ -139,14 +140,14 @@ export interface PaintState {
   frac: number;
   /** Horas de jornada que le quedan al ritmo de ahora; null si está parado. */
   hoursLeft: number | null;
-  /** Aún no ha empezado: el pintor va de camino. */
+  /** Aún no ha empezado: el pintor va de camino (hasta que llega, `arrived`). */
   walking: boolean;
 }
 
 /** Cómo va un trabajo de pintar ahora (para la ficha y la escena). */
 export function paintState(s: GameState, p: Paint): PaintState {
   const rate = rateOf(s, p);
-  const walking = !!p.wait && p.at > partOf(s) + 1e-9;
+  const walking = !!p.wait;
   const done = walking ? p.done : Math.min(p.need, p.done + rate * workedIn(p.at, partOf(s)));
   return {
     paint: p,
@@ -166,8 +167,11 @@ export function arrivePaint(s: GameState, who: string, roomId: string): boolean 
   return true;
 }
 
-/** Avanza lo que se pinta hasta la parte del día `part` y acaba lo que esté. */
-export function stepPaints(s: GameState, part: number): DawnEvent[] {
+/**
+ * Avanza lo que se pinta hasta la parte del día `part` y acaba lo que esté. Con `unseen` (el
+ * juego cerrado: nadie puede decir que ha llegado), el pintor llega a sus horas de camino.
+ */
+export function stepPaints(s: GameState, part: number, unseen = false): DawnEvent[] {
   if (!s.paints?.length) return [];
   const news: DawnEvent[] = [];
   const keep: Paint[] = [];
@@ -179,7 +183,7 @@ export function stepPaints(s: GameState, part: number): DawnEvent[] {
       s.gold += p.gold;
       continue;
     }
-    if (p.wait && part >= p.at && p.at < WORK_END) delete p.wait;
+    if (p.wait && unseen && part >= p.at && p.at < WORK_END) delete p.wait;
     if (p.wait) {
       keep.push(p);
       continue;
@@ -212,9 +216,12 @@ export function stepPaints(s: GameState, part: number): DawnEvent[] {
 const rateOfWorker = (s: GameState, p: Paint) =>
   s.workers.some((w) => w.id === p.painter && w.room === p.shop);
 
-/** Al pasar la noche: lo que quedaba del día y, para el día nuevo, se cuenta desde la mañana. */
-export function nightPaints(s: GameState): DawnEvent[] {
-  const news = stepPaints(s, 1);
+/**
+ * Al pasar la noche: lo que quedaba del día y, para el día nuevo, se cuenta desde la mañana. El
+ * que aún no ha llegado sigue esperando (por la mañana irá a la sala); con `unseen`, ver arriba.
+ */
+export function nightPaints(s: GameState, unseen = false): DawnEvent[] {
+  const news = stepPaints(s, 1, unseen);
   for (const p of s.paints ?? []) p.at = p.wait ? WORK_START + PAINT_WALK / 24 : 0;
   return news;
 }

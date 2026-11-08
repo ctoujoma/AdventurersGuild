@@ -533,12 +533,18 @@ export class RoomScene {
       y0: number;
       y1: number;
       at: string;
+      /** El pintor ya ha llegado: desde entonces se ve avanzar (antes, aunque cuente, no). */
+      started: boolean;
+      /** Los lados: el de la izquierda se pinta al empezar; el de la derecha, con la última franja. */
+      sides: { tex: DataTexture; fresh: Uint8Array; right: boolean; done?: boolean }[];
     }
   >();
   /** Lo que se pintaba antes (para saber cuál acaba de terminar). */
   private painted = new Map<string, ScenePaint>();
   /** Las salas recién pintadas que aún gotean (ver `dripPaint`). */
   private drips: { box: Rect; ramp: readonly string[]; until: number }[] = [];
+  /** Las texturas de los lados de la última sala puesta y su dibujo del color nuevo (ver `box`). */
+  private sideMaps: { tex: DataTexture; fresh: Uint8Array; right: boolean }[] = [];
   /** Los materiales de la última pared del fondo puesta (ver `box`). */
   private backMats: { mat: ShaderMaterial; mood: boolean }[] = [];
   /**
@@ -1442,6 +1448,8 @@ export class RoomScene {
       if (!wall) continue;
       spans.push({ ...p, x0: wall.x0, x1: wall.x1, w: wall.w });
       if (p.walking) continue;
+      if (!wall.started && !this.crowd.painterIn(p.painter, p.room)) continue;
+      wall.started = true;
       const s = stripeOf(p.frac, wall.w);
       const at = `${s.full}:${Math.floor(s.part * 12)}`;
       if (at === wall.at) continue;
@@ -1449,6 +1457,12 @@ export class RoomScene {
       for (const m of wall.maps) {
         const img = m.tex.image as unknown as { data: Uint8Array };
         paintOver(img.data, m.fresh, wall.w, wall.h, s);
+        m.tex.needsUpdate = true;
+      }
+      for (const m of wall.sides) {
+        if (m.done || (m.right && s.full < s.n - 1)) continue;
+        m.done = true;
+        (m.tex.image as unknown as { data: Uint8Array }).data.set(m.fresh);
         m.tex.needsUpdate = true;
       }
     }
@@ -2354,6 +2368,7 @@ export class RoomScene {
       },
       hang: { left: free(room.col), right: free(room.col + room.w - 1) },
       room,
+      fresh: job ? dress(plain, job.tint ? { [plain.id]: job.tint } : {}) : undefined,
     });
     if (fresh && job) {
       const mood = softened(moodGround(fresh), false);
@@ -2372,6 +2387,8 @@ export class RoomScene {
         y0: r.y,
         y1: r.y + r.h,
         at: '',
+        started: false,
+        sides: this.sideMaps,
       });
     }
     // En voladizo (sin nada debajo), la cara de abajo del suelo, que se ve desde el patio.
@@ -2557,6 +2574,8 @@ export class RoomScene {
       hang?: { left: boolean; right: boolean };
       /** La sala (para los acabados de sus lados). */
       room?: Room;
+      /** Si se está pintando, la sala con el color nuevo (para sus lados). */
+      fresh?: Room;
     },
   ): void {
     const g = this.world;
@@ -2603,8 +2622,7 @@ export class RoomScene {
           );
     const winL = wins('left');
     const winR = wins('right');
-    this.plane(
-      g,
+    const left = (room?: Room) =>
       sideTex(
         theme,
         r.h,
@@ -2612,14 +2630,10 @@ export class RoomScene {
         `${seed}i`,
         o.door !== undefined || o.garden?.left ? [0] : [],
         o.door,
-        o.room,
+        room,
         winL,
-      ),
-      [at(x0, yb, 0), at(x0, yb, D), at(x0, yt, D), at(x0, yt, 0)],
-      flat,
-    );
-    this.plane(
-      g,
+      );
+    const right = (room?: Room) =>
       mirror(
         sideTex(
           theme,
@@ -2628,13 +2642,43 @@ export class RoomScene {
           `${seed}d`,
           o.garden?.right ? [0] : [],
           1,
-          o.room,
+          room,
           winR,
         ),
-      ),
+      );
+    const matsL: { mat: ShaderMaterial; mood: boolean }[] = [];
+    const matsR: { mat: ShaderMaterial; mood: boolean }[] = [];
+    this.plane(
+      g,
+      left(o.room),
+      [at(x0, yb, 0), at(x0, yb, D), at(x0, yt, D), at(x0, yt, 0)],
+      flat,
+      matsL,
+    );
+    this.plane(
+      g,
+      right(o.room),
       [at(x1, yb, D), at(x1, yb, 0), at(x1, yt, 0), at(x1, yt, D)],
       flat,
+      matsR,
     );
+    // Si se está pintando, los lados del color nuevo (ver `painting`).
+    this.sideMaps = o.fresh
+      ? [
+          { mats: matsL, img: left(o.fresh), right: false },
+          { mats: matsR, img: right(o.fresh), right: true },
+        ].flatMap(({ mats, img, right }) => {
+          const soft = softened(moodGround(img), false);
+          return mats.map(({ mat, mood }) => {
+            const b = mood ? soft : img;
+            return {
+              tex: mat.uniforms.map!.value as DataTexture,
+              fresh: new Uint8Array(b.data.buffer, b.data.byteOffset, b.data.byteLength),
+              right,
+            };
+          });
+        })
+      : [];
     // La hoja de la puerta de la calle, sobre su hueco: gira hacia dentro cuando pasa alguien.
     if (o.door !== undefined) {
       const { z0, z1, h } = STREET_LEAF;

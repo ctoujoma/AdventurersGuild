@@ -270,23 +270,25 @@ describe('la sastrería viste a los héroes', () => {
     expect(t.dawn.some((e) => /estrena ropa/.test(e.t))).toBe(true);
   });
 
-  it('no se cose hasta que el héroe ha tenido tiempo de llegar a la sala', () => {
+  it('con el juego abierto no se cose hasta que llega; cerrado, a sus horas de camino', () => {
     const { s, room } = withShop('camino', 'sastreria');
     const h = s.heroes.find((x) => x.status === 'ok')!;
     s.clock = DAY_SECONDS * 0.3;
     const t = reduce(s, { type: 'dressAt', room, heroId: h.id, dress: { dye: 'vino' } });
     const c = dressingOf(t, h.id)!;
     expect(craftState(t, c).walking).toBe(true);
-    // Media hora después sigue de camino y sin nada cosido.
-    const half = { ...t, clock: t.clock! + DAY_SECONDS * (DRESS_WALK / 2 / 24) };
-    stepCrafts(half, half.clock! / DAY_SECONDS);
-    const mid = dressingOf(half, h.id)!;
-    expect(mid.done).toBe(0);
-    expect(craftState(half, mid).walking).toBe(true);
-    // Pasado el camino, ya avanza.
-    const later = { ...half, clock: t.clock! + DAY_SECONDS * ((DRESS_WALK + 1) / 24) };
+    // Pasadas las horas de camino y más, sin llegar no se cose nada.
+    const later = { ...t, clock: t.clock! + DAY_SECONDS * ((DRESS_WALK + 3) / 24) };
     stepCrafts(later, later.clock! / DAY_SECONDS);
-    expect(dressingOf(later, h.id)!.done).toBeGreaterThan(0);
+    const mid = dressingOf(later, h.id)!;
+    expect(mid.done).toBe(0);
+    expect(craftState(later, mid).walking).toBe(true);
+    // Pasa la noche sin llegar: se le sigue esperando.
+    expect(dressingOf(endDay(later), h.id)?.wait).toBe(true);
+    // Con el juego cerrado (sin escena), se le da por llegado y se cose.
+    const away = { ...t, clock: t.clock! + DAY_SECONDS * ((DRESS_WALK + 1) / 24) };
+    stepCrafts(away, away.clock! / DAY_SECONDS, undefined, true);
+    expect(dressingOf(away, h.id)!.done).toBeGreaterThan(0);
   });
 
   it('se empieza a coser en cuanto la escena dice que el héroe ha llegado', () => {

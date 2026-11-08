@@ -1363,7 +1363,17 @@ export class Crowd {
   private ladders = new Map<string, Mesh>();
 
   setPaints(list: readonly PaintSpan[]): void {
+    const was = this.paints;
     this.paints = new Map(list.map((p) => [p.painter, p]));
+    // Encargo nuevo: el pintor sale ya hacia la sala, aunque fuera de camino a otra cosa (la tarea
+    // nueva le llega antes que el encargo, y andando no vuelve a pensar hasta llegar).
+    for (const [id, p] of this.paints) {
+      if (was.get(id)?.room === p.room) continue;
+      const a = this.actors.get(id);
+      if (!a || a.gone || a.held || a.climb || a.leaving || a.homeward || this.scripted) continue;
+      a.path = [];
+      this.paintTurn(a);
+    }
     for (const [id, m] of this.ladders)
       if (!this.paints.has(id)) {
         this.group.remove(m);
@@ -1388,18 +1398,26 @@ export class Crowd {
     // Un poco a la izquierda de la franja (por lo ya pintado), mirando a la derecha.
     const x = Math.max(p.x0 + 6, Math.min(p.x1 - 10, p.x0 + u * (p.x1 - p.x0) - 5));
     const place = { x, floor: r.room.floor };
-    // La cenefa (arriba) desde la escalera; la raya del zócalo (abajo), de rodillas.
-    const work: WorkId = p.walking || s.part < 0.7 ? 'brochazo' : 'zocalo';
+    // Casi siempre subido a la escalera, por lo de arriba; de vez en cuando (una franja de cada
+    // cuatro, cuando va por abajo), de rodillas por el zócalo.
+    const low = s.full % 4 === 3 && s.part > 0.5;
+    const work: WorkId = low ? 'zocalo' : 'brochazo';
     // De camino aún no pinta: al llegar se queda mirando la pared hasta que empieza.
     a.task = p.walking ? null : { at: x, work, face: 1 };
     a.wait = 2;
-    if (Math.abs(a.x - x) < 2 && a.floor === place.floor) {
-      a.ladder = !p.walking && s.part < 0.35;
+    // No se baja a cada franja: corre la escalera cuando la franja ya le queda lejos.
+    const near = a.floor === place.floor && this.inRoom(a, p.room) && Math.abs(a.x - x) < 9;
+    if (near && !p.walking) {
+      if (a.task) a.task.at = a.x;
+      a.ladder = !low;
       return true;
     }
+    if (near) return true;
     if (!route(this.L, { x: a.x, floor: a.floor }, place, this.segs)) return false;
-    // Por delante de lo suelto (camas, arcones), que se le vea trabajar.
+    // Por delante de lo suelto (camas, arcones), que se le vea trabajar. Si aún no está en la
+    // sala, va deprisa: el trabajo no se ve empezar hasta que llega.
     this.go(a, { place, pose: 'stand', stand: WALK_Z - 4 });
+    if (!this.inRoom(a, p.room)) a.run = Math.max(a.run ?? 1, BRISK);
     return true;
   }
 
@@ -1635,6 +1653,12 @@ export class Crowd {
     if (!r) return null;
     const x = r.rect.x + r.rect.w / 2 + (this.rnd() - 0.5) * Math.min(30, r.rect.w / 3);
     return { x, floor: r.room.floor };
+  }
+
+  /** Si el pintor está ya en la sala que pinta (o no se le ve): entonces se ve avanzar la pared. */
+  painterIn(id: string, room: string): boolean {
+    const a = this.actors.get(id);
+    return !a || a.gone || (!a.path.length && this.inRoom(a, room));
   }
 
   /** Si alguien ya ha llegado a una sala y está parado en ella (para quitar la marca). */
