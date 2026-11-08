@@ -25,7 +25,7 @@ import type { AbilityId, CombatSetup, Order } from './combat';
 import type { Gear } from './gear';
 import type { Mats } from './materials';
 
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 export type Sex = 'm' | 'f';
 
@@ -122,7 +122,8 @@ export type ItemIcon =
  * fallida), ward (anula al gafe del grupo), ambush (esquiva la mitad de las emboscadas).
  */
 export type ItemPerk = 'guard' | 'luck' | 'ward' | 'ambush';
-export type Rarity = 0 | 1 | 2;
+/** Rareza: 0 común, 1 bueno, 2 raro, 3 épico, 4 legendario. */
+export type Rarity = 0 | 1 | 2 | 3 | 4;
 
 export interface Item {
   id: string;
@@ -338,7 +339,7 @@ export interface CraftEnd {
   id: string;
   room: string;
   /**
-   * hecho: salió un objeto (`rarity` 1 si es de las buenas); receta o nada: al desmontar;
+   * hecho: salió un objeto (`rarity` 2 si es de las buenas); receta o nada: al desmontar;
    * vestido: el héroe estrena ropa; cancelado: se canceló o el taller ya no está.
    */
   how: 'hecho' | 'receta' | 'nada' | 'vestido' | 'templado' | 'cancelado';

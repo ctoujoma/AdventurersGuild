@@ -44,7 +44,7 @@ import {
 } from 'three';
 import { P, darker } from '../../art/palette';
 import { PixelBuffer, bayer, rgba, toHex } from '../../art/pixel';
-import type { Building, RaidResult, Room, RoomYield } from '../../core/model';
+import type { Building, Rarity, RaidResult, Room, RoomYield } from '../../core/model';
 import { ROOMS } from '../../data/rooms';
 import { INCIDENTS } from '../../data/incidents';
 import { TINTS, type GardenEdgeId, type TintId } from '../../data/custom';
@@ -1683,7 +1683,7 @@ export class RoomScene {
       }
       return;
     }
-    const good = (end.rarity ?? 0) >= 1;
+    const good = (end.rarity ?? 0) >= 2;
     this.finished.push({
       room: c.room,
       at: this.t,
@@ -1719,7 +1719,12 @@ export class RoomScene {
         const k = (this.t - f.at) / (f.until - f.at);
         const x = Math.round(f.x - camera.px) - 6;
         const y = Math.round(f.y - camera.py - 14 - k * 10);
-        this.paintFading(rackIcon(f.icon, f.rarity as 0 | 1), x, y, 1 - Math.max(0, k - 0.6) / 0.4);
+        this.paintFading(
+          rackIcon(f.icon, f.rarity as Rarity),
+          x,
+          y,
+          1 - Math.max(0, k - 0.6) / 0.4,
+        );
         continue;
       }
       if ([...this.crafted.values()].some((c) => c.room === f.room && !c.undo)) continue;
@@ -1731,9 +1736,9 @@ export class RoomScene {
       // Con su borde oscuro, para que se lea sobre el yunque: la hoja y la empuñadura.
       ctx.fillStyle = P.black;
       ctx.fillRect(x - 1, y - 2, 11, 4);
-      ctx.fillStyle = f.rarity >= 1 ? P.gold : P.mist;
+      ctx.fillStyle = f.rarity >= 2 ? P.gold : P.mist;
       ctx.fillRect(x, y - 1, 7, 2);
-      ctx.fillStyle = f.rarity >= 1 ? P.lemon : P.white;
+      ctx.fillStyle = f.rarity >= 2 ? P.lemon : P.white;
       ctx.fillRect(x, y - 1, 7, 1);
       ctx.fillStyle = P.oak;
       ctx.fillRect(x + 7, y - 1, 2, 2);

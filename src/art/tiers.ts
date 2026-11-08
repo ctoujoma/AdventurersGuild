@@ -7,12 +7,11 @@ import { P } from './palette';
  * acero pulido, ennegrecido, oro); el color del nivel va donde es natural: gemas, runas, telas,
  * el campo del escudo y el marco. Cuanto más alto, más adornos.
  *
- * El juego tiene hoy tres rarezas (común, bueno y legendario): `tierOf` las coloca en la escala
- * (el «bueno» es azul, como en la interfaz). Si se añaden niveles, basta con cambiar `tierOf`.
+ * Cada rareza del juego (0–4) es su nivel: `tierOf` las coloca en la escala.
  */
 export type Tier = 0 | 1 | 2 | 3 | 4;
 
-const BY_RARITY: Record<Rarity, Tier> = { 0: 0, 1: 2, 2: 4 };
+const BY_RARITY: Record<Rarity, Tier> = { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4 };
 export const tierOf = (r: Rarity | undefined): Tier => BY_RARITY[r ?? 0] ?? 0;
 /** El color de cada nivel, para los textos («bueno (verde)»). */
 export const TIER_COLOR_NAMES: Record<Tier, string> = {

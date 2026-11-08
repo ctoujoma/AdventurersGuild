@@ -65,7 +65,7 @@ export const workerFrame = (w: Pick<Worker, 'trade' | 'village'>) =>
 export const wornMarks = (h: Pick<Hero, 'worn'>): GearMark[] | undefined => {
   const l = gearList(h).flatMap((i) =>
     i.icon
-      ? [{ icon: i.icon, rarity: i.rarity ?? 0, unique: i.rarity === 2 ? i.name : undefined }]
+      ? [{ icon: i.icon, rarity: i.rarity ?? 0, unique: i.rarity === 4 ? i.name : undefined }]
       : [],
   );
   return l.length ? l : undefined;

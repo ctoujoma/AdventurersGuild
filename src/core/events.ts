@@ -4,7 +4,7 @@
  */
 import { GEAR } from '../data/items';
 import { activeChain } from './chains';
-import type { DawnEvent, GameState, Hero, PendingEvent } from './model';
+import type { DawnEvent, GameState, Hero, PendingEvent, Rarity } from './model';
 import type { Rng } from './rng';
 
 // ---------- Amenaza regional ----------
@@ -62,7 +62,7 @@ interface EventDef {
 }
 
 const home = (s: GameState) => s.heroes.filter((h) => h.status === 'ok');
-const gearOf = (rarity: 0 | 1 | 2) => GEAR.filter((g) => g.rarity === rarity);
+const gearOf = (rarity: Rarity) => GEAR.filter((g) => g.rarity === rarity);
 
 const EVENTS: readonly EventDef[] = [
   {
@@ -77,7 +77,7 @@ const EVENTS: readonly EventDef[] = [
         apply: (s, rng) => {
           s.gold -= 60;
           if (rng.chance(0.65)) {
-            const g = rng.pick(gearOf(1));
+            const g = rng.pick(gearOf(2));
             s.inventory.push({ ...g, id: `i${s.uid++}` });
             return `Era de verdad: ${g.name}. Ya cuelga en el tablero de la bodega.`;
           }
@@ -148,7 +148,7 @@ const EVENTS: readonly EventDef[] = [
         hint: 'Un objeto valioso',
         apply: (s, rng) => {
           s.gold -= 100;
-          const g = rng.chance(0.2) ? rng.pick(gearOf(2)) : rng.pick(gearOf(1));
+          const g = rng.pick(gearOf(rng.chance(0.1) ? 4 : rng.chance(0.2) ? 3 : 2));
           s.inventory.push({ ...g, id: `i${s.uid++}`, value: Math.max(g.value, 150) });
           return `Te quedas ${g.name.toLowerCase()}. El noble no vuelve, claro.`;
         },

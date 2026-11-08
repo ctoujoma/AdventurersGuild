@@ -140,7 +140,7 @@ describe('equipo visible', () => {
     const look = generateLook('equipado', 'guerrero', 'm');
     const plain = heroSprites(look);
     const sword = heroSprites(look, { gear: { icon: 'espada', rarity: 0 } });
-    const gold = heroSprites(look, { gear: { icon: 'espada', rarity: 2 } });
+    const gold = heroSprites(look, { gear: { icon: 'espada', rarity: 4 } });
     expect(sword.idle[0].data).not.toEqual(plain.idle[0].data);
     expect(sword.walk[0].data).not.toEqual(plain.walk[0].data);
     expect(gold.idle[0].data).not.toEqual(sword.idle[0].data);
@@ -170,7 +170,7 @@ describe('filete del tinte', () => {
       fn(b, gear);
       return b.data;
     };
-    const own = { icon: 'coraza', rarity: 2, unique: 'Coraza de escamas de sierpe' } as const;
+    const own = { icon: 'coraza', rarity: 4, unique: 'Coraza de escamas de sierpe' } as const;
     for (const icon of ['coraza', 'escudo'] as const)
       for (const [fn, w, h] of [
         [gearPortraitFront, 40, 48],

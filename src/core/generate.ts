@@ -185,8 +185,10 @@ export function generateQuest(
     if (rng.chance(0.6)) {
       const rarity = rng.weighted<number>([
         [0, 1],
-        [1, 0.3 + danger * 0.12 + rank * 0.06],
-        [2, 0.02 + danger * 0.04 + rank * 0.03],
+        [1, 0.15 + danger * 0.05 + rank * 0.02],
+        [2, 0.2 + danger * 0.08 + rank * 0.04],
+        [3, 0.02 + danger * 0.03 + rank * 0.02],
+        [4, 0.01 + danger * 0.02 + rank * 0.02],
       ]);
       const base = rng.pick(GEAR.filter((g) => g.rarity === rarity));
       item = { id: uidItem, ...base, value: Math.round(base.value * (1 + rank * 0.2)) };
