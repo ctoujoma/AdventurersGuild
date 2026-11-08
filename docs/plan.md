@@ -330,6 +330,10 @@ en medio, para que los edificios salgan más interesantes (y, más adelante, pas
 
 ## Pendiente de revisar
 
+- **Revisión crítica antes de las expediciones** (8 de noviembre): fallos, comodidad, fichas de
+  sala, sistemas a medias y un solo motor de pelea, con la partida del usuario:
+  [`revision-critica.md`](revision-critica.md).
+
 - **Asaltos en directo** (hechos, con cámara lenta al arrastrar y el objetivo «sin heridos»):
   falta su arte ([`encargos/arte-asaltos.md`](encargos/arte-asaltos.md)).
 - **Hecho (6 de noviembre):** la velocidad x2/x4 también acelera la escena, y la sastrería no
