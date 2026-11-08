@@ -58,6 +58,9 @@ export const VET_LEVEL = 4;
 /** Moral extra por noche y tope de moral extra de los veteranos, por nivel del ala. */
 export const VET_REST = [0, 4, 8, 12] as const;
 export const VET_CAP = [0, 10, 15, 20] as const;
+/** Veterano sin cama en el ala: moral de menos por noche y tope de moral más bajo. */
+export const VET_SNUB_REST = 2;
+export const VET_SNUB_CAP = 10;
 
 /** Dormitorio de nivel 4 (dosel y alfombras): moral extra por noche para todos los de casa. */
 export const DORM_REST = [0, 0, 0, 0, 2] as const;

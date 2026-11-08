@@ -1263,6 +1263,7 @@ export class Crowd {
       const work = a.hero.work;
       const guard = a.hero.guard;
       const vault = a.hero.vault;
+      const dorm = a.hero.dorm;
       const goTo = a.hero.goTo;
       // Si ha cambiado su dibujo (equipo nuevo, herido o curado, u otra partida con los mismos
       // ids), se le rehace: si no, seguía con el de antes hasta que salía y volvía a entrar.
@@ -1270,7 +1271,8 @@ export class Crowd {
       a.hero = h;
       if (reskin) this.reskin(a);
       // Tarea nueva (o de guardia): va ya, sin acabar antes el paseo que llevaba.
-      const post = !guard !== !h.guard || !vault !== !h.vault;
+      // (Otro dormitorio: de noche, va andando a su cama nueva.)
+      const post = !guard !== !h.guard || !vault !== !h.vault || dorm !== h.dorm;
       if ((work !== h.work || goTo !== h.goTo || post) && !a.gone && !a.leaving) {
         a.wait = 0;
         // (Decide cuando ya se sabe su sitio nuevo: el de guardia, la puerta; ver abajo.)
@@ -2304,6 +2306,7 @@ export class Crowd {
         status: a.hero.status,
         guard: a.hero.guard,
         vault: a.hero.vault,
+        dorm: a.hero.dorm,
         staff: a.hero.staff,
       }));
     this.homes = homes(people, this.S);

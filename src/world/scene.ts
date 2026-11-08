@@ -24,6 +24,8 @@ export interface SceneHero {
   guard?: boolean;
   /** De guardia en la cámara del tesoro: patrulla dentro, día y noche. */
   vault?: boolean;
+  /** El dormitorio (o cuarto del servicio) en el que duerme (id), según `core/beds.ts`. */
+  dorm?: string;
   /** Sala en la que trabaja de día (id). */
   work?: string;
   /** Va corriendo a esta sala (id) a arreglar algo (un incidente); manda sobre `work`. */
