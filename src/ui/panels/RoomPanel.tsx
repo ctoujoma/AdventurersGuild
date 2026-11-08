@@ -40,6 +40,7 @@ import { isWorkshop } from '../../core/crafting';
 import { crewGroups } from '../crew';
 import { GUARD, type Task } from '../drop';
 import { dawnIn } from '../when';
+import { storeNext } from '../../core/materials';
 
 /** A dónde lleva cada sala: los paneles de siempre que tienen que ver con ella. */
 export type RoomLink =
@@ -514,6 +515,9 @@ export function RoomPanel({
       </div>
       {state && <p class="room-state">{state}</p>}
       <p class="room-desc">{def.desc}</p>
+      {room.type === 'almacen' && storeNext(game, room.level) && (
+        <p class="row-sub">{storeNext(game, room.level)}</p>
+      )}
       {info && room.level > 0 && <span class="row-sub">{info.effect(room.level)}</span>}
       {info && cost !== null && (
         <span class="next-level">Mejora: {info.effect(room.level + 1)}</span>
