@@ -301,7 +301,9 @@ npm run build`.
     dibujo) y la pila encima según lo lleno (`SceneModel.mats`, en décimos en `look.mats`):
     lingotes en pirámide, rollos, fardos, sacos de hierbas, tablones y la caja de cristales que
     destella. En las anchas, dos tarimas por material (se llena una y luego la otra). En la pared,
-    estanterías con cajas que se llenan con el total;
+    estanterías con cajas que se llenan con el total. Si no caben en fila (un hueco a nivel 2–3,
+    con los raros), en dos filas: la de atrás subida a un estante de carga y un letrero doble por
+    columna (los dos dibujos), para no invadir la sala de al lado;
   - sin almacén, el rincón de la bodega (`cornerPile`): tres columnas pegadas a la pared del fondo,
     a la derecha (lingotes, rollos y fardos), que crecen hasta 10 de cada;
   - el «+N»: una raya dorada por mejora en la esquina del icono y un destello (`itemIcon(…, plus)`;

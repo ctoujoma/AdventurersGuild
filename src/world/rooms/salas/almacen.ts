@@ -210,18 +210,25 @@ export function pile(m: Material, n: number, w = PILE_W): PixelBuffer {
   });
 }
 
-/** El letrero colgado del techo con el dibujo del material (y las cadenas). */
-function sign(m: Material): PixelBuffer {
+/**
+ * El letrero colgado del techo con el dibujo del material (y las cadenas). Con dos materiales
+ * (las salas estrechas, que los ponen en dos filas), uno encima del otro: el de atrás arriba.
+ */
+function sign(m: Material, below?: Material): PixelBuffer {
+  const h = below ? 44 : 26;
   return Prop.piece(
     20,
-    26,
+    h,
     (p) => {
       p.vline(4, 0, 6, P.steel);
       p.vline(15, 0, 6, P.steel);
-      p.rect(1, 6, 18, 19, W[3]!);
-      p.rect(2, 7, 16, 17, W[5]!);
+      p.rect(1, 6, 18, h - 7, W[3]!);
+      p.rect(2, 7, 16, h - 9, W[5]!);
       p.hline(1, 6, 18, W[4]!);
       p.blit(materialIcon(m, 16), 2, 7);
+      if (!below) return;
+      p.hline(2, 24, 16, W[3]!);
+      p.blit(materialIcon(below, 16), 2, 25);
     },
     'black',
   );
@@ -230,17 +237,72 @@ function sign(m: Material): PixelBuffer {
 /** Los materiales que caben en el almacén (los raros, solo si hay sitio para ellos), en orden. */
 const kept = (look: SalonLook) => MATERIAL_LIST.filter((m) => look.mats.fill[m] !== undefined);
 
+/** Alto del estante de carga de la fila de atrás (para que asome por encima de la de delante). */
+const RACK = 20;
+
+/** Una pila subida a un estante de carga: dos postes y una tabla gruesa. */
+function onRack(top: PixelBuffer): PixelBuffer {
+  return Prop.piece(
+    top.w,
+    top.h + RACK,
+    (p) => {
+      p.blit(top, 0, 0);
+      const y = top.h;
+      for (const x of [1, top.w - 4]) {
+        p.rect(x, y, 3, RACK, W[2]!);
+        p.vline(x, y, RACK, W[4]!);
+      }
+      p.rect(0, y - 1, top.w, 3, W[3]!);
+      p.hline(0, y - 1, top.w, W[5]!);
+      p.hline(4, y + RACK - 8, top.w - 8, W[2]!);
+    },
+    'none',
+  );
+}
+
+/** Profundidad de las pilas: la fila única (o la de atrás) y la de delante. */
+const BACK = FREE + 2;
+const FRONT_ROW = FREE - 6;
+
+interface Zone {
+  m: Material;
+  x: number;
+  z: number;
+  part: 0 | 1 | null;
+  /** El material de la pila de delante en la misma columna (solo en las de atrás, con dos filas). */
+  ahead?: Material;
+}
+
 /**
  * Dónde va cada pila en la sala (centros en x del interior), repartidas de lado a lado. Si sobra
- * sitio (las anchas), cada material tiene dos tarimas: se llena la primera y luego la segunda.
+ * sitio (las anchas), cada material tiene dos tarimas: se llena la primera y luego la segunda. Si
+ * no caben en fila (una sala estrecha con los raros), en dos filas, una delante de la otra.
  */
-function zones(look: SalonLook, w: number): { m: Material; x: number; part: 0 | 1 | null }[] {
+function zones(look: SalonLook, w: number): Zone[] {
   const list = kept(look);
-  const z = FREE + 2;
-  const pw = worldW(pile('hierro', 0), z);
+  const pw = worldW(pile('hierro', 0), BACK);
   const two = list.length > 0 && (w - 8) / list.length >= pw * 2 + 6;
+  if (!two && list.length * pw > w - 8) {
+    const cols = Math.ceil(list.length / 2);
+    const xs = spread(
+      4,
+      w - 4,
+      Array.from({ length: cols }, () => pw),
+    );
+    return list.map((m, i) => {
+      const back = i < cols;
+      const c = back ? i : i - cols;
+      return {
+        m,
+        x: xs[c]!,
+        z: back ? BACK : FRONT_ROW,
+        part: null,
+        ahead: back ? list[i + cols] : undefined,
+      };
+    });
+  }
   const parts: (0 | 1 | null)[] = two ? [0, 1] : [null];
-  const items = list.flatMap((m) => parts.map((part) => ({ m, part })));
+  const items = list.flatMap((m) => parts.map((part) => ({ m, part, z: BACK })));
   const xs = spread(
     4,
     w - 4,
@@ -286,16 +348,17 @@ function wall(b: PixelBuffer, room: Room, look: SalonLook, { cells, ruin, top }:
 function things(_room: Room, w: number, look: SalonLook): Thing[] {
   const t: Thing[] = [];
   const zs = zones(look, w);
-  for (const { m, x, part } of zs) {
+  for (const { m, x, z, part, ahead } of zs) {
     const n = unitsOf(m, partFill(look.mats.fill[m] ?? 0, part));
-    const it = thick(at(pile(m, n), x, FREE + 2), 8, 'madera');
+    const img = ahead ? onRack(pile(m, n)) : pile(m, n);
+    const it = thick(at(img, x, z), 8, 'madera');
     t.push(
       m === 'cristal' && n > 0 ? emits(it, { kind: 'glint', rate: 0.8, at: [5, 10, 21, 20] }) : it,
     );
-    // El letrero, entre sus dos tarimas (o sobre la única).
-    if (part === 1) continue;
+    // El letrero, entre sus dos tarimas (o sobre la única); con dos filas, uno por columna.
+    if (part === 1 || z === FRONT_ROW) continue;
     const pair = part === 0 ? zs.find((o) => o.m === m && o.part === 1) : undefined;
-    t.push(hung(sign(m), pair ? (x + pair.x) / 2 : x, FREE + 6, 2));
+    t.push(hung(sign(m, ahead), pair ? (x + pair.x) / 2 : x, FREE + 6, 2));
   }
   return t;
 }
