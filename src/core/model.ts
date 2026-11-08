@@ -323,8 +323,12 @@ export interface Craft {
   wait?: true;
   /** Lo pagado al empezar (se devuelve al cancelar). */
   gold: number;
-  /** El objeto que se desmonta (si es desmontar). */
+  /** El objeto que se desmonta o, con `temper`, el que se mejora. */
   item?: Item;
+  /** Mejorar `item` (+1 a su habilidad principal) en lugar de desmontarlo. */
+  temper?: true;
+  /** Materiales gastados al empezar (se devuelven al cancelar). */
+  mats?: Mats;
 }
 
 /** Cómo acabó un trabajo de taller (por su id). */
@@ -335,7 +339,7 @@ export interface CraftEnd {
    * hecho: salió un objeto (`rarity` 1 si es de las buenas); receta o nada: al desmontar;
    * vestido: el héroe estrena ropa; cancelado: se canceló o el taller ya no está.
    */
-  how: 'hecho' | 'receta' | 'nada' | 'vestido' | 'cancelado';
+  how: 'hecho' | 'receta' | 'nada' | 'vestido' | 'templado' | 'cancelado';
   rarity?: Rarity;
   /** Al desmontar: el objeto, lo que se aprende (si sale) y el día, para el aviso de la campanita. */
   undo?: { item: string; recipe: RecipeId; day: number };

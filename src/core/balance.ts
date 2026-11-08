@@ -527,6 +527,13 @@ export const PAINT_SLOTS = [0, 1, 1, 2] as const;
 export const MAT_LOOSE = 10;
 export const STORE_CAP = [0, 15, 30, 50] as const;
 export const MAT_SELL = 3;
+/**
+ * Mejorar un objeto en su taller: hasta `TEMPER_MAX`; cada paso cuesta `TEMPER_GOLD` y
+ * `TEMPER_HOURS` por el nivel al que llega, y tantos de su material como ese nivel.
+ */
+export const TEMPER_MAX = 3;
+export const TEMPER_GOLD = 15;
+export const TEMPER_HOURS = 4;
 export const MAT_PER_OUTCOME: Record<Outcome, number> = {
   'Éxito brillante': 3,
   Éxito: 2,

@@ -6,6 +6,8 @@ import { planBuild } from './rooms';
 import {
   canCraft,
   canDress,
+  canTemper,
+  temperCost,
   dressStatus,
   canUndo,
   craftState,
@@ -47,7 +49,19 @@ function withForge(seed: string, level = 1, skill = 4): { s: GameState; forge: s
 describe('la forja crea objetos', () => {
   it('se saben las recetas de serie y las demás no', () => {
     const s = newGame('recetas');
-    expect(knownRecipes(s)).toEqual(['espada', 'coraza', 'ganzuas', 'botas', 'amuleto']);
+    expect(knownRecipes(s)).toEqual([
+      'espada',
+      'coraza',
+      'ganzuas',
+      'botas',
+      'amuleto',
+      'espadaLarga',
+      'cota',
+      'escudoTachonado',
+      'ganzuasTempladas',
+      'botasCuero',
+      'capaForrada',
+    ]);
   });
 
   it('crear cobra al empezar y deja el objeto en el arcón al acabar', () => {
@@ -414,5 +428,59 @@ describe('cómo acaba cada trabajo (para la escena)', () => {
     t = endDay(t, true);
     expect(['receta', 'nada']).toContain(t.craftLog?.find((e) => e.id === undo)?.how);
     expect(t.craftLog!.length).toBeLessThanOrEqual(8);
+  });
+});
+
+describe('materiales en los talleres', () => {
+  it('las recetas buenas piden materiales: sin ellos no se empieza y se dice de dónde salen', () => {
+    const { s, forge } = withForge('materiales');
+    expect(canCraft(s, forge, 'espadaLarga')).toMatch(/Faltan 2 de hierro: sale limpiando/);
+    s.mats = { hierro: 3 };
+    expect(canCraft(s, forge, 'espadaLarga')).toBeNull();
+    const t = reduce(s, { type: 'craft', room: forge, recipe: 'espadaLarga' });
+    expect(t.mats?.hierro).toBe(1);
+    // Al cancelar, vuelven.
+    const back = reduce(t, { type: 'cancelCraft', id: t.crafts![0]!.id });
+    expect(back.mats?.hierro).toBe(3);
+    expect(back.gold).toBe(s.gold);
+  });
+
+  it('mejorar un objeto: +1 cada vez hasta +3, con oro y su material, en su taller', () => {
+    const { s, forge } = withForge('mejorar');
+    s.inventory.push({
+      id: 'esp',
+      name: 'Espada de la casa',
+      desc: '',
+      value: 20,
+      kind: 'arma',
+      icon: 'espada',
+      bonus: { Combate: 1 },
+    });
+    expect(canTemper(s, forge, 'esp')).toMatch(/Falta 1 de hierro/);
+    s.mats = { hierro: 10 };
+    expect(temperCost(s.inventory.at(-1)!)).toMatchObject({
+      room: 'forja',
+      to: 1,
+      mats: { hierro: 1 },
+    });
+    let t = reduce(s, { type: 'temper', room: forge, itemId: 'esp' });
+    expect(t.inventory.some((i) => i.id === 'esp')).toBe(false);
+    expect(t.mats?.hierro).toBe(9);
+    t = endDay(t, true);
+    const it = t.inventory.find((i) => i.id === 'esp')!;
+    expect(it.plus).toBe(1);
+    expect(t.dawn.some((e) => /ahora es \+1/.test(e.t))).toBe(true);
+    expect(temperCost({ ...it, plus: 3 })).toBeNull();
+    // Las botas se mejoran en la sastrería, no en la forja.
+    s.inventory.push({
+      id: 'bot',
+      name: 'Botas',
+      desc: '',
+      value: 10,
+      kind: 'herramienta',
+      icon: 'botas',
+      bonus: { Supervivencia: 1 },
+    });
+    expect(canTemper(s, forge, 'bot')).toMatch(/otro taller/);
   });
 });

@@ -26,15 +26,27 @@ import {
   CRAFT_SLOTS,
   CRAFT_STD_WORK,
   DAY_SECONDS,
+  TEMPER_GOLD,
+  TEMPER_HOURS,
+  TEMPER_MAX,
   UNDO_CHANCE,
   UNDO_HOURS,
 } from './balance';
-import type { Craft, CraftEnd, DawnEvent, GameState, Item, Rarity, Room } from './model';
+import type { Craft, CraftEnd, DawnEvent, GameState, Item, ItemIcon, Rarity, Room } from './model';
 import { Rng } from './rng';
 import { active } from './rooms';
 import { workAt, workedIn } from './workers';
 import { hasUnlock, unlockSource } from './goals';
 import { bump } from './feats';
+import {
+  MATERIALS,
+  gainMats,
+  hasMats,
+  missing,
+  spendMats,
+  type Material,
+  type Mats,
+} from './materials';
 
 /** Las salas que son taller (las que tienen recetas). */
 const SHOPS = new Set<RoomType>(RECIPE_IDS.map((id) => RECIPES[id].room));
@@ -97,7 +109,93 @@ export function canCraft(s: GameState, roomId: string, recipe: RecipeId): string
   if (rc.room !== r.type) return 'Eso no se hace en esta sala.';
   if (!knownRecipes(s).includes(recipe)) return 'Aún no sabéis hacerlo.';
   if (s.gold < rc.gold) return `Te faltan ${rc.gold - s.gold} monedas.`;
-  return null;
+  return lackText(s, rc.mats);
+}
+
+/** «Falta 1 de cuero: sale cazando y explorando.» (null si hay de todo). */
+export function lackText(s: GameState, need?: Mats): string | null {
+  if (!need || hasMats(s, need)) return null;
+  const miss = missing(s, need);
+  const [m, n] = Object.entries(miss)[0] as [Material, number];
+  return `Falta${n > 1 ? 'n' : ''} ${n} de ${MATERIALS[m].name.toLowerCase()}: ${MATERIALS[m].from.toLowerCase()}`;
+}
+
+/** El material de cada dibujo: lo que pide mejorarlo y lo que devuelve desmontarlo. */
+export const ICON_MATERIAL: Record<ItemIcon, Material> = {
+  espada: 'hierro',
+  hacha: 'hierro',
+  coraza: 'hierro',
+  ganzua: 'hierro',
+  escudo: 'cuero',
+  botas: 'cuero',
+  capa: 'tela',
+  amuleto: 'hierbas',
+  varita: 'madera',
+};
+
+/** El taller que mejora cada dibujo. */
+const ICON_SHOP: Record<ItemIcon, RoomType> = {
+  espada: 'forja',
+  hacha: 'forja',
+  coraza: 'forja',
+  ganzua: 'forja',
+  escudo: 'forja',
+  botas: 'sastreria',
+  capa: 'sastreria',
+  amuleto: 'alquimia',
+  varita: 'alquimia',
+};
+
+/** Lo que cuesta mejorar un objeto un paso más (null si no se puede mejorar más o no se mejora). */
+export function temperCost(
+  it: Item,
+): { room: RoomType; gold: number; hours: number; mats: Mats; to: number } | null {
+  if (!it.icon || !it.kind || it.kind === 'tesoro') return null;
+  const to = (it.plus ?? 0) + 1;
+  if (to > TEMPER_MAX) return null;
+  return {
+    room: ICON_SHOP[it.icon],
+    gold: TEMPER_GOLD * to,
+    hours: TEMPER_HOURS * to,
+    mats: { [ICON_MATERIAL[it.icon]]: to },
+    to,
+  };
+}
+
+/** Por qué no se puede mejorar un objeto del arcón en un taller (null = se puede). */
+export function canTemper(s: GameState, roomId: string, itemId: string): string | null {
+  const why = canStart(s, roomId);
+  if (why) return why;
+  const r = s.building.rooms.find((x) => x.id === roomId)!;
+  const it = s.inventory.find((x) => x.id === itemId);
+  if (!it) return 'Ese objeto no está en el arcón (si lo lleva alguien, quítaselo antes).';
+  const cost = temperCost(it);
+  if (!cost)
+    return (it.plus ?? 0) >= TEMPER_MAX ? 'Ya está mejorado del todo.' : 'Esto no se mejora.';
+  if (cost.room !== r.type) return 'Eso se mejora en otro taller.';
+  if (s.gold < cost.gold) return `Te faltan ${cost.gold - s.gold} monedas.`;
+  return lackText(s, cost.mats);
+}
+
+/** Empieza a mejorar un objeto (ya comprobado con `canTemper`): sale del arcón mientras tanto. */
+export function startTemper(s: GameState, roomId: string, itemId: string): void {
+  const item = s.inventory.find((it) => it.id === itemId)!;
+  const cost = temperCost(item)!;
+  s.inventory = s.inventory.filter((it) => it !== item);
+  s.gold -= cost.gold;
+  spendMats(s, cost.mats);
+  const c: Craft = {
+    id: `c${s.uid++}`,
+    room: roomId,
+    item,
+    temper: true,
+    need: hoursToWork(cost.hours),
+    done: 0,
+    at: partOf(s),
+    gold: cost.gold,
+    mats: cost.mats,
+  };
+  s.crafts = [...(s.crafts ?? []), c];
 }
 
 /** Los objetos del arcón que se pueden desmontar en un taller (enseñan una receta que no se sabe). */
@@ -128,6 +226,7 @@ const partOf = (s: GameState) => Math.min(1, (s.clock ?? 0) / DAY_SECONDS);
 export function startCraft(s: GameState, roomId: string, recipe: RecipeId): void {
   const rc = RECIPES[recipe];
   s.gold -= rc.gold;
+  if (rc.mats) spendMats(s, rc.mats);
   const c: Craft = {
     id: `c${s.uid++}`,
     room: roomId,
@@ -137,6 +236,7 @@ export function startCraft(s: GameState, roomId: string, recipe: RecipeId): void
     at: partOf(s),
     gold: rc.gold,
   };
+  if (rc.mats) c.mats = { ...rc.mats };
   s.crafts = [...(s.crafts ?? []), c];
 }
 
@@ -175,6 +275,12 @@ export function cancelCraft(s: GameState, id: string): void {
   if (!c) return;
   s.gold += c.gold;
   if (c.item) s.inventory.push(c.item);
+  if (c.mats) {
+    const mats = { ...s.mats };
+    for (const [m, n] of Object.entries(c.mats) as [Material, number][])
+      mats[m] = (mats[m] ?? 0) + n;
+    s.mats = mats;
+  }
   logEnd(s, c, 'cancelado');
   s.crafts = s.crafts!.filter((x) => x !== c);
   if (!s.crafts.length) delete s.crafts;
@@ -338,9 +444,23 @@ function finish(s: GameState, c: Craft, rng: Rng, news: DawnEvent[]): void {
     return;
   }
   s.inventory = [...s.inventory];
+  if (c.temper && c.item) {
+    const it = { ...c.item, plus: (c.item.plus ?? 0) + 1 };
+    s.inventory.push(it);
+    logEnd(s, c, 'templado');
+    const room = s.building.rooms.find((r) => r.id === c.room);
+    const at = (room && WORKSHOP_PLACE[room.type]) ?? 'el taller';
+    news.push({
+      t: `En ${at} han mejorado ${it.name}: ahora es +${it.plus}. Ya está en el arcón.`,
+      k: 'good',
+    });
+    return;
+  }
   const rc = RECIPES[c.recipe!];
   const place = WORKSHOP_PLACE[rc.room] ?? 'el taller';
   if (c.item) {
+    // Desmontar devuelve algo de su material (si cabe).
+    if (c.item.icon) gainMats(s, { [ICON_MATERIAL[c.item.icon]]: 1 });
     if (rng.chance(undoChance(s, c.room))) {
       s.recipes = [...(s.recipes ?? []), c.recipe!];
       logEnd(s, c, 'receta');

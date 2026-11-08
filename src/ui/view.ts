@@ -212,7 +212,7 @@ export function sceneModel(s: GameState): SceneModel {
         rarity: c.item?.rarity ?? 0,
         frac: st.frac,
         stalled: st.hoursLeft === null,
-        undo: !!c.item,
+        undo: !!c.item && !c.temper,
         hero: c.dress?.hero,
         walking: st.walking || undefined,
       };

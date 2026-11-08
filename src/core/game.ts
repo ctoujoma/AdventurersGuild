@@ -153,6 +153,8 @@ import {
   canCraft,
   arrive,
   canDress,
+  canTemper,
+  startTemper,
   knownRecipes,
   learnRecipe,
   startDress,
@@ -185,6 +187,8 @@ export type Action =
   /** Talleres: crear de una receta, desmontar un objeto del arcón o cancelar un trabajo. */
   | { type: 'craft'; room: string; recipe: RecipeId }
   | { type: 'undoItem'; room: string; itemId: string }
+  /** Mejorar un objeto del arcón en su taller (+1 a su habilidad principal, hasta +3). */
+  | { type: 'temper'; room: string; itemId: string }
   | { type: 'cancelCraft'; id: string }
   /** Pintar una sala de un color (null: los de la casa), con el pintor del taller. */
   | { type: 'paint'; room: string; tint: TintId | null }
@@ -891,6 +895,12 @@ function reduceAction(state: GameState, action: Action): GameState {
       if (canCraft(state, action.room, action.recipe)) return state;
       const s = structuredClone(state);
       startCraft(s, action.room, action.recipe);
+      return s;
+    }
+    case 'temper': {
+      if (canTemper(state, action.room, action.itemId)) return state;
+      const s = structuredClone(state);
+      startTemper(s, action.room, action.itemId);
       return s;
     }
     case 'undoItem': {
