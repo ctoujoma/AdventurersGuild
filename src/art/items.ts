@@ -350,36 +350,37 @@ export function trophyIcon(icon: TrophyIcon): PixelBuffer {
   return make(`t:${icon}`, 14, 14, (b) => {
     switch (icon) {
       case 'cabeza': {
-        // Escudo de madera y cabeza de oso: orejas, hocico claro, ojos y colmillos.
-        plaque(b, 2, 8, 11, 13);
-        b.clear(2, 13);
-        b.clear(11, 13);
-        b.level = 4;
-        b.ellipse(6.5, 5.5, 4.5, 4.5, (_x, _y, d) => (d > 0.15 ? P.umber : P.mocha));
+        // Escudo de madera y cabeza de oso: orejas, hocico claro, ojos y colmillos. La cabeza
+        // lleva un filo oscuro para que no se confunda con la madera de detrás.
+        plaque(b, 1, 9, 12, 13);
+        b.clear(1, 13);
+        b.clear(12, 13);
         b.level = 3;
-        b.rect(2, 0, 3, 3, P.umber);
-        b.rect(9, 0, 3, 3, P.umber);
-        b.set(3, 1, P.cocoa);
-        b.set(10, 1, P.cocoa);
+        b.rect(1, 0, 4, 4, P.ebony);
+        b.rect(9, 0, 4, 4, P.ebony);
+        b.rect(2, 1, 2, 2, P.umber);
+        b.rect(10, 1, 2, 2, P.umber);
+        b.set(2, 1, P.mocha);
+        b.set(10, 1, P.mocha);
         b.level = 4;
-        b.rect(3, 3, 3, 2, P.mocha);
-        b.set(3, 3, P.cocoa);
-        b.set(4, 3, P.cocoa);
-        b.vline(10, 4, 5, P.bark);
-        b.hline(4, 10, 6, P.bark);
-        b.set(5, 5, P.black);
-        b.set(8, 5, P.black);
-        b.set(5, 4, P.gold);
-        b.set(8, 4, P.gold);
+        b.ellipse(7, 6, 5, 5, P.ebony);
+        b.ellipse(7, 6, 4, 4, (x, y) => (x + y < 9 ? P.mocha : x + y > 14 ? P.bark : P.umber));
         b.level = 5;
-        b.rect(5, 7, 4, 3, P.cocoa);
-        b.hline(5, 7, 4, P.clay);
+        // Hocico claro.
+        b.rect(5, 7, 4, 3, P.clay);
+        b.hline(5, 7, 4, P.tan);
+        b.vline(8, 8, 2, P.oak);
         b.rect(6, 7, 2, 1, P.black);
         b.set(6, 7, P.steel);
+        b.hline(6, 9, 2, P.rust);
+        // Ojos.
+        b.set(4, 5, P.black);
+        b.set(9, 5, P.black);
+        b.set(4, 4, P.gold);
+        b.set(9, 4, P.gold);
+        // Colmillos.
         b.set(5, 10, P.white);
         b.set(8, 10, P.mist);
-        b.set(5, 11, P.sand);
-        b.set(8, 11, P.sand);
         break;
       }
       case 'colmillos': {
