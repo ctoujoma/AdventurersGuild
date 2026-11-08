@@ -8,7 +8,7 @@ import { loadHushed, saveHushed } from '../platform/hushed';
 import { audio, type Mood } from '../audio/audio';
 import { catchUp, waitText } from '../core/away';
 import { dawnIn } from './when';
-import { IncidentMark } from './IncidentMark';
+import { IncidentHelpers, IncidentMark } from './IncidentMark';
 import { RumorMark } from './RumorMark';
 import { rumorRoom } from '../core/rumors';
 import { canClose, canHire, customOf, newGame, reduce, type Action } from '../core/game';
@@ -1167,6 +1167,12 @@ export function App() {
           </span>
         )}
         {bubble && <SpeechBubble bubble={bubble} scene={scene} />}
+        {!passing &&
+          !dawnOpen &&
+          !paying &&
+          (game.incidents ?? []).map((inc) => (
+            <IncidentHelpers key={`h-${inc.id}`} game={game} inc={inc} scene={scene} />
+          ))}
         {!passing &&
           !dawnOpen &&
           !paying &&

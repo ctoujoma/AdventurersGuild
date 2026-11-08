@@ -1,3 +1,4 @@
+import { MatShelf } from '../mats';
 import { useState } from 'preact/hooks';
 import { roomMax } from '../../core/balance';
 import { appeal, neighborsOf, seatsOf, visitorList, visitorsOf } from '../../core/salon';
@@ -515,6 +516,7 @@ export function RoomPanel({
       </div>
       {state && <p class="room-state">{state}</p>}
       <p class="room-desc">{def.desc}</p>
+      {room.type === 'almacen' && room.level > 0 && <MatShelf game={game} />}
       {room.type === 'almacen' && storeNext(game, room.level) && (
         <p class="row-sub">{storeNext(game, room.level)}</p>
       )}

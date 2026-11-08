@@ -4,7 +4,7 @@
  * un atlas con todos sus fotogramas (de pie, parpadeo, andando, sentada, en la cama y entrenando)
  * y la escena solo cambia cuál se ve y dónde está.
  */
-import { Group, PlaneGeometry, Vector3, type Mesh, type ShaderMaterial } from 'three';
+import { Group, PlaneGeometry, Vector3, type Mesh, type ShaderMaterial, type Texture } from 'three';
 import { P } from '../../art/palette';
 import { PixelBuffer, alpha } from '../../art/pixel';
 import {
@@ -695,6 +695,8 @@ interface Actor {
   img: PixelBuffer;
   mat: ShaderMaterial;
   mesh: Mesh;
+  /** Su contorno, mientras puede ir a un incidente (`callout`); detrás de él, con su fotograma. */
+  ring?: Mesh;
   x: number;
   /** Altura de los pies en el mundo (y hacia abajo) y planta en la que está o a la que va. */
   y: number;
@@ -2268,6 +2270,10 @@ export class Crowd {
     this.group.remove(a.mesh);
     a.mat.dispose();
     (a.mat.uniforms.map!.value as { dispose(): void }).dispose();
+    if (a.ring) {
+      this.group.remove(a.ring);
+      (a.ring.material as ShaderMaterial).dispose();
+    }
     this.actors.delete(id);
   }
 
@@ -3107,10 +3113,43 @@ export class Crowd {
     u.uAxisU!.value.set(w, 0, 0);
     u.uAxisV!.value.set(0, h, 0);
     u.uUvOffset!.value.set(...uvOf(f.frame));
+    this.placeRing(a, t);
     const look = this.tint(a.x, a.floor);
     u.uAmbient!.value.set(...look.ambient);
     u.uSun!.value = look.sun;
     this.placeLadder(a, f.z, look);
+  }
+
+  /**
+   * El contorno dorado de quien puede ir a un incidente (o más claro, el personal): el mismo
+   * fotograma que su figura, un pelo por detrás, latiendo. Si ya no toca, se esconde.
+   */
+  private placeRing(a: Actor, t: number): void {
+    const on = !!a.hero.callout && !a.gone && !a.leaving && a.hero.status === 'ok';
+    if (!on) {
+      if (a.ring) a.ring.visible = false;
+      return;
+    }
+    if (!a.ring) {
+      const mat = this.look.outline(
+        a.mat.uniforms.map!.value as Texture,
+        a.hero.staff ? P.sand : P.gold,
+      );
+      mat.uniforms.uUvScale!.value.set(1 / COLS, 1 / ROWS);
+      mat.polygonOffset = true;
+      mat.polygonOffsetFactor = 1;
+      mat.polygonOffsetUnits = 4;
+      a.ring = mesh(this.geo, mat);
+      this.group.add(a.ring);
+    }
+    const r = a.ring;
+    const m = r.material as ShaderMaterial;
+    m.uniforms.map!.value = a.mat.uniforms.map!.value;
+    m.uniforms.uUvOffset!.value.copy(a.mat.uniforms.uUvOffset!.value);
+    m.uniforms.uPulse!.value = 0.5 + 0.5 * Math.sin(t * 5);
+    r.visible = a.mesh.visible;
+    r.position.copy(a.mesh.position);
+    r.scale.copy(a.mesh.scale);
   }
 
   /** La escalera de tijera bajo el pintor subido a ella (detrás de él); si no, escondida. */

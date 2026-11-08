@@ -105,6 +105,20 @@ describe('incidentes', () => {
     expect(news.some((n) => n.t.includes(hero.name))).toBe(true);
   });
 
+  it('quien va a un incidente no pierde su tarea: al acabar, vuelve a ella (y el de guardia, a la puerta)', () => {
+    const s = withIncident('pelea');
+    const [a, b] = s.heroes.filter((h) => h.status === 'ok');
+    const cocina = s.building.rooms.find((r) => r.type === 'cocina')!;
+    a!.job = cocina.id;
+    b!.guard = true;
+    const sent = reduce(s, { type: 'incident', id: 'i1', act: { by: 'who', who: a!.id } });
+    const u = structuredClone(sent);
+    stepIncidents(u, 10, sent.incidents![0]!.coming!.at);
+    expect(u.incidents).toEqual([]);
+    expect(u.heroes.find((h) => h.id === a!.id)!.job).toBe(cocina.id);
+    expect(u.heroes.find((h) => h.id === b!.id)!.guard).toBe(true);
+  });
+
   it('si ya hay quien sepa arreglarlo en la sala, se pone a ello solo', () => {
     const s = withIncident('pelea');
     const hero = s.heroes.find((h) => h.status === 'ok')!;
