@@ -167,12 +167,17 @@ export function backWall(room: Room, w: number, h: number, look: SalonLook = NO_
     );
   // Lo propio de cada sala (las que ya tienen su arte, también por reparar).
   const art = ART[room.type];
+  let over: (() => void) | undefined;
   if (!bare(room)) {
     if (art?.wall)
       art.wall(b, room, look, { cells: cellsOf(room, w), wain, top: bh - wain - 3, ruin });
-    else if (!ruin && room.type === 'salon') salonWall(b, room, look, windows, CELL_BACK, wain);
+    else if (!ruin && room.type === 'salon')
+      over = salonWall(b, room, look, windows, CELL_BACK, wain);
   }
-  if (room.type === 'salon') painted();
+  if (room.type === 'salon') {
+    painted();
+    over?.();
+  }
   if (ruin) {
     cobweb(b, 1, 1, 8, 1);
     cobweb(b, bw - 2, 1, 6, -1);
