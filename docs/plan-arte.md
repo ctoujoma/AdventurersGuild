@@ -333,8 +333,12 @@ npm run build`.
     épico o legendario (`portraitShine`) y en la escena les saltan destellos (`shineLegends`);
   - la escena (tablero de la bodega, lo que sale de los talleres) sigue con los de 12 × 12
     (`rackIcon`), con los colores nuevos;
-  - pendiente de hablar: el tinte del héroe casi no se ve en el retrato con coraza (ver la nota en
-    `agente-principal.md`). Capturas en `capturas/equipo-arte/` (`tools/shots/equipo.mjs`).
+  - el filete del tinte en peto y escudo lo hizo el agente principal (#185; revisado: bien, sin
+    tocar el metal ni los legendarios propios);
+  - la interfaz pinta los marcos por nivel (`tier-N`, `tierOf`): con los cinco niveles en el
+    núcleo, verde y morado salen solos. El nombre del legendario pasa a rojo oscuro (el morado,
+    para el épico);
+  - capturas en `capturas/equipo-arte/` (`tools/shots/equipo.mjs`).
 
 - [ ] **Pendiente (el usuario, 8 de noviembre): vista previa cosmética de los héroes**, como la de
       los colores de las salas: al elegir tinte o prenda en la sastrería, verlo unos segundos en el

@@ -141,6 +141,11 @@ talleres, nombres y marcos). El arte ya está listo para cinco:
   la interfaz)**, legendario → legendario. Si añades niveles, cambia `tierOf` (y `RARITY_NAMES`,
   los marcos `.rarity-N` de `styles.css` y `glossary.ts`, que dice «raro (azul)»). El usuario
   aceptó que el «bueno» pase a verde cuando haya cinco.
+- **La interfaz ya va por nivel** (no por rareza): las casillas, el muñeco, la ficha y el recuadro
+  del Arcón usan la clase `tier-N` con `tierOf(rarity)`, y `pixelui.ts` tiene los cinco marcos
+  (`--frame-slot-0`, `-t1`, `-1`, `-t3`, `-2`: gris, verde, azul, morado y oro). Al cambiar
+  `tierOf`, los marcos y el color del nombre siguen solos. Las clases `rarity-N` que quedan en
+  `styles.css` son de las mejoras del gremio (`.facility`), no de los objetos.
 - Un legendario nuevo sin dibujo sale con su icono en oro; con dibujo, es añadir su rejilla en
   `legendaries.ts` con el nombre exacto del objeto.
 - **Cambios de tipos**: `HeroMarks.gear` es ahora `GearMark | GearMark[]` (una pieza por ranura,
