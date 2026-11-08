@@ -187,7 +187,7 @@ function braces(b: PixelBuffer, x0: number, x1: number, top: number, bottom: num
  * Lo propio del salón en la pared del fondo (`b` ya lleva el yeso, el zócalo y las ventanas):
  * la alacena detrás de la barra, el tablón, tornapuntas, trofeos, tapices, apliques y ristras.
  * `windows` son las x (en el fondo) de las ventanas de cada planta, de arriba abajo; `cell` lo
- * que mide un hueco en el fondo.
+ * que mide un hueco en el fondo. Devuelve lo que va encima de la cenefa pintada (los pendones).
  */
 export function salonWall(
   b: PixelBuffer,
@@ -196,7 +196,7 @@ export function salonWall(
   windows: number[][],
   cell: number,
   wain: number,
-): void {
+): () => void {
   const lvl = room.level;
   const floor = b.h;
   // Arriba de la planta de abajo (en el de dos alturas, la de arriba queda para lucir).
@@ -233,10 +233,11 @@ export function salonWall(
   const flags: number[] = [];
   if (tall)
     for (let x = 36; x < b.w - 30; x += 36)
-      if (free(x - 7, 14, 0) && x + 7 < flueLeft && x - (flags.at(-1) ?? -99) >= 60) {
-        b.blit(banner(look.crest.field, look.crest.dark, low - 24), x - 7, 4);
-        flags.push(x);
-      }
+      if (free(x - 7, 14, 0) && x + 7 < flueLeft && x - (flags.at(-1) ?? -99) >= 60) flags.push(x);
+  const hang = () => {
+    for (const x of flags) b.blit(banner(look.crest.field, look.crest.dark, low - 24), x - 7, 4);
+  };
+  hang();
   const clear = (x: number, w: number) =>
     free(x, w, 0) &&
     x + w < flueLeft &&
@@ -259,6 +260,8 @@ export function salonWall(
     b.blit(trophyIcon(t), x, ty);
     x += 18;
   }
+  // Los pendones cuelgan por delante de la cenefa (que se pinta después).
+  return hang;
 }
 
 // ---------- Muebles de delante ----------
