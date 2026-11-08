@@ -15,7 +15,8 @@ import { gearOf } from '../core/resolve';
 import type { Member } from '../core/party';
 import type { SceneHero, SceneModel } from '../world/scene';
 import { taskLabel } from './crew';
-import { gearList, shownGear, type Gear } from '../core/gear';
+import { gearList, type Gear } from '../core/gear';
+import type { GearMark } from '../art/heroes/gear';
 
 /** Puentes entre el modelo del juego y el arte o la escena. */
 
@@ -59,11 +60,21 @@ export const heroFrame = (h: Pick<Hero, 'cls'>) => `pf-hero pf-${h.cls}`;
 export const workerFrame = (w: Pick<Worker, 'trade' | 'village'>) =>
   `pf-worker pf-${w.village === 'bardo' ? 'bardo' : w.trade}`;
 
+/** Lo que lleva puesto, para el dibujo: una pieza por ranura (los legendarios, por su nombre). */
+export const wornMarks = (h: Pick<Hero, 'worn'>): GearMark[] | undefined => {
+  const l = gearList(h).flatMap((i) =>
+    i.icon
+      ? [{ icon: i.icon, rarity: i.rarity ?? 0, unique: i.rarity === 2 ? i.name : undefined }]
+      : [],
+  );
+  return l.length ? l : undefined;
+};
+
 export const marksOf = (h: Hero): HeroMarks => ({
   injured: h.status === 'herido',
   eyepatch: h.traits.some((t) => t.id === 'tuerto'),
   scar: h.traits.some((t) => t.id === 'cortado'),
-  gear: shownGear(h),
+  gear: wornMarks(h),
 });
 
 export const memberOf = (

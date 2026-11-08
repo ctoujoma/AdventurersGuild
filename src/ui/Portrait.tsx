@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'preact/hooks';
 import type { HeroLook, HeroMarks } from '../art/heroes/look';
 import { renderPortrait } from '../art/portraits/portrait';
+import { portraitShine, portraitShines } from '../art/heroes/gear';
+import { FRAMES } from '../art/legendaries';
+import { useShine } from './useShine';
 import { BufferImage } from './BufferImage';
 
 interface Props {
@@ -38,9 +41,14 @@ export function Portrait({ look, marks = {}, scale = 2, label, alive = true, fra
     loop();
     return () => clearTimeout(t);
   }, [alive]);
+  const shine = useShine(alive && portraitShines(marks.gear), FRAMES, 5000);
   return (
     <span class={frame ? `portrait-frame ${frame}` : 'portrait-frame'}>
-      <BufferImage buf={renderPortrait(look, marks, blink)} scale={scale} label={label} />
+      <BufferImage
+        buf={portraitShine(renderPortrait(look, marks, blink), marks.gear, shine)}
+        scale={scale}
+        label={label}
+      />
     </span>
   );
 }

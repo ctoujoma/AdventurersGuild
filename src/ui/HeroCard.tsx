@@ -12,6 +12,7 @@ import { slotIcon } from '../art/materials';
 import { itemIcon } from '../art/items';
 import { RARITY_NAMES, itemEffect, itemName } from '../data/items';
 import { BufferImage } from './BufferImage';
+import { ItemImage, itemProps } from './ItemImage';
 import { help } from './HoldHelp';
 import { Icon } from './icons';
 import { taskLabel } from './crew';
@@ -236,10 +237,7 @@ function GearDoll({
               onClick={() => setSel(sel === sl ? null : sl)}
             >
               {it ? (
-                <BufferImage
-                  buf={itemIcon(it.icon ?? SILHOUETTE[sl], it.rarity, it.plus)}
-                  scale={2}
-                />
+                <ItemImage {...itemProps(it, SILHOUETTE[sl])} scale={2} />
               ) : (
                 // Vacía: su silueta apagada.
                 <BufferImage buf={slotIcon(sl, 16)} scale={2} />
@@ -254,7 +252,7 @@ function GearDoll({
         <div class="doll-pick">
           {was ? (
             <div class={`gear-item rarity-${was.rarity ?? 0}`}>
-              <BufferImage buf={itemIcon(was.icon ?? 'espada', was.rarity, was.plus)} scale={2} />
+              <ItemImage {...itemProps(was)} scale={2} />
               <span>
                 <b>{itemName(was)}</b>
                 <small>
@@ -566,7 +564,12 @@ export function HeroCard({
                               <BufferImage
                                 buf={
                                   it
-                                    ? itemIcon(it.icon ?? SILHOUETTE[sl], it.rarity, it.plus)
+                                    ? itemIcon(
+                                        it.icon ?? SILHOUETTE[sl],
+                                        it.rarity,
+                                        it.plus,
+                                        it.name,
+                                      )
                                     : slotIcon(sl, 16)
                                 }
                                 scale={1}

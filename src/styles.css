@@ -7375,8 +7375,8 @@ p.notebook-close {
   border-image: var(--frame-parchment) 5 fill / 8px / 0 stretch;
 }
 .item-tip-icon canvas {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
 }
 .item-tip-icon.rarity-1 {
   box-shadow: 0 0 0 2px var(--ocean);

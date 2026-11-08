@@ -313,6 +313,29 @@ npm run build`.
   - [ ] Visto bueno del usuario. Capturas en `capturas/materiales/` (`tools/shots/almacen.mjs`;
         `interfaz.png`, el Arcón y la ficha).
 
+- [x] **Iconos y equipo puesto, por niveles** (el usuario, 8 de noviembre; validado en hojas
+      antes de meterlo):
+  - los nueve iconos del equipo, a mano en rejillas de 14 × 14 (`art/itemGrids.ts`; 16 × 16 con
+    contorno, o al doble), sin ruido y simétricos (escudo, coraza, amuleto, capa);
+  - la escala de niveles (`art/tiers.ts`): común gris, bueno verde, raro azul, épico morado y
+    legendario oro. **El metal nunca se tiñe** (hierro mate, acero, acero pulido, ennegrecido,
+    oro): el color va en gemas, runas, telas, el campo del escudo y el marco; cada nivel añade
+    adornos (`ORN`). Hoy hay tres rarezas: `tierOf` pone el «bueno» en azul (como la interfaz);
+  - los legendarios propios (`art/legendaries.ts`, por el nombre del objeto): los nueve del botín.
+    Un legendario sin dibujo usa su icono en oro (los genéricos se quedan);
+  - animados (`itemFrames`, `ItemImage`, `useShine`): los épicos, un brillo morado que cruza; los
+    legendarios, una estrella; los propios, la suya (rayo, brasas, gota de las algas, aleteo,
+    cristal que late, brillo en la hoja). Cada pocos segundos y al azar; sin movimiento si el
+    sistema lo pide;
+  - en el retrato y la figura, **las tres piezas** (antes, una): peto con hombreras, capa, escudo
+    grande del que asoma la esquina (retrato), amuleto grande, bandolera de ganzúas, botas (figura).
+    La **Corona del Rey Ahogado va en la cabeza**, en lugar del sombrero. El retrato brilla con lo
+    épico o legendario (`portraitShine`) y en la escena les saltan destellos (`shineLegends`);
+  - la escena (tablero de la bodega, lo que sale de los talleres) sigue con los de 12 × 12
+    (`rackIcon`), con los colores nuevos;
+  - pendiente de hablar: el tinte del héroe casi no se ve en el retrato con coraza (ver la nota en
+    `agente-principal.md`). Capturas en `capturas/equipo-arte/` (`tools/shots/equipo.mjs`).
+
 - [ ] **Pendiente (el usuario, 8 de noviembre): vista previa cosmética de los héroes**, como la de
       los colores de las salas: al elegir tinte o prenda en la sastrería, verlo unos segundos en el
       retrato de la ficha y en la figura de la escena (redibujarla con lo elegido y volver con un

@@ -123,3 +123,33 @@ Hecho desde la rama del pintor; léelo antes de tocar trabajos, talleres o entre
   llegada cada 2 s mientras siga en su sala y sin contar (por si no salió de ella de un día a otro).
 - Ojo con los tests nuevos: quien se asigna en un test no cuenta hasta despachar `arrived`, y tras
   `endDay(s)` (sin `true`) todos vuelven a ir de camino.
+
+## Equipo: niveles nuevos y lo que cambió el arte (8 de noviembre)
+
+El usuario quiere **más niveles de rareza** en el futuro (es cosa tuya: tipo, botín, equilibrio,
+talleres, nombres y marcos). El arte ya está listo para cinco:
+
+| Nivel | Color | En el dibujo (`art/tiers.ts`) |
+|---|---|---|
+| Común | gris | hierro mate y cuero |
+| Bueno | verde | acero, remates de bronce, gema verde |
+| Raro | azul | acero pulido, plata, gemas azules, remaches |
+| Épico | morado | metal ennegrecido, runas y pedrería moradas (brilla de vez en cuando) |
+| Legendario | oro | oro; los que tienen nombre, su dibujo propio (`art/legendaries.ts`) |
+
+- Hoy `Rarity` es 0–2 y `tierOf` la coloca en la escala: común → común, **bueno → raro (azul, como
+  la interfaz)**, legendario → legendario. Si añades niveles, cambia `tierOf` (y `RARITY_NAMES`,
+  los marcos `.rarity-N` de `styles.css` y `glossary.ts`, que dice «raro (azul)»). El usuario
+  aceptó que el «bueno» pase a verde cuando haya cinco.
+- Un legendario nuevo sin dibujo sale con su icono en oro; con dibujo, es añadir su rejilla en
+  `legendaries.ts` con el nombre exacto del objeto.
+- **Cambios de tipos**: `HeroMarks.gear` es ahora `GearMark | GearMark[]` (una pieza por ranura,
+  con `unique` = nombre del legendario). `marksOf` usa `wornMarks(h)` (`ui/view.ts`) en vez de
+  `shownGear`; las peleas guardadas (`BossFight.heroes[].gear`, una pieza) siguen valiendo.
+  `shownGear` del núcleo no se ha tocado.
+- **Iconos**: `itemIcon` es de 16 × 16 (antes 12) y anima los épicos y legendarios con
+  `ItemImage` (`ui/ItemImage.tsx`); en la escena va `rackIcon` (12 × 12).
+- **Por hablar con el usuario**: con coraza, el tinte de la sastrería casi no se ve en el retrato
+  (el peto y las hombreras tapan el pecho, y el equipo se pinta encima de la prenda; en la figura
+  es al revés). Propuesta: prenda por encima del equipo en el retrato, y un filete del color del
+  tinte en peto y escudo. La capa común ya toma el tinte.

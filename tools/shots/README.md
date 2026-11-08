@@ -66,3 +66,7 @@ para preparar cualquier situación antes de la captura: subir salas de nivel, pr
 12. Almacén: `node tools/shots/almacen.mjs <carpeta> [ancho] [alto]` saca el almacén a nivel 1–3 y
     ancho 1 y 3, vacío, a medias y lleno, y el rincón de la bodega (sin almacén) con 0, 5 y 10 de
     cada material básico.
+
+13. Equipo: `node tools/shots/equipo.mjs <carpeta> [ancho] [alto]` viste a los héroes con una pieza
+    por ranura (común, buena, legendaria con dibujo propio y la corona) y saca su ficha, el Arcón y
+    la sala con ellos.

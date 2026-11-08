@@ -1,4 +1,4 @@
-import { gearPortraitBack, gearPortraitFront } from '../heroes/gear';
+import { gearPortraitBack, gearPortraitFront, wearsCrown, withDye } from '../heroes/gear';
 import { dyeOf, garmentPortrait } from '../heroes/sastre';
 import type { HeadgearId, HeroLook, HeroMarks, OutfitId } from '../heroes/look';
 import { EYES as EYE_COLORS, HAIR, P, SKIN, type Ramp } from '../palette';
@@ -214,12 +214,13 @@ export function renderPortrait(look: HeroLook, marks: HeroMarks = {}, blink = fa
 
   const c = slots(look);
   const fig = new PixelBuffer(W, H);
-  const worn = marks.injured && look.headgear === 'casco' ? null : look.headgear;
+  const worn =
+    wearsCrown(marks.gear) || (marks.injured && look.headgear === 'casco') ? null : look.headgear;
   const hg = worn ? (PORTRAIT_HAT[worn] ?? (worn as keyof typeof HEADGEAR)) : null;
   const hair = look.hairStyle;
 
   // Detrás de todo: lo que lleva a la espalda, la capa, la melena y la coleta.
-  const gear = marks.gear ? { ...marks.gear, dye: look.dye } : undefined;
+  const gear = withDye(marks.gear, look.dye);
   if (gear) gearPortraitBack(fig, gear);
   if (look.garment) garmentPortrait(fig, look.garment, look.dye, true);
   if (hg !== 'capucha') {
