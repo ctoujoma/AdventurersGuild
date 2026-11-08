@@ -54,3 +54,11 @@ Lo que queda es la interfaz y la escena:
   trabajo se cancela y se devuelve lo pagado.
 - Falta también el icono de la cinta de obras (ahora `pintado`) y el banderín (`brocha`, en
   `goalMark.ts`), por si arte los quiere cambiar.
+
+## Hecho en arte (agente de arte, 8 de noviembre)
+
+El taller, el pintor y el trabajo que se ve: detalle en [`../plan-arte.md`](../plan-arte.md)
+(«El taller del pintor»); capturas en `capturas/pintor/`. La escena lleva al pintor a la sala que
+pinta, despacha `arrived` al llegar y pinta la pared por franjas con `paintState(s, p).frac`.
+Las telas (mantas, alfombras, cortinas) cambian al acabar, no por franjas. Icono nuevo `brocha`
+en Obras (el de antes, `pintado`, es el del rótulo de la fachada).

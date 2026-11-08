@@ -114,6 +114,18 @@ export const SIDE_TORSO: Record<OutfitId, Grid> = {
     '.....ccccaaa....',
     ...empty(5),
   ],
+  // La bata, larga, con una mancha.
+  pintor: [
+    ...empty(10),
+    '.....cccccc.....',
+    '....ccccrcaa....',
+    '.....cccccaa....',
+    '.....cccycaa....',
+    '.....ccccccc....',
+    '.....ccrcccc....',
+    '.....CCCCCCC....',
+    ...empty(5),
+  ],
   herrero: [
     ...empty(10),
     '.....xcccc......',
@@ -480,6 +492,7 @@ export const SIDE_WEAPONS: Record<OutfitId, { back?: Grid; front?: Grid }> = {
   herrero: {},
   sastre: {},
   alquimista: {},
+  pintor: {},
   campesino: {},
   mercader: {},
   noble: {},

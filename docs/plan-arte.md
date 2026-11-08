@@ -249,6 +249,29 @@ npm run build`.
         capturas en `capturas/guardia/` (`tools/shots/guardia.mjs`).
   Capturas en `capturas/movimiento/`.
 
+- [x] **El taller del pintor** ([`encargos/pintor.md`](encargos/pintor.md), rama
+      `claude/eager-ptolemy-57jazp`):
+  - el taller (`salas/pintor.ts`): el caballete con un cuadro a medio pintar (entero y con marco
+    en el 3), los botes de pintura con el palo y las brochas, los rollos de tela en su cesta bajo
+    cada ventana, la escalera apoyada en el rincón, el estante de pigmentos, las muestras de
+    color en la pared, cuadros colgados (desde el 2), la mesa de mezclar en las anchas y la lona
+    con manchas en el suelo. Sitios de trabajo nuevos: `caballete` (pintar) y `botes` (mezclar);
+  - el pintor (traje `pintor`): bata clara manchada de colores, boina de vino y la brocha
+    (herramienta nueva `brocha` en `weapons.ts`). En su taller pinta el cuadro y remueve los botes;
+  - el trabajo se ve: la escena lleva al pintor a la sala que pinta (`painterAt` en `view.ts`) y
+    avisa al llegar (`arrived`); mientras va de camino, nada cambia. Luego la pared del fondo pasa
+    al color nuevo por franjas de izquierda a derecha y, en la de cada momento, de arriba abajo
+    (`pintura.ts`: se dibujan las dos paredes al montar la sala y se copian las franjas a la
+    textura, también la de luz con ambiente). El pintor se pone en la franja: subido a la escalera
+    de tijera para lo de arriba (`stepladder`, `STEP_UP`), de pie y de rodillas para el zócalo.
+    Al acabar cambian las telas, caen gotas del color por la pared (partícula `paint`) y destellos;
+  - para que el color se vea en la pared: con tema, la cenefa pintada bajo la viga de cada
+    planta y una raya sobre el zócalo (`tintBand` en `acabados.ts`); las salas enteladas del 3
+    no la llevan (ya cambia la tela). Ojo: cambia el aspecto de las salas que ya tenían tema;
+  - iconos: en Obras, la sala del pintor con una brocha (`brocha` en `ui/icons.tsx`; `pintado`
+    es el del rótulo «Pintado» de la fachada y no se toca) y el banderín con la brocha mojada.
+  - [ ] Visto bueno del usuario. Capturas en `capturas/pintor/` (`tools/shots/pintor.mjs`).
+
 - [ ] **La pelea de los asaltos, en directo** ([`encargos/arte-asaltos.md`](encargos/arte-asaltos.md)).
       Un PR por punto, desde la rama `claude/raid-combat-system-nkzv5y`.
   - [x] 1. Golpes por clase (`raidFx.ts`, `blowOf` y `blowFrame` en `crowd.ts`): el guerrero

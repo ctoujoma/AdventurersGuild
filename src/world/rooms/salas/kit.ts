@@ -96,7 +96,10 @@ export type TaskPoi =
   // La alquimia: el caldero, el alambique y el atril con el libro.
   | 'caldero'
   | 'alambique'
-  | 'atril';
+  | 'atril'
+  // El pintor: pintar en el caballete y mezclar en los botes (o la mesa de mezclar).
+  | 'caballete'
+  | 'botes';
 
 /** Un mueble con su sitio de trabajo. */
 export const task = (t: Thing, poi: TaskPoi): Thing => ({ ...t, poi });

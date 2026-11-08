@@ -1,4 +1,5 @@
 import { craftState, dressingOf } from '../core/crafting';
+import { paintState, painterAt } from '../core/paint';
 import { RECIPES } from '../data/recipes';
 import { generateLook, type HeroLook, type HeroMarks, type OutfitId } from '../art/heroes/look';
 import type { Facilities, GameState, Hero, Item, Worker } from '../core/model';
@@ -32,6 +33,7 @@ const TRADE_LOOK: Partial<Record<Worker['trade'], OutfitId>> = {
   forja: 'herrero',
   sastreria: 'sastre',
   alquimia: 'alquimista',
+  pintor: 'pintor',
 };
 
 /**
@@ -143,7 +145,8 @@ export function sceneModel(s: GameState): SceneModel {
       status: 'ok',
       look: workerLook(w),
       marks: {},
-      work: w.room,
+      // El pintor que está pintando una sala, en ella (y no en su taller).
+      work: painterAt(s, w.id) ?? w.room,
       goTo: goTo(w.id),
       staff: beds-- > 0 ? 'casa' : 'pueblo',
     });
@@ -211,5 +214,16 @@ export function sceneModel(s: GameState): SceneModel {
       };
     }),
     craftEnds: s.craftLog,
+    paints: (s.paints ?? []).map((p) => {
+      const st = paintState(s, p);
+      return {
+        id: p.id,
+        room: p.room,
+        painter: p.painter,
+        tint: p.tint,
+        frac: st.frac,
+        walking: st.walking,
+      };
+    }),
   };
 }

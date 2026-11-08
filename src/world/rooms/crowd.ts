@@ -45,6 +45,22 @@ import {
 import { project, scaleAt, type View } from './view3d';
 import { FAR_Z, NEAR_Z, type BedSpot } from './people';
 import type { PoiKind, TaskPoi } from './salas/kit';
+import { STEP_UP, stepladder } from './salas/pintor';
+import { STRIPE, stripeOf } from './pintura';
+
+/**
+ * Una sala que se está pintando, para el pintor: la pared (x del mundo de un lado al otro y
+ * ancho de su dibujo, para las franjas), lo que lleva y si aún va de camino.
+ */
+export interface PaintSpan {
+  room: string;
+  painter: string;
+  frac: number;
+  walking: boolean;
+  x0: number;
+  x1: number;
+  w: number;
+}
 
 /** Como mucho, tantas figuras animadas a la vez (y de ellas, tantos visitantes). */
 export const MAX_ACTORS = 30;
@@ -112,6 +128,7 @@ const TOOLS = [
   'pluma',
   'atizador',
   'sorbo',
+  'brocha',
 ] as const;
 
 /** Un trabajo: la herramienta y los cuatro tiempos (postura del brazo, giro y duración). */
@@ -398,6 +415,47 @@ const WORK = {
       ['ready', 125, 0.35],
     ],
   },
+  // El pintor: pintar el cuadro del caballete a pinceladas cortas y mirarlo…
+  pintar: {
+    tool: 20,
+    steps: [
+      ['thrust', 20, 0.3],
+      ['thrust', 40, 0.25],
+      ['thrust', 25, 0.3],
+      ['ready', 0, 1],
+    ],
+  },
+  // … remover la pintura en el bote con el palo, abajo…
+  mezclar: {
+    tool: 14,
+    steps: [
+      ['ready', 150, 0.45],
+      ['ready', 165, 0.4],
+      ['ready', 150, 0.45],
+      ['ready', 135, 0.4],
+    ],
+  },
+  // … y, en la sala que pinta, la brocha por la pared: de arriba abajo, subido a la escalera…
+  brochazo: {
+    tool: 20,
+    steps: [
+      ['up', -10, 0.35],
+      ['up', 15, 0.3],
+      ['thrust', 0, 0.35],
+      ['up', 15, 0.3],
+    ],
+  },
+  // … o de rodillas, por abajo.
+  zocalo: {
+    tool: 20,
+    crouch: true,
+    steps: [
+      ['thrust', 10, 0.3],
+      ['thrust', 40, 0.3],
+      ['thrust', 10, 0.3],
+      ['ready', 0, 0.6],
+    ],
+  },
   // … y echar un leño al fuego.
   lena: {
     tool: 6,
@@ -439,8 +497,10 @@ const TASKS: Record<TaskPoi, WorkId[]> = {
   caldero: ['remover', 'remover', 'moler'],
   alambique: ['destilar'],
   atril: ['apuntar'],
+  caballete: ['pintar'],
+  botes: ['mezclar'],
 };
-const ROUTINE = new Set(['cocina', 'bodega', 'forja', 'sastreria', 'alquimia']);
+const ROUTINE = new Set(['cocina', 'bodega', 'forja', 'sastreria', 'alquimia', 'pintor']);
 /** Los talleres: solo trabajan (y con su rutina) mientras hay un trabajo en marcha. */
 const WORKSHOP = new Set(['forja', 'sastreria', 'alquimia']);
 /** Dónde se desmonta, por orden: el banco de la forja o, si no hay, el mueble de cada taller. */
@@ -585,6 +645,7 @@ const DRILL_WEAPON: Record<OutfitId, WeaponId> = {
   herrero: 'garrote',
   sastre: 'garrote',
   alquimista: 'baston',
+  pintor: 'garrote',
   campesino: 'garrote',
   mercader: 'daga',
   noble: 'espada',
@@ -677,6 +738,8 @@ interface Actor {
   task?: { at: number; work: WorkId; face: 1 | -1 } | null;
   /** Vistiendo a un héroe: cuántas tareas lleva con él desde que llegó (ver `FIRST_FIT`). */
   fit?: number;
+  /** Pintando subido a la escalera de tijera (la figura va `STEP_UP` más arriba). */
+  ladder?: boolean;
   /** La última vuelta en que sonó su golpe (ver `hits`). */
   hitAt?: number;
   /** De charla con alguien: con quién, cuándo empezó (al llegar) y cuándo acaba. */
@@ -1292,6 +1355,52 @@ export class Crowd {
   /** Temas de color de las salas: la manta de quien duerme en una litera es la de su sala. */
   setTints(t: Readonly<Record<string, TintId>>): void {
     this.tints = t;
+  }
+
+  /** Las salas que se pintan, por pintor (la escena las da en cada fotograma). */
+  private paints = new Map<string, PaintSpan>();
+  /** La escalera de tijera de cada pintor que está pintando (se ve cuando se sube). */
+  private ladders = new Map<string, Mesh>();
+
+  setPaints(list: readonly PaintSpan[]): void {
+    this.paints = new Map(list.map((p) => [p.painter, p]));
+    for (const [id, m] of this.ladders)
+      if (!this.paints.has(id)) {
+        this.group.remove(m);
+        (m.material as ShaderMaterial).dispose();
+        this.ladders.delete(id);
+      }
+  }
+
+  /**
+   * El pintor que tiene una sala que pintar: va a ella y, cuando empieza, se pone en la franja
+   * que toca, mirando hacia lo que falta. Por arriba, subido a la escalera; por el medio, de
+   * pie; y lo de abajo, de rodillas. Se queda hasta que cambia de franja.
+   */
+  private paintTurn(a: Actor): boolean {
+    const p = this.paints.get(a.hero.id);
+    a.ladder = false;
+    if (!p || !this.L || this.time !== 'day' || a.hero.status !== 'ok') return false;
+    const r = this.L.rooms.find((x) => x.room.id === p.room);
+    if (!r) return false;
+    const s = stripeOf(p.walking ? 0 : p.frac, p.w);
+    const u = Math.min(p.w, (s.full + 0.5) * STRIPE) / p.w;
+    // Un poco a la izquierda de la franja (por lo ya pintado), mirando a la derecha.
+    const x = Math.max(p.x0 + 6, Math.min(p.x1 - 10, p.x0 + u * (p.x1 - p.x0) - 5));
+    const place = { x, floor: r.room.floor };
+    // La cenefa (arriba) desde la escalera; la raya del zócalo (abajo), de rodillas.
+    const work: WorkId = p.walking || s.part < 0.7 ? 'brochazo' : 'zocalo';
+    // De camino aún no pinta: al llegar se queda mirando la pared hasta que empieza.
+    a.task = p.walking ? null : { at: x, work, face: 1 };
+    a.wait = 2;
+    if (Math.abs(a.x - x) < 2 && a.floor === place.floor) {
+      a.ladder = !p.walking && s.part < 0.35;
+      return true;
+    }
+    if (!route(this.L, { x: a.x, floor: a.floor }, place, this.segs)) return false;
+    // Por delante de lo suelto (camas, arcones), que se le vea trabajar.
+    this.go(a, { place, pose: 'stand', stand: WALK_Z - 4 });
+    return true;
   }
 
   setVisitors(v: SceneVisitors): void {
@@ -2032,6 +2141,7 @@ export class Crowd {
     this.look.dispose();
     this.geo.dispose();
     this.actors.clear();
+    this.ladders.clear();
   }
 
   // ---------- Por dentro ----------
@@ -2171,8 +2281,9 @@ export class Crowd {
       return null;
     if (a.path.length || a.held || a.leaving || a.pose !== 'stand' || a.edge) return null;
     const job = this.S?.jobs.get(h.work);
-    // En la cocina y la bodega, lo que toque de su rutina (o nada, en el rato quieto).
-    if (job && ROUTINE.has(job.room.type)) {
+    // En la cocina y la bodega, lo que toque de su rutina (o nada, en el rato quieto); el
+    // pintor, también en la sala que pinta.
+    if ((job && ROUTINE.has(job.room.type)) || this.paints.has(h.id)) {
       const tk = a.task;
       if (!tk || Math.abs(a.x - tk.at) > 16) return null;
       const w: Work = WORK[tk.work];
@@ -2533,6 +2644,8 @@ export class Crowd {
       a.run = Math.max(a.run ?? 1, RUSH);
       return;
     }
+    // El pintor que tiene una sala que pintar, a ella.
+    if (this.paintTurn(a)) return;
     const home = this.homes.get(h.id);
     const job = this.workOf(a);
     if (!job) a.task = null;
@@ -2864,7 +2977,9 @@ export class Crowd {
     const job = this.jobAnim(a);
     if (job) {
       const i = F.tool + job.slot * 8 + (job.dir > 0 ? 0 : 4) + job.pose;
-      return { frame: i, left: a.x - CELL / 2 / k, bottom: top + TALL / k, z };
+      // Subido a la escalera de tijera: los pies en su tabla.
+      const up = a.ladder ? STEP_UP / k : 0;
+      return { frame: i, left: a.x - CELL / 2 / k, bottom: top + TALL / k - up, z };
     }
     if (a.pose === 'stand' && !a.path.length && this.time === 'day' && !this.scripted) {
       const p = (t + (hash(a.hero.id) % 37) / 7) % 6;
@@ -2963,6 +3078,47 @@ export class Crowd {
     u.uAxisV!.value.set(0, h, 0);
     u.uUvOffset!.value.set(...uvOf(f.frame));
     const look = this.tint(a.x, a.floor);
+    u.uAmbient!.value.set(...look.ambient);
+    u.uSun!.value = look.sun;
+    this.placeLadder(a, f.z, look);
+  }
+
+  /** La escalera de tijera bajo el pintor subido a ella (detrás de él); si no, escondida. */
+  private placeLadder(a: Actor, z: number, look: { ambient: Tint; sun: number }): void {
+    let m = this.ladders.get(a.hero.id);
+    const on = !!a.ladder && !a.path.length && !a.gone && !!this.jobAnim(a);
+    if (!on) {
+      if (m) m.visible = false;
+      return;
+    }
+    if (!m) {
+      const img = stepladder();
+      const mat = this.look.surface(img, [at(0, 0, 0), at(1, 0, 0), at(1, -1, 0), at(0, -1, 0)], {
+        ambient: [0.44, 0.38, 0.46],
+        sun: 0,
+        wrap: 0.6,
+        dither: 0.03,
+        halo: 0.3,
+        noWeather: true,
+      });
+      m = mesh(this.geo, mat);
+      m.userData.w = img.w;
+      m.userData.h = img.h;
+      this.group.add(m);
+      this.ladders.set(a.hero.id, m);
+    }
+    const lz = z + 1.5;
+    const k = scaleAt(lz);
+    const w = m.userData.w / k;
+    const h = m.userData.h / k;
+    const origin = at(a.x - w / 2, a.y, lz);
+    m.visible = true;
+    m.position.copy(origin);
+    m.scale.set(w, h, 1);
+    const u = (m.material as ShaderMaterial).uniforms;
+    u.uOrigin!.value.copy(origin);
+    u.uAxisU!.value.set(w, 0, 0);
+    u.uAxisV!.value.set(0, h, 0);
     u.uAmbient!.value.set(...look.ambient);
     u.uSun!.value = look.sun;
   }

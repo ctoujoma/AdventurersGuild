@@ -37,6 +37,7 @@ const SLOTS = {
   forja: [1, -1, 3],
   sastreria: [1, 1, 3],
   alquimia: [1, 1, 3],
+  pintor: [1, 1, 2],
   despensa: [1, -1, 3],
   armas: [1, 1, 3],
   tiro: [1, 1, 3],

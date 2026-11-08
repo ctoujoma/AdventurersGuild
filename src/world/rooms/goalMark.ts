@@ -52,7 +52,8 @@ const ICONS: Record<GoalIcon, string[]> = {
   libro: ['.......', '###.###', '#o#.#o#', '###.###', '#o#.#o#', '###.###', '.......'],
   tijeras: ['#....#.', '.#..#..', '..##...', '..##...', '.o..o..', 'o.o.o.o', '.o...o.'],
   frasco: ['..###..', '...#...', '...#...', '..#.#..', '.#ooo#.', '#ooooo#', '.#####.'],
-  brocha: ['.....##', '....##.', '...##..', '..#....', '.###...', '#ooo#..', '.ooo...'],
+  // La brocha: el mango, la virola, las cerdas mojadas y dos gotas que caen.
+  brocha: ['.....##', '....##.', '...##..', '..###..', '.#ooo..', '#ooo...', '.o..o..'],
 };
 
 /** El icono de cada sala (lo que se hace en ella). */

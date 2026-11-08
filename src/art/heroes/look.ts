@@ -16,6 +16,8 @@ export type OutfitId =
   // La sastra o el sastre (chaleco y la cinta al cuello) y la o el alquimista (túnica y frascos).
   | 'sastre'
   | 'alquimista'
+  // La pintora o el pintor: bata clara manchada de pintura y boina.
+  | 'pintor'
   // La gente de fuera que viene al salón (no son héroes ni se contratan).
   | 'campesino'
   | 'mercader'
@@ -66,6 +68,7 @@ const HEADGEAR: Record<OutfitId, [HeadgearId, number] | null> = {
   herrero: null,
   sastre: null,
   alquimista: null,
+  pintor: ['boina', 1],
   campesino: ['paja', 0.75],
   mercader: ['boina', 0.85],
   noble: ['pluma', 0.8],

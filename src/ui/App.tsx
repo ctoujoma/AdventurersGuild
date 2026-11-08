@@ -1103,6 +1103,7 @@ export function App() {
             const g = gameRef.current;
             const waits =
               g.crafts?.some((c) => c.wait && c.dress?.hero === id) ||
+              g.paints?.some((p) => p.wait && p.painter === id && p.room === room) ||
               [...g.heroes, ...g.workers].some((x) => x.id === id && x.walk !== undefined) ||
               g.incidents?.some((i) => i.coming?.who === id);
             if (waits) dispatch({ type: 'arrived', heroId: id, room });

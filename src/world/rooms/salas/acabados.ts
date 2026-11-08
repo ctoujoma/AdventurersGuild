@@ -246,6 +246,47 @@ const CLOTH: Partial<Record<string, [string, string, string]>> = {
   enfermeria: [P.mist, P.fog, P.white],
 };
 
+/**
+ * Lo pintado del color de la sala (con tema): la cenefa bajo la viga de cada planta (en cada `ys`)
+ * y una raya encima del zócalo (en `rail`). Así se ve en la pared de qué color la ha pintado el pintor.
+ * Las salas enteladas (`wallCloth`, desde el 3) no lo llevan: ya la tela toma el color.
+ */
+export function tintBand(
+  b: PixelBuffer,
+  room: Room,
+  theme: Theme,
+  fine: boolean,
+  ys: number[],
+  rail: number,
+) {
+  const t = tintOf(room);
+  if (!t) return;
+  if (fine && room.level >= 3 && CLOTH[room.type] && (theme === 'yeso' || theme === 'madera'))
+    return;
+  const [d, m, l, h] = TINTS[t].ramp;
+  const w = b.w;
+  for (const y of ys) {
+    b.hline(0, y, w, d);
+    b.rect(0, y + 1, w, 6, m);
+    b.hline(0, y + 1, w, l);
+    b.hline(0, y + 7, w, d);
+    // El dibujo de plantilla: un rombo claro cada 10 y, entre ellos, dos puntos.
+    for (let x = 0; x < w; x += 10) {
+      b.hline(x + 4, y + 2, 2, l);
+      b.hline(x + 3, y + 3, 4, l);
+      b.hline(x + 3, y + 4, 4, l);
+      b.hline(x + 4, y + 5, 2, l);
+      b.set(x + 4, y + 3, h);
+      b.set(x + 9, y + 3, l);
+      b.set(x + 9, y + 5, l);
+    }
+  }
+  // La raya de encima del zócalo.
+  b.hline(0, rail, w, l);
+  b.hline(0, rail + 1, w, m);
+  b.hline(0, rail + 2, w, d);
+}
+
 /** La tela de la pared de una sala (si la lleva): la suya o la de su tema de color. */
 function wallCloth(room: Room): [string, string, string] | undefined {
   const house = CLOTH[room.type];

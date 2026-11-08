@@ -57,3 +57,8 @@ para preparar cualquier situación antes de la captura: subir salas de nivel, pr
     ventana, de día y de noche (`HORAS=manana,dia,tarde,noche`); con `TRANSICION=nublado`, una
     tira de la vista desde fuera pasando de despejado a ese tiempo, para un GIF. Con `FOTOGRAMAS=<n>`, de cada
     captura salen n fotogramas seguidos (lluvia, para GIF). Con `RAYO=1`, un relámpago paso a paso.
+
+11. Pintor: `node tools/shots/pintor.mjs <carpeta> [ancho] [alto]` pone el taller del pintor con
+    su pintor y le manda pintar una sala (`SALA`, por defecto `dormitorio`; `COLOR`, por defecto
+    `bosque`): saca la sala con el pintor de camino, pintando por franjas, de cerca en la escalera,
+    al acabar (las gotas, para un GIF) y el pintor de vuelta en su taller.

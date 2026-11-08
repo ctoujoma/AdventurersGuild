@@ -37,6 +37,8 @@ export type WeaponId =
   | 'maja'
   | 'pluma'
   | 'atizador'
+  // La brocha del pintor, con la punta mojada.
+  | 'brocha'
   // El cucharón visto en escorzo (casi de frente), al probar el guiso.
   | 'sorbo';
 
@@ -155,6 +157,8 @@ export const WEAPONS: Record<WeaponId, Weapon> = {
   atizador: grid(['s.', 'sS', '.S', '.S', '.S', '.S', '.b', '.B'], 1, 6),
   // El cucharón en escorzo: el cazo junto a la boca y un poco del mango hacia la mano.
   sorbo: grid(['.sS', 'bs.'], 0, 1),
+  // La brocha del pintor: las cerdas mojadas de pintura, la virola y el mango.
+  brocha: grid(['.R.', 'RRR', 'RRR', 'mmm', '.b.', '.b.', '.o.'], 1, 5),
   // Pluma de escribir.
   pluma: grid(['W.', 'Wm', '.m', '.B'], 1, 3),
   lima: grid(['.s', 'Ss', 'Ss', 'Ss', 'bB', 'b.'], 0, 4),

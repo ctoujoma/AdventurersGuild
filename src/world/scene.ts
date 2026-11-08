@@ -87,6 +87,25 @@ export interface SceneModel {
   craftEnds?: SceneCraftEnd[];
   /** Cómo acabaron los últimos incidentes: bien, mal, el de guardia le paró o se le coló. */
   incidentEnds?: readonly IncidentEnd[];
+  /**
+   * Las salas que se están pintando (solo dibujo; cambia en cada tick, así que no va entero en la
+   * clave que rehace la escena: solo la sala y el color).
+   */
+  paints?: ScenePaint[];
+}
+
+/** Una sala que se está pintando, tal como la ve la escena. */
+export interface ScenePaint {
+  id: string;
+  /** La sala que se pinta y el pintor (un trabajador) que está en ella. */
+  room: string;
+  painter: string;
+  /** El color nuevo (null: los de la casa). */
+  tint: TintId | null;
+  /** Lo que lleva, de 0 a 1: hasta ahí, la pared ya es del color nuevo (por franjas). */
+  frac: number;
+  /** Aún no ha empezado: el pintor va de camino (la sala no cambia). */
+  walking: boolean;
 }
 
 /** Cómo acabó un trabajo de taller. */
