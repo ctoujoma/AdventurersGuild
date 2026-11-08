@@ -8,7 +8,9 @@ import { RISK_LABELS, moraleMod, skill } from '../core/party';
 import { questEstimate } from '../core/resolve';
 import { repeatParty, suggestParty } from '../core/suggest';
 import { CLASS_NAMES, dangerClass, dangerLabel, statusLabel } from '../data/labels';
+import { MATERIALS, QUEST_MATERIAL } from '../core/materials';
 import { help } from './HoldHelp';
+import { MatIcon } from './mats';
 import { Icon } from './icons';
 import { Portrait } from './Portrait';
 import { listNames, plural } from './text';
@@ -109,6 +111,15 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
             <span class="fact" {...help('Paga si sale bien.')}>
               <Icon name="coin" size={12} />
               {q.reward}
+            </span>
+            <span
+              class="fact"
+              {...help(
+                `Trae ${MATERIALS[QUEST_MATERIAL[q.type]].name.toLowerCase()}: más cuanto mejor salga.`,
+              )}
+            >
+              <MatIcon m={QUEST_MATERIAL[q.type]} size={12} />
+              {MATERIALS[QUEST_MATERIAL[q.type]].name}
             </span>
             <span class="fact" {...help('Lo que dura el viaje con este grupo.')}>
               <Icon name="pasos" size={12} />
