@@ -73,6 +73,8 @@ const ROOM_GOALS: [RoomType, number, Reward][] = [
   ['tiro', 2, { gold: 40, item: 0 }],
   ['biblioteca', 2, { gold: 40, item: 0 }],
   ['capilla', 2, { gold: 50, rep: 2 }],
+  ['almacen', 1, { gold: 30 }],
+  ['almacen', 2, { gold: 60 }],
   ['forja', 2, { gold: 60 }],
   ['sastreria', 2, { gold: 80 }],
   ['alquimia', 2, { gold: 80 }],
@@ -193,7 +195,7 @@ export const GOALS: readonly GoalDef[] = [
   byType('Limpiar', 'Limpia {n} guaridas', 2, { gold: 50 }),
   ...ROOM_GOALS.map(([room, level, reward]): GoalDef => ({
     id: `${room}-${level}`,
-    text: `{sala} a nivel ${level}`,
+    text: level === 1 ? 'Construye: {sala}' : `{sala} a nivel ${level}`,
     room,
     level,
     reward,

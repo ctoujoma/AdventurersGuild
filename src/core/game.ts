@@ -153,6 +153,8 @@ import {
   canCraft,
   arrive,
   canDress,
+  canTemper,
+  startTemper,
   knownRecipes,
   learnRecipe,
   startDress,
@@ -180,11 +182,14 @@ import {
   tidyJobs,
   villageCrew,
 } from './workers';
+import { SLOTS, gearList, slotOf, type Slot } from './gear';
 
 export type Action =
   /** Talleres: crear de una receta, desmontar un objeto del arcón o cancelar un trabajo. */
   | { type: 'craft'; room: string; recipe: RecipeId }
   | { type: 'undoItem'; room: string; itemId: string }
+  /** Mejorar un objeto del arcón en su taller (+1 a su habilidad principal, hasta +3). */
+  | { type: 'temper'; room: string; itemId: string }
   | { type: 'cancelCraft'; id: string }
   /** Pintar una sala de un color (null: los de la casa), con el pintor del taller. */
   | { type: 'paint'; room: string; tint: TintId | null }
@@ -219,7 +224,7 @@ export type Action =
   | { type: 'read'; reportId: string }
   | { type: 'answer'; id: string; yes: boolean }
   | { type: 'equip'; heroId: string; itemId: string }
-  | { type: 'unequip'; heroId: string }
+  | { type: 'unequip'; heroId: string; slot?: Slot }
   | { type: 'sellTrophy'; id: string }
   | { type: 'tip'; id: string }
   | { type: 'ackOpening' }
@@ -315,7 +320,7 @@ export function canEquip(s: GameState, heroId: string, itemId: string): string |
   const h = s.heroes.find((x) => x.id === heroId);
   const it = s.inventory.find((x) => x.id === itemId);
   if (!h || !it) return 'Ese objeto ya no está.';
-  if (!it.kind || it.kind === 'tesoro') return 'Esto no se equipa: se vende.';
+  if (!it.kind || it.kind === 'tesoro' || !slotOf(it)) return 'Esto no se equipa: se vende.';
   if (h.status !== 'ok' && h.status !== 'herido') return `${h.name} no está en el gremio.`;
   return null;
 }
@@ -549,7 +554,7 @@ function reduceAction(state: GameState, action: Action): GameState {
       if (!h || h.status !== 'ok') return state;
       const s = structuredClone(state);
       // Lo que llevaba es del gremio: vuelve al arcón.
-      if (h.item) s.inventory.push(structuredClone(h.item));
+      s.inventory.push(...structuredClone(gearList(h)));
       s.heroes = s.heroes.filter((x) => x.id !== action.id);
       return s;
     }
@@ -581,17 +586,27 @@ function reduceAction(state: GameState, action: Action): GameState {
       const h = s.heroes.find((x) => x.id === action.heroId)!;
       const it = s.inventory.find((x) => x.id === action.itemId)!;
       s.inventory = s.inventory.filter((x) => x !== it);
-      if (h.item) s.inventory.push(h.item);
-      h.item = it;
+      const slot = slotOf(it)!;
+      const was = h.worn?.[slot];
+      if (was) s.inventory.push(was);
+      h.worn = { ...h.worn, [slot]: it };
       return s;
     }
     case 'unequip': {
       const h = state.heroes.find((x) => x.id === action.heroId);
-      if (!h?.item || (h.status !== 'ok' && h.status !== 'herido')) return state;
+      if (!h || (h.status !== 'ok' && h.status !== 'herido')) return state;
+      // Sin ranura, se quita todo; con ranura, solo lo de esa.
+      const slots = action.slot ? [action.slot] : SLOTS;
+      if (!slots.some((k) => h.worn?.[k])) return state;
       const s = structuredClone(state);
       const x = s.heroes.find((y) => y.id === action.heroId)!;
-      s.inventory.push(x.item!);
-      delete x.item;
+      const worn = { ...x.worn };
+      for (const k of slots) {
+        if (worn[k]) s.inventory.push(worn[k]);
+        delete worn[k];
+      }
+      if (Object.keys(worn).length) x.worn = worn;
+      else delete x.worn;
       return s;
     }
     case 'sellTrophy': {
@@ -881,6 +896,12 @@ function reduceAction(state: GameState, action: Action): GameState {
       if (canCraft(state, action.room, action.recipe)) return state;
       const s = structuredClone(state);
       startCraft(s, action.room, action.recipe);
+      return s;
+    }
+    case 'temper': {
+      if (canTemper(state, action.room, action.itemId)) return state;
+      const s = structuredClone(state);
+      startTemper(s, action.room, action.itemId);
       return s;
     }
     case 'undoItem': {
@@ -1325,7 +1346,7 @@ export function endDay(state: GameState, away = false): GameState {
         });
         events.push({ t: `Han encontrado la capa de ${h.name}. No volverá.`, k: 'bad' });
         if (s.stats) s.stats.lastDeath = s.day;
-        delete h.item;
+        delete h.worn;
       }
     }
   }
@@ -1382,7 +1403,13 @@ export function endDay(state: GameState, away = false): GameState {
     s.heroes = s.heroes.filter((h) => !deserters.includes(h));
     for (const h of deserters)
       events.push({
-        t: `${h.name} ha recogido sus cosas antes del alba. Estaba ${h.sex === 'f' ? 'harta' : 'harto'}.${h.item ? ` Se ha llevado ${h.item.name.toLowerCase()}.` : ''}`,
+        t: `${h.name} ha recogido sus cosas antes del alba. Estaba ${h.sex === 'f' ? 'harta' : 'harto'}.${
+          gearList(h).length
+            ? ` Se ha llevado ${gearList(h)
+                .map((i) => i.name.toLowerCase())
+                .join(' y ')}.`
+            : ''
+        }`,
         k: 'bad',
       });
   }

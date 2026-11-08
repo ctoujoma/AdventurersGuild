@@ -5,10 +5,25 @@
  */
 import type { ItemIcon, ItemKind } from '../core/model';
 import type { GearBase } from './items';
+import type { Mats } from '../core/materials';
 import type { RoomType } from './rooms';
 
 export type RecipeId =
-  'espada' | 'coraza' | 'ganzuas' | 'hacha' | 'escudo' | 'botas' | 'capa' | 'amuleto' | 'varita';
+  | 'espada'
+  | 'coraza'
+  | 'ganzuas'
+  | 'hacha'
+  | 'escudo'
+  | 'botas'
+  | 'capa'
+  | 'amuleto'
+  | 'varita'
+  | 'espadaLarga'
+  | 'cota'
+  | 'escudoTachonado'
+  | 'ganzuasTempladas'
+  | 'botasCuero'
+  | 'capaForrada';
 
 /** Los talleres, para las frases («en la sastrería»). */
 export const WORKSHOP_PLACE: Partial<Record<RoomType, string>> = {
@@ -32,6 +47,8 @@ export interface Recipe {
   hours: number;
   /** Se sabe desde el principio; las demás se aprenden desmontando o como premio. */
   free?: boolean;
+  /** Materiales que pide (se devuelven si se cancela). Las de la casa no piden nada. */
+  mats?: Mats;
   /** Lo que sale: normal y bueno. */
   common: GearBase;
   good: GearBase;
@@ -300,11 +317,194 @@ export const RECIPES: Record<RecipeId, Recipe> = {
       bonus: { Arcano: 2 },
     },
   },
+  espadaLarga: {
+    name: 'Espada larga',
+    one: 'una espada larga',
+    many: 'espadas largas',
+    room: 'forja',
+    icon: 'espada',
+    kind: 'arma',
+    gold: 35,
+    hours: 10,
+    free: true,
+    mats: { hierro: 2 },
+    common: {
+      name: 'Espada larga',
+      desc: 'Más hierro, más alcance. Se maneja a dos manos si hace falta.',
+      value: 40,
+      kind: 'arma',
+      rarity: 0,
+      icon: 'espada',
+      bonus: { Combate: 2 },
+    },
+    good: {
+      name: 'Espada larga de buen temple',
+      desc: 'Larga, recta y con un filo que no se mella.',
+      value: 70,
+      kind: 'arma',
+      rarity: 1,
+      icon: 'espada',
+      bonus: { Combate: 3 },
+    },
+  },
+  cota: {
+    name: 'Cota de malla',
+    one: 'una cota de malla',
+    many: 'cotas de malla',
+    room: 'forja',
+    icon: 'coraza',
+    kind: 'armadura',
+    gold: 40,
+    hours: 12,
+    free: true,
+    mats: { hierro: 3 },
+    common: {
+      name: 'Cota de malla',
+      desc: 'Miles de anillas de hierro. Pesa, pero para los golpes.',
+      value: 45,
+      kind: 'armadura',
+      rarity: 0,
+      icon: 'coraza',
+      bonus: { Combate: 1 },
+      perk: 'guard',
+    },
+    good: {
+      name: 'Cota de malla doble',
+      desc: 'Anillas dobles bajo un peto de cuero. Las flechas rebotan.',
+      value: 80,
+      kind: 'armadura',
+      rarity: 1,
+      icon: 'coraza',
+      bonus: { Combate: 2 },
+      perk: 'guard',
+    },
+  },
+  escudoTachonado: {
+    name: 'Escudo tachonado',
+    one: 'un escudo tachonado',
+    many: 'escudos tachonados',
+    room: 'forja',
+    icon: 'escudo',
+    kind: 'armadura',
+    gold: 35,
+    hours: 10,
+    free: true,
+    mats: { hierro: 1, cuero: 2 },
+    common: {
+      name: 'Escudo tachonado',
+      desc: 'Madera forrada de cuero y tachuelas de hierro.',
+      value: 40,
+      kind: 'armadura',
+      rarity: 0,
+      icon: 'escudo',
+      bonus: { Combate: 2 },
+    },
+    good: {
+      name: 'Escudo tachonado con bordón',
+      desc: 'Con un borde de hierro que aguanta un hachazo.',
+      value: 72,
+      kind: 'armadura',
+      rarity: 1,
+      icon: 'escudo',
+      bonus: { Combate: 2, Supervivencia: 1 },
+    },
+  },
+  ganzuasTempladas: {
+    name: 'Ganzúas templadas',
+    one: 'unas ganzúas templadas',
+    many: 'ganzúas templadas',
+    room: 'forja',
+    icon: 'ganzua',
+    kind: 'herramienta',
+    gold: 25,
+    hours: 6,
+    free: true,
+    mats: { hierro: 2 },
+    common: {
+      name: 'Ganzúas templadas',
+      desc: 'Acero templado: no se doblan en la cerradura más terca.',
+      value: 36,
+      kind: 'herramienta',
+      rarity: 0,
+      icon: 'ganzua',
+      bonus: { Trampas: 2 },
+    },
+    good: {
+      name: 'Ganzúas de cerrajero',
+      desc: 'Un juego completo, en su estuche de cuero.',
+      value: 66,
+      kind: 'herramienta',
+      rarity: 1,
+      icon: 'ganzua',
+      bonus: { Trampas: 3 },
+    },
+  },
+  botasCuero: {
+    name: 'Botas de cuero',
+    one: 'unas botas de cuero',
+    many: 'botas de cuero',
+    room: 'sastreria',
+    icon: 'botas',
+    kind: 'herramienta',
+    gold: 25,
+    hours: 8,
+    free: true,
+    mats: { cuero: 2 },
+    common: {
+      name: 'Botas de cuero curtido',
+      desc: 'Cuero de verdad, cosido a mano. Aguantan una semana de camino.',
+      value: 36,
+      kind: 'herramienta',
+      rarity: 0,
+      icon: 'botas',
+      bonus: { Supervivencia: 2 },
+    },
+    good: {
+      name: 'Botas de rastreador',
+      desc: 'Suela blanda: no hacen ruido ni dejan huella.',
+      value: 66,
+      kind: 'herramienta',
+      rarity: 1,
+      icon: 'botas',
+      bonus: { Supervivencia: 2, Trampas: 1 },
+    },
+  },
+  capaForrada: {
+    name: 'Capa forrada',
+    one: 'una capa forrada',
+    many: 'capas forradas',
+    room: 'sastreria',
+    icon: 'capa',
+    kind: 'herramienta',
+    gold: 35,
+    hours: 10,
+    free: true,
+    mats: { tela: 2, cuero: 1 },
+    common: {
+      name: 'Capa forrada',
+      desc: 'Doble tela y un cuello de cuero. Ni el viento de la sierra pasa.',
+      value: 42,
+      kind: 'herramienta',
+      rarity: 0,
+      icon: 'capa',
+      bonus: { Supervivencia: 2 },
+    },
+    good: {
+      name: 'Capa de montaraz',
+      desc: 'Forrada, con bolsillos por dentro y del color del monte.',
+      value: 75,
+      kind: 'herramienta',
+      rarity: 1,
+      icon: 'capa',
+      bonus: { Supervivencia: 2 },
+      perk: 'ambush',
+    },
+  },
 };
 
 export const RECIPE_IDS = Object.keys(RECIPES) as RecipeId[];
 
 /** La receta que se puede sacar desmontando un objeto de este dibujo (si hay alguna). */
 export const RECIPE_BY_ICON: Partial<Record<ItemIcon, RecipeId>> = Object.fromEntries(
-  RECIPE_IDS.map((id) => [RECIPES[id].icon, id]),
+  RECIPE_IDS.filter((id) => !RECIPES[id].mats).map((id) => [RECIPES[id].icon, id]),
 );

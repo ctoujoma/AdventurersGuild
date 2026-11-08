@@ -18,6 +18,7 @@ import type { GameState, Hero, Outcome } from '../src/core/model';
 import { questEstimate } from '../src/core/resolve';
 import { vaultFull, vaultOf } from '../src/core/vault';
 import { settleWalks } from '../src/core/workers';
+import { slotOf } from '../src/core/gear';
 
 declare const process: { argv: string[] };
 
@@ -57,8 +58,8 @@ function playDay(s: GameState, st: Strategy): GameState {
   // El equipo se reparte entre quien no lleva nada; lo demás se vende.
   for (const it of s.inventory) {
     const bare =
-      st.equip && it.kind && it.kind !== 'tesoro'
-        ? s.heroes.find((h) => h.status === 'ok' && !h.item)
+      st.equip && it.kind && it.kind !== 'tesoro' && slotOf(it)
+        ? s.heroes.find((h) => h.status === 'ok' && !h.worn?.[slotOf(it)!])
         : undefined;
     s = bare
       ? reduce(s, { type: 'equip', heroId: bare.id, itemId: it.id })

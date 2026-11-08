@@ -25,8 +25,12 @@ const TABS: { name: string; icon: IconName; rooms: RoomType[] }[] = [
   { name: 'Comida', icon: 'olla', rooms: ['cocina', 'bodega', 'despensa'] },
   { name: 'Entreno', icon: 'espadas', rooms: ['armas', 'tiro', 'biblioteca'] },
   { name: 'Defensa', icon: 'escudo', rooms: ['armeria', 'torre', 'tesoro', 'recibidor'] },
-  { name: 'Talleres', icon: 'yunque', rooms: ['forja', 'sastreria', 'alquimia', 'pintor'] },
-  { name: 'Gremio', icon: 'jarra', rooms: ['salon', 'mapas'] },
+  {
+    name: 'Talleres',
+    icon: 'yunque',
+    rooms: ['forja', 'sastreria', 'alquimia', 'pintor'],
+  },
+  { name: 'Gremio', icon: 'jarra', rooms: ['salon', 'mapas', 'almacen'] },
 ];
 
 const ICON: Record<RoomType, IconName> = {
@@ -51,6 +55,7 @@ const ICON: Record<RoomType, IconName> = {
   sastreria: 'banderin',
   alquimia: 'vela',
   pintor: 'brocha',
+  almacen: 'cofre',
 };
 
 /** La última pestaña de la cinta (la cinta se rehace al volver de elegir sitio). */

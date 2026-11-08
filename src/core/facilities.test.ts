@@ -86,7 +86,9 @@ describe('construcciones de fuera', () => {
     const { gearOf } = await import('./resolve');
     const item = { id: 'x', name: 'Espada', desc: '', value: 1, bonus: { Combate: 1 } };
     const s = newGame('forja');
-    expect(gearOf(item, { ...s.fac, forja: 2 }).Combate).toBe(3);
+    expect(gearOf({ arma: item }, { ...s.fac, forja: 2 }).Combate).toBe(3);
+    // La forja afila el arma; lo de las otras ranuras suma tal cual (más sus mejoras de taller).
+    expect(gearOf({ cuerpo: { ...item, plus: 1 } }, { ...s.fac, forja: 2 }).Combate).toBe(2);
   });
 
   it('el establo acorta los viajes largos', async () => {

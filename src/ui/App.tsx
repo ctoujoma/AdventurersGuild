@@ -1408,8 +1408,8 @@ export function App() {
                 audio.play('select');
                 if (h && it) toast(`${h.name} se equipa: ${it.name}.`);
               }}
-              onUnequip={(heroId) => {
-                dispatch({ type: 'unequip', heroId });
+              onUnequip={(heroId, slot) => {
+                dispatch({ type: 'unequip', heroId, slot });
                 audio.play('deselect');
               }}
               onSell={sell}
@@ -1565,8 +1565,8 @@ export function App() {
               dispatch({ type: 'equip', heroId: cardHero.id, itemId });
               audio.play('select');
             }}
-            onUnequip={() => {
-              dispatch({ type: 'unequip', heroId: cardHero.id });
+            onUnequip={(slot) => {
+              dispatch({ type: 'unequip', heroId: cardHero.id, slot });
               audio.play('deselect');
             }}
             onLocate={() => {
