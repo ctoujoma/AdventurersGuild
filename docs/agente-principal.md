@@ -152,4 +152,7 @@ talleres, nombres y marcos). El arte ya está listo para cinco:
 - **Decidido con el usuario (filete del tinte)**: el equipo va **delante** de la prenda (coraza y
   escudo tapan el tabardo, también en el retrato; no cambiar el orden). Lo único que falta: un
   **filete del color del tinte** en el peto y en el escudo, en el retrato y en la figura, para
-  que el tinte se vea aunque lleve coraza. La capa común ya toma el tinte. Encargo pendiente.
+  que el tinte se vea aunque lleve coraza. La capa común ya toma el tinte. **Hecho**
+  (`dyeLine` en `art/heroes/gear.ts`): filete de `TINTS[dye].ramp[2]` dentro del borde del peto y
+  del canto del escudo, en retrato y figura; sin tinte no cambia nada y los legendarios propios
+  (`unique`) no lo llevan. Coraza y escudo comparten ranura (cuerpo): nunca van juntos.
