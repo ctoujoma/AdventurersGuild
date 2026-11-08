@@ -179,6 +179,21 @@ cámara y el almacén tienen la suya. El resto no dice qué gana el jugador al p
 `FACILITY_INFO`), que la ficha enseñe «Ahora: …» y «Mejora: …» siempre igual, y un test que
 falle si una sala con más de un nivel no tiene texto. Así no vuelve a pasar con las salas nuevas.
 
+### El salón (nota del usuario)
+
+- **El botón «Mejorar» queda al final de la ficha**, debajo de los puestos, los colores y las
+  obras: en el salón hay que bajar mucho y el usuario no lo vio en 200 días. Ponerlo arriba,
+  junto a los puntos del nivel (en todas las salas).
+- **Doble altura (3 × 2) frente a 3 × 1:** la segunda planta da +2 de Atractivo (lo mismo que un
+  nivel) y el doble de puestos (12 en vez de 6), pero las plazas (mesas) salen solo del ancho
+  (`seatsOf`: 10 en los dos). Y cada mejora cuesta el doble, porque el recargo cuenta los 6 huecos
+  (×3) en vez de 3 (×1,5): el nivel 2 cuesta 750 en lugar de 375 y el 4, 2.250 en lugar de 1.125.
+  Con 4 camareros, los puestos de más no sirven. Nada de esto se explica. Propuesta: que la altura
+  no cuente en el recargo del salón, o que la planta de arriba dé plazas (un altillo con mesas), y
+  que la ficha lo diga.
+- **De nivel en nivel, el salón casi no cambia de aspecto** (para el agente de arte,
+  `plan-arte.md`): la descripción de cada nivel promete manteles, laúd, candelabros y barra dorada.
+
 ## 5. Sistemas a medias
 
 - **Materiales raros sin fuente:** hierbas, madera buena y cristal solo «salen en las
@@ -241,7 +256,7 @@ amigos saldrían ya de aquí.
 
 1. «Sugerir» con todas las combinaciones (pequeño, mucho efecto).
 2. Fallos 1.2 a 1.5 (sastrería, experiencia, textos de asaltos, forja).
-3. «Mejora: …» en todas las salas, con su test (punto 4).
+3. «Mejora: …» en todas las salas, con su test, y el botón de mejorar arriba (punto 4).
 4. Aviso de equipo mejor en el arcón y «Lo mejor del arcón» en la hoja del encargo.
 5. Tablón con dificultad a la medida de los héroes y la probabilidad en la tarjeta; decidir qué
    empuja a aventurar (punto 2).
