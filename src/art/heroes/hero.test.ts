@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { validateGrid } from '../sprite';
+import type { GearMark } from './gear';
 import { BASE, BEARD, BODY_W, HAIR, HATS, HELMS, OUTFITS, OVERLAYS, WEAPONS } from './layers';
 import {
   SIDE_ARM,
@@ -155,5 +156,31 @@ describe('equipo visible', () => {
       expect(renderPortrait(look, { gear: { icon, rarity: 1 } }).data).not.toEqual(
         renderPortrait(look).data,
       );
+  });
+});
+
+describe('filete del tinte', () => {
+  it('el tinte se ve sobre coraza y escudo; sin tinte o en legendarios propios no cambia', async () => {
+    const { PixelBuffer } = await import('../pixel');
+    const { gearFront, gearPortraitFront, gearSide } = await import('./gear');
+    const draw = (fn: typeof gearFront, w: number, h: number, gear: GearMark[]) => {
+      const b = new PixelBuffer(w, h);
+      // Cuerpo relleno y un hueco a la izquierda (el escudo de perfil va detrás).
+      for (let y = 0; y < h; y++) for (let x = 5; x < w; x++) b.set(x, y, '#808080');
+      fn(b, gear);
+      return b.data;
+    };
+    const own = { icon: 'coraza', rarity: 2, unique: 'Coraza de escamas de sierpe' } as const;
+    for (const icon of ['coraza', 'escudo'] as const)
+      for (const [fn, w, h] of [
+        [gearPortraitFront, 40, 48],
+        [gearFront, 16, 26],
+        [gearSide, 16, 26],
+      ] as const) {
+        const plain = draw(fn, w, h, [{ icon, rarity: 1 }]);
+        expect(draw(fn, w, h, [{ icon, rarity: 1, dye: 'mar' }])).not.toEqual(plain);
+        expect(draw(fn, w, h, [{ icon, rarity: 1, dye: undefined }])).toEqual(plain);
+        expect(draw(fn, w, h, [{ ...own, dye: 'mar' }])).toEqual(draw(fn, w, h, [own]));
+      }
   });
 });

@@ -86,11 +86,18 @@ await page.evaluate(() => {
       it('Coraza de escamas de sierpe', 'armadura', 'coraza', 2),
       it('Corona del Rey Ahogado', 'amuleto', 'amuleto', 2),
     ],
+    [
+      it('Espada larga', 'arma', 'espada', 0),
+      it('Coraza buena', 'armadura', 'coraza', 1),
+      it('Botas', 'armadura', 'botas', 0),
+    ],
   ];
   const pool = [...s.heroes, ...(s.candidates ?? [])];
-  s.heroes = pool.slice(0, 4).map((h, i) => {
+  s.heroes = pool.slice(0, 5).map((h, i) => {
     const [a, c, x] = SETS[i % SETS.length];
-    return { ...h, status: 'ok', worn: { arma: a, cuerpo: c, complemento: x } };
+    // Con tinte el del escudo y el último, de coraza (comparten ranura): se ve su filete.
+    const dress = i === 1 || i === 4 ? { ...h.dress, dye: 'mar' } : h.dress;
+    return { ...h, dress, status: 'ok', worn: { arma: a, cuerpo: c, complemento: x } };
   });
   s.candidates = [];
   s.inventory = [

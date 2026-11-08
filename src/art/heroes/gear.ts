@@ -101,6 +101,11 @@ function tones(p: GearMark): Tones {
   return base;
 }
 
+/** Filete del tinte (tela o cuero, nunca el metal); los legendarios propios no lo llevan. */
+function dyeLine(p: GearMark): string | undefined {
+  return p.dye && !p.unique ? TINTS[p.dye].ramp[2] : undefined;
+}
+
 function under(b: PixelBuffer, x: number, y: number, c: string) {
   if (!alpha(b.get(x, y))) b.set(x, y, c);
 }
@@ -150,12 +155,14 @@ function crownSprite(b: PixelBuffer) {
 function pieceFront(b: PixelBuffer, p: GearMark) {
   const T = tones(p);
   const { m, a, c } = T;
+  const dy = dyeLine(p);
   switch (p.icon) {
     case 'coraza':
       for (let y = 13; y <= 17; y++)
         for (let x = 5; x <= 10; x++) {
           let col = y === 13 || x === 5 ? m[2]! : m[1]!;
           if (T.u === 'Coraza de escamas de sierpe') col = (x + y) % 2 ? P.forest : P.leaf;
+          else if (dy && (y === 17 || x === 5 || x === 10)) col = dy;
           b.setIfFilled(x, y, col);
         }
       b.setIfFilled(3, 13, T.u ? P.gold : m[2]!);
@@ -214,7 +221,8 @@ function pieceFront(b: PixelBuffer, p: GearMark) {
           if (y >= 20 && (x === 0 || x === 4)) continue;
           if (y === 21 && x !== 2) continue;
           const edge = y === 14 || x === 0 || x === 4 || y >= 20;
-          b.set(x, y, edge ? m[2]! : T.f[x < 2 ? 1 : 0]!);
+          const inner = dy && !edge && (y >= 18 ? x !== 2 || y === 19 : false);
+          b.set(x, y, edge ? m[2]! : inner ? dy : T.f[x < 2 ? 1 : 0]!);
         }
       if (!T.u) {
         b.set(2, 15, T.t[1]!);
@@ -255,10 +263,14 @@ export function gearSide(b: PixelBuffer, g: GearMarks): void {
   for (const p of sorted(g)) {
     const T = tones(p);
     const { m, a, c } = T;
+    const dy = dyeLine(p);
     switch (p.icon) {
       case 'coraza':
         for (let y = 13; y <= 16; y++)
-          for (let x = 5; x <= 10; x++) b.setIfFilled(x, y, y === 13 ? m[2]! : m[1]!);
+          for (let x = 5; x <= 10; x++) {
+            const rim = dy && y > 13 && (y === 16 || x === 5 || x === 10);
+            b.setIfFilled(x, y, rim ? dy : y === 13 ? m[2]! : m[1]!);
+          }
         break;
       case 'capa':
         for (let y = 12; y <= 23; y++) {
@@ -282,7 +294,7 @@ export function gearSide(b: PixelBuffer, g: GearMarks): void {
       case 'escudo':
         for (let y = 12; y <= 19; y++)
           for (let x = 1; x <= 4; x++)
-            under(b, x, y, x === 1 || y === 12 || y === 19 ? m[2]! : T.f[0]!);
+            under(b, x, y, x === 1 || y === 12 || y === 19 ? m[2]! : dy && x === 2 ? dy : T.f[0]!);
         break;
       case 'varita':
         b.setIfFilled(12, 19, a[1]!);
@@ -367,6 +379,7 @@ export function gearPortraitFront(b: PixelBuffer, g: GearMarks): void {
   for (const p of sorted(g)) {
     const T = tones(p);
     const { m, a } = T;
+    const dy = dyeLine(p);
     switch (p.icon) {
       case 'coraza': {
         const scales = T.u === 'Coraza de escamas de sierpe';
@@ -376,6 +389,10 @@ export function gearPortraitFront(b: PixelBuffer, g: GearMarks): void {
             const ins = x >= 14 + Math.max(0, 42 - y) && x <= 25 - Math.max(0, 42 - y);
             if (!ins) continue;
             let col = x === 19 || x === 20 ? m[3]! : x < 19 ? m[2]! : m[1]!;
+            // Filete justo dentro del borde del peto.
+            const lo = 14 + Math.max(0, 42 - y),
+              hi = 25 - Math.max(0, 42 - y);
+            if (dy && (x === lo + 1 || x === hi - 1 || (y === 41 && x > lo && x < hi))) col = dy;
             if (scales)
               col =
                 (x + (Math.floor((y - 40) / 2) % 2 ? 2 : 0)) % 4 === 0
@@ -438,7 +455,9 @@ export function gearPortraitFront(b: PixelBuffer, g: GearMarks): void {
               ? y < top + 1 || x > cx + half - 1
                 ? m[3]!
                 : m[2]!
-              : T.f[y < 41 ? 1 : 0]!;
+              : dy && (dx > round - 3 || y < top + 3)
+                ? dy
+                : T.f[y < 41 ? 1 : 0]!;
             if (!edge && !white && (Math.abs(x - cx) < 2 || Math.abs(y - 42) < 1.5))
               col = T.tier === 0 ? P.steel : T.t[1]!;
             if (white && !edge && Math.abs(dx - (round - 4)) < 0.6) col = P.cyan;
