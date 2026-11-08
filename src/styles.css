@@ -7210,13 +7210,21 @@ p.notebook-close {
 }
 .item-chips {
   position: absolute;
-  left: -5px;
-  right: -5px;
+  left: -6px;
+  right: -6px;
   bottom: -6px;
   display: flex;
   gap: 2px;
-  justify-content: center;
   align-items: flex-end;
+}
+/* Las fichas llenan el ancho de la casilla, igual a cada lado; la mayor, algo más ancha. */
+.item-chips .item-chip {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+}
+.item-chips .item-chip.is-main {
+  flex-grow: 1.4;
 }
 .item-chip {
   display: inline-block;
