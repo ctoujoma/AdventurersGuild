@@ -22,6 +22,7 @@ import type { UnlockId } from '../data/unlocks';
 import type { Tutorial } from './tutorial';
 import type { Attrs, Challenge, ClassId, SkillId, Trait } from './party';
 import type { AbilityId, CombatSetup, Order } from './combat';
+import type { Gear } from './gear';
 
 export const SAVE_VERSION = 4;
 
@@ -54,8 +55,8 @@ export interface Hero {
   history: string[];
   /** Petición pendiente: aumento (desanimado) o caché de veterano (al subir de nivel). */
   request?: 'raise' | 'cache';
-  /** Objeto equipado (una ranura). Se pierde si cae o deserta. */
-  item?: Item;
+  /** Lo que lleva puesto, por ranura (ver `core/gear.ts`). Se pierde si cae o deserta. */
+  worn?: Gear;
   /** De guardia: no sale de misión y defiende mejor la taberna. */
   guard?: boolean;
   /** Dónde se le perdió la pista (si está desaparecido). */
@@ -131,6 +132,8 @@ export interface Item {
   icon?: ItemIcon;
   bonus?: Partial<Record<SkillId, number>>;
   perk?: ItemPerk;
+  /** Mejoras de taller (+1 a +3) a su habilidad principal. */
+  plus?: number;
 }
 
 export type TrophyIcon = 'cabeza' | 'colmillos' | 'estandarte' | 'calavera' | 'idolo' | 'mascara';

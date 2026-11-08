@@ -2,7 +2,7 @@ import { craftState, dressingOf } from '../core/crafting';
 import { paintState, painterAt } from '../core/paint';
 import { RECIPES } from '../data/recipes';
 import { generateLook, type HeroLook, type HeroMarks, type OutfitId } from '../art/heroes/look';
-import type { Facilities, GameState, Hero, Item, Worker } from '../core/model';
+import type { Facilities, GameState, Hero, Worker } from '../core/model';
 import { customOf, gearInStock } from '../core/game';
 import { onWay, staffBeds, workerTitle } from '../core/workers';
 import { visitorsOf } from '../core/salon';
@@ -14,6 +14,7 @@ import { gearOf } from '../core/resolve';
 import type { Member } from '../core/party';
 import type { SceneHero, SceneModel } from '../world/scene';
 import { taskLabel } from './crew';
+import { gearList, shownGear, type Gear } from '../core/gear';
 
 /** Puentes entre el modelo del juego y el arte o la escena. */
 
@@ -61,18 +62,21 @@ export const marksOf = (h: Hero): HeroMarks => ({
   injured: h.status === 'herido',
   eyepatch: h.traits.some((t) => t.id === 'tuerto'),
   scar: h.traits.some((t) => t.id === 'cortado'),
-  gear: h.item?.icon ? { icon: h.item.icon, rarity: h.item.rarity ?? 0 } : undefined,
+  gear: shownGear(h),
 });
 
-export const memberOf = (h: Hero, fac?: Facilities): Member & { item?: Item } => ({
+export const memberOf = (
+  h: Pick<Hero, 'cls' | 'lvl' | 'attrs' | 'traits' | 'morale' | 'worn'>,
+  fac?: Facilities,
+): Member & { worn?: Gear } => ({
   cls: h.cls,
   lvl: h.lvl,
   attrs: h.attrs,
   traits: h.traits,
   morale: h.morale,
-  item: h.item,
-  gear: gearOf(h.item, fac),
-  perk: h.item?.perk,
+  worn: h.worn,
+  gear: gearOf(h.worn, fac),
+  perks: gearList(h).flatMap((i) => (i.perk ? [i.perk] : [])),
 });
 
 /** Los visitantes de hoy en el orden en que llegan (mezclados, siempre igual para el mismo día). */

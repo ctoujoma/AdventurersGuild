@@ -2,6 +2,7 @@ import { START_BEER, START_FOOD } from '../core/balance';
 import { emptyStats } from '../core/feats';
 import { SAVE_VERSION, type GameState } from '../core/model';
 import { facOf } from '../core/rooms';
+import { migrateGear } from '../core/gear';
 
 /**
  * Dónde se guarda la partida. En la web, localStorage; en Android se cambiará por
@@ -55,6 +56,7 @@ export function parseSave(raw: string | null): GameState | null {
     s.feats ??= {};
     s.food ??= START_FOOD;
     s.beer ??= START_BEER;
+    for (const h of s.heroes) migrateGear(h);
     return s;
   } catch {
     return null;
