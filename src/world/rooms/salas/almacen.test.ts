@@ -5,6 +5,9 @@ import { MATERIAL_LIST } from '../../../core/materials';
 import { NO_LOOK, type SalonLook } from '../salon';
 import { cornerPile, pile, unitsOf } from './almacen';
 import { ART } from '.';
+import { worldW } from './kit';
+import { CELL_W, WALL } from '../layout';
+import type { Room } from '../../../core/model';
 
 const filled = (b: { data: Uint32Array }) => b.data.filter((c) => c >>> 24).length;
 const look = (fill: SalonLook['mats']['fill'], store: boolean): SalonLook => ({
@@ -39,6 +42,17 @@ describe('el almacén', () => {
       expect(unitsOf(m, 0)).toBe(0);
       expect(unitsOf(m, 0.01)).toBe(1);
       expect(filled(pile(m, unitsOf(m, 1)))).toBeGreaterThan(filled(pile(m, unitsOf(m, 0.3))));
+    }
+  });
+
+  it('en una sala de un hueco con los seis, nada se sale de ella', () => {
+    const w = CELL_W - 2 * WALL;
+    const all = Object.fromEntries(MATERIAL_LIST.map((m) => [m, 1]));
+    const things = ART.almacen!.things!({ w: 1, level: 2 } as Room, w, look(all, true));
+    for (const t of things) {
+      const half = worldW(t.img, t.z) / 2;
+      expect(t.x - half).toBeGreaterThanOrEqual(0);
+      expect(t.x + half).toBeLessThanOrEqual(w);
     }
   });
 
