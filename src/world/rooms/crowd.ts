@@ -2371,6 +2371,8 @@ export class Crowd {
     if (!j || !ROUTINE.has(j.room.type) || !this.L) return false;
     const craft = this.crafts.get(j.room.id);
     if (WORKSHOP.has(j.room.type) && !craft) {
+      // Sin encargo también va a su taller (a su puesto) y allí espera.
+      if (!this.inRoom(a, j.room.id)) return false;
       a.task = null;
       a.wait = 4 + this.rnd() * 4;
       return true;
