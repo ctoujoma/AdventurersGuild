@@ -35,6 +35,8 @@ export interface Settings {
    * «Anochecer». Lo normal es que el tiempo corra solo, también cerrado (ver `core/away.ts`).
    */
   classicTime: boolean;
+  /** Mandar la partida a los desarrolladores (ver `platform/telemetry.ts`). */
+  share: boolean;
   /** Modo prueba: atajos en Ajustes (se abre tocando cinco veces el título). */
   tester: boolean;
 }
@@ -57,6 +59,7 @@ export const DEFAULT_SETTINGS: Settings = {
   moodLightV: MOOD_LIGHT_V,
   weather: 'normal',
   classicTime: false,
+  share: true,
   tester: false,
 };
 
@@ -81,6 +84,7 @@ export function parseSettings(raw: unknown): Settings {
     moodLightV: MOOD_LIGHT_V,
     weather: r.weather === 'clear' ? 'clear' : 'normal',
     classicTime: r.classicTime === true,
+    share: r.share !== false,
     tester: r.tester === true,
   };
 }

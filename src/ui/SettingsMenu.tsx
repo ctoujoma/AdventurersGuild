@@ -141,6 +141,17 @@ export function SettingsMenu({
               <span>Vibración en golpes, monedas y asaltos</span>
             </label>
           )}
+          <label class="set-check">
+            <input
+              type="checkbox"
+              checked={s.share}
+              onChange={(e) => set({ share: e.currentTarget.checked })}
+            />
+            <span>
+              Enviar mi partida a los desarrolladores (día, oro, tiempo jugado), para mejorar el
+              juego
+            </span>
+          </label>
           <h4 class="qs-sub">Imagen</h4>
           <label class="set-check">
             <input
