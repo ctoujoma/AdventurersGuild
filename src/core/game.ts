@@ -41,6 +41,9 @@ import {
   TRAINING_XP,
   VET_CAP,
   VET_SNUB_CAP,
+  CACHE_GRUDGE,
+  OVER_CAP_DROP,
+  REFUSE_GRUDGE,
   VET_SNUB_REST,
   VET_REST,
   WORK_END,
@@ -674,10 +677,19 @@ function reduceAction(state: GameState, action: Action): GameState {
       delete x.request;
       if (action.yes) {
         x.salary += amount;
+        // Pagarle lo que pide le quita el rencor de antes.
+        delete x.grudge;
         x.morale = Math.min(100, x.morale + RAISE_MORALE);
         x.history.push(`Día ${s.day} · ${cache ? 'Le pagaste su caché' : 'Le subiste el sueldo'}`);
       } else {
         x.morale = Math.max(0, x.morale + (cache ? CACHE_REFUSE_MORALE : REFUSE_MORALE));
+        // Y se lo guarda: durante unos días no se anima del todo (se suma a lo que ya tuviera).
+        const g = cache ? CACHE_GRUDGE : REFUSE_GRUDGE;
+        const old = x.grudge && x.grudge.until > s.day ? x.grudge : null;
+        x.grudge = {
+          cap: Math.min(40, (old?.cap ?? 0) + g.cap),
+          until: Math.max(old?.until ?? 0, s.day + g.days),
+        };
         x.history.push(`Día ${s.day} · ${cache ? 'Le negaste el caché' : 'Le negaste el aumento'}`);
       }
       return s;
@@ -1425,11 +1437,13 @@ export function endDay(state: GameState, away = false): GameState {
         k: 'warn',
       });
     }
+    if (h.grudge && h.grudge.until <= s.day) delete h.grudge;
     const cap =
       restCap(s.fac.tab) +
       (has(h, 'bebedor') && s.fac.tab >= 2 ? 10 : 0) +
       VET_CAP[vet]! -
-      (snub ? VET_SNUB_CAP : 0);
+      (snub ? VET_SNUB_CAP : 0) -
+      (h.grudge?.cap ?? 0);
     const gain =
       restMorale(s.fac.tab) +
       chapelRest(s.fac.cap) +
@@ -1438,8 +1452,8 @@ export function endDay(state: GameState, away = false): GameState {
       (DORM_REST[s.fac.dorm] ?? 0) -
       (snub ? VET_SNUB_REST : 0);
     if (h.morale < cap) h.morale = Math.min(cap, h.morale + gain);
-    // Sin su cuarto, aunque ya estuviera animado, se le va bajando hasta el tope.
-    else if (snub) h.morale = Math.max(cap, h.morale - VET_SNUB_REST);
+    // Sin su cuarto o con rencor, aunque ya estuviera animado, se le va bajando hasta el tope.
+    else if (snub || h.grudge) h.morale = Math.max(cap, h.morale - OVER_CAP_DROP);
     if (h.morale < MORALE_QUIT && !has(h, 'leal') && vet < 2 && rng.chance(DESERT_CHANCE)) {
       deserters.push(h);
       continue;

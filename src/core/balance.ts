@@ -359,6 +359,11 @@ export const SALARY_EVERY = 7;
 export const UNPAID_LIMIT = 2;
 export const UNPAID_MORALE = -20;
 export const REFUSE_MORALE = -10;
+/** Rencor al negar un aumento o el caché: tope de moral de menos y días que dura. */
+export const REFUSE_GRUDGE = { cap: 15, days: 7 } as const;
+export const CACHE_GRUDGE = { cap: 20, days: 14 } as const;
+/** Lo que baja cada noche la moral de quien está por encima de su tope (rencor o sin su cuarto). */
+export const OVER_CAP_DROP = 2;
 
 // ---------- Asaltos ----------
 /** Desde qué día pueden llegar asaltos y a partir de qué notoriedad empiezan a fijarse. */
