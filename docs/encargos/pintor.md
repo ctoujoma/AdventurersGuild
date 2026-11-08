@@ -67,7 +67,10 @@ Ronda 2 (pedido del usuario): **pintar no empieza hasta que el pintor llega** a 
 `core/paint.ts`, con el juego abierto se espera a `arrived` sin plazo (si no llega en el día,
 sigue esperando y por la mañana vuelve a ir); `PAINT_WALK` solo vale con el juego cerrado
 (`endDay(s, true)`, `nightPaints(s, unseen)`), donde no hay escena que lo diga. `walking` es ya
-«aún no ha llegado». Ojo: la sastrería (`DRESS_WALK`) sigue con el plazo de antes.
+«aún no ha llegado». La sastrería, igual (pedido del usuario): no se cose hasta que el héroe
+llega; `DRESS_WALK` solo con el juego cerrado (`stepCrafts(…, unseen)`, `nightCrafts`).
+La cenefa va bajo las ventanas, con una raya en el límite de la pared con el techo (elegido por
+el usuario).
 
 ## Hecho en la interfaz (8 de noviembre)
 

@@ -1157,7 +1157,7 @@ export function endDay(state: GameState, away = false): GameState {
   const events: DawnEvent[] = [...pending];
   s.incidentNews = undefined;
   // Los talleres cuentan lo que quedaba del día (con la gente de hoy, antes de que cambie).
-  events.push(...nightCrafts(s, rng));
+  events.push(...nightCrafts(s, rng, away));
   events.push(...nightPaints(s, away));
   // El rumor que no se ha tocado se pierde con la noche.
   s.rumor = undefined;

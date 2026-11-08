@@ -247,13 +247,10 @@ const CLOTH: Partial<Record<string, [string, string, string]>> = {
 };
 
 /**
- * Dónde va lo pintado del color de la sala (con tema), para que se vea en la pared de qué color
- * la ha pintado el pintor: `arriba`, una cenefa bajo la viga de cada planta y una raya encima del
- * zócalo; `ventana`, una cenefa más ancha bajo las ventanas, encima del zócalo (prueba de las dos,
- * a elegir con el usuario).
+ * Lo pintado del color de la sala (con tema), para que se vea en la pared de qué color la ha
+ * pintado el pintor: una cenefa bajo las ventanas, encima del zócalo, y una raya en el límite de
+ * la pared con el techo (elegido por el usuario entre esta y otra arriba, bajo la viga).
  */
-export type BandAt = 'arriba' | 'ventana';
-export const BAND: { at: BandAt } = { at: 'arriba' };
 
 /**
  * Los tonos de lo pintado de una sala, si lo lleva: con tema y sin pared entelada (las del 3,
@@ -286,7 +283,7 @@ export function tintBand(b: PixelBuffer, [d, m, l, h]: Ramp, y: number, k: numbe
   }
 }
 
-/** La raya pintada encima del zócalo (tres filas desde `y`). */
+/** Una raya pintada (tres filas desde `y`): la del límite con el techo. */
 export function tintRail(b: PixelBuffer, [d, m, l]: Ramp, y: number) {
   b.hline(0, y, b.w, l!);
   b.hline(0, y + 1, b.w, m!);

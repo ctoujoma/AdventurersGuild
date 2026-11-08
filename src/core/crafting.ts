@@ -296,7 +296,8 @@ export function craftState(s: GameState, c: Craft): CraftState {
     frac: c.need > 0 ? done / c.need : 1,
     // Horas de jornada (de noche no se trabaja).
     hoursLeft: rate > 0 ? ((c.need - done) / rate) * 24 * (WORK_END - WORK_START) : null,
-    walking: !!c.wait && c.at > partOf(s) + 1e-9,
+    // Hasta que la escena dice que ha llegado (`arrive`).
+    walking: !!c.wait,
   };
 }
 
@@ -372,7 +373,13 @@ function finish(s: GameState, c: Craft, rng: Rng, news: DawnEvent[]): void {
  * es una copia (o se copia aquí lo que se toca). Devuelve las noticias. Con `shared`, usa esa
  * tirada (la de la noche) en vez de la del estado.
  */
-export function stepCrafts(s: GameState, part: number, shared?: Rng): DawnEvent[] {
+export function stepCrafts(
+  s: GameState,
+  part: number,
+  shared?: Rng,
+  /** El juego cerrado: nadie puede decir que ha llegado (ver abajo). */
+  unseen = false,
+): DawnEvent[] {
   if (!s.crafts?.length) return [];
   const news: DawnEvent[] = [];
   const rng = shared ?? new Rng(s.rng);
@@ -386,9 +393,10 @@ export function stepCrafts(s: GameState, part: number, shared?: Rng): DawnEvent[
       logEnd(s, c, 'cancelado');
       continue;
     }
-    // El héroe aún va de camino: se le sigue esperando. Si nadie dice que ha llegado, se da por llegado a su hora (si cae dentro de la jornada;
-    // si no, le esperan a la mañana siguiente).
-    if (c.wait && part >= c.at && c.at < WORK_END) delete c.wait;
+    // El héroe aún va de camino: no se cose hasta que llega (lo dice la escena, `arrive`). Solo con
+    // el juego cerrado, sin escena, se le da por llegado a su hora (si cae en la jornada; si no, a
+    // la mañana siguiente).
+    if (c.wait && unseen && part >= c.at && c.at < WORK_END) delete c.wait;
     if (c.wait) {
       keep.push(c);
       continue;
@@ -405,11 +413,14 @@ export function stepCrafts(s: GameState, part: number, shared?: Rng): DawnEvent[
   return news;
 }
 
-/** Al pasar la noche: lo que quedaba del día y, para el día nuevo, se empieza a contar de cero. */
-export function nightCrafts(s: GameState, rng: Rng): DawnEvent[] {
-  const news = stepCrafts(s, 1, rng);
-  // Quien aún iba de camino a la sastrería, va por la mañana (con el mismo margen).
-  // Quien aún no había llegado (se le mandó a última hora), va por la mañana a primera hora.
+/**
+ * Al pasar la noche: lo que quedaba del día y, para el día nuevo, se empieza a contar de cero.
+ * Con `unseen` (el juego cerrado), ver `stepCrafts`.
+ */
+export function nightCrafts(s: GameState, rng: Rng, unseen = false): DawnEvent[] {
+  const news = stepCrafts(s, 1, rng, unseen);
+  // Quien aún no había llegado a la sastrería sigue esperado: por la mañana vuelve a ir (y, con
+  // el juego cerrado, llega a sus horas de camino).
   for (const c of s.crafts ?? []) c.at = c.wait ? WORK_START + DRESS_WALK / 24 : 0;
   return news;
 }

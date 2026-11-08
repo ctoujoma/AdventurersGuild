@@ -37,7 +37,6 @@ import {
   WOOD_FINE,
   floorFinish,
   sideFinish,
-  BAND,
   bandRamp,
   tintBand,
   tintRail,
@@ -143,19 +142,16 @@ export function backWall(room: Room, w: number, h: number, look: SalonLook = NO_
   beam(b, 0, 0, bw, 3, WOOD_DARK);
   // Con tema de color, la cenefa pintada de su color bajo la viga de arriba (en el salón, encima
   // de lo suyo, más abajo: si no, la tapan las guirnaldas).
-  // Con tema de color, lo pintado de su color (ver `BAND`): en el salón, al final, encima de
-  // lo suyo (si no, lo tapan las guirnaldas).
+  // Con tema de color, lo pintado de su color (ver `tintBand`): en el salón, al final, encima de
+  // lo suyo (si no, lo tapan sus cosas).
   const paint = !bare(room) && !ruin ? bandRamp(room, theme, fine) : null;
   const painted = () => {
     if (!paint) return;
     const step = Math.round(PITCH * BACK);
-    for (let j = 0; j < room.h; j++) {
-      const top = j ? Math.round((j * PITCH - SLAB) * BACK) + 5 : 4;
-      const bottom = bh - (room.h - 1 - j) * step;
-      if (BAND.at === 'arriba') tintBand(b, paint, top, 8);
-      else tintBand(b, paint, bottom - wain - 14, 10);
-    }
-    if (BAND.at === 'arriba') tintRail(b, paint, bh - wain - 6);
+    // La cenefa bajo las ventanas de cada planta y la raya bajo la viga del techo.
+    for (let j = 0; j < room.h; j++)
+      tintBand(b, paint, bh - (room.h - 1 - j) * step - wain - 14, 10);
+    tintRail(b, paint, 3);
   };
   if (room.type !== 'salon') painted();
   // Ventanas planta a planta (de arriba abajo), en las mismas columnas en todas. En el salón
@@ -326,14 +322,15 @@ export function sideTex(
     room && !bare(room) && !ruined(room)
       ? bandRamp(room, theme, !!ART[room.type] && room.level >= 2)
       : null;
-  if (paint)
+  if (paint) {
+    let top = h;
     for (let f = 0; f * PITCH < h; f++) {
       const yb = h - f * PITCH;
-      if (BAND.at === 'arriba') {
-        tintBand(b, paint, yb - ROOM_H + 5, 10);
-        if (f === 0) tintRail(b, paint, yb - 24);
-      } else tintBand(b, paint, yb - 36, 12);
+      tintBand(b, paint, yb - 36, 12);
+      top = yb - ROOM_H;
     }
+    tintRail(b, paint, Math.max(0, top));
+  }
   // El marco de cada puerta a la sala de al lado (DOOR_U0…DOOR_U1 van a media resolución); el
   // hueco se abre después de la sombra.
   const u0 = 2 * DOOR_U0;

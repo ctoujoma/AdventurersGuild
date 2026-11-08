@@ -278,7 +278,9 @@ npm run build`.
     En la sala, casi siempre subido a la escalera y corriéndola cada par de franjas; una de cada
     cuatro, de rodillas por el zócalo. La cenefa también en los muros de los lados (el de la
     izquierda se pinta al empezar; el de la derecha, con la última franja). Prueba A/B de dónde
-    va (`BAND.at`: `arriba` o `ventana`) en `capturas/pintor/cenefa-AB.png`, a elegir;
+    va (`capturas/pintor/cenefa-AB.png`): el usuario eligió **bajo las ventanas**, con una raya
+    en el límite de la pared con el techo (`capturas/pintor/cenefa.png`). Y la sastrería, igual:
+    no se cose hasta que el héroe llega (`DRESS_WALK` solo con el juego cerrado);
   - iconos: en Obras, la sala del pintor con una brocha (`brocha` en `ui/icons.tsx`; `pintado`
     es el del rótulo «Pintado» de la fachada y no se toca) y el banderín con la brocha mojada.
   - [ ] Visto bueno del usuario. Capturas en `capturas/pintor/` (`tools/shots/pintor.mjs`).

@@ -504,8 +504,8 @@ export const DRESS_GOLD = 15;
 export const DRESS_HOURS = 4;
 export const DRESS_MORALE = 8;
 /**
- * Vestir empieza cuando el héroe llega a la sastrería (lo dice la escena); si nadie lo dice (sin
- * escena o con la app cerrada), a las tantas horas de juego como mucho.
+ * Vestir empieza cuando el héroe llega a la sastrería (lo dice la escena); solo con el juego
+ * cerrado (sin escena que lo diga) se le da por llegado a las tantas horas de juego.
  */
 export const DRESS_WALK = 2;
 /**
