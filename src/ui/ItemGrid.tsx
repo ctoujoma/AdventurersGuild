@@ -6,7 +6,6 @@
  */
 import { createPortal } from 'preact/compat';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import { itemIcon } from '../art/items';
 import { temperCost } from '../core/crafting';
 import { SLOT_NAMES, slotOf } from '../core/gear';
 import type { Item } from '../core/model';
@@ -14,7 +13,7 @@ import type { SkillId } from '../core/party';
 import { RARITY_NAMES, PERK_INFO, itemName } from '../data/items';
 import { ROOMS } from '../data/rooms';
 import { haptic } from '../platform/haptics';
-import { BufferImage } from './BufferImage';
+import { ItemImage } from './ItemImage';
 import { Icon } from './icons';
 
 /** Lo que dura la pulsación larga (la misma que la ayuda de `HoldHelp`). */
@@ -125,7 +124,7 @@ function ItemTile({
           <Icon name="star" size={10} />
         </span>
       )}
-      <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity)} scale={3} />
+      <ItemImage icon={it.icon ?? 'espada'} rarity={it.rarity} name={it.name} scale={3} />
       <span class="item-chips">
         {chips.map((s, i) => (
           <span
@@ -156,7 +155,7 @@ function ItemTip({ e, at }: { e: GridEntry; at: DOMRect }) {
     <div class={`item-tip rarity-${it.rarity ?? 0}`} role="tooltip" style={style}>
       <div class="item-tip-head">
         <span class={`item-tip-icon rarity-${it.rarity ?? 0}`}>
-          <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity)} scale={3} />
+          <ItemImage icon={it.icon ?? 'espada'} rarity={it.rarity} name={it.name} scale={2} />
         </span>
         <span>
           <b>

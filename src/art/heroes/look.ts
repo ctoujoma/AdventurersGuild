@@ -1,5 +1,5 @@
 import type { GarmentId, TintId } from '../../data/custom';
-import type { GearMark } from './gear';
+import type { GearMarks } from './gear';
 import { Rng } from '../../core/rng';
 import { EYES, HAIR, SKIN } from '../palette';
 
@@ -55,7 +55,7 @@ export interface HeroMarks {
   eyepatch?: boolean;
   scar?: boolean;
   /** Equipo que lleva puesto (se ve en el sprite y en el retrato). */
-  gear?: GearMark;
+  gear?: GearMarks;
 }
 
 const HEADGEAR: Record<OutfitId, [HeadgearId, number] | null> = {

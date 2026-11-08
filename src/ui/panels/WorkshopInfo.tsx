@@ -4,7 +4,7 @@
  * para sacar su receta y, en la sastrería, vestir a un héroe (tinte y prenda).
  */
 import { useState } from 'preact/hooks';
-import { itemIcon } from '../../art/items';
+import { ItemImage } from '../ItemImage';
 import { DRESS_GOLD, DRESS_HOURS } from '../../core/balance';
 import {
   canCraft,
@@ -31,7 +31,6 @@ import { RECIPES } from '../../data/recipes';
 import { GARMENTS, TINTS, TINT_IDS, type Dress, type GarmentId } from '../../data/custom';
 import { TRADES, type Trade } from '../../data/workers';
 import { hasUnlock, unlockSource } from '../../core/goals';
-import { BufferImage } from '../BufferImage';
 import { Icon } from '../icons';
 import { Portrait } from '../Portrait';
 import { lookOf, marksOf } from '../view';
@@ -93,8 +92,11 @@ export function WorkshopInfo({
             {who ? (
               <Portrait look={lookOf(who)} marks={marksOf(who)} scale={1} alive={false} />
             ) : (
-              <BufferImage
-                buf={itemIcon(c.item?.icon ?? rc!.icon, c.item?.rarity, c.item?.plus)}
+              <ItemImage
+                icon={c.item?.icon ?? rc!.icon}
+                rarity={c.item?.rarity}
+                plus={c.item?.plus}
+                name={c.item?.name}
                 scale={2}
               />
             )}
@@ -129,7 +131,7 @@ export function WorkshopInfo({
           if (!known.includes(id))
             return (
               <article key={id} class="row forge-locked">
-                <BufferImage buf={itemIcon(rc.icon, 0)} scale={2} />
+                <ItemImage icon={rc.icon} scale={2} />
                 <span class="row-info">
                   <b>{rc.name}</b>
                   <span class="row-sub">Se aprende desmontando {rc.one} o como premio.</span>
@@ -140,7 +142,7 @@ export function WorkshopInfo({
           const why = canCraft(game, room.id, id);
           return (
             <article key={id} class="row">
-              <BufferImage buf={itemIcon(rc.icon, 0)} scale={2} />
+              <ItemImage icon={rc.icon} scale={2} />
               <span class="row-info">
                 <b>{rc.common.name}</b>
                 <span class="row-sub">

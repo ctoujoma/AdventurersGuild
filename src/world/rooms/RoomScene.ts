@@ -62,7 +62,8 @@ import type {
   ScenePaint,
   SoundName,
 } from '../scene';
-import { itemIcon } from '../../art/items';
+import { rackIcon } from '../../art/items';
+import { hasLegend } from '../../art/heroes/gear';
 import { LANTERN, dummy, furnish, gearRoom, type Glow, type RGB } from './furniture';
 import { chalkPlan } from './ruina';
 import { towerLampY, watchtower } from './salas/torre';
@@ -854,6 +855,7 @@ export class RoomScene {
     ]);
     if (model.visitors) this.crowd.setVisitors(model.visitors);
     this.crowd.setTints(this.tintsNow(model));
+    this.shiners = model.heroes.filter((h) => hasLegend(h.marks.gear)).map((h) => h.id);
     if (key === this.key) {
       this.crowd.setPeople(model.heroes);
       this.showIncidents();
@@ -1577,6 +1579,23 @@ export class RoomScene {
     this.cb.onSound?.('coin', 0.3);
   }
 
+  /** Quién lleva algún legendario: de vez en cuando le salta un destello. */
+  private shiners: string[] = [];
+  private shineIn = 2;
+  private shineLegends(dt: number): void {
+    this.shineIn -= dt;
+    if (this.shineIn > 0 || !this.shiners.length) return;
+    this.shineIn = 1.4 + Math.random() * 1.6;
+    for (const id of this.shiners) {
+      const w = this.crowd.where(id);
+      if (!w || w.down || Math.random() < 0.4) continue;
+      const x = w.x + (Math.random() - 0.5) * 12;
+      this.particles.spawn('glint', x, w.y - 6 - Math.random() * 18, {
+        max: 0.4 + Math.random() * 0.4,
+      });
+    }
+  }
+
   /** Un punto de la pared del fondo (en el mundo) en la vista, para las partículas. */
   private onWall(x: number, y: number): { x: number; y: number } {
     const c = this.camera;
@@ -1700,7 +1719,7 @@ export class RoomScene {
         const k = (this.t - f.at) / (f.until - f.at);
         const x = Math.round(f.x - camera.px) - 6;
         const y = Math.round(f.y - camera.py - 14 - k * 10);
-        this.paintFading(itemIcon(f.icon, f.rarity as 0 | 1), x, y, 1 - Math.max(0, k - 0.6) / 0.4);
+        this.paintFading(rackIcon(f.icon, f.rarity as 0 | 1), x, y, 1 - Math.max(0, k - 0.6) / 0.4);
         continue;
       }
       if ([...this.crafted.values()].some((c) => c.room === f.room && !c.undo)) continue;
@@ -4250,6 +4269,7 @@ export class RoomScene {
     this.camera.update(dt);
     this.puffs(w);
     this.dripPaint(w);
+    this.shineLegends(w);
     // Las gotas de la gotera (y las de pintura) salpican al caer.
     this.particles.update(w, this.t, (p) => {
       if (p.kind !== 'drip' && p.kind !== 'paint') return;

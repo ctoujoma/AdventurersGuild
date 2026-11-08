@@ -1,7 +1,7 @@
 import { HAIR, P, SKIN, darker } from '../palette';
 import { PixelBuffer, alpha, toHex } from '../pixel';
 import type { Grid } from '../sprite';
-import { gearFront, gearSide } from './gear';
+import { gearFront, gearSide, withDye, wearsCrown } from './gear';
 import { dyeOf, garmentFront, garmentSide } from './sastre';
 import {
   ARMS_UP,
@@ -298,8 +298,7 @@ function slots(look: HeroLook): Slots {
 }
 
 /** El equipo, con el tinte del héroe (la capa y los filetes lo toman). */
-const gearOf = (look: HeroLook, marks: HeroMarks) =>
-  marks.gear ? { ...marks.gear, dye: look.dye } : undefined;
+const gearOf = (look: HeroLook, marks: HeroMarks) => withDye(marks.gear, look.dye);
 
 function stamp(
   buf: PixelBuffer,
@@ -329,6 +328,8 @@ const withBlink = (grid: Grid, eyeRows: [number, number]): Grid =>
   grid.map((row, y) => (y === eyeRows[0] ? row.replace(/e/g, 'x') : row));
 
 function headgearOf(look: HeroLook, marks: HeroMarks) {
+  // La corona va en lugar del sombrero.
+  if (wearsCrown(marks.gear)) return null;
   return marks.injured && look.headgear === 'casco' ? null : look.headgear;
 }
 
