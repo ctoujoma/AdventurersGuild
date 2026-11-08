@@ -99,3 +99,15 @@ Para el agente principal (núcleo, tiempo, tutoriales, combate, talleres, amigos
   (`cappedTrainees`), ropa con candados (`dressStatus`), el taller del pintor (`core/paint.ts`) y la
   auditoría del tiempo (`propuesta-tiempo.md`, pendiente de decidir). Lo que queda de interfaz y
   arte, al final de cada encargo en `encargos/`.
+
+## Dónde lo dejamos (8 de noviembre, antes de compactar)
+
+- Hecho: equipo con sentido, capa 1 (#169: tres ranuras, materiales básicos, almacén, recetas con
+  materiales, mejorar hasta +3). El almacén va en la pestaña Gremio; nivel 2 libre con aviso, nivel 3
+  con plata (#172).
+- Agentes trabajando: interfaz y arte del equipo (`encargos/interfaz-equipo-materiales.md`,
+  `encargos/arte-materiales.md`); siguen pendientes los del pintor y la ficha.
+- **En pausa, para retomar:** las expediciones. Propuesta en `propuesta-expediciones.md`, con cinco
+  preguntas al usuario sin contestar (rumbos, decisiones por el camino, si caen todos, tamaño del
+  grupo, duración de la vuelta). Primero se diseña su interfaz y su arte; luego el núcleo.
+- Después: sucesos nocturnos (`propuesta-noche-expedicion-equipo.md`, parte 1).
