@@ -28,6 +28,8 @@ export interface SceneHero {
   work?: string;
   /** Va corriendo a esta sala (id) a arreglar algo (un incidente); manda sobre `work`. */
   goTo?: string;
+  /** Puede ir al incidente que espera a que se arrastre a alguien: se le resalta la silueta. */
+  callout?: boolean;
   /**
    * El núcleo aún espera que llegue a su sala de trabajo (no cuenta hasta entonces): la escena
    * avisa al verle en ella (`onArrive`), y repite el aviso mientras siga esperándole.

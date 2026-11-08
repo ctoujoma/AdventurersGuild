@@ -1,3 +1,4 @@
+import { INCIDENTS } from '../data/incidents';
 import { craftState, dressingOf } from '../core/crafting';
 import { paintState, painterAt } from '../core/paint';
 import { RECIPES } from '../data/recipes';
@@ -135,6 +136,12 @@ export function sceneModel(s: GameState): SceneModel {
   const heroes: SceneHero[] = [];
   // Quien va a arreglar un incidente corre a esa sala.
   const goTo = (id: string) => s.incidents?.find((i) => i.coming?.who === id)?.room;
+  // Un incidente que espera a que se arrastre a alguien: se resalta a quien puede ir.
+  const asks = (s.incidents ?? [])
+    .filter((i) => !i.coming && !i.duel)
+    .map((i) => INCIDENTS[i.kind].how);
+  const callHeroes = asks.some((h) => h === 'heroe' || h === 'alguien') || undefined;
+  const callStaff = asks.includes('alguien') || undefined;
   for (const h of s.heroes) {
     if (h.status === 'muerto' || h.status === 'desaparecido') continue;
     heroes.push({
@@ -149,6 +156,7 @@ export function sceneModel(s: GameState): SceneModel {
       // Mientras lo visten, está en la sastrería.
       work: dressingOf(s, h.id)?.room ?? h.job,
       goTo: goTo(h.id),
+      callout: (h.status === 'ok' && callHeroes) || undefined,
       due: h.walk !== undefined || undefined,
       train: trainBar(s, h),
     });
@@ -166,6 +174,7 @@ export function sceneModel(s: GameState): SceneModel {
       // El pintor que está pintando una sala, en ella (y no en su taller).
       work: painterAt(s, w.id) ?? w.room,
       goTo: goTo(w.id),
+      callout: callStaff,
       due: w.walk !== undefined || undefined,
       staff: beds-- > 0 ? 'casa' : 'pueblo',
     });

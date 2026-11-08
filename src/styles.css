@@ -5130,6 +5130,30 @@ select.crew-free {
   gap: 6px;
 }
 
+/* La flecha sobre quien puede ir a un incidente (dorada los héroes, más apagada el personal). */
+.incident-helper {
+  position: absolute;
+  z-index: 4;
+  transform: translate(-50%, -100%);
+  margin-top: 8px;
+  line-height: 0;
+  color: var(--sand);
+  pointer-events: none;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.55));
+  animation: helper-bob 0.9s steps(2) infinite;
+}
+.incident-helper.is-hero {
+  color: var(--gold);
+}
+.incident-helper svg {
+  display: block;
+}
+@keyframes helper-bob {
+  50% {
+    translate: 0 -4px;
+  }
+}
+
 @keyframes incident-wobble {
   0%,
   70%,
@@ -7147,6 +7171,17 @@ p.notebook-close {
   border-width: 10px;
   border-image: var(--frame-parchment) 5 fill / 10px / 0 stretch;
   cursor: pointer;
+}
+.doll-slot:not(.is-empty) {
+  border-width: 12px;
+  border-image: var(--frame-slot-0) 6 fill / 12px / 0 stretch;
+}
+.doll-slot.rarity-1:not(.is-empty) {
+  border-image-source: var(--frame-slot-1);
+}
+.doll-slot.rarity-2:not(.is-empty) {
+  border-image-source: var(--frame-slot-2);
+  box-shadow: 0 0 8px rgba(254, 174, 52, 0.5);
 }
 .doll-slot small {
   font-size: var(--t-s);

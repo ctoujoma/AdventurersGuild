@@ -532,6 +532,26 @@ const GLOW_FRAG = /* glsl */ `
   }
 `;
 
+/**
+ * El contorno de una figura (quien puede ir a un incidente): un téxel de color justo por fuera de
+ * lo opaco del fotograma; lo de dentro no se pinta (la figura va delante). Late con `uPulse`.
+ */
+const OUTLINE_FRAG = /* glsl */ `
+  uniform sampler2D map;
+  uniform vec3 uColor;
+  uniform float uPulse;
+  varying vec2 vUv;
+  void main() {
+    vec2 tx = 1.0 / vec2(textureSize(map, 0));
+    if (texture2D(map, vUv).a > 0.5) discard;
+    float n = 0.0;
+    for (int i = -1; i <= 1; i++)
+      for (int j = -1; j <= 1; j++) n = max(n, texture2D(map, vUv + vec2(float(i), float(j)) * tx).a);
+    if (n < 0.5) discard;
+    gl_FragColor = vec4(mix(uColor, vec3(1.0, 0.95, 0.7), uPulse * 0.6), 1.0);
+  }
+`;
+
 const HALO_FRAG = /* glsl */ `
   // El mismo halo que se pinta en las superficies (ver SURFACE_FRAG): cae con el cuadrado de la
   // distancia y va en cinco escalones con el borde mellado en grumos de 2 téxeles.
@@ -801,6 +821,26 @@ export class Look {
         side: DoubleSide,
       }),
     );
+  }
+
+  /**
+   * Contorno de una figura con el mismo atlas y fotograma que ella (`OUTLINE_FRAG`). No se
+   * guarda en la escena: lo suelta quien lo pide.
+   */
+  outline(map: Texture, hex: string): ShaderMaterial {
+    return new ShaderMaterial({
+      uniforms: {
+        map: { value: map },
+        uColor: { value: rgb(hex) },
+        uPulse: { value: 0 },
+        uUvOffset: { value: new Vector2(0, 0) },
+        uSway: { value: 0 },
+        uUvScale: { value: new Vector2(1, 1) },
+      },
+      vertexShader: SURFACE_VERT,
+      fragmentShader: OUTLINE_FRAG,
+      side: DoubleSide,
+    });
   }
 
   /** Color plano que brilla por sí solo. */
