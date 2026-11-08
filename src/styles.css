@@ -2912,6 +2912,16 @@ button.trait[aria-pressed='true'] {
   background: var(--sand);
   box-shadow: 0 0 0 3px var(--ink);
 }
+.title-news {
+  max-width: 340px;
+  margin: 0 auto 10px;
+}
+.title-news ul {
+  margin: 0;
+  padding-left: 18px;
+  max-height: 30vh;
+  overflow-y: auto;
+}
 .title-foot {
   position: absolute;
   bottom: 14px;
