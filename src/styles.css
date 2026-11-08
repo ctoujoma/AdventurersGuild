@@ -7148,6 +7148,17 @@ p.notebook-close {
   border-image: var(--frame-parchment) 5 fill / 10px / 0 stretch;
   cursor: pointer;
 }
+.doll-slot:not(.is-empty) {
+  border-width: 12px;
+  border-image: var(--frame-slot-0) 6 fill / 12px / 0 stretch;
+}
+.doll-slot.rarity-1:not(.is-empty) {
+  border-image-source: var(--frame-slot-1);
+}
+.doll-slot.rarity-2:not(.is-empty) {
+  border-image-source: var(--frame-slot-2);
+  box-shadow: 0 0 8px rgba(254, 174, 52, 0.5);
+}
 .doll-slot small {
   font-size: var(--t-s);
 }
