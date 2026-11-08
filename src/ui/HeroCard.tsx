@@ -252,24 +252,74 @@ function GearDoll({
       </div>
       {sel && (
         <div class="doll-pick">
-          {was ? (
-            <div class={`gear-item tier-${tierOf(was.rarity)}`}>
-              <ItemImage {...itemProps(was)} scale={2} />
-              <span>
-                <b>{itemName(was)}</b>
-                <small>
-                  <em>{RARITY_NAMES[was.rarity ?? 0]}</em> · {itemEffect(was)}
-                </small>
+          {/* Lo que lleva → lo elegido, lo que cambia y los botones juntos (siempre aquí). */}
+          <div class="swap">
+            <div class="swap-row">
+              <span
+                class={`swap-box tier-${tierOf(was?.rarity)} ${was ? '' : 'is-empty'}`}
+                aria-hidden="true"
+              >
+                {was ? (
+                  <ItemImage {...itemProps(was, SILHOUETTE[sel])} scale={2} />
+                ) : (
+                  <BufferImage buf={slotIcon(sel, 16)} scale={2} />
+                )}
               </span>
-              {canGear && (
-                <button class="btn btn-wood" onClick={() => onUnequip(sel)}>
-                  Quitar
-                </button>
+              {picked && (
+                <>
+                  <span class="swap-arrow" aria-hidden="true">
+                    →
+                  </span>
+                  <span class={`swap-box tier-${tierOf(picked.rarity)}`} aria-hidden="true">
+                    <ItemImage {...itemProps(picked)} scale={2} />
+                  </span>
+                </>
               )}
+              <span class={`swap-info tier-${tierOf((picked ?? was)?.rarity)}`}>
+                {picked ? (
+                  <>
+                    <b>{itemName(picked)}</b>
+                    <small>
+                      <em>{RARITY_NAMES[picked.rarity ?? 0]}</em>
+                    </small>
+                    <small class="doll-deltas">{deltaText(deltas(picked))}</small>
+                  </>
+                ) : was ? (
+                  <>
+                    <b>{itemName(was)}</b>
+                    <small>
+                      <em>{RARITY_NAMES[was.rarity ?? 0]}</em> · {itemEffect(was)}
+                    </small>
+                  </>
+                ) : (
+                  <small>{SLOT_NAMES[sel]}: no lleva nada.</small>
+                )}
+                {canGear && !picked && fits.length > 0 && (
+                  <small class="swap-hint">Toca uno del arcón para compararlo.</small>
+                )}
+              </span>
             </div>
-          ) : (
-            <span class="row-sub">{SLOT_NAMES[sel]}: no lleva nada.</span>
-          )}
+            {canGear && (was || picked) && (
+              <div class="swap-btns">
+                {was && (
+                  <button class="btn btn-wood" onClick={() => onUnequip(sel)}>
+                    Quitar
+                  </button>
+                )}
+                {picked && (
+                  <button
+                    class="btn btn-gold"
+                    onClick={() => {
+                      onEquip(picked.id);
+                      setPick(null);
+                    }}
+                  >
+                    {was ? 'Cambiar' : 'Ponérselo'}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
           {canGear && fits.length > 0 && (
             <ItemGrid
               label={`Del arcón: ${SLOT_NAMES[sel].toLowerCase()}`}
@@ -278,20 +328,6 @@ function GearDoll({
               selected={pick}
               onPick={setPick}
             />
-          )}
-          {canGear && picked && (
-            <div class={`gear-item doll-try tier-${tierOf(picked.rarity)}`}>
-              <span>
-                <b>{itemName(picked)}</b>
-                <small class="doll-deltas">{deltaText(deltas(picked))}</small>
-              </span>
-              <button class="btn btn-gold" onClick={() => onEquip(picked.id)}>
-                Ponérselo
-              </button>
-            </div>
-          )}
-          {canGear && fits.length > 0 && !picked && (
-            <span class="row-sub">Toca uno para ver qué cambia.</span>
           )}
           {canGear && !fits.length && (
             <span class="row-sub">
