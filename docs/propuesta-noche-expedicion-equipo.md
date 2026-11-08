@@ -94,3 +94,63 @@ Para cuando cerremos lo de ahora. Antes de hacerlo, una propuesta propia con nú
 1. ¿Tres ranuras (arma, ropa, abalorio) o dos (arma y ropa)?
 2. ¿Materiales sí o no? Dan mucha riqueza, pero son un sistema más que explicar.
 3. ¿Empezamos por la fase A?
+
+## Equipo: lo decidido (8 de noviembre) y la propuesta concreta
+
+El usuario empieza por aquí: **tres ranuras** y **materiales**, con una forma cómoda y simpática de
+verlos en la interfaz.
+
+### Las tres ranuras
+
+Las botas no van con la armadura: la ropa que protege va en el cuerpo, y lo que se lleva además, en
+el complemento.
+
+| Ranura | Qué va | De qué taller sale |
+| --- | --- | --- |
+| **Arma** | espada, hacha, varita (y arco, más adelante) | forja; la varita, alquimia |
+| **Cuerpo** | coraza, escudo, capa | forja (coraza, escudo); sastrería (capa) |
+| **Complemento** | botas, amuleto, ganzúas | sastrería (botas); alquimia (amuleto); forja (ganzúas) |
+
+Así cada taller llena dos ranuras y ninguna depende de uno solo. Los objetos que ya hay se reparten
+por su dibujo (`icon`), sin tocar las partidas guardadas: el objeto que lleve un héroe va a su ranura.
+
+### Materiales
+
+Seis, con dibujo propio y nombre de andar por casa:
+
+| Material | Sale sobre todo de | Lo piden |
+| --- | --- | --- |
+| **Hierro** (un lingote) | limpiar guaridas, desmontar armas | armas, corazas, escudos, ganzúas |
+| **Cuero** (un rollo atado) | cazar | botas, escudos, capas buenas |
+| **Tela** (un fardo) | escoltar, recuperar | capas, ropa de la sastrería |
+| **Hierbas** (un manojo) | explorar, el jardín | amuletos, pociones (más adelante) |
+| **Madera buena** (unos listones) | explorar, el bosque | hachas, varitas, arcos |
+| **Cristal** (una piedra que brilla, raro) | jefes, rumores, encargos de peligro | lo bueno de cada taller |
+
+- Los encargos traen 1–3 del suyo al volver (más con éxito brillante); los jefes y los rumores,
+  cristal. Desmontar un objeto devuelve parte de lo que llevaba.
+- Las recetas de la casa siguen sin pedir nada (siempre se puede hacer algo); las buenas piden 1–3
+  materiales. Mejorar un objeto (+1, hasta +3) pide su material y algo de oro.
+- Se guardan en el gremio, sin límite al principio (más adelante, con la despensa o un almacén).
+
+### Cómo se ve (interfaz y arte)
+
+- **El estante de materiales**, arriba del Arcón: seis tarros o cajas con su dibujo y la cifra. Al
+  tocar uno: qué es, de dónde sale y para qué sirve («Cuero: sale cazando. Lo piden las botas y los
+  escudos»).
+- **Al volver un grupo**, sus materiales saltan del informe al estante (como las monedas a la
+  bolsa), con un «+2 cuero» pequeño.
+- **En las recetas**, debajo del nombre, los materiales que piden con su dibujo: en verde si los
+  hay, en gris con la cifra que falta si no («falta 1 cuero: sale cazando»).
+- **En la ficha del héroe**, un muñeco con las tres ranuras: arma, cuerpo y complemento, con su
+  silueta si están vacías. Tocar una abre el Arcón filtrado por esa ranura. Lo que lleva se ve
+  también en el dibujo del héroe, como ahora.
+- **En el tablón**, cada encargo enseña el material que suele traer (un dibujito junto a la paga).
+
+### Por fases
+
+1. **Núcleo, A:** las tres ranuras (con lo que ya hay), mejorar objetos y los materiales con sus
+   fuentes y recetas. Tests y `npm run sim`.
+2. **Interfaz:** el estante, el muñeco de la ficha, las recetas con materiales y lo del tablón y el
+   informe.
+3. **Arte:** los seis dibujos de los materiales, las siluetas de las ranuras y el muñeco.
