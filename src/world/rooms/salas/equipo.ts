@@ -41,7 +41,7 @@ export function gearRack(items: readonly GearView[], slots: number): PixelBuffer
       // Dos clavijas por hueco (se ven cuando está vacío).
       b.set(x + 3, y + 3, W[5]!);
       b.set(x + 9, y + 3, W[5]!);
-      if (it) b.blit(itemIcon(it.icon, it.rarity), x + 1, y);
+      if (it) b.blit(itemIcon(it.icon, it.rarity, it.plus), x + 1, y);
     }
   });
 }

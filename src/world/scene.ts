@@ -1,3 +1,4 @@
+import type { Material } from '../core/materials';
 import type { HeroLook, HeroMarks } from '../art/heroes/look';
 import type { Building, Duel, IncidentEnd, ItemIcon, Rarity, TrophyIcon } from '../core/model';
 import type { FacadeLook, GardenLook, TintId } from '../data/custom';
@@ -71,6 +72,8 @@ export interface SceneModel {
   gear: GearView[];
   /** Lo llena que está la cámara del tesoro, de 0 a 1 (el oro que se ve en ella). */
   vault?: number;
+  /** Los materiales: lo lleno de cada uno (0–1 de su tope, solo los que caben) y si hay almacén. */
+  mats?: { fill: Partial<Record<Material, number>>; store: boolean };
   trophies: TrophyIcon[];
   heroes: SceneHero[];
   /** Los incidentes en marcha: se ven en su sala mientras duran (solo dibujo). */
@@ -161,6 +164,8 @@ export interface SceneIncident {
 export interface GearView {
   icon: ItemIcon;
   rarity: Rarity;
+  /** Mejoras del taller (+1 a +3): sus galones en el icono. */
+  plus?: number;
 }
 
 export type SoundName =

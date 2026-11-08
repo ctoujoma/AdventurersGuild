@@ -15,7 +15,9 @@ import {
   type Mats,
 } from '../core/materials';
 import type { GameState } from '../core/model';
-import { Icon, type IconName } from './icons';
+import type { IconName } from './icons';
+import { BufferImage } from './BufferImage';
+import { materialIcon } from '../art/materials';
 
 export const MAT_ICON: Record<Material, IconName> = {
   hierro: 'lingote',
@@ -26,8 +28,19 @@ export const MAT_ICON: Record<Material, IconName> = {
   cristal: 'cristal',
 };
 
+/**
+ * El dibujo de un material (`art/materials.ts`), a su tamaño de verdad para que no se emborrone:
+ * el de 16 en las líneas y los chips; con `size` de 20 o más, el de 32, con más detalle.
+ */
 export function MatIcon({ m, size = 14 }: { m: Material; size?: number }) {
-  return <Icon name={MAT_ICON[m]} size={size} />;
+  return (
+    <BufferImage
+      buf={materialIcon(m, size >= 20 ? 32 : 16)}
+      scale={1}
+      label={MATERIALS[m].name}
+      class="mat-icon"
+    />
+  );
 }
 
 /** «+2 cuero» de un chip del informe: el material, si lo es (para el dibujo y el salto). */

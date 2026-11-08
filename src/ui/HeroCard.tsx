@@ -8,6 +8,7 @@ import type { GameState, Hero, Item, ItemIcon } from '../core/model';
 import { SKILLS, attr, moraleBand, skill, type SkillId } from '../core/party';
 import { CLASS_NAMES, MORALE_INFO, statusLabel } from '../data/labels';
 import { HIDDEN_TRAIT_HINT, TRAIT_INFO, traitLabel } from '../data/traits';
+import { slotIcon } from '../art/materials';
 import { itemIcon } from '../art/items';
 import { RARITY_NAMES, itemEffect, itemName } from '../data/items';
 import { BufferImage } from './BufferImage';
@@ -230,7 +231,15 @@ function GearDoll({
               class={`doll-slot rarity-${it?.rarity ?? 0} ${it ? '' : 'is-empty'} ${sel === sl ? 'is-sel' : ''}`}
               onClick={() => setSel(sel === sl ? null : sl)}
             >
-              <BufferImage buf={itemIcon(it?.icon ?? SILHOUETTE[sl], it?.rarity)} scale={2} />
+              {it ? (
+                <BufferImage
+                  buf={itemIcon(it.icon ?? SILHOUETTE[sl], it.rarity, it.plus)}
+                  scale={2}
+                />
+              ) : (
+                // Vacía: su silueta apagada.
+                <BufferImage buf={slotIcon(sl, 16)} scale={2} />
+              )}
               {it?.plus ? <b class="doll-plus">+{it.plus}</b> : null}
               <small>{SLOT_NAMES[sl]}</small>
             </button>
@@ -241,7 +250,7 @@ function GearDoll({
         <div class="doll-pick">
           {was ? (
             <div class={`gear-item rarity-${was.rarity ?? 0}`}>
-              <BufferImage buf={itemIcon(was.icon ?? 'espada', was.rarity)} scale={2} />
+              <BufferImage buf={itemIcon(was.icon ?? 'espada', was.rarity, was.plus)} scale={2} />
               <span>
                 <b>{itemName(was)}</b>
                 <small>
@@ -265,7 +274,7 @@ function GearDoll({
                 data-tut="equipar"
                 onClick={() => onEquip(it.id)}
               >
-                <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity)} scale={2} />
+                <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity, it.plus)} scale={2} />
                 <span>
                   <b>{itemName(it)}</b>
                   <small class="doll-deltas">{deltaText(deltas(it))}</small>
@@ -534,7 +543,11 @@ export function HeroCard({
                     >
                       {wornShown ? (
                         <BufferImage
-                          buf={itemIcon(wornShown.icon ?? 'espada', wornShown.rarity)}
+                          buf={itemIcon(
+                            wornShown.icon ?? 'espada',
+                            wornShown.rarity,
+                            wornShown.plus,
+                          )}
                           scale={1}
                         />
                       ) : (

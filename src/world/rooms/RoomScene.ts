@@ -108,7 +108,7 @@ import { RaidShow, isBandit } from './raid';
 import { DAY_SECONDS, WORK_END } from '../../core/balance';
 import { catHunts, napping } from '../../core/incidents';
 import type { Assault } from '../../core/assault';
-import { HEARTH_RIGHT, NO_LOOK, type SalonLook } from './salon';
+import { HEARTH_RIGHT, NO_LOOK, type MatsLook, type SalonLook } from './salon';
 import {
   FEW_LIGHTS,
   Look,
@@ -399,6 +399,16 @@ const HIT_AT: Record<Hit['kind'], { poi: PoiKind; v: number; sound?: SoundName }
 
 /** El oro de la cámara, en octavos: la escena solo se repinta cuando cambia de octavo. */
 const vaultStep = (v = 0) => Math.round(Math.max(0, Math.min(1, v)) * 8);
+/** Los materiales en décimos (no se rehace la escena con cada unidad). */
+const matsStep = (m?: SceneModel['mats']): MatsLook => ({
+  fill: Object.fromEntries(
+    Object.entries(m?.fill ?? {}).map(([k, f]) => [
+      k,
+      Math.round(Math.max(0, Math.min(1, f)) * 10) / 10,
+    ]),
+  ),
+  store: !!m?.store,
+});
 
 /** Nombre de una sala tal como se enseña al tocarla. */
 export function roomLabel(b: Building, id: string): string {
@@ -839,6 +849,7 @@ export class RoomScene {
       model.raven,
       model.gear,
       vaultStep(model.vault),
+      matsStep(model.mats),
       (model.paints ?? []).map((p) => [p.room, p.tint]),
     ]);
     if (model.visitors) this.crowd.setVisitors(model.visitors);
@@ -2567,6 +2578,7 @@ export class RoomScene {
       gear: m.gear,
       gearRoom: m.building ? gearRoom(m.building) : null,
       vault: vaultStep(m.vault) / 8,
+      mats: matsStep(m.mats),
     };
   }
 

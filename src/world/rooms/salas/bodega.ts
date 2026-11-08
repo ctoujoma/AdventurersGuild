@@ -22,6 +22,7 @@ import {
   fire,
   row,
   stretchesOf,
+  worldW,
   type RoomArt,
   type Thing,
   type WallCtx,
@@ -32,6 +33,7 @@ import {
   type Round,
 } from './kit';
 import { candleOn, sack, shelf, web } from './piezas';
+import { cornerPile } from './almacen';
 
 // ---------- Piezas ----------
 
@@ -281,9 +283,14 @@ function barrels(): PixelBuffer {
  * suman la tina de fermentar con la cebada (primer tramo de en medio) y la mesa de embotellar
  * con el botellero (segundo); bajo la ventana de en medio, barriles apilados.
  */
-function things(room: Room, w: number): Thing[] {
+function things(room: Room, w: number, look: SalonLook): Thing[] {
   const lvl = room.level;
   const t: Thing[] = [];
+  // Sin almacén, los materiales en el rincón de la derecha (crecen hasta su tope).
+  const heap = cornerPile(look);
+  // (Por delante de la cuba de la ventana, pegado a la pared de la derecha, y por detrás de donde
+  // pasa la gente.)
+  if (heap) t.push(thick(at(heap, w - worldW(heap, FREE - 7) / 2 - 1, FREE - 7), 6, 'madera'));
   for (const s of stretchesOf(room, w)) {
     if (s.kind === 'left') {
       if (lvl >= 2)

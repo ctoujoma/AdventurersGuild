@@ -15,3 +15,10 @@ pon al día `docs/plan-arte.md`.
 4. **El rincón de la bodega**: sin almacén, unas pocas cajas y sacos en un rincón de la bodega,
    que crecen hasta el tope (10 de cada).
 5. **El «+N»** de los objetos mejorados: un brillo o unas marquitas en su icono.
+
+## Hecho (agente de arte, 8 de noviembre)
+
+Todo, con capturas en `capturas/materiales/`; detalle en [`../plan-arte.md`](../plan-arte.md).
+Para la interfaz: `materialIcon(m, 16 | 32)` y `slotIcon(slot, 16 | 32)` en `art/materials.ts`
+(con `BufferImage`), e `itemIcon(icon, rarity, plus)` ya pinta el «+N». La escena recibe
+`SceneModel.mats` (lo lleno de cada material y si hay almacén) desde `ui/view.ts`.

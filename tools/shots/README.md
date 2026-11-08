@@ -62,3 +62,7 @@ para preparar cualquier situación antes de la captura: subir salas de nivel, pr
     su pintor y le manda pintar una sala (`SALA`, por defecto `dormitorio`; `COLOR`, por defecto
     `bosque`): saca la sala con el pintor de camino, pintando por franjas, de cerca en la escalera,
     al acabar (las gotas, para un GIF) y el pintor de vuelta en su taller.
+
+12. Almacén: `node tools/shots/almacen.mjs <carpeta> [ancho] [alto]` saca el almacén a nivel 1–3 y
+    ancho 1 y 3, vacío, a medias y lleno, y el rincón de la bodega (sin almacén) con 0, 5 y 10 de
+    cada material básico.

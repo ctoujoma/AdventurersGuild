@@ -27,7 +27,36 @@ const METAL = [
 ] as const;
 const TRIM = [P.oak, P.gold, P.lemon] as const;
 
-export function itemIcon(icon: ItemIcon, rarity: Rarity = 0): PixelBuffer {
+/**
+ * El icono de un objeto; con `plus` (las mejoras del taller, +1 a +3), sus galones dorados en la
+ * esquina de arriba (una raya por mejora) y un destello.
+ */
+export function itemIcon(icon: ItemIcon, rarity: Rarity = 0, plus = 0): PixelBuffer {
+  const base = plainIcon(icon, rarity);
+  const n = Math.max(0, Math.min(3, Math.round(plus)));
+  if (!n) return base;
+  const key = `p:${icon}:${rarity}:${n}`;
+  const hit = cache.get(key);
+  if (hit) return hit;
+  const b = base.clone();
+  // Rayas doradas (como galones) apiladas en la esquina de arriba a la derecha, con sombra.
+  for (let k = 0; k < n; k++) {
+    const y = 1 + k * 2;
+    b.hline(b.w - 4, y, 3, P.lemon);
+    b.set(b.w - 4, y, P.white);
+    b.hline(b.w - 4, y + 1, 3, P.rust);
+  }
+  // Un destello en la otra esquina.
+  b.set(1, 1, P.white);
+  b.set(0, 1, P.lemon);
+  b.set(2, 1, P.lemon);
+  b.set(1, 0, P.lemon);
+  b.set(1, 2, P.lemon);
+  cache.set(key, b);
+  return b;
+}
+
+function plainIcon(icon: ItemIcon, rarity: Rarity): PixelBuffer {
   const [m0, m1, m2] = METAL[rarity];
   const trim = TRIM[rarity];
   return make(`i:${icon}:${rarity}`, 12, 12, (b) => {
