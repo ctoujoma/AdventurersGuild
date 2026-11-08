@@ -14,6 +14,7 @@ import { emptyStats } from './feats';
 import { generateQuest } from './generate';
 import type { BossFight, DawnEvent, GameState, Hero, Quest, Report } from './model';
 import type { Rng } from './rng';
+import { shownGear } from './gear';
 
 export const chainDef = (id: string) => CHAINS.find((c) => c.id === id)!;
 
@@ -71,7 +72,7 @@ export function fightRoster(heroes: readonly Hero[]): BossFight['heroes'] {
     sex: h.sex,
     eyepatch: h.traits.some((t) => t.id === 'tuerto') || undefined,
     scar: h.traits.some((t) => t.id === 'cortado') || undefined,
-    gear: h.item?.icon ? { icon: h.item.icon, rarity: h.item.rarity ?? 0 } : undefined,
+    gear: shownGear(h),
     fate: 'ok',
   }));
 }

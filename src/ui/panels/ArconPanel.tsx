@@ -11,6 +11,7 @@ import { Icon } from '../icons';
 import { Portrait } from '../Portrait';
 import { Tabs } from '../Tabs';
 import { lookOf, marksOf, memberOf, heroFrame } from '../view';
+import { SLOTS, SLOT_NAMES, slotOf, type Slot } from '../../core/gear';
 
 export type ArconTab = 'equipo' | 'tesoros' | 'trofeos';
 
@@ -19,7 +20,7 @@ interface Props {
   tab: ArconTab;
   onTab: (t: ArconTab) => void;
   onEquip: (heroId: string, itemId: string) => void;
-  onUnequip: (heroId: string) => void;
+  onUnequip: (heroId: string, slot: Slot) => void;
   onSell: (itemId: string) => void;
   onSellTrophy: (id: string) => void;
   onHero: (id: string) => void;
@@ -58,7 +59,11 @@ export function ArconPanel({
 }: Props) {
   const stock = game.inventory.filter(isGear);
   const treasures = game.inventory.filter((i) => !isGear(i));
-  const worn = game.heroes.filter((h) => h.item && h.status !== 'muerto');
+  const worn = game.heroes
+    .filter((h) => h.status !== 'muerto')
+    .flatMap((h) =>
+      SLOTS.flatMap((slot) => (h.worn?.[slot] ? [{ h, slot, it: h.worn[slot]! }] : [])),
+    );
   const takers = game.heroes.filter(inGuild);
   const [giving, setGiving] = useState<string | null>(null);
 
@@ -121,10 +126,15 @@ export function ArconPanel({
                     aria-label={`¿A quién le das ${it.name}?`}
                   >
                     {takers.map((h) => {
+                      const slot = slotOf(it) ?? 'arma';
+                      const was = h.worn?.[slot];
                       // Cómo le queda lo que mejora el objeto: de su cifra de ahora a la nueva.
                       const gains = (Object.keys(it.bonus ?? {}) as SkillId[]).map((k) => {
                         const now = skill(memberOf(h, game.fac), k);
-                        const then = skill(memberOf({ ...h, item: it }, game.fac), k);
+                        const then = skill(
+                          memberOf({ ...h, worn: { ...h.worn, [slot]: it } }, game.fac),
+                          k,
+                        );
                         return { k, now, then };
                       });
                       return (
@@ -134,7 +144,7 @@ export function ArconPanel({
                           aria-label={[
                             `Dárselo a ${h.name}`,
                             `${CLASS_NAMES[h.cls][h.sex]} de nivel ${h.lvl}`,
-                            h.item ? `cambia ${h.item.name}` : 'sin equipo',
+                            was ? `cambia ${was.name}` : `${SLOT_NAMES[slot].toLowerCase()} libre`,
                             ...gains.map((g) => `${g.k} de ${g.now} a ${g.then}`),
                           ].join('. ')}
                           onClick={() => {
@@ -162,7 +172,9 @@ export function ArconPanel({
                               </span>
                             ))}
                             <span class="pick-gear">
-                              {h.item ? `cambia ${h.item.name}` : 'sin equipo'}
+                              {was
+                                ? `cambia ${was.name}`
+                                : `${SLOT_NAMES[slot].toLowerCase()} libre`}
                             </span>
                           </span>
                         </button>
@@ -177,18 +189,19 @@ export function ArconPanel({
           <h3 class="sec-title">Lo llevan puesto</h3>
           {!worn.length && <p class="panel-note">Nadie lleva equipo todavía.</p>}
           <div class="rows">
-            {worn.map((h) => (
-              <article key={h.id} class="row">
-                <BufferImage buf={itemIcon(h.item!.icon ?? 'espada', h.item!.rarity)} scale={2} />
-                <span class="row-info" {...help(h.item!.desc)}>
-                  <b>{h.item!.name}</b>
+            {worn.map(({ h, slot, it }) => (
+              <article key={`${h.id}-${slot}`} class="row">
+                <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity)} scale={2} />
+                <span class="row-info" {...help(it.desc)}>
+                  <b>{it.name}</b>
                   <button class="linklike row-sub" onClick={() => onHero(h.id)}>
                     {h.name}
-                    {h.status === 'mision' ? ' (de misión)' : ''} · {itemEffect(h.item!)}
+                    {h.status === 'mision' ? ' (de misión)' : ''} · {SLOT_NAMES[slot]} ·{' '}
+                    {itemEffect(it)}
                   </button>
                 </span>
                 {inGuild(h) && (
-                  <button class="btn btn-wood" onClick={() => onUnequip(h.id)}>
+                  <button class="btn btn-wood" onClick={() => onUnequip(h.id, slot)}>
                     Quitar
                   </button>
                 )}

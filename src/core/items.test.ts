@@ -6,6 +6,7 @@ import { generateQuest } from './generate';
 import type { GameState, Item } from './model';
 import { questEstimate, resolveMission } from './resolve';
 import { Rng } from './rng';
+import { migrateGear } from './gear';
 
 const gear = (name: string, id = 'g1'): Item => ({ id, ...GEAR.find((g) => g.name === name)! });
 
@@ -22,14 +23,39 @@ describe('equipo', () => {
     );
     const h = s.heroes[0]!.id;
     s = reduce(s, { type: 'equip', heroId: h, itemId: 'g1' });
-    expect(s.heroes[0]!.item?.id).toBe('g1');
+    expect(s.heroes[0]!.worn?.arma?.id).toBe('g1');
     expect(gearInStock(s).map((i) => i.id)).toEqual(['g2']);
     s = reduce(s, { type: 'equip', heroId: h, itemId: 'g2' });
-    expect(s.heroes[0]!.item?.id).toBe('g2');
+    expect(s.heroes[0]!.worn?.arma?.id).toBe('g2');
     expect(gearInStock(s).map((i) => i.id)).toEqual(['g1']);
     s = reduce(s, { type: 'unequip', heroId: h });
-    expect(s.heroes[0]!.item).toBeUndefined();
+    expect(s.heroes[0]!.worn).toBeUndefined();
     expect(gearInStock(s)).toHaveLength(2);
+  });
+
+  it('tres ranuras: arma, cuerpo y complemento a la vez; cada objeto a la suya', () => {
+    let s = withStock(
+      newGame('ranuras'),
+      gear('Espada oxidada'),
+      gear('Coraza abollada', 'g2'),
+      gear('Botas remendadas', 'g3'),
+    );
+    const h = s.heroes[0]!.id;
+    for (const id of ['g1', 'g2', 'g3']) s = reduce(s, { type: 'equip', heroId: h, itemId: id });
+    const w = s.heroes[0]!.worn!;
+    expect([w.arma?.id, w.cuerpo?.id, w.complemento?.id]).toEqual(['g1', 'g2', 'g3']);
+    expect(gearInStock(s)).toHaveLength(0);
+    s = reduce(s, { type: 'unequip', heroId: h, slot: 'cuerpo' });
+    expect(s.heroes[0]!.worn?.cuerpo).toBeUndefined();
+    expect(s.heroes[0]!.worn?.arma?.id).toBe('g1');
+    expect(gearInStock(s).map((i) => i.id)).toEqual(['g2']);
+  });
+
+  it('las partidas de antes pasan su objeto a la ranura que le toca', () => {
+    const h = { ...newGame('vieja').heroes[0]!, item: gear('Botas remendadas', 'b') };
+    migrateGear(h);
+    expect(h.worn?.complemento?.id).toBe('b');
+    expect('item' in h).toBe(false);
   });
 
   it('los tesoros no se equipan', () => {
@@ -48,8 +74,11 @@ describe('equipo', () => {
     const q = { ...s.quests[0]!, challenges: [{ skill: 'Combate' as const, diff: 10 }] };
     const h = s.heroes[0]!;
     const base = questEstimate(q, [h], s.fac).rows[0]!.power;
-    const armed = questEstimate(q, [{ ...h, item: gear('Hacha de leñador enano') }], s.fac)
-      .rows[0]!;
+    const armed = questEstimate(
+      q,
+      [{ ...h, worn: { arma: gear('Hacha de leñador enano') } }],
+      s.fac,
+    ).rows[0]!;
     expect(armed.power).toBe(base + 2);
   });
 

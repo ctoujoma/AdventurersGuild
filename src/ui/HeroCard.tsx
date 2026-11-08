@@ -20,6 +20,7 @@ import { Tabs } from './Tabs';
 import { Portrait } from './Portrait';
 import { heroFrame, lookOf, marksOf, memberOf } from './view';
 import { GARMENTS, TINTS, TINT_IDS, type Dress, type GarmentId, type TintId } from '../data/custom';
+import { SLOTS, SLOT_NAMES, gearList, shownItem, slotOf, type Slot } from '../core/gear';
 
 interface Props {
   game: GameState;
@@ -31,7 +32,7 @@ interface Props {
   onLocate: () => void;
   onAnswer: (yes: boolean) => void;
   onEquip: (itemId: string) => void;
-  onUnequip: () => void;
+  onUnequip: (slot: Slot) => void;
   /** Cambiar su tarea mientras está en casa (trabajar, entrenar, guardia o descansar). */
   onTask?: (task: Task) => void;
   /** Encargar ropa nueva a la sastrería (acción `dressAt`): va andando y el sastre le viste. */
@@ -217,6 +218,8 @@ export function HeroCard({
   const [history, setHistory] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const stock = gearInStock(game);
+  const worn = gearList(h);
+  const wornShown = shownItem(h);
   const canGear = !candidate && (h.status === 'ok' || h.status === 'herido');
   const m = memberOf(h, game.fac);
   const why = candidate ? canHire(game, h.id) : null;
@@ -407,14 +410,16 @@ export function HeroCard({
                   {!candidate && (
                     <button
                       data-tut="equipo"
-                      class={`act ${h.item ? 'on' : ''}`}
+                      class={`act ${wornShown ? 'on' : ''}`}
                       aria-expanded={open === 'equipo'}
-                      aria-label={h.item ? `Equipo: ${h.item.name}` : 'Equipo'}
+                      aria-label={
+                        worn.length ? `Equipo: ${worn.map((i) => i.name).join(', ')}` : 'Equipo'
+                      }
                       onClick={() => toggle('equipo')}
                     >
-                      {h.item ? (
+                      {wornShown ? (
                         <BufferImage
-                          buf={itemIcon(h.item.icon ?? 'espada', h.item.rarity)}
+                          buf={itemIcon(wornShown.icon ?? 'espada', wornShown.rarity)}
                           scale={1}
                         />
                       ) : (
@@ -434,29 +439,35 @@ export function HeroCard({
               )}
               {open === 'equipo' && (
                 <div class="gear-slot">
-                  {h.item ? (
-                    <div class={`gear-item rarity-${h.item.rarity ?? 0}`}>
-                      <BufferImage
-                        buf={itemIcon(h.item.icon ?? 'espada', h.item.rarity)}
-                        scale={2}
-                      />
-                      <span>
-                        <b>{h.item.name}</b>
-                        <small>
-                          <em>{RARITY_NAMES[h.item.rarity ?? 0]}</em> · {itemEffect(h.item)}
-                        </small>
+                  {SLOTS.map((slot) => {
+                    const it = h.worn?.[slot];
+                    return it ? (
+                      <div key={slot} class={`gear-item rarity-${it.rarity ?? 0}`}>
+                        <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity)} scale={2} />
+                        <span>
+                          <b>{it.name}</b>
+                          <small>
+                            {SLOT_NAMES[slot]} · <em>{RARITY_NAMES[it.rarity ?? 0]}</em> ·{' '}
+                            {itemEffect(it)}
+                          </small>
+                        </span>
+                        {canGear && (
+                          <button class="btn btn-wood" onClick={() => onUnequip(slot)}>
+                            Quitar
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <span key={slot} class="row-sub">
+                        {SLOT_NAMES[slot]}: nada.
                       </span>
-                      {canGear && (
-                        <button class="btn btn-wood" onClick={onUnequip}>
-                          Quitar
-                        </button>
-                      )}
-                    </div>
-                  ) : (
+                    );
+                  })}
+                  {!worn.length && (
                     <span class="row-sub">
                       {stock.length
-                        ? 'Sin equipo. Elige uno del tablero de la bodega:'
-                        : 'Sin equipo. Los encargos con «+ objeto» pueden traerlo.'}
+                        ? 'Elige del tablero de la bodega:'
+                        : 'Los encargos con «+ objeto» pueden traer equipo.'}
                     </span>
                   )}
                   {canGear &&
@@ -474,6 +485,7 @@ export function HeroCard({
                         <span>
                           <b>{it.name}</b>
                           <small>
+                            {SLOT_NAMES[slotOf(it) ?? 'arma']} ·{' '}
                             <em>{RARITY_NAMES[it.rarity ?? 0]}</em> · {itemEffect(it)}
                           </small>
                         </span>

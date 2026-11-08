@@ -154,3 +154,12 @@ Seis, con dibujo propio y nombre de andar por casa:
 2. **Interfaz:** el estante, el muñeco de la ficha, las recetas con materiales y lo del tablón y el
    informe.
 3. **Arte:** los seis dibujos de los materiales, las siluetas de las ranuras y el muñeco.
+
+### Hecho en el núcleo (8 de noviembre)
+
+Tres ranuras (`core/gear.ts`), materiales básicos con el rincón de la bodega y el almacén
+(`core/materials.ts`, sala `almacen`), seis recetas que piden materiales, mejorar objetos hasta +3
+(acción `temper`) y desmontar devuelve material. Decidido con el usuario: las expediciones se abren
+con el primer héroe de nivel 5; lo que no cabe se vende; el almacén, tras la deuda (antes, el aviso
+lo dice). Encargos: [`encargos/interfaz-equipo-materiales.md`](encargos/interfaz-equipo-materiales.md)
+y [`encargos/arte-materiales.md`](encargos/arte-materiales.md).

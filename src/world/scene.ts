@@ -112,7 +112,7 @@ export interface ScenePaint {
 export interface SceneCraftEnd {
   id: string;
   room: string;
-  how: 'hecho' | 'receta' | 'nada' | 'vestido' | 'cancelado';
+  how: 'hecho' | 'receta' | 'nada' | 'vestido' | 'templado' | 'cancelado';
   /** Con `hecho`: 0 normal, 1 de las buenas. */
   rarity?: Rarity;
 }

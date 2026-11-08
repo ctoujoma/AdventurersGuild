@@ -27,6 +27,7 @@ import {
   DISASTER,
   FAIL_CASUALTY,
   GREED,
+  MAT_PER_OUTCOME,
   INJURY,
   MORALE,
   PAY,
@@ -48,7 +49,6 @@ import { PLACE_INFO, placeAt } from '../data/places';
 import type {
   ChipKind,
   Facilities,
-  Item,
   GameState,
   Hero,
   Mission,
@@ -68,6 +68,8 @@ import {
 } from './party';
 import type { Rng } from './rng';
 import { listNames } from './text';
+import { SLOTS, gearList, hasPerk, shownItem, type Gear } from './gear';
+import { MATERIALS, QUEST_MATERIAL, gainMats } from './materials';
 
 const has = (h: Hero, id: string) => h.traits.some((t) => t.id === id);
 const sx = (h: Hero, m: string, f: string) => (h.sex === 'f' ? f : m);
@@ -83,28 +85,38 @@ export const MAIN_ATTR = {
 
 /** Lo que se ve antes de enviar: con un mago en el grupo, el giro oculto se descubre. */
 /** Cada héroe con el equipo de la armería puesto. */
-/** Lo que suma a un héroe la armería del gremio más su objeto equipado. */
-export function gearOf(item: Item | undefined, fac?: Facilities): Partial<Record<SkillId, number>> {
+/**
+ * Lo que suma a un héroe la armería del gremio más lo que lleva puesto (las tres ranuras). Cada
+ * mejora del taller (`plus`) suma a la habilidad principal del objeto; la forja afila el arma.
+ */
+export function gearOf(worn: Gear | undefined, fac?: Facilities): Partial<Record<SkillId, number>> {
   const gear: Partial<Record<SkillId, number>> = { ...ARMORY[fac?.arm ?? 0] };
-  const bonus = Object.entries(item?.bonus ?? {}) as [SkillId, number][];
-  bonus.forEach(([k, v], i) => {
-    // La forja afila el objeto equipado: más en su habilidad principal.
-    gear[k] = (gear[k] ?? 0) + v + (i === 0 ? (fac?.forja ?? 0) : 0);
-  });
+  for (const slot of SLOTS) {
+    const item = worn?.[slot];
+    const bonus = Object.entries(item?.bonus ?? {}) as [SkillId, number][];
+    bonus.forEach(([k, v], i) => {
+      const main = i === 0 ? (item?.plus ?? 0) + (slot === 'arma' ? (fac?.forja ?? 0) : 0) : 0;
+      gear[k] = (gear[k] ?? 0) + v + main;
+    });
+  }
   return gear;
 }
 
 /** Cada héroe con su equipo puesto: armería, objeto y su efecto. */
-export function equip<T extends Member & { item?: Item }>(
+export function equip<T extends Member & { worn?: Gear }>(
   party: readonly T[],
   fac?: Facilities,
 ): T[] {
-  return party.map((m) => ({ ...m, gear: gearOf(m.item, fac), perk: m.item?.perk ?? m.perk }));
+  return party.map((m) => ({
+    ...m,
+    gear: gearOf(m.worn, fac),
+    perks: m.worn ? gearList(m).flatMap((i) => (i.perk ? [i.perk] : [])) : m.perks,
+  }));
 }
 
 export function questEstimate(
   q: Quest,
-  members: readonly (Member & { item?: Item })[],
+  members: readonly (Member & { worn?: Gear })[],
   fac?: Facilities,
 ): Estimate & { reveal: boolean } {
   const party = equip(members, fac);
@@ -223,11 +235,13 @@ export function resolveMission(
         : 'Fracaso';
   } else {
     // Desafíos.
-    const lucky = party.filter((h) => has(h, 'afortunado') || h.item?.perk === 'luck');
-    const warded = party.find((h) => h.item?.perk === 'ward');
+    const lucky = party.filter((h) => has(h, 'afortunado') || hasPerk(h, 'luck'));
+    const warded = party.find((h) => hasPerk(h, 'ward'));
     const jinx = party.some((h) => has(h, 'gafe')) && !warded ? 0.05 : 0;
     if (warded && party.some((h) => has(h, 'gafe')))
-      say(`El ${lower(warded.item!.name)} de ${warded.name} tuvo a raya la mala suerte del grupo.`);
+      say(
+        `El ${lower(gearList(warded).find((i) => i.perk === 'ward')!.name)} de ${warded.name} tuvo a raya la mala suerte del grupo.`,
+      );
     let passes = 0;
     let sumP = 0;
     q.challenges.forEach((c, i) => {
@@ -247,8 +261,9 @@ export function resolveMission(
       const pool = rng.chance(0.35)
         ? CLASS_LINES[best!.cls][k]
         : [...LINES[c.skill][k], ...MORE_LINES[c.skill][k]];
-      if (ok && (best!.item?.rarity ?? 0) >= 1 && rng.chance(0.4))
-        say(fresh(ITEM_LINES), best, { item: lower(best!.item!.name) });
+      const shown = shownItem(best!);
+      if (ok && (shown?.rarity ?? 0) >= 1 && rng.chance(0.4))
+        say(fresh(ITEM_LINES), best, { item: lower(shown!.name) });
       else say(fresh(pool), best);
     });
 
@@ -258,7 +273,7 @@ export function resolveMission(
     else {
       const ambush = rng.chance(DISASTER[q.danger]!);
       const scout =
-        party.find((h) => h.cls === 'explorador') ?? party.find((h) => h.item?.perk === 'ambush');
+        party.find((h) => h.cls === 'explorador') ?? party.find((h) => hasPerk(h, 'ambush'));
       if (ambush && scout && rng.chance(1 - SCOUT_AMBUSH)) {
         outcome = 'Fracaso';
         say(`${scout.name} olió la emboscada a tiempo y los sacó por un barranco. Se salvaron.`);
@@ -308,6 +323,15 @@ export function resolveMission(
     }
   }
   chips.unshift({ t: gold > 0 ? `+${gold} monedas` : 'Sin cobrar', k: gold > 0 ? 'good' : 'bad' });
+  // Materiales: cada tipo de encargo trae el suyo, más cuanto mejor sale.
+  const nMat = MAT_PER_OUTCOME[outcome];
+  if (nMat > 0) {
+    const m = QUEST_MATERIAL[q.type];
+    const got = gainMats(state, { [m]: nMat });
+    if (got.kept[m])
+      chips.push({ t: `+${got.kept[m]} ${MATERIALS[m].name.toLowerCase()}`, k: 'info' });
+    if (got.warn) chips.push({ t: got.warn, k: 'warn' });
+  }
   const dRep = REP[outcome];
   state.rep = Math.max(0, state.rep + dRep);
   chips.push({ t: `${dRep >= 0 ? '+' : ''}${dRep} reputación`, k: dRep >= 0 ? 'good' : 'bad' });
@@ -363,10 +387,8 @@ export function resolveMission(
       victim.status = 'muerto';
       fallen = victim;
       stats.lastDeath = state.day;
-      if (victim.item) {
-        chips.push({ t: `Perdido: ${victim.item.name}`, k: 'bad' });
-        delete victim.item;
-      }
+      for (const it of gearList(victim)) chips.push({ t: `Perdido: ${it.name}`, k: 'bad' });
+      delete victim.worn;
       state.fallen.unshift({
         name: victim.name + (victim.nick ? ` «${victim.nick}»` : ''),
         epitaph: `${q.title} · día ${state.day}.`,
@@ -414,7 +436,7 @@ export function resolveMission(
       h.status = 'ok';
       h.days = 0;
       const guarded = party.some((o) => o !== h && o.cls === 'guerrero');
-      const armored = h.item?.perk === 'guard' ? 0.5 : 1;
+      const armored = hasPerk(h, 'guard') ? 0.5 : 1;
       const risk =
         INJURY[outcome] * (guarded ? mods.guard : 1) * armored + (has(h, 'valiente') ? 0.08 : 0);
       // Contra el jefe, se hiere quien cayó en la pelea.
