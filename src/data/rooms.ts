@@ -26,7 +26,8 @@ export type RoomType =
   | 'biblioteca'
   | 'sastreria'
   | 'alquimia'
-  | 'pintor';
+  | 'pintor'
+  | 'almacen';
 
 /** Dónde puede ir: en la planta baja, encima de otra sala (la torre) o en cualquier planta. */
 export type RoomPlace = 'baja' | 'tejado' | 'libre';
@@ -215,6 +216,13 @@ export const ROOMS: Record<RoomType, RoomDef> = {
     maxH: 1,
     place: 'libre',
     unique: true,
+  },
+  almacen: {
+    name: 'Almacén',
+    desc: 'Guarda los materiales que traen los encargos: más con cada nivel y cada hueco.',
+    maxW: 3,
+    maxH: 1,
+    place: 'libre',
   },
 };
 

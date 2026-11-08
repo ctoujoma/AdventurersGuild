@@ -27,6 +27,7 @@ import {
   DISASTER,
   FAIL_CASUALTY,
   GREED,
+  MAT_PER_OUTCOME,
   INJURY,
   MORALE,
   PAY,
@@ -68,6 +69,7 @@ import {
 import type { Rng } from './rng';
 import { listNames } from './text';
 import { SLOTS, gearList, hasPerk, shownItem, type Gear } from './gear';
+import { MATERIALS, QUEST_MATERIAL, gainMats } from './materials';
 
 const has = (h: Hero, id: string) => h.traits.some((t) => t.id === id);
 const sx = (h: Hero, m: string, f: string) => (h.sex === 'f' ? f : m);
@@ -321,6 +323,15 @@ export function resolveMission(
     }
   }
   chips.unshift({ t: gold > 0 ? `+${gold} monedas` : 'Sin cobrar', k: gold > 0 ? 'good' : 'bad' });
+  // Materiales: cada tipo de encargo trae el suyo, más cuanto mejor sale.
+  const nMat = MAT_PER_OUTCOME[outcome];
+  if (nMat > 0) {
+    const m = QUEST_MATERIAL[q.type];
+    const got = gainMats(state, { [m]: nMat });
+    if (got.kept[m])
+      chips.push({ t: `+${got.kept[m]} ${MATERIALS[m].name.toLowerCase()}`, k: 'info' });
+    if (got.warn) chips.push({ t: got.warn, k: 'warn' });
+  }
   const dRep = REP[outcome];
   state.rep = Math.max(0, state.rep + dRep);
   chips.push({ t: `${dRep >= 0 ? '+' : ''}${dRep} reputación`, k: dRep >= 0 ? 'good' : 'bad' });

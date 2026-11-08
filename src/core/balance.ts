@@ -93,6 +93,7 @@ export const ROOM_COST: Record<RoomType, readonly number[]> = {
   biblioteca: [0, 150, 320, 520, 850],
   sastreria: [0, 160, 340, 620],
   pintor: [0, 140, 300, 520],
+  almacen: [0, 90, 200, 400],
   alquimia: [0, 220, 420, 700],
 };
 export const roomMax = (t: RoomType) => ROOM_COST[t].length - 1;
@@ -518,6 +519,21 @@ export const PAINT_HOURS = 3;
 export const PAINT_WALK = 2;
 /** Pintores trabajando a la vez, por nivel del taller. */
 export const PAINT_SLOTS = [0, 1, 1, 2] as const;
+/**
+ * Materiales (ver `core/materials.ts`): los que caben de cada básico sin almacén, los que guarda
+ * el almacén por hueco y nivel, lo que se saca vendiendo cada uno que no cabe y los que trae un
+ * encargo según cómo salga.
+ */
+export const MAT_LOOSE = 10;
+export const STORE_CAP = [0, 15, 30, 50] as const;
+export const MAT_SELL = 3;
+export const MAT_PER_OUTCOME: Record<Outcome, number> = {
+  'Éxito brillante': 3,
+  Éxito: 2,
+  'Éxito parcial': 1,
+  Fracaso: 0,
+  Desastre: 0,
+};
 /**
  * Lo mismo con una tarea nueva (trabajar o entrenar): cuenta desde que llega a la sala o, si
  * nadie lo dice, a las tantas horas de juego como mucho.

@@ -23,6 +23,7 @@ import type { Tutorial } from './tutorial';
 import type { Attrs, Challenge, ClassId, SkillId, Trait } from './party';
 import type { AbilityId, CombatSetup, Order } from './combat';
 import type { Gear } from './gear';
+import type { Mats } from './materials';
 
 export const SAVE_VERSION = 4;
 
@@ -745,6 +746,8 @@ export interface GameState {
   crafts?: Craft[];
   /** Las salas que se están pintando. */
   paints?: Paint[];
+  /** Materiales guardados (ver `core/materials.ts`). */
+  mats?: Mats;
   /**
    * Los últimos trabajos de taller que han terminado (acabados o cancelados), para que la escena
    * sepa cómo acabó el que desaparece de `crafts`. Solo los más recientes.

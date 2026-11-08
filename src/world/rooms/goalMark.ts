@@ -79,6 +79,7 @@ const ROOM_ICON: Record<RoomType, GoalIcon> = {
   sastreria: 'tijeras',
   alquimia: 'frasco',
   pintor: 'brocha',
+  almacen: 'saco',
 };
 
 /**
