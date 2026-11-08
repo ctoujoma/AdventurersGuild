@@ -405,35 +405,33 @@ export function trophyIcon(icon: TrophyIcon): PixelBuffer {
         break;
       }
       case 'estandarte': {
-        // Estandarte enemigo capturado: asta con remate, tela con pliegues y desgarros.
+        // Estandarte enemigo capturado, colgado de una vara de lado a lado: tela larga con
+        // pliegues, la punta en cola de golondrina y una calavera de ojos rojos.
         b.level = 3;
-        b.vline(1, 1, 13, P.oak);
-        b.vline(2, 1, 13, P.bark);
-        b.set(1, 0, P.gold);
-        b.set(2, 0, P.orange);
-        b.hline(3, 1, 10, P.bark);
+        b.hline(0, 1, 14, P.oak);
+        b.hline(1, 0, 12, P.clay);
+        b.set(0, 1, P.gold);
+        b.set(13, 1, P.orange);
         b.level = 2;
-        b.rect(3, 2, 10, 9, P.wine);
-        // Pliegues: claros y sombras verticales.
-        b.vline(4, 2, 9, P.red);
-        b.vline(11, 2, 9, P.plum);
-        b.vline(12, 2, 9, P.plum);
-        b.hline(3, 2, 10, P.red);
-        // Las puntas, rasgadas.
-        b.rect(3, 11, 3, 2, P.wine);
-        b.set(4, 11, P.red);
-        b.set(3, 13, P.wine);
-        b.rect(10, 11, 3, 2, P.wine);
-        b.set(12, 11, P.plum);
-        b.set(11, 13, P.plum);
-        b.set(7, 11, P.plum);
-        // El emblema: calavera negra con ojos rojos.
+        b.rect(3, 2, 8, 9, P.wine);
+        b.vline(3, 2, 9, P.red);
+        b.vline(10, 2, 9, P.plum);
+        // Cola de golondrina.
+        for (let k = 0; k < 3; k++) {
+          b.hline(3, 11 + k, 3 - k, P.wine);
+          b.hline(8 + k, 11 + k, 3 - k, P.wine);
+        }
+        b.set(3, 11, P.red);
+        b.set(10, 11, P.plum);
+        // Borla dorada en los extremos de la vara.
+        b.set(1, 2, P.gold);
+        b.set(12, 2, P.gold);
         b.level = 3;
-        b.rect(6, 4, 4, 3, P.black);
-        b.hline(7, 7, 2, P.black);
-        b.set(7, 5, P.hot);
+        b.rect(5, 4, 4, 3, P.black);
+        b.hline(6, 7, 2, P.black);
+        b.set(6, 5, P.hot);
         b.set(8, 5, P.hot);
-        b.set(6, 4, P.navy);
+        b.set(5, 4, P.navy);
         break;
       }
       case 'calavera': {
