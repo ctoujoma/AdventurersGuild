@@ -6,6 +6,7 @@ import { CREST_COLORS, DEFAULT_NAME } from '../data/custom';
 import { crestBoard } from '../world/props';
 import { BufferImage } from './BufferImage';
 import { VERSION } from '../version';
+import { NEWS, loadSeenNews, saveSeenNews, unseenNews } from '../platform/news';
 
 interface Props {
   /** Partida guardada, si la hay. */
@@ -19,6 +20,11 @@ interface Props {
 /** Pantalla de título sobre la taberna de noche: el rótulo cae con un golpe seco. */
 export function Title({ saved, onContinue, onNew, onSaves, onSettings }: Props) {
   const [confirm, setConfirm] = useState(false);
+  const [news, setNews] = useState(() => unseenNews(NEWS, loadSeenNews()));
+  const closeNews = () => {
+    if (NEWS[0]) saveSeenNews(NEWS[0].pr);
+    setNews([]);
+  };
   const custom = saved ? customOf(saved) : null;
   const sign = useMemo(() => {
     const col = CREST_COLORS[custom?.color ?? 'vino'];
@@ -41,6 +47,21 @@ export function Title({ saved, onContinue, onNew, onSaves, onSettings }: Props) 
           <h1 class="title-big">Aventureros</h1>
           <span class="title-plaque">{custom?.name ?? DEFAULT_NAME}</span>
         </div>
+        {news.length > 0 && (
+          <div class="title-confirm title-news" role="status">
+            <strong>¡Novedades!</strong>
+            <ul>
+              {news.map((n) => (
+                <li key={n.pr}>
+                  {n.title} <small>({n.date})</small>
+                </li>
+              ))}
+            </ul>
+            <button class="btn btn-gold" onClick={closeNews}>
+              Entendido
+            </button>
+          </div>
+        )}
         <nav class="title-menu" aria-label="Menú principal">
           {saved && !confirm && (
             <button class="btn btn-gold" onClick={onContinue}>
