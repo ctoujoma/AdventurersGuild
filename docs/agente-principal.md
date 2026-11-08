@@ -137,10 +137,19 @@ talleres, nombres y marcos). El arte ya está listo para cinco:
 | Épico | morado | metal ennegrecido, runas y pedrería moradas (brilla de vez en cuando) |
 | Legendario | oro | oro; los que tienen nombre, su dibujo propio (`art/legendaries.ts`) |
 
-- Hoy `Rarity` es 0–2 y `tierOf` la coloca en la escala: común → común, **bueno → raro (azul, como
-  la interfaz)**, legendario → legendario. Si añades niveles, cambia `tierOf` (y `RARITY_NAMES`,
-  los marcos `.rarity-N` de `styles.css` y `glossary.ts`, que dice «raro (azul)»). El usuario
-  aceptó que el «bueno» pase a verde cuando haya cinco.
+- **Hecho: cinco rarezas** (`Rarity` 0–4, `tierOf` uno a uno). Lo que cambió:
+  - Catálogo (`data/items.ts`): los «buenos» de antes son **raros** (2), los legendarios son 4;
+    nuevos 6 buenos (+1 y +1 en otra habilidad, ~30 monedas) y 6 épicos (+3, o +2/+1 con efecto,
+    ~85). Los épicos no tienen dibujo propio (`unique` solo cuenta en los legendarios, 4).
+  - Botín (`generate.ts`): pesos de 0 a 4 según peligro y rango; rumores dan raro o, con
+    `RUMOR_LEGEND`, épico o legendario a medias; eventos (buhonero: raro; noble: raro/épico/legendario).
+  - Premios (`data/feats.ts`, `data/goals.ts`): `item: 1` → 2 y `2` → 4. Talleres: lo «bueno» de
+    las recetas sale raro (2); no se fabrican buenos, épicos ni legendarios. Mejora (`plus`) igual.
+  - Venta: el `value` de cada objeto. Estante de la escena (`rackIcon`): tres acabados (común,
+    bueno–épico, legendario).
+  - Guardado: `SAVE_VERSION` 5; una partida v4 se convierte al cargar (`fiveRarities` en
+    `platform/storage.ts`: cada `rarity` 1→2, 2→4, y `reward.item` igual; incluye peleas guardadas).
+  - `npm run sim`: victorias y oro dentro de ±1 punto en todas las estrategias.
 - **La interfaz ya va por nivel** (no por rareza): las casillas, el muñeco, la ficha y el recuadro
   del Arcón usan la clase `tier-N` con `tierOf(rarity)`, y `pixelui.ts` tiene los cinco marcos
   (`--frame-slot-0`, `-t1`, `-1`, `-t3`, `-2`: gris, verde, azul, morado y oro). Al cambiar

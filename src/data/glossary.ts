@@ -52,7 +52,7 @@ export const GLOSSARY: readonly { term: string; text: string }[] = [
   },
   {
     term: 'Equipo',
-    text: 'Lo traen algunos encargos («+ objeto»). Se da desde el arcón o la ficha del héroe. Común, raro (azul) o legendario (dorado). Si el héroe muere, el objeto se pierde.',
+    text: 'Lo traen algunos encargos («+ objeto»). Se da desde el arcón o la ficha del héroe. Común (gris), bueno (verde), raro (azul), épico (morado) o legendario (dorado). Si el héroe muere, el objeto se pierde.',
   },
   {
     term: 'Trofeos',
