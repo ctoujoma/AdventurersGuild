@@ -18,7 +18,7 @@ import { Assault, assaultSetup, raidRoute, raidSeed } from '../core/assault';
 import { Rng } from '../core/rng';
 import { canHireWorker } from '../core/workers';
 import { DAY_SECONDS, DELIVERIES, DUSK, NIGHT_RUSH, WORK_END } from '../core/balance';
-import { DECOR, FACADE, PET_LINES } from '../data/custom';
+import { DECOR, DEFAULT_NAME, FACADE, PET_LINES } from '../data/custom';
 import { RUMORS, VISITORS, type VisitorKind } from '../data/visitors';
 import type { BossFight as BossFightRecord, Facilities, GameState } from '../core/model';
 import { FACILITY_INFO } from '../data/labels';
@@ -48,6 +48,7 @@ import { Icon } from './icons';
 import { Letter } from './Letter';
 import { EventCard } from './EventCard';
 import { Opening } from './Opening';
+import { NameTavern } from './NameTavern';
 import { Panel } from './Panel';
 import { LibroPanel } from './panels/LibroPanel';
 import { MapPanel } from './panels/MapPanel';
@@ -1677,6 +1678,20 @@ export function App() {
                 toast(`${customOf(game).name} abre sus puertas al mundo. ¡A por la leyenda!`);
               }}
               onRetry={restart}
+            />
+          )}
+        {pendingEvent === null &&
+          calm &&
+          !game.over &&
+          game.askName &&
+          customOf(game).name === DEFAULT_NAME && (
+            <NameTavern
+              onName={(name) => {
+                dispatch({ type: 'custom', patch: { name } });
+                audio.play('coin');
+                toast('Letrero nuevo en la puerta.');
+              }}
+              onLater={() => dispatch({ type: 'nameAsked' })}
             />
           )}
         {game.over && !dawnOpen && screen === 'game' && <GameOver game={game} onNew={restart} />}
