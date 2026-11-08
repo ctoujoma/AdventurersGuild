@@ -2,7 +2,8 @@ import { useState } from 'preact/hooks';
 import { itemIcon, trophyIcon } from '../../art/items';
 import { TROPHY_APPEAL, TROPHY_SLOTS } from '../../core/balance';
 import type { GameState, Hero, Item } from '../../core/model';
-import { RARITY_NAMES, itemEffect } from '../../data/items';
+import { RARITY_NAMES, itemEffect, itemName } from '../../data/items';
+import { MatShelf } from '../mats';
 import { CLASS_NAMES } from '../../data/labels';
 import { skill, type SkillId } from '../../core/party';
 import { BufferImage } from '../BufferImage';
@@ -69,7 +70,7 @@ export function ArconPanel({
 
   const gear = (it: Item) => (
     <span class={`row-info rarity-${it.rarity ?? 0}`} {...help(it.desc)}>
-      <b>{it.name}</b>
+      <b>{itemName(it)}</b>
       <span class="row-sub">
         <em>{RARITY_NAMES[it.rarity ?? 0]}</em> · {itemEffect(it)}
       </span>
@@ -78,6 +79,7 @@ export function ArconPanel({
 
   return (
     <>
+      <MatShelf game={game} />
       <Tabs
         label="Arcón"
         value={tab}
@@ -144,7 +146,9 @@ export function ArconPanel({
                           aria-label={[
                             `Dárselo a ${h.name}`,
                             `${CLASS_NAMES[h.cls][h.sex]} de nivel ${h.lvl}`,
-                            was ? `cambia ${was.name}` : `${SLOT_NAMES[slot].toLowerCase()} libre`,
+                            was
+                              ? `cambia ${itemName(was)}`
+                              : `${SLOT_NAMES[slot].toLowerCase()} libre`,
                             ...gains.map((g) => `${g.k} de ${g.now} a ${g.then}`),
                           ].join('. ')}
                           onClick={() => {
@@ -173,7 +177,7 @@ export function ArconPanel({
                             ))}
                             <span class="pick-gear">
                               {was
-                                ? `cambia ${was.name}`
+                                ? `cambia ${itemName(was)}`
                                 : `${SLOT_NAMES[slot].toLowerCase()} libre`}
                             </span>
                           </span>
@@ -193,7 +197,7 @@ export function ArconPanel({
               <article key={`${h.id}-${slot}`} class="row">
                 <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity)} scale={2} />
                 <span class="row-info" {...help(it.desc)}>
-                  <b>{it.name}</b>
+                  <b>{itemName(it)}</b>
                   <button class="linklike row-sub" onClick={() => onHero(h.id)}>
                     {h.name}
                     {h.status === 'mision' ? ' (de misión)' : ''} · {SLOT_NAMES[slot]} ·{' '}
@@ -220,7 +224,7 @@ export function ArconPanel({
             {treasures.map((it) => (
               <article key={it.id} class="row">
                 <span class="row-info" {...help(it.desc)}>
-                  <b>{it.name}</b>
+                  <b>{itemName(it)}</b>
                 </span>
                 <Sell name={it.name} value={it.value} onSell={() => onSell(it.id)} />
               </article>

@@ -295,8 +295,15 @@ export const TROPHIES: Record<
 };
 
 /** Resumen corto de lo que hace un objeto: «+2 Combate · Esquiva emboscadas». */
+/** El nombre con su mejora del taller: «Espada larga +2». */
+export const itemName = (it: Pick<Item, 'name' | 'plus'>) =>
+  it.plus ? `${it.name} +${it.plus}` : it.name;
+
 export function itemEffect(it: Item): string {
-  const parts = Object.entries(it.bonus ?? {}).map(([k, v]) => `+${v} ${k}`);
+  // La mejora del taller (`plus`) suma a la habilidad principal (la primera), como en `gearOf`.
+  const parts = Object.entries(it.bonus ?? {}).map(
+    ([k, v], i) => `+${v + (i === 0 ? (it.plus ?? 0) : 0)} ${k}`,
+  );
   if (it.perk) parts.push(PERK_INFO[it.perk]);
   return parts.join(' · ') || 'Solo vale lo que te den por él';
 }

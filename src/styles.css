@@ -6964,3 +6964,171 @@ p.notebook-close {
     font-size: 11px;
   }
 }
+
+/* ---------- Materiales ---------- */
+/* El estante del Arcón: un tarro por material, sobre una tabla de madera. */
+.mat-shelf {
+  margin: 0 0 10px;
+}
+.mat-jars {
+  display: flex;
+  gap: 8px;
+  padding: 6px 8px 8px;
+  background: linear-gradient(transparent calc(100% - 6px), var(--oak) calc(100% - 6px));
+  box-shadow: inset 0 -2px 0 var(--bark);
+}
+.mat-jar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 56px;
+  min-height: 56px;
+  padding: 6px 6px 4px;
+  font-family: var(--pixel);
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.35);
+  border: 0;
+  border-radius: 10px 10px 4px 4px;
+  box-shadow: 0 0 0 2px var(--ink);
+  cursor: pointer;
+}
+.mat-jar b {
+  font-size: var(--t-m);
+}
+.mat-jar small {
+  color: var(--text-soft);
+  font-size: var(--t-s);
+}
+.mat-jar.is-full {
+  background: rgba(254, 174, 52, 0.45);
+}
+.mat-jar.is-open {
+  box-shadow:
+    0 0 0 2px var(--ink),
+    0 0 0 4px var(--gold);
+}
+.mat-jar.is-bump {
+  animation: gold-bump 0.22s cubic-bezier(0.3, 1.8, 0.5, 1);
+}
+.mat-why {
+  margin: 6px 0 0;
+  font-size: var(--t-s);
+}
+.mat-loose {
+  display: block;
+  margin-top: 4px;
+  font-size: var(--t-s);
+  color: var(--text-soft);
+}
+/* Lo que pide una receta o una mejora: verde si lo hay, gris con lo que falta. */
+.mat-cost {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-top: 2px;
+}
+.mat-need {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--pixel);
+  font-size: var(--t-s);
+}
+.mat-need.is-ok {
+  color: var(--text-good);
+}
+.mat-need.is-short {
+  color: var(--text-soft);
+}
+.mat-need.is-short .icon {
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+.forge-plus {
+  color: var(--text-good);
+}
+.note-mat {
+  margin-left: auto;
+}
+/* Los materiales del informe que saltan a la pestaña Gremio. */
+.chip-mat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.mat-fly {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+}
+.tab.is-bump {
+  animation: gold-bump 0.22s cubic-bezier(0.3, 1.8, 0.5, 1);
+}
+
+/* ---------- El muñeco del equipo (ficha del héroe) ---------- */
+.doll {
+  margin: 8px 0;
+}
+.doll-slots {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+.doll-slot {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 92px;
+  padding: 8px 2px 4px;
+  font-family: var(--pixel);
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.3);
+  border: 2px dashed transparent;
+  box-shadow: 0 0 0 2px var(--ink);
+  cursor: pointer;
+}
+.doll-slot small {
+  font-size: var(--t-s);
+}
+.doll-slot.is-empty {
+  background: transparent;
+  border-color: var(--text-soft);
+  box-shadow: none;
+}
+.doll-slot.is-empty canvas,
+.doll-slot.is-empty img {
+  filter: brightness(0);
+  opacity: 0.22;
+}
+.doll-slot.is-sel {
+  box-shadow:
+    0 0 0 2px var(--ink),
+    0 0 0 4px var(--gold);
+}
+.doll-plus {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: var(--t-s);
+  color: var(--text-good);
+}
+.doll-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+.doll-deltas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+}
+.doll-deltas .up {
+  color: var(--text-good);
+}
+.doll-deltas .down {
+  color: var(--wine);
+}

@@ -121,6 +121,20 @@ describe('avisos de la campanita', () => {
     expect(a.some((x) => x.id === 'desmonta:c3')).toBe(false);
   });
 
+  it('la primera vez que no caben materiales, lleva a construir el almacén', () => {
+    const s = newGame('rincon');
+    s.reports = [
+      {
+        ...({} as GameState['reports'][number]),
+        id: 'r1',
+        chips: [{ t: 'No cabía: vendido 2 de cuero por 4 monedas.', k: 'warn' }],
+      },
+    ];
+    expect(gatherAlerts(s).find((a) => a.id === 'almacen-lleno')?.go).toEqual({ panel: 'gremio' });
+    s.mode = 'libre';
+    expect(gatherAlerts(s).find((a) => a.id === 'almacen-lleno')?.go).toEqual({ build: 'almacen' });
+  });
+
   it('la obra terminada se avisa mientras la interfaz la recuerde', () => {
     const before = newGame('obra');
     const r = roomOf(before, 'bodega');

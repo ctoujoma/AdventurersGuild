@@ -1030,6 +1030,10 @@ export function App() {
     } else if ('quest' in g) {
       openPanel('tablon');
       setQuestId(g.quest);
+    } else if ('build' in g) {
+      openPanel(null);
+      works.startPlan();
+      works.startPick({ kind: 'build', type: g.build });
     } else openPanel(g.panel);
   };
 
