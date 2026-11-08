@@ -84,17 +84,25 @@ describe('el taller del pintor', () => {
     expect(t.dawn.some((e) => /ha acabado de pintar/.test(e.t))).toBe(true);
   });
 
-  it('si nadie dice que ha llegado, empieza a las horas de camino', () => {
+  it('con el juego abierto no empieza hasta que llega; cerrado, a las horas de camino', () => {
     const { s, room } = withShop('camino');
     s.clock = DAY_SECONDS * 0.2;
     const t = reduce(s, { type: 'paint', room, tint: 'mar' });
-    const half = reduce(t, { type: 'tick', to: t.clock! + DAY_SECONDS * (PAINT_WALK / 2 / 24) });
-    expect(paintingOf(half, room)!.done).toBe(0);
-    const later = reduce(half, {
+    // Abierto: pasan las horas de camino y más, y sin llegar no se pinta nada.
+    const later = reduce(t, {
       type: 'tick',
-      to: t.clock! + DAY_SECONDS * ((PAINT_WALK + 1) / 24),
+      to: t.clock! + DAY_SECONDS * ((PAINT_WALK + 3) / 24),
     });
-    expect(paintingOf(later, room)!.done).toBeGreaterThan(0);
+    expect(paintingOf(later, room)!.done).toBe(0);
+    expect(paintState(later, paintingOf(later, room)!).walking).toBe(true);
+    // Pasa la noche sin llegar: sigue esperando (mañana irá a la sala).
+    const next = endDay(later);
+    expect(paintingOf(next, room)!.wait).toBe(true);
+    expect(paintingOf(next, room)!.done).toBe(0);
+    // Con el juego cerrado (sin escena), se le da por llegado y pinta.
+    const away = endDay(later, true);
+    const p = paintingOf(away, room);
+    expect(p ? p.done > 0 : customOf(away).colors?.[room] === 'mar').toBe(true);
   });
 
   it('cancelar devuelve lo pagado; sin pintor, se cancela solo', () => {

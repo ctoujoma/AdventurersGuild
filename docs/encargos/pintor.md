@@ -62,3 +62,9 @@ El taller, el pintor y el trabajo que se ve: detalle en [`../plan-arte.md`](../p
 pinta, despacha `arrived` al llegar y pinta la pared por franjas con `paintState(s, p).frac`.
 Las telas (mantas, alfombras, cortinas) cambian al acabar, no por franjas. Icono nuevo `brocha`
 en Obras (el de antes, `pintado`, es el del rótulo de la fachada).
+
+Ronda 2 (pedido del usuario): **pintar no empieza hasta que el pintor llega** a la sala. En
+`core/paint.ts`, con el juego abierto se espera a `arrived` sin plazo (si no llega en el día,
+sigue esperando y por la mañana vuelve a ir); `PAINT_WALK` solo vale con el juego cerrado
+(`endDay(s, true)`, `nightPaints(s, unseen)`), donde no hay escena que lo diga. `walking` es ya
+«aún no ha llegado». Ojo: la sastrería (`DRESS_WALK`) sigue con el plazo de antes.

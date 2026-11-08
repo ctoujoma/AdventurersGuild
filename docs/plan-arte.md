@@ -268,6 +268,17 @@ npm run build`.
   - para que el color se vea en la pared: con tema, la cenefa pintada bajo la viga de cada
     planta y una raya sobre el zócalo (`tintBand` en `acabados.ts`); las salas enteladas del 3
     no la llevan (ya cambia la tela). Ojo: cambia el aspecto de las salas que ya tenían tema;
+  - ronda 2 (el usuario: «no veo al pintor pintando la sala… desaparece y al acabar reaparece en
+    su taller»; «la tarea no debería empezar hasta que el pintor llegue»): la tarea nueva le
+    llegaba a la escena antes que el encargo y se iba a pasear (al salón, a sentarse); ahora, en
+    cuanto llega el encargo, sale hacia la sala y deprisa (`setPaints`). En el núcleo
+    (`core/paint.ts`, pedido del usuario): con el juego abierto no empieza hasta `arrived`, sin
+    plazo (antes, a las `PAINT_WALK` horas aunque no llegara); solo con el juego cerrado (`away`,
+    sin escena) se le da por llegado. La escena, además, no avanza la pared hasta verle en la sala.
+    En la sala, casi siempre subido a la escalera y corriéndola cada par de franjas; una de cada
+    cuatro, de rodillas por el zócalo. La cenefa también en los muros de los lados (el de la
+    izquierda se pinta al empezar; el de la derecha, con la última franja). Prueba A/B de dónde
+    va (`BAND.at`: `arriba` o `ventana`) en `capturas/pintor/cenefa-AB.png`, a elegir;
   - iconos: en Obras, la sala del pintor con una brocha (`brocha` en `ui/icons.tsx`; `pintado`
     es el del rótulo «Pintado» de la fachada y no se toca) y el banderín con la brocha mojada.
   - [ ] Visto bueno del usuario. Capturas en `capturas/pintor/` (`tools/shots/pintor.mjs`).

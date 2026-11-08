@@ -247,44 +247,50 @@ const CLOTH: Partial<Record<string, [string, string, string]>> = {
 };
 
 /**
- * Lo pintado del color de la sala (con tema): la cenefa bajo la viga de cada planta (en cada `ys`)
- * y una raya encima del zócalo (en `rail`). Así se ve en la pared de qué color la ha pintado el pintor.
- * Las salas enteladas (`wallCloth`, desde el 3) no lo llevan: ya la tela toma el color.
+ * Dónde va lo pintado del color de la sala (con tema), para que se vea en la pared de qué color
+ * la ha pintado el pintor: `arriba`, una cenefa bajo la viga de cada planta y una raya encima del
+ * zócalo; `ventana`, una cenefa más ancha bajo las ventanas, encima del zócalo (prueba de las dos,
+ * a elegir con el usuario).
  */
-export function tintBand(
-  b: PixelBuffer,
-  room: Room,
-  theme: Theme,
-  fine: boolean,
-  ys: number[],
-  rail: number,
-) {
+export type BandAt = 'arriba' | 'ventana';
+export const BAND: { at: BandAt } = { at: 'arriba' };
+
+/**
+ * Los tonos de lo pintado de una sala, si lo lleva: con tema y sin pared entelada (las del 3,
+ * `wallCloth`, ya toman el color en la tela).
+ */
+export function bandRamp(room: Room, theme: Theme, fine: boolean): Ramp | null {
   const t = tintOf(room);
-  if (!t) return;
+  if (!t) return null;
   if (fine && room.level >= 3 && CLOTH[room.type] && (theme === 'yeso' || theme === 'madera'))
-    return;
-  const [d, m, l, h] = TINTS[t].ramp;
+    return null;
+  return TINTS[t].ramp as unknown as Ramp;
+}
+
+/** Una cenefa de `k` filas desde `y`: filetes oscuros, el fondo y un rombo claro cada 10. */
+export function tintBand(b: PixelBuffer, [d, m, l, h]: Ramp, y: number, k: number) {
   const w = b.w;
-  for (const y of ys) {
-    b.hline(0, y, w, d);
-    b.rect(0, y + 1, w, 6, m);
-    b.hline(0, y + 1, w, l);
-    b.hline(0, y + 7, w, d);
-    // El dibujo de plantilla: un rombo claro cada 10 y, entre ellos, dos puntos.
-    for (let x = 0; x < w; x += 10) {
-      b.hline(x + 4, y + 2, 2, l);
-      b.hline(x + 3, y + 3, 4, l);
-      b.hline(x + 3, y + 4, 4, l);
-      b.hline(x + 4, y + 5, 2, l);
-      b.set(x + 4, y + 3, h);
-      b.set(x + 9, y + 3, l);
-      b.set(x + 9, y + 5, l);
-    }
+  b.hline(0, y, w, d!);
+  b.rect(0, y + 1, w, k - 2, m!);
+  b.hline(0, y + 1, w, l!);
+  b.hline(0, y + k - 1, w, d!);
+  const c = y + Math.floor(k / 2);
+  for (let x = 0; x < w; x += 10) {
+    b.hline(x + 4, c - 2, 2, l!);
+    b.hline(x + 3, c - 1, 4, l!);
+    b.hline(x + 3, c, 4, l!);
+    b.hline(x + 4, c + 1, 2, l!);
+    b.set(x + 4, c - 1, h!);
+    b.set(x + 9, c - 1, l!);
+    b.set(x + 9, c + 1, l!);
   }
-  // La raya de encima del zócalo.
-  b.hline(0, rail, w, l);
-  b.hline(0, rail + 1, w, m);
-  b.hline(0, rail + 2, w, d);
+}
+
+/** La raya pintada encima del zócalo (tres filas desde `y`). */
+export function tintRail(b: PixelBuffer, [d, m, l]: Ramp, y: number) {
+  b.hline(0, y, b.w, l!);
+  b.hline(0, y + 1, b.w, m!);
+  b.hline(0, y + 2, b.w, d!);
 }
 
 /** La tela de la pared de una sala (si la lleva): la suya o la de su tema de color. */

@@ -37,7 +37,10 @@ import {
   WOOD_FINE,
   floorFinish,
   sideFinish,
+  BAND,
+  bandRamp,
   tintBand,
+  tintRail,
   wallFinish,
 } from './salas/acabados';
 import { BLIND, cellsOf, sconceOn, takeWallActs, windowX } from './salas/kit';
@@ -140,16 +143,21 @@ export function backWall(room: Room, w: number, h: number, look: SalonLook = NO_
   beam(b, 0, 0, bw, 3, WOOD_DARK);
   // Con tema de color, la cenefa pintada de su color bajo la viga de arriba (en el salón, encima
   // de lo suyo, más abajo: si no, la tapan las guirnaldas).
-  const band = !bare(room) && !ruin;
-  // Una cenefa por planta (bajo la viga de cada una) y la raya del zócalo, abajo.
-  const bands = [
-    4,
-    ...Array.from(
-      { length: room.h - 1 },
-      (_, j) => Math.round(((j + 1) * PITCH - SLAB) * BACK) + 5,
-    ),
-  ];
-  if (band && room.type !== 'salon') tintBand(b, room, theme, fine, bands, bh - wain - 6);
+  // Con tema de color, lo pintado de su color (ver `BAND`): en el salón, al final, encima de
+  // lo suyo (si no, lo tapan las guirnaldas).
+  const paint = !bare(room) && !ruin ? bandRamp(room, theme, fine) : null;
+  const painted = () => {
+    if (!paint) return;
+    const step = Math.round(PITCH * BACK);
+    for (let j = 0; j < room.h; j++) {
+      const top = j ? Math.round((j * PITCH - SLAB) * BACK) + 5 : 4;
+      const bottom = bh - (room.h - 1 - j) * step;
+      if (BAND.at === 'arriba') tintBand(b, paint, top, 8);
+      else tintBand(b, paint, bottom - wain - 14, 10);
+    }
+    if (BAND.at === 'arriba') tintRail(b, paint, bh - wain - 6);
+  };
+  if (room.type !== 'salon') painted();
   // Ventanas planta a planta (de arriba abajo), en las mismas columnas en todas. En el salón
   // se quita la columna que cae detrás de la chimenea (o de su tiro, que sube hasta el techo).
   const { hearthLeft } = hearthSpan(bw);
@@ -168,7 +176,7 @@ export function backWall(room: Room, w: number, h: number, look: SalonLook = NO_
       art.wall(b, room, look, { cells: cellsOf(room, w), wain, top: bh - wain - 3, ruin });
     else if (!ruin && room.type === 'salon') salonWall(b, room, look, windows, CELL_BACK, wain);
   }
-  if (band && room.type === 'salon') tintBand(b, room, theme, fine, bands, bh - wain - 6);
+  if (room.type === 'salon') painted();
   if (ruin) {
     cobweb(b, 1, 1, 8, 1);
     cobweb(b, bw - 2, 1, 6, -1);
@@ -313,6 +321,19 @@ export function sideTex(
   else stoneWall(b, 0, 0, W, h, seed, { ramp: ROCK, bw: 14, bh: 8 });
   // Los acabados de la sala, como en su pared del fondo.
   if (room && !bare(room) && !ruined(room) && ART[room.type]) sideFinish(b, room, theme, seed);
+  // Lo pintado del color de la sala, como en la del fondo (las puertas lo cortan).
+  const paint =
+    room && !bare(room) && !ruined(room)
+      ? bandRamp(room, theme, !!ART[room.type] && room.level >= 2)
+      : null;
+  if (paint)
+    for (let f = 0; f * PITCH < h; f++) {
+      const yb = h - f * PITCH;
+      if (BAND.at === 'arriba') {
+        tintBand(b, paint, yb - ROOM_H + 5, 10);
+        if (f === 0) tintRail(b, paint, yb - 24);
+      } else tintBand(b, paint, yb - 36, 12);
+    }
   // El marco de cada puerta a la sala de al lado (DOOR_U0…DOOR_U1 van a media resolución); el
   // hueco se abre después de la sombra.
   const u0 = 2 * DOOR_U0;
