@@ -17,6 +17,7 @@ import {
 import type { GameState, Hero, Outcome } from '../src/core/model';
 import { questEstimate } from '../src/core/resolve';
 import { vaultFull, vaultOf } from '../src/core/vault';
+import { settleWalks } from '../src/core/workers';
 
 declare const process: { argv: string[] };
 
@@ -123,6 +124,10 @@ function playDay(s: GameState, st: Strategy): GameState {
       if (pick) s = reduce(s, { type: 'send', questId: q.id, heroIds: pick.map((h) => h.id) });
     }
   }
+  // La simulación no tiene escena que diga quién llega a su sala: llegan a su hora (como con el
+  // juego cerrado, ver `settleWalks`).
+  s = structuredClone(s);
+  settleWalks(s);
   return reduce(s, { type: 'endDay' });
 }
 
@@ -153,6 +158,9 @@ const newRooms = (): Rooms => ({
 
 /** Juega un día apuntando lo que interesa de las salas. */
 function tracked(s: GameState, st: Strategy, acc: Rooms): GameState {
+  // Sin escena, cada uno llega a su sala a su hora (ver `settleWalks`).
+  s = structuredClone(s);
+  settleWalks(s);
   const phase = s.mode === 'libre' ? 3 : Math.min(2, Math.floor((s.day - 1) / 10));
   acc.till[phase]! += dayIncome(s, s.day);
   acc.wages[phase]! += salaries(s);

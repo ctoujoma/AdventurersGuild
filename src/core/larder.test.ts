@@ -28,9 +28,16 @@ describe('comida y cerveza', () => {
     const none = reduce(s, { type: 'assign', who: cook(s).id, room: null });
     expect(dailyYield(none).food).toBe(0);
     // Un héroe echando una mano también cocina, aunque menos.
-    const help = reduce(none, {
+    const sent = reduce(none, {
       type: 'assign',
       who: s.heroes[0]!.id,
+      room: roomOf(s, 'cocina').id,
+    });
+    // Mientras va de camino no cuenta; al llegar (lo dice la escena), sí.
+    expect(dailyYield(sent).food).toBe(0);
+    const help = reduce(sent, {
+      type: 'arrived',
+      heroId: s.heroes[0]!.id,
       room: roomOf(s, 'cocina').id,
     });
     expect(dailyYield(help).food).toBe(Math.round(HERO_WORK * COOK_PER_WORK));

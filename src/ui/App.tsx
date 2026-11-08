@@ -1353,6 +1353,7 @@ export function App() {
                   : (id, tint) => dispatch({ type: 'tint', id, tint })
               }
               onAct={works.planning ? undefined : dispatch}
+              onPreview={works.planning ? undefined : (id, t) => scene.current?.previewTint(id, t)}
             />
           </Panel>
         )}

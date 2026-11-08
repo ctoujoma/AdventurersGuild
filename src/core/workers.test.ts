@@ -89,8 +89,42 @@ describe('trabajadores', () => {
     const t = reduce(sent, { type: 'arrived', heroId: h.id, room: salon.id });
     expect(onWay(t, t.heroes[0]!)).toBe(false);
     expect(workIn(t, 'salon')).toBeCloseTo(before + HERO_WORK * workedIn(0.5, 1));
-    // A la mañana siguiente, el día entero.
+    // A la mañana siguiente, otra vez de camino: cuenta desde que llega.
     expect(endDay(t).heroes[0]!.since).toBeUndefined();
+    expect(onWay(endDay(t), endDay(t).heroes[0]!)).toBe(true);
+  });
+
+  it('cada mañana, cada uno cuenta desde que llega; sin escena, desde que empieza la jornada', () => {
+    const s = newGame('mañana');
+    const cook = village(s, 'cocinera');
+    const cocina = roomOf(s, 'cocina');
+    // De noche al día siguiente: la cocinera va de camino y no cuenta hasta que llega, aunque pase
+    // la mañana entera.
+    let t = endDay(s);
+    expect(
+      onWay(
+        t,
+        t.workers.find((w) => w.id === cook.id)!,
+      ),
+    ).toBe(true);
+    expect(workAt(t, cocina, true)).toBe(0);
+    t = reduce(t, { type: 'tick', to: DAY_SECONDS * 0.5 });
+    expect(workAt(t, cocina, true)).toBe(0);
+    expect(dailyYield(t).food).toBe(0);
+    // Llega a media jornada (lo dice la escena): cuenta lo que queda de día.
+    t = reduce(t, { type: 'arrived', heroId: cook.id, room: cocina.id });
+    expect(workAt(t, cocina, true)).toBeGreaterThan(0);
+    expect(dailyYield(t).food).toBeGreaterThan(0);
+    expect(dailyYield(t).food).toBeLessThan(dailyYield(s).food);
+    // Con el juego cerrado (sin escena que lo diga), llega al empezar la jornada: el día entero.
+    const away = endDay(s, true);
+    expect(
+      onWay(
+        away,
+        away.workers.find((w) => w.id === cook.id)!,
+      ),
+    ).toBe(false);
+    expect(dailyYield(away).food).toBe(dailyYield(s).food);
   });
 
   it('cada sala tiene dos puestos por hueco y no admite más', () => {

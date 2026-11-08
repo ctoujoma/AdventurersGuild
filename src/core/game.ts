@@ -170,6 +170,7 @@ import {
   assign,
   arrivedAt,
   newShift,
+  settleWalks,
   bardPlaying,
   canAssign,
   canHireWorker,
@@ -1516,8 +1517,10 @@ export function endDay(state: GameState, away = false): GameState {
   // Si la fama de hoy ha subido el rango, se cuenta con lo que se abre.
   checkRank(s, events);
 
-  // Mañana cada uno cuenta en su sala desde el principio del día.
+  // Mañana cada uno cuenta en su sala desde que llega (con el juego cerrado no hay escena que lo
+  // diga: se le da por llegado al empezar la jornada).
   newShift(s);
+  if (away) settleWalks(s);
   s.flavor = rng.pick(FLAVOR);
   s.dawn = events;
   s.rng = rng.save();

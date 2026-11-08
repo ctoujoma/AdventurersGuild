@@ -686,8 +686,9 @@ type Tint = readonly [number, number, number];
 
 interface Actor {
   hero: SceneHero;
-  /** La sala de trabajo a la que ya se ha dicho que ha llegado (`onArrive`). */
+  /** La sala de trabajo a la que ya se ha dicho que ha llegado (`onArrive`) y cuándo. */
   told?: string;
+  toldAt?: number;
   /** Ya no es de la casa (despedido, o candidato que se va): sale por la puerta y desaparece. */
   quit?: boolean;
   /** Sus fotogramas (para tocarle solo donde se le ve). */
@@ -1636,8 +1637,11 @@ export class Crowd {
       a.told = undefined;
       return;
     }
-    if (a.told === w || a.path.length || a.pose === 'walk') return;
+    if (a.path.length || a.pose === 'walk') return;
+    // Ya dicho; si el núcleo aún le espera (otro día, sin haber salido de la sala), se repite.
+    if (a.told === w && !(a.hero.due && this.now - (a.toldAt ?? 0) > 2)) return;
     a.told = w;
+    a.toldAt = this.now;
     this.onArrive?.(a.hero.id, w);
   }
 

@@ -16,6 +16,7 @@ import {
   SCHEDULE,
 } from './balance';
 import { endDay, salaries, tick } from './game';
+import { settleWalks } from './workers';
 import type { DawnEvent, GameState } from './model';
 
 export interface AwayDay {
@@ -53,7 +54,12 @@ export function catchUp(state: GameState, realSeconds: number): Away {
   let left = awaySeconds(realSeconds);
   if (state.over || left <= 0) return { state, days: [], seconds: 0 };
   const total = left;
+  // Con el juego cerrado no hay escena que diga quién llega a su sala: llegan a su hora.
   let s = state;
+  if ([...s.workers, ...s.heroes].some((x) => x.walk !== undefined)) {
+    s = structuredClone(s);
+    settleWalks(s);
+  }
   const days: AwayDay[] = [];
   let waiting: number | undefined;
   const dusk = DUSK * DAY_SECONDS;
