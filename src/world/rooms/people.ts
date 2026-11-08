@@ -150,6 +150,8 @@ export interface Spots {
   /** Los dos de guardia, en el recibidor (sus taburetes, a `guardZ`). */
   guard: Place[];
   guardZ: number;
+  /** La cámara del tesoro (por dónde patrullan los que la guardan), si hay. */
+  vault: { x0: number; x1: number; floor: number } | null;
   /** Salas en uso a las que se puede ir a dar una vuelta. */
   rooms: { room: Room; x0: number; x1: number }[];
   /** Puerta de la calle, por dentro. */
@@ -168,6 +170,7 @@ export function spots(L: RoomsLayout): Spots {
     bar: [],
     guard: [],
     guardZ: SPOT.guardZ,
+    vault: null,
     rooms: [],
     door: { x: 12, floor: 0 },
   };
@@ -179,6 +182,7 @@ export function spots(L: RoomsLayout): Spots {
       // En sus taburetes, delante del armero (ver `SPOT` en recibidor.ts).
       out.guard = SPOT.guards.map((gx) => ({ x: i.x + gx, floor: 0 }));
     }
+    if (room.type === 'tesoro') out.vault = { x0: i.x + 8, x1: i.x + i.w - 8, floor: room.floor };
     if (!inUse(room)) continue;
     for (const b of beds(room, i.w)) {
       const spot = { ...b, x: i.x + b.x, roomId: room.id, floor: room.floor };
@@ -213,13 +217,15 @@ export interface Resident {
   id: string;
   status: 'ok' | 'herido' | 'mision' | 'candidato';
   guard?: boolean;
+  /** De guardia en la cámara: su sitio está allí (de pie), día y noche. */
+  vault?: boolean;
   /** Trabajador: con cama en el servicio o de los que duermen en el pueblo (sin sitio fijo). */
   staff?: 'casa' | 'pueblo';
 }
 
 /**
  * Sitio fijo de cada uno: los heridos en los catres (y si no caben, en camas), los de guardia
- * en el recibidor, los candidatos en la barra, los trabajadores en el servicio y los demás con
+ * en el recibidor o en la cámara, los candidatos en la barra, los trabajadores en el servicio y los demás con
  * una cama cada uno.
  */
 export function homes(people: readonly Resident[], S: Spots): Map<string, Goal> {
@@ -237,6 +243,7 @@ export function homes(people: readonly Resident[], S: Spots): Map<string, Goal> 
     if (b) out.set(p.id, bed(b));
   }
   let g = 0;
+  let nv = 0;
   const staff = [...S.staffBeds];
   for (const p of people.filter((x) => x.staff === 'casa')) {
     const b = staff.shift();
@@ -246,6 +253,14 @@ export function homes(people: readonly Resident[], S: Spots): Map<string, Goal> 
     if (p.guard && g < S.guard.length) {
       // Sentados en su taburete, día y noche (no se acuestan).
       out.set(p.id, { place: S.guard[g++]!, pose: 'sit', z: S.guardZ });
+      continue;
+    }
+    if (p.vault && S.vault) {
+      const v = S.vault;
+      out.set(p.id, {
+        place: { x: v.x0 + (v.x1 - v.x0) * (nv++ % 2 ? 0.7 : 0.3), floor: v.floor },
+        pose: 'stand',
+      });
       continue;
     }
     const b = free.shift();

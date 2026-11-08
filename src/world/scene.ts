@@ -22,6 +22,8 @@ export interface SceneHero {
   marks: HeroMarks;
   /** De guardia en el recibidor (la vista de salas lo enseña). */
   guard?: boolean;
+  /** De guardia en la cámara del tesoro: patrulla dentro, día y noche. */
+  vault?: boolean;
   /** Sala en la que trabaja de día (id). */
   work?: string;
   /** Va corriendo a esta sala (id) a arreglar algo (un incidente); manda sobre `work`. */

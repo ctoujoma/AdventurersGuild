@@ -38,6 +38,7 @@ import { Rng } from './rng';
 import { active } from './rooms';
 import { onWay } from './workers';
 import { bump } from './feats';
+import { guardsAt } from './guards';
 
 /** Lo último que ha pasado con los incidentes, para el aviso de la interfaz. */
 export type IncidentNews = { t: string; k: ChipKind };
@@ -172,7 +173,9 @@ export function catHunts(b: Building, roomId: string): boolean {
 
 /**
  * La casa se ayuda sola: el de guardia (despierto) va a separar la pelea del salón y entretiene
- * al recaudador en la puerta; el gato caza las ratas de las salas de su planta. Devuelve la
+ * al recaudador en la puerta; el de guardia en la cámara se echa encima del ladrón (se avisa
+ * igual: si no puede con él, aún se le puede cerrar el paso); el gato caza las ratas de las
+ * salas de su planta. Devuelve la
  * noticia, si la hay. Muta `s` (una copia).
  */
 function helpers(s: GameState, inc: Incident, to: number): IncidentNews | null {
@@ -186,6 +189,14 @@ function helpers(s: GameState, inc: Incident, to: number): IncidentNews | null {
     // Deja la puerta un momento: va andando y la separa al llegar (como si se le mandara).
     set({ coming: { who: g, at: to + INCIDENT_WALK } });
     return { t: `${nameOf(s, g)} deja la puerta un momento para ir a separarlos.`, k: 'info' };
+  }
+  if (inc.kind === 'ladron' && !inc.duel) {
+    const g = guardsAt(s, 'tesoro')[0];
+    if (!g) return null;
+    const duel = thiefDuel(s, g.id, inc.id, to);
+    if (!duel) return null;
+    set({ duel });
+    return { t: `${g.name}, de guardia en la cámara, se echa encima del ladrón.`, k: 'info' };
   }
   if (inc.kind === 'recaudador' && !inc.held) {
     const g = awakeGuard(s, to);
@@ -268,8 +279,7 @@ export function napping(guards: readonly string[], part: number): string | null 
 }
 
 /** Los de guardia ahora en la puerta (en el orden de la lista de héroes). */
-const guardsOf = (s: GameState) =>
-  s.heroes.filter((h) => h.status === 'ok' && h.guard).map((h) => h.id);
+const guardsOf = (s: GameState) => guardsAt(s, 'puerta').map((h) => h.id);
 
 /**
  * Sale mal. El ladrón que se escapa tiene que salir por el recibidor: si hay alguien de guardia

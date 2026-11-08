@@ -77,6 +77,7 @@ Segunda pasada (lo que quedaba, también hecho):
 | El recaudador en la puerta | Esperaba lo mismo con o sin guardia | El de guardia le entretiene: `GUARD_HOLD` segundos más para pagar (una vez) |
 | Ratas en la cocina (u otra sala de la planta del salón) | Solo las espantaba el jugador | El gato va a cazarlas (`catHunts`, la misma cuenta en el núcleo y en la escena): caza una a los `CAT_FIRST` s y otra cada `CAT_EVERY`; acecha de un lado a otro de la sala y al acabar vuelve al fuego |
 | Acabar un asalto ganado | Se acostaba a todos de golpe (el «a negro» de las noches sin asalto se colaba al acabar) y nadie lo celebraba | Nadie salta de sitio; los defensores que siguen en pie dan saltos donde han peleado (`Crowd.cheerHere`) y luego van a lo suyo andando |
+| Guardia en la cámara del tesoro (nueva: `post: 'tesoro'`, dos como en la puerta) | — | Patrullan la cámara andando, de día y de noche (no se acuestan, `Crowd.patrol`); al ladrón se le echan encima solos a los `INCIDENT_REACT` s (se avisa igual; si pierden, aún le puede parar la puerta) y van corriendo a plantarse delante (`Crowd.engage`); en el asalto empiezan allí despiertos, armados y sin moverse: la última defensa |
 
 **La guardia** (decidido con el usuario, 7 de noviembre): los de guardia siguen en la puerta día y
 noche, sin acostarse (en el núcleo no dormir no les cuesta nada: recuperan moral igual). Para el

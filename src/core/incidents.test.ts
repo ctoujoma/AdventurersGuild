@@ -189,6 +189,37 @@ describe('incidentes', () => {
     expect(news.some((n) => n.t.includes(g.name) && /cierra el paso/.test(n.t))).toBe(true);
   });
 
+  it('el de guardia en la cámara se echa encima del ladrón solo (y se avisa igual)', () => {
+    const s = withIncident('ladron', 'camara');
+    const g = s.heroes.find((h) => h.status === 'ok')!;
+    g.guard = true;
+    g.post = 'tesoro';
+    g.lvl = 8;
+    g.attrs = { F: 12, D: 12, M: 8 };
+    // Antes de reaccionar, nada.
+    stepIncidents(s, 10, 11);
+    expect(s.incidents![0]!.duel).toBeUndefined();
+    const at = 10 + INCIDENT_REACT;
+    const news = stepIncidents(s, at - 1, at);
+    const duel = s.incidents![0]!.duel!;
+    expect(duel.who).toBe(g.id);
+    expect(news.some((n) => n.t.includes(g.name) && /cámara/.test(n.t))).toBe(true);
+    // Le gana: no se pierde nada.
+    stepIncidents(s, at, at + duel.end + 1);
+    expect(s.incidents).toEqual([]);
+    expect(s.gold).toBe(500);
+  });
+
+  it('el de guardia en la cámara no cuenta como guardia de la puerta', () => {
+    const s = withIncident('pelea', 'camara-pelea');
+    const g = s.heroes.find((h) => h.status === 'ok')!;
+    g.guard = true;
+    g.post = 'tesoro';
+    const at = 10 + INCIDENT_REACT;
+    stepIncidents(s, at - 1, at);
+    expect(s.incidents?.[0]?.coming).toBeUndefined();
+  });
+
   it('a la hora de la siesta, el de guardia solo cabecea y se le cuela; con dos, se turnan', () => {
     const nap = (GUARD_NAP[0] + GUARD_NAP[1]) / 2 - 0.01;
     expect(napping(['a'], 0.3)).toBeNull();

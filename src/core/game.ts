@@ -3,6 +3,7 @@
  * `reduce(state, action)` nunca muta el estado que recibe: copia y devuelve uno nuevo.
  */
 import { earn, spill, vaultNews } from './vault';
+import { guardsAt, postFull, postIssue, postOf, type Post } from './guards';
 import { FLAVOR } from '../data/stories';
 import { checkRank } from './ranks';
 import {
@@ -14,7 +15,6 @@ import {
   type IncidentAct,
 } from './incidents';
 import {
-  MAX_GUARDS,
   AWAY_RAID,
   DORM_REST,
   BOARD_SIZE,
@@ -229,7 +229,7 @@ export type Action =
   | { type: 'tip'; id: string }
   | { type: 'ackOpening' }
   | { type: 'nameAsked' }
-  | { type: 'guard'; id: string; on: boolean }
+  | { type: 'guard'; id: string; on: boolean; post?: Post }
   | { type: 'choose'; index: number }
   | { type: 'custom'; patch: Partial<Pick<Custom, 'name' | 'color' | 'symbol'>> }
   | { type: 'buyDog' }
@@ -309,9 +309,8 @@ export function canSend(s: GameState, questId: string, heroIds: readonly string[
   return null;
 }
 
-/** En el recibidor caben dos de guardia. */
-export const guardsFull = (s: GameState) =>
-  s.heroes.filter((h) => h.status === 'ok' && h.guard).length >= MAX_GUARDS;
+/** En el recibidor (y en la cámara) caben dos de guardia. */
+export const guardsFull = (s: GameState, post: Post = 'puerta') => postFull(s, post);
 
 /** Equipo del arcón que se puede poner (los tesoros solo se venden). */
 export const gearInStock = (s: GameState) =>
@@ -782,11 +781,15 @@ function reduceAction(state: GameState, action: Action): GameState {
     }
     case 'guard': {
       const h = state.heroes.find((x) => x.id === action.id);
-      if (!h || h.status !== 'ok' || !!h.guard === action.on) return state;
-      if (action.on && guardsFull(state)) return state;
+      const post = action.post ?? 'puerta';
+      if (!h || h.status !== 'ok') return state;
+      if (action.on ? h.guard && postOf(h) === post : !h.guard) return state;
+      if (action.on && postIssue(state, post)) return state;
       const s = structuredClone(state);
       const g = s.heroes.find((x) => x.id === action.id)!;
       g.guard = action.on || undefined;
+      if (action.on && post === 'tesoro') g.post = post;
+      else delete g.post;
       // De guardia no se puede estar a la vez en la cocina.
       if (action.on) delete g.job;
       return s;
@@ -994,12 +997,16 @@ function reduceAction(state: GameState, action: Action): GameState {
 function backToJob(s: GameState, h: Hero, events: DawnEvent[]): void {
   if (h.guardBefore) {
     delete h.guardBefore;
-    if (!guardsFull(s)) {
+    const post = postOf(h);
+    if (!postIssue(s, post)) {
       h.guard = true;
       delete h.jobBefore;
       return;
     }
-    events.push({ t: `${h.name} no puede volver a la guardia: ya hay dos en la puerta.` });
+    delete h.post;
+    events.push({
+      t: `${h.name} no puede volver a la guardia: ${post === 'tesoro' ? 'ya hay dos en la cámara o ya no está' : 'ya hay dos en la puerta'}.`,
+    });
   }
   if (!h.jobBefore) return;
   const why = canAssign(s, h.id, h.jobBefore);
@@ -1244,7 +1251,7 @@ export function endDay(state: GameState, away = false): GameState {
   }
   if (rng.chance(brawlChance(s, visits))) {
     const home = s.heroes.filter((h) => h.status === 'ok');
-    const guard = home.find((h) => h.guard);
+    const guard = guardsAt(s, 'puerta')[0];
     if (guard)
       events.push({
         t: `Pelea en el salón${decor.includes('naipes') ? ' por una partida de naipes' : ''}: ${guard.name}, que estaba de guardia, la cortó en un momento.`,

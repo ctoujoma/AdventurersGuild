@@ -3,7 +3,7 @@ import { newGame, reduce } from '../core/game';
 import { brewAt } from '../core/larder';
 import type { GameState, Room } from '../core/model';
 import { candidatesFor, crewAlerts, crewGroups, taskLabel, taskOf, taskOptions } from './crew';
-import { GUARD, planTask, type Task } from './drop';
+import { GUARD, GUARD_VAULT, planDrop, planTask, type Task } from './drop';
 
 const roomOf = (s: GameState, type: Room['type']) => s.building.rooms.find((r) => r.type === type)!;
 const group = (s: GameState, key: string) => crewGroups(s).find((g) => g.key === key)!;
@@ -26,6 +26,24 @@ describe('la casa por tareas', () => {
     expect(group(s, 'descansan').people.every((p) => p.hero)).toBe(true);
     // La enfermería está rota: no tiene puestos, no sale.
     expect(crewGroups(s).some((g) => g.key === roomOf(s, 'enfermeria').id)).toBe(false);
+  });
+
+  it('soltar a un héroe en la cámara del tesoro lo pone de guardia allí (y de la puerta se cambia)', () => {
+    let s = newGame('camara');
+    const h = s.heroes[0]!;
+    s = task(s, h.id, GUARD);
+    const d = planDrop(s, h.id, roomOf(s, 'tesoro').id);
+    expect(d.ok && d.text).toMatch(/cámara del tesoro/);
+    if (d.ok) s = d.actions.reduce(reduce, s);
+    expect(taskOf(s, h.id)).toBe(GUARD_VAULT);
+    expect(taskLabel(s, h.id)).toBe('Guarda la cámara');
+    expect(group(s, GUARD).people).toEqual([]);
+    expect(group(s, GUARD_VAULT).people.map((p) => p.id)).toEqual([h.id]);
+    expect(taskOptions(s, s.heroes[1]!.id).find((o) => o.task === GUARD_VAULT)?.label).toMatch(
+      /1 libre/,
+    );
+    // Los trabajadores no hacen guardias.
+    expect(planTask(s, s.workers[0]!.id, GUARD_VAULT).ok).toBe(false);
   });
 
   it('un héroe que ayuda ocupa su puesto y sale en la sala, no entre los que descansan', () => {
