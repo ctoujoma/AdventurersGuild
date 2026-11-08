@@ -24,7 +24,8 @@ import {
 } from '../../core/crafting';
 import type { Action } from '../../core/game';
 import type { GameState, Room } from '../../core/model';
-import { itemEffect, itemName } from '../../data/items';
+import { RARITY_NAMES, itemEffect, itemName } from '../../data/items';
+import { tierOf } from '../../art/tiers';
 import { MatCost } from '../mats';
 import { ItemGrid } from '../ItemGrid';
 import { RECIPES } from '../../data/recipes';
@@ -148,8 +149,9 @@ export function WorkshopInfo({
                 <span class="row-sub">
                   {itemEffect({ ...rc.common, id })} · {hours(clockHours(rc.hours))}
                 </span>
-                <span class="row-sub forge-good">
-                  De las buenas: {rc.good.name} ({itemEffect({ ...rc.good, id })})
+                <span class={`row-sub forge-good tier-${tierOf(rc.good.rarity)}`}>
+                  <em>{RARITY_NAMES[rc.good.rarity ?? 0]}</em>: {rc.good.name} (
+                  {itemEffect({ ...rc.good, id })})
                 </span>
                 <MatCost game={game} mats={rc.mats} />
               </span>

@@ -2,6 +2,7 @@
  * Hazañas (logros con niveles) y resumen de llegada. Se evalúa al amanecer sobre el estado ya
  * copiado (aquí se muta) y deja su línea en el resumen. Los objetivos están en `goals.ts`.
  */
+import { RARITY_NAMES } from '../data/items';
 import { FEATS } from '../data/feats';
 import { GEAR } from '../data/items';
 import { unlockName } from '../data/unlocks';
@@ -47,8 +48,7 @@ export function rewardText(r: Reward): string {
   const parts: string[] = [];
   if (r.gold) parts.push(`${r.gold} monedas`);
   if (r.rep) parts.push(`${r.rep} de reputación`);
-  if (r.item !== undefined)
-    parts.push(['equipo común', 'equipo bueno', 'equipo legendario'][r.item]!);
+  if (r.item !== undefined) parts.push(`equipo ${RARITY_NAMES[r.item].toLowerCase()}`);
   if (r.unlock) parts.push(unlockName(r.unlock));
   return parts.join(' y ');
 }
