@@ -440,7 +440,7 @@ export function trophyIcon(icon: TrophyIcon): PixelBuffer {
         // Calavera de un gran enemigo con su corona, sobre una peana de madera.
         plaque(b, 2, 11, 11, 13);
         b.level = 4;
-        b.ellipse(6.5, 5, 4.5, 4, (x, y) => (x > 8 ? P.tan : P.sand));
+        b.ellipse(6.5, 5, 4.5, 4, (x) => (x > 8 ? P.tan : P.sand));
         b.set(4, 2, P.white);
         b.set(3, 3, P.white);
         b.rect(4, 8, 6, 3, P.sand);
