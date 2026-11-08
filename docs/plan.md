@@ -144,6 +144,20 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
 13. **Sucesos nocturnos, expediciones sin fin y equipo con sentido** (para decidir:
     [`propuesta-noche-expedicion-equipo.md`](propuesta-noche-expedicion-equipo.md)). Las
     expediciones, apuntadas para después.
+14. **Experiencia: se sube de nivel peleando de verdad** (decidido con el usuario, 8 de
+    noviembre, tras la [revisión crítica](revision-critica.md)). Entrenar (el patio de
+    entrenamiento, `TRAINING_XP`) da poca o ninguna experiencia y con tope de 99: no sube de
+    nivel. Los asaltos sí suben de nivel (son una pelea en toda regla): quitar el tope de 99 de
+    `core/raids.ts` y pasar por `levelUp`, con su aviso al amanecer. Los encargos, como siempre.
+15. **La fama se gana con encargos** (decidido con el usuario, 8 de noviembre). Hoy sube sola con
+    el salón: los nobles (+1 cada uno, cada día: de +1 a +5 diarios en la partida del usuario),
+    el cuervo, los tapices y el espía calado (`endDay`, en `core/game.ts`); por eso se llega a
+    Leyenda sin mandar a nadie. Ahora: lo pasivo, casi nada (los nobles traen oro y alguna vez
+    fama, no a diario); fama al resolver algunos incidentes y decisiones (ya la dan algunos), y
+    el grueso, de los encargos y las historias. Los asaltos ganados la siguen dando. Comprobar
+    con `npm run sim` a qué día se llega a cada rango (el simulador no tiene salón: medir también
+    con una partida larga) y retocar `REP`, `RANKS` o los premios para que el ritmo de los rangos
+    no cambie para quien sí aventura.
 
 ## Fase 2 · Tutoriales
 
@@ -337,6 +351,11 @@ en medio, para que los edificios salgan más interesantes (y, más adelante, pas
   nivel; lo que es solo aspecto (colores y, en el salón, los adornos que se compran) en un botón
   «Personalizar» que abre una hoja encima; recetas de los talleres en pestañas. Detalle en
   [`revision-critica.md`](revision-critica.md), «La ficha de sala, una por una».
+- **Pasada de interfaz a encargos, mapa y navegación** (pedido del usuario): cómo se presenta
+  el encargo (tarjeta del tablón y hoja), el mapa y la lista de grupos fuera, la ficha del viaje,
+  las pestañas y los botones de la barra, y lo que queda escondido en submenús. Hallazgos y una
+  propuesta para decidir (pestañas Tablón · Mapa · Héroes · Gremio, el arcón en Héroes, un solo
+  buzón) en [`revision-critica.md`](revision-critica.md), punto 7.
 
 - **Asaltos en directo** (hechos, con cámara lenta al arrastrar y el objetivo «sin heridos»):
   falta su arte ([`encargos/arte-asaltos.md`](encargos/arte-asaltos.md)).

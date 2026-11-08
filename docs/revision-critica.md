@@ -69,8 +69,9 @@ está, cancelar y devolver el oro; y avisar al mandar de encargo a alguien al qu
 
 `core/raids.ts` da 15 de experiencia a quien defiende, pero con tope de 99 (`Math.min(99, …)`)
 para que nadie suba de nivel sin encargos. El patio de entrenamiento, en cambio, sí sube de nivel
-(`levelUp`). Resultado: héroes que llevan meses a un punto de subir. **Decidir:** o se sube de
-nivel también defendiendo, o no se da experiencia y se dice.
+(`levelUp`). Resultado: héroes que llevan meses a un punto de subir. **Decidido con el usuario
+(plan, fase 1, punto 14):** al revés: los asaltos sí suben de nivel (es una pelea en toda regla) y
+entrenar da poca o ninguna experiencia, con tope de 99.
 
 ### 1.4 Textos de los asaltos con la concordancia mal
 
@@ -110,7 +111,8 @@ Es lo que más pesa antes de las expediciones, que son la versión larga de lo m
   fama sube también con el salón, los nobles y los asaltos ganados, así que el tablón se pone en
   Leyenda con héroes de nivel 1–4. Propuesta: que cada tablón traiga de todo (uno fácil, uno a su
   medida, uno difícil), midiendo a los héroes que hay en casa, y que el rango suba el techo, no
-  el suelo.
+  el suelo. **Decidido con el usuario (plan, fase 1, punto 15):** la fama pasiva del salón, casi
+  nada; se gana con encargos, historias y algunos incidentes y decisiones.
 - **Ni rastro de lo factible en el tablón:** la tarjeta dice peligro, plazas y paga, pero no si
   hay grupo para hacerlo. Con «Sugerir» arreglado, la tarjeta podría decir «Pan comido» o
   «Arriesgado» con el mejor grupo de casa.
@@ -283,7 +285,73 @@ guardan la pelea (`fight.sim`) para repetirla; hay que seguir pudiendo repetirla
 versión del motor o el registro ya jugado). Las peleas de las expediciones, el torneo y los
 amigos saldrían ya de aquí.
 
-## 7. Orden recomendado antes de las expediciones
+## 7. Encargos, mapa y navegación (pasada de interfaz)
+
+Con la partida del usuario en móvil (420 × 860), mandando dos grupos.
+
+### El tablón
+
+- La tarjeta dice peligro, días de viaje, plazas, material, paga y, arriba, lo que falta para que
+  caduque (reloj de arena con «1d», que se confunde con los días de viaje). **No dice qué
+  habilidades pide ni si hay grupo en casa para hacerlo.** Propuesta: los iconos de las pruebas
+  (Combate, Arcano…) y una chapa con lo que da el mejor grupo de casa («Pan comido»,
+  «Arriesgado»…), con «Sugerir» ya arreglado.
+- Con muchos encargos el tablón es una rejilla de notas que hay que bajar; ordenar o filtrar
+  (por lo que se puede hacer, por paga, por lo que caduca antes) ayudaría.
+
+### La hoja del encargo
+
+- Bien: cada prueba con su barra (lo que suma el grupo frente a lo que pide) y cada héroe con las
+  tres habilidades que importan en ese encargo.
+- Los 13 héroes salen en una rejilla sin ordenar por lo que aportan: con muchos hay que bajar.
+  Ordenar por lo que suben la probabilidad.
+- Los de guardia salen en gris, al final, sin forma de llevárselos: un toque «Quitar de guardia y
+  llevar» (con aviso de que la puerta se queda con menos).
+- «Sugerir» (punto 1.1) y «Lo mejor del arcón» (punto 3.1).
+
+### El mapa y los grupos fuera
+
+- **El mapa no tiene pestaña:** se abre con un banderín pequeño de la barra del día («Fuera del
+  gremio») o desde la sala de mapas. Es donde están los encargos por sitio y los grupos fuera.
+- En el móvil, los nombres de los sitios son diminutos y se montan sobre los iconos; las marcas
+  (los «!» naranjas, los números azules de los grupos) solo se entienden con el «?».
+- **«Amenaza 59»** sale en el mapa y en el Gremio sin decir qué pasa si sube.
+- **Grupos fuera:** una lista plegada debajo del mapa. Desplegada, cada grupo trae el título (que
+  abre el viaje, pero no lo parece), una barra y un botón grande por héroe (que abre su ficha):
+  pesan más los héroes que el viaje, que es lo que se busca. Mejor retratos pequeños y la fila
+  entera abre el viaje. Si solo hay un grupo fuera, el banderín podría abrir su viaje directamente.
+
+### La ficha del viaje
+
+- Completa: la tira, quién va, el viaje por partes, el diario y el jefe que espera. Se llega solo
+  por el mapa o por un aviso. En la escena no se nota quién falta (las camas vacías y la nota en
+  el tablón de la propuesta de expediciones valdrían también para los encargos).
+
+### Barra de juego y menús escondidos
+
+- **Pestañas:** Taberna, Tablón, Héroes y personal, Gremio. «Taberna» solo cierra paneles (lo
+  mismo que la ×).
+- **Escondidos:** el mapa (un banderín), el arcón, el libro de objetivos y las partidas (dentro del
+  Gremio), el patio, el establo y la empalizada (al final de Gremio › Salas), y el correo (un sobre
+  abajo a la izquierda) separado de la campana de avisos (arriba a la derecha): dos buzones en
+  dos esquinas.
+- **El Gremio mezcla** lo de jugar (Salas, Adornos, Arcón, Libro) con lo del sistema (Partidas,
+  Ajustes, Menú principal); Ajustes, además, tiene su botón arriba.
+- Botones flotantes de la derecha (volver a la sala, modo obras) solo con icono.
+
+**Propuesta para decidir con el usuario:**
+
+1. Pestañas: **Tablón · Mapa · Héroes · Gremio** (la taberna es lo que se ve al cerrar). El mapa
+   con los grupos fuera; el tablón y el mapa enlazados (un encargo del tablón se ve en el mapa y
+   al revés).
+2. **El arcón dentro de Héroes** (Héroes · Barra · Tareas · Equipo): el equipo es de los héroes.
+3. **Un solo buzón:** la campana con los avisos y los informes (o el correo con los dos), no dos
+   iconos en dos esquinas.
+4. **El Gremio, para la casa:** Salas (con el patio a la vista, no al final), Adornos, Libro; lo del
+   sistema (Partidas, Ajustes, Menú principal) en el engranaje de arriba.
+5. La amenaza explicada (qué pasa al subir) donde sale.
+
+## 8. Orden recomendado antes de las expediciones
 
 1. «Sugerir» con todas las combinaciones (pequeño, mucho efecto).
 2. Fallos 1.2 a 1.5 (sastrería, experiencia, textos de asaltos, forja).
