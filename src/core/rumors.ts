@@ -51,7 +51,8 @@ export function rumorQuest(s: GameState, rng: Rng, text: string): Quest {
   let q = generateQuest(rng, `q${s.uid++}`, rank, `i${s.uid++}`, s.mode === 'libre');
   for (let i = 0; i < 8 && taken.has(q.title); i++)
     q = generateQuest(rng, `q${s.uid++}`, rank, `i${s.uid++}`, s.mode === 'libre');
-  const rarity = rng.chance(RUMOR_LEGEND) ? 2 : 1;
+  // Un raro, o (a veces) un épico o un legendario.
+  const rarity = rng.chance(RUMOR_LEGEND) ? (rng.chance(0.5) ? 4 : 3) : 2;
   const base = rng.pick(GEAR.filter((g) => g.rarity === rarity));
   return {
     ...q,

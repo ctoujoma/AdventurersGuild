@@ -97,7 +97,7 @@ describe('equipo', () => {
       const q = generateQuest(rng, `q${i}`, i % 5, `i${i}`);
       if (q.item?.kind && q.item.kind !== 'tesoro') seen.add(q.item.rarity ?? 0);
     }
-    expect([...seen].sort()).toEqual([0, 1, 2]);
+    expect([...seen].sort()).toEqual([0, 1, 2, 3, 4]);
   });
 });
 

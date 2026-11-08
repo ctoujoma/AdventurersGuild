@@ -80,7 +80,7 @@ const ROOM_GOALS: [RoomType, number, Reward][] = [
   ['alquimia', 2, { gold: 80 }],
   ['pintor', 2, { gold: 60 }],
   ['mapas', 2, { gold: 50, rep: 2 }],
-  ['armeria', 2, { gold: 50, item: 1 }],
+  ['armeria', 2, { gold: 50, item: 2 }],
 ];
 
 export const GOALS: readonly GoalDef[] = [
@@ -236,7 +236,7 @@ export const GOALS: readonly GoalDef[] = [
     text: 'Ten {n} héroes en el gremio',
     have: 'heroes',
     n: 8,
-    reward: { gold: 80, item: 1 },
+    reward: { gold: 80, item: 2 },
   },
   {
     id: 'nivel-5',
@@ -251,7 +251,7 @@ export const GOALS: readonly GoalDef[] = [
     text: 'Que un héroe llegue a nivel {n}',
     have: 'level',
     n: 8,
-    reward: { gold: 120, item: 2 },
+    reward: { gold: 120, item: 4 },
   },
   {
     id: 'sin-bajas',

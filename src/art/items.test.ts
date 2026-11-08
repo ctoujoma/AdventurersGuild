@@ -26,16 +26,18 @@ describe('iconos del equipo', () => {
   });
 
   it('cada legendario del botín tiene su dibujo propio', () => {
-    for (const g of GEAR.filter((x) => x.rarity === 2)) {
+    for (const g of GEAR.filter((x) => x.rarity === 4)) {
       expect(LEGENDS[g.name], g.name).toBeDefined();
-      expect(sig(itemIcon(g.icon!, 2, 0, g.name))).not.toBe(sig(itemIcon(g.icon!, 2)));
+      expect(sig(itemIcon(g.icon!, 4, 0, g.name))).not.toBe(sig(itemIcon(g.icon!, 4)));
     }
   });
 
   it('épicos y legendarios se animan; los demás, quietos', () => {
     expect(itemFrames('espada', 0)).toHaveLength(1);
     expect(itemFrames('espada', 1)).toHaveLength(1);
-    const f = itemFrames('espada', 2, 0, 'Hoja de Vadoverde');
+    expect(itemFrames('espada', 2)).toHaveLength(1);
+    expect(itemFrames('espada', 3)).toHaveLength(FRAMES);
+    const f = itemFrames('espada', 4, 0, 'Hoja de Vadoverde');
     expect(f).toHaveLength(FRAMES);
     expect(new Set(f.map(sig)).size).toBeGreaterThan(1);
   });
@@ -59,7 +61,7 @@ describe('el equipo puesto', () => {
 
   it('la corona va en lugar del sombrero', () => {
     const crown = [
-      { icon: 'amuleto' as const, rarity: 2 as const, unique: 'Corona del Rey Ahogado' },
+      { icon: 'amuleto' as const, rarity: 4 as const, unique: 'Corona del Rey Ahogado' },
     ];
     const bare = { ...look, headgear: null };
     expect(sig(renderPortrait(look, { gear: crown }))).toBe(

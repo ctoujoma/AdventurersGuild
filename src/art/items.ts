@@ -30,6 +30,8 @@ const RACK_METAL = [
   [P.amber, P.gold, P.lemon],
 ] as const;
 const RACK_TRIM = [P.oak, P.mist, P.lemon] as const;
+/** El estante (12 × 12) tiene tres acabados: común, bueno a épico, y legendario. */
+const RACK_OF: Record<Rarity, 0 | 1 | 2> = { 0: 0, 1: 1, 2: 1, 3: 1, 4: 2 };
 
 /** Las mejoras del taller (+1 a +3): galones dorados en la esquina de arriba y un destello. */
 function withPlus(base: PixelBuffer, key: string, plus: number): PixelBuffer {
@@ -113,7 +115,7 @@ function tierRows(icon: ItemIcon, t: Tier): { rows: string[]; pal: Record<string
 }
 
 const uniqueOf = (rarity: Rarity, unique?: string) =>
-  rarity === 2 && unique && LEGENDS[unique] ? unique : undefined;
+  rarity === 4 && unique && LEGENDS[unique] ? unique : undefined;
 
 /**
  * El icono de un objeto (16 × 16; `size` 32, el mismo dibujo al doble). Los legendarios con
@@ -247,8 +249,9 @@ export function rackIcon(icon: ItemIcon, rarity: Rarity = 0, plus = 0): PixelBuf
 }
 
 function rackPlain(icon: ItemIcon, rarity: Rarity): PixelBuffer {
-  const [m0, m1, m2] = RACK_METAL[rarity];
-  const trim = RACK_TRIM[rarity];
+  const rk = RACK_OF[rarity];
+  const [m0, m1, m2] = RACK_METAL[rk];
+  const trim = RACK_TRIM[rk];
   return make(`r:${icon}:${rarity}`, 12, 12, (b) => {
     switch (icon) {
       case 'espada':
@@ -286,7 +289,7 @@ function rackPlain(icon: ItemIcon, rarity: Rarity): PixelBuffer {
         b.line(2, 1, 6, 6, P.oak);
         b.line(10, 1, 6, 6, P.oak);
         b.rect(4, 6, 5, 5, trim);
-        b.rect(5, 7, 3, 3, rarity === 1 ? P.cyan : P.wine);
+        b.rect(5, 7, 3, 3, rk === 1 ? P.cyan : P.wine);
         b.set(5, 7, P.white);
         break;
       case 'ganzua':
@@ -310,15 +313,15 @@ function rackPlain(icon: ItemIcon, rarity: Rarity): PixelBuffer {
         b.rect(4, 0, 4, 2, trim);
         for (let y = 2; y < 12; y++) {
           const half = 2 + Math.floor(y / 3);
-          b.hline(6 - half, y, half * 2, [P.mocha, P.ocean, P.wine][rarity]);
+          b.hline(6 - half, y, half * 2, [P.mocha, P.ocean, P.wine][rk]);
           b.set(6 - half, y, P.deep);
         }
-        b.vline(6, 2, 9, [P.cocoa, P.sky, P.red][rarity]);
+        b.vline(6, 2, 9, [P.cocoa, P.sky, P.red][rk]);
         break;
       case 'varita':
         b.line(2, 10, 8, 4, P.oak);
         b.line(3, 10, 9, 4, P.bark);
-        b.rect(8, 1, 3, 3, rarity === 1 ? P.cyan : trim);
+        b.rect(8, 1, 3, 3, rk === 1 ? P.cyan : trim);
         b.set(9, 0, P.white);
         b.set(11, 2, P.white);
         break;

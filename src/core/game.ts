@@ -1316,7 +1316,7 @@ export function endDay(state: GameState, away = false): GameState {
     const big =
       !bad &&
       home.length > 0 &&
-      (d.outcome === 'Éxito brillante' || !!fight?.won || (m.quest.item?.rarity ?? 0) >= 1);
+      (d.outcome === 'Éxito brillante' || !!fight?.won || (m.quest.item?.rarity ?? 0) >= 2);
     events.push({
       t: home.length
         ? `${plural(home.length, 'Vuelve', 'Vuelven')} ${listNames(home)} de «${m.quest.title}».`

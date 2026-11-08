@@ -33,7 +33,7 @@ export function withDye(g: GearMarks | undefined, dye: TintId | undefined): Gear
   return l.length ? l.map((p) => ({ ...p, dye })) : undefined;
 }
 /** Si lleva algún legendario (le salen destellos en la escena). */
-export const hasLegend = (g?: GearMarks) => listOf(g).some((p) => p.rarity === 2);
+export const hasLegend = (g?: GearMarks) => listOf(g).some((p) => p.rarity === 4);
 /** Si lleva la corona (que va en la cabeza, en lugar del sombrero). */
 export const wearsCrown = (g?: GearMarks) => listOf(g).some((p) => p.unique === CROWN);
 
@@ -57,7 +57,7 @@ function tones(p: GearMark): Tones {
     f: FIELD[k]!,
     boot: BOOT[k]!,
     tier: k,
-    u: p.rarity === 2 ? p.unique : undefined,
+    u: p.rarity === 4 ? p.unique : undefined,
   };
   // La capa común, del color del tinte del héroe.
   if (k === 0 && p.dye) {
@@ -575,7 +575,7 @@ export function portraitShine(src: PixelBuffer, g: GearMarks | undefined, f: num
   l.forEach((p, i) => {
     const r = TWINKLE[(f + i * 3) % TWINKLE.length]!;
     const tip = tierOf(p.rarity) === 4 ? P.lemon : P.rose;
-    const u = p.rarity === 2 ? p.unique : undefined;
+    const u = p.rarity === 4 ? p.unique : undefined;
     if (u === CROWN) return star(b, 13, 6, r, P.lemon);
     if (u === 'Varita de la Abuela Tormenta') {
       if (f === 3 || f === 5)

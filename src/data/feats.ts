@@ -24,8 +24,8 @@ export const FEATS: readonly FeatDef[] = [
     rewards: [
       { gold: 40 },
       { gold: 80, rep: 3, unlock: 'roof:pizarra' },
-      { gold: 150, item: 1, unlock: 'tint:morado' },
-      { gold: 300, item: 2 },
+      { gold: 150, item: 2, unlock: 'tint:morado' },
+      { gold: 300, item: 4 },
     ],
   },
   {
@@ -36,8 +36,8 @@ export const FEATS: readonly FeatDef[] = [
     tiers: [3, 10, 25],
     rewards: [
       { rep: 5, unlock: 'sign:pintado' },
-      { gold: 100, item: 1 },
-      { gold: 250, item: 2 },
+      { gold: 100, item: 2 },
+      { gold: 250, item: 4 },
     ],
   },
   {
@@ -46,7 +46,7 @@ export const FEATS: readonly FeatDef[] = [
     text: 'Consigue {n} trofeos',
     stat: 'trophies',
     tiers: [1, 3, 5],
-    rewards: [{ gold: 50, unlock: 'walls:piedra' }, { gold: 120, rep: 5 }, { item: 2 }],
+    rewards: [{ gold: 50, unlock: 'walls:piedra' }, { gold: 120, rep: 5 }, { item: 4 }],
   },
   {
     id: 'veterano',
@@ -54,7 +54,7 @@ export const FEATS: readonly FeatDef[] = [
     text: 'Sube un héroe a nivel {n}',
     stat: 'maxLvl',
     tiers: [3, 5, 8],
-    rewards: [{ gold: 50 }, { item: 1, unlock: 'roof:verde' }, { item: 2 }],
+    rewards: [{ gold: 50 }, { item: 2, unlock: 'roof:verde' }, { item: 4 }],
   },
   {
     id: 'oro',
@@ -62,7 +62,7 @@ export const FEATS: readonly FeatDef[] = [
     text: 'Gana {n} monedas con encargos',
     stat: 'goldEarned',
     tiers: [500, 1500, 4000],
-    rewards: [{ rep: 3 }, { gold: 100, unlock: 'tint:ocre' }, { gold: 200, item: 1 }],
+    rewards: [{ rep: 3 }, { gold: 100, unlock: 'tint:ocre' }, { gold: 200, item: 2 }],
   },
   {
     id: 'asaltos',
@@ -70,7 +70,7 @@ export const FEATS: readonly FeatDef[] = [
     text: 'Repele {n} asaltos a la taberna',
     stat: 'raids',
     tiers: [1, 3, 5],
-    rewards: [{ gold: 60, unlock: 'sign:hierro' }, { gold: 150, rep: 5 }, { item: 2 }],
+    rewards: [{ gold: 60, unlock: 'sign:hierro' }, { gold: 150, rep: 5 }, { item: 4 }],
   },
   {
     id: 'sinbajas',
@@ -78,6 +78,6 @@ export const FEATS: readonly FeatDef[] = [
     text: 'Pasa {n} días seguidos sin bajas',
     stat: 'safeDays',
     tiers: [10, 20, 40],
-    rewards: [{ gold: 40, unlock: 'boxes' }, { gold: 100, rep: 5 }, { item: 2 }],
+    rewards: [{ gold: 40, unlock: 'boxes' }, { gold: 100, rep: 5 }, { item: 4 }],
   },
 ];

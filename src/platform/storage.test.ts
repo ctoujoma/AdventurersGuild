@@ -68,4 +68,32 @@ describe('guardado', () => {
     mem.data = JSON.stringify({ ...newGame('v'), version: 0 });
     expect(loadGame(mem)).toBeNull();
   });
+
+  it('una partida de tres rarezas pasa a cinco: el bueno a raro y el legendario a 4', () => {
+    const mem = memory();
+    const old = newGame('tres-rarezas') as GameState & { version: number };
+    const it = (id: string, rarity: number) => ({ id, name: id, desc: '', value: 1, rarity });
+    old.version = 4;
+    old.inventory = [it('a', 0), it('b', 1), it('c', 2)] as GameState['inventory'];
+    const h = old.heroes[0]!;
+    h.worn = { arma: it('d', 2) as never };
+    old.reports = [
+      { id: 'r', fight: { heroes: [{ gear: { icon: 'espada', rarity: 1 } }] } } as never,
+    ];
+    old.goals = {
+      active: [{ reward: { gold: 1, item: 1 } }] as never,
+      done: {},
+      log: [],
+    };
+    mem.write(JSON.stringify(old));
+    const s = loadGame(mem)!;
+    expect(s.version).toBe(5);
+    expect(s.inventory.map((x) => x.rarity)).toEqual([0, 2, 4]);
+    expect(s.heroes[0]!.worn?.arma?.rarity).toBe(4);
+    expect(
+      (s.reports[0] as never as { fight: { heroes: { gear: { rarity: number } }[] } }).fight
+        .heroes[0]!.gear.rarity,
+    ).toBe(2);
+    expect(s.goals!.active[0]!.reward.item).toBe(2);
+  });
 });
