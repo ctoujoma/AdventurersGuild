@@ -110,24 +110,29 @@ interface Props {
   onTint?: (room: string, tint: TintId | null) => void;
   /** Lo que se hace en la sala (crear y desmontar en los talleres). Sin él, solo se mira. */
   onAct?: (a: Action) => void;
+  /** Enseñar en la escena cómo quedaría la sala con un color, unos segundos. */
+  onPreview?: (room: string, tint: TintId | null) => void;
 }
 
 /**
  * Los colores de las telas de la sala: se elige uno (los de la casa o un tema) y se encarga al
  * pintor del taller, que va andando y la pinta en unas horas. Cada color dice cómo está (candado,
  * sin dinero, sin taller, sin pintor, ocupado); el trabajo en marcha se ve y se puede cancelar.
- * `onTint` (gratis, al momento) solo llega en el modo prueba.
+ * `onTint` (gratis, al momento) solo llega en el modo prueba. Al tocar un color (se tenga o no),
+ * la sala se ve unos segundos así en la escena (`onPreview`) y vuelve sola a la de verdad.
  */
 function RoomTint({
   game,
   room,
   onAct,
   onTint,
+  onPreview,
 }: {
   game: GameState;
   room: Room;
   onAct?: (a: Action) => void;
   onTint?: (room: string, tint: TintId | null) => void;
+  onPreview?: (room: string, tint: TintId | null) => void;
 }) {
   const cur = roomTint(game, room.id);
   const job = paintingOf(game, room.id);
@@ -149,6 +154,8 @@ function RoomTint({
         class={`tav-swatch room-swatch ${id ? '' : 'house'} ${pick === id ? 'on' : ''} ${lock ? 'locked' : ''} ${cur === id ? 'is-now' : ''}`}
         style={bg ? { background: bg } : undefined}
         onClick={() => {
+          // Cómo quedaría: se ve unos segundos en la sala, aunque aún no se tenga.
+          onPreview?.(room.id, id);
           // En el modo prueba se puede elegir igual, para probarlo gratis.
           setLocked(lock ? `${name(id)}: ${st.why}` : null);
           if (lock && !onTint) return;
@@ -179,6 +186,7 @@ function RoomTint({
           return swatch(id, `linear-gradient(${l} 0 30%, ${m} 30% 70%, ${d} 70%)`);
         })}
       </div>
+      {onPreview && <small class="row-sub">Toca un color para ver cómo quedaría.</small>}
       {locked && <small class="lock-why">{locked}</small>}
       {job && js ? (
         <div class="paint-job" role="status">
@@ -473,6 +481,7 @@ export function RoomPanel({
   onOpen,
   onTint,
   onAct,
+  onPreview,
 }: Props) {
   const room = game.building.rooms.find((r) => r.id === roomId);
   if (!room) return <p class="panel-note">Esa sala ya no está.</p>;
@@ -556,7 +565,7 @@ export function RoomPanel({
         <WorkshopInfo game={game} room={room} onAct={onAct} />
       )}
       {!room.works && room.level >= (TINT_FROM[room.type] ?? Infinity) && (onAct || onTint) && (
-        <RoomTint game={game} room={room} onAct={onAct} onTint={onTint} />
+        <RoomTint game={game} room={room} onAct={onAct} onTint={onTint} onPreview={onPreview} />
       )}
       {onWork && <RoomWorks game={game} room={room} onWork={onWork} onMove={onMove} />}
       {links.length > 0 && (

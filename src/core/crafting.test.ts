@@ -105,6 +105,10 @@ describe('la forja crea objetos', () => {
     expect(craftState(t, t.crafts![0]!).frac).toBeCloseTo(atDusk, 5);
     t = reduce(t, { type: 'tick', to: DAY_SECONDS * WORK_START * 0.9 });
     expect(craftState(t, t.crafts![0]!).frac).toBeCloseTo(atDusk, 5);
+    // Ya en la jornada, mientras no llega a la forja (lo dice la escena), tampoco.
+    t = reduce(t, { type: 'tick', to: DAY_SECONDS * 0.2 });
+    expect(craftState(t, t.crafts![0]!).frac).toBeCloseTo(atDusk, 5);
+    t = reduce(t, { type: 'arrived', heroId: hero.id, room: forge });
     t = reduce(t, { type: 'tick', to: DAY_SECONDS * 0.3 });
     // (Si ya ha acabado, también ha seguido.)
     const c = t.crafts?.[0];

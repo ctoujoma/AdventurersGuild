@@ -125,6 +125,8 @@ describe('la casa por tareas', () => {
     let s = newGame('suma');
     const bodega = roomOf(s, 'bodega');
     s = task(s, s.heroes[0]!.id, bodega.id);
+    // Cuenta en la sala desde que llega (lo dice la escena).
+    s = reduce(s, { type: 'arrived', heroId: s.heroes[0]!.id, room: bodega.id });
     const jarras = group(s, bodega.id).people.map((p) => Number(p.gives!.match(/\d+/)![0]));
     expect(jarras.reduce((a, b) => a + b, 0)).toBe(Math.round(brewAt(s, bodega)));
   });

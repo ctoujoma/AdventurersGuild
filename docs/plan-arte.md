@@ -281,6 +281,12 @@ npm run build`.
     va (`capturas/pintor/cenefa-AB.png`): el usuario eligió **bajo las ventanas**, con una raya
     en el límite de la pared con el techo (`capturas/pintor/cenefa.png`). Y la sastrería, igual:
     no se cose hasta que el héroe llega (`DRESS_WALK` solo con el juego cerrado);
+  - ronda 3 (el usuario): nada avanza sin el trabajador en la sala, también la forja, la
+    alquimia, las demás salas y el entrenamiento, y cada mañana se cuenta al llegar (detalle para
+    el principal en [`agente-principal.md`](agente-principal.md), «Cambios en el núcleo hechos
+    por el agente de arte»). Y vista previa del color: al tocar un color en la ficha de la sala
+    (se tenga o no), la sala se ve así 3,5 s y vuelve sola, con un fundido al entrar y al salir
+    (`previewTint` y `snapFade` en `RoomScene.ts`);
   - iconos: en Obras, la sala del pintor con una brocha (`brocha` en `ui/icons.tsx`; `pintado`
     es el del rótulo «Pintado» de la fachada y no se toca) y el banderín con la brocha mojada.
   - [ ] Visto bueno del usuario. Capturas en `capturas/pintor/` (`tools/shots/pintor.mjs`).

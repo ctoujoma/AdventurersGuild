@@ -79,11 +79,17 @@ export const dayPartOf = (s: GameState) => Math.min(1, (s.clock ?? 0) / DAY_SECO
 
 type OnShift = Pick<Worker, 'walk' | 'since'>;
 
-/** Desde qué parte de hoy cuenta alguien en su sala (0: todo el día). */
-export const shiftStart = (x: OnShift) => x.walk ?? x.since ?? 0;
+/**
+ * Desde qué parte de hoy cuenta alguien en su sala (0: todo el día). Quien aún no ha llegado no
+ * cuenta (1: nada de hoy): lo que pasa, pasa de verdad.
+ */
+export const shiftStart = (x: OnShift) => (x.walk !== undefined ? 1 : (x.since ?? 0));
 
-/** Si aún va de camino a su sala ahora mismo. */
-export const onWay = (s: GameState, x: OnShift) => x.walk !== undefined && dayPartOf(s) < x.walk;
+/**
+ * Si aún va de camino a su sala: hasta que la escena dice que ha llegado (`arrivedAt`), sea la
+ * hora que sea. Sin escena (juego cerrado, simulación), ver `settleWalks`.
+ */
+export const onWay = (_s: GameState, x: OnShift) => x.walk !== undefined;
 
 /**
  * La parte de la jornada que cae entre las partes del día `a` y `b` (0–1: 1 es la jornada
@@ -158,7 +164,7 @@ export function canAssign(s: GameState, who: string, room: string | null): strin
 
 /**
  * Pone a alguien a trabajar en una sala (o lo quita). El estado ya es una copia. Con sala nueva
- * va de camino: cuenta desde que llega (`arrivedAt`) o, como mucho, en `JOB_WALK` horas.
+ * va de camino: cuenta desde que llega (`arrivedAt`); sin escena, a las `JOB_WALK` horas.
  */
 export function assign(s: GameState, who: string, room: string | null): void {
   const x: (Worker | Hero) | undefined =
@@ -185,7 +191,7 @@ export function arrivedAt(s: GameState, who: string, room: string): boolean {
   const j = s.heroes.findIndex((h) => h.id === who && h.job === room && h.walk !== undefined);
   if (i < 0 && j < 0) return false;
   const start = <T extends OnShift>(x: T): T => {
-    const out = { ...x, since: Math.min(x.walk!, dayPartOf(s)) };
+    const out = { ...x, since: dayPartOf(s) };
     delete out.walk;
     return out;
   };
@@ -194,12 +200,30 @@ export function arrivedAt(s: GameState, who: string, room: string): boolean {
   return true;
 }
 
-/** Al acabar la noche, mañana cuentan todos desde el principio. El estado ya es una copia. */
+/**
+ * Al acabar la noche: mañana cada uno cuenta desde que llega a su sala (lo dice la escena con
+ * `arrivedAt`; quien viene del pueblo o se levanta de la cama tarda lo que tarda). Sin escena,
+ * se le da por llegado al empezar la jornada (`settleWalks`). El estado ya es una copia.
+ */
 export function newShift(s: GameState): void {
   for (const x of [...s.workers, ...s.heroes]) {
-    delete x.walk;
     delete x.since;
+    if ('trade' in x ? x.room : x.job) x.walk = WORK_START;
+    else delete x.walk;
   }
+}
+
+/**
+ * Sin escena que diga quién llega (el juego cerrado o la simulación): cada uno que iba de camino
+ * llega a su hora (`walk`: al empezar la jornada o a las `JOB_WALK` horas de mandarle). El
+ * estado ya es una copia.
+ */
+export function settleWalks(s: GameState): void {
+  for (const x of [...s.workers, ...s.heroes])
+    if (x.walk !== undefined) {
+      x.since = x.walk;
+      delete x.walk;
+    }
 }
 
 /** Sala con puesto libre para alguien: la de su oficio y, si no, la que tenga sitio. */

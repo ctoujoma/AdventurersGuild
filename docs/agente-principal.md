@@ -99,3 +99,27 @@ Para el agente principal (núcleo, tiempo, tutoriales, combate, talleres, amigos
   (`cappedTrainees`), ropa con candados (`dressStatus`), el taller del pintor (`core/paint.ts`) y la
   auditoría del tiempo (`propuesta-tiempo.md`, pendiente de decidir). Lo que queda de interfaz y
   arte, al final de cada encargo en `encargos/`.
+
+## Cambios en el núcleo hechos por el agente de arte (8 de noviembre)
+
+Pedido del usuario («lo que pasa, pasa de verdad»: sin el trabajador en la sala, no se avanza).
+Hecho desde la rama del pintor; léelo antes de tocar trabajos, talleres o entrenamiento.
+
+- **Nada cuenta hasta que se llega** (`core/workers.ts`): `onWay` ya no mira la hora: quien tiene
+  `walk` va de camino hasta que la escena despacha `arrived` (`arrivedAt`, que ahora cuenta desde
+  ese momento, `since = ahora`). `shiftStart` da 1 (nada de hoy) mientras va de camino. Afecta a
+  todo lo que usa `workAt`/`shiftShare`: caja y visitantes del salón, comida, cerveza, curación,
+  talleres (forja, alquimia, sastrería) y entrenamiento.
+- **Cada mañana también** (`newShift`): quien tiene sala amanece con `walk = WORK_START` y cuenta
+  desde que la escena le ve llegar (los del pueblo tardan lo que tardan andando).
+- **Sin escena, a su hora** (`settleWalks`): con el juego cerrado (`catchUp` en `away.ts` y
+  `endDay(s, true)`) y en `npm run sim` (en `tools/sim.ts`, al empezar cada día y antes de la
+  noche), cada uno llega a su `walk` (el principio de la jornada, o `JOB_WALK` horas tras
+  mandarle). Así `npm run sim` da **lo mismo que antes** (comprobado: salida idéntica).
+- **Pintar y vestir** (`core/paint.ts`, `core/crafting.ts`): no empiezan hasta `arrived`;
+  `PAINT_WALK`/`DRESS_WALK` solo con el juego cerrado (`unseen` en `stepPaints`/`stepCrafts` y en
+  sus `night…`).
+- **Escena**: `SceneHero.due` (el núcleo aún le espera) hace que `crowd.tell` repita el aviso de
+  llegada cada 2 s mientras siga en su sala y sin contar (por si no salió de ella de un día a otro).
+- Ojo con los tests nuevos: quien se asigna en un test no cuenta hasta despachar `arrived`, y tras
+  `endDay(s)` (sin `true`) todos vuelven a ir de camino.

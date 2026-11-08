@@ -25,6 +25,11 @@ export interface SceneHero {
   work?: string;
   /** Va corriendo a esta sala (id) a arreglar algo (un incidente); manda sobre `work`. */
   goTo?: string;
+  /**
+   * El núcleo aún espera que llegue a su sala de trabajo (no cuenta hasta entonces): la escena
+   * avisa al verle en ella (`onArrive`), y repite el aviso mientras siga esperándole.
+   */
+  due?: boolean;
   /** Trabajador: duerme en el dormitorio del servicio o se va a dormir al pueblo. */
   staff?: 'casa' | 'pueblo';
   /** Visitante del salón: entra, se sienta un rato y se va. */

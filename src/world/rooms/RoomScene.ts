@@ -197,6 +197,9 @@ function lightTod(tod: number): number {
 }
 /** Cámara lenta del asalto mientras se arrastra a alguien (parte del ritmo normal). */
 const RAID_SLOW = 0.3;
+/** La vista previa de un color en una sala: lo que dura y lo que tarda el fundido. */
+const PREVIEW_S = 3.5;
+const FADE_S = 0.6;
 /** Lo que ruedan los dados de los de guardia al tirarlos (s). */
 const DICE_ROLL = 0.5;
 /** Hasta dónde llega la luz de cada antorcha del asalto. */
@@ -541,6 +544,13 @@ export class RoomScene {
   >();
   /** Lo que se pintaba antes (para saber cuál acaba de terminar). */
   private painted = new Map<string, ScenePaint>();
+  /**
+   * La vista previa de un color en una sala (al elegirlo en su ficha): se ve unos segundos así y
+   * vuelve sola al de verdad. Al entrar y al salir, un fundido desde lo que se veía (`snapFade`).
+   */
+  private preview: { room: string; tint: TintId | null; until: number } | null = null;
+  /** Lo que hacer justo después de pintar el próximo fotograma (la foto para el fundido). */
+  private afterDraw: (() => void) | null = null;
   /** Las salas recién pintadas que aún gotean (ver `dripPaint`). */
   private drips: { box: Rect; ramp: readonly string[]; until: number }[] = [];
   /** Las texturas de los lados de la última sala puesta y su dibujo del color nuevo (ver `box`). */
@@ -823,7 +833,7 @@ export class RoomScene {
       model.look,
       model.garden,
       model.decor,
-      model.tints,
+      this.tintsNow(model),
       model.trophies,
       model.dog,
       model.raven,
@@ -832,7 +842,7 @@ export class RoomScene {
       (model.paints ?? []).map((p) => [p.room, p.tint]),
     ]);
     if (model.visitors) this.crowd.setVisitors(model.visitors);
-    this.crowd.setTints(model.tints ?? {});
+    this.crowd.setTints(this.tintsNow(model));
     if (key === this.key) {
       this.crowd.setPeople(model.heroes);
       this.showIncidents();
@@ -1434,6 +1444,73 @@ export class RoomScene {
         if (end && end.how !== 'cancelado') this.craftDone(c, end);
       }
     this.crafted = now;
+  }
+
+  /** Los colores de las salas que se ven ahora: los de verdad, con la vista previa encima. */
+  private tintsNow(m: SceneModel): Readonly<Record<string, TintId>> {
+    const p = this.preview;
+    if (!p) return m.tints ?? {};
+    const out = { ...m.tints };
+    if (p.tint) out[p.room] = p.tint;
+    else delete out[p.room];
+    return out;
+  }
+
+  /**
+   * Enseña una sala con otro color unos segundos (`PREVIEW_S`) y vuelve sola a la de verdad, con
+   * un fundido al entrar y al salir. Con el color de ahora, deja de enseñarla.
+   */
+  previewTint(room: string, tint: TintId | null): void {
+    const m = this.model;
+    if (!m) return;
+    const now = (m.tints?.[room] ?? null) === tint;
+    if (now && !this.preview) return;
+    this.snapFade(() => {
+      this.preview = now ? null : { room, tint, until: this.t + PREVIEW_S };
+    });
+  }
+
+  /**
+   * Cambia lo que se ve con un fundido: se hace una foto de lo de ahora, se cambia (`change`), se
+   * rehace la escena y la foto se va apagando encima.
+   */
+  private snapFade(change: () => void): void {
+    this.afterDraw = () => {
+      const src = this.canvas;
+      const box = src.getBoundingClientRect();
+      const host = src.parentElement;
+      if (!host || !box.width) {
+        change();
+        if (this.model) this.setModel(this.model);
+        return;
+      }
+      const shot = document.createElement('canvas');
+      shot.width = src.width;
+      shot.height = src.height;
+      shot.getContext('2d')?.drawImage(src, 0, 0);
+      const at = host.getBoundingClientRect();
+      Object.assign(shot.style, {
+        position: 'absolute',
+        left: `${box.left - at.left}px`,
+        top: `${box.top - at.top}px`,
+        width: `${box.width}px`,
+        height: `${box.height}px`,
+        imageRendering: 'pixelated',
+        pointerEvents: 'none',
+        transition: `opacity ${FADE_S}s ease`,
+        opacity: '1',
+      });
+      host.appendChild(shot);
+      change();
+      if (this.model) this.setModel(this.model);
+      // Al fotograma siguiente (ya con lo nuevo debajo), la foto se apaga y se quita.
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          shot.style.opacity = '0';
+          setTimeout(() => shot.remove(), FADE_S * 1000 + 100);
+        }),
+      );
+    };
   }
 
   /**
@@ -2248,7 +2325,7 @@ export class RoomScene {
   /** Caja de una sala con sus muebles, sus faroles y, si está en obras, el andamio delante. */
   private roomBox(plain: Room, rect: Rect, b: Building): void {
     // Vestida con su tema de color: el arte de las telas lo lee de ella.
-    const room = dress(plain, this.model?.tints);
+    const room = dress(plain, this.model ? this.tintsNow(this.model) : undefined);
     const r = interior(rect);
     const ruin = ruined(room) && room.type !== 'torre';
     const dim = ruined(room) || bare(room);
@@ -4098,6 +4175,9 @@ export class RoomScene {
 
   private update(dt: number): void {
     this.t += dt;
+    // Se acaba la vista previa de un color: vuelve al de verdad, fundiéndose.
+    if (this.preview && this.t > this.preview.until && !this.afterDraw)
+      this.snapFade(() => (this.preview = null));
     // De noche (el asalto) todo va a su ritmo; de día, la gente sigue al reloj.
     // En el asalto en directo, mientras se arrastra a alguien, todo va a cámara lenta.
     const slow = this.night && this.drag?.moved && this.liveRaid ? RAID_SLOW : 1;
@@ -4666,6 +4746,10 @@ export class RoomScene {
     if (raining) r.render(this.rainScene, this.flat);
     if (shadows) this.shared.uDepth.value = this.noDepth;
     if (live) r.render(this.topScene, this.flat);
+    // La foto para un fundido, ahora que el lienzo aún tiene el fotograma.
+    const after = this.afterDraw;
+    this.afterDraw = null;
+    after?.();
   }
 
   /** Los sitios de una obra: un recuadro de puntos que late; el elegido, lleno y con marca. */

@@ -136,6 +136,7 @@ export function sceneModel(s: GameState): SceneModel {
       // Mientras lo visten, está en la sastrería.
       work: dressingOf(s, h.id)?.room ?? h.job,
       goTo: goTo(h.id),
+      due: h.walk !== undefined || undefined,
       train: trainBar(s, h),
     });
   }
@@ -152,6 +153,7 @@ export function sceneModel(s: GameState): SceneModel {
       // El pintor que está pintando una sala, en ella (y no en su taller).
       work: painterAt(s, w.id) ?? w.room,
       goTo: goTo(w.id),
+      due: w.walk !== undefined || undefined,
       staff: beds-- > 0 ? 'casa' : 'pueblo',
     });
   for (const h of s.candidates)
