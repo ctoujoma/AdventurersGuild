@@ -7,6 +7,7 @@ import {
   RAVEN_PRICE,
   sealInitial,
 } from '../data/custom';
+import { VET_SNUB_REST } from './balance';
 import { customOf, endDay, newGame, reduce } from './game';
 import type { GameState } from './model';
 import { assaultSetup } from './assault';
@@ -124,7 +125,19 @@ describe('tu taberna', () => {
       h.morale = 10;
     }
     const base = endDay(s).heroes[0]!.morale;
-    const withWing = endDay({ ...s, fac: { ...s.fac, vet: 1 } }).heroes[0]!.morale;
-    expect(withWing - base).toBe(4);
+    // Con el ala (y cama en ella): +4 y, además, no se quejan (sin ella, -2).
+    const w = structuredClone(s);
+    w.building.rooms.push({
+      id: 'v',
+      type: 'veteranos',
+      col: 1,
+      floor: 2,
+      w: 1,
+      h: 1,
+      level: 1,
+      spent: 0,
+    });
+    const withWing = endDay({ ...w, fac: { ...w.fac, vet: 1 } }).heroes[0]!.morale;
+    expect(withWing - base).toBe(4 + VET_SNUB_REST);
   });
 });

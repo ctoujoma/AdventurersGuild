@@ -3,6 +3,7 @@
  * `reduce(state, action)` nunca muta el estado que recibe: copia y devuelve uno nuevo.
  */
 import { earn, spill, vaultNews } from './vault';
+import { dormIssue, sleepPlan, isVet } from './beds';
 import { guardsAt, postFull, postIssue, postOf, type Post } from './guards';
 import { FLAVOR } from '../data/stories';
 import { checkRank } from './ranks';
@@ -39,7 +40,11 @@ import {
   SALARY_EVERY,
   TRAINING_XP,
   VET_CAP,
-  VET_LEVEL,
+  VET_SNUB_CAP,
+  CACHE_GRUDGE,
+  OVER_CAP_DROP,
+  REFUSE_GRUDGE,
+  VET_SNUB_REST,
   VET_REST,
   WORK_END,
   UNPAID_LIMIT,
@@ -139,6 +144,7 @@ import {
   uncleBuilding,
   type ExtendDir,
   type Plan,
+  roomBeds,
 } from './rooms';
 import { Rng } from './rng';
 import { BOSSES } from '../data/bosses';
@@ -230,6 +236,8 @@ export type Action =
   | { type: 'ackOpening' }
   | { type: 'nameAsked' }
   | { type: 'guard'; id: string; on: boolean; post?: Post }
+  /** Cambiar a alguien de dormitorio (héroes) o de cuarto del servicio (trabajadores). */
+  | { type: 'dorm'; who: string; room: string }
   | { type: 'choose'; index: number }
   | { type: 'custom'; patch: Partial<Pick<Custom, 'name' | 'color' | 'symbol'>> }
   | { type: 'buyDog' }
@@ -669,10 +677,19 @@ function reduceAction(state: GameState, action: Action): GameState {
       delete x.request;
       if (action.yes) {
         x.salary += amount;
+        // Pagarle lo que pide le quita el rencor de antes.
+        delete x.grudge;
         x.morale = Math.min(100, x.morale + RAISE_MORALE);
         x.history.push(`Día ${s.day} · ${cache ? 'Le pagaste su caché' : 'Le subiste el sueldo'}`);
       } else {
         x.morale = Math.max(0, x.morale + (cache ? CACHE_REFUSE_MORALE : REFUSE_MORALE));
+        // Y se lo guarda: durante unos días no se anima del todo (se suma a lo que ya tuviera).
+        const g = cache ? CACHE_GRUDGE : REFUSE_GRUDGE;
+        const old = x.grudge && x.grudge.until > s.day ? x.grudge : null;
+        x.grudge = {
+          cap: Math.min(40, (old?.cap ?? 0) + g.cap),
+          until: Math.max(old?.until ?? 0, s.day + g.days),
+        };
         x.history.push(`Día ${s.day} · ${cache ? 'Le negaste el caché' : 'Le negaste el aumento'}`);
       }
       return s;
@@ -777,6 +794,14 @@ function reduceAction(state: GameState, action: Action): GameState {
       const rng = new Rng(s.rng);
       choose(s, rng, action.index);
       s.rng = rng.save();
+      return s;
+    }
+    case 'dorm': {
+      if (dormIssue(state, action.who, action.room)) return state;
+      const s = structuredClone(state);
+      const p =
+        s.heroes.find((h) => h.id === action.who) ?? s.workers.find((w) => w.id === action.who)!;
+      p.dorm = action.room;
       return s;
     }
     case 'guard': {
@@ -1392,17 +1417,43 @@ export function endDay(state: GameState, away = false): GameState {
 
   // Moral: se descansa en la taberna; quien está harto se va, quien está desanimado pide más.
   const deserters: Hero[] = [];
+  // Los veteranos quieren dormir en su ala: con cama allí, más moral; sin ella, se quejan.
+  const plan = sleepPlan(s);
+  const wing = (h: Hero) =>
+    s.building.rooms.find((r) => r.id === plan.get(h.id))?.type === 'veteranos';
   for (const h of s.heroes) {
     if (h.status !== 'ok') continue;
-    const vet = h.lvl >= VET_LEVEL ? s.fac.vet : 0;
-    const cap = restCap(s.fac.tab) + (has(h, 'bebedor') && s.fac.tab >= 2 ? 10 : 0) + VET_CAP[vet]!;
+    // Los de guardia no se acuestan: cuentan como si tuvieran su cama en el ala.
+    const housedVet = isVet(h) && (h.guard || wing(h));
+    const snub = isVet(h) && !housedVet;
+    const vet = housedVet ? s.fac.vet : 0;
+    if (!snub) delete h.vetSnub;
+    else if (!h.vetSnub) {
+      h.vetSnub = true;
+      events.push({
+        t: s.building.rooms.some((r) => r.type === 'veteranos' && roomBeds(r) > 0)
+          ? `${h.name} es ${h.sex === 'f' ? 'veterana' : 'veterano'} y no le queda cama en el ala de veteranos: duerme con los novatos y no le hace gracia. Amplía el ala.`
+          : `${h.name} ya es ${h.sex === 'f' ? 'veterana' : 'veterano'} y no le hace gracia seguir durmiendo con los novatos: quiere un cuarto en el ala de veteranos.`,
+        k: 'warn',
+      });
+    }
+    if (h.grudge && h.grudge.until <= s.day) delete h.grudge;
+    const cap =
+      restCap(s.fac.tab) +
+      (has(h, 'bebedor') && s.fac.tab >= 2 ? 10 : 0) +
+      VET_CAP[vet]! -
+      (snub ? VET_SNUB_CAP : 0) -
+      (h.grudge?.cap ?? 0);
     const gain =
       restMorale(s.fac.tab) +
       chapelRest(s.fac.cap) +
       decorMorale +
       VET_REST[vet]! +
-      (DORM_REST[s.fac.dorm] ?? 0);
+      (DORM_REST[s.fac.dorm] ?? 0) -
+      (snub ? VET_SNUB_REST : 0);
     if (h.morale < cap) h.morale = Math.min(cap, h.morale + gain);
+    // Sin su cuarto o con rencor, aunque ya estuviera animado, se le va bajando hasta el tope.
+    else if (snub || h.grudge) h.morale = Math.max(cap, h.morale - OVER_CAP_DROP);
     if (h.morale < MORALE_QUIT && !has(h, 'leal') && vet < 2 && rng.chance(DESERT_CHANCE)) {
       deserters.push(h);
       continue;

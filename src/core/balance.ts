@@ -58,6 +58,9 @@ export const VET_LEVEL = 4;
 /** Moral extra por noche y tope de moral extra de los veteranos, por nivel del ala. */
 export const VET_REST = [0, 4, 8, 12] as const;
 export const VET_CAP = [0, 10, 15, 20] as const;
+/** Veterano sin cama en el ala: moral de menos por noche y tope de moral más bajo. */
+export const VET_SNUB_REST = 2;
+export const VET_SNUB_CAP = 10;
 
 /** Dormitorio de nivel 4 (dosel y alfombras): moral extra por noche para todos los de casa. */
 export const DORM_REST = [0, 0, 0, 0, 2] as const;
@@ -356,6 +359,11 @@ export const SALARY_EVERY = 7;
 export const UNPAID_LIMIT = 2;
 export const UNPAID_MORALE = -20;
 export const REFUSE_MORALE = -10;
+/** Rencor al negar un aumento o el caché: tope de moral de menos y días que dura. */
+export const REFUSE_GRUDGE = { cap: 15, days: 7 } as const;
+export const CACHE_GRUDGE = { cap: 20, days: 14 } as const;
+/** Lo que baja cada noche la moral de quien está por encima de su tope (rencor o sin su cuarto). */
+export const OVER_CAP_DROP = 2;
 
 // ---------- Asaltos ----------
 /** Desde qué día pueden llegar asaltos y a partir de qué notoriedad empiezan a fijarse. */

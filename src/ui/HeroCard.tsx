@@ -1,4 +1,5 @@
 import { tierOf } from '../art/tiers';
+import { CACHE_GRUDGE, REFUSE_GRUDGE } from '../core/balance';
 import { useEffect, useState } from 'preact/hooks';
 import { DRESS_GOLD, GUARD_BONUS, VET_LEVEL, XP_PER_LEVEL } from '../core/balance';
 import { craftState, dressStatus, dressingOf } from '../core/crafting';
@@ -507,8 +508,8 @@ export function HeroCard({
                   role="status"
                   {...help(
                     h.request === 'cache'
-                      ? `«Nivel ${h.lvl}. Ya no soy un cualquiera, y mi precio tampoco.» Si se lo niegas, se lo tomará muy mal.`
-                      : '«Con lo que me pagas no me llega ni para la cerveza.»',
+                      ? `«Nivel ${h.lvl}. Ya no soy un cualquiera, y mi precio tampoco.» Si se lo niegas, se lo tomará muy mal: ${CACHE_GRUDGE.days} días sin pasar de cierto ánimo.`
+                      : `«Con lo que me pagas no me llega ni para la cerveza.» Si se lo niegas, se lo guardará: ${REFUSE_GRUDGE.days} días sin animarse del todo.`,
                   )}
                 >
                   <span>
@@ -526,6 +527,22 @@ export function HeroCard({
                 </div>
               )}
 
+              {!candidate && !gone && h.grudge && h.grudge.until > game.day && (
+                <p
+                  class="row-sub room-bad"
+                  {...help(
+                    'Le negaste lo que pedía y se lo guarda: su moral no sube del todo. Se le pasa con los días o si le pagas lo siguiente que pida.',
+                  )}
+                >
+                  {h.sex === 'f' ? 'Resentida' : 'Resentido'}: moral −{h.grudge.cap} de tope ·{' '}
+                  {h.grudge.until - game.day} {h.grudge.until - game.day === 1 ? 'día' : 'días'}
+                </p>
+              )}
+              {!candidate && !gone && h.vetSnub && (
+                <p class="row-sub room-bad">
+                  Quiere dormir en el ala de veteranos: mientras no tenga cama allí, se anima menos.
+                </p>
+              )}
               {!candidate && !gone && (
                 <div class="acts">
                   {canTask && (

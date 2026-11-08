@@ -1,4 +1,5 @@
 import { INCIDENTS } from '../data/incidents';
+import { sleepPlan } from '../core/beds';
 import { craftState, dressingOf } from '../core/crafting';
 import { paintState, painterAt } from '../core/paint';
 import { RECIPES } from '../data/recipes';
@@ -142,6 +143,7 @@ export function sceneModel(s: GameState): SceneModel {
     .map((i) => INCIDENTS[i.kind].how);
   const callHeroes = asks.some((h) => h === 'heroe' || h === 'alguien') || undefined;
   const callStaff = asks.includes('alguien') || undefined;
+  const plan = sleepPlan(s);
   for (const h of s.heroes) {
     if (h.status === 'muerto' || h.status === 'desaparecido') continue;
     heroes.push({
@@ -153,6 +155,7 @@ export function sceneModel(s: GameState): SceneModel {
       marks: marksOf(h),
       guard: !!h.guard && !h.post,
       vault: (h.guard && h.post === 'tesoro') || undefined,
+      dorm: plan.get(h.id),
       // Mientras lo visten, está en la sastrería.
       work: dressingOf(s, h.id)?.room ?? h.job,
       goTo: goTo(h.id),
@@ -177,6 +180,7 @@ export function sceneModel(s: GameState): SceneModel {
       callout: callStaff,
       due: w.walk !== undefined || undefined,
       staff: beds-- > 0 ? 'casa' : 'pueblo',
+      dorm: plan.get(w.id),
     });
   for (const h of s.candidates)
     heroes.push({

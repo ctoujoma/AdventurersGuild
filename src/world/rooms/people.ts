@@ -219,6 +219,8 @@ export interface Resident {
   guard?: boolean;
   /** De guardia en la cámara: su sitio está allí (de pie), día y noche. */
   vault?: boolean;
+  /** Su dormitorio (id): coge una cama de esa sala si queda. */
+  dorm?: string;
   /** Trabajador: con cama en el servicio o de los que duermen en el pueblo (sin sitio fijo). */
   staff?: 'casa' | 'pueblo';
 }
@@ -238,15 +240,20 @@ export function homes(people: readonly Resident[], S: Spots): Map<string, Goal> 
     z: b.z,
     bed: b,
   });
+  // Una cama de su dormitorio, si queda; si no, la primera libre.
+  const take = (list: BedSpot[], dorm?: string) => {
+    const i = dorm ? list.findIndex((b) => b.roomId === dorm) : -1;
+    return i >= 0 ? list.splice(i, 1)[0] : list.shift();
+  };
   for (const p of people.filter((x) => x.status === 'herido')) {
-    const b = cots.shift() ?? free.shift();
+    const b = cots.shift() ?? take(free, p.dorm);
     if (b) out.set(p.id, bed(b));
   }
   let g = 0;
   let nv = 0;
   const staff = [...S.staffBeds];
   for (const p of people.filter((x) => x.staff === 'casa')) {
-    const b = staff.shift();
+    const b = take(staff, p.dorm);
     if (b) out.set(p.id, bed(b));
   }
   for (const p of people.filter((x) => x.status === 'ok' && !x.staff)) {
@@ -263,7 +270,7 @@ export function homes(people: readonly Resident[], S: Spots): Map<string, Goal> 
       });
       continue;
     }
-    const b = free.shift();
+    const b = take(free, p.dorm);
     if (b) out.set(p.id, bed(b));
   }
   // Los que buscan trabajo (héroes y trabajadores) esperan en la barra; si no caben, a su lado.

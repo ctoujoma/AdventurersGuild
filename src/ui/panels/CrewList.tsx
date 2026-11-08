@@ -31,7 +31,7 @@ interface Props {
 const toTask = (v: string): Task => v || null;
 
 /** El retrato de alguien de la casa (trabajador, héroe o quien pide trabajo). */
-function Face({ game, id }: { game: GameState; id: string }) {
+export function Face({ game, id }: { game: GameState; id: string }) {
   const w = game.workers.find((x) => x.id === id) ?? game.seekers.find((x) => x.id === id);
   if (w) return <Portrait look={workerLook(w)} frame={workerFrame(w)} scale={1} alive={false} />;
   const h = game.heroes.find((x) => x.id === id);

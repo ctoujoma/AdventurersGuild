@@ -37,6 +37,7 @@ import { help } from '../HoldHelp';
 import { Icon, type IconName } from '../icons';
 import { CrewGroup } from './CrewList';
 import { WorkshopInfo } from './WorkshopInfo';
+import { DormList } from './DormList';
 import { isWorkshop } from '../../core/crafting';
 import { crewGroups } from '../crew';
 import { GUARD, type Task } from '../drop';
@@ -564,6 +565,12 @@ export function RoomPanel({
           {n.text}
         </span>
       ))}
+      {onAct &&
+        (room.type === 'dormitorio' || room.type === 'veteranos' || room.type === 'servicio') &&
+        room.level > 0 &&
+        (!room.works || room.works.kind === 'extend') && (
+          <DormList game={game} room={room} onAct={onAct} onOpen={onOpen} />
+        )}
       {onTask && onOpen && (hasPosts(room.type) || room.type === 'recibidor') && (
         <RoomCrew game={game} room={room} onTask={onTask} onOpen={onOpen} />
       )}

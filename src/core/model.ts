@@ -68,6 +68,15 @@ export interface Hero {
   job?: string;
   /** La que tenía al salir de encargo: al volver, la recupera si sigue habiendo sitio. */
   jobBefore?: string;
+  /** Dormitorio elegido a mano (id); sin esto, el que le toque (ver `core/beds.ts`). */
+  dorm?: string;
+  /**
+   * Rencor por negarle un aumento o su caché: hasta el día `until`, su moral no pasa del tope de
+   * siempre menos `cap`. Se le pasa antes si se le paga lo siguiente que pida.
+   */
+  grudge?: { cap: number; until: number };
+  /** Ya se ha quejado de no tener cama en el ala de veteranos (para avisar una vez). */
+  vetSnub?: boolean;
   /** Estaba de guardia al caer herido: al curarse, vuelve a su puesto (`post`) si queda sitio. */
   guardBefore?: boolean;
   /**
@@ -98,6 +107,8 @@ export interface Worker {
   fee: number;
   /** Sala en la que trabaja (id); sin sala, descansa. */
   room?: string;
+  /** Cuarto del servicio elegido a mano (id); sin esto, el que le toque. */
+  dorm?: string;
   /**
    * Va de camino a su sala (tarea nueva): no cuenta hasta que llega (acción `arrived`) o, si
    * nadie lo dice, hasta esta parte del día. Se borra al llegar y cada noche.

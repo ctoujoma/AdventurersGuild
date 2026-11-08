@@ -87,6 +87,23 @@ describe('la gente de la casa', () => {
     expect(h.has('e')).toBe(false);
   });
 
+  it('cada uno coge cama en su dormitorio (los veteranos, en su ala)', () => {
+    const b = uncleBuilding();
+    maxOut(b);
+    const S = spots(roomsLayout(b));
+    const vet = S.beds.find((x) => b.rooms.find((r) => r.id === x.roomId)?.type === 'veteranos');
+    expect(vet).toBeTruthy();
+    const h = homes(
+      [
+        { id: 'a', status: 'ok' },
+        { id: 'v', status: 'ok', dorm: vet!.roomId },
+      ],
+      S,
+    );
+    expect(h.get('v')?.bed?.roomId).toBe(vet!.roomId);
+    expect(h.get('a')?.bed?.roomId).not.toBe(vet!.roomId);
+  });
+
   it('los que buscan trabajo y no caben en la barra esperan a su lado', () => {
     const S = spots(L0());
     const many = Array.from({ length: S.bar.length + 2 }, (_, i) => ({
