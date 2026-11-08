@@ -24,6 +24,7 @@ import type { BossFight as BossFightRecord, Facilities, GameState } from '../cor
 import { FACILITY_INFO } from '../data/labels';
 import { loadRecords, mergeRecords, saveRecords } from '../platform/records';
 import { loadGame, saveGame, webStorage } from '../platform/storage';
+import { addMinute, sendReport } from '../platform/telemetry';
 import type { Point } from '../world/scene';
 import { cheat, testFight } from '../core/cheats';
 import { BossCall, BossFight, BossWait } from './BossFight';
@@ -438,6 +439,19 @@ export function App() {
     if (screen === 'game' && seen) comeBackRef.current((Date.now() - seen) / 1000);
     // Solo al arrancar.
   }, []);
+  // Minutos jugados (con la partida a la vista) y envío a los desarrolladores cada 2.
+  const shareRef = useRef(settings.share);
+  shareRef.current = settings.share;
+  useEffect(() => {
+    if (screen !== 'game') return;
+    if (shareRef.current) sendReport(gameRef.current);
+    const id = setInterval(() => {
+      if (document.hidden) return;
+      const m = addMinute();
+      if (shareRef.current && m % 2 === 0) sendReport(gameRef.current);
+    }, 60_000);
+    return () => clearInterval(id);
+  }, [screen]);
   // Con la pestaña oculta o el juego cerrado, se guarda la hora; al volver, se pone al día.
   const hiddenAt = useRef<number | null>(null);
   useEffect(() => {
