@@ -305,8 +305,11 @@ npm run build`.
   - sin almacén, el rincón de la bodega (`cornerPile`): tres columnas pegadas a la pared del fondo,
     a la derecha (lingotes, rollos y fardos), que crecen hasta 10 de cada;
   - el «+N»: una raya dorada por mejora en la esquina del icono y un destello (`itemIcon(…, plus)`;
-    ya en el Arcón, la ficha del héroe, la del taller y el tablero de la bodega).
-  - [ ] Visto bueno del usuario. Capturas en `capturas/materiales/` (`tools/shots/almacen.mjs`).
+    ya en el Arcón, la ficha del héroe, la del taller y el tablero de la bodega);
+  - en la interfaz que hizo el de interfaz (#171): `MatIcon` (`ui/mats.tsx`) pinta estos dibujos a
+    su tamaño (16 en líneas y chips, 32 en el estante) y el muñeco (`GearDoll`), las siluetas.
+  - [ ] Visto bueno del usuario. Capturas en `capturas/materiales/` (`tools/shots/almacen.mjs`;
+        `interfaz.png`, el Arcón y la ficha).
 
 - [ ] **Pendiente (el usuario, 8 de noviembre): vista previa cosmética de los héroes**, como la de
       los colores de las salas: al elegir tinte o prenda en la sastrería, verlo unos segundos en el
