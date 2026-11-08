@@ -79,7 +79,10 @@ export function WorkshopInfo({
             {who ? (
               <Portrait look={lookOf(who)} marks={marksOf(who)} scale={1} alive={false} />
             ) : (
-              <BufferImage buf={itemIcon(c.item?.icon ?? rc!.icon, c.item?.rarity)} scale={2} />
+              <BufferImage
+                buf={itemIcon(c.item?.icon ?? rc!.icon, c.item?.rarity, c.item?.plus)}
+                scale={2}
+              />
             )}
             <span class="row-info">
               <b>{what}</b>
@@ -159,7 +162,7 @@ export function WorkshopInfo({
               const why = canUndo(game, room.id, it.id);
               return (
                 <article key={it.id} class="row">
-                  <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity)} scale={2} />
+                  <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity, it.plus)} scale={2} />
                   <span class="row-info">
                     <b>{it.name}</b>
                     <span class="row-sub">{itemEffect(it)}</span>

@@ -419,7 +419,11 @@ export function HeroCard({
                     >
                       {wornShown ? (
                         <BufferImage
-                          buf={itemIcon(wornShown.icon ?? 'espada', wornShown.rarity)}
+                          buf={itemIcon(
+                            wornShown.icon ?? 'espada',
+                            wornShown.rarity,
+                            wornShown.plus,
+                          )}
                           scale={1}
                         />
                       ) : (
@@ -443,7 +447,10 @@ export function HeroCard({
                     const it = h.worn?.[slot];
                     return it ? (
                       <div key={slot} class={`gear-item rarity-${it.rarity ?? 0}`}>
-                        <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity)} scale={2} />
+                        <BufferImage
+                          buf={itemIcon(it.icon ?? 'espada', it.rarity, it.plus)}
+                          scale={2}
+                        />
                         <span>
                           <b>{it.name}</b>
                           <small>
@@ -481,7 +488,10 @@ export function HeroCard({
                           onEquip(it.id);
                         }}
                       >
-                        <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity)} scale={2} />
+                        <BufferImage
+                          buf={itemIcon(it.icon ?? 'espada', it.rarity, it.plus)}
+                          scale={2}
+                        />
                         <span>
                           <b>{it.name}</b>
                           <small>

@@ -4,6 +4,7 @@
  * la barra con sus jarras, las mesas con velas, la chimenea con el escudo, los barriles y la
  * leña. Crece con el nivel del salón y con la decoración que se compra.
  */
+import type { Material } from '../../core/materials';
 import type { GearView } from '../scene';
 import { trophyIcon } from '../../art/items';
 import { P, R, type Ramp } from '../../art/palette';
@@ -31,6 +32,16 @@ export interface SalonLook {
   gearRoom: string | null;
   /** Lo llena que está la cámara del tesoro (0–1, en octavos para no repintar a cada moneda). */
   vault: number;
+  /**
+   * Los materiales guardados: lo lleno de cada uno (0–1 de su tope, en décimos; solo los que caben)
+   * y si hay almacén (si no, se amontonan en un rincón de la bodega).
+   */
+  mats: MatsLook;
+}
+
+export interface MatsLook {
+  fill: Partial<Record<Material, number>>;
+  store: boolean;
 }
 
 export const NO_LOOK: SalonLook = {
@@ -40,6 +51,7 @@ export const NO_LOOK: SalonLook = {
   gear: [],
   gearRoom: null,
   vault: 0,
+  mats: { fill: {}, store: false },
 };
 
 // ---------- Pared del fondo (a la escala del fondo) ----------

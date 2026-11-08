@@ -291,6 +291,28 @@ npm run build`.
     es el del rótulo «Pintado» de la fachada y no se toca) y el banderín con la brocha mojada.
   - [ ] Visto bueno del usuario. Capturas en `capturas/pintor/` (`tools/shots/pintor.mjs`).
 
+- [x] **Materiales, ranuras y almacén** ([`encargos/arte-materiales.md`](encargos/arte-materiales.md)):
+  - los seis materiales (`art/materials.ts`, `materialIcon(m, 16 | 32)`), distintos por la forma:
+    lingote, rollo de cuero atado, fardo de tela, manojo de hierbas, listones y cristal que brilla
+    (a 32 con más detalle, no ampliado);
+  - las siluetas apagadas de las ranuras (`slotIcon('arma' | 'cuerpo' | 'complemento')`), para el
+    muñeco de la ficha (lo monta el de interfaz);
+  - el almacén (`salas/almacen.ts`): una tarima por material con su letrero colgado del techo (su
+    dibujo) y la pila encima según lo lleno (`SceneModel.mats`, en décimos en `look.mats`):
+    lingotes en pirámide, rollos, fardos, sacos de hierbas, tablones y la caja de cristales que
+    destella. En las anchas, dos tarimas por material (se llena una y luego la otra). En la pared,
+    estanterías con cajas que se llenan con el total;
+  - sin almacén, el rincón de la bodega (`cornerPile`): tres columnas pegadas a la pared del fondo,
+    a la derecha (lingotes, rollos y fardos), que crecen hasta 10 de cada;
+  - el «+N»: una raya dorada por mejora en la esquina del icono y un destello (`itemIcon(…, plus)`;
+    ya en el Arcón, la ficha del héroe, la del taller y el tablero de la bodega).
+  - [ ] Visto bueno del usuario. Capturas en `capturas/materiales/` (`tools/shots/almacen.mjs`).
+
+- [ ] **Pendiente (el usuario, 8 de noviembre): vista previa cosmética de los héroes**, como la de
+      los colores de las salas: al elegir tinte o prenda en la sastrería, verlo unos segundos en el
+      retrato de la ficha y en la figura de la escena (redibujarla con lo elegido y volver con un
+      fundido, como `previewTint`/`snapFade`). Toca hacerlo después de los materiales.
+
 - [ ] **La pelea de los asaltos, en directo** ([`encargos/arte-asaltos.md`](encargos/arte-asaltos.md)).
       Un PR por punto, desde la rama `claude/raid-combat-system-nkzv5y`.
   - [x] 1. Golpes por clase (`raidFx.ts`, `blowOf` y `blowFrame` en `crowd.ts`): el guerrero

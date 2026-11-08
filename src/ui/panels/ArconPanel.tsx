@@ -105,7 +105,7 @@ export function ArconPanel({
             {stock.map((it) => (
               <div key={it.id} class="row-group">
                 <article class="row">
-                  <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity)} scale={2} />
+                  <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity, it.plus)} scale={2} />
                   {gear(it)}
                   <div class="row-actions">
                     <button
@@ -191,7 +191,7 @@ export function ArconPanel({
           <div class="rows">
             {worn.map(({ h, slot, it }) => (
               <article key={`${h.id}-${slot}`} class="row">
-                <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity)} scale={2} />
+                <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity, it.plus)} scale={2} />
                 <span class="row-info" {...help(it.desc)}>
                   <b>{it.name}</b>
                   <button class="linklike row-sub" onClick={() => onHero(h.id)}>

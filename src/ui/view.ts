@@ -8,6 +8,7 @@ import { onWay, staffBeds, workerTitle } from '../core/workers';
 import { visitorsOf } from '../core/salon';
 import { trainState } from '../core/training';
 import { goldCap } from '../core/vault';
+import { MATERIAL_LIST, matCap, matOf, storeLevel } from '../core/materials';
 import { CREST_COLORS } from '../data/custom';
 import { CLASS_NAMES } from '../data/labels';
 import { gearOf } from '../core/resolve';
@@ -190,9 +191,22 @@ export function sceneModel(s: GameState): SceneModel {
     look: customOf(s).look,
     garden: customOf(s).garden,
     visitors: { day: s.day, kinds: visitorOrder(s) },
-    gear: gearInStock(s).map((i) => ({ icon: i.icon ?? 'espada', rarity: i.rarity ?? 0 })),
+    gear: gearInStock(s).map((i) => ({
+      icon: i.icon ?? 'espada',
+      rarity: i.rarity ?? 0,
+      ...(i.plus ? { plus: i.plus } : {}),
+    })),
     trophies: s.trophies.map((t) => t.icon),
     vault: Math.min(1, s.gold / goldCap(s)),
+    mats: {
+      fill: Object.fromEntries(
+        MATERIAL_LIST.flatMap((m) => {
+          const cap = matCap(s, m);
+          return cap > 0 ? [[m, Math.min(1, matOf(s, m) / cap)]] : [];
+        }),
+      ),
+      store: storeLevel(s) > 0,
+    },
     heroes,
     incidents: (s.incidents ?? []).map(({ id, kind, room, taps, until, duel }) => ({
       id,
