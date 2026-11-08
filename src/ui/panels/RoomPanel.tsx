@@ -1,10 +1,9 @@
 import { useState } from 'preact/hooks';
 import { roomMax } from '../../core/balance';
 import { appeal, neighborsOf, seatsOf, visitorList, visitorsOf } from '../../core/salon';
-import { canWork, customOf, roster, type Action } from '../../core/game';
+import { canWork, roster, type Action } from '../../core/game';
 import { TINTS, TINT_FROM, TINT_IDS, type TintId } from '../../data/custom';
-import { unlockSource } from '../../core/goals';
-import type { UnlockId } from '../../data/unlocks';
+import { paintState, paintStatus, paintingOf, roomTint } from '../../core/paint';
 import { beerCap, dailyYield, eatersOf, foodCap } from '../../core/larder';
 import { ATTR_NAMES, trainCap } from '../../core/training';
 import {
@@ -107,60 +106,127 @@ interface Props {
   onTask?: (who: string, task: Task) => void;
   /** Abrir la ficha de un héroe. */
   onOpen?: (id: string) => void;
-  /** Elegir el tema de color de sus telas (`null`: los de la casa). */
+  /** Modo prueba: cambiar el color de sus telas gratis y al momento (`null`: los de la casa). */
   onTint?: (room: string, tint: TintId | null) => void;
-  /** Si se tiene una pieza (los temas de color que faltan salen con candado). */
-  has?: (id: UnlockId) => boolean;
   /** Lo que se hace en la sala (crear y desmontar en los talleres). Sin él, solo se mira. */
   onAct?: (a: Action) => void;
 }
 
-/** Los colores de las telas de la sala: los de la casa o uno de los temas. */
+/**
+ * Los colores de las telas de la sala: se elige uno (los de la casa o un tema) y se encarga al
+ * pintor del taller, que va andando y la pinta en unas horas. Cada color dice cómo está (candado,
+ * sin dinero, sin taller, sin pintor, ocupado); el trabajo en marcha se ve y se puede cancelar.
+ * `onTint` (gratis, al momento) solo llega en el modo prueba.
+ */
 function RoomTint({
   game,
   room,
+  onAct,
   onTint,
-  has,
 }: {
   game: GameState;
   room: Room;
-  onTint: (room: string, tint: TintId | null) => void;
-  has: (id: UnlockId) => boolean;
+  onAct?: (a: Action) => void;
+  onTint?: (room: string, tint: TintId | null) => void;
 }) {
-  const cur = customOf(game).colors?.[room.id] ?? null;
+  const cur = roomTint(game, room.id);
+  const job = paintingOf(game, room.id);
+  const [pick, setPick] = useState<TintId | null>(job ? job.tint : cur);
   const [locked, setLocked] = useState<string | null>(null);
-  const swatch = (id: TintId | null, label: string, bg?: string) => {
-    const why = id && cur !== id && !has(`tint:${id}`) ? unlockSource(`tint:${id}`) : null;
-    const text = why ? `${label}. Se gana con: ${why}` : label;
+  const name = (id: TintId | null) => (id ? TINTS[id].name : 'De la casa');
+  const swatch = (id: TintId | null, bg?: string) => {
+    const st = paintStatus(game, room.id, id);
+    const lock = st.state === 'lock';
+    const text = lock ? `${name(id)}. ${st.why}` : name(id);
     return (
       <button
         key={id ?? 'casa'}
         role="radio"
-        aria-checked={cur === id}
-        aria-disabled={!!why}
+        aria-checked={pick === id}
+        aria-disabled={lock}
         aria-label={text}
         title={text}
-        class={`tav-swatch room-swatch ${id ? '' : 'house'} ${cur === id ? 'on' : ''} ${why ? 'locked' : ''}`}
+        class={`tav-swatch room-swatch ${id ? '' : 'house'} ${pick === id ? 'on' : ''} ${lock ? 'locked' : ''} ${cur === id ? 'is-now' : ''}`}
         style={bg ? { background: bg } : undefined}
         onClick={() => {
-          if (why) return setLocked(`${label}: se gana con ${why}.`);
-          setLocked(null);
-          onTint(room.id, id);
+          // En el modo prueba se puede elegir igual, para probarlo gratis.
+          setLocked(lock ? `${name(id)}: ${st.why}` : null);
+          if (lock && !onTint) return;
+          setPick(id);
         }}
-      />
+      >
+        {lock && <Icon name="candado" size={10} />}
+      </button>
     );
   };
+  const st = paintStatus(game, room.id, pick);
+  // Sin taller o sin pintor, decirlo ya, aunque esté elegido el color de ahora.
+  const gate = !job
+    ? ([null, ...TINT_IDS] as (TintId | null)[])
+        .filter((t) => t !== cur)
+        .map((t) => paintStatus(game, room.id, t))
+        .find((x) => x.state !== 'lock')
+    : undefined;
+  const blocked = gate && (gate.state === 'none' || gate.state === 'nobody') ? gate : null;
+  const js = job ? paintState(game, job) : null;
   return (
     <div class="room-tint">
-      <span class="row-sub">Colores de las telas</span>
+      <span class="row-sub">Colores de las telas · ahora: {name(cur)}</span>
       <div class="tav-swatches" role="radiogroup" aria-label="Colores de las telas">
-        {swatch(null, 'De la casa')}
+        {swatch(null)}
         {TINT_IDS.map((id) => {
           const [, d, m, l] = TINTS[id].ramp;
-          return swatch(id, TINTS[id].name, `linear-gradient(${l} 0 30%, ${m} 30% 70%, ${d} 70%)`);
+          return swatch(id, `linear-gradient(${l} 0 30%, ${m} 30% 70%, ${d} 70%)`);
         })}
       </div>
       {locked && <small class="lock-why">{locked}</small>}
+      {job && js ? (
+        <div class="paint-job" role="status">
+          <span class="row-sub">
+            Pintándola de {name(job.tint).toLowerCase()}:{' '}
+            {js.walking
+              ? 'el pintor va de camino.'
+              : js.hoursLeft === null
+                ? 'parado, el pintor no está en su taller.'
+                : `acaba en ${Math.max(1, Math.ceil(js.hoursLeft))} h.`}
+          </span>
+          <span class="train-bar" aria-label={`${Math.round(js.frac * 100)} %`}>
+            <i style={{ width: `${Math.round(js.frac * 100)}%` }} />
+          </span>
+          {onAct && (
+            <button class="btn btn-wood" onClick={() => onAct({ type: 'cancelPaint', id: job.id })}>
+              Cancelar · devuelve {job.gold}
+            </button>
+          )}
+        </div>
+      ) : st.state === 'ok' ? (
+        <>
+          <button
+            class="btn btn-gold dress-go"
+            disabled={!onAct}
+            onClick={() => onAct?.({ type: 'paint', room: room.id, tint: pick })}
+          >
+            <Icon name="brocha" size={12} /> Pintar de {name(pick).toLowerCase()} · {st.cost}
+          </button>
+          <small class="lock-why">El pintor irá andando y la pintará en unas horas.</small>
+        </>
+      ) : st.state === 'same' ? (
+        <small class="lock-why">
+          {blocked && 'why' in blocked ? blocked.why : 'Ya es de este color. Elige otro.'}
+        </small>
+      ) : (
+        <>
+          <button class="btn btn-wood dress-go locked" disabled>
+            <Icon name={st.state === 'lock' ? 'candado' : 'brocha'} size={12} /> Pintar · {st.cost}
+          </button>
+          <small class="lock-why">{st.why}</small>
+        </>
+      )}
+      {onTint && cur !== pick && (
+        <button class="btn btn-wood dress-go" onClick={() => onTint(room.id, pick)}>
+          Probar gratis (modo prueba)
+        </button>
+      )}
     </div>
   );
 }
@@ -406,7 +472,6 @@ export function RoomPanel({
   onTask,
   onOpen,
   onTint,
-  has,
   onAct,
 }: Props) {
   const room = game.building.rooms.find((r) => r.id === roomId);
@@ -490,8 +555,8 @@ export function RoomPanel({
       {isWorkshop(room.type) && room.level > 0 && !room.works && (
         <WorkshopInfo game={game} room={room} onAct={onAct} />
       )}
-      {onTint && !room.works && room.level >= (TINT_FROM[room.type] ?? Infinity) && (
-        <RoomTint game={game} room={room} onTint={onTint} has={has ?? (() => true)} />
+      {!room.works && room.level >= (TINT_FROM[room.type] ?? Infinity) && (onAct || onTint) && (
+        <RoomTint game={game} room={room} onAct={onAct} onTint={onTint} />
       )}
       {onWork && <RoomWorks game={game} room={room} onWork={onWork} onMove={onMove} />}
       {links.length > 0 && (

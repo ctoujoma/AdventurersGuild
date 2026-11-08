@@ -62,3 +62,15 @@ El taller, el pintor y el trabajo que se ve: detalle en [`../plan-arte.md`](../p
 pinta, despacha `arrived` al llegar y pinta la pared por franjas con `paintState(s, p).frac`.
 Las telas (mantas, alfombras, cortinas) cambian al acabar, no por franjas. Icono nuevo `brocha`
 en Obras (el de antes, `pintado`, es el del rótulo de la fachada).
+
+## Hecho en la interfaz (8 de noviembre)
+
+- **Ficha de la sala** (`RoomTint` en `RoomPanel.tsx`): se elige un color y se ve su estado con
+  `paintStatus` (candado y de dónde sale, falta dinero, sin taller, sin pintor, ocupado; sin
+  taller o sin pintor se dice aunque esté elegido el color de ahora). El botón «Pintar de … ·
+  precio» despacha `paint`; el trabajo en marcha sale con su barra (`paintState`), si va de camino
+  o cuántas horas le quedan, y «Cancelar · devuelve …» (`cancelPaint`). El color de ahora lleva un
+  borde de puntos.
+- **`tint` gratis, solo en el modo prueba** («Probar gratis»; en prueba se pueden elegir también
+  los que tienen candado).
+- **Escena:** ya la dejó hecha arte (arriba); no hacía falta nada provisional.
