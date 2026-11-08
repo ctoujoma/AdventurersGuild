@@ -226,6 +226,7 @@ export const LEVEL_RANK: Partial<Record<RoomType, Partial<Record<number, number>
   sastreria: { 1: 1, 3: 2 },
   alquimia: { 1: 2, 3: 3 },
   pintor: { 1: 1, 3: 2 },
+  almacen: { 3: 2 },
 };
 /** Rango que pide un nivel de sala (0: ninguno). */
 export const levelRank = (t: RoomType, level: number) => LEVEL_RANK[t]?.[level] ?? 0;
@@ -527,6 +528,8 @@ export const PAINT_SLOTS = [0, 1, 1, 2] as const;
 export const MAT_LOOSE = 10;
 export const STORE_CAP = [0, 15, 30, 50] as const;
 export const MAT_SELL = 3;
+/** Las expediciones se abren cuando el primer héroe llega a este nivel. */
+export const EXPEDITION_LEVEL = 5;
 /**
  * Mejorar un objeto en su taller: hasta `TEMPER_MAX`; cada paso cuesta `TEMPER_GOLD` y
  * `TEMPER_HOURS` por el nivel al que llega, y tantos de su material como ese nivel.

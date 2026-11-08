@@ -42,3 +42,22 @@ decidido»). El núcleo ya está; esto es lo que falta. Rama propia, PR contra `
    que lleve a construir el almacén (o que diga que se podrá al pagar la deuda).
 
 Si tocas `App.tsx`, dilo en el PR.
+
+## Hecho en la interfaz (8 de noviembre)
+
+Capturas en `capturas/equipo/`. Piezas comunes en `ui/mats.tsx` (`MatIcon`, `MatCost`,
+`MatShelf`, `chipMat`) y dibujos nuevos en `ui/icons.tsx` (`lingote`, `cuero`, `tela`, `hierbas`,
+`madera`, `cristal`; arte puede retocarlos).
+
+1. **Estante** arriba del Arcón: un tarro por material con «7/10» (dorado si está lleno); al
+   tocarlo, de dónde sale y para qué sirve. Sin almacén: «Sin almacén caben 10 de cada».
+2. **Salto**: los «+2 cuero» del informe llevan su dibujo y, al abrir la carta (una vez por
+   informe), saltan a la pestaña Gremio, donde está el Arcón (`flyTo` en `coinFlight.ts`).
+3. **Muñeco**: las tres ranuras con lo que lleva o su silueta; tocar una enseña lo que cabe del
+   arcón con lo que cambia cada habilidad («Combate 7 → 10») y deja quitar lo puesto.
+4. **Taller**: los materiales de cada receta (verde si los hay; gris con lo que falta) y la
+   sección «Mejorar» con oro, material, horas y el «+1» que gana; el trabajo se lee «Mejorando
+   … a +N». El «+N» sale en el nombre (`itemName`) y suma en `itemEffect`.
+5. **Tablón**: el dibujo del material junto a la paga (y en la hoja del encargo, con su nombre).
+6. **Rincón lleno**: aviso en la campanita (`almacen-lleno`) que abre las obras con el almacén
+   elegido o, con la deuda, lleva al Gremio; descartado, no vuelve.

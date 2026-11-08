@@ -16,19 +16,43 @@ function bump(el: Element): void {
 export function flyCoins(from: { x: number; y: number }, n: number, onLand: () => void): void {
   const target = document.querySelector('[data-gold]');
   if (!target) return;
+  const r = target.getBoundingClientRect();
+  // El icono de la moneda del contador, a la izquierda del número.
+  flyTo(
+    from,
+    target,
+    { x: r.left + 12, y: r.top + r.height / 2 },
+    n,
+    () => {
+      const el = document.createElement('span');
+      el.className = 'coin-fly';
+      return el;
+    },
+    onLand,
+  );
+}
+
+/**
+ * Lo mismo con cualquier cosa (`make` crea cada pieza): sale de `from` en arco hasta `to`, sobre
+ * `target`, que da un saltito con cada una que llega. Lo usan los materiales del informe.
+ */
+export function flyTo(
+  from: { x: number; y: number },
+  target: Element,
+  to: { x: number; y: number },
+  n: number,
+  make: () => HTMLElement,
+  onLand: () => void,
+): void {
   if (reduced() || typeof Element.prototype.animate !== 'function') {
     bump(target);
     return;
   }
-  const r = target.getBoundingClientRect();
-  // El icono de la moneda del contador, a la izquierda del número.
-  const to = { x: r.left + 12, y: r.top + r.height / 2 };
   // Si la caja no se ve (la cámara mira a otro sitio), salen del borde de la pantalla.
   const x0 = Math.max(8, Math.min(innerWidth - 8, from.x));
   const y0 = Math.max(8, Math.min(innerHeight - 8, from.y));
   for (let i = 0; i < n; i++) {
-    const el = document.createElement('span');
-    el.className = 'coin-fly';
+    const el = make();
     const sx = x0 + (Math.random() - 0.5) * 24;
     const sy = y0 + (Math.random() - 0.5) * 10;
     el.style.left = `${sx}px`;

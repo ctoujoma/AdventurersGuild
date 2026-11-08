@@ -10,6 +10,7 @@ import { listNames, plural } from '../core/text';
 import { ATTR_NAMES, cappedTrainees } from '../core/training';
 import { nurseBonus } from '../core/workers';
 import { RECIPES } from '../data/recipes';
+import { storeLevel } from '../core/materials';
 import { crewAlerts } from './crew';
 import type { IconName } from './icons';
 import { jobRoomName } from './roomName';
@@ -22,6 +23,8 @@ export type Go =
   | { barra: true }
   | { quest: string }
   | { trip: string }
+  /** El modo obras con una sala elegida para construir (el almacén). */
+  | { build: 'almacen' }
   | { panel: 'tablon' | 'fuera' | 'gremio' };
 
 export interface Notice {
@@ -165,6 +168,23 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
       go: rooms.some((r) => r.id === e.room) ? { room: e.room } : { panel: 'gremio' },
     });
   }
+
+  // El rincón de los materiales se llenó y se vendió algo: la primera vez, que lleve a construir
+  // el almacén (o que diga que se podrá al pagar la deuda). Descartado, no vuelve.
+  if (
+    !storeLevel(game) &&
+    game.reports.some((r) => r.chips.some((c) => c.t.startsWith('No cabía')))
+  )
+    out.push({
+      id: 'almacen-lleno',
+      text:
+        game.mode === 'libre'
+          ? 'En el rincón de la bodega ya no caben más materiales y lo que sobra se vende barato. Construye un almacén.'
+          : 'En el rincón de la bodega ya no caben más materiales y lo que sobra se vende barato. Cuando pagues la deuda podrás construir un almacén.',
+      k: 'warn',
+      icon: 'cofre',
+      go: game.mode === 'libre' ? { build: 'almacen' } : { panel: 'gremio' },
+    });
 
   // Obras recién acabadas.
   for (const id of done) {

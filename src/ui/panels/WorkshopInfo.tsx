@@ -1,7 +1,7 @@
 /**
  * Un taller por dentro (forja, sastrería, alquimia): lo que se está haciendo, las recetas para
- * crear, los objetos del arcón que se pueden desmontar para sacar su receta y, en la sastrería,
- * vestir a un héroe (tinte y prenda).
+ * crear (con los materiales que piden), los objetos del arcón que se pueden mejorar o desmontar
+ * para sacar su receta y, en la sastrería, vestir a un héroe (tinte y prenda).
  */
 import { useState } from 'preact/hooks';
 import { itemIcon } from '../../art/items';
@@ -9,6 +9,7 @@ import { DRESS_GOLD, DRESS_HOURS } from '../../core/balance';
 import {
   canCraft,
   canDress,
+  canTemper,
   canUndo,
   clockHours,
   craftSlots,
@@ -17,12 +18,14 @@ import {
   goodChance,
   knownRecipes,
   recipesFor,
+  temperCost,
   undoable,
   undoChance,
 } from '../../core/crafting';
 import type { Action } from '../../core/game';
 import type { GameState, Room } from '../../core/model';
-import { itemEffect } from '../../data/items';
+import { itemEffect, itemName } from '../../data/items';
+import { MatCost } from '../mats';
 import { RECIPES } from '../../data/recipes';
 import { GARMENTS, TINTS, TINT_IDS, type Dress, type GarmentId } from '../../data/custom';
 import { TRADES, type Trade } from '../../data/workers';
@@ -50,6 +53,11 @@ export function WorkshopInfo({
   const known = knownRecipes(game);
   const all = recipesFor(room.type);
   const undo = undoable(game, room.id);
+  // Lo del arcón que se mejora en este taller (y aún no está a tope).
+  const better = game.inventory.flatMap((it) => {
+    const cost = temperCost(it);
+    return cost && cost.room === room.type ? [{ it, cost }] : [];
+  });
   const good = goodChance(game, room.id);
   const smith = TRADES[room.type as Trade]?.name.m.toLowerCase() ?? 'alguien';
   return (
@@ -71,9 +79,11 @@ export function WorkshopInfo({
         const who = c.dress && game.heroes.find((h) => h.id === c.dress!.hero);
         const what = who
           ? `Vistiendo a ${who.name}`
-          : c.item
-            ? `Desmontando ${c.item.name}`
-            : `Creando: ${rc!.name}`;
+          : c.item && c.temper
+            ? `Mejorando ${itemName(c.item)} a +${(c.item.plus ?? 0) + 1}`
+            : c.item
+              ? `Desmontando ${itemName(c.item)}`
+              : `Creando: ${rc!.name}`;
         return (
           <article key={c.id} class="row forge-job">
             {who ? (
@@ -135,6 +145,7 @@ export function WorkshopInfo({
                 <span class="row-sub forge-good">
                   De las buenas: {rc.good.name} ({itemEffect({ ...rc.good, id })})
                 </span>
+                <MatCost game={game} mats={rc.mats} />
               </span>
               {onAct && (
                 <button
@@ -151,6 +162,45 @@ export function WorkshopInfo({
           );
         })}
       </div>
+      {better.length > 0 && (
+        <>
+          <h4 class="sec-title">Mejorar</h4>
+          <span class="row-sub">
+            Un objeto del arcón sube +1 en lo suyo, hasta +3. Mientras tanto no está en el arcón.
+          </span>
+          <div class="rows">
+            {better.map(({ it, cost }) => {
+              const why = canTemper(game, room.id, it.id);
+              const main = Object.keys(it.bonus ?? {})[0];
+              return (
+                <article key={it.id} class="row">
+                  <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity, it.plus)} scale={2} />
+                  <span class="row-info">
+                    <b>{itemName(it)}</b>
+                    <span class="row-sub">
+                      {itemEffect(it)} · a +{cost.to}:{' '}
+                      <b class="forge-plus">+1{main ? ` ${main}` : ''}</b> ·{' '}
+                      {hours(clockHours(cost.hours))}
+                    </span>
+                    <MatCost game={game} mats={cost.mats} />
+                  </span>
+                  {onAct && (
+                    <button
+                      class="btn btn-gold"
+                      disabled={!!why}
+                      title={why ?? undefined}
+                      aria-label={`Mejorar ${itemName(it)} a +${cost.to} por ${cost.gold} monedas`}
+                      onClick={() => onAct({ type: 'temper', room: room.id, itemId: it.id })}
+                    >
+                      Mejorar · <Icon name="coin" size={10} /> {cost.gold}
+                    </button>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        </>
+      )}
       {undo.length > 0 && (
         <>
           <h4 class="sec-title">Desmontar</h4>
@@ -164,7 +214,7 @@ export function WorkshopInfo({
                 <article key={it.id} class="row">
                   <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity, it.plus)} scale={2} />
                   <span class="row-info">
-                    <b>{it.name}</b>
+                    <b>{itemName(it)}</b>
                     <span class="row-sub">{itemEffect(it)}</span>
                   </span>
                   {onAct && (

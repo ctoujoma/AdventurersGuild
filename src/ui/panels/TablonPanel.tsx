@@ -1,7 +1,9 @@
 import { chainDef } from '../../core/chains';
 import type { Quest } from '../../core/model';
 import { dangerClass, dangerLabel } from '../../data/labels';
+import { MATERIALS, QUEST_MATERIAL } from '../../core/materials';
 import { help } from '../HoldHelp';
+import { MatIcon } from '../mats';
 import { Icon } from '../icons';
 import { plural } from '../text';
 import { dawnIn, shortDawn, span } from '../when';
@@ -45,6 +47,7 @@ export function TablonPanel({ quests, seeAll, onOpen }: Props) {
               `${span(q.days)} de viaje`,
               `hasta ${q.slots} ${plural(q.slots, 'héroe', 'héroes')}`,
               `${q.reward} monedas${q.item ? ' y un objeto' : ''}`,
+              `trae ${MATERIALS[QUEST_MATERIAL[q.type]].name.toLowerCase()}`,
               chain ? '' : expires,
             ]
               .filter(Boolean)
@@ -88,6 +91,12 @@ export function TablonPanel({ quests, seeAll, onOpen }: Props) {
               <span class="note-k" {...help('Héroes que caben')}>
                 <Icon name="heroe" size={10} />
                 {q.slots}
+              </span>
+              <span
+                class="note-k note-mat"
+                {...help(`Trae ${MATERIALS[QUEST_MATERIAL[q.type]].name.toLowerCase()}`)}
+              >
+                <MatIcon m={QUEST_MATERIAL[q.type]} size={12} />
               </span>
               <b class="reward">
                 <Icon name="coin" size={12} />

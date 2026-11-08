@@ -4,12 +4,13 @@ import { craftState, dressStatus, dressingOf } from '../core/crafting';
 import { hasUnlock, unlockSource } from '../core/goals';
 import { PERKS } from '../core/classes';
 import { canHire, gearInStock, requestAmount } from '../core/game';
-import type { GameState, Hero } from '../core/model';
-import { SKILLS, attr, moraleBand, skill } from '../core/party';
+import type { GameState, Hero, Item, ItemIcon } from '../core/model';
+import { SKILLS, attr, moraleBand, skill, type SkillId } from '../core/party';
 import { CLASS_NAMES, MORALE_INFO, statusLabel } from '../data/labels';
 import { HIDDEN_TRAIT_HINT, TRAIT_INFO, traitLabel } from '../data/traits';
+import { slotIcon } from '../art/materials';
 import { itemIcon } from '../art/items';
-import { RARITY_NAMES, itemEffect } from '../data/items';
+import { RARITY_NAMES, itemEffect, itemName } from '../data/items';
 import { BufferImage } from './BufferImage';
 import { help } from './HoldHelp';
 import { Icon } from './icons';
@@ -168,6 +169,130 @@ function DressMenu({
   );
 }
 
+/** La silueta de cada ranura vacía (un objeto típico, en sombra). */
+const SILHOUETTE: Record<Slot, ItemIcon> = {
+  arma: 'espada',
+  cuerpo: 'coraza',
+  complemento: 'amuleto',
+};
+
+/**
+ * El muñeco del equipo: las tres ranuras (arma, cuerpo, complemento), con lo que lleva o su
+ * silueta si están vacías. Tocar una abre lo que cabe en ella del arcón, con lo que cambia cada
+ * habilidad («Combate 9 → 11»), y deja quitar lo que lleva.
+ */
+function GearDoll({
+  game,
+  hero: h,
+  canGear,
+  onEquip,
+  onUnequip,
+}: {
+  game: GameState;
+  hero: Hero;
+  canGear: boolean;
+  onEquip: (itemId: string) => void;
+  onUnequip: (slot: Slot) => void;
+}) {
+  const [sel, setSel] = useState<Slot | null>(SLOTS.find((x) => !h.worn?.[x]) ?? 'arma');
+  const was = sel ? h.worn?.[sel] : undefined;
+  const fits = sel ? gearInStock(game).filter((it) => slotOf(it) === sel) : [];
+  /** Lo que cambia cada habilidad al ponerse `it` (o quitarse lo de la ranura, sin él). */
+  const deltas = (it?: Item) => {
+    const keys = new Set([
+      ...Object.keys(it?.bonus ?? {}),
+      ...Object.keys(was?.bonus ?? {}),
+    ]) as Set<SkillId>;
+    const after = { ...h.worn, [sel!]: it };
+    if (!it) delete after[sel!];
+    return [...keys].map((k) => ({
+      k,
+      now: skill(memberOf(h, game.fac), k),
+      then: skill(memberOf({ ...h, worn: after }, game.fac), k),
+    }));
+  };
+  const deltaText = (d: { k: SkillId; now: number; then: number }[]) =>
+    d.map((x) => (
+      <span key={x.k} class={x.then > x.now ? 'up' : x.then < x.now ? 'down' : ''}>
+        {x.k} {x.now} → {x.then}
+      </span>
+    ));
+  return (
+    <div class="doll">
+      <div class="doll-slots" role="radiogroup" aria-label="Equipo">
+        {SLOTS.map((sl) => {
+          const it = h.worn?.[sl];
+          return (
+            <button
+              key={sl}
+              role="radio"
+              aria-checked={sel === sl}
+              aria-label={`${SLOT_NAMES[sl]}: ${it ? itemName(it) : 'nada'}`}
+              class={`doll-slot rarity-${it?.rarity ?? 0} ${it ? '' : 'is-empty'} ${sel === sl ? 'is-sel' : ''}`}
+              onClick={() => setSel(sel === sl ? null : sl)}
+            >
+              {it ? (
+                <BufferImage
+                  buf={itemIcon(it.icon ?? SILHOUETTE[sl], it.rarity, it.plus)}
+                  scale={2}
+                />
+              ) : (
+                // Vacía: su silueta apagada.
+                <BufferImage buf={slotIcon(sl, 16)} scale={2} />
+              )}
+              {it?.plus ? <b class="doll-plus">+{it.plus}</b> : null}
+              <small>{SLOT_NAMES[sl]}</small>
+            </button>
+          );
+        })}
+      </div>
+      {sel && (
+        <div class="doll-pick">
+          {was ? (
+            <div class={`gear-item rarity-${was.rarity ?? 0}`}>
+              <BufferImage buf={itemIcon(was.icon ?? 'espada', was.rarity, was.plus)} scale={2} />
+              <span>
+                <b>{itemName(was)}</b>
+                <small>
+                  <em>{RARITY_NAMES[was.rarity ?? 0]}</em> · {itemEffect(was)}
+                </small>
+              </span>
+              {canGear && (
+                <button class="btn btn-wood" onClick={() => onUnequip(sel)}>
+                  Quitar
+                </button>
+              )}
+            </div>
+          ) : (
+            <span class="row-sub">{SLOT_NAMES[sel]}: no lleva nada.</span>
+          )}
+          {canGear &&
+            fits.map((it) => (
+              <button
+                key={it.id}
+                class={`gear-item gear-pick rarity-${it.rarity ?? 0}`}
+                data-tut="equipar"
+                onClick={() => onEquip(it.id)}
+              >
+                <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity, it.plus)} scale={2} />
+                <span>
+                  <b>{itemName(it)}</b>
+                  <small class="doll-deltas">{deltaText(deltas(it))}</small>
+                </span>
+              </button>
+            ))}
+          {canGear && !fits.length && (
+            <span class="row-sub">
+              En el arcón no hay nada de {SLOT_NAMES[sel].toLowerCase()}.
+              {game.inventory.length ? '' : ' Los encargos con «+ objeto» pueden traer equipo.'}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const ATTRS = [
   ['F', 'Fuerza'],
   ['D', 'Destreza'],
@@ -217,7 +342,6 @@ export function HeroCard({
   const [chip, setChip] = useState<string | null>(null);
   const [history, setHistory] = useState(false);
   const [confirm, setConfirm] = useState(false);
-  const stock = gearInStock(game);
   const worn = gearList(h);
   const wornShown = shownItem(h);
   const canGear = !candidate && (h.status === 'ok' || h.status === 'herido');
@@ -413,7 +537,7 @@ export function HeroCard({
                       class={`act ${wornShown ? 'on' : ''}`}
                       aria-expanded={open === 'equipo'}
                       aria-label={
-                        worn.length ? `Equipo: ${worn.map((i) => i.name).join(', ')}` : 'Equipo'
+                        worn.length ? `Equipo: ${worn.map(itemName).join(', ')}` : 'Equipo'
                       }
                       onClick={() => toggle('equipo')}
                     >
@@ -442,66 +566,13 @@ export function HeroCard({
                 <TaskSelect game={game} who={h.id} name={h.name} onTask={(_, t) => onTask!(t)} />
               )}
               {open === 'equipo' && (
-                <div class="gear-slot">
-                  {SLOTS.map((slot) => {
-                    const it = h.worn?.[slot];
-                    return it ? (
-                      <div key={slot} class={`gear-item rarity-${it.rarity ?? 0}`}>
-                        <BufferImage
-                          buf={itemIcon(it.icon ?? 'espada', it.rarity, it.plus)}
-                          scale={2}
-                        />
-                        <span>
-                          <b>{it.name}</b>
-                          <small>
-                            {SLOT_NAMES[slot]} · <em>{RARITY_NAMES[it.rarity ?? 0]}</em> ·{' '}
-                            {itemEffect(it)}
-                          </small>
-                        </span>
-                        {canGear && (
-                          <button class="btn btn-wood" onClick={() => onUnequip(slot)}>
-                            Quitar
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <span key={slot} class="row-sub">
-                        {SLOT_NAMES[slot]}: nada.
-                      </span>
-                    );
-                  })}
-                  {!worn.length && (
-                    <span class="row-sub">
-                      {stock.length
-                        ? 'Elige del tablero de la bodega:'
-                        : 'Los encargos con «+ objeto» pueden traer equipo.'}
-                    </span>
-                  )}
-                  {canGear &&
-                    stock.map((it) => (
-                      <button
-                        key={it.id}
-                        class={`gear-item gear-pick rarity-${it.rarity ?? 0}`}
-                        data-tut="equipar"
-                        onClick={() => {
-                          setOpen(null);
-                          onEquip(it.id);
-                        }}
-                      >
-                        <BufferImage
-                          buf={itemIcon(it.icon ?? 'espada', it.rarity, it.plus)}
-                          scale={2}
-                        />
-                        <span>
-                          <b>{it.name}</b>
-                          <small>
-                            {SLOT_NAMES[slotOf(it) ?? 'arma']} ·{' '}
-                            <em>{RARITY_NAMES[it.rarity ?? 0]}</em> · {itemEffect(it)}
-                          </small>
-                        </span>
-                      </button>
-                    ))}
-                </div>
+                <GearDoll
+                  game={game}
+                  hero={h}
+                  canGear={canGear}
+                  onEquip={onEquip}
+                  onUnequip={onUnequip}
+                />
               )}
 
               <div class="attrs">
