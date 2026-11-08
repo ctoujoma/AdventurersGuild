@@ -75,6 +75,53 @@ function darkPanel(): PixelBuffer {
   return b;
 }
 
+/**
+ * Ranura de inventario (16×16, corte 6): aro biselado del metal de la rareza (hierro, azul, oro),
+ * esquinas en escalón y el hueco de pergamino hundido con un bisel de madera suave.
+ */
+function slotFrame(dark: string, mid: string, light: string): PixelBuffer {
+  const n = 16;
+  const b = new PixelBuffer(n, n);
+  b.rect(0, 0, n, n, P.black);
+  b.rect(1, 1, n - 2, n - 2, mid);
+  b.hline(1, 1, n - 2, light);
+  b.vline(1, 1, n - 2, light);
+  b.hline(1, n - 2, n - 2, dark);
+  b.vline(n - 2, 1, n - 2, dark);
+  // El hueco: sombra arriba y a la izquierda, luz abajo y a la derecha.
+  b.rect(3, 3, n - 6, n - 6, P.tan);
+  b.hline(3, 3, n - 6, P.clay);
+  b.vline(3, 3, n - 6, P.clay);
+  b.rect(4, 4, n - 7, n - 7, P.sand);
+  b.hline(4, 4, n - 7, P.tan);
+  b.vline(4, 4, n - 7, P.tan);
+  for (const [x, y] of [
+    [0, 0],
+    [1, 0],
+    [0, 1],
+    [n - 1, 0],
+    [n - 2, 0],
+    [n - 1, 1],
+    [0, n - 1],
+    [1, n - 1],
+    [0, n - 2],
+    [n - 1, n - 1],
+    [n - 2, n - 1],
+    [n - 1, n - 2],
+  ])
+    b.clear(x!, y!);
+  for (const [x, y] of [
+    [1, 1],
+    [n - 2, 1],
+    [1, n - 2],
+    [n - 2, n - 2],
+  ])
+    b.set(x!, y!, P.black);
+  b.set(2, 2, light);
+  b.set(n - 3, n - 3, dark);
+  return b;
+}
+
 function button(face: string, light: string, dark: string, down: boolean): PixelBuffer {
   const b = new PixelBuffer(12, 12);
   b.rect(0, 0, 12, 12, P.black);
@@ -156,6 +203,9 @@ export function installPixelUi(): void {
   root.setProperty('--frame-wood', dataUrl(woodFrame()));
   root.setProperty('--frame-parchment', dataUrl(parchment()));
   root.setProperty('--frame-dark', dataUrl(darkPanel()));
+  root.setProperty('--frame-slot-0', dataUrl(slotFrame(P.slate, P.steel, P.fog)));
+  root.setProperty('--frame-slot-1', dataUrl(slotFrame(P.ocean, P.sky, P.mist)));
+  root.setProperty('--frame-slot-2', dataUrl(slotFrame(P.orange, P.gold, P.lemon)));
   root.setProperty('--btn-gold', dataUrl(button(P.gold, P.lemon, P.orange, false)));
   root.setProperty('--btn-gold-down', dataUrl(button(P.orange, P.lemon, P.brick, true)));
   root.setProperty('--btn-wood', dataUrl(button(P.rust, P.oak, P.plum, false)));

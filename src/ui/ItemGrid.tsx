@@ -62,6 +62,9 @@ function ItemTile({
 }) {
   const { it, who } = e;
   const stats = itemStats(it);
+  // Dos fichas como mucho, la mayor primero; solo se agranda si sube más que la otra.
+  const chips = [...stats].sort((a, b) => b.n - a.n).slice(0, 2);
+  const tie = chips.length === 2 && chips[0]!.n === chips[1]!.n;
   const ref = useRef<HTMLButtonElement>(null);
   const hold = useRef<{ t: number; x: number; y: number; fired: boolean } | null>(null);
   const label = [
@@ -124,8 +127,11 @@ function ItemTile({
       )}
       <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity)} scale={3} />
       <span class="item-chips">
-        {stats.slice(0, 2).map((s, i) => (
-          <span key={s.k} class={`item-chip skill-${SKILL_SHORT[s.k]} ${i ? '' : 'is-main'}`}>
+        {chips.map((s, i) => (
+          <span
+            key={s.k}
+            class={`item-chip skill-${SKILL_SHORT[s.k]} ${i || tie ? '' : 'is-main'}`}
+          >
             {SKILL_SHORT[s.k]} {s.n}
           </span>
         ))}
@@ -206,11 +212,14 @@ export function ItemGrid({
   selected,
   onPick,
   label,
+  tut,
 }: {
   entries: GridEntry[];
   selected: string | null;
   onPick: (key: string | null) => void;
   label: string;
+  /** Para que el tutorial la señale. */
+  tut?: string;
 }) {
   const [tip, setTip] = useState<{ key: string; at: DOMRect } | null>(null);
   // Con el dedo, el recuadro se queda hasta el siguiente toque (en cualquier sitio).
@@ -228,7 +237,7 @@ export function ItemGrid({
   const shown = tip && entries.find((e) => e.key === tip.key);
   return (
     <>
-      <div class="item-grid" role="group" aria-label={label}>
+      <div class="item-grid" role="group" aria-label={label} data-tut={tut}>
         {entries.map((e) => (
           <ItemTile
             key={e.key}

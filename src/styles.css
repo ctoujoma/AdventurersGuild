@@ -7164,40 +7164,39 @@ p.notebook-close {
   gap: 8px;
   padding: 4px 4px 6px;
 }
-/* La casilla: una tarjeta de pergamino como las demás; la rareza, como en el resto del juego
-   (azul el bueno, brillo dorado el legendario). */
+/* La casilla: una ranura de inventario; el aro dice la rareza (hierro el común, azul el bueno y
+   oro, con brillo, el legendario). Lo de dentro va separado del aro. */
 .item-tile {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  height: 108px;
-  padding: 4px 0 0;
+  height: 112px;
+  padding: 10px 0 0;
   color: var(--plum);
   background: none;
   border-style: solid;
-  border-width: 10px;
-  border-image: var(--frame-parchment) 5 fill / 10px / 0 stretch;
+  border-width: 12px;
+  border-image: var(--frame-slot-0) 6 fill / 12px / 0 stretch;
   cursor: pointer;
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
 .item-tile.rarity-1 {
-  box-shadow: 0 0 0 2px var(--ocean);
+  border-image-source: var(--frame-slot-1);
 }
 .item-tile.rarity-2 {
-  box-shadow:
-    0 0 0 2px var(--gold),
-    0 0 10px rgba(254, 174, 52, 0.55);
+  border-image-source: var(--frame-slot-2);
+  box-shadow: 0 0 8px rgba(254, 174, 52, 0.5);
 }
 .item-tile:hover,
 .item-tile:focus-visible {
   filter: brightness(1.06);
 }
 .item-tile.is-sel {
-  outline: 3px solid var(--gold);
+  outline: 2px solid var(--gold);
   outline-offset: 3px;
 }
 .item-tile canvas {
@@ -7206,30 +7205,40 @@ p.notebook-close {
 }
 .item-plus {
   position: absolute;
-  top: -4px;
-  right: -2px;
+  top: 1px;
+  right: 3px;
   font-family: var(--pixel);
   font-size: var(--t-s);
+  line-height: 1;
   color: var(--text-good);
 }
 .item-perk {
   position: absolute;
-  top: -3px;
-  left: -3px;
+  top: 2px;
+  left: 3px;
   line-height: 0;
 }
 .item-chips {
   position: absolute;
   left: -6px;
   right: -6px;
-  bottom: -2px;
+  bottom: -6px;
   display: flex;
-  gap: 3px;
-  justify-content: center;
+  gap: 2px;
   align-items: flex-end;
+}
+/* Las fichas llenan el ancho de la casilla, igual a cada lado; la mayor, algo más ancha. */
+.item-chips .item-chip {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+}
+.item-chips .item-chip.is-main {
+  flex-grow: 1.4;
 }
 .item-chip {
   display: inline-block;
+  white-space: nowrap;
   padding: 1px 3px;
   font-family: var(--pixel);
   font-size: 10px;
@@ -7257,8 +7266,8 @@ p.notebook-close {
 }
 .item-who {
   position: absolute;
-  left: -15px;
-  bottom: -15px;
+  left: -19px;
+  bottom: -19px;
   width: 20px;
   height: 20px;
   display: flex;
