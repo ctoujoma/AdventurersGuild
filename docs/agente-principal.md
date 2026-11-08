@@ -149,7 +149,7 @@ talleres, nombres y marcos). El arte ya está listo para cinco:
   `shownGear` del núcleo no se ha tocado.
 - **Iconos**: `itemIcon` es de 16 × 16 (antes 12) y anima los épicos y legendarios con
   `ItemImage` (`ui/ItemImage.tsx`); en la escena va `rackIcon` (12 × 12).
-- **Por hablar con el usuario**: con coraza, el tinte de la sastrería casi no se ve en el retrato
-  (el peto y las hombreras tapan el pecho, y el equipo se pinta encima de la prenda; en la figura
-  es al revés). Propuesta: prenda por encima del equipo en el retrato, y un filete del color del
-  tinte en peto y escudo. La capa común ya toma el tinte.
+- **Decidido con el usuario (filete del tinte)**: el equipo va **delante** de la prenda (coraza y
+  escudo tapan el tabardo, también en el retrato; no cambiar el orden). Lo único que falta: un
+  **filete del color del tinte** en el peto y en el escudo, en el retrato y en la figura, para
+  que el tinte se vea aunque lleve coraza. La capa común ya toma el tinte. Encargo pendiente.
