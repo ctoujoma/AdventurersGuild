@@ -228,6 +228,7 @@ export type Action =
   | { type: 'sellTrophy'; id: string }
   | { type: 'tip'; id: string }
   | { type: 'ackOpening' }
+  | { type: 'nameAsked' }
   | { type: 'guard'; id: string; on: boolean }
   | { type: 'choose'; index: number }
   | { type: 'custom'; patch: Partial<Pick<Custom, 'name' | 'color' | 'symbol'>> }
@@ -411,6 +412,7 @@ export function newGame(seed: string, opts: { tutorial?: boolean } = {}): GameSt
     seed,
     rng: 0,
     uid: 1,
+    askName: false,
     day: 1,
     gold: START.gold,
     rep: 0,
@@ -679,7 +681,12 @@ function reduceAction(state: GameState, action: Action): GameState {
     case 'custom': {
       const patch = { ...action.patch };
       if (patch.name !== undefined) patch.name = patch.name.trim().slice(0, 24) || DEFAULT_NAME;
-      return { ...state, custom: { ...customOf(state), ...patch } };
+      const named = patch.name !== undefined && patch.name !== DEFAULT_NAME;
+      return {
+        ...state,
+        askName: named ? false : state.askName,
+        custom: { ...customOf(state), ...patch },
+      };
     }
     case 'buyDog': {
       const c = customOf(state);
@@ -786,8 +793,10 @@ function reduceAction(state: GameState, action: Action): GameState {
     }
     case 'ackOpening': {
       if (!state.opening || state.opening.seen) return state;
-      return { ...state, opening: { ...state.opening, seen: true } };
+      return { ...state, askName: true, opening: { ...state.opening, seen: true } };
     }
+    case 'nameAsked':
+      return state.askName ? { ...state, askName: false } : state;
     case 'tip': {
       if (state.tips?.includes(action.id)) return state;
       return { ...state, tips: [...(state.tips ?? []), action.id] };

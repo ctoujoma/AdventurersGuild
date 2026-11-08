@@ -51,6 +51,8 @@ export function parseSave(raw: string | null): GameState | null {
     if (!s || s.version !== SAVE_VERSION || !s.building || !Array.isArray(s.heroes)) return null;
     s.fac = facOf(s.building);
     s.trophies ??= [];
+    // Partidas de antes del aviso: se les pide nombre una vez.
+    s.askName ??= true;
     s.mode ??= 'deuda';
     s.stats ??= emptyStats();
     s.feats ??= {};
