@@ -179,6 +179,37 @@ cámara y el almacén tienen la suya. El resto no dice qué gana el jugador al p
 `FACILITY_INFO`), que la ficha enseñe «Ahora: …» y «Mejora: …» siempre igual, y un test que
 falle si una sala con más de un nivel no tiene texto. Así no vuelve a pasar con las salas nuevas.
 
+### La ficha de sala, una por una (partida del usuario, móvil 420 × 860)
+
+Cuánto hay que bajar hasta «Mejorar» (lo que se ve sin bajar son unos 560 px):
+
+| Sala | Alto de la ficha | «Mejorar» a | Pantallas |
+| --- | --- | --- | --- |
+| Forja | 1.574 px | 1.548 | 2,8 |
+| Sastrería | 1.305 | 1.246 | 2,3 |
+| Salón | 961 | 909 | 1,7 |
+| Dormitorio | 827 | 775 | 1,5 |
+| Cuartos de veteranos | 770 | 744 | 1,4 |
+| Las demás | 190–530 | al final | 1 |
+
+- En los talleres, la lista de recetas (crear y mejorar) se come la ficha: la forja ocupa casi tres
+  pantallas. Mejor en pestañas dentro de la ficha (Crear · Mejorar · Vestir) o en una hoja aparte.
+- **Los colores salen en medio**, entre los puestos y las obras, y solo en 9 salas (las que tienen
+  telas, `TINT_FROM`): la cocina, la forja o la cámara no tienen y nada dice por qué.
+- **Los adornos del salón no están en el salón:** se compran en Gremio › Adornos (el salón solo
+  tiene un enlace).
+
+**Propuesta (del usuario, de acuerdo):** sacar lo que es solo aspecto a un botón **«Personalizar»**
+(pincel) que abra una hoja encima con los colores de la sala y, en el salón, los adornos que se
+compran; más adelante, adornos para otras salas (los «adornos colocables» de `futuro.md`). El
+botón solo sale en las salas que tienen algo que personalizar. La ficha queda así, igual en todas:
+
+1. Cabecera: nivel, **«Mejorar · coste»** y «Mejora: …» (punto 4).
+2. Para qué sirve y sus cifras.
+3. Quién trabaja (los puestos).
+4. Lo suyo: camas, crear, vestir… (en pestañas si es largo).
+5. Una fila de botones: Personalizar, Obras (ampliar, mover, tirar) y los enlaces de siempre.
+
 ### El salón (nota del usuario)
 
 - **El botón «Mejorar» queda al final de la ficha**, debajo de los puestos, los colores y las
@@ -256,7 +287,8 @@ amigos saldrían ya de aquí.
 
 1. «Sugerir» con todas las combinaciones (pequeño, mucho efecto).
 2. Fallos 1.2 a 1.5 (sastrería, experiencia, textos de asaltos, forja).
-3. «Mejora: …» en todas las salas, con su test, y el botón de mejorar arriba (punto 4).
+3. «Mejora: …» en todas las salas, con su test, y la ficha reordenada: «Mejorar» arriba y
+   «Personalizar» (colores y adornos) en una hoja aparte (puntos 3.3 y 4).
 4. Aviso de equipo mejor en el arcón y «Lo mejor del arcón» en la hoja del encargo.
 5. Tablón con dificultad a la medida de los héroes y la probabilidad en la tarjeta; decidir qué
    empuja a aventurar (punto 2).

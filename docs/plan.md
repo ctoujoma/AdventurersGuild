@@ -333,6 +333,10 @@ en medio, para que los edificios salgan más interesantes (y, más adelante, pas
 - **Revisión crítica antes de las expediciones** (8 de noviembre): fallos, comodidad, fichas de
   sala, sistemas a medias y un solo motor de pelea, con la partida del usuario:
   [`revision-critica.md`](revision-critica.md).
+- **Ficha de sala reordenada** (interfaz, decidido con el usuario): «Mejorar» arriba, junto al
+  nivel; lo que es solo aspecto (colores y, en el salón, los adornos que se compran) en un botón
+  «Personalizar» que abre una hoja encima; recetas de los talleres en pestañas. Detalle en
+  [`revision-critica.md`](revision-critica.md), «La ficha de sala, una por una».
 
 - **Asaltos en directo** (hechos, con cámara lenta al arrastrar y el objetivo «sin heridos»):
   falta su arte ([`encargos/arte-asaltos.md`](encargos/arte-asaltos.md)).
