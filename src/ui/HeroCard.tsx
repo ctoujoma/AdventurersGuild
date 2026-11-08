@@ -18,6 +18,7 @@ import { taskLabel } from './crew';
 import type { Task } from './drop';
 import { TaskSelect } from './panels/CrewList';
 import { Tabs } from './Tabs';
+import { ItemGrid } from './ItemGrid';
 import { Portrait } from './Portrait';
 import { heroFrame, lookOf, marksOf, memberOf } from './view';
 import { GARMENTS, TINTS, TINT_IDS, type Dress, type GarmentId, type TintId } from '../data/custom';
@@ -197,6 +198,9 @@ function GearDoll({
   const [sel, setSel] = useState<Slot | null>(SLOTS.find((x) => !h.worn?.[x]) ?? 'arma');
   const was = sel ? h.worn?.[sel] : undefined;
   const fits = sel ? gearInStock(game).filter((it) => slotOf(it) === sel) : [];
+  // El elegido en la rejilla (un toque); debajo sale lo que cambia y «Ponérselo».
+  const [pick, setPick] = useState<string | null>(null);
+  const picked = fits.find((it) => it.id === pick);
   /** Lo que cambia cada habilidad al ponerse `it` (o quitarse lo de la ranura, sin él). */
   const deltas = (it?: Item) => {
     const keys = new Set([
@@ -266,21 +270,29 @@ function GearDoll({
           ) : (
             <span class="row-sub">{SLOT_NAMES[sel]}: no lleva nada.</span>
           )}
-          {canGear &&
-            fits.map((it) => (
-              <button
-                key={it.id}
-                class={`gear-item gear-pick rarity-${it.rarity ?? 0}`}
-                data-tut="equipar"
-                onClick={() => onEquip(it.id)}
-              >
-                <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity, it.plus)} scale={2} />
-                <span>
-                  <b>{itemName(it)}</b>
-                  <small class="doll-deltas">{deltaText(deltas(it))}</small>
-                </span>
+          {canGear && fits.length > 0 && (
+            <ItemGrid
+              label={`Del arcón: ${SLOT_NAMES[sel].toLowerCase()}`}
+              tut="equipar"
+              entries={fits.map((it) => ({ it, key: it.id }))}
+              selected={pick}
+              onPick={setPick}
+            />
+          )}
+          {canGear && picked && (
+            <div class={`gear-item doll-try rarity-${picked.rarity ?? 0}`}>
+              <span>
+                <b>{itemName(picked)}</b>
+                <small class="doll-deltas">{deltaText(deltas(picked))}</small>
+              </span>
+              <button class="btn btn-gold" onClick={() => onEquip(picked.id)}>
+                Ponérselo
               </button>
-            ))}
+            </div>
+          )}
+          {canGear && fits.length > 0 && !picked && (
+            <span class="row-sub">Toca uno para ver qué cambia.</span>
+          )}
           {canGear && !fits.length && (
             <span class="row-sub">
               En el arcón no hay nada de {SLOT_NAMES[sel].toLowerCase()}.

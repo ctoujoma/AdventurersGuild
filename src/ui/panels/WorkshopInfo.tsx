@@ -26,6 +26,7 @@ import type { Action } from '../../core/game';
 import type { GameState, Room } from '../../core/model';
 import { itemEffect, itemName } from '../../data/items';
 import { MatCost } from '../mats';
+import { ItemGrid } from '../ItemGrid';
 import { RECIPES } from '../../data/recipes';
 import { GARMENTS, TINTS, TINT_IDS, type Dress, type GarmentId } from '../../data/custom';
 import { TRADES, type Trade } from '../../data/workers';
@@ -53,6 +54,9 @@ export function WorkshopInfo({
   const known = knownRecipes(game);
   const all = recipesFor(room.type);
   const undo = undoable(game, room.id);
+  // Lo elegido en cada rejilla (mejorar y desmontar); debajo sale su coste y el botón.
+  const [tpick, setTpick] = useState<string | null>(null);
+  const [upick, setUpick] = useState<string | null>(null);
   // Lo del arcón que se mejora en este taller (y aún no está a tope).
   const better = game.inventory.flatMap((it) => {
     const cost = temperCost(it);
@@ -168,17 +172,24 @@ export function WorkshopInfo({
           <span class="row-sub">
             Un objeto del arcón sube +1 en lo suyo, hasta +3. Mientras tanto no está en el arcón.
           </span>
-          <div class="rows">
-            {better.map(({ it, cost }) => {
+          <ItemGrid
+            label="Para mejorar"
+            entries={better.map(({ it }) => ({ it, key: it.id }))}
+            selected={tpick}
+            onPick={setTpick}
+          />
+          {better
+            .filter(({ it }) => it.id === tpick)
+            .map(({ it, cost }) => {
               const why = canTemper(game, room.id, it.id);
               const main = Object.keys(it.bonus ?? {})[0];
               return (
-                <article key={it.id} class="row">
-                  <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity, it.plus)} scale={2} />
+                <article key={it.id} class="row item-act">
                   <span class="row-info">
-                    <b>{itemName(it)}</b>
+                    <b>
+                      {itemName(it)} → +{cost.to}
+                    </b>
                     <span class="row-sub">
-                      {itemEffect(it)} · a +{cost.to}:{' '}
                       <b class="forge-plus">+1{main ? ` ${main}` : ''}</b> ·{' '}
                       {hours(clockHours(cost.hours))}
                     </span>
@@ -190,7 +201,10 @@ export function WorkshopInfo({
                       disabled={!!why}
                       title={why ?? undefined}
                       aria-label={`Mejorar ${itemName(it)} a +${cost.to} por ${cost.gold} monedas`}
-                      onClick={() => onAct({ type: 'temper', room: room.id, itemId: it.id })}
+                      onClick={() => {
+                        onAct({ type: 'temper', room: room.id, itemId: it.id });
+                        setTpick(null);
+                      }}
                     >
                       Mejorar · <Icon name="coin" size={10} /> {cost.gold}
                     </button>
@@ -198,7 +212,9 @@ export function WorkshopInfo({
                 </article>
               );
             })}
-          </div>
+          {!better.some(({ it }) => it.id === tpick) && (
+            <span class="row-sub">Toca uno para ver lo que cuesta.</span>
+          )}
         </>
       )}
       {undo.length > 0 && (
@@ -207,22 +223,31 @@ export function WorkshopInfo({
           <span class="row-sub">
             Se pierde el objeto; {pct(undoChance(game, room.id))} de las veces se saca cómo se hace.
           </span>
-          <div class="rows">
-            {undo.map((it) => {
+          <ItemGrid
+            label="Para desmontar"
+            entries={undo.map((it) => ({ it, key: it.id }))}
+            selected={upick}
+            onPick={setUpick}
+          />
+          {undo
+            .filter((it) => it.id === upick)
+            .map((it) => {
               const why = canUndo(game, room.id, it.id);
               return (
-                <article key={it.id} class="row">
-                  <BufferImage buf={itemIcon(it.icon ?? 'espada', it.rarity, it.plus)} scale={2} />
+                <article key={it.id} class="row item-act">
                   <span class="row-info">
                     <b>{itemName(it)}</b>
-                    <span class="row-sub">{itemEffect(it)}</span>
+                    <span class="row-sub">{itemEffect(it)} · se pierde</span>
                   </span>
                   {onAct && (
                     <button
                       class="btn btn-wood"
                       disabled={!!why}
                       title={why ?? undefined}
-                      onClick={() => onAct({ type: 'undoItem', room: room.id, itemId: it.id })}
+                      onClick={() => {
+                        onAct({ type: 'undoItem', room: room.id, itemId: it.id });
+                        setUpick(null);
+                      }}
                     >
                       Desmontar
                     </button>
@@ -230,7 +255,6 @@ export function WorkshopInfo({
                 </article>
               );
             })}
-          </div>
         </>
       )}
     </div>
