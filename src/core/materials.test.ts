@@ -56,3 +56,17 @@ describe('materiales', () => {
     expect(matOf(s, 'hierro')).toBe(1);
   });
 });
+
+describe('el almacén por niveles', () => {
+  it('el nivel 2 avisa de que lo raro llega con las expediciones; el 3 pide plata', async () => {
+    const { storeNext } = await import('./materials');
+    const { levelRank } = await import('./balance');
+    const s = newGame('niveles');
+    expect(storeNext(s, 1)).toMatch(/que llega con las expediciones/);
+    s.stats = { ...s.stats!, maxLvl: 5 };
+    expect(storeNext(s, 1)).not.toMatch(/expediciones/);
+    expect(storeNext(s, 3)).toBeNull();
+    expect(levelRank('almacen', 2)).toBe(0);
+    expect(levelRank('almacen', 3)).toBe(2);
+  });
+});

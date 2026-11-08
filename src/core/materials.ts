@@ -7,7 +7,7 @@
  */
 import type { QuestType } from './model';
 import type { GameState } from './model';
-import { MAT_LOOSE, MAT_SELL, STORE_CAP } from './balance';
+import { EXPEDITION_LEVEL, MAT_LOOSE, MAT_SELL, STORE_CAP } from './balance';
 import { active } from './rooms';
 
 export type Material = 'hierro' | 'cuero' | 'tela' | 'hierbas' | 'madera' | 'cristal';
@@ -69,6 +69,9 @@ export type Mats = Partial<Record<Material, number>>;
 
 /** Cuántos hay de un material. */
 export const matOf = (s: GameState, m: Material) => s.mats?.[m] ?? 0;
+
+/** Las expediciones se abren con el primer héroe que llega a `EXPEDITION_LEVEL`. */
+export const expeditionsOpen = (s: GameState) => (s.stats?.maxLvl ?? 1) >= EXPEDITION_LEVEL;
 
 /** Si hay almacén en uso (y de qué nivel el mejor). */
 export const storeLevel = (s: GameState) =>
@@ -134,6 +137,21 @@ export function gainMats(
       ? `${what} Construye un almacén para guardarlos.`
       : `${what} Cuando pagues la deuda podrás construir un almacén.`;
   return { kept, sold, gold, warn };
+}
+
+/**
+ * Lo que da el siguiente nivel del almacén, para su ficha. El 2 abre los estantes de lo raro, que
+ * llega con las expediciones (si aún no las hay, se dice).
+ */
+export function storeNext(s: GameState, level: number): string | null {
+  const next = level + 1;
+  const room = `cabe más de cada material (${STORE_CAP[next] ?? STORE_CAP.at(-1)} por hueco)`;
+  if (next > STORE_CAP.length - 1) return null;
+  if (next === 2)
+    return `Nivel 2: ${room} y estantes para lo delicado (hierbas, madera buena y cristal)${
+      expeditionsOpen(s) ? '' : ', que llega con las expediciones'
+    }.`;
+  return `Nivel ${next}: ${room}.`;
 }
 
 /** Si hay de todo lo que se pide. */
