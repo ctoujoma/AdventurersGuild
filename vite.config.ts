@@ -5,6 +5,7 @@ import { join, relative, resolve } from 'node:path';
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 import preact from '@preact/preset-vite';
+import { parseNews } from './src/platform/news';
 
 /** Todos los ficheros de una carpeta, con su ruta relativa a ella. */
 function walk(dir: string, root = dir): string[] {
@@ -64,11 +65,23 @@ function version(): string {
   }
 }
 
+/** Novedades para el aviso del juego: los últimos PR fusionados (vacío sin git). */
+function news() {
+  try {
+    const log = execSync('git log --merges --first-parent -n 40 --format=%cs%x1f%s%x1f%b%x1e', {
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).toString();
+    return parseNews(log);
+  } catch {
+    return [];
+  }
+}
+
 export default defineConfig({
   // Rutas relativas: el mismo build sirve en GitHub Pages, en local y dentro de Capacitor.
   base: './',
   plugins: [preact(), precache()],
-  define: { __VERSION__: JSON.stringify(version()) },
+  define: { __VERSION__: JSON.stringify(version()), __NEWS__: JSON.stringify(news()) },
   // three.js va dentro del mismo fichero (el juego se empaqueta en un solo HTML).
   build: { chunkSizeWarningLimit: 1200 },
   test: {
