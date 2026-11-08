@@ -2,8 +2,10 @@ import { useState } from 'preact/hooks';
 import { trophyIcon } from '../../art/items';
 import { TROPHY_APPEAL, TROPHY_SLOTS } from '../../core/balance';
 import type { GameState, Hero, Item } from '../../core/model';
-import { itemName } from '../../data/items';
+import { RARITY_NAMES, itemName } from '../../data/items';
+import { tierOf, type Tier } from '../../art/tiers';
 import { MatShelf } from '../mats';
+import { ItemImage } from '../ItemImage';
 import { ItemGrid, itemScore, type GridEntry } from '../ItemGrid';
 import { CLASS_NAMES } from '../../data/labels';
 import { skill, type SkillId } from '../../core/party';
@@ -143,7 +145,10 @@ export function ArconPanel({
   const [giving, setGiving] = useState(false);
   const [filter, setFilter] = useState<Filter>('todo');
   const [sel, setSel] = useState<string | null>(null);
-  const fits = (it: Item) => filter === 'todo' || slotOf(it) === filter;
+  // Filtro por nivel (con el contador de cada uno); se suma al de la ranura.
+  const [tier, setTier] = useState<Tier | null>(null);
+  const inSlot = (it: Item) => filter === 'todo' || slotOf(it) === filter;
+  const fits = (it: Item) => inSlot(it) && (tier === null || tierOf(it.rarity) === tier);
   // El arcón y lo puesto juntos, lo mejor primero; lo puesto lleva la inicial de quien lo lleva.
   const all: (GridEntry & { heroId?: string; slot?: Slot; canTake?: boolean })[] = [
     ...stock.map((it) => ({ it, key: `a:${it.id}` })),
@@ -157,6 +162,14 @@ export function ArconPanel({
     })),
   ];
   const entries = all.filter((e) => fits(e.it)).sort((a, b) => itemScore(b.it) - itemScore(a.it));
+  // Cuántos hay de cada nivel (en la ranura elegida), del mejor al peor.
+  const tiers = new Map<Tier, { n: number; name: string }>();
+  for (const e of all.filter((x) => inSlot(x.it))) {
+    const t = tierOf(e.it.rarity);
+    const name = RARITY_NAMES[e.it.rarity ?? 0];
+    tiers.set(t, { n: (tiers.get(t)?.n ?? 0) + 1, name });
+  }
+  const tierList = [...tiers.entries()].sort((a, b) => b[0] - a[0]);
   const chosen = entries.find((e) => e.key === sel);
 
   return (
@@ -186,15 +199,38 @@ export function ArconPanel({
             value={filter}
             onChange={(f) => {
               setFilter(f);
+              setTier(null);
               setSel(null);
             }}
             tabs={FILTERS.map(([id, label]) => ({ id, label }))}
           />
-          <span class="row-sub item-count">
-            {entries.length} {entries.length === 1 ? 'objeto' : 'objetos'}
-            {worn.length ? ` · ${worn.length} ${worn.length === 1 ? 'puesto' : 'puestos'}` : ''} ·
-            lo mejor primero
-          </span>
+          <div class="item-count">
+            <span class="row-sub">
+              {entries.length} {entries.length === 1 ? 'objeto' : 'objetos'}
+              {worn.length ? ` · ${worn.length} ${worn.length === 1 ? 'puesto' : 'puestos'}` : ''} ·
+              lo mejor primero
+            </span>
+            {tierList.length > 1 && (
+              <span class="tier-pips" role="group" aria-label="Filtrar por nivel">
+                {tierList.map(([t, { n, name }]) => (
+                  <button
+                    key={t}
+                    class={`tier-pip tier-${t}`}
+                    aria-pressed={tier === t}
+                    aria-label={`${name}: ${n}`}
+                    title={name}
+                    onClick={() => {
+                      setTier(tier === t ? null : t);
+                      setSel(null);
+                    }}
+                  >
+                    <i />
+                    {n}
+                  </button>
+                ))}
+              </span>
+            )}
+          </div>
           {!entries.length && (
             <p class="panel-note">
               {filter === 'todo'
@@ -227,7 +263,18 @@ export function ArconPanel({
                 />
               )}
               <div class="item-bar-row">
-                <b class="item-bar-name">{itemName(chosen.it)}</b>
+                <span class={`act-slot tier-${tierOf(chosen.it.rarity)}`} aria-hidden="true">
+                  <ItemImage
+                    icon={chosen.it.icon ?? 'espada'}
+                    rarity={chosen.it.rarity}
+                    name={chosen.it.name}
+                    scale={1}
+                  />
+                </span>
+                <b class="item-bar-name">
+                  {itemName(chosen.it)}
+                  <small> · {RARITY_NAMES[chosen.it.rarity ?? 0]}</small>
+                </b>
                 {chosen.who ? (
                   <>
                     <button class="btn btn-wood" onClick={() => onHero(chosen.heroId!)}>

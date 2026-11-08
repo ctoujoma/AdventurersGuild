@@ -36,9 +36,9 @@ export function itemStats(it: Item): { k: SkillId; n: number; base: number }[] {
   }));
 }
 
-/** Para ordenar: lo mejor primero (rareza, mejora y lo que sube). */
+/** Para ordenar: lo mejor primero (nivel, mejora y lo que sube). */
 export const itemScore = (it: Item) =>
-  (it.rarity ?? 0) * 100 + (it.plus ?? 0) * 10 + itemStats(it).reduce((a, s) => a + s.n, 0);
+  tierOf(it.rarity) * 100 + (it.plus ?? 0) * 10 + itemStats(it).reduce((a, s) => a + s.n, 0);
 
 export interface GridEntry {
   it: Item;

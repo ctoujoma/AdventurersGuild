@@ -1,4 +1,5 @@
-import type { Item, QuestType, TrophyIcon } from '../core/model';
+import { TIER_COLOR_NAMES, tierOf } from '../art/tiers';
+import type { Item, QuestType, Rarity, TrophyIcon } from '../core/model';
 
 /**
  * Catálogo de botín. El equipo tiene tipo, rareza (0 común, 1 bueno, 2 raro, 3
@@ -354,6 +355,17 @@ export const TREASURES: readonly GearBase[] = [
 ];
 
 export const RARITY_NAMES = ['Común', 'Bueno', 'Raro', 'Épico', 'Legendario'] as const;
+
+/**
+ * Las rarezas en una frase, con el color de las que no son comunes: «común, bueno (verde),
+ * raro (azul), épico (morado) o legendario (dorado)». Sale de `RARITY_NAMES` y `tierOf`: si cambian los niveles, cambia sola.
+ */
+export function rarityList(): string {
+  const all = RARITY_NAMES.map((n, r) =>
+    r ? `${n.toLowerCase()} (${TIER_COLOR_NAMES[tierOf(r as Rarity)]})` : n.toLowerCase(),
+  );
+  return `${all.slice(0, -1).join(', ')} o ${all[all.length - 1]}`;
+}
 
 export const PERK_INFO: Record<NonNullable<Item['perk']>, string> = {
   guard: 'Quien lo lleva se hiere la mitad',

@@ -28,6 +28,10 @@ revisión crítica y propuestas, **sin decidir**: el usuario elige qué entra y 
   con volumen (`solid` en `salas/kit.ts`). Falta ver si se hace con más piezas (armarios,
   alacenas) tras probarlo.
 - **Decisiones abiertas** del plan: nombre del juego e idiomas (preparar los textos para traducir).
+- **Herirse al perder un incidente** (para hablarlo con el usuario más adelante): hoy los
+  incidentes no hieren a nadie (ni perder el duelo con el ladrón). Idea: que perder pueda herir
+  al héroe que fue; al curarse volvería a su tarea o a la guardia, como tras un asalto
+  (`jobBefore` / `guardBefore`).
 
 ## 2. Mejoras apuntadas
 

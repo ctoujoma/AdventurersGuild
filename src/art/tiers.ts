@@ -13,6 +13,14 @@ export type Tier = 0 | 1 | 2 | 3 | 4;
 
 const BY_RARITY: Record<Rarity, Tier> = { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4 };
 export const tierOf = (r: Rarity | undefined): Tier => BY_RARITY[r ?? 0] ?? 0;
+/** El color de cada nivel, para los textos («bueno (verde)»). */
+export const TIER_COLOR_NAMES: Record<Tier, string> = {
+  0: 'gris',
+  1: 'verde',
+  2: 'azul',
+  3: 'morado',
+  4: 'dorado',
+};
 
 /** Metal (oscuro, medio, claro, brillo). */
 export const METAL: readonly (readonly [string, string, string, string])[] = [
