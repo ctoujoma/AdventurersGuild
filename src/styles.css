@@ -7247,6 +7247,96 @@ p.notebook-close {
   gap: 6px;
   margin-top: 10px;
 }
+/* Cambiar una pieza: lo que lleva → lo elegido, lo que cambia y los dos botones juntos. */
+.swap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 6px 8px 8px;
+  border-style: solid;
+  border-width: 10px;
+  border-image: var(--frame-parchment) 5 fill / 10px / 0 stretch;
+}
+.swap-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.swap-box {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  box-sizing: border-box;
+  border-style: solid;
+  border-width: 12px;
+  border-image: var(--frame-slot-0) 6 fill / 12px / 0 stretch;
+}
+.swap-box.tier-1 {
+  border-image-source: var(--frame-slot-t1);
+}
+.swap-box.tier-2 {
+  border-image-source: var(--frame-slot-1);
+}
+.swap-box.tier-3 {
+  border-image-source: var(--frame-slot-t3);
+}
+.swap-box.tier-4 {
+  border-image-source: var(--frame-slot-2);
+  box-shadow: 0 0 8px rgba(254, 174, 52, 0.5);
+}
+.swap-box.is-empty {
+  border: 2px dashed var(--tan);
+  border-image: none;
+}
+.swap-box.is-empty canvas,
+.swap-box.is-empty img {
+  filter: brightness(0);
+  opacity: 0.22;
+}
+.swap-box canvas,
+.swap-box img {
+  margin: -6px;
+}
+.swap-arrow {
+  font-family: var(--pixel);
+  font-size: 18px;
+  color: var(--oak);
+}
+.swap-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: var(--t-m);
+  line-height: 1.25;
+}
+.swap-info b {
+  font-family: var(--pixel);
+  font-weight: 400;
+}
+.swap-info em {
+  font-style: normal;
+  font-family: var(--pixel);
+  font-size: var(--t-s);
+}
+.swap-hint {
+  color: var(--text-soft);
+}
+.swap-btns {
+  display: flex;
+  gap: 8px;
+}
+.swap-btns .btn {
+  flex: 1;
+  min-height: 44px;
+}
+.swap-btns .btn-gold {
+  flex: 2;
+}
 .doll-deltas {
   display: flex;
   flex-wrap: wrap;
