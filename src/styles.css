@@ -2656,18 +2656,26 @@ button.trait[aria-pressed='true'] {
 .facility.rarity-2 .next-level {
   color: var(--grape, #68386c);
 }
-/* El nombre del nivel de un objeto, del color de su marco (verde, azul, morado, oro oscuro). */
+/* El nombre del nivel de un objeto, del color de su marco, oscurecido para leerse sobre el
+   pergamino (todos pasan de 5:1): gris, verde, azul, morado y rojo vino el legendario. */
+:root {
+  --tier-text-0: var(--text-soft);
+  --tier-text-1: var(--text-good);
+  --tier-text-2: var(--ocean);
+  --tier-text-3: var(--grape);
+  --tier-text-4: var(--wine);
+}
 .tier-1 em {
-  color: var(--leaf);
+  color: var(--tier-text-1);
 }
 .tier-2 em {
-  color: var(--ocean);
+  color: var(--tier-text-2);
 }
 .tier-3 em {
-  color: var(--grape);
+  color: var(--tier-text-3);
 }
 .tier-4 em {
-  color: #be4a2f;
+  color: var(--tier-text-4);
 }
 .facility.rarity-2 {
   box-shadow:
@@ -6769,8 +6777,9 @@ p.notebook-close {
   margin: 4px 0 2px;
 }
 
-.forge-good {
-  color: var(--leaf-dark, #3d6b2a);
+.forge-good em {
+  font-style: normal;
+  font-weight: 700;
 }
 
 .forge-locked {
@@ -7258,6 +7267,54 @@ p.notebook-close {
 .item-hint {
   text-align: center;
 }
+/* La línea de cuántos hay y, a la derecha, un contador por nivel que filtra al tocarlo. */
+div.item-count {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 10px;
+}
+.tier-pips {
+  display: flex;
+  gap: 4px;
+}
+.tier-pip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 2px 6px;
+  font-family: var(--pixel);
+  font-size: var(--t-s);
+  color: var(--plum);
+  background: none;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+.tier-pip[aria-pressed='true'] {
+  border-color: var(--gold);
+  background: rgba(254, 174, 52, 0.18);
+}
+.tier-pip i {
+  width: 12px;
+  height: 12px;
+  background: var(--steel);
+  border: 2px solid var(--ink);
+  box-shadow: inset 2px 2px 0 rgba(255, 255, 255, 0.35);
+}
+.tier-pip.tier-1 i {
+  background: var(--leaf);
+}
+.tier-pip.tier-2 i {
+  background: var(--sky);
+}
+.tier-pip.tier-3 i {
+  background: var(--grape);
+}
+.tier-pip.tier-4 i {
+  background: var(--gold);
+}
 .item-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
@@ -7424,16 +7481,16 @@ p.notebook-close {
   color: var(--text-soft);
 }
 .item-tip.tier-1 .item-tip-head em {
-  color: var(--leaf);
+  color: var(--tier-text-1);
 }
 .item-tip.tier-2 .item-tip-head em {
-  color: var(--ocean);
+  color: var(--tier-text-2);
 }
 .item-tip.tier-3 .item-tip-head em {
-  color: var(--grape);
+  color: var(--tier-text-3);
 }
 .item-tip.tier-4 .item-tip-head em {
-  color: #be4a2f;
+  color: var(--tier-text-4);
 }
 .item-tip-icon {
   display: flex;

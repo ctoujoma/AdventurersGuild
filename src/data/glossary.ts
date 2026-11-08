@@ -1,6 +1,10 @@
+import { rarityList } from './items';
+
 /**
  * Glosario de Ajustes: qué es cada cosa del juego, en una o dos frases.
  */
+const cap = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+
 export const GLOSSARY: readonly { term: string; text: string }[] = [
   {
     term: 'Oro y próximo pago',
@@ -52,7 +56,7 @@ export const GLOSSARY: readonly { term: string; text: string }[] = [
   },
   {
     term: 'Equipo',
-    text: 'Lo traen algunos encargos («+ objeto»). Se da desde el arcón o la ficha del héroe. Común, raro (azul) o legendario (dorado). Si el héroe muere, el objeto se pierde.',
+    text: `Lo traen algunos encargos («+ objeto»). Se da desde el arcón o la ficha del héroe. ${cap(rarityList())}; el marco lleva su color. Si el héroe muere, el objeto se pierde.`,
   },
   {
     term: 'Trofeos',
