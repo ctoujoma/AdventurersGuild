@@ -170,3 +170,16 @@ talleres, nombres y marcos). El arte ya está listo para cinco:
   (`dyeLine` en `art/heroes/gear.ts`): filete de `TINTS[dye].ramp[2]` dentro del borde del peto y
   del canto del escudo, en retrato y figura; sin tinte no cambia nada y los legendarios propios
   (`unique`) no lo llevan. Coraza y escudo comparten ranura (cuerpo): nunca van juntos.
+
+## Dónde lo dejamos (9 de noviembre): revisión crítica y decisiones
+
+- Barrido general con una partida del usuario (día 219):
+  [`revision-critica.md`](revision-critica.md).
+- Todo lo que sale de ahí, y lo pendiente de propuestas anteriores (noche, expediciones), está en
+  [`decisiones.md`](decisiones.md) con un código (A1…X5) y en la página «Decisiones del Jarro»
+  (https://claude.ai/artifact/5MgZx3bgd3pJQay91rDtjk), donde el usuario aprueba, pide cambios o
+  rechaza. Antes de seguir, leer sus respuestas (colección `decisiones`) y poner al día el
+  registro y el plan (sección «Antes de las expediciones»).
+- Aprobado ya: A1 (la fama se gana con encargos), A2 (se sube de nivel peleando) y C6 (botón
+  «Personalizar» en las salas). Lo siguiente, de lo troncal a lo menudo: el bloque 1 (A3–A7) y
+  los arreglos rápidos (B1–B7), que no dependen de nada.

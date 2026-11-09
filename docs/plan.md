@@ -159,6 +159,35 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
     con una partida larga) y retocar `REP`, `RANKS` o los premios para que el ritmo de los rangos
     no cambie para quien sí aventura.
 
+## Antes de las expediciones (revisión crítica del 8 de noviembre)
+
+Barrido general con la partida del usuario (día 219, Leyenda, 12 encargos):
+[`revision-critica.md`](revision-critica.md). Cada punto tiene un código y se decide en la página
+**«Decisiones del Jarro»** (https://claude.ai/artifact/5MgZx3bgd3pJQay91rDtjk; respuestas en su colección `decisiones`), con el registro
+en [`decisiones.md`](decisiones.md). Se va de lo troncal a lo menudo: no se empieza un punto
+hasta que lo que lo sostiene está aprobado. Estado a 8 de noviembre:
+
+- **Aprobado:** A1 (la fama se gana con encargos: fase 1, punto 15), A2 (se sube de nivel
+  peleando: fase 1, punto 14) y C6 (botón «Personalizar» en las salas, propuesta del usuario).
+- **1 · El bucle (troncal):** A3 tablón a la medida de los héroes (tras A1), A4 algo que empuje
+  a aventurar (tras A1), A5 la guardia con coste, A6 un solo motor de pelea para jefes, asaltos y
+  ladrón (tras A2), A7 las expediciones después de A3 y A6.
+- **2 · Arreglos rápidos (sin dependencias):** B1 «Sugerir» con todas las combinaciones, B2 la
+  sastrería que se queda bloqueada, B3 textos de los asaltos, B4 el texto de la forja, B5 precio
+  de venta por rareza, B6 informes con tope y «Leído todo», B7 «sale raro» en los talleres.
+- **3 · Navegación y fichas:** C1 pestañas Tablón · Mapa · Héroes · Gremio, C2 el arcón en
+  Héroes, C3 un solo buzón, C4 el Gremio para la casa, C5 ficha de sala con «Mejorar» arriba y
+  qué da cada nivel en todas, C7 recetas en pestañas, C8 patio, establo y empalizada a la vista.
+- **4 · Encargos y equipo:** D1 la tarjeta del tablón dice si se puede (tras B1 y A3), D2 hoja
+  del encargo ordenada y «Quitar de guardia y llevar», D3 aviso de equipo mejor y «Lo mejor del
+  arcón», D4 mapa legible y amenaza explicada (tras C1), D5 quien está fuera se nota en la taberna.
+- **5 · Salas y equilibrio:** E1 salón de doble altura, E2 el salón cambia con cada nivel (arte),
+  E3 alquimia y materiales raros hasta las expediciones.
+- **6 · Sucesos nocturnos:** N1 con cuáles empezar, N2 cuántos (de la propuesta de la noche,
+  punto 13 de la fase 1).
+- **7 · Expediciones:** X1 a X5, las cinco preguntas de
+  [`propuesta-expediciones.md`](propuesta-expediciones.md).
+
 ## Fase 2 · Tutoriales
 
 De un **agente propio del tutorial** desde el 1 de noviembre: [`encargos/tutorial.md`](encargos/tutorial.md).
@@ -343,19 +372,6 @@ en medio, para que los edificios salgan más interesantes (y, más adelante, pas
   mueve el viento a rachas (`art/grass.ts`). Capturas: `tools/shots/fondo.mjs`.
 
 ## Pendiente de revisar
-
-- **Revisión crítica antes de las expediciones** (8 de noviembre): fallos, comodidad, fichas de
-  sala, sistemas a medias y un solo motor de pelea, con la partida del usuario:
-  [`revision-critica.md`](revision-critica.md).
-- **Ficha de sala reordenada** (interfaz, decidido con el usuario): «Mejorar» arriba, junto al
-  nivel; lo que es solo aspecto (colores y, en el salón, los adornos que se compran) en un botón
-  «Personalizar» que abre una hoja encima; recetas de los talleres en pestañas. Detalle en
-  [`revision-critica.md`](revision-critica.md), «La ficha de sala, una por una».
-- **Pasada de interfaz a encargos, mapa y navegación** (pedido del usuario): cómo se presenta
-  el encargo (tarjeta del tablón y hoja), el mapa y la lista de grupos fuera, la ficha del viaje,
-  las pestañas y los botones de la barra, y lo que queda escondido en submenús. Hallazgos y una
-  propuesta para decidir (pestañas Tablón · Mapa · Héroes · Gremio, el arcón en Héroes, un solo
-  buzón) en [`revision-critica.md`](revision-critica.md), punto 7.
 
 - **Asaltos en directo** (hechos, con cámara lenta al arrastrar y el objetivo «sin heridos»):
   falta su arte ([`encargos/arte-asaltos.md`](encargos/arte-asaltos.md)).
