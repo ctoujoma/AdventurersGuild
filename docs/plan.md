@@ -159,34 +159,61 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
     con una partida larga) y retocar `REP`, `RANKS` o los premios para que el ritmo de los rangos
     no cambie para quien sí aventura.
 
-## Antes de las expediciones (revisión crítica del 8 de noviembre)
+## Plan de ataque: pulido general antes de las expediciones
 
-Barrido general con la partida del usuario (día 219, Leyenda, 12 encargos):
-[`revision-critica.md`](revision-critica.md). Cada punto tiene un código y se decide en la página
-**«Decisiones del Jarro»** (https://claude.ai/artifact/5MgZx3bgd3pJQay91rDtjk; respuestas en su colección `decisiones`), con el registro
-en [`decisiones.md`](decisiones.md). Se va de lo troncal a lo menudo: no se empieza un punto
-hasta que lo que lo sostiene está aprobado. Estado a 8 de noviembre:
+Sale de la [revisión crítica](revision-critica.md) (8 de noviembre, con la partida del usuario:
+día 219, Leyenda, 12 encargos) y de las respuestas del usuario en la página **«Decisiones del
+Jarro»** (https://claude.ai/artifact/5MgZx3bgd3pJQay91rDtjk), copiadas en
+[`decisiones.md`](decisiones.md) (cada punto con su código, lo que eligió y sus notas). Las
+expediciones se hacen **al acabar este plan** (A7). Orden: de lo troncal a lo menudo; el núcleo,
+en este orden; la interfaz, en paralelo con su agente; el arte, cuando toque cada pieza. Al cerrar
+una fase, `npm run sim` y una partida larga para ver que el ritmo sigue bien.
 
-- **Aprobado:** A1 (la fama se gana con encargos: fase 1, punto 15), A2 (se sube de nivel
-  peleando: fase 1, punto 14) y C6 (botón «Personalizar» en las salas, propuesta del usuario).
-- **1 · El bucle (troncal):** A3 tablón a la medida de los héroes (tras A1), A4 algo que empuje
-  a aventurar (tras A1), A5 la guardia con coste, A6 un solo motor de pelea para jefes, asaltos y
-  ladrón (tras A2), A7 las expediciones después de A3 y A6.
-- **2 · Arreglos rápidos (sin dependencias):** B1 «Sugerir» con todas las combinaciones, B2 la
-  sastrería que se queda bloqueada, B3 textos de los asaltos, B4 el texto de la forja, B5 precio
-  de venta por rareza, B6 informes con tope y «Leído todo», B7 «sale raro» en los talleres.
-- **3 · Navegación y fichas:** C1 pestañas Tablón · Mapa · Héroes · Gremio, C2 el arcón en
-  Héroes, C3 un solo buzón, C4 el Gremio para la casa, C5 ficha de sala con «Mejorar» arriba y
-  qué da cada nivel en todas, C7 recetas en pestañas, C8 patio, establo y empalizada a la vista.
-- **4 · Encargos y equipo:** D1 la tarjeta del tablón dice si se puede (tras B1 y A3), D2 hoja
-  del encargo ordenada y «Quitar de guardia y llevar», D3 aviso de equipo mejor y «Lo mejor del
-  arcón», D4 mapa legible y amenaza explicada (tras C1), D5 quien está fuera se nota en la taberna.
-- **5 · Salas y equilibrio:** E1 salón de doble altura, E2 el salón cambia con cada nivel (arte),
-  E3 alquimia y materiales raros hasta las expediciones.
-- **6 · Sucesos nocturnos:** N1 con cuáles empezar, N2 cuántos (de la propuesta de la noche,
-  punto 13 de la fase 1).
-- **7 · Expediciones:** X1 a X5, las cinco preguntas de
-  [`propuesta-expediciones.md`](propuesta-expediciones.md).
+1. **Fase 1 · Arreglos y números** (agente principal, sin dependencias):
+   - B1 «Sugerir» prueba todas las combinaciones (sin coste notable en el móvil).
+   - B2 la sastrería: pausa mientras el héroe está de misión (encargo o expedición), se puede
+     cancelar desde la sastrería para liberar el hueco, sigue por la mañana si vuelve de noche;
+     si ya no está en el gremio, se cancela y se devuelve el oro.
+   - B3 textos de los asaltos (bandas en plural) y faltas de los informes.
+   - B6 informes: los últimos 50 y «Leído todo».
+   - A2 experiencia: el patio da poca o ninguna, tope 99; los asaltos suben de nivel.
+   - A1 fama: lo pasivo del salón, casi nada; sale de encargos, historias, algunos incidentes y
+     decisiones; los asaltos ganados la siguen dando.
+   - E3 textos de los materiales: quitar lo que no existe (pociones, hachas con madera, cristal).
+2. **Fase 2 · El bucle** (agente principal; se equilibra todo junto con el simulador):
+   - A3 tablón a la medida de los héroes de casa (de todo: fácil, a su medida y difícil); el rango
+     sube el techo, no el suelo.
+   - A4 (c) que haya que aventurar: los héroes se aburren (moral que baja tras días sin salir) y la
+     amenaza de la comarca hace cosas que se ven; además, la fama baja si no se mandan encargos
+     (nunca con el juego cerrado); hasta dónde, en A9.
+   - A5 (b) la guardia cuenta como trabajo: quien guarda no duerme ni recupera moral y la va
+     perdiendo; marca de moral baja en el retrato y en la ficha, y aviso.
+   - A8 bajas de verdad en lo difícil (pendiente de elegir): más bajas en peligro alto y letal, el
+     clérigo salva solo a veces y más desaparecidos que vuelven (la capilla sirve).
+3. **Fase 3 · Talleres** (agente principal; interfaz después):
+   - B8 el nivel del taller da calidad (sale común, bueno o raro) y el tamaño da puestos (más
+     trabajadores, más deprisa). La forja deja de sumar a las armas (B4); textos «sale raro» y de
+     la forja (B7, B4).
+   - B5 precio de venta por tramos de rareza y tipo (con números, para aprobar).
+4. **Fase 4 · Un solo motor de pelea** (A6): jefes, asaltos y ladrón con el mismo motor; los
+   encargos sueltos siguen con tiradas calibradas contra él; los informes viejos se siguen viendo.
+5. **Bocetos antes de decidir** (para el usuario): C7 talleres con recetas en pestañas, D1 tarjeta
+   del tablón que dice si se puede, E1 el altillo del salón (usando el fondo de la sala).
+6. **Fase 5 · Interfaz** (agente de interfaz, en paralelo desde ya; encargo por escribir): C1
+   pestañas Tablón · Mapa · Héroes · Gremio; C2 el arcón en Héroes; C3 todo en la campana y C9
+   el historial de encargos (dónde, pendiente); C4 el Gremio para la casa y lo del sistema en el
+   engranaje; C5 ficha de sala con «Mejorar» arriba y qué da cada nivel (con test); C6 botón
+   «Personalizar»; D2 hoja del encargo ordenada y «Quitar de guardia y llevar»; D3 aviso de equipo
+   mejor en el arcón (solo el aviso); D4 mapa legible y amenaza explicada; D5 quien está fuera se
+   nota en la taberna (con arte).
+7. **Fase 6 · Salas**: C8 patio, establo y empalizada (qué hacemos, pendiente); E1 el altillo (tras
+   el boceto); E2 que cada nivel del salón se note (arte) y E4 un nivel 5 (pendiente).
+8. **Fase 7 · La noche**: N1 empezar por el ladrón nocturno, el mensajero, la pesadilla y el gato;
+   N2 uno de cada dos noches de media, algo más con niebla o tormenta; con la noche acelerada se
+   resuelve solo según quién esté de guardia. Minijuegos, más adelante (`futuro.md`).
+9. **Fase 8 · Expediciones** (agente de expediciones, al acabar lo anterior): respuestas ya
+   adelantadas en [`propuesta-expediciones.md`](propuesta-expediciones.md), «Respuestas del
+   usuario».
 
 ## Fase 2 · Tutoriales
 

@@ -182,3 +182,10 @@ entrenamiento ganarían sentido.
   - huecos para colocar adornos.
 - Todo esto se gana con hazañas, rangos y el legado (apartado 5), y es lo que se vendería como
   extra (apartado 6).
+
+## Sucesos nocturnos con minijuego (idea del usuario, 11 de noviembre)
+
+Que algunos sucesos o incidentes se resuelvan con un minijuego corto en lugar de un toque.
+Cuidado con la noche acelerada: con «Pasar la noche» todo tiene que poder resolverse solo (según
+quién esté de guardia), así que el minijuego solo puede mejorar el resultado, nunca ser obligatorio.
+Ver N1 y N2 en [`decisiones.md`](decisiones.md).

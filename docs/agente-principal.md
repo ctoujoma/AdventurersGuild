@@ -180,6 +180,7 @@ talleres, nombres y marcos). El arte ya está listo para cinco:
   (https://claude.ai/artifact/5MgZx3bgd3pJQay91rDtjk), donde el usuario aprueba, pide cambios o
   rechaza. Antes de seguir, leer sus respuestas (colección `decisiones`) y poner al día el
   registro y el plan (sección «Antes de las expediciones»).
-- Aprobado ya: A1 (la fama se gana con encargos), A2 (se sube de nivel peleando) y C6 (botón
+- (11 de noviembre) El usuario contestó todo: el plan de ataque está en `plan.md` y lo pendiente
+  (bocetos C7, D1 y E1; A8, A9, B5, C8, C9, E4 y X4) en el registro. Antes: aprobado A1, A2 y C6 (botón
   «Personalizar» en las salas). Lo siguiente, de lo troncal a lo menudo: el bloque 1 (A3–A7) y
   los arreglos rápidos (B1–B7), que no dependen de nada.
