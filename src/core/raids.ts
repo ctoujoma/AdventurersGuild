@@ -45,10 +45,11 @@ import type { DawnEvent, GameState, Report } from './model';
 import { levelUp } from './resolve';
 import { Rng } from './rng';
 import { listNames } from './text';
+import { priceOf } from './gear';
 
 /** Fama más riqueza a la vista: lo que atrae a los bandidos. */
 export function notoriety(s: GameState): number {
-  const treasure = s.inventory.reduce((a, i) => a + i.value, 0);
+  const treasure = s.inventory.reduce((a, i) => a + priceOf(i), 0);
   const trophies = s.trophies.reduce((a, t) => a + t.value, 0);
   const unrest = threatOf(s) >= THREAT_RAIDS ? 40 : 0;
   return Math.round(s.rep + s.gold / 40 + (treasure + trophies) / 12 + unrest);

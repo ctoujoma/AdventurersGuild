@@ -633,3 +633,18 @@ export const BORED_FLOOR = 30;
 /** Noches sin nadie fuera antes de que la comarca olvide al gremio: la fama baja un tanto al día. */
 export const QUIET_AFTER = 4;
 export const QUIET_FAME = 0.01;
+
+/**
+ * Precio de venta del equipo por rareza (común, bueno, raro, épico, legendario): un tramo de
+ * monedas y lo que suele dar un objeto de esa rareza (suma de sus bonos, su efecto y su temple).
+ * Dentro del tramo, más cuanto más da. No depende del rango ni de dónde salió.
+ */
+export const PRICE_TIERS: readonly { lo: number; hi: number; min: number; max: number }[] = [
+  { lo: 10, hi: 20, min: 1, max: 3 },
+  { lo: 25, hi: 40, min: 2, max: 4 },
+  { lo: 50, hi: 90, min: 2, max: 5 },
+  { lo: 100, hi: 160, min: 3, max: 6 },
+  { lo: 200, hi: 350, min: 4, max: 8 },
+];
+/** Las armas valen un poco más; los complementos, un poco menos. */
+export const PRICE_KIND: Partial<Record<string, number>> = { arma: 1.1, complemento: 0.9 };

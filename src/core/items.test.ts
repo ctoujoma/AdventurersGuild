@@ -133,3 +133,24 @@ describe('trofeos', () => {
     expect(a).toEqual(b);
   });
 });
+
+describe('precio de venta por rareza', () => {
+  it('cada rareza en su tramo, sin solaparse, y el temple suma', async () => {
+    const { GEAR } = await import('../data/items');
+    const { priceOf } = await import('./gear');
+    const top: number[] = [];
+    const low: number[] = [];
+    for (const g of GEAR) {
+      const r = g.rarity ?? 0;
+      const p = priceOf({ id: 'x', ...g });
+      top[r] = Math.max(top[r] ?? 0, p);
+      low[r] = Math.min(low[r] ?? Infinity, p);
+    }
+    for (let r = 1; r < top.length; r++)
+      if (low[r] !== undefined) expect(low[r]!).toBeGreaterThan(top[r - 1]!);
+    const sword = GEAR.find((g) => g.icon === 'espada' && (g.rarity ?? 0) === 0)!;
+    expect(priceOf({ id: 'y', ...sword, plus: 2 })).toBeGreaterThan(priceOf({ id: 'y', ...sword }));
+    // Los tesoros, lo que ponen.
+    expect(priceOf({ id: 't', name: 'Cáliz', desc: '', value: 77, kind: 'tesoro' })).toBe(77);
+  });
+});

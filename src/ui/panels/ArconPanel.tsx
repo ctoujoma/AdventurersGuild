@@ -15,7 +15,7 @@ import { Icon } from '../icons';
 import { Portrait } from '../Portrait';
 import { Tabs } from '../Tabs';
 import { lookOf, marksOf, memberOf, heroFrame } from '../view';
-import { SLOTS, SLOT_NAMES, slotOf, type Slot } from '../../core/gear';
+import { SLOTS, SLOT_NAMES, priceOf, slotOf, type Slot } from '../../core/gear';
 
 export type ArconTab = 'equipo' | 'tesoros' | 'trofeos';
 
@@ -304,7 +304,7 @@ export function ArconPanel({
                     </button>
                     <Sell
                       name={itemName(chosen.it)}
-                      value={chosen.it.value}
+                      value={priceOf(chosen.it)}
                       onSell={() => {
                         onSell(chosen.it.id);
                         setSel(null);
@@ -329,7 +329,7 @@ export function ArconPanel({
                 <span class="row-info" {...help(it.desc)}>
                   <b>{itemName(it)}</b>
                 </span>
-                <Sell name={it.name} value={it.value} onSell={() => onSell(it.id)} />
+                <Sell name={it.name} value={priceOf(it)} onSell={() => onSell(it.id)} />
               </article>
             ))}
           </div>

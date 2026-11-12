@@ -198,7 +198,7 @@ import {
   tidyJobs,
   villageCrew,
 } from './workers';
-import { SLOTS, gearList, slotOf, type Slot } from './gear';
+import { SLOTS, gearList, priceOf, slotOf, type Slot } from './gear';
 
 export type Action =
   /** Talleres: crear de una receta, desmontar un objeto del arcón o cancelar un trabajo. */
@@ -676,7 +676,7 @@ function reduceAction(state: GameState, action: Action): GameState {
       const it = state.inventory.find((i) => i.id === action.itemId);
       if (!it) return state;
       const s = structuredClone(state);
-      earn(s, it.value);
+      earn(s, priceOf(it));
       s.inventory = s.inventory.filter((i) => i.id !== it.id);
       return s;
     }

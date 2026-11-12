@@ -8,7 +8,7 @@ import { tierOf } from '../art/tiers';
 import { createPortal } from 'preact/compat';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { temperCost } from '../core/crafting';
-import { SLOT_NAMES, slotOf } from '../core/gear';
+import { SLOT_NAMES, priceOf, slotOf } from '../core/gear';
 import type { Item } from '../core/model';
 import type { SkillId } from '../core/party';
 import { RARITY_NAMES, PERK_INFO, itemName } from '../data/items';
@@ -197,7 +197,7 @@ function ItemTip({ e, at }: { e: GridEntry; at: DOMRect }) {
       {it.desc && <p class="item-tip-desc">«{it.desc}»</p>}
       <div class="item-tip-foot">
         <span>{who ? `Lo lleva ${who}` : 'En el arcón'}</span>
-        <span>Vale {it.value} monedas</span>
+        <span>Vale {priceOf(it)} monedas</span>
       </div>
     </div>
   );
