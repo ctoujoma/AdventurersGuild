@@ -18,7 +18,9 @@ export function GameOver({ game, onNew }: { game: GameState; onNew: () => void }
         <ul class="dawn-events">
           <li class="ev ev-info">Héroes en el gremio: {roster(game).length}</li>
           <li class="ev ev-bad">Caídos en estas semanas: {dead}</li>
-          <li class="ev ev-good">Misiones completadas: {game.stats?.missions ?? game.reports.length}</li>
+          <li class="ev ev-good">
+            Misiones completadas: {game.stats?.missions ?? game.reports.length}
+          </li>
           {win && <li class="ev ev-warn">Puntuación: {over.score}</li>}
         </ul>
         <div class="dawn-actions">
