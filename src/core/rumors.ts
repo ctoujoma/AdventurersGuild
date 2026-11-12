@@ -16,7 +16,7 @@ import {
   RUMOR_SECS,
   rankIndex,
 } from './balance';
-import { generateQuest } from './generate';
+import { generateQuest, homePower } from './generate';
 import type { ChipKind, GameState, Quest } from './model';
 import { Rng } from './rng';
 import { active } from './rooms';
@@ -48,9 +48,11 @@ export function rumorQuest(s: GameState, rng: Rng, text: string): Quest {
   const rank = rankIndex(s.rep);
   // Que no se llame igual que otro del tablón.
   const taken = new Set(s.quests.map((x) => x.title));
-  let q = generateQuest(rng, `q${s.uid++}`, rank, `i${s.uid++}`, s.mode === 'libre');
-  for (let i = 0; i < 8 && taken.has(q.title); i++)
-    q = generateQuest(rng, `q${s.uid++}`, rank, `i${s.uid++}`, s.mode === 'libre');
+  const power = homePower(s.heroes);
+  const make = () =>
+    generateQuest(rng, `q${s.uid++}`, rank, `i${s.uid++}`, s.mode === 'libre', undefined, power);
+  let q = make();
+  for (let i = 0; i < 8 && taken.has(q.title); i++) q = make();
   // Un raro, o (a veces) un épico o un legendario.
   const rarity = rng.chance(RUMOR_LEGEND) ? (rng.chance(0.5) ? 4 : 3) : 2;
   const base = rng.pick(GEAR.filter((g) => g.rarity === rarity));

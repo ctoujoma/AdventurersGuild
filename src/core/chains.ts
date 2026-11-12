@@ -11,7 +11,7 @@ import { GEAR } from '../data/items';
 import { PLACE_INFO } from '../data/places';
 import { rankIndex } from './balance';
 import { emptyStats } from './feats';
-import { generateQuest } from './generate';
+import { generateQuest, homePower } from './generate';
 import type { BossFight, DawnEvent, GameState, Hero, Quest, Report } from './model';
 import type { Rng } from './rng';
 import { shownGear } from './gear';
@@ -39,6 +39,7 @@ export function chainQuest(
     `i${s.uid++}`,
     s.mode === 'libre',
     st.type,
+    homePower(s.heroes),
   );
   return {
     ...q,

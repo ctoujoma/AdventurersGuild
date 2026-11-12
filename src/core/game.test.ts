@@ -201,8 +201,10 @@ describe('avance de día', () => {
     s = reduce(s, { type: 'send', questId: q.id, heroIds: [h.id] });
     for (let d = 0; d < q.days; d++) s = endDay(s);
     expect(s.missions).toHaveLength(0);
-    expect(s.reports).toHaveLength(1);
-    expect(s.reports[0]!.heroIds).toEqual([h.id]);
+    // (Puede llegar también alguna carta: se cuentan los informes de encargo.)
+    const mine = s.reports.filter((r) => r.heroIds.length);
+    expect(mine).toHaveLength(1);
+    expect(mine[0]!.heroIds).toEqual([h.id]);
     expect(s.heroes.find((x) => x.id === h.id)!.status).not.toBe('mision');
   });
 

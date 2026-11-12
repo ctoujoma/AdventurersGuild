@@ -44,7 +44,7 @@ import {
   ATTR_MAX,
   rankIndex,
 } from './balance';
-import { fill, generateQuest } from './generate';
+import { fill, generateQuest, homePower } from './generate';
 import { TROPHIES } from '../data/items';
 import { PLACE_INFO, placeAt } from '../data/places';
 import type {
@@ -414,6 +414,7 @@ export function resolveMission(
         `i${state.uid++}`,
         false,
         'Explorar',
+        homePower(state.heroes),
       );
       state.quests.push({
         ...rq,

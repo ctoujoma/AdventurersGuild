@@ -110,7 +110,7 @@ import {
 import { stepRaids } from './raids';
 import { advanceChain, bossOf, fightRoster, offerChain } from './chains';
 import { choose, maybeEvent, scaredClients, stepThreat } from './events';
-import { generateHero, generateQuest } from './generate';
+import { generateHero, generateQuest, homePower } from './generate';
 import {
   SAVE_VERSION,
   type AssaultOutcome,
@@ -510,7 +510,15 @@ function hero(s: GameState, rng: Rng, cls?: Hero['cls']): Hero {
 }
 
 function quest(s: GameState, rng: Rng): Quest {
-  return generateQuest(rng, `q${s.uid++}`, rankIndex(s.rep), `i${s.uid++}`, s.mode === 'libre');
+  return generateQuest(
+    rng,
+    `q${s.uid++}`,
+    rankIndex(s.rep),
+    `i${s.uid++}`,
+    s.mode === 'libre',
+    undefined,
+    homePower(s.heroes),
+  );
 }
 
 // ---------- Acciones ----------

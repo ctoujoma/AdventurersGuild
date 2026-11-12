@@ -584,3 +584,13 @@ export const RECIPE_FIND = 0.2;
 
 /** Informes que guarda el correo (los más nuevos). */
 export const REPORTS_KEEP = 50;
+
+/**
+ * El tablón, medido con los héroes de casa: cuánto más difícil que «a su medida» (k) y con qué
+ * peso sale (w). El rango pone el techo de la medida.
+ */
+export const BOARD_TIERS: readonly { k: number; w: number }[] = [
+  { k: 0.75, w: 0.35 },
+  { k: 1, w: 0.4 },
+  { k: 1.3, w: 0.25 },
+];
