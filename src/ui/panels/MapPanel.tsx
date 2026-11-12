@@ -21,6 +21,7 @@ import { dawnIn, nightIn, shortSpan, span } from '../when';
 import { help } from '../HoldHelp';
 import { Icon, type IconName } from '../icons';
 import { listNames, plural } from '../text';
+import { bandNumber, capBand } from '../../data/raids';
 
 interface Props {
   game: GameState;
@@ -691,12 +692,15 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
           {game.raid?.warned && (
             <span
               class="map-raid"
-              data-help={`${game.raid.band} viene hacia la taberna: llega ${nightIn(game.raid.day - game.day)}.`}
+              data-help={bandNumber(
+                `${capBand(game.raid.band)} {viene|vienen} hacia la taberna: {llega|llegan} ${nightIn(game.raid.day - game.day)}.`,
+                game.raid.band,
+              )}
               style={pct(
                 Math.max(8, TAVERN.x - 14 * Math.max(1, game.raid.day - game.day)),
                 TAVERN.y + 10,
               )}
-              title={`${game.raid.band}: llega ${nightIn(game.raid.day - game.day)}`}
+              title={`${capBand(game.raid.band)}: ${nightIn(game.raid.day - game.day)}`}
             >
               <Icon name="espadas" size={15} />
             </span>

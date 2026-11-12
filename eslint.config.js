@@ -5,7 +5,7 @@ import prettier from 'eslint-config-prettier';
 import { defineConfig } from 'eslint/config';
 
 export default defineConfig(
-  { ignores: ['dist', 'docs', 'node_modules'] },
+  { ignores: ['dist', 'docs', 'node_modules', '.claude'] },
   js.configs.recommended,
   tseslint.configs.recommended,
   { languageOptions: { globals: { ...globals.browser, ...globals.node } } },

@@ -145,6 +145,20 @@ interface Rooms {
   raidsWon: number;
   stolen: number;
   spilt: number[];
+  /** Resultados de todos los informes (el correo guarda solo los últimos). */
+  outcomes: Record<Outcome, number>;
+  /** Bajas según el peligro (0: fácil, peligro 0–1; 1: difícil, 2–3): encargos, muertos, perdidos. */
+  sentBy: number[];
+  deadBy: number[];
+  lostBy: number[];
+  /** Encargos que salen mal (fracaso o desastre) y éxitos parciales, igual. */
+  badBy: number[];
+  partialBy: number[];
+  /** Desaparecidos que vuelven (solos o rescatados) y los que se dan por muertos. */
+  back: number;
+  gone: number;
+  /** Peligro de cada encargo por su título (el informe no guarda el encargo). */
+  danger: Map<string, number>;
 }
 const newRooms = (): Rooms => ({
   till: [0, 0, 0, 0],
@@ -155,6 +169,15 @@ const newRooms = (): Rooms => ({
   raidsWon: 0,
   stolen: 0,
   spilt: [0, 0, 0, 0],
+  outcomes: { 'Éxito brillante': 0, Éxito: 0, 'Éxito parcial': 0, Fracaso: 0, Desastre: 0 },
+  sentBy: [0, 0],
+  deadBy: [0, 0],
+  lostBy: [0, 0],
+  badBy: [0, 0],
+  partialBy: [0, 0],
+  back: 0,
+  gone: 0,
+  danger: new Map(),
 });
 
 /** Juega un día apuntando lo que interesa de las salas. */
@@ -166,14 +189,28 @@ function tracked(s: GameState, st: Strategy, acc: Rooms): GameState {
   acc.till[phase]! += dayIncome(s, s.day);
   acc.wages[phase]! += salaries(s);
   acc.days[phase]!++;
-  const seen = s.reports.length;
+  const seen = new Set(s.reports.map((r) => r.id));
+  for (const q of s.quests) acc.danger.set(q.title, q.danger);
   const next = playDay(s, st);
   for (const e of next.dawn) {
     if (e.t.startsWith('No hubo comida')) acc.hungry++;
+    if (/ha vuelto!|ha rescatado a/.test(e.t)) acc.back++;
+    if (e.t.startsWith('Han encontrado la capa')) acc.gone++;
     const lost = /(\d+) monedas no cabían/.exec(e.t);
     if (lost) acc.spilt[phase]! += Number(lost[1]);
   }
-  for (const r of next.reports.slice(0, next.reports.length - seen)) {
+  for (const r of next.reports.filter((x) => !seen.has(x.id))) {
+    acc.outcomes[r.outcome]++;
+    if (!r.raid) {
+      const hard = (acc.danger.get(r.title) ?? 0) >= 2 ? 1 : 0;
+      acc.sentBy[hard]!++;
+      if (r.outcome === 'Fracaso' || r.outcome === 'Desastre') acc.badBy[hard]!++;
+      if (r.outcome === 'Éxito parcial') acc.partialBy[hard]!++;
+      for (const c of r.chips) {
+        if (/: caíd[oa]$/.test(c.t)) acc.deadBy[hard]!++;
+        if (/: desaparecid[oa]$/.test(c.t)) acc.lostBy[hard]!++;
+      }
+    }
     if (!r.raid) continue;
     acc.raids++;
     if (r.raid.won) acc.raidsWon++;
@@ -202,14 +239,8 @@ for (const st of STRATEGIES) {
   const sent: number[] = [];
   const reps: number[] = [];
   const stories: number[] = [];
-  const outcomes: Record<Outcome, number> = {
-    'Éxito brillante': 0,
-    Éxito: 0,
-    'Éxito parcial': 0,
-    Fracaso: 0,
-    Desastre: 0,
-  };
   const rooms = newRooms();
+  const outcomes = rooms.outcomes;
   for (let i = 0; i < N; i++) {
     let s = newGame(`sim-${i}`);
     const start = s.heroes.length;
@@ -228,10 +259,9 @@ for (const st of STRATEGIES) {
     } else lossDays.push(s.day);
     deaths.push(s.heroes.filter((h) => h.status === 'muerto').length);
     hired.push(s.heroes.length - start);
-    sent.push(s.reports.length);
+    sent.push(s.stats?.missions ?? 0);
     reps.push(s.rep);
     stories.push((s.chains ?? []).filter((c) => c.status === 'hecha').length);
-    for (const r of s.reports) outcomes[r.outcome]++;
   }
   const total = Object.values(outcomes).reduce((a, b) => a + b, 0);
   console.log(`■ ${st.name}`);
@@ -253,6 +283,16 @@ for (const st of STRATEGIES) {
         .map(([k, v]) => `${k} ${pct(v, total)}`)
         .join(' · ')}`,
     );
+  const per100 = (x: number, k: number) => ((100 * x) / Math.max(1, rooms.sentBy[k]!)).toFixed(1);
+  console.log(
+    `  bajas cada 100 encargos (fácil 0–1 / difícil 2–3): muertos ${per100(rooms.deadBy[0]!, 0)} / ${per100(rooms.deadBy[1]!, 1)} · desaparecidos ${per100(rooms.lostBy[0]!, 0)} / ${per100(rooms.lostBy[1]!, 1)} · encargos ${rooms.sentBy.map((x) => (x / N).toFixed(1)).join(' / ')} por partida`,
+  );
+  console.log(
+    `  salen mal (fácil / difícil): ${per100(rooms.badBy[0]!, 0)} % / ${per100(rooms.badBy[1]!, 1)} % · éxito parcial ${per100(rooms.partialBy[0]!, 0)} % / ${per100(rooms.partialBy[1]!, 1)} %`,
+  );
+  console.log(
+    `  desaparecidos que vuelven ${pct(rooms.back, rooms.back + rooms.gone)} (${rooms.back} vuelven, ${rooms.gone} no)`,
+  );
   const per = (xs: number[]) =>
     xs.map((x, k) => (rooms.days[k] ? (x / rooms.days[k]!).toFixed(0) : '–')).join(' / ');
   console.log(`  caja del salón al día (1–10 / 11–20 / 21–30 / libre): ${per(rooms.till)}`);

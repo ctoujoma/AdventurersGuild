@@ -8,6 +8,7 @@ import { GEAR } from '../data/items';
 import { unlockName } from '../data/unlocks';
 import type { Arrival, DawnEvent, GameState, Rarity, Reward, Stats } from './model';
 import type { Rng } from './rng';
+import { priceOf } from './gear';
 
 const ROMAN = ['I', 'II', 'III', 'IV', 'V'];
 
@@ -94,7 +95,7 @@ export function arrival(s: GameState, alive: number): Arrival {
     trophies * 60 +
     facilities * 25 -
     fallen * 40 +
-    s.inventory.reduce((a, i) => a + i.value, 0);
+    s.inventory.reduce((a, i) => a + priceOf(i), 0);
   return {
     day: s.day,
     heroes: alive,

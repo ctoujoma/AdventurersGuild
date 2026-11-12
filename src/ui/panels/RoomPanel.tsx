@@ -472,7 +472,7 @@ function RoomWorks({
   );
 }
 
-/** Ficha de una sala: para qué sirve, su nivel, arreglarla o mejorarla y sus obras. */
+/** Ficha de una sala: arriba su nivel y el botón de arreglarla o mejorarla; luego para qué sirve y sus obras. */
 export function RoomPanel({
   game,
   roomId,
@@ -504,17 +504,35 @@ export function RoomPanel({
   const links = LINKS[room.type] ?? [];
   return (
     <>
-      <div class="room-head" {...(info ? help(info.levels[room.level]) : {})}>
-        <span class="pips" aria-label={`Nivel ${room.level} de ${max}`}>
-          {Array.from({ length: max }, (_, i) => (
-            <i key={i} class={i < room.level ? 'on' : ''} />
-          ))}
-        </span>
-        <span class="row-sub">
-          {room.level ? `Nivel ${room.level} de ${max}` : 'Sin arreglar'}
-          {size > 1 ? ` · ${size} ${plural(size, 'hueco', 'huecos')}` : ''}
-        </span>
+      <div class="room-top">
+        <div class="room-head" {...(info ? help(info.levels[room.level]) : {})}>
+          <span class="pips" aria-label={`Nivel ${room.level} de ${max}`}>
+            {Array.from({ length: max }, (_, i) => (
+              <i key={i} class={i < room.level ? 'on' : ''} />
+            ))}
+          </span>
+          <span class="row-sub">
+            {room.level ? `Nivel ${room.level} de ${max}` : 'Sin arreglar'}
+            {size > 1 ? ` · ${size} ${plural(size, 'hueco', 'huecos')}` : ''}
+          </span>
+        </div>
+        {cost !== null ? (
+          <button
+            class="btn btn-gold room-up"
+            data-tut={`mejorar-${room.type}`}
+            aria-label={`${room.level === 0 ? 'Arreglar' : 'Mejorar'} ${def.name} por ${cost} monedas`}
+            disabled={!!why}
+            title={why ?? undefined}
+            onClick={() => onUpgrade(room.id)}
+          >
+            <Icon name="mejorar" size={14} /> {room.level === 0 ? 'Arreglar' : 'Mejorar'} ·{' '}
+            <Icon name="coin" size={10} /> {cost}
+          </button>
+        ) : (
+          <span class="pill pill-ok room-max">Al máximo</span>
+        )}
       </div>
+      {why && cost !== null && <p class="qs-warn">{why}</p>}
       {state && <p class="room-state">{state}</p>}
       <p class="room-desc">{def.desc}</p>
       {room.type === 'almacen' && room.level > 0 && <MatShelf game={game} />}
@@ -575,7 +593,7 @@ export function RoomPanel({
         <RoomCrew game={game} room={room} onTask={onTask} onOpen={onOpen} />
       )}
       {isWorkshop(room.type) && room.level > 0 && !room.works && (
-        <WorkshopInfo game={game} room={room} onAct={onAct} />
+        <WorkshopInfo key={room.id} game={game} room={room} onAct={onAct} />
       )}
       {!room.works && room.level >= (TINT_FROM[room.type] ?? Infinity) && (onAct || onTint) && (
         <RoomTint game={game} room={room} onAct={onAct} onTint={onTint} onPreview={onPreview} />
@@ -590,22 +608,6 @@ export function RoomPanel({
           ))}
         </div>
       )}
-      {cost !== null ? (
-        <button
-          class="btn btn-gold room-act"
-          data-tut={`mejorar-${room.type}`}
-          aria-label={`${room.level === 0 ? 'Arreglar' : 'Mejorar'} ${def.name} por ${cost} monedas`}
-          disabled={!!why}
-          title={why ?? undefined}
-          onClick={() => onUpgrade(room.id)}
-        >
-          <Icon name="mejorar" size={16} /> {room.level === 0 ? 'Arreglar' : 'Mejorar'} ·{' '}
-          <Icon name="coin" size={12} /> {cost}
-        </button>
-      ) : (
-        <span class="pill pill-ok room-max">Al máximo</span>
-      )}
-      {why && cost !== null && <p class="qs-warn">{why}</p>}
     </>
   );
 }

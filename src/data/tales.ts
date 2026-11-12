@@ -33,8 +33,8 @@ export const MORE_OPENERS: Record<QuestType, readonly [one: string, many: string
       'En el camino a {place} asaltan a uno de cada tres carros. {who} no soltaron la empuñadura en todo el viaje.',
     ],
     [
-      '{client} insistió en llevar también a su tía. {who} no supo decir que no.',
-      '{client} insistió en llevar también a su tía. {who} no supieron decir que no.',
+      '{Client} insistió en llevar también a su tía. {who} no supo decir que no.',
+      '{Client} insistió en llevar también a su tía. {who} no supieron decir que no.',
     ],
   ],
   Explorar: [
@@ -53,8 +53,8 @@ export const MORE_OPENERS: Record<QuestType, readonly [one: string, many: string
   ],
   Recuperar: [
     [
-      '{client} describió el objeto con tanto detalle que {who} sospechó que no era suyo.',
-      '{client} describió el objeto con tanto detalle que {who} sospecharon que no era suyo.',
+      '{Client} describió el objeto con tanto detalle que {who} sospechó que no era suyo.',
+      '{Client} describió el objeto con tanto detalle que {who} sospecharon que no era suyo.',
     ],
     [
       'El objeto seguía en {place}. El problema era el bicho que dormía encima.',
@@ -89,8 +89,8 @@ export const MORE_OPENERS: Record<QuestType, readonly [one: string, many: string
       '{who} se taparon la nariz con un pañuelo antes de bajar a {place}. No sirvió de nada.',
     ],
     [
-      '{client} juraba que eran «cuatro o cinco». {who} contó más de treinta.',
-      '{client} juraba que eran «cuatro o cinco». {who} contaron más de treinta.',
+      '{Client} juraba que eran «cuatro o cinco». {who} contó más de treinta.',
+      '{Client} juraba que eran «cuatro o cinco». {who} contaron más de treinta.',
     ],
   ],
 };
@@ -288,23 +288,23 @@ export const HIGH_MORALE: readonly string[] = [
 /** Cierres que hablan del cliente. */
 export const CLIENT_CLOSERS: Record<Outcome, readonly string[]> = {
   'Éxito brillante': [
-    '{client} prometió hablar bien del gremio en todas las tabernas de la comarca.',
-    '{client} quiso invitarles a cenar. Aceptaron, claro.',
+    '{Client} prometió hablar bien del gremio en todas las tabernas de la comarca.',
+    '{Client} quiso invitarles a cenar. Aceptaron, claro.',
   ],
   Éxito: [
-    '{client} contó las monedas dos veces, pero pagó.',
-    '{client} dio las gracias con un apretón de manos algo flojo.',
+    '{Client} contó las monedas dos veces, pero pagó.',
+    '{Client} dio las gracias con un apretón de manos algo flojo.',
   ],
   'Éxito parcial': [
-    '{client} pagó refunfuñando y pidió descuento para la próxima vez.',
-    '{client} dijo que «algo es algo». Lo dijo con muy mala cara.',
+    '{Client} pagó refunfuñando y pidió descuento para la próxima vez.',
+    '{Client} dijo que «algo es algo». Lo dijo con muy mala cara.',
   ],
   Fracaso: [
-    '{client} cerró la puerta sin decir palabra.',
-    '{client} dice que la próxima vez buscará otro gremio.',
+    '{Client} cerró la puerta sin decir palabra.',
+    '{Client} dice que la próxima vez buscará otro gremio.',
   ],
   Desastre: [
-    '{client} ha pedido que no vuelvan a pasar por allí.',
+    '{Client} ha pedido que no vuelvan a pasar por allí.',
     'Dicen que {client} va contando lo ocurrido por los mercados. No sale bien parado el gremio.',
   ],
 };

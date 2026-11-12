@@ -11,8 +11,9 @@ import {
   type QuestTemplate,
 } from '../data/quests';
 import { FIRST_NAMES, QUOTES, SURNAMES } from '../data/names';
-import { FREE_PAY, REWARD_PER_POINT } from './balance';
+import { BOARD_TIERS, FREE_PAY, REWARD_PER_POINT } from './balance';
 import type { Danger, Hero, Item, Quest, QuestType, Sex } from './model';
+import { skill } from './party';
 import type { AttrId, Attrs, Challenge, ClassId, SkillId, Trait, TraitId } from './party';
 import type { Rng } from './rng';
 
@@ -110,8 +111,25 @@ export function generateHero(rng: Rng, id: string, opts: HeroOptions): Hero {
   };
 }
 
-/** Fuerza típica de un héroe en su habilidad fuerte, según el rango. */
+/** Fuerza típica de un héroe en su habilidad fuerte, según el rango (el techo del tablón). */
 const perHero = (rank: number) => 4.4 + rank * 1.7;
+
+const SKILLS: readonly SkillId[] = ['Combate', 'Trampas', 'Arcano', 'Supervivencia'];
+
+/**
+ * Fuerza típica de los héroes del gremio, en la misma escala que `perHero`: la media de sus
+ * cuatro habilidades, de los cuatro mejores (los que irían). Sin contar el equipo: lo que se
+ * lleva puesto es ventaja del jugador. Undefined si no hay nadie (el tablón, por el rango).
+ */
+export function homePower(heroes: readonly Hero[]): number | undefined {
+  const mine = heroes.filter((h) => h.status !== 'muerto' && h.status !== 'desaparecido');
+  if (!mine.length) return undefined;
+  const each = mine
+    .map((h) => SKILLS.reduce((a, k) => a + skill(h, k), 0) / SKILLS.length)
+    .sort((a, b) => b - a)
+    .slice(0, 4);
+  return each.reduce((a, b) => a + b, 0) / each.length;
+}
 
 /** `free`: en modo libre los encargos de rango alto pagan sin el recorte de «La deuda». */
 /**
@@ -133,6 +151,11 @@ export function generateQuest(
   uidItem: string,
   free = false,
   forceType?: QuestType,
+  /**
+   * Fuerza de los héroes de casa (`homePower`): el tablón se mide con ellos (fácil, a su medida o
+   * difícil) y el rango pone el techo. Sin ella, solo el rango.
+   */
+  power?: number,
 ): Quest {
   const type = forceType ?? rng.pick(QUEST_TYPES);
   const tpl = TEMPLATES[type];
@@ -148,7 +171,10 @@ export function generateQuest(
     [3, 2 + rank],
     [4, rank],
   ]);
-  const mainDiff = Math.round(perHero(rank) * slots + rng.int(-2, 2));
+  // A la medida de casa, sin pasar de lo que da el rango; y de todo: fácil, justo o difícil.
+  const base = power === undefined ? perHero(rank) : Math.min(power, perHero(rank));
+  const tier = power === undefined ? 1 : rng.weighted<number>(BOARD_TIERS.map((t) => [t.k, t.w]));
+  const mainDiff = Math.round(base * tier * slots + rng.int(-2, 2));
   const challenges: Challenge[] = [{ skill: tpl.main, diff: Math.max(4, mainDiff) }];
   const extras = slots >= 3 ? 2 : slots === 2 ? 1 : rng.chance(0.3) ? 1 : 0;
   const pool = [...tpl.extra];
@@ -160,7 +186,7 @@ export function generateQuest(
     });
   }
 
-  const tough = mainDiff / (perHero(rank) * slots);
+  const tough = mainDiff / (base * slots);
   let danger = clamp(
     Math.round((slots - 1) / 1.5 + (tough - 1) * 3 + rng.int(-1, 1) * 0.5),
     0,

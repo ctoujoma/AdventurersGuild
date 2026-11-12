@@ -17,6 +17,9 @@ function send(seed: string): GameState {
   return t;
 }
 
+/** Informes de encargo (sin las cartas que puedan llegar entre medias). */
+const trips = (s: GameState) => s.reports.filter((r) => r.heroIds.length).length;
+
 describe('contra qué se pelea', () => {
   const q = (type: QuestType, text: string) =>
     ({ type, title: '', text }) as unknown as Mission['quest'];
@@ -90,7 +93,7 @@ describe('se resuelve al acabar lo suyo', () => {
   it('con el juego abierto llega el informe a media vuelta y los héroes siguen fuera', () => {
     let s = send('faena');
     const m0 = s.missions[0]!;
-    const reports = s.reports.length;
+    const reports = trips(s);
     // Avanza día a día hasta pasar el punto de resolver.
     for (let i = 0; i < 10 && !s.missions[0]?.done; i++) {
       s = reduce(s, { type: 'tick', to: DAY_SECONDS * 0.79 });
@@ -99,14 +102,14 @@ describe('se resuelve al acabar lo suyo', () => {
     // El último día, el reloj pasa por lo suyo antes de la noche: aún no han vuelto.
     const m = s.missions.find((x) => x.id === m0.id)!;
     expect(m.done).toBeDefined();
-    expect(s.reports.length).toBe(reports + 1);
+    expect(trips(s)).toBe(reports + 1);
     expect(journeyNow(s, m).t).toBeGreaterThanOrEqual(RESOLVE_T - 1e-9);
     for (const id of Object.keys(m.done!.fates))
       expect(s.heroes.find((h) => h.id === id)!.status).toBe('mision');
     expect(journeyNow(s, m).past.some((e) => e.kind === 'aviso')).toBe(true);
     // Al volver, cada uno como quedó y sin informe nuevo.
     while (s.missions.some((x) => x.id === m0.id)) s = endDay(s);
-    expect(s.reports.length).toBe(reports + 1);
+    expect(trips(s)).toBe(reports + 1);
     for (const [id, f] of Object.entries(m.done!.fates))
       expect(s.heroes.find((h) => h.id === id)!.status).toBe(f.status);
   });
@@ -114,9 +117,9 @@ describe('se resuelve al acabar lo suyo', () => {
   it('con el juego cerrado se resuelve en la noche y vuelve igual', () => {
     let s = send('cerrado');
     const id = s.missions[0]!.id;
-    const reports = s.reports.length;
+    const reports = trips(s);
     while (s.missions.some((x) => x.id === id)) s = endDay(s);
-    expect(s.reports.length).toBe(reports + 1);
+    expect(trips(s)).toBe(reports + 1);
     expect(s.heroes.some((h) => h.status === 'mision')).toBe(false);
   });
 });
@@ -135,13 +138,13 @@ describe('ante el jefe se espera al jugador', () => {
   it('con el juego abierto se para, avisa y se resuelve cuando se dice', () => {
     let s = withBoss('jefe');
     const id = s.missions[0]!.id;
-    const reports = s.reports.length;
+    const reports = trips(s);
     s = reduce(s, { type: 'tick', to: DAY_SECONDS * 0.7 });
     const m = s.missions[0]!;
     expect(m.waiting).toBe(true);
     expect(m.done).toBeUndefined();
     expect(s.bossWait).toBe(id);
-    expect(s.reports.length).toBe(reports);
+    expect(trips(s)).toBe(reports);
     // Parado ante el jefe aunque pase el reloj.
     s = reduce(s, { type: 'tick', to: DAY_SECONDS * 0.79 });
     expect(journeyNow(s, s.missions[0]!).t).toBeCloseTo(BOSS_T, 5);
@@ -157,10 +160,10 @@ describe('ante el jefe se espera al jugador', () => {
     let s = withBoss('noche');
     s = reduce(s, { type: 'tick', to: DAY_SECONDS * 0.7 });
     expect(s.missions[0]!.waiting).toBe(true);
-    const reports = s.reports.length;
+    const reports = trips(s);
     s = endDay(s);
     // El informe de la pelea (y, si se gana, la carta del final de la historia).
-    expect(s.reports.length).toBeGreaterThan(reports);
+    expect(trips(s)).toBeGreaterThan(reports);
     const fight = s.reports.find((r) => r.fight);
     expect(s.lastFight).toBe(fight?.id);
     expect(fight?.fight?.sim?.auto).toBe(true);

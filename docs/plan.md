@@ -144,6 +144,82 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
 13. **Sucesos nocturnos, expediciones sin fin y equipo con sentido** (para decidir:
     [`propuesta-noche-expedicion-equipo.md`](propuesta-noche-expedicion-equipo.md)). Las
     expediciones, apuntadas para después.
+14. **Experiencia: se sube de nivel peleando de verdad** (decidido con el usuario, 8 de
+    noviembre, tras la [revisión crítica](revision-critica.md)). Entrenar (el patio de
+    entrenamiento, `TRAINING_XP`) da poca o ninguna experiencia y con tope de 99: no sube de
+    nivel. Los asaltos sí suben de nivel (son una pelea en toda regla): quitar el tope de 99 de
+    `core/raids.ts` y pasar por `levelUp`, con su aviso al amanecer. Los encargos, como siempre.
+15. **(Hecho, fase 1.) La fama se gana con encargos** (decidido con el usuario, 8 de noviembre). Hoy sube sola con
+    el salón: los nobles (+1 cada uno, cada día: de +1 a +5 diarios en la partida del usuario),
+    el cuervo, los tapices y el espía calado (`endDay`, en `core/game.ts`); por eso se llega a
+    Leyenda sin mandar a nadie. Ahora: lo pasivo, casi nada (los nobles traen oro y alguna vez
+    fama, no a diario); fama al resolver algunos incidentes y decisiones (ya la dan algunos), y
+    el grueso, de los encargos y las historias. Los asaltos ganados la siguen dando. Comprobar
+    con `npm run sim` a qué día se llega a cada rango (el simulador no tiene salón: medir también
+    con una partida larga) y retocar `REP`, `RANKS` o los premios para que el ritmo de los rangos
+    no cambie para quien sí aventura.
+
+## Plan de ataque: pulido general antes de las expediciones
+
+Sale de la [revisión crítica](revision-critica.md) (8 de noviembre, con la partida del usuario:
+día 219, Leyenda, 12 encargos) y de las respuestas del usuario en la página **«Decisiones del
+Jarro»** (https://claude.ai/artifact/5MgZx3bgd3pJQay91rDtjk), copiadas en
+[`decisiones.md`](decisiones.md) (cada punto con su código, lo que eligió y sus notas). Las
+expediciones se hacen **al acabar este plan** (A7). Orden: de lo troncal a lo menudo; el núcleo,
+en este orden; la interfaz, en paralelo con su agente; el arte, cuando toque cada pieza. Al cerrar
+una fase, `npm run sim` y una partida larga para ver que el ritmo sigue bien.
+
+1. **Fase 1 · Arreglos y números** (agente principal, sin dependencias) — **hecha** (12 de noviembre;
+   detalle en [`agente-principal.md`](agente-principal.md)):
+   - B1 «Sugerir» prueba todas las combinaciones (sin coste notable en el móvil).
+   - B2 la sastrería: pausa mientras el héroe está de misión (encargo o expedición), se puede
+     cancelar desde la sastrería para liberar el hueco, sigue por la mañana si vuelve de noche;
+     si ya no está en el gremio, se cancela y se devuelve el oro.
+   - B3 textos de los asaltos (bandas en plural) y faltas de los informes.
+   - B6 informes: los últimos 50 y «Leído todo».
+   - A2 experiencia: el patio da poca o ninguna, tope 99; los asaltos suben de nivel.
+   - A1 fama: lo pasivo del salón, casi nada; sale de encargos, historias, algunos incidentes y
+     decisiones; los asaltos ganados la siguen dando.
+   - E3 textos de los materiales: quitar lo que no existe (pociones, hachas con madera, cristal).
+2. **Fase 2 · El bucle** (agente principal; se equilibra todo junto con el simulador) — **hecha**
+   (12 de noviembre; detalle en [`agente-principal.md`](agente-principal.md)):
+   - A3 tablón a la medida de los héroes de casa (de todo: fácil, a su medida y difícil); el rango
+     sube el techo, no el suelo.
+   - A4 (c) que haya que aventurar: los héroes se aburren (moral que baja tras días sin salir) y la
+     amenaza de la comarca hace cosas que se ven; además, la fama baja si no se mandan encargos
+     (nunca con el juego cerrado) y puede caer como mucho al rango de abajo (A9, b). Lo ya
+     construido se queda; solo se bloquea construir lo nuevo de ese rango hasta recuperarlo.
+     La guardia no cuenta como «días sin salir», pero sigue costando moral: hay que ir rotándola.
+   - A5 (b) la guardia cuenta como trabajo: quien guarda no duerme ni recupera moral y la va
+     perdiendo; marca de moral baja en el retrato y en la ficha, y aviso.
+   - A8 bajas de verdad en lo difícil: más bajas en peligro alto y letal, el clérigo salva solo a
+     veces y 7 de cada 10 bajas son desaparecidos que pueden volver (la capilla sirve). Objetivo:
+     en lo difícil, una baja cada 15 o 20 encargos; en lo fácil, casi nunca.
+3. **Fase 3 · Talleres** (agente principal; interfaz después) — **hecha** (12 de noviembre, con C7):
+   - B8 el nivel del taller da calidad (sale común, bueno o raro) y el tamaño da puestos (más
+     trabajadores, más deprisa). La forja deja de sumar a las armas (B4); textos «sale raro» y de
+     la forja (B7, B4).
+   - B5 precio de venta por tramos de rareza y tipo (aprobado; los números, con el simulador).
+4. **Fase 4 · Un solo motor de pelea** (A6): jefes, asaltos y ladrón con el mismo motor; los
+   encargos sueltos siguen con tiradas calibradas contra él; los informes viejos se siguen viendo.
+5. **Bocetos antes de decidir** (para el usuario): C7 talleres con recetas en pestañas, D1 tarjeta
+   del tablón que dice si se puede, E1 el altillo del salón (usando el fondo de la sala).
+6. **Fase 5 · Interfaz** (agente de interfaz, en paralelo desde ya; encargo por escribir): C1
+   pestañas Tablón · Mapa · Héroes · Gremio; C2 el arcón en Héroes; C3 todo en la campana y C9
+   el historial de encargos (un panel al que se llega desde el Libro y desde el Tablón); C4 el Gremio para la casa y lo del sistema en el
+   engranaje; C5 ficha de sala con «Mejorar» arriba y qué da cada nivel (con test); C6 botón
+   «Personalizar»; D2 hoja del encargo ordenada y «Quitar de guardia y llevar»; D3 aviso de equipo
+   mejor en el arcón (solo el aviso); D4 mapa legible y amenaza explicada; D5 quien está fuera se
+   nota en la taberna (con arte).
+7. **Fase 6 · Salas**: E1 el altillo del salón (que la altura no cuente en el recargo y que la
+   planta de arriba dé plazas; tras el boceto); E2 que cada nivel del salón se note (arte) y E4 un
+   nivel 5 con su arte. C8 (patio, establo y empalizada) queda para más adelante (`futuro.md`).
+8. **Fase 7 · La noche**: N1 empezar por el ladrón nocturno, el mensajero, la pesadilla y el gato;
+   N2 uno de cada dos noches de media, algo más con niebla o tormenta; con la noche acelerada se
+   resuelve solo según quién esté de guardia. Minijuegos, más adelante (`futuro.md`).
+9. **Fase 8 · Expediciones** (agente de expediciones, al acabar lo anterior): respuestas ya
+   adelantadas en [`propuesta-expediciones.md`](propuesta-expediciones.md), «Respuestas del
+   usuario».
 
 ## Fase 2 · Tutoriales
 

@@ -1,4 +1,7 @@
-/** Textos de los asaltos a la taberna. Huecos: {band}, {h} héroe, {who} defensores. */
+/**
+ * Textos de los asaltos a la taberna. Huecos: {band} (o {Band}, con mayúscula), {h} héroe,
+ * {who} defensores. Lo que cambia con el número de la banda, entre llaves: «{viene|vienen}».
+ */
 
 export const BANDS: readonly string[] = [
   'la banda del Tuerto Garra',
@@ -11,19 +14,19 @@ export const BANDS: readonly string[] = [
 
 /** De dónde llega el chivatazo de que se acerca un asalto. */
 export const TIPOFFS: readonly string[] = [
-  'El tabernero ha oído en la barra que {band} anda preguntando por El Jarro Partido.',
-  'Un buhonero asustado cuenta que {band} acampa a dos leguas, y que hablan de tu caja.',
+  'El tabernero ha oído en la barra que {band} {anda|andan} preguntando por El Jarro Partido.',
+  'Un buhonero asustado cuenta que {band} {acampa|acampan} a dos leguas, y que hablan de tu caja.',
   'Bigotes lleva dos noches bufando a la puerta, y alguien ha pintado en el poste del camino la señal de {band}.',
-  'Una niña del pueblo trae un recado: {band} viene a por el gremio.',
+  'Una niña del pueblo trae un recado: {band} {viene|vienen} a por el gremio.',
 ];
 /** Chivatazo traído por un explorador del gremio. */
 export const SCOUT_TIPOFF =
-  '{h} ha visto huellas y hogueras en el camino real: es {band}, y vienen hacia aquí.';
+  '{h} ha visto huellas y hogueras en el camino real: {es|son} {band}, y vienen hacia aquí.';
 
 export const RAID_OPEN: readonly string[] = [
   'Pasada la medianoche, una fila de antorchas bajó por el camino real: era {band}.',
-  'Los perros del pueblo ladraron a la vez. Luego se oyeron botas y voces en el patio: había llegado {band}.',
-  'A deshoras, alguien aporreó la puerta con el pomo de una espada. Era {band}.',
+  'Los perros del pueblo ladraron a la vez. Luego se oyeron botas y voces en el patio: {había|habían} llegado {band}.',
+  'A deshoras, alguien aporreó la puerta con el pomo de una espada. {Era|Eran} {band}.',
 ];
 
 export const RAID_FIGHT: readonly string[] = [
@@ -34,7 +37,7 @@ export const RAID_FIGHT: readonly string[] = [
 ];
 
 export const RAID_WON: readonly string[] = [
-  'Al alba, {band} huía camino abajo. En el patio se dejaron las antorchas y un sombrero de ala ancha.',
+  'Al alba, {band} {huía|huían} camino abajo. En el patio se dejaron las antorchas y un sombrero de ala ancha.',
   'Los que quedaban en pie salieron corriendo. En el pueblo ya cuentan que en El Jarro Partido no se roba.',
 ];
 
@@ -45,3 +48,15 @@ export const RAID_LOST: readonly string[] = [
 
 export const RAID_EMPTY =
   'No había nadie en casa para defenderla. El tabernero se escondió en la bodega con Bigotes y oyó cómo vaciaban la caja.';
+
+/** Si la banda es plural («los Hermanos Cuervo», «las Ratas del Vado»). */
+export const bandPlural = (band: string) => /^(los|las) /i.test(band);
+
+/** Elige en un texto lo que va con la banda: «{viene|vienen}» según sea una o varios. */
+export const bandNumber = (text: string, band: string) =>
+  text.replace(/\{([^{}|]*)\|([^{}|]*)\}/g, (_, one: string, many: string) =>
+    bandPlural(band) ? many : one,
+  );
+
+/** La banda con mayúscula, para empezar una frase o una etiqueta. */
+export const capBand = (band: string) => band.charAt(0).toUpperCase() + band.slice(1);

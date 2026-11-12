@@ -21,12 +21,20 @@ export function addThreat(s: GameState, d: number): void {
 
 /**
  * Cada noche: si hay una historia en marcha y su paso espera en el tablón sin que nadie
- * vaya, la amenaza crece; si no hay ninguna, se calma. Devuelve los ingresos perdidos.
+ * vaya, la amenaza crece; también si pasan días sin que nadie salga de encargo. Si no, se calma.
+ * Devuelve los ingresos perdidos.
  */
-export function stepThreat(s: GameState, rng: Rng, events: DawnEvent[], income: number): number {
+export function stepThreat(
+  s: GameState,
+  rng: Rng,
+  events: DawnEvent[],
+  income: number,
+  /** Nadie sale de encargo desde hace días: la comarca se revuelve. */
+  idle = false,
+): number {
   const cs = activeChain(s);
   const waiting = cs && s.quests.some((q) => q.chain?.id === cs.id);
-  addThreat(s, waiting ? 2 : -1);
+  addThreat(s, waiting ? 2 : idle ? 1 : -1);
   const t = threatOf(s);
   if (t >= THREAT_CARAVAN && income > 0 && rng.chance(0.2)) {
     events.push({

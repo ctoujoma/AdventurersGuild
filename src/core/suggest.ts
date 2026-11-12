@@ -1,7 +1,7 @@
 /**
- * El grupo sugerido para un encargo: entre quienes pueden ir, se va sumando al que más mejora la
- * estimación hasta que nadie la mejora o no caben más. No busca entre todas las combinaciones:
- * basta con eso para un botón de «Sugerir», y el jugador puede cambiarla antes de enviar.
+ * El grupo sugerido para un encargo: prueba todos los grupos posibles entre quienes pueden ir
+ * (con 13 héroes y 4 plazas son 1.092) y se queda con el mejor. Uno más solo va si mejora de
+ * verdad la estimación: a igualdad, cuantos menos, mejor (quedan libres para otra cosa).
  */
 import { canSend } from './game';
 import type { GameState, Hero } from './model';
@@ -31,27 +31,40 @@ export function suggestParty(s: GameState, questId: string): Suggestion {
   const score = (party: Hero[]) =>
     questEstimate(q, party, s.fac).total -
     party.filter((h) => h.morale < MORALE_LOW).length * LOW_MORALE;
-  const party: Hero[] = [];
-  let best = -Infinity;
-  while (party.length < q.slots) {
-    let pick: Hero | null = null;
-    let pickScore = -Infinity;
-    for (const h of pool) {
-      if (party.includes(h)) continue;
-      const next = [...party, h];
-      const ids = next.map((x) => x.id);
-      if (canSend(s, q.id, ids)) continue;
-      const v = score(next);
-      if (v > pickScore) {
-        pick = h;
-        pickScore = v;
-      }
+  // El mejor grupo de cada tamaño, probando todas las combinaciones.
+  const bestOf: { party: Hero[]; v: number }[] = [];
+  const pick: Hero[] = [];
+  const walk = (from: number) => {
+    if (pick.length) {
+      if (
+        canSend(
+          s,
+          q.id,
+          pick.map((h) => h.id),
+        )
+      )
+        return; // Y con más gente tampoco (arrogante).
+      const v = score(pick);
+      const k = pick.length - 1;
+      if (!bestOf[k] || v > bestOf[k].v) bestOf[k] = { party: [...pick], v };
     }
-    // El primero va siempre (si alguien puede); los demás, solo si mejoran de verdad.
-    if (!pick || (party.length && pickScore < best + GAIN)) break;
-    party.push(pick);
-    best = pickScore;
+    if (pick.length >= q.slots) return;
+    for (let i = from; i < pool.length; i++) {
+      pick.push(pool[i]!);
+      walk(i + 1);
+      pick.pop();
+    }
+  };
+  walk(0);
+  // De menos a más gente: cada uno de más tiene que ganar lo suyo.
+  let chosen: { party: Hero[]; v: number } | undefined;
+  for (const b of bestOf) {
+    if (!b) continue;
+    if (!chosen || b.v >= chosen.v + GAIN * (b.party.length - chosen.party.length)) chosen = b;
   }
+  // Primero, el que más ayuda por sí solo.
+  const solo = new Map(chosen?.party.map((h) => [h, score([h])]));
+  const party = (chosen?.party ?? []).sort((a, b) => solo.get(b)! - solo.get(a)!);
   if (!party.length) return { why: 'Nadie de los que están en casa puede ir a este encargo.' };
   return { ids: party.map((h) => h.id) };
 }

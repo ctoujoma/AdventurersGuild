@@ -3,6 +3,7 @@
  * escudo, capa) y **complemento** (botas, amuleto, ganzúas). Cada objeto va a la suya según su
  * dibujo; los tesoros no se equipan.
  */
+import { PRICE_KIND, PRICE_TIERS } from './balance';
 import type { Hero, Item, ItemIcon, ItemPerk, Rarity } from './model';
 
 export type Slot = 'arma' | 'cuerpo' | 'complemento';
@@ -59,4 +60,19 @@ export function migrateGear(h: Hero & { item?: Item }): void {
 export function shownGear(h: { worn?: Gear }): { icon: ItemIcon; rarity: Rarity } | undefined {
   const it = gearList(h).find((i) => i.icon);
   return it?.icon ? { icon: it.icon, rarity: it.rarity ?? 0 } : undefined;
+}
+
+/**
+ * Lo que dan por un objeto al venderlo. El equipo, por su rareza y lo que da (`PRICE_TIERS`), sin
+ * mirar el rango ni de dónde salió; los tesoros, lo que pone en ellos.
+ */
+export function priceOf(it: Item): number {
+  const slot = slotOf(it);
+  if (!it.kind || it.kind === 'tesoro' || !slot) return it.value;
+  const tier = PRICE_TIERS[it.rarity ?? 0] ?? PRICE_TIERS[0]!;
+  const bonus = Object.values(it.bonus ?? {}).reduce((a, b) => a + (b ?? 0), 0);
+  const power = bonus + (it.perk ? 1 : 0) + (it.plus ?? 0);
+  const t = Math.max(0, Math.min(1, (power - tier.min) / (tier.max - tier.min)));
+  const raw = (tier.lo + (tier.hi - tier.lo) * t) * (PRICE_KIND[slot] ?? 1);
+  return Math.max(5, Math.round(raw / 5) * 5);
 }

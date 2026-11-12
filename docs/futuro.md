@@ -182,3 +182,33 @@ entrenamiento ganarían sentido.
   - huecos para colocar adornos.
 - Todo esto se gana con hazañas, rangos y el legado (apartado 5), y es lo que se vendería como
   extra (apartado 6).
+
+## Sucesos nocturnos con minijuego (idea del usuario, 11 de noviembre)
+
+Que algunos sucesos o incidentes se resuelvan con un minijuego corto en lugar de un toque.
+Cuidado con la noche acelerada: con «Pasar la noche» todo tiene que poder resolverse solo (según
+quién esté de guardia), así que el minijuego solo puede mejorar el resultado, nunca ser obligatorio.
+Ver N1 y N2 en [`decisiones.md`](decisiones.md).
+
+## Revivir a un caído (idea del usuario, 12 de noviembre)
+
+Alguna forma de traer de vuelta a un muerto. El usuario insiste (12 de noviembre, al bajar las
+bajas del éxito parcial difícil al 35 %): que no se olvide. Ideas para elegir:
+
+- **Ver un anuncio** (solo en la app): revive a uno, una vez cada tanto.
+- **Objeto legendario de un solo uso** (una pluma de fénix, un cáliz bendito) que sale de
+  historias, rumores o jefes; se gasta al usarlo.
+- **Ritual en la capilla** a nivel alto: cuesta oro y días, y el revivido vuelve con una secuela
+  (un rasgo nuevo, moral baja unos días).
+- **Encargo «Más allá del velo»**: tras una muerte, a veces sale en el tablón un encargo difícil
+  para traerlo de vuelta (como el rescate de los desaparecidos, pero más duro).
+- **Sacerdote ambulante**: un visitante raro del salón que lo ofrece por un precio alto.
+
+Va con A8 (bajas de verdad en lo difícil) de [`decisiones.md`](decisiones.md); el Muro de los
+caídos guarda a quién se puede revivir.
+
+## Patio, establo y empalizada con arte y uso nuevos (12 de noviembre, C8)
+
+Rehacer sus dibujos (son los de antes de las salas) y darles uso nuevo: caballos de verdad en el
+establo que los héroes usen en las expediciones; en el patio, un veterano que enseña a uno de
+nivel bajo y le da experiencia (respetando el tope de 99: solo se sube de nivel peleando, A2).

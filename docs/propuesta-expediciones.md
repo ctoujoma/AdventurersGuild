@@ -102,3 +102,41 @@ pendientes con plazo; la vuelta y el informe; y con el juego cerrado, que siga (
 3. **Si caen todos:** ¿se pierde lo que llevaban (como en Fallout Shelter) o vuelve algo?
 4. **Grupo:** ¿de 1 a 4, o como mucho 3?
 5. **Volver:** ¿tarda lo mismo que la ida, o la mitad (ya conocen el camino)?
+
+## Respuestas del usuario (11 de noviembre, adelantadas en otra conversación)
+
+**Para el agente de las expediciones:** el usuario contestó a «Para decidir» en la página
+«Decisiones del Jarro» (https://claude.ai/artifact/5MgZx3bgd3pJQay91rDtjk; registro en
+[`decisiones.md`](decisiones.md), códigos X1 a X5, A7 y E3), dentro de una revisión general del
+juego ([`revision-critica.md`](revision-critica.md)). No hace falta volver a preguntarle esto.
+
+1. **Rumbos (X1):** los cuatro. Los que no estén listos pueden salir marcados como «en obras»
+   (WIP) mientras se van haciendo.
+2. **Decisiones por el camino (X2):** sí, con aviso y un día de plazo. Además, un icono en cada
+   expedición para silenciar sus avisos y que lo resuelva todo sola.
+3. **Si caen todos (X3):** vuelve algo.
+4. **Grupo (X4):** aprobado de 1 a 4. Falta aclarar si el tope lo abre una sala; propuesta: que
+   lo dé la sala de mapas (nivel 1: 2 héroes, nivel 2: 3, nivel 3: 4) en vez de una sala nueva de
+   exploradores. Hoy la sala de mapas da un encargo más por nivel, el peligro real a nivel 2, el
+   mapa a color y algo más de aviso de asaltos.
+5. **La vuelta (X5):** tarda la mitad que la ida (ya conocen el camino).
+
+**Cuándo (A7):** las expediciones se hacen **al acabar el plan de pulido general** (plan.md, «Plan
+de ataque»). Llegarán sobre cosas que cambian antes: un tablón a la medida de los héroes (A3), un
+solo motor de pelea para jefes, asaltos y ladrón (A6, que deberían usar también las peleas de la
+expedición), bajas que vuelven a pasar en lo difícil con más desaparecidos que regresan (A8) y la
+fama que se gana con encargos (A1).
+
+**Materiales raros (E3):** hasta las expediciones no hay hierbas, madera buena ni cristal, así que
+la alquimia no puede mejorar amuletos ni varitas (`ICON_MATERIAL` en `core/crafting.ts`). Decidido:
+esperar a las expediciones para darles fuente, y corregir ya los textos de `MATERIALS`
+(`core/materials.ts`), que prometían pociones (no existen), hachas que piden madera (no la piden)
+y cristal para «lo mejor de cada taller» (nada lo pide). Al hacer las expediciones: que sean la
+fuente de esos tres, y revisar qué recetas y mejoras los piden.
+
+### Materiales (E3, corregido en la fase 1)
+
+Hoy las hierbas solo sirven para mejorar amuletos y la madera para mejorar varitas (en la
+alquimia); el cristal no lo pide nada. Los textos dicen «Saldrán en las expediciones» y «Aún no lo
+pide ningún taller». Al hacer las expediciones: que den estos materiales y darles uso (recetas de
+alquimia, lo mejor de cada taller con cristal) y poner al día `MATERIALS` en `core/materials.ts`.

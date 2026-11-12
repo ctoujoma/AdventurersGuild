@@ -22,7 +22,7 @@ export const PERKS: Record<ClassId, { name: string; desc: string }> = {
   mago: { name: 'Sexto sentido', desc: 'Descubre giros ocultos y el peligro real del encargo.' },
   clerigo: {
     name: 'Plegaria',
-    desc: `Evita muertes en el grupo y las derrotas desaniman la mitad.`,
+    desc: `A veces salva a quien iba a caer y las derrotas desaniman la mitad.`,
   },
   explorador: {
     name: 'Atajos',

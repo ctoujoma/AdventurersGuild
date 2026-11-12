@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { TEMPLATES } from '../data/quests';
-import { fill, pickStory } from './generate';
+import { fill, generateQuest, homePower, pickStory } from './generate';
+import { newGame } from './game';
+import type { Quest } from './model';
 import { Rng } from './rng';
 
 describe('plantillas de texto', () => {
@@ -42,5 +44,42 @@ describe('encargos', () => {
       if (story) expect(text).toBe(story[1]);
       else expect(tpl.texts).toContain(text);
     }
+  });
+});
+
+describe('tablón a la medida de casa', () => {
+  const per = (q: Quest) => q.challenges[0]!.diff / q.slots;
+  const many = (rank: number, power?: number) =>
+    Array.from({ length: 300 }, (_, i) =>
+      generateQuest(new Rng(`medida-${i}`), `q${i}`, rank, `i${i}`, false, undefined, power),
+    );
+
+  it('con héroes flojos en Leyenda, el tablón se mide con ellos (el rango es el techo)', () => {
+    const legend = many(4).map(per);
+    const weak = many(4, 6).map(per);
+    const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+    expect(avg(weak)).toBeLessThan(avg(legend) * 0.7);
+    // Héroes más fuertes que el rango: no pasa del techo del rango.
+    expect(avg(many(0, 20).map(per))).toBeLessThan(avg(many(0).map(per)) * 1.15);
+  });
+
+  it('trae de todo: fáciles, a su medida y difíciles (más peligrosos)', () => {
+    const qs = many(3, 8);
+    const easy = qs.filter((q) => per(q) < 8 * 0.85);
+    const hard = qs.filter((q) => per(q) > 8 * 1.15);
+    expect(easy.length).toBeGreaterThan(30);
+    expect(hard.length).toBeGreaterThan(30);
+    const danger = (xs: Quest[]) => xs.reduce((a, q) => a + q.danger, 0) / xs.length;
+    expect(danger(hard)).toBeGreaterThan(danger(easy));
+  });
+});
+
+describe('fuerza de casa', () => {
+  it('media de las habilidades de los cuatro mejores, sin caídos', () => {
+    const s = newGame('casa');
+    const p = homePower(s.heroes)!;
+    expect(p).toBeGreaterThan(3);
+    expect(p).toBeLessThan(7);
+    expect(homePower(s.heroes.map((h) => ({ ...h, status: 'muerto' as const })))).toBeUndefined();
   });
 });

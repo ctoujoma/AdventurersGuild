@@ -12,7 +12,9 @@ import {
   canUndo,
   craftState,
   dressingOf,
+  crafted,
   goodChance,
+  qualityOdds,
   knownRecipes,
   learnRecipe,
   stepCrafts,
@@ -326,6 +328,49 @@ describe('la sastrería viste a los héroes', () => {
     expect(reduce(a, { type: 'arrived', heroId: h.id, room })).toBe(a);
   });
 
+  it('de misión queda en pausa; al volver tiene que ir otra vez a la sastrería', () => {
+    const { s, room } = withShop('pausa', 'sastreria');
+    const h = s.heroes.find((x) => x.status === 'ok')!;
+    s.clock = DAY_SECONDS * 0.3;
+    let t = reduce(s, { type: 'dressAt', room, heroId: h.id, dress: { dye: 'vino' } });
+    t = reduce(t, { type: 'arrived', heroId: h.id, room });
+    t = { ...t, clock: t.clock! + DAY_SECONDS * (1 / 24) };
+    stepCrafts(t, t.clock! / DAY_SECONDS);
+    const done = dressingOf(t, h.id)!.done;
+    expect(done).toBeGreaterThan(0);
+    // Se va de misión: no se cose y, cuando vuelva, le esperan otra vez.
+    t.heroes = t.heroes.map((x) => (x.id === h.id ? { ...x, status: 'mision', days: 2 } : x));
+    t = { ...t, clock: t.clock! + DAY_SECONDS * (3 / 24) };
+    stepCrafts(t, t.clock! / DAY_SECONDS);
+    expect(dressingOf(t, h.id)).toMatchObject({ done, wait: true });
+    // Vuelve: hasta que llega, nada; al llegar, sigue donde lo dejó.
+    t.heroes = t.heroes.map((x) => (x.id === h.id ? { ...x, status: 'ok', days: 0 } : x));
+    t = { ...t, clock: t.clock! + DAY_SECONDS * (1 / 24) };
+    stepCrafts(t, t.clock! / DAY_SECONDS);
+    expect(dressingOf(t, h.id)!.done).toBe(done);
+    t = reduce(t, { type: 'arrived', heroId: h.id, room });
+    t = { ...t, clock: t.clock! + DAY_SECONDS * (1 / 24) };
+    stepCrafts(t, t.clock! / DAY_SECONDS);
+    expect(dressingOf(t, h.id)!.done).toBeGreaterThan(done);
+  });
+
+  it('si el héroe ya no está en el gremio, se cancela y se devuelve el oro', () => {
+    for (const gone of ['muerto', 'desaparecido', 'despedido'] as const) {
+      const { s, room } = withShop(`fuera-${gone}`, 'sastreria');
+      const h = s.heroes.find((x) => x.status === 'ok')!;
+      s.clock = DAY_SECONDS * 0.3;
+      const t = reduce(s, { type: 'dressAt', room, heroId: h.id, dress: { dye: 'vino' } });
+      t.heroes =
+        gone === 'despedido'
+          ? t.heroes.filter((x) => x.id !== h.id)
+          : t.heroes.map((x) => (x.id === h.id ? { ...x, status: gone } : x));
+      const news = stepCrafts(t, 0.4);
+      expect(dressingOf(t, h.id)).toBeUndefined();
+      expect(t.gold).toBe(s.gold);
+      expect(news.some((n) => /devuelve/.test(n.t))).toBe(true);
+    }
+  });
+
   it('solo con los tintes que se tienen, a uno en casa y no a quien ya va así', () => {
     const { s, room } = withShop('tintes', 'sastreria');
     const h = s.heroes.find((x) => x.status === 'ok')!;
@@ -488,5 +533,30 @@ describe('materiales en los talleres', () => {
       bonus: { Supervivencia: 1 },
     });
     expect(canTemper(s, forge, 'bot')).toMatch(/otro taller/);
+  });
+});
+
+describe('el nivel del taller da la calidad', () => {
+  it('a más nivel, más bueno y más raro; sin artesano, la mitad', () => {
+    const lo = withForge('cal-1', 1);
+    const hi = withForge('cal-3', 3);
+    const a = qualityOdds(lo.s, lo.forge);
+    const b = qualityOdds(hi.s, hi.forge);
+    expect(a.comun + a.bueno + a.raro).toBeCloseTo(1, 9);
+    expect(b.raro).toBeGreaterThan(a.raro);
+    expect(b.bueno).toBeGreaterThan(a.bueno);
+    expect(b.comun).toBeLessThan(a.comun);
+    const alone = { ...hi.s, workers: [] };
+    expect(qualityOdds(alone, hi.forge).raro).toBeCloseTo(b.raro / 2, 9);
+    // Un artesano mañoso pasa algo de común a raro.
+    const pro = withForge('cal-pro', 3, 9);
+    expect(qualityOdds(pro.s, pro.forge).raro).toBeGreaterThan(b.raro);
+  });
+
+  it('lo bueno es lo común con +1 y en verde; lo raro, la receta buena', () => {
+    const rc = RECIPES.espada;
+    expect(crafted(rc, 'comun')).toEqual(rc.common);
+    expect(crafted(rc, 'bueno')).toMatchObject({ name: rc.common.name, rarity: 1, plus: 1 });
+    expect(crafted(rc, 'raro')).toEqual(rc.good);
   });
 });

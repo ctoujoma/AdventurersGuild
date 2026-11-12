@@ -498,7 +498,7 @@ export function HeroCard({
                   <div
                     class="meter"
                     {...help(
-                      `${MORALE_INFO[band].label[h.sex]} ${MORALE_INFO[band].desc} Baja con los viajes y los fracasos; sube descansando.`,
+                      `${MORALE_INFO[band].label[h.sex]} ${MORALE_INFO[band].desc} Baja con los viajes, los fracasos, la guardia (de guardia no se duerme) y tras una semana sin salir de aventura; sube descansando.`,
                     )}
                   >
                     <span>Moral</span>
@@ -587,7 +587,7 @@ export function HeroCard({
                       aria-expanded={open === 'trabajo'}
                       aria-label={`Tarea: ${task}`}
                       {...help(
-                        `Mientras está en casa puede descansar (recupera la moral), echar una mano en una sala (rinde menos que un trabajador), entrenar o hacer guardia (no sale de misión, pega +${GUARD_BONUS} si asaltan y da la alarma; caben dos). También puedes llevarlo con el dedo a la sala.`,
+                        `Mientras está en casa puede descansar (recupera la moral), echar una mano en una sala (rinde menos que un trabajador), entrenar o hacer guardia (no sale de misión, pega +${GUARD_BONUS} si asaltan y da la alarma; caben dos; no duerme, así que no recupera moral y la va perdiendo: hay que ir relevando). También puedes llevarlo con el dedo a la sala.`,
                       )}
                       onClick={() => toggle('trabajo')}
                     >

@@ -1099,6 +1099,29 @@ button:focus-visible {
   text-align: left;
 }
 
+/* Moral baja: chapa roja con una flecha blanca hacia abajo, en la esquina del retrato. */
+.portrait-low {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  width: 13px;
+  height: 13px;
+  background: var(--red);
+  box-shadow: 0 0 0 2px var(--ink);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.portrait-low::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 4px;
+  border-left: 3.5px solid transparent;
+  border-right: 3.5px solid transparent;
+  border-top: 5px solid var(--white);
+}
+
 .row > .portrait-frame {
   flex: none;
 }
@@ -1143,6 +1166,7 @@ button:focus-visible {
 }
 
 .portrait-frame {
+  position: relative;
   display: inline-block;
   line-height: 0;
   padding: 2px;
@@ -1789,11 +1813,23 @@ button:focus-visible {
   color: var(--text-good);
 }
 
-/* Ficha de sala: nivel arriba, cifras en chapas, atajos y, abajo, mejorar o arreglar. */
+/* Ficha de sala: arriba el nivel y, a su lado, mejorar o arreglar; luego cifras en chapas y atajos. */
+.room-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 8px;
+}
+
 .room-head {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.room-up {
+  margin-left: auto;
 }
 
 .room-state {
@@ -1813,7 +1849,7 @@ button:focus-visible {
 }
 
 .room-max {
-  align-self: flex-start;
+  margin-left: auto;
 }
 
 /* Ficha de sala: atajos a los paneles que tienen que ver con ella. */
@@ -2214,6 +2250,10 @@ button:focus-visible {
 
 .mail.read {
   opacity: 0.75;
+}
+
+.mail-all {
+  align-self: flex-end;
 }
 
 .mail-info {
@@ -6764,7 +6804,8 @@ p.notebook-close {
   }
 }
 
-/* La forja por dentro: trabajos en marcha, recetas y desmontar. */
+/* Un taller por dentro (WorkshopInfo.tsx): lo que está en marcha y las pestañas Crear, Templar
+   y Vestir. */
 .forge {
   display: flex;
   flex-direction: column;
@@ -6786,7 +6827,24 @@ p.notebook-close {
   opacity: 0.7;
 }
 
-.dress-heroes,
+.forge-tabs {
+  margin: 8px 0 4px;
+}
+
+/* Templar: los dos botones del objeto elegido, uno encima de otro. */
+.forge-acts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Vestir: a quién, en una rejilla de retratos con el nombre debajo. */
+.dress-who {
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 6px;
+  margin: 6px 0;
+}
+
 .dress-garments {
   display: flex;
   flex-wrap: wrap;

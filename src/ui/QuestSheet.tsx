@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks';
+import { useMemo, useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
 import { canSend } from '../core/game';
 import type { GameState, Quest } from '../core/model';
@@ -6,6 +6,7 @@ import { chainDef } from '../core/chains';
 import { PERKS, partyClasses, tripDays } from '../core/classes';
 import { RISK_LABELS, moraleMod, skill } from '../core/party';
 import { questEstimate } from '../core/resolve';
+import { dressingOf } from '../core/crafting';
 import { repeatParty, suggestParty } from '../core/suggest';
 import { CLASS_NAMES, dangerClass, dangerLabel, statusLabel } from '../data/labels';
 import { MATERIALS, QUEST_MATERIAL } from '../core/materials';
@@ -49,12 +50,20 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
   const est = questEstimate(q, members, game.fac);
   const scale = Math.max(1, ...est.rows.map((r) => Math.max(r.diff, r.power))) * 1.15;
   const blocked = party.length ? canSend(game, q.id, sel) : null;
+  // Si a alguno le están cosiendo, la sastrería le espera (se puede cancelar desde allí).
+  const sewing = party.filter((h) => dressingOf(game, h.id));
+  const sewNames = listNames(sewing.map((h) => h.name.split(' ')[0]!));
+  const sewNote = !sewing.length
+    ? null
+    : sewing.length > 1
+      ? `A ${sewNames} les están cosiendo: la sastrería esperará a que vuelvan.`
+      : `A ${sewNames} le están cosiendo: la sastrería esperará a que vuelva.`;
   const mage = party.find((h) => h.cls === 'mago');
   const days = tripDays(q, members, game.fac.establo);
   const hideDanger = q.dangerHidden && !mage && game.fac.mapas < 2;
 
-  // El mejor grupo que se puede mandar ahora; el jugador lo cambia si quiere.
-  const suggestion = suggestParty(game, q.id);
+  // El mejor grupo que se puede mandar ahora (se cuenta una vez, no al tocar cada héroe).
+  const suggestion = useMemo(() => suggestParty(game, q.id), [game, q.id]);
   const suggest = () => {
     if ('why' in suggestion) return setWarn(suggestion.why);
     setWarn(null);
@@ -265,9 +274,9 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
             })}
           </div>
         </div>
-        {(warn || blocked) && (
+        {(warn || blocked || sewNote) && (
           <p class="qs-warn" role="status">
-            {warn ?? blocked}
+            {warn ?? blocked ?? sewNote}
           </p>
         )}
         <button

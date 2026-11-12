@@ -6,7 +6,7 @@ import { earn, spill, vaultNews } from './vault';
 import { dormIssue, sleepPlan, isVet } from './beds';
 import { guardsAt, postFull, postIssue, postOf, type Post } from './guards';
 import { FLAVOR } from '../data/stories';
-import { checkRank } from './ranks';
+import { checkRank, fadeFame } from './ranks';
 import {
   actOnIncident,
   arriveIncident,
@@ -26,7 +26,13 @@ import {
   DELIVERIES,
   DUSK,
   DEBT,
+  BORED_AFTER,
+  BORED_DROP,
+  BORED_FLOOR,
   DESERT_CHANCE,
+  GUARD_DROP,
+  GUARD_FLOOR,
+  QUIET_AFTER,
   GARDEN_W,
   MAX_UP,
   MAX_CANDIDATES,
@@ -39,6 +45,7 @@ import {
   REFUSE_MORALE,
   SALARY_EVERY,
   TRAINING_XP,
+  XP_PER_LEVEL,
   VET_CAP,
   VET_SNUB_CAP,
   CACHE_GRUDGE,
@@ -52,6 +59,7 @@ import {
   SCHEDULE,
   START,
   START_BEER,
+  REPORTS_KEEP,
   START_FOOD,
   chapelRest,
   healRate,
@@ -68,7 +76,9 @@ import {
   DOG_PRICE,
   FEAST_MORALE,
   FEAST_PRICE,
+  NOBLE_REP_EVERY,
   RAVEN_EVERY,
+  TAPESTRY_EVERY,
   RAVEN_PRICE,
   TINTS,
   GARMENTS,
@@ -106,7 +116,7 @@ import {
 import { stepRaids } from './raids';
 import { advanceChain, bossOf, fightRoster, offerChain } from './chains';
 import { choose, maybeEvent, scaredClients, stepThreat } from './events';
-import { generateHero, generateQuest } from './generate';
+import { generateHero, generateQuest, homePower } from './generate';
 import {
   SAVE_VERSION,
   type AssaultOutcome,
@@ -120,7 +130,7 @@ import {
   type Report,
 } from './model';
 import { MORALE_LOW, MORALE_QUIT } from './party';
-import { levelUp, resolveMission } from './resolve';
+import { resolveMission } from './resolve';
 import {
   applyPlan,
   beds,
@@ -188,7 +198,7 @@ import {
   tidyJobs,
   villageCrew,
 } from './workers';
-import { SLOTS, gearList, slotOf, type Slot } from './gear';
+import { SLOTS, gearList, priceOf, slotOf, type Slot } from './gear';
 
 export type Action =
   /** Talleres: crear de una receta, desmontar un objeto del arcón o cancelar un trabajo. */
@@ -228,6 +238,8 @@ export type Action =
   | { type: 'works'; steps: Action[] }
   | { type: 'sell'; itemId: string }
   | { type: 'read'; reportId: string }
+  /** Marca leído todo el correo. */
+  | { type: 'readAll' }
   | { type: 'answer'; id: string; yes: boolean }
   | { type: 'equip'; heroId: string; itemId: string }
   | { type: 'unequip'; heroId: string; slot?: Slot }
@@ -504,7 +516,15 @@ function hero(s: GameState, rng: Rng, cls?: Hero['cls']): Hero {
 }
 
 function quest(s: GameState, rng: Rng): Quest {
-  return generateQuest(rng, `q${s.uid++}`, rankIndex(s.rep), `i${s.uid++}`, s.mode === 'libre');
+  return generateQuest(
+    rng,
+    `q${s.uid++}`,
+    rankIndex(s.rep),
+    `i${s.uid++}`,
+    s.mode === 'libre',
+    undefined,
+    homePower(s.heroes),
+  );
 }
 
 // ---------- Acciones ----------
@@ -656,7 +676,7 @@ function reduceAction(state: GameState, action: Action): GameState {
       const it = state.inventory.find((i) => i.id === action.itemId);
       if (!it) return state;
       const s = structuredClone(state);
-      earn(s, it.value);
+      earn(s, priceOf(it));
       s.inventory = s.inventory.filter((i) => i.id !== it.id);
       return s;
     }
@@ -666,6 +686,10 @@ function reduceAction(state: GameState, action: Action): GameState {
       const s = structuredClone(state);
       s.reports.find((x) => x.id === action.reportId)!.read = true;
       return s;
+    }
+    case 'readAll': {
+      if (state.reports.every((r) => r.read)) return state;
+      return { ...state, reports: state.reports.map((r) => (r.read ? r : { ...r, read: true })) };
     }
     case 'answer': {
       const h = state.heroes.find((x) => x.id === action.id);
@@ -1234,7 +1258,10 @@ export function endDay(state: GameState, away = false): GameState {
   const feast = c0.feast === s.day - 1;
   const income = dayIncome(s, s.day - 1);
   const visits = visitorsOf(s, s.day - 1);
-  const lost = stepThreat(s, rng, events, income);
+  // Noches sin nadie fuera (con el juego cerrado o en el tutorial no cuentan).
+  if (s.missions.length) s.quiet = 0;
+  else if (!away && !tutorialOn(s)) s.quiet = (s.quiet ?? 0) + 1;
+  const lost = stepThreat(s, rng, events, income, (s.quiet ?? 0) > QUIET_AFTER);
   // Lo que la caja ya entregó durante el día no se cobra otra vez.
   s.gold += income - lost - (s.till ?? 0);
   s.clock = 0;
@@ -1249,18 +1276,19 @@ export function endDay(state: GameState, away = false): GameState {
     for (const h of s.heroes)
       if (h.status === 'ok') h.morale = Math.min(100, h.morale + FEAST_MORALE);
   // Tapices y cuervo: la fama del gremio se extiende.
-  if (decor.includes('tapices') && s.day % 7 === 0) s.rep += 1;
+  if (decor.includes('tapices') && s.day % TAPESTRY_EVERY === 0) s.rep += 1;
   if (c0.raven && s.day % RAVEN_EVERY === 0) {
     s.rep += 1;
     events.push({
       t: 'El cuervo vuelve de otro pueblo: allí ya se habla del gremio (+1 reputación).',
     });
   }
-  // Lo que traen los visitantes: fama de los nobles, ojos de los espías y alguna pelea.
-  if (visits.kinds.noble) {
-    s.rep += visits.kinds.noble;
+  // Lo que traen los visitantes: algo de fama de los nobles (de higos a brevas: la fama sale de
+  // los encargos), ojos de los espías y alguna pelea.
+  if (visits.kinds.noble && s.day % NOBLE_REP_EVERY === 0) {
+    s.rep += 1;
     events.push({
-      t: `${visits.kinds.noble === 1 ? 'Un noble ha cenado' : 'Unos nobles han cenado'} en el salón: se hablará del gremio (+${visits.kinds.noble} reputación).`,
+      t: `${visits.kinds.noble === 1 ? 'Un noble ha cenado' : 'Unos nobles han cenado'} en el salón: se hablará del gremio (+1 reputación).`,
       k: 'good',
     });
   }
@@ -1392,16 +1420,12 @@ export function endDay(state: GameState, away = false): GameState {
     }
   }
 
-  // Patio de entrenamiento: quien descansa en casa también aprende.
+  // Patio de entrenamiento: quien descansa en casa aprende un poco, pero de nivel se sube
+  // peleando (encargos y asaltos): se queda a un punto.
   if (s.fac.patio > 0)
     for (const h of s.heroes) {
-      if (h.status !== 'ok') continue;
-      h.xp += TRAINING_XP[s.fac.patio] ?? 0;
-      for (const t of levelUp(s, h))
-        events.push({
-          t: `${t} entrenando en el patio.`,
-          k: t.includes('caché') ? 'warn' : 'good',
-        });
+      if (h.status !== 'ok' || h.xp >= XP_PER_LEVEL - 1) continue;
+      h.xp = Math.min(XP_PER_LEVEL - 1, h.xp + (TRAINING_XP[s.fac.patio] ?? 0));
     }
 
   // Salas de entrenamiento: quien entrena suma el día y quizá sube un punto.
@@ -1421,8 +1445,14 @@ export function endDay(state: GameState, away = false): GameState {
   const plan = sleepPlan(s);
   const wing = (h: Hero) =>
     s.building.rooms.find((r) => r.id === plan.get(h.id))?.type === 'veteranos';
+  // Con el juego cerrado (o en el tutorial) no se aburre nadie ni se agota de guardia.
+  const strain = !away && !tutorialOn(s);
+  const tired: string[] = [];
+  const bored: string[] = [];
   for (const h of s.heroes) {
+    if (h.status === 'mision') h.idle = 0;
     if (h.status !== 'ok') continue;
+    if (strain && !h.guard) h.idle = (h.idle ?? 0) + 1;
     // Los de guardia no se acuestan: cuentan como si tuvieran su cama en el ala.
     const housedVet = isVet(h) && (h.guard || wing(h));
     const snub = isVet(h) && !housedVet;
@@ -1451,7 +1481,16 @@ export function endDay(state: GameState, away = false): GameState {
       VET_REST[vet]! +
       (DORM_REST[s.fac.dorm] ?? 0) -
       (snub ? VET_SNUB_REST : 0);
-    if (h.morale < cap) h.morale = Math.min(cap, h.morale + gain);
+    if (strain && h.guard) {
+      // De guardia no se duerme: no descansa y va perdiendo moral (hay que ir rotando).
+      const was = h.morale;
+      h.morale = Math.max(Math.min(was, GUARD_FLOOR), was - GUARD_DROP);
+      if (was >= MORALE_LOW && h.morale < MORALE_LOW) tired.push(h.name);
+    } else if (strain && (h.idle ?? 0) > BORED_AFTER) {
+      // Muchos días sin salir de aventura: se aburre.
+      if (h.idle === BORED_AFTER + 1) bored.push(h.name);
+      h.morale = Math.max(Math.min(h.morale, BORED_FLOOR), h.morale - BORED_DROP);
+    } else if (h.morale < cap) h.morale = Math.min(cap, h.morale + gain);
     // Sin su cuarto o con rencor, aunque ya estuviera animado, se le va bajando hasta el tope.
     else if (snub || h.grudge) h.morale = Math.max(cap, h.morale - OVER_CAP_DROP);
     if (h.morale < MORALE_QUIT && !has(h, 'leal') && vet < 2 && rng.chance(DESERT_CHANCE)) {
@@ -1466,6 +1505,16 @@ export function endDay(state: GameState, away = false): GameState {
       });
     }
   }
+  if (tired.length)
+    events.push({
+      t: `${listNames(tired)} ${tired.length > 1 ? 'llevan' : 'lleva'} muchas noches de guardia sin dormir y ${tired.length > 1 ? 'están agotados' : 'está sin fuerzas'}: de guardia no se recupera moral. Haz el relevo para que ${tired.length > 1 ? 'descansen' : 'descanse'}.`,
+      k: 'warn',
+    });
+  if (bored.length)
+    events.push({
+      t: `${listNames(bored)} se ${bored.length > 1 ? 'aburren' : 'aburre'}: más de una semana sin salir de aventura. Hasta que ${bored.length > 1 ? 'salgan' : 'salga'}, la moral irá bajando.`,
+      k: 'warn',
+    });
   if (deserters.length) {
     s.heroes = s.heroes.filter((h) => !deserters.includes(h));
     for (const h of deserters)
@@ -1608,13 +1657,16 @@ export function endDay(state: GameState, away = false): GameState {
   s.gold = kept.gold;
   s.spilt = kept.spilt;
   vaultNews(s, events);
-  // Si la fama de hoy ha subido el rango, se cuenta con lo que se abre.
+  // Sin encargos, la fama se olvida (solo jugando); si ha subido el rango, se cuenta.
+  if (!away) fadeFame(s, events);
   checkRank(s, events);
 
   // Mañana cada uno cuenta en su sala desde que llega (con el juego cerrado no hay escena que lo
   // diga: se le da por llegado al empezar la jornada).
   newShift(s);
   if (away) settleWalks(s);
+  // El correo guarda los últimos informes (si no, la partida crece sin fin).
+  if (s.reports.length > REPORTS_KEEP) s.reports = s.reports.slice(0, REPORTS_KEEP);
   s.flavor = rng.pick(FLAVOR);
   s.dawn = events;
   s.rng = rng.save();

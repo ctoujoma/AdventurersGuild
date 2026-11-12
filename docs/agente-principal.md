@@ -170,3 +170,110 @@ talleres, nombres y marcos). El arte ya está listo para cinco:
   (`dyeLine` en `art/heroes/gear.ts`): filete de `TINTS[dye].ramp[2]` dentro del borde del peto y
   del canto del escudo, en retrato y figura; sin tinte no cambia nada y los legendarios propios
   (`unique`) no lo llevan. Coraza y escudo comparten ranura (cuerpo): nunca van juntos.
+
+## Dónde lo dejamos (9 de noviembre): revisión crítica y decisiones
+
+- Barrido general con una partida del usuario (día 219):
+  [`revision-critica.md`](revision-critica.md).
+- Todo lo que sale de ahí, y lo pendiente de propuestas anteriores (noche, expediciones), está en
+  [`decisiones.md`](decisiones.md) con un código (A1…X5) y en la página «Decisiones del Jarro»
+  (https://claude.ai/artifact/5MgZx3bgd3pJQay91rDtjk), donde el usuario aprueba, pide cambios o
+  rechaza. Antes de seguir, leer sus respuestas (colección `decisiones`) y poner al día el
+  registro y el plan (sección «Antes de las expediciones»).
+- (11 de noviembre) El usuario contestó todo: el plan de ataque está en `plan.md` y lo pendiente
+  (bocetos C7, D1 y E1; A8, A9, B5, C8, C9, E4 y X4) en el registro. Antes: aprobado A1, A2 y C6 (botón
+  «Personalizar» en las salas). Lo siguiente, de lo troncal a lo menudo: el bloque 1 (A3–A7) y
+  los arreglos rápidos (B1–B7), que no dependen de nada.
+
+## Para retomar (12 de noviembre): todo decidido, empieza el plan de ataque
+
+1. Leer [`plan.md`](plan.md), «Plan de ataque» (fases 1 a 8), y [`decisiones.md`](decisiones.md):
+   cada punto con su código, lo elegido, las notas del usuario y «Por aclarar antes de empezar
+   cada fase» (preguntarlo al llegar a esa fase).
+2. Por si el usuario cambia algo en la página, leer antes su colección `decisiones` (herramienta de
+   datos del artefacto, https://claude.ai/artifact/5MgZx3bgd3pJQay91rDtjk) y comparar con el
+   registro. La página está copiada en `tools/decisiones.html` por si hay que republicarla.
+3. Siguiente paso: la **fase 1** (B1, B2, B3, B6, A2, A1 y los textos de E3) en la rama
+   `claude/sweet-bell-mky0ou`, o los bocetos C7, D1 y E1 si el usuario los prefiere antes.
+4. Datos de la partida del usuario (día 219) usados en la revisión: resumidos en
+   [`revision-critica.md`](revision-critica.md). La partida entera no está en el repositorio; si
+   hace falta, pedírsela («Gremio › Partidas › Copiar código»).
+
+## Fase 1 hecha (12 de noviembre)
+
+- **B1** «Sugerir» prueba todos los grupos (`core/suggest.ts`); a igualdad, menos gente (cada uno
+  de más tiene que ganar `GAIN`). 13 héroes: 5 ms; 20: 20 ms. En `QuestSheet` se cuenta con
+  `useMemo` (no al tocar cada héroe). Test con tres especialistas que el método viejo no sacaba.
+- **B2** sastrería (`stepCrafts`): si el héroe sale o cae en cama, el trabajo se pausa y vuelve a
+  esperarle (`wait`): al volver tiene que ir otra vez a la sala. Si ya no está en el gremio
+  (despedido, muerto o desaparecido), se cancela y devuelve el oro con aviso. El panel dice «En
+  pausa…» y la hoja del encargo avisa si a alguien del grupo le están cosiendo.
+- **B3** bandas: «{viene|vienen}» en `data/raids.ts` (`bandNumber`, `capBand`), también en el
+  aviso del amanecer, el mapa, el Gremio y la barra. Clientes en las frases con artículo
+  (`clientProse` en `data/quests.ts`: «Berta, la posadera, pagó…») y `{Client}`/`{Place}` al
+  empezar frase.
+- **B6** el correo guarda 50 (`REPORTS_KEEP`, al final de `endDay`) y tiene «Leído todo»
+  (acción `readAll`). Ojo: los informes ya no son el historial; para contar encargos, `stats`
+  (cambiados `tools/sim.ts` y `GameOver`).
+- **A2** patio: 1 o 2 de experiencia por noche y se queda en 99. Asalto ganado: +25 (`RAID_XP`) y
+  `levelUp` (chips en el informe).
+- **A1** fama pasiva: nobles +1 solo cada 10 días (`NOBLE_REP_EVERY`), tapices cada 14, cuervo
+  cada 15. `npm run sim`: victorias y oro iguales; fama final −11 % (normal 845 → 752).
+- **E3** textos de los materiales (sin pociones, hachas ni cristal en uso).
+- Siguiente: fase 2 (el bucle) o los bocetos C7, D1 y E1, lo que prefiera el usuario.
+
+## Fase 2 hecha (12 de noviembre)
+
+- **A3** tablón a la medida (`generateQuest(..., power)` con `homePower(heroes)`, en
+  `core/generate.ts`): la medida es la media de las cuatro habilidades de los cuatro mejores (sin
+  equipo), con el techo del rango (`perHero(rank)`); cada encargo sale fácil, justo o difícil
+  (`BOARD_TIERS`: ×0,75 / ×1 / ×1,3 con pesos 35/40/25 %) y el peligro se mide contra la medida.
+  Lo usan el tablón, las historias, los rumores y los rescates. Sin `power`, como antes.
+- **A5** quien está de guardia no duerme: −3 de moral por noche (`GUARD_DROP`), sin bajar de 15
+  (`GUARD_FLOOR`: no llega a desertar), aviso al bajar de 35. Marca de moral baja (chapa roja con
+  flecha) en el retrato (`marks.low`, `Portrait.tsx`); textos de la ficha al día.
+- **A4** aburrimiento: `hero.idle` cuenta noches en casa sin salir (la guardia no cuenta; vuelve a 0
+  al salir de encargo); pasadas 7 (`BORED_AFTER`), −2 por noche hasta 30 y aviso. La comarca:
+  `state.quiet` cuenta noches sin nadie fuera; pasadas 4 (`QUIET_AFTER`) la amenaza sube +1 por
+  noche (caravanas, menos encargos, asaltos, que ya existían).
+- **A9** fama que se olvida (`fadeFame` en `core/ranks.ts`): con `quiet` > 4, −1 % por noche, sin
+  bajar del principio del rango de debajo del más alto alcanzado (`rankSeen`); avisos al empezar,
+  al perder el rango (`rankLost`) y al recuperarlo. Lo construido se queda: las obras ya piden el
+  rango actual. Nada de esto pasa con el juego cerrado ni en el tutorial.
+- `npm run sim` con A3+A4+A5+A9: victorias 86/73/47/82 % (temeraria/normal/cauta/sin contratar;
+  antes 85/71/49/77), oro y fama parecidos.
+- **A8** bajas (otro agente, ya junto): `CASUALTY[resultado][peligro]` en `balance.ts` (fracaso
+  difícil 0,7 y letal 0,9; éxito parcial difícil 0,45 y letal 0,6; desastre 0,5–1),
+  `CLERIC_SAVE` 0,4, `COWARD_FLEE` 0,4, `LOST_SHARE` 0,7 (desaparecidos). La capilla ya subía la
+  vuelta (`RETURN_CHANCE`); su texto lo dice. Tests en `core/casualties.test.ts`; el simulador
+  cuenta bajas por peligro y vueltas.
+- `npm run sim` con toda la fase: victorias 87/71/52/80 %; normal, en lo difícil una baja cada 19
+  encargos (1,6 muertos + 3,6 desaparecidos por 100), en lo fácil casi nunca; con capilla vuelve
+  el 85 % de los desaparecidos. Si la temeraria (1 cada 9) parece mucho: bajar
+  `CASUALTY['Éxito parcial'][2]` a 0,35.
+- Bocetos hechos (`docs/bocetos/`, publicados: C7 https://claude.ai/artifact/P4KEM694obLjsUmQA1FySd,
+  D1 https://claude.ai/artifact/GzzfZM9VD6mj3XJqcMNvqp, E1
+  https://claude.ai/artifact/Jnjqegd7qromZxRTekpgUQ), cada uno con variantes A y B. Falta que el
+  usuario elija. El de E1 se dibujó con el motor en una copia aparte (no está en el repositorio).
+- Siguiente: fase 3 (talleres), con lo que elija el usuario de C7.
+
+## Fase 3 hecha (12 de noviembre)
+
+- **B8** calidad por nivel del taller: `qualityOdds(s, roomId)` en `core/crafting.ts` →
+  `{ comun, bueno, raro }` con `CRAFT_QUALITY[nivel]` (nivel 1: 70/25/5 %; 2: 45/38/17; 3:
+  25/45/30; 4: 15/45/40); el mejor artesano pasa 3 puntos por maña sobre 4 de común a raro; sin
+  artesano, bueno y raro a la mitad. Lo bueno es lo común con `plus: 1` y rareza 1 (`crafted`).
+  `goodChance` queda como alias de la probabilidad de raro. El tamaño ya daba puestos.
+- **B4** la forja ya no suma a las armas (`gearOf`); su efecto en `FACILITY_INFO` es la calidad
+  (`qualityText`). Descripción de la sala al día.
+- **B5** `priceOf(item)` en `core/gear.ts`: el equipo vale por rareza y lo que da (`PRICE_TIERS`,
+  `PRICE_KIND`), sin rango ni procedencia; los tesoros, su `value`. Lo usan vender, el arcón, la
+  ficha del objeto, la notoriedad de los asaltos y los logros. Común 10–15, bueno 25–35, raro
+  45–70, épico 110–130, legendario 180–275.
+- `npm run sim`: victorias 86/71/53/79 %, como antes.
+- **C7** (otro agente, ya junto): `RoomPanel` lleva «Mejorar · precio» arriba en todas las salas
+  (`.room-top`); la ficha del taller (`WorkshopInfo`) tiene «Trabajan aquí» y «En marcha» fijos y
+  pestañas Crear (lista) · Templar (una rejilla; Mejorar y Desmontar al tocar) · Vestir (rejilla de
+  retratos). Dos cifras de calidad: la de la sala (`FACILITY_INFO`) y la de ahora con el artesano.
+  La forja pasa de 2,4 a 1,3 pantallas con la misma partida.
+- Siguiente: fase 4 (un solo motor de pelea, A6).

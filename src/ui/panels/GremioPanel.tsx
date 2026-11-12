@@ -10,6 +10,7 @@ import { help } from '../HoldHelp';
 import { nightIn } from '../when';
 import { GoalRow } from './LibroPanel';
 import { Icon, type IconName } from '../icons';
+import { capBand } from '../../data/raids';
 
 interface Props {
   game: GameState;
@@ -179,7 +180,7 @@ export function GremioPanel({
       <div class="chips gremio-safe">
         {game.raid?.warned && (
           <span class="fact fact-alert" role="status">
-            <Icon name="flag" size={12} /> {game.raid.band}: {nightIn(nights)}
+            <Icon name="flag" size={12} /> {capBand(game.raid.band)}: {nightIn(nights)}
           </span>
         )}
         {!game.raid?.warned && (game.truce ?? 0) > game.day && (

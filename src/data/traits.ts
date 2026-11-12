@@ -16,7 +16,7 @@ export const TRAIT_INFO: Record<
     m: 'Cobarde',
     f: 'Cobarde',
     tone: 'mix',
-    desc: '−2 Combate. En un desastre huye… y sobrevive.',
+    desc: '−2 Combate. Cuando todo se tuerce, a veces huye a tiempo… y sobrevive.',
   },
   codicioso: {
     m: 'Codicioso',

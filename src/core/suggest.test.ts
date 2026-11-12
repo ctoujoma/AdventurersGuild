@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { canSend, newGame, reduce } from './game';
 import type { GameState, Hero } from './model';
+import { skill } from './party';
+import { questEstimate } from './resolve';
 import { repeatParty, suggestParty } from './suggest';
 
 /** Una partida con los héroes que se le den (copias del primero con cambios). */
@@ -46,6 +48,32 @@ describe('grupo sugerido', () => {
       challenges: s.quests[0]!.challenges.map((c) => ({ ...c, diff: 1 })),
     };
     expect(ids(suggestParty(s, s.quests[0]!.id))).toHaveLength(1);
+  });
+
+  it('prueba todos los grupos: tres especialistas aunque ninguno sirva solo', () => {
+    // Solo o de dos en dos no llegan al 2 %; los tres juntos, al 8 % (el de antes se paraba en uno).
+    const bare = { traits: [], worn: {}, lvl: 1, morale: 60 };
+    const s = withHeroes(
+      'todos',
+      { ...bare, cls: 'guerrero', attrs: { F: 10, D: 0, M: 0 } },
+      { ...bare, cls: 'picaro', attrs: { F: 0, D: 10, M: 0 } },
+      { ...bare, cls: 'mago', attrs: { F: 0, D: 0, M: 10 } },
+      { ...bare, cls: 'guerrero', attrs: { F: 1, D: 1, M: 1 } },
+    );
+    const [g, p, m] = s.heroes;
+    s.quests[0] = {
+      ...s.quests[0]!,
+      twist: undefined,
+      challenges: [
+        { skill: 'Combate', diff: skill(g!, 'Combate') + 4 },
+        { skill: 'Trampas', diff: skill(p!, 'Trampas') + 4 },
+        { skill: 'Arcano', diff: skill(m!, 'Arcano') + 4 },
+      ],
+    };
+    const r = ids(suggestParty(s, s.quests[0]!.id));
+    expect([...r].sort()).toEqual(['x0', 'x1', 'x2']);
+    const party = s.heroes.filter((h) => r.includes(h.id));
+    expect(questEstimate(s.quests[0]!, party, s.fac).total).toBeGreaterThan(0.05);
   });
 
   it('a igualdad, mejor quien no tiene la moral baja', () => {

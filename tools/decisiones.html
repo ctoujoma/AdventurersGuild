@@ -1,0 +1,719 @@
+<title>Decisiones del Jarro</title>
+<meta name="claude:viewport-fit-sides" content="cover" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Jersey+10&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap"
+/>
+<style>
+  /* Libro de cuentas de la taberna: una columna de fichas por bloques, de lo troncal a lo menudo. */
+  :root {
+    --bg: #e9e3d3;
+    --card: #f6f1e4;
+    --ink: #2b2219;
+    --muted: #6e604c;
+    --line: #cdbf9f;
+    --gold: #a26a12;
+    --ok: #3f7a35;
+    --bad: #a8372b;
+    --chg: #2f5c8f;
+    --wait: #9a7a2c;
+    --chip: #e3d9c2;
+    --display: 'Jersey 10', 'Courier New', monospace;
+    --body: 'Alegreya Sans', 'Segoe UI', system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --bg: #1b1611;
+      --card: #271f17;
+      --ink: #ecdfc6;
+      --muted: #b3a283;
+      --line: #44382a;
+      --gold: #e2a63a;
+      --ok: #8cc16a;
+      --bad: #ec7563;
+      --chg: #84abdd;
+      --wait: #d8b25a;
+      --chip: #352a1f;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme='dark'] {
+    --bg: #1b1611;
+    --card: #271f17;
+    --ink: #ecdfc6;
+    --muted: #b3a283;
+    --line: #44382a;
+    --gold: #e2a63a;
+    --ok: #8cc16a;
+    --bad: #ec7563;
+    --chg: #84abdd;
+    --wait: #d8b25a;
+    --chip: #352a1f;
+    color-scheme: dark;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.45;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 20px 48px;
+  }
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+  h1,
+  h2 {
+    font-family: var(--display);
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    text-wrap: balance;
+    margin: 0;
+  }
+  h1 {
+    font-size: 44px;
+    line-height: 1;
+    color: var(--gold);
+  }
+  h2 {
+    font-size: 28px;
+    line-height: 1.05;
+  }
+  header p {
+    margin: 6px 0 0;
+    color: var(--muted);
+    max-width: 62ch;
+  }
+  .tally {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .tally span {
+    background: var(--chip);
+    border-radius: 999px;
+    padding: 3px 11px;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  .tally b {
+    font-weight: 700;
+  }
+  .seg {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    width: fit-content;
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+  .seg button {
+    font: inherit;
+    font-size: 15px;
+    background: transparent;
+    color: var(--ink);
+    border: 0;
+    padding: 7px 14px;
+    cursor: pointer;
+  }
+  .seg button + button {
+    border-left: 1px solid var(--line);
+  }
+  .seg button[aria-pressed='true'] {
+    background: var(--ink);
+    color: var(--card);
+  }
+  .block {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .block > p {
+    margin: 0;
+    color: var(--muted);
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+  }
+  .card.is-wait {
+    opacity: 0.72;
+  }
+  .card.st-aprobada {
+    border-left: 4px solid var(--ok);
+  }
+  .card.st-rechazada {
+    border-left: 4px solid var(--bad);
+  }
+  .card.st-cambiar {
+    border-left: 4px solid var(--chg);
+  }
+  .top {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    flex-wrap: wrap;
+  }
+  .code {
+    font-family: var(--display);
+    font-size: 22px;
+    color: var(--gold);
+    line-height: 1;
+  }
+  .title {
+    font-weight: 700;
+    font-size: 18px;
+    flex: 1 1 220px;
+    min-width: 0;
+  }
+  .pill {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+  }
+  .pill.aprobada {
+    color: var(--ok);
+  }
+  .pill.rechazada {
+    color: var(--bad);
+  }
+  .pill.cambiar {
+    color: var(--chg);
+  }
+  .pill.pendiente {
+    color: var(--muted);
+  }
+  .que {
+    margin: 0;
+  }
+  .why {
+    margin: 0;
+    color: var(--muted);
+    font-size: 15px;
+  }
+  .why b {
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .reply {
+    margin: 0;
+    font-size: 15px;
+    padding: 8px 10px;
+    border-radius: 5px;
+    background: var(--chip);
+  }
+  .reply b {
+    color: var(--chg);
+    font-weight: 700;
+  }
+  .deps {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .dep {
+    font-family: var(--display);
+    font-size: 17px;
+    padding: 0 7px;
+    border-radius: 4px;
+    background: var(--chip);
+    color: var(--wait);
+    border: 0;
+    cursor: pointer;
+  }
+  .dep.ok {
+    color: var(--ok);
+  }
+  .dep.bad {
+    color: var(--bad);
+  }
+  .opts {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border: 0;
+    padding: 0;
+    margin: 0;
+  }
+  .opts label {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+  }
+  .opts label:has(input:checked) {
+    border-color: var(--line);
+    background: var(--chip);
+  }
+  .opts input {
+    margin-top: 4px;
+    accent-color: var(--gold);
+  }
+  .opts .k {
+    font-family: var(--display);
+    font-size: 18px;
+    color: var(--gold);
+    line-height: 1.2;
+  }
+  .acts {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .acts button {
+    font: inherit;
+    font-size: 15px;
+    font-weight: 500;
+    padding: 6px 13px;
+    border-radius: 5px;
+    cursor: pointer;
+    border: 1px solid var(--line);
+    background: transparent;
+    color: var(--ink);
+  }
+  .acts button.yes {
+    border-color: var(--ok);
+    color: var(--ok);
+  }
+  .acts button.chg {
+    border-color: var(--chg);
+    color: var(--chg);
+  }
+  .acts button.no {
+    border-color: var(--bad);
+    color: var(--bad);
+  }
+  .acts button.on.yes {
+    background: var(--ok);
+    color: var(--card);
+  }
+  .acts button.on.chg {
+    background: var(--chg);
+    color: var(--card);
+  }
+  .acts button.on.no {
+    background: var(--bad);
+    color: var(--card);
+  }
+  .acts button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .acts .undo {
+    border: 0;
+    color: var(--muted);
+    text-decoration: underline;
+    padding: 6px 4px;
+  }
+  .acts small {
+    color: var(--muted);
+  }
+  textarea {
+    width: 100%;
+    font: inherit;
+    font-size: 15px;
+    color: var(--ink);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 7px 9px;
+    resize: vertical;
+    min-height: 40px;
+  }
+  :focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+  .empty,
+  .note {
+    background: var(--card);
+    border: 1px dashed var(--line);
+    border-radius: 6px;
+    padding: 18px;
+    color: var(--muted);
+  }
+  .toast {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    background: var(--ink);
+    color: var(--card);
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .card {
+      transition: opacity 0.2s;
+    }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Decisiones del Jarro</h1>
+    <p>
+      Lo que queda por decidir antes de las expediciones, de lo troncal a lo menudo. Aprueba, pide
+      cambios (con una nota) o rechaza cada punto; lo que depende de algo aún sin aprobar espera su
+      turno.
+    </p>
+    <div class="tally" id="tally" aria-live="polite"></div>
+  </header>
+  <div class="seg" role="group" aria-label="Qué enseñar">
+    <button id="f-ready" aria-pressed="true">Listas para decidir</button>
+    <button id="f-all" aria-pressed="false">Todas</button>
+    <button id="f-done" aria-pressed="false">Ya decididas</button>
+  </div>
+  <main id="list">
+    <div class="empty">
+      Cargando las decisiones… Aquí saldrán por bloques: primero el bucle del juego, luego los
+      arreglos, la navegación, los encargos, las salas, la noche y las expediciones.
+    </div>
+  </main>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+  const ST = {
+    aprobada: 'Aprobada',
+    cambiar: 'Con cambios',
+    rechazada: 'Rechazada',
+    pendiente: 'Pendiente',
+  };
+  let db = null,
+    blocks = [],
+    items = {},
+    filter = 'ready';
+  const drafts = {}; // notas y opciones a medio escribir, por id
+  const $ = (s) => document.querySelector(s);
+  const el = (tag, cls, text) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  };
+  const ok = (id) =>
+    items[id] && (items[id].estado === 'aprobada' || items[id].estado === 'cambiar');
+  const ready = (d) => d.depende.every(ok);
+  const decided = (d) => d.estado !== 'pendiente';
+
+  function toast(t) {
+    const n = $('#toast');
+    n.textContent = t;
+    n.hidden = false;
+    clearTimeout(toast.t);
+    toast.t = setTimeout(() => {
+      n.hidden = true;
+    }, 1800);
+  }
+
+  function tally() {
+    const all = Object.values(items);
+    const c = (s) => all.filter((d) => d.estado === s).length;
+    const r = all.filter((d) => !decided(d) && ready(d)).length;
+    const t = $('#tally');
+    t.replaceChildren();
+    [
+      ['Aprobadas', c('aprobada')],
+      ['Con cambios', c('cambiar')],
+      ['Rechazadas', c('rechazada')],
+      ['Pendientes', c('pendiente')],
+      ['Listas ahora', r],
+    ].forEach(([k, v]) => {
+      const s = el('span');
+      s.append(el('b', null, String(v)), ' ' + k.toLowerCase());
+      t.append(s);
+    });
+  }
+
+  async function save(d, patch, msg) {
+    if (!db) return;
+    try {
+      await db.doc('decisiones/' + d.id).update({ ...patch, cuando: new Date().toISOString() });
+      toast(msg);
+    } catch (e) {
+      toast(
+        e && e.code === 'not_granted'
+          ? 'No tienes permiso para cambiar esto.'
+          : 'No se ha guardado. Prueba otra vez.',
+      );
+    }
+  }
+
+  function card(d) {
+    const c = el('article', 'card st-' + d.estado + (ready(d) || decided(d) ? '' : ' is-wait'));
+    c.id = 'd-' + d.id;
+    const top = el('div', 'top');
+    top.append(
+      el('span', 'code', d.id),
+      el('span', 'title', d.titulo),
+      el('span', 'pill ' + d.estado, ST[d.estado] || d.estado),
+    );
+    c.append(top);
+    if (d.que) c.append(el('p', 'que', d.que));
+
+    const draft = drafts[d.id] || (drafts[d.id] = { opcion: d.opcion || null, nota: d.nota || '' });
+    if (d.opciones && d.opciones.length) {
+      const fs = el('fieldset', 'opts');
+      fs.setAttribute('aria-label', 'Opciones de ' + d.id);
+      d.opciones.forEach((o) => {
+        const lab = el('label');
+        const r = el('input');
+        r.type = 'radio';
+        r.name = 'o-' + d.id;
+        r.id = 'o-' + d.id + '-' + o.id;
+        r.value = o.id;
+        r.checked = draft.opcion === o.id;
+        r.addEventListener('change', () => {
+          draft.opcion = o.id;
+          render();
+        });
+        const txt = el('span');
+        txt.append(el('span', 'k', o.id + ') '), o.texto);
+        lab.append(r, txt);
+        fs.append(lab);
+      });
+      c.append(fs);
+    }
+    if (d.porque) {
+      const w = el('p', 'why');
+      w.append(el('b', null, 'Por qué: '), d.porque);
+      c.append(w);
+    }
+    if (d.respuesta) {
+      const r = el('p', 'reply');
+      r.append(el('b', null, 'Respuesta a tu nota: '), d.respuesta);
+      c.append(r);
+    }
+    if (d.fase) {
+      const f = el('p', 'why');
+      f.append(el('b', null, 'En el plan: '), d.fase);
+      c.append(f);
+    }
+    if (d.depende.length) {
+      const deps = el('div', 'deps');
+      deps.append(ready(d) ? 'Depende de' : 'Espera a');
+      d.depende.forEach((x) => {
+        const b = el(
+          'button',
+          'dep' + (ok(x) ? ' ok' : items[x] && items[x].estado === 'rechazada' ? ' bad' : ''),
+          x,
+        );
+        b.title = items[x] ? items[x].titulo + ' · ' + (ST[items[x].estado] || '') : x;
+        b.addEventListener('click', () => {
+          filter = 'all';
+          render();
+          setTimeout(
+            () =>
+              document
+                .getElementById('d-' + x)
+                ?.scrollIntoView({ behavior: 'smooth', block: 'center' }),
+            30,
+          );
+        });
+        deps.append(b);
+      });
+      c.append(deps);
+    }
+
+    const ta = el('textarea');
+    ta.id = 'n-' + d.id;
+    ta.rows = 2;
+    ta.placeholder = 'Nota (qué cambiarías, por qué no…)';
+    ta.value = draft.nota;
+    ta.addEventListener('input', () => {
+      draft.nota = ta.value;
+    });
+    c.append(ta);
+
+    const acts = el('div', 'acts');
+    const needOpt = d.opciones && d.opciones.length && !draft.opcion;
+    const btn = (cls, label, estado) => {
+      const b = el('button', cls + (d.estado === estado ? ' on' : ''), label);
+      if (estado === 'aprobada' && needOpt) {
+        b.disabled = true;
+        b.title = 'Elige una opción';
+      }
+      if (estado === 'cambiar' && !draft.nota.trim() && needOpt)
+        b.title = 'Escribe en la nota qué cambiarías';
+      b.addEventListener('click', () => {
+        if (estado === 'cambiar' && !draft.nota.trim()) {
+          ta.focus();
+          toast('Escribe en la nota qué cambiarías.');
+          return;
+        }
+        save(
+          d,
+          { estado, opcion: draft.opcion || null, nota: draft.nota.trim() },
+          ST[estado] + ': ' + d.id,
+        );
+      });
+      return b;
+    };
+    acts.append(
+      btn('yes', 'Aprobar', 'aprobada'),
+      btn('chg', 'Con cambios', 'cambiar'),
+      btn('no', 'Rechazar', 'rechazada'),
+    );
+    if (decided(d)) {
+      const u = el('button', 'undo', 'Volver a pendiente');
+      u.addEventListener('click', () =>
+        save(d, { estado: 'pendiente' }, d.id + ' vuelve a pendiente'),
+      );
+      acts.append(u);
+    } else {
+      const g = el('button', null, 'Guardar sin decidir');
+      g.addEventListener('click', () =>
+        save(d, { opcion: draft.opcion || null, nota: draft.nota.trim() }, 'Nota guardada'),
+      );
+      acts.append(g);
+    }
+    if (needOpt) acts.append(el('small', null, 'Elige una opción para aprobar.'));
+    c.append(acts);
+    return c;
+  }
+
+  function render() {
+    tally();
+    ['ready', 'all', 'done'].forEach((f) =>
+      $('#f-' + f).setAttribute('aria-pressed', String(filter === f)),
+    );
+    const list = $('#list');
+    list.replaceChildren();
+    const all = Object.values(items).sort((a, b) => a.orden - b.orden);
+    if (!all.length) {
+      list.append(
+        el(
+          'div',
+          'empty',
+          'Aún no hay decisiones cargadas. Las añade Claude desde la conversación.',
+        ),
+      );
+      return;
+    }
+    const show = (d) =>
+      filter === 'all' || (filter === 'done' ? decided(d) : !decided(d) && ready(d));
+    let any = false;
+    const order = blocks.length
+      ? blocks.slice().sort((a, b) => a.orden - b.orden)
+      : [...new Set(all.map((d) => d.bloque))].map((id) => ({ id, titulo: id }));
+    order.forEach((b) => {
+      const ds = all.filter((d) => d.bloque === b.id && show(d));
+      if (!ds.length) return;
+      any = true;
+      const sec = el('section', 'block');
+      sec.append(el('h2', null, b.titulo));
+      if (b.desc) sec.append(el('p', null, b.desc));
+      ds.forEach((d) => sec.append(card(d)));
+      list.append(sec);
+    });
+    if (!any)
+      list.append(
+        el(
+          'div',
+          'empty',
+          filter === 'done'
+            ? 'Todavía no has decidido nada.'
+            : 'No queda nada listo: lo que falta espera a que apruebes algo de lo que depende. Mira «Todas».',
+        ),
+      );
+  }
+
+  $('#f-ready').addEventListener('click', () => {
+    filter = 'ready';
+    render();
+  });
+  $('#f-all').addEventListener('click', () => {
+    filter = 'all';
+    render();
+  });
+  $('#f-done').addEventListener('click', () => {
+    filter = 'done';
+    render();
+  });
+
+  (async () => {
+    const timer = setTimeout(() => {
+      if (!Object.keys(items).length)
+        $('#list').replaceChildren(
+          el(
+            'div',
+            'note',
+            'No llegan las decisiones. Abre la página con tu cuenta de claude.ai para verlas y contestar.',
+          ),
+        );
+    }, 10000);
+    db = window.claude ? await window.claude.use('db') : null;
+    if (!db) {
+      clearTimeout(timer);
+      $('#list').replaceChildren(
+        el(
+          'div',
+          'note',
+          'Esta vista no puede leer las decisiones. Ábrela con tu cuenta de claude.ai.',
+        ),
+      );
+      return;
+    }
+    db.collection('bloques').onSnapshot(
+      (snap) => {
+        blocks = snap.docs.map((x) => ({ id: x.id, ...x.data() }));
+        render();
+      },
+      () => {},
+    );
+    db.collection('decisiones').onSnapshot(
+      (snap) => {
+        clearTimeout(timer);
+        items = {};
+        snap.docs.forEach((x) => {
+          const v = x.data();
+          items[x.id] = { id: x.id, depende: [], opciones: [], ...v };
+        });
+        // Lo guardado manda sobre lo que se estaba escribiendo solo si no hay borrador distinto.
+        render();
+      },
+      (e) => {
+        clearTimeout(timer);
+        $('#list').replaceChildren(
+          el(
+            'div',
+            'note',
+            'No se han podido leer las decisiones (' + ((e && e.code) || 'error') + ').',
+          ),
+        );
+      },
+    );
+  })();
+</script>

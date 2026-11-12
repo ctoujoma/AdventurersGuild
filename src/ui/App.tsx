@@ -78,6 +78,7 @@ import { GremioPanel } from './panels/GremioPanel';
 import { HeroesPanel, type HeroFilter } from './panels/HeroesPanel';
 import { MailPanel } from './panels/MailPanel';
 import { TablonPanel } from './panels/TablonPanel';
+import { priceOf } from '../core/gear';
 import { TabernaPanel } from './panels/TabernaPanel';
 import { ArconPanel, type ArconTab } from './panels/ArconPanel';
 import { QuestSheet } from './QuestSheet';
@@ -664,7 +665,7 @@ export function App() {
     const it = game.inventory.find((i) => i.id === itemId);
     dispatch({ type: 'sell', itemId });
     audio.play('coin');
-    if (it) toast(`Vendido: ${it.name} por ${it.value} monedas.`);
+    if (it) toast(`Vendido: ${it.name} por ${priceOf(it)} monedas.`);
   };
 
   // Escape y el botón «atrás» del móvil cierran lo que esté encima (ajustes, partidas,
@@ -1508,7 +1509,14 @@ export function App() {
         )}
         {panel === 'correo' && (
           <Panel title="Correo del amanecer" onClose={() => openPanel(null)}>
-            <MailPanel reports={game.reports} onOpen={openReport} />
+            <MailPanel
+              reports={game.reports}
+              onOpen={openReport}
+              onReadAll={() => {
+                audio.play('select');
+                dispatch({ type: 'readAll' });
+              }}
+            />
           </Panel>
         )}
         {panel === 'fuera' && (

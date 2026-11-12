@@ -33,8 +33,8 @@ export const OPENERS: Record<QuestType, readonly [one: string, many: string][]> 
       '{who} bajaron a {place} con una cuerda y dos antorchas que no paraban de humear.',
     ],
     [
-      '{place} era más grande por dentro de lo que parecía por fuera.',
-      '{place} era más grande por dentro de lo que parecía por fuera.',
+      '{Place} era más grande por dentro de lo que parecía por fuera.',
+      '{Place} era más grande por dentro de lo que parecía por fuera.',
     ],
   ],
   Recuperar: [

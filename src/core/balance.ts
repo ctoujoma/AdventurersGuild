@@ -68,7 +68,10 @@ export const DORM_REST = [0, 0, 0, 0, 2] as const;
 export const TOWER_DETER = 0.75;
 
 /** Patio de entrenamiento: experiencia por noche descansando, por nivel. */
-export const TRAINING_XP = [0, 6, 12] as const;
+/** Experiencia por noche en el patio: poca, y nunca hace subir de nivel (se queda en 99). */
+export const TRAINING_XP = [0, 1, 2] as const;
+/** Experiencia por defender un asalto ganado (sí sube de nivel). */
+export const RAID_XP = 25;
 export const facilityMax = (k: keyof Facilities) => UPGRADE_COST[k].length - 1;
 
 /**
@@ -293,8 +296,25 @@ export const MORALE: Record<Outcome, number> = {
 export const REWARD_PER_POINT = 5;
 /** Probabilidad de que un fracaso acabe en desastre, por nivel de peligro. */
 export const DISASTER = [0.05, 0.3, 0.6, 0.9] as const;
-/** Probabilidad de una baja (herida grave, muerte o desaparición) en un fracaso, por peligro. */
-export const FAIL_CASUALTY = [0, 0.05, 0.15, 0.3] as const;
+/**
+ * Probabilidad de una baja (muerte o desaparición; con un clérigo, quizá solo una herida grave)
+ * según el resultado y el peligro (A8): en lo difícil se pierde gente de vez en cuando (una baja
+ * cada 15–20 encargos); en lo fácil, casi nunca. Como lo difícil rara vez sale del todo mal, buena
+ * parte de esas bajas llegan en un éxito parcial. Medido con `npm run sim`.
+ */
+export const CASUALTY: Record<Outcome, readonly [number, number, number, number]> = {
+  'Éxito brillante': [0, 0, 0, 0],
+  Éxito: [0, 0, 0, 0],
+  'Éxito parcial': [0, 0, 0.35, 0.6],
+  Fracaso: [0, 0.05, 0.7, 0.9],
+  Desastre: [0.5, 0.8, 1, 1],
+};
+/** Un clérigo salva a veces a quien iba a caer (se queda en herida grave con secuela). */
+export const CLERIC_SAVE = 0.4;
+/** Un cobarde, a veces, huye a tiempo y se salva. */
+export const COWARD_FLEE = 0.4;
+/** De las bajas, parte son desaparecidos (pueden volver; ver `returnChance`); el resto, muertos. */
+export const LOST_SHARE = 0.7;
 /** El giro oculto sube así la dificultad del primer desafío. */
 export const TWIST_DIFF = 3;
 /** Parte del oro que se queda un codicioso. */
@@ -309,7 +329,7 @@ export const SCOUT_AMBUSH = 0.5;
 export const ROGUE_GOLD = 0.1;
 /** Guerrero: multiplica el riesgo de herida de sus compañeros. */
 export const WARRIOR_GUARD = 0.5;
-/** Clérigo: multiplica las pérdidas de moral del grupo (y además evita muertes). */
+/** Clérigo: multiplica las pérdidas de moral del grupo (y a veces evita una baja, `CLERIC_SAVE`). */
 export const CLERIC_SOLACE = 0.5;
 
 // ---------- Moral ----------
@@ -504,7 +524,18 @@ export const CRAFT_STD_WORK = 6;
 /** Trabajos a la vez en un taller, por nivel de la sala. */
 export const CRAFT_SLOTS = [0, 1, 1, 2, 2] as const;
 /** Probabilidad de que salga bueno, por nivel de la sala; más con un buen herrero. */
-export const CRAFT_GOOD = [0, 0.15, 0.25, 0.35, 0.45] as const;
+/**
+ * Calidad de lo que sale de un taller según su nivel (índice): probabilidad de común, bueno y raro.
+ * El nivel de la sala da la calidad; el tamaño, los puestos (más manos, más deprisa).
+ */
+export const CRAFT_QUALITY: readonly (readonly [number, number, number])[] = [
+  [1, 0, 0],
+  [0.7, 0.25, 0.05],
+  [0.45, 0.38, 0.17],
+  [0.25, 0.45, 0.3],
+  [0.15, 0.45, 0.4],
+];
+/** Cada punto de maña del mejor artesano por encima de 4 pasa esto de común a raro. */
 export const CRAFT_GOOD_PER_SKILL = 0.03;
 /** Desmontar: horas que tarda y probabilidad de sacar la receta, por nivel de la sala. */
 export const UNDO_HOURS = 4;
@@ -578,3 +609,42 @@ export const CAT_FIRST = 6;
 export const CAT_EVERY = 10;
 /** Probabilidad de que un encargo con éxito brillante traiga los planos de una receta. */
 export const RECIPE_FIND = 0.2;
+
+/** Informes que guarda el correo (los más nuevos). */
+export const REPORTS_KEEP = 50;
+
+/**
+ * El tablón, medido con los héroes de casa: cuánto más difícil que «a su medida» (k) y con qué
+ * peso sale (w). El rango pone el techo de la medida.
+ */
+export const BOARD_TIERS: readonly { k: number; w: number }[] = [
+  { k: 0.75, w: 0.35 },
+  { k: 1, w: 0.4 },
+  { k: 1.3, w: 0.25 },
+];
+
+/** Quien está de guardia no duerme: pierde esta moral cada noche (sin bajar de `GUARD_FLOOR`). */
+export const GUARD_DROP = 3;
+export const GUARD_FLOOR = 15;
+/** Noches en casa sin salir de aventura antes de aburrirse; luego, moral que pierde cada noche. */
+export const BORED_AFTER = 7;
+export const BORED_DROP = 2;
+export const BORED_FLOOR = 30;
+/** Noches sin nadie fuera antes de que la comarca olvide al gremio: la fama baja un tanto al día. */
+export const QUIET_AFTER = 4;
+export const QUIET_FAME = 0.01;
+
+/**
+ * Precio de venta del equipo por rareza (común, bueno, raro, épico, legendario): un tramo de
+ * monedas y lo que suele dar un objeto de esa rareza (suma de sus bonos, su efecto y su temple).
+ * Dentro del tramo, más cuanto más da. No depende del rango ni de dónde salió.
+ */
+export const PRICE_TIERS: readonly { lo: number; hi: number; min: number; max: number }[] = [
+  { lo: 10, hi: 20, min: 1, max: 3 },
+  { lo: 25, hi: 40, min: 2, max: 4 },
+  { lo: 50, hi: 90, min: 2, max: 5 },
+  { lo: 100, hi: 160, min: 3, max: 6 },
+  { lo: 200, hi: 350, min: 4, max: 8 },
+];
+/** Las armas valen un poco más; los complementos, un poco menos. */
+export const PRICE_KIND: Partial<Record<string, number>> = { arma: 1.1, complemento: 0.9 };

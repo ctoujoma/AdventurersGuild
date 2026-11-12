@@ -5,3 +5,5 @@ dist
 coverage
 # Guiones de capturas locales (ver tools/shots/README.md)
 tools/shots/_*.mjs
+# Copias de trabajo de los agentes
+.claude/worktrees

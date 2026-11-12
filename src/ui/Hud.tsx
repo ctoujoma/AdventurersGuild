@@ -12,6 +12,7 @@ import { Counter } from './Counter';
 import { Icon } from './icons';
 import { AlertBell } from './AlertBell';
 import type { Notice } from './alerts';
+import { bandNumber } from '../data/raids';
 
 type Tip = 'oro' | 'rep' | 'comida' | 'cerveza' | 'pago' | 'asalto';
 
@@ -72,7 +73,10 @@ export function Hud({
         ? `Próximo pago, el día ${pay.day} (${when}): ${pay.amount} al prestamista y ${due - pay.amount} en salarios. Total ${due}.${short ? ' Ahora mismo no llega.' : ''}`
         : `Salarios del día ${pay.day} (${when}): ${due} monedas.${short ? ' Ahora mismo no llega.' : ''}`,
     asalto: game.raid
-      ? `Chivatazo: ${game.raid.band} llega ${nightIn(nights)}. Prepara las defensas.`
+      ? bandNumber(
+          `Chivatazo: ${game.raid.band} {llega|llegan} ${nightIn(nights)}. Prepara las defensas.`,
+          game.raid.band,
+        )
       : '',
   };
   return (

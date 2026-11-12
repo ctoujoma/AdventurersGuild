@@ -5,14 +5,23 @@ import { OUTCOME_CLASS } from '../../data/labels';
 export function MailPanel({
   reports,
   onOpen,
+  onReadAll,
 }: {
   reports: Report[];
   onOpen: (id: string) => void;
+  /** Marca todo como leído (sale si hay algo sin leer). */
+  onReadAll?: () => void;
 }) {
   if (!reports.length)
     return <p class="panel-note">Nadie ha vuelto todavía. Los informes llegan aquí al amanecer.</p>;
+  const unread = reports.filter((r) => !r.read).length;
   return (
     <div class="rows">
+      {onReadAll && unread > 1 && (
+        <button class="btn btn-wood mail-all" onClick={onReadAll}>
+          Leído todo ({unread})
+        </button>
+      )}
       {reports.map((r) => (
         <button
           key={r.id}
@@ -43,6 +52,7 @@ export function MailPanel({
           </span>
         </button>
       ))}
+      <p class="panel-note">Se guardan los últimos 50 informes.</p>
     </div>
   );
 }

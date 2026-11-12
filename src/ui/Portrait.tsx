@@ -49,6 +49,7 @@ export function Portrait({ look, marks = {}, scale = 2, label, alive = true, fra
         scale={scale}
         label={label}
       />
+      {marks.low && <i class="portrait-low" title="Moral baja" aria-label="Moral baja" />}
     </span>
   );
 }

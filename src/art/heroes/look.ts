@@ -56,6 +56,8 @@ export interface HeroMarks {
   scar?: boolean;
   /** Equipo que lleva puesto (se ve en el sprite y en el retrato). */
   gear?: GearMarks;
+  /** Moral baja: la interfaz le pone una marca junto al retrato (no se dibuja en el sprite). */
+  low?: boolean;
 }
 
 const HEADGEAR: Record<OutfitId, [HeadgearId, number] | null> = {

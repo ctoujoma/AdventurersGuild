@@ -1,7 +1,15 @@
 import type { Danger, Facilities, Hero, Outcome } from '../core/model';
+import { CRAFT_QUALITY, TRAINING_XP, returnChance } from '../core/balance';
 import type { ClassId, MoraleBand } from '../core/party';
 
 /** Textos de la interfaz que dependen de los datos del juego. */
+
+/** «común 45 %, bueno 38 %, raro 17 %»: lo que sale de un taller de ese nivel (con artesano). */
+export function qualityText(level: number): string {
+  const [c, b, r] = CRAFT_QUALITY[level] ?? CRAFT_QUALITY.at(-1)!;
+  const pct = (x: number) => `${Math.round(100 * x)} %`;
+  return `común ${pct(c)}, bueno ${pct(b)}, raro ${pct(r)}`;
+}
 
 export const CLASS_NAMES: Record<ClassId, { m: string; f: string }> = {
   guerrero: { m: 'Guerrero', f: 'Guerrera' },
@@ -134,7 +142,7 @@ export const FACILITY_INFO: Record<
     effect: (l) =>
       l === 0
         ? 'Sin efecto'
-        : `Moral +${2 * l} por noche, los desaparecidos vuelven más${l >= 2 ? ' y los caídos duelen la mitad' : ''}`,
+        : `Moral +${2 * l} por noche, vuelve el ${Math.round(100 * returnChance(l))} % de los desaparecidos (sin capilla, el ${Math.round(100 * returnChance(0))} %)${l >= 2 ? ' y los caídos duelen la mitad' : ''}`,
   },
   forja: {
     name: 'Forja',
@@ -145,7 +153,8 @@ export const FACILITY_INFO: Record<
       'Fragua grande con chimenea y armero',
       'Una pieza al rojo en la fragua y paredes de arenisca',
     ],
-    effect: (l) => (l === 0 ? 'Sin efecto' : `+${l} al objeto que lleva puesto cada héroe`),
+    effect: (l) =>
+      l === 0 ? 'Sin efecto' : `Calidad de la sala: ${qualityText(l)} (un buen artesano la sube)`,
   },
   establo: {
     name: 'Establo',
@@ -161,7 +170,9 @@ export const FACILITY_INFO: Record<
     room: 'patio-entreno',
     levels: ['No hay', 'Muñecos de paja junto al camino', 'Muñecos, diana y armero de prácticas'],
     effect: (l) =>
-      l === 0 ? 'Sin efecto' : `+${[0, 6, 12][l]} de experiencia por noche a quien descansa`,
+      l === 0
+        ? 'Sin efecto'
+        : `+${TRAINING_XP[l]} de experiencia por noche a quien descansa (de nivel se sube peleando)`,
   },
   empal: {
     name: 'Empalizada',
