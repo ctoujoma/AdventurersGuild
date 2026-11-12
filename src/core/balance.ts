@@ -296,8 +296,25 @@ export const MORALE: Record<Outcome, number> = {
 export const REWARD_PER_POINT = 5;
 /** Probabilidad de que un fracaso acabe en desastre, por nivel de peligro. */
 export const DISASTER = [0.05, 0.3, 0.6, 0.9] as const;
-/** Probabilidad de una baja (herida grave, muerte o desaparición) en un fracaso, por peligro. */
-export const FAIL_CASUALTY = [0, 0.05, 0.15, 0.3] as const;
+/**
+ * Probabilidad de una baja (muerte o desaparición; con un clérigo, quizá solo una herida grave)
+ * según el resultado y el peligro (A8): en lo difícil se pierde gente de vez en cuando (una baja
+ * cada 15–20 encargos); en lo fácil, casi nunca. Como lo difícil rara vez sale del todo mal, buena
+ * parte de esas bajas llegan en un éxito parcial. Medido con `npm run sim`.
+ */
+export const CASUALTY: Record<Outcome, readonly [number, number, number, number]> = {
+  'Éxito brillante': [0, 0, 0, 0],
+  Éxito: [0, 0, 0, 0],
+  'Éxito parcial': [0, 0, 0.45, 0.6],
+  Fracaso: [0, 0.05, 0.7, 0.9],
+  Desastre: [0.5, 0.8, 1, 1],
+};
+/** Un clérigo salva a veces a quien iba a caer (se queda en herida grave con secuela). */
+export const CLERIC_SAVE = 0.4;
+/** Un cobarde, a veces, huye a tiempo y se salva. */
+export const COWARD_FLEE = 0.4;
+/** De las bajas, parte son desaparecidos (pueden volver; ver `returnChance`); el resto, muertos. */
+export const LOST_SHARE = 0.7;
 /** El giro oculto sube así la dificultad del primer desafío. */
 export const TWIST_DIFF = 3;
 /** Parte del oro que se queda un codicioso. */
@@ -312,7 +329,7 @@ export const SCOUT_AMBUSH = 0.5;
 export const ROGUE_GOLD = 0.1;
 /** Guerrero: multiplica el riesgo de herida de sus compañeros. */
 export const WARRIOR_GUARD = 0.5;
-/** Clérigo: multiplica las pérdidas de moral del grupo (y además evita muertes). */
+/** Clérigo: multiplica las pérdidas de moral del grupo (y a veces evita una baja, `CLERIC_SAVE`). */
 export const CLERIC_SOLACE = 0.5;
 
 // ---------- Moral ----------

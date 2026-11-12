@@ -26,7 +26,10 @@ import { emptyStats } from './feats';
 import {
   ARMORY,
   DISASTER,
-  FAIL_CASUALTY,
+  CASUALTY,
+  CLERIC_SAVE,
+  COWARD_FLEE,
+  LOST_SHARE,
   GREED,
   MAT_PER_OUTCOME,
   INJURY,
@@ -369,13 +372,14 @@ export function resolveMission(
   const healer = party.find((h) => h.cls === 'clerigo');
   let fallen: Hero | null = null;
   let victim: Hero | null = null;
-  if (outcome === 'Desastre' || (outcome === 'Fracaso' && rng.chance(FAIL_CASUALTY[q.danger]))) {
+  const pCasualty = CASUALTY[outcome][q.danger] ?? 0;
+  if (pCasualty > 0 && rng.chance(pCasualty)) {
     const fallenHere = fight ? party.filter((h) => fight.downed.includes(h.id)) : [];
     victim = rng.pick(fallenHere.length ? fallenHere : party);
-    if (has(victim, 'cobarde')) {
+    if (has(victim, 'cobarde') && rng.chance(COWARD_FLEE)) {
       say(`${victim.name} salió corriendo a la primera señal. No es heroico, pero está vivo.`);
       victim = null;
-    } else if (healer && healer !== victim) {
+    } else if (healer && healer !== victim && rng.chance(CLERIC_SAVE)) {
       const options = SCARS.filter((x) => !has(victim!, x.trait));
       victim.status = 'herido';
       victim.days = 5;
@@ -390,7 +394,7 @@ export function resolveMission(
         chips.push({ t: `Secuela: ${TRAIT_INFO[scar.trait][victim.sex]}`, k: 'warn' });
       } else say(`${victim.name} estuvo a punto de no contarlo. ${healer.name} rezó muy deprisa.`);
       chips.push({ t: `${victim.name}: grave, 5 días`, k: 'bad' });
-    } else if (rng.chance(0.5)) {
+    } else if (!rng.chance(LOST_SHARE)) {
       victim.status = 'muerto';
       fallen = victim;
       stats.lastDeath = state.day;

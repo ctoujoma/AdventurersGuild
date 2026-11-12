@@ -1,5 +1,5 @@
 import type { Danger, Facilities, Hero, Outcome } from '../core/model';
-import { TRAINING_XP } from '../core/balance';
+import { TRAINING_XP, returnChance } from '../core/balance';
 import type { ClassId, MoraleBand } from '../core/party';
 
 /** Textos de la interfaz que dependen de los datos del juego. */
@@ -135,7 +135,7 @@ export const FACILITY_INFO: Record<
     effect: (l) =>
       l === 0
         ? 'Sin efecto'
-        : `Moral +${2 * l} por noche, los desaparecidos vuelven más${l >= 2 ? ' y los caídos duelen la mitad' : ''}`,
+        : `Moral +${2 * l} por noche, vuelve el ${Math.round(100 * returnChance(l))} % de los desaparecidos (sin capilla, el ${Math.round(100 * returnChance(0))} %)${l >= 2 ? ' y los caídos duelen la mitad' : ''}`,
   },
   forja: {
     name: 'Forja',
