@@ -332,3 +332,22 @@ describe('el día vivo', () => {
     expect(reduce(s, { type: 'tick', to: 5 })).toBe(s);
   });
 });
+
+describe('correo', () => {
+  it('«Leído todo» marca todo y el correo guarda los últimos 50', () => {
+    let s = newGame('correo');
+    const base = { title: 'x', who: 'y', body: [], chips: [], outcome: 'Éxito' } as never;
+    s.reports = Array.from({ length: 60 }, (_, i) => ({
+      ...(base as object),
+      id: `r${i}`,
+      day: 60 - i,
+      read: i % 2 === 0,
+    })) as GameState['reports'];
+    s = reduce(s, { type: 'readAll' });
+    expect(s.reports.every((r) => r.read)).toBe(true);
+    expect(reduce(s, { type: 'readAll' })).toBe(s);
+    s = endDay(s);
+    expect(s.reports.length).toBe(50);
+    expect(s.reports[0]!.id).toBe('r0');
+  });
+});

@@ -85,7 +85,7 @@ export const DECOR: Record<DecorId, { name: string; desc: string; price: number;
     },
     tapices: {
       name: 'Tapices con el escudo',
-      desc: '+1 de reputación cada 7 días: la taberna luce.',
+      desc: '+1 de reputación cada 14 días: la taberna luce.',
       price: 45,
       appeal: 2,
     },
@@ -245,7 +245,11 @@ export interface Dress {
 
 /** El cuervo mensajero lleva la fama del gremio a otros pueblos. */
 export const RAVEN_PRICE = 80;
-export const RAVEN_EVERY = 5;
+export const RAVEN_EVERY = 15;
+/** Los tapices: +1 de fama cada tantos días (la fama sale sobre todo de los encargos). */
+export const TAPESTRY_EVERY = 14;
+/** Los nobles que cenan en el salón hablan del gremio, pero solo cuenta uno de cada tantos días. */
+export const NOBLE_REP_EVERY = 10;
 
 /** Fiesta de la comarca: cada 10 días se puede montar en la taberna. */
 export const FEAST_EVERY = 10;

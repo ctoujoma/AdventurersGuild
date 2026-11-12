@@ -68,7 +68,10 @@ export const DORM_REST = [0, 0, 0, 0, 2] as const;
 export const TOWER_DETER = 0.75;
 
 /** Patio de entrenamiento: experiencia por noche descansando, por nivel. */
-export const TRAINING_XP = [0, 6, 12] as const;
+/** Experiencia por noche en el patio: poca, y nunca hace subir de nivel (se queda en 99). */
+export const TRAINING_XP = [0, 1, 2] as const;
+/** Experiencia por defender un asalto ganado (sí sube de nivel). */
+export const RAID_XP = 25;
 export const facilityMax = (k: keyof Facilities) => UPGRADE_COST[k].length - 1;
 
 /**
@@ -578,3 +581,6 @@ export const CAT_FIRST = 6;
 export const CAT_EVERY = 10;
 /** Probabilidad de que un encargo con éxito brillante traiga los planos de una receta. */
 export const RECIPE_FIND = 0.2;
+
+/** Informes que guarda el correo (los más nuevos). */
+export const REPORTS_KEEP = 50;

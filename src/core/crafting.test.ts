@@ -326,6 +326,49 @@ describe('la sastrería viste a los héroes', () => {
     expect(reduce(a, { type: 'arrived', heroId: h.id, room })).toBe(a);
   });
 
+  it('de misión queda en pausa; al volver tiene que ir otra vez a la sastrería', () => {
+    const { s, room } = withShop('pausa', 'sastreria');
+    const h = s.heroes.find((x) => x.status === 'ok')!;
+    s.clock = DAY_SECONDS * 0.3;
+    let t = reduce(s, { type: 'dressAt', room, heroId: h.id, dress: { dye: 'vino' } });
+    t = reduce(t, { type: 'arrived', heroId: h.id, room });
+    t = { ...t, clock: t.clock! + DAY_SECONDS * (1 / 24) };
+    stepCrafts(t, t.clock! / DAY_SECONDS);
+    const done = dressingOf(t, h.id)!.done;
+    expect(done).toBeGreaterThan(0);
+    // Se va de misión: no se cose y, cuando vuelva, le esperan otra vez.
+    t.heroes = t.heroes.map((x) => (x.id === h.id ? { ...x, status: 'mision', days: 2 } : x));
+    t = { ...t, clock: t.clock! + DAY_SECONDS * (3 / 24) };
+    stepCrafts(t, t.clock! / DAY_SECONDS);
+    expect(dressingOf(t, h.id)).toMatchObject({ done, wait: true });
+    // Vuelve: hasta que llega, nada; al llegar, sigue donde lo dejó.
+    t.heroes = t.heroes.map((x) => (x.id === h.id ? { ...x, status: 'ok', days: 0 } : x));
+    t = { ...t, clock: t.clock! + DAY_SECONDS * (1 / 24) };
+    stepCrafts(t, t.clock! / DAY_SECONDS);
+    expect(dressingOf(t, h.id)!.done).toBe(done);
+    t = reduce(t, { type: 'arrived', heroId: h.id, room });
+    t = { ...t, clock: t.clock! + DAY_SECONDS * (1 / 24) };
+    stepCrafts(t, t.clock! / DAY_SECONDS);
+    expect(dressingOf(t, h.id)!.done).toBeGreaterThan(done);
+  });
+
+  it('si el héroe ya no está en el gremio, se cancela y se devuelve el oro', () => {
+    for (const gone of ['muerto', 'desaparecido', 'despedido'] as const) {
+      const { s, room } = withShop(`fuera-${gone}`, 'sastreria');
+      const h = s.heroes.find((x) => x.status === 'ok')!;
+      s.clock = DAY_SECONDS * 0.3;
+      const t = reduce(s, { type: 'dressAt', room, heroId: h.id, dress: { dye: 'vino' } });
+      t.heroes =
+        gone === 'despedido'
+          ? t.heroes.filter((x) => x.id !== h.id)
+          : t.heroes.map((x) => (x.id === h.id ? { ...x, status: gone } : x));
+      const news = stepCrafts(t, 0.4);
+      expect(dressingOf(t, h.id)).toBeUndefined();
+      expect(t.gold).toBe(s.gold);
+      expect(news.some((n) => /devuelve/.test(n.t))).toBe(true);
+    }
+  });
+
   it('solo con los tintes que se tienen, a uno en casa y no a quien ya va así', () => {
     const { s, room } = withShop('tintes', 'sastreria');
     const h = s.heroes.find((x) => x.status === 'ok')!;

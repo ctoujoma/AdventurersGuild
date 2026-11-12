@@ -2216,6 +2216,10 @@ button:focus-visible {
   opacity: 0.75;
 }
 
+.mail-all {
+  align-self: flex-end;
+}
+
 .mail-info {
   display: flex;
   flex-direction: column;

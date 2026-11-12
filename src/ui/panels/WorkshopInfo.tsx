@@ -109,7 +109,7 @@ export function WorkshopInfo({
               <span class={`row-sub ${hoursLeft === null ? 'room-bad' : ''}`}>
                 {hoursLeft === null
                   ? who && who.status !== 'ok'
-                    ? `Parado: ${who.name} no está en casa.`
+                    ? `En pausa: ${who.name} ${who.status === 'mision' ? 'está de misión' : 'no está en pie'}. Sigue cuando vuelva (o cancela para dejar libre la sastrería).`
                     : `Parado: pon a un ${smith} (o a un héroe) a trabajar aquí.`
                   : walking && who
                     ? `${who.name} viene de camino.`

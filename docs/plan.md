@@ -149,7 +149,7 @@ despacio, a afinar). Es el modo normal; los «días a la antigua» quedan en Aju
     entrenamiento, `TRAINING_XP`) da poca o ninguna experiencia y con tope de 99: no sube de
     nivel. Los asaltos sí suben de nivel (son una pelea en toda regla): quitar el tope de 99 de
     `core/raids.ts` y pasar por `levelUp`, con su aviso al amanecer. Los encargos, como siempre.
-15. **La fama se gana con encargos** (decidido con el usuario, 8 de noviembre). Hoy sube sola con
+15. **(Hecho, fase 1.) La fama se gana con encargos** (decidido con el usuario, 8 de noviembre). Hoy sube sola con
     el salón: los nobles (+1 cada uno, cada día: de +1 a +5 diarios en la partida del usuario),
     el cuervo, los tapices y el espía calado (`endDay`, en `core/game.ts`); por eso se llega a
     Leyenda sin mandar a nadie. Ahora: lo pasivo, casi nada (los nobles traen oro y alguna vez
@@ -169,7 +169,8 @@ expediciones se hacen **al acabar este plan** (A7). Orden: de lo troncal a lo me
 en este orden; la interfaz, en paralelo con su agente; el arte, cuando toque cada pieza. Al cerrar
 una fase, `npm run sim` y una partida larga para ver que el ritmo sigue bien.
 
-1. **Fase 1 · Arreglos y números** (agente principal, sin dependencias):
+1. **Fase 1 · Arreglos y números** (agente principal, sin dependencias) — **hecha** (12 de noviembre;
+   detalle en [`agente-principal.md`](agente-principal.md)):
    - B1 «Sugerir» prueba todas las combinaciones (sin coste notable en el móvil).
    - B2 la sastrería: pausa mientras el héroe está de misión (encargo o expedición), se puede
      cancelar desde la sastrería para liberar el hueco, sigue por la mañana si vuelve de noche;

@@ -33,7 +33,7 @@ Lo pasivo del salón (los nobles a diario, el cuervo, los tapices) pasa a ser ca
 
 Por qué: Tu partida: día 219 en Leyenda (638 de fama) con solo 12 encargos; los nobles daban de +1 a +5 al día. Dónde: plan.md, fase 1, punto 15.
 
-Plan: Fase 1 · Arreglos y números.
+Plan: Fase 1 · Arreglos y números. **Hecho** (12 de noviembre).
 
 ### A2 · Se sube de nivel peleando de verdad — Aprobada
 
@@ -41,7 +41,7 @@ Entrenar en el patio da poca o ninguna experiencia y nunca pasa de 99. Defender 
 
 Por qué: Hoy es al revés: el patio sube de nivel y los asaltos se quedan en 99. Cinco de tus héroes llevan meses a un punto de subir. Dónde: plan.md, fase 1, punto 14.
 
-Plan: Fase 1 · Arreglos y números.
+Plan: Fase 1 · Arreglos y números. **Hecho** (12 de noviembre).
 
 ### A3 · Un tablón a la medida de los héroes — Aprobada
 
@@ -139,7 +139,7 @@ Nota del usuario: siempre que no sea destructor para la performance..
 
 Respuesta: Son 1.092 grupos como mucho y cada cuenta es rápida: en el móvil no se nota. Si hiciera falta, se dejan fuera los héroes que no aportan nada al encargo.
 
-Plan: Fase 1 · Arreglos y números.
+Plan: Fase 1 · Arreglos y números. **Hecho** (12 de noviembre).
 
 ### B2 · La sastrería no se queda bloqueada — Aprobada
 
@@ -151,7 +151,7 @@ Nota del usuario: que quede en pausa el trabajo del sastre si el heroe esta de m
 
 Respuesta: Incorporado: el trabajo se pausa mientras está de misión (encargo o expedición); desde la sastrería se puede cancelar para liberar el hueco; si vuelve de noche, se sigue por la mañana. Si ya no está en el gremio, se cancela y se devuelve el oro.
 
-Plan: Fase 1 · Arreglos y números.
+Plan: Fase 1 · Arreglos y números. **Hecho** (12 de noviembre).
 
 ### B3 · Textos de los asaltos bien escritos — Aprobada
 
@@ -159,7 +159,7 @@ Cada banda con su número («llegaron los Hermanos Cuervo») y las faltas de los
 
 Por qué: Hoy sale «había llegado los Hermanos Cuervo» o «Era las Ratas del Vado». Dónde: data/raids.ts.
 
-Plan: Fase 1 · Arreglos y números.
+Plan: Fase 1 · Arreglos y números. **Hecho** (12 de noviembre).
 
 ### B4 · La forja dice lo que hace — Aprobada
 
@@ -189,7 +189,7 @@ Se guardan los últimos 50 informes y el correo tiene un botón «Leído todo».
 
 Por qué: Tu partida guarda 30 informes, 20 sin leer, y el guardado crece sin fin.
 
-Plan: Fase 1 · Arreglos y números.
+Plan: Fase 1 · Arreglos y números. **Hecho** (12 de noviembre).
 
 ### B7 · Talleres: «sale raro» en vez de «de las buenas» — Aprobada
 
@@ -425,7 +425,7 @@ Nota del usuario: anota las correcciones en comentarios para que el otro agnte d
 
 Respuesta: Incorporado: corrijo los textos de los materiales ya (fase 1) y dejo la nota para el agente de las expediciones en su propuesta.
 
-Plan: Fase 1 · Arreglos y números.
+Plan: Fase 1 · Arreglos y números. **Hecho** (12 de noviembre).
 
 ## 6 · Sucesos nocturnos
 

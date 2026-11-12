@@ -39,6 +39,7 @@ import {
   REFUSE_MORALE,
   SALARY_EVERY,
   TRAINING_XP,
+  XP_PER_LEVEL,
   VET_CAP,
   VET_SNUB_CAP,
   CACHE_GRUDGE,
@@ -52,6 +53,7 @@ import {
   SCHEDULE,
   START,
   START_BEER,
+  REPORTS_KEEP,
   START_FOOD,
   chapelRest,
   healRate,
@@ -68,7 +70,9 @@ import {
   DOG_PRICE,
   FEAST_MORALE,
   FEAST_PRICE,
+  NOBLE_REP_EVERY,
   RAVEN_EVERY,
+  TAPESTRY_EVERY,
   RAVEN_PRICE,
   TINTS,
   GARMENTS,
@@ -120,7 +124,7 @@ import {
   type Report,
 } from './model';
 import { MORALE_LOW, MORALE_QUIT } from './party';
-import { levelUp, resolveMission } from './resolve';
+import { resolveMission } from './resolve';
 import {
   applyPlan,
   beds,
@@ -228,6 +232,8 @@ export type Action =
   | { type: 'works'; steps: Action[] }
   | { type: 'sell'; itemId: string }
   | { type: 'read'; reportId: string }
+  /** Marca leído todo el correo. */
+  | { type: 'readAll' }
   | { type: 'answer'; id: string; yes: boolean }
   | { type: 'equip'; heroId: string; itemId: string }
   | { type: 'unequip'; heroId: string; slot?: Slot }
@@ -666,6 +672,10 @@ function reduceAction(state: GameState, action: Action): GameState {
       const s = structuredClone(state);
       s.reports.find((x) => x.id === action.reportId)!.read = true;
       return s;
+    }
+    case 'readAll': {
+      if (state.reports.every((r) => r.read)) return state;
+      return { ...state, reports: state.reports.map((r) => (r.read ? r : { ...r, read: true })) };
     }
     case 'answer': {
       const h = state.heroes.find((x) => x.id === action.id);
@@ -1249,18 +1259,19 @@ export function endDay(state: GameState, away = false): GameState {
     for (const h of s.heroes)
       if (h.status === 'ok') h.morale = Math.min(100, h.morale + FEAST_MORALE);
   // Tapices y cuervo: la fama del gremio se extiende.
-  if (decor.includes('tapices') && s.day % 7 === 0) s.rep += 1;
+  if (decor.includes('tapices') && s.day % TAPESTRY_EVERY === 0) s.rep += 1;
   if (c0.raven && s.day % RAVEN_EVERY === 0) {
     s.rep += 1;
     events.push({
       t: 'El cuervo vuelve de otro pueblo: allí ya se habla del gremio (+1 reputación).',
     });
   }
-  // Lo que traen los visitantes: fama de los nobles, ojos de los espías y alguna pelea.
-  if (visits.kinds.noble) {
-    s.rep += visits.kinds.noble;
+  // Lo que traen los visitantes: algo de fama de los nobles (de higos a brevas: la fama sale de
+  // los encargos), ojos de los espías y alguna pelea.
+  if (visits.kinds.noble && s.day % NOBLE_REP_EVERY === 0) {
+    s.rep += 1;
     events.push({
-      t: `${visits.kinds.noble === 1 ? 'Un noble ha cenado' : 'Unos nobles han cenado'} en el salón: se hablará del gremio (+${visits.kinds.noble} reputación).`,
+      t: `${visits.kinds.noble === 1 ? 'Un noble ha cenado' : 'Unos nobles han cenado'} en el salón: se hablará del gremio (+1 reputación).`,
       k: 'good',
     });
   }
@@ -1392,16 +1403,12 @@ export function endDay(state: GameState, away = false): GameState {
     }
   }
 
-  // Patio de entrenamiento: quien descansa en casa también aprende.
+  // Patio de entrenamiento: quien descansa en casa aprende un poco, pero de nivel se sube
+  // peleando (encargos y asaltos): se queda a un punto.
   if (s.fac.patio > 0)
     for (const h of s.heroes) {
-      if (h.status !== 'ok') continue;
-      h.xp += TRAINING_XP[s.fac.patio] ?? 0;
-      for (const t of levelUp(s, h))
-        events.push({
-          t: `${t} entrenando en el patio.`,
-          k: t.includes('caché') ? 'warn' : 'good',
-        });
+      if (h.status !== 'ok' || h.xp >= XP_PER_LEVEL - 1) continue;
+      h.xp = Math.min(XP_PER_LEVEL - 1, h.xp + (TRAINING_XP[s.fac.patio] ?? 0));
     }
 
   // Salas de entrenamiento: quien entrena suma el día y quizá sube un punto.
@@ -1615,6 +1622,8 @@ export function endDay(state: GameState, away = false): GameState {
   // diga: se le da por llegado al empezar la jornada).
   newShift(s);
   if (away) settleWalks(s);
+  // El correo guarda los últimos informes (si no, la partida crece sin fin).
+  if (s.reports.length > REPORTS_KEEP) s.reports = s.reports.slice(0, REPORTS_KEEP);
   s.flavor = rng.pick(FLAVOR);
   s.dawn = events;
   s.rng = rng.save();

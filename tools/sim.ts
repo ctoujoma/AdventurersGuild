@@ -145,6 +145,8 @@ interface Rooms {
   raidsWon: number;
   stolen: number;
   spilt: number[];
+  /** Resultados de todos los informes (el correo guarda solo los últimos). */
+  outcomes: Record<Outcome, number>;
 }
 const newRooms = (): Rooms => ({
   till: [0, 0, 0, 0],
@@ -155,6 +157,7 @@ const newRooms = (): Rooms => ({
   raidsWon: 0,
   stolen: 0,
   spilt: [0, 0, 0, 0],
+  outcomes: { 'Éxito brillante': 0, Éxito: 0, 'Éxito parcial': 0, Fracaso: 0, Desastre: 0 },
 });
 
 /** Juega un día apuntando lo que interesa de las salas. */
@@ -166,14 +169,15 @@ function tracked(s: GameState, st: Strategy, acc: Rooms): GameState {
   acc.till[phase]! += dayIncome(s, s.day);
   acc.wages[phase]! += salaries(s);
   acc.days[phase]!++;
-  const seen = s.reports.length;
+  const seen = new Set(s.reports.map((r) => r.id));
   const next = playDay(s, st);
   for (const e of next.dawn) {
     if (e.t.startsWith('No hubo comida')) acc.hungry++;
     const lost = /(\d+) monedas no cabían/.exec(e.t);
     if (lost) acc.spilt[phase]! += Number(lost[1]);
   }
-  for (const r of next.reports.slice(0, next.reports.length - seen)) {
+  for (const r of next.reports.filter((x) => !seen.has(x.id))) {
+    acc.outcomes[r.outcome]++;
     if (!r.raid) continue;
     acc.raids++;
     if (r.raid.won) acc.raidsWon++;
@@ -202,14 +206,8 @@ for (const st of STRATEGIES) {
   const sent: number[] = [];
   const reps: number[] = [];
   const stories: number[] = [];
-  const outcomes: Record<Outcome, number> = {
-    'Éxito brillante': 0,
-    Éxito: 0,
-    'Éxito parcial': 0,
-    Fracaso: 0,
-    Desastre: 0,
-  };
   const rooms = newRooms();
+  const outcomes = rooms.outcomes;
   for (let i = 0; i < N; i++) {
     let s = newGame(`sim-${i}`);
     const start = s.heroes.length;
@@ -228,10 +226,9 @@ for (const st of STRATEGIES) {
     } else lossDays.push(s.day);
     deaths.push(s.heroes.filter((h) => h.status === 'muerto').length);
     hired.push(s.heroes.length - start);
-    sent.push(s.reports.length);
+    sent.push(s.stats?.missions ?? 0);
     reps.push(s.rep);
     stories.push((s.chains ?? []).filter((c) => c.status === 'hecha').length);
-    for (const r of s.reports) outcomes[r.outcome]++;
   }
   const total = Object.values(outcomes).reduce((a, b) => a + b, 0);
   console.log(`■ ${st.name}`);

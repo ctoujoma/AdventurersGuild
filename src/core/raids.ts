@@ -15,6 +15,8 @@ import {
   RAID_WON,
   SCOUT_TIPOFF,
   TIPOFFS,
+  bandNumber,
+  capBand,
 } from '../data/raids';
 import {
   RAID_BASE,
@@ -22,6 +24,7 @@ import {
   RAID_MAX_CHANCE,
   TOWER_DETER,
   RAID_NOTORIETY,
+  RAID_XP,
   SPY_DAYS,
   SPY_RISK,
   rankIndex,
@@ -39,6 +42,7 @@ import { THREAT_RAIDS, threatOf } from './events';
 import { emptyStats } from './feats';
 import { fill } from './generate';
 import type { DawnEvent, GameState, Report } from './model';
+import { levelUp } from './resolve';
 import { Rng } from './rng';
 import { listNames } from './text';
 
@@ -84,8 +88,8 @@ function tipoff(s: GameState, rng: Rng, events: DawnEvent[], firstTry: boolean):
     s.fac.torre >= 1
       ? `El vigía de la torre ha visto antorchas en el camino real: es ${raid.band}.`
       : scout
-        ? fill(SCOUT_TIPOFF, { h: scout.name, band: raid.band })
-        : fill(rng.pick(TIPOFFS), { band: raid.band });
+        ? fill(bandNumber(SCOUT_TIPOFF, raid.band), { h: scout.name, band: raid.band })
+        : fill(bandNumber(rng.pick(TIPOFFS), raid.band), { band: raid.band });
   events.push({
     t: `Chivatazo: ${text} Llegarán en ${days <= 1 ? 'una noche' : `unas ${days} noches`}.`,
     k: 'bad',
@@ -123,7 +127,7 @@ function resolveRaid(s: GameState, rng: Rng, events: DawnEvent[]): Report {
   const ds = s.heroes.filter((h) => fight.fought.includes(h.id));
   const fallen = new Set(fight.fell);
   const names = ds.length ? listNames(ds.map((h) => h.name)) : 'nadie';
-  const body: string[] = [fill(rng.pick(RAID_OPEN), { band: raid.band })];
+  const body: string[] = [fill(bandNumber(rng.pick(RAID_OPEN), raid.band), { band: raid.band })];
   const chips: Report['chips'] = [];
   const won = fight.escaped === 0;
   const hurt = s.heroes.filter((h) => fallen.has(h.id));
@@ -171,15 +175,17 @@ function resolveRaid(s: GameState, rng: Rng, events: DawnEvent[]): Report {
     s.truce = s.day + truce;
     stats.raids++;
     if (ds.length && !hurt.length) stats.cleanRaids = (stats.cleanRaids ?? 0) + 1;
-    body.push(fill(rng.pick(RAID_WON), { band: raid.band }));
+    body.push(fill(bandNumber(rng.pick(RAID_WON), raid.band), { band: raid.band }));
     chips.push(
       { t: 'Asalto repelido', k: 'good' },
       { t: `+${loot} monedas de los bandidos`, k: 'good' },
     );
     chips.push({ t: '+4 reputación', k: 'good' }, { t: `Tregua: ${truce} días`, k: 'info' });
+    // Pelear de verdad es lo que hace subir de nivel (el patio, no).
     for (const h of ds) {
       h.morale = Math.min(100, h.morale + 8);
-      h.xp = Math.min(99, h.xp + 15);
+      h.xp += RAID_XP;
+      for (const t of levelUp(s, h)) chips.push({ t, k: t.includes('caché') ? 'warn' : 'good' });
     }
   } else {
     s.gold = Math.max(0, s.gold - fight.stolen);
@@ -217,12 +223,16 @@ function resolveRaid(s: GameState, rng: Rng, events: DawnEvent[]): Report {
     if (fallen.has(w.id)) chips.push({ t: `${w.name} se llevó unos buenos golpes`, k: 'bad' });
   for (const h of ds) h.history.push(`Día ${s.day} · Defendió la taberna de ${raid.band}`);
 
+  const Band = capBand(raid.band);
   events.push({
-    t: won
-      ? `¡${raid.band[0]!.toUpperCase()}${raid.band.slice(1)} asaltó la taberna y ${names} ${ds.length > 1 ? 'los echaron' : 'los echó'}!`
-      : fight.stolen > 0
-        ? `${raid.band[0]!.toUpperCase()}${raid.band.slice(1)} asaltó la taberna y se llevó ${fight.stolen} monedas.`
-        : `${raid.band[0]!.toUpperCase()}${raid.band.slice(1)} asaltó la taberna y salió con lo que pudo del arcón.`,
+    t: bandNumber(
+      won
+        ? `¡${Band} {asaltó|asaltaron} la taberna y ${names} ${ds.length > 1 ? 'los echaron' : 'los echó'}!`
+        : fight.stolen > 0
+          ? `${Band} {asaltó|asaltaron} la taberna y se {llevó|llevaron} ${fight.stolen} monedas.`
+          : `${Band} {asaltó|asaltaron} la taberna y {salió|salieron} con lo que {pudo|pudieron} del arcón.`,
+      raid.band,
+    ),
     k: won ? 'good' : 'bad',
   });
   s.lastRaid = {

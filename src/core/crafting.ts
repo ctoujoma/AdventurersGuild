@@ -513,6 +513,25 @@ export function stepCrafts(
       logEnd(s, c, 'cancelado');
       continue;
     }
+    if (c.dress) {
+      const h = s.heroes.find((x) => x.id === c.dress!.hero);
+      if (!h || h.status === 'muerto' || h.status === 'desaparecido') {
+        // Ya no está en el gremio: se cancela y se devuelve lo pagado.
+        s.gold += c.gold;
+        logEnd(s, c, 'cancelado');
+        news.push({
+          t: `La sastrería deja lo que cosía${h ? ` para ${h.name}` : ''} y devuelve ${c.gold} monedas.`,
+        });
+        continue;
+      }
+      if (h.status !== 'ok') {
+        // Fuera o en cama: en pausa. Al volver, tiene que ir otra vez a la sastrería.
+        c.wait = true;
+        c.at = Math.max(part, WORK_START) + DRESS_WALK / 24;
+        keep.push(c);
+        continue;
+      }
+    }
     // El héroe aún va de camino: no se cose hasta que llega (lo dice la escena, `arrive`). Solo con
     // el juego cerrado, sin escena, se le da por llegado a su hora (si cae en la jornada; si no, a
     // la mañana siguiente).

@@ -16,6 +16,7 @@ import {
   WALLS,
   DOG_PRICE,
   FEAST_PRICE,
+  RAVEN_EVERY,
   RAVEN_PRICE,
   decorSlots,
   isFeastDay,
@@ -524,7 +525,7 @@ export function TabernaPanel({
             )}
           >
             <b>{c.raven ? 'Carbón, el cuervo' : 'Cuervo mensajero'}</b>
-            <span class="row-sub">+1 de reputación cada 5 días</span>
+            <span class="row-sub">+1 de reputación cada {RAVEN_EVERY} días</span>
             {c.raven ? (
               <span class="pill pill-ok">En casa</span>
             ) : (

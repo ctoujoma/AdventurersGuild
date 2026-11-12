@@ -26,7 +26,7 @@ export const MATERIALS: Record<Material, { name: string; from: string; uses: str
   hierro: {
     name: 'Hierro',
     from: 'Sale limpiando guaridas e investigando.',
-    uses: 'Lo piden las armas, las corazas y las ganzúas.',
+    uses: 'Lo piden las armas, las corazas y las ganzúas (crearlas y mejorarlas).',
   },
   cuero: {
     name: 'Cuero',
@@ -36,22 +36,22 @@ export const MATERIALS: Record<Material, { name: string; from: string; uses: str
   tela: {
     name: 'Tela',
     from: 'Sale escoltando y recuperando.',
-    uses: 'La piden las capas y la ropa de la sastrería.',
+    uses: 'La piden las capas.',
   },
   hierbas: {
     name: 'Hierbas',
-    from: 'Salen en las expediciones.',
-    uses: 'Las piden los amuletos y las pociones.',
+    from: 'Saldrán en las expediciones.',
+    uses: 'Las piden los amuletos para mejorarlos en la alquimia.',
   },
   madera: {
     name: 'Madera buena',
-    from: 'Sale en las expediciones.',
-    uses: 'La piden las hachas y las varitas.',
+    from: 'Saldrá en las expediciones.',
+    uses: 'La piden las varitas para mejorarlas en la alquimia.',
   },
   cristal: {
     name: 'Cristal',
-    from: 'Sale, raro, en las expediciones lejanas.',
-    uses: 'Lo pide lo mejor de cada taller.',
+    from: 'Saldrá, raro, en las expediciones lejanas.',
+    uses: 'Aún no lo pide ningún taller.',
   },
 };
 

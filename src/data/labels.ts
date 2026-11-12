@@ -1,4 +1,5 @@
 import type { Danger, Facilities, Hero, Outcome } from '../core/model';
+import { TRAINING_XP } from '../core/balance';
 import type { ClassId, MoraleBand } from '../core/party';
 
 /** Textos de la interfaz que dependen de los datos del juego. */
@@ -161,7 +162,9 @@ export const FACILITY_INFO: Record<
     room: 'patio-entreno',
     levels: ['No hay', 'Muñecos de paja junto al camino', 'Muñecos, diana y armero de prácticas'],
     effect: (l) =>
-      l === 0 ? 'Sin efecto' : `+${[0, 6, 12][l]} de experiencia por noche a quien descansa`,
+      l === 0
+        ? 'Sin efecto'
+        : `+${TRAINING_XP[l]} de experiencia por noche a quien descansa (de nivel se sube peleando)`,
   },
   empal: {
     name: 'Empalizada',

@@ -198,3 +198,26 @@ talleres, nombres y marcos). El arte ya está listo para cinco:
 4. Datos de la partida del usuario (día 219) usados en la revisión: resumidos en
    [`revision-critica.md`](revision-critica.md). La partida entera no está en el repositorio; si
    hace falta, pedírsela («Gremio › Partidas › Copiar código»).
+
+## Fase 1 hecha (12 de noviembre)
+
+- **B1** «Sugerir» prueba todos los grupos (`core/suggest.ts`); a igualdad, menos gente (cada uno
+  de más tiene que ganar `GAIN`). 13 héroes: 5 ms; 20: 20 ms. En `QuestSheet` se cuenta con
+  `useMemo` (no al tocar cada héroe). Test con tres especialistas que el método viejo no sacaba.
+- **B2** sastrería (`stepCrafts`): si el héroe sale o cae en cama, el trabajo se pausa y vuelve a
+  esperarle (`wait`): al volver tiene que ir otra vez a la sala. Si ya no está en el gremio
+  (despedido, muerto o desaparecido), se cancela y devuelve el oro con aviso. El panel dice «En
+  pausa…» y la hoja del encargo avisa si a alguien del grupo le están cosiendo.
+- **B3** bandas: «{viene|vienen}» en `data/raids.ts` (`bandNumber`, `capBand`), también en el
+  aviso del amanecer, el mapa, el Gremio y la barra. Clientes en las frases con artículo
+  (`clientProse` en `data/quests.ts`: «Berta, la posadera, pagó…») y `{Client}`/`{Place}` al
+  empezar frase.
+- **B6** el correo guarda 50 (`REPORTS_KEEP`, al final de `endDay`) y tiene «Leído todo»
+  (acción `readAll`). Ojo: los informes ya no son el historial; para contar encargos, `stats`
+  (cambiados `tools/sim.ts` y `GameOver`).
+- **A2** patio: 1 o 2 de experiencia por noche y se queda en 99. Asalto ganado: +25 (`RAID_XP`) y
+  `levelUp` (chips en el informe).
+- **A1** fama pasiva: nobles +1 solo cada 10 días (`NOBLE_REP_EVERY`), tapices cada 14, cuervo
+  cada 15. `npm run sim`: victorias y oro iguales; fama final −11 % (normal 845 → 752).
+- **E3** textos de los materiales (sin pociones, hachas ni cristal en uso).
+- Siguiente: fase 2 (el bucle) o los bocetos C7, D1 y E1, lo que prefiera el usuario.

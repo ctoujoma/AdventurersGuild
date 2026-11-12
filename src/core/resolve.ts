@@ -3,6 +3,7 @@
  * Tira un dado por desafío, clasifica el resultado y aplica las consecuencias al estado
  * (que se recibe ya copiado: aquí se muta). Devuelve el informe para el amanecer.
  */
+import { clientProse } from '../data/quests';
 import { CLOSERS, LINES, OPENERS, SCARS } from '../data/stories';
 import {
   BANTER,
@@ -172,7 +173,13 @@ export function resolveMission(
   const stats = (state.stats ??= emptyStats());
   const say = (text: string, h?: Hero, extra: Record<string, string> = {}) =>
     body.push(
-      fill(text, { who: names, place: q.place, client: q.client, h: h?.name ?? names, ...extra }),
+      fill(text, {
+        who: names,
+        place: q.place,
+        client: clientProse(q.client),
+        h: h?.name ?? names,
+        ...extra,
+      }),
     );
 
   // Frases sin repetir dentro del mismo informe.

@@ -133,3 +133,10 @@ esperar a las expediciones para darles fuente, y corregir ya los textos de `MATE
 (`core/materials.ts`), que prometían pociones (no existen), hachas que piden madera (no la piden)
 y cristal para «lo mejor de cada taller» (nada lo pide). Al hacer las expediciones: que sean la
 fuente de esos tres, y revisar qué recetas y mejoras los piden.
+
+### Materiales (E3, corregido en la fase 1)
+
+Hoy las hierbas solo sirven para mejorar amuletos y la madera para mejorar varitas (en la
+alquimia); el cristal no lo pide nada. Los textos dicen «Saldrán en las expediciones» y «Aún no lo
+pide ningún taller». Al hacer las expediciones: que den estos materiales y darles uso (recetas de
+alquimia, lo mejor de cada taller con cristal) y poner al día `MATERIALS` en `core/materials.ts`.

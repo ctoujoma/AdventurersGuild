@@ -4,6 +4,7 @@ import {
   DEFAULT_NAME,
   DOG_PRICE,
   FEAST_PRICE,
+  RAVEN_EVERY,
   RAVEN_PRICE,
   sealInitial,
 } from '../data/custom';
@@ -98,10 +99,10 @@ describe('tu taberna', () => {
     expect(a.gold - (s.gold - plain.gold) - b.gold).toBeGreaterThanOrEqual(8);
   });
 
-  it('el cuervo trae reputación cada 5 días', () => {
+  it('el cuervo trae reputación cada tantos días', () => {
     let s = reduce({ ...newGame('cuervo'), gold: 500 }, { type: 'buyRaven' });
     expect(s.gold).toBe(500 - RAVEN_PRICE);
-    s.day = 4;
+    s.day = RAVEN_EVERY - 1;
     const rep = s.rep;
     s = endDay(s);
     expect(s.rep).toBeGreaterThanOrEqual(rep + 1);

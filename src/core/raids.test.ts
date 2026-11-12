@@ -3,6 +3,16 @@ import { canSend, endDay, newGame, reduce } from './game';
 import type { GameState } from './model';
 import { notoriety, raidChance, stepRaids } from './raids';
 import { Rng } from './rng';
+import { fill } from './generate';
+import {
+  BANDS,
+  RAID_OPEN,
+  RAID_WON,
+  SCOUT_TIPOFF,
+  TIPOFFS,
+  bandNumber,
+  bandPlural,
+} from '../data/raids';
 
 /** Partida con un asalto a punto de llegar esta noche. */
 function underAttack(seed: string, strength: number): GameState {
@@ -37,6 +47,30 @@ describe('asaltos', () => {
     expect(s.lastRaid?.defenders.length).toBe(2);
   });
 
+  it('defender la taberna sube de nivel (el patio, no)', () => {
+    const s = underAttack('nivel', 1);
+    for (const h of s.heroes) {
+      h.attrs = { F: 10, D: 10, M: 10 };
+      h.xp = 99;
+    }
+    const lvl = new Map(s.heroes.map((h) => [h.id, h.lvl]));
+    const r = stepRaids(s, new Rng('a'), [])!;
+    const ds = s.heroes.filter((h) => s.lastRaid!.defenders.includes(h.id));
+    expect(ds.length).toBeGreaterThan(0);
+    for (const h of ds) expect(h.lvl).toBe(lvl.get(h.id)! + 1);
+    expect(r.chips.some((c) => /sube a nivel/.test(c.t))).toBe(true);
+    // En el patio, como mucho a un punto de subir.
+    const p = newGame('patio');
+    p.building.yard = { ...p.building.yard, patio: 2 };
+    p.fac = { ...p.fac, patio: 2 };
+    for (const h of p.heroes) h.xp = 97;
+    const n = endDay(p);
+    for (const h of n.heroes.filter((x) => x.status === 'ok')) {
+      expect(h.xp).toBe(99);
+      expect(h.lvl).toBe(p.heroes.find((x) => x.id === h.id)!.lvl);
+    }
+  });
+
   it('si pierden (o no hay nadie): saqueo', () => {
     const s = underAttack('pierde', 99);
     s.inventory.push({ id: 'x', name: 'Cáliz', desc: '', value: 40, kind: 'tesoro' });
@@ -66,5 +100,20 @@ describe('asaltos', () => {
     }
     expect(raids).toBeGreaterThan(0);
     expect(s.reports.some((r) => r.raid)).toBe(true);
+  });
+});
+
+describe('textos de los asaltos', () => {
+  it('cada banda con su número y sin huecos sin rellenar', () => {
+    const all = [...TIPOFFS, SCOUT_TIPOFF, ...RAID_OPEN, ...RAID_WON];
+    for (const band of BANDS)
+      for (const t of all) {
+        const out = fill(bandNumber(t, band), { band, h: 'Brena' });
+        expect(out).not.toMatch(/[{}|]/);
+        if (bandPlural(band)) expect(out).not.toMatch(/\b(había llegado|Era|huía) /);
+        else expect(out).not.toMatch(/\b(habían llegado|Eran|huían) /);
+      }
+    expect(bandNumber('{Era|Eran} {band}', 'los Hermanos Cuervo')).toBe('Eran {band}');
+    expect(bandNumber('{Era|Eran} {band}', 'la banda del Tuerto Garra')).toBe('Era {band}');
   });
 });

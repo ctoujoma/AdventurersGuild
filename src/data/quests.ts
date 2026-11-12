@@ -328,6 +328,37 @@ export const CLIENTS = [
 
 export const SHADY_CLIENTS = ['Desconocido', 'Un tal Corvo', 'Una voz tras la cortina'];
 
+/**
+ * Cómo se nombra a cada cliente en una frase («Berta, la posadera, pagó…»): la etiqueta del
+ * tablón no lleva artículo y a veces es plural. Los que no están, tal cual.
+ */
+const CLIENT_PROSE: Record<string, string> = {
+  'Ilario, molinero': 'Ilario, el molinero,',
+  'Gremio de mercaderes': 'el Gremio de mercaderes',
+  'Hermana Odile, templo': 'la hermana Odile, del templo,',
+  'Berta, posadera': 'Berta, la posadera,',
+  'Alcaldía de Sotomuro': 'la alcaldía de Sotomuro',
+  'Viuda de Arnau': 'la viuda de Arnau',
+  'Mayordomo del conde': 'el mayordomo del conde',
+  'Salinas de Ormaz': 'el capataz de las salinas de Ormaz',
+  'Maese Quirico, erudito': 'maese Quirico, el erudito,',
+  'Los pastores del valle': 'el mayoral de los pastores del valle',
+  'El herrero Bartolo': 'el herrero Bartolo',
+  Desconocido: 'el desconocido',
+  'Un tal Corvo': 'un tal Corvo',
+  'Una voz tras la cortina': 'la voz tras la cortina',
+  // Las historias (data/chains.ts).
+  'Alcaldía de Hondogrís': 'la alcaldía de Hondogrís',
+  'Casa Ferrán, salineros': 'la casa Ferrán, de los salineros,',
+  'Cofradía de pescadores de Juncal': 'la cofradía de pescadores de Juncal',
+  'Abad Lope, monasterio de Peñalta': 'el abad Lope, del monasterio de Peñalta,',
+  'Concejo de Carbonera': 'el concejo de Carbonera',
+  'Prior Anselmo de Sanvela': 'el prior Anselmo de Sanvela',
+  'Los tres pueblos del norte': 'el portavoz de los tres pueblos del norte',
+  'El propio gremio': 'el propio gremio',
+};
+export const clientProse = (label: string) => CLIENT_PROSE[label] ?? label;
+
 export const TWISTS = [
   'Lo que buscaban tenía compañía.',
   'El cliente se olvidó de mencionar a los otros.',

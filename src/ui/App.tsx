@@ -1508,7 +1508,14 @@ export function App() {
         )}
         {panel === 'correo' && (
           <Panel title="Correo del amanecer" onClose={() => openPanel(null)}>
-            <MailPanel reports={game.reports} onOpen={openReport} />
+            <MailPanel
+              reports={game.reports}
+              onOpen={openReport}
+              onReadAll={() => {
+                audio.play('select');
+                dispatch({ type: 'readAll' });
+              }}
+            />
           </Panel>
         )}
         {panel === 'fuera' && (
