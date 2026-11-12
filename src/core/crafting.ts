@@ -10,8 +10,10 @@ import {
   RECIPE_BY_ICON,
   RECIPE_IDS,
   WORKSHOP_PLACE,
+  type Recipe,
   type RecipeId,
 } from '../data/recipes';
+import type { GearBase } from '../data/items';
 import type { RoomType } from '../data/rooms';
 import { GARMENTS, TINTS, type Dress } from '../data/custom';
 import {
@@ -21,7 +23,7 @@ import {
   DRESS_WALK,
   WORK_END,
   WORK_START,
-  CRAFT_GOOD,
+  CRAFT_QUALITY,
   CRAFT_GOOD_PER_SKILL,
   CRAFT_SLOTS,
   CRAFT_STD_WORK,
@@ -407,16 +409,51 @@ export function craftState(s: GameState, c: Craft): CraftState {
   };
 }
 
-/** Probabilidad de que una receta salga buena en un taller (por nivel y por el mejor herrero). */
-export function goodChance(s: GameState, roomId: string): number {
+/** Calidad de lo que sale de una receta: común, bueno o raro. */
+export type Quality = 'comun' | 'bueno' | 'raro';
+export const QUALITY_NAME: Record<Quality, string> = {
+  comun: 'común',
+  bueno: 'bueno',
+  raro: 'raro',
+};
+
+/**
+ * Probabilidades de que una receta salga común, buena o rara en un taller: las da el nivel de la
+ * sala, y el mejor artesano las mejora un poco. Sin artesano (solo héroes echando una mano),
+ * buena y rara la mitad de veces.
+ */
+export function qualityOdds(s: GameState, roomId: string): Record<Quality, number> {
   const r = s.building.rooms.find((x) => x.id === roomId);
-  if (!r) return 0;
+  if (!r) return { comun: 1, bueno: 0, raro: 0 };
   const smiths = s.workers.filter((w) => w.room === roomId && w.trade === r.type);
   const best = smiths.reduce((a, w) => Math.max(a, w.skill), 0);
-  const base = CRAFT_GOOD[active(r).level] ?? CRAFT_GOOD.at(-1)!;
-  // Sin herrero (solo héroes echando una mano), sale bueno la mitad de veces.
-  const p = best ? base + CRAFT_GOOD_PER_SKILL * (best - 4) : base / 2;
-  return Math.max(0, Math.min(0.8, p));
+  let [comun, bueno, raro] = CRAFT_QUALITY[active(r).level] ?? CRAFT_QUALITY.at(-1)!;
+  if (!best) {
+    comun += (bueno + raro) / 2;
+    bueno /= 2;
+    raro /= 2;
+  } else {
+    const shift = Math.max(-raro, Math.min(comun, CRAFT_GOOD_PER_SKILL * (best - 4)));
+    comun -= shift;
+    raro += shift;
+  }
+  return { comun, bueno, raro };
+}
+
+/** Probabilidad de que una receta salga rara (para quien solo quiere esa cifra). */
+export const goodChance = (s: GameState, roomId: string) => qualityOdds(s, roomId).raro;
+
+/** El objeto que sale de una receta según su calidad (el bueno: el común con +1 y en verde). */
+export function crafted(rc: Recipe, q: Quality): GearBase {
+  if (q === 'raro') return structuredClone(rc.good);
+  const base = structuredClone(rc.common);
+  if (q === 'comun') return base;
+  return {
+    ...base,
+    rarity: 1,
+    plus: 1,
+    value: Math.round((rc.common.value + rc.good.value) / 2),
+  };
 }
 
 /** Probabilidad de sacar la receta al desmontar en un taller. */
@@ -475,15 +512,18 @@ function finish(s: GameState, c: Craft, rng: Rng, news: DawnEvent[]): void {
     }
     return;
   }
-  const good = rng.chance(goodChance(s, c.room));
-  const base = good ? rc.good : rc.common;
-  s.inventory.push({ ...structuredClone(base), id: `i${s.uid++}` });
+  const odds = qualityOdds(s, c.room);
+  const roll = rng.next();
+  const q: Quality = roll < odds.raro ? 'raro' : roll < odds.raro + odds.bueno ? 'bueno' : 'comun';
+  const base = crafted(rc, q);
+  s.inventory.push({ ...base, id: `i${s.uid++}` });
   logEnd(s, c, 'hecho', base.rarity ?? 0);
   bump(s, 'crafted');
   news.push({
-    t: good
-      ? `¡En ${place} han creado ${base.name}! Ha salido de las buenas. Ya está en el arcón.`
-      : `En ${place} han creado ${base.name}. Ya está en el arcón.`,
+    t:
+      q === 'comun'
+        ? `En ${place} han creado ${base.name}. Ya está en el arcón.`
+        : `${q === 'raro' ? '¡' : ''}En ${place} han creado ${base.name}${q === 'raro' ? '!' : '.'} Ha salido de calidad ${QUALITY_NAME[q]}. Ya está en el arcón.`,
     k: 'good',
   });
 }

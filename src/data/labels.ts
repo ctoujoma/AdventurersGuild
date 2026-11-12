@@ -1,8 +1,15 @@
 import type { Danger, Facilities, Hero, Outcome } from '../core/model';
-import { TRAINING_XP, returnChance } from '../core/balance';
+import { CRAFT_QUALITY, TRAINING_XP, returnChance } from '../core/balance';
 import type { ClassId, MoraleBand } from '../core/party';
 
 /** Textos de la interfaz que dependen de los datos del juego. */
+
+/** «común 45 %, bueno 38 %, raro 17 %»: lo que sale de un taller de ese nivel (con artesano). */
+export function qualityText(level: number): string {
+  const [c, b, r] = CRAFT_QUALITY[level] ?? CRAFT_QUALITY.at(-1)!;
+  const pct = (x: number) => `${Math.round(100 * x)} %`;
+  return `común ${pct(c)}, bueno ${pct(b)}, raro ${pct(r)}`;
+}
 
 export const CLASS_NAMES: Record<ClassId, { m: string; f: string }> = {
   guerrero: { m: 'Guerrero', f: 'Guerrera' },
@@ -146,7 +153,7 @@ export const FACILITY_INFO: Record<
       'Fragua grande con chimenea y armero',
       'Una pieza al rojo en la fragua y paredes de arenisca',
     ],
-    effect: (l) => (l === 0 ? 'Sin efecto' : `+${l} al objeto que lleva puesto cada héroe`),
+    effect: (l) => (l === 0 ? 'Sin efecto' : `Lo que se crea sale mejor: ${qualityText(l)}`),
   },
   establo: {
     name: 'Establo',

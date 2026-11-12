@@ -145,7 +145,7 @@ export const ROOMS: Record<RoomType, RoomDef> = {
   },
   forja: {
     name: 'Forja',
-    desc: 'Crea armas y armaduras, y mejora el objeto que lleva cada héroe.',
+    desc: 'Crea armas y armaduras, y templa las del arcón.',
     maxW: 3,
     maxH: 1,
     place: 'libre',

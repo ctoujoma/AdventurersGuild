@@ -82,12 +82,11 @@ describe('instalaciones nuevas', () => {
 });
 
 describe('construcciones de fuera', () => {
-  it('la forja mejora el objeto equipado', async () => {
+  it('la forja ya no afila las armas: lo que suma es el objeto y su temple', async () => {
     const { gearOf } = await import('./resolve');
     const item = { id: 'x', name: 'Espada', desc: '', value: 1, bonus: { Combate: 1 } };
     const s = newGame('forja');
-    expect(gearOf({ arma: item }, { ...s.fac, forja: 2 }).Combate).toBe(3);
-    // La forja afila el arma; lo de las otras ranuras suma tal cual (más sus mejoras de taller).
+    expect(gearOf({ arma: item }, { ...s.fac, forja: 2 }).Combate).toBe(1);
     expect(gearOf({ cuerpo: { ...item, plus: 1 } }, { ...s.fac, forja: 2 }).Combate).toBe(2);
   });
 

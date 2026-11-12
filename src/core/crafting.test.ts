@@ -12,7 +12,9 @@ import {
   canUndo,
   craftState,
   dressingOf,
+  crafted,
   goodChance,
+  qualityOdds,
   knownRecipes,
   learnRecipe,
   stepCrafts,
@@ -531,5 +533,30 @@ describe('materiales en los talleres', () => {
       bonus: { Supervivencia: 1 },
     });
     expect(canTemper(s, forge, 'bot')).toMatch(/otro taller/);
+  });
+});
+
+describe('el nivel del taller da la calidad', () => {
+  it('a más nivel, más bueno y más raro; sin artesano, la mitad', () => {
+    const lo = withForge('cal-1', 1);
+    const hi = withForge('cal-3', 3);
+    const a = qualityOdds(lo.s, lo.forge);
+    const b = qualityOdds(hi.s, hi.forge);
+    expect(a.comun + a.bueno + a.raro).toBeCloseTo(1, 9);
+    expect(b.raro).toBeGreaterThan(a.raro);
+    expect(b.bueno).toBeGreaterThan(a.bueno);
+    expect(b.comun).toBeLessThan(a.comun);
+    const alone = { ...hi.s, workers: [] };
+    expect(qualityOdds(alone, hi.forge).raro).toBeCloseTo(b.raro / 2, 9);
+    // Un artesano mañoso pasa algo de común a raro.
+    const pro = withForge('cal-pro', 3, 9);
+    expect(qualityOdds(pro.s, pro.forge).raro).toBeGreaterThan(b.raro);
+  });
+
+  it('lo bueno es lo común con +1 y en verde; lo raro, la receta buena', () => {
+    const rc = RECIPES.espada;
+    expect(crafted(rc, 'comun')).toEqual(rc.common);
+    expect(crafted(rc, 'bueno')).toMatchObject({ name: rc.common.name, rarity: 1, plus: 1 });
+    expect(crafted(rc, 'raro')).toEqual(rc.good);
   });
 });

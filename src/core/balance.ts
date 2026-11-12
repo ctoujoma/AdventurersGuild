@@ -524,7 +524,18 @@ export const CRAFT_STD_WORK = 6;
 /** Trabajos a la vez en un taller, por nivel de la sala. */
 export const CRAFT_SLOTS = [0, 1, 1, 2, 2] as const;
 /** Probabilidad de que salga bueno, por nivel de la sala; más con un buen herrero. */
-export const CRAFT_GOOD = [0, 0.15, 0.25, 0.35, 0.45] as const;
+/**
+ * Calidad de lo que sale de un taller según su nivel (índice): probabilidad de común, bueno y raro.
+ * El nivel de la sala da la calidad; el tamaño, los puestos (más manos, más deprisa).
+ */
+export const CRAFT_QUALITY: readonly (readonly [number, number, number])[] = [
+  [1, 0, 0],
+  [0.7, 0.25, 0.05],
+  [0.45, 0.38, 0.17],
+  [0.25, 0.45, 0.3],
+  [0.15, 0.45, 0.4],
+];
+/** Cada punto de maña del mejor artesano por encima de 4 pasa esto de común a raro. */
 export const CRAFT_GOOD_PER_SKILL = 0.03;
 /** Desmontar: horas que tarda y probabilidad de sacar la receta, por nivel de la sala. */
 export const UNDO_HOURS = 4;

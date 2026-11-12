@@ -289,7 +289,9 @@ Aclaración: Aprobado a la espera del boceto: se hace antes de tocar nada.
 
 Boceto (12 de noviembre): https://claude.ai/artifact/P4KEM694obLjsUmQA1FySd (copia en `docs/bocetos/c7-talleres.html`), dos variantes, A y B: falta que el usuario elija.
 
-Plan: Bocetos (antes de decidir).
+Elegida (12 de noviembre): **A, lista**. En la pestaña Vestir de la sastrería, a quién vestir con una rejilla de retratos (no botones con nombres). La pestaña de objetos se llamará «Templar».
+
+Plan: Bocetos hechos; se hace en su fase (C7 con la fase 3, D1 en la 5, E1 en la 6).
 
 ### C8 · Patio, establo y empalizada a la vista — Aprobada con cambios
 
@@ -327,7 +329,9 @@ Aclaración: Aprobado a la espera del boceto: se hace antes de tocar nada.
 
 Boceto (12 de noviembre): https://claude.ai/artifact/GzzfZM9VD6mj3XJqcMNvqp (copia en `docs/bocetos/d1-tarjeta.html`), dos variantes, A y B: falta que el usuario elija.
 
-Plan: Bocetos (antes de decidir).
+Elegida (12 de noviembre): **A, chapa**, de momento. Al usuario no le convence cargar tanto la nota: hacerla lo más ligera posible (iconos pequeños, chapa corta) y revisarla al verla en el juego.
+
+Plan: Bocetos hechos; se hace en su fase (C7 con la fase 3, D1 en la 5, E1 en la 6).
 
 ### D2 · Hoja del encargo más cómoda — Aprobada
 
@@ -395,7 +399,9 @@ Aclaración: Aprobada la (c) a la espera del boceto del altillo: se hace antes d
 
 Boceto (12 de noviembre): https://claude.ai/artifact/Jnjqegd7qromZxRTekpgUQ (copia en `docs/bocetos/e1-altillo.html`), dos variantes, A y B: falta que el usuario elija.
 
-Plan: Bocetos (antes de decidir).
+Elegida (12 de noviembre): **B, galería al fondo**, pero con profundidad de verdad (que no sea un dibujo plano en la pared: suelo de la galería con fondo, barandilla delante, sombra) y con **escalera dentro del salón** por la que suban clientes y trabajadores del salón (en el boceto subían por la escalera de la casa). Con la (c): la altura deja de encarecer las mejoras.
+
+Plan: Bocetos hechos; se hace en su fase (C7 con la fase 3, D1 en la 5, E1 en la 6).
 
 ### E2 · El salón cambia de verdad con cada nivel — Aprobada con cambios
 

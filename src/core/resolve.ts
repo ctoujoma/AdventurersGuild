@@ -99,7 +99,7 @@ export function gearOf(worn: Gear | undefined, fac?: Facilities): Partial<Record
     const item = worn?.[slot];
     const bonus = Object.entries(item?.bonus ?? {}) as [SkillId, number][];
     bonus.forEach(([k, v], i) => {
-      const main = i === 0 ? (item?.plus ?? 0) + (slot === 'arma' ? (fac?.forja ?? 0) : 0) : 0;
+      const main = i === 0 ? (item?.plus ?? 0) : 0;
       gear[k] = (gear[k] ?? 0) + v + main;
     });
   }
