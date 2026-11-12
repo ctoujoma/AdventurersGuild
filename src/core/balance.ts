@@ -594,3 +594,14 @@ export const BOARD_TIERS: readonly { k: number; w: number }[] = [
   { k: 1, w: 0.4 },
   { k: 1.3, w: 0.25 },
 ];
+
+/** Quien está de guardia no duerme: pierde esta moral cada noche (sin bajar de `GUARD_FLOOR`). */
+export const GUARD_DROP = 3;
+export const GUARD_FLOOR = 15;
+/** Noches en casa sin salir de aventura antes de aburrirse; luego, moral que pierde cada noche. */
+export const BORED_AFTER = 7;
+export const BORED_DROP = 2;
+export const BORED_FLOOR = 30;
+/** Noches sin nadie fuera antes de que la comarca olvide al gremio: la fama baja un tanto al día. */
+export const QUIET_AFTER = 4;
+export const QUIET_FAME = 0.01;

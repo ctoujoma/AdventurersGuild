@@ -6,7 +6,7 @@ import { earn, spill, vaultNews } from './vault';
 import { dormIssue, sleepPlan, isVet } from './beds';
 import { guardsAt, postFull, postIssue, postOf, type Post } from './guards';
 import { FLAVOR } from '../data/stories';
-import { checkRank } from './ranks';
+import { checkRank, fadeFame } from './ranks';
 import {
   actOnIncident,
   arriveIncident,
@@ -26,7 +26,13 @@ import {
   DELIVERIES,
   DUSK,
   DEBT,
+  BORED_AFTER,
+  BORED_DROP,
+  BORED_FLOOR,
   DESERT_CHANCE,
+  GUARD_DROP,
+  GUARD_FLOOR,
+  QUIET_AFTER,
   GARDEN_W,
   MAX_UP,
   MAX_CANDIDATES,
@@ -1252,7 +1258,10 @@ export function endDay(state: GameState, away = false): GameState {
   const feast = c0.feast === s.day - 1;
   const income = dayIncome(s, s.day - 1);
   const visits = visitorsOf(s, s.day - 1);
-  const lost = stepThreat(s, rng, events, income);
+  // Noches sin nadie fuera (con el juego cerrado o en el tutorial no cuentan).
+  if (s.missions.length) s.quiet = 0;
+  else if (!away && !tutorialOn(s)) s.quiet = (s.quiet ?? 0) + 1;
+  const lost = stepThreat(s, rng, events, income, (s.quiet ?? 0) > QUIET_AFTER);
   // Lo que la caja ya entregó durante el día no se cobra otra vez.
   s.gold += income - lost - (s.till ?? 0);
   s.clock = 0;
@@ -1436,8 +1445,14 @@ export function endDay(state: GameState, away = false): GameState {
   const plan = sleepPlan(s);
   const wing = (h: Hero) =>
     s.building.rooms.find((r) => r.id === plan.get(h.id))?.type === 'veteranos';
+  // Con el juego cerrado (o en el tutorial) no se aburre nadie ni se agota de guardia.
+  const strain = !away && !tutorialOn(s);
+  const tired: string[] = [];
+  const bored: string[] = [];
   for (const h of s.heroes) {
+    if (h.status === 'mision') h.idle = 0;
     if (h.status !== 'ok') continue;
+    if (strain && !h.guard) h.idle = (h.idle ?? 0) + 1;
     // Los de guardia no se acuestan: cuentan como si tuvieran su cama en el ala.
     const housedVet = isVet(h) && (h.guard || wing(h));
     const snub = isVet(h) && !housedVet;
@@ -1466,7 +1481,16 @@ export function endDay(state: GameState, away = false): GameState {
       VET_REST[vet]! +
       (DORM_REST[s.fac.dorm] ?? 0) -
       (snub ? VET_SNUB_REST : 0);
-    if (h.morale < cap) h.morale = Math.min(cap, h.morale + gain);
+    if (strain && h.guard) {
+      // De guardia no se duerme: no descansa y va perdiendo moral (hay que ir rotando).
+      const was = h.morale;
+      h.morale = Math.max(Math.min(was, GUARD_FLOOR), was - GUARD_DROP);
+      if (was >= MORALE_LOW && h.morale < MORALE_LOW) tired.push(h.name);
+    } else if (strain && (h.idle ?? 0) > BORED_AFTER) {
+      // Muchos días sin salir de aventura: se aburre.
+      if (h.idle === BORED_AFTER + 1) bored.push(h.name);
+      h.morale = Math.max(Math.min(h.morale, BORED_FLOOR), h.morale - BORED_DROP);
+    } else if (h.morale < cap) h.morale = Math.min(cap, h.morale + gain);
     // Sin su cuarto o con rencor, aunque ya estuviera animado, se le va bajando hasta el tope.
     else if (snub || h.grudge) h.morale = Math.max(cap, h.morale - OVER_CAP_DROP);
     if (h.morale < MORALE_QUIT && !has(h, 'leal') && vet < 2 && rng.chance(DESERT_CHANCE)) {
@@ -1481,6 +1505,16 @@ export function endDay(state: GameState, away = false): GameState {
       });
     }
   }
+  if (tired.length)
+    events.push({
+      t: `${listNames(tired)} ${tired.length > 1 ? 'llevan' : 'lleva'} muchas noches de guardia sin dormir y ${tired.length > 1 ? 'están agotados' : 'está sin fuerzas'}: de guardia no se recupera moral. Haz el relevo para que ${tired.length > 1 ? 'descansen' : 'descanse'}.`,
+      k: 'warn',
+    });
+  if (bored.length)
+    events.push({
+      t: `${listNames(bored)} se ${bored.length > 1 ? 'aburren' : 'aburre'}: más de una semana sin salir de aventura. Hasta que ${bored.length > 1 ? 'salgan' : 'salga'}, la moral irá bajando.`,
+      k: 'warn',
+    });
   if (deserters.length) {
     s.heroes = s.heroes.filter((h) => !deserters.includes(h));
     for (const h of deserters)
@@ -1623,7 +1657,8 @@ export function endDay(state: GameState, away = false): GameState {
   s.gold = kept.gold;
   s.spilt = kept.spilt;
   vaultNews(s, events);
-  // Si la fama de hoy ha subido el rango, se cuenta con lo que se abre.
+  // Sin encargos, la fama se olvida (solo jugando); si ha subido el rango, se cuenta.
+  if (!away) fadeFame(s, events);
   checkRank(s, events);
 
   // Mañana cada uno cuenta en su sala desde que llega (con el juego cerrado no hay escena que lo

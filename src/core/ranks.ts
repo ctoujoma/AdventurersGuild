@@ -4,7 +4,15 @@
  * aviso del amanecer al subir de rango.
  */
 import { ROOMS, type RoomType } from '../data/rooms';
-import { FLOORS_BY_RANK, LEVEL_RANK, RANKS, WING_RANK, rankIndex } from './balance';
+import {
+  FLOORS_BY_RANK,
+  LEVEL_RANK,
+  QUIET_AFTER,
+  QUIET_FAME,
+  RANKS,
+  WING_RANK,
+  rankIndex,
+} from './balance';
 import type { DawnEvent, GameState } from './model';
 
 /** Lo que abre el rango `r`, dicho para el jugador: «la planta 5», «nivel 3 de la capilla»… */
@@ -30,6 +38,13 @@ const list = (xs: string[]) =>
  */
 export function checkRank(s: GameState, events: DawnEvent[]): void {
   const r = rankIndex(s.rep);
+  if (s.rankLost !== undefined && r >= s.rankLost) {
+    events.push({
+      t: `El gremio vuelve a ser de ${RANKS[s.rankLost]!.name}: se puede construir otra vez lo de ese rango.`,
+      k: 'good',
+    });
+    delete s.rankLost;
+  }
   if (s.rankSeen === undefined || r <= s.rankSeen) {
     s.rankSeen = Math.max(s.rankSeen ?? r, r);
     return;
@@ -41,4 +56,32 @@ export function checkRank(s: GameState, events: DawnEvent[]): void {
     k: 'good',
     big: true,
   });
+}
+
+/**
+ * Si pasan días sin nadie fuera de encargo, la comarca se olvida del gremio: la fama baja un poco
+ * cada noche, sin caer más allá del rango de debajo del más alto alcanzado. Lo construido se
+ * queda; lo nuevo de un rango perdido no se puede construir hasta recuperarlo (lo pide el rango).
+ * Solo jugando: con el juego cerrado no pasa (lo decide quien llama).
+ */
+export function fadeFame(s: GameState, events: DawnEvent[]): void {
+  const quiet = s.quiet ?? 0;
+  if (quiet <= QUIET_AFTER) return;
+  const before = rankIndex(s.rep);
+  const floor = RANKS[Math.max(0, (s.rankSeen ?? before) - 1)]!.at;
+  if (s.rep <= floor) return;
+  if (quiet === QUIET_AFTER + 1)
+    events.push({
+      t: 'Hace días que nadie sale de encargo: en la comarca se empieza a olvidar al gremio. La fama irá bajando hasta que mandes a alguien.',
+      k: 'warn',
+    });
+  s.rep = Math.max(floor, s.rep - Math.max(1, Math.round(s.rep * QUIET_FAME)));
+  const after = rankIndex(s.rep);
+  if (after < before) {
+    s.rankLost = Math.max(s.rankLost ?? 0, before);
+    events.push({
+      t: `El gremio baja a ${RANKS[after]!.name}: ya no se habla de vuestras hazañas. Lo construido se queda, pero lo nuevo de ${RANKS[before]!.name} no se puede construir hasta recuperarlo.`,
+      k: 'bad',
+    });
+  }
 }

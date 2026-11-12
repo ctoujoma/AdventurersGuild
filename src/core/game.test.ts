@@ -1,4 +1,14 @@
-import { DAY_SECONDS, DUSK } from './balance';
+import {
+  BORED_AFTER,
+  BORED_DROP,
+  BORED_FLOOR,
+  DAY_SECONDS,
+  DUSK,
+  GUARD_DROP,
+  GUARD_FLOOR,
+  QUIET_AFTER,
+  RANKS,
+} from './balance';
 import { describe, expect, it } from 'vitest';
 import { DEBT, SCHEDULE, capacity } from './balance';
 import {
@@ -351,5 +361,70 @@ describe('correo', () => {
     s = endDay(s);
     expect(s.reports.length).toBe(50);
     expect(s.reports[0]!.id).toBe('r0');
+  });
+});
+
+describe('hay que salir de aventura', () => {
+  const home = (seed: string) => {
+    const s = newGame(seed);
+    const h = s.heroes.find((x) => x.status === 'ok')!;
+    s.gold = 100000; // Que no falte para los pagos (sin sueldo, también baja la moral).
+    return { s, h };
+  };
+  const after = (s: GameState, id: string) => s.heroes.find((x) => x.id === id)!;
+
+  it('de guardia no se duerme: pierde moral cada noche, avisa y no baja de un mínimo', () => {
+    const { s, h } = home('guardia');
+    h.guard = true;
+    h.morale = 37;
+    let n = endDay(s);
+    expect(after(n, h.id).morale).toBe(37 - GUARD_DROP);
+    expect(n.dawn.some((e) => /noches de guardia sin dormir/.test(e.t))).toBe(true);
+    // Cerca del mínimo: se queda en él (sin la cena ni los pagos, que también restan).
+    n = endDay({ ...s, heroes: s.heroes.map((x) => ({ ...x, morale: GUARD_FLOOR + 1 })) });
+    expect(after(n, h.id).morale).toBe(GUARD_FLOOR);
+    expect(after(endDay(n), h.id).morale).toBe(GUARD_FLOOR);
+    // La guardia no cuenta para el aburrimiento.
+    expect(after(n, h.id).idle ?? 0).toBe(0);
+    // Con el juego cerrado, no se agota.
+    const shut = endDay({ ...s, heroes: s.heroes.map((x) => ({ ...x, morale: 50 })) }, true);
+    expect(after(shut, h.id).morale).toBeGreaterThanOrEqual(50);
+  });
+
+  it('una semana sin salir: se aburre y la moral baja hasta un suelo', () => {
+    const { s, h } = home('aburrido');
+    h.idle = BORED_AFTER;
+    h.morale = 60;
+    let n = endDay(s);
+    expect(after(n, h.id).morale).toBe(60 - BORED_DROP);
+    expect(n.dawn.some((e) => /se aburre/.test(e.t))).toBe(true);
+    n = endDay({ ...n, heroes: n.heroes.map((x) => ({ ...x, morale: BORED_FLOOR + 1 })) });
+    expect(after(n, h.id).morale).toBe(BORED_FLOOR);
+    expect(after(endDay(n), h.id).morale).toBe(BORED_FLOOR);
+    // Al salir de encargo se le pasa.
+    n.heroes = n.heroes.map((x) => (x.id === h.id ? { ...x, status: 'mision', days: 2 } : x));
+    expect(after(endDay(n), h.id).idle).toBe(0);
+  });
+
+  it('sin encargos, la fama baja (como mucho al rango de abajo) y se avisa al perder y al recuperar', () => {
+    const s = newGame('olvido');
+    s.rep = 301;
+    s.rankSeen = 4;
+    s.quiet = QUIET_AFTER;
+    let n = endDay(s);
+    expect(n.rep).toBeLessThan(300);
+    expect(n.rankLost).toBe(4);
+    expect(n.dawn.some((e) => /se empieza a olvidar/.test(e.t))).toBe(true);
+    expect(n.dawn.some((e) => /baja a oro/.test(e.t))).toBe(true);
+    // Como mucho, al principio del rango de abajo.
+    n = endDay(endDay({ ...n, rep: RANKS[3]!.at + 1 }));
+    expect(n.rep).toBe(RANKS[3]!.at);
+    // Con el juego cerrado no baja.
+    const shut = endDay({ ...s, rep: 250 }, true);
+    expect(shut.rep).toBeGreaterThanOrEqual(250);
+    // Al recuperarlo, se cuenta.
+    n = endDay({ ...n, rep: 320, quiet: 0 });
+    expect(n.rankLost).toBeUndefined();
+    expect(n.dawn.some((e) => /vuelve a ser de leyenda/.test(e.t))).toBe(true);
   });
 });

@@ -58,8 +58,10 @@ export interface Hero {
   request?: 'raise' | 'cache';
   /** Lo que lleva puesto, por ranura (ver `core/gear.ts`). Se pierde si cae o deserta. */
   worn?: Gear;
-  /** De guardia: no sale de misión y defiende mejor la taberna. */
+  /** De guardia: no sale de misión y defiende mejor la taberna (no duerme: pierde moral). */
   guard?: boolean;
+  /** Noches en casa sin salir de aventura (la guardia no cuenta); con muchas, se aburre. */
+  idle?: number;
   /** Dónde hace la guardia: sin esto, en la puerta; `tesoro`, en la cámara (patrulla dentro). */
   post?: 'tesoro';
   /** Dónde se le perdió la pista (si está desaparecido). */
@@ -792,6 +794,10 @@ export interface GameState {
   incidentNews?: { t: string; k: ChipKind }[];
   /** Rango más alto ya anunciado (para avisar al subir; ver `core/ranks.ts`). */
   rankSeen?: number;
+  /** Noches seguidas sin nadie fuera de encargo (la comarca se olvida del gremio). */
+  quiet?: number;
+  /** El rango que se perdió por falta de encargos (para avisar al recuperarlo). */
+  rankLost?: number;
   /** Hora real (ms) de la última vez que se guardó con el juego abierto (tiempo que corre solo). */
   lastSeen?: number;
 }

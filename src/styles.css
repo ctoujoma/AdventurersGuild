@@ -1099,6 +1099,29 @@ button:focus-visible {
   text-align: left;
 }
 
+/* Moral baja: chapa roja con una flecha blanca hacia abajo, en la esquina del retrato. */
+.portrait-low {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  width: 13px;
+  height: 13px;
+  background: var(--red);
+  box-shadow: 0 0 0 2px var(--ink);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.portrait-low::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 4px;
+  border-left: 3.5px solid transparent;
+  border-right: 3.5px solid transparent;
+  border-top: 5px solid var(--white);
+}
+
 .row > .portrait-frame {
   flex: none;
 }
@@ -1143,6 +1166,7 @@ button:focus-visible {
 }
 
 .portrait-frame {
+  position: relative;
   display: inline-block;
   line-height: 0;
   padding: 2px;

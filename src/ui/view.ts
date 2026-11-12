@@ -8,6 +8,7 @@ import type { Facilities, GameState, Hero, Worker } from '../core/model';
 import { customOf, gearInStock } from '../core/game';
 import { onWay, staffBeds, workerTitle } from '../core/workers';
 import { visitorsOf } from '../core/salon';
+import { MORALE_LOW } from '../core/party';
 import { trainState } from '../core/training';
 import { goldCap } from '../core/vault';
 import { MATERIAL_LIST, matCap, matOf, storeLevel } from '../core/materials';
@@ -77,6 +78,7 @@ export const marksOf = (h: Hero): HeroMarks => ({
   eyepatch: h.traits.some((t) => t.id === 'tuerto'),
   scar: h.traits.some((t) => t.id === 'cortado'),
   gear: wornMarks(h),
+  low: (h.status === 'ok' || h.status === 'herido') && h.morale < MORALE_LOW,
 });
 
 export const memberOf = (
