@@ -184,3 +184,17 @@ talleres, nombres y marcos). El arte ya está listo para cinco:
   (bocetos C7, D1 y E1; A8, A9, B5, C8, C9, E4 y X4) en el registro. Antes: aprobado A1, A2 y C6 (botón
   «Personalizar» en las salas). Lo siguiente, de lo troncal a lo menudo: el bloque 1 (A3–A7) y
   los arreglos rápidos (B1–B7), que no dependen de nada.
+
+## Para retomar (12 de noviembre): todo decidido, empieza el plan de ataque
+
+1. Leer [`plan.md`](plan.md), «Plan de ataque» (fases 1 a 8), y [`decisiones.md`](decisiones.md):
+   cada punto con su código, lo elegido, las notas del usuario y «Por aclarar antes de empezar
+   cada fase» (preguntarlo al llegar a esa fase).
+2. Por si el usuario cambia algo en la página, leer antes su colección `decisiones` (herramienta de
+   datos del artefacto, https://claude.ai/artifact/5MgZx3bgd3pJQay91rDtjk) y comparar con el
+   registro. La página está copiada en `tools/decisiones.html` por si hay que republicarla.
+3. Siguiente paso: la **fase 1** (B1, B2, B3, B6, A2, A1 y los textos de E3) en la rama
+   `claude/sweet-bell-mky0ou`, o los bocetos C7, D1 y E1 si el usuario los prefiere antes.
+4. Datos de la partida del usuario (día 219) usados en la revisión: resumidos en
+   [`revision-critica.md`](revision-critica.md). La partida entera no está en el repositorio; si
+   hace falta, pedírsela («Gremio › Partidas › Copiar código»).

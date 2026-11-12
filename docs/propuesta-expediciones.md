@@ -115,7 +115,7 @@ juego ([`revision-critica.md`](revision-critica.md)). No hace falta volver a pre
 2. **Decisiones por el camino (X2):** sí, con aviso y un día de plazo. Además, un icono en cada
    expedición para silenciar sus avisos y que lo resuelva todo sola.
 3. **Si caen todos (X3):** vuelve algo.
-4. **Grupo (X4):** de 1 a 4, pero el tope lo daría una sala. Pendiente de decidir; propuesta: que
+4. **Grupo (X4):** aprobado de 1 a 4. Falta aclarar si el tope lo abre una sala; propuesta: que
    lo dé la sala de mapas (nivel 1: 2 héroes, nivel 2: 3, nivel 3: 4) en vez de una sala nueva de
    exploradores. Hoy la sala de mapas da un encargo más por nivel, el peligro real a nivel 2, el
    mapa a color y algo más de aviso de asaltos.

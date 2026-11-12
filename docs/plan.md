@@ -185,29 +185,33 @@ una fase, `npm run sim` y una partida larga para ver que el ritmo sigue bien.
      sube el techo, no el suelo.
    - A4 (c) que haya que aventurar: los héroes se aburren (moral que baja tras días sin salir) y la
      amenaza de la comarca hace cosas que se ven; además, la fama baja si no se mandan encargos
-     (nunca con el juego cerrado); hasta dónde, en A9.
+     (nunca con el juego cerrado) y puede caer como mucho al rango de abajo (A9, b). Lo ya
+     construido se queda; solo se bloquea construir lo de ese rango hasta recuperarlo (confirmar).
+     Quien está de guardia no cuenta como «días sin salir» (ya pierde moral por guardar).
    - A5 (b) la guardia cuenta como trabajo: quien guarda no duerme ni recupera moral y la va
      perdiendo; marca de moral baja en el retrato y en la ficha, y aviso.
-   - A8 bajas de verdad en lo difícil (pendiente de elegir): más bajas en peligro alto y letal, el
-     clérigo salva solo a veces y más desaparecidos que vuelven (la capilla sirve).
+   - A8 bajas de verdad en lo difícil: más bajas en peligro alto y letal, el clérigo salva solo a
+     veces y 7 de cada 10 bajas son desaparecidos que pueden volver (la capilla sirve). Objetivo:
+     en lo difícil, una baja cada 15 o 20 encargos; en lo fácil, casi nunca.
 3. **Fase 3 · Talleres** (agente principal; interfaz después):
    - B8 el nivel del taller da calidad (sale común, bueno o raro) y el tamaño da puestos (más
      trabajadores, más deprisa). La forja deja de sumar a las armas (B4); textos «sale raro» y de
      la forja (B7, B4).
-   - B5 precio de venta por tramos de rareza y tipo (con números, para aprobar).
+   - B5 precio de venta por tramos de rareza y tipo (aprobado; los números, con el simulador).
 4. **Fase 4 · Un solo motor de pelea** (A6): jefes, asaltos y ladrón con el mismo motor; los
    encargos sueltos siguen con tiradas calibradas contra él; los informes viejos se siguen viendo.
 5. **Bocetos antes de decidir** (para el usuario): C7 talleres con recetas en pestañas, D1 tarjeta
    del tablón que dice si se puede, E1 el altillo del salón (usando el fondo de la sala).
 6. **Fase 5 · Interfaz** (agente de interfaz, en paralelo desde ya; encargo por escribir): C1
    pestañas Tablón · Mapa · Héroes · Gremio; C2 el arcón en Héroes; C3 todo en la campana y C9
-   el historial de encargos (dónde, pendiente); C4 el Gremio para la casa y lo del sistema en el
+   el historial de encargos (un panel al que se llega desde el Libro y desde el Tablón); C4 el Gremio para la casa y lo del sistema en el
    engranaje; C5 ficha de sala con «Mejorar» arriba y qué da cada nivel (con test); C6 botón
    «Personalizar»; D2 hoja del encargo ordenada y «Quitar de guardia y llevar»; D3 aviso de equipo
    mejor en el arcón (solo el aviso); D4 mapa legible y amenaza explicada; D5 quien está fuera se
    nota en la taberna (con arte).
-7. **Fase 6 · Salas**: C8 patio, establo y empalizada (qué hacemos, pendiente); E1 el altillo (tras
-   el boceto); E2 que cada nivel del salón se note (arte) y E4 un nivel 5 (pendiente).
+7. **Fase 6 · Salas**: E1 el altillo del salón (que la altura no cuente en el recargo y que la
+   planta de arriba dé plazas; tras el boceto); E2 que cada nivel del salón se note (arte) y E4 un
+   nivel 5 con su arte. C8 (patio, establo y empalizada) queda para más adelante (`futuro.md`).
 8. **Fase 7 · La noche**: N1 empezar por el ladrón nocturno, el mensajero, la pesadilla y el gato;
    N2 uno de cada dos noches de media, algo más con niebla o tormenta; con la noche acelerada se
    resuelve solo según quién esté de guardia. Minijuegos, más adelante (`futuro.md`).

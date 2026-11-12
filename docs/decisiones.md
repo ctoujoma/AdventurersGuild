@@ -1,14 +1,25 @@
 # Decisiones
 
-Registro de lo decidido con el usuario y lo que queda, por bloques y de lo troncal a lo menudo.
-El usuario contesta en la página **«Decisiones del Jarro»**
-(https://claude.ai/artifact/5MgZx3bgd3pJQay91rDtjk; sus respuestas se leen con la herramienta de
-datos del artefacto, colección `decisiones`). Este fichero copia lo que contesta y lo aprobado
-pasa al [plan](plan.md) («Plan de ataque»). De dónde sale cada punto:
-[`revision-critica.md`](revision-critica.md). Última lectura: 11 de noviembre.
+Registro de lo decidido con el usuario, por bloques y de lo troncal a lo menudo. El usuario
+contesta en la página **«Decisiones del Jarro»** (https://claude.ai/artifact/5MgZx3bgd3pJQay91rDtjk;
+sus respuestas se leen con la herramienta de datos del artefacto, colección `decisiones`; copia de
+la página en `tools/decisiones.html`). Este fichero copia lo que contesta; lo aprobado está en el
+[plan](plan.md), «Plan de ataque». De dónde sale cada punto: [`revision-critica.md`](revision-critica.md).
+Última lectura: 12 de noviembre (todo contestado).
 
 Estados: Aprobada; Aprobada con cambios (los cambios, en su nota, ya incorporados); Rechazada;
-Pendiente (falta su respuesta, a veces tras un boceto o una pregunta mía).
+Pendiente.
+
+## Por aclarar antes de empezar cada fase
+
+- **A9 y los rangos:** si la fama baja y se cae de rango, lo ya construido se queda; solo se
+  bloquea construir lo de ese rango hasta recuperarlo (propuesta, confirmar).
+- **A4 + A5:** quien está de guardia ya pierde moral por guardar; que no cuente además como
+  «días sin salir» para el aburrimiento (si no, pierde por partida doble).
+- **A2 y el patio (C8, más adelante):** si el patio acaba con un veterano que enseña, esa
+  experiencia también respeta el tope de 99 (solo se sube de nivel peleando).
+- **X4:** el tope de 1 a 4, ¿lo abre la sala de mapas o una sala nueva?
+- **C7, D1 y E1:** aprobados, pero el usuario pidió verlos antes: bocetos primero.
 
 ## 1 · El bucle del juego
 
@@ -86,26 +97,29 @@ Respuesta: De acuerdo: las expediciones, al acabar este plan de pulido.
 
 Plan: Fase 8 · Expediciones (agente de expediciones).
 
-### A8 · Bajas de verdad en lo difícil — Pendiente
+### A8 · Bajas de verdad en lo difícil — Aprobada con cambios
 
 En los encargos de peligro alto y letal se vuelve a perder gente de vez en cuando: más bajas al fracasar, alguna en un éxito parcial letal, y el clérigo salva solo a veces. Más desaparecidos que muertos: vuelven a los pocos días, y la capilla sube la probabilidad (así sirve de algo). Objetivo: en lo difícil, una baja cada 15 o 20 encargos; en lo fácil, casi nunca.
 
-- (a) Más desaparecidos que muertos (7 de cada 10).
-- (b) Mitad y mitad, como ahora.
+Elegida: (a) Más desaparecidos que muertos (7 de cada 10).
 
 Por qué: En el simulador (estrategia normal) muere 0,38 héroes cada 100 encargos y solo sale mal el 3 %. Al salir mal, un clérigo en el grupo o un cobarde evitan casi siempre la baja. En tu partida, ninguna en 219 días. Depende de: A3. Dónde: core/resolve.ts (bajas), balance.ts (FAIL_CASUALTY).
 
+Nota del usuario: apuntar para plan futuro que haya alguna forma de revivir a los caidos(Muertos), viendo un anuncio quizas, o con algun objeto/item legendario que pueda usarse para revivir a 1 caído.
+
+Aclaración: Elegido (a). Lo de revivir caídos (anuncio u objeto legendario de un solo uso) queda en futuro.md.
+
 Plan: Fase 2 · El bucle.
 
-### A9 · Perder fama: hasta dónde — Pendiente
+### A9 · Perder fama: hasta dónde — Aprobada
 
 Si pasan días sin mandar encargos, la fama baja poco a poco. Con el juego cerrado no se pierde, igual que los pagos.
 
-- (a) Nunca por debajo del inicio del rango en el que estás.
-- (b) Puede caer al rango de abajo, pero no más.
-- (c) Sin límite.
+Elegida: (b) Puede caer al rango de abajo, pero no más.
 
 Por qué: Tu nota en A4. Depende de: A4.
+
+Aclaración: Por aclarar: al bajar de rango, lo ya construido se queda (plantas, niveles, salas); solo no se puede construir lo de ese rango hasta recuperarlo.
 
 Plan: Fase 2 · El bucle.
 
@@ -157,13 +171,11 @@ Respuesta: De acuerdo: la forja deja de afilar armas y entra en el modelo nuevo 
 
 Plan: Fase 3 · Talleres.
 
-### B5 · El precio de venta sigue a la rareza — Pendiente
+### B5 · El precio de venta sigue a la rareza — Aprobada
 
 Legendario por encima de épico, raro, bueno y común, sin depender del rango ni de dónde salió.
 
 Por qué: La Hoja de Vadoverde (legendaria) vale 120 y un escudo raro 150; el mismo objeto vale 50 o 150 según cuándo salió.
-
-Nota del usuario: poner una horquilla por tipo capaz?
 
 Respuesta: Propuesta: un tramo de precio por rareza (por ejemplo común 10–20, bueno 25–40, raro 50–90, épico 100–160, legendario 200–350) y, dentro del tramo, según lo que da el objeto y su tipo. Te lo traigo con números en la fase 3.
 
@@ -223,15 +235,17 @@ Respuesta: Todo en la campana. El historial de encargos (cumplidos y en curso) l
 
 Plan: Fase 5 · Interfaz (en paralelo, agente de interfaz).
 
-### C9 · Historial de encargos: dónde — Pendiente
+### C9 · Historial de encargos: dónde — Aprobada con cambios
 
 Una lista con los encargos cumplidos (y los que están en curso), con su resultado y su informe.
 
-- (a) En el Libro (junto a los objetivos y las hazañas).
-- (b) En la pestaña Mapa, debajo de los grupos fuera.
-- (c) En el Tablón, en una pestaña «Hechos».
+Elegida: (a) En el Libro (junto a los objetivos y las hazañas).
 
 Por qué: Tu nota en C3. Depende de: C3.
+
+Nota del usuario: a) y c), dos sitios que llevan al mismo panel, te parece bien?
+
+Aclaración: Sí: el Libro y el Tablón llevan al mismo panel del historial.
 
 Plan: Fase 5 · Interfaz (en paralelo, agente de interfaz).
 
@@ -259,7 +273,7 @@ Por qué: Los colores salen en medio de la ficha y solo en 9 salas; los adornos 
 
 Plan: Fase 5 · Interfaz (en paralelo, agente de interfaz).
 
-### C7 · Talleres: recetas en pestañas — Pendiente
+### C7 · Talleres: recetas en pestañas — Aprobada
 
 Crear · Mejorar · Vestir dentro de la ficha del taller.
 
@@ -269,9 +283,11 @@ Nota del usuario: necesito ver un mockup de la idea para entenderte
 
 Respuesta: Te preparo un boceto antes de decidir.
 
+Aclaración: Aprobado a la espera del boceto: se hace antes de tocar nada.
+
 Plan: Bocetos (antes de decidir).
 
-### C8 · Patio, establo y empalizada a la vista — Pendiente
+### C8 · Patio, establo y empalizada a la vista — Aprobada con cambios
 
 Que se vean: en la escena, delante de la taberna, o arriba en la lista de salas.
 
@@ -281,9 +297,11 @@ Que se vean: en la escena, delante de la taberna, o arriba en la lista de salas.
 
 Por qué: En 219 días no construiste ninguno: están al final de Gremio › Salas.
 
-Nota del usuario: recuerdame que hacia cada uno, hay que ver que qeude acorde con los nuevos graficos
+Nota del usuario: dejamos para mas adelante, como puntos de mejora, habrá que rehacer los grficos y encontrar nuevas utilidades, como dibujar caballos de verdad que puedan usar los heroes en las expediciones en el establo. patio podria ser para que un veterano entrene a uno de nivel bajo y le de EXP?
 
 Respuesta: Lo que hace cada uno hoy: el establo, un día menos en viajes de 3 o más días (y a nivel 2, las escoltas pagan un 25 % más); el patio, +6 o +12 de experiencia por noche a quien descansa (con A2 se queda casi sin uso); la empalizada, más fuerza a quien pelea en el patio durante un asalto (+15 % por nivel). Se dibujan con el arte viejo, muy simple. Elige qué hacemos.
+
+Aclaración: Para más adelante (futuro.md): rehacer su arte y darles uso nuevo (caballos de verdad en el establo para las expediciones; en el patio, un veterano que enseña a uno de nivel bajo).
 
 Plan: Fase 6 · Salas.
 
@@ -291,7 +309,7 @@ Plan: Fase 6 · Salas.
 
 Lo que más hace el jugador: elegir encargo, formar grupo, equipar, seguir el viaje.
 
-### D1 · La tarjeta del tablón dice si se puede — Pendiente
+### D1 · La tarjeta del tablón dice si se puede — Aprobada
 
 Iconos de lo que pide (Combate, Arcano…) y una chapa con cómo saldría con el mejor grupo de casa. La caducidad, que no se confunda con los días de viaje.
 
@@ -300,6 +318,8 @@ Por qué: Hoy la tarjeta no dice qué pide ni si tienes grupo. Depende de: B1, A
 Nota del usuario: necesito ver un mockup antes de decidir
 
 Respuesta: Te preparo un boceto antes de decidir.
+
+Aclaración: Aprobado a la espera del boceto: se hace antes de tocar nada.
 
 Plan: Bocetos (antes de decidir).
 
@@ -349,11 +369,11 @@ La forja deja de sumar a las armas. En todos los talleres, el nivel de la sala s
 
 Por qué: Tus notas en B4 y B7. Dónde: core/crafting.ts, balance.ts (CRAFT_*).
 
-Nota del usuario: Propuesta tuya (notas de B4 y B7).
+Aclaración: Ojo: el tamaño ya da puestos (2 por hueco) y cada trabajador suma velocidad; lo nuevo es que el nivel dé la calidad (común, bueno o raro) y que la forja deje de sumar a las armas.
 
 Plan: Fase 3 · Talleres.
 
-### E1 · Salón de doble altura — Pendiente
+### E1 · Salón de doble altura — Aprobada
 
 Que la segunda planta del salón compense lo que cuesta.
 
@@ -364,6 +384,8 @@ Por qué: Hoy da +2 de Atractivo y 6 puestos más (las mesas solo salen del anch
 Nota del usuario: necesitaria un mock up del altillo este para ver si es viable o me parece feo. tenemos la profundidad de la sala tambien para jugar visualmente
 
 Respuesta: Te preparo un boceto del altillo, jugando también con el fondo de la sala.
+
+Aclaración: Aprobada la (c) a la espera del boceto del altillo: se hace antes de tocar nada.
 
 Plan: Bocetos (antes de decidir).
 
@@ -379,12 +401,11 @@ Respuesta: El salón ya llega al nivel 4 (el gran salón) en el juego: falta que
 
 Plan: Fase 6 · Salas.
 
-### E4 · Nivel 5 del salón — Pendiente
+### E4 · Nivel 5 del salón — Aprobada
 
 Un nivel más para el salón, con su dibujo y algo que dé (más Atractivo, una plaza de adorno más…).
 
-- (a) Sí, con su arte.
-- (b) No de momento: primero que se noten los niveles que hay.
+Elegida: (a) Sí, con su arte.
 
 Por qué: Tu nota en E2. Depende de: E2.
 
@@ -472,7 +493,7 @@ Depende de: A7. Dónde: propuesta-expediciones.md, «Para decidir».
 
 Plan: Fase 8 · Expediciones (agente de expediciones).
 
-### X4 · Expediciones: tamaño del grupo — Pendiente
+### X4 · Expediciones: tamaño del grupo — Aprobada
 
 Elegida: (a) De 1 a 4.
 
@@ -481,6 +502,8 @@ Depende de: A7. Dónde: propuesta-expediciones.md, «Para decidir».
 Nota del usuario: en funcion de una sala nueva que sera la sala de los exploradores, por ejemplo, o que sea una mejora de la sala de mapas? (actualmente la sala de mapas hace/desbloquea algo?)
 
 Respuesta: Hoy la sala de mapas da un encargo más por nivel en el tablón, el peligro real a nivel 2, el mapa a color y algo más de aviso de asaltos. Propuesta: que el tamaño del grupo de expedición lo dé la sala de mapas (nivel 1: 2 héroes, nivel 2: 3, nivel 3: 4) en vez de una sala nueva.
+
+Aclaración: Por aclarar: aprobado «de 1 a 4»; falta decir si ese tope lo abre la sala de mapas (propuesta) o una sala nueva de exploradores.
 
 Plan: Fase 8 · Expediciones (agente de expediciones).
 
@@ -500,4 +523,4 @@ Plan: Fase 8 · Expediciones (agente de expediciones).
 - Para retomar: leer la colección `decisiones`, poner al día este fichero y el plan, y seguir
   con lo aprobado, de lo troncal a lo menudo.
 - Para añadir o cambiar un punto: aquí y en la base de datos (`set` de uno nuevo, o `update` de
-  los campos del texto, sin tocar los que escribe el usuario).
+  los campos del texto con `if_version`, sin tocar los que escribe el usuario).

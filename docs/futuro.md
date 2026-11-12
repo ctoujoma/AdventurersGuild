@@ -189,3 +189,15 @@ Que algunos sucesos o incidentes se resuelvan con un minijuego corto en lugar de
 Cuidado con la noche acelerada: con «Pasar la noche» todo tiene que poder resolverse solo (según
 quién esté de guardia), así que el minijuego solo puede mejorar el resultado, nunca ser obligatorio.
 Ver N1 y N2 en [`decisiones.md`](decisiones.md).
+
+## Revivir a un caído (idea del usuario, 12 de noviembre)
+
+Alguna forma de traer de vuelta a un muerto: viendo un anuncio (solo en la app) o con un objeto
+legendario de un solo uso. Va con A8 (bajas de verdad en lo difícil) de
+[`decisiones.md`](decisiones.md).
+
+## Patio, establo y empalizada con arte y uso nuevos (12 de noviembre, C8)
+
+Rehacer sus dibujos (son los de antes de las salas) y darles uso nuevo: caballos de verdad en el
+establo que los héroes usen en las expediciones; en el patio, un veterano que enseña a uno de
+nivel bajo y le da experiencia (respetando el tope de 99: solo se sube de nivel peleando, A2).
