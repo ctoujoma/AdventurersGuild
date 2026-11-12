@@ -222,7 +222,7 @@ talleres, nombres y marcos). El arte ya está listo para cinco:
 - **E3** textos de los materiales (sin pociones, hachas ni cristal en uso).
 - Siguiente: fase 2 (el bucle) o los bocetos C7, D1 y E1, lo que prefiera el usuario.
 
-## Fase 2 (12 de noviembre, en curso)
+## Fase 2 hecha (12 de noviembre)
 
 - **A3** tablón a la medida (`generateQuest(..., power)` con `homePower(heroes)`, en
   `core/generate.ts`): la medida es la media de las cuatro habilidades de los cuatro mejores (sin
@@ -242,5 +242,13 @@ talleres, nombres y marcos). El arte ya está listo para cinco:
   rango actual. Nada de esto pasa con el juego cerrado ni en el tutorial.
 - `npm run sim` con A3+A4+A5+A9: victorias 86/73/47/82 % (temeraria/normal/cauta/sin contratar;
   antes 85/71/49/77), oro y fama parecidos.
-- **A8** (bajas) lo hace otro agente en paralelo (`core/resolve.ts`); los bocetos C7, D1 y E1,
-  otro, en `docs/bocetos/`.
+- **A8** bajas (otro agente, ya junto): `CASUALTY[resultado][peligro]` en `balance.ts` (fracaso
+  difícil 0,7 y letal 0,9; éxito parcial difícil 0,45 y letal 0,6; desastre 0,5–1),
+  `CLERIC_SAVE` 0,4, `COWARD_FLEE` 0,4, `LOST_SHARE` 0,7 (desaparecidos). La capilla ya subía la
+  vuelta (`RETURN_CHANCE`); su texto lo dice. Tests en `core/casualties.test.ts`; el simulador
+  cuenta bajas por peligro y vueltas.
+- `npm run sim` con toda la fase: victorias 87/71/52/80 %; normal, en lo difícil una baja cada 19
+  encargos (1,6 muertos + 3,6 desaparecidos por 100), en lo fácil casi nunca; con capilla vuelve
+  el 85 % de los desaparecidos. Si la temeraria (1 cada 9) parece mucho: bajar
+  `CASUALTY['Éxito parcial'][2]` a 0,35.
+- Siguiente: los bocetos C7, D1 y E1 (otro agente, en `docs/bocetos/`), luego la fase 3.

@@ -49,7 +49,7 @@ Cada tablón trae de todo, medido con los héroes que hay en casa: alguno fácil
 
 Por qué: La dificultad sale solo del rango. Con la fama pasiva, el tablón se puso en Leyenda con héroes de nivel 1 a 4. Depende de: A1. Dónde: core/generate.ts (generateQuest).
 
-Plan: Fase 2 · El bucle.
+Plan: Fase 2 · El bucle. **Hecho** (12 de noviembre).
 
 ### A4 · Algo que empuje a mandar héroes — Aprobada
 
@@ -63,7 +63,7 @@ Nota del usuario: valorar perder fama.pensar que pasa si un jugador deja de juga
 
 Respuesta: Lo de perder fama va en A9 (nueva): con el juego cerrado no se pierde (como los pagos); jugando, baja poco a poco si no se mandan encargos. Elige allí hasta dónde puede bajar.
 
-Plan: Fase 2 · El bucle.
+Plan: Fase 2 · El bucle. **Hecho** (12 de noviembre).
 
 ### A5 · La guardia tiene un coste — Aprobada
 
@@ -77,7 +77,7 @@ Nota del usuario: poner un indicador cuando un heroe tiene moral baja, y avisar 
 
 Respuesta: Apuntado también: una marca de moral baja en el retrato y en la ficha, y el aviso de que quien está de guardia no duerme, no recupera moral y la va perdiendo.
 
-Plan: Fase 2 · El bucle.
+Plan: Fase 2 · El bucle. **Hecho** (12 de noviembre).
 
 ### A6 · Un solo motor para las peleas — Aprobada
 
@@ -111,7 +111,7 @@ Nota del usuario: apuntar para plan futuro que haya alguna forma de revivir a lo
 
 Aclaración: Elegido (a). Lo de revivir caídos (anuncio u objeto legendario de un solo uso) queda en futuro.md.
 
-Plan: Fase 2 · El bucle.
+Plan: Fase 2 · El bucle. **Hecho** (12 de noviembre).
 
 ### A9 · Perder fama: hasta dónde — Aprobada
 
@@ -123,7 +123,7 @@ Por qué: Tu nota en A4. Depende de: A4.
 
 Aclaración: Por aclarar: al bajar de rango, lo ya construido se queda (plantas, niveles, salas); solo no se puede construir lo de ese rango hasta recuperarlo.
 
-Plan: Fase 2 · El bucle.
+Plan: Fase 2 · El bucle. **Hecho** (12 de noviembre).
 
 ## 2 · Arreglos rápidos
 

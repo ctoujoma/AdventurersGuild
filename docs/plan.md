@@ -181,7 +181,8 @@ una fase, `npm run sim` y una partida larga para ver que el ritmo sigue bien.
    - A1 fama: lo pasivo del salón, casi nada; sale de encargos, historias, algunos incidentes y
      decisiones; los asaltos ganados la siguen dando.
    - E3 textos de los materiales: quitar lo que no existe (pociones, hachas con madera, cristal).
-2. **Fase 2 · El bucle** (agente principal; se equilibra todo junto con el simulador):
+2. **Fase 2 · El bucle** (agente principal; se equilibra todo junto con el simulador) — **hecha**
+   (12 de noviembre; detalle en [`agente-principal.md`](agente-principal.md)):
    - A3 tablón a la medida de los héroes de casa (de todo: fácil, a su medida y difícil); el rango
      sube el techo, no el suelo.
    - A4 (c) que haya que aventurar: los héroes se aburren (moral que baja tras días sin salir) y la
