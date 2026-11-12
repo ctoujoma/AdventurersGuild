@@ -221,3 +221,26 @@ talleres, nombres y marcos). El arte ya está listo para cinco:
   cada 15. `npm run sim`: victorias y oro iguales; fama final −11 % (normal 845 → 752).
 - **E3** textos de los materiales (sin pociones, hachas ni cristal en uso).
 - Siguiente: fase 2 (el bucle) o los bocetos C7, D1 y E1, lo que prefiera el usuario.
+
+## Fase 2 (12 de noviembre, en curso)
+
+- **A3** tablón a la medida (`generateQuest(..., power)` con `homePower(heroes)`, en
+  `core/generate.ts`): la medida es la media de las cuatro habilidades de los cuatro mejores (sin
+  equipo), con el techo del rango (`perHero(rank)`); cada encargo sale fácil, justo o difícil
+  (`BOARD_TIERS`: ×0,75 / ×1 / ×1,3 con pesos 35/40/25 %) y el peligro se mide contra la medida.
+  Lo usan el tablón, las historias, los rumores y los rescates. Sin `power`, como antes.
+- **A5** quien está de guardia no duerme: −3 de moral por noche (`GUARD_DROP`), sin bajar de 15
+  (`GUARD_FLOOR`: no llega a desertar), aviso al bajar de 35. Marca de moral baja (chapa roja con
+  flecha) en el retrato (`marks.low`, `Portrait.tsx`); textos de la ficha al día.
+- **A4** aburrimiento: `hero.idle` cuenta noches en casa sin salir (la guardia no cuenta; vuelve a 0
+  al salir de encargo); pasadas 7 (`BORED_AFTER`), −2 por noche hasta 30 y aviso. La comarca:
+  `state.quiet` cuenta noches sin nadie fuera; pasadas 4 (`QUIET_AFTER`) la amenaza sube +1 por
+  noche (caravanas, menos encargos, asaltos, que ya existían).
+- **A9** fama que se olvida (`fadeFame` en `core/ranks.ts`): con `quiet` > 4, −1 % por noche, sin
+  bajar del principio del rango de debajo del más alto alcanzado (`rankSeen`); avisos al empezar,
+  al perder el rango (`rankLost`) y al recuperarlo. Lo construido se queda: las obras ya piden el
+  rango actual. Nada de esto pasa con el juego cerrado ni en el tutorial.
+- `npm run sim` con A3+A4+A5+A9: victorias 86/73/47/82 % (temeraria/normal/cauta/sin contratar;
+  antes 85/71/49/77), oro y fama parecidos.
+- **A8** (bajas) lo hace otro agente en paralelo (`core/resolve.ts`); los bocetos C7, D1 y E1,
+  otro, en `docs/bocetos/`.
