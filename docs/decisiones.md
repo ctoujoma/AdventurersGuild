@@ -171,7 +171,7 @@ Nota del usuario: esa pasiva esta desactualizada, la forja deberia tener otro ef
 
 Respuesta: De acuerdo: la forja deja de afilar armas y entra en el modelo nuevo de talleres (B8).
 
-Plan: Fase 3 · Talleres.
+Plan: Fase 3 · Talleres. **Hecho** (12 de noviembre).
 
 ### B5 · El precio de venta sigue a la rareza — Aprobada
 
@@ -181,7 +181,7 @@ Por qué: La Hoja de Vadoverde (legendaria) vale 120 y un escudo raro 150; el mi
 
 Respuesta: Propuesta: un tramo de precio por rareza (por ejemplo común 10–20, bueno 25–40, raro 50–90, épico 100–160, legendario 200–350) y, dentro del tramo, según lo que da el objeto y su tipo. Te lo traigo con números en la fase 3.
 
-Plan: Fase 3 · Talleres.
+Plan: Fase 3 · Talleres. **Hecho** (12 de noviembre).
 
 ### B6 · Informes con tope y «Leído todo» — Aprobada
 
@@ -201,7 +201,7 @@ Nota del usuario: ok! puede dar comun, buena y raro entonces? relacionar con el 
 
 Respuesta: Sí: según el nivel de la sala saldrá común, bueno o raro, y el tamaño da más puestos y más velocidad. Va en B8 (nueva).
 
-Plan: Fase 3 · Talleres.
+Plan: Fase 3 · Talleres. **Hecho** (12 de noviembre).
 
 ## 3 · Navegación y fichas
 
@@ -290,6 +290,8 @@ Aclaración: Aprobado a la espera del boceto: se hace antes de tocar nada.
 Boceto (12 de noviembre): https://claude.ai/artifact/P4KEM694obLjsUmQA1FySd (copia en `docs/bocetos/c7-talleres.html`), dos variantes, A y B: falta que el usuario elija.
 
 Elegida (12 de noviembre): **A, lista**. En la pestaña Vestir de la sastrería, a quién vestir con una rejilla de retratos (no botones con nombres). La pestaña de objetos se llamará «Templar».
+
+**Hecho** con la fase 3 (12 de noviembre): la forja ocupa 1,3 pantallas (antes 2,4 con la misma partida).
 
 Plan: Bocetos hechos; se hace en su fase (C7 con la fase 3, D1 en la 5, E1 en la 6).
 
@@ -381,7 +383,7 @@ Por qué: Tus notas en B4 y B7. Dónde: core/crafting.ts, balance.ts (CRAFT_*).
 
 Aclaración: Ojo: el tamaño ya da puestos (2 por hueco) y cada trabajador suma velocidad; lo nuevo es que el nivel dé la calidad (común, bueno o raro) y que la forja deje de sumar a las armas.
 
-Plan: Fase 3 · Talleres.
+Plan: Fase 3 · Talleres. **Hecho** (12 de noviembre).
 
 ### E1 · Salón de doble altura — Aprobada
 

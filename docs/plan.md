@@ -195,7 +195,7 @@ una fase, `npm run sim` y una partida larga para ver que el ritmo sigue bien.
    - A8 bajas de verdad en lo difícil: más bajas en peligro alto y letal, el clérigo salva solo a
      veces y 7 de cada 10 bajas son desaparecidos que pueden volver (la capilla sirve). Objetivo:
      en lo difícil, una baja cada 15 o 20 encargos; en lo fácil, casi nunca.
-3. **Fase 3 · Talleres** (agente principal; interfaz después):
+3. **Fase 3 · Talleres** (agente principal; interfaz después) — **hecha** (12 de noviembre, con C7):
    - B8 el nivel del taller da calidad (sale común, bueno o raro) y el tamaño da puestos (más
      trabajadores, más deprisa). La forja deja de sumar a las armas (B4); textos «sale raro» y de
      la forja (B7, B4).

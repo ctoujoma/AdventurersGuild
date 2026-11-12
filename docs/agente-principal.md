@@ -257,7 +257,7 @@ talleres, nombres y marcos). El arte ya está listo para cinco:
   usuario elija. El de E1 se dibujó con el motor en una copia aparte (no está en el repositorio).
 - Siguiente: fase 3 (talleres), con lo que elija el usuario de C7.
 
-## Fase 3 (12 de noviembre, en curso)
+## Fase 3 hecha (12 de noviembre)
 
 - **B8** calidad por nivel del taller: `qualityOdds(s, roomId)` en `core/crafting.ts` →
   `{ comun, bueno, raro }` con `CRAFT_QUALITY[nivel]` (nivel 1: 70/25/5 %; 2: 45/38/17; 3:
@@ -271,5 +271,9 @@ talleres, nombres y marcos). El arte ya está listo para cinco:
   ficha del objeto, la notoriedad de los asaltos y los logros. Común 10–15, bueno 25–35, raro
   45–70, épico 110–130, legendario 180–275.
 - `npm run sim`: victorias 86/71/53/79 %, como antes.
-- **C7** (ficha en pestañas, lista; Vestir con rejilla de retratos; pestaña «Templar»; textos de
-  calidad): otro agente en paralelo.
+- **C7** (otro agente, ya junto): `RoomPanel` lleva «Mejorar · precio» arriba en todas las salas
+  (`.room-top`); la ficha del taller (`WorkshopInfo`) tiene «Trabajan aquí» y «En marcha» fijos y
+  pestañas Crear (lista) · Templar (una rejilla; Mejorar y Desmontar al tocar) · Vestir (rejilla de
+  retratos). Dos cifras de calidad: la de la sala (`FACILITY_INFO`) y la de ahora con el artesano.
+  La forja pasa de 2,4 a 1,3 pantallas con la misma partida.
+- Siguiente: fase 4 (un solo motor de pelea, A6).
