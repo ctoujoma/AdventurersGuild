@@ -256,3 +256,20 @@ talleres, nombres y marcos). El arte ya está listo para cinco:
   https://claude.ai/artifact/Jnjqegd7qromZxRTekpgUQ), cada uno con variantes A y B. Falta que el
   usuario elija. El de E1 se dibujó con el motor en una copia aparte (no está en el repositorio).
 - Siguiente: fase 3 (talleres), con lo que elija el usuario de C7.
+
+## Fase 3 (12 de noviembre, en curso)
+
+- **B8** calidad por nivel del taller: `qualityOdds(s, roomId)` en `core/crafting.ts` →
+  `{ comun, bueno, raro }` con `CRAFT_QUALITY[nivel]` (nivel 1: 70/25/5 %; 2: 45/38/17; 3:
+  25/45/30; 4: 15/45/40); el mejor artesano pasa 3 puntos por maña sobre 4 de común a raro; sin
+  artesano, bueno y raro a la mitad. Lo bueno es lo común con `plus: 1` y rareza 1 (`crafted`).
+  `goodChance` queda como alias de la probabilidad de raro. El tamaño ya daba puestos.
+- **B4** la forja ya no suma a las armas (`gearOf`); su efecto en `FACILITY_INFO` es la calidad
+  (`qualityText`). Descripción de la sala al día.
+- **B5** `priceOf(item)` en `core/gear.ts`: el equipo vale por rareza y lo que da (`PRICE_TIERS`,
+  `PRICE_KIND`), sin rango ni procedencia; los tesoros, su `value`. Lo usan vender, el arcón, la
+  ficha del objeto, la notoriedad de los asaltos y los logros. Común 10–15, bueno 25–35, raro
+  45–70, épico 110–130, legendario 180–275.
+- `npm run sim`: victorias 86/71/53/79 %, como antes.
+- **C7** (ficha en pestañas, lista; Vestir con rejilla de retratos; pestaña «Templar»; textos de
+  calidad): otro agente en paralelo.
