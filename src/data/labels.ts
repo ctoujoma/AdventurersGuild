@@ -153,7 +153,8 @@ export const FACILITY_INFO: Record<
       'Fragua grande con chimenea y armero',
       'Una pieza al rojo en la fragua y paredes de arenisca',
     ],
-    effect: (l) => (l === 0 ? 'Sin efecto' : `Lo que se crea sale mejor: ${qualityText(l)}`),
+    effect: (l) =>
+      l === 0 ? 'Sin efecto' : `Calidad de la sala: ${qualityText(l)} (un buen artesano la sube)`,
   },
   establo: {
     name: 'Establo',

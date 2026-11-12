@@ -173,8 +173,8 @@ function CraftList({
   return (
     <>
       <span class="row-sub">
-        Sale: {oddsText(qualityOdds(game, room.id))} (con la maña de quien trabaja aquí). El bueno
-        lleva +1; el raro es el que pone en cada receta.
+        Ahora, con quien trabaja aquí, sale: {oddsText(qualityOdds(game, room.id))}. El bueno lleva
+        +1; el raro es el que pone en cada receta.
       </span>
       <div class="rows">
         {all
