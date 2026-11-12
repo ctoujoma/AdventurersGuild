@@ -305,7 +305,7 @@ export const DISASTER = [0.05, 0.3, 0.6, 0.9] as const;
 export const CASUALTY: Record<Outcome, readonly [number, number, number, number]> = {
   'Éxito brillante': [0, 0, 0, 0],
   Éxito: [0, 0, 0, 0],
-  'Éxito parcial': [0, 0, 0.45, 0.6],
+  'Éxito parcial': [0, 0, 0.35, 0.6],
   Fracaso: [0, 0.05, 0.7, 0.9],
   Desastre: [0.5, 0.8, 1, 1],
 };

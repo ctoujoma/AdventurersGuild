@@ -111,6 +111,8 @@ Nota del usuario: apuntar para plan futuro que haya alguna forma de revivir a lo
 
 Aclaración: Elegido (a). Lo de revivir caídos (anuncio u objeto legendario de un solo uso) queda en futuro.md.
 
+Ajuste (12 de noviembre, el usuario): bajas del éxito parcial difícil al 35 % (antes 45 %). Revivir caídos: varias ideas en futuro.md, que no se olvide.
+
 Plan: Fase 2 · El bucle. **Hecho** (12 de noviembre).
 
 ### A9 · Perder fama: hasta dónde — Aprobada
