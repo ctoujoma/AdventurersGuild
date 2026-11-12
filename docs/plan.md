@@ -186,8 +186,8 @@ una fase, `npm run sim` y una partida larga para ver que el ritmo sigue bien.
    - A4 (c) que haya que aventurar: los héroes se aburren (moral que baja tras días sin salir) y la
      amenaza de la comarca hace cosas que se ven; además, la fama baja si no se mandan encargos
      (nunca con el juego cerrado) y puede caer como mucho al rango de abajo (A9, b). Lo ya
-     construido se queda; solo se bloquea construir lo de ese rango hasta recuperarlo (confirmar).
-     Quien está de guardia no cuenta como «días sin salir» (ya pierde moral por guardar).
+     construido se queda; solo se bloquea construir lo nuevo de ese rango hasta recuperarlo.
+     La guardia no cuenta como «días sin salir», pero sigue costando moral: hay que ir rotándola.
    - A5 (b) la guardia cuenta como trabajo: quien guarda no duerme ni recupera moral y la va
      perdiendo; marca de moral baja en el retrato y en la ficha, y aviso.
    - A8 bajas de verdad en lo difícil: más bajas en peligro alto y letal, el clérigo salva solo a

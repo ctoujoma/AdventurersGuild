@@ -12,13 +12,15 @@ Pendiente.
 
 ## Por aclarar antes de empezar cada fase
 
-- **A9 y los rangos:** si la fama baja y se cae de rango, lo ya construido se queda; solo se
-  bloquea construir lo de ese rango hasta recuperarlo (propuesta, confirmar).
-- **A4 + A5:** quien está de guardia ya pierde moral por guardar; que no cuente además como
-  «días sin salir» para el aburrimiento (si no, pierde por partida doble).
+- **A9 y los rangos (decidido, 12 de noviembre):** si se cae de rango, lo ya construido se
+  queda; solo se bloquea construir lo nuevo de ese rango hasta recuperarlo.
+- **A4 + A5 (decidido, 12 de noviembre):** la guardia no cuenta como «días sin salir» para el
+  aburrimiento, pero la guardia sigue costando moral para que el jugador tenga que ir rotando
+  (que no deje a alguien de guardia para siempre).
 - **A2 y el patio (C8, más adelante):** si el patio acaba con un veterano que enseña, esa
   experiencia también respeta el tope de 99 (solo se sube de nivel peleando).
-- **X4:** el tope de 1 a 4, ¿lo abre la sala de mapas o una sala nueva?
+- **X4:** el tope de 1 a 4, ¿lo abre la sala de mapas o una sala nueva? Se valora al llegar a
+  las expediciones.
 - **C7, D1 y E1:** aprobados, pero el usuario pidió verlos antes: bocetos primero.
 
 ## 1 · El bucle del juego
