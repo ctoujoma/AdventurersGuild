@@ -251,4 +251,8 @@ talleres, nombres y marcos). El arte ya está listo para cinco:
   encargos (1,6 muertos + 3,6 desaparecidos por 100), en lo fácil casi nunca; con capilla vuelve
   el 85 % de los desaparecidos. Si la temeraria (1 cada 9) parece mucho: bajar
   `CASUALTY['Éxito parcial'][2]` a 0,35.
-- Siguiente: los bocetos C7, D1 y E1 (otro agente, en `docs/bocetos/`), luego la fase 3.
+- Bocetos hechos (`docs/bocetos/`, publicados: C7 https://claude.ai/artifact/P4KEM694obLjsUmQA1FySd,
+  D1 https://claude.ai/artifact/GzzfZM9VD6mj3XJqcMNvqp, E1
+  https://claude.ai/artifact/Jnjqegd7qromZxRTekpgUQ), cada uno con variantes A y B. Falta que el
+  usuario elija. El de E1 se dibujó con el motor en una copia aparte (no está en el repositorio).
+- Siguiente: fase 3 (talleres), con lo que elija el usuario de C7.

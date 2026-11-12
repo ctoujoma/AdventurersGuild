@@ -287,6 +287,8 @@ Respuesta: Te preparo un boceto antes de decidir.
 
 Aclaración: Aprobado a la espera del boceto: se hace antes de tocar nada.
 
+Boceto (12 de noviembre): https://claude.ai/artifact/P4KEM694obLjsUmQA1FySd (copia en `docs/bocetos/c7-talleres.html`), dos variantes, A y B: falta que el usuario elija.
+
 Plan: Bocetos (antes de decidir).
 
 ### C8 · Patio, establo y empalizada a la vista — Aprobada con cambios
@@ -322,6 +324,8 @@ Nota del usuario: necesito ver un mockup antes de decidir
 Respuesta: Te preparo un boceto antes de decidir.
 
 Aclaración: Aprobado a la espera del boceto: se hace antes de tocar nada.
+
+Boceto (12 de noviembre): https://claude.ai/artifact/GzzfZM9VD6mj3XJqcMNvqp (copia en `docs/bocetos/d1-tarjeta.html`), dos variantes, A y B: falta que el usuario elija.
 
 Plan: Bocetos (antes de decidir).
 
@@ -388,6 +392,8 @@ Nota del usuario: necesitaria un mock up del altillo este para ver si es viable 
 Respuesta: Te preparo un boceto del altillo, jugando también con el fondo de la sala.
 
 Aclaración: Aprobada la (c) a la espera del boceto del altillo: se hace antes de tocar nada.
+
+Boceto (12 de noviembre): https://claude.ai/artifact/Jnjqegd7qromZxRTekpgUQ (copia en `docs/bocetos/e1-altillo.html`), dos variantes, A y B: falta que el usuario elija.
 
 Plan: Bocetos (antes de decidir).
 
