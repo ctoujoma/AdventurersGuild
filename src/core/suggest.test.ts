@@ -3,7 +3,7 @@ import { canSend, newGame, reduce } from './game';
 import type { GameState, Hero } from './model';
 import { skill } from './party';
 import { questEstimate } from './resolve';
-import { repeatParty, suggestParty } from './suggest';
+import { outlook, questFit, repeatParty, suggestParty } from './suggest';
 
 /** Una partida con los héroes que se le den (copias del primero con cambios). */
 function withHeroes(seed: string, ...changes: Partial<Hero>[]): GameState {
@@ -128,5 +128,36 @@ describe('grupo sugerido', () => {
     // Al mandar un paso, se apunta en la historia.
     s = reduce(s, { type: 'send', questId: s.quests[0]!.id, heroIds: ['x0', 'x1'] });
     expect(s.chains![0]!.party).toEqual(['x0', 'x1']);
+  });
+});
+
+describe('la nota del tablón y la hoja', () => {
+  it('la nota dice cómo saldría con el grupo sugerido', () => {
+    const s = newGame('nota');
+    const q = s.quests[0]!;
+    const o = outlook(s, q.id);
+    if (!('ids' in o)) throw new Error('debería haber grupo');
+    const party = o.ids.map((id) => s.heroes.find((h) => h.id === id)!);
+    expect(o.est.total).toBeCloseTo(questEstimate(q, party, s.fac).total);
+    expect(o.est.rows).toHaveLength(q.challenges.length);
+    // Sin nadie en casa, dice por qué.
+    s.heroes.forEach((h) => (h.status = 'mision'));
+    expect(outlook(s, q.id)).toEqual({ why: 'No hay nadie en casa para ir.' });
+  });
+
+  it('en la hoja va antes quien cubre más de lo que pide, sin que pese pasarse', () => {
+    const s = withHeroes('aporte', {});
+    const base = { ...s.heroes[0]!, traits: [], worn: {}, lvl: 1, morale: 60 };
+    const q = {
+      challenges: [
+        { skill: 'Combate' as const, diff: 6 },
+        { skill: 'Arcano' as const, diff: 6 },
+      ],
+    };
+    // Un guerrero muy fuerte solo en combate frente a uno que cubre las dos pruebas a medias.
+    const bruto = { ...base, cls: 'guerrero' as const, attrs: { F: 20, D: 0, M: 0 } };
+    const mixto = { ...base, cls: 'clerigo' as const, attrs: { F: 5, D: 0, M: 9 } };
+    expect(skill(bruto, 'Combate')).toBeGreaterThan(skill(mixto, 'Combate'));
+    expect(questFit(q, mixto)).toBeGreaterThan(questFit(q, bruto));
   });
 });

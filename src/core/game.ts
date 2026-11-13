@@ -224,7 +224,8 @@ export type Action =
   | { type: 'incident'; id: string; act: IncidentAct }
   /** Poner a trabajar a un trabajador o a un héroe en una sala (null: deja de trabajar). */
   | { type: 'assign'; who: string; room: string | null }
-  | { type: 'send'; questId: string; heroIds: string[] }
+  /** `unguard`: los de guardia del grupo dejan la guardia para ir (y vuelven a ella al volver). */
+  | { type: 'send'; questId: string; heroIds: string[]; unguard?: boolean }
   | { type: 'upgrade'; fac: keyof Facilities }
   | { type: 'upgradeRoom'; id: string }
   | { type: 'build'; room: RoomType; col: number; floor: number }
@@ -316,14 +317,19 @@ export function canHire(s: GameState, id: string): string | null {
   return null;
 }
 
-export function canSend(s: GameState, questId: string, heroIds: readonly string[]): string | null {
+export function canSend(
+  s: GameState,
+  questId: string,
+  heroIds: readonly string[],
+  unguard = false,
+): string | null {
   const q = s.quests.find((x) => x.id === questId);
   if (!q) return 'Ese encargo ya no está en el tablón.';
   if (!heroIds.length) return 'Elige al menos un héroe.';
   if (heroIds.length > q.slots) return `Este encargo admite ${q.slots} como máximo.`;
   const party = heroIds.map((id) => s.heroes.find((h) => h.id === id));
   if (party.some((h) => !h || h.status !== 'ok')) return 'Alguien del grupo no está disponible.';
-  const guard = party.find((h) => h!.guard);
+  const guard = !unguard && party.find((h) => h!.guard);
   if (guard) return `${guard.name} está de guardia en la taberna.`;
   const proud = party.find((h) => h!.traits.some((t) => t.id === 'arrogante' && !t.hidden));
   if (proud && party.some((h) => h!.lvl < proud.lvl))
@@ -649,12 +655,17 @@ function reduceAction(state: GameState, action: Action): GameState {
       return s;
     }
     case 'send': {
-      if (canSend(state, action.questId, action.heroIds)) return state;
+      if (canSend(state, action.questId, action.heroIds, action.unguard)) return state;
       const s = structuredClone(state);
       const q = s.quests.find((x) => x.id === action.questId)!;
       const party = action.heroIds.map((id) => s.heroes.find((x) => x.id === id)!);
       const days = tripDays(q, party, s.fac.establo);
       for (const h of party) {
+        // Deja la guardia para ir; al volver, la retoma si sigue habiendo sitio en su puesto.
+        if (h.guard) {
+          delete h.guard;
+          h.guardBefore = true;
+        }
         h.status = 'mision';
         h.days = days;
         if (h.job) h.jobBefore = h.job;

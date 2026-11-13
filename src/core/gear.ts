@@ -70,9 +70,40 @@ export function priceOf(it: Item): number {
   const slot = slotOf(it);
   if (!it.kind || it.kind === 'tesoro' || !slot) return it.value;
   const tier = PRICE_TIERS[it.rarity ?? 0] ?? PRICE_TIERS[0]!;
-  const bonus = Object.values(it.bonus ?? {}).reduce((a, b) => a + (b ?? 0), 0);
-  const power = bonus + (it.perk ? 1 : 0) + (it.plus ?? 0);
-  const t = Math.max(0, Math.min(1, (power - tier.min) / (tier.max - tier.min)));
+  const t = Math.max(0, Math.min(1, (gearPower(it) - tier.min) / (tier.max - tier.min)));
   const raw = (tier.lo + (tier.hi - tier.lo) * t) * (PRICE_KIND[slot] ?? 1);
   return Math.max(5, Math.round(raw / 5) * 5);
+}
+
+/**
+ * Lo que da un objeto, para compararlo con otro de su ranura: la suma de sus bonos, las mejoras
+ * del taller (el temple) y uno más si tiene efecto. Es la misma cuenta que pone su precio.
+ */
+export function gearPower(it: Item): number {
+  const bonus = Object.values(it.bonus ?? {}).reduce((a, b) => a + (b ?? 0), 0);
+  return bonus + (it.plus ?? 0) + (it.perk ? 1 : 0);
+}
+
+/** Algo del arcón que da más que lo que lleva un héroe en esa ranura (o que lleva nada). */
+export interface Upgrade {
+  slot: Slot;
+  item: Item;
+}
+
+/**
+ * Las ranuras de un héroe para las que hay algo mejor en el arcón (`stock`: lo guardado), con lo
+ * mejor de cada una. Los tesoros no cuentan. Es el aviso de que el equipo se queda olvidado.
+ */
+export function betterGear(h: { worn?: Gear }, stock: readonly Item[]): Upgrade[] {
+  const out: Upgrade[] = [];
+  for (const slot of SLOTS) {
+    let best: Item | undefined;
+    for (const it of stock) {
+      if (!it.kind || it.kind === 'tesoro' || slotOf(it) !== slot) continue;
+      if (!best || gearPower(it) > gearPower(best)) best = it;
+    }
+    const now = h.worn?.[slot];
+    if (best && gearPower(best) > (now ? gearPower(now) : 0)) out.push({ slot, item: best });
+  }
+  return out;
 }

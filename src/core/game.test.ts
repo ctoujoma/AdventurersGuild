@@ -129,6 +129,24 @@ describe('acciones', () => {
     expect(canSend(s, s.quests[0]!.id, [h.id])).not.toBeNull();
   });
 
+  it('a uno de guardia se le puede quitar de guardia y llevar; al volver, la retoma', () => {
+    let s = newGame('guardia-fuera');
+    const q = s.quests[0]!;
+    const h = ready(s)[0]!;
+    s = reduce(s, { type: 'guard', id: h.id, on: true });
+    expect(canSend(s, q.id, [h.id])).toMatch(/de guardia/);
+    expect(reduce(s, { type: 'send', questId: q.id, heroIds: [h.id] })).toBe(s);
+    expect(canSend(s, q.id, [h.id], true)).toBeNull();
+    s = reduce(s, { type: 'send', questId: q.id, heroIds: [h.id], unguard: true });
+    const out = s.heroes.find((x) => x.id === h.id)!;
+    expect(out.status).toBe('mision');
+    expect(out.guard).toBeUndefined();
+    // Con todos sanos al volver, retoma la guardia.
+    for (let d = 0; d < 20 && s.missions.length; d++) s = endDay(s);
+    const back = s.heroes.find((x) => x.id === h.id)!;
+    if (back.status === 'ok') expect(back.guard).toBe(true);
+  });
+
   it('un arrogante no va con héroes de menor nivel', () => {
     const s = newGame('orgullo');
     const [a, b] = s.heroes;

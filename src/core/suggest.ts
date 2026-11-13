@@ -4,8 +4,8 @@
  * verdad la estimación: a igualdad, cuantos menos, mejor (quedan libres para otra cosa).
  */
 import { canSend } from './game';
-import type { GameState, Hero } from './model';
-import { MORALE_LOW } from './party';
+import type { GameState, Hero, Quest } from './model';
+import { MORALE_LOW, skill, type Estimate, type Member } from './party';
 import { questEstimate } from './resolve';
 
 /** Lo que tiene que mejorar la estimación para que merezca la pena llevar a uno más. */
@@ -67,6 +67,32 @@ export function suggestParty(s: GameState, questId: string): Suggestion {
   const party = (chosen?.party ?? []).sort((a, b) => solo.get(b)! - solo.get(a)!);
   if (!party.length) return { why: 'Nadie de los que están en casa puede ir a este encargo.' };
   return { ids: party.map((h) => h.id) };
+}
+
+/** Cómo saldría un encargo con el grupo sugerido (lo que dice la nota del tablón). */
+export type Outlook = { ids: string[]; est: Estimate } | { why: string };
+
+export function outlook(s: GameState, questId: string): Outlook {
+  const r = suggestParty(s, questId);
+  if ('why' in r) return r;
+  const q = s.quests.find((x) => x.id === questId)!;
+  const party = r.ids.map((id) => s.heroes.find((h) => h.id === id)!);
+  return { ids: r.ids, est: questEstimate(q, party, s.fac) };
+}
+
+/**
+ * Lo que aporta alguien a un encargo, para ordenar la hoja: la parte de cada prueba que cubre él
+ * solo (hasta entera) sumada entre todas, y a igualdad, la suma de lo que tiene. Así cuenta tanto
+ * quien llega en una prueba como quien ayuda un poco en todas, sin que un especialista muy pasado
+ * en una (que no sube más la probabilidad) tape a los demás. `m` ya con su equipo (`memberOf`).
+ */
+export function questFit(q: Pick<Quest, 'challenges'>, m: Member): number {
+  const vals = q.challenges.map((c) => skill(m, c.skill));
+  const cover = q.challenges.reduce(
+    (a, c, i) => a + Math.min(1, vals[i]! / Math.max(1, c.diff)),
+    0,
+  );
+  return cover * 1000 + vals.reduce((a, b) => a + b, 0);
 }
 
 /** El grupo de la última vez, para repetirlo: quién vuelve a ir y a quién se salta (y por qué). */
