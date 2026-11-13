@@ -612,6 +612,8 @@ export const RECIPE_FIND = 0.2;
 
 /** Informes que guarda el correo (los más nuevos). */
 export const REPORTS_KEEP = 50;
+/** Encargos que guarda el historial (un resumen corto de cada uno). */
+export const QUEST_LOG_KEEP = 200;
 
 /**
  * El tablón, medido con los héroes de casa: cuánto más difícil que «a su medida» (k) y con qué

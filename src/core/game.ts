@@ -60,6 +60,7 @@ import {
   START,
   START_BEER,
   REPORTS_KEEP,
+  QUEST_LOG_KEEP,
   START_FOOD,
   chapelRest,
   healRate,
@@ -127,6 +128,7 @@ import {
   type Hero,
   type Custom,
   type Quest,
+  type QuestLogEntry,
   type Report,
 } from './model';
 import { MORALE_LOW, MORALE_QUIT } from './party';
@@ -1081,6 +1083,21 @@ function settleDue(m: Mission, part: number): boolean {
   return (days - m.daysLeft + part) / days >= at - 1e-9;
 }
 
+/** Apunta el encargo resuelto en el historial (el más nuevo primero, con tope). */
+function logQuest(s: GameState, m: Mission, r: Report): void {
+  const entry: QuestLogEntry = {
+    id: m.id,
+    title: m.quest.title,
+    place: m.quest.place,
+    sent: Math.max(1, r.day - (Math.max(1, m.quest.days) - m.daysLeft)),
+    day: r.day,
+    who: r.who,
+    outcome: r.outcome,
+    report: r.id,
+  };
+  s.questLog = [entry, ...(s.questLog ?? []).filter((e) => e.id !== m.id)].slice(0, QUEST_LOG_KEEP);
+}
+
 /**
  * Resuelve un encargo al acabar lo suyo: llega el informe (el oro, la fama y el botín, con él)
  * y el grupo emprende la vuelta con cómo ha quedado cada uno. Los muertos y perdidos, ya no
@@ -1134,6 +1151,7 @@ function settleMission(
   }
   m.waiting = undefined;
   m.done = { report: r.id, outcome: r.outcome, fates };
+  logQuest(s, m, r);
   const bad = r.outcome === 'Fracaso' || r.outcome === 'Desastre';
   events.push({
     t: `Llega aviso de ${r.who} desde ${m.quest.place}: ${r.outcome.toLowerCase()}.`,

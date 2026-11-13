@@ -216,6 +216,11 @@ describe('avance de día', () => {
     expect(mine).toHaveLength(1);
     expect(mine[0]!.heroIds).toEqual([h.id]);
     expect(s.heroes.find((x) => x.id === h.id)!.status).not.toBe('mision');
+    // Queda en el historial, con su informe y el día en que salió.
+    expect(s.questLog).toHaveLength(1);
+    const e = s.questLog![0]!;
+    expect(e).toMatchObject({ title: q.title, place: q.place, report: mine[0]!.id, sent: 1 });
+    expect(e.outcome).toBe(mine[0]!.outcome);
   });
 
   it('rellena el tablón y es determinista', () => {
