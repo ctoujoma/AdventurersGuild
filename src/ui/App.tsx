@@ -611,11 +611,11 @@ export function App() {
   };
 
   /** Manda un grupo: la nota sale del tablón y los héroes cruzan la puerta. */
-  const send = (qid: string, ids: string[]) => {
+  const send = (qid: string, ids: string[], unguard = false) => {
     const q = game.quests.find((x) => x.id === qid);
     if (!q) return;
     const before = gameRef.current;
-    const next = dispatch({ type: 'send', questId: qid, heroIds: ids });
+    const next = dispatch({ type: 'send', questId: qid, heroIds: ids, unguard });
     if (next === before) return;
     const days = next.missions.at(-1)?.daysLeft ?? q.days;
     const names = listNames(ids.map((id) => game.heroes.find((h) => h.id === id)?.name ?? ''));
@@ -1358,6 +1358,7 @@ export function App() {
           <Panel title="Tablón de encargos" onClose={() => openPanel(null)} variant="cork">
             <HistoryButton game={game} onClick={() => openHistory('tablon')} />
             <TablonPanel
+              game={game}
               quests={game.quests}
               seeAll={game.fac.mapas >= 2}
               onOpen={(id) => {
@@ -1571,7 +1572,7 @@ export function App() {
             game={game}
             quest={openQuest}
             onClose={() => setQuestId(null)}
-            onSend={(ids) => send(openQuest.id, ids)}
+            onSend={(ids, unguard) => send(openQuest.id, ids, unguard)}
           />
         )}
         {openTrip && (

@@ -942,6 +942,50 @@ button:focus-visible {
   text-wrap: balance;
 }
 
+/* Lo que pide (iconos pequeños) y la chapa de cómo saldría con el mejor grupo de casa. */
+.note-odds {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.note-skills {
+  display: inline-flex;
+  gap: 2px;
+}
+.note-skill {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  box-shadow: inset 0 0 0 1px var(--tan);
+}
+.note-skill.ok {
+  background: rgba(99, 199, 77, 0.35);
+  box-shadow: inset 0 0 0 1px var(--leaf);
+}
+.note-skill.low {
+  background: rgba(228, 59, 68, 0.25);
+  box-shadow: inset 0 0 0 1px var(--wine);
+}
+.note-chance {
+  margin-left: auto;
+  padding: 0 4px;
+  font-family: var(--pixel);
+  font-size: var(--t-s);
+  line-height: 16px;
+  color: var(--white);
+  white-space: nowrap;
+}
+.note-chance.est-2 {
+  color: var(--ink);
+}
+.note-chance.est-none {
+  color: var(--text-soft);
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--tan);
+}
+
 .note-foot {
   display: flex;
   align-items: center;
@@ -956,6 +1000,17 @@ button:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 2px;
+  white-space: nowrap;
+}
+
+/* «Nuevo» y «Rumor», como cinta en la esquina de la nota: arriba queda sitio para el plazo. */
+.note .note-new {
+  position: absolute;
+  top: -14px;
+  left: -10px;
+  margin: 0;
+  box-shadow: 0 0 0 2px var(--ink);
+  transform: rotate(-4deg);
 }
 
 .note-foot .reward {
@@ -1584,11 +1639,16 @@ button:focus-visible {
 .qs-who .qs-sub {
   margin: 0;
 }
-.qs-repeat {
+.qs-repeat,
+.qs-unguard {
   justify-content: flex-start;
   max-width: 100%;
 }
-.qs-repeat span {
+.qs-unguard {
+  align-self: flex-start;
+}
+.qs-repeat span,
+.qs-unguard span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1662,6 +1722,36 @@ button:focus-visible {
 
 .pick:disabled .pick-name,
 .pick:disabled .pick-skills {
+  color: var(--text-soft);
+}
+
+/* De guardia: se le puede llevar (deja la guardia); un poco apagado hasta que se le elige. */
+.pick.is-guard:not([aria-pressed='true']) {
+  background: rgba(139, 155, 180, 0.22);
+}
+.pick-guard {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  padding: 0 3px;
+  font-family: var(--pixel);
+  font-size: var(--t-s);
+  white-space: nowrap;
+  color: var(--sand);
+  background: var(--slate);
+}
+.pick[aria-pressed='true'] .pick-guard {
+  background: var(--wine);
+}
+
+/* El aviso de equipo olvidado: una línea discreta por héroe que va. */
+.qs-gear {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--t-s);
   color: var(--text-soft);
 }
 
@@ -7862,4 +7952,40 @@ div.item-count {
   background: var(--sand);
   border: 0;
   box-shadow: 0 0 0 3px var(--ink);
+}
+
+/* Equipo olvidado: el cofre junto al nombre (Héroes) y en el botón del equipo (ficha), y un punto
+   en cada ranura para la que hay algo mejor en el arcón. */
+.gear-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  margin-left: 4px;
+  vertical-align: middle;
+  background: var(--lemon);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+.act {
+  position: relative;
+}
+.act-mark {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  margin: 0;
+}
+.act-slot.has-better {
+  position: relative;
+}
+.act-slot.has-better::after,
+.doll-slot.has-better::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 6px;
+  height: 6px;
+  background: var(--lemon);
+  box-shadow: 0 0 0 1px var(--ink);
 }

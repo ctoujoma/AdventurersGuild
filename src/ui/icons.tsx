@@ -1,4 +1,5 @@
 import { P } from '../art/palette';
+import type { SkillId } from '../core/party';
 
 /** Iconos de 12×12 en pixel art (cada carácter es un color). */
 const COLORS: Record<string, string> = {
@@ -28,6 +29,8 @@ const COLORS: Record<string, string> = {
   C: P.coral,
   P: P.rose,
   u: P.umber,
+  v: P.grape,
+  O: P.oak,
 };
 
 const ICONS = {
@@ -987,6 +990,31 @@ const ICONS = {
     'kRk....kRk',
     '.kk....kk.',
   ],
+  /** Habilidades que piden los encargos: Arcano (la estrella) y Supervivencia (la fogata). */
+  arcano: [
+    '....kk....',
+    '...kvPk...',
+    '...kPCk...',
+    '.kkPCwPkk.',
+    'kvPCwwCPvk',
+    'kPPCwwCPPk',
+    '.kkPCwPkk.',
+    '...kPCk...',
+    '...kvPk...',
+    '....kk....',
+  ],
+  fogata: [
+    '....k.....',
+    '...kgk....',
+    '..kgGgk.k.',
+    '..kgGGkogk',
+    '.koGwGgogk',
+    '.kRoGGoRk.',
+    'kbObkkbObk',
+    'kkbObbObkk',
+    '.kk....kk.',
+    '..........',
+  ],
   /** Materiales: hierro (lingote), cuero, tela, hierbas, madera buena y cristal. */
   lingote: [
     '..........',
@@ -1056,6 +1084,14 @@ const ICONS = {
 } satisfies Record<string, string[]>;
 
 export type IconName = keyof typeof ICONS;
+
+/** El icono de cada habilidad (lo que pide un encargo). */
+export const SKILL_ICON: Record<SkillId, IconName> = {
+  Combate: 'espadas',
+  Trampas: 'candado',
+  Arcano: 'arcano',
+  Supervivencia: 'fogata',
+};
 
 export function Icon({
   name,

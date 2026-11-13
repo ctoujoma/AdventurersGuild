@@ -14,6 +14,7 @@ import { slotIcon } from '../art/materials';
 import { itemIcon } from '../art/items';
 import { RARITY_NAMES, itemEffect, itemName } from '../data/items';
 import { BufferImage } from './BufferImage';
+import { gearHintText, upgradesFor } from './gearHint';
 import { ItemImage, itemProps } from './ItemImage';
 import { help } from './HoldHelp';
 import { Icon } from './icons';
@@ -198,7 +199,11 @@ function GearDoll({
   onEquip: (itemId: string) => void;
   onUnequip: (slot: Slot) => void;
 }) {
-  const [sel, setSel] = useState<Slot | null>(SLOTS.find((x) => !h.worn?.[x]) ?? 'arma');
+  // Las ranuras con algo mejor en el arcón llevan marca; al abrir, la primera de ellas.
+  const better = new Set(upgradesFor(game, h).map((u) => u.slot));
+  const [sel, setSel] = useState<Slot | null>(
+    SLOTS.find((x) => better.has(x)) ?? SLOTS.find((x) => !h.worn?.[x]) ?? 'arma',
+  );
   const was = sel ? h.worn?.[sel] : undefined;
   const fits = sel ? gearInStock(game).filter((it) => slotOf(it) === sel) : [];
   // El elegido en la rejilla (un toque); debajo sale lo que cambia y «Ponérselo».
@@ -234,8 +239,8 @@ function GearDoll({
               key={sl}
               role="radio"
               aria-checked={sel === sl}
-              aria-label={`${SLOT_NAMES[sl]}: ${it ? itemName(it) : 'nada'}`}
-              class={`doll-slot tier-${tierOf(it?.rarity)} ${it ? '' : 'is-empty'} ${sel === sl ? 'is-sel' : ''}`}
+              aria-label={`${SLOT_NAMES[sl]}: ${it ? itemName(it) : 'nada'}${better.has(sl) ? '. Hay algo mejor en el arcón' : ''}`}
+              class={`doll-slot tier-${tierOf(it?.rarity)} ${it ? '' : 'is-empty'} ${sel === sl ? 'is-sel' : ''} ${better.has(sl) ? 'has-better' : ''}`}
               onClick={() => setSel(sel === sl ? null : sl)}
             >
               {it ? (
@@ -393,6 +398,9 @@ export function HeroCard({
   const worn = gearList(h);
   const wornShown = shownItem(h);
   const canGear = !candidate && (h.status === 'ok' || h.status === 'herido');
+  // Equipo olvidado: lo mejor del arcón para sus ranuras (marca en el botón del equipo).
+  const ups = candidate ? [] : upgradesFor(game, h);
+  const gearHint = ups.length ? gearHintText(h.name.split(' ')[0]!, ups) : null;
   const m = memberOf(h, game.fac);
   const why = candidate ? canHire(game, h.id) : null;
   const gone = h.status === 'muerto' || h.status === 'desaparecido';
@@ -600,20 +608,26 @@ export function HeroCard({
                       data-tut="equipo"
                       class={`act ${wornShown ? 'on' : ''}`}
                       aria-expanded={open === 'equipo'}
-                      aria-label={
+                      aria-label={`${
                         worn.length
                           ? `Equipo (${worn.length} de ${SLOTS.length}): ${worn.map(itemName).join(', ')}`
                           : 'Equipo: no lleva nada'
-                      }
+                      }${gearHint ? `. ${gearHint}` : ''}`}
+                      {...(gearHint ? help(gearHint) : {})}
                       onClick={() => toggle('equipo')}
                     >
+                      {gearHint && (
+                        <span class="gear-mark act-mark" aria-hidden="true">
+                          <Icon name="cofre" size={10} />
+                        </span>
+                      )}
                       <span class="act-slots" aria-hidden="true">
                         {SLOTS.map((sl) => {
                           const it = h.worn?.[sl];
                           return (
                             <span
                               key={sl}
-                              class={`act-slot ${it ? `tier-${tierOf(it.rarity)}` : 'is-empty'}`}
+                              class={`act-slot ${it ? `tier-${tierOf(it.rarity)}` : 'is-empty'} ${ups.some((u) => u.slot === sl) ? 'has-better' : ''}`}
                             >
                               <BufferImage
                                 buf={
