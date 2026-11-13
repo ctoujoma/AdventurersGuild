@@ -7,7 +7,6 @@ import type { Custom, GameState } from '../../core/model';
 import {
   CREST_COLORS,
   CREST_SYMBOLS,
-  DECOR,
   FACADE,
   GARDEN_EDGES,
   GARDEN_GROUNDS,
@@ -15,13 +14,9 @@ import {
   SIGNS,
   WALLS,
   DOG_PRICE,
-  FEAST_PRICE,
   RAVEN_EVERY,
   RAVEN_PRICE,
-  decorSlots,
-  isFeastDay,
   type CrestColor,
-  type DecorId,
   type FacadeId,
   type FacadeLook,
   type GardenEdgeId,
@@ -44,7 +39,6 @@ interface Props {
   game: GameState;
   onCustom: (patch: Partial<Pick<Custom, 'name' | 'color' | 'symbol'>>) => void;
   onDog: () => void;
-  onDecor: (id: DecorId, on: boolean) => void;
   onFacade: (id: FacadeId) => void;
   /** El aspecto de la fachada por partes (tejado, paredes, rótulo, jardineras). */
   onLook: (patch: FacadeLook) => void;
@@ -55,7 +49,6 @@ interface Props {
   /** Con la pestaña del jardín abierta, la cámara lo enseña sobre el panel (vista previa). */
   onGardenView: (on: boolean) => void;
   onRaven: () => void;
-  onFeast: () => void;
   /** Si se tiene una pieza (las demás salen con candado y de dónde se ganan). */
   has: (id: UnlockId) => boolean;
 }
@@ -258,10 +251,10 @@ function GardenParts({
   );
 }
 
-type AdornoTab = 'letrero' | 'salon' | 'fachada' | 'jardin' | 'animales';
+type AdornoTab = 'letrero' | 'fachada' | 'jardin' | 'animales';
 
 /** Precio en un botón dorado: moneda y cifra. */
-function Buy({
+export function Buy({
   price,
   gold,
   label,
@@ -287,33 +280,26 @@ function Buy({
 }
 
 /**
- * Adornos de la taberna, en cuatro pestañas: el letrero (nombre y escudo), el salón (la fiesta
- * y la decoración), la fachada y los animales. Cada adorno es una baldosa con su precio; lo que
- * hace, manteniendo pulsado. El personal está con los héroes, en «Trabajo».
+ * Adornos de la taberna, en pestañas: el letrero (nombre y escudo), la fachada, el jardín (con
+ * el patio trasero) y los animales. Cada adorno es una baldosa con su precio; lo que hace,
+ * manteniendo pulsado. Lo del salón (la fiesta y la decoración) está en su ficha, en
+ * «Personalizar»; el personal, con los héroes, en «Trabajo».
  */
 export function TabernaPanel({
   game,
   onCustom,
   onDog,
-  onDecor,
   onFacade,
   onLook,
   onGarden,
   onGardenView,
   onGardenWorks,
   onRaven,
-  onFeast,
   has,
 }: Props) {
   const c = customOf(game);
-  const decor = c.decor ?? [];
   const facade = c.facade ?? [];
-  const slots = decorSlots(game.fac.tab);
-  const feastToday = isFeastDay(game.day);
-  const nextFeast = Math.ceil((game.day + 1) / 10) * 10;
-  const [tab, setTab] = useState<AdornoTab>(
-    feastToday && c.feast !== game.day ? 'salon' : 'letrero',
-  );
+  const [tab, setTab] = useState<AdornoTab>('letrero');
   const [name, setName] = useState(c.name);
   useEffect(() => onGardenView(tab === 'jardin'), [tab]);
   const col = CREST_COLORS[c.color];
@@ -330,13 +316,6 @@ export function TabernaPanel({
         onChange={setTab}
         tabs={[
           { id: 'letrero', label: 'Letrero', icon: 'letrero' },
-          {
-            id: 'salon',
-            label: 'Salón',
-            icon: 'jarra',
-            alert: feastToday && c.feast !== game.day ? 1 : 0,
-            help: 'Decoración del salón: un hueco más por cada nivel del salón. Y la fiesta de la comarca, cada 10 días.',
-          },
           {
             id: 'fachada',
             label: 'Fachada',
@@ -392,71 +371,6 @@ export function TabernaPanel({
                 {CREST_SYMBOLS[k]}
               </button>
             ))}
-          </div>
-        </>
-      )}
-
-      {tab === 'salon' && (
-        <>
-          <article
-            class={`row ${feastToday ? 'tav-feast' : ''}`}
-            {...help(
-              'Cada 10 días el pueblo sale a la calle. Si la montas en la taberna, esa noche la caja se dobla y los que descansan ganan 10 de moral.',
-            )}
-          >
-            <Icon name="banderin" size={22} />
-            <span class="row-info">
-              <b>{feastToday ? '¡Hoy es la fiesta!' : 'Fiesta de la comarca'}</b>
-              <span class="row-sub">
-                {feastToday ? 'La caja se dobla esta noche.' : `Día ${nextFeast}`}
-              </span>
-            </span>
-            {feastToday &&
-              (c.feast === game.day ? (
-                <span class="pill pill-ok">Montada</span>
-              ) : (
-                <Buy
-                  price={FEAST_PRICE}
-                  gold={game.gold}
-                  label="Montar la fiesta"
-                  onBuy={onFeast}
-                />
-              ))}
-          </article>
-          <h3 class="sec-title">
-            Decoración{' '}
-            <span class="row-sub">
-              {decor.length}/{slots} huecos
-            </span>
-          </h3>
-          <div class="adornos">
-            {(Object.keys(DECOR) as DecorId[]).map((k) => {
-              const d = DECOR[k];
-              const on = decor.includes(k);
-              return (
-                <article
-                  key={k}
-                  class={`adorno ${on ? 'on' : ''}`}
-                  {...help(`${d.desc} ${on ? 'Quitarla no devuelve el dinero.' : ''}`.trim())}
-                >
-                  <b>{d.name}</b>
-                  <span class="row-sub">+{d.appeal} Atractivo</span>
-                  {on ? (
-                    <button class="btn btn-wood" onClick={() => onDecor(k, false)}>
-                      Quitar
-                    </button>
-                  ) : (
-                    <Buy
-                      price={d.price}
-                      gold={game.gold}
-                      label={`Poner ${d.name}`}
-                      disabled={decor.length >= slots}
-                      onBuy={() => onDecor(k, true)}
-                    />
-                  )}
-                </article>
-              );
-            })}
           </div>
         </>
       )}

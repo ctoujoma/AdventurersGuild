@@ -1844,6 +1844,44 @@ button:focus-visible {
   font-size: var(--t-m);
 }
 
+/* Qué da el nivel de ahora y qué daría el siguiente, bajo la cabecera (igual en todas las salas). */
+.room-levels {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.room-levels p {
+  margin: 0;
+  font-size: var(--t-m);
+}
+
+.room-levels b {
+  font-family: var(--pixel);
+  font-weight: 400;
+}
+
+/* «Personalizar» con algo pendiente (hoy es la fiesta): un punto, como en las pestañas. */
+.room-custom-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: 4px;
+  background: var(--red);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+
+.room-custom .adornos {
+  margin-bottom: 4px;
+}
+
+/* «Personalizar» deja ver la sala por encima, para mirar cómo quedaría un color. */
+@media (orientation: portrait) {
+  .as-sheet > .herocard.room-custom {
+    max-height: 72%;
+  }
+}
+
 .room-act {
   align-self: stretch;
 }

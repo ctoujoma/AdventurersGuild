@@ -1380,6 +1380,20 @@ export function App() {
               }
               onAct={works.planning ? undefined : dispatch}
               onPreview={works.planning ? undefined : (id, t) => scene.current?.previewTint(id, t)}
+              onDecor={
+                works.planning
+                  ? undefined
+                  : (id, on) => {
+                      dispatch({ type: 'decor', id, on });
+                      audio.play(on ? 'build' : 'close');
+                      if (on) toast(`${DECOR[id].name}: ya luce en el salón.`);
+                    }
+              }
+              onFeast={() => {
+                dispatch({ type: 'feast' });
+                audio.fanfare();
+                toast('¡Fiesta montada! Banderines, música y la caja abierta hasta el alba.');
+              }}
             />
           </Panel>
         )}
@@ -1461,11 +1475,6 @@ export function App() {
                 audio.play('coin');
                 toast('Tizón ya duerme junto a la puerta. ¡Guau!');
               }}
-              onDecor={(id, on) => {
-                dispatch({ type: 'decor', id, on });
-                audio.play(on ? 'build' : 'close');
-                if (on) toast(`${DECOR[id].name}: ya luce en el salón.`);
-              }}
               onLook={(patch) => dispatch({ type: 'facadeLook', patch })}
               onGarden={(patch) => dispatch({ type: 'gardenLook', patch })}
               onGardenWorks={() => {
@@ -1493,11 +1502,6 @@ export function App() {
                 dispatch({ type: 'buyRaven' });
                 audio.play('coin');
                 toast('Carbón se posa en el letrero y grazna. Parece que le gusta el sitio.');
-              }}
-              onFeast={() => {
-                dispatch({ type: 'feast' });
-                audio.fanfare();
-                toast('¡Fiesta montada! Banderines, música y la caja abierta hasta el alba.');
               }}
             />
           </Panel>

@@ -1327,7 +1327,7 @@ export function endDay(state: GameState, away = false): GameState {
   }
   if (isFeastDay(s.day))
     events.push({
-      t: 'Hoy es la fiesta de la comarca: si montas la fiesta en la taberna, la caja lo notará.',
+      t: 'Hoy es la fiesta de la comarca: si la montas en el salón (Personalizar), la caja lo notará.',
     });
 
   // Regresos.

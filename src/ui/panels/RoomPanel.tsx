@@ -3,18 +3,10 @@ import { useState } from 'preact/hooks';
 import { roomMax } from '../../core/balance';
 import { appeal, neighborsOf, seatsOf, visitorList, visitorsOf } from '../../core/salon';
 import { canWork, roster, type Action } from '../../core/game';
-import { TINTS, TINT_FROM, TINT_IDS, type TintId } from '../../data/custom';
-import { paintState, paintStatus, paintingOf, roomTint } from '../../core/paint';
+import type { DecorId, TintId } from '../../data/custom';
 import { beerCap, dailyYield, eatersOf, foodCap } from '../../core/larder';
 import { ATTR_NAMES, trainCap } from '../../core/training';
-import {
-  LOCK_TIME,
-  TRAIN_CAP,
-  TRAIN_HERO_BASE,
-  TRAIN_MAIN_BONUS,
-  TRAIN_PER_LEVEL,
-  VAULT_STORE,
-} from '../../core/balance';
+import { TRAIN_HERO_BASE, TRAIN_MAIN_BONUS, TRAIN_PER_LEVEL } from '../../core/balance';
 import { raidRoute, routeTime } from '../../core/assault';
 import { defense } from '../../core/raids';
 import { doorTime, goldCap, lockTime } from '../../core/vault';
@@ -29,6 +21,7 @@ import {
   type ExtendDir,
 } from '../../core/rooms';
 import { FACILITY_INFO } from '../../data/labels';
+import { roomEffect } from '../../data/roomInfo';
 import { ROOMS, TRAINS, type RoomType } from '../../data/rooms';
 import { listNames, plural } from '../../core/text';
 import { hasPosts, isTrainRoom, staffBeds, workerCap } from '../../core/workers';
@@ -42,19 +35,11 @@ import { isWorkshop } from '../../core/crafting';
 import { crewGroups } from '../crew';
 import { GUARD, type Task } from '../drop';
 import { dawnIn } from '../when';
-import { storeNext } from '../../core/materials';
+import { RoomCustom, canCustomize, feastPending } from './RoomCustom';
 
 /** A dónde lleva cada sala: los paneles de siempre que tienen que ver con ella. */
 export type RoomLink =
-  | 'tablon'
-  | 'candidatos'
-  | 'casa'
-  | 'heroes'
-  | 'trabajadores'
-  | 'libro'
-  | 'fuera'
-  | 'equipo'
-  | 'tesoros';
+  'tablon' | 'candidatos' | 'heroes' | 'trabajadores' | 'libro' | 'fuera' | 'equipo' | 'tesoros';
 
 const WORK = { to: 'trabajadores', label: 'Tareas', icon: 'martillo' } as const;
 
@@ -62,7 +47,6 @@ const LINKS: Partial<Record<RoomType, { to: RoomLink; label: string; icon: IconN
   salon: [
     { to: 'tablon', label: 'Tablón', icon: 'tablon' },
     { to: 'candidatos', label: 'Barra', icon: 'jarra' },
-    { to: 'casa', label: 'Adornos', icon: 'banderin' },
     WORK,
   ],
   cocina: [WORK],
@@ -115,131 +99,10 @@ interface Props {
   onAct?: (a: Action) => void;
   /** Enseñar en la escena cómo quedaría la sala con un color, unos segundos. */
   onPreview?: (room: string, tint: TintId | null) => void;
-}
-
-/**
- * Los colores de las telas de la sala: se elige uno (los de la casa o un tema) y se encarga al
- * pintor del taller, que va andando y la pinta en unas horas. Cada color dice cómo está (candado,
- * sin dinero, sin taller, sin pintor, ocupado); el trabajo en marcha se ve y se puede cancelar.
- * `onTint` (gratis, al momento) solo llega en el modo prueba. Al tocar un color (se tenga o no),
- * la sala se ve unos segundos así en la escena (`onPreview`) y vuelve sola a la de verdad.
- */
-function RoomTint({
-  game,
-  room,
-  onAct,
-  onTint,
-  onPreview,
-}: {
-  game: GameState;
-  room: Room;
-  onAct?: (a: Action) => void;
-  onTint?: (room: string, tint: TintId | null) => void;
-  onPreview?: (room: string, tint: TintId | null) => void;
-}) {
-  const cur = roomTint(game, room.id);
-  const job = paintingOf(game, room.id);
-  const [pick, setPick] = useState<TintId | null>(job ? job.tint : cur);
-  const [locked, setLocked] = useState<string | null>(null);
-  const name = (id: TintId | null) => (id ? TINTS[id].name : 'De la casa');
-  const swatch = (id: TintId | null, bg?: string) => {
-    const st = paintStatus(game, room.id, id);
-    const lock = st.state === 'lock';
-    const text = lock ? `${name(id)}. ${st.why}` : name(id);
-    return (
-      <button
-        key={id ?? 'casa'}
-        role="radio"
-        aria-checked={pick === id}
-        aria-disabled={lock}
-        aria-label={text}
-        title={text}
-        class={`tav-swatch room-swatch ${id ? '' : 'house'} ${pick === id ? 'on' : ''} ${lock ? 'locked' : ''} ${cur === id ? 'is-now' : ''}`}
-        style={bg ? { background: bg } : undefined}
-        onClick={() => {
-          // Cómo quedaría: se ve unos segundos en la sala, aunque aún no se tenga.
-          onPreview?.(room.id, id);
-          // En el modo prueba se puede elegir igual, para probarlo gratis.
-          setLocked(lock ? `${name(id)}: ${st.why}` : null);
-          if (lock && !onTint) return;
-          setPick(id);
-        }}
-      >
-        {lock && <Icon name="candado" size={10} />}
-      </button>
-    );
-  };
-  const st = paintStatus(game, room.id, pick);
-  // Sin taller o sin pintor, decirlo ya, aunque esté elegido el color de ahora.
-  const gate = !job
-    ? ([null, ...TINT_IDS] as (TintId | null)[])
-        .filter((t) => t !== cur)
-        .map((t) => paintStatus(game, room.id, t))
-        .find((x) => x.state !== 'lock')
-    : undefined;
-  const blocked = gate && (gate.state === 'none' || gate.state === 'nobody') ? gate : null;
-  const js = job ? paintState(game, job) : null;
-  return (
-    <div class="room-tint">
-      <span class="row-sub">Colores de las telas · ahora: {name(cur)}</span>
-      <div class="tav-swatches" role="radiogroup" aria-label="Colores de las telas">
-        {swatch(null)}
-        {TINT_IDS.map((id) => {
-          const [, d, m, l] = TINTS[id].ramp;
-          return swatch(id, `linear-gradient(${l} 0 30%, ${m} 30% 70%, ${d} 70%)`);
-        })}
-      </div>
-      {onPreview && <small class="row-sub">Toca un color para ver cómo quedaría.</small>}
-      {locked && <small class="lock-why">{locked}</small>}
-      {job && js ? (
-        <div class="paint-job" role="status">
-          <span class="row-sub">
-            Pintándola de {name(job.tint).toLowerCase()}:{' '}
-            {js.walking
-              ? 'el pintor va de camino.'
-              : js.hoursLeft === null
-                ? 'parado, el pintor no está en su taller.'
-                : `acaba en ${Math.max(1, Math.ceil(js.hoursLeft))} h.`}
-          </span>
-          <span class="train-bar" aria-label={`${Math.round(js.frac * 100)} %`}>
-            <i style={{ width: `${Math.round(js.frac * 100)}%` }} />
-          </span>
-          {onAct && (
-            <button class="btn btn-wood" onClick={() => onAct({ type: 'cancelPaint', id: job.id })}>
-              Cancelar · devuelve {job.gold}
-            </button>
-          )}
-        </div>
-      ) : st.state === 'ok' ? (
-        <>
-          <button
-            class="btn btn-gold dress-go"
-            disabled={!onAct}
-            onClick={() => onAct?.({ type: 'paint', room: room.id, tint: pick })}
-          >
-            <Icon name="brocha" size={12} /> Pintar de {name(pick).toLowerCase()} · {st.cost}
-          </button>
-          <small class="lock-why">El pintor irá andando y la pintará en unas horas.</small>
-        </>
-      ) : st.state === 'same' ? (
-        <small class="lock-why">
-          {blocked && 'why' in blocked ? blocked.why : 'Ya es de este color. Elige otro.'}
-        </small>
-      ) : (
-        <>
-          <button class="btn btn-wood dress-go locked" disabled>
-            <Icon name={st.state === 'lock' ? 'candado' : 'brocha'} size={12} /> Pintar · {st.cost}
-          </button>
-          <small class="lock-why">{st.why}</small>
-        </>
-      )}
-      {onTint && cur !== pick && (
-        <button class="btn btn-wood dress-go" onClick={() => onTint(room.id, pick)}>
-          Probar gratis (modo prueba)
-        </button>
-      )}
-    </div>
-  );
+  /** Poner o quitar un adorno del salón (en «Personalizar»). */
+  onDecor?: (id: DecorId, on: boolean) => void;
+  /** Montar la fiesta de la comarca (en «Personalizar» del salón). */
+  onFeast?: () => void;
 }
 
 /** El salón por dentro: su Atractivo, las plazas y quién viene hoy. */
@@ -300,9 +163,8 @@ function LarderInfo({ game, room }: { game: GameState; room: Room }) {
 }
 
 /** La cámara del tesoro: cuánto oro cabe, cuánto aguanta la cerradura y por dónde vendrían. */
-function VaultInfo({ game, room }: { game: GameState; room: Room }) {
+function VaultInfo({ game }: { game: GameState }) {
   const cap = goldCap(game);
-  const better = room.level < VAULT_STORE.length - 1;
   const route = raidRoute(game.building).slice(1, -1);
   const names = route.map((id) => {
     const r = game.building.rooms.find((x) => x.id === id);
@@ -327,12 +189,6 @@ function VaultInfo({ game, room }: { game: GameState; room: Room }) {
           <Icon name="escudo" size={12} /> {odds}/10
         </Fact>
       </div>
-      {better && (
-        <span class="next-level">
-          Mejorada: cabrían {VAULT_STORE[room.level + 1] * room.w * room.h} y la cerradura
-          aguantaría {LOCK_TIME[room.level + 1]} s.
-        </span>
-      )}
     </>
   );
 }
@@ -349,11 +205,10 @@ function DoorInfo({ game }: { game: GameState }) {
 /** Una sala de entrenamiento: qué se entrena y hasta dónde (cómo va cada uno, en sus huecos). */
 function TrainInfo({ room }: { room: Room }) {
   const attr = TRAINS[room.type]!;
-  const next = TRAIN_CAP[room.level + 1];
   return (
     <div class="chips">
       <Fact
-        info={`Pon aquí a un héroe que esté en casa para que entrene. Las habilidades suben solas según su clase. Cada héroe llega como mucho a ${TRAIN_HERO_BASE} más ${TRAIN_PER_LEVEL} por nivel (${TRAIN_MAIN_BONUS} más en el atributo principal de su clase).${next ? ` Mejorada, se llega hasta ${next} y se entrena más rápido.` : ''}`}
+        info={`Pon aquí a un héroe que esté en casa para que entrene. Las habilidades suben solas según su clase. Cada héroe llega como mucho a ${TRAIN_HERO_BASE} más ${TRAIN_PER_LEVEL} por nivel (${TRAIN_MAIN_BONUS} más en el atributo principal de su clase).`}
       >
         {ATTR_NAMES[attr]} hasta {trainCap(room)}
       </Fact>
@@ -485,7 +340,10 @@ export function RoomPanel({
   onTint,
   onAct,
   onPreview,
+  onDecor,
+  onFeast,
 }: Props) {
+  const [custom, setCustom] = useState(false);
   const room = game.building.rooms.find((r) => r.id === roomId);
   if (!room) return <p class="panel-note">Esa sala ya no está.</p>;
   const def = ROOMS[room.type];
@@ -502,6 +360,10 @@ export function RoomPanel({
         : 'Rota: hay que arreglarla para que sirva.'
       : null;
   const links = LINKS[room.type] ?? [];
+  const cells = room.w * room.h;
+  const look = { onAct, onTint, onPreview, onDecor, onFeast };
+  const customizable = canCustomize(room, look);
+  const feast = customizable && feastPending(game, room);
   return (
     <>
       <div class="room-top">
@@ -532,22 +394,28 @@ export function RoomPanel({
           <span class="pill pill-ok room-max">Al máximo</span>
         )}
       </div>
+      <div class="room-levels">
+        {room.level > 0 && (
+          <p class="room-now">
+            <b>Ahora:</b> {roomEffect(room.type, room.level, cells)}.
+          </p>
+        )}
+        {cost !== null && (
+          <p class="next-level">
+            <b>{room.level > 0 ? 'Mejora' : room.type === 'torre' ? 'Levantada' : 'Arreglada'}:</b>{' '}
+            {roomEffect(room.type, room.level + 1, cells)}.
+          </p>
+        )}
+      </div>
       {why && cost !== null && <p class="qs-warn">{why}</p>}
       {state && <p class="room-state">{state}</p>}
       <p class="room-desc">{def.desc}</p>
       {room.type === 'almacen' && room.level > 0 && <MatShelf game={game} />}
-      {room.type === 'almacen' && storeNext(game, room.level) && (
-        <p class="row-sub">{storeNext(game, room.level)}</p>
-      )}
-      {info && room.level > 0 && <span class="row-sub">{info.effect(room.level)}</span>}
-      {info && cost !== null && (
-        <span class="next-level">Mejora: {info.effect(room.level + 1)}</span>
-      )}
       {room.type === 'salon' && room.level > 0 && <SalonInfo game={game} />}
       {(room.type === 'cocina' || room.type === 'despensa' || room.type === 'bodega') &&
         room.level > 0 && <LarderInfo game={game} room={room} />}
       {isTrainRoom(room.type) && room.level > 0 && <TrainInfo room={room} />}
-      {room.type === 'tesoro' && <VaultInfo game={game} room={room} />}
+      {room.type === 'tesoro' && <VaultInfo game={game} />}
       {room.type === 'recibidor' && <DoorInfo game={game} />}
       {(room.type === 'dormitorio' || room.type === 'veteranos') && room.level > 0 && (
         <div class="chips">
@@ -595,18 +463,28 @@ export function RoomPanel({
       {isWorkshop(room.type) && room.level > 0 && !room.works && (
         <WorkshopInfo key={room.id} game={game} room={room} onAct={onAct} />
       )}
-      {!room.works && room.level >= (TINT_FROM[room.type] ?? Infinity) && (onAct || onTint) && (
-        <RoomTint game={game} room={room} onAct={onAct} onTint={onTint} onPreview={onPreview} />
-      )}
       {onWork && <RoomWorks game={game} room={room} onWork={onWork} onMove={onMove} />}
-      {links.length > 0 && (
+      {(links.length > 0 || customizable) && (
         <div class="room-links">
+          {customizable && (
+            <button
+              class={`btn ${feast ? 'btn-gold' : 'btn-wood'}`}
+              aria-haspopup="dialog"
+              onClick={() => setCustom(true)}
+            >
+              <Icon name="brocha" size={14} /> Personalizar
+              {feast && <span class="room-custom-dot" aria-label="Hoy es la fiesta" />}
+            </button>
+          )}
           {links.map((l) => (
             <button key={l.to} class="btn btn-wood" onClick={() => onLink(l.to)}>
               <Icon name={l.icon} size={14} /> {l.label}
             </button>
           ))}
         </div>
+      )}
+      {custom && customizable && (
+        <RoomCustom game={game} room={room} onClose={() => setCustom(false)} {...look} />
       )}
     </>
   );
