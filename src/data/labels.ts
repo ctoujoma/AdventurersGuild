@@ -96,7 +96,7 @@ export const FACILITY_INFO: Record<
     effect: (l) =>
       l === 0
         ? 'No deja dinero: no viene nadie'
-        : `+${l * 2} de Atractivo (más visitantes), más encargos${l >= 2 ? ' y mejores candidatos' : ''}${l >= 4 ? '; descansar anima del todo' : ''}`,
+        : `+${l * 2} de Atractivo (más visitantes)${l <= 2 ? ', más encargos' : ''}${l >= 2 ? ' y mejores candidatos' : ''}; descansar anima más`,
   },
   mapas: {
     name: 'Sala de mapas',
@@ -110,7 +110,7 @@ export const FACILITY_INFO: Record<
     effect: (l) =>
       l === 0
         ? 'Sin efecto'
-        : `+${l} ${l === 1 ? 'encargo' : 'encargos'} en el tablón${l >= 2 ? '; ves el peligro real de todos' : ''}`,
+        : `+${l} ${l === 1 ? 'encargo' : 'encargos'} en el tablón, +15 % de chivatazo de los asaltos${l >= 2 ? '; ves el peligro real de todos' : ''}`,
   },
   arm: {
     name: 'Armería',
