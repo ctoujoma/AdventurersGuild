@@ -5,8 +5,8 @@
  * abren la cámara, cada bandido carga lo que puede, y lo que llevan se recupera si caen antes de
  * perderse por el camino.
  *
- * Cada uno con su vida y sus golpes, con las cuentas de la pelea contra jefes (`core/combat.ts`):
- * habilidad por clase y críticos. Se decide aquí, paso a paso y con una semilla; con el juego
+ * Cada uno con su vida y sus golpes, con el motor común de las peleas (`core/fight.ts`):
+ * habilidad por clase y críticos; aquí, cada uno tiene delante a los que están en su sala. Se decide aquí, paso a paso y con una semilla; con el juego
  * abierto se juega en directo (`Assault`, con órdenes del jugador) y, si no, solo. La escena
  * enseña la lista de pasos que sale (RaidPlan).
  */
@@ -34,8 +34,17 @@ import {
   WORKER_HP,
   rankIndex,
 } from './balance';
-import { ABILITIES, AI_CRIT, AUTO_SKILL, CRIT, CRIT_MULT, CRIT_OPEN, heroUnit } from './combat';
-import type { AbilityId } from './combat';
+import {
+  ABILITIES,
+  Fight,
+  alive,
+  heroUnit,
+  type AbilityId,
+  type FightEvent,
+  type FightOrder,
+  type FightUnit,
+  type OrderInput,
+} from './fight';
 import type { AssaultOutcome, Building, GameState, RaidPlan, RaidStep } from './model';
 import { equip } from './resolve';
 import { Rng } from './rng';
@@ -303,17 +312,8 @@ export function assaultSetup(s: GameState, strength: number, rng: Rng): AssaultS
   };
 }
 
-/** Uno en el asalto: dónde está, a dónde va y cómo va de vida. */
-export interface Fighter {
-  id: string;
-  side: 'd' | 'b';
-  hp: number;
-  max: number;
-  atk: number;
-  def: number;
-  every: number;
-  /** Lo que falta para su siguiente golpe. */
-  cool: number;
+/** Uno en el asalto: dónde está, a dónde va y cómo va de vida (los de casa, `h`; bandidos, `e`). */
+export interface Fighter extends FightUnit {
   node: string;
   /** En camino hacia una sala vecina (llega en el segundo `until`). */
   to: string | null;
@@ -328,11 +328,8 @@ export interface Fighter {
   worker: boolean;
   fought: boolean;
   ranged: boolean;
-  /** A quién pega (id), si sigue en su sala. */
-  target?: string;
   /** Sala a la que le ha mandado el jugador: va allí y se queda. */
   hold?: string;
-  ability?: AbilityId;
   charge: number;
   readyFor: number;
   taunt: number;
@@ -340,36 +337,77 @@ export interface Fighter {
   critTaken: boolean;
 }
 
-/** Órdenes del jugador durante el asalto (con el paso en que se dieron, para repetirlo). */
-export type RaidOrder = { step: number; who: string } & (
-  | { kind: 'move'; to: string }
-  | { kind: 'target'; to: string }
-  | { kind: 'skill' }
-  | { kind: 'crit' }
-);
-export type RaidOrderInput = RaidOrder extends infer O
-  ? O extends RaidOrder
-    ? Omit<O, 'step'>
-    : never
-  : never;
+/** Órdenes del jugador durante el asalto (las comunes menos cubrirse: no hay golpe fuerte). */
+export type RaidOrder = Exclude<FightOrder, { kind: 'cover' }>;
+export type RaidOrderInput = OrderInput<RaidOrder>;
+
+/** Los del asalto al empezar: los de casa donde estén y los bandidos fuera. */
+function fighters(setup: AssaultSetup): Fighter[] {
+  const base = {
+    to: null,
+    until: 0,
+    down: false,
+    gone: false,
+    gold: 0,
+    fought: false,
+    charge: 0,
+    readyFor: 0,
+    taunt: 0,
+    critOpen: false,
+    critTaken: false,
+  };
+  return [
+    ...setup.defenders.map((d, i): Fighter => ({
+      ...base,
+      id: d.id,
+      side: 'h',
+      hp: d.hp,
+      max: d.hp,
+      atk: d.power,
+      def: d.def ?? 1,
+      every: d.every ?? 1.3,
+      cool: (d.every ?? 1.3) * (0.4 + 0.1 * (i % 4)),
+      node: d.at,
+      wake: d.wake,
+      // Los de la cámara están despiertos y no se mueven de allí (salvo que se les mande).
+      awake: !!d.vault,
+      ...(d.vault ? { hold: d.at } : {}),
+      guard: !!d.guard,
+      worker: !!d.worker,
+      ranged: !!d.ranged,
+      ability: d.ability,
+      charge: d.ability ? ABILITIES[d.ability].every * 0.6 : 0,
+    })),
+    ...setup.bandits.map((b, i): Fighter => ({
+      ...base,
+      id: b.id,
+      side: 'e',
+      hp: b.hp,
+      max: b.hp,
+      atk: b.power,
+      def: 1,
+      every: BANDIT_EVERY,
+      cool: BANDIT_EVERY * (0.5 + 0.15 * (i % 3)),
+      node: OUT,
+      wake: 0,
+      awake: true,
+      guard: false,
+      worker: false,
+      ranged: false,
+    })),
+  ];
+}
 
 /**
  * El asalto en marcha, paso a paso: se le pueden dar órdenes (mover a alguien, elegir a quién
  * pegan, la habilidad, el crítico) y va dejando los pasos para la escena. Sin órdenes, cada uno
  * hace lo suyo. Determinista con la semilla: con las mismas órdenes sale lo mismo.
  */
-export class Assault {
-  step = 0;
-  readonly units: Fighter[];
+export class Assault extends Fight<Fighter, RaidOrder, AssaultResult> {
   readonly steps: RaidStep[] = [];
-  readonly orders: RaidOrder[] = [];
-  result: AssaultResult | null = null;
-  private rng: Rng;
-  private pending: RaidOrder[];
   private next: Map<string, Map<string, string>>;
   private dist: Map<string, Map<string, number>>;
   private start: Record<string, string> = {};
-  private manual = new Set<string>();
   private phase: 'in' | 'out' = 'in';
   private door: number;
   private doorOpen: boolean;
@@ -388,66 +426,18 @@ export class Assault {
     seed: string | Rng,
     orders: readonly RaidOrder[] = [],
   ) {
-    this.rng = typeof seed === 'string' ? new Rng(seed) : seed;
-    this.pending = [...orders].sort((a, b) => a.step - b.step);
+    super(
+      fighters(setup),
+      typeof seed === 'string' ? new Rng(seed) : seed,
+      orders,
+      false,
+      RAID_STEP,
+    );
     ({ next: this.next, dist: this.dist } = hops(setup.graph));
     this.door = setup.door;
     this.doorOpen = !setup.route.length;
     this.lock = setup.lock;
     this.left = setup.gold;
-    const base = {
-      to: null,
-      until: 0,
-      down: false,
-      gone: false,
-      gold: 0,
-      fought: false,
-      charge: 0,
-      readyFor: 0,
-      taunt: 0,
-      critOpen: false,
-      critTaken: false,
-    };
-    this.units = [
-      ...setup.defenders.map((d, i): Fighter => ({
-        ...base,
-        id: d.id,
-        side: 'd',
-        hp: d.hp,
-        max: d.hp,
-        atk: d.power,
-        def: d.def ?? 1,
-        every: d.every ?? 1.3,
-        cool: (d.every ?? 1.3) * (0.4 + 0.1 * (i % 4)),
-        node: d.at,
-        wake: d.wake,
-        // Los de la cámara están despiertos y no se mueven de allí (salvo que se les mande).
-        awake: !!d.vault,
-        ...(d.vault ? { hold: d.at } : {}),
-        guard: !!d.guard,
-        worker: !!d.worker,
-        ranged: !!d.ranged,
-        ability: d.ability,
-        charge: d.ability ? ABILITIES[d.ability].every * 0.6 : 0,
-      })),
-      ...setup.bandits.map((b, i): Fighter => ({
-        ...base,
-        id: b.id,
-        side: 'b',
-        hp: b.hp,
-        max: b.hp,
-        atk: b.power,
-        def: 1,
-        every: BANDIT_EVERY,
-        cool: BANDIT_EVERY * (0.5 + 0.15 * (i % 3)),
-        node: OUT,
-        wake: 0,
-        awake: true,
-        guard: false,
-        worker: false,
-        ranged: false,
-      })),
-    ];
     for (const u of this.units) this.start[u.id] = u.node;
     // Llegan por el camino; los de guardia salen al patio a recibirlos.
     const bands = this.bands();
@@ -465,16 +455,12 @@ export class Assault {
     return Math.round(this.step * RAID_STEP * 100) / 100;
   }
 
-  unit(id: string): Fighter | undefined {
-    return this.units.find((u) => u.id === id);
-  }
-
   defs(): Fighter[] {
-    return this.units.filter((u) => u.side === 'd');
+    return this.units.filter((u) => u.side === 'h');
   }
 
   bands(): Fighter[] {
-    return this.units.filter((u) => u.side === 'b');
+    return this.units.filter((u) => u.side === 'e');
   }
 
   /** Lo que se ve ahora (y la vida de cada uno): para la escena y el informe. */
@@ -484,27 +470,9 @@ export class Assault {
     return { route: this.setup.route, start: this.start, steps: this.steps, end: this.t, hp };
   }
 
-  /** Orden del jugador en el paso de ahora (se guarda para repetirla). */
-  order(o: RaidOrderInput): boolean {
-    if (this.result) return false;
-    const full = { ...o, step: this.step } as RaidOrder;
-    if (!this.apply(full)) return false;
-    this.orders.push(full);
-    return true;
-  }
-
-  /** Juega hasta el final (sin jugador, o repitiendo órdenes). */
-  run(): AssaultResult {
-    while (!this.result) this.tick();
-    return this.result;
-  }
-
   tick(): void {
     if (this.result) return;
-    while (this.pending.length && this.pending[0]!.step <= this.step) {
-      const o = this.pending.shift()!;
-      if (this.apply(o)) this.orders.push(o);
-    }
+    this.playOrders();
     const t = this.t;
     if (t >= RAID_MAX_T) return this.finish();
     const defs = this.defs();
@@ -516,7 +484,7 @@ export class Assault {
       }
     // Se pierden de vista con lo que llevan.
     for (const b of bands)
-      if (this.standing(b) && !b.to && b.node === OUT && this.phase === 'out') {
+      if (alive(b) && !b.to && b.node === OUT && this.phase === 'out') {
         b.gone = true;
         this.stolen += b.gold;
         this.steps.push({ t, k: 'escape', id: b.id, gold: b.gold });
@@ -527,16 +495,97 @@ export class Assault {
       if (t >= d.wake || bands.some((b) => this.here(b, d.node))) this.rouse(d);
     }
     this.brawl(t);
-    if (!bands.some((b) => this.standing(b))) return this.finish();
+    if (!bands.some(alive)) return this.finish();
     this.advance(t);
     this.chase(t);
     this.step++;
   }
 
-  // ---------- Por dentro ----------
+  // ---------- La pelea, por salas ----------
 
-  private standing = (u: Fighter) => !u.down && !u.gone;
-  private here = (u: Fighter, node: string) => this.standing(u) && !u.to && u.node === node;
+  /** Los enemigos que tiene delante (en su sala y sin ir de camino). */
+  protected foesOf(u: Fighter): Fighter[] {
+    if (u.to || !alive(u) || (u.side === 'h' && !u.awake)) return [];
+    return this.units.filter((f) => f.side !== u.side && this.here(f, u.node));
+  }
+
+  protected alliesOf(u: Fighter): Fighter[] {
+    return this.units.filter((f) => f.side === u.side && this.here(f, u.node));
+  }
+
+  /** Los de casa pegan al que tenga menos vida de los que tienen delante. */
+  protected heroPick(_u: Fighter, foes: Fighter[]): Fighter {
+    return foes.reduce((a, b) => (b.hp < a.hp ? b : a));
+  }
+
+  /** La empalizada ayuda a los de casa que pelean en el patio. */
+  protected override boost(u: Fighter): number {
+    return u.side === 'h' && u.node === YARD ? 1 + this.setup.yard : 1;
+  }
+
+  protected override downed(_from: Fighter, to: Fighter): void {
+    to.down = true;
+    if (to.side === 'h') {
+      this.fell.push(to.id);
+      this.steps.push({ t: this.t, k: 'fall', id: to.id });
+    } else {
+      this.recovered += to.gold;
+      this.steps.push({ t: this.t, k: 'down', id: to.id, gold: to.gold });
+    }
+  }
+
+  /** Lo que pasa en la pelea, como lo lee la escena del asalto (`RaidStep`). */
+  protected emit(e: FightEvent): void {
+    const t = this.t;
+    if (e.kind === 'hit')
+      this.steps.push({
+        t,
+        k: 'hit',
+        from: e.from,
+        id: e.to,
+        amount: e.dealt,
+        crit: e.crit || undefined,
+      });
+    else if (e.kind === 'skill') this.steps.push({ t, k: 'skill', id: e.from, skill: e.skill });
+    else if (e.kind === 'heal')
+      this.steps.push({ t, k: 'heal', from: e.from, id: e.to, amount: e.dealt });
+    else if (e.kind === 'chance') this.steps.push({ t, k: 'chance', id: e.from });
+  }
+
+  protected override moveTo(u: Fighter, to: string): boolean {
+    if (!this.setup.graph.has(to) || to === OUT) return false;
+    // Mientras aguanta la puerta, de dentro no se sale al patio (salvo los de guardia).
+    if (to === YARD && !this.doorOpen && !u.guard && u.node !== YARD) return false;
+    u.hold = to;
+    this.rouse(u);
+    return true;
+  }
+
+  /** En cada sala con gente de los dos bandos: cada uno pega a su ritmo. */
+  private brawl(t: number): void {
+    const nodes = new Set(this.units.filter((u) => alive(u) && !u.to).map((u) => u.node));
+    for (const node of nodes) {
+      const ds = this.defs().filter((d) => this.here(d, node) && d.awake);
+      const bs = this.bands().filter((b) => this.here(b, node));
+      if (!ds.length || !bs.length) {
+        this.fights.delete(node);
+        continue;
+      }
+      if (!this.fights.has(node)) {
+        this.fights.add(node);
+        this.steps.push({ t, k: 'fight', at: node });
+      }
+      for (const u of [...ds, ...bs]) {
+        if (!alive(u)) continue;
+        if (u.side === 'h') u.fought = true;
+        this.act(u);
+      }
+    }
+  }
+
+  // ---------- Por la casa ----------
+
+  private here = (u: Fighter, node: string) => alive(u) && !u.to && u.node === node;
 
   private rouse(d: Fighter): void {
     if (d.awake) return;
@@ -559,173 +608,11 @@ export class Assault {
     this.steps.push({ t, k: 'move', ids: us.map((u) => u.id), to, dur });
   }
 
-  private apply(o: RaidOrder): boolean {
-    const u = this.unit(o.who);
-    if (!u || u.side !== 'd' || !this.standing(u)) return false;
-    if (o.kind === 'move') {
-      if (!this.setup.graph.has(o.to) || o.to === OUT) return false;
-      // Mientras aguanta la puerta, de dentro no se sale al patio (salvo los de guardia).
-      if (o.to === YARD && !this.doorOpen && !u.guard && u.node !== YARD) return false;
-      u.hold = o.to;
-      this.rouse(u);
-      return true;
-    }
-    if (o.kind === 'target') {
-      const to = this.unit(o.to);
-      if (!to || to.side !== 'b' || !this.standing(to)) return false;
-      u.target = to.id;
-      return true;
-    }
-    if (o.kind === 'crit') {
-      if (!u.critOpen || u.critTaken) return false;
-      u.critTaken = true;
-      return true;
-    }
-    if (!u.ability || u.charge > 0 || !this.foesAt(u).length) return false;
-    this.manual.add(u.id);
-    this.useSkill(u);
-    return true;
-  }
-
-  /** Los enemigos que tiene delante (en su sala y sin ir de camino). */
-  private foesAt(u: Fighter): Fighter[] {
-    if (u.to || !this.standing(u) || (u.side === 'd' && !u.awake)) return [];
-    return this.units.filter((f) => f.side !== u.side && this.here(f, u.node));
-  }
-
-  /** En cada sala con gente de los dos bandos: cada uno pega a su ritmo. */
-  private brawl(t: number): void {
-    const nodes = new Set(this.units.filter((u) => this.standing(u) && !u.to).map((u) => u.node));
-    for (const node of nodes) {
-      const ds = this.defs().filter((d) => this.here(d, node) && d.awake);
-      const bs = this.bands().filter((b) => this.here(b, node));
-      if (!ds.length || !bs.length) {
-        this.fights.delete(node);
-        continue;
-      }
-      if (!this.fights.has(node)) {
-        this.fights.add(node);
-        this.steps.push({ t, k: 'fight', at: node });
-      }
-      for (const u of [...ds, ...bs]) {
-        if (!this.standing(u)) continue;
-        if (u.side === 'd') u.fought = true;
-        if (u.taunt) u.taunt = Math.max(0, u.taunt - RAID_STEP);
-        if (u.ability) {
-          if (u.charge > 0) u.charge = Math.max(0, u.charge - RAID_STEP);
-          else {
-            u.readyFor += RAID_STEP;
-            if (this.wantsSkill(u)) this.useSkill(u);
-          }
-        }
-        u.cool -= RAID_STEP;
-        if (u.cool > 0) continue;
-        u.cool += u.every;
-        const to = this.targetOf(u);
-        if (!to) continue;
-        const crit = u.side === 'd' ? this.heroCrit(u) : this.rng.chance(CRIT);
-        const boost = u.side === 'd' && node === YARD ? 1 + this.setup.yard : 1;
-        this.hit(
-          u,
-          to,
-          u.atk * boost * (0.85 + this.rng.next() * 0.3) * (crit ? CRIT_MULT : 1),
-          crit,
-        );
-        if (u.side === 'd' && !u.worker && this.standing(u) && this.rng.chance(CRIT_OPEN)) {
-          u.critOpen = true;
-          this.steps.push({ t, k: 'chance', id: u.id });
-        }
-      }
-    }
-  }
-
-  private heroCrit(u: Fighter): boolean {
-    if (!u.critOpen) return false;
-    const taken = u.critTaken;
-    u.critOpen = false;
-    u.critTaken = false;
-    if (taken) return true;
-    const playing = this.orders.some((o) => o.kind === 'crit');
-    return !playing && this.rng.chance(AI_CRIT);
-  }
-
-  private wantsSkill(u: Fighter): boolean {
-    if (this.manual.has(u.id)) return u.readyFor >= AUTO_SKILL;
-    if (u.ability === 'curar')
-      return this.defs().some((d) => this.here(d, u.node) && d.hp < d.max * 0.6);
-    return true;
-  }
-
-  private useSkill(u: Fighter): void {
-    const id = u.ability!;
-    u.charge = ABILITIES[id].every;
-    u.readyFor = 0;
-    this.steps.push({ t: this.t, k: 'skill', id: u.id, skill: id });
-    const to = this.targetOf(u);
-    if (id === 'provocar') u.taunt = 6;
-    else if (id === 'punalada' && to) this.hit(u, to, u.atk * 3, false);
-    else if (id === 'andanada' && to) {
-      this.hit(u, to, u.atk * 1.1, false);
-      if (this.standing(to)) this.hit(u, to, u.atk * 1.1, false);
-    } else if (id === 'bola') for (const f of this.foesAt(u)) this.hit(u, f, u.atk * 1.4, false);
-    else if (id === 'curar') {
-      const low = this.defs()
-        .filter((d) => this.here(d, u.node))
-        .sort((a, b) => a.hp / a.max - b.hp / b.max)[0];
-      if (low) {
-        const amount = Math.min(low.max - low.hp, Math.round(low.max * 0.35));
-        low.hp += amount;
-        this.steps.push({ t: this.t, k: 'heal', from: u.id, id: low.id, amount });
-      }
-    }
-  }
-
-  private hit(from: Fighter, to: Fighter, raw: number, crit: boolean): void {
-    const def = to.def + (to.taunt ? 3 : 0);
-    const amount = Math.min(to.hp, Math.max(1, Math.round(raw - def * 0.5)));
-    to.hp -= amount;
-    this.steps.push({
-      t: this.t,
-      k: 'hit',
-      from: from.id,
-      id: to.id,
-      amount,
-      crit: crit || undefined,
-    });
-    if (to.hp > 0) return;
-    to.down = true;
-    if (to.side === 'd') {
-      this.fell.push(to.id);
-      this.steps.push({ t: this.t, k: 'fall', id: to.id });
-    } else {
-      this.recovered += to.gold;
-      this.steps.push({ t: this.t, k: 'down', id: to.id, gold: to.gold });
-    }
-  }
-
-  /** A quién pega: su blanco si sigue delante; si no, uno de los que tiene delante. */
-  private targetOf(u: Fighter): Fighter | undefined {
-    const foes = this.foesAt(u);
-    if (!foes.length) return undefined;
-    if (u.side === 'b') {
-      const taunter = foes.find((f) => f.taunt);
-      if (taunter) return taunter;
-    }
-    const t = u.target && foes.find((f) => f.id === u.target);
-    if (t) return t;
-    const pick =
-      u.side === 'd'
-        ? foes.reduce((a, b) => (b.hp < a.hp ? b : a))
-        : this.rng.weighted(foes.map((f) => [f, f.ranged ? 1 : 2] as const));
-    u.target = pick.id;
-    return pick;
-  }
-
   /** Los bandidos van todos juntos; mientras alguien les planta cara, no avanzan. */
   private advance(t: number): void {
     const route = this.setup.route;
     const vault = route.at(-1);
-    const pack = this.bands().filter(this.standing);
+    const pack = this.bands().filter(alive);
     const lead = pack[0]!;
     const busy = !!lead.to || this.defs().some((d) => this.here(d, lead.node) && d.awake);
     if (busy) return;
@@ -781,7 +668,7 @@ export class Assault {
    */
   private chase(t: number): void {
     const route = this.setup.route;
-    const pack = this.bands().filter(this.standing);
+    const pack = this.bands().filter(alive);
     const lead = pack[0]!;
     const busy = !!lead.to || this.defs().some((d) => this.here(d, lead.node) && d.awake);
     const ahead: [string, number][] = [];
@@ -805,7 +692,7 @@ export class Assault {
     }
     const yardHeld = this.defs().some((g) => g.guard && this.here(g, YARD));
     for (const d of this.defs()) {
-      if (!this.standing(d) || !d.awake || d.to) continue;
+      if (!alive(d) || !d.awake || d.to) continue;
       const open = (n: string) =>
         n !== OUT && (n !== YARD || this.doorOpen || d.guard || yardHeld || d.node === YARD);
       let goal: string | undefined;
@@ -831,7 +718,7 @@ export class Assault {
     const t = this.t;
     // Se acabó el tiempo: los que quedan se van con lo que lleven.
     for (const b of this.bands())
-      if (this.standing(b)) {
+      if (alive(b)) {
         b.gone = true;
         this.stolen += b.gold;
         this.steps.push({ t, k: 'escape', id: b.id, gold: b.gold });

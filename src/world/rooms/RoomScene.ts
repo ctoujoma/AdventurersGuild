@@ -5279,7 +5279,7 @@ export class RoomScene {
   private raidGrab(p: Point): string | null {
     const id = this.heroAt(p.x, p.y);
     const u = id ? this.liveRaid?.live?.unit(id) : undefined;
-    return u && u.side === 'd' && !u.down ? id : null;
+    return u && u.side === 'h' && !u.down ? id : null;
   }
 
   /** La casilla de mudanza bajo un punto de la pantalla (si es válida). */
