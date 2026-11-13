@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { VET_SNUB_CAP } from './balance';
-import { dormIssue, sleepPlan, vetsWithoutWing } from './beds';
+import { awayPlan, dormIssue, isAway, sleepPlan, vetsWithoutWing } from './beds';
 import { endDay, newGame, reduce } from './game';
 import type { GameState, Room } from './model';
 
@@ -71,5 +71,47 @@ describe('quién duerme dónde', () => {
     const next = endDay(w);
     expect(next.heroes.find((y) => y.id === h.id)!.vetSnub).toBeUndefined();
     expect(VET_SNUB_CAP).toBeGreaterThan(0);
+  });
+});
+
+describe('la cama de quien está fuera', () => {
+  it('le espera en su dormitorio si sobra sitio; los de casa, antes', () => {
+    const s = newGame('fuera');
+    const [a, b] = s.heroes;
+    const c = { ...a!, id: 'caido', status: 'muerto' as const };
+    s.heroes.push(c);
+    a!.status = 'mision';
+    b!.status = 'desaparecido';
+    expect(isAway(a!)).toBe(true);
+    expect(isAway(b!)).toBe(true);
+    expect(isAway(c)).toBe(false);
+    const away = awayPlan(s);
+    expect(away.get(a!.id)).toBe(dorm(s).id);
+    expect(away.get(b!.id)).toBe(dorm(s).id);
+    expect(away.has(c.id)).toBe(false);
+    expect(sleepPlan(s).has(a!.id)).toBe(false);
+  });
+
+  it('sin camas de sobra, no hay cama que le espere (la usa alguien de casa)', () => {
+    const s = newGame('fuera-lleno');
+    const [a] = s.heroes;
+    a!.status = 'mision';
+    const extra = Array.from({ length: 30 }, (_, i) => ({
+      ...s.heroes[1]!,
+      id: `x${i}`,
+      status: 'ok' as const,
+      guard: false,
+    }));
+    s.heroes.push(...extra);
+    expect(awayPlan(s).has(a!.id)).toBe(false);
+  });
+
+  it('el veterano, en el ala', () => {
+    const s = newGame('fuera-vet');
+    s.building.rooms.push(wing());
+    const [a] = s.heroes;
+    a!.lvl = 6;
+    a!.status = 'mision';
+    expect(awayPlan(s).get(a!.id)).toBe('v');
   });
 });
