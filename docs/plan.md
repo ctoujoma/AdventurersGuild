@@ -200,7 +200,7 @@ una fase, `npm run sim` y una partida larga para ver que el ritmo sigue bien.
      trabajadores, más deprisa). La forja deja de sumar a las armas (B4); textos «sale raro» y de
      la forja (B7, B4).
    - B5 precio de venta por tramos de rareza y tipo (aprobado; los números, con el simulador).
-4. **Fase 4 · Un solo motor de pelea** (A6): jefes, asaltos y ladrón con el mismo motor; los
+4. **Fase 4 · Un solo motor de pelea** (A6) — **hecha** (13 de noviembre; falta que las escenas lean el registro común y la barra de habilidades): jefes, asaltos y ladrón con el mismo motor; los
    encargos sueltos siguen con tiradas calibradas contra él; los informes viejos se siguen viendo.
 5. **Bocetos antes de decidir** (para el usuario): C7 talleres con recetas en pestañas, D1 tarjeta
    del tablón que dice si se puede, E1 el altillo del salón (usando el fondo de la sala).

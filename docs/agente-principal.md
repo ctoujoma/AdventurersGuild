@@ -277,3 +277,21 @@ talleres, nombres y marcos). El arte ya está listo para cinco:
   retratos). Dos cifras de calidad: la de la sala (`FACILITY_INFO`) y la de ahora con el artesano.
   La forja pasa de 2,4 a 1,3 pantallas con la misma partida.
 - Siguiente: fase 4 (un solo motor de pelea, A6).
+
+## Fase 4 hecha (13 de noviembre)
+
+- PR de las fases 1 a 3 fusionada (ctoujoma/AdventurersGuild#193); la rama se rehízo desde `main`.
+- `core/fight.ts`: `FightUnit`, `FightOrder`, `FightEvent` y la clase `Fight` (golpe, crítico con
+  ocasión e IA, habilidades, golpe fuerte con aviso y cubrirse). `Combat` (jefes), `Assault`
+  (asaltos) y `clockDuel` (ladrón) la usan; cada una traduce el registro a `CombatEvent`,
+  `RaidStep` o `DuelHit`, así que las escenas no cambiaron. `heroUnit` y `ABILITIES` viven en
+  `fight.ts` (`combat.ts` los reexporta).
+- Tests de referencia: `core/peleas.test.ts` con `core/fixtures/peleas.json` (70 jefes, 31 asaltos,
+  15 ladrones, en directo y repetidas con órdenes). Para regrabarlas:
+  `GRABAR_PELEAS=1 npx vitest run src/core/peleas.test.ts` y prettier sobre el JSON.
+- `npm run calib` y `npm run sim`, idénticos a antes.
+- Pendiente (paso 4): que `world/battle.ts` y `world/rooms/raid.ts` lean `FightEvent` (los
+  informes viejos de asalto guardan `RaidStep`: mantener el adaptador), la barra de habilidades
+  común de `BossFight` y `RaidCrew`, y el aviso del cabecilla en el asalto (cambia el equilibrio:
+  preguntar).
+- Siguiente: fase 5 (interfaz).

@@ -85,7 +85,7 @@ Jefes, asaltos y el ladrón pelean con el mismo motor: mismas unidades, golpes, 
 
 Por qué: Hoy hay tres bucles de pelea distintos más las tiradas. Las expediciones traerían el quinto. Depende de: A2. Dónde: revision-critica.md, punto 6.
 
-Plan: Fase 4 · Un solo motor de pelea.
+Plan: Fase 4 · Un solo motor de pelea. **Hecho** (13 de noviembre): `core/fight.ts`; jefes, asaltos y ladrón dan lo mismo que antes (116 peleas de referencia).
 
 ### A7 · Las expediciones, después del tablón y del motor — Aprobada
 
