@@ -29,6 +29,7 @@ import { PITCH, STAIR_W, floorY, type RoomsLayout, type Rect } from './layout';
 import { CLIMB_Z, STEPS, goesRight, stepAt } from './stairs';
 import {
   LANES,
+  awayBeds,
   homes,
   outside,
   route,
@@ -2179,6 +2180,11 @@ export class Crowd {
   }
 
   /** Lo que se lee al pasar el ratón: el nombre y, en otra línea, quién es. */
+  /** Las camas que esperan a los que están fuera (de las que no usa nadie de casa). */
+  awayBeds(away: readonly { id: string; dorm?: string }[]): Map<string, BedSpot> {
+    return this.S ? awayBeds(this.homes, away, this.S) : new Map();
+  }
+
   hoverOf(id: string): string {
     const h = this.actors.get(id)?.hero;
     if (!h) return '';

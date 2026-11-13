@@ -540,7 +540,7 @@ export function App() {
     setBubble(null);
   };
 
-  const onHotspot = (id: string) => {
+  const onHotspot = (id: string, label?: string) => {
     setHint(false);
     if (id.startsWith('bicho:')) {
       // Un animal de la casa o un bicho de una sala rota: hace lo suyo en la escena y dice algo.
@@ -553,6 +553,11 @@ export function App() {
       const [, act, room] = id.split(':');
       if (works.planning) {
         if (room) works.select(room);
+        return;
+      }
+      // Quien está fuera (la nota del tablón o su cama hecha): se lee lo que dice.
+      if (act === 'fuera') {
+        if (label) toast(label.replace(/\n/g, ' · '));
         return;
       }
       if (act === 'tablon') openPanel('tablon');

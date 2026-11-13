@@ -106,6 +106,7 @@ export function bedsOf(room: Room, w: number): Bed[] {
       z: BED_Z,
       top: row - (h - BUNK_H),
       level,
+      tall: h,
     }));
   });
 }
@@ -493,7 +494,7 @@ function diceTable(): PixelBuffer {
 const quiltOf = (room: Room) =>
   room.type === 'veteranos' ? 3 : room.type === 'servicio' ? 1 : room.level;
 /** Los colores de esa manta: los de su nivel o los del tema de la sala. */
-const quiltRamp = (room: Room): Ramp => cloth(room, Prop.bunkQuilt(quiltOf(room)));
+export const quiltRamp = (room: Room): Ramp => cloth(room, Prop.bunkQuilt(quiltOf(room)));
 
 function styleOf(room: Room): Style {
   return room.type === 'servicio' ? 'servicio' : room.type === 'veteranos' ? 'veterano' : 'tropa';

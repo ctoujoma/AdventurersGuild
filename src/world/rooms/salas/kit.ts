@@ -105,7 +105,7 @@ export type TaskPoi =
 export const task = (t: Thing, poi: TaskPoi): Thing => ({ ...t, poi });
 
 /** Lo que abre una cosa de una sala al tocarla (el tablón, el mapa de la comarca…). */
-export type ActId = 'tablon' | 'mapa' | 'candidatos' | 'equipo';
+export type ActId = 'tablon' | 'mapa' | 'candidatos' | 'equipo' | 'fuera';
 
 /** Algo tocable pintado en la pared del fondo, en sus píxeles. */
 export interface WallAct {
@@ -254,6 +254,8 @@ export interface Bed {
   z: number;
   top: number;
   level: number;
+  /** Alto del dibujo de la litera (40 la de dos pisos, 60 la de tres). */
+  tall?: number;
 }
 
 /** Farol de cadena corta: colgado delante de una ventana, no la tapa. */

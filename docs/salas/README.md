@@ -213,6 +213,14 @@ La lista completa de pendientes e ideas (bucle, monetización, amigos, torneos, 
   `pets.ts`): una rata que cruza corriendo en las de abajo y en la bodega, y un par de
   murciélagos colgados en las de arriba; tocados, chillan y salen corriendo o volando. Hoja:
   `capturas/rotas.png` (`tools/shots/rotas.mjs`).
+- **Quien está fuera** (D5; `world/rooms/fuera.ts`): de encargo o desaparecido (`isAway` en
+  `core/beds.ts`; las expediciones, con `SceneAway.why`), su cama se ve hecha y vacía: la manta
+  tapa la almohada y su capa doblada, de su color, a los pies (`madeBed`). La cama sale de las que
+  sobran (`awayPlan` en el núcleo, `awayBeds` en `people.ts`: quien está en casa va antes). En el
+  tablón del salón, una nota blanca con chincheta azul: una raya del color de cada uno por grupo
+  y los desaparecidos en gris con un punto rojo (`awayPaper`). Las dos se leen al pasar por encima
+  y, al tocarlas, salen en un aviso (`cosa:fuera`). La escena las pinta aparte (`showAway`) y las
+  rehace solo si cambia quién falta.
 - Trabajar, charlar o calentarse van con los pies quietos (`fightSprites(…, planted)`): las
   posturas de pelea abren las piernas y, al alternarlas, parecía que andaban.
 

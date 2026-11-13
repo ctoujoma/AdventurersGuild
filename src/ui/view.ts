@@ -1,5 +1,5 @@
 import { INCIDENTS } from '../data/incidents';
-import { sleepPlan } from '../core/beds';
+import { awayPlan, isAway, sleepPlan } from '../core/beds';
 import { craftState, dressingOf } from '../core/crafting';
 import { paintState, painterAt } from '../core/paint';
 import { RECIPES } from '../data/recipes';
@@ -16,7 +16,7 @@ import { CREST_COLORS } from '../data/custom';
 import { CLASS_NAMES } from '../data/labels';
 import { gearOf } from '../core/resolve';
 import type { Member } from '../core/party';
-import type { SceneHero, SceneModel } from '../world/scene';
+import type { SceneAway, SceneHero, SceneModel } from '../world/scene';
 import { taskLabel } from './crew';
 import { gearList, type Gear } from '../core/gear';
 import type { GearMark } from '../art/heroes/gear';
@@ -135,6 +135,25 @@ function trainBar(s: GameState, h: Hero): SceneHero['train'] {
   return t.capped ? { at: 1, perDay: 0, max: true } : { at: t.frac, perDay: t.perDay };
 }
 
+/** Los que están fuera, para la escena: su cama hecha y la nota del tablón. */
+function awayOf(s: GameState): SceneAway[] {
+  const beds = awayPlan(s);
+  return s.heroes.filter(isAway).map((h) => {
+    // (Quien se perdió ya no va con su grupo, aunque aún no haya vuelto.)
+    const m = h.status === 'mision' ? s.missions.find((x) => x.heroIds.includes(h.id)) : undefined;
+    return {
+      id: h.id,
+      name: h.name,
+      look: lookOf(h),
+      why: h.status === 'desaparecido' ? 'perdido' : 'encargo',
+      dorm: beds.get(h.id),
+      group: m?.id,
+      task: m?.quest.title,
+      days: m?.daysLeft,
+    };
+  });
+}
+
 export function sceneModel(s: GameState): SceneModel {
   const heroes: SceneHero[] = [];
   // Quien va a arreglar un incidente corre a esa sala.
@@ -235,6 +254,7 @@ export function sceneModel(s: GameState): SceneModel {
       store: storeLevel(s) > 0,
     },
     heroes,
+    away: awayOf(s),
     incidents: (s.incidents ?? []).map(({ id, kind, room, taps, until, duel }) => ({
       id,
       kind,
