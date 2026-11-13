@@ -22,7 +22,7 @@ import {
   THIEF_HP_RANK,
   rankIndex,
 } from './balance';
-import { CRIT, CRIT_MULT, heroUnit } from './combat';
+import { clockDuel, heroUnit } from './fight';
 import type {
   Building,
   ChipKind,
@@ -318,45 +318,30 @@ function fail(s: GameState, inc: Incident): IncidentNews {
 }
 
 /**
- * La pelea con el ladrón, golpe a golpe (con las cuentas de la pelea contra jefes): si el héroe
- * lo tumba antes de que pasen `THIEF_ESCAPE` segundos, le pilla; si no, se escapa. Más duro con
- * cada rango. Determinista con la semilla del incidente.
+ * La pelea con el ladrón, golpe a golpe (con el motor de las peleas, `core/fight.ts`): un bandido
+ * que huye con reloj. Si el héroe lo tumba antes de que pasen `THIEF_ESCAPE` segundos, le pilla;
+ * si no, se escapa. Más duro con cada rango. Determinista con la semilla del incidente.
  */
 export function thiefDuel(s: GameState, who: string, seed: string, at: number): Duel | null {
   const h = s.heroes.find((x) => x.id === who && x.status === 'ok');
   if (!h) return null;
   const u = heroUnit({ ...equip([h], s.fac)[0]!, id: h.id, name: h.name });
   const rank = rankIndex(s.rep);
-  const thief = { hp: THIEF_HP + THIEF_HP_RANK * rank, atk: 3 + 1.5 * rank, every: 1.1, def: 1 };
-  const rng = new Rng(`ladron-${seed}`);
-  let hh = u.max;
-  let lh = thief.hp;
-  let ch = u.every * 0.5;
-  let cl = thief.every * 0.8;
-  const hits: DuelHit[] = [];
-  let t = 0;
-  for (; t < THIEF_ESCAPE && lh > 0 && hh > 0; t = Math.round((t + 0.1) * 10) / 10) {
-    ch -= 0.1;
-    cl -= 0.1;
-    if (ch <= 0) {
-      ch += u.every;
-      const crit = rng.chance(CRIT);
-      const raw = u.atk * (0.85 + rng.next() * 0.3) * (crit ? CRIT_MULT : 1);
-      const amount = Math.min(lh, Math.max(1, Math.round(raw - thief.def * 0.5)));
-      lh -= amount;
-      hits.push({ t, by: 'h', amount, crit: crit || undefined });
-    }
-    if (cl <= 0 && lh > 0) {
-      cl += thief.every;
-      const amount = Math.min(
-        hh,
-        Math.max(1, Math.round(thief.atk * (0.85 + rng.next() * 0.3) - u.def * 0.5)),
-      );
-      hh -= amount;
-      hits.push({ t, by: 'l', amount });
-    }
-  }
-  return { who, at, end: t + 0.6, won: lh <= 0, hits, hp: { h: u.max, l: thief.hp } };
+  const hp = THIEF_HP + THIEF_HP_RANK * rank;
+  const every = 1.1;
+  const thief = {
+    id: 'ladron',
+    side: 'e' as const,
+    hp,
+    max: hp,
+    atk: 3 + 1.5 * rank,
+    def: 1,
+    every,
+    cool: every * 0.8,
+  };
+  const d = clockDuel({ ...u, hp: u.max }, thief, `ladron-${seed}`, THIEF_ESCAPE);
+  const hits: DuelHit[] = d.hits.map((x) => ({ ...x, by: x.by === 'a' ? 'h' : 'l' }));
+  return { who, at, end: d.t + 0.6, won: d.won, hits, hp: { h: u.max, l: hp } };
 }
 
 /** Sale mal: se pierde lo que diga y se cuenta. */

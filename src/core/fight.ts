@@ -435,7 +435,7 @@ export abstract class Fight<U extends FightUnit, O extends FightOrder, R> {
 
 /**
  * Uno contra uno con reloj (el ladrón): si `a` tumba a `b` antes de `limit` segundos, gana; si
- * no, `b` se escapa. Sin habilidades ni ocasiones de crítico: los dos, críticos a veces solo `a`.
+ * no, `b` se escapa. Sin habilidades ni ocasiones de crítico; solo `a` mete críticos, a veces.
  */
 export function clockDuel(
   a: FightUnit,
@@ -449,10 +449,10 @@ export function clockDuel(
 } {
   const d = new ClockDuel(a, b, seed, limit);
   d.run();
-  return { won: d.result!, t: d.t, hits: d.hits };
+  return { won: d.result!.won, t: d.t, hits: d.hits };
 }
 
-class ClockDuel extends Fight<FightUnit, never, boolean> {
+class ClockDuel extends Fight<FightUnit, never, { won: boolean }> {
   readonly hits: { t: number; by: 'a' | 'b'; amount: number; crit?: boolean }[] = [];
 
   constructor(
@@ -472,6 +472,7 @@ class ClockDuel extends Fight<FightUnit, never, boolean> {
     );
   }
 
+  /** Segundos, contados en décimas para no arrastrar decimales. */
   get t(): number {
     return this.step / 10;
   }
@@ -479,7 +480,7 @@ class ClockDuel extends Fight<FightUnit, never, boolean> {
   tick(): void {
     const [a, b] = this.units as [FightUnit, FightUnit];
     if (this.t >= this.limit || !alive(a) || !alive(b)) {
-      this.result = !alive(b);
+      this.result = { won: !alive(b) };
       return;
     }
     for (const u of this.units) if (alive(u)) this.act(u);
