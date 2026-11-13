@@ -122,6 +122,13 @@ export interface Unit extends FightUnit {
 
 export const alive = (u: FightUnit) => u.hp > 0 && !u.gone;
 
+/** Lo que lleva cargada la habilidad (0–1; 1, lista), para las barras de las interfaces. */
+export const skillCharge = (u: FightUnit) =>
+  u.ability ? 1 - (u.charge ?? 0) / ABILITIES[u.ability].every : 0;
+
+/** Tiene abierta la ocasión de crítico y aún no la ha cogido: ¡ahora! */
+export const critReady = (u: FightUnit) => alive(u) && !!u.critOpen && !u.critTaken;
+
 /** Lo que pesa un héroe en la pelea: de sus atributos, su nivel y su clase. */
 export function heroUnit(h: Member & { id: string; name: string }): Unit {
   const ranged = h.cls === 'mago' || h.cls === 'explorador';
