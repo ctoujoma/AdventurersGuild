@@ -9,12 +9,13 @@ import { PixelBuffer } from '../../art/pixel';
 import type { Building, Room } from '../../core/model';
 import * as Prop from '../props';
 import { ruinThings } from './ruina';
-import { PITCH, ROOM_H } from './layout';
+import { PITCH, ROOM_H, SLAB } from './layout';
 import { BACK, scaleAt } from './view3d';
 import { ART } from './salas';
 import { bedsOf } from './salas/camas';
 import { cotsOf } from './salas/enfermeria';
 import { cloth } from './salas/tintes';
+import { galleryOf, galleryThings } from './galeria';
 
 /** Los manteles del salón, granates (o del tema de la sala). */
 const VINO = [P.plum, P.wine, P.red, P.coral] as const;
@@ -108,18 +109,24 @@ function tables(room: Room, w: number): { x: number; z: number }[] {
   }));
 }
 
-/** Un sitio donde sentarse: el taburete (centro en x y profundidad). */
+/** Un sitio donde sentarse: el taburete (centro en x y profundidad; `up`, plantas por encima). */
 export interface Seat {
   x: number;
   z: number;
+  up?: number;
 }
 
 export function seats(room: Room, w: number): Seat[] {
   if (room.type !== 'salon' || !inUse(room)) return [];
-  return tables(room, w).flatMap((t) => [
-    { x: t.x - 18, z: t.z - 2 },
-    { x: t.x + 18, z: t.z + 2 },
-  ]);
+  const gal = galleryOf(room, w);
+  return [
+    ...tables(room, w).flatMap((t) => [
+      { x: t.x - 18, z: t.z - 2 },
+      { x: t.x + 18, z: t.z + 2 },
+    ]),
+    // Los de la galería, en la planta de arriba.
+    ...(gal?.seats.map((s) => ({ ...s, up: 1 })) ?? []),
+  ];
 }
 
 export function beds(room: Room, w: number): Bed[] {
@@ -177,8 +184,13 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
       const decor = look.decor;
       // Fuego grande desde el nivel 3; la chimenea grande (decoración) lo aviva más.
       const big = decor.includes('chimenea') || lvl >= 3;
+      // En el de dos alturas y tres huecos, la galería al fondo (con la barra debajo).
+      const gal = galleryOf(room, w);
+      const ceiling = room.h * PITCH - SLAB;
+      if (gal) t.push(...galleryThings(room, gal, lvl, ceiling));
       add(bar(lvl, decor.includes('barril')), 44, WALL - 16);
       t.at(-1)!.act = 'candidatos';
+      if (gal) t.at(-1)!.dim = 0.7;
       // Lo justo: un barril y una caja; del 2, los barriles apilados.
       if (lvl >= 2) add(barrels(), 17, FRONT + 4);
       else {
@@ -218,15 +230,28 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
       for (const x of salonSconces(room, Math.round(w * BACK)))
         t.push(wallLight(room, x, low + 23));
       add(logPile(), w - 13, WALL - 12);
-      if (decor.includes('tarima')) add(stage(), w - 94, WALL - 2);
-      // Las ristras y el jamón, en el salón sencillo (del 3 en adelante, no).
-      if (lvl <= 2) t.push({ img: larder(), x: 84, z: WALL - 8, y: 0, hang: true });
+      // (Con galería, la tarima va debajo: donde iba está la escalera.)
+      if (decor.includes('tarima')) {
+        add(stage(), gal ? gal.x1 - 30 : w - 94, WALL - 2);
+        if (gal) t.at(-1)!.dim = 0.7;
+      }
+      // Las ristras y el jamón, en el salón sencillo (del 3 en adelante, no): de la viga del
+      // techo o, con galería, de las de debajo de su suelo.
+      if (lvl <= 2)
+        t.push({
+          img: larder(),
+          x: 84,
+          z: WALL - 8,
+          y: gal ? ceiling - (PITCH - 8) : 0,
+          hang: true,
+          dim: gal ? 0.7 : undefined,
+        });
       const linen = cloth(room, VINO);
       tables(room, w).forEach(({ x: tx, z }, i) => {
         const cards = i === 0 && decor.includes('naipes');
         const candle = lvl >= 2 && !cards;
         add(
-          tableSet(`${room.id}-${i}`, lvl, lvl >= 3 ? linen : undefined, candle, cards),
+          tableSet(`${room.id}-${i}`, lvl >= 3 ? linen : undefined, candle, cards, lvl),
           tx,
           z,
           0,
@@ -264,8 +289,9 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
       if (room.h > 1 || decor.includes('lampara')) {
         // En el de dos alturas, colgada de una cadena larga hasta media sala.
         const drop = (room.h - 1) * (PITCH - 24);
-        // (Con la lámpara de hierro comprada, entre las de latón o junto a la de cristal.)
-        const lx = lvl === 4 ? w / 2 : w / 2 + (lvl >= 5 ? 34 : 20);
+        // Con galería, por delante de la escalera (donde no da con nada); si no, con la lámpara
+        // de hierro comprada, entre las de latón o junto a la de cristal.
+        const lx = gal ? gal.lamp : lvl === 4 ? w / 2 : w / 2 + (lvl >= 5 ? 34 : 20);
         if (drop)
           t.push({
             img: chain(Math.round(drop * scaleAt(MID))),

@@ -11,6 +11,7 @@ import { P, R, type Ramp } from '../../art/palette';
 import { PixelBuffer, rgba } from '../../art/pixel';
 import type { Room, TrophyIcon } from '../../core/model';
 import { Rng } from '../../core/rng';
+import { gallerySeats } from '../../core/salon';
 import { stoneWall } from '../paint';
 import * as Prop from '../props';
 import { CELL_W, DEPTH, PITCH, ROOM_H } from './layout';
@@ -269,8 +270,10 @@ export function salonWall(
   if (tall)
     for (let x = 36; x < b.w - 30; x += 36)
       if (free(x - 7, 14, 0) && x + 7 < flueLeft && x - (flags.at(-1) ?? -99) >= 60) flags.push(x);
+  // Con galería, más cortos: acaban por encima de la cabeza de los de arriba.
+  const long = low - 24 - (tall && gallerySeats(room) > 0 ? 22 : 0);
   const hang = () => {
-    for (const x of flags) b.blit(banner(look.crest.field, look.crest.dark, low - 24), x - 7, 4);
+    for (const x of flags) b.blit(banner(look.crest.field, look.crest.dark, long), x - 7, 4);
   };
   hang();
   // Altura de la fila de trofeos (en el de dos alturas, a media pared de arriba).
@@ -412,10 +415,10 @@ function candelabrum(b: PixelBuffer, x: number, base: number, gold: boolean) {
  */
 export function tableSet(
   seed: string,
-  level: number,
   cloth: readonly string[] | undefined,
   candle: boolean,
   cards: boolean,
+  level = 3,
 ): PixelBuffer {
   return Prop.piece(26, 22, (b) => {
     if (cards) {

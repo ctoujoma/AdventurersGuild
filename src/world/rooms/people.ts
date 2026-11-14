@@ -7,12 +7,54 @@ import type { Room } from '../../core/model';
 import { hasPosts } from '../../core/workers';
 import { beds, seats, type Bed } from './furniture';
 import { SPOT } from './salas/recibidor';
+import { EDGE, galleryOf } from './galeria';
 import { PATIO_W, PITCH, STAIR_W, WALL, floorY, interior, type RoomsLayout } from './layout';
 
 /** Un punto del suelo: x del mundo y planta. */
 export interface Place {
   x: number;
   floor: number;
+  /** Rellano de una escalera de dentro de una sala (la de la galería del salón). */
+  flight?: Flight;
+}
+
+/**
+ * Una escalera de dentro de una sala (la de la galería del salón): sube de `floor` a la de
+ * encima y `steps` dice dónde se pisa cada peldaño (x e y del mundo, y su fondo).
+ */
+export interface Flight {
+  floor: number;
+  steps: { x: number; y: number; z: number }[];
+}
+
+/** La galería de un salón, en el mundo: su planta, por dónde se anda y su canto. */
+export interface GalleryWalk {
+  floor: number;
+  x0: number;
+  x1: number;
+  edge: number;
+}
+
+const inner = new WeakMap<RoomsLayout, { flights: Flight[]; walks: GalleryWalk[] }>();
+
+/** Las escaleras de dentro de las salas y las galerías (una vez por cada `RoomsLayout`). */
+export function insides(L: RoomsLayout): { flights: Flight[]; walks: GalleryWalk[] } {
+  let v = inner.get(L);
+  if (v) return v;
+  v = { flights: [], walks: [] };
+  for (const { room, rect } of L.rooms) {
+    const i = interior(rect);
+    const g = galleryOf(room, i.w);
+    if (!g) continue;
+    const base = floorY(room.floor);
+    v.flights.push({
+      floor: room.floor,
+      steps: g.steps.map((s) => ({ x: i.x + s.x, y: base - s.y, z: s.z })),
+    });
+    v.walks.push({ floor: room.floor + 1, x0: i.x + g.walk[0], x1: i.x + g.walk[1], edge: EDGE });
+  }
+  inner.set(L, v);
+  return v;
 }
 
 /** Tramos de suelo seguidos de cada planta (salas que se tocan y escaleras). */
@@ -35,6 +77,8 @@ export function segments(L: RoomsLayout): Segments {
   };
   for (const { room, rect } of L.rooms)
     if (room.type !== 'torre') push(room.floor, rect.x, rect.x + rect.w);
+  // Las galerías: un tramo aparte (sin tocar las salas de al lado: solo se llega por su escalera).
+  for (const w of insides(L).walks) push(w.floor, w.x0, w.x1);
   for (const s of L.stairs) for (const f of [...s.floors, ...s.halls]) push(f, s.x, s.x + STAIR_W);
   // El patio, delante del recibidor, y el jardín de entre los dos edificios.
   push(0, -PATIO_W, 0);
@@ -75,6 +119,16 @@ export function route(L: RoomsLayout, from: Place, to: Place, S = segments(L)): 
       shaft.push(k);
     }
   });
+  // Y los dos de cada escalera de dentro de una sala (el pie y arriba), que se unen entre sí.
+  const own = L.stairs.length;
+  insides(L).flights.forEach((fl, k) => {
+    const [a, b] = [fl.steps[0]!, fl.steps.at(-1)!];
+    nodes.push(
+      { x: a.x, floor: fl.floor, flight: fl },
+      { x: b.x, floor: fl.floor + 1, flight: fl },
+    );
+    shaft.push(own + k, own + k);
+  });
   const n = nodes.length;
   const dist = new Array<number>(n).fill(Infinity);
   const prev = new Array<number>(n).fill(-1);
@@ -85,12 +139,9 @@ export function route(L: RoomsLayout, from: Place, to: Place, S = segments(L)): 
     const p = nodes[i]!;
     const q = nodes[j]!;
     if (p.floor === q.floor) return level(p, q);
-    const s = L.stairs[shaft[i]!]!;
-    return (
-      shaft[i] === shaft[j] &&
-      Math.abs(p.floor - q.floor) === 1 &&
-      s.flights.includes(Math.min(p.floor, q.floor))
-    );
+    if (shaft[i] !== shaft[j] || Math.abs(p.floor - q.floor) !== 1) return false;
+    const s = L.stairs[shaft[i]!];
+    return !s || s.flights.includes(Math.min(p.floor, q.floor));
   };
   const cost = (p: Place, q: Place) => Math.abs(p.x - q.x) + Math.abs(p.floor - q.floor) * PITCH;
   for (let i = 0; i < n; i++) if (level(from, nodes[i]!)) dist[i] = cost(from, nodes[i]!);
@@ -190,7 +241,8 @@ export function spots(L: RoomsLayout): Spots {
         spot,
       );
     }
-    for (const s of seats(room, i.w)) out.seats.push({ x: i.x + s.x, floor: room.floor, z: s.z });
+    for (const s of seats(room, i.w))
+      out.seats.push({ x: i.x + s.x, floor: room.floor + (s.up ?? 0), z: s.z });
     if (room.type === 'salon')
       for (let k = 0; k < 4; k++) out.bar.push({ x: i.x + 30 + k * 14, floor: room.floor });
     if (room.type !== 'tesoro') out.rooms.push({ room, x0: i.x + 14, x1: i.x + i.w - 14 });
@@ -344,10 +396,13 @@ export function workGoal(
   if (!j) return null;
   const floor = j.room.floor;
   if (j.room.type === 'salon') {
-    const tables = S.seats.filter((s) => s.floor === floor && s.x >= j.x0 - 20 && s.x <= j.x1 + 20);
+    // (Las de la galería también: se sube por su escalera.)
+    const tables = S.seats.filter(
+      (s) => s.floor >= floor && s.floor < floor + j.room.h && s.x >= j.x0 - 20 && s.x <= j.x1 + 20,
+    );
     if (tables.length && rnd() < 0.7) {
       const t = tables[Math.floor(rnd() * tables.length)]!;
-      return { place: { x: t.x + (rnd() < 0.5 ? -9 : 9), floor }, pose: 'stand' };
+      return { place: { x: t.x + (rnd() < 0.5 ? -9 : 9), floor: t.floor }, pose: 'stand' };
     }
     // Si no, a limpiar la barra.
     const bar = S.bar.filter((b) => b.floor === floor);

@@ -32,8 +32,10 @@ import {
   awayBeds,
   homes,
   outside,
+  insides,
   route,
   segments,
+  type Flight,
   spots,
   wander,
   workGoal,
@@ -758,7 +760,7 @@ interface Actor {
    * Subiendo o bajando un tramo: la planta de abajo, la columna (x de su hueco), si sube y por
    * dónde va (0 = abajo, 1 = arriba).
    */
-  climb?: { lower: number; sx: number; up: boolean; u: number } | null;
+  climb?: { lower: number; sx: number; up: boolean; u: number; fl?: Flight } | null;
 }
 
 /** La caída: lo que dura, lo que echa hacia atrás y la parte en que aún se tambalea de pie. */
@@ -2369,7 +2371,8 @@ export class Crowd {
       this.S!.bar.some((b) => b.floor === a.floor && Math.abs(b.x - a.x) < 6);
     const key = (wiping ? 'barra' : job?.room.type) as WorkId | undefined;
     const w: Work | undefined = key && key in WORK ? WORK[key] : undefined;
-    if (!job || !w || a.floor !== job.room.floor || a.x < job.x0 - 8 || a.x > job.x1 + 8)
+    const off = a.floor - (job?.room.floor ?? 0);
+    if (!job || !w || off < 0 || off >= job.room.h || a.x < job.x0 - 8 || a.x > job.x1 + 8)
       return null;
     const cycle = w.steps.reduce((a, s) => a + s[2], 0);
     let p = (this.now + (hash(h.id) % 89) / 11) % cycle;
@@ -2796,7 +2799,15 @@ export class Crowd {
   private pathTo(a: Actor, p: Place): Place[] | null {
     if (!this.L) return null;
     const c = a.climb;
-    const mid = c ? { x: c.sx + STAIR_W / 2, floor: c.up ? c.lower + 1 : c.lower } : null;
+    const mid = c
+      ? c.fl
+        ? {
+            x: (c.up ? c.fl.steps.at(-1)! : c.fl.steps[0]!).x,
+            floor: c.up ? c.lower + 1 : c.lower,
+            flight: c.fl,
+          }
+        : { x: c.sx + STAIR_W / 2, floor: c.up ? c.lower + 1 : c.lower }
+      : null;
     const rest = route(this.L, mid ?? { x: a.x, floor: a.floor }, p, this.segs);
     return mid && rest ? [mid, ...rest] : rest;
   }
@@ -2831,8 +2842,11 @@ export class Crowd {
       const up = next.floor > a.floor;
       const lower = Math.min(a.floor, next.floor);
       const sx = next.x - STAIR_W / 2;
+      // La de dentro de una sala (la galería del salón) dice ella dónde va cada peldaño.
+      const fl = a.climb?.fl ?? next.flight;
+      const at = (i: number) => (fl ? fl.steps[i]! : stepAt(sx, lower, i));
       if (!a.climb) {
-        const start = stepAt(sx, lower, up ? 0 : STEPS);
+        const start = at(up ? 0 : STEPS);
         const dx = start.x - a.x;
         const step = SPEED * run * dt;
         a.dist += step;
@@ -2841,7 +2855,7 @@ export class Crowd {
           a.dir = dx > 0 ? 1 : -1;
         } else {
           a.x = start.x;
-          a.climb = { lower, sx, up, u: up ? 0 : 1 };
+          a.climb = { lower, sx, up, u: up ? 0 : 1, fl };
         }
       }
       const c = a.climb;
@@ -2849,12 +2863,13 @@ export class Crowd {
         const step = CLIMB * run * dt;
         a.dist += step;
         c.u = Math.max(0, Math.min(1, c.u + ((up ? 1 : -1) * step) / PITCH));
-        // Mira hacia donde va el tramo (al bajar, al revés que al subir).
-        a.dir = goesRight(lower) === up ? 1 : -1;
         const s = c.u * STEPS;
         const i = Math.min(STEPS - 1, Math.floor(s));
-        const p0 = stepAt(sx, lower, i);
-        const p1 = stepAt(sx, lower, i + 1);
+        const p0 = at(i);
+        const p1 = at(i + 1);
+        // Mira hacia donde va el tramo (al bajar, al revés que al subir).
+        if (!fl) a.dir = goesRight(lower) === up ? 1 : -1;
+        else if (Math.abs(p1.x - p0.x) > 0.5) a.dir = p1.x > p0.x === up ? 1 : -1;
         // Cada peldaño: un impulso rápido y un momento quieto en él.
         const f = smoothstep(Math.min(1, (s - i) / LIFT));
         a.x = p0.x + (p1.x - p0.x) * f;
@@ -2935,12 +2950,35 @@ export class Crowd {
     if (a.edge) return a.edge.bed.z;
     if (a.climb) {
       // Del carril al tramo en el primer peldaño, y de vuelta en el último.
-      const s = a.climb.u * STEPS;
+      const c = a.climb;
+      const s = c.u * STEPS;
+      if (c.fl) {
+        // En la de la galería, cada peldaño a su fondo (la de caracol da la vuelta al eje).
+        const i = Math.min(STEPS - 1, Math.floor(s));
+        const [p, q] = [c.fl.steps[i]!, c.fl.steps[i + 1]!];
+        const z = p.z + (q.z - p.z) * Math.min(1, s - i);
+        if (s < 1) return a.lane + (z - a.lane) * s;
+        const top = this.lifted(a.lane, a.x, c.lower + 1);
+        if (s > STEPS - 1) return top + (z - top) * (STEPS - s);
+        return z;
+      }
       const w = Math.min(1, s, STEPS - s);
       return a.lane + (CLIMB_Z - a.lane) * w;
     }
     if ((a.pose === 'sit' || a.pose === 'bed') && a.goal?.z !== undefined) return a.goal.z;
-    return a.lane;
+    return this.lifted(a.lane, a.x, a.floor);
+  }
+
+  /**
+   * En la galería del salón se anda por detrás de su canto (y de la barandilla): el carril de
+   * siempre, corrido hacia el fondo.
+   */
+  private lifted(lane: number, x: number, floor: number): number {
+    if (!this.L) return lane;
+    for (const w of insides(this.L).walks)
+      if (w.floor === floor && x >= w.x0 - 6 && x <= w.x1 + 6)
+        return w.edge + 5 + (lane - 16) * 0.5;
+    return lane;
   }
 
   /** Fotograma, tamaño y esquina de abajo a la izquierda (en el mundo 2D) de alguien. */
