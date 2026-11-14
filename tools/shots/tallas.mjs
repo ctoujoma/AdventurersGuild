@@ -148,7 +148,6 @@ for (const size of SIZES) {
     await take(n);
     await page.keyboard.press('Escape');
     await wait(700);
-    await click('.tabs button:has-text("Taberna")');
   }
   await click('.tabs button:has-text("Tablón")');
   await click('.panel .quest, .panel [class*="quest"] button, .panel button.card');
@@ -156,12 +155,12 @@ for (const size of SIZES) {
   await page.keyboard.press('Escape');
   await page.keyboard.press('Escape');
   await wait(700);
-  await click('.tabs button:has-text("Taberna")');
-  await click('button[aria-label^="Fuera del gremio"]');
+  await click('.tabs button:has-text("Mapa")');
   await take('7-mapa');
   await page.keyboard.press('Escape');
   await wait(700);
-  await click('button[aria-label="Ajustes"], button[aria-label*="justes"]');
+  await click('[data-tut="engranaje"]');
+  await click('.gear-item:has-text("Ajustes")');
   await take('8-ajustes');
   await page.keyboard.press('Escape');
   await wait(700);

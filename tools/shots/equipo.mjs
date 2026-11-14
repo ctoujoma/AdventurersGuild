@@ -129,8 +129,8 @@ for (let i = 0; i < n; i++) {
   await page.keyboard.press('Escape');
   await wait(300);
 }
-await click('.tab:has-text("Gremio")');
-await click('button:has-text("Arcón y trofeos"), .tile:has-text("Arcón")');
+await click('.tab:has-text("Héroes")');
+await click('[data-tut="seg-equipo"]');
 await wait(600);
 await page.screenshot({ path: `${out}/arcon.png` });
 await page.keyboard.press('Escape');
