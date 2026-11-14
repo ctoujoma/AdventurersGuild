@@ -217,6 +217,8 @@ const TERRAIN_PAD = 3200;
 /** Ancho del trozo de terreno o de tierra que se repite hasta allí. */
 const TILE = 512;
 const DAWN_LIGHT = 0.65;
+/** Lo que tarda en cerrarse la noche desde que se acuestan (parte del día). */
+const NIGHT_CLOSE = 0.1;
 const NEAR = 20;
 const FAR = EYE + 400;
 /** Lo que tarda en levantarse una sala al pagar las obras (s). */
@@ -683,6 +685,8 @@ export class RoomScene {
   /** Hora del día que lleva el reloj de la partida (0 mañana, 1 noche); manda sobre la propia. */
   private clockTod: number | null = null;
   private dayAtNightfall = 0;
+  /** Lo cerrada que estaba ya la noche del reloj al empezar la transición al día siguiente. */
+  private darkAtNightfall = 0;
   private night: {
     start: number;
     dur: number;
@@ -1377,6 +1381,7 @@ export class RoomScene {
   nightfall(done: () => void, dur = 2.6, hold = 0): void {
     this.night?.done?.();
     this.dayAtNightfall = this.daylight().day;
+    this.darkAtNightfall = this.nightLight().dark;
     this.night = { start: this.t, dur, hold, done };
   }
 
@@ -1986,13 +1991,25 @@ export class RoomScene {
     return 0.5 + (te - a - plateau) / n.dur;
   }
 
+  /**
+   * La noche cerrada del reloj: desde que se acuestan (`WORK_END`) se va cerrando y sigue cerrada
+   * hasta que acaba el día (la noche que cuenta el núcleo es la que se ve).
+   */
+  private clockDark(): number {
+    const tod = this.clockTod ?? Math.min(1, (this.t - this.dayStart) / DAY_LENGTH);
+    return smooth(Math.max(0, Math.min(1, (tod - WORK_END) / NIGHT_CLOSE)));
+  }
+
   private nightLight(): NightLight {
-    if (!this.night) return { dark: 0, warm: 0 };
+    if (!this.night) return { dark: this.clockDark(), warm: 0 };
     const p = this.nightP();
     const ramp = (a: number, b: number) => Math.max(0, Math.min(1, (p - a) / (b - a)));
+    // Con asalto, algo menos oscuro: que se vea la pelea.
+    const full = this.raid ? 0.45 : 1;
+    // Al pasar al día siguiente se sigue desde lo oscura que ya estaba (de noche, sin bajón).
+    const from = this.darkAtNightfall;
     return {
-      // Con asalto, algo menos oscuro: que se vea la pelea.
-      dark: ramp(0, 0.35) * (1 - ramp(0.5, 0.9)) * (this.raid ? 0.45 : 1),
+      dark: p < 0.35 ? from + (full - from) * ramp(0, 0.35) : full * (1 - ramp(0.5, 0.9)),
       warm: ramp(0.45, 0.9) * (1 - ramp(1.05, 1.8)),
     };
   }
