@@ -59,6 +59,13 @@ export interface HeroSprites {
   bed: PixelBuffer;
   /** Cabeza dormida, sin venda, para la almohada del dormitorio. */
   sleep: PixelBuffer;
+  /**
+   * De espaldas: quieto y subiendo un peldaño con cada pierna (el pie de arriba, levantado). Para
+   * la escalera de caracol, cuando se aleja de la cámara.
+   */
+  back: [PixelBuffer, PixelBuffer, PixelBuffer];
+  /** De frente, subiendo o bajando un peldaño con cada pierna (cuando viene hacia la cámara). */
+  stepFront: [PixelBuffer, PixelBuffer];
 }
 
 type Slots = Record<string, string>;
@@ -383,6 +390,99 @@ function composeFront(
   return b;
 }
 
+/** La nuca: la cabeza llena de pelo (o de piel, el calvo; o de la capucha) y el cuello debajo. */
+const NAPE: Grid = [
+  '................',
+  '................',
+  '....hhhhhhhh....',
+  '...hhhhhhhhhh...',
+  '...hhhhhhhhhh...',
+  '...hhHhhhhHhh...',
+  '...hHhhhhhhHh...',
+  '...HhhHHHhhhH...',
+  '....HHhhhhHH....',
+  '......XXXX......',
+];
+/** La coleta y la melena, vistas por detrás. */
+const NAPE_TAIL: Grid = [
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '.......hh.......',
+  '.......hH.......',
+  '.......HH.......',
+];
+const NAPE_LONG: Grid = [
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '',
+  '...hhhhhhhhhh...',
+  '...hHhhhhhhHh...',
+  '....HhhhhhhH....',
+];
+
+/**
+ * De espaldas: lo mismo que de frente (traje, equipo, sombrero) pero con la nuca en lugar de la
+ * cara, sin barba ni parche, y volteado (lo que lleva en la mano derecha queda a la derecha).
+ */
+function composeBack(look: HeroLook, marks: HeroMarks): PixelBuffer {
+  const c = slots(look);
+  const b = new PixelBuffer(BODY_W, BODY_H + HEADROOM);
+  const body = (g: Grid, from = 0) =>
+    stamp(b, g.map((r) => r || '................').slice(from), c, 0, HEADROOM + from);
+  const hg = headgearOf(look, marks);
+  const bald = look.hairStyle === 'calvo';
+  body(BASE);
+  const nape = hg === 'capucha' ? 'cC' : bald ? 'xX' : 'hH';
+  body(NAPE.map((r) => r.replace(/h/g, nape[0]!).replace(/H/g, nape[1]!)));
+  body(OUTFITS[look.outfit]);
+  if (hg !== 'capucha' && look.hairStyle === 'largo') body(NAPE_LONG);
+  if (hg !== 'capucha' && look.hairStyle === 'coleta') body(NAPE_TAIL);
+  if (hg === 'capucha') body(HELMS.capucha);
+  else if (hg === 'casco') body(HELMS.casco);
+  else {
+    if (!bald) body(FRONT_HAIR[look.hairStyle].slice(0, 4));
+    if (hg) stamp(b, HATS[hg], c, 0, 0);
+  }
+  if (marks.injured && hg !== 'sombrero' && hg !== 'gorra') body(OVERLAYS.venda);
+  if (look.garment === 'capa') garmentFront(b, 'capa', look.dye);
+  body(WEAPONS[look.outfit]);
+  const gear = gearOf(look, marks);
+  if (gear) gearFront(b, gear);
+  if (look.garment && look.garment !== 'capa') garmentFront(b, look.garment, look.dye);
+  const out = new PixelBuffer(b.w, b.h);
+  out.blit(b, 0, 0, true);
+  return out;
+}
+
+/**
+ * Subiendo un peldaño (de frente o de espaldas): una pierna con el pie levantado (`left`, la de
+ * la izquierda del dibujo), dos filas más corta, y el cuerpo un píxel más arriba.
+ */
+function stepUp(src: PixelBuffer, left: boolean): PixelBuffer {
+  const out = new PixelBuffer(src.w, src.h);
+  const hip = HEADROOM + 17;
+  for (let y = 0; y < src.h; y++)
+    for (let x = 0; x < src.w; x++) {
+      const leg = y >= hip && (left ? x < src.w / 2 : x >= src.w / 2);
+      const from = leg ? y + 2 : y + 1;
+      const c = from < src.h ? src.get(x, from) : 0;
+      if (c) out.set(x, y, c);
+    }
+  return out;
+}
+
 /** Respiración: cabeza y pecho bajan un píxel; caderas y piernas se quedan quietas. */
 function breathe(src: PixelBuffer): PixelBuffer {
   const out = src.clone();
@@ -531,6 +631,7 @@ export function heroSprites(look: HeroLook, marks: HeroMarks = {}): HeroSprites 
   const bare = { ...look, headgear: look.headgear === 'capucha' ? ('capucha' as const) : null };
   const bedRaw = composeFront(bare, { ...marks, injured: true }, true, false);
   const sleepRaw = composeFront(bare, marks, true, false);
+  const backRaw = composeBack(look, marks);
   const sprites: HeroSprites = {
     idle: [selOut(front), selOut(breathe(front))],
     blink: selOut(composeFront(look, marks, true)),
@@ -543,6 +644,8 @@ export function heroSprites(look: HeroLook, marks: HeroMarks = {}): HeroSprites 
     sit: selOut(front.crop(0, 0, BODY_W, sitRows)),
     bed: selOut(bedRaw.crop(1, 2, BODY_W - 2, HEADROOM + 10)),
     sleep: selOut(sleepRaw.crop(1, 2, BODY_W - 2, HEADROOM + 10)),
+    back: [selOut(backRaw), selOut(stepUp(backRaw, true)), selOut(stepUp(backRaw, false))],
+    stepFront: [selOut(stepUp(front, true)), selOut(stepUp(front, false))],
   };
   cache.set(key, sprites);
   return sprites;

@@ -116,7 +116,9 @@ import {
   DECK,
   EDGE,
   GAL_STEPS,
+  HALF,
   SPIRAL_R,
+  TURN,
   deckEnd,
   deckTop,
   deckUnder,
@@ -125,6 +127,8 @@ import {
   shadeWall,
   spiralAngle,
   spiralTread,
+  stringerTex,
+  treadTop,
   type Gallery,
 } from './galeria';
 import {
@@ -4385,45 +4389,70 @@ export class RoomScene {
       [at(x1, under, EDGE), at(x1, under, DEPTH), at(x1, top, DEPTH), at(x1, top, EDGE)],
       { ambient, sun: sun * 0.8, dither: 0 },
     );
-    if (g.kind !== 'caracol' || !g.axis) return;
-    // La de caracol: cada peldaño, una tabla vista de canto a su fondo (las de detrás del eje
-    // quedan tapadas por él; las de delante, por delante), con un barrote en la punta.
+    // La escalera de caracol, en 3D alrededor de su eje (que es una figura con volumen): cada
+    // peldaño en abanico (su huella por encima y por debajo, y su canto, una figura a su fondo:
+    // los de detrás del eje quedan tapados por él), la zanca y el pasamanos en hélice por fuera
+    // y un barrote en la punta de cada peldaño.
     const ax = r.x + g.axis.x;
     const az = g.axis.z;
-    const half = (12 * Math.PI) / 180;
+    const Rr = SPIRAL_R;
+    const rise = PITCH / GAL_STEPS;
+    const turn = (TURN * Math.PI) / 180;
     const side = { ambient, sun, dither: 0, wrap: 0.6, side: DoubleSide };
     const Q = (a: number, rad: number, y: number) =>
       at(ax + rad * Math.sin(a), y, az - rad * Math.cos(a));
-    const rail: Vector3[] = [];
+    // Alto (sobre el suelo) de la línea de los peldaños en cada ángulo de la vuelta.
+    const a1 = spiralAngle(1);
+    const lift = (a: number) => rise * (1 + (a - a1) / turn);
     for (let i = 1; i < GAL_STEPS; i++) {
       const a = spiralAngle(i);
-      const y = floor - (i * PITCH) / GAL_STEPS;
-      const xs = [0, Math.sin(a - half), Math.sin(a + half)].map((v) => v * SPIRAL_R);
-      const z = az - 9 * Math.cos(a);
+      const y = floor - i * rise;
+      const [b0, b1] = [a - HALF, a + HALF];
+      this.plane(
+        this.world,
+        treadTop(),
+        [Q(b0, 2, y), Q(b1, 2, y), Q(b1, Rr, y), Q(b0, Rr, y)],
+        side,
+      );
+      const xs = [0, Math.sin(b0), Math.sin(b1)].map((v) => v * Rr);
+      const z = az - Rr * 0.55 * Math.cos(a);
       const k = scaleAt(z);
       const plank = spiralTread(Math.round((Math.max(...xs) - Math.min(...xs)) * k), Math.cos(a));
-      this.figure(
-        this.world,
-        plank,
-        ax + (Math.max(...xs) + Math.min(...xs)) / 2,
-        y + 4 / k,
-        z,
-        ambient,
-        sun,
-      );
-      const b = Q(a + half, SPIRAL_R - 1, y);
-      rail.push(Q(a + half, SPIRAL_R - 1, y - 14));
+      const mid = (Math.max(...xs) + Math.min(...xs)) / 2;
+      this.figure(this.world, plank, ax + mid, y + plank.h / k, z, ambient, sun);
+      const b = Q(b1, Rr - 1, y);
       const bar = new PixelBuffer(1, Math.round(14 * scaleAt(-b.z)));
       for (let j = 0; j < bar.h; j++) bar.set(0, j, rgba(j % 5 ? R.wood[3]! : R.wood[5]!));
       this.figure(this.world, bar, b.x, GROUND - b.y, -b.z, ambient, sun);
     }
-    // El pasamanos: una cinta de barrote a barrote, hasta la barandilla de la galería.
-    rail.push(at(x1, top - 13, az));
-    for (let i = 0; i + 1 < rail.length; i++) {
-      const [p, q] = [rail[i]!, rail[i + 1]!];
-      const d = new Vector3(0, 1.6, 0);
-      this.plane(this.world, deckEnd(4, 2), [p, q, q.clone().add(d), p.clone().add(d)], side);
+    // La zanca (una cinta de tablas bajo el borde de fuera) y el pasamanos, en tramos cortos.
+    const from = a1 - HALF;
+    const to = spiralAngle(GAL_STEPS - 1) + HALF;
+    const n = (GAL_STEPS - 1) * 2;
+    const band = stringerTex();
+    const hand = deckEnd(4, 2);
+    for (let i = 0; i < n; i++) {
+      const [p, q] = [from + ((to - from) * i) / n, from + ((to - from) * (i + 1)) / n];
+      const [yp, yq] = [floor - lift(p) + rise / 2, floor - lift(q) + rise / 2];
+      this.plane(
+        this.world,
+        band,
+        [Q(p, Rr, yp + 7), Q(q, Rr, yq + 7), Q(q, Rr, yq), Q(p, Rr, yp)],
+        side,
+      );
+      const [hp, hq] = [yp - 16, yq - 16];
+      this.plane(
+        this.world,
+        hand,
+        [Q(p, Rr - 1, hp + 1.6), Q(q, Rr - 1, hq + 1.6), Q(q, Rr - 1, hq), Q(p, Rr - 1, hp)],
+        side,
+      );
     }
+    // Y el último tramo del pasamanos, hasta la barandilla de la galería.
+    const end = Q(to, Rr - 1, floor - lift(to) + rise / 2 - 16);
+    const rail = at(x1, top - 13, az);
+    const d = new Vector3(0, 1.6, 0);
+    this.plane(this.world, hand, [end, rail, rail.clone().add(d), end.clone().add(d)], side);
   }
 
   private plane(

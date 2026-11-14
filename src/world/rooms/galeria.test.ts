@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Building } from '../../core/model';
 import { uncleBuilding } from '../../core/rooms';
 import { seatsOf } from '../../core/salon';
-import { galleryOf } from './galeria';
+import { galleryOf, stepView } from './galeria';
 import { roomsLayout } from './layout';
 import { insides, route, segments, spots } from './people';
 
@@ -24,23 +24,34 @@ describe('la galería del salón', () => {
   it('solo en el de dos alturas y tres huecos, con seis plazas más', () => {
     const b = tall();
     const salon = b.rooms.find((r) => r.type === 'salon')!;
-    expect(galleryOf(salon, 362, 'recta')!.seats).toHaveLength(6);
+    expect(galleryOf(salon, 362)!.seats).toHaveLength(6);
     expect(galleryOf({ ...salon, h: 1 }, 362)).toBeNull();
     expect(galleryOf({ ...salon, w: 2 }, 236)).toBeNull();
     expect(seatsOf(b)).toBe(5 * 2 + 6);
   });
 
-  it('las dos escaleras van del suelo del salón al de la galería', () => {
+  it('la escalera va del suelo del salón al de la galería', () => {
     const salon = tall().rooms.find((r) => r.type === 'salon')!;
-    for (const kind of ['recta', 'caracol'] as const) {
-      const g = galleryOf(salon, 362, kind)!;
-      expect(g.steps[0]!.y).toBe(0);
-      expect(g.steps.at(-1)!.y).toBeCloseTo(106);
-      // Arriba se llega por donde se anda en la galería.
-      const top = g.steps.at(-1)!.x;
-      expect(top).toBeGreaterThanOrEqual(g.walk[0]);
-      expect(top).toBeLessThanOrEqual(g.walk[1]);
-    }
+    const g = galleryOf(salon, 362)!;
+    expect(g.steps[0]!.y).toBe(0);
+    expect(g.steps.at(-1)!.y).toBeCloseTo(106);
+    // Arriba se llega por donde se anda en la galería.
+    const top = g.steps.at(-1)!.x;
+    expect(top).toBeGreaterThanOrEqual(g.walk[0]);
+    expect(top).toBeLessThanOrEqual(g.walk[1]);
+  });
+
+  it('quien sube la vuelta mira hacia donde va: de lado, de espaldas detrás y de frente al final', () => {
+    const salon = tall().rooms.find((r) => r.type === 'salon')!;
+    const st = galleryOf(salon, 362)!.steps;
+    const up = st.slice(0, -1).map((p, i) => stepView(p, st[i + 1]!, true));
+    expect(up).toContain('back');
+    expect(up).toContain('front');
+    expect(up[1]).toBe('right');
+    expect(up.at(-1)).toBe('left');
+    // Bajando, cada tramo al revés.
+    const flip = { right: 'left', left: 'right', back: 'front', front: 'back' } as const;
+    st.slice(0, -1).forEach((p, i) => expect(stepView(p, st[i + 1]!, false)).toBe(flip[up[i]!]));
   });
 
   it('a una mesa de arriba se sube por la escalera del salón, no por la de la casa', () => {

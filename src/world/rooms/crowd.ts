@@ -27,6 +27,7 @@ import { GROUND } from '../geometry';
 import { Look, mesh, texture, type Shared } from './gl';
 import { PITCH, STAIR_W, floorY, type RoomsLayout, type Rect } from './layout';
 import { CLIMB_Z, STEPS, goesRight, stepAt } from './stairs';
+import { stepView } from './galeria';
 import {
   LANES,
   awayBeds,
@@ -575,6 +576,12 @@ const SIZES = {
   toast: 2,
   /** Sentado con los ojos cerrados (el de guardia que cabecea de madrugada). */
   sitZ: 1,
+  /**
+   * En la escalera de caracol: de espaldas (quieto y con cada pie en alto) y de frente con cada
+   * pie en alto (quieto, el de siempre).
+   */
+  back: 3,
+  stepF: 2,
 } as const;
 
 /** Dónde empieza cada cosa en el atlas. */
@@ -917,6 +924,8 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
   });
   put(spr.sit, F.sit);
   put(dozing(spr), F.sitZ);
+  spr.back.forEach((img, i) => put(img, F.back + i));
+  spr.stepFront.forEach((img, i) => put(img, F.stepF + i));
   // Entrenando: los fotogramas de mirar a la izquierda son los mismos, volteados.
   const pose = fightSprites(h.look, h.marks);
   // Trabajando, charlando o junto al fuego: los pies quietos.
@@ -2869,7 +2878,11 @@ export class Crowd {
         const p1 = at(i + 1);
         // Mira hacia donde va el tramo (al bajar, al revés que al subir).
         if (!fl) a.dir = goesRight(lower) === up ? 1 : -1;
-        else if (Math.abs(p1.x - p0.x) > 0.5) a.dir = p1.x > p0.x === up ? 1 : -1;
+        else {
+          // En la de caracol, de lado según el tramo (de frente o de espaldas, no cambia).
+          const v = stepView(fl.steps[i]!, fl.steps[i + 1]!, up);
+          if (v === 'right' || v === 'left') a.dir = v === 'right' ? 1 : -1;
+        }
         // Cada peldaño: un impulso rápido y un momento quieto en él.
         const f = smoothstep(Math.min(1, (s - i) / LIFT));
         a.x = p0.x + (p1.x - p0.x) * f;
@@ -3139,10 +3152,17 @@ export class Crowd {
     }
     if (a.climb) {
       // En la escalera: la pierna sube en el impulso y se apoya en el peldaño (alternando).
-      const s = a.climb.u * STEPS;
+      const c = a.climb;
+      const s = c.u * STEPS;
       const i = Math.floor(s);
       const lifting = s - i < LIFT;
-      frame = (a.dir > 0 ? F.walk : F.walkL) + (i % 2 ? 4 : 0) + (lifting ? 3 : 0);
+      // En la de caracol, según hacia dónde va en ese tramo de la vuelta: de lado, de espaldas
+      // (alejándose) o de frente (viniendo hacia la cámara).
+      const j = Math.min(STEPS - 1, i);
+      const view = c.fl ? stepView(c.fl.steps[j]!, c.fl.steps[j + 1]!, c.up) : null;
+      if (view === 'back') frame = lifting ? F.back + 1 + (i % 2) : F.back;
+      else if (view === 'front') frame = lifting ? F.stepF + (i % 2) : F.idle;
+      else frame = (a.dir > 0 ? F.walk : F.walkL) + (i % 2 ? 4 : 0) + (lifting ? 3 : 0);
     } else if (a.pose === 'walk' && a.turn) frame = F.idle;
     else if (a.pose === 'walk') {
       // Un tiempo del paso cada `WALK_PX` píxeles: el pie apoyado no patina.

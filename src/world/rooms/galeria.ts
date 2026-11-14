@@ -2,13 +2,14 @@
  * La galería del salón de dos alturas (boceto E1): un suelo de madera pegado a la pared del
  * fondo a la altura de la planta de arriba, con su canto, sus pies derechos y su barandilla, y
  * tres mesas encima. Debajo queda la barra, a resguardo (y en sombra). Se sube por una escalera
- * dentro del salón; hay dos para elegir: `recta` (de obra, contra la pared del fondo, que sube
- * hacia la galería) y `caracol` (en el hueco de entre la galería y la chimenea).
+ * de caracol dentro del salón, en el hueco de entre la galería y la chimenea (la eligió el
+ * usuario entre esta y una recta contra la pared).
  *
  * Todo en coordenadas de la sala (x desde la pared de la izquierda, z hacia el fondo, y desde el
  * suelo hacia arriba). Lógica pura: dice dónde va cada cosa y su dibujo; la escena monta el suelo
  * de la galería (arriba, abajo y el extremo) y la escalera de caracol en 3D (`RoomScene.gallery`),
- * y la gente sube y baja por los peldaños (`steps`, ver `flightsOf` en `people.ts`).
+ * y la gente sube y baja por los peldaños (`steps`, ver `insides` en `people.ts`), mirando hacia
+ * donde va en cada tramo de la vuelta (`stepView`).
  */
 import { P, R } from '../../art/palette';
 import { PixelBuffer } from '../../art/pixel';
@@ -24,25 +25,19 @@ import { BACK, scaleAt } from './view3d';
 const W = R.wood; // [black, plum, bark, rust, oak, clay, tan]
 const VINO = [P.plum, P.wine, P.red, P.coral] as const;
 
-export type Escalera = 'recta' | 'caracol';
-
-/** Qué escalera se dibuja (boceto: se elige con `window.__escalera` antes de cargar). */
-export const escalera = (): Escalera =>
-  (globalThis as { __escalera?: string }).__escalera === 'caracol' ? 'caracol' : 'recta';
-
 /** Canto de la galería (lo que sale de la pared hacia delante) y grueso de su suelo. */
 export const EDGE = 24;
 export const DECK = 8;
 /** Peldaños de la escalera (el último es ya el suelo de la galería). */
 export const GAL_STEPS = 12;
 const RISE = PITCH / GAL_STEPS;
-/** Escalera recta: fondo de su frente y largo de cada peldaño. */
-const RECTA_Z = 40;
-const TREAD = 7.5;
-const RAIL_Z = RECTA_Z - 5;
-/** Escalera de caracol: radio y fondo de su eje. */
-export const SPIRAL_R = 17;
+/** Radio de la escalera, fondo de su eje y radio por el que se pisa (algo fuera de la mitad). */
+export const SPIRAL_R = 18;
 const SPIRAL_Z = 40;
+const WALK_R = 12;
+/** Lo que gira cada peldaño (en grados) y su medio ancho en radianes. */
+export const TURN = 24;
+export const HALF = ((TURN / 2) * Math.PI) / 180;
 
 export interface Step {
   x: number;
@@ -52,7 +47,6 @@ export interface Step {
 }
 
 export interface Gallery {
-  kind: Escalera;
   /** El suelo de arriba va de la pared de la izquierda a `x1`, de `EDGE` a la pared del fondo. */
   x1: number;
   /** Por dónde se anda arriba (x). */
@@ -62,8 +56,8 @@ export interface Gallery {
   seats: { x: number; z: number }[];
   /** Dónde se pisa cada peldaño, del suelo (0) a la galería (`GAL_STEPS`). */
   steps: Step[];
-  /** La de caracol: su eje. */
-  axis?: { x: number; z: number };
+  /** El eje de la escalera de caracol. */
+  axis: { x: number; z: number };
   /** Dónde queda sitio para la lámpara grande (x), fuera de la galería y la escalera. */
   lamp: number;
 }
@@ -80,42 +74,21 @@ export function hasGallery(room: Room): boolean {
 }
 
 /** La galería de un salón de ancho interior `w` (null si no tiene). */
-export function galleryOf(room: Room, w: number, kind = escalera()): Gallery | null {
+export function galleryOf(room: Room, w: number): Gallery | null {
   if (!hasGallery(room)) return null;
   const n = gallerySeats(room) / 2;
-  let x1: number;
-  let steps: Step[];
-  let axis: Gallery['axis'];
-  let lamp: number;
-  if (kind === 'recta') {
-    // Contra la pared del fondo, entre la galería y la chimenea: sube hacia la izquierda.
-    const foot = w - 80;
-    x1 = foot - 11 * TREAD;
-    // Quien sube va justo delante del frente del tramo (como en las de la casa: `CLIMB_Z`), con
-    // el pasamanos por delante.
-    const z = RECTA_Z - 2;
-    steps = Array.from({ length: GAL_STEPS + 1 }, (_, i) =>
-      i === 0
-        ? { x: foot + 4, y: 0, z }
-        : i === GAL_STEPS
-          ? { x: x1 - 5, y: PITCH, z }
-          : { x: x1 + (11.5 - i) * TREAD, y: i * RISE, z },
-    );
-    lamp = x1 + 44;
-  } else {
-    // Una vuelta y media vuelta de caracol: empieza de cara (delante del eje), pasa por detrás
-    // y sale arriba por la izquierda, a la galería.
-    const cx = w - 106;
-    axis = { x: cx, z: SPIRAL_Z };
-    x1 = cx - SPIRAL_R - 2;
-    steps = Array.from({ length: GAL_STEPS + 1 }, (_, i) => {
-      if (i === 0) return { x: cx - 3, y: 0, z: SPIRAL_Z - SPIRAL_R - 2 };
-      if (i === GAL_STEPS) return { x: x1 - 4, y: PITCH, z: SPIRAL_Z };
-      const a = spiralAngle(i);
-      return { x: cx + 11 * Math.sin(a), y: i * RISE, z: SPIRAL_Z - 11 * Math.cos(a) };
-    });
-    lamp = cx + 34;
-  }
+  // Casi una vuelta: empieza de cara (delante del eje), sube hacia la derecha, pasa por detrás
+  // y sale arriba por la izquierda, a la galería.
+  const cx = w - 106;
+  const axis = { x: cx, z: SPIRAL_Z };
+  const x1 = cx - SPIRAL_R - 2;
+  const steps: Step[] = Array.from({ length: GAL_STEPS + 1 }, (_, i) => {
+    if (i === 0) return { x: cx - 4, y: 0, z: SPIRAL_Z - SPIRAL_R - 3 };
+    if (i === GAL_STEPS) return { x: x1 - 4, y: PITCH, z: SPIRAL_Z };
+    const a = spiralAngle(i);
+    return { x: cx + WALK_R * Math.sin(a), y: i * RISE, z: SPIRAL_Z - WALK_R * Math.cos(a) };
+  });
+  const lamp = cx + 34;
   // Las mesas de arriba, repartidas, contra la pared (con sus dos taburetes).
   const a = 26;
   const b = x1 - 26;
@@ -124,7 +97,6 @@ export function galleryOf(room: Room, w: number, kind = escalera()): Gallery | n
     z: DEPTH - 12,
   }));
   return {
-    kind,
     x1,
     walk: [18, x1 - 2],
     posts: [6, Math.round(x1 / 2), Math.round(x1 - 5)],
@@ -140,7 +112,26 @@ export function galleryOf(room: Room, w: number, kind = escalera()): Gallery | n
 }
 
 /** Ángulo del peldaño `i` de la de caracol (0 = de cara, hacia la derecha, detrás, izquierda). */
-export const spiralAngle = (i: number) => (((i - 1) * 24 + 12) * Math.PI) / 180;
+export const spiralAngle = (i: number) => (((i - 1) * TURN + TURN / 2) * Math.PI) / 180;
+
+/** Hacia dónde mira quien pisa un tramo de la escalera: de lado, de espaldas o de frente. */
+export type StepView = 'right' | 'left' | 'back' | 'front';
+
+/**
+ * La vista de quien va del peldaño `p` al `q` (subiendo; al bajar, al revés): si se aleja de la
+ * cámara, de espaldas; si viene hacia ella, de frente; si no, de lado hacia donde va.
+ */
+export function stepView(
+  p: { x: number; z: number },
+  q: { x: number; z: number },
+  up: boolean,
+): StepView {
+  const k = up ? 1 : -1;
+  const dx = (q.x - p.x) * k;
+  const dz = (q.z - p.z) * k;
+  if (Math.abs(dz) > Math.abs(dx) * 1.2) return dz > 0 ? 'back' : 'front';
+  return dx >= 0 ? 'right' : 'left';
+}
 
 // ---------- Dibujos ----------
 
@@ -209,74 +200,6 @@ function post(h: number): PixelBuffer {
   });
 }
 
-/**
- * La escalera recta, de lado: peldaños con su canto claro y la zanca cerrada hasta el suelo
- * (con volumen hasta la pared: de cada peldaño sale su huella y de cada tabica su cara).
- */
-function straightFlight(): PixelBuffer {
-  const k = scaleAt(RECTA_Z);
-  const run = 11 * TREAD;
-  const w = Math.round(run * k) + 1;
-  const h = Math.round(PITCH * k);
-  return Prop.piece(w, h, (b) => {
-    // De izquierda (arriba, junto a la galería) a derecha (el pie).
-    for (let x = 0; x < w; x++) {
-      const u = x / k;
-      const i = Math.min(11, 11 - Math.floor(u / TREAD));
-      const top = Math.round(h - i * RISE * k);
-      // Cuerpo: tablas verticales oscuras bajo la zanca.
-      for (let y = top; y < h; y++) b.set(x, y, (x >> 2) % 2 ? W[2]! : W[1]!);
-      // La huella y su canto.
-      b.set(x, top, W[6]!);
-      b.set(x, top + 1, W[5]!);
-      b.set(x, top + 2, W[4]!);
-      b.set(x, top + 3, W[2]!);
-      // La zanca, en diagonal bajo los cantos.
-      const z = Math.round(h - ((run - u) / run) * PITCH * k) + 6;
-      for (let y = z; y < Math.min(h, z + 4); y++) b.set(x, y, y === z ? W[5]! : W[3]!);
-    }
-    // Tabicas: la arista de cada peldaño.
-    for (let i = 1; i <= 11; i++) {
-      const x = Math.round((run - (i - 1) * TREAD) * k) - 1;
-      const top = Math.round(h - i * RISE * k);
-      b.vline(Math.min(w - 1, x), top, Math.round(RISE * k), W[1]!);
-    }
-  });
-}
-
-/** El pasamanos de la recta: pilar al pie, la baranda en diagonal y sus barrotes. */
-function straightRail(): PixelBuffer {
-  const k = scaleAt(RAIL_Z);
-  const run = 11 * TREAD;
-  const w = Math.round(run * k) + 4;
-  const tall = 14 * k;
-  const h = Math.round(PITCH * k + tall) + 2;
-  return Prop.piece(
-    w,
-    h,
-    (b) => {
-      const yAt = (u: number) => h - (Math.max(0, 11 - u / TREAD) * RISE + 14) * k;
-      for (let x = 0; x < w - 4; x++) {
-        const y = Math.round(yAt(x / k));
-        b.set(x, y, W[5]!);
-        b.set(x, y + 1, W[3]!);
-        if (x % 8 === 3) {
-          const foot = Math.round(h - Math.max(0, 11 - Math.floor(x / k / TREAD)) * RISE * k);
-          b.vline(x, y + 2, Math.max(0, foot - y - 2), W[2]!);
-        }
-      }
-      // El pilar de arranque, con su bola.
-      const nx = w - 5;
-      const top = Math.round(h - 16 * k);
-      b.rect(nx, top, 3, h - top, W[3]!);
-      b.vline(nx, top, h - top, W[5]!);
-      b.rect(nx - 1, top - 2, 5, 2, W[4]!);
-      b.hline(nx - 1, top - 2, 5, W[6]!);
-    },
-    'none',
-  );
-}
-
 /** El eje de la de caracol: un tronco torneado que asoma por encima de la galería. */
 function spiralPost(): PixelBuffer {
   const k = scaleAt(SPIRAL_Z);
@@ -307,6 +230,24 @@ export function spiralTread(w: number, front: number): PixelBuffer {
     // La ménsula de debajo, junto al eje.
     b.hline(1, 4, b.w - 2, W[1]!);
   });
+}
+
+/** La huella de un peldaño de la de caracol, vista desde arriba: tabla con su canto claro fuera. */
+export function treadTop(): PixelBuffer {
+  const b = new PixelBuffer(8, 8);
+  for (let y = 0; y < 8; y++)
+    for (let x = 0; x < 8; x++)
+      b.set(x, y, y === 0 ? W[6]! : x === 0 || x === 7 ? W[2]! : y % 3 === 2 ? W[3]! : W[4]!);
+  return b;
+}
+
+/** La zanca de la de caracol: tablas en vertical, con el canto de arriba claro. */
+export function stringerTex(): PixelBuffer {
+  const b = new PixelBuffer(6, 7);
+  for (let y = 0; y < 7; y++)
+    for (let x = 0; x < 6; x++)
+      b.set(x, y, y === 0 ? W[5]! : y === 6 ? W[1]! : x % 3 === 0 ? W[2]! : W[3]!);
+  return b;
 }
 
 /** Faroles colgados bajo la galería (alumbran la barra). */
@@ -362,25 +303,8 @@ export function galleryThings(room: Room, g: Gallery, lvl: number, ceiling: numb
     t.push({ img: Prop.stool(), x: x - 18, z: z - 2, y: PITCH });
     t.push({ img: Prop.stool(), x: x + 18, z: z + 2, y: PITCH });
   });
-  if (g.kind === 'recta') {
-    const k = scaleAt(RECTA_Z);
-    const fl = straightFlight();
-    const x0 = g.x1;
-    t.push({
-      img: fl,
-      x: x0 + fl.w / k / 2,
-      z: RECTA_Z,
-      y: 0,
-      box: true,
-      mat: 'madera',
-    });
-    const kr2 = scaleAt(RAIL_Z);
-    const rl = straightRail();
-    t.push({ img: rl, x: x0 + rl.w / kr2 / 2, z: RAIL_Z, y: 0 });
-  } else if (g.axis) {
-    const sp = spiralPost();
-    t.push({ img: sp, x: g.axis.x, z: g.axis.z, y: 0, box: true, thick: 3, mat: 'madera' });
-  }
+  const sp = spiralPost();
+  t.push({ img: sp, x: g.axis.x, z: g.axis.z, y: 0, box: true, thick: 3, mat: 'madera' });
   return t;
 }
 
