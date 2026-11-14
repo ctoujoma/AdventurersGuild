@@ -403,7 +403,7 @@ Respuesta: Te preparo un boceto del altillo, jugando también con el fondo de la
 
 Aclaración: Aprobada la (c) a la espera del boceto del altillo: se hace antes de tocar nada.
 
-Boceto (12 de noviembre): https://claude.ai/artifact/Jnjqegd7qromZxRTekpgUQ (copia en `docs/bocetos/e1-altillo.html`), dos variantes, A y B: falta que el usuario elija.
+Boceto nuevo (14 de noviembre, galería con escalera): https://claude.ai/artifact/PvUURLiq7EdsCw8f9D7iRU. Boceto anterior (12 de noviembre): https://claude.ai/artifact/Jnjqegd7qromZxRTekpgUQ (copia en `docs/bocetos/e1-altillo.html`), dos variantes, A y B: falta que el usuario elija.
 
 Elegida (12 de noviembre): **B, galería al fondo**, pero con profundidad de verdad (que no sea un dibujo plano en la pared: suelo de la galería con fondo, barandilla delante, sombra) y con **escalera dentro del salón** por la que suban clientes y trabajadores del salón (en el boceto subían por la escalera de la casa). Con la (c): la altura deja de encarecer las mejoras.
 

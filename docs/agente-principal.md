@@ -335,3 +335,13 @@ Repartida en cuatro agentes y juntada en la rama (sin choques):
 - Forma de trabajar que le gusta al usuario: repartir en agentes con `isolation: worktree`
   (cada uno parte de `origin/claude/sweet-bell-mky0ou`, sin push), juntar con `cherry-pick`,
   comprobar en pantalla y con `npm run sim`, y PR por bloques de fases.
+
+### Fase 6 · bocetos (14 de noviembre, esperando al usuario)
+
+- Página: https://claude.ai/artifact/PvUURLiq7EdsCw8f9D7iRU (noche, E1, E2/E4).
+- Noche (N0): parche en el scratchpad (`noche.patch`): `clockDark()` en `RoomScene.ts` (la noche se
+  cierra en `NIGHT_CLOSE` desde `WORK_END`) y la transición parte de `darkAtNightfall`.
+- E1: commit `56b0671` en la rama local `worktree-agent-ac0ba57ec90852c44` (galería con volumen,
+  escalera recta o de caracol con `window.__escalera`, `seatsOf` 10 → 16 en el 3×2).
+- E2/E4: commit `a98b7c6` en `worktree-agent-ac0bd98cdd0151a3e` (paredes, suelos y muebles por
+  nivel; nivel 5 con coste 1200 en `balance.ts`). Choca con E1 en `salonWall` y `furniture.ts`.
