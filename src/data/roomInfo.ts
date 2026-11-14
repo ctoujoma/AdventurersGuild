@@ -23,6 +23,7 @@ import {
   VET_REST,
   restCap,
   restMorale,
+  salonAppeal,
 } from '../core/balance';
 import { bedsPerCell } from '../core/rooms';
 import { listNames, plural } from '../core/text';
@@ -79,7 +80,7 @@ export const ROOM_INFO: Record<RoomType, Effect> = {
     const more = BOARD_SIZE(l) - BOARD_SIZE(0);
     return listNames(
       [
-        `+${2 * l} de Atractivo`,
+        `+${salonAppeal(l)} de Atractivo`,
         `+${more} ${plural(more, 'encargo', 'encargos')} en el tablón`,
         `+${restMorale(l)} de moral por noche al descansar (hasta ${restCap(l)})`,
         `${decorSlots(l)} huecos de decoración`,

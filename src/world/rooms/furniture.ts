@@ -15,6 +15,7 @@ import { ART } from './salas';
 import { bedsOf } from './salas/camas';
 import { cotsOf } from './salas/enfermeria';
 import { cloth } from './salas/tintes';
+import { salonTint } from './salas/acabados';
 import { galleryOf, galleryThings } from './galeria';
 
 /** Los manteles del salón, granates (o del tema de la sala). */
@@ -29,8 +30,10 @@ import {
   WARM,
   ceilingGlow,
   chandelier,
+  at,
   fire,
   hung,
+  thick,
   wallLight,
   type Bed,
   type Glow,
@@ -43,8 +46,8 @@ import {
   HEARTH_SCONCES,
   HEARTH_SCONCE_Y,
   bar,
-  barrels,
   crystalChandelier,
+  nook,
   hearth as salonHearth,
   larder,
   logPile,
@@ -191,12 +194,9 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
       add(bar(lvl, decor.includes('barril')), 44, WALL - 16);
       t.at(-1)!.act = 'candidatos';
       if (gal) t.at(-1)!.dim = 0.7;
-      // Lo justo: un barril y una caja; del 2, los barriles apilados.
-      if (lvl >= 2) add(barrels(), 17, FRONT + 4);
-      else {
-        add(Prop.barrel(), 12, FRONT + 4);
-        add(Prop.crate(), 26, FRONT + 2);
-      }
+      // Junto a la puerta de la izquierda, lo de cada nivel (ver `nook`): bien delante y con
+      // poco fondo, para que la gente pase por detrás.
+      t.push(thick(at(nook(lvl), 17, 5), 5, 'madera'));
       // En el de dos alturas, el tiro de la chimenea sube hasta el techo.
       const rise = Math.round((room.h - 1) * PITCH * scaleAt(HEARTH_Z));
       const hx = w - HEARTH_RIGHT;
@@ -215,7 +215,7 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
         poi: 'warm',
       });
       // La luz de los apliques de la chimenea (van pintados en ella).
-      if (lvl >= 2)
+      if (lvl === 2 || lvl === 3)
         for (const px of HEARTH_SCONCES)
           add(new PixelBuffer(1, 1), hx + (px - 28) / scaleAt(HEARTH_Z), HEARTH_Z - 2, 0, {
             dy: HEARTH_SCONCE_Y / scaleAt(HEARTH_Z),
@@ -247,6 +247,8 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
           dim: gal ? 0.7 : undefined,
         });
       const linen = cloth(room, VINO);
+      // Los cojines, del color de la pared del nivel (o del que haya elegido el pintor).
+      const cushion = salonTint(room).slice(0, 3);
       tables(room, w).forEach(({ x: tx, z }, i) => {
         const cards = i === 0 && decor.includes('naipes');
         const candle = lvl >= 2 && !cards;
@@ -257,41 +259,29 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
           0,
           candle ? { dy: 18, r: 34, color: CANDLE, power: 0.45, flicker: 0.12 } : undefined,
         );
-        add(seat(lvl), tx - 18, z - 2);
-        add(seat(lvl), tx + 18, z + 2);
+        add(seat(lvl, cushion), tx - 18, z - 2);
+        add(seat(lvl, cushion), tx + 18, z + 2);
       });
-      // La luz del techo: el farol (1–2), la araña de hierro (3), dos de latón (4) o, en el 5,
-      // la lámpara de araña de cristal en medio (con las dos de latón si hay sitio).
+      // La luz del techo, una sola: el farol (1–2), la araña de hierro (3), la de latón (4) o la
+      // lámpara de araña de cristal (5).
       if (lvl <= 2)
         t.push(hung(lamp(), w / 2, MID, 0, { ...ceilingGlow(w, 1, 4), color: LANTERN }));
-      else if (lvl === 3) t.push(hung(chandelier(9), w / 2, MID, 0, ceilingGlow(w, 3, 4)));
-      else {
-        const pair = lvl === 4 || w > 160;
-        const k = lvl >= 5 ? 0.22 : 0.3;
-        if (pair)
-          for (const x of [w * k, w * (1 - k)])
-            t.push(
-              hung(chandelier(9, true), x, MID, 0, {
-                ...ceilingGlow(w, 4, 4),
-                r: Math.round(ceilingGlow(w, 4, 4).r * 0.75),
-                power: 1.05,
-              }),
-            );
-        if (lvl >= 5)
-          t.push(
-            hung(crystalChandelier(8), w / 2, MID, 0, {
-              ...ceilingGlow(w, 4, 10),
-              r: Math.round(ceilingGlow(w, 4, 10).r * 1.15),
-              power: 1.6,
-            }),
-          );
-      }
+      else if (lvl <= 4)
+        t.push(hung(chandelier(9, lvl === 4), w / 2, MID, 0, ceilingGlow(w, lvl, 4)));
+      else
+        t.push(
+          hung(crystalChandelier(8), w / 2, MID, 0, {
+            ...ceilingGlow(w, 4, 10),
+            r: Math.round(ceilingGlow(w, 4, 10).r * 1.2),
+            power: 1.7,
+          }),
+        );
       if (room.h > 1 || decor.includes('lampara')) {
         // En el de dos alturas, colgada de una cadena larga hasta media sala.
         const drop = (room.h - 1) * (PITCH - 24);
-        // Con galería, por delante de la escalera (donde no da con nada); si no, con la lámpara
-        // de hierro comprada, entre las de latón o junto a la de cristal.
-        const lx = gal ? gal.lamp : lvl === 4 ? w / 2 : w / 2 + (lvl >= 5 ? 34 : 20);
+        // Con galería, por delante de la escalera (donde no da con nada); si no, a un lado de la
+        // lámpara del nivel.
+        const lx = gal ? gal.lamp : w / 2 + (lvl >= 3 ? 34 : 20);
         if (drop)
           t.push({
             img: chain(Math.round(drop * scaleAt(MID))),

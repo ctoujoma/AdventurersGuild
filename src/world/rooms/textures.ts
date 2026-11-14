@@ -44,6 +44,7 @@ import {
   salonFinish,
   salonFloor,
   salonSideFinish,
+  salonTint,
 } from './salas/acabados';
 import { BLIND, cellsOf, sconceOn, takeWallActs, windowX } from './salas/kit';
 import { RISE, goesRight, stepAt } from './stairs';
@@ -216,6 +217,8 @@ function windowAt(b: PixelBuffer, cx: number, y: number, room: Room, ruin: boole
   const stained = room.type === 'capilla' || (room.type === 'salon' && room.level >= 5);
   const salon = room.type === 'salon';
   const glass = [P.rose, P.gold, P.sky, P.grape];
+  // El filete de color de las vidrieras del salón, del color de la sala.
+  const [, lead1, lead2] = salon ? salonTint(room) : [P.wine, P.wine, P.ocean];
   if (!ruin) windowsDrawn.push({ x: cx, y: y + h, top: y, w });
   for (let j = 0; j < h; j++)
     for (let i = 0; i < w; i++)
@@ -227,7 +230,7 @@ function windowAt(b: PixelBuffer, cx: number, y: number, room: Room, ruin: boole
         const lead = (i + j) % 4 === 0 || (i - j + 100) % 4 === 0;
         const k = Math.floor((i + j) / 4) + Math.floor((i - j + 100) / 4);
         const edge = pi === 0 || pi === 7 || pj === 0 || pj === 9;
-        const tint = (Math.floor(i / 8) + Math.floor(j / 10)) % 2 ? P.wine : P.ocean;
+        const tint = (Math.floor(i / 8) + Math.floor(j / 10)) % 2 ? lead2 : lead1;
         b.set(x + i, y + j, edge ? tint : lead ? P.slate : k % 3 ? P.sand : P.lemon);
       } else if (stained) b.set(x + i, y + j, glass[(Math.floor(i / 4) + Math.floor(j / 5)) % 4]!);
       else b.clear(x + i, y + j);
@@ -284,8 +287,10 @@ export function floorTex(room: Room | null, theme: Theme, w: number, seed: strin
       // Estera de esparto junto al fuego (2), alfombra de lana (3) y, en el gran salón, la
       // alfombra roja de punta a punta con cenefa de oro (o del tema de la sala).
       if (lvl === 2) rug(w - 96, 50, [P.clay, P.tan, P.sand]);
-      else if (lvl === 3) rug(w - 104, 74, [P.deep, P.forest, P.gold]);
-      else if (lvl >= 4) {
+      else if (lvl === 3) {
+        const c = salonTint(room);
+        rug(w - 104, 74, [c[0], c[1], P.gold]);
+      } else if (lvl >= 4) {
         const c = cloth(room, [P.plum, P.wine, P.red, P.coral]);
         const x0 = 20;
         const rw = w - 40;

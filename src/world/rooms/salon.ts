@@ -244,27 +244,18 @@ export function salonWall(
   }
   // Apliques con vela en los postes libres (desde el nivel 2; los de la chimenea van con ella).
   for (const x of salonSconces(room, b.w)) b.blit(sconceArt(lvl), x - 3, low + 22);
-  // Encima de la alacena: la diana con su pizarra (2) y, desde el 3, la cabeza de ciervo.
+  // Encima de la alacena, una sola cosa: la diana con su pizarra (2) o, desde el 3, la cabeza
+  // de ciervo (el trofeo).
   const above = floor - 46;
   const spots: { x: number; y: number; w: number; h: number }[] = [];
-  if (lvl >= 2) {
-    const dx = lvl >= 3 ? 31 : 22;
-    b.blit(Prop.dartboard(), dx, above - 15);
-    spots.push({ x: dx, y: above - 15, w: 13, h: 13 });
-    if (lvl === 2) {
-      b.blit(chalkboard(), 8, above - 16);
-      spots.push({ x: 8, y: above - 16, w: 10, h: 12 });
-    }
+  if (lvl === 2) {
+    b.blit(Prop.dartboard(), 22, above - 15);
+    b.blit(chalkboard(), 8, above - 16);
+    spots.push({ x: 8, y: above - 16, w: 28, h: 13 });
+  } else if (lvl >= 3) {
+    b.blit(stagHead(lvl), 11, above - 19);
+    spots.push({ x: 11, y: above - 19, w: 26, h: 19 });
   }
-  if (lvl >= 3) {
-    b.blit(stagHead(lvl), 5, above - 19);
-    spots.push({ x: 5, y: above - 19, w: 26, h: 19 });
-  }
-  // Cortinajes de terciopelo a los lados de cada ventana (nivel 5).
-  if (lvl >= 5)
-    windows.forEach((row, j) =>
-      row.forEach((wx) => curtains(b, wx, Math.round((j * PITCH + 18) * BACK))),
-    );
   // En el de dos alturas, pendones del gremio en los postes de arriba (sin tapar ventanas).
   const flags: number[] = [];
   if (tall)
@@ -316,8 +307,7 @@ export function salonWall(
 /**
  * La barra con lo de encima: jarras, una jarra grande, el barrilito especial y la luz. Cambia
  * con el nivel: tablas sin más (1), paneles y barra de latón para los pies con una vela (2), un
- * candelabro de hierro (3), remates de oro, grifos de latón y candelabro dorado (4) y tablero de
- * mármol (5).
+ * candelabro de hierro (3), remates de oro y grifos de latón (4) y tablero de mármol (5).
  */
 export function bar(level: number, special: boolean): PixelBuffer {
   return Prop.piece(66, 28, (b) => {
@@ -350,7 +340,7 @@ export function bar(level: number, special: boolean): PixelBuffer {
     b.rect(24, 2, 3, 3, P.clay);
     b.set(28, 6, P.clay);
     b.set(23, 7, P.tan);
-    if (level >= 4)
+    if (level === 4)
       // Dos grifos de latón con su mango.
       for (const x of [30, 33]) {
         b.rect(x, 4, 2, 6, P.gold);
@@ -363,7 +353,7 @@ export function bar(level: number, special: boolean): PixelBuffer {
       b.rect(36, 8, 5, 2, P.steel);
       b.rect(37, 4, 2, 4, P.white);
       b.set(38, 3, P.lemon);
-    } else if (level >= 3) candelabrum(b, 39, 10, level >= 4);
+    } else if (level === 3) candelabrum(b, 39, 10, false);
     if (special) {
       // Barrilito especial con espita.
       b.ellipse(57, 5, 5, 5, W[3]!);
@@ -410,8 +400,8 @@ function candelabrum(b: PixelBuffer, x: number, base: number, gold: boolean) {
 }
 /**
  * Una mesa redonda con lo que haya encima: jarras, un plato, una vela, o naipes. Con el nivel:
- * vela (2), mantel (3) y, en el gran salón, mantel blanco con su camino del color de la sala,
- * palmatoria dorada y, en el 5, copas de oro.
+ * vela (2), mantel (3) y, en el gran salón, mantel blanco con palmatoria dorada y, en el 5, copas
+ * de oro.
  */
 export function tableSet(
   seed: string,
@@ -437,12 +427,6 @@ export function tableSet(
     }
     const linen = level >= 4;
     b.blit(Prop.roundTable(linen ? [P.fog, P.mist, P.white, P.white] : cloth), 0, 8);
-    if (linen && cloth) {
-      // El camino de mesa, del color del mantel de antes.
-      b.rect(10, 10, 6, 5, cloth[2]!);
-      b.vline(10, 10, 5, cloth[1]!);
-      b.hline(10, 15, 6, P.gold);
-    }
     const rng = new Rng(`mesa-${seed}`);
     const left = rng.chance(0.5);
     // Jarra (en el 5, copa de oro).
@@ -470,8 +454,8 @@ export function tableSet(
   });
 }
 
-/** Taburete: de madera (1–2), con cojín verde (3) o rojo con tachuelas de oro (4–5). */
-export function seat(level: number): PixelBuffer {
+/** Taburete: de madera (1–2) o con cojín (del color `c`, de la sombra a la luz) desde el 3. */
+export function seat(level: number, c: readonly string[] = [P.wine, P.red, P.coral]): PixelBuffer {
   if (level <= 2) return Prop.stool();
   return Prop.piece(9, 11, (b) => {
     b.rect(1, 4, 2, 7, W[3]!);
@@ -479,13 +463,93 @@ export function seat(level: number): PixelBuffer {
     b.hline(2, 8, 5, W[2]!);
     b.rect(0, 2, 9, 2, W[4]!);
     b.hline(0, 3, 9, W[2]!);
-    const c = level >= 4 ? [P.wine, P.red, P.coral] : [P.deep, P.forest, P.leaf];
     b.rect(0, 0, 9, 3, c[1]!);
     b.hline(1, 0, 7, c[2]!);
     b.hline(0, 2, 9, c[0]!);
     if (level >= 4) for (const x of [1, 4, 7]) b.set(x, 2, P.gold);
   });
 }
+/**
+ * Lo de junto a la puerta de la izquierda, delante de todo (la gente pasa por detrás): un
+ * barril y una caja (1), los barriles de la cerveza (2), un tonel con su grifo (3), un aparador
+ * con licoreras (4) y un pedestal de mármol con un jarrón de flores (5). Poco alto y estrecho.
+ */
+export function nook(level: number): PixelBuffer {
+  if (level >= 5)
+    return Prop.piece(16, 34, (b) => {
+      // Pedestal.
+      b.rect(3, 16, 10, 18, P.mist);
+      b.vline(3, 16, 18, P.white);
+      b.vline(12, 16, 18, P.fog);
+      b.rect(1, 14, 14, 3, P.white);
+      b.hline(1, 16, 14, P.fog);
+      b.rect(1, 31, 14, 3, P.fog);
+      b.hline(1, 31, 14, P.gold);
+      // Jarrón y flores.
+      b.ellipse(8, 10, 4, 4, P.ocean);
+      b.rect(6, 4, 4, 3, P.ocean);
+      b.set(6, 9, P.sky);
+      b.hline(5, 13, 6, P.gold);
+      for (const [x, y, c] of [
+        [4, 1, P.red],
+        [8, 0, P.lemon],
+        [12, 2, P.coral],
+        [6, 3, P.leaf],
+        [10, 3, P.forest],
+        [2, 4, P.leaf],
+        [14, 5, P.lime],
+      ] as const)
+        b.rect(x - 1, y, 2, 2, c);
+    });
+  if (level === 4)
+    return Prop.piece(24, 26, (b) => {
+      // Aparador oscuro con tiradores de oro y dos licoreras encima.
+      b.rect(0, 10, 24, 14, W[2]!);
+      b.rect(0, 9, 24, 2, W[4]!);
+      b.hline(0, 9, 24, P.gold);
+      for (const x of [2, 13]) {
+        b.rect(x, 13, 9, 9, W[1]!);
+        b.rect(x + 1, 14, 7, 7, W[3]!);
+        b.set(x + 4, 17, P.gold);
+      }
+      b.rect(1, 24, 2, 2, W[1]!);
+      b.rect(21, 24, 2, 2, W[1]!);
+      for (const [x, c] of [
+        [6, P.wine],
+        [16, P.amber],
+      ] as const) {
+        b.ellipse(x, 6, 3, 3, c);
+        b.rect(x - 1, 0, 2, 3, P.mist);
+        b.set(x - 1, 5, P.white);
+      }
+      b.rect(10, 6, 2, 3, P.mist);
+    });
+  if (level === 3)
+    return Prop.piece(22, 26, (b) => {
+      // Tonel tumbado en su burro, con el grifo de latón y un cubo debajo.
+      b.rect(2, 20, 3, 6, W[2]!);
+      b.rect(17, 20, 3, 6, W[2]!);
+      b.hline(0, 20, 22, W[3]!);
+      b.ellipse(11, 10, 10, 10, W[3]!);
+      b.ellipse(11, 10, 8.5, 8.5, W[4]!);
+      b.ellipse(10, 9, 4.5, 4.5, W[5]!);
+      for (const r of [9.5, 6]) b.ellipse(11, 10, r, r, W[2]!);
+      b.ellipse(11, 10, 5.5, 5.5, W[4]!);
+      b.ellipse(11, 10, 9, 9, W[3]!);
+      b.ellipse(11, 10, 8, 8, W[4]!);
+      b.ellipse(11, 10, 3.5, 3.5, W[5]!);
+      b.rect(10, 18, 3, 3, P.gold);
+      b.set(11, 21, P.lemon);
+      b.rect(8, 23, 7, 3, P.slate);
+      b.hline(8, 23, 7, P.steel);
+    });
+  if (level === 2) return barrels();
+  return Prop.piece(28, 16, (b) => {
+    b.blit(Prop.barrel(), 0, 1);
+    b.blit(Prop.crate(), 13, 4);
+  });
+}
+
 /** Barriles apilados: dos abajo y uno encima. */
 export function barrels(): PixelBuffer {
   return Prop.piece(26, 28, (b) => {
@@ -595,9 +659,11 @@ export function hearth(
     // derecha cuelga el laúd).
     const side = level >= 3 ? 2 : 44;
     const jx = level >= 3 ? 13 : 7;
-    b.ellipse(jx, mantle - 3, 2, 2, P.clay);
-    b.rect(jx - 1, mantle - 6, 2, 2, P.clay);
-    if (level >= 2)
+    if (level <= 3) {
+      b.ellipse(jx, mantle - 3, 2, 2, P.clay);
+      b.rect(jx - 1, mantle - 6, 2, 2, P.clay);
+    }
+    if (level === 2 || level === 3)
       for (const x of [side + 2, side + 6]) {
         b.rect(x, mantle - 5, 2, 5, P.white);
         b.set(x, mantle - 6, P.lemon);
@@ -629,8 +695,8 @@ export function hearth(
       b.rect(26, y + 6, 4, 5, P.sand);
       b.set(27, y + 7, crest.dark);
     }
-    // Apliques a los lados de la boca (desde el 2): alumbran también en el salón pequeño.
-    if (level >= 2)
+    // Apliques a los lados de la boca (2 y 3): alumbran también en el salón pequeño.
+    if (level === 2 || level === 3)
       for (const x of HEARTH_SCONCES) b.blit(sconceArt(level), x - 3, top + HEARTH_SCONCE_TOP);
   });
 }
@@ -692,7 +758,8 @@ export function sconceArt(level: number): PixelBuffer {
  * la alacena, en una ventana, en el tablón ni detrás de la chimenea.
  */
 export function salonSconces(room: Room, bw: number): number[] {
-  if (room.level < 2) return [];
+  // (Del 4 en adelante alumbran la lámpara y los candelabros: sin apliques.)
+  if (room.level < 2 || room.level > 3) return [];
   const { hearthLeft } = hearthSpan(bw);
   const wins = Array.from({ length: room.w }, (_, i) => windowX(i)).filter(
     (x) => x + 14 < hearthLeft,
@@ -736,34 +803,6 @@ function stagHead(level: number): PixelBuffer {
     b.rect(10, 17, 7, 2, rim);
     b.blit(Prop.antlers(), 0, 1);
   });
-}
-
-/** Cortinajes de terciopelo con su galería y alzapaños de oro, a los lados de una ventana. */
-function curtains(b: PixelBuffer, cx: number, y: number) {
-  const top = y - 7;
-  const bottom = y + 25;
-  for (const side of [-1, 1]) {
-    const x0 = side < 0 ? cx - 18 : cx + 12;
-    for (let j = top; j < bottom; j++) {
-      // Recogidas a media altura: más estrechas junto al alzapaños.
-      const pinch = Math.abs(j - (y + 14)) < 3 ? 2 : 0;
-      for (let i = 0; i < 6 - pinch; i++) {
-        const x = side < 0 ? x0 + i : x0 + pinch + i;
-        b.set(x, j, i % 3 === 0 ? P.plum : i % 3 === 1 ? P.wine : P.red);
-      }
-    }
-    b.hline(side < 0 ? cx - 18 : cx + 14, y + 14, 4, P.gold);
-    b.set(side < 0 ? cx - 15 : cx + 15, y + 15, P.lemon);
-  }
-  // La galería de arriba, con sus ondas y el fleco.
-  b.rect(cx - 19, top - 2, 38, 5, P.wine);
-  b.hline(cx - 19, top - 2, 38, P.red);
-  b.hline(cx - 19, top - 3, 38, P.gold);
-  for (let x = cx - 19; x < cx + 19; x++) {
-    const k = (x - cx + 19) % 6;
-    if (k > 0 && k < 5) b.set(x, top + 3, P.wine);
-    if (k === 0) b.set(x, top + 3, P.gold);
-  }
 }
 
 /** La lámpara de araña de cristal del nivel 5: dos pisos de velas y lágrimas de cristal. */

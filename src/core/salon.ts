@@ -22,6 +22,7 @@ import {
   VISIT_BASE,
   VISIT_PER_APPEAL,
   VISIT_PER_REP,
+  salonAppeal,
 } from './balance';
 import type { Building, GameState, Room } from './model';
 import { Rng } from './rng';
@@ -93,7 +94,7 @@ export function appeal(s: GameState): number {
   if (!r) return 0;
   const c = s.custom;
   return (
-    r.level * 2 +
+    salonAppeal(r.level) +
     (r.h > 1 ? 2 : 0) +
     (c?.decor ?? []).reduce((a, id) => a + DECOR[id].appeal, 0) +
     (c?.facade ?? []).reduce((a, id) => a + FACADE[id].appeal, 0) +
