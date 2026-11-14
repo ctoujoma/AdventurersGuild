@@ -180,7 +180,7 @@ export function ArconPanel({
         value={tab}
         onChange={onTab}
         tabs={[
-          { id: 'equipo', label: 'Equipo', icon: 'espadas', count: stock.length + worn.length },
+          { id: 'equipo', label: 'Piezas', icon: 'espadas', count: stock.length + worn.length },
           { id: 'tesoros', label: 'Tesoros', icon: 'cofre', count: treasures.length },
           {
             id: 'trofeos',

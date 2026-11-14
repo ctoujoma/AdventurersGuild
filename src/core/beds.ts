@@ -62,6 +62,50 @@ export function sleepPlan(s: GameState): Map<string, string> {
   return out;
 }
 
+/**
+ * Fuera de casa: de encargo (y, cuando las haya, de expedición) o desaparecido. Su cama le espera
+ * hecha (la escena la enseña así) y su nombre va en la nota del tablón.
+ */
+export const isAway = (h: Pick<Hero, 'status'>) =>
+  h.status === 'mision' || h.status === 'desaparecido';
+
+/**
+ * La cama que espera a cada uno de los que están fuera: id → id de su dormitorio. Solo con las
+ * que no usa nadie de casa esta noche (quien está en casa va antes): la que eligió, si queda; si
+ * no, como al repartir (los veteranos, al ala).
+ */
+export function awayPlan(s: GameState): Map<string, string> {
+  const out = new Map<string, string>();
+  const plan = sleepPlan(s);
+  const left = new Map(s.building.rooms.map((r) => [r.id, bedsIn(r)]));
+  for (const id of plan.values()) left.set(id, (left.get(id) ?? 0) - 1);
+  const rooms = s.building.rooms.filter((r) => r.type === 'dormitorio' || r.type === 'veteranos');
+  const put = (h: Hero, r: Room | undefined) => {
+    if (!r || !fits(h, r) || (left.get(r.id) ?? 0) <= 0) return false;
+    left.set(r.id, left.get(r.id)! - 1);
+    out.set(h.id, r.id);
+    return true;
+  };
+  const first = (h: Hero, type: Room['type']) =>
+    put(
+      h,
+      rooms.find((r) => r.type === type && (left.get(r.id) ?? 0) > 0),
+    );
+  for (const h of s.heroes.filter(isAway)) {
+    if (
+      h.dorm &&
+      put(
+        h,
+        rooms.find((r) => r.id === h.dorm),
+      )
+    )
+      continue;
+    if (isVet(h) && first(h, 'veteranos')) continue;
+    if (!first(h, 'dormitorio')) first(h, 'veteranos');
+  }
+  return out;
+}
+
 /** Los veteranos en casa sin cama en el ala de veteranos. */
 export function vetsWithoutWing(s: GameState): Hero[] {
   const plan = sleepPlan(s);

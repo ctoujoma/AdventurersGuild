@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CHAINS } from '../data/chains';
 import { offerChain } from './chains';
-import { maybeEvent, stepThreat } from './events';
+import { maybeEvent, stepThreat, threatTrend } from './events';
 import { endDay, newGame, reduce } from './game';
 import type { GameState } from './model';
 import { resolveMission } from './resolve';
@@ -57,5 +57,21 @@ describe('amenaza regional', () => {
     let lost = 0;
     for (let d = 0; d < 50; d++) lost += stepThreat(s, new Rng(`c${d}`), [], 10);
     expect(lost).toBeGreaterThan(0);
+  });
+
+  it('dice hacia dónde va y por qué', () => {
+    const s = newGame('tendencia');
+    s.missions = [];
+    s.quiet = 0;
+    expect(threatTrend(s).d).toBe(-1);
+    s.quiet = 10;
+    expect(threatTrend(s)).toMatchObject({ d: 1, why: /no sale nadie/ });
+    s.rep = CHAINS[0]!.rep;
+    offerChain(s, new Rng('o'), []);
+    expect(threatTrend(s)).toMatchObject({ d: 2, why: /espera en el tablón/ });
+    // Y es lo que hace la noche.
+    s.threat = 10;
+    stepThreat(s, new Rng('n'), [], 0, true);
+    expect(s.threat).toBe(12);
   });
 });

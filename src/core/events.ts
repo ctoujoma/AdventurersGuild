@@ -3,7 +3,8 @@
  * y los sucesos de la taberna en los que hay que elegir.
  */
 import { GEAR } from '../data/items';
-import { activeChain } from './chains';
+import { QUIET_AFTER } from './balance';
+import { activeChain, chainDef } from './chains';
 import type { DawnEvent, GameState, Hero, PendingEvent, Rarity } from './model';
 import type { Rng } from './rng';
 
@@ -47,6 +48,30 @@ export function stepThreat(
     events.push({ t: 'Corre el miedo por los caminos: hoy llegan menos encargos.', k: 'warn' });
   return 0;
 }
+
+/**
+ * Hacia dónde va la amenaza esta noche y por qué (lo mismo que decide `stepThreat`), para
+ * explicarla donde sale: sube 2 si el paso de una historia espera en el tablón, 1 si hace días
+ * que no sale nadie de encargo; si no, baja 1.
+ */
+export function threatTrend(s: GameState): { d: number; why: string } {
+  const cs = activeChain(s);
+  if (cs && s.quests.some((q) => q.chain?.id === cs.id))
+    return { d: 2, why: `el siguiente paso de «${chainDef(cs.id).name}» espera en el tablón` };
+  if (!s.missions.length && (s.quiet ?? 0) + 1 > QUIET_AFTER)
+    return { d: 1, why: 'hace días que no sale nadie de encargo' };
+  return {
+    d: -1,
+    why: s.missions.length ? 'hay grupos por los caminos' : 'la comarca está en calma',
+  };
+}
+
+/** Lo que pasa con cada tramo de amenaza, de menos a más. */
+export const THREAT_STEPS = [
+  { at: THREAT_CARAVAN, text: 'asaltan caravanas: algún día la taberna no deja nada' },
+  { at: THREAT_SCARED, text: 'llegan menos encargos al tablón' },
+  { at: THREAT_RAIDS, text: 'los bandidos se fijan más en el gremio: más asaltos' },
+] as const;
 
 /** Encargos de menos en el tablón cuando la amenaza asusta a los clientes. */
 export const scaredClients = (s: GameState) => (threatOf(s) >= THREAT_SCARED ? 1 : 0);

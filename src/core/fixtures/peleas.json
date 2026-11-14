@@ -1,0 +1,5639 @@
+{
+  "combatSetups": {
+    "ref-pareja-bestia": {
+      "seed": "ref-pareja-bestia",
+      "boss": "bestia",
+      "units": [
+        {
+          "id": "h-pareja-0",
+          "side": "h",
+          "name": "Blanca Madroño",
+          "kind": "guerrero",
+          "max": 76,
+          "hp": 76,
+          "atk": 10.8,
+          "def": 3,
+          "every": 1.3,
+          "cool": 0.65,
+          "ability": "provocar",
+          "charge": 7.199999999999999,
+          "ranged": false
+        },
+        {
+          "id": "h-pareja-1",
+          "side": "h",
+          "name": "Estefanía",
+          "kind": "mago",
+          "max": 40,
+          "hp": 40,
+          "atk": 6.800000000000001,
+          "def": 1,
+          "every": 1.6,
+          "cool": 0.8,
+          "ability": "bola",
+          "charge": 8.4,
+          "ranged": true
+        },
+        {
+          "id": "jefe",
+          "side": "e",
+          "name": "La bestia de Hondogrís",
+          "kind": "jefe",
+          "max": 276,
+          "hp": 276,
+          "atk": 6.993,
+          "def": 2,
+          "every": 1.8,
+          "cool": 1.5,
+          "special": 8
+        }
+      ]
+    },
+    "ref-pareja-reina": {
+      "seed": "ref-pareja-reina",
+      "boss": "reina",
+      "units": [
+        {
+          "id": "h-pareja-0",
+          "side": "h",
+          "name": "Blanca Madroño",
+          "kind": "guerrero",
+          "max": 76,
+          "hp": 76,
+          "atk": 10.8,
+          "def": 3,
+          "every": 1.3,
+          "cool": 0.65,
+          "ability": "provocar",
+          "charge": 7.199999999999999,
+          "ranged": false
+        },
+        {
+          "id": "h-pareja-1",
+          "side": "h",
+          "name": "Estefanía",
+          "kind": "mago",
+          "max": 40,
+          "hp": 40,
+          "atk": 6.800000000000001,
+          "def": 1,
+          "every": 1.6,
+          "cool": 0.8,
+          "ability": "bola",
+          "charge": 8.4,
+          "ranged": true
+        },
+        {
+          "id": "jefe",
+          "side": "e",
+          "name": "La Reina de la Cripta",
+          "kind": "jefe",
+          "max": 234,
+          "hp": 234,
+          "atk": 8.9355,
+          "def": 2,
+          "every": 1.8,
+          "cool": 1.5,
+          "special": 8
+        },
+        {
+          "id": "esbirro-0",
+          "side": "e",
+          "name": "Esbirro",
+          "kind": "esbirro",
+          "max": 38,
+          "hp": 38,
+          "atk": 3.29,
+          "def": 1,
+          "every": 1.6,
+          "cool": 0.8
+        },
+        {
+          "id": "esbirro-1",
+          "side": "e",
+          "name": "Esbirro",
+          "kind": "esbirro",
+          "max": 38,
+          "hp": 38,
+          "atk": 3.29,
+          "def": 1,
+          "every": 1.6,
+          "cool": 1.1
+        },
+        {
+          "id": "esbirro-2",
+          "side": "e",
+          "name": "Esbirro",
+          "kind": "esbirro",
+          "max": 38,
+          "hp": 38,
+          "atk": 3.29,
+          "def": 1,
+          "every": 1.6,
+          "cool": 1.4
+        }
+      ]
+    },
+    "ref-trio-ahogado": {
+      "seed": "ref-trio-ahogado",
+      "boss": "ahogado",
+      "units": [
+        {
+          "id": "h-trio-0",
+          "side": "h",
+          "name": "Arnaldo",
+          "kind": "picaro",
+          "max": 53,
+          "hp": 53,
+          "atk": 7.6000000000000005,
+          "def": 1,
+          "every": 1,
+          "cool": 0.5,
+          "ability": "punalada",
+          "charge": 6,
+          "ranged": false
+        },
+        {
+          "id": "h-trio-1",
+          "side": "h",
+          "name": "Quirico",
+          "kind": "clerigo",
+          "max": 66,
+          "hp": 66,
+          "atk": 7.6000000000000005,
+          "def": 2,
+          "every": 1.5,
+          "cool": 0.75,
+          "ability": "curar",
+          "charge": 7.199999999999999,
+          "ranged": false
+        },
+        {
+          "id": "h-trio-2",
+          "side": "h",
+          "name": "Anselmo",
+          "kind": "explorador",
+          "max": 60,
+          "hp": 60,
+          "atk": 9.2,
+          "def": 1,
+          "every": 1.1,
+          "cool": 0.55,
+          "ability": "andanada",
+          "charge": 6,
+          "ranged": true
+        },
+        {
+          "id": "jefe",
+          "side": "e",
+          "name": "El Rey Ahogado",
+          "kind": "jefe",
+          "max": 227,
+          "hp": 227,
+          "atk": 9.324000000000002,
+          "def": 2,
+          "every": 1.8,
+          "cool": 1.5,
+          "special": 8
+        },
+        {
+          "id": "esbirro-0",
+          "side": "e",
+          "name": "Esbirro",
+          "kind": "esbirro",
+          "max": 43,
+          "hp": 43,
+          "atk": 3.76,
+          "def": 1,
+          "every": 1.6,
+          "cool": 0.8
+        },
+        {
+          "id": "esbirro-1",
+          "side": "e",
+          "name": "Esbirro",
+          "kind": "esbirro",
+          "max": 43,
+          "hp": 43,
+          "atk": 3.76,
+          "def": 1,
+          "every": 1.6,
+          "cool": 1.1
+        }
+      ]
+    },
+    "ref-trio-dragona": {
+      "seed": "ref-trio-dragona",
+      "boss": "dragona",
+      "units": [
+        {
+          "id": "h-trio-0",
+          "side": "h",
+          "name": "Arnaldo",
+          "kind": "picaro",
+          "max": 53,
+          "hp": 53,
+          "atk": 7.6000000000000005,
+          "def": 1,
+          "every": 1,
+          "cool": 0.5,
+          "ability": "punalada",
+          "charge": 6,
+          "ranged": false
+        },
+        {
+          "id": "h-trio-1",
+          "side": "h",
+          "name": "Quirico",
+          "kind": "clerigo",
+          "max": 66,
+          "hp": 66,
+          "atk": 7.6000000000000005,
+          "def": 2,
+          "every": 1.5,
+          "cool": 0.75,
+          "ability": "curar",
+          "charge": 7.199999999999999,
+          "ranged": false
+        },
+        {
+          "id": "h-trio-2",
+          "side": "h",
+          "name": "Anselmo",
+          "kind": "explorador",
+          "max": 60,
+          "hp": 60,
+          "atk": 9.2,
+          "def": 1,
+          "every": 1.1,
+          "cool": 0.55,
+          "ability": "andanada",
+          "charge": 6,
+          "ranged": true
+        },
+        {
+          "id": "jefe",
+          "side": "e",
+          "name": "La dragona de la Corona Blanca",
+          "kind": "jefe",
+          "max": 529,
+          "hp": 529,
+          "atk": 14.0415,
+          "def": 2,
+          "every": 1.8,
+          "cool": 1.5,
+          "special": 8
+        }
+      ]
+    },
+    "ref-cuatro-reina": {
+      "seed": "ref-cuatro-reina",
+      "boss": "reina",
+      "units": [
+        {
+          "id": "h-cuatro-0",
+          "side": "h",
+          "name": "Rhea Rastrojo",
+          "kind": "guerrero",
+          "max": 104,
+          "hp": 104,
+          "atk": 11.600000000000001,
+          "def": 3,
+          "every": 1.3,
+          "cool": 0.65,
+          "ability": "provocar",
+          "charge": 7.199999999999999,
+          "ranged": false
+        },
+        {
+          "id": "h-cuatro-1",
+          "side": "h",
+          "name": "Úrsula",
+          "kind": "clerigo",
+          "max": 68,
+          "hp": 68,
+          "atk": 10.8,
+          "def": 2,
+          "every": 1.5,
+          "cool": 0.75,
+          "ability": "curar",
+          "charge": 7.199999999999999,
+          "ranged": false
+        },
+        {
+          "id": "h-cuatro-2",
+          "side": "h",
+          "name": "Arnaldo",
+          "kind": "mago",
+          "max": 57,
+          "hp": 57,
+          "atk": 10.8,
+          "def": 1,
+          "every": 1.6,
+          "cool": 0.8,
+          "ability": "bola",
+          "charge": 8.4,
+          "ranged": true
+        },
+        {
+          "id": "h-cuatro-3",
+          "side": "h",
+          "name": "Clara",
+          "kind": "explorador",
+          "max": 64,
+          "hp": 64,
+          "atk": 9.2,
+          "def": 1,
+          "every": 1.1,
+          "cool": 0.55,
+          "ability": "andanada",
+          "charge": 6,
+          "ranged": true
+        },
+        {
+          "id": "jefe",
+          "side": "e",
+          "name": "La Reina de la Cripta",
+          "kind": "jefe",
+          "max": 234,
+          "hp": 234,
+          "atk": 8.9355,
+          "def": 2,
+          "every": 1.8,
+          "cool": 1.5,
+          "special": 8
+        },
+        {
+          "id": "esbirro-0",
+          "side": "e",
+          "name": "Esbirro",
+          "kind": "esbirro",
+          "max": 38,
+          "hp": 38,
+          "atk": 3.29,
+          "def": 1,
+          "every": 1.6,
+          "cool": 0.8
+        },
+        {
+          "id": "esbirro-1",
+          "side": "e",
+          "name": "Esbirro",
+          "kind": "esbirro",
+          "max": 38,
+          "hp": 38,
+          "atk": 3.29,
+          "def": 1,
+          "every": 1.6,
+          "cool": 1.1
+        },
+        {
+          "id": "esbirro-2",
+          "side": "e",
+          "name": "Esbirro",
+          "kind": "esbirro",
+          "max": 38,
+          "hp": 38,
+          "atk": 3.29,
+          "def": 1,
+          "every": 1.6,
+          "cool": 1.4
+        }
+      ]
+    },
+    "ref-cuatro-sierpe": {
+      "seed": "ref-cuatro-sierpe",
+      "boss": "sierpe",
+      "units": [
+        {
+          "id": "h-cuatro-0",
+          "side": "h",
+          "name": "Rhea Rastrojo",
+          "kind": "guerrero",
+          "max": 104,
+          "hp": 104,
+          "atk": 11.600000000000001,
+          "def": 3,
+          "every": 1.3,
+          "cool": 0.65,
+          "ability": "provocar",
+          "charge": 7.199999999999999,
+          "ranged": false
+        },
+        {
+          "id": "h-cuatro-1",
+          "side": "h",
+          "name": "Úrsula",
+          "kind": "clerigo",
+          "max": 68,
+          "hp": 68,
+          "atk": 10.8,
+          "def": 2,
+          "every": 1.5,
+          "cool": 0.75,
+          "ability": "curar",
+          "charge": 7.199999999999999,
+          "ranged": false
+        },
+        {
+          "id": "h-cuatro-2",
+          "side": "h",
+          "name": "Arnaldo",
+          "kind": "mago",
+          "max": 57,
+          "hp": 57,
+          "atk": 10.8,
+          "def": 1,
+          "every": 1.6,
+          "cool": 0.8,
+          "ability": "bola",
+          "charge": 8.4,
+          "ranged": true
+        },
+        {
+          "id": "h-cuatro-3",
+          "side": "h",
+          "name": "Clara",
+          "kind": "explorador",
+          "max": 64,
+          "hp": 64,
+          "atk": 9.2,
+          "def": 1,
+          "every": 1.1,
+          "cool": 0.55,
+          "ability": "andanada",
+          "charge": 6,
+          "ranged": true
+        },
+        {
+          "id": "jefe",
+          "side": "e",
+          "name": "La sierpe de Sierra Parda",
+          "kind": "jefe",
+          "max": 188,
+          "hp": 188,
+          "atk": 4.7452499999999995,
+          "def": 2,
+          "every": 1.8,
+          "cool": 1.5,
+          "special": 8
+        }
+      ]
+    },
+    "ref-cinco-dragona": {
+      "seed": "ref-cinco-dragona",
+      "boss": "dragona",
+      "units": [
+        {
+          "id": "h-cinco-0",
+          "side": "h",
+          "name": "Ivo",
+          "kind": "guerrero",
+          "max": 104,
+          "hp": 104,
+          "atk": 13.200000000000001,
+          "def": 3,
+          "every": 1.3,
+          "cool": 0.65,
+          "ability": "provocar",
+          "charge": 7.199999999999999,
+          "ranged": false
+        },
+        {
+          "id": "h-cinco-1",
+          "side": "h",
+          "name": "Gaspar",
+          "kind": "picaro",
+          "max": 40,
+          "hp": 40,
+          "atk": 6,
+          "def": 1,
+          "every": 1,
+          "cool": 0.5,
+          "ability": "punalada",
+          "charge": 6,
+          "ranged": false
+        },
+        {
+          "id": "h-cinco-2",
+          "side": "h",
+          "name": "Sancha",
+          "kind": "mago",
+          "max": 49,
+          "hp": 49,
+          "atk": 7.6000000000000005,
+          "def": 1,
+          "every": 1.6,
+          "cool": 0.8,
+          "ability": "bola",
+          "charge": 8.4,
+          "ranged": true
+        },
+        {
+          "id": "h-cinco-3",
+          "side": "h",
+          "name": "Blanca",
+          "kind": "clerigo",
+          "max": 61,
+          "hp": 61,
+          "atk": 7.6000000000000005,
+          "def": 2,
+          "every": 1.5,
+          "cool": 0.75,
+          "ability": "curar",
+          "charge": 7.199999999999999,
+          "ranged": false
+        },
+        {
+          "id": "h-cinco-4",
+          "side": "h",
+          "name": "Ivo del Vado",
+          "kind": "explorador",
+          "max": 63,
+          "hp": 63,
+          "atk": 9.2,
+          "def": 1,
+          "every": 1.1,
+          "cool": 0.55,
+          "ability": "andanada",
+          "charge": 6,
+          "ranged": true
+        },
+        {
+          "id": "jefe",
+          "side": "e",
+          "name": "La dragona de la Corona Blanca",
+          "kind": "jefe",
+          "max": 529,
+          "hp": 529,
+          "atk": 14.0415,
+          "def": 2,
+          "every": 1.8,
+          "cool": 1.5,
+          "special": 8
+        }
+      ]
+    },
+    "ref-cinco-bestia": {
+      "seed": "ref-cinco-bestia",
+      "boss": "bestia",
+      "units": [
+        {
+          "id": "h-cinco-0",
+          "side": "h",
+          "name": "Ivo",
+          "kind": "guerrero",
+          "max": 104,
+          "hp": 104,
+          "atk": 13.200000000000001,
+          "def": 3,
+          "every": 1.3,
+          "cool": 0.65,
+          "ability": "provocar",
+          "charge": 7.199999999999999,
+          "ranged": false
+        },
+        {
+          "id": "h-cinco-1",
+          "side": "h",
+          "name": "Gaspar",
+          "kind": "picaro",
+          "max": 40,
+          "hp": 40,
+          "atk": 6,
+          "def": 1,
+          "every": 1,
+          "cool": 0.5,
+          "ability": "punalada",
+          "charge": 6,
+          "ranged": false
+        },
+        {
+          "id": "h-cinco-2",
+          "side": "h",
+          "name": "Sancha",
+          "kind": "mago",
+          "max": 49,
+          "hp": 49,
+          "atk": 7.6000000000000005,
+          "def": 1,
+          "every": 1.6,
+          "cool": 0.8,
+          "ability": "bola",
+          "charge": 8.4,
+          "ranged": true
+        },
+        {
+          "id": "h-cinco-3",
+          "side": "h",
+          "name": "Blanca",
+          "kind": "clerigo",
+          "max": 61,
+          "hp": 61,
+          "atk": 7.6000000000000005,
+          "def": 2,
+          "every": 1.5,
+          "cool": 0.75,
+          "ability": "curar",
+          "charge": 7.199999999999999,
+          "ranged": false
+        },
+        {
+          "id": "h-cinco-4",
+          "side": "h",
+          "name": "Ivo del Vado",
+          "kind": "explorador",
+          "max": 63,
+          "hp": 63,
+          "atk": 9.2,
+          "def": 1,
+          "every": 1.1,
+          "cool": 0.55,
+          "ability": "andanada",
+          "charge": 6,
+          "ranged": true
+        },
+        {
+          "id": "jefe",
+          "side": "e",
+          "name": "La bestia de Hondogrís",
+          "kind": "jefe",
+          "max": 276,
+          "hp": 276,
+          "atk": 6.993,
+          "def": 2,
+          "every": 1.8,
+          "cool": 1.5,
+          "special": 8
+        }
+      ]
+    },
+    "ref-solo-sierpe": {
+      "seed": "ref-solo-sierpe",
+      "boss": "sierpe",
+      "units": [
+        {
+          "id": "h-solo-0",
+          "side": "h",
+          "name": "Pelayo Torcal",
+          "kind": "picaro",
+          "max": 50,
+          "hp": 50,
+          "atk": 6,
+          "def": 1,
+          "every": 1,
+          "cool": 0.5,
+          "ability": "punalada",
+          "charge": 6,
+          "ranged": false
+        },
+        {
+          "id": "jefe",
+          "side": "e",
+          "name": "La sierpe de Sierra Parda",
+          "kind": "jefe",
+          "max": 188,
+          "hp": 188,
+          "atk": 4.7452499999999995,
+          "def": 2,
+          "every": 1.8,
+          "cool": 1.5,
+          "special": 8
+        }
+      ]
+    },
+    "ref-solo-ahogado": {
+      "seed": "ref-solo-ahogado",
+      "boss": "ahogado",
+      "units": [
+        {
+          "id": "h-solo-0",
+          "side": "h",
+          "name": "Pelayo Torcal",
+          "kind": "picaro",
+          "max": 50,
+          "hp": 50,
+          "atk": 6,
+          "def": 1,
+          "every": 1,
+          "cool": 0.5,
+          "ability": "punalada",
+          "charge": 6,
+          "ranged": false
+        },
+        {
+          "id": "jefe",
+          "side": "e",
+          "name": "El Rey Ahogado",
+          "kind": "jefe",
+          "max": 227,
+          "hp": 227,
+          "atk": 9.324000000000002,
+          "def": 2,
+          "every": 1.8,
+          "cool": 1.5,
+          "special": 8
+        },
+        {
+          "id": "esbirro-0",
+          "side": "e",
+          "name": "Esbirro",
+          "kind": "esbirro",
+          "max": 43,
+          "hp": 43,
+          "atk": 3.76,
+          "def": 1,
+          "every": 1.6,
+          "cool": 0.8
+        },
+        {
+          "id": "esbirro-1",
+          "side": "e",
+          "name": "Esbirro",
+          "kind": "esbirro",
+          "max": 43,
+          "hp": 43,
+          "atk": 3.76,
+          "def": 1,
+          "every": 1.6,
+          "cool": 1.1
+        }
+      ]
+    }
+  },
+  "assaultSetups": {
+    "casa vacia": {
+      "graph": [
+        [
+          "t2",
+          [
+            { "to": "t3", "dur": 3.2 },
+            { "to": "t4", "dur": 4 },
+            { "to": "t6", "dur": 4.800000000000001 },
+            { "to": "t7", "dur": 5.6000000000000005 },
+            { "to": "t9", "dur": 6.4 },
+            { "to": "t10", "dur": 6.4 }
+          ]
+        ],
+        [
+          "t3",
+          [
+            { "to": "t4", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 3.2 },
+            { "to": "t6", "dur": 3.2 },
+            { "to": "t7", "dur": 4 },
+            { "to": "t9", "dur": 4.800000000000001 },
+            { "to": "t10", "dur": 4.800000000000001 }
+          ]
+        ],
+        [
+          "t4",
+          [
+            { "to": "t3", "dur": 2.4000000000000004 },
+            { "to": "t5", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 4 },
+            { "to": "t6", "dur": 4 },
+            { "to": "t7", "dur": 4.800000000000001 },
+            { "to": "t9", "dur": 5.6000000000000005 },
+            { "to": "t10", "dur": 5.6000000000000005 }
+          ]
+        ],
+        ["t5", [{ "to": "t4", "dur": 2.4000000000000004 }]],
+        [
+          "t6",
+          [
+            { "to": "t7", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 4.800000000000001 },
+            { "to": "t3", "dur": 3.2 },
+            { "to": "t4", "dur": 4 },
+            { "to": "t9", "dur": 3.2 },
+            { "to": "t10", "dur": 3.2 },
+            { "to": "patio", "dur": 2.5 }
+          ]
+        ],
+        [
+          "t7",
+          [
+            { "to": "t6", "dur": 2.4000000000000004 },
+            { "to": "t8", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 5.6000000000000005 },
+            { "to": "t3", "dur": 4 },
+            { "to": "t4", "dur": 4.800000000000001 },
+            { "to": "t9", "dur": 4 },
+            { "to": "t10", "dur": 4 }
+          ]
+        ],
+        ["t8", [{ "to": "t7", "dur": 2.4000000000000004 }]],
+        [
+          "t9",
+          [
+            { "to": "t10", "dur": 1.6 },
+            { "to": "t2", "dur": 6.4 },
+            { "to": "t3", "dur": 4.800000000000001 },
+            { "to": "t4", "dur": 5.6000000000000005 },
+            { "to": "t6", "dur": 3.2 },
+            { "to": "t7", "dur": 4 }
+          ]
+        ],
+        [
+          "t10",
+          [
+            { "to": "t9", "dur": 1.6 },
+            { "to": "t11", "dur": 1.6 },
+            { "to": "t2", "dur": 6.4 },
+            { "to": "t3", "dur": 4.800000000000001 },
+            { "to": "t4", "dur": 5.6000000000000005 },
+            { "to": "t6", "dur": 3.2 },
+            { "to": "t7", "dur": 4 }
+          ]
+        ],
+        [
+          "t11",
+          [
+            { "to": "t10", "dur": 1.6 },
+            { "to": "t12", "dur": 1.6 }
+          ]
+        ],
+        ["t12", [{ "to": "t11", "dur": 1.6 }]],
+        [
+          "patio",
+          [
+            { "to": "t6", "dur": 2.5 },
+            { "to": "fuera", "dur": 3 }
+          ]
+        ],
+        ["fuera", [{ "to": "patio", "dur": 3 }]]
+      ],
+      "route": ["t6", "t10", "t11", "t12"],
+      "defenders": [],
+      "bandits": [
+        { "id": "b0", "power": 12.666666666666666, "hp": 38 },
+        { "id": "b1", "power": 12.666666666666666, "hp": 38 },
+        { "id": "b2", "power": 12.666666666666666, "hp": 38 }
+      ],
+      "carry": 60,
+      "gold": 300,
+      "door": 5,
+      "lock": 6,
+      "arrive": 3,
+      "yard": 0
+    },
+    "durmiendo": {
+      "graph": [
+        [
+          "t2",
+          [
+            { "to": "t3", "dur": 3.2 },
+            { "to": "t4", "dur": 4 },
+            { "to": "t6", "dur": 4.800000000000001 },
+            { "to": "t7", "dur": 5.6000000000000005 },
+            { "to": "t9", "dur": 6.4 },
+            { "to": "t10", "dur": 6.4 }
+          ]
+        ],
+        [
+          "t3",
+          [
+            { "to": "t4", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 3.2 },
+            { "to": "t6", "dur": 3.2 },
+            { "to": "t7", "dur": 4 },
+            { "to": "t9", "dur": 4.800000000000001 },
+            { "to": "t10", "dur": 4.800000000000001 }
+          ]
+        ],
+        [
+          "t4",
+          [
+            { "to": "t3", "dur": 2.4000000000000004 },
+            { "to": "t5", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 4 },
+            { "to": "t6", "dur": 4 },
+            { "to": "t7", "dur": 4.800000000000001 },
+            { "to": "t9", "dur": 5.6000000000000005 },
+            { "to": "t10", "dur": 5.6000000000000005 }
+          ]
+        ],
+        ["t5", [{ "to": "t4", "dur": 2.4000000000000004 }]],
+        [
+          "t6",
+          [
+            { "to": "t7", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 4.800000000000001 },
+            { "to": "t3", "dur": 3.2 },
+            { "to": "t4", "dur": 4 },
+            { "to": "t9", "dur": 3.2 },
+            { "to": "t10", "dur": 3.2 },
+            { "to": "patio", "dur": 2.5 }
+          ]
+        ],
+        [
+          "t7",
+          [
+            { "to": "t6", "dur": 2.4000000000000004 },
+            { "to": "t8", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 5.6000000000000005 },
+            { "to": "t3", "dur": 4 },
+            { "to": "t4", "dur": 4.800000000000001 },
+            { "to": "t9", "dur": 4 },
+            { "to": "t10", "dur": 4 }
+          ]
+        ],
+        ["t8", [{ "to": "t7", "dur": 2.4000000000000004 }]],
+        [
+          "t9",
+          [
+            { "to": "t10", "dur": 1.6 },
+            { "to": "t2", "dur": 6.4 },
+            { "to": "t3", "dur": 4.800000000000001 },
+            { "to": "t4", "dur": 5.6000000000000005 },
+            { "to": "t6", "dur": 3.2 },
+            { "to": "t7", "dur": 4 }
+          ]
+        ],
+        [
+          "t10",
+          [
+            { "to": "t9", "dur": 1.6 },
+            { "to": "t11", "dur": 1.6 },
+            { "to": "t2", "dur": 6.4 },
+            { "to": "t3", "dur": 4.800000000000001 },
+            { "to": "t4", "dur": 5.6000000000000005 },
+            { "to": "t6", "dur": 3.2 },
+            { "to": "t7", "dur": 4 }
+          ]
+        ],
+        [
+          "t11",
+          [
+            { "to": "t10", "dur": 1.6 },
+            { "to": "t12", "dur": 1.6 }
+          ]
+        ],
+        ["t12", [{ "to": "t11", "dur": 1.6 }]],
+        [
+          "patio",
+          [
+            { "to": "t6", "dur": 2.5 },
+            { "to": "fuera", "dur": 3 }
+          ]
+        ],
+        ["fuera", [{ "to": "patio", "dur": 3 }]]
+      ],
+      "route": ["t6", "t10", "t11", "t12"],
+      "defenders": [
+        {
+          "id": "h1",
+          "power": 8.4,
+          "hp": 71,
+          "def": 3,
+          "every": 1.3,
+          "ability": "provocar",
+          "ranged": false,
+          "at": "t4",
+          "guard": false,
+          "wake": 4.963497302494943
+        },
+        {
+          "id": "h2",
+          "power": 6.800000000000001,
+          "hp": 40,
+          "def": 1,
+          "every": 1.6,
+          "ability": "bola",
+          "ranged": true,
+          "at": "t4",
+          "guard": false,
+          "wake": 4.557768177706748
+        }
+      ],
+      "bandits": [
+        { "id": "b0", "power": 11.399999999999999, "hp": 38 },
+        { "id": "b1", "power": 11.399999999999999, "hp": 38 },
+        { "id": "b2", "power": 11.399999999999999, "hp": 38 }
+      ],
+      "carry": 58,
+      "gold": 500,
+      "door": 5,
+      "lock": 6,
+      "arrive": 3,
+      "yard": 0
+    },
+    "guardia en la puerta": {
+      "graph": [
+        [
+          "t2",
+          [
+            { "to": "t3", "dur": 3.2 },
+            { "to": "t4", "dur": 4 },
+            { "to": "t6", "dur": 4.800000000000001 },
+            { "to": "t7", "dur": 5.6000000000000005 },
+            { "to": "t9", "dur": 6.4 },
+            { "to": "t10", "dur": 6.4 }
+          ]
+        ],
+        [
+          "t3",
+          [
+            { "to": "t4", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 3.2 },
+            { "to": "t6", "dur": 3.2 },
+            { "to": "t7", "dur": 4 },
+            { "to": "t9", "dur": 4.800000000000001 },
+            { "to": "t10", "dur": 4.800000000000001 }
+          ]
+        ],
+        [
+          "t4",
+          [
+            { "to": "t3", "dur": 2.4000000000000004 },
+            { "to": "t5", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 4 },
+            { "to": "t6", "dur": 4 },
+            { "to": "t7", "dur": 4.800000000000001 },
+            { "to": "t9", "dur": 5.6000000000000005 },
+            { "to": "t10", "dur": 5.6000000000000005 }
+          ]
+        ],
+        ["t5", [{ "to": "t4", "dur": 2.4000000000000004 }]],
+        [
+          "t6",
+          [
+            { "to": "t7", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 4.800000000000001 },
+            { "to": "t3", "dur": 3.2 },
+            { "to": "t4", "dur": 4 },
+            { "to": "t9", "dur": 3.2 },
+            { "to": "t10", "dur": 3.2 },
+            { "to": "patio", "dur": 2.5 }
+          ]
+        ],
+        [
+          "t7",
+          [
+            { "to": "t6", "dur": 2.4000000000000004 },
+            { "to": "t8", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 5.6000000000000005 },
+            { "to": "t3", "dur": 4 },
+            { "to": "t4", "dur": 4.800000000000001 },
+            { "to": "t9", "dur": 4 },
+            { "to": "t10", "dur": 4 }
+          ]
+        ],
+        ["t8", [{ "to": "t7", "dur": 2.4000000000000004 }]],
+        [
+          "t9",
+          [
+            { "to": "t10", "dur": 1.6 },
+            { "to": "t2", "dur": 6.4 },
+            { "to": "t3", "dur": 4.800000000000001 },
+            { "to": "t4", "dur": 5.6000000000000005 },
+            { "to": "t6", "dur": 3.2 },
+            { "to": "t7", "dur": 4 }
+          ]
+        ],
+        [
+          "t10",
+          [
+            { "to": "t9", "dur": 1.6 },
+            { "to": "t11", "dur": 1.6 },
+            { "to": "t2", "dur": 6.4 },
+            { "to": "t3", "dur": 4.800000000000001 },
+            { "to": "t4", "dur": 5.6000000000000005 },
+            { "to": "t6", "dur": 3.2 },
+            { "to": "t7", "dur": 4 }
+          ]
+        ],
+        [
+          "t11",
+          [
+            { "to": "t10", "dur": 1.6 },
+            { "to": "t12", "dur": 1.6 }
+          ]
+        ],
+        ["t12", [{ "to": "t11", "dur": 1.6 }]],
+        [
+          "patio",
+          [
+            { "to": "t6", "dur": 2.5 },
+            { "to": "fuera", "dur": 3 }
+          ]
+        ],
+        ["fuera", [{ "to": "patio", "dur": 3 }]]
+      ],
+      "route": ["t6", "t10", "t11", "t12"],
+      "defenders": [
+        {
+          "id": "h1",
+          "power": 13.8,
+          "hp": 129,
+          "def": 3,
+          "every": 1.3,
+          "ability": "provocar",
+          "ranged": false,
+          "at": "t6",
+          "guard": true,
+          "wake": 0
+        },
+        {
+          "id": "h2",
+          "power": 11.4,
+          "hp": 75,
+          "def": 1,
+          "every": 1.1,
+          "ability": "andanada",
+          "ranged": true,
+          "at": "t6",
+          "guard": true,
+          "wake": 0
+        }
+      ],
+      "bandits": [
+        { "id": "b0", "power": 13.299999999999999, "hp": 38 },
+        { "id": "b1", "power": 13.299999999999999, "hp": 38 }
+      ],
+      "carry": 54,
+      "gold": 160,
+      "door": 5,
+      "lock": 6,
+      "arrive": 7,
+      "yard": 0
+    },
+    "guardia en la camara": {
+      "graph": [
+        [
+          "t2",
+          [
+            { "to": "t3", "dur": 3.2 },
+            { "to": "t4", "dur": 4 },
+            { "to": "t6", "dur": 4.800000000000001 },
+            { "to": "t7", "dur": 5.6000000000000005 },
+            { "to": "t9", "dur": 6.4 },
+            { "to": "t10", "dur": 6.4 }
+          ]
+        ],
+        [
+          "t3",
+          [
+            { "to": "t4", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 3.2 },
+            { "to": "t6", "dur": 3.2 },
+            { "to": "t7", "dur": 4 },
+            { "to": "t9", "dur": 4.800000000000001 },
+            { "to": "t10", "dur": 4.800000000000001 }
+          ]
+        ],
+        [
+          "t4",
+          [
+            { "to": "t3", "dur": 2.4000000000000004 },
+            { "to": "t5", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 4 },
+            { "to": "t6", "dur": 4 },
+            { "to": "t7", "dur": 4.800000000000001 },
+            { "to": "t9", "dur": 5.6000000000000005 },
+            { "to": "t10", "dur": 5.6000000000000005 }
+          ]
+        ],
+        ["t5", [{ "to": "t4", "dur": 2.4000000000000004 }]],
+        [
+          "t6",
+          [
+            { "to": "t7", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 4.800000000000001 },
+            { "to": "t3", "dur": 3.2 },
+            { "to": "t4", "dur": 4 },
+            { "to": "t9", "dur": 3.2 },
+            { "to": "t10", "dur": 3.2 },
+            { "to": "patio", "dur": 2.5 }
+          ]
+        ],
+        [
+          "t7",
+          [
+            { "to": "t6", "dur": 2.4000000000000004 },
+            { "to": "t8", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 5.6000000000000005 },
+            { "to": "t3", "dur": 4 },
+            { "to": "t4", "dur": 4.800000000000001 },
+            { "to": "t9", "dur": 4 },
+            { "to": "t10", "dur": 4 }
+          ]
+        ],
+        ["t8", [{ "to": "t7", "dur": 2.4000000000000004 }]],
+        [
+          "t9",
+          [
+            { "to": "t10", "dur": 1.6 },
+            { "to": "t2", "dur": 6.4 },
+            { "to": "t3", "dur": 4.800000000000001 },
+            { "to": "t4", "dur": 5.6000000000000005 },
+            { "to": "t6", "dur": 3.2 },
+            { "to": "t7", "dur": 4 }
+          ]
+        ],
+        [
+          "t10",
+          [
+            { "to": "t9", "dur": 1.6 },
+            { "to": "t11", "dur": 1.6 },
+            { "to": "t2", "dur": 6.4 },
+            { "to": "t3", "dur": 4.800000000000001 },
+            { "to": "t4", "dur": 5.6000000000000005 },
+            { "to": "t6", "dur": 3.2 },
+            { "to": "t7", "dur": 4 }
+          ]
+        ],
+        [
+          "t11",
+          [
+            { "to": "t10", "dur": 1.6 },
+            { "to": "t12", "dur": 1.6 }
+          ]
+        ],
+        ["t12", [{ "to": "t11", "dur": 1.6 }]],
+        [
+          "patio",
+          [
+            { "to": "t6", "dur": 2.5 },
+            { "to": "fuera", "dur": 3 }
+          ]
+        ],
+        ["fuera", [{ "to": "patio", "dur": 3 }]]
+      ],
+      "route": ["t6", "t10", "t11", "t12"],
+      "defenders": [
+        {
+          "id": "h1",
+          "power": 12.2,
+          "hp": 122,
+          "def": 3,
+          "every": 1.3,
+          "ability": "provocar",
+          "ranged": false,
+          "at": "t6",
+          "guard": true,
+          "wake": 0
+        },
+        {
+          "id": "h2",
+          "power": 6,
+          "hp": 40,
+          "def": 1,
+          "every": 1.6,
+          "ability": "bola",
+          "ranged": true,
+          "at": "t4",
+          "guard": false,
+          "wake": 1.9882800853811204
+        },
+        {
+          "id": "h-casa-asalto-guardia en la camara-1",
+          "power": 18.6,
+          "hp": 162,
+          "def": 3,
+          "every": 1.3,
+          "ability": "provocar",
+          "ranged": false,
+          "at": "t12",
+          "guard": false,
+          "vault": true,
+          "wake": 0
+        }
+      ],
+      "bandits": [
+        { "id": "b0", "power": 11.399999999999999, "hp": 38 },
+        { "id": "b1", "power": 11.399999999999999, "hp": 38 },
+        { "id": "b2", "power": 11.399999999999999, "hp": 38 },
+        { "id": "b3", "power": 11.399999999999999, "hp": 38 }
+      ],
+      "carry": 64,
+      "gold": 800,
+      "door": 5,
+      "lock": 6,
+      "arrive": 7,
+      "yard": 0
+    },
+    "perro y clases": {
+      "graph": [
+        [
+          "t2",
+          [
+            { "to": "t3", "dur": 3.2 },
+            { "to": "t4", "dur": 4 },
+            { "to": "t6", "dur": 4.800000000000001 },
+            { "to": "t7", "dur": 5.6000000000000005 },
+            { "to": "t9", "dur": 6.4 },
+            { "to": "t10", "dur": 6.4 }
+          ]
+        ],
+        [
+          "t3",
+          [
+            { "to": "t4", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 3.2 },
+            { "to": "t6", "dur": 3.2 },
+            { "to": "t7", "dur": 4 },
+            { "to": "t9", "dur": 4.800000000000001 },
+            { "to": "t10", "dur": 4.800000000000001 }
+          ]
+        ],
+        [
+          "t4",
+          [
+            { "to": "t3", "dur": 2.4000000000000004 },
+            { "to": "t5", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 4 },
+            { "to": "t6", "dur": 4 },
+            { "to": "t7", "dur": 4.800000000000001 },
+            { "to": "t9", "dur": 5.6000000000000005 },
+            { "to": "t10", "dur": 5.6000000000000005 }
+          ]
+        ],
+        ["t5", [{ "to": "t4", "dur": 2.4000000000000004 }]],
+        [
+          "t6",
+          [
+            { "to": "t7", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 4.800000000000001 },
+            { "to": "t3", "dur": 3.2 },
+            { "to": "t4", "dur": 4 },
+            { "to": "t9", "dur": 3.2 },
+            { "to": "t10", "dur": 3.2 },
+            { "to": "patio", "dur": 2.5 }
+          ]
+        ],
+        [
+          "t7",
+          [
+            { "to": "t6", "dur": 2.4000000000000004 },
+            { "to": "t8", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 5.6000000000000005 },
+            { "to": "t3", "dur": 4 },
+            { "to": "t4", "dur": 4.800000000000001 },
+            { "to": "t9", "dur": 4 },
+            { "to": "t10", "dur": 4 }
+          ]
+        ],
+        ["t8", [{ "to": "t7", "dur": 2.4000000000000004 }]],
+        [
+          "t9",
+          [
+            { "to": "t10", "dur": 1.6 },
+            { "to": "t2", "dur": 6.4 },
+            { "to": "t3", "dur": 4.800000000000001 },
+            { "to": "t4", "dur": 5.6000000000000005 },
+            { "to": "t6", "dur": 3.2 },
+            { "to": "t7", "dur": 4 }
+          ]
+        ],
+        [
+          "t10",
+          [
+            { "to": "t9", "dur": 1.6 },
+            { "to": "t11", "dur": 1.6 },
+            { "to": "t2", "dur": 6.4 },
+            { "to": "t3", "dur": 4.800000000000001 },
+            { "to": "t4", "dur": 5.6000000000000005 },
+            { "to": "t6", "dur": 3.2 },
+            { "to": "t7", "dur": 4 }
+          ]
+        ],
+        [
+          "t11",
+          [
+            { "to": "t10", "dur": 1.6 },
+            { "to": "t12", "dur": 1.6 }
+          ]
+        ],
+        ["t12", [{ "to": "t11", "dur": 1.6 }]],
+        [
+          "patio",
+          [
+            { "to": "t6", "dur": 2.5 },
+            { "to": "fuera", "dur": 3 }
+          ]
+        ],
+        ["fuera", [{ "to": "patio", "dur": 3 }]]
+      ],
+      "route": ["t6", "t10", "t11", "t12"],
+      "defenders": [
+        {
+          "id": "h1",
+          "power": 9.2,
+          "hp": 81,
+          "def": 3,
+          "every": 1.3,
+          "ability": "provocar",
+          "ranged": false,
+          "at": "t4",
+          "guard": false,
+          "wake": 1.7504380624741316
+        },
+        {
+          "id": "h2",
+          "power": 6,
+          "hp": 50,
+          "def": 1,
+          "every": 1,
+          "ability": "punalada",
+          "ranged": false,
+          "at": "t4",
+          "guard": false,
+          "wake": 2.12442076462321
+        },
+        {
+          "id": "h-casa-asalto-perro y clases-1",
+          "power": 8.4,
+          "hp": 55,
+          "def": 2,
+          "every": 1.5,
+          "ability": "curar",
+          "ranged": false,
+          "at": "t4",
+          "guard": false,
+          "wake": 2.1708365704398602
+        },
+        {
+          "id": "h-casa-asalto-perro y clases-2",
+          "power": 10.8,
+          "hp": 54,
+          "def": 1,
+          "every": 1.6,
+          "ability": "bola",
+          "ranged": true,
+          "at": "t4",
+          "guard": false,
+          "wake": 2.3620795300230384
+        },
+        {
+          "id": "h-casa-asalto-perro y clases-3",
+          "power": 6,
+          "hp": 50,
+          "def": 1,
+          "every": 1,
+          "ability": "punalada",
+          "ranged": false,
+          "at": "t4",
+          "guard": false,
+          "wake": 2.3390718300361186
+        }
+      ],
+      "bandits": [
+        { "id": "b0", "power": 11.399999999999999, "hp": 38 },
+        { "id": "b1", "power": 11.399999999999999, "hp": 38 },
+        { "id": "b2", "power": 11.399999999999999, "hp": 38 },
+        { "id": "b3", "power": 11.399999999999999, "hp": 38 },
+        { "id": "b4", "power": 11.399999999999999, "hp": 38 }
+      ],
+      "carry": 70,
+      "gold": 1200,
+      "door": 5,
+      "lock": 6,
+      "arrive": 3,
+      "yard": 0
+    },
+    "guardia con clerigo y mago": {
+      "graph": [
+        [
+          "t2",
+          [
+            { "to": "t3", "dur": 3.2 },
+            { "to": "t4", "dur": 4 },
+            { "to": "t6", "dur": 4.800000000000001 },
+            { "to": "t7", "dur": 5.6000000000000005 },
+            { "to": "t9", "dur": 6.4 },
+            { "to": "t10", "dur": 6.4 }
+          ]
+        ],
+        [
+          "t3",
+          [
+            { "to": "t4", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 3.2 },
+            { "to": "t6", "dur": 3.2 },
+            { "to": "t7", "dur": 4 },
+            { "to": "t9", "dur": 4.800000000000001 },
+            { "to": "t10", "dur": 4.800000000000001 }
+          ]
+        ],
+        [
+          "t4",
+          [
+            { "to": "t3", "dur": 2.4000000000000004 },
+            { "to": "t5", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 4 },
+            { "to": "t6", "dur": 4 },
+            { "to": "t7", "dur": 4.800000000000001 },
+            { "to": "t9", "dur": 5.6000000000000005 },
+            { "to": "t10", "dur": 5.6000000000000005 }
+          ]
+        ],
+        ["t5", [{ "to": "t4", "dur": 2.4000000000000004 }]],
+        [
+          "t6",
+          [
+            { "to": "t7", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 4.800000000000001 },
+            { "to": "t3", "dur": 3.2 },
+            { "to": "t4", "dur": 4 },
+            { "to": "t9", "dur": 3.2 },
+            { "to": "t10", "dur": 3.2 },
+            { "to": "patio", "dur": 2.5 }
+          ]
+        ],
+        [
+          "t7",
+          [
+            { "to": "t6", "dur": 2.4000000000000004 },
+            { "to": "t8", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 5.6000000000000005 },
+            { "to": "t3", "dur": 4 },
+            { "to": "t4", "dur": 4.800000000000001 },
+            { "to": "t9", "dur": 4 },
+            { "to": "t10", "dur": 4 }
+          ]
+        ],
+        ["t8", [{ "to": "t7", "dur": 2.4000000000000004 }]],
+        [
+          "t9",
+          [
+            { "to": "t10", "dur": 1.6 },
+            { "to": "t2", "dur": 6.4 },
+            { "to": "t3", "dur": 4.800000000000001 },
+            { "to": "t4", "dur": 5.6000000000000005 },
+            { "to": "t6", "dur": 3.2 },
+            { "to": "t7", "dur": 4 }
+          ]
+        ],
+        [
+          "t10",
+          [
+            { "to": "t9", "dur": 1.6 },
+            { "to": "t11", "dur": 1.6 },
+            { "to": "t2", "dur": 6.4 },
+            { "to": "t3", "dur": 4.800000000000001 },
+            { "to": "t4", "dur": 5.6000000000000005 },
+            { "to": "t6", "dur": 3.2 },
+            { "to": "t7", "dur": 4 }
+          ]
+        ],
+        [
+          "t11",
+          [
+            { "to": "t10", "dur": 1.6 },
+            { "to": "t12", "dur": 1.6 }
+          ]
+        ],
+        ["t12", [{ "to": "t11", "dur": 1.6 }]],
+        [
+          "patio",
+          [
+            { "to": "t6", "dur": 2.5 },
+            { "to": "fuera", "dur": 3 }
+          ]
+        ],
+        ["fuera", [{ "to": "patio", "dur": 3 }]]
+      ],
+      "route": ["t6", "t10", "t11", "t12"],
+      "defenders": [
+        {
+          "id": "h1",
+          "power": 8.4,
+          "hp": 81,
+          "def": 3,
+          "every": 1.3,
+          "ability": "provocar",
+          "ranged": false,
+          "at": "t4",
+          "guard": false,
+          "wake": 1.4284960427321494
+        },
+        {
+          "id": "h2",
+          "power": 6,
+          "hp": 56,
+          "def": 2,
+          "every": 1.5,
+          "ability": "curar",
+          "ranged": false,
+          "at": "t4",
+          "guard": false,
+          "wake": 1.6616825219243765
+        },
+        {
+          "id": "h-casa-asalto-guardia con clerigo y mago-1",
+          "power": 9,
+          "hp": 92,
+          "def": 2,
+          "every": 1.5,
+          "ability": "curar",
+          "ranged": false,
+          "at": "t6",
+          "guard": true,
+          "wake": 0
+        },
+        {
+          "id": "h-casa-asalto-guardia con clerigo y mago-2",
+          "power": 12.2,
+          "hp": 66,
+          "def": 1,
+          "every": 1.6,
+          "ability": "bola",
+          "ranged": true,
+          "at": "t6",
+          "guard": true,
+          "wake": 0
+        }
+      ],
+      "bandits": [
+        { "id": "b0", "power": 10.45, "hp": 38 },
+        { "id": "b1", "power": 10.45, "hp": 38 },
+        { "id": "b2", "power": 10.45, "hp": 38 },
+        { "id": "b3", "power": 10.45, "hp": 38 }
+      ],
+      "carry": 62,
+      "gold": 900,
+      "door": 5,
+      "lock": 6,
+      "arrive": 7,
+      "yard": 0
+    },
+    "banda grande y trabajador": {
+      "graph": [
+        [
+          "t2",
+          [
+            { "to": "t3", "dur": 3.2 },
+            { "to": "t4", "dur": 4 },
+            { "to": "t6", "dur": 4.800000000000001 },
+            { "to": "t7", "dur": 5.6000000000000005 },
+            { "to": "t9", "dur": 6.4 },
+            { "to": "t10", "dur": 6.4 }
+          ]
+        ],
+        [
+          "t3",
+          [
+            { "to": "t4", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 3.2 },
+            { "to": "t6", "dur": 3.2 },
+            { "to": "t7", "dur": 4 },
+            { "to": "t9", "dur": 4.800000000000001 },
+            { "to": "t10", "dur": 4.800000000000001 }
+          ]
+        ],
+        [
+          "t4",
+          [
+            { "to": "t3", "dur": 2.4000000000000004 },
+            { "to": "t5", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 4 },
+            { "to": "t6", "dur": 4 },
+            { "to": "t7", "dur": 4.800000000000001 },
+            { "to": "t9", "dur": 5.6000000000000005 },
+            { "to": "t10", "dur": 5.6000000000000005 }
+          ]
+        ],
+        ["t5", [{ "to": "t4", "dur": 2.4000000000000004 }]],
+        [
+          "t6",
+          [
+            { "to": "t7", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 4.800000000000001 },
+            { "to": "t3", "dur": 3.2 },
+            { "to": "t4", "dur": 4 },
+            { "to": "t9", "dur": 3.2 },
+            { "to": "t10", "dur": 3.2 },
+            { "to": "patio", "dur": 2.5 }
+          ]
+        ],
+        [
+          "t7",
+          [
+            { "to": "t6", "dur": 2.4000000000000004 },
+            { "to": "t8", "dur": 2.4000000000000004 },
+            { "to": "t2", "dur": 5.6000000000000005 },
+            { "to": "t3", "dur": 4 },
+            { "to": "t4", "dur": 4.800000000000001 },
+            { "to": "t9", "dur": 4 },
+            { "to": "t10", "dur": 4 }
+          ]
+        ],
+        ["t8", [{ "to": "t7", "dur": 2.4000000000000004 }]],
+        [
+          "t9",
+          [
+            { "to": "t10", "dur": 1.6 },
+            { "to": "t2", "dur": 6.4 },
+            { "to": "t3", "dur": 4.800000000000001 },
+            { "to": "t4", "dur": 5.6000000000000005 },
+            { "to": "t6", "dur": 3.2 },
+            { "to": "t7", "dur": 4 }
+          ]
+        ],
+        [
+          "t10",
+          [
+            { "to": "t9", "dur": 1.6 },
+            { "to": "t11", "dur": 1.6 },
+            { "to": "t2", "dur": 6.4 },
+            { "to": "t3", "dur": 4.800000000000001 },
+            { "to": "t4", "dur": 5.6000000000000005 },
+            { "to": "t6", "dur": 3.2 },
+            { "to": "t7", "dur": 4 }
+          ]
+        ],
+        [
+          "t11",
+          [
+            { "to": "t10", "dur": 1.6 },
+            { "to": "t12", "dur": 1.6 }
+          ]
+        ],
+        ["t12", [{ "to": "t11", "dur": 1.6 }]],
+        [
+          "patio",
+          [
+            { "to": "t6", "dur": 2.5 },
+            { "to": "fuera", "dur": 3 }
+          ]
+        ],
+        ["fuera", [{ "to": "patio", "dur": 3 }]]
+      ],
+      "route": ["t6", "t10", "t11", "t12"],
+      "defenders": [
+        {
+          "id": "h1",
+          "power": 7.6000000000000005,
+          "hp": 71,
+          "def": 3,
+          "every": 1.3,
+          "ability": "provocar",
+          "ranged": false,
+          "at": "t4",
+          "guard": false,
+          "wake": 1.6487479989882559
+        },
+        {
+          "id": "h2",
+          "power": 9,
+          "hp": 92,
+          "def": 2,
+          "every": 1.5,
+          "ability": "curar",
+          "ranged": false,
+          "at": "t6",
+          "guard": true,
+          "wake": 0
+        },
+        {
+          "id": "h-casa-asalto-banda grande y trabajador-1",
+          "power": 7.6000000000000005,
+          "hp": 49,
+          "def": 1,
+          "every": 1.1,
+          "ability": "andanada",
+          "ranged": true,
+          "at": "t4",
+          "guard": false,
+          "wake": 1.1581529674585909
+        },
+        {
+          "id": "h-casa-asalto-banda grande y trabajador-2",
+          "power": 14.8,
+          "hp": 103,
+          "def": 3,
+          "every": 1.3,
+          "ability": "provocar",
+          "ranged": false,
+          "at": "t4",
+          "guard": false,
+          "wake": 1.0978849860839546
+        },
+        {
+          "id": "w-ref",
+          "power": 3.666666666666667,
+          "hp": 20,
+          "every": 1.6,
+          "at": "t10",
+          "worker": true,
+          "wake": "∞"
+        }
+      ],
+      "bandits": [
+        { "id": "b0", "power": 11.399999999999999, "hp": 38 },
+        { "id": "b1", "power": 11.399999999999999, "hp": 38 },
+        { "id": "b2", "power": 11.399999999999999, "hp": 38 },
+        { "id": "b3", "power": 11.399999999999999, "hp": 38 },
+        { "id": "b4", "power": 11.399999999999999, "hp": 38 },
+        { "id": "b5", "power": 11.399999999999999, "hp": 38 }
+      ],
+      "carry": 76,
+      "gold": 2000,
+      "door": 5,
+      "lock": 6,
+      "arrive": 7,
+      "yard": 0
+    }
+  },
+  "combats": [
+    {
+      "name": "pareja contra bestia (auto)",
+      "setup": "ref-pareja-bestia",
+      "mode": "auto",
+      "expect": {
+        "result": { "won": false, "downed": ["h-pareja-0", "h-pareja-1"], "steps": 267 },
+        "hp": [0, 0, 4],
+        "events": { "n": 67, "hash": "92f49f50" },
+        "orders": []
+      }
+    },
+    {
+      "name": "pareja contra bestia (idle)",
+      "setup": "ref-pareja-bestia",
+      "mode": "idle",
+      "expect": {
+        "result": { "won": false, "downed": ["h-pareja-0", "h-pareja-1"], "steps": 267 },
+        "hp": [0, 0, 4],
+        "events": { "n": 67, "hash": "92f49f50" },
+        "orders": []
+      }
+    },
+    {
+      "name": "pareja contra bestia (todo)",
+      "setup": "ref-pareja-bestia",
+      "mode": "player",
+      "player": { "target": true, "skill": true, "cover": true, "crit": true },
+      "expect": {
+        "result": { "won": true, "downed": ["h-pareja-1"], "steps": 228 },
+        "hp": [38, 0, 0],
+        "events": { "n": 59, "hash": "24078897" },
+        "orders": [
+          { "who": "h-pareja-0", "kind": "target", "to": "jefe", "step": 7 },
+          { "who": "h-pareja-1", "kind": "target", "to": "jefe", "step": 30 },
+          { "who": "h-pareja-0", "kind": "crit", "step": 34 },
+          { "who": "h-pareja-1", "kind": "crit", "step": 40 },
+          { "who": "h-pareja-0", "kind": "crit", "step": 46 },
+          { "who": "h-pareja-0", "kind": "target", "to": "jefe", "step": 53 },
+          { "who": "h-pareja-1", "kind": "cover", "step": 66 },
+          { "who": "h-pareja-0", "kind": "crit", "step": 72 },
+          { "who": "h-pareja-0", "kind": "skill", "step": 73 },
+          { "who": "h-pareja-1", "kind": "target", "to": "jefe", "step": 76 },
+          { "who": "h-pareja-1", "kind": "skill", "step": 85 },
+          { "who": "h-pareja-0", "kind": "crit", "step": 98 },
+          { "who": "h-pareja-0", "kind": "target", "to": "jefe", "step": 99 },
+          { "who": "h-pareja-1", "kind": "target", "to": "jefe", "step": 122 },
+          { "who": "h-pareja-0", "kind": "target", "to": "jefe", "step": 145 },
+          { "who": "h-pareja-0", "kind": "cover", "step": 150 },
+          { "who": "h-pareja-0", "kind": "target", "to": "jefe", "step": 168 },
+          { "who": "h-pareja-0", "kind": "target", "to": "jefe", "step": 191 },
+          { "who": "h-pareja-0", "kind": "skill", "step": 194 },
+          { "who": "h-pareja-0", "kind": "target", "to": "jefe", "step": 214 }
+        ]
+      }
+    },
+    {
+      "name": "pareja contra bestia (blanco)",
+      "setup": "ref-pareja-bestia",
+      "mode": "player",
+      "player": { "target": true },
+      "expect": {
+        "result": { "won": false, "downed": ["h-pareja-0", "h-pareja-1"], "steps": 267 },
+        "hp": [0, 0, 4],
+        "events": { "n": 67, "hash": "92f49f50" },
+        "orders": [
+          { "who": "h-pareja-0", "kind": "target", "to": "jefe", "step": 7 },
+          { "who": "h-pareja-1", "kind": "target", "to": "jefe", "step": 30 },
+          { "who": "h-pareja-0", "kind": "target", "to": "jefe", "step": 53 },
+          { "who": "h-pareja-1", "kind": "target", "to": "jefe", "step": 76 },
+          { "who": "h-pareja-0", "kind": "target", "to": "jefe", "step": 99 },
+          { "who": "h-pareja-1", "kind": "target", "to": "jefe", "step": 122 },
+          { "who": "h-pareja-0", "kind": "target", "to": "jefe", "step": 145 },
+          { "who": "h-pareja-0", "kind": "target", "to": "jefe", "step": 168 },
+          { "who": "h-pareja-0", "kind": "target", "to": "jefe", "step": 191 },
+          { "who": "h-pareja-0", "kind": "target", "to": "jefe", "step": 214 },
+          { "who": "h-pareja-0", "kind": "target", "to": "jefe", "step": 237 },
+          { "who": "h-pareja-0", "kind": "target", "to": "jefe", "step": 260 }
+        ]
+      }
+    },
+    {
+      "name": "pareja contra bestia (habilidad)",
+      "setup": "ref-pareja-bestia",
+      "mode": "player",
+      "player": { "skill": true },
+      "expect": {
+        "result": { "won": false, "downed": ["h-pareja-0", "h-pareja-1"], "steps": 267 },
+        "hp": [0, 0, 4],
+        "events": { "n": 67, "hash": "d4eaee4a" },
+        "orders": [
+          { "who": "h-pareja-0", "kind": "skill", "step": 73 },
+          { "who": "h-pareja-1", "kind": "skill", "step": 85 },
+          { "who": "h-pareja-0", "kind": "skill", "step": 194 }
+        ]
+      }
+    },
+    {
+      "name": "pareja contra bestia (cubrirse)",
+      "setup": "ref-pareja-bestia",
+      "mode": "player",
+      "player": { "cover": true },
+      "expect": {
+        "result": { "won": true, "downed": ["h-pareja-1"], "steps": 280 },
+        "hp": [9, 0, 0],
+        "events": { "n": 71, "hash": "25af6143" },
+        "orders": [
+          { "who": "h-pareja-1", "kind": "cover", "step": 66 },
+          { "who": "h-pareja-0", "kind": "cover", "step": 150 },
+          { "who": "h-pareja-0", "kind": "cover", "step": 248 }
+        ]
+      }
+    },
+    {
+      "name": "pareja contra bestia (critico)",
+      "setup": "ref-pareja-bestia",
+      "mode": "player",
+      "player": { "crit": true },
+      "expect": {
+        "result": { "won": true, "downed": ["h-pareja-1"], "steps": 228 },
+        "hp": [32, 0, 0],
+        "events": { "n": 57, "hash": "472abe7d" },
+        "orders": [
+          { "who": "h-pareja-0", "kind": "crit", "step": 34 },
+          { "who": "h-pareja-1", "kind": "crit", "step": 40 },
+          { "who": "h-pareja-0", "kind": "crit", "step": 46 },
+          { "who": "h-pareja-0", "kind": "crit", "step": 72 },
+          { "who": "h-pareja-0", "kind": "crit", "step": 98 }
+        ]
+      }
+    },
+    {
+      "name": "pareja contra reina (auto)",
+      "setup": "ref-pareja-reina",
+      "mode": "auto",
+      "expect": {
+        "result": { "won": false, "downed": ["h-pareja-0", "h-pareja-1"], "steps": 141 },
+        "hp": [0, 0, 168, 0, 0, 19],
+        "events": { "n": 57, "hash": "76f6266f" },
+        "orders": []
+      }
+    },
+    {
+      "name": "pareja contra reina (idle)",
+      "setup": "ref-pareja-reina",
+      "mode": "idle",
+      "expect": {
+        "result": { "won": false, "downed": ["h-pareja-0", "h-pareja-1"], "steps": 141 },
+        "hp": [0, 0, 168, 0, 0, 19],
+        "events": { "n": 57, "hash": "76f6266f" },
+        "orders": []
+      }
+    },
+    {
+      "name": "pareja contra reina (todo)",
+      "setup": "ref-pareja-reina",
+      "mode": "player",
+      "player": { "target": true, "skill": true, "cover": true, "crit": true },
+      "expect": {
+        "result": { "won": false, "downed": ["h-pareja-0", "h-pareja-1"], "steps": 177 },
+        "hp": [0, 0, 148, 0, 0, 0],
+        "events": { "n": 71, "hash": "4a7f0dcc" },
+        "orders": [
+          { "who": "h-pareja-0", "kind": "target", "to": "esbirro-0", "step": 7 },
+          { "who": "h-pareja-1", "kind": "target", "to": "esbirro-1", "step": 30 },
+          { "who": "h-pareja-0", "kind": "target", "to": "jefe", "step": 53 },
+          { "who": "h-pareja-1", "kind": "cover", "step": 66 },
+          { "who": "h-pareja-0", "kind": "crit", "step": 72 },
+          { "who": "h-pareja-0", "kind": "skill", "step": 73 },
+          { "who": "h-pareja-1", "kind": "target", "to": "esbirro-1", "step": 76 },
+          { "who": "h-pareja-1", "kind": "skill", "step": 85 },
+          { "who": "h-pareja-0", "kind": "crit", "step": 98 },
+          { "who": "h-pareja-0", "kind": "target", "to": "esbirro-2", "step": 99 },
+          { "who": "h-pareja-1", "kind": "crit", "step": 104 },
+          { "who": "h-pareja-1", "kind": "target", "to": "jefe", "step": 122 },
+          { "who": "h-pareja-1", "kind": "target", "to": "esbirro-2", "step": 145 },
+          { "who": "h-pareja-1", "kind": "cover", "step": 150 },
+          { "who": "h-pareja-1", "kind": "target", "to": "jefe", "step": 168 }
+        ]
+      }
+    },
+    {
+      "name": "pareja contra reina (blanco)",
+      "setup": "ref-pareja-reina",
+      "mode": "player",
+      "player": { "target": true },
+      "expect": {
+        "result": { "won": false, "downed": ["h-pareja-0", "h-pareja-1"], "steps": 159 },
+        "hp": [0, 0, 160, 0, 0, 12],
+        "events": { "n": 63, "hash": "ad098059" },
+        "orders": [
+          { "who": "h-pareja-0", "kind": "target", "to": "esbirro-0", "step": 7 },
+          { "who": "h-pareja-1", "kind": "target", "to": "esbirro-1", "step": 30 },
+          { "who": "h-pareja-0", "kind": "target", "to": "jefe", "step": 53 },
+          { "who": "h-pareja-1", "kind": "target", "to": "esbirro-1", "step": 76 },
+          { "who": "h-pareja-0", "kind": "target", "to": "esbirro-2", "step": 99 },
+          { "who": "h-pareja-1", "kind": "target", "to": "jefe", "step": 122 },
+          { "who": "h-pareja-1", "kind": "target", "to": "esbirro-2", "step": 145 }
+        ]
+      }
+    },
+    {
+      "name": "pareja contra reina (habilidad)",
+      "setup": "ref-pareja-reina",
+      "mode": "player",
+      "player": { "skill": true },
+      "expect": {
+        "result": { "won": false, "downed": ["h-pareja-0", "h-pareja-1"], "steps": 141 },
+        "hp": [0, 0, 168, 0, 0, 19],
+        "events": { "n": 57, "hash": "76f6266f" },
+        "orders": [
+          { "who": "h-pareja-0", "kind": "skill", "step": 73 },
+          { "who": "h-pareja-1", "kind": "skill", "step": 85 }
+        ]
+      }
+    },
+    {
+      "name": "pareja contra reina (cubrirse)",
+      "setup": "ref-pareja-reina",
+      "mode": "player",
+      "player": { "cover": true },
+      "expect": {
+        "result": { "won": false, "downed": ["h-pareja-0", "h-pareja-1"], "steps": 172 },
+        "hp": [0, 0, 157, 0, 0, 9],
+        "events": { "n": 68, "hash": "4721b6a6" },
+        "orders": [
+          { "who": "h-pareja-1", "kind": "cover", "step": 66 },
+          { "who": "h-pareja-1", "kind": "cover", "step": 150 }
+        ]
+      }
+    },
+    {
+      "name": "pareja contra reina (critico)",
+      "setup": "ref-pareja-reina",
+      "mode": "player",
+      "player": { "crit": true },
+      "expect": {
+        "result": { "won": false, "downed": ["h-pareja-0", "h-pareja-1"], "steps": 159 },
+        "hp": [0, 0, 163, 0, 0, 7],
+        "events": { "n": 61, "hash": "6d834734" },
+        "orders": [
+          { "who": "h-pareja-0", "kind": "crit", "step": 72 },
+          { "who": "h-pareja-1", "kind": "crit", "step": 104 }
+        ]
+      }
+    },
+    {
+      "name": "trio contra ahogado (auto)",
+      "setup": "ref-trio-ahogado",
+      "mode": "auto",
+      "expect": {
+        "result": { "won": true, "downed": ["h-trio-2"], "steps": 158 },
+        "hp": [26, 64, 0, 0, 0, 0],
+        "events": { "n": 77, "hash": "2cae8957" },
+        "orders": []
+      }
+    },
+    {
+      "name": "trio contra ahogado (idle)",
+      "setup": "ref-trio-ahogado",
+      "mode": "idle",
+      "expect": {
+        "result": { "won": true, "downed": ["h-trio-2"], "steps": 158 },
+        "hp": [26, 64, 0, 0, 0, 0],
+        "events": { "n": 77, "hash": "2cae8957" },
+        "orders": []
+      }
+    },
+    {
+      "name": "trio contra ahogado (todo)",
+      "setup": "ref-trio-ahogado",
+      "mode": "player",
+      "player": { "target": true, "skill": true, "cover": true, "crit": true },
+      "expect": {
+        "result": { "won": true, "downed": ["h-trio-2"], "steps": 143 },
+        "hp": [44, 64, 0, 0, 0, 0],
+        "events": { "n": 74, "hash": "14884e83" },
+        "orders": [
+          { "who": "h-trio-0", "kind": "target", "to": "esbirro-0", "step": 7 },
+          { "who": "h-trio-1", "kind": "target", "to": "esbirro-1", "step": 30 },
+          { "who": "h-trio-0", "kind": "crit", "step": 46 },
+          { "who": "h-trio-2", "kind": "target", "to": "esbirro-1", "step": 53 },
+          { "who": "h-trio-1", "kind": "crit", "step": 54 },
+          { "who": "h-trio-0", "kind": "skill", "step": 61 },
+          { "who": "h-trio-2", "kind": "cover", "step": 66 },
+          { "who": "h-trio-1", "kind": "skill", "step": 73 },
+          { "who": "h-trio-0", "kind": "target", "to": "jefe", "step": 76 },
+          { "who": "h-trio-1", "kind": "crit", "step": 84 },
+          { "who": "h-trio-1", "kind": "target", "to": "jefe", "step": 99 },
+          { "who": "h-trio-0", "kind": "crit", "step": 106 },
+          { "who": "h-trio-2", "kind": "target", "to": "jefe", "step": 122 },
+          { "who": "h-trio-2", "kind": "crit", "step": 128 }
+        ]
+      }
+    },
+    {
+      "name": "trio contra ahogado (blanco)",
+      "setup": "ref-trio-ahogado",
+      "mode": "player",
+      "player": { "target": true },
+      "expect": {
+        "result": { "won": true, "downed": ["h-trio-2"], "steps": 146 },
+        "hp": [26, 64, 0, 0, 0, 0],
+        "events": { "n": 74, "hash": "d830bdad" },
+        "orders": [
+          { "who": "h-trio-0", "kind": "target", "to": "esbirro-0", "step": 7 },
+          { "who": "h-trio-1", "kind": "target", "to": "esbirro-1", "step": 30 },
+          { "who": "h-trio-2", "kind": "target", "to": "esbirro-1", "step": 53 },
+          { "who": "h-trio-0", "kind": "target", "to": "jefe", "step": 76 },
+          { "who": "h-trio-1", "kind": "target", "to": "jefe", "step": 99 },
+          { "who": "h-trio-2", "kind": "target", "to": "jefe", "step": 122 },
+          { "who": "h-trio-0", "kind": "target", "to": "jefe", "step": 145 }
+        ]
+      }
+    },
+    {
+      "name": "trio contra ahogado (habilidad)",
+      "setup": "ref-trio-ahogado",
+      "mode": "player",
+      "player": { "skill": true },
+      "expect": {
+        "result": { "won": true, "downed": ["h-trio-2"], "steps": 158 },
+        "hp": [26, 64, 0, 0, 0, 0],
+        "events": { "n": 77, "hash": "2cae8957" },
+        "orders": [
+          { "who": "h-trio-0", "kind": "skill", "step": 61 },
+          { "who": "h-trio-1", "kind": "skill", "step": 73 }
+        ]
+      }
+    },
+    {
+      "name": "trio contra ahogado (cubrirse)",
+      "setup": "ref-trio-ahogado",
+      "mode": "player",
+      "player": { "cover": true },
+      "expect": {
+        "result": { "won": true, "downed": ["h-trio-2"], "steps": 158 },
+        "hp": [26, 64, 0, 0, 0, 0],
+        "events": { "n": 79, "hash": "95767344" },
+        "orders": [
+          { "who": "h-trio-2", "kind": "cover", "step": 66 },
+          { "who": "h-trio-1", "kind": "cover", "step": 150 }
+        ]
+      }
+    },
+    {
+      "name": "trio contra ahogado (critico)",
+      "setup": "ref-trio-ahogado",
+      "mode": "player",
+      "player": { "crit": true },
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 138 },
+        "hp": [44, 64, 2, 0, 0, 0],
+        "events": { "n": 69, "hash": "820659db" },
+        "orders": [
+          { "who": "h-trio-0", "kind": "crit", "step": 46 },
+          { "who": "h-trio-1", "kind": "crit", "step": 54 },
+          { "who": "h-trio-1", "kind": "crit", "step": 84 },
+          { "who": "h-trio-0", "kind": "crit", "step": 106 },
+          { "who": "h-trio-2", "kind": "crit", "step": 128 }
+        ]
+      }
+    },
+    {
+      "name": "trio contra dragona (auto)",
+      "setup": "ref-trio-dragona",
+      "mode": "auto",
+      "expect": {
+        "result": { "won": false, "downed": ["h-trio-0", "h-trio-1", "h-trio-2"], "steps": 195 },
+        "hp": [0, 0, 0, 173],
+        "events": { "n": 74, "hash": "f5ca8f45" },
+        "orders": []
+      }
+    },
+    {
+      "name": "trio contra dragona (idle)",
+      "setup": "ref-trio-dragona",
+      "mode": "idle",
+      "expect": {
+        "result": { "won": false, "downed": ["h-trio-0", "h-trio-1", "h-trio-2"], "steps": 195 },
+        "hp": [0, 0, 0, 173],
+        "events": { "n": 74, "hash": "f5ca8f45" },
+        "orders": []
+      }
+    },
+    {
+      "name": "trio contra dragona (todo)",
+      "setup": "ref-trio-dragona",
+      "mode": "player",
+      "player": { "target": true, "skill": true, "cover": true, "crit": true },
+      "expect": {
+        "result": { "won": false, "downed": ["h-trio-0", "h-trio-1", "h-trio-2"], "steps": 249 },
+        "hp": [0, 0, 0, 48],
+        "events": { "n": 96, "hash": "287bb60" },
+        "orders": [
+          { "who": "h-trio-0", "kind": "target", "to": "jefe", "step": 7 },
+          { "who": "h-trio-1", "kind": "target", "to": "jefe", "step": 30 },
+          { "who": "h-trio-2", "kind": "target", "to": "jefe", "step": 53 },
+          { "who": "h-trio-0", "kind": "skill", "step": 61 },
+          { "who": "h-trio-2", "kind": "cover", "step": 66 },
+          { "who": "h-trio-1", "kind": "skill", "step": 73 },
+          { "who": "h-trio-0", "kind": "target", "to": "jefe", "step": 76 },
+          { "who": "h-trio-2", "kind": "crit", "step": 94 },
+          { "who": "h-trio-0", "kind": "crit", "step": 96 },
+          { "who": "h-trio-1", "kind": "target", "to": "jefe", "step": 99 },
+          { "who": "h-trio-2", "kind": "crit", "step": 106 },
+          { "who": "h-trio-2", "kind": "crit", "step": 116 },
+          { "who": "h-trio-2", "kind": "target", "to": "jefe", "step": 122 },
+          { "who": "h-trio-0", "kind": "crit", "step": 126 },
+          { "who": "h-trio-2", "kind": "crit", "step": 128 },
+          { "who": "h-trio-0", "kind": "target", "to": "jefe", "step": 145 },
+          { "who": "h-trio-2", "kind": "cover", "step": 150 },
+          { "who": "h-trio-0", "kind": "skill", "step": 162 },
+          { "who": "h-trio-2", "kind": "skill", "step": 163 },
+          { "who": "h-trio-2", "kind": "target", "to": "jefe", "step": 168 },
+          { "who": "h-trio-2", "kind": "target", "to": "jefe", "step": 191 },
+          { "who": "h-trio-2", "kind": "target", "to": "jefe", "step": 214 },
+          { "who": "h-trio-2", "kind": "target", "to": "jefe", "step": 237 },
+          { "who": "h-trio-2", "kind": "cover", "step": 248 }
+        ]
+      }
+    },
+    {
+      "name": "trio contra dragona (blanco)",
+      "setup": "ref-trio-dragona",
+      "mode": "player",
+      "player": { "target": true },
+      "expect": {
+        "result": { "won": false, "downed": ["h-trio-0", "h-trio-1", "h-trio-2"], "steps": 195 },
+        "hp": [0, 0, 0, 173],
+        "events": { "n": 74, "hash": "f5ca8f45" },
+        "orders": [
+          { "who": "h-trio-0", "kind": "target", "to": "jefe", "step": 7 },
+          { "who": "h-trio-1", "kind": "target", "to": "jefe", "step": 30 },
+          { "who": "h-trio-2", "kind": "target", "to": "jefe", "step": 53 },
+          { "who": "h-trio-0", "kind": "target", "to": "jefe", "step": 76 },
+          { "who": "h-trio-0", "kind": "target", "to": "jefe", "step": 99 },
+          { "who": "h-trio-2", "kind": "target", "to": "jefe", "step": 122 },
+          { "who": "h-trio-2", "kind": "target", "to": "jefe", "step": 145 },
+          { "who": "h-trio-2", "kind": "target", "to": "jefe", "step": 168 },
+          { "who": "h-trio-2", "kind": "target", "to": "jefe", "step": 191 }
+        ]
+      }
+    },
+    {
+      "name": "trio contra dragona (habilidad)",
+      "setup": "ref-trio-dragona",
+      "mode": "player",
+      "player": { "skill": true },
+      "expect": {
+        "result": { "won": false, "downed": ["h-trio-0", "h-trio-1", "h-trio-2"], "steps": 195 },
+        "hp": [0, 0, 0, 173],
+        "events": { "n": 74, "hash": "f5ca8f45" },
+        "orders": [
+          { "who": "h-trio-0", "kind": "skill", "step": 61 },
+          { "who": "h-trio-1", "kind": "skill", "step": 73 },
+          { "who": "h-trio-2", "kind": "skill", "step": 163 }
+        ]
+      }
+    },
+    {
+      "name": "trio contra dragona (cubrirse)",
+      "setup": "ref-trio-dragona",
+      "mode": "player",
+      "player": { "cover": true },
+      "expect": {
+        "result": { "won": false, "downed": ["h-trio-0", "h-trio-1", "h-trio-2"], "steps": 249 },
+        "hp": [0, 0, 0, 78],
+        "events": { "n": 99, "hash": "ac7c3169" },
+        "orders": [
+          { "who": "h-trio-2", "kind": "cover", "step": 66 },
+          { "who": "h-trio-2", "kind": "cover", "step": 150 },
+          { "who": "h-trio-0", "kind": "cover", "step": 248 }
+        ]
+      }
+    },
+    {
+      "name": "trio contra dragona (critico)",
+      "setup": "ref-trio-dragona",
+      "mode": "player",
+      "player": { "crit": true },
+      "expect": {
+        "result": { "won": false, "downed": ["h-trio-0", "h-trio-1", "h-trio-2"], "steps": 195 },
+        "hp": [0, 0, 0, 162],
+        "events": { "n": 74, "hash": "87f9dd69" },
+        "orders": [
+          { "who": "h-trio-2", "kind": "crit", "step": 94 },
+          { "who": "h-trio-0", "kind": "crit", "step": 126 },
+          { "who": "h-trio-2", "kind": "crit", "step": 128 },
+          { "who": "h-trio-0", "kind": "crit", "step": 136 }
+        ]
+      }
+    },
+    {
+      "name": "cuatro contra reina (auto)",
+      "setup": "ref-cuatro-reina",
+      "mode": "auto",
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 111 },
+        "hp": [83, 39, 55, 62, 0, 0, 0, 0],
+        "events": { "n": 68, "hash": "69a80e40" },
+        "orders": []
+      }
+    },
+    {
+      "name": "cuatro contra reina (idle)",
+      "setup": "ref-cuatro-reina",
+      "mode": "idle",
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 111 },
+        "hp": [83, 39, 55, 62, 0, 0, 0, 0],
+        "events": { "n": 68, "hash": "69a80e40" },
+        "orders": []
+      }
+    },
+    {
+      "name": "cuatro contra reina (todo)",
+      "setup": "ref-cuatro-reina",
+      "mode": "player",
+      "player": { "target": true, "skill": true, "cover": true, "crit": true },
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 104 },
+        "hp": [89, 42, 55, 62, 0, 0, 0, 0],
+        "events": { "n": 67, "hash": "ea8822dd" },
+        "orders": [
+          { "who": "h-cuatro-0", "kind": "target", "to": "esbirro-0", "step": 7 },
+          { "who": "h-cuatro-1", "kind": "crit", "step": 24 },
+          { "who": "h-cuatro-1", "kind": "target", "to": "esbirro-2", "step": 30 },
+          { "who": "h-cuatro-2", "kind": "target", "to": "jefe", "step": 53 },
+          { "who": "h-cuatro-3", "kind": "cover", "step": 66 },
+          { "who": "h-cuatro-1", "kind": "crit", "step": 68 },
+          { "who": "h-cuatro-0", "kind": "skill", "step": 73 },
+          { "who": "h-cuatro-1", "kind": "skill", "step": 73 },
+          { "who": "h-cuatro-3", "kind": "target", "to": "jefe", "step": 76 },
+          { "who": "h-cuatro-3", "kind": "crit", "step": 84 },
+          { "who": "h-cuatro-0", "kind": "target", "to": "jefe", "step": 99 }
+        ]
+      }
+    },
+    {
+      "name": "cuatro contra reina (blanco)",
+      "setup": "ref-cuatro-reina",
+      "mode": "player",
+      "player": { "target": true },
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 113 },
+        "hp": [81, 38, 55, 62, 0, 0, 0, 0],
+        "events": { "n": 70, "hash": "8943c2f7" },
+        "orders": [
+          { "who": "h-cuatro-0", "kind": "target", "to": "esbirro-0", "step": 7 },
+          { "who": "h-cuatro-1", "kind": "target", "to": "esbirro-2", "step": 30 },
+          { "who": "h-cuatro-2", "kind": "target", "to": "jefe", "step": 53 },
+          { "who": "h-cuatro-3", "kind": "target", "to": "jefe", "step": 76 },
+          { "who": "h-cuatro-0", "kind": "target", "to": "jefe", "step": 99 }
+        ]
+      }
+    },
+    {
+      "name": "cuatro contra reina (habilidad)",
+      "setup": "ref-cuatro-reina",
+      "mode": "player",
+      "player": { "skill": true },
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 111 },
+        "hp": [83, 39, 55, 62, 0, 0, 0, 0],
+        "events": { "n": 68, "hash": "69a80e40" },
+        "orders": [
+          { "who": "h-cuatro-0", "kind": "skill", "step": 73 },
+          { "who": "h-cuatro-1", "kind": "skill", "step": 73 }
+        ]
+      }
+    },
+    {
+      "name": "cuatro contra reina (cubrirse)",
+      "setup": "ref-cuatro-reina",
+      "mode": "player",
+      "player": { "cover": true },
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 111 },
+        "hp": [83, 39, 55, 62, 0, 0, 0, 0],
+        "events": { "n": 69, "hash": "4571d576" },
+        "orders": [{ "who": "h-cuatro-3", "kind": "cover", "step": 66 }]
+      }
+    },
+    {
+      "name": "cuatro contra reina (critico)",
+      "setup": "ref-cuatro-reina",
+      "mode": "player",
+      "player": { "crit": true },
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 105 },
+        "hp": [86, 43, 55, 62, 0, 0, 0, 0],
+        "events": { "n": 65, "hash": "7635173f" },
+        "orders": [
+          { "who": "h-cuatro-1", "kind": "crit", "step": 24 },
+          { "who": "h-cuatro-0", "kind": "crit", "step": 86 }
+        ]
+      }
+    },
+    {
+      "name": "cuatro contra sierpe (auto)",
+      "setup": "ref-cuatro-sierpe",
+      "mode": "auto",
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 61 },
+        "hp": [104, 68, 57, 50, 0],
+        "events": { "n": 26, "hash": "2849f584" },
+        "orders": []
+      }
+    },
+    {
+      "name": "cuatro contra sierpe (idle)",
+      "setup": "ref-cuatro-sierpe",
+      "mode": "idle",
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 61 },
+        "hp": [104, 68, 57, 50, 0],
+        "events": { "n": 26, "hash": "2849f584" },
+        "orders": []
+      }
+    },
+    {
+      "name": "cuatro contra sierpe (todo)",
+      "setup": "ref-cuatro-sierpe",
+      "mode": "player",
+      "player": { "target": true, "skill": true, "cover": true, "crit": true },
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 59 },
+        "hp": [104, 68, 57, 50, 0],
+        "events": { "n": 25, "hash": "ae6f2f6b" },
+        "orders": [
+          { "who": "h-cuatro-0", "kind": "target", "to": "jefe", "step": 7 },
+          { "who": "h-cuatro-1", "kind": "crit", "step": 8 },
+          { "who": "h-cuatro-1", "kind": "target", "to": "jefe", "step": 30 },
+          { "who": "h-cuatro-2", "kind": "crit", "step": 40 },
+          { "who": "h-cuatro-2", "kind": "target", "to": "jefe", "step": 53 }
+        ]
+      }
+    },
+    {
+      "name": "cuatro contra sierpe (blanco)",
+      "setup": "ref-cuatro-sierpe",
+      "mode": "player",
+      "player": { "target": true },
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 61 },
+        "hp": [104, 68, 57, 50, 0],
+        "events": { "n": 26, "hash": "2849f584" },
+        "orders": [
+          { "who": "h-cuatro-0", "kind": "target", "to": "jefe", "step": 7 },
+          { "who": "h-cuatro-1", "kind": "target", "to": "jefe", "step": 30 },
+          { "who": "h-cuatro-2", "kind": "target", "to": "jefe", "step": 53 }
+        ]
+      }
+    },
+    {
+      "name": "cuatro contra sierpe (habilidad)",
+      "setup": "ref-cuatro-sierpe",
+      "mode": "player",
+      "player": { "skill": true },
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 61 },
+        "hp": [104, 68, 57, 50, 0],
+        "events": { "n": 26, "hash": "2849f584" },
+        "orders": []
+      }
+    },
+    {
+      "name": "cuatro contra sierpe (cubrirse)",
+      "setup": "ref-cuatro-sierpe",
+      "mode": "player",
+      "player": { "cover": true },
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 61 },
+        "hp": [104, 68, 57, 50, 0],
+        "events": { "n": 26, "hash": "2849f584" },
+        "orders": []
+      }
+    },
+    {
+      "name": "cuatro contra sierpe (critico)",
+      "setup": "ref-cuatro-sierpe",
+      "mode": "player",
+      "player": { "crit": true },
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 59 },
+        "hp": [104, 68, 57, 50, 0],
+        "events": { "n": 25, "hash": "ae6f2f6b" },
+        "orders": [
+          { "who": "h-cuatro-1", "kind": "crit", "step": 8 },
+          { "who": "h-cuatro-2", "kind": "crit", "step": 40 }
+        ]
+      }
+    },
+    {
+      "name": "cinco contra dragona (auto)",
+      "setup": "ref-cinco-dragona",
+      "mode": "auto",
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 149 },
+        "hp": [68, 36, 45, 57, 15, 0],
+        "events": { "n": 96, "hash": "ac78a5fe" },
+        "orders": []
+      }
+    },
+    {
+      "name": "cinco contra dragona (idle)",
+      "setup": "ref-cinco-dragona",
+      "mode": "idle",
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 149 },
+        "hp": [68, 36, 45, 57, 15, 0],
+        "events": { "n": 96, "hash": "ac78a5fe" },
+        "orders": []
+      }
+    },
+    {
+      "name": "cinco contra dragona (todo)",
+      "setup": "ref-cinco-dragona",
+      "mode": "player",
+      "player": { "target": true, "skill": true, "cover": true, "crit": true },
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 138 },
+        "hp": [67, 36, 45, 57, 31, 0],
+        "events": { "n": 91, "hash": "a6c1de11" },
+        "orders": [
+          { "who": "h-cinco-4", "kind": "crit", "step": 6 },
+          { "who": "h-cinco-0", "kind": "target", "to": "jefe", "step": 7 },
+          { "who": "h-cinco-3", "kind": "crit", "step": 8 },
+          { "who": "h-cinco-0", "kind": "crit", "step": 20 },
+          { "who": "h-cinco-1", "kind": "target", "to": "jefe", "step": 30 },
+          { "who": "h-cinco-3", "kind": "crit", "step": 38 },
+          { "who": "h-cinco-2", "kind": "target", "to": "jefe", "step": 53 },
+          { "who": "h-cinco-1", "kind": "skill", "step": 61 },
+          { "who": "h-cinco-4", "kind": "cover", "step": 66 },
+          { "who": "h-cinco-4", "kind": "crit", "step": 72 },
+          { "who": "h-cinco-0", "kind": "skill", "step": 73 },
+          { "who": "h-cinco-3", "kind": "target", "to": "jefe", "step": 76 },
+          { "who": "h-cinco-1", "kind": "crit", "step": 76 },
+          { "who": "h-cinco-3", "kind": "crit", "step": 84 },
+          { "who": "h-cinco-4", "kind": "target", "to": "jefe", "step": 99 },
+          { "who": "h-cinco-0", "kind": "target", "to": "jefe", "step": 122 },
+          { "who": "h-cinco-1", "kind": "crit", "step": 126 },
+          { "who": "h-cinco-2", "kind": "crit", "step": 136 }
+        ]
+      }
+    },
+    {
+      "name": "cinco contra dragona (blanco)",
+      "setup": "ref-cinco-dragona",
+      "mode": "player",
+      "player": { "target": true },
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 149 },
+        "hp": [68, 36, 45, 57, 15, 0],
+        "events": { "n": 96, "hash": "ac78a5fe" },
+        "orders": [
+          { "who": "h-cinco-0", "kind": "target", "to": "jefe", "step": 7 },
+          { "who": "h-cinco-1", "kind": "target", "to": "jefe", "step": 30 },
+          { "who": "h-cinco-2", "kind": "target", "to": "jefe", "step": 53 },
+          { "who": "h-cinco-3", "kind": "target", "to": "jefe", "step": 76 },
+          { "who": "h-cinco-4", "kind": "target", "to": "jefe", "step": 99 },
+          { "who": "h-cinco-0", "kind": "target", "to": "jefe", "step": 122 },
+          { "who": "h-cinco-1", "kind": "target", "to": "jefe", "step": 145 }
+        ]
+      }
+    },
+    {
+      "name": "cinco contra dragona (habilidad)",
+      "setup": "ref-cinco-dragona",
+      "mode": "player",
+      "player": { "skill": true },
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 149 },
+        "hp": [68, 36, 45, 57, 15, 0],
+        "events": { "n": 96, "hash": "ac78a5fe" },
+        "orders": [
+          { "who": "h-cinco-1", "kind": "skill", "step": 61 },
+          { "who": "h-cinco-0", "kind": "skill", "step": 73 }
+        ]
+      }
+    },
+    {
+      "name": "cinco contra dragona (cubrirse)",
+      "setup": "ref-cinco-dragona",
+      "mode": "player",
+      "player": { "cover": true },
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 149 },
+        "hp": [68, 36, 45, 57, 15, 0],
+        "events": { "n": 97, "hash": "dd86bc0f" },
+        "orders": [{ "who": "h-cinco-4", "kind": "cover", "step": 66 }]
+      }
+    },
+    {
+      "name": "cinco contra dragona (critico)",
+      "setup": "ref-cinco-dragona",
+      "mode": "player",
+      "player": { "crit": true },
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 138 },
+        "hp": [67, 36, 45, 57, 31, 0],
+        "events": { "n": 90, "hash": "b34f4406" },
+        "orders": [
+          { "who": "h-cinco-4", "kind": "crit", "step": 6 },
+          { "who": "h-cinco-3", "kind": "crit", "step": 8 },
+          { "who": "h-cinco-0", "kind": "crit", "step": 20 },
+          { "who": "h-cinco-3", "kind": "crit", "step": 38 },
+          { "who": "h-cinco-4", "kind": "crit", "step": 72 },
+          { "who": "h-cinco-1", "kind": "crit", "step": 76 },
+          { "who": "h-cinco-3", "kind": "crit", "step": 84 },
+          { "who": "h-cinco-1", "kind": "crit", "step": 126 },
+          { "who": "h-cinco-2", "kind": "crit", "step": 136 }
+        ]
+      }
+    },
+    {
+      "name": "cinco contra bestia (auto)",
+      "setup": "ref-cinco-bestia",
+      "mode": "auto",
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 72 },
+        "hp": [104, 40, 49, 40, 63, 0],
+        "events": { "n": 47, "hash": "a83f393a" },
+        "orders": []
+      }
+    },
+    {
+      "name": "cinco contra bestia (idle)",
+      "setup": "ref-cinco-bestia",
+      "mode": "idle",
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 72 },
+        "hp": [104, 40, 49, 40, 63, 0],
+        "events": { "n": 47, "hash": "a83f393a" },
+        "orders": []
+      }
+    },
+    {
+      "name": "cinco contra bestia (todo)",
+      "setup": "ref-cinco-bestia",
+      "mode": "player",
+      "player": { "target": true, "skill": true, "cover": true, "crit": true },
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 72 },
+        "hp": [104, 40, 49, 29, 63, 0],
+        "events": { "n": 44, "hash": "6ed06d72" },
+        "orders": [
+          { "who": "h-cinco-4", "kind": "crit", "step": 6 },
+          { "who": "h-cinco-0", "kind": "target", "to": "jefe", "step": 7 },
+          { "who": "h-cinco-1", "kind": "target", "to": "jefe", "step": 30 },
+          { "who": "h-cinco-4", "kind": "crit", "step": 40 },
+          { "who": "h-cinco-2", "kind": "target", "to": "jefe", "step": 53 },
+          { "who": "h-cinco-0", "kind": "crit", "step": 60 },
+          { "who": "h-cinco-1", "kind": "skill", "step": 61 },
+          { "who": "h-cinco-4", "kind": "cover", "step": 66 }
+        ]
+      }
+    },
+    {
+      "name": "cinco contra bestia (blanco)",
+      "setup": "ref-cinco-bestia",
+      "mode": "player",
+      "player": { "target": true },
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 72 },
+        "hp": [104, 40, 49, 40, 63, 0],
+        "events": { "n": 47, "hash": "a83f393a" },
+        "orders": [
+          { "who": "h-cinco-0", "kind": "target", "to": "jefe", "step": 7 },
+          { "who": "h-cinco-1", "kind": "target", "to": "jefe", "step": 30 },
+          { "who": "h-cinco-2", "kind": "target", "to": "jefe", "step": 53 }
+        ]
+      }
+    },
+    {
+      "name": "cinco contra bestia (habilidad)",
+      "setup": "ref-cinco-bestia",
+      "mode": "player",
+      "player": { "skill": true },
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 72 },
+        "hp": [104, 40, 49, 40, 63, 0],
+        "events": { "n": 47, "hash": "a83f393a" },
+        "orders": [{ "who": "h-cinco-1", "kind": "skill", "step": 61 }]
+      }
+    },
+    {
+      "name": "cinco contra bestia (cubrirse)",
+      "setup": "ref-cinco-bestia",
+      "mode": "player",
+      "player": { "cover": true },
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 72 },
+        "hp": [104, 40, 49, 40, 63, 0],
+        "events": { "n": 48, "hash": "ac244cf" },
+        "orders": [{ "who": "h-cinco-4", "kind": "cover", "step": 66 }]
+      }
+    },
+    {
+      "name": "cinco contra bestia (critico)",
+      "setup": "ref-cinco-bestia",
+      "mode": "player",
+      "player": { "crit": true },
+      "expect": {
+        "result": { "won": true, "downed": [], "steps": 72 },
+        "hp": [104, 40, 49, 29, 63, 0],
+        "events": { "n": 43, "hash": "ddd90fc1" },
+        "orders": [
+          { "who": "h-cinco-4", "kind": "crit", "step": 6 },
+          { "who": "h-cinco-4", "kind": "crit", "step": 40 },
+          { "who": "h-cinco-0", "kind": "crit", "step": 60 }
+        ]
+      }
+    },
+    {
+      "name": "solo contra sierpe (auto)",
+      "setup": "ref-solo-sierpe",
+      "mode": "auto",
+      "expect": {
+        "result": { "won": false, "downed": ["h-solo-0"], "steps": 159 },
+        "hp": [0, 88],
+        "events": { "n": 35, "hash": "890f1ec5" },
+        "orders": []
+      }
+    },
+    {
+      "name": "solo contra sierpe (idle)",
+      "setup": "ref-solo-sierpe",
+      "mode": "idle",
+      "expect": {
+        "result": { "won": false, "downed": ["h-solo-0"], "steps": 159 },
+        "hp": [0, 88],
+        "events": { "n": 35, "hash": "890f1ec5" },
+        "orders": []
+      }
+    },
+    {
+      "name": "solo contra sierpe (todo)",
+      "setup": "ref-solo-sierpe",
+      "mode": "player",
+      "player": { "target": true, "skill": true, "cover": true, "crit": true },
+      "expect": {
+        "result": { "won": false, "downed": ["h-solo-0"], "steps": 177 },
+        "hp": [0, 50],
+        "events": { "n": 45, "hash": "c800f9ce" },
+        "orders": [
+          { "who": "h-solo-0", "kind": "target", "to": "jefe", "step": 7 },
+          { "who": "h-solo-0", "kind": "crit", "step": 26 },
+          { "who": "h-solo-0", "kind": "target", "to": "jefe", "step": 30 },
+          { "who": "h-solo-0", "kind": "target", "to": "jefe", "step": 53 },
+          { "who": "h-solo-0", "kind": "skill", "step": 61 },
+          { "who": "h-solo-0", "kind": "cover", "step": 66 },
+          { "who": "h-solo-0", "kind": "target", "to": "jefe", "step": 76 },
+          { "who": "h-solo-0", "kind": "target", "to": "jefe", "step": 99 },
+          { "who": "h-solo-0", "kind": "target", "to": "jefe", "step": 122 },
+          { "who": "h-solo-0", "kind": "crit", "step": 126 },
+          { "who": "h-solo-0", "kind": "target", "to": "jefe", "step": 145 },
+          { "who": "h-solo-0", "kind": "crit", "step": 146 },
+          { "who": "h-solo-0", "kind": "cover", "step": 150 },
+          { "who": "h-solo-0", "kind": "skill", "step": 162 },
+          { "who": "h-solo-0", "kind": "target", "to": "jefe", "step": 168 },
+          { "who": "h-solo-0", "kind": "crit", "step": 176 }
+        ]
+      }
+    },
+    {
+      "name": "solo contra sierpe (blanco)",
+      "setup": "ref-solo-sierpe",
+      "mode": "player",
+      "player": { "target": true },
+      "expect": {
+        "result": { "won": false, "downed": ["h-solo-0"], "steps": 159 },
+        "hp": [0, 88],
+        "events": { "n": 35, "hash": "890f1ec5" },
+        "orders": [
+          { "who": "h-solo-0", "kind": "target", "to": "jefe", "step": 7 },
+          { "who": "h-solo-0", "kind": "target", "to": "jefe", "step": 30 },
+          { "who": "h-solo-0", "kind": "target", "to": "jefe", "step": 53 },
+          { "who": "h-solo-0", "kind": "target", "to": "jefe", "step": 76 },
+          { "who": "h-solo-0", "kind": "target", "to": "jefe", "step": 99 },
+          { "who": "h-solo-0", "kind": "target", "to": "jefe", "step": 122 },
+          { "who": "h-solo-0", "kind": "target", "to": "jefe", "step": 145 }
+        ]
+      }
+    },
+    {
+      "name": "solo contra sierpe (habilidad)",
+      "setup": "ref-solo-sierpe",
+      "mode": "player",
+      "player": { "skill": true },
+      "expect": {
+        "result": { "won": false, "downed": ["h-solo-0"], "steps": 159 },
+        "hp": [0, 88],
+        "events": { "n": 35, "hash": "890f1ec5" },
+        "orders": [{ "who": "h-solo-0", "kind": "skill", "step": 61 }]
+      }
+    },
+    {
+      "name": "solo contra sierpe (cubrirse)",
+      "setup": "ref-solo-sierpe",
+      "mode": "player",
+      "player": { "cover": true },
+      "expect": {
+        "result": { "won": false, "downed": ["h-solo-0"], "steps": 177 },
+        "hp": [0, 61],
+        "events": { "n": 44, "hash": "afc38da8" },
+        "orders": [
+          { "who": "h-solo-0", "kind": "cover", "step": 66 },
+          { "who": "h-solo-0", "kind": "cover", "step": 150 }
+        ]
+      }
+    },
+    {
+      "name": "solo contra sierpe (critico)",
+      "setup": "ref-solo-sierpe",
+      "mode": "player",
+      "player": { "crit": true },
+      "expect": {
+        "result": { "won": false, "downed": ["h-solo-0"], "steps": 177 },
+        "hp": [0, 50],
+        "events": { "n": 43, "hash": "c00ee89f" },
+        "orders": [
+          { "who": "h-solo-0", "kind": "crit", "step": 26 },
+          { "who": "h-solo-0", "kind": "crit", "step": 126 },
+          { "who": "h-solo-0", "kind": "crit", "step": 146 },
+          { "who": "h-solo-0", "kind": "crit", "step": 176 }
+        ]
+      }
+    },
+    {
+      "name": "solo contra ahogado (auto)",
+      "setup": "ref-solo-ahogado",
+      "mode": "auto",
+      "expect": {
+        "result": { "won": false, "downed": ["h-solo-0"], "steps": 51 },
+        "hp": [0, 227, 9, 43],
+        "events": { "n": 16, "hash": "bb79bc21" },
+        "orders": []
+      }
+    },
+    {
+      "name": "solo contra ahogado (idle)",
+      "setup": "ref-solo-ahogado",
+      "mode": "idle",
+      "expect": {
+        "result": { "won": false, "downed": ["h-solo-0"], "steps": 51 },
+        "hp": [0, 227, 9, 43],
+        "events": { "n": 16, "hash": "bb79bc21" },
+        "orders": []
+      }
+    },
+    {
+      "name": "solo contra ahogado (todo)",
+      "setup": "ref-solo-ahogado",
+      "mode": "player",
+      "player": { "target": true, "skill": true, "cover": true, "crit": true },
+      "expect": {
+        "result": { "won": false, "downed": ["h-solo-0"], "steps": 56 },
+        "hp": [0, 222, 22, 31],
+        "events": { "n": 19, "hash": "47fb70a2" },
+        "orders": [
+          { "who": "h-solo-0", "kind": "crit", "step": 6 },
+          { "who": "h-solo-0", "kind": "target", "to": "esbirro-0", "step": 7 },
+          { "who": "h-solo-0", "kind": "target", "to": "esbirro-1", "step": 30 },
+          { "who": "h-solo-0", "kind": "target", "to": "jefe", "step": 53 }
+        ]
+      }
+    },
+    {
+      "name": "solo contra ahogado (blanco)",
+      "setup": "ref-solo-ahogado",
+      "mode": "player",
+      "player": { "target": true },
+      "expect": {
+        "result": { "won": false, "downed": ["h-solo-0"], "steps": 51 },
+        "hp": [0, 227, 20, 32],
+        "events": { "n": 16, "hash": "b2bc972b" },
+        "orders": [
+          { "who": "h-solo-0", "kind": "target", "to": "esbirro-0", "step": 7 },
+          { "who": "h-solo-0", "kind": "target", "to": "esbirro-1", "step": 30 }
+        ]
+      }
+    },
+    {
+      "name": "solo contra ahogado (habilidad)",
+      "setup": "ref-solo-ahogado",
+      "mode": "player",
+      "player": { "skill": true },
+      "expect": {
+        "result": { "won": false, "downed": ["h-solo-0"], "steps": 51 },
+        "hp": [0, 227, 9, 43],
+        "events": { "n": 16, "hash": "bb79bc21" },
+        "orders": []
+      }
+    },
+    {
+      "name": "solo contra ahogado (cubrirse)",
+      "setup": "ref-solo-ahogado",
+      "mode": "player",
+      "player": { "cover": true },
+      "expect": {
+        "result": { "won": false, "downed": ["h-solo-0"], "steps": 51 },
+        "hp": [0, 227, 9, 43],
+        "events": { "n": 16, "hash": "bb79bc21" },
+        "orders": []
+      }
+    },
+    {
+      "name": "solo contra ahogado (critico)",
+      "setup": "ref-solo-ahogado",
+      "mode": "player",
+      "player": { "crit": true },
+      "expect": {
+        "result": { "won": false, "downed": ["h-solo-0"], "steps": 56 },
+        "hp": [0, 227, 4, 43],
+        "events": { "n": 19, "hash": "a95b623c" },
+        "orders": [{ "who": "h-solo-0", "kind": "crit", "step": 6 }]
+      }
+    }
+  ],
+  "assaults": [
+    {
+      "name": "casa vacia (solos)",
+      "setup": "casa vacia",
+      "rng": 3689831937,
+      "expect": {
+        "result": {
+          "fell": [],
+          "fought": [],
+          "downed": 0,
+          "escaped": 3,
+          "stolen": 180,
+          "recovered": 0
+        },
+        "end": 35.2,
+        "start": { "b0": "fuera", "b1": "fuera", "b2": "fuera" },
+        "hp": { "b0": 38, "b1": 38, "b2": 38 },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 20, "hash": "e7e2fd4c" },
+        "left": [
+          ["b0", 38, "fuera"],
+          ["b1", 38, "fuera"],
+          ["b2", 38, "fuera"]
+        ],
+        "orders": []
+      }
+    },
+    {
+      "name": "durmiendo (solos)",
+      "setup": "durmiendo",
+      "rng": 3922248970,
+      "expect": {
+        "result": {
+          "fell": ["h1", "h2"],
+          "fought": ["h1", "h2"],
+          "downed": 1,
+          "escaped": 2,
+          "stolen": 116,
+          "recovered": 0
+        },
+        "end": 40.5,
+        "start": { "h1": "t4", "h2": "t4", "b0": "fuera", "b1": "fuera", "b2": "fuera" },
+        "hp": { "h1": 71, "h2": 40, "b0": 38, "b1": 38, "b2": 38 },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 43, "hash": "adc10bde" },
+        "left": [
+          ["h1", 0, "t10"],
+          ["h2", 0, "t10"],
+          ["b0", 0, "t10"],
+          ["b1", 33, "fuera"],
+          ["b2", 38, "fuera"]
+        ],
+        "orders": []
+      }
+    },
+    {
+      "name": "durmiendo (todo)",
+      "setup": "durmiendo",
+      "rng": 3922248970,
+      "player": { "move": true, "target": true, "skill": true, "crit": true },
+      "expect": {
+        "result": {
+          "fell": ["h2", "h1"],
+          "fought": ["h1", "h2"],
+          "downed": 1,
+          "escaped": 2,
+          "stolen": 116,
+          "recovered": 0
+        },
+        "end": 40.3,
+        "start": { "h1": "t4", "h2": "t4", "b0": "fuera", "b1": "fuera", "b2": "fuera" },
+        "hp": { "h1": 71, "h2": 40, "b0": 38, "b1": 38, "b2": 38 },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 43, "hash": "61a463ac" },
+        "left": [
+          ["h1", 0, "t10"],
+          ["h2", 0, "t10"],
+          ["b0", 38, "fuera"],
+          ["b1", 22, "fuera"],
+          ["b2", 0, "t10"]
+        ],
+        "orders": [
+          { "kind": "move", "who": "h2", "to": "t10", "step": 15 },
+          { "kind": "target", "who": "h1", "to": "b2", "step": 139 },
+          { "kind": "target", "who": "h2", "to": "b2", "step": 139 },
+          { "kind": "target", "who": "h1", "to": "b2", "step": 156 },
+          { "kind": "target", "who": "h2", "to": "b2", "step": 156 },
+          { "kind": "target", "who": "h1", "to": "b1", "step": 173 },
+          { "kind": "target", "who": "h2", "to": "b1", "step": 173 }
+        ]
+      }
+    },
+    {
+      "name": "durmiendo (mover)",
+      "setup": "durmiendo",
+      "rng": 3922248970,
+      "player": { "move": true },
+      "expect": {
+        "result": {
+          "fell": ["h1", "h2"],
+          "fought": ["h1", "h2"],
+          "downed": 1,
+          "escaped": 2,
+          "stolen": 116,
+          "recovered": 0
+        },
+        "end": 40.5,
+        "start": { "h1": "t4", "h2": "t4", "b0": "fuera", "b1": "fuera", "b2": "fuera" },
+        "hp": { "h1": 71, "h2": 40, "b0": 38, "b1": 38, "b2": 38 },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 43, "hash": "fd01d4a4" },
+        "left": [
+          ["h1", 0, "t10"],
+          ["h2", 0, "t10"],
+          ["b0", 0, "t10"],
+          ["b1", 33, "fuera"],
+          ["b2", 38, "fuera"]
+        ],
+        "orders": [{ "kind": "move", "who": "h2", "to": "t10", "step": 15 }]
+      }
+    },
+    {
+      "name": "durmiendo (blanco y habilidad)",
+      "setup": "durmiendo",
+      "rng": 3922248970,
+      "player": { "target": true, "skill": true },
+      "expect": {
+        "result": {
+          "fell": ["h2", "h1"],
+          "fought": ["h1", "h2"],
+          "downed": 1,
+          "escaped": 2,
+          "stolen": 116,
+          "recovered": 0
+        },
+        "end": 40.3,
+        "start": { "h1": "t4", "h2": "t4", "b0": "fuera", "b1": "fuera", "b2": "fuera" },
+        "hp": { "h1": 71, "h2": 40, "b0": 38, "b1": 38, "b2": 38 },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 43, "hash": "a1b6fd2e" },
+        "left": [
+          ["h1", 0, "t10"],
+          ["h2", 0, "t10"],
+          ["b0", 38, "fuera"],
+          ["b1", 22, "fuera"],
+          ["b2", 0, "t10"]
+        ],
+        "orders": [
+          { "kind": "target", "who": "h1", "to": "b2", "step": 139 },
+          { "kind": "target", "who": "h2", "to": "b2", "step": 139 },
+          { "kind": "target", "who": "h1", "to": "b2", "step": 156 },
+          { "kind": "target", "who": "h2", "to": "b2", "step": 156 },
+          { "kind": "target", "who": "h1", "to": "b1", "step": 173 },
+          { "kind": "target", "who": "h2", "to": "b1", "step": 173 }
+        ]
+      }
+    },
+    {
+      "name": "durmiendo (critico)",
+      "setup": "durmiendo",
+      "rng": 3922248970,
+      "player": { "crit": true },
+      "expect": {
+        "result": {
+          "fell": ["h1", "h2"],
+          "fought": ["h1", "h2"],
+          "downed": 1,
+          "escaped": 2,
+          "stolen": 116,
+          "recovered": 0
+        },
+        "end": 40.5,
+        "start": { "h1": "t4", "h2": "t4", "b0": "fuera", "b1": "fuera", "b2": "fuera" },
+        "hp": { "h1": 71, "h2": 40, "b0": 38, "b1": 38, "b2": 38 },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 43, "hash": "adc10bde" },
+        "left": [
+          ["h1", 0, "t10"],
+          ["h2", 0, "t10"],
+          ["b0", 0, "t10"],
+          ["b1", 33, "fuera"],
+          ["b2", 38, "fuera"]
+        ],
+        "orders": [{ "kind": "crit", "who": "h2", "step": 178 }]
+      }
+    },
+    {
+      "name": "guardia en la puerta (solos)",
+      "setup": "guardia en la puerta",
+      "rng": 1452593897,
+      "expect": {
+        "result": {
+          "fell": [],
+          "fought": ["h1", "h2"],
+          "downed": 2,
+          "escaped": 0,
+          "stolen": 0,
+          "recovered": 0
+        },
+        "end": 10.8,
+        "start": { "h1": "t6", "h2": "t6", "b0": "fuera", "b1": "fuera" },
+        "hp": { "h1": 129, "h2": 75, "b0": 38, "b1": 38 },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 17, "hash": "f3fbb000" },
+        "left": [
+          ["h1", 76, "patio"],
+          ["h2", 75, "patio"],
+          ["b0", 0, "patio"],
+          ["b1", 0, "patio"]
+        ],
+        "orders": []
+      }
+    },
+    {
+      "name": "guardia en la puerta (todo)",
+      "setup": "guardia en la puerta",
+      "rng": 1452593897,
+      "player": { "move": true, "target": true, "skill": true, "crit": true },
+      "expect": {
+        "result": {
+          "fell": [],
+          "fought": ["h1"],
+          "downed": 2,
+          "escaped": 0,
+          "stolen": 0,
+          "recovered": 0
+        },
+        "end": 14,
+        "start": { "h1": "t6", "h2": "t6", "b0": "fuera", "b1": "fuera" },
+        "hp": { "h1": 129, "h2": 75, "b0": 38, "b1": 38 },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 23, "hash": "fe3c7b18" },
+        "left": [
+          ["h1", 36, "patio"],
+          ["h2", 75, "t10"],
+          ["b0", 0, "patio"],
+          ["b1", 0, "patio"]
+        ],
+        "orders": [
+          { "kind": "move", "who": "h2", "to": "t10", "step": 15 },
+          { "kind": "target", "who": "h1", "to": "b1", "step": 71 },
+          { "kind": "target", "who": "h1", "to": "b1", "step": 88 },
+          { "kind": "crit", "who": "h1", "step": 90 },
+          { "kind": "crit", "who": "h1", "step": 102 },
+          { "kind": "crit", "who": "h1", "step": 128 }
+        ]
+      }
+    },
+    {
+      "name": "guardia en la puerta (mover)",
+      "setup": "guardia en la puerta",
+      "rng": 1452593897,
+      "player": { "move": true },
+      "expect": {
+        "result": {
+          "fell": [],
+          "fought": ["h1"],
+          "downed": 2,
+          "escaped": 0,
+          "stolen": 0,
+          "recovered": 0
+        },
+        "end": 14,
+        "start": { "h1": "t6", "h2": "t6", "b0": "fuera", "b1": "fuera" },
+        "hp": { "h1": 129, "h2": 75, "b0": 38, "b1": 38 },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 23, "hash": "1d644e5a" },
+        "left": [
+          ["h1", 49, "patio"],
+          ["h2", 75, "t10"],
+          ["b0", 0, "patio"],
+          ["b1", 0, "patio"]
+        ],
+        "orders": [{ "kind": "move", "who": "h2", "to": "t10", "step": 15 }]
+      }
+    },
+    {
+      "name": "guardia en la puerta (blanco y habilidad)",
+      "setup": "guardia en la puerta",
+      "rng": 1452593897,
+      "player": { "target": true, "skill": true },
+      "expect": {
+        "result": {
+          "fell": [],
+          "fought": ["h1", "h2"],
+          "downed": 2,
+          "escaped": 0,
+          "stolen": 0,
+          "recovered": 0
+        },
+        "end": 10.8,
+        "start": { "h1": "t6", "h2": "t6", "b0": "fuera", "b1": "fuera" },
+        "hp": { "h1": 129, "h2": 75, "b0": 38, "b1": 38 },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 17, "hash": "fa8361d7" },
+        "left": [
+          ["h1", 76, "patio"],
+          ["h2", 75, "patio"],
+          ["b0", 0, "patio"],
+          ["b1", 0, "patio"]
+        ],
+        "orders": [
+          { "kind": "target", "who": "h1", "to": "b1", "step": 71 },
+          { "kind": "target", "who": "h2", "to": "b1", "step": 71 },
+          { "kind": "target", "who": "h1", "to": "b1", "step": 88 },
+          { "kind": "target", "who": "h2", "to": "b1", "step": 88 }
+        ]
+      }
+    },
+    {
+      "name": "guardia en la puerta (critico)",
+      "setup": "guardia en la puerta",
+      "rng": 1452593897,
+      "player": { "crit": true },
+      "expect": {
+        "result": {
+          "fell": [],
+          "fought": ["h1", "h2"],
+          "downed": 2,
+          "escaped": 0,
+          "stolen": 0,
+          "recovered": 0
+        },
+        "end": 10.8,
+        "start": { "h1": "t6", "h2": "t6", "b0": "fuera", "b1": "fuera" },
+        "hp": { "h1": 129, "h2": 75, "b0": 38, "b1": 38 },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 18, "hash": "d409b302" },
+        "left": [
+          ["h1", 86, "patio"],
+          ["h2", 75, "patio"],
+          ["b0", 0, "patio"],
+          ["b1", 0, "patio"]
+        ],
+        "orders": [{ "kind": "crit", "who": "h1", "step": 90 }]
+      }
+    },
+    {
+      "name": "guardia en la camara (solos)",
+      "setup": "guardia en la camara",
+      "rng": 4047563914,
+      "expect": {
+        "result": {
+          "fell": ["h1", "h2"],
+          "fought": ["h1", "h2", "h-casa-asalto-guardia en la camara-1"],
+          "downed": 4,
+          "escaped": 0,
+          "stolen": 0,
+          "recovered": 0
+        },
+        "end": 35.6,
+        "start": {
+          "h1": "t6",
+          "h2": "t4",
+          "h-casa-asalto-guardia en la camara-1": "t12",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera"
+        },
+        "hp": {
+          "h1": 122,
+          "h2": 40,
+          "h-casa-asalto-guardia en la camara-1": 162,
+          "b0": 38,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 62, "hash": "b54c79ff" },
+        "left": [
+          ["h1", 0, "patio"],
+          ["h2", 0, "patio"],
+          ["h-casa-asalto-guardia en la camara-1", 38, "t12"],
+          ["b0", 0, "patio"],
+          ["b1", 0, "t12"],
+          ["b2", 0, "t12"],
+          ["b3", 0, "t12"]
+        ],
+        "orders": []
+      }
+    },
+    {
+      "name": "guardia en la camara (todo)",
+      "setup": "guardia en la camara",
+      "rng": 4047563914,
+      "player": { "move": true, "target": true, "skill": true, "crit": true },
+      "expect": {
+        "result": {
+          "fell": ["h1", "h2"],
+          "fought": ["h1", "h2", "h-casa-asalto-guardia en la camara-1"],
+          "downed": 3,
+          "escaped": 1,
+          "stolen": 64,
+          "recovered": 0
+        },
+        "end": 51.6,
+        "start": {
+          "h1": "t6",
+          "h2": "t4",
+          "h-casa-asalto-guardia en la camara-1": "t12",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera"
+        },
+        "hp": {
+          "h1": 122,
+          "h2": 40,
+          "h-casa-asalto-guardia en la camara-1": 162,
+          "b0": 38,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 73, "hash": "16ed9387" },
+        "left": [
+          ["h1", 0, "patio"],
+          ["h2", 0, "patio"],
+          ["h-casa-asalto-guardia en la camara-1", 46, "t12"],
+          ["b0", 22, "fuera"],
+          ["b1", 0, "t10"],
+          ["b2", 0, "t10"],
+          ["b3", 0, "patio"]
+        ],
+        "orders": [
+          {
+            "kind": "move",
+            "who": "h-casa-asalto-guardia en la camara-1",
+            "to": "t10",
+            "step": 15
+          },
+          { "kind": "target", "who": "h1", "to": "b3", "step": 71 },
+          { "kind": "target", "who": "h1", "to": "b3", "step": 88 },
+          { "kind": "target", "who": "h2", "to": "b3", "step": 88 },
+          { "kind": "crit", "who": "h1", "step": 102 },
+          { "kind": "target", "who": "h1", "to": "b2", "step": 105 },
+          { "kind": "target", "who": "h2", "to": "b2", "step": 105 },
+          { "kind": "target", "who": "h2", "to": "b2", "step": 122 },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-guardia en la camara-1",
+            "to": "b2",
+            "step": 241
+          },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-guardia en la camara-1",
+            "to": "b2",
+            "step": 258
+          },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-guardia en la camara-1",
+            "to": "b1",
+            "step": 275
+          },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-guardia en la camara-1",
+            "to": "b1",
+            "step": 292
+          },
+          {
+            "kind": "move",
+            "who": "h-casa-asalto-guardia en la camara-1",
+            "to": "patio",
+            "step": 300
+          },
+          {
+            "kind": "move",
+            "who": "h-casa-asalto-guardia en la camara-1",
+            "to": "t12",
+            "step": 420
+          }
+        ]
+      }
+    },
+    {
+      "name": "guardia en la camara (mover)",
+      "setup": "guardia en la camara",
+      "rng": 4047563914,
+      "player": { "move": true },
+      "expect": {
+        "result": {
+          "fell": ["h1", "h2"],
+          "fought": ["h1", "h2", "h-casa-asalto-guardia en la camara-1"],
+          "downed": 3,
+          "escaped": 1,
+          "stolen": 64,
+          "recovered": 0
+        },
+        "end": 51.6,
+        "start": {
+          "h1": "t6",
+          "h2": "t4",
+          "h-casa-asalto-guardia en la camara-1": "t12",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera"
+        },
+        "hp": {
+          "h1": 122,
+          "h2": 40,
+          "h-casa-asalto-guardia en la camara-1": 162,
+          "b0": 38,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 73, "hash": "e508de9" },
+        "left": [
+          ["h1", 0, "patio"],
+          ["h2", 0, "patio"],
+          ["h-casa-asalto-guardia en la camara-1", 55, "t12"],
+          ["b0", 0, "patio"],
+          ["b1", 0, "t10"],
+          ["b2", 0, "t10"],
+          ["b3", 38, "fuera"]
+        ],
+        "orders": [
+          {
+            "kind": "move",
+            "who": "h-casa-asalto-guardia en la camara-1",
+            "to": "t10",
+            "step": 15
+          },
+          {
+            "kind": "move",
+            "who": "h-casa-asalto-guardia en la camara-1",
+            "to": "patio",
+            "step": 300
+          },
+          {
+            "kind": "move",
+            "who": "h-casa-asalto-guardia en la camara-1",
+            "to": "t12",
+            "step": 420
+          }
+        ]
+      }
+    },
+    {
+      "name": "guardia en la camara (blanco y habilidad)",
+      "setup": "guardia en la camara",
+      "rng": 4047563914,
+      "player": { "target": true, "skill": true },
+      "expect": {
+        "result": {
+          "fell": ["h1", "h2"],
+          "fought": ["h1", "h2", "h-casa-asalto-guardia en la camara-1"],
+          "downed": 4,
+          "escaped": 0,
+          "stolen": 0,
+          "recovered": 0
+        },
+        "end": 35.6,
+        "start": {
+          "h1": "t6",
+          "h2": "t4",
+          "h-casa-asalto-guardia en la camara-1": "t12",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera"
+        },
+        "hp": {
+          "h1": 122,
+          "h2": 40,
+          "h-casa-asalto-guardia en la camara-1": 162,
+          "b0": 38,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 62, "hash": "4c63e562" },
+        "left": [
+          ["h1", 0, "patio"],
+          ["h2", 0, "patio"],
+          ["h-casa-asalto-guardia en la camara-1", 26, "t12"],
+          ["b0", 0, "t12"],
+          ["b1", 0, "t12"],
+          ["b2", 0, "t12"],
+          ["b3", 0, "patio"]
+        ],
+        "orders": [
+          { "kind": "target", "who": "h1", "to": "b3", "step": 71 },
+          { "kind": "target", "who": "h1", "to": "b3", "step": 88 },
+          { "kind": "target", "who": "h2", "to": "b3", "step": 88 },
+          { "kind": "target", "who": "h1", "to": "b2", "step": 105 },
+          { "kind": "target", "who": "h2", "to": "b2", "step": 105 },
+          { "kind": "target", "who": "h2", "to": "b2", "step": 122 },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-guardia en la camara-1",
+            "to": "b2",
+            "step": 275
+          },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-guardia en la camara-1",
+            "to": "b1",
+            "step": 292
+          },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-guardia en la camara-1",
+            "to": "b1",
+            "step": 309
+          },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-guardia en la camara-1",
+            "to": "b1",
+            "step": 326
+          },
+          { "kind": "skill", "who": "h-casa-asalto-guardia en la camara-1", "step": 344 }
+        ]
+      }
+    },
+    {
+      "name": "guardia en la camara (critico)",
+      "setup": "guardia en la camara",
+      "rng": 4047563914,
+      "player": { "crit": true },
+      "expect": {
+        "result": {
+          "fell": ["h1", "h2"],
+          "fought": ["h1", "h2", "h-casa-asalto-guardia en la camara-1"],
+          "downed": 4,
+          "escaped": 0,
+          "stolen": 0,
+          "recovered": 0
+        },
+        "end": 35.6,
+        "start": {
+          "h1": "t6",
+          "h2": "t4",
+          "h-casa-asalto-guardia en la camara-1": "t12",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera"
+        },
+        "hp": {
+          "h1": 122,
+          "h2": 40,
+          "h-casa-asalto-guardia en la camara-1": 162,
+          "b0": 38,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 62, "hash": "c2552e34" },
+        "left": [
+          ["h1", 0, "patio"],
+          ["h2", 0, "patio"],
+          ["h-casa-asalto-guardia en la camara-1", 37, "t12"],
+          ["b0", 0, "patio"],
+          ["b1", 0, "t12"],
+          ["b2", 0, "t12"],
+          ["b3", 0, "t12"]
+        ],
+        "orders": [
+          { "kind": "crit", "who": "h1", "step": 102 },
+          { "kind": "crit", "who": "h-casa-asalto-guardia en la camara-1", "step": 332 }
+        ]
+      }
+    },
+    {
+      "name": "perro y clases (solos)",
+      "setup": "perro y clases",
+      "rng": 3860866760,
+      "expect": {
+        "result": {
+          "fell": ["h1", "h-casa-asalto-perro y clases-3", "h2"],
+          "fought": [
+            "h1",
+            "h2",
+            "h-casa-asalto-perro y clases-1",
+            "h-casa-asalto-perro y clases-2",
+            "h-casa-asalto-perro y clases-3"
+          ],
+          "downed": 5,
+          "escaped": 0,
+          "stolen": 0,
+          "recovered": 0
+        },
+        "end": 29.9,
+        "start": {
+          "h1": "t4",
+          "h2": "t4",
+          "h-casa-asalto-perro y clases-1": "t4",
+          "h-casa-asalto-perro y clases-2": "t4",
+          "h-casa-asalto-perro y clases-3": "t4",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera",
+          "b4": "fuera"
+        },
+        "hp": {
+          "h1": 81,
+          "h2": 50,
+          "h-casa-asalto-perro y clases-1": 55,
+          "h-casa-asalto-perro y clases-2": 54,
+          "h-casa-asalto-perro y clases-3": 50,
+          "b0": 38,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38,
+          "b4": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 99, "hash": "9f52099c" },
+        "left": [
+          ["h1", 0, "t6"],
+          ["h2", 0, "t12"],
+          ["h-casa-asalto-perro y clases-1", 23, "t12"],
+          ["h-casa-asalto-perro y clases-2", 23, "t12"],
+          ["h-casa-asalto-perro y clases-3", 0, "t12"],
+          ["b0", 0, "t12"],
+          ["b1", 0, "t12"],
+          ["b2", 0, "t12"],
+          ["b3", 0, "t12"],
+          ["b4", 0, "t12"]
+        ],
+        "orders": []
+      }
+    },
+    {
+      "name": "perro y clases (todo)",
+      "setup": "perro y clases",
+      "rng": 3860866760,
+      "player": { "move": true, "target": true, "skill": true, "crit": true },
+      "expect": {
+        "result": {
+          "fell": [
+            "h1",
+            "h-casa-asalto-perro y clases-3",
+            "h2",
+            "h-casa-asalto-perro y clases-1",
+            "h-casa-asalto-perro y clases-2"
+          ],
+          "fought": [
+            "h1",
+            "h2",
+            "h-casa-asalto-perro y clases-1",
+            "h-casa-asalto-perro y clases-2",
+            "h-casa-asalto-perro y clases-3"
+          ],
+          "downed": 1,
+          "escaped": 4,
+          "stolen": 280,
+          "recovered": 0
+        },
+        "end": 43,
+        "start": {
+          "h1": "t4",
+          "h2": "t4",
+          "h-casa-asalto-perro y clases-1": "t4",
+          "h-casa-asalto-perro y clases-2": "t4",
+          "h-casa-asalto-perro y clases-3": "t4",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera",
+          "b4": "fuera"
+        },
+        "hp": {
+          "h1": 81,
+          "h2": 50,
+          "h-casa-asalto-perro y clases-1": 55,
+          "h-casa-asalto-perro y clases-2": 54,
+          "h-casa-asalto-perro y clases-3": 50,
+          "b0": 38,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38,
+          "b4": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 84, "hash": "924056dc" },
+        "left": [
+          ["h1", 0, "t6"],
+          ["h2", 0, "t10"],
+          ["h-casa-asalto-perro y clases-1", 0, "t10"],
+          ["h-casa-asalto-perro y clases-2", 0, "t10"],
+          ["h-casa-asalto-perro y clases-3", 0, "t10"],
+          ["b0", 18, "fuera"],
+          ["b1", 38, "fuera"],
+          ["b2", 38, "fuera"],
+          ["b3", 10, "fuera"],
+          ["b4", 0, "t10"]
+        ],
+        "orders": [
+          { "kind": "move", "who": "h-casa-asalto-perro y clases-3", "to": "t10", "step": 15 },
+          { "kind": "crit", "who": "h1", "step": 112 },
+          { "kind": "target", "who": "h1", "to": "b4", "step": 122 },
+          { "kind": "target", "who": "h2", "to": "b4", "step": 173 },
+          { "kind": "target", "who": "h-casa-asalto-perro y clases-1", "to": "b4", "step": 173 },
+          { "kind": "target", "who": "h-casa-asalto-perro y clases-2", "to": "b4", "step": 173 },
+          { "kind": "crit", "who": "h2", "step": 176 },
+          { "kind": "target", "who": "h-casa-asalto-perro y clases-1", "to": "b3", "step": 190 },
+          { "kind": "target", "who": "h-casa-asalto-perro y clases-2", "to": "b3", "step": 190 },
+          { "kind": "target", "who": "h-casa-asalto-perro y clases-2", "to": "b3", "step": 207 }
+        ]
+      }
+    },
+    {
+      "name": "perro y clases (mover)",
+      "setup": "perro y clases",
+      "rng": 3860866760,
+      "player": { "move": true },
+      "expect": {
+        "result": {
+          "fell": [
+            "h1",
+            "h-casa-asalto-perro y clases-3",
+            "h-casa-asalto-perro y clases-1",
+            "h2",
+            "h-casa-asalto-perro y clases-2"
+          ],
+          "fought": [
+            "h1",
+            "h2",
+            "h-casa-asalto-perro y clases-1",
+            "h-casa-asalto-perro y clases-2",
+            "h-casa-asalto-perro y clases-3"
+          ],
+          "downed": 2,
+          "escaped": 3,
+          "stolen": 210,
+          "recovered": 0
+        },
+        "end": 44.6,
+        "start": {
+          "h1": "t4",
+          "h2": "t4",
+          "h-casa-asalto-perro y clases-1": "t4",
+          "h-casa-asalto-perro y clases-2": "t4",
+          "h-casa-asalto-perro y clases-3": "t4",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera",
+          "b4": "fuera"
+        },
+        "hp": {
+          "h1": 81,
+          "h2": 50,
+          "h-casa-asalto-perro y clases-1": 55,
+          "h-casa-asalto-perro y clases-2": 54,
+          "h-casa-asalto-perro y clases-3": 50,
+          "b0": 38,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38,
+          "b4": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 89, "hash": "5de5c705" },
+        "left": [
+          ["h1", 0, "t6"],
+          ["h2", 0, "t10"],
+          ["h-casa-asalto-perro y clases-1", 0, "t10"],
+          ["h-casa-asalto-perro y clases-2", 0, "t10"],
+          ["h-casa-asalto-perro y clases-3", 0, "t10"],
+          ["b0", 0, "t10"],
+          ["b1", 0, "t10"],
+          ["b2", 7, "fuera"],
+          ["b3", 38, "fuera"],
+          ["b4", 38, "fuera"]
+        ],
+        "orders": [
+          { "kind": "move", "who": "h-casa-asalto-perro y clases-3", "to": "t10", "step": 15 }
+        ]
+      }
+    },
+    {
+      "name": "perro y clases (blanco y habilidad)",
+      "setup": "perro y clases",
+      "rng": 3860866760,
+      "player": { "target": true, "skill": true },
+      "expect": {
+        "result": {
+          "fell": [
+            "h1",
+            "h-casa-asalto-perro y clases-3",
+            "h2",
+            "h-casa-asalto-perro y clases-1",
+            "h-casa-asalto-perro y clases-2"
+          ],
+          "fought": [
+            "h1",
+            "h2",
+            "h-casa-asalto-perro y clases-1",
+            "h-casa-asalto-perro y clases-2",
+            "h-casa-asalto-perro y clases-3"
+          ],
+          "downed": 2,
+          "escaped": 3,
+          "stolen": 210,
+          "recovered": 0
+        },
+        "end": 44.4,
+        "start": {
+          "h1": "t4",
+          "h2": "t4",
+          "h-casa-asalto-perro y clases-1": "t4",
+          "h-casa-asalto-perro y clases-2": "t4",
+          "h-casa-asalto-perro y clases-3": "t4",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera",
+          "b4": "fuera"
+        },
+        "hp": {
+          "h1": 81,
+          "h2": 50,
+          "h-casa-asalto-perro y clases-1": 55,
+          "h-casa-asalto-perro y clases-2": 54,
+          "h-casa-asalto-perro y clases-3": 50,
+          "b0": 38,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38,
+          "b4": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 99, "hash": "11ea3014" },
+        "left": [
+          ["h1", 0, "t6"],
+          ["h2", 0, "t12"],
+          ["h-casa-asalto-perro y clases-1", 0, "t12"],
+          ["h-casa-asalto-perro y clases-2", 0, "t12"],
+          ["h-casa-asalto-perro y clases-3", 0, "t12"],
+          ["b0", 0, "t12"],
+          ["b1", 38, "fuera"],
+          ["b2", 38, "fuera"],
+          ["b3", 10, "fuera"],
+          ["b4", 0, "t12"]
+        ],
+        "orders": [
+          { "kind": "target", "who": "h1", "to": "b4", "step": 122 },
+          { "kind": "target", "who": "h2", "to": "b4", "step": 207 },
+          { "kind": "target", "who": "h-casa-asalto-perro y clases-1", "to": "b4", "step": 207 },
+          { "kind": "target", "who": "h-casa-asalto-perro y clases-2", "to": "b4", "step": 207 },
+          { "kind": "target", "who": "h-casa-asalto-perro y clases-3", "to": "b4", "step": 207 },
+          { "kind": "target", "who": "h2", "to": "b4", "step": 224 },
+          { "kind": "target", "who": "h-casa-asalto-perro y clases-1", "to": "b4", "step": 224 },
+          { "kind": "target", "who": "h-casa-asalto-perro y clases-2", "to": "b4", "step": 224 },
+          { "kind": "target", "who": "h-casa-asalto-perro y clases-1", "to": "b3", "step": 241 },
+          { "kind": "target", "who": "h-casa-asalto-perro y clases-2", "to": "b3", "step": 241 },
+          { "kind": "target", "who": "h-casa-asalto-perro y clases-2", "to": "b3", "step": 258 }
+        ]
+      }
+    },
+    {
+      "name": "perro y clases (critico)",
+      "setup": "perro y clases",
+      "rng": 3860866760,
+      "player": { "crit": true },
+      "expect": {
+        "result": {
+          "fell": ["h1", "h-casa-asalto-perro y clases-3", "h2"],
+          "fought": [
+            "h1",
+            "h2",
+            "h-casa-asalto-perro y clases-1",
+            "h-casa-asalto-perro y clases-2",
+            "h-casa-asalto-perro y clases-3"
+          ],
+          "downed": 5,
+          "escaped": 0,
+          "stolen": 0,
+          "recovered": 0
+        },
+        "end": 29.2,
+        "start": {
+          "h1": "t4",
+          "h2": "t4",
+          "h-casa-asalto-perro y clases-1": "t4",
+          "h-casa-asalto-perro y clases-2": "t4",
+          "h-casa-asalto-perro y clases-3": "t4",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera",
+          "b4": "fuera"
+        },
+        "hp": {
+          "h1": 81,
+          "h2": 50,
+          "h-casa-asalto-perro y clases-1": 55,
+          "h-casa-asalto-perro y clases-2": 54,
+          "h-casa-asalto-perro y clases-3": 50,
+          "b0": 38,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38,
+          "b4": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 98, "hash": "c95bf681" },
+        "left": [
+          ["h1", 0, "t6"],
+          ["h2", 0, "t12"],
+          ["h-casa-asalto-perro y clases-1", 30, "t12"],
+          ["h-casa-asalto-perro y clases-2", 21, "t12"],
+          ["h-casa-asalto-perro y clases-3", 0, "t12"],
+          ["b0", 0, "t12"],
+          ["b1", 0, "t12"],
+          ["b2", 0, "t12"],
+          ["b3", 0, "t12"],
+          ["b4", 0, "t12"]
+        ],
+        "orders": [
+          { "kind": "crit", "who": "h1", "step": 112 },
+          { "kind": "crit", "who": "h-casa-asalto-perro y clases-3", "step": 216 },
+          { "kind": "crit", "who": "h2", "step": 218 },
+          { "kind": "crit", "who": "h-casa-asalto-perro y clases-1", "step": 242 },
+          { "kind": "crit", "who": "h-casa-asalto-perro y clases-1", "step": 256 },
+          { "kind": "crit", "who": "h-casa-asalto-perro y clases-1", "step": 286 }
+        ]
+      }
+    },
+    {
+      "name": "guardia con clerigo y mago (solos)",
+      "setup": "guardia con clerigo y mago",
+      "rng": 927524808,
+      "expect": {
+        "result": {
+          "fell": ["h-casa-asalto-guardia con clerigo y mago-1"],
+          "fought": [
+            "h1",
+            "h2",
+            "h-casa-asalto-guardia con clerigo y mago-1",
+            "h-casa-asalto-guardia con clerigo y mago-2"
+          ],
+          "downed": 4,
+          "escaped": 0,
+          "stolen": 0,
+          "recovered": 0
+        },
+        "end": 15.5,
+        "start": {
+          "h1": "t4",
+          "h2": "t4",
+          "h-casa-asalto-guardia con clerigo y mago-1": "t6",
+          "h-casa-asalto-guardia con clerigo y mago-2": "t6",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera"
+        },
+        "hp": {
+          "h1": 81,
+          "h2": 56,
+          "h-casa-asalto-guardia con clerigo y mago-1": 92,
+          "h-casa-asalto-guardia con clerigo y mago-2": 66,
+          "b0": 38,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 52, "hash": "546a7f03" },
+        "left": [
+          ["h1", 49, "patio"],
+          ["h2", 56, "patio"],
+          ["h-casa-asalto-guardia con clerigo y mago-1", 0, "patio"],
+          ["h-casa-asalto-guardia con clerigo y mago-2", 45, "patio"],
+          ["b0", 0, "patio"],
+          ["b1", 0, "patio"],
+          ["b2", 0, "patio"],
+          ["b3", 0, "patio"]
+        ],
+        "orders": []
+      }
+    },
+    {
+      "name": "guardia con clerigo y mago (todo)",
+      "setup": "guardia con clerigo y mago",
+      "rng": 927524808,
+      "player": { "move": true, "target": true, "skill": true, "crit": true },
+      "expect": {
+        "result": {
+          "fell": ["h-casa-asalto-guardia con clerigo y mago-1", "h1", "h2"],
+          "fought": ["h1", "h2", "h-casa-asalto-guardia con clerigo y mago-1"],
+          "downed": 2,
+          "escaped": 2,
+          "stolen": 124,
+          "recovered": 0
+        },
+        "end": 52.4,
+        "start": {
+          "h1": "t4",
+          "h2": "t4",
+          "h-casa-asalto-guardia con clerigo y mago-1": "t6",
+          "h-casa-asalto-guardia con clerigo y mago-2": "t6",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera"
+        },
+        "hp": {
+          "h1": 81,
+          "h2": 56,
+          "h-casa-asalto-guardia con clerigo y mago-1": 92,
+          "h-casa-asalto-guardia con clerigo y mago-2": 66,
+          "b0": 38,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 83, "hash": "9c44a954" },
+        "left": [
+          ["h1", 0, "patio"],
+          ["h2", 0, "patio"],
+          ["h-casa-asalto-guardia con clerigo y mago-1", 0, "patio"],
+          ["h-casa-asalto-guardia con clerigo y mago-2", 66, "t12"],
+          ["b0", 32, "fuera"],
+          ["b1", 17, "fuera"],
+          ["b2", 0, "patio"],
+          ["b3", 0, "patio"]
+        ],
+        "orders": [
+          {
+            "kind": "move",
+            "who": "h-casa-asalto-guardia con clerigo y mago-2",
+            "to": "t10",
+            "step": 15
+          },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-guardia con clerigo y mago-1",
+            "to": "b3",
+            "step": 71
+          },
+          { "kind": "target", "who": "h1", "to": "b3", "step": 88 },
+          { "kind": "target", "who": "h2", "to": "b3", "step": 88 },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-guardia con clerigo y mago-1",
+            "to": "b3",
+            "step": 88
+          },
+          { "kind": "target", "who": "h1", "to": "b2", "step": 105 },
+          { "kind": "target", "who": "h2", "to": "b2", "step": 105 },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-guardia con clerigo y mago-1",
+            "to": "b2",
+            "step": 105
+          },
+          { "kind": "target", "who": "h1", "to": "b2", "step": 122 },
+          { "kind": "target", "who": "h2", "to": "b2", "step": 122 },
+          { "kind": "target", "who": "h1", "to": "b2", "step": 139 },
+          { "kind": "target", "who": "h2", "to": "b2", "step": 139 },
+          { "kind": "skill", "who": "h2", "step": 155 },
+          { "kind": "target", "who": "h2", "to": "b1", "step": 156 },
+          { "kind": "crit", "who": "h2", "step": 166 },
+          { "kind": "target", "who": "h2", "to": "b1", "step": 173 },
+          { "kind": "target", "who": "h2", "to": "b1", "step": 190 },
+          {
+            "kind": "move",
+            "who": "h-casa-asalto-guardia con clerigo y mago-2",
+            "to": "patio",
+            "step": 300
+          },
+          {
+            "kind": "move",
+            "who": "h-casa-asalto-guardia con clerigo y mago-2",
+            "to": "t12",
+            "step": 420
+          }
+        ]
+      }
+    },
+    {
+      "name": "guardia con clerigo y mago (mover)",
+      "setup": "guardia con clerigo y mago",
+      "rng": 927524808,
+      "player": { "move": true },
+      "expect": {
+        "result": {
+          "fell": ["h-casa-asalto-guardia con clerigo y mago-1", "h1", "h2"],
+          "fought": ["h1", "h2", "h-casa-asalto-guardia con clerigo y mago-1"],
+          "downed": 2,
+          "escaped": 2,
+          "stolen": 124,
+          "recovered": 0
+        },
+        "end": 53.8,
+        "start": {
+          "h1": "t4",
+          "h2": "t4",
+          "h-casa-asalto-guardia con clerigo y mago-1": "t6",
+          "h-casa-asalto-guardia con clerigo y mago-2": "t6",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera"
+        },
+        "hp": {
+          "h1": 81,
+          "h2": 56,
+          "h-casa-asalto-guardia con clerigo y mago-1": 92,
+          "h-casa-asalto-guardia con clerigo y mago-2": 66,
+          "b0": 38,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 86, "hash": "5dcbb98" },
+        "left": [
+          ["h1", 0, "patio"],
+          ["h2", 0, "patio"],
+          ["h-casa-asalto-guardia con clerigo y mago-1", 0, "patio"],
+          ["h-casa-asalto-guardia con clerigo y mago-2", 66, "t12"],
+          ["b0", 0, "patio"],
+          ["b1", 0, "patio"],
+          ["b2", 2, "fuera"],
+          ["b3", 38, "fuera"]
+        ],
+        "orders": [
+          {
+            "kind": "move",
+            "who": "h-casa-asalto-guardia con clerigo y mago-2",
+            "to": "t10",
+            "step": 15
+          },
+          {
+            "kind": "move",
+            "who": "h-casa-asalto-guardia con clerigo y mago-2",
+            "to": "patio",
+            "step": 300
+          },
+          {
+            "kind": "move",
+            "who": "h-casa-asalto-guardia con clerigo y mago-2",
+            "to": "t12",
+            "step": 420
+          }
+        ]
+      }
+    },
+    {
+      "name": "guardia con clerigo y mago (blanco y habilidad)",
+      "setup": "guardia con clerigo y mago",
+      "rng": 927524808,
+      "player": { "target": true, "skill": true },
+      "expect": {
+        "result": {
+          "fell": ["h-casa-asalto-guardia con clerigo y mago-1"],
+          "fought": [
+            "h1",
+            "h2",
+            "h-casa-asalto-guardia con clerigo y mago-1",
+            "h-casa-asalto-guardia con clerigo y mago-2"
+          ],
+          "downed": 4,
+          "escaped": 0,
+          "stolen": 0,
+          "recovered": 0
+        },
+        "end": 15,
+        "start": {
+          "h1": "t4",
+          "h2": "t4",
+          "h-casa-asalto-guardia con clerigo y mago-1": "t6",
+          "h-casa-asalto-guardia con clerigo y mago-2": "t6",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera"
+        },
+        "hp": {
+          "h1": 81,
+          "h2": 56,
+          "h-casa-asalto-guardia con clerigo y mago-1": 92,
+          "h-casa-asalto-guardia con clerigo y mago-2": 66,
+          "b0": 38,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 51, "hash": "c1999a2a" },
+        "left": [
+          ["h1", 72, "patio"],
+          ["h2", 56, "patio"],
+          ["h-casa-asalto-guardia con clerigo y mago-1", 0, "patio"],
+          ["h-casa-asalto-guardia con clerigo y mago-2", 16, "patio"],
+          ["b0", 0, "patio"],
+          ["b1", 0, "patio"],
+          ["b2", 0, "patio"],
+          ["b3", 0, "patio"]
+        ],
+        "orders": [
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-guardia con clerigo y mago-1",
+            "to": "b3",
+            "step": 71
+          },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-guardia con clerigo y mago-2",
+            "to": "b3",
+            "step": 71
+          },
+          { "kind": "target", "who": "h1", "to": "b3", "step": 88 },
+          { "kind": "target", "who": "h2", "to": "b3", "step": 88 },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-guardia con clerigo y mago-1",
+            "to": "b3",
+            "step": 88
+          },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-guardia con clerigo y mago-2",
+            "to": "b3",
+            "step": 88
+          },
+          { "kind": "target", "who": "h1", "to": "b2", "step": 105 },
+          { "kind": "target", "who": "h2", "to": "b2", "step": 105 },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-guardia con clerigo y mago-1",
+            "to": "b2",
+            "step": 105
+          },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-guardia con clerigo y mago-2",
+            "to": "b2",
+            "step": 105
+          },
+          { "kind": "target", "who": "h1", "to": "b2", "step": 122 },
+          { "kind": "target", "who": "h2", "to": "b2", "step": 122 },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-guardia con clerigo y mago-1",
+            "to": "b2",
+            "step": 122
+          },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-guardia con clerigo y mago-2",
+            "to": "b2",
+            "step": 122
+          }
+        ]
+      }
+    },
+    {
+      "name": "guardia con clerigo y mago (critico)",
+      "setup": "guardia con clerigo y mago",
+      "rng": 927524808,
+      "player": { "crit": true },
+      "expect": {
+        "result": {
+          "fell": ["h-casa-asalto-guardia con clerigo y mago-1"],
+          "fought": [
+            "h1",
+            "h2",
+            "h-casa-asalto-guardia con clerigo y mago-1",
+            "h-casa-asalto-guardia con clerigo y mago-2"
+          ],
+          "downed": 4,
+          "escaped": 0,
+          "stolen": 0,
+          "recovered": 0
+        },
+        "end": 15.5,
+        "start": {
+          "h1": "t4",
+          "h2": "t4",
+          "h-casa-asalto-guardia con clerigo y mago-1": "t6",
+          "h-casa-asalto-guardia con clerigo y mago-2": "t6",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera"
+        },
+        "hp": {
+          "h1": 81,
+          "h2": 56,
+          "h-casa-asalto-guardia con clerigo y mago-1": 92,
+          "h-casa-asalto-guardia con clerigo y mago-2": 66,
+          "b0": 38,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 52, "hash": "546a7f03" },
+        "left": [
+          ["h1", 49, "patio"],
+          ["h2", 56, "patio"],
+          ["h-casa-asalto-guardia con clerigo y mago-1", 0, "patio"],
+          ["h-casa-asalto-guardia con clerigo y mago-2", 45, "patio"],
+          ["b0", 0, "patio"],
+          ["b1", 0, "patio"],
+          ["b2", 0, "patio"],
+          ["b3", 0, "patio"]
+        ],
+        "orders": [{ "kind": "crit", "who": "h2", "step": 150 }]
+      }
+    },
+    {
+      "name": "banda grande y trabajador (solos)",
+      "setup": "banda grande y trabajador",
+      "rng": 1899135800,
+      "expect": {
+        "result": {
+          "fell": ["h-casa-asalto-banda grande y trabajador-2"],
+          "fought": [
+            "h1",
+            "h2",
+            "h-casa-asalto-banda grande y trabajador-1",
+            "h-casa-asalto-banda grande y trabajador-2"
+          ],
+          "downed": 6,
+          "escaped": 0,
+          "stolen": 0,
+          "recovered": 0
+        },
+        "end": 18.2,
+        "start": {
+          "h1": "t4",
+          "h2": "t6",
+          "h-casa-asalto-banda grande y trabajador-1": "t4",
+          "h-casa-asalto-banda grande y trabajador-2": "t4",
+          "w-ref": "t10",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera",
+          "b4": "fuera",
+          "b5": "fuera"
+        },
+        "hp": {
+          "h1": 71,
+          "h2": 92,
+          "h-casa-asalto-banda grande y trabajador-1": 49,
+          "h-casa-asalto-banda grande y trabajador-2": 103,
+          "w-ref": 20,
+          "b0": 38,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38,
+          "b4": 38,
+          "b5": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 80, "hash": "6d05abc0" },
+        "left": [
+          ["h1", 10, "patio"],
+          ["h2", 18, "patio"],
+          ["h-casa-asalto-banda grande y trabajador-1", 49, "patio"],
+          ["h-casa-asalto-banda grande y trabajador-2", 0, "patio"],
+          ["w-ref", 20, "t10"],
+          ["b0", 0, "patio"],
+          ["b1", 0, "patio"],
+          ["b2", 0, "patio"],
+          ["b3", 0, "patio"],
+          ["b4", 0, "patio"],
+          ["b5", 0, "patio"]
+        ],
+        "orders": []
+      }
+    },
+    {
+      "name": "banda grande y trabajador (todo)",
+      "setup": "banda grande y trabajador",
+      "rng": 1899135800,
+      "player": { "move": true, "target": true, "skill": true, "crit": true },
+      "expect": {
+        "result": {
+          "fell": [
+            "h-casa-asalto-banda grande y trabajador-1",
+            "h2",
+            "h1",
+            "w-ref",
+            "h-casa-asalto-banda grande y trabajador-2"
+          ],
+          "fought": [
+            "h1",
+            "h2",
+            "h-casa-asalto-banda grande y trabajador-1",
+            "h-casa-asalto-banda grande y trabajador-2",
+            "w-ref"
+          ],
+          "downed": 1,
+          "escaped": 5,
+          "stolen": 380,
+          "recovered": 0
+        },
+        "end": 48.1,
+        "start": {
+          "h1": "t4",
+          "h2": "t6",
+          "h-casa-asalto-banda grande y trabajador-1": "t4",
+          "h-casa-asalto-banda grande y trabajador-2": "t4",
+          "w-ref": "t10",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera",
+          "b4": "fuera",
+          "b5": "fuera"
+        },
+        "hp": {
+          "h1": 71,
+          "h2": 92,
+          "h-casa-asalto-banda grande y trabajador-1": 49,
+          "h-casa-asalto-banda grande y trabajador-2": 103,
+          "w-ref": 20,
+          "b0": 38,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38,
+          "b4": 38,
+          "b5": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 86, "hash": "37e116ea" },
+        "left": [
+          ["h1", 0, "patio"],
+          ["h2", 0, "patio"],
+          ["h-casa-asalto-banda grande y trabajador-1", 0, "patio"],
+          ["h-casa-asalto-banda grande y trabajador-2", 0, "t10"],
+          ["w-ref", 0, "t10"],
+          ["b0", 21, "fuera"],
+          ["b1", 38, "fuera"],
+          ["b2", 38, "fuera"],
+          ["b3", 38, "fuera"],
+          ["b4", 10, "fuera"],
+          ["b5", 0, "patio"]
+        ],
+        "orders": [
+          {
+            "kind": "move",
+            "who": "h-casa-asalto-banda grande y trabajador-2",
+            "to": "t10",
+            "step": 15
+          },
+          { "kind": "target", "who": "h2", "to": "b5", "step": 71 },
+          { "kind": "target", "who": "h1", "to": "b5", "step": 88 },
+          { "kind": "target", "who": "h2", "to": "b5", "step": 88 },
+          { "kind": "target", "who": "h1", "to": "b5", "step": 105 },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-banda grande y trabajador-2",
+            "to": "b4",
+            "step": 241
+          },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-banda grande y trabajador-2",
+            "to": "b4",
+            "step": 258
+          }
+        ]
+      }
+    },
+    {
+      "name": "banda grande y trabajador (mover)",
+      "setup": "banda grande y trabajador",
+      "rng": 1899135800,
+      "player": { "move": true },
+      "expect": {
+        "result": {
+          "fell": [
+            "h-casa-asalto-banda grande y trabajador-1",
+            "h2",
+            "h1",
+            "w-ref",
+            "h-casa-asalto-banda grande y trabajador-2"
+          ],
+          "fought": [
+            "h1",
+            "h2",
+            "h-casa-asalto-banda grande y trabajador-1",
+            "h-casa-asalto-banda grande y trabajador-2",
+            "w-ref"
+          ],
+          "downed": 1,
+          "escaped": 5,
+          "stolen": 380,
+          "recovered": 0
+        },
+        "end": 47.2,
+        "start": {
+          "h1": "t4",
+          "h2": "t6",
+          "h-casa-asalto-banda grande y trabajador-1": "t4",
+          "h-casa-asalto-banda grande y trabajador-2": "t4",
+          "w-ref": "t10",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera",
+          "b4": "fuera",
+          "b5": "fuera"
+        },
+        "hp": {
+          "h1": 71,
+          "h2": 92,
+          "h-casa-asalto-banda grande y trabajador-1": 49,
+          "h-casa-asalto-banda grande y trabajador-2": 103,
+          "w-ref": 20,
+          "b0": 38,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38,
+          "b4": 38,
+          "b5": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 84, "hash": "137bb559" },
+        "left": [
+          ["h1", 0, "patio"],
+          ["h2", 0, "patio"],
+          ["h-casa-asalto-banda grande y trabajador-1", 0, "patio"],
+          ["h-casa-asalto-banda grande y trabajador-2", 0, "t10"],
+          ["w-ref", 0, "t10"],
+          ["b0", 0, "patio"],
+          ["b1", 8, "fuera"],
+          ["b2", 38, "fuera"],
+          ["b3", 38, "fuera"],
+          ["b4", 38, "fuera"],
+          ["b5", 38, "fuera"]
+        ],
+        "orders": [
+          {
+            "kind": "move",
+            "who": "h-casa-asalto-banda grande y trabajador-2",
+            "to": "t10",
+            "step": 15
+          }
+        ]
+      }
+    },
+    {
+      "name": "banda grande y trabajador (blanco y habilidad)",
+      "setup": "banda grande y trabajador",
+      "rng": 1899135800,
+      "player": { "target": true, "skill": true },
+      "expect": {
+        "result": {
+          "fell": ["h-casa-asalto-banda grande y trabajador-2", "h1"],
+          "fought": [
+            "h1",
+            "h2",
+            "h-casa-asalto-banda grande y trabajador-1",
+            "h-casa-asalto-banda grande y trabajador-2"
+          ],
+          "downed": 6,
+          "escaped": 0,
+          "stolen": 0,
+          "recovered": 0
+        },
+        "end": 19.7,
+        "start": {
+          "h1": "t4",
+          "h2": "t6",
+          "h-casa-asalto-banda grande y trabajador-1": "t4",
+          "h-casa-asalto-banda grande y trabajador-2": "t4",
+          "w-ref": "t10",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera",
+          "b4": "fuera",
+          "b5": "fuera"
+        },
+        "hp": {
+          "h1": 71,
+          "h2": 92,
+          "h-casa-asalto-banda grande y trabajador-1": 49,
+          "h-casa-asalto-banda grande y trabajador-2": 103,
+          "w-ref": 20,
+          "b0": 38,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38,
+          "b4": 38,
+          "b5": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 80, "hash": "1c944223" },
+        "left": [
+          ["h1", 0, "patio"],
+          ["h2", 49, "patio"],
+          ["h-casa-asalto-banda grande y trabajador-1", 5, "patio"],
+          ["h-casa-asalto-banda grande y trabajador-2", 0, "patio"],
+          ["w-ref", 20, "t10"],
+          ["b0", 0, "patio"],
+          ["b1", 0, "patio"],
+          ["b2", 0, "patio"],
+          ["b3", 0, "patio"],
+          ["b4", 0, "patio"],
+          ["b5", 0, "patio"]
+        ],
+        "orders": [
+          { "kind": "target", "who": "h2", "to": "b5", "step": 71 },
+          { "kind": "target", "who": "h1", "to": "b4", "step": 88 },
+          { "kind": "target", "who": "h2", "to": "b4", "step": 88 },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-banda grande y trabajador-1",
+            "to": "b4",
+            "step": 88
+          },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-banda grande y trabajador-2",
+            "to": "b4",
+            "step": 88
+          },
+          { "kind": "target", "who": "h1", "to": "b3", "step": 105 },
+          { "kind": "target", "who": "h2", "to": "b3", "step": 105 },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-banda grande y trabajador-1",
+            "to": "b3",
+            "step": 105
+          },
+          { "kind": "target", "who": "h1", "to": "b3", "step": 122 },
+          { "kind": "target", "who": "h2", "to": "b3", "step": 122 },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-banda grande y trabajador-1",
+            "to": "b3",
+            "step": 122
+          },
+          { "kind": "skill", "who": "h-casa-asalto-banda grande y trabajador-1", "step": 138 },
+          { "kind": "target", "who": "h2", "to": "b2", "step": 139 },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-banda grande y trabajador-1",
+            "to": "b2",
+            "step": 139
+          },
+          { "kind": "skill", "who": "h2", "step": 143 },
+          { "kind": "target", "who": "h2", "to": "b2", "step": 156 },
+          {
+            "kind": "target",
+            "who": "h-casa-asalto-banda grande y trabajador-1",
+            "to": "b2",
+            "step": 156
+          }
+        ]
+      }
+    },
+    {
+      "name": "banda grande y trabajador (critico)",
+      "setup": "banda grande y trabajador",
+      "rng": 1899135800,
+      "player": { "crit": true },
+      "expect": {
+        "result": {
+          "fell": ["h-casa-asalto-banda grande y trabajador-2", "h1"],
+          "fought": [
+            "h1",
+            "h2",
+            "h-casa-asalto-banda grande y trabajador-1",
+            "h-casa-asalto-banda grande y trabajador-2"
+          ],
+          "downed": 6,
+          "escaped": 0,
+          "stolen": 0,
+          "recovered": 0
+        },
+        "end": 18.2,
+        "start": {
+          "h1": "t4",
+          "h2": "t6",
+          "h-casa-asalto-banda grande y trabajador-1": "t4",
+          "h-casa-asalto-banda grande y trabajador-2": "t4",
+          "w-ref": "t10",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera",
+          "b4": "fuera",
+          "b5": "fuera"
+        },
+        "hp": {
+          "h1": 71,
+          "h2": 92,
+          "h-casa-asalto-banda grande y trabajador-1": 49,
+          "h-casa-asalto-banda grande y trabajador-2": 103,
+          "w-ref": 20,
+          "b0": 38,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38,
+          "b4": 38,
+          "b5": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "steps": { "n": 77, "hash": "fdb7b540" },
+        "left": [
+          ["h1", 0, "patio"],
+          ["h2", 50, "patio"],
+          ["h-casa-asalto-banda grande y trabajador-1", 7, "patio"],
+          ["h-casa-asalto-banda grande y trabajador-2", 0, "patio"],
+          ["w-ref", 20, "t10"],
+          ["b0", 0, "patio"],
+          ["b1", 0, "patio"],
+          ["b2", 0, "patio"],
+          ["b3", 0, "patio"],
+          ["b4", 0, "patio"],
+          ["b5", 0, "patio"]
+        ],
+        "orders": [
+          { "kind": "crit", "who": "h-casa-asalto-banda grande y trabajador-2", "step": 86 },
+          { "kind": "crit", "who": "h-casa-asalto-banda grande y trabajador-1", "step": 106 },
+          { "kind": "crit", "who": "h2", "step": 124 }
+        ]
+      }
+    }
+  ],
+  "duels": [
+    {
+      "name": "guerrero con 0 de fama",
+      "hero": {
+        "id": "h-ladron-guerrero-0",
+        "seed": "h-ladron-guerrero-0-Catalina",
+        "name": "Catalina",
+        "sex": "f",
+        "cls": "guerrero",
+        "lvl": 1,
+        "xp": 0,
+        "attrs": { "F": 6, "D": 4, "M": 4 },
+        "traits": [{ "id": "afortunado" }, { "id": "leal", "hidden": true }],
+        "morale": 66,
+        "salary": 10,
+        "fee": 30,
+        "status": "ok",
+        "days": 0,
+        "quote": "«¿A quién hay que pegar?»",
+        "history": []
+      },
+      "fac": {
+        "dorm": 1,
+        "enf": 0,
+        "tab": 1,
+        "mapas": 0,
+        "arm": 0,
+        "cap": 0,
+        "forja": 0,
+        "establo": 0,
+        "patio": 0,
+        "empal": 0,
+        "torre": 0,
+        "vet": 0
+      },
+      "rep": 0,
+      "seed": "ref-0-0",
+      "at": 100,
+      "expect": {
+        "who": "h-ladron-guerrero-0",
+        "at": 100,
+        "end": 3.9,
+        "won": true,
+        "hits": [
+          { "t": 0.6, "by": "h", "amount": 8 },
+          { "t": 0.8, "by": "l", "amount": 2 },
+          { "t": 1.9, "by": "h", "amount": 8 },
+          { "t": 1.9, "by": "l", "amount": 2 },
+          { "t": 3, "by": "l", "amount": 1 },
+          { "t": 3.2, "by": "h", "amount": 4 }
+        ],
+        "hp": { "h": 76, "l": 20 }
+      }
+    },
+    {
+      "name": "guerrero con 120 de fama",
+      "hero": {
+        "id": "h-ladron-guerrero-120",
+        "seed": "h-ladron-guerrero-120-Quiteria",
+        "name": "Quiteria",
+        "sex": "f",
+        "cls": "guerrero",
+        "lvl": 1,
+        "xp": 0,
+        "attrs": { "F": 7, "D": 5, "M": 3 },
+        "traits": [{ "id": "arrogante" }, { "id": "leal", "hidden": true }],
+        "morale": 66,
+        "salary": 10,
+        "fee": 33,
+        "status": "ok",
+        "days": 0,
+        "quote": "«Cobro por golpe. Es broma. Más o menos.»",
+        "history": []
+      },
+      "fac": {
+        "dorm": 1,
+        "enf": 0,
+        "tab": 1,
+        "mapas": 0,
+        "arm": 0,
+        "cap": 0,
+        "forja": 0,
+        "establo": 0,
+        "patio": 0,
+        "empal": 0,
+        "torre": 0,
+        "vet": 0
+      },
+      "rep": 120,
+      "seed": "ref-0-120",
+      "at": 100,
+      "expect": {
+        "who": "h-ladron-guerrero-120",
+        "at": 100,
+        "end": 5.199999999999999,
+        "won": true,
+        "hits": [
+          { "t": 0.6, "by": "h", "amount": 8 },
+          { "t": 0.8, "by": "l", "amount": 5 },
+          { "t": 1.9, "by": "h", "amount": 10 },
+          { "t": 1.9, "by": "l", "amount": 4 },
+          { "t": 3, "by": "l", "amount": 5 },
+          { "t": 3.2, "by": "h", "amount": 18, "crit": true },
+          { "t": 4.1, "by": "l", "amount": 4 },
+          { "t": 4.5, "by": "h", "amount": 4 }
+        ],
+        "hp": { "h": 81, "l": 40 }
+      }
+    },
+    {
+      "name": "guerrero con 600 de fama",
+      "hero": {
+        "id": "h-ladron-guerrero-600",
+        "seed": "h-ladron-guerrero-600-Teobaldo",
+        "name": "Teobaldo",
+        "sex": "m",
+        "cls": "guerrero",
+        "lvl": 1,
+        "xp": 0,
+        "attrs": { "F": 6, "D": 4, "M": 2 },
+        "traits": [{ "id": "supersticioso" }, { "id": "afortunado", "hidden": true }],
+        "morale": 73,
+        "salary": 10,
+        "fee": 30,
+        "status": "ok",
+        "days": 0,
+        "quote": "«¿A quién hay que pegar?»",
+        "history": []
+      },
+      "fac": {
+        "dorm": 1,
+        "enf": 0,
+        "tab": 1,
+        "mapas": 0,
+        "arm": 0,
+        "cap": 0,
+        "forja": 0,
+        "establo": 0,
+        "patio": 0,
+        "empal": 0,
+        "torre": 0,
+        "vet": 0
+      },
+      "rep": 600,
+      "seed": "ref-0-600",
+      "at": 100,
+      "expect": {
+        "who": "h-ladron-guerrero-600",
+        "at": 100,
+        "end": 8.6,
+        "won": false,
+        "hits": [
+          { "t": 0.6, "by": "h", "amount": 7 },
+          { "t": 0.8, "by": "l", "amount": 8 },
+          { "t": 1.9, "by": "h", "amount": 9 },
+          { "t": 1.9, "by": "l", "amount": 8 },
+          { "t": 3, "by": "l", "amount": 7 },
+          { "t": 3.2, "by": "h", "amount": 8 },
+          { "t": 4.1, "by": "l", "amount": 8 },
+          { "t": 4.5, "by": "h", "amount": 8 },
+          { "t": 5.2, "by": "l", "amount": 6 },
+          { "t": 5.8, "by": "h", "amount": 9 },
+          { "t": 6.3, "by": "l", "amount": 9 },
+          { "t": 7.1, "by": "h", "amount": 8 },
+          { "t": 7.4, "by": "l", "amount": 6 }
+        ],
+        "hp": { "h": 76, "l": 60 }
+      }
+    },
+    {
+      "name": "picaro con 0 de fama",
+      "hero": {
+        "id": "h-ladron-picaro-0",
+        "seed": "h-ladron-picaro-0-Lysa",
+        "name": "Lysa",
+        "sex": "f",
+        "cls": "picaro",
+        "lvl": 3,
+        "xp": 0,
+        "attrs": { "F": 3, "D": 8, "M": 4 },
+        "traits": [{ "id": "afortunado" }, { "id": "valiente", "hidden": true }],
+        "morale": 70,
+        "salary": 18,
+        "fee": 63,
+        "status": "ok",
+        "days": 0,
+        "quote": "«Trabajo de noche. Y de día, si hay que esconderse.»",
+        "history": []
+      },
+      "fac": {
+        "dorm": 1,
+        "enf": 0,
+        "tab": 1,
+        "mapas": 0,
+        "arm": 0,
+        "cap": 0,
+        "forja": 0,
+        "establo": 0,
+        "patio": 0,
+        "empal": 0,
+        "torre": 0,
+        "vet": 0
+      },
+      "rep": 0,
+      "seed": "ref-1-0",
+      "at": 101,
+      "expect": {
+        "who": "h-ladron-picaro-0",
+        "at": 101,
+        "end": 2.2,
+        "won": true,
+        "hits": [
+          { "t": 0.5, "by": "h", "amount": 10 },
+          { "t": 0.8, "by": "l", "amount": 2 },
+          { "t": 1.5, "by": "h", "amount": 10 }
+        ],
+        "hp": { "h": 53, "l": 20 }
+      }
+    },
+    {
+      "name": "picaro con 120 de fama",
+      "hero": {
+        "id": "h-ladron-picaro-120",
+        "seed": "h-ladron-picaro-120-Bruno Quejigo",
+        "name": "Bruno Quejigo",
+        "sex": "m",
+        "cls": "picaro",
+        "lvl": 1,
+        "xp": 0,
+        "attrs": { "F": 3, "D": 5, "M": 6 },
+        "traits": [{ "id": "cobarde" }, { "id": "gafe", "hidden": true }],
+        "morale": 68,
+        "salary": 10,
+        "fee": 30,
+        "status": "ok",
+        "days": 0,
+        "quote": "«Esa bolsa que buscas… ¿era roja? Qué casualidad.»",
+        "history": []
+      },
+      "fac": {
+        "dorm": 1,
+        "enf": 0,
+        "tab": 1,
+        "mapas": 0,
+        "arm": 0,
+        "cap": 0,
+        "forja": 0,
+        "establo": 0,
+        "patio": 0,
+        "empal": 0,
+        "torre": 0,
+        "vet": 0
+      },
+      "rep": 120,
+      "seed": "ref-1-120",
+      "at": 101,
+      "expect": {
+        "who": "h-ladron-picaro-120",
+        "at": 101,
+        "end": 8.6,
+        "won": false,
+        "hits": [
+          { "t": 0.5, "by": "h", "amount": 3 },
+          { "t": 0.8, "by": "l", "amount": 6 },
+          { "t": 1.5, "by": "h", "amount": 3 },
+          { "t": 1.9, "by": "l", "amount": 6 },
+          { "t": 2.5, "by": "h", "amount": 3 },
+          { "t": 3, "by": "l", "amount": 5 },
+          { "t": 3.5, "by": "h", "amount": 4 },
+          { "t": 4.1, "by": "l", "amount": 6 },
+          { "t": 4.5, "by": "h", "amount": 3 },
+          { "t": 5.2, "by": "l", "amount": 5 },
+          { "t": 5.5, "by": "h", "amount": 3 },
+          { "t": 6.3, "by": "l", "amount": 5 },
+          { "t": 6.5, "by": "h", "amount": 3 },
+          { "t": 7.4, "by": "l", "amount": 6 },
+          { "t": 7.5, "by": "h", "amount": 3 }
+        ],
+        "hp": { "h": 45, "l": 40 }
+      }
+    },
+    {
+      "name": "picaro con 600 de fama",
+      "hero": {
+        "id": "h-ladron-picaro-600",
+        "seed": "h-ladron-picaro-600-Bruno Mostaza",
+        "name": "Bruno Mostaza",
+        "sex": "m",
+        "cls": "picaro",
+        "lvl": 3,
+        "xp": 0,
+        "attrs": { "F": 3, "D": 7, "M": 5 },
+        "traits": [{ "id": "arrogante" }, { "id": "codicioso", "hidden": true }],
+        "morale": 61,
+        "salary": 18,
+        "fee": 63,
+        "status": "ok",
+        "days": 0,
+        "quote": "«Trabajo de noche. Y de día, si hay que esconderse.»",
+        "history": []
+      },
+      "fac": {
+        "dorm": 1,
+        "enf": 0,
+        "tab": 1,
+        "mapas": 0,
+        "arm": 0,
+        "cap": 0,
+        "forja": 0,
+        "establo": 0,
+        "patio": 0,
+        "empal": 0,
+        "torre": 0,
+        "vet": 0
+      },
+      "rep": 600,
+      "seed": "ref-1-600",
+      "at": 101,
+      "expect": {
+        "who": "h-ladron-picaro-600",
+        "at": 101,
+        "end": 8.1,
+        "won": false,
+        "hits": [
+          { "t": 0.5, "by": "h", "amount": 6 },
+          { "t": 0.8, "by": "l", "amount": 7 },
+          { "t": 1.5, "by": "h", "amount": 12, "crit": true },
+          { "t": 1.9, "by": "l", "amount": 10 },
+          { "t": 2.5, "by": "h", "amount": 8 },
+          { "t": 3, "by": "l", "amount": 8 },
+          { "t": 3.5, "by": "h", "amount": 7 },
+          { "t": 4.1, "by": "l", "amount": 7 },
+          { "t": 4.5, "by": "h", "amount": 7 },
+          { "t": 5.2, "by": "l", "amount": 7 },
+          { "t": 5.5, "by": "h", "amount": 8 },
+          { "t": 6.3, "by": "l", "amount": 9 },
+          { "t": 6.5, "by": "h", "amount": 7 },
+          { "t": 7.4, "by": "l", "amount": 5 }
+        ],
+        "hp": { "h": 53, "l": 60 }
+      }
+    },
+    {
+      "name": "mago con 0 de fama",
+      "hero": {
+        "id": "h-ladron-mago-0",
+        "seed": "h-ladron-mago-0-Lope",
+        "name": "Lope",
+        "sex": "m",
+        "cls": "mago",
+        "lvl": 4,
+        "xp": 0,
+        "attrs": { "F": 2, "D": 5, "M": 10 },
+        "traits": [{ "id": "valiente" }, { "id": "arrogante", "hidden": true }],
+        "morale": 62,
+        "salary": 24,
+        "fee": 84,
+        "status": "ok",
+        "days": 0,
+        "quote": "«Si ves humo verde, aléjate. Si ves humo morado, corre.»",
+        "history": []
+      },
+      "fac": {
+        "dorm": 1,
+        "enf": 0,
+        "tab": 1,
+        "mapas": 0,
+        "arm": 0,
+        "cap": 0,
+        "forja": 0,
+        "establo": 0,
+        "patio": 0,
+        "empal": 0,
+        "torre": 0,
+        "vet": 0
+      },
+      "rep": 0,
+      "seed": "ref-2-0",
+      "at": 102,
+      "expect": {
+        "who": "h-ladron-mago-0",
+        "at": 102,
+        "end": 3.1,
+        "won": true,
+        "hits": [
+          { "t": 0.8, "by": "h", "amount": 13 },
+          { "t": 0.8, "by": "l", "amount": 3 },
+          { "t": 1.9, "by": "l", "amount": 2 },
+          { "t": 2.4, "by": "h", "amount": 7, "crit": true }
+        ],
+        "hp": { "h": 52, "l": 20 }
+      }
+    },
+    {
+      "name": "mago con 120 de fama",
+      "hero": {
+        "id": "h-ladron-mago-120",
+        "seed": "h-ladron-mago-120-Dulce Vel",
+        "name": "Dulce Vel",
+        "sex": "f",
+        "cls": "mago",
+        "lvl": 2,
+        "xp": 0,
+        "attrs": { "F": 4, "D": 5, "M": 9 },
+        "traits": [{ "id": "valiente" }, { "id": "gafe", "hidden": true }],
+        "morale": 73,
+        "salary": 17,
+        "fee": 57,
+        "status": "ok",
+        "days": 0,
+        "quote": "«Cobro por adelantado. Y no me llames bruja.»",
+        "history": []
+      },
+      "fac": {
+        "dorm": 1,
+        "enf": 0,
+        "tab": 1,
+        "mapas": 0,
+        "arm": 0,
+        "cap": 0,
+        "forja": 0,
+        "establo": 0,
+        "patio": 0,
+        "empal": 0,
+        "torre": 0,
+        "vet": 0
+      },
+      "rep": 120,
+      "seed": "ref-2-120",
+      "at": 102,
+      "expect": {
+        "who": "h-ladron-mago-120",
+        "at": 102,
+        "end": 6.199999999999999,
+        "won": true,
+        "hits": [
+          { "t": 0.8, "by": "h", "amount": 9 },
+          { "t": 0.8, "by": "l", "amount": 6 },
+          { "t": 1.9, "by": "l", "amount": 6 },
+          { "t": 2.4, "by": "h", "amount": 9 },
+          { "t": 3, "by": "l", "amount": 5 },
+          { "t": 3.9, "by": "h", "amount": 11 },
+          { "t": 4.1, "by": "l", "amount": 6 },
+          { "t": 5.2, "by": "l", "amount": 6 },
+          { "t": 5.5, "by": "h", "amount": 11, "crit": true }
+        ],
+        "hp": { "h": 54, "l": 40 }
+      }
+    },
+    {
+      "name": "mago con 600 de fama",
+      "hero": {
+        "id": "h-ladron-mago-600",
+        "seed": "h-ladron-mago-600-Leandro",
+        "name": "Leandro",
+        "sex": "m",
+        "cls": "mago",
+        "lvl": 3,
+        "xp": 0,
+        "attrs": { "F": 3, "D": 5, "M": 10 },
+        "traits": [{ "id": "cobarde" }, { "id": "codicioso", "hidden": true }],
+        "morale": 60,
+        "salary": 21,
+        "fee": 72,
+        "status": "ok",
+        "days": 0,
+        "quote": "«Cobro por adelantado. Y no me llames bruja.»",
+        "history": []
+      },
+      "fac": {
+        "dorm": 1,
+        "enf": 0,
+        "tab": 1,
+        "mapas": 0,
+        "arm": 0,
+        "cap": 0,
+        "forja": 0,
+        "establo": 0,
+        "patio": 0,
+        "empal": 0,
+        "torre": 0,
+        "vet": 0
+      },
+      "rep": 600,
+      "seed": "ref-2-600",
+      "at": 102,
+      "expect": {
+        "who": "h-ladron-mago-600",
+        "at": 102,
+        "end": 6.199999999999999,
+        "won": true,
+        "hits": [
+          { "t": 0.8, "by": "h", "amount": 10 },
+          { "t": 0.8, "by": "l", "amount": 7 },
+          { "t": 1.9, "by": "l", "amount": 7 },
+          { "t": 2.4, "by": "h", "amount": 10 },
+          { "t": 3, "by": "l", "amount": 8 },
+          { "t": 3.9, "by": "h", "amount": 22, "crit": true },
+          { "t": 4.1, "by": "l", "amount": 8 },
+          { "t": 5.2, "by": "l", "amount": 7 },
+          { "t": 5.5, "by": "h", "amount": 18, "crit": true }
+        ],
+        "hp": { "h": 53, "l": 60 }
+      }
+    },
+    {
+      "name": "clerigo con 0 de fama",
+      "hero": {
+        "id": "h-ladron-clerigo-0",
+        "seed": "h-ladron-clerigo-0-Ilsa Lobera",
+        "name": "Ilsa Lobera",
+        "sex": "f",
+        "cls": "clerigo",
+        "lvl": 3,
+        "xp": 0,
+        "attrs": { "F": 5, "D": 4, "M": 9 },
+        "traits": [{ "id": "afortunado" }, { "id": "codicioso", "hidden": true }],
+        "morale": 70,
+        "salary": 21,
+        "fee": 72,
+        "status": "ok",
+        "days": 0,
+        "quote": "«Rezo por todos. Por algunos, más caro.»",
+        "history": []
+      },
+      "fac": {
+        "dorm": 1,
+        "enf": 0,
+        "tab": 1,
+        "mapas": 0,
+        "arm": 0,
+        "cap": 0,
+        "forja": 0,
+        "establo": 0,
+        "patio": 0,
+        "empal": 0,
+        "torre": 0,
+        "vet": 0
+      },
+      "rep": 0,
+      "seed": "ref-3-0",
+      "at": 103,
+      "expect": {
+        "who": "h-ladron-clerigo-0",
+        "at": 103,
+        "end": 4.3999999999999995,
+        "won": true,
+        "hits": [
+          { "t": 0.7, "by": "h", "amount": 10 },
+          { "t": 0.8, "by": "l", "amount": 2 },
+          { "t": 1.9, "by": "l", "amount": 2 },
+          { "t": 2.2, "by": "h", "amount": 9 },
+          { "t": 3, "by": "l", "amount": 2 },
+          { "t": 3.7, "by": "h", "amount": 1 }
+        ],
+        "hp": { "h": 69, "l": 20 }
+      }
+    },
+    {
+      "name": "clerigo con 120 de fama",
+      "hero": {
+        "id": "h-ladron-clerigo-120",
+        "seed": "h-ladron-clerigo-120-Irene",
+        "name": "Irene",
+        "sex": "f",
+        "cls": "clerigo",
+        "lvl": 2,
+        "xp": 0,
+        "attrs": { "F": 3, "D": 3, "M": 7 },
+        "traits": [{ "id": "gafe" }, { "id": "bebedor", "hidden": true }],
+        "morale": 62,
+        "salary": 14,
+        "fee": 45,
+        "status": "ok",
+        "days": 0,
+        "quote": "«He cerrado heridas peores que la tuya. Y bocas.»",
+        "history": []
+      },
+      "fac": {
+        "dorm": 1,
+        "enf": 0,
+        "tab": 1,
+        "mapas": 0,
+        "arm": 0,
+        "cap": 0,
+        "forja": 0,
+        "establo": 0,
+        "patio": 0,
+        "empal": 0,
+        "torre": 0,
+        "vet": 0
+      },
+      "rep": 120,
+      "seed": "ref-3-120",
+      "at": 103,
+      "expect": {
+        "who": "h-ladron-clerigo-120",
+        "at": 103,
+        "end": 7.3999999999999995,
+        "won": true,
+        "hits": [
+          { "t": 0.7, "by": "h", "amount": 12, "crit": true },
+          { "t": 0.8, "by": "l", "amount": 5 },
+          { "t": 1.9, "by": "l", "amount": 5 },
+          { "t": 2.2, "by": "h", "amount": 13, "crit": true },
+          { "t": 3, "by": "l", "amount": 5 },
+          { "t": 3.7, "by": "h", "amount": 7 },
+          { "t": 4.1, "by": "l", "amount": 6 },
+          { "t": 5.2, "by": "h", "amount": 6 },
+          { "t": 5.2, "by": "l", "amount": 5 },
+          { "t": 6.3, "by": "l", "amount": 5 },
+          { "t": 6.7, "by": "h", "amount": 2 }
+        ],
+        "hp": { "h": 55, "l": 40 }
+      }
+    },
+    {
+      "name": "clerigo con 600 de fama",
+      "hero": {
+        "id": "h-ladron-clerigo-600",
+        "seed": "h-ladron-clerigo-600-Marina Hiedra",
+        "name": "Marina Hiedra",
+        "sex": "f",
+        "cls": "clerigo",
+        "lvl": 4,
+        "xp": 0,
+        "attrs": { "F": 4, "D": 4, "M": 10 },
+        "traits": [{ "id": "codicioso" }, { "id": "arrogante", "hidden": true }],
+        "morale": 71,
+        "salary": 25,
+        "fee": 87,
+        "status": "ok",
+        "days": 0,
+        "quote": "«Los dioses me escuchan. A veces contestan.»",
+        "history": []
+      },
+      "fac": {
+        "dorm": 1,
+        "enf": 0,
+        "tab": 1,
+        "mapas": 0,
+        "arm": 0,
+        "cap": 0,
+        "forja": 0,
+        "establo": 0,
+        "patio": 0,
+        "empal": 0,
+        "torre": 0,
+        "vet": 0
+      },
+      "rep": 600,
+      "seed": "ref-3-600",
+      "at": 103,
+      "expect": {
+        "who": "h-ladron-clerigo-600",
+        "at": 103,
+        "end": 8.6,
+        "won": false,
+        "hits": [
+          { "t": 0.7, "by": "h", "amount": 11 },
+          { "t": 0.8, "by": "l", "amount": 9 },
+          { "t": 1.9, "by": "l", "amount": 9 },
+          { "t": 2.2, "by": "h", "amount": 11 },
+          { "t": 3, "by": "l", "amount": 9 },
+          { "t": 3.7, "by": "h", "amount": 11 },
+          { "t": 4.1, "by": "l", "amount": 8 },
+          { "t": 5.2, "by": "h", "amount": 10 },
+          { "t": 5.2, "by": "l", "amount": 7 },
+          { "t": 6.3, "by": "l", "amount": 9 },
+          { "t": 6.7, "by": "h", "amount": 12 },
+          { "t": 7.4, "by": "l", "amount": 8 }
+        ],
+        "hp": { "h": 68, "l": 60 }
+      }
+    },
+    {
+      "name": "explorador con 0 de fama",
+      "hero": {
+        "id": "h-ladron-explorador-0",
+        "seed": "h-ladron-explorador-0-Nela Granizo",
+        "name": "Nela Granizo",
+        "sex": "f",
+        "cls": "explorador",
+        "lvl": 3,
+        "xp": 0,
+        "attrs": { "F": 6, "D": 10, "M": 2 },
+        "traits": [{ "id": "arrogante" }, { "id": "leal", "hidden": true }],
+        "morale": 60,
+        "salary": 21,
+        "fee": 72,
+        "status": "ok",
+        "days": 0,
+        "quote": "«Duermo mejor bajo un árbol que bajo tu techo. Sin ofender.»",
+        "history": []
+      },
+      "fac": {
+        "dorm": 1,
+        "enf": 0,
+        "tab": 1,
+        "mapas": 0,
+        "arm": 0,
+        "cap": 0,
+        "forja": 0,
+        "establo": 0,
+        "patio": 0,
+        "empal": 0,
+        "torre": 0,
+        "vet": 0
+      },
+      "rep": 0,
+      "seed": "ref-4-0",
+      "at": 104,
+      "expect": {
+        "who": "h-ladron-explorador-0",
+        "at": 104,
+        "end": 2.3,
+        "won": true,
+        "hits": [
+          { "t": 0.5, "by": "h", "amount": 9 },
+          { "t": 0.8, "by": "l", "amount": 3 },
+          { "t": 1.6, "by": "h", "amount": 11 }
+        ],
+        "hp": { "h": 68, "l": 20 }
+      }
+    },
+    {
+      "name": "explorador con 120 de fama",
+      "hero": {
+        "id": "h-ladron-explorador-120",
+        "seed": "h-ladron-explorador-120-Casimiro de la Torre",
+        "name": "Casimiro de la Torre",
+        "sex": "m",
+        "cls": "explorador",
+        "lvl": 4,
+        "xp": 0,
+        "attrs": { "F": 5, "D": 10, "M": 3 },
+        "traits": [{ "id": "leal" }, { "id": "supersticioso", "hidden": true }],
+        "morale": 62,
+        "salary": 25,
+        "fee": 87,
+        "status": "ok",
+        "days": 0,
+        "quote": "«Duermo mejor bajo un árbol que bajo tu techo. Sin ofender.»",
+        "history": []
+      },
+      "fac": {
+        "dorm": 1,
+        "enf": 0,
+        "tab": 1,
+        "mapas": 0,
+        "arm": 0,
+        "cap": 0,
+        "forja": 0,
+        "establo": 0,
+        "patio": 0,
+        "empal": 0,
+        "torre": 0,
+        "vet": 0
+      },
+      "rep": 120,
+      "seed": "ref-4-120",
+      "at": 104,
+      "expect": {
+        "who": "h-ladron-explorador-120",
+        "at": 104,
+        "end": 4.5,
+        "won": true,
+        "hits": [
+          { "t": 0.5, "by": "h", "amount": 11 },
+          { "t": 0.8, "by": "l", "amount": 6 },
+          { "t": 1.6, "by": "h", "amount": 12 },
+          { "t": 1.9, "by": "l", "amount": 6 },
+          { "t": 2.7, "by": "h", "amount": 12 },
+          { "t": 3, "by": "l", "amount": 6 },
+          { "t": 3.8, "by": "h", "amount": 5, "crit": true }
+        ],
+        "hp": { "h": 67, "l": 40 }
+      }
+    },
+    {
+      "name": "explorador con 600 de fama",
+      "hero": {
+        "id": "h-ladron-explorador-600",
+        "seed": "h-ladron-explorador-600-Mencía",
+        "name": "Mencía",
+        "sex": "f",
+        "cls": "explorador",
+        "lvl": 4,
+        "xp": 0,
+        "attrs": { "F": 4, "D": 10, "M": 2 },
+        "traits": [{ "id": "bebedor" }, { "id": "arrogante", "hidden": true }],
+        "morale": 69,
+        "salary": 23,
+        "fee": 81,
+        "status": "ok",
+        "days": 0,
+        "quote": "«Huelo la lluvia dos días antes. Y a los bandidos, tres.»",
+        "history": []
+      },
+      "fac": {
+        "dorm": 1,
+        "enf": 0,
+        "tab": 1,
+        "mapas": 0,
+        "arm": 0,
+        "cap": 0,
+        "forja": 0,
+        "establo": 0,
+        "patio": 0,
+        "empal": 0,
+        "torre": 0,
+        "vet": 0
+      },
+      "rep": 600,
+      "seed": "ref-4-600",
+      "at": 104,
+      "expect": {
+        "who": "h-ladron-explorador-600",
+        "at": 104,
+        "end": 7.8,
+        "won": true,
+        "hits": [
+          { "t": 0.5, "by": "h", "amount": 9 },
+          { "t": 0.8, "by": "l", "amount": 7 },
+          { "t": 1.6, "by": "h", "amount": 9 },
+          { "t": 1.9, "by": "l", "amount": 8 },
+          { "t": 2.7, "by": "h", "amount": 8 },
+          { "t": 3, "by": "l", "amount": 8 },
+          { "t": 3.8, "by": "h", "amount": 9 },
+          { "t": 4.1, "by": "l", "amount": 9 },
+          { "t": 4.9, "by": "h", "amount": 10 },
+          { "t": 5.2, "by": "l", "amount": 9 },
+          { "t": 6, "by": "h", "amount": 10 },
+          { "t": 6.3, "by": "l", "amount": 9 },
+          { "t": 7.1, "by": "h", "amount": 5 }
+        ],
+        "hp": { "h": 62, "l": 60 }
+      }
+    }
+  ]
+}

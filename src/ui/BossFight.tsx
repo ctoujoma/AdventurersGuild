@@ -4,14 +4,8 @@ import { bufferCanvas } from '../art/canvas';
 import { generateLook } from '../art/heroes/look';
 import { audio } from '../audio/audio';
 import { haptic } from '../platform/haptics';
-import {
-  ABILITIES,
-  Combat,
-  STEP,
-  type AbilityId,
-  type CombatResult,
-  type Order,
-} from '../core/combat';
+import { Combat, STEP, type CombatResult, type Order } from '../core/combat';
+import { ABILITIES, critReady, skillCharge, type AbilityId } from '../core/fight';
 import type { BossFight as Fight } from '../core/model';
 import { BOSSES, type BossKind } from '../data/bosses';
 import { PLACE_INFO } from '../data/places';
@@ -74,9 +68,9 @@ const viewOf = (c: Combat): HeroView[] =>
     name: u.name.split(' ')[0]!,
     hp: u.hp / u.max,
     skill: u.ability,
-    charge: u.ability ? 1 - (u.charge ?? 0) / ABILITIES[u.ability].every : 0,
+    charge: skillCharge(u),
     target: u.target,
-    chance: !!u.critOpen && !u.critTaken && u.hp > 0,
+    chance: critReady(u),
   }));
 
 /**
@@ -158,7 +152,7 @@ export function BossFight({ fight, onClose, onResult }: Props) {
         b.setHp(u.id, u.hp / u.max);
         if (u.target) b.aim(u.id, u.target);
         // La ocasión de crítico solo se marca si la puede coger el jugador.
-        if (u.side === 'h') b.setChance(u.id, playing && !!u.critOpen && !u.critTaken && u.hp > 0);
+        if (u.side === 'h') b.setChance(u.id, playing && critReady(u));
       }
       if (combat.result && !reported) {
         reported = true;

@@ -60,6 +60,7 @@ import {
   START,
   START_BEER,
   REPORTS_KEEP,
+  QUEST_LOG_KEEP,
   START_FOOD,
   chapelRest,
   healRate,
@@ -127,6 +128,7 @@ import {
   type Hero,
   type Custom,
   type Quest,
+  type QuestLogEntry,
   type Report,
 } from './model';
 import { MORALE_LOW, MORALE_QUIT } from './party';
@@ -222,7 +224,8 @@ export type Action =
   | { type: 'incident'; id: string; act: IncidentAct }
   /** Poner a trabajar a un trabajador o a un héroe en una sala (null: deja de trabajar). */
   | { type: 'assign'; who: string; room: string | null }
-  | { type: 'send'; questId: string; heroIds: string[] }
+  /** `unguard`: los de guardia del grupo dejan la guardia para ir (y vuelven a ella al volver). */
+  | { type: 'send'; questId: string; heroIds: string[]; unguard?: boolean }
   | { type: 'upgrade'; fac: keyof Facilities }
   | { type: 'upgradeRoom'; id: string }
   | { type: 'build'; room: RoomType; col: number; floor: number }
@@ -314,14 +317,19 @@ export function canHire(s: GameState, id: string): string | null {
   return null;
 }
 
-export function canSend(s: GameState, questId: string, heroIds: readonly string[]): string | null {
+export function canSend(
+  s: GameState,
+  questId: string,
+  heroIds: readonly string[],
+  unguard = false,
+): string | null {
   const q = s.quests.find((x) => x.id === questId);
   if (!q) return 'Ese encargo ya no está en el tablón.';
   if (!heroIds.length) return 'Elige al menos un héroe.';
   if (heroIds.length > q.slots) return `Este encargo admite ${q.slots} como máximo.`;
   const party = heroIds.map((id) => s.heroes.find((h) => h.id === id));
   if (party.some((h) => !h || h.status !== 'ok')) return 'Alguien del grupo no está disponible.';
-  const guard = party.find((h) => h!.guard);
+  const guard = !unguard && party.find((h) => h!.guard);
   if (guard) return `${guard.name} está de guardia en la taberna.`;
   const proud = party.find((h) => h!.traits.some((t) => t.id === 'arrogante' && !t.hidden));
   if (proud && party.some((h) => h!.lvl < proud.lvl))
@@ -647,12 +655,17 @@ function reduceAction(state: GameState, action: Action): GameState {
       return s;
     }
     case 'send': {
-      if (canSend(state, action.questId, action.heroIds)) return state;
+      if (canSend(state, action.questId, action.heroIds, action.unguard)) return state;
       const s = structuredClone(state);
       const q = s.quests.find((x) => x.id === action.questId)!;
       const party = action.heroIds.map((id) => s.heroes.find((x) => x.id === id)!);
       const days = tripDays(q, party, s.fac.establo);
       for (const h of party) {
+        // Deja la guardia para ir; al volver, la retoma si sigue habiendo sitio en su puesto.
+        if (h.guard) {
+          delete h.guard;
+          h.guardBefore = true;
+        }
         h.status = 'mision';
         h.days = days;
         if (h.job) h.jobBefore = h.job;
@@ -1081,6 +1094,21 @@ function settleDue(m: Mission, part: number): boolean {
   return (days - m.daysLeft + part) / days >= at - 1e-9;
 }
 
+/** Apunta el encargo resuelto en el historial (el más nuevo primero, con tope). */
+function logQuest(s: GameState, m: Mission, r: Report): void {
+  const entry: QuestLogEntry = {
+    id: m.id,
+    title: m.quest.title,
+    place: m.quest.place,
+    sent: Math.max(1, r.day - (Math.max(1, m.quest.days) - m.daysLeft)),
+    day: r.day,
+    who: r.who,
+    outcome: r.outcome,
+    report: r.id,
+  };
+  s.questLog = [entry, ...(s.questLog ?? []).filter((e) => e.id !== m.id)].slice(0, QUEST_LOG_KEEP);
+}
+
 /**
  * Resuelve un encargo al acabar lo suyo: llega el informe (el oro, la fama y el botín, con él)
  * y el grupo emprende la vuelta con cómo ha quedado cada uno. Los muertos y perdidos, ya no
@@ -1134,6 +1162,7 @@ function settleMission(
   }
   m.waiting = undefined;
   m.done = { report: r.id, outcome: r.outcome, fates };
+  logQuest(s, m, r);
   const bad = r.outcome === 'Fracaso' || r.outcome === 'Desastre';
   events.push({
     t: `Llega aviso de ${r.who} desde ${m.quest.place}: ${r.outcome.toLowerCase()}.`,
@@ -1327,7 +1356,7 @@ export function endDay(state: GameState, away = false): GameState {
   }
   if (isFeastDay(s.day))
     events.push({
-      t: 'Hoy es la fiesta de la comarca: si montas la fiesta en la taberna, la caja lo notará.',
+      t: 'Hoy es la fiesta de la comarca: si la montas en el salón (Personalizar), la caja lo notará.',
     });
 
   // Regresos.

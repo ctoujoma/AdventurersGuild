@@ -66,6 +66,8 @@ import { rackIcon } from '../../art/items';
 import { hasLegend } from '../../art/heroes/gear';
 import { LANTERN, dummy, furnish, gearRoom, type Glow, type RGB } from './furniture';
 import { chalkPlan } from './ruina';
+import { NOTE_AT, awayGroups, awayNote, awayPaper, bedNote, cloakOf, madeBed } from './fuera';
+import { quiltRamp } from './salas/camas';
 import { towerLampY, watchtower } from './salas/torre';
 import { BLIND, CANDLE, takeWallActs, type ActId, type PoiKind, type Round } from './salas/kit';
 import { FLIGHT_Z, flightArt, goesRight } from './stairs';
@@ -264,6 +266,15 @@ const SIGN_KNOCK = 4.2;
 const SIGN_SPIN_MAX = 6;
 
 /** Un mueble anclado: su malla, su esquina de arriba a la izquierda, su escala y su pared. */
+/** Una sala tal como se montó: su pared, su luz y la sala vestida (para pintar encima). */
+interface RoomBox {
+  r: Rect;
+  back: PixelBuffer;
+  ambient: Tint;
+  sun: number;
+  room: Room;
+}
+
 interface Pin {
   mesh: Object3D;
   x: number;
@@ -342,6 +353,7 @@ const ACT_LABEL: Record<ActId, string> = {
   mapa: 'Mapa de la comarca',
   candidatos: 'La barra: quien busca trabajo',
   equipo: 'Equipo del gremio',
+  fuera: 'Quién está fuera',
 };
 
 /** Iconos de 7×5 de los bocadillos (k negro, r rojo, w blanco, g oro, y limón, o roble, m plata, t y c pan). */
@@ -372,6 +384,8 @@ const TALK_INK: Record<string, string> = {
 /** Una cosa tocable de una sala: su recuadro en el mundo a su profundidad. */
 interface PropSpot {
   act?: ActId;
+  /** Lo que se lee al pasar por encima, si no es el de siempre de `act` (la nota de los de fuera). */
+  label?: string;
   /** Sitio al que va la gente a hacer algo (sin `act`, no se toca: solo se usa). */
   poi?: PoiKind;
   room: string;
@@ -631,6 +645,15 @@ export class RoomScene {
   /** Las hojas de las puertas entre salas, que se abren cuando alguien pasa (ver `doorway`). */
   private doors: Door[] = [];
   private hoverProp: PropSpot | null = null;
+  /**
+   * Lo de los que están fuera (ver `fuera.ts`): sus camas hechas y la nota del tablón, en su
+   * grupo (con su `Look` y sus anclas a la pared), que se rehace solo si cambia `awayAt`.
+   */
+  private awayAt = '';
+  private awayGroup: Group | null = null;
+  private awayLook: Look | null = null;
+  private awayPins: Pin[] = [];
+  private boxes = new Map<string, RoomBox>();
   /** Sitios para una obra: mientras los hay, solo se tocan ellos. */
   private targets: Spot[] | null = null;
   private chosen: string | null = null;
@@ -858,6 +881,7 @@ export class RoomScene {
     this.shiners = model.heroes.filter((h) => hasLegend(h.marks.gear)).map((h) => h.id);
     if (key === this.key) {
       this.crowd.setPeople(model.heroes);
+      this.showAway();
       this.showIncidents();
       return;
     }
@@ -878,6 +902,7 @@ export class RoomScene {
     this.pets.setRaven(model.raven ? this.perch : null);
     this.crowd.setPois(this.poisOf(L));
     this.crowd.setPeople(model.heroes);
+    this.showAway();
     this.showIncidents();
     if (this.routePts) this.routePts = this.routePoints(this.routeIds.split(' '));
     this.camera.world = { x0: L.x0, x1: L.x1, y0: L.y0, y1: L.y1 };
@@ -1999,6 +2024,12 @@ export class RoomScene {
     this.props = [];
     this.doors = [];
     this.hoverProp = null;
+    this.boxes.clear();
+    this.awayAt = '';
+    this.awayGroup = null;
+    this.awayLook?.dispose();
+    this.awayLook = null;
+    this.awayPins = [];
     const b = L.b;
     const g = this.world;
 
@@ -2389,6 +2420,7 @@ export class RoomScene {
       : null;
     if (fresh) takeWindows();
     const back = backWall(room, r.w, r.h, this.salonLook());
+    this.boxes.set(room.id, { r, back, ambient, sun, room });
     // La luz que entra por cada ventana: un foco del color del día un poco por delante de la
     // pared, a la altura del alféizar (solo se enciende con luz con ambiente y de día).
     const panes = takeWindows();
@@ -2591,6 +2623,97 @@ export class RoomScene {
       const img = scaffold(r.w * k, r.h * k);
       this.figure(this.world, img, r.x + r.w / 2, r.y + r.h, 3, ROOM_DIM, sun);
     }
+  }
+
+  /**
+   * Quien está fuera se nota (`fuera.ts`): su cama, hecha y vacía, en su dormitorio (una de las
+   * que no usa nadie de casa: `Crowd.awayBeds`) y la nota del tablón del salón. Las dos se leen
+   * al pasar por encima o al tocarlas. Se rehace solo si cambia quién falta, qué cama le espera o
+   * dónde está el tablón.
+   */
+  private showAway(): void {
+    const list = this.model?.away ?? [];
+    const beds = this.crowd.awayBeds(list);
+    const board = this.props.find((p) => p.act === 'tablon');
+    const key = JSON.stringify([
+      list.map((a) => [a.id, a.name, a.why, a.group, a.task, a.days, cloakOf(a)]),
+      [...beds].map(([id, b]) => [id, b.roomId, b.x, b.top]),
+      board ? [board.room, board.x0, board.y0] : null,
+    ]);
+    if (key === this.awayAt) return;
+    this.awayAt = key;
+    if (this.awayGroup) this.world.remove(this.awayGroup);
+    this.awayLook?.dispose();
+    const old = new Set(this.awayPins);
+    this.pins = this.pins.filter((p) => !old.has(p));
+    this.awayPins = [];
+    this.props = this.props.filter((p) => p.act !== 'fuera');
+    this.hoverProp = null;
+    this.pinnedAt = '';
+    this.awayGroup = null;
+    this.awayLook = null;
+    if (!list.length) return;
+    const g = new Group();
+    this.world.add(g);
+    const look = new Look(this.shared);
+    this.awayGroup = g;
+    this.awayLook = look;
+    const put = (img: PixelBuffer, x: number, base: number, z: number, box: RoomBox) => {
+      const n = this.pins.length;
+      this.figure(g, img, x, base, z, box.ambient, box.sun, { wall: box, look });
+      this.awayPins.push(...this.pins.slice(n));
+      // Delante de lo que está a su misma profundidad (la litera, el tablón).
+      const m = (g.children.at(-1) as Mesh).material as ShaderMaterial;
+      m.polygonOffset = true;
+      m.polygonOffsetFactor = -1;
+      m.polygonOffsetUnits = -4;
+    };
+    for (const a of list) {
+      const bed = beds.get(a.id);
+      const box = bed && this.boxes.get(bed.roomId);
+      if (!bed || !box || bed.kind !== 'litera') continue;
+      const tall = bed.tall ?? 40;
+      const cloak = cloakOf(a);
+      const base = box.r.y + box.r.h;
+      put(
+        madeBed(tall, bed.top, quiltRamp(box.room), cloak.field, cloak.dark),
+        bed.x,
+        base,
+        bed.z,
+        box,
+      );
+      // Se toca el piso de la cama (no la litera entera).
+      const k = scaleAt(bed.z);
+      const row = base - (40 - bed.top) / k;
+      this.props.push({
+        act: 'fuera',
+        label: bedNote(a),
+        room: bed.roomId,
+        x0: bed.x - 10 / k,
+        y0: row - 4 / k,
+        x1: bed.x + 10 / k,
+        y1: row + 7 / k,
+        z: bed.z,
+      });
+    }
+    const box = board && this.boxes.get(board.room);
+    if (!board || !box) return;
+    const img = awayPaper(awayGroups(list));
+    const x0 = board.x0 + (NOTE_AT.x * box.r.w) / box.back.w;
+    const y0 = board.y0 + (NOTE_AT.y * box.r.h) / box.back.h;
+    const z = DEPTH - 1;
+    const k = scaleAt(z);
+    put(img, x0 + img.w / k / 2, y0 + img.h / k, z, box);
+    this.props.push({
+      act: 'fuera',
+      label: awayNote(list),
+      room: board.room,
+      x0,
+      y0,
+      x1: x0 + img.w / k,
+      y1: y0 + img.h / k,
+      z,
+    });
   }
 
   /** Lo que el salón enseña de la partida: decoración, escudo y trofeos. */
@@ -3879,6 +4002,8 @@ export class RoomScene {
       round?: Round;
       mound?: boolean;
       mat?: Mat;
+      /** Con otro `Look` (lo que se rehace aparte: las camas de los de fuera). */
+      look?: Look;
     } = {},
   ): void {
     // Por duplicado (ver `dual`): la de siempre y la de luz con ambiente.
@@ -3903,8 +4028,8 @@ export class RoomScene {
     const m = o.mound
       ? this.mound(img, corners, x - w / 2, base - h, depth, k, ambient, sun)
       : mesh(
-          quad(corners, this.look),
-          this.look.surface(img, corners, {
+          quad(corners, o.look ?? this.look),
+          (o.look ?? this.look).surface(img, corners, {
             ambient,
             sun,
             wrap: 0.6,
@@ -5184,7 +5309,7 @@ export class RoomScene {
     const prop = this.propAt(cssX, cssY);
     if (prop) {
       this.cb.onSound?.('click', 0.5);
-      this.cb.onHotspot?.(`cosa:${prop.act!}:${prop.room}`, ACT_LABEL[prop.act!], {
+      this.cb.onHotspot?.(`cosa:${prop.act!}:${prop.room}`, prop.label ?? ACT_LABEL[prop.act!], {
         x: cssX,
         y: cssY,
         wx: w.x,
@@ -5279,7 +5404,7 @@ export class RoomScene {
   private raidGrab(p: Point): string | null {
     const id = this.heroAt(p.x, p.y);
     const u = id ? this.liveRaid?.live?.unit(id) : undefined;
-    return u && u.side === 'd' && !u.down ? id : null;
+    return u && u.side === 'h' && !u.down ? id : null;
   }
 
   /** La casilla de mudanza bajo un punto de la pantalla (si es válida). */
@@ -5754,7 +5879,7 @@ export class RoomScene {
         if (prop) {
           this.hover = null;
           c.style.cursor = 'pointer';
-          this.cb.onHover?.(ACT_LABEL[prop.act!], p);
+          this.cb.onHover?.(prop.label ?? ACT_LABEL[prop.act!], p);
           return;
         }
         if (who) {

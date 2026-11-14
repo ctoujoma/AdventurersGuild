@@ -1,3 +1,4 @@
+import type { ComponentChildren } from 'preact';
 import { canHire, roster, salaries } from '../../core/game';
 import type { GameState, Hero } from '../../core/model';
 import type { Task } from '../drop';
@@ -7,12 +8,13 @@ import { moraleBand } from '../../core/party';
 import { beds } from '../../core/rooms';
 import { CLASS_NAMES, MORALE_INFO, statusLabel } from '../../data/labels';
 import { help } from '../HoldHelp';
+import { gearHintText, upgradesFor } from '../gearHint';
 import { Icon } from '../icons';
 import { Portrait } from '../Portrait';
 import { Tabs } from '../Tabs';
 import { lookOf, marksOf, heroFrame } from '../view';
 
-export type HeroFilter = 'todos' | 'candidatos' | 'trabajadores';
+export type HeroFilter = 'todos' | 'candidatos' | 'trabajadores' | 'equipo';
 
 interface Props {
   game: GameState;
@@ -25,6 +27,8 @@ interface Props {
   onTask: (who: string, task: Task) => void;
   /** En Tareas, a quién elegir al abrir. */
   focus?: string | null;
+  /** La pestaña Equipo: el arcón (lo monta `App`, con sus acciones). */
+  equipo: ComponentChildren;
 }
 
 /** Lo que más importa de un héroe, en una chapa: si pide algo, su ánimo o si está de guardia. */
@@ -37,7 +41,10 @@ function heroFlag(h: Hero): { text: string; cls: string } | null {
   return null;
 }
 
-/** Plantilla del gremio, candidatos que esperan en la barra y trabajadores de la casa. */
+/**
+ * Plantilla del gremio, candidatos que esperan en la barra, trabajadores de la casa y el equipo
+ * (el arcón: el equipo es de los héroes).
+ */
 export function HeroesPanel({
   game,
   filter,
@@ -48,6 +55,7 @@ export function HeroesPanel({
   onFireWorker,
   onTask,
   focus,
+  equipo,
 }: Props) {
   const mine = game.heroes.filter((h) => h.status !== 'muerto');
   const cands = game.candidates;
@@ -59,12 +67,15 @@ export function HeroesPanel({
     // Lo que hace: su tarea si está en casa («Entrena Fuerza»), o su estado si está fuera.
     const doing = candidate ? statusLabel(h, true) : taskLabel(game, h.id);
     const pill = h.status === 'ok' ? (h.guard ? 'guard' : 'ok') : h.status;
+    // Equipo olvidado: hay algo mejor en el arcón para alguna de sus ranuras.
+    const ups = candidate ? [] : upgradesFor(game, h);
+    const gearHint = ups.length ? gearHintText(h.name.split(' ')[0]!, ups) : null;
     return (
       <article key={h.id} class="row">
         <button
           data-tut={`hero-${h.id}`}
           class="row-main"
-          aria-label={`${h.name}, ${CLASS_NAMES[h.cls][h.sex]} de nivel ${h.lvl}. ${doing}${flag ? `. ${flag.text}` : ''}. Ver ficha`}
+          aria-label={`${h.name}, ${CLASS_NAMES[h.cls][h.sex]} de nivel ${h.lvl}. ${doing}${flag ? `. ${flag.text}` : ''}${gearHint ? `. ${gearHint}` : '.'} Ver ficha`}
           onClick={() => onOpen(h.id)}
         >
           <Portrait
@@ -77,6 +88,11 @@ export function HeroesPanel({
           <span class="row-info" aria-hidden="true">
             <b>
               {h.name} {h.nick && <span class="nick">{h.nick}</span>}
+              {gearHint && (
+                <span class="gear-mark" {...help(gearHint)}>
+                  <Icon name="cofre" size={10} />
+                </span>
+              )}
             </b>
             <span class="row-sub">
               {CLASS_NAMES[h.cls][h.sex]} · {h.lvl} · <Icon name="coin" size={10} />
@@ -140,9 +156,18 @@ export function HeroesPanel({
             alert: crewAlerts(game).length,
             help: 'Quién hace qué en la casa: dónde trabaja cada uno, quién entrena, la guardia y quién descansa. Toca a alguien para cambiarle la tarea.',
           },
+          {
+            id: 'equipo',
+            label: 'Equipo',
+            icon: 'cofre',
+            count: game.inventory.length,
+            help: 'El arcón: el equipo (el guardado y el puesto), los tesoros para vender, los trofeos y los materiales.',
+          },
         ]}
       />
-      {filter === 'trabajadores' ? (
+      {filter === 'equipo' ? (
+        equipo
+      ) : filter === 'trabajadores' ? (
         <CrewList game={game} onOpen={onOpen} onTask={onTask} onFire={onFireWorker} focus={focus} />
       ) : filter === 'todos' ? (
         <>

@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
+import type { Report } from '../core/model';
 import { hushRule, type Notice } from './alerts';
 import { Icon } from './icons';
+import { MailPanel } from './panels/MailPanel';
+import { Tabs } from './Tabs';
+
+/** Lo que enseña la campana abierta: los avisos o los informes (el correo). */
+export type BellView = 'avisos' | 'informes';
 
 /** Lo que dura a la vista el aviso nuevo junto a la campana. */
 const PEEK_MS = 3200;
@@ -12,9 +18,12 @@ const GONE_MS = 220;
 const GONE_STEP = 40;
 
 /**
- * La campanita de avisos, arriba. Lleva su número; cuando llega uno nuevo se balancea, suena y
- * asoma el aviso un momento. Tocarla abre la lista; tocar un aviso lleva a donde se arregla.
- * Un aviso se descarta deslizándolo o con su «×» (ver `hushRule`), y hay «Descartar todos».
+ * La campanita de arriba: el único buzón, con los avisos y los informes (el correo). Lleva su
+ * número (avisos e informes sin leer); cuando llega un aviso nuevo se balancea, suena y lo asoma
+ * un momento. Abierta, dos pestañas: en «Avisos», tocar uno lleva a donde se arregla, y se
+ * descarta deslizándolo o con su «×» (ver `hushRule`), o con «Descartar todos»; en «Informes»,
+ * los informes de los grupos y las cartas, con «Leído todo». Quién la abre, y en qué pestaña,
+ * lo lleva `App` (el amanecer la abre en los informes).
  */
 export function AlertBell({
   alerts,
@@ -23,6 +32,12 @@ export function AlertBell({
   hushedCount,
   onUnhush,
   quiet,
+  reports,
+  onReport,
+  onReadAll,
+  onHistory,
+  open,
+  onOpen,
 }: {
   alerts: Notice[];
   onGo: (n: Notice) => void;
@@ -32,8 +47,15 @@ export function AlertBell({
   onUnhush: () => void;
   /** Hay algo delante (la noche, el cobro, la carta): lo nuevo espera a que se cierre. */
   quiet?: boolean;
+  reports: Report[];
+  onReport: (id: string) => void;
+  onReadAll: () => void;
+  /** Al historial de encargos (desde el pie de los informes). */
+  onHistory?: () => void;
+  open: BellView | null;
+  onOpen: (v: BellView | null) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const setOpen = (v: BellView | null) => onOpen(v);
   const [peek, setPeek] = useState<Notice | null>(null);
   /** Sube cada vez que llega algo nuevo: reinicia la animación de la campana. */
   const [ring, setRing] = useState(0);
@@ -60,7 +82,7 @@ export function AlertBell({
   }, [peek]);
   useEffect(() => {
     if (!open) return;
-    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(null);
     window.addEventListener('keydown', esc);
     return () => window.removeEventListener('keydown', esc);
   }, [open]);
@@ -118,15 +140,17 @@ export function AlertBell({
           },
         };
 
-  const n = alerts.length;
-  const worst = alerts[0]?.k;
+  const unread = reports.filter((r) => !r.read).length;
+  const n = alerts.length + unread;
+  // Sin avisos, el color de los informes nuevos (de un grupo que ha vuelto, bueno).
+  const worst = alerts[0]?.k ?? 'good';
   const hushable = alerts.filter((a) => hushRule(a) !== 'never' && !gone[a.id]);
   const go = (a: Notice) => {
     if (swiped.current) {
       swiped.current = false;
       return;
     }
-    setOpen(false);
+    setOpen(null);
     setPeek(null);
     audio.play('select');
     onGo(a);
@@ -136,12 +160,21 @@ export function AlertBell({
       <button
         key={ring}
         class={`btn-icon alerts-bell ${n ? `has-${worst}` : 'is-quiet'} ${ring ? 'is-ringing' : ''}`}
-        aria-label={n ? `${n} ${n === 1 ? 'aviso' : 'avisos'}` : 'Sin avisos'}
-        aria-expanded={open}
+        data-tut="correo"
+        aria-label={
+          [
+            alerts.length ? `${alerts.length} ${alerts.length === 1 ? 'aviso' : 'avisos'}` : '',
+            unread ? `${unread} ${unread === 1 ? 'informe sin leer' : 'informes sin leer'}` : '',
+          ]
+            .filter(Boolean)
+            .join(' y ') || 'Sin avisos ni informes nuevos'
+        }
+        aria-expanded={!!open}
         onClick={() => {
           audio.play(open ? 'close' : 'open');
           setPeek(null);
-          setOpen((o) => !o);
+          // Con informes sin leer, abre en ellos (lo nuevo de la mañana).
+          setOpen(open ? null : unread ? 'informes' : 'avisos');
         }}
       >
         <Icon name="bell" size={16} />
@@ -155,12 +188,43 @@ export function AlertBell({
       )}
       {open && (
         <>
-          <div class="alerts-scrim" onClick={() => setOpen(false)} />
-          <div class="alerts-pop" role="dialog" aria-label="Avisos">
-            <h3 class="alerts-title">
-              <Icon name="bell" size={14} /> Avisos
-            </h3>
-            {n ? (
+          <div class="alerts-scrim" onClick={() => setOpen(null)} />
+          <div class="alerts-pop" role="dialog" aria-label="Avisos e informes">
+            <Tabs
+              label="Buzón"
+              value={open}
+              onChange={(v) => {
+                audio.play('select', 0.5);
+                setOpen(v);
+              }}
+              tabs={[
+                { id: 'avisos', label: 'Avisos', icon: 'bell', count: alerts.length },
+                { id: 'informes', label: 'Informes', icon: 'letter', alert: unread },
+              ]}
+            />
+            {open === 'informes' ? (
+              <div class="alerts-mail">
+                <MailPanel
+                  reports={reports}
+                  onOpen={(id) => {
+                    setOpen(null);
+                    onReport(id);
+                  }}
+                  onReadAll={onReadAll}
+                />
+                {onHistory && (
+                  <button
+                    class="linklike alerts-history"
+                    onClick={() => {
+                      setOpen(null);
+                      onHistory();
+                    }}
+                  >
+                    <Icon name="lista" size={12} /> Historial de encargos
+                  </button>
+                )}
+              </div>
+            ) : alerts.length ? (
               <ul class="alerts-list">
                 {alerts.map((a, i) => {
                   const g = gone[a.id];
@@ -216,7 +280,7 @@ export function AlertBell({
                 <Icon name="check" size={16} /> Todo en orden. Nada que se te olvide.
               </p>
             )}
-            {(hushable.length > 1 || hushedCount > 0) && (
+            {open === 'avisos' && (hushable.length > 1 || hushedCount > 0) && (
               <div class="alerts-foot">
                 {hushable.length > 1 && (
                   <button class="linklike" onClick={() => dismiss(hushable.map((a) => a.id))}>

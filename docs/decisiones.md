@@ -85,7 +85,7 @@ Jefes, asaltos y el ladrón pelean con el mismo motor: mismas unidades, golpes, 
 
 Por qué: Hoy hay tres bucles de pelea distintos más las tiradas. Las expediciones traerían el quinto. Depende de: A2. Dónde: revision-critica.md, punto 6.
 
-Plan: Fase 4 · Un solo motor de pelea.
+Plan: Fase 4 · Un solo motor de pelea. **Hecho** (13 de noviembre): `core/fight.ts`; jefes, asaltos y ladrón dan lo mismo que antes (116 peleas de referencia).
 
 ### A7 · Las expediciones, después del tablón y del motor — Aprobada
 
@@ -215,7 +215,7 @@ El mapa pasa a tener pestaña (con los grupos fuera). La taberna es lo que se ve
 
 Por qué: El mapa se abre con un banderín pequeño; la pestaña «Taberna» solo cierra paneles.
 
-Plan: Fase 5 · Interfaz (en paralelo, agente de interfaz).
+Plan: Fase 5 · Interfaz. **Hecho** (14 de noviembre).
 
 ### C2 · El arcón dentro de Héroes — Aprobada
 
@@ -223,7 +223,7 @@ Héroes · Barra · Tareas · Equipo: el equipo es de los héroes.
 
 Por qué: Hoy está en Gremio › Arcón. Depende de: C1.
 
-Plan: Fase 5 · Interfaz (en paralelo, agente de interfaz).
+Plan: Fase 5 · Interfaz. **Hecho** (14 de noviembre).
 
 ### C3 · Un solo buzón — Aprobada con cambios
 
@@ -237,7 +237,7 @@ Nota del usuario: todo en la campana pero necesitamos un sitio con la lista de m
 
 Respuesta: Todo en la campana. El historial de encargos (cumplidos y en curso) lo planteo en C9 (nueva): elige dónde va.
 
-Plan: Fase 5 · Interfaz (en paralelo, agente de interfaz).
+Plan: Fase 5 · Interfaz. **Hecho** (14 de noviembre).
 
 ### C9 · Historial de encargos: dónde — Aprobada con cambios
 
@@ -251,7 +251,7 @@ Nota del usuario: a) y c), dos sitios que llevan al mismo panel, te parece bien?
 
 Aclaración: Sí: el Libro y el Tablón llevan al mismo panel del historial.
 
-Plan: Fase 5 · Interfaz (en paralelo, agente de interfaz).
+Plan: Fase 5 · Interfaz. **Hecho** (14 de noviembre).
 
 ### C4 · El Gremio, para la casa — Aprobada
 
@@ -259,7 +259,7 @@ Salas, Adornos y Libro en el Gremio. Partidas, Ajustes y Menú principal, en el 
 
 Por qué: Hoy el Gremio mezcla lo de jugar con lo del sistema, y Ajustes está dos veces. Depende de: C1, C2.
 
-Plan: Fase 5 · Interfaz (en paralelo, agente de interfaz).
+Plan: Fase 5 · Interfaz. **Hecho** (14 de noviembre).
 
 ### C5 · Ficha de sala: «Mejorar» arriba y qué da cada nivel — Aprobada
 
@@ -267,7 +267,7 @@ El botón «Mejorar · coste» junto al nivel, y «Ahora: …» y «Mejora: …�
 
 Por qué: Tardaste 200 días en ver el botón del salón. Pintor, sastrería, alquimia, cocina, bodega, despensa, servicio y recibidor no dicen qué da mejorarlos. Dónde: revision-critica.md, punto 4.
 
-Plan: Fase 5 · Interfaz (en paralelo, agente de interfaz).
+Plan: Fase 5 · Interfaz. **Hecho** (14 de noviembre).
 
 ### C6 · Botón «Personalizar» en las salas — Aprobada
 
@@ -275,7 +275,7 @@ Los colores de la sala y, en el salón, los adornos que se compran, en una hoja 
 
 Por qué: Los colores salen en medio de la ficha y solo en 9 salas; los adornos del salón se compran en el Gremio. Depende de: C5.
 
-Plan: Fase 5 · Interfaz (en paralelo, agente de interfaz).
+Plan: Fase 5 · Interfaz. **Hecho** (14 de noviembre).
 
 ### C7 · Talleres: recetas en pestañas — Aprobada
 
@@ -335,6 +335,8 @@ Boceto (12 de noviembre): https://claude.ai/artifact/GzzfZM9VD6mj3XJqcMNvqp (cop
 
 Elegida (12 de noviembre): **A, chapa**, de momento. Al usuario no le convence cargar tanto la nota: hacerla lo más ligera posible (iconos pequeños, chapa corta) y revisarla al verla en el juego.
 
+**Hecho** con la fase 5 (14 de noviembre): opción A, ligera (iconos de 10 px, chapa corta).
+
 Plan: Bocetos hechos; se hace en su fase (C7 con la fase 3, D1 en la 5, E1 en la 6).
 
 ### D2 · Hoja del encargo más cómoda — Aprobada
@@ -343,7 +345,7 @@ Los héroes ordenados por lo que aportan, y un toque «Quitar de guardia y lleva
 
 Por qué: Con 13 héroes hay que bajar, y los de guardia salen en gris sin forma de llevártelos. Depende de: B1.
 
-Plan: Fase 5 · Interfaz (en paralelo, agente de interfaz).
+Plan: Fase 5 · Interfaz. **Hecho** (14 de noviembre).
 
 ### D3 · Que no se olvide el equipo — Aprobada con cambios
 
@@ -355,7 +357,7 @@ Nota del usuario: solo el aviso de momento
 
 Respuesta: Incorporado: de momento, solo el aviso.
 
-Plan: Fase 5 · Interfaz (en paralelo, agente de interfaz).
+Plan: Fase 5 · Interfaz. **Hecho** (14 de noviembre).
 
 ### D4 · Mapa más legible — Aprobada
 
@@ -363,7 +365,7 @@ Nombres que se lean en el móvil, la leyenda a la vista, los grupos fuera con re
 
 Por qué: En el móvil los nombres se montan unos sobre otros y «Amenaza 59» no dice qué pasa si sube. Depende de: C1.
 
-Plan: Fase 5 · Interfaz (en paralelo, agente de interfaz).
+Plan: Fase 5 · Interfaz. **Hecho** (14 de noviembre).
 
 ### D5 · Quien está fuera se nota en la taberna — Aprobada
 
@@ -371,7 +373,7 @@ Camas hechas y vacías y una nota en el tablón con quién está fuera, para enc
 
 Por qué: Hoy en la escena no se nota quién falta.
 
-Plan: Fase 5 · Interfaz (en paralelo, agente de interfaz).
+Plan: Fase 5 · Interfaz. **Hecho** (14 de noviembre).
 
 ## 5 · Salas y equilibrio
 

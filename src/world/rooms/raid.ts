@@ -12,7 +12,7 @@
 import { P } from '../../art/palette';
 import { tinyDigits } from '../../art/digits';
 import type { Assault } from '../../core/assault';
-import type { AbilityId } from '../../core/combat';
+import type { AbilityId } from '../../core/fight';
 import type { RaidPlan, RaidStep } from '../../core/model';
 import { BANDIT_TYPES, banditLook } from '../battle';
 import type { PKind } from '../particles';

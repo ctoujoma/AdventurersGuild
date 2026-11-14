@@ -407,6 +407,16 @@ button:focus-visible {
   color: var(--fog);
 }
 
+.tab-ico {
+  position: relative;
+  display: inline-grid;
+}
+
+.tab-ico .badge {
+  top: -6px;
+  right: -14px;
+}
+
 .tab .icon {
   filter: grayscale(0.6) brightness(0.8);
   transition: transform 0.12s steps(2);
@@ -932,10 +942,54 @@ button:focus-visible {
   text-wrap: balance;
 }
 
+/* Lo que pide (iconos pequeños) y la chapa de cómo saldría con el mejor grupo de casa. */
+.note-odds {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.note-skills {
+  display: inline-flex;
+  gap: 2px;
+}
+.note-skill {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  box-shadow: inset 0 0 0 1px var(--tan);
+}
+.note-skill.ok {
+  background: rgba(99, 199, 77, 0.35);
+  box-shadow: inset 0 0 0 1px var(--leaf);
+}
+.note-skill.low {
+  background: rgba(228, 59, 68, 0.25);
+  box-shadow: inset 0 0 0 1px var(--wine);
+}
+.note-chance {
+  margin-left: auto;
+  padding: 0 4px;
+  font-family: var(--pixel);
+  font-size: var(--t-s);
+  line-height: 16px;
+  color: var(--white);
+  white-space: nowrap;
+}
+.note-chance.est-2 {
+  color: var(--ink);
+}
+.note-chance.est-none {
+  color: var(--text-soft);
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--tan);
+}
+
 .note-foot {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   border-top: 2px dashed var(--tan);
   padding-top: 3px;
   font-family: var(--pixel);
@@ -946,6 +1000,17 @@ button:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 2px;
+  white-space: nowrap;
+}
+
+/* «Nuevo» y «Rumor», como cinta en la esquina de la nota: arriba queda sitio para el plazo. */
+.note .note-new {
+  position: absolute;
+  top: -14px;
+  left: -10px;
+  margin: 0;
+  box-shadow: 0 0 0 2px var(--ink);
+  transform: rotate(-4deg);
 }
 
 .note-foot .reward {
@@ -1031,6 +1096,19 @@ button:focus-visible {
   flex-direction: column;
   gap: 2px;
   padding: 4px 3px;
+}
+
+/* Con cuatro, en un móvil estrecho o en el panel de al lado (tumbado), la palabra sin el icono
+   (Héroes · Barra · Tareas · Equipo). */
+@media (max-width: 479px),
+  (orientation: landscape) and (min-width: 900px),
+  (orientation: landscape) and (max-height: 520px) {
+  .segs:has(> .seg:nth-child(4)):not(:has(> .seg:nth-child(5))) .seg {
+    padding: 0 4px;
+  }
+  .segs:has(> .seg:nth-child(4)):not(:has(> .seg:nth-child(5))) .seg > .icon {
+    display: none;
+  }
 }
 
 .seg-n {
@@ -1561,11 +1639,16 @@ button:focus-visible {
 .qs-who .qs-sub {
   margin: 0;
 }
-.qs-repeat {
+.qs-repeat,
+.qs-unguard {
   justify-content: flex-start;
   max-width: 100%;
 }
-.qs-repeat span {
+.qs-unguard {
+  align-self: flex-start;
+}
+.qs-repeat span,
+.qs-unguard span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1639,6 +1722,36 @@ button:focus-visible {
 
 .pick:disabled .pick-name,
 .pick:disabled .pick-skills {
+  color: var(--text-soft);
+}
+
+/* De guardia: se le puede llevar (deja la guardia); un poco apagado hasta que se le elige. */
+.pick.is-guard:not([aria-pressed='true']) {
+  background: rgba(139, 155, 180, 0.22);
+}
+.pick-guard {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  padding: 0 3px;
+  font-family: var(--pixel);
+  font-size: var(--t-s);
+  white-space: nowrap;
+  color: var(--sand);
+  background: var(--slate);
+}
+.pick[aria-pressed='true'] .pick-guard {
+  background: var(--wine);
+}
+
+/* El aviso de equipo olvidado: una línea discreta por héroe que va. */
+.qs-gear {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--t-s);
   color: var(--text-soft);
 }
 
@@ -1842,6 +1955,44 @@ button:focus-visible {
 .room-desc {
   margin: 0;
   font-size: var(--t-m);
+}
+
+/* Qué da el nivel de ahora y qué daría el siguiente, bajo la cabecera (igual en todas las salas). */
+.room-levels {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.room-levels p {
+  margin: 0;
+  font-size: var(--t-m);
+}
+
+.room-levels b {
+  font-family: var(--pixel);
+  font-weight: 400;
+}
+
+/* «Personalizar» con algo pendiente (hoy es la fiesta): un punto, como en las pestañas. */
+.room-custom-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: 4px;
+  background: var(--red);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+
+.room-custom .adornos {
+  margin-bottom: 4px;
+}
+
+/* «Personalizar» deja ver la sala por encima, para mirar cómo quedaría un color. */
+@media (orientation: portrait) {
+  .as-sheet > .herocard.room-custom {
+    max-height: 72%;
+  }
 }
 
 .room-act {
@@ -3332,6 +3483,14 @@ button.trait[aria-pressed='true'] {
     0 0 2px var(--sand),
     0 0 2px var(--sand);
 }
+/* El nombre de un sitio, en una etiqueta de pergamino: se lee sobre el bosque o el agua. */
+.map-place small {
+  padding: 1px 3px;
+  color: var(--plum);
+  text-shadow: none;
+  background: rgba(234, 212, 170, 0.88);
+  box-shadow: 0 0 0 1px rgba(79, 47, 45, 0.55);
+}
 .map-tavern {
   display: flex;
   flex-direction: column;
@@ -3347,8 +3506,12 @@ button.trait[aria-pressed='true'] {
   filter: drop-shadow(0 1px 0 var(--sand));
 }
 .map-tavern small {
+  padding: 1px 3px;
   font-family: var(--pixel);
   color: var(--wine);
+  text-shadow: none;
+  background: rgba(234, 212, 170, 0.92);
+  box-shadow: 0 0 0 1px var(--wine);
 }
 .map-pin,
 .map-party,
@@ -3418,12 +3581,107 @@ button.trait[aria-pressed='true'] {
 
 .map-threat-line {
   margin: 0;
+  min-height: 28px;
   display: flex;
   align-items: center;
   gap: 4px;
   font-family: var(--pixel);
   font-size: var(--t-s);
   color: var(--wine);
+  cursor: pointer;
+}
+.map-threat-trend.up {
+  color: var(--red);
+}
+.map-threat-trend.down {
+  color: var(--leaf);
+}
+.map-threat-more {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  margin-left: 2px;
+  color: var(--sand);
+  background: var(--wine);
+}
+/* Qué es la amenaza: la barra con sus tramos, lo que pasa en cada uno y hacia dónde va. */
+.map-threat-info {
+  max-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: var(--t-s);
+  color: var(--ink);
+}
+.map-threat-info ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--text-soft);
+}
+.map-threat-info li b {
+  display: inline-block;
+  min-width: 20px;
+  font-family: var(--pixel);
+  font-weight: 400;
+}
+.map-threat-info li.now {
+  color: var(--wine);
+}
+.map-threat-info p {
+  margin: 0;
+}
+.map-threat-meter {
+  position: relative;
+  height: 8px;
+  background: var(--tan);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+.map-threat-meter i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--wine);
+}
+.map-threat-meter b {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--ink);
+}
+
+/* La leyenda, siempre a la vista bajo el mapa (lo demás, tras «?»). */
+.map-key {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  margin: 0;
+  padding: 0 4px;
+  list-style: none;
+  font-size: var(--t-s);
+  color: var(--text-soft);
+}
+.map-key li {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.map-key span {
+  display: inline-grid;
+  place-items: center;
+  width: 13px;
+  height: 13px;
+  font-family: var(--pixel);
+  font-size: var(--t-s);
+  color: var(--sand);
+}
+.map-key .lg-step {
+  border-radius: 50%;
 }
 
 /* Encima del mapa, arriba a la izquierda: la amenaza y la leyenda (tras «?»). */
@@ -3554,10 +3812,33 @@ button.trait[aria-pressed='true'] {
   min-width: 0;
   min-height: 44px;
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 8px;
   text-align: left;
   color: var(--ink);
+}
+/* Los retratos de quien va, pequeños y juntos: pesa más el viaje que cada héroe. */
+.map-trip-faces {
+  flex: none;
+  display: flex;
+}
+.map-trip-face {
+  zoom: 0.6;
+  margin-right: -6px;
+  line-height: 0;
+}
+.map-trip-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.map-trip-go {
+  flex: none;
+  padding: 4px;
+  line-height: 0;
+  box-shadow: inset 0 0 0 2px var(--tan);
 }
 .map-trip-main b {
   font-family: var(--pixel);
@@ -5628,6 +5909,60 @@ select.crew-free {
   margin-top: 2px;
   font-size: var(--t-s);
   color: var(--text-soft);
+}
+
+/* La campana también es el correo: sus informes, con la misma fila del correo. */
+.alerts-pop .segs {
+  margin-bottom: 6px;
+}
+
+.alerts-mail .rows {
+  gap: 6px;
+}
+
+.alerts-history {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  min-height: 32px;
+}
+
+/* El engranaje: partidas, ajustes y menú principal. */
+.gear-pop {
+  width: max-content;
+  min-width: 180px;
+  display: grid;
+  gap: 4px;
+}
+
+.gear-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 4px 10px;
+  font: var(--t-m) / 1.2 var(--pixel);
+  color: var(--plum);
+  text-align: left;
+  background: transparent;
+  box-shadow: 0 0 0 2px var(--tan);
+}
+
+.gear-item:hover,
+.gear-item:focus-visible {
+  background: var(--tan);
+}
+
+/* El historial de encargos, desde el libro y el tablón: discreto, arriba a la derecha. */
+.history-btn {
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 10px;
+  font-size: var(--t-s);
 }
 
 .alerts-foot {
@@ -7747,4 +8082,40 @@ div.item-count {
   background: var(--sand);
   border: 0;
   box-shadow: 0 0 0 3px var(--ink);
+}
+
+/* Equipo olvidado: el cofre junto al nombre (Héroes) y en el botón del equipo (ficha), y un punto
+   en cada ranura para la que hay algo mejor en el arcón. */
+.gear-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  margin-left: 4px;
+  vertical-align: middle;
+  background: var(--lemon);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+.act {
+  position: relative;
+}
+.act-mark {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  margin: 0;
+}
+.act-slot.has-better {
+  position: relative;
+}
+.act-slot.has-better::after,
+.doll-slot.has-better::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 6px;
+  height: 6px;
+  background: var(--lemon);
+  box-shadow: 0 0 0 1px var(--ink);
 }

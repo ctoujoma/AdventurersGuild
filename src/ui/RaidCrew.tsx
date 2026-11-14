@@ -6,7 +6,7 @@
  */
 import { useEffect, useState } from 'preact/hooks';
 import type { HeroLook, HeroMarks } from '../art/heroes/look';
-import { ABILITIES } from '../core/combat';
+import { ABILITIES, critReady, skillCharge, type AbilityId } from '../core/fight';
 import type { GameState } from '../core/model';
 import { Portrait } from './Portrait';
 import type { GameScene } from './SceneView';
@@ -22,7 +22,7 @@ interface Row {
   down: boolean;
   /** 0–1: lo que lleva cargada la habilidad. */
   charge: number;
-  skill?: keyof typeof ABILITIES;
+  skill?: AbilityId;
   chance: boolean;
   /** De camino a otra sala. */
   moving: boolean;
@@ -57,7 +57,6 @@ export function RaidCrew({
           .filter((d) => !d.worker)
           .map((d) => {
             const h = game.heroes.find((x) => x.id === d.id);
-            const every = d.ability ? ABILITIES[d.ability].every : 1;
             return {
               id: d.id,
               name: h?.name ?? d.id,
@@ -66,9 +65,9 @@ export function RaidCrew({
               frame: h ? heroFrame(h) : undefined,
               hp: d.hp / d.max,
               down: d.down,
-              charge: d.ability ? 1 - d.charge / every : 0,
+              charge: skillCharge(d),
               skill: d.ability,
-              chance: d.critOpen && !d.critTaken,
+              chance: critReady(d),
               moving: !!d.to,
             };
           }),

@@ -7,10 +7,10 @@ import { goldCap, vaultFull } from '../core/vault';
 import { listNames } from './text';
 import { rankUnlocks } from '../core/ranks';
 import { dawnIn, nightIn, shortDawn } from './when';
-import type { GameState } from '../core/model';
+import type { GameState, Report } from '../core/model';
 import { Counter } from './Counter';
 import { Icon } from './icons';
-import { AlertBell } from './AlertBell';
+import { AlertBell, type BellView } from './AlertBell';
 import type { Notice } from './alerts';
 import { bandNumber } from '../data/raids';
 
@@ -18,28 +18,65 @@ type Tip = 'oro' | 'rep' | 'comida' | 'cerveza' | 'pago' | 'asalto';
 
 /**
  * Barra superior: día, nombre y rango del gremio, oro, reputación, comida, cerveza y próximo pago. Al tocar
- * una cifra sale debajo una línea que explica qué es. El sonido está en Ajustes; en pantallas anchas,
- * también aquí.
+ * una cifra sale debajo una línea que explica qué es. A la derecha, la campana (avisos e informes),
+ * el sonido y el engranaje (partidas, ajustes y menú principal).
  */
 export function Hud({
   game,
   onSettings,
+  onSaves,
+  onTitle,
   alerts,
   onAlert,
   onHush,
   hushedCount,
   onUnhush,
   quiet,
+  reports,
+  onReport,
+  onReadAll,
+  onHistory,
+  bell,
+  onBell,
 }: {
   game: GameState;
   onSettings: () => void;
+  onSaves: () => void;
+  onTitle: () => void;
   alerts: Notice[];
   onAlert: (n: Notice) => void;
   onHush: (ids: string[]) => void;
   hushedCount: number;
   onUnhush: () => void;
   quiet?: boolean;
+  reports: Report[];
+  onReport: (id: string) => void;
+  onReadAll: () => void;
+  onHistory: () => void;
+  bell: BellView | null;
+  onBell: (v: BellView | null) => void;
 }) {
+  const [gear, setGear] = useState(false);
+  useEffect(() => {
+    if (!gear) return;
+    const esc = (e: KeyboardEvent) => e.key === 'Escape' && setGear(false);
+    window.addEventListener('keydown', esc);
+    return () => window.removeEventListener('keydown', esc);
+  }, [gear]);
+  /** Una entrada del engranaje: cierra el menú y abre lo suyo. */
+  const gearItem = (icon: 'pergamino' | 'ajustes' | 'puerta', label: string, go: () => void) => (
+    <button
+      class="gear-item"
+      onClick={() => {
+        audio.play('select');
+        setGear(false);
+        go();
+      }}
+    >
+      <Icon name={icon} size={16} />
+      <span>{label}</span>
+    </button>
+  );
   const [sound, setSound] = useState(audio.on);
   useEffect(() => audio.subscribe(setSound), []);
   const pay = nextPayment(game);
@@ -165,6 +202,12 @@ export function Hud({
           hushedCount={hushedCount}
           onUnhush={onUnhush}
           quiet={quiet}
+          reports={reports}
+          onReport={onReport}
+          onReadAll={onReadAll}
+          onHistory={onHistory}
+          open={bell}
+          onOpen={onBell}
         />
         <button
           class="btn-icon hud-sound"
@@ -174,9 +217,30 @@ export function Hud({
         >
           <Icon name={sound ? 'sound' : 'mute'} size={16} />
         </button>
-        <button class="btn-icon" aria-label="Ajustes" onClick={onSettings}>
-          <Icon name="ajustes" size={16} />
-        </button>
+        <div class="alerts gear">
+          <button
+            class="btn-icon"
+            data-tut="engranaje"
+            aria-label="Partidas, ajustes y menú principal"
+            aria-expanded={gear}
+            onClick={() => {
+              audio.play(gear ? 'close' : 'open');
+              setGear(!gear);
+            }}
+          >
+            <Icon name="ajustes" size={16} />
+          </button>
+          {gear && (
+            <>
+              <div class="alerts-scrim" onClick={() => setGear(false)} />
+              <div class="alerts-pop gear-pop" role="menu" aria-label="Sistema">
+                {gearItem('pergamino', 'Partidas', onSaves)}
+                {gearItem('ajustes', 'Ajustes', onSettings)}
+                {gearItem('puerta', 'Menú principal', onTitle)}
+              </div>
+            </>
+          )}
+        </div>
       </div>
       {tip && tips[tip] && (
         <p class="hud-tip" role="status" onClick={() => setTip(null)}>

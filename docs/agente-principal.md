@@ -277,3 +277,45 @@ talleres, nombres y marcos). El arte ya está listo para cinco:
   retratos). Dos cifras de calidad: la de la sala (`FACILITY_INFO`) y la de ahora con el artesano.
   La forja pasa de 2,4 a 1,3 pantallas con la misma partida.
 - Siguiente: fase 4 (un solo motor de pelea, A6).
+
+## Fase 4 hecha (13 de noviembre)
+
+- PR de las fases 1 a 3 fusionada (ctoujoma/AdventurersGuild#193); la rama se rehízo desde `main`.
+- `core/fight.ts`: `FightUnit`, `FightOrder`, `FightEvent` y la clase `Fight` (golpe, crítico con
+  ocasión e IA, habilidades, golpe fuerte con aviso y cubrirse). `Combat` (jefes), `Assault`
+  (asaltos) y `clockDuel` (ladrón) la usan; cada una traduce el registro a `CombatEvent`,
+  `RaidStep` o `DuelHit`, así que las escenas no cambiaron. `heroUnit` y `ABILITIES` viven en
+  `fight.ts` (`combat.ts` los reexporta).
+- Tests de referencia: `core/peleas.test.ts` con `core/fixtures/peleas.json` (70 jefes, 31 asaltos,
+  15 ladrones, en directo y repetidas con órdenes). Para regrabarlas:
+  `GRABAR_PELEAS=1 npx vitest run src/core/peleas.test.ts` y prettier sobre el JSON.
+- `npm run calib` y `npm run sim`, idénticos a antes.
+- Pendiente (paso 4): que `world/battle.ts` y `world/rooms/raid.ts` lean `FightEvent` (los
+  informes viejos de asalto guardan `RaidStep`: mantener el adaptador), la barra de habilidades
+  común de `BossFight` y `RaidCrew`, y el aviso del cabecilla en el asalto (cambia el equilibrio:
+  preguntar).
+- Siguiente: fase 5 (interfaz).
+
+## Fase 5 hecha (14 de noviembre)
+
+Repartida en cuatro agentes y juntada en la rama (sin choques):
+- **Navegación (C1–C4, C9)**: barra Tablón · Mapa · Héroes · Gremio (la taberna es lo de detrás);
+  Héroes con pestañas Héroes · Barra · Tareas · Equipo (el arcón; su pestaña interior se llama
+  «Piezas»); la campana con Avisos e Informes (adiós al correo de abajo); Gremio con Salas,
+  Adornos y Libro, y el engranaje con Partidas, Ajustes y Menú principal; historial de encargos
+  (`HistoryPanel`, `state.questLog`, 200 como mucho, `QUEST_LOG_KEEP`) desde el Libro, el Tablón y
+  la campana.
+- **Fichas de sala (C5, C6)**: `ROOM_INFO` en `data/roomInfo.ts` con «Ahora / Mejora» de todas las
+  salas y su test; botón «Personalizar» (`RoomCustom.tsx`) con colores y, en el salón, fiesta y
+  decoración (fuera de Gremio › Adornos; allí quedan letrero, fachada, jardín y animales).
+- **Encargos y mapa (D1–D4)**: nota del tablón con iconos y chapa (`outlook` en `core/suggest.ts`,
+  memorizado); hoja del encargo ordenada por `questFit` y «Quitar de guardia y llevar»
+  (`send` con `unguard`; retoma la guardia al volver); aviso de equipo mejor (`gearPower`,
+  `betterGear`, `ui/gearHint.ts`); mapa con rótulos que no se montan, leyenda a la vista y
+  amenaza explicada (`threatTrend`, `THREAT_STEPS`).
+- **La taberna (D5)**: `isAway`/`awayPlan` en `core/beds.ts`; camas hechas de los de fuera y nota
+  en el tablón del salón (`world/rooms/fuera.ts`).
+- `npm run sim`: victorias 86/72/53 %; normal, en lo difícil una baja cada ~21 encargos.
+- Dudas abiertas para el usuario: el aviso de equipo marca casi a todos si nadie lleva nada;
+  «Personalizar» va en la fila de botones del final; los animales siguen en Adornos.
+- Siguiente: fase 6 (salas: E1 galería del salón con escalera, E2, E4).

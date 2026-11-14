@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { maxOut, uncleBuilding } from '../../core/rooms';
 import { colX, floorTop, roomsLayout } from './layout';
-import { homes, outside, route, segments, spots, wander, workGoal, type Place } from './people';
+import {
+  awayBeds,
+  homes,
+  outside,
+  route,
+  segments,
+  spots,
+  wander,
+  workGoal,
+  type Place,
+} from './people';
 
 const L0 = () => roomsLayout(uncleBuilding());
 const centerOf = (L: ReturnType<typeof L0>, type: string): Place => {
@@ -102,6 +112,27 @@ describe('la gente de la casa', () => {
     );
     expect(h.get('v')?.bed?.roomId).toBe(vet!.roomId);
     expect(h.get('a')?.bed?.roomId).not.toBe(vet!.roomId);
+  });
+
+  it('a quien está fuera le espera una cama que no usa nadie de casa, en su dormitorio', () => {
+    const S = spots(roomsLayout(uncleBuilding()));
+    const room = S.beds[0]!.roomId;
+    const h = homes(
+      [
+        { id: 'a', status: 'ok', dorm: room },
+        { id: 'b', status: 'ok', dorm: room },
+      ],
+      S,
+    );
+    const away = awayBeds(h, [{ id: 'e', dorm: room }, { id: 'f' }], S);
+    const bed = away.get('e');
+    expect(bed?.roomId).toBe(room);
+    expect([h.get('a')?.bed, h.get('b')?.bed]).not.toContain(bed);
+    // Sin cama de sobra en el núcleo, no se le pone ninguna.
+    expect(away.has('f')).toBe(false);
+    // Si no queda ninguna libre, tampoco.
+    const all = S.beds.map((_, i) => ({ id: `x${i}`, status: 'ok' as const }));
+    expect(awayBeds(homes(all, S), [{ id: 'e', dorm: room }], S).size).toBe(0);
   });
 
   it('los que buscan trabajo y no caben en la barra esperan a su lado', () => {

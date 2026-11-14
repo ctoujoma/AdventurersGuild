@@ -223,6 +223,22 @@ export interface Mission {
   };
 }
 
+/** Un encargo resuelto, para el historial (ver `GameState.questLog`). */
+export interface QuestLogEntry {
+  /** Id de la misión. */
+  id: string;
+  title: string;
+  place: string;
+  /** Día en que salió el grupo y día en que llegó el informe. */
+  sent: number;
+  day: number;
+  /** El grupo, en palabras («Ana y Bruno»). */
+  who: string;
+  outcome: Outcome;
+  /** Id del informe (puede que el correo ya no lo guarde). */
+  report: string;
+}
+
 export type Outcome = 'Éxito brillante' | 'Éxito' | 'Éxito parcial' | 'Fracaso' | 'Desastre';
 
 export type ChipKind = 'good' | 'bad' | 'warn' | 'info';
@@ -798,6 +814,11 @@ export interface GameState {
   quiet?: number;
   /** El rango que se perdió por falta de encargos (para avisar al recuperarlo). */
   rankLost?: number;
+  /**
+   * Historial de encargos resueltos, el más nuevo primero (el correo solo guarda los últimos
+   * informes; esto, un resumen corto de cada uno, con tope `QUEST_LOG_KEEP`).
+   */
+  questLog?: QuestLogEntry[];
   /** Hora real (ms) de la última vez que se guardó con el juego abierto (tiempo que corre solo). */
   lastSeen?: number;
 }

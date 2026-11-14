@@ -200,11 +200,11 @@ una fase, `npm run sim` y una partida larga para ver que el ritmo sigue bien.
      trabajadores, más deprisa). La forja deja de sumar a las armas (B4); textos «sale raro» y de
      la forja (B7, B4).
    - B5 precio de venta por tramos de rareza y tipo (aprobado; los números, con el simulador).
-4. **Fase 4 · Un solo motor de pelea** (A6): jefes, asaltos y ladrón con el mismo motor; los
+4. **Fase 4 · Un solo motor de pelea** (A6) — **hecha** (13 de noviembre; falta que las escenas lean el registro común y la barra de habilidades): jefes, asaltos y ladrón con el mismo motor; los
    encargos sueltos siguen con tiradas calibradas contra él; los informes viejos se siguen viendo.
 5. **Bocetos antes de decidir** (para el usuario): C7 talleres con recetas en pestañas, D1 tarjeta
    del tablón que dice si se puede, E1 el altillo del salón (usando el fondo de la sala).
-6. **Fase 5 · Interfaz** (agente de interfaz, en paralelo desde ya; encargo por escribir): C1
+6. **Fase 5 · Interfaz** — **hecha** (14 de noviembre, con D1) (agente de interfaz, en paralelo desde ya; encargo por escribir): C1
    pestañas Tablón · Mapa · Héroes · Gremio; C2 el arcón en Héroes; C3 todo en la campana y C9
    el historial de encargos (un panel al que se llega desde el Libro y desde el Tablón); C4 el Gremio para la casa y lo del sistema en el
    engranaje; C5 ficha de sala con «Mejorar» arriba y qué da cada nivel (con test); C6 botón

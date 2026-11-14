@@ -24,11 +24,11 @@ interface Props {
 const flown = new Set<string>();
 
 /**
- * Los materiales del informe («+2 cuero») saltan de su chip a la pestaña Gremio, donde está el
- * estante del Arcón, como las monedas a la caja: un dibujito por cada uno (hasta cuatro).
+ * Los materiales del informe («+2 cuero») saltan de su chip a la pestaña Héroes, donde está el
+ * estante del arcón (Héroes › Equipo), como las monedas a la caja: un dibujito por cada uno (hasta cuatro).
  */
 function flyMats(root: HTMLElement): void {
-  const target = document.querySelector('[data-tut="tab-gremio"]');
+  const target = document.querySelector('[data-tut="tab-heroes"]');
   if (!target) return;
   const r = target.getBoundingClientRect();
   const to = { x: r.left + r.width / 2, y: r.top + r.height / 2 };

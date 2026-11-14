@@ -50,6 +50,24 @@ export interface SceneHero {
   train?: { at: number; perDay: number; max?: boolean };
 }
 
+/**
+ * Alguien que está fuera de casa (`isAway` en `core/beds.ts`): su cama se ve hecha y vacía y su
+ * nombre va en la nota del tablón del salón.
+ */
+export interface SceneAway {
+  id: string;
+  name: string;
+  look: HeroLook;
+  /** Por qué falta: de encargo, de expedición (cuando las haya) o desaparecido. */
+  why: 'encargo' | 'expedicion' | 'perdido';
+  /** El dormitorio en el que le espera su cama (si sobra una: `awayPlan`). */
+  dorm?: string;
+  /** Con quién va (id del grupo), a qué y los días que le quedan fuera. */
+  group?: string;
+  task?: string;
+  days?: number;
+}
+
 /** Los visitantes de hoy, en orden de llegada (la escena los hace entrar a lo largo del día). */
 export interface SceneVisitors {
   day: number;
@@ -82,6 +100,8 @@ export interface SceneModel {
   mats?: { fill: Partial<Record<Material, number>>; store: boolean };
   trophies: TrophyIcon[];
   heroes: SceneHero[];
+  /** Los que están fuera (de encargo o desaparecidos): camas hechas y la nota del tablón. */
+  away?: SceneAway[];
   /** Los incidentes en marcha: se ven en su sala mientras duran (solo dibujo). */
   incidents?: SceneIncident[];
   /** El día y el reloj (segundos): si un incidente se va con el reloj en su `until`, salió mal. */

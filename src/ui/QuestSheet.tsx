@@ -7,13 +7,15 @@ import { PERKS, partyClasses, tripDays } from '../core/classes';
 import { RISK_LABELS, moraleMod, skill } from '../core/party';
 import { questEstimate } from '../core/resolve';
 import { dressingOf } from '../core/crafting';
-import { repeatParty, suggestParty } from '../core/suggest';
+import { guardsAt, postOf } from '../core/guards';
+import { questFit, repeatParty, suggestParty } from '../core/suggest';
 import { CLASS_NAMES, dangerClass, dangerLabel, statusLabel } from '../data/labels';
 import { MATERIALS, QUEST_MATERIAL } from '../core/materials';
 import { help } from './HoldHelp';
 import { MatIcon } from './mats';
 import { Icon } from './icons';
 import { Portrait } from './Portrait';
+import { gearHintText, upgradesFor } from './gearHint';
 import { listNames, plural } from './text';
 import { lookOf, marksOf, memberOf, heroFrame } from './view';
 import { span } from './when';
@@ -22,7 +24,8 @@ interface Props {
   game: GameState;
   quest: Quest;
   onClose: () => void;
-  onSend: (ids: string[]) => void;
+  /** `unguard`: alguno del grupo está de guardia y la deja para ir. */
+  onSend: (ids: string[], unguard: boolean) => void;
 }
 
 /**
@@ -35,21 +38,39 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
   /** La historia del encargo, plegada a dos líneas hasta que se toca. */
   const [story, setStory] = useState(false);
   const heroes = game.heroes.filter((h) => h.status !== 'muerto');
-  // Los disponibles primero y, entre ellos, quien más destaca en lo que pide el encargo
-  // (su mejor habilidad de las pedidas y, a igualdad, la suma de todas).
-  const fit = (h: (typeof heroes)[number]) => {
-    const vals = q.challenges.map((c) => skill(memberOf(h, game.fac), c.skill));
-    return Math.max(0, ...vals) * 100 + vals.reduce((a, b) => a + b, 0);
-  };
-  const busyOf = (h: (typeof heroes)[number]) => h.status !== 'ok' || !!h.guard;
-  const ranked = [...heroes].sort(
-    (a, b) => Number(busyOf(a)) - Number(busyOf(b)) || fit(b) - fit(a),
+  // Primero los libres, luego los de guardia (se les puede llevar) y al final quien no está;
+  // en cada grupo, quien más aporta a este encargo (`questFit`, con su equipo puesto).
+  const fit = useMemo(
+    () => new Map(heroes.map((h) => [h.id, questFit(q, memberOf(h, game.fac))])),
+    [game, q],
   );
+  const rank = (h: (typeof heroes)[number]) => (h.status !== 'ok' ? 2 : h.guard ? 1 : 0);
+  const ranked = [...heroes].sort((a, b) => rank(a) - rank(b) || fit.get(b.id)! - fit.get(a.id)!);
   const party = sel.map((id) => heroes.find((h) => h.id === id)!).filter(Boolean);
   const members = party.map((h) => memberOf(h, game.fac));
   const est = questEstimate(q, members, game.fac);
   const scale = Math.max(1, ...est.rows.map((r) => Math.max(r.diff, r.power))) * 1.15;
-  const blocked = party.length ? canSend(game, q.id, sel) : null;
+  // Los de guardia que van: dejan su puesto (y lo retoman al volver).
+  const guards = party.filter((h) => h.guard);
+  const unguard = guards.length > 0;
+  const blocked = party.length ? canSend(game, q.id, sel, unguard) : null;
+  const guardNote = guards.length
+    ? (['puerta', 'tesoro'] as const)
+        .map((post) => {
+          const off = guards.filter((h) => postOf(h) === post);
+          if (!off.length) return null;
+          const left = guardsAt(game, post).length - off.length;
+          const where = post === 'puerta' ? 'la puerta' : 'la cámara';
+          return `${listNames(off.map((h) => h.name.split(' ')[0]!))} ${plural(off.length, 'deja', 'dejan')} la guardia: ${where} se queda ${left ? `con ${left}` : 'sin nadie'} hasta que ${plural(off.length, 'vuelva', 'vuelvan')}.`;
+        })
+        .filter(Boolean)
+        .join(' ')
+    : null;
+  // Equipo olvidado: lo mejor del arcón para los que van.
+  const gearNotes = party.flatMap((h) => {
+    const ups = upgradesFor(game, h);
+    return ups.length ? [gearHintText(h.name.split(' ')[0]!, ups)] : [];
+  });
   // Si a alguno le están cosiendo, la sastrería le espera (se puede cancelar desde allí).
   const sewing = party.filter((h) => dressingOf(game, h.id));
   const sewNames = listNames(sewing.map((h) => h.name.split(' ')[0]!));
@@ -223,27 +244,43 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
               </span>
             </button>
           )}
+          {gearNotes.map((t) => (
+            <p key={t} class="qs-gear" role="status">
+              <Icon name="cofre" size={12} /> {t}
+            </p>
+          ))}
           <div class="picks">
             {ranked.map((h) => {
               const on = sel.includes(h.id);
-              const busy = busyOf(h);
+              const busy = h.status !== 'ok';
+              const guard = !busy && !!h.guard;
               const mood = moraleMod(h);
               const skills = q.challenges.map(
                 (c) => `${c.skill.slice(0, 3)} ${skill(memberOf(h, game.fac), c.skill)}`,
               );
-              const state = busy ? (h.guard ? 'De guardia' : statusLabel(h)) : null;
+              const state = busy ? statusLabel(h) : null;
               return (
                 <button
                   key={h.id}
-                  class="pick"
+                  class={`pick ${guard ? 'is-guard' : ''}`}
                   aria-pressed={on}
                   disabled={busy}
+                  {...(guard
+                    ? help(
+                        'De guardia: tócalo para quitarle de guardia y llevarlo. Retoma la guardia al volver.',
+                      )
+                    : {})}
                   aria-label={[
                     h.name,
                     `${CLASS_NAMES[h.cls][h.sex]} de nivel ${h.lvl}`,
                     mood > 0 ? (h.sex === 'f' ? 'animada' : 'animado') : '',
                     mood < 0 ? (h.sex === 'f' ? 'desanimada' : 'desanimado') : '',
                     state ?? skills.join(', '),
+                    guard
+                      ? on
+                        ? 'deja la guardia para ir'
+                        : 'de guardia: quitar de guardia y llevar'
+                      : '',
                   ]
                     .filter(Boolean)
                     .join('. ')}
@@ -264,6 +301,12 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
                   <span class="pick-skills" aria-hidden="true">
                     {state ?? skills.map((x) => <span key={x}>{x}</span>)}
                   </span>
+                  {guard && (
+                    <span class="pick-guard" aria-hidden="true">
+                      <Icon name="escudo" size={10} />
+                      De guardia
+                    </span>
+                  )}
                   {on && (
                     <span class="check" aria-hidden="true">
                       <Icon name="check" size={12} />
@@ -273,10 +316,23 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
               );
             })}
           </div>
+          {ranked
+            .filter((h) => h.status === 'ok' && h.guard && !sel.includes(h.id))
+            .map((h) => (
+              <button
+                key={h.id}
+                class="btn btn-wood qs-unguard"
+                {...help('Deja la guardia para ir con el grupo y la retoma al volver.')}
+                onClick={() => toggle(h.id)}
+              >
+                <Icon name="escudo" size={12} />
+                <span>Quitar de guardia y llevar a {h.name.split(' ')[0]}</span>
+              </button>
+            ))}
         </div>
-        {(warn || blocked || sewNote) && (
+        {(warn || blocked || guardNote || sewNote) && (
           <p class="qs-warn" role="status">
-            {warn ?? blocked ?? sewNote}
+            {warn ?? blocked ?? guardNote ?? sewNote}
           </p>
         )}
         <button
@@ -288,7 +344,7 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
               ? `Enviar a ${listNames(party.map((h) => h.name))}`
               : 'Elige al menos un héroe'
           }
-          onClick={() => onSend(sel)}
+          onClick={() => onSend(sel, unguard)}
         >
           <Icon name="espadas" size={16} />
           {party.length ? `Enviar · ${party.length}` : 'Elige quién va'}

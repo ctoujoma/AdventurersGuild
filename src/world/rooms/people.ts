@@ -286,6 +286,27 @@ export function homes(people: readonly Resident[], S: Spots): Map<string, Goal> 
 }
 
 /**
+ * La cama que espera a cada uno de los que están fuera: una de las que no usa nadie de casa
+ * (`home`, de `homes`), en el dormitorio que dice el núcleo (`awayPlan`); quien no tiene, sin.
+ */
+export function awayBeds(
+  home: ReadonlyMap<string, Goal>,
+  away: readonly { id: string; dorm?: string }[],
+  S: Spots,
+): Map<string, BedSpot> {
+  const used = new Set([...home.values()].map((g) => g.bed));
+  const free = S.beds.filter((b) => !used.has(b));
+  const out = new Map<string, BedSpot>();
+  for (const p of away) {
+    if (!p.dorm) continue;
+    const i = free.findIndex((b) => b.roomId === p.dorm);
+    const b = i >= 0 ? free.splice(i, 1)[0] : free.shift();
+    if (b) out.set(p.id, b);
+  }
+  return out;
+}
+
+/**
  * A dónde va alguien que está en casa y libre durante el día: casi siempre al salón (a una
  * mesa libre o a la barra) y a veces a otra sala, a dar una vuelta. `rnd` da números de 0 a 1.
  */

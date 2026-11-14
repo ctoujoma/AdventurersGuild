@@ -285,6 +285,15 @@ guardan la pelea (`fight.sim`) para repetirla; hay que seguir pudiendo repetirla
 versión del motor o el registro ya jugado). Las peleas de las expediciones, el torneo y los
 amigos saldrían ya de aquí.
 
+**Estado (fase 4):** hechos (1) y (2). `core/fight.ts` tiene la unidad (`FightUnit`), las órdenes
+(`FightOrder`), el paso común (`Fight.act`: golpe, crítico, habilidades, golpe fuerte y cubrirse) y
+el registro común (`FightEvent`); `Combat`, `Assault` y el ladrón (`clockDuel`) solo ponen el sitio
+y traducen el registro a `CombatEvent`, `RaidStep` y `DuelHit`, así que las escenas no cambian.
+`core/peleas.test.ts` guarda con semillas fijas 70 peleas de jefe, 31 asaltos y 15 duelos (con y
+sin órdenes) y comprueba que dan exactamente lo mismo. Las interfaces leen la carga y el crítico
+del motor (`skillCharge`, `critReady`). Falta: (3) la barra de habilidades común y (4) que las
+dos escenas lean `FightEvent` en vez de `CombatEvent` / `RaidStep` (y `DuelHit`).
+
 ## 7. Encargos, mapa y navegación (pasada de interfaz)
 
 Con la partida del usuario en móvil (420 × 860), mandando dos grupos.
