@@ -41,7 +41,8 @@ export const START = {
 export const UPGRADE_COST: Record<keyof Facilities, readonly number[]> = {
   dorm: [0, 80, 170, 420, 750],
   enf: [0, 100, 230, 450],
-  tab: [0, 90, 250, 450, 750],
+  // El 5 (salón de banquetes) es un boceto para verlo: aún sin su efecto propio.
+  tab: [0, 90, 250, 450, 750, 1200],
   mapas: [0, 120, 340, 620],
   arm: [0, 150, 380, 650],
   cap: [0, 110, 320, 600],

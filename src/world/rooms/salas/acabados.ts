@@ -537,3 +537,160 @@ function frame(b: PixelBuffer, w: number, h: number, dark: string, light: string
   b.vline(3, 2, h - 4, light);
   b.vline(w - 4, 2, h - 4, light);
 }
+
+// ---------- El salón: un aspecto por nivel ----------
+//
+// El salón no usa los acabados de las demás salas: cada nivel tiene su color de pared, para que
+// se reconozca de un vistazo. 1: yeso basto con desconchones; 2: encalado con cenefa roja; 3:
+// verde de taberna sobre un arrimadero alto de paneles; 4: damasco granate con pilastras y
+// remates de oro; 5 (boceto): damasco azul con pilastras de mármol y zócalo de mármol.
+
+/** Yeso verde (nivel 3 del salón). */
+const SALON_GREEN: Ramp = [P.deep, P.deep, P.forest, P.leaf];
+/** Alto del arrimadero de paneles del salón (niveles 3 a 5). */
+export const SALON_DADO = 28;
+
+/** Lo que va en la pared del fondo del salón según su nivel (encima del yeso de siempre). */
+export function salonFinish(b: PixelBuffer, room: Room, wain: number, seed: string) {
+  const lvl = room.level;
+  const bw = b.w;
+  const bh = b.h;
+  const rail = bh - wain;
+  // Lo de la planta de abajo (en el de dos alturas, el arrimadero solo va abajo).
+  const dado = bh - SALON_DADO;
+  if (lvl <= 1) {
+    patches(b, bw, rail - 3, seed);
+    return;
+  }
+  if (lvl === 2) {
+    plaster(b, 0, 0, bw, rail - 3, `${seed}c`, PLASTER_FINE);
+    for (let x = 0; x < bw; x += 36) post(b, x, 0, 3, rail - 3, WOOD_DARK);
+    stencil(b, 4, bw, [P.wine, P.red], (x) => x % 36 < 3);
+    boardsH(b, rail, bw, wain);
+    return;
+  }
+  if (lvl === 3) {
+    plaster(b, 0, 0, bw, dado, `${seed}v`, SALON_GREEN);
+    for (let x = 0; x < bw; x += 36) post(b, x, 3, 3, dado - 3, WOOD_DARK);
+    cornice(b, 3, bw, true);
+    panels(b, dado, bw, SALON_DADO);
+    b.hline(0, dado, bw, P.oak);
+    b.hline(0, dado + 1, bw, P.black);
+    return;
+  }
+  const blue = lvl >= 5;
+  damask(b, 6, dado, bw, blue ? [P.navy, P.ocean, P.gold] : [P.wine, P.plum, P.gold]);
+  frieze(b, 6, bw);
+  for (let x = 0; x < bw; x += 36)
+    if (blue) marblePilaster(b, x, 12, dado);
+    else pilaster(b, x, 12, dado);
+  goldCornice(b, 2, bw);
+  if (blue) {
+    darkMarble(b, 0, dado, bw, SALON_DADO);
+    b.hline(0, dado, bw, P.gold);
+    b.hline(0, dado + 1, bw, P.amber);
+  } else {
+    goldPanels(b, dado, bw, SALON_DADO);
+    b.hline(0, dado, bw, P.gold);
+  }
+}
+
+/** Lo mismo en las paredes de los lados del salón (fondo × alto), planta a planta. */
+export function salonSideFinish(b: PixelBuffer, room: Room, seed: string) {
+  const lvl = room.level;
+  if (lvl < 2) return;
+  const w = b.w;
+  for (let f = 0; f * PITCH < b.h; f++) {
+    const yb = b.h - f * PITCH;
+    const yt = yb - ROOM_H;
+    if (lvl === 2) {
+      plaster(b, 0, yt, w, ROOM_H - 18, `${seed}${f}`, PLASTER_FINE);
+      stencil(b, yt + 5, w, [P.wine, P.red], () => false);
+      continue;
+    }
+    if (lvl === 3) {
+      plaster(b, 0, yt, w, ROOM_H - SALON_DADO, `${seed}${f}`, SALON_GREEN);
+      cornice(b, yt + 3, w, true);
+      panels(b, yb - SALON_DADO, w, SALON_DADO);
+      b.hline(0, yb - SALON_DADO, w, P.oak);
+      continue;
+    }
+    const blue = lvl >= 5;
+    damask(
+      b,
+      yt + 7,
+      yb - SALON_DADO,
+      w,
+      blue ? [P.navy, P.ocean, P.gold] : [P.wine, P.plum, P.gold],
+    );
+    frieze(b, yt + 7, w);
+    goldCornice(b, yt + 3, w);
+    if (blue) {
+      darkMarble(b, 0, yb - SALON_DADO, w, SALON_DADO);
+      b.hline(0, yb - SALON_DADO, w, P.gold);
+    } else {
+      goldPanels(b, yb - SALON_DADO, w, SALON_DADO);
+      b.hline(0, yb - SALON_DADO, w, P.gold);
+    }
+  }
+}
+
+/**
+ * El suelo del salón (debajo de la alfombra): tablas bastas (1), tablas de siempre (2),
+ * cestería con cenefa (3), espiga con filete de oro (4) y rombos de mármol (5).
+ */
+export function salonFloor(b: PixelBuffer, room: Room) {
+  const lvl = room.level;
+  if (lvl <= 1) {
+    // Tablas viejas: juntas abiertas y alguna tabla más oscura.
+    for (let x = 0; x < b.w; x += 8) {
+      b.vline(x, 0, b.h, P.black);
+      if ((x / 8) % 3 === 1) b.rect(x + 1, 0, 7, b.h, P.bark);
+    }
+    return;
+  }
+  if (lvl === 2) return;
+  if (lvl <= 4) floorFinish(b, { ...room, level: lvl }, 'tablas', '');
+  else floor4(b, 'piedra');
+}
+
+/** Desconchones del yeso basto: se ve el ladrillo de debajo. */
+function patches(b: PixelBuffer, bw: number, h: number, seed: string) {
+  let s = 0;
+  for (const ch of seed) s = (s * 31 + ch.charCodeAt(0)) >>> 0;
+  for (let x = 10; x < bw - 16; x += 36) {
+    s = (s * 1103515245 + 12345) >>> 0;
+    const px = x + (s % 14);
+    const py = 8 + ((s >>> 8) % Math.max(1, h - 24));
+    const pw = 7 + ((s >>> 4) % 6);
+    for (let j = 0; j < 5; j++) {
+      const inset = j === 0 || j === 4 ? 1 : 0;
+      b.hline(px + inset, py + j, pw - inset * 2, j % 2 ? P.brick : P.rust);
+      if (j % 2) b.set(px + 2 + ((j * 3) % 4), py + j, P.plum);
+    }
+    b.hline(px, py - 1, pw, P.clay);
+  }
+}
+
+/** Pilastra de mármol blanco con capitel y basa dorados (nivel 5 del salón). */
+function marblePilaster(b: PixelBuffer, x: number, y0: number, y1: number) {
+  b.rect(x - 2, y0, 7, y1 - y0, P.mist);
+  b.vline(x - 2, y0, y1 - y0, P.white);
+  b.vline(x + 4, y0, y1 - y0, P.fog);
+  b.vline(x + 1, y0 + 4, y1 - y0 - 8, P.fog);
+  for (const y of [y0, y1 - 4]) {
+    b.rect(x - 3, y, 9, 4, P.gold);
+    b.hline(x - 3, y, 9, P.lemon);
+    b.hline(x - 3, y + 3, 9, P.amber);
+  }
+}
+
+/** Zócalo de mármol oscuro (azul pizarra con vetas claras), en placas con su junta. */
+function darkMarble(b: PixelBuffer, x0: number, y0: number, w: number, h: number) {
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      const lx = x % 18;
+      const vein = (lx + y * 2) % 13 === 0 || (lx * 2 - y + 40) % 17 === 0;
+      b.set(x0 + x, y0 + y, lx === 0 ? P.black : vein ? P.steel : x % 36 < 18 ? P.navy : P.slate);
+    }
+}

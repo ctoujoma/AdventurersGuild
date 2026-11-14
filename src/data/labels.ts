@@ -92,6 +92,7 @@ export const FACILITY_INFO: Record<
       'Dos mesas, barriles, apliques, diana y caldero',
       'Manteles, trofeo, laúd, candelabro y fuego grande',
       'Gran salón: alfombra roja, dos candelabros y barra dorada',
+      'Salón de banquetes: araña de cristal, vidrieras, cortinajes y mármol',
     ],
     effect: (l) =>
       l === 0

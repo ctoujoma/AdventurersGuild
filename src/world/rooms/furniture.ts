@@ -9,8 +9,8 @@ import { PixelBuffer } from '../../art/pixel';
 import type { Building, Room } from '../../core/model';
 import * as Prop from '../props';
 import { ruinThings } from './ruina';
-import { PITCH } from './layout';
-import { scaleAt } from './view3d';
+import { PITCH, ROOM_H } from './layout';
+import { BACK, scaleAt } from './view3d';
 import { ART } from './salas';
 import { bedsOf } from './salas/camas';
 import { cotsOf } from './salas/enfermeria';
@@ -21,6 +21,7 @@ const VINO = [P.plum, P.wine, P.red, P.coral] as const;
 import {
   CANDLE,
   FIRE,
+  LANTERN,
   FRONT,
   MID,
   WALL,
@@ -28,6 +29,8 @@ import {
   ceilingGlow,
   chandelier,
   fire,
+  hung,
+  wallLight,
   type Bed,
   type Glow,
   type Thing,
@@ -36,11 +39,16 @@ import {
   HEARTH_RIGHT,
   HEARTH_Z,
   NO_LOOK,
+  HEARTH_SCONCES,
+  HEARTH_SCONCE_Y,
   bar,
   barrels,
+  crystalChandelier,
   hearth as salonHearth,
   larder,
   logPile,
+  salonSconces,
+  seat,
   stage,
   tableSet,
   type SalonLook,
@@ -153,7 +161,8 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
   const lvl = room.level;
   // Farol del techo en cada sala que se usa (salvo las que ponen sus propias luces).
   // (En las salas con su arte, en el nivel 3, la araña de hierro, igual de alta.)
-  if (!art?.ownLamp)
+  // (El salón pone las suyas: farol, araña de hierro, dos de latón o la de cristal.)
+  if (!art?.ownLamp && room.type !== 'salon')
     t.push({
       img: art && lvl >= 3 ? chandelier(9, lvl >= 4) : lamp(),
       x: w / 2,
@@ -166,51 +175,108 @@ export function furnish(room: Room, w: number, look: SalonLook = NO_LOOK): Thing
   switch (room.type) {
     case 'salon': {
       const decor = look.decor;
-      const big = decor.includes('chimenea');
+      // Fuego grande desde el nivel 3; la chimenea grande (decoración) lo aviva más.
+      const big = decor.includes('chimenea') || lvl >= 3;
       add(bar(lvl, decor.includes('barril')), 44, WALL - 16);
       t.at(-1)!.act = 'candidatos';
-      add(barrels(), 17, FRONT + 4);
+      // Lo justo: un barril y una caja; del 2, los barriles apilados.
+      if (lvl >= 2) add(barrels(), 17, FRONT + 4);
+      else {
+        add(Prop.barrel(), 12, FRONT + 4);
+        add(Prop.crate(), 26, FRONT + 2);
+      }
       // En el de dos alturas, el tiro de la chimenea sube hasta el techo.
       const rise = Math.round((room.h - 1) * PITCH * scaleAt(HEARTH_Z));
+      const hx = w - HEARTH_RIGHT;
       t.push({
         img: salonHearth(lvl, look.crest, big, rise),
-        x: w - HEARTH_RIGHT,
+        x: hx,
         z: HEARTH_Z,
         y: 0,
-        light: fire(10, big ? 120 : 90, FIRE, true),
+        light: fire(
+          10,
+          (lvl >= 3 ? 120 : lvl >= 2 ? 90 : 70) + (decor.includes('chimenea') ? 25 : 0),
+          FIRE,
+          big,
+        ),
         box: true,
         poi: 'warm',
       });
+      // La luz de los apliques de la chimenea (van pintados en ella).
+      if (lvl >= 2)
+        for (const px of HEARTH_SCONCES)
+          add(new PixelBuffer(1, 1), hx + (px - 28) / scaleAt(HEARTH_Z), HEARTH_Z - 2, 0, {
+            dy: HEARTH_SCONCE_Y / scaleAt(HEARTH_Z),
+            r: 40,
+            color: CANDLE,
+            power: 0.5,
+            flicker: 0.1,
+          });
+      // Y la de los de la pared.
+      const bh = Math.round((room.h * PITCH - (PITCH - ROOM_H)) * BACK);
+      const low = bh - Math.round(ROOM_H * BACK);
+      for (const x of salonSconces(room, Math.round(w * BACK)))
+        t.push(wallLight(room, x, low + 23));
       add(logPile(), w - 13, WALL - 12);
       if (decor.includes('tarima')) add(stage(), w - 94, WALL - 2);
-      t.push({ img: larder(), x: 84, z: WALL - 8, y: 0, hang: true });
+      // Las ristras y el jamón, en el salón sencillo (del 3 en adelante, no).
+      if (lvl <= 2) t.push({ img: larder(), x: 84, z: WALL - 8, y: 0, hang: true });
+      const linen = cloth(room, VINO);
       tables(room, w).forEach(({ x: tx, z }, i) => {
         const cards = i === 0 && decor.includes('naipes');
         const candle = lvl >= 2 && !cards;
         add(
-          tableSet(`${room.id}-${i}`, lvl >= 3 ? cloth(room, VINO) : undefined, candle, cards),
+          tableSet(`${room.id}-${i}`, lvl, lvl >= 3 ? linen : undefined, candle, cards),
           tx,
           z,
           0,
           candle ? { dy: 18, r: 34, color: CANDLE, power: 0.45, flicker: 0.12 } : undefined,
         );
-        add(Prop.stool(), tx - 18, z - 2);
-        add(Prop.stool(), tx + 18, z + 2);
+        add(seat(lvl), tx - 18, z - 2);
+        add(seat(lvl), tx + 18, z + 2);
       });
-      if (room.h > 1 || lvl >= 3 || decor.includes('lampara')) {
+      // La luz del techo: el farol (1–2), la araña de hierro (3), dos de latón (4) o, en el 5,
+      // la lámpara de araña de cristal en medio (con las dos de latón si hay sitio).
+      if (lvl <= 2)
+        t.push(hung(lamp(), w / 2, MID, 0, { ...ceilingGlow(w, 1, 4), color: LANTERN }));
+      else if (lvl === 3) t.push(hung(chandelier(9), w / 2, MID, 0, ceilingGlow(w, 3, 4)));
+      else {
+        const pair = lvl === 4 || w > 160;
+        const k = lvl >= 5 ? 0.22 : 0.3;
+        if (pair)
+          for (const x of [w * k, w * (1 - k)])
+            t.push(
+              hung(chandelier(9, true), x, MID, 0, {
+                ...ceilingGlow(w, 4, 4),
+                r: Math.round(ceilingGlow(w, 4, 4).r * 0.75),
+                power: 1.05,
+              }),
+            );
+        if (lvl >= 5)
+          t.push(
+            hung(crystalChandelier(8), w / 2, MID, 0, {
+              ...ceilingGlow(w, 4, 10),
+              r: Math.round(ceilingGlow(w, 4, 10).r * 1.15),
+              power: 1.6,
+            }),
+          );
+      }
+      if (room.h > 1 || decor.includes('lampara')) {
         // En el de dos alturas, colgada de una cadena larga hasta media sala.
         const drop = (room.h - 1) * (PITCH - 24);
+        // (Con la lámpara de hierro comprada, entre las de latón o junto a la de cristal.)
+        const lx = lvl === 4 ? w / 2 : w / 2 + (lvl >= 5 ? 34 : 20);
         if (drop)
           t.push({
             img: chain(Math.round(drop * scaleAt(MID))),
-            x: w / 2 + 20,
+            x: lx,
             z: MID,
             y: 0,
             hang: true,
           });
         t.push({
           img: Prop.chandelier(),
-          x: w / 2 + 20,
+          x: lx,
           z: MID,
           y: drop,
           hang: true,
