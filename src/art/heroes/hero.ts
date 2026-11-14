@@ -397,11 +397,22 @@ const NAPE: Grid = [
   '....hhhhhhhh....',
   '...hhhhhhhhhh...',
   '...hhhhhhhhhh...',
-  '...hhHhhhhHhh...',
-  '...hHhhhhhhHh...',
-  '...HhhHHHhhhH...',
-  '....HHhhhhHH....',
+  '..xhhhhhhhhhhx..',
+  '..xHhhhhhhhhHx..',
+  '...HhhhhhhhhH...',
+  '....HHHHHHHH....',
   '......XXXX......',
+];
+/** El casco por detrás: la cabeza entera, hasta la nuca. */
+const HELM_BACK: Grid = [
+  '................',
+  '....mmmmmmmm....',
+  '...mMmmmmmmMm...',
+  '...mmmmmmmmmm...',
+  '...mmmmmmmmmm...',
+  '...MmmmmmmmmM...',
+  '...MMmmmmmmMM...',
+  '....MMMMMMMM....',
 ];
 /** La coleta y la melena, vistas por detrás. */
 const NAPE_TAIL: Grid = [
@@ -450,7 +461,7 @@ function composeBack(look: HeroLook, marks: HeroMarks): PixelBuffer {
   if (hg !== 'capucha' && look.hairStyle === 'largo') body(NAPE_LONG);
   if (hg !== 'capucha' && look.hairStyle === 'coleta') body(NAPE_TAIL);
   if (hg === 'capucha') body(HELMS.capucha);
-  else if (hg === 'casco') body(HELMS.casco);
+  else if (hg === 'casco') body(HELM_BACK);
   else {
     if (!bald) body(FRONT_HAIR[look.hairStyle].slice(0, 4));
     if (hg) stamp(b, HATS[hg], c, 0, 0);
