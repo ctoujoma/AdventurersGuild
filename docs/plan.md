@@ -214,7 +214,9 @@ una fase, `npm run sim` y una partida larga para ver que el ritmo sigue bien.
 7. **Fase 6 · Salas**: E1 el altillo del salón (que la altura no cuente en el recargo y que la
    planta de arriba dé plazas; tras el boceto); E2 que cada nivel del salón se note (arte) y E4 un
    nivel 5 con su arte. C8 (patio, establo y empalizada) queda para más adelante (`futuro.md`).
-8. **Fase 7 · La noche**: N1 empezar por el ladrón nocturno, el mensajero, la pesadilla y el gato;
+8. **Fase 7 · La noche**: N0 (nota del usuario, 14 de noviembre) que la noche se vea toda la noche
+   del reloj: hoy al acostarse solo se agrisa y la noche cerrada sale un instante al pasar al día
+   siguiente (resto de la transición vieja); se adelanta con la fase 6, tras enseñarle capturas. N1 empezar por el ladrón nocturno, el mensajero, la pesadilla y el gato;
    N2 uno de cada dos noches de media, algo más con niebla o tormenta; con la noche acelerada se
    resuelve solo según quién esté de guardia. Minijuegos, más adelante (`futuro.md`).
 9. **Fase 8 · Expediciones** (agente de expediciones, al acabar lo anterior): respuestas ya
