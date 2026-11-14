@@ -18,10 +18,12 @@ import {
 import { audio } from '../../audio/audio';
 import { BufferImage } from '../BufferImage';
 import { dawnIn, nightIn, shortSpan, span } from '../when';
-import { help } from '../HoldHelp';
 import { Icon, type IconName } from '../icons';
 import { listNames, plural } from '../text';
 import { bandNumber, capBand } from '../../data/raids';
+import { THREAT_STEPS, threatTrend } from '../../core/events';
+import { Portrait } from '../Portrait';
+import { heroFrame, lookOf, marksOf } from '../view';
 
 interface Props {
   game: GameState;
@@ -101,6 +103,12 @@ function arrow(a: { x: number; y: number }, b: { x: number; y: number }, inv = 1
   return `M${p(0, 0)} L${p(-ux * s - uy * s * 0.6, -uy * s + ux * s * 0.6)} L${p(-ux * s + uy * s * 0.6, -uy * s - ux * s * 0.6)} Z`;
 }
 
+/** Ancho aproximado (px de pantalla) de un rótulo con la letra pequeña del mapa. */
+const labelW = (text: string) => text.length * 6.4 + 8;
+type Box = { x: number; y: number; w: number; h: number };
+const hits = (a: Box, b: Box) =>
+  a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
 /** Dónde va un grupo: media misión de ida y media de vuelta. */
 function partyPos(place: string, days: number, left: number) {
   const p = placeAt(place);
@@ -144,6 +152,7 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
   const byId = (id: string) => game.heroes.find((h) => h.id === id);
   // La amenaza nace donde termina la historia en marcha (o la última).
   const threat = game.threat ?? 0;
+  const trend = threatTrend(game);
   const lastChain = [...(game.chains ?? [])].reverse()[0];
   const threatAt = lastChain ? placeAt(chainDef(lastChain.id).steps.at(-1)!.place) : null;
   const missing = game.heroes.filter((h) => h.status === 'desaparecido');
@@ -160,8 +169,10 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
     () => typeof window !== 'undefined' && window.innerWidth > window.innerHeight,
   );
   const [info, setInfo] = useState<Info | null>(null);
-  /** La leyenda y la ayuda, plegadas tras el botón «?». */
+  /** El resto de la leyenda y la ayuda, plegadas tras el botón «?». */
   const [legend, setLegend] = useState(false);
+  /** Qué es la amenaza y qué pasa si sube, al tocarla. */
+  const [threatOpen, setThreatOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const [cardH, setCardH] = useState(0);
   useLayoutEffect(() => {
@@ -280,6 +291,48 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
   });
   /** Unidades del dibujo (las de los lugares) por píxel de pantalla: grosor de las líneas. */
   const unit = MAP_W / (buf.w * view.z);
+
+  // ---------- Rótulos sin montarse ----------
+  // Se ponen por orden de importancia (la taberna, donde hay algo que hacer o alguien, lo
+  // explorado y el resto; las regiones al final) y el que pisaría a otro ya puesto no sale: el
+  // punto sigue ahí y al tocarlo se ve su nombre. Al acercar el mapa caben más.
+  const shown = new Set<string>();
+  {
+    const placed: Box[] = [];
+    const t = screen(TAVERN.x, TAVERN.y);
+    const tn = customOf(game).name;
+    placed.push({ x: t.x - labelW(tn) / 2, y: t.y - 12, w: labelW(tn), h: 30 });
+    // Los grupos de viaje tapan lo que tienen debajo: su sitio, reservado.
+    for (const m of game.missions) {
+      const g = partyPos(m.quest.place, m.quest.days, m.daysLeft);
+      const at = screen(g.x, g.y);
+      placed.push({ x: at.x - 10, y: at.y - 10, w: 20, h: 20 });
+    }
+    const busy = (n: string) =>
+      game.quests.some((q) => q.place === n) ||
+      game.missions.some((m) => m.quest.place === n) ||
+      missing.some((h) => h.lostAt === n);
+    const order = Object.keys(PLACE_INFO)
+      .filter(known)
+      .map((n) => ({ n, k: busy(n) ? 0 : explored.includes(n) ? 1 : 2 }))
+      .sort((a, b) => a.k - b.k);
+    for (const { n } of order) {
+      const p = screen(placeAt(n).x, placeAt(n).y);
+      const box = { x: p.x - labelW(n) / 2, y: p.y + 3, w: labelW(n), h: 15 };
+      // Solo los que caben enteros en el visor (uno cortado en el borde no se lee).
+      if (box.x < 0 || box.x + box.w > size.w || box.y < 0 || box.y + box.h > size.h) continue;
+      if (placed.some((b) => hits(b, box))) continue;
+      placed.push(box);
+      shown.add(n);
+    }
+    for (const r of REGIONS) {
+      const p = screen(r.x, r.y);
+      const box = { x: p.x - labelW(r.name) / 2, y: p.y - 8, w: labelW(r.name), h: 16 };
+      if (placed.some((b) => hits(b, box))) continue;
+      placed.push(box);
+      shown.add(`region:${r.name}`);
+    }
+  }
 
   // ---------- Ficha flotante ----------
   const questsAt = (name: string) => game.quests.filter((q) => q.place === name);
@@ -571,7 +624,7 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
               );
             })}
           </svg>
-          {REGIONS.filter((r) => regionSeen(r.x, r.y)).map((r) => (
+          {REGIONS.filter((r) => regionSeen(r.x, r.y) && shown.has(`region:${r.name}`)).map((r) => (
             <span key={r.name} class="map-region" style={pct(r.x, r.y)} aria-hidden="true">
               {r.name}
             </span>
@@ -583,13 +636,14 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
                 key={n}
                 class={`map-place ${info?.kind === 'place' && info.name === n ? 'on' : ''}`}
                 style={pct(p.x, p.y)}
+                aria-label={n}
                 onClick={(e) => {
                   e.stopPropagation();
                   tap(() => setInfo({ kind: 'place', name: n }))();
                 }}
               >
                 <i />
-                <small>{n}</small>
+                {shown.has(n) && <small aria-hidden="true">{n}</small>}
               </button>
             ))}
           <button
@@ -747,24 +801,47 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
         </div>
         <div class="map-over" onPointerDown={(e) => e.stopPropagation()}>
           {threat > 0 && !legend && (
-            <p
-              class="map-threat-line"
-              {...help('Amenaza en la comarca: crece si una historia espera en el tablón.')}
+            <button
+              class={`map-threat-line ${threatOpen ? 'is-on' : ''}`}
+              aria-expanded={threatOpen}
+              aria-label={`Amenaza en la comarca: ${threat} de 100. Qué pasa si sube`}
+              onClick={() => setThreatOpen(!threatOpen)}
             >
               <Icon name="calavera" size={10} /> Amenaza {threat}
-            </p>
+              <span class={`map-threat-trend ${trend.d > 0 ? 'up' : 'down'}`} aria-hidden="true">
+                {trend.d > 0 ? `+${trend.d}` : '-1'}
+              </span>
+              <span class="map-threat-more" aria-hidden="true">
+                {threatOpen ? '×' : '?'}
+              </span>
+            </button>
+          )}
+          {threat > 0 && !legend && threatOpen && (
+            <div class="map-threat-info">
+              <span class="map-threat-meter" aria-hidden="true">
+                <i style={{ width: `${threat}%` }} />
+                {THREAT_STEPS.map((st) => (
+                  <b key={st.at} style={{ left: `${st.at}%` }} />
+                ))}
+              </span>
+              <ul>
+                {THREAT_STEPS.map((st) => (
+                  <li key={st.at} class={threat >= st.at ? 'now' : ''}>
+                    <b>{st.at}</b> {st.text}
+                    {threat >= st.at ? ' (ya pasa)' : ''}
+                  </li>
+                ))}
+              </ul>
+              <p>
+                Esta noche {trend.d > 0 ? `sube ${trend.d}` : 'baja 1'}: {trend.why}.{' '}
+                {trend.d > 0
+                  ? 'Baja sola cuando no espera ninguna historia y hay grupos fuera.'
+                  : 'Sube si un paso de una historia espera en el tablón o si pasan días sin mandar a nadie.'}
+              </p>
+            </div>
           )}
           {legend && (
             <ul class="map-legend">
-              <li>
-                <span class="lg-pin">!</span> Encargo
-              </li>
-              <li>
-                <span class="lg-party">2</span> Grupo de viaje
-              </li>
-              <li>
-                <span class="lg-missing">?</span> Desaparecido
-              </li>
               <li>
                 <i class="lg-route" /> Camino de un grupo
               </li>
@@ -791,6 +868,22 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
           )}
         </div>
       </div>
+      <ul class="map-key" aria-label="Leyenda del mapa">
+        <li>
+          <span class="lg-pin">!</span> Encargo
+        </li>
+        <li>
+          <span class="lg-party">2</span> Grupo fuera
+        </li>
+        <li>
+          <span class="lg-step now">1</span> Historia
+        </li>
+        {missing.length > 0 && (
+          <li>
+            <span class="lg-missing">?</span> Desaparecido
+          </li>
+        )}
+      </ul>
       <section class="map-trips" aria-label="Grupos fuera">
         <button
           class="map-trips-toggle"
@@ -823,25 +916,36 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
                   <li key={m.id} class="map-trip">
                     <button
                       class="map-trip-main"
-                      aria-label={`${m.quest.title}: ver el viaje`}
+                      aria-label={`${m.quest.title}, con ${listNames(party(m).map((h) => h.name))}: ver el viaje`}
                       onClick={() => onTrip(m.id)}
                     >
-                      <b>{m.quest.title}</b>
-                      <span class="row-sub">
-                        {pos.back ? 'Vuelven de' : 'Van hacia'} {m.quest.place} · en casa{' '}
-                        {dawnIn(m.daysLeft)}
+                      <span class="map-trip-faces" aria-hidden="true">
+                        {party(m).map((h) => (
+                          <span key={h.id} class="map-trip-face">
+                            <Portrait
+                              look={lookOf(h)}
+                              marks={marksOf(h)}
+                              frame={heroFrame(h)}
+                              scale={1}
+                              alive={false}
+                            />
+                          </span>
+                        ))}
                       </span>
-                      <span class="train-bar" aria-hidden="true">
-                        <i style={{ width: `${Math.round(done * 100)}%` }} />
+                      <span class="map-trip-text">
+                        <b>{m.quest.title}</b>
+                        <span class="row-sub">
+                          {pos.back ? 'Vuelven de' : 'Van hacia'} {m.quest.place} · en casa{' '}
+                          {dawnIn(m.daysLeft)}
+                        </span>
+                        <span class="train-bar" aria-hidden="true">
+                          <i style={{ width: `${Math.round(done * 100)}%` }} />
+                        </span>
+                      </span>
+                      <span class="map-trip-go" aria-hidden="true">
+                        <Icon name="pasos" size={12} />
                       </span>
                     </button>
-                    <div class="map-trip-heroes">
-                      {party(m).map((h) => (
-                        <button key={h.id} class="btn btn-wood" onClick={() => onHero(h.id)}>
-                          {h.name}
-                        </button>
-                      ))}
-                    </div>
                   </li>
                 );
               })}
