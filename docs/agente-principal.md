@@ -295,3 +295,27 @@ talleres, nombres y marcos). El arte ya está listo para cinco:
   común de `BossFight` y `RaidCrew`, y el aviso del cabecilla en el asalto (cambia el equilibrio:
   preguntar).
 - Siguiente: fase 5 (interfaz).
+
+## Fase 5 hecha (14 de noviembre)
+
+Repartida en cuatro agentes y juntada en la rama (sin choques):
+- **Navegación (C1–C4, C9)**: barra Tablón · Mapa · Héroes · Gremio (la taberna es lo de detrás);
+  Héroes con pestañas Héroes · Barra · Tareas · Equipo (el arcón; su pestaña interior se llama
+  «Piezas»); la campana con Avisos e Informes (adiós al correo de abajo); Gremio con Salas,
+  Adornos y Libro, y el engranaje con Partidas, Ajustes y Menú principal; historial de encargos
+  (`HistoryPanel`, `state.questLog`, 200 como mucho, `QUEST_LOG_KEEP`) desde el Libro, el Tablón y
+  la campana.
+- **Fichas de sala (C5, C6)**: `ROOM_INFO` en `data/roomInfo.ts` con «Ahora / Mejora» de todas las
+  salas y su test; botón «Personalizar» (`RoomCustom.tsx`) con colores y, en el salón, fiesta y
+  decoración (fuera de Gremio › Adornos; allí quedan letrero, fachada, jardín y animales).
+- **Encargos y mapa (D1–D4)**: nota del tablón con iconos y chapa (`outlook` en `core/suggest.ts`,
+  memorizado); hoja del encargo ordenada por `questFit` y «Quitar de guardia y llevar»
+  (`send` con `unguard`; retoma la guardia al volver); aviso de equipo mejor (`gearPower`,
+  `betterGear`, `ui/gearHint.ts`); mapa con rótulos que no se montan, leyenda a la vista y
+  amenaza explicada (`threatTrend`, `THREAT_STEPS`).
+- **La taberna (D5)**: `isAway`/`awayPlan` en `core/beds.ts`; camas hechas de los de fuera y nota
+  en el tablón del salón (`world/rooms/fuera.ts`).
+- `npm run sim`: victorias 86/72/53 %; normal, en lo difícil una baja cada ~21 encargos.
+- Dudas abiertas para el usuario: el aviso de equipo marca casi a todos si nadie lleva nada;
+  «Personalizar» va en la fila de botones del final; los animales siguen en Adornos.
+- Siguiente: fase 6 (salas: E1 galería del salón con escalera, E2, E4).

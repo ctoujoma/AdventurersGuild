@@ -204,7 +204,7 @@ una fase, `npm run sim` y una partida larga para ver que el ritmo sigue bien.
    encargos sueltos siguen con tiradas calibradas contra él; los informes viejos se siguen viendo.
 5. **Bocetos antes de decidir** (para el usuario): C7 talleres con recetas en pestañas, D1 tarjeta
    del tablón que dice si se puede, E1 el altillo del salón (usando el fondo de la sala).
-6. **Fase 5 · Interfaz** (agente de interfaz, en paralelo desde ya; encargo por escribir): C1
+6. **Fase 5 · Interfaz** — **hecha** (14 de noviembre, con D1) (agente de interfaz, en paralelo desde ya; encargo por escribir): C1
    pestañas Tablón · Mapa · Héroes · Gremio; C2 el arcón en Héroes; C3 todo en la campana y C9
    el historial de encargos (un panel al que se llega desde el Libro y desde el Tablón); C4 el Gremio para la casa y lo del sistema en el
    engranaje; C5 ficha de sala con «Mejorar» arriba y qué da cada nivel (con test); C6 botón
