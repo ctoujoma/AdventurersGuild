@@ -989,7 +989,7 @@ button:focus-visible {
 .note-foot {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   border-top: 2px dashed var(--tan);
   padding-top: 3px;
   font-family: var(--pixel);
