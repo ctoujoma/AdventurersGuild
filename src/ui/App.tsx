@@ -50,7 +50,7 @@ import { EventCard } from './EventCard';
 import { Opening } from './Opening';
 import { NameTavern } from './NameTavern';
 import { Panel } from './Panel';
-import { LibroPanel } from './panels/LibroPanel';
+import { HistoryButton, LibroPanel } from './panels/LibroPanel';
 import { MapPanel } from './panels/MapPanel';
 import { SaveMenu } from './SaveMenu';
 import { SettingsMenu } from './SettingsMenu';
@@ -76,7 +76,7 @@ import {
 } from '../core/tutorial';
 import { GremioPanel } from './panels/GremioPanel';
 import { HeroesPanel, type HeroFilter } from './panels/HeroesPanel';
-import { MailPanel } from './panels/MailPanel';
+import { HistoryPanel } from './panels/HistoryPanel';
 import { TablonPanel } from './panels/TablonPanel';
 import { priceOf } from '../core/gear';
 import { TabernaPanel } from './panels/TabernaPanel';
@@ -92,10 +92,12 @@ import { useWorks } from './works';
 import { LOCKED, worksOpen } from '../core/rooms';
 import { ROOMS } from '../data/rooms';
 import { TabBar, type TabId } from './TabBar';
+import type { BellView } from './AlertBell';
 import { listNames, plural } from './text';
 import { sceneModel } from './view';
 
-type PanelId = Exclude<TabId, 'taberna'> | 'correo' | 'fuera' | 'libro' | 'casa' | 'arcon' | 'sala';
+/** El mapa es la pestaña «Mapa»; el arcón, Héroes › Equipo; el correo, la campana. */
+type PanelId = 'tablon' | 'heroes' | 'gremio' | 'fuera' | 'libro' | 'casa' | 'sala' | 'historial';
 
 interface Bubble {
   text: string;
@@ -147,6 +149,9 @@ export function App() {
   /** Lo que ve la escena: durante el amanecer sigue mostrando la noche anterior. */
   const [sceneGame, setSceneGame] = useState(game);
   const [panel, setPanel] = useState<PanelId | null>(null);
+  /** La campana abierta (avisos o informes) y de dónde se llegó al historial. */
+  const [bell, setBell] = useState<BellView | null>(null);
+  const [histFrom, setHistFrom] = useState<'tablon' | 'libro'>('tablon');
   /** La pestaña del jardín abierta en Adornos: panel bajo y la cámara en el jardín. */
   const [gardenView, setGardenView] = useState(false);
   /** Grupo fuera cuya ficha «Encargo en curso» está abierta. */
@@ -656,13 +661,14 @@ export function App() {
 
   const roomLink = (to: RoomLink) => {
     if (to === 'candidatos' || to === 'trabajadores') setHeroFilter(to);
-    if (to === 'equipo' || to === 'tesoros') setArconTab(to);
+    if (to === 'equipo' || to === 'tesoros') {
+      setHeroFilter('equipo');
+      setArconTab(to);
+    }
     openPanel(
-      to === 'candidatos' || to === 'trabajadores'
+      to === 'candidatos' || to === 'trabajadores' || to === 'equipo' || to === 'tesoros'
         ? 'heroes'
-        : to === 'equipo' || to === 'tesoros'
-          ? 'arcon'
-          : to,
+        : to,
     );
   };
 
@@ -677,6 +683,7 @@ export function App() {
   // informe, encargo, ficha, panel).
   const overlayOpen =
     !!watching ||
+    !!bell ||
     settingsOpen ||
     saveMenu ||
     !!reportId ||
@@ -690,6 +697,7 @@ export function App() {
   };
   const closeTop = () => {
     if (watching) closeWatch();
+    else if (bell) setBell(null);
     else if (settingsOpen) setSettingsOpen(false);
     else if (saveMenu) setSaveMenu(false);
     else if (reportId) setReportId(null);
@@ -1005,13 +1013,24 @@ export function App() {
     if (works.planning) return;
     endDay();
   }, [clock, ticking, passing, works.planning, realTime]);
-  // Lo que se abre desde el gremio (arcón, libro, adornos) deja encendida su pestaña.
-  const tab: TabId =
+  // Lo que se abre desde una pestaña (el libro y los adornos, del gremio; el historial, de donde
+  // se llegó) la deja encendida. Con todo cerrado, ninguna: se ve la taberna.
+  const tab: TabId | null =
     panel === 'tablon' || panel === 'heroes' || panel === 'gremio'
       ? panel
-      : panel === 'arcon' || panel === 'libro' || panel === 'casa'
-        ? 'gremio'
-        : 'taberna';
+      : panel === 'fuera'
+        ? 'mapa'
+        : panel === 'libro' || panel === 'casa'
+          ? 'gremio'
+          : panel === 'historial'
+            ? histFrom === 'libro'
+              ? 'gremio'
+              : 'tablon'
+            : null;
+  const openHistory = (from: 'tablon' | 'libro') => {
+    setHistFrom(from);
+    openPanel('historial');
+  };
 
   const shown = passing ? sceneGame : game;
   const allAlerts = useMemo(() => gatherAlerts(shown, worksDone), [shown, worksDone]);
@@ -1063,6 +1082,17 @@ export function App() {
       <Hud
         game={passing ? sceneGame : game}
         onSettings={() => setSettingsOpen(true)}
+        onSaves={() => setSaveMenu(true)}
+        onTitle={toTitle}
+        reports={game.reports}
+        onReport={openReport}
+        onReadAll={() => {
+          audio.play('select');
+          dispatch({ type: 'readAll' });
+        }}
+        onHistory={() => openHistory('tablon')}
+        bell={bell}
+        onBell={setBell}
         alerts={alerts}
         onAlert={goAlert}
         onHush={hush}
@@ -1300,10 +1330,6 @@ export function App() {
         {!panel && works.planning && <WorksBar works={works} onMore={() => openPanel('gremio')} />}
         {!panel && !game.over && !works.pick && !works.planning && (
           <DayBar
-            unread={unread}
-            away={away}
-            onMail={() => openPanel('correo')}
-            onAway={() => openPanel('fuera')}
             part={clock / DAY_SECONDS}
             real={realTime}
             rush={canRush}
@@ -1330,6 +1356,7 @@ export function App() {
         )}
         {panel === 'tablon' && (
           <Panel title="Tablón de encargos" onClose={() => openPanel(null)} variant="cork">
+            <HistoryButton game={game} onClick={() => openHistory('tablon')} />
             <TablonPanel
               quests={game.quests}
               seeAll={game.fac.mapas >= 2}
@@ -1357,6 +1384,30 @@ export function App() {
                 if (w) toast(`${w.name} recoge sus cosas y se despide.`);
               }}
               onTask={setTask}
+              equipo={
+                <ArconPanel
+                  game={game}
+                  tab={arconTab}
+                  onTab={setArconTab}
+                  onEquip={(heroId, itemId) => {
+                    const h = game.heroes.find((x) => x.id === heroId);
+                    const it = game.inventory.find((x) => x.id === itemId);
+                    dispatch({ type: 'equip', heroId, itemId });
+                    audio.play('select');
+                    if (h && it) toast(`${h.name} se equipa: ${it.name}.`);
+                  }}
+                  onUnequip={(heroId, slot) => {
+                    dispatch({ type: 'unequip', heroId, slot });
+                    audio.play('deselect');
+                  }}
+                  onSell={sell}
+                  onSellTrophy={sellTrophy}
+                  onHero={(id) => {
+                    audio.play('open');
+                    setCard(id);
+                  }}
+                />
+              }
             />
           </Panel>
         )}
@@ -1428,41 +1479,8 @@ export function App() {
                   />
                 ) : undefined
               }
-              onSaves={() => setSaveMenu(true)}
-              onSettings={() => setSettingsOpen(true)}
               onLibro={() => openPanel('libro')}
               onTaberna={() => openPanel('casa')}
-              onTitle={toTitle}
-              onArcon={() => {
-                setArconTab('equipo');
-                openPanel('arcon');
-              }}
-            />
-          </Panel>
-        )}
-        {panel === 'arcon' && (
-          <Panel title="Arcón" onClose={() => openPanel(null)}>
-            <ArconPanel
-              game={game}
-              tab={arconTab}
-              onTab={setArconTab}
-              onEquip={(heroId, itemId) => {
-                const h = game.heroes.find((x) => x.id === heroId);
-                const it = game.inventory.find((x) => x.id === itemId);
-                dispatch({ type: 'equip', heroId, itemId });
-                audio.play('select');
-                if (h && it) toast(`${h.name} se equipa: ${it.name}.`);
-              }}
-              onUnequip={(heroId, slot) => {
-                dispatch({ type: 'unequip', heroId, slot });
-                audio.play('deselect');
-              }}
-              onSell={sell}
-              onSellTrophy={sellTrophy}
-              onHero={(id) => {
-                audio.play('open');
-                setCard(id);
-              }}
             />
           </Panel>
         )}
@@ -1513,18 +1531,21 @@ export function App() {
         )}
         {panel === 'libro' && (
           <Panel title="Libro de hazañas" onClose={() => openPanel(null)}>
-            <LibroPanel game={game} records={records} />
+            <LibroPanel game={game} records={records} onHistory={() => openHistory('libro')} />
           </Panel>
         )}
-        {panel === 'correo' && (
-          <Panel title="Correo del amanecer" onClose={() => openPanel(null)}>
-            <MailPanel
-              reports={game.reports}
-              onOpen={openReport}
-              onReadAll={() => {
-                audio.play('select');
-                dispatch({ type: 'readAll' });
+        {panel === 'historial' && (
+          <Panel title="Historial de encargos" onClose={() => openPanel(null)}>
+            <button class="back" onClick={() => openPanel(histFrom)}>
+              ← {histFrom === 'libro' ? 'Libro' : 'Tablón'}
+            </button>
+            <HistoryPanel
+              game={game}
+              onTrip={(id) => {
+                audio.play('open');
+                setTripId(id);
               }}
+              onReport={openReport}
             />
           </Panel>
         )}
@@ -1663,7 +1684,10 @@ export function App() {
               toast('Hecho: la carta del amanecer saldrá de golpe. Se cambia en Ajustes.');
             }}
             onClose={() => closeDawn()}
-            onMail={() => closeDawn('correo')}
+            onMail={() => {
+              closeDawn();
+              setBell('informes');
+            }}
           />
         )}
         {screen === 'game' && dawnChip === game.day && !dawnOpen && !passing && (
@@ -1723,10 +1747,14 @@ export function App() {
       <TabBar
         hidden={works.planning}
         tab={tab}
+        badges={{ mapa: away }}
         onTab={(t) => {
+          const p = t === 'mapa' ? 'fuera' : t;
+          // Tocar la pestaña abierta vuelve a la taberna.
+          if (panel === p) return openPanel(null);
           if (t === 'heroes') setHeroFilter('todos');
           if (t === 'gremio') setFocusFac(null);
-          openPanel(t === 'taberna' ? null : t);
+          openPanel(p);
         }}
       />
       {raiding && (

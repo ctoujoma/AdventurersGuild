@@ -16,12 +16,8 @@ interface Props {
   game: GameState;
   focus: keyof Facilities | null;
   onUpgrade: (k: keyof Facilities) => void;
-  onArcon: () => void;
-  onSaves: () => void;
-  onSettings: () => void;
   onLibro: () => void;
   onTaberna: () => void;
-  onTitle: () => void;
   /** Vista de salas: la lista de obras sustituye a la de mejoras (el patio sigue igual). */
   obras?: ComponentChildren;
   /** Abrir directamente en las salas (mientras se planea una reforma). */
@@ -31,18 +27,15 @@ interface Props {
 const OUTSIDE: (keyof Facilities)[] = ['forja', 'establo', 'patio', 'empal', 'torre'];
 
 /**
- * El gremio: la deuda y la seguridad de un vistazo y botones grandes para lo demás (salas,
- * adornos, arcón, libro, partidas y ajustes). «Salas» abre, en el mismo panel, la lista de
- * salas por planta y las mejoras del patio.
+ * El gremio, lo de la casa: la deuda y la seguridad de un vistazo, los objetivos y botones
+ * grandes para las salas y el libro (el arcón está en Héroes; las partidas, los ajustes y el
+ * menú principal, en el engranaje de arriba). «Salas» abre, en el mismo panel, la lista de salas
+ * por planta y las mejoras del patio.
  */
 export function GremioPanel({
   game,
   focus,
   onUpgrade,
-  onArcon,
-  onSaves,
-  onSettings,
-  onTitle,
   onLibro,
   onTaberna,
   obras,
@@ -236,14 +229,8 @@ export function GremioPanel({
           ) : undefined,
         )}
         {tile('banderin', 'Adornos', onTaberna)}
-        {tile('cofre', 'Arcón', onArcon)}
         {tile('libro', 'Libro', onLibro)}
-        {tile('pergamino', 'Partidas', onSaves)}
-        {tile('ajustes', 'Ajustes', onSettings)}
       </div>
-      <button class="linklike gremio-title" onClick={onTitle}>
-        Menú principal
-      </button>
     </>
   );
 }

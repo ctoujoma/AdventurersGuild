@@ -34,7 +34,7 @@ export const TIPS: readonly Tip[] = [
   {
     id: 'noche',
     focus: 'puerta',
-    text: 'Cuando un grupo se va, tarda unos días en volver. Por la mañana llega el correo con lo que ha pasado.',
+    text: 'Cuando un grupo se va, tarda unos días en volver. Por la mañana llega su informe a la campana de arriba.',
     when: (s) => s.missions.length > 0 && s.day <= 2,
   },
   {
@@ -102,7 +102,7 @@ export const TIPS: readonly Tip[] = [
   },
   {
     id: 'servicio',
-    text: 'Ahora viene gente del pueblo a pedir trabajo: lo verás en «Héroes», pestaña «Trabajo». Pero cada uno nuevo necesita su cama, así que antes construye el dormitorio del servicio.',
+    text: 'Ahora viene gente del pueblo a pedir trabajo: lo verás en «Héroes», pestaña «Barra». Pero cada uno nuevo necesita su cama, así que antes construye el dormitorio del servicio.',
     when: (s) => seen(s, 'excavar') && sinceOpening(s) >= 3,
   },
   {

@@ -4,10 +4,23 @@ import { goalProgress } from '../../core/goals';
 import type { ActiveGoal, GameState } from '../../core/model';
 import { FEATS } from '../../data/feats';
 import type { Records } from '../../platform/records';
+import { Icon } from '../icons';
 
 interface Props {
   game: GameState;
   records: Records;
+  /** Abre el historial de encargos (el mismo panel que desde el tablón). */
+  onHistory: () => void;
+}
+
+/** El botón al historial de encargos (en el Libro y en el Tablón). */
+export function HistoryButton({ game, onClick }: { game: GameState; onClick: () => void }) {
+  const n = (game.questLog?.length ?? 0) + game.missions.length;
+  return (
+    <button class="btn btn-wood history-btn" onClick={onClick}>
+      <Icon name="lista" size={14} /> Historial de encargos{n ? ` · ${n}` : ''}
+    </button>
+  );
 }
 
 /** Un objetivo en curso: qué pide, cuánto lleva y qué da. */
@@ -26,11 +39,15 @@ export function GoalRow({ game, goal }: { game: GameState; goal: ActiveGoal }) {
   );
 }
 
-/** Libro de hazañas: objetivos (y lo cumplido), historias, hazañas por niveles, récords y los caídos. */
-export function LibroPanel({ game, records }: Props) {
+/**
+ * Libro de hazañas: el historial de encargos (botón), objetivos (y lo cumplido), historias,
+ * hazañas por niveles, récords y los caídos.
+ */
+export function LibroPanel({ game, records, onHistory }: Props) {
   const goals = game.goals;
   return (
     <>
+      <HistoryButton game={game} onClick={onHistory} />
       {goals && (
         <section>
           <h3 class="sec-title">Objetivos</h3>

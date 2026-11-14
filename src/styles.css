@@ -407,6 +407,16 @@ button:focus-visible {
   color: var(--fog);
 }
 
+.tab-ico {
+  position: relative;
+  display: inline-grid;
+}
+
+.tab-ico .badge {
+  top: -6px;
+  right: -14px;
+}
+
 .tab .icon {
   filter: grayscale(0.6) brightness(0.8);
   transition: transform 0.12s steps(2);
@@ -1031,6 +1041,19 @@ button:focus-visible {
   flex-direction: column;
   gap: 2px;
   padding: 4px 3px;
+}
+
+/* Con cuatro, en un móvil estrecho o en el panel de al lado (tumbado), la palabra sin el icono
+   (Héroes · Barra · Tareas · Equipo). */
+@media (max-width: 479px),
+  (orientation: landscape) and (min-width: 900px),
+  (orientation: landscape) and (max-height: 520px) {
+  .segs:has(> .seg:nth-child(4)):not(:has(> .seg:nth-child(5))) .seg {
+    padding: 0 4px;
+  }
+  .segs:has(> .seg:nth-child(4)):not(:has(> .seg:nth-child(5))) .seg > .icon {
+    display: none;
+  }
 }
 
 .seg-n {
@@ -5666,6 +5689,60 @@ select.crew-free {
   margin-top: 2px;
   font-size: var(--t-s);
   color: var(--text-soft);
+}
+
+/* La campana también es el correo: sus informes, con la misma fila del correo. */
+.alerts-pop .segs {
+  margin-bottom: 6px;
+}
+
+.alerts-mail .rows {
+  gap: 6px;
+}
+
+.alerts-history {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  min-height: 32px;
+}
+
+/* El engranaje: partidas, ajustes y menú principal. */
+.gear-pop {
+  width: max-content;
+  min-width: 180px;
+  display: grid;
+  gap: 4px;
+}
+
+.gear-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 4px 10px;
+  font: var(--t-m) / 1.2 var(--pixel);
+  color: var(--plum);
+  text-align: left;
+  background: transparent;
+  box-shadow: 0 0 0 2px var(--tan);
+}
+
+.gear-item:hover,
+.gear-item:focus-visible {
+  background: var(--tan);
+}
+
+/* El historial de encargos, desde el libro y el tablón: discreto, arriba a la derecha. */
+.history-btn {
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 10px;
+  font-size: var(--t-s);
 }
 
 .alerts-foot {

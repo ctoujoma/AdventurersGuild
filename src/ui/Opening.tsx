@@ -72,7 +72,8 @@ export function Opening({ arrival: a, best, rooms, onOpen, onRetry }: Props) {
           <div class="title-confirm">
             <span>
               ¿No te convence cómo has llegado? Empieza de nuevo y llega en mejores condiciones a la
-              apertura. Esta partida se perderá (puedes guardarla antes desde Gremio).
+              apertura. Esta partida se perderá (puedes guardarla antes en Partidas, en el engranaje
+              de arriba).
             </span>
             <div class="herocard-actions">
               <button class="btn btn-red" onClick={onRetry}>

@@ -4,8 +4,6 @@ import { Icon } from './icons';
 import { countdown } from './when';
 
 interface Props {
-  unread: number;
-  away: number;
   /** Parte del día que ha pasado (0 por la mañana, 1 de noche). */
   part: number;
   /** Ya es de noche: se puede cerrar la taberna. */
@@ -20,8 +18,6 @@ interface Props {
   real?: boolean;
   /** Con el tiempo que corre solo, se puede acelerar (mientras dura «La deuda» y en pruebas). */
   rush?: boolean;
-  onMail: () => void;
-  onAway: () => void;
   onPace: () => void;
   onDusk: () => void;
   onEndDay: () => void;
@@ -35,7 +31,8 @@ export function partName(part: number, dusk: number): string {
 }
 
 /**
- * Barra del día sobre la escena: correo, grupos fuera, el reloj y una acción: de día, saltar al
+ * Barra del día sobre la escena (el correo está en la campana de arriba y los grupos fuera, en
+ * la pestaña Mapa): el reloj y una acción: de día, saltar al
  * anochecer; al anochecer, cerrar la taberna y pasar la noche. Con el tiempo que corre solo, en
  * vez de la acción, cuánto falta para que anochezca o caiga la noche.
  */
@@ -51,25 +48,6 @@ export function DayBar(p: Props) {
   const slow = Math.round(AWAY_DAY_SECONDS / DAY_SECONDS);
   return (
     <div class="daybar">
-      <button
-        class="btn-icon daybar-btn"
-        data-tut="correo"
-        aria-label={`Correo, ${p.unread} sin leer`}
-        {...help('Correo: los informes de los grupos que vuelven y las cartas que llegan.')}
-        onClick={p.onMail}
-      >
-        <Icon name="letter" size={20} />
-        {p.unread > 0 && <span class="badge">{p.unread}</span>}
-      </button>
-      <button
-        class="btn-icon daybar-btn"
-        aria-label={`Fuera del gremio: ${p.away}`}
-        {...help('La comarca: el mapa con los grupos de viaje, los encargos y las historias.')}
-        onClick={p.onAway}
-      >
-        <Icon name="flag" size={20} />
-        {p.away > 0 && <span class="badge badge-info">{p.away}</span>}
-      </button>
       {p.real && !p.rush ? (
         <span
           class="clock clock-real"
@@ -128,7 +106,7 @@ export function DayBar(p: Props) {
       ) : p.canClose ? (
         <button
           class="btn btn-gold endday"
-          data-help="Cerrar: cierra la taberna y pasa la noche. Los grupos avanzan y por la mañana llega el correo."
+          data-help="Cerrar: cierra la taberna y pasa la noche. Los grupos avanzan y por la mañana llegan los informes."
           onClick={p.onEndDay}
         >
           <Icon name="moon" size={18} /> Cerrar

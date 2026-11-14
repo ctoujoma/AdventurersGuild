@@ -1,3 +1,4 @@
+import type { ComponentChildren } from 'preact';
 import { canHire, roster, salaries } from '../../core/game';
 import type { GameState, Hero } from '../../core/model';
 import type { Task } from '../drop';
@@ -12,7 +13,7 @@ import { Portrait } from '../Portrait';
 import { Tabs } from '../Tabs';
 import { lookOf, marksOf, heroFrame } from '../view';
 
-export type HeroFilter = 'todos' | 'candidatos' | 'trabajadores';
+export type HeroFilter = 'todos' | 'candidatos' | 'trabajadores' | 'equipo';
 
 interface Props {
   game: GameState;
@@ -25,6 +26,8 @@ interface Props {
   onTask: (who: string, task: Task) => void;
   /** En Tareas, a quién elegir al abrir. */
   focus?: string | null;
+  /** La pestaña Equipo: el arcón (lo monta `App`, con sus acciones). */
+  equipo: ComponentChildren;
 }
 
 /** Lo que más importa de un héroe, en una chapa: si pide algo, su ánimo o si está de guardia. */
@@ -37,7 +40,10 @@ function heroFlag(h: Hero): { text: string; cls: string } | null {
   return null;
 }
 
-/** Plantilla del gremio, candidatos que esperan en la barra y trabajadores de la casa. */
+/**
+ * Plantilla del gremio, candidatos que esperan en la barra, trabajadores de la casa y el equipo
+ * (el arcón: el equipo es de los héroes).
+ */
 export function HeroesPanel({
   game,
   filter,
@@ -48,6 +54,7 @@ export function HeroesPanel({
   onFireWorker,
   onTask,
   focus,
+  equipo,
 }: Props) {
   const mine = game.heroes.filter((h) => h.status !== 'muerto');
   const cands = game.candidates;
@@ -140,9 +147,18 @@ export function HeroesPanel({
             alert: crewAlerts(game).length,
             help: 'Quién hace qué en la casa: dónde trabaja cada uno, quién entrena, la guardia y quién descansa. Toca a alguien para cambiarle la tarea.',
           },
+          {
+            id: 'equipo',
+            label: 'Equipo',
+            icon: 'cofre',
+            count: game.inventory.length,
+            help: 'El arcón: el equipo (el guardado y el puesto), los tesoros para vender, los trofeos y los materiales.',
+          },
         ]}
       />
-      {filter === 'trabajadores' ? (
+      {filter === 'equipo' ? (
+        equipo
+      ) : filter === 'trabajadores' ? (
         <CrewList game={game} onOpen={onOpen} onTask={onTask} onFire={onFireWorker} focus={focus} />
       ) : filter === 'todos' ? (
         <>
