@@ -319,3 +319,19 @@ Repartida en cuatro agentes y juntada en la rama (sin choques):
 - Dudas abiertas para el usuario: el aviso de equipo marca casi a todos si nadie lleva nada;
   «Personalizar» va en la fila de botones del final; los animales siguen en Adornos.
 - Siguiente: fase 6 (salas: E1 galería del salón con escalera, E2, E4).
+
+## Para retomar (14 de noviembre)
+
+- PR abierta: ctoujoma/AdventurersGuild#194 (fases 4 y 5). Si ya se fusionó, rehacer la rama
+  `claude/sweet-bell-mky0ou` desde `main` antes de seguir.
+- Siguiente: **fase 6 · salas** (E1 galería al fondo del salón con profundidad y escalera dentro,
+  por la que suben clientes y trabajadores; E2 que cada nivel del salón se note; E4 nivel 5 con
+  su arte). Boceto de E1: `docs/bocetos/e1-altillo.html`. Luego fase 7 (la noche) y fase 8
+  (expediciones, otro agente).
+- Pendiente del motor de pelea: escenas con el registro común, barra de habilidades común y, si
+  el usuario quiere, el aviso del cabecilla en el asalto.
+- Dudas abiertas con el usuario: aviso de equipo (marca a casi todos; no mira la clase),
+  «Personalizar» al final de la ficha, animales y fachada en Gremio › Adornos.
+- Forma de trabajar que le gusta al usuario: repartir en agentes con `isolation: worktree`
+  (cada uno parte de `origin/claude/sweet-bell-mky0ou`, sin push), juntar con `cherry-pick`,
+  comprobar en pantalla y con `npm run sim`, y PR por bloques de fases.
