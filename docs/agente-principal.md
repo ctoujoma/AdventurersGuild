@@ -354,3 +354,18 @@ Repartida en cuatro agentes y juntada en la rama (sin choques):
   `worktree-agent-ac0bd98cdd0151a3e` además: `47b535b`, `79470c9` (rampa de color, mesas delante,
   hueco ante la escalera) y la escalera `d49a865` (de E1 `1de8966`). Pendiente de mi crítica: 2 y 3
   parecidos, damasco del 5 granuloso a 1×, pendones iguales en todos los niveles.
+
+### Fase 6 · hecha (15 de noviembre)
+
+- Junto en la rama todo lo de los dos agentes (cherry-pick de `worktree-agent-ac0bd98cdd0151a3e`).
+- E1: galería al fondo del salón de 3 de ancho y dos alturas (`src/world/rooms/galeria.ts`), 3 mesas
+  arriba (`gallerySeats`, el 3×2 pasa de 10 a 16 plazas), escalera de caracol dentro del salón por la
+  que suben clientes, héroes y trabajadores, con vistas de espaldas y tres cuartos en el atlas de la
+  gente (`stepView`). La altura del salón ya no cuenta en el recargo de mejorar (`upgradeCostOf`).
+- E2: cada nivel con su material y una rampa de color de menos a más con el color del pintor
+  (`salonTint`, `salonFinish`, `salonSideFinish`, `salonFloor` en `acabados.ts`), muebles, luz,
+  pendones y lo de junto a la puerta (`nook`) por nivel; mesas de abajo muy delante, con hueco ante
+  la escalera. Textos de cada nivel en `labels.ts` dicen lo que se ve.
+- E4: nivel 5 (salón de banquetes), coste 1200, +12 de Atractivo (`salonAppeal`), 6 huecos de adorno.
+- Pendiente: el tope de visitantes en escena (`MAX_VISITORS = 8`) sigue igual; tres cuartos y
+  espaldas de la gente son sencillos (sin capa propia por traje).

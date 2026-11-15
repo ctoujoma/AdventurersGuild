@@ -195,6 +195,13 @@ describe('obras', () => {
     expect(upgradeCostOf(room(s, 'dormitorio'))).toBe(Math.round(UPGRADE_COST.dorm[2]! * 1.5));
   });
 
+  it('la planta de arriba del salón no encarece sus mejoras', () => {
+    const r = room(open(), 'salon');
+    const tall = { ...r, h: 2 };
+    expect(upgradeCostOf(tall)).toBe(upgradeCostOf({ ...r, h: 1 }));
+    expect(upgradeCostOf({ ...tall, w: r.w + 1 })).toBeGreaterThan(upgradeCostOf(tall)!);
+  });
+
   it('el salón puede crecer una planta hacia arriba; las demás, no', () => {
     let s = open();
     no(s, { type: 'extend', id: room(s, 'cocina').id, dir: 'up' }, /no crece tanto/);
