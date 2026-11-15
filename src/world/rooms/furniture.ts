@@ -105,16 +105,27 @@ const inUse = (room: Room) => room.level > 0 && !(room.works && room.works.kind 
 
 /** Fondo de la fila de mesas del salón (las de atrás, 6 más). */
 const TABLE_Z = 5;
+/** Ancho del hueco que dejan las mesas delante de la escalera de la galería. */
+const STAIR_GAP = 44;
 
 /** Mesas del salón: dónde va cada una y sus dos taburetes. */
 function tables(room: Room, w: number): { x: number; z: number }[] {
   const n = Math.max(1, room.w * 2 - 1);
-  return Array.from({ length: n }, (_, i) => ({
-    x: 92 + ((i + 0.5) * (w - 150)) / n,
-    // Muy delante, como lo de la puerta: la gente pasa por detrás, entre las mesas y lo de la
-    // pared (la barra, la chimenea o la escalera de la galería). Al tresbolillo, pero poco.
-    z: i % 2 ? TABLE_Z + 6 : TABLE_Z,
-  }));
+  // Con galería, un hueco en la fila delante del pie de la escalera: así se ven sus peldaños
+  // de abajo y se ve por dónde se sube. Las mesas se reparten en lo que queda.
+  const gal = galleryOf(room, w);
+  const gap = gal ? { x0: gal.axis.x - STAIR_GAP / 2, w: STAIR_GAP } : null;
+  const span = w - 150 - (gap?.w ?? 0);
+  return Array.from({ length: n }, (_, i) => {
+    const c = 92 + ((i + 0.5) * span) / n;
+    return {
+      // (Las que pasan al otro lado, con el taburete de la izquierda fuera del hueco.)
+      x: gap && c + 22 > gap.x0 ? Math.max(c + gap.w, gap.x0 + gap.w + 22) : c,
+      // Muy delante, como lo de la puerta: la gente pasa por detrás, entre las mesas y lo de la
+      // pared (la barra, la chimenea o la escalera de la galería). Al tresbolillo, pero poco.
+      z: i % 2 ? TABLE_Z + 6 : TABLE_Z,
+    };
+  });
 }
 
 /** Un sitio donde sentarse: el taburete (centro en x y profundidad; `up`, plantas por encima). */
