@@ -582,6 +582,11 @@ const SIZES = {
    */
   back: 3,
   stepF: 2,
+  /** De tres cuartos, en los giros: de espaldas y de frente, a la derecha y a la izquierda. */
+  back3: 2,
+  back3L: 2,
+  front3: 2,
+  front3L: 2,
 } as const;
 
 /** Dónde empieza cada cosa en el atlas. */
@@ -926,6 +931,15 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
   put(dozing(spr), F.sitZ);
   spr.back.forEach((img, i) => put(img, F.back + i));
   spr.stepFront.forEach((img, i) => put(img, F.stepF + i));
+  // (De tres cuartos, quieto y con un pie en alto: el atlas no da para más.)
+  spr.back3.forEach((img, i) => {
+    put(img, F.back3 + i);
+    put(img, F.back3L + i, 3, true);
+  });
+  spr.front3.forEach((img, i) => {
+    put(img, F.front3 + i);
+    put(img, F.front3L + i, 3, true);
+  });
   // Entrenando: los fotogramas de mirar a la izquierda son los mismos, volteados.
   const pose = fightSprites(h.look, h.marks);
   // Trabajando, charlando o junto al fuego: los pies quietos.
@@ -2880,8 +2894,7 @@ export class Crowd {
         if (!fl) a.dir = goesRight(lower) === up ? 1 : -1;
         else {
           // En la de caracol, de lado según el tramo (de frente o de espaldas, no cambia).
-          const v = stepView(fl.steps[i]!, fl.steps[i + 1]!, up);
-          if (v === 'right' || v === 'left') a.dir = v === 'right' ? 1 : -1;
+          a.dir = stepView(fl.steps[i]!, fl.steps[i + 1]!, up).dir;
         }
         // Cada peldaño: un impulso rápido y un momento quieto en él.
         const f = smoothstep(Math.min(1, (s - i) / LIFT));
@@ -3159,9 +3172,12 @@ export class Crowd {
       // En la de caracol, según hacia dónde va en ese tramo de la vuelta: de lado, de espaldas
       // (alejándose) o de frente (viniendo hacia la cámara).
       const j = Math.min(STEPS - 1, i);
-      const view = c.fl ? stepView(c.fl.steps[j]!, c.fl.steps[j + 1]!, c.up) : null;
-      if (view === 'back') frame = lifting ? F.back + 1 + (i % 2) : F.back;
-      else if (view === 'front') frame = lifting ? F.stepF + (i % 2) : F.idle;
+      const v = c.fl ? stepView(c.fl.steps[j]!, c.fl.steps[j + 1]!, c.up) : null;
+      const foot = lifting ? 1 + (i % 2) : 0;
+      if (v?.view === 'back') frame = F.back + foot;
+      else if (v?.view === 'front') frame = lifting ? F.stepF + (i % 2) : F.idle;
+      else if (v?.view === 'back3') frame = (v.dir > 0 ? F.back3 : F.back3L) + (lifting ? 1 : 0);
+      else if (v?.view === 'front3') frame = (v.dir > 0 ? F.front3 : F.front3L) + (lifting ? 1 : 0);
       else frame = (a.dir > 0 ? F.walk : F.walkL) + (i % 2 ? 4 : 0) + (lifting ? 3 : 0);
     } else if (a.pose === 'walk' && a.turn) frame = F.idle;
     else if (a.pose === 'walk') {

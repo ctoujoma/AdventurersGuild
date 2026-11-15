@@ -32,12 +32,17 @@ export const DECK = 8;
 export const GAL_STEPS = 12;
 const RISE = PITCH / GAL_STEPS;
 /** Radio de la escalera, fondo de su eje y radio por el que se pisa (algo fuera de la mitad). */
-export const SPIRAL_R = 18;
+export const SPIRAL_R = 20;
 const SPIRAL_Z = 40;
-const WALK_R = 12;
+const WALK_R = 13;
 /** Lo que gira cada peldaño (en grados) y su medio ancho en radianes. */
 export const TURN = 24;
 export const HALF = ((TURN / 2) * Math.PI) / 180;
+/**
+ * Lo que se achata la vuelta vista un poco desde arriba (como las mesas redondas): la huella de
+ * los peldaños de delante se ve entera y la de los de los lados, de canto.
+ */
+const FLAT = 0.3;
 
 export interface Step {
   x: number;
@@ -86,7 +91,9 @@ export function galleryOf(room: Room, w: number): Gallery | null {
     if (i === 0) return { x: cx - 4, y: 0, z: SPIRAL_Z - SPIRAL_R - 3 };
     if (i === GAL_STEPS) return { x: x1 - 4, y: PITCH, z: SPIRAL_Z };
     const a = spiralAngle(i);
-    return { x: cx + WALK_R * Math.sin(a), y: i * RISE, z: SPIRAL_Z - WALK_R * Math.cos(a) };
+    // (Más bajo delante y más alto detrás: la huella se dibuja vista un poco desde arriba.)
+    const y = i * RISE - WALK_R * Math.cos(a) * FLAT;
+    return { x: cx + WALK_R * Math.sin(a), y, z: SPIRAL_Z - WALK_R * Math.cos(a) };
   });
   const lamp = cx + 34;
   // Las mesas de arriba, repartidas, contra la pared (con sus dos taburetes).
@@ -114,12 +121,19 @@ export function galleryOf(room: Room, w: number): Gallery | null {
 /** Ángulo del peldaño `i` de la de caracol (0 = de cara, hacia la derecha, detrás, izquierda). */
 export const spiralAngle = (i: number) => (((i - 1) * TURN + TURN / 2) * Math.PI) / 180;
 
-/** Hacia dónde mira quien pisa un tramo de la escalera: de lado, de espaldas o de frente. */
-export type StepView = 'right' | 'left' | 'back' | 'front';
+/**
+ * Cómo se ve a quien pisa un tramo de la escalera: de lado, de tres cuartos (de espaldas o de
+ * frente con la cabeza vuelta), de espaldas o de frente; y hacia qué lado mira (1, derecha).
+ */
+export interface StepView {
+  view: 'side' | 'back3' | 'back' | 'front3' | 'front';
+  dir: 1 | -1;
+}
 
 /**
- * La vista de quien va del peldaño `p` al `q` (subiendo; al bajar, al revés): si se aleja de la
- * cámara, de espaldas; si viene hacia ella, de frente; si no, de lado hacia donde va.
+ * La vista de quien va del peldaño `p` al `q` (subiendo; al bajar, al revés), según el ángulo de
+ * lo que avanza en el suelo: si se aleja de la cámara, de espaldas; si viene hacia ella, de
+ * frente; en medio, de tres cuartos; y si va de lado a lado, de perfil.
  */
 export function stepView(
   p: { x: number; z: number },
@@ -129,8 +143,11 @@ export function stepView(
   const k = up ? 1 : -1;
   const dx = (q.x - p.x) * k;
   const dz = (q.z - p.z) * k;
-  if (Math.abs(dz) > Math.abs(dx) * 1.2) return dz > 0 ? 'back' : 'front';
-  return dx >= 0 ? 'right' : 'left';
+  const deg = (Math.atan2(Math.abs(dz), Math.abs(dx)) * 180) / Math.PI;
+  const dir = dx >= 0 ? 1 : -1;
+  if (deg <= 30) return { view: 'side', dir };
+  if (deg >= 66) return { view: dz > 0 ? 'back' : 'front', dir };
+  return { view: dz > 0 ? 'back3' : 'front3', dir };
 }
 
 // ---------- Dibujos ----------
@@ -204,50 +221,141 @@ function post(h: number): PixelBuffer {
 function spiralPost(): PixelBuffer {
   const k = scaleAt(SPIRAL_Z);
   const h = Math.round((PITCH + 18) * k);
-  return Prop.piece(7, h, (b) => {
-    b.rect(1, 3, 5, h - 3, W[3]!);
-    b.vline(1, 3, h - 3, W[5]!);
-    b.vline(2, 3, h - 3, W[4]!);
-    b.vline(5, 3, h - 3, W[1]!);
-    b.rect(0, 0, 7, 3, W[4]!);
-    b.hline(0, 0, 7, W[6]!);
-    for (let y = 12; y < h - 4; y += 9) b.hline(1, y, 5, W[2]!);
-    b.rect(0, h - 3, 7, 3, P.steel);
+  return Prop.piece(5, h, (b) => {
+    b.rect(1, 3, 3, h - 3, W[2]!);
+    b.vline(1, 3, h - 3, W[4]!);
+    b.vline(3, 3, h - 3, W[1]!);
+    b.rect(0, 0, 5, 3, W[4]!);
+    b.hline(0, 0, 5, W[6]!);
+    b.rect(0, h - 3, 5, 3, P.steel);
   });
+}
+
+/** Un tramo dibujado de la de caracol: su dibujo, a qué fondo va y dónde cae el eje en él. */
+export interface SpiralPiece {
+  img: PixelBuffer;
+  z: number;
+  /** El eje, a la altura de la huella del peldaño, en píxeles del dibujo. */
+  ox: number;
+  oy: number;
+  /** Alto de esa huella sobre el suelo del salón. */
+  h: number;
 }
 
 /**
- * Un peldaño de la de caracol visto de canto (`w` de ancho): la tabla con su canto, más clara
- * cuanto más de cara está (`front`, de -1, detrás del eje, a 1, delante).
+ * El peldaño `i` de la de caracol con su tramo de zanca, de barrote y de pasamanos, dibujado como
+ * pixel art (la vuelta, algo achatada: vista un poco desde arriba). Cada uno va a su fondo: los
+ * de delante del eje, por delante de quien sube; los de detrás, por detrás (y el eje los tapa).
+ * Peldaño en cuña: la huella clara con su canto de delante más claro aún, y debajo el grueso de
+ * la tabla, oscuro (de lado solo se ve eso: el canto fino). La zanca, una cinta continua por
+ * fuera (por delante se le ve la cara; por detrás, la de dentro, oscura), y el pasamanos.
+ * `x1` es el extremo de la galería respecto al eje (el último tramo del pasamanos llega a ella).
  */
-export function spiralTread(w: number, front: number): PixelBuffer {
-  const lit = front > 0.3 ? W[6]! : front > -0.3 ? W[5]! : W[4]!;
-  return Prop.piece(Math.max(2, w), 5, (b) => {
-    b.hline(0, 0, b.w, lit);
-    b.hline(0, 1, b.w, W[5]!);
-    b.hline(0, 2, b.w, W[4]!);
-    b.hline(0, 3, b.w, W[3]!);
-    // La ménsula de debajo, junto al eje.
-    b.hline(1, 4, b.w - 2, W[1]!);
+export function spiralPiece(i: number, x1: number): SpiralPiece {
+  const a = spiralAngle(i);
+  const front = Math.cos(a);
+  const z = SPIRAL_Z - SPIRAL_R * 0.8 * front - (front >= 0 ? 1 : -1);
+  const k = scaleAt(z);
+  const R0 = SPIRAL_R;
+  const turn = (TURN * Math.PI) / 180;
+  const last = i === GAL_STEPS - 1;
+  const left = last ? Math.min(-R0, x1) - 2 : -R0 - 2;
+  const ox = Math.ceil(-left * k) + 1;
+  const oy = Math.ceil(22 * k);
+  const w = ox + Math.ceil((R0 + 2) * k) + 1;
+  const h = oy + Math.ceil((R0 * FLAT + 12) * k);
+  const b = new PixelBuffer(w, h);
+  // Un punto de la vuelta (radio, ángulo, alto sobre la huella) en píxeles del dibujo.
+  const P = (r: number, f: number, up: number) => ({
+    x: ox + r * Math.sin(f) * k,
+    y: oy + (r * Math.cos(f) * FLAT - up) * k,
   });
-}
-
-/** La huella de un peldaño de la de caracol, vista desde arriba: tabla con su canto claro fuera. */
-export function treadTop(): PixelBuffer {
-  const b = new PixelBuffer(8, 8);
-  for (let y = 0; y < 8; y++)
-    for (let x = 0; x < 8; x++)
-      b.set(x, y, y === 0 ? W[6]! : x === 0 || x === 7 ? W[2]! : y % 3 === 2 ? W[3]! : W[4]!);
-  return b;
-}
-
-/** La zanca de la de caracol: tablas en vertical, con el canto de arriba claro. */
-export function stringerTex(): PixelBuffer {
-  const b = new PixelBuffer(6, 7);
-  for (let y = 0; y < 7; y++)
-    for (let x = 0; x < 6; x++)
-      b.set(x, y, y === 0 ? W[5]! : y === 6 ? W[1]! : x % 3 === 0 ? W[2]! : W[3]!);
-  return b;
+  const set = (x: number, y: number, c: string) => {
+    const [px, py] = [Math.round(x), Math.round(y)];
+    if (px >= 0 && py >= 0 && px < w && py < h) b.set(px, py, c);
+  };
+  const [f0, f1] = [a - HALF, a + HALF];
+  // La zanca: de la mitad del peldaño de antes a la del de después, por debajo de las huellas.
+  const along = (f: number) => (RISE * (f - a)) / turn;
+  for (let s = 0; s <= 40; s++) {
+    const f = f0 - HALF * 0.1 + ((f1 - f0 + HALF * 0.2) * s) / 40;
+    const p = P(R0, f, along(f) - 1);
+    const out = Math.cos(f) >= -0.05;
+    const band = Math.round(7 * k);
+    for (let d = 0; d <= band; d++)
+      set(
+        p.x,
+        p.y + d,
+        d === 0
+          ? out
+            ? W[5]!
+            : W[3]!
+          : d === band
+            ? W[0]!
+            : out
+              ? d < 3
+                ? W[4]!
+                : W[3]!
+              : W[1]!,
+      );
+  }
+  // El peldaño: el grueso (oscuro) y encima la huella, cuña del eje a la zanca.
+  const inWedge = (px: number, py: number) => {
+    const X = (px - ox) / k;
+    const Zc = (py - oy) / k / FLAT;
+    const r = Math.hypot(X, Zc);
+    const f = Math.atan2(X, Zc);
+    let df = f - a;
+    while (df > Math.PI) df -= 2 * Math.PI;
+    while (df < -Math.PI) df += 2 * Math.PI;
+    return r >= 1.5 && r <= R0 - 0.3 && Math.abs(df) <= HALF ? df : null;
+  };
+  const thick = Math.max(2, Math.round(3 * k));
+  for (let py = 0; py < h; py++)
+    for (let px = 0; px < w; px++) {
+      for (let t = thick; t >= 1; t--)
+        if (inWedge(px, py - t) !== null) {
+          b.set(px, py, t === thick ? W[1]! : W[2]!);
+          break;
+        }
+    }
+  for (let py = 0; py < h; py++)
+    for (let px = 0; px < w; px++) {
+      const df = inWedge(px, py);
+      if (df === null) continue;
+      // El canto de delante (por donde se sube), claro; la veta, a lo largo.
+      const nose = df < -HALF + 0.12;
+      b.set(px, py, nose ? W[6]! : (px + py * 2) % 7 === 0 ? W[4]! : W[5]!);
+    }
+  // El barrote, en la punta del peldaño, y el pasamanos (más oscuro por detrás).
+  const side = front >= -0.05;
+  const foot = P(R0 - 1, a, 0);
+  const top = P(R0 - 1, a, 15);
+  for (let y = Math.round(top.y); y <= Math.round(foot.y); y++) {
+    set(foot.x, y, side ? W[4]! : W[2]!);
+    set(foot.x + 1, y, side ? W[2]! : W[1]!);
+  }
+  for (let s = 0; s <= 30; s++) {
+    const f = f0 - HALF * 0.1 + ((f1 - f0 + HALF * 0.2) * s) / 30;
+    const p = P(R0 - 1, f, along(f) + 15);
+    const lit = Math.cos(f) >= -0.05;
+    set(p.x, p.y, lit ? W[6]! : W[3]!);
+    set(p.x, p.y + 1, lit ? W[3]! : W[1]!);
+  }
+  if (last) {
+    // Hasta la barandilla de la galería (su pilar del final).
+    const from = P(R0 - 1, f1, along(f1) + 15);
+    const to = { x: ox + x1 * k, y: oy - (PITCH + 13 - i * RISE) * k };
+    b.line(Math.round(from.x), Math.round(from.y), Math.round(to.x), Math.round(to.y), W[5]!);
+    b.line(
+      Math.round(from.x),
+      Math.round(from.y) + 1,
+      Math.round(to.x),
+      Math.round(to.y) + 1,
+      W[2]!,
+    );
+  }
+  return { img: b, z, ox, oy, h: i * RISE };
 }
 
 /** Faroles colgados bajo la galería (alumbran la barra). */

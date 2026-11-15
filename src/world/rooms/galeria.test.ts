@@ -41,17 +41,23 @@ describe('la galería del salón', () => {
     expect(top).toBeLessThanOrEqual(g.walk[1]);
   });
 
-  it('quien sube la vuelta mira hacia donde va: de lado, de espaldas detrás y de frente al final', () => {
+  it('quien sube la vuelta mira hacia donde va: de lado, de tres cuartos, de espaldas y de frente', () => {
     const salon = tall().rooms.find((r) => r.type === 'salon')!;
     const st = galleryOf(salon, 362)!.steps;
     const up = st.slice(0, -1).map((p, i) => stepView(p, st[i + 1]!, true));
-    expect(up).toContain('back');
-    expect(up).toContain('front');
-    expect(up[1]).toBe('right');
-    expect(up.at(-1)).toBe('left');
-    // Bajando, cada tramo al revés.
-    const flip = { right: 'left', left: 'right', back: 'front', front: 'back' } as const;
-    st.slice(0, -1).forEach((p, i) => expect(stepView(p, st[i + 1]!, false)).toBe(flip[up[i]!]));
+    const views = up.map((v) => v.view);
+    expect(views).toContain('back');
+    expect(views).toContain('back3');
+    expect(views).toContain('front3');
+    expect(up[1]).toEqual({ view: 'side', dir: 1 });
+    expect(up.at(-1)).toEqual({ view: 'side', dir: -1 });
+    // Bajando, cada tramo al revés: de espaldas pasa a de frente y el lado se da la vuelta.
+    const flip = { side: 'side', back: 'front', front: 'back', back3: 'front3', front3: 'back3' };
+    st.slice(0, -1).forEach((p, i) => {
+      const down = stepView(p, st[i + 1]!, false);
+      expect(down.view).toBe(flip[up[i]!.view]);
+      expect(down.dir).toBe(-up[i]!.dir);
+    });
   });
 
   it('a una mesa de arriba se sube por la escalera del salón, no por la de la casa', () => {

@@ -66,6 +66,13 @@ export interface HeroSprites {
   back: [PixelBuffer, PixelBuffer, PixelBuffer];
   /** De frente, subiendo o bajando un peldaño con cada pierna (cuando viene hacia la cámara). */
   stepFront: [PixelBuffer, PixelBuffer];
+  /**
+   * De tres cuartos (para los giros de la escalera de caracol), mirando a la derecha: de espaldas
+   * con la cabeza vuelta (se le ve la mejilla) y de frente con la cabeza vuelta; quieto y con
+   * el pie de delante en alto.
+   */
+  back3: [PixelBuffer, PixelBuffer];
+  front3: [PixelBuffer, PixelBuffer];
 }
 
 type Slots = Record<string, string>;
@@ -457,7 +464,7 @@ function composeBack(look: HeroLook, marks: HeroMarks): PixelBuffer {
   body(BASE);
   const nape = hg === 'capucha' ? 'cC' : bald ? 'xX' : 'hH';
   body(NAPE.map((r) => r.replace(/h/g, nape[0]!).replace(/H/g, nape[1]!)));
-  body(OUTFITS[look.outfit]);
+  body(plainBack(OUTFITS[look.outfit]));
   if (hg !== 'capucha' && look.hairStyle === 'largo') body(NAPE_LONG);
   if (hg !== 'capucha' && look.hairStyle === 'coleta') body(NAPE_TAIL);
   if (hg === 'capucha') body(HELMS.capucha);
@@ -474,6 +481,46 @@ function composeBack(look: HeroLook, marks: HeroMarks): PixelBuffer {
   if (look.garment && look.garment !== 'capa') garmentFront(b, look.garment, look.dye);
   const out = new PixelBuffer(b.w, b.h);
   out.blit(b, 0, 0, true);
+  return out;
+}
+
+/** Lo que solo se ve por delante (cruces, correas, hebillas, botones): en el pecho. */
+const CHEST_MARKS = /[aAyYwgrpk]/g;
+
+/**
+ * El traje por detrás: en las filas del pecho, lo que solo lleva por delante se tapa con el
+ * color de tela (o de metal) que más hay en esa fila.
+ */
+function plainBack(g: Grid): Grid {
+  return g.map((row, y) => {
+    if (y < 10 || y > 15) return row;
+    const count = new Map<string, number>();
+    for (const ch of row) if (/[cCmMoOqQ]/.test(ch)) count.set(ch, (count.get(ch) ?? 0) + 1);
+    const main = [...count].sort((a, b) => b[1] - a[1])[0]?.[0];
+    return main ? row.replace(CHEST_MARKS, main) : row;
+  });
+}
+
+/**
+ * De tres cuartos, mirando a la derecha: la cabeza (y el sombrero) un píxel hacia allí y, de
+ * espaldas, la mejilla (`skin`) asomando por ese lado.
+ */
+function threeQuarter(src: PixelBuffer, skin?: string): PixelBuffer {
+  const out = src.clone();
+  const neck = HEADROOM + 9;
+  for (let y = 0; y <= neck; y++) {
+    for (let x = src.w - 1; x >= 0; x--) {
+      const from = x > 0 ? src.get(x - 1, y) : 0;
+      if (from) out.data[y * src.w + x] = from;
+      else out.clear(x, y);
+    }
+  }
+  if (skin)
+    for (let y = HEADROOM + 5; y <= HEADROOM + 7; y++) {
+      let edge = -1;
+      for (let x = 0; x < Math.min(out.w, 15); x++) if (alpha(out.get(x, y))) edge = x;
+      if (edge > 0) out.set(edge, y, skin);
+    }
   return out;
 }
 
@@ -643,6 +690,9 @@ export function heroSprites(look: HeroLook, marks: HeroMarks = {}): HeroSprites 
   const bedRaw = composeFront(bare, { ...marks, injured: true }, true, false);
   const sleepRaw = composeFront(bare, marks, true, false);
   const backRaw = composeBack(look, marks);
+  const skin = (SKIN[look.skin] ?? SKIN[0]!)[3]!;
+  const back3 = threeQuarter(backRaw, skin);
+  const front3 = threeQuarter(front);
   const sprites: HeroSprites = {
     idle: [selOut(front), selOut(breathe(front))],
     blink: selOut(composeFront(look, marks, true)),
@@ -657,6 +707,8 @@ export function heroSprites(look: HeroLook, marks: HeroMarks = {}): HeroSprites 
     sleep: selOut(sleepRaw.crop(1, 2, BODY_W - 2, HEADROOM + 10)),
     back: [selOut(backRaw), selOut(stepUp(backRaw, true)), selOut(stepUp(backRaw, false))],
     stepFront: [selOut(stepUp(front, true)), selOut(stepUp(front, false))],
+    back3: [selOut(back3), selOut(stepUp(back3, false))],
+    front3: [selOut(front3), selOut(stepUp(front3, false))],
   };
   cache.set(key, sprites);
   return sprites;
