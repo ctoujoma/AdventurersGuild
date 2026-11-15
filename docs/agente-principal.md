@@ -345,3 +345,8 @@ Repartida en cuatro agentes y juntada en la rama (sin choques):
   escalera recta o de caracol con `window.__escalera`, `seatsOf` 10 → 16 en el 3×2).
 - E2/E4: commit `a98b7c6` en `worktree-agent-ac0bd98cdd0151a3e` (paredes, suelos y muebles por
   nivel; nivel 5 con coste 1200 en `balance.ts`). Choca con E1 en `salonWall` y `furniture.ts`.
+- Segunda vuelta (15 de noviembre): https://claude.ai/artifact/AnK6iNbRpA6RN2n5o5JXQV. Todo junto en la
+  rama local `worktree-agent-ac0bd98cdd0151a3e` (E2/E4 `a98b7c6`, `6b66db1` + E1 `0563ae4`,
+  `7798d4c`, `f94ab3c`, `5016a11`): caracol con gente orientada, niveles aligerados con el color del
+  pintor (`salonTint`), lo de la puerta por nivel (`nook`), textos nuevos y nivel 5 a +12 (`salonAppeal`).
+  Falta: manteles de la galería por nivel, `npm run sim` (6 plazas más) y la PR.
