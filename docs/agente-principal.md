@@ -350,3 +350,7 @@ Repartida en cuatro agentes y juntada en la rama (sin choques):
   `7798d4c`, `f94ab3c`, `5016a11`): caracol con gente orientada, niveles aligerados con el color del
   pintor (`salonTint`), lo de la puerta por nivel (`nook`), textos nuevos y nivel 5 a +12 (`salonAppeal`).
   Falta: manteles de la galería por nivel, `npm run sim` (6 plazas más) y la PR.
+- Tercera vuelta (15 de noviembre): https://claude.ai/artifact/HXAJqwWAzm3QAYte5jxNtW. En
+  `worktree-agent-ac0bd98cdd0151a3e` además: `47b535b`, `79470c9` (rampa de color, mesas delante,
+  hueco ante la escalera) y la escalera `d49a865` (de E1 `1de8966`). Pendiente de mi crítica: 2 y 3
+  parecidos, damasco del 5 granuloso a 1×, pendones iguales en todos los niveles.
