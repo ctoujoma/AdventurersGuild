@@ -16,6 +16,7 @@ import { stoneWall } from '../paint';
 import * as Prop from '../props';
 import { CELL_W, DEPTH, PITCH, ROOM_H } from './layout';
 import { markWall, sconce as wallSconce, windowX } from './salas/kit';
+import { salonTint } from './salas/acabados';
 import { BACK, scaleAt } from './view3d';
 
 const W = R.wood; // [black, plum, bark, rust, oak, clay, tan]
@@ -135,8 +136,16 @@ function tapestry(field: string, dark: string): PixelBuffer {
   });
 }
 
-/** Pendón largo con los colores del escudo, colgado de una vara (en el salón de dos alturas). */
-function banner(field: string, dark: string, h: number): PixelBuffer {
+/**
+ * Pendón largo colgado de una vara (en el salón de dos alturas): `sencillo`, liso y sin
+ * emblema; `gremio`, con el rombo dorado; `oro`, además con canto y fleco de oro.
+ */
+function banner(
+  field: string,
+  dark: string,
+  h: number,
+  kind: 'sencillo' | 'gremio' | 'oro' = 'gremio',
+): PixelBuffer {
   return Prop.piece(14, h, (b) => {
     b.hline(0, 0, 14, W[3]!);
     b.set(0, 1, P.gold);
@@ -150,11 +159,53 @@ function banner(field: string, dark: string, h: number): PixelBuffer {
       b.hline(2, body + 1 + k, 5 - k, field);
       b.hline(7 + k, body + 1 + k, 5 - k, field);
     }
+    if (kind === 'sencillo') {
+      // Solo una franja más oscura arriba.
+      b.hline(3, 3, 8, dark);
+      return;
+    }
     // El emblema en medio: un rombo dorado.
     const cy = Math.round(body * 0.4);
     for (let k = 0; k < 4; k++) b.hline(7 - k, cy - 3 + k, 2 * k, P.gold);
     for (let k = 0; k < 4; k++) b.hline(4 + k, cy + 1 + k, 6 - 2 * k, P.gold);
     b.hline(3, 3, 8, P.gold);
+    if (kind === 'oro') {
+      // Canto dorado y fleco en la cola.
+      b.vline(2, 1, body, P.gold);
+      b.vline(11, 1, body, P.gold);
+      for (let k = 0; k < 5; k++) {
+        b.set(6 - k, body + 1 + k, P.gold);
+        b.set(7 + k, body + 1 + k, P.gold);
+      }
+    }
+  });
+}
+
+/** Tapiz ancho con el escudo del gremio, cenefa y fleco de oro (salón de banquetes). */
+function hallTapestry(crest: SalonLook['crest'], h: number): PixelBuffer {
+  return Prop.piece(24, h, (b) => {
+    b.hline(0, 0, 24, W[3]!);
+    b.set(0, 1, P.gold);
+    b.set(23, 1, P.gold);
+    const body = h - 4;
+    b.rect(1, 1, 22, body, crest.dark);
+    b.rect(3, 3, 18, body - 4, crest.field);
+    // Cenefa: filete de oro por dentro del borde.
+    b.rect(2, 2, 20, 1, P.gold);
+    b.rect(2, body - 1, 20, 1, P.gold);
+    b.vline(2, 2, body - 2, P.gold);
+    b.vline(21, 2, body - 2, P.gold);
+    // El escudo en medio: un blasón con la jarra (una forma clara) y un rombo de oro encima.
+    const cy = Math.round(body * 0.45);
+    b.rect(8, cy - 6, 8, 9, P.gold);
+    b.rect(9, cy - 5, 6, 8, crest.dark);
+    b.rect(10, cy + 3, 4, 2, P.gold);
+    b.rect(11, cy + 5, 2, 1, P.gold);
+    b.rect(10, cy - 3, 4, 4, P.sand);
+    for (let k = 0; k < 3; k++) b.hline(12 - k, cy - 12 + k, 2 * k, P.gold);
+    for (let k = 0; k < 3; k++) b.hline(10 + k, cy - 9 + k, 4 - 2 * k, P.gold);
+    // Fleco.
+    for (let x = 1; x < 23; x++) b.vline(x, body + 1, x % 2 ? 3 : 2, x % 2 ? P.gold : P.orange);
   });
 }
 
@@ -256,15 +307,28 @@ export function salonWall(
     b.blit(stagHead(lvl), 11, above - 19);
     spots.push({ x: 11, y: above - 19, w: 26, h: 19 });
   }
-  // En el de dos alturas, pendones del gremio en los postes de arriba (sin tapar ventanas).
-  const flags: number[] = [];
-  if (tall)
+  // En el de dos alturas, lo que cuelga arriba de los postes (sin tapar ventanas) cambia con
+  // el nivel: nada (1), un pendón sencillo del color de la sala (2), los pendones del gremio
+  // (3), con canto y fleco de oro (4) y tapices anchos con el escudo (5).
+  const half = lvl >= 5 ? 12 : 7;
+  let flags: number[] = [];
+  if (tall && lvl >= 2)
     for (let x = 36; x < b.w - 30; x += 36)
-      if (free(x - 7, 14, 0) && x + 7 < flueLeft && x - (flags.at(-1) ?? -99) >= 60) flags.push(x);
+      if (free(x - half, half * 2, 0) && x + half < flueLeft && x - (flags.at(-1) ?? -99) >= 60)
+        flags.push(x);
+  if (lvl === 2 && flags.length) flags = [flags[Math.floor((flags.length - 1) / 2)]!];
   // Con galería, más cortos: acaban por encima de la cabeza de los de arriba.
   const long = low - 24 - (tall && gallerySeats(room) > 0 ? 22 : 0);
+  const tint = salonTint(room);
+  const hanging = !flags.length
+    ? null
+    : lvl === 2
+      ? banner(tint[1]!, tint[0]!, long, 'sencillo')
+      : lvl >= 5
+        ? hallTapestry(look.crest, long)
+        : banner(look.crest.field, look.crest.dark, long, lvl >= 4 ? 'oro' : 'gremio');
   const hang = () => {
-    for (const x of flags) b.blit(banner(look.crest.field, look.crest.dark, long), x - 7, 4);
+    if (hanging) for (const x of flags) b.blit(hanging, x - Math.floor(hanging.w / 2), 4);
   };
   hang();
   // Altura de la fila de trofeos (en el de dos alturas, a media pared de arriba).
@@ -272,7 +336,7 @@ export function salonWall(
   const clear = (x: number, w: number) =>
     free(x, w, 0) &&
     x + w < flueLeft &&
-    flags.every((f) => x + w < f - 8 || x > f + 8) &&
+    flags.every((f) => x + w < f - half - 1 || x > f + half + 1) &&
     // En el de una planta, la fila de arriba no pisa el tablón.
     (tall || !boardOn || x + w < bx || x > bx + board.w) &&
     // Ni lo de encima de la alacena.
