@@ -16,9 +16,10 @@ import type { PixelBuffer } from '../../../art/pixel';
 import type { Room } from '../../../core/model';
 import { beam, planksV, plaster, post, stoneWall } from '../../paint';
 import { PITCH, ROOM_H } from '../layout';
+import { BACK } from '../view3d';
 import type { Theme } from '../textures';
 import { tintOf } from './tintes';
-import { TINTS } from '../../../data/custom';
+import { TINTS, type TintId } from '../../../data/custom';
 
 const WOOD_DARK: Ramp = [P.black, P.plum, P.bark, P.rust];
 const WAINSCOT: Ramp = [P.ebony, P.plum, P.bark, P.rust];
@@ -259,6 +260,8 @@ const CLOTH: Partial<Record<string, [string, string, string]>> = {
 export function bandRamp(room: Room, theme: Theme, fine: boolean): Ramp | null {
   const t = tintOf(room);
   if (!t) return null;
+  // El salón, del 2 en adelante, lleva el color en la pared misma (ver `salonFinish`).
+  if (room.type === 'salon' && room.level >= 2) return null;
   if (fine && room.level >= 3 && CLOTH[room.type] && (theme === 'yeso' || theme === 'madera'))
     return null;
   return TINTS[t].ramp as unknown as Ramp;
@@ -536,4 +539,254 @@ function frame(b: PixelBuffer, w: number, h: number, dark: string, light: string
   b.hline(3, h - 3, w - 6, light);
   b.vline(3, 2, h - 4, light);
   b.vline(w - 4, 2, h - 4, light);
+}
+
+// ---------- El salón: un aspecto por nivel ----------
+//
+// El salón no usa los acabados de las demás salas: cada nivel cambia el material de la pared
+// (yeso basto, encalado con cenefa de plantilla, yeso fino con friso pintado sobre un
+// arrimadero alto de paneles, tela de un color sobre los paneles y, en el 5, estuco claro con
+// zócalo de mármol) y el color sale del pintor de salas: el del tema elegido o, sin tema, el de
+// la casa (vino, el de sus manteles). Por eso, del 2 en adelante, el salón no lleva además la
+// cenefa pintada de `tintBand` encima (ver `bandRamp`): el color ya va en la cenefa, el friso
+// o la tela.
+
+/** Alto del arrimadero de paneles del salón (niveles 3 a 5). */
+export const SALON_DADO = 28;
+
+/** El color de la casa del salón (el de sus manteles y su alfombra), si no lo han pintado. */
+const SALON_HOUSE: TintId = 'vino';
+
+/** Los cuatro tonos del salón: los del tema elegido o los de la casa. */
+export function salonTint(room: Room): readonly [string, string, string, string] {
+  return TINTS[tintOf(room) ?? SALON_HOUSE].ramp;
+}
+
+/** Estuco claro del nivel 5. */
+const STUCCO: Ramp = [P.tan, P.sand, P.sand, P.white];
+
+/** Lo que va en la pared del fondo del salón según su nivel (encima del yeso de siempre). */
+export function salonFinish(b: PixelBuffer, room: Room, wain: number, seed: string) {
+  const lvl = room.level;
+  const bw = b.w;
+  const bh = b.h;
+  const rail = bh - wain;
+  // El arrimadero solo va abajo (en el de dos alturas, la planta de arriba queda lisa).
+  const dado = bh - SALON_DADO;
+  const tint = salonTint(room);
+  if (lvl <= 1) {
+    // Yeso basto y oscuro, sin color, con desconchones.
+    plaster(b, 0, 0, bw, rail - 3, `${seed}b`, ROUGH);
+    for (let x = 0; x < bw; x += 36) post(b, x, 0, 3, rail - 3, WOOD_DARK);
+    patches(b, bw, rail - 3, seed);
+    return;
+  }
+  if (lvl === 2) {
+    // Encalado con un hilo de plantilla (rombos con su punto) del color de la sala.
+    plaster(b, 0, 0, bw, rail - 3, `${seed}c`, PLASTER_FINE);
+    for (let x = 0; x < bw; x += 36) post(b, x, 0, 3, rail - 3, WOOD_DARK);
+    stencil(b, TOP.stencil, bw, [tint[1]!, tint[2]!], (x) => x % 36 < 3);
+    boardsH(b, rail, bw, wain);
+    return;
+  }
+  if (lvl === 3) {
+    plaster(b, 0, 0, bw, dado, `${seed}v`, PLASTER_FINE);
+    for (let x = 0; x < bw; x += 36) post(b, x, 3, 3, dado - 3, WOOD_DARK);
+    cornice(b, TOP.cornice, bw, false);
+    // El friso pintado del color de la sala, bajo la cornisa, y el arrimadero alto de paneles.
+    tintBand(b, tint, TOP.band, TOP.bandH);
+    panels(b, dado, bw, SALON_DADO);
+    b.hline(0, dado, bw, P.oak);
+    b.hline(0, dado + 1, bw, P.black);
+    return;
+  }
+  if (lvl === 4) {
+    // Estuco claro, el friso del color bajo una cornisa dorada y los paneles del zócalo
+    // pintados del color de la sala.
+    plaster(b, 0, 5, bw, dado - 5, `${seed}e`, STUCCO);
+    goldCornice(b, TOP.gold, bw);
+    tintBand(b, tint, TOP.band + 1, TOP.bandH);
+    tintPanels(b, dado, bw, SALON_DADO, tint);
+    b.hline(0, dado, bw, P.gold);
+    return;
+  }
+  // 5: la pared entera de damasco del color, tono sobre tono y apagado; abajo, mármol.
+  muteDamask(b, TOP.gold + 3, dado, bw, tint);
+  goldCornice(b, TOP.gold, bw);
+  darkMarble(b, 0, dado, bw, SALON_DADO);
+  b.hline(0, dado, bw, P.gold);
+  b.hline(0, dado + 1, bw, P.amber);
+}
+
+/**
+ * Dónde va lo de arriba de la pared del fondo del salón (en sus píxeles, a la escala del
+ * fondo): la viga del techo ocupa de 0 a 3. Las de los lados lo repiten a su escala (`side`),
+ * para que rematen contra el techo igual que la del fondo en la esquina.
+ */
+const TOP = { stencil: 4, cornice: 3, band: 6, bandH: 11, gold: 2 } as const;
+/** De píxeles del fondo a los de las paredes de los lados (que van a la escala del mundo). */
+const side = (v: number) => Math.round(v / BACK);
+
+/**
+ * Lo mismo en las paredes de los lados del salón: una sola pared de arriba abajo, con la viga,
+ * la moldura y el friso a la misma altura que en la del fondo. Se ven muy de canto, así que van
+ * sin dibujos menudos en horizontal (rombos, paneles, damasco), que se rompen en granulado:
+ * solo franjas y filetes, que se leen igual a cualquier escala.
+ */
+export function salonSideFinish(b: PixelBuffer, room: Room, seed: string) {
+  const lvl = room.level;
+  const w = b.w;
+  const h = b.h;
+  const tint = salonTint(room);
+  const dado = h - side(SALON_DADO);
+  const beamH = side(3);
+  if (lvl <= 1) plaster(b, 0, 0, w, h - 18, `${seed}b`, ROUGH);
+  else if (lvl === 2) {
+    plaster(b, 0, 0, w, h - 18, seed, PLASTER_FINE);
+    // El hilo de la plantilla: dos filetes finos del color, con el claro entre ellos.
+    const y = side(TOP.stencil);
+    b.hline(0, y, w, tint[1]!);
+    b.hline(0, y + 3, w, tint[2]!);
+    b.hline(0, y + side(6), w, tint[1]!);
+  } else if (lvl === 3) {
+    plaster(b, 0, 0, w, dado, seed, PLASTER_FINE);
+    cornice(b, side(TOP.cornice), w, false);
+    plainBand(b, tint, side(TOP.band), side(TOP.bandH));
+    plainDado(b, dado, w, h - dado, [P.ebony, P.bark, P.umber, P.rust]);
+    b.hline(0, dado, w, P.oak);
+  } else if (lvl === 4) {
+    plaster(b, 0, 0, w, dado, `${seed}e`, STUCCO);
+    goldCornice(b, side(TOP.gold), w);
+    plainBand(b, tint, side(TOP.band + 1), side(TOP.bandH));
+    plainDado(b, dado, w, h - dado, [P.black, tint[0]!, tint[1]!, tint[2]!]);
+    b.hline(0, dado, w, P.gold);
+  } else {
+    // El damasco de canto: liso, de la sombra del color, con un filete del tono cada tanto
+    // (los dibujos menudos y los tramados se rompen al verse de lado).
+    b.rect(0, 0, w, dado, tint[0]!);
+    for (let y = side(TOP.gold) + 18; y < dado - 8; y += 24) {
+      b.hline(0, y, w, tint[1]!);
+      b.hline(0, y + 2, w, tint[1]!);
+    }
+    goldCornice(b, side(TOP.gold), w);
+    b.hline(0, dado - 1, w, P.gold);
+    plainDado(b, dado, w, h - dado, [P.black, P.navy, P.slate, P.steel]);
+    b.hline(0, dado, w, P.gold);
+  }
+  // La viga del techo, como en la del fondo.
+  beam(b, 0, 0, w, beamH, WOOD_DARK);
+}
+
+/** Una franja lisa del color (filetes oscuros, el tono y un filete claro), sin dibujo. */
+function plainBand(b: PixelBuffer, [d, m, l]: readonly string[], y: number, k: number) {
+  b.hline(0, y, b.w, d!);
+  b.rect(0, y + 1, b.w, k - 2, m!);
+  b.hline(0, y + 1, b.w, l!);
+  b.hline(0, y + k - 1, b.w, d!);
+}
+
+/** Un zócalo liso (de un tono con su moldura de arriba y su sombra abajo), sin paneles. */
+function plainDado(
+  b: PixelBuffer,
+  y0: number,
+  w: number,
+  h: number,
+  [d, m, l, hi]: readonly string[],
+) {
+  b.rect(0, y0, w, h, m!);
+  b.hline(0, y0 + 1, w, hi!);
+  b.hline(0, y0 + 2, w, l!);
+  b.hline(0, y0 + 4, w, d!);
+  b.hline(0, y0 + h - 2, w, d!);
+}
+
+/** Yeso basto del nivel 1: más oscuro y sucio que el de siempre. */
+const ROUGH: Ramp = [P.plum, P.rust, P.clay, P.skinS];
+
+/** Los paneles del zócalo, pintados del color de la sala (nivel 4). */
+function tintPanels(
+  b: PixelBuffer,
+  y0: number,
+  w: number,
+  h: number,
+  [d, m, l]: readonly string[],
+) {
+  b.rect(0, y0, w, h, d!);
+  for (let x = 2; x + 14 <= w; x += 18) {
+    const ph = h - 3;
+    b.rect(x, y0 + 1, 14, ph, m!);
+    b.hline(x, y0 + 1, 14, P.black);
+    b.vline(x, y0 + 1, ph, P.black);
+    b.hline(x + 1, y0 + ph, 13, l!);
+    b.vline(x + 13, y0 + 2, ph - 1, l!);
+    b.rect(x + 3, y0 + 3, 8, ph - 4, d!);
+    b.hline(x + 3, y0 + 3, 8, P.gold);
+  }
+}
+
+/**
+ * Damasco tono sobre tono y apagado (nivel 5): el fondo, tramado entre la sombra y el tono del
+ * color (ni plano ni saturado); el dibujo, en la sombra; un punto de oro en uno de cada dos.
+ */
+function muteDamask(b: PixelBuffer, y0: number, y1: number, w: number, [d, m]: readonly string[]) {
+  for (let y = y0; y < y1; y++)
+    for (let x = 0; x < w; x++) {
+      const tx = x % 10;
+      const ty = (y - y0) % 12;
+      const dd = Math.abs(tx - 5) + Math.abs(ty - 6);
+      const cell = Math.floor(x / 10) + Math.floor((y - y0) / 12);
+      let c = (x + y) % 2 ? d! : m!;
+      if (dd === 4) c = d!;
+      else if (dd === 0) c = cell % 2 ? P.gold : m!;
+      b.set(x, y, c);
+    }
+  b.hline(0, y0, w, P.gold);
+  b.hline(0, y1 - 1, w, P.gold);
+}
+
+/**
+ * El suelo del salón (debajo de la alfombra): tablas bastas (1), tablas de siempre (2),
+ * cestería con cenefa (3), espiga con filete de oro (4) y rombos de mármol (5).
+ */
+export function salonFloor(b: PixelBuffer, room: Room) {
+  const lvl = room.level;
+  if (lvl <= 1) {
+    // Tablas viejas: juntas abiertas y alguna tabla más oscura.
+    for (let x = 0; x < b.w; x += 8) {
+      b.vline(x, 0, b.h, P.black);
+      if ((x / 8) % 3 === 1) b.rect(x + 1, 0, 7, b.h, P.bark);
+    }
+    return;
+  }
+  if (lvl === 2) return;
+  if (lvl <= 4) floorFinish(b, { ...room, level: lvl }, 'tablas', '');
+  else floor4(b, 'piedra');
+}
+
+/** Desconchones del yeso basto: se ve el ladrillo de debajo. */
+function patches(b: PixelBuffer, bw: number, h: number, seed: string) {
+  let s = 0;
+  for (const ch of seed) s = (s * 31 + ch.charCodeAt(0)) >>> 0;
+  for (let x = 10; x < bw - 16; x += 36) {
+    s = (s * 1103515245 + 12345) >>> 0;
+    const px = x + (s % 14);
+    const py = 8 + ((s >>> 8) % Math.max(1, h - 24));
+    const pw = 7 + ((s >>> 4) % 6);
+    for (let j = 0; j < 5; j++) {
+      const inset = j === 0 || j === 4 ? 1 : 0;
+      b.hline(px + inset, py + j, pw - inset * 2, j % 2 ? P.brick : P.rust);
+      if (j % 2) b.set(px + 2 + ((j * 3) % 4), py + j, P.plum);
+    }
+    b.hline(px, py - 1, pw, P.clay);
+  }
+}
+
+/** Zócalo de mármol oscuro (azul pizarra con vetas claras), en placas con su junta. */
+function darkMarble(b: PixelBuffer, x0: number, y0: number, w: number, h: number) {
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      const lx = x % 18;
+      const vein = (lx + y * 2) % 13 === 0 || (lx * 2 - y + 40) % 17 === 0;
+      b.set(x0 + x, y0 + y, lx === 0 ? P.black : vein ? P.steel : x % 36 < 18 ? P.navy : P.slate);
+    }
 }

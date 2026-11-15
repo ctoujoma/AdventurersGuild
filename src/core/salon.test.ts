@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DECOR, FACADE, decorSlots } from '../data/custom';
-import { NOBLE_APPEAL, RAID_NOTORIETY, SEAT_TURNS } from './balance';
+import { NOBLE_APPEAL, RAID_NOTORIETY, SEAT_TURNS, salonAppeal } from './balance';
+import { ROOM_INFO } from '../data/roomInfo';
 import { newGame, reduce } from './game';
 import type { GameState, Room } from './model';
 import { raidChance } from './raids';
@@ -32,6 +33,23 @@ describe('el salón y sus visitantes', () => {
     // Más nivel de salón, más huecos de decoración.
     expect(decorSlots(1)).toBe(2);
     expect(decorSlots(3)).toBe(4);
+  });
+
+  it('el salón de banquetes (nivel 5) da 12 de Atractivo: dos más que la cuenta', () => {
+    const s = newGame('banquete');
+    const r = room(s, 'salon');
+    const at = (level: number) =>
+      appeal({
+        ...s,
+        building: {
+          ...s.building,
+          rooms: s.building.rooms.map((x) => (x.id === r.id ? { ...x, level } : x)),
+        },
+      });
+    expect(at(4) - at(0)).toBe(8);
+    expect(at(5) - at(0)).toBe(12);
+    expect(salonAppeal(5)).toBe(12);
+    expect(ROOM_INFO.salon(5, 1)).toContain('+12 de Atractivo');
   });
 
   it('los visitantes de un día son siempre los mismos y caben en las plazas', () => {

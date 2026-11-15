@@ -407,7 +407,7 @@ Boceto nuevo (14 de noviembre, galería con escalera): https://claude.ai/artifac
 
 Elegida (12 de noviembre): **B, galería al fondo**, pero con profundidad de verdad (que no sea un dibujo plano en la pared: suelo de la galería con fondo, barandilla delante, sombra) y con **escalera dentro del salón** por la que suban clientes y trabajadores del salón (en el boceto subían por la escalera de la casa). Con la (c): la altura deja de encarecer las mejoras.
 
-Plan: Bocetos hechos; se hace en su fase (C7 con la fase 3, D1 en la 5, E1 en la 6).
+Plan: **Hecho** (15 de noviembre): galería al fondo con escalera de caracol; la altura ya no encarece las mejoras.
 
 ### E2 · El salón cambia de verdad con cada nivel — Aprobada con cambios
 
@@ -419,7 +419,7 @@ Nota del usuario: pensamos un posible nivel 4 y incluso 5
 
 Respuesta: El salón ya llega al nivel 4 (el gran salón) en el juego: falta que cada nivel se note en el dibujo. El nivel 5 lo planteo en E4 (nueva).
 
-Plan: Fase 6 · Salas.
+Plan: **Hecho** (15 de noviembre): rampa de color con el pintor, muebles y pendones por nivel, textos nuevos.
 
 ### E4 · Nivel 5 del salón — Aprobada
 
@@ -429,7 +429,7 @@ Elegida: (a) Sí, con su arte.
 
 Por qué: Tu nota en E2. Depende de: E2.
 
-Plan: Fase 6 · Salas.
+Plan: **Hecho** (15 de noviembre): salón de banquetes, coste 1200, +12 de Atractivo.
 
 ### E3 · Alquimia y materiales raros hasta las expediciones — Aprobada con cambios
 

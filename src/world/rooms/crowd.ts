@@ -27,13 +27,16 @@ import { GROUND } from '../geometry';
 import { Look, mesh, texture, type Shared } from './gl';
 import { PITCH, STAIR_W, floorY, type RoomsLayout, type Rect } from './layout';
 import { CLIMB_Z, STEPS, goesRight, stepAt } from './stairs';
+import { stepView } from './galeria';
 import {
   LANES,
   awayBeds,
   homes,
   outside,
+  insides,
   route,
   segments,
+  type Flight,
   spots,
   wander,
   workGoal,
@@ -573,6 +576,17 @@ const SIZES = {
   toast: 2,
   /** Sentado con los ojos cerrados (el de guardia que cabecea de madrugada). */
   sitZ: 1,
+  /**
+   * En la escalera de caracol: de espaldas (quieto y con cada pie en alto) y de frente con cada
+   * pie en alto (quieto, el de siempre).
+   */
+  back: 3,
+  stepF: 2,
+  /** De tres cuartos, en los giros: de espaldas y de frente, a la derecha y a la izquierda. */
+  back3: 2,
+  back3L: 2,
+  front3: 2,
+  front3L: 2,
 } as const;
 
 /** Dónde empieza cada cosa en el atlas. */
@@ -758,7 +772,7 @@ interface Actor {
    * Subiendo o bajando un tramo: la planta de abajo, la columna (x de su hueco), si sube y por
    * dónde va (0 = abajo, 1 = arriba).
    */
-  climb?: { lower: number; sx: number; up: boolean; u: number } | null;
+  climb?: { lower: number; sx: number; up: boolean; u: number; fl?: Flight } | null;
 }
 
 /** La caída: lo que dura, lo que echa hacia atrás y la parte en que aún se tambalea de pie. */
@@ -915,6 +929,17 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
   });
   put(spr.sit, F.sit);
   put(dozing(spr), F.sitZ);
+  spr.back.forEach((img, i) => put(img, F.back + i));
+  spr.stepFront.forEach((img, i) => put(img, F.stepF + i));
+  // (De tres cuartos, quieto y con un pie en alto: el atlas no da para más.)
+  spr.back3.forEach((img, i) => {
+    put(img, F.back3 + i);
+    put(img, F.back3L + i, 3, true);
+  });
+  spr.front3.forEach((img, i) => {
+    put(img, F.front3 + i);
+    put(img, F.front3L + i, 3, true);
+  });
   // Entrenando: los fotogramas de mirar a la izquierda son los mismos, volteados.
   const pose = fightSprites(h.look, h.marks);
   // Trabajando, charlando o junto al fuego: los pies quietos.
@@ -2369,7 +2394,8 @@ export class Crowd {
       this.S!.bar.some((b) => b.floor === a.floor && Math.abs(b.x - a.x) < 6);
     const key = (wiping ? 'barra' : job?.room.type) as WorkId | undefined;
     const w: Work | undefined = key && key in WORK ? WORK[key] : undefined;
-    if (!job || !w || a.floor !== job.room.floor || a.x < job.x0 - 8 || a.x > job.x1 + 8)
+    const off = a.floor - (job?.room.floor ?? 0);
+    if (!job || !w || off < 0 || off >= job.room.h || a.x < job.x0 - 8 || a.x > job.x1 + 8)
       return null;
     const cycle = w.steps.reduce((a, s) => a + s[2], 0);
     let p = (this.now + (hash(h.id) % 89) / 11) % cycle;
@@ -2796,7 +2822,15 @@ export class Crowd {
   private pathTo(a: Actor, p: Place): Place[] | null {
     if (!this.L) return null;
     const c = a.climb;
-    const mid = c ? { x: c.sx + STAIR_W / 2, floor: c.up ? c.lower + 1 : c.lower } : null;
+    const mid = c
+      ? c.fl
+        ? {
+            x: (c.up ? c.fl.steps.at(-1)! : c.fl.steps[0]!).x,
+            floor: c.up ? c.lower + 1 : c.lower,
+            flight: c.fl,
+          }
+        : { x: c.sx + STAIR_W / 2, floor: c.up ? c.lower + 1 : c.lower }
+      : null;
     const rest = route(this.L, mid ?? { x: a.x, floor: a.floor }, p, this.segs);
     return mid && rest ? [mid, ...rest] : rest;
   }
@@ -2831,8 +2865,11 @@ export class Crowd {
       const up = next.floor > a.floor;
       const lower = Math.min(a.floor, next.floor);
       const sx = next.x - STAIR_W / 2;
+      // La de dentro de una sala (la galería del salón) dice ella dónde va cada peldaño.
+      const fl = a.climb?.fl ?? next.flight;
+      const at = (i: number) => (fl ? fl.steps[i]! : stepAt(sx, lower, i));
       if (!a.climb) {
-        const start = stepAt(sx, lower, up ? 0 : STEPS);
+        const start = at(up ? 0 : STEPS);
         const dx = start.x - a.x;
         const step = SPEED * run * dt;
         a.dist += step;
@@ -2841,7 +2878,7 @@ export class Crowd {
           a.dir = dx > 0 ? 1 : -1;
         } else {
           a.x = start.x;
-          a.climb = { lower, sx, up, u: up ? 0 : 1 };
+          a.climb = { lower, sx, up, u: up ? 0 : 1, fl };
         }
       }
       const c = a.climb;
@@ -2849,12 +2886,16 @@ export class Crowd {
         const step = CLIMB * run * dt;
         a.dist += step;
         c.u = Math.max(0, Math.min(1, c.u + ((up ? 1 : -1) * step) / PITCH));
-        // Mira hacia donde va el tramo (al bajar, al revés que al subir).
-        a.dir = goesRight(lower) === up ? 1 : -1;
         const s = c.u * STEPS;
         const i = Math.min(STEPS - 1, Math.floor(s));
-        const p0 = stepAt(sx, lower, i);
-        const p1 = stepAt(sx, lower, i + 1);
+        const p0 = at(i);
+        const p1 = at(i + 1);
+        // Mira hacia donde va el tramo (al bajar, al revés que al subir).
+        if (!fl) a.dir = goesRight(lower) === up ? 1 : -1;
+        else {
+          // En la de caracol, de lado según el tramo (de frente o de espaldas, no cambia).
+          a.dir = stepView(fl.steps[i]!, fl.steps[i + 1]!, up).dir;
+        }
         // Cada peldaño: un impulso rápido y un momento quieto en él.
         const f = smoothstep(Math.min(1, (s - i) / LIFT));
         a.x = p0.x + (p1.x - p0.x) * f;
@@ -2935,12 +2976,35 @@ export class Crowd {
     if (a.edge) return a.edge.bed.z;
     if (a.climb) {
       // Del carril al tramo en el primer peldaño, y de vuelta en el último.
-      const s = a.climb.u * STEPS;
+      const c = a.climb;
+      const s = c.u * STEPS;
+      if (c.fl) {
+        // En la de la galería, cada peldaño a su fondo (la de caracol da la vuelta al eje).
+        const i = Math.min(STEPS - 1, Math.floor(s));
+        const [p, q] = [c.fl.steps[i]!, c.fl.steps[i + 1]!];
+        const z = p.z + (q.z - p.z) * Math.min(1, s - i);
+        if (s < 1) return a.lane + (z - a.lane) * s;
+        const top = this.lifted(a.lane, a.x, c.lower + 1);
+        if (s > STEPS - 1) return top + (z - top) * (STEPS - s);
+        return z;
+      }
       const w = Math.min(1, s, STEPS - s);
       return a.lane + (CLIMB_Z - a.lane) * w;
     }
     if ((a.pose === 'sit' || a.pose === 'bed') && a.goal?.z !== undefined) return a.goal.z;
-    return a.lane;
+    return this.lifted(a.lane, a.x, a.floor);
+  }
+
+  /**
+   * En la galería del salón se anda por detrás de su canto (y de la barandilla): el carril de
+   * siempre, corrido hacia el fondo.
+   */
+  private lifted(lane: number, x: number, floor: number): number {
+    if (!this.L) return lane;
+    for (const w of insides(this.L).walks)
+      if (w.floor === floor && x >= w.x0 - 6 && x <= w.x1 + 6)
+        return w.edge + 5 + (lane - 16) * 0.5;
+    return lane;
   }
 
   /** Fotograma, tamaño y esquina de abajo a la izquierda (en el mundo 2D) de alguien. */
@@ -3101,10 +3165,20 @@ export class Crowd {
     }
     if (a.climb) {
       // En la escalera: la pierna sube en el impulso y se apoya en el peldaño (alternando).
-      const s = a.climb.u * STEPS;
+      const c = a.climb;
+      const s = c.u * STEPS;
       const i = Math.floor(s);
       const lifting = s - i < LIFT;
-      frame = (a.dir > 0 ? F.walk : F.walkL) + (i % 2 ? 4 : 0) + (lifting ? 3 : 0);
+      // En la de caracol, según hacia dónde va en ese tramo de la vuelta: de lado, de espaldas
+      // (alejándose) o de frente (viniendo hacia la cámara).
+      const j = Math.min(STEPS - 1, i);
+      const v = c.fl ? stepView(c.fl.steps[j]!, c.fl.steps[j + 1]!, c.up) : null;
+      const foot = lifting ? 1 + (i % 2) : 0;
+      if (v?.view === 'back') frame = F.back + foot;
+      else if (v?.view === 'front') frame = lifting ? F.stepF + (i % 2) : F.idle;
+      else if (v?.view === 'back3') frame = (v.dir > 0 ? F.back3 : F.back3L) + (lifting ? 1 : 0);
+      else if (v?.view === 'front3') frame = (v.dir > 0 ? F.front3 : F.front3L) + (lifting ? 1 : 0);
+      else frame = (a.dir > 0 ? F.walk : F.walkL) + (i % 2 ? 4 : 0) + (lifting ? 3 : 0);
     } else if (a.pose === 'walk' && a.turn) frame = F.idle;
     else if (a.pose === 'walk') {
       // Un tiempo del paso cada `WALK_PX` píxeles: el pie apoyado no patina.

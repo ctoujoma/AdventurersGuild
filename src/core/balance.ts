@@ -41,7 +41,8 @@ export const START = {
 export const UPGRADE_COST: Record<keyof Facilities, readonly number[]> = {
   dorm: [0, 80, 170, 420, 750],
   enf: [0, 100, 230, 450],
-  tab: [0, 90, 250, 450, 750],
+  // El 5 (salón de banquetes): 2 de Atractivo más (ver `salonAppeal`).
+  tab: [0, 90, 250, 450, 750, 1200],
   mapas: [0, 120, 340, 620],
   arm: [0, 150, 380, 650],
   cap: [0, 110, 320, 600],
@@ -337,6 +338,8 @@ export const CLERIC_SOLACE = 0.5;
 export const TRIP_FATIGUE = 4;
 /** Moral que se recupera cada noche descansando en el gremio, según la taberna. */
 export const restMorale = (tab: number) => 2 + tab;
+/** Atractivo del salón por su nivel: dos por nivel y, en el salón de banquetes (5), dos más. */
+export const salonAppeal = (level: number) => level * 2 + (level >= 5 ? 2 : 0);
 /** Hasta dónde llega la moral solo descansando: una taberna mejor anima más. */
 export const restCap = (tab: number) => 55 + 6 * tab;
 /** Capilla: moral extra por noche y probabilidad de que vuelva un desaparecido. */

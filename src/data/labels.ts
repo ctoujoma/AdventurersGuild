@@ -1,5 +1,5 @@
 import type { Danger, Facilities, Hero, Outcome } from '../core/model';
-import { CRAFT_QUALITY, TRAINING_XP, returnChance } from '../core/balance';
+import { CRAFT_QUALITY, TRAINING_XP, returnChance, salonAppeal } from '../core/balance';
 import type { ClassId, MoraleBand } from '../core/party';
 
 /** Textos de la interfaz que dependen de los datos del juego. */
@@ -88,15 +88,16 @@ export const FACILITY_INFO: Record<
     room: 'sala',
     levels: [
       'En ruinas: chimenea apagada y telarañas',
-      'Una mesa, un farol y lo justo',
-      'Dos mesas, barriles, apliques, diana y caldero',
-      'Manteles, trofeo, laúd, candelabro y fuego grande',
-      'Gran salón: alfombra roja, dos candelabros y barra dorada',
+      'Yeso desconchado, barra de tablas, un farol y lo justo',
+      'Encalado con cenefa, barriles, apliques, diana, caldero y velas',
+      'Arrimadero de paneles, manteles, trofeo, laúd, candelabro y fuego grande',
+      'Gran salón: alfombra larga, araña de latón, dos candelabros y barra dorada',
+      'Salón de banquetes: araña de cristal, vidrieras, chimenea y barra de mármol',
     ],
     effect: (l) =>
       l === 0
         ? 'No deja dinero: no viene nadie'
-        : `+${l * 2} de Atractivo (más visitantes)${l <= 2 ? ', más encargos' : ''}${l >= 2 ? ' y mejores candidatos' : ''}; descansar anima más`,
+        : `+${salonAppeal(l)} de Atractivo (más visitantes)${l <= 2 ? ', más encargos' : ''}${l >= 2 ? ' y mejores candidatos' : ''}; descansar anima más`,
   },
   mapas: {
     name: 'Sala de mapas',

@@ -41,6 +41,10 @@ import {
   tintBand,
   tintRail,
   wallFinish,
+  salonFinish,
+  salonFloor,
+  salonSideFinish,
+  salonTint,
 } from './salas/acabados';
 import { BLIND, cellsOf, sconceOn, takeWallActs, windowX } from './salas/kit';
 import { RISE, goesRight, stepAt } from './stairs';
@@ -135,6 +139,8 @@ export function backWall(room: Room, w: number, h: number, look: SalonLook = NO_
     stoneWall(b, 0, 0, bw, bh, seed, { ramp: CELLAR, bw: 12, bh: 7, moss: ruin ? 10 : 0 });
   else stoneWall(b, 0, 0, bw, bh, seed, { ramp: ROCK, bw: 14, bh: 8 });
   if (fine) wallFinish(b, room, theme, wain, seed);
+  // El salón cambia de pared en cada nivel (ver `salonFinish`).
+  if (room.type === 'salon' && !bare(room) && !ruin) salonFinish(b, room, wain, seed);
   // Vigas a la altura de cada planta en las salas de más de una (en el salón, solo un listón:
   // es una sala alta, no dos plantas).
   for (let j = 1; j < room.h; j++)
@@ -207,12 +213,26 @@ function windowAt(b: PixelBuffer, cx: number, y: number, room: Room, ruin: boole
   const x = cx - w / 2;
   b.rect(x - 3, y - 3, w + 6, h + 6, P.plum);
   b.rect(x - 2, y - 2, w + 4, h + 4, P.bark);
-  const stained = room.type === 'capilla';
+  // Vidrieras en la capilla y en el salón del nivel 5 (rombos emplomados de oro, vino y azul).
+  const stained = room.type === 'capilla' || (room.type === 'salon' && room.level >= 5);
+  const salon = room.type === 'salon';
   const glass = [P.rose, P.gold, P.sky, P.grape];
+  // El filete de color de las vidrieras del salón, del color de la sala.
+  const [, lead1, lead2] = salon ? salonTint(room) : [P.wine, P.wine, P.ocean];
   if (!ruin) windowsDrawn.push({ x: cx, y: y + h, top: y, w });
   for (let j = 0; j < h; j++)
     for (let i = 0; i < w; i++)
-      if (stained) b.set(x + i, y + j, glass[(Math.floor(i / 4) + Math.floor(j / 5)) % 4]!);
+      if (stained && salon) {
+        // Vidriera emplomada: rombos pequeños de vidrio claro y un filete de color en cada
+        // cuarterón (vino y azul, al tresbolillo).
+        const pi = i % 8;
+        const pj = j % 10;
+        const lead = (i + j) % 4 === 0 || (i - j + 100) % 4 === 0;
+        const k = Math.floor((i + j) / 4) + Math.floor((i - j + 100) / 4);
+        const edge = pi === 0 || pi === 7 || pj === 0 || pj === 9;
+        const tint = (Math.floor(i / 8) + Math.floor(j / 10)) % 2 ? lead2 : lead1;
+        b.set(x + i, y + j, edge ? tint : lead ? P.slate : k % 3 ? P.sand : P.lemon);
+      } else if (stained) b.set(x + i, y + j, glass[(Math.floor(i / 4) + Math.floor(j / 5)) % 4]!);
       else b.clear(x + i, y + j);
   b.vline(x + w / 2, y, h, P.bark);
   b.hline(x, y + h / 2, w, P.bark);
@@ -262,9 +282,32 @@ export function floorTex(room: Room | null, theme: Theme, w: number, seed: strin
     const art = ART[room.type];
     if (art?.floor) art.floor(b, room, cellsOf(room, w));
     else if (room.type === 'salon') {
-      // La alfombra roja (o del tema de la sala).
-      const c = cloth(room, [P.plum, P.wine, P.red, P.coral]);
-      rug(w - 100, 70, [c[1], c[2], P.gold]);
+      salonFloor(b, room);
+      const lvl = room.level;
+      // Estera de esparto junto al fuego (2), alfombra de lana (3) y, en el gran salón, la
+      // alfombra roja de punta a punta con cenefa de oro (o del tema de la sala).
+      if (lvl === 2) rug(w - 96, 50, [P.clay, P.tan, P.sand]);
+      else if (lvl === 3) {
+        const c = salonTint(room);
+        rug(w - 104, 74, [c[0], c[1], P.gold]);
+      } else if (lvl >= 4) {
+        const c = cloth(room, [P.plum, P.wine, P.red, P.coral]);
+        const x0 = 20;
+        const rw = w - 40;
+        b.rect(x0, 4, rw, DEEP - 8, c[0]);
+        b.rect(x0 + 1, 5, rw - 2, DEEP - 10, P.gold);
+        b.rect(x0 + 3, 6, rw - 6, DEEP - 12, c[1]);
+        b.rect(x0 + 4, 7, rw - 8, DEEP - 14, c[2]);
+        for (let i = x0 + 8; i < x0 + rw - 8; i += 8) {
+          b.set(i, 9, P.gold);
+          b.set(i + 4, DEEP - 10, P.gold);
+        }
+        // Flecos en las puntas.
+        for (let y = 5; y < DEEP - 5; y += 2) {
+          b.set(x0 - 1, y, P.sand);
+          b.set(x0 + rw, y, P.sand);
+        }
+      }
     } else if (room.type === 'capilla') rug(w / 2 - 12, 24, [P.wine, P.grape, P.gold]);
   }
   return b;
@@ -322,6 +365,7 @@ export function sideTex(
   else stoneWall(b, 0, 0, W, h, seed, { ramp: ROCK, bw: 14, bh: 8 });
   // Los acabados de la sala, como en su pared del fondo.
   if (room && !bare(room) && !ruined(room) && ART[room.type]) sideFinish(b, room, theme, seed);
+  if (room?.type === 'salon' && !bare(room) && !ruined(room)) salonSideFinish(b, room, seed);
   // Lo pintado del color de la sala, como en la del fondo (las puertas lo cortan).
   const paint =
     room && !bare(room) && !ruined(room)

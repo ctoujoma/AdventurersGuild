@@ -193,10 +193,14 @@ export function beds(b: Building): number {
   return b.rooms.reduce((n, r) => n + roomBeds(r), 0);
 }
 
-/** Mejorar: lo que pone la tabla para el nivel siguiente, con recargo si es más ancha que la de serie. */
+/**
+ * Mejorar: lo que pone la tabla para el nivel siguiente, con recargo si es más grande que la de
+ * serie. En el salón solo cuenta el ancho: la planta de arriba (la galería) no encarece (E1).
+ */
 export function upgradeCostOf(r: Room): number | null {
   if (r.level >= roomMax(r.type)) return null;
-  const extra = Math.max(0, r.w * r.h - (ROOMS[r.type].base ?? 1));
+  const size = r.type === 'salon' ? r.w : r.w * r.h;
+  const extra = Math.max(0, size - (ROOMS[r.type].base ?? 1));
   return Math.round(ROOM_COST[r.type][r.level + 1]! * (1 + ROOM_SIZE_COST * extra));
 }
 

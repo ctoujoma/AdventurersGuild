@@ -22,6 +22,7 @@ import {
   VISIT_BASE,
   VISIT_PER_APPEAL,
   VISIT_PER_REP,
+  salonAppeal,
 } from './balance';
 import type { Building, GameState, Room } from './model';
 import { Rng } from './rng';
@@ -93,7 +94,7 @@ export function appeal(s: GameState): number {
   if (!r) return 0;
   const c = s.custom;
   return (
-    r.level * 2 +
+    salonAppeal(r.level) +
     (r.h > 1 ? 2 : 0) +
     (c?.decor ?? []).reduce((a, id) => a + DECOR[id].appeal, 0) +
     (c?.facade ?? []).reduce((a, id) => a + FACADE[id].appeal, 0) +
@@ -101,12 +102,20 @@ export function appeal(s: GameState): number {
   );
 }
 
-/** Plazas del salón: dos taburetes por mesa, más mesas cuanto más ancho. */
+/** Plazas del salón: dos taburetes por mesa, más mesas cuanto más ancho (y las de la galería). */
 export function seatsOf(b: Building): number {
   const r = salonOf(b);
   if (!r) return 0;
-  const w = (r.works?.from ?? r).w;
-  return Math.max(1, w * 2 - 1) * 2;
+  const was = r.works?.from ?? r;
+  return Math.max(1, was.w * 2 - 1) * 2 + gallerySeats(was);
+}
+
+/**
+ * Plazas de la galería del salón de dos alturas (boceto E1): tres mesas arriba, contra la pared
+ * del fondo, si es de tres huecos (en los más estrechos no cabe con su escalera).
+ */
+export function gallerySeats(r: { w: number; h: number }): number {
+  return r.h > 1 && r.w >= 3 ? 6 : 0;
 }
 
 /** A cuántos se puede atender hoy: los de la barra y, con la cocina al lado, alguno más. */

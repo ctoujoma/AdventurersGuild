@@ -113,6 +113,19 @@ import { catHunts, napping } from '../../core/incidents';
 import type { Assault } from '../../core/assault';
 import { HEARTH_RIGHT, NO_LOOK, type MatsLook, type SalonLook } from './salon';
 import {
+  DECK,
+  EDGE,
+  GAL_STEPS,
+  deckEnd,
+  deckTop,
+  deckUnder,
+  galleryOf,
+  shadeFloor,
+  shadeWall,
+  spiralPiece,
+  type Gallery,
+} from './galeria';
+import {
   FEW_LIGHTS,
   Look,
   MAX_BOXES,
@@ -284,6 +297,11 @@ interface Pin {
   k: number;
   wx: number;
   wy: number;
+  /**
+   * En vez de a la pared, a un eje (la escalera de caracol): ese punto (x, y del mundo) se ve
+   * donde caería a la escala `kp` (la del eje), aunque la figura vaya a otro fondo.
+   */
+  axis?: { x: number; y: number; kp: number };
 }
 
 export interface Spot {
@@ -2437,6 +2455,9 @@ export class RoomScene {
       : null;
     if (fresh) takeWindows();
     const back = backWall(room, r.w, r.h, this.salonLook());
+    // La galería del salón de dos alturas: su sombra en la pared y en el suelo de debajo.
+    const gal = galleryOf(room, r.w);
+    if (gal) shadeWall(back, gal, r.h);
     this.boxes.set(room.id, { r, back, ambient, sun, room });
     // La luz que entra por cada ventana: un foco del color del día un poco por delante de la
     // pared, a la altura del alféizar (solo se enciende con luz con ambiente y de día).
@@ -2519,9 +2540,11 @@ export class RoomScene {
           y1: r.y + (a.y + a.h) * ty,
           z: DEPTH,
         });
+    const ground = floorTex(room, theme, r.w, seed);
+    if (gal) shadeFloor(ground, gal);
     this.box(rect, theme, ambient, sun, seed, {
       back,
-      floorTex: floorTex(room, theme, r.w, seed),
+      floorTex: ground,
       sides,
       floor: room.floor,
       door: room.type === 'recibidor' ? room.level : undefined,
@@ -2581,7 +2604,10 @@ export class RoomScene {
       const h = th.img.h / k;
       const x = r.x + th.x;
       const bottom = th.hang ? ceil3 - h - th.y : floor3 + th.y;
-      this.figure(this.world, th.img, x, GROUND - bottom, th.z, ambient, sun, {
+      const lit = th.dim
+        ? ([ambient[0] * th.dim, ambient[1] * th.dim, ambient[2] * th.dim] as const)
+        : ambient;
+      this.figure(this.world, th.img, x, GROUND - bottom, th.z, lit, th.dim ? sun * th.dim : sun, {
         wall: { r, back },
         box: th.box || !!th.thick,
         thick: th.thick,
@@ -2625,6 +2651,7 @@ export class RoomScene {
       if (th.light?.steady)
         this.shafts.push({ x, y0: GROUND - bottom - h, y1: GROUND - bottom, z: th.z });
     }
+    if (gal) this.gallery(gal, r, ambient, sun);
     if (ruin) {
       // El plano en tiza de lo que tendrá al repararla, en la pared del fondo.
       const plan = chalkPlan(
@@ -4149,7 +4176,14 @@ export class RoomScene {
     const key = `${view.px},${view.py},${view.vw},${view.vh}`;
     if (key === this.pinnedAt) return;
     this.pinnedAt = key;
+    const e = eyeOf(view);
     for (const p of this.pins) {
+      if (p.axis) {
+        const f = (p.axis.kp - p.k) / p.k;
+        p.mesh.position.x = (p.axis.x - e.x) * f;
+        p.mesh.position.y = -(p.axis.y - e.y) * f;
+        continue;
+      }
       const d = pinShift(view, p, p.k, p.wx, p.wy);
       p.mesh.position.x = d.x;
       p.mesh.position.y = -d.y;
@@ -4328,11 +4362,73 @@ export class RoomScene {
     return g;
   }
 
+  /**
+   * El suelo de la galería del salón (ver `galeria.ts`), en 3D: por encima (las tablas), por
+   * debajo (las viguetas, en sombra) y el extremo de la escalera; el canto de delante es una
+   * figura. Con la de caracol, también sus peldaños (cada uno a su fondo, así quien sube pasa
+   * por delante y por detrás del eje), los barrotes y el pasamanos.
+   */
+  private gallery(g: Gallery, r: Rect, ambient: Tint, sun: number): void {
+    const x0 = r.x;
+    const x1 = r.x + g.x1;
+    const floor = r.y + r.h;
+    const top = floor - PITCH;
+    const under = top + DECK;
+    const rows = Math.round((DEPTH - EDGE) / 2);
+    const w = Math.round(g.x1);
+    const shade = [ambient[0] * 0.5, ambient[1] * 0.5, ambient[2] * 0.5] as const;
+    this.plane(
+      this.world,
+      deckTop(w, rows),
+      [at(x0, top, EDGE), at(x1, top, EDGE), at(x1, top, DEPTH), at(x0, top, DEPTH)],
+      { ambient, sun, dither: 0 },
+    );
+    this.plane(
+      this.world,
+      deckUnder(w, rows),
+      [at(x0, under, DEPTH), at(x1, under, DEPTH), at(x1, under, EDGE), at(x0, under, EDGE)],
+      { ambient: shade, sun: sun * 0.4, dither: 0 },
+    );
+    this.plane(
+      this.world,
+      deckEnd(rows, DECK),
+      [at(x1, under, EDGE), at(x1, under, DEPTH), at(x1, top, DEPTH), at(x1, top, EDGE)],
+      { ambient, sun: sun * 0.8, dither: 0 },
+    );
+    // La escalera de caracol: cada peldaño, con su tramo de zanca y de pasamanos, es un dibujo a
+    // su fondo (ver `spiralPiece`); el eje es una figura con volumen (en `galleryThings`). Cada
+    // peldaño se ancla al eje: al mover la cámara, su arranque sigue pegado a él aunque vaya a
+    // otro fondo (si no, la perspectiva los despegaba).
+    const ax = r.x + g.axis.x;
+    const kp = scaleAt(g.axis.z);
+    const groups = this.dual ? [this.dual.classic, this.dual.mood] : [this.world];
+    for (let i = 1; i < GAL_STEPS; i++) {
+      const p = spiralPiece(i, g.x1 - g.axis.x);
+      const k = scaleAt(p.z);
+      const x = ax + (p.img.w / 2 - p.ox) / k;
+      const base = floor - p.h + (p.img.h - p.oy) / k;
+      const before = groups.map((gr) => gr.children.length);
+      this.figure(this.world, p.img, x, base, p.z, ambient, sun);
+      const axis = { x: ax, y: floor - p.h, kp };
+      groups.forEach((gr, n) => {
+        for (const mesh of gr.children.slice(before[n]))
+          this.pins.push({ mesh, x: 0, y: 0, k, wx: 0, wy: 0, axis });
+      });
+    }
+  }
+
   private plane(
     g: Group,
     img: PixelBuffer,
     corners: Corners,
-    o: { ambient: Tint; sun: number; wrap?: number; dither?: number; repeat?: number },
+    o: {
+      ambient: Tint;
+      sun: number;
+      wrap?: number;
+      dither?: number;
+      repeat?: number;
+      side?: typeof DoubleSide;
+    },
     /** Si se da, se le añaden los materiales hechos (con la luz con ambiente, son dos). */
     out?: { mat: ShaderMaterial; mood: boolean }[],
   ): ShaderMaterial {

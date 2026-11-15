@@ -63,6 +63,8 @@ export interface Thing {
   act?: ActId;
   /** Sitio al que la gente va a hacer algo (calentarse las manos, rezar…). */
   poi?: PoiKind;
+  /** En sombra (debajo de la galería del salón): su luz de fondo, por esto. */
+  dim?: number;
 }
 
 /**

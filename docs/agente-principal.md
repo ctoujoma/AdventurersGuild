@@ -345,3 +345,27 @@ Repartida en cuatro agentes y juntada en la rama (sin choques):
   escalera recta o de caracol con `window.__escalera`, `seatsOf` 10 → 16 en el 3×2).
 - E2/E4: commit `a98b7c6` en `worktree-agent-ac0bd98cdd0151a3e` (paredes, suelos y muebles por
   nivel; nivel 5 con coste 1200 en `balance.ts`). Choca con E1 en `salonWall` y `furniture.ts`.
+- Segunda vuelta (15 de noviembre): https://claude.ai/artifact/AnK6iNbRpA6RN2n5o5JXQV. Todo junto en la
+  rama local `worktree-agent-ac0bd98cdd0151a3e` (E2/E4 `a98b7c6`, `6b66db1` + E1 `0563ae4`,
+  `7798d4c`, `f94ab3c`, `5016a11`): caracol con gente orientada, niveles aligerados con el color del
+  pintor (`salonTint`), lo de la puerta por nivel (`nook`), textos nuevos y nivel 5 a +12 (`salonAppeal`).
+  Falta: manteles de la galería por nivel, `npm run sim` (6 plazas más) y la PR.
+- Tercera vuelta (15 de noviembre): https://claude.ai/artifact/HXAJqwWAzm3QAYte5jxNtW. En
+  `worktree-agent-ac0bd98cdd0151a3e` además: `47b535b`, `79470c9` (rampa de color, mesas delante,
+  hueco ante la escalera) y la escalera `d49a865` (de E1 `1de8966`). Pendiente de mi crítica: 2 y 3
+  parecidos, damasco del 5 granuloso a 1×, pendones iguales en todos los niveles.
+
+### Fase 6 · hecha (15 de noviembre)
+
+- Junto en la rama todo lo de los dos agentes (cherry-pick de `worktree-agent-ac0bd98cdd0151a3e`).
+- E1: galería al fondo del salón de 3 de ancho y dos alturas (`src/world/rooms/galeria.ts`), 3 mesas
+  arriba (`gallerySeats`, el 3×2 pasa de 10 a 16 plazas), escalera de caracol dentro del salón por la
+  que suben clientes, héroes y trabajadores, con vistas de espaldas y tres cuartos en el atlas de la
+  gente (`stepView`). La altura del salón ya no cuenta en el recargo de mejorar (`upgradeCostOf`).
+- E2: cada nivel con su material y una rampa de color de menos a más con el color del pintor
+  (`salonTint`, `salonFinish`, `salonSideFinish`, `salonFloor` en `acabados.ts`), muebles, luz,
+  pendones y lo de junto a la puerta (`nook`) por nivel; mesas de abajo muy delante, con hueco ante
+  la escalera. Textos de cada nivel en `labels.ts` dicen lo que se ve.
+- E4: nivel 5 (salón de banquetes), coste 1200, +12 de Atractivo (`salonAppeal`), 6 huecos de adorno.
+- Pendiente: el tope de visitantes en escena (`MAX_VISITORS = 8`) sigue igual; tres cuartos y
+  espaldas de la gente son sencillos (sin capa propia por traje).
