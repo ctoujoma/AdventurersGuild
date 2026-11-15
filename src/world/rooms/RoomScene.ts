@@ -297,6 +297,11 @@ interface Pin {
   k: number;
   wx: number;
   wy: number;
+  /**
+   * En vez de a la pared, a un eje (la escalera de caracol): ese punto (x, y del mundo) se ve
+   * donde caería a la escala `kp` (la del eje), aunque la figura vaya a otro fondo.
+   */
+  axis?: { x: number; y: number; kp: number };
 }
 
 export interface Spot {
@@ -4171,7 +4176,14 @@ export class RoomScene {
     const key = `${view.px},${view.py},${view.vw},${view.vh}`;
     if (key === this.pinnedAt) return;
     this.pinnedAt = key;
+    const e = eyeOf(view);
     for (const p of this.pins) {
+      if (p.axis) {
+        const f = (p.axis.kp - p.k) / p.k;
+        p.mesh.position.x = (p.axis.x - e.x) * f;
+        p.mesh.position.y = -(p.axis.y - e.y) * f;
+        continue;
+      }
       const d = pinShift(view, p, p.k, p.wx, p.wy);
       p.mesh.position.x = d.x;
       p.mesh.position.y = -d.y;
@@ -4384,14 +4396,24 @@ export class RoomScene {
       { ambient, sun: sun * 0.8, dither: 0 },
     );
     // La escalera de caracol: cada peldaño, con su tramo de zanca y de pasamanos, es un dibujo a
-    // su fondo (ver `spiralPiece`); el eje es una figura con volumen (en `galleryThings`).
+    // su fondo (ver `spiralPiece`); el eje es una figura con volumen (en `galleryThings`). Cada
+    // peldaño se ancla al eje: al mover la cámara, su arranque sigue pegado a él aunque vaya a
+    // otro fondo (si no, la perspectiva los despegaba).
     const ax = r.x + g.axis.x;
+    const kp = scaleAt(g.axis.z);
+    const groups = this.dual ? [this.dual.classic, this.dual.mood] : [this.world];
     for (let i = 1; i < GAL_STEPS; i++) {
       const p = spiralPiece(i, g.x1 - g.axis.x);
       const k = scaleAt(p.z);
       const x = ax + (p.img.w / 2 - p.ox) / k;
       const base = floor - p.h + (p.img.h - p.oy) / k;
+      const before = groups.map((gr) => gr.children.length);
       this.figure(this.world, p.img, x, base, p.z, ambient, sun);
+      const axis = { x: ax, y: floor - p.h, kp };
+      groups.forEach((gr, n) => {
+        for (const mesh of gr.children.slice(before[n]))
+          this.pins.push({ mesh, x: 0, y: 0, k, wx: 0, wy: 0, axis });
+      });
     }
   }
 

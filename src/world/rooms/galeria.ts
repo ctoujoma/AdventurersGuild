@@ -42,7 +42,9 @@ export const HALF = ((TURN / 2) * Math.PI) / 180;
  * Lo que se achata la vuelta vista un poco desde arriba (como las mesas redondas): la huella de
  * los peldaños de delante se ve entera y la de los de los lados, de canto.
  */
-const FLAT = 0.3;
+const FLAT = 0.5;
+/** Radio del collarín de cada peldaño en el eje. */
+const COLLAR = 4.5;
 
 export interface Step {
   x: number;
@@ -261,12 +263,12 @@ export function spiralPiece(i: number, x1: number): SpiralPiece {
   const last = i === GAL_STEPS - 1;
   const left = last ? Math.min(-R0, x1) - 2 : -R0 - 2;
   const ox = Math.ceil(-left * k) + 1;
-  const oy = Math.ceil(22 * k);
+  const oy = Math.ceil(26 * k);
   const w = ox + Math.ceil((R0 + 2) * k) + 1;
   const h = oy + Math.ceil((R0 * FLAT + 12) * k);
   const b = new PixelBuffer(w, h);
   // Un punto de la vuelta (radio, ángulo, alto sobre la huella) en píxeles del dibujo.
-  const P = (r: number, f: number, up: number) => ({
+  const pt = (r: number, f: number, up: number) => ({
     x: ox + r * Math.sin(f) * k,
     y: oy + (r * Math.cos(f) * FLAT - up) * k,
   });
@@ -274,14 +276,16 @@ export function spiralPiece(i: number, x1: number): SpiralPiece {
     const [px, py] = [Math.round(x), Math.round(y)];
     if (px >= 0 && py >= 0 && px < w && py < h) b.set(px, py, c);
   };
-  const [f0, f1] = [a - HALF, a + HALF];
+  // El primero, el arranque, una cuña más ancha.
+  const half = i === 1 ? HALF * 1.6 : HALF;
+  const [f0, f1] = [a - half, a + half];
   // La zanca: de la mitad del peldaño de antes a la del de después, por debajo de las huellas.
   const along = (f: number) => (RISE * (f - a)) / turn;
   for (let s = 0; s <= 40; s++) {
     const f = f0 - HALF * 0.1 + ((f1 - f0 + HALF * 0.2) * s) / 40;
-    const p = P(R0, f, along(f) - 1);
+    const p = pt(R0, f, along(f) - 1);
     const out = Math.cos(f) >= -0.05;
-    const band = Math.round(7 * k);
+    const band = Math.max(3, Math.round(4 * k));
     for (let d = 0; d <= band; d++)
       set(
         p.x,
@@ -308,14 +312,28 @@ export function spiralPiece(i: number, x1: number): SpiralPiece {
     let df = f - a;
     while (df > Math.PI) df -= 2 * Math.PI;
     while (df < -Math.PI) df += 2 * Math.PI;
-    return r >= 1.5 && r <= R0 - 0.3 && Math.abs(df) <= HALF ? df : null;
+    return r <= R0 - 0.3 && Math.abs(df) <= half ? df : null;
   };
-  const thick = Math.max(2, Math.round(3 * k));
+  // El collarín: un aro de madera en el eje a la altura de cada peldaño, de donde nace la cuña
+  // (así todas se agarran al eje, también las de canto o las de detrás).
+  const ring = (px: number, py: number) =>
+    Math.hypot((px - ox) / k, (py - oy) / k / FLAT) <= COLLAR;
+  const thick = Math.max(3, Math.round(4 * k));
+  for (let py = 0; py < h; py++)
+    for (let px = 0; px < w; px++) {
+      if (ring(px, py)) b.set(px, py, py - oy < 0 ? W[5]! : W[3]!);
+      else
+        for (let t = thick; t >= 1; t--)
+          if (ring(px, py - t)) {
+            b.set(px, py, t === thick ? W[0]! : W[2]!);
+            break;
+          }
+    }
   for (let py = 0; py < h; py++)
     for (let px = 0; px < w; px++) {
       for (let t = thick; t >= 1; t--)
         if (inWedge(px, py - t) !== null) {
-          b.set(px, py, t === thick ? W[1]! : W[2]!);
+          b.set(px, py, t === thick ? W[0]! : t === 1 ? W[3]! : W[1]!);
           break;
         }
     }
@@ -324,27 +342,29 @@ export function spiralPiece(i: number, x1: number): SpiralPiece {
       const df = inWedge(px, py);
       if (df === null) continue;
       // El canto de delante (por donde se sube), claro; la veta, a lo largo.
-      const nose = df < -HALF + 0.12;
-      b.set(px, py, nose ? W[6]! : (px + py * 2) % 7 === 0 ? W[4]! : W[5]!);
+      const nose = df < -half + 0.12;
+      // El borde de fuera de la huella, oscuro (separa la huella clara de la zanca).
+      const rim = inWedge(px, py + 1) === null;
+      b.set(px, py, nose ? P.sand : rim ? W[4]! : (px + py * 2) % 7 === 0 ? W[5]! : W[6]!);
     }
   // El barrote, en la punta del peldaño, y el pasamanos (más oscuro por detrás).
   const side = front >= -0.05;
-  const foot = P(R0 - 1, a, 0);
-  const top = P(R0 - 1, a, 15);
+  const foot = pt(R0 - 1, a, 0);
+  const top = pt(R0 - 1, a, 15);
   for (let y = Math.round(top.y); y <= Math.round(foot.y); y++) {
     set(foot.x, y, side ? W[4]! : W[2]!);
     set(foot.x + 1, y, side ? W[2]! : W[1]!);
   }
   for (let s = 0; s <= 30; s++) {
     const f = f0 - HALF * 0.1 + ((f1 - f0 + HALF * 0.2) * s) / 30;
-    const p = P(R0 - 1, f, along(f) + 15);
+    const p = pt(R0 - 1, f, along(f) + 15);
     const lit = Math.cos(f) >= -0.05;
     set(p.x, p.y, lit ? W[6]! : W[3]!);
     set(p.x, p.y + 1, lit ? W[3]! : W[1]!);
   }
   if (last) {
     // Hasta la barandilla de la galería (su pilar del final).
-    const from = P(R0 - 1, f1, along(f1) + 15);
+    const from = pt(R0 - 1, f1, along(f1) + 15);
     const to = { x: ox + x1 * k, y: oy - (PITCH + 13 - i * RISE) * k };
     b.line(Math.round(from.x), Math.round(from.y), Math.round(to.x), Math.round(to.y), W[5]!);
     b.line(
