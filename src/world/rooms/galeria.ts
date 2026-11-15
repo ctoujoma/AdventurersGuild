@@ -402,7 +402,13 @@ export function galleryThings(room: Room, g: Gallery, lvl: number, ceiling: numb
   // Las mesas de arriba (con manteles desde el nivel 3, como abajo).
   g.tables.forEach(({ x, z }, i) => {
     t.push({
-      img: tableSet(`${room.id}-g${i}`, lvl >= 3 ? cloth(room, VINO) : undefined, lvl >= 2, false),
+      img: tableSet(
+        `${room.id}-g${i}`,
+        lvl >= 3 ? cloth(room, VINO) : undefined,
+        lvl >= 2,
+        false,
+        lvl,
+      ),
       x,
       z,
       y: PITCH,

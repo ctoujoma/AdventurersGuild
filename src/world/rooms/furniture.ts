@@ -103,12 +103,17 @@ const slot = (w: number, i: number, n: number) => 10 + ((i + 0.5) * (w - 20)) / 
 /** Si la sala está en uso (ni rota ni en obras): solo entonces tiene sus muebles. */
 const inUse = (room: Room) => room.level > 0 && !(room.works && room.works.kind !== 'extend');
 
+/** Fondo de la fila de mesas del salón (las de atrás, 6 más). */
+const TABLE_Z = 5;
+
 /** Mesas del salón: dónde va cada una y sus dos taburetes. */
 function tables(room: Room, w: number): { x: number; z: number }[] {
   const n = Math.max(1, room.w * 2 - 1);
   return Array.from({ length: n }, (_, i) => ({
     x: 92 + ((i + 0.5) * (w - 150)) / n,
-    z: i % 2 ? MID - 4 : FRONT + 6,
+    // Muy delante, como lo de la puerta: la gente pasa por detrás, entre las mesas y lo de la
+    // pared (la barra, la chimenea o la escalera de la galería). Al tresbolillo, pero poco.
+    z: i % 2 ? TABLE_Z + 6 : TABLE_Z,
   }));
 }
 

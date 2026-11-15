@@ -224,8 +224,8 @@ export function salonWall(
   // Dónde empieza la chimenea (y su tiro) vista en el fondo: lo de la pared no se pone detrás.
   const { hearthLeft, flueLeft } = hearthSpan(b.w);
   // Tornapuntas en los paños sin ventana (entre los postes de cada 36), planta a planta: solo
-  // en el salón sencillo (del 3 en adelante la pared va forrada).
-  for (let j = 0; j < (lvl <= 2 ? room.h : 0); j++) {
+  // en el salón sencillo del nivel 1 (luego la pared va encalada o forrada).
+  for (let j = 0; j < (lvl <= 1 ? room.h : 0); j++) {
     const top = Math.round(j * PITCH * BACK) + 5;
     const bottom = j === room.h - 1 ? floor - wain - 4 : Math.round((j * PITCH + ROOM_H) * BACK);
     for (let x = 0; x + 36 <= b.w; x += 36)

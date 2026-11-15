@@ -573,15 +573,19 @@ export function salonFinish(b: PixelBuffer, room: Room, wain: number, seed: stri
   // El arrimadero solo va abajo (en el de dos alturas, la planta de arriba queda lisa).
   const dado = bh - SALON_DADO;
   const tint = salonTint(room);
-  const [t0, t1, t2] = tint;
   if (lvl <= 1) {
+    // Yeso basto y oscuro, sin color, con desconchones.
+    plaster(b, 0, 0, bw, rail - 3, `${seed}b`, ROUGH);
+    for (let x = 0; x < bw; x += 36) post(b, x, 0, 3, rail - 3, WOOD_DARK);
     patches(b, bw, rail - 3, seed);
     return;
   }
   if (lvl === 2) {
     plaster(b, 0, 0, bw, rail - 3, `${seed}c`, PLASTER_FINE);
     for (let x = 0; x < bw; x += 36) post(b, x, 0, 3, rail - 3, WOOD_DARK);
-    stencil(b, 4, bw, [t1!, t2!], (x) => x % 36 < 3);
+    // La cenefa de plantilla, ancha y de color, bajo la viga y encima del arrimadero.
+    stencilBand(b, 4, bw, tint);
+    stencilBand(b, rail - 13, bw, tint);
     boardsH(b, rail, bw, wain);
     return;
   }
@@ -590,80 +594,133 @@ export function salonFinish(b: PixelBuffer, room: Room, wain: number, seed: stri
     for (let x = 0; x < bw; x += 36) post(b, x, 3, 3, dado - 3, WOOD_DARK);
     cornice(b, 3, bw, false);
     // El friso pintado del color de la sala, bajo la cornisa.
-    tintBand(b, tint, 6, 9);
+    tintBand(b, tint, 6, 11);
     panels(b, dado, bw, SALON_DADO);
     b.hline(0, dado, bw, P.oak);
     b.hline(0, dado + 1, bw, P.black);
     return;
   }
-  // 4: tela del color de la sala con un motivo suelto, sobre los paneles; 5: estuco claro
-  // sobre mármol oscuro (el color queda para la alfombra, los cojines y las vidrieras). Sin
-  // pilastras ni frisos: una sola cornisa dorada.
-  if (lvl >= 5) plaster(b, 0, 5, bw, dado - 5, `${seed}e`, STUCCO);
-  else sparseCloth(b, 0, 5, bw, dado - 5, [t1!, t0!]);
-  goldCornice(b, 2, bw);
-  if (lvl >= 5) {
-    darkMarble(b, 0, dado, bw, SALON_DADO);
+  if (lvl === 4) {
+    // Estuco claro, el friso del color bajo una cornisa dorada y los paneles del zócalo
+    // pintados del color de la sala.
+    plaster(b, 0, 5, bw, dado - 5, `${seed}e`, STUCCO);
+    goldCornice(b, 2, bw);
+    tintBand(b, tint, 7, 11);
+    tintPanels(b, dado, bw, SALON_DADO, tint);
     b.hline(0, dado, bw, P.gold);
-    b.hline(0, dado + 1, bw, P.amber);
-  } else {
-    panels(b, dado, bw, SALON_DADO);
-    b.hline(0, dado, bw, P.gold);
-    b.hline(0, dado + 1, bw, P.black);
-  }
-}
-
-/** Lo mismo en las paredes de los lados del salón (fondo × alto), planta a planta. */
-export function salonSideFinish(b: PixelBuffer, room: Room, seed: string) {
-  const lvl = room.level;
-  if (lvl < 2) return;
-  const w = b.w;
-  const tint = salonTint(room);
-  const [t0, t1, t2] = tint;
-  // Una sola pared de arriba abajo (el de dos alturas es una sala alta): la moldura arriba y
-  // el arrimadero abajo, como en la del fondo.
-  const h = b.h;
-  const yb = h;
-  if (lvl === 2) {
-    plaster(b, 0, 0, w, h - 18, seed, PLASTER_FINE);
-    stencil(b, 5, w, [t1!, t2!], () => false);
     return;
   }
-  const dado = yb - SALON_DADO;
+  // 5: la pared entera de damasco del color, tono sobre tono y apagado, con su filete de oro;
+  // abajo, mármol oscuro.
+  muteDamask(b, 5, dado, bw, tint);
+  goldCornice(b, 2, bw);
+  darkMarble(b, 0, dado, bw, SALON_DADO);
+  b.hline(0, dado, bw, P.gold);
+  b.hline(0, dado + 1, bw, P.amber);
+}
+
+/** Lo mismo en las paredes de los lados del salón: una sola pared de arriba abajo. */
+export function salonSideFinish(b: PixelBuffer, room: Room, seed: string) {
+  const lvl = room.level;
+  const w = b.w;
+  const h = b.h;
+  const tint = salonTint(room);
+  const dado = h - SALON_DADO;
+  if (lvl <= 1) {
+    plaster(b, 0, 0, w, h - 18, `${seed}b`, ROUGH);
+    return;
+  }
+  if (lvl === 2) {
+    plaster(b, 0, 0, w, h - 18, seed, PLASTER_FINE);
+    stencilBand(b, 5, w, tint);
+    stencilBand(b, h - 31, w, tint);
+    return;
+  }
   if (lvl === 3) {
     plaster(b, 0, 0, w, dado, seed, PLASTER_FINE);
     cornice(b, 3, w, false);
-    tintBand(b, tint, 6, 9);
+    tintBand(b, tint, 6, 11);
     panels(b, dado, w, SALON_DADO);
     b.hline(0, dado, w, P.oak);
     return;
   }
-  if (lvl >= 5) plaster(b, 0, 6, w, dado - 6, `${seed}e`, STUCCO);
-  else sparseCloth(b, 0, 6, w, dado - 6, [t1!, t0!]);
+  if (lvl === 4) {
+    plaster(b, 0, 6, w, dado - 6, `${seed}e`, STUCCO);
+    goldCornice(b, 2, w);
+    tintBand(b, tint, 7, 11);
+    tintPanels(b, dado, w, SALON_DADO, tint);
+    b.hline(0, dado, w, P.gold);
+    return;
+  }
+  muteDamask(b, 6, dado, w, tint);
   goldCornice(b, 2, w);
-  if (lvl >= 5) darkMarble(b, 0, dado, w, SALON_DADO);
-  else panels(b, dado, w, SALON_DADO);
+  darkMarble(b, 0, dado, w, SALON_DADO);
   b.hline(0, dado, w, P.gold);
 }
 
-/** Tela lisa de un color con un rombito suelto (sin dibujo que llene la pared). */
-function sparseCloth(
+/** Yeso basto del nivel 1: más oscuro y sucio que el de siempre. */
+const ROUGH: Ramp = [P.plum, P.rust, P.clay, P.skinS];
+
+/**
+ * Cenefa de plantilla ancha (9 filas): fondo del color de la sala con rombos y puntos claros
+ * entre dos filetes oscuros. Se lee bien de lejos.
+ */
+function stencilBand(b: PixelBuffer, y: number, w: number, [d, m, l, h]: readonly string[]) {
+  b.hline(0, y, w, d!);
+  b.rect(0, y + 1, w, 7, m!);
+  b.hline(0, y + 8, w, d!);
+  for (let x = 0; x < w; x++) {
+    const k = x % 10;
+    const r = Math.abs(k - 5);
+    // Un rombo de 7 de alto cada 10, con el centro más claro.
+    if (r <= 3) {
+      b.set(x, y + 4 - (3 - r), l!);
+      b.set(x, y + 4 + (3 - r), l!);
+    }
+    if (k === 5) b.set(x, y + 4, h!);
+    if (k === 0) b.set(x, y + 4, l!);
+  }
+}
+
+/** Los paneles del zócalo, pintados del color de la sala (nivel 4). */
+function tintPanels(
   b: PixelBuffer,
-  x0: number,
   y0: number,
   w: number,
   h: number,
-  [bg, ink]: string[],
+  [d, m, l]: readonly string[],
 ) {
-  b.rect(x0, y0, w, h, bg!);
-  for (let y = 4; y < h - 2; y += 12)
-    for (let x = ((y / 12) % 2) * 9 + 4; x < w; x += 18) {
-      b.set(x0 + x, y0 + y - 1, ink!);
-      b.set(x0 + x - 1, y0 + y, ink!);
-      b.set(x0 + x + 1, y0 + y, ink!);
-      b.set(x0 + x, y0 + y + 1, ink!);
-      b.set(x0 + x, y0 + y, P.gold);
+  b.rect(0, y0, w, h, d!);
+  for (let x = 2; x + 14 <= w; x += 18) {
+    const ph = h - 3;
+    b.rect(x, y0 + 1, 14, ph, m!);
+    b.hline(x, y0 + 1, 14, P.black);
+    b.vline(x, y0 + 1, ph, P.black);
+    b.hline(x + 1, y0 + ph, 13, l!);
+    b.vline(x + 13, y0 + 2, ph - 1, l!);
+    b.rect(x + 3, y0 + 3, 8, ph - 4, d!);
+    b.hline(x + 3, y0 + 3, 8, P.gold);
+  }
+}
+
+/**
+ * Damasco tono sobre tono y apagado (nivel 5): el fondo, tramado entre la sombra y el tono del
+ * color (ni plano ni saturado); el dibujo, en la sombra; un punto de oro en uno de cada dos.
+ */
+function muteDamask(b: PixelBuffer, y0: number, y1: number, w: number, [d, m]: readonly string[]) {
+  for (let y = y0; y < y1; y++)
+    for (let x = 0; x < w; x++) {
+      const tx = x % 10;
+      const ty = (y - y0) % 12;
+      const dd = Math.abs(tx - 5) + Math.abs(ty - 6);
+      const cell = Math.floor(x / 10) + Math.floor((y - y0) / 12);
+      let c = (x + y) % 2 ? d! : m!;
+      if (dd === 4) c = d!;
+      else if (dd === 0) c = cell % 2 ? P.gold : m!;
+      b.set(x, y, c);
     }
+  b.hline(0, y0, w, P.gold);
+  b.hline(0, y1 - 1, w, P.gold);
 }
 
 /**
