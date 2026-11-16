@@ -83,11 +83,7 @@ export function FightCrew({
           ¡Cubríos!
         </button>
       )}
-      <ul
-        class="rc-list"
-        aria-label={label}
-        style={{ gridTemplateColumns: `repeat(${Math.min(crew.length, 6)}, minmax(0, 76px))` }}
-      >
+      <ul class="rc-list" aria-label={label} style={{ '--cols': Math.min(crew.length, 6) }}>
         {crew.map((h) => {
           const ready = h.charge >= 1 && !h.down;
           const chance = playing && h.chance && !h.down;
