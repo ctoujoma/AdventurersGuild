@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { ARENA, arenaBuffer } from '../art/arenas';
 import { bufferCanvas } from '../art/canvas';
-import { generateLook } from '../art/heroes/look';
+import { generateLook, type HeroLook } from '../art/heroes/look';
 import { audio } from '../audio/audio';
 import { haptic } from '../platform/haptics';
 import { Combat, STEP, type CombatResult, type Order } from '../core/combat';
-import { ABILITIES, critReady, skillCharge, type AbilityId } from '../core/fight';
+import { critReady } from '../core/fight';
 import type { BossFight as Fight } from '../core/model';
 import { BOSSES, type BossKind } from '../data/bosses';
 import { PLACE_INFO } from '../data/places';
 import { Battle } from '../world/battle';
 import { lightSprite } from '../world/lighting';
 import { Particles } from '../world/particles';
+import { FightCrew, crewCard, type CrewCard } from './FightCrew';
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -49,29 +50,26 @@ function battleOf(
   );
 }
 
-/** Lo que la interfaz enseña de cada héroe mientras se pelea. */
-interface HeroView {
-  id: string;
-  name: string;
-  hp: number;
-  skill?: AbilityId;
-  /** Carga de la habilidad (0–1; 1 lista). */
-  charge: number;
-  target?: string;
-  /** Ocasión de crítico abierta (y no cogida): ¡ahora! */
-  chance: boolean;
-}
+/** Los retratos, hechos una vez (la barra se repinta diez veces por segundo). */
+const looks = new Map<string, HeroLook>();
+const lookFor = (h: Fight['heroes'][number]) => {
+  let l = looks.get(h.seed);
+  if (!l) looks.set(h.seed, (l = generateLook(h.seed, h.cls, h.sex)));
+  return l;
+};
 
-const viewOf = (c: Combat): HeroView[] =>
-  c.heroes().map((u) => ({
-    id: u.id,
-    name: u.name.split(' ')[0]!,
-    hp: u.hp / u.max,
-    skill: u.ability,
-    charge: skillCharge(u),
-    target: u.target,
-    chance: critReady(u),
-  }));
+/** La barra del grupo: cada héroe con su retrato y a por quién va. */
+function crewOf(c: Combat, fight: Fight): CrewCard[] {
+  return c.heroes().map((u) => {
+    const h = fight.heroes.find((x) => x.id === u.id);
+    return crewCard(u, {
+      name: u.name.split(' ')[0]!,
+      look: h ? lookFor(h) : undefined,
+      marks: h ? { eyepatch: h.eyepatch, scar: h.scar, gear: h.gear } : undefined,
+      note: u.target === 'jefe' ? 'al jefe' : u.target ? 'al esbirro' : '',
+    });
+  });
+}
 
 /**
  * La pelea contra el jefe, a pantalla completa: el escenario del lugar de noche, el grupo
@@ -86,7 +84,7 @@ export function BossFight({ fight, onClose, onResult }: Props) {
   const battleRef = useRef<Battle | null>(null);
   const [hp, setHp] = useState(1);
   const [ended, setEnded] = useState(false);
-  const [party, setParty] = useState<HeroView[]>([]);
+  const [party, setParty] = useState<CrewCard[]>([]);
   const [warn, setWarn] = useState(false);
   const [chosen, setChosen] = useState<string | null>(null);
   const [result, setResult] = useState<CombatResult | null>(null);
@@ -129,24 +127,12 @@ export function BossFight({ fight, onClose, onResult }: Props) {
     /** Lo que pasa en la simulación se ve en la escena. */
     const follow = () => {
       if (!combat) return;
+      const isHero = (id: string) => combat.unit(id)?.side === 'h';
       for (; seen < combat.events.length; seen++) {
         const e = combat.events[seen]!;
-        if ((e.kind === 'hit' || e.kind === 'crit') && e.to) {
-          b.flashHit(e.to, e.kind === 'crit');
-          const toHero = combat.unit(e.to)?.side === 'h';
-          b.number(e.to, e.amount ?? 0, e.kind === 'crit' ? 'crit' : toHero ? 'hurt' : 'hit');
-          if (e.kind === 'crit' && !toHero && !muted) audio.play('zap', 0.7);
-        } else if (e.kind === 'heal' && e.to) b.number(e.to, e.amount ?? 0, 'heal');
-        else if (e.kind === 'down' && e.to) b.down(e.to);
-        else if (e.kind === 'warn') {
-          setWarn(true);
-          if (!muted) audio.play('roar', 0.7);
-        } else if (e.kind === 'special') {
-          setWarn(false);
-          if (!muted) audio.play(e.amount ? 'thud' : 'boom', 0.9);
-        } else if (e.kind === 'cover' && !muted) audio.play('swing', 0.8);
-        else if (e.kind === 'heal' && !muted) audio.play('holy', 0.6);
-        else if (e.kind === 'chance' && playing && !muted) audio.play('swing', 0.35);
+        b.event(e, isHero, playing);
+        if (e.kind === 'warn') setWarn(true);
+        else if (e.kind === 'special') setWarn(false);
       }
       for (const u of combat.units) {
         b.setHp(u.id, u.hp / u.max);
@@ -229,7 +215,7 @@ export function BossFight({ fight, onClose, onResult }: Props) {
       // La barra del grupo, unas diez veces por segundo.
       if (combat && (ui += dt) > 0.1) {
         ui = 0;
-        setParty(viewOf(combat));
+        setParty(crewOf(combat, fight));
       }
       raf = requestAnimationFrame(frame);
     };
@@ -298,7 +284,7 @@ export function BossFight({ fight, onClose, onResult }: Props) {
     const ok = combatRef.current?.order(o) ?? false;
     if (ok) {
       haptic('select');
-      setParty(viewOf(combatRef.current!));
+      setParty(crewOf(combatRef.current!, fight));
     }
     return ok;
   };
@@ -356,65 +342,26 @@ export function BossFight({ fight, onClose, onResult }: Props) {
             }
           }}
         />
-        {playing && warn && !result && (
-          <button
-            class="btn btn-gold bossfight-cover"
-            onClick={() => {
-              const first = party.find((h) => h.hp > 0);
+      </div>
+      {sim && !ended && (
+        <div class="bossfight-crew">
+          <FightCrew
+            crew={party}
+            label="El grupo"
+            playing={playing}
+            chosen={chosen}
+            onCrit={takeCrit}
+            onSkill={(id) => order({ who: id, kind: 'skill' })}
+            onPick={(id) => setChosen(chosen === id ? null : id)}
+            onPress={(id) => (drag.current = id)}
+            warn={warn && !result}
+            onCover={() => {
+              const first = party.find((h) => !h.down);
               if (first) order({ who: first.id, kind: 'cover' });
               setWarn(false);
             }}
-          >
-            ¡Cubríos!
-          </button>
-        )}
-      </div>
-      {sim && !ended && (
-        <ul class="bossfight-crew" aria-label="El grupo">
-          {party.map((h) => {
-            const ready = h.charge >= 1 && h.hp > 0;
-            return (
-              <li
-                key={h.id}
-                class={`bf-hero ${h.hp <= 0 ? 'is-down' : ''} ${chosen === h.id ? 'is-chosen' : ''} ${playing && h.chance ? 'is-chance' : ''}`}
-              >
-                <button
-                  class="bf-hero-main"
-                  disabled={!playing || h.hp <= 0}
-                  aria-label={`${h.name}: elegir a quién ataca (o arrástralo a un enemigo)`}
-                  onPointerDown={() => {
-                    if (playing && h.hp > 0) drag.current = h.id;
-                  }}
-                  onClick={() =>
-                    h.chance ? takeCrit(h.id) : setChosen(chosen === h.id ? null : h.id)
-                  }
-                >
-                  <span class="bf-hero-name">
-                    {h.name}
-                    {playing && h.chance && <b class="bf-now"> ¡Ahora!</b>}
-                  </span>
-                  <span class="bf-hp" aria-hidden="true">
-                    <i style={{ width: `${Math.round(h.hp * 100)}%` }} />
-                  </span>
-                  <span class="bf-target">
-                    {h.target === 'jefe' ? 'al jefe' : h.target ? 'al esbirro' : ''}
-                  </span>
-                </button>
-                {h.skill && (
-                  <button
-                    class={`bf-skill ${ready ? 'is-ready' : ''}`}
-                    disabled={!playing || !ready}
-                    title={ABILITIES[h.skill].text}
-                    onClick={() => order({ who: h.id, kind: 'skill' })}
-                  >
-                    <span class="bf-charge" style={{ height: `${Math.round(h.charge * 100)}%` }} />
-                    <span class="bf-skill-name">{ABILITIES[h.skill].name}</span>
-                  </button>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+          />
+        </div>
       )}
       {playing && !ended && (
         <p class="bossfight-hint">

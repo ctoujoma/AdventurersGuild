@@ -22,6 +22,7 @@ import type { UnlockId } from '../data/unlocks';
 import type { Tutorial } from './tutorial';
 import type { Attrs, Challenge, ClassId, SkillId, Trait } from './party';
 import type { AbilityId, CombatSetup, Order } from './combat';
+import type { FightEvent } from './fight';
 import type { Gear } from './gear';
 import type { Mats } from './materials';
 
@@ -90,6 +91,11 @@ export interface Hero {
   since?: number;
   /** Progreso de entrenamiento hacia el siguiente punto de cada atributo. */
   train?: Partial<Attrs>;
+  /**
+   * Volvió del velo (lo revivió el forastero de la tormenta): hasta este día su moral no pasa
+   * del tope de siempre menos `VEIL_CAP`.
+   */
+  veil?: number;
 }
 
 /** Quien trabaja en la taberna: no sale de misión, cobra poco y rinde más en su oficio. */
@@ -285,6 +291,10 @@ export interface BossFight {
 export interface Fallen {
   name: string;
   epitaph: string;
+  /** Id del héroe (los caídos de antes no lo traen: se buscan por el nombre). */
+  id?: string;
+  /** Día en que volvió del velo (el forastero de la tormenta): sigue en el Muro, tachado. */
+  back?: number;
 }
 
 export interface Facilities {
@@ -563,9 +573,34 @@ export interface RaidResult {
 }
 
 /**
- * Lo que pasa en un asalto, en segundos desde que se oyen las botas. Los sitios son salas (por
- * id), el patio ('patio') o el camino ('fuera'). Las figuras son héroes, trabajadores o
- * bandidos ('b0', 'b1'…).
+ * Lo que pasa por la casa en un asalto (lo de pelear va con el registro común, `FightEvent`).
+ * Los sitios son salas (por id), el patio ('patio') o el camino ('fuera'). Las figuras son
+ * héroes, trabajadores o bandidos ('b0', 'b1'…).
+ */
+export type RaidHouse =
+  /** Echan a andar hacia una sala vecina y llegan en `dur` segundos. */
+  | { kind: 'move'; ids: string[]; to: string; dur: number }
+  /** Se despierta y sale corriendo (los que duermen). */
+  | { kind: 'wake'; id: string }
+  /** Empiezan a pelear en una sala. */
+  | { kind: 'fight'; at: string }
+  /** Empiezan a romper la puerta, y la rompen. */
+  | { kind: 'door'; dur: number }
+  | { kind: 'broke' }
+  /** Empiezan con la cerradura de la cámara, y la abren. */
+  | { kind: 'lock'; dur: number }
+  | { kind: 'open' }
+  /** Un bandido carga su saco. */
+  | { kind: 'loot'; id: string; gold: number }
+  /** Un bandido se pierde por el camino con lo que lleva. */
+  | { kind: 'escape'; id: string; gold: number };
+
+/** El registro de un asalto, en segundos desde que se oyen las botas: la casa y la pelea. */
+export type RaidEntry = (RaidHouse | FightEvent) & { t: number };
+
+/**
+ * El registro viejo de los asaltos (los informes guardados antes del registro común): se lee
+ * con `raidLog` (`core/assault.ts`).
  */
 export type RaidStep =
   /** Echan a andar hacia una sala vecina y llegan en `dur` segundos. */
@@ -612,7 +647,9 @@ export interface RaidPlan {
   route: string[];
   /** Dónde está cada uno al empezar. */
   start: Record<string, string>;
-  steps: RaidStep[];
+  /** Lo que pasa (léase con `raidLog`: los informes viejos traen `steps` en su lugar). */
+  log?: RaidEntry[];
+  steps?: RaidStep[];
   /** Segundo en el que acaba todo. */
   end: number;
   /** Vida de cada uno al empezar (los informes viejos no la traen). */
@@ -647,6 +684,8 @@ export interface Stats {
   painted?: number;
   /** Puntos de atributo ganados entrenando. */
   trained?: number;
+  /** Caídos que han vuelto del velo. */
+  revived?: number;
   byType: Partial<Record<QuestType, number>>;
 }
 
@@ -821,4 +860,22 @@ export interface GameState {
   questLog?: QuestLogEntry[];
   /** Hora real (ms) de la última vez que se guardó con el juego abierto (tiempo que corre solo). */
   lastSeen?: number;
+  /** Sucesos nocturnos: la última noche ya tirada y el último día de cada suceso (`core/night.ts`). */
+  nights?: NightLog;
+  /** El forastero de la tormenta, si está en el salón (ver `core/stranger.ts`). */
+  stranger?: Stranger | null;
+}
+
+export interface NightLog {
+  /** Último día cuya noche ya se ha tirado (una vez por noche). */
+  rolled: number;
+  /** Último día en que pasó cada suceso (para no repetirlo enseguida). */
+  last: Record<string, number>;
+}
+
+/** El forastero de la tormenta: llegó la noche del día `day` y se va al día siguiente a mediodía. */
+export interface Stranger {
+  day: number;
+  /** Reloj (s) de la noche en que entró (la escena le ve entrar si aún es reciente). */
+  at: number;
 }

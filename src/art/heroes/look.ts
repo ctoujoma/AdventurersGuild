@@ -22,9 +22,13 @@ export type OutfitId =
   | 'campesino'
   | 'mercader'
   | 'noble'
-  | 'forastero';
+  | 'forastero'
+  // El forastero de la tormenta (suceso nocturno): hábito oscuro hasta los pies, capucha honda
+  // que deja la cara en sombra (solo brillan los ojos) y un bastón con farol.
+  | 'velado';
 export type HairStyle = 'corto' | 'largo' | 'coleta' | 'punta' | 'mono' | 'calvo';
-export type HeadgearId = 'casco' | 'capucha' | 'sombrero' | 'gorra' | 'paja' | 'boina' | 'pluma';
+export type HeadgearId =
+  'casco' | 'capucha' | 'sombrero' | 'gorra' | 'paja' | 'boina' | 'pluma' | 'velo';
 export type FaceShape = 'redonda' | 'cuadrada' | 'alargada';
 export type Brow = 'recta' | 'arqueada' | 'fruncida';
 export type Mouth = 'neutra' | 'sonrisa' | 'mueca' | 'seria';
@@ -75,7 +79,11 @@ const HEADGEAR: Record<OutfitId, [HeadgearId, number] | null> = {
   mercader: ['boina', 0.85],
   noble: ['pluma', 0.8],
   forastero: ['capucha', 1],
+  velado: ['velo', 1],
 };
+
+/** El forastero de la tormenta: siempre el mismo (la capucha honda no deja ver más). */
+export const strangerLook = (): HeroLook => generateLook('forastero-de-la-tormenta', 'velado', 'm');
 
 export function generateLook(seed: string, outfit: OutfitId, sex: Sex): HeroLook {
   const rng = new Rng(`look:${seed}`);

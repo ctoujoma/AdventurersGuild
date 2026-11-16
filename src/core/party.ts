@@ -19,7 +19,8 @@ export type TraitId =
   | 'tuerto'
   | 'cojo'
   | 'cortado'
-  | 'curtido';
+  | 'curtido'
+  | 'velo';
 
 export type Attrs = Record<AttrId, number>;
 
@@ -90,6 +91,7 @@ const TRAIT_EFFECTS: Partial<
   cojo: { skills: { Supervivencia: -2 } },
   cortado: { skills: { Combate: 1 } },
   curtido: { skills: { Supervivencia: 2 } },
+  velo: { attrs: { F: -1 }, skills: { Arcano: 2 } },
 };
 
 export type MoraleBand = 'animado' | 'normal' | 'desanimado' | 'harto';

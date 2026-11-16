@@ -41,6 +41,8 @@ export interface SceneHero {
   staff?: 'casa' | 'pueblo';
   /** Visitante del salón: entra, se sienta un rato y se va. */
   visitor?: boolean;
+  /** El forastero de la tormenta: visitante que no se va de noche (se queda junto al fuego). */
+  stranger?: boolean;
   /** Bandido de un asalto (solo de noche, mientras dura). */
   bandit?: boolean;
   /**
@@ -68,6 +70,9 @@ export interface SceneAway {
   days?: number;
 }
 
+/** El id del forastero de la tormenta en la escena (al tocarlo, su oferta). */
+export const STRANGER_ID = 'forastero';
+
 /** Los visitantes de hoy, en orden de llegada (la escena los hace entrar a lo largo del día). */
 export interface SceneVisitors {
   day: number;
@@ -92,6 +97,8 @@ export interface SceneModel {
   /** Tema de color de las telas de cada sala (por id). */
   tints?: Record<string, TintId>;
   visitors?: SceneVisitors;
+  /** El forastero de la tormenta está en el salón (suceso nocturno, `core/stranger.ts`). */
+  stranger?: boolean;
   /** Equipo sin dueño (armería o arcones) y trofeos del salón. */
   gear: GearView[];
   /** Lo llena que está la cámara del tesoro, de 0 a 1 (el oro que se ve en ella). */

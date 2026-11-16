@@ -47,6 +47,8 @@ import {
 import { Icon } from './icons';
 import { Letter } from './Letter';
 import { EventCard } from './EventCard';
+import { StrangerCard } from './StrangerCard';
+import { STRANGER_ID } from '../world/scene';
 import { Opening } from './Opening';
 import { NameTavern } from './NameTavern';
 import { Panel } from './Panel';
@@ -967,6 +969,21 @@ export function App() {
   // «Pasar la noche»: de noche, el reloj corre a x16 hasta el amanecer (se apaga con el día nuevo).
   const [nightRush, setNightRush] = useState(false);
   useEffect(() => setNightRush(false), [game.day]);
+  // El forastero de la tormenta: al llegar se para «Pasar la noche» (su oferta es una decisión
+  // del jugador) y la cámara va al salón; si no se le contesta, la oferta sigue en la campanita
+  // hasta que se va, al día siguiente a mediodía.
+  const [strangerOpen, setStrangerOpen] = useState(false);
+  const strangerKey = game.stranger ? game.stranger.day : null;
+  const strangerWas = useRef(strangerKey);
+  useEffect(() => {
+    if (strangerKey !== null && strangerKey !== strangerWas.current) {
+      setNightRush(false);
+      const salon = game.building.rooms.find((r) => r.type === 'salon');
+      if (salon) scene.current?.focus(salon.id);
+    }
+    if (strangerKey === null) setStrangerOpen(false);
+    strangerWas.current = strangerKey;
+  }, [strangerKey]);
   const isNight = clock >= WORK_END * DAY_SECONDS;
   // Con el tiempo que corre solo, acelerar el día solo se puede mientras dura «La deuda» (y en el
   // modo prueba): luego el reloj es el de verdad. La noche se puede pasar siempre.
@@ -1070,6 +1087,9 @@ export function App() {
     } else if ('quest' in g) {
       openPanel('tablon');
       setQuestId(g.quest);
+    } else if ('stranger' in g) {
+      audio.play('open');
+      setStrangerOpen(true);
     } else if ('build' in g) {
       openPanel(null);
       works.startPlan();
@@ -1118,6 +1138,12 @@ export function App() {
           onHero={(id, at) => {
             setHint(false);
             setBubble(null);
+            // El forastero de la tormenta: su oferta.
+            if (id === STRANGER_ID) {
+              audio.play('open', 0.6);
+              setStrangerOpen(true);
+              return;
+            }
             // Los visitantes cuentan lo que se oye por ahí.
             if (id.startsWith('vis-')) {
               const i = Number(id.split('-')[2]);
@@ -1804,6 +1830,17 @@ export function App() {
               ? (orders) => dispatch({ type: 'boss', id: watching.play!, orders })
               : undefined
           }
+        />
+      )}
+      {strangerOpen && game.stranger && !game.over && (
+        <StrangerCard
+          game={game}
+          onAnswer={(id) => {
+            dispatch({ type: 'stranger', heroId: id });
+            audio.play(id ? 'cheer' : 'close');
+            setStrangerOpen(false);
+          }}
+          onClose={() => setStrangerOpen(false)}
         />
       )}
       {pendingEvent && (

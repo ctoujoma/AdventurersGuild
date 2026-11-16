@@ -1,7 +1,8 @@
 /**
- * Un taller por dentro (forja, sastrería, alquimia): lo que se está haciendo, siempre a la vista,
- * y debajo las pestañas: Crear (las recetas, en lista), Templar (lo del arcón que se mejora o se
- * desmonta aquí, en una sola rejilla) y, en la sastrería, Vestir (tinte y prenda de un héroe).
+ * Un taller por dentro (forja, sastrería, alquimia). Sus pestañas van arriba de la ficha, junto a
+ * «Sala»: Crear (las recetas, en lista), Templar (lo del arcón que se mejora o se desmonta aquí, en
+ * una sola rejilla) y, en la sastrería, Vestir (tinte y prenda de un héroe). Lo que se está
+ * haciendo sale en «Sala» y encima de cada pestaña, para ver al momento lo que se encarga.
  */
 import { useState } from 'preact/hooks';
 import { ItemImage } from '../ItemImage';
@@ -37,7 +38,7 @@ import { hasUnlock, unlockSource } from '../../core/goals';
 import { listNames } from '../../core/text';
 import { Icon } from '../icons';
 import { Portrait } from '../Portrait';
-import { Tabs, type TabItem } from '../Tabs';
+import type { TabItem } from '../Tabs';
 import { heroFrame, lookOf, marksOf } from '../view';
 
 const pct = (p: number) => `${Math.round(p * 100)} %`;
@@ -52,29 +53,36 @@ const oddsText = (odds: Record<Quality, number>) =>
     .map((q) => `${QUALITY_NAME[q]} ${pct(odds[q])}`)
     .join(', ');
 
-type Tab = 'crear' | 'templar' | 'vestir';
+export type WorkTab = 'crear' | 'templar' | 'vestir';
 
+/** Las pestañas del taller (van en la fila de la ficha, tras «Sala»). */
+export function workshopTabs(game: GameState, room: Room): TabItem<WorkTab>[] {
+  const known = knownRecipes(game).filter((id) => recipesFor(room.type).includes(id));
+  return [
+    { id: 'crear', label: 'Crear', icon: 'martillo', count: known.length },
+    { id: 'templar', label: 'Templar', icon: 'mejorar', count: forWork(game, room).length },
+    ...(room.type === 'sastreria'
+      ? [{ id: 'vestir', label: 'Vestir', icon: 'tijeras' } as const]
+      : []),
+  ];
+}
+
+/**
+ * Lo del taller que va en una pestaña: en «Sala» (`tab` vacío), lo que está en marcha con la
+ * explicación de si falta artesano; en las demás, lo que está en marcha y debajo lo suyo.
+ */
 export function WorkshopInfo({
   game,
   room,
+  tab,
   onAct,
 }: {
   game: GameState;
   room: Room;
+  tab?: WorkTab;
   onAct?: (a: Action) => void;
 }) {
   const jobs = craftsIn(game, room.id).map((c) => craftState(game, c));
-  const known = knownRecipes(game).filter((id) => recipesFor(room.type).includes(id));
-  // La pestaña elegida se queda mientras la ficha está abierta (la ficha la monta por sala).
-  const [tab, setTab] = useState<Tab>('crear');
-  const dress = room.type === 'sastreria';
-  const shown: Tab = tab === 'vestir' && !dress ? 'crear' : tab;
-  const work = forWork(game, room);
-  const tabs: TabItem<Tab>[] = [
-    { id: 'crear', label: 'Crear', icon: 'martillo', count: known.length },
-    { id: 'templar', label: 'Templar', icon: 'mejorar', count: work.length },
-    ...(dress ? [{ id: 'vestir', label: 'Vestir', icon: 'tijeras' } as const] : []),
-  ];
   const smith = TRADES[room.type as Trade]?.name.m.toLowerCase() ?? 'alguien';
   return (
     <div class="forge">
@@ -84,7 +92,7 @@ export function WorkshopInfo({
           ? `Trabajando (${jobs.length} de ${craftSlots(room)}).`
           : `Libre: puede hacer ${craftSlots(room) > 1 ? `${craftSlots(room)} cosas` : 'una cosa'} a la vez.`}
       </span>
-      {!game.workers.some((w) => w.room === room.id && w.trade === room.type) && (
+      {!tab && !game.workers.some((w) => w.room === room.id && w.trade === room.type) && (
         <span class="row-sub">
           Sin {smith}, solo trabaja un héroe que eche una mano, y más despacio. Si viene alguien a
           pedir trabajo de {smith}, contrátalo (hace falta cama en el dormitorio del servicio).
@@ -136,12 +144,11 @@ export function WorkshopInfo({
           </article>
         );
       })}
-      <div class="forge-tabs">
-        <Tabs tabs={tabs} value={shown} onChange={setTab} label="Qué hacer en el taller" />
-      </div>
-      {shown === 'crear' && <CraftList game={game} room={room} onAct={onAct} />}
-      {shown === 'templar' && <TemperGrid game={game} room={room} onAct={onAct} />}
-      {shown === 'vestir' && <DressPicker game={game} room={room} onAct={onAct} />}
+      {tab === 'crear' && <CraftList game={game} room={room} onAct={onAct} />}
+      {tab === 'templar' && <TemperGrid game={game} room={room} onAct={onAct} />}
+      {tab === 'vestir' && room.type === 'sastreria' && (
+        <DressPicker game={game} room={room} onAct={onAct} />
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { tierOf } from '../art/tiers';
-import { CACHE_GRUDGE, REFUSE_GRUDGE } from '../core/balance';
+import { CACHE_GRUDGE, REFUSE_GRUDGE, VEIL_CAP } from '../core/balance';
 import { useEffect, useState } from 'preact/hooks';
 import { DRESS_GOLD, GUARD_BONUS, VET_LEVEL, XP_PER_LEVEL } from '../core/balance';
 import { craftState, dressStatus, dressingOf } from '../core/crafting';
@@ -580,6 +580,17 @@ export function HeroCard({
                 >
                   {h.sex === 'f' ? 'Resentida' : 'Resentido'}: moral −{h.grudge.cap} de tope ·{' '}
                   {h.grudge.until - game.day} {h.grudge.until - game.day === 1 ? 'día' : 'días'}
+                </p>
+              )}
+              {!candidate && !gone && h.veil && h.veil > game.day && (
+                <p
+                  class="row-sub room-bad"
+                  {...help(
+                    'Volvió de entre los muertos y aún no se ha hecho a estar vivo: su moral no sube del todo. Se le pasa con los días.',
+                  )}
+                >
+                  Vuelto del velo: moral −{VEIL_CAP} de tope · {h.veil - game.day}{' '}
+                  {h.veil - game.day === 1 ? 'día' : 'días'}
                 </p>
               )}
               {!candidate && !gone && h.vetSnub && (

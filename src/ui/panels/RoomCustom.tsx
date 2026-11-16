@@ -1,5 +1,4 @@
 import { useState } from 'preact/hooks';
-import { createPortal } from 'preact/compat';
 import { customOf, type Action } from '../../core/game';
 import type { GameState, Room } from '../../core/model';
 import { paintState, paintStatus, paintingOf, roomTint } from '../../core/paint';
@@ -15,7 +14,6 @@ import {
   type DecorId,
   type TintId,
 } from '../../data/custom';
-import { ROOMS } from '../../data/rooms';
 import { help } from '../HoldHelp';
 import { Icon } from '../icons';
 import { Buy } from './TabernaPanel';
@@ -251,47 +249,24 @@ function SalonAdornos({
 }
 
 /**
- * La hoja «Personalizar» de una sala, encima de su ficha: los colores de sus telas y, en el
- * salón, los adornos que se compran. Solo aspecto (y el Atractivo de los adornos): lo que la sala
- * hace está en la ficha. Se abre sobre la escena, no dentro del panel.
+ * La pestaña «Personalizar» de una sala: los colores de sus telas y, en el salón, los adornos que
+ * se compran. Solo aspecto (y el Atractivo de los adornos): lo que la sala hace está en «Sala».
  */
-export function RoomCustom({
-  game,
-  room,
-  onClose,
-  ...p
-}: CustomProps & { game: GameState; room: Room; onClose: () => void }) {
-  const sheet = (
-    <div class="card-backdrop as-sheet" onClick={onClose}>
-      <article
-        class="herocard questsheet room-custom"
-        onClick={(e) => e.stopPropagation()}
-        aria-label={`Personalizar: ${ROOMS[room.type].name}`}
-      >
-        <button class="btn-icon herocard-x" data-tut="cerrar" aria-label="Cerrar" onClick={onClose}>
-          <Icon name="close" size={14} />
-        </button>
-        <div class="qs-scroll">
-          <header class="qs-head">
-            <span class="eyebrow">Personalizar</span>
-            <h3>{ROOMS[room.type].name}</h3>
-          </header>
-          {tintable(room, p) && (
-            <RoomTint
-              game={game}
-              room={room}
-              onAct={p.onAct}
-              onTint={p.onTint}
-              onPreview={p.onPreview}
-            />
-          )}
-          {room.type === 'salon' && p.onDecor && (
-            <SalonAdornos game={game} onDecor={p.onDecor} onFeast={p.onFeast} />
-          )}
-        </div>
-      </article>
+export function RoomCustom({ game, room, ...p }: CustomProps & { game: GameState; room: Room }) {
+  return (
+    <div class="room-custom">
+      {tintable(room, p) && (
+        <RoomTint
+          game={game}
+          room={room}
+          onAct={p.onAct}
+          onTint={p.onTint}
+          onPreview={p.onPreview}
+        />
+      )}
+      {room.type === 'salon' && p.onDecor && (
+        <SalonAdornos game={game} onDecor={p.onDecor} onFeast={p.onFeast} />
+      )}
     </div>
   );
-  const host = document.querySelector('.stage');
-  return host ? createPortal(sheet, host) : sheet;
 }

@@ -25,7 +25,9 @@ export type Go =
   | { trip: string }
   /** El modo obras con una sala elegida para construir (el almacén). */
   | { build: 'almacen' }
-  | { panel: 'tablon' | 'fuera' | 'gremio' };
+  | { panel: 'tablon' | 'fuera' | 'gremio' }
+  /** La oferta del forastero de la tormenta. */
+  | { stranger: true };
 
 export interface Notice {
   /** Fijo mientras dure lo mismo: así se sabe qué aviso es nuevo. */
@@ -184,6 +186,16 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
       k: 'warn',
       icon: 'cofre',
       go: game.mode === 'libre' ? { build: 'almacen' } : { panel: 'gremio' },
+    });
+
+  // El forastero de la tormenta espera junto al fuego (hasta mañana a mediodía).
+  if (game.stranger)
+    out.push({
+      id: `forastero:${game.stranger.day}`,
+      text: `Un forastero encapuchado espera junto al fuego: ofrece traer de vuelta a un caído. Se irá ${game.day > game.stranger.day ? 'hoy' : 'mañana'} a mediodía.`,
+      k: 'warn',
+      icon: 'vela',
+      go: { stranger: true },
     });
 
   // Obras recién acabadas.

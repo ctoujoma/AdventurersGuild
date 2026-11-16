@@ -200,7 +200,7 @@ una fase, `npm run sim` y una partida larga para ver que el ritmo sigue bien.
      trabajadores, más deprisa). La forja deja de sumar a las armas (B4); textos «sale raro» y de
      la forja (B7, B4).
    - B5 precio de venta por tramos de rareza y tipo (aprobado; los números, con el simulador).
-4. **Fase 4 · Un solo motor de pelea** (A6) — **hecha** (13 de noviembre; falta que las escenas lean el registro común y la barra de habilidades): jefes, asaltos y ladrón con el mismo motor; los
+4. **Fase 4 · Un solo motor de pelea** (A6) — **hecha** (13 de noviembre; el registro común, la barra de habilidades y el cabecilla, el 16): jefes, asaltos y ladrón con el mismo motor; los
    encargos sueltos siguen con tiradas calibradas contra él; los informes viejos se siguen viendo.
 5. **Bocetos antes de decidir** (para el usuario): C7 talleres con recetas en pestañas, D1 tarjeta
    del tablón que dice si se puede, E1 el altillo del salón (usando el fondo de la sala).
@@ -214,6 +214,11 @@ una fase, `npm run sim` y una partida larga para ver que el ritmo sigue bien.
 7. **Fase 6 · Salas** — **hecha** (15 de noviembre; bocetos en tres vueltas, el último https://claude.ai/artifact/HXAJqwWAzm3QAYte5jxNtW): E1 el altillo del salón (que la altura no cuente en el recargo y que la
    planta de arriba dé plazas; tras el boceto); E2 que cada nivel del salón se note (arte) y E4 un
    nivel 5 con su arte. C8 (patio, establo y empalizada) queda para más adelante (`futuro.md`).
+7b. **Antes de la fase 7** — **hecho** (16 de noviembre, aprobado con vistas previas: https://claude.ai/artifact/HseU8Nj7tG6dXSWW715yQ1) (15 de noviembre, con el usuario): el paso 4 del motor de pelea (las dos
+   escenas leen `FightEvent` y barra de habilidades común; el aviso del cabecilla, aprobado, con bandas de
+   hasta 9 bandidos al final); la navegación de las fichas de sala (Personalizar y demás pestañas) arriba de todo; y
+   el **forastero de la tormenta** (resucitar por oro y recursos en noches de tormenta), primer
+   suceso nocturno de la fase 7. Todo con vistas previas antes de meterlo.
 8. **Fase 7 · La noche**: N0 (nota del usuario, 14 de noviembre) que la noche se vea toda la noche
    del reloj: hoy al acostarse solo se agrisa y la noche cerrada sale un instante al pasar al día
    siguiente (resto de la transición vieja); **hecho** (14 de noviembre, aprobado con capturas). N1 empezar por el ladrón nocturno, el mensajero, la pesadilla y el gato;

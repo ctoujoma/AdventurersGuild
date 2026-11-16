@@ -7,7 +7,9 @@
  * Determinista: avanza a pasos fijos con una semilla, y las órdenes llevan el paso en que se
  * dieron. Cada pelea pone el sitio (quién tiene delante a quién: todos en la arena del jefe, por
  * salas en el asalto), lo que pasa alrededor (andar, la puerta, la cámara…) y su registro para
- * la escena (`emit` traduce los sucesos comunes a `CombatEvent`, `RaidStep` o `DuelHit`).
+ * la escena: el jefe y el asalto apuntan los sucesos comunes tal cual (`FightEvent`, con su paso
+ * o su segundo) y el ladrón sus golpes (`DuelHit`, que la escena lee con `duelLog`). Las escenas
+ * los enseñan igual (`world/fightLook.ts`) y la barra de los nuestros es una (`ui/FightCrew`).
  *
  * Ojo: los informes viejos guardan la pelea de un jefe (montaje y órdenes) para repetirla, así
  * que el orden de las tiradas no se puede cambiar sin que se vean distintas. Las peleas de

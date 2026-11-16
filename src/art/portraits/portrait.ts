@@ -99,6 +99,10 @@ const CLASS: Record<OutfitId, [Ramp, Ramp]> = {
     [P.black, P.navy, P.slate, P.steel],
     [P.navy, P.slate, P.steel, P.fog],
   ],
+  velado: [
+    [P.black, P.black, P.deep, P.forest],
+    [P.rust, P.tan, P.sand, P.white],
+  ],
 };
 
 /** Los de fuera usan en el retrato la ropa y el sombrero más parecidos de los héroes. */
@@ -116,6 +120,7 @@ const PORTRAIT_HAT: Partial<Record<HeadgearId, keyof typeof HEADGEAR>> = {
   paja: 'sombrero',
   boina: 'gorra',
   pluma: 'gorra',
+  velo: 'capucha',
 };
 
 function slots(look: HeroLook): Slots {
@@ -205,6 +210,36 @@ function backdrop(): PixelBuffer {
   return bg;
 }
 
+/** El hueco de la capucha por filas (de la pieza `capucha`): [fila, primera, última columna]. */
+const HOOD_GAP: readonly (readonly [number, number, number])[] = [
+  [8, 13, 21],
+  [9, 12, 22],
+  [10, 12, 23],
+  [11, 11, 23],
+  ...Array.from({ length: 18 }, (_, i) => [12 + i, 11, 27] as const),
+];
+
+/**
+ * Deja en sombra lo que asoma por el hueco de la capucha (negro y, abajo del todo, apenas el
+ * cuello); dos puntos de luz donde van los ojos (el reflejo del farol).
+ */
+function veilFace(fig: PixelBuffer, blink: boolean): void {
+  for (const [row, x0, x1] of HOOD_GAP)
+    for (let x = x0; x <= x1; x++) {
+      const y = row + TOP;
+      if (!alpha(fig.get(x, y))) continue;
+      fig.set(x, y, row < 28 ? P.black : P.ebony);
+    }
+  if (blink) return;
+  for (const [x, c] of [
+    [13, P.lemon],
+    [14, P.gold],
+    [19, P.gold],
+    [20, P.lemon],
+  ] as const)
+    fig.set(x, 18 + TOP, c);
+}
+
 const cache = new Map<string, PixelBuffer>();
 
 export function renderPortrait(look: HeroLook, marks: HeroMarks = {}, blink = false): PixelBuffer {
@@ -256,6 +291,8 @@ export function renderPortrait(look: HeroLook, marks: HeroMarks = {}, blink = fa
   else if (hg === 'gorra') stamp(fig, front, c, 10);
   else if (hg !== 'capucha') stamp(fig, front, c);
   if (hg) stamp(fig, HEADGEAR[hg], c);
+  // La capucha honda del forastero: la cara, en sombra; solo brillan los ojos.
+  if (worn === 'velo') veilFace(fig, blink);
 
   if (marks.eyepatch) stamp(fig, EYEPATCH, c);
   if (marks.injured) stamp(fig, BANDAGE, c);

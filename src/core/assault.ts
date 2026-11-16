@@ -6,7 +6,8 @@
  * perderse por el camino.
  *
  * Cada uno con su vida y sus golpes, con el motor común de las peleas (`core/fight.ts`):
- * habilidad por clase y críticos; aquí, cada uno tiene delante a los que están en su sala. Se decide aquí, paso a paso y con una semilla; con el juego
+ * habilidad por clase y críticos; aquí, cada uno tiene delante a los que están en su sala. El
+ * cabecilla (el primero de la banda) avisa de su golpe fuerte a los de su sala, como el jefe. Se decide aquí, paso a paso y con una semilla; con el juego
  * abierto se juega en directo (`Assault`, con órdenes del jugador) y, si no, solo. La escena
  * enseña la lista de pasos que sale (RaidPlan).
  */
@@ -14,9 +15,14 @@ import {
   BANDIT_CARRY,
   BANDIT_EVERY,
   BANDIT_HP,
+  BANDIT_MAX,
+  BANDIT_PER,
   BANDIT_POWER,
+  BANDIT_SPLIT,
   GUARD_BONUS,
   GUARD_HP,
+  LEADER_HP,
+  LEADER_SPECIAL,
   LOAD_TIME,
   MAX_GUARDS,
   PALISADE_FIGHT,
@@ -37,6 +43,7 @@ import {
 import {
   ABILITIES,
   Fight,
+  WARN,
   alive,
   heroUnit,
   type AbilityId,
@@ -45,7 +52,7 @@ import {
   type FightUnit,
   type OrderInput,
 } from './fight';
-import type { AssaultOutcome, Building, GameState, RaidPlan, RaidStep } from './model';
+import type { AssaultOutcome, Building, GameState, RaidEntry, RaidHouse, RaidPlan } from './model';
 import { equip } from './resolve';
 import { Rng } from './rng';
 import { shafts, stairLinks } from './rooms';
@@ -200,6 +207,8 @@ export interface Bandit {
   /** Daño de cada golpe y vida. */
   power: number;
   hp: number;
+  /** El cabecilla: avisa de su golpe fuerte a los de su sala. */
+  leader?: boolean;
 }
 
 export interface AssaultSetup {
@@ -222,7 +231,8 @@ export interface AssaultSetup {
 export type AssaultResult = AssaultOutcome;
 
 /** Cuántos bandidos trae una banda de esa fuerza. */
-export const banditCount = (strength: number) => Math.max(2, Math.min(6, Math.round(strength / 6)));
+export const banditCount = (strength: number) =>
+  Math.max(2, Math.min(BANDIT_MAX, Math.round(strength / BANDIT_PER)));
 
 /** Fuerza de una banda que viniera esta noche (la anunciada, si hay chivatazo). */
 export function likelyStrength(s: GameState, notoriety: number): number {
@@ -295,8 +305,9 @@ export function assaultSetup(s: GameState, strength: number, rng: Rng): AssaultS
   const n = banditCount(strength);
   const bandits = Array.from({ length: n }, (_, i) => ({
     id: `b${i}`,
-    power: (strength / n) * BANDIT_POWER,
-    hp: BANDIT_HP,
+    power: (strength / Math.min(n, BANDIT_SPLIT)) * BANDIT_POWER,
+    hp: Math.round(BANDIT_HP * (i ? 1 : LEADER_HP)),
+    ...(i ? {} : { leader: true }),
   }));
   return {
     graph,
@@ -337,8 +348,8 @@ export interface Fighter extends FightUnit {
   critTaken: boolean;
 }
 
-/** Órdenes del jugador durante el asalto (las comunes menos cubrirse: no hay golpe fuerte). */
-export type RaidOrder = Exclude<FightOrder, { kind: 'cover' }>;
+/** Órdenes del jugador durante el asalto (todas las comunes: cubrirse, del golpe del cabecilla). */
+export type RaidOrder = FightOrder;
 export type RaidOrderInput = OrderInput<RaidOrder>;
 
 /** Los del asalto al empezar: los de casa donde estén y los bandidos fuera. */
@@ -394,6 +405,7 @@ function fighters(setup: AssaultSetup): Fighter[] {
       guard: false,
       worker: false,
       ranged: false,
+      ...(b.leader ? { special: LEADER_SPECIAL } : {}),
     })),
   ];
 }
@@ -404,7 +416,8 @@ function fighters(setup: AssaultSetup): Fighter[] {
  * hace lo suyo. Determinista con la semilla: con las mismas órdenes sale lo mismo.
  */
 export class Assault extends Fight<Fighter, RaidOrder, AssaultResult> {
-  readonly steps: RaidStep[] = [];
+  /** Lo que pasa, para la escena y el informe (la casa y la pelea, con el registro común). */
+  readonly log: RaidEntry[] = [];
   private next: Map<string, Map<string, string>>;
   private dist: Map<string, Map<string, number>>;
   private start: Record<string, string> = {};
@@ -445,7 +458,7 @@ export class Assault extends Fight<Fighter, RaidOrder, AssaultResult> {
       b.to = YARD;
       b.until = setup.arrive;
     }
-    this.steps.push({ t: 0, k: 'move', ids: bands.map((b) => b.id), to: YARD, dur: setup.arrive });
+    this.note({ kind: 'move', ids: bands.map((b) => b.id), to: YARD, dur: setup.arrive });
     const guards = this.defs().filter((d) => d.guard);
     if (guards.length && setup.route.length) this.move(guards, YARD);
   }
@@ -467,7 +480,7 @@ export class Assault extends Fight<Fighter, RaidOrder, AssaultResult> {
   plan(): RaidPlan {
     const hp: Record<string, number> = {};
     for (const u of this.units) hp[u.id] = u.max;
-    return { route: this.setup.route, start: this.start, steps: this.steps, end: this.t, hp };
+    return { route: this.setup.route, start: this.start, log: this.log, end: this.t, hp };
   }
 
   tick(): void {
@@ -487,14 +500,14 @@ export class Assault extends Fight<Fighter, RaidOrder, AssaultResult> {
       if (alive(b) && !b.to && b.node === OUT && this.phase === 'out') {
         b.gone = true;
         this.stolen += b.gold;
-        this.steps.push({ t, k: 'escape', id: b.id, gold: b.gold });
+        this.note({ kind: 'escape', id: b.id, gold: b.gold });
       }
     // Se despiertan con el jaleo (o al tenerlos delante).
     for (const d of defs) {
       if (d.awake || d.down) continue;
       if (t >= d.wake || bands.some((b) => this.here(b, d.node))) this.rouse(d);
     }
-    this.brawl(t);
+    this.brawl();
     if (!bands.some(alive)) return this.finish();
     this.advance(t);
     this.chase(t);
@@ -523,33 +536,21 @@ export class Assault extends Fight<Fighter, RaidOrder, AssaultResult> {
     return u.side === 'h' && u.node === YARD ? 1 + this.setup.yard : 1;
   }
 
-  protected override downed(_from: Fighter, to: Fighter): void {
+  protected override downed(from: Fighter, to: Fighter): void {
     to.down = true;
-    if (to.side === 'h') {
-      this.fell.push(to.id);
-      this.steps.push({ t: this.t, k: 'fall', id: to.id });
-    } else {
-      this.recovered += to.gold;
-      this.steps.push({ t: this.t, k: 'down', id: to.id, gold: to.gold });
-    }
+    if (to.side === 'h') this.fell.push(to.id);
+    else this.recovered += to.gold;
+    super.downed(from, to);
   }
 
-  /** Lo que pasa en la pelea, como lo lee la escena del asalto (`RaidStep`). */
+  /** Lo que pasa en la pelea va al registro tal cual (`FightEvent`), con su segundo. */
   protected emit(e: FightEvent): void {
-    const t = this.t;
-    if (e.kind === 'hit')
-      this.steps.push({
-        t,
-        k: 'hit',
-        from: e.from,
-        id: e.to,
-        amount: e.dealt,
-        crit: e.crit || undefined,
-      });
-    else if (e.kind === 'skill') this.steps.push({ t, k: 'skill', id: e.from, skill: e.skill });
-    else if (e.kind === 'heal')
-      this.steps.push({ t, k: 'heal', from: e.from, id: e.to, amount: e.dealt });
-    else if (e.kind === 'chance') this.steps.push({ t, k: 'chance', id: e.from });
+    this.log.push({ ...e, t: this.t });
+  }
+
+  /** Lo que pasa por la casa, con su segundo. */
+  private note(e: RaidHouse): void {
+    this.log.push({ ...e, t: this.t });
   }
 
   protected override moveTo(u: Fighter, to: string): boolean {
@@ -562,7 +563,7 @@ export class Assault extends Fight<Fighter, RaidOrder, AssaultResult> {
   }
 
   /** En cada sala con gente de los dos bandos: cada uno pega a su ritmo. */
-  private brawl(t: number): void {
+  private brawl(): void {
     const nodes = new Set(this.units.filter((u) => alive(u) && !u.to).map((u) => u.node));
     for (const node of nodes) {
       const ds = this.defs().filter((d) => this.here(d, node) && d.awake);
@@ -573,7 +574,7 @@ export class Assault extends Fight<Fighter, RaidOrder, AssaultResult> {
       }
       if (!this.fights.has(node)) {
         this.fights.add(node);
-        this.steps.push({ t, k: 'fight', at: node });
+        this.note({ kind: 'fight', at: node });
       }
       for (const u of [...ds, ...bs]) {
         if (!alive(u)) continue;
@@ -590,7 +591,7 @@ export class Assault extends Fight<Fighter, RaidOrder, AssaultResult> {
   private rouse(d: Fighter): void {
     if (d.awake) return;
     d.awake = true;
-    if (!d.guard) this.steps.push({ t: this.t, k: 'wake', id: d.id });
+    if (!d.guard) this.note({ kind: 'wake', id: d.id });
   }
 
   private durOf(a: string, b: string): number {
@@ -604,8 +605,10 @@ export class Assault extends Fight<Fighter, RaidOrder, AssaultResult> {
       u.to = to;
       u.until = t + dur;
       u.target = undefined;
+      // El cabecilla que se va sin descargar su golpe avisa otra vez en la próxima pelea.
+      if (u.special !== undefined && u.special <= WARN) u.special = WARN + 1;
     }
-    this.steps.push({ t, k: 'move', ids: us.map((u) => u.id), to, dur });
+    this.note({ kind: 'move', ids: us.map((u) => u.id), to, dur });
   }
 
   /** Los bandidos van todos juntos; mientras alguien les planta cara, no avanzan. */
@@ -624,12 +627,12 @@ export class Assault extends Fight<Fighter, RaidOrder, AssaultResult> {
         else {
           if (!this.doorStarted) {
             this.doorStarted = true;
-            this.steps.push({ t, k: 'door', dur: this.door });
+            this.note({ kind: 'door', dur: this.door });
           }
           this.door -= RAID_STEP;
           if (this.door <= 1e-6) {
             this.doorOpen = true;
-            this.steps.push({ t, k: 'broke' });
+            this.note({ kind: 'broke' });
           }
         }
       } else if (node !== vault) {
@@ -638,15 +641,15 @@ export class Assault extends Fight<Fighter, RaidOrder, AssaultResult> {
       } else {
         if (!this.lockStarted) {
           this.lockStarted = true;
-          this.steps.push({ t, k: 'lock', dur: this.lock });
+          this.note({ kind: 'lock', dur: this.lock });
         }
         this.lock -= RAID_STEP;
         if (this.lock <= 1e-6) {
-          this.steps.push({ t, k: 'open' });
+          this.note({ kind: 'open' });
           for (const b of pack) {
             b.gold = Math.min(this.setup.carry, this.left);
             this.left -= b.gold;
-            this.steps.push({ t, k: 'loot', id: b.id, gold: b.gold });
+            this.note({ kind: 'loot', id: b.id, gold: b.gold });
           }
           this.loadUntil = t + LOAD_TIME;
           this.phase = 'out';
@@ -715,13 +718,12 @@ export class Assault extends Fight<Fighter, RaidOrder, AssaultResult> {
   }
 
   private finish(): void {
-    const t = this.t;
     // Se acabó el tiempo: los que quedan se van con lo que lleven.
     for (const b of this.bands())
       if (alive(b)) {
         b.gone = true;
         this.stolen += b.gold;
-        this.steps.push({ t, k: 'escape', id: b.id, gold: b.gold });
+        this.note({ kind: 'escape', id: b.id, gold: b.gold });
       }
     const bands = this.bands();
     this.result = {
@@ -736,6 +738,45 @@ export class Assault extends Fight<Fighter, RaidOrder, AssaultResult> {
       recovered: this.recovered,
     };
   }
+}
+
+/**
+ * El registro de un asalto. Los informes de antes del registro común traen `steps` (`RaidStep`):
+ * se pasan a `RaidEntry` (el golpe, la cura y la caída con el registro común) para verlos igual.
+ */
+export function raidLog(plan: Pick<RaidPlan, 'log' | 'steps'>): RaidEntry[] {
+  if (plan.log) return plan.log;
+  // Quién le pegó por última vez a cada uno (los viejos no lo apuntaban al caer).
+  const last = new Map<string, string>();
+  return (plan.steps ?? []).map((s): RaidEntry => {
+    switch (s.k) {
+      case 'hit':
+        last.set(s.id, s.from);
+        return {
+          t: s.t,
+          kind: 'hit',
+          from: s.from,
+          to: s.id,
+          amount: s.amount,
+          dealt: s.amount,
+          crit: !!s.crit,
+        };
+      case 'heal':
+        return { t: s.t, kind: 'heal', from: s.from, to: s.id, amount: s.amount, dealt: s.amount };
+      case 'skill':
+        return { t: s.t, kind: 'skill', from: s.id, skill: s.skill };
+      case 'chance':
+        return { t: s.t, kind: 'chance', from: s.id };
+      // El oro del bandido que cae ya lo dice su saco (`loot`).
+      case 'fall':
+      case 'down':
+        return { t: s.t, kind: 'down', from: last.get(s.id) ?? s.id, to: s.id };
+      default: {
+        const { k, ...rest } = s;
+        return { ...rest, kind: k } as RaidEntry;
+      }
+    }
+  });
 }
 
 /** Juega el asalto entero: sin órdenes (se las apañan) o repitiendo las del jugador. */

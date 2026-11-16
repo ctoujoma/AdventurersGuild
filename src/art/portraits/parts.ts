@@ -639,4 +639,15 @@ export const OUTFITS = {
     [35, 30, 'WWpp'],
     [36, 31, 'Wpp'],
   ],
+  // El forastero de la tormenta: solo el hábito, sin la estola ni la cruz del clérigo; un nudo
+  // del cordón de hueso al cuello.
+  velado: [
+    ...SHOULDERS,
+    [32, 15, 'bbcccccbb'],
+    [33, 13, 'bbbcccccbbb'],
+    [35, 18, 'CC'],
+    [36, 17, 'C..C'],
+    [37, 18, 'B'],
+    [38, 18, 'B'],
+  ],
 } satisfies Record<string, Part>;

@@ -71,7 +71,9 @@ describe('la pelea contra un jefe', () => {
         if (u.critOpen && !u.critTaken && c.order({ who: u.id, kind: 'crit' })) taken++;
       c.tick();
     }
-    const crits = c.events.filter((e) => e.kind === 'crit' && c.unit(e.from)?.side === 'h').length;
+    const crits = c.events.filter(
+      (e) => e.kind === 'hit' && e.crit && c.unit(e.from)?.side === 'h',
+    ).length;
     expect(taken).toBeGreaterThan(0);
     // Cada ocasión cogida acaba en crítico (salvo la última si la pelea termina antes).
     expect(crits).toBeGreaterThanOrEqual(taken - 1);
@@ -94,9 +96,10 @@ describe('la pelea contra un jefe', () => {
         c.tick();
       }
       const special = c.events.find((e) => e.kind === 'special')!;
-      return c.events
-        .filter((e) => e.step === special.step && e.kind === 'hit')
-        .reduce((a, e) => a + (e.amount ?? 0), 0);
+      return c.events.reduce(
+        (a, e) => a + (e.step === special.step && e.kind === 'hit' ? e.amount : 0),
+        0,
+      );
     };
     expect(hurt(true)).toBeLessThan(hurt(false) * 0.6);
   });

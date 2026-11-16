@@ -109,7 +109,8 @@ import { FLAME_FRAMES, FLAME_H, FLAME_W, flameStrip } from './flame';
 import { faces, sideTexel, type Mat } from './volume';
 import { RaidShow, isBandit } from './raid';
 import { DAY_SECONDS, WORK_END } from '../../core/balance';
-import { catHunts, napping } from '../../core/incidents';
+import { catHunts, duelLog, napping } from '../../core/incidents';
+import { CRIT_SOUND, NUMBER_COLOR, numberOf } from '../fightLook';
 import type { Assault } from '../../core/assault';
 import { HEARTH_RIGHT, NO_LOOK, type MatsLook, type SalonLook } from './salon';
 import {
@@ -899,6 +900,7 @@ export class RoomScene {
       (model.paints ?? []).map((p) => [p.room, p.tint]),
     ]);
     if (model.visitors) this.crowd.setVisitors(model.visitors);
+    this.crowd.setStranger(!!model.stranger);
     this.crowd.setTints(this.tintsNow(model));
     this.shiners = model.heroes.filter((h) => hasLegend(h.marks.gear)).map((h) => h.id);
     if (key === this.key) {
@@ -977,13 +979,13 @@ export class RoomScene {
         this.crowd.engage(d.who, thief.x, thief.floor);
       }
       const shown = this.duelShown.get(inc.room) ?? 0;
-      const past = d.hits.filter((h) => h.t <= now);
+      const past = duelLog(d).filter((h) => h.t <= now);
       const dir = thief.x >= hero.x ? 1 : -1;
       // Los golpes nuevos: el héroe atiza y el ladrón lo encaja, o el ladrón acuchilla y el
       // héroe recula; chispas donde da y su sonido.
       let beat: 'stab' | 'hurt' | undefined;
       for (const h of past.slice(shown)) {
-        if (h.by === 'h') {
+        if (h.from === d.who) {
           this.crowd.strike(d.who, dir);
           beat = 'hurt';
           for (let i = 0; i < (h.crit ? 6 : 3); i++)
@@ -999,6 +1001,7 @@ export class RoomScene {
             );
         }
         this.cb.onSound?.('hit', h.crit ? 0.9 : 0.5);
+        if (h.crit && h.from === d.who) this.cb.onSound?.(CRIT_SOUND.name, CRIT_SOUND.volume);
       }
       this.incidents.duel(inc.room, hero.x, beat);
       // En guardia mientras el ladrón siga ahí (hasta que el núcleo cierra el incidente).
@@ -1010,8 +1013,7 @@ export class RoomScene {
         this.duelSeen.add(`${inc.room}#fin`);
         this.crowd.flinch(d.who, dir > 0 ? -1 : 1, 0.9);
       }
-      const lost = (by: 'h' | 'l') =>
-        past.filter((h) => h.by !== by).reduce((a, h) => a + h.amount, 0);
+      const lost = (id: string) => past.filter((h) => h.to === id).reduce((a, h) => a + h.dealt, 0);
       const bar = (x: number, y: number, k: number, color: string) => {
         const X = Math.round(x - px) - 6;
         const Y = Math.round(y - py) - 31;
@@ -1022,19 +1024,18 @@ export class RoomScene {
         ctx.fillStyle = color;
         ctx.fillRect(X, Y, Math.max(0, Math.round(12 * k)), 2);
       };
-      bar(hero.x, hero.y, 1 - lost('h') / d.hp.h, P.lime);
-      bar(thief.x, thief.y, 1 - lost('l') / d.hp.l, P.red);
+      bar(hero.x, hero.y, 1 - lost(d.who) / d.hp.h, P.lime);
+      bar(thief.x, thief.y, 1 - lost('ladron') / d.hp.l, P.red);
       // Los números de los golpes del último segundo, subiendo.
       for (const h of past) {
         const k = now - h.t;
         if (k > 0.9) continue;
-        const at = h.by === 'h' ? thief : hero;
-        const text = String(h.amount);
+        const at = h.from === d.who ? thief : hero;
+        const { text, kind } = numberOf(h, (id) => id === d.who)!;
         const X = Math.round(at.x - px - text.length * 2);
         const Y = Math.round(at.y - py - 36 - k * 10);
-        const color = h.crit ? P.lemon : h.by === 'h' ? P.white : P.red;
         tinyDigits(ctx, text, X + 1, Y + 1, P.black);
-        tinyDigits(ctx, text, X, Y, color);
+        tinyDigits(ctx, text, X, Y, NUMBER_COLOR[kind]);
       }
     }
   }

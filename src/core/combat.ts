@@ -13,7 +13,6 @@ import {
   STEP,
   alive,
   heroUnit,
-  type AbilityId,
   type FightEvent,
   type FightOrder,
   type OrderInput,
@@ -45,45 +44,8 @@ export const MAX_TIME = 90;
 /** Las órdenes de la pelea contra un jefe (las comunes menos la de mover: no hay salas). */
 export type Order = Exclude<FightOrder, { kind: 'move' }>;
 
-export type CombatEventKind =
-  | 'hit'
-  | 'crit'
-  | 'skill'
-  | 'heal'
-  | 'down'
-  /** El jefe avisa de su golpe fuerte (`WARN` s antes). */
-  | 'warn'
-  | 'cover'
-  /** Se abre la ocasión de crítico de un héroe (hasta su siguiente golpe). */
-  | 'chance'
-  | 'special';
-
-export interface CombatEvent {
-  step: number;
-  kind: CombatEventKind;
-  from: string;
-  to?: string;
-  amount?: number;
-  skill?: AbilityId;
-}
-
-/** Un suceso común como lo lee la escena de la arena (`world/battle.ts` y `BossFight`). */
-export function combatEvent(step: number, e: FightEvent): CombatEvent {
-  switch (e.kind) {
-    case 'hit':
-      return { step, kind: e.crit ? 'crit' : 'hit', from: e.from, to: e.to, amount: e.amount };
-    case 'heal':
-      return { step, kind: 'heal', from: e.from, to: e.to, amount: e.amount };
-    case 'down':
-      return { step, kind: 'down', from: e.from, to: e.to };
-    case 'skill':
-      return { step, kind: 'skill', from: e.from, skill: e.skill };
-    case 'special':
-      return { step, kind: 'special', from: e.from, amount: e.covered ? 1 : 0 };
-    default:
-      return { step, kind: e.kind, from: e.from };
-  }
-}
+/** Lo que pasa en la pelea de un jefe: el registro común (`FightEvent`) con el paso en que pasó. */
+export type CombatEvent = FightEvent & { step: number };
 
 export interface CombatSetup {
   seed: string;
@@ -226,7 +188,7 @@ export class Combat extends Fight<Unit, Order, CombatResult> {
   }
 
   protected emit(e: FightEvent): void {
-    this.events.push(combatEvent(this.step, e));
+    this.events.push({ ...e, step: this.step });
   }
 
   protected override downed(from: Unit, to: Unit): void {

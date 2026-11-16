@@ -53,6 +53,7 @@ import {
   REFUSE_GRUDGE,
   VET_SNUB_REST,
   VET_REST,
+  VEIL_CAP,
   WORK_END,
   UNPAID_LIMIT,
   UNPAID_MORALE,
@@ -115,6 +116,8 @@ import {
   tutorialStep,
 } from './tutorial';
 import { stepRaids } from './raids';
+import { nightDue, rollNight } from './night';
+import { dismiss, revive, reviveIssue, stepStranger, strangerGone } from './stranger';
 import { advanceChain, bossOf, fightRoster, offerChain } from './chains';
 import { choose, maybeEvent, scaredClients, stepThreat } from './events';
 import { generateHero, generateQuest, homePower } from './generate';
@@ -280,6 +283,8 @@ export type Action =
   | { type: 'raidFought'; result: AssaultOutcome }
   | { type: 'renameHero'; id: string; name: string }
   | { type: 'tutorial'; op: 'carta' | 'ok' | 'saltar' | 'listo' | TutorialSkip }
+  /** El forastero de la tormenta: traer de vuelta a ese caído (null: decirle que no). */
+  | { type: 'stranger'; heroId: string | null }
   /** Saltar al anochecer. */
   | { type: 'dusk' }
   | { type: 'endDay' };
@@ -870,8 +875,19 @@ function reduceAction(state: GameState, action: Action): GameState {
       // Mientras dura el tutorial el reloj está parado (salvo en sus pasos libres): solo avanza
       // con los saltos.
       if (tutorialFrozen(state)) return state;
-      const next = tick(state, action.to);
+      let next = tick(state, action.to);
       if (next === state) return state;
+      // La noche: el suceso que toque (una vez por noche) y el forastero que se va a mediodía.
+      const nightNews: DawnEvent[] = [];
+      if (nightDue(next, state.clock ?? 0, next.clock ?? 0) || strangerGone(next)) {
+        next = structuredClone(next);
+        const rng = new Rng(next.rng);
+        if (nightDue(next, state.clock ?? 0, next.clock ?? 0))
+          nightNews.push(...rollNight(next, rng));
+        const gone = stepStranger(next);
+        if (gone) nightNews.push(gone);
+        next.rng = rng.save();
+      }
       const part = Math.min(1, (next.clock ?? 0) / DAY_SECONDS);
       const crafted = [
         ...(next.crafts?.length ? stepCrafts(next, part) : []),
@@ -888,7 +904,7 @@ function reduceAction(state: GameState, action: Action): GameState {
       const g = ms.next.over ? { next: ms.next, news: [] } : tickGoals(ms.next);
       const all = [
         ...news,
-        ...[...crafted, ...ms.news, ...g.news].map((n) => ({
+        ...[...nightNews, ...crafted, ...ms.news, ...g.news].map((n) => ({
           t: n.t,
           k: n.k ?? ('good' as const),
         })),
@@ -1039,6 +1055,14 @@ function reduceAction(state: GameState, action: Action): GameState {
       const s = structuredClone(state);
       const n = actOnIncident(s, action.id, action.act);
       s.incidentNews = n ? [n] : undefined;
+      return s;
+    }
+    case 'stranger': {
+      if (!state.stranger) return state;
+      if (action.heroId && reviveIssue(state, action.heroId)) return state;
+      const s = structuredClone(state);
+      const said = action.heroId ? revive(s, action.heroId) : dismiss(s);
+      s.incidentNews = [{ t: said.t, k: said.k ?? 'info' }];
       return s;
     }
     case 'dusk':
@@ -1277,6 +1301,10 @@ export function endDay(state: GameState, away = false): GameState {
   events.push(...nightPaints(s, away));
   // El rumor que no se ha tocado se pierde con la noche.
   s.rumor = undefined;
+  // El forastero de una noche anterior ya se fue a mediodía; el suceso de esta noche, si no se
+  // ha tirado con el reloj (juego cerrado), se tira ahora y se cuenta al amanecer.
+  if (s.stranger && s.stranger.day < s.day) s.stranger = null;
+  events.push(...rollNight(s, rng));
   s.day++;
   stepWorks(s, events);
   tidyJobs(s);
@@ -1439,6 +1467,7 @@ export function endDay(state: GameState, away = false): GameState {
       } else {
         h.status = 'muerto';
         s.fallen.unshift({
+          id: h.id,
           name: h.name + (h.nick ? ` «${h.nick}»` : ''),
           epitaph: `${h.sex === 'f' ? 'Desaparecida' : 'Desaparecido'}. Encontraron su capa el día ${s.day}.`,
         });
@@ -1497,12 +1526,14 @@ export function endDay(state: GameState, away = false): GameState {
       });
     }
     if (h.grudge && h.grudge.until <= s.day) delete h.grudge;
+    if (h.veil && h.veil <= s.day) delete h.veil;
     const cap =
       restCap(s.fac.tab) +
       (has(h, 'bebedor') && s.fac.tab >= 2 ? 10 : 0) +
       VET_CAP[vet]! -
       (snub ? VET_SNUB_CAP : 0) -
-      (h.grudge?.cap ?? 0);
+      (h.grudge?.cap ?? 0) -
+      (h.veil ? VEIL_CAP : 0);
     const gain =
       restMorale(s.fac.tab) +
       chapelRest(s.fac.cap) +
@@ -1521,7 +1552,7 @@ export function endDay(state: GameState, away = false): GameState {
       h.morale = Math.max(Math.min(h.morale, BORED_FLOOR), h.morale - BORED_DROP);
     } else if (h.morale < cap) h.morale = Math.min(cap, h.morale + gain);
     // Sin su cuarto o con rencor, aunque ya estuviera animado, se le va bajando hasta el tope.
-    else if (snub || h.grudge) h.morale = Math.max(cap, h.morale - OVER_CAP_DROP);
+    else if (snub || h.grudge || h.veil) h.morale = Math.max(cap, h.morale - OVER_CAP_DROP);
     if (h.morale < MORALE_QUIT && !has(h, 'leal') && vet < 2 && rng.chance(DESERT_CHANCE)) {
       deserters.push(h);
       continue;

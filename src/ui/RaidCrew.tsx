@@ -1,32 +1,15 @@
 /**
- * La tira de abajo durante el asalto en directo: una tarjeta por cada uno de los nuestros, con
- * su retrato, su vida y la carga de su habilidad. Tocarla coge el crítico si lo tiene abierto y,
- * si no, lanza la habilidad cuando está lista. Para moverlos, se les arrastra en la escena a una
- * sala; para elegir a por quién van, se toca a un bandido. Con seis caben en una fila en el móvil.
+ * La tira de abajo durante el asalto en directo: la barra común de las peleas (`FightCrew`) con
+ * los nuestros. Tocar una tarjeta coge el crítico si lo tiene abierto y, si no, lanza la
+ * habilidad cuando está lista (también desde su cinta). Para moverlos, se les arrastra en la
+ * escena a una sala; para elegir a por quién van, se toca a un bandido. Cuando el cabecilla
+ * avisa de su golpe fuerte, «¡Cubríos!».
  */
 import { useEffect, useState } from 'preact/hooks';
-import type { HeroLook, HeroMarks } from '../art/heroes/look';
-import { ABILITIES, critReady, skillCharge, type AbilityId } from '../core/fight';
 import type { GameState } from '../core/model';
-import { Portrait } from './Portrait';
+import { FightCrew, crewCard, type CrewCard } from './FightCrew';
 import type { GameScene } from './SceneView';
 import { heroFrame, lookOf, marksOf } from './view';
-
-interface Row {
-  id: string;
-  name: string;
-  look?: HeroLook;
-  marks?: HeroMarks;
-  frame?: string;
-  hp: number;
-  down: boolean;
-  /** 0–1: lo que lleva cargada la habilidad. */
-  charge: number;
-  skill?: AbilityId;
-  chance: boolean;
-  /** De camino a otra sala. */
-  moving: boolean;
-}
 
 export function RaidCrew({
   game,
@@ -35,12 +18,15 @@ export function RaidCrew({
   game: GameState;
   scene: { current: GameScene | null };
 }) {
-  const [rows, setRows] = useState<Row[]>([]);
+  const [crew, setCrew] = useState<CrewCard[]>([]);
   const [end, setEnd] = useState<string | null>(null);
+  const [warn, setWarn] = useState(false);
   useEffect(() => {
     const read = () => {
-      const live = scene.current?.liveRaid?.live;
-      if (!live) return setRows([]);
+      const show = scene.current?.liveRaid;
+      const live = show?.live;
+      if (!show || !live) return setCrew([]);
+      setWarn(show.warning);
       const r = live.result;
       setEnd(
         !r
@@ -51,25 +37,19 @@ export function RaidCrew({
               ? `Se escapan con ${r.stolen} monedas.`
               : 'Se escapan, pero sin el oro.',
       );
-      setRows(
+      setCrew(
         live
           .defs()
           .filter((d) => !d.worker)
           .map((d) => {
             const h = game.heroes.find((x) => x.id === d.id);
-            return {
-              id: d.id,
+            return crewCard(d, {
               name: h?.name ?? d.id,
               look: h ? lookOf(h) : undefined,
               marks: h ? marksOf(h) : undefined,
               frame: h ? heroFrame(h) : undefined,
-              hp: d.hp / d.max,
-              down: d.down,
-              charge: skillCharge(d),
-              skill: d.ability,
-              chance: critReady(d),
               moving: !!d.to,
-            };
+            });
           }),
       );
     };
@@ -77,77 +57,27 @@ export function RaidCrew({
     const id = setInterval(read, 150);
     return () => clearInterval(id);
   }, [game, scene]);
-  if (!rows.length) return null;
-  const tap = (id: string) => scene.current?.liveRaid?.tap(id);
+  if (!crew.length) return null;
+  const raid = () => scene.current?.liveRaid;
   return (
     <div class="raid-crew">
-      <p class={`raid-crew-hint ${end ? 'is-end' : ''}`}>
+      {/* Mientras avisa el cabecilla, «¡Cubríos!» ocupa el sitio de la pista (sin taparla a medias). */}
+      <p class={`raid-crew-hint ${end ? 'is-end' : ''} ${warn && !end ? 'is-hidden' : ''}`}>
         {end ?? 'Arrastra a los tuyos a una sala · toca a un bandido para ir a por él'}
       </p>
-      <ul
-        class="rc-list"
-        aria-label="Los que defienden la taberna"
-        style={{ gridTemplateColumns: `repeat(${Math.min(rows.length, 6)}, minmax(0, 76px))` }}
-      >
-        {rows.map((h) => {
-          const ready = h.charge >= 1 && !h.down;
-          const skill = h.skill ? ABILITIES[h.skill] : null;
-          const state = h.down ? 'en el suelo' : h.moving ? 'corriendo' : '';
-          const label = [
-            h.name,
-            `vida ${Math.round(h.hp * 100)} %`,
-            h.chance ? '¡crítico!' : '',
-            skill && ready ? `${skill.name} lista` : '',
-            state,
-          ]
-            .filter(Boolean)
-            .join(', ');
-          return (
-            <li
-              key={h.id}
-              class={`rc-card ${h.down ? 'is-down' : ''} ${h.chance ? 'is-chance' : ''} ${ready ? 'is-ready' : ''}`}
-            >
-              <button
-                class="rc-hit"
-                disabled={h.down}
-                aria-label={label}
-                title={skill ? `${skill.name}: ${skill.text}` : h.name}
-                onClick={() => tap(h.id)}
-              >
-                <span class="rc-face">
-                  {h.look && (
-                    <Portrait
-                      look={h.look}
-                      marks={h.marks}
-                      scale={1}
-                      alive={!h.down}
-                      frame={h.frame}
-                    />
-                  )}
-                  {h.chance && <b class="rc-now" aria-hidden="true" />}
-                  {h.moving && !h.down && (
-                    <i class="rc-run" aria-hidden="true">
-                      »
-                    </i>
-                  )}
-                </span>
-                <span class={`rc-hp ${h.hp < 0.35 ? 'is-low' : ''}`} aria-hidden="true">
-                  <i style={{ width: `${Math.round(h.hp * 100)}%` }} />
-                </span>
-                {skill && (
-                  <span class="rc-skill" aria-hidden="true">
-                    <i style={{ width: `${Math.round(Math.min(1, h.charge) * 100)}%` }} />
-                    <span>{ready ? skill.name : ''}</span>
-                  </span>
-                )}
-                <span class="rc-name" aria-hidden="true">
-                  {h.down ? 'en el suelo' : h.name}
-                </span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+      <FightCrew
+        crew={crew}
+        label="Los que defienden la taberna"
+        playing={!end}
+        onCrit={(id) => raid()?.tap(id)}
+        onPick={(id) => raid()?.tap(id)}
+        onSkill={(id) => raid()?.live?.order({ kind: 'skill', who: id })}
+        warn={warn}
+        onCover={() => {
+          raid()?.cover();
+          setWarn(false);
+        }}
+      />
     </div>
   );
 }

@@ -2,8 +2,10 @@
  * El tiempo que hace: solo lo usa la escena (no afecta a la partida ni se guarda). Sale de la
  * semilla de la partida, el día y la hora, así que es el mismo al volver a abrir. Cada día tiene
  * su tipo (casi siempre despejado o algo nublado; pocos de lluvia y nunca dos seguidos de
- * lluvia fuerte) y, dentro del día, va cambiando poco a poco.
+ * lluvia fuerte; ver `core/sky.ts`, que también lo usa el núcleo) y, dentro del día, va
+ * cambiando poco a poco.
  */
+import { dayKind, rainSpan, skyHash, type WeatherKind } from '../core/sky';
 
 /** Cada componente, de 0 a 1. */
 export interface Weather {
@@ -18,19 +20,7 @@ export interface Weather {
   storm: number;
 }
 
-export type WeatherKind =
-  'despejado' | 'nubes' | 'nublado' | 'niebla' | 'viento' | 'lluvia' | 'tormenta' | 'nieve';
-
-export const WEATHER_KINDS: readonly WeatherKind[] = [
-  'despejado',
-  'nubes',
-  'nublado',
-  'niebla',
-  'viento',
-  'lluvia',
-  'tormenta',
-  'nieve',
-];
+export { WEATHER_KINDS, dayKind, type WeatherKind } from '../core/sky';
 
 export const WEATHER_LABEL: Record<WeatherKind, string> = {
   despejado: 'Despejado',
@@ -69,39 +59,6 @@ export function weatherOf(kind: WeatherKind): Weather {
   }
 }
 
-/** Un número de 0 a 1 que solo depende de la semilla, el día y una sal. */
-function hash(seed: string, day: number, salt: number): number {
-  let h = 2166136261 ^ salt;
-  for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619);
-  h = Math.imul(h ^ day, 2246822519);
-  h = Math.imul(h ^ (h >>> 15), 3266489917);
-  h ^= h >>> 16;
-  return (h >>> 0) / 4294967296;
-}
-
-/** El tipo de día, sin mirar el anterior. */
-function rawKind(seed: string, day: number): WeatherKind {
-  if (day <= 1) return 'despejado';
-  const r = hash(seed, day, 1);
-  if (r < 0.35) return 'despejado';
-  if (r < 0.4) return 'viento';
-  if (r < 0.65) return 'nubes';
-  if (r < 0.77) return 'nublado';
-  if (r < 0.85) return 'niebla';
-  if (r < 0.93) return 'lluvia';
-  if (r < 0.96) return 'tormenta';
-  return 'nieve';
-}
-
-const wet = (k: WeatherKind) => k === 'lluvia' || k === 'tormenta' || k === 'nieve';
-
-/** El tipo de día: tras uno de lluvia (o nieve), nunca otro; se queda en nublado. */
-export function dayKind(seed: string, day: number): WeatherKind {
-  const k = rawKind(seed, day);
-  if (wet(k) && wet(rawKind(seed, day - 1))) return 'nublado';
-  return k;
-}
-
 const smooth = (a: number, b: number, x: number) => {
   const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
   return t * t * (3 - 2 * t);
@@ -120,7 +77,7 @@ export function weatherAt(seed: string, day: number, tod: number): Weather {
 
 function rawAt(seed: string, day: number, tod: number): Weather {
   const kind = dayKind(seed, day);
-  const j = (salt: number) => hash(seed, day, salt);
+  const j = (salt: number) => skyHash(seed, day, salt);
   const t = Math.max(0, Math.min(1, tod));
   // Las nubes de fondo ondulan suave a lo largo del día (cada día a su manera).
   const wave = Math.sin((t * (1.5 + j(2)) + j(3)) * Math.PI * 2) * 0.08;
@@ -154,8 +111,7 @@ function rawAt(seed: string, day: number, tod: number): Weather {
     case 'tormenta':
     case 'nieve': {
       // Se va cubriendo y, ya cubierto, empieza; algunos días para antes del anochecer.
-      const a = 0.1 + j(6) * 0.4;
-      const stop = j(7) < 0.4 ? a + 0.3 + j(8) * 0.2 : 2;
+      const { start: a, stop } = rainSpan(seed, day);
       const on = smooth(a + 0.06, a + 0.2, t) * (1 - smooth(stop, stop + 0.14, t));
       const cloud = Math.max(lerp(0.45, 1, smooth(a - 0.15, a + 0.05, t)), on);
       const k = kind === 'tormenta' ? 1 : 0.5 + j(9) * 0.35;

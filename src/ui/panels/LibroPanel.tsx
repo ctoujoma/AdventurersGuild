@@ -161,9 +161,14 @@ export function LibroPanel({ game, records, onHistory }: Props) {
           <h3 class="sec-title">Muro de los caídos</h3>
           <div class="rows">
             {game.fallen.map((f, i) => (
-              <div key={i} class="fallen">
+              <div key={i} class={f.back ? 'fallen back' : 'fallen'}>
                 <b>{f.name}</b>
                 <span>{f.epitaph}</span>
+                {f.back && (
+                  <span class="fallen-back">
+                    Volvió del velo el día {f.back}: lo trajo el forastero de la tormenta.
+                  </span>
+                )}
               </div>
             ))}
           </div>

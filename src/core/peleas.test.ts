@@ -13,6 +13,7 @@ import {
   Assault,
   YARD,
   assaultSetup,
+  raidLog,
   simulate,
   type AssaultSetup,
   type RaidOrder,
@@ -24,13 +25,14 @@ import {
   questFoes,
   runCombat,
   setupCombat,
+  type CombatEvent,
   type CombatSetup,
   type Order,
 } from './combat';
 import { newGame } from './game';
 import { generateHero } from './generate';
 import { thiefDuel } from './incidents';
-import type { Duel, Facilities, GameState, Hero } from './model';
+import type { Duel, Facilities, GameState, Hero, RaidEntry, RaidStep } from './model';
 import type { ClassId } from './party';
 import { Rng, hashString } from './rng';
 
@@ -54,6 +56,70 @@ const digest = (log: readonly unknown[]) => ({
   n: log.length,
   hash: hashString(canon(log)).toString(16),
 });
+
+// ---------- Los registros de antes ----------
+
+/**
+ * Los jefes se grabaron con el registro de antes del registro común (`CombatEvent` viejo): el de
+ * ahora, pasado al formato viejo, tiene que dar exactamente lo grabado. Los asaltos se graban ya
+ * con el de ahora; el formato viejo (`RaidStep`) sirve para ver que los informes viejos se leen.
+ */
+function oldCombatEvent(e: CombatEvent): unknown {
+  const { step } = e;
+  switch (e.kind) {
+    case 'hit':
+      return { step, kind: e.crit ? 'crit' : 'hit', from: e.from, to: e.to, amount: e.amount };
+    case 'heal':
+      return { step, kind: 'heal', from: e.from, to: e.to, amount: e.amount };
+    case 'down':
+      return { step, kind: 'down', from: e.from, to: e.to };
+    case 'skill':
+      return { step, kind: 'skill', from: e.from, skill: e.skill };
+    case 'special':
+      return { step, kind: 'special', from: e.from, amount: e.covered ? 1 : 0 };
+    default:
+      return { step, kind: e.kind, from: e.from };
+  }
+}
+
+const isBandit = (id: string) => /^b\d+$/.test(id);
+
+/** El registro de un asalto como se apuntaba antes (`RaidStep`). */
+function oldSteps(log: readonly RaidEntry[]): RaidStep[] {
+  const gold = new Map<string, number>();
+  return log.flatMap((e): RaidStep[] => {
+    const { t } = e;
+    switch (e.kind) {
+      case 'hit':
+        return [
+          { t, k: 'hit', from: e.from, id: e.to, amount: e.dealt, crit: e.crit || undefined },
+        ];
+      case 'heal':
+        return [{ t, k: 'heal', from: e.from, id: e.to, amount: e.dealt }];
+      case 'skill':
+        return [{ t, k: 'skill', id: e.from, skill: e.skill }];
+      case 'chance':
+        return [{ t, k: 'chance', id: e.from }];
+      case 'down':
+        return [
+          isBandit(e.to)
+            ? { t, k: 'down', id: e.to, gold: gold.get(e.to) ?? 0 }
+            : { t, k: 'fall', id: e.to },
+        ];
+      case 'warn':
+      case 'cover':
+      case 'special':
+        return [];
+      case 'loot':
+        gold.set(e.id, e.gold);
+        return [{ t, k: 'loot', id: e.id, gold: e.gold }];
+      default: {
+        const { kind, ...rest } = e;
+        return [{ ...rest, k: kind } as RaidStep];
+      }
+    }
+  });
+}
 
 // ---------- Jefes ----------
 
@@ -112,7 +178,7 @@ function playCombat(setup: CombatSetup, p: Player): Combat {
 const combatSummary = (c: Combat) => ({
   result: c.result,
   hp: c.units.map((u) => u.hp),
-  events: digest(c.events),
+  events: digest(c.events.map(oldCombatEvent)),
 });
 
 interface CombatCase {
@@ -131,6 +197,7 @@ interface RaidPlayer {
   target?: boolean;
   skill?: boolean;
   crit?: boolean;
+  cover?: boolean;
 }
 
 function playAssault(setup: AssaultSetup, state: number, p: RaidPlayer): Assault {
@@ -151,6 +218,12 @@ function playAssault(setup: AssaultSetup, state: number, p: RaidPlayer): Assault
         if (foes.length > 1) a.order({ kind: 'target', who: d.id, to: foes.at(-1)!.id });
       }
     if (p.skill) skills(ds, a.step, (who) => a.order({ kind: 'skill', who }));
+    if (p.cover && ds[0]) {
+      let warn = -1;
+      for (const e of a.log) if (e.kind === 'warn') warn = Math.round(e.t / 0.1);
+      // A tiempo, ocho pasos tras el aviso del cabecilla.
+      if (warn >= 0 && a.step - warn === 8) a.order({ kind: 'cover', who: ds[0].id });
+    }
     if (p.crit)
       for (const d of ds)
         if (d.critOpen && !d.critTaken && a.step % 2 === 0) a.order({ kind: 'crit', who: d.id });
@@ -167,7 +240,7 @@ const assaultSummary = (a: Assault) => {
     start: plan.start,
     hp: plan.hp,
     route: plan.route,
-    steps: digest(plan.steps),
+    log: digest(plan.log!),
     left: a.units.map((u) => [u.id, u.hp, u.node]),
   };
 };
@@ -327,7 +400,8 @@ function assaultCases(): Omit<AssaultCase, 'expect'>[] {
     edit?.(setup);
     const players: [string, RaidPlayer?][] = [
       ['solos', undefined],
-      ['todo', { move: true, target: true, skill: true, crit: true }],
+      ['todo', { move: true, target: true, skill: true, crit: true, cover: true }],
+      ['cubrirse', { cover: true }],
       ['mover', { move: true }],
       ['blanco y habilidad', { target: true, skill: true }],
       ['critico', { crit: true }],
@@ -494,7 +568,7 @@ describe('peleas de referencia: asaltos', () => {
   it('hay de todo: sin órdenes y con cada tipo de orden', () => {
     expect(fx.assaults.length).toBeGreaterThanOrEqual(30);
     const kinds = new Set(fx.assaults.flatMap((c) => c.expect.orders.map((o) => o.kind)));
-    expect([...kinds].sort()).toEqual(['crit', 'move', 'skill', 'target']);
+    expect([...kinds].sort()).toEqual(['cover', 'crit', 'move', 'skill', 'target']);
     expect(fx.assaults.some((c) => c.expect.result.escaped === 0)).toBe(true);
     expect(fx.assaults.some((c) => c.expect.result.stolen > 0)).toBe(true);
   });
@@ -508,7 +582,13 @@ describe('peleas de referencia: asaltos', () => {
     again.run();
     expect(plain(assaultSummary(again))).toEqual(want);
     const r = simulate(loadSetup(ac.setup), new Rng(ac.rng), orders);
-    expect(digest(r.plan.steps)).toEqual(want.steps);
+    expect(digest(r.plan.log!)).toEqual(want.log);
+    // Un informe viejo (con `steps`) se lee igual que el de ahora.
+    const old = raidLog({ steps: oldSteps(r.plan.log!) });
+    expect(plain(oldSteps(old))).toEqual(plain(oldSteps(r.plan.log!)));
+    // (el formato viejo no tenía el aviso del cabecilla)
+    const theirs = r.plan.log!.filter((e) => !['warn', 'cover', 'special'].includes(e.kind));
+    expect(old.map((e) => e.kind)).toEqual(theirs.map((e) => e.kind));
   });
 });
 

@@ -207,6 +207,11 @@ bajas del éxito parcial difícil al 35 %): que no se olvide. Ideas para elegir:
 Va con A8 (bajas de verdad en lo difícil) de [`decisiones.md`](decisiones.md); el Muro de los
 caídos guarda a quién se puede revivir.
 
+**Boceto (16 de noviembre, rama `forastero-tormenta`, por aprobar):** el forastero de la
+tormenta, primer suceso nocturno (`core/night.ts`, `core/stranger.ts`): solo en noches de
+tormenta y con algún caído; pide oro, raciones, jarras y tela según el nivel; el revivido vuelve
+en cama, sin ánimo unos días y con el rasgo «Vuelto del velo».
+
 ## Patio, establo y empalizada con arte y uso nuevos (12 de noviembre, C8)
 
 Rehacer sus dibujos (son los de antes de las salas) y darles uso nuevo: caballos de verdad en el

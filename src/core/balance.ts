@@ -438,6 +438,20 @@ export const BANDIT_HP = 38;
 /** Daño de cada golpe de un bandido por punto de fuerza de la banda (repartida), y su ritmo. */
 export const BANDIT_POWER = 1.9;
 export const BANDIT_EVERY = 1.4;
+/**
+ * Cuántos bandidos trae una banda: uno por cada `BANDIT_PER` de fuerza, entre 2 y `BANDIT_MAX`.
+ * La fuerza se reparte entre los primeros `BANDIT_SPLIT`: los que vienen de más (las bandas
+ * fuertes, al final de la partida) pegan igual que ellos, así que suman peligro de verdad.
+ */
+export const BANDIT_PER = 6;
+export const BANDIT_MAX = 9;
+export const BANDIT_SPLIT = 6;
+/**
+ * El cabecilla (el primero de la banda): más vida y un golpe fuerte a todos los de su sala, con
+ * aviso (como el jefe); el primero, a estos segundos de pelea.
+ */
+export const LEADER_HP = 1.8;
+export const LEADER_SPECIAL = 5;
 /** Oro que carga cada bandido: unos fijos más la fuerza de la banda. */
 export const BANDIT_CARRY = 40;
 /** Lo que se tarda en cargar los sacos. */
@@ -653,3 +667,32 @@ export const PRICE_TIERS: readonly { lo: number; hi: number; min: number; max: n
 ];
 /** Las armas valen un poco más; los complementos, un poco menos. */
 export const PRICE_KIND: Partial<Record<string, number>> = { arma: 1.1, complemento: 0.9 };
+
+// ---------- La noche: sucesos (fase 7) y el forastero de la tormenta ----------
+
+/**
+ * Parte del día en que se tira el suceso de la noche (un poco después de acostarse, para que la
+ * escena ya esté a oscuras). Con el juego cerrado, se tira al pasar el día.
+ */
+export const NIGHT_ROLL = 0.74;
+/** El forastero de la tormenta: probabilidad en cada noche de tormenta (con algún caído). */
+export const STRANGER_CHANCE = 0.65;
+/** Días que pasan, como poco, entre una visita y la siguiente. */
+export const STRANGER_EVERY = 10;
+/** Parte del día siguiente en que se va si no se le ha dicho nada (mediodía). */
+export const STRANGER_LEAVE = 0.35;
+/**
+ * Lo que pide por traer de vuelta a un caído de nivel `lvl`: oro, raciones (para el camino),
+ * jarras (para el rito) y tela (el sudario). Sube con el nivel.
+ */
+export const strangerPrice = (lvl: number) => ({
+  gold: 50 + 50 * lvl,
+  food: 2 + lvl,
+  beer: 2 + lvl,
+  tela: 1 + Math.floor(lvl / 3),
+});
+/** El revivido: días en cama, moral con la que vuelve, y tope de moral menos `VEIL_CAP` unos días. */
+export const VEIL_BED = 4;
+export const VEIL_MORALE = 30;
+export const VEIL_CAP = 25;
+export const VEIL_DAYS = 10;
