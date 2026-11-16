@@ -4,6 +4,7 @@
  * un atlas con todos sus fotogramas (de pie, parpadeo, andando, sentada, en la cama y entrenando)
  * y la escena solo cambia cuál se ve y dónde está.
  */
+import type { Sex } from '../../core/model';
 import { Group, PlaneGeometry, Vector3, type Mesh, type ShaderMaterial, type Texture } from 'three';
 import { P } from '../../art/palette';
 import { PixelBuffer, alpha } from '../../art/pixel';
@@ -20,9 +21,9 @@ import {
 import { bunkQuilt } from '../props';
 import { HEADROOM } from '../../art/heroes/layers';
 import { TINTS, TINT_IDS, type TintId } from '../../data/custom';
-import { generateLook, strangerLook, type OutfitId } from '../../art/heroes/look';
+import { generateLook, messengerLook, strangerLook, type OutfitId } from '../../art/heroes/look';
 import { WEAPONS, type WeaponId } from '../weapons';
-import { STRANGER_ID, type SceneHero, type SceneVisitors } from '../scene';
+import { MESSENGER_ID, STRANGER_ID, type SceneHero, type SceneVisitors } from '../scene';
 import { GROUND } from '../geometry';
 import { Look, mesh, texture, type Shared } from './gl';
 import { PITCH, STAIR_W, floorY, type RoomsLayout, type Rect } from './layout';
@@ -780,6 +781,8 @@ interface Actor {
 const FALL_TIME = 0.45;
 /** Los de guardia: cada cuánto planta uno la carta (de día) y cada cuánto cabecea (de noche). */
 const GAME_CYCLE = 3.4;
+/** El mensajero espera a tantos píxeles de la pared de la calle (la puerta no se le abre). */
+const MESSENGER_GAP = 22;
 const NOD_CYCLE = 4.6;
 /** Lo que dura el gesto de encajar un golpe. */
 const HURT_TIME = 0.25;
@@ -1165,8 +1168,11 @@ export class Crowd {
   private now = 0;
   /** Sitios de las salas a los que se va a hacer algo (el tablón, la chimenea, el altar…). */
   private pois: Poi[] = [];
-  /** El de guardia que cabecea ahora a la hora de la siesta (lo dice la escena con `napping`). */
-  napper: string | null = null;
+  /**
+   * Los de guardia que cabecean ahora: a la hora de la siesta y, de noche, en sus mini-cabezadas
+   * (lo dice la escena con `nappers` del núcleo, la misma cuenta que deja colarse al ladrón).
+   */
+  nappers = new Set<string>();
   /** Ya se ha puesto a la gente una vez: quien aparece después, llega andando. */
   private ready = false;
   /**
@@ -1459,7 +1465,7 @@ export class Crowd {
     if (v.day === this.visitors.day && v.kinds.length === this.visitors.kinds.length) return;
     if (v.day !== this.visitors.day)
       for (const a of [...this.actors.values()])
-        if (a.hero.visitor && !a.hero.stranger) this.remove(a.hero.id);
+        if (a.hero.visitor && !a.hero.stranger && !a.hero.messenger) this.remove(a.hero.id);
     this.visitors = v;
   }
 
@@ -1494,6 +1500,46 @@ export class Crowd {
     this.put(b, outside());
     this.go(b, this.fireside());
     b.wait = 999;
+  }
+
+  /**
+   * El mensajero tardío (suceso nocturno): llega por el camino con su farol y espera fuera, junto
+   * a la puerta de la calle (sin que se abra: nadie le ha abierto). Al irse, vuelve por el camino.
+   */
+  setMessenger(m: { day: number; sex: Sex } | null): void {
+    const a = this.actors.get(MESSENGER_ID);
+    if (!m) {
+      if (!a || a.leaving) return;
+      a.leaving = true;
+      a.goal = null;
+      this.go(a, { place: outside(), pose: 'stand' });
+      return;
+    }
+    if ((a && !a.leaving) || !this.S || !this.L || this.scripted) return;
+    if (a) this.remove(MESSENGER_ID);
+    if (this.actors.size >= MAX_ACTORS) return;
+    this.add({
+      id: MESSENGER_ID,
+      name: 'Mensajero',
+      title: 'Llama a la puerta con un farol',
+      status: 'ok',
+      look: messengerLook(m.day, m.sex),
+      marks: {},
+      visitor: true,
+      messenger: true,
+    });
+    const b = this.actors.get(MESSENGER_ID)!;
+    this.put(b, outside());
+    // Fuera, a un paso de la puerta (más cerca, la hoja se abriría sola).
+    this.go(b, { place: { x: this.L.left - MESSENGER_GAP, floor: 0 }, pose: 'stand' });
+    b.wait = 999;
+  }
+
+  /** Dónde está el mensajero y hacia dónde mira, si está (para su farol). */
+  messengerAt(): { x: number; y: number; z: number; dir: 1 | -1; walking: boolean } | null {
+    const a = this.actors.get(MESSENGER_ID);
+    if (!a || a.gone) return null;
+    return { x: a.x, y: a.y, z: a.lane, dir: a.dir, walking: a.path.length > 0 };
   }
 
   /** La silla del salón más cerca de la chimenea (si no hay, de pie junto al fuego o en la barra). */
@@ -1595,8 +1641,8 @@ export class Crowd {
     if (this.scripted) return;
     for (const a of [...this.actors.values()]) {
       if (a.gone || (a.leaving && !a.hero.visitor)) continue;
-      // El forastero no se va con la noche: espera junto al fuego.
-      if (a.hero.stranger && !a.leaving) continue;
+      // El forastero no se va con la noche: espera junto al fuego (y el mensajero, en la puerta).
+      if ((a.hero.stranger || a.hero.messenger) && !a.leaving) continue;
       if (a.hero.visitor || this.village(a)) {
         if (a.hero.visitor) a.leaving = true;
         else a.homeward = true;
@@ -2090,12 +2136,14 @@ export class Crowd {
     if (!this.S.guard.some((p) => p.x === a.goal?.place.x && p.floor === a.goal.place.floor))
       return null;
     const off = (hash(a.hero.id) % 97) / 13;
-    // A la hora de la siesta, el que cabecea (el núcleo deja que se le cuele el ladrón) se pinta
-    // como de madrugada.
-    if (this.time === 'day' && this.napper !== a.hero.id) {
+    // El que cabecea (a la hora de la siesta o en sus cabezadas de noche: el núcleo deja que se le
+    // cuele el ladrón) se hunde poco a poco; despierto, de día juega a los dados y de noche vela.
+    const nap = this.nappers.has(a.hero.id);
+    if (this.time === 'day' && !nap) {
       const p = (this.now + off) % GAME_CYCLE;
       return { night: false, slam: p < 0.22, nod: 0, dozing: false };
     }
+    if (!nap) return { night: true, slam: false, nod: 0, dozing: false };
     const p = ((this.now + off) % NOD_CYCLE) / NOD_CYCLE;
     return {
       night: true,
@@ -2223,7 +2271,7 @@ export class Crowd {
     const t = this.now;
     for (const a of this.actors.values()) {
       // El forastero no pide nada: espera callado.
-      if (a.gone || a.held || a.hero.stranger) continue;
+      if (a.gone || a.held || a.hero.stranger || a.hero.messenger) continue;
       const c = a.chat;
       if (c && c.from && t >= c.from && t < c.until) {
         const turn = Math.floor((t - c.from) / TURN);
@@ -2789,7 +2837,12 @@ export class Crowd {
       a.run = Math.max(a.run ?? 1, RUSH);
       return;
     }
-    // De guardia en la cámara: da vueltas por ella, de día y de noche (no se acuesta).
+    // De guardia en la cámara: da vueltas por ella, de día y de noche (no se acuesta); mientras
+    // cabecea, se queda quieto donde esté.
+    if (h.vault && h.status === 'ok' && this.nappers.has(h.id) && this.inVault(a)) {
+      a.wait = 0.5;
+      return;
+    }
     if (h.vault && h.status === 'ok' && this.patrol(a)) return;
     // El pintor que tiene una sala que pintar, a ella.
     if (this.paintTurn(a)) return;
@@ -2819,6 +2872,15 @@ export class Crowd {
     // Si ya está ahí, se queda.
     if (Math.abs(g.place.x - a.x) < 4 && g.place.floor === a.floor && g.pose === a.pose) return;
     this.go(a, g);
+  }
+
+  /** Los de guardia en la cámara que cabecean de pie, quietos (para sus «zzz»). */
+  vaultNappers(): { id: string; x: number; y: number; z: number }[] {
+    const out = [];
+    for (const a of this.actors.values())
+      if (this.nappers.has(a.hero.id) && this.inVault(a) && !a.path.length && a.pose === 'stand')
+        out.push({ id: a.hero.id, x: a.x, y: a.y, z: a.lane });
+    return out;
   }
 
   /** El de guardia en la cámara ya está dentro (de noche sigue con su ronda). */

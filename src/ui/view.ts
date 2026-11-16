@@ -1,3 +1,4 @@
+import { messengerSex } from '../core/messenger';
 import { INCIDENTS } from '../data/incidents';
 import { awayPlan, isAway, sleepPlan } from '../core/beds';
 import { craftState, dressingOf } from '../core/crafting';
@@ -238,6 +239,10 @@ export function sceneModel(s: GameState): SceneModel {
     garden: customOf(s).garden,
     visitors: { day: s.day, kinds: visitorOrder(s) },
     stranger: !!s.stranger,
+    messenger:
+      s.messenger && !s.messenger.gone
+        ? { day: s.messenger.day, sex: messengerSex(s.messenger.day) }
+        : null,
     gear: gearInStock(s).map((i) => ({
       icon: i.icon ?? 'espada',
       rarity: i.rarity ?? 0,
@@ -256,11 +261,12 @@ export function sceneModel(s: GameState): SceneModel {
     },
     heroes,
     away: awayOf(s),
-    incidents: (s.incidents ?? []).map(({ id, kind, room, taps, until, duel }) => ({
+    incidents: (s.incidents ?? []).map(({ id, kind, room, taps, from, until, duel }) => ({
       id,
       kind,
       room,
       taps,
+      from,
       until,
       duel,
     })),

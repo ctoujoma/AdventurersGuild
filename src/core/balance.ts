@@ -675,6 +675,44 @@ export const PRICE_KIND: Partial<Record<string, number>> = { arma: 1.1, compleme
  * escena ya esté a oscuras). Con el juego cerrado, se tira al pasar el día.
  */
 export const NIGHT_ROLL = 0.74;
+/**
+ * Cuántas noches pasa algo (N2): aparte del forastero, que se tira solo, se tira «¿pasa algo esta
+ * noche?» y, si sale, se elige uno de los posibles por su peso. Uno de cada dos de media; algo más
+ * con niebla o tormenta.
+ */
+export const NIGHT_ODDS = 0.5;
+export const NIGHT_ODDS_ROUGH = 0.65;
+/**
+ * Mini-cabezadas de los de guardia de noche: cada `NIGHT_NAP_CYCLE` segundos de reloj, cada uno
+ * cabecea la parte `NIGHT_NAP_SHARE`; el segundo, desfasado `NIGHT_NAP_TURN` del primero (se
+ * turnan, pero queda un rato en que cabecean los dos).
+ */
+export const NIGHT_NAP_CYCLE = 24;
+export const NIGHT_NAP_SHARE = 0.45;
+export const NIGHT_NAP_TURN = 0.35;
+/**
+ * El ladrón nocturno: segundos de reloj que tarda en hacerse con el oro (lo que hay para mandar a
+ * alguien), lo que tarda luego en llegar a la puerta al escaparse, la parte de la caja que se
+ * lleva, su tope (por cada rango, más) y cada cuántos días puede volver.
+ */
+export const NIGHT_THIEF_SECS = 22;
+export const NIGHT_THIEF_RUN = 9;
+export const NIGHT_THIEF_SHARE = 0.08;
+export const NIGHT_THIEF_TOP = 25;
+export const NIGHT_THIEF_EVERY = 3;
+/** Oro mínimo para que un ladrón se moleste en entrar. */
+export const NIGHT_THIEF_MIN = 30;
+/** Desde qué día viene (no antes del primer pago: aún se está aprendiendo a jugar). */
+export const NIGHT_THIEF_FROM = 8;
+/**
+ * El mensajero tardío: segundos de reloj que espera en la puerta, lo que paga de más su encargo,
+ * los días que dura en el tablón (sale al amanecer o se pierde al acabar el día siguiente) y cada
+ * cuántos días puede volver.
+ */
+export const MESSENGER_WAIT = 30;
+export const MESSENGER_PAY = 1.5;
+export const MESSENGER_EXPIRES = 2;
+export const MESSENGER_EVERY = 2;
 /** El forastero de la tormenta: probabilidad en cada noche de tormenta (con algún caído). */
 export const STRANGER_CHANCE = 0.65;
 /** Días que pasan, como poco, entre una visita y la siguiente. */

@@ -25,10 +25,16 @@ import {
   spilledMug,
   taxmanStrip,
   THIEF_FIGHT,
+  LANTERN_F,
+  LANTERN_W,
+  lanternGlowStrip,
+  nightThiefFightStrip,
+  nightThiefStrip,
   thiefFightStrip,
   thiefStrip,
   toppledStool,
 } from '../../art/incidents';
+import { isThief } from '../../core/incidents';
 import { ratStrip, type Strip } from '../../art/pets';
 import type { PixelBuffer } from '../../art/pixel';
 import type { Building, IncidentEnd } from '../../core/model';
@@ -78,6 +84,10 @@ const LEFTOVER = 45;
 /** Ratas a la vista como mucho (si faltan más toques, entra otra al irse una). */
 const MAX_RATS = 4;
 const THIEF_SPEED = 9;
+/** El nocturno, entrando a hurtadillas por el patio hasta su sala. */
+const SNEAK_SPEED = 26;
+/** Un incidente que empezó hace menos de esto (s de reloj) aún se ve llegar. */
+const FRESH = 4;
 /**
  * El ladrón que se escapa corre por la casa (sala a sala, por las escaleras y el recibidor)
  * hasta el patio: algo más deprisa que quien anda, pero que se le pueda seguir con la vista.
@@ -153,6 +163,8 @@ interface Show {
    * ladrón o el que encaja) y cuánto hace.
    */
   fight?: { hero: number; beat: 'stab' | 'hurt' | null; t: number };
+  /** El ladrón nocturno: la rendija encendida de su farol tapado (sigue su mano). */
+  lamp?: Actor;
 }
 
 /** El forcejeo: a qué distancia del héroe se pone el ladrón y lo que dura cada golpe (s). */
@@ -170,6 +182,7 @@ export class IncidentArt {
   /** Las tiras, hechas una vez. */
   private strips: Partial<Record<string, Strip>> = {};
   private blaze: PixelBuffer | null = null;
+  private lanternGlow: PixelBuffer | null = null;
   emit?: Emit;
   /** El chillido de las ratas al espantarlas. */
   sound?: (name: SoundName, volume: number) => void;
@@ -221,7 +234,7 @@ export class IncidentArt {
       this.shows.delete(key);
       if (still.has(key.split(':').slice(0, 2).join(':'))) {
         // Solo se ha movido la sala: se vuelve a poner en su sitio nuevo.
-        for (const a of s.actors) this.drop(a);
+        this.dropShow(s);
         continue;
       }
       // Ha acabado: cómo, lo dice el núcleo (`ends`); si no se sabe, si el reloj ha llegado a su
@@ -240,7 +253,8 @@ export class IncidentArt {
     for (const [key, w] of want) {
       const known = this.shows.get(key);
       if (!known) {
-        const s = this.build(key, w.inc.kind, w.r, w.floor, w.level, w.inc.taps);
+        const fresh = !!clock && w.inc.from !== undefined && clock.secs - w.inc.from < FRESH;
+        const s = this.build(key, w.inc.kind, w.r, w.floor, w.level, w.inc.taps, fresh);
         s.id = w.inc.id;
         s.day = clock?.day;
         s.until = w.inc.until;
@@ -258,9 +272,9 @@ export class IncidentArt {
   /** Dónde está el ladrón de una sala (para la pelea con quien ha llegado), si lo hay. */
   thiefAt(room: string): { x: number; y: number; floor: number } | null {
     for (const s of this.shows.values()) {
-      if (s.kind !== 'ladron' || s.gone || !s.key.includes(`:${room}:`)) continue;
+      if (!isThief(s.kind) || s.gone || !s.key.includes(`:${room}:`)) continue;
       const a = s.actors[0];
-      if (a) return { x: a.x, y: a.bottom, floor: s.level };
+      if (a) return { x: a.x, y: a.bottom, floor: a.level ?? s.level };
     }
     return null;
   }
@@ -272,12 +286,21 @@ export class IncidentArt {
    */
   duel(room: string, hero: number, beat?: 'stab' | 'hurt'): void {
     for (const s of this.shows.values()) {
-      if (s.kind !== 'ladron' || s.gone || !s.key.includes(`:${room}:`)) continue;
+      if (!isThief(s.kind) || s.gone || !s.key.includes(`:${room}:`)) continue;
       const a0 = s.actors[0];
       if (!a0) return;
       if (!s.fight) {
         s.fight = { hero, beat: null, t: 0 };
-        this.restrip(s, a0, 'ladron-pelea', thiefFightStrip);
+        // Si aún entraba, ya está en su sala (le han salido al paso en la puerta).
+        if (a0.route && !a0.flee) {
+          a0.route = undefined;
+          a0.level = undefined;
+          a0.x = s.r.x + 20;
+          a0.bottom = s.floor;
+          a0.z = FRONT + 2;
+        }
+        if (s.kind === 'nocturno') this.restrip(s, a0, 'nocturno-pelea', nightThiefFightStrip);
+        else this.restrip(s, a0, 'ladron-pelea', thiefFightStrip);
       }
       s.fight.hero = hero;
       const a = s.actors[0]!;
@@ -301,6 +324,44 @@ export class IncidentArt {
     this.drop(a);
     s.actors[s.actors.indexOf(a)] = c;
     return c;
+  }
+
+  /**
+   * El farol tapado de cada ladrón nocturno (se mueve con él, también por el patio): dónde está y
+   * en qué planta. Sin farol cuando pelea (se le ha caído).
+   */
+  lanterns(): { x: number; y: number; floor: number }[] {
+    const out = [];
+    for (const s of this.shows.values()) {
+      const l = s.lamp;
+      if (!l?.mesh.visible) continue;
+      out.push({ x: l.x, y: l.bottom - 2, floor: l.level ?? s.level });
+    }
+    return out;
+  }
+
+  /** Pone la rendija del farol en la mano de delante del nocturno (sin farol si pelea). */
+  private hold(s: Show, t: number): void {
+    const l = s.lamp;
+    if (!l) return;
+    const a = s.actors[0];
+    l.mesh.visible = !!a?.strip && !s.fight && a.strip.n === 2;
+    if (!a || !l.mesh.visible) return;
+    const k = scaleAt(a.z);
+    l.x = a.x + (a.dir * 5) / k;
+    l.bottom = a.bottom - 1.5 / k;
+    l.z = a.z - 0.5;
+    l.level = a.level;
+    l.frame = Math.floor(t * 6) % LANTERN_F;
+    this.place(l, s);
+  }
+
+  /** Quita del todo un incidente de la escena (sus figuras y la luz del farol). */
+  private dropShow(s: Show): void {
+    for (const a of s.actors) this.drop(a);
+    s.actors.length = 0;
+    if (s.lamp) this.drop(s.lamp);
+    s.lamp = undefined;
   }
 
   /** Las luces de los incidentes (el fuego alumbra su cocina). */
@@ -330,15 +391,17 @@ export class IncidentArt {
       this.runOff(s, dt);
       if (!s.gone) this.step(s, dt, t);
       else if (!s.actors.length) {
+        this.dropShow(s);
         this.shows.delete(key);
         continue;
       }
       for (const a of s.actors) this.place(a, s);
+      this.hold(s, t);
     }
   }
 
   clear(): void {
-    for (const s of this.shows.values()) for (const a of s.actors) this.drop(a);
+    for (const s of this.shows.values()) this.dropShow(s);
     this.shows.clear();
   }
 
@@ -446,10 +509,12 @@ export class IncidentArt {
    * peldaño y el recibidor) hasta el patio y un poco más allá, por el camino.
    */
   private escape(s: Show, a: Actor, speed: number, block = false): boolean {
-    const path = this.L ? route(this.L, { x: a.x, floor: s.level }, outside()) : null;
+    // Desde donde esté (el nocturno puede no haber llegado aún a su sala).
+    const from = a.level ?? s.level;
+    const path = this.L ? route(this.L, { x: a.x, floor: from }, outside()) : null;
     if (!path) return false;
     const pts: NonNullable<Actor['route']> = [];
-    let f = s.level;
+    let f = from;
     for (const q of path) {
       if (q.floor !== f) {
         // Un tramo: del pie al final, a la profundidad de quien sube.
@@ -470,7 +535,7 @@ export class IncidentArt {
     if (hall) {
       // El primer tramo que cruza el medio del recibidor (en su planta): ahí se para.
       const cx = hall.rect.x + hall.rect.w / 2;
-      let prev = { x: a.x, level: s.level };
+      let prev = { x: a.x, level: from };
       for (let i = 0; i < pts.length; i++) {
         const q = pts[i]!;
         const lo = Math.min(prev.x, q.x);
@@ -487,6 +552,46 @@ export class IncidentArt {
     a.flee = speed;
     a.wait = 0;
     return true;
+  }
+
+  /**
+   * El camino de la gente entre dos sitios, en puntos (con los tramos de escalera peldaño a
+   * peldaño, a la profundidad de quien sube).
+   */
+  private walkway(
+    from: { x: number; floor: number },
+    to: { x: number; floor: number },
+    z: number,
+  ): NonNullable<Actor['route']> | null {
+    const path = this.L ? route(this.L, from, to) : null;
+    if (!path) return null;
+    const pts: NonNullable<Actor['route']> = [];
+    let f = from.floor;
+    for (const q of path) {
+      if (q.floor !== f) {
+        const up = q.floor > f;
+        const lower = Math.min(f, q.floor);
+        const sx = q.x - STAIR_W / 2;
+        const p0 = stepAt(sx, lower, up ? 0 : STEPS);
+        const p1 = stepAt(sx, lower, up ? STEPS : 0);
+        pts.push({ x: p0.x, y: floorY(f), level: f, z: CLIMB_Z });
+        pts.push({ x: p1.x, y: floorY(q.floor), level: q.floor, z: CLIMB_Z });
+        f = q.floor;
+      } else pts.push({ x: q.x, y: floorY(f), level: f, z });
+    }
+    return pts;
+  }
+
+  /** El nocturno entra: del camino (fuera, en el patio) a su sala. */
+  private sneakIn(s: Show, a: Actor): void {
+    const start = outside();
+    const pts = this.walkway(start, { x: a.x, floor: s.level }, a.z);
+    if (!pts) return;
+    a.x = start.x - 40;
+    a.bottom = floorY(0);
+    a.level = 0;
+    a.z = MID;
+    a.route = [{ x: start.x, y: floorY(0), level: 0, z: a.z }, ...pts];
   }
 
   /** Le pillan: estrellas de la pelea y el botín que vuelve (monedas que saltan). */
@@ -516,13 +621,27 @@ export class IncidentArt {
     s.gone = true;
     s.n = 0;
     const speeds: Partial<Record<IncidentKind, number>> = failed
-      ? { ratas: RAT_SPEED * 2, ladron: THIEF_RUN.away, recaudador: 26, noble: 20 }
-      : { ratas: RAT_SPEED * 3, ladron: THIEF_RUN.caught, recaudador: 16, noble: 12 };
+      ? {
+          ratas: RAT_SPEED * 2,
+          ladron: THIEF_RUN.away,
+          nocturno: THIEF_RUN.away,
+          recaudador: 26,
+          noble: 20,
+        }
+      : {
+          ratas: RAT_SPEED * 3,
+          ladron: THIEF_RUN.caught,
+          nocturno: THIEF_RUN.caught,
+          recaudador: 16,
+          noble: 12,
+        };
     const speed = speeds[s.kind];
     const { r, floor } = s;
     const mid = r.x + r.w / 2;
     // Si estaba peleando, vuelve a la figura de correr con el saco.
-    if (s.fight && s.actors[0]) this.restrip(s, s.actors[0], 'ladron', thiefStrip);
+    if (s.fight && s.actors[0])
+      if (s.kind === 'nocturno') this.restrip(s, s.actors[0], 'nocturno', nightThiefStrip);
+      else this.restrip(s, s.actors[0], 'ladron', thiefStrip);
     s.fight = undefined;
     const first = s.actors[0];
     if (s.kind === 'ratas') this.sound?.('squeak', 0.4);
@@ -534,7 +653,7 @@ export class IncidentArt {
     }
     for (const a of [...s.actors]) {
       // Al ladrón vencido en la cámara se le pilla allí mismo: cae, no sale corriendo.
-      if (s.kind === 'ladron' && !failed) {
+      if (isThief(s.kind) && !failed) {
         this.poof(a);
         this.caught(a);
         this.drop(a);
@@ -544,7 +663,7 @@ export class IncidentArt {
       if (speed) {
         // El ladrón no se esfuma en la puerta: sale de la casa corriendo (o hasta el recibidor,
         // si le espera el de guardia).
-        if (!(s.kind === 'ladron' && this.escape(s, a, speed, blocked))) this.exit(s, a, speed);
+        if (!(isThief(s.kind) && this.escape(s, a, speed, blocked))) this.exit(s, a, speed);
         continue;
       }
       // El fuego que sale mal no se apaga con vapor: se ahoga en humo negro.
@@ -593,6 +712,7 @@ export class IncidentArt {
         keep(brokenChair(), mid - 14, FRONT + 1);
         break;
       case 'ladron':
+      case 'nocturno':
         if (first) first.drops = true;
         break;
       case 'recaudador':
@@ -701,6 +821,7 @@ export class IncidentArt {
     floor: number,
     level: number,
     taps?: number,
+    fresh = false,
   ): Show {
     const s: Show = { key, kind, r, floor, level, actors: [], timer: 0, beat: 0, n: 0, taps };
     const mid = r.x + r.w / 2;
@@ -732,6 +853,22 @@ export class IncidentArt {
         const a = this.figure(this.strip('ladron', thiefStrip), r.x + 20, floor, FRONT + 2);
         a.tx = r.x + r.w - 20;
         A.push(a);
+        break;
+      }
+      case 'nocturno': {
+        const a = this.figure(this.strip('nocturno', nightThiefStrip), r.x + 20, floor, FRONT + 2);
+        a.tx = r.x + r.w - 20;
+        // Recién llegado: entra desde el camino, por el patio y la puerta, hasta su sala.
+        if (fresh) this.sneakIn(s, a);
+        A.push(a);
+        this.lanternGlow ??= lanternGlowStrip();
+        s.lamp = this.actor(
+          this.look.glow(this.lanternGlow, LANTERN_F),
+          { glow: { w: LANTERN_W, h: 4 }, cells: LANTERN_F },
+          a.x,
+          a.bottom,
+          a.z,
+        );
         break;
       }
       case 'recaudador':
@@ -841,9 +978,19 @@ export class IncidentArt {
         emit?.('puff', cloud.x + (this.rnd() - 0.5) * w, cloud.bottom - 4, cloud.z);
         break;
       }
-      case 'ladron': {
+      case 'ladron':
+      case 'nocturno': {
         const a = A[0]!;
         const f = s.fight;
+        // Aún entrando: a hurtadillas por su camino; al llegar, ya en su sala.
+        if (a.route && !a.flee) {
+          if (!this.follow(a, SNEAK_SPEED * dt)) {
+            a.route = undefined;
+            a.level = undefined;
+            a.z = FRONT + 2;
+          }
+          break;
+        }
         if (f) {
           // Forcejeando: cara a cara con el héroe, a su distancia, meciéndose adelante y atrás;
           // con cada golpe, la cuchillada o el gesto de encajarlo.

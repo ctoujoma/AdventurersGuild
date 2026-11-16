@@ -13,6 +13,7 @@ const ICON: Record<IncidentKind, IconName> = {
   recaudador: 'coin',
   gotera: 'barril',
   noble: 'jarra',
+  nocturno: 'farol',
 };
 
 interface Props {
@@ -73,7 +74,11 @@ export function IncidentMark({ game, inc, clock, speed, scene, onAct, onAsk }: P
     else onAsk(d.ask, inc.room);
   };
   return (
-    <div ref={ref} class={`incident incident-${d.how}`} role="alert">
+    <div
+      ref={ref}
+      class={`incident incident-${d.how} ${d.night ? 'incident-night' : ''}`}
+      role="alert"
+    >
       <button
         class="incident-btn"
         data-tut="incidente"

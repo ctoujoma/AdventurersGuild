@@ -162,6 +162,17 @@ interface Rooms {
   gone: number;
   /** Peligro de cada encargo por su título (el informe no guarda el encargo). */
   danger: Map<string, number>;
+  /**
+   * La noche (fase 7): noches jugadas y con algún suceso; ladrones (pillados y oro que se llevan)
+   * y mensajeros (con el recado recogido por el de guardia).
+   */
+  nights: number;
+  eventful: number;
+  thieves: number;
+  caught: number;
+  thiefGold: number;
+  messengers: number;
+  taken: number;
 }
 const newRooms = (): Rooms => ({
   till: [0, 0, 0, 0],
@@ -183,6 +194,13 @@ const newRooms = (): Rooms => ({
   back: 0,
   gone: 0,
   danger: new Map(),
+  nights: 0,
+  eventful: 0,
+  thieves: 0,
+  caught: 0,
+  thiefGold: 0,
+  messengers: 0,
+  taken: 0,
 });
 
 /** Juega un día apuntando lo que interesa de las salas. */
@@ -197,7 +215,19 @@ function tracked(s: GameState, st: Strategy, acc: Rooms): GameState {
   const seen = new Set(s.reports.map((r) => r.id));
   for (const q of s.quests) acc.danger.set(q.title, q.danger);
   const next = playDay(s, st);
+  acc.nights++;
+  if (Object.values(next.nights?.last ?? {}).includes(next.day - 1)) acc.eventful++;
   for (const e of next.dawn) {
+    if (e.t.startsWith('Anoche entró un ladrón')) {
+      acc.thieves++;
+      if (e.k === 'good') acc.caught++;
+      const m = /(\d+) monedas de/.exec(e.t);
+      if (m) acc.thiefGold += Number(m[1]);
+    }
+    if (/^Anoche llamó una? mensajer/.test(e.t)) {
+      acc.messengers++;
+      if (e.t.includes('recogió')) acc.taken++;
+    }
     if (e.t.startsWith('No hubo comida')) acc.hungry++;
     if (/ha vuelto!|ha rescatado a/.test(e.t)) acc.back++;
     if (e.t.startsWith('Han encontrado la capa')) acc.gone++;
@@ -314,6 +344,9 @@ for (const st of STRATEGIES) {
   );
   console.log(
     `  oro perdido por la cámara llena, por partida (igual): ${rooms.spilt.map((x) => (x / N).toFixed(0)).join(' / ')}`,
+  );
+  console.log(
+    `  noches con suceso ${pct(rooms.eventful, rooms.nights)} · ladrones ${(rooms.thieves / N).toFixed(1)} por partida (pillados ${pct(rooms.caught, rooms.thieves)}, se llevan ${(rooms.thiefGold / N).toFixed(0)} monedas) · mensajeros ${(rooms.messengers / N).toFixed(1)} (recado recogido ${pct(rooms.taken, rooms.messengers)})`,
   );
   if (lossDays.length) {
     const at = (d: number) => lossDays.filter((x) => x === d).length;

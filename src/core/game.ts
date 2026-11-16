@@ -116,7 +116,14 @@ import {
   tutorialStep,
 } from './tutorial';
 import { stepRaids } from './raids';
-import { nightDue, rollNight } from './night';
+import { nightDue, nightRng, rollNight } from './night';
+import {
+  acceptMessenger,
+  dismissMessenger,
+  messengerGone,
+  settleMessenger,
+  stepMessenger,
+} from './messenger';
 import { dismiss, revive, reviveIssue, stepStranger, strangerGone } from './stranger';
 import { advanceChain, bossOf, fightRoster, offerChain } from './chains';
 import { choose, maybeEvent, scaredClients, stepThreat } from './events';
@@ -285,6 +292,8 @@ export type Action =
   | { type: 'tutorial'; op: 'carta' | 'ok' | 'saltar' | 'listo' | TutorialSkip }
   /** El forastero de la tormenta: traer de vuelta a ese caído (null: decirle que no). */
   | { type: 'stranger'; heroId: string | null }
+  /** El mensajero tardío: aceptar su encargo o despedirle. */
+  | { type: 'messenger'; accept: boolean }
   /** Saltar al anochecer. */
   | { type: 'dusk' }
   | { type: 'endDay' };
@@ -879,13 +888,15 @@ function reduceAction(state: GameState, action: Action): GameState {
       if (next === state) return state;
       // La noche: el suceso que toque (una vez por noche) y el forastero que se va a mediodía.
       const nightNews: DawnEvent[] = [];
-      if (nightDue(next, state.clock ?? 0, next.clock ?? 0) || strangerGone(next)) {
+      const leaves = !!next.messenger && !next.messenger.gone && messengerGone(next);
+      if (nightDue(next, state.clock ?? 0, next.clock ?? 0) || strangerGone(next) || leaves) {
         next = structuredClone(next);
         const rng = new Rng(next.rng);
         if (nightDue(next, state.clock ?? 0, next.clock ?? 0))
-          nightNews.push(...rollNight(next, rng));
+          nightNews.push(...rollNight(next, nightRng(next)));
         const gone = stepStranger(next);
         if (gone) nightNews.push(gone);
+        stepMessenger(next);
         next.rng = rng.save();
       }
       const part = Math.min(1, (next.clock ?? 0) / DAY_SECONDS);
@@ -1063,6 +1074,17 @@ function reduceAction(state: GameState, action: Action): GameState {
       const s = structuredClone(state);
       const said = action.heroId ? revive(s, action.heroId) : dismiss(s);
       s.incidentNews = [{ t: said.t, k: said.k ?? 'info' }];
+      return s;
+    }
+    case 'messenger': {
+      if (!state.messenger || state.messenger.gone) return state;
+      const s = structuredClone(state);
+      if (!action.accept) {
+        dismissMessenger(s);
+        return s;
+      }
+      const n = acceptMessenger(s);
+      s.incidentNews = n ? [n] : undefined;
       return s;
     }
     case 'dusk':
@@ -1304,7 +1326,13 @@ export function endDay(state: GameState, away = false): GameState {
   // El forastero de una noche anterior ya se fue a mediodía; el suceso de esta noche, si no se
   // ha tirado con el reloj (juego cerrado), se tira ahora y se cuenta al amanecer.
   if (s.stranger && s.stranger.day < s.day) s.stranger = null;
-  events.push(...rollNight(s, rng));
+  // Lo que ya pasó esta noche con el juego abierto, y lo que pasa ahora si no se ha tirado: el
+  // ladrón y el mensajero sin tocar se resuelven ya (según quién esté de guardia y despierto).
+  events.push(...(s.nightLines ?? []));
+  delete s.nightLines;
+  events.push(...rollNight(s, nightRng(s)));
+  failIncidents(s, events);
+  settleMessenger(s, events);
   s.day++;
   stepWorks(s, events);
   tidyJobs(s);
@@ -1610,7 +1638,7 @@ export function endDay(state: GameState, away = false): GameState {
   s.quests = s.quests.filter((q) => q.expires > 0);
   let fresh = 0;
   while (
-    s.quests.filter((q) => !q.chain && !q.rescue && !q.rumor).length <
+    s.quests.filter((q) => !q.chain && !q.rescue && !q.rumor && !q.urgent).length <
     BOARD_SIZE(s.fac.tab, s.fac.mapas) + (s.fac.torre >= 2 ? 1 : 0) - scaredClients(s)
   ) {
     s.quests.push(quest(s, rng));

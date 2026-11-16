@@ -3,10 +3,11 @@
  * jugador haga algo (a lo Fallout Shelter, con lo nuestro). Datos: dónde pasa cada uno, cómo
  * se resuelve, cuánto aguanta y lo que se cuenta. Las reglas están en `core/incidents.ts`.
  */
+import { NIGHT_THIEF_SECS, NIGHT_THIEF_SHARE, NIGHT_THIEF_TOP } from '../core/balance';
 import type { RoomType } from './rooms';
 
 export type IncidentKind =
-  'pelea' | 'ladron' | 'fuego' | 'ratas' | 'recaudador' | 'gotera' | 'noble';
+  'pelea' | 'ladron' | 'fuego' | 'ratas' | 'recaudador' | 'gotera' | 'noble' | 'nocturno';
 
 /**
  * Cómo se resuelve: arrastrando a un héroe o a cualquiera de la casa a la sala, tocando el icono
@@ -35,8 +36,17 @@ export interface IncidentDef {
   lose: string;
   /** Si sale bien: reputación. */
   rep?: number;
-  /** Si sale mal: lo que se pierde. */
-  loss: { gold?: number; goldShare?: number; food?: number; beer?: number; rep?: number };
+  /** Si sale mal: lo que se pierde (`goldTop`: tope de `goldShare`, por cada rango uno más). */
+  loss: {
+    gold?: number;
+    goldShare?: number;
+    goldTop?: number;
+    food?: number;
+    beer?: number;
+    rep?: number;
+  };
+  /** Solo de noche (un suceso nocturno, ver `core/thief.ts`): de día no sale. */
+  night?: boolean;
   /** Pagar: lo que cuesta (más por cada rango). Tocar: cuántas veces. Elegir: las opciones. */
   cost?: number;
   taps?: number;
@@ -109,6 +119,18 @@ export const INCIDENTS: Record<IncidentKind, IncidentDef> = {
     win: 'El carpintero tapa la gotera antes de que se aguen las cubas.',
     lose: 'La gotera echa a perder {n} jarras.',
     loss: { beer: 6 },
+  },
+  nocturno: {
+    rooms: ['tesoro', 'recibidor'],
+    how: 'heroe',
+    night: true,
+    title: 'Una sombra con un farol',
+    ask: 'Arrastra a un héroe: se despierta y va a por el ladrón.',
+    secs: NIGHT_THIEF_SECS,
+    win: '{h} pilla al ladrón nocturno con las manos en la bolsa.',
+    lose: 'El ladrón nocturno se escapa con {n} monedas.',
+    rep: 2,
+    loss: { goldShare: NIGHT_THIEF_SHARE, goldTop: NIGHT_THIEF_TOP },
   },
   noble: {
     rooms: ['salon'],

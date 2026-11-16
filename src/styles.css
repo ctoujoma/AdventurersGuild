@@ -8203,3 +8203,36 @@ div.item-count {
   background: var(--lemon);
   box-shadow: 0 0 0 1px var(--ink);
 }
+
+/* La noche (fase 7): los avisos de noche, más tenues que los de día (nada de prisa de verdad). */
+.incident-night .incident-btn {
+  filter: brightness(0.78) saturate(0.7);
+  opacity: 0.88;
+  animation-duration: 3.2s;
+}
+.incident-night .incident-bar i {
+  background: var(--rust);
+}
+/* «Urgente»: el rojo de las notas nuevas (lo trajo el mensajero y caduca pronto). */
+.note-new.note-urgent-tag {
+  margin-right: 0;
+}
+/* El mensajero tardío: su recado, como una nota del tablón. */
+.messenger-note {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px;
+  border-style: solid;
+  border-width: 10px;
+  border-image: var(--frame-parchment) 5 fill / 10px / 0 stretch;
+}
+.messenger-text {
+  margin: 0;
+  line-height: 1.35;
+}
+.messenger-when {
+  display: block;
+  margin: 10px 0;
+  line-height: 1.35;
+}

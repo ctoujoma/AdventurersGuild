@@ -11,6 +11,8 @@ import { dawnIn } from './when';
 import { IncidentHelpers, IncidentMark } from './IncidentMark';
 import { RumorMark } from './RumorMark';
 import { rumorRoom } from '../core/rumors';
+import { messengerRoom } from '../core/messenger';
+import { MessengerCard, MessengerMark } from './MessengerCard';
 import { canClose, canHire, customOf, newGame, reduce, type Action } from '../core/game';
 import { hasUnlock } from '../core/goals';
 import type { UnlockId } from '../data/unlocks';
@@ -48,7 +50,7 @@ import { Icon } from './icons';
 import { Letter } from './Letter';
 import { EventCard } from './EventCard';
 import { StrangerCard } from './StrangerCard';
-import { STRANGER_ID } from '../world/scene';
+import { MESSENGER_ID, STRANGER_ID } from '../world/scene';
 import { Opening } from './Opening';
 import { NameTavern } from './NameTavern';
 import { Panel } from './Panel';
@@ -973,6 +975,12 @@ export function App() {
   // del jugador) y la cámara va al salón; si no se le contesta, la oferta sigue en la campanita
   // hasta que se va, al día siguiente a mediodía.
   const [strangerOpen, setStrangerOpen] = useState(false);
+  // El mensajero tardío: su tarjeta, al tocarle a él o su aviso (no para «Pasar la noche»).
+  const [messengerOpen, setMessengerOpen] = useState(false);
+  const knocking = !!game.messenger && !game.messenger.gone;
+  useEffect(() => {
+    if (!knocking) setMessengerOpen(false);
+  }, [knocking]);
   const strangerKey = game.stranger ? game.stranger.day : null;
   const strangerWas = useRef(strangerKey);
   useEffect(() => {
@@ -1144,6 +1152,13 @@ export function App() {
               setStrangerOpen(true);
               return;
             }
+            if (id === MESSENGER_ID) {
+              if (knocking) {
+                audio.play('open', 0.6);
+                setMessengerOpen(true);
+              }
+              return;
+            }
             // Los visitantes cuentan lo que se oye por ahí.
             if (id.startsWith('vis-')) {
               const i = Number(id.split('-')[2]);
@@ -1268,6 +1283,19 @@ export function App() {
               aside={(game.incidents ?? []).some((i) => i.room === c.room)}
             />
           ))}
+        {!passing && !dawnOpen && knocking && messengerRoom(game) && (
+          <MessengerMark
+            messenger={game.messenger!}
+            room={messengerRoom(game)!}
+            clock={clock}
+            speed={clockPace}
+            scene={scene}
+            onOpen={() => {
+              audio.play('open', 0.6);
+              setMessengerOpen(true);
+            }}
+          />
+        )}
         {!passing && !dawnOpen && game.rumor && rumorRoom(game) && (
           <RumorMark
             key={game.rumor.id}
@@ -1841,6 +1869,17 @@ export function App() {
             setStrangerOpen(false);
           }}
           onClose={() => setStrangerOpen(false)}
+        />
+      )}
+      {messengerOpen && knocking && !game.over && (
+        <MessengerCard
+          game={game}
+          onAnswer={(accept) => {
+            dispatch({ type: 'messenger', accept });
+            audio.play(accept ? 'coin' : 'close');
+            setMessengerOpen(false);
+          }}
+          onClose={() => setMessengerOpen(false)}
         />
       )}
       {pendingEvent && (

@@ -200,6 +200,8 @@ export interface Quest {
   chain?: { id: string; step: number };
   /** Salió de un rumor de la barra (no cuenta para el tablón; botín bueno o legendario). */
   rumor?: boolean;
+  /** Lo trajo el mensajero tardío: urgente, mejor pagado y caduca pronto (no cuenta para el tablón). */
+  urgent?: boolean;
 }
 
 /** Un rumor en la barra: se oye un rato y, si se toca a tiempo, abre un encargo especial. */
@@ -864,6 +866,26 @@ export interface GameState {
   nights?: NightLog;
   /** El forastero de la tormenta, si está en el salón (ver `core/stranger.ts`). */
   stranger?: Stranger | null;
+  /** El mensajero tardío, si está llamando a la puerta (ver `core/messenger.ts`). */
+  messenger?: Messenger | null;
+  /**
+   * Lo que ha pasado esta noche con el juego abierto (el ladrón, el mensajero…): no sale en avisos
+   * sueltos; se cuenta al amanecer, en la carta.
+   */
+  nightLines?: DawnEvent[];
+}
+
+/** El mensajero tardío: llama a la puerta la noche del día `day` con un encargo urgente. */
+export interface Messenger {
+  day: number;
+  /** Reloj (s) en que llamó (se va a los `MESSENGER_WAIT` s si nadie le abre). */
+  at: number;
+  /** El encargo que trae (ya hecho: la tarjeta lo enseña tal cual). */
+  quest: Quest;
+  /** El de guardia (id) que estaba despierto cuando llamó y le recogerá el recado. */
+  guard?: string;
+  /** Ya se ha ido de la puerta sin que nadie le atendiera (se cuenta al amanecer). */
+  gone?: boolean;
 }
 
 export interface NightLog {

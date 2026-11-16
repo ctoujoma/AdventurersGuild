@@ -104,7 +104,8 @@ export function TablonPanel({ game, quests, seeAll, onOpen }: Props) {
       {[
         ...quests.filter((q) => q.chain),
         ...quests.filter((q) => q.rumor),
-        ...quests.filter((q) => !q.chain && !q.rumor),
+        ...quests.filter((q) => q.urgent),
+        ...quests.filter((q) => !q.chain && !q.rumor && !q.urgent),
       ].map((q, i) => {
         const hidden = q.dangerHidden && !seeAll;
         const chain = q.chain ? chainDef(q.chain.id) : null;
@@ -121,6 +122,7 @@ export function TablonPanel({ game, quests, seeAll, onOpen }: Props) {
               q.title,
               chain ? `${chain.name}, paso ${q.chain!.step + 1} de ${chain.steps.length}` : q.type,
               q.rumor ? 'de un rumor, con botín especial' : '',
+              q.urgent ? 'urgente, lo trajo un mensajero' : '',
               `pide ${listNames(q.challenges.map((c) => c.skill))}`,
               o && 'est' in o
                 ? `con tu mejor grupo, ${RISK_LABELS[o.est.level].toLowerCase()}: ${Math.round(o.est.total * 100)} %`
@@ -151,6 +153,8 @@ export function TablonPanel({ game, quests, seeAll, onOpen }: Props) {
               )}
               {q.rumor ? (
                 <span class="note-new note-rumor-tag">Rumor</span>
+              ) : q.urgent ? (
+                <span class="note-new note-urgent-tag">Urgente</span>
               ) : (
                 q.fresh && <span class="note-new">Nuevo</span>
               )}

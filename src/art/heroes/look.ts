@@ -85,6 +85,10 @@ const HEADGEAR: Record<OutfitId, [HeadgearId, number] | null> = {
 /** El forastero de la tormenta: siempre el mismo (la capucha honda no deja ver más). */
 export const strangerLook = (): HeroLook => generateLook('forastero-de-la-tormenta', 'velado', 'm');
 
+/** El mensajero tardío de la noche `day`: un caminante con capa y capucha, cada noche otro. */
+export const messengerLook = (day: number, sex: Sex): HeroLook =>
+  generateLook(`mensajero-${day}`, 'forastero', sex);
+
 export function generateLook(seed: string, outfit: OutfitId, sex: Sex): HeroLook {
   const rng = new Rng(`look:${seed}`);
   const skin = rng.int(0, SKIN.length - 1);

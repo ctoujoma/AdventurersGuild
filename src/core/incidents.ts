@@ -17,7 +17,12 @@ import {
   CAT_FIRST,
   GUARD_HOLD,
   GUARD_NAP,
+  NIGHT_NAP_CYCLE,
+  NIGHT_NAP_SHARE,
+  NIGHT_NAP_TURN,
+  NIGHT_THIEF_RUN,
   THIEF_ESCAPE,
+  WORK_END,
   THIEF_HP,
   THIEF_HP_RANK,
   rankIndex,
@@ -42,6 +47,17 @@ import { guardsAt } from './guards';
 
 /** Lo último que ha pasado con los incidentes, para el aviso de la interfaz. */
 export type IncidentNews = { t: string; k: ChipKind };
+
+/** Los dos ladrones (el de la cámara, de día, y el nocturno) pelean con quien llega. */
+export const isThief = (k: IncidentKind) => k === 'ladron' || k === 'nocturno';
+
+/**
+ * Lo de la noche no sale en avisos sueltos: se guarda para contarlo al amanecer, en la carta (ver
+ * `endDay`). Muta `s` (una copia).
+ */
+export function tellDawn(s: GameState, n: DawnEvent): void {
+  s.nightLines = [...(s.nightLines ?? []), n];
+}
 
 const fill = (t: string, v: Record<string, string | number>) =>
   t.replace(/\{(\w+)\}/g, (_, k: string) => String(v[k] ?? ''));
@@ -73,8 +89,14 @@ function places(s: GameState, kind: IncidentKind): string[] {
  * tiempo salen mal y, de vez en cuando, empieza uno nuevo. Muta `s` (una copia).
  */
 export function stepIncidents(s: GameState, from: number, to: number): IncidentNews[] {
-  const news: IncidentNews[] = [];
+  const out: IncidentNews[] = [];
+  // Lo del ladrón nocturno va a la carta del amanecer, no a los avisos.
+  let night = false;
+  const news = {
+    push: (n: IncidentNews) => (night ? tellDawn(s, n) : out.push(n)),
+  };
   for (const inc of [...(s.incidents ?? [])]) {
+    night = !!INCIDENTS[inc.kind].night;
     const c = inc.coming;
     if (c) {
       // Quien iba de camino ya no puede ir (ha salido, se ha herido, se ha ido): vuelve a correr.
@@ -94,6 +116,13 @@ export function stepIncidents(s: GameState, from: number, to: number): IncidentN
       if (to >= inc.duel.at + inc.duel.end) news.push(settleDuel(s, inc));
       continue;
     }
+    // El nocturno: nadie le ve hasta que sale con el oro (entonces, el de guardia, si no cabecea).
+    if (night) {
+      if (to < inc.until) continue;
+      const n = nightLate(s, inc, to, false);
+      if (n) news.push(n);
+      continue;
+    }
     const help = helpers(s, inc, to);
     if (help) news.push(help);
     if (!s.incidents?.some((i) => i.id === inc.id && !i.coming)) continue;
@@ -105,18 +134,20 @@ export function stepIncidents(s: GameState, from: number, to: number): IncidentN
       news.push(win(s, inc, who));
     }
   }
+  night = false;
   // Sale mal al acabarse el tiempo, salvo que alguien vaya ya de camino.
   const list = s.incidents ?? [];
-  const late = (i: Incident) => i.until <= to && !i.coming && !i.duel;
+  const late = (i: Incident) => i.until <= to && !i.coming && !i.duel && !INCIDENTS[i.kind].night;
   for (const inc of list.filter(late)) news.push(fail(s, inc));
   s.incidents = list.filter((i) => !late(i));
   // Uno a la vez, desde el segundo día y con tiempo de resolverlo antes de que anochezca.
-  if (s.day < INCIDENT_FROM_DAY || s.incidents.length || s.over) return news;
+  if (s.day < INCIDENT_FROM_DAY || s.incidents.length || s.over) return out;
   const rng = new Rng(s.rng);
   const chance = Math.max(0, to - from) / INCIDENT_EVERY;
   if (rng.chance(chance)) {
     const kinds = (Object.keys(INCIDENTS) as IncidentKind[]).filter(
-      (k) => places(s, k).length && to + INCIDENTS[k].secs < DUSK * DAY_SECONDS,
+      (k) =>
+        !INCIDENTS[k].night && places(s, k).length && to + INCIDENTS[k].secs < DUSK * DAY_SECONDS,
     );
     if (kinds.length) {
       const kind = rng.pick(kinds);
@@ -134,7 +165,7 @@ export function stepIncidents(s: GameState, from: number, to: number): IncidentN
     }
   }
   s.rng = rng.save();
-  return news;
+  return out;
 }
 
 /**
@@ -155,8 +186,8 @@ export function presentFor(s: GameState, inc: Pick<Incident, 'kind' | 'room'>): 
 /** Quien está de guardia y despierto ahora (no cabecea), si hay alguien. */
 function awakeGuard(s: GameState, to: number): string | null {
   const guards = guardsOf(s);
-  const nap = napping(guards, Math.min(1, to / DAY_SECONDS));
-  return guards.find((g) => g !== nap) ?? null;
+  const nap = nappers(guards, Math.min(1, to / DAY_SECONDS), s.day);
+  return guards.find((g) => !nap.includes(g)) ?? null;
 }
 
 /**
@@ -246,7 +277,7 @@ export function arriveIncident(s: GameState, who: string, room: string): Inciden
 
 /** Llega quien iba: lo arregla; al ladrón, primero hay que ganarle la pelea. */
 function reach(s: GameState, inc: Incident, who: string): IncidentNews | null {
-  const duel = inc.kind === 'ladron' ? thiefDuel(s, who, inc.id, s.clock ?? 0) : null;
+  const duel = isThief(inc.kind) ? thiefDuel(s, who, inc.id, s.clock ?? 0) : null;
   if (!duel) {
     done(s, inc, 'bien');
     return win(s, inc, nameOf(s, who));
@@ -258,6 +289,7 @@ function reach(s: GameState, inc: Incident, who: string): IncidentNews | null {
 /** Acaba el duelo con el ladrón: le pilla o se escapa con el oro. */
 function settleDuel(s: GameState, inc: Incident): IncidentNews {
   const d = inc.duel!;
+  if (INCIDENTS[inc.kind].night) return settleNight(s, inc);
   if (d.won) {
     done(s, inc, 'bien');
     return win(s, inc, nameOf(s, d.who));
@@ -276,6 +308,30 @@ export function napping(guards: readonly string[], part: number): string | null 
   if (!guards.length || part < a || part >= b) return null;
   if (guards.length === 1) return guards[0]!;
   return part < (a + b) / 2 ? guards[0]! : guards[1]!;
+}
+
+/** Un número de 0 a 1 que solo depende del id (el desfase de las cabezadas de cada uno). */
+function idPhase(id: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < id.length; i++) h = Math.imul(h ^ id.charCodeAt(i), 16777619);
+  return ((h >>> 0) % 1000) / 1000;
+}
+
+/**
+ * Los de guardia que cabecean ahora (parte del día `part`). De día, el de la siesta (`napping`).
+ * De noche, mini-cabezadas en ciclo: cada uno la parte `NIGHT_NAP_SHARE` de cada
+ * `NIGHT_NAP_CYCLE` segundos; con dos, se turnan (el segundo, desfasado), pero hay un rato en que
+ * cabecean los dos. Pura con el reloj, el día y los ids: la escena enseña lo mismo.
+ */
+export function nappers(guards: readonly string[], part: number, day = 0): string[] {
+  if (part < WORK_END) {
+    const n = napping(guards, part);
+    return n ? [n] : [];
+  }
+  if (!guards.length) return [];
+  // El desfase cambia cada noche (el día), para que no cabeceen siempre a la misma hora.
+  const turn = (part * DAY_SECONDS) / NIGHT_NAP_CYCLE + idPhase(guards[0]!) + day * 0.618;
+  return guards.filter((_, i) => (turn + i * NIGHT_NAP_TURN) % 1 < NIGHT_NAP_SHARE);
 }
 
 /** Los de guardia ahora en la puerta (en el orden de la lista de héroes). */
@@ -362,6 +418,7 @@ function lose(s: GameState, inc: Incident): IncidentNews {
   let n = 0;
   if (l.gold) n = Math.min(s.gold, l.gold);
   if (l.goldShare) n = Math.floor(s.gold * l.goldShare);
+  if (l.goldTop) n = Math.min(n, l.goldTop * (1 + rankIndex(s.rep)));
   s.gold -= n;
   if (l.food) s.food = Math.max(0, s.food - (n = Math.min(s.food, l.food)));
   if (l.beer) s.beer = Math.max(0, s.beer - (n = Math.min(s.beer, l.beer)));
@@ -374,8 +431,121 @@ function win(s: GameState, inc: Incident, who: string): IncidentNews {
   const d = INCIDENTS[inc.kind];
   if (d.rep) s.rep += d.rep;
   bump(s, 'incidents');
-  if (inc.kind === 'ladron') bump(s, 'thieves');
+  if (isThief(inc.kind)) bump(s, 'thieves');
   return { t: fill(d.win, { h: who }) + (d.rep ? ` (+${d.rep} reputación)` : ''), k: 'good' };
+}
+
+// ---------- El ladrón nocturno ----------
+
+/** Si el ladrón ha ido a la cámara (si no, a la caja del recibidor). */
+const toVault = (s: GameState, inc: Incident) =>
+  s.building.rooms.find((r) => r.id === inc.room)?.type === 'tesoro';
+
+/** Despiertos al reloj `at` entre los de guardia `ids`, y los que cabecean. */
+function awakeAt(s: GameState, ids: string[], at: number) {
+  const nap = nappers(ids, Math.min(1, at / DAY_SECONDS), s.day);
+  return { awake: ids.filter((g) => !nap.includes(g)), nap };
+}
+
+const repText = (n?: number) => (n ? ` (+${n} reputación)` : '');
+
+/** Le pillan: la fama y se cuenta (el ladrón de más). Muta `s`. */
+function caughtNight(s: GameState, inc: Incident, how: 'bien' | 'puerta', guard?: string) {
+  done(s, inc, how, guard);
+  const def = INCIDENTS[inc.kind];
+  if (def.rep) s.rep += def.rep;
+  bump(s, 'incidents');
+  bump(s, 'thieves');
+  return repText(def.rep);
+}
+
+const NIGHT_HEAD = 'Anoche entró un ladrón con un farol tapado.';
+
+/**
+ * El ladrón nocturno sale con el oro (reloj `at`; las cabezadas, a su hora `until`): si el de
+ * guardia de ese sitio (la cámara o la puerta) está despierto, le sale al paso (el duelo, que la
+ * escena enseña; con `now`, sin escena, se resuelve ya); si cabecea o no hay nadie, se escapa por
+ * la puerta (`slip`). Muta `s`.
+ */
+function nightLate(s: GameState, inc: Incident, at: number, now: boolean): IncidentNews | null {
+  const vault = toVault(s, inc);
+  const ids = guardsAt(s, vault ? 'tesoro' : 'puerta').map((h) => h.id);
+  const { awake, nap } = awakeAt(s, ids, inc.until);
+  const duel = awake[0] ? thiefDuel(s, awake[0], inc.id, at) : null;
+  if (duel) {
+    const withDuel = { ...inc, duel };
+    s.incidents = (s.incidents ?? []).map((i) => (i.id === inc.id ? withDuel : i));
+    return now ? settleNight(s, withDuel) : null;
+  }
+  // En la cámara: si cabeceaba el de guardia, no le ve; aún queda la puerta.
+  if (vault) {
+    const lead = nap[0] ? `${nameOf(s, nap[0])} cabeceaba en la cámara y no le vio.` : '';
+    return slip(s, inc, inc.until + NIGHT_THIEF_RUN, [], lead);
+  }
+  return slip(s, inc, inc.until, [], '');
+}
+
+/** Acaba el duelo del nocturno: le pilla o se escapa (y aún puede pararle la puerta). */
+function settleNight(s: GameState, inc: Incident): IncidentNews {
+  const d = inc.duel!;
+  if (d.won)
+    return {
+      t: `${NIGHT_HEAD} ${nameOf(s, d.who)} le salió al paso y le pilló con las manos en la bolsa.${caughtNight(s, inc, 'bien')}`,
+      k: 'good',
+    };
+  return slip(
+    s,
+    inc,
+    d.at + d.end + NIGHT_THIEF_RUN,
+    [d.who],
+    `${nameOf(s, d.who)} le salió al paso, pero no pudo con él.`,
+  );
+}
+
+/**
+ * El nocturno escapa por la puerta (reloj `at`): si hay alguien de guardia despierto (que no sea
+ * quien ya ha peleado), le cierra el paso; si cabecean, se cuela; si no, se va con el oro.
+ */
+function slip(
+  s: GameState,
+  inc: Incident,
+  at: number,
+  fought: string[],
+  lead: string,
+): IncidentNews {
+  const ids = guardsOf(s).filter((g) => !fought.includes(g));
+  const head = `${NIGHT_HEAD}${lead ? ` ${lead}` : ''}`;
+  const where = toVault(s, inc) ? 'la cámara' : 'la caja';
+  const take = (how: IncidentEnd['how'], guard?: string) => {
+    const before = s.gold;
+    done(s, inc, how, guard);
+    lose(s, inc);
+    return before - s.gold;
+  };
+  const { awake, nap } = awakeAt(s, ids, at);
+  if (awake[0]) {
+    const g = awake[0];
+    const duel = thiefDuel(s, g, `${inc.id}-puerta`, at);
+    if (duel?.won)
+      return {
+        t: `${head} ${nameOf(s, g)}, de guardia, le cerró el paso en la puerta y recuperó el botín.${caughtNight(s, inc, 'puerta', g)}`,
+        k: 'good',
+      };
+    const n = take('mal');
+    return {
+      t: `${head} Ni ${nameOf(s, g)}, de guardia en la puerta, pudo pararle: se llevó ${n} monedas de ${where}.`,
+      k: 'bad',
+    };
+  }
+  if (nap[0]) {
+    const n = take('cuela', nap[0]);
+    return {
+      t: `${head} ${nameOf(s, nap[0])} cabeceaba en la puerta y se le coló con ${n} monedas de ${where}.`,
+      k: 'bad',
+    };
+  }
+  const n = take('mal');
+  return { t: `${head} Nadie le vio salir: se llevó ${n} monedas de ${where}.`, k: 'bad' };
 }
 
 /** Se acaba: fuera de la lista y, para la escena, cómo acabó (los últimos). */
@@ -452,6 +622,12 @@ export function actOnIncident(s: GameState, id: string, act: IncidentAct): Incid
  */
 export function failIncidents(s: GameState, events: DawnEvent[]): void {
   for (const inc of [...(s.incidents ?? [])]) {
+    // El nocturno sin tocar: el de guardia (si no cabecea) le sale al paso, ya.
+    const going = !!inc.coming && canGo(s, inc, inc.coming.who);
+    if (INCIDENTS[inc.kind].night && !inc.duel && !going) {
+      events.push(nightLate(s, inc, inc.until, true)!);
+      continue;
+    }
     if (inc.duel) {
       events.push(settleDuel(s, inc));
       continue;

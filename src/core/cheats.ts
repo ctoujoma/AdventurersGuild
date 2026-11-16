@@ -5,21 +5,45 @@
 import { CHAINS } from '../data/chains';
 import type { BossKind } from '../data/bosses';
 import { BANDS } from '../data/raids';
-import { rankIndex } from './balance';
+import { DAY_SECONDS, NIGHT_ROLL, rankIndex } from './balance';
 import { activeChain, advanceChain, chainDef, fightRoster, offerChain } from './chains';
-import { endDay } from './game';
+import { endDay, tick } from './game';
+import { MESSENGER_EVENT } from './messenger';
+import { startThief } from './thief';
 import type { BossFight, GameState, Report } from './model';
 import { Rng } from './rng';
 import { maxOut, syncFac } from './rooms';
 
 export type Cheat =
-  'oro' | 'fama' | 'curar' | 'obras' | 'asalto' | 'historia' | 'dias' | 'forastero';
+  | 'oro'
+  | 'fama'
+  | 'curar'
+  | 'obras'
+  | 'asalto'
+  | 'historia'
+  | 'dias'
+  | 'forastero'
+  | 'ladronNoche'
+  | 'mensajero';
 
 export function cheat(state: GameState, kind: Cheat): { state: GameState; note: string } {
   if (kind === 'dias') {
     let s = state;
     for (let i = 0; i < 3 && !s.over; i++) s = endDay(s);
     return { state: s, note: `Han pasado 3 días: es el día ${s.day}.` };
+  }
+  if (kind === 'ladronNoche' || kind === 'mensajero') {
+    // Ya de noche (a la hora del suceso, si aún es de día) y el suceso ahora mismo.
+    const night = NIGHT_ROLL * DAY_SECONDS;
+    const s = structuredClone((state.clock ?? 0) < night ? tick(state, night) : state);
+    if (kind === 'mensajero') {
+      if (s.messenger) return { state, note: 'Ya hay un mensajero en la puerta.' };
+      MESSENGER_EVENT.start(s, new Rng(`prueba-${s.day}-${s.uid}`));
+      return { state: s, note: 'Un mensajero llama a la puerta con un farol.' };
+    }
+    if (s.incidents?.length) return { state, note: 'Ya hay un incidente en marcha.' };
+    startThief(s);
+    return { state: s, note: 'Una sombra con un farol tapado cruza el patio.' };
   }
   const s = structuredClone(state);
   const rng = new Rng(`prueba-${s.day}-${s.uid}`);

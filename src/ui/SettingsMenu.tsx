@@ -32,6 +32,8 @@ const CHEATS: { kind: Cheat; label: string }[] = [
   { kind: 'asalto', label: 'Asalto esta noche' },
   { kind: 'historia', label: 'Avanzar historia' },
   { kind: 'forastero', label: 'Forastero de la tormenta' },
+  { kind: 'ladronNoche', label: 'Ladrón nocturno' },
+  { kind: 'mensajero', label: 'Mensajero tardío' },
 ];
 
 const SPEEDS: Settings['speed'][] = [1, 1.5, 2];

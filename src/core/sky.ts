@@ -64,3 +64,9 @@ export function rainSpan(seed: string, day: number): { start: number; stop: numb
 
 /** Si la noche del día `day` es de tormenta (la que se ve desde que se van a dormir). */
 export const stormNight = (seed: string, day: number) => dayKind(seed, day) === 'tormenta';
+
+/** Si la noche del día `day` es de niebla o de tormenta (pasan más cosas, ver `core/night.ts`). */
+export const roughNight = (seed: string, day: number) => {
+  const k = dayKind(seed, day);
+  return k === 'niebla' || k === 'tormenta';
+};
