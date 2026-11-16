@@ -13,7 +13,7 @@ const ICON: Record<IncidentKind, IconName> = {
   recaudador: 'coin',
   gotera: 'barril',
   noble: 'jarra',
-  nocturno: 'farol',
+  nocturno: 'cofre',
 };
 
 interface Props {

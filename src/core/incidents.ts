@@ -460,7 +460,7 @@ function caughtNight(s: GameState, inc: Incident, how: 'bien' | 'puerta', guard?
   return repText(def.rep);
 }
 
-const NIGHT_HEAD = 'Anoche entró un ladrón con un farol tapado.';
+const NIGHT_HEAD = 'Anoche entró un ladrón.';
 
 /**
  * El ladrón nocturno sale con el oro (reloj `at`; las cabezadas, a su hora `until`): si el de

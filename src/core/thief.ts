@@ -1,6 +1,6 @@
 /**
- * El ladrón nocturno (suceso de la noche, ver `night.ts`): una sombra con un farol tapado entra por
- * el patio y va a la cámara del tesoro (si hay) o a la caja del recibidor. Es un incidente de noche
+ * El ladrón nocturno (suceso de la noche, ver `night.ts`): un ladrón entra por el patio y va a la
+ * cámara del tesoro (si hay) o a la caja del recibidor. Es un incidente de noche
  * (`nocturno` en `data/incidents.ts`) con poco rato para mandar a alguien; si no se toca, el de
  * guardia le sale al paso si no está cabeceando. Las reglas, en `core/incidents.ts`.
  */
@@ -47,7 +47,7 @@ export const THIEF_EVENT: NightEvent = {
     !s.incidents?.length &&
     !!thiefRoom(s),
   every: NIGHT_THIEF_EVERY,
-  // Sin aviso: se ve la sombra y el aviso sobre la sala; lo que pase, al amanecer.
+  // Sin aviso suelto: se le ve entrar y el aviso sobre la sala; lo que pase, al amanecer.
   start: (s) => {
     startThief(s);
     return null;

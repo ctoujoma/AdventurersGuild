@@ -224,7 +224,7 @@ export const THIEF_FIGHT = { guard: 0, stab: 1, hurt: 2 } as const;
 // ---------- El ladrón nocturno ----------
 
 /**
- * La sombra de la noche: el mismo ladrón con capa y capucha de color de noche (pizarra y azul
+ * El ladrón de noche: el mismo ladrón con capa y capucha de color de noche (pizarra y azul
  * oscuro, la cara casi tapada) y, colgando de la mano de delante, un farol tapado: una caja negra
  * con una rendija de luz (lo que deja ver la escena a oscuras).
  */

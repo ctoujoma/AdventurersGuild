@@ -55,7 +55,7 @@ export function cheat(state: GameState, kind: Cheat): { state: GameState; note: 
     }
     if (s.incidents?.length) return { state, note: 'Ya hay un incidente en marcha.' };
     startThief(s);
-    return { state: s, note: 'Una sombra con un farol tapado cruza el patio.' };
+    return { state: s, note: 'Ha entrado un ladrón.' };
   }
   const s = structuredClone(state);
   const rng = new Rng(`prueba-${s.day}-${s.uid}`);
