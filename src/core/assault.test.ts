@@ -4,6 +4,7 @@ import {
   Assault,
   YARD,
   assaultSetup,
+  banditCount,
   raidGraph,
   raidRoute,
   simulate,
@@ -238,5 +239,49 @@ describe('el asalto sala a sala', () => {
     const next = endDay(fought);
     expect(next.raid).toBeNull();
     expect(next.lastRaid?.plan).toEqual(fake.plan);
+  });
+
+  it('las bandas fuertes traen más bandidos (no solo más fuertes)', () => {
+    expect(banditCount(12)).toBe(2);
+    expect(banditCount(36)).toBe(6);
+    expect(banditCount(50)).toBeGreaterThan(6);
+    const s = newGame('banda');
+    const set = assaultSetup(s, 54, new Rng('b'));
+    expect(set.bandits.length).toBeGreaterThan(6);
+    // Los de más pegan igual que los demás, y el cabecilla aguanta más.
+    expect(new Set(set.bandits.map((b) => b.power)).size).toBe(1);
+    expect(set.bandits[0]).toMatchObject({ leader: true });
+    expect(set.bandits[0]!.hp).toBeGreaterThan(set.bandits[1]!.hp);
+  });
+
+  it('el cabecilla avisa de su golpe fuerte y, si se cubren, hace mucho menos', () => {
+    const s = newGame('cabecilla');
+    const door = roomOf(s, 'recibidor').id;
+    const set = setup(s, {
+      defenders: [
+        { id: 'g1', power: 4, hp: 400, at: door, guard: true, wake: 0 },
+        { id: 'g2', power: 4, hp: 400, at: door, guard: true, wake: 0 },
+      ],
+    });
+    const hurt = (seed: string, cover: boolean) => {
+      const a = new Assault(set, seed);
+      while (!a.result && !a.log.some((e) => e.kind === 'special')) {
+        if (cover && a.log.some((e) => e.kind === 'warn')) a.order({ kind: 'cover', who: 'g1' });
+        a.tick();
+      }
+      const log = a.log;
+      const warn = log.findIndex((e) => e.kind === 'warn');
+      const special = log.find((e) => e.kind === 'special')!;
+      expect(warn).toBeGreaterThanOrEqual(0);
+      expect(warn).toBeLessThan(log.indexOf(special));
+      const hits = log
+        .filter((e) => e.kind === 'hit' && e.t === special.t && e.from === 'b0')
+        .reduce((n, e) => n + (e.kind === 'hit' ? e.amount : 0), 0);
+      return { hits, covered: special.kind === 'special' && special.covered };
+    };
+    // Sin jugador, la IA se cubre a veces: una semilla en la que no.
+    const seed = ['c', 'd', 'e', 'f', 'g'].find((x) => !hurt(x, false).covered)!;
+    expect(hurt(seed, true).covered).toBe(true);
+    expect(hurt(seed, true).hits).toBeLessThan(hurt(seed, false).hits * 0.6);
   });
 });

@@ -438,6 +438,20 @@ export const BANDIT_HP = 38;
 /** Daño de cada golpe de un bandido por punto de fuerza de la banda (repartida), y su ritmo. */
 export const BANDIT_POWER = 1.9;
 export const BANDIT_EVERY = 1.4;
+/**
+ * Cuántos bandidos trae una banda: uno por cada `BANDIT_PER` de fuerza, entre 2 y `BANDIT_MAX`.
+ * La fuerza se reparte entre los primeros `BANDIT_SPLIT`: los que vienen de más (las bandas
+ * fuertes, al final de la partida) pegan igual que ellos, así que suman peligro de verdad.
+ */
+export const BANDIT_PER = 6;
+export const BANDIT_MAX = 9;
+export const BANDIT_SPLIT = 6;
+/**
+ * El cabecilla (el primero de la banda): más vida y un golpe fuerte a todos los de su sala, con
+ * aviso (como el jefe); el primero, a estos segundos de pelea.
+ */
+export const LEADER_HP = 1.8;
+export const LEADER_SPECIAL = 5;
 /** Oro que carga cada bandido: unos fijos más la fuerza de la banda. */
 export const BANDIT_CARRY = 40;
 /** Lo que se tarda en cargar los sacos. */

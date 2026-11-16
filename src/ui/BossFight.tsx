@@ -342,18 +342,6 @@ export function BossFight({ fight, onClose, onResult }: Props) {
             }
           }}
         />
-        {playing && warn && !result && (
-          <button
-            class="btn btn-gold bossfight-cover"
-            onClick={() => {
-              const first = party.find((h) => !h.down);
-              if (first) order({ who: first.id, kind: 'cover' });
-              setWarn(false);
-            }}
-          >
-            ¡Cubríos!
-          </button>
-        )}
       </div>
       {sim && !ended && (
         <div class="bossfight-crew">
@@ -366,6 +354,12 @@ export function BossFight({ fight, onClose, onResult }: Props) {
             onSkill={(id) => order({ who: id, kind: 'skill' })}
             onPick={(id) => setChosen(chosen === id ? null : id)}
             onPress={(id) => (drag.current = id)}
+            warn={warn && !result}
+            onCover={() => {
+              const first = party.find((h) => !h.down);
+              if (first) order({ who: first.id, kind: 'cover' });
+              setWarn(false);
+            }}
           />
         </div>
       )}

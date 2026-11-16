@@ -60,9 +60,9 @@ const digest = (log: readonly unknown[]) => ({
 // ---------- Los registros de antes ----------
 
 /**
- * Las peleas se grabaron con los registros de antes del registro común (`CombatEvent` viejo y
- * `RaidStep`). El de ahora lleva lo mismo y algo más: pasado al formato viejo, tiene que dar
- * exactamente lo grabado.
+ * Los jefes se grabaron con el registro de antes del registro común (`CombatEvent` viejo): el de
+ * ahora, pasado al formato viejo, tiene que dar exactamente lo grabado. Los asaltos se graban ya
+ * con el de ahora; el formato viejo (`RaidStep`) sirve para ver que los informes viejos se leen.
  */
 function oldCombatEvent(e: CombatEvent): unknown {
   const { step } = e;
@@ -197,6 +197,7 @@ interface RaidPlayer {
   target?: boolean;
   skill?: boolean;
   crit?: boolean;
+  cover?: boolean;
 }
 
 function playAssault(setup: AssaultSetup, state: number, p: RaidPlayer): Assault {
@@ -217,6 +218,12 @@ function playAssault(setup: AssaultSetup, state: number, p: RaidPlayer): Assault
         if (foes.length > 1) a.order({ kind: 'target', who: d.id, to: foes.at(-1)!.id });
       }
     if (p.skill) skills(ds, a.step, (who) => a.order({ kind: 'skill', who }));
+    if (p.cover && ds[0]) {
+      let warn = -1;
+      for (const e of a.log) if (e.kind === 'warn') warn = Math.round(e.t / 0.1);
+      // A tiempo, ocho pasos tras el aviso del cabecilla.
+      if (warn >= 0 && a.step - warn === 8) a.order({ kind: 'cover', who: ds[0].id });
+    }
     if (p.crit)
       for (const d of ds)
         if (d.critOpen && !d.critTaken && a.step % 2 === 0) a.order({ kind: 'crit', who: d.id });
@@ -233,7 +240,7 @@ const assaultSummary = (a: Assault) => {
     start: plan.start,
     hp: plan.hp,
     route: plan.route,
-    steps: digest(oldSteps(plan.log!)),
+    log: digest(plan.log!),
     left: a.units.map((u) => [u.id, u.hp, u.node]),
   };
 };
@@ -393,7 +400,8 @@ function assaultCases(): Omit<AssaultCase, 'expect'>[] {
     edit?.(setup);
     const players: [string, RaidPlayer?][] = [
       ['solos', undefined],
-      ['todo', { move: true, target: true, skill: true, crit: true }],
+      ['todo', { move: true, target: true, skill: true, crit: true, cover: true }],
+      ['cubrirse', { cover: true }],
       ['mover', { move: true }],
       ['blanco y habilidad', { target: true, skill: true }],
       ['critico', { crit: true }],
@@ -560,7 +568,7 @@ describe('peleas de referencia: asaltos', () => {
   it('hay de todo: sin órdenes y con cada tipo de orden', () => {
     expect(fx.assaults.length).toBeGreaterThanOrEqual(30);
     const kinds = new Set(fx.assaults.flatMap((c) => c.expect.orders.map((o) => o.kind)));
-    expect([...kinds].sort()).toEqual(['crit', 'move', 'skill', 'target']);
+    expect([...kinds].sort()).toEqual(['cover', 'crit', 'move', 'skill', 'target']);
     expect(fx.assaults.some((c) => c.expect.result.escaped === 0)).toBe(true);
     expect(fx.assaults.some((c) => c.expect.result.stolen > 0)).toBe(true);
   });
@@ -574,11 +582,13 @@ describe('peleas de referencia: asaltos', () => {
     again.run();
     expect(plain(assaultSummary(again))).toEqual(want);
     const r = simulate(loadSetup(ac.setup), new Rng(ac.rng), orders);
-    expect(digest(oldSteps(r.plan.log!))).toEqual(want.steps);
+    expect(digest(r.plan.log!)).toEqual(want.log);
     // Un informe viejo (con `steps`) se lee igual que el de ahora.
     const old = raidLog({ steps: oldSteps(r.plan.log!) });
     expect(plain(oldSteps(old))).toEqual(plain(oldSteps(r.plan.log!)));
-    expect(old.map((e) => e.kind)).toEqual(r.plan.log!.map((e) => e.kind));
+    // (el formato viejo no tenía el aviso del cabecilla)
+    const theirs = r.plan.log!.filter((e) => !['warn', 'cover', 'special'].includes(e.kind));
+    expect(old.map((e) => e.kind)).toEqual(theirs.map((e) => e.kind));
   });
 });
 

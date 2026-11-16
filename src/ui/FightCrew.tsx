@@ -59,6 +59,9 @@ interface Props {
   onPick?: (id: string) => void;
   /** Empezar a arrastrarla (a un enemigo o a una sala). */
   onPress?: (id: string) => void;
+  /** El jefe o el cabecilla avisa de su golpe fuerte: el botón «¡Cubríos!». */
+  warn?: boolean;
+  onCover?: () => void;
 }
 
 export function FightCrew({
@@ -70,80 +73,94 @@ export function FightCrew({
   onSkill,
   onPick,
   onPress,
+  warn,
+  onCover,
 }: Props) {
   return (
-    <ul
-      class="rc-list"
-      aria-label={label}
-      style={{ gridTemplateColumns: `repeat(${Math.min(crew.length, 6)}, minmax(0, 76px))` }}
-    >
-      {crew.map((h) => {
-        const ready = h.charge >= 1 && !h.down;
-        const chance = playing && h.chance && !h.down;
-        const skill = h.skill ? ABILITIES[h.skill] : null;
-        const state = h.down ? 'en el suelo' : h.moving ? 'corriendo' : (h.note ?? '');
-        const label = [h.name, `vida ${Math.round(h.hp * 100)} %`, chance ? '¡crítico!' : '', state]
-          .filter(Boolean)
-          .join(', ');
-        return (
-          <li
-            key={h.id}
-            class={`rc-card ${h.down ? 'is-down' : ''} ${chance ? 'is-chance' : ''} ${ready ? 'is-ready' : ''} ${chosen === h.id ? 'is-chosen' : ''}`}
-          >
-            <button
-              class="rc-hit"
-              disabled={!playing || h.down}
-              aria-label={label}
-              title={h.name}
-              onPointerDown={() => {
-                if (playing && !h.down) onPress?.(h.id);
-              }}
-              onClick={() => (chance ? onCrit(h.id) : onPick?.(h.id))}
+    <div class="fc">
+      {playing && warn && onCover && (
+        <button class="btn btn-gold fc-cover" onClick={onCover}>
+          ¡Cubríos!
+        </button>
+      )}
+      <ul
+        class="rc-list"
+        aria-label={label}
+        style={{ gridTemplateColumns: `repeat(${Math.min(crew.length, 6)}, minmax(0, 76px))` }}
+      >
+        {crew.map((h) => {
+          const ready = h.charge >= 1 && !h.down;
+          const chance = playing && h.chance && !h.down;
+          const skill = h.skill ? ABILITIES[h.skill] : null;
+          const state = h.down ? 'en el suelo' : h.moving ? 'corriendo' : (h.note ?? '');
+          const label = [
+            h.name,
+            `vida ${Math.round(h.hp * 100)} %`,
+            chance ? '¡crítico!' : '',
+            state,
+          ]
+            .filter(Boolean)
+            .join(', ');
+          return (
+            <li
+              key={h.id}
+              class={`rc-card ${h.down ? 'is-down' : ''} ${chance ? 'is-chance' : ''} ${ready ? 'is-ready' : ''} ${chosen === h.id ? 'is-chosen' : ''}`}
             >
-              <span class="rc-face">
-                {h.look && (
-                  <Portrait
-                    look={h.look}
-                    marks={h.marks}
-                    scale={1}
-                    alive={!h.down}
-                    frame={h.frame}
-                  />
-                )}
-                {chance && <b class="rc-now" aria-hidden="true" />}
-                {h.moving && !h.down && (
-                  <i class="rc-run" aria-hidden="true">
-                    »
-                  </i>
-                )}
-              </span>
-              <span class={`rc-hp ${h.hp < 0.35 ? 'is-low' : ''}`} aria-hidden="true">
-                <i style={{ width: `${Math.round(h.hp * 100)}%` }} />
-              </span>
-              <span class="rc-name" aria-hidden="true">
-                {h.down ? 'en el suelo' : chance ? '¡Ahora!' : h.name}
-              </span>
-              {h.note && !h.down && (
-                <span class="rc-note" aria-hidden="true">
-                  {h.note}
-                </span>
-              )}
-            </button>
-            {skill && (
               <button
-                class="rc-skill"
-                disabled={!playing || !ready}
-                title={`${skill.name}: ${skill.text}`}
-                aria-label={ready ? `${h.name}: ${skill.name}` : `${skill.name}, cargando`}
-                onClick={() => onSkill(h.id)}
+                class="rc-hit"
+                disabled={!playing || h.down}
+                aria-label={label}
+                title={h.name}
+                onPointerDown={() => {
+                  if (playing && !h.down) onPress?.(h.id);
+                }}
+                onClick={() => (chance ? onCrit(h.id) : onPick?.(h.id))}
               >
-                <i style={{ width: `${Math.round(Math.min(1, h.charge) * 100)}%` }} />
-                <span>{skill.name}</span>
+                <span class="rc-face">
+                  {h.look && (
+                    <Portrait
+                      look={h.look}
+                      marks={h.marks}
+                      scale={1}
+                      alive={!h.down}
+                      frame={h.frame}
+                    />
+                  )}
+                  {chance && <b class="rc-now" aria-hidden="true" />}
+                  {h.moving && !h.down && (
+                    <i class="rc-run" aria-hidden="true">
+                      »
+                    </i>
+                  )}
+                </span>
+                <span class={`rc-hp ${h.hp < 0.35 ? 'is-low' : ''}`} aria-hidden="true">
+                  <i style={{ width: `${Math.round(h.hp * 100)}%` }} />
+                </span>
+                <span class="rc-name" aria-hidden="true">
+                  {h.down ? 'en el suelo' : chance ? '¡Ahora!' : h.name}
+                </span>
+                {h.note && !h.down && (
+                  <span class="rc-note" aria-hidden="true">
+                    {h.note}
+                  </span>
+                )}
               </button>
-            )}
-          </li>
-        );
-      })}
-    </ul>
+              {skill && (
+                <button
+                  class="rc-skill"
+                  disabled={!playing || !ready}
+                  title={`${skill.name}: ${skill.text}`}
+                  aria-label={ready ? `${h.name}: ${skill.name}` : `${skill.name}, cargando`}
+                  onClick={() => onSkill(h.id)}
+                >
+                  <i style={{ width: `${Math.round(Math.min(1, h.charge) * 100)}%` }} />
+                  <span>{skill.name}</span>
+                </button>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }

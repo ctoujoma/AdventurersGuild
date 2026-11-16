@@ -38,6 +38,8 @@ const MELEE_FX: Partial<Record<Blow, FxKind>> = {
 
 /** El asalto se ve algo más rápido de lo que dura en el núcleo. */
 export const RAID_SPEED = 1.6;
+/** En directo, mientras el cabecilla avisa (y nadie se ha cubierto), va más despacio. */
+const WARN_SLOW = 0.6;
 
 export interface RaidHooks {
   burst(kind: PKind, x: number, y: number, n: number): void;
@@ -148,6 +150,11 @@ export class RaidShow {
   private inbound = new Map<string, number>();
   private held = new Map<string, FallStep>();
   private skipping = false;
+  /** El cabecilla de la banda (el que avisa de su golpe fuerte), si lo hay. */
+  private leader: string | null;
+  /** Está avisando de su golpe fuerte, y si los nuestros ya se han cubierto. */
+  private warned = false;
+  private covered = false;
 
   constructor(
     private plan: RaidPlan,
@@ -159,6 +166,10 @@ export class RaidShow {
   ) {
     this.fx = new RaidFx((id) => this.crowd.where(id));
     this.log = raidLog(plan);
+    this.leader =
+      live?.units.find((u) => u.side === 'e' && u.special !== undefined)?.id ??
+      this.log.find((e) => e.kind === 'warn')?.from ??
+      null;
     for (const [id, n] of Object.entries(plan.hp ?? {})) {
       this.hp.set(id, n);
       this.max.set(id, n);
@@ -237,6 +248,18 @@ export class RaidShow {
     return any;
   }
 
+  /** En directo: el cabecilla está avisando y aún no se han cubierto (el botón «¡Cubríos!»). */
+  get warning(): boolean {
+    return !!this.live && this.warned && !this.covered && !this.live.result;
+  }
+
+  /** En directo: ¡cubríos! (lo dice uno de los nuestros que siga en pie). */
+  cover(): boolean {
+    const live = this.live;
+    const who = live?.defs().find((d) => !d.down && !d.worker);
+    return !!who && !!live?.order({ kind: 'cover', who: who.id });
+  }
+
   /** En directo: tocar a un héroe coge su crítico si lo tiene abierto; si no, su habilidad. */
   tap(id: string): 'crit' | 'skill' | null {
     const live = this.live;
@@ -279,7 +302,7 @@ export class RaidShow {
   }
 
   update(dt: number): void {
-    this.t += dt * RAID_SPEED;
+    this.t += dt * RAID_SPEED * (this.warning ? WARN_SLOW : 1);
     // En directo, la pelea se juega hasta el segundo que se ve.
     const live = this.live;
     if (live) while (!live.result && live.t < this.t) live.tick();
@@ -314,6 +337,7 @@ export class RaidShow {
     this.t = this.end + 0.5;
     this.floats = [];
     this.chances.clear();
+    this.warned = false;
     this.door = null;
     this.lock = null;
     this.fights.clear();
@@ -369,6 +393,7 @@ export class RaidShow {
       ctx.fillRect(x - 1, y + 1, 3, 3);
       ctx.fillRect(x, y, 1, 5);
     }
+    this.drawLeader(ctx, px, py);
     this.fx.draw(ctx, px, py);
     // Los números de daño (y de cura) suben y se apagan.
     this.floats = this.floats.filter((f) => this.t - f.t0 < FLOAT_LIFE * RAID_SPEED);
@@ -391,11 +416,43 @@ export class RaidShow {
     }
   }
 
+  /**
+   * El cabecilla: una coronita sobre su vida, para distinguirlo; mientras avisa de su golpe
+   * fuerte, un «!» que late (rojo; gris si los nuestros ya se han cubierto).
+   */
+  private drawLeader(ctx: CanvasRenderingContext2D, px: number, py: number): void {
+    const id = this.leader;
+    const w = id ? this.crowd.where(id) : null;
+    if (!w || w.down) return;
+    const x = Math.round(w.x - px);
+    const y = Math.round(w.y - py);
+    // La coronita, a la izquierda de la barra de vida.
+    ctx.fillStyle = P.black;
+    ctx.fillRect(x - 13, y - 34, 7, 5);
+    ctx.fillStyle = P.gold;
+    ctx.fillRect(x - 12, y - 31, 5, 1);
+    ctx.fillRect(x - 12, y - 33, 1, 2);
+    ctx.fillRect(x - 10, y - 33, 1, 2);
+    ctx.fillRect(x - 8, y - 33, 1, 2);
+    if (!this.warned) return;
+    const beat = Math.floor(this.t * 6) % 2;
+    const top = y - 48 - beat;
+    ctx.fillStyle = P.black;
+    ctx.fillRect(x - 3, top - 1, 7, 12);
+    ctx.fillStyle = this.covered ? P.steel : P.red;
+    ctx.fillRect(x - 2, top, 5, 10);
+    ctx.fillStyle = P.white;
+    ctx.fillRect(x, top + 1, 1, 5);
+    ctx.fillRect(x, top + 7, 1, 2);
+  }
+
   // ---------- Por dentro ----------
 
   private apply(s: RaidEntry, skip: boolean): void {
     switch (s.kind) {
       case 'move':
+        // El cabecilla se va sin descargar su golpe: ya avisará en la próxima pelea.
+        if (this.leader && s.ids.includes(this.leader)) this.warned = false;
         for (const id of s.ids) {
           const p = this.placeOf(s.to, id, this.at.get(id));
           this.at.set(id, s.to);
@@ -411,6 +468,7 @@ export class RaidShow {
         if (!skip) this.hooks.sound('swing', 0.8);
         break;
       case 'down':
+        if (s.to === this.leader) this.warned = false;
         // Si le va a llegar una flecha o un hechizo, cae cuando le dé.
         if (!skip && this.inbound.get(s.to)) this.held.set(s.to, s);
         else this.fallen(s, skip);
@@ -468,6 +526,40 @@ export class RaidShow {
         this.hooks.sound('holy', 0.7);
         const n = numberOf(s, (id) => !isBandit(id))!;
         this.float(s.to, n.text, NUMBER_COLOR[n.kind], this.t + 0.25);
+        break;
+      }
+      case 'warn':
+        this.warned = true;
+        this.covered = false;
+        if (skip) break;
+        // Levanta el arma y grita: el golpe fuerte va a caer sobre los de su sala.
+        this.crowd.strike(s.from, this.facing(s.from), 'grito');
+        this.fx.add('shout', s.from);
+        this.hooks.sound('roar', 0.7);
+        break;
+      case 'cover':
+        this.covered = true;
+        if (skip) break;
+        this.hooks.sound('swing', 0.8);
+        // Los nuestros de su sala se ponen en guardia.
+        for (const [id, node] of this.at)
+          if (!isBandit(id) && node === this.at.get(this.leader ?? '')) {
+            this.crowd.guardUp(id, this.facing(id), 1.2);
+            const w = this.crowd.where(id);
+            if (w) this.hooks.burst('glint', w.x, w.y - 18, 3);
+          }
+        break;
+      case 'special': {
+        this.warned = false;
+        this.covered = false;
+        if (skip) break;
+        const w = this.crowd.where(s.from);
+        this.crowd.strike(s.from, this.facing(s.from), 'maza');
+        if (w) {
+          this.hooks.burst('dust', w.x, w.y - 2, 12);
+          this.hooks.burst('puff', w.x, w.y - 4, s.covered ? 3 : 8);
+        }
+        this.hooks.sound(s.covered ? 'thud' : 'boom', 0.9);
         break;
       }
       case 'chance':

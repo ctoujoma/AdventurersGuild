@@ -143,6 +143,9 @@ interface Rooms {
   hungry: number;
   raids: number;
   raidsWon: number;
+  /** Asaltos y ganados por tramo (como `till`). */
+  raidsBy: number[];
+  wonBy: number[];
   stolen: number;
   spilt: number[];
   /** Resultados de todos los informes (el correo guarda solo los últimos). */
@@ -167,6 +170,8 @@ const newRooms = (): Rooms => ({
   hungry: 0,
   raids: 0,
   raidsWon: 0,
+  raidsBy: [0, 0, 0, 0],
+  wonBy: [0, 0, 0, 0],
   stolen: 0,
   spilt: [0, 0, 0, 0],
   outcomes: { 'Éxito brillante': 0, Éxito: 0, 'Éxito parcial': 0, Fracaso: 0, Desastre: 0 },
@@ -213,7 +218,11 @@ function tracked(s: GameState, st: Strategy, acc: Rooms): GameState {
     }
     if (!r.raid) continue;
     acc.raids++;
-    if (r.raid.won) acc.raidsWon++;
+    acc.raidsBy[phase]!++;
+    if (r.raid.won) {
+      acc.raidsWon++;
+      acc.wonBy[phase]!++;
+    }
     for (const c of r.chips) {
       const m = /Saqueo: −(\d+)/.exec(c.t);
       if (m) acc.stolen += Number(m[1]);
@@ -299,6 +308,9 @@ for (const st of STRATEGIES) {
   console.log(`  nómina semanal media (igual): ${per(rooms.wages)}`);
   console.log(
     `  por partida: noches sin cenar ${(rooms.hungry / N).toFixed(1)} · asaltos ${(rooms.raids / N).toFixed(1)} (ganados ${pct(rooms.raidsWon, rooms.raids)}, saqueo ${(rooms.stolen / N).toFixed(0)})`,
+  );
+  console.log(
+    `  asaltos por tramo (11–20 / 21–30 / libre): ${[1, 2, 3].map((k) => `${(rooms.raidsBy[k]! / N).toFixed(1)} (ganados ${pct(rooms.wonBy[k]!, rooms.raidsBy[k]!)})`).join(' / ')}`,
   );
   console.log(
     `  oro perdido por la cámara llena, por partida (igual): ${rooms.spilt.map((x) => (x / N).toFixed(0)).join(' / ')}`,

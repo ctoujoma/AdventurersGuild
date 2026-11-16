@@ -867,7 +867,7 @@
       "route": ["t6", "t10", "t11", "t12"],
       "defenders": [],
       "bandits": [
-        { "id": "b0", "power": 12.666666666666666, "hp": 38 },
+        { "id": "b0", "power": 12.666666666666666, "hp": 68, "leader": true },
         { "id": "b1", "power": 12.666666666666666, "hp": 38 },
         { "id": "b2", "power": 12.666666666666666, "hp": 38 }
       ],
@@ -1008,7 +1008,7 @@
         }
       ],
       "bandits": [
-        { "id": "b0", "power": 11.399999999999999, "hp": 38 },
+        { "id": "b0", "power": 11.399999999999999, "hp": 68, "leader": true },
         { "id": "b1", "power": 11.399999999999999, "hp": 38 },
         { "id": "b2", "power": 11.399999999999999, "hp": 38 }
       ],
@@ -1149,7 +1149,7 @@
         }
       ],
       "bandits": [
-        { "id": "b0", "power": 13.299999999999999, "hp": 38 },
+        { "id": "b0", "power": 13.299999999999999, "hp": 68, "leader": true },
         { "id": "b1", "power": 13.299999999999999, "hp": 38 }
       ],
       "carry": 54,
@@ -1302,7 +1302,7 @@
         }
       ],
       "bandits": [
-        { "id": "b0", "power": 11.399999999999999, "hp": 38 },
+        { "id": "b0", "power": 11.399999999999999, "hp": 68, "leader": true },
         { "id": "b1", "power": 11.399999999999999, "hp": 38 },
         { "id": "b2", "power": 11.399999999999999, "hp": 38 },
         { "id": "b3", "power": 11.399999999999999, "hp": 38 }
@@ -1480,7 +1480,7 @@
         }
       ],
       "bandits": [
-        { "id": "b0", "power": 11.399999999999999, "hp": 38 },
+        { "id": "b0", "power": 11.399999999999999, "hp": 68, "leader": true },
         { "id": "b1", "power": 11.399999999999999, "hp": 38 },
         { "id": "b2", "power": 11.399999999999999, "hp": 38 },
         { "id": "b3", "power": 11.399999999999999, "hp": 38 },
@@ -1647,7 +1647,7 @@
         }
       ],
       "bandits": [
-        { "id": "b0", "power": 10.45, "hp": 38 },
+        { "id": "b0", "power": 10.45, "hp": 68, "leader": true },
         { "id": "b1", "power": 10.45, "hp": 38 },
         { "id": "b2", "power": 10.45, "hp": 38 },
         { "id": "b3", "power": 10.45, "hp": 38 }
@@ -1822,7 +1822,7 @@
         }
       ],
       "bandits": [
-        { "id": "b0", "power": 11.399999999999999, "hp": 38 },
+        { "id": "b0", "power": 11.399999999999999, "hp": 68, "leader": true },
         { "id": "b1", "power": 11.399999999999999, "hp": 38 },
         { "id": "b2", "power": 11.399999999999999, "hp": 38 },
         { "id": "b3", "power": 11.399999999999999, "hp": 38 },
@@ -2974,11 +2974,11 @@
         },
         "end": 35.2,
         "start": { "b0": "fuera", "b1": "fuera", "b2": "fuera" },
-        "hp": { "b0": 38, "b1": 38, "b2": 38 },
+        "hp": { "b0": 68, "b1": 38, "b2": 38 },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 20, "hash": "e7e2fd4c" },
+        "log": { "n": 20, "hash": "359d80f6" },
         "left": [
-          ["b0", 38, "fuera"],
+          ["b0", 68, "fuera"],
           ["b1", 38, "fuera"],
           ["b2", 38, "fuera"]
         ],
@@ -2998,17 +2998,17 @@
           "stolen": 116,
           "recovered": 0
         },
-        "end": 40.5,
+        "end": 40.2,
         "start": { "h1": "t4", "h2": "t4", "b0": "fuera", "b1": "fuera", "b2": "fuera" },
-        "hp": { "h1": 71, "h2": 40, "b0": 38, "b1": 38, "b2": 38 },
+        "hp": { "h1": 71, "h2": 40, "b0": 68, "b1": 38, "b2": 38 },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 43, "hash": "adc10bde" },
+        "log": { "n": 46, "hash": "1d90403e" },
         "left": [
           ["h1", 0, "t10"],
           ["h2", 0, "t10"],
-          ["b0", 0, "t10"],
-          ["b1", 33, "fuera"],
-          ["b2", 38, "fuera"]
+          ["b0", 68, "fuera"],
+          ["b1", 0, "t10"],
+          ["b2", 24, "fuera"]
         ],
         "orders": []
       }
@@ -3017,7 +3017,7 @@
       "name": "durmiendo (todo)",
       "setup": "durmiendo",
       "rng": 3922248970,
-      "player": { "move": true, "target": true, "skill": true, "crit": true },
+      "player": { "move": true, "target": true, "skill": true, "crit": true, "cover": true },
       "expect": {
         "result": {
           "fell": ["h2", "h1"],
@@ -3029,14 +3029,14 @@
         },
         "end": 40.3,
         "start": { "h1": "t4", "h2": "t4", "b0": "fuera", "b1": "fuera", "b2": "fuera" },
-        "hp": { "h1": 71, "h2": 40, "b0": 38, "b1": 38, "b2": 38 },
+        "hp": { "h1": 71, "h2": 40, "b0": 68, "b1": 38, "b2": 38 },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 43, "hash": "61a463ac" },
+        "log": { "n": 48, "hash": "25d4fb84" },
         "left": [
           ["h1", 0, "t10"],
           ["h2", 0, "t10"],
-          ["b0", 38, "fuera"],
-          ["b1", 22, "fuera"],
+          ["b0", 68, "fuera"],
+          ["b1", 23, "fuera"],
           ["b2", 0, "t10"]
         ],
         "orders": [
@@ -3046,8 +3046,38 @@
           { "kind": "target", "who": "h1", "to": "b2", "step": 156 },
           { "kind": "target", "who": "h2", "to": "b2", "step": 156 },
           { "kind": "target", "who": "h1", "to": "b1", "step": 173 },
-          { "kind": "target", "who": "h2", "to": "b1", "step": 173 }
+          { "kind": "target", "who": "h2", "to": "b1", "step": 173 },
+          { "kind": "cover", "who": "h1", "step": 173 }
         ]
+      }
+    },
+    {
+      "name": "durmiendo (cubrirse)",
+      "setup": "durmiendo",
+      "rng": 3922248970,
+      "player": { "cover": true },
+      "expect": {
+        "result": {
+          "fell": ["h2", "h1"],
+          "fought": ["h1", "h2"],
+          "downed": 1,
+          "escaped": 2,
+          "stolen": 116,
+          "recovered": 0
+        },
+        "end": 40.5,
+        "start": { "h1": "t4", "h2": "t4", "b0": "fuera", "b1": "fuera", "b2": "fuera" },
+        "hp": { "h1": 71, "h2": 40, "b0": 68, "b1": 38, "b2": 38 },
+        "route": ["t6", "t10", "t11", "t12"],
+        "log": { "n": 48, "hash": "941d87" },
+        "left": [
+          ["h1", 0, "t10"],
+          ["h2", 0, "t10"],
+          ["b0", 68, "fuera"],
+          ["b1", 0, "t10"],
+          ["b2", 24, "fuera"]
+        ],
+        "orders": [{ "kind": "cover", "who": "h1", "step": 173 }]
       }
     },
     {
@@ -3064,17 +3094,17 @@
           "stolen": 116,
           "recovered": 0
         },
-        "end": 40.5,
+        "end": 40.2,
         "start": { "h1": "t4", "h2": "t4", "b0": "fuera", "b1": "fuera", "b2": "fuera" },
-        "hp": { "h1": 71, "h2": 40, "b0": 38, "b1": 38, "b2": 38 },
+        "hp": { "h1": 71, "h2": 40, "b0": 68, "b1": 38, "b2": 38 },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 43, "hash": "fd01d4a4" },
+        "log": { "n": 46, "hash": "18aebfdc" },
         "left": [
           ["h1", 0, "t10"],
           ["h2", 0, "t10"],
-          ["b0", 0, "t10"],
-          ["b1", 33, "fuera"],
-          ["b2", 38, "fuera"]
+          ["b0", 68, "fuera"],
+          ["b1", 0, "t10"],
+          ["b2", 24, "fuera"]
         ],
         "orders": [{ "kind": "move", "who": "h2", "to": "t10", "step": 15 }]
       }
@@ -3086,23 +3116,23 @@
       "player": { "target": true, "skill": true },
       "expect": {
         "result": {
-          "fell": ["h2", "h1"],
+          "fell": ["h1", "h2"],
           "fought": ["h1", "h2"],
           "downed": 1,
           "escaped": 2,
           "stolen": 116,
           "recovered": 0
         },
-        "end": 40.3,
+        "end": 40.2,
         "start": { "h1": "t4", "h2": "t4", "b0": "fuera", "b1": "fuera", "b2": "fuera" },
-        "hp": { "h1": 71, "h2": 40, "b0": 38, "b1": 38, "b2": 38 },
+        "hp": { "h1": 71, "h2": 40, "b0": 68, "b1": 38, "b2": 38 },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 43, "hash": "a1b6fd2e" },
+        "log": { "n": 46, "hash": "e4e1a5ac" },
         "left": [
           ["h1", 0, "t10"],
           ["h2", 0, "t10"],
-          ["b0", 38, "fuera"],
-          ["b1", 22, "fuera"],
+          ["b0", 68, "fuera"],
+          ["b1", 23, "fuera"],
           ["b2", 0, "t10"]
         ],
         "orders": [
@@ -3129,19 +3159,19 @@
           "stolen": 116,
           "recovered": 0
         },
-        "end": 40.5,
+        "end": 40.2,
         "start": { "h1": "t4", "h2": "t4", "b0": "fuera", "b1": "fuera", "b2": "fuera" },
-        "hp": { "h1": 71, "h2": 40, "b0": 38, "b1": 38, "b2": 38 },
+        "hp": { "h1": 71, "h2": 40, "b0": 68, "b1": 38, "b2": 38 },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 43, "hash": "adc10bde" },
+        "log": { "n": 46, "hash": "1d90403e" },
         "left": [
           ["h1", 0, "t10"],
           ["h2", 0, "t10"],
-          ["b0", 0, "t10"],
-          ["b1", 33, "fuera"],
-          ["b2", 38, "fuera"]
+          ["b0", 68, "fuera"],
+          ["b1", 0, "t10"],
+          ["b2", 24, "fuera"]
         ],
-        "orders": [{ "kind": "crit", "who": "h2", "step": 178 }]
+        "orders": []
       }
     },
     {
@@ -3157,13 +3187,13 @@
           "stolen": 0,
           "recovered": 0
         },
-        "end": 10.8,
+        "end": 11.9,
         "start": { "h1": "t6", "h2": "t6", "b0": "fuera", "b1": "fuera" },
-        "hp": { "h1": 129, "h2": 75, "b0": 38, "b1": 38 },
+        "hp": { "h1": 129, "h2": 75, "b0": 68, "b1": 38 },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 17, "hash": "f3fbb000" },
+        "log": { "n": 22, "hash": "abbcc2e4" },
         "left": [
-          ["h1", 76, "patio"],
+          ["h1", 73, "patio"],
           ["h2", 75, "patio"],
           ["b0", 0, "patio"],
           ["b1", 0, "patio"]
@@ -3175,7 +3205,7 @@
       "name": "guardia en la puerta (todo)",
       "setup": "guardia en la puerta",
       "rng": 1452593897,
-      "player": { "move": true, "target": true, "skill": true, "crit": true },
+      "player": { "move": true, "target": true, "skill": true, "crit": true, "cover": true },
       "expect": {
         "result": {
           "fell": [],
@@ -3185,13 +3215,13 @@
           "stolen": 0,
           "recovered": 0
         },
-        "end": 14,
+        "end": 16.6,
         "start": { "h1": "t6", "h2": "t6", "b0": "fuera", "b1": "fuera" },
-        "hp": { "h1": 129, "h2": 75, "b0": 38, "b1": 38 },
+        "hp": { "h1": 129, "h2": 75, "b0": 68, "b1": 38 },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 23, "hash": "fe3c7b18" },
+        "log": { "n": 32, "hash": "4c70d75f" },
         "left": [
-          ["h1", 36, "patio"],
+          ["h1", 15, "patio"],
           ["h2", 75, "t10"],
           ["b0", 0, "patio"],
           ["b1", 0, "patio"]
@@ -3202,8 +3232,37 @@
           { "kind": "target", "who": "h1", "to": "b1", "step": 88 },
           { "kind": "crit", "who": "h1", "step": 90 },
           { "kind": "crit", "who": "h1", "step": 102 },
-          { "kind": "crit", "who": "h1", "step": 128 }
+          { "kind": "cover", "who": "h1", "step": 106 },
+          { "kind": "skill", "who": "h1", "step": 143 }
         ]
+      }
+    },
+    {
+      "name": "guardia en la puerta (cubrirse)",
+      "setup": "guardia en la puerta",
+      "rng": 1452593897,
+      "player": { "cover": true },
+      "expect": {
+        "result": {
+          "fell": [],
+          "fought": ["h1", "h2"],
+          "downed": 2,
+          "escaped": 0,
+          "stolen": 0,
+          "recovered": 0
+        },
+        "end": 11.9,
+        "start": { "h1": "t6", "h2": "t6", "b0": "fuera", "b1": "fuera" },
+        "hp": { "h1": 129, "h2": 75, "b0": 68, "b1": 38 },
+        "route": ["t6", "t10", "t11", "t12"],
+        "log": { "n": 23, "hash": "8fb50f43" },
+        "left": [
+          ["h1", 73, "patio"],
+          ["h2", 75, "patio"],
+          ["b0", 0, "patio"],
+          ["b1", 0, "patio"]
+        ],
+        "orders": [{ "kind": "cover", "who": "h1", "step": 106 }]
       }
     },
     {
@@ -3220,13 +3279,13 @@
           "stolen": 0,
           "recovered": 0
         },
-        "end": 14,
+        "end": 16.6,
         "start": { "h1": "t6", "h2": "t6", "b0": "fuera", "b1": "fuera" },
-        "hp": { "h1": 129, "h2": 75, "b0": 38, "b1": 38 },
+        "hp": { "h1": 129, "h2": 75, "b0": 68, "b1": 38 },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 23, "hash": "1d644e5a" },
+        "log": { "n": 30, "hash": "31f52d4a" },
         "left": [
-          ["h1", 49, "patio"],
+          ["h1", 11, "patio"],
           ["h2", 75, "t10"],
           ["b0", 0, "patio"],
           ["b1", 0, "patio"]
@@ -3248,13 +3307,13 @@
           "stolen": 0,
           "recovered": 0
         },
-        "end": 10.8,
+        "end": 11.9,
         "start": { "h1": "t6", "h2": "t6", "b0": "fuera", "b1": "fuera" },
-        "hp": { "h1": 129, "h2": 75, "b0": 38, "b1": 38 },
+        "hp": { "h1": 129, "h2": 75, "b0": 68, "b1": 38 },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 17, "hash": "fa8361d7" },
+        "log": { "n": 22, "hash": "abbcc2e4" },
         "left": [
-          ["h1", 76, "patio"],
+          ["h1", 73, "patio"],
           ["h2", 75, "patio"],
           ["b0", 0, "patio"],
           ["b1", 0, "patio"]
@@ -3281,13 +3340,13 @@
           "stolen": 0,
           "recovered": 0
         },
-        "end": 10.8,
+        "end": 11.9,
         "start": { "h1": "t6", "h2": "t6", "b0": "fuera", "b1": "fuera" },
-        "hp": { "h1": 129, "h2": 75, "b0": 38, "b1": 38 },
+        "hp": { "h1": 129, "h2": 75, "b0": 68, "b1": 38 },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 18, "hash": "d409b302" },
+        "log": { "n": 21, "hash": "483450b2" },
         "left": [
-          ["h1", 86, "patio"],
+          ["h1", 63, "patio"],
           ["h2", 75, "patio"],
           ["b0", 0, "patio"],
           ["b1", 0, "patio"]
@@ -3308,7 +3367,7 @@
           "stolen": 0,
           "recovered": 0
         },
-        "end": 35.6,
+        "end": 36,
         "start": {
           "h1": "t6",
           "h2": "t4",
@@ -3322,19 +3381,19 @@
           "h1": 122,
           "h2": 40,
           "h-casa-asalto-guardia en la camara-1": 162,
-          "b0": 38,
+          "b0": 68,
           "b1": 38,
           "b2": 38,
           "b3": 38
         },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 62, "hash": "b54c79ff" },
+        "log": { "n": 65, "hash": "c51a7460" },
         "left": [
           ["h1", 0, "patio"],
           ["h2", 0, "patio"],
-          ["h-casa-asalto-guardia en la camara-1", 38, "t12"],
-          ["b0", 0, "patio"],
-          ["b1", 0, "t12"],
+          ["h-casa-asalto-guardia en la camara-1", 57, "t12"],
+          ["b0", 0, "t12"],
+          ["b1", 0, "patio"],
           ["b2", 0, "t12"],
           ["b3", 0, "t12"]
         ],
@@ -3345,7 +3404,7 @@
       "name": "guardia en la camara (todo)",
       "setup": "guardia en la camara",
       "rng": 4047563914,
-      "player": { "move": true, "target": true, "skill": true, "crit": true },
+      "player": { "move": true, "target": true, "skill": true, "crit": true, "cover": true },
       "expect": {
         "result": {
           "fell": ["h1", "h2"],
@@ -3369,18 +3428,18 @@
           "h1": 122,
           "h2": 40,
           "h-casa-asalto-guardia en la camara-1": 162,
-          "b0": 38,
+          "b0": 68,
           "b1": 38,
           "b2": 38,
           "b3": 38
         },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 73, "hash": "16ed9387" },
+        "log": { "n": 78, "hash": "9041465e" },
         "left": [
           ["h1", 0, "patio"],
           ["h2", 0, "patio"],
-          ["h-casa-asalto-guardia en la camara-1", 46, "t12"],
-          ["b0", 22, "fuera"],
+          ["h-casa-asalto-guardia en la camara-1", 32, "t12"],
+          ["b0", 68, "fuera"],
           ["b1", 0, "t10"],
           ["b2", 0, "t10"],
           ["b3", 0, "patio"]
@@ -3395,9 +3454,9 @@
           { "kind": "target", "who": "h1", "to": "b3", "step": 71 },
           { "kind": "target", "who": "h1", "to": "b3", "step": 88 },
           { "kind": "target", "who": "h2", "to": "b3", "step": 88 },
-          { "kind": "crit", "who": "h1", "step": 102 },
           { "kind": "target", "who": "h1", "to": "b2", "step": 105 },
           { "kind": "target", "who": "h2", "to": "b2", "step": 105 },
+          { "kind": "cover", "who": "h1", "step": 106 },
           { "kind": "target", "who": "h2", "to": "b2", "step": 122 },
           {
             "kind": "target",
@@ -3405,6 +3464,7 @@
             "to": "b2",
             "step": 241
           },
+          { "kind": "crit", "who": "h-casa-asalto-guardia en la camara-1", "step": 248 },
           {
             "kind": "target",
             "who": "h-casa-asalto-guardia en la camara-1",
@@ -3439,6 +3499,56 @@
       }
     },
     {
+      "name": "guardia en la camara (cubrirse)",
+      "setup": "guardia en la camara",
+      "rng": 4047563914,
+      "player": { "cover": true },
+      "expect": {
+        "result": {
+          "fell": ["h1", "h2"],
+          "fought": ["h1", "h2", "h-casa-asalto-guardia en la camara-1"],
+          "downed": 4,
+          "escaped": 0,
+          "stolen": 0,
+          "recovered": 0
+        },
+        "end": 35.6,
+        "start": {
+          "h1": "t6",
+          "h2": "t4",
+          "h-casa-asalto-guardia en la camara-1": "t12",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera"
+        },
+        "hp": {
+          "h1": 122,
+          "h2": 40,
+          "h-casa-asalto-guardia en la camara-1": 162,
+          "b0": 68,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "log": { "n": 68, "hash": "eba9de52" },
+        "left": [
+          ["h1", 0, "patio"],
+          ["h2", 0, "patio"],
+          ["h-casa-asalto-guardia en la camara-1", 37, "t12"],
+          ["b0", 0, "t12"],
+          ["b1", 0, "patio"],
+          ["b2", 0, "t12"],
+          ["b3", 0, "t12"]
+        ],
+        "orders": [
+          { "kind": "cover", "who": "h1", "step": 106 },
+          { "kind": "cover", "who": "h-casa-asalto-guardia en la camara-1", "step": 335 }
+        ]
+      }
+    },
+    {
       "name": "guardia en la camara (mover)",
       "setup": "guardia en la camara",
       "rng": 4047563914,
@@ -3466,21 +3576,21 @@
           "h1": 122,
           "h2": 40,
           "h-casa-asalto-guardia en la camara-1": 162,
-          "b0": 38,
+          "b0": 68,
           "b1": 38,
           "b2": 38,
           "b3": 38
         },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 73, "hash": "e508de9" },
+        "log": { "n": 72, "hash": "8a21433" },
         "left": [
           ["h1", 0, "patio"],
           ["h2", 0, "patio"],
-          ["h-casa-asalto-guardia en la camara-1", 55, "t12"],
-          ["b0", 0, "patio"],
-          ["b1", 0, "t10"],
+          ["h-casa-asalto-guardia en la camara-1", 74, "t12"],
+          ["b0", 52, "fuera"],
+          ["b1", 0, "patio"],
           ["b2", 0, "t10"],
-          ["b3", 38, "fuera"]
+          ["b3", 0, "t10"]
         ],
         "orders": [
           {
@@ -3518,7 +3628,7 @@
           "stolen": 0,
           "recovered": 0
         },
-        "end": 35.6,
+        "end": 36,
         "start": {
           "h1": "t6",
           "h2": "t4",
@@ -3532,17 +3642,17 @@
           "h1": 122,
           "h2": 40,
           "h-casa-asalto-guardia en la camara-1": 162,
-          "b0": 38,
+          "b0": 68,
           "b1": 38,
           "b2": 38,
           "b3": 38
         },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 62, "hash": "4c63e562" },
+        "log": { "n": 65, "hash": "4079551c" },
         "left": [
           ["h1", 0, "patio"],
           ["h2", 0, "patio"],
-          ["h-casa-asalto-guardia en la camara-1", 26, "t12"],
+          ["h-casa-asalto-guardia en la camara-1", 57, "t12"],
           ["b0", 0, "t12"],
           ["b1", 0, "t12"],
           ["b2", 0, "t12"],
@@ -3567,19 +3677,7 @@
             "to": "b1",
             "step": 292
           },
-          {
-            "kind": "target",
-            "who": "h-casa-asalto-guardia en la camara-1",
-            "to": "b1",
-            "step": 309
-          },
-          {
-            "kind": "target",
-            "who": "h-casa-asalto-guardia en la camara-1",
-            "to": "b1",
-            "step": 326
-          },
-          { "kind": "skill", "who": "h-casa-asalto-guardia en la camara-1", "step": 344 }
+          { "kind": "skill", "who": "h-casa-asalto-guardia en la camara-1", "step": 335 }
         ]
       }
     },
@@ -3597,7 +3695,7 @@
           "stolen": 0,
           "recovered": 0
         },
-        "end": 35.6,
+        "end": 34.7,
         "start": {
           "h1": "t6",
           "h2": "t4",
@@ -3611,26 +3709,23 @@
           "h1": 122,
           "h2": 40,
           "h-casa-asalto-guardia en la camara-1": 162,
-          "b0": 38,
+          "b0": 68,
           "b1": 38,
           "b2": 38,
           "b3": 38
         },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 62, "hash": "c2552e34" },
+        "log": { "n": 61, "hash": "c0c0b344" },
         "left": [
           ["h1", 0, "patio"],
           ["h2", 0, "patio"],
-          ["h-casa-asalto-guardia en la camara-1", 37, "t12"],
-          ["b0", 0, "patio"],
-          ["b1", 0, "t12"],
+          ["h-casa-asalto-guardia en la camara-1", 67, "t12"],
+          ["b0", 0, "t12"],
+          ["b1", 0, "patio"],
           ["b2", 0, "t12"],
           ["b3", 0, "t12"]
         ],
-        "orders": [
-          { "kind": "crit", "who": "h1", "step": 102 },
-          { "kind": "crit", "who": "h-casa-asalto-guardia en la camara-1", "step": 332 }
-        ]
+        "orders": [{ "kind": "crit", "who": "h-casa-asalto-guardia en la camara-1", "step": 336 }]
       }
     },
     {
@@ -3639,7 +3734,13 @@
       "rng": 3860866760,
       "expect": {
         "result": {
-          "fell": ["h1", "h-casa-asalto-perro y clases-3", "h2"],
+          "fell": [
+            "h1",
+            "h-casa-asalto-perro y clases-3",
+            "h-casa-asalto-perro y clases-2",
+            "h2",
+            "h-casa-asalto-perro y clases-1"
+          ],
           "fought": [
             "h1",
             "h2",
@@ -3647,12 +3748,12 @@
             "h-casa-asalto-perro y clases-2",
             "h-casa-asalto-perro y clases-3"
           ],
-          "downed": 5,
-          "escaped": 0,
-          "stolen": 0,
+          "downed": 3,
+          "escaped": 2,
+          "stolen": 140,
           "recovered": 0
         },
-        "end": 29.9,
+        "end": 44.1,
         "start": {
           "h1": "t4",
           "h2": "t4",
@@ -3671,25 +3772,25 @@
           "h-casa-asalto-perro y clases-1": 55,
           "h-casa-asalto-perro y clases-2": 54,
           "h-casa-asalto-perro y clases-3": 50,
-          "b0": 38,
+          "b0": 68,
           "b1": 38,
           "b2": 38,
           "b3": 38,
           "b4": 38
         },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 99, "hash": "9f52099c" },
+        "log": { "n": 101, "hash": "f8e51073" },
         "left": [
           ["h1", 0, "t6"],
           ["h2", 0, "t12"],
-          ["h-casa-asalto-perro y clases-1", 23, "t12"],
-          ["h-casa-asalto-perro y clases-2", 23, "t12"],
+          ["h-casa-asalto-perro y clases-1", 0, "t12"],
+          ["h-casa-asalto-perro y clases-2", 0, "t12"],
           ["h-casa-asalto-perro y clases-3", 0, "t12"],
-          ["b0", 0, "t12"],
+          ["b0", 68, "fuera"],
           ["b1", 0, "t12"],
           ["b2", 0, "t12"],
           ["b3", 0, "t12"],
-          ["b4", 0, "t12"]
+          ["b4", 38, "fuera"]
         ],
         "orders": []
       }
@@ -3698,7 +3799,156 @@
       "name": "perro y clases (todo)",
       "setup": "perro y clases",
       "rng": 3860866760,
-      "player": { "move": true, "target": true, "skill": true, "crit": true },
+      "player": { "move": true, "target": true, "skill": true, "crit": true, "cover": true },
+      "expect": {
+        "result": {
+          "fell": [
+            "h1",
+            "h-casa-asalto-perro y clases-3",
+            "h-casa-asalto-perro y clases-2",
+            "h2",
+            "h-casa-asalto-perro y clases-1"
+          ],
+          "fought": [
+            "h1",
+            "h2",
+            "h-casa-asalto-perro y clases-1",
+            "h-casa-asalto-perro y clases-2",
+            "h-casa-asalto-perro y clases-3"
+          ],
+          "downed": 1,
+          "escaped": 4,
+          "stolen": 280,
+          "recovered": 0
+        },
+        "end": 42.7,
+        "start": {
+          "h1": "t4",
+          "h2": "t4",
+          "h-casa-asalto-perro y clases-1": "t4",
+          "h-casa-asalto-perro y clases-2": "t4",
+          "h-casa-asalto-perro y clases-3": "t4",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera",
+          "b4": "fuera"
+        },
+        "hp": {
+          "h1": 81,
+          "h2": 50,
+          "h-casa-asalto-perro y clases-1": 55,
+          "h-casa-asalto-perro y clases-2": 54,
+          "h-casa-asalto-perro y clases-3": 50,
+          "b0": 68,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38,
+          "b4": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "log": { "n": 90, "hash": "862ecb87" },
+        "left": [
+          ["h1", 0, "t6"],
+          ["h2", 0, "t10"],
+          ["h-casa-asalto-perro y clases-1", 0, "t10"],
+          ["h-casa-asalto-perro y clases-2", 0, "t10"],
+          ["h-casa-asalto-perro y clases-3", 0, "t10"],
+          ["b0", 68, "fuera"],
+          ["b1", 22, "fuera"],
+          ["b2", 38, "fuera"],
+          ["b3", 5, "fuera"],
+          ["b4", 0, "t10"]
+        ],
+        "orders": [
+          { "kind": "move", "who": "h-casa-asalto-perro y clases-3", "to": "t10", "step": 15 },
+          { "kind": "crit", "who": "h1", "step": 112 },
+          { "kind": "target", "who": "h1", "to": "b4", "step": 122 },
+          { "kind": "cover", "who": "h2", "step": 172 },
+          { "kind": "target", "who": "h2", "to": "b4", "step": 173 },
+          { "kind": "target", "who": "h-casa-asalto-perro y clases-1", "to": "b4", "step": 173 },
+          { "kind": "target", "who": "h-casa-asalto-perro y clases-2", "to": "b4", "step": 173 },
+          { "kind": "target", "who": "h2", "to": "b3", "step": 190 },
+          { "kind": "target", "who": "h-casa-asalto-perro y clases-1", "to": "b3", "step": 190 },
+          { "kind": "target", "who": "h-casa-asalto-perro y clases-2", "to": "b3", "step": 190 },
+          { "kind": "crit", "who": "h2", "step": 196 },
+          { "kind": "target", "who": "h-casa-asalto-perro y clases-1", "to": "b3", "step": 207 }
+        ]
+      }
+    },
+    {
+      "name": "perro y clases (cubrirse)",
+      "setup": "perro y clases",
+      "rng": 3860866760,
+      "player": { "cover": true },
+      "expect": {
+        "result": {
+          "fell": [
+            "h1",
+            "h-casa-asalto-perro y clases-3",
+            "h2",
+            "h-casa-asalto-perro y clases-2",
+            "h-casa-asalto-perro y clases-1"
+          ],
+          "fought": [
+            "h1",
+            "h2",
+            "h-casa-asalto-perro y clases-1",
+            "h-casa-asalto-perro y clases-2",
+            "h-casa-asalto-perro y clases-3"
+          ],
+          "downed": 3,
+          "escaped": 2,
+          "stolen": 140,
+          "recovered": 0
+        },
+        "end": 46.9,
+        "start": {
+          "h1": "t4",
+          "h2": "t4",
+          "h-casa-asalto-perro y clases-1": "t4",
+          "h-casa-asalto-perro y clases-2": "t4",
+          "h-casa-asalto-perro y clases-3": "t4",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera",
+          "b4": "fuera"
+        },
+        "hp": {
+          "h1": 81,
+          "h2": 50,
+          "h-casa-asalto-perro y clases-1": 55,
+          "h-casa-asalto-perro y clases-2": 54,
+          "h-casa-asalto-perro y clases-3": 50,
+          "b0": 68,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38,
+          "b4": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "log": { "n": 109, "hash": "22a1be79" },
+        "left": [
+          ["h1", 0, "t6"],
+          ["h2", 0, "t12"],
+          ["h-casa-asalto-perro y clases-1", 0, "t12"],
+          ["h-casa-asalto-perro y clases-2", 0, "t12"],
+          ["h-casa-asalto-perro y clases-3", 0, "t12"],
+          ["b0", 68, "fuera"],
+          ["b1", 0, "t12"],
+          ["b2", 0, "t12"],
+          ["b3", 0, "t12"],
+          ["b4", 21, "fuera"]
+        ],
+        "orders": [{ "kind": "cover", "who": "h2", "step": 216 }]
+      }
+    },
+    {
+      "name": "perro y clases (mover)",
+      "setup": "perro y clases",
+      "rng": 3860866760,
+      "player": { "move": true },
       "expect": {
         "result": {
           "fell": [
@@ -3715,9 +3965,79 @@
             "h-casa-asalto-perro y clases-2",
             "h-casa-asalto-perro y clases-3"
           ],
-          "downed": 1,
-          "escaped": 4,
-          "stolen": 280,
+          "downed": 2,
+          "escaped": 3,
+          "stolen": 210,
+          "recovered": 0
+        },
+        "end": 42.7,
+        "start": {
+          "h1": "t4",
+          "h2": "t4",
+          "h-casa-asalto-perro y clases-1": "t4",
+          "h-casa-asalto-perro y clases-2": "t4",
+          "h-casa-asalto-perro y clases-3": "t4",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera",
+          "b4": "fuera"
+        },
+        "hp": {
+          "h1": 81,
+          "h2": 50,
+          "h-casa-asalto-perro y clases-1": 55,
+          "h-casa-asalto-perro y clases-2": 54,
+          "h-casa-asalto-perro y clases-3": 50,
+          "b0": 68,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38,
+          "b4": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "log": { "n": 89, "hash": "eb76b930" },
+        "left": [
+          ["h1", 0, "t6"],
+          ["h2", 0, "t10"],
+          ["h-casa-asalto-perro y clases-1", 0, "t10"],
+          ["h-casa-asalto-perro y clases-2", 0, "t10"],
+          ["h-casa-asalto-perro y clases-3", 0, "t10"],
+          ["b0", 68, "fuera"],
+          ["b1", 0, "t10"],
+          ["b2", 0, "t10"],
+          ["b3", 28, "fuera"],
+          ["b4", 38, "fuera"]
+        ],
+        "orders": [
+          { "kind": "move", "who": "h-casa-asalto-perro y clases-3", "to": "t10", "step": 15 }
+        ]
+      }
+    },
+    {
+      "name": "perro y clases (blanco y habilidad)",
+      "setup": "perro y clases",
+      "rng": 3860866760,
+      "player": { "target": true, "skill": true },
+      "expect": {
+        "result": {
+          "fell": [
+            "h1",
+            "h-casa-asalto-perro y clases-3",
+            "h-casa-asalto-perro y clases-2",
+            "h2",
+            "h-casa-asalto-perro y clases-1"
+          ],
+          "fought": [
+            "h1",
+            "h2",
+            "h-casa-asalto-perro y clases-1",
+            "h-casa-asalto-perro y clases-2",
+            "h-casa-asalto-perro y clases-3"
+          ],
+          "downed": 2,
+          "escaped": 3,
+          "stolen": 210,
           "recovered": 0
         },
         "end": 43,
@@ -3739,173 +4059,24 @@
           "h-casa-asalto-perro y clases-1": 55,
           "h-casa-asalto-perro y clases-2": 54,
           "h-casa-asalto-perro y clases-3": 50,
-          "b0": 38,
+          "b0": 68,
           "b1": 38,
           "b2": 38,
           "b3": 38,
           "b4": 38
         },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 84, "hash": "924056dc" },
-        "left": [
-          ["h1", 0, "t6"],
-          ["h2", 0, "t10"],
-          ["h-casa-asalto-perro y clases-1", 0, "t10"],
-          ["h-casa-asalto-perro y clases-2", 0, "t10"],
-          ["h-casa-asalto-perro y clases-3", 0, "t10"],
-          ["b0", 18, "fuera"],
-          ["b1", 38, "fuera"],
-          ["b2", 38, "fuera"],
-          ["b3", 10, "fuera"],
-          ["b4", 0, "t10"]
-        ],
-        "orders": [
-          { "kind": "move", "who": "h-casa-asalto-perro y clases-3", "to": "t10", "step": 15 },
-          { "kind": "crit", "who": "h1", "step": 112 },
-          { "kind": "target", "who": "h1", "to": "b4", "step": 122 },
-          { "kind": "target", "who": "h2", "to": "b4", "step": 173 },
-          { "kind": "target", "who": "h-casa-asalto-perro y clases-1", "to": "b4", "step": 173 },
-          { "kind": "target", "who": "h-casa-asalto-perro y clases-2", "to": "b4", "step": 173 },
-          { "kind": "crit", "who": "h2", "step": 176 },
-          { "kind": "target", "who": "h-casa-asalto-perro y clases-1", "to": "b3", "step": 190 },
-          { "kind": "target", "who": "h-casa-asalto-perro y clases-2", "to": "b3", "step": 190 },
-          { "kind": "target", "who": "h-casa-asalto-perro y clases-2", "to": "b3", "step": 207 }
-        ]
-      }
-    },
-    {
-      "name": "perro y clases (mover)",
-      "setup": "perro y clases",
-      "rng": 3860866760,
-      "player": { "move": true },
-      "expect": {
-        "result": {
-          "fell": [
-            "h1",
-            "h-casa-asalto-perro y clases-3",
-            "h-casa-asalto-perro y clases-1",
-            "h2",
-            "h-casa-asalto-perro y clases-2"
-          ],
-          "fought": [
-            "h1",
-            "h2",
-            "h-casa-asalto-perro y clases-1",
-            "h-casa-asalto-perro y clases-2",
-            "h-casa-asalto-perro y clases-3"
-          ],
-          "downed": 2,
-          "escaped": 3,
-          "stolen": 210,
-          "recovered": 0
-        },
-        "end": 44.6,
-        "start": {
-          "h1": "t4",
-          "h2": "t4",
-          "h-casa-asalto-perro y clases-1": "t4",
-          "h-casa-asalto-perro y clases-2": "t4",
-          "h-casa-asalto-perro y clases-3": "t4",
-          "b0": "fuera",
-          "b1": "fuera",
-          "b2": "fuera",
-          "b3": "fuera",
-          "b4": "fuera"
-        },
-        "hp": {
-          "h1": 81,
-          "h2": 50,
-          "h-casa-asalto-perro y clases-1": 55,
-          "h-casa-asalto-perro y clases-2": 54,
-          "h-casa-asalto-perro y clases-3": 50,
-          "b0": 38,
-          "b1": 38,
-          "b2": 38,
-          "b3": 38,
-          "b4": 38
-        },
-        "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 89, "hash": "5de5c705" },
-        "left": [
-          ["h1", 0, "t6"],
-          ["h2", 0, "t10"],
-          ["h-casa-asalto-perro y clases-1", 0, "t10"],
-          ["h-casa-asalto-perro y clases-2", 0, "t10"],
-          ["h-casa-asalto-perro y clases-3", 0, "t10"],
-          ["b0", 0, "t10"],
-          ["b1", 0, "t10"],
-          ["b2", 7, "fuera"],
-          ["b3", 38, "fuera"],
-          ["b4", 38, "fuera"]
-        ],
-        "orders": [
-          { "kind": "move", "who": "h-casa-asalto-perro y clases-3", "to": "t10", "step": 15 }
-        ]
-      }
-    },
-    {
-      "name": "perro y clases (blanco y habilidad)",
-      "setup": "perro y clases",
-      "rng": 3860866760,
-      "player": { "target": true, "skill": true },
-      "expect": {
-        "result": {
-          "fell": [
-            "h1",
-            "h-casa-asalto-perro y clases-3",
-            "h2",
-            "h-casa-asalto-perro y clases-1",
-            "h-casa-asalto-perro y clases-2"
-          ],
-          "fought": [
-            "h1",
-            "h2",
-            "h-casa-asalto-perro y clases-1",
-            "h-casa-asalto-perro y clases-2",
-            "h-casa-asalto-perro y clases-3"
-          ],
-          "downed": 2,
-          "escaped": 3,
-          "stolen": 210,
-          "recovered": 0
-        },
-        "end": 44.4,
-        "start": {
-          "h1": "t4",
-          "h2": "t4",
-          "h-casa-asalto-perro y clases-1": "t4",
-          "h-casa-asalto-perro y clases-2": "t4",
-          "h-casa-asalto-perro y clases-3": "t4",
-          "b0": "fuera",
-          "b1": "fuera",
-          "b2": "fuera",
-          "b3": "fuera",
-          "b4": "fuera"
-        },
-        "hp": {
-          "h1": 81,
-          "h2": 50,
-          "h-casa-asalto-perro y clases-1": 55,
-          "h-casa-asalto-perro y clases-2": 54,
-          "h-casa-asalto-perro y clases-3": 50,
-          "b0": 38,
-          "b1": 38,
-          "b2": 38,
-          "b3": 38,
-          "b4": 38
-        },
-        "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 99, "hash": "11ea3014" },
+        "log": { "n": 101, "hash": "3255d221" },
         "left": [
           ["h1", 0, "t6"],
           ["h2", 0, "t12"],
           ["h-casa-asalto-perro y clases-1", 0, "t12"],
           ["h-casa-asalto-perro y clases-2", 0, "t12"],
           ["h-casa-asalto-perro y clases-3", 0, "t12"],
-          ["b0", 0, "t12"],
-          ["b1", 38, "fuera"],
-          ["b2", 38, "fuera"],
-          ["b3", 10, "fuera"],
+          ["b0", 68, "fuera"],
+          ["b1", 18, "fuera"],
+          ["b2", 19, "fuera"],
+          ["b3", 0, "t12"],
           ["b4", 0, "t12"]
         ],
         "orders": [
@@ -3914,12 +4085,13 @@
           { "kind": "target", "who": "h-casa-asalto-perro y clases-1", "to": "b4", "step": 207 },
           { "kind": "target", "who": "h-casa-asalto-perro y clases-2", "to": "b4", "step": 207 },
           { "kind": "target", "who": "h-casa-asalto-perro y clases-3", "to": "b4", "step": 207 },
-          { "kind": "target", "who": "h2", "to": "b4", "step": 224 },
-          { "kind": "target", "who": "h-casa-asalto-perro y clases-1", "to": "b4", "step": 224 },
-          { "kind": "target", "who": "h-casa-asalto-perro y clases-2", "to": "b4", "step": 224 },
-          { "kind": "target", "who": "h-casa-asalto-perro y clases-1", "to": "b3", "step": 241 },
-          { "kind": "target", "who": "h-casa-asalto-perro y clases-2", "to": "b3", "step": 241 },
-          { "kind": "target", "who": "h-casa-asalto-perro y clases-2", "to": "b3", "step": 258 }
+          { "kind": "target", "who": "h2", "to": "b3", "step": 224 },
+          { "kind": "target", "who": "h-casa-asalto-perro y clases-1", "to": "b3", "step": 224 },
+          { "kind": "target", "who": "h-casa-asalto-perro y clases-2", "to": "b3", "step": 224 },
+          { "kind": "target", "who": "h2", "to": "b2", "step": 241 },
+          { "kind": "target", "who": "h-casa-asalto-perro y clases-1", "to": "b2", "step": 241 },
+          { "kind": "target", "who": "h-casa-asalto-perro y clases-2", "to": "b2", "step": 241 },
+          { "kind": "target", "who": "h-casa-asalto-perro y clases-1", "to": "b2", "step": 258 }
         ]
       }
     },
@@ -3930,7 +4102,13 @@
       "player": { "crit": true },
       "expect": {
         "result": {
-          "fell": ["h1", "h-casa-asalto-perro y clases-3", "h2"],
+          "fell": [
+            "h1",
+            "h-casa-asalto-perro y clases-3",
+            "h2",
+            "h-casa-asalto-perro y clases-1",
+            "h-casa-asalto-perro y clases-2"
+          ],
           "fought": [
             "h1",
             "h2",
@@ -3938,12 +4116,12 @@
             "h-casa-asalto-perro y clases-2",
             "h-casa-asalto-perro y clases-3"
           ],
-          "downed": 5,
-          "escaped": 0,
-          "stolen": 0,
+          "downed": 4,
+          "escaped": 1,
+          "stolen": 70,
           "recovered": 0
         },
-        "end": 29.2,
+        "end": 46.9,
         "start": {
           "h1": "t4",
           "h2": "t4",
@@ -3962,21 +4140,21 @@
           "h-casa-asalto-perro y clases-1": 55,
           "h-casa-asalto-perro y clases-2": 54,
           "h-casa-asalto-perro y clases-3": 50,
-          "b0": 38,
+          "b0": 68,
           "b1": 38,
           "b2": 38,
           "b3": 38,
           "b4": 38
         },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 98, "hash": "c95bf681" },
+        "log": { "n": 108, "hash": "fdf43149" },
         "left": [
           ["h1", 0, "t6"],
           ["h2", 0, "t12"],
-          ["h-casa-asalto-perro y clases-1", 30, "t12"],
-          ["h-casa-asalto-perro y clases-2", 21, "t12"],
+          ["h-casa-asalto-perro y clases-1", 0, "t12"],
+          ["h-casa-asalto-perro y clases-2", 0, "t12"],
           ["h-casa-asalto-perro y clases-3", 0, "t12"],
-          ["b0", 0, "t12"],
+          ["b0", 43, "fuera"],
           ["b1", 0, "t12"],
           ["b2", 0, "t12"],
           ["b3", 0, "t12"],
@@ -3984,11 +4162,8 @@
         ],
         "orders": [
           { "kind": "crit", "who": "h1", "step": 112 },
-          { "kind": "crit", "who": "h-casa-asalto-perro y clases-3", "step": 216 },
-          { "kind": "crit", "who": "h2", "step": 218 },
-          { "kind": "crit", "who": "h-casa-asalto-perro y clases-1", "step": 242 },
-          { "kind": "crit", "who": "h-casa-asalto-perro y clases-1", "step": 256 },
-          { "kind": "crit", "who": "h-casa-asalto-perro y clases-1", "step": 286 }
+          { "kind": "crit", "who": "h-casa-asalto-perro y clases-2", "step": 246 },
+          { "kind": "crit", "who": "h-casa-asalto-perro y clases-2", "step": 294 }
         ]
       }
     },
@@ -3998,7 +4173,10 @@
       "rng": 927524808,
       "expect": {
         "result": {
-          "fell": ["h-casa-asalto-guardia con clerigo y mago-1"],
+          "fell": [
+            "h-casa-asalto-guardia con clerigo y mago-1",
+            "h-casa-asalto-guardia con clerigo y mago-2"
+          ],
           "fought": [
             "h1",
             "h2",
@@ -4010,7 +4188,7 @@
           "stolen": 0,
           "recovered": 0
         },
-        "end": 15.5,
+        "end": 17.9,
         "start": {
           "h1": "t4",
           "h2": "t4",
@@ -4026,18 +4204,18 @@
           "h2": 56,
           "h-casa-asalto-guardia con clerigo y mago-1": 92,
           "h-casa-asalto-guardia con clerigo y mago-2": 66,
-          "b0": 38,
+          "b0": 68,
           "b1": 38,
           "b2": 38,
           "b3": 38
         },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 52, "hash": "546a7f03" },
+        "log": { "n": 65, "hash": "4444b11e" },
         "left": [
-          ["h1", 49, "patio"],
-          ["h2", 56, "patio"],
+          ["h1", 56, "patio"],
+          ["h2", 46, "patio"],
           ["h-casa-asalto-guardia con clerigo y mago-1", 0, "patio"],
-          ["h-casa-asalto-guardia con clerigo y mago-2", 45, "patio"],
+          ["h-casa-asalto-guardia con clerigo y mago-2", 0, "patio"],
           ["b0", 0, "patio"],
           ["b1", 0, "patio"],
           ["b2", 0, "patio"],
@@ -4050,17 +4228,17 @@
       "name": "guardia con clerigo y mago (todo)",
       "setup": "guardia con clerigo y mago",
       "rng": 927524808,
-      "player": { "move": true, "target": true, "skill": true, "crit": true },
+      "player": { "move": true, "target": true, "skill": true, "crit": true, "cover": true },
       "expect": {
         "result": {
           "fell": ["h-casa-asalto-guardia con clerigo y mago-1", "h1", "h2"],
           "fought": ["h1", "h2", "h-casa-asalto-guardia con clerigo y mago-1"],
-          "downed": 2,
-          "escaped": 2,
-          "stolen": 124,
+          "downed": 3,
+          "escaped": 1,
+          "stolen": 62,
           "recovered": 0
         },
-        "end": 52.4,
+        "end": 56.6,
         "start": {
           "h1": "t4",
           "h2": "t4",
@@ -4076,20 +4254,20 @@
           "h2": 56,
           "h-casa-asalto-guardia con clerigo y mago-1": 92,
           "h-casa-asalto-guardia con clerigo y mago-2": 66,
-          "b0": 38,
+          "b0": 68,
           "b1": 38,
           "b2": 38,
           "b3": 38
         },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 83, "hash": "9c44a954" },
+        "log": { "n": 99, "hash": "2ce9cb9f" },
         "left": [
           ["h1", 0, "patio"],
           ["h2", 0, "patio"],
           ["h-casa-asalto-guardia con clerigo y mago-1", 0, "patio"],
           ["h-casa-asalto-guardia con clerigo y mago-2", 66, "t12"],
-          ["b0", 32, "fuera"],
-          ["b1", 17, "fuera"],
+          ["b0", 28, "fuera"],
+          ["b1", 0, "patio"],
           ["b2", 0, "patio"],
           ["b3", 0, "patio"]
         ],
@@ -4122,15 +4300,19 @@
             "to": "b2",
             "step": 105
           },
+          { "kind": "cover", "who": "h1", "step": 106 },
           { "kind": "target", "who": "h1", "to": "b2", "step": 122 },
           { "kind": "target", "who": "h2", "to": "b2", "step": 122 },
-          { "kind": "target", "who": "h1", "to": "b2", "step": 139 },
-          { "kind": "target", "who": "h2", "to": "b2", "step": 139 },
+          { "kind": "crit", "who": "h1", "step": 126 },
+          { "kind": "crit", "who": "h1", "step": 138 },
+          { "kind": "target", "who": "h1", "to": "b1", "step": 139 },
+          { "kind": "target", "who": "h2", "to": "b1", "step": 139 },
+          { "kind": "crit", "who": "h1", "step": 152 },
+          { "kind": "skill", "who": "h1", "step": 153 },
           { "kind": "skill", "who": "h2", "step": 155 },
+          { "kind": "target", "who": "h1", "to": "b1", "step": 156 },
           { "kind": "target", "who": "h2", "to": "b1", "step": 156 },
-          { "kind": "crit", "who": "h2", "step": 166 },
-          { "kind": "target", "who": "h2", "to": "b1", "step": 173 },
-          { "kind": "target", "who": "h2", "to": "b1", "step": 190 },
+          { "kind": "cover", "who": "h2", "step": 197 },
           {
             "kind": "move",
             "who": "h-casa-asalto-guardia con clerigo y mago-2",
@@ -4147,6 +4329,61 @@
       }
     },
     {
+      "name": "guardia con clerigo y mago (cubrirse)",
+      "setup": "guardia con clerigo y mago",
+      "rng": 927524808,
+      "player": { "cover": true },
+      "expect": {
+        "result": {
+          "fell": ["h-casa-asalto-guardia con clerigo y mago-2"],
+          "fought": [
+            "h1",
+            "h2",
+            "h-casa-asalto-guardia con clerigo y mago-1",
+            "h-casa-asalto-guardia con clerigo y mago-2"
+          ],
+          "downed": 4,
+          "escaped": 0,
+          "stolen": 0,
+          "recovered": 0
+        },
+        "end": 15.3,
+        "start": {
+          "h1": "t4",
+          "h2": "t4",
+          "h-casa-asalto-guardia con clerigo y mago-1": "t6",
+          "h-casa-asalto-guardia con clerigo y mago-2": "t6",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera"
+        },
+        "hp": {
+          "h1": 81,
+          "h2": 56,
+          "h-casa-asalto-guardia con clerigo y mago-1": 92,
+          "h-casa-asalto-guardia con clerigo y mago-2": 66,
+          "b0": 68,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "log": { "n": 64, "hash": "91edb60a" },
+        "left": [
+          ["h1", 79, "patio"],
+          ["h2", 54, "patio"],
+          ["h-casa-asalto-guardia con clerigo y mago-1", 35, "patio"],
+          ["h-casa-asalto-guardia con clerigo y mago-2", 0, "patio"],
+          ["b0", 0, "patio"],
+          ["b1", 0, "patio"],
+          ["b2", 0, "patio"],
+          ["b3", 0, "patio"]
+        ],
+        "orders": [{ "kind": "cover", "who": "h1", "step": 106 }]
+      }
+    },
+    {
       "name": "guardia con clerigo y mago (mover)",
       "setup": "guardia con clerigo y mago",
       "rng": 927524808,
@@ -4155,9 +4392,9 @@
         "result": {
           "fell": ["h-casa-asalto-guardia con clerigo y mago-1", "h1", "h2"],
           "fought": ["h1", "h2", "h-casa-asalto-guardia con clerigo y mago-1"],
-          "downed": 2,
-          "escaped": 2,
-          "stolen": 124,
+          "downed": 3,
+          "escaped": 1,
+          "stolen": 62,
           "recovered": 0
         },
         "end": 53.8,
@@ -4176,22 +4413,22 @@
           "h2": 56,
           "h-casa-asalto-guardia con clerigo y mago-1": 92,
           "h-casa-asalto-guardia con clerigo y mago-2": 66,
-          "b0": 38,
+          "b0": 68,
           "b1": 38,
           "b2": 38,
           "b3": 38
         },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 86, "hash": "5dcbb98" },
+        "log": { "n": 97, "hash": "ebc4ea34" },
         "left": [
           ["h1", 0, "patio"],
           ["h2", 0, "patio"],
           ["h-casa-asalto-guardia con clerigo y mago-1", 0, "patio"],
           ["h-casa-asalto-guardia con clerigo y mago-2", 66, "t12"],
-          ["b0", 0, "patio"],
+          ["b0", 40, "fuera"],
           ["b1", 0, "patio"],
-          ["b2", 2, "fuera"],
-          ["b3", 38, "fuera"]
+          ["b2", 0, "patio"],
+          ["b3", 0, "patio"]
         ],
         "orders": [
           {
@@ -4222,7 +4459,10 @@
       "player": { "target": true, "skill": true },
       "expect": {
         "result": {
-          "fell": ["h-casa-asalto-guardia con clerigo y mago-1"],
+          "fell": [
+            "h-casa-asalto-guardia con clerigo y mago-1",
+            "h-casa-asalto-guardia con clerigo y mago-2"
+          ],
           "fought": [
             "h1",
             "h2",
@@ -4234,7 +4474,7 @@
           "stolen": 0,
           "recovered": 0
         },
-        "end": 15,
+        "end": 20.2,
         "start": {
           "h1": "t4",
           "h2": "t4",
@@ -4250,18 +4490,18 @@
           "h2": 56,
           "h-casa-asalto-guardia con clerigo y mago-1": 92,
           "h-casa-asalto-guardia con clerigo y mago-2": 66,
-          "b0": 38,
+          "b0": 68,
           "b1": 38,
           "b2": 38,
           "b3": 38
         },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 51, "hash": "c1999a2a" },
+        "log": { "n": 74, "hash": "f8f3a049" },
         "left": [
-          ["h1", 72, "patio"],
-          ["h2", 56, "patio"],
+          ["h1", 58, "patio"],
+          ["h2", 46, "patio"],
           ["h-casa-asalto-guardia con clerigo y mago-1", 0, "patio"],
-          ["h-casa-asalto-guardia con clerigo y mago-2", 16, "patio"],
+          ["h-casa-asalto-guardia con clerigo y mago-2", 0, "patio"],
           ["b0", 0, "patio"],
           ["b1", 0, "patio"],
           ["b2", 0, "patio"],
@@ -4312,16 +4552,12 @@
           { "kind": "target", "who": "h2", "to": "b2", "step": 122 },
           {
             "kind": "target",
-            "who": "h-casa-asalto-guardia con clerigo y mago-1",
-            "to": "b2",
-            "step": 122
-          },
-          {
-            "kind": "target",
             "who": "h-casa-asalto-guardia con clerigo y mago-2",
             "to": "b2",
             "step": 122
-          }
+          },
+          { "kind": "skill", "who": "h1", "step": 153 },
+          { "kind": "skill", "who": "h2", "step": 155 }
         ]
       }
     },
@@ -4332,7 +4568,10 @@
       "player": { "crit": true },
       "expect": {
         "result": {
-          "fell": ["h-casa-asalto-guardia con clerigo y mago-1"],
+          "fell": [
+            "h-casa-asalto-guardia con clerigo y mago-1",
+            "h-casa-asalto-guardia con clerigo y mago-2"
+          ],
           "fought": [
             "h1",
             "h2",
@@ -4344,7 +4583,7 @@
           "stolen": 0,
           "recovered": 0
         },
-        "end": 15.5,
+        "end": 17.6,
         "start": {
           "h1": "t4",
           "h2": "t4",
@@ -4360,24 +4599,29 @@
           "h2": 56,
           "h-casa-asalto-guardia con clerigo y mago-1": 92,
           "h-casa-asalto-guardia con clerigo y mago-2": 66,
-          "b0": 38,
+          "b0": 68,
           "b1": 38,
           "b2": 38,
           "b3": 38
         },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 52, "hash": "546a7f03" },
+        "log": { "n": 65, "hash": "55992708" },
         "left": [
-          ["h1", 49, "patio"],
-          ["h2", 56, "patio"],
+          ["h1", 58, "patio"],
+          ["h2", 46, "patio"],
           ["h-casa-asalto-guardia con clerigo y mago-1", 0, "patio"],
-          ["h-casa-asalto-guardia con clerigo y mago-2", 45, "patio"],
+          ["h-casa-asalto-guardia con clerigo y mago-2", 0, "patio"],
           ["b0", 0, "patio"],
           ["b1", 0, "patio"],
           ["b2", 0, "patio"],
           ["b3", 0, "patio"]
         ],
-        "orders": [{ "kind": "crit", "who": "h2", "step": 150 }]
+        "orders": [
+          { "kind": "crit", "who": "h2", "step": 106 },
+          { "kind": "crit", "who": "h-casa-asalto-guardia con clerigo y mago-2", "step": 130 },
+          { "kind": "crit", "who": "h1", "step": 164 },
+          { "kind": "crit", "who": "h2", "step": 166 }
+        ]
       }
     },
     {
@@ -4386,7 +4630,7 @@
       "rng": 1899135800,
       "expect": {
         "result": {
-          "fell": ["h-casa-asalto-banda grande y trabajador-2"],
+          "fell": ["h-casa-asalto-banda grande y trabajador-2", "h1"],
           "fought": [
             "h1",
             "h2",
@@ -4398,7 +4642,7 @@
           "stolen": 0,
           "recovered": 0
         },
-        "end": 18.2,
+        "end": 19.7,
         "start": {
           "h1": "t4",
           "h2": "t6",
@@ -4418,7 +4662,7 @@
           "h-casa-asalto-banda grande y trabajador-1": 49,
           "h-casa-asalto-banda grande y trabajador-2": 103,
           "w-ref": 20,
-          "b0": 38,
+          "b0": 68,
           "b1": 38,
           "b2": 38,
           "b3": 38,
@@ -4426,11 +4670,11 @@
           "b5": 38
         },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 80, "hash": "6d05abc0" },
+        "log": { "n": 93, "hash": "b90932dd" },
         "left": [
-          ["h1", 10, "patio"],
-          ["h2", 18, "patio"],
-          ["h-casa-asalto-banda grande y trabajador-1", 49, "patio"],
+          ["h1", 0, "patio"],
+          ["h2", 37, "patio"],
+          ["h-casa-asalto-banda grande y trabajador-1", 19, "patio"],
           ["h-casa-asalto-banda grande y trabajador-2", 0, "patio"],
           ["w-ref", 20, "t10"],
           ["b0", 0, "patio"],
@@ -4447,7 +4691,7 @@
       "name": "banda grande y trabajador (todo)",
       "setup": "banda grande y trabajador",
       "rng": 1899135800,
-      "player": { "move": true, "target": true, "skill": true, "crit": true },
+      "player": { "move": true, "target": true, "skill": true, "crit": true, "cover": true },
       "expect": {
         "result": {
           "fell": [
@@ -4469,7 +4713,7 @@
           "stolen": 380,
           "recovered": 0
         },
-        "end": 48.1,
+        "end": 47,
         "start": {
           "h1": "t4",
           "h2": "t6",
@@ -4489,7 +4733,7 @@
           "h-casa-asalto-banda grande y trabajador-1": 49,
           "h-casa-asalto-banda grande y trabajador-2": 103,
           "w-ref": 20,
-          "b0": 38,
+          "b0": 68,
           "b1": 38,
           "b2": 38,
           "b3": 38,
@@ -4497,18 +4741,18 @@
           "b5": 38
         },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 86, "hash": "37e116ea" },
+        "log": { "n": 88, "hash": "a4aed689" },
         "left": [
           ["h1", 0, "patio"],
           ["h2", 0, "patio"],
           ["h-casa-asalto-banda grande y trabajador-1", 0, "patio"],
           ["h-casa-asalto-banda grande y trabajador-2", 0, "t10"],
           ["w-ref", 0, "t10"],
-          ["b0", 21, "fuera"],
-          ["b1", 38, "fuera"],
+          ["b0", 68, "fuera"],
+          ["b1", 19, "fuera"],
           ["b2", 38, "fuera"],
           ["b3", 38, "fuera"],
-          ["b4", 10, "fuera"],
+          ["b4", 24, "fuera"],
           ["b5", 0, "patio"]
         ],
         "orders": [
@@ -4521,19 +4765,83 @@
           { "kind": "target", "who": "h2", "to": "b5", "step": 71 },
           { "kind": "target", "who": "h1", "to": "b5", "step": 88 },
           { "kind": "target", "who": "h2", "to": "b5", "step": 88 },
+          { "kind": "crit", "who": "h1", "step": 102 },
           { "kind": "target", "who": "h1", "to": "b5", "step": 105 },
+          { "kind": "cover", "who": "h1", "step": 106 },
           {
             "kind": "target",
             "who": "h-casa-asalto-banda grande y trabajador-2",
             "to": "b4",
             "step": 241
           },
-          {
-            "kind": "target",
-            "who": "h-casa-asalto-banda grande y trabajador-2",
-            "to": "b4",
-            "step": 258
-          }
+          { "kind": "cover", "who": "h-casa-asalto-banda grande y trabajador-2", "step": 242 }
+        ]
+      }
+    },
+    {
+      "name": "banda grande y trabajador (cubrirse)",
+      "setup": "banda grande y trabajador",
+      "rng": 1899135800,
+      "player": { "cover": true },
+      "expect": {
+        "result": {
+          "fell": ["h-casa-asalto-banda grande y trabajador-2", "h1"],
+          "fought": [
+            "h1",
+            "h2",
+            "h-casa-asalto-banda grande y trabajador-1",
+            "h-casa-asalto-banda grande y trabajador-2"
+          ],
+          "downed": 6,
+          "escaped": 0,
+          "stolen": 0,
+          "recovered": 0
+        },
+        "end": 19.7,
+        "start": {
+          "h1": "t4",
+          "h2": "t6",
+          "h-casa-asalto-banda grande y trabajador-1": "t4",
+          "h-casa-asalto-banda grande y trabajador-2": "t4",
+          "w-ref": "t10",
+          "b0": "fuera",
+          "b1": "fuera",
+          "b2": "fuera",
+          "b3": "fuera",
+          "b4": "fuera",
+          "b5": "fuera"
+        },
+        "hp": {
+          "h1": 71,
+          "h2": 92,
+          "h-casa-asalto-banda grande y trabajador-1": 49,
+          "h-casa-asalto-banda grande y trabajador-2": 103,
+          "w-ref": 20,
+          "b0": 68,
+          "b1": 38,
+          "b2": 38,
+          "b3": 38,
+          "b4": 38,
+          "b5": 38
+        },
+        "route": ["t6", "t10", "t11", "t12"],
+        "log": { "n": 95, "hash": "52f7d37a" },
+        "left": [
+          ["h1", 0, "patio"],
+          ["h2", 37, "patio"],
+          ["h-casa-asalto-banda grande y trabajador-1", 19, "patio"],
+          ["h-casa-asalto-banda grande y trabajador-2", 0, "patio"],
+          ["w-ref", 20, "t10"],
+          ["b0", 0, "patio"],
+          ["b1", 0, "patio"],
+          ["b2", 0, "patio"],
+          ["b3", 0, "patio"],
+          ["b4", 0, "patio"],
+          ["b5", 0, "patio"]
+        ],
+        "orders": [
+          { "kind": "cover", "who": "h1", "step": 106 },
+          { "kind": "cover", "who": "h2", "step": 197 }
         ]
       }
     },
@@ -4583,7 +4891,7 @@
           "h-casa-asalto-banda grande y trabajador-1": 49,
           "h-casa-asalto-banda grande y trabajador-2": 103,
           "w-ref": 20,
-          "b0": 38,
+          "b0": 68,
           "b1": 38,
           "b2": 38,
           "b3": 38,
@@ -4591,16 +4899,16 @@
           "b5": 38
         },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 84, "hash": "137bb559" },
+        "log": { "n": 88, "hash": "ea72f9ae" },
         "left": [
           ["h1", 0, "patio"],
           ["h2", 0, "patio"],
           ["h-casa-asalto-banda grande y trabajador-1", 0, "patio"],
           ["h-casa-asalto-banda grande y trabajador-2", 0, "t10"],
           ["w-ref", 0, "t10"],
-          ["b0", 0, "patio"],
-          ["b1", 8, "fuera"],
-          ["b2", 38, "fuera"],
+          ["b0", 68, "fuera"],
+          ["b1", 0, "patio"],
+          ["b2", 5, "fuera"],
           ["b3", 38, "fuera"],
           ["b4", 38, "fuera"],
           ["b5", 38, "fuera"]
@@ -4622,19 +4930,26 @@
       "player": { "target": true, "skill": true },
       "expect": {
         "result": {
-          "fell": ["h-casa-asalto-banda grande y trabajador-2", "h1"],
+          "fell": [
+            "h-casa-asalto-banda grande y trabajador-2",
+            "h1",
+            "h-casa-asalto-banda grande y trabajador-1",
+            "h2",
+            "w-ref"
+          ],
           "fought": [
             "h1",
             "h2",
             "h-casa-asalto-banda grande y trabajador-1",
-            "h-casa-asalto-banda grande y trabajador-2"
+            "h-casa-asalto-banda grande y trabajador-2",
+            "w-ref"
           ],
-          "downed": 6,
-          "escaped": 0,
-          "stolen": 0,
+          "downed": 5,
+          "escaped": 1,
+          "stolen": 76,
           "recovered": 0
         },
-        "end": 19.7,
+        "end": 59.3,
         "start": {
           "h1": "t4",
           "h2": "t6",
@@ -4654,7 +4969,7 @@
           "h-casa-asalto-banda grande y trabajador-1": 49,
           "h-casa-asalto-banda grande y trabajador-2": 103,
           "w-ref": 20,
-          "b0": 38,
+          "b0": 68,
           "b1": 38,
           "b2": 38,
           "b3": 38,
@@ -4662,14 +4977,14 @@
           "b5": 38
         },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 80, "hash": "1c944223" },
+        "log": { "n": 118, "hash": "a2626dbb" },
         "left": [
           ["h1", 0, "patio"],
-          ["h2", 49, "patio"],
-          ["h-casa-asalto-banda grande y trabajador-1", 5, "patio"],
+          ["h2", 0, "patio"],
+          ["h-casa-asalto-banda grande y trabajador-1", 0, "patio"],
           ["h-casa-asalto-banda grande y trabajador-2", 0, "patio"],
-          ["w-ref", 20, "t10"],
-          ["b0", 0, "patio"],
+          ["w-ref", 0, "t10"],
+          ["b0", 4, "fuera"],
           ["b1", 0, "patio"],
           ["b2", 0, "patio"],
           ["b3", 0, "patio"],
@@ -4734,19 +5049,26 @@
       "player": { "crit": true },
       "expect": {
         "result": {
-          "fell": ["h-casa-asalto-banda grande y trabajador-2", "h1"],
+          "fell": [
+            "h-casa-asalto-banda grande y trabajador-2",
+            "h-casa-asalto-banda grande y trabajador-1",
+            "h1",
+            "h2",
+            "w-ref"
+          ],
           "fought": [
             "h1",
             "h2",
             "h-casa-asalto-banda grande y trabajador-1",
-            "h-casa-asalto-banda grande y trabajador-2"
+            "h-casa-asalto-banda grande y trabajador-2",
+            "w-ref"
           ],
-          "downed": 6,
-          "escaped": 0,
-          "stolen": 0,
+          "downed": 5,
+          "escaped": 1,
+          "stolen": 76,
           "recovered": 0
         },
-        "end": 18.2,
+        "end": 57.9,
         "start": {
           "h1": "t4",
           "h2": "t6",
@@ -4766,7 +5088,7 @@
           "h-casa-asalto-banda grande y trabajador-1": 49,
           "h-casa-asalto-banda grande y trabajador-2": 103,
           "w-ref": 20,
-          "b0": 38,
+          "b0": 68,
           "b1": 38,
           "b2": 38,
           "b3": 38,
@@ -4774,14 +5096,14 @@
           "b5": 38
         },
         "route": ["t6", "t10", "t11", "t12"],
-        "steps": { "n": 77, "hash": "fdb7b540" },
+        "log": { "n": 114, "hash": "61739576" },
         "left": [
           ["h1", 0, "patio"],
-          ["h2", 50, "patio"],
-          ["h-casa-asalto-banda grande y trabajador-1", 7, "patio"],
+          ["h2", 0, "patio"],
+          ["h-casa-asalto-banda grande y trabajador-1", 0, "patio"],
           ["h-casa-asalto-banda grande y trabajador-2", 0, "patio"],
-          ["w-ref", 20, "t10"],
-          ["b0", 0, "patio"],
+          ["w-ref", 0, "t10"],
+          ["b0", 33, "fuera"],
           ["b1", 0, "patio"],
           ["b2", 0, "patio"],
           ["b3", 0, "patio"],
@@ -4790,8 +5112,8 @@
         ],
         "orders": [
           { "kind": "crit", "who": "h-casa-asalto-banda grande y trabajador-2", "step": 86 },
-          { "kind": "crit", "who": "h-casa-asalto-banda grande y trabajador-1", "step": 106 },
-          { "kind": "crit", "who": "h2", "step": 124 }
+          { "kind": "crit", "who": "h-casa-asalto-banda grande y trabajador-1", "step": 118 },
+          { "kind": "crit", "who": "h2", "step": 228 }
         ]
       }
     }

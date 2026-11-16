@@ -6870,14 +6870,23 @@ p.notebook-close {
     0 0 0 3px var(--ink),
     0 0 0 6px var(--lemon);
 }
-.bossfight-cover {
+/*
+ * «¡Cubríos!» en la barra de las peleas (el jefe y el cabecilla del asalto): encima de las
+ * tarjetas, sin empujar nada (tapa el borde de la escena o la pista mientras dura el aviso).
+ */
+.fc {
+  position: relative;
+}
+.fc-cover {
   position: absolute;
+  z-index: 2;
   left: 50%;
-  top: 12%;
-  transform: translateX(-50%);
-  min-height: 48px;
-  padding: 8px 18px;
+  bottom: calc(100% + 4px);
+  min-height: 44px;
+  padding: 6px 18px;
   font-size: var(--t-l);
+  white-space: nowrap;
+  transform: translateX(-50%);
   animation: tut-btn 0.6s steps(3) infinite;
 }
 .bossfight-crew {

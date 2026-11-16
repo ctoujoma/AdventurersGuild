@@ -6,7 +6,8 @@
  * perderse por el camino.
  *
  * Cada uno con su vida y sus golpes, con el motor común de las peleas (`core/fight.ts`):
- * habilidad por clase y críticos; aquí, cada uno tiene delante a los que están en su sala. Se decide aquí, paso a paso y con una semilla; con el juego
+ * habilidad por clase y críticos; aquí, cada uno tiene delante a los que están en su sala. El
+ * cabecilla (el primero de la banda) avisa de su golpe fuerte a los de su sala, como el jefe. Se decide aquí, paso a paso y con una semilla; con el juego
  * abierto se juega en directo (`Assault`, con órdenes del jugador) y, si no, solo. La escena
  * enseña la lista de pasos que sale (RaidPlan).
  */
@@ -14,9 +15,14 @@ import {
   BANDIT_CARRY,
   BANDIT_EVERY,
   BANDIT_HP,
+  BANDIT_MAX,
+  BANDIT_PER,
   BANDIT_POWER,
+  BANDIT_SPLIT,
   GUARD_BONUS,
   GUARD_HP,
+  LEADER_HP,
+  LEADER_SPECIAL,
   LOAD_TIME,
   MAX_GUARDS,
   PALISADE_FIGHT,
@@ -37,6 +43,7 @@ import {
 import {
   ABILITIES,
   Fight,
+  WARN,
   alive,
   heroUnit,
   type AbilityId,
@@ -200,6 +207,8 @@ export interface Bandit {
   /** Daño de cada golpe y vida. */
   power: number;
   hp: number;
+  /** El cabecilla: avisa de su golpe fuerte a los de su sala. */
+  leader?: boolean;
 }
 
 export interface AssaultSetup {
@@ -222,7 +231,8 @@ export interface AssaultSetup {
 export type AssaultResult = AssaultOutcome;
 
 /** Cuántos bandidos trae una banda de esa fuerza. */
-export const banditCount = (strength: number) => Math.max(2, Math.min(6, Math.round(strength / 6)));
+export const banditCount = (strength: number) =>
+  Math.max(2, Math.min(BANDIT_MAX, Math.round(strength / BANDIT_PER)));
 
 /** Fuerza de una banda que viniera esta noche (la anunciada, si hay chivatazo). */
 export function likelyStrength(s: GameState, notoriety: number): number {
@@ -295,8 +305,9 @@ export function assaultSetup(s: GameState, strength: number, rng: Rng): AssaultS
   const n = banditCount(strength);
   const bandits = Array.from({ length: n }, (_, i) => ({
     id: `b${i}`,
-    power: (strength / n) * BANDIT_POWER,
-    hp: BANDIT_HP,
+    power: (strength / Math.min(n, BANDIT_SPLIT)) * BANDIT_POWER,
+    hp: Math.round(BANDIT_HP * (i ? 1 : LEADER_HP)),
+    ...(i ? {} : { leader: true }),
   }));
   return {
     graph,
@@ -337,8 +348,8 @@ export interface Fighter extends FightUnit {
   critTaken: boolean;
 }
 
-/** Órdenes del jugador durante el asalto (las comunes menos cubrirse: no hay golpe fuerte). */
-export type RaidOrder = Exclude<FightOrder, { kind: 'cover' }>;
+/** Órdenes del jugador durante el asalto (todas las comunes: cubrirse, del golpe del cabecilla). */
+export type RaidOrder = FightOrder;
 export type RaidOrderInput = OrderInput<RaidOrder>;
 
 /** Los del asalto al empezar: los de casa donde estén y los bandidos fuera. */
@@ -394,6 +405,7 @@ function fighters(setup: AssaultSetup): Fighter[] {
       guard: false,
       worker: false,
       ranged: false,
+      ...(b.leader ? { special: LEADER_SPECIAL } : {}),
     })),
   ];
 }
@@ -593,6 +605,8 @@ export class Assault extends Fight<Fighter, RaidOrder, AssaultResult> {
       u.to = to;
       u.until = t + dur;
       u.target = undefined;
+      // El cabecilla que se va sin descargar su golpe avisa otra vez en la próxima pelea.
+      if (u.special !== undefined && u.special <= WARN) u.special = WARN + 1;
     }
     this.note({ kind: 'move', ids: us.map((u) => u.id), to, dur });
   }
