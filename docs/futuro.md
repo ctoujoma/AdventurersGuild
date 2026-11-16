@@ -190,6 +190,15 @@ Cuidado con la noche acelerada: con «Pasar la noche» todo tiene que poder reso
 quién esté de guardia), así que el minijuego solo puede mejorar el resultado, nunca ser obligatorio.
 Ver N1 y N2 en [`decisiones.md`](decisiones.md).
 
+Notas del usuario al ver las vistas previas de la fase 7 (16 de noviembre):
+
+- **Llevar el trago a la pesadilla arrastrándolo** (la forma «b», hoy solo boceto): sale una jarra
+  en la bodega y se arrastra hasta quien tiene la pesadilla, resaltado mientras se arrastra. Cuidar
+  el dibujo de la jarra y darle contorno o brillo. Si la noche va acelerada, el suceso la frena y
+  se arrastra a ×1. De momento se queda la forma «a» (tocar).
+- **El gato, más suelto:** que se mueva por más salas (hoy solo caza en despensa o bodega de la
+  planta del salón), sin dejar obsoleto el incidente de las ratas.
+
 ## Revivir a un caído (idea del usuario, 12 de noviembre)
 
 Alguna forma de traer de vuelta a un muerto. El usuario insiste (12 de noviembre, al bajar las

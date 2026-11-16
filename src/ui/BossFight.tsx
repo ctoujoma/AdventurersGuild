@@ -392,7 +392,7 @@ export function BossFight({ fight, onClose, onResult }: Props) {
             </button>
           </>
         ) : (
-          <button class="btn btn-wood" onClick={() => skipRef.current()}>
+          <button class="btn btn-wood bossfight-skip" onClick={() => skipRef.current()}>
             {playing ? 'Que se las apañen' : 'Saltar'}
           </button>
         )}
