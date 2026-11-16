@@ -1313,6 +1313,14 @@ export function tick(state: GameState, to: number): GameState {
 }
 
 /** Pasa la noche y amanece. `away`: con el juego cerrado (menos asaltos; ver `away.ts`). */
+/** «Juana lleva muchas noches de guardia y se duerme: relévala» (o varios). */
+export function tiredLine(hs: readonly Pick<Hero, 'name' | 'sex'>[]): string {
+  const f = hs.every((h) => h.sex === 'f');
+  return hs.length > 1
+    ? `${listNames(hs.map((h) => h.name))} llevan muchas noches de guardia y se duermen: relév${f ? 'alas' : 'alos'}.`
+    : `${hs[0]!.name} lleva muchas noches de guardia y se duerme: relév${f ? 'ala' : 'alo'}.`;
+}
+
 export function endDay(state: GameState, away = false): GameState {
   if (state.over) return state;
   const s = structuredClone(state);
@@ -1538,7 +1546,7 @@ export function endDay(state: GameState, away = false): GameState {
     s.building.rooms.find((r) => r.id === plan.get(h.id))?.type === 'veteranos';
   // Con el juego cerrado (o en el tutorial) no se aburre nadie ni se agota de guardia.
   const strain = !away && !tutorialOn(s);
-  const tired: string[] = [];
+  const tired: Hero[] = [];
   const bored: string[] = [];
   for (const h of s.heroes) {
     if (h.status === 'mision') h.idle = 0;
@@ -1578,7 +1586,7 @@ export function endDay(state: GameState, away = false): GameState {
       // De guardia no se duerme: no descansa y va perdiendo moral (hay que ir rotando).
       const was = h.morale;
       h.morale = Math.max(Math.min(was, GUARD_FLOOR), was - GUARD_DROP);
-      if (was >= MORALE_LOW && h.morale < MORALE_LOW) tired.push(h.name);
+      if (was >= MORALE_LOW && h.morale < MORALE_LOW) tired.push(h);
     } else if (strain && (h.idle ?? 0) > BORED_AFTER) {
       // Muchos días sin salir de aventura: se aburre.
       if (h.idle === BORED_AFTER + 1) bored.push(h.name);
@@ -1598,11 +1606,9 @@ export function endDay(state: GameState, away = false): GameState {
       });
     }
   }
-  if (tired.length)
-    events.push({
-      t: `${listNames(tired)} ${tired.length > 1 ? 'llevan' : 'lleva'} muchas noches de guardia sin dormir y ${tired.length > 1 ? 'están agotados' : 'está sin fuerzas'}: de guardia no se recupera moral. Haz el relevo para que ${tired.length > 1 ? 'descansen' : 'descanse'}.`,
-      k: 'warn',
-    });
+  // Agotado de guardia (la moral, por debajo de `MORALE_LOW`): de noche se duerme mucho más
+  // (`napShare`). Se dice una vez, al pasar el umbral; mientras siga, queda en la campanita.
+  if (tired.length) events.push({ t: tiredLine(tired), k: 'warn' });
   if (bored.length)
     events.push({
       t: `${listNames(bored)} se ${bored.length > 1 ? 'aburren' : 'aburre'}: más de una semana sin salir de aventura. Hasta que ${bored.length > 1 ? 'salgan' : 'salga'}, la moral irá bajando.`,

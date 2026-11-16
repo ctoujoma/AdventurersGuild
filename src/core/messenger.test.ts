@@ -74,7 +74,7 @@ describe('el mensajero tardío', () => {
       g.guard = true;
       MESSENGER_EVENT.start(s, new Rng(`m${day}`));
       const m = s.messenger!;
-      const awake = !nappers([g.id], m.at / DAY_SECONDS, s.day).length;
+      const awake = !nappers([g], m.at / DAY_SECONDS, s.day).length;
       expect(m.guard === g.id).toBe(awake);
       const next = endDay(s);
       expect(next.quests.some((x) => x.id === m.quest.id)).toBe(awake);

@@ -688,11 +688,24 @@ export const NIGHT_ODDS = 0.5;
 export const NIGHT_ODDS_ROUGH = 0.65;
 /**
  * Mini-cabezadas de los de guardia de noche: cada `NIGHT_NAP_CYCLE` segundos de reloj, cada uno
- * cabecea la parte `NIGHT_NAP_SHARE`; el segundo, desfasado `NIGHT_NAP_TURN` del primero (se
- * turnan, pero queda un rato en que cabecean los dos).
+ * cabecea una parte (`napShare`); el segundo, desfasado `NIGHT_NAP_TURN` del primero (se turnan,
+ * pero queda un rato en que cabecean los dos).
+ *
+ * La parte, según el guardia: `NIGHT_NAP_SHARE` con moral `NIGHT_NAP_MORALE` y nivel
+ * `NIGHT_NAP_LVL`; cada punto de moral por debajo suma `NIGHT_NAP_PER_MORALE` (y por encima
+ * resta) y cada nivel de más resta `NIGHT_NAP_PER_LVL` (hasta `NIGHT_NAP_LVL_TOP`). Entre
+ * `NIGHT_NAP_MIN` y `NIGHT_NAP_MAX`: de un 25 % (nivel 6 y moral 85) a un 70 % (agotado, con la
+ * moral por los suelos tras muchas noches seguidas: ver `GUARD_DROP`).
  */
 export const NIGHT_NAP_CYCLE = 24;
 export const NIGHT_NAP_SHARE = 0.45;
+export const NIGHT_NAP_MORALE = 60;
+export const NIGHT_NAP_LVL = 3;
+export const NIGHT_NAP_PER_MORALE = 0.005;
+export const NIGHT_NAP_PER_LVL = 0.025;
+export const NIGHT_NAP_LVL_TOP = 8;
+export const NIGHT_NAP_MIN = 0.2;
+export const NIGHT_NAP_MAX = 0.75;
 export const NIGHT_NAP_TURN = 0.35;
 /**
  * El ladrón nocturno: segundos de reloj que tarda en hacerse con el oro (lo que hay para mandar a

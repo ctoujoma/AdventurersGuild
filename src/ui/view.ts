@@ -179,6 +179,7 @@ export function sceneModel(s: GameState): SceneModel {
       marks: marksOf(h),
       guard: !!h.guard && !h.post,
       vault: (h.guard && h.post === 'tesoro') || undefined,
+      sentry: h.guard ? { lvl: h.lvl, morale: h.morale } : undefined,
       dorm: plan.get(h.id),
       // Mientras lo visten, está en la sastrería.
       work: dressingOf(s, h.id)?.room ?? h.job,

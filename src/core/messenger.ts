@@ -69,9 +69,9 @@ export function urgentQuest(s: GameState, rng: Rng): Quest {
 
 /** El de guardia de la puerta que está despierto al reloj `at`, si hay. */
 function awakeAtDoor(s: GameState, at: number): string | undefined {
-  const ids = guardsAt(s, 'puerta').map((h) => h.id);
-  const nap = nappers(ids, Math.min(1, at / DAY_SECONDS), s.day);
-  return ids.find((g) => !nap.includes(g));
+  const gs = guardsAt(s, 'puerta');
+  const nap = nappers(gs, Math.min(1, at / DAY_SECONDS), s.day);
+  return gs.find((g) => !nap.includes(g.id))?.id;
 }
 
 export const MESSENGER_EVENT: NightEvent = {

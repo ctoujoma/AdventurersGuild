@@ -19,6 +19,13 @@ import {
   GUARD_HOLD,
   GUARD_NAP,
   NIGHT_NAP_CYCLE,
+  NIGHT_NAP_LVL,
+  NIGHT_NAP_LVL_TOP,
+  NIGHT_NAP_MAX,
+  NIGHT_NAP_MIN,
+  NIGHT_NAP_MORALE,
+  NIGHT_NAP_PER_LVL,
+  NIGHT_NAP_PER_MORALE,
   NIGHT_NAP_SHARE,
   NIGHT_NAP_TURN,
   NIGHT_THIEF_RUN,
@@ -36,6 +43,7 @@ import type {
   Duel,
   DuelHit,
   GameState,
+  Hero,
   Incident,
   IncidentEnd,
 } from './model';
@@ -184,11 +192,9 @@ export function presentFor(s: GameState, inc: Pick<Incident, 'kind' | 'room'>): 
   return null;
 }
 
-/** Quien está de guardia y despierto ahora (no cabecea), si hay alguien. */
+/** Quien está de guardia en la puerta y despierto ahora (no cabecea), si hay alguien. */
 function awakeGuard(s: GameState, to: number): string | null {
-  const guards = guardsOf(s);
-  const nap = nappers(guards, Math.min(1, to / DAY_SECONDS), s.day);
-  return guards.find((g) => !nap.includes(g)) ?? null;
+  return awakeAt(s, guardsOf(s), to).awake[0] ?? null;
 }
 
 /**
@@ -318,21 +324,40 @@ function idPhase(id: string): number {
   return ((h >>> 0) % 1000) / 1000;
 }
 
+/** Lo que cuenta de un guardia para sus cabezadas de noche: quién es, su nivel y su moral. */
+export type Sentry = Pick<Hero, 'id' | 'lvl' | 'morale'>;
+
 /**
- * Los de guardia que cabecean ahora (parte del día `part`). De día, el de la siesta (`napping`).
- * De noche, mini-cabezadas en ciclo: cada uno la parte `NIGHT_NAP_SHARE` de cada
- * `NIGHT_NAP_CYCLE` segundos; con dos, se turnan (el segundo, desfasado), pero hay un rato en que
- * cabecean los dos. Pura con el reloj, el día y los ids: la escena enseña lo mismo.
+ * La parte de cada ciclo que cabecea de noche (ver `NIGHT_NAP_SHARE`): más con la moral baja (de
+ * guardia no se descansa: tras muchas noches seguidas se duerme más) y menos con más nivel.
  */
-export function nappers(guards: readonly string[], part: number, day = 0): string[] {
+export function napShare(h: Pick<Hero, 'lvl' | 'morale'>): number {
+  const share =
+    NIGHT_NAP_SHARE +
+    (NIGHT_NAP_MORALE - h.morale) * NIGHT_NAP_PER_MORALE -
+    (Math.min(h.lvl, NIGHT_NAP_LVL_TOP) - NIGHT_NAP_LVL) * NIGHT_NAP_PER_LVL;
+  return Math.min(NIGHT_NAP_MAX, Math.max(NIGHT_NAP_MIN, share));
+}
+
+/**
+ * Los de guardia (ids) que cabecean ahora (parte del día `part`). De día, el de la siesta
+ * (`napping`). De noche, mini-cabezadas en ciclo: cada uno su parte (`napShare`) de cada
+ * `NIGHT_NAP_CYCLE` segundos; con dos, se turnan (el segundo, desfasado), pero hay un rato en que
+ * cabecean los dos. Pura con el reloj, el día, los ids, el nivel y la moral: la escena enseña lo
+ * mismo.
+ */
+export function nappers(guards: readonly Sentry[], part: number, day = 0): string[] {
   if (part < WORK_END) {
-    const n = napping(guards, part);
+    const n = napping(
+      guards.map((g) => g.id),
+      part,
+    );
     return n ? [n] : [];
   }
   if (!guards.length) return [];
   // El desfase cambia cada noche (el día), para que no cabeceen siempre a la misma hora.
-  const turn = (part * DAY_SECONDS) / NIGHT_NAP_CYCLE + idPhase(guards[0]!) + day * 0.618;
-  return guards.filter((_, i) => (turn + i * NIGHT_NAP_TURN) % 1 < NIGHT_NAP_SHARE);
+  const turn = (part * DAY_SECONDS) / NIGHT_NAP_CYCLE + idPhase(guards[0]!.id) + day * 0.618;
+  return guards.filter((g, i) => (turn + i * NIGHT_NAP_TURN) % 1 < napShare(g)).map((g) => g.id);
 }
 
 /** Los de guardia ahora en la puerta (en el orden de la lista de héroes). */
@@ -444,7 +469,8 @@ const toVault = (s: GameState, inc: Incident) =>
 
 /** Despiertos al reloj `at` entre los de guardia `ids`, y los que cabecean. */
 function awakeAt(s: GameState, ids: string[], at: number) {
-  const nap = nappers(ids, Math.min(1, at / DAY_SECONDS), s.day);
+  const hs = ids.flatMap((id) => s.heroes.find((h) => h.id === id) ?? []);
+  const nap = nappers(hs, Math.min(1, at / DAY_SECONDS), s.day);
   return { awake: ids.filter((g) => !nap.includes(g)), nap };
 }
 

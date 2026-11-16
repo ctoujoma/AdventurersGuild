@@ -4629,8 +4629,10 @@ export class RoomScene {
     this.pets.update(w, this.wt);
     // La siesta y las cabezadas de noche de los de guardia (la misma cuenta que el núcleo, por
     // puesto): cabecean en su taburete o, en la cámara, quietos de pie.
-    const guards = this.model?.heroes.filter((h) => h.guard && h.status === 'ok') ?? [];
-    const post = (vault: boolean) => guards.filter((h) => !!h.vault === vault).map((h) => h.id);
+    // (Los de la cámara no llevan `guard`, que es el de la puerta: se miran por `sentry`.)
+    const guards = this.model?.heroes.filter((h) => h.sentry && h.status === 'ok') ?? [];
+    const post = (vault: boolean) =>
+      guards.filter((h) => !!h.vault === vault).map((h) => ({ id: h.id, ...h.sentry! }));
     const day = this.model?.clock?.day ?? 0;
     const part = this.clockTod ?? 0;
     this.crowd.nappers = new Set([

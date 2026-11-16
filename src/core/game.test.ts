@@ -402,7 +402,7 @@ describe('hay que salir de aventura', () => {
     h.morale = 37;
     let n = endDay(s);
     expect(after(n, h.id).morale).toBe(37 - GUARD_DROP);
-    expect(n.dawn.some((e) => /noches de guardia sin dormir/.test(e.t))).toBe(true);
+    expect(n.dawn.some((e) => /noches de guardia y se duerme/.test(e.t))).toBe(true);
     // Cerca del mínimo: se queda en él (sin la cena ni los pagos, que también restan).
     n = endDay({ ...s, heroes: s.heroes.map((x) => ({ ...x, morale: GUARD_FLOOR + 1 })) });
     expect(after(n, h.id).morale).toBe(GUARD_FLOOR);

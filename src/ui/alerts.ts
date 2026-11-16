@@ -4,7 +4,8 @@
  * no llega, las obras recién acabadas, quien entrena sin poder subir más y lo que salió de
  * desmontar un objeto. Los incidentes no: ya flotan sobre su sala.
  */
-import { nextPayment, salaries } from '../core/game';
+import { nextPayment, salaries, tiredLine } from '../core/game';
+import { MORALE_LOW } from '../core/party';
 import type { ChipKind, GameState } from '../core/model';
 import { listNames, plural } from '../core/text';
 import { ATTR_NAMES, cappedTrainees } from '../core/training';
@@ -199,6 +200,18 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
       icon: 'vela',
       go: { stranger: true },
     });
+
+  // De guardia y agotado (moral baja): de noche se duerme mucho. Uno por guardia, fijo mientras
+  // dure (no vuelve a sonar cada noche).
+  for (const h of game.heroes)
+    if (h.guard && h.status === 'ok' && h.morale < MORALE_LOW)
+      out.push({
+        id: `agotado:${h.id}`,
+        text: tiredLine([h]),
+        k: 'warn',
+        icon: 'moon',
+        go: { crew: h.id },
+      });
 
   // La pesadilla: alguien da vueltas en la cama (tocándole se le lleva un trago).
   const nm = nightmareNow(game);

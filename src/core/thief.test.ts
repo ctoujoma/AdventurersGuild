@@ -8,7 +8,7 @@ import {
   WORK_END,
 } from './balance';
 import { endDay, newGame, reduce, tick } from './game';
-import { failIncidents, nappers, stepIncidents } from './incidents';
+import { failIncidents, napShare, nappers, stepIncidents, type Sentry } from './incidents';
 import type { DawnEvent, GameState } from './model';
 import { THIEF_EVENT, startThief, thiefRoom } from './thief';
 
@@ -84,7 +84,7 @@ describe('el ladrón nocturno', () => {
       // Va a la cámara (sin guardia allí): el de la puerta le ve al salir, un poco después.
       const vault = s.building.rooms.find((r) => r.id === inc.room)?.type === 'tesoro';
       const at = vault ? inc.until + NIGHT_THIEF_RUN : inc.until;
-      const asleep = nappers([g.id], at / DAY_SECONDS, s.day).length > 0;
+      const asleep = nappers([g], at / DAY_SECONDS, s.day).length > 0;
       const thieves = s.stats?.thieves ?? 0;
       const ev = untouched(s);
       const end = s.incidentLog!.at(-1)!;
@@ -105,7 +105,10 @@ describe('el ladrón nocturno', () => {
   });
 
   it('de noche, cabezadas en ciclo; con dos se turnan, pero a ratos cabecean los dos', () => {
-    const ids = ['a', 'b'];
+    const ids: Sentry[] = [
+      { id: 'a', lvl: 3, morale: 60 },
+      { id: 'b', lvl: 3, morale: 60 },
+    ];
     let one = 0;
     let both = 0;
     let none = 0;
@@ -123,6 +126,46 @@ describe('el ladrón nocturno', () => {
     expect(nappers(ids, 0.3)).toEqual([]);
     // Pura: lo mismo con lo mismo.
     expect(nappers(ids, 0.8, 7)).toEqual(nappers(ids, 0.8, 7));
+  });
+
+  it('cabecean según su estado: más con la moral baja, menos con más nivel', () => {
+    /** La parte de la noche que cabecea, contada con el reloj (lo que ve la escena). */
+    const asleep = (g: Sentry) => {
+      let n = 0;
+      let all = 0;
+      for (let day = 1; day <= 20; day++)
+        for (let t = WORK_END * DAY_SECONDS; t < DAY_SECONDS; t += 0.5, all++)
+          if (nappers([g], t / DAY_SECONDS, day).length) n++;
+      return n / all;
+    };
+    const normal = asleep({ id: 'n', lvl: 3, morale: 60 });
+    const fresh = asleep({ id: 'v', lvl: 6, morale: 85 });
+    const worn = asleep({ id: 'a', lvl: 2, morale: 15 });
+    // Un guardia normal, como antes (~45 %); de un ~25 % a un ~70 %.
+    expect(normal).toBeGreaterThan(0.4);
+    expect(normal).toBeLessThan(0.5);
+    expect(fresh).toBeGreaterThan(0.2);
+    expect(fresh).toBeLessThan(0.3);
+    expect(worn).toBeGreaterThan(0.65);
+    expect(worn).toBeLessThan(0.75);
+    // Más moral, menos cabezadas; más nivel, también.
+    expect(napShare({ lvl: 3, morale: 40 })).toBeGreaterThan(napShare({ lvl: 3, morale: 70 }));
+    expect(napShare({ lvl: 7, morale: 60 })).toBeLessThan(napShare({ lvl: 1, morale: 60 }));
+    // Con topes.
+    expect(napShare({ lvl: 30, morale: 100 })).toBeGreaterThanOrEqual(0.2);
+    expect(napShare({ lvl: 1, morale: 0 })).toBeLessThanOrEqual(0.75);
+  });
+
+  it('tras muchas noches seguidas de guardia se duerme más (la moral baja cada noche)', () => {
+    let s = night('relevo', 9);
+    const g = guard(s);
+    g.morale = 60;
+    const id = g.id;
+    const before = napShare(g);
+    for (let i = 0; i < 12; i++) s = endDay(s);
+    const h = s.heroes.find((x) => x.id === id)!;
+    expect(h.guard).toBe(true);
+    expect(napShare(h)).toBeGreaterThan(before);
   });
 
   it('arrastrar a un héroe: se despierta, va y pelea con él', () => {
