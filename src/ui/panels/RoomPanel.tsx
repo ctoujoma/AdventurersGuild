@@ -29,13 +29,14 @@ import type { ComponentChildren } from 'preact';
 import { help } from '../HoldHelp';
 import { Icon, type IconName } from '../icons';
 import { CrewGroup } from './CrewList';
-import { WorkshopInfo } from './WorkshopInfo';
+import { WorkshopInfo, workshopTabs, type WorkTab } from './WorkshopInfo';
 import { DormList } from './DormList';
 import { isWorkshop } from '../../core/crafting';
 import { crewGroups } from '../crew';
 import { GUARD, type Task } from '../drop';
 import { dawnIn } from '../when';
 import { RoomCustom, canCustomize, feastPending } from './RoomCustom';
+import { Tabs, type TabItem } from '../Tabs';
 
 /** A dónde lleva cada sala: los paneles de siempre que tienen que ver con ella. */
 export type RoomLink =
@@ -327,7 +328,14 @@ function RoomWorks({
   );
 }
 
-/** Ficha de una sala: arriba su nivel y el botón de arreglarla o mejorarla; luego para qué sirve y sus obras. */
+/** Las pestañas de la ficha: «Sala» siempre; las del taller y «Personalizar», según la sala. */
+type RoomTab = 'sala' | WorkTab | 'custom';
+
+/**
+ * Ficha de una sala. Arriba de todo, bajo el título, sus pestañas (si tiene más de una): «Sala»
+ * (nivel y mejorar, para qué sirve, quién trabaja, lo que está en marcha y sus obras), las del
+ * taller (Crear · Templar · Vestir) y «Personalizar» (colores y, en el salón, fiesta y adornos).
+ */
 export function RoomPanel({
   game,
   roomId,
@@ -343,7 +351,8 @@ export function RoomPanel({
   onDecor,
   onFeast,
 }: Props) {
-  const [custom, setCustom] = useState(false);
+  // La pestaña elegida es de esta sala: al abrir otra, se vuelve a «Sala».
+  const [pick, setPick] = useState<{ room: string; tab: RoomTab }>({ room: roomId, tab: 'sala' });
   const room = game.building.rooms.find((r) => r.id === roomId);
   if (!room) return <p class="panel-note">Esa sala ya no está.</p>;
   const def = ROOMS[room.type];
@@ -364,8 +373,43 @@ export function RoomPanel({
   const look = { onAct, onTint, onPreview, onDecor, onFeast };
   const customizable = canCustomize(room, look);
   const feast = customizable && feastPending(game, room);
+  const workshop = isWorkshop(room.type) && room.level > 0 && !room.works;
+  const tabs: TabItem<RoomTab>[] = [
+    { id: 'sala', label: 'Sala', icon: 'puerta' },
+    ...(workshop ? workshopTabs(game, room) : []),
+    ...(customizable
+      ? [{ id: 'custom', label: 'Personalizar', icon: 'brocha', alert: feast ? 1 : 0 } as const]
+      : []),
+  ];
+  const want = pick.room === roomId ? pick.tab : 'sala';
+  const tab = tabs.some((t) => t.id === want) ? want : 'sala';
+  const bar = tabs.length > 1 && (
+    <div class="room-tabs">
+      <Tabs
+        tabs={tabs}
+        value={tab}
+        onChange={(t) => setPick({ room: roomId, tab: t })}
+        label={`Ficha: ${def.name}`}
+      />
+    </div>
+  );
+  if (tab === 'custom')
+    return (
+      <>
+        {bar}
+        <RoomCustom game={game} room={room} {...look} />
+      </>
+    );
+  if (tab !== 'sala')
+    return (
+      <>
+        {bar}
+        <WorkshopInfo key={room.id} game={game} room={room} tab={tab} onAct={onAct} />
+      </>
+    );
   return (
     <>
+      {bar}
       <div class="room-top">
         <div class="room-head" {...(info ? help(info.levels[room.level]) : {})}>
           <span class="pips" aria-label={`Nivel ${room.level} de ${max}`}>
@@ -410,6 +454,15 @@ export function RoomPanel({
       {why && cost !== null && <p class="qs-warn">{why}</p>}
       {state && <p class="room-state">{state}</p>}
       <p class="room-desc">{def.desc}</p>
+      {links.length > 0 && (
+        <div class="room-links" role="group" aria-label="Ir a">
+          {links.map((l) => (
+            <button key={l.to} class="btn btn-wood" onClick={() => onLink(l.to)}>
+              <Icon name={l.icon} size={14} /> {l.label}
+            </button>
+          ))}
+        </div>
+      )}
       {room.type === 'almacen' && room.level > 0 && <MatShelf game={game} />}
       {room.type === 'salon' && room.level > 0 && <SalonInfo game={game} />}
       {(room.type === 'cocina' || room.type === 'despensa' || room.type === 'bodega') &&
@@ -460,32 +513,8 @@ export function RoomPanel({
       {onTask && onOpen && (hasPosts(room.type) || room.type === 'recibidor') && (
         <RoomCrew game={game} room={room} onTask={onTask} onOpen={onOpen} />
       )}
-      {isWorkshop(room.type) && room.level > 0 && !room.works && (
-        <WorkshopInfo key={room.id} game={game} room={room} onAct={onAct} />
-      )}
+      {workshop && <WorkshopInfo key={room.id} game={game} room={room} onAct={onAct} />}
       {onWork && <RoomWorks game={game} room={room} onWork={onWork} onMove={onMove} />}
-      {(links.length > 0 || customizable) && (
-        <div class="room-links">
-          {customizable && (
-            <button
-              class={`btn ${feast ? 'btn-gold' : 'btn-wood'}`}
-              aria-haspopup="dialog"
-              onClick={() => setCustom(true)}
-            >
-              <Icon name="brocha" size={14} /> Personalizar
-              {feast && <span class="room-custom-dot" aria-label="Hoy es la fiesta" />}
-            </button>
-          )}
-          {links.map((l) => (
-            <button key={l.to} class="btn btn-wood" onClick={() => onLink(l.to)}>
-              <Icon name={l.icon} size={14} /> {l.label}
-            </button>
-          ))}
-        </div>
-      )}
-      {custom && customizable && (
-        <RoomCustom game={game} room={room} onClose={() => setCustom(false)} {...look} />
-      )}
     </>
   );
 }

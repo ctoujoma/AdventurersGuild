@@ -1974,25 +1974,23 @@ button:focus-visible {
   font-weight: 400;
 }
 
-/* «Personalizar» con algo pendiente (hoy es la fiesta): un punto, como en las pestañas. */
-.room-custom-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  margin-left: 4px;
-  background: var(--red);
-  box-shadow: 0 0 0 2px var(--ink);
+/* Pestañas de la ficha (Sala · Crear · Templar · Vestir · Personalizar): arriba de todo, bajo el
+   título, y pegadas arriba al bajar por la ficha, para cambiar sin volver a subir. */
+.room-tabs {
+  position: sticky;
+  top: -12px;
+  z-index: 3;
+  margin: -12px -10px 0;
+  padding: 8px 10px;
+  background: var(--tex-paper) var(--sand);
+  background-size: 64px;
+  box-shadow: 0 2px 0 var(--tan);
 }
 
-.room-custom .adornos {
-  margin-bottom: 4px;
-}
-
-/* «Personalizar» deja ver la sala por encima, para mirar cómo quedaría un color. */
-@media (orientation: portrait) {
-  .as-sheet > .herocard.room-custom {
-    max-height: 72%;
-  }
+.room-custom {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .room-act {
@@ -2003,12 +2001,11 @@ button:focus-visible {
   margin-left: auto;
 }
 
-/* Ficha de sala: atajos a los paneles que tienen que ver con ella. */
+/* Ficha de sala: atajos a los paneles que tienen que ver con ella, bajo lo que hace la sala. */
 .room-links {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 4px;
 }
 
 .room-links:empty {
@@ -7160,10 +7157,6 @@ p.notebook-close {
 
 .forge-locked {
   opacity: 0.7;
-}
-
-.forge-tabs {
-  margin: 8px 0 4px;
 }
 
 /* Templar: los dos botones del objeto elegido, uno encima de otro. */
