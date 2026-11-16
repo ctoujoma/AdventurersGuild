@@ -79,6 +79,12 @@ export const TRAIT_INFO: Record<
     tone: 'mix',
     desc: 'Secuela. +1 Combate: con esa cara, nadie quiere pelea.',
   },
+  velo: {
+    m: 'Vuelto del velo',
+    f: 'Vuelta del velo',
+    tone: 'mix',
+    desc: 'Secuela: murió y volvió. +2 Arcano (ha visto el otro lado), −1 Fuerza (algo se quedó allí).',
+  },
 };
 
 export const HIDDEN_TRAIT_HINT = 'Rasgo oculto: se descubre tras su primera misión';

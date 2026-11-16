@@ -12,7 +12,8 @@ import type { BossFight, GameState, Report } from './model';
 import { Rng } from './rng';
 import { maxOut, syncFac } from './rooms';
 
-export type Cheat = 'oro' | 'fama' | 'curar' | 'obras' | 'asalto' | 'historia' | 'dias';
+export type Cheat =
+  'oro' | 'fama' | 'curar' | 'obras' | 'asalto' | 'historia' | 'dias' | 'forastero';
 
 export function cheat(state: GameState, kind: Cheat): { state: GameState; note: string } {
   if (kind === 'dias') {
@@ -49,6 +50,21 @@ export function cheat(state: GameState, kind: Cheat): { state: GameState; note: 
         warned: true,
       };
       return { state: s, note: 'Asalto esta noche: pulsa «Cerrar».' };
+    case 'forastero': {
+      // El forastero de la tormenta ahora mismo (sin esperar a la noche ni a la tormenta). Si no
+      // hay caídos, cae el primero que esté en casa, para poder probarlo.
+      if (!s.heroes.some((h) => h.status === 'muerto')) {
+        const h = s.heroes.find((x) => x.status === 'ok');
+        if (!h) return { state, note: 'No hay caídos ni nadie en casa.' };
+        h.status = 'muerto';
+        delete h.worn;
+        delete h.guard;
+        delete h.job;
+        s.fallen.unshift({ id: h.id, name: h.name, epitaph: `Modo prueba · día ${s.day}.` });
+      }
+      s.stranger = { day: s.day, at: s.clock ?? 0 };
+      return { state: s, note: 'El forastero de la tormenta está junto al fuego del salón.' };
+    }
     case 'historia': {
       const cs = activeChain(s);
       const events: { t: string }[] = [];

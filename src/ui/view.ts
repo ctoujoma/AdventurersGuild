@@ -237,6 +237,7 @@ export function sceneModel(s: GameState): SceneModel {
     look: customOf(s).look,
     garden: customOf(s).garden,
     visitors: { day: s.day, kinds: visitorOrder(s) },
+    stranger: !!s.stranger,
     gear: gearInStock(s).map((i) => ({
       icon: i.icon ?? 'espada',
       rarity: i.rarity ?? 0,

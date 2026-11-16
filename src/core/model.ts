@@ -91,6 +91,11 @@ export interface Hero {
   since?: number;
   /** Progreso de entrenamiento hacia el siguiente punto de cada atributo. */
   train?: Partial<Attrs>;
+  /**
+   * Volvió del velo (lo revivió el forastero de la tormenta): hasta este día su moral no pasa
+   * del tope de siempre menos `VEIL_CAP`.
+   */
+  veil?: number;
 }
 
 /** Quien trabaja en la taberna: no sale de misión, cobra poco y rinde más en su oficio. */
@@ -286,6 +291,10 @@ export interface BossFight {
 export interface Fallen {
   name: string;
   epitaph: string;
+  /** Id del héroe (los caídos de antes no lo traen: se buscan por el nombre). */
+  id?: string;
+  /** Día en que volvió del velo (el forastero de la tormenta): sigue en el Muro, tachado. */
+  back?: number;
 }
 
 export interface Facilities {
@@ -675,6 +684,8 @@ export interface Stats {
   painted?: number;
   /** Puntos de atributo ganados entrenando. */
   trained?: number;
+  /** Caídos que han vuelto del velo. */
+  revived?: number;
   byType: Partial<Record<QuestType, number>>;
 }
 
@@ -849,4 +860,22 @@ export interface GameState {
   questLog?: QuestLogEntry[];
   /** Hora real (ms) de la última vez que se guardó con el juego abierto (tiempo que corre solo). */
   lastSeen?: number;
+  /** Sucesos nocturnos: la última noche ya tirada y el último día de cada suceso (`core/night.ts`). */
+  nights?: NightLog;
+  /** El forastero de la tormenta, si está en el salón (ver `core/stranger.ts`). */
+  stranger?: Stranger | null;
+}
+
+export interface NightLog {
+  /** Último día cuya noche ya se ha tirado (una vez por noche). */
+  rolled: number;
+  /** Último día en que pasó cada suceso (para no repetirlo enseguida). */
+  last: Record<string, number>;
+}
+
+/** El forastero de la tormenta: llegó la noche del día `day` y se va al día siguiente a mediodía. */
+export interface Stranger {
+  day: number;
+  /** Reloj (s) de la noche en que entró (la escena le ve entrar si aún es reciente). */
+  at: number;
 }

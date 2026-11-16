@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { stormNight } from '../core/sky';
 import { CLEAR, approach, dayKind, weatherAt, weatherOf } from './weather';
 
 describe('el tiempo', () => {
@@ -57,5 +58,20 @@ describe('el tiempo', () => {
     let w = CLEAR;
     for (let i = 0; i < 100; i++) w = approach(w, t, 1, 10);
     expect(w.cloud).toBeCloseTo(1, 2);
+  });
+});
+
+describe('la noche de tormenta', () => {
+  it('el tipo de día es el mismo en el núcleo y en la escena, y la tormenta dura toda la noche', () => {
+    let storms = 0;
+    for (let d = 2; d < 3000; d++) {
+      if (!stormNight('cielo', d)) continue;
+      storms++;
+      expect(dayKind('cielo', d)).toBe('tormenta');
+      expect(weatherAt('cielo', d, 1).storm).toBeGreaterThan(0.9);
+    }
+    // Pocas, pero las hay: una noche de cada veintitantas.
+    expect(storms / 3000).toBeGreaterThan(0.025);
+    expect(storms / 3000).toBeLessThan(0.07);
   });
 });

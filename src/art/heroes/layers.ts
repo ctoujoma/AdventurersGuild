@@ -272,6 +272,22 @@ export const OUTFITS = {
     '....oo....oo....',
     '...OOO....OOO...',
   ],
+  // Hábito hasta los pies, con el cordón de hueso a la cintura y el bajo deshilachado.
+  velado: [
+    ...EMPTY_TOP,
+    '..cccccccccccc..',
+    '.cccccccccccccc.',
+    '.cCcccccccccCCc.',
+    '.cCcccccccccCcc.',
+    '.cCaAaaaaaaAaCc.',
+    '.cCcccccAcccCCc.',
+    '.cCccccccAccCcc.',
+    '.cCcccccccccCCc.',
+    '.CCcccccccccCCc.',
+    '.CCCcccccccCCCC.',
+    '.C.CCCCCCCCCC.C.',
+    '...O.O.OO.O.O...',
+  ],
 } satisfies Record<OutfitId, Grid>;
 
 export const HAIR = {
@@ -409,6 +425,20 @@ export const HELMS = {
     '..ccC......Ccc..',
     '...cccccccccc...',
   ],
+  // La capucha honda del forastero: acaba en pico y deja la cara en sombra; solo brillan los ojos.
+  velo: [
+    '.......cc.......',
+    '.....cccccc.....',
+    '...cccccccccc...',
+    '..cccCCCCCCccc..',
+    '..cCkkkkkkkkCc..',
+    '..cCkkkkkkkkCc..',
+    '..cCkykkkkykCc..',
+    '..cCkkkkkkkkCc..',
+    '..ccCkkkkkkCcc..',
+    '..cccCkkkkCccc..',
+    '...cccccccccc...',
+  ],
 } satisfies Record<string, Grid>;
 
 export const WEAPONS = {
@@ -526,6 +556,15 @@ export const WEAPONS = {
   ],
   noble: [],
   forastero: [],
+  // El bastón con el farol colgado (de luz amarilla).
+  velado: [
+    '..............v.',
+    '.............MMM',
+    '.............MyM',
+    '.............MYM',
+    '..............M.',
+    ...Array.from({ length: 17 }, () => '..............v.'),
+  ],
 } satisfies Record<OutfitId, Grid>;
 
 export const OVERLAYS = {

@@ -202,6 +202,10 @@ export const CLASS_LINES: Record<ClassId, { ok: readonly string[]; ko: readonly 
 
 /** Apartes por rasgo: dan color y, si el rasgo está oculto, son una pista. */
 export const TRAIT_LINES: Partial<Record<TraitId, readonly string[]>> = {
+  velo: [
+    '{h} se quedó mirando una tumba del camino más de la cuenta. Dice que le saludaron.',
+    'Por la noche, junto al fuego, {h} no habla del otro lado. Nadie se atreve a preguntar.',
+  ],
   valiente: [
     '{h} se ofreció a ir delante sin que nadie se lo pidiera.',
     '{h} se rió del peligro, y el peligro le dejó un recuerdo en la pierna.',

@@ -401,6 +401,7 @@ export function resolveMission(
       for (const it of gearList(victim)) chips.push({ t: `Perdido: ${it.name}`, k: 'bad' });
       delete victim.worn;
       state.fallen.unshift({
+        id: victim.id,
         name: victim.name + (victim.nick ? ` «${victim.nick}»` : ''),
         epitaph: `${q.title} · día ${state.day}.`,
       });

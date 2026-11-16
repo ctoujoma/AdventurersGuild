@@ -181,6 +181,17 @@ export const SIDE_TORSO: Record<OutfitId, Grid> = {
     '...cCccccccccc..',
     ...empty(5),
   ],
+  velado: [
+    ...empty(10),
+    '....cccccccc....',
+    '...cccccccccc...',
+    '...cCcccccccc...',
+    '...cCaaaaAaaac..',
+    '...cCcccccAccc..',
+    '...cCccccccAcc..',
+    '...cCccccccccc..',
+    ...empty(5),
+  ],
 };
 
 /** Piernas: de pie y ciclo de paso (contacto, cruce). Filas 17–21. */
@@ -411,7 +422,7 @@ export const SIDE_HATS: Record<'sombrero' | 'gorra' | 'paja' | 'boina' | 'pluma'
   ],
 };
 
-export const SIDE_HELMS: Record<'casco' | 'capucha', Grid> = {
+export const SIDE_HELMS: Record<'casco' | 'capucha' | 'velo', Grid> = {
   casco: [
     E,
     '.....mmmmmm.....',
@@ -432,6 +443,19 @@ export const SIDE_HELMS: Record<'casco' | 'capucha', Grid> = {
     '...ccCccc.......',
     '....ccccc.......',
     '....cccccc......',
+  ],
+  // De perfil, la capucha sobresale por delante de la cara: solo asoma el brillo de un ojo.
+  velo: [
+    '....cc..........',
+    '....ccccc.......',
+    '...ccccccccc....',
+    '...cccccccccc...',
+    '...cCcccckkkcc..',
+    '...cCccckkkkkc..',
+    '...cCccckkkykc..',
+    '...ccCcckkkkc...',
+    '....ccccckkcc...',
+    '....cccccccc....',
   ],
 };
 
@@ -497,4 +521,14 @@ export const SIDE_WEAPONS: Record<OutfitId, { back?: Grid; front?: Grid }> = {
   mercader: {},
   noble: {},
   forastero: {},
+  velado: {
+    front: [
+      '...........v....',
+      '..........MMM...',
+      '..........MyM...',
+      '..........MYM...',
+      '...........M....',
+      ...Array.from({ length: 17 }, () => '...........v....'),
+    ],
+  },
 };

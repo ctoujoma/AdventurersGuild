@@ -900,6 +900,7 @@ export class RoomScene {
       (model.paints ?? []).map((p) => [p.room, p.tint]),
     ]);
     if (model.visitors) this.crowd.setVisitors(model.visitors);
+    this.crowd.setStranger(!!model.stranger);
     this.crowd.setTints(this.tintsNow(model));
     this.shiners = model.heroes.filter((h) => hasLegend(h.marks.gear)).map((h) => h.id);
     if (key === this.key) {

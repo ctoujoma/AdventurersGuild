@@ -667,3 +667,32 @@ export const PRICE_TIERS: readonly { lo: number; hi: number; min: number; max: n
 ];
 /** Las armas valen un poco más; los complementos, un poco menos. */
 export const PRICE_KIND: Partial<Record<string, number>> = { arma: 1.1, complemento: 0.9 };
+
+// ---------- La noche: sucesos (fase 7) y el forastero de la tormenta ----------
+
+/**
+ * Parte del día en que se tira el suceso de la noche (un poco después de acostarse, para que la
+ * escena ya esté a oscuras). Con el juego cerrado, se tira al pasar el día.
+ */
+export const NIGHT_ROLL = 0.74;
+/** El forastero de la tormenta: probabilidad en cada noche de tormenta (con algún caído). */
+export const STRANGER_CHANCE = 0.65;
+/** Días que pasan, como poco, entre una visita y la siguiente. */
+export const STRANGER_EVERY = 10;
+/** Parte del día siguiente en que se va si no se le ha dicho nada (mediodía). */
+export const STRANGER_LEAVE = 0.35;
+/**
+ * Lo que pide por traer de vuelta a un caído de nivel `lvl`: oro, raciones (para el camino),
+ * jarras (para el rito) y tela (el sudario). Sube con el nivel.
+ */
+export const strangerPrice = (lvl: number) => ({
+  gold: 50 + 50 * lvl,
+  food: 2 + lvl,
+  beer: 2 + lvl,
+  tela: 1 + Math.floor(lvl / 3),
+});
+/** El revivido: días en cama, moral con la que vuelve, y tope de moral menos `VEIL_CAP` unos días. */
+export const VEIL_BED = 4;
+export const VEIL_MORALE = 30;
+export const VEIL_CAP = 25;
+export const VEIL_DAYS = 10;

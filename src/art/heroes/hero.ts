@@ -262,6 +262,19 @@ const CLASS: Record<OutfitId, Slots> = {
     q: P.slate,
     Q: P.navy,
   },
+  // El forastero de la tormenta: hábito verde muy oscuro, casi negro, con cordón de hueso.
+  velado: {
+    c: P.deep,
+    C: P.black,
+    a: P.sand,
+    A: P.tan,
+    o: P.ebony,
+    O: P.black,
+    p: P.black,
+    P: P.black,
+    q: P.deep,
+    Q: P.black,
+  },
 };
 
 const SHARED: Slots = {
@@ -368,8 +381,8 @@ function composeFront(
     // Fuera los brazos caídos (mangas y manos): van en alto, encima de todo.
     for (let y = HEADROOM + 12; y <= HEADROOM + 16; y++)
       for (const x of [0, 1, 2, 3, 12, 13, 14, 15]) b.clear(x, y);
-  if (look.beard && hg !== 'capucha') body(BEARD);
-  if (hg === 'capucha') body(HELMS.capucha);
+  if (look.beard && hg !== 'capucha' && hg !== 'velo') body(BEARD);
+  if (hg === 'capucha' || hg === 'velo') body(HELMS[hg]);
   else if (hg === 'casco') {
     body(FRONT_HAIR[look.hairStyle], 5);
     body(HELMS.casco);
@@ -566,7 +579,7 @@ export const WALK_STEPS = 8;
 export const WALK_PX = 2;
 
 /** Los que llevan faldón o capa hasta los pies (de perfil, sin piernas). */
-const ROBES: ReadonlySet<OutfitId> = new Set(['mago', 'clerigo', 'noble', 'forastero']);
+const ROBES: ReadonlySet<OutfitId> = new Set(['mago', 'clerigo', 'noble', 'forastero', 'velado']);
 
 function composeSide(
   look: HeroLook,
@@ -614,8 +627,8 @@ function composeSide(
         : [SIDE_ARM.back, SIDE_ARM.rest, SIDE_ARM.forward, SIDE_ARM.rest][Math.floor(step / 2)]!;
     stamp(b, arm, c, 0, HEADROOM + 10 + bob);
   }
-  if (look.beard && hg !== 'capucha') up(SIDE_BEARD);
-  if (hg === 'capucha') up(SIDE_HELMS.capucha);
+  if (look.beard && hg !== 'capucha' && hg !== 'velo') up(SIDE_BEARD);
+  if (hg === 'capucha' || hg === 'velo') up(SIDE_HELMS[hg]);
   else if (hg === 'casco') {
     up(SIDE_HAIR[look.hairStyle] ?? [], 5);
     up(SIDE_HELMS.casco);
@@ -686,7 +699,8 @@ export function heroSprites(look: HeroLook, marks: HeroMarks = {}): HeroSprites 
   if (hit) return hit;
   const front = composeFront(look, marks, false);
   const sitRows = HEADROOM + 17;
-  const bare = { ...look, headgear: look.headgear === 'capucha' ? ('capucha' as const) : null };
+  const hood = look.headgear === 'capucha' || look.headgear === 'velo';
+  const bare = { ...look, headgear: hood ? look.headgear : null };
   const bedRaw = composeFront(bare, { ...marks, injured: true }, true, false);
   const sleepRaw = composeFront(bare, marks, true, false);
   const backRaw = composeBack(look, marks);

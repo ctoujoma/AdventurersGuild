@@ -20,9 +20,9 @@ import {
 import { bunkQuilt } from '../props';
 import { HEADROOM } from '../../art/heroes/layers';
 import { TINTS, TINT_IDS, type TintId } from '../../data/custom';
-import { generateLook, type OutfitId } from '../../art/heroes/look';
+import { generateLook, strangerLook, type OutfitId } from '../../art/heroes/look';
 import { WEAPONS, type WeaponId } from '../weapons';
-import type { SceneHero, SceneVisitors } from '../scene';
+import { STRANGER_ID, type SceneHero, type SceneVisitors } from '../scene';
 import { GROUND } from '../geometry';
 import { Look, mesh, texture, type Shared } from './gl';
 import { PITCH, STAIR_W, floorY, type RoomsLayout, type Rect } from './layout';
@@ -665,6 +665,7 @@ const DRILL_WEAPON: Record<OutfitId, WeaponId> = {
   mercader: 'daga',
   noble: 'espada',
   forastero: 'daga',
+  velado: 'baston',
 };
 
 /**
@@ -1457,8 +1458,59 @@ export class Crowd {
   setVisitors(v: SceneVisitors): void {
     if (v.day === this.visitors.day && v.kinds.length === this.visitors.kinds.length) return;
     if (v.day !== this.visitors.day)
-      for (const a of [...this.actors.values()]) if (a.hero.visitor) this.remove(a.hero.id);
+      for (const a of [...this.actors.values()])
+        if (a.hero.visitor && !a.hero.stranger) this.remove(a.hero.id);
     this.visitors = v;
+  }
+
+  /**
+   * El forastero de la tormenta (suceso nocturno): entra por la puerta, se sienta a la mesa más
+   * cerca del fuego del salón y espera, de día y de noche. Al irse, sale por donde vino.
+   */
+  setStranger(on: boolean): void {
+    const a = this.actors.get(STRANGER_ID);
+    if (!on) {
+      if (!a || a.leaving) return;
+      this.standUp(a);
+      a.leaving = true;
+      a.goal = null;
+      this.go(a, { place: outside(), pose: 'stand' });
+      return;
+    }
+    if ((a && !a.leaving) || !this.S || !this.L || this.scripted) return;
+    if (a) this.remove(STRANGER_ID);
+    if (this.actors.size >= MAX_ACTORS) return;
+    this.add({
+      id: STRANGER_ID,
+      name: 'Forastero encapuchado',
+      title: 'Junto al fuego, esperando',
+      status: 'ok',
+      look: strangerLook(),
+      marks: {},
+      visitor: true,
+      stranger: true,
+    });
+    const b = this.actors.get(STRANGER_ID)!;
+    this.put(b, outside());
+    this.go(b, this.fireside());
+    b.wait = 999;
+  }
+
+  /** La silla del salón más cerca de la chimenea (si no hay, de pie junto al fuego o en la barra). */
+  private fireside(): Goal {
+    const S = this.S!;
+    const fire = this.pois.find(
+      (p) => p.kind === 'warm' && S.seats.some((x) => x.floor === p.floor),
+    );
+    const free = S.seats.filter((x) => !this.taken().has(x));
+    if (fire) {
+      const near = free
+        .filter((x) => x.floor === fire.floor)
+        .sort((m, n) => Math.abs(m.x - fire.x) - Math.abs(n.x - fire.x))[0];
+      if (near) return { place: { x: near.x, floor: near.floor }, pose: 'sit', z: near.z };
+      return { place: { x: fire.x - fire.half - 6, floor: fire.floor }, pose: 'stand' };
+    }
+    return { place: S.bar[0] ?? S.door, pose: 'stand' };
   }
 
   /** La hora del día: entran los visitantes que tocan y se van los que ya han estado un rato. */
@@ -1543,6 +1595,8 @@ export class Crowd {
     if (this.scripted) return;
     for (const a of [...this.actors.values()]) {
       if (a.gone || (a.leaving && !a.hero.visitor)) continue;
+      // El forastero no se va con la noche: espera junto al fuego.
+      if (a.hero.stranger && !a.leaving) continue;
       if (a.hero.visitor || this.village(a)) {
         if (a.hero.visitor) a.leaving = true;
         else a.homeward = true;
@@ -2168,7 +2222,8 @@ export class Crowd {
     if (this.time !== 'day' || this.scripted) return out;
     const t = this.now;
     for (const a of this.actors.values()) {
-      if (a.gone || a.held) continue;
+      // El forastero no pide nada: espera callado.
+      if (a.gone || a.held || a.hero.stranger) continue;
       const c = a.chat;
       if (c && c.from && t >= c.from && t < c.until) {
         const turn = Math.floor((t - c.from) / TURN);

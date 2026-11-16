@@ -31,6 +31,7 @@ const CHEATS: { kind: Cheat; label: string }[] = [
   { kind: 'obras', label: 'Mejoras al máximo' },
   { kind: 'asalto', label: 'Asalto esta noche' },
   { kind: 'historia', label: 'Avanzar historia' },
+  { kind: 'forastero', label: 'Forastero de la tormenta' },
 ];
 
 const SPEEDS: Settings['speed'][] = [1, 1.5, 2];
