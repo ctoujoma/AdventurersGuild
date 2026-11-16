@@ -72,7 +72,7 @@ import { towerLampY, watchtower } from './salas/torre';
 import { BLIND, CANDLE, takeWallActs, type ActId, type PoiKind, type Round } from './salas/kit';
 import { FLIGHT_Z, flightArt, goesRight } from './stairs';
 import { dress } from './salas/tintes';
-import { Crowd, WALK_Z, type Hit, type PaintSpan, type Poi, type Talk } from './crowd';
+import { Crowd, DRINK_TIME, WALK_Z, type Hit, type PaintSpan, type Poi, type Talk } from './crowd';
 import { drawGoal, goalBox, goalIcon, type GoalIcon } from './goalMark';
 import { clothOf } from '../../art/heroes/hero';
 import { LAWN_D, tuftAllowed, yardBushes, yardTrees } from './patio';
@@ -538,6 +538,9 @@ export class RoomScene {
   private smokeAt: { x: number; y: number }[] = [];
   private smokeT = 0;
   private crossT = 0;
+  /** La pesadilla: cada cuánto sube la nubecilla (o los «zzz») y si ya salió la jarra. */
+  private dreamT = 0;
+  private mugOn = false;
   /** Rayos de luz de las salas rotas (en el mundo) y cada cuánto sale una mota de polvo. */
   private shafts: { x: number; y0: number; y1: number; z: number }[] = [];
   private dustT = 0;
@@ -805,6 +808,15 @@ export class RoomScene {
     };
     canvas.addEventListener('webglcontextlost', (e) => e.preventDefault());
     this.pets.sound = (name, v) => this.cb.onSound?.(name, v);
+    // La caza de noche: polvo y un chillido donde el gato cae encima de la rata.
+    this.pets.caught = (x, y, z) => {
+      const c = this.camera;
+      const s = project({ px: c.px, py: c.py, vw: c.vw, vh: c.vh }, x, y, z);
+      const X = c.px + s.x;
+      const Y = c.py + s.y;
+      for (let i = 0; i < 3; i++) this.particles.spawn('puff', X - 4 + i * 3, Y - 3);
+      this.cb.onSound?.('squeak', 0.35);
+    };
     this.crowd.onArrive = (id, room) => this.cb.onArrive?.(id, room);
     this.incidents.onBlock = (x, level, to) => this.crowd.chase(x, level, to);
     this.bindInput();
@@ -907,6 +919,7 @@ export class RoomScene {
     if (model.visitors) this.crowd.setVisitors(model.visitors);
     this.crowd.setStranger(!!model.stranger);
     this.crowd.setMessenger(model.messenger ?? null);
+    this.crowd.setNightmare(model.nightmare ?? null);
     this.crowd.setTints(this.tintsNow(model));
     this.shiners = model.heroes.filter((h) => hasLegend(h.marks.gear)).map((h) => h.id);
     if (key === this.key) {
@@ -1207,6 +1220,12 @@ export class RoomScene {
     const den = rats ? L.rooms.find((r) => r.room.id === rats.room) : undefined;
     this.pets.setHunt(
       den ? [interior(den.rect).x + 14, interior(den.rect).x + interior(den.rect).w - 14] : null,
+    );
+    // De noche, el gato de caza por la despensa o la bodega (`core/nightCat.ts`).
+    const lair = m.nightCat ? L.rooms.find((r) => r.room.id === m.nightCat!.room) : undefined;
+    const li = lair ? interior(lair.rect) : null;
+    this.pets.setNightHunt(
+      li && lair ? { x0: li.x + 10, x1: li.x + li.w - 10, floor: lair.room.floor } : null,
     );
     this.incidentLamps = this.incidents.lights().map((l) => ({
       pos: new Vector3(l.x, GROUND - l.y, -l.z + 6),
@@ -4755,6 +4774,7 @@ export class RoomScene {
         this.particles.spawn('cross', view.px + s.x - 3, view.py + s.y - 10);
       }
     }
+    this.dreamFx(dt);
     if (!this.smokeAt.length) return;
     this.smokeT -= dt;
     if (this.smokeT > 0) return;
@@ -4764,6 +4784,43 @@ export class RoomScene {
     for (const p of this.smokeAt) {
       this.particles.spawn('chimney', p.x + (Math.random() - 0.5) * 3, p.y - 1);
       if (cold > 0.3) this.particles.spawn('chimney', p.x + (Math.random() - 0.5) * 6, p.y - 3);
+    }
+  }
+
+  /**
+   * La pesadilla: una nubecilla oscura sube de quien da vueltas en la cama; al llevarle el trago,
+   * la jarra aparece sobre la cama y baja a sus manos (deshaciendo la nube), y luego, «zzz».
+   */
+  private dreamFx(dt: number): void {
+    const nm = this.crowd.nightmare();
+    if (!nm) {
+      this.mugOn = false;
+      return;
+    }
+    const c = this.camera;
+    const view: View = { px: c.px, py: c.py, vw: c.vw, vh: c.vh };
+    const s = project(view, nm.x, nm.y, nm.z);
+    const x = view.px + s.x;
+    const y = view.py + s.y;
+    if (nm.state === 'drink') {
+      if (!this.mugOn) {
+        this.mugOn = true;
+        const left = Math.max(0.5, DRINK_TIME - nm.since);
+        this.particles.spawn('mug', x + 7, y - 14, { vy: 10, ay: y - 4, max: left });
+        for (let i = 0; i < 4; i++)
+          this.particles.spawn('puff', x - 6 + i * 3, y - 11 - (i % 2) * 2);
+        this.dreamT = DRINK_TIME;
+      }
+    } else this.mugOn = false;
+    this.dreamT -= dt;
+    if (this.dreamT > 0) return;
+    // Mientras no se le lleve el trago, siempre con su nube (también entre una vuelta y otra).
+    if (!this.crowd.nightmareEased()) {
+      this.dreamT = 1.1;
+      this.particles.spawn('gloom', x - 4, y - 13);
+    } else if (nm.state === 'calm') {
+      this.dreamT = 2.4;
+      this.particles.spawn('zzz', x + 2, y - 8);
     }
   }
 

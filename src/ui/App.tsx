@@ -1,3 +1,4 @@
+import { easeIssue, nightmareNow } from '../core/nightmare';
 import { CraftMark } from './CraftMark';
 import { flyCoins } from './coinFlight';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
@@ -1157,6 +1158,19 @@ export function App() {
                 audio.play('open', 0.6);
                 setMessengerOpen(true);
               }
+              return;
+            }
+            // El de la pesadilla: se le lleva un trago de la bodega (si queda).
+            const nm = gameRef.current.nightmare;
+            if (nm && nm.hero === id && !nm.eased && nightmareNow(gameRef.current)) {
+              const why = easeIssue(gameRef.current);
+              if (why) {
+                audio.play('click', 0.5);
+                say(why, at);
+                return;
+              }
+              audio.play('splash', 0.5);
+              dispatch({ type: 'nightmare' });
               return;
             }
             // Los visitantes cuentan lo que se oye por ahí.

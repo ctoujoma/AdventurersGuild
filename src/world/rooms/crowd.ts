@@ -794,6 +794,9 @@ const SEAT_TIME = 0.24;
 const LIFT = 0.45;
 const smoothstep = (x: number) => x * x * (3 - 2 * x);
 const TURN_TIME = 0.1;
+/** La pesadilla: cada cuánto da un respingo y lo que tarda en beberse el trago. */
+const TOSS_CYCLE = 6.5;
+export const DRINK_TIME = 3.4;
 
 const hash = (s: string) => {
   let h = 0;
@@ -1385,11 +1388,93 @@ export class Crowd {
     const out: { x: number; y: number; z: number }[] = [];
     for (const a of this.actors.values()) {
       if (a.gone || a.hero.status !== 'herido' || a.pose !== 'bed' || a.edge) continue;
+      // El de la pesadilla ya lleva su nubecilla.
+      if (this.dream?.id === a.hero.id && !this.dream.eased) continue;
       const f = this.frame(a, this.now);
       const k = scaleAt(f.z);
       out.push({ x: f.left + 10 / k, y: f.bottom - TALL / k + 8 / k, z: f.z });
     }
     return out;
+  }
+
+  /** La pesadilla de esta noche: quién, si ya bebió y cuándo se le llevó el trago (reloj de la escena). */
+  private dream: { id: string; eased: boolean; at: number } | null = null;
+
+  /** La pesadilla (`SceneModel.nightmare`): al pasar a `eased`, se incorpora y bebe un rato. */
+  setNightmare(n: { hero: string; eased: boolean } | null): void {
+    if (!n) {
+      this.dream = null;
+      return;
+    }
+    const was = this.dream;
+    if (was && was.id === n.hero && was.eased === n.eased) return;
+    const now = was?.id === n.hero && !was.eased && n.eased;
+    this.dream = { id: n.hero, eased: n.eased, at: now ? this.now : -99 };
+  }
+
+  /**
+   * Cómo está el de la pesadilla: dando vueltas (`toss`), incorporado de golpe (`start`), con el
+   * trago (`drink`), ya tranquilo (`calm`) o nada (no es él o no está acostado).
+   */
+  private dreamOf(a: Actor): 'toss' | 'start' | 'drink' | 'calm' | null {
+    const d = this.dream;
+    if (!d || d.id !== a.hero.id || a.pose !== 'bed' || a.edge || a.path.length) return null;
+    if (d.eased) return this.now - d.at < DRINK_TIME ? 'drink' : 'calm';
+    // Cada `TOSS_CYCLE`: un respingo (incorporado), luego se agita a ratos bajo la manta.
+    const p = (this.now + (hash(a.hero.id) % 7)) % TOSS_CYCLE;
+    if (p < 0.7) return 'start';
+    return p % 2.4 < 1.5 ? 'toss' : 'calm';
+  }
+
+  /** Si al de la pesadilla ya se le llevó el trago. */
+  nightmareEased(): boolean {
+    return !!this.dream?.eased;
+  }
+
+  /**
+   * El de la pesadilla, si está acostado: dónde tiene la cabeza (mundo 2D) y cómo está, para que
+   * la escena le ponga la nubecilla, la jarra o los «zzz».
+   */
+  nightmare(): {
+    x: number;
+    y: number;
+    z: number;
+    state: 'toss' | 'start' | 'drink' | 'calm';
+    since: number;
+  } | null {
+    const d = this.dream;
+    const a = d ? this.actors.get(d.id) : undefined;
+    if (!a || a.gone) return null;
+    const state = this.dreamOf(a);
+    if (!state) return null;
+    const f = this.frame(a, this.now);
+    const k = scaleAt(f.z);
+    const up = state === 'start' || state === 'drink';
+    return {
+      x: f.left + (up ? 8 : 6) / k,
+      y: f.bottom - TALL / k + (up ? UP_DROP + 6 : 8) / k,
+      z: f.z,
+      state,
+      since: this.now - (d?.at ?? 0),
+    };
+  }
+
+  /** Incorporado en la cama: el fotograma de acostado, con el dibujo `UP_DROP` filas más abajo. */
+  private upFrame(
+    bed: BedSpot,
+    k: number,
+    z: number,
+  ): { frame: number; left: number; bottom: number; z: number } {
+    const tint = this.tints[bed.roomId];
+    const f = bedFrame(bed, k, z, tint);
+    const up =
+      bed.kind !== 'litera'
+        ? F.up + (bed.kind === 'catre' ? 4 : 5)
+        : tint
+          ? F.upT + TINT_IDS.indexOf(tint)
+          : F.up + bed.level;
+    // El dibujo baja UP_DROP filas en su fotograma, así que el fotograma sube otro tanto.
+    return { ...f, frame: up, bottom: f.bottom - UP_DROP / k };
   }
 
   /** Temas de color de las salas: la manta de quien duerme en una litera es la de su sala. */
@@ -3128,22 +3213,20 @@ export class Crowd {
   private frame(a: Actor, t: number): { frame: number; left: number; bottom: number; z: number } {
     const z = this.depth(a);
     const k = scaleAt(z);
-    if (a.edge) {
-      // Incorporado: el fotograma de acostado, con el dibujo `UP_DROP` filas más abajo.
-      const bed = a.edge.bed;
-      const tint = this.tints[bed.roomId];
-      const f = bedFrame(bed, k, z, tint);
-      const up =
-        bed.kind !== 'litera'
-          ? F.up + (bed.kind === 'catre' ? 4 : 5)
-          : tint
-            ? F.upT + TINT_IDS.indexOf(tint)
-            : F.up + bed.level;
-      // El dibujo baja UP_DROP filas en su fotograma, así que el fotograma sube otro tanto.
-      return { ...f, frame: up, bottom: f.bottom - UP_DROP / k };
-    }
+    if (a.edge) return this.upFrame(a.edge.bed, k, z);
     const bed = a.pose === 'bed' ? a.goal?.bed : undefined;
-    if (bed) return bedFrame(bed, k, z, this.tints[bed.roomId]);
+    if (bed) {
+      const d = this.dreamOf(a);
+      // La pesadilla: bebiendo, incorporado; sin el trago, se agita bajo la manta y a ratos se
+      // incorpora de golpe.
+      if (d === 'drink' || d === 'start') return this.upFrame(bed, k, z);
+      const f = bedFrame(bed, k, z, this.tints[bed.roomId]);
+      if (d === 'toss') {
+        const dx = Math.floor(t * 7) % 2 ? 1 : -1;
+        return { ...f, left: f.left + dx / k };
+      }
+      return f;
+    }
     if (a.held) {
       // Colgando del dedo, pataleando un poco.
       const step = Math.floor(t * 12) % WALK_STEPS;

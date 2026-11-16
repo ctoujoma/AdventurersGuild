@@ -15,6 +15,7 @@ import {
   INCIDENT_RANK_COST,
   CAT_EVERY,
   CAT_FIRST,
+  CAT_MAX,
   GUARD_HOLD,
   GUARD_NAP,
   NIGHT_NAP_CYCLE,
@@ -205,8 +206,8 @@ export function catHunts(b: Building, roomId: string): boolean {
 /**
  * La casa se ayuda sola: el de guardia (despierto) va a separar la pelea del salón y entretiene
  * al recaudador en la puerta; el de guardia en la cámara se echa encima del ladrón (se avisa
- * igual: si no puede con él, aún se le puede cerrar el paso); el gato caza las ratas de las
- * salas de su planta. Devuelve la
+ * igual: si no puede con él, aún se le puede cerrar el paso); el gato caza algunas ratas de
+ * las salas de su planta (no todas). Devuelve la
  * noticia, si la hay. Muta `s` (una copia).
  */
 function helpers(s: GameState, inc: Incident, to: number): IncidentNews | null {
@@ -239,17 +240,17 @@ function helpers(s: GameState, inc: Incident, to: number): IncidentNews | null {
     };
   }
   if (inc.kind === 'ratas' && catHunts(s.building, inc.room)) {
+    // El gato ayuda (quita alguna, sin avisar de cada una) pero no remata: la última, siempre
+    // para el jugador.
     let at = inc.cat ?? inc.from + CAT_FIRST;
     let taps = inc.taps ?? 0;
-    while (to >= at && taps > 0) {
+    let caught = inc.caught ?? 0;
+    while (to >= at && taps > 1 && caught < CAT_MAX) {
       taps--;
+      caught++;
       at += CAT_EVERY;
     }
-    if (taps <= 0) {
-      done(s, inc, 'bien');
-      return { t: 'El gato acaba con las últimas ratas. Fuera ratas: no queda ni una.', k: 'good' };
-    }
-    if (taps !== inc.taps || at !== inc.cat) set({ taps, cat: at });
+    if (taps !== inc.taps || at !== inc.cat) set({ taps, cat: at, caught });
   }
   return null;
 }

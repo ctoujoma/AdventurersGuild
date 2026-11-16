@@ -34,6 +34,8 @@ const CHEATS: { kind: Cheat; label: string }[] = [
   { kind: 'forastero', label: 'Forastero de la tormenta' },
   { kind: 'ladronNoche', label: 'Ladrón nocturno' },
   { kind: 'mensajero', label: 'Mensajero tardío' },
+  { kind: 'pesadilla', label: 'Pesadilla' },
+  { kind: 'gato', label: 'Gato cazador' },
 ];
 
 const SPEEDS: Settings['speed'][] = [1, 1.5, 2];

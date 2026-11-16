@@ -11,6 +11,8 @@ import { ATTR_NAMES, cappedTrainees } from '../core/training';
 import { nurseBonus } from '../core/workers';
 import { RECIPES } from '../data/recipes';
 import { storeLevel } from '../core/materials';
+import { sleepPlan } from '../core/beds';
+import { nightmareNow } from '../core/nightmare';
 import { crewAlerts } from './crew';
 import type { IconName } from './icons';
 import { jobRoomName } from './roomName';
@@ -197,6 +199,21 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
       icon: 'vela',
       go: { stranger: true },
     });
+
+  // La pesadilla: alguien da vueltas en la cama (tocándole se le lleva un trago).
+  const nm = nightmareNow(game);
+  if (nm && !nm.n.eased) {
+    // Los heridos, en los catres de la enfermería (si está en uso); los demás, en su dormitorio.
+    const cots = rooms.find((r) => r.type === 'enfermeria' && r.level > 0 && !r.works);
+    const bed = nm.h.status === 'herido' && cots ? cots.id : sleepPlan(game).get(nm.h.id);
+    out.push({
+      id: `pesadilla:${nm.n.day}`,
+      text: `${nm.h.name} da vueltas en la cama, entre pesadillas. Tócal${nm.h.sex === 'f' ? 'a' : 'o'} para llevarle un trago de la bodega.`,
+      k: 'warn',
+      icon: 'moon',
+      go: bed ? { room: bed } : { crew: null },
+    });
+  }
 
   // Obras recién acabadas.
   for (const id of done) {

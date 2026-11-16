@@ -3,6 +3,7 @@ import { INCIDENTS } from '../data/incidents';
 import {
   CAT_EVERY,
   CAT_FIRST,
+  CAT_MAX,
   DAY_SECONDS,
   GUARD_HOLD,
   GUARD_NAP,
@@ -278,14 +279,27 @@ describe('incidentes', () => {
     expect(s.incidents![0]!.until).toBe(until + GUARD_HOLD);
   });
 
-  it('ratas: el gato caza alguna si la sala está en la planta del salón', () => {
+  it('ratas: el gato ayuda en la planta del salón, pero no remata', () => {
     const s = withIncident('ratas', 'gato');
     const inc = s.incidents![0]!;
     // En la cocina, junto al salón (planta baja).
     inc.room = s.building.rooms.find((r) => r.type === 'cocina')!.id;
     expect(catHunts(s.building, inc.room)).toBe(true);
     const taps = inc.taps!;
-    stepIncidents(s, 10, 10 + CAT_FIRST + CAT_EVERY);
+    // Sin avisar de cada rata.
+    expect(stepIncidents(s, 10, 10 + CAT_FIRST + CAT_EVERY)).toEqual([]);
     expect(s.incidents![0]!.taps).toBe(taps - 2);
+    // Por mucho que pase, como mucho `CAT_MAX`; y nunca la última.
+    stepIncidents(s, 10 + CAT_FIRST + CAT_EVERY, inc.until - 1);
+    expect(s.incidents![0]!.taps).toBe(Math.max(1, taps - CAT_MAX));
+    const one = withIncident('ratas', 'gato');
+    one.incidents![0]!.room = inc.room;
+    one.incidents![0]!.taps = 2;
+    stepIncidents(one, 10, one.incidents![0]!.until - 1);
+    expect(one.incidents![0]!.taps).toBe(1);
+    // Al acabarse el tiempo, sale mal: rematar le toca al jugador.
+    const news = stepIncidents(one, one.incidents![0]!.until - 1, one.incidents![0]!.until);
+    expect(one.incidents).toEqual([]);
+    expect(news[0]?.k).toBe('bad');
   });
 });

@@ -194,6 +194,15 @@ La lista completa de pendientes e ideas (bucle, monetización, amigos, torneos, 
   solo hay uno), a una cama del dormitorio (`homes` en `people.ts`). Estén donde estén, se les
   pinta acostados con la venda (los sanos, sin ella) y de vez en cuando sube una cruz roja sobre
   su cabeza (`injured` en `crowd.ts`, partícula `cross`).
+- **Sucesos de la noche, parte B** (fase 7; `core/night.ts`, que ahora tiene `dawn` para lo que
+  se resuelve al amanecer): la **pesadilla** (`core/nightmare.ts`): un herido o desanimado da
+  vueltas en la cama (se agita, se incorpora de golpe y le sube una nubecilla con un rayito:
+  `dreamOf` en `crowd.ts`, `dreamFx` en `RoomScene.ts`, partícula `gloom`); tocándole, aparece la
+  jarra (`mug`), bebe y duerme con «zzz» (acción `nightmare`, gasta jarras). Si no se toca, amanece
+  con menos moral; la guardia no se mete. El **gato cazador** (`core/nightCat.ts`): con despensa o
+  bodega en la planta del salón, persigue una rata, salta y la caza (`setNightHunt` en `pets.ts`);
+  al amanecer, una línea menuda, raciones salvadas y ese día sin ratas. De día, el gato ayuda con
+  las ratas pero no remata (`CAT_MAX`). Trucos: «Pesadilla» y «Gato cazador».
 - **Animales del salón** (`world/rooms/pets.ts`, dibujos en `art/pets.ts`): el gato Bigotes
   (el de la taberna de antes del PR 12) duerme a la derecha de la chimenea; a ratos se sienta,
   se lava y da una vuelta por delante de las mesas. Tizón, el perro (si se ha comprado),

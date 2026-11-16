@@ -1,4 +1,6 @@
 import { messengerSex } from '../core/messenger';
+import { nightCatNow } from '../core/nightCat';
+import { nightmareNow } from '../core/nightmare';
 import { INCIDENTS } from '../data/incidents';
 import { awayPlan, isAway, sleepPlan } from '../core/beds';
 import { craftState, dressingOf } from '../core/crafting';
@@ -243,6 +245,10 @@ export function sceneModel(s: GameState): SceneModel {
       s.messenger && !s.messenger.gone
         ? { day: s.messenger.day, sex: messengerSex(s.messenger.day) }
         : null,
+    nightmare: nightmareNow(s)
+      ? { hero: s.nightmare!.hero, eased: !!s.nightmare!.eased }
+      : undefined,
+    nightCat: nightCatNow(s) ? { room: s.nightCat!.room, n: s.nightCat!.n } : undefined,
     gear: gearInStock(s).map((i) => ({
       icon: i.icon ?? 'espada',
       rarity: i.rarity ?? 0,

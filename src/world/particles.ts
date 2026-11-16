@@ -36,7 +36,11 @@ export type PKind =
   /** Burbuja de la cuba: sube un poco, se hincha y revienta. */
   | 'bubble'
   /** El pergamino de una receta aprendida: sube meciéndose y se desvanece. */
-  | 'scroll';
+  | 'scroll'
+  /** La nubecilla oscura de la pesadilla, con un rayito que parpadea: sube despacio. */
+  | 'gloom'
+  /** La jarra del trago: aparece sobre la cama, baja a las manos y se queda hasta acabar. */
+  | 'mug';
 
 export interface Particle {
   kind: PKind;
@@ -156,6 +160,16 @@ export class Particles {
         }
         case 'scroll':
           p.vx = Math.sin(t * 2.5 + p.seed) * 4;
+          break;
+        case 'gloom':
+          p.vx = Math.sin(t * 1.6 + p.seed) * 1.5;
+          break;
+        case 'mug':
+          // Baja hasta su sitio (`ay`) y se queda.
+          if (p.y >= p.ay) {
+            p.y = p.ay;
+            p.vy = 0;
+          }
           break;
         case 'note':
         case 'zzz':
@@ -285,6 +299,56 @@ export class Particles {
           if (k > 0.5 && Math.floor(t * 6 + p.seed) % 3 === 0) px(ctx, x + 7, y - 1, P.white);
           break;
         }
+        case 'gloom': {
+          // Morada con el borde pizarra y una luz arriba; debajo, a ratos, el rayito.
+          const g = ['...SSS...', '.SSGGGSS.', 'SGGHHGGGS', 'SGGGGGGGS', '.SSSSSSS.'];
+          const ink: Record<string, string> = { S: P.slate, G: P.grape, H: P.rose };
+          const show = k > 0.3 ? () => true : fade;
+          g.forEach((row, j) => {
+            for (let i = 0; i < row.length; i++) {
+              const c = ink[row[i]!];
+              if (c && show(x + i, y + j)) px(ctx, x + i, y + j, c);
+            }
+          });
+          if (k > 0.3 && Math.floor(t * 5 + p.seed) % 3 === 0)
+            for (const [i, j] of [
+              [4, 5],
+              [3, 6],
+              [4, 7],
+              [3, 8],
+            ] as const)
+              px(ctx, x + i, y + j, P.lemon);
+          break;
+        }
+        case 'mug': {
+          // Jarra de madera clara con espuma y su contorno oscuro (si no, a oscuras no se ve);
+          // aparece y se va tramada.
+          const g = ['.WWWW..', 'WWWWWW.', 'WmWWmWoo', '.tTtt.o', '.rrrr.o', '.tTtto.', '.tttt..'];
+          const ink: Record<string, string> = {
+            W: P.white,
+            m: P.mist,
+            t: P.tan,
+            T: P.clay,
+            r: P.rust,
+            o: P.oak,
+          };
+          const u = 1 - k;
+          const show =
+            u < 0.12
+              ? (a: number, b: number) => bayer(a + p.seed, b) < u / 0.12
+              : k < 0.15
+                ? fade
+                : () => true;
+          const on = (i: number, j: number) => !!ink[g[j]?.[i] ?? '.'];
+          for (let j = -1; j <= g.length; j++)
+            for (let i = -1; i <= 8; i++) {
+              if (!show(x + i, y + j)) continue;
+              if (on(i, j)) px(ctx, x + i, y + j, ink[g[j]![i]!]!);
+              else if (on(i - 1, j) || on(i + 1, j) || on(i, j - 1) || on(i, j + 1))
+                px(ctx, x + i, y + j, P.black);
+            }
+          break;
+        }
         case 'drip':
           // Una gota alargada: clara arriba.
           px(ctx, x, y, P.sky);
@@ -369,4 +433,6 @@ const defaults: Record<PKind, { life: number; vx: number; vy: number }> = {
   glint: { life: 0.7, vx: 0, vy: 0 },
   bubble: { life: 0.9, vx: 0, vy: -3 },
   scroll: { life: 2.6, vx: 0, vy: -9 },
+  gloom: { life: 2.2, vx: 0, vy: -2.5 },
+  mug: { life: 3.4, vx: 0, vy: 0 },
 };

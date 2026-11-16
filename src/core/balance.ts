@@ -621,9 +621,13 @@ export const THIEF_ESCAPE = 8;
 export const GUARD_NAP = [0.48, 0.58] as const;
 /** El recaudador en la puerta: segundos de más que le entretiene el de guardia. */
 export const GUARD_HOLD = 20;
-/** Las ratas: el gato llega a los tantos segundos y caza una cada tantos. */
+/**
+ * Las ratas: el gato llega a los tantos segundos y caza una cada tantos, pero como mucho
+ * `CAT_MAX` (ayuda; rematar le toca al jugador).
+ */
 export const CAT_FIRST = 6;
 export const CAT_EVERY = 10;
+export const CAT_MAX = 3;
 /** Probabilidad de que un encargo con éxito brillante traiga los planos de una receta. */
 export const RECIPE_FIND = 0.2;
 
@@ -734,3 +738,16 @@ export const VEIL_BED = 4;
 export const VEIL_MORALE = 30;
 export const VEIL_CAP = 25;
 export const VEIL_DAYS = 10;
+/**
+ * La pesadilla: un héroe herido o con la moral baja (`MORALE_LOW`) da vueltas en la cama.
+ * Días entre una y otra.
+ */
+export const NIGHTMARE_EVERY = 3;
+/** El trago de la bodega: jarras que cuesta (herido o no) y moral que sube. */
+export const NIGHTMARE_BEER = 1;
+export const NIGHTMARE_EASE = 12;
+/** Si nadie le lleva nada: moral que pierde al amanecer. */
+export const NIGHTMARE_LOSS = 8;
+/** El gato cazador: días entre una caza y otra y raciones que se salvan. */
+export const CAT_NIGHT_EVERY = 4;
+export const CAT_NIGHT_FOOD = 2;

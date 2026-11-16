@@ -84,6 +84,7 @@ export const MESSENGER_EVENT: NightEvent = {
     s.messenger = { day: s.day, at, quest: urgentQuest(s, rng), ...(guard ? { guard } : {}) };
     return null;
   },
+  dawn: (s) => settleMessenger(s),
 };
 
 /** Si ya se ha cansado de esperar en la puerta (y se ha ido). */
@@ -121,24 +122,23 @@ export function dismissMessenger(s: GameState): void {
  * Al pasar el día: el mensajero que nadie ha atendido. Si el de guardia estaba despierto cuando
  * llamó, le recogió el recado y el encargo sale en el tablón; si no, se fue. Muta `s`.
  */
-export function settleMessenger(s: GameState, events: DawnEvent[]): void {
+export function settleMessenger(s: GameState): DawnEvent | null {
   const m = s.messenger;
-  if (!m) return;
+  if (!m) return null;
   s.messenger = null;
   const g = m.guard && s.heroes.find((h) => h.id === m.guard);
   if (g) {
     s.quests = [...s.quests, m.quest];
-    events.push({
+    return {
       t: `Anoche llamó ${aMessenger(m.day)} con un encargo urgente y ${g.name}, de guardia, le recogió el recado: «${m.quest.title}» (${m.quest.reward} monedas) está en el tablón. Sale hoy o se pierde.`,
       k: 'good',
-    });
-    return;
+    };
   }
   const napper = guardsAt(s, 'puerta')[0];
-  events.push({
+  return {
     t: napper
       ? `Anoche llamó ${aMessenger(m.day)} con un encargo urgente, pero ${napper.name} cabeceaba en la puerta y no le oyó: se lo llevó a otra parte.`
       : `Anoche llamó ${aMessenger(m.day)} con un encargo urgente, pero nadie le abrió: se lo llevó a otra parte.`,
     k: 'warn',
-  });
+  };
 }

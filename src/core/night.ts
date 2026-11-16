@@ -1,16 +1,23 @@
 /**
  * Sucesos nocturnos (fase 7, «La noche»): la pieza común. Cada suceso dice cuándo puede pasar
- * (`when`), cada cuánto como poco (`every`) y qué pasa al llegar (`start`). Cada noche se tira una
- * sola vez y pasa uno como mucho: con el juego abierto, a la hora `NIGHT_ROLL`; con el juego
- * cerrado (o si se pasa el día antes), al pasar el día. La noche del asalto no pasa nada.
+/**
+ * Sucesos nocturnos (fase 7, «La noche»): la pieza común. Cada suceso dice cuándo puede pasar
+ * (`when`), cada cuánto como poco (`every`), qué pasa al llegar (`start`) y, si hace falta, cómo
+ * acaba al amanecer (`dawn`, ver `dawnNight`). Cada noche se tira una sola vez y pasa uno como
+ * mucho: con el juego abierto, a la hora `NIGHT_ROLL`; con el juego cerrado (o si se pasa el día
+ * antes), al pasar el día. La noche del asalto no pasa nada.
  *
  * Cuántos (N2): los que tienen `chance` (el forastero) se tiran antes, cada uno con la suya. Para
- * el resto, una tirada «¿pasa algo esta noche?» (`NIGHT_ODDS`, más con niebla o tormenta) y, si
- * sale, se elige uno de los posibles por su peso (`weight`, 1 si no lo dice).
+ * el resto (ladrón, mensajero, pesadilla y gato), una tirada «¿pasa algo esta noche?»
+ * (`NIGHT_ODDS`, más con niebla o tormenta) y, si sale, uno de los posibles por su peso
+ * (`weight`, 1 si no lo dice).
  */
 import { DAY_SECONDS, NIGHT_ODDS, NIGHT_ODDS_ROUGH, NIGHT_ROLL } from './balance';
 import { MESSENGER_EVENT } from './messenger';
 import type { DawnEvent, GameState, NightLog } from './model';
+import { NIGHT_CAT_EVENT } from './nightCat';
+import { NIGHTMARE_EVENT } from './nightmare';
+import { raidTonight } from './raids';
 import { Rng } from './rng';
 import { roughNight } from './sky';
 import { STRANGER_EVENT } from './stranger';
@@ -23,16 +30,28 @@ export interface NightEvent {
   when: (s: GameState) => boolean;
   /** Se tira aparte, antes que los demás, con esta probabilidad (el forastero). */
   chance?: (s: GameState) => number;
-  /** Peso al elegir entre los demás cuando «pasa algo» (1 si no lo dice). */
-  weight?: (s: GameState) => number;
   /** Días que han de pasar, como poco, desde la última vez. */
   every: number;
   /** Lo que pasa: muta `s` (ya copiado) y devuelve el aviso, si lo hay. */
   start: (s: GameState, rng: Rng) => DawnEvent | null;
+  /** En la tirada común, lo que pesa frente a los demás que puedan (1 si no se dice). */
+  weight?: number;
+  /**
+   * Al amanecer (en `endDay`, tras tirar la noche): cómo acabó lo que no se tocó o se tocó.
+   * Muta `s` (ya copiado) y devuelve la línea de la carta, si la hay. Se llama todas las noches
+   * (para recoger lo que quede de otras).
+   */
+  dawn?: (s: GameState) => DawnEvent | null;
 }
 
 /** Por orden: los que se tiran aparte, el de arriba primero. */
-export const NIGHT_EVENTS: readonly NightEvent[] = [STRANGER_EVENT, THIEF_EVENT, MESSENGER_EVENT];
+export const NIGHT_EVENTS: readonly NightEvent[] = [
+  STRANGER_EVENT,
+  THIEF_EVENT,
+  MESSENGER_EVENT,
+  NIGHTMARE_EVENT,
+  NIGHT_CAT_EVENT,
+];
 
 export const nightLog = (s: GameState): NightLog => s.nights ?? { rolled: 0, last: {} };
 
@@ -49,16 +68,15 @@ export function canHappen(s: GameState, e: NightEvent): boolean {
  */
 export const nightRng = (s: GameState) => new Rng(`noche:${s.seed}:${s.day}`);
 
-/** Si esta noche hay asalto (se juega la noche de antes de `raid.day`). */
-export const raidTonight = (s: GameState) => !!s.raid && s.raid.day <= s.day + 1;
+export { raidTonight };
 
 /** Probabilidad de que pase algo esta noche (aparte de los que se tiran solos). */
 export const nightOdds = (s: GameState) =>
   roughNight(s.seed, s.day) ? NIGHT_ODDS_ROUGH : NIGHT_ODDS;
 
 /** Elige uno por su peso. */
-function pickWeighted(s: GameState, list: NightEvent[], rng: Rng): NightEvent | null {
-  const w = list.map((e) => Math.max(0, e.weight?.(s) ?? 1));
+function pickWeighted(list: NightEvent[], rng: Rng): NightEvent | null {
+  const w = list.map((e) => Math.max(0, e.weight ?? 1));
   const total = w.reduce((a, b) => a + b, 0);
   if (total <= 0) return null;
   let r = rng.next() * total;
@@ -84,7 +102,6 @@ export function rollNight(s: GameState, rng: Rng): DawnEvent[] {
     if (e.chance && canHappen(s, e) && rng.chance(e.chance(s))) return happen(e);
   if (!rng.chance(nightOdds(s))) return [];
   const e = pickWeighted(
-    s,
     NIGHT_EVENTS.filter((x) => !x.chance && canHappen(s, x)),
     rng,
   );
@@ -94,3 +111,13 @@ export function rollNight(s: GameState, rng: Rng): DawnEvent[] {
 /** Si el reloj ha pasado de `from` a `to` por la hora del suceso de la noche. */
 export const nightDue = (s: GameState, from: number, to: number) =>
   from < NIGHT_ROLL * DAY_SECONDS && to >= NIGHT_ROLL * DAY_SECONDS && nightLog(s).rolled < s.day;
+
+/** Al amanecer: lo que dice cada suceso de cómo acabó la noche (ver `NightEvent.dawn`). */
+export function dawnNight(s: GameState): DawnEvent[] {
+  const out: DawnEvent[] = [];
+  for (const e of NIGHT_EVENTS) {
+    const said = e.dawn?.(s);
+    if (said) out.push(said);
+  }
+  return out;
+}

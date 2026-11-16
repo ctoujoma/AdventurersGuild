@@ -416,6 +416,8 @@ describe('hay que salir de aventura', () => {
 
   it('una semana sin salir: se aburre y la moral baja hasta un suelo', () => {
     const { s, h } = home('aburrido');
+    // Sin pesadillas (con la moral tan baja podría tenerlas y perder algo más).
+    s.nights = { rolled: 0, last: { pesadilla: 9999 } };
     h.idle = BORED_AFTER;
     h.morale = 60;
     let n = endDay(s);

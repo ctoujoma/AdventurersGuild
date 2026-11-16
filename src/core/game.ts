@@ -116,14 +116,9 @@ import {
   tutorialStep,
 } from './tutorial';
 import { stepRaids } from './raids';
-import { nightDue, nightRng, rollNight } from './night';
-import {
-  acceptMessenger,
-  dismissMessenger,
-  messengerGone,
-  settleMessenger,
-  stepMessenger,
-} from './messenger';
+import { dawnNight, nightDue, nightRng, rollNight } from './night';
+import { acceptMessenger, dismissMessenger, messengerGone, stepMessenger } from './messenger';
+import { easeIssue, easeNightmare } from './nightmare';
 import { dismiss, revive, reviveIssue, stepStranger, strangerGone } from './stranger';
 import { advanceChain, bossOf, fightRoster, offerChain } from './chains';
 import { choose, maybeEvent, scaredClients, stepThreat } from './events';
@@ -294,6 +289,8 @@ export type Action =
   | { type: 'stranger'; heroId: string | null }
   /** El mensajero tardío: aceptar su encargo o despedirle. */
   | { type: 'messenger'; accept: boolean }
+  /** Llevarle un trago de la bodega al de la pesadilla (`core/nightmare.ts`). */
+  | { type: 'nightmare' }
   /** Saltar al anochecer. */
   | { type: 'dusk' }
   | { type: 'endDay' };
@@ -1087,6 +1084,13 @@ function reduceAction(state: GameState, action: Action): GameState {
       s.incidentNews = n ? [n] : undefined;
       return s;
     }
+    case 'nightmare': {
+      if (easeIssue(state)) return state;
+      const s = structuredClone(state);
+      const said = easeNightmare(s);
+      s.incidentNews = [{ t: said.t, k: said.k ?? 'info' }];
+      return s;
+    }
     case 'dusk':
       return tick(state, DUSK * DAY_SECONDS);
     case 'endDay':
@@ -1326,13 +1330,14 @@ export function endDay(state: GameState, away = false): GameState {
   // El forastero de una noche anterior ya se fue a mediodía; el suceso de esta noche, si no se
   // ha tirado con el reloj (juego cerrado), se tira ahora y se cuenta al amanecer.
   if (s.stranger && s.stranger.day < s.day) s.stranger = null;
-  // Lo que ya pasó esta noche con el juego abierto, y lo que pasa ahora si no se ha tirado: el
-  // ladrón y el mensajero sin tocar se resuelven ya (según quién esté de guardia y despierto).
+  // Lo que ya pasó esta noche con el juego abierto (`tellDawn`), lo que pasa ahora si no se ha
+  // tirado y cómo acaba lo que quede (el ladrón y el mensajero sin tocar, según quién esté de
+  // guardia y despierto; la pesadilla; el gato), todo a la carta del amanecer.
   events.push(...(s.nightLines ?? []));
   delete s.nightLines;
   events.push(...rollNight(s, nightRng(s)));
   failIncidents(s, events);
-  settleMessenger(s, events);
+  events.push(...dawnNight(s));
   s.day++;
   stepWorks(s, events);
   tidyJobs(s);

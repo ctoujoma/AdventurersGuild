@@ -472,6 +472,8 @@ export interface Incident {
   held?: string;
   /** Las ratas: el gato caza una al llegar a este segundo del reloj (y luego otra, y otra). */
   cat?: number;
+  /** Las ratas que ya ha cazado el gato (como mucho `CAT_MAX`: el resto, el jugador). */
+  caught?: number;
 }
 
 /** Un golpe del duelo con el ladrón: el héroe (`h`) o el ladrón (`l`), y cuánto quita. */
@@ -873,6 +875,24 @@ export interface GameState {
    * sueltos; se cuenta al amanecer, en la carta.
    */
   nightLines?: DawnEvent[];
+  /** La pesadilla de esta noche, si la hay (ver `core/nightmare.ts`). */
+  nightmare?: Nightmare | null;
+  /** El gato de caza por la noche (ver `core/nightCat.ts`); se recoge al amanecer. */
+  nightCat?: NightCat | null;
+}
+
+/** Un héroe da vueltas en la cama la noche del día `day`; `eased`: ya se le llevó el trago. */
+export interface Nightmare {
+  day: number;
+  hero: string;
+  eased?: boolean;
+}
+
+/** El gato caza `n` ratas en la sala `room` la noche del día `day`. */
+export interface NightCat {
+  day: number;
+  room: string;
+  n: number;
 }
 
 /** El mensajero tardío: llama a la puerta la noche del día `day` con un encargo urgente. */

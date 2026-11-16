@@ -106,6 +106,13 @@ export interface SceneModel {
   stranger?: boolean;
   /** El mensajero tardío llama a la puerta (la noche del día `day`; `core/messenger.ts`). */
   messenger?: { day: number; sex: Sex } | null;
+  /**
+   * La pesadilla de esta noche (`core/nightmare.ts`): quién da vueltas en la cama y si ya se le
+   * ha llevado el trago (entonces se incorpora, bebe y se calma).
+   */
+  nightmare?: { hero: string; eased: boolean };
+  /** El gato de caza esta noche (`core/nightCat.ts`): en qué sala y cuántas ratas caza. */
+  nightCat?: { room: string; n: number };
   /** Equipo sin dueño (armería o arcones) y trofeos del salón. */
   gear: GearView[];
   /** Lo llena que está la cámara del tesoro, de 0 a 1 (el oro que se ve en ella). */
