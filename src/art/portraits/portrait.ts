@@ -115,7 +115,6 @@ const PORTRAIT_OUTFIT: Partial<Record<OutfitId, keyof typeof OUTFITS>> = {
   pintor: 'tabernero',
   noble: 'clerigo',
   forastero: 'picaro',
-  velado: 'clerigo',
 };
 const PORTRAIT_HAT: Partial<Record<HeadgearId, keyof typeof HEADGEAR>> = {
   paja: 'sombrero',

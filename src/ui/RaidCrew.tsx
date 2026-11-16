@@ -61,7 +61,8 @@ export function RaidCrew({
   const raid = () => scene.current?.liveRaid;
   return (
     <div class="raid-crew">
-      <p class={`raid-crew-hint ${end ? 'is-end' : ''}`}>
+      {/* Mientras avisa el cabecilla, «¡Cubríos!» ocupa el sitio de la pista (sin taparla a medias). */}
+      <p class={`raid-crew-hint ${end ? 'is-end' : ''} ${warn && !end ? 'is-hidden' : ''}`}>
         {end ?? 'Arrastra a los tuyos a una sala · toca a un bandido para ir a por él'}
       </p>
       <FightCrew

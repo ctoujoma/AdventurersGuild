@@ -475,12 +475,14 @@ function composeBack(look: HeroLook, marks: HeroMarks): PixelBuffer {
   const hg = headgearOf(look, marks);
   const bald = look.hairStyle === 'calvo';
   body(BASE);
-  const nape = hg === 'capucha' ? 'cC' : bald ? 'xX' : 'hH';
+  // La capucha y el velo del forastero tapan la cabeza entera, también de espaldas.
+  const hood = hg === 'capucha' || hg === 'velo';
+  const nape = hood ? 'cC' : bald ? 'xX' : 'hH';
   body(NAPE.map((r) => r.replace(/h/g, nape[0]!).replace(/H/g, nape[1]!)));
   body(plainBack(OUTFITS[look.outfit]));
-  if (hg !== 'capucha' && look.hairStyle === 'largo') body(NAPE_LONG);
-  if (hg !== 'capucha' && look.hairStyle === 'coleta') body(NAPE_TAIL);
-  if (hg === 'capucha') body(HELMS.capucha);
+  if (!hood && look.hairStyle === 'largo') body(NAPE_LONG);
+  if (!hood && look.hairStyle === 'coleta') body(NAPE_TAIL);
+  if (hood) body(HELMS[hg]);
   else if (hg === 'casco') body(HELM_BACK);
   else {
     if (!bald) body(FRONT_HAIR[look.hairStyle].slice(0, 4));

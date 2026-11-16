@@ -370,7 +370,7 @@ Repartida en cuatro agentes y juntada en la rama (sin choques):
 - Pendiente: el tope de visitantes en escena (`MAX_VISITORS = 8`) sigue igual; tres cuartos y
   espaldas de la gente son sencillos (sin capa propia por traje).
 
-### Antes de la fase 7 · vistas previas (16 de noviembre, esperando al usuario)
+### Antes de la fase 7 · hecho (16 de noviembre, luz verde del usuario)
 
 - Página: https://claude.ai/artifact/HseU8Nj7tG6dXSWW715yQ1.
 - Fichas con pestañas arriba: `dfca237` en `worktree-agent-a90d7ad02821c1983`.
@@ -379,3 +379,8 @@ Repartida en cuatro agentes y juntada en la rama (sin choques):
 - Forastero de la tormenta: `42e1419` en la rama `forastero-tormenta` (parte de `origin/main`
   7f9c3a8, sin la fase 6: puede chocar al juntar). Pieza de sucesos nocturnos en `core/night.ts`;
   el tipo de día pasa a `core/sky.ts`; tormentas del 3 % al 5 %. Pulir: cuello del retrato.
+- Juntado en la rama (cherry-pick) y pulido: «¡Cubríos!» ya no tapa la pista del asalto
+  (`.raid-crew-hint.is-hidden`); el retrato del forastero tiene torso propio (`OUTFITS.velado` en
+  `art/portraits/parts.ts`, sin la estola del clérigo); la vista de espaldas trata el velo como
+  la capucha (`composeBack`).
+- Fase 7: los sucesos nocturnos van en `NIGHT_EVENTS` (`core/night.ts`); el forastero es el primero.

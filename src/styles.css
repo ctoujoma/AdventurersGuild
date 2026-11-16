@@ -6958,6 +6958,9 @@ p.notebook-close {
   transform: translateX(-50%);
   animation: tut-btn 0.6s steps(3) infinite;
 }
+.raid-crew-hint.is-hidden {
+  visibility: hidden;
+}
 .bossfight-crew {
   width: 100%;
   max-width: 900px;
