@@ -86,7 +86,7 @@ describe('el asalto sala a sala', () => {
     s.gold = 400;
     const set = setup(s);
     const r = simulate(set, new Rng('a'));
-    const kinds = r.plan.steps.map((x) => x.k);
+    const kinds = r.plan.log!.map((x) => x.kind);
     expect(kinds).toContain('door');
     expect(kinds).toContain('broke');
     expect(kinds).toContain('open');
@@ -107,8 +107,8 @@ describe('el asalto sala a sala', () => {
       ],
     });
     const r = simulate(set, new Rng('b'));
-    expect(r.plan.steps.find((x) => x.k === 'fight')).toMatchObject({ at: YARD });
-    expect(r.plan.steps.some((x) => x.k === 'broke')).toBe(false);
+    expect(r.plan.log!.find((x) => x.kind === 'fight')).toMatchObject({ at: YARD });
+    expect(r.plan.log!.some((x) => x.kind === 'broke')).toBe(false);
     expect(r.escaped).toBe(0);
     expect(r.downed).toBe(set.bandits.length);
   });
@@ -138,10 +138,10 @@ describe('el asalto sala a sala', () => {
       door: 1,
     });
     const r = simulate(only, new Rng('d'));
-    const moves = r.plan.steps.filter((x) => x.k === 'move' && x.ids.includes('k'));
+    const moves = r.plan.log!.filter((x) => x.kind === 'move' && x.ids.includes('k'));
     expect(moves).toEqual([]);
-    expect(r.plan.steps.some((x) => x.k === 'wake' && x.id === 'k')).toBe(false);
-    expect(r.plan.steps.find((x) => x.k === 'fight')).toMatchObject({ at: vault });
+    expect(r.plan.log!.some((x) => x.kind === 'wake' && x.id === 'k')).toBe(false);
+    expect(r.plan.log!.find((x) => x.kind === 'fight')).toMatchObject({ at: vault });
     expect(r.escaped).toBe(0);
     expect(r.stolen).toBe(0);
   });
@@ -157,7 +157,7 @@ describe('el asalto sala a sala', () => {
       door: 1,
     });
     const r = simulate(set, new Rng('c'));
-    expect(r.plan.steps.some((x) => x.k === 'open')).toBe(true);
+    expect(r.plan.log!.some((x) => x.kind === 'open')).toBe(true);
     expect(r.escaped).toBe(0);
     expect(r.stolen).toBe(0);
     expect(r.recovered).toBeGreaterThan(0);
@@ -169,8 +169,8 @@ describe('el asalto sala a sala', () => {
     const late = { id: 'h', power: 60, hp: 60, at: bed, wake: 14 };
     const weak = simulate(setup(s, { defenders: [late], lock: 1, door: 1 }), new Rng('d'));
     const strong = simulate(setup(s, { defenders: [late], lock: 30, door: 1 }), new Rng('d'));
-    expect(weak.plan.steps.some((x) => x.k === 'open')).toBe(true);
-    expect(strong.plan.steps.some((x) => x.k === 'open')).toBe(false);
+    expect(weak.plan.log!.some((x) => x.kind === 'open')).toBe(true);
+    expect(strong.plan.log!.some((x) => x.kind === 'open')).toBe(false);
   });
 
   it('el informe del asalto lleva la pelea para verla en la escena', () => {
@@ -180,7 +180,7 @@ describe('el asalto sala a sala', () => {
     const next = endDay({ ...s, tips: ['*'] });
     const plan = next.lastRaid?.plan;
     expect(plan?.route.length).toBeGreaterThan(1);
-    expect(plan?.steps.length).toBeGreaterThan(3);
+    expect(plan?.log?.length).toBeGreaterThan(3);
     expect(plan?.end).toBeGreaterThan(0);
     // Quien cae, cae herido (no muere) y deja la guardia.
     for (const id of next.lastRaid!.hurt)
@@ -191,13 +191,12 @@ describe('el asalto sala a sala', () => {
     const s = newGame('golpes');
     s.gold = 300;
     const r = simulate(assaultSetup(s, 20, new Rng('g')), 'g');
-    const hits = r.plan.steps.filter((x) => x.k === 'hit');
+    const hits = r.plan.log!.filter((x) => x.kind === 'hit');
     expect(hits.length).toBeGreaterThan(5);
     // Nadie pierde más vida de la que tiene: quien cae, cae con su última vida gastada.
     const left: Record<string, number> = { ...r.plan.hp };
-    for (const h of hits) if (h.k === 'hit') left[h.id]! -= h.amount;
-    for (const x of r.plan.steps)
-      if (x.k === 'fall' || x.k === 'down') expect(left[x.id]).toBeLessThanOrEqual(0);
+    for (const h of hits) if (h.kind === 'hit') left[h.to]! -= h.dealt;
+    for (const x of r.plan.log!) if (x.kind === 'down') expect(left[x.to]).toBeLessThanOrEqual(0);
   });
 
   it('con órdenes: el héroe va a la sala que se le dice y se repite igual', () => {
@@ -211,11 +210,11 @@ describe('el asalto sala a sala', () => {
     // A una sala que no existe, no.
     expect(a.order({ kind: 'move', who: hero.id, to: 'nada' })).toBe(false);
     const r = a.run();
-    const moves = r.plan.steps.filter((x) => x.k === 'move' && x.ids.includes(hero.id));
+    const moves = r.plan.log!.filter((x) => x.kind === 'move' && x.ids.includes(hero.id));
     expect(moves.at(-1)).toMatchObject({ to: vault });
     // Con las mismas órdenes, lo mismo.
     const again = simulate(set, 'o', a.orders);
-    expect(again.plan.steps).toEqual(r.plan.steps);
+    expect(again.plan.log!).toEqual(r.plan.log!);
   });
 
   it('jugado en directo, el anochecer usa lo que pasó', () => {

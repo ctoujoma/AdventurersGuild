@@ -11,10 +11,11 @@
  */
 import { P } from '../../art/palette';
 import { tinyDigits } from '../../art/digits';
-import type { Assault } from '../../core/assault';
+import { raidLog, type Assault } from '../../core/assault';
 import type { AbilityId } from '../../core/fight';
-import type { RaidPlan, RaidStep } from '../../core/model';
+import type { RaidEntry, RaidPlan } from '../../core/model';
 import { BANDIT_TYPES, banditLook } from '../battle';
+import { CRIT_SOUND, NUMBER_COLOR, numberOf } from '../fightLook';
 import type { PKind } from '../particles';
 import type { SoundName } from '../scene';
 import { blowOf, type Blow, type Crowd } from './crowd';
@@ -23,8 +24,8 @@ import type { Place } from './people';
 import { RaidFx, type FxKind } from './raidFx';
 import type { View } from './view3d';
 
-type HitStep = Extract<RaidStep, { k: 'hit' }>;
-type FallStep = Extract<RaidStep, { k: 'fall' | 'down' }>;
+type HitStep = Extract<RaidEntry, { kind: 'hit' }>;
+type FallStep = Extract<RaidEntry, { kind: 'down' }>;
 
 /** Quien pelea a distancia se queda a esta distancia del blanco (si no, se arrima a 11). */
 const RANGED_REACH = 34;
@@ -109,6 +110,8 @@ export class RaidShow {
   /** Segundos de asalto que ya se han visto. */
   t = 0;
   private next = 0;
+  /** Lo que pasa (en directo, el registro que va llenando la pelea). */
+  private log: RaidEntry[];
   private areas = new Map<string, Area>();
   private fights = new Set<string>();
   private sacks = new Map<string, number>();
@@ -155,6 +158,7 @@ export class RaidShow {
     readonly live: Assault | null = null,
   ) {
     this.fx = new RaidFx((id) => this.crowd.where(id));
+    this.log = raidLog(plan);
     for (const [id, n] of Object.entries(plan.hp ?? {})) {
       this.hp.set(id, n);
       this.max.set(id, n);
@@ -279,9 +283,9 @@ export class RaidShow {
     // En directo, la pelea se juega hasta el segundo que se ve.
     const live = this.live;
     if (live) while (!live.result && live.t < this.t) live.tick();
-    const steps = this.plan.steps;
-    while (this.next < steps.length && steps[this.next]!.t <= this.t)
-      this.apply(steps[this.next++]!, false);
+    const log = this.log;
+    while (this.next < log.length && log[this.next]!.t <= this.t)
+      this.apply(log[this.next++]!, false);
     this.fx.update(dt * RAID_SPEED);
     const due = this.soon.filter((x) => x.t <= this.t);
     this.soon = this.soon.filter((x) => x.t > this.t);
@@ -303,8 +307,8 @@ export class RaidShow {
     this.live?.run();
     this.skipping = true;
     this.fx.flush();
-    const steps = this.plan.steps;
-    while (this.next < steps.length) this.apply(steps[this.next++]!, true);
+    const log = this.log;
+    while (this.next < log.length) this.apply(log[this.next++]!, true);
     this.skipping = false;
     this.soon = [];
     this.t = this.end + 0.5;
@@ -389,8 +393,8 @@ export class RaidShow {
 
   // ---------- Por dentro ----------
 
-  private apply(s: RaidStep, skip: boolean): void {
-    switch (s.k) {
+  private apply(s: RaidEntry, skip: boolean): void {
+    switch (s.kind) {
       case 'move':
         for (const id of s.ids) {
           const p = this.placeOf(s.to, id, this.at.get(id));
@@ -406,10 +410,9 @@ export class RaidShow {
         this.fights.add(s.at);
         if (!skip) this.hooks.sound('swing', 0.8);
         break;
-      case 'fall':
       case 'down':
         // Si le va a llegar una flecha o un hechizo, cae cuando le dé.
-        if (!skip && this.inbound.get(s.id)) this.held.set(s.id, s);
+        if (!skip && this.inbound.get(s.to)) this.held.set(s.to, s);
         else this.fallen(s, skip);
         break;
       case 'door': {
@@ -446,44 +449,47 @@ export class RaidShow {
         this.crowd.vanish(s.id);
         break;
       case 'hit':
-        this.lastFrom.set(s.id, s.from);
-        this.hp.set(s.id, Math.max(0, (this.hp.get(s.id) ?? 0) - s.amount));
+        this.lastFrom.set(s.to, s.from);
+        this.hp.set(s.to, Math.max(0, (this.hp.get(s.to) ?? 0) - s.dealt));
         if (skip) break;
         this.chances.delete(s.from);
         this.blow(s);
         break;
       case 'heal': {
         this.hp.set(
-          s.id,
-          Math.min(this.max.get(s.id) ?? Infinity, (this.hp.get(s.id) ?? 0) + s.amount),
+          s.to,
+          Math.min(this.max.get(s.to) ?? Infinity, (this.hp.get(s.to) ?? 0) + s.dealt),
         );
         if (skip) break;
         // La luz cae sobre el curado y el número sale cuando le llega.
-        this.fx.add('pillar', s.id);
-        const w = this.crowd.where(s.id);
+        this.fx.add('pillar', s.to);
+        const w = this.crowd.where(s.to);
         if (w) this.hooks.burst('glint', w.x, w.y - 16, 6);
         this.hooks.sound('holy', 0.7);
-        this.float(s.id, String(s.amount), P.lime, this.t + 0.25);
+        const n = numberOf(s, (id) => !isBandit(id))!;
+        this.float(s.to, n.text, NUMBER_COLOR[n.kind], this.t + 0.25);
         break;
       }
       case 'chance':
-        if (!skip) this.chances.add(s.id);
+        // Como en la arena del jefe: el rombo solo sale si el jugador lo puede coger.
+        if (!skip && this.live) this.chances.add(s.from);
         break;
       case 'skill': {
         if (skip) break;
-        this.skillNow = { id: s.id, skill: s.skill, t: s.t };
-        const w = this.crowd.where(s.id);
+        const id = s.from;
+        this.skillNow = { id, skill: s.skill, t: s.t };
+        const w = this.crowd.where(id);
         if (!w) break;
         if (s.skill === 'provocar') {
           // El arma en alto y un grito que atrae a los bandidos.
-          this.crowd.strike(s.id, this.facing(s.id), 'grito');
-          this.fx.add('shout', s.id);
+          this.crowd.strike(id, this.facing(id), 'grito');
+          this.fx.add('shout', id);
           this.hooks.sound('roar', 0.5);
         } else if (s.skill === 'curar') {
-          this.crowd.strike(s.id, this.facing(s.id), 'grito');
+          this.crowd.strike(id, this.facing(id), 'grito');
           this.hooks.burst('glint', w.x, w.y - 26, 4);
         } else if (s.skill === 'bola') {
-          this.fx.add('cast', s.id, this.facing(s.id));
+          this.fx.add('cast', id, this.facing(id));
           this.hooks.sound('whoosh', 0.8);
         } else this.hooks.sound('swing', 0.9);
         break;
@@ -512,7 +518,7 @@ export class RaidShow {
    */
   private blow(s: HitStep): void {
     const a = this.crowd.where(s.from);
-    const b = this.crowd.where(s.id);
+    const b = this.crowd.where(s.to);
     const now = this.skillNow;
     const skill = now && now.id === s.from && now.t === s.t ? now.skill : null;
     const land = () => this.land(s);
@@ -524,7 +530,7 @@ export class RaidShow {
     const ranged = skill === 'bola' || blow === 'tiro' || blow === 'conjuro';
     if (!ranged) {
       land();
-      this.fx.add(skill === 'punalada' ? 'stab' : (MELEE_FX[blow] ?? 'smash'), s.id, dir);
+      this.fx.add(skill === 'punalada' ? 'stab' : (MELEE_FX[blow] ?? 'smash'), s.to, dir);
       return;
     }
     // Los disparos del mismo segundo salen uno tras otro (las dos flechas de la andanada).
@@ -535,21 +541,21 @@ export class RaidShow {
     const hand =
       kind === 'arrow' ? { x: a.x + dir * 7, y: a.y - 15 } : { x: a.x + dir * 8, y: a.y - 22 };
     if (kind === 'bolt' && !n) this.fx.add('cast', s.from, dir);
-    this.inbound.set(s.id, (this.inbound.get(s.id) ?? 0) + 1);
+    this.inbound.set(s.to, (this.inbound.get(s.to) ?? 0) + 1);
     this.fx.shoot(
       kind,
       hand.x,
       hand.y,
-      s.id,
+      s.to,
       () => {
-        const left = (this.inbound.get(s.id) ?? 1) - 1;
-        if (left > 0) this.inbound.set(s.id, left);
-        else this.inbound.delete(s.id);
+        const left = (this.inbound.get(s.to) ?? 1) - 1;
+        if (left > 0) this.inbound.set(s.to, left);
+        else this.inbound.delete(s.to);
         land();
-        if (kind === 'fire' && !this.skipping) this.fx.add('boom', s.id);
-        const fall = this.held.get(s.id);
+        if (kind === 'fire' && !this.skipping) this.fx.add('boom', s.to);
+        const fall = this.held.get(s.to);
         if (fall && !left) {
-          this.held.delete(s.id);
+          this.held.delete(s.to);
           this.fallen(fall, this.skipping);
         }
       },
@@ -562,13 +568,16 @@ export class RaidShow {
   private land(s: HitStep): void {
     if (this.skipping) return;
     const a = this.crowd.where(s.from);
-    const b = this.crowd.where(s.id);
+    const b = this.crowd.where(s.to);
     if (b) {
       const dir = !a || b.x >= a.x ? 1 : -1;
       this.hooks.burst('spark', b.x - dir * 3, b.y - 14, s.crit ? 6 : 3);
-      if (s.crit) this.fx.add('crit', s.id, dir);
+      if (s.crit) this.fx.add('crit', s.to, dir);
     }
-    this.float(s.id, String(s.amount), s.crit ? P.lemon : isBandit(s.id) ? P.white : P.red);
+    const n = numberOf(s, (id) => !isBandit(id))!;
+    this.float(s.to, n.text, NUMBER_COLOR[n.kind]);
+    // Como en la arena: el crítico de los nuestros suena aparte.
+    if (s.crit && isBandit(s.to)) this.hooks.sound(CRIT_SOUND.name, CRIT_SOUND.volume);
     if (this.t - this.lastHit > 0.2) {
       this.lastHit = this.t;
       this.hooks.sound('hit', s.crit ? 0.9 : 0.5);
@@ -584,26 +593,26 @@ export class RaidShow {
 
   /** Cae (un defensor herido o un bandido, que suelta lo que lleva). */
   private fallen(s: FallStep, skip: boolean): void {
-    const w = this.crowd.where(s.id);
-    const by = this.crowd.where(this.lastFrom.get(s.id) ?? '');
+    const w = this.crowd.where(s.to);
+    const by = this.crowd.where(this.lastFrom.get(s.to) ?? '');
     // Le echa hacia el lado contrario de quien le pegó.
     const push: 1 | -1 = !w || !by || w.x >= by.x ? 1 : -1;
-    const carried = this.sacks.get(s.id) ?? 0;
-    this.sacks.delete(s.id);
-    const gold = s.k === 'down' ? Math.max(s.gold, carried) : 0;
+    const carried = this.sacks.get(s.to) ?? 0;
+    this.sacks.delete(s.to);
+    const gold = carried;
     if (w && gold > 0) this.drop(w, push, gold, skip);
     if (skip || !w) {
-      this.crowd.knock(s.id);
+      this.crowd.knock(s.to);
       return;
     }
-    this.crowd.knock(s.id, push);
-    this.downAt.set(s.id, this.t);
+    this.crowd.knock(s.to, push);
+    this.downAt.set(s.to, this.t);
     this.hooks.sound('swing', 0.4);
     // El golpe contra el suelo, al acabar de caer: polvo y ruido sordo.
     this.soon.push({
       t: this.t + LAND_TIME,
       fn: () => {
-        const at = this.crowd.where(s.id);
+        const at = this.crowd.where(s.to);
         if (!at) return;
         this.hooks.burst('dust', at.x, at.y - 2, 6);
         this.hooks.burst('puff', at.x + push * 4, at.y - 3, 3);

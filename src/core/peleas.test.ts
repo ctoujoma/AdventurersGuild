@@ -13,6 +13,7 @@ import {
   Assault,
   YARD,
   assaultSetup,
+  raidLog,
   simulate,
   type AssaultSetup,
   type RaidOrder,
@@ -24,13 +25,14 @@ import {
   questFoes,
   runCombat,
   setupCombat,
+  type CombatEvent,
   type CombatSetup,
   type Order,
 } from './combat';
 import { newGame } from './game';
 import { generateHero } from './generate';
 import { thiefDuel } from './incidents';
-import type { Duel, Facilities, GameState, Hero } from './model';
+import type { Duel, Facilities, GameState, Hero, RaidEntry, RaidStep } from './model';
 import type { ClassId } from './party';
 import { Rng, hashString } from './rng';
 
@@ -54,6 +56,70 @@ const digest = (log: readonly unknown[]) => ({
   n: log.length,
   hash: hashString(canon(log)).toString(16),
 });
+
+// ---------- Los registros de antes ----------
+
+/**
+ * Las peleas se grabaron con los registros de antes del registro común (`CombatEvent` viejo y
+ * `RaidStep`). El de ahora lleva lo mismo y algo más: pasado al formato viejo, tiene que dar
+ * exactamente lo grabado.
+ */
+function oldCombatEvent(e: CombatEvent): unknown {
+  const { step } = e;
+  switch (e.kind) {
+    case 'hit':
+      return { step, kind: e.crit ? 'crit' : 'hit', from: e.from, to: e.to, amount: e.amount };
+    case 'heal':
+      return { step, kind: 'heal', from: e.from, to: e.to, amount: e.amount };
+    case 'down':
+      return { step, kind: 'down', from: e.from, to: e.to };
+    case 'skill':
+      return { step, kind: 'skill', from: e.from, skill: e.skill };
+    case 'special':
+      return { step, kind: 'special', from: e.from, amount: e.covered ? 1 : 0 };
+    default:
+      return { step, kind: e.kind, from: e.from };
+  }
+}
+
+const isBandit = (id: string) => /^b\d+$/.test(id);
+
+/** El registro de un asalto como se apuntaba antes (`RaidStep`). */
+function oldSteps(log: readonly RaidEntry[]): RaidStep[] {
+  const gold = new Map<string, number>();
+  return log.flatMap((e): RaidStep[] => {
+    const { t } = e;
+    switch (e.kind) {
+      case 'hit':
+        return [
+          { t, k: 'hit', from: e.from, id: e.to, amount: e.dealt, crit: e.crit || undefined },
+        ];
+      case 'heal':
+        return [{ t, k: 'heal', from: e.from, id: e.to, amount: e.dealt }];
+      case 'skill':
+        return [{ t, k: 'skill', id: e.from, skill: e.skill }];
+      case 'chance':
+        return [{ t, k: 'chance', id: e.from }];
+      case 'down':
+        return [
+          isBandit(e.to)
+            ? { t, k: 'down', id: e.to, gold: gold.get(e.to) ?? 0 }
+            : { t, k: 'fall', id: e.to },
+        ];
+      case 'warn':
+      case 'cover':
+      case 'special':
+        return [];
+      case 'loot':
+        gold.set(e.id, e.gold);
+        return [{ t, k: 'loot', id: e.id, gold: e.gold }];
+      default: {
+        const { kind, ...rest } = e;
+        return [{ ...rest, k: kind } as RaidStep];
+      }
+    }
+  });
+}
 
 // ---------- Jefes ----------
 
@@ -112,7 +178,7 @@ function playCombat(setup: CombatSetup, p: Player): Combat {
 const combatSummary = (c: Combat) => ({
   result: c.result,
   hp: c.units.map((u) => u.hp),
-  events: digest(c.events),
+  events: digest(c.events.map(oldCombatEvent)),
 });
 
 interface CombatCase {
@@ -167,7 +233,7 @@ const assaultSummary = (a: Assault) => {
     start: plan.start,
     hp: plan.hp,
     route: plan.route,
-    steps: digest(plan.steps),
+    steps: digest(oldSteps(plan.log!)),
     left: a.units.map((u) => [u.id, u.hp, u.node]),
   };
 };
@@ -508,7 +574,11 @@ describe('peleas de referencia: asaltos', () => {
     again.run();
     expect(plain(assaultSummary(again))).toEqual(want);
     const r = simulate(loadSetup(ac.setup), new Rng(ac.rng), orders);
-    expect(digest(r.plan.steps)).toEqual(want.steps);
+    expect(digest(oldSteps(r.plan.log!))).toEqual(want.steps);
+    // Un informe viejo (con `steps`) se lee igual que el de ahora.
+    const old = raidLog({ steps: oldSteps(r.plan.log!) });
+    expect(plain(oldSteps(old))).toEqual(plain(oldSteps(r.plan.log!)));
+    expect(old.map((e) => e.kind)).toEqual(r.plan.log!.map((e) => e.kind));
   });
 });
 

@@ -17,6 +17,8 @@ import type { BossKind } from '../data/bosses';
 import type { PKind } from './particles';
 import { WEAPONS, type WeaponId } from './weapons';
 import { tinyDigits } from '../art/digits';
+import type { FightEvent } from '../core/fight';
+import { CRIT_SOUND, NUMBER_COLOR, numberOf, type NumberKind } from './fightLook';
 
 /**
  * Asalto a la taberna en tiempo real: los bandidos bajan por el camino, los defensores salen
@@ -1322,18 +1324,51 @@ export class Battle {
   }
 
   /** Un número que sube desde quien recibe (daño, crítico o cura). */
-  number(id: string, amount: number, kind: 'hit' | 'crit' | 'hurt' | 'heal'): void {
+  number(id: string, text: string, kind: NumberKind): void {
     const f = this.bySim(id);
     if (!f) return;
-    const color = { hit: P.white, crit: P.lemon, hurt: P.red, heal: P.lime }[kind];
     const top = f.art ? f.chestH * 2 : 28;
     this.numbers.push({
       x: f.x + (Math.random() - 0.5) * 8,
       y: this.hooks.feetAt(f.x) - top,
       t: 0,
-      text: String(Math.max(0, Math.round(amount))),
-      color,
+      text,
+      color: NUMBER_COLOR[kind],
     });
+  }
+
+  /**
+   * Lo que pasa en la simulación (el registro común), en la escena: destellos, números, caídas
+   * y sonidos, igual que en el asalto. `isHero`: si es de los nuestros; `playing`: si el jugador
+   * da órdenes (la ocasión de crítico solo suena entonces).
+   */
+  event(e: FightEvent, isHero: (id: string) => boolean, playing: boolean): void {
+    const n = numberOf(e, isHero);
+    if (n) this.number(n.id, n.text, n.kind);
+    switch (e.kind) {
+      case 'hit':
+        this.flashHit(e.to, e.crit);
+        if (e.crit && !isHero(e.to)) this.sound(CRIT_SOUND.name, CRIT_SOUND.volume);
+        break;
+      case 'heal':
+        this.sound('holy', 0.6);
+        break;
+      case 'down':
+        this.down(e.to);
+        break;
+      case 'warn':
+        this.sound('roar', 0.7);
+        break;
+      case 'cover':
+        this.sound('swing', 0.8);
+        break;
+      case 'special':
+        this.sound(e.covered ? 'thud' : 'boom', 0.9);
+        break;
+      case 'chance':
+        if (playing) this.sound('swing', 0.35);
+        break;
+    }
   }
 
   /** Dónde está una unidad en el escenario (para tocarla), o null. */

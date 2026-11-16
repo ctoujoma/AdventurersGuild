@@ -22,7 +22,7 @@ import {
   THIEF_HP_RANK,
   rankIndex,
 } from './balance';
-import { clockDuel, heroUnit } from './fight';
+import { clockDuel, heroUnit, type FightEvent } from './fight';
 import type {
   Building,
   ChipKind,
@@ -342,6 +342,17 @@ export function thiefDuel(s: GameState, who: string, seed: string, at: number): 
   const d = clockDuel({ ...u, hp: u.max }, thief, `ladron-${seed}`, THIEF_ESCAPE);
   const hits: DuelHit[] = d.hits.map((x) => ({ ...x, by: x.by === 'a' ? 'h' : 'l' }));
   return { who, at, end: d.t + 0.6, won: d.won, hits, hp: { h: u.max, l: hp } };
+}
+
+/** Un golpe del registro común, con su segundo (el duelo solo tiene golpes). */
+export type DuelEvent = Extract<FightEvent, { kind: 'hit' }> & { t: number };
+
+/** Los golpes del duelo con el registro común, para la escena (el ladrón es `ladron`). */
+export function duelLog(d: Duel): DuelEvent[] {
+  return d.hits.map((x) => {
+    const [from, to] = x.by === 'h' ? [d.who, 'ladron'] : ['ladron', d.who];
+    return { t: x.t, kind: 'hit', from, to, amount: x.amount, dealt: x.amount, crit: !!x.crit };
+  });
 }
 
 /** Sale mal: se pierde lo que diga y se cuenta. */

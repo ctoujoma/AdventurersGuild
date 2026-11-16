@@ -35,6 +35,7 @@ import {
   banditCount,
   holdOdds,
   likelyStrength,
+  raidLog,
   raidSeed,
   simulate,
 } from './assault';
@@ -132,7 +133,7 @@ function resolveRaid(s: GameState, rng: Rng, events: DawnEvent[]): Report {
   const chips: Report['chips'] = [];
   const won = fight.escaped === 0;
   const hurt = s.heroes.filter((h) => fallen.has(h.id));
-  const steps = fight.plan.steps;
+  const steps = raidLog(fight.plan);
   const guards = s.heroes.filter((h) => fight.plan.start[h.id] === fight.plan.route[0] && h.guard);
   const roomName = (id: string) => {
     const r = s.building.rooms.find((x) => x.id === id);
@@ -143,27 +144,27 @@ function resolveRaid(s: GameState, rng: Rng, events: DawnEvent[]): Report {
   if (guards.length)
     body.push(
       fill(rng.pick(RAID_FIGHT), { h: guards[0]!.name }) +
-        (steps.some((x) => x.k === 'broke')
+        (steps.some((x) => x.kind === 'broke')
           ? ` Pero eran muchos: ${guards.length > 1 ? 'los de guardia cayeron' : 'cayó'} y rompieron la puerta.`
           : ''),
     );
-  else if (steps.some((x) => x.k === 'broke'))
+  else if (steps.some((x) => x.kind === 'broke'))
     body.push('No había nadie de guardia: rompieron la puerta a hachazos y entraron.');
   const rooms = [
-    ...new Set(steps.flatMap((x) => (x.k === 'fight' && x.at !== YARD ? [x.at] : []))),
+    ...new Set(steps.flatMap((x) => (x.kind === 'fight' && x.at !== YARD ? [x.at] : []))),
   ];
   if (rooms.length)
     body.push(
       `Se peleó en ${listNames(rooms.map((r) => roomName(r)))}${ds.length ? `: ${names} plantaron cara` : ''}.`,
     );
   if (!ds.length) body.push(RAID_EMPTY);
-  if (steps.some((x) => x.k === 'open'))
+  if (steps.some((x) => x.kind === 'open'))
     body.push(
       fight.stolen > 0
         ? 'Forzaron la cerradura de la cámara y cargaron los sacos.'
         : 'Forzaron la cerradura de la cámara, pero no llegaron a sacar nada de casa.',
     );
-  else if (steps.some((x) => x.k === 'lock'))
+  else if (steps.some((x) => x.kind === 'lock'))
     body.push('Llegaron a la cámara, pero la cerradura aguantó lo justo.');
 
   if (fight.recovered > 0)

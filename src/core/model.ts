@@ -22,6 +22,7 @@ import type { UnlockId } from '../data/unlocks';
 import type { Tutorial } from './tutorial';
 import type { Attrs, Challenge, ClassId, SkillId, Trait } from './party';
 import type { AbilityId, CombatSetup, Order } from './combat';
+import type { FightEvent } from './fight';
 import type { Gear } from './gear';
 import type { Mats } from './materials';
 
@@ -563,9 +564,34 @@ export interface RaidResult {
 }
 
 /**
- * Lo que pasa en un asalto, en segundos desde que se oyen las botas. Los sitios son salas (por
- * id), el patio ('patio') o el camino ('fuera'). Las figuras son héroes, trabajadores o
- * bandidos ('b0', 'b1'…).
+ * Lo que pasa por la casa en un asalto (lo de pelear va con el registro común, `FightEvent`).
+ * Los sitios son salas (por id), el patio ('patio') o el camino ('fuera'). Las figuras son
+ * héroes, trabajadores o bandidos ('b0', 'b1'…).
+ */
+export type RaidHouse =
+  /** Echan a andar hacia una sala vecina y llegan en `dur` segundos. */
+  | { kind: 'move'; ids: string[]; to: string; dur: number }
+  /** Se despierta y sale corriendo (los que duermen). */
+  | { kind: 'wake'; id: string }
+  /** Empiezan a pelear en una sala. */
+  | { kind: 'fight'; at: string }
+  /** Empiezan a romper la puerta, y la rompen. */
+  | { kind: 'door'; dur: number }
+  | { kind: 'broke' }
+  /** Empiezan con la cerradura de la cámara, y la abren. */
+  | { kind: 'lock'; dur: number }
+  | { kind: 'open' }
+  /** Un bandido carga su saco. */
+  | { kind: 'loot'; id: string; gold: number }
+  /** Un bandido se pierde por el camino con lo que lleva. */
+  | { kind: 'escape'; id: string; gold: number };
+
+/** El registro de un asalto, en segundos desde que se oyen las botas: la casa y la pelea. */
+export type RaidEntry = (RaidHouse | FightEvent) & { t: number };
+
+/**
+ * El registro viejo de los asaltos (los informes guardados antes del registro común): se lee
+ * con `raidLog` (`core/assault.ts`).
  */
 export type RaidStep =
   /** Echan a andar hacia una sala vecina y llegan en `dur` segundos. */
@@ -612,7 +638,9 @@ export interface RaidPlan {
   route: string[];
   /** Dónde está cada uno al empezar. */
   start: Record<string, string>;
-  steps: RaidStep[];
+  /** Lo que pasa (léase con `raidLog`: los informes viejos traen `steps` en su lugar). */
+  log?: RaidEntry[];
+  steps?: RaidStep[];
   /** Segundo en el que acaba todo. */
   end: number;
   /** Vida de cada uno al empezar (los informes viejos no la traen). */

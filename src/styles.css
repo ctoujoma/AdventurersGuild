@@ -6881,91 +6881,9 @@ p.notebook-close {
   animation: tut-btn 0.6s steps(3) infinite;
 }
 .bossfight-crew {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px;
   width: 100%;
   max-width: 900px;
   margin: 0 auto;
-  padding: 0;
-  list-style: none;
-}
-.bf-hero {
-  display: flex;
-  gap: 4px;
-  min-width: 0;
-}
-.bf-hero.is-down {
-  opacity: 0.45;
-}
-.bf-hero-main {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 82px;
-  min-height: 48px;
-  padding: 5px 8px;
-  font: inherit;
-  font-size: var(--t-s);
-  color: var(--sand);
-  text-align: left;
-  background: var(--navy);
-  border: 0;
-  box-shadow: 0 0 0 2px var(--slate);
-  cursor: grab;
-  touch-action: none;
-}
-.bf-hero.is-chosen .bf-hero-main {
-  box-shadow: 0 0 0 2px var(--lemon);
-}
-.bf-hero-name {
-  font-weight: bold;
-}
-.bf-hp {
-  position: relative;
-  height: 6px;
-  background: var(--plum);
-}
-.bf-hp i {
-  position: absolute;
-  inset: 0 auto 0 0;
-  background: var(--lime);
-  transition: width 120ms steps(3);
-}
-.bf-target {
-  font-size: 11px;
-  color: var(--fog);
-}
-.bf-skill {
-  position: relative;
-  overflow: hidden;
-  min-width: 64px;
-  min-height: 48px;
-  padding: 4px 6px;
-  font: inherit;
-  font-size: 11px;
-  color: var(--fog);
-  background: var(--ink);
-  border: 0;
-  box-shadow: 0 0 0 2px var(--slate);
-}
-.bf-charge {
-  position: absolute;
-  inset: auto 0 0 0;
-  background: rgba(254, 174, 52, 0.25);
-}
-.bf-skill-name {
-  position: relative;
-}
-.bf-skill.is-ready {
-  color: var(--ink);
-  background: var(--gold);
-  box-shadow: 0 0 0 2px var(--lemon);
-  cursor: pointer;
-}
-.bf-skill.is-ready .bf-charge {
-  display: none;
 }
 .bossfight-hint {
   margin: 0 auto;
@@ -6973,14 +6891,6 @@ p.notebook-close {
   font-size: var(--t-s);
   color: var(--fog);
   text-align: center;
-}
-
-.bf-hero.is-chance .bf-hero-main {
-  box-shadow: 0 0 0 2px var(--lemon);
-  animation: tut-btn 0.5s steps(2) infinite;
-}
-.bf-now {
-  color: var(--lemon);
 }
 
 /* ---------- La carta del amanecer, una a una ---------- */
@@ -7317,12 +7227,12 @@ p.notebook-close {
 }
 
 /*
- * Las tarjetas de los que defienden: el retrato pequeño con su marco, la vida y la carga de la
- * habilidad (dorada y con su nombre cuando está lista). Una fila de hasta seis, que en el móvil
- * se aprietan sin pasar a otra línea.
+ * La barra de los nuestros en las peleas (`FightCrew`: el jefe y el asalto): el retrato pequeño
+ * con su marco, la vida, el nombre y, debajo, la habilidad con su recarga (dorada cuando está
+ * lista). Una fila de hasta seis, que en el móvil se aprietan sin pasar a otra línea.
  */
 .rc-list {
-  /* Las columnas, una por defensor y hasta seis (las pone RaidCrew). */
+  /* Las columnas, una por cada uno y hasta seis (las pone FightCrew). */
   display: grid;
   justify-content: center;
   gap: 5px;
@@ -7331,6 +7241,9 @@ p.notebook-close {
   list-style: none;
 }
 .rc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
   min-width: 0;
 }
 .rc-hit {
@@ -7346,7 +7259,10 @@ p.notebook-close {
   border: 0;
   box-shadow: 0 0 0 2px var(--slate);
   cursor: pointer;
-  touch-action: manipulation;
+  touch-action: none;
+}
+.rc-hit:disabled {
+  cursor: default;
 }
 .rc-face {
   position: relative;
@@ -7354,15 +7270,13 @@ p.notebook-close {
   justify-content: center;
   line-height: 0;
 }
-.rc-hp,
-.rc-skill {
+.rc-hp {
   position: relative;
   display: block;
   height: 5px;
   background: var(--plum);
 }
-.rc-hp i,
-.rc-skill i {
+.rc-hp i {
   position: absolute;
   inset: 0 auto 0 0;
   background: var(--lime);
@@ -7372,17 +7286,8 @@ p.notebook-close {
 .rc-hp.is-low i {
   background: var(--gold);
 }
-.rc-skill {
-  height: 4px;
-  background: var(--ink);
-}
-.rc-skill i {
-  background: rgba(254, 174, 52, 0.55);
-}
-.rc-skill span {
-  display: none;
-}
-.rc-name {
+.rc-name,
+.rc-note {
   overflow: hidden;
   font-size: 10px;
   line-height: 1.2;
@@ -7390,31 +7295,55 @@ p.notebook-close {
   text-overflow: ellipsis;
   text-align: center;
 }
-/* Habilidad lista: la barra se vuelve una cinta dorada con el nombre, y la tarjeta brilla. */
-.rc-card.is-ready .rc-hit {
-  box-shadow: 0 0 0 2px var(--gold);
+.rc-note {
+  font-size: 9px;
+  color: var(--fog);
+}
+/* La habilidad: se va llenando y, lista, se vuelve una cinta dorada que se toca. */
+.rc-skill {
+  position: relative;
+  overflow: hidden;
+  min-height: 22px;
+  padding: 0 2px;
+  font: inherit;
+  font-size: 9px;
+  line-height: 22px;
+  color: var(--fog);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  background: var(--ink);
+  border: 0;
+  box-shadow: 0 0 0 2px var(--slate);
+}
+.rc-skill i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: rgba(254, 174, 52, 0.3);
+  transition: width 120ms steps(3);
+}
+.rc-skill span {
+  position: relative;
 }
 .rc-card.is-ready .rc-skill {
-  height: 11px;
+  color: var(--ink);
   background: var(--gold);
+  box-shadow: 0 0 0 2px var(--lemon);
+  cursor: pointer;
 }
 .rc-card.is-ready .rc-skill i {
   display: none;
 }
-.rc-card.is-ready .rc-skill span {
-  display: block;
-  overflow: hidden;
-  font-size: 9px;
-  line-height: 11px;
-  color: var(--ink);
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  text-align: center;
+/* El elegido para mandarle a por alguien. */
+.rc-card.is-chosen .rc-hit {
+  box-shadow: 0 0 0 2px var(--lemon);
 }
 /* Crítico abierto: el marco late en amarillo y un rombo sobre el retrato. */
 .rc-card.is-chance .rc-hit {
   box-shadow: 0 0 0 2px var(--lemon);
   animation: tut-btn 0.5s steps(2) infinite;
+}
+.rc-card.is-chance .rc-name {
+  color: var(--lemon);
 }
 .rc-now {
   position: absolute;
@@ -7437,14 +7366,14 @@ p.notebook-close {
   text-shadow: 1px 1px 0 var(--ink);
 }
 /* En el suelo: en gris y apagado. */
-.rc-card.is-down .rc-hit {
-  cursor: default;
-}
 .rc-card.is-down .rc-face {
   filter: grayscale(1) brightness(0.6);
 }
 .rc-card.is-down .rc-name {
   color: var(--fog);
+}
+.rc-card.is-down .rc-skill {
+  opacity: 0.5;
 }
 /* En el móvil, la pista en una línea más corta. */
 @media (max-width: 520px) {
