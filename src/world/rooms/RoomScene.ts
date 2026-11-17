@@ -72,7 +72,17 @@ import { towerLampY, watchtower } from './salas/torre';
 import { BLIND, CANDLE, takeWallActs, type ActId, type PoiKind, type Round } from './salas/kit';
 import { FLIGHT_Z, flightArt, goesRight } from './stairs';
 import { dress } from './salas/tintes';
-import { Crowd, DRINK_TIME, WALK_Z, type Hit, type PaintSpan, type Poi, type Talk } from './crowd';
+import {
+  Crowd,
+  DRINK_TIME,
+  MUG_GONE,
+  MUG_LANDS,
+  WALK_Z,
+  type Hit,
+  type PaintSpan,
+  type Poi,
+  type Talk,
+} from './crowd';
 import { drawGoal, goalBox, goalIcon, type GoalIcon } from './goalMark';
 import { clothOf } from '../../art/heroes/hero';
 import { LAWN_D, tuftAllowed, yardBushes, yardTrees } from './patio';
@@ -543,6 +553,7 @@ export class RoomScene {
   /** La pesadilla: cada cuánto sube la nubecilla (o los «zzz») y si ya salió la jarra. */
   private dreamT = 0;
   private mugOn = false;
+  private mugGone = false;
   /** Rayos de luz de las salas rotas (en el mundo) y cada cuánto sale una mota de polvo. */
   private shafts: { x: number; y0: number; y1: number; z: number }[] = [];
   private dustT = 0;
@@ -4805,6 +4816,7 @@ export class RoomScene {
     const nm = this.crowd.nightmare();
     if (!nm) {
       this.mugOn = false;
+      this.mugGone = false;
       return;
     }
     const c = this.camera;
@@ -4813,15 +4825,30 @@ export class RoomScene {
     const x = view.px + s.x;
     const y = view.py + s.y;
     if (nm.state === 'drink') {
+      // La jarra del fotograma al pecho, en pantalla: la que baja flotando acaba justo ahí y
+      // allí se la coge (desde entonces, la lleva el dibujo).
+      const m = project(view, nm.mug.x, nm.mug.y, nm.z);
+      const mx = view.px + m.x;
+      const my = view.py + m.y;
       if (!this.mugOn) {
         this.mugOn = true;
-        const left = Math.max(0.5, DRINK_TIME - nm.since);
-        this.particles.spawn('mug', x + 7, y - 14, { vy: 10, ay: y - 4, max: left });
+        const left = MUG_LANDS - nm.since;
+        const drop = 12;
+        if (left > 0.1)
+          this.particles.spawn('mug', mx - 3.5, my - drop, { vy: drop / left, ay: my, max: left });
         for (let i = 0; i < 4; i++)
           this.particles.spawn('puff', x - 6 + i * 3, y - 11 - (i % 2) * 2);
         this.dreamT = DRINK_TIME;
       }
-    } else this.mugOn = false;
+      // Al acabar el trago, la jarra se deshace en una nubecilla.
+      if (!this.mugGone && nm.since >= MUG_GONE) {
+        this.mugGone = true;
+        for (let i = 0; i < 3; i++) this.particles.spawn('puff', mx - 3 + i * 3, my + 1 - (i % 2));
+      }
+    } else {
+      this.mugOn = false;
+      this.mugGone = false;
+    }
     this.dreamT -= dt;
     if (this.dreamT > 0) return;
     // Mientras no se le lleve el trago, siempre con su nube (también entre una vuelta y otra).

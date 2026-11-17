@@ -73,6 +73,8 @@ export interface HeroSprites {
    */
   back3: [PixelBuffer, PixelBuffer];
   front3: [PixelBuffer, PixelBuffer];
+  /** Incorporado en la cama bebiendo (ver `composeDrink`): un fotograma por tiempo del trago. */
+  drink: [PixelBuffer, PixelBuffer, PixelBuffer];
 }
 
 type Slots = Record<string, string>;
@@ -516,6 +518,107 @@ function plainBack(g: Grid): Grid {
   });
 }
 
+/** Filas del sentado (de cintura para arriba): hasta las manos. */
+const SIT_ROWS = HEADROOM + 17;
+
+/**
+ * La jarra de espuma, de frente, con el asa a la izquierda (la mano derecha, que de frente cae a
+ * ese lado): derecha y empinada (se le ve el culo y la espuma asoma arriba, en los labios). La
+ * derecha es también la que baja flotando en la pesadilla (`particles.ts`). Madera más oscura
+ * que la piel, para que no se confunda con la cara.
+ */
+export const MUG: Record<'up' | 'tip', Grid> = {
+  up: ['..WWW.', '.WWmWW', 'oottTT', 'o.rrrr', 'oottTT', '..TTTT'],
+  tip: ['..WmW.', 'oottTT', 'o.rrrr', 'oottTT', '..tTTt'],
+};
+export const MUG_INK: Slots = { W: P.white, m: P.mist, t: P.clay, T: P.oak, r: P.bark, o: P.rust };
+
+/** Los tres tiempos del trago: la jarra al pecho, a la boca y empinada. */
+export type Sip = 0 | 1 | 2;
+
+/**
+ * Cada tiempo del trago: esquina de la jarra (x, fila del cuerpo), fila de la mano (en el asa) y
+ * el brazo, de la muñeca al codo (que asoma por fuera del cuerpo al subir la jarra).
+ */
+const SIPS: Record<Sip, { mug: [number, number]; hand: number; arm: [number, number][] }> = {
+  0: { mug: [4, 9], hand: 11, arm: [[3, 12]] },
+  1: {
+    mug: [4, 7],
+    hand: 9,
+    arm: [
+      [3, 10],
+      [2, 11],
+      [1, 11],
+      [0, 12],
+    ],
+  },
+  2: {
+    mug: [4, 6],
+    hand: 7,
+    arm: [
+      [3, 8],
+      [2, 9],
+      [1, 9],
+      [0, 10],
+      [0, 11],
+      [1, 12],
+    ],
+  },
+};
+
+/**
+ * Incorporado en la cama bebiendo (de cintura para arriba, como `sit`, y una fila más alto para
+ * la cabeza echada atrás): el brazo derecho sube la jarra a la boca. Bebiendo, los ojos cerrados
+ * y la cabeza un píxel atrás (sube: se le ve más cuello); empinada, el codo más alto. La jarra y
+ * el brazo llevan su propio contorno por encima del cuerpo, para que se lean delante de la cara.
+ */
+function composeDrink(look: HeroLook, marks: HeroMarks, sip: Sip): PixelBuffer {
+  const c = slots(look);
+  const src = composeFront(look, marks, sip > 0);
+  const b = new PixelBuffer(BODY_W, SIT_ROWS + 1);
+  // La cabeza (hasta la barbilla) sube un píxel al echarla atrás; el cuello se alarga.
+  const neck = HEADROOM + 9;
+  const lift = sip > 0 ? 1 : 0;
+  for (let y = 0; y < SIT_ROWS; y++)
+    for (let x = 0; x < BODY_W; x++) {
+      const v = src.get(x, y);
+      if (alpha(v)) b.data[(y + 1 - (y < neck ? lift : 0)) * BODY_W + x] = v;
+    }
+  if (lift)
+    for (let x = 0; x < BODY_W; x++) {
+      const v = src.get(x, neck);
+      if (alpha(v)) b.data[neck * BODY_W + x] = v;
+    }
+  // Lo que lleve en esa mano (el arco, la daga) no está: la mano lleva la jarra.
+  for (let y = neck; y < b.h; y++) for (const x of [0, 1]) b.clear(x, y);
+  // La jarra, la mano y el brazo, en su capa (`r`: fila del cuerpo).
+  const row = (r: number) => HEADROOM + 1 + r;
+  const top = new PixelBuffer(BODY_W, b.h);
+  const { mug, hand, arm } = SIPS[sip];
+  // El brazo, de dos de grueso y del color de la manga (o de la piel, si va sin mangas): la
+  // sombra, por debajo.
+  const sleeve = toHex(src.get(3, HEADROOM + 12));
+  for (const [x, r] of arm) {
+    top.set(x, row(r), sleeve);
+    if (!arm.some(([ax, ar]) => ax === x && ar === r + 1)) top.set(x, row(r) + 1, darker(sleeve));
+  }
+  stamp(top, MUG[sip === 2 ? 'tip' : 'up'], MUG_INK, mug[0], row(mug[1]));
+  // La mano agarra el asa: los nudillos por delante.
+  top.rect(mug[0], row(hand), 2, 2, c.x!);
+  top.set(mug[0], row(hand) + 1, c.X!);
+  // Su contorno, donde cae encima del cuerpo (por fuera ya lo pone `selOut`).
+  for (let y = 0; y < b.h; y++)
+    for (let x = 0; x < BODY_W; x++) {
+      if (alpha(top.get(x, y)) || !alpha(b.get(x, y))) continue;
+      const n = [top.get(x - 1, y), top.get(x + 1, y), top.get(x, y - 1), top.get(x, y + 1)].find(
+        (v) => alpha(v),
+      );
+      if (n) b.set(x, y, darker(toHex(n), 3));
+    }
+  b.blit(top, 0, 0);
+  return b;
+}
+
 /**
  * De tres cuartos, mirando a la derecha: la cabeza (y el sombrero) un píxel hacia allí y, de
  * espaldas, la mejilla (`skin`) asomando por ese lado.
@@ -700,7 +803,6 @@ export function heroSprites(look: HeroLook, marks: HeroMarks = {}): HeroSprites 
   const hit = cache.get(key);
   if (hit) return hit;
   const front = composeFront(look, marks, false);
-  const sitRows = HEADROOM + 17;
   const hood = look.headgear === 'capucha' || look.headgear === 'velo';
   const bare = { ...look, headgear: hood ? look.headgear : null };
   const bedRaw = composeFront(bare, { ...marks, injured: true }, true, false);
@@ -718,13 +820,16 @@ export function heroSprites(look: HeroLook, marks: HeroMarks = {}): HeroSprites 
     cheer: selOut(composeFront(look, marks, false, false, 'cheer')),
     stretch: selOut(composeFront(look, marks, true, false, 'stretch')),
     yawn: selOut(composeFront(look, marks, true, false, 'yawn')),
-    sit: selOut(front.crop(0, 0, BODY_W, sitRows)),
+    sit: selOut(front.crop(0, 0, BODY_W, SIT_ROWS)),
     bed: selOut(bedRaw.crop(1, 2, BODY_W - 2, HEADROOM + 10)),
     sleep: selOut(sleepRaw.crop(1, 2, BODY_W - 2, HEADROOM + 10)),
     back: [selOut(backRaw), selOut(stepUp(backRaw, true)), selOut(stepUp(backRaw, false))],
     stepFront: [selOut(stepUp(front, true)), selOut(stepUp(front, false))],
     back3: [selOut(back3), selOut(stepUp(back3, false))],
     front3: [selOut(front3), selOut(stepUp(front3, false))],
+    drink: [0, 1, 2].map((k) =>
+      selOut(composeDrink(look, marks, k as Sip)),
+    ) as HeroSprites['drink'],
   };
   cache.set(key, sprites);
   return sprites;

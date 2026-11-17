@@ -1,5 +1,6 @@
 import { P } from '../art/palette';
 import { bayer } from '../art/pixel';
+import { MUG, MUG_INK } from '../art/heroes/hero';
 
 /** Partículas en pixel art: ascuas, humo, chispas, polvo, luciérnagas, notas, corazones… */
 
@@ -321,24 +322,14 @@ export class Particles {
           break;
         }
         case 'mug': {
-          // Jarra de madera clara con espuma y su contorno oscuro (si no, a oscuras no se ve);
-          // aparece y se va tramada.
-          const g = ['.WWWW..', 'WWWWWW.', 'WmWWmWoo', '.tTtt.o', '.rrrr.o', '.tTtto.', '.tttt..'];
-          const ink: Record<string, string> = {
-            W: P.white,
-            m: P.mist,
-            t: P.tan,
-            T: P.clay,
-            r: P.rust,
-            o: P.oak,
-          };
+          // La jarra de espuma del trago (la misma que lleva luego en la mano, `MUG` de
+          // `hero.ts`), con su contorno oscuro (si no, a oscuras no se ve). Aparece tramada y se
+          // va de golpe: al llegar, ya la tiene él en la mano.
+          const g = MUG.up;
+          const ink = MUG_INK;
           const u = 1 - k;
           const show =
-            u < 0.12
-              ? (a: number, b: number) => bayer(a + p.seed, b) < u / 0.12
-              : k < 0.15
-                ? fade
-                : () => true;
+            u < 0.4 ? (a: number, b: number) => bayer(a + p.seed, b) < u / 0.4 : () => true;
           const on = (i: number, j: number) => !!ink[g[j]?.[i] ?? '.'];
           for (let j = -1; j <= g.length; j++)
             for (let i = -1; i <= 8; i++) {

@@ -17,6 +17,7 @@ import {
   heroSprites,
   type FightPose,
   type HeroSprites,
+  type Sip,
 } from '../../art/heroes/hero';
 import { bunkQuilt } from '../props';
 import { HEADROOM } from '../../art/heroes/layers';
@@ -589,6 +590,11 @@ const SIZES = {
   back3L: 2,
   front3: 2,
   front3L: 2,
+  /**
+   * Incorporado en la cama bebiendo (la pesadilla): los tres tiempos del trago (`Sip`) con cada
+   * manta de `up` y de `upT`, en ese orden (ver `upSlot`). Al final, para no mover lo de antes.
+   */
+  sip: 3 * (6 + TINT_IDS.length),
 } as const;
 
 /** Dónde empieza cada cosa en el atlas. */
@@ -602,13 +608,16 @@ export const F = (() => {
   return out;
 })();
 const FRAMES = Object.values(SIZES).reduce((a, n) => a + n, 0);
+/** Qué manta de incorporado es el fotograma `up` (de `F.up` o de `F.upT`): 0 a 12. */
+const upSlot = (up: number) => (up - F.up < 6 ? up - F.up : 6 + up - F.upT);
 /**
  * El atlas va en `ROWS` filas (se dibuja en una tira y se pliega, ver `fold`): su ancho no puede
  * pasar de lo que aguanta una textura en cualquier móvil (4096).
  */
-const ROWS = 2;
+const ROWS = 3;
 const COLS = Math.ceil(FRAMES / ROWS);
 export const ATLAS_W = CELL * COLS;
+export const ATLAS_H = TALL * ROWS;
 /** Filas que baja el dibujo en los fotogramas de incorporado (para que quepa la cabeza). */
 const UP_DROP = 8;
 
@@ -800,7 +809,22 @@ const smoothstep = (x: number) => x * x * (3 - 2 * x);
 const TURN_TIME = 0.1;
 /** La pesadilla: cada cuánto da un respingo y lo que tarda en beberse el trago. */
 const TOSS_CYCLE = 6.5;
-export const DRINK_TIME = 3.4;
+export const DRINK_TIME = 4.4;
+/**
+ * El trago, por tiempos (desde que se le lleva): hasta `MUG_LANDS` la jarra baja flotando a sus
+ * manos (incorporado, sin ella); luego la sube al pecho, a la boca, la empina, otra vez a la boca
+ * y al pecho, y hasta `MUG_GONE` (cuando la jarra se deshace) la tiene; luego se acuesta.
+ */
+export const MUG_LANDS = 0.7;
+const SIP_STEPS: [number, Sip][] = [
+  [1.1, 0],
+  [1.5, 1],
+  [2.9, 2],
+  [3.3, 1],
+];
+export const MUG_GONE = 3.8;
+const sipAt = (t: number): Sip | -1 =>
+  t < MUG_LANDS || t >= MUG_GONE ? -1 : (SIP_STEPS.find(([end]) => t < end)?.[1] ?? 0);
 
 const hash = (s: string) => {
   let h = 0;
@@ -1003,10 +1027,18 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
   b.hline(m + 4, 17, 20, P.rust);
   // Incorporado en la cama: lo mismo que acostado pero sentado (de cintura para arriba) con la
   // manta por las piernas. Todo va `UP_DROP` filas más abajo para que quepa la cabeza.
+  // Bebiendo, igual pero con cada tiempo del trago (`spr.drink`, una fila más alto: el fondo de
+  // la figura, en el mismo sitio).
   const sitUp = (i: number, sx: number, blanket: (x: number, y: number) => void, top: number) => {
-    const x0 = i * CELL;
-    b.blit(spr.sit, x0 + sx, top + UP_DROP + 5 - spr.sit.h);
-    blanket(x0, UP_DROP);
+    const slot = upSlot(i);
+    for (const [img, f] of [
+      [spr.sit, i],
+      ...spr.drink.map((d, k) => [d, F.sip + slot * 3 + k] as const),
+    ] as const) {
+      const x0 = f * CELL;
+      b.blit(img, x0 + sx, top + UP_DROP + 5 - img.h);
+      blanket(x0, UP_DROP);
+    }
   };
   for (const { up, q } of quilts) {
     sitUp(
@@ -1095,7 +1127,7 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
  * de `COLS` celdas. Así cabe en una textura de cualquier móvil aunque crezca.
  */
 function fold(strip: PixelBuffer): PixelBuffer {
-  const out = new PixelBuffer(CELL * COLS, TALL * ROWS);
+  const out = new PixelBuffer(ATLAS_W, ATLAS_H);
   for (let i = 0; i < FRAMES; i++) {
     const cx = (i % COLS) * CELL;
     const cy = Math.floor(i / COLS) * TALL;
@@ -1445,6 +1477,10 @@ export class Crowd {
     z: number;
     state: 'toss' | 'start' | 'drink' | 'calm';
     since: number;
+    /** Bebiendo: el tiempo del trago (-1, sin la jarra en la mano). */
+    sip: Sip | -1;
+    /** Dónde tiene la jarra al pecho (el centro de la espuma, arriba; mundo 2D). */
+    mug: { x: number; y: number };
   } | null {
     const d = this.dream;
     const a = d ? this.actors.get(d.id) : undefined;
@@ -1454,20 +1490,32 @@ export class Crowd {
     const f = this.frame(a, this.now);
     const k = scaleAt(f.z);
     const up = state === 'start' || state === 'drink';
+    const since = this.now - (d?.at ?? 0);
+    // La jarra del fotograma al pecho (ver `SIPS` en `hero.ts`): en la litera, la figura empieza
+    // en la columna 0 de su fotograma y en la fila 1; en el catre y el jergón, 2 más a la derecha
+    // y 2 más abajo.
+    const bunk = a.goal?.bed?.kind === 'litera' || a.edge?.bed.kind === 'litera';
+    const nudge = bunk ? 0 : 2;
     return {
       x: f.left + (up ? 8 : 6) / k,
       y: f.bottom - TALL / k + (up ? UP_DROP + 6 : 8) / k,
       z: f.z,
       state,
-      since: this.now - (d?.at ?? 0),
+      since,
+      sip: state === 'drink' ? sipAt(since) : -1,
+      mug: { x: f.left + (8.5 + nudge) / k, y: f.bottom - TALL / k + (16 + nudge) / k },
     };
   }
 
-  /** Incorporado en la cama: el fotograma de acostado, con el dibujo `UP_DROP` filas más abajo. */
+  /**
+   * Incorporado en la cama: el fotograma de acostado, con el dibujo `UP_DROP` filas más abajo. Con
+   * `sip`, bebiendo (ese tiempo del trago, con la misma manta).
+   */
   private upFrame(
     bed: BedSpot,
     k: number,
     z: number,
+    sip: Sip | -1 = -1,
   ): { frame: number; left: number; bottom: number; z: number } {
     const tint = this.tints[bed.roomId];
     const f = bedFrame(bed, k, z, tint);
@@ -1477,8 +1525,9 @@ export class Crowd {
         : tint
           ? F.upT + TINT_IDS.indexOf(tint)
           : F.up + bed.level;
+    const frame = sip < 0 ? up : F.sip + upSlot(up) * 3 + sip;
     // El dibujo baja UP_DROP filas en su fotograma, así que el fotograma sube otro tanto.
-    return { ...f, frame: up, bottom: f.bottom - UP_DROP / k };
+    return { ...f, frame, bottom: f.bottom - UP_DROP / k };
   }
 
   /** Temas de color de las salas: la manta de quien duerme en una litera es la de su sala. */
@@ -3228,7 +3277,8 @@ export class Crowd {
       const d = this.dreamOf(a);
       // La pesadilla: bebiendo, incorporado; sin el trago, se agita bajo la manta y a ratos se
       // incorpora de golpe.
-      if (d === 'drink' || d === 'start') return this.upFrame(bed, k, z);
+      if (d === 'start') return this.upFrame(bed, k, z);
+      if (d === 'drink') return this.upFrame(bed, k, z, sipAt(t - (this.dream?.at ?? 0)));
       const f = bedFrame(bed, k, z, this.tints[bed.roomId]);
       if (d === 'toss') {
         const dx = Math.floor(t * 7) % 2 ? 1 : -1;
