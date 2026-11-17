@@ -32,6 +32,7 @@ import {
 import { P } from '../../art/palette';
 import { bevelRelief, type PixelBuffer } from '../../art/pixel';
 import { GROUND } from '../geometry';
+import { memoOf } from './memo';
 import { PARTITION, SLAB } from './layout';
 
 /** Máscara de lluvia vacía (hasta que hay edificio). */
@@ -710,15 +711,47 @@ export type Shared = ReturnType<typeof sharedUniforms>;
 
 /** Los materiales de una escena, con los uniformes que comparten (día, focos y paleta). */
 export class Look {
-  private owned: { dispose(): void }[] = [];
+  private owned = new Set<{ dispose(): void }>();
+  /**
+   * Las texturas hechas, por búfer (y si se repite o lleva relieve): un búfer que se repite (de
+   * la caché de dibujos, `memo.ts`) usa la misma textura, sin volver a subirla.
+   */
+  private texes = new Map<PixelBuffer, Map<string, Texture>>();
 
-  constructor(readonly shared: Shared = sharedUniforms()) {}
+  /**
+   * `prev`: la de antes, que aún se pinta hasta que esta esté lista; las texturas de sus búferes
+   * que se vuelvan a usar pasan a esta (y ya no las suelta aquella).
+   */
+  constructor(
+    readonly shared: Shared = sharedUniforms(),
+    private prev: Look | null = null,
+  ) {}
+
+  /** La textura de un búfer (`kind`: «map», «rep» si se repite, o el relieve), hecha una vez. */
+  private tex<T extends Texture>(b: PixelBuffer, kind: string, make: () => T): T {
+    let m = this.texes.get(b);
+    const had = m?.get(kind);
+    if (had) return had as T;
+    const old = this.prev?.texes.get(b)?.get(kind);
+    let t: T;
+    if (old && this.prev) {
+      this.prev.texes.get(b)!.delete(kind);
+      this.prev.owned.delete(old);
+      t = old as T;
+    } else t = make();
+    if (!m) this.texes.set(b, (m = new Map()));
+    m.set(kind, t);
+    return this.own(t);
+  }
 
   /** Material de un plano con sus esquinas (para saber dónde cae cada téxel en el mundo). */
   surface(b: PixelBuffer, corners: Corners, o: SurfaceOpts): ShaderMaterial {
-    const map = this.own(texture(b));
-    if (o.repeat) map.wrapS = RepeatWrapping;
-    const relief = o.bevel ? bevelRelief(b) : b.relief;
+    const map = this.tex(b, o.repeat ? 'rep' : 'map', () => {
+      const t = texture(b);
+      if (o.repeat) t.wrapS = RepeatWrapping;
+      return t;
+    });
+    const relief = o.bevel ? memoOf(b, 'bisel', () => bevelRelief(b)) : b.relief;
     const [a, br, , d] = corners;
     const u = new Vector3().subVectors(br, a);
     const v = new Vector3().subVectors(d, a);
@@ -740,7 +773,11 @@ export class Look {
           uNoWeather: { value: o.noWeather ? 1 : 0 },
           uFade: { value: 1 },
           uRim: { value: (o.wrap ?? 0.25) >= 0.5 ? 0.9 : 0 },
-          uRelief: { value: relief ? this.own(reliefTexture(b, relief)) : NO_DEPTH },
+          uRelief: {
+            value: relief
+              ? this.tex(b, o.bevel ? 'bisel' : 'relieve', () => reliefTexture(b, relief))
+              : NO_DEPTH,
+          },
           uHasRelief: { value: relief ? 1 : 0 },
           uUvOffset: { value: new Vector2(0, 0) },
           uSway: { value: 0 },
@@ -755,7 +792,7 @@ export class Look {
 
   /** Dibujo que brilla por sí solo, sin luz ni paleta (las llamas): un fotograma de su tira. */
   glow(b: PixelBuffer, frames: number): ShaderMaterial {
-    const map = this.own(texture(b));
+    const map = this.tex(b, 'map', () => texture(b));
     return this.own(
       new ShaderMaterial({
         uniforms: {
@@ -870,13 +907,21 @@ export class Look {
   }
 
   own<T extends { dispose(): void }>(x: T): T {
-    this.owned.push(x);
+    this.owned.add(x);
     return x;
   }
 
   dispose(): void {
+    this.dropPrev();
     for (const x of this.owned) x.dispose();
-    this.owned = [];
+    this.owned.clear();
+    this.texes.clear();
+  }
+
+  /** Ya no hace falta la de antes (esta ya se ha pintado): se suelta lo que no se ha heredado. */
+  dropPrev(): void {
+    this.prev?.dispose();
+    this.prev = null;
   }
 }
 

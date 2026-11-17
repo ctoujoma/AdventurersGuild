@@ -141,7 +141,12 @@ button:focus-visible {
   text-align: center;
 }
 
+/* Arriba a la izquierda (no centrado): así un punto del lienzo cae en el mismo sitio de la
+   escena aunque el lienzo cambie de tamaño (el zoom animado) o vaya corrido (`placeCanvas`). */
 .scene-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
   display: block;
   cursor: grab;
   touch-action: none;
@@ -4552,6 +4557,14 @@ button.trait[aria-pressed='true'] {
   }
   .herocard {
     max-height: calc(100% - 8px);
+  }
+  /* La barra del día, más baja y pegada abajo: con tan poco alto, tapa menos la escena. */
+  .daybar {
+    bottom: 4px;
+    padding: 2px;
+  }
+  .daybar-left {
+    min-height: 36px;
   }
 }
 

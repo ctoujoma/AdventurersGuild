@@ -47,9 +47,10 @@ import { PixelBuffer, bayer, rgba, toHex } from '../../art/pixel';
 import type { Building, Rarity, RaidResult, Room, RoomYield } from '../../core/model';
 import { ROOMS } from '../../data/rooms';
 import { INCIDENTS } from '../../data/incidents';
-import { TINTS, type GardenEdgeId, type TintId } from '../../data/custom';
+import { TINTS, type GardenEdgeId, type RoofId, type TintId } from '../../data/custom';
 import { paintOver, stripeOf } from './pintura';
-import { Camera } from '../camera';
+import { Camera, MAX_ZOOM, ZOOM_TIME, crispBelow, crispNear, stepZoom } from '../camera';
+import { memo, memoOf } from './memo';
 import { GROUND } from '../geometry';
 import { Particles, WEARY_OUT, type Particle, type PKind } from '../particles';
 import * as Prop from '../props';
@@ -254,8 +255,20 @@ const NEAR = 20;
 const FAR = EYE + 400;
 /** Lo que tarda en levantarse una sala al pagar las obras (s). */
 const RAISE = 2.4;
+/** Lo que se quiere ver al empezar en un teléfono (en el mundo): el ancho del salón, y de alto una planta y algo. */
+const START_W = 240;
+const START_H = 150;
+/** Lo que tapa abajo la barra del día (píxeles CSS): el suelo del salón se encuadra por encima. */
+const BOTTOM_UI = 52;
 
 type Tint = readonly [number, number, number];
+
+/** El suelo de un trozo de terreno (`groundTex`), hecho una vez por medida y semilla. */
+const soil = (w: number, d: number, patio: boolean, seed: string, road = patio) =>
+  memo(`suelo:${w}:${d}:${patio}:${seed}:${road}`, () => groundTex(w, d, patio, seed, road));
+/** Las tejas de una vertiente, hechas una vez por largo, semilla y tejado. */
+const tiles = (len: number, seed: string, roof?: RoofId) =>
+  memo(`tejas:${len}:${seed}:${roof ?? ''}`, () => roofTiles(len, seed, roof));
 /** Luz de fondo de cada sitio (0–1 por canal): la noche sin faroles. */
 /** Profundidad de las chimeneas del tejado: justo detrás del hastial (que tapa su pie). */
 const CHIMNEY_Z = 8;
@@ -511,6 +524,8 @@ export class RoomScene {
   private noDepth = this.shared.uDepth.value;
   private look = new Look(this.shared);
   private keep = new Look(this.shared);
+  /** Se acaba de montar la escena: la `look` de antes se suelta tras el próximo dibujo. */
+  private lookFresh = false;
   private crowd = new Crowd(this.shared, (x, floor) => this.tintAt(x, floor));
   /** El gato y el perro del salón. */
   private pets = new Pets(this.shared, (x, floor) => this.tintAt(x, floor));
@@ -582,6 +597,8 @@ export class RoomScene {
   private outside = false;
   private coverFade = 0;
   private cover: Mesh | null = null;
+  /** Hace la tapa (ver `rebuild`): se llama la primera vez que hace falta. */
+  private coverMake: (() => void) | null = null;
   private coverGlass: Mesh | null = null;
   private coverAt = 0;
   private grassTick = -1;
@@ -776,7 +793,15 @@ export class RoomScene {
   /** Modo obras: la sala elegida, que se puede coger para moverla, y la que se lleva con el dedo. */
   private grabbable: string | null = null;
   private roomDrag: { id: string; x: number; y: number; moved: boolean; rect: Rect } | null = null;
-  private pinch = 0;
+  /** El pellizco en marcha: distancia y zoom al empezar, y el punto entre los dedos (en la vista). */
+  private pinch: { d0: number; z0: number; mid: Point; raw: number } | null = null;
+  /** El zoom animado en marcha (ver `zoomTo`). */
+  private zoomAnim: { from: number; to: number; t0: number; ax: number; ay: number } | null = null;
+  /** Lo que va corrido el lienzo (ver `placeCanvas`), en píxeles CSS. */
+  private shift = { x: 0, y: 0 };
+  /** El tamaño del lienzo en píxeles del juego (para no rehacerlo si no cambia). */
+  private canvasW = 0;
+  private canvasH = 0;
   /** Rueda del ratón: lo que se lleva girado y cuándo fue el último salto de zoom. */
   private wheel = 0;
   private wheelAt = 0;
@@ -863,7 +888,7 @@ export class RoomScene {
     if (x0 >= px && x1 <= px + vw && y0 >= py && y1 <= py + vh - bar) return;
     const fit = Math.floor(Math.min(this.cssW / (x1 - x0), (this.cssH - 120) / (y1 - y0)));
     const z = Math.max(this.minZoom(this.cssW, this.cssH), Math.min(this.camera.zoom, fit));
-    if (z !== this.camera.zoom) this.resize(this.cssW, this.cssH, z);
+    if (z !== this.camera.zoom) this.zoomTo(z);
     this.camera.centerOn((x0 + x1) / 2, (y0 + y1) / 2 + 45 / z);
   }
 
@@ -944,6 +969,9 @@ export class RoomScene {
       return;
     }
     this.key = key;
+    // Lo que se mira (la sala en el centro de la vista): si las obras la corren (una escalera
+    // nueva a su izquierda ensancha el edificio), la cámara se corre con ella.
+    const seen = this.centerRoom();
     const L = roomsLayout(b);
     this.layout = L;
     this.rebuild(L, model);
@@ -963,6 +991,10 @@ export class RoomScene {
     this.showAway();
     this.showIncidents();
     if (this.routePts) this.routePts = this.routePoints(this.routeIds.split(' '));
+    // (Solo si sigue en su hueco: si es la sala que se ha movido, la vista se queda donde está.)
+    const now = seen && L.rooms.find((r) => r.room.id === seen.id);
+    if (seen && now && now.room.col === seen.col && now.room.floor === seen.floor)
+      this.camera.shiftBy(now.rect.x - seen.rect.x, now.rect.y - seen.rect.y);
     this.camera.world = { x0: L.x0, x1: L.x1, y0: L.y0, y1: L.y1 };
     // Cualquier sala puede quedar en el centro (y verse de frente), aunque esté en una esquina.
     this.camera.reach = { x0: L.left, x1: L.right, y0: floorTop(L.top), y1: floorY(L.deepest) };
@@ -972,7 +1004,7 @@ export class RoomScene {
       label: roomLabel(b, room.id),
       rect: room.type === 'torre' ? (this.towerRect ?? rect) : rect,
     }));
-    if (this.cssW) this.resize(this.cssW, this.cssH, this.camera.zoom);
+    if (this.cssW) this.resize(this.cssW, this.cssH);
     if (!this.framed && this.cssW) this.frame();
     // Polvo y monedas donde algo ha mejorado o se ha construido.
     if (prev)
@@ -1263,19 +1295,32 @@ export class RoomScene {
     }));
   }
 
+  /**
+   * El tamaño de la vista. Con `zoom`, ese de golpe; sin él, el que hay (la primera vez, o al
+   * girar el teléfono, el de partida: ver `startZoom`): así, al cambiar de alto la ventana (la
+   * barra del navegador del móvil que sale y se esconde) no cambia lo que se mira.
+   */
   resize(cssW: number, cssH: number, zoom?: number): void {
+    const turned = !this.cssW || cssW > cssH !== this.cssW > this.cssH;
     this.cssW = cssW;
     this.cssH = cssH;
     const min = this.minZoom(cssW, cssH);
-    const z = Math.max(
-      min,
-      zoom ?? Math.max(2, Math.ceil(min), Math.floor(Math.min(cssW / 200, cssH / 240))),
-    );
-    this.camera.setView(cssW, cssH, z);
-    const { vw, vh } = this.camera;
-    this.renderer.setSize(vw, vh, false);
+    if (zoom !== undefined || turned) this.zoomAnim = null;
+    const want = zoom ?? (turned ? this.startZoom(cssW, cssH) : this.camera.zoom);
+    this.camera.setView(cssW, cssH, Math.max(min, want));
+    this.fitCanvas();
+    if (!this.framed && this.layout) this.frame();
+  }
+
+  /** El lienzo y lo que va a su tamaño, al de la vista de ahora (si ha cambiado). */
+  private fitCanvas(): void {
+    const { vw, vh, zoom: z } = this.camera;
     this.canvas.style.width = `${vw * z}px`;
     this.canvas.style.height = `${vh * z}px`;
+    if (vw === this.canvasW && vh === this.canvasH) return;
+    this.canvasW = vw;
+    this.canvasH = vh;
+    this.renderer.setSize(vw, vh, false);
     for (const c of [this.skyCanvas, this.top]) {
       c.width = vw;
       c.height = vh;
@@ -1285,14 +1330,31 @@ export class RoomScene {
     this.topTex.dispose();
     this.skyAt = '';
     this.topLive = true;
-    if (!this.framed && this.layout) this.frame();
   }
 
-  /** La primera vez, la cámara mira al salón. */
+  /**
+   * El zoom con el que se empieza: en un teléfono de pie, que quepa el ancho del salón; tumbado,
+   * que se vea una planta entera y algo de las de al lado por encima de la barra del día. En
+   * pantallas grandes, el de siempre (un píxel del juego, dos o más de la pantalla).
+   */
+  private startZoom(cssW: number, cssH: number): number {
+    const fit = Math.min(cssW / START_W, (cssH - BOTTOM_UI) / START_H);
+    if (fit >= 2) return Math.max(2, Math.floor(Math.min(cssW / 200, cssH / 240)));
+    // Lo más cerca que deja verlo, con el píxel nítido en la pantalla del teléfono.
+    return Math.max(1, crispBelow(fit));
+  }
+
+  /** La primera vez, la cámara mira al salón (con su suelo por encima de la barra del día). */
   private frame(): void {
     this.framed = true;
-    const p = this.layout ? focusPoint(this.layout, 'sala') : null;
-    if (p) this.camera.centerOn(p.x, p.y - 20, false);
+    const L = this.layout;
+    const p = L ? focusPoint(L, 'sala') : null;
+    if (!L || !p) return;
+    const sala = L.rooms.find((r) => r.room.type === 'salon')?.rect;
+    const { vh, zoom } = this.camera;
+    let cy = p.y - 20;
+    if (sala) cy = Math.max(cy, sala.y + sala.h + 8 + BOTTOM_UI / zoom - vh / 2);
+    this.camera.centerOn(p.x, cy, false);
   }
 
   /**
@@ -1311,11 +1373,21 @@ export class RoomScene {
     return Math.max(px, Math.ceil(Math.min(cover, fit) * 100) / 100);
   }
 
+  /** Un paso de zoom (+1 acerca, −1 aleja), animado y con el centro de la vista quieto. */
   zoomBy(step: number): void {
+    this.zoomAt(step, this.cssW / 2, this.cssH / 2, false);
+  }
+
+  /**
+   * Un paso de zoom dejando quieto el punto del mundo que hay bajo (cssX, cssY), en el lienzo
+   * (o en la vista, sin `onCanvas`). Se anima (`zoomTo`); si ya iba hacia otro, el paso cuenta
+   * desde allí (dos golpes de rueda seguidos, dos pasos).
+   */
+  zoomAt(step: number, cssX: number, cssY: number, onCanvas = true): void {
     const min = this.minZoom(this.cssW, this.cssH);
-    const cur = this.camera.zoom;
+    const cur = this.zoomAnim?.to ?? this.camera.zoom;
     // La vista desde fuera: un paso más allá del zoom mínimo (y al acercar, se quita primero).
-    if (this.moodLight && step < 0 && cur <= min) {
+    if (this.moodLight && step < 0 && cur <= min + 0.001) {
       this.outside = true;
       return;
     }
@@ -1323,25 +1395,56 @@ export class RoomScene {
       this.outside = false;
       return;
     }
-    const z =
-      step > 0
-        ? Math.min(6, Math.floor(cur) + 1)
-        : Math.max(min, Number.isInteger(cur) ? cur - 1 : Math.floor(cur));
-    if (z !== cur) this.resize(this.cssW, this.cssH, z);
+    const z = stepZoom(cur, step, min);
+    // Del lienzo a la vista: el lienzo va corrido lo que no es entero de la posición.
+    const ax = cssX + (onCanvas ? this.shift.x : 0);
+    const ay = cssY + (onCanvas ? this.shift.y : 0);
+    this.zoomTo(z, ax, ay);
   }
 
-  /** Un paso de zoom dejando quieto el punto del mundo que hay bajo (cssX, cssY). */
-  zoomAt(step: number, cssX: number, cssY: number): void {
-    const before = this.camera.toWorld(cssX, cssY);
-    const z = this.camera.zoom;
-    this.zoomBy(step);
-    if (this.camera.zoom === z) return;
-    const after = this.camera.toWorld(cssX, cssY);
-    this.camera.drag(
-      (after.x - before.x) * this.camera.zoom,
-      (after.y - before.y) * this.camera.zoom,
-      0,
-    );
+  /**
+   * Lleva el zoom a `z` en `ZOOM_TIME`, suave al llegar, dejando quieto el punto de la vista
+   * (ax, ay) (o el centro). Con la escena parada, de golpe.
+   */
+  zoomTo(z: number, ax = this.cssW / 2, ay = this.cssH / 2): void {
+    if (!this.cssW) return;
+    const from = this.camera.zoom;
+    if (!this.raf) {
+      this.zoomAnim = null;
+      this.camera.zoomAround(z, ax, ay);
+      this.fitCanvas();
+      return;
+    }
+    if (Math.abs(z - from) < 0.001 && !this.zoomAnim) return;
+    this.zoomAnim = { from, to: z, t0: performance.now(), ax, ay };
+  }
+
+  /** Un fotograma del zoom animado (si lo hay): el zoom de ahora, con su punto quieto. */
+  private stepZoomAnim(now: number): void {
+    const a = this.zoomAnim;
+    if (!a) return;
+    const k = Math.min(1, Math.max(0, (now - a.t0) / ZOOM_TIME));
+    // Rápido al salir y suave al llegar.
+    const e = 1 - (1 - k) * (1 - k);
+    const to = Math.max(this.minZoom(this.cssW, this.cssH), a.to);
+    this.camera.zoomAround(k >= 1 ? to : a.from + (to - a.from) * e, a.ax, a.ay);
+    this.fitCanvas();
+    if (k >= 1) this.zoomAnim = null;
+  }
+
+  /**
+   * Mientras el zoom va por valores de paso (animándose o con el pellizco), la posición no se
+   * redondea en pantalla: el lienzo (pintado en la posición entera) se corre lo que falta, y así
+   * el punto que se queda quieto no baila. Parado, sin correr: cada píxel en su sitio.
+   */
+  private placeCanvas(): void {
+    const c = this.camera;
+    const moving = !!this.zoomAnim || !!this.pinch;
+    const x = moving ? (c.px - c.x) * c.zoom : 0;
+    const y = moving ? (c.py - c.y) * c.zoom : 0;
+    if (x === this.shift.x && y === this.shift.y) return;
+    this.shift = { x, y };
+    this.canvas.style.transform = x || y ? `translate(${x}px, ${y}px)` : '';
   }
 
   /** Punto del mundo junto al techo de una sala (para colgar de él un aviso), o null. */
@@ -1354,8 +1457,9 @@ export class RoomScene {
   roomOnScreen(id: string): { x: number; y: number; w: number; h: number } | null {
     const r = this.layout?.rooms.find((x) => x.room.id === id);
     if (!r) return null;
-    const a = this.screenOf(r.rect.x, r.rect.y);
-    const b = this.screenOf(r.rect.x + r.rect.w, r.rect.y + r.rect.h);
+    // Del lienzo (su rectángulo ya cuenta con lo que va corrido: ver `placeCanvas`).
+    const a = this.camera.toScreen(r.rect.x, r.rect.y);
+    const b = this.camera.toScreen(r.rect.x + r.rect.w, r.rect.y + r.rect.h);
     const c = this.canvas.getBoundingClientRect();
     return {
       x: c.left + Math.min(a.x, b.x),
@@ -1378,8 +1482,8 @@ export class RoomScene {
   targetOnScreen(id: string): { x: number; y: number; w: number; h: number } | null {
     const r = this.targets?.find((x) => x.id === id)?.rect;
     if (!r) return null;
-    const a = this.screenOf(r.x, r.y);
-    const b = this.screenOf(r.x + r.w, r.y + r.h);
+    const a = this.camera.toScreen(r.x, r.y);
+    const b = this.camera.toScreen(r.x + r.w, r.y + r.h);
     const c = this.canvas.getBoundingClientRect();
     return {
       x: c.left + Math.min(a.x, b.x),
@@ -1407,17 +1511,58 @@ export class RoomScene {
 
   /** De cerca: un paso de zoom si la cámara está lejos, y centrada en la sala. */
   closeUp(room: string, zoom = 3): void {
-    if (this.camera.zoom < zoom) this.resize(this.cssW, this.cssH, zoom);
+    const z = crispNear(zoom);
+    if ((this.zoomAnim?.to ?? this.camera.zoom) < z) this.zoomTo(z);
     this.focus(room);
   }
 
+  /** Dónde cae un punto del mundo en la escena (en píxeles CSS, desde su esquina). */
   screenOf(wx: number, wy: number): Point {
-    return this.camera.toScreen(wx, wy);
+    const p = this.camera.toScreen(wx, wy);
+    return { x: p.x + this.shift.x, y: p.y + this.shift.y };
   }
 
-  focus(room: string): void {
-    const p = this.layout ? focusPoint(this.layout, room) : null;
+  /**
+   * La cámara va a una sala (o a la primera de una lista). Con `soft`, solo si no se ve ya (ni
+   * ninguna de la lista): así, al hacer o pagar obras, no se mueve sola si se está mirando.
+   */
+  focus(room: string | readonly string[], soft = false): void {
+    const list = typeof room === 'string' ? [room] : room;
+    if (!list.length) return;
+    if (soft && list.some((id) => this.inView(id))) return;
+    const p = this.layout ? focusPoint(this.layout, list[0]!) : null;
     if (p) this.camera.centerOn(p.x, p.y);
+  }
+
+  /** La sala que hay en el centro de la vista (o la más cercana a él), con su sitio. */
+  private centerRoom(): { id: string; rect: Rect; col: number; floor: number } | null {
+    const L = this.layout;
+    if (!L || !this.camera.vw) return null;
+    const cx = this.camera.x + this.camera.vw / 2;
+    const cy = this.camera.y + this.camera.vh / 2;
+    let best: { id: string; rect: Rect; col: number; floor: number } | null = null;
+    let far = Infinity;
+    for (const { room, rect } of L.rooms) {
+      const dx = Math.max(rect.x - cx, 0, cx - rect.x - rect.w);
+      const dy = Math.max(rect.y - cy, 0, cy - rect.y - rect.h);
+      const d = dx * dx + dy * dy;
+      if (d < far) {
+        far = d;
+        best = { id: room.id, rect: { ...rect }, col: room.col, floor: room.floor };
+      }
+    }
+    return best;
+  }
+
+  /** Si se ve el centro de una sala, con algo de margen por los bordes. */
+  private inView(id: string): boolean {
+    const r = this.layout?.rooms.find((x) => x.room.id === id)?.rect;
+    if (!r) return false;
+    const { px, py, vw, vh, zoom } = this.camera;
+    const cx = r.x + r.w / 2;
+    const cy = r.y + r.h / 2;
+    const m = Math.min(vw, vh) * 0.1;
+    return cx > px + m && cx < px + vw - m && cy > py + m && cy < py + vh - m - BOTTOM_UI / zoom;
   }
 
   /**
@@ -1466,7 +1611,9 @@ export class RoomScene {
     const loop = (now: number) => {
       const dt = Math.max(0, Math.min(0.05, (now - (this.last || now)) / 1000));
       this.last = now;
+      this.stepZoomAnim(now);
       this.update(dt * this.speed);
+      this.placeCanvas();
       this.draw();
       this.raf = requestAnimationFrame(loop);
     };
@@ -2191,8 +2338,12 @@ export class RoomScene {
   private rebuild(L: RoomsLayout, model: SceneModel): void {
     // Lo de antes fuera (las láminas de cielo y partículas se quedan).
     this.world.clear();
-    this.look.dispose();
-    this.look = new Look(this.shared);
+    // La de antes se suelta tras el primer dibujo con la nueva (`lookFresh`): así three.js no
+    // tiene que compilar otra vez los mismos sombreadores (se van con el último material que los
+    // usa) y las texturas de los dibujos que se repiten pasan tal cual, sin volver a subirlas.
+    this.look.dropPrev();
+    this.look = new Look(this.shared, this.look);
+    this.lookFresh = true;
     this.lamps = [];
     this.haloSprites = new Map();
     this.flames = [];
@@ -2255,9 +2406,14 @@ export class RoomScene {
     const cut = GROUND - F.y;
     // La tapa de la vista desde fuera (luz con ambiente, al alejar del todo): delante del corte,
     // sin la luz ni el halo de las salas en su cara de fuera (`wrap` 0, `halo` 0). Aparece con
-    // un fundido por tramas (`uFade`, ver `outside`).
-    {
-      const { buf: img, glass } = outsideFace(L, look, F, model.seed);
+    // un fundido por tramas (`uFade`, ver `outside`). Se hace la primera vez que se pide (es
+    // cara y, sin la luz con ambiente o sin alejar del todo, no se ve nunca).
+    this.cover = null;
+    this.coverGlass = null;
+    this.coverMake = () => {
+      const { buf: img, glass } = memoOf(F, `fuera:${model.seed}`, () =>
+        outsideFace(L, look, F, model.seed),
+      );
       const corners: Corners = [
         at(F.x, fy1, -0.6),
         at(fx1, fy1, -0.6),
@@ -2285,16 +2441,17 @@ export class RoomScene {
       this.coverGlass = mesh(quad(gc, this.look), this.look.glow(glass, 1));
       this.coverGlass.visible = false;
       g.add(this.coverGlass);
-    }
+    };
+    // Los trozos del corte, como el corte: los mismos mientras no cambie (y su textura también).
     this.plane(
       g,
-      F.buf.crop(0, 0, F.buf.w, cut),
+      memoOf(F.buf, 'arriba', () => F.buf.crop(0, 0, F.buf.w, cut)),
       [at(F.x, GROUND, 0), at(fx1, GROUND, 0), at(fx1, F.y, 0), at(F.x, F.y, 0)],
       { ambient: OUTDOOR, sun: 1 },
     );
     this.plane(
       g,
-      F.buf.crop(0, cut, F.buf.w, F.buf.h - cut),
+      memoOf(F.buf, 'abajo', () => F.buf.crop(0, cut, F.buf.w, F.buf.h - cut)),
       [at(F.x, fy1, 0), at(fx1, fy1, 0), at(fx1, GROUND, 0), at(F.x, GROUND, 0)],
       { ambient: EARTH, sun: 0 },
     );
@@ -2306,13 +2463,13 @@ export class RoomScene {
     const dark = { ambient: EARTH, sun: 0, repeat: n };
     this.plane(
       g,
-      earthBuf(TILE, fy1 - GROUND, true),
+      memo(`tierra:${TILE}:${fy1 - GROUND}:1`, () => earthBuf(TILE, fy1 - GROUND, true)),
       [at(tx0, fy1, 0), at(F.x, fy1, 0), at(F.x, GROUND, 0), at(tx0, GROUND, 0)],
       dark,
     );
     this.plane(
       g,
-      earthBuf(TILE, fy1 - GROUND, false),
+      memo(`tierra:${TILE}:${fy1 - GROUND}:0`, () => earthBuf(TILE, fy1 - GROUND, false)),
       [at(fx1, fy1, 0), at(tx1, fy1, 0), at(tx1, GROUND, 0), at(fx1, GROUND, 0)],
       dark,
     );
@@ -2413,13 +2570,13 @@ export class RoomScene {
       const opts = { ambient: OUTDOOR, sun: 1, dither: 0 };
       this.plane(
         g,
-        roofTiles(len, `tejado${run.x0}`, look.roof),
+        tiles(len, `tejado${run.x0}`, look.roof),
         [at(run.x0, eave, d), at(run.x0, eave, 0), at(mid, ridge, 0), at(mid, ridge, d)],
         opts,
       );
       this.plane(
         g,
-        roofTiles(len, `tejado${run.x1}`, look.roof),
+        tiles(len, `tejado${run.x1}`, look.roof),
         [at(run.x1, eave, 0), at(run.x1, eave, d), at(mid, ridge, d), at(mid, ridge, 0)],
         opts,
       );
@@ -2445,10 +2602,16 @@ export class RoomScene {
     ) => {
       this.plane(groundC, tex, corners, o);
       const src = wide ? wide() : tex;
-      this.plane(groundM, moodGround(src, gi++), corners, {
-        ...o,
-        repeat: wide ? undefined : o.repeat,
-      });
+      const seed = gi++;
+      this.plane(
+        groundM,
+        memoOf(src, `suelo${seed}`, () => moodGround(src, seed)),
+        corners,
+        {
+          ...o,
+          repeat: wide ? undefined : o.repeat,
+        },
+      );
     };
     const back = DEPTH + 2;
     // A los lados, un trozo de patio y otro de hierba que se repiten (`TILE`) hasta muy lejos.
@@ -2458,7 +2621,7 @@ export class RoomScene {
     const x0 = L.left - nl * TILE;
     const x1 = L.right + nr * TILE;
     ground(
-      groundTex(TILE, YARD_D / 2, true, 'patio', false),
+      soil(TILE, YARD_D / 2, true, 'patio', false),
       [
         at(x0, GROUND, 0),
         at(L.left, GROUND, 0),
@@ -2466,10 +2629,10 @@ export class RoomScene {
         at(x0, GROUND, YARD_D),
       ],
       { ...yard, repeat: nl },
-      () => groundTex(TILE * nl, YARD_D / 2, true, 'patio-ancho', false),
+      () => soil(TILE * nl, YARD_D / 2, true, 'patio-ancho', false),
     );
     ground(
-      groundTex(TILE, YARD_D / 2, false, 'solares'),
+      soil(TILE, YARD_D / 2, false, 'solares'),
       [
         at(L.right, GROUND, 0),
         at(x1, GROUND, 0),
@@ -2477,7 +2640,7 @@ export class RoomScene {
         at(L.right, GROUND, YARD_D),
       ],
       { ...yard, repeat: nr },
-      () => groundTex(TILE * nr, YARD_D / 2, false, 'solares-ancho'),
+      () => soil(TILE * nr, YARD_D / 2, false, 'solares-ancho'),
     );
     // Detrás del edificio, la hierba del terreno; en el jardín, su césped (más abajo) hasta
     // `LAWN_D`, y de ahí a los árboles, el terreno otra vez.
@@ -2491,12 +2654,7 @@ export class RoomScene {
       : [[L.left, L.right, back]];
     for (const [a, c, z] of behind)
       ground(
-        groundTex(
-          Math.round(c - a),
-          (YARD_D - z) / 2,
-          false,
-          a === L.left ? 'huerto' : `huerto${a}`,
-        ),
+        soil(Math.round(c - a), (YARD_D - z) / 2, false, a === L.left ? 'huerto' : `huerto${a}`),
         [at(a, GROUND, z), at(c, GROUND, z), at(c, GROUND, YARD_D), at(a, GROUND, YARD_D)],
         yard,
       );
@@ -2538,7 +2696,7 @@ export class RoomScene {
     for (const [a, c] of [...used, [L.right, L.right] as [number, number]]) {
       if (a > gx + 1)
         ground(
-          groundTex(Math.round(a - gx), back / 2, false, `solar${Math.round(gx)}`),
+          soil(Math.round(a - gx), back / 2, false, `solar${Math.round(gx)}`),
           [at(gx, GROUND, 0), at(a, GROUND, 0), at(a, GROUND, back), at(gx, GROUND, back)],
           yard,
         );
@@ -3039,7 +3197,7 @@ export class RoomScene {
     );
     this.plane(
       g,
-      ceilingTex(theme, r.w, seed),
+      memo(`techo:${theme}:${r.w}:${seed}`, () => ceilingTex(theme, r.w, seed)),
       [at(x0, yt, D), at(x1, yt, D), at(x1, yt, 0), at(x0, yt, 0)],
       flat,
     );
@@ -3058,8 +3216,11 @@ export class RoomScene {
           );
     const winL = wins('left');
     const winR = wins('right');
-    const left = (room?: Room) =>
-      sideTex(
+    // Los lados se guardan (`memo`) salvo mientras se pintan: la pintura cambia su textura.
+    const keep = (args: unknown[], make: () => PixelBuffer) =>
+      o.fresh ? make() : memo(`lado:${JSON.stringify(args)}`, make);
+    const left = (room?: Room) => {
+      const args = [
         theme,
         r.h,
         doors(o.sides.left),
@@ -3068,20 +3229,22 @@ export class RoomScene {
         o.door,
         room,
         winL,
-      );
-    const right = (room?: Room) =>
-      mirror(
-        sideTex(
-          theme,
-          r.h,
-          doors(o.sides.right),
-          `${seed}d`,
-          o.garden?.right ? [0] : [],
-          1,
-          room,
-          winR,
-        ),
-      );
+      ] as const;
+      return keep([...args], () => sideTex(...args));
+    };
+    const right = (room?: Room) => {
+      const args = [
+        theme,
+        r.h,
+        doors(o.sides.right),
+        `${seed}d`,
+        o.garden?.right ? [0] : [],
+        1,
+        room,
+        winR,
+      ] as const;
+      return keep(['d', ...args], () => mirror(sideTex(...args)));
+    };
     const matsL: { mat: ShaderMaterial; mood: boolean }[] = [];
     const matsR: { mat: ShaderMaterial; mood: boolean }[] = [];
     this.plane(
@@ -3161,7 +3324,7 @@ export class RoomScene {
         const street = !doorDone && i === 0;
         if (street) doorDone = true;
         const hasWin = (side === 'left' ? winL : winR).includes(i);
-        const tex = outerSide(
+        const args = [
           themeOf(f),
           bottom - top,
           street || (i === 0 && !!o.garden?.[side]),
@@ -3169,7 +3332,8 @@ export class RoomScene {
           street ? o.door : 1,
           this.model?.look?.walls,
           hasWin ? (o.room && ruined(o.room) ? 'tablas' : 'cristal') : undefined,
-        );
+        ] as const;
+        const tex = memo(`fuera:${JSON.stringify(args)}`, () => outerSide(...args));
         if (hasWin && !(o.room && ruined(o.room)))
           this.sideOpening(
             side,
@@ -3182,7 +3346,7 @@ export class RoomScene {
           const x = rect.x - WALL;
           this.plane(
             g,
-            mirror(tex),
+            memoOf(tex, 'espejo', () => mirror(tex)),
             [at(x, bottom, D), at(x, bottom, 0), at(x, top, 0), at(x, top, D)],
             outdoor,
           );
@@ -3267,12 +3431,13 @@ export class RoomScene {
     for (const t of yardTrees(L)) {
       const n0 = classic.children.length;
       const n1 = mood.children.length;
-      both(
-        t.conifer ? Prop.pine(`pino${t.x}`, t.h) : Prop.oakTree(`roble${t.x}`, t.h),
-        t.conifer ? pineCnc(`pino${t.x}`, t.h) : oakCnc(`roble${t.x}`, t.h),
-        t.x,
-        t.depth,
+      // Cada árbol, dibujado una vez (no cambia con las obras).
+      const [a, b] = memo(`arbol:${t.conifer}:${t.x}:${t.h}`, () =>
+        t.conifer
+          ? [Prop.pine(`pino${t.x}`, t.h), pineCnc(`pino${t.x}`, t.h)]
+          : [Prop.oakTree(`roble${t.x}`, t.h), oakCnc(`roble${t.x}`, t.h)],
       );
+      both(a, b, t.x, t.depth);
       // Los árboles se mecen con el viento (ver `stepWind`): los altos, más.
       for (const m of [...classic.children.slice(n0), ...mood.children.slice(n1)]) {
         const u = m instanceof Mesh ? (m.material as ShaderMaterial).uniforms?.uSway : undefined;
@@ -3280,7 +3445,10 @@ export class RoomScene {
       }
     }
     this.plantGrass(L, classic, mood);
-    for (const bu of yardBushes(L)) both(Prop.bush(bu.seed), bushCnc(bu.seed), bu.x, bu.depth);
+    for (const bu of yardBushes(L)) {
+      const [a, b] = memo(`mata:${bu.seed}`, () => [Prop.bush(bu.seed), bushCnc(bu.seed)]);
+      both(a, b, bu.x, bu.depth);
+    }
     for (let i = 0; i < Math.min(2, y.patio); i++) put(dummy(), px + 110 + i * 30, 40 + i * 16);
     this.gardenArt(L, model);
     if (y.establo > 0) put(stable(y.establo), px + 120, 150);
@@ -4924,9 +5092,9 @@ export class RoomScene {
       this.raidLive = null;
       // Con asalto no se acuesta a nadie de golpe (ni al acabar): cada uno va a lo suyo andando.
       n.out = true;
-      this.raidZoom = this.camera.zoom;
-      const z = Math.min(6, Math.max(3, Math.floor(this.camera.zoom) + 1));
-      if (this.cssW && z !== this.camera.zoom) this.resize(this.cssW, this.cssH, z);
+      this.raidZoom = this.zoomAnim?.to ?? this.camera.zoom;
+      const z = crispNear(Math.min(6, Math.max(3, Math.floor(this.camera.zoom) + 1)));
+      if (this.cssW && z !== this.camera.zoom) this.zoomTo(z);
     }
     const raid = this.raid;
     if (!raid) return;
@@ -4949,7 +5117,7 @@ export class RoomScene {
       }
       this.raidWon = undefined;
       this.raid = null;
-      if (this.raidZoom !== null && this.cssW) this.resize(this.cssW, this.cssH, this.raidZoom);
+      if (this.raidZoom !== null && this.cssW) this.zoomTo(this.raidZoom);
       this.raidZoom = null;
     }
   }
@@ -5215,8 +5383,13 @@ export class RoomScene {
       const now = performance.now() / 1000;
       const dt = Math.min(0.1, Math.max(0, now - this.coverAt));
       this.coverAt = now;
-      if (!this.moodLight || this.camera.zoom > this.minZoom(this.cssW, this.cssH))
+      const goal = this.zoomAnim?.to ?? this.camera.zoom;
+      if (!this.moodLight || goal > this.minZoom(this.cssW, this.cssH) + 0.001)
         this.outside = false;
+      if (this.outside && this.coverMake) {
+        this.coverMake();
+        this.coverMake = null;
+      }
       const want = this.outside ? 1 : 0;
       const f = this.coverFade + Math.sign(want - this.coverFade) * dt * 2.5;
       this.coverFade = Math.max(
@@ -5272,6 +5445,10 @@ export class RoomScene {
     if (raining) r.render(this.rainScene, this.flat);
     if (shadows) this.shared.uDepth.value = this.noDepth;
     if (live) r.render(this.topScene, this.flat);
+    if (this.lookFresh) {
+      this.lookFresh = false;
+      this.look.dropPrev();
+    }
     // La foto para un fundido, ahora que el lienzo aún tiene el fotograma.
     const after = this.afterDraw;
     this.afterDraw = null;
@@ -6182,6 +6359,26 @@ export class RoomScene {
     }
   }
 
+  /** El punto entre dos dedos, en la vista (los dedos van en el lienzo, que va corrido). */
+  private between(a: Point, b: Point): Point {
+    return { x: (a.x + b.x) / 2 + this.shift.x, y: (a.y + b.y) / 2 + this.shift.y };
+  }
+
+  /**
+   * Se acaba el pellizco: el zoom va, suave, al nítido más cercano. Pellizcando hacia fuera
+   * del todo (con luz con ambiente), la vista desde fuera; hacia dentro, se quita.
+   */
+  private endPinch(): void {
+    const pin = this.pinch;
+    if (!pin) return;
+    this.pinch = null;
+    const min = this.minZoom(this.cssW, this.cssH);
+    if (this.moodLight && pin.raw < min * 0.85) this.outside = true;
+    else if (this.outside && pin.raw > pin.z0 * 1.15) this.outside = false;
+    const z = Math.max(min, Math.min(MAX_ZOOM, crispNear(this.camera.zoom)));
+    this.zoomTo(z, pin.mid.x, pin.mid.y);
+  }
+
   private bindInput(): void {
     const c = this.canvas;
     const local = (e: PointerEvent | WheelEvent) => {
@@ -6228,7 +6425,14 @@ export class RoomScene {
       } else if (this.pointers.size === 2) {
         this.cancelDrag();
         const [a, b] = [...this.pointers.values()];
-        this.pinch = Math.hypot(a!.x - b!.x, a!.y - b!.y);
+        // El pellizco manda: se para el zoom animado que hubiera y se sigue desde donde va.
+        this.zoomAnim = null;
+        this.pinch = {
+          d0: Math.max(1, Math.hypot(a!.x - b!.x, a!.y - b!.y)),
+          z0: this.camera.zoom,
+          mid: this.between(a!, b!),
+          raw: this.camera.zoom,
+        };
         if (this.press) this.press.moved = true;
       }
     });
@@ -6269,15 +6473,19 @@ export class RoomScene {
       }
       this.pointers.set(e.pointerId, p);
       if (this.pointers.size === 2) {
+        const pin = this.pinch;
+        if (!pin) return;
+        // El zoom sigue a los dedos sin saltos (al soltar, se ajusta a uno nítido: `endPinch`) y
+        // lo que había entre ellos sigue entre ellos, también si se mueven a la vez.
         const [a, b] = [...this.pointers.values()];
-        const d = Math.hypot(a!.x - b!.x, a!.y - b!.y);
-        if (d / this.pinch > 1.3) {
-          this.zoomBy(1);
-          this.pinch = d;
-        } else if (d / this.pinch < 0.75) {
-          this.zoomBy(-1);
-          this.pinch = d;
-        }
+        const mid = this.between(a!, b!);
+        pin.raw = (pin.z0 * Math.hypot(a!.x - b!.x, a!.y - b!.y)) / pin.d0;
+        const z = Math.max(this.minZoom(this.cssW, this.cssH), Math.min(MAX_ZOOM, pin.raw));
+        this.camera.zoomAround(z, pin.mid.x, pin.mid.y);
+        this.camera.drag(mid.x - pin.mid.x, mid.y - pin.mid.y, 0);
+        pin.mid = mid;
+        this.fitCanvas();
+        this.placeCanvas();
         return;
       }
       if (this.drag) {
@@ -6332,6 +6540,7 @@ export class RoomScene {
       this.drag = null;
       const wasClick = this.press && !this.press.moved && this.pointers.size === 1;
       this.pointers.delete(e.pointerId);
+      if (this.pointers.size < 2) this.endPinch();
       if (this.pointers.size === 0) {
         this.camera.release();
         if (wasClick) {
@@ -6345,6 +6554,7 @@ export class RoomScene {
     c.addEventListener('pointerup', end);
     c.addEventListener('pointercancel', (e) => {
       this.pointers.delete(e.pointerId);
+      if (this.pointers.size < 2) this.endPinch();
       this.cancelDrag();
       if (this.roomDrag?.moved) this.cb.onRoomDrop?.();
       this.roomDrag = null;

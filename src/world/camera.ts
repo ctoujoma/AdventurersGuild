@@ -11,7 +11,10 @@ export interface CameraWorld {
   y1: number;
 }
 
-/** Cámara 2D con arrastre, inercia, zoom entero y enfoque suave a un punto. */
+/**
+ * Cámara 2D con arrastre, inercia, zoom y enfoque suave a un punto. El zoom puede pasar por
+ * valores no enteros (al animarse o con el pellizco); la escena lo deja quieto en uno nítido.
+ */
 export class Camera {
   /** Por defecto, la taberna dibujada con su cielo de más por arriba. */
   world: CameraWorld = { x0: WORLD_X0, x1: WORLD_X1, y0: -SKY_TOP, y1: WORLD_H };
@@ -30,7 +33,11 @@ export class Camera {
   vh = 0;
   private vx = 0;
   private vy = 0;
-  private target: { x: number; y: number } | null = null;
+  /** El destino de un enfoque suave: el centro de la vista (así vale aunque cambie el zoom). */
+  private target: { cx: number; cy: number } | null = null;
+  /** Tamaño de la vista en píxeles CSS (para `zoomAround`). */
+  private cssW = 0;
+  private cssH = 0;
   /** Lo que queda del camino por segundo al ir a un destino (más alto, más lento). */
   private ease = 0.002;
   dragging = false;
@@ -38,6 +45,8 @@ export class Camera {
   setView(cssW: number, cssH: number, zoom = this.zoom): void {
     const cx = this.x + this.vw / 2;
     const cy = this.y + this.vh / 2;
+    this.cssW = cssW;
+    this.cssH = cssH;
     this.zoom = zoom;
     this.vw = Math.ceil(cssW / zoom);
     this.vh = Math.ceil(cssH / zoom);
@@ -46,6 +55,31 @@ export class Camera {
       this.y = cy - this.vh / 2;
     }
     this.clamp();
+  }
+
+  /**
+   * Cambia el zoom dejando quieto el punto del mundo que se ve en (ax, ay) de la vista (en
+   * píxeles CSS, con la posición sin redondear: la escena corre el lienzo lo que falta).
+   */
+  zoomAround(zoom: number, ax: number, ay: number): void {
+    const wx = this.x + ax / this.zoom;
+    const wy = this.y + ay / this.zoom;
+    this.zoom = zoom;
+    this.vw = Math.ceil(this.cssW / zoom);
+    this.vh = Math.ceil(this.cssH / zoom);
+    this.x = wx - ax / zoom;
+    this.y = wy - ay / zoom;
+    this.clamp();
+  }
+
+  /** Corre la cámara (y su destino, si va hacia uno) tanto como se ha corrido lo que se mira. */
+  shiftBy(dx: number, dy: number): void {
+    this.x += dx;
+    this.y += dy;
+    if (this.target) {
+      this.target.cx += dx;
+      this.target.cy += dy;
+    }
   }
 
   private bounds() {
@@ -96,14 +130,12 @@ export class Camera {
   }
 
   centerOn(x: number, y: number, smooth = true, slow = false): void {
-    const tx = x - this.vw / 2;
-    const ty = y - this.vh / 2;
     this.ease = slow ? 0.25 : 0.002;
-    if (smooth) this.target = { x: tx, y: ty };
+    if (smooth) this.target = { cx: x, cy: y };
     else {
       this.target = null;
-      this.x = tx;
-      this.y = ty;
+      this.x = x - this.vw / 2;
+      this.y = y - this.vh / 2;
       this.clamp();
     }
     this.stopInertia();
@@ -113,7 +145,7 @@ export class Camera {
   unlift(): void {
     if (!this.lift) return;
     this.lift = 0;
-    this.target = { x: this.x, y: this.y };
+    this.target = { cx: this.x + this.vw / 2, cy: this.y + this.vh / 2 };
     this.ease = 0.002;
   }
 
@@ -130,13 +162,14 @@ export class Camera {
     if (this.target) {
       // El destino, dentro de los límites: si no, nunca se llegaría y seguiría tirando.
       const b = this.bounds();
-      this.target.x = Math.max(b.minX, Math.min(b.maxX, this.target.x));
-      this.target.y = Math.max(b.minY, Math.min(b.maxY, this.target.y));
+      const tx = Math.max(b.minX, Math.min(b.maxX, this.target.cx - this.vw / 2));
+      const ty = Math.max(b.minY, Math.min(b.maxY, this.target.cy - this.vh / 2));
+      this.target.cx = tx + this.vw / 2;
+      this.target.cy = ty + this.vh / 2;
       const k = 1 - Math.pow(this.ease, dt);
-      this.x += (this.target.x - this.x) * k;
-      this.y += (this.target.y - this.y) * k;
-      if (Math.abs(this.target.x - this.x) < 0.3 && Math.abs(this.target.y - this.y) < 0.3)
-        this.target = null;
+      this.x += (tx - this.x) * k;
+      this.y += (ty - this.y) * k;
+      if (Math.abs(tx - this.x) < 0.3 && Math.abs(ty - this.y) < 0.3) this.target = null;
       this.clamp();
       return;
     }
@@ -170,4 +203,40 @@ export class Camera {
   toScreen(wx: number, wy: number): { x: number; y: number } {
     return { x: (wx - this.px) * this.zoom, y: (wy - this.py) * this.zoom };
   }
+}
+
+/** Lo que dura un paso de zoom animado (ms). */
+export const ZOOM_TIME = 220;
+/** Lo más cerca que se puede acercar. */
+export const MAX_ZOOM = 6;
+
+const dprNow = () => (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
+
+/**
+ * El zoom nítido más cercano a `z`: un número entero de píxeles de la pantalla por cada píxel
+ * del juego (en un teléfono con 3 por píxel CSS, también 4/3 o 5/3).
+ */
+export const crispNear = (z: number, dpr = dprNow()) => Math.max(1, Math.round(z * dpr)) / dpr;
+
+/** El zoom nítido más grande que no pasa de `z`. */
+export const crispBelow = (z: number, dpr = dprNow()) =>
+  Math.max(1, Math.floor(z * dpr + 1e-6)) / dpr;
+
+/**
+ * El zoom de un paso desde `cur`: el entero de al lado (en su valor nítido), sin bajar de `min`
+ * ni pasar de `MAX_ZOOM`.
+ */
+export function stepZoom(cur: number, step: number, min: number, dpr = dprNow()): number {
+  if (step > 0) {
+    for (let n = Math.floor(cur + 1e-6) + 1; n <= MAX_ZOOM; n++) {
+      const z = Math.min(MAX_ZOOM, crispNear(n, dpr));
+      if (z > cur + 0.01) return z;
+    }
+    return Math.max(cur, min);
+  }
+  for (let n = Math.ceil(cur - 1e-6) - 1; n >= 1; n--) {
+    const z = crispNear(n, dpr);
+    if (z < cur - 0.01) return Math.max(min, z);
+  }
+  return Math.min(cur, min);
 }

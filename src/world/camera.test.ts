@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Camera, SKY_TOP } from './camera';
+import { Camera, SKY_TOP, crispBelow, crispNear, stepZoom } from './camera';
 import { WORLD_H, WORLD_X0, WORLD_X1 } from './geometry';
 
 describe('Camera', () => {
@@ -45,5 +45,50 @@ describe('Camera', () => {
     const w = c.toWorld(100, 60);
     const s = c.toScreen(w.x, w.y);
     expect(s).toEqual({ x: 100, y: 60 });
+  });
+
+  it('al cambiar el zoom deja quieto el punto que se le dice', () => {
+    const c = new Camera();
+    c.setView(400, 600, 2);
+    c.centerOn(250, 200, false);
+    const before = { x: c.x + 100 / 2, y: c.y + 80 / 2 };
+    c.zoomAround(3, 100, 80);
+    expect(c.zoom).toBe(3);
+    expect(c.vw).toBe(Math.ceil(400 / 3));
+    expect(c.x + 100 / 3).toBeCloseTo(before.x, 6);
+    expect(c.y + 80 / 3).toBeCloseTo(before.y, 6);
+  });
+
+  it('un enfoque suave llega al punto aunque el zoom cambie por el camino', () => {
+    const c = new Camera();
+    c.setView(400, 600, 2);
+    c.centerOn(300, 250, false);
+    c.centerOn(250, 200);
+    for (let i = 0; i < 10; i++) c.update(1 / 60);
+    c.zoomAround(3, 200, 300);
+    for (let i = 0; i < 300; i++) c.update(1 / 60);
+    expect(c.x + c.vw / 2).toBeCloseTo(250, 0);
+    expect(c.y + c.vh / 2).toBeCloseTo(200, 0);
+  });
+});
+
+describe('zoom nítido', () => {
+  it('un número entero de píxeles de la pantalla por píxel del juego', () => {
+    expect(crispNear(2, 1)).toBe(2);
+    expect(crispNear(1.4, 3)).toBeCloseTo(4 / 3);
+    expect(crispNear(2, 2.625)).toBeCloseTo(5 / 2.625);
+    expect(crispBelow(1.625, 3)).toBeCloseTo(4 / 3);
+    expect(crispBelow(1.5, 2)).toBe(1.5);
+  });
+
+  it('los pasos van de entero en entero, sin bajar del mínimo ni pasar de 6', () => {
+    expect(stepZoom(2, 1, 1, 1)).toBe(3);
+    expect(stepZoom(1.5, 1, 1, 2)).toBe(2);
+    expect(stepZoom(4 / 3, -1, 0.7, 3)).toBe(1);
+    expect(stepZoom(1, -1, 0.7, 1)).toBe(0.7);
+    expect(stepZoom(2, -1, 1.6, 1)).toBe(1.6);
+    expect(stepZoom(6, 1, 1, 1)).toBe(6);
+    // Con 2,625 por píxel CSS, el «2» nítido es 5/2,625: de ahí, el siguiente paso sube.
+    expect(stepZoom(5 / 2.625, 1, 1, 2.625)).toBeCloseTo(8 / 2.625);
   });
 });
