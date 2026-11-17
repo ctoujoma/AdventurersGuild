@@ -229,6 +229,17 @@ una fase, `npm run sim` y una partida larga para ver que el ritmo sigue bien.
    `NIGHT_EVENTS`; una de cada dos noches (65 % con niebla o tormenta); los de guardia cabecean
    de noche según su moral y su nivel, con señal y aviso al agotarse; todo a la carta del
    amanecer. Arrastrar el trago y el gato más suelto, en `futuro.md`.
+8b. **Feedback de testers (17 de noviembre)**, en marcha con vistas previas:
+   - Arreglos rápidos: la ficha tapa la sala al ir a ella desde Gremio (vertical); velocidad
+     ×0,5; no cerrar lo abierto al amanecer (ni en otros momentos automáticos); el corte de luz
+     del recibidor; el oro que se sale de las tarjetas; en el dormitorio, los que están fuera en
+     gris («fuera esta noche»); la enfermería dice lo que aporta cada uno que trabaja ahí.
+   - Para decidir (después de los arreglos): **desplegables para elegir a quién poner en una
+     tarea** (y otros sitios con desplegables), más integrados y que digan qué mejora al cambiar
+     de persona; **variedad y calidad de los aspectos** (recuento de clases y combinaciones,
+     propuesta de opciones nuevas y una pasada gráfica a los retratos, con boceto).
+   - Pregunta: para qué sirve la armería (respondida: suma Combate, y desde el nivel 2 Trampas y
+     Supervivencia, a todos los que salen de encargo).
 9. **Fase 8 · Expediciones** (agente de expediciones, al acabar lo anterior): respuestas ya
    adelantadas en [`propuesta-expediciones.md`](propuesta-expediciones.md), «Respuestas del
    usuario».
