@@ -407,3 +407,18 @@ Repartida en cuatro agentes y juntada en la rama (sin choques):
   de `origin/claude/sweet-bell-mky0ou`, sin push; juntar con `cherry-pick`); hacer de crítico del
   propio trabajo; `npm run sim` al cerrar; PR por bloques. Plantilla de las páginas de bocetos:
   scratchpad `f7/pagina/index.html` (copia la cabecera de `docs/bocetos/e1-altillo.html`).
+
+## Fase 7 · la noche (17 de noviembre)
+
+- Hecha y en PR: los cuatro sucesos nocturnos (`core/thief.ts`, `messenger.ts`, `nightmare.ts`,
+  `nightCat.ts`) en `NIGHT_EVENTS`; `chance` solo para el forastero (se tira aparte), el resto por
+  `weight` con la tirada común `NIGHT_ODDS` (0,55 / 0,72 con niebla o tormenta) y `nightRng`.
+  Líneas del amanecer: las de en vivo por `tellDawn`, las del amanecer por `dawn` de cada suceso.
+- Guardias: cabezadas nocturnas deterministas según moral y nivel (`napShare`, `nappers`); nube
+  gris sobre el agotado y aviso fijo en la campanita.
+- Gesto de beber y camisa de dormir en la cama (atlas de la gente a 3 filas, `F.sip`).
+- Peleas en el móvil apaisado: barra en fila, pegada abajo; «Que se las apañen» arriba.
+- El sim nunca pone guardias: el ladrón le quita ~550 monedas por partida (victorias normal
+  73 → 69 %). Con jugador real y guardias, menos. El usuario: «OK de momento y vemos».
+- En marcha aparte: zoom suave, tirones al aplicar obras, la cámara que se mueve sola y el
+  encuadre en móviles (agente en otra copia, sobre esta rama).
