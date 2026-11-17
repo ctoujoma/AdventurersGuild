@@ -1546,7 +1546,6 @@ export function endDay(state: GameState, away = false): GameState {
     s.building.rooms.find((r) => r.id === plan.get(h.id))?.type === 'veteranos';
   // Con el juego cerrado (o en el tutorial) no se aburre nadie ni se agota de guardia.
   const strain = !away && !tutorialOn(s);
-  const tired: Hero[] = [];
   const bored: string[] = [];
   for (const h of s.heroes) {
     if (h.status === 'mision') h.idle = 0;
@@ -1586,7 +1585,6 @@ export function endDay(state: GameState, away = false): GameState {
       // De guardia no se duerme: no descansa y va perdiendo moral (hay que ir rotando).
       const was = h.morale;
       h.morale = Math.max(Math.min(was, GUARD_FLOOR), was - GUARD_DROP);
-      if (was >= MORALE_LOW && h.morale < MORALE_LOW) tired.push(h);
     } else if (strain && (h.idle ?? 0) > BORED_AFTER) {
       // Muchos días sin salir de aventura: se aburre.
       if (h.idle === BORED_AFTER + 1) bored.push(h.name);
@@ -1607,8 +1605,7 @@ export function endDay(state: GameState, away = false): GameState {
     }
   }
   // Agotado de guardia (la moral, por debajo de `MORALE_LOW`): de noche se duerme mucho más
-  // (`napShare`). Se dice una vez, al pasar el umbral; mientras siga, queda en la campanita.
-  if (tired.length) events.push({ t: tiredLine(tired), k: 'warn' });
+  // (`napShare`). No va en la carta del amanecer: queda en la campanita y se le ve en la escena.
   if (bored.length)
     events.push({
       t: `${listNames(bored)} se ${bored.length > 1 ? 'aburren' : 'aburre'}: más de una semana sin salir de aventura. Hasta que ${bored.length > 1 ? 'salgan' : 'salga'}, la moral irá bajando.`,

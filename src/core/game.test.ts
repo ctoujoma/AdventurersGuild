@@ -396,13 +396,14 @@ describe('hay que salir de aventura', () => {
   };
   const after = (s: GameState, id: string) => s.heroes.find((x) => x.id === id)!;
 
-  it('de guardia no se duerme: pierde moral cada noche, avisa y no baja de un mínimo', () => {
+  it('de guardia no se duerme: pierde moral cada noche y no baja de un mínimo (sin carta)', () => {
     const { s, h } = home('guardia');
     h.guard = true;
     h.morale = 37;
     let n = endDay(s);
     expect(after(n, h.id).morale).toBe(37 - GUARD_DROP);
-    expect(n.dawn.some((e) => /noches de guardia y se duerme/.test(e.t))).toBe(true);
+    // El aviso de agotado va solo en la campanita, no en la carta del amanecer.
+    expect(n.dawn.some((e) => /noches de guardia y se duerme/.test(e.t))).toBe(false);
     // Cerca del mínimo: se queda en él (sin la cena ni los pagos, que también restan).
     n = endDay({ ...s, heroes: s.heroes.map((x) => ({ ...x, morale: GUARD_FLOOR + 1 })) });
     expect(after(n, h.id).morale).toBe(GUARD_FLOOR);

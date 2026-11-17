@@ -2326,6 +2326,28 @@ export class Crowd {
     return out;
   }
 
+  /**
+   * Los de guardia agotados (moral baja, `marks.low`): dónde tienen lo alto de la cabeza (mundo 2D,
+   * el centro), para que la escena les ponga encima su nubecilla mientras les dure.
+   */
+  weary(): { id: string; x: number; y: number; z: number }[] {
+    const out: { id: string; x: number; y: number; z: number }[] = [];
+    for (const a of this.actors.values()) {
+      const h = a.hero;
+      if (a.gone || !h.guard || !h.marks.low || h.status !== 'ok' || a.held) continue;
+      const f = this.frame(a, this.now);
+      const k = scaleAt(f.z);
+      // Acostado, la cabeza en la almohada (como la cruz del herido); si no, lo alto de la
+      // figura (la coronilla, en la fila 7 de su fotograma: el sombrero asoma algo más).
+      out.push(
+        a.pose === 'bed'
+          ? { id: h.id, x: f.left + 10 / k, y: f.bottom - TALL / k + 8 / k, z: f.z }
+          : { id: h.id, x: f.left + 12 / k, y: f.bottom - TALL / k + 5 / k, z: f.z },
+      );
+    }
+    return out;
+  }
+
   /** Si alguien está delante (más cerca que `z`) de un punto del mundo y lo tapa. */
   /** La x de quien esté más cerca de `x` en la planta `floor` (a menos de `r`), o null. */
   near(x: number, floor: number, r: number): number | null {

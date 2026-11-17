@@ -51,7 +51,7 @@ import { TINTS, type GardenEdgeId, type TintId } from '../../data/custom';
 import { paintOver, stripeOf } from './pintura';
 import { Camera } from '../camera';
 import { GROUND } from '../geometry';
-import { Particles, type PKind } from '../particles';
+import { Particles, WEARY_OUT, type Particle, type PKind } from '../particles';
 import * as Prop from '../props';
 import type {
   Point,
@@ -554,6 +554,8 @@ export class RoomScene {
   private dreamT = 0;
   private mugOn = false;
   private mugGone = false;
+  /** La nubecilla de cada guardia agotado (ver `wearyFx`). */
+  private wearyAt = new Map<string, Particle>();
   /** Rayos de luz de las salas rotas (en el mundo) y cada cuánto sale una mota de polvo. */
   private shafts: { x: number; y0: number; y1: number; z: number }[] = [];
   private dustT = 0;
@@ -1091,7 +1093,7 @@ export class RoomScene {
     for (const [i, l] of this.incidents.lanterns().entries())
       out.push(
         this.carried(
-          { ...l, power: 1, seed: 31 + i },
+          { ...l, seed: 31 + i },
           l.fallen ? THIEF_LAMP_FALLEN : THIEF_LAMP,
           [255, 160, 90],
         ),
@@ -4796,6 +4798,7 @@ export class RoomScene {
       }
     }
     this.dreamFx(dt);
+    this.wearyFx();
     if (!this.smokeAt.length) return;
     this.smokeT -= dt;
     if (this.smokeT > 0) return;
@@ -4806,6 +4809,39 @@ export class RoomScene {
       this.particles.spawn('chimney', p.x + (Math.random() - 0.5) * 3, p.y - 1);
       if (cold > 0.3) this.particles.spawn('chimney', p.x + (Math.random() - 0.5) * 6, p.y - 3);
     }
+  }
+
+  /**
+   * Los de guardia agotados: su nubecilla gris (`weary`) va pegada encima de la cabeza mientras
+   * les dure; al descansar, se apaga tramada.
+   */
+  private wearyFx(): void {
+    const c = this.camera;
+    const view: View = { px: c.px, py: c.py, vw: c.vw, vh: c.vh };
+    const seen = new Set<string>();
+    for (const g of this.crowd.weary()) {
+      seen.add(g.id);
+      let p = this.wearyAt.get(g.id);
+      // (También si se ha vaciado la lista de partículas: la vieja ya no se pinta.)
+      if (!p || p.life <= 0 || !this.particles.list.includes(p)) {
+        const n = this.particles.list.length;
+        this.particles.spawn('weary', 0, 0);
+        p = this.particles.list.length > n ? this.particles.list[n] : undefined;
+        if (!p) continue;
+        this.wearyAt.set(g.id, p);
+      }
+      // (Las partículas se pintan sin perspectiva: se pasa el punto de la cabeza a la vista.)
+      const s = project(view, g.x, g.y, g.z);
+      // Algo por encima y a la izquierda (a la derecha le salen las «zzz» cuando cabecea).
+      p.x = view.px + s.x - 6;
+      p.y = view.py + s.y - 9;
+      p.life = Math.max(p.life, WEARY_OUT + 0.01);
+    }
+    for (const [id, p] of this.wearyAt)
+      if (!seen.has(id)) {
+        p.life = Math.min(p.life, WEARY_OUT);
+        this.wearyAt.delete(id);
+      }
   }
 
   /**

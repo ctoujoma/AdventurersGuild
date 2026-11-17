@@ -170,11 +170,22 @@ interface Show {
    * el duelo en la cámara a oscuras). Dónde cayó.
    */
   fallen?: { x: number; bottom: number; z: number; level: number };
+  /**
+   * Le han pillado: lo que hace (s) que acabó el duelo. El farol caído sigue encendido
+   * `LAMP_LIT`, se apaga en `LAMP_FADE` y se va con una voluta de humo.
+   */
+  lampOut?: number;
 }
 
 /** El forcejeo: a qué distancia del héroe se pone el ladrón y lo que dura cada golpe (s). */
 const DUEL_GAP = 15;
 const DUEL_BEAT = 0.28;
+/** El farol del ladrón pillado: lo que sigue encendido en el suelo y lo que tarda en apagarse (s). */
+const LAMP_LIT = 1.2;
+const LAMP_FADE = 1;
+/** Lo encendido que está el farol (1, del todo; 0, apagado: le han pillado y se apaga). */
+const lampK = (s: Show) =>
+  s.lampOut === undefined ? 1 : 1 - Math.min(1, Math.max(0, (s.lampOut - LAMP_LIT) / LAMP_FADE));
 
 const at = (x: number, y: number, depth: number) => new Vector3(x, GROUND - y, -depth);
 
@@ -253,7 +264,9 @@ export class IncidentArt {
             s.until !== undefined &&
             (clock.day !== s.day || clock.secs >= s.until - 0.5);
       this.leave(s, failed, end?.how === 'puerta');
-      if (s.actors.length) this.shows.set(`${key}#fuera${this.out++}`, s);
+      // (Pillado, ya no queda nadie, pero el farol aún se apaga en el suelo.)
+      if (s.actors.length || s.lampOut !== undefined)
+        this.shows.set(`${key}#fuera${this.out++}`, s);
     }
     for (const [key, w] of want) {
       const known = this.shows.get(key);
@@ -335,14 +348,14 @@ export class IncidentArt {
    * El farol de cada ladrón nocturno (se mueve con él, también por el patio): dónde está, en qué
    * planta y si se le ha caído al pelear (destapado en el suelo: alumbra más).
    */
-  lanterns(): { x: number; y: number; floor: number; fallen: boolean }[] {
+  lanterns(): { x: number; y: number; floor: number; fallen: boolean; power: number }[] {
     const out = [];
     for (const s of this.shows.values()) {
       const l = s.lamp;
       if (!l?.mesh.visible) continue;
       // El caído alumbra desde algo más arriba (la llama destapada, hacia los que pelean).
       const y = s.fallen ? l.bottom - 10 : l.bottom - 2;
-      out.push({ x: l.x, y, floor: l.level ?? s.level, fallen: !!s.fallen });
+      out.push({ x: l.x, y, floor: l.level ?? s.level, fallen: !!s.fallen, power: lampK(s) });
     }
     return out;
   }
@@ -350,6 +363,8 @@ export class IncidentArt {
   /**
    * Pone la rendija del farol en la mano de delante del nocturno. Al pelear se le cae: se queda en
    * el suelo, entre él y quien le planta cara (un poco al fondo), encendido: los alumbra a los dos.
+   * Si se escapa, lo recoge al salir corriendo (vuelve a su mano, tapado); si le pillan, se apaga
+   * en el suelo (`lampOut`).
    */
   private hold(s: Show, t: number): void {
     const l = s.lamp;
@@ -364,6 +379,7 @@ export class IncidentArt {
       l.z = s.fallen.z;
       l.level = s.fallen.level;
       l.frame = Math.floor(t * 6) % LANTERN_F;
+      l.mat.uniforms.uFade!.value = lampK(s);
       this.place(l, s);
       return;
     }
@@ -410,9 +426,14 @@ export class IncidentArt {
     for (const [key, s] of this.shows) {
       s.timer -= dt;
       s.beat -= dt;
+      if (s.lampOut !== undefined) s.lampOut += dt;
       this.runOff(s, dt);
       if (!s.gone) this.step(s, dt, t);
-      else if (!s.actors.length) {
+      else if (!s.actors.length && (s.lampOut === undefined || lampK(s) <= 0)) {
+        // El farol que se apaga en el suelo (le han pillado) se va con una voluta de humo.
+        const l = s.lamp;
+        if (l && s.lampOut !== undefined)
+          for (let i = 0; i < 3; i++) this.emit?.('smoke', l.x + (i - 1) * 1.5, l.bottom - 3, l.z);
         this.dropShow(s);
         this.shows.delete(key);
         continue;
@@ -670,6 +691,12 @@ export class IncidentArt {
       if (s.kind === 'nocturno') this.restrip(s, s.actors[0], 'nocturno', nightThiefStrip);
       else this.restrip(s, s.actors[0], 'ladron', thiefStrip);
     s.fight = undefined;
+    // El farol caído: si se escapa, se lo lleva (lo recoge al salir corriendo); si le pillan, se
+    // queda en el suelo y se apaga.
+    if (s.lamp && s.fallen) {
+      if (failed) s.fallen = undefined;
+      else s.lampOut = 0;
+    }
     const first = s.actors[0];
     if (s.kind === 'ratas') this.sound?.('squeak', 0.4);
     if (!failed) {

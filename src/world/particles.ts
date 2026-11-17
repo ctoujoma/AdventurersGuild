@@ -41,7 +41,15 @@ export type PKind =
   /** La nubecilla oscura de la pesadilla, con un rayito que parpadea: sube despacio. */
   | 'gloom'
   /** La jarra del trago: aparece sobre la cama, baja a las manos y se queda hasta acabar. */
-  | 'mug';
+  | 'mug'
+  /**
+   * El guardia agotado: una nubecilla gris con una gota que cae, sobre la cabeza mientras le dure
+   * (la escena la lleva con él, ver `wearyFx` en `RoomScene.ts`).
+   */
+  | 'weary';
+
+/** Lo que tarda en encenderse y apagarse la nubecilla del guardia agotado (s). */
+export const WEARY_OUT = 0.5;
 
 export interface Particle {
   kind: PKind;
@@ -321,6 +329,38 @@ export class Particles {
               px(ctx, x + i, y + j, P.lemon);
           break;
         }
+        case 'weary': {
+          // Gris pizarra con el borde casi negro (se lee de noche), que se mece un poco; debajo,
+          // una gota que cae y vuelve a salir. Se enciende tramada y se apaga igual (al
+          // descansar, la escena le baja la vida a `WEARY_OUT`).
+          const g = ['.WW.WW.', 'WsWWsWW', 'sssssss', '.SSSSS.'];
+          const ink: Record<string, string> = { W: P.fog, s: P.steel, S: P.slate };
+          const born = p.max - p.life;
+          const show =
+            born < WEARY_OUT
+              ? (a: number, b: number) => bayer(a + p.seed, b) < born / WEARY_OUT
+              : p.life < WEARY_OUT
+                ? (a: number, b: number) => bayer(a + p.seed, b) < p.life / WEARY_OUT
+                : () => true;
+          const bob = Math.floor(t * 1.5 + p.seed) % 2;
+          const on = (i: number, j: number) => !!ink[g[j]?.[i] ?? '.'];
+          for (let j = -1; j <= g.length; j++)
+            for (let i = -1; i <= 7; i++) {
+              const yy = y + j + bob;
+              if (!show(x + i, yy)) continue;
+              if (on(i, j)) px(ctx, x + i, yy, ink[g[j]![i]!]!);
+              else if (on(i - 1, j) || on(i + 1, j) || on(i, j - 1) || on(i, j + 1))
+                px(ctx, x + i, yy, P.navy);
+            }
+          // La gota: sale de debajo, cae tres píxeles y se apaga.
+          const d = (t * 1.2 + p.seed / 7) % 1;
+          if (d < 0.75 && show(x + 3, y + 5)) {
+            const dy = y + 5 + bob + Math.floor(d * 4);
+            px(ctx, x + 3, dy, P.sky);
+            px(ctx, x + 3, dy - 1, P.fog);
+          }
+          break;
+        }
         case 'mug': {
           // La jarra de espuma del trago (la misma que lleva luego en la mano, `MUG` de
           // `hero.ts`), con su contorno oscuro (si no, a oscuras no se ve). Aparece tramada y se
@@ -426,4 +466,5 @@ const defaults: Record<PKind, { life: number; vx: number; vy: number }> = {
   scroll: { life: 2.6, vx: 0, vy: -9 },
   gloom: { life: 2.2, vx: 0, vy: -2.5 },
   mug: { life: 3.4, vx: 0, vy: 0 },
+  weary: { life: 9999, vx: 0, vy: 0 },
 };

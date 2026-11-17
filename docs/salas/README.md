@@ -201,15 +201,20 @@ La lista completa de pendientes e ideas (bucle, monetización, amigos, torneos, 
   `dawn` de cada suceso (`dawnNight`). Están:
   - el **ladrón nocturno** (`core/thief.ts`, incidente `nocturno`): entra por el patio con un farol
     tapado y va a la cámara (o a la caja); se le puede arrastrar a alguien; si no, le sale al paso
-    el de guardia si no cabecea. En la pelea se le cae el farol y alumbra el duelo;
+    el de guardia si no cabecea. En la pelea se le cae el farol y alumbra el duelo; si se escapa,
+    lo recoge y se lo lleva; si le pillan, se apaga en el suelo y se va (`lampOut` en
+    `incidents.ts`);
   - el **mensajero tardío** (`core/messenger.ts`, `ui/MessengerCard.tsx`): espera pegado a la
     puerta, de cara a ella; tocarle abre su encargo urgente; si no, lo recoge el de guardia
     despierto;
   - la **pesadilla** (`core/nightmare.ts`): un herido o desanimado da vueltas en la cama (se agita,
     se incorpora de golpe y le sube una nubecilla con un rayito: `dreamOf` en `crowd.ts`, `dreamFx`
-    en `RoomScene.ts`, partícula `gloom`); tocándole, aparece la jarra (`mug`), bebe y duerme con
-    «zzz» (acción `nightmare`, una jarra, herido o no). Si no se toca, amanece con menos moral; la
+    en `RoomScene.ts`, partícula `gloom`); tocándole, la jarra (`mug`) baja a su mano, bebe con
+    el gesto del atlas (`F.sip`) y duerme con «zzz» (acción `nightmare`, una jarra, herido o no). Si no se toca, amanece con menos moral; la
     guardia no se mete;
+  - el **guardia agotado** (moral por debajo de `MORALE_LOW`): se duerme más de noche; el aviso va
+    solo en la campanita (no en la carta) y en la escena lleva encima una nubecilla gris con su
+    gota mientras le dure (`weary` en `crowd.ts`, `wearyFx` en `RoomScene.ts`);
   - el **gato cazador** (`core/nightCat.ts`): con despensa o bodega en la planta del salón,
     persigue una rata, salta y la caza (`setNightHunt` en `pets.ts`); al amanecer, una línea
     menuda y 2 raciones salvadas (las ratas de día siguen viniendo). De día, el gato ayuda con las
