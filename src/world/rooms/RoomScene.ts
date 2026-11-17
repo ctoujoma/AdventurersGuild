@@ -224,6 +224,8 @@ const RAID_TORCH_R = 95;
 /** Los faroles de la noche: el del mensajero (abierto) y el del ladrón (tapado, apenas alumbra). */
 const MESSENGER_LAMP = { r: 70, power: 0.95, halo: 9 };
 const THIEF_LAMP = { r: 52, power: 0.85, halo: 6 };
+/** El del ladrón caído al suelo en la pelea, ya destapado: alumbra el duelo. */
+const THIEF_LAMP_FALLEN = { r: 110, power: 1.6, halo: 8 };
 /** Cada cuánto llama a la puerta el mensajero (s de la escena). */
 const KNOCK_EVERY = 2.8;
 /** Al acabar el asalto, segundos que sigue de noche antes de amanecer. */
@@ -1076,7 +1078,13 @@ export class RoomScene {
         ),
       );
     for (const [i, l] of this.incidents.lanterns().entries())
-      out.push(this.carried({ ...l, power: 1, seed: 31 + i }, THIEF_LAMP, [255, 160, 90]));
+      out.push(
+        this.carried(
+          { ...l, power: 1, seed: 31 + i },
+          l.fallen ? THIEF_LAMP_FALLEN : THIEF_LAMP,
+          [255, 160, 90],
+        ),
+      );
     return out;
   }
 

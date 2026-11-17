@@ -46,6 +46,7 @@ import {
   type Segments,
   type SeatSpot,
   type Spots,
+  YARD_FRONT,
 } from './people';
 import { project, scaleAt, type View } from './view3d';
 import { FAR_Z, NEAR_Z, type BedSpot } from './people';
@@ -781,8 +782,11 @@ interface Actor {
 const FALL_TIME = 0.45;
 /** Los de guardia: cada cuánto planta uno la carta (de día) y cada cuánto cabecea (de noche). */
 const GAME_CYCLE = 3.4;
-/** El mensajero espera a tantos píxeles de la pared de la calle (la puerta no se le abre). */
-const MESSENGER_GAP = 22;
+/**
+ * El mensajero espera pegado a la puerta de la calle, a tantos píxeles del muro (no cuenta para
+ * abrirla: ver `near`), y por delante de las matas del patio (a la profundidad `YARD_FRONT`).
+ */
+const MESSENGER_GAP = 9;
 const NOD_CYCLE = 4.6;
 /** Lo que dura el gesto de encajar un golpe. */
 const HURT_TIME = 0.25;
@@ -1615,8 +1619,12 @@ export class Crowd {
     });
     const b = this.actors.get(MESSENGER_ID)!;
     this.put(b, outside());
-    // Fuera, a un paso de la puerta (más cerca, la hoja se abriría sola).
-    this.go(b, { place: { x: this.L.left - MESSENGER_GAP, floor: 0 }, pose: 'stand' });
+    // Fuera, pegado a la puerta y por delante de las matas.
+    this.go(b, {
+      place: { x: this.L.left - MESSENGER_GAP, floor: 0 },
+      pose: 'stand',
+      stand: YARD_FRONT,
+    });
     b.wait = 999;
   }
 
@@ -2274,7 +2282,8 @@ export class Crowd {
   near(x: number, floor: number, r: number): number | null {
     let best: number | null = null;
     for (const a of this.actors.values()) {
-      if (a.gone || a.floor !== floor || a.pose === 'bed') continue;
+      // (El mensajero, en la puerta de la calle, espera a que le abran: no la abre él.)
+      if (a.gone || a.floor !== floor || a.pose === 'bed' || a.hero.messenger) continue;
       const d = Math.abs(a.x - x);
       if (d < r && (best === null || d < Math.abs(best - x))) best = a.x;
     }
@@ -3384,6 +3393,9 @@ export class Crowd {
       // Un tiempo del paso cada `WALK_PX` píxeles: el pie apoyado no patina.
       const step = Math.floor((a.dist * k) / WALK_PX) % WALK_STEPS;
       frame = (a.dir > 0 ? F.walk : F.walkL) + step;
+    } else if (a.hero.messenger && a.pose === 'stand' && !a.leaving) {
+      // El mensajero, de perfil y de cara a la puerta, esperando a que le abran.
+      frame = a.dir > 0 ? F.talk : F.talk + 1;
     } else if (this.time === 'dusk' && a.pose === 'stand' && !this.scripted) {
       // Al atardecer, alguno bosteza.
       const g = (t + (hash(a.hero.id) % 41) / 3) % 11;

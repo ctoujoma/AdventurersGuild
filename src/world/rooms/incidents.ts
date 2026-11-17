@@ -44,7 +44,7 @@ import type { SceneIncident, SoundName } from '../scene';
 import { GROUND } from '../geometry';
 import { Look, mesh, type Shared } from './gl';
 import { STAIR_W, floorY, interior, type Rect, type RoomsLayout } from './layout';
-import { outside, route } from './people';
+import { YARD_FRONT, outside, route } from './people';
 import { FIRE, FRONT, MID, SOLID } from './salas/kit';
 import { CLIMB_Z, STEPS, stepAt } from './stairs';
 import { scaleAt } from './view3d';
@@ -165,6 +165,11 @@ interface Show {
   fight?: { hero: number; beat: 'stab' | 'hurt' | null; t: number };
   /** El ladrón nocturno: la rendija encendida de su farol tapado (sigue su mano). */
   lamp?: Actor;
+  /**
+   * Al empezar la pelea, el farol se le cae al suelo y se destapa: ahí se queda, encendido (alumbra
+   * el duelo en la cámara a oscuras). Dónde cayó.
+   */
+  fallen?: { x: number; bottom: number; z: number; level: number };
 }
 
 /** El forcejeo: a qué distancia del héroe se pone el ladrón y lo que dura cada golpe (s). */
@@ -327,25 +332,42 @@ export class IncidentArt {
   }
 
   /**
-   * El farol tapado de cada ladrón nocturno (se mueve con él, también por el patio): dónde está y
-   * en qué planta. Sin farol cuando pelea (se le ha caído).
+   * El farol de cada ladrón nocturno (se mueve con él, también por el patio): dónde está, en qué
+   * planta y si se le ha caído al pelear (destapado en el suelo: alumbra más).
    */
-  lanterns(): { x: number; y: number; floor: number }[] {
+  lanterns(): { x: number; y: number; floor: number; fallen: boolean }[] {
     const out = [];
     for (const s of this.shows.values()) {
       const l = s.lamp;
       if (!l?.mesh.visible) continue;
-      out.push({ x: l.x, y: l.bottom - 2, floor: l.level ?? s.level });
+      // El caído alumbra desde algo más arriba (la llama destapada, hacia los que pelean).
+      const y = s.fallen ? l.bottom - 10 : l.bottom - 2;
+      out.push({ x: l.x, y, floor: l.level ?? s.level, fallen: !!s.fallen });
     }
     return out;
   }
 
-  /** Pone la rendija del farol en la mano de delante del nocturno (sin farol si pelea). */
+  /**
+   * Pone la rendija del farol en la mano de delante del nocturno. Al pelear se le cae: se queda en
+   * el suelo, entre él y quien le planta cara (un poco al fondo), encendido: los alumbra a los dos.
+   */
   private hold(s: Show, t: number): void {
     const l = s.lamp;
     if (!l) return;
     const a = s.actors[0];
-    l.mesh.visible = !!a?.strip && !s.fight && a.strip.n === 2;
+    if (s.fight && a && !s.fallen)
+      s.fallen = { x: a.x + a.dir * 5, bottom: a.bottom, z: a.z + 3, level: a.level ?? s.level };
+    if (s.fallen) {
+      l.mesh.visible = true;
+      l.x = s.fallen.x;
+      l.bottom = s.fallen.bottom - 0.5;
+      l.z = s.fallen.z;
+      l.level = s.fallen.level;
+      l.frame = Math.floor(t * 6) % LANTERN_F;
+      this.place(l, s);
+      return;
+    }
+    l.mesh.visible = !!a?.strip && a.strip.n === 2;
     if (!a || !l.mesh.visible) return;
     const k = scaleAt(a.z);
     l.x = a.x + (a.dir * 5) / k;
@@ -582,15 +604,20 @@ export class IncidentArt {
     return pts;
   }
 
-  /** El nocturno entra: del camino (fuera, en el patio) a su sala. */
+  /**
+   * El nocturno entra: del camino (fuera, en el patio) a su sala. Por el patio, por delante de las
+   * matas (`YARD_FRONT`), hasta la puerta.
+   */
   private sneakIn(s: Show, a: Actor): void {
     const start = outside();
     const pts = this.walkway(start, { x: a.x, floor: s.level }, a.z);
-    if (!pts) return;
+    if (!pts || !this.L) return;
+    const left = this.L.left;
+    for (const q of pts) if (q.x < left - 4) q.z = YARD_FRONT;
     a.x = start.x - 40;
     a.bottom = floorY(0);
     a.level = 0;
-    a.z = MID;
+    a.z = YARD_FRONT;
     a.route = [{ x: start.x, y: floorY(0), level: 0, z: a.z }, ...pts];
   }
 
