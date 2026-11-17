@@ -44,7 +44,7 @@ export function MessengerMark({ messenger, room, clock, speed, scene, onOpen }: 
   }, [messenger.at, room]);
   const left = Math.max(0, messenger.at + MESSENGER_WAIT - clock);
   const frac = Math.max(0, Math.min(1, left / MESSENGER_WAIT));
-  const secs = Math.ceil(left / Math.max(1, speed));
+  const secs = Math.ceil(left / Math.max(0.5, speed));
   return (
     <div ref={ref} class="incident incident-night" role="status">
       <button

@@ -61,7 +61,13 @@ import { MapPanel } from './panels/MapPanel';
 import { SaveMenu } from './SaveMenu';
 import { SettingsMenu } from './SettingsMenu';
 import type { WeatherKind } from '../world/weather';
-import { applyLook, loadSettings, saveSettings, type Settings } from '../platform/settings';
+import {
+  applyLook,
+  loadSettings,
+  nextPace,
+  saveSettings,
+  type Settings,
+} from '../platform/settings';
 import { Splash } from './Splash';
 import { Title } from './Title';
 import { nextTip } from './tips';
@@ -1029,7 +1035,8 @@ export function App() {
     setClock(clockRef.current);
     scene.current?.setTime(clockRef.current / DAY_SECONDS);
   }, [game.day, game.seed]);
-  // La escena va al ritmo del reloj: a x2, x4 u x8 la gente también anda (y trabaja) más deprisa.
+  // La escena va al ritmo del reloj: a x2, x4 u x8 la gente también anda (y trabaja) más deprisa
+  // (y a x½, más despacio).
   const pace = ticking ? clockPace : 1;
   useEffect(() => {
     if (scene.current) scene.current.pace = pace;
@@ -1425,8 +1432,7 @@ export function App() {
             onPace={() =>
               setSettings({
                 ...settings,
-                pace:
-                  settings.pace === 1 ? 2 : settings.pace === 2 ? 4 : settings.pace === 4 ? 8 : 1,
+                pace: nextPace(settings.pace),
               })
             }
             onDusk={() =>

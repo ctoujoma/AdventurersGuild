@@ -1,3 +1,17 @@
+/** Ritmos del reloj del día, en el orden en que los recorre el botón del reloj. */
+export const PACES = [1, 2, 4, 8, 0.5] as const;
+export type Pace = (typeof PACES)[number];
+
+/** El siguiente ritmo al tocar el reloj: ×1 → ×2 → ×4 → ×8 → ×½ → ×1. */
+export function nextPace(p: Pace): Pace {
+  return PACES[(PACES.indexOf(p) + 1) % PACES.length]!;
+}
+
+/** El ritmo escrito para la barra: «½» en vez de «0.5». */
+export function paceLabel(p: number): string {
+  return p === 0.5 ? '½' : String(p);
+}
+
 /** Ajustes del jugador: se guardan en este navegador, aparte de la partida. */
 export interface Settings {
   /** Volúmenes de 0 a 1. */
@@ -6,8 +20,8 @@ export interface Settings {
   ambient: number;
   /** Velocidad de la escena: noches, asaltos y paseos. */
   speed: 1 | 1.5 | 2;
-  /** Lo rápido que corre el reloj del día (se cambia desde la barra del día). */
-  pace: 1 | 2 | 4 | 8;
+  /** Lo rápido que corre el reloj del día (se cambia desde la barra del día; ½ = más despacio). */
+  pace: Pace;
   /** Letra más grande en paneles y fichas. */
   bigText: boolean;
   /** Menos movimiento en la interfaz. */
@@ -74,7 +88,7 @@ export function parseSettings(raw: unknown): Settings {
     sfx: clamp01(r.sfx, 1),
     ambient: clamp01(r.ambient, 1),
     speed: r.speed === 1.5 || r.speed === 2 ? r.speed : 1,
-    pace: r.pace === 2 || r.pace === 4 || r.pace === 8 ? r.pace : 1,
+    pace: PACES.includes(r.pace as Pace) ? (r.pace as Pace) : 1,
     bigText: r.bigText === true,
     calm: r.calm === true,
     dawnAll: r.dawnAll === true,

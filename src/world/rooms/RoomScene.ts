@@ -500,7 +500,7 @@ export class RoomScene {
   readonly camera = new Camera();
   speed = 1;
   /**
-   * El ritmo del reloj (x1, x2, x4): la gente, las puertas y los efectos van a ese ritmo para que
+   * El ritmo del reloj (x½, x1, x2, x4, x8): la gente, las puertas y los efectos van a ese ritmo para que
    * lo que se ve no se quede atrás del reloj. La cámara y la noche del asalto, no.
    */
   pace = 1;
