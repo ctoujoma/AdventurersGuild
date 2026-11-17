@@ -60,6 +60,7 @@ import type { FacadeLook, RoofId, WallId } from '../../data/custom';
 type Crest = { field: string; dark: string; symbol: string };
 import { NO_LOOK, hearthSpan, salonWall, type SalonLook } from './salon';
 import { BACK } from './view3d';
+import { memo } from './memo';
 import { ruinFloor } from './ruina';
 
 export type Theme = 'madera' | 'yeso' | 'piedra' | 'cueva';
@@ -620,26 +621,39 @@ export const caveCells = (L: RoomsLayout): { rect: Rect; floor: number; col: num
  * y los hastiales de los tejados. Lo que queda dentro de cada sala se deja transparente.
  */
 export function facade(L: RoomsLayout, look: FacadeLook = {}, crest?: Crest): Facade {
+  // Solo depende de la forma del edificio (no del nivel de las salas): al mejorar una sala o
+  // cambiar un adorno, el mismo corte de antes (ver `memo.ts`).
+  const shape = { ...L.b, rooms: L.b.rooms.map((r) => [r.id, r.type, r.col, r.floor, r.w, r.h]) };
+  return memo(`corte:${JSON.stringify([shape, look, crest ?? null])}`, () =>
+    cutFace(L, look, crest),
+  );
+}
+
+function cutFace(L: RoomsLayout, look: FacadeLook, crest?: Crest): Facade {
   const runs = roofRuns(L);
   const top = Math.min(GROUND, ...runs.map((r) => r.base - r.h)) - 4;
   const ox = L.x0;
   const oy = top;
   const W = L.x1 - L.x0;
   const H = L.y1 - top;
-  const buf = new PixelBuffer(W, H);
   const g = GROUND - oy;
   const left = L.left - ox;
   const right = L.right - ox;
-  earth(buf, 0, g, W, H - g);
   // Con patio trasero, el edificio acaba donde empieza el jardín: bajo el jardín, tierra como
   // la de fuera, y bajo el anexo, sus cimientos (no se excava).
   const garden = L.garden;
   const main = garden ? garden.x - ox : right;
-  // Roca bajo el edificio: asoma por los lados en escalones, cada hilada algo más ancha que la
-  // de encima, como una zarpa que lo asienta.
-  const inRock = rockBase(buf, left, main, g + SLAB);
-  for (let y = g + 4 * PITCH; y < H; y++)
-    for (let x = 0; x < W; x++) if ((x + y) % 3 === 0 && inRock(x, y)) buf.set(x, y, P.black);
+  // La tierra y la roca de debajo (lo más caro), guardadas por medida: se copian.
+  const buf = memo(`corte-tierra:${W}:${H}:${g}:${left}:${main}`, () => {
+    const b = new PixelBuffer(W, H);
+    earth(b, 0, g, W, H - g);
+    // Roca bajo el edificio: asoma por los lados en escalones, cada hilada algo más ancha que
+    // la de encima, como una zarpa que lo asienta.
+    const inRock = rockBase(b, left, main, g + SLAB);
+    for (let y = g + 4 * PITCH; y < H; y++)
+      for (let x = 0; x < W; x++) if ((x + y) % 3 === 0 && inRock(x, y)) b.set(x, y, P.black);
+    return b;
+  }).clone();
   // Los cimientos, solo bajo lo que está construido en la planta baja del anexo (sus solares
   // vacíos son tierra, como el jardín).
   const built = garden ? groundSpans(L, garden.x + garden.w) : [];
@@ -657,10 +671,16 @@ export function facade(L: RoomsLayout, look: FacadeLook = {}, crest?: Crest): Fa
 
   // Muros y forjados: cada hueco ocupado, con su media pared y sus forjados, de madera arriba
   // y de piedra abajo; luego se vacía el interior.
-  const wood = new PixelBuffer(W, H);
-  wallFill(wood, 0, 0, W, g + SLAB, 'muros', look.walls);
-  const stone = new PixelBuffer(W, H);
-  stoneWall(stone, 0, g, W, H - g, 'sillares', { ramp: STONE, bw: 12, bh: 6 });
+  const wood = memo(`corte-madera:${W}:${H}:${g}:${look.walls ?? ''}`, () => {
+    const b = new PixelBuffer(W, H);
+    wallFill(b, 0, 0, W, g + SLAB, 'muros', look.walls);
+    return b;
+  });
+  const stone = memo(`corte-piedra:${W}:${H}:${g}`, () => {
+    const b = new PixelBuffer(W, H);
+    stoneWall(b, 0, g, W, H - g, 'sillares', { ramp: STONE, bw: 12, bh: 6 });
+    return b;
+  });
   const stairs = stairCells(L);
   const cells: { rect: Rect; floor: number }[] = [
     ...L.rooms

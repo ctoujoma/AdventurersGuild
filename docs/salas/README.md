@@ -110,7 +110,7 @@ La lista completa de pendientes e ideas (bucle, monetización, amigos, torneos, 
   `RoomScene.ts` (montaje, cámara, toques, arrastre, asalto), `textures.ts` (caras de las salas
   y el corte), `furniture.ts` (muebles), `salon.ts` (arte del salón), `salas/` (arte de cada
   una de las demás salas, ver [`encargo-arte.md`](encargo-arte.md)), `crowd.ts` y
-  `people.ts` (gente y caminos), `works.ts` (sitios válidos para cada obra), `raid.ts` (asalto).
+  `people.ts` (gente y caminos), `works.ts` (sitios válidos para cada obra), `raid.ts` (asalto), `memo.ts` (caché de dibujos entre montajes: al pagar obras solo se rehace lo que cambia; lo que da es compartido, no se pinta encima).
 - `src/ui/`: `App.tsx`, `works.ts` (hook del modo obras = borrador), `WorksBar.tsx` (cinta con
   pestañas), `RoomMenu.tsx` (menú-icono junto a la sala), `panels/RoomPanel.tsx` (ficha de
   sala), `drop.ts` (soltar personajes en salas).

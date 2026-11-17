@@ -492,7 +492,8 @@ export function App() {
     game,
     dispatch,
     toast,
-    focus: (id) => scene.current?.focus(id),
+    // Solo si no se ve: al hacer o pagar obras la cámara no se va de lo que se está mirando.
+    focus: (id) => scene.current?.focus(id, true),
     raise: (ids) => {
       const s = scene.current;
       s?.raise(ids);

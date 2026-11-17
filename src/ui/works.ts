@@ -52,8 +52,8 @@ interface Deps {
   game: GameState;
   dispatch: (a: Action) => GameState;
   toast: (text: string) => void;
-  /** Mira a una sala de la escena (la que se acaba de tocar). */
-  focus: (id: string) => void;
+  /** Mira a una sala de la escena (la que se acaba de tocar), o a una de la lista, si no se ve ya. */
+  focus: (id: string | string[]) => void;
   /** Levanta en la escena las salas recién hechas (andamio y polvo). */
   raise: (ids: string[]) => void;
   /** Enseña en la escena lo que cuesta la obra apuntada (sobre su sala o donde se tocó). */
@@ -234,7 +234,7 @@ export function useWorks({ game, dispatch, toast, focus, raise, price }: Deps): 
         return;
       }
       const ids = touchedRooms(before, after);
-      if (ids[0]) focus(ids[0]);
+      focus(ids);
       raise(ids);
       audio.play('coin');
       toast(
