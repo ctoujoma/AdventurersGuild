@@ -461,7 +461,7 @@ Nota del usuario: que es la pesadilla? podriamos pensar mas para mas adelante, q
 
 Respuesta: La pesadilla: un héroe herido o con la moral baja da vueltas en la cama; si le llevas un trago de la bodega (gasta jarras), sube su moral; si no, amanece con algo menos. Lo de los minijuegos queda apuntado en futuro.md. Con la noche acelerada, todo se resuelve solo según quién esté de guardia: así no hace falta quedarse mirando.
 
-Plan: Fase 7 · La noche.
+Plan: Fase 7 · La noche. **Hecho** (17 de noviembre, aprobado con capturas).
 
 ### N2 · Sucesos nocturnos: cuántos — Aprobada con cambios
 
@@ -475,7 +475,7 @@ Nota del usuario: mas/menos en funcion de algo? noches de niebla o tormenta que 
 
 Respuesta: Incorporado: uno de cada dos noches de media, y algo más en noches de niebla o tormenta.
 
-Plan: Fase 7 · La noche.
+Plan: Fase 7 · La noche. **Hecho** (17 de noviembre, aprobado con capturas).
 
 ## 7 · Expediciones
 

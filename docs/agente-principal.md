@@ -384,3 +384,41 @@ Repartida en cuatro agentes y juntada en la rama (sin choques):
   `art/portraits/parts.ts`, sin la estola del clérigo); la vista de espaldas trata el velo como
   la capucha (`composeBack`).
 - Fase 7: los sucesos nocturnos van en `NIGHT_EVENTS` (`core/night.ts`); el forastero es el primero.
+
+## Para retomar (16 de noviembre)
+
+- PR abierta: ctoujoma/AdventurersGuild#197 (pestañas arriba en las fichas, motor de pelea paso 4
+  con el cabecilla y bandas hasta 9, forastero de la tormenta). Si ya se fusionó, juntar `main` en
+  la rama `claude/sweet-bell-mky0ou` antes de seguir (el push forzado no está permitido: usar merge).
+- Hechas y fusionadas: fase 6 (#196) y la noche que se ve toda la noche (#195).
+- Siguiente: **fase 7 · la noche**. N1: el ladrón nocturno, el mensajero, la pesadilla y el gato
+  como entradas de `NIGHT_EVENTS` (`core/night.ts`; el forastero ya es la primera). N2: un suceso
+  de media una de cada dos noches, algo más con niebla o tormenta (en `chance`). Con la noche
+  acelerada se resuelve solo según quién esté de guardia (las decisiones del jugador, como el
+  forastero, paran la aceleración o esperan al día siguiente). Minijuegos, más adelante.
+  Respuestas del usuario en `decisiones.md` (N1: qué es la pesadilla; N2: niebla y tormenta).
+- Luego: fase 8 (expediciones, otro agente).
+- Dudas aún abiertas con el usuario: el aviso de equipo en el arcón (marca a casi todos y no
+  mira la clase); animales y fachada en Gremio › Adornos. Para más adelante (`futuro.md`): otras
+  formas de revivir (anuncio, objeto, ritual), C8 patio/establo/empalizada, minijuegos de la noche,
+  tope de visitantes en escena (`MAX_VISITORS = 8`), espaldas y tres cuartos propios por traje.
+- Cómo le gusta trabajar al usuario: **antes de meter nada, vistas previas** (capturas en una
+  página para aprobar o descartar); repartir en agentes con `isolation: worktree` (cada uno parte
+  de `origin/claude/sweet-bell-mky0ou`, sin push; juntar con `cherry-pick`); hacer de crítico del
+  propio trabajo; `npm run sim` al cerrar; PR por bloques. Plantilla de las páginas de bocetos:
+  scratchpad `f7/pagina/index.html` (copia la cabecera de `docs/bocetos/e1-altillo.html`).
+
+## Fase 7 · la noche (17 de noviembre)
+
+- Hecha y en PR: los cuatro sucesos nocturnos (`core/thief.ts`, `messenger.ts`, `nightmare.ts`,
+  `nightCat.ts`) en `NIGHT_EVENTS`; `chance` solo para el forastero (se tira aparte), el resto por
+  `weight` con la tirada común `NIGHT_ODDS` (0,55 / 0,72 con niebla o tormenta) y `nightRng`.
+  Líneas del amanecer: las de en vivo por `tellDawn`, las del amanecer por `dawn` de cada suceso.
+- Guardias: cabezadas nocturnas deterministas según moral y nivel (`napShare`, `nappers`); nube
+  gris sobre el agotado y aviso fijo en la campanita.
+- Gesto de beber y camisa de dormir en la cama (atlas de la gente a 3 filas, `F.sip`).
+- Peleas en el móvil apaisado: barra en fila, pegada abajo; «Que se las apañen» arriba.
+- El sim nunca pone guardias: el ladrón le quita ~550 monedas por partida (victorias normal
+  73 → 69 %). Con jugador real y guardias, menos. El usuario: «OK de momento y vemos».
+- En marcha aparte: zoom suave, tirones al aplicar obras, la cámara que se mueve sola y el
+  encuadre en móviles (agente en otra copia, sobre esta rama).

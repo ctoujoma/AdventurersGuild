@@ -51,7 +51,7 @@ import { TINTS, type GardenEdgeId, type TintId } from '../../data/custom';
 import { paintOver, stripeOf } from './pintura';
 import { Camera } from '../camera';
 import { GROUND } from '../geometry';
-import { Particles, type PKind } from '../particles';
+import { Particles, WEARY_OUT, type Particle, type PKind } from '../particles';
 import * as Prop from '../props';
 import type {
   Point,
@@ -72,7 +72,17 @@ import { towerLampY, watchtower } from './salas/torre';
 import { BLIND, CANDLE, takeWallActs, type ActId, type PoiKind, type Round } from './salas/kit';
 import { FLIGHT_Z, flightArt, goesRight } from './stairs';
 import { dress } from './salas/tintes';
-import { Crowd, WALK_Z, type Hit, type PaintSpan, type Poi, type Talk } from './crowd';
+import {
+  Crowd,
+  DRINK_TIME,
+  MUG_GONE,
+  MUG_LANDS,
+  WALK_Z,
+  type Hit,
+  type PaintSpan,
+  type Poi,
+  type Talk,
+} from './crowd';
 import { drawGoal, goalBox, goalIcon, type GoalIcon } from './goalMark';
 import { clothOf } from '../../art/heroes/hero';
 import { LAWN_D, tuftAllowed, yardBushes, yardTrees } from './patio';
@@ -109,7 +119,7 @@ import { FLAME_FRAMES, FLAME_H, FLAME_W, flameStrip } from './flame';
 import { faces, sideTexel, type Mat } from './volume';
 import { RaidShow, isBandit } from './raid';
 import { DAY_SECONDS, WORK_END } from '../../core/balance';
-import { catHunts, duelLog, napping } from '../../core/incidents';
+import { catHunts, duelLog, nappers } from '../../core/incidents';
 import { CRIT_SOUND, NUMBER_COLOR, numberOf } from '../fightLook';
 import type { Assault } from '../../core/assault';
 import { HEARTH_RIGHT, NO_LOOK, type MatsLook, type SalonLook } from './salon';
@@ -221,6 +231,13 @@ const FADE_S = 0.6;
 const DICE_ROLL = 0.5;
 /** Hasta dónde llega la luz de cada antorcha del asalto. */
 const RAID_TORCH_R = 95;
+/** Los faroles de la noche: el del mensajero (abierto) y el del ladrón (tapado, apenas alumbra). */
+const MESSENGER_LAMP = { r: 70, power: 0.95, halo: 9 };
+const THIEF_LAMP = { r: 52, power: 0.85, halo: 6 };
+/** El del ladrón caído al suelo en la pelea, ya destapado: alumbra el duelo. */
+const THIEF_LAMP_FALLEN = { r: 110, power: 1.6, halo: 8 };
+/** Cada cuánto llama a la puerta el mensajero (s de la escena). */
+const KNOCK_EVERY = 2.8;
 /** Al acabar el asalto, segundos que sigue de noche antes de amanecer. */
 const RAID_AFTER = 3;
 /**
@@ -533,6 +550,12 @@ export class RoomScene {
   private smokeAt: { x: number; y: number }[] = [];
   private smokeT = 0;
   private crossT = 0;
+  /** La pesadilla: cada cuánto sube la nubecilla (o los «zzz») y si ya salió la jarra. */
+  private dreamT = 0;
+  private mugOn = false;
+  private mugGone = false;
+  /** La nubecilla de cada guardia agotado (ver `wearyFx`). */
+  private wearyAt = new Map<string, Particle>();
   /** Rayos de luz de las salas rotas (en el mundo) y cada cuánto sale una mota de polvo. */
   private shafts: { x: number; y0: number; y1: number; z: number }[] = [];
   private dustT = 0;
@@ -800,6 +823,15 @@ export class RoomScene {
     };
     canvas.addEventListener('webglcontextlost', (e) => e.preventDefault());
     this.pets.sound = (name, v) => this.cb.onSound?.(name, v);
+    // La caza de noche: polvo y un chillido donde el gato cae encima de la rata.
+    this.pets.caught = (x, y, z) => {
+      const c = this.camera;
+      const s = project({ px: c.px, py: c.py, vw: c.vw, vh: c.vh }, x, y, z);
+      const X = c.px + s.x;
+      const Y = c.py + s.y;
+      for (let i = 0; i < 3; i++) this.particles.spawn('puff', X - 4 + i * 3, Y - 3);
+      this.cb.onSound?.('squeak', 0.35);
+    };
     this.crowd.onArrive = (id, room) => this.cb.onArrive?.(id, room);
     this.incidents.onBlock = (x, level, to) => this.crowd.chase(x, level, to);
     this.bindInput();
@@ -901,6 +933,8 @@ export class RoomScene {
     ]);
     if (model.visitors) this.crowd.setVisitors(model.visitors);
     this.crowd.setStranger(!!model.stranger);
+    this.crowd.setMessenger(model.messenger ?? null);
+    this.crowd.setNightmare(model.nightmare ?? null);
     this.crowd.setTints(this.tintsNow(model));
     this.shiners = model.heroes.filter((h) => hasLegend(h.marks.gear)).map((h) => h.id);
     if (key === this.key) {
@@ -1041,6 +1075,119 @@ export class RoomScene {
   }
 
   /**
+   * Los faroles de la noche, que se mueven con quien los lleva: el del mensajero en la puerta y el
+   * farol tapado del ladrón nocturno (apenas una rendija: se le ve venir, poco más).
+   */
+  private nightLamps(): Lamp[] {
+    const out: Lamp[] = [];
+    const m = this.crowd.messengerAt();
+    const hand = this.messengerHand();
+    if (m && hand)
+      out.push(
+        this.carried(
+          { x: hand.x, y: hand.y, floor: 0, power: 1, seed: 17 },
+          MESSENGER_LAMP,
+          [255, 196, 120],
+        ),
+      );
+    for (const [i, l] of this.incidents.lanterns().entries())
+      out.push(
+        this.carried(
+          { ...l, seed: 31 + i },
+          l.fallen ? THIEF_LAMP_FALLEN : THIEF_LAMP,
+          [255, 160, 90],
+        ),
+      );
+    return out;
+  }
+
+  /** La luz de algo que se lleva en la mano (antorcha o farol), con la zona que alumbra. */
+  private carried(
+    l: { x: number; y: number; floor: number; power: number; seed: number },
+    k: { r: number; power: number; halo: number },
+    color: RGB,
+  ): Lamp {
+    const L = this.layout!;
+    const room = L.rooms.find(
+      ({ room: r, rect }) => r.floor === l.floor && l.x >= rect.x && l.x < rect.x + rect.w,
+    );
+    // Fuera (el patio y el camino): hasta donde llegue la luz, pero no dentro del edificio
+    // (si no, su luz y su halo se verían a través del muro).
+    const out = l.x < L.left ? L.left - WALL : l.x > L.right ? L.right + WALL : null;
+    const reach = k.r * 1.5;
+    const zone: Lamp['zone'] = room
+      ? this.zoneOf(room.rect)
+      : [
+          out !== null && l.x > L.right ? Math.max(l.x - reach, out) : l.x - reach,
+          GROUND - (floorY(l.floor) + 12),
+          out !== null && l.x < L.left ? Math.min(l.x + reach, out) : l.x + reach,
+          GROUND - (floorY(l.floor) - reach),
+        ];
+    const z = WALK_Z - 6;
+    return {
+      pos: new Vector3(l.x, GROUND - l.y, -z + 6),
+      glow: new Vector3(l.x, GROUND - l.y, -z),
+      r: k.r,
+      color,
+      power: k.power * l.power,
+      flicker: 0.3,
+      zone,
+      seed: l.seed,
+      fire: true,
+      deep: true,
+      halo: k.halo,
+    };
+  }
+
+  /** Dónde lleva el mensajero el farol: en la mano de delante, a media altura. */
+  private messengerHand(): { x: number; y: number } | null {
+    const m = this.crowd.messengerAt();
+    if (!m) return null;
+    return { x: m.x + m.dir * 6, y: m.y - 11 };
+  }
+
+  /** La última vez que el mensajero ha llamado a la puerta (para sus golpes, cada poco). */
+  private knockAt = -9;
+
+  /**
+   * El farol del mensajero: la caja de hierro con su cristal encendido, colgando de la mano. Y,
+   * ya en la puerta, de vez en cuando llama: un «¡!» junto a la hoja.
+   */
+  private messengerLantern(ctx: CanvasRenderingContext2D, px: number, py: number): void {
+    const m = this.crowd.messengerAt();
+    const h = this.messengerHand();
+    if (!m || !h) return;
+    const { camera } = this;
+    const v: View = { px: camera.px, py: camera.py, vw: camera.vw, vh: camera.vh };
+    if (!m.walking && this.layout && this.wt - this.knockAt > KNOCK_EVERY) {
+      this.knockAt = this.wt;
+      const k = project(v, this.layout.left - 3, m.y - 27, m.z);
+      this.particles.spawn('bark', v.px + k.x, v.py + k.y);
+    }
+    const p = project(v, h.x, h.y, m.z);
+    const x = Math.round(p.x);
+    // Se mece un poco al andar.
+    const y = Math.round(p.y + (m.walking ? Math.round(Math.sin(this.wt * 9)) : 0));
+    const dot = (dx: number, dy: number, c: string, w = 1, hh = 1) => {
+      ctx.fillStyle = c;
+      ctx.fillRect(x + dx, y + dy, w, hh);
+    };
+    void px;
+    void py;
+    const f = Math.floor(this.wt * 7) % 3;
+    ctx.globalAlpha = 0.25;
+    dot(-3, -3, '#ffcf70', 7, 9);
+    ctx.globalAlpha = 1;
+    dot(0, -4, P.black, 1, 2);
+    dot(-2, -2, P.black, 5, 1);
+    dot(-2, -1, P.black, 1, 4);
+    dot(2, -1, P.black, 1, 4);
+    dot(-1, -1, f === 1 ? '#f2902f' : '#ffb35c', 3, 3);
+    dot(0, 0, '#ffe1a0', 1, 1 + (f === 2 ? 1 : 0));
+    dot(-2, 3, P.black, 5, 1);
+  }
+
+  /**
    * Las antorchas de los bandidos en el asalto: un fuego que les sigue y alumbra la sala en la
    * que están (y a quien pelea alrededor). Es lo que deja ver la pelea en la bodega o el sótano.
    */
@@ -1094,6 +1241,12 @@ export class RoomScene {
     const den = rats ? L.rooms.find((r) => r.room.id === rats.room) : undefined;
     this.pets.setHunt(
       den ? [interior(den.rect).x + 14, interior(den.rect).x + interior(den.rect).w - 14] : null,
+    );
+    // De noche, el gato de caza por la despensa o la bodega (`core/nightCat.ts`).
+    const lair = m.nightCat ? L.rooms.find((r) => r.room.id === m.nightCat!.room) : undefined;
+    const li = lair ? interior(lair.rect) : null;
+    this.pets.setNightHunt(
+      li && lair ? { x0: li.x + 10, x1: li.x + li.w - 10, floor: lair.room.floor } : null,
     );
     this.incidentLamps = this.incidents.lights().map((l) => ({
       pos: new Vector3(l.x, GROUND - l.y, -l.z + 6),
@@ -4495,14 +4648,18 @@ export class RoomScene {
     const parts = Math.max(1, Math.ceil(w / 0.05));
     for (let i = 1; i <= parts; i++) this.crowd.update(w / parts, this.wt - w + (w * i) / parts);
     this.pets.update(w, this.wt);
-    // La siesta del de guardia (la misma cuenta que el núcleo): cabecea en su taburete.
-    const guards = this.model?.heroes.filter((h) => h.guard && h.status === 'ok') ?? [];
-    this.crowd.napper = this.night
-      ? null
-      : napping(
-          guards.map((h) => h.id),
-          this.clockTod ?? 0,
-        );
+    // La siesta y las cabezadas de noche de los de guardia (la misma cuenta que el núcleo, por
+    // puesto): cabecean en su taburete o, en la cámara, quietos de pie.
+    // (Los de la cámara no llevan `guard`, que es el de la puerta: se miran por `sentry`.)
+    const guards = this.model?.heroes.filter((h) => h.sentry && h.status === 'ok') ?? [];
+    const post = (vault: boolean) =>
+      guards.filter((h) => !!h.vault === vault).map((h) => ({ id: h.id, ...h.sentry! }));
+    const day = this.model?.clock?.day ?? 0;
+    const part = this.clockTod ?? 0;
+    this.crowd.nappers = new Set([
+      ...nappers(post(false), part, day),
+      ...nappers(post(true), part, day),
+    ]);
     this.incidents.update(w, this.wt);
     this.edgePan(dt);
     this.stepWind(dt);
@@ -4640,6 +4797,8 @@ export class RoomScene {
         this.particles.spawn('cross', view.px + s.x - 3, view.py + s.y - 10);
       }
     }
+    this.dreamFx(dt);
+    this.wearyFx();
     if (!this.smokeAt.length) return;
     this.smokeT -= dt;
     if (this.smokeT > 0) return;
@@ -4649,6 +4808,92 @@ export class RoomScene {
     for (const p of this.smokeAt) {
       this.particles.spawn('chimney', p.x + (Math.random() - 0.5) * 3, p.y - 1);
       if (cold > 0.3) this.particles.spawn('chimney', p.x + (Math.random() - 0.5) * 6, p.y - 3);
+    }
+  }
+
+  /**
+   * Los de guardia agotados: su nubecilla gris (`weary`) va pegada encima de la cabeza mientras
+   * les dure; al descansar, se apaga tramada.
+   */
+  private wearyFx(): void {
+    const c = this.camera;
+    const view: View = { px: c.px, py: c.py, vw: c.vw, vh: c.vh };
+    const seen = new Set<string>();
+    for (const g of this.crowd.weary()) {
+      seen.add(g.id);
+      let p = this.wearyAt.get(g.id);
+      // (También si se ha vaciado la lista de partículas: la vieja ya no se pinta.)
+      if (!p || p.life <= 0 || !this.particles.list.includes(p)) {
+        const n = this.particles.list.length;
+        this.particles.spawn('weary', 0, 0);
+        p = this.particles.list.length > n ? this.particles.list[n] : undefined;
+        if (!p) continue;
+        this.wearyAt.set(g.id, p);
+      }
+      // (Las partículas se pintan sin perspectiva: se pasa el punto de la cabeza a la vista.)
+      const s = project(view, g.x, g.y, g.z);
+      // Algo por encima y a la izquierda (a la derecha le salen las «zzz» cuando cabecea).
+      p.x = view.px + s.x - 6;
+      p.y = view.py + s.y - 9;
+      p.life = Math.max(p.life, WEARY_OUT + 0.01);
+    }
+    for (const [id, p] of this.wearyAt)
+      if (!seen.has(id)) {
+        p.life = Math.min(p.life, WEARY_OUT);
+        this.wearyAt.delete(id);
+      }
+  }
+
+  /**
+   * La pesadilla: una nubecilla oscura sube de quien da vueltas en la cama; al llevarle el trago,
+   * la jarra aparece sobre la cama y baja a sus manos (deshaciendo la nube), y luego, «zzz».
+   */
+  private dreamFx(dt: number): void {
+    const nm = this.crowd.nightmare();
+    if (!nm) {
+      this.mugOn = false;
+      this.mugGone = false;
+      return;
+    }
+    const c = this.camera;
+    const view: View = { px: c.px, py: c.py, vw: c.vw, vh: c.vh };
+    const s = project(view, nm.x, nm.y, nm.z);
+    const x = view.px + s.x;
+    const y = view.py + s.y;
+    if (nm.state === 'drink') {
+      // La jarra del fotograma al pecho, en pantalla: la que baja flotando acaba justo ahí y
+      // allí se la coge (desde entonces, la lleva el dibujo).
+      const m = project(view, nm.mug.x, nm.mug.y, nm.z);
+      const mx = view.px + m.x;
+      const my = view.py + m.y;
+      if (!this.mugOn) {
+        this.mugOn = true;
+        const left = MUG_LANDS - nm.since;
+        const drop = 12;
+        if (left > 0.1)
+          this.particles.spawn('mug', mx - 3.5, my - drop, { vy: drop / left, ay: my, max: left });
+        for (let i = 0; i < 4; i++)
+          this.particles.spawn('puff', x - 6 + i * 3, y - 11 - (i % 2) * 2);
+        this.dreamT = DRINK_TIME;
+      }
+      // Al acabar el trago, la jarra se deshace en una nubecilla.
+      if (!this.mugGone && nm.since >= MUG_GONE) {
+        this.mugGone = true;
+        for (let i = 0; i < 3; i++) this.particles.spawn('puff', mx - 3 + i * 3, my + 1 - (i % 2));
+      }
+    } else {
+      this.mugOn = false;
+      this.mugGone = false;
+    }
+    this.dreamT -= dt;
+    if (this.dreamT > 0) return;
+    // Mientras no se le lleve el trago, siempre con su nube (también entre una vuelta y otra).
+    if (!this.crowd.nightmareEased()) {
+      this.dreamT = 1.1;
+      this.particles.spawn('gloom', x - 4, y - 13);
+    } else if (nm.state === 'calm') {
+      this.dreamT = 2.4;
+      this.particles.spawn('zzz', x + 2, y - 8);
     }
   }
 
@@ -4805,7 +5050,7 @@ export class RoomScene {
     const x1 = view.px + view.vw + 40;
     const y0 = GROUND - (view.py + view.vh + 40);
     const y1 = GROUND - (view.py - 40);
-    const near = [...this.lamps, ...this.incidentLamps, ...this.raidLamps()]
+    const near = [...this.lamps, ...this.incidentLamps, ...this.raidLamps(), ...this.nightLamps()]
       .filter((l) => l.zone[2] > x0 && l.zone[0] < x1 && l.zone[3] > y0 && l.zone[1] < y1)
       .filter((l) => (!l.sun || sunLampK > 0.02) && (!l.night || nightK > 0.02))
       .sort(
@@ -4911,7 +5156,9 @@ export class RoomScene {
       (!this.night && !!this.model?.heroes.some((h) => h.train)) ||
       this.crowd.drilling() ||
       this.crowd.bubbles().length > 0 ||
-      this.crowd.guards().length > 0;
+      this.crowd.guards().length > 0 ||
+      this.crowd.vaultNappers().length > 0 ||
+      !!this.crowd.messengerAt();
     if (live || this.topLive) {
       const ctx = this.topCtx;
       ctx.clearRect(0, 0, view.vw, view.vh);
@@ -4925,6 +5172,7 @@ export class RoomScene {
         this.trainBars();
         this.talkBubbles();
         this.guardGame();
+        this.messengerLantern(ctx, view.px, view.py);
         this.flyingArrows();
         this.raid?.draw(ctx, view.px, view.py, view);
         this.drawDuels(ctx, view.px, view.py);
@@ -5235,6 +5483,16 @@ export class RoomScene {
    */
   private guardGame(): void {
     const L = this.layout;
+    // Los de la cámara que cabecean de pie: sus «zzz» (sin dados ni taburete).
+    if (L)
+      for (const g of this.crowd.vaultNappers()) {
+        if (this.wt - (this.snoreAt.get(g.id) ?? -9) < 1.3) continue;
+        this.snoreAt.set(g.id, this.wt);
+        const { camera } = this;
+        const v: View = { px: camera.px, py: camera.py, vw: camera.vw, vh: camera.vh };
+        const p = project(v, g.x + 4, g.y - 31, g.z);
+        this.particles.spawn('zzz', v.px + p.x, v.py + p.y);
+      }
     const list = this.crowd.guards();
     if (!L || !list.length) return;
     const desk = L.rooms.find((r) => r.room.type === 'recibidor');

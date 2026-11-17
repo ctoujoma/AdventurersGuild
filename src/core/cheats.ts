@@ -5,21 +5,57 @@
 import { CHAINS } from '../data/chains';
 import type { BossKind } from '../data/bosses';
 import { BANDS } from '../data/raids';
-import { rankIndex } from './balance';
+import { DAY_SECONDS, NIGHT_ROLL, rankIndex } from './balance';
 import { activeChain, advanceChain, chainDef, fightRoster, offerChain } from './chains';
-import { endDay } from './game';
+import { endDay, tick } from './game';
+import { MESSENGER_EVENT } from './messenger';
+import { startThief } from './thief';
 import type { BossFight, GameState, Report } from './model';
 import { Rng } from './rng';
+import { MORALE_LOW } from './party';
+import { huntRooms } from './nightCat';
+import { restless } from './nightmare';
 import { maxOut, syncFac } from './rooms';
 
 export type Cheat =
-  'oro' | 'fama' | 'curar' | 'obras' | 'asalto' | 'historia' | 'dias' | 'forastero';
+  | 'oro'
+  | 'fama'
+  | 'curar'
+  | 'obras'
+  | 'asalto'
+  | 'historia'
+  | 'dias'
+  | 'forastero'
+  | 'ladronNoche'
+  | 'mensajero'
+  | 'pesadilla'
+  | 'gato';
+
+/** Lleva el reloj a la hora de los sucesos de la noche (si aún no ha llegado) y da la noche por tirada. */
+function toNight(s: GameState): GameState {
+  const n = tick(s, NIGHT_ROLL * DAY_SECONDS);
+  n.nights = { rolled: n.day, last: { ...(n.nights?.last ?? {}) } };
+  return n;
+}
 
 export function cheat(state: GameState, kind: Cheat): { state: GameState; note: string } {
   if (kind === 'dias') {
     let s = state;
     for (let i = 0; i < 3 && !s.over; i++) s = endDay(s);
     return { state: s, note: `Han pasado 3 días: es el día ${s.day}.` };
+  }
+  if (kind === 'ladronNoche' || kind === 'mensajero') {
+    // Ya de noche (a la hora del suceso, si aún es de día) y el suceso ahora mismo.
+    const night = NIGHT_ROLL * DAY_SECONDS;
+    const s = structuredClone((state.clock ?? 0) < night ? tick(state, night) : state);
+    if (kind === 'mensajero') {
+      if (s.messenger) return { state, note: 'Ya hay un mensajero en la puerta.' };
+      MESSENGER_EVENT.start(s, new Rng(`prueba-${s.day}-${s.uid}`));
+      return { state: s, note: 'Un mensajero llama a la puerta con un farol.' };
+    }
+    if (s.incidents?.length) return { state, note: 'Ya hay un incidente en marcha.' };
+    startThief(s);
+    return { state: s, note: 'Ha entrado un ladrón.' };
   }
   const s = structuredClone(state);
   const rng = new Rng(`prueba-${s.day}-${s.uid}`);
@@ -64,6 +100,28 @@ export function cheat(state: GameState, kind: Cheat): { state: GameState; note: 
       }
       s.stranger = { day: s.day, at: s.clock ?? 0 };
       return { state: s, note: 'El forastero de la tormenta está junto al fuego del salón.' };
+    }
+    case 'pesadilla': {
+      // Si nadie está herido ni con la moral baja, se le baja al primero que duerma en casa.
+      let h = restless(s)[0];
+      if (!h) {
+        const ok = s.heroes.find((x) => x.status === 'ok' && !x.guard);
+        if (!ok) return { state, note: 'No hay nadie en casa que duerma.' };
+        ok.morale = Math.min(ok.morale, MORALE_LOW - 10);
+        h = restless(s)[0];
+        if (!h) return { state, note: 'No hay cama libre para nadie.' };
+      }
+      const n = toNight(s);
+      n.nightmare = { day: n.day, hero: h.id };
+      return { state: n, note: `${h.name} da vueltas en la cama: tócale para llevarle un trago.` };
+    }
+    case 'gato': {
+      const room = huntRooms(s)[0];
+      if (!room)
+        return { state, note: 'Hace falta una despensa o una bodega en la planta del salón.' };
+      const n = toNight(s);
+      n.nightCat = { day: n.day, room: room.id, n: 3 };
+      return { state: n, note: 'El gato ha salido de caza (se ve de noche).' };
     }
     case 'historia': {
       const cs = activeChain(s);

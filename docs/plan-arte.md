@@ -428,7 +428,16 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
 1. **Más cilindros y cuerpos de verdad**: los barriles apilados, las mesas (tablero y patas), el
    horno de pan (cúpula) y la caldera (cúpula de cobre) con la misma idea que `round`.
 2. [x] **Atlas de la gente en dos filas** (#100): se dibuja en una tira y se pliega (`fold` en
-   `crowd.ts`); hay sitio para gestos nuevos.
+   `crowd.ts`); hay sitio para gestos nuevos. Ya va en **tres filas** (3024 × 84; se leía todo por
+   `cellOf`/`uvOf`, así que lo de antes no cambia): los fotogramas nuevos van **al final** de
+   `SIZES` para no mover los viejos.
+   - [x] El gesto de beber en la cama (la pesadilla): `drink` en `heroSprites` (`composeDrink`,
+         de frente: la jarra al pecho, a la boca con la cabeza atrás y los ojos cerrados, y
+         empinada con el codo alto; jarra y brazo con su contorno sobre el cuerpo), en el atlas
+         como `F.sip` (3 tiempos × las 13 mantas de incorporado). En la escena, la jarra baja
+         flotando justo a su mano (`MUG_LANDS`), bebe (`sipAt`), se deshace en una nubecilla
+         (`MUG_GONE`) y se acuesta. La jarra de la partícula es la misma (`MUG` de `hero.ts`).
+         Los clientes de la barra ya beben de perfil (`F.drink`); los sentados, aún no.
 3. **Rutinas y sitios para las salas sin nada que hacer**: armería (afilar en la muela), mapas
    (el mapa, los alfileres y el catalejo), despensa (la cocinera viene a por cosas), tesoro
    (contar monedas), capilla (arrodillarse y encender velas), recibidor (la ronda del guardia).

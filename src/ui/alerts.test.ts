@@ -50,6 +50,23 @@ describe('avisos de la campanita', () => {
     expect(ids(s)).toContain('vuelve:m1');
   });
 
+  it('el de guardia agotado: «se duerme: relévala», uno y fijo mientras dure', () => {
+    const s = newGame('agotada');
+    const h = s.heroes.find((x) => x.status === 'ok')!;
+    h.guard = true;
+    h.morale = 60;
+    expect(ids(s)).not.toContain(`agotado:${h.id}`);
+    h.morale = 20;
+    const a = gatherAlerts(s).filter((x) => x.id.startsWith('agotado:'));
+    expect(a.length).toBe(1);
+    expect(a[0]!.text).toBe(
+      `${h.name} lleva muchas noches de guardia y se duerme: relév${h.sex === 'f' ? 'ala' : 'alo'}.`,
+    );
+    // Relevado (sin guardia), se va.
+    delete h.guard;
+    expect(ids(s)).not.toContain(`agotado:${h.id}`);
+  });
+
   it('los heridos sin nadie en la enfermería llevan a ella', () => {
     const s = newGame('heridos');
     const h = s.heroes[0]!;

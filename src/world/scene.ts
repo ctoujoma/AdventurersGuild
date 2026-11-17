@@ -1,6 +1,6 @@
 import type { Material } from '../core/materials';
 import type { HeroLook, HeroMarks } from '../art/heroes/look';
-import type { Building, Duel, IncidentEnd, ItemIcon, Rarity, TrophyIcon } from '../core/model';
+import type { Building, Duel, IncidentEnd, ItemIcon, Rarity, Sex, TrophyIcon } from '../core/model';
 import type { FacadeLook, GardenLook, TintId } from '../data/custom';
 import type { IncidentKind } from '../data/incidents';
 import type { BattleSound } from './battle';
@@ -24,6 +24,8 @@ export interface SceneHero {
   guard?: boolean;
   /** De guardia en la cámara del tesoro: patrulla dentro, día y noche. */
   vault?: boolean;
+  /** De guardia: su nivel y su moral, para cabecear de noche como en el núcleo (`nappers`). */
+  sentry?: { lvl: number; morale: number };
   /** El dormitorio (o cuarto del servicio) en el que duerme (id), según `core/beds.ts`. */
   dorm?: string;
   /** Sala en la que trabaja de día (id). */
@@ -43,6 +45,8 @@ export interface SceneHero {
   visitor?: boolean;
   /** El forastero de la tormenta: visitante que no se va de noche (se queda junto al fuego). */
   stranger?: boolean;
+  /** El mensajero tardío: llama a la puerta con su farol y espera fuera (no entra). */
+  messenger?: boolean;
   /** Bandido de un asalto (solo de noche, mientras dura). */
   bandit?: boolean;
   /**
@@ -73,6 +77,9 @@ export interface SceneAway {
 /** El id del forastero de la tormenta en la escena (al tocarlo, su oferta). */
 export const STRANGER_ID = 'forastero';
 
+/** El id del mensajero tardío en la escena (al tocarlo, su recado). */
+export const MESSENGER_ID = 'mensajero';
+
 /** Los visitantes de hoy, en orden de llegada (la escena los hace entrar a lo largo del día). */
 export interface SceneVisitors {
   day: number;
@@ -99,6 +106,15 @@ export interface SceneModel {
   visitors?: SceneVisitors;
   /** El forastero de la tormenta está en el salón (suceso nocturno, `core/stranger.ts`). */
   stranger?: boolean;
+  /** El mensajero tardío llama a la puerta (la noche del día `day`; `core/messenger.ts`). */
+  messenger?: { day: number; sex: Sex } | null;
+  /**
+   * La pesadilla de esta noche (`core/nightmare.ts`): quién da vueltas en la cama y si ya se le
+   * ha llevado el trago (entonces se incorpora, bebe y se calma).
+   */
+  nightmare?: { hero: string; eased: boolean };
+  /** El gato de caza esta noche (`core/nightCat.ts`): en qué sala y cuántas ratas caza. */
+  nightCat?: { room: string; n: number };
   /** Equipo sin dueño (armería o arcones) y trofeos del salón. */
   gear: GearView[];
   /** Lo llena que está la cámara del tesoro, de 0 a 1 (el oro que se ve en ella). */
@@ -187,6 +203,8 @@ export interface SceneIncident {
   room: string;
   /** Los de tocar (las ratas): toques que faltan. */
   taps?: number;
+  /** Segundo del día en que empezó (el ladrón nocturno recién llegado se ve entrar). */
+  from?: number;
   /** Segundo del día en que sale mal si nadie hace nada. */
   until?: number;
   /** La pelea con el ladrón, golpe a golpe (segundos del reloj desde `at`). */

@@ -152,7 +152,9 @@ export const thiefStrip = (): Strip =>
  * las piernas abiertas, la cuchillada a fondo (echado hacia delante, el brazo estirado y el paso
  * largo) y encajando un golpe (la cabeza atrás, los ojos cerrados y la daga recogida).
  */
-export const thiefFightStrip = (): Strip =>
+export const thiefFightStrip = (): Strip => fightStrip(THIEF);
+
+const fightStrip = (THIEF: Record<string, string>): Strip =>
   strip([
     sprite(
       [
@@ -218,6 +220,79 @@ export const thiefFightStrip = (): Strip =>
 
 /** Fotogramas de `thiefFightStrip`. */
 export const THIEF_FIGHT = { guard: 0, stab: 1, hurt: 2 } as const;
+
+// ---------- El ladrón nocturno ----------
+
+/**
+ * El ladrón de noche: el mismo ladrón con capa y capucha de color de noche (pizarra y azul
+ * oscuro, la cara casi tapada) y, colgando de la mano de delante, un farol tapado: una caja negra
+ * con una rendija de luz (lo que deja ver la escena a oscuras).
+ */
+const NIGHT_THIEF = {
+  ...THIEF,
+  c: P.navy,
+  C: P.black,
+  h: P.slate,
+  f: P.skinS,
+  e: P.lemon,
+  s: P.rust,
+  S: P.plum,
+  b: P.black,
+  k: P.black,
+  L: P.navy,
+  o: P.orange,
+  y: P.lemon,
+};
+
+const NIGHT_TOP: Rows = [
+  '.......hhh.....',
+  '......hcccc....',
+  '.....hccCCcc...',
+  '.....hcCCefc...',
+  '.....ccCCff....',
+  '..gs.ccCCf.....',
+  '.sssscccccc....',
+  'ssSsscccccccf..',
+  'sSSsscccccc.f..',
+  'sSSsscCcccc.k..',
+  '.sSs.cCcccckLk.',
+  '..s..cCcccckoy.',
+];
+
+/** Dos pasos de puntillas, encogido, con el saco al hombro y el farol tapado por delante. */
+export const nightThiefStrip = (): Strip =>
+  strip([
+    sprite([...NIGHT_TOP, '......cc.cckkk.', '.....bb...bb...', '.....k.....k...'], NIGHT_THIEF),
+    sprite([...NIGHT_TOP, '......ccccckkk.', '.......bbb.....', '.......kk......'], NIGHT_THIEF),
+  ]);
+
+/**
+ * Peleando (como el de día, con los colores de la noche, algo más claros para que se lea la pelea
+ * a oscuras: el farol se le ha caído).
+ */
+export const nightThiefFightStrip = (): Strip =>
+  fightStrip({ ...NIGHT_THIEF, c: P.slate, C: P.navy, h: P.steel });
+
+/**
+ * La rendija del farol tapado, encendida (se suma a lo de detrás: brilla a oscuras). Dos
+ * fotogramas de `LANTERN_W`: la llama baila un poco.
+ */
+export const LANTERN_W = 5;
+export const LANTERN_F = 2;
+export function lanternGlowStrip(): PixelBuffer {
+  const b = new PixelBuffer(LANTERN_W * LANTERN_F, 4);
+  const rows = [
+    ['.....', '.oy..', 'oyyo.', '.oo..'],
+    ['.....', '..yo.', '.oyyo', '..oo.'],
+  ];
+  const c: Record<string, string> = { o: P.orange, y: P.lemon };
+  rows.forEach((f, i) =>
+    f.forEach((row, y) => {
+      for (let x = 0; x < row.length; x++) if (c[row[x]!]) b.set(i * LANTERN_W + x, y, c[row[x]!]!);
+    }),
+  );
+  return b;
+}
 
 // ---------- El recaudador ----------
 

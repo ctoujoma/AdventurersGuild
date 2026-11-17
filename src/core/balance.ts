@@ -621,9 +621,13 @@ export const THIEF_ESCAPE = 8;
 export const GUARD_NAP = [0.48, 0.58] as const;
 /** El recaudador en la puerta: segundos de más que le entretiene el de guardia. */
 export const GUARD_HOLD = 20;
-/** Las ratas: el gato llega a los tantos segundos y caza una cada tantos. */
+/**
+ * Las ratas: el gato llega a los tantos segundos y caza una cada tantos, pero como mucho
+ * `CAT_MAX` (ayuda; rematar le toca al jugador).
+ */
 export const CAT_FIRST = 6;
 export const CAT_EVERY = 10;
+export const CAT_MAX = 3;
 /** Probabilidad de que un encargo con éxito brillante traiga los planos de una receta. */
 export const RECIPE_FIND = 0.2;
 
@@ -675,6 +679,59 @@ export const PRICE_KIND: Partial<Record<string, number>> = { arma: 1.1, compleme
  * escena ya esté a oscuras). Con el juego cerrado, se tira al pasar el día.
  */
 export const NIGHT_ROLL = 0.74;
+/**
+ * Cuántas noches pasa algo (N2): aparte del forastero, que se tira solo, se tira «¿pasa algo esta
+ * noche?» y, si sale, se elige uno de los posibles por su peso. La tirada va algo por encima de
+ * una de cada dos porque a veces no queda ninguno posible (todos en su «cada cuánto»): contadas
+ * todas las noches, pasa algo en una de cada dos, y en unas dos de cada tres con niebla o tormenta
+ * (`npm run sim`).
+ */
+export const NIGHT_ODDS = 0.55;
+export const NIGHT_ODDS_ROUGH = 0.72;
+/**
+ * Mini-cabezadas de los de guardia de noche: cada `NIGHT_NAP_CYCLE` segundos de reloj, cada uno
+ * cabecea una parte (`napShare`); el segundo, desfasado `NIGHT_NAP_TURN` del primero (se turnan,
+ * pero queda un rato en que cabecean los dos).
+ *
+ * La parte, según el guardia: `NIGHT_NAP_SHARE` con moral `NIGHT_NAP_MORALE` y nivel
+ * `NIGHT_NAP_LVL`; cada punto de moral por debajo suma `NIGHT_NAP_PER_MORALE` (y por encima
+ * resta) y cada nivel de más resta `NIGHT_NAP_PER_LVL` (hasta `NIGHT_NAP_LVL_TOP`). Entre
+ * `NIGHT_NAP_MIN` y `NIGHT_NAP_MAX`: de un 25 % (nivel 6 y moral 85) a un 70 % (agotado, con la
+ * moral por los suelos tras muchas noches seguidas: ver `GUARD_DROP`).
+ */
+export const NIGHT_NAP_CYCLE = 24;
+export const NIGHT_NAP_SHARE = 0.45;
+export const NIGHT_NAP_MORALE = 60;
+export const NIGHT_NAP_LVL = 3;
+export const NIGHT_NAP_PER_MORALE = 0.005;
+export const NIGHT_NAP_PER_LVL = 0.025;
+export const NIGHT_NAP_LVL_TOP = 8;
+export const NIGHT_NAP_MIN = 0.2;
+export const NIGHT_NAP_MAX = 0.75;
+export const NIGHT_NAP_TURN = 0.35;
+/**
+ * El ladrón nocturno: segundos de reloj que tarda en hacerse con el oro (lo que hay para mandar a
+ * alguien), lo que tarda luego en llegar a la puerta al escaparse, la parte de la caja que se
+ * lleva, su tope (por cada rango, más) y cada cuántos días puede volver.
+ */
+export const NIGHT_THIEF_SECS = 22;
+export const NIGHT_THIEF_RUN = 9;
+export const NIGHT_THIEF_SHARE = 0.08;
+export const NIGHT_THIEF_TOP = 25;
+export const NIGHT_THIEF_EVERY = 3;
+/** Oro mínimo para que un ladrón se moleste en entrar. */
+export const NIGHT_THIEF_MIN = 30;
+/** Desde qué día viene (no antes del primer pago: aún se está aprendiendo a jugar). */
+export const NIGHT_THIEF_FROM = 8;
+/**
+ * El mensajero tardío: segundos de reloj que espera en la puerta, lo que paga de más su encargo,
+ * los días que dura en el tablón (sale al amanecer o se pierde al acabar el día siguiente) y cada
+ * cuántos días puede volver.
+ */
+export const MESSENGER_WAIT = 30;
+export const MESSENGER_PAY = 1.5;
+export const MESSENGER_EXPIRES = 2;
+export const MESSENGER_EVERY = 2;
 /** El forastero de la tormenta: probabilidad en cada noche de tormenta (con algún caído). */
 export const STRANGER_CHANCE = 0.65;
 /** Días que pasan, como poco, entre una visita y la siguiente. */
@@ -696,3 +753,16 @@ export const VEIL_BED = 4;
 export const VEIL_MORALE = 30;
 export const VEIL_CAP = 25;
 export const VEIL_DAYS = 10;
+/**
+ * La pesadilla: un héroe herido o con la moral baja (`MORALE_LOW`) da vueltas en la cama.
+ * Días entre una y otra.
+ */
+export const NIGHTMARE_EVERY = 3;
+/** El trago de la bodega: jarras que cuesta (herido o no) y moral que sube. */
+export const NIGHTMARE_BEER = 1;
+export const NIGHTMARE_EASE = 12;
+/** Si nadie le lleva nada: moral que pierde al amanecer. */
+export const NIGHTMARE_LOSS = 8;
+/** El gato cazador: días entre una caza y otra y raciones que se salvan. */
+export const CAT_NIGHT_EVERY = 4;
+export const CAT_NIGHT_FOOD = 2;

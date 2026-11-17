@@ -4,13 +4,16 @@
  * no llega, las obras recién acabadas, quien entrena sin poder subir más y lo que salió de
  * desmontar un objeto. Los incidentes no: ya flotan sobre su sala.
  */
-import { nextPayment, salaries } from '../core/game';
+import { nextPayment, salaries, tiredLine } from '../core/game';
+import { MORALE_LOW } from '../core/party';
 import type { ChipKind, GameState } from '../core/model';
 import { listNames, plural } from '../core/text';
 import { ATTR_NAMES, cappedTrainees } from '../core/training';
 import { nurseBonus } from '../core/workers';
 import { RECIPES } from '../data/recipes';
 import { storeLevel } from '../core/materials';
+import { sleepPlan } from '../core/beds';
+import { nightmareNow } from '../core/nightmare';
 import { crewAlerts } from './crew';
 import type { IconName } from './icons';
 import { jobRoomName } from './roomName';
@@ -197,6 +200,33 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
       icon: 'vela',
       go: { stranger: true },
     });
+
+  // De guardia y agotado (moral baja): de noche se duerme mucho. Uno por guardia, fijo mientras
+  // dure (no vuelve a sonar cada noche).
+  for (const h of game.heroes)
+    if (h.guard && h.status === 'ok' && h.morale < MORALE_LOW)
+      out.push({
+        id: `agotado:${h.id}`,
+        text: tiredLine([h]),
+        k: 'warn',
+        icon: 'moon',
+        go: { crew: h.id },
+      });
+
+  // La pesadilla: alguien da vueltas en la cama (tocándole se le lleva un trago).
+  const nm = nightmareNow(game);
+  if (nm && !nm.n.eased) {
+    // Los heridos, en los catres de la enfermería (si está en uso); los demás, en su dormitorio.
+    const cots = rooms.find((r) => r.type === 'enfermeria' && r.level > 0 && !r.works);
+    const bed = nm.h.status === 'herido' && cots ? cots.id : sleepPlan(game).get(nm.h.id);
+    out.push({
+      id: `pesadilla:${nm.n.day}`,
+      text: `${nm.h.name} da vueltas en la cama, entre pesadillas. Tócal${nm.h.sex === 'f' ? 'a' : 'o'} para llevarle un trago de la bodega.`,
+      k: 'warn',
+      icon: 'moon',
+      go: bed ? { room: bed } : { crew: null },
+    });
+  }
 
   // Obras recién acabadas.
   for (const id of done) {

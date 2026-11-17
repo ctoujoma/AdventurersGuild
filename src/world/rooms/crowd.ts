@@ -4,6 +4,7 @@
  * un atlas con todos sus fotogramas (de pie, parpadeo, andando, sentada, en la cama y entrenando)
  * y la escena solo cambia cuál se ve y dónde está.
  */
+import type { Sex } from '../../core/model';
 import { Group, PlaneGeometry, Vector3, type Mesh, type ShaderMaterial, type Texture } from 'three';
 import { P } from '../../art/palette';
 import { PixelBuffer, alpha } from '../../art/pixel';
@@ -16,13 +17,14 @@ import {
   heroSprites,
   type FightPose,
   type HeroSprites,
+  type Sip,
 } from '../../art/heroes/hero';
 import { bunkQuilt } from '../props';
 import { HEADROOM } from '../../art/heroes/layers';
 import { TINTS, TINT_IDS, type TintId } from '../../data/custom';
-import { generateLook, strangerLook, type OutfitId } from '../../art/heroes/look';
+import { generateLook, messengerLook, strangerLook, type OutfitId } from '../../art/heroes/look';
 import { WEAPONS, type WeaponId } from '../weapons';
-import { STRANGER_ID, type SceneHero, type SceneVisitors } from '../scene';
+import { MESSENGER_ID, STRANGER_ID, type SceneHero, type SceneVisitors } from '../scene';
 import { GROUND } from '../geometry';
 import { Look, mesh, texture, type Shared } from './gl';
 import { PITCH, STAIR_W, floorY, type RoomsLayout, type Rect } from './layout';
@@ -45,6 +47,7 @@ import {
   type Segments,
   type SeatSpot,
   type Spots,
+  YARD_FRONT,
 } from './people';
 import { project, scaleAt, type View } from './view3d';
 import { FAR_Z, NEAR_Z, type BedSpot } from './people';
@@ -587,6 +590,11 @@ const SIZES = {
   back3L: 2,
   front3: 2,
   front3L: 2,
+  /**
+   * Incorporado en la cama bebiendo (la pesadilla): los tres tiempos del trago (`Sip`) con cada
+   * manta de `up` y de `upT`, en ese orden (ver `upSlot`). Al final, para no mover lo de antes.
+   */
+  sip: 3 * (6 + TINT_IDS.length),
 } as const;
 
 /** Dónde empieza cada cosa en el atlas. */
@@ -600,13 +608,16 @@ export const F = (() => {
   return out;
 })();
 const FRAMES = Object.values(SIZES).reduce((a, n) => a + n, 0);
+/** Qué manta de incorporado es el fotograma `up` (de `F.up` o de `F.upT`): 0 a 12. */
+const upSlot = (up: number) => (up - F.up < 6 ? up - F.up : 6 + up - F.upT);
 /**
  * El atlas va en `ROWS` filas (se dibuja en una tira y se pliega, ver `fold`): su ancho no puede
  * pasar de lo que aguanta una textura en cualquier móvil (4096).
  */
-const ROWS = 2;
+const ROWS = 3;
 const COLS = Math.ceil(FRAMES / ROWS);
 export const ATLAS_W = CELL * COLS;
+export const ATLAS_H = TALL * ROWS;
 /** Filas que baja el dibujo en los fotogramas de incorporado (para que quepa la cabeza). */
 const UP_DROP = 8;
 
@@ -780,6 +791,11 @@ interface Actor {
 const FALL_TIME = 0.45;
 /** Los de guardia: cada cuánto planta uno la carta (de día) y cada cuánto cabecea (de noche). */
 const GAME_CYCLE = 3.4;
+/**
+ * El mensajero espera pegado a la puerta de la calle, a tantos píxeles del muro (no cuenta para
+ * abrirla: ver `near`), y por delante de las matas del patio (a la profundidad `YARD_FRONT`).
+ */
+const MESSENGER_GAP = 9;
 const NOD_CYCLE = 4.6;
 /** Lo que dura el gesto de encajar un golpe. */
 const HURT_TIME = 0.25;
@@ -791,6 +807,24 @@ const SEAT_TIME = 0.24;
 const LIFT = 0.45;
 const smoothstep = (x: number) => x * x * (3 - 2 * x);
 const TURN_TIME = 0.1;
+/** La pesadilla: cada cuánto da un respingo y lo que tarda en beberse el trago. */
+const TOSS_CYCLE = 6.5;
+export const DRINK_TIME = 4.4;
+/**
+ * El trago, por tiempos (desde que se le lleva): hasta `MUG_LANDS` la jarra baja flotando a sus
+ * manos (incorporado, sin ella); luego la sube al pecho, a la boca, la empina, otra vez a la boca
+ * y al pecho, y hasta `MUG_GONE` (cuando la jarra se deshace) la tiene; luego se acuesta.
+ */
+export const MUG_LANDS = 0.7;
+const SIP_STEPS: [number, Sip][] = [
+  [1.1, 0],
+  [1.5, 1],
+  [2.9, 2],
+  [3.3, 1],
+];
+export const MUG_GONE = 3.8;
+const sipAt = (t: number): Sip | -1 =>
+  t < MUG_LANDS || t >= MUG_GONE ? -1 : (SIP_STEPS.find(([end]) => t < end)?.[1] ?? 0);
 
 const hash = (s: string) => {
   let h = 0;
@@ -993,15 +1027,24 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
   b.hline(m + 4, 17, 20, P.rust);
   // Incorporado en la cama: lo mismo que acostado pero sentado (de cintura para arriba) con la
   // manta por las piernas. Todo va `UP_DROP` filas más abajo para que quepa la cabeza.
-  const sitUp = (i: number, sx: number, blanket: (x: number, y: number) => void, top: number) => {
-    const x0 = i * CELL;
-    b.blit(spr.sit, x0 + sx, top + UP_DROP + 5 - spr.sit.h);
-    blanket(x0, UP_DROP);
+  // Bebiendo, igual pero con cada tiempo del trago (`spr.drink`, una fila más alto: el fondo de
+  // la figura, en el mismo sitio). Con la camisa de dormir (`upright`) y la cabeza en la misma
+  // columna que en la almohada (la figura empieza una más a la izquierda que la celda: se le
+  // quita esa columna, la del contorno).
+  const sitUp = (i: number, blanket: (x: number, y: number) => void, top: number) => {
+    const slot = upSlot(i);
+    for (const [img, f] of [
+      [spr.upright, i],
+      ...spr.drink.map((d, k) => [d, F.sip + slot * 3 + k] as const),
+    ] as const) {
+      const x0 = f * CELL;
+      b.blit(img.crop(1, 0, img.w - 1, img.h), x0, top + UP_DROP + 5 - img.h);
+      blanket(x0, UP_DROP);
+    }
   };
   for (const { up, q } of quilts) {
     sitUp(
       up,
-      0,
       (x, d) => {
         b.rect(x + 2, 12 + d, 21, 6, q[2]!);
         b.hline(x + 2, 12 + d, 21, q[3]!);
@@ -1012,7 +1055,6 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
   }
   sitUp(
     F.up + 4,
-    2,
     (x, d) => {
       b.rect(x + 4, 14 + d, 20, 4, P.white);
       b.hline(x + 4, 17 + d, 20, P.mist);
@@ -1021,7 +1063,6 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
   );
   sitUp(
     F.up + 5,
-    2,
     (x, d) => {
       b.rect(x + 4, 14 + d, 20, 4, P.clay);
       b.hline(x + 4, 14 + d, 20, P.tan);
@@ -1085,7 +1126,7 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
  * de `COLS` celdas. Así cabe en una textura de cualquier móvil aunque crezca.
  */
 function fold(strip: PixelBuffer): PixelBuffer {
-  const out = new PixelBuffer(CELL * COLS, TALL * ROWS);
+  const out = new PixelBuffer(ATLAS_W, ATLAS_H);
   for (let i = 0; i < FRAMES; i++) {
     const cx = (i % COLS) * CELL;
     const cy = Math.floor(i / COLS) * TALL;
@@ -1165,8 +1206,11 @@ export class Crowd {
   private now = 0;
   /** Sitios de las salas a los que se va a hacer algo (el tablón, la chimenea, el altar…). */
   private pois: Poi[] = [];
-  /** El de guardia que cabecea ahora a la hora de la siesta (lo dice la escena con `napping`). */
-  napper: string | null = null;
+  /**
+   * Los de guardia que cabecean ahora: a la hora de la siesta y, de noche, en sus mini-cabezadas
+   * (lo dice la escena con `nappers` del núcleo, la misma cuenta que deja colarse al ladrón).
+   */
+  nappers = new Set<string>();
   /** Ya se ha puesto a la gente una vez: quien aparece después, llega andando. */
   private ready = false;
   /**
@@ -1379,11 +1423,110 @@ export class Crowd {
     const out: { x: number; y: number; z: number }[] = [];
     for (const a of this.actors.values()) {
       if (a.gone || a.hero.status !== 'herido' || a.pose !== 'bed' || a.edge) continue;
+      // El de la pesadilla ya lleva su nubecilla.
+      if (this.dream?.id === a.hero.id && !this.dream.eased) continue;
       const f = this.frame(a, this.now);
       const k = scaleAt(f.z);
       out.push({ x: f.left + 10 / k, y: f.bottom - TALL / k + 8 / k, z: f.z });
     }
     return out;
+  }
+
+  /** La pesadilla de esta noche: quién, si ya bebió y cuándo se le llevó el trago (reloj de la escena). */
+  private dream: { id: string; eased: boolean; at: number } | null = null;
+
+  /** La pesadilla (`SceneModel.nightmare`): al pasar a `eased`, se incorpora y bebe un rato. */
+  setNightmare(n: { hero: string; eased: boolean } | null): void {
+    if (!n) {
+      this.dream = null;
+      return;
+    }
+    const was = this.dream;
+    if (was && was.id === n.hero && was.eased === n.eased) return;
+    const now = was?.id === n.hero && !was.eased && n.eased;
+    this.dream = { id: n.hero, eased: n.eased, at: now ? this.now : -99 };
+  }
+
+  /**
+   * Cómo está el de la pesadilla: dando vueltas (`toss`), incorporado de golpe (`start`), con el
+   * trago (`drink`), ya tranquilo (`calm`) o nada (no es él o no está acostado).
+   */
+  private dreamOf(a: Actor): 'toss' | 'start' | 'drink' | 'calm' | null {
+    const d = this.dream;
+    if (!d || d.id !== a.hero.id || a.pose !== 'bed' || a.edge || a.path.length) return null;
+    if (d.eased) return this.now - d.at < DRINK_TIME ? 'drink' : 'calm';
+    // Cada `TOSS_CYCLE`: un respingo (incorporado), luego se agita a ratos bajo la manta.
+    const p = (this.now + (hash(a.hero.id) % 7)) % TOSS_CYCLE;
+    if (p < 0.7) return 'start';
+    return p % 2.4 < 1.5 ? 'toss' : 'calm';
+  }
+
+  /** Si al de la pesadilla ya se le llevó el trago. */
+  nightmareEased(): boolean {
+    return !!this.dream?.eased;
+  }
+
+  /**
+   * El de la pesadilla, si está acostado: dónde tiene la cabeza (mundo 2D) y cómo está, para que
+   * la escena le ponga la nubecilla, la jarra o los «zzz».
+   */
+  nightmare(): {
+    x: number;
+    y: number;
+    z: number;
+    state: 'toss' | 'start' | 'drink' | 'calm';
+    since: number;
+    /** Bebiendo: el tiempo del trago (-1, sin la jarra en la mano). */
+    sip: Sip | -1;
+    /** Dónde tiene la jarra al pecho (el centro de la espuma, arriba; mundo 2D). */
+    mug: { x: number; y: number };
+  } | null {
+    const d = this.dream;
+    const a = d ? this.actors.get(d.id) : undefined;
+    if (!a || a.gone) return null;
+    const state = this.dreamOf(a);
+    if (!state) return null;
+    const f = this.frame(a, this.now);
+    const k = scaleAt(f.z);
+    const up = state === 'start' || state === 'drink';
+    const since = this.now - (d?.at ?? 0);
+    // La jarra del fotograma al pecho (ver `SIPS` en `hero.ts`): la figura empieza una columna
+    // a la izquierda de su fotograma y, en la litera, en la fila 1; en el catre y el jergón, 2
+    // más abajo.
+    const bunk = a.goal?.bed?.kind === 'litera' || a.edge?.bed.kind === 'litera';
+    const nudge = bunk ? 0 : 2;
+    return {
+      x: f.left + (up ? 8 : 6) / k,
+      y: f.bottom - TALL / k + (up ? UP_DROP + 6 : 8) / k,
+      z: f.z,
+      state,
+      since,
+      sip: state === 'drink' ? sipAt(since) : -1,
+      mug: { x: f.left + 7.5 / k, y: f.bottom - TALL / k + (16 + nudge) / k },
+    };
+  }
+
+  /**
+   * Incorporado en la cama: el fotograma de acostado, con el dibujo `UP_DROP` filas más abajo. Con
+   * `sip`, bebiendo (ese tiempo del trago, con la misma manta).
+   */
+  private upFrame(
+    bed: BedSpot,
+    k: number,
+    z: number,
+    sip: Sip | -1 = -1,
+  ): { frame: number; left: number; bottom: number; z: number } {
+    const tint = this.tints[bed.roomId];
+    const f = bedFrame(bed, k, z, tint);
+    const up =
+      bed.kind !== 'litera'
+        ? F.up + (bed.kind === 'catre' ? 4 : 5)
+        : tint
+          ? F.upT + TINT_IDS.indexOf(tint)
+          : F.up + bed.level;
+    const frame = sip < 0 ? up : F.sip + upSlot(up) * 3 + sip;
+    // El dibujo baja UP_DROP filas en su fotograma, así que el fotograma sube otro tanto.
+    return { ...f, frame, bottom: f.bottom - UP_DROP / k };
   }
 
   /** Temas de color de las salas: la manta de quien duerme en una litera es la de su sala. */
@@ -1459,7 +1602,7 @@ export class Crowd {
     if (v.day === this.visitors.day && v.kinds.length === this.visitors.kinds.length) return;
     if (v.day !== this.visitors.day)
       for (const a of [...this.actors.values()])
-        if (a.hero.visitor && !a.hero.stranger) this.remove(a.hero.id);
+        if (a.hero.visitor && !a.hero.stranger && !a.hero.messenger) this.remove(a.hero.id);
     this.visitors = v;
   }
 
@@ -1494,6 +1637,50 @@ export class Crowd {
     this.put(b, outside());
     this.go(b, this.fireside());
     b.wait = 999;
+  }
+
+  /**
+   * El mensajero tardío (suceso nocturno): llega por el camino con su farol y espera fuera, junto
+   * a la puerta de la calle (sin que se abra: nadie le ha abierto). Al irse, vuelve por el camino.
+   */
+  setMessenger(m: { day: number; sex: Sex } | null): void {
+    const a = this.actors.get(MESSENGER_ID);
+    if (!m) {
+      if (!a || a.leaving) return;
+      a.leaving = true;
+      a.goal = null;
+      this.go(a, { place: outside(), pose: 'stand' });
+      return;
+    }
+    if ((a && !a.leaving) || !this.S || !this.L || this.scripted) return;
+    if (a) this.remove(MESSENGER_ID);
+    if (this.actors.size >= MAX_ACTORS) return;
+    this.add({
+      id: MESSENGER_ID,
+      name: 'Mensajero',
+      title: 'Llama a la puerta con un farol',
+      status: 'ok',
+      look: messengerLook(m.day, m.sex),
+      marks: {},
+      visitor: true,
+      messenger: true,
+    });
+    const b = this.actors.get(MESSENGER_ID)!;
+    this.put(b, outside());
+    // Fuera, pegado a la puerta y por delante de las matas.
+    this.go(b, {
+      place: { x: this.L.left - MESSENGER_GAP, floor: 0 },
+      pose: 'stand',
+      stand: YARD_FRONT,
+    });
+    b.wait = 999;
+  }
+
+  /** Dónde está el mensajero y hacia dónde mira, si está (para su farol). */
+  messengerAt(): { x: number; y: number; z: number; dir: 1 | -1; walking: boolean } | null {
+    const a = this.actors.get(MESSENGER_ID);
+    if (!a || a.gone) return null;
+    return { x: a.x, y: a.y, z: a.lane, dir: a.dir, walking: a.path.length > 0 };
   }
 
   /** La silla del salón más cerca de la chimenea (si no hay, de pie junto al fuego o en la barra). */
@@ -1595,8 +1782,8 @@ export class Crowd {
     if (this.scripted) return;
     for (const a of [...this.actors.values()]) {
       if (a.gone || (a.leaving && !a.hero.visitor)) continue;
-      // El forastero no se va con la noche: espera junto al fuego.
-      if (a.hero.stranger && !a.leaving) continue;
+      // El forastero no se va con la noche: espera junto al fuego (y el mensajero, en la puerta).
+      if ((a.hero.stranger || a.hero.messenger) && !a.leaving) continue;
       if (a.hero.visitor || this.village(a)) {
         if (a.hero.visitor) a.leaving = true;
         else a.homeward = true;
@@ -2090,12 +2277,14 @@ export class Crowd {
     if (!this.S.guard.some((p) => p.x === a.goal?.place.x && p.floor === a.goal.place.floor))
       return null;
     const off = (hash(a.hero.id) % 97) / 13;
-    // A la hora de la siesta, el que cabecea (el núcleo deja que se le cuele el ladrón) se pinta
-    // como de madrugada.
-    if (this.time === 'day' && this.napper !== a.hero.id) {
+    // El que cabecea (a la hora de la siesta o en sus cabezadas de noche: el núcleo deja que se le
+    // cuele el ladrón) se hunde poco a poco; despierto, de día juega a los dados y de noche vela.
+    const nap = this.nappers.has(a.hero.id);
+    if (this.time === 'day' && !nap) {
       const p = (this.now + off) % GAME_CYCLE;
       return { night: false, slam: p < 0.22, nod: 0, dozing: false };
     }
+    if (!nap) return { night: true, slam: false, nod: 0, dozing: false };
     const p = ((this.now + off) % NOD_CYCLE) / NOD_CYCLE;
     return {
       night: true,
@@ -2136,12 +2325,35 @@ export class Crowd {
     return out;
   }
 
+  /**
+   * Los de guardia agotados (moral baja, `marks.low`): dónde tienen lo alto de la cabeza (mundo 2D,
+   * el centro), para que la escena les ponga encima su nubecilla mientras les dure.
+   */
+  weary(): { id: string; x: number; y: number; z: number }[] {
+    const out: { id: string; x: number; y: number; z: number }[] = [];
+    for (const a of this.actors.values()) {
+      const h = a.hero;
+      if (a.gone || !h.guard || !h.marks.low || h.status !== 'ok' || a.held) continue;
+      const f = this.frame(a, this.now);
+      const k = scaleAt(f.z);
+      // Acostado, la cabeza en la almohada (como la cruz del herido); si no, lo alto de la
+      // figura (la coronilla, en la fila 7 de su fotograma: el sombrero asoma algo más).
+      out.push(
+        a.pose === 'bed'
+          ? { id: h.id, x: f.left + 10 / k, y: f.bottom - TALL / k + 8 / k, z: f.z }
+          : { id: h.id, x: f.left + 12 / k, y: f.bottom - TALL / k + 5 / k, z: f.z },
+      );
+    }
+    return out;
+  }
+
   /** Si alguien está delante (más cerca que `z`) de un punto del mundo y lo tapa. */
   /** La x de quien esté más cerca de `x` en la planta `floor` (a menos de `r`), o null. */
   near(x: number, floor: number, r: number): number | null {
     let best: number | null = null;
     for (const a of this.actors.values()) {
-      if (a.gone || a.floor !== floor || a.pose === 'bed') continue;
+      // (El mensajero, en la puerta de la calle, espera a que le abran: no la abre él.)
+      if (a.gone || a.floor !== floor || a.pose === 'bed' || a.hero.messenger) continue;
       const d = Math.abs(a.x - x);
       if (d < r && (best === null || d < Math.abs(best - x))) best = a.x;
     }
@@ -2223,7 +2435,7 @@ export class Crowd {
     const t = this.now;
     for (const a of this.actors.values()) {
       // El forastero no pide nada: espera callado.
-      if (a.gone || a.held || a.hero.stranger) continue;
+      if (a.gone || a.held || a.hero.stranger || a.hero.messenger) continue;
       const c = a.chat;
       if (c && c.from && t >= c.from && t < c.until) {
         const turn = Math.floor((t - c.from) / TURN);
@@ -2789,7 +3001,12 @@ export class Crowd {
       a.run = Math.max(a.run ?? 1, RUSH);
       return;
     }
-    // De guardia en la cámara: da vueltas por ella, de día y de noche (no se acuesta).
+    // De guardia en la cámara: da vueltas por ella, de día y de noche (no se acuesta); mientras
+    // cabecea, se queda quieto donde esté.
+    if (h.vault && h.status === 'ok' && this.nappers.has(h.id) && this.inVault(a)) {
+      a.wait = 0.5;
+      return;
+    }
     if (h.vault && h.status === 'ok' && this.patrol(a)) return;
     // El pintor que tiene una sala que pintar, a ella.
     if (this.paintTurn(a)) return;
@@ -2819,6 +3036,15 @@ export class Crowd {
     // Si ya está ahí, se queda.
     if (Math.abs(g.place.x - a.x) < 4 && g.place.floor === a.floor && g.pose === a.pose) return;
     this.go(a, g);
+  }
+
+  /** Los de guardia en la cámara que cabecean de pie, quietos (para sus «zzz»). */
+  vaultNappers(): { id: string; x: number; y: number; z: number }[] {
+    const out = [];
+    for (const a of this.actors.values())
+      if (this.nappers.has(a.hero.id) && this.inVault(a) && !a.path.length && a.pose === 'stand')
+        out.push({ id: a.hero.id, x: a.x, y: a.y, z: a.lane });
+    return out;
   }
 
   /** El de guardia en la cámara ya está dentro (de noche sigue con su ronda). */
@@ -3066,22 +3292,21 @@ export class Crowd {
   private frame(a: Actor, t: number): { frame: number; left: number; bottom: number; z: number } {
     const z = this.depth(a);
     const k = scaleAt(z);
-    if (a.edge) {
-      // Incorporado: el fotograma de acostado, con el dibujo `UP_DROP` filas más abajo.
-      const bed = a.edge.bed;
-      const tint = this.tints[bed.roomId];
-      const f = bedFrame(bed, k, z, tint);
-      const up =
-        bed.kind !== 'litera'
-          ? F.up + (bed.kind === 'catre' ? 4 : 5)
-          : tint
-            ? F.upT + TINT_IDS.indexOf(tint)
-            : F.up + bed.level;
-      // El dibujo baja UP_DROP filas en su fotograma, así que el fotograma sube otro tanto.
-      return { ...f, frame: up, bottom: f.bottom - UP_DROP / k };
-    }
+    if (a.edge) return this.upFrame(a.edge.bed, k, z);
     const bed = a.pose === 'bed' ? a.goal?.bed : undefined;
-    if (bed) return bedFrame(bed, k, z, this.tints[bed.roomId]);
+    if (bed) {
+      const d = this.dreamOf(a);
+      // La pesadilla: bebiendo, incorporado; sin el trago, se agita bajo la manta y a ratos se
+      // incorpora de golpe.
+      if (d === 'start') return this.upFrame(bed, k, z);
+      if (d === 'drink') return this.upFrame(bed, k, z, sipAt(t - (this.dream?.at ?? 0)));
+      const f = bedFrame(bed, k, z, this.tints[bed.roomId]);
+      if (d === 'toss') {
+        const dx = Math.floor(t * 7) % 2 ? 1 : -1;
+        return { ...f, left: f.left + dx / k };
+      }
+      return f;
+    }
     if (a.held) {
       // Colgando del dedo, pataleando un poco.
       const step = Math.floor(t * 12) % WALK_STEPS;
@@ -3239,6 +3464,9 @@ export class Crowd {
       // Un tiempo del paso cada `WALK_PX` píxeles: el pie apoyado no patina.
       const step = Math.floor((a.dist * k) / WALK_PX) % WALK_STEPS;
       frame = (a.dir > 0 ? F.walk : F.walkL) + step;
+    } else if (a.hero.messenger && a.pose === 'stand' && !a.leaving) {
+      // El mensajero, de perfil y de cara a la puerta, esperando a que le abran.
+      frame = a.dir > 0 ? F.talk : F.talk + 1;
     } else if (this.time === 'dusk' && a.pose === 'stand' && !this.scripted) {
       // Al atardecer, alguno bosteza.
       const g = (t + (hash(a.hero.id) % 41) / 3) % 11;

@@ -66,6 +66,12 @@ export const LANES = [16, 21, 26] as const;
 export const NEAR_Z = 13;
 export const FAR_Z = 44;
 
+/**
+ * Lo que espera o se cuela por el patio de noche (el mensajero, el ladrón) va a esta profundidad:
+ * por delante de las matas y del arbusto de junto a la puerta (`yardBushes`, a 12).
+ */
+export const YARD_FRONT = 7;
+
 /** Por dónde se sale al patio y dónde se pierde uno de vista al irse de misión. */
 export const outside = (): Place => ({ x: -PATIO_W + 24, floor: 0 });
 

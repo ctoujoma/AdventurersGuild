@@ -116,7 +116,9 @@ import {
   tutorialStep,
 } from './tutorial';
 import { stepRaids } from './raids';
-import { nightDue, rollNight } from './night';
+import { dawnNight, nightDue, nightRng, rollNight } from './night';
+import { acceptMessenger, dismissMessenger, messengerGone, stepMessenger } from './messenger';
+import { easeIssue, easeNightmare } from './nightmare';
 import { dismiss, revive, reviveIssue, stepStranger, strangerGone } from './stranger';
 import { advanceChain, bossOf, fightRoster, offerChain } from './chains';
 import { choose, maybeEvent, scaredClients, stepThreat } from './events';
@@ -285,6 +287,10 @@ export type Action =
   | { type: 'tutorial'; op: 'carta' | 'ok' | 'saltar' | 'listo' | TutorialSkip }
   /** El forastero de la tormenta: traer de vuelta a ese caído (null: decirle que no). */
   | { type: 'stranger'; heroId: string | null }
+  /** El mensajero tardío: aceptar su encargo o despedirle. */
+  | { type: 'messenger'; accept: boolean }
+  /** Llevarle un trago de la bodega al de la pesadilla (`core/nightmare.ts`). */
+  | { type: 'nightmare' }
   /** Saltar al anochecer. */
   | { type: 'dusk' }
   | { type: 'endDay' };
@@ -879,13 +885,15 @@ function reduceAction(state: GameState, action: Action): GameState {
       if (next === state) return state;
       // La noche: el suceso que toque (una vez por noche) y el forastero que se va a mediodía.
       const nightNews: DawnEvent[] = [];
-      if (nightDue(next, state.clock ?? 0, next.clock ?? 0) || strangerGone(next)) {
+      const leaves = !!next.messenger && !next.messenger.gone && messengerGone(next);
+      if (nightDue(next, state.clock ?? 0, next.clock ?? 0) || strangerGone(next) || leaves) {
         next = structuredClone(next);
         const rng = new Rng(next.rng);
         if (nightDue(next, state.clock ?? 0, next.clock ?? 0))
-          nightNews.push(...rollNight(next, rng));
+          nightNews.push(...rollNight(next, nightRng(next)));
         const gone = stepStranger(next);
         if (gone) nightNews.push(gone);
+        stepMessenger(next);
         next.rng = rng.save();
       }
       const part = Math.min(1, (next.clock ?? 0) / DAY_SECONDS);
@@ -1062,6 +1070,24 @@ function reduceAction(state: GameState, action: Action): GameState {
       if (action.heroId && reviveIssue(state, action.heroId)) return state;
       const s = structuredClone(state);
       const said = action.heroId ? revive(s, action.heroId) : dismiss(s);
+      s.incidentNews = [{ t: said.t, k: said.k ?? 'info' }];
+      return s;
+    }
+    case 'messenger': {
+      if (!state.messenger || state.messenger.gone) return state;
+      const s = structuredClone(state);
+      if (!action.accept) {
+        dismissMessenger(s);
+        return s;
+      }
+      const n = acceptMessenger(s);
+      s.incidentNews = n ? [n] : undefined;
+      return s;
+    }
+    case 'nightmare': {
+      if (easeIssue(state)) return state;
+      const s = structuredClone(state);
+      const said = easeNightmare(s);
       s.incidentNews = [{ t: said.t, k: said.k ?? 'info' }];
       return s;
     }
@@ -1287,6 +1313,14 @@ export function tick(state: GameState, to: number): GameState {
 }
 
 /** Pasa la noche y amanece. `away`: con el juego cerrado (menos asaltos; ver `away.ts`). */
+/** «Juana lleva muchas noches de guardia y se duerme: relévala» (o varios). */
+export function tiredLine(hs: readonly Pick<Hero, 'name' | 'sex'>[]): string {
+  const f = hs.every((h) => h.sex === 'f');
+  return hs.length > 1
+    ? `${listNames(hs.map((h) => h.name))} llevan muchas noches de guardia y se duermen: relév${f ? 'alas' : 'alos'}.`
+    : `${hs[0]!.name} lleva muchas noches de guardia y se duerme: relév${f ? 'ala' : 'alo'}.`;
+}
+
 export function endDay(state: GameState, away = false): GameState {
   if (state.over) return state;
   const s = structuredClone(state);
@@ -1304,7 +1338,14 @@ export function endDay(state: GameState, away = false): GameState {
   // El forastero de una noche anterior ya se fue a mediodía; el suceso de esta noche, si no se
   // ha tirado con el reloj (juego cerrado), se tira ahora y se cuenta al amanecer.
   if (s.stranger && s.stranger.day < s.day) s.stranger = null;
-  events.push(...rollNight(s, rng));
+  // Lo que ya pasó esta noche con el juego abierto (`tellDawn`), lo que pasa ahora si no se ha
+  // tirado y cómo acaba lo que quede (el ladrón y el mensajero sin tocar, según quién esté de
+  // guardia y despierto; la pesadilla; el gato), todo a la carta del amanecer.
+  events.push(...(s.nightLines ?? []));
+  delete s.nightLines;
+  events.push(...rollNight(s, nightRng(s)));
+  failIncidents(s, events);
+  events.push(...dawnNight(s));
   s.day++;
   stepWorks(s, events);
   tidyJobs(s);
@@ -1505,7 +1546,6 @@ export function endDay(state: GameState, away = false): GameState {
     s.building.rooms.find((r) => r.id === plan.get(h.id))?.type === 'veteranos';
   // Con el juego cerrado (o en el tutorial) no se aburre nadie ni se agota de guardia.
   const strain = !away && !tutorialOn(s);
-  const tired: string[] = [];
   const bored: string[] = [];
   for (const h of s.heroes) {
     if (h.status === 'mision') h.idle = 0;
@@ -1545,7 +1585,6 @@ export function endDay(state: GameState, away = false): GameState {
       // De guardia no se duerme: no descansa y va perdiendo moral (hay que ir rotando).
       const was = h.morale;
       h.morale = Math.max(Math.min(was, GUARD_FLOOR), was - GUARD_DROP);
-      if (was >= MORALE_LOW && h.morale < MORALE_LOW) tired.push(h.name);
     } else if (strain && (h.idle ?? 0) > BORED_AFTER) {
       // Muchos días sin salir de aventura: se aburre.
       if (h.idle === BORED_AFTER + 1) bored.push(h.name);
@@ -1565,11 +1604,8 @@ export function endDay(state: GameState, away = false): GameState {
       });
     }
   }
-  if (tired.length)
-    events.push({
-      t: `${listNames(tired)} ${tired.length > 1 ? 'llevan' : 'lleva'} muchas noches de guardia sin dormir y ${tired.length > 1 ? 'están agotados' : 'está sin fuerzas'}: de guardia no se recupera moral. Haz el relevo para que ${tired.length > 1 ? 'descansen' : 'descanse'}.`,
-      k: 'warn',
-    });
+  // Agotado de guardia (la moral, por debajo de `MORALE_LOW`): de noche se duerme mucho más
+  // (`napShare`). No va en la carta del amanecer: queda en la campanita y se le ve en la escena.
   if (bored.length)
     events.push({
       t: `${listNames(bored)} se ${bored.length > 1 ? 'aburren' : 'aburre'}: más de una semana sin salir de aventura. Hasta que ${bored.length > 1 ? 'salgan' : 'salga'}, la moral irá bajando.`,
@@ -1610,7 +1646,7 @@ export function endDay(state: GameState, away = false): GameState {
   s.quests = s.quests.filter((q) => q.expires > 0);
   let fresh = 0;
   while (
-    s.quests.filter((q) => !q.chain && !q.rescue && !q.rumor).length <
+    s.quests.filter((q) => !q.chain && !q.rescue && !q.rumor && !q.urgent).length <
     BOARD_SIZE(s.fac.tab, s.fac.mapas) + (s.fac.torre >= 2 ? 1 : 0) - scaredClients(s)
   ) {
     s.quests.push(quest(s, rng));

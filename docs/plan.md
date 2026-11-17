@@ -224,6 +224,11 @@ una fase, `npm run sim` y una partida larga para ver que el ritmo sigue bien.
    siguiente (resto de la transición vieja); **hecho** (14 de noviembre, aprobado con capturas). N1 empezar por el ladrón nocturno, el mensajero, la pesadilla y el gato;
    N2 uno de cada dos noches de media, algo más con niebla o tormenta; con la noche acelerada se
    resuelve solo según quién esté de guardia. Minijuegos, más adelante (`futuro.md`).
+   **Hecho** (17 de noviembre, aprobado con capturas): ladrón nocturno, mensajero tardío,
+   pesadilla (tocar para el trago, con el gesto de beber en la cama) y gato cazador, en
+   `NIGHT_EVENTS`; una de cada dos noches (65 % con niebla o tormenta); los de guardia cabecean
+   de noche según su moral y su nivel, con señal y aviso al agotarse; todo a la carta del
+   amanecer. Arrastrar el trago y el gato más suelto, en `futuro.md`.
 9. **Fase 8 · Expediciones** (agente de expediciones, al acabar lo anterior): respuestas ya
    adelantadas en [`propuesta-expediciones.md`](propuesta-expediciones.md), «Respuestas del
    usuario».

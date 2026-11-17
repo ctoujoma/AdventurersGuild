@@ -324,10 +324,13 @@ const RAT = { g: P.clay, G: P.rust, e: P.black, p: P.coral };
 /** La rata (de la taberna de antes): dos pasos corriendo, mirando a la derecha. */
 export const RAT_F = { run: 0 } as const;
 
-export const ratStrip = (): Strip =>
+/** La de la caza de noche, algo más clara (corre por una sala a oscuras). */
+const RAT_LIGHT = { g: P.tan, G: P.clay, e: P.black, p: P.coral };
+
+export const ratStrip = (light = false): Strip =>
   strip([
-    sprite(['.....ggg..', 'p..ggggge.', '.pGggggggp', '...g.g.g..'], RAT),
-    sprite(['.....ggg..', '.p.ggggge.', 'p.Gggggggp', '....g.g.g.'], RAT),
+    sprite(['.....ggg..', 'p..ggggge.', '.pGggggggp', '...g.g.g..'], light ? RAT_LIGHT : RAT),
+    sprite(['.....ggg..', '.p.ggggge.', 'p.Gggggggp', '....g.g.g.'], light ? RAT_LIGHT : RAT),
   ]);
 
 /** Pardos con las alas más claras (en negro, a oscuras, no se veían). */

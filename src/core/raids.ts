@@ -261,3 +261,6 @@ function resolveRaid(s: GameState, rng: Rng, events: DawnEvent[]): Report {
     raid: { won },
   };
 }
+
+/** Esta noche hay asalto (se resuelve al pasar el día): ningún suceso nocturno esa noche. */
+export const raidTonight = (s: GameState) => !!s.raid && s.raid.day <= s.day + 1;

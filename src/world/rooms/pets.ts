@@ -5,7 +5,9 @@
  * gato ronronea y el perro se sienta y ladra. Fuera, si se ha comprado, Carbón, el cuervo, posado
  * en el rótulo: mira a un lado y a otro, grazna y a ratos se va volando (a llevar noticias a otros
  * pueblos) y vuelve. En las salas rotas, bichos: una rata que cruza corriendo (abajo y en la
- * bodega) y murciélagos colgados del techo (arriba). Son solo de adorno: no cambian nada del juego.
+ * bodega) y murciélagos colgados del techo (arriba). De noche, a veces, el gato sale de caza
+ * (`core/nightCat.ts`): persigue una rata (la `presa`) por la despensa o la bodega y la caza a
+ * ratos. Son solo de adorno: no cambian nada del juego.
  */
 import { Group, PlaneGeometry, Vector3, type Mesh, type ShaderMaterial } from 'three';
 import { alpha } from '../../art/pixel';
@@ -36,7 +38,7 @@ import { project, scaleAt, type View } from './view3d';
  * `murcielago:<sala>:<n>`).
  */
 export type PetId = string;
-export type PetKind = 'gato' | 'perro' | 'cuervo' | 'rata' | 'murcielago';
+export type PetKind = 'gato' | 'perro' | 'cuervo' | 'rata' | 'murcielago' | 'presa';
 export const kindOf = (id: PetId) => id.split(':')[0] as PetKind;
 
 /** Donde se posa el cuervo (sus patas, en el mundo). */
@@ -66,11 +68,17 @@ const RAVEN_AWAY = { dx: -260, dy: -140 };
 const RAT_Z = FRONT - 3;
 const BAT_Z = MID;
 const RAT_SPEED = 34;
+/** La caza de noche: lo que corren la rata y el gato, a cuánto la sigue y lo que dura el salto. */
+const PREY_SPEED = 46;
+const CHASE_GAP = 13;
+const POUNCE = 0.42;
 /** Como mucho, tantas salas con ratas y tantas con murciélagos (para no llenar la casa). */
 const MAX_RATS = 3;
 const MAX_BATS = 2;
 /** La luz de los bichos: más clara que la de su sala, para que se vean en lo oscuro. */
 const CRITTER_LIGHT = { ambient: [0.62, 0.56, 0.6] as Tint, sun: 0 };
+/** La caza de noche, aún más clara: el gato y la rata corren por una sala a oscuras. */
+const HUNT_LIGHT = { ambient: [0.95, 0.86, 0.84] as Tint, sun: 0 };
 
 /** Por dónde anda un bicho: de pared a pared de su sala, su suelo y su techo. */
 interface Area {
@@ -143,6 +151,24 @@ export class Pets {
   private now = 0;
   private seed = 7;
   private perch: Perch | null = null;
+  /**
+   * La caza de noche (de x a x de la sala, y su planta): la rata corre de un lado a otro y el
+   * gato tras ella; cada `catchEvery` pasadas, salta y la caza.
+   */
+  private chase: {
+    x0: number;
+    x1: number;
+    floor: number;
+    phase: 'go' | 'hide' | 'run' | 'pounce' | 'proud';
+    t: number;
+    passes: number;
+    from: number;
+    to: number;
+    /** El salto: de dónde a dónde (x). */
+    jump?: [number, number];
+  } | null = null;
+  /** La rata cazada (para echar polvo donde cae) y para que se oiga. */
+  caught?: (x: number, y: number, z: number) => void;
   /** Para que se oiga lo que hacen por su cuenta (el graznido). */
   sound?: (name: SoundName, volume: number) => void;
 
@@ -177,7 +203,7 @@ export class Pets {
     // Si la obra ha sido en otra sala, cada uno sigue a lo suyo; si no, vuelve a su sitio.
     const [a, b] = this.range;
     const cat = this.pets.get('gato') ?? this.add('gato', catStrip(), CAT_Z);
-    if (this.hunt && cat.floor === floor) {
+    if ((this.hunt || this.chase) && cat.floor === floor) {
       // De caza en otra sala de la planta: sigue a lo suyo.
     } else if (cat.state === 'walk' && cat.floor === floor && cat.x >= a && cat.x <= b) {
       // Iba andando y el salón sigue ahí: vuelve andando a su sitio junto al fuego.
@@ -277,7 +303,10 @@ export class Pets {
     const raven = this.pets.get('cuervo');
     if (raven) this.raven(raven, dt);
     const cat = this.pets.get('gato');
-    if (cat) this.cat(cat, dt);
+    if (cat) {
+      if (this.chase) this.nightHunt(cat, dt);
+      else this.cat(cat, dt);
+    }
     const dog = this.pets.get('perro');
     if (dog) this.dog(dog, dt);
     for (const p of this.pets.values()) this.place(p, t);
@@ -293,7 +322,9 @@ export class Pets {
     const kind = kindOf(id);
     if (kind === 'gato') this.set(p, 'sit', 4 + this.rnd() * 3);
     else if (kind === 'perro') this.set(p, 'bark', 1.6);
-    else if (kind === 'rata') {
+    else if (kind === 'presa') {
+      // La de la caza: que siga corriendo (la caza la lleva el gato).
+    } else if (kind === 'rata') {
       // Se va corriendo, más deprisa, por el lado más cercano.
       const a = p.area!;
       p.target = p.x - a.x0 < a.x1 - p.x ? a.x0 : a.x1;
@@ -331,6 +362,7 @@ export class Pets {
       cuervo: 'Carbón, el cuervo',
       rata: 'Una rata',
       murcielago: 'Murciélagos',
+      presa: 'Una rata',
     }[kindOf(id)];
   }
 
@@ -413,6 +445,158 @@ export class Pets {
       c.target = this.home;
       c.tz = CAT_Z;
       this.set(c, 'walk', 0);
+    }
+  }
+
+  /**
+   * La caza de noche (`SceneModel.nightCat`): de x a x de la sala y su planta, o null. El gato
+   * deja el fuego y va trotando; allí persigue a la rata.
+   */
+  setNightHunt(area: { x0: number; x1: number; floor: number } | null): void {
+    const c = this.pets.get('gato');
+    if (!area) {
+      if (!this.chase) return;
+      this.chase = null;
+      this.remove('presa');
+      if (c) {
+        c.y = undefined;
+        c.target = this.home;
+        c.tz = CAT_Z;
+        this.set(c, 'walk', 0);
+      }
+      return;
+    }
+    const was = this.chase;
+    if (was && was.x0 === area.x0 && was.floor === area.floor) return;
+    this.chase = { ...area, phase: 'go', t: 0, passes: 0, from: area.x0, to: area.x1 };
+    const r = this.pets.get('presa') ?? this.add('presa', ratStrip(true), RAT_Z);
+    r.floor = area.floor;
+    r.area = { x0: area.x0, x1: area.x1, floor: floorY(area.floor), ceil: 0 };
+    this.set(r, 'away', 0);
+    if (c) {
+      c.target = (area.x0 + area.x1) / 2;
+      c.tz = CAT_WALK_Z;
+      this.set(c, 'walk', 0);
+    }
+  }
+
+  /** La caza de noche, paso a paso (manda sobre lo que haría el gato por su cuenta). */
+  private nightHunt(c: Pet, dt: number): void {
+    const h = this.chase!;
+    const r = this.pets.get('presa');
+    if (!r) return;
+    h.t += dt;
+    const toward = (x: number, z: number, speed: number) => {
+      const dx = x - c.x;
+      const dz = z - c.z;
+      const left = Math.hypot(dx, dz);
+      const step = speed * dt;
+      if (left <= step) {
+        c.x = x;
+        c.z = z;
+        return true;
+      }
+      c.x += (dx / left) * step;
+      c.z += (dz / left) * step;
+      c.dist += step;
+      if (Math.abs(dx) > 0.3) c.dir = dx > 0 ? 1 : -1;
+      return false;
+    };
+    switch (h.phase) {
+      case 'go':
+        // Del fuego a la sala, al trote (puede que esté en otra sala de la planta).
+        if (c.state !== 'walk') this.set(c, 'walk', 0);
+        if (c.floor !== h.floor) {
+          c.floor = h.floor;
+          c.x = (h.x0 + h.x1) / 2;
+        }
+        if (toward((h.x0 + h.x1) / 2, CAT_WALK_Z, CAT_SPEED * 2.4)) {
+          h.phase = 'hide';
+          h.t = 0;
+          this.set(c, 'sit', 0);
+        }
+        return;
+      case 'hide':
+        // Se acerca al agujero por donde saldrá la rata y se agazapa mirándolo; la rata sale
+        // como una flecha por delante de él y corre al otro lado.
+        {
+          const inward = h.to > h.from ? 1 : -1;
+          const spot = h.from + inward * 10;
+          if (Math.abs(c.x - spot) > 0.5) {
+            if (c.state !== 'walk') this.set(c, 'walk', 0);
+            toward(spot, CAT_WALK_Z, CAT_SPEED * 1.6);
+            h.t = 0;
+            return;
+          }
+          if (c.state !== 'sit') this.set(c, 'sit', 0);
+          c.dir = inward > 0 ? -1 : 1;
+        }
+        if (h.t < 1.6 + (h.passes % 3) * 0.5) return;
+        r.x = h.from;
+        r.dir = h.to > h.from ? 1 : -1;
+        this.set(r, 'run', -1);
+        h.phase = 'run';
+        h.t = 0;
+        return;
+      case 'run': {
+        const step = PREY_SPEED * dt;
+        const left = h.to - r.x;
+        r.dir = left > 0 ? 1 : -1;
+        if (Math.abs(left) <= step) r.x = h.to;
+        else {
+          r.x += Math.sign(left) * step;
+          r.dist += step;
+        }
+        if (c.state !== 'walk') this.set(c, 'walk', 0);
+        // Tras ella, sin recular: si aún no le ha pasado, espera a que le pase.
+        const behind = r.x - r.dir * CHASE_GAP;
+        toward(
+          r.dir > 0 ? Math.max(c.x, behind) : Math.min(c.x, behind),
+          CAT_WALK_Z,
+          PREY_SPEED * 1.05,
+        );
+        c.dir = r.dir;
+        // Una de cada tres pasadas, a media sala, salta encima.
+        const mid = Math.abs(r.x - (h.x0 + h.x1) / 2) < 6;
+        if (h.passes % 3 === 2 && mid) {
+          h.phase = 'pounce';
+          h.t = 0;
+          h.jump = [c.x, r.x + r.dir * 2];
+          this.set(r, 'sniff', 9);
+          return;
+        }
+        if (r.x === h.to) {
+          // Se ha metido en su agujero: la próxima vez sale por el otro lado.
+          this.set(r, 'away', 99);
+          h.passes++;
+          [h.from, h.to] = [h.to, h.from];
+          h.phase = 'hide';
+          h.t = 0;
+        }
+        return;
+      }
+      case 'pounce': {
+        // En arco hasta la rata; al caer, se acabó.
+        const u = Math.min(1, h.t / POUNCE);
+        const [j0, j1] = h.jump ?? [c.x, c.x];
+        c.x = j0 + (j1 - j0) * u;
+        c.y = floorY(h.floor) - Math.sin(u * Math.PI) * 9;
+        if (u < 1) return;
+        c.y = undefined;
+        this.set(r, 'away', 99);
+        this.caught?.(r.x, floorY(h.floor), r.z);
+        h.passes++;
+        h.phase = 'proud';
+        h.t = 0;
+        this.set(c, 'sit', 0);
+        return;
+      }
+      case 'proud':
+        // Sentado, se lava los bigotes; luego vuelve a acechar.
+        if (h.t < 3.2) return;
+        [h.from, h.to] = this.rnd() < 0.5 ? [h.x0, h.x1] : [h.x1, h.x0];
+        h.phase = 'hide';
+        h.t = 0;
     }
   }
 
@@ -601,13 +785,15 @@ export class Pets {
   private frame(p: Pet, t: number): number {
     const age = t - p.since;
     const kind = kindOf(p.id);
-    if (kind === 'rata')
+    if (kind === 'rata' || kind === 'presa')
       return p.state === 'sniff' ? RAT_F.run : RAT_F.run + (Math.floor(p.dist / 3) % 2);
     if (kind === 'murcielago')
       return p.state === 'fly' ? BAT_F.fly + (Math.floor(t * 12 + (p.hx ?? 0)) % 2) : BAT_F.hang;
     if (kind === 'gato') {
       switch (p.state) {
         case 'walk':
+          // Saltando encima de la rata: con las patas estiradas.
+          if (this.chase?.phase === 'pounce') return CAT_F.walk + 1;
           return CAT_F.walk + (Math.floor(p.dist / CAT_STEP) % 2);
         case 'sit':
           // Sentado, a ratos se lava la cara.
@@ -668,7 +854,10 @@ export class Pets {
     u.uUvOffset!.value.set(this.cell(p, t) / (p.strip.n * 2), 0);
     // Los bichos, algo más claros que su sala rota (con su luz fría, ni se veían).
     const critter = kindOf(p.id) === 'rata' || kindOf(p.id) === 'murcielago';
-    const look = critter ? CRITTER_LIGHT : this.tint(p.x, p.floor);
+    // La caza de noche: el gato y su presa, en la sala a oscuras.
+    const hunting =
+      kindOf(p.id) === 'presa' || (p.id === 'gato' && !!this.chase && this.chase.phase !== 'go');
+    const look = hunting ? HUNT_LIGHT : critter ? CRITTER_LIGHT : this.tint(p.x, p.floor);
     u.uAmbient!.value.set(...look.ambient);
     u.uSun!.value = look.sun;
   }

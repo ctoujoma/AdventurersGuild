@@ -327,7 +327,7 @@ export function BossFight({ fight, onClose, onResult }: Props) {
           class={`bossfight-stage ${chosen ? 'is-aiming' : ''}`}
           style={{
             aspectRatio: `${viewW} / ${ARENA.h}`,
-            width: `min(100%, ${((viewW / ARENA.h) * 56).toFixed(1)}vh)`,
+            '--ratio': (viewW / ARENA.h).toFixed(3),
           }}
           onPointerDown={(e) => {
             if (!playing) return;
@@ -392,7 +392,7 @@ export function BossFight({ fight, onClose, onResult }: Props) {
             </button>
           </>
         ) : (
-          <button class="btn btn-wood" onClick={() => skipRef.current()}>
+          <button class="btn btn-wood bossfight-skip" onClick={() => skipRef.current()}>
             {playing ? 'Que se las apañen' : 'Saltar'}
           </button>
         )}

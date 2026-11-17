@@ -1,3 +1,6 @@
+import { messengerSex } from '../core/messenger';
+import { nightCatNow } from '../core/nightCat';
+import { nightmareNow } from '../core/nightmare';
 import { INCIDENTS } from '../data/incidents';
 import { awayPlan, isAway, sleepPlan } from '../core/beds';
 import { craftState, dressingOf } from '../core/crafting';
@@ -176,6 +179,7 @@ export function sceneModel(s: GameState): SceneModel {
       marks: marksOf(h),
       guard: !!h.guard && !h.post,
       vault: (h.guard && h.post === 'tesoro') || undefined,
+      sentry: h.guard ? { lvl: h.lvl, morale: h.morale } : undefined,
       dorm: plan.get(h.id),
       // Mientras lo visten, está en la sastrería.
       work: dressingOf(s, h.id)?.room ?? h.job,
@@ -238,6 +242,14 @@ export function sceneModel(s: GameState): SceneModel {
     garden: customOf(s).garden,
     visitors: { day: s.day, kinds: visitorOrder(s) },
     stranger: !!s.stranger,
+    messenger:
+      s.messenger && !s.messenger.gone
+        ? { day: s.messenger.day, sex: messengerSex(s.messenger.day) }
+        : null,
+    nightmare: nightmareNow(s)
+      ? { hero: s.nightmare!.hero, eased: !!s.nightmare!.eased }
+      : undefined,
+    nightCat: nightCatNow(s) ? { room: s.nightCat!.room, n: s.nightCat!.n } : undefined,
     gear: gearInStock(s).map((i) => ({
       icon: i.icon ?? 'espada',
       rarity: i.rarity ?? 0,
@@ -256,11 +268,12 @@ export function sceneModel(s: GameState): SceneModel {
     },
     heroes,
     away: awayOf(s),
-    incidents: (s.incidents ?? []).map(({ id, kind, room, taps, until, duel }) => ({
+    incidents: (s.incidents ?? []).map(({ id, kind, room, taps, from, until, duel }) => ({
       id,
       kind,
       room,
       taps,
+      from,
       until,
       duel,
     })),
