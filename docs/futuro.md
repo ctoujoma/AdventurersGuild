@@ -198,6 +198,8 @@ Notas del usuario al ver las vistas previas de la fase 7 (16 de noviembre):
   se arrastra a ×1. De momento se queda la forma «a» (tocar).
 - **El gato, más suelto:** que se mueva por más salas (hoy solo caza en despensa o bodega de la
   planta del salón), sin dejar obsoleto el incidente de las ratas.
+- Pesadilla: la jarra que aparece y baja flotando a su mano se ve poco (pequeña y sin efecto);
+  darle algo al aparecer (un brillo, unas chispitas) para que se note el trago.
 
 ## Revivir a un caído (idea del usuario, 12 de noviembre)
 

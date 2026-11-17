@@ -1028,22 +1028,23 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
   // Incorporado en la cama: lo mismo que acostado pero sentado (de cintura para arriba) con la
   // manta por las piernas. Todo va `UP_DROP` filas más abajo para que quepa la cabeza.
   // Bebiendo, igual pero con cada tiempo del trago (`spr.drink`, una fila más alto: el fondo de
-  // la figura, en el mismo sitio).
-  const sitUp = (i: number, sx: number, blanket: (x: number, y: number) => void, top: number) => {
+  // la figura, en el mismo sitio). Con la camisa de dormir (`upright`) y la cabeza en la misma
+  // columna que en la almohada (la figura empieza una más a la izquierda que la celda: se le
+  // quita esa columna, la del contorno).
+  const sitUp = (i: number, blanket: (x: number, y: number) => void, top: number) => {
     const slot = upSlot(i);
     for (const [img, f] of [
-      [spr.sit, i],
+      [spr.upright, i],
       ...spr.drink.map((d, k) => [d, F.sip + slot * 3 + k] as const),
     ] as const) {
       const x0 = f * CELL;
-      b.blit(img, x0 + sx, top + UP_DROP + 5 - img.h);
+      b.blit(img.crop(1, 0, img.w - 1, img.h), x0, top + UP_DROP + 5 - img.h);
       blanket(x0, UP_DROP);
     }
   };
   for (const { up, q } of quilts) {
     sitUp(
       up,
-      0,
       (x, d) => {
         b.rect(x + 2, 12 + d, 21, 6, q[2]!);
         b.hline(x + 2, 12 + d, 21, q[3]!);
@@ -1054,7 +1055,6 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
   }
   sitUp(
     F.up + 4,
-    2,
     (x, d) => {
       b.rect(x + 4, 14 + d, 20, 4, P.white);
       b.hline(x + 4, 17 + d, 20, P.mist);
@@ -1063,7 +1063,6 @@ export function atlas(spr: HeroSprites, h: SceneHero): PixelBuffer {
   );
   sitUp(
     F.up + 5,
-    2,
     (x, d) => {
       b.rect(x + 4, 14 + d, 20, 4, P.clay);
       b.hline(x + 4, 14 + d, 20, P.tan);
@@ -1491,9 +1490,9 @@ export class Crowd {
     const k = scaleAt(f.z);
     const up = state === 'start' || state === 'drink';
     const since = this.now - (d?.at ?? 0);
-    // La jarra del fotograma al pecho (ver `SIPS` en `hero.ts`): en la litera, la figura empieza
-    // en la columna 0 de su fotograma y en la fila 1; en el catre y el jergón, 2 más a la derecha
-    // y 2 más abajo.
+    // La jarra del fotograma al pecho (ver `SIPS` en `hero.ts`): la figura empieza una columna
+    // a la izquierda de su fotograma y, en la litera, en la fila 1; en el catre y el jergón, 2
+    // más abajo.
     const bunk = a.goal?.bed?.kind === 'litera' || a.edge?.bed.kind === 'litera';
     const nudge = bunk ? 0 : 2;
     return {
@@ -1503,7 +1502,7 @@ export class Crowd {
       state,
       since,
       sip: state === 'drink' ? sipAt(since) : -1,
-      mug: { x: f.left + (8.5 + nudge) / k, y: f.bottom - TALL / k + (16 + nudge) / k },
+      mug: { x: f.left + 7.5 / k, y: f.bottom - TALL / k + (16 + nudge) / k },
     };
   }
 

@@ -55,6 +55,8 @@ export interface HeroSprites {
   yawn: PixelBuffer;
   /** Sentado tras una mesa: de cintura para arriba. */
   sit: PixelBuffer;
+  /** Incorporado en la cama: como `sit`, pero con la camisa de dormir y sin sombrero. */
+  upright: PixelBuffer;
   /** Cabeza con venda para pintarla en la almohada. */
   bed: PixelBuffer;
   /** Cabeza dormida, sin venda, para la almohada del dormitorio. */
@@ -365,19 +367,48 @@ function headgearOf(look: HeroLook, marks: HeroMarks) {
 /** Gestos de frente: celebrar (brazos en alto y boca abierta), estirarse y bostezar. */
 type Gesture = 'cheer' | 'stretch' | 'yawn';
 
+/**
+ * La camisa de dormir (en la cama, en lugar del traje): lisa, de lino azulado, con el cuello
+ * abierto. Con sus propias tintas (no las del traje: la capucha, si la lleva, sigue con las suyas).
+ */
+const NIGHTSHIRT: Grid = [
+  ...Array.from({ length: 10 }, () => '................'),
+  '...cccxxccccc...',
+  '..cCccxxcccCcc..',
+  '..cCcccccccCcc..',
+  '..cCcccccccCcc..',
+  '..cCcccccccCcc..',
+  '....cccccccc....',
+  '....cccccccc....',
+  '....cCccccCc....',
+  '...cCccccccCc...',
+  '...cCccccccCc...',
+  '...cccccccccc...',
+];
+const NIGHT_INK: Slots = { c: P.mist, C: P.fog };
+
+/** En la cama: sin sombrero ni casco (la capucha y el velo, sí), como en la almohada. */
+const bedLook = (look: HeroLook): HeroLook => {
+  const hood = look.headgear === 'capucha' || look.headgear === 'velo';
+  return { ...look, headgear: hood ? look.headgear : null };
+};
+
 function composeFront(
   look: HeroLook,
   marks: HeroMarks,
   blink: boolean,
   noHat = false,
   gesture?: Gesture,
+  /** En la cama: con la camisa de dormir, sin armas, equipo ni prendas de la sastrería. */
+  night = false,
 ): PixelBuffer {
   const c = slots(look);
   const b = new PixelBuffer(BODY_W, BODY_H + HEADROOM);
   const body = (g: Grid, from = 0) => stamp(b, g.slice(from), c, 0, HEADROOM + from);
   const hg = noHat ? null : headgearOf(look, marks);
   body(blink ? withBlink(BASE, [5, 6]) : BASE);
-  body(OUTFITS[look.outfit]);
+  if (night) stamp(b, NIGHTSHIRT, { ...NIGHT_INK, x: c.x!, X: c.X! }, 0, HEADROOM);
+  else body(OUTFITS[look.outfit]);
   const up = gesture === 'cheer' || gesture === 'stretch';
   if (up)
     // Fuera los brazos caídos (mangas y manos): van en alto, encima de todo.
@@ -397,6 +428,7 @@ function composeFront(
   // La prenda de la sastrería: la capa, por detrás del equipo; lo demás (tabardo, faja,
   // bufanda), por encima de la armadura, para que se vea con ella puesta.
   const cape = look.garment === 'capa';
+  if (night) return b;
   if (cape) garmentFront(b, 'capa', look.dye);
   // Con los brazos en alto, el arma no está en la mano.
   if (!up) body(WEAPONS[look.outfit]);
@@ -549,7 +581,7 @@ const SIPS: Record<Sip, { mug: [number, number]; hand: number; arm: [number, num
       [3, 10],
       [2, 11],
       [1, 11],
-      [0, 12],
+      [1, 12],
     ],
   },
   2: {
@@ -559,9 +591,9 @@ const SIPS: Record<Sip, { mug: [number, number]; hand: number; arm: [number, num
       [3, 8],
       [2, 9],
       [1, 9],
-      [0, 10],
-      [0, 11],
-      [1, 12],
+      [1, 10],
+      [1, 11],
+      [2, 12],
     ],
   },
 };
@@ -574,7 +606,7 @@ const SIPS: Record<Sip, { mug: [number, number]; hand: number; arm: [number, num
  */
 function composeDrink(look: HeroLook, marks: HeroMarks, sip: Sip): PixelBuffer {
   const c = slots(look);
-  const src = composeFront(look, marks, sip > 0);
+  const src = composeFront(bedLook(look), marks, sip > 0, false, undefined, true);
   const b = new PixelBuffer(BODY_W, SIT_ROWS + 1);
   // La cabeza (hasta la barbilla) sube un píxel al echarla atrás; el cuello se alarga.
   const neck = HEADROOM + 9;
@@ -803,10 +835,12 @@ export function heroSprites(look: HeroLook, marks: HeroMarks = {}): HeroSprites 
   const hit = cache.get(key);
   if (hit) return hit;
   const front = composeFront(look, marks, false);
-  const hood = look.headgear === 'capucha' || look.headgear === 'velo';
-  const bare = { ...look, headgear: hood ? look.headgear : null };
-  const bedRaw = composeFront(bare, { ...marks, injured: true }, true, false);
-  const sleepRaw = composeFront(bare, marks, true, false);
+  // En la cama, la misma cabeza acostado que incorporado: sin sombrero y con la camisa de dormir
+  // (sin armas ni equipo, que asomaban junto a la almohada).
+  const bare = bedLook(look);
+  const bedRaw = composeFront(bare, { ...marks, injured: true }, true, false, undefined, true);
+  const sleepRaw = composeFront(bare, marks, true, false, undefined, true);
+  const nightRaw = composeFront(bare, marks, false, false, undefined, true);
   const backRaw = composeBack(look, marks);
   const skin = (SKIN[look.skin] ?? SKIN[0]!)[3]!;
   const back3 = threeQuarter(backRaw, skin);
@@ -821,6 +855,7 @@ export function heroSprites(look: HeroLook, marks: HeroMarks = {}): HeroSprites 
     stretch: selOut(composeFront(look, marks, true, false, 'stretch')),
     yawn: selOut(composeFront(look, marks, true, false, 'yawn')),
     sit: selOut(front.crop(0, 0, BODY_W, SIT_ROWS)),
+    upright: selOut(nightRaw.crop(0, 0, BODY_W, SIT_ROWS)),
     bed: selOut(bedRaw.crop(1, 2, BODY_W - 2, HEADROOM + 10)),
     sleep: selOut(sleepRaw.crop(1, 2, BODY_W - 2, HEADROOM + 10)),
     back: [selOut(backRaw), selOut(stepUp(backRaw, true)), selOut(stepUp(backRaw, false))],
