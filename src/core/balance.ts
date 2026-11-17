@@ -681,11 +681,13 @@ export const PRICE_KIND: Partial<Record<string, number>> = { arma: 1.1, compleme
 export const NIGHT_ROLL = 0.74;
 /**
  * Cuántas noches pasa algo (N2): aparte del forastero, que se tira solo, se tira «¿pasa algo esta
- * noche?» y, si sale, se elige uno de los posibles por su peso. Uno de cada dos de media; algo más
- * con niebla o tormenta.
+ * noche?» y, si sale, se elige uno de los posibles por su peso. La tirada va algo por encima de
+ * una de cada dos porque a veces no queda ninguno posible (todos en su «cada cuánto»): contadas
+ * todas las noches, pasa algo en una de cada dos, y en unas dos de cada tres con niebla o tormenta
+ * (`npm run sim`).
  */
-export const NIGHT_ODDS = 0.5;
-export const NIGHT_ODDS_ROUGH = 0.65;
+export const NIGHT_ODDS = 0.55;
+export const NIGHT_ODDS_ROUGH = 0.72;
 /**
  * Mini-cabezadas de los de guardia de noche: cada `NIGHT_NAP_CYCLE` segundos de reloj, cada uno
  * cabecea una parte (`napShare`); el segundo, desfasado `NIGHT_NAP_TURN` del primero (se turnan,

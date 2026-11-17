@@ -194,15 +194,31 @@ La lista completa de pendientes e ideas (bucle, monetización, amigos, torneos, 
   solo hay uno), a una cama del dormitorio (`homes` en `people.ts`). Estén donde estén, se les
   pinta acostados con la venda (los sanos, sin ella) y de vez en cuando sube una cruz roja sobre
   su cabeza (`injured` en `crowd.ts`, partícula `cross`).
-- **Sucesos de la noche, parte B** (fase 7; `core/night.ts`, que ahora tiene `dawn` para lo que
-  se resuelve al amanecer): la **pesadilla** (`core/nightmare.ts`): un herido o desanimado da
-  vueltas en la cama (se agita, se incorpora de golpe y le sube una nubecilla con un rayito:
-  `dreamOf` en `crowd.ts`, `dreamFx` en `RoomScene.ts`, partícula `gloom`); tocándole, aparece la
-  jarra (`mug`), bebe y duerme con «zzz» (acción `nightmare`, gasta jarras). Si no se toca, amanece
-  con menos moral; la guardia no se mete. El **gato cazador** (`core/nightCat.ts`): con despensa o
-  bodega en la planta del salón, persigue una rata, salta y la caza (`setNightHunt` en `pets.ts`);
-  al amanecer, una línea menuda, raciones salvadas y ese día sin ratas. De día, el gato ayuda con
-  las ratas pero no remata (`CAT_MAX`). Trucos: «Pesadilla» y «Gato cazador».
+- **Sucesos de la noche** (fase 7; `core/night.ts`): aparte del forastero (que se tira solo, con
+  `chance`), una tirada común cada noche (`NIGHT_ODDS`, más con niebla o tormenta, semilla propia
+  `nightRng`) y, si sale, uno de los posibles por su `weight`; la noche del asalto, nada. Lo que
+  pasa en vivo va a la carta del amanecer por `tellDawn`; lo que se resuelve al amanecer, por el
+  `dawn` de cada suceso (`dawnNight`). Están:
+  - el **ladrón nocturno** (`core/thief.ts`, incidente `nocturno`): entra por el patio con un farol
+    tapado y va a la cámara (o a la caja); se le puede arrastrar a alguien; si no, le sale al paso
+    el de guardia si no cabecea. En la pelea se le cae el farol y alumbra el duelo;
+  - el **mensajero tardío** (`core/messenger.ts`, `ui/MessengerCard.tsx`): espera pegado a la
+    puerta, de cara a ella; tocarle abre su encargo urgente; si no, lo recoge el de guardia
+    despierto;
+  - la **pesadilla** (`core/nightmare.ts`): un herido o desanimado da vueltas en la cama (se agita,
+    se incorpora de golpe y le sube una nubecilla con un rayito: `dreamOf` en `crowd.ts`, `dreamFx`
+    en `RoomScene.ts`, partícula `gloom`); tocándole, aparece la jarra (`mug`), bebe y duerme con
+    «zzz» (acción `nightmare`, una jarra, herido o no). Si no se toca, amanece con menos moral; la
+    guardia no se mete;
+  - el **gato cazador** (`core/nightCat.ts`): con despensa o bodega en la planta del salón,
+    persigue una rata, salta y la caza (`setNightHunt` en `pets.ts`); al amanecer, una línea
+    menuda y 2 raciones salvadas (las ratas de día siguen viniendo). De día, el gato ayuda con las
+    ratas pero no remata (`CAT_MAX`).
+
+  Los de guardia cabecean de noche en ciclo (`nappers`), cada uno su parte (`napShare`): más con la
+  moral baja (de guardia se pierde `GUARD_DROP` cada noche) y menos con más nivel. Al agotarse,
+  «X lleva muchas noches de guardia y se duerme: relévala» (carta y campanita). Trucos: «Ladrón
+  nocturno», «Mensajero tardío», «Pesadilla» y «Gato cazador».
 - **Animales del salón** (`world/rooms/pets.ts`, dibujos en `art/pets.ts`): el gato Bigotes
   (el de la taberna de antes del PR 12) duerme a la derecha de la chimenea; a ratos se sienta,
   se lava y da una vuelta por delante de las mesas. Tizón, el perro (si se ha comprado),

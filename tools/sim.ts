@@ -18,6 +18,7 @@ import type { GameState, Hero, Outcome } from '../src/core/model';
 import { questEstimate } from '../src/core/resolve';
 import { vaultFull, vaultOf } from '../src/core/vault';
 import { settleWalks } from '../src/core/workers';
+import { roughNight } from '../src/core/sky';
 import { slotOf } from '../src/core/gear';
 
 declare const process: { argv: string[] };
@@ -168,6 +169,11 @@ interface Rooms {
    */
   nights: number;
   eventful: number;
+  /** Las de niebla o tormenta (más sucesos), aparte. */
+  rough: number;
+  roughEventful: number;
+  /** Cuántas veces sale cada suceso. */
+  byEvent: Record<string, number>;
   thieves: number;
   caught: number;
   thiefGold: number;
@@ -196,6 +202,9 @@ const newRooms = (): Rooms => ({
   danger: new Map(),
   nights: 0,
   eventful: 0,
+  rough: 0,
+  roughEventful: 0,
+  byEvent: {},
   thieves: 0,
   caught: 0,
   thiefGold: 0,
@@ -216,7 +225,14 @@ function tracked(s: GameState, st: Strategy, acc: Rooms): GameState {
   for (const q of s.quests) acc.danger.set(q.title, q.danger);
   const next = playDay(s, st);
   acc.nights++;
-  if (Object.values(next.nights?.last ?? {}).includes(next.day - 1)) acc.eventful++;
+  const fired = Object.entries(next.nights?.last ?? {}).filter(([, d]) => d === next.day - 1);
+  const rough = roughNight(s.seed, s.day);
+  if (rough) acc.rough++;
+  if (fired.length) {
+    acc.eventful++;
+    if (rough) acc.roughEventful++;
+  }
+  for (const [id] of fired) acc.byEvent[id] = (acc.byEvent[id] ?? 0) + 1;
   for (const e of next.dawn) {
     if (e.t.startsWith('Anoche entró un ladrón')) {
       acc.thieves++;
@@ -346,7 +362,13 @@ for (const st of STRATEGIES) {
     `  oro perdido por la cámara llena, por partida (igual): ${rooms.spilt.map((x) => (x / N).toFixed(0)).join(' / ')}`,
   );
   console.log(
-    `  noches con suceso ${pct(rooms.eventful, rooms.nights)} · ladrones ${(rooms.thieves / N).toFixed(1)} por partida (pillados ${pct(rooms.caught, rooms.thieves)}, se llevan ${(rooms.thiefGold / N).toFixed(0)} monedas) · mensajeros ${(rooms.messengers / N).toFixed(1)} (recado recogido ${pct(rooms.taken, rooms.messengers)})`,
+    `  noches con suceso ${pct(rooms.eventful, rooms.nights)} (con niebla o tormenta ${pct(rooms.roughEventful, rooms.rough)}; por partida: ${Object.entries(
+      rooms.byEvent,
+    )
+      .map(([id, n]) => `${id} ${(n / N).toFixed(1)}`)
+      .join(
+        ', ',
+      )}) · ladrones ${(rooms.thieves / N).toFixed(1)} por partida (pillados ${pct(rooms.caught, rooms.thieves)}, se llevan ${(rooms.thiefGold / N).toFixed(0)} monedas) · mensajeros ${(rooms.messengers / N).toFixed(1)} (recado recogido ${pct(rooms.taken, rooms.messengers)})`,
   );
   if (lossDays.length) {
     const at = (d: number) => lossDays.filter((x) => x === d).length;
