@@ -1492,12 +1492,12 @@ export function App() {
               audio.play('select', 0.5);
               setNightRush(!nightRush);
             }}
-            onPace={() =>
-              setSettings({
-                ...settings,
-                pace: nextPace(settings.pace),
-              })
-            }
+            onPace={() => {
+              // Con «Pasar la noche» puesto el reloj va a su ritmo: tocar el reloj lo quita, para
+              // que la velocidad elegida se note.
+              if (nightRush && isNight) setNightRush(false);
+              setSettings({ ...settings, pace: nextPace(settings.pace) });
+            }}
             onDusk={() =>
               moveClock(Math.max(clockRef.current, DUSK * DAY_SECONDS), clockRef.current)
             }

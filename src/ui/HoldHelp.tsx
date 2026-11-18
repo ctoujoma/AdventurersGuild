@@ -20,6 +20,8 @@ export function HoldHelp() {
     let swallow = false;
     const down = (e: PointerEvent) => {
       setTip(null);
+      // Si la pulsación larga no acabó en click (el móvil la cancela), no se come el siguiente.
+      swallow = false;
       const el = (e.target as Element | null)?.closest?.('[data-help]');
       if (!el) return;
       start = { x: e.clientX, y: e.clientY };

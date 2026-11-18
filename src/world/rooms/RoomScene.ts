@@ -6686,7 +6686,9 @@ export class RoomScene {
  */
 function swallowGhostClick(canvas: HTMLCanvasElement): void {
   const stop = (e: MouseEvent) => {
-    if (e.target === canvas) return;
+    // El click fantasma ha caído en el lienzo (no se abrió nada encima): ya pasó, se deja de
+    // vigilar. Si no, el siguiente toque en un botón (el reloj) en esos 400 ms se perdía.
+    if (e.target === canvas) return done();
     e.preventDefault();
     e.stopPropagation();
     done();

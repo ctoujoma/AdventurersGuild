@@ -5044,6 +5044,8 @@ textarea:focus-visible,
   color: var(--white);
   font: inherit;
   cursor: pointer;
+  /* Sin el zoom de doble toque: tocar dos veces seguidas cambia dos veces la velocidad. */
+  touch-action: manipulation;
 }
 
 .clock-pace {
