@@ -156,6 +156,9 @@ function SpeechBubble({ bubble, scene }: { bubble: Bubble; scene: { current: Gam
   );
 }
 
+/** Segundos de respiro antes del tutorial de obras tras poner nombre a la taberna. */
+const NAME_BREATH = 18;
+
 export function App() {
   const [saved] = useState(loadGame);
   const [game, setGame] = useState<GameState>(() => saved ?? freshGame());
@@ -998,14 +1001,28 @@ export function App() {
   // El tutorial guiado va antes que las notas sueltas del tío (y las sustituye mientras dura).
   // La lección sigue a la vista con paneles abiertos: señala lo que hay que tocar dentro.
   // En el respiro de antes de un paso no hay nota ni foco: se mira y se trastea a gusto.
-  const wait = calm && !pendingEvent && !introHold ? tutorialWait(game) : 0;
+  // Poner nombre a la taberna (al pagar la deuda) va antes que el tutorial de obras: mientras
+  // está a la vista no hay nota ni cuenta atrás, y tras ponerlo hay un respiro más largo.
+  const naming =
+    calm && !game.over && !!game.askName && customOf(game).name === DEFAULT_NAME && !eventHeld;
+  const askedName = useRef(false);
+  if (naming) askedName.current = true;
+  const breath = tutorialWait(game);
+  const wait =
+    calm && !pendingEvent && !introHold && !naming
+      ? breath && askedName.current && obrasOn(game)
+        ? Math.max(breath, NAME_BREATH)
+        : breath
+      : 0;
   useEffect(() => {
     if (!wait) return;
     const t = setTimeout(() => dispatch({ type: 'tutorial', op: 'listo' }), wait * 1000);
     return () => clearTimeout(t);
   }, [wait, game.tutorial?.step]);
   const lesson =
-    calm && !pendingEvent && !introHold && !game.tutorial?.wait ? tutorialStep(game) : null;
+    calm && !pendingEvent && !introHold && !naming && !game.tutorial?.wait
+      ? tutorialStep(game)
+      : null;
   const lessonFocus = lesson
     ? tutorialFocus(game, panel, {
         planning: works.planning,
@@ -1856,21 +1873,16 @@ export function App() {
               onRetry={restart}
             />
           )}
-        {pendingEvent === null &&
-          !eventHeld &&
-          calm &&
-          !game.over &&
-          game.askName &&
-          customOf(game).name === DEFAULT_NAME && (
-            <NameTavern
-              onName={(name) => {
-                dispatch({ type: 'custom', patch: { name } });
-                audio.play('coin');
-                toast('Letrero nuevo en la puerta.');
-              }}
-              onLater={() => dispatch({ type: 'nameAsked' })}
-            />
-          )}
+        {pendingEvent === null && naming && (
+          <NameTavern
+            onName={(name) => {
+              dispatch({ type: 'custom', patch: { name } });
+              audio.play('coin');
+              toast('Letrero nuevo en la puerta.');
+            }}
+            onLater={() => dispatch({ type: 'nameAsked' })}
+          />
+        )}
         {game.over && !dawnOpen && screen === 'game' && <GameOver game={game} onNew={restart} />}
       </div>
       {/* En el modo obras, la cinta manda: sin pestañas, más escena. */}
