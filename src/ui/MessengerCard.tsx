@@ -7,7 +7,7 @@ import { dangerClass, dangerLabel } from '../data/labels';
 import { Icon } from './icons';
 import { Portrait } from './Portrait';
 import type { GameScene } from './SceneView';
-import { plural } from './text';
+import { plural, shortGold } from './text';
 import { span } from './when';
 
 interface MarkProps {
@@ -122,7 +122,7 @@ export function MessengerCard({ game, onAnswer, onClose }: CardProps) {
               </span>
               <b class="reward">
                 <Icon name="coin" size={12} />
-                {q.reward}
+                {shortGold(q.reward)}
                 {q.item ? '+' : ''}
               </b>
             </span>

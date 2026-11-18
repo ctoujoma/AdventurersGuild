@@ -994,8 +994,9 @@ button:focus-visible {
 
 .note-foot {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
+  gap: 2px 4px;
   border-top: 2px dashed var(--tan);
   padding-top: 3px;
   font-family: var(--pixel);
@@ -1021,6 +1022,8 @@ button:focus-visible {
 
 .note-foot .reward {
   margin-left: auto;
+  /* El oro no se parte ni se sale: si no cabe en la fila, baja entero a la derecha. */
+  white-space: nowrap;
 }
 
 .pin {

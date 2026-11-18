@@ -8,7 +8,7 @@ import { MATERIALS, QUEST_MATERIAL } from '../../core/materials';
 import { help } from '../HoldHelp';
 import { MatIcon } from '../mats';
 import { Icon, SKILL_ICON } from '../icons';
-import { listNames, plural } from '../text';
+import { listNames, plural, shortGold } from '../text';
 import { span } from '../when';
 
 interface Props {
@@ -184,7 +184,7 @@ export function TablonPanel({ game, quests, seeAll, onOpen }: Props) {
               </span>
               <b class="reward">
                 <Icon name="coin" size={12} />
-                {q.reward}
+                {shortGold(q.reward)}
                 {q.item ? '+' : ''}
               </b>
             </span>
