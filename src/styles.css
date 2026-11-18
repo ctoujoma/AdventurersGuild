@@ -910,8 +910,9 @@ button:focus-visible {
 
 .note-top {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
+  gap: 2px 4px;
   min-width: 0;
   font-size: var(--t-s);
 }
