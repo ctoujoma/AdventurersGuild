@@ -640,7 +640,8 @@ button:focus-visible {
   bottom: 0;
   transform: translateX(-50%);
   width: min(100%, 580px);
-  max-height: 86%;
+  /* Siempre queda una franja de escena encima: ahí se encuadra la sala de la ficha. */
+  max-height: min(86%, calc(100% - 120px));
   display: flex;
   flex-direction: column;
   z-index: 5;

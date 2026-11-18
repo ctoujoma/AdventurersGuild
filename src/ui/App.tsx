@@ -1,6 +1,7 @@
 import { easeIssue, nightmareNow } from '../core/nightmare';
 import { CraftMark } from './CraftMark';
 import { flyCoins } from './coinFlight';
+import { SHEETS, coverOf } from './cover';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useBackButton } from '../platform/back';
 import { HoldHelp } from './HoldHelp';
@@ -329,28 +330,39 @@ export function App() {
 
   const toast = (text: string) => setNotice({ text, key: Date.now() });
 
-  /** El panel abierto va a un lado y no ocupa todo el ancho de la escena. */
-  const sidePanel = () => {
-    const stage = document.querySelector('.stage')?.getBoundingClientRect();
-    const panel = document.querySelector('.panel')?.getBoundingClientRect();
-    return !!stage && !!panel && panel.width < stage.width * 0.7;
-  };
-
-  /** La parte de la escena (de 0 a 1, desde arriba) que no tapa el panel abierto. */
-  const uncovered = () => {
-    const stage = document.querySelector('.stage')?.getBoundingClientRect();
-    const top = document.querySelector('.panel')?.getBoundingClientRect().top;
-    if (!stage || top === undefined || !stage.height) return 0.5;
-    return Math.min(1, Math.max(0, (top - stage.top) / stage.height));
-  };
-
-  // Fuera de Adornos, la cámara vuelve a sus límites (la vista previa del jardín la baja).
+  // Fuera de Adornos se acaba la vista previa del jardín.
   useEffect(() => {
-    if (panel !== 'casa') {
-      scene.current?.releaseTop();
-      setGardenView(false);
-    }
+    if (panel !== 'casa') setGardenView(false);
   }, [panel]);
+
+  // Lo que tapan los paneles y las fichas, para que la cámara encuadre lo que enfoca en lo que
+  // queda libre (por encima de la hoja en vertical; a su lado en horizontal). Se mide al abrir,
+  // cerrar o cambiar de alto cualquiera de ellos.
+  const stageRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage || typeof ResizeObserver === 'undefined') return;
+    let raf = 0;
+    const measure = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => scene.current?.setCover(coverOf(stage)));
+    };
+    const ro = new ResizeObserver(measure);
+    const watch = () => {
+      ro.disconnect();
+      ro.observe(stage);
+      for (const el of stage.querySelectorAll<HTMLElement>(SHEETS)) ro.observe(el);
+      measure();
+    };
+    const mo = new MutationObserver(watch);
+    mo.observe(stage, { childList: true });
+    watch();
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+      mo.disconnect();
+    };
+  }, [screen]);
 
   /**
    * Ante el jefe: «Ver la pelea» la juega (el resultado sale de la pelea, con las órdenes del
@@ -1130,7 +1142,7 @@ export function App() {
         onUnhush={() => setHushed({})}
         quiet={passing || paying || dawnOpen || !!bossCall || !!watching || screen !== 'game'}
       />
-      <div class="stage">
+      <div class="stage" ref={stageRef}>
         <SceneView
           model={model}
           onReady={(s) => {
@@ -1577,14 +1589,8 @@ export function App() {
               }}
               onGardenView={(on) => {
                 setGardenView(on);
-                return on
-                  ? // Tras la entrada del panel, que se mide ya en su sitio.
-                    setTimeout(() => {
-                      // Con el panel a un lado (pantalla horizontal) no tapa nada: se enfoca sin más.
-                      if (sidePanel()) scene.current?.focus('jardin');
-                      else scene.current?.focusTop('jardin', uncovered());
-                    }, 350)
-                  : scene.current?.releaseTop();
+                // El panel baja: el jardín, en lo que queda libre por encima (ver `setCover`).
+                if (on) scene.current?.focus('jardin');
               }}
               onFacade={(id) => {
                 dispatch({ type: 'facade', id });

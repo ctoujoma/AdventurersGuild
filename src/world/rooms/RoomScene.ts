@@ -155,7 +155,6 @@ import {
   PARTITION,
   PITCH,
   ROOF_H,
-  ROOM_H,
   SLAB,
   WALL,
   YARD_D,
@@ -335,6 +334,12 @@ interface Pin {
   axis?: { x: number; y: number; kp: number };
 }
 
+/** Lo que tapan los paneles y fichas abiertos, en píxeles CSS desde cada borde de la escena. */
+export interface Cover {
+  right: number;
+  bottom: number;
+}
+
 export interface Spot {
   id: string;
   label: string;
@@ -383,6 +388,11 @@ interface Lamp {
   night?: boolean;
   /** Un farol de fuera: su halo, con luz con ambiente, flota delante de él (`haloSprites`). */
   outdoor?: boolean;
+  /**
+   * Su zona acaba justo en el muro del edificio (lo de fuera junto a la puerta): no se ensancha
+   * al grueso del muro como las de las salas, que su luz entraba en la sala con un corte.
+   */
+  walled?: boolean;
 }
 
 /**
@@ -559,6 +569,15 @@ export class RoomScene {
   private marker: { id: string; until: number } | null = null;
   /** A quién sigue la cámara (la ficha del héroe con «Ropa y colores» abierto). */
   private following: string | null = null;
+  /** Lo que tapan los paneles abiertos (ver `setCover`). */
+  private covered: Cover = { right: 0, bottom: 0 };
+  /**
+   * Lo último que se ha enfocado (una sala o alguien), hasta que se toque la escena: si cambia
+   * lo que tapan los paneles, se vuelve a encuadrar en lo que queda libre.
+   */
+  private aim: { room: string } | { hero: string } | null = null;
+  /** Al alejar para que una sala quepa sobre un panel: el zoom de antes y el puesto. */
+  private zoomBack: { from: number; to: number } | null = null;
   private world = new Group();
   private lamps: Lamp[] = [];
   /** Bocas de las chimeneas del tejado (en el mundo 2D), por donde sale el humo. */
@@ -1168,6 +1187,7 @@ export class RoomScene {
       fire: true,
       deep: true,
       halo: k.halo,
+      walled: !room,
     };
   }
 
@@ -1530,8 +1550,72 @@ export class RoomScene {
     const list = typeof room === 'string' ? [room] : room;
     if (!list.length) return;
     if (soft && list.some((id) => this.inView(id))) return;
-    const p = this.layout ? focusPoint(this.layout, list[0]!) : null;
-    if (p) this.camera.centerOn(p.x, p.y);
+    const L = this.layout;
+    const id = list[0]!;
+    const p = L ? focusPoint(L, id) : null;
+    if (!L || !p) return;
+    this.aim = { room: id };
+    const hit = L.rooms.find((x) => x.room.id === id) ?? L.rooms.find((x) => x.room.type === id);
+    this.aimAt(p, hit?.rect ?? null);
+  }
+
+  /**
+   * Lo que tapan los paneles y fichas abiertos (lo mide la interfaz al abrirlos, cerrarlos o
+   * cambiar de alto). Lo que se acaba de enfocar se vuelve a encuadrar en lo que queda libre.
+   */
+  setCover(c: Cover): void {
+    const was = this.covered;
+    if (c.right === was.right && c.bottom === was.bottom) return;
+    this.covered = c;
+    const open = c.right > 0 || c.bottom > 0;
+    if (!open) {
+      // Si se alejó para que la sala cupiera y nadie ha tocado el zoom, vuelve al de antes.
+      const back = this.zoomBack;
+      this.zoomBack = null;
+      if (back && Math.abs((this.zoomAnim?.to ?? this.camera.zoom) - back.to) < 0.01)
+        this.zoomTo(back.from);
+    }
+    const aim = this.aim;
+    if (aim && 'room' in aim) this.focus(aim.room);
+    else if (aim) this.focusHero(aim.hero, false);
+    else if (!open) this.camera.unlift();
+    if (!open) this.aim = null;
+  }
+
+  /**
+   * La cámara a un punto, puesto en el centro de lo que no tapan los paneles; con `fit` (la
+   * sala), si no cabe ahí, se aleja lo justo (con el píxel nítido).
+   */
+  private aimAt(p: Point, fit: Rect | null): void {
+    const { right, bottom } = this.covered;
+    const cam = this.camera;
+    let z = this.zoomAnim?.to ?? cam.zoom;
+    // El zoom que se tenía antes de alejar para encuadrar (si nadie lo ha cambiado desde
+    // entonces): con otro panel más bajo se puede volver a acercar hasta él, no más.
+    if (this.zoomBack && Math.abs(this.zoomBack.to - z) > 0.01) this.zoomBack = null;
+    const base = this.zoomBack?.from ?? z;
+    let want = base;
+    const fw = this.cssW - right;
+    const fh = this.cssH - bottom;
+    if ((right || bottom) && fit && fw > 0 && fh > 0) {
+      const k = Math.min((fw - 16) / fit.w, (fh - 16) / fit.h);
+      // Sin bajar de un píxel CSS por píxel del juego (más lejos no se distingue nada): en una
+      // franja muy baja se ve el centro de la sala.
+      const least = Math.max(this.minZoom(this.cssW, this.cssH), Math.min(base, 1));
+      want = Math.min(base, Math.max(least, crispBelow(k)));
+    }
+    if (Math.abs(want - z) > 0.001) {
+      this.zoomTo(want);
+      z = want;
+    }
+    this.zoomBack = want < base - 0.001 ? { from: base, to: want } : null;
+    // El centro de lo libre queda a la izquierda y por encima del de la vista: la cámara, al
+    // revés. Los límites se estiran lo mismo, para poder encuadrar también lo de los bordes.
+    const dx = right / 2 / z;
+    const dy = bottom / 2 / z;
+    cam.liftX = dx;
+    cam.lift = dy;
+    cam.centerOn(p.x + dx, p.y + dy);
   }
 
   /** La sala que hay en el centro de la vista (o la más cercana a él), con su sitio. */
@@ -1562,7 +1646,13 @@ export class RoomScene {
     const cx = r.x + r.w / 2;
     const cy = r.y + r.h / 2;
     const m = Math.min(vw, vh) * 0.1;
-    return cx > px + m && cx < px + vw - m && cy > py + m && cy < py + vh - m - BOTTOM_UI / zoom;
+    const { right, bottom } = this.covered;
+    return (
+      cx > px + m &&
+      cx < px + vw - m - right / zoom &&
+      cy > py + m &&
+      cy < py + vh - m - Math.max(BOTTOM_UI, bottom) / zoom
+    );
   }
 
   /**
@@ -1577,25 +1667,8 @@ export class RoomScene {
     const cx = this.camera.x + this.camera.vw / 2;
     const near = Math.abs(cx - sala.x) < this.camera.vw / 4;
     const p = anexo && near ? anexo : sala;
+    this.aim = null;
     this.camera.centerOn(p.x, p.y);
-  }
-
-  /**
-   * Como `focus`, pero con el sitio en la franja de arriba que deja un panel abierto (`seen`:
-   * la parte de la vista, de 0 a 1, que queda sin tapar).
-   */
-  focusTop(name: string, seen: number): void {
-    const p = this.layout ? focusPoint(this.layout, name) : null;
-    if (!p) return;
-    // El suelo del sitio, un poco por encima del borde del panel.
-    const dy = this.camera.vh * (0.5 - Math.max(0.1, seen)) + ROOM_H / 2 + 6;
-    this.camera.lift = dy;
-    this.camera.centerOn(p.x, p.y + dy);
-  }
-
-  /** Al cerrar el panel, la cámara vuelve a sus límites. */
-  releaseTop(): void {
-    this.camera.unlift();
   }
 
   /** La entrada de la partida: la cámara empieza fuera, a la izquierda, y entra despacio hasta la sala. */
@@ -1646,18 +1719,19 @@ export class RoomScene {
     return r ? { x: r.x + r.w / 2, y: r.y } : null;
   }
 
-  /** Centra la cámara en alguien y lo marca un rato. */
-  focusHero(id: string): boolean {
+  /** Centra la cámara en alguien (en lo que no tapan los paneles) y lo marca un rato. */
+  focusHero(id: string, mark = true): boolean {
     const p = this.heroPosition(id);
     if (!p) return false;
-    this.camera.centerOn(p.x, p.y + 14);
-    this.marker = { id, until: this.t + 4 };
+    this.aim = { hero: id };
+    this.aimAt({ x: p.x, y: p.y + 14 }, null);
+    if (mark) this.marker = { id, until: this.t + 4 };
     return true;
   }
 
   /**
-   * La cámara sigue a alguien hasta que se pase `null` (o deje de verse). Va un poco por
-   * debajo de él, para que quede en la parte de arriba, a la vista sobre la ficha.
+   * La cámara sigue a alguien hasta que se pase `null` (o deje de verse), en lo que no tapa su
+   * ficha.
    */
   follow(id: string | null): void {
     this.following = id;
@@ -1668,7 +1742,7 @@ export class RoomScene {
     if (!this.following) return;
     const p = this.heroPosition(this.following);
     if (!p) return;
-    this.camera.centerOn(p.x, p.y + this.camera.vh * 0.22);
+    this.aimAt({ x: p.x, y: p.y + 14 }, null);
   }
 
   /** Recuadro de alguien en coordenadas del plano de corte (lo que tapa en pantalla). */
@@ -3537,6 +3611,7 @@ export class RoomScene {
         power: 1,
         flicker: 0.1,
         zone: [px - 40, -SLAB, dx + PARTITION / 2, 140],
+        walled: true,
         seed: 3,
         fire: false,
         halo: haloOf(60, 1, false),
@@ -3552,6 +3627,7 @@ export class RoomScene {
         power: 3,
         flicker: 0.05,
         zone: [dx - 140, -SLAB, dx + PARTITION / 2, 140],
+        walled: true,
         seed: 5,
         fire: false,
         halo: 0,
@@ -5240,7 +5316,7 @@ export class RoomScene {
         row + i * 4,
       );
       data.set(l.zone, 2 * row + i * 4);
-      data.set([l.glow.x, l.glow.y, l.glow.z, 0], 3 * row + i * 4);
+      data.set([l.glow.x, l.glow.y, l.glow.z, l.walled ? 0 : 1], 3 * row + i * 4);
     }
     s.uLightCount.value = n;
     // Los halos de los faroles de fuera (con luz con ambiente): flotan delante y se suman a lo
@@ -6386,6 +6462,8 @@ export class RoomScene {
       return { x: e.clientX - r.left, y: e.clientY - r.top };
     };
     c.addEventListener('pointerdown', (e) => {
+      // Quien toca la escena manda: ya no se reencuadra lo último enfocado.
+      this.aim = null;
       c.setPointerCapture(e.pointerId);
       const p = local(e);
       this.pointers.set(e.pointerId, p);
@@ -6573,6 +6651,7 @@ export class RoomScene {
       'wheel',
       (e) => {
         e.preventDefault();
+        this.aim = null;
         // La rueda acerca y aleja (hacia donde apunta el ratón); de lado o con mayúsculas, mueve.
         const side = e.shiftKey ? e.deltaY || e.deltaX : e.deltaX;
         if (!e.ctrlKey && Math.abs(side) > Math.abs(e.deltaY) * (e.shiftKey ? 0 : 1)) {

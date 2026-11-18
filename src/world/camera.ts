@@ -25,6 +25,8 @@ export class Camera {
   reach: CameraWorld | null = null;
   /** Bajada de más (en mundo) para dejar algo a la vista sobre un panel; 0 normalmente. */
   lift = 0;
+  /** Lo mismo hacia la derecha, para dejar algo a la vista junto a un panel de lado. */
+  liftX = 0;
   x = 0;
   y = 0;
   zoom = 2;
@@ -91,10 +93,10 @@ export class Camera {
     const minY = this.vh >= h ? y0 + (h - this.vh) / 2 : y0;
     const maxY = this.vh >= h ? minY : y1 - this.vh;
     const r = this.reach;
-    if (!r) return { minX, maxX, minY, maxY: maxY + this.lift };
+    if (!r) return { minX, maxX: maxX + this.liftX, minY, maxY: maxY + this.lift };
     return {
       minX: Math.min(minX, r.x0 - this.vw / 2),
-      maxX: Math.max(maxX, r.x1 - this.vw / 2),
+      maxX: Math.max(maxX, r.x1 - this.vw / 2) + this.liftX,
       minY: Math.min(minY, r.y0 - this.vh / 2),
       maxY: Math.max(maxY, r.y1 - this.vh / 2) + this.lift,
     };
@@ -141,10 +143,15 @@ export class Camera {
     this.stopInertia();
   }
 
-  /** Quita la bajada de más y vuelve, suave, a los límites de siempre. */
+  /**
+   * Quita la bajada de más y vuelve, suave, a los límites de siempre (si iba hacia algún sitio,
+   * sigue yendo: el destino se ajusta a los límites al andar).
+   */
   unlift(): void {
-    if (!this.lift) return;
+    if (!this.lift && !this.liftX) return;
     this.lift = 0;
+    this.liftX = 0;
+    if (this.target) return;
     this.target = { cx: this.x + this.vw / 2, cy: this.y + this.vh / 2 };
     this.ease = 0.002;
   }
