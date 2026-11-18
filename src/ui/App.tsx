@@ -4,6 +4,7 @@ import { flyCoins } from './coinFlight';
 import { SHEETS, coverOf } from './cover';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
 import { useBackButton } from '../platform/back';
+import { Held } from './held';
 import { HoldHelp } from './HoldHelp';
 import { haptic, setHaptics } from '../platform/haptics';
 import { loadHushed, saveHushed } from '../platform/hushed';
@@ -200,6 +201,10 @@ export function App() {
     play?: string;
   } | null>(null);
   const [card, setCard] = useState<string | null>(null);
+  /** La oferta del forastero de la tormenta, abierta (ver `strangerKey`). */
+  const [strangerOpen, setStrangerOpen] = useState(false);
+  /** El mensajero tardío: su tarjeta, al tocarle a él o su aviso (no para «Pasar la noche»). */
+  const [messengerOpen, setMessengerOpen] = useState(false);
   const [questId, setQuestId] = useState<string | null>(null);
   const [reportId, setReportId] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ text: string; key: number } | null>(null);
@@ -218,6 +223,13 @@ export function App() {
   /** El cobro del día de pago a la vista, y lo que viene después (el jefe o la carta). */
   const [paying, setPaying] = useState(false);
   const payThen = useRef<(() => void) | null>(null);
+  /**
+   * Lo que llega solo (el cobro, el aviso de un jefe, un suceso…) no corta lo que el jugador
+   * tiene abierto: si hay un panel, una ficha o una carta delante, espera a que lo cierre.
+   */
+  const busyRef = useRef(false);
+  const [held] = useState(() => new Held());
+  const whenFree = (fn: () => void) => held.when(busyRef.current, fn);
   /** Salas cuya obra acaba de terminar: la campanita lo dice durante ese día. */
   const [worksDone, setWorksDone] = useState<string[]>([]);
   const prevGame = useRef(game);
@@ -448,7 +460,7 @@ export function App() {
     setClock(clockRef.current);
     scene.current?.setTime(clockRef.current / DAY_SECONDS);
     if (away.days.length) {
-      setPanel(null);
+      // La carta del amanecer va encima de lo que hubiera abierto (no lo cierra).
       setAwayDays(away.days.length);
       setDawnOpen(true);
     } else
@@ -750,6 +762,16 @@ export function App() {
           : 'taberna';
   useEffect(() => audio.setMood(mood), [mood]);
 
+  /** Deja la pantalla libre: solo para lo que de verdad debe cortar (asalto, fin de partida). */
+  const clearScreen = () => {
+    setPanel(null);
+    setCard(null);
+    setQuestId(null);
+    setReportId(null);
+    setTripId(null);
+    setBell(null);
+  };
+
   /** Cae la noche (o, en el tutorial, se salta el tiempo hasta lo siguiente que pase). */
   const endDay = (skip?: TutorialSkip) => {
     if (passing) return;
@@ -758,37 +780,40 @@ export function App() {
       if (!canClose(gameRef.current)) return;
     }
     setHint(false);
-    setPanel(null);
-    setCard(null);
-    setQuestId(null);
     setBubble(null);
     const before = gameRef.current;
     // Asalto esta noche con la escena a la vista: se juega en directo y, al acabar, amanece.
     // El núcleo lo resuelve en el `endDay` que deja `day` en `raid.day`, o sea, la noche de antes.
     const due = before.raid && before.raid.day <= before.day + 1;
-    if (!skip && due && scene.current && !before.over) {
+    const live = !skip && due && scene.current && !before.over;
+    // La noche normal cae con lo abierto delante (la escena oscurece detrás); solo el asalto
+    // (hay que verlo) y los saltos del tutorial (los pide el jugador) dejan la pantalla libre.
+    if (skip || live) clearScreen();
+    if (live) {
       const rng = new Rng(raidSeed(before));
-      const live = new Assault(assaultSetup(before, before.raid!.strength, rng), rng);
+      const fight = new Assault(assaultSetup(before, before.raid!.strength, rng), rng);
       setPassing(true);
       setRaiding(true);
       setRaidLive(true);
       raidLiveRef.current = true;
       audio.play('horn');
-      scene.current.raidNight(
-        { plan: live.plan() },
+      scene.current!.raidNight(
+        { plan: fight.plan() },
         () => {
           setRaidLive(false);
           raidLiveRef.current = false;
-          dispatch({ type: 'raidFought', result: live.result ?? live.run() });
+          dispatch({ type: 'raidFought', result: fight.result ?? fight.run() });
           const next = dispatch({ type: 'endDay' });
           dawnAfter(before, next, skip)();
         },
-        live,
+        fight,
       );
       return;
     }
     const next = dispatch(skip ? { type: 'tutorial', op: skip } : { type: 'endDay' });
     if (next === before) return;
+    // Asalto que se repite (sin directo) o fin de partida: eso sí corta.
+    if (next.lastRaid || next.over) clearScreen();
     const sunrise = dawnAfter(before, next, skip);
     if (!scene.current) return sunrise();
     setPassing(true);
@@ -817,10 +842,18 @@ export function App() {
         else quietDawn(next);
       };
       // El día de pago, antes de todo, el cobro.
-      if (next.payday?.day === next.day && !next.over) {
-        payThen.current = open;
-        setPaying(true);
-      } else open();
+      const payday = next.payday?.day === next.day && !next.over;
+      const show = () => {
+        // Si se ha tenido algo abierto hasta el día siguiente, eso ya pasó (queda en el correo).
+        if (gameRef.current.day !== next.day) return;
+        if (payday) {
+          payThen.current = open;
+          setPaying(true);
+        } else open();
+      };
+      // El cobro y el aviso del jefe tapan la pantalla: esperan a que se cierre lo abierto.
+      if ((payday || next.lastFight) && !next.over) whenFree(show);
+      else show();
       // Asalto repelido o deuda saldada: suena el brindis.
       if (party) setTimeout(() => audio.fanfare(), 60);
     };
@@ -934,6 +967,23 @@ export function App() {
   const callReport = bossCall ? game.reports.find((r) => r.id === bossCall) : undefined;
   const unread = game.reports.filter((r) => !r.read).length;
   const away = game.missions.length + game.heroes.filter((h) => h.status === 'desaparecido').length;
+  // El jugador está con algo suyo abierto: lo que llega solo espera (ver `whenFree`).
+  const busy =
+    !!panel ||
+    !!card ||
+    !!questId ||
+    !!reportId ||
+    !!tripId ||
+    !!bell ||
+    strangerOpen ||
+    messengerOpen ||
+    settingsOpen ||
+    saveMenu ||
+    !!watching;
+  busyRef.current = busy;
+  useEffect(() => {
+    if (!busy) held.free();
+  }, [busy]);
   const calm =
     screen === 'game' &&
     !dawnOpen &&
@@ -942,7 +992,9 @@ export function App() {
     !(game.opening && !game.opening.seen) &&
     // El tutorial de obras se lee dentro del modo obras.
     (obrasOn(game) || (!works.pick && !works.planning));
-  const pendingEvent = calm && !game.over ? (game.event ?? null) : null;
+  // El suceso del amanecer también espera a que se cierre lo abierto (no lo tapa).
+  const eventHeld = !!game.event && busy;
+  const pendingEvent = calm && !game.over && !busy ? (game.event ?? null) : null;
   // El tutorial guiado va antes que las notas sueltas del tío (y las sustituye mientras dura).
   // La lección sigue a la vista con paneles abiertos: señala lo que hay que tocar dentro.
   // En el respiro de antes de un paso no hay nota ni foco: se mira y se trastea a gusto.
@@ -967,10 +1019,7 @@ export function App() {
   const [spotY, setSpotY] = useState<number | null>(null);
   /** Lo que tapa lo que señala el tutorial hay que cerrarlo antes (la nota lo dice). */
   const [spotClose, setSpotClose] = useState(false);
-  const tip =
-    calm && !pendingEvent && !card && !questId && !reportId && !panel && !tutorialOn(game)
-      ? nextTip(game)
-      : null;
+  const tip = calm && !game.event && !busy && !tutorialOn(game) ? nextTip(game) : null;
   // La nota del tío mira hacia lo que explica.
   useEffect(() => {
     if (tip?.focus) scene.current?.focus(tip.focus);
@@ -994,9 +1043,6 @@ export function App() {
   // El forastero de la tormenta: al llegar se para «Pasar la noche» (su oferta es una decisión
   // del jugador) y la cámara va al salón; si no se le contesta, la oferta sigue en la campanita
   // hasta que se va, al día siguiente a mediodía.
-  const [strangerOpen, setStrangerOpen] = useState(false);
-  // El mensajero tardío: su tarjeta, al tocarle a él o su aviso (no para «Pasar la noche»).
-  const [messengerOpen, setMessengerOpen] = useState(false);
   const knocking = !!game.messenger && !game.messenger.gone;
   useEffect(() => {
     if (!knocking) setMessengerOpen(false);
@@ -1053,7 +1099,7 @@ export function App() {
     return () => clearInterval(id);
   }, [ticking]);
   // Tiempo que corre solo: al acabar el día la noche cae sola, aunque haya un panel o una ficha
-  // abiertos (se cierran); solo el modo obras la hace esperar.
+  // abiertos (siguen abiertos, salvo si hay asalto); solo el modo obras la hace esperar.
   useEffect(() => {
     if (!realTime || !ticking || passing || clock < DAY_SECONDS) return;
     if (works.planning) return;
@@ -1794,6 +1840,7 @@ export function App() {
           !dawnOpen &&
           !paying &&
           !passing &&
+          !busy &&
           game.opening &&
           !game.opening.seen && (
             <Opening
@@ -1810,6 +1857,7 @@ export function App() {
             />
           )}
         {pendingEvent === null &&
+          !eventHeld &&
           calm &&
           !game.over &&
           game.askName &&
@@ -1863,7 +1911,7 @@ export function App() {
           }}
         />
       )}
-      {waitMission && bossOf(waitMission.quest) && !watching && (
+      {waitMission && bossOf(waitMission.quest) && !busy && (
         <BossWait
           boss={bossOf(waitMission.quest)!}
           place={waitMission.quest.place}
