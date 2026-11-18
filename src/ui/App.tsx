@@ -1835,7 +1835,8 @@ export function App() {
             }}
           />
         )}
-        {screen === 'game' && dawnChip === game.day && !dawnOpen && !passing && (
+        {/* Con algo abierto, el botón del parte espera (no tapa el panel). */}
+        {screen === 'game' && dawnChip === game.day && !dawnOpen && !passing && !busy && (
           <button
             class={`dawn-chip ${game.dawn.some((e) => e.k === 'bad') ? 'is-bad' : ''}`}
             aria-label={`Amanece el día ${game.day}: ver el parte`}
