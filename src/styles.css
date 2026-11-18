@@ -5231,6 +5231,15 @@ button.crew-alert {
   box-shadow: 0 0 0 2px var(--slate);
   color: var(--text-soft);
 }
+/* De guardia: también es su cama, en un ámbar apagado (distinto del gris de los de fuera). */
+.crew-slot.is-guard {
+  background: rgba(196, 150, 70, 0.28);
+  box-shadow: 0 0 0 2px #9a7b46;
+  color: var(--text-soft);
+}
+.crew-slot.is-guard .portrait-frame {
+  filter: grayscale(0.6) sepia(0.4);
+}
 .crew-slot.is-away .portrait-frame {
   filter: grayscale(1);
   opacity: 0.7;

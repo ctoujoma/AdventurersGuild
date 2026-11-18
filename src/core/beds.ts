@@ -72,9 +72,10 @@ export const isAway = (h: Pick<Hero, 'status'>) =>
 /**
  * La cama que espera a cada uno de los que están fuera: id → id de su dormitorio. Solo con las
  * que no usa nadie de casa esta noche (quien está en casa va antes): la que eligió, si queda; si
- * no, como al repartir (los veteranos, al ala).
+ * no, como al repartir (los veteranos, al ala). Con `guards`, después, también la de los de
+ * guardia (esta noche no se acuestan, pero la cama sigue siendo suya).
  */
-export function awayPlan(s: GameState): Map<string, string> {
+export function awayPlan(s: GameState, guards = false): Map<string, string> {
   const out = new Map<string, string>();
   const plan = sleepPlan(s);
   const left = new Map(s.building.rooms.map((r) => [r.id, bedsIn(r)]));
@@ -91,7 +92,11 @@ export function awayPlan(s: GameState): Map<string, string> {
       h,
       rooms.find((r) => r.type === type && (left.get(r.id) ?? 0) > 0),
     );
-  for (const h of s.heroes.filter(isAway)) {
+  const owners = [
+    ...s.heroes.filter(isAway),
+    ...(guards ? s.heroes.filter((h) => h.status === 'ok' && h.guard) : []),
+  ];
+  for (const h of owners) {
     if (
       h.dorm &&
       put(

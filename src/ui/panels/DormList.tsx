@@ -40,7 +40,8 @@ export function DormList({
   const all: (Hero | Worker)[] = [...game.heroes, ...game.workers];
   const here = all.filter((p) => plan.get(p.id) === room.id);
   // Los que están fuera (de encargo o desaparecidos) siguen teniendo aquí su cama, hecha.
-  const away = awayPlan(game);
+  // Y los de guardia (en la puerta o en la cámara: esta noche no se acuestan).
+  const away = awayPlan(game, true);
   const gone = game.heroes.filter((h) => away.get(h.id) === room.id);
   const total = room.type === 'servicio' ? staffBedsOf(room) : roomBeds(room);
   const free = Math.max(0, total - here.length - gone.length);
@@ -61,7 +62,7 @@ export function DormList({
         <span>Duermen aquí</span>
         <span class="row-sub">
           {here.length + gone.length} de {total}
-          {gone.length ? ` · ${gone.length} fuera` : ''}
+          {gone.length ? ` · ${gone.length} sin acostar` : ''}
         </span>
       </h3>
       <div class="crew-slots">
@@ -86,8 +87,8 @@ export function DormList({
         {gone.map((h) => (
           <button
             key={h.id}
-            class="crew-slot is-hero is-away"
-            aria-label={`${h.name}, fuera esta noche: su cama le espera`}
+            class={`crew-slot is-hero ${h.guard ? 'is-guard' : 'is-away'}`}
+            aria-label={`${h.name}, ${h.guard ? 'de guardia' : 'fuera esta noche'}: su cama le espera`}
             onClick={() => onOpen?.(h.id)}
           >
             <Face game={game} id={h.id} />
@@ -95,8 +96,9 @@ export function DormList({
               <b>{h.name}</b>
               <small>{sub(h)}</small>
               <small>
-                Fuera esta noche
-                {h.status === 'mision' ? ` · vuelve ${dawnIn(h.days)}` : ' · desaparecido'}
+                {h.guard
+                  ? 'De guardia esta noche'
+                  : `Fuera esta noche · ${h.status === 'mision' ? `vuelve ${dawnIn(h.days)}` : 'desaparecido'}`}
               </small>
             </span>
           </button>
