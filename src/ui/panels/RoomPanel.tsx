@@ -6,7 +6,13 @@ import { canWork, roster, type Action } from '../../core/game';
 import type { DecorId, TintId } from '../../data/custom';
 import { beerCap, dailyYield, eatersOf, foodCap } from '../../core/larder';
 import { ATTR_NAMES, trainCap } from '../../core/training';
-import { TRAIN_HERO_BASE, TRAIN_MAIN_BONUS, TRAIN_PER_LEVEL } from '../../core/balance';
+import {
+  NURSE_WORK,
+  TRAIN_HERO_BASE,
+  TRAIN_MAIN_BONUS,
+  TRAIN_PER_LEVEL,
+  healRate,
+} from '../../core/balance';
 import { raidRoute, routeTime } from '../../core/assault';
 import { defense } from '../../core/raids';
 import { doorTime, goldCap, lockTime } from '../../core/vault';
@@ -24,7 +30,15 @@ import { FACILITY_INFO } from '../../data/labels';
 import { roomEffect } from '../../data/roomInfo';
 import { ROOMS, TRAINS, type RoomType } from '../../data/rooms';
 import { listNames, plural } from '../../core/text';
-import { hasPosts, isTrainRoom, staffBeds, workerCap } from '../../core/workers';
+import {
+  hasPosts,
+  isTrainRoom,
+  nurseBonus,
+  staffBeds,
+  workIn,
+  workerCap,
+} from '../../core/workers';
+import { handText } from '../crew';
 import type { ComponentChildren } from 'preact';
 import { help } from '../HoldHelp';
 import { Icon, type IconName } from '../icons';
@@ -199,6 +213,37 @@ function DoorInfo({ game }: { game: GameState }) {
   return (
     <div class="chips">
       <Fact info="Cuánto aguanta la puerta a los bandidos.">Puerta {doorTime(game)} s</Fact>
+    </div>
+  );
+}
+
+/**
+ * La enfermería: cuánto cura cada noche (el nivel y, con mano suficiente, un día más: las
+ * cuentas de `endDay`), la mano que hay hoy y los heridos.
+ */
+function InfirmaryInfo({ game }: { game: GameState }) {
+  const base = healRate(game.fac.enf);
+  const bonus = nurseBonus(game);
+  const hand = workIn(game, 'enfermeria');
+  const hurt = game.heroes.filter((h) => h.status === 'herido').length;
+  return (
+    <div class="chips">
+      <Fact
+        info={`Días de cama que se le quitan a cada herido cada noche: ${base} por la sala${bonus ? ' y 1 más por quien trabaja aquí' : ''}.`}
+      >
+        <Icon name="cama" size={12} /> −{base + bonus} {plural(base + bonus, 'día', 'días')} por
+        noche
+      </Fact>
+      <Fact
+        info={`Con ${NURSE_WORK} de mano entre todos (un enfermero, o trabajadores y héroes echando una mano), cada herido se cura un día más por noche. Rinden más en una enfermería mejor.`}
+        warn={!bonus && hurt > 0}
+      >
+        <Icon name="martillo" size={12} /> Mano {handText(hand)} de {NURSE_WORK}
+        {bonus ? ': −1 día' : ''}
+      </Fact>
+      <Fact info="Héroes heridos ahora mismo.">
+        <Icon name="cruz" size={12} /> {hurt} {plural(hurt, 'herido', 'heridos')}
+      </Fact>
     </div>
   );
 }
@@ -468,6 +513,7 @@ export function RoomPanel({
       {(room.type === 'cocina' || room.type === 'despensa' || room.type === 'bodega') &&
         room.level > 0 && <LarderInfo game={game} room={room} />}
       {isTrainRoom(room.type) && room.level > 0 && <TrainInfo room={room} />}
+      {room.type === 'enfermeria' && room.level > 0 && <InfirmaryInfo game={game} />}
       {room.type === 'tesoro' && <VaultInfo game={game} />}
       {room.type === 'recibidor' && <DoorInfo game={game} />}
       {(room.type === 'dormitorio' || room.type === 'veteranos') && room.level > 0 && (

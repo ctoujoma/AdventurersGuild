@@ -13,6 +13,7 @@ import {
   SERVE_PER_WORK,
 } from '../core/balance';
 import { dayPart } from '../core/game';
+import { isWorkshop } from '../core/crafting';
 import { brewAt, cookAt } from '../core/larder';
 import type { GameState, Hero, Room, Worker } from '../core/model';
 import { visitorsOf } from '../core/salon';
@@ -70,14 +71,20 @@ export function crewEffect(game: GameState, room: Room): string {
       return `Saca ${Math.round(brewAt(game, room))} jarras al día.`;
     case 'cocina':
       return `Hace ${Math.round(cookAt(game, room))} raciones al día.`;
-    case 'enfermeria':
-      return workIn(game, 'enfermeria') >= NURSE_WORK
-        ? 'Los heridos se curan un día antes.'
-        : 'Con más mano, los heridos se curarían un día antes.';
+    case 'enfermeria': {
+      // La cuenta del núcleo (`nurseBonus`): con `NURSE_WORK` de mano entre todos, un día más.
+      const n = workIn(game, 'enfermeria');
+      return n >= NURSE_WORK
+        ? `Llegan a ${NURSE_WORK} de mano: cada noche, un día de cama menos a cada herido. Más gente no cura más deprisa.`
+        : `Con ${NURSE_WORK} de mano entre todos (hoy, ${handText(n)}), cada noche sería un día de cama menos a cada herido.`;
+    }
     default:
       return '';
   }
 }
+
+/** Mano con un decimal y coma: «2», «2,3». */
+export const handText = (n: number) => String(Math.round(n * 10) / 10).replace('.', ',');
 
 /** Lo que sale de una sala que produce por cada punto de trabajo (sin cifra en la enfermería). */
 function perWork(room: Room): number {
@@ -194,6 +201,29 @@ export function crewGroups(game: GameState): Group[] {
       groups.at(-1)!.people.forEach((m, i) => {
         m.gives = gives[i];
       });
+    // En la enfermería no sale nada que contar: lo que pone cada uno de la mano que hace falta.
+    if (room.type === 'enfermeria') {
+      const lv = 0.75 + 0.25 * room.level;
+      const hands = [
+        ...crew.workers.map((w) => effortOf(w, room.type) * lv),
+        ...crew.heroes.map((h) => (h.status === 'ok' && !h.guard ? HERO_WORK * lv : 0)),
+      ];
+      groups.at(-1)!.people.forEach((m, i) => {
+        if (hands[i]) m.gives = `+${handText(hands[i])} de mano`;
+      });
+    }
+    // En un taller, cada trabajo va al ritmo de todos juntos: la parte de cada uno (si son varios).
+    if (isWorkshop(room.type)) {
+      const parts = [
+        ...crew.workers.map((w) => effortOf(w, room.type)),
+        ...crew.heroes.map((h) => (h.status === 'ok' && !h.guard ? HERO_WORK : 0)),
+      ];
+      const sum = parts.reduce((a, b) => a + b, 0);
+      if (parts.filter(Boolean).length > 1)
+        groups.at(-1)!.people.forEach((m, i) => {
+          if (parts[i]) m.gives = `Hace el ${Math.round((100 * parts[i]) / sum)} %`;
+        });
+    }
   }
   groups.push({
     key: GUARD,

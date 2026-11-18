@@ -92,6 +92,18 @@ describe('la cama de quien está fuera', () => {
     expect(sleepPlan(s).has(a!.id)).toBe(false);
   });
 
+  it('los de guardia, si se piden, también tienen su cama (después de los de fuera)', () => {
+    const s = newGame('guardia');
+    const [a, b] = s.heroes;
+    a!.status = 'mision';
+    b!.guard = true;
+    expect(sleepPlan(s).has(b!.id)).toBe(false);
+    expect(awayPlan(s).has(b!.id)).toBe(false);
+    const plan = awayPlan(s, true);
+    expect(plan.get(a!.id)).toBe(dorm(s).id);
+    expect(plan.get(b!.id)).toBe(dorm(s).id);
+  });
+
   it('sin camas de sobra, no hay cama que le espere (la usa alguien de casa)', () => {
     const s = newGame('fuera-lleno');
     const [a] = s.heroes;

@@ -19,7 +19,7 @@ import { audio } from '../../audio/audio';
 import { BufferImage } from '../BufferImage';
 import { dawnIn, nightIn, shortSpan, span } from '../when';
 import { Icon, type IconName } from '../icons';
-import { listNames, plural } from '../text';
+import { listNames, plural, shortGold } from '../text';
 import { bandNumber, capBand } from '../../data/raids';
 import { THREAT_STEPS, threatTrend } from '../../core/events';
 import { Portrait } from '../Portrait';
@@ -350,7 +350,7 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
           <b>{q.title}</b>
           <span class="mc-stats">
             <Stat icon="coin" label={`${q.reward} monedas`}>
-              {q.reward}
+              {shortGold(q.reward)}
             </Stat>
             {days(q.days)}
             <span

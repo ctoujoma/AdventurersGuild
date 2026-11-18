@@ -7,7 +7,7 @@ import { dangerClass, dangerLabel } from '../data/labels';
 import { Icon } from './icons';
 import { Portrait } from './Portrait';
 import type { GameScene } from './SceneView';
-import { plural } from './text';
+import { plural, shortGold } from './text';
 import { span } from './when';
 
 interface MarkProps {
@@ -44,7 +44,7 @@ export function MessengerMark({ messenger, room, clock, speed, scene, onOpen }: 
   }, [messenger.at, room]);
   const left = Math.max(0, messenger.at + MESSENGER_WAIT - clock);
   const frac = Math.max(0, Math.min(1, left / MESSENGER_WAIT));
-  const secs = Math.ceil(left / Math.max(1, speed));
+  const secs = Math.ceil(left / Math.max(0.5, speed));
   return (
     <div ref={ref} class="incident incident-night" role="status">
       <button
@@ -122,7 +122,7 @@ export function MessengerCard({ game, onAnswer, onClose }: CardProps) {
               </span>
               <b class="reward">
                 <Icon name="coin" size={12} />
-                {q.reward}
+                {shortGold(q.reward)}
                 {q.item ? '+' : ''}
               </b>
             </span>

@@ -38,7 +38,7 @@ export function RumorMark({ rumor, room, clock, speed, scene, onTake }: Props) {
   }, [rumor.id, room]);
   const left = Math.max(0, rumor.until - clock);
   const frac = Math.max(0, Math.min(1, left / Math.max(1, rumor.until - rumor.from)));
-  const secs = Math.ceil(left / Math.max(1, speed));
+  const secs = Math.ceil(left / Math.max(0.5, speed));
   return (
     <button
       ref={ref}

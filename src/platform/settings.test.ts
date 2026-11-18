@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_SETTINGS, MOOD_LIGHT_V, parseSettings } from './settings';
+import { DEFAULT_SETTINGS, MOOD_LIGHT_V, nextPace, paceLabel, parseSettings } from './settings';
 
 describe('ajustes', () => {
   it('rellena lo que falta y corrige lo que viene mal', () => {
@@ -29,5 +29,16 @@ describe('ajustes', () => {
     expect(parseSettings({}).vibrate).toBe(true);
     expect(parseSettings({ vibrate: 'no' }).vibrate).toBe(true);
     expect(parseSettings({ vibrate: false }).vibrate).toBe(false);
+  });
+
+  it('el reloj recorre ×1, ×2, ×4, ×8 y ×½, y el ½ se guarda', () => {
+    const seen = [];
+    let p = parseSettings({}).pace;
+    for (let i = 0; i < 5; i++) seen.push((p = nextPace(p)));
+    expect(seen).toEqual([2, 4, 8, 0.5, 1]);
+    expect(parseSettings({ pace: 0.5 }).pace).toBe(0.5);
+    expect(parseSettings({ pace: 3 }).pace).toBe(1);
+    expect(paceLabel(0.5)).toBe('½');
+    expect(paceLabel(4)).toBe('4');
   });
 });

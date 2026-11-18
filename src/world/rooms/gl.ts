@@ -320,8 +320,10 @@ const SURFACE_FRAG = /* glsl */ `
       if (i >= uLightCount) break;
       vec4 z = texelFetch(uLights, ivec2(i, 2), 0);
       // Con luz con ambiente, la zona se ensancha al grueso del muro: de noche, el corte
-      // alrededor de una sala encendida recibe su luz.
-      if (world.x < z.x - uZonePad || world.x > z.z + uZonePad || world.y < z.y || world.y > z.w) continue;
+      // alrededor de una sala encendida recibe su luz. Las de fuera que acaban en el muro, no
+      // (la .w de la fila 3 es 0): si no, su luz entraba en la sala de al lado con un corte.
+      float pad = uZonePad * texelFetch(uLights, ivec2(i, 3), 0).w;
+      if (world.x < z.x - pad || world.x > z.z + pad || world.y < z.y || world.y > z.w) continue;
       vec4 lp = texelFetch(uLights, ivec2(i, 0), 0);
       vec4 lc = texelFetch(uLights, ivec2(i, 1), 0);
       vec3 d = lp.xyz - world;

@@ -640,7 +640,8 @@ button:focus-visible {
   bottom: 0;
   transform: translateX(-50%);
   width: min(100%, 580px);
-  max-height: 86%;
+  /* Siempre queda una franja de escena encima: ahí se encuadra la sala de la ficha. */
+  max-height: min(86%, calc(100% - 120px));
   display: flex;
   flex-direction: column;
   z-index: 5;
@@ -909,8 +910,9 @@ button:focus-visible {
 
 .note-top {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
+  gap: 2px 4px;
   min-width: 0;
   font-size: var(--t-s);
 }
@@ -993,8 +995,9 @@ button:focus-visible {
 
 .note-foot {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
+  gap: 2px 4px;
   border-top: 2px dashed var(--tan);
   padding-top: 3px;
   font-family: var(--pixel);
@@ -1020,6 +1023,8 @@ button:focus-visible {
 
 .note-foot .reward {
   margin-left: auto;
+  /* El oro no se parte ni se sale: si no cabe en la fila, baja entero a la derecha. */
+  white-space: nowrap;
 }
 
 .pin {
@@ -5040,6 +5045,8 @@ textarea:focus-visible,
   color: var(--white);
   font: inherit;
   cursor: pointer;
+  /* Sin el zoom de doble toque: tocar dos veces seguidas cambia dos veces la velocidad. */
+  touch-action: manipulation;
 }
 
 .clock-pace {
@@ -5217,6 +5224,25 @@ button.crew-alert {
 }
 .crew-slot.is-sel {
   background: var(--gold);
+}
+/* Fuera esta noche (de encargo): su cama sigue siendo suya, en gris. */
+.crew-slot.is-away {
+  background: rgba(139, 155, 180, 0.25);
+  box-shadow: 0 0 0 2px var(--slate);
+  color: var(--text-soft);
+}
+/* De guardia: también es su cama, en un ámbar apagado (distinto del gris de los de fuera). */
+.crew-slot.is-guard {
+  background: rgba(196, 150, 70, 0.28);
+  box-shadow: 0 0 0 2px #9a7b46;
+  color: var(--text-soft);
+}
+.crew-slot.is-guard .portrait-frame {
+  filter: grayscale(0.6) sepia(0.4);
+}
+.crew-slot.is-away .portrait-frame {
+  filter: grayscale(1);
+  opacity: 0.7;
 }
 .crew-who {
   min-width: 0;

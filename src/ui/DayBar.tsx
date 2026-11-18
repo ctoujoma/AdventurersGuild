@@ -1,4 +1,5 @@
 import { AWAY_DAY_SECONDS, DAY_SECONDS, DUSK, NIGHT_RUSH, WORK_END } from '../core/balance';
+import { type Pace, paceLabel } from '../platform/settings';
 import { help } from './HoldHelp';
 import { Icon } from './icons';
 import { countdown } from './when';
@@ -10,7 +11,7 @@ interface Props {
   canClose: boolean;
   /** Pasando la noche (con o sin asalto): el reloj de mañana aún no corre. */
   night?: boolean;
-  pace: 1 | 2 | 4 | 8;
+  pace: Pace;
   /** «Pasar la noche» puesto: de noche el reloj corre a `NIGHT_RUSH`. */
   rushing?: boolean;
   onRushNight?: () => void;
@@ -65,11 +66,11 @@ export function DayBar(p: Props) {
       ) : (
         <button
           class="clock"
-          aria-label={`${partName(part, dusk)}. Velocidad ×${p.pace}: toca para cambiarla`}
+          aria-label={`${partName(part, dusk)}. Velocidad ×${paceLabel(p.pace)}: toca para cambiarla`}
           data-help={
             p.real
               ? 'El reloj del día corre solo. Mientras pagas la deuda puedes acelerarlo: toca para cambiar la velocidad.'
-              : 'El reloj del día: la caja va entregando lo de la taberna hasta el anochecer. Toca para que corra más rápido.'
+              : 'El reloj del día: la caja va entregando lo de la taberna hasta el anochecer. Toca para cambiar su velocidad (de ×½ a ×8).'
           }
           onClick={p.onPace}
         >
@@ -78,7 +79,7 @@ export function DayBar(p: Props) {
             <i style={{ width: `${Math.round(part * 100)}%` }} />
             <b style={{ left: `${dusk * 100}%` }} />
           </span>
-          <span class="clock-pace">×{p.pace}</span>
+          <span class="clock-pace">×{paceLabel(p.pace)}</span>
         </button>
       )}
       {p.night ? null : night && p.onRushNight && (p.real || !p.canClose) ? (

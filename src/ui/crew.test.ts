@@ -28,6 +28,24 @@ describe('la casa por tareas', () => {
     expect(crewGroups(s).some((g) => g.key === roomOf(s, 'enfermeria').id)).toBe(false);
   });
 
+  it('en la enfermería cada uno dice la mano que pone, y la sala lo que falta para curar antes', () => {
+    let s = newGame('enfermera');
+    s = {
+      ...s,
+      building: {
+        ...s.building,
+        rooms: s.building.rooms.map((r) => (r.type === 'enfermeria' ? { ...r, level: 1 } : r)),
+      },
+    };
+    const enf = roomOf(s, 'enfermeria');
+    const h = s.heroes[0]!;
+    s = task(s, h.id, enf.id);
+    const g = group(s, enf.id);
+    // Un héroe pone 2 de los 3 que hacen falta: aún no basta.
+    expect(g.people.find((p) => p.id === h.id)!.gives).toBe('+2 de mano');
+    expect(g.note).toMatch(/Con 3 de mano entre todos/);
+  });
+
   it('soltar a un héroe en la cámara del tesoro lo pone de guardia allí (y de la puerta se cambia)', () => {
     let s = newGame('camara');
     const h = s.heroes[0]!;

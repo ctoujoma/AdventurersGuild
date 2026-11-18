@@ -55,7 +55,7 @@ export function IncidentMark({ game, inc, clock, speed, scene, onAct, onAsk }: P
   const d = INCIDENTS[inc.kind];
   const left = Math.max(0, inc.until - clock);
   const frac = Math.max(0, Math.min(1, left / Math.max(1, inc.until - inc.from)));
-  const secs = Math.ceil(left / Math.max(1, speed));
+  const secs = Math.ceil(left / Math.max(0.5, speed));
   const cost = d.how === 'pagar' ? incidentCost(game, inc) : 0;
   const action =
     d.how === 'pagar'
