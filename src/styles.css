@@ -5219,6 +5219,16 @@ button.crew-alert {
 .crew-slot.is-sel {
   background: var(--gold);
 }
+/* Fuera esta noche (de encargo): su cama sigue siendo suya, en gris. */
+.crew-slot.is-away {
+  background: rgba(139, 155, 180, 0.25);
+  box-shadow: 0 0 0 2px var(--slate);
+  color: var(--text-soft);
+}
+.crew-slot.is-away .portrait-frame {
+  filter: grayscale(1);
+  opacity: 0.7;
+}
 .crew-who {
   min-width: 0;
   display: flex;

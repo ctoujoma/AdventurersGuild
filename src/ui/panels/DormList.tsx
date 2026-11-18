@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { dormIssue, isVet, sleepPlan, staffBedsOf } from '../../core/beds';
+import { awayPlan, dormIssue, isVet, sleepPlan, staffBedsOf } from '../../core/beds';
 import type { Action } from '../../core/game';
 import type { GameState, Hero, Room, Worker } from '../../core/model';
 import { roomBeds } from '../../core/rooms';
@@ -7,6 +7,7 @@ import { CLASS_NAMES } from '../../data/labels';
 import { TRADES } from '../../data/workers';
 import { jobRoomName } from '../roomName';
 import { Face } from './CrewList';
+import { dawnIn } from '../when';
 
 const isHero = (p: Hero | Worker): p is Hero => 'cls' in p;
 
@@ -38,8 +39,11 @@ export function DormList({
   const plan = sleepPlan(game);
   const all: (Hero | Worker)[] = [...game.heroes, ...game.workers];
   const here = all.filter((p) => plan.get(p.id) === room.id);
+  // Los que están fuera (de encargo o desaparecidos) siguen teniendo aquí su cama, hecha.
+  const away = awayPlan(game);
+  const gone = game.heroes.filter((h) => away.get(h.id) === room.id);
   const total = room.type === 'servicio' ? staffBedsOf(room) : roomBeds(room);
-  const free = Math.max(0, total - here.length);
+  const free = Math.max(0, total - here.length - gone.length);
   const roomOf = (id: string) => game.building.rooms.find((r) => r.id === plan.get(id));
   const sub = (p: Hero | Worker) =>
     isHero(p)
@@ -56,7 +60,8 @@ export function DormList({
       <h3 class="crew-h">
         <span>Duermen aquí</span>
         <span class="row-sub">
-          {here.length} de {total}
+          {here.length + gone.length} de {total}
+          {gone.length ? ` · ${gone.length} fuera` : ''}
         </span>
       </h3>
       <div class="crew-slots">
@@ -78,6 +83,24 @@ export function DormList({
             </button>
           );
         })}
+        {gone.map((h) => (
+          <button
+            key={h.id}
+            class="crew-slot is-hero is-away"
+            aria-label={`${h.name}, fuera esta noche: su cama le espera`}
+            onClick={() => onOpen?.(h.id)}
+          >
+            <Face game={game} id={h.id} />
+            <span class="crew-who">
+              <b>{h.name}</b>
+              <small>{sub(h)}</small>
+              <small>
+                Fuera esta noche
+                {h.status === 'mision' ? ` · vuelve ${dawnIn(h.days)}` : ' · desaparecido'}
+              </small>
+            </span>
+          </button>
+        ))}
         {Array.from({ length: free }, (_, i) =>
           movers.length ? (
             <select
