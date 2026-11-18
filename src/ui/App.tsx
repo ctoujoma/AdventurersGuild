@@ -765,7 +765,7 @@ export function App() {
           : 'taberna';
   useEffect(() => audio.setMood(mood), [mood]);
 
-  /** Deja la pantalla libre: solo para lo que de verdad debe cortar (asalto, fin de partida). */
+  /** Deja la pantalla libre: solo para lo que de verdad debe cortar (asalto, cobro, fin de partida). */
   const clearScreen = () => {
     setPanel(null);
     setCard(null);
@@ -854,8 +854,12 @@ export function App() {
           setPaying(true);
         } else open();
       };
-      // El cobro y el aviso del jefe tapan la pantalla: esperan a que se cierre lo abierto.
-      if ((payday || next.lastFight) && !next.over) whenFree(show);
+      // El cobro (cada 7 días, un momento importante) corta como el asalto: deja la pantalla libre
+      // y sale ya. El aviso del jefe tapa la pantalla: espera a que se cierre lo abierto.
+      if (payday) {
+        clearScreen();
+        show();
+      } else if (next.lastFight && !next.over) whenFree(show);
       else show();
       // Asalto repelido o deuda saldada: suena el brindis.
       if (party) setTimeout(() => audio.fanfare(), 60);
