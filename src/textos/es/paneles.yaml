@@ -530,6 +530,9 @@ fightcrew:
   cargando: "{nombre}, cargando"
   corriendo: "corriendo"
 bossfight:
+  # Pelea de una expedición (sin jefe de historia).
+  expedicion_gana: "¡Ganan la pelea!"
+  expedicion_pierde: "Pierden la pelea y se retiran."
   al_jefe: "al jefe"
   al_esbirro: "al esbirro"
   pelea_contra: "Pelea contra {short}"

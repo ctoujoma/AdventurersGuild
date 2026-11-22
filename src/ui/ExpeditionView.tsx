@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'preact/hooks';
 import { EXP_HOURS, EXP_HURT_DOWN } from '../core/balance';
 import { distAt, hoursHome, riskNow } from '../core/expedition';
-import type { ExpKind, Expedition, GameState } from '../core/model';
+import type { BossFight, ExpKind, Expedition, GameState } from '../core/model';
+import { ExpeditionCard } from './ExpeditionCard';
 import { matsMsg, type Material } from '../core/materials';
 import { STRIP_H } from '../world/tripStrip';
 import { dangerClass } from '../data/labels';
@@ -19,6 +20,10 @@ interface Props {
   onClose: () => void;
   onHero: (id: string) => void;
   onBack: () => void;
+  onChoose: (option: string) => void;
+  onMute: (on: boolean) => void;
+  /** Ver una pelea del diario. */
+  onWatch: (fight: BossFight) => void;
 }
 
 const KIND_ICON: Record<ExpKind, IconName> = {
@@ -33,12 +38,23 @@ const KIND_ICON: Record<ExpKind, IconName> = {
   aviso: 'banderin',
   vuelta: 'home',
   llegada: 'home',
+  suceso: 'star',
+  eleccion: 'check',
 };
 
 const AIM_W = 220;
 
 /** El visor: el paisaje con el grupo en directo y, debajo, cómo van y su diario. */
-export function ExpeditionView({ game, exp: e, onClose, onHero, onBack }: Props) {
+export function ExpeditionView({
+  game,
+  exp: e,
+  onClose,
+  onHero,
+  onBack,
+  onChoose,
+  onMute,
+  onWatch,
+}: Props) {
   const box = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const now = marchNow(game, e);
@@ -116,7 +132,17 @@ export function ExpeditionView({ game, exp: e, onClose, onHero, onBack }: Props)
               {t('expediciones.expeditionview.dia', { dia: day, vuelta: !!e.turn })}
             </span>
             <h3>{t('expediciones.expeditionview.titulo', { rumbo: e.heading })}</h3>
+            <label class="exp-mute">
+              <input
+                type="checkbox"
+                checked={!!e.mute}
+                onChange={(ev) => onMute((ev.target as HTMLInputElement).checked)}
+              />
+              <Icon name={e.mute ? 'mute' : 'bell'} size={12} />
+              {e.mute ? t('expediciones.carta.silenciada') : t('expediciones.carta.silenciar')}
+            </label>
           </header>
+          <ExpeditionCard game={game} exp={e} onChoose={onChoose} />
           <div class="chips qs-facts">
             <span class="fact">
               <Icon name="pasos" size={12} />
@@ -185,7 +211,15 @@ export function ExpeditionView({ game, exp: e, onClose, onHero, onBack }: Props)
                     dia: Math.floor(l.h / EXP_HOURS) + 1,
                   })}
                 </span>
-                <span>{tx(l.t)}</span>
+                <span>
+                  {tx(l.t)}
+                  {l.fight && (
+                    <button class="btn btn-wood exp-watch" onClick={() => onWatch(l.fight!)}>
+                      <Icon name="espadas" size={10} />
+                      {t('expediciones.carta.ver_pelea')}
+                    </button>
+                  )}
+                </span>
               </li>
             ))}
           </ol>

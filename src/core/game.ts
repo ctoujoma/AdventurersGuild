@@ -212,6 +212,8 @@ import {
   HOUR,
   callBack,
   canExpedition,
+  chooseOption,
+  muteExpedition,
   gameTime,
   sendExpedition,
   stepExpeditions,
@@ -245,6 +247,9 @@ export type Action =
   /** Expediciones: salir hacia un rumbo con raciones, o mandar volver a una. */
   | { type: 'expedition'; heading: Heading; heroIds: string[]; rations: number; unguard?: boolean }
   | { type: 'expBack'; id: string }
+  /** El suceso que espera en una expedición: elegir una opción; o silenciarla. */
+  | { type: 'expChoose'; id: string; option: string }
+  | { type: 'expMute'; id: string; on: boolean }
   | { type: 'upgrade'; fac: keyof Facilities }
   | { type: 'upgradeRoom'; id: string }
   | { type: 'build'; room: RoomType; col: number; floor: number }
@@ -713,6 +718,14 @@ function reduceAction(state: GameState, action: Action): GameState {
     case 'expBack': {
       const s = structuredClone(state);
       return callBack(s, action.id) ? s : state;
+    }
+    case 'expChoose': {
+      const s = structuredClone(state);
+      return chooseOption(s, action.id, action.option) ? s : state;
+    }
+    case 'expMute': {
+      const s = structuredClone(state);
+      return muteExpedition(s, action.id, action.on) ? s : state;
     }
     case 'sell': {
       const it = state.inventory.find((i) => i.id === action.itemId);

@@ -22,6 +22,10 @@ error:
   tope: "With the map room as it is, {n, plural, one {# hero at most can go} other {# heroes at most can go}}. Upgrade it to send more."
   pocas_raciones: "You need at least {n} rations: one day out and the way back."
   despensa: "There {n, plural, one {is only # ration} other {are only # rations}} in the pantry."
+  sin_suceso: "There's nothing left to choose."
+  falta_clase: "You'd need {clase, select, guerrero {a warrior} picaro {a rogue} mago {a mage} clerigo {a cleric} other {a scout}} on their feet."
+  sin_oro: "The pack doesn't hold {n} coins."
+  sin_materiales: "They carry nothing to sell."
 diario:
   salida: "{grupo} {n, plural, one {sets} other {set}} out for {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}} with {raciones} rations."
   aviso: "{dias} days in: {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}} {n, plural, one {grows} other {grows}} wilder. More danger, better loot."
@@ -34,12 +38,19 @@ diario:
   cura: "{mismo, select, si {{curandero} tends to their own wounds by the fire.} other {{curandero} bandages {heroe}'s wounds by the fire.}}"
   hambre: "There aren't rations for everyone: {quien} {n, plural, one {goes} other {go}} to bed hungry."
   llegada: "{n, plural, one {Arrives} other {They arrive}} at the tavern."
+  prudencia: "{guardian, select, si {No one says a word, and the guardian won't wait any longer.} other {No one says a word: {n, plural, one {plays it safe} other {they play it safe}}.}}"
+  invitado_se_va: "{heroe} falls in the fight and, as soon as {sexo, select, f {she} other {he}} can stand, says goodbye: this isn't for {sexo, select, f {her} other {him}}."
+  guardian_bien: "{enemigos, mayus} falls! {heroe} lands the final blow.{m, plural, =0 {} one { {heridos} ends up hurt.} other { {heridos} end up hurt.}}"
+  piel: "{heroe} takes the hide: 2 leather."
+  tras_pelea: "After the fight, they find {que}."
+  guardian_botin: "In its lair they find {que}. And something else: {objeto}."
   vuelta:
     raciones: "Just enough rations left to get back ({raciones}): {n, plural, one {turns} other {they turn}} back."
     jugador: "Your message reaches {n, plural, one {them} other {them}}: heading home."
     herido: "With {heroe} {sexo, select, f {badly hurt} other {badly hurt}}, they turn back."
     caidos: "{n, plural, one {{heroe} crawls home as best they can} other {No one is left standing. They crawl home as best they can}}; most of the pack stays behind."
     hambre: "Out of rations, {n, plural, one {heads} other {they head}} home."
+    guardian: "Better not to push their luck: {n, plural, one {turns} other {they turn}} back."
   camino:
     bosque:
       - "The trail gets lost among old oaks."
@@ -54,12 +65,16 @@ diario:
     bosque: "{n, plural, one {Camps} other {They camp}} under the trees{vuelta, select, si {, on the way back} other {}}. {raciones, plural, =0 {No rations} one {# ration} other {# rations}} left."
 enemigos:
   bosque:
-    - "some wolves"
+    - "a pack of wolves"
     - "a wild boar"
-    - "some bandits"
     - "a bear"
-    - "some poachers"
-    - "spiders as big as dogs"
+    - "a huge wolf"
+guardianes:
+  bosque: "Old Tusk"
+pelea:
+  nombre: "{enemigos, mayus}"
+  donde: "In {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}, {dias, plural, =0 {less than a day} one {one day} other {# days}} from home"
+botin: "{oro, plural, =0 {} one {one coin and } other {# coins and }}{que}"
 informe:
   titulo: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}"
   cuerpo: "{dias, plural, one {One day away} other {# days away}}: {n, plural, one {got} other {they got}} {lejos, plural, =0 {less than a day} one {one day} other {# days}} from the tavern."
@@ -75,7 +90,11 @@ informe:
   chip_herido: "{heroe}, hurt ({dias} d)"
   chip_caido: "{heroe} didn't come back"
   chip_perdido: "Lost: {objeto}"
+  chip_objeto: "Brought back: {objeto}"
+  chip_invitado: "{heroe} wants to stay: waiting at the bar"
 aviso:
+  suceso: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}: {que, mayus}. They're waiting for your call."
+  guardian: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}: {que}! Open the viewer to watch."
   vuelve: "The expedition is back from {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}: {grupo}."
 expeditionsheet:
   titulo: "New expedition"
@@ -124,3 +143,147 @@ mappanel:
   estado: "{vuelta, select, si {Heading back} other {Pushing deeper}} · {dias, plural, =0 {less than a day} one {# day} other {# days}} out · {raciones, plural, one {# ration} other {# rations}}"
   sin_hueco: "Expeditions at once: {n} (extend the map room)"
   nueva: "New expedition"
+  espera: "{que, mayus}: waiting for your call"
+sucesos:
+  cofre:
+    titulo: "a half-buried chest"
+    texto: "Among the roots, a half-buried chest peeks out, with a rusty padlock."
+    forzar:
+      nombre: "Force it"
+      bien: "{heroe} smashes the padlock. Inside: {que}.{con_objeto, select, si { And {objeto}.} other {}}"
+      mal: "{heroe} forces the lid and a needle trap springs: hurt, and the chest is empty."
+    ganzua:
+      nombre: "Pick the lock"
+      bien: "{heroe} opens the padlock without a sound. Inside: {que}.{con_objeto, select, si { And {objeto}.} other {}}"
+      mal: "The pick snaps and the trap springs: {heroe} ends up with a swollen hand."
+    dejar:
+      nombre: "Leave it"
+      bien: "Better not to touch what someone else buried. They move on."
+  santuario:
+    titulo: "a forest shrine"
+    texto: "A moss-covered stone shrine, with candles someone lit not long ago."
+    rezar:
+      nombre: "Pray"
+      bien: "{heroe} prays quietly and everyone feels better: each heals one wound."
+    ofrenda:
+      nombre: "Leave an offering"
+      bien: "They leave {oro} coins in the bowl.{curado, select, si { The wounds sting less.} other { Nothing happens, but they feel calmer.}}"
+    seguir:
+      nombre: "Move on"
+      bien: "They pass by respectfully."
+  mercader:
+    titulo: "a travelling merchant"
+    texto: "A merchant with a mule stops them: selling stale bread and buying anything."
+    comprar:
+      nombre: "Buy rations"
+      bien: "They buy {m, plural, one {one ration} other {# rations}} for {oro} coins."
+    vender:
+      nombre: "Sell what they carry"
+      bien: "They sell {m} things from the pack for {oro} coins."
+    seguir:
+      nombre: "Move on"
+      bien: "No deals today; they move on."
+  viajero:
+    titulo: "a lone traveller"
+    texto: "A traveller in a ragged cloak asks to walk with them a while: says they can handle a sword."
+    unirse:
+      nombre: "Let them come"
+      bien: "{otro} joins the group. Seems {otro_sexo, select, f {trustworthy} other {trustworthy}}."
+      mal: "During the night the traveller vanishes with {oro, plural, =0 {nothing: there was nothing to steal} other {# coins from the pack}}."
+    calar:
+      nombre: "Let the cleric size them up"
+      bien: "{heroe} looks them in the eye and lets them come. It's {otro}, and they can be trusted."
+      mal: "{heroe} doesn't trust them one bit and sends them off. Just as well."
+    seguir:
+      nombre: "Send them off"
+      bien: "They wish them a good road and move on."
+  campamento:
+    titulo: "an abandoned camp"
+    texto: "Cold embers, a torn tent and scattered bundles: someone left in a hurry."
+    registrar:
+      nombre: "Search it"
+      bien: "They gather {m, plural, one {one ration} other {# rations}}; also, {que}."
+      mal: "While they search, whatever scared off the owners comes back."
+    rastrear:
+      nombre: "Track who left it"
+      bien: "{heroe} reads the tracks: they left in no danger. They gather {m, plural, one {one ration} other {# rations}}."
+    seguir:
+      nombre: "Move on"
+      bien: "They don't touch it: something scared off the owners."
+  oso:
+    titulo: "a bear on the trail"
+    texto: "A huge bear blocks the way and rears up on its hind legs."
+    plantar:
+      nombre: "Stand up to it"
+      bien: "{heroe} steps forward, weapon raised."
+    rodear:
+      nombre: "Go around quietly"
+      bien: "{heroe} leads them on a detour through the brambles: the bear never notices."
+      mal: "A branch snaps and the bear turns around."
+    retroceder:
+      nombre: "Back off and wait"
+      bien: "They back away slowly and wait for it to leave: they lose a few hours."
+  cueva:
+    titulo: "a cave"
+    texto: "A cave mouth among the rocks; inside, water drips, and something else."
+    entrar:
+      nombre: "Go in"
+      bien: "Inside, in a dry corner, they find {que}.{con_objeto, select, si { And {objeto}.} other {}}"
+      mal: "They're not alone in the cave."
+    cuidado:
+      nombre: "Go in carefully"
+      bien: "{heroe} goes first, feeling the way: they find {que} without waking anything."
+      mal: "{heroe} hears something at the back and they leave empty-handed. Just as well."
+    seguir:
+      nombre: "Pass it by"
+      bien: "They leave the cave behind; maybe another time."
+  torre:
+    titulo: "an abandoned watchtower"
+    texto: "A half-ruined stone watchtower, its door barred."
+    subir:
+      nombre: "Climb the outside"
+      bien: "{heroe} climbs the stones and gets in through a window. Up top: {que}."
+      mal: "{heroe} slips halfway up and falls: hurt."
+    cerradura:
+      nombre: "Open the door"
+      bien: "{heroe} opens the door without breaking it. Inside: {que}.{con_objeto, select, si { And {objeto}.} other {}}"
+      mal: "The lock won't give. They leave it."
+    seguir:
+      nombre: "Move on"
+      bien: "They move on; the watchtower watches them go."
+  ruinas:
+    titulo: "ruins with runes"
+    texto: "Old ivy-covered stones and a door sealed with runes that still glow."
+    runas:
+      nombre: "Read the runes"
+      bien: "{heroe} reads the runes aloud and the door opens: inside, 2 crystal.{con_objeto, select, si { And {objeto}.} other {}}"
+      mal: "The runes burst in {heroe}'s hands: hurt."
+    forzar:
+      nombre: "Force the door"
+      bien: "{heroe} pushes the door and something wakes inside."
+    seguir:
+      nombre: "Leave them be"
+      bien: "Some things are better left shut. They move on."
+  guardian:
+    titulo: "the guardian of the forest"
+    texto: "The ground shakes: Old Tusk, the boar that guards the deepest forest, blocks their way."
+    pelear:
+      nombre: "Get it!"
+      bien: "{heroe} shouts and they charge at the guardian."
+    volver:
+      nombre: "Turn back"
+      bien: "They back away without turning their backs on it."
+carta:
+  titulo: "{que, mayus}"
+  espera: "{sitio, select, si {They wait at the door until tomorrow} other {They wait until nightfall}}: {horas, plural, one {# hour left} other {# hours left}}."
+  espera_guardian: "The guardian won't wait long: {horas, plural, one {# hour left} other {# hours left}}."
+  silenciar: "Mute this expedition"
+  silenciada: "Muted: no alerts, they decide"
+  riesgo:
+    - "safe"
+    - "a little risky"
+    - "risky"
+    - "very risky"
+  depende: "depends on their {atributo, select, F {Strength} D {Dexterity} other {Mind}}"
+  cuesta: "{n} coins"
+  ver_pelea: "Watch the fight"

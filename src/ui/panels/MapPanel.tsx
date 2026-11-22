@@ -25,7 +25,7 @@ import { bandParams, capBand } from '../../data/raids';
 import { THREAT_STEPS, threatTrend } from '../../core/events';
 import { Portrait } from '../Portrait';
 import { heroFrame, lookOf, marksOf } from '../view';
-import { t, tx } from '../../textos';
+import { msg, t, tx } from '../../textos';
 import { distAt, expSlots, expeditionsOpen } from '../../core/expedition';
 import { clientLabel } from '../../data/quests';
 
@@ -1000,13 +1000,20 @@ export function MapPanel({ game, onQuest, onHero, onTrip, onExpedition }: Props)
                       ))}
                     </span>
                     <span class="map-trip-text">
-                      <b>{t('expediciones.expeditionview.titulo', { rumbo: e.heading })}</b>
+                      <b>
+                        {t('expediciones.expeditionview.titulo', { rumbo: e.heading })}
+                        {e.pending && <span class="exp-alert"> !</span>}
+                      </b>
                       <span class="row-sub">
-                        {t('expediciones.mappanel.estado', {
-                          dias: Math.floor(distAt(e)),
-                          vuelta: !!e.turn,
-                          raciones: e.rations,
-                        })}
+                        {e.pending
+                          ? t('expediciones.mappanel.espera', {
+                              que: msg(`expediciones.sucesos.${e.pending.kind}.titulo`),
+                            })
+                          : t('expediciones.mappanel.estado', {
+                              dias: Math.floor(distAt(e)),
+                              vuelta: !!e.turn,
+                              raciones: e.rations,
+                            })}
                       </span>
                     </span>
                     <span class="map-trip-go" aria-hidden="true">
