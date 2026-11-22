@@ -40,7 +40,8 @@ import {
   RAISE_CHANCE,
   RAISE_MORALE,
   CACHE,
-  CACHE_REFUSE_MORALE,
+  CACHE_OWED_MORALE,
+  VET_LEVEL,
   RANKS,
   REFUSE_MORALE,
   SALARY_EVERY,
@@ -48,7 +49,6 @@ import {
   XP_PER_LEVEL,
   VET_CAP,
   VET_SNUB_CAP,
-  CACHE_GRUDGE,
   OVER_CAP_DROP,
   REFUSE_GRUDGE,
   VET_SNUB_REST,
@@ -251,6 +251,8 @@ export type Action =
   /** Marca leído todo el correo. */
   | { type: 'readAll' }
   | { type: 'answer'; id: string; yes: boolean }
+  /** Pagar después el caché que se le negó. */
+  | { type: 'payOwed'; id: string }
   | { type: 'equip'; heroId: string; itemId: string }
   | { type: 'unequip'; heroId: string; slot?: Slot }
   | { type: 'sellTrophy'; id: string }
@@ -318,7 +320,7 @@ export const nextPayment = (s: GameState) =>
 
 /** Lo que pide un héroe con petición pendiente. */
 export const requestAmount = (h: Hero) =>
-  h.request === 'cache' ? (CACHE[h.lvl] ?? CACHE[5]!) : RAISE_AMOUNT;
+  h.request === 'cache' ? (CACHE[h.cacheAt ?? h.lvl] ?? CACHE[VET_LEVEL]!) : RAISE_AMOUNT;
 export const upgradeCost = (s: GameState, k: keyof Facilities) => facilityCost(s, k);
 
 export function canHire(s: GameState, id: string): string | null {
@@ -722,10 +724,15 @@ function reduceAction(state: GameState, action: Action): GameState {
         delete x.grudge;
         x.morale = Math.min(100, x.morale + RAISE_MORALE);
         x.history.push(msg('partida.historial.pagado', { dia: s.day, cache }));
+      } else if (cache) {
+        // El caché negado no se olvida: le falta esa moral hasta que se le pague.
+        x.owed = (x.owed ?? 0) + amount;
+        x.morale = Math.max(0, x.morale - CACHE_OWED_MORALE);
+        x.history.push(msg('partida.historial.negado', { dia: s.day, cache }));
       } else {
-        x.morale = Math.max(0, x.morale + (cache ? CACHE_REFUSE_MORALE : REFUSE_MORALE));
+        x.morale = Math.max(0, x.morale + REFUSE_MORALE);
         // Y se lo guarda: durante unos días no se anima del todo (se suma a lo que ya tuviera).
-        const g = cache ? CACHE_GRUDGE : REFUSE_GRUDGE;
+        const g = REFUSE_GRUDGE;
         const old = x.grudge && x.grudge.until > s.day ? x.grudge : null;
         x.grudge = {
           cap: Math.min(40, (old?.cap ?? 0) + g.cap),
@@ -733,6 +740,18 @@ function reduceAction(state: GameState, action: Action): GameState {
         };
         x.history.push(msg('partida.historial.negado', { dia: s.day, cache }));
       }
+      return s;
+    }
+    case 'payOwed': {
+      const h = state.heroes.find((x) => x.id === action.id);
+      if (!h?.owed) return state;
+      const s = structuredClone(state);
+      const x = s.heroes.find((y) => y.id === action.id)!;
+      x.salary += h.owed;
+      delete x.owed;
+      delete x.grudge;
+      x.morale = Math.min(100, x.morale + CACHE_OWED_MORALE);
+      x.history.push(msg('partida.historial.pagado', { dia: s.day, cache: true }));
       return s;
     }
     case 'custom': {
@@ -1594,6 +1613,7 @@ export function endDay(state: GameState, away = false): GameState {
       VET_CAP[vet]! -
       (snub ? VET_SNUB_CAP : 0) -
       (h.grudge?.cap ?? 0) -
+      (h.owed ? CACHE_OWED_MORALE : 0) -
       (h.veil ? VEIL_CAP : 0);
     const gain =
       restMorale(s.fac.tab) +
@@ -1611,8 +1631,9 @@ export function endDay(state: GameState, away = false): GameState {
       if (h.idle === BORED_AFTER + 1) bored.push(h.name);
       h.morale = Math.max(Math.min(h.morale, BORED_FLOOR), h.morale - BORED_DROP);
     } else if (h.morale < cap) h.morale = Math.min(cap, h.morale + gain);
-    // Sin su cuarto o con rencor, aunque ya estuviera animado, se le va bajando hasta el tope.
-    else if (snub || h.grudge || h.veil) h.morale = Math.max(cap, h.morale - OVER_CAP_DROP);
+    // Sin su cuarto, con rencor o con el caché sin pagar, aunque ya estuviera animado, se le va bajando hasta el tope.
+    else if (snub || h.grudge || h.owed || h.veil)
+      h.morale = Math.max(cap, h.morale - OVER_CAP_DROP);
     if (h.morale < MORALE_QUIT && !has(h, 'leal') && vet < 2 && rng.chance(DESERT_CHANCE)) {
       deserters.push(h);
       continue;

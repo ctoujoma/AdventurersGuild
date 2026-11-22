@@ -107,6 +107,7 @@ export function revive(s: GameState, id: string): DawnEvent {
     'since',
     'lostAt',
     'grudge',
+    'owed',
   ] as const)
     delete h[k];
   if (!h.traits.some((t) => t.id === 'velo')) h.traits.push({ id: 'velo' });

@@ -26,7 +26,7 @@ daybar:
   anochecer: "Anochecer"
   manana: "Mañana"
   tarde: "Tarde"
-  el_reloj_del_dia: "El reloj del día corre solo y la noche cae sola. Con el juego cerrado la taberna sigue, {slow} veces más despacio, y al volver te cuenta lo que ha pasado."
+  el_reloj_del_dia: "El reloj del día corre solo y la noche cae sola. Con el juego cerrado la taberna sigue a un día de juego por cada día real (hasta {dias} días), y al volver te cuenta lo que ha pasado."
   el_reloj_del_dia_2: "El reloj del día corre solo. Mientras pagas la deuda puedes acelerarlo: toca para cambiar la velocidad."
   el_reloj_del_dia_3: "El reloj del día: la caja va entregando lo de la taberna hasta el anochecer. Toca para cambiar su velocidad (de ×½ a ×8)."
   pasar_la_noche_el: "Pasar la noche: el reloj corre ×{night_rush} hasta el amanecer. Si hay asalto, empieza a su ritmo."

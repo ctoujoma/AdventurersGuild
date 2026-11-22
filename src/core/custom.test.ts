@@ -9,7 +9,7 @@ import {
   RAVEN_PRICE,
   sealInitial,
 } from '../data/custom';
-import { VET_SNUB_REST } from './balance';
+import { VET_LEVEL, VET_SNUB_REST } from './balance';
 import { customOf, endDay, newGame, reduce } from './game';
 import { textsOf } from '../textos';
 import type { GameState } from './model';
@@ -124,7 +124,7 @@ describe('tu taberna', () => {
   it('el ala de veteranos anima a los de nivel alto y a nivel 2 no desertan', () => {
     const s = { ...newGame('vet'), gold: 500 };
     for (const h of s.heroes) {
-      h.lvl = 5;
+      h.lvl = VET_LEVEL;
       h.morale = 10;
     }
     const base = endDay(s).heroes[0]!.morale;

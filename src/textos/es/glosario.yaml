@@ -36,7 +36,7 @@ terminos:
     texto: "Los heridos se curan en la enfermería. Un desaparecido se perdió en una misión: puede volver solo (la capilla ayuda) o con un encargo de rescate."
   nivel_y_veteranos:
     termino: "Nivel y veteranos"
-    texto: "La experiencia sube el nivel y con él el salario. Desde el nivel 4 son veteranos: el ala de veteranos les da descanso extra y ya no desertan."
+    texto: "La experiencia sube el nivel y con él el salario. Desde el nivel 8 son veteranos (el ala de veteranos les da descanso extra y ya no desertan) y desde el 12, maestros; el nivel más alto es el 15. Al hacerse veteranos y maestros piden su caché."
   equipo:
     termino: "Equipo"
     texto: "Lo traen algunos encargos («+ objeto»). Se da desde el arcón o la ficha del héroe. {rarezas, mayus}; el marco lleva su color. Si el héroe muere, el objeto se pierde."

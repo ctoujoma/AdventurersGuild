@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAT_LOOSE, MAT_SELL, STORE_CAP } from './balance';
+import { EXPEDITION_LEVEL, MAT_LOOSE, MAT_SELL, STORE_CAP } from './balance';
 import { newGame } from './game';
 import type { GameState } from './model';
 import { gainMats, hasMats, matCap, matOf, missing, spendMats } from './materials';
@@ -64,7 +64,7 @@ describe('el almacén por niveles', () => {
     const { levelRank } = await import('./balance');
     const s = newGame('niveles');
     expect(storeNext(s, 1)).toMatch(/que llega con las expediciones/);
-    s.stats = { ...s.stats!, maxLvl: 5 };
+    s.stats = { ...s.stats!, maxLvl: EXPEDITION_LEVEL };
     expect(storeNext(s, 1)).not.toMatch(/expediciones/);
     expect(storeNext(s, 3)).toBeNull();
     expect(levelRank('almacen', 2)).toBe(0);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { VET_SNUB_CAP } from './balance';
+import { VET_LEVEL, VET_SNUB_CAP } from './balance';
 import { awayPlan, dormIssue, isAway, sleepPlan, vetsWithoutWing } from './beds';
 import { endDay, newGame, reduce } from './game';
 import type { GameState, Room } from './model';
@@ -21,7 +21,7 @@ describe('quién duerme dónde', () => {
   it('los héroes, en los dormitorios; los veteranos, en el ala si la hay', () => {
     const s = newGame('camas');
     const [a, b] = s.heroes;
-    a!.lvl = 6;
+    a!.lvl = VET_LEVEL;
     b!.lvl = 2;
     expect(sleepPlan(s).get(a!.id)).toBe(dorm(s).id);
     expect(vetsWithoutWing(s).map((h) => h.id)).toEqual([a!.id]);
@@ -35,7 +35,7 @@ describe('quién duerme dónde', () => {
   it('en el ala solo duermen veteranos (salvo que no quepan en los dormitorios)', () => {
     const s = newGame('ala');
     s.building.rooms.push(wing());
-    const h = s.heroes.find((x) => x.lvl < 4)!;
+    const h = s.heroes.find((x) => x.lvl < VET_LEVEL)!;
     expect(dormIssue(s, h.id, 'v')).toMatch(/veteran[oa]/);
     expect(reduce(s, { type: 'dorm', who: h.id, room: 'v' })).toBe(s);
   });
@@ -56,7 +56,7 @@ describe('quién duerme dónde', () => {
   it('el veterano sin cuarto en el ala se queja una vez y pierde moral hasta tenerlo', () => {
     const s = newGame('queja');
     const h = s.heroes[0]!;
-    h.lvl = 5;
+    h.lvl = VET_LEVEL;
     h.morale = 90;
     let t = endDay({ ...s, tips: ['*'] });
     const x = t.heroes.find((y) => y.id === h.id)!;
@@ -125,7 +125,7 @@ describe('la cama de quien está fuera', () => {
     const s = newGame('fuera-vet');
     s.building.rooms.push(wing());
     const [a] = s.heroes;
-    a!.lvl = 6;
+    a!.lvl = VET_LEVEL;
     a!.status = 'mision';
     expect(awayPlan(s).get(a!.id)).toBe('v');
   });

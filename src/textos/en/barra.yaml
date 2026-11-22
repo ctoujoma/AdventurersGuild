@@ -22,7 +22,7 @@ daybar:
   anochecer: "Nightfall"
   manana: "Morning"
   tarde: "Afternoon"
-  el_reloj_del_dia: "The day clock runs on its own and night falls on its own. With the game closed the tavern carries on, {slow} times slower, and when you come back it tells you what happened."
+  el_reloj_del_dia: "The day clock runs on its own and night falls on its own. With the game closed the tavern carries on at one game day per real day (up to {dias} days), and when you come back it tells you what happened."
   el_reloj_del_dia_2: "The day clock runs on its own. While you're paying off the debt you can speed it up: tap to change the speed."
   el_reloj_del_dia_3: "The day clock: the till hands over the tavern's takings until nightfall. Tap to change its speed (from ×½ to ×8)."
   pasar_la_noche_el: "Pass the night: the clock runs ×{night_rush} until dawn. If there's a raid, it starts at its own pace."
