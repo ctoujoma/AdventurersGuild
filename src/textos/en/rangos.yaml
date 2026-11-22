@@ -1,0 +1,7 @@
+planta: "floor {n}"
+nivel: "level {n} of the {sala, minus}"
+patio: "the backyard"
+recupera: "The guild is {rango} again: you can build that rank's things once more."
+sube: "The guild is now {rango}! Tougher, better-paid quests are coming in{hay, select, si {, and {abre} opens up} other {}}."
+olvido: "Nobody has gone out on a quest for days: the county is starting to forget the guild. Fame will keep dropping until you send someone."
+baja: "The guild drops to {rango}: nobody talks about your deeds anymore. What's built stays, but new {antes} things can't be built until you win it back."

@@ -1,0 +1,17 @@
+habilidades:
+  provocar:
+    nombre: "Taunt"
+    texto: "Draws blows onto themselves for a few seconds and holds out longer."
+  punalada:
+    nombre: "Backstab"
+    texto: "A blow from behind: triple damage."
+  bola:
+    nombre: "Fireball"
+    texto: "Burns every enemy at once."
+  curar:
+    nombre: "Heal"
+    texto: "Heals whoever in the party is worst off."
+  andanada:
+    nombre: "Volley"
+    texto: "Two arrows in a row at the same target."
+esbirro: "Minion"

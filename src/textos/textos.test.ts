@@ -85,9 +85,13 @@ describe('los ficheros de textos', () => {
       expect(extra, `claves de más en «${l}»`).toEqual([]);
       const holes = all
         .filter((x) => theirs.has(x.key))
-        .filter((x) => argsOf(x.text).join() !== argsOf(theirs.get(x.key)!).join())
+        // Una traducción puede no usar un hueco (el género en inglés), pero no inventarlos.
+        .filter((x) => {
+          const ok = new Set(argsOf(x.text));
+          return argsOf(theirs.get(x.key)!).some((a) => !ok.has(a));
+        })
         .map((x) => x.key);
-      expect(holes, `huecos distintos en «${l}»`).toEqual([]);
+      expect(holes, `huecos que no están en «${SOURCE}» («${l}»)`).toEqual([]);
       const lens = [...lists].filter(([k, n]) => myLists.get(k) !== n).map(([k]) => k);
       expect(lens, `listas de otro largo en «${l}»`).toEqual([]);
     }

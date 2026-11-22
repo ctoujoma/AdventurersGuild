@@ -1,0 +1,15 @@
+guerrero:
+  nombre: "Shield"
+  desc: "Covers the party: companions take half the wounds."
+picaro:
+  nombre: "Sticky fingers"
+  desc: "+{n}% gold, and brings back the item even on a partial success."
+mago:
+  nombre: "Sixth sense"
+  desc: "Uncovers hidden twists and the real danger of the quest."
+clerigo:
+  nombre: "Prayer"
+  desc: "Sometimes saves someone about to fall, and defeats hurt morale half as much."
+explorador:
+  nombre: "Shortcuts"
+  desc: "On journeys of {min} days or more, returns {dias} early and dodges half the ambushes."

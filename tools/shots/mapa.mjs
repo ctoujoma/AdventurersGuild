@@ -24,7 +24,7 @@ for (const [tag, vp] of [
   ['vertical', { width: 420, height: 860 }],
   ['horizontal', { width: 860, height: 420 }],
 ]) {
-  const page = await browser.newPage({ viewport: vp, deviceScaleFactor: 1 });
+  const page = await browser.newPage({ locale: 'es-ES', viewport: vp, deviceScaleFactor: 1 });
   page.on('pageerror', (e) => console.log('PAGEERROR', e.stack));
   await page.addInitScript(() => {
     localStorage.setItem(

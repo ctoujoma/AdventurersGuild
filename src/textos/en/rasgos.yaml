@@ -1,0 +1,59 @@
+rasgos:
+  valiente:
+    m: "Brave"
+    f: "Brave"
+    desc: "+2 Combat. Never flees, even when they should."
+  cobarde:
+    m: "Cowardly"
+    f: "Cowardly"
+    desc: "−2 Combat. When it all goes wrong, sometimes flees in time… and survives."
+  codicioso:
+    m: "Greedy"
+    f: "Greedy"
+    desc: "Keeps 10% of the gold. Performs better when the pay is high."
+  afortunado:
+    m: "Lucky"
+    f: "Lucky"
+    desc: "Rerolls one failed roll per quest."
+  gafe:
+    m: "Jinxed"
+    f: "Jinxed"
+    desc: "Slightly worsens every roll of the party."
+  bebedor:
+    m: "Hard-drinking"
+    f: "Hard-drinking"
+    desc: "−1 Dexterity. More morale if the tavern is upgraded."
+  leal:
+    m: "Loyal"
+    f: "Loyal"
+    desc: "Never deserts. Suffers double if a companion falls."
+  arrogante:
+    m: "Arrogant"
+    f: "Arrogant"
+    desc: "Refuses to go with lower-level heroes."
+  supersticioso:
+    m: "Superstitious"
+    f: "Superstitious"
+    desc: "−2 Arcana. Hates crypts."
+  tuerto:
+    m: "One-eyed"
+    f: "One-eyed"
+    desc: "Scar. −1 Dexterity, +1 Combat: looks scarier."
+  cojo:
+    m: "Lame"
+    f: "Lame"
+    desc: "Scar. −2 Survival: long roads feel endless."
+  curtido:
+    m: "Hardened"
+    f: "Hardened"
+    desc: "Survived being lost in the county. +2 Survival."
+  cortado:
+    m: "Scar-faced"
+    f: "Scar-faced"
+    desc: "Scar. +1 Combat: with that face, nobody wants a fight."
+  velo:
+    m: "Back from the veil"
+    f: "Back from the veil"
+    desc: "Scar: died and came back. +2 Arcana (has seen the other side), −1 Strength (something stayed there)."
+pista_oculto: "Hidden trait: revealed after their first quest"
+oculto: "??"

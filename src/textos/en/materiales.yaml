@@ -1,0 +1,28 @@
+hierro:
+  nombre: "Iron"
+  de_donde: "Comes from clearing lairs and investigating."
+  usos: "Needed for weapons, armour and lockpicks (making and upgrading them)."
+cuero:
+  nombre: "Leather"
+  de_donde: "Comes from hunting and exploring."
+  usos: "Needed for boots, shields and good cloaks."
+tela:
+  nombre: "Cloth"
+  de_donde: "Comes from escorting and recovering."
+  usos: "Needed for cloaks."
+hierbas:
+  nombre: "Herbs"
+  de_donde: "Will come from expeditions."
+  usos: "Amulets need them to be upgraded at the alchemist's."
+madera:
+  nombre: "Fine wood"
+  de_donde: "Will come from expeditions."
+  usos: "Wands need it to be upgraded at the alchemist's."
+cristal:
+  nombre: "Crystal"
+  de_donde: "Will come, rarely, from distant expeditions."
+  usos: "No workshop needs it yet."
+cuanto: "{n} {material, minus}"
+nada: "nothing"
+no_cabe: "Didn't fit: sold {que} for {oro} gold.{consejo, select, ampliar { Expand the storeroom to keep more.} construir { Build a storeroom to keep them.} other { Once you pay off the debt you can build a storeroom.}}"
+almacen_siguiente: "Level {nivel}: more of each material fits ({n} per slot){delicado, select, si { and shelves for delicate goods (herbs, fine wood and crystal){expediciones, select, si {} other {, which come with expeditions}}} other {}}."

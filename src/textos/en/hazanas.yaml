@@ -1,0 +1,28 @@
+hazanas:
+  encargos:
+    nombre: "A job's a job"
+    texto: "Complete {n} quests successfully"
+  brillantes:
+    nombre: "Worth a song"
+    texto: "Achieve {n} brilliant successes"
+  trofeos:
+    nombre: "Wall of honour"
+    texto: "Earn {n} trophies"
+  veterano:
+    nombre: "Seasoned"
+    texto: "Get a hero to level {n}"
+  oro:
+    nombre: "Full till"
+    texto: "Earn {n} gold from quests"
+  asaltos:
+    nombre: "No thieving here"
+    texto: "Repel {n} raids on the tavern"
+  sinbajas:
+    nombre: "Everyone home"
+    texto: "Go {n} days in a row without losses"
+premio:
+  oro: "{n} gold"
+  rep: "{n} reputation"
+  equipo: "{rareza, minus} gear"
+  con_objeto: "{premio} ({objeto})"
+cumplida: "Feat: “{nombre}” {nivel}. Reward: {premio}."

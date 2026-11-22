@@ -1,0 +1,67 @@
+amenaza:
+  caravana: "The caravan bringing the wine has been raided: the tavern makes nothing today. The county is restless."
+  miedo: "Fear runs along the roads: fewer quests arrive today."
+  por_historia: "the next step of “{historia}” is waiting on the board"
+  por_quietud: "nobody has gone out on a quest for days"
+  en_camino: "there are parties out on the roads"
+  en_calma: "the county is calm"
+  tramo_caravanas: "caravans get raided: some days the tavern makes nothing"
+  tramo_encargos: "fewer quests reach the board"
+  tramo_asaltos: "bandits take more notice of the guild: more raids"
+buhonero:
+  texto: "A pedlar with a cart full of knick-knacks swears he has “a real item” hidden under the tarp. He asks 60 gold, without showing it first."
+  opciones:
+    - etiqueta: "Buy (60)"
+      pista: "Good gear… or not"
+    - etiqueta: "No, thanks"
+      pista: "Nothing changes"
+  bueno: "It was the real thing: {objeto}. It's already hanging on the cellar board."
+  malo: "It was… {objeto, minus}. The pedlar is already past the second crossroads."
+  no: "The pedlar leaves, whistling."
+pelea:
+  texto: "{a} and {b} have got into a fight at the bar over a bet. Jugs are flying."
+  opciones:
+    - etiqueta: "Step in and buy a round"
+      pista: "−10 gold, more morale"
+    - etiqueta: "Let them sort it out"
+      pista: "One wins, one loses"
+  ronda: "A round and a handshake. {a} and {b} end up singing together."
+  solos: "{a} wins the argument and the bet. {b} won't speak to them for days."
+bardo:
+  texto: "A passing bard asks to sing tonight in exchange for supper and a corner to sleep in."
+  opciones:
+    - etiqueta: "Let him sing"
+      pista: "−5 gold, morale for everyone"
+    - etiqueta: "Send him off"
+      pista: "Nothing changes"
+  canta: "He sings ballads of highwaymen and the hall ends up joining the chorus."
+  no: "He leaves grumbling. That night he sings at the inn across the road."
+noble:
+  texto: "A ruined noble offers his family's sword as a pledge for 100 gold. He swears he'll come back for it before winter."
+  opciones:
+    - etiqueta: "Accept (100)"
+      pista: "A valuable item"
+    - etiqueta: "Refuse"
+      pista: "Nothing changes"
+  si: "You keep {objeto, minus}. The noble doesn't come back, of course."
+  no: "He leaves with his sword and his pride."
+lobos:
+  texto: "Some villagers ask for help: wolves come down to the fold every night. They have nothing to pay with."
+  opciones:
+    - etiqueta: "Help for free"
+      pista: "+6 reputation, some risk"
+    - etiqueta: "Refuse"
+      pista: "−2 reputation"
+  mordisco: "{heroe} drives off the wolves, but comes back with a bite: two days in bed. The village speaks well of the guild."
+  ayuda: "{heroe} drives off the wolves. The village speaks well of the guild."
+  no: "The villagers leave crestfallen. Word will get around."
+apuesta:
+  texto: "A stranger with a bone die challenges the house: 30 gold says he rolls higher than the innkeeper."
+  opciones:
+    - etiqueta: "Bet 30"
+      pista: "Double or nothing"
+    - etiqueta: "No gambling here"
+      pista: "Nothing changes"
+  gana: "The innkeeper rolls a six. The stranger pays up and leaves without finishing his beer."
+  pierde: "The stranger rolls a six and the innkeeper a two. He scoops up the gold and orders another jug."
+  no: "The stranger shrugs and looks for another tavern."

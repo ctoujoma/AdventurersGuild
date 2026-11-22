@@ -1,0 +1,27 @@
+visitantes:
+  campesino:
+    desc: "They spend little, but they always come."
+  mercader:
+    desc: "They pay well and come with the guild's fame."
+  noble:
+    desc: "They only visit a hall with lots of Appeal. They bring fame."
+  espia:
+    nombre: "quiet stranger"
+    plural: "quiet strangers"
+    desc: "Watches a lot and drinks little: could be a bandit spy."
+rumores:
+  - "They say chains rattle at night in the old mill."
+  - "The smith's son has been seen talking with the forest folk."
+  - "The harvest looks good, if the boars don't trample it."
+  - "At the Robledo fair they pay double for wolf pelts."
+  - "Some swear the Greyhollow mine isn't empty."
+  - "Merlo the moneylender has bought another house. Another one."
+  - "Carts come down the north road without escort. Bad idea."
+  - "This beer beats the one at the crossroads inn."
+  - "My cousin says he saw a dragon. My cousin sees a lot of things."
+  - "One-Eye's bandits split their loot at the hermitage."
+cuantos:
+  campesino: "{n, plural, one {# peasant} other {# peasants}}"
+  mercader: "{n, plural, one {# merchant} other {# merchants}}"
+  noble: "{n, plural, one {# noble} other {# nobles}}"
+  espia: "{n, plural, one {# quiet stranger} other {# quiet strangers}}"

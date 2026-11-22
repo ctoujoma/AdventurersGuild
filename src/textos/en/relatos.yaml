@@ -1,0 +1,332 @@
+comienzos:
+  Cazar:
+    - - "{grupo} followed the trail to {lugar} for two nights."
+      - "{grupo} followed the trail to {lugar} for two nights."
+    - - "{grupo} lay in wait at {lugar}, downwind."
+      - "{grupo} lay in wait at {lugar}, downwind."
+  Escoltar:
+    - - "{grupo} walked beside the wagon all the way to {lugar}."
+      - "{grupo} walked beside the wagon all the way to {lugar}."
+    - - "The merchant didn't stop talking the whole way to {lugar}. {grupo} put up with it."
+      - "The merchant didn't stop talking the whole way to {lugar}. {grupo} put up with it."
+  Explorar:
+    - - "{grupo} went down into {lugar} with a rope and a torch that wouldn't stop smoking."
+      - "{grupo} went down into {lugar} with a rope and two torches that wouldn't stop smoking."
+    - - "{lugar, mayus} was bigger on the inside than it looked from outside."
+      - "{lugar, mayus} was bigger on the inside than it looked from outside."
+  Recuperar:
+    - - "{grupo} reached {lugar} when it was already pitch dark."
+      - "{grupo} reached {lugar} when it was already pitch dark."
+    - - "The job looked easy, and that should have made {grupo} suspicious."
+      - "The job looked easy, and that should have made {grupo} suspicious."
+  Investigar:
+    - - "{grupo} spent the night at {lugar} with eyes wide open."
+      - "{grupo} spent the night at {lugar} with eyes wide open."
+    - - "Nobody at {lugar} wanted to talk. {grupo} bought a round and then everyone talked."
+      - "Nobody at {lugar} wanted to talk. {grupo} bought a round and then everyone talked."
+  Limpiar:
+    - - "{grupo} went down into {lugar} with a broom, a sword and little patience."
+      - "{grupo} went down into {lugar} with a broom, a sword and little patience."
+    - - "The smell of {lugar} could be noticed from the road."
+      - "The smell of {lugar} could be noticed from the road."
+lineas:
+  Combate:
+    ok:
+      - "{heroe} stood in front and didn't give a single step."
+      - "{heroe} dealt blows with more enthusiasm than technique, but it worked."
+      - "When the charge came, {heroe} was already waiting."
+    ko:
+      - "There were more of them than the quest said, and {heroe} got the worst of it."
+      - "{heroe} charged first and thought later. This time it went badly."
+      - "{heroe}'s sword got stuck in a tree trunk at the worst moment."
+  Trampas:
+    ok:
+      - "{heroe} found the tripwire before anyone stepped on it."
+      - "The lock gave way as soon as {heroe} whispered to it."
+      - "{heroe} spotted the loose flagstone and warned the others not to step on it."
+    ko:
+      - "The trap went off; {heroe} is still shaken."
+      - "{heroe} swore that flagstone wasn't there before."
+      - "{heroe} spent half an hour on the lock and got nowhere. Their version differs."
+  Arcano:
+    ok:
+      - "{heroe} read the runes aloud and whatever was growling at the back stopped growling."
+      - "{heroe} recognised the symbol in time and nobody touched what they shouldn't."
+      - "{heroe} made a gesture, the room smelled of sulphur for a moment, and that was that."
+    ko:
+      - "{heroe} mispronounced a word. All the candles went out at once."
+      - "{heroe} said they understood what was written on the wall. They didn't understand a letter."
+      - "{heroe}'s spell worked, but on the wrong person."
+  Supervivencia:
+    ok:
+      - "{heroe} found a shortcut through the ravine and they gained half a day."
+      - "{heroe} smelled the ambush before seeing it."
+      - "Thanks to {heroe} they slept under cover and ate hot food every night."
+    ko:
+      - "They got lost twice. {heroe} swears the map was wrong."
+      - "It rained for three days straight and {heroe} picked the worst spot to camp."
+      - "{heroe} mistook mushrooms for other mushrooms. Two days of cramps."
+cierres:
+  brillante:
+    - "They came back singing, with a full purse."
+    - "The client paid, left a tip and hugged everyone."
+  exito:
+    - "Job done. The client paid without a word of complaint."
+    - "Quest complete, no scares and not much of a story."
+  parcial:
+    - "The client paid half, “for the trouble”."
+    - "Half a job, half the pay and a very long argument."
+  fracaso:
+    - "They came back empty-handed with feet full of blisters."
+    - "The client didn't part with a single coin, and complained on top of it."
+  desastre:
+    - "They came back worse than they left, and with nothing."
+    - "Nobody wants to talk about what happened there."
+ambiente:
+  - "A bard has been singing off-key at the bar all morning. He's the smith's cousin, so nobody says anything."
+  - "Someone has carved “Brom never misses” into a table. Below, in different handwriting, it says “sure, sure”."
+  - "Whiskers has left something at the door that isn't a mouse. The innkeeper has covered it with a bucket."
+  - "Today there's chunky soup. The innkeeper swears the chunks are bacon."
+  - "A traveller asks if this is where they hire heroes “cheap, but not that cheap”."
+  - "It rained all night. The leak in the cellar now has a name: Gertrude."
+  - "The moneylender walked past the door, slowly, looking inside."
+  - "Two regulars argue whether a griffin is more bird or more cat. There's already money on the table."
+  - "The innkeeper swears Uncle Fausto's portrait winks at him at night."
+  - "A kid came in to pet Whiskers. Left with a scratch and very happy."
+cicatrices:
+  "0":
+    nick:
+      m: "One-Eye"
+      f: "One-Eye"
+    texto: "has lost an eye"
+  "1":
+    nick:
+      m: "Gimpy"
+      f: "Gimpy"
+    texto: "left half a knee among the rocks"
+  "2":
+    nick:
+      m: "Scarface"
+      f: "Scarface"
+    texto: "bears a gash from ear to chin"
+mas_comienzos:
+  Cazar:
+    - - "The tracks were so big that {grupo} had to look twice."
+      - "The tracks were so big that {grupo} had to look twice."
+    - - "{grupo} set off for {lugar} before cockcrow, with a lamb tied up as bait."
+      - "{grupo} set off for {lugar} before cockcrow, with a lamb tied up as bait."
+    - - "At {lugar} nobody left home after dark. A bad sign for anyone out hunting."
+      - "At {lugar} nobody left home after dark. A bad sign for anyone out hunting."
+  Escoltar:
+    - - "The cargo was covered with a tarp, and {grupo} decided not to ask."
+      - "The cargo was covered with a tarp, and {grupo} decided not to ask."
+    - - "On the road to {lugar} one cart in three gets robbed. {grupo} didn't let go of the hilt the whole trip."
+      - "On the road to {lugar} one cart in three gets robbed. {grupo} didn't let go of their hilts the whole trip."
+    - - "{cliente, mayus} insisted on bringing their aunt too. {grupo} couldn't say no."
+      - "{cliente, mayus} insisted on bringing their aunt too. {grupo} couldn't say no."
+  Explorar:
+    - - "The map of {lugar} had more wine stains than roads."
+      - "The map of {lugar} had more wine stains than roads."
+    - - "{grupo} counted the steps going into {lugar}. On the way back the count was different."
+      - "{grupo} counted the steps going into {lugar}. On the way back the count was different."
+    - - "At {lugar} there was a hand's breadth of dust and, in the dust, tracks of something that wore no boots."
+      - "At {lugar} there was a hand's breadth of dust and, in the dust, tracks of something that wore no boots."
+  Recuperar:
+    - - "{cliente, mayus} described the item in such detail that {grupo} suspected it wasn't theirs."
+      - "{cliente, mayus} described the item in such detail that {grupo} suspected it wasn't theirs."
+    - - "The item was still at {lugar}. The problem was the creature sleeping on top of it."
+      - "The item was still at {lugar}. The problem was the creature sleeping on top of it."
+    - - "{grupo} got into {lugar} through the window, because the door had too many bolts."
+      - "{grupo} got into {lugar} through the window, because the door had too many bolts."
+  Investigar:
+    - - "At {lugar} everyone had an alibi, and every alibi was the same tavern."
+      - "At {lugar} everyone had an alibi, and every alibi was the same tavern."
+    - - "{grupo} started with the usual: asking the old woman who sees everything from her window."
+      - "{grupo} started with the usual: asking the old woman who sees everything from her window."
+    - - "Every clue ended at {lugar}, and there nobody knew anything at all."
+      - "Every clue ended at {lugar}, and there nobody knew anything at all."
+  Limpiar:
+    - - "From the door of {lugar} you could already hear something scratching and gnawing."
+      - "From the door of {lugar} you could already hear something scratching and gnawing."
+    - - "{grupo} covered their nose with a handkerchief before going down into {lugar}. It didn't help."
+      - "{grupo} covered their noses with handkerchiefs before going down into {lugar}. It didn't help."
+    - - "{cliente, mayus} swore there were “four or five”. {grupo} counted over thirty."
+      - "{cliente, mayus} swore there were “four or five”. {grupo} counted over thirty."
+mas_lineas:
+  Combate:
+    ok:
+      - "{heroe} dodged the first blow and there wasn't a second."
+      - "{heroe} let out such a roar that half of them ran off before it started."
+      - "{heroe} used a chair, a saucepan and, finally, the sword."
+    ko:
+      - "{heroe} slipped in the mud just when staying upright mattered most."
+      - "{heroe}'s shield stopped the blow, but the arm took a nasty crack."
+      - "They were attacked from behind and {heroe} didn't notice until it was too late."
+  Trampas:
+    ok:
+      - "{heroe} took the mechanism apart and kept a spring “just in case”."
+      - "A dart whistled past {heroe}'s ear, but they had already ducked."
+      - "{heroe} tested every tile with the tip of a knife. It took a while, but they got through."
+    ko:
+      - "A click, a whistle and {heroe} with singed hair."
+      - "The net dropped from the ceiling and {heroe} was left hanging like a ham."
+      - "{heroe} opened the chest. The chest bit."
+  Arcano:
+    ok:
+      - "{heroe} drew a circle of salt and whatever lurked didn't dare cross it."
+      - "The cursed book shut by itself when {heroe} recited its own name to it."
+      - "The hair on {heroe}'s arms stood on end and they raised the alarm before anyone."
+    ko:
+      - "{heroe}'s amulet turned red-hot and had to be thrown into a puddle."
+      - "{heroe} read the scroll backwards. For an hour, everyone spoke backwards."
+      - "What slept in the crypt woke up, and {heroe} couldn't put it back to sleep."
+  Supervivencia:
+    ok:
+      - "{heroe} saw the storm coming from the colour of the sky and found a cave in time."
+      - "{heroe} hunted, plucked and roasted a pheasant while the others set up camp."
+      - "Following the moss on the trees, {heroe} got them out of the forest without a scratch."
+    ko:
+      - "{heroe} lit the fire with green wood. It smoked all night and warmed nothing."
+      - "The river was higher than {heroe} reckoned. They lost half the load."
+      - "{heroe} left the food unhung and the wolves dined better than the party."
+por_clase:
+  guerrero:
+    ok:
+      - "{heroe} stepped in front, as always, and took everything they threw."
+      - "{heroe} didn't beat around the bush. Two slashes and on to the next thing."
+    ko:
+      - "{heroe} tried to fix it with a sword, and that wasn't how it got fixed."
+      - "{heroe}'s armour was too heavy for that terrain, and it showed."
+  picaro:
+    ok:
+      - "{heroe} slipped round the back and opened the door from inside."
+      - "{heroe} went in and out without anyone noticing, which is what they're paid for."
+    ko:
+      - "{heroe} tried to sneak in and tripped over the only bucket in the whole corridor."
+      - "Even {heroe}'s fingers slip now and then."
+  mago:
+    ok:
+      - "{heroe} murmured something in a dead language and the thing calmed down."
+      - "A blue spark in {heroe}'s hand and the way was clear."
+    ko:
+      - "{heroe} got tongue-tied halfway through the spell. Out came toads."
+      - "{heroe} had everything worked out, except the wind."
+  clerigo:
+    ok:
+      - "{heroe} prayed aloud and, perhaps by chance, everything went well."
+      - "With a blessing and a good whack of the staff, {heroe} settled it all."
+    ko:
+      - "The gods were busy with something else when {heroe} called on them."
+      - "By the time {heroe} finished the prayer, it was too late."
+  explorador:
+    ok:
+      - "{heroe} knew a goat track that's on no map."
+      - "{heroe} put an ear to the ground and knew where they were coming from."
+    ko:
+      - "For the first time in years, {heroe} got lost, and doesn't want anyone to know."
+      - "The trail {heroe} followed belonged to a boar. A very bad-tempered boar."
+por_rasgo:
+  velo:
+    - "{heroe} stared at a roadside grave longer than they should. Says it waved at them."
+    - "At night, by the fire, {heroe} doesn't talk about the other side. Nobody dares ask."
+  valiente:
+    - "{heroe} offered to go first without anyone asking."
+    - "{heroe} laughed at danger, and danger left them a souvenir on the leg."
+  cobarde:
+    - "{heroe} suggested turning back three times “out of prudence”."
+    - "Every time a branch creaked, {heroe} ended up behind someone."
+  codicioso:
+    - "{heroe} priced everything in sight, including the client's boots."
+    - "{heroe} asked twice whether the pay was per head or per party."
+  afortunado:
+    - "{heroe} found a coin on the road. Then another. Then another."
+    - "A stray arrow bounced off {heroe}'s buckle. Not a scratch."
+  gafe:
+    - "Since {heroe} joined the trip, two straps broke and three black cats crossed their path."
+    - "It started raining just as {heroe} said “what a lovely day”."
+  bebedor:
+    - "{heroe} brought a wineskin “to disinfect wounds”. It arrived empty."
+    - "{heroe}'s first question on reaching {lugar} was where the tavern was."
+  leal:
+    - "{heroe} didn't leave the party even to sleep."
+    - "{heroe} carried a companion's pack without a word."
+  arrogante:
+    - "{heroe} explained to the whole party how to do their jobs. Several times."
+    - "{heroe} made it clear that, in their opinion, this was beneath their talent."
+  supersticioso:
+    - "{heroe} refused to cross the bridge until they'd spat into the river three times."
+    - "{heroe} hung garlic in the tent. Nobody slept well, but no vampire came either."
+  tuerto:
+    - "With the eyepatch, {heroe} only had to glare for people to step aside."
+  cojo:
+    - "{heroe} limped the whole way without a complaint. Well, with a few."
+  cortado:
+    - "{heroe} only had to smile for nobody to look for a fight."
+camino:
+  - "Halfway there they met a pedlar selling “water from the fountain of youth”. It smelled of well."
+  - "They slept at an inn where the soup was even worse than at El Jarro Partido. They didn't think it possible."
+  - "A shepherd showed them the way in exchange for listening to him sing. He sang badly and at length."
+  - "The storm caught them in the open and they spent the night in a barn, with a very curious goat."
+  - "At a crossroads, a sign said “{lugar}, one league”. It was three."
+  - "They crossed paths with another band of adventurers. They nodded and nobody said where they were going."
+  - "A boy followed them for two leagues asking if they were real heroes."
+  - "They slept in the open. Someone snored all night and nobody admits to it."
+hallazgos:
+  - "By the road they found a purse with {oro} gold. They asked at the nearest inn, but without much effort."
+  - "A merchant grateful for driving off some wolves gave them {oro} gold as a tip."
+  - "A bandit was sleeping it off by the road with {oro} gold in his pocket. He woke up lighter."
+piques:
+  - "{a} and {b} argued the whole trip about whether a dragon beats a giant. No agreement."
+  - "{a} taught {b} a tavern song. Now there's no stopping it."
+  - "{a} snored all night and {b} woke up with dark circles and a thirst for revenge."
+  - "{a} and {b} bet their dinner on who'd come back with more scratches."
+  - "{a} saved {b}'s skin, and won't let them forget it for months."
+  - "{a} and {b} didn't say a word to each other the whole trip. Something happened the first night."
+desanimados:
+  - "{heroe}'s mind was elsewhere, and it showed."
+  - "{heroe} barely opened their mouth the whole trip, and hardly ate."
+  - "{heroe} wondered aloud why anyone risks their skin for so little."
+animados:
+  - "{heroe} whistled the whole way and by the end everyone was whistling."
+  - "{heroe} was so keen they pulled the whole party along."
+cierres_cliente:
+  brillante:
+    - "{cliente, mayus} promised to speak well of the guild in every tavern in the county."
+    - "{cliente, mayus} wanted to treat them to dinner. They accepted, of course."
+  exito:
+    - "{cliente, mayus} counted the coins twice, but paid."
+    - "{cliente, mayus} said thanks with a rather limp handshake."
+  parcial:
+    - "{cliente, mayus} paid grumbling and asked for a discount next time."
+    - "{cliente, mayus} said “it's something”. With a very sour face."
+  fracaso:
+    - "{cliente, mayus} shut the door without a word."
+    - "{cliente, mayus} says next time they'll find another guild."
+  desastre:
+    - "{cliente, mayus} has asked them never to come by again."
+    - "They say {cliente} is telling the story at every market. The guild doesn't come off well."
+mas_cierres:
+  brillante:
+    - "They'll tell this one at the tavern for years, with more enemies each time."
+    - "They came back with the pay and ravenous."
+  exito:
+    - "No heroics. A clean, well-paid job."
+    - "The client paid what was agreed and everyone went to dinner."
+  parcial:
+    - "It didn't go entirely wrong, but nothing to brag about either."
+    - "They did the main thing and left the rest half-done."
+  fracaso:
+    - "Some days you'd better not get out of bed, and this was one."
+    - "Not a trace of the pay. Tonight it's stale bread for dinner."
+  desastre:
+    - "This story won't be told at the tavern."
+    - "The journey back was long and very quiet."
+revelar:
+  - "By the way, now you know something more: {heroe} is {rasgo, minus}."
+  - "You learn one thing from this trip: {heroe} is {rasgo, minus}."
+  - "According to the others, {heroe} is {rasgo, minus}."
+  - "At {lugar} it became very clear that {heroe} is {rasgo, minus}."
+por_objeto:
+  - "{heroe} pulled out {objeto, minus} and that ended the argument."
+  - "Without {objeto, minus}, {heroe} wouldn't have come back to tell the tale."
+  - "{objeto, mayus} saved {heroe}'s skin at the worst moment."

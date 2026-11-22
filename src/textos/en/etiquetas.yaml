@@ -1,0 +1,196 @@
+clases:
+  guerrero:
+    m: "Warrior"
+    f: "Warrior"
+  picaro:
+    m: "Rogue"
+    f: "Rogue"
+  mago:
+    m: "Mage"
+    f: "Mage"
+  clerigo:
+    m: "Cleric"
+    f: "Cleric"
+  explorador:
+    m: "Ranger"
+    f: "Ranger"
+peligro:
+  - "Low"
+  - "Medium"
+  - "High"
+  - "Deadly"
+mejoras:
+  dorm:
+    nombre: "Dormitories"
+    niveles:
+      - "In ruins: straw on the floor"
+      - "2 bunks"
+      - "3 bunks and curtains"
+      - "4 bunks with quilts, a lantern and bunting"
+      - "Canopy bunks, embroidered blankets and rugs"
+    efecto: "{camas} beds per slot; each dormitory adds its own{lujo, select, si {; +2 morale per night for those at home} other {}}"
+  enf:
+    nombre: "Infirmary"
+    niveles:
+      - "Closed and full of junk"
+      - "1 cot and a candle"
+      - "2 cots, a lantern and herbs drying"
+      - "2 cots and an apothecary chest with potions"
+    efecto_0: "Wounds heal at their own pace"
+    efecto: "Wounds heal {veces} times faster"
+  tab:
+    nombre: "Tavern"
+    niveles:
+      - "In ruins: cold hearth and cobwebs"
+      - "Peeling plaster, a plank bar, a lantern and the bare minimum"
+      - "Whitewash with a border, barrels, sconces, a dartboard, a cauldron and candles"
+      - "Wood panelling, tablecloths, a trophy, a lute, a candelabra and a big fire"
+      - "Great hall: long rug, brass chandelier, two candelabras and a gilded bar"
+      - "Banquet hall: crystal chandelier, stained glass, fireplace and a marble bar"
+    efecto_0: "No income: nobody comes"
+    efecto: "+{atractivo} Appeal (more visitors){encargos, select, si {, more quests} other {}}{candidatos, select, si { and better candidates} other {}}; resting cheers up more"
+  mapas:
+    nombre: "Map room"
+    niveles:
+      - "An old map nailed up in the attic"
+      - "Mapping table and maps of the county"
+      - "Spyglass, globe and routes marked with red thread"
+      - "Great map with a compass rose and green damask"
+    efecto: "+{n, plural, one {# quest} other {# quests}} on the board, +15% chance of raid tip-offs{todos, select, si {; you see the real danger of all of them} other {}}"
+  arm:
+    nombre: "Armoury"
+    niveles:
+      - "Four rusty swords in the cellar"
+      - "Weapon rack with spears, swords and shields"
+      - "Armour, an anvil and a whetstone"
+      - "Three rows of shelves and sandstone walls"
+    efecto:
+      - "Everyone goes with their own"
+      - "+1 Combat for everyone"
+      - "+1 Combat, Traps and Survival for everyone"
+      - "+2 Combat and +1 Traps and Survival for everyone"
+  cap:
+    nombre: "Chapel"
+    niveles:
+      - "None: you pray wherever you can"
+      - "Stone annex with an altar and a candle for each of the fallen"
+      - "Bell, stained glass and pews"
+      - "More candles, another row of the fallen and purple damask"
+    efecto: "Morale +{moral} per night, {vuelve}% of the missing return (without a chapel, {sin}%){mitad, select, si { and the fallen hurt half as much} other {}}"
+  forja:
+    nombre: "Forge"
+    niveles:
+      - "None: the village smith charges a lot"
+      - "A shed with a hearth, anvil and bellows"
+      - "Big forge with a chimney and weapon rack"
+      - "A red-hot piece in the forge and sandstone walls"
+    efecto: "Room quality: {calidad} (a good craftsman raises it)"
+  establo:
+    nombre: "Stable"
+    niveles:
+      - "None: you go on foot"
+      - "A stable with two horses"
+      - "Big stable and a cart"
+    efecto: "One day less on journeys of 3 days or more{carro, select, si {; escorts pay 25% more} other {}}"
+  patio:
+    nombre: "Training yard"
+    niveles:
+      - "None"
+      - "Straw dummies by the road"
+      - "Dummies, a target and a practice weapon rack"
+    efecto: "+{xp} experience per night for those resting (levels are won by fighting)"
+  empal:
+    nombre: "Palisade"
+    niveles:
+      - "None"
+      - "Sharpened stakes closing off the yard"
+      - "Double palisade with a walkway"
+    efecto: "+{defensa} defence if the tavern is raided"
+  torre:
+    nombre: "Watchtower"
+    niveles:
+      - "None"
+      - "Wooden tower with a lantern"
+      - "Tall tower with a bell and a banner"
+      - "Lit beacon, pennant and flag"
+    efecto: "Always a tip-off before raids{campana, select, si {; one more quest on the board} other {}}{almenara, select, si {; with the beacon, gangs think twice} other {}}"
+  vet:
+    nombre: "Veterans' wing"
+    niveles:
+      - "None"
+      - "Rooms with a window for the veterans"
+      - "A wing with a balcony and their trophies"
+      - "Armour under the window and garnet damask"
+    efecto: "{camas} beds per slot. Heroes of level 4 or higher: +{moral} morale per night and a higher cap{balcon, select, si {; they never desert} other {}}"
+moral:
+  animado:
+    etiqueta:
+      m: "Cheerful."
+      f: "Cheerful."
+    corto: "+1"
+    desc: "+1 to all skills."
+  normal:
+    etiqueta:
+      m: "Calm."
+      f: "Calm."
+    desc: "Resting at the tavern raises morale; upgrading it, even more."
+  desanimado:
+    etiqueta:
+      m: "Down."
+      f: "Down."
+    corto: "−1"
+    desc: "−1 to all skills. May ask you for a raise."
+  harto:
+    etiqueta:
+      m: "Fed up."
+      f: "Fed up."
+    corto: "−1"
+    desc: "−1 to everything and may leave any night. Let them rest or raise their wage."
+calidad: "common {c}%, good {b}%, rare {r}%"
+peligro_oculto: "??"
+estado:
+  candidato: "Looking for work"
+  ok: "Available"
+  mision: "On a quest · {dias} d"
+  herido: "Wounded · {dias} d"
+  desaparecido: "Missing"
+  muerto: "Fallen"
+sin_efecto: "No effect"
+resultado:
+  brillante: "Brilliant success"
+  exito: "Success"
+  parcial: "Partial success"
+  fracaso: "Failure"
+  desastre: "Disaster"
+rangos:
+  cobre: "copper"
+  hierro: "iron"
+  plata: "silver"
+  oro: "gold"
+  leyenda: "legend"
+habilidades:
+  Combate: "Combat"
+  Trampas: "Traps"
+  Arcano: "Arcana"
+  Supervivencia: "Survival"
+habilidades_corto:
+  Combate: "CMB"
+  Trampas: "TRP"
+  Arcano: "ARC"
+  Supervivencia: "SRV"
+atributos:
+  F: "Strength"
+  D: "Dexterity"
+  M: "Mind"
+riesgo:
+  - "Piece of cake"
+  - "Likely"
+  - "Risky"
+  - "Suicidal"
+tipos:
+  Cazar: "Hunt"
+  Escoltar: "Escort"
+  Explorar: "Explore"
+  Recuperar: "Recover"
+  Investigar: "Investigate"
+  Limpiar: "Clear"

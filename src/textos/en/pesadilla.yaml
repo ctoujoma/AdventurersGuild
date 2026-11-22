@@ -1,0 +1,6 @@
+tranquilo: "Sleeping peacefully now."
+ya_bebio: "{heroe} has already had their drink."
+sin_cerveza: "There's no beer left in the cellar (you need one jug)."
+trago: "{heroe} sits up, downs the drink and lies back down, calmer (+{moral} morale, −{jarras} jug)."
+durmio: "{heroe} slept right through after last night's drink."
+mala_noche: "{heroe} spent the night tossing and turning, plagued by nightmares: wakes up with less morale (−{n})."

@@ -28,6 +28,7 @@ const browser = await chromium.launch({
   headless: false,
 });
 const page = await browser.newPage({
+  locale: 'es-ES',
   viewport: vp,
   deviceScaleFactor: 1,
   hasTouch: vp.width < 900,

@@ -1,0 +1,2 @@
+llena: "The treasure vault is full: {n} gold didn't fit and was lost. Spend it, upgrade the vault or make it bigger."
+casi: "The treasure vault is almost full ({oro} of {tope}). Whatever doesn't fit will be lost."

@@ -1,0 +1,1 @@
+sin_cena: "There wasn't food for everyone: {quien} went to bed without supper (−{moral} morale).{servicio, select, si { Not even the staff ate.} other {}}"

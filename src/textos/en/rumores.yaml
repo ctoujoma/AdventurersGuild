@@ -1,0 +1,13 @@
+rumores:
+  - "A muleteer swears something glitters under the stones at {lugar}."
+  - "Two woodcutters whisper: at {lugar} there's a cave that wasn't there last winter."
+  - "A pedlar says she saw a sword stuck in a stump near {lugar}."
+  - "The old man in the corner talks of treasure buried at {lugar}. He seems sober this time."
+  - "A shepherd says something big carries off the sheep at {lugar}, and leaves gold in exchange."
+  - "A stranger buys a round and asks, very quietly, the way to {lugar}."
+  - "Word is a merchant lost a sealed chest at {lugar} and nobody has gone looking."
+  - "A barmaid has heard bells underground at {lugar}. Three nights now."
+  - "A drunken soldier boasts of the loot he left hidden at {lugar}."
+  - "They say the witch of {lugar} has gone and her house stands open."
+encargo: "{rumor} {texto}"
+apuntado: "You note it down: “{titulo}” is on the board, with {objeto} as loot."

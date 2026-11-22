@@ -1,0 +1,13 @@
+recados:
+  - "Arrives out of breath: “Have them leave at dawn, for pity's sake.”"
+  - "Bears the miller's seal and is in a great hurry."
+  - "Rode in from the far end of the county."
+  - "“Tomorrow will be too late,” they say, and won't even sit down."
+quien: "a messenger"
+encargo: "{recado} {texto}"
+aceptado: "Last night {quien} knocked with an urgent quest: “{titulo}” ({n} gold) is on the board. It leaves today or it's lost."
+en_tablon: "“{titulo}” is already on the board."
+despedido: "Last night you turned away {quien}: they took their quest elsewhere."
+recogido: "Last night {quien} knocked with an urgent quest and {heroe}, on guard, took the message: “{titulo}” ({n} gold) is on the board. It leaves today or it's lost."
+dormido: "Last night {quien} knocked with an urgent quest, but {heroe} was nodding off at the door and didn't hear: they took it elsewhere."
+nadie: "Last night {quien} knocked with an urgent quest, but nobody answered: they took it elsewhere."

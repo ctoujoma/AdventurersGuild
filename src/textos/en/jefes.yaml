@@ -1,0 +1,31 @@
+jefes:
+  bestia:
+    nombre: "The Beast of Greyhollow"
+    corto: "the Beast of Greyhollow"
+    gana: "The Beast has fallen!"
+    pierde: "The Beast has sent them running."
+  ahogado:
+    nombre: "The Drowned King"
+    corto: "the Drowned King"
+    gana: "The Drowned King sinks back to the depths!"
+    pierde: "The Drowned King still rules his lagoon."
+  sierpe:
+    nombre: "The Wyrm of Sierra Parda"
+    corto: "the Wyrm of Sierra Parda"
+    gana: "The Wyrm has fallen!"
+    pierde: "The Wyrm has driven them from its cave."
+  jabali:
+    nombre: "The Ash Boar"
+    corto: "the Ash Boar"
+    gana: "The Ash Boar has fallen!"
+    pierde: "The Ash Boar vanishes, grunting, into the smoke."
+  reina:
+    nombre: "The Crypt Queen"
+    corto: "the Crypt Queen"
+    gana: "The Crypt Queen returns to her slumber!"
+    pierde: "The Crypt Queen remains on her throne."
+  dragona:
+    nombre: "The Dragon of the White Crown"
+    corto: "the Dragon of the White Crown"
+    gana: "The Dragon of the White Crown has fallen!"
+    pierde: "The Dragon of the White Crown has driven them off the glacier."

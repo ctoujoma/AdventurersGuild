@@ -1,0 +1,61 @@
+objetivos:
+  encargos:
+    texto: "Complete {n} quests"
+  brillantes:
+    texto: "Achieve {n} brilliant successes"
+  oro:
+    texto: "Earn {n} gold from quests"
+  incidentes:
+    texto: "Resolve {n} incidents in the tavern"
+  asalto-limpio:
+    texto: "Raids repelled without wounded: {n}"
+  ladrones:
+    texto: "Knock down {n} thieves"
+  rumores:
+    texto: "Note down {n} rumours from the bar"
+  historias:
+    texto: "Complete {n} stories"
+  talleres:
+    texto: "Make {n} items in the workshops"
+  vestir:
+    texto: "Dress {n} heroes at the tailor's"
+  pintar:
+    texto: "Paint {n} rooms"
+  entrenar:
+    texto: "Gain {n} points training"
+  jarras:
+    texto: "Store {n} jugs in the cellar"
+  raciones:
+    texto: "Store {n} rations of food"
+  personal-4:
+    texto: "Have {n} workers in the house"
+  personal-7:
+    texto: "Have {n} workers in the house"
+  heroes-5:
+    texto: "Have {n} heroes in the guild"
+  heroes-8:
+    texto: "Have {n} heroes in the guild"
+  nivel-5:
+    texto: "Get a hero to level {n}"
+  nivel-8:
+    texto: "Get a hero to level {n}"
+  sin-bajas:
+    texto: "Go {n} days in a row without losses"
+  sin-bajas-30:
+    texto: "Go {n} days in a row without losses"
+  hierro:
+    texto: "Reach iron rank ({n} reputation)"
+  plata:
+    texto: "Reach silver rank ({n} reputation)"
+por_tipo:
+  Cazar: "Complete {n} hunting quests"
+  Explorar: "Complete {n} explorations"
+  Escoltar: "Complete {n} escorts"
+  Recuperar: "Recover {n} lost things"
+  Investigar: "Solve {n} investigations"
+  Limpiar: "Clear {n} lairs"
+construye: "Build: {sala}"
+sala_nivel: "{sala} to level {nivel}"
+cumplido: "Goal achieved: {objetivo}. Reward: {premio}."
+fuente_hazana: "Feat “{nombre}” {nivel}"
+fuente: "Goal: {objetivo}"

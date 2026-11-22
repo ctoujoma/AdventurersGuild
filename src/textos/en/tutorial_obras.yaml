@@ -1,0 +1,23 @@
+o_martillo:
+  texto: "With the debt paid, the house is all yours and the patching-up is over: now it's time for real building work. First, a bigger hall: on good nights you can't fit a pin in there. Tap the hammer."
+  regalo: "On the last page of the notebook there were {n} gold: “For the hall. Building always costs more than you think.”"
+o_solar:
+  texto: "In building mode everything is make-believe until you pay: you see how it looks and what it costs, and if you change your mind, you undo it. The hall has nowhere to grow: the kitchen is to the right and the dormitory above. First you need space: buy the plot next door."
+  veto: "Space first: buy the plot on the right (the gap with its price, next to the kitchen)."
+o_mudar:
+  texto: "Now, move the kitchen to the new plot. Tap it and press “Move” (or grab it with your finger) and drop it in the gap on the right. It'll still be next to the hall, which is what matters."
+  veto: "Now move the kitchen: take it to the new plot."
+o_salon:
+  texto: "A free slot. Below you'll see the kitchen is cut off: that's fine, a draft can be left half-done; it just has to be fixed before paying. Tap the hall and expand it with the “+” on its right: it'll reach the kitchen."
+  veto: "Now, the hall: tap it and expand it with the “+” on the right."
+o_excavar:
+  texto: "Now the treasure vault, which fills up fast, and whatever doesn't fit is lost. Down below there's no plot to buy: there's rock. Dig out the slot under the plot, next to the vault. The deeper, the pricier."
+  veto: "Now dig out the slot under the plot, next to the vault."
+o_camara:
+  texto: "Tap the vault and expand it with the “+” on the right."
+  veto: "Now, the vault: tap it and expand it with the “+” on the right."
+o_pagar:
+  texto: "That's how it'll look. Below is what it all costs together: if you like it, pay and the work goes up in a moment."
+  veto: "Everything's noted down: pay for the work (or undo the last step if you made a mistake)."
+o_fin:
+  texto: "That's how you make room: plot, move, expand and dig. You can also grow upwards, but each floor can only overhang the one below by one slot. And now villagers are coming to ask for work (in “Heroes”, “Bar” tab): each one needs a bed, so first build the staff quarters. One more thing: the iron, leather and cloth that quests bring pile up in a corner of the cellar, and whatever doesn't fit gets sold cheap. A storeroom (in the “Guild” tab) keeps them."

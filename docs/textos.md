@@ -121,10 +121,20 @@ tx(report.body[0]); // escribir lo guardado (mensaje o frase vieja)
 
 ## Idioma
 
-- Se guarda en Ajustes (`lang` en `jarro:ajustes`); `src/textos` lo lee al arrancar. Sin él, o
-  si no hay textos de ese idioma, español. Lo que falte en un idioma sale en español.
-- El selector de Ajustes se pondrá cuando llegue el inglés (y entonces, por defecto, el idioma
-  del navegador). Cambiar de idioma recargará la página.
+- Idiomas: `es` (origen) e `en` (bloque 4).
+- Se guarda en Ajustes (`lang` en `jarro:ajustes`); `src/textos` lo lee al arrancar. Sin él, el
+  del navegador si hay textos para él (`browserLang`); si no, español. Lo que falte en un
+  idioma sale en español.
+- El selector está en Ajustes («Idioma», con el nombre de cada idioma en su lengua). Al cambiar,
+  guarda los ajustes y recarga la página (la partida se guarda sola al salir). `<html lang>` se
+  pone al arrancar.
+- Fuera del navegador (tests, `npm run sim`) no se mira el idioma del navegador: siempre `es`.
+  Las capturas de `tools/shots` abren el navegador con `locale: 'es-ES'` para salir en español.
+- Inglés, retoques propios: `Lang.post` de `en` pone «an» delante de vocal cuando el artículo
+  va fuera del hueco («a {objeto}» → «an iron sword»). El nombre de la taberna, «El Jarro
+  Partido», no se traduce (es su nombre y hace de valor por defecto en las partidas), como los
+  de los héroes y los pueblos con nombre propio (Hondovado, Valdeloro…); los lugares
+  descriptivos sí («the mill», «Greyhollow»).
 
 ## Partidas guardadas (decidido: partidas limpias con conversor)
 
@@ -159,7 +169,8 @@ tx(report.body[0]); // escribir lo guardado (mensaje o frase vieja)
 ## Los tests (`src/textos/textos.test.ts`)
 
 - Todos los textos de `es` se pueden leer (huecos bien cerrados, `other` en cada caso).
-- Cada otro idioma tiene las mismas claves, los mismos huecos y listas del mismo largo.
+- Cada otro idioma tiene las mismas claves y listas del mismo largo, y no usa huecos que no
+  estén en `es` (puede no usar alguno: el género en inglés, `{sexo, select, …}`, sobra).
 - Las claves que usa el código (`t('…')`, `tl`, `tr`, `has`, `msg`; con `${…}`, el principio)
   existen.
 - **No hay textos sueltos** en el código (`PENDING` ya está vacío), salvo en `ALLOWED` (a
@@ -176,8 +187,8 @@ tx(report.body[0]); // escribir lo guardado (mensaje o frase vieja)
 | --- | --- | --- |
 | 1 | Sistema, convención, tabla, tests y `src/data` | Hecho (#201) |
 | 2 | `src/core` (informes, cartas, avisos) con mensajes guardados y conversor v5→v6 | Hecho (#203) |
-| 3 | `src/ui`, `src/world`, `src/audio` (la interfaz y la escena) | Hecho (este PR) |
-| 4 | Inglés y selector en Ajustes | Cuando el usuario diga |
+| 3 | `src/ui`, `src/world`, `src/audio` (la interfaz y la escena) | Hecho (#204) |
+| 4 | Inglés y selector en Ajustes | Hecho (este PR) |
 
 Bloque 1, comprobado: todo lo que exportan los módulos de `src/data` sale idéntico (volcado
 antes y después), y también la salida de sus funciones (etiquetas, efectos de salas y mejoras,
@@ -203,6 +214,11 @@ alquimia» (salía «En la taller…»), listas con «y» en los avisos. Arregla
 fallos del bloque 2: el id del cliente («molinero») en la hoja del encargo, el mapa y el Libro;
 «[object Object]» en el aviso de incidentes, en la ronda de la barra y en la etiqueta de las
 notas del tablón; y la chapita de materiales del informe, que guardaba el nombre ya escrito.
+
+Bloque 4: los 52 ficheros traducidos al inglés (`src/textos/en`, sin notas: las notas viven en
+`es`). Comprobado: el test de claves pasa (mismas claves y listas, sin huecos de más); los 897
+tests, lint, formato y build pasan; `npm run sim` no cambia (sigue en español); recorrido de las
+pantallas con `XLANG=en` (ver «Cabos sueltos» para lo que queda en español).
 
 ## Herramientas
 
@@ -248,8 +264,7 @@ di en qué PR.
    vale para inglés; para un idioma con mayúsculas en los nombres (alemán) habría que cambiarlo.
 9. Nombres de héroes (`data/names.ts`): se quedan en el código y no se traducen. Si un idioma
    quiere su propia lista para los héroes nuevos, se saca a `nombres.yaml`.
-10. Los colores de las rarezas (`art/tiers.ts`, `TIER_COLOR_NAMES`: «gris», «verde»…) siguen en
-    el código (salen en `data/items.ts`); en `src/art` no hay más texto que se enseñe.
+10. ~~Los colores de las rarezas en el código~~: ahora `objetos.colores` (bloque 4).
 11. ~~Claves en inglés en `trabajadores.yaml`~~: ahora `papel` y `cita` (bloque 2).
 13. Las peleas contra jefes guardan los nombres de los luchadores ya escritos
     (`BossFight.sim.setup`: «Esbirro», el nombre del jefe): una pelea guardada se ve en el idioma
@@ -259,7 +274,7 @@ di en qué PR.
     el idioma falso de vez en cuando (ver «Herramientas»).
 15. `RANKS[i].name`, `ATTR_NAMES`, `SLOT_NAMES`, `PERKS`, `MATERIALS` y similares se escriben al
     cargar (en el idioma de la partida); para guardar, usar su mensaje (`rankMsg`, `matMsg`…).
-12. El selector de idioma en Ajustes y la recarga al cambiarlo (bloque 4).
+12. ~~El selector de idioma en Ajustes y la recarga al cambiarlo~~: hecho en el bloque 4.
 16. Abreviaturas sacadas cortando el nombre (`skillName(k).slice(0, 3)` en el arcón): en otro
     idioma pueden salir raras; si molesta, una lista de cortas como `etiquetas.habilidades_corto`.
 17. ~~Comillas «» puestas en el código alrededor de un hueco~~: en la interfaz ya van en el

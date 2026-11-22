@@ -24,21 +24,46 @@ type Node = string | readonly Node[] | Tree;
 export const SOURCE = 'es';
 const ALL = TEXTOS as Record<string, Tree>;
 /** Idiomas con textos (el selector de Ajustes sale cuando haya más de uno). */
-export const LANGS = Object.keys(ALL);
+export const LANGS = [SOURCE, ...Object.keys(ALL).filter((l) => l !== SOURCE && l !== 'xx')];
 
 let code = SOURCE;
 let tree: Tree = ALL[SOURCE]!;
 let fallback: Tree = tree;
 
-/** Idioma guardado en Ajustes (se lee directamente para no depender de la plataforma). */
+/**
+ * Idioma guardado en Ajustes (se lee directamente para no depender de la plataforma); sin él, el
+ * del navegador si hay textos para él.
+ */
 function savedLang(): string | undefined {
   try {
     const raw = globalThis.localStorage?.getItem('jarro:ajustes');
     const l = raw ? (JSON.parse(raw) as { lang?: unknown }).lang : undefined;
-    return typeof l === 'string' ? l : undefined;
+    if (typeof l === 'string') return l;
   } catch {
-    return undefined;
+    /* sin almacenamiento: el del navegador */
   }
+  return browserLang();
+}
+
+/**
+ * El primer idioma del navegador con textos (`en-GB` → `en`). Fuera del navegador (tests, `sim`),
+ * ninguno: el de origen.
+ */
+export function browserLang(): string | undefined {
+  if (typeof document === 'undefined') return undefined;
+  const nav = globalThis.navigator;
+  const wanted = nav?.languages?.length ? nav.languages : nav?.language ? [nav.language] : [];
+  for (const w of wanted) {
+    const l = w.toLowerCase().split('-')[0]!;
+    if (ALL[l]) return l;
+  }
+  return undefined;
+}
+
+/** El nombre de un idioma en ese idioma («Español», «English»). */
+export function langName(l: string): string {
+  const n = new Intl.DisplayNames([l], { type: 'language' }).of(l) ?? l;
+  return n.charAt(0).toLocaleUpperCase(l) + n.slice(1);
 }
 
 const lang: Lang = {
@@ -68,6 +93,8 @@ const POST: Record<string, (s: string) => string> = {
     s
       .replace(/(?<![\p{L}\p{N}])([Aa]) el(?![\p{L}\p{N}])/gu, '$1l')
       .replace(/(?<![\p{L}\p{N}])([Dd])e el(?![\p{L}\p{N}])/gu, '$1el'),
+  // «a» delante de vocal, «an» (el hueco no sabe qué palabra le toca delante): «an iron sword».
+  en: (s) => s.replace(/(?<![\p{L}\p{N}'’])([Aa]) (?=[aeioAEIO])/gu, '$1n '),
 };
 setLang(savedLang());
 

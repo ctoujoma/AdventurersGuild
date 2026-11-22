@@ -19,7 +19,7 @@ const browser = await chromium.launch({
   args: ['--headless=new', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
   headless: false,
 });
-const page = await browser.newPage({ viewport: vp, deviceScaleFactor: 1 });
+const page = await browser.newPage({ locale: 'es-ES', viewport: vp, deviceScaleFactor: 1 });
 page.on('pageerror', (e) => console.log('PAGEERROR', e.stack));
 await page.addInitScript(() => {
   localStorage.setItem(
