@@ -269,7 +269,12 @@ lo que hay que tocar y no romper la inmersión. Ahora:
   inicio (encargo de interfaz), candados en el mapa y los adornos y que la barra diga que el
   reloj está parado.
 
-### Pendiente del agente principal (22 de noviembre, tras el agente de textos)
+### Del agente principal tras los textos (22 de noviembre)
+
+**Hecho** (rama `claude/peaceful-galileo-ijouv1`): el día de 24 h con el juego cerrado y la
+veteranía (partidas a la versión 7 con `core/ladder.ts`; caché a 8: 30, a 12: 60; caché sin
+pagar: −15 y tope −15 hasta pagarlo). Con el simulador, la nómina de oro y leyenda baja un
+15–30 % (los niveles 6 y 7 ya no doblan la subida); el resto, igual. Falta la guía de tutoriales.
 
 Esperan a que el agente de textos cierre su bloque de `core`, para no pisarse:
 
