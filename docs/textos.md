@@ -293,7 +293,8 @@ di en qué PR.
     «{n} huecos»): con el inglés se verá si hace falta `plural`.
 21. Siguen en español, fijos: `index.html` (título y descripción antes de arrancar) y
     `public/manifest.webmanifest` (nombre de la app instalada), que no saben de idiomas; y las
-    «Novedades» de la portada, que salen de los mensajes de git.
+    «Novedades» de la portada, que salen de los mensajes de git. El nombre de la app instalada
+    será uno solo para todos los idiomas (decidido): se elige al hacer la APK (`docs/futuro.md`).
 
 ## Decisiones (22 de noviembre, con el usuario)
 
