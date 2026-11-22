@@ -52,6 +52,8 @@ app:
   hecho_la_carta_del: "Hecho: la carta del amanecer saldrá de golpe. Se cambia en Ajustes."
   visitante_dice: "{quien, mayus}: «{rumor}»"
 title:
+  # Nombre del juego en la pestaña del navegador.
+  app: "El Jarro Partido"
   el_gremio_de: "El Gremio de"
   aventureros: "Aventureros"
   novedades: "¡Novedades!"

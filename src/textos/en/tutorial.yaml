@@ -1,5 +1,5 @@
 casa:
-  texto: "This is El Jarro Partido, top to bottom. Each slot is a room and each room does its job: the hall serves, the kitchen makes rations, the cellar brews beer and the heroes sleep in the dormitories. Drag to look at the whole thing."
+  texto: "This is The Broken Jug, top to bottom. Each slot is a room and each room does its job: the hall serves, the kitchen makes rations, the cellar brews beer and the heroes sleep in the dormitories. Drag to look at the whole thing."
 dinero:
   texto: "Money comes in through two doors. One is the hall's till: what customers spend trickles in during the day, and more if there are rations and beer. The other is the quests on the board, which pay much more but need heroes and days away. With both, you pay Merlo."
 barra:
@@ -39,7 +39,7 @@ carta:
   cabecera: "Hondovado, at the onset of winter"
   cuerpo:
     - "Nephew:"
-    - "If this letter reaches you, I'm gone and El Jarro Partido is yours. Along with the tavern I leave you two adventurers who don't charge much, the cat, and a thousand gold of debt to Merlo, the moneylender, who collects every seven days and never lets one slide."
+    - "If this letter reaches you, I'm gone and The Broken Jug is yours. Along with the tavern I leave you two adventurers who don't charge much, the cat, and a thousand gold of debt to Merlo, the moneylender, who collects every seven days and never lets one slide."
     - "Under the bar you'll find my notebook. I wrote it for whoever came after me: read it calmly and do what it says, it took me years to learn."
   firma: "Fausto"
 tablon:

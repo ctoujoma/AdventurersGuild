@@ -23,7 +23,7 @@ import { Assault, assaultSetup, raidRoute, raidSeed } from '../core/assault';
 import { Rng } from '../core/rng';
 import { canHireWorker } from '../core/workers';
 import { DAY_SECONDS, DELIVERIES, DUSK, NIGHT_RUSH, WORK_END } from '../core/balance';
-import { DECOR, DEFAULT_NAME, FACADE, PET_LINES } from '../data/custom';
+import { DECOR, FACADE, isDefaultName, PET_LINES } from '../data/custom';
 import { RUMORS, VISITORS, type VisitorKind } from '../data/visitors';
 import type { BossFight as BossFightRecord, Facilities, GameState } from '../core/model';
 import { FACILITY_INFO } from '../data/labels';
@@ -1018,7 +1018,7 @@ export function App() {
   // Poner nombre a la taberna (al pagar la deuda) va antes que el tutorial de obras: mientras
   // está a la vista no hay nota ni cuenta atrás, y tras ponerlo hay un respiro más largo.
   const naming =
-    calm && !game.over && !!game.askName && customOf(game).name === DEFAULT_NAME && !eventHeld;
+    calm && !game.over && !!game.askName && isDefaultName(customOf(game).name) && !eventHeld;
   const askedName = useRef(false);
   if (naming) askedName.current = true;
   const breath = tutorialWait(game);

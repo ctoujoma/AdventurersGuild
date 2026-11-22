@@ -3,6 +3,7 @@ import {
   DECOR,
   DEFAULT_NAME,
   DOG_PRICE,
+  isDefaultName,
   FEAST_PRICE,
   RAVEN_EVERY,
   RAVEN_PRICE,
@@ -10,6 +11,7 @@ import {
 } from '../data/custom';
 import { VET_SNUB_REST } from './balance';
 import { customOf, endDay, newGame, reduce } from './game';
+import { textsOf } from '../textos';
 import type { GameState } from './model';
 import { assaultSetup } from './assault';
 import { Rng } from './rng';
@@ -140,5 +142,24 @@ describe('tu taberna', () => {
     });
     const withWing = endDay({ ...w, fac: { ...w.fac, vet: 1 } }).heroes[0]!.morale;
     expect(withWing - base).toBe(4 + VET_SNUB_REST);
+  });
+});
+
+describe('el nombre de la taberna', () => {
+  it('sin bautizar, sale el de serie del idioma de ahora aunque se guardara en otro', () => {
+    const s = newGame('nombre');
+    const en = (textsOf('en')?.personalizar as { nombre_inicial: string }).nombre_inicial;
+    s.custom = { ...customOf(s), name: en };
+    expect(isDefaultName(en)).toBe(true);
+    expect(customOf(s).name).toBe(DEFAULT_NAME);
+  });
+
+  it('el que pone el jugador se queda, y el de serie no cuenta como bautizo', () => {
+    const s = newGame('nombre2');
+    s.askName = true;
+    const named = reduce(s, { type: 'custom', patch: { name: 'La Oca' } });
+    expect(customOf(named).name).toBe('La Oca');
+    expect(named.askName).toBe(false);
+    expect(reduce(s, { type: 'custom', patch: { name: DEFAULT_NAME } }).askName).toBe(true);
   });
 });

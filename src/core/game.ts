@@ -76,6 +76,7 @@ import {
   DECOR,
   FACADE,
   DEFAULT_NAME,
+  isDefaultName,
   DOG_PRICE,
   FEAST_MORALE,
   FEAST_PRICE,
@@ -737,7 +738,7 @@ function reduceAction(state: GameState, action: Action): GameState {
     case 'custom': {
       const patch = { ...action.patch };
       if (patch.name !== undefined) patch.name = patch.name.trim().slice(0, 24) || DEFAULT_NAME;
-      const named = patch.name !== undefined && patch.name !== DEFAULT_NAME;
+      const named = patch.name !== undefined && !isDefaultName(patch.name);
       return {
         ...state,
         askName: named ? false : state.askName,

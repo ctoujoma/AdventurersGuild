@@ -57,6 +57,10 @@ revisión crítica y propuestas, **sin decidir**: el usuario elige qué entra y 
 Capacitor, guardado nativo, botón atrás, icono adaptativo, APK/AAB firmados en CI y Google
 Play (pruebas internas → cerradas). Detalle en [`plan-desarrollo.md`](plan-desarrollo.md).
 
+- Nombre de la app instalada (manifest, `index.html`, ficha de la tienda): **uno solo para
+  todos los idiomas** (decidido con el usuario el 22 de noviembre); elegirlo al hacer la APK.
+  Dentro del juego ya va por idioma (ver `docs/textos.md`).
+
 ## 4. Revisión crítica del bucle
 
 **Lo que funciona:**
