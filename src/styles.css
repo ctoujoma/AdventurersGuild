@@ -3088,6 +3088,8 @@ button.trait[aria-pressed='true'] {
   font-weight: 700;
   font-size: clamp(40px, 12vw, 92px);
   line-height: 1;
+  /* Si no cabe en una línea (otros idiomas), las dos centradas. */
+  text-align: center;
   color: var(--gold);
   text-shadow:
     3px 0 0 var(--ink),

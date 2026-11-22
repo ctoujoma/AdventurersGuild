@@ -5,13 +5,23 @@
 
 import { P } from '../art/palette';
 import type { RoomType } from './rooms';
-import { t, tl } from '../textos';
+import { LANGS, t, textsOf, tl } from '../textos';
 
 export type CrestColor = 'vino' | 'mar' | 'bosque' | 'oro' | 'noche';
 export type CrestSymbol = 'jarra' | 'espada' | 'llave' | 'estrella' | 'dragon' | 'luna';
 export type StaffId = 'cocinera' | 'bardo' | 'mozo';
 
 export const DEFAULT_NAME = t('personalizar.nombre_inicial');
+
+/** El nombre de serie en cada idioma: una taberna sin bautizar lleva el del idioma de ahora. */
+const DEFAULT_NAMES = new Set(
+  LANGS.map(
+    (l) => (textsOf(l)?.personalizar as { nombre_inicial?: string } | undefined)?.nombre_inicial,
+  ).filter((n): n is string => !!n),
+);
+
+/** ¿Es el nombre de serie (en cualquier idioma), o sea, aún sin bautizar? */
+export const isDefaultName = (name: string | undefined) => !name || DEFAULT_NAMES.has(name);
 
 export const CREST_COLORS: Record<CrestColor, { name: string; field: string; dark: string }> = {
   vino: {

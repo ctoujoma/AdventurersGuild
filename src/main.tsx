@@ -6,9 +6,10 @@ import '@fontsource/alegreya-sans/latin-700.css';
 import './styles.css';
 import { App } from './ui/App';
 import { installPixelUi } from './ui/pixelui';
-import { currentLang } from './textos';
+import { currentLang, t } from './textos';
 
 document.documentElement.lang = currentLang();
+document.title = t('pantallas.title.app');
 installPixelUi();
 render(<App />, document.getElementById('app')!);
 

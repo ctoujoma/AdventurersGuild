@@ -131,10 +131,15 @@ tx(report.body[0]); // escribir lo guardado (mensaje o frase vieja)
 - Fuera del navegador (tests, `npm run sim`) no se mira el idioma del navegador: siempre `es`.
   Las capturas de `tools/shots` abren el navegador con `locale: 'es-ES'` para salir en español.
 - Inglés, retoques propios: `Lang.post` de `en` pone «an» delante de vocal cuando el artículo
-  va fuera del hueco («a {objeto}» → «an iron sword»). El nombre de la taberna, «El Jarro
-  Partido», no se traduce (es su nombre y hace de valor por defecto en las partidas), como los
-  de los héroes y los pueblos con nombre propio (Hondovado, Valdeloro…); los lugares
-  descriptivos sí («the mill», «Greyhollow»).
+  va fuera del hueco («a {objeto}» → «an iron sword»). Los nombres de los héroes y de los pueblos
+  con nombre propio (Hondovado, Valdeloro…) no se traducen; los lugares descriptivos sí
+  («the mill», «Greyhollow»).
+- La taberna tiene nombre de serie en cada idioma (`personalizar.nombre_inicial`: «El Jarro
+  Partido», «The Broken Jug»). Una taberna sin bautizar lo enseña en el idioma de ahora aunque
+  la partida se empezara en otro (`isDefaultName` mira el de todos los idiomas; `customOf` lo
+  cambia al leer), y el de serie no cuenta como bautizo. El que pone el jugador no se toca.
+- El nombre del juego: `pantallas.title.app` en la pestaña del navegador («Adventurer's Guild»
+  en inglés) y la portada (`title.el_gremio_de` + `title.aventureros`).
 
 ## Partidas guardadas (decidido: partidas limpias con conversor)
 
@@ -286,6 +291,9 @@ di en qué PR.
     `salas.con_articulo`.
 20. Algunas cuentas sin plural siguen como estaban («{n} raciones» en el coste del forastero,
     «{n} huecos»): con el inglés se verá si hace falta `plural`.
+21. Siguen en español, fijos: `index.html` (título y descripción antes de arrancar) y
+    `public/manifest.webmanifest` (nombre de la app instalada), que no saben de idiomas; y las
+    «Novedades» de la portada, que salen de los mensajes de git.
 
 ## Decisiones (22 de noviembre, con el usuario)
 

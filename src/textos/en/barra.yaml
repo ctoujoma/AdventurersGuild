@@ -182,7 +182,7 @@ roomname:
 panel:
   cerrar: "Close"
 sceneview:
-  la_taberna_el_jarro: "The El Jarro Partido tavern. Drag to explore it and tap whatever you like."
+  la_taberna_el_jarro: "The Broken Jug tavern. Drag to explore it and tap whatever you like."
   este_navegador_no_puede: "This browser can't draw the tavern (it lacks WebGL). Try another browser or enable hardware acceleration."
   scene_slow: "scene slow"
 incidentmark:

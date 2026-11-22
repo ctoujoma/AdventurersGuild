@@ -33,7 +33,7 @@ historias:
       la_cripta_de_ormaz:
         titulo: "The Ormaz crypt"
         texto: "The hooded figures led to a crypt under the cemetery chapel that appears on no plan. That's where they meet."
-    ending: "The crypt is sealed and the cult scattered. Sister Odile came to bless the door of El Jarro Partido, and had a glass of wine while she was at it."
+    ending: "The crypt is sealed and the cult scattered. Sister Odile came to bless the door of The Broken Jug, and had a glass of wine while she was at it."
     reward:
       trophy:
         nombre: "High priest's mask"

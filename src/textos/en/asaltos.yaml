@@ -12,7 +12,7 @@ bandas:
   - nombre: "Black Hand's crew"
     varios: "no"
 chivatazos:
-  - "The innkeeper heard at the bar that {banda} {varios, select, si {are} other {is}} asking about El Jarro Partido."
+  - "The innkeeper heard at the bar that {banda} {varios, select, si {are} other {is}} asking about The Broken Jug."
   - "A frightened pedlar says {banda} {varios, select, si {are} other {is}} camped two leagues away, talking about your till."
   - "Whiskers has been hissing at the door for two nights, and someone has painted the mark of {banda} on the roadside post."
   - "A village girl brings a message: {banda} {varios, select, si {are} other {is}} coming for the guild."
@@ -28,7 +28,7 @@ asalto_pelea:
   - "A bandit tried to sneak in through the hall window; {heroe} saw him off with a stool."
 asalto_ganado:
   - "At dawn, {banda} {varios, select, si {were} other {was}} fleeing down the road. In the yard they left their torches and a wide-brimmed hat."
-  - "Those still standing ran off. In the village they already say nobody robs El Jarro Partido."
+  - "Those still standing ran off. In the village they already say nobody robs The Broken Jug."
 asalto_perdido:
   - "There were too many. They took what they wanted and were gone before dawn."
   - "When they finally left, the till was half empty and the door torn off."
