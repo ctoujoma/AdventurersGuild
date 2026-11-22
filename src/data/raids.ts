@@ -1,34 +1,40 @@
-import { t, tl, tr } from '../textos';
+import { has, idText, msg, t, tl, tx, type Msg, type Params, type Txt } from '../textos';
 /**
- * Textos de los asaltos a la taberna. Huecos: {band} (o {Band}, con mayúscula), {h} héroe,
- * {who} defensores. Lo que cambia con el número de la banda, entre llaves: «{viene|vienen}».
+ * Textos de los asaltos a la taberna (`asaltos.…`). Huecos: {banda}, {heroe}, {grupo}; {varios}
+ * dice si la banda va en plural, para elegir el verbo (ver `bandParams`).
  */
 
-export const BANDS: readonly string[] = tl('asaltos.bandas');
+/** Las bandas, como mensajes (lo que se guarda en `Raid.band`). */
+export const BANDS: readonly Msg[] = tl<readonly unknown[]>('asaltos.bandas').map((_, i) =>
+  msg(`asaltos.bandas.${i}.nombre`),
+);
 
-/** De dónde llega el chivatazo de que se acerca un asalto. */
-export const TIPOFFS: readonly string[] = tl('asaltos.chivatazos');
-/** Chivatazo traído por un explorador del gremio. */
-export const SCOUT_TIPOFF = tr('asaltos.chivatazo_explorador');
+/** Cuántos hay de cada lista (el núcleo elige por posición). */
+export const TIPOFFS = tl('asaltos.chivatazos');
+export const RAID_OPEN = tl('asaltos.asalto_empieza');
+export const RAID_FIGHT = tl('asaltos.asalto_pelea');
+export const RAID_WON = tl('asaltos.asalto_ganado');
+export const RAID_LOST = tl('asaltos.asalto_perdido');
 
-export const RAID_OPEN: readonly string[] = tl('asaltos.asalto_empieza');
+/**
+ * Si la banda es plural («los Hermanos Cuervo», «las Ratas del Vado»): lo dice su `varios` en el
+ * idioma de ahora; las partidas viejas traen el nombre en español y se mira el artículo.
+ */
+export function bandPlural(band: Txt): boolean {
+  if (typeof band === 'string') return /^(los|las) /i.test(band);
+  const k = band.k.replace(/\.nombre$/, '.varios');
+  return has(k) ? t(k) === 'si' : /^(los|las) /i.test(idText(band));
+}
 
-export const RAID_FIGHT: readonly string[] = tl('asaltos.asalto_pelea');
-
-export const RAID_WON: readonly string[] = tl('asaltos.asalto_ganado');
-
-export const RAID_LOST: readonly string[] = tl('asaltos.asalto_perdido');
-
-export const RAID_EMPTY = t('asaltos.asalto_vacio');
-
-/** Si la banda es plural («los Hermanos Cuervo», «las Ratas del Vado»). */
-export const bandPlural = (band: string) => /^(los|las) /i.test(band);
-
-/** Elige en un texto lo que va con la banda: «{viene|vienen}» según sea una o varios. */
-export const bandNumber = (text: string, band: string) =>
-  text.replace(/\{([^{}|]*)\|([^{}|]*)\}/g, (_, one: string, many: string) =>
-    bandPlural(band) ? many : one,
-  );
+/** Los huecos de la banda para un texto: `{banda}` y `{varios}`. */
+export const bandParams = (band: Txt, extra: Params = {}): Params => ({
+  banda: band,
+  varios: bandPlural(band),
+  ...extra,
+});
 
 /** La banda con mayúscula, para empezar una frase o una etiqueta. */
-export const capBand = (band: string) => band.charAt(0).toUpperCase() + band.slice(1);
+export const capBand = (band: Txt) => {
+  const b = tx(band);
+  return b.charAt(0).toUpperCase() + b.slice(1);
+};

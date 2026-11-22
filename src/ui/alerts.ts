@@ -17,6 +17,7 @@ import { nightmareNow } from '../core/nightmare';
 import { crewAlerts } from './crew';
 import type { IconName } from './icons';
 import { jobRoomName } from './roomName';
+import { idText, tx } from '../textos';
 
 /** Adónde lleva tocar el aviso: una sala (con la cámara), Tareas, un encargo o un panel. */
 export type Go =
@@ -90,7 +91,7 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
   if (going.length === 1)
     out.push({
       id: `caduca:${going[0]!.id}`,
-      text: `«${going[0]!.title}» se va del tablón esta noche y nadie lo ha cogido.`,
+      text: `«${tx(going[0]!.title)}» se va del tablón esta noche y nadie lo ha cogido.`,
       k: 'warn',
       icon: 'tablon',
       go: { quest: going[0]!.id },
@@ -98,7 +99,7 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
   else if (going.length > 1)
     out.push({
       id: `caducan:${going.map((q) => q.id).join(',')}`,
-      text: `${going.length} encargos se van del tablón esta noche: ${listNames(going.map((q) => `«${q.title}»`))}.`,
+      text: `${going.length} encargos se van del tablón esta noche: ${listNames(going.map((q) => `«${tx(q.title)}»`))}.`,
       k: 'warn',
       icon: 'tablon',
       go: { panel: 'tablon' },
@@ -141,7 +142,7 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
     if (m.waiting)
       out.push({
         id: `jefe:${m.id}`,
-        text: `El grupo de «${m.quest.title}» está ante el jefe: ¿ves la pelea?`,
+        text: `El grupo de «${tx(m.quest.title)}» está ante el jefe: ¿ves la pelea?`,
         k: 'warn',
         icon: 'calavera',
         go: { trip: m.id },
@@ -152,7 +153,7 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
     if (m.daysLeft <= 1 && !m.waiting)
       out.push({
         id: `vuelve:${m.id}`,
-        text: `El grupo de «${m.quest.title}» vuelve esta noche.`,
+        text: `El grupo de «${tx(m.quest.title)}» vuelve esta noche.`,
         k: 'good',
         icon: 'banderin',
         go: { trip: m.id },
@@ -166,8 +167,8 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
     out.push({
       id: `desmonta:${e.id}`,
       text: learnt
-        ? `Desmontando ${e.undo.item} han sacado cómo se hace: ya podéis crear ${rc.many}.`
-        : `Han desmontado ${e.undo.item}, pero no han sacado nada en claro.`,
+        ? `Desmontando ${tx(e.undo.item)} han sacado cómo se hace: ya podéis crear ${rc.many}.`
+        : `Han desmontado ${tx(e.undo.item)}, pero no han sacado nada en claro.`,
       k: learnt ? 'good' : 'info',
       icon: 'yunque',
       go: rooms.some((r) => r.id === e.room) ? { room: e.room } : { panel: 'gremio' },
@@ -178,7 +179,7 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
   // el almacén (o que diga que se podrá al pagar la deuda). Descartado, no vuelve.
   if (
     !storeLevel(game) &&
-    game.reports.some((r) => r.chips.some((c) => c.t.startsWith('No cabía')))
+    game.reports.some((r) => r.chips.some((c) => idText(c.t).startsWith('No cabía')))
   )
     out.push({
       id: 'almacen-lleno',

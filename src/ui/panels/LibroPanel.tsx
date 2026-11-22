@@ -5,6 +5,7 @@ import type { ActiveGoal, GameState } from '../../core/model';
 import { FEATS } from '../../data/feats';
 import type { Records } from '../../platform/records';
 import { Icon } from '../icons';
+import { t, tx } from '../../textos';
 
 interface Props {
   game: GameState;
@@ -28,7 +29,7 @@ export function GoalRow({ game, goal }: { game: GameState; goal: ActiveGoal }) {
   const n = goalProgress(game, goal);
   return (
     <article class="feat">
-      <b>{goal.text}</b>
+      <b>{tx(goal.text)}</b>
       <span class="track">
         <i style={{ width: `${(n / goal.target) * 100}%` }} />
       </span>
@@ -62,7 +63,7 @@ export function LibroPanel({ game, records, onHistory }: Props) {
               <ul>
                 {goals.log.map((l, i) => (
                   <li key={i}>
-                    <b>Día {l.day}</b> · {l.text} <small>({l.reward})</small>
+                    <b>Día {l.day}</b> · {tx(l.text)} <small>({tx(l.reward)})</small>
                   </li>
                 ))}
               </ul>
@@ -81,7 +82,7 @@ export function LibroPanel({ game, records, onHistory }: Props) {
               return (
                 <article key={cs.id} class={`feat ${cs.status === 'hecha' ? 'done' : ''}`}>
                   <div class="feat-head">
-                    <b>{def.name}</b>
+                    <b>{tx(def.name)}</b>
                     <span class="pips">
                       {def.steps.map((_, i) => (
                         <i key={i} class={i < n ? 'on' : ''} />
@@ -92,7 +93,7 @@ export function LibroPanel({ game, records, onHistory }: Props) {
                     {def.client} ·{' '}
                     {cs.status === 'hecha'
                       ? 'Cumplida'
-                      : `En el tablón: «${def.steps[cs.step]!.title}»${cs.twists ? ` (se ha torcido ${cs.twists} ${cs.twists === 1 ? 'vez' : 'veces'})` : ''}`}
+                      : `En el tablón: «${tx(def.steps[cs.step]!.title)}»${cs.twists ? ` (se ha torcido ${cs.twists} ${cs.twists === 1 ? 'vez' : 'veces'})` : ''}`}
                   </small>
                 </article>
               );
@@ -125,12 +126,12 @@ export function LibroPanel({ game, records, onHistory }: Props) {
                       <i style={{ width: `${((v - prev) / (next - prev)) * 100}%` }} />
                     </span>
                     <small>
-                      {f.text.replace('{n}', String(next))} · {Math.min(v, next)}/{next} · Premio:{' '}
+                      {t(f.text, { n: next })} · {Math.min(v, next)}/{next} · Premio:{' '}
                       {rewardText(f.rewards[got]!)}
                     </small>
                   </>
                 ) : (
-                  <small>Completada: {f.text.replace('{n}', String(f.tiers.at(-1)))}.</small>
+                  <small>Completada: {t(f.text, { n: f.tiers.at(-1) })}.</small>
                 )}
               </article>
             );
@@ -162,8 +163,8 @@ export function LibroPanel({ game, records, onHistory }: Props) {
           <div class="rows">
             {game.fallen.map((f, i) => (
               <div key={i} class={f.back ? 'fallen back' : 'fallen'}>
-                <b>{f.name}</b>
-                <span>{f.epitaph}</span>
+                <b>{tx(f.name)}</b>
+                <span>{tx(f.epitaph)}</span>
                 {f.back && (
                   <span class="fallen-back">
                     Volvió del velo el día {f.back}: lo trajo el forastero de la tormenta.

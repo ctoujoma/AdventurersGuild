@@ -4,7 +4,6 @@
  * `data/goals.ts`; las piezas que se ganan, en `data/unlocks.ts`.
  */
 import { GOALS, GOAL_LOG, GOAL_SLOTS, type GoalDef } from '../data/goals';
-import { ROOMS } from '../data/rooms';
 import { FEATS } from '../data/feats';
 import { FREE, unlockName, type UnlockId } from '../data/unlocks';
 import { levelRank, rankIndex, roomMax } from './balance';
@@ -12,6 +11,7 @@ import { grant, statValue } from './feats';
 import type { ActiveGoal, ChipKind, GameState, Goals, Reward } from './model';
 import { Rng } from './rng';
 import { active } from './rooms';
+import { type Msg, type Txt, msg, t, tx } from '../textos';
 
 const defOf = (id: string) => GOALS.find((g) => g.id === id);
 
@@ -69,7 +69,7 @@ function make(s: GameState, d: GoalDef, goals: Goals): ActiveGoal {
     if (r.rep) reward.rep = r.rep + Math.floor(times / 2);
     return {
       id: d.id,
-      text: d.text.replace('{n}', String(target)),
+      text: msg(d.text, { n: target }),
       base: measure(s, d),
       target,
       reward,
@@ -78,14 +78,14 @@ function make(s: GameState, d: GoalDef, goals: Goals): ActiveGoal {
   if ('room' in d)
     return {
       id: d.id,
-      text: d.text.replace('{sala}', ROOMS[d.room].name),
+      text: goalMsg(d),
       base: 0,
       target: d.level,
       reward: d.reward,
     };
   return {
     id: d.id,
-    text: d.text.replace('{n}', String(d.n)),
+    text: goalMsg(d),
     base: 0,
     target: d.n,
     reward: d.reward,
@@ -103,7 +103,7 @@ export function goalsPending(s: GameState): boolean {
  * Cobra los objetivos cumplidos, los apunta en el Libro y rellena hasta tres. Muta `s` (una
  * copia entera: el premio toca la caja, el arcón y las piezas) y deja lo que se cuenta en `out`.
  */
-export function checkGoals(s: GameState, rng: Rng, out: { t: string; k?: ChipKind }[]): void {
+export function checkGoals(s: GameState, rng: Rng, out: { t: Txt; k?: ChipKind }[]): void {
   const goals: Goals = s.goals ?? { active: [], done: {}, log: [] };
   s.goals = goals;
   for (const g of [...goals.active]) {
@@ -113,7 +113,7 @@ export function checkGoals(s: GameState, rng: Rng, out: { t: string; k?: ChipKin
     goals.done[g.id] = (goals.done[g.id] ?? 0) + 1;
     goals.log.unshift({ day: s.day, text: g.text, reward: what });
     goals.log.length = Math.min(goals.log.length, GOAL_LOG);
-    out.push({ t: `Objetivo cumplido: ${g.text}. Premio: ${what}.`, k: 'good' });
+    out.push({ t: msg('objetivos.cumplido', { objetivo: g.text, premio: what }), k: 'good' });
   }
   while (goals.active.length < GOAL_SLOTS) {
     const pool = GOALS.filter((d) => available(s, d, goals));
@@ -125,11 +125,11 @@ export function checkGoals(s: GameState, rng: Rng, out: { t: string; k?: ChipKin
 }
 
 /** Mira los objetivos con el juego abierto (en el `tick`): copia y cobra solo si hace falta. */
-export function tickGoals(s: GameState): { next: GameState; news: { t: string; k?: ChipKind }[] } {
+export function tickGoals(s: GameState): { next: GameState; news: { t: Txt; k?: ChipKind }[] } {
   if (!goalsPending(s)) return { next: s, news: [] };
   const next = structuredClone(s);
   const rng = new Rng(next.rng);
-  const news: { t: string; k?: ChipKind }[] = [];
+  const news: { t: Txt; k?: ChipKind }[] = [];
   checkGoals(next, rng, news);
   next.rng = rng.save();
   return { next, news };
@@ -145,14 +145,25 @@ export const hasUnlock = (s: GameState, id: UnlockId) =>
 export function unlockSource(id: UnlockId): string | null {
   for (const f of FEATS) {
     const i = f.rewards.findIndex((r) => r.unlock === id);
-    if (i >= 0) return `Hazaña «${f.name}» ${['I', 'II', 'III', 'IV', 'V'][i]}`;
+    if (i >= 0)
+      return t('objetivos.fuente_hazana', {
+        nombre: f.name,
+        nivel: ['I', 'II', 'III', 'IV', 'V'][i],
+      });
   }
   const g = GOALS.find((x) => x.reward.unlock === id);
-  if (g)
-    return `Objetivo: ${g.text
-      .replace('{n}', 'n' in g ? String(g.n) : '')
-      .replace('{sala}', 'room' in g ? ROOMS[g.room].name : '')}`;
+  if (g) return t('objetivos.fuente', { objetivo: goalMsg(g) });
   return null;
 }
+
+/** El texto de un objetivo tal como sale la primera vez (con su cifra o su sala). */
+export function goalMsg(d: GoalDef): Msg {
+  if ('room' in d)
+    return msg(d.text, { sala: msg(`salas.salas.${d.room}.nombre`), nivel: d.level });
+  return msg(d.text, { n: d.n });
+}
+
+/** El texto de un objetivo en curso, escrito. */
+export const goalText = (g: ActiveGoal) => tx(g.text);
 
 export { unlockName };

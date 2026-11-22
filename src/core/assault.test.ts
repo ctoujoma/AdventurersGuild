@@ -14,6 +14,7 @@ import { endDay, guardsFull, newGame, reduce } from './game';
 import type { GameState } from './model';
 import { Rng } from './rng';
 import { goldCap, lockTime } from './vault';
+import { tx } from '../textos';
 
 const roomOf = (s: GameState, type: string) => s.building.rooms.find((r) => r.type === type)!;
 
@@ -33,7 +34,7 @@ describe('la cámara del tesoro', () => {
     expect(s.spilt).toBe(30);
     const next = endDay({ ...s, tips: ['*'] });
     expect(next.spilt).toBeUndefined();
-    expect(next.dawn.some((e) => /cámara del tesoro está llena/.test(e.t))).toBe(true);
+    expect(next.dawn.some((e) => /cámara del tesoro está llena/.test(tx(e.t)))).toBe(true);
     // Mejorarla: cabe más y la cerradura aguanta más.
     const v = roomOf(s, 'tesoro');
     v.level = 3;

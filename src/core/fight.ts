@@ -18,6 +18,7 @@
 import type { ClassId } from './party';
 import { attr, skill, type Member } from './party';
 import { Rng } from './rng';
+import { t } from '../textos';
 
 /** Paso fijo de la simulación (s). */
 export const STEP = 0.1;
@@ -41,35 +42,21 @@ export const AI_COVER = 0.4;
 
 export type AbilityId = 'provocar' | 'punalada' | 'bola' | 'curar' | 'andanada';
 
+/** Nombre y texto de una habilidad (`peleas.habilidades.<id>`). */
+const ability = (id: string) => ({
+  name: t(`peleas.habilidades.${id}.nombre`),
+  text: t(`peleas.habilidades.${id}.texto`),
+});
+
 export const ABILITIES: Record<
   AbilityId,
   { name: string; every: number; text: string; cls: ClassId }
 > = {
-  provocar: {
-    cls: 'guerrero',
-    name: 'Provocar',
-    every: 12,
-    text: 'Atrae los golpes hacia sí unos segundos y aguanta más.',
-  },
-  punalada: {
-    cls: 'picaro',
-    name: 'Puñalada',
-    every: 10,
-    text: 'Un golpe por la espalda: el triple de daño.',
-  },
-  bola: {
-    cls: 'mago',
-    name: 'Bola de fuego',
-    every: 14,
-    text: 'Quema a todos los enemigos a la vez.',
-  },
-  curar: { cls: 'clerigo', name: 'Curar', every: 12, text: 'Cura al que esté peor del grupo.' },
-  andanada: {
-    cls: 'explorador',
-    name: 'Andanada',
-    every: 10,
-    text: 'Dos flechas seguidas al mismo blanco.',
-  },
+  provocar: { cls: 'guerrero', every: 12, ...ability('provocar') },
+  punalada: { cls: 'picaro', every: 10, ...ability('punalada') },
+  bola: { cls: 'mago', every: 14, ...ability('bola') },
+  curar: { cls: 'clerigo', every: 12, ...ability('curar') },
+  andanada: { cls: 'explorador', every: 10, ...ability('andanada') },
 };
 
 const ABILITY_OF: Record<ClassId, AbilityId> = {

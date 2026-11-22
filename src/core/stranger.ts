@@ -19,6 +19,7 @@ import { hasMats, matOf, spendMats, type Mats } from './materials';
 import type { DawnEvent, GameState, Hero } from './model';
 import type { NightEvent } from './night';
 import { stormNight } from './sky';
+import { type Txt, idText, msg, t } from '../textos';
 
 /** Los caídos que se pueden traer de vuelta (el héroe entero se guarda al caer). */
 export const fallenHeroes = (s: GameState) => s.heroes.filter((h) => h.status === 'muerto');
@@ -30,10 +31,7 @@ export const STRANGER_EVENT: NightEvent = {
   every: STRANGER_EVERY,
   start: (s) => {
     s.stranger = { day: s.day, at: s.clock ?? 0 };
-    return {
-      t: 'Con la tormenta ha entrado un forastero encapuchado. Se ha sentado junto al fuego y pregunta por tus caídos. Se irá mañana a mediodía.',
-      k: 'warn',
-    };
+    return { t: msg('forastero.llega'), k: 'warn' };
   },
 };
 
@@ -53,32 +51,33 @@ export function priceFor(h: Hero): Price {
 /** Lo que falta para pagarle (vacío si llega). */
 export function shortOf(s: GameState, p: Price): string[] {
   const out: string[] = [];
-  if (s.gold < p.gold) out.push(`${p.gold - s.gold} monedas`);
-  if (s.food < p.food)
-    out.push(`${p.food - s.food} ${p.food - s.food === 1 ? 'ración' : 'raciones'}`);
-  if (s.beer < p.beer) out.push(`${p.beer - s.beer} ${p.beer - s.beer === 1 ? 'jarra' : 'jarras'}`);
+  if (s.gold < p.gold) out.push(t('forastero.monedas', { n: p.gold - s.gold }));
+  if (s.food < p.food) out.push(t('forastero.raciones', { n: p.food - s.food }));
+  if (s.beer < p.beer) out.push(t('forastero.jarras', { n: p.beer - s.beer }));
   const tela = (p.mats.tela ?? 0) - matOf(s, 'tela');
-  if (tela > 0) out.push(`${tela} de tela`);
+  if (tela > 0)
+    out.push(t('materiales.cuanto', { n: tela, material: msg('materiales.tela.nombre') }));
   return out;
 }
 
 /** Por qué no se puede traer a ese caído ahora (null: se puede). */
 export function reviveIssue(s: GameState, id: string): string | null {
-  if (!s.stranger) return 'El forastero ya no está.';
+  if (!s.stranger) return t('forastero.se_fue');
   const h = s.heroes.find((x) => x.id === id);
-  if (!h || h.status !== 'muerto') return 'No está entre los caídos.';
+  if (!h || h.status !== 'muerto') return t('forastero.no_caido');
   const p = priceFor(h);
   if (s.gold < p.gold || s.food < p.food || s.beer < p.beer || !hasMats(s, p.mats))
-    return `Falta: ${shortOf(s, p).join(', ')}.`;
+    return t('forastero.falta', { que: shortOf(s, p).join(', ') });
   return null;
 }
 
-const fullName = (h: Hero) => h.name + (h.nick ? ` «${h.nick}»` : '');
+const fullName = (h: Hero): Txt =>
+  h.nick ? msg('general.apodado', { nombre: h.name, apodo: h.nick }) : h.name;
 
 /** Su línea del Muro de los caídos (por id o, en las de antes, por el nombre). */
 const wallEntry = (s: GameState, h: Hero) =>
   s.fallen.find((f) => !f.back && f.id === h.id) ??
-  s.fallen.find((f) => !f.back && !f.id && f.name === fullName(h));
+  s.fallen.find((f) => !f.back && !f.id && idText(f.name) === idText(fullName(h)));
 
 /** Trae de vuelta a un caído (ya comprobado con `reviveIssue`). Muta `s`; devuelve el aviso. */
 export function revive(s: GameState, id: string): DawnEvent {
@@ -111,11 +110,11 @@ export function revive(s: GameState, id: string): DawnEvent {
   ] as const)
     delete h[k];
   if (!h.traits.some((t) => t.id === 'velo')) h.traits.push({ id: 'velo' });
-  h.history.push(`Día ${s.day} · Volvió del velo: lo trajo el forastero de la tormenta`);
+  h.history.push(msg('forastero.historial', { dia: s.day }));
   if (s.stats) s.stats.revived = (s.stats.revived ?? 0) + 1;
   s.stranger = null;
   return {
-    t: `El forastero pide que apaguen las velas. Cuando vuelven a encenderlas, ${h.name} respira en el catre, pálid${h.sex === 'f' ? 'a' : 'o'} y helad${h.sex === 'f' ? 'a' : 'o'}. El forastero ya no está.`,
+    t: msg('forastero.vuelve', { heroe: h.name, sexo: h.sex }),
     k: 'good',
   };
 }
@@ -123,7 +122,7 @@ export function revive(s: GameState, id: string): DawnEvent {
 /** Rechazar la oferta: se va con la tormenta. */
 export function dismiss(s: GameState): DawnEvent {
   s.stranger = null;
-  return { t: 'El forastero se encoge de hombros, se cala la capucha y sale a la tormenta.' };
+  return { t: msg('forastero.rechazado') };
 }
 
 /** Si ya es hora de que se vaya (al día siguiente de llegar, a mediodía). */
@@ -135,6 +134,6 @@ export function stepStranger(s: GameState): DawnEvent | null {
   if (!strangerGone(s)) return null;
   s.stranger = null;
   return {
-    t: 'A mediodía, el sitio junto al fuego está vacío: el forastero se ha ido sin que nadie le viera salir.',
+    t: msg('forastero.se_va'),
   };
 }

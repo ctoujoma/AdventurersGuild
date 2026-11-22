@@ -23,6 +23,7 @@ import {
 } from './crafting';
 import { endDay, newGame, reduce } from './game';
 import type { GameState, Worker } from './model';
+import { tx } from '../textos';
 
 /** Partida con la forja en uso (nivel `level`) y un herrero de Maña `skill` trabajando en ella. */
 function withForge(seed: string, level = 1, skill = 4): { s: GameState; forge: string } {
@@ -84,8 +85,8 @@ describe('la forja crea objetos', () => {
     expect(t.crafts).toBeUndefined();
     expect(t.inventory).toHaveLength(inv + 1);
     const it = t.inventory.at(-1)!;
-    expect([RECIPES.espada.common.name, RECIPES.espada.good.name]).toContain(it.name);
-    expect(t.incidentNews?.some((n) => /han creado/.test(n.t))).toBe(true);
+    expect([RECIPES.espada.common.name, RECIPES.espada.good.name].map(tx)).toContain(tx(it.name));
+    expect(t.incidentNews?.some((n) => /han creado/.test(tx(n.t)))).toBe(true);
   });
 
   it('solo se trabaja en la jornada: de noche se para y a la mañana sigue', () => {
@@ -139,7 +140,7 @@ describe('la forja crea objetos', () => {
     t = endDay(t, true);
     expect(t.crafts).toBeUndefined();
     expect(t.inventory.some((i) => i.icon === 'coraza')).toBe(true);
-    expect(t.dawn.some((e) => /han creado/.test(e.t))).toBe(true);
+    expect(t.dawn.some((e) => /han creado/.test(tx(e.t)))).toBe(true);
   });
 
   it('sin nadie en la sala se para; un héroe echa una mano, más despacio', () => {
@@ -185,9 +186,11 @@ describe('la forja crea objetos', () => {
     for (let i = 0; i < 40; i++) {
       const { s, forge } = withForge(`muchas-${i}`, 4, 9);
       const t = endDay(reduce(s, { type: 'craft', room: forge, recipe: 'espada' }), true);
-      const it = t.inventory.find((x) => x.icon === 'espada' && x.name.includes('templada'));
+      const it = t.inventory.find((x) => x.icon === 'espada' && tx(x.name).includes('templada'));
       if (it) good++;
-      expect(t.inventory.every((x) => (x.rarity ?? 0) < 2 || !x.name.includes('casa'))).toBe(true);
+      expect(t.inventory.every((x) => (x.rarity ?? 0) < 2 || !tx(x.name).includes('casa'))).toBe(
+        true,
+      );
     }
     expect(good).toBeGreaterThan(5);
     expect(good).toBeLessThan(35);
@@ -287,7 +290,7 @@ describe('la sastrería viste a los héroes', () => {
     expect(x.dress).toEqual({ dye: 'vino', garment: 'faja' });
     expect(x.morale).toBeGreaterThan(50);
     expect(t.stats?.dressed).toBe(1);
-    expect(t.dawn.some((e) => /estrena ropa/.test(e.t))).toBe(true);
+    expect(t.dawn.some((e) => /estrena ropa/.test(tx(e.t)))).toBe(true);
   });
 
   it('con el juego abierto no se cose hasta que llega; cerrado, a sus horas de camino', () => {
@@ -367,7 +370,7 @@ describe('la sastrería viste a los héroes', () => {
       const news = stepCrafts(t, 0.4);
       expect(dressingOf(t, h.id)).toBeUndefined();
       expect(t.gold).toBe(s.gold);
-      expect(news.some((n) => /devuelve/.test(n.t))).toBe(true);
+      expect(news.some((n) => /devuelve/.test(tx(n.t)))).toBe(true);
     }
   });
 
@@ -520,7 +523,7 @@ describe('materiales en los talleres', () => {
     t = endDay(t, true);
     const it = t.inventory.find((i) => i.id === 'esp')!;
     expect(it.plus).toBe(1);
-    expect(t.dawn.some((e) => /ahora es \+1/.test(e.t))).toBe(true);
+    expect(t.dawn.some((e) => /ahora es \+1/.test(tx(e.t)))).toBe(true);
     expect(temperCost({ ...it, plus: 3 })).toBeNull();
     // Las botas se mejoran en la sastrería, no en la forja.
     s.inventory.push({

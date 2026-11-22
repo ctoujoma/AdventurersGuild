@@ -5,13 +5,14 @@
  */
 import { PRICE_KIND, PRICE_TIERS } from './balance';
 import type { Hero, Item, ItemIcon, ItemPerk, Rarity } from './model';
+import { t } from '../textos';
 
 export type Slot = 'arma' | 'cuerpo' | 'complemento';
 export const SLOTS: readonly Slot[] = ['arma', 'cuerpo', 'complemento'];
 export const SLOT_NAMES: Record<Slot, string> = {
-  arma: 'Arma',
-  cuerpo: 'Cuerpo',
-  complemento: 'Complemento',
+  arma: t('objetos.ranuras.arma'),
+  cuerpo: t('objetos.ranuras.cuerpo'),
+  complemento: t('objetos.ranuras.complemento'),
 };
 
 /** Lo que lleva puesto un héroe, por ranura. */

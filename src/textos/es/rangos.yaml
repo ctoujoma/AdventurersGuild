@@ -1,0 +1,7 @@
+planta: "la planta {n}"
+nivel: "el nivel {n} de {sala, minus}"
+patio: "el patio trasero"
+recupera: "El gremio vuelve a ser de {rango}: se puede construir otra vez lo de ese rango."
+sube: "¡El gremio es ahora de {rango}! Llegan encargos más duros y mejor pagados{hay, select, si {, y se abre {abre}} other {}}."
+olvido: "Hace días que nadie sale de encargo: en la comarca se empieza a olvidar al gremio. La fama irá bajando hasta que mandes a alguien."
+baja: "El gremio baja a {rango}: ya no se habla de vuestras hazañas. Lo construido se queda, pero lo nuevo de {antes} no se puede construir hasta recuperarlo."

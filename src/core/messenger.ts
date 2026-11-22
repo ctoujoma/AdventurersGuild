@@ -22,21 +22,17 @@ import type { ChipKind, DawnEvent, GameState, Quest, Sex } from './model';
 import type { NightEvent } from './night';
 import type { Rng } from './rng';
 import { active } from './rooms';
+import { type Msg, type Txt, idText, msg, t, tl } from '../textos';
 
 /** Lo que dice al dar el recado (delante del texto del encargo). */
-const URGENT = [
-  'Llega sin aliento: «Que salgan al alba, por lo que más quieran».',
-  'Trae el sello del molinero y mucha prisa.',
-  'Viene a caballo desde la otra punta de la comarca.',
-  '«Mañana ya será tarde», dice, y no quiere ni sentarse.',
-];
+const URGENT = tl('mensajero.recados');
 
 /** Quien llama la noche del día `day`: cada noche otro (a veces, una mensajera). */
 export const messengerSex = (day: number): Sex => (day % 3 ? 'm' : 'f');
 
 /** «un mensajero» o «una mensajera». */
-export const aMessenger = (day: number) =>
-  messengerSex(day) === 'f' ? 'una mensajera' : 'un mensajero';
+export const aMessenger = (day: number) => t('mensajero.quien', { sexo: messengerSex(day) });
+const who = (day: number): Msg => msg('mensajero.quien', { sexo: messengerSex(day) });
 
 /** La puerta (el recibidor en uso), si hay. */
 export const messengerRoom = (s: GameState) =>
@@ -44,7 +40,7 @@ export const messengerRoom = (s: GameState) =>
 
 /** El encargo que trae: del nivel de la casa, mejor pagado y con prisa. */
 export function urgentQuest(s: GameState, rng: Rng): Quest {
-  const taken = new Set(s.quests.map((x) => x.title));
+  const taken = new Set(s.quests.map((x) => idText(x.title)));
   const make = () =>
     generateQuest(
       rng,
@@ -56,10 +52,13 @@ export function urgentQuest(s: GameState, rng: Rng): Quest {
       homePower(s.heroes),
     );
   let q = make();
-  for (let i = 0; i < 8 && taken.has(q.title); i++) q = make();
+  for (let i = 0; i < 8 && taken.has(idText(q.title)); i++) q = make();
   return {
     ...q,
-    text: `${rng.pick(URGENT)} ${q.text}`,
+    text: msg('mensajero.encargo', {
+      recado: msg(`mensajero.recados.${rng.int(0, URGENT.length - 1)}`),
+      texto: q.text,
+    }),
     reward: Math.round((q.reward * MESSENGER_PAY) / 5) * 5,
     expires: MESSENGER_EXPIRES,
     fresh: true,
@@ -97,17 +96,17 @@ export function stepMessenger(s: GameState): void {
 }
 
 /** Aceptar el encargo: va ya al tablón. Muta `s` (ya copiado); devuelve la línea. */
-export function acceptMessenger(s: GameState): { t: string; k: ChipKind } | null {
+export function acceptMessenger(s: GameState): { t: Txt; k: ChipKind } | null {
   const m = s.messenger;
   if (!m || m.gone) return null;
   s.quests = [...s.quests, m.quest];
   s.messenger = null;
   const line = {
-    t: `Anoche llamó ${aMessenger(m.day)} con un encargo urgente: «${m.quest.title}» (${m.quest.reward} monedas) está en el tablón. Sale hoy o se pierde.`,
+    t: msg('mensajero.aceptado', { quien: who(m.day), titulo: m.quest.title, n: m.quest.reward }),
     k: 'good' as const,
   };
   tellDawn(s, line);
-  return { t: `«${m.quest.title}» ya está en el tablón.`, k: 'good' };
+  return { t: msg('mensajero.en_tablon', { titulo: m.quest.title }), k: 'good' };
 }
 
 /** Despedirle: se va con su encargo. Muta `s` (ya copiado). */
@@ -115,7 +114,7 @@ export function dismissMessenger(s: GameState): void {
   const m = s.messenger;
   if (!m || m.gone) return;
   s.messenger = null;
-  tellDawn(s, { t: `Anoche despediste a ${aMessenger(m.day)}: se llevó su encargo a otra parte.` });
+  tellDawn(s, { t: msg('mensajero.despedido', { quien: who(m.day) }) });
 }
 
 /**
@@ -130,15 +129,20 @@ export function settleMessenger(s: GameState): DawnEvent | null {
   if (g) {
     s.quests = [...s.quests, m.quest];
     return {
-      t: `Anoche llamó ${aMessenger(m.day)} con un encargo urgente y ${g.name}, de guardia, le recogió el recado: «${m.quest.title}» (${m.quest.reward} monedas) está en el tablón. Sale hoy o se pierde.`,
+      t: msg('mensajero.recogido', {
+        quien: who(m.day),
+        heroe: g.name,
+        titulo: m.quest.title,
+        n: m.quest.reward,
+      }),
       k: 'good',
     };
   }
   const napper = guardsAt(s, 'puerta')[0];
   return {
     t: napper
-      ? `Anoche llamó ${aMessenger(m.day)} con un encargo urgente, pero ${napper.name} cabeceaba en la puerta y no le oyó: se lo llevó a otra parte.`
-      : `Anoche llamó ${aMessenger(m.day)} con un encargo urgente, pero nadie le abrió: se lo llevó a otra parte.`,
+      ? msg('mensajero.dormido', { quien: who(m.day), heroe: napper.name })
+      : msg('mensajero.nadie', { quien: who(m.day) }),
     k: 'warn',
   };
 }

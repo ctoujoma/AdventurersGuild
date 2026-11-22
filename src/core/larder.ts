@@ -16,8 +16,8 @@ import {
 import type { Building, DawnEvent, GameState, Hero, Room, RoomYield, Worker } from './model';
 import { active } from './rooms';
 import { visitorsOf, type DayVisitors } from './salon';
-import { listNames } from './text';
 import { workAt } from './workers';
+import { msg } from '../textos';
 
 /** Raciones que hace una cocina en un día. */
 export const cookAt = (s: GameState, r: Room) =>
@@ -91,7 +91,12 @@ export function stepLarder(s: GameState, visits: DayVisitors, events: DawnEvent[
   for (const h of hungry) h.morale = Math.max(0, h.morale - HUNGER_MORALE);
   if (hungry.length)
     events.push({
-      t: `No hubo comida para todos: ${listNames(hungry.map((h) => h.name))} ${hungry.length === 1 ? 'se acostó' : 'se acostaron'} sin cenar (−${HUNGER_MORALE} de moral).${meals < workers.length ? ' Ni el servicio cenó.' : ''}`,
+      t: msg('comida.sin_cena', {
+        quien: hungry.map((h) => h.name),
+        n: hungry.length,
+        moral: HUNGER_MORALE,
+        servicio: meals < workers.length,
+      }),
       k: 'bad',
     });
   s.food = Math.min(s.food, foodCap(s.building));

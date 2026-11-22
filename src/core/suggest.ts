@@ -7,6 +7,7 @@ import { canSend } from './game';
 import type { GameState, Hero, Quest } from './model';
 import { MORALE_LOW, skill, type Estimate, type Member } from './party';
 import { questEstimate } from './resolve';
+import { t } from '../textos';
 
 /** Lo que tiene que mejorar la estimación para que merezca la pena llevar a uno más. */
 const GAIN = 0.02;
@@ -20,13 +21,13 @@ const free = (s: GameState) => s.heroes.filter((h) => h.status === 'ok' && !h.gu
 
 export function suggestParty(s: GameState, questId: string): Suggestion {
   const q = s.quests.find((x) => x.id === questId);
-  if (!q) return { why: 'Ese encargo ya no está en el tablón.' };
+  if (!q) return { why: t('partida.error.encargo') };
   const pool = free(s);
   if (!pool.length)
     return {
-      why: s.heroes.some((h) => h.status === 'ok')
-        ? 'Los que están en casa hacen guardia.'
-        : 'No hay nadie en casa para ir.',
+      why: t(
+        s.heroes.some((h) => h.status === 'ok') ? 'grupo.todos_de_guardia' : 'grupo.nadie_en_casa',
+      ),
     };
   const score = (party: Hero[]) =>
     questEstimate(q, party, s.fac).total -
@@ -65,7 +66,7 @@ export function suggestParty(s: GameState, questId: string): Suggestion {
   // Primero, el que más ayuda por sí solo.
   const solo = new Map(chosen?.party.map((h) => [h, score([h])]));
   const party = (chosen?.party ?? []).sort((a, b) => solo.get(b)! - solo.get(a)!);
-  if (!party.length) return { why: 'Nadie de los que están en casa puede ir a este encargo.' };
+  if (!party.length) return { why: t('grupo.nadie_puede') };
   return { ids: party.map((h) => h.id) };
 }
 
@@ -107,11 +108,11 @@ export interface Repeat {
 /** Por qué alguien del grupo de antes no puede ir ahora (null: puede). */
 function busy(h: Hero | undefined): string | null {
   if (!h) return null;
-  const a = (m: string, f: string) => (h.sex === 'f' ? f : m);
-  if (h.status === 'herido') return `${h.name} sigue ${a('herido', 'herida')}`;
-  if (h.status === 'mision') return `${h.name} está de misión`;
-  if (h.status !== 'ok') return `${h.name} ya no está en el gremio`;
-  if (h.guard) return `${h.name} está de guardia`;
+  const p = { heroe: h.name, sexo: h.sex };
+  if (h.status === 'herido') return t('grupo.herido', p);
+  if (h.status === 'mision') return t('grupo.de_mision', p);
+  if (h.status !== 'ok') return t('grupo.fuera', p);
+  if (h.guard) return t('grupo.de_guardia', p);
   return null;
 }
 
@@ -129,7 +130,7 @@ export function repeatParty(s: GameState, questId: string): Repeat | null {
     const why = busy(h);
     if (why) skipped.push(why);
     else if (ids.length < q.slots) ids.push(id);
-    else skipped.push(`${h.name} no cabe: este encargo admite ${q.slots}`);
+    else skipped.push(t('grupo.no_cabe', { heroe: h.name, n: q.slots }));
   }
   return { from: step ? 'paso' : 'ultima', ids, skipped };
 }

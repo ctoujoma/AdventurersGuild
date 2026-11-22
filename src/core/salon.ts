@@ -28,6 +28,7 @@ import type { Building, GameState, Room } from './model';
 import { Rng } from './rng';
 import { active, isShaft } from './rooms';
 import { workIn } from './workers';
+import { type Msg, msg, t } from '../textos';
 
 /** El salón en uso (o null si está roto o en obras). */
 export function salonOf(b: Building): Room | null {
@@ -56,26 +57,16 @@ export function neighborsOf(b: Building, r: Room): Neighbor[] {
   const out: Neighbor[] = [];
   if (active(r).level === 0) return out;
   if (r.type === 'cocina' && besides(b, r, 'salon'))
-    out.push({
-      good: true,
-      text: 'Junto al salón: los platos llegan antes y se atiende a más gente.',
-    });
+    out.push({ good: true, text: t('vecinos.cocina_salon') });
   if (r.type === 'salon' && besides(b, r, 'cocina'))
-    out.push({ good: true, text: 'La cocina al lado: se atiende a más gente.' });
-  if (r.type === 'bodega' && r.floor < 0)
-    out.push({ good: true, text: 'Bajo tierra, fresca: la cerveza sale mejor.' });
+    out.push({ good: true, text: t('vecinos.salon_cocina') });
+  if (r.type === 'bodega' && r.floor < 0) out.push({ good: true, text: t('vecinos.bodega_abajo') });
   if (r.type === 'bodega' && r.floor >= 0)
-    out.push({
-      good: false,
-      text: 'Sobre el suelo la cerveza se calienta: bajo tierra saldría mejor.',
-    });
+    out.push({ good: false, text: t('vecinos.bodega_arriba') });
   if ((r.type === 'dormitorio' || r.type === 'veteranos') && besides(b, r, 'salon'))
-    out.push({
-      good: false,
-      text: 'Pegado al salón: con el ruido se descansa peor (−1 de moral).',
-    });
+    out.push({ good: false, text: t('vecinos.camas_salon') });
   if (r.type === 'salon' && (besides(b, r, 'dormitorio') || besides(b, r, 'veteranos')))
-    out.push({ good: false, text: 'Hay camas pegadas al salón: con el ruido se descansa peor.' });
+    out.push({ good: false, text: t('vecinos.salon_camas') });
   return out;
 }
 
@@ -192,9 +183,11 @@ export const brawlChance = (s: GameState, v: DayVisitors) =>
       BRAWL_PER_VISITOR * Math.max(0, v.total - 6) +
       ((s.custom?.decor ?? []).includes('naipes') ? BRAWL_NAIPES : 0);
 
-/** «5 campesinos, 1 mercader» para los resúmenes. */
-export function visitorList(v: DayVisitors): string {
-  return KINDS.filter((k) => v.kinds[k] > 0)
-    .map((k) => `${v.kinds[k]} ${v.kinds[k] === 1 ? VISITORS[k].name : VISITORS[k].plural}`)
-    .join(', ');
+/** «5 campesinos y 1 mercader» para los resúmenes (un mensaje: se guarda en la carta). */
+export function visitorList(v: DayVisitors): Msg {
+  return msg('general.lista', {
+    xs: KINDS.filter((k) => v.kinds[k] > 0).map((k) =>
+      msg(`visitantes.cuantos.${k}`, { n: v.kinds[k] }),
+    ),
+  });
 }

@@ -1,0 +1,17 @@
+habilidades:
+  provocar:
+    nombre: "Provocar"
+    texto: "Atrae los golpes hacia sí unos segundos y aguanta más."
+  punalada:
+    nombre: "Puñalada"
+    texto: "Un golpe por la espalda: el triple de daño."
+  bola:
+    nombre: "Bola de fuego"
+    texto: "Quema a todos los enemigos a la vez."
+  curar:
+    nombre: "Curar"
+    texto: "Cura al que esté peor del grupo."
+  andanada:
+    nombre: "Andanada"
+    texto: "Dos flechas seguidas al mismo blanco."
+esbirro: "Esbirro"

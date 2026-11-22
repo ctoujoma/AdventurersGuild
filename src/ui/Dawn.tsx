@@ -4,6 +4,7 @@ import type { DawnEvent } from '../core/model';
 import { dawnPages, delayAfter, type Step } from './dawnSteps';
 import { Icon } from './icons';
 import { plural } from './text';
+import { tx } from '../textos';
 
 interface Props {
   day: number;
@@ -39,7 +40,7 @@ function Line({ e, delay }: { e: DawnEvent; delay?: number }) {
       style={delay !== undefined ? { animationDelay: `${delay}s` } : undefined}
     >
       {e.big && <Icon name="star" size={14} class="ev-star" />}
-      {e.t}
+      {tx(e.t)}
     </li>
   );
 }

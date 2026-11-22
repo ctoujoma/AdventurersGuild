@@ -3,6 +3,7 @@ import { emptyStats } from '../core/feats';
 import { SAVE_VERSION, type GameState } from '../core/model';
 import { facOf } from '../core/rooms';
 import { migrateGear } from '../core/gear';
+import { cleanTexts } from '../core/convert';
 
 /**
  * Dónde se guarda la partida. En la web, localStorage; en Android se cambiará por
@@ -51,7 +52,12 @@ export function parseSave(raw: string | null): GameState | null {
     if (!s || !s.building || !Array.isArray(s.heroes)) return null;
     if (s.version === 4) {
       fiveRarities(s);
-      s.version = SAVE_VERSION;
+      s.version = 5;
+    }
+    // De la 5 a la 6: los textos guardados pasan a mensajes (ver `core/convert.ts`).
+    if (s.version === 5) {
+      cleanTexts(s);
+      s.version = 6;
     }
     if (s.version !== SAVE_VERSION) return null;
     s.fac = facOf(s.building);

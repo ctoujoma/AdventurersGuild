@@ -2,6 +2,7 @@
  * Reglas de grupo: habilidades de cada héroe y estimación de riesgo de un encargo.
  * TS puro, sin DOM: lo usan la interfaz, los tests y (en la fase 1) la resolución.
  */
+import { tl } from '../textos';
 
 export type ClassId = 'guerrero' | 'picaro' | 'mago' | 'clerigo' | 'explorador';
 export type SkillId = 'Combate' | 'Trampas' | 'Arcano' | 'Supervivencia';
@@ -117,7 +118,7 @@ export function moraleMod(m: Member): number {
 /** El gafe empeora todas las tiradas del grupo. */
 const JINX = 0.05;
 
-export const RISK_LABELS = ['Pan comido', 'Probable', 'Arriesgado', 'Suicida'] as const;
+export const RISK_LABELS = tl('etiquetas.riesgo');
 export type RiskLevel = 0 | 1 | 2 | 3;
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));

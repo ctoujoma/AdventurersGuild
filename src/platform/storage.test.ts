@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { SAVE_VERSION } from '../core/model';
 import { START_BEER, START_FOOD } from '../core/balance';
 import { endDay, newGame } from '../core/game';
 import type { GameState } from '../core/model';
@@ -87,7 +88,7 @@ describe('guardado', () => {
     };
     mem.write(JSON.stringify(old));
     const s = loadGame(mem)!;
-    expect(s.version).toBe(5);
+    expect(s.version).toBe(SAVE_VERSION);
     expect(s.inventory.map((x) => x.rarity)).toEqual([0, 2, 4]);
     expect(s.heroes[0]!.worn?.arma?.rarity).toBe(4);
     expect(

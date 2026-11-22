@@ -1,0 +1,28 @@
+hierro:
+  nombre: "Hierro"
+  de_donde: "Sale limpiando guaridas e investigando."
+  usos: "Lo piden las armas, las corazas y las ganzúas (crearlas y mejorarlas)."
+cuero:
+  nombre: "Cuero"
+  de_donde: "Sale cazando y explorando."
+  usos: "Lo piden las botas, los escudos y las capas buenas."
+tela:
+  nombre: "Tela"
+  de_donde: "Sale escoltando y recuperando."
+  usos: "La piden las capas."
+hierbas:
+  nombre: "Hierbas"
+  de_donde: "Saldrán en las expediciones."
+  usos: "Las piden los amuletos para mejorarlos en la alquimia."
+madera:
+  nombre: "Madera buena"
+  de_donde: "Saldrá en las expediciones."
+  usos: "La piden las varitas para mejorarlas en la alquimia."
+cristal:
+  nombre: "Cristal"
+  de_donde: "Saldrá, raro, en las expediciones lejanas."
+  usos: "Aún no lo pide ningún taller."
+cuanto: "{n} de {material, minus}"
+nada: "nada"
+no_cabe: "No cabía: vendido {que} por {oro} monedas.{consejo, select, ampliar { Amplía el almacén para guardar más.} construir { Construye un almacén para guardarlos.} other { Cuando pagues la deuda podrás construir un almacén.}}"
+almacen_siguiente: "Nivel {nivel}: cabe más de cada material ({n} por hueco){delicado, select, si { y estantes para lo delicado (hierbas, madera buena y cristal){expediciones, select, si {} other {, que llega con las expediciones}}} other {}}."

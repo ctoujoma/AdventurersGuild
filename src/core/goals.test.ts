@@ -8,6 +8,7 @@ import { endDay, newGame, reduce } from './game';
 import { checkGoals, goalProgress, hasUnlock, unlockSource } from './goals';
 import type { GameState } from './model';
 import { Rng } from './rng';
+import { tx } from '../textos';
 
 const cumplir = (s: GameState, id: string) => {
   const g = s.goals!.active.find((a) => a.id === id)!;
@@ -35,7 +36,7 @@ describe('objetivos', () => {
     const out: { t: string }[] = [];
     checkGoals(s, new Rng(1), out);
     expect(s.gold).toBe(gold + 40);
-    expect(out[0]?.t).toMatch(/Objetivo cumplido: Cumple 3 encargos/);
+    expect(tx(out[0]?.t)).toMatch(/Objetivo cumplido: Cumple 3 encargos/);
     expect(s.goals!.log[0]).toMatchObject({ day: s.day, text: 'Cumple 3 encargos' });
     expect(s.goals!.done.encargos).toBe(1);
     expect(s.goals!.active).toHaveLength(GOAL_SLOTS);
@@ -72,7 +73,7 @@ describe('objetivos', () => {
     s.beer = 40;
     const t = reduce(s, { type: 'tick', to: (s.clock ?? 0) + 1 });
     expect(t.goals!.done.jarras).toBe(1);
-    expect(t.incidentNews?.some((n) => n.t.startsWith('Objetivo cumplido'))).toBe(true);
+    expect(t.incidentNews?.some((n) => tx(n.t).startsWith('Objetivo cumplido'))).toBe(true);
     // Sin nada cumplido, el reloj no copia los objetivos.
     const u = reduce(t, { type: 'tick', to: (t.clock ?? 0) + 1 });
     expect(u.goals).toBe(t.goals);
@@ -123,7 +124,7 @@ describe('objetivos', () => {
     s.goals!.active[0] = { id: 'raciones', text: 'x', base: 0, target: 1, reward: { gold: 5 } };
     const t = endDay(s);
     expect(t.goals!.done.raciones).toBe(1);
-    expect(t.dawn.some((e) => e.t.startsWith('Objetivo cumplido'))).toBe(true);
+    expect(t.dawn.some((e) => tx(e.t).startsWith('Objetivo cumplido'))).toBe(true);
     expect(t.goals!.active).toHaveLength(GOAL_SLOTS);
   });
 
@@ -169,7 +170,7 @@ describe('objetivos', () => {
     expect(goalProgress(s, s.goals!.active[2]!)).toBe(5);
     const out: { t: string }[] = [];
     checkGoals(s, new Rng(1), out);
-    expect(out.filter((e) => e.t.startsWith('Objetivo cumplido'))).toHaveLength(3);
+    expect(out.filter((e) => tx(e.t).startsWith('Objetivo cumplido'))).toHaveLength(3);
   });
 
   it('los de llegar a algo van en serie', () => {

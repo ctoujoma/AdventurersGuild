@@ -41,7 +41,7 @@ import { workAt, workedIn } from './workers';
 import { hasUnlock, unlockSource } from './goals';
 import { bump } from './feats';
 import {
-  MATERIALS,
+  matMsg,
   gainMats,
   hasMats,
   missing,
@@ -49,6 +49,7 @@ import {
   type Material,
   type Mats,
 } from './materials';
+import { msg, t } from '../textos';
 
 /** Las salas que son taller (las que tienen recetas). */
 const SHOPS = new Set<RoomType>(RECIPE_IDS.map((id) => RECIPES[id].room));
@@ -90,15 +91,17 @@ const hoursToWork = (h: number) => (h / 24) * CRAFT_STD_WORK;
  */
 export const clockHours = (h: number) => h * (WORK_END - WORK_START);
 
+/** El taller («la forja», «la sastrería»…) como mensaje, para un hueco. */
+const shopMsg = (type?: RoomType) =>
+  type && WORKSHOP_PLACE[type] ? msg(`recetas.taller.${type}`) : msg('talleres.el_taller');
+
 /** Por qué no se puede empezar algo en un taller (null = se puede). */
 function canStart(s: GameState, roomId: string): string | null {
   const r = s.building.rooms.find((x) => x.id === roomId);
-  if (!r || !isWorkshop(r.type)) return 'Esa sala no es un taller.';
-  if (active(r).level === 0) return 'La sala no está en uso.';
+  if (!r || !isWorkshop(r.type)) return t('talleres.error.no_taller');
+  if (active(r).level === 0) return t('talleres.error.sin_uso');
   if (craftsIn(s, roomId).length >= craftSlots(r))
-    return craftSlots(r) > 1
-      ? 'El taller ya está a tope.'
-      : 'El taller ya tiene un trabajo: mejora la sala para hacer dos a la vez.';
+    return t(craftSlots(r) > 1 ? 'talleres.error.a_tope' : 'talleres.error.uno');
   return null;
 }
 
@@ -108,9 +111,9 @@ export function canCraft(s: GameState, roomId: string, recipe: RecipeId): string
   if (why) return why;
   const rc = RECIPES[recipe];
   const r = s.building.rooms.find((x) => x.id === roomId)!;
-  if (rc.room !== r.type) return 'Eso no se hace en esta sala.';
-  if (!knownRecipes(s).includes(recipe)) return 'Aún no sabéis hacerlo.';
-  if (s.gold < rc.gold) return `Te faltan ${rc.gold - s.gold} monedas.`;
+  if (rc.room !== r.type) return t('talleres.error.otra_sala');
+  if (!knownRecipes(s).includes(recipe)) return t('talleres.error.no_sabeis');
+  if (s.gold < rc.gold) return t('partida.error.faltan', { n: rc.gold - s.gold });
   return lackText(s, rc.mats);
 }
 
@@ -119,7 +122,11 @@ export function lackText(s: GameState, need?: Mats): string | null {
   if (!need || hasMats(s, need)) return null;
   const miss = missing(s, need);
   const [m, n] = Object.entries(miss)[0] as [Material, number];
-  return `Falta${n > 1 ? 'n' : ''} ${n} de ${MATERIALS[m].name.toLowerCase()}: ${MATERIALS[m].from.toLowerCase()}`;
+  return t('talleres.error.falta', {
+    n,
+    material: matMsg(m),
+    de_donde: msg(`materiales.${m}.de_donde`),
+  });
 }
 
 /** El material de cada dibujo: lo que pide mejorarlo y lo que devuelve desmontarlo. */
@@ -170,12 +177,12 @@ export function canTemper(s: GameState, roomId: string, itemId: string): string 
   if (why) return why;
   const r = s.building.rooms.find((x) => x.id === roomId)!;
   const it = s.inventory.find((x) => x.id === itemId);
-  if (!it) return 'Ese objeto no está en el arcón (si lo lleva alguien, quítaselo antes).';
+  if (!it) return t('talleres.error.no_arcon_puesto');
   const cost = temperCost(it);
   if (!cost)
-    return (it.plus ?? 0) >= TEMPER_MAX ? 'Ya está mejorado del todo.' : 'Esto no se mejora.';
-  if (cost.room !== r.type) return 'Eso se mejora en otro taller.';
-  if (s.gold < cost.gold) return `Te faltan ${cost.gold - s.gold} monedas.`;
+    return t((it.plus ?? 0) >= TEMPER_MAX ? 'talleres.error.mejorado' : 'talleres.error.no_mejora');
+  if (cost.room !== r.type) return t('talleres.error.otro_taller');
+  if (s.gold < cost.gold) return t('partida.error.faltan', { n: cost.gold - s.gold });
   return lackText(s, cost.mats);
 }
 
@@ -216,9 +223,8 @@ export function undoable(s: GameState, roomId: string): Item[] {
 export function canUndo(s: GameState, roomId: string, itemId: string): string | null {
   const why = canStart(s, roomId);
   if (why) return why;
-  if (!s.inventory.some((it) => it.id === itemId)) return 'Ese objeto no está en el arcón.';
-  if (!undoable(s, roomId).some((it) => it.id === itemId))
-    return 'De ese objeto no se saca nada nuevo.';
+  if (!s.inventory.some((it) => it.id === itemId)) return t('talleres.error.no_arcon');
+  if (!undoable(s, roomId).some((it) => it.id === itemId)) return t('talleres.error.nada_nuevo');
   return null;
 }
 
@@ -308,17 +314,19 @@ export function canDress(s: GameState, roomId: string, heroId: string, to: Dress
   const why = canStart(s, roomId);
   if (why) return why;
   const r = s.building.rooms.find((x) => x.id === roomId)!;
-  if (r.type !== 'sastreria') return 'Eso se hace en la sastrería.';
+  if (r.type !== 'sastreria') return t('talleres.error.sastreria');
   const h = s.heroes.find((x) => x.id === heroId);
-  if (!h) return 'Ya no está en el gremio.';
-  if (h.status !== 'ok') return `${h.name} no está en casa.`;
-  if (dressingOf(s, heroId)) return `A ${h.name} ya le están cosiendo.`;
-  if (to.dye && !TINTS[to.dye]) return 'Ese tinte no existe.';
-  if (to.garment && !GARMENTS[to.garment]) return 'Esa prenda no existe.';
+  if (!h) return t('talleres.ropa.fuera');
+  if (h.status !== 'ok') return t('talleres.ropa.no_en_casa', { heroe: h.name });
+  if (dressingOf(s, heroId)) return t('talleres.ropa.cosiendo', { heroe: h.name });
+  if (to.dye && !TINTS[to.dye]) return t('talleres.ropa.sin_tinte');
+  if (to.garment && !GARMENTS[to.garment]) return t('talleres.ropa.sin_prenda');
   if (to.dye && !hasUnlock(s, `tint:${to.dye}`))
-    return `Aún no tenéis el tinte ${TINTS[to.dye].name.toLowerCase()}.`;
-  if (sameDress(h.dress, to)) return 'Ya va así.';
-  if (s.gold < DRESS_GOLD) return `Te faltan ${DRESS_GOLD - s.gold} monedas.`;
+    return t('talleres.ropa.tinte_bloqueado', {
+      tinte: msg(`personalizar.tintes.${to.dye}.nombre`),
+    });
+  if (sameDress(h.dress, to)) return t('talleres.ropa.igual');
+  if (s.gold < DRESS_GOLD) return t('partida.error.faltan', { n: DRESS_GOLD - s.gold });
   return null;
 }
 
@@ -337,34 +345,42 @@ export type DressStatus =
 export function dressStatus(s: GameState, heroId: string, to: Dress): DressStatus {
   const cost = DRESS_GOLD;
   const h = s.heroes.find((x) => x.id === heroId);
-  if (!h) return { state: 'away', why: 'Ya no está en el gremio.', cost };
-  if (sameDress(h.dress, to)) return { state: 'same', why: 'Ya va así.', cost };
+  if (!h) return { state: 'away', why: t('talleres.ropa.fuera'), cost };
+  if (sameDress(h.dress, to)) return { state: 'same', why: t('talleres.ropa.igual'), cost };
   if (to.dye && !hasUnlock(s, `tint:${to.dye}`)) {
     const from = unlockSource(`tint:${to.dye}`);
-    return { state: 'lock', why: from ? `Se consigue con: ${from}.` : 'Aún no lo tenéis.', cost };
+    return {
+      state: 'lock',
+      why: from ? t('talleres.ropa.se_consigue', { como: from }) : t('talleres.ropa.no_lo_teneis'),
+      cost,
+    };
   }
   const rooms = s.building.rooms.filter((r) => r.type === 'sastreria' && active(r).level > 0);
-  if (!rooms.length) return { state: 'none', why: 'Hace falta una sastrería.', cost };
-  if (h.status !== 'ok') return { state: 'away', why: `${h.name} no está en casa.`, cost };
+  if (!rooms.length) return { state: 'none', why: t('talleres.ropa.sin_sastreria'), cost };
+  if (h.status !== 'ok')
+    return { state: 'away', why: t('talleres.ropa.no_en_casa', { heroe: h.name }), cost };
   if (dressingOf(s, heroId))
-    return { state: 'sewing', why: `A ${h.name} ya le están cosiendo.`, cost };
+    return { state: 'sewing', why: t('talleres.ropa.cosiendo', { heroe: h.name }), cost };
   const free = rooms.find((r) => !canStart(s, r.id));
   if (!free) {
     const r = rooms[0]!;
     const c = craftsIn(s, r.id)[0];
     const who = c?.dress ? s.heroes.find((x) => x.id === c.dress!.hero)?.name : undefined;
     const left = c ? craftState(s, c).hoursLeft : null;
-    const what = who ? `está con ${who}` : 'está ocupada';
-    const when = left === null ? '' : `: acaba en ${Math.max(1, Math.ceil(left))} h`;
     return {
       state: 'busy',
-      why: `La sastrería ${what}${when}.`,
+      why: t('talleres.ropa.ocupada', {
+        quien: who,
+        con: !!who,
+        horas: left === null ? 0 : Math.max(1, Math.ceil(left)),
+      }),
       cost,
       room: r.id,
       hoursLeft: left,
     };
   }
-  if (s.gold < cost) return { state: 'gold', why: `Te faltan ${cost - s.gold} monedas.`, cost };
+  if (s.gold < cost)
+    return { state: 'gold', why: t('partida.error.faltan', { n: cost - s.gold }), cost };
   return { state: 'ok', room: free.id, cost };
 }
 
@@ -412,9 +428,9 @@ export function craftState(s: GameState, c: Craft): CraftState {
 /** Calidad de lo que sale de una receta: común, bueno o raro. */
 export type Quality = 'comun' | 'bueno' | 'raro';
 export const QUALITY_NAME: Record<Quality, string> = {
-  comun: 'común',
-  bueno: 'bueno',
-  raro: 'raro',
+  comun: t('talleres.calidad.comun'),
+  bueno: t('talleres.calidad.bueno'),
+  raro: t('talleres.calidad.raro'),
 };
 
 /**
@@ -476,7 +492,7 @@ function finish(s: GameState, c: Craft, rng: Rng, news: DawnEvent[]): void {
     const h = s.heroes.find((x) => x.id === hero);
     if (h)
       news.push({
-        t: `${h.name} estrena ropa: sale de la sastrería ${h.sex === 'f' ? 'hecha' : 'hecho'} un pincel.`,
+        t: msg('talleres.aviso.vestido', { heroe: h.name, sexo: h.sex }),
         k: 'good',
       });
     return;
@@ -487,15 +503,18 @@ function finish(s: GameState, c: Craft, rng: Rng, news: DawnEvent[]): void {
     s.inventory.push(it);
     logEnd(s, c, 'templado');
     const room = s.building.rooms.find((r) => r.id === c.room);
-    const at = (room && WORKSHOP_PLACE[room.type]) ?? 'el taller';
     news.push({
-      t: `En ${at} han mejorado ${it.name}: ahora es +${it.plus}. Ya está en el arcón.`,
+      t: msg('talleres.aviso.mejorado', {
+        taller: shopMsg(room?.type),
+        objeto: it.name,
+        mas: it.plus,
+      }),
       k: 'good',
     });
     return;
   }
   const rc = RECIPES[c.recipe!];
-  const place = WORKSHOP_PLACE[rc.room] ?? 'el taller';
+  const place = shopMsg(rc.room);
   if (c.item) {
     // Desmontar devuelve algo de su material (si cabe).
     if (c.item.icon) gainMats(s, { [ICON_MATERIAL[c.item.icon]]: 1 });
@@ -503,12 +522,16 @@ function finish(s: GameState, c: Craft, rng: Rng, news: DawnEvent[]): void {
       s.recipes = [...(s.recipes ?? []), c.recipe!];
       logEnd(s, c, 'receta');
       news.push({
-        t: `Desmontando ${c.item.name}, en ${place} han sacado cómo se hace: ya podéis crear ${rc.many}.`,
+        t: msg('talleres.aviso.receta', {
+          objeto: c.item.name,
+          taller: place,
+          receta: msg(`recetas.recetas.${c.recipe}.many`),
+        }),
         k: 'good',
       });
     } else {
       logEnd(s, c, 'nada');
-      news.push({ t: `Han desmontado ${c.item.name}, pero no han sacado nada en claro.` });
+      news.push({ t: msg('talleres.aviso.desmontado', { objeto: c.item.name }) });
     }
     return;
   }
@@ -520,10 +543,7 @@ function finish(s: GameState, c: Craft, rng: Rng, news: DawnEvent[]): void {
   logEnd(s, c, 'hecho', base.rarity ?? 0);
   bump(s, 'crafted');
   news.push({
-    t:
-      q === 'comun'
-        ? `En ${place} han creado ${base.name}. Ya está en el arcón.`
-        : `${q === 'raro' ? '¡' : ''}En ${place} han creado ${base.name}${q === 'raro' ? '!' : '.'} Ha salido de calidad ${QUALITY_NAME[q]}. Ya está en el arcón.`,
+    t: msg(`talleres.aviso.creado_${q}`, { taller: place, objeto: base.name }),
     k: 'good',
   });
 }
@@ -560,7 +580,7 @@ export function stepCrafts(
         s.gold += c.gold;
         logEnd(s, c, 'cancelado');
         news.push({
-          t: `La sastrería deja lo que cosía${h ? ` para ${h.name}` : ''} y devuelve ${c.gold} monedas.`,
+          t: msg('talleres.aviso.cancelado', { heroe: h?.name, para: !!h, n: c.gold }),
         });
         continue;
       }

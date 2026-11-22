@@ -178,3 +178,7 @@ rareza_color: "{rareza} ({color})"
 con_mejora: "{nombre} +{mas}"
 bono: "+{n} {habilidad}"
 solo_venta: "Solo vale lo que te den por él"
+ranuras:
+  arma: "Arma"
+  cuerpo: "Cuerpo"
+  complemento: "Complemento"

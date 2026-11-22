@@ -3,12 +3,13 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
 import type { Custom, Hero, Report } from '../core/model';
 import { CREST_COLORS, sealInitial } from '../data/custom';
-import { OUTCOME_CLASS } from '../data/labels';
+import { OUTCOME_CLASS, outcomeLabel } from '../data/labels';
 import { flyTo } from './coinFlight';
 import { Icon } from './icons';
 import { MatIcon, chipMat } from './mats';
 import { Portrait } from './Portrait';
 import { lookOf, marksOf, heroFrame } from './view';
+import { tx } from '../textos';
 
 interface Props {
   report: Report;
@@ -83,7 +84,7 @@ export function Letter({ report: r, heroes, seal, onClose, onWatch }: Props) {
       <article
         class="herocard letter"
         onClick={(e) => e.stopPropagation()}
-        aria-label={`Informe: ${r.title}`}
+        aria-label={`Informe: ${tx(r.title)}`}
       >
         <button class="btn-icon herocard-x" data-tut="cerrar" aria-label="Cerrar" onClick={close}>
           <Icon name="close" size={14} />
@@ -98,9 +99,15 @@ export function Letter({ report: r, heroes, seal, onClose, onWatch }: Props) {
           </span>
           <span class="eyebrow">Informe · día {r.day}</span>
           <h3 class={`outcome outcome-${OUTCOME_CLASS[r.outcome]}`}>
-            {r.heading ?? (r.raid ? (r.raid.won ? 'Asalto repelido' : 'Saqueo') : r.outcome)}
+            {r.heading
+              ? tx(r.heading)
+              : r.raid
+                ? r.raid.won
+                  ? 'Asalto repelido'
+                  : 'Saqueo'
+                : outcomeLabel(r.outcome)}
           </h3>
-          <b class="letter-title">{r.title}</b>
+          <b class="letter-title">{tx(r.title)}</b>
           <div class="letter-party">
             {party.map((h) => (
               <span
@@ -120,20 +127,20 @@ export function Letter({ report: r, heroes, seal, onClose, onWatch }: Props) {
           </div>
           <div class="story">
             {r.body.map((p, i) => (
-              <p key={i}>{p}</p>
+              <p key={i}>{tx(p)}</p>
             ))}
           </div>
           <div class="chips" ref={chipsRef}>
             {r.chips.map((c, i) => {
-              const m = chipMat(c.t);
+              const m = chipMat(tx(c.t));
               return (
                 <span
                   key={i}
                   class={`chip chip-${c.k} ${m ? 'chip-mat' : ''}`}
-                  data-mat={m ? c.t : undefined}
+                  data-mat={m ? tx(c.t) : undefined}
                 >
                   {m && <MatIcon m={m.m} size={12} />}
-                  {c.t}
+                  {tx(c.t)}
                 </span>
               );
             })}

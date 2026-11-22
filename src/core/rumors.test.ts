@@ -3,6 +3,8 @@ import { RUMOR_EVERY, RUMOR_SECS } from './balance';
 import { endDay, newGame, reduce } from './game';
 import type { GameState } from './model';
 import { stepRumors } from './rumors';
+import { tx } from '../textos';
+import { placeName } from '../data/places';
 
 /** Partida en el día 3 con un rumor en la barra. */
 function withRumor(seed = 'rumor'): GameState {
@@ -33,9 +35,9 @@ describe('rumores de la barra', () => {
     const q = t.quests.find((x) => x.rumor)!;
     expect(q).toBeDefined();
     expect(q.item!.rarity).toBeGreaterThanOrEqual(1);
-    expect(q.text).toContain(q.place);
+    expect(tx(q.text)).toContain(placeName(q.place));
     expect(q.danger).toBeGreaterThanOrEqual(1);
-    expect(t.incidentNews?.[0]?.t).toContain(q.title);
+    expect(tx(t.incidentNews?.[0]?.t)).toContain(tx(q.title));
   });
 
   it('si no se toca, se pierde sin más; y mientras haya uno en el tablón no se oye otro', () => {

@@ -16,6 +16,7 @@ import { help } from '../HoldHelp';
 import { Icon } from '../icons';
 import { Portrait } from '../Portrait';
 import { lookOf, marksOf, workerLook, heroFrame, workerFrame } from '../view';
+import { tx } from '../../textos';
 
 interface Props {
   game: GameState;
@@ -298,7 +299,7 @@ export function SeekerList({ game, onHire }: { game: GameState; onHire: (id: str
       {game.seekers.map((w) => {
         const why = canHireWorker(game, w.id);
         return (
-          <article key={w.id} class="row" {...help(`«${w.quote}»`)}>
+          <article key={w.id} class="row" {...help(`«${tx(w.quote)}»`)}>
             <Face game={game} id={w.id} />
             <span class="row-info">
               <b>{w.name}</b>

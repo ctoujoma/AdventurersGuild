@@ -1,0 +1,2854 @@
+{
+  "version": 5,
+  "seed": "conversor-v5",
+  "rng": 1340746220,
+  "uid": 388,
+  "askName": false,
+  "day": 46,
+  "gold": 1272,
+  "rep": 61,
+  "paid": 1000,
+  "clock": 0,
+  "till": 0,
+  "food": 12,
+  "beer": 20,
+  "building": {
+    "cols": 4,
+    "stairs": [
+      { "at": 1, "floor": -1 },
+      { "at": 1, "floor": 0 },
+      { "at": 1, "floor": 1 }
+    ],
+    "dug": ["0,-1", "1,-1", "2,-1", "3,-1"],
+    "rooms": [
+      { "id": "t1", "type": "torre", "col": 0, "floor": 3, "w": 1, "h": 1, "level": 0, "spent": 0 },
+      { "id": "t2", "type": "mapas", "col": 0, "floor": 2, "w": 1, "h": 1, "level": 0, "spent": 0 },
+      {
+        "id": "t3",
+        "type": "enfermeria",
+        "col": 0,
+        "floor": 1,
+        "w": 1,
+        "h": 1,
+        "level": 0,
+        "spent": 0
+      },
+      {
+        "id": "t4",
+        "type": "dormitorio",
+        "col": 1,
+        "floor": 1,
+        "w": 2,
+        "h": 1,
+        "level": 1,
+        "spent": 0
+      },
+      {
+        "id": "t5",
+        "type": "capilla",
+        "col": 3,
+        "floor": 1,
+        "w": 1,
+        "h": 1,
+        "level": 0,
+        "spent": 0
+      },
+      {
+        "id": "t6",
+        "type": "recibidor",
+        "col": 0,
+        "floor": 0,
+        "w": 1,
+        "h": 1,
+        "level": 1,
+        "spent": 0
+      },
+      { "id": "t7", "type": "salon", "col": 1, "floor": 0, "w": 2, "h": 1, "level": 1, "spent": 0 },
+      {
+        "id": "t8",
+        "type": "cocina",
+        "col": 3,
+        "floor": 0,
+        "w": 1,
+        "h": 1,
+        "level": 1,
+        "spent": 0
+      },
+      {
+        "id": "t9",
+        "type": "bodega",
+        "col": 0,
+        "floor": -1,
+        "w": 1,
+        "h": 1,
+        "level": 1,
+        "spent": 0
+      },
+      {
+        "id": "t10",
+        "type": "armeria",
+        "col": 1,
+        "floor": -1,
+        "w": 1,
+        "h": 1,
+        "level": 0,
+        "spent": 0
+      },
+      {
+        "id": "t11",
+        "type": "forja",
+        "col": 2,
+        "floor": -1,
+        "w": 1,
+        "h": 1,
+        "level": 0,
+        "spent": 0
+      },
+      {
+        "id": "t12",
+        "type": "tesoro",
+        "col": 3,
+        "floor": -1,
+        "w": 1,
+        "h": 1,
+        "level": 1,
+        "spent": 0
+      }
+    ],
+    "yard": { "establo": 0, "patio": 0, "empal": 0 }
+  },
+  "fac": {
+    "dorm": 1,
+    "enf": 0,
+    "tab": 1,
+    "mapas": 0,
+    "arm": 0,
+    "cap": 0,
+    "forja": 0,
+    "establo": 0,
+    "patio": 0,
+    "empal": 0,
+    "torre": 0,
+    "vet": 0
+  },
+  "heroes": [
+    {
+      "id": "h1",
+      "seed": "h1-Ovidia Lumbre",
+      "name": "Ovidia Lumbre",
+      "sex": "f",
+      "cls": "guerrero",
+      "lvl": 2,
+      "xp": 75,
+      "attrs": { "F": 6, "D": 4, "M": 4 },
+      "traits": [{ "id": "supersticioso" }, { "id": "gafe", "hidden": false }],
+      "morale": 36,
+      "salary": 14,
+      "fee": 30,
+      "status": "muerto",
+      "days": 0,
+      "quote": "«He sobrevivido a tres guerras y a un matrimonio.»",
+      "history": [
+        "Ya trabajaba para tu tío",
+        "Día 3 · Una serpiente de ciénaga en las salinas · Fracaso",
+        "Día 4 · Algo raro en la ermita · Fracaso",
+        "Día 6 · El sótano del alquimista · Éxito",
+        "Día 8 · Rescate de Brom · Éxito",
+        "Día 11 · La grieta · Fracaso",
+        "Día 13 · Bichos en el vado · Éxito brillante"
+      ],
+      "idle": 0,
+      "lostAt": "la casa del canal"
+    },
+    {
+      "id": "h2",
+      "seed": "h2-Brom",
+      "name": "Brom",
+      "sex": "m",
+      "cls": "clerigo",
+      "lvl": 6,
+      "xp": 70,
+      "attrs": { "F": 4, "D": 4, "M": 11 },
+      "traits": [
+        { "id": "codicioso" },
+        { "id": "afortunado", "hidden": false },
+        { "id": "curtido" }
+      ],
+      "morale": 55,
+      "salary": 62,
+      "fee": 30,
+      "status": "muerto",
+      "days": 0,
+      "quote": "«Los dioses me escuchan. A veces contestan.»",
+      "history": [
+        "Día 1 · Se queda en el gremio",
+        "Día 3 · La niña que sabe cosas · Éxito",
+        "Día 5 · Desaparecidos en la ermita · Éxito",
+        "Día 8 · Rescatado por Ovidia Lumbre",
+        "Día 11 · Pieles para el curtidor · Éxito",
+        "Día 12 · El molino abandonado · Éxito",
+        "Día 14 · Rumores en la posada · Éxito parcial",
+        "Día 15 · La niña que sabe cosas · Éxito",
+        "Día 16 · El mapa del capataz · Éxito",
+        "Día 18 · Una boda en el pantano de las ranas · Éxito brillante",
+        "Día 20 · Cazar una pareja de wargos · Éxito brillante",
+        "Día 22 · El pozo seco · Éxito brillante",
+        "Día 24 · La torre hundida · Éxito brillante",
+        "Día 26 · Las galerías de la mina vieja · Fracaso",
+        "Día 30 · La niña que sabe cosas · Éxito brillante",
+        "Día 33 · Volvió cuando ya nadie lo esperaba",
+        "Día 37 · Lo que suena en el granero de los Cardo · Éxito"
+      ],
+      "idle": 0,
+      "lostAt": "la mina vieja",
+      "vetSnub": true,
+      "request": "cache"
+    },
+    {
+      "id": "h4",
+      "seed": "h4-Tadeo Grajal",
+      "name": "Tadeo Grajal",
+      "sex": "m",
+      "cls": "clerigo",
+      "lvl": 2,
+      "xp": 30,
+      "attrs": { "F": 6, "D": 4, "M": 6 },
+      "traits": [{ "id": "valiente" }, { "id": "leal", "hidden": false }],
+      "morale": 60,
+      "salary": 14,
+      "fee": 33,
+      "status": "muerto",
+      "days": 0,
+      "quote": "«Rezo por todos. Por algunos, más caro.»",
+      "history": [
+        "Día 4 · Contratado",
+        "Día 5 · Las vacas del bosque de Sotomuro · Fracaso",
+        "Día 6 · El pozo seco · Éxito parcial",
+        "Día 7 · El cementerio no descansa · Éxito",
+        "Día 9 · Sacarlo del cementerio de Ormaz · Éxito parcial",
+        "Día 14 · Rumores en la posada · Éxito parcial"
+      ],
+      "idle": 0,
+      "lostAt": "la mina vieja"
+    },
+    {
+      "id": "h5",
+      "seed": "h5-Honorata",
+      "name": "Honorata",
+      "sex": "f",
+      "cls": "explorador",
+      "lvl": 7,
+      "xp": 50,
+      "attrs": { "F": 3, "D": 12, "M": 4 },
+      "traits": [{ "id": "leal" }, { "id": "codicioso", "hidden": false }],
+      "morale": 48,
+      "salary": 90,
+      "fee": 30,
+      "status": "muerto",
+      "days": 0,
+      "quote": "«Conozco un atajo. Bueno, conozco a uno que lo conoce.»",
+      "history": [
+        "Día 5 · Contratada",
+        "Día 6 · El sótano del alquimista · Éxito",
+        "Día 7 · El cementerio no descansa · Éxito",
+        "Día 9 · Sacarlo del cementerio de Ormaz · Éxito parcial",
+        "Día 10 · Las joyas de la viuda · Éxito parcial",
+        "Día 11 · Rumores en la posada · Fracaso",
+        "Día 12 · Un mapa a medias · Éxito parcial",
+        "Día 14 · Rumores en la posada · Éxito parcial",
+        "Día 18 · Una boda en el pantano de las ranas · Éxito brillante",
+        "Día 20 · Cazar una pareja de wargos · Éxito brillante",
+        "Día 22 · El pozo seco · Éxito brillante",
+        "Día 24 · La torre hundida · Éxito brillante",
+        "Día 26 · Las galerías de la mina vieja · Fracaso",
+        "Día 27 · El ternero que faltaba · Éxito brillante",
+        "Día 28 · Más allá de la casa del canal · Fracaso",
+        "Día 29 · Defendió la taberna de la Compañía Sin Bandera",
+        "Día 33 · La grieta · Éxito brillante",
+        "Día 35 · El vino del obispo · Éxito parcial",
+        "Día 39 · El pozo seco · Éxito brillante",
+        "Día 40 · Un encargo discreto en el bosque de Sotomuro · Éxito brillante"
+      ],
+      "idle": 0,
+      "vetSnub": true,
+      "request": "cache"
+    },
+    {
+      "id": "h62",
+      "seed": "h62-Irene",
+      "name": "Irene",
+      "sex": "f",
+      "cls": "guerrero",
+      "lvl": 1,
+      "xp": 50,
+      "attrs": { "F": 8, "D": 6, "M": 4 },
+      "traits": [{ "id": "arrogante" }, { "id": "bebedor", "hidden": false }],
+      "morale": 72,
+      "salary": 13,
+      "fee": 42,
+      "status": "muerto",
+      "days": 0,
+      "quote": "«Cobro por golpe. Es broma. Más o menos.»",
+      "history": ["Día 18 · Contratada", "Día 20 · Cazar una pareja de wargos · Éxito brillante"],
+      "idle": 0
+    },
+    {
+      "id": "h77",
+      "seed": "h77-Remigio",
+      "name": "Remigio",
+      "sex": "m",
+      "cls": "clerigo",
+      "lvl": 1,
+      "xp": 40,
+      "attrs": { "F": 6, "D": 4, "M": 8 },
+      "traits": [{ "id": "afortunado" }, { "id": "gafe", "hidden": false }],
+      "morale": 63,
+      "salary": 13,
+      "fee": 42,
+      "status": "muerto",
+      "days": 0,
+      "quote": "«He cerrado heridas peores que la tuya. Y bocas.»",
+      "history": ["Día 19 · Contratado", "Día 21 · Ratas en la torre caída · Éxito"],
+      "idle": 0
+    },
+    {
+      "id": "h111",
+      "seed": "h111-Yolanda",
+      "name": "Yolanda",
+      "sex": "f",
+      "cls": "clerigo",
+      "lvl": 2,
+      "xp": 5,
+      "attrs": { "F": 5, "D": 2, "M": 9 },
+      "traits": [{ "id": "afortunado" }, { "id": "leal", "hidden": false }],
+      "morale": 47,
+      "salary": 14,
+      "fee": 33,
+      "status": "muerto",
+      "days": 0,
+      "quote": "«Los dioses me escuchan. A veces contestan.»",
+      "history": [
+        "Día 22 · Contratada",
+        "Día 24 · La torre hundida · Éxito brillante",
+        "Día 27 · Una caja en los riscos · Éxito parcial",
+        "Día 29 · Un jabalí del tamaño de un carro en los riscos · Fracaso",
+        "Día 29 · Defendió la taberna de la Compañía Sin Bandera",
+        "Día 34 · Un carro, tres baúles y la mina vieja · Fracaso"
+      ],
+      "idle": 0
+    },
+    {
+      "id": "h190",
+      "seed": "h190-Olalla",
+      "name": "Olalla",
+      "sex": "f",
+      "cls": "clerigo",
+      "lvl": 1,
+      "xp": 65,
+      "attrs": { "F": 4, "D": 2, "M": 6 },
+      "traits": [{ "id": "arrogante" }, { "id": "valiente", "hidden": false }, { "id": "curtido" }],
+      "morale": 44,
+      "salary": 10,
+      "fee": 30,
+      "status": "muerto",
+      "days": 0,
+      "quote": "«He cerrado heridas peores que la tuya. Y bocas.»",
+      "history": [
+        "Día 24 · Contratada",
+        "Día 27 · Volvió cuando ya nadie lo esperaba",
+        "Día 29 · Defendió la taberna de la Compañía Sin Bandera",
+        "Día 33 · Las vacas de la ermita · Desastre",
+        "Día 37 · Lo que se dejaron en el pantano de las ranas · Éxito parcial",
+        "Día 39 · Lo que pasa en la torre caída · Éxito parcial"
+      ],
+      "idle": 0,
+      "lostAt": "el pantano de las ranas"
+    },
+    {
+      "id": "h197",
+      "seed": "h197-Bruno",
+      "name": "Bruno",
+      "sex": "m",
+      "cls": "mago",
+      "lvl": 5,
+      "xp": 20,
+      "attrs": { "F": 4, "D": 5, "M": 11 },
+      "traits": [{ "id": "arrogante" }, { "id": "supersticioso", "hidden": false }],
+      "morale": 40,
+      "salary": 40,
+      "fee": 54,
+      "status": "muerto",
+      "days": 0,
+      "quote": "«Si ves humo verde, aléjate. Si ves humo morado, corre.»",
+      "history": [
+        "Día 26 · Contratado",
+        "Día 27 · El ternero que faltaba · Éxito brillante",
+        "Día 28 · Más allá de la casa del canal · Fracaso",
+        "Día 30 · La niña que sabe cosas · Éxito brillante",
+        "Día 31 · Un trol de puente en el cementerio de Ormaz · Fracaso",
+        "Día 33 · La grieta · Éxito brillante",
+        "Día 35 · El vino del obispo · Éxito parcial",
+        "Día 37 · Lo que suena en el granero de los Cardo · Éxito",
+        "Día 39 · El pozo seco · Éxito brillante",
+        "Día 42 · El sótano del alquimista · Éxito parcial"
+      ],
+      "idle": 0,
+      "vetSnub": true,
+      "request": "cache"
+    },
+    {
+      "id": "h291",
+      "seed": "h291-Greta",
+      "name": "Greta",
+      "sex": "f",
+      "cls": "guerrero",
+      "lvl": 1,
+      "xp": 25,
+      "attrs": { "F": 7, "D": 5, "M": 4 },
+      "traits": [{ "id": "leal" }, { "id": "gafe", "hidden": false }],
+      "morale": 63,
+      "salary": 11,
+      "fee": 36,
+      "status": "muerto",
+      "days": 0,
+      "quote": "«Cobro por golpe. Es broma. Más o menos.»",
+      "history": ["Día 40 · Contratada", "Día 42 · Algo raro en la mina vieja · Éxito parcial"],
+      "idle": 0,
+      "lostAt": "el puente de los ahorcados"
+    },
+    {
+      "id": "h305",
+      "seed": "h305-Teobaldo Pedregal",
+      "name": "Teobaldo Pedregal",
+      "sex": "m",
+      "cls": "clerigo",
+      "lvl": 1,
+      "xp": 15,
+      "attrs": { "F": 6, "D": 2, "M": 7 },
+      "traits": [{ "id": "afortunado" }, { "id": "supersticioso", "hidden": false }],
+      "morale": 47,
+      "salary": 10,
+      "fee": 33,
+      "status": "mision",
+      "days": 1,
+      "quote": "«Rezo por todos. Por algunos, más caro.»",
+      "history": ["Día 41 · Contratado", "Día 43 · El ternero que faltaba · Fracaso"],
+      "idle": 0
+    },
+    {
+      "id": "h313",
+      "seed": "h313-Sancha",
+      "name": "Sancha",
+      "sex": "f",
+      "cls": "clerigo",
+      "lvl": 1,
+      "xp": 0,
+      "attrs": { "F": 3, "D": 4, "M": 5 },
+      "traits": [{ "id": "cobarde" }, { "id": "afortunado", "hidden": true }],
+      "morale": 63,
+      "salary": 10,
+      "fee": 30,
+      "status": "desaparecido",
+      "days": 1,
+      "quote": "«Los dioses me escuchan. A veces contestan.»",
+      "history": ["Día 42 · Contratada"],
+      "idle": 0,
+      "lostAt": "la mina vieja"
+    },
+    {
+      "id": "h340",
+      "seed": "h340-Elías",
+      "name": "Elías",
+      "sex": "m",
+      "cls": "explorador",
+      "lvl": 1,
+      "xp": 25,
+      "attrs": { "F": 6, "D": 6, "M": 4 },
+      "traits": [{ "id": "afortunado" }, { "id": "valiente", "hidden": false }],
+      "morale": 55,
+      "salary": 11,
+      "fee": 36,
+      "status": "mision",
+      "days": 1,
+      "quote": "«Duermo mejor bajo un árbol que bajo tu techo. Sin ofender.»",
+      "history": ["Día 43 · Contratado", "Día 45 · Luces raras en el vado · Éxito parcial"],
+      "idle": 0
+    },
+    {
+      "id": "h380",
+      "seed": "h380-Eulalia",
+      "name": "Eulalia",
+      "sex": "f",
+      "cls": "picaro",
+      "lvl": 2,
+      "xp": 0,
+      "attrs": { "F": 2, "D": 9, "M": 4 },
+      "traits": [{ "id": "valiente" }, { "id": "leal", "hidden": true }],
+      "morale": 70,
+      "salary": 14,
+      "fee": 48,
+      "status": "mision",
+      "days": 1,
+      "quote": "«No pregunto de dónde viene el oro. Tú tampoco preguntes.»",
+      "history": ["Día 45 · Contratada"],
+      "idle": 0
+    }
+  ],
+  "candidates": [
+    {
+      "id": "h386",
+      "seed": "h386-Urraca Corvo",
+      "name": "Urraca Corvo",
+      "sex": "f",
+      "cls": "clerigo",
+      "lvl": 2,
+      "xp": 0,
+      "attrs": { "F": 5, "D": 3, "M": 7 },
+      "traits": [{ "id": "supersticioso" }, { "id": "leal", "hidden": true }],
+      "morale": 75,
+      "salary": 14,
+      "fee": 48,
+      "status": "ok",
+      "days": 0,
+      "quote": "«He cerrado heridas peores que la tuya. Y bocas.»",
+      "history": []
+    }
+  ],
+  "workers": [
+    {
+      "id": "w6",
+      "seed": "pueblo-cocinera",
+      "name": "Remedios",
+      "sex": "f",
+      "skill": 7,
+      "trade": "cocina",
+      "xp": 14,
+      "salary": 6,
+      "fee": 0,
+      "village": "cocinera",
+      "quote": "Aquí no se tira nada. Lo que sobra hoy, mañana es guiso.",
+      "room": "t8",
+      "since": 0.05
+    },
+    {
+      "id": "w7",
+      "seed": "pueblo-bardo",
+      "name": "Tobías",
+      "sex": "m",
+      "skill": 7,
+      "trade": "salon",
+      "xp": 14,
+      "salary": 6,
+      "fee": 0,
+      "village": "bardo",
+      "quote": "Una canción más y sirvo otra ronda. O al revés.",
+      "room": "t7",
+      "since": 0.05
+    },
+    {
+      "id": "w8",
+      "seed": "pueblo-mozo",
+      "name": "Nico",
+      "sex": "m",
+      "skill": 6,
+      "trade": "bodega",
+      "xp": 28,
+      "salary": 6,
+      "fee": 0,
+      "village": "mozo",
+      "quote": "Los barriles pesan menos si no los miras.",
+      "room": "t9",
+      "since": 0.05
+    }
+  ],
+  "seekers": [
+    {
+      "id": "w353",
+      "seed": "w353-Gil",
+      "name": "Gil",
+      "sex": "m",
+      "skill": 2,
+      "trade": "bodega",
+      "xp": 0,
+      "salary": 5,
+      "fee": 13,
+      "quote": "Mi madre llevaba una taberna. La suya era peor que esta."
+    },
+    {
+      "id": "w365",
+      "seed": "w365-Casilda",
+      "name": "Casilda",
+      "sex": "f",
+      "skill": 4,
+      "trade": "salon",
+      "xp": 0,
+      "salary": 7,
+      "fee": 21,
+      "quote": "Mi madre llevaba una taberna. La suya era peor que esta."
+    },
+    {
+      "id": "w387",
+      "seed": "w387-Telmo",
+      "name": "Telmo",
+      "sex": "m",
+      "skill": 3,
+      "trade": "salon",
+      "xp": 0,
+      "salary": 6,
+      "fee": 17,
+      "quote": "Pago mis deudas trabajando. ¿Hay algo que fregar?"
+    }
+  ],
+  "quests": [
+    {
+      "id": "q372",
+      "title": "Rescate de Sancha",
+      "client": "El propio gremio",
+      "type": "Explorar",
+      "text": "Se perdió su rastro cerca de la mina vieja. Si alguien va a buscarle pronto, quizá aún esté a tiempo.",
+      "place": "la mina vieja",
+      "challenges": [{ "skill": "Supervivencia", "diff": 6 }],
+      "slots": 1,
+      "days": 1,
+      "reward": 0,
+      "danger": 2,
+      "expires": 1,
+      "fresh": false,
+      "rescue": "h313"
+    },
+    {
+      "id": "q375",
+      "title": "Las galerías de la mina vieja",
+      "client": "Alcaldía de Hondogrís",
+      "type": "Explorar",
+      "text": "Con el mapa en la mano, hay que bajar a la mina vieja y encontrar la guarida.",
+      "place": "la mina vieja",
+      "challenges": [
+        { "skill": "Supervivencia", "diff": 25 },
+        { "skill": "Trampas", "diff": 24 }
+      ],
+      "slots": 2,
+      "days": 1,
+      "reward": 50,
+      "danger": 2,
+      "expires": 997,
+      "fresh": false,
+      "chain": { "id": "hondogris", "step": 2 }
+    },
+    {
+      "id": "q378",
+      "title": "Una caja en el cementerio de Ormaz",
+      "client": "Hermana Odile, templo",
+      "type": "Recuperar",
+      "text": "Hay que sacar una caja de una casa vacía en el cementerio de Ormaz sin preguntar qué lleva. Mitad por adelantado.",
+      "place": "el cementerio de Ormaz",
+      "challenges": [
+        { "skill": "Trampas", "diff": 16 },
+        { "skill": "Combate", "diff": 9 },
+        { "skill": "Supervivencia", "diff": 9 }
+      ],
+      "slots": 3,
+      "days": 2,
+      "reward": 135,
+      "danger": 2,
+      "expires": 4,
+      "twist": "Alguien más quería lo mismo, y llegó antes.",
+      "fresh": false
+    },
+    {
+      "id": "q382",
+      "title": "El sello del notario",
+      "client": "Salinas de Ormaz",
+      "type": "Recuperar",
+      "text": "Al notario le robaron el sello, y el ladrón se esconde en la casa del canal. Sin sello no hay herencias, y sin herencias hay muchos primos enfadados.",
+      "place": "la casa del canal",
+      "challenges": [
+        { "skill": "Trampas", "diff": 28 },
+        { "skill": "Supervivencia", "diff": 17 },
+        { "skill": "Combate", "diff": 15 }
+      ],
+      "slots": 4,
+      "days": 2,
+      "reward": 235,
+      "danger": 2,
+      "expires": 3,
+      "item": {
+        "id": "i383",
+        "name": "Capa de explorador",
+        "desc": "Parda y verdosa. Tumbado en el monte, no te ve ni tu madre.",
+        "value": 55,
+        "kind": "herramienta",
+        "rarity": 2,
+        "icon": "capa",
+        "bonus": { "Supervivencia": 1 },
+        "perk": "ambush"
+      },
+      "fresh": true
+    },
+    {
+      "id": "q384",
+      "title": "Escoltar la carreta hasta Valdeloro",
+      "client": "Alcaldía de Sotomuro",
+      "type": "Escoltar",
+      "text": "Hay que llevar una carga hasta Valdeloro. Los dos últimos carros no llegaron.",
+      "place": "Valdeloro",
+      "challenges": [
+        { "skill": "Combate", "diff": 10 },
+        { "skill": "Supervivencia", "diff": 5 }
+      ],
+      "slots": 2,
+      "days": 1,
+      "reward": 35,
+      "danger": 0,
+      "expires": 2,
+      "fresh": true
+    }
+  ],
+  "missions": [
+    {
+      "id": "m381",
+      "quest": {
+        "id": "q351",
+        "title": "El vino del obispo",
+        "client": "Maese Quirico, erudito",
+        "type": "Escoltar",
+        "text": "Doce barricas para el obispo, que espera en las salinas. Si llega una menos, se notará en el sermón.",
+        "place": "las salinas",
+        "challenges": [
+          { "skill": "Combate", "diff": 19 },
+          { "skill": "Trampas", "diff": 11 },
+          { "skill": "Supervivencia", "diff": 11 }
+        ],
+        "slots": 3,
+        "days": 2,
+        "reward": 180,
+        "danger": 2,
+        "expires": 2,
+        "fresh": false
+      },
+      "heroIds": ["h380", "h340", "h305"],
+      "daysLeft": 1
+    }
+  ],
+  "reports": [
+    {
+      "id": "r377",
+      "day": 45,
+      "title": "Luces raras en el vado",
+      "heroIds": ["h340"],
+      "who": "Elías",
+      "outcome": "Éxito parcial",
+      "body": [
+        "En el vado todos tenían coartada, y todas eran la misma taberna.",
+        "Elías se rió del peligro, y el peligro le dejó un recuerdo en la pierna.",
+        "Elías trazó un círculo de sal y lo que acechaba no se atrevió a cruzarlo.",
+        "El escudo de Elías paró el golpe, pero el brazo se llevó un buen crujido.",
+        "Un clic, un silbido y Elías con el pelo chamuscado.",
+        "El cliente pagó la mitad, «por las molestias».",
+        "Por cierto, ahora sabes algo más: Elías es valiente."
+      ],
+      "chips": [
+        { "t": "+54 monedas", "k": "good" },
+        {
+          "t": "No cabía: vendido 1 de hierro por 3 monedas. Construye un almacén para guardarlos.",
+          "k": "warn"
+        },
+        { "t": "+1 reputación", "k": "good" },
+        { "t": "Descubierto: Valiente", "k": "info" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r374",
+      "day": 45,
+      "title": "Las galerías de la mina vieja",
+      "heroIds": ["h313"],
+      "who": "Sancha",
+      "outcome": "Desastre",
+      "body": [
+        "El mapa de la mina vieja tenía más manchas de vino que caminos.",
+        "Un bandido dormía la mona junto al camino con 9 monedas en el bolsillo. Se despertó más ligero.",
+        "Sancha sugirió tres veces dar media vuelta «por prudencia».",
+        "Sancha dejó la comida sin colgar y los lobos cenaron mejor que el grupo.",
+        "Los dioses estaban ocupados en otra cosa cuando Sancha los llamó.",
+        "Sancha juró que esa losa no estaba ahí antes.",
+        "El viaje de vuelta fue largo y muy silencioso.",
+        "Nadie sabe qué fue de Sancha. Lo último que vieron fue su sombra cerca de la mina vieja.",
+        "La historia se ha torcido: habrá que volver a intentarlo, y ahora será más difícil."
+      ],
+      "chips": [
+        { "t": "Sin cobrar", "k": "bad" },
+        { "t": "Hallazgo: +9", "k": "good" },
+        { "t": "-6 reputación", "k": "bad" },
+        { "t": "Sancha: desaparecida", "k": "bad" },
+        { "t": "«La sombra de Hondogrís» se complica", "k": "warn" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r367",
+      "day": 44,
+      "title": "Rescate de Olalla",
+      "heroIds": ["h197"],
+      "who": "Bruno",
+      "outcome": "Fracaso",
+      "body": [
+        "Bruno bajó al pantano de las ranas con una cuerda y una antorcha que no paraba de humear.",
+        "Bruno confundió setas con setas. Dos días de retortijones.",
+        "Hay días en que más vale no salir de la cama, y este fue uno.",
+        "Bruno no volvió. Su nombre irá al Muro de los caídos.",
+        "No encontraron ni rastro de Olalla."
+      ],
+      "chips": [
+        { "t": "Sin cobrar", "k": "bad" },
+        { "t": "-3 reputación", "k": "bad" },
+        { "t": "Bruno: caído", "k": "bad" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r362",
+      "day": 43,
+      "title": "Las ruinas del puente de los ahorcados",
+      "heroIds": ["h291"],
+      "who": "Greta",
+      "outcome": "Fracaso",
+      "body": [
+        "Greta bajó al puente de los ahorcados con una cuerda y una antorcha que no paraba de humear.",
+        "Junto al camino encontraron una bolsa con 6 monedas. Preguntaron en la venta más cercana, pero sin mucho empeño.",
+        "La armadura de Greta pesaba demasiado para aquel terreno, y se notó.",
+        "De la paga, ni rastro. Esta noche se cena pan duro.",
+        "Nadie sabe qué fue de Greta. Lo último que vieron fue su sombra cerca del puente de los ahorcados."
+      ],
+      "chips": [
+        { "t": "Sin cobrar", "k": "bad" },
+        { "t": "Hallazgo: +6", "k": "good" },
+        { "t": "-3 reputación", "k": "bad" },
+        { "t": "Greta: desaparecida", "k": "bad" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r359",
+      "day": 43,
+      "title": "El ternero que faltaba",
+      "heroIds": ["h305"],
+      "who": "Teobaldo Pedregal",
+      "outcome": "Fracaso",
+      "body": [
+        "Las huellas eran tan grandes que Teobaldo Pedregal tuvo que mirarlas dos veces.",
+        "Teobaldo Pedregal se encontró una moneda en el camino. Luego otra. Luego otra.",
+        "El escudo de Teobaldo Pedregal paró el golpe, pero el brazo se llevó un buen crujido.",
+        "Volvieron con las manos vacías y los pies llenos de ampollas.",
+        "Teobaldo Pedregal vuelve herido: 3 días de reposo.",
+        "De este viaje sacas algo en claro: Teobaldo Pedregal es supersticioso."
+      ],
+      "chips": [
+        { "t": "Sin cobrar", "k": "bad" },
+        { "t": "-3 reputación", "k": "bad" },
+        { "t": "Teobaldo Pedregal: herido, 3 días", "k": "bad" },
+        { "t": "Descubierto: Supersticioso", "k": "info" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r348",
+      "day": 42,
+      "title": "Algo raro en la mina vieja",
+      "heroIds": ["h291"],
+      "who": "Greta",
+      "outcome": "Éxito parcial",
+      "body": [
+        "En la mina vieja todos tenían coartada, y todas eran la misma taberna.",
+        "Greta no se separó del grupo ni para dormir.",
+        "Greta quiso arreglarlo a espadazos, y aquello no se arreglaba así.",
+        "Greta repartió golpes con más entusiasmo que técnica, pero funcionó.",
+        "La armadura de Greta pesaba demasiado para aquel terreno, y se notó.",
+        "El cliente pagó la mitad, «por las molestias».",
+        "En la mina vieja quedó bien claro que Greta es gafe."
+      ],
+      "chips": [
+        { "t": "+37 monedas", "k": "good" },
+        {
+          "t": "No cabía: vendido 1 de hierro por 3 monedas. Construye un almacén para guardarlos.",
+          "k": "warn"
+        },
+        { "t": "+1 reputación", "k": "good" },
+        { "t": "Descubierto: Gafe", "k": "info" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r345",
+      "day": 42,
+      "title": "Las galerías de la mina vieja",
+      "heroIds": ["h5"],
+      "who": "Honorata",
+      "outcome": "Fracaso",
+      "body": [
+        "En la mina vieja había un palmo de polvo y, en el polvo, huellas de algo que no llevaba botas.",
+        "Honorata cargó con la mochila de un compañero sin decir nada.",
+        "El río estaba más crecido de lo que Honorata calculó. Perdieron media carga.",
+        "La red cayó del techo y Honorata quedó colgando como un jamón.",
+        "Por primera vez en años, Honorata se perdió, y no quiere que se sepa.",
+        "Volvieron con las manos vacías y los pies llenos de ampollas.",
+        "Honorata no volvió. Su nombre irá al Muro de los caídos.",
+        "La historia se ha torcido: habrá que volver a intentarlo, y ahora será más difícil."
+      ],
+      "chips": [
+        { "t": "Sin cobrar", "k": "bad" },
+        { "t": "-3 reputación", "k": "bad" },
+        { "t": "Honorata: caída", "k": "bad" },
+        { "t": "«La sombra de Hondogrís» se complica", "k": "warn" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r344",
+      "day": 42,
+      "title": "El sótano del alquimista",
+      "heroIds": ["h197"],
+      "who": "Bruno",
+      "outcome": "Éxito parcial",
+      "body": [
+        "Bruno se tapó la nariz con un pañuelo antes de bajar a la posada del Cuervo. No sirvió de nada.",
+        "Bruno ya lo había advertido: lo que buscaban tenía compañía.",
+        "Un bandido dormía la mona junto al camino con 12 monedas en el bolsillo. Se despertó más ligero.",
+        "Bruno colgó ajos en la tienda. Nadie durmió bien, pero tampoco vino ningún vampiro.",
+        "Bruno lo tenía todo calculado, menos el viento.",
+        "Bruno vio la losa suelta y avisó a los demás para que no la pisaran.",
+        "Bruno reconoció el símbolo a tiempo y nadie tocó lo que no debía.",
+        "Hicieron lo principal y dejaron a medias lo demás."
+      ],
+      "chips": [
+        { "t": "+33 monedas", "k": "good" },
+        { "t": "Hallazgo: +12", "k": "good" },
+        {
+          "t": "No cabía: vendido 1 de hierro por 3 monedas. Construye un almacén para guardarlos.",
+          "k": "warn"
+        },
+        { "t": "+1 reputación", "k": "good" },
+        { "t": "Bruno sube a nivel 5", "k": "good" },
+        { "t": "Bruno pide caché de veterano", "k": "warn" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r337",
+      "day": 41,
+      "title": "Asalto de los Hermanos Cuervo",
+      "heroIds": [],
+      "who": "nadie",
+      "outcome": "Desastre",
+      "body": [
+        "Los perros del pueblo ladraron a la vez. Luego se oyeron botas y voces en el patio: habían llegado los Hermanos Cuervo.",
+        "No había nadie de guardia: rompieron la puerta a hachazos y entraron.",
+        "No había nadie en casa para defenderla. El tabernero se escondió en la bodega con Bigotes y oyó cómo vaciaban la caja.",
+        "Forzaron la cerradura de la cámara y cargaron los sacos.",
+        "Cuando por fin se fueron, la caja estaba medio vacía y la puerta, arrancada."
+      ],
+      "chips": [
+        { "t": "Saqueo: −256 monedas", "k": "bad" },
+        { "t": "−3 reputación", "k": "bad" },
+        { "t": "Robado: Talismán de ajo", "k": "bad" },
+        { "t": "Robado: Reliquia sin nombre", "k": "bad" }
+      ],
+      "read": false,
+      "raid": { "won": false }
+    },
+    {
+      "id": "r336",
+      "day": 41,
+      "title": "Plaga en el pantano de las ranas",
+      "heroIds": ["h190"],
+      "who": "Olalla",
+      "outcome": "Fracaso",
+      "body": [
+        "Desde la puerta del pantano de las ranas ya se oía algo rascando y royendo.",
+        "Olalla resbaló en el barro justo cuando más falta hacía estar de pie.",
+        "Olalla dijo que entendía lo que ponía en la pared. No entendía ni una letra.",
+        "Un clic, un silbido y Olalla con el pelo chamuscado.",
+        "La alcaldía de Sotomuro cerró la puerta sin decir palabra.",
+        "Nadie sabe qué fue de Olalla. Lo último que vieron fue su sombra cerca del pantano de las ranas."
+      ],
+      "chips": [
+        { "t": "Sin cobrar", "k": "bad" },
+        { "t": "-3 reputación", "k": "bad" },
+        { "t": "Olalla: desaparecida", "k": "bad" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r323",
+      "day": 40,
+      "title": "Un encargo discreto en el bosque de Sotomuro",
+      "heroIds": ["h5"],
+      "who": "Honorata",
+      "outcome": "Éxito brillante",
+      "body": [
+        "Honorata llegó al bosque de Sotomuro cuando ya era noche cerrada.",
+        "Junto al camino encontraron una bolsa con 10 monedas. Preguntaron en la venta más cercana, pero sin mucho empeño.",
+        "Honorata vio la losa suelta y avisó a los demás para que no la pisaran.",
+        "El cliente pagó, dejó propina y abrazó a todo el mundo.",
+        "Entre lo que traen hay unos planos: ya se sabe crear capas."
+      ],
+      "chips": [
+        { "t": "+17 monedas", "k": "good" },
+        { "t": "Hallazgo: +10", "k": "good" },
+        { "t": "Honorata se queda 2", "k": "warn" },
+        {
+          "t": "No cabía: vendido 3 de tela por 9 monedas. Construye un almacén para guardarlos.",
+          "k": "warn"
+        },
+        { "t": "+8 reputación", "k": "good" },
+        { "t": "Botín: Reliquia sin nombre", "k": "info" },
+        { "t": "Receta: capa", "k": "good" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r319",
+      "day": 40,
+      "title": "Las galerías de la mina vieja",
+      "heroIds": ["h2"],
+      "who": "Brom",
+      "outcome": "Desastre",
+      "body": [
+        "En la mina vieja había un palmo de polvo y, en el polvo, huellas de algo que no llevaba botas.",
+        "Un niño les siguió dos leguas preguntando si eran héroes de verdad.",
+        "Una flecha perdida rebotó en la hebilla de Brom. Ni un rasguño.",
+        "Cuando Brom acabó la oración, ya era tarde.",
+        "La trampa saltó; Brom todavía tiene el susto en el cuerpo.",
+        "El amuleto de Brom se puso al rojo vivo y hubo que tirarlo a un charco.",
+        "Nadie quiere hablar de lo que pasó allí.",
+        "Brom no volvió. Su nombre irá al Muro de los caídos.",
+        "La historia se ha torcido: habrá que volver a intentarlo, y ahora será más difícil."
+      ],
+      "chips": [
+        { "t": "Sin cobrar", "k": "bad" },
+        { "t": "-6 reputación", "k": "bad" },
+        { "t": "Brom: caído", "k": "bad" },
+        { "t": "«La sombra de Hondogrís» se complica", "k": "warn" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r315",
+      "day": 39,
+      "title": "Lo que pasa en la torre caída",
+      "heroIds": ["h190"],
+      "who": "Olalla",
+      "outcome": "Éxito parcial",
+      "body": [
+        "Olalla empezó por lo de siempre: preguntar a la vieja que lo ve todo desde su ventana.",
+        "Olalla rezó en voz alta y, quizá por casualidad, todo salió bien.",
+        "Eran más de los que decíal encargo, y Olalla se llevó la peor parte.",
+        "El cliente pagó la mitad, «por las molestias»."
+      ],
+      "chips": [
+        { "t": "+14 monedas", "k": "good" },
+        {
+          "t": "No cabía: vendido 1 de hierro por 3 monedas. Construye un almacén para guardarlos.",
+          "k": "warn"
+        },
+        { "t": "+1 reputación", "k": "good" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r314",
+      "day": 39,
+      "title": "El pozo seco",
+      "heroIds": ["h5", "h197"],
+      "who": "Honorata y Bruno",
+      "outcome": "Éxito brillante",
+      "body": [
+        "Honorata y Bruno contaron los pasos al entrar en la mina vieja. A la vuelta les salían otros.",
+        "Un bandido dormía la mona junto al camino con 9 monedas en el bolsillo. Se despertó más ligero.",
+        "Honorata cazó, desplumó y asó un faisán mientras los demás montaban el campamento.",
+        "Honorata conocía un sendero de cabras que no sale en ningún mapa.",
+        "Bruno trazó un círculo de sal y lo que acechaba no se atrevió a cruzarlo.",
+        "El mayoral de los pastores del valle quiso invitarles a cenar. Aceptaron, claro."
+      ],
+      "chips": [
+        { "t": "+135 monedas", "k": "good" },
+        { "t": "Hallazgo: +9", "k": "good" },
+        { "t": "Honorata se queda 15", "k": "warn" },
+        { "t": "En el mapa: el refugio de Nevaza y el desfiladero de las Cabras", "k": "info" },
+        {
+          "t": "No cabía: vendido 3 de cuero por 9 monedas. Construye un almacén para guardarlos.",
+          "k": "warn"
+        },
+        { "t": "+8 reputación", "k": "good" },
+        { "t": "Honorata sube a nivel 7", "k": "good" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r300",
+      "day": 37,
+      "title": "Lo que se dejaron en el pantano de las ranas",
+      "heroIds": ["h190"],
+      "who": "Olalla",
+      "outcome": "Éxito parcial",
+      "body": [
+        "El encargo parecía fácil, y eso a Olalla tendría que haberle escamado.",
+        "Olalla se rió del peligro, y el peligro le dejó un recuerdo en la pierna.",
+        "La red cayó del techo y Olalla quedó colgando como un jamón.",
+        "Olalla vio venir la tormenta por el color del cielo y encontró una cueva a tiempo.",
+        "La voz tras la cortina pagó refunfuñando y pidió descuento para la próxima vez."
+      ],
+      "chips": [
+        { "t": "+21 monedas", "k": "good" },
+        {
+          "t": "No cabía: vendido 1 de tela por 3 monedas. Construye un almacén para guardarlos.",
+          "k": "warn"
+        },
+        { "t": "+1 reputación", "k": "good" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r299",
+      "day": 37,
+      "title": "Lo que suena en el granero de los Cardo",
+      "heroIds": ["h2", "h197"],
+      "who": "Brom y Bruno",
+      "outcome": "Éxito",
+      "body": [
+        "Nadie en el granero de los Cardo quería hablar. Brom y Bruno invitaron a una ronda y entonces hablaron todos.",
+        "Bruno se negó a cruzar el puente hasta escupir tres veces al río.",
+        "Brom trazó un círculo de sal y lo que acechaba no se atrevió a cruzarlo.",
+        "Cuando todo se torcía, la suerte de Brom lo enderezó.",
+        "Brom rezó en voz alta y, quizá por casualidad, todo salió bien.",
+        "Brom encontró el cable antes de que nadie lo pisara.",
+        "El mayordomo del conde dio las gracias con un apretón de manos algo flojo."
+      ],
+      "chips": [
+        { "t": "+175 monedas", "k": "good" },
+        { "t": "Brom se queda 20", "k": "warn" },
+        {
+          "t": "No cabía: vendido 2 de hierro por 6 monedas. Construye un almacén para guardarlos.",
+          "k": "warn"
+        },
+        { "t": "+5 reputación", "k": "good" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r284",
+      "day": 35,
+      "title": "Las galerías de la mina vieja",
+      "heroIds": ["h111"],
+      "who": "Yolanda",
+      "outcome": "Desastre",
+      "body": [
+        "En la mina vieja había un palmo de polvo y, en el polvo, huellas de algo que no llevaba botas.",
+        "Cuando Yolanda acabó la oración, ya era tarde.",
+        "Los dioses estaban ocupados en otra cosa cuando Yolanda los llamó.",
+        "La alcaldía de Hondogrís ha pedido que no vuelvan a pasar por allí.",
+        "Yolanda no volvió. Su nombre irá al Muro de los caídos.",
+        "La historia se ha torcido: habrá que volver a intentarlo, y ahora será más difícil."
+      ],
+      "chips": [
+        { "t": "Sin cobrar", "k": "bad" },
+        { "t": "-6 reputación", "k": "bad" },
+        { "t": "Yolanda: caída", "k": "bad" },
+        { "t": "«La sombra de Hondogrís» se complica", "k": "warn" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r283",
+      "day": 35,
+      "title": "El vino del obispo",
+      "heroIds": ["h5", "h197"],
+      "who": "Honorata y Bruno",
+      "outcome": "Éxito parcial",
+      "body": [
+        "El mercader no paró de hablar en todo el camino al molino. Honorata y Bruno aguantaron.",
+        "Durmieron en una posada donde la sopa era aún peor que la de El Jarro Partido. No lo creían posible.",
+        "Bruno explicó a todo el grupo cómo hacer su trabajo. Varias veces.",
+        "El rastro que siguió Honorata era de un jabalí. Un jabalí con muy mal genio.",
+        "Siguiendo el musgo de los árboles, Honorata los sacó del bosque sin un rasguño.",
+        "Honorata encontró el cable antes de que nadie lo pisara.",
+        "El cliente pagó la mitad, «por las molestias».",
+        "Honorata vuelve herida: 3 días de reposo."
+      ],
+      "chips": [
+        { "t": "+63 monedas", "k": "good" },
+        { "t": "Honorata se queda 7", "k": "warn" },
+        { "t": "+1 tela", "k": "info" },
+        { "t": "+1 reputación", "k": "good" },
+        { "t": "Honorata: herida, 3 días", "k": "bad" },
+        { "t": "Bruno sube a nivel 4", "k": "good" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r276",
+      "day": 34,
+      "title": "Un carro, tres baúles y la mina vieja",
+      "heroIds": ["h111"],
+      "who": "Yolanda",
+      "outcome": "Fracaso",
+      "body": [
+        "Yolanda caminó junto a la carreta todo el trayecto hasta la mina vieja.",
+        "Durmieron en una posada donde la sopa era aún peor que la de El Jarro Partido. No lo creían posible.",
+        "Los dioses estaban ocupados en otra cosa cuando Yolanda los llamó.",
+        "El río estaba más crecido de lo que Yolanda calculó. Perdieron media carga.",
+        "Un clic, un silbido y Yolanda con el pelo chamuscado.",
+        "Volvieron con las manos vacías y los pies llenos de ampollas."
+      ],
+      "chips": [
+        { "t": "Sin cobrar", "k": "bad" },
+        { "t": "-3 reputación", "k": "bad" },
+        { "t": "Yolanda sube a nivel 2", "k": "good" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r269",
+      "day": 33,
+      "title": "Las vacas de la ermita",
+      "heroIds": ["h190"],
+      "who": "Olalla",
+      "outcome": "Desastre",
+      "body": [
+        "En la ermita todos tenían coartada, y todas eran la misma taberna.",
+        "Olalla se rió del peligro, y el peligro le dejó un recuerdo en la pierna.",
+        "Cuando Olalla acabó la oración, ya era tarde.",
+        "Los dioses estaban ocupados en otra cosa cuando Olalla los llamó.",
+        "Nadie quiere hablar de lo que pasó allí.",
+        "Olalla vuelve herida: 4 días de reposo.",
+        "En la ermita quedó bien claro que Olalla es valiente."
+      ],
+      "chips": [
+        { "t": "Sin cobrar", "k": "bad" },
+        { "t": "-6 reputación", "k": "bad" },
+        { "t": "Olalla: herida, 4 días", "k": "bad" },
+        { "t": "Descubierto: Valiente", "k": "info" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r268",
+      "day": 33,
+      "title": "La grieta",
+      "heroIds": ["h5", "h197"],
+      "who": "Honorata y Bruno",
+      "outcome": "Éxito brillante",
+      "body": [
+        "En el puente de los ahorcados había un palmo de polvo y, en el polvo, huellas de algo que no llevaba botas.",
+        "Bruno explicó a todo el grupo cómo hacer su trabajo. Varias veces.",
+        "Honorata pegó la oreja al suelo y supo por dónde venían.",
+        "Honorata conocía un sendero de cabras que no sale en ningún mapa.",
+        "La viuda de Arnau quiso invitarles a cenar. Aceptaron, claro."
+      ],
+      "chips": [
+        { "t": "+124 monedas", "k": "good" },
+        { "t": "Honorata se queda 14", "k": "warn" },
+        { "t": "En el mapa: el mesón de Levante y la cueva de la Sierpe", "k": "info" },
+        {
+          "t": "No cabía: vendido 3 de cuero por 9 monedas. Construye un almacén para guardarlos.",
+          "k": "warn"
+        },
+        { "t": "+8 reputación", "k": "good" },
+        { "t": "Honorata sube a nivel 6", "k": "good" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r259",
+      "day": 32,
+      "title": "Las galerías de la mina vieja",
+      "heroIds": ["h2"],
+      "who": "Brom",
+      "outcome": "Desastre",
+      "body": [
+        "En la mina vieja había un palmo de polvo y, en el polvo, huellas de algo que no llevaba botas.",
+        "Brom se encontró una moneda en el camino. Luego otra. Luego otra.",
+        "Brom fue silbando todo el camino y al final silbaban todos.",
+        "Cuando Brom acabó la oración, ya era tarde.",
+        "La red cayó del techo y Brom quedó colgando como un jamón.",
+        "Dicen que la alcaldía de Hondogrís va contando lo ocurrido por los mercados. No sale bien parado el gremio.",
+        "Nadie sabe qué fue de Brom. Lo último que vieron fue su sombra cerca de la mina vieja.",
+        "La historia se ha torcido: habrá que volver a intentarlo, y ahora será más difícil."
+      ],
+      "chips": [
+        { "t": "Sin cobrar", "k": "bad" },
+        { "t": "-6 reputación", "k": "bad" },
+        { "t": "Brom: desaparecido", "k": "bad" },
+        { "t": "«La sombra de Hondogrís» se complica", "k": "warn" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r249",
+      "day": 31,
+      "title": "Un trol de puente en el cementerio de Ormaz",
+      "heroIds": ["h197"],
+      "who": "Bruno",
+      "outcome": "Fracaso",
+      "body": [
+        "Bruno siguió el rastro hasta el cementerio de Ormaz durante dos noches.",
+        "Bruno dejó claro que, en su opinión, aquello era poca cosa para su talento.",
+        "A Bruno se le enredó la lengua a mitad del conjuro. Salieron sapos.",
+        "Hay días en que más vale no salir de la cama, y este fue uno."
+      ],
+      "chips": [
+        { "t": "Sin cobrar", "k": "bad" },
+        { "t": "-3 reputación", "k": "bad" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r245",
+      "day": 30,
+      "title": "La niña que sabe cosas",
+      "heroIds": ["h2", "h197"],
+      "who": "Brom y Bruno",
+      "outcome": "Éxito brillante",
+      "body": [
+        "Brom y Bruno pasaron la noche en Valdeloro con los ojos muy abiertos.",
+        "Bruno colgó ajos en la tienda. Nadie durmió bien, pero tampoco vino ningún vampiro.",
+        "Con una bendición y un buen bastonazo, Brom lo dejó todo en paz.",
+        "Brom esquivó el primer golpe y no hubo un segundo.",
+        "El mayordomo del conde quiso invitarles a cenar. Aceptaron, claro.",
+        "Y se trajeron un recuerdo: máscara del culto. Irá a la pared de la sala.",
+        "Entre lo que traen hay unos planos: ya se sabe crear varitas."
+      ],
+      "chips": [
+        { "t": "+214 monedas", "k": "good" },
+        { "t": "Brom se queda 24", "k": "warn" },
+        {
+          "t": "No cabía: vendido 3 de hierro por 9 monedas. Construye un almacén para guardarlos.",
+          "k": "warn"
+        },
+        { "t": "+8 reputación", "k": "good" },
+        { "t": "Botín: Mapa a medio quemar", "k": "info" },
+        { "t": "Trofeo: Máscara del culto", "k": "good" },
+        { "t": "Brom sube a nivel 6", "k": "good" },
+        { "t": "Bruno sube a nivel 3", "k": "good" },
+        { "t": "Receta: varita", "k": "good" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r238",
+      "day": 29,
+      "title": "Asalto de la Compañía Sin Bandera",
+      "heroIds": ["h5", "h111", "h190"],
+      "who": "Honorata, Yolanda y Olalla",
+      "outcome": "Desastre",
+      "body": [
+        "A deshoras, alguien aporreó la puerta con el pomo de una espada. Era la Compañía Sin Bandera.",
+        "No había nadie de guardia: rompieron la puerta a hachazos y entraron.",
+        "Se peleó en armería: Honorata, Yolanda y Olalla plantaron cara.",
+        "Forzaron la cerradura de la cámara y cargaron los sacos.",
+        "Eran demasiados. Se llevaron lo que quisieron y antes del alba ya no estaban."
+      ],
+      "chips": [
+        { "t": "Saqueo: −128 monedas", "k": "bad" },
+        { "t": "−3 reputación", "k": "bad" },
+        { "t": "Robado: Ganzúas finas", "k": "bad" },
+        { "t": "Robado: Ganzúas de alambre", "k": "bad" },
+        { "t": "Robado el trofeo: Ídolo de jade", "k": "bad" },
+        { "t": "Honorata: herida, 2 días", "k": "bad" },
+        { "t": "Yolanda: herida, 2 días", "k": "bad" },
+        { "t": "Olalla: herida, 3 días", "k": "bad" }
+      ],
+      "read": false,
+      "raid": { "won": false }
+    },
+    {
+      "id": "r237",
+      "day": 29,
+      "title": "Un jabalí del tamaño de un carro en los riscos",
+      "heroIds": ["h111"],
+      "who": "Yolanda",
+      "outcome": "Fracaso",
+      "body": [
+        "Yolanda salió hacia los riscos antes de que cantara el gallo, con un cordero atado de cebo.",
+        "Lo que nadie dijo: por el camino les salió al paso algo que nadie había mencionado.",
+        "Yolanda cargó con la mochila de un compañero sin decir nada.",
+        "Les cayeron por la espalda y Yolanda no se dio cuenta hasta que fue tarde.",
+        "Yolanda encendió la hoguera con leña verde. Echó humo toda la noche y no calentó nada.",
+        "El mayoral de los pastores del valle dice que la próxima vez buscará otro gremio."
+      ],
+      "chips": [
+        { "t": "Sin cobrar", "k": "bad" },
+        { "t": "-3 reputación", "k": "bad" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r228",
+      "day": 28,
+      "title": "Más allá de la casa del canal",
+      "heroIds": ["h197", "h5"],
+      "who": "Bruno y Honorata",
+      "outcome": "Fracaso",
+      "body": [
+        "La casa del canal era más grande por dentro de lo que parecía por fuera.",
+        "Honorata y Bruno discutieron todo el viaje sobre si un dragón vence a un gigante. No hubo acuerdo.",
+        "El río estaba más crecido de lo que Honorata calculó. Perdieron media carga.",
+        "Bruno pronunció mal una palabra. Las velas se apagaron todas a la vez.",
+        "Honorata olió la emboscada a tiempo y los sacó por un barranco. Se salvaron.",
+        "Hay días en que más vale no salir de la cama, y este fue uno.",
+        "Honorata vuelve herida: 2 días de reposo."
+      ],
+      "chips": [
+        { "t": "Sin cobrar", "k": "bad" },
+        { "t": "-3 reputación", "k": "bad" },
+        { "t": "Honorata: herida, 2 días", "k": "bad" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r223",
+      "day": 27,
+      "title": "El ternero que faltaba",
+      "heroIds": ["h5", "h197"],
+      "who": "Honorata y Bruno",
+      "outcome": "Éxito brillante",
+      "body": [
+        "Honorata y Bruno salieron hacia Valdeloro antes de que cantara el gallo, con un cordero atado de cebo.",
+        "A medio camino se cruzaron con un buhonero que vendía «agua de la fuente de la juventud». Olía a pozo.",
+        "Honorata esquivó el primer golpe y no hubo un segundo.",
+        "Honorata cazó, desplumó y asó un faisán mientras los demás montaban el campamento.",
+        "Volvieron cantando y con la bolsa llena.",
+        "En Valdeloro quedó bien claro que Bruno es supersticioso."
+      ],
+      "chips": [
+        { "t": "+107 monedas", "k": "good" },
+        { "t": "Honorata se queda 12", "k": "warn" },
+        {
+          "t": "No cabía: vendido 3 de cuero por 9 monedas. Cuando pagues la deuda podrás construir un almacén.",
+          "k": "warn"
+        },
+        { "t": "+8 reputación", "k": "good" },
+        { "t": "Descubierto: Supersticioso", "k": "info" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r222",
+      "day": 27,
+      "title": "Una caja en los riscos",
+      "heroIds": ["h111"],
+      "who": "Yolanda",
+      "outcome": "Éxito parcial",
+      "body": [
+        "Doña Urraca describió el objeto con tanto detalle que Yolanda sospechó que no era suyo.",
+        "Yolanda se encontró una moneda en el camino. Luego otra. Luego otra.",
+        "Yolanda iba con tantas ganas que tiraba del grupo.",
+        "Cuando Yolanda acabó la oración, ya era tarde.",
+        "Yolanda usó una silla, una cacerola y, al final, la espada.",
+        "Yolanda rezó en voz alta y, quizá por casualidad, todo salió bien.",
+        "Hicieron lo principal y dejaron a medias lo demás."
+      ],
+      "chips": [
+        { "t": "+65 monedas", "k": "good" },
+        { "t": "+1 tela", "k": "info" },
+        { "t": "+1 reputación", "k": "good" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r220",
+      "day": 26,
+      "title": "Un mapa a medias",
+      "heroIds": ["h190"],
+      "who": "Olalla",
+      "outcome": "Fracaso",
+      "body": [
+        "El vado era más grande por dentro de lo que parecía por fuera.",
+        "Lo que nadie dijo: la amenaza era el doble de grande de lo prometido.",
+        "Olalla explicó a todo el grupo cómo hacer su trabajo. Varias veces.",
+        "Los dioses estaban ocupados en otra cosa cuando Olalla los llamó.",
+        "Cuando Olalla acabó la oración, ya era tarde.",
+        "Olalla estuvo media hora con la cerradura y no hubo manera. Su versión es otra.",
+        "Volvieron con las manos vacías y los pies llenos de ampollas.",
+        "Nadie sabe qué fue de Olalla. Lo último que vieron fue su sombra cerca del vado."
+      ],
+      "chips": [
+        { "t": "Sin cobrar", "k": "bad" },
+        { "t": "-3 reputación", "k": "bad" },
+        { "t": "Olalla: desaparecida", "k": "bad" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r215",
+      "day": 26,
+      "title": "Las galerías de la mina vieja",
+      "heroIds": ["h2", "h5"],
+      "who": "Brom y Honorata",
+      "outcome": "Fracaso",
+      "body": [
+        "Brom y Honorata contaron los pasos al entrar en la mina vieja. A la vuelta les salían otros.",
+        "Honorata confundió setas con setas. Dos días de retortijones.",
+        "Los dioses estaban ocupados en otra cosa cuando Brom los llamó.",
+        "De la paga, ni rastro. Esta noche se cena pan duro.",
+        "Brom vuelve herido: 3 días de reposo.",
+        "La historia se ha torcido: habrá que volver a intentarlo, y ahora será más difícil."
+      ],
+      "chips": [
+        { "t": "Sin cobrar", "k": "bad" },
+        { "t": "-3 reputación", "k": "bad" },
+        { "t": "Brom: herido, 3 días", "k": "bad" },
+        { "t": "Honorata sube a nivel 5", "k": "good" },
+        { "t": "Honorata pide caché de veterano", "k": "warn" },
+        { "t": "«La sombra de Hondogrís» se complica", "k": "warn" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r201",
+      "day": 24,
+      "title": "La torre hundida",
+      "heroIds": ["h2", "h5", "h111"],
+      "who": "Brom, Honorata y Yolanda",
+      "outcome": "Éxito brillante",
+      "body": [
+        "En el vado había un palmo de polvo y, en el polvo, huellas de algo que no llevaba botas.",
+        "Lo que nadie dijo: por el camino les salió al paso algo que nadie había mencionado.",
+        "La tormenta los pilló en campo abierto y pasaron la noche en un granero, con una cabra muy curiosa.",
+        "Honorata vio venir la tormenta por el color del cielo y encontró una cueva a tiempo.",
+        "Con una bendición y un buen bastonazo, Brom lo dejó todo en paz.",
+        "Brom rezó en voz alta y, quizá por casualidad, todo salió bien.",
+        "Ilario, el molinero, prometió hablar bien del gremio en todas las tabernas de la comarca.",
+        "En el vado quedó bien claro que Yolanda es leal.",
+        "Entre lo que traen hay unos planos: ya se sabe crear hachas."
+      ],
+      "chips": [
+        { "t": "+292 monedas", "k": "good" },
+        { "t": "Brom se queda 33", "k": "warn" },
+        { "t": "En el mapa: el monasterio de Peñalta y Valdeloro", "k": "info" },
+        {
+          "t": "No cabía: vendido 3 de cuero por 9 monedas. Cuando pagues la deuda podrás construir un almacén.",
+          "k": "warn"
+        },
+        { "t": "+8 reputación", "k": "good" },
+        { "t": "Descubierto: Leal", "k": "info" },
+        { "t": "Receta: hacha", "k": "good" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r200",
+      "day": 24,
+      "title": "El recaudador",
+      "heroIds": ["h77"],
+      "who": "Remigio",
+      "outcome": "Desastre",
+      "body": [
+        "Remigio caminó junto a la carreta todo el trayecto hasta la ermita.",
+        "Durmieron en una posada donde la sopa era aún peor que la de El Jarro Partido. No lo creían posible.",
+        "Se puso a llover justo cuando Remigio dijo «qué buen día hace».",
+        "Remigio resbaló en el barro justo cuando más falta hacía estar de pie.",
+        "Cuando Remigio acabó la oración, ya era tarde.",
+        "Los dioses estaban ocupados en otra cosa cuando Remigio los llamó.",
+        "El mayoral de los pastores del valle ha pedido que no vuelvan a pasar por allí.",
+        "Remigio no volvió. Su nombre irá al Muro de los caídos."
+      ],
+      "chips": [
+        { "t": "Sin cobrar", "k": "bad" },
+        { "t": "-6 reputación", "k": "bad" },
+        { "t": "Remigio: caído", "k": "bad" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r185",
+      "day": 22,
+      "title": "Las galerías de la mina vieja",
+      "heroIds": ["h62"],
+      "who": "Irene",
+      "outcome": "Desastre",
+      "body": [
+        "En la mina vieja había un palmo de polvo y, en el polvo, huellas de algo que no llevaba botas.",
+        "La primera pregunta de Irene al llegar a la mina vieja fue dónde estaba la taberna.",
+        "Irene dejó la comida sin colgar y los lobos cenaron mejor que el grupo.",
+        "El conjuro de Irene funcionó, pero sobre la persona equivocada.",
+        "Dicen que la alcaldía de Hondogrís va contando lo ocurrido por los mercados. No sale bien parado el gremio.",
+        "Irene no volvió. Su nombre irá al Muro de los caídos.",
+        "La historia se ha torcido: habrá que volver a intentarlo, y ahora será más difícil."
+      ],
+      "chips": [
+        { "t": "Sin cobrar", "k": "bad" },
+        { "t": "-6 reputación", "k": "bad" },
+        { "t": "Irene: caída", "k": "bad" },
+        { "t": "«La sombra de Hondogrís» se complica", "k": "warn" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r184",
+      "day": 22,
+      "title": "El pozo seco",
+      "heroIds": ["h5", "h2"],
+      "who": "Honorata y Brom",
+      "outcome": "Éxito brillante",
+      "body": [
+        "El molino era más grande por dentro de lo que parecía por fuera.",
+        "Lo que nadie dijo: el cliente se olvidó de mencionar a los otros.",
+        "Brom y Honorata se apostaron la cena a ver quién volvía con más rasguños.",
+        "Honorata olió la emboscada antes de verla.",
+        "Honorata fue tanteando cada baldosa con la punta del cuchillo. Tardaron, pero pasaron.",
+        "Volvieron cantando y con la bolsa llena.",
+        "Y se trajeron un recuerdo: ídolo de jade. Irá a la pared de la sala."
+      ],
+      "chips": [
+        { "t": "+140 monedas", "k": "good" },
+        { "t": "Honorata se queda 16", "k": "warn" },
+        { "t": "En el mapa: los riscos y el paso del Lobo", "k": "info" },
+        { "t": "+1 cuero", "k": "info" },
+        {
+          "t": "No cabía: vendido 2 de cuero por 6 monedas. Cuando pagues la deuda podrás construir un almacén.",
+          "k": "warn"
+        },
+        { "t": "+8 reputación", "k": "good" },
+        { "t": "Botín: Talismán de ajo", "k": "info" },
+        { "t": "Trofeo: Ídolo de jade", "k": "good" },
+        { "t": "Honorata sube a nivel 4", "k": "good" },
+        { "t": "Brom sube a nivel 5", "k": "good" },
+        { "t": "Brom pide caché de veterano", "k": "warn" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r176",
+      "day": 21,
+      "title": "Ratas en la torre caída",
+      "heroIds": ["h77"],
+      "who": "Remigio",
+      "outcome": "Éxito",
+      "body": [
+        "Desde la puerta de la torre caída ya se oía algo rascando y royendo.",
+        "Durmieron al raso. Alguien roncó toda la noche y nadie reconoce haber sido.",
+        "Remigio usó una silla, una cacerola y, al final, la espada.",
+        "Remigio trazó un círculo de sal y lo que acechaba no se atrevió a cruzarlo.",
+        "Berta, la posadera, dio las gracias con un apretón de manos algo flojo.",
+        "En la torre caída quedó bien claro que Remigio es gafe."
+      ],
+      "chips": [
+        { "t": "+45 monedas", "k": "good" },
+        {
+          "t": "No cabía: vendido 2 de hierro por 6 monedas. Cuando pagues la deuda podrás construir un almacén.",
+          "k": "warn"
+        },
+        { "t": "+5 reputación", "k": "good" },
+        { "t": "Descubierto: Gafe", "k": "info" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r169",
+      "day": 20,
+      "title": "Cazar una pareja de wargos",
+      "heroIds": ["h5", "h2", "h62"],
+      "who": "Honorata, Brom y Irene",
+      "outcome": "Éxito brillante",
+      "body": [
+        "En la torre caída nadie salía de casa al anochecer. Mala señal para quien va de caza.",
+        "Un mercader agradecido por ahuyentar a unos lobos les dio 15 monedas de propina.",
+        "Irene usó una silla, una cacerola y, al final, la espada.",
+        "Honorata encontró un atajo por el barranco y ganaron medio día.",
+        "Honorata desmontó el mecanismo y se guardó un muelle «por si acaso».",
+        "Berta, la posadera, prometió hablar bien del gremio en todas las tabernas de la comarca.",
+        "Y se trajeron un recuerdo: cabeza de jabalí negro. Irá a la pared de la sala.",
+        "Según cuentan los demás, Irene es bebedora."
+      ],
+      "chips": [
+        { "t": "+304 monedas", "k": "good" },
+        { "t": "Hallazgo: +15", "k": "good" },
+        { "t": "Honorata se queda 34", "k": "warn" },
+        { "t": "+3 cuero", "k": "info" },
+        { "t": "+8 reputación", "k": "good" },
+        { "t": "Trofeo: Cabeza de jabalí negro", "k": "good" },
+        { "t": "Descubierto: Bebedora", "k": "info" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r156",
+      "day": 18,
+      "title": "Las galerías de la mina vieja",
+      "heroIds": ["h4"],
+      "who": "Tadeo Grajal",
+      "outcome": "Fracaso",
+      "body": [
+        "La mina vieja era más grande por dentro de lo que parecía por fuera.",
+        "En un cruce, un cartel decía «A la mina vieja, una legua». Eran tres.",
+        "Tadeo Grajal confundió setas con setas. Dos días de retortijones.",
+        "Cuando Tadeo Grajal acabó la oración, ya era tarde.",
+        "La alcaldía de Hondogrís dice que la próxima vez buscará otro gremio.",
+        "Nadie sabe qué fue de Tadeo Grajal. Lo último que vieron fue su sombra cerca de la mina vieja.",
+        "La historia se ha torcido: habrá que volver a intentarlo, y ahora será más difícil."
+      ],
+      "chips": [
+        { "t": "Sin cobrar", "k": "bad" },
+        { "t": "-3 reputación", "k": "bad" },
+        { "t": "Tadeo Grajal: desaparecido", "k": "bad" },
+        { "t": "«La sombra de Hondogrís» se complica", "k": "warn" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r153",
+      "day": 18,
+      "title": "Lo que suena en el molino",
+      "heroIds": ["h25"],
+      "who": "Martín Pedregal",
+      "outcome": "Fracaso",
+      "body": [
+        "Nadie en el molino quería hablar. Martín Pedregal invitó a una ronda y entonces hablaron todos.",
+        "Lo que dormía en la cripta despertó, y Martín Pedregal no supo volver a dormirlo.",
+        "Doña Urraca dice que la próxima vez buscará otro gremio.",
+        "Martín Pedregal vuelve herido: 2 días de reposo."
+      ],
+      "chips": [
+        { "t": "Sin cobrar", "k": "bad" },
+        { "t": "-3 reputación", "k": "bad" },
+        { "t": "Martín Pedregal: herido, 2 días", "k": "bad" },
+        { "t": "Martín Pedregal sube a nivel 2", "k": "good" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r152",
+      "day": 18,
+      "title": "Una boda en el pantano de las ranas",
+      "heroIds": ["h5", "h2"],
+      "who": "Honorata y Brom",
+      "outcome": "Éxito brillante",
+      "body": [
+        "La carga iba tapada con una lona, y Honorata y Brom decidieron no preguntar.",
+        "Lo que nadie dijo: lo que buscaban tenía compañía.",
+        "Brom fue silbando todo el camino y al final silbaban todos.",
+        "Brom pegó un grito tan bestia que la mitad salió corriendo antes de empezar.",
+        "Honorata pegó la oreja al suelo y supo por dónde venían.",
+        "Un tal Corvo quiso invitarles a cenar. Aceptaron, claro.",
+        "Y se trajeron un recuerdo: estandarte de los bandidos. Irá a la pared de la sala.",
+        "Entre lo que traen hay unos planos: ya se sabe crear escudos."
+      ],
+      "chips": [
+        { "t": "+124 monedas", "k": "good" },
+        { "t": "Honorata se queda 14", "k": "warn" },
+        { "t": "+3 tela", "k": "info" },
+        { "t": "+8 reputación", "k": "good" },
+        { "t": "Trofeo: Estandarte de los bandidos", "k": "good" },
+        { "t": "Honorata sube a nivel 3", "k": "good" },
+        { "t": "Brom sube a nivel 4", "k": "good" },
+        { "t": "Receta: escudo", "k": "good" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r136",
+      "day": 16,
+      "title": "El mapa del capataz",
+      "heroIds": ["h2", "h25"],
+      "who": "Brom y Martín Pedregal",
+      "outcome": "Éxito",
+      "body": [
+        "La alcaldía de Hondogrís describió el objeto con tanto detalle que Brom y Martín Pedregal sospecharon que no era suyo.",
+        "Martín Pedregal llevaba una bota de vino «para desinfectar heridas». Llegó vacía.",
+        "Brom rezó en voz alta y, quizá por casualidad, todo salió bien.",
+        "Brom esquivó el primer golpe y no hubo un segundo.",
+        "El cliente pagó lo acordado y todos a cenar."
+      ],
+      "chips": [
+        { "t": "+85 monedas", "k": "good" },
+        { "t": "Brom se queda 10", "k": "warn" },
+        { "t": "+2 tela", "k": "info" },
+        { "t": "+5 reputación", "k": "good" },
+        { "t": "«La sombra de Hondogrís» 2/4", "k": "info" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r135",
+      "day": 16,
+      "title": "Las ruinas de la casa del canal",
+      "heroIds": ["h1"],
+      "who": "Ovidia Lumbre",
+      "outcome": "Desastre",
+      "body": [
+        "Ovidia Lumbre bajó a la casa del canal con una cuerda y una antorcha que no paraba de humear.",
+        "Ovidia Lumbre se negó a cruzar el puente hasta escupir tres veces al río.",
+        "Ovidia Lumbre confundió setas con setas. Dos días de retortijones.",
+        "Ovidia Lumbre abrió el cofre. El cofre mordió.",
+        "Ovidia Lumbre leyó el pergamino del revés. Durante una hora, todos hablaron al revés.",
+        "Nadie quiere hablar de lo que pasó allí.",
+        "Nadie sabe qué fue de Ovidia Lumbre. Lo último que vieron fue su sombra cerca de la casa del canal."
+      ],
+      "chips": [
+        { "t": "Sin cobrar", "k": "bad" },
+        { "t": "-6 reputación", "k": "bad" },
+        { "t": "Ovidia Lumbre: desaparecida", "k": "bad" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r129",
+      "day": 15,
+      "title": "La niña que sabe cosas",
+      "heroIds": ["h2"],
+      "who": "Brom",
+      "outcome": "Éxito",
+      "body": [
+        "Nadie en el granero de los Cardo quería hablar. Brom invitó a una ronda y entonces hablaron todos.",
+        "Lo que nadie dijo: la amenaza era el doble de grande de lo prometido.",
+        "Brom trazó un círculo de sal y lo que acechaba no se atrevió a cruzarlo.",
+        "Brom encontró el cable antes de que nadie lo pisara.",
+        "El cliente pagó lo acordado y todos a cenar."
+      ],
+      "chips": [
+        { "t": "+40 monedas", "k": "good" },
+        { "t": "Brom se queda 5", "k": "warn" },
+        {
+          "t": "No cabía: vendido 2 de hierro por 6 monedas. Cuando pagues la deuda podrás construir un almacén.",
+          "k": "warn"
+        },
+        { "t": "+5 reputación", "k": "good" },
+        { "t": "Brom sube a nivel 3", "k": "good" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r128",
+      "day": 15,
+      "title": "Lo que se dejaron en las salinas",
+      "heroIds": ["h25"],
+      "who": "Martín Pedregal",
+      "outcome": "Éxito parcial",
+      "body": [
+        "El encargo parecía fácil, y eso a Martín Pedregal tendría que haberle escamado.",
+        "Un bandido dormía la mona junto al camino con 14 monedas en el bolsillo. Se despertó más ligero.",
+        "Martín Pedregal abrió el cofre. El cofre mordió.",
+        "Martín Pedregal se puso delante, como hace siempre, y aguantó todo lo que le echaron.",
+        "Maese Quirico, el erudito, dijo que «algo es algo». Lo dijo con muy mala cara."
+      ],
+      "chips": [
+        { "t": "+21 monedas", "k": "good" },
+        { "t": "Hallazgo: +14", "k": "good" },
+        { "t": "+1 tela", "k": "info" },
+        { "t": "+1 reputación", "k": "good" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r118",
+      "day": 14,
+      "title": "Rumores en la posada",
+      "heroIds": ["h4", "h5", "h2"],
+      "who": "Tadeo Grajal, Honorata y Brom",
+      "outcome": "Éxito parcial",
+      "body": [
+        "Todas las pistas acababan en la posada del Cuervo, y allí nadie sabía nada de nada.",
+        "Honorata y Tadeo Grajal se apostaron la cena a ver quién volvía con más rasguños.",
+        "Brom reconoció el símbolo a tiempo y nadie tocó lo que no debía.",
+        "Con una bendición y un buen bastonazo, Tadeo Grajal lo dejó todo en paz.",
+        "Honorata abrió el cofre. El cofre mordió.",
+        "Hicieron lo principal y dejaron a medias lo demás.",
+        "Tadeo Grajal vuelve herido: 4 días de reposo.",
+        "Honorata vuelve herida: 3 días de reposo."
+      ],
+      "chips": [
+        { "t": "+117 monedas", "k": "good" },
+        { "t": "Honorata se queda 13", "k": "warn" },
+        {
+          "t": "No cabía: vendido 1 de hierro por 3 monedas. Cuando pagues la deuda podrás construir un almacén.",
+          "k": "warn"
+        },
+        { "t": "+1 reputación", "k": "good" },
+        { "t": "Tadeo Grajal: herido, 4 días", "k": "bad" },
+        { "t": "Honorata: herida, 3 días", "k": "bad" },
+        { "t": "«La sombra de Hondogrís» 1/4", "k": "info" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r113",
+      "day": 13,
+      "title": "Bichos en el vado",
+      "heroIds": ["h1"],
+      "who": "Ovidia Lumbre",
+      "outcome": "Éxito brillante",
+      "body": [
+        "Ovidia Lumbre se tapó la nariz con un pañuelo antes de bajar al vado. No sirvió de nada.",
+        "Ovidia Lumbre preguntó en voz alta para qué se juega uno el pellejo por tan poco.",
+        "Ovidia Lumbre no se anduvo con rodeos. Dos tajos y a otra cosa.",
+        "El cliente pagó, dejó propina y abrazó a todo el mundo."
+      ],
+      "chips": [
+        { "t": "+25 monedas", "k": "good" },
+        {
+          "t": "No cabía: vendido 3 de hierro por 9 monedas. Cuando pagues la deuda podrás construir un almacén.",
+          "k": "warn"
+        },
+        { "t": "+8 reputación", "k": "good" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r104",
+      "day": 12,
+      "title": "Un mapa a medias",
+      "heroIds": ["h5"],
+      "who": "Honorata",
+      "outcome": "Éxito parcial",
+      "body": [
+        "Honorata contó los pasos al entrar en el cementerio de Ormaz. A la vuelta le salían otros.",
+        "Honorata conocía un sendero de cabras que no sale en ningún mapa.",
+        "Honorata juró que esa losa no estaba ahí antes.",
+        "No salió mal del todo, pero tampoco como para presumir."
+      ],
+      "chips": [
+        { "t": "+28 monedas", "k": "good" },
+        { "t": "Honorata se queda 3", "k": "warn" },
+        { "t": "+1 cuero", "k": "info" },
+        { "t": "+1 reputación", "k": "good" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r103",
+      "day": 12,
+      "title": "El molino abandonado",
+      "heroIds": ["h2"],
+      "who": "Brom",
+      "outcome": "Éxito",
+      "body": [
+        "Brom se tapó la nariz con un pañuelo antes de bajar al vado. No sirvió de nada.",
+        "Un mercader agradecido por ahuyentar a unos lobos les dio 6 monedas de propina.",
+        "Una flecha perdida rebotó en la hebilla de Brom. Ni un rasguño.",
+        "Brom se plantó delante y no retrocedió ni un paso.",
+        "El capataz de las salinas de Ormaz dio las gracias con un apretón de manos algo flojo."
+      ],
+      "chips": [
+        { "t": "+18 monedas", "k": "good" },
+        { "t": "Hallazgo: +6", "k": "good" },
+        { "t": "Brom se queda 2", "k": "warn" },
+        { "t": "+2 hierro", "k": "info" },
+        { "t": "+5 reputación", "k": "good" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r102",
+      "day": 12,
+      "title": "Lo que suena en la posada del Cuervo",
+      "heroIds": ["h25"],
+      "who": "Martín Pedregal",
+      "outcome": "Desastre",
+      "body": [
+        "Martín Pedregal pasó la noche en la posada del Cuervo con los ojos muy abiertos.",
+        "Se puso a llover justo cuando Martín Pedregal dijo «qué buen día hace».",
+        "Lo que dormía en la cripta despertó, y Martín Pedregal no supo volver a dormirlo.",
+        "La armadura de Martín Pedregal pesaba demasiado para aquel terreno, y se notó.",
+        "Dicen que la hermana Odile, del templo, va contando lo ocurrido por los mercados. No sale bien parado el gremio.",
+        "Martín Pedregal vuelve herido: 2 días de reposo."
+      ],
+      "chips": [
+        { "t": "Sin cobrar", "k": "bad" },
+        { "t": "-6 reputación", "k": "bad" },
+        { "t": "Martín Pedregal: herido, 2 días", "k": "bad" }
+      ],
+      "read": false
+    },
+    {
+      "id": "r92",
+      "day": 11,
+      "title": "Rumores en la posada",
+      "heroIds": ["h5"],
+      "who": "Honorata",
+      "outcome": "Fracaso",
+      "body": [
+        "Honorata empezó por lo de siempre: preguntar a la vieja que lo ve todo desde su ventana.",
+        "Honorata cargó con la mochila de un compañero sin decir nada.",
+        "Lo que dormía en la cripta despertó, y Honorata no supo volver a dormirlo.",
+        "De la paga, ni rastro. Esta noche se cena pan duro.",
+        "La historia se ha torcido: habrá que volver a intentarlo, y ahora será más difícil."
+      ],
+      "chips": [
+        { "t": "Sin cobrar", "k": "bad" },
+        { "t": "-3 reputación", "k": "bad" },
+        { "t": "«La sombra de Hondogrís» se complica", "k": "warn" }
+      ],
+      "read": false
+    }
+  ],
+  "inventory": [
+    {
+      "id": "i243",
+      "name": "Mapa a medio quemar",
+      "desc": "Falta justo la parte importante.",
+      "value": 21,
+      "kind": "tesoro"
+    },
+    {
+      "name": "Capa de explorador",
+      "desc": "Parda y verdosa. Tumbado en el monte, no te ve ni tu madre.",
+      "value": 46,
+      "kind": "herramienta",
+      "rarity": 2,
+      "icon": "capa",
+      "bonus": { "Supervivencia": 1 },
+      "perk": "ambush",
+      "id": "i331"
+    }
+  ],
+  "trophies": [
+    {
+      "id": "t151",
+      "name": "Estandarte de los bandidos",
+      "desc": "Capturado en el camino real.",
+      "icon": "estandarte",
+      "who": "Honorata y Brom",
+      "place": "el pantano de las ranas",
+      "day": 18,
+      "value": 80
+    },
+    {
+      "id": "t168",
+      "name": "Cabeza de jabalí negro",
+      "desc": "Dicen que derribó un molino.",
+      "icon": "cabeza",
+      "who": "Honorata, Brom y Irene",
+      "place": "la torre caída",
+      "day": 20,
+      "value": 80
+    },
+    {
+      "id": "t244",
+      "name": "Máscara del culto",
+      "desc": "Tiene una sonrisa que no le gusta a nadie.",
+      "icon": "mascara",
+      "who": "Brom y Bruno",
+      "place": "Valdeloro",
+      "day": 30,
+      "value": 80
+    }
+  ],
+  "fallen": [
+    { "id": "h291", "name": "Greta", "epitaph": "Desaparecida. Encontraron su capa el día 46." },
+    { "id": "h190", "name": "Olalla", "epitaph": "Desaparecida. Encontraron su capa el día 45." },
+    { "id": "h197", "name": "Bruno", "epitaph": "Rescate de Olalla · día 44." },
+    { "id": "h5", "name": "Honorata", "epitaph": "Las galerías de la mina vieja · día 42." },
+    { "id": "h2", "name": "Brom", "epitaph": "Las galerías de la mina vieja · día 40." },
+    { "id": "h111", "name": "Yolanda", "epitaph": "Las galerías de la mina vieja · día 35." },
+    { "id": "h77", "name": "Remigio", "epitaph": "El recaudador · día 24." },
+    { "id": "h62", "name": "Irene", "epitaph": "Las galerías de la mina vieja · día 22." },
+    {
+      "id": "h4",
+      "name": "Tadeo Grajal",
+      "epitaph": "Desaparecido. Encontraron su capa el día 20."
+    },
+    {
+      "id": "h1",
+      "name": "Ovidia Lumbre",
+      "epitaph": "Desaparecida. Encontraron su capa el día 17."
+    },
+    {
+      "name": "Aldric «Medio Pan»",
+      "epitaph": "Mina de Hondogrís, en tiempos de tu tío. Pidió media ración hasta el final."
+    },
+    {
+      "name": "Fausto, tu tío",
+      "epitaph": "Murió en su cama, debiendo mil monedas a medio pueblo."
+    }
+  ],
+  "dawn": [
+    {
+      "t": "Vinieron 6 campesinos, 2 mercaderes, 1 noble. La taberna deja 39 monedas.",
+      "k": "good"
+    },
+    { "t": "Han encontrado la capa de Greta. No volverá.", "k": "bad" },
+    { "t": "Caduca: Escoltar la carreta hasta las salinas." },
+    { "t": "2 encargos nuevos en el tablón." },
+    { "t": "En la barra hay alguien nuevo buscando trabajo: Urraca Corvo." },
+    { "t": "Garr se cansó de esperar trabajo y se fue a otra posada." },
+    { "t": "Viene a pedir trabajo Telmo, camarero (Maña 3)." }
+  ],
+  "mode": "libre",
+  "rankSeen": 1,
+  "stats": {
+    "missions": 63,
+    "wins": 21,
+    "brilliant": 10,
+    "trophies": 4,
+    "goldEarned": 2625,
+    "maxLvl": 7,
+    "lastDeath": 46,
+    "raids": 0,
+    "byType": {
+      "Investigar": 5,
+      "Limpiar": 5,
+      "Explorar": 5,
+      "Cazar": 3,
+      "Recuperar": 2,
+      "Escoltar": 1
+    }
+  },
+  "feats": {
+    "encargos": 2,
+    "brillantes": 2,
+    "trofeos": 2,
+    "veterano": 2,
+    "oro": 2,
+    "asaltos": 0,
+    "sinbajas": 1
+  },
+  "flavor": "Un viajero pregunta si es aquí donde contratan héroes «baratos, pero no tanto».",
+  "over": null,
+  "goals": {
+    "active": [
+      {
+        "id": "recibidor-2",
+        "text": "Recibidor a nivel 2",
+        "base": 0,
+        "target": 2,
+        "reward": { "gold": 50, "rep": 2 }
+      },
+      {
+        "id": "tesoro-2",
+        "text": "Cámara del tesoro a nivel 2",
+        "base": 0,
+        "target": 2,
+        "reward": { "gold": 60 }
+      },
+      {
+        "id": "incidentes",
+        "text": "Resuelve 2 incidentes en la taberna",
+        "base": 0,
+        "target": 2,
+        "reward": { "gold": 30 }
+      }
+    ],
+    "done": { "encargos": 1, "sin-bajas": 1, "oro": 1 },
+    "log": [
+      {
+        "day": 18,
+        "text": "Gana 200 monedas con encargos",
+        "reward": "2 de reputación y equipo común (Ganzúas de alambre)"
+      },
+      {
+        "day": 15,
+        "text": "Pasa 15 días seguidos sin bajas",
+        "reward": "60 monedas y 2 de reputación"
+      },
+      { "day": 6, "text": "Cumple 3 encargos", "reward": "40 monedas" }
+    ]
+  },
+  "explored": [
+    "las salinas",
+    "Hondogrís",
+    "la ermita",
+    "el bosque de Sotomuro",
+    "el puente de los ahorcados",
+    "el cementerio de Ormaz",
+    "el vado",
+    "la mina vieja",
+    "la torre caída",
+    "el pantano de las ranas",
+    "la posada del Cuervo",
+    "la casa del canal",
+    "el granero de los Cardo",
+    "el molino",
+    "los riscos",
+    "el paso del Lobo",
+    "el monasterio de Peñalta",
+    "Valdeloro",
+    "el mesón de Levante",
+    "la cueva de la Sierpe",
+    "el refugio de Nevaza",
+    "el desfiladero de las Cabras"
+  ],
+  "lastParty": ["h380", "h340", "h305"],
+  "incidents": [],
+  "nights": { "rolled": 45, "last": { "mensajero": 44, "ladron": 41, "pesadilla": 43 } },
+  "quiet": 0,
+  "threat": 76,
+  "lastFight": null,
+  "bossWait": null,
+  "yields": [
+    { "room": "t8", "food": 21 },
+    { "room": "t9", "beer": 11 }
+  ],
+  "lastRaid": null,
+  "questLog": [
+    {
+      "id": "m366",
+      "title": "Luces raras en el vado",
+      "place": "el vado",
+      "sent": 43,
+      "day": 45,
+      "who": "Elías",
+      "outcome": "Éxito parcial",
+      "report": "r377"
+    },
+    {
+      "id": "m356",
+      "title": "Las galerías de la mina vieja",
+      "place": "la mina vieja",
+      "sent": 42,
+      "day": 45,
+      "who": "Sancha",
+      "outcome": "Desastre",
+      "report": "r374"
+    },
+    {
+      "id": "m354",
+      "title": "Rescate de Olalla",
+      "place": "el pantano de las ranas",
+      "sent": 42,
+      "day": 44,
+      "who": "Bruno",
+      "outcome": "Fracaso",
+      "report": "r367"
+    },
+    {
+      "id": "m355",
+      "title": "Las ruinas del puente de los ahorcados",
+      "place": "el puente de los ahorcados",
+      "sent": 42,
+      "day": 43,
+      "who": "Greta",
+      "outcome": "Fracaso",
+      "report": "r362"
+    },
+    {
+      "id": "m342",
+      "title": "El ternero que faltaba",
+      "place": "el cementerio de Ormaz",
+      "sent": 41,
+      "day": 43,
+      "who": "Teobaldo Pedregal",
+      "outcome": "Fracaso",
+      "report": "r359"
+    },
+    {
+      "id": "m333",
+      "title": "Algo raro en la mina vieja",
+      "place": "la mina vieja",
+      "sent": 40,
+      "day": 42,
+      "who": "Greta",
+      "outcome": "Éxito parcial",
+      "report": "r348"
+    },
+    {
+      "id": "m332",
+      "title": "Las galerías de la mina vieja",
+      "place": "la mina vieja",
+      "sent": 40,
+      "day": 42,
+      "who": "Honorata",
+      "outcome": "Fracaso",
+      "report": "r345"
+    },
+    {
+      "id": "m317",
+      "title": "El sótano del alquimista",
+      "place": "la posada del Cuervo",
+      "sent": 39,
+      "day": 42,
+      "who": "Bruno",
+      "outcome": "Éxito parcial",
+      "report": "r344"
+    },
+    {
+      "id": "m318",
+      "title": "Plaga en el pantano de las ranas",
+      "place": "el pantano de las ranas",
+      "sent": 39,
+      "day": 41,
+      "who": "Olalla",
+      "outcome": "Fracaso",
+      "report": "r336"
+    },
+    {
+      "id": "m316",
+      "title": "Un encargo discreto en el bosque de Sotomuro",
+      "place": "el bosque de Sotomuro",
+      "sent": 39,
+      "day": 40,
+      "who": "Honorata",
+      "outcome": "Éxito brillante",
+      "report": "r323"
+    },
+    {
+      "id": "m306",
+      "title": "Las galerías de la mina vieja",
+      "place": "la mina vieja",
+      "sent": 37,
+      "day": 40,
+      "who": "Brom",
+      "outcome": "Desastre",
+      "report": "r319"
+    },
+    {
+      "id": "m308",
+      "title": "Lo que pasa en la torre caída",
+      "place": "la torre caída",
+      "sent": 37,
+      "day": 39,
+      "who": "Olalla",
+      "outcome": "Éxito parcial",
+      "report": "r315"
+    },
+    {
+      "id": "m307",
+      "title": "El pozo seco",
+      "place": "la mina vieja",
+      "sent": 37,
+      "day": 39,
+      "who": "Honorata y Bruno",
+      "outcome": "Éxito brillante",
+      "report": "r314"
+    },
+    {
+      "id": "m298",
+      "title": "Lo que se dejaron en el pantano de las ranas",
+      "place": "el pantano de las ranas",
+      "sent": 36,
+      "day": 37,
+      "who": "Olalla",
+      "outcome": "Éxito parcial",
+      "report": "r300"
+    },
+    {
+      "id": "m293",
+      "title": "Lo que suena en el granero de los Cardo",
+      "place": "el granero de los Cardo",
+      "sent": 35,
+      "day": 37,
+      "who": "Brom y Bruno",
+      "outcome": "Éxito",
+      "report": "r299"
+    },
+    {
+      "id": "m282",
+      "title": "Las galerías de la mina vieja",
+      "place": "la mina vieja",
+      "sent": 34,
+      "day": 35,
+      "who": "Yolanda",
+      "outcome": "Desastre",
+      "report": "r284"
+    },
+    {
+      "id": "m273",
+      "title": "El vino del obispo",
+      "place": "el molino",
+      "sent": 33,
+      "day": 35,
+      "who": "Honorata y Bruno",
+      "outcome": "Éxito parcial",
+      "report": "r283"
+    },
+    {
+      "id": "m256",
+      "title": "Un carro, tres baúles y la mina vieja",
+      "place": "la mina vieja",
+      "sent": 31,
+      "day": 34,
+      "who": "Yolanda",
+      "outcome": "Fracaso",
+      "report": "r276"
+    },
+    {
+      "id": "m267",
+      "title": "Las vacas de la ermita",
+      "place": "la ermita",
+      "sent": 32,
+      "day": 33,
+      "who": "Olalla",
+      "outcome": "Desastre",
+      "report": "r269"
+    },
+    {
+      "id": "m255",
+      "title": "La grieta",
+      "place": "el puente de los ahorcados",
+      "sent": 31,
+      "day": 33,
+      "who": "Honorata y Bruno",
+      "outcome": "Éxito brillante",
+      "report": "r268"
+    },
+    {
+      "id": "m247",
+      "title": "Las galerías de la mina vieja",
+      "place": "la mina vieja",
+      "sent": 30,
+      "day": 32,
+      "who": "Brom",
+      "outcome": "Desastre",
+      "report": "r259"
+    },
+    {
+      "id": "m248",
+      "title": "Un trol de puente en el cementerio de Ormaz",
+      "place": "el cementerio de Ormaz",
+      "sent": 30,
+      "day": 31,
+      "who": "Bruno",
+      "outcome": "Fracaso",
+      "report": "r249"
+    },
+    {
+      "id": "m236",
+      "title": "La niña que sabe cosas",
+      "place": "Valdeloro",
+      "sent": 28,
+      "day": 30,
+      "who": "Brom y Bruno",
+      "outcome": "Éxito brillante",
+      "report": "r245"
+    },
+    {
+      "id": "m227",
+      "title": "Un jabalí del tamaño de un carro en los riscos",
+      "place": "los riscos",
+      "sent": 27,
+      "day": 29,
+      "who": "Yolanda",
+      "outcome": "Fracaso",
+      "report": "r237"
+    },
+    {
+      "id": "m226",
+      "title": "Más allá de la casa del canal",
+      "place": "la casa del canal",
+      "sent": 27,
+      "day": 28,
+      "who": "Bruno y Honorata",
+      "outcome": "Fracaso",
+      "report": "r228"
+    },
+    {
+      "id": "m221",
+      "title": "El ternero que faltaba",
+      "place": "Valdeloro",
+      "sent": 26,
+      "day": 27,
+      "who": "Honorata y Bruno",
+      "outcome": "Éxito brillante",
+      "report": "r223"
+    },
+    {
+      "id": "m206",
+      "title": "Una caja en los riscos",
+      "place": "los riscos",
+      "sent": 24,
+      "day": 27,
+      "who": "Yolanda",
+      "outcome": "Éxito parcial",
+      "report": "r222"
+    },
+    {
+      "id": "m207",
+      "title": "Un mapa a medias",
+      "place": "el vado",
+      "sent": 24,
+      "day": 26,
+      "who": "Olalla",
+      "outcome": "Fracaso",
+      "report": "r220"
+    },
+    {
+      "id": "m205",
+      "title": "Las galerías de la mina vieja",
+      "place": "la mina vieja",
+      "sent": 24,
+      "day": 26,
+      "who": "Brom y Honorata",
+      "outcome": "Fracaso",
+      "report": "r215"
+    },
+    {
+      "id": "m192",
+      "title": "La torre hundida",
+      "place": "el vado",
+      "sent": 22,
+      "day": 24,
+      "who": "Brom, Honorata y Yolanda",
+      "outcome": "Éxito brillante",
+      "report": "r201"
+    },
+    {
+      "id": "m179",
+      "title": "El recaudador",
+      "place": "la ermita",
+      "sent": 21,
+      "day": 24,
+      "who": "Remigio",
+      "outcome": "Desastre",
+      "report": "r200"
+    },
+    {
+      "id": "m174",
+      "title": "Las galerías de la mina vieja",
+      "place": "la mina vieja",
+      "sent": 20,
+      "day": 22,
+      "who": "Irene",
+      "outcome": "Desastre",
+      "report": "r185"
+    },
+    {
+      "id": "m173",
+      "title": "El pozo seco",
+      "place": "el molino",
+      "sent": 20,
+      "day": 22,
+      "who": "Honorata y Brom",
+      "outcome": "Éxito brillante",
+      "report": "r184"
+    },
+    {
+      "id": "m165",
+      "title": "Ratas en la torre caída",
+      "place": "la torre caída",
+      "sent": 19,
+      "day": 21,
+      "who": "Remigio",
+      "outcome": "Éxito",
+      "report": "r176"
+    },
+    {
+      "id": "m160",
+      "title": "Cazar una pareja de wargos",
+      "place": "la torre caída",
+      "sent": 18,
+      "day": 20,
+      "who": "Honorata, Brom y Irene",
+      "outcome": "Éxito brillante",
+      "report": "r169"
+    },
+    {
+      "id": "m149",
+      "title": "Las galerías de la mina vieja",
+      "place": "la mina vieja",
+      "sent": 17,
+      "day": 18,
+      "who": "Tadeo Grajal",
+      "outcome": "Fracaso",
+      "report": "r156"
+    },
+    {
+      "id": "m142",
+      "title": "Lo que suena en el molino",
+      "place": "el molino",
+      "sent": 16,
+      "day": 18,
+      "who": "Martín Pedregal",
+      "outcome": "Fracaso",
+      "report": "r153"
+    },
+    {
+      "id": "m141",
+      "title": "Una boda en el pantano de las ranas",
+      "place": "el pantano de las ranas",
+      "sent": 16,
+      "day": 18,
+      "who": "Honorata y Brom",
+      "outcome": "Éxito brillante",
+      "report": "r152"
+    },
+    {
+      "id": "m132",
+      "title": "El mapa del capataz",
+      "place": "Hondogrís",
+      "sent": 15,
+      "day": 16,
+      "who": "Brom y Martín Pedregal",
+      "outcome": "Éxito",
+      "report": "r136"
+    },
+    {
+      "id": "m114",
+      "title": "Las ruinas de la casa del canal",
+      "place": "la casa del canal",
+      "sent": 13,
+      "day": 16,
+      "who": "Ovidia Lumbre",
+      "outcome": "Desastre",
+      "report": "r135"
+    },
+    {
+      "id": "m127",
+      "title": "La niña que sabe cosas",
+      "place": "el granero de los Cardo",
+      "sent": 14,
+      "day": 15,
+      "who": "Brom",
+      "outcome": "Éxito",
+      "report": "r129"
+    },
+    {
+      "id": "m115",
+      "title": "Lo que se dejaron en las salinas",
+      "place": "las salinas",
+      "sent": 13,
+      "day": 15,
+      "who": "Martín Pedregal",
+      "outcome": "Éxito parcial",
+      "report": "r128"
+    },
+    {
+      "id": "m112",
+      "title": "Rumores en la posada",
+      "place": "la posada del Cuervo",
+      "sent": 12,
+      "day": 14,
+      "who": "Tadeo Grajal, Honorata y Brom",
+      "outcome": "Éxito parcial",
+      "report": "r118"
+    },
+    {
+      "id": "m97",
+      "title": "Bichos en el vado",
+      "place": "el vado",
+      "sent": 11,
+      "day": 13,
+      "who": "Ovidia Lumbre",
+      "outcome": "Éxito brillante",
+      "report": "r113"
+    },
+    {
+      "id": "m99",
+      "title": "Un mapa a medias",
+      "place": "el cementerio de Ormaz",
+      "sent": 11,
+      "day": 12,
+      "who": "Honorata",
+      "outcome": "Éxito parcial",
+      "report": "r104"
+    },
+    {
+      "id": "m98",
+      "title": "El molino abandonado",
+      "place": "el vado",
+      "sent": 11,
+      "day": 12,
+      "who": "Brom",
+      "outcome": "Éxito",
+      "report": "r103"
+    },
+    {
+      "id": "m88",
+      "title": "Lo que suena en la posada del Cuervo",
+      "place": "la posada del Cuervo",
+      "sent": 10,
+      "day": 12,
+      "who": "Martín Pedregal",
+      "outcome": "Desastre",
+      "report": "r102"
+    },
+    {
+      "id": "m87",
+      "title": "Rumores en la posada",
+      "place": "la posada del Cuervo",
+      "sent": 10,
+      "day": 11,
+      "who": "Honorata",
+      "outcome": "Fracaso",
+      "report": "r92"
+    },
+    {
+      "id": "m79",
+      "title": "Pieles para el curtidor",
+      "place": "la posada del Cuervo",
+      "sent": 9,
+      "day": 11,
+      "who": "Brom",
+      "outcome": "Éxito",
+      "report": "r91"
+    },
+    {
+      "id": "m72",
+      "title": "La grieta",
+      "place": "la torre caída",
+      "sent": 8,
+      "day": 11,
+      "who": "Ovidia Lumbre",
+      "outcome": "Fracaso",
+      "report": "r90"
+    },
+    {
+      "id": "m78",
+      "title": "Las joyas de la viuda",
+      "place": "el pantano de las ranas",
+      "sent": 9,
+      "day": 10,
+      "who": "Honorata",
+      "outcome": "Éxito parcial",
+      "report": "r82"
+    },
+    {
+      "id": "m66",
+      "title": "Sacarlo del cementerio de Ormaz",
+      "place": "el cementerio de Ormaz",
+      "sent": 7,
+      "day": 9,
+      "who": "Honorata y Tadeo Grajal",
+      "outcome": "Éxito parcial",
+      "report": "r74"
+    },
+    {
+      "id": "m56",
+      "title": "Recompensa por un trol de puente",
+      "place": "las salinas",
+      "sent": 6,
+      "day": 9,
+      "who": "Martín Pedregal",
+      "outcome": "Fracaso",
+      "report": "r73"
+    },
+    {
+      "id": "m55",
+      "title": "Rescate de Brom",
+      "place": "el puente de los ahorcados",
+      "sent": 6,
+      "day": 8,
+      "who": "Ovidia Lumbre",
+      "outcome": "Éxito",
+      "report": "r69"
+    },
+    {
+      "id": "m54",
+      "title": "El cementerio no descansa",
+      "place": "el cementerio de Ormaz",
+      "sent": 6,
+      "day": 7,
+      "who": "Tadeo Grajal y Honorata",
+      "outcome": "Éxito",
+      "report": "r57"
+    },
+    {
+      "id": "m41",
+      "title": "El pozo seco",
+      "place": "el bosque de Sotomuro",
+      "sent": 5,
+      "day": 6,
+      "who": "Tadeo Grajal",
+      "outcome": "Éxito parcial",
+      "report": "r46"
+    },
+    {
+      "id": "m40",
+      "title": "Una caja en el puente de los ahorcados",
+      "place": "el puente de los ahorcados",
+      "sent": 5,
+      "day": 6,
+      "who": "Brom",
+      "outcome": "Desastre",
+      "report": "r45"
+    },
+    {
+      "id": "m39",
+      "title": "El sótano del alquimista",
+      "place": "el bosque de Sotomuro",
+      "sent": 5,
+      "day": 6,
+      "who": "Honorata y Ovidia Lumbre",
+      "outcome": "Éxito",
+      "report": "r42"
+    },
+    {
+      "id": "m33",
+      "title": "Las vacas del bosque de Sotomuro",
+      "place": "el bosque de Sotomuro",
+      "sent": 4,
+      "day": 5,
+      "who": "Tadeo Grajal",
+      "outcome": "Fracaso",
+      "report": "r35"
+    },
+    {
+      "id": "m26",
+      "title": "Desaparecidos en la ermita",
+      "place": "la ermita",
+      "sent": 3,
+      "day": 5,
+      "who": "Brom",
+      "outcome": "Éxito",
+      "report": "r34"
+    },
+    {
+      "id": "m27",
+      "title": "Algo raro en la ermita",
+      "place": "la ermita",
+      "sent": 3,
+      "day": 4,
+      "who": "Ovidia Lumbre",
+      "outcome": "Fracaso",
+      "report": "r28"
+    },
+    {
+      "id": "m18",
+      "title": "La niña que sabe cosas",
+      "place": "Hondogrís",
+      "sent": 1,
+      "day": 3,
+      "who": "Brom",
+      "outcome": "Éxito",
+      "report": "r24"
+    },
+    {
+      "id": "m17",
+      "title": "Una serpiente de ciénaga en las salinas",
+      "place": "las salinas",
+      "sent": 1,
+      "day": 3,
+      "who": "Ovidia Lumbre",
+      "outcome": "Fracaso",
+      "report": "r23"
+    }
+  ],
+  "mats": { "hierro": 10, "cuero": 10, "tela": 10 },
+  "chains": [{ "id": "hondogris", "step": 2, "status": "activa", "twists": 9, "party": ["h313"] }],
+  "payday": { "day": 42, "debt": 0, "wages": 79 },
+  "messenger": null,
+  "unlocks": ["boxes", "roof:pizarra", "walls:piedra", "sign:pintado", "roof:verde", "tint:ocre"],
+  "incidentLog": [
+    { "id": "inc89", "kind": "nocturno", "room": "t12", "how": "mal" },
+    { "id": "inc150", "kind": "nocturno", "room": "t12", "how": "mal" },
+    { "id": "inc175", "kind": "nocturno", "room": "t12", "how": "mal" },
+    { "id": "inc242", "kind": "nocturno", "room": "t12", "how": "mal" },
+    { "id": "inc294", "kind": "nocturno", "room": "t12", "how": "mal" },
+    { "id": "inc343", "kind": "nocturno", "room": "t12", "how": "mal" }
+  ],
+  "nightmare": null,
+  "event": {
+    "id": "buhonero",
+    "who": [],
+    "text": "Un buhonero con un carro lleno de cachivaches jura que tiene «un objeto de verdad» escondido bajo la lona. Pide 60 monedas, sin enseñarlo antes.",
+    "options": [
+      { "label": "Comprar (60)", "hint": "Equipo bueno… o no" },
+      { "label": "No, gracias", "hint": "Nada cambia" }
+    ]
+  },
+  "recipes": ["escudo", "hacha", "varita", "capa"],
+  "scout": 42,
+  "raid": null,
+  "opening": {
+    "day": 28,
+    "heroes": 5,
+    "gold": 970,
+    "rep": 74,
+    "trophies": 3,
+    "facilities": 2,
+    "fallen": 4,
+    "score": 1725,
+    "seen": false
+  },
+  "truce": 46,
+  "unpaid": 0
+}

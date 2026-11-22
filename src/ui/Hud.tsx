@@ -12,7 +12,8 @@ import { Counter } from './Counter';
 import { Icon } from './icons';
 import { AlertBell, type BellView } from './AlertBell';
 import type { Notice } from './alerts';
-import { bandNumber } from '../data/raids';
+import { bandParams } from '../data/raids';
+import { t } from '../textos';
 
 type Tip = 'oro' | 'rep' | 'comida' | 'cerveza' | 'pago' | 'asalto';
 
@@ -110,10 +111,7 @@ export function Hud({
         ? `Próximo pago, el día ${pay.day} (${when}): ${pay.amount} al prestamista y ${due - pay.amount} en salarios. Total ${due}.${short ? ' Ahora mismo no llega.' : ''}`
         : `Salarios del día ${pay.day} (${when}): ${due} monedas.${short ? ' Ahora mismo no llega.' : ''}`,
     asalto: game.raid
-      ? bandNumber(
-          `Chivatazo: ${game.raid.band} {llega|llegan} ${nightIn(nights)}. Prepara las defensas.`,
-          game.raid.band,
-        )
+      ? t('asaltos.aviso_barra', bandParams(game.raid.band, { cuando: nightIn(nights) }))
       : '',
   };
   return (

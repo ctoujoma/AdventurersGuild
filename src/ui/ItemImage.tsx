@@ -2,6 +2,7 @@ import type { Item, ItemIcon, Rarity } from '../core/model';
 import { itemAnimates, itemFrames } from '../art/items';
 import { BufferImage } from './BufferImage';
 import { useShine } from './useShine';
+import { idText } from '../textos';
 
 interface Props {
   icon: ItemIcon;
@@ -28,5 +29,5 @@ export const itemProps = (
   icon: it.icon ?? fallback,
   rarity: it.rarity,
   plus: it.plus,
-  name: it.name,
+  name: idText(it.name),
 });

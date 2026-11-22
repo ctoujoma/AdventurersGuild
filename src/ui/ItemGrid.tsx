@@ -16,6 +16,7 @@ import { ROOMS } from '../data/rooms';
 import { haptic } from '../platform/haptics';
 import { ItemImage } from './ItemImage';
 import { Icon } from './icons';
+import { tx } from '../textos';
 
 /** Lo que dura la pulsación larga (la misma que la ayuda de `HoldHelp`). */
 const HOLD_MS = 450;
@@ -125,7 +126,7 @@ function ItemTile({
           <Icon name="star" size={10} />
         </span>
       )}
-      <ItemImage icon={it.icon ?? 'espada'} rarity={it.rarity} name={it.name} scale={3} />
+      <ItemImage icon={it.icon ?? 'espada'} rarity={it.rarity} name={tx(it.name)} scale={3} />
       <span class="item-chips">
         {chips.map((s, i) => (
           <span
@@ -156,11 +157,11 @@ function ItemTip({ e, at }: { e: GridEntry; at: DOMRect }) {
     <div class={`item-tip tier-${tierOf(it.rarity)}`} role="tooltip" style={style}>
       <div class="item-tip-head">
         <span class={`item-tip-icon tier-${tierOf(it.rarity)}`}>
-          <ItemImage icon={it.icon ?? 'espada'} rarity={it.rarity} name={it.name} scale={2} />
+          <ItemImage icon={it.icon ?? 'espada'} rarity={it.rarity} name={tx(it.name)} scale={2} />
         </span>
         <span>
           <b>
-            {it.name}
+            {tx(it.name)}
             {it.plus ? <span class="item-tip-plus"> +{it.plus}</span> : null}
           </b>
           <em>
@@ -194,7 +195,7 @@ function ItemTip({ e, at }: { e: GridEntry; at: DOMRect }) {
           <small>Mejorado del todo: no sube más.</small>
         ) : null}
       </div>
-      {it.desc && <p class="item-tip-desc">«{it.desc}»</p>}
+      {it.desc && <p class="item-tip-desc">«{tx(it.desc)}»</p>}
       <div class="item-tip-foot">
         <span>{who ? `Lo lleva ${who}` : 'En el arcón'}</span>
         <span>Vale {priceOf(it)} monedas</span>

@@ -4,17 +4,17 @@ incidentes:
   pelea:
     titulo: "Pelea en el salón"
     ask: "Arrastra a un héroe al salón para separarlos."
-    gana: "{h} separa a los borrachos antes de que vuelen las sillas."
+    gana: "{heroe} separa a los borrachos antes de que vuelen las sillas."
     pierde: "La pelea acaba con sillas rotas: {n} monedas en arreglos."
   ladron:
     titulo: "Un ladrón en la cámara"
     ask: "Arrastra a un héroe a la cámara del tesoro."
-    gana: "{h} pilla al ladrón con las manos en la bolsa."
+    gana: "{heroe} pilla al ladrón con las manos en la bolsa."
     pierde: "El ladrón se escapa con {n} monedas."
   fuego:
     titulo: "Fuego en la cocina"
     ask: "Arrastra a alguien de la casa a la cocina para apagarlo."
-    gana: "{h} apaga el fuego a cubos."
+    gana: "{heroe} apaga el fuego a cubos."
     pierde: "El fuego se come {n} raciones."
   ratas:
     titulo: "Ratas en la despensa"
@@ -34,7 +34,7 @@ incidentes:
   nocturno:
     titulo: "Ha entrado un ladrón"
     ask: "Arrastra a un héroe: se despierta y va a por el ladrón."
-    gana: "{h} pilla al ladrón con las manos en la bolsa."
+    gana: "{heroe} pilla al ladrón con las manos en la bolsa."
     pierde: "El ladrón se escapa con {n} monedas."
   noble:
     titulo: "Un noble borracho"
@@ -47,3 +47,29 @@ incidentes:
         etiqueta: "Pagarle la cuenta"
         texto: "Le pagas la cuenta y se va cantando las alabanzas del gremio."
     pierde: "El noble se va sin pagar y dice cosas feas del gremio por ahí."
+guardia:
+  separa: "{heroe} deja la puerta un momento para ir a separarlos."
+  ladron: "{heroe}, de guardia en la cámara, se echa encima del ladrón."
+  recaudador: "{heroe}, de guardia, entretiene al recaudador en la puerta: hay algo más de tiempo."
+no_puede: "{heroe} no puede con él. {resto}"
+se_cuela: "{heroe} cabeceaba en la puerta y se le cuela. {resto}"
+puerta: "{heroe}, de guardia, le cierra el paso en la puerta y recupera el botín.{rep, plural, =0 {} other { (+# reputación)}}"
+ni_guardia: "Ni {heroe}, de guardia, le para. {resto}"
+con_rep: "{texto}{rep, plural, =0 {} other { (+# reputación)}}"
+noche:
+  cabeza: "Anoche entró un ladrón.{hay, select, si { {lead}} other {}}"
+  cabeceaba: "{heroe} cabeceaba en la cámara y no le vio."
+  pillado: "{cabeza} {heroe} le salió al paso y le pilló con las manos en la bolsa.{rep, plural, =0 {} other { (+# reputación)}}"
+  no_pudo: "{heroe} le salió al paso, pero no pudo con él."
+  la_camara: "la cámara"
+  la_caja: "la caja"
+  puerta: "{cabeza} {heroe}, de guardia, le cerró el paso en la puerta y recuperó el botín.{rep, plural, =0 {} other { (+# reputación)}}"
+  ni_guardia: "{cabeza} Ni {heroe}, de guardia en la puerta, pudo pararle: se llevó {n} monedas de {donde}."
+  se_cuela: "{cabeza} {heroe} cabeceaba en la puerta y se le coló con {n} monedas de {donde}."
+  nadie: "{cabeza} Nadie le vio salir: se llevó {n} monedas de {donde}."
+error:
+  resuelto: "Eso ya se ha resuelto."
+  heroe: "Para esto hace falta un héroe."
+  de_casa: "Tiene que ser alguien de casa."
+  ya_va: "Ya va {heroe}."
+eleccion: "{texto}{rep, plural, =0 {} other { ({mas, select, si {+} other {}}# reputación)}}"

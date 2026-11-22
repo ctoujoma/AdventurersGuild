@@ -69,6 +69,7 @@ import {
   restCap,
   restMorale,
   returnChance,
+  rankMsg,
 } from './balance';
 import { tripDays } from './classes';
 import {
@@ -99,7 +100,7 @@ import {
   GARDEN_PIECES,
   type Dress,
 } from '../data/custom';
-import { ROOMS, type RoomType } from '../data/rooms';
+import type { RoomType } from '../data/rooms';
 import { arrival, checkFeats, emptyStats } from './feats';
 import { checkGoals, tickGoals } from './goals';
 import { stepRumors, takeRumor } from './rumors';
@@ -137,7 +138,7 @@ import {
   type Report,
 } from './model';
 import { MORALE_LOW, MORALE_QUIT } from './party';
-import { resolveMission } from './resolve';
+import { outcomeMsg, resolveMission } from './resolve';
 import {
   applyPlan,
   beds,
@@ -164,10 +165,8 @@ import {
   roomBeds,
 } from './rooms';
 import { Rng } from './rng';
-import { BOSSES } from '../data/bosses';
 import { resolveAt } from './journey';
 import { missionCombat, runCombat, type Order } from './combat';
-import { listNames, plural } from './text';
 import { stepLarder } from './larder';
 import { stepTraining } from './training';
 import { customOf } from './custom';
@@ -188,7 +187,8 @@ import {
   startUndo,
   stepCrafts,
 } from './crafting';
-import { RECIPES, RECIPE_IDS, type RecipeId } from '../data/recipes';
+import { RECIPE_IDS, type RecipeId } from '../data/recipes';
+import { placeMsg } from '../data/places';
 import { brawlChance, noisyBeds, visitorList, visitorsOf } from './salon';
 import {
   addSeeker,
@@ -206,6 +206,7 @@ import {
   villageCrew,
 } from './workers';
 import { SLOTS, gearList, priceOf, slotOf, type Slot } from './gear';
+import { msg, t } from '../textos';
 
 export type Action =
   /** Talleres: crear de una receta, desmontar un objeto del arcón o cancelar un trabajo. */
@@ -321,10 +322,9 @@ export const upgradeCost = (s: GameState, k: keyof Facilities) => facilityCost(s
 
 export function canHire(s: GameState, id: string): string | null {
   const c = s.candidates.find((x) => x.id === id);
-  if (!c) return 'Ese candidato ya no está.';
-  if (roster(s).length >= beds(s.building))
-    return 'No queda sitio: mejora o amplía los dormitorios, o abre los cuartos de veteranos.';
-  if (s.gold < c.fee) return `Te faltan ${c.fee - s.gold} monedas para la prima de fichaje.`;
+  if (!c) return t('partida.error.candidato');
+  if (roster(s).length >= beds(s.building)) return t('partida.error.sin_sitio');
+  if (s.gold < c.fee) return t('partida.error.prima', { n: c.fee - s.gold });
   return null;
 }
 
@@ -335,16 +335,16 @@ export function canSend(
   unguard = false,
 ): string | null {
   const q = s.quests.find((x) => x.id === questId);
-  if (!q) return 'Ese encargo ya no está en el tablón.';
-  if (!heroIds.length) return 'Elige al menos un héroe.';
-  if (heroIds.length > q.slots) return `Este encargo admite ${q.slots} como máximo.`;
+  if (!q) return t('partida.error.encargo');
+  if (!heroIds.length) return t('partida.error.sin_heroes');
+  if (heroIds.length > q.slots) return t('partida.error.plazas', { n: q.slots });
   const party = heroIds.map((id) => s.heroes.find((h) => h.id === id));
-  if (party.some((h) => !h || h.status !== 'ok')) return 'Alguien del grupo no está disponible.';
+  if (party.some((h) => !h || h.status !== 'ok')) return t('partida.error.no_disponible');
   const guard = !unguard && party.find((h) => h!.guard);
-  if (guard) return `${guard.name} está de guardia en la taberna.`;
+  if (guard) return t('partida.error.de_guardia', { heroe: guard.name });
   const proud = party.find((h) => h!.traits.some((t) => t.id === 'arrogante' && !t.hidden));
   if (proud && party.some((h) => h!.lvl < proud.lvl))
-    return `${proud.name} no va con héroes de menor nivel.`;
+    return t('partida.error.arrogante', { heroe: proud.name });
   return null;
 }
 
@@ -358,9 +358,10 @@ export const gearInStock = (s: GameState) =>
 export function canEquip(s: GameState, heroId: string, itemId: string): string | null {
   const h = s.heroes.find((x) => x.id === heroId);
   const it = s.inventory.find((x) => x.id === itemId);
-  if (!h || !it) return 'Ese objeto ya no está.';
-  if (!it.kind || it.kind === 'tesoro' || !slotOf(it)) return 'Esto no se equipa: se vende.';
-  if (h.status !== 'ok' && h.status !== 'herido') return `${h.name} no está en el gremio.`;
+  if (!h || !it) return t('partida.error.objeto');
+  if (!it.kind || it.kind === 'tesoro' || !slotOf(it)) return t('partida.error.no_se_equipa');
+  if (h.status !== 'ok' && h.status !== 'herido')
+    return t('partida.error.fuera', { heroe: h.name });
   return null;
 }
 
@@ -408,7 +409,7 @@ export function canWork(s: GameState, a: Action): string | null {
 /** Hace una obra sobre una copia del estado, o dice por qué no se puede. */
 export function tryWork(s: GameState, a: Action): GameState | { error: string } {
   const plan = planOf(s, a);
-  if (!plan) return { error: 'Eso no es una obra.' };
+  if (!plan) return { error: t('partida.error.no_es_obra') };
   if ('error' in plan) return plan;
   const next = structuredClone(s);
   applyPlan(next, plan);
@@ -435,7 +436,7 @@ export function tryWorks(s: GameState, steps: readonly Action[]): GameState | { 
 
 /** Lo que impide pagar el borrador tal como está (salas sin paso, una que falta o el oro). */
 export const planIssue = (s: GameState) =>
-  problem(s.building) ?? (s.gold < 0 ? `Te faltan ${-s.gold} monedas.` : null);
+  problem(s.building) ?? (s.gold < 0 ? t('partida.error.faltan', { n: -s.gold }) : null);
 
 /** Una obra que solo se puede hacer en el plano (deja la casa a medias hasta otra obra). */
 export const needsPlan = (s: GameState, a: Action) =>
@@ -471,40 +472,31 @@ export function newGame(seed: string, opts: { tutorial?: boolean } = {}): GameSt
     inventory: [],
     trophies: [],
     fallen: [
-      {
-        name: 'Aldric «Medio Pan»',
-        epitaph: 'Mina de Hondogrís, en tiempos de tu tío. Pidió media ración hasta el final.',
-      },
-      { name: 'Fausto, tu tío', epitaph: 'Murió en su cama, debiendo mil monedas a medio pueblo.' },
+      { name: msg('partida.inicio.aldric'), epitaph: msg('partida.inicio.aldric_epitafio') },
+      { name: msg('partida.inicio.fausto'), epitaph: msg('partida.inicio.fausto_epitafio') },
     ],
     dawn: [
+      { t: msg('partida.inicio.herencia'), k: 'warn' },
       {
-        t: 'Tu tío Fausto te ha dejado El Jarro Partido… y mil monedas de deuda con Merlo, el prestamista.',
-        k: 'warn',
-      },
-      {
-        t: `Cada 7 días toca pagar: ${SCHEDULE.map((p) => p.amount).join(', ')}, más los salarios de tus héroes.`,
+        t: msg('partida.inicio.pagos', { cuotas: SCHEDULE.map((p) => p.amount).join(', ') }),
         k: 'bad',
       },
-      {
-        t: 'El tablón de encargos está en el salón: toca la sala y ábrelo para mandar grupos. Si sale bien, vuelven con oro.',
-      },
-      { t: 'En la barra del salón esperan candidatos. «Cerrar» hace pasar la noche.' },
-      { t: `Paga la deuda en ${DAYS} días y el gremio será tuyo.`, k: 'good' },
+      { t: msg('partida.inicio.tablon') },
+      { t: msg('partida.inicio.candidatos') },
+      { t: msg('partida.inicio.plazo', { dias: DAYS }), k: 'good' },
     ],
     mode: 'deuda',
     // Desde cobre: el primer rango que se gane se anuncia (ver `checkRank`).
     rankSeen: 0,
     stats: emptyStats(),
     feats: {},
-    flavor:
-      '«Sobrino: la taberna es tuya, con sus deudas. A Merlo págale a tiempo, que no perdona. El gato viene con la casa.» — Fausto',
+    flavor: msg('partida.inicio.ambiente'),
     over: null,
   };
   // Un guerrero veterano de tu tío y alguien más; candidatos y encargos para empezar.
   for (let i = 0; i < START.heroes; i++) {
     const h = hero(s, rng, i === 0 ? 'guerrero' : undefined);
-    h.history.push(i === 0 ? 'Ya trabajaba para tu tío' : 'Día 1 · Se queda en el gremio');
+    h.history.push(msg(i === 0 ? 'partida.inicio.veterano' : 'partida.inicio.se_queda'));
     s.heroes.push(h);
   }
   for (let i = 0; i < START.candidates; i++) s.candidates.push(hero(s, rng));
@@ -593,7 +585,7 @@ function reduceAction(state: GameState, action: Action): GameState {
       const c = s.candidates.find((x) => x.id === action.id)!;
       s.gold -= c.fee;
       s.candidates = s.candidates.filter((x) => x !== c);
-      c.history.push(`Día ${s.day} · ${c.sex === 'f' ? 'Contratada' : 'Contratado'}`);
+      c.history.push(msg('partida.historial.contratado', { dia: s.day, sexo: c.sex }));
       s.heroes.push(c);
       return s;
     }
@@ -728,7 +720,7 @@ function reduceAction(state: GameState, action: Action): GameState {
         // Pagarle lo que pide le quita el rencor de antes.
         delete x.grudge;
         x.morale = Math.min(100, x.morale + RAISE_MORALE);
-        x.history.push(`Día ${s.day} · ${cache ? 'Le pagaste su caché' : 'Le subiste el sueldo'}`);
+        x.history.push(msg('partida.historial.pagado', { dia: s.day, cache }));
       } else {
         x.morale = Math.max(0, x.morale + (cache ? CACHE_REFUSE_MORALE : REFUSE_MORALE));
         // Y se lo guarda: durante unos días no se anima del todo (se suma a lo que ya tuviera).
@@ -738,7 +730,7 @@ function reduceAction(state: GameState, action: Action): GameState {
           cap: Math.min(40, (old?.cap ?? 0) + g.cap),
           until: Math.max(old?.until ?? 0, s.day + g.days),
         };
-        x.history.push(`Día ${s.day} · ${cache ? 'Le negaste el caché' : 'Le negaste el aumento'}`);
+        x.history.push(msg('partida.historial.negado', { dia: s.day, cache }));
       }
       return s;
     }
@@ -1117,7 +1109,7 @@ function backToJob(s: GameState, h: Hero, events: DawnEvent[]): void {
     }
     delete h.post;
     events.push({
-      t: `${h.name} no puede volver a la guardia: ${post === 'tesoro' ? 'ya hay dos en la cámara o ya no está' : 'ya hay dos en la puerta'}.`,
+      t: msg('partida.aviso.sin_guardia', { heroe: h.name, camara: post === 'tesoro' }),
     });
   }
   if (!h.jobBefore) return;
@@ -1129,7 +1121,11 @@ function backToJob(s: GameState, h: Hero, events: DawnEvent[]): void {
     h.walk = 1;
   } else if (room)
     events.push({
-      t: `${h.name} no puede volver a ${ROOMS[room.type].name.toLowerCase()}: ${why.charAt(0).toLowerCase()}${why.slice(1)}`,
+      t: msg('partida.aviso.sin_sala', {
+        heroe: h.name,
+        sala: msg(`salas.salas.${room.type}.nombre`),
+        motivo: why,
+      }),
     });
   delete h.jobBefore;
 }
@@ -1198,9 +1194,11 @@ function settleMission(
     rng.chance(RECIPE_FIND)
   ) {
     const id = learnRecipe(s, rng)!;
-    const rc = RECIPES[id];
-    r.body.push(`Entre lo que traen hay unos planos: ya se sabe crear ${rc.many}.`);
-    r.chips.push({ t: `Receta: ${rc.name.toLowerCase()}`, k: 'good' });
+    r.body.push(msg('partida.aviso.planos', { receta: msg(`recetas.recetas.${id}.many`) }));
+    r.chips.push({
+      t: msg('partida.aviso.chip_receta', { receta: msg(`recetas.recetas.${id}.nombre`) }),
+      k: 'good',
+    });
   }
   const fates: NonNullable<Mission['done']>['fates'] = {};
   for (const id of m.heroIds) {
@@ -1215,7 +1213,11 @@ function settleMission(
   logQuest(s, m, r);
   const bad = r.outcome === 'Fracaso' || r.outcome === 'Desastre';
   events.push({
-    t: `Llega aviso de ${r.who} desde ${m.quest.place}: ${r.outcome.toLowerCase()}.`,
+    t: msg('partida.aviso.llega', {
+      grupo: r.who,
+      lugar: placeMsg(m.quest.place),
+      resultado: outcomeMsg(r.outcome),
+    }),
     k: bad ? 'bad' : 'good',
   });
   return r;
@@ -1240,7 +1242,10 @@ export function tickMissions(s: GameState): { next: GameState; news: DawnEvent[]
       m.waiting = true;
       next.bossWait = m.id;
       news.push({
-        t: `El grupo de «${m.quest.title}» ha dado con ${BOSSES[boss].short}: espera a que digas.`,
+        t: msg('partida.aviso.jefe', {
+          titulo: m.quest.title,
+          jefe: msg(`jefes.jefes.${boss}.corto`),
+        }),
         k: 'warn',
       });
     } else settleMission(next, m, rng, news);
@@ -1254,19 +1259,17 @@ function rescue(s: GameState, id: string, r: Report, events: DawnEvent[]): void 
   const h = s.heroes.find((x) => x.id === id);
   if (!h || h.status !== 'desaparecido') return;
   if (r.outcome === 'Fracaso' || r.outcome === 'Desastre') {
-    r.body.push(`No encontraron ni rastro de ${h.name}.`);
+    r.body.push(msg('partida.rescate.nada', { heroe: h.name }));
     return;
   }
   h.status = 'herido';
   h.days = 2;
   h.morale = Math.min(100, h.morale + 10);
-  h.history.push(`Día ${s.day} · Rescatado por ${r.who}`);
-  r.heading = 'Rescate';
-  r.body.push(
-    `Encontraron a ${h.name} escondido en una cueva, con hambre y muchas ganas de volver.`,
-  );
-  r.chips.push({ t: `${h.name} vuelve a casa`, k: 'good' });
-  events.push({ t: `¡${r.who} ha rescatado a ${h.name}!`, k: 'good' });
+  h.history.push(msg('partida.rescate.historial', { dia: s.day, grupo: r.who }));
+  r.heading = msg('partida.rescate.titulo');
+  r.body.push(msg('partida.rescate.cueva', { heroe: h.name }));
+  r.chips.push({ t: msg('partida.rescate.chip', { heroe: h.name }), k: 'good' });
+  events.push({ t: msg('partida.rescate.aviso', { grupo: r.who, heroe: h.name }), k: 'good' });
 }
 
 /** Lo que deja la taberna el día `day`: los visitantes atendidos, la decoración y la fiesta. */
@@ -1315,10 +1318,11 @@ export function tick(state: GameState, to: number): GameState {
 /** Pasa la noche y amanece. `away`: con el juego cerrado (menos asaltos; ver `away.ts`). */
 /** «Juana lleva muchas noches de guardia y se duerme: relévala» (o varios). */
 export function tiredLine(hs: readonly Pick<Hero, 'name' | 'sex'>[]): string {
-  const f = hs.every((h) => h.sex === 'f');
-  return hs.length > 1
-    ? `${listNames(hs.map((h) => h.name))} llevan muchas noches de guardia y se duermen: relév${f ? 'alas' : 'alos'}.`
-    : `${hs[0]!.name} lleva muchas noches de guardia y se duerme: relév${f ? 'ala' : 'alo'}.`;
+  return t('partida.aviso.cansados', {
+    quien: hs.map((h) => h.name),
+    n: hs.length,
+    sexo: hs.every((h) => h.sex === 'f') ? 'f' : 'm',
+  });
 }
 
 export function endDay(state: GameState, away = false): GameState {
@@ -1366,7 +1370,18 @@ export function endDay(state: GameState, away = false): GameState {
   s.till = 0;
   if (income - lost > 0) {
     events.push({
-      t: `${visits.total ? `Vinieron ${visitorList(visits)}${visits.served < visits.total ? ` (se atendió a ${visits.served})` : ''}. ` : ''}${visits.fed < visits.served ? `Faltó comida: ${visits.served - visits.fed} solo ${visits.served - visits.fed === 1 ? 'bebió' : 'bebieron'}. ` : ''}La taberna deja ${income - lost} monedas${feast ? ': ¡la fiesta ha llenado el salón!' : '.'}`,
+      t: msg('partida.noche.caja', {
+        vinieron: visits.total
+          ? msg('partida.noche.vinieron', {
+              quien: visitorList(visits),
+              faltan: visits.served < visits.total,
+              atendidos: visits.served,
+            })
+          : '',
+        sin_comer: visits.fed < visits.served ? visits.served - visits.fed : 0,
+        n: income - lost,
+        fiesta: feast,
+      }),
       k: 'good',
     });
   }
@@ -1377,16 +1392,14 @@ export function endDay(state: GameState, away = false): GameState {
   if (decor.includes('tapices') && s.day % TAPESTRY_EVERY === 0) s.rep += 1;
   if (c0.raven && s.day % RAVEN_EVERY === 0) {
     s.rep += 1;
-    events.push({
-      t: 'El cuervo vuelve de otro pueblo: allí ya se habla del gremio (+1 reputación).',
-    });
+    events.push({ t: msg('partida.noche.cuervo') });
   }
   // Lo que traen los visitantes: algo de fama de los nobles (de higos a brevas: la fama sale de
   // los encargos), ojos de los espías y alguna pelea.
   if (visits.kinds.noble && s.day % NOBLE_REP_EVERY === 0) {
     s.rep += 1;
     events.push({
-      t: `${visits.kinds.noble === 1 ? 'Un noble ha cenado' : 'Unos nobles han cenado'} en el salón: se hablará del gremio (+1 reputación).`,
+      t: msg('partida.noche.nobles', { n: visits.kinds.noble }),
       k: 'good',
     });
   }
@@ -1395,7 +1408,7 @@ export function endDay(state: GameState, away = false): GameState {
     if (guard) {
       s.rep += 1;
       events.push({
-        t: `${guard.name} caló a un forastero que miraba demasiado la puerta de la cámara: era un espía de los bandidos y salió corriendo.`,
+        t: msg('partida.noche.espia', { heroe: guard.name }),
         k: 'good',
       });
     } else s.scout = s.day - 1;
@@ -1405,28 +1418,28 @@ export function endDay(state: GameState, away = false): GameState {
     const guard = guardsAt(s, 'puerta')[0];
     if (guard)
       events.push({
-        t: `Pelea en el salón${decor.includes('naipes') ? ' por una partida de naipes' : ''}: ${guard.name}, que estaba de guardia, la cortó en un momento.`,
+        t: msg('partida.noche.pelea_guardia', {
+          naipes: decor.includes('naipes'),
+          heroe: guard.name,
+        }),
       });
     else if (home.length) {
       const h = rng.pick(home);
       h.morale = Math.max(0, h.morale - 6);
       events.push({
-        t: `Pelea en el salón${decor.includes('naipes') ? ' por una partida de naipes' : ''}: ${h.name} se llevó un par de golpes separando a los que se pegaban.`,
+        t: msg('partida.noche.pelea_heroe', { naipes: decor.includes('naipes'), heroe: h.name }),
         k: 'warn',
       });
     } else {
       const broken = Math.min(s.gold, rng.int(6, 16));
       s.gold -= broken;
       events.push({
-        t: `Pelea en el salón y nadie de los nuestros para pararla: ${broken} monedas en sillas y jarras rotas.`,
+        t: msg('partida.noche.pelea_sola', { n: broken }),
         k: 'bad',
       });
     }
   }
-  if (isFeastDay(s.day))
-    events.push({
-      t: 'Hoy es la fiesta de la comarca: si la montas en el salón (Personalizar), la caja lo notará.',
-    });
+  if (isFeastDay(s.day)) events.push({ t: msg('partida.noche.fiesta') });
 
   // Regresos.
   for (const m of s.missions) {
@@ -1470,8 +1483,8 @@ export function endDay(state: GameState, away = false): GameState {
       (d.outcome === 'Éxito brillante' || !!fight?.won || (m.quest.item?.rarity ?? 0) >= 2);
     events.push({
       t: home.length
-        ? `${plural(home.length, 'Vuelve', 'Vuelven')} ${listNames(home)} de «${m.quest.title}».`
-        : `Del grupo de «${m.quest.title}» no vuelve nadie.`,
+        ? msg('partida.noche.vuelven', { n: home.length, quien: home, titulo: m.quest.title })
+        : msg('partida.noche.no_vuelve', { titulo: m.quest.title }),
       k: bad ? 'bad' : 'good',
       ...(big ? { big } : {}),
     });
@@ -1486,7 +1499,7 @@ export function endDay(state: GameState, away = false): GameState {
         h.status = 'ok';
         h.days = 0;
         if (h.jobBefore || h.guardBefore) backToJob(s, h, events);
-        events.push({ t: `${h.name} vuelve a estar ${h.sex === 'f' ? 'lista' : 'listo'}.` });
+        events.push({ t: msg('partida.noche.curado', { heroe: h.name, sexo: h.sex }) });
       }
     } else if (h.status === 'desaparecido') {
       // Mientras haya un grupo buscándole, no se le da por perdido.
@@ -1497,11 +1510,15 @@ export function endDay(state: GameState, away = false): GameState {
         h.status = 'herido';
         h.days = 2;
         h.morale = Math.max(0, h.morale - 10);
-        h.history.push(`Día ${s.day} · Volvió cuando ya nadie lo esperaba`);
+        h.history.push(msg('partida.historial.volvio', { dia: s.day }));
         const toughened = !h.traits.some((t) => t.id === 'curtido');
         if (toughened) h.traits.push({ id: 'curtido' });
         events.push({
-          t: `¡${h.name} ha vuelto! Con hambre, lleno de barro y con ganas de contarlo todo.${toughened ? ` Ahora ${h.sex === 'f' ? 'es curtida' : 'es curtido'}: +2 Supervivencia.` : ''}`,
+          t: msg('partida.noche.vuelve_perdido', {
+            heroe: h.name,
+            curtido: toughened,
+            sexo: h.sex,
+          }),
           k: 'good',
           big: true,
         });
@@ -1509,10 +1526,10 @@ export function endDay(state: GameState, away = false): GameState {
         h.status = 'muerto';
         s.fallen.unshift({
           id: h.id,
-          name: h.name + (h.nick ? ` «${h.nick}»` : ''),
-          epitaph: `${h.sex === 'f' ? 'Desaparecida' : 'Desaparecido'}. Encontraron su capa el día ${s.day}.`,
+          name: h.nick ? msg('general.apodado', { nombre: h.name, apodo: h.nick }) : h.name,
+          epitaph: msg('partida.noche.capa_epitafio', { sexo: h.sex, dia: s.day }),
         });
-        events.push({ t: `Han encontrado la capa de ${h.name}. No volverá.`, k: 'bad' });
+        events.push({ t: msg('partida.noche.capa', { heroe: h.name }), k: 'bad' });
         if (s.stats) s.stats.lastDeath = s.day;
         delete h.worn;
       }
@@ -1559,9 +1576,12 @@ export function endDay(state: GameState, away = false): GameState {
     else if (!h.vetSnub) {
       h.vetSnub = true;
       events.push({
-        t: s.building.rooms.some((r) => r.type === 'veteranos' && roomBeds(r) > 0)
-          ? `${h.name} es ${h.sex === 'f' ? 'veterana' : 'veterano'} y no le queda cama en el ala de veteranos: duerme con los novatos y no le hace gracia. Amplía el ala.`
-          : `${h.name} ya es ${h.sex === 'f' ? 'veterana' : 'veterano'} y no le hace gracia seguir durmiendo con los novatos: quiere un cuarto en el ala de veteranos.`,
+        t: msg(
+          s.building.rooms.some((r) => r.type === 'veteranos' && roomBeds(r) > 0)
+            ? 'partida.noche.veterano_sin_cama'
+            : 'partida.noche.veterano_sin_ala',
+          { heroe: h.name, sexo: h.sex },
+        ),
         k: 'warn',
       });
     }
@@ -1599,7 +1619,7 @@ export function endDay(state: GameState, away = false): GameState {
     if (h.morale < MORALE_LOW && !h.request && rng.chance(RAISE_CHANCE)) {
       h.request = 'raise';
       events.push({
-        t: `${h.name} quiere hablar contigo: pide ${RAISE_AMOUNT} monedas más de sueldo.`,
+        t: msg('partida.noche.aumento', { heroe: h.name, n: RAISE_AMOUNT }),
         k: 'warn',
       });
     }
@@ -1608,20 +1628,19 @@ export function endDay(state: GameState, away = false): GameState {
   // (`napShare`). No va en la carta del amanecer: queda en la campanita y se le ve en la escena.
   if (bored.length)
     events.push({
-      t: `${listNames(bored)} se ${bored.length > 1 ? 'aburren' : 'aburre'}: más de una semana sin salir de aventura. Hasta que ${bored.length > 1 ? 'salgan' : 'salga'}, la moral irá bajando.`,
+      t: msg('partida.noche.aburridos', { quien: bored, n: bored.length }),
       k: 'warn',
     });
   if (deserters.length) {
     s.heroes = s.heroes.filter((h) => !deserters.includes(h));
     for (const h of deserters)
       events.push({
-        t: `${h.name} ha recogido sus cosas antes del alba. Estaba ${h.sex === 'f' ? 'harta' : 'harto'}.${
-          gearList(h).length
-            ? ` Se ha llevado ${gearList(h)
-                .map((i) => i.name.toLowerCase())
-                .join(' y ')}.`
-            : ''
-        }`,
+        t: msg('partida.noche.deserta', {
+          heroe: h.name,
+          sexo: h.sex,
+          objetos: gearList(h).map((i) => msg('general.minus', { x: i.name })),
+          lleva: gearList(h).length > 0,
+        }),
         k: 'bad',
       });
   }
@@ -1642,7 +1661,8 @@ export function endDay(state: GameState, away = false): GameState {
     q.fresh = false;
   }
   const gone = s.quests.filter((q) => q.expires <= 0);
-  if (gone.length) events.push({ t: `Caduca: ${listNames(gone.map((q) => q.title))}.` });
+  if (gone.length)
+    events.push({ t: msg('partida.noche.caduca', { titulos: gone.map((q) => q.title) }) });
   s.quests = s.quests.filter((q) => q.expires > 0);
   let fresh = 0;
   while (
@@ -1652,20 +1672,17 @@ export function endDay(state: GameState, away = false): GameState {
     s.quests.push(quest(s, rng));
     fresh++;
   }
-  if (fresh)
-    events.push({
-      t: `${fresh} ${plural(fresh, 'encargo nuevo', 'encargos nuevos')} en el tablón.`,
-    });
+  if (fresh) events.push({ t: msg('partida.noche.nuevos', { n: fresh }) });
 
   // Candidatos: entre los visitantes viene algún aventurero (más cuanta más gente).
   if (rng.chance(Math.min(0.9, (0.5 + visits.total / 10) / CANDIDATE_EVERY))) {
     const c = hero(s, rng);
     if (s.candidates.length >= MAX_CANDIDATES) {
       const left = s.candidates.shift()!;
-      events.push({ t: `${left.name} se cansó de esperar en la barra.` });
+      events.push({ t: msg('partida.noche.se_cansa', { heroe: left.name }) });
     }
     s.candidates.push(c);
-    events.push({ t: `En la barra hay alguien nuevo buscando trabajo: ${c.name}.` });
+    events.push({ t: msg('partida.noche.candidato', { heroe: c.name }) });
   }
 
   // Trabajadores: cogen maña y, desde que se paga la deuda, viene gente a pedir trabajo.
@@ -1684,16 +1701,22 @@ export function endDay(state: GameState, away = false): GameState {
       s.paid += pay.amount;
       s.payday = { day: s.day, debt: pay.amount, wages };
       events.push({
-        t: `Día de pago: ${wages} en salarios y ${pay.amount} al prestamista.`,
+        t: msg('partida.pago.deuda', { salarios: wages, cuota: pay.amount }),
         k: 'warn',
       });
     } else {
       s.over = {
         kind: 'derrota',
-        text: `Día ${s.day}: debías ${total} monedas (${pay.amount} de deuda y ${wages} de salarios) y solo tenías ${s.gold}. Merlo, el prestamista, se queda con la taberna.`,
+        text: msg('partida.pago.derrota', {
+          dia: s.day,
+          total,
+          cuota: pay.amount,
+          salarios: wages,
+          oro: s.gold,
+        }),
         score: 0,
       };
-      events.push({ t: 'No llegas al pago. El prestamista se queda con la taberna.', k: 'bad' });
+      events.push({ t: msg('partida.pago.no_llegas'), k: 'bad' });
     }
   }
 
@@ -1704,19 +1727,19 @@ export function endDay(state: GameState, away = false): GameState {
       s.gold -= wages;
       s.unpaid = 0;
       if (wages) s.payday = { day: s.day, debt: 0, wages };
-      if (wages) events.push({ t: `Día de pago: ${wages} monedas en salarios.`, k: 'warn' });
+      if (wages) events.push({ t: msg('partida.pago.salarios', { n: wages }), k: 'warn' });
     } else {
       s.unpaid = (s.unpaid ?? 0) + 1;
       for (const h of roster(s)) h.morale = Math.max(0, h.morale + UNPAID_MORALE);
       if (s.unpaid >= UNPAID_LIMIT)
         s.over = {
           kind: 'derrota',
-          text: `Día ${s.day}: otra semana sin pagar salarios. Los héroes se marchan, los acreedores se llevan los muebles y ${customOf(s).name} cierra.`,
+          text: msg('partida.pago.quiebra', { dia: s.day, taberna: customOf(s).name }),
           score: arrival(s, roster(s).length).score,
         };
       else
         events.push({
-          t: `No llegas a pagar los salarios (${wages}). Los héroes se quejan; si se repite la semana que viene, el gremio quiebra.`,
+          t: msg('partida.pago.impago', { n: wages }),
           k: 'bad',
         });
     }
@@ -1734,11 +1757,16 @@ export function endDay(state: GameState, away = false): GameState {
       // Con las obras llega también gente a pedir trabajo (y el dormitorio del servicio).
       for (let i = 0; i < 2; i++) addSeeker(s, rng, events);
       events.push({
-        t: `La deuda de tu tío está pagada. ${customOf(s).name} es tuyo: gremio de ${rankOf(s).name}, ${alive} ${plural(alive, 'héroe', 'héroes')} y ${s.gold} monedas en la caja.`,
+        t: msg('partida.pago.libre', {
+          taberna: customOf(s).name,
+          rango: rankMsg(rankIndex(s.rep)),
+          n: alive,
+          oro: s.gold,
+        }),
         k: 'good',
         big: true,
       });
-    } else s.over = { kind: 'derrota', text: 'Se acabó el plazo y la deuda sigue ahí.', score: 0 };
+    } else s.over = { kind: 'derrota', text: msg('partida.pago.plazo'), score: 0 };
   }
 
   if (!s.over) {
@@ -1763,7 +1791,7 @@ export function endDay(state: GameState, away = false): GameState {
   if (away) settleWalks(s);
   // El correo guarda los últimos informes (si no, la partida crece sin fin).
   if (s.reports.length > REPORTS_KEEP) s.reports = s.reports.slice(0, REPORTS_KEEP);
-  s.flavor = rng.pick(FLAVOR);
+  s.flavor = msg(`relatos.ambiente.${rng.int(0, FLAVOR.length - 1)}`);
   s.dawn = events;
   s.rng = rng.save();
   return s;

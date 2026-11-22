@@ -9,6 +9,7 @@ import type { DawnEvent, GameState, Room } from './model';
 import type { NightEvent } from './night';
 import { raidTonight } from './raids';
 import { active } from './rooms';
+import { msg } from '../textos';
 
 /** Las salas donde puede cazar de noche: despensa (antes) o bodega en uso, en la planta del salón. */
 export function huntRooms(s: GameState): Room[] {
@@ -38,8 +39,6 @@ export const NIGHT_CAT_EVENT: NightEvent = {
   dawn: (s) => settleNightCat(s),
 };
 
-const NUMBERS = ['', 'una', 'dos', 'tres', 'cuatro'];
-
 /** Al amanecer: lo que ha cazado. Muta `s` (ya copiado). */
 export function settleNightCat(s: GameState): DawnEvent | null {
   const c = s.nightCat;
@@ -49,6 +48,6 @@ export function settleNightCat(s: GameState): DawnEvent | null {
   const room = s.building.rooms.find((r) => r.id === c.room);
   s.food += CAT_NIGHT_FOOD;
   return {
-    t: `El gato ha cazado ${NUMBERS[c.n] ?? c.n} ratas en ${room?.type === 'bodega' ? 'la bodega' : 'la despensa'}: se salvan ${CAT_NIGHT_FOOD} raciones.`,
+    t: msg('gato.caza', { n: c.n, bodega: room?.type === 'bodega', raciones: CAT_NIGHT_FOOD }),
   };
 }

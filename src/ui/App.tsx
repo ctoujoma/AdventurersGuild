@@ -108,6 +108,7 @@ import { TabBar, type TabId } from './TabBar';
 import type { BellView } from './AlertBell';
 import { listNames, plural } from './text';
 import { sceneModel } from './view';
+import { tx } from '../textos';
 
 /** El mapa es la pestaña «Mapa»; el arcón, Héroes › Equipo; el correo, la campana. */
 type PanelId = 'tablon' | 'heroes' | 'gremio' | 'fuera' | 'libro' | 'casa' | 'sala' | 'historial';
@@ -469,7 +470,7 @@ export function App() {
     } else
       toast(
         away.waiting
-          ? waitText(away.state, away.waiting)
+          ? tx(waitText(away.state, away.waiting))
           : 'La taberna ha seguido abierta mientras no estabas.',
       );
   };
@@ -628,7 +629,8 @@ export function App() {
     const t = game.trophies.find((x) => x.id === id);
     dispatch({ type: 'sellTrophy', id });
     audio.play('coin');
-    if (t) toast(`Vendido: ${t.name} por ${t.value} monedas. La pared queda un poco más vacía.`);
+    if (t)
+      toast(`Vendido: ${tx(t.name)} por ${t.value} monedas. La pared queda un poco más vacía.`);
   };
 
   const hire = (id: string) => {
@@ -715,7 +717,7 @@ export function App() {
     const it = game.inventory.find((i) => i.id === itemId);
     dispatch({ type: 'sell', itemId });
     audio.play('coin');
-    if (it) toast(`Vendido: ${it.name} por ${priceOf(it)} monedas.`);
+    if (it) toast(`Vendido: ${tx(it.name)} por ${priceOf(it)} monedas.`);
   };
 
   // Escape y el botón «atrás» del móvil cierran lo que esté encima (ajustes, partidas,
@@ -1549,7 +1551,7 @@ export function App() {
                     const it = game.inventory.find((x) => x.id === itemId);
                     dispatch({ type: 'equip', heroId, itemId });
                     audio.play('select');
-                    if (h && it) toast(`${h.name} se equipa: ${it.name}.`);
+                    if (h && it) toast(`${h.name} se equipa: ${tx(it.name)}.`);
                   }}
                   onUnequip={(heroId, slot) => {
                     dispatch({ type: 'unequip', heroId, slot });
@@ -1824,7 +1826,7 @@ export function App() {
             day={game.day}
             away={awayDays || undefined}
             name={customOf(game).name}
-            flavor={game.flavor}
+            flavor={tx(game.flavor)}
             events={game.dawn}
             unread={unread}
             all={settings.dawnAll || settings.calm}
@@ -1916,7 +1918,7 @@ export function App() {
       {bossCall && callReport?.fight && (
         <BossCall
           fight={callReport.fight}
-          who={callReport.who}
+          who={tx(callReport.who)}
           onWatch={() => {
             setBossCall(null);
             audio.play('horn');
@@ -1980,7 +1982,7 @@ export function App() {
           onChoose={(i) => {
             const next = dispatch({ type: 'choose', index: i });
             audio.play(i === 0 ? 'coin' : 'close');
-            if (next.lastChoice) toast(next.lastChoice);
+            if (next.lastChoice) toast(tx(next.lastChoice));
           }}
         />
       )}

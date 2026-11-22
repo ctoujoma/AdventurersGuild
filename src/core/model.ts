@@ -25,8 +25,10 @@ import type { AbilityId, CombatSetup, Order } from './combat';
 import type { FightEvent } from './fight';
 import type { Gear } from './gear';
 import type { Mats } from './materials';
+import type { Txt } from '../textos';
 
-export const SAVE_VERSION = 5;
+/** 6: los textos se guardan como mensajes (las de la 5 se convierten al cargar: `core/convert.ts`). */
+export const SAVE_VERSION = 6;
 
 export type Sex = 'm' | 'f';
 
@@ -39,7 +41,8 @@ export interface Hero {
   /** Tinte y prenda de la sastrería (solo se ven). */
   dress?: Dress;
   name: string;
-  nick?: string;
+  /** Apodo (de una herida grave): un texto, se traduce. */
+  nick?: Txt;
   sex: Sex;
   cls: ClassId;
   lvl: number;
@@ -53,8 +56,8 @@ export interface Hero {
   status: HeroStatus;
   /** Días que le quedan fuera o en cama. */
   days: number;
-  quote: string;
-  history: string[];
+  quote: Txt;
+  history: Txt[];
   /** Petición pendiente: aumento (desanimado) o caché de veterano (al subir de nivel). */
   request?: 'raise' | 'cache';
   /** Lo que lleva puesto, por ranura (ver `core/gear.ts`). Se pierde si cae o deserta. */
@@ -126,7 +129,7 @@ export interface Worker {
   since?: number;
   /** Uno de los tres del pueblo que ya trabajaban para tu tío. */
   village?: StaffId;
-  quote: string;
+  quote: Txt;
 }
 
 export type QuestType = 'Cazar' | 'Escoltar' | 'Explorar' | 'Recuperar' | 'Investigar' | 'Limpiar';
@@ -146,8 +149,9 @@ export type Rarity = 0 | 1 | 2 | 3 | 4;
 
 export interface Item {
   id: string;
-  name: string;
-  desc: string;
+  /** Mensaje del catálogo (`objetos.…`); las partidas viejas traen la frase. */
+  name: Txt;
+  desc: Txt;
   value: number;
   /** Sin tipo (partidas antiguas) cuenta como tesoro: solo se vende. */
   kind?: ItemKind;
@@ -164,11 +168,11 @@ export type TrophyIcon = 'cabeza' | 'colmillos' | 'estandarte' | 'calavera' | 'i
 /** Recuerdo de una gran hazaña: se exhibe en la sala y atrae clientela. */
 export interface Trophy {
   id: string;
-  name: string;
-  desc: string;
+  name: Txt;
+  desc: Txt;
   icon: TrophyIcon;
-  /** Quién lo consiguió, dónde y cuándo. */
-  who: string;
+  /** Quién lo consiguió, dónde (id del lugar) y cuándo. */
+  who: Txt;
   place: string;
   day: number;
   value: number;
@@ -176,10 +180,12 @@ export interface Trophy {
 
 export interface Quest {
   id: string;
-  title: string;
+  title: Txt;
+  /** Id del cliente (`encargos.clientes.<id>`); las partidas viejas traen la etiqueta. */
   client: string;
   type: QuestType;
-  text: string;
+  text: Txt;
+  /** Id del lugar: su nombre en español (`data/places.ts`); se escribe con `placeName`. */
   place: string;
   challenges: Challenge[];
   slots: number;
@@ -192,7 +198,7 @@ export interface Quest {
   expires: number;
   item?: Item;
   /** Giro oculto: más duro de lo que parece. Un mago en el grupo lo detecta. */
-  twist?: string;
+  twist?: Txt;
   fresh?: boolean;
   /** Rescate de un héroe desaparecido (su id). */
   rescue?: string;
@@ -207,7 +213,7 @@ export interface Quest {
 /** Un rumor en la barra: se oye un rato y, si se toca a tiempo, abre un encargo especial. */
 export interface Rumor {
   id: string;
-  text: string;
+  text: Txt;
   /** Reloj del día (s) en que empieza y en que se pierde. */
   from: number;
   until: number;
@@ -235,13 +241,13 @@ export interface Mission {
 export interface QuestLogEntry {
   /** Id de la misión. */
   id: string;
-  title: string;
+  title: Txt;
   place: string;
   /** Día en que salió el grupo y día en que llegó el informe. */
   sent: number;
   day: number;
   /** El grupo, en palabras («Ana y Bruno»). */
-  who: string;
+  who: Txt;
   outcome: Outcome;
   /** Id del informe (puede que el correo ya no lo guarde). */
   report: string;
@@ -254,17 +260,17 @@ export type ChipKind = 'good' | 'bad' | 'warn' | 'info';
 export interface Report {
   id: string;
   day: number;
-  title: string;
+  title: Txt;
   heroIds: string[];
-  who: string;
+  who: Txt;
   outcome: Outcome;
-  body: string[];
-  chips: { t: string; k: ChipKind }[];
+  body: Txt[];
+  chips: { t: Txt; k: ChipKind }[];
   read: boolean;
   /** Informe de un asalto a la taberna (con su propio titular). */
   raid?: { won: boolean };
   /** Titular propio (cartas de clientes, finales de cadena). */
-  heading?: string;
+  heading?: Txt;
   /** Pelea contra un jefe, guardada para verla (y repetirla). */
   fight?: BossFight;
 }
@@ -291,8 +297,9 @@ export interface BossFight {
 }
 
 export interface Fallen {
-  name: string;
-  epitaph: string;
+  /** Nombre (con su apodo, si lo tiene). */
+  name: Txt;
+  epitaph: Txt;
   /** Id del héroe (los caídos de antes no lo traen: se buscan por el nombre). */
   id?: string;
   /** Día en que volvió del velo (el forastero de la tormenta): sigue en el Muro, tachado. */
@@ -386,7 +393,7 @@ export interface CraftEnd {
   how: 'hecho' | 'receta' | 'nada' | 'vestido' | 'templado' | 'cancelado';
   rarity?: Rarity;
   /** Al desmontar: el objeto, lo que se aprende (si sale) y el día, para el aviso de la campanita. */
-  undo?: { item: string; recipe: RecipeId; day: number };
+  undo?: { item: Txt; recipe: RecipeId; day: number };
 }
 
 /** Obra en curso: la sala nueva o movida no funciona hasta que acaba; la ampliada, sí. */
@@ -509,7 +516,7 @@ export interface Duel {
 }
 
 export interface DawnEvent {
-  t: string;
+  t: Txt;
   k?: ChipKind;
   /** Encabezado (el día, en la carta de «Mientras no estabas»). */
   head?: boolean;
@@ -540,8 +547,8 @@ export interface PendingEvent {
   id: string;
   /** Héroes que aparecen en el suceso. */
   who: string[];
-  text: string;
-  options: { label: string; hint: string }[];
+  text: Txt;
+  options: { label: Txt; hint: Txt }[];
 }
 
 export interface ChainState {
@@ -556,14 +563,15 @@ export interface ChainState {
 
 export interface Raid {
   day: number;
-  band: string;
+  /** La banda (`asaltos.bandas.<n>`); las partidas viejas traen el nombre. */
+  band: Txt;
   strength: number;
   warned: boolean;
 }
 
 export interface RaidResult {
   day: number;
-  band: string;
+  band: Txt;
   bandits: number;
   defenders: string[];
   won: boolean;
@@ -708,7 +716,7 @@ export interface Arrival {
 /** Un objetivo en curso: el contador al salir (los de contar), lo que pide y su premio. */
 export interface ActiveGoal {
   id: string;
-  text: string;
+  text: Txt;
   base: number;
   target: number;
   reward: Reward;
@@ -718,7 +726,7 @@ export interface ActiveGoal {
 export interface Goals {
   active: ActiveGoal[];
   done: Record<string, number>;
-  log: { day: number; text: string; reward: string }[];
+  log: { day: number; text: Txt; reward: Txt }[];
 }
 
 export interface Reward {
@@ -730,7 +738,7 @@ export interface Reward {
   unlock?: UnlockId;
 }
 
-export type GameOver = { kind: 'victoria' | 'derrota'; text: string; score: number } | null;
+export type GameOver = { kind: 'victoria' | 'derrota'; text: Txt; score: number } | null;
 
 export interface GameState {
   version: number;
@@ -769,7 +777,7 @@ export interface GameState {
   fallen: Fallen[];
   /** Resumen del último amanecer (vacío el primer día). */
   dawn: DawnEvent[];
-  flavor: string;
+  flavor: Txt;
   over: GameOver;
   /** Notas del tutorial ya leídas ('*' = sin consejos). */
   tips?: string[];
@@ -802,7 +810,7 @@ export interface GameState {
   /** Suceso de la taberna esperando una decisión. */
   event?: PendingEvent | null;
   /** Lo que pasó con la última decisión (para avisar). */
-  lastChoice?: string | null;
+  lastChoice?: Txt | null;
   /** Cadenas de misiones empezadas. */
   chains?: ChainState[];
   /** El último grupo que salió de misión («Como la última vez» en la hoja del encargo). */
@@ -850,7 +858,7 @@ export interface GameState {
   /** Rumor que se oye ahora en la barra (solo con el juego abierto). */
   rumor?: Rumor;
   /** Lo último que ha pasado con los incidentes, para el aviso de la interfaz (de paso). */
-  incidentNews?: { t: string; k: ChipKind }[];
+  incidentNews?: { t: Txt; k: ChipKind }[];
   /** Rango más alto ya anunciado (para avisar al subir; ver `core/ranks.ts`). */
   rankSeen?: number;
   /** Noches seguidas sin nadie fuera de encargo (la comarca se olvida del gremio). */

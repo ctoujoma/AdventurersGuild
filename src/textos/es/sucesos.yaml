@@ -1,0 +1,67 @@
+amenaza:
+  caravana: "Han asaltado la caravana que traía el vino: hoy la taberna no deja nada. La comarca está revuelta."
+  miedo: "Corre el miedo por los caminos: hoy llegan menos encargos."
+  por_historia: "el siguiente paso de «{historia}» espera en el tablón"
+  por_quietud: "hace días que no sale nadie de encargo"
+  en_camino: "hay grupos por los caminos"
+  en_calma: "la comarca está en calma"
+  tramo_caravanas: "asaltan caravanas: algún día la taberna no deja nada"
+  tramo_encargos: "llegan menos encargos al tablón"
+  tramo_asaltos: "los bandidos se fijan más en el gremio: más asaltos"
+buhonero:
+  texto: "Un buhonero con un carro lleno de cachivaches jura que tiene «un objeto de verdad» escondido bajo la lona. Pide 60 monedas, sin enseñarlo antes."
+  opciones:
+    - etiqueta: "Comprar (60)"
+      pista: "Equipo bueno… o no"
+    - etiqueta: "No, gracias"
+      pista: "Nada cambia"
+  bueno: "Era de verdad: {objeto}. Ya cuelga en el tablero de la bodega."
+  malo: "Era… {objeto, minus}. El buhonero ya va por el segundo cruce."
+  no: "El buhonero se va silbando."
+pelea:
+  texto: "{a} y {b} se han enzarzado en la barra por una apuesta. Vuelan jarras."
+  opciones:
+    - etiqueta: "Mediar e invitar a una ronda"
+      pista: "−10 monedas, más moral"
+    - etiqueta: "Que lo arreglen ellos"
+      pista: "Uno gana, otro pierde"
+  ronda: "Una ronda y un apretón de manos. {a} y {b} acaban cantando juntos."
+  solos: "{a} gana la discusión y la apuesta. {b} no le habla en días."
+bardo:
+  texto: "Un bardo de paso pide cantar esta noche a cambio de cena y un rincón para dormir."
+  opciones:
+    - etiqueta: "Que cante"
+      pista: "−5 monedas, moral para todos"
+    - etiqueta: "Echarlo"
+      pista: "Nada cambia"
+  canta: "Canta romances de bandoleros y la sala acaba coreando el estribillo."
+  no: "Se va refunfuñando. Esa noche canta en la posada de enfrente."
+noble:
+  texto: "Un noble arruinado ofrece la espada de su familia en prenda por 100 monedas. Jura que volverá a por ella antes del invierno."
+  opciones:
+    - etiqueta: "Aceptar (100)"
+      pista: "Un objeto valioso"
+    - etiqueta: "Rechazar"
+      pista: "Nada cambia"
+  si: "Te quedas {objeto, minus}. El noble no vuelve, claro."
+  no: "Se marcha con su espada y su orgullo."
+lobos:
+  texto: "Unos aldeanos piden ayuda: los lobos bajan cada noche al redil. No tienen con qué pagar."
+  opciones:
+    - etiqueta: "Ayudar gratis"
+      pista: "+6 reputación, algún riesgo"
+    - etiqueta: "Negarse"
+      pista: "−2 reputación"
+  mordisco: "{heroe} ahuyenta a los lobos, pero vuelve con un mordisco: dos días en cama. En el pueblo hablan bien del gremio."
+  ayuda: "{heroe} ahuyenta a los lobos. En el pueblo hablan bien del gremio."
+  no: "Los aldeanos se van cabizbajos. Se correrá la voz."
+apuesta:
+  texto: "Un forastero con un dado de hueso reta a la casa: 30 monedas a que saca más que el tabernero."
+  opciones:
+    - etiqueta: "Apostar 30"
+      pista: "Doble o nada"
+    - etiqueta: "Aquí no se juega"
+      pista: "Nada cambia"
+  gana: "El tabernero saca un seis. El forastero paga, y se va sin terminarse la cerveza."
+  pierde: "El forastero saca un seis y el tabernero un dos. Recoge las monedas y pide otra jarra."
+  no: "El forastero se encoge de hombros y busca otra taberna."

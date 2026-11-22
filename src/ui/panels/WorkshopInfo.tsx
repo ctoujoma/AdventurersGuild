@@ -40,6 +40,7 @@ import { Icon } from '../icons';
 import { Portrait } from '../Portrait';
 import type { TabItem } from '../Tabs';
 import { heroFrame, lookOf, marksOf } from '../view';
+import { tx } from '../../textos';
 
 const pct = (p: number) => `${Math.round(p * 100)} %`;
 
@@ -117,7 +118,7 @@ export function WorkshopInfo({
                 icon={c.item?.icon ?? rc!.icon}
                 rarity={c.item?.rarity}
                 plus={c.item?.plus}
-                name={c.item?.name}
+                name={tx(c.item?.name)}
                 scale={2}
               />
             )}
@@ -193,10 +194,13 @@ function CraftList({
               <article key={id} class="row">
                 <ItemImage icon={rc.icon} scale={2} />
                 <span class="row-info">
-                  <b>{rc.common.name}</b>
+                  <b>{tx(rc.common.name)}</b>
                   <span class="row-sub">
                     {itemEffect({ ...rc.common, id })} · {hours(clockHours(rc.hours))} ·{' '}
-                    <span class={`forge-good tier-${tierOf(rc.good.rarity)}`} title={rc.good.name}>
+                    <span
+                      class={`forge-good tier-${tierOf(rc.good.rarity)}`}
+                      title={tx(rc.good.name)}
+                    >
                       <em>raro</em> {itemEffect({ ...rc.good, id })}
                     </span>
                   </span>
@@ -207,7 +211,7 @@ function CraftList({
                     class="btn btn-gold"
                     disabled={!!why}
                     title={why ?? undefined}
-                    aria-label={`Crear ${rc.common.name} por ${rc.gold} monedas`}
+                    aria-label={`Crear ${tx(rc.common.name)} por ${rc.gold} monedas`}
                     onClick={() => onAct({ type: 'craft', room: room.id, recipe: id })}
                   >
                     Crear · <Icon name="coin" size={10} /> {rc.gold}

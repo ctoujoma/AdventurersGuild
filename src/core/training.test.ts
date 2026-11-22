@@ -12,6 +12,7 @@ import { endDay, newGame, reduce } from './game';
 import type { GameState, Room } from './model';
 import { cappedTrainees, skillGain, stepTraining, trainState, trainingOf } from './training';
 import { canAssign, workedIn } from './workers';
+import { tx } from '../textos';
 
 /** Partida con una sala de armas de nivel `level` y el primer héroe (guerrero) entrenando en ella. */
 function gym(level = 1): GameState {
@@ -48,7 +49,7 @@ describe('entrenamiento', () => {
     expect(trainState(s, h, 0.5)!.frac).toBeCloseTo((cost - 1 + workedIn(0, 0.5)) / cost);
     stepTraining(s, events);
     expect(h.attrs.F).toBe(4);
-    expect(events.at(-1)!.t).toMatch(/Fuerza 4/);
+    expect(tx(events.at(-1)!.t)).toMatch(/Fuerza 4/);
     // Y la noche de verdad también entrena.
     const t = gym();
     t.heroes[0]!.train = { F: cost - 1 };
@@ -93,7 +94,7 @@ describe('entrenamiento', () => {
     expect(h.attrs.F).toBe(TRAIN_CAP[1]);
     // Sin nada que aprender, deja la sala y se avisa de por qué.
     expect(h.job).toBeUndefined();
-    expect(said.at(-1)!.t).toMatch(/deja .*ya no aprende más Fuerza.*mejorar la sala/);
+    expect(tx(said.at(-1)!.t)).toMatch(/deja .*ya no aprende más Fuerza.*mejorar la sala/);
     h.job = room;
     const better = gym(2);
     better.heroes[0]!.attrs.F = TRAIN_CAP[1];
@@ -119,7 +120,7 @@ describe('entrenamiento', () => {
     stepTraining(s, events);
     expect(h.attrs.F).toBe(9);
     expect(h.job).toBeUndefined();
-    expect(events.at(-1)!.t).toMatch(/subir de nivel/);
+    expect(tx(events.at(-1)!.t)).toMatch(/subir de nivel/);
     h.job = room;
     h.lvl = 3;
     expect(trainState(s, h)).toMatchObject({ capped: false, cap: 11 });
@@ -136,7 +137,7 @@ describe('entrenamiento', () => {
     stepTraining(s, events);
     expect(h.attrs.F).toBe(7);
     expect(h.job).toBeUndefined();
-    expect(events.map((e) => e.t)).toEqual([
+    expect(events.map((e) => tx(e.t))).toEqual([
       expect.stringMatching(/ha entrenado: Fuerza 7/),
       expect.stringMatching(/deja la sala de armas/),
     ]);

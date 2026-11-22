@@ -8,6 +8,7 @@ import { FRAMES } from './legendaries';
 import { renderPortrait } from './portraits/portrait';
 import { renderHero } from './heroes/hero';
 import { generateLook } from './heroes/look';
+import { idText, tx } from '../textos';
 
 const ICONS = Object.keys(GRIDS) as ItemIcon[];
 const sig = (b: { data: Uint32Array }) => b.data.join();
@@ -27,8 +28,8 @@ describe('iconos del equipo', () => {
 
   it('cada legendario del botín tiene su dibujo propio', () => {
     for (const g of GEAR.filter((x) => x.rarity === 4)) {
-      expect(LEGENDS[g.name], g.name).toBeDefined();
-      expect(sig(itemIcon(g.icon!, 4, 0, g.name))).not.toBe(sig(itemIcon(g.icon!, 4)));
+      expect(LEGENDS[idText(g.name)], idText(g.name)).toBeDefined();
+      expect(sig(itemIcon(g.icon!, 4, 0, tx(g.name)))).not.toBe(sig(itemIcon(g.icon!, 4)));
     }
   });
 

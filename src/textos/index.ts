@@ -58,7 +58,17 @@ export function setLang(l: string | undefined): void {
   lang.plural = (n) => rules.select(n);
   const lists = new Intl.ListFormat(code, { type: 'conjunction' });
   lang.list = (xs) => lists.format(xs);
+  lang.post = POST[code];
 }
+
+/** Retoques de cada idioma a la frase ya escrita (ver `Lang.post`). */
+const POST: Record<string, (s: string) => string> = {
+  // Sin \b: en JavaScript la «í» de «Amplía» no cuenta como letra.
+  es: (s) =>
+    s
+      .replace(/(?<![\p{L}\p{N}])([Aa]) el(?![\p{L}\p{N}])/gu, '$1l')
+      .replace(/(?<![\p{L}\p{N}])([Dd])e el(?![\p{L}\p{N}])/gu, '$1el'),
+};
 setLang(savedLang());
 
 export const currentLang = () => code;
@@ -124,9 +134,28 @@ export const has = (key: string) =>
 export const msg = (k: string, p?: Params): Msg => (p ? { k, p } : { k });
 
 /** Escribe un texto guardado. */
-export function tx(x: Txt | undefined): string {
-  if (x === undefined) return '';
+export function tx(x: Txt | null | undefined): string {
+  if (x === undefined || x === null) return '';
   return typeof x === 'string' ? x : t(x.k, x.p);
+}
+
+const source: Lang = {
+  code: SOURCE,
+  plural: (n) => new Intl.PluralRules(SOURCE).select(n),
+  list: (xs) => new Intl.ListFormat(SOURCE, { type: 'conjunction' }).format(xs),
+  render: (m) => idText(m),
+  post: POST[SOURCE],
+};
+
+/**
+ * Un texto guardado escrito siempre en el idioma de origen: para lo que hace de id (el dibujo de
+ * un legendario va por su nombre) y para reconocer frases viejas. No es para enseñar.
+ */
+export function idText(x: Txt | undefined): string {
+  if (x === undefined || x === null) return '';
+  if (typeof x === 'string') return x;
+  const n = find(ALL[SOURCE]!, x.k);
+  return typeof n === 'string' ? format(n, x.p, source) : x.k;
 }
 
 /** Los textos de un idioma, tal cual (para las herramientas y los tests). */

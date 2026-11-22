@@ -17,6 +17,7 @@ import { NIGHT_EVENTS, canHappen, rollNight } from './night';
 import { Rng } from './rng';
 import { stormNight } from './sky';
 import { STRANGER_EVENT, priceFor, reviveIssue } from './stranger';
+import { tx } from '../textos';
 
 /** Una partida sin tutorial, en un día de tormenta, con el primer héroe caído. */
 function stormy(seed = 'tormenta'): GameState {
@@ -92,7 +93,7 @@ describe('sucesos nocturnos', () => {
       s = reduce(t, { type: 'tick', to: NIGHT_ROLL * DAY_SECONDS + 1 });
     }
     expect(s!.stranger?.day).toBe(s!.day);
-    expect(s!.incidentNews?.some((n) => n.t.includes('forastero'))).toBe(true);
+    expect(s!.incidentNews?.some((n) => tx(n.t).includes('forastero'))).toBe(true);
     // Pasa la noche: sigue junto al fuego por la mañana.
     const morning = endDay(s!);
     expect(morning.stranger).toBeTruthy();
@@ -113,7 +114,7 @@ describe('sucesos nocturnos', () => {
       if (!next.stranger) continue;
       found = true;
       expect(next.stranger.day).toBe(t.day);
-      expect(next.dawn.some((e) => e.t.includes('forastero'))).toBe(true);
+      expect(next.dawn.some((e) => tx(e.t).includes('forastero'))).toBe(true);
     }
     expect(found).toBe(true);
   });
@@ -157,7 +158,7 @@ describe('el forastero trae de vuelta a un caído', () => {
     expect(h.morale).toBe(VEIL_MORALE);
     expect(h.veil).toBe(s.day + VEIL_DAYS);
     expect(h.traits.some((t) => t.id === 'velo')).toBe(true);
-    expect(h.history.at(-1)).toMatch(/velo/);
+    expect(tx(h.history.at(-1))).toMatch(/velo/);
     expect(next.stranger).toBeNull();
     // El Muro lo cuenta: sigue en él, marcado como vuelto.
     expect(next.fallen.find((f) => f.id === h.id)?.back).toBe(s.day);

@@ -1,0 +1,63 @@
+casa:
+  texto: "Esto es El Jarro Partido, de arriba abajo. Cada hueco es una sala y cada sala hace lo suyo: en el salón se sirve, la cocina saca las raciones, la bodega da la cerveza y los héroes duermen en los dormitorios. Arrastra para mirarla entera."
+dinero:
+  texto: "El dinero entra por dos puertas. Una es la caja del salón: lo que gastan los clientes va llegando durante el día, y más si hay raciones y cerveza. La otra son los encargos del tablón, que pagan mucho más pero piden héroes y días fuera. Con las dos se paga a Merlo."
+barra:
+  texto: "Con dos espadas no se llega lejos. En la barra siempre hay alguien buscando trabajo: contrata a uno. La prima se paga una vez; el sueldo, cada semana."
+  regalo: "En la caja de puros de la barra había {n} monedas: «Para la primera prima»."
+nombre:
+  texto: "Los aventureros llegan con el nombre que les puso su madre, y a veces no les pega. Abre la ficha del nuevo y toca su nombre: déjalo o cámbialo, pero que sea de la casa."
+enfermeria:
+  texto: "La enfermería se vino abajo el invierno pasado. Arréglala antes de que alguien vuelva con una flecha en el muslo: en una cama de verdad se cura el doble de rápido."
+  regalo: "Entre las hojas del cuaderno había {n} monedas, con una nota: «Para la enfermería. No te las bebas»."
+esperar:
+  texto: "Con el grupo en el camino, la casa es tuya: mírala, toca lo que quieras y deja correr el día. Y si te cansas de esperar, salta hasta que vuelvan."
+  corto: "El grupo está fuera."
+informe:
+  texto: "Cada grupo que vuelve trae su informe. Léelo entero: ahí se ve de qué pasta está hecho cada cual."
+ratas:
+  texto: "Si oyes rascar en la cocina, son ratas. Espántalas antes de que se coman las raciones. Cada día pasa algo así: atiéndelo a tiempo, que luego sale caro."
+rumor:
+  texto: "En la barra se habla más de la cuenta. Cuando oigas algo que brilla, apúntalo antes de que se pierda: de ahí salen los mejores encargos."
+mandar:
+  texto: "Ese rumor ya es un encargo, y paga en especie. Manda a quien tengas en casa, aunque vaya solo."
+objetivos:
+  texto: "En el Gremio llevo la cuenta de lo que queda por hacer en la casa: siempre tres cosas. Cumplirlas da oro y lustre."
+fin:
+  texto: "Si has llegado hasta aquí, la taberna sigue siendo tuya. El resto del cuaderno son recetas y cuentas pendientes: lo irás leyendo cuando toque."
+oficio_sitio:
+  salon: "el salón"
+  cocina: "la cocina"
+  bodega: "la bodega"
+  enfermeria: "la enfermería"
+  forja: "la forja"
+  sastreria: "la sastrería"
+  alquimia: "el taller de alquimia"
+  pintor: "el taller del pintor"
+veto_cocina: "{quien}: donde rinde es en {sitio}, no entre fogones. Para la cocina, mejor un héroe{hay, select, si {: prueba con {heroe}} other {}}."
+carta:
+  cabecera: "Hondovado, a la entrada del invierno"
+  cuerpo:
+    - "Sobrino:"
+    - "Si te llega esta carta, es que ya no estoy y El Jarro Partido es tuyo. Con la taberna te dejo dos aventureros que no cobran mucho, al gato y mil monedas de deuda con Merlo, el prestamista, que cobra cada siete días y no perdona ni una."
+    - "Debajo de la barra tienes mi cuaderno. Lo fui escribiendo para quien viniera detrás: léelo con calma y haz lo que pone, que a mí me costó años aprenderlo."
+  firma: "Fausto"
+tablon:
+  texto: "Lo primero, el tablón. De los encargos come esta casa. Hay uno fácil, «{titulo}»: manda a {quien}, que saben hacerlo."
+  el_primero: "el primero"
+mover:
+  texto: "Cada cual rinde donde lo pones. Los del pueblo saben su oficio; los héroes, en sus ratos libres, echan una mano donde haga falta: no son cocineros, pero algo ayudan. Coge con el dedo a {heroe} y {sexo, select, f {suéltala} other {suéltalo}} en la cocina."
+  un_heroe: "un héroe"
+equipo:
+  texto: "Lo que traen, mejor puesto que en un arcón. Dale {hay, select, si {«{objeto}»} other {el equipo}} a {heroe}: ficha, «Equipo»."
+  alguien: "alguien"
+herido:
+  texto: "{heroe} ha vuelto {sexo, select, f {herida} other {herido}}. No puede salir hasta que se cure: se cura solo con los días, antes con la enfermería."
+  alguien: "Alguien"
+pago:
+  cabeza: "El día {dia} viene Merlo: {cuota} monedas, más {sueldos} de sueldos."
+  listo: "{cabeza} Ya tienes la caja lista: no le hagas esperar."
+  falta: "{cabeza} Te faltan {n}, y quedan {noches, plural, one {# noche} other {# noches}}. La caja del salón deja algo cada noche y el tablón tiene más encargos: ve pasando las noches hasta juntarlo."
+  corto_listo: "Merlo, día {dia}: caja lista."
+  corto_falta: "Merlo, día {dia}: faltan {n}."
+  tio: "El tío pone {n} monedas para que llegues al pago: «Ya me lo devolverás»."

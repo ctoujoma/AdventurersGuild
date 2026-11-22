@@ -51,6 +51,7 @@ import { GUARD, type Task } from '../drop';
 import { dawnIn } from '../when';
 import { RoomCustom, canCustomize, feastPending } from './RoomCustom';
 import { Tabs, type TabItem } from '../Tabs';
+import { tx } from '../../textos';
 
 /** A dónde lleva cada sala: los paneles de siempre que tienen que ver con ella. */
 export type RoomLink =
@@ -135,7 +136,7 @@ function SalonInfo({ game }: { game: GameState }) {
         </Fact>
       </div>
       <span class="row-sub">
-        Hoy {v.total ? `vienen ${visitorList(v)}` : 'no viene nadie'}.
+        Hoy {v.total ? `vienen ${tx(visitorList(v))}` : 'no viene nadie'}.
         {v.served < v.total ? ` Solo se atiende a ${v.served}: falta gente en la barra.` : ''}
       </span>
     </>

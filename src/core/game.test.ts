@@ -26,6 +26,7 @@ import { generateHero, generateQuest } from './generate';
 import type { GameState, Hero } from './model';
 import { questEstimate, resolveMission } from './resolve';
 import { Rng } from './rng';
+import { tx } from '../textos';
 
 const ready = (s: GameState) => s.heroes.filter((h) => h.status === 'ok');
 
@@ -79,8 +80,8 @@ describe('generadores', () => {
       for (const c of q.challenges) expect(c.diff).toBeGreaterThan(0);
       expect(q.reward).toBeGreaterThan(0);
       expect(q.days).toBeGreaterThanOrEqual(1);
-      expect(q.title).not.toMatch(/[{}]/);
-      expect(q.text).not.toMatch(/[{}]/);
+      expect(tx(q.title)).not.toMatch(/[{}]/);
+      expect(tx(q.text)).not.toMatch(/[{}]/);
     }
   });
 });
@@ -205,7 +206,7 @@ describe('resolución', () => {
       new Rng(7),
     );
     expect(r.body.length).toBeGreaterThan(2);
-    for (const p of r.body) expect(p).not.toMatch(/[{}]/);
+    for (const p of r.body) expect(tx(p)).not.toMatch(/[{}]/);
     if (h.status !== 'muerto' && h.status !== 'desaparecido')
       expect(h.traits.every((t) => !t.hidden)).toBe(true);
   });
@@ -285,7 +286,7 @@ describe('avance de día', () => {
     expect(s.opening?.seen).toBe(false);
     expect(s.opening!.score).toBeGreaterThan(0);
     // La noticia de la deuda saldada, con brillo en la carta.
-    expect(s.dawn.find((e) => /deuda de tu tío está pagada/.test(e.t))?.big).toBe(true);
+    expect(s.dawn.find((e) => /deuda de tu tío está pagada/.test(tx(e.t)))?.big).toBe(true);
     expect(s.goals?.active.length).toBe(3);
     s = reduce(s, { type: 'ackOpening' });
     expect(s.opening?.seen).toBe(true);
@@ -309,7 +310,7 @@ describe('avance de día', () => {
         daysLeft: 1,
         done: { report: 'rb', outcome, fates: { [h.id]: { status: 'ok', days: 0 } } },
       });
-      return endDay(s).dawn.find((e) => e.t.includes(q.title));
+      return endDay(s).dawn.find((e) => tx(e.t).includes(tx(q.title)));
     };
     expect(back('Éxito brillante')?.big).toBe(true);
     expect(back('Éxito')?.big).toBeUndefined();
@@ -403,7 +404,7 @@ describe('hay que salir de aventura', () => {
     let n = endDay(s);
     expect(after(n, h.id).morale).toBe(37 - GUARD_DROP);
     // El aviso de agotado va solo en la campanita, no en la carta del amanecer.
-    expect(n.dawn.some((e) => /noches de guardia y se duerme/.test(e.t))).toBe(false);
+    expect(n.dawn.some((e) => /noches de guardia y se duerme/.test(tx(e.t)))).toBe(false);
     // Cerca del mínimo: se queda en él (sin la cena ni los pagos, que también restan).
     n = endDay({ ...s, heroes: s.heroes.map((x) => ({ ...x, morale: GUARD_FLOOR + 1 })) });
     expect(after(n, h.id).morale).toBe(GUARD_FLOOR);
@@ -423,7 +424,7 @@ describe('hay que salir de aventura', () => {
     h.morale = 60;
     let n = endDay(s);
     expect(after(n, h.id).morale).toBe(60 - BORED_DROP);
-    expect(n.dawn.some((e) => /se aburre/.test(e.t))).toBe(true);
+    expect(n.dawn.some((e) => /se aburre/.test(tx(e.t)))).toBe(true);
     n = endDay({ ...n, heroes: n.heroes.map((x) => ({ ...x, morale: BORED_FLOOR + 1 })) });
     expect(after(n, h.id).morale).toBe(BORED_FLOOR);
     expect(after(endDay(n), h.id).morale).toBe(BORED_FLOOR);
@@ -440,8 +441,8 @@ describe('hay que salir de aventura', () => {
     let n = endDay(s);
     expect(n.rep).toBeLessThan(300);
     expect(n.rankLost).toBe(4);
-    expect(n.dawn.some((e) => /se empieza a olvidar/.test(e.t))).toBe(true);
-    expect(n.dawn.some((e) => /baja a oro/.test(e.t))).toBe(true);
+    expect(n.dawn.some((e) => /se empieza a olvidar/.test(tx(e.t)))).toBe(true);
+    expect(n.dawn.some((e) => /baja a oro/.test(tx(e.t)))).toBe(true);
     // Como mucho, al principio del rango de abajo.
     n = endDay(endDay({ ...n, rep: RANKS[3]!.at + 1 }));
     expect(n.rep).toBe(RANKS[3]!.at);
@@ -451,6 +452,6 @@ describe('hay que salir de aventura', () => {
     // Al recuperarlo, se cuenta.
     n = endDay({ ...n, rep: 320, quiet: 0 });
     expect(n.rankLost).toBeUndefined();
-    expect(n.dawn.some((e) => /vuelve a ser de leyenda/.test(e.t))).toBe(true);
+    expect(n.dawn.some((e) => /vuelve a ser de leyenda/.test(tx(e.t)))).toBe(true);
   });
 });

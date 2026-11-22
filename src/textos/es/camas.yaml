@@ -1,0 +1,8 @@
+fuera: "Ya no está en la taberna."
+sin_camas: "Ahí no hay camas."
+no_veterano: "{nombre} aún no es {sexo, select, f {veterana} other {veterano}}."
+heroes: "Los héroes duermen en los dormitorios."
+trabajadores: "Los trabajadores duermen en el servicio."
+pueblo: "{nombre} duerme en el pueblo."
+ya_aqui: "{nombre} ya duerme aquí."
+llenas: "No queda cama libre."

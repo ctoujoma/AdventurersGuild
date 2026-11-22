@@ -36,13 +36,13 @@ import {
   roomMax,
 } from './balance';
 import type { Building, DawnEvent, Facilities, GameState, Room } from './model';
+import { msg, t } from '../textos';
 
 export type Planned = { b: Building; cost: number };
 export type Plan = { error: string } | Planned;
 export type ExtendDir = 'left' | 'right' | 'up';
 
-export const LOCKED =
-  'Las obras se abren al pagar la deuda: de momento solo se arregla y se mejora lo que hay.';
+export const LOCKED = t('obras.cerradas');
 
 const key = (c: number, f: number) => `${c},${f}`;
 
@@ -259,9 +259,9 @@ export function problem(b: Building): string | null {
   for (const s of b.stairs) {
     const k = key(s.at, s.floor);
     if (!stairFits(b, s.at) || s.floor < -MAX_DOWN || s.floor >= MAX_UP || flights.has(k))
-      return 'Esa escalera no cabe ahí.';
+      return t('obras.escalera_no_cabe');
     // Bajo el anexo no se excava: su escalera no baja de la planta baja.
-    if (s.at >= WING_COL && s.floor < 0) return 'Bajo el anexo no se excava.';
+    if (s.at >= WING_COL && s.floor < 0) return t('obras.anexo_sin_sotano');
     flights.add(k);
   }
   const cols = shafts(b);
@@ -269,44 +269,43 @@ export function problem(b: Building): string | null {
   const count = new Map<RoomType, number>();
   for (const r of b.rooms) {
     const d = ROOMS[r.type];
-    if (r.w < 1 || r.w > d.maxW || r.h < 1 || r.h > d.maxH) return `${d.name}: no crece tanto.`;
+    if (r.w < 1 || r.w > d.maxW || r.h < 1 || r.h > d.maxH)
+      return t('obras.no_crece', { sala: d.name });
     const roof = r.type === 'torre' ? MAX_UP + 1 : MAX_UP;
-    if (r.floor < -MAX_DOWN || r.floor + r.h - 1 > roof) return 'No cabe en el solar.';
+    if (r.floor < -MAX_DOWN || r.floor + r.h - 1 > roof) return t('obras.fuera_solar');
     for (let c = r.col; c < r.col + r.w; c++) {
-      if (inGarden(b, c)) return 'En el jardín no se construye.';
-      if (!onLot(b, c)) return 'No cabe en el solar.';
+      if (inGarden(b, c)) return t('obras.jardin');
+      if (!onLot(b, c)) return t('obras.fuera_solar');
     }
     if (inWing(b, r.col)) {
-      if (r.floor < 0) return 'Bajo el anexo no se excava.';
-      if (NOT_IN_WING.includes(r.type)) return `${d.name}: no va en el anexo.`;
+      if (r.floor < 0) return t('obras.anexo_sin_sotano');
+      if (NOT_IN_WING.includes(r.type)) return t('obras.no_anexo', { sala: d.name });
     }
-    if (d.place === 'baja' && r.floor !== 0) return `${d.name}: va en la planta baja.`;
-    if (r.type === 'recibidor' && r.col !== 0) return 'El recibidor va junto al patio.';
-    if (cols.some((x) => x > r.col && x < r.col + r.w))
-      return 'Una sala no puede cruzar la escalera.';
+    if (d.place === 'baja' && r.floor !== 0) return t('obras.planta_baja', { sala: d.name });
+    if (r.type === 'recibidor' && r.col !== 0) return t('obras.recibidor');
+    if (cols.some((x) => x > r.col && x < r.col + r.w)) return t('obras.cruza_escalera');
     for (const [c, f] of cellsOf(r)) {
-      if (at.has(key(c, f))) return 'Ahí ya hay otra sala.';
-      if (f < 0 && !b.dug.includes(key(c, f))) return 'Primero hay que excavar.';
+      if (at.has(key(c, f))) return t('obras.ocupado');
+      if (f < 0 && !b.dug.includes(key(c, f))) return t('obras.excavar_antes');
       at.set(key(c, f), r);
     }
     count.set(r.type, (count.get(r.type) ?? 0) + 1);
-    if (d.unique && count.get(r.type)! > 1) return `Ya tienes ${d.name.toLowerCase()}.`;
+    if (d.unique && count.get(r.type)! > 1) return t('obras.ya_tienes', { sala: d.name });
   }
   const under = (c: number, f: number) => at.get(key(c, f - 1));
   for (const r of b.rooms) {
     if (r.type === 'torre') {
       const below = under(r.col, r.floor);
-      if (r.floor < 1 || !below || below.type === 'torre') return 'La torre va encima de una sala.';
+      if (r.floor < 1 || !below || below.type === 'torre') return t('obras.torre_encima');
       continue;
     }
     for (let c = r.col; c < r.col + r.w; c++) {
-      if (under(c, r.floor)?.type === 'torre') return 'Encima de la torre no se construye.';
+      if (under(c, r.floor)?.type === 'torre') return t('obras.sobre_torre');
       const holds = (x: number) => {
         const u = under(x, r.floor);
         return !!u && u.type !== 'torre';
       };
-      if (r.floor > 0 && ![c - 1, c, c + 1].some(holds))
-        return 'Una planta solo puede sobresalir un hueco de la de abajo.';
+      if (r.floor > 0 && ![c - 1, c, c + 1].some(holds)) return t('obras.voladizo');
     }
   }
   // Cada tramo sale de algo: hacia arriba, de una planta con sala al lado; hacia abajo, de una
@@ -321,15 +320,14 @@ export function problem(b: Building): string | null {
         : f < 0
           ? hasStair(b, x, f + 1) || beside(x, f + 1)
           : hasStair(b, x, -1) || hasStair(b, x, 1) || beside(x, 0) || beside(x, 1);
-    if (!from)
-      return 'La escalera tiene que salir de una sala, de un hueco excavado o de otro tramo.';
+    if (!from) return t('obras.escalera_aire');
   }
   if (lax) return null;
   // Las salas que no pueden faltar (se pueden quitar en el plano para ponerlas en otro sitio).
   const gone = MUST.find((t) => !count.get(t));
-  if (gone) return `Falta: ${ROOMS[gone].name}. Vuelve a ponerla en el plano para poder pagar.`;
+  if (gone) return t('obras.falta', { sala: ROOMS[gone].name });
   const lost = cutOff(b, at);
-  return lost ? `${ROOMS[lost.type].name}: se quedaría sin paso desde el recibidor.` : null;
+  return lost ? t('obras.sin_paso', { sala: ROOMS[lost.type].name }) : null;
 }
 
 /**
@@ -461,13 +459,13 @@ function finish(s: GameState, b: Building, cost: number): Plan {
   const e = problem(b) ?? rankIssue(s, b);
   if (e) return { error: e };
   // En el borrador el oro se mira al pagarlo todo junto (`planIssue`).
-  if (!lax && cost > s.gold) return { error: `Te faltan ${cost - s.gold} monedas.` };
+  if (!lax && cost > s.gold) return { error: t('partida.error.faltan', { n: cost - s.gold }) };
   return { b, cost };
 }
 
 /** «La planta 5 se abre con el rango de plata.» */
 const lockedFloor = (f: number) =>
-  `La planta ${f} se abre con el rango de ${RANKS[floorRank(f)]?.name ?? 'leyenda'}.`;
+  t('obras.planta_rango', { n: f, rango: RANKS[floorRank(f)]?.name ?? RANKS.at(-1)!.name });
 
 /**
  * Lo que el rango del gremio aún no deja hacer en `b`: plantas que no se han abierto. Solo mira
@@ -495,7 +493,7 @@ function rankIssue(s: GameState, b: Building): string | null {
 function find(s: GameState, id: string): { b: Building; r: Room } | { error: string } {
   const b = structuredClone(s.building);
   const r = b.rooms.find((x) => x.id === id);
-  return r ? { b, r } : { error: 'Esa sala ya no está.' };
+  return r ? { b, r } : { error: t('pintor.sin_sala') };
 }
 
 /** Arreglar (si está rota) o subir de nivel una sala. Se puede desde el primer día. */
@@ -504,10 +502,10 @@ export function planUpgrade(s: GameState, id: string): Plan {
   if ('error' in got) return got;
   const { b, r } = got;
   const cost = upgradeCostOf(r);
-  if (cost === null) return { error: 'Ya está al máximo.' };
+  if (cost === null) return { error: t('obras.al_maximo') };
   const need = levelRank(r.type, r.level + 1);
   if (need > rankIndex(s.rep))
-    return { error: `El nivel ${r.level + 1} se abre con el rango de ${RANKS[need]!.name}.` };
+    return { error: t('obras.nivel_rango', { n: r.level + 1, rango: RANKS[need]!.name }) };
   r.level++;
   r.spent += cost;
   return finish(s, b, cost);
@@ -520,7 +518,7 @@ export function planUpgrade(s: GameState, id: string): Plan {
 export function planBuild(s: GameState, type: RoomType, col: number, floor: number): Plan {
   if (!worksOpen(s)) return { error: LOCKED };
   const rank = levelRank(type, 1);
-  if (rank > rankIndex(s.rep)) return { error: `Se abre con el rango de ${RANKS[rank]!.name}.` };
+  if (rank > rankIndex(s.rep)) return { error: t('obras.rango', { rango: RANKS[rank]!.name }) };
   const b = structuredClone(s.building);
   const fresh: Room = newRoom(b, type, col, floor);
   const next = b.rooms.find(
@@ -544,7 +542,7 @@ export function planExtend(s: GameState, id: string, dir: ExtendDir): Plan {
   const got = find(s, id);
   if ('error' in got) return got;
   const { b, r } = got;
-  if (r.level === 0) return { error: 'Primero hay que arreglarla.' };
+  if (r.level === 0) return { error: t('obras.arreglar_antes') };
   const before = r.w * r.h;
   if (dir === 'up') r.h++;
   else {
@@ -565,8 +563,8 @@ export function planMove(s: GameState, id: string, col: number, floor: number): 
   const got = find(s, id);
   if ('error' in got) return got;
   const { b, r } = got;
-  if (ROOMS[r.type].fixed) return { error: `${ROOMS[r.type].name}: no se puede mover.` };
-  if (r.col === col && r.floor === floor) return { error: 'Ya está ahí.' };
+  if (ROOMS[r.type].fixed) return { error: t('obras.fija', { sala: ROOMS[r.type].name }) };
+  if (r.col === col && r.floor === floor) return { error: t('obras.ya_ahi') };
   r.col = col;
   r.floor = floor;
   const paid = isFresh(id) || !!draft?.moved.has(id);
@@ -582,7 +580,7 @@ export function planDemolish(s: GameState, id: string): Plan {
   const { b, r } = got;
   // En el plano sí: se quita para ponerla en otro sitio, y no se paga hasta que vuelva a estar.
   if (ROOMS[r.type].keep && !lax)
-    return { error: `${ROOMS[r.type].name}: no se puede quitar (en el plano, sí, para moverla).` };
+    return { error: t('obras.no_quitar', { sala: ROOMS[r.type].name }) };
   b.rooms = b.rooms.filter((x) => x !== r);
   // Una sala puesta en este mismo borrador se quita devolviendo todo.
   return finish(s, b, -(isFresh(id) ? r.spent : Math.floor(r.spent * DEMOLISH_REFUND)));
@@ -596,13 +594,13 @@ export function planDig(s: GameState, col: number, floor: number): Plan {
   if (!worksOpen(s)) return { error: LOCKED };
   const b = structuredClone(s.building);
   if (floor >= 0 || floor < -MAX_DOWN || col < 0 || col >= b.cols)
-    return { error: 'Ahí no se puede excavar.' };
-  if (isDug(b, col, floor)) return { error: 'Ya está excavado.' };
+    return { error: t('obras.no_excavar') };
+  if (isDug(b, col, floor)) return { error: t('obras.excavado') };
   const sides = [col, col + 1];
   const byStair = sides.some((x) => landing(b, x, floor));
   const down = byStair ? undefined : sides.find((x) => landing(b, x, floor + 1));
   if (!byStair && down === undefined && !isDug(b, col - 1, floor) && !isDug(b, col + 1, floor))
-    return { error: 'Hay que excavar junto a la escalera o junto a otro hueco excavado.' };
+    return { error: t('obras.excavar_junto') };
   let cost = DIG_COST[-floor]!;
   if (down !== undefined) {
     cost += stairCost(b);
@@ -625,8 +623,8 @@ export function planPlot(s: GameState): Plan {
     b.cols++;
     return finish(s, b, cost);
   }
-  if (!b.wing) return { error: 'Para seguir creciendo, compra el patio trasero.' };
-  if (b.wing >= WING_MAX) return { error: 'No quedan solares a la venta.' };
+  if (!b.wing) return { error: t('obras.compra_patio') };
+  if (b.wing >= WING_MAX) return { error: t('obras.sin_solares') };
   const cost = WING_PLOT_COST[b.wing - WING_START]!;
   b.wing++;
   return finish(s, b, cost);
@@ -639,10 +637,10 @@ export function planPlot(s: GameState): Plan {
 export function planWing(s: GameState): Plan {
   if (!worksOpen(s)) return { error: LOCKED };
   const b = structuredClone(s.building);
-  if (b.wing) return { error: 'Ya tienes el patio trasero.' };
-  if (b.cols < MAX_COLS) return { error: 'Primero, los solares de al lado.' };
+  if (b.wing) return { error: t('obras.ya_patio') };
+  if (b.cols < MAX_COLS) return { error: t('obras.solares_antes') };
   if (rankIndex(s.rep) < WING_RANK)
-    return { error: `Se abre con el rango de ${RANKS[WING_RANK]!.name}.` };
+    return { error: t('obras.rango', { rango: RANKS[WING_RANK]!.name }) };
   b.wing = WING_START;
   return finish(s, b, WING_COST);
 }
@@ -654,7 +652,7 @@ export function planWing(s: GameState): Plan {
 export function planStair(s: GameState, at: number, floor: number): Plan {
   if (!worksOpen(s)) return { error: LOCKED };
   const b = structuredClone(s.building);
-  if (hasStair(b, at, floor)) return { error: 'Ahí ya hay escalera.' };
+  if (hasStair(b, at, floor)) return { error: t('obras.hay_escalera') };
   const cost = stairCost(b);
   b.stairs.push({ at, floor });
   b.stairs.sort((x, y) => x.at - y.at || x.floor - y.floor);
@@ -668,7 +666,7 @@ export function planStair(s: GameState, at: number, floor: number): Plan {
 export function planUnstair(s: GameState, at: number, floor: number): Plan {
   if (!worksOpen(s)) return { error: LOCKED };
   const b = structuredClone(s.building);
-  if (!hasStair(b, at, floor)) return { error: 'Ahí no hay escalera.' };
+  if (!hasStair(b, at, floor)) return { error: t('obras.sin_escalera') };
   b.stairs = b.stairs.filter((x) => x.at !== at || x.floor !== floor);
   const paid = stairCost(b);
   const fresh = !!draft && !draft.flights.has(key(at, floor));
@@ -687,7 +685,7 @@ export function planFacility(s: GameState, k: keyof Facilities): Plan {
   if (isYard(k)) {
     const level = s.building.yard[k];
     const cost = UPGRADE_COST[k][level + 1];
-    if (cost === undefined) return { error: 'Ya está al máximo.' };
+    if (cost === undefined) return { error: t('obras.al_maximo') };
     const b = structuredClone(s.building);
     b.yard[k]++;
     return finish(s, b, cost);
@@ -695,9 +693,9 @@ export function planFacility(s: GameState, k: keyof Facilities): Plan {
   const type = typeOf(k);
   const room = s.building.rooms.find((r) => r.type === type);
   if (room) return planUpgrade(s, room.id);
-  if (!worksOpen(s)) return { error: `${ROOMS[type].name}: se construyen al pagar la deuda.` };
+  if (!worksOpen(s)) return { error: t('obras.tras_deuda', { sala: ROOMS[type].name }) };
   const spot = freeSpot(s.building, type);
-  if (!spot) return { error: 'No queda sitio en la taberna.' };
+  if (!spot) return { error: t('obras.sin_sitio') };
   return planBuild(s, type, spot.col, spot.floor);
 }
 
@@ -721,14 +719,13 @@ export function stepWorks(s: GameState, events: DawnEvent[]) {
   let done = false;
   for (const r of s.building.rooms) {
     if (!r.works || --r.works.nights > 0) continue;
-    const name = ROOMS[r.type].name;
     events.push({
-      t:
-        r.works.kind === 'build'
-          ? `Acaba la obra: ya está lista la sala nueva (${name.toLowerCase()}).`
-          : r.works.kind === 'extend'
-            ? `Acaba la obra: ${name.toLowerCase()} ya es más grande.`
-            : `${name} ya está en su sitio nuevo.`,
+      t: msg(
+        `obras.acaba.${r.works.kind === 'build' || r.works.kind === 'extend' ? r.works.kind : 'move'}`,
+        {
+          sala: msg(`salas.salas.${r.type}.nombre`),
+        },
+      ),
       k: 'good',
     });
     delete r.works;

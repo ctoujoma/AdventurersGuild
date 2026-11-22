@@ -3,6 +3,7 @@ import { DAY_SECONDS, PAINT_GOLD, PAINT_WALK } from './balance';
 import { customOf, endDay, newGame, reduce } from './game';
 import type { GameState } from './model';
 import { painterAt, paintState, paintStatus, paintingOf } from './paint';
+import { tx } from '../textos';
 
 /** Partida con un taller del pintor (y su pintor, si `painter`). */
 function withShop(seed: string, painter = true): { s: GameState; shop: string; room: string } {
@@ -81,7 +82,7 @@ describe('el taller del pintor', () => {
     expect(customOf(t).colors?.[room]).toBe('mar');
     expect(t.stats?.painted).toBe(1);
     expect(painterAt(t, 'w-pintor')).toBeNull();
-    expect(t.dawn.some((e) => /ha acabado de pintar/.test(e.t))).toBe(true);
+    expect(t.dawn.some((e) => /ha acabado de pintar/.test(tx(e.t)))).toBe(true);
   });
 
   it('con el juego abierto no empieza hasta que llega; cerrado, a las horas de camino', () => {

@@ -27,6 +27,7 @@ import { GUARD, GUARD_VAULT, planTask, type Task } from './drop';
 import { guardsAt } from '../core/guards';
 import { vaultOf } from '../core/vault';
 import { jobRoomName } from './roomName';
+import { tx } from '../textos';
 
 /** Alguien de la casa en la lista. */
 export interface Member {
@@ -130,7 +131,7 @@ const workerMember = (w: Worker, room?: Room): Member => ({
   sub: `${TRADES[w.trade].name[w.sex]} · Maña ${w.skill}`,
   hero: false,
   off: !!room && room.type !== w.trade,
-  more: `«${w.quote}»`,
+  more: `«${tx(w.quote)}»`,
 });
 
 const heroMember = (h: Hero, sub: string): Member => ({ id: h.id, name: h.name, sub, hero: true });

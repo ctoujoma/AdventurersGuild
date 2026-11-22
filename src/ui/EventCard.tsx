@@ -1,4 +1,5 @@
 import type { PendingEvent } from '../core/model';
+import { tx } from '../textos';
 
 interface Props {
   event: PendingEvent;
@@ -12,7 +13,7 @@ export function EventCard({ event, onChoose }: Props) {
       <article class="herocard eventcard" role="dialog" aria-label="Suceso en la taberna">
         <div class="qs-scroll">
           <span class="eyebrow">Mientras tanto, en la taberna…</span>
-          <p class="event-text">{event.text}</p>
+          <p class="event-text">{tx(event.text)}</p>
           <div class="event-options">
             {event.options.map((o, i) => (
               <button
@@ -20,8 +21,8 @@ export function EventCard({ event, onChoose }: Props) {
                 class={`btn ${i === 0 ? 'btn-gold' : 'btn-wood'}`}
                 onClick={() => onChoose(i)}
               >
-                <span>{o.label}</span>
-                <small>{o.hint}</small>
+                <span>{tx(o.label)}</span>
+                <small>{tx(o.hint)}</small>
               </button>
             ))}
           </div>

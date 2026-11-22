@@ -27,6 +27,7 @@ import { Portrait } from './Portrait';
 import { heroFrame, lookOf, marksOf, memberOf } from './view';
 import { GARMENTS, TINTS, TINT_IDS, type Dress, type GarmentId, type TintId } from '../data/custom';
 import { SLOTS, SLOT_NAMES, gearList, shownItem, slotOf, type Slot } from '../core/gear';
+import { idText, tx } from '../textos';
 
 interface Props {
   game: GameState;
@@ -477,7 +478,7 @@ export function HeroCard({
               ) : (
                 <h3>{h.name}</h3>
               )}
-              {h.nick && <span class="nick">{h.nick}</span>}
+              {h.nick && <span class="nick">{tx(h.nick)}</span>}
               <span class="row-sub">
                 {CLASS_NAMES[h.cls][h.sex]} · nivel {h.lvl} · <Icon name="coin" size={10} />
                 {candidate ? `${h.fee} + ` : ''}
@@ -533,7 +534,7 @@ export function HeroCard({
               ]}
             />
           )}
-          {candidate && <p class="quote">{h.quote}</p>}
+          {candidate && <p class="quote">{tx(h.quote)}</p>}
           {dressing && (
             <DressMenu
               game={game}
@@ -647,7 +648,7 @@ export function HeroCard({
                                         it.icon ?? SILHOUETTE[sl],
                                         it.rarity,
                                         it.plus,
-                                        it.name,
+                                        idText(it.name),
                                       )
                                     : slotIcon(sl, 16)
                                 }
@@ -715,7 +716,7 @@ export function HeroCard({
               {history && h.history.length > 0 && (
                 <ul class="hist">
                   {h.history.map((x, i) => (
-                    <li key={i}>{x}</li>
+                    <li key={i}>{tx(x)}</li>
                   ))}
                 </ul>
               )}

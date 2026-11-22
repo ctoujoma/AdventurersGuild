@@ -68,10 +68,30 @@ tx(report.body[0]); // escribir lo guardado (mensaje o frase vieja)
 
 - `t(clave, huecos)`: el texto escrito en el idioma elegido.
 - `tl(clave)`: una lista. `tl<readonly [string, string][]>(…)` para listas de pares.
-- `tr(clave)`: el texto **sin rellenar**, para las plantillas que el núcleo aún rellena a su
-  manera (`{n}`, `{place}`). Es de transición: lo nuevo, con `t(clave, huecos)`.
+- `tr(clave)`: el texto **sin rellenar** (para mirar qué huecos tiene una plantilla).
 - `msg(clave, huecos)` y `tx(…)`: lo que se **guarda en la partida** es el mensaje (clave y
   huecos), no la frase; se escribe al enseñarlo, en el idioma que esté puesto. Ver «Partidas».
+- `idText(…)`: un texto guardado escrito **siempre en español**. Solo para lo que hace de id
+  (el dibujo de un legendario va por su nombre, comparar títulos) o para reconocer frases de
+  partidas viejas. Nunca para enseñar.
+
+### Qué usar en el núcleo (`src/core`)
+
+- **Lo que se guarda en la partida** (informes y sus chapitas, avisos del amanecer, cartas,
+  historial y cita de los héroes, títulos y textos de encargos, objetos, objetivos, el suceso
+  pendiente…): `msg(clave, huecos)`. Los tipos ya lo piden: esos campos son `Txt`.
+- **Lo que se devuelve para enseñarlo ya** (por qué no se puede hacer algo, la ficha de una
+  sala, el estado de la sastrería): `t(clave, huecos)`.
+- Los huecos pueden llevar otros mensajes: un lugar (`placeMsg(id)`), un cliente
+  (`clientMsg(id)`, `clientLabelMsg(id)`), un objeto (su `name`), una sala
+  (`msg('salas.salas.<tipo>.nombre')`), una banda (`bandParams(band)` da `{banda}` y
+  `{varios}`), un rango (`rankMsg(i)`), un material (`matMsg(m)`). Se escriben en el idioma
+  de quien lee.
+- Las listas de variantes se eligen por posición (`rng.int(0, lista.length - 1)` gasta el mismo
+  azar que `rng.pick`) y se guarda la clave con su número: ``msg(`relatos.ambiente.${i}`)``.
+- En la interfaz, todo campo `Txt` se enseña con `tx(…)`. Ojo: TypeScript no avisa si un
+  mensaje se pinta tal cual en JSX o en una plantilla (`` `${…}` ``): para buscarlos,
+  `npm run textos:sin-tx` (ver «Herramientas»).
 - Los datos (`src/data`) escriben sus textos al cargar el módulo: el idioma se elige al
   arrancar y cambiarlo recarga la página.
 - Una clave que no existe sale como la clave (y avisa en la consola); el test la pilla antes.
@@ -85,14 +105,20 @@ tx(report.body[0]); // escribir lo guardado (mensaje o frase vieja)
 
 ## Partidas guardadas (decidido: partidas limpias con conversor)
 
-- Hoy (versión 5) las partidas guardan frases ya escritas: informes, cartas, encargos del
-  tablón, cita e historial de los héroes, nombres de objetos.
-- Con el bloque del núcleo: las partidas nuevas guardan **mensajes** (`Msg`: clave y huecos) y
-  ids (objetos, lugares, clientes, apodos), y se sube `SAVE_VERSION` a 6 con un **conversor de
-  la 5 a la 6** al cargar: lo que sale de un catálogo se pasa a id o a mensaje (objetos, salas,
-  resultados, encargos del tablón, apodos); el texto libre que no se puede reconocer (informes
-  y cartas viejos, historial) se queda como frase (`Txt` = mensaje o frase) y se sigue leyendo
-  en español. Así no se pierden las partidas de los testers.
+- **Versión 6** (bloque 2): las partidas guardan **mensajes** (`Msg`: clave y huecos) e ids.
+  `Txt` = mensaje o frase: las frases solo vienen de partidas viejas.
+- **Conversor de la 5 a la 6** (`core/convert.ts`, al cargar en `platform/storage.ts`): pasa a
+  mensaje lo que sale de un catálogo y se reconoce comparando con el español: objetos (arcón,
+  equipo puesto, talleres, botín de los encargos), trofeos, encargos del tablón y de los
+  grupos fuera (con su plantilla y su amenaza; también los de rumor, mensajero, historia y
+  rescate), clientes (a su id), giros, apodos, citas de héroes y trabajadores, el rumor, la
+  banda del asalto, la frase del día, los objetivos en curso, el suceso pendiente y los caídos
+  del tío. El texto libre ya escrito (informes y cartas, historial, avisos del amanecer, Libro,
+  epitafios) se queda como frase y se sigue leyendo en español. Lo que no reconoce, también.
+- Lo prueba `core/convert.test.ts` con una partida v5 de verdad (`core/fixtures/partida-v5.json`,
+  jugada un mes con el código de antes): todo lo de catálogo pasa a mensaje y se lee igual.
+- Los lugares van por su id, que es su nombre en español («el molino»): no hay que convertir
+  nada; el nombre que se enseña sale de `lugares.sitios.<clave>` (`placeName`, `placeMsg`).
 - Los nombres de los héroes se quedan como nacieron en cualquier idioma.
 
 ## La tabla (revisar o traducir)
@@ -121,8 +147,8 @@ tx(report.body[0]); // escribir lo guardado (mensaje o frase vieja)
 
 | Bloque | Qué | Estado |
 | --- | --- | --- |
-| 1 | Sistema, convención, tabla, tests y `src/data` | Hecho (este PR) |
-| 2 | `src/core` (informes, cartas, avisos) con mensajes guardados y conversor v5→v6 | Siguiente |
+| 1 | Sistema, convención, tabla, tests y `src/data` | Hecho (#201) |
+| 2 | `src/core` (informes, cartas, avisos) con mensajes guardados y conversor v5→v6 | Hecho (este PR) |
 | 3 | `src/ui`, `src/world`, `src/art`, `src/platform` | Después |
 | 4 | Inglés y selector en Ajustes | Cuando el usuario diga |
 
@@ -132,32 +158,38 @@ nombres de premios, objetos, glosario). Solo cambian niveles que no existen (sal
 «+undefined»). `npm run sim` da la misma salida. Las capturas de la interfaz (`tools/shots/ui.mjs`)
 dan las mismas medidas.
 
+Bloque 2, comprobado: `npm run sim` da la misma salida (el azar no cambia); la interfaz da las
+mismas medidas en todas las pantallas; los 897 tests pasan. Cambios de texto a propósito (mejor
+español, misma idea): la contracción «a el»/«de el» ya no se come la «í» («Amplía el» salía
+«Amplíal»; «decía el», «decíal»), y se aplica en todas las frases con huecos («cerca del
+molino»); «calidad buena/rara» (decía «calidad bueno»); «veterana» en femenino; las listas
+llevan «y» al final («3 campesinos y 1 noble»).
+
+## Herramientas
+
+- `npm run textos:sacar` / `textos:meter`: la tabla (arriba).
+- `npm run textos:sin-tx`: busca con el comprobador de tipos de TypeScript cada `{expr}` de JSX,
+  cada `` `${expr}` `` y cada `+`, `===` y `!==` cuyo tipo sea `Msg`/`Txt` (un mensaje que se
+  pintaría como objeto o se compararía mal). Pasarlo tras tocar la interfaz; lo que salga, con
+  `tx()` (o `idText()` si es para comparar).
+
 ## Cabos sueltos (para no olvidar)
 
 Lo que queda por hacer o por decidir para poder traducir de verdad. Al resolver uno, táchalo y
 di en qué PR.
 
-1. **El núcleo guarda frases hechas** (`Report.body`, `chips`, `Quest.title/text`, `Hero.quote`,
-   `history`, `Item.name`, cartas, avisos, epitafios, objetivos): pasar a `Msg` + conversor
-   v5→v6 (bloque 2).
-2. **Plantillas que el núcleo rellena a su manera** con `tr()`: `fill` de `core/generate.ts`
-   (con `{Threat}` en mayúscula y las contracciones «a el» → «al», «de el» → «del», que son del
-   español: deberán ser de cada idioma), `core/incidents.ts`, `core/goals.ts`, `core/journey.ts`,
-   `core/rumors.ts` y `ui/panels/LibroPanel.tsx` (`{n}`). Pasarlas a `t(clave, huecos)` y
-   `{amenaza, mayus}`. De paso, los huecos que aún van en inglés (`{place}`, `{threat}`, `{who}`,
-   `{gold}`, `{band}`, `{foe}`…) pasan a español (`{lugar}`, `{amenaza}`…).
-3. **Asaltos con `{viene|vienen}`** (`bandNumber`, en `data/raids.ts`, `ui/Hud.tsx`,
-   `ui/panels/MapPanel.tsx`): pasar a `{varios, select, si {vienen} other {viene}}`. El test se
-   las salta mientras tanto (`LEGACY`).
-4. **Textos que hacen de id**:
-   - lugares: `PLACE_INFO` va por el nombre en español y `Quest.place` lo guarda (`data/places.ts`
-     está en `ALLOWED` por esto);
-   - clientes: `Quest.client` guarda la etiqueta (`clientProse` la busca por la etiqueta del
-     idioma de ahora: los ids ya están en `encargos.clientes`);
-   - objetos: se identifican por el nombre (los legendarios con dibujo propio en
-     `art/legendaries.ts`, y lo guardado);
-   - `Outcome` (`'Éxito brillante'`…) se enseña tal cual; `SkillId`, `QuestType` y `AttrId`
-     también (p. ej. `+1 Combate` en `itemEffect`, `ATTR_NAMES`): necesitan su etiqueta.
+1. ~~El núcleo guarda frases hechas~~: hecho en el bloque 2 (mensajes y conversor).
+2. ~~Plantillas que el núcleo rellenaba a su manera~~ (`fill`, `{Threat}`, huecos en inglés):
+   hecho en el bloque 2. Las contracciones del español son ahora `Lang.post` (`textos/index.ts`).
+3. ~~Asaltos con `{viene|vienen}`~~: hecho en el bloque 2 (`bandParams`, `varios` en cada banda).
+4. **Textos que hacen de id** (lo que queda):
+   - ~~clientes~~ (bloque 2: `Quest.client` es un id) y ~~lugares~~ (su id es su nombre en
+     español, con su nombre traducible en `lugares.sitios`);
+   - objetos: el dibujo propio de los legendarios (`art/legendaries.ts`) va por el nombre en
+     español (`idText`); valdría un id en el catálogo;
+   - en la interfaz quedan sitios que enseñan `Outcome`, `QuestType` o `SkillId` tal cual (el
+     núcleo ya usa `outcomeLabel`, `skillName`, `attrName`): bloque 3.
+   - `ui/mats.ts` (`chipMat`) busca el material leyendo la chapita en español: bloque 3.
 5. `FOE_WORDS` (`data/journey.ts`) busca palabras en español en el texto del encargo: en otro
    idioma no casaría. Mejor sacar el enemigo de la plantilla o la amenaza.
 6. `sealInitial` (`data/custom.ts`) se salta artículos en español.
@@ -168,8 +200,14 @@ di en qué PR.
 9. Nombres de héroes (`data/names.ts`): se quedan en el código y no se traducen. Si un idioma
    quiere su propia lista para los héroes nuevos, se saca a `nombres.yaml`.
 10. Los colores de las rarezas (`art/tiers.ts`, `TIER_COLOR_NAMES`) y el resto de `src/art`.
-11. En `trabajadores.yaml` quedan dos claves en inglés (`role`, `quote`): renombrarlas cuando se
-    toque `data/workers.ts`.
+11. ~~Claves en inglés en `trabajadores.yaml`~~: ahora `papel` y `cita` (bloque 2).
+13. Las peleas contra jefes guardan los nombres de los luchadores ya escritos
+    (`BossFight.sim.setup`: «Esbirro», el nombre del jefe): una pelea guardada se ve en el idioma
+    en que se jugó. Para traducirlas, guardar ids y escribir al pintar.
+14. El test de textos sueltos no ve **palabras sueltas sin tilde** (`'Arma'`, `'nadie'`): se
+    buscaron a mano en `data` y `core` en el bloque 2; en la interfaz habrá que mirar igual.
+15. `RANKS[i].name`, `ATTR_NAMES`, `SLOT_NAMES`, `PERKS`, `MATERIALS` y similares se escriben al
+    cargar (en el idioma de la partida); para guardar, usar su mensaje (`rankMsg`, `matMsg`…).
 12. El selector de idioma en Ajustes y la recarga al cambiarlo (bloque 4).
 
 ## Decisiones (22 de noviembre, con el usuario)

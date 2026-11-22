@@ -21,6 +21,7 @@ import {
   type Plan,
 } from './rooms';
 import type { TutorialStep } from './tutorial';
+import { t } from '../textos';
 
 const find = (b: Building, type: string) => b.rooms.find((r) => r.type === type);
 /** El edificio que se enseña: el borrador del modo obras, si está abierto. */
@@ -94,28 +95,20 @@ const ALLOW: Record<string, (a: Action, b: Building) => boolean> = {
     (a.type === 'build' && a.room === 'tesoro'),
 };
 
-const WHY: Record<string, string> = {
-  'o-solar':
-    'Primero, sitio: compra el solar de la derecha (el hueco con su precio, junto a la cocina).',
-  'o-mudar': 'Ahora toca mudar la cocina: llévala al solar nuevo.',
-  'o-salon': 'Ahora, el salón: tócalo y amplíalo con el «+» de la derecha.',
-  'o-excavar': 'Ahora hay que excavar el hueco de debajo del solar, junto a la cámara.',
-  'o-camara': 'Ahora, la cámara: tócala y amplíala con el «+» de la derecha.',
-  'o-pagar': 'Ya está todo apuntado: paga las obras (o deshaz la última si te has equivocado).',
-};
+/** Por qué no se deja apuntar otra obra en cada paso (`tutorial_obras.<paso>.veto`). */
+const WHY = ['o-solar', 'o-mudar', 'o-salon', 'o-excavar', 'o-camara', 'o-pagar'];
 
 /** Lo que el tutorial de obras no deja apuntar ahora, y por qué (null = adelante). */
 export function obrasVeto(s: GameState, st: TutorialStep, a: Action): string | null {
   const ok = ALLOW[st.id];
   if (ok?.(a, plan(s))) return null;
-  return WHY[st.id] ?? null;
+  return WHY.includes(st.id) ? t(`tutorial_obras.${st.id.replace('-', '_')}.veto`) : null;
 }
 
 export const OBRAS: readonly TutorialStep[] = [
   {
     id: 'o-martillo',
-    text: () =>
-      'Pagada la deuda, la casa es tuya del todo y se acabaron los apaños: ahora se hace obra de verdad. Lo primero, un salón más grande, que en las noches buenas no cabe un alfiler. Toca el martillo.',
+    text: () => t('tutorial_obras.o_martillo.texto'),
     pause: 6,
     clock: true,
     done: (s) => !!s.tutorial?.plan || allDone(s),
@@ -124,53 +117,47 @@ export const OBRAS: readonly TutorialStep[] = [
       if (cost === null || s.gold >= cost) return null;
       const gift = cost - s.gold;
       s.gold += gift;
-      return `En la última hoja del cuaderno había ${gift} monedas: «Para el salón. Las obras siempre cuestan más de lo que uno cree».`;
+      return t('tutorial_obras.o_martillo.regalo', { n: gift });
     },
   },
   {
     id: 'o-solar',
-    text: () =>
-      'En el modo obras todo es de mentira hasta que pagas: ves cómo queda y lo que cuesta, y si te arrepientes, lo deshaces. El salón no tiene por dónde crecer: a la derecha está la cocina y encima el dormitorio. Lo primero es sitio: compra el solar de al lado.',
+    text: () => t('tutorial_obras.o_solar.texto'),
     focus: (s) => find(s.building, 'cocina')?.id ?? null,
     done: (s) => plan(s).cols > START_COLS || allDone(s),
   },
   {
     id: 'o-mudar',
-    text: () =>
-      'Ahora, la cocina al solar nuevo. Tócala y dale a «Mover» (o cógela con el dedo) y suéltala en el hueco de la derecha. Seguirá pegada al salón, que es lo que importa.',
+    text: () => t('tutorial_obras.o_mudar.texto'),
     focus: (s) => find(s.building, 'cocina')?.id ?? null,
     done: (s) => !kitchenInWay(plan(s)) || salonGrown(plan(s)),
   },
   {
     id: 'o-salon',
-    text: () =>
-      'Hueco libre. Abajo verás que la cocina se ha quedado sin paso: no pasa nada, en el borrador se puede dejar algo a medias; solo hay que arreglarlo antes de pagar. Toca el salón y amplíalo con el «+» que sale a su derecha: llegará hasta la cocina.',
+    text: () => t('tutorial_obras.o_salon.texto'),
     focus: (s) => find(s.building, 'salon')?.id ?? null,
     done: (s) => salonGrown(plan(s)),
   },
   {
     id: 'o-excavar',
-    text: () =>
-      'Ahora la cámara del tesoro, que se llena enseguida y lo que no cabe se pierde. Abajo no hay solar que comprar: hay roca. Excava el hueco de debajo del solar, junto a la cámara. Cuanto más hondo, más caro.',
+    text: () => t('tutorial_obras.o_excavar.texto'),
     focus: (s) => find(s.building, 'tesoro')?.id ?? null,
     done: (s) => dugBeside(plan(s)) || vaultGrown(plan(s)),
   },
   {
     id: 'o-camara',
-    text: () => 'Toca la cámara y amplíala con el «+» de la derecha.',
+    text: () => t('tutorial_obras.o_camara.texto'),
     focus: (s) => find(s.building, 'tesoro')?.id ?? null,
     done: (s) => vaultGrown(plan(s)),
   },
   {
     id: 'o-pagar',
-    text: () =>
-      'Así queda. Abajo tienes lo que cuesta todo junto: si te convence, paga y la obra se levanta en un momento.',
+    text: () => t('tutorial_obras.o_pagar.texto'),
     done: allDone,
   },
   {
     id: 'o-fin',
-    text: () =>
-      'Así se hace sitio: solar, mudanza, ampliar y excavar. Hacia arriba también se crece, pero cada planta solo sobresale un hueco de la de abajo. Y ahora viene gente del pueblo a pedir trabajo (en «Héroes», pestaña «Barra»): cada uno necesita su cama, así que antes construye el dormitorio del servicio. Otra cosa: el hierro, el cuero y la tela que traen los encargos se amontonan en un rincón de la bodega, y lo que no cabe se malvende. Un almacén (en la pestaña «Gremio») los guarda.',
+    text: () => t('tutorial_obras.o_fin.texto'),
     button: 'seguir',
   },
 ];

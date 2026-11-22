@@ -4,6 +4,7 @@ import { OUTCOME_CLASS } from '../../data/labels';
 import { Icon } from '../icons';
 import { listNames } from '../text';
 import { dawnIn } from '../when';
+import { tx } from '../../textos';
 
 interface Props {
   game: GameState;
@@ -36,7 +37,7 @@ export function HistoryPanel({ game, onTrip, onReport }: Props) {
               <button key={m.id} class="row mail" onClick={() => onTrip(m.id)}>
                 <Icon name="flag" size={16} />
                 <span class="mail-info">
-                  <b>{m.quest.title}</b>
+                  <b>{tx(m.quest.title)}</b>
                   <span class="row-sub">
                     {names(game, m)} · {m.quest.place}
                   </span>
@@ -74,9 +75,9 @@ export function HistoryPanel({ game, onTrip, onReport }: Props) {
                     G
                   </span>
                   <span class="mail-info">
-                    <b>{e.title}</b>
+                    <b>{tx(e.title)}</b>
                     <span class="row-sub">
-                      {e.who} · {e.place}
+                      {tx(e.who)} · {e.place}
                     </span>
                   </span>
                   <span class="mail-side">
@@ -93,7 +94,7 @@ export function HistoryPanel({ game, onTrip, onReport }: Props) {
                 <button
                   key={e.id}
                   class="row mail read"
-                  aria-label={`${e.title}: ${e.outcome}. Leer el informe`}
+                  aria-label={`${tx(e.title)}: ${e.outcome}. Leer el informe`}
                   onClick={() => onReport(e.report)}
                 >
                   {body}

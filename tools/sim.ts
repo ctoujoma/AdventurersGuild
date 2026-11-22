@@ -20,6 +20,7 @@ import { vaultFull, vaultOf } from '../src/core/vault';
 import { settleWalks } from '../src/core/workers';
 import { roughNight } from '../src/core/sky';
 import { slotOf } from '../src/core/gear';
+import { idText } from '../src/textos';
 
 declare const process: { argv: string[] };
 
@@ -222,7 +223,7 @@ function tracked(s: GameState, st: Strategy, acc: Rooms): GameState {
   acc.wages[phase]! += salaries(s);
   acc.days[phase]!++;
   const seen = new Set(s.reports.map((r) => r.id));
-  for (const q of s.quests) acc.danger.set(q.title, q.danger);
+  for (const q of s.quests) acc.danger.set(idText(q.title), q.danger);
   const next = playDay(s, st);
   acc.nights++;
   const fired = Object.entries(next.nights?.last ?? {}).filter(([, d]) => d === next.day - 1);
@@ -233,7 +234,8 @@ function tracked(s: GameState, st: Strategy, acc: Rooms): GameState {
     if (rough) acc.roughEventful++;
   }
   for (const [id] of fired) acc.byEvent[id] = (acc.byEvent[id] ?? 0) + 1;
-  for (const e of next.dawn) {
+  for (const ev of next.dawn) {
+    const e = { ...ev, t: idText(ev.t) };
     if (e.t.startsWith('Anoche entró un ladrón')) {
       acc.thieves++;
       if (e.k === 'good') acc.caught++;
@@ -253,13 +255,13 @@ function tracked(s: GameState, st: Strategy, acc: Rooms): GameState {
   for (const r of next.reports.filter((x) => !seen.has(x.id))) {
     acc.outcomes[r.outcome]++;
     if (!r.raid) {
-      const hard = (acc.danger.get(r.title) ?? 0) >= 2 ? 1 : 0;
+      const hard = (acc.danger.get(idText(r.title)) ?? 0) >= 2 ? 1 : 0;
       acc.sentBy[hard]!++;
       if (r.outcome === 'Fracaso' || r.outcome === 'Desastre') acc.badBy[hard]!++;
       if (r.outcome === 'Éxito parcial') acc.partialBy[hard]!++;
       for (const c of r.chips) {
-        if (/: caíd[oa]$/.test(c.t)) acc.deadBy[hard]!++;
-        if (/: desaparecid[oa]$/.test(c.t)) acc.lostBy[hard]!++;
+        if (/: caíd[oa]$/.test(idText(c.t))) acc.deadBy[hard]!++;
+        if (/: desaparecid[oa]$/.test(idText(c.t))) acc.lostBy[hard]!++;
       }
     }
     if (!r.raid) continue;
@@ -270,7 +272,7 @@ function tracked(s: GameState, st: Strategy, acc: Rooms): GameState {
       acc.wonBy[phase]!++;
     }
     for (const c of r.chips) {
-      const m = /Saqueo: −(\d+)/.exec(c.t);
+      const m = /Saqueo: −(\d+)/.exec(idText(c.t));
       if (m) acc.stolen += Number(m[1]);
     }
   }

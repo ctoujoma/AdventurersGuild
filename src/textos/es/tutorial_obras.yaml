@@ -1,0 +1,23 @@
+o_martillo:
+  texto: "Pagada la deuda, la casa es tuya del todo y se acabaron los apaños: ahora se hace obra de verdad. Lo primero, un salón más grande, que en las noches buenas no cabe un alfiler. Toca el martillo."
+  regalo: "En la última hoja del cuaderno había {n} monedas: «Para el salón. Las obras siempre cuestan más de lo que uno cree»."
+o_solar:
+  texto: "En el modo obras todo es de mentira hasta que pagas: ves cómo queda y lo que cuesta, y si te arrepientes, lo deshaces. El salón no tiene por dónde crecer: a la derecha está la cocina y encima el dormitorio. Lo primero es sitio: compra el solar de al lado."
+  veto: "Primero, sitio: compra el solar de la derecha (el hueco con su precio, junto a la cocina)."
+o_mudar:
+  texto: "Ahora, la cocina al solar nuevo. Tócala y dale a «Mover» (o cógela con el dedo) y suéltala en el hueco de la derecha. Seguirá pegada al salón, que es lo que importa."
+  veto: "Ahora toca mudar la cocina: llévala al solar nuevo."
+o_salon:
+  texto: "Hueco libre. Abajo verás que la cocina se ha quedado sin paso: no pasa nada, en el borrador se puede dejar algo a medias; solo hay que arreglarlo antes de pagar. Toca el salón y amplíalo con el «+» que sale a su derecha: llegará hasta la cocina."
+  veto: "Ahora, el salón: tócalo y amplíalo con el «+» de la derecha."
+o_excavar:
+  texto: "Ahora la cámara del tesoro, que se llena enseguida y lo que no cabe se pierde. Abajo no hay solar que comprar: hay roca. Excava el hueco de debajo del solar, junto a la cámara. Cuanto más hondo, más caro."
+  veto: "Ahora hay que excavar el hueco de debajo del solar, junto a la cámara."
+o_camara:
+  texto: "Toca la cámara y amplíala con el «+» de la derecha."
+  veto: "Ahora, la cámara: tócala y amplíala con el «+» de la derecha."
+o_pagar:
+  texto: "Así queda. Abajo tienes lo que cuesta todo junto: si te convence, paga y la obra se levanta en un momento."
+  veto: "Ya está todo apuntado: paga las obras (o deshaz la última si te has equivocado)."
+o_fin:
+  texto: "Así se hace sitio: solar, mudanza, ampliar y excavar. Hacia arriba también se crece, pero cada planta solo sobresale un hueco de la de abajo. Y ahora viene gente del pueblo a pedir trabajo (en «Héroes», pestaña «Barra»): cada uno necesita su cama, así que antes construye el dormitorio del servicio. Otra cosa: el hierro, el cuero y la tela que traen los encargos se amontonan en un rincón de la bodega, y lo que no cabe se malvende. Un almacén (en la pestaña «Gremio») los guarda."

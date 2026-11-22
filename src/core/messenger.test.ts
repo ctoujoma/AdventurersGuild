@@ -6,6 +6,7 @@ import { nappers } from './incidents';
 import { MESSENGER_EVENT, messengerGone } from './messenger';
 import type { GameState } from './model';
 import { Rng } from './rng';
+import { tx } from '../textos';
 
 /** Una partida sin tutorial, de noche, con el mensajero llamando a la puerta. */
 function knock(seed = 'mensajero', day = 4): GameState {
@@ -39,7 +40,7 @@ describe('el mensajero tardío', () => {
     expect(t.quests.some((x) => x.id === q.id)).toBe(true);
     const d1 = endDay(t);
     expect(d1.quests.some((x) => x.id === q.id)).toBe(true);
-    expect(d1.dawn.some((e) => e.t.includes(q.title))).toBe(true);
+    expect(d1.dawn.some((e) => tx(e.t).includes(tx(q.title)))).toBe(true);
     const d2 = endDay(d1);
     expect(d2.quests.some((x) => x.id === q.id)).toBe(false);
   });
@@ -60,7 +61,7 @@ describe('el mensajero tardío', () => {
     expect(gone.incidentNews ?? []).toEqual([]);
     const d = endDay(gone);
     expect(d.quests.some((x) => x.id === q.id)).toBe(false);
-    expect(d.dawn.some((e) => /nadie le abrió/.test(e.t))).toBe(true);
+    expect(d.dawn.some((e) => /nadie le abrió/.test(tx(e.t)))).toBe(true);
     // Con guardia: solo si estaba despierto cuando llamó.
     let took = 0;
     let missed = 0;
@@ -80,7 +81,9 @@ describe('el mensajero tardío', () => {
       expect(next.quests.some((x) => x.id === m.quest.id)).toBe(awake);
       if (awake) took++;
       else {
-        expect(next.dawn.some((e) => e.t.includes(g.name) && /cabeceaba/.test(e.t))).toBe(true);
+        expect(next.dawn.some((e) => tx(e.t).includes(g.name) && /cabeceaba/.test(tx(e.t)))).toBe(
+          true,
+        );
         missed++;
       }
     }

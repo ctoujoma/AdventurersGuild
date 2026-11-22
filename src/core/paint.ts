@@ -21,9 +21,9 @@ import { customOf } from './custom';
 import { hasUnlock, unlockSource } from './goals';
 import type { DawnEvent, GameState, Paint, Room } from './model';
 import { active } from './rooms';
-import { ROOMS } from '../data/rooms';
 import { effortOf, workedIn } from './workers';
 import { bump } from './feats';
+import { msg, t } from '../textos';
 
 const partOf = (s: GameState) => Math.min(1, (s.clock ?? 0) / DAY_SECONDS);
 
@@ -73,19 +73,24 @@ export type PaintStatus =
 export function paintStatus(s: GameState, roomId: string, tint: TintId | null): PaintStatus {
   const r = s.building.rooms.find((x) => x.id === roomId);
   const cost = r ? paintCost(r) : PAINT_GOLD;
-  if (!r) return { state: 'none', why: 'Esa sala ya no está.', cost };
-  if (roomTint(s, roomId) === tint) return { state: 'same', why: 'Ya es de ese color.', cost };
+  if (!r) return { state: 'none', why: t('pintor.sin_sala'), cost };
+  if (roomTint(s, roomId) === tint) return { state: 'same', why: t('pintor.mismo'), cost };
   if (tint && !hasUnlock(s, `tint:${tint}`)) {
     const from = unlockSource(`tint:${tint}`);
-    return { state: 'lock', why: from ? `Se consigue con: ${from}.` : 'Aún no lo tenéis.', cost };
+    return {
+      state: 'lock',
+      why: from ? t('talleres.ropa.se_consigue', { como: from }) : t('talleres.ropa.no_lo_teneis'),
+      cost,
+    };
   }
   const list = shops(s);
-  if (!list.length) return { state: 'none', why: 'Hace falta un taller del pintor.', cost };
+  if (!list.length) return { state: 'none', why: t('pintor.sin_taller'), cost };
   if (!list.some((x) => paintersOf(s, x.id).length))
-    return { state: 'nobody', why: 'El taller del pintor no tiene pintor.', cost };
-  if (paintingOf(s, roomId)) return { state: 'painting', why: 'Ya la están pintando.', cost };
-  if (!freeShop(s)) return { state: 'busy', why: 'Los pintores están pintando otra sala.', cost };
-  if (s.gold < cost) return { state: 'gold', why: `Te faltan ${cost - s.gold} monedas.`, cost };
+    return { state: 'nobody', why: t('pintor.sin_pintor'), cost };
+  if (paintingOf(s, roomId)) return { state: 'painting', why: t('pintor.pintando'), cost };
+  if (!freeShop(s)) return { state: 'busy', why: t('pintor.ocupados'), cost };
+  if (s.gold < cost)
+    return { state: 'gold', why: t('partida.error.faltan', { n: cost - s.gold }), cost };
   return { state: 'ok', cost };
 }
 
@@ -201,9 +206,12 @@ export function stepPaints(s: GameState, part: number, unseen = false): DawnEven
     s.custom = { ...c, colors };
     bump(s, 'painted');
     const w = s.workers.find((x) => x.id === p.painter);
-    const color = p.tint ? TINTS[p.tint].name.toLowerCase() : 'los colores de la casa';
     news.push({
-      t: `${w?.name ?? 'El pintor'} ha acabado de pintar ${ROOMS[r.type].name.toLowerCase()}: ahora luce ${color}.`,
+      t: msg('pintor.acabado', {
+        pintor: w?.name ?? msg('pintor.el_pintor'),
+        sala: msg(`salas.salas.${r.type}.nombre`),
+        color: p.tint ? msg(`personalizar.tintes.${p.tint}.nombre`) : msg('pintor.de_la_casa'),
+      }),
       k: 'good',
     });
   }

@@ -7,7 +7,9 @@
  * - `{n, plural, one {# jarra} other {# jarras}}`: plural según el idioma; `=0 {…}` para un
  *   número exacto; `#` es el número.
  * - `{sexo, select, f {pálida} other {pálido}}`: elige por el valor (`si`/`no` para sí y no).
- * - `{nombre, mayus}`: el hueco con la primera letra en mayúscula.
+ * - `{nombre, mayus}` / `{nombre, minus}`: el hueco con la primera letra en mayúscula / minúscula.
+ * - Cada idioma puede retocar la frase ya escrita (`Lang.post`): en español, «a el» → «al» y
+ *   «de el» → «del» (los lugares y amenazas llevan su artículo).
  */
 
 export type Param = string | number | boolean | Msg | readonly Param[] | null | undefined;
@@ -22,7 +24,7 @@ export interface Msg {
 type Part =
   | string
   | { arg: string; kind?: undefined }
-  | { arg: string; kind: 'mayus' }
+  | { arg: string; kind: 'mayus' | 'minus' }
   | { arg: string; kind: 'plural' | 'select'; cases: Record<string, Part[]> }
   | { hash: true };
 
@@ -32,6 +34,8 @@ export interface Lang {
   plural: (n: number) => string;
   list: (items: readonly string[]) => string;
   render: (m: Msg) => string;
+  /** Retoque de la frase ya escrita (contracciones…). */
+  post?: (s: string) => string;
 }
 
 const cache = new Map<string, Part[]>();
@@ -87,8 +91,8 @@ function parseArg(r: { s: string; i: number }): Part {
     return { arg };
   }
   end(/^,\s*/);
-  const kind = end(/^(plural|select|mayus)\s*/)[1] as 'plural' | 'select' | 'mayus';
-  if (kind === 'mayus') {
+  const kind = end(/^(plural|select|mayus|minus)\s*/)[1] as 'plural' | 'select' | 'mayus' | 'minus';
+  if (kind === 'mayus' || kind === 'minus') {
     end(/^\}/);
     return { arg, kind };
   }
@@ -118,7 +122,8 @@ function show(v: Param, lang: Lang): string {
 
 /** Escribe un mensaje con sus huecos. */
 export function format(src: string, p: Params | undefined, lang: Lang): string {
-  return run(parse(src), p ?? {}, lang, 0);
+  const out = run(parse(src), p ?? {}, lang, 0);
+  return p && lang.post ? lang.post(out) : out;
 }
 
 function run(parts: Part[], p: Params, lang: Lang, n: number): string {
@@ -127,14 +132,15 @@ function run(parts: Part[], p: Params, lang: Lang, n: number): string {
     if (typeof part === 'string') out += part;
     else if ('hash' in part) out += String(n);
     else if (!part.kind) out += show(p[part.arg], lang);
-    else if (part.kind === 'mayus') {
+    else if (part.kind === 'mayus' || part.kind === 'minus') {
       const v = show(p[part.arg], lang);
-      out += v.charAt(0).toUpperCase() + v.slice(1);
+      const c = v.charAt(0);
+      out += (part.kind === 'mayus' ? c.toUpperCase() : c.toLowerCase()) + v.slice(1);
     } else if (part.kind === 'plural') {
       const num = Number(p[part.arg] ?? 0);
       const c = part.cases[`=${num}`] ?? part.cases[lang.plural(num)] ?? part.cases.other!;
       out += run(c, p, lang, num);
-    } else {
+    } else if (part.kind === 'select') {
       const v = show(p[part.arg], lang);
       out += run(part.cases[v] ?? part.cases.other!, p, lang, n);
     }

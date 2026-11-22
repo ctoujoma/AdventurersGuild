@@ -16,7 +16,7 @@ o está en «Más adelante», no se toca sin preguntar. El detalle de cada idea 
 - **Tecnología:** seguir en web (TypeScript, Preact, three.js) y empaquetar: Capacitor para
   Android e iOS, Electron o Tauri para Steam. Medir pronto el 3D en un Android modesto.
 - **Textos preparados para traducir** (inglés primero) antes de que crezcan más. En marcha: convención
-  y estado en [`textos.md`](textos.md) (hecho el sistema y `src/data`; siguen `src/core` y la interfaz).
+  y estado en [`textos.md`](textos.md) (hechos el sistema, `src/data` y `src/core` con partidas limpias; sigue la interfaz).
 
 ## Quién hace qué
 

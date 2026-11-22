@@ -21,6 +21,7 @@ import {
 import { equip } from './resolve';
 import type { GameState, Mission } from './model';
 import { Rng } from './rng';
+import { t } from '../textos';
 
 export {
   ABILITIES,
@@ -89,7 +90,7 @@ export function foeUnits(boss: BossKind, diff: number, n: number): Unit[] {
     out.push({
       id: `esbirro-${i}`,
       side: 'e',
-      name: 'Esbirro',
+      name: t('peleas.esbirro'),
       kind: 'esbirro',
       max: Math.round(FOE_TUNE.minionHp * (diff + 3)),
       hp: 0,

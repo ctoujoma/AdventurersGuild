@@ -22,3 +22,8 @@ rumores:
   - "Esta cerveza es mejor que la de la posada del cruce."
   - "Mi primo dice que vio un dragón. Mi primo ve muchas cosas."
   - "Los bandidos del Tuerto se reparten el botín en la ermita."
+cuantos:
+  campesino: "{n, plural, one {# campesino} other {# campesinos}}"
+  mercader: "{n, plural, one {# mercader} other {# mercaderes}}"
+  noble: "{n, plural, one {# noble} other {# nobles}}"
+  espia: "{n, plural, one {# forastero callado} other {# forasteros callados}}"

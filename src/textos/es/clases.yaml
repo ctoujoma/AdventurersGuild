@@ -1,0 +1,15 @@
+guerrero:
+  nombre: "Escudo"
+  desc: "Cubre al grupo: sus compañeros se hieren la mitad."
+picaro:
+  nombre: "Manos largas"
+  desc: "+{n} % de oro, y trae el objeto aunque el éxito sea parcial."
+mago:
+  nombre: "Sexto sentido"
+  desc: "Descubre giros ocultos y el peligro real del encargo."
+clerigo:
+  nombre: "Plegaria"
+  desc: "A veces salva a quien iba a caer y las derrotas desaniman la mitad."
+explorador:
+  nombre: "Atajos"
+  desc: "En viajes de {min} días o más vuelve {dias} antes, y esquiva la mitad de emboscadas."

@@ -3,7 +3,7 @@
  * plantas nuevas y niveles de sala (ver `FLOORS_BY_RANK` y `LEVEL_RANK` en `balance.ts`), y el
  * aviso del amanecer al subir de rango.
  */
-import { ROOMS, type RoomType } from '../data/rooms';
+import type { RoomType } from '../data/rooms';
 import {
   FLOORS_BY_RANK,
   LEVEL_RANK,
@@ -12,25 +12,27 @@ import {
   RANKS,
   WING_RANK,
   rankIndex,
+  rankMsg,
 } from './balance';
 import type { DawnEvent, GameState } from './model';
+import { type Msg, msg, t } from '../textos';
 
 /** Lo que abre el rango `r`, dicho para el jugador: «la planta 5», «nivel 3 de la capilla»… */
-export function rankUnlocks(r: number): string[] {
-  const out: string[] = [];
+export function rankOpens(r: number): Msg[] {
+  const out: Msg[] = [];
   const floors = FLOORS_BY_RANK[r] ?? 0;
   const before = FLOORS_BY_RANK[r - 1] ?? floors;
-  for (let f = before + 1; f <= floors; f++) out.push(`la planta ${f}`);
+  for (let f = before + 1; f <= floors; f++) out.push(msg('rangos.planta', { n: f }));
   for (const [type, levels] of Object.entries(LEVEL_RANK) as [RoomType, Record<number, number>][])
     for (const [level, need] of Object.entries(levels))
-      if (need === r) out.push(`el nivel ${level} de ${ROOMS[type].name.toLowerCase()}`);
-  if (r === WING_RANK) out.push('el patio trasero');
+      if (need === r)
+        out.push(msg('rangos.nivel', { n: level, sala: msg(`salas.salas.${type}.nombre`) }));
+  if (r === WING_RANK) out.push(msg('rangos.patio'));
   return out;
 }
 
-/** «a, b y c». */
-const list = (xs: string[]) =>
-  xs.length < 2 ? (xs[0] ?? '') : `${xs.slice(0, -1).join(', ')} y ${xs.at(-1)}`;
+/** Lo mismo, escrito (para la interfaz). */
+export const rankUnlocks = (r: number): string[] => rankOpens(r).map((m) => t(m.k, m.p));
 
 /**
  * Al amanecer, si el gremio ha subido de rango, lo cuenta con lo que se abre. Las partidas de
@@ -40,7 +42,7 @@ export function checkRank(s: GameState, events: DawnEvent[]): void {
   const r = rankIndex(s.rep);
   if (s.rankLost !== undefined && r >= s.rankLost) {
     events.push({
-      t: `El gremio vuelve a ser de ${RANKS[s.rankLost]!.name}: se puede construir otra vez lo de ese rango.`,
+      t: msg('rangos.recupera', { rango: rankMsg(s.rankLost) }),
       k: 'good',
     });
     delete s.rankLost;
@@ -50,9 +52,9 @@ export function checkRank(s: GameState, events: DawnEvent[]): void {
     return;
   }
   s.rankSeen = r;
-  const opens = rankUnlocks(r);
+  const opens = rankOpens(r);
   events.push({
-    t: `¡El gremio es ahora de ${RANKS[r]!.name}! Llegan encargos más duros y mejor pagados${opens.length ? `, y se abre ${list(opens)}` : ''}.`,
+    t: msg('rangos.sube', { rango: rankMsg(r), abre: opens, hay: opens.length > 0 }),
     k: 'good',
     big: true,
   });
@@ -72,7 +74,7 @@ export function fadeFame(s: GameState, events: DawnEvent[]): void {
   if (s.rep <= floor) return;
   if (quiet === QUIET_AFTER + 1)
     events.push({
-      t: 'Hace días que nadie sale de encargo: en la comarca se empieza a olvidar al gremio. La fama irá bajando hasta que mandes a alguien.',
+      t: msg('rangos.olvido'),
       k: 'warn',
     });
   s.rep = Math.max(floor, s.rep - Math.max(1, Math.round(s.rep * QUIET_FAME)));
@@ -80,7 +82,7 @@ export function fadeFame(s: GameState, events: DawnEvent[]): void {
   if (after < before) {
     s.rankLost = Math.max(s.rankLost ?? 0, before);
     events.push({
-      t: `El gremio baja a ${RANKS[after]!.name}: ya no se habla de vuestras hazañas. Lo construido se queda, pero lo nuevo de ${RANKS[before]!.name} no se puede construir hasta recuperarlo.`,
+      t: msg('rangos.baja', { rango: rankMsg(after), antes: rankMsg(before) }),
       k: 'bad',
     });
   }

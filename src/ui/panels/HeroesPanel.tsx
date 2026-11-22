@@ -13,6 +13,7 @@ import { Icon } from '../icons';
 import { Portrait } from '../Portrait';
 import { Tabs } from '../Tabs';
 import { lookOf, marksOf, heroFrame } from '../view';
+import { tx } from '../../textos';
 
 export type HeroFilter = 'todos' | 'candidatos' | 'trabajadores' | 'equipo';
 
@@ -87,7 +88,7 @@ export function HeroesPanel({
           />
           <span class="row-info" aria-hidden="true">
             <b>
-              {h.name} {h.nick && <span class="nick">{h.nick}</span>}
+              {h.name} {h.nick && <span class="nick">{tx(h.nick)}</span>}
               {gearHint && (
                 <span class="gear-mark" {...help(gearHint)}>
                   <Icon name="cofre" size={10} />

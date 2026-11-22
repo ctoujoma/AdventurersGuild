@@ -5,6 +5,7 @@
  */
 import { DOOR_TIME, LOCK_TIME, VAULT_STORE, VAULT_WARN } from './balance';
 import type { DawnEvent, GameState, Room } from './model';
+import { msg } from '../textos';
 
 export const vaultOf = (s: GameState): Room | undefined =>
   s.building.rooms.find((r) => r.type === 'tesoro');
@@ -52,12 +53,12 @@ export function vaultNews(s: GameState, events: DawnEvent[]): void {
   const lost = s.spilt ?? 0;
   if (lost > 0)
     events.push({
-      t: `La cámara del tesoro está llena: ${lost} monedas no cabían y se han perdido. Gasta, mejórala o hazla más grande.`,
+      t: msg('camara.llena', { n: lost }),
       k: 'bad',
     });
   else if (vaultFull(s))
     events.push({
-      t: `La cámara del tesoro está casi llena (${s.gold} de ${goldCap(s)}). Lo que no quepa se perderá.`,
+      t: msg('camara.casi', { oro: s.gold, tope: goldCap(s) }),
       k: 'warn',
     });
   delete s.spilt;

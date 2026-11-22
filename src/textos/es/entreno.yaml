@@ -1,0 +1,6 @@
+mejorar_sala: "Para seguir, hay que mejorar la sala."
+subir_nivel: "Para seguir, tiene que subir de nivel."
+mas: "{habilidad} +{n}"
+deja: "{heroe} deja la {sala, minus}: ya no aprende más {atributo} ahí. {por, select, sala {Para seguir, hay que mejorar la sala.} other {Para seguir, tiene que subir de nivel.}}"
+historial: "Día {dia} · Entrenando: {atributo} {n}"
+sube: "{heroe} ha entrenado: {atributo} {n}{hay, select, si { ({gana})} other {}}."

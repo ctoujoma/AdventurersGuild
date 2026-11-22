@@ -1,17 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { TEMPLATES } from '../data/quests';
-import { fill, generateQuest, homePower, pickStory } from './generate';
+import { generateQuest, homePower, pickStory } from './generate';
+import { msg, t, tr } from '../textos';
 import { newGame } from './game';
 import type { Quest } from './model';
 import { Rng } from './rng';
 
 describe('plantillas de texto', () => {
   it('rellena huecos, capitaliza y contrae «a el» y «de el»', () => {
-    expect(fill('{Threat} bajó a {place}', { threat: 'un oso', place: 'el molino' })).toBe(
-      'Un oso bajó al molino',
+    const lugar = msg('lugares.sitios.el_molino');
+    expect(t('encargos.plantillas.Cazar.titulos.0', { amenaza: 'un oso', lugar })).toBe(
+      'Un oso en el molino',
     );
-    expect(fill('Lejos de {place}', { place: 'el vado' })).toBe('Lejos del vado');
-    expect(fill('Rafael y {x}', {})).toBe('Rafael y {x}');
+    expect(t('viaje.llegar.0', { lugar: msg('lugares.sitios.el_vado') })).toBe('Llegan al vado.');
   });
 });
 
@@ -21,8 +22,7 @@ describe('encargos', () => {
 
   it('solo usan los huecos que el generador sabe rellenar', () => {
     for (const t of texts) {
-      for (const [, key] of t.matchAll(/\{(\w+)\}/g))
-        expect(['place', 'threat', 'Threat', 'client']).toContain(key);
+      for (const [, key] of t.matchAll(/\{(\w+)[},]/g)) expect(['lugar', 'amenaza']).toContain(key);
     }
   });
 
@@ -39,7 +39,7 @@ describe('encargos', () => {
     const tpl = TEMPLATES.Recuperar;
     const rng = new Rng('historias');
     for (let i = 0; i < 200; i++) {
-      const [title, text] = pickStory(rng, tpl);
+      const [title, text] = pickStory(rng, 'Recuperar').map(tr);
       const story = tpl.stories!.find((s) => s[0] === title);
       if (story) expect(text).toBe(story[1]);
       else expect(tpl.texts).toContain(text);
