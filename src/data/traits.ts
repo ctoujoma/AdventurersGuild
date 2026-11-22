@@ -1,5 +1,6 @@
 import type { Sex } from '../art/heroes/look';
 import type { Trait, TraitId } from '../core/party';
+import { t, tr } from '../textos';
 
 /** Nombre, tono y descripción de cada rasgo, para mostrarlo en la interfaz. */
 export const TRAIT_INFO: Record<
@@ -7,88 +8,93 @@ export const TRAIT_INFO: Record<
   { m: string; f: string; tone: 'pos' | 'neg' | 'mix'; desc: string }
 > = {
   valiente: {
-    m: 'Valiente',
-    f: 'Valiente',
+    m: t('rasgos.rasgos.valiente.m'),
+    f: t('rasgos.rasgos.valiente.f'),
     tone: 'pos',
-    desc: '+2 Combate. Nunca huye, aunque debería.',
+    desc: t('rasgos.rasgos.valiente.desc'),
   },
   cobarde: {
-    m: 'Cobarde',
-    f: 'Cobarde',
+    m: t('rasgos.rasgos.cobarde.m'),
+    f: t('rasgos.rasgos.cobarde.f'),
     tone: 'mix',
-    desc: '−2 Combate. Cuando todo se tuerce, a veces huye a tiempo… y sobrevive.',
+    desc: t('rasgos.rasgos.cobarde.desc'),
   },
   codicioso: {
-    m: 'Codicioso',
-    f: 'Codiciosa',
+    m: t('rasgos.rasgos.codicioso.m'),
+    f: t('rasgos.rasgos.codicioso.f'),
     tone: 'mix',
-    desc: 'Se queda el 10 % del oro. Rinde más si la paga es alta.',
+    desc: t('rasgos.rasgos.codicioso.desc'),
   },
   afortunado: {
-    m: 'Afortunado',
-    f: 'Afortunada',
+    m: t('rasgos.rasgos.afortunado.m'),
+    f: t('rasgos.rasgos.afortunado.f'),
     tone: 'pos',
-    desc: 'Repite una tirada fallida por misión.',
+    desc: t('rasgos.rasgos.afortunado.desc'),
   },
-  gafe: { m: 'Gafe', f: 'Gafe', tone: 'neg', desc: 'Empeora un poco todas las tiradas del grupo.' },
-  bebedor: {
-    m: 'Bebedor',
-    f: 'Bebedora',
+  gafe: {
+    m: t('rasgos.rasgos.gafe.m'),
+    f: t('rasgos.rasgos.gafe.f'),
     tone: 'neg',
-    desc: '−1 Destreza. Más moral si la taberna está mejorada.',
+    desc: t('rasgos.rasgos.gafe.desc'),
+  },
+  bebedor: {
+    m: t('rasgos.rasgos.bebedor.m'),
+    f: t('rasgos.rasgos.bebedor.f'),
+    tone: 'neg',
+    desc: t('rasgos.rasgos.bebedor.desc'),
   },
   leal: {
-    m: 'Leal',
-    f: 'Leal',
+    m: t('rasgos.rasgos.leal.m'),
+    f: t('rasgos.rasgos.leal.f'),
     tone: 'pos',
-    desc: 'Nunca deserta. Sufre el doble si cae un compañero.',
+    desc: t('rasgos.rasgos.leal.desc'),
   },
   arrogante: {
-    m: 'Arrogante',
-    f: 'Arrogante',
+    m: t('rasgos.rasgos.arrogante.m'),
+    f: t('rasgos.rasgos.arrogante.f'),
     tone: 'mix',
-    desc: 'No acepta ir con héroes de menor nivel.',
+    desc: t('rasgos.rasgos.arrogante.desc'),
   },
   supersticioso: {
-    m: 'Supersticioso',
-    f: 'Supersticiosa',
+    m: t('rasgos.rasgos.supersticioso.m'),
+    f: t('rasgos.rasgos.supersticioso.f'),
     tone: 'neg',
-    desc: '−2 Arcano. Odia las criptas.',
+    desc: t('rasgos.rasgos.supersticioso.desc'),
   },
   tuerto: {
-    m: 'Tuerto',
-    f: 'Tuerta',
+    m: t('rasgos.rasgos.tuerto.m'),
+    f: t('rasgos.rasgos.tuerto.f'),
     tone: 'mix',
-    desc: 'Secuela. −1 Destreza, +1 Combate: da más miedo.',
+    desc: t('rasgos.rasgos.tuerto.desc'),
   },
   cojo: {
-    m: 'Cojo',
-    f: 'Coja',
+    m: t('rasgos.rasgos.cojo.m'),
+    f: t('rasgos.rasgos.cojo.f'),
     tone: 'neg',
-    desc: 'Secuela. −2 Supervivencia: los caminos largos se le hacen eternos.',
+    desc: t('rasgos.rasgos.cojo.desc'),
   },
   curtido: {
-    m: 'Curtido',
-    f: 'Curtida',
+    m: t('rasgos.rasgos.curtido.m'),
+    f: t('rasgos.rasgos.curtido.f'),
     tone: 'pos',
-    desc: 'Sobrevivió perdido en la comarca. +2 Supervivencia.',
+    desc: t('rasgos.rasgos.curtido.desc'),
   },
   cortado: {
-    m: 'Cara cortada',
-    f: 'Cara cortada',
+    m: t('rasgos.rasgos.cortado.m'),
+    f: t('rasgos.rasgos.cortado.f'),
     tone: 'mix',
-    desc: 'Secuela. +1 Combate: con esa cara, nadie quiere pelea.',
+    desc: t('rasgos.rasgos.cortado.desc'),
   },
   velo: {
-    m: 'Vuelto del velo',
-    f: 'Vuelta del velo',
+    m: t('rasgos.rasgos.velo.m'),
+    f: t('rasgos.rasgos.velo.f'),
     tone: 'mix',
-    desc: 'Secuela: murió y volvió. +2 Arcano (ha visto el otro lado), −1 Fuerza (algo se quedó allí).',
+    desc: t('rasgos.rasgos.velo.desc'),
   },
 };
 
-export const HIDDEN_TRAIT_HINT = 'Rasgo oculto: se descubre tras su primera misión';
+export const HIDDEN_TRAIT_HINT = t('rasgos.pista_oculto');
 
 export function traitLabel(t: Trait, sex: Sex): string {
-  return t.hidden ? '¿?' : TRAIT_INFO[t.id][sex];
+  return t.hidden ? tr('rasgos.oculto') : TRAIT_INFO[t.id][sex];
 }

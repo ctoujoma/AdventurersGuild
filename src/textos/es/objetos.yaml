@@ -1,0 +1,180 @@
+# Objetos: equipo, tesoros, trofeos y rarezas (data/items.ts).
+# Los legendarios con dibujo propio se buscan por el nombre (pendiente: ids).
+
+equipo:
+  espada_oxidada:
+    nombre: "Espada oxidada"
+    desc: "Con una buena limpieza, quizá corte algo."
+  ganzuas_de_alambre:
+    nombre: "Ganzúas de alambre"
+    desc: "Dobladas a mano. Abren casi todo, si se les da tiempo."
+  botas_remendadas:
+    nombre: "Botas remendadas"
+    desc: "Tienen más parches que cuero, pero no calan."
+  talisman_de_ajo:
+    nombre: "Talismán de ajo"
+    desc: "Ahuyenta espíritus. Y amigos."
+  coraza_abollada:
+    nombre: "Coraza abollada"
+    desc: "Está llena de bollos, pero sigue parando golpes."
+  espada_de_soldado:
+    nombre: "Espada de soldado"
+    desc: "De las que reparte el ejército. Buen acero, sin adornos."
+  ganzuas_de_laton:
+    nombre: "Ganzúas de latón"
+    desc: "No se doblan a la primera. Ya es algo."
+  botas_de_caminante:
+    nombre: "Botas de caminante"
+    desc: "Suela doble y cordones que no se sueltan."
+  colgante_de_cuarzo:
+    nombre: "Colgante de cuarzo"
+    desc: "Se empaña cuando algo raro anda cerca."
+  cota_de_anillas:
+    nombre: "Cota de anillas"
+    desc: "Tintinea al andar, pero para un tajo."
+  vara_de_avellano:
+    nombre: "Vara de avellano"
+    desc: "Recta y ligera. Algún aprendiz le hizo runas a navaja."
+  hacha_de_lenador_enano:
+    nombre: "Hacha de leñador enano"
+    desc: "Pesa lo suyo, pero parte un tronco de un tajo."
+  ganzuas_finas:
+    nombre: "Ganzúas finas"
+    desc: "Estuche de terciopelo. Alguien las echará de menos."
+  capa_de_explorador:
+    nombre: "Capa de explorador"
+    desc: "Parda y verdosa. Tumbado en el monte, no te ve ni tu madre."
+  amuleto_de_hueso:
+    nombre: "Amuleto de hueso"
+    desc: "Huele a humo y a otra cosa. La mala suerte no se le acerca."
+  escudo_con_blason:
+    nombre: "Escudo con blasón"
+    desc: "Lleva las armas de una casa noble que se extinguió hace años."
+  varita_de_serbal:
+    nombre: "Varita de serbal"
+    desc: "Tiembla un poco cuando hay magia cerca."
+  mandoble_de_hierronegro:
+    nombre: "Mandoble de Hierronegro"
+    desc: "Forjado de noche, en una fragua que ya no existe."
+  hacha_de_guerra_runica:
+    nombre: "Hacha de guerra rúnica"
+    desc: "Las runas del filo se encienden cuando muerde."
+  ganzuas_de_sombra:
+    nombre: "Ganzúas de sombra"
+    desc: "Nadie oye abrirse una puerta con ellas."
+  amuleto_del_vigia:
+    nombre: "Amuleto del vigía"
+    desc: "Un ojo de piedra que nunca parpadea."
+  escudo_de_la_torre:
+    nombre: "Escudo de la torre"
+    desc: "Lleva las mellas de cien asedios."
+  baculo_de_ceniza:
+    nombre: "Báculo de ceniza"
+    desc: "Huele a hoguera aunque nunca se haya quemado."
+  hoja_de_vadoverde:
+    nombre: "Hoja de Vadoverde"
+    desc: "Se hizo para un rey que murió sin estrenarla. Silba al cortar."
+  capa_elfica:
+    nombre: "Capa élfica"
+    desc: "Quien la lleva no hace ruido ni deja huella."
+  varita_de_la_abuela_tormenta:
+    nombre: "Varita de la Abuela Tormenta"
+    desc: "Huele a lluvia. A veces truena dentro del bolsillo."
+  botas_de_siete_leguas:
+    nombre: "Botas de siete leguas"
+    desc: "De un carretero de los Ferrán. Con ellas los caminos se acortan, o eso parece."
+  corona_del_rey_ahogado:
+    nombre: "Corona del Rey Ahogado"
+    desc: "Verde de algas y fría como el fondo de la laguna. Quien la lleva no teme a los muertos."
+  coraza_de_escamas_de_sierpe:
+    nombre: "Coraza de escamas de sierpe"
+    desc: "Hecha con las escamas de la sierpe de Sierra Parda. No arde ni con brasas."
+  capa_de_piel_de_ceniza:
+    nombre: "Capa de piel de ceniza"
+    desc: "Del jabalí de ceniza. Huele a humo y no deja pasar el frío ni las flechas."
+  cetro_de_la_reina:
+    nombre: "Cetro de la Reina"
+    desc: "Frío al tacto. Los muertos que lo oyen golpear el suelo se vuelven a tumbar."
+  escudo_de_escama_blanca:
+    nombre: "Escudo de escama blanca"
+    desc: "Una sola escama de la dragona de la Corona Blanca, con asa. Ni el fuego ni el hielo la mellan."
+tesoros:
+  colmillos_de_huargo:
+    nombre: "Colmillos de huargo"
+    desc: "La tienda de pociones los compraría."
+  llave_de_hierro_negro:
+    nombre: "Llave de hierro negro"
+    desc: "No abre ninguna puerta de la comarca. Ya se ha probado."
+  mapa_a_medio_quemar:
+    nombre: "Mapa a medio quemar"
+    desc: "Falta justo la parte importante."
+  reliquia_sin_nombre:
+    nombre: "Reliquia sin nombre"
+    desc: "Sigue tibia aunque pase la noche al raso."
+  bolsa_de_gemas_turbias:
+    nombre: "Bolsa de gemas turbias"
+    desc: "Brillan menos de lo que prometen."
+  caliz_de_plata:
+    nombre: "Cáliz de plata"
+    desc: "Con el escudo de un monasterio."
+rarezas:
+  - "Común"
+  - "Bueno"
+  - "Raro"
+  - "Épico"
+  - "Legendario"
+efectos:
+  guard: "Quien lo lleva se hiere la mitad"
+  luck: "Repite una tirada fallida por misión"
+  ward: "Anula al gafe del grupo"
+  ambush: "Esquiva la mitad de las emboscadas"
+trofeos:
+  Cazar:
+    cabeza_de_huargo:
+      nombre: "Cabeza de huargo"
+      desc: "Aún enseña los dientes."
+    colmillos_de_basilisco:
+      nombre: "Colmillos de basilisco"
+      desc: "Nadie quiere mirarlos de frente."
+    cabeza_de_jabali_negro:
+      nombre: "Cabeza de jabalí negro"
+      desc: "Dicen que derribó un molino."
+  Limpiar:
+    estandarte_orco:
+      nombre: "Estandarte orco"
+      desc: "Huele igual que el día que lo trajeron."
+    calavera_del_rey_de_las_ratas:
+      nombre: "Calavera del rey de las ratas"
+      desc: "Lleva una corona diminuta."
+  Explorar:
+    idolo_de_jade:
+      nombre: "Ídolo de jade"
+      desc: "Sus ojos siguen a quien pasa."
+    calavera_con_runas:
+      nombre: "Calavera con runas"
+      desc: "Las runas brillan cuando llueve."
+  Investigar:
+    mascara_del_culto:
+      nombre: "Máscara del culto"
+      desc: "Tiene una sonrisa que no le gusta a nadie."
+    estandarte_de_la_hermandad:
+      nombre: "Estandarte de la hermandad"
+      desc: "De la hermandad ya no queda nadie."
+  Recuperar:
+    idolo_del_templo_hundido:
+      nombre: "Ídolo del templo hundido"
+      desc: "Pesa más de lo que parece."
+    mascara_del_ladron_sin_rostro:
+      nombre: "Máscara del ladrón sin rostro"
+      desc: "Por dentro está caliente."
+  Escoltar:
+    estandarte_de_los_bandidos:
+      nombre: "Estandarte de los bandidos"
+      desc: "Capturado en el camino real."
+    colmillos_del_lobo_blanco:
+      nombre: "Colmillos del lobo blanco"
+      desc: "Atacó la caravana y perdió."
+rareza_color: "{rareza} ({color})"
+con_mejora: "{nombre} +{mas}"
+bono: "+{n} {habilidad}"
+solo_venta: "Solo vale lo que te den por él"

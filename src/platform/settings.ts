@@ -53,6 +53,11 @@ export interface Settings {
   share: boolean;
   /** Modo prueba: atajos en Ajustes (se abre tocando cinco veces el título). */
   tester: boolean;
+  /**
+   * Idioma de los textos (`src/textos/<idioma>`); sin él, español. Lo lee `src/textos` al
+   * arrancar: cambiarlo recarga la página. El selector sale cuando haya más de un idioma.
+   */
+  lang?: string;
 }
 
 const KEY = 'jarro:ajustes';
@@ -100,6 +105,9 @@ export function parseSettings(raw: unknown): Settings {
     classicTime: r.classicTime === true,
     share: r.share !== false,
     tester: r.tester === true,
+    ...(typeof r.lang === 'string' && /^[a-z]{2}(-[A-Z]{2})?$/.test(r.lang)
+      ? { lang: r.lang }
+      : {}),
   };
 }
 

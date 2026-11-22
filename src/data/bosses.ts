@@ -1,3 +1,4 @@
+import { t } from '../textos';
 /**
  * Los jefes que cierran algunas historias. La pelea se puede ver: el núcleo decide el
  * resultado y la escena lo cuenta (src/world/battle.ts y src/art/bosses.ts).
@@ -25,48 +26,48 @@ export interface BossDef {
 
 export const BOSSES: Record<BossKind, BossDef> = {
   bestia: {
-    name: 'La bestia de Hondogrís',
-    short: 'la bestia de Hondogrís',
+    name: t('jefes.jefes.bestia.nombre'),
+    short: t('jefes.jefes.bestia.corto'),
     minions: 0,
-    win: '¡La bestia ha caído!',
-    lose: 'La bestia los ha hecho huir.',
+    win: t('jefes.jefes.bestia.gana'),
+    lose: t('jefes.jefes.bestia.pierde'),
   },
   ahogado: {
-    name: 'El Rey Ahogado',
-    short: 'el Rey Ahogado',
+    name: t('jefes.jefes.ahogado.nombre'),
+    short: t('jefes.jefes.ahogado.corto'),
     minions: 2,
-    win: '¡El Rey Ahogado vuelve al fondo!',
-    lose: 'El Rey Ahogado sigue en su laguna.',
+    win: t('jefes.jefes.ahogado.gana'),
+    lose: t('jefes.jefes.ahogado.pierde'),
   },
   sierpe: {
-    name: 'La sierpe de Sierra Parda',
-    short: 'la sierpe de Sierra Parda',
+    name: t('jefes.jefes.sierpe.nombre'),
+    short: t('jefes.jefes.sierpe.corto'),
     minions: 0,
-    win: '¡La sierpe ha caído!',
-    lose: 'La sierpe los ha echado de su cueva.',
+    win: t('jefes.jefes.sierpe.gana'),
+    lose: t('jefes.jefes.sierpe.pierde'),
   },
   jabali: {
-    name: 'El jabalí de ceniza',
-    short: 'el jabalí de ceniza',
+    name: t('jefes.jefes.jabali.nombre'),
+    short: t('jefes.jefes.jabali.corto'),
     minions: 0,
-    win: '¡El jabalí de ceniza ha caído!',
-    lose: 'El jabalí de ceniza se pierde gruñendo en el humo.',
+    win: t('jefes.jefes.jabali.gana'),
+    lose: t('jefes.jefes.jabali.pierde'),
     base: 'bestia',
   },
   reina: {
-    name: 'La Reina de la Cripta',
-    short: 'la Reina de la Cripta',
+    name: t('jefes.jefes.reina.nombre'),
+    short: t('jefes.jefes.reina.corto'),
     minions: 3,
-    win: '¡La Reina de la Cripta vuelve a su sueño!',
-    lose: 'La Reina de la Cripta sigue en su trono.',
+    win: t('jefes.jefes.reina.gana'),
+    lose: t('jefes.jefes.reina.pierde'),
     base: 'ahogado',
   },
   dragona: {
-    name: 'La dragona de la Corona Blanca',
-    short: 'la dragona de la Corona Blanca',
+    name: t('jefes.jefes.dragona.nombre'),
+    short: t('jefes.jefes.dragona.corto'),
     minions: 0,
-    win: '¡La dragona de la Corona Blanca ha caído!',
-    lose: 'La dragona de la Corona Blanca los ha echado del glaciar.',
+    win: t('jefes.jefes.dragona.gana'),
+    lose: t('jefes.jefes.dragona.pierde'),
     base: 'sierpe',
   },
 };

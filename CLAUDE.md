@@ -11,4 +11,6 @@
   y la página «Decisiones del Jarro» (https://claude.ai/artifact/5MgZx3bgd3pJQay91rDtjk). Léelas antes de empezar algo nuevo.
 - Plan del juego completo (lo decidido, por fases y quién hace qué): [`docs/plan.md`](docs/plan.md).
   Ideas y detalle: [`docs/futuro.md`](docs/futuro.md).
+- **Textos:** todo texto del juego va en `src/textos/<idioma>/*.yaml` y se usa con `t('zona.clave', { huecos })`;
+  frases enteras (plurales y género con ICU). Convención y estado: [`docs/textos.md`](docs/textos.md).
 - Antes de subir: `npm run lint && npm run format:check && npm run typecheck && npm test && npm run build`.

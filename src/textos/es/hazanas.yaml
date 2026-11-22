@@ -1,0 +1,24 @@
+# Libro de hazañas (data/feats.ts). {n}: lo que pide el nivel.
+
+hazanas:
+  encargos:
+    nombre: "Trabajo es trabajo"
+    texto: "Cumple {n} encargos con éxito"
+  brillantes:
+    nombre: "Para cantarlo"
+    texto: "Consigue {n} éxitos brillantes"
+  trofeos:
+    nombre: "Pared de honor"
+    texto: "Consigue {n} trofeos"
+  veterano:
+    nombre: "Curtidos"
+    texto: "Sube un héroe a nivel {n}"
+  oro:
+    nombre: "Caja llena"
+    texto: "Gana {n} monedas con encargos"
+  asaltos:
+    nombre: "Aquí no se roba"
+    texto: "Repele {n} asaltos a la taberna"
+  sinbajas:
+    nombre: "Todos a casa"
+    texto: "Pasa {n} días seguidos sin bajas"

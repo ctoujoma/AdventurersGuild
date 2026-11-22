@@ -1,0 +1,149 @@
+# Recetas de los talleres (data/recipes.ts).
+
+taller:
+  forja: "la forja"
+  sastreria: "la sastrería"
+  alquimia: "el taller de alquimia"
+recetas:
+  espada:
+    nombre: "Espada"
+    one: "una espada"
+    common:
+      nombre: "Espada de la casa"
+      desc: "Recién salida del yunque del gremio. Sencilla, pero corta."
+    good:
+      nombre: "Espada bien templada"
+      desc: "El herrero le dio un temple de los buenos. Canta al desenvainarla."
+  coraza:
+    nombre: "Coraza"
+    one: "una coraza"
+    common:
+      nombre: "Coraza de la casa"
+      desc: "Chapa gruesa y correas nuevas. Pesa, pero para golpes."
+    good:
+      nombre: "Coraza remachada"
+      desc: "Cada remache en su sitio. Quien la lleva se planta sin miedo."
+  ganzuas:
+    nombre: "Ganzúas"
+    one: "unas ganzúas"
+    many: "ganzúas"
+    common:
+      nombre: "Ganzúas de la casa"
+      desc: "Alambre bueno, bien doblado. Abren lo de siempre."
+    good:
+      nombre: "Ganzúas de acero fino"
+      desc: "Tan finas que se oyen pensar las cerraduras."
+  hacha:
+    nombre: "Hacha"
+    one: "un hacha"
+    common:
+      nombre: "Hacha de la casa"
+      desc: "Copiada de un hacha enana. No tan buena, pero casi."
+    good:
+      nombre: "Hacha de doble filo"
+      desc: "Dos filos y un equilibrio que da gusto. Parte escudos."
+  escudo:
+    nombre: "Escudo"
+    one: "un escudo"
+    common:
+      nombre: "Escudo de la casa"
+      desc: "Madera con cantos de hierro y el escudo del gremio pintado."
+    good:
+      nombre: "Escudo reforzado"
+      desc: "Con bullones de hierro. Más de una flecha se ha quedado ahí."
+  botas:
+    nombre: "Botas"
+    one: "unas botas"
+    common:
+      nombre: "Botas de la casa"
+      desc: "Cuero curtido y suela doble. Aguantan el barro."
+    good:
+      nombre: "Botas de caña alta"
+      desc: "Cosidas a medida. Se camina con ellas un día entero sin una ampolla."
+  capa:
+    nombre: "Capa"
+    one: "una capa"
+    common:
+      nombre: "Capa de viaje"
+      desc: "Lana gruesa con capucha. Quita el frío y la lluvia."
+    good:
+      nombre: "Capa encerada"
+      desc: "Del color del monte. Quien la lleva se pierde entre los árboles."
+  amuleto:
+    nombre: "Amuleto"
+    one: "un amuleto"
+    common:
+      nombre: "Amuleto de la casa"
+      desc: "Una piedra con agujero y unas hierbas. Algo hace."
+    good:
+      nombre: "Amuleto bendecido"
+      desc: "Pasó tres noches en la capilla. Los malos agüeros no se le acercan."
+  varita:
+    nombre: "Varita"
+    one: "una varita"
+    common:
+      nombre: "Varita de avellano"
+      desc: "Recta y con su runa. Chisporrotea un poco."
+    good:
+      nombre: "Varita de fresno tallado"
+      desc: "Tallada a la luz de la luna, como manda el libro."
+  espadaLarga:
+    nombre: "Espada larga"
+    one: "una espada larga"
+    many: "espadas largas"
+    common:
+      nombre: "Espada larga"
+      desc: "Más hierro, más alcance. Se maneja a dos manos si hace falta."
+    good:
+      nombre: "Espada larga de buen temple"
+      desc: "Larga, recta y con un filo que no se mella."
+  cota:
+    nombre: "Cota de malla"
+    one: "una cota de malla"
+    many: "cotas de malla"
+    common:
+      nombre: "Cota de malla"
+      desc: "Miles de anillas de hierro. Pesa, pero para los golpes."
+    good:
+      nombre: "Cota de malla doble"
+      desc: "Anillas dobles bajo un peto de cuero. Las flechas rebotan."
+  escudoTachonado:
+    nombre: "Escudo tachonado"
+    one: "un escudo tachonado"
+    many: "escudos tachonados"
+    common:
+      nombre: "Escudo tachonado"
+      desc: "Madera forrada de cuero y tachuelas de hierro."
+    good:
+      nombre: "Escudo tachonado con bordón"
+      desc: "Con un borde de hierro que aguanta un hachazo."
+  ganzuasTempladas:
+    nombre: "Ganzúas templadas"
+    one: "unas ganzúas templadas"
+    many: "ganzúas templadas"
+    common:
+      nombre: "Ganzúas templadas"
+      desc: "Acero templado: no se doblan en la cerradura más terca."
+    good:
+      nombre: "Ganzúas de cerrajero"
+      desc: "Un juego completo, en su estuche de cuero."
+  botasCuero:
+    nombre: "Botas de cuero"
+    one: "unas botas de cuero"
+    many: "botas de cuero"
+    common:
+      nombre: "Botas de cuero curtido"
+      desc: "Cuero de verdad, cosido a mano. Aguantan una semana de camino."
+    good:
+      nombre: "Botas de rastreador"
+      desc: "Suela blanda: no hacen ruido ni dejan huella."
+  capaForrada:
+    nombre: "Capa forrada"
+    one: "una capa forrada"
+    many: "capas forradas"
+    common:
+      nombre: "Capa forrada"
+      desc: "Doble tela y un cuello de cuero. Ni el viento de la sierra pasa."
+    good:
+      nombre: "Capa de montaraz"
+      desc: "Forrada, con bolsillos por dentro y del color del monte."

@@ -7,6 +7,7 @@ import type { ItemIcon, ItemKind } from '../core/model';
 import type { GearBase } from './items';
 import type { Mats } from '../core/materials';
 import type { RoomType } from './rooms';
+import { t } from '../textos';
 
 export type RecipeId =
   | 'espada'
@@ -27,9 +28,9 @@ export type RecipeId =
 
 /** Los talleres, para las frases («en la sastrería»). */
 export const WORKSHOP_PLACE: Partial<Record<RoomType, string>> = {
-  forja: 'la forja',
-  sastreria: 'la sastrería',
-  alquimia: 'el taller de alquimia',
+  forja: t('recetas.taller.forja'),
+  sastreria: t('recetas.taller.sastreria'),
+  alquimia: t('recetas.taller.alquimia'),
 };
 
 export interface Recipe {
@@ -56,8 +57,8 @@ export interface Recipe {
 
 export const RECIPES: Record<RecipeId, Recipe> = {
   espada: {
-    name: 'Espada',
-    one: 'una espada',
+    name: t('recetas.recetas.espada.nombre'),
+    one: t('recetas.recetas.espada.one'),
     many: 'espadas',
     room: 'forja',
     icon: 'espada',
@@ -66,8 +67,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     hours: 8,
     free: true,
     common: {
-      name: 'Espada de la casa',
-      desc: 'Recién salida del yunque del gremio. Sencilla, pero corta.',
+      name: t('recetas.recetas.espada.common.nombre'),
+      desc: t('recetas.recetas.espada.common.desc'),
       value: 22,
       kind: 'arma',
       rarity: 0,
@@ -75,8 +76,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
       bonus: { Combate: 1 },
     },
     good: {
-      name: 'Espada bien templada',
-      desc: 'El herrero le dio un temple de los buenos. Canta al desenvainarla.',
+      name: t('recetas.recetas.espada.good.nombre'),
+      desc: t('recetas.recetas.espada.good.desc'),
       value: 48,
       kind: 'arma',
       rarity: 2,
@@ -85,8 +86,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     },
   },
   coraza: {
-    name: 'Coraza',
-    one: 'una coraza',
+    name: t('recetas.recetas.coraza.nombre'),
+    one: t('recetas.recetas.coraza.one'),
     many: 'corazas',
     room: 'forja',
     icon: 'coraza',
@@ -95,8 +96,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     hours: 10,
     free: true,
     common: {
-      name: 'Coraza de la casa',
-      desc: 'Chapa gruesa y correas nuevas. Pesa, pero para golpes.',
+      name: t('recetas.recetas.coraza.common.nombre'),
+      desc: t('recetas.recetas.coraza.common.desc'),
       value: 26,
       kind: 'armadura',
       rarity: 0,
@@ -104,8 +105,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
       perk: 'guard',
     },
     good: {
-      name: 'Coraza remachada',
-      desc: 'Cada remache en su sitio. Quien la lleva se planta sin miedo.',
+      name: t('recetas.recetas.coraza.good.nombre'),
+      desc: t('recetas.recetas.coraza.good.desc'),
       value: 52,
       kind: 'armadura',
       rarity: 2,
@@ -115,9 +116,9 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     },
   },
   ganzuas: {
-    name: 'Ganzúas',
-    one: 'unas ganzúas',
-    many: 'ganzúas',
+    name: t('recetas.recetas.ganzuas.nombre'),
+    one: t('recetas.recetas.ganzuas.one'),
+    many: t('recetas.recetas.ganzuas.many'),
     room: 'forja',
     icon: 'ganzua',
     kind: 'herramienta',
@@ -125,8 +126,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     hours: 6,
     free: true,
     common: {
-      name: 'Ganzúas de la casa',
-      desc: 'Alambre bueno, bien doblado. Abren lo de siempre.',
+      name: t('recetas.recetas.ganzuas.common.nombre'),
+      desc: t('recetas.recetas.ganzuas.common.desc'),
       value: 20,
       kind: 'herramienta',
       rarity: 0,
@@ -134,8 +135,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
       bonus: { Trampas: 1 },
     },
     good: {
-      name: 'Ganzúas de acero fino',
-      desc: 'Tan finas que se oyen pensar las cerraduras.',
+      name: t('recetas.recetas.ganzuas.good.nombre'),
+      desc: t('recetas.recetas.ganzuas.good.desc'),
       value: 46,
       kind: 'herramienta',
       rarity: 2,
@@ -144,8 +145,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     },
   },
   hacha: {
-    name: 'Hacha',
-    one: 'un hacha',
+    name: t('recetas.recetas.hacha.nombre'),
+    one: t('recetas.recetas.hacha.one'),
     many: 'hachas',
     room: 'forja',
     icon: 'hacha',
@@ -153,8 +154,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     gold: 45,
     hours: 12,
     common: {
-      name: 'Hacha de la casa',
-      desc: 'Copiada de un hacha enana. No tan buena, pero casi.',
+      name: t('recetas.recetas.hacha.common.nombre'),
+      desc: t('recetas.recetas.hacha.common.desc'),
       value: 40,
       kind: 'arma',
       rarity: 0,
@@ -162,8 +163,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
       bonus: { Combate: 2 },
     },
     good: {
-      name: 'Hacha de doble filo',
-      desc: 'Dos filos y un equilibrio que da gusto. Parte escudos.',
+      name: t('recetas.recetas.hacha.good.nombre'),
+      desc: t('recetas.recetas.hacha.good.desc'),
       value: 70,
       kind: 'arma',
       rarity: 2,
@@ -172,8 +173,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     },
   },
   escudo: {
-    name: 'Escudo',
-    one: 'un escudo',
+    name: t('recetas.recetas.escudo.nombre'),
+    one: t('recetas.recetas.escudo.one'),
     many: 'escudos',
     room: 'forja',
     icon: 'escudo',
@@ -181,8 +182,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     gold: 45,
     hours: 12,
     common: {
-      name: 'Escudo de la casa',
-      desc: 'Madera con cantos de hierro y el escudo del gremio pintado.',
+      name: t('recetas.recetas.escudo.common.nombre'),
+      desc: t('recetas.recetas.escudo.common.desc'),
       value: 40,
       kind: 'armadura',
       rarity: 0,
@@ -191,8 +192,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
       perk: 'guard',
     },
     good: {
-      name: 'Escudo reforzado',
-      desc: 'Con bullones de hierro. Más de una flecha se ha quedado ahí.',
+      name: t('recetas.recetas.escudo.good.nombre'),
+      desc: t('recetas.recetas.escudo.good.desc'),
       value: 70,
       kind: 'armadura',
       rarity: 2,
@@ -202,8 +203,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     },
   },
   botas: {
-    name: 'Botas',
-    one: 'unas botas',
+    name: t('recetas.recetas.botas.nombre'),
+    one: t('recetas.recetas.botas.one'),
     many: 'botas',
     room: 'sastreria',
     icon: 'botas',
@@ -212,8 +213,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     hours: 6,
     free: true,
     common: {
-      name: 'Botas de la casa',
-      desc: 'Cuero curtido y suela doble. Aguantan el barro.',
+      name: t('recetas.recetas.botas.common.nombre'),
+      desc: t('recetas.recetas.botas.common.desc'),
       value: 18,
       kind: 'herramienta',
       rarity: 0,
@@ -221,8 +222,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
       bonus: { Supervivencia: 1 },
     },
     good: {
-      name: 'Botas de caña alta',
-      desc: 'Cosidas a medida. Se camina con ellas un día entero sin una ampolla.',
+      name: t('recetas.recetas.botas.good.nombre'),
+      desc: t('recetas.recetas.botas.good.desc'),
       value: 44,
       kind: 'herramienta',
       rarity: 2,
@@ -231,8 +232,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     },
   },
   capa: {
-    name: 'Capa',
-    one: 'una capa',
+    name: t('recetas.recetas.capa.nombre'),
+    one: t('recetas.recetas.capa.one'),
     many: 'capas',
     room: 'sastreria',
     icon: 'capa',
@@ -240,8 +241,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     gold: 30,
     hours: 8,
     common: {
-      name: 'Capa de viaje',
-      desc: 'Lana gruesa con capucha. Quita el frío y la lluvia.',
+      name: t('recetas.recetas.capa.common.nombre'),
+      desc: t('recetas.recetas.capa.common.desc'),
       value: 24,
       kind: 'herramienta',
       rarity: 0,
@@ -249,8 +250,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
       bonus: { Supervivencia: 1 },
     },
     good: {
-      name: 'Capa encerada',
-      desc: 'Del color del monte. Quien la lleva se pierde entre los árboles.',
+      name: t('recetas.recetas.capa.good.nombre'),
+      desc: t('recetas.recetas.capa.good.desc'),
       value: 48,
       kind: 'herramienta',
       rarity: 2,
@@ -260,8 +261,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     },
   },
   amuleto: {
-    name: 'Amuleto',
-    one: 'un amuleto',
+    name: t('recetas.recetas.amuleto.nombre'),
+    one: t('recetas.recetas.amuleto.one'),
     many: 'amuletos',
     room: 'alquimia',
     icon: 'amuleto',
@@ -270,8 +271,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     hours: 8,
     free: true,
     common: {
-      name: 'Amuleto de la casa',
-      desc: 'Una piedra con agujero y unas hierbas. Algo hace.',
+      name: t('recetas.recetas.amuleto.common.nombre'),
+      desc: t('recetas.recetas.amuleto.common.desc'),
       value: 20,
       kind: 'amuleto',
       rarity: 0,
@@ -279,8 +280,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
       bonus: { Arcano: 1 },
     },
     good: {
-      name: 'Amuleto bendecido',
-      desc: 'Pasó tres noches en la capilla. Los malos agüeros no se le acercan.',
+      name: t('recetas.recetas.amuleto.good.nombre'),
+      desc: t('recetas.recetas.amuleto.good.desc'),
       value: 46,
       kind: 'amuleto',
       rarity: 2,
@@ -290,8 +291,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     },
   },
   varita: {
-    name: 'Varita',
-    one: 'una varita',
+    name: t('recetas.recetas.varita.nombre'),
+    one: t('recetas.recetas.varita.one'),
     many: 'varitas',
     room: 'alquimia',
     icon: 'varita',
@@ -299,8 +300,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     gold: 45,
     hours: 12,
     common: {
-      name: 'Varita de avellano',
-      desc: 'Recta y con su runa. Chisporrotea un poco.',
+      name: t('recetas.recetas.varita.common.nombre'),
+      desc: t('recetas.recetas.varita.common.desc'),
       value: 26,
       kind: 'arma',
       rarity: 0,
@@ -308,8 +309,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
       bonus: { Arcano: 1 },
     },
     good: {
-      name: 'Varita de fresno tallado',
-      desc: 'Tallada a la luz de la luna, como manda el libro.',
+      name: t('recetas.recetas.varita.good.nombre'),
+      desc: t('recetas.recetas.varita.good.desc'),
       value: 50,
       kind: 'arma',
       rarity: 2,
@@ -318,9 +319,9 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     },
   },
   espadaLarga: {
-    name: 'Espada larga',
-    one: 'una espada larga',
-    many: 'espadas largas',
+    name: t('recetas.recetas.espadaLarga.nombre'),
+    one: t('recetas.recetas.espadaLarga.one'),
+    many: t('recetas.recetas.espadaLarga.many'),
     room: 'forja',
     icon: 'espada',
     kind: 'arma',
@@ -329,8 +330,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     free: true,
     mats: { hierro: 2 },
     common: {
-      name: 'Espada larga',
-      desc: 'Más hierro, más alcance. Se maneja a dos manos si hace falta.',
+      name: t('recetas.recetas.espadaLarga.common.nombre'),
+      desc: t('recetas.recetas.espadaLarga.common.desc'),
       value: 40,
       kind: 'arma',
       rarity: 0,
@@ -338,8 +339,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
       bonus: { Combate: 2 },
     },
     good: {
-      name: 'Espada larga de buen temple',
-      desc: 'Larga, recta y con un filo que no se mella.',
+      name: t('recetas.recetas.espadaLarga.good.nombre'),
+      desc: t('recetas.recetas.espadaLarga.good.desc'),
       value: 70,
       kind: 'arma',
       rarity: 2,
@@ -348,9 +349,9 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     },
   },
   cota: {
-    name: 'Cota de malla',
-    one: 'una cota de malla',
-    many: 'cotas de malla',
+    name: t('recetas.recetas.cota.nombre'),
+    one: t('recetas.recetas.cota.one'),
+    many: t('recetas.recetas.cota.many'),
     room: 'forja',
     icon: 'coraza',
     kind: 'armadura',
@@ -359,8 +360,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     free: true,
     mats: { hierro: 3 },
     common: {
-      name: 'Cota de malla',
-      desc: 'Miles de anillas de hierro. Pesa, pero para los golpes.',
+      name: t('recetas.recetas.cota.common.nombre'),
+      desc: t('recetas.recetas.cota.common.desc'),
       value: 45,
       kind: 'armadura',
       rarity: 0,
@@ -369,8 +370,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
       perk: 'guard',
     },
     good: {
-      name: 'Cota de malla doble',
-      desc: 'Anillas dobles bajo un peto de cuero. Las flechas rebotan.',
+      name: t('recetas.recetas.cota.good.nombre'),
+      desc: t('recetas.recetas.cota.good.desc'),
       value: 80,
       kind: 'armadura',
       rarity: 2,
@@ -380,9 +381,9 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     },
   },
   escudoTachonado: {
-    name: 'Escudo tachonado',
-    one: 'un escudo tachonado',
-    many: 'escudos tachonados',
+    name: t('recetas.recetas.escudoTachonado.nombre'),
+    one: t('recetas.recetas.escudoTachonado.one'),
+    many: t('recetas.recetas.escudoTachonado.many'),
     room: 'forja',
     icon: 'escudo',
     kind: 'armadura',
@@ -391,8 +392,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     free: true,
     mats: { hierro: 1, cuero: 2 },
     common: {
-      name: 'Escudo tachonado',
-      desc: 'Madera forrada de cuero y tachuelas de hierro.',
+      name: t('recetas.recetas.escudoTachonado.common.nombre'),
+      desc: t('recetas.recetas.escudoTachonado.common.desc'),
       value: 40,
       kind: 'armadura',
       rarity: 0,
@@ -400,8 +401,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
       bonus: { Combate: 2 },
     },
     good: {
-      name: 'Escudo tachonado con bordón',
-      desc: 'Con un borde de hierro que aguanta un hachazo.',
+      name: t('recetas.recetas.escudoTachonado.good.nombre'),
+      desc: t('recetas.recetas.escudoTachonado.good.desc'),
       value: 72,
       kind: 'armadura',
       rarity: 2,
@@ -410,9 +411,9 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     },
   },
   ganzuasTempladas: {
-    name: 'Ganzúas templadas',
-    one: 'unas ganzúas templadas',
-    many: 'ganzúas templadas',
+    name: t('recetas.recetas.ganzuasTempladas.nombre'),
+    one: t('recetas.recetas.ganzuasTempladas.one'),
+    many: t('recetas.recetas.ganzuasTempladas.many'),
     room: 'forja',
     icon: 'ganzua',
     kind: 'herramienta',
@@ -421,8 +422,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     free: true,
     mats: { hierro: 2 },
     common: {
-      name: 'Ganzúas templadas',
-      desc: 'Acero templado: no se doblan en la cerradura más terca.',
+      name: t('recetas.recetas.ganzuasTempladas.common.nombre'),
+      desc: t('recetas.recetas.ganzuasTempladas.common.desc'),
       value: 36,
       kind: 'herramienta',
       rarity: 0,
@@ -430,8 +431,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
       bonus: { Trampas: 2 },
     },
     good: {
-      name: 'Ganzúas de cerrajero',
-      desc: 'Un juego completo, en su estuche de cuero.',
+      name: t('recetas.recetas.ganzuasTempladas.good.nombre'),
+      desc: t('recetas.recetas.ganzuasTempladas.good.desc'),
       value: 66,
       kind: 'herramienta',
       rarity: 2,
@@ -440,9 +441,9 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     },
   },
   botasCuero: {
-    name: 'Botas de cuero',
-    one: 'unas botas de cuero',
-    many: 'botas de cuero',
+    name: t('recetas.recetas.botasCuero.nombre'),
+    one: t('recetas.recetas.botasCuero.one'),
+    many: t('recetas.recetas.botasCuero.many'),
     room: 'sastreria',
     icon: 'botas',
     kind: 'herramienta',
@@ -451,8 +452,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     free: true,
     mats: { cuero: 2 },
     common: {
-      name: 'Botas de cuero curtido',
-      desc: 'Cuero de verdad, cosido a mano. Aguantan una semana de camino.',
+      name: t('recetas.recetas.botasCuero.common.nombre'),
+      desc: t('recetas.recetas.botasCuero.common.desc'),
       value: 36,
       kind: 'herramienta',
       rarity: 0,
@@ -460,8 +461,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
       bonus: { Supervivencia: 2 },
     },
     good: {
-      name: 'Botas de rastreador',
-      desc: 'Suela blanda: no hacen ruido ni dejan huella.',
+      name: t('recetas.recetas.botasCuero.good.nombre'),
+      desc: t('recetas.recetas.botasCuero.good.desc'),
       value: 66,
       kind: 'herramienta',
       rarity: 2,
@@ -470,9 +471,9 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     },
   },
   capaForrada: {
-    name: 'Capa forrada',
-    one: 'una capa forrada',
-    many: 'capas forradas',
+    name: t('recetas.recetas.capaForrada.nombre'),
+    one: t('recetas.recetas.capaForrada.one'),
+    many: t('recetas.recetas.capaForrada.many'),
     room: 'sastreria',
     icon: 'capa',
     kind: 'herramienta',
@@ -481,8 +482,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
     free: true,
     mats: { tela: 2, cuero: 1 },
     common: {
-      name: 'Capa forrada',
-      desc: 'Doble tela y un cuello de cuero. Ni el viento de la sierra pasa.',
+      name: t('recetas.recetas.capaForrada.common.nombre'),
+      desc: t('recetas.recetas.capaForrada.common.desc'),
       value: 42,
       kind: 'herramienta',
       rarity: 0,
@@ -490,8 +491,8 @@ export const RECIPES: Record<RecipeId, Recipe> = {
       bonus: { Supervivencia: 2 },
     },
     good: {
-      name: 'Capa de montaraz',
-      desc: 'Forrada, con bolsillos por dentro y del color del monte.',
+      name: t('recetas.recetas.capaForrada.good.nombre'),
+      desc: t('recetas.recetas.capaForrada.good.desc'),
       value: 75,
       kind: 'herramienta',
       rarity: 2,

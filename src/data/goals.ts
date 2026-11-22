@@ -7,6 +7,7 @@
 import type { QuestType, Reward } from '../core/model';
 import type { RoomType } from './rooms';
 import { INCIDENT_FROM_DAY, RAID_FROM, RUMOR_FROM_DAY } from '../core/balance';
+import { tr } from '../textos';
 
 export type GoalDef =
   | {
@@ -46,9 +47,9 @@ export type GoalDef =
       after?: string;
     };
 
-const byType = (t: QuestType, text: string, n: number, reward: Reward): GoalDef => ({
+const byType = (t: QuestType, n: number, reward: Reward): GoalDef => ({
   id: `tipo-${t}`,
-  text,
+  text: tr(`objetivos.por_tipo.${t}`),
   stat: `byType:${t}`,
   n,
   step: 1,
@@ -86,7 +87,7 @@ const ROOM_GOALS: [RoomType, number, Reward][] = [
 export const GOALS: readonly GoalDef[] = [
   {
     id: 'encargos',
-    text: 'Cumple {n} encargos',
+    text: tr('objetivos.objetivos.encargos.texto'),
     stat: 'wins',
     n: 3,
     step: 2,
@@ -94,7 +95,7 @@ export const GOALS: readonly GoalDef[] = [
   },
   {
     id: 'brillantes',
-    text: 'Logra {n} éxitos brillantes',
+    text: tr('objetivos.objetivos.brillantes.texto'),
     stat: 'brilliant',
     n: 1,
     step: 1,
@@ -102,7 +103,7 @@ export const GOALS: readonly GoalDef[] = [
   },
   {
     id: 'oro',
-    text: 'Gana {n} monedas con encargos',
+    text: tr('objetivos.objetivos.oro.texto'),
     stat: 'goldEarned',
     n: 200,
     step: 150,
@@ -110,7 +111,7 @@ export const GOALS: readonly GoalDef[] = [
   },
   {
     id: 'incidentes',
-    text: 'Resuelve {n} incidentes en la taberna',
+    text: tr('objetivos.objetivos.incidentes.texto'),
     stat: 'incidents',
     n: 2,
     step: 2,
@@ -118,7 +119,7 @@ export const GOALS: readonly GoalDef[] = [
   },
   {
     id: 'asalto-limpio',
-    text: 'Asaltos repelidos sin heridos: {n}',
+    text: tr('objetivos.objetivos.asalto-limpio.texto'),
     stat: 'cleanRaids',
     n: 1,
     step: 1,
@@ -127,7 +128,7 @@ export const GOALS: readonly GoalDef[] = [
   },
   {
     id: 'ladrones',
-    text: 'Tumba a {n} ladrones',
+    text: tr('objetivos.objetivos.ladrones.texto'),
     stat: 'thieves',
     n: 1,
     step: 1,
@@ -136,7 +137,7 @@ export const GOALS: readonly GoalDef[] = [
   },
   {
     id: 'rumores',
-    text: 'Apunta {n} rumores de la barra',
+    text: tr('objetivos.objetivos.rumores.texto'),
     stat: 'rumors',
     n: 2,
     step: 1,
@@ -145,7 +146,7 @@ export const GOALS: readonly GoalDef[] = [
   },
   {
     id: 'historias',
-    text: 'Completa {n} historias',
+    text: tr('objetivos.objetivos.historias.texto'),
     stat: 'chains',
     n: 1,
     step: 1,
@@ -153,7 +154,7 @@ export const GOALS: readonly GoalDef[] = [
   },
   {
     id: 'talleres',
-    text: 'Crea {n} objetos en los talleres',
+    text: tr('objetivos.objetivos.talleres.texto'),
     stat: 'crafted',
     n: 2,
     step: 2,
@@ -162,7 +163,7 @@ export const GOALS: readonly GoalDef[] = [
   },
   {
     id: 'vestir',
-    text: 'Viste a {n} héroes en la sastrería',
+    text: tr('objetivos.objetivos.vestir.texto'),
     stat: 'dressed',
     n: 1,
     step: 1,
@@ -171,7 +172,7 @@ export const GOALS: readonly GoalDef[] = [
   },
   {
     id: 'pintar',
-    text: 'Pinta {n} salas',
+    text: tr('objetivos.objetivos.pintar.texto'),
     stat: 'painted',
     n: 1,
     step: 1,
@@ -180,43 +181,46 @@ export const GOALS: readonly GoalDef[] = [
   },
   {
     id: 'entrenar',
-    text: 'Gana {n} puntos entrenando',
+    text: tr('objetivos.objetivos.entrenar.texto'),
     stat: 'trained',
     n: 2,
     step: 2,
     reward: { gold: 40 },
     needs: ['armas', 'tiro', 'biblioteca'],
   },
-  byType('Cazar', 'Cumple {n} encargos de caza', 2, { gold: 50 }),
-  byType('Explorar', 'Cumple {n} exploraciones', 2, { gold: 50 }),
-  byType('Escoltar', 'Cumple {n} escoltas', 2, { gold: 50 }),
-  byType('Recuperar', 'Recupera {n} cosas perdidas', 2, { gold: 50 }),
-  byType('Investigar', 'Resuelve {n} investigaciones', 2, { gold: 50 }),
-  byType('Limpiar', 'Limpia {n} guaridas', 2, { gold: 50 }),
+  byType('Cazar', 2, { gold: 50 }),
+  byType('Explorar', 2, { gold: 50 }),
+  byType('Escoltar', 2, { gold: 50 }),
+  byType('Recuperar', 2, { gold: 50 }),
+  byType('Investigar', 2, { gold: 50 }),
+  byType('Limpiar', 2, { gold: 50 }),
   ...ROOM_GOALS.map(([room, level, reward]): GoalDef => ({
     id: `${room}-${level}`,
-    text: level === 1 ? 'Construye: {sala}' : `{sala} a nivel ${level}`,
+    text:
+      level === 1
+        ? tr('objetivos.construye')
+        : tr('objetivos.sala_nivel').replace('{nivel}', String(level)),
     room,
     level,
     reward,
   })),
   {
     id: 'jarras',
-    text: 'Junta {n} jarras en la bodega',
+    text: tr('objetivos.objetivos.jarras.texto'),
     have: 'beer',
     n: 30,
     reward: { gold: 30 },
   },
   {
     id: 'raciones',
-    text: 'Junta {n} raciones de comida',
+    text: tr('objetivos.objetivos.raciones.texto'),
     have: 'food',
     n: 40,
     reward: { gold: 30 },
   },
   {
     id: 'personal-4',
-    text: 'Ten {n} trabajadores en la casa',
+    text: tr('objetivos.objetivos.personal-4.texto'),
     have: 'workers',
     n: 4,
     reward: { gold: 40 },
@@ -224,23 +228,29 @@ export const GOALS: readonly GoalDef[] = [
   {
     id: 'personal-7',
     after: 'personal-4',
-    text: 'Ten {n} trabajadores en la casa',
+    text: tr('objetivos.objetivos.personal-7.texto'),
     have: 'workers',
     n: 7,
     reward: { gold: 80 },
   },
-  { id: 'heroes-5', text: 'Ten {n} héroes en el gremio', have: 'heroes', n: 5, reward: { rep: 2 } },
+  {
+    id: 'heroes-5',
+    text: tr('objetivos.objetivos.heroes-5.texto'),
+    have: 'heroes',
+    n: 5,
+    reward: { rep: 2 },
+  },
   {
     id: 'heroes-8',
     after: 'heroes-5',
-    text: 'Ten {n} héroes en el gremio',
+    text: tr('objetivos.objetivos.heroes-8.texto'),
     have: 'heroes',
     n: 8,
     reward: { gold: 80, item: 2 },
   },
   {
     id: 'nivel-5',
-    text: 'Que un héroe llegue a nivel {n}',
+    text: tr('objetivos.objetivos.nivel-5.texto'),
     have: 'level',
     n: 5,
     reward: { gold: 60 },
@@ -248,14 +258,14 @@ export const GOALS: readonly GoalDef[] = [
   {
     id: 'nivel-8',
     after: 'nivel-5',
-    text: 'Que un héroe llegue a nivel {n}',
+    text: tr('objetivos.objetivos.nivel-8.texto'),
     have: 'level',
     n: 8,
     reward: { gold: 120, item: 4 },
   },
   {
     id: 'sin-bajas',
-    text: 'Pasa {n} días seguidos sin bajas',
+    text: tr('objetivos.objetivos.sin-bajas.texto'),
     have: 'safe',
     n: 15,
     reward: { gold: 60, rep: 2 },
@@ -263,14 +273,14 @@ export const GOALS: readonly GoalDef[] = [
   {
     id: 'sin-bajas-30',
     after: 'sin-bajas',
-    text: 'Pasa {n} días seguidos sin bajas',
+    text: tr('objetivos.objetivos.sin-bajas-30.texto'),
     have: 'safe',
     n: 30,
     reward: { gold: 120, rep: 4 },
   },
   {
     id: 'hierro',
-    text: 'Llega al rango de hierro ({n} de reputación)',
+    text: tr('objetivos.objetivos.hierro.texto'),
     have: 'rep',
     n: 40,
     reward: { gold: 60, unlock: 'roof:paja' },
@@ -278,7 +288,7 @@ export const GOALS: readonly GoalDef[] = [
   {
     id: 'plata',
     after: 'hierro',
-    text: 'Llega al rango de plata ({n} de reputación)',
+    text: tr('objetivos.objetivos.plata.texto'),
     have: 'rep',
     n: 100,
     reward: { gold: 120, unlock: 'tint:ceniza' },

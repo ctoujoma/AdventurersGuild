@@ -7,3 +7,4 @@ coverage
 tools/shots/_*.mjs
 # Copias de trabajo de los agentes
 .claude/worktrees
+textos.csv

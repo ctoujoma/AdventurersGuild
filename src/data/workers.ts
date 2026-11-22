@@ -4,6 +4,7 @@
  */
 import type { Sex } from '../core/model';
 import type { StaffId } from './custom';
+import { t, tl } from '../textos';
 
 /** Oficio: el de la sala en la que rinde más. */
 export type Trade =
@@ -11,44 +12,68 @@ export type Trade =
 
 export const TRADES: Record<Trade, { name: Record<Sex, string>; job: string; gives: string }> = {
   salon: {
-    name: { m: 'Camarero', f: 'Camarera' },
-    job: 'Atiende el salón',
-    gives: 'más monedas en la caja',
+    name: {
+      m: t('trabajadores.oficios.salon.nombre.m'),
+      f: t('trabajadores.oficios.salon.nombre.f'),
+    },
+    job: t('trabajadores.oficios.salon.trabajo'),
+    gives: t('trabajadores.oficios.salon.da'),
   },
   cocina: {
-    name: { m: 'Cocinero', f: 'Cocinera' },
-    job: 'Cocina',
-    gives: 'la comida de la casa',
+    name: {
+      m: t('trabajadores.oficios.cocina.nombre.m'),
+      f: t('trabajadores.oficios.cocina.nombre.f'),
+    },
+    job: t('trabajadores.oficios.cocina.trabajo'),
+    gives: t('trabajadores.oficios.cocina.da'),
   },
   bodega: {
-    name: { m: 'Cervecero', f: 'Cervecera' },
-    job: 'Hace cerveza',
-    gives: 'cerveza para el salón',
+    name: {
+      m: t('trabajadores.oficios.bodega.nombre.m'),
+      f: t('trabajadores.oficios.bodega.nombre.f'),
+    },
+    job: t('trabajadores.oficios.bodega.trabajo'),
+    gives: t('trabajadores.oficios.bodega.da'),
   },
   enfermeria: {
-    name: { m: 'Enfermero', f: 'Enfermera' },
-    job: 'Cuida a los heridos',
-    gives: 'los heridos se curan antes',
+    name: {
+      m: t('trabajadores.oficios.enfermeria.nombre.m'),
+      f: t('trabajadores.oficios.enfermeria.nombre.f'),
+    },
+    job: t('trabajadores.oficios.enfermeria.trabajo'),
+    gives: t('trabajadores.oficios.enfermeria.da'),
   },
   forja: {
-    name: { m: 'Herrero', f: 'Herrera' },
-    job: 'Trabaja en la forja',
-    gives: 'crea armas y armaduras',
+    name: {
+      m: t('trabajadores.oficios.forja.nombre.m'),
+      f: t('trabajadores.oficios.forja.nombre.f'),
+    },
+    job: t('trabajadores.oficios.forja.trabajo'),
+    gives: t('trabajadores.oficios.forja.da'),
   },
   sastreria: {
-    name: { m: 'Sastre', f: 'Sastra' },
-    job: 'Cose en la sastrería',
-    gives: 'viste a los héroes y crea botas y capas',
+    name: {
+      m: t('trabajadores.oficios.sastreria.nombre.m'),
+      f: t('trabajadores.oficios.sastreria.nombre.f'),
+    },
+    job: t('trabajadores.oficios.sastreria.trabajo'),
+    gives: t('trabajadores.oficios.sastreria.da'),
   },
   alquimia: {
-    name: { m: 'Alquimista', f: 'Alquimista' },
-    job: 'Trabaja en el taller de alquimia',
-    gives: 'crea amuletos y varitas',
+    name: {
+      m: t('trabajadores.oficios.alquimia.nombre.m'),
+      f: t('trabajadores.oficios.alquimia.nombre.f'),
+    },
+    job: t('trabajadores.oficios.alquimia.trabajo'),
+    gives: t('trabajadores.oficios.alquimia.da'),
   },
   pintor: {
-    name: { m: 'Pintor', f: 'Pintora' },
-    job: 'Trabaja en el taller del pintor',
-    gives: 'pinta las salas del color que elijas',
+    name: {
+      m: t('trabajadores.oficios.pintor.nombre.m'),
+      f: t('trabajadores.oficios.pintor.nombre.f'),
+    },
+    job: t('trabajadores.oficios.pintor.trabajo'),
+    gives: t('trabajadores.oficios.pintor.da'),
   },
 };
 
@@ -60,39 +85,30 @@ export const VILLAGE: Record<
   { name: string; role: string; sex: Sex; trade: Trade; skill: number; quote: string }
 > = {
   cocinera: {
-    name: 'Remedios',
-    role: 'la cocinera',
+    name: t('trabajadores.pueblo.cocinera.nombre'),
+    role: t('trabajadores.pueblo.cocinera.role'),
     sex: 'f',
     trade: 'cocina',
     skill: 4,
-    quote: 'Aquí no se tira nada. Lo que sobra hoy, mañana es guiso.',
+    quote: t('trabajadores.pueblo.cocinera.quote'),
   },
   bardo: {
-    name: 'Tobías',
-    role: 'el bardo',
+    name: t('trabajadores.pueblo.bardo.nombre'),
+    role: t('trabajadores.pueblo.bardo.role'),
     sex: 'm',
     trade: 'salon',
     skill: 4,
-    quote: 'Una canción más y sirvo otra ronda. O al revés.',
+    quote: t('trabajadores.pueblo.bardo.quote'),
   },
   mozo: {
-    name: 'Nico',
-    role: 'el mozo',
+    name: t('trabajadores.pueblo.mozo.nombre'),
+    role: t('trabajadores.pueblo.mozo.role'),
     sex: 'm',
     trade: 'bodega',
     skill: 3,
-    quote: 'Los barriles pesan menos si no los miras.',
+    quote: t('trabajadores.pueblo.mozo.quote'),
   },
 };
 
 /** Lo que dice quien viene a pedir trabajo. */
-export const WORKER_QUOTES: readonly string[] = [
-  'Trabajo de sol a sol y no me quejo. Casi nunca.',
-  'En mi casa éramos once. Sé hacer de todo un poco.',
-  'Me echaron de la posada del camino por llegar pronto. Raro, ¿verdad?',
-  'Si hay cama y plato caliente, aquí me quedo.',
-  'Mi madre llevaba una taberna. La suya era peor que esta.',
-  'No sé luchar, pero sé lo que pesa un barril lleno.',
-  'Pago mis deudas trabajando. ¿Hay algo que fregar?',
-  'Me han dicho que aquí se come bien. Vengo a comprobarlo.',
-];
+export const WORKER_QUOTES: readonly string[] = tl('trabajadores.citas_trabajadores');

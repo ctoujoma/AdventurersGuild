@@ -12,6 +12,7 @@ import {
   type TintId,
   type WallId,
 } from './custom';
+import { t } from '../textos';
 
 export type UnlockId =
   `roof:${RoofId}` | `walls:${WallId}` | `sign:${SignId}` | `tint:${TintId}` | 'boxes';
@@ -34,10 +35,12 @@ export const FREE: readonly UnlockId[] = [
 
 /** Nombre para el premio («tejado de pizarra»). */
 export function unlockName(id: UnlockId): string {
-  if (id === 'boxes') return 'jardineras para la fachada';
+  if (id === 'boxes') return t('personalizar.premio.jardineras');
   const [kind, k] = id.split(':') as [string, string];
-  if (kind === 'roof') return `tejado de ${ROOFS[k as RoofId].toLowerCase()}`;
-  if (kind === 'walls') return `paredes de ${WALLS[k as WallId].toLowerCase()}`;
-  if (kind === 'sign') return `rótulo ${SIGNS[k as SignId].toLowerCase()}`;
-  return `telas color ${TINTS[k as TintId].name.toLowerCase()}`;
+  const say = (key: string, name: string) =>
+    t(`personalizar.premio.${key}`, { nombre: name.toLowerCase() });
+  if (kind === 'roof') return say('tejado', ROOFS[k as RoofId]);
+  if (kind === 'walls') return say('paredes', WALLS[k as WallId]);
+  if (kind === 'sign') return say('rotulo', SIGNS[k as SignId]);
+  return say('tinte', TINTS[k as TintId].name);
 }

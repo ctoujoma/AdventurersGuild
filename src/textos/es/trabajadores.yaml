@@ -1,0 +1,73 @@
+# Trabajadores: oficios y los tres del pueblo (data/workers.ts).
+
+oficios:
+  salon:
+    nombre:
+      m: "Camarero"
+      f: "Camarera"
+    trabajo: "Atiende el salón"
+    da: "más monedas en la caja"
+  cocina:
+    nombre:
+      m: "Cocinero"
+      f: "Cocinera"
+    trabajo: "Cocina"
+    da: "la comida de la casa"
+  bodega:
+    nombre:
+      m: "Cervecero"
+      f: "Cervecera"
+    trabajo: "Hace cerveza"
+    da: "cerveza para el salón"
+  enfermeria:
+    nombre:
+      m: "Enfermero"
+      f: "Enfermera"
+    trabajo: "Cuida a los heridos"
+    da: "los heridos se curan antes"
+  forja:
+    nombre:
+      m: "Herrero"
+      f: "Herrera"
+    trabajo: "Trabaja en la forja"
+    da: "crea armas y armaduras"
+  sastreria:
+    nombre:
+      m: "Sastre"
+      f: "Sastra"
+    trabajo: "Cose en la sastrería"
+    da: "viste a los héroes y crea botas y capas"
+  alquimia:
+    nombre:
+      m: "Alquimista"
+      f: "Alquimista"
+    trabajo: "Trabaja en el taller de alquimia"
+    da: "crea amuletos y varitas"
+  pintor:
+    nombre:
+      m: "Pintor"
+      f: "Pintora"
+    trabajo: "Trabaja en el taller del pintor"
+    da: "pinta las salas del color que elijas"
+pueblo:
+  cocinera:
+    nombre: "Remedios"
+    role: "la cocinera"
+    quote: "Aquí no se tira nada. Lo que sobra hoy, mañana es guiso."
+  bardo:
+    nombre: "Tobías"
+    role: "el bardo"
+    quote: "Una canción más y sirvo otra ronda. O al revés."
+  mozo:
+    nombre: "Nico"
+    role: "el mozo"
+    quote: "Los barriles pesan menos si no los miras."
+citas_trabajadores:
+  - "Trabajo de sol a sol y no me quejo. Casi nunca."
+  - "En mi casa éramos once. Sé hacer de todo un poco."
+  - "Me echaron de la posada del camino por llegar pronto. Raro, ¿verdad?"
+  - "Si hay cama y plato caliente, aquí me quedo."
+  - "Mi madre llevaba una taberna. La suya era peor que esta."
+  - "No sé luchar, pero sé lo que pesa un barril lleno."
+  - "Pago mis deudas trabajando. ¿Hay algo que fregar?"
+  - "Me han dicho que aquí se come bien. Vengo a comprobarlo."

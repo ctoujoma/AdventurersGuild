@@ -1,0 +1,60 @@
+# Objetivos del día (data/goals.ts). Huecos: {n} lo que pide, {sala} la sala, {nivel} su nivel.
+
+objetivos:
+  encargos:
+    texto: "Cumple {n} encargos"
+  brillantes:
+    texto: "Logra {n} éxitos brillantes"
+  oro:
+    texto: "Gana {n} monedas con encargos"
+  incidentes:
+    texto: "Resuelve {n} incidentes en la taberna"
+  asalto-limpio:
+    texto: "Asaltos repelidos sin heridos: {n}"
+  ladrones:
+    texto: "Tumba a {n} ladrones"
+  rumores:
+    texto: "Apunta {n} rumores de la barra"
+  historias:
+    texto: "Completa {n} historias"
+  talleres:
+    texto: "Crea {n} objetos en los talleres"
+  vestir:
+    texto: "Viste a {n} héroes en la sastrería"
+  pintar:
+    texto: "Pinta {n} salas"
+  entrenar:
+    texto: "Gana {n} puntos entrenando"
+  jarras:
+    texto: "Junta {n} jarras en la bodega"
+  raciones:
+    texto: "Junta {n} raciones de comida"
+  personal-4:
+    texto: "Ten {n} trabajadores en la casa"
+  personal-7:
+    texto: "Ten {n} trabajadores en la casa"
+  heroes-5:
+    texto: "Ten {n} héroes en el gremio"
+  heroes-8:
+    texto: "Ten {n} héroes en el gremio"
+  nivel-5:
+    texto: "Que un héroe llegue a nivel {n}"
+  nivel-8:
+    texto: "Que un héroe llegue a nivel {n}"
+  sin-bajas:
+    texto: "Pasa {n} días seguidos sin bajas"
+  sin-bajas-30:
+    texto: "Pasa {n} días seguidos sin bajas"
+  hierro:
+    texto: "Llega al rango de hierro ({n} de reputación)"
+  plata:
+    texto: "Llega al rango de plata ({n} de reputación)"
+por_tipo:
+  Cazar: "Cumple {n} encargos de caza"
+  Explorar: "Cumple {n} exploraciones"
+  Escoltar: "Cumple {n} escoltas"
+  Recuperar: "Recupera {n} cosas perdidas"
+  Investigar: "Resuelve {n} investigaciones"
+  Limpiar: "Limpia {n} guaridas"
+construye: "Construye: {sala}"
+sala_nivel: "{sala} a nivel {nivel}"

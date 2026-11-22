@@ -1,0 +1,100 @@
+# Salas: nombres, descripciones y lo que da cada nivel (data/rooms.ts y data/roomInfo.ts).
+
+salas:
+  recibidor:
+    nombre: "Recibidor"
+    desc: "La entrada desde el patio. Aquí se ponen los héroes de guardia."
+  salon:
+    nombre: "Salón"
+    desc: "El corazón de la taberna: aquí comen, beben y pagan los que vienen."
+  cocina:
+    nombre: "Cocina"
+    desc: "Hace la comida para los visitantes y para los nuestros."
+  bodega:
+    nombre: "Bodega"
+    desc: "Hace y guarda la cerveza. Bajo tierra sale mejor."
+  tesoro:
+    nombre: "Cámara del tesoro"
+    desc: "Guarda el oro del gremio. Es lo que buscan los bandidos."
+  dormitorio:
+    nombre: "Dormitorio"
+    desc: "Camas para los héroes."
+  enfermeria:
+    nombre: "Enfermería"
+    desc: "Los heridos se curan antes."
+  capilla:
+    nombre: "Capilla"
+    desc: "Moral para todos y una vela por cada caído."
+  mapas:
+    nombre: "Sala de mapas"
+    desc: "Más encargos en el tablón y, con nivel, el peligro real."
+  armeria:
+    nombre: "Armería"
+    desc: "Equipo para todos los que salen de misión."
+  forja:
+    nombre: "Forja"
+    desc: "Crea armas y armaduras, y templa las del arcón."
+  veteranos:
+    nombre: "Cuartos de veteranos"
+    desc: "Cuartos para los héroes de nivel alto."
+  torre:
+    nombre: "Torre del vigía"
+    desc: "Avisa de los asaltos que vienen."
+  servicio:
+    nombre: "Dormitorio del servicio"
+    desc: "Camas para los trabajadores."
+  despensa:
+    nombre: "Despensa"
+    desc: "Guarda la comida."
+  armas:
+    nombre: "Sala de armas"
+    desc: "Se entrena la Fuerza."
+  tiro:
+    nombre: "Galería de tiro"
+    desc: "Se entrena la Destreza."
+  biblioteca:
+    nombre: "Biblioteca"
+    desc: "Se entrena la Mente."
+  sastreria:
+    nombre: "Sastrería"
+    desc: "Tiñe y viste a los héroes, y crea botas y capas."
+  alquimia:
+    nombre: "Taller de alquimia"
+    desc: "Crea amuletos y varitas."
+  pintor:
+    nombre: "Taller del pintor"
+    desc: "El pintor pinta las salas del color que elijas."
+  almacen:
+    nombre: "Almacén"
+    desc: "Guarda los materiales que traen los encargos: más con cada nivel y cada hueco."
+efecto:
+  taller_0: "No crea nada"
+  taller: "{n, plural, one {# trabajo} other {# trabajos}} a la vez, al {ritmo} % de ritmo; sale: {calidad}; al desmontar, {receta} % de sacar la receta"
+  entreno_0: "No se entrena"
+  entreno: "{atributo} hasta {tope}, al {ritmo} % de ritmo"
+  candidatos:
+    - "candidatos de más nivel"
+    - "candidatos de más nivel y más fuertes"
+    - "candidatos de aún más nivel y más fuertes"
+  recibidor: "La puerta aguanta {s} s a los bandidos"
+  salon_0: "No viene nadie: no deja dinero"
+  salon_atractivo: "+{n} de Atractivo"
+  salon_encargos: "+{n, plural, one {# encargo} other {# encargos}} en el tablón"
+  salon_moral: "+{moral} de moral por noche al descansar (hasta {tope})"
+  salon_adornos: "{n} huecos de decoración"
+  cocina_0: "No cocina ni guarda nada"
+  cocina: "Los cocineros rinden al {ritmo} % y caben {n} raciones"
+  bodega_0: "No hace ni guarda cerveza"
+  bodega: "Los cerveceros rinden al {ritmo} % y caben {n} jarras"
+  despensa_0: "No guarda nada"
+  despensa: "Caben {n} raciones"
+  tesoro: "Caben {n} monedas{colchon, select, si { (bajo el colchón)} other {}} y la cerradura aguanta {s} s"
+  dormitorio_0: "Sin camas: paja en el suelo"
+  dormitorio: "{camas, plural, one {# cama} other {# camas}} para héroes{moral, select, 0 {} other {; +{moral} de moral por noche a los de casa}}"
+  veteranos: "{camas, plural, one {# cama} other {# camas}}; los héroes de nivel {nivel} o más: +{moral} de moral por noche y tope +{tope}{balcon, select, si {; nunca desertan} other {}}"
+  servicio_0: "Sin camas: solo trabajan los {n} del pueblo"
+  servicio: "{camas, plural, one {# cama} other {# camas}} para trabajadores"
+  pintor_0: "No pinta nada"
+  pintor: "{n, plural, one {# pintor} other {# pintores}} a la vez, al {ritmo} % de ritmo"
+  almacen_0: "No guarda nada"
+  almacen: "Caben {n} más de cada material{delicado, select, si {, y lo delicado (hierbas, madera buena y cristal)} other { básico}}"

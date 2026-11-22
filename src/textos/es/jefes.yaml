@@ -1,0 +1,33 @@
+# Jefes que cierran algunas historias (data/bosses.ts). «corto»: cómo se le nombra en una frase.
+
+jefes:
+  bestia:
+    nombre: "La bestia de Hondogrís"
+    corto: "la bestia de Hondogrís"
+    gana: "¡La bestia ha caído!"
+    pierde: "La bestia los ha hecho huir."
+  ahogado:
+    nombre: "El Rey Ahogado"
+    corto: "el Rey Ahogado"
+    gana: "¡El Rey Ahogado vuelve al fondo!"
+    pierde: "El Rey Ahogado sigue en su laguna."
+  sierpe:
+    nombre: "La sierpe de Sierra Parda"
+    corto: "la sierpe de Sierra Parda"
+    gana: "¡La sierpe ha caído!"
+    pierde: "La sierpe los ha echado de su cueva."
+  jabali:
+    nombre: "El jabalí de ceniza"
+    corto: "el jabalí de ceniza"
+    gana: "¡El jabalí de ceniza ha caído!"
+    pierde: "El jabalí de ceniza se pierde gruñendo en el humo."
+  reina:
+    nombre: "La Reina de la Cripta"
+    corto: "la Reina de la Cripta"
+    gana: "¡La Reina de la Cripta vuelve a su sueño!"
+    pierde: "La Reina de la Cripta sigue en su trono."
+  dragona:
+    nombre: "La dragona de la Corona Blanca"
+    corto: "la dragona de la Corona Blanca"
+    gana: "¡La dragona de la Corona Blanca ha caído!"
+    pierde: "La dragona de la Corona Blanca los ha echado del glaciar."

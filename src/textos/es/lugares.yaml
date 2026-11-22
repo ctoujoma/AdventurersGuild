@@ -1,0 +1,15 @@
+# Regiones del mapa (data/places.ts). Los lugares de los encargos están en encargos.lugares.
+
+regiones:
+  sierra_parda:
+    nombre: "Sierra Parda"
+  mar_del_poniente:
+    nombre: "Mar del Poniente"
+  las_marismas:
+    nombre: "Las Marismas"
+  tierras_del_este:
+    nombre: "Tierras del Este"
+  llanos_del_sur:
+    nombre: "Llanos del Sur"
+  montes_de_la_niebla:
+    nombre: "Montes de la Niebla"

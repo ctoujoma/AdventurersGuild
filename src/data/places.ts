@@ -1,3 +1,4 @@
+import { t } from '../textos';
 /**
  * Geografía de la comarca para el mapa: dónde está cada lugar de los encargos (en una
  * rejilla de MAP_W × MAP_H píxeles) y de qué tipo es su terreno.
@@ -67,10 +68,10 @@ export const REVEAL_RADIUS = 30;
 
 /** Nombres de las regiones, rotulados en el mapa cuando se conoce la zona. */
 export const REGIONS: readonly { name: string; x: number; y: number }[] = [
-  { name: 'Sierra Parda', x: 214, y: 24 },
-  { name: 'Mar del Poniente', x: 40, y: 150 },
-  { name: 'Las Marismas', x: 118, y: 236 },
-  { name: 'Tierras del Este', x: 352, y: 128 },
-  { name: 'Llanos del Sur', x: 276, y: 250 },
-  { name: 'Montes de la Niebla', x: 74, y: 40 },
+  { name: t('lugares.regiones.sierra_parda.nombre'), x: 214, y: 24 },
+  { name: t('lugares.regiones.mar_del_poniente.nombre'), x: 40, y: 150 },
+  { name: t('lugares.regiones.las_marismas.nombre'), x: 118, y: 236 },
+  { name: t('lugares.regiones.tierras_del_este.nombre'), x: 352, y: 128 },
+  { name: t('lugares.regiones.llanos_del_sur.nombre'), x: 276, y: 250 },
+  { name: t('lugares.regiones.montes_de_la_niebla.nombre'), x: 74, y: 40 },
 ];
