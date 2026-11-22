@@ -268,6 +268,19 @@ lo que hay que tocar y no romper la inmersión. Ahora:
   inicio (encargo de interfaz), candados en el mapa y los adornos y que la barra diga que el
   reloj está parado.
 
+### Pendiente del agente principal (22 de noviembre, tras el agente de textos)
+
+Esperan a que el agente de textos cierre su bloque de `core`, para no pisarse:
+
+- **Juego cerrado: un día cada 24 h reales** (EX7, opción b, en la página de decisiones de las
+  expediciones). Hoy `AWAY_DAY_SECONDS = 3600` (un día por hora) y `AWAY_MAX_DAYS = 8`.
+  Revisar el tope, los pagos estando fuera (`dueTonight`), la carta de «Mientras no estabas» y
+  el texto de la barra (`DayBar.tsx`). Abierto sigue igual (un día cada 5 minutos).
+- **Repasar los tutoriales desde Ajustes** (obras y, cuando exista, expediciones). Idea del
+  usuario: un pase de tarjetas, una por paso, con una captura del juego, flechas o marcos que
+  señalan qué tocar y un texto abajo que explica la acción. Se pasan tocando o deslizando. No
+  es el tutorial guiado otra vez: es una guía para mirar. Enseñar vistas previas antes de meterlo.
+
 ### 2b · El segundo, las obras (cuando la taberna es tuya)
 
 Al pagar la deuda: construir una sala nueva, moverla, ampliarla, mejorar otra y excavar un
