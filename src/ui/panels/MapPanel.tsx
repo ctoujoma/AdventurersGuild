@@ -26,6 +26,7 @@ import { THREAT_STEPS, threatTrend } from '../../core/events';
 import { Portrait } from '../Portrait';
 import { heroFrame, lookOf, marksOf } from '../view';
 import { t, tx } from '../../textos';
+import { distAt, expSlots, expeditionsOpen } from '../../core/expedition';
 import { clientLabel } from '../../data/quests';
 
 interface Props {
@@ -34,6 +35,8 @@ interface Props {
   onHero: (id: string) => void;
   /** Abre la ficha «Encargo en curso» de un grupo fuera. */
   onTrip: (missionId: string) => void;
+  /** Abre el visor de una expedición (o, con null, la hoja de preparar una nueva). */
+  onExpedition: (id: string | null) => void;
 }
 
 const pct = (x: number, y: number) => ({
@@ -131,7 +134,7 @@ function partyPos(place: string, days: number, left: number) {
  * un grupo abre una ficha flotante dentro del propio mapa. Ocupa el panel entero; debajo, la lista
  * de grupos fuera, plegable. Tocar un grupo (en el mapa o en la lista) abre su «Encargo en curso».
  */
-export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
+export function MapPanel({ game, onQuest, onHero, onTrip, onExpedition }: Props) {
   const level = game.fac.mapas;
   const explored = game.explored ?? [];
   const knownRadius = KNOWN_RADIUS + (level >= 1 ? 20 : 0);
@@ -164,6 +167,7 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
   const lastChain = [...(game.chains ?? [])].reverse()[0];
   const threatAt = lastChain ? placeAt(chainDef(lastChain.id).steps.at(-1)!.place) : null;
   const missing = game.heroes.filter((h) => h.status === 'desaparecido');
+  const exps = game.expeditions ?? [];
   const pinsAt: Record<string, number> = {};
 
   // ---------- Zoom y arrastre ----------
@@ -953,7 +957,9 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
         >
           <Icon name="pasos" size={14} />
           <b>{t('paneles.map.grupos_fuera_2')}</b>
-          {game.missions.length > 0 && <span class="row-sub">{game.missions.length}</span>}
+          {game.missions.length + exps.length > 0 && (
+            <span class="row-sub">{game.missions.length + exps.length}</span>
+          )}
           {!trips && soonest && (
             <span class="map-trips-next">
               {t('paneles.map.en_casa_2', {
@@ -966,6 +972,66 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
             {trips ? '▾' : '▴'}
           </span>
         </button>
+        {trips && (exps.length > 0 || expeditionsOpen(game)) && (
+          <ul class="map-trip-list exp-list">
+            {exps.map((e) => {
+              const crew = e.heroIds.map(byId).filter((h) => !!h);
+              return (
+                <li key={e.id} class="map-trip">
+                  <button
+                    class="map-trip-main"
+                    aria-label={t('expediciones.mappanel.ver', {
+                      rumbo: e.heading,
+                      quien: listNames(crew.map((h) => h.name)),
+                    })}
+                    onClick={() => onExpedition(e.id)}
+                  >
+                    <span class="map-trip-faces" aria-hidden="true">
+                      {crew.map((h) => (
+                        <span key={h.id} class="map-trip-face">
+                          <Portrait
+                            look={lookOf(h)}
+                            marks={marksOf(h)}
+                            frame={heroFrame(h)}
+                            scale={1}
+                            alive={false}
+                          />
+                        </span>
+                      ))}
+                    </span>
+                    <span class="map-trip-text">
+                      <b>{t('expediciones.expeditionview.titulo', { rumbo: e.heading })}</b>
+                      <span class="row-sub">
+                        {t('expediciones.mappanel.estado', {
+                          dias: Math.floor(distAt(e)),
+                          vuelta: !!e.turn,
+                          raciones: e.rations,
+                        })}
+                      </span>
+                    </span>
+                    <span class="map-trip-go" aria-hidden="true">
+                      <Icon name="bosque" size={12} />
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+            {expeditionsOpen(game) && (
+              <li class="map-trip">
+                <button
+                  class="btn btn-wood exp-new"
+                  disabled={exps.length >= expSlots(game)}
+                  onClick={() => onExpedition(null)}
+                >
+                  <Icon name="plus" size={12} />
+                  {exps.length >= expSlots(game)
+                    ? t('expediciones.mappanel.sin_hueco', { n: expSlots(game) })
+                    : t('expediciones.mappanel.nueva')}
+                </button>
+              </li>
+            )}
+          </ul>
+        )}
         {!trips ? null : game.missions.length ? (
           <ul class="map-trip-list">
             {[...game.missions]
@@ -1017,7 +1083,7 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
                 );
               })}
           </ul>
-        ) : (
+        ) : exps.length ? null : (
           <p class="tiny">{t('paneles.map.no_hay_ningun_grupo')}</p>
         )}
       </section>

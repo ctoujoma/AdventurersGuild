@@ -133,6 +133,7 @@ import {
   type Facilities,
   type GameState,
   type Hero,
+  type Heading,
   type Custom,
   type Quest,
   type QuestLogEntry,
@@ -207,6 +208,14 @@ import {
   villageCrew,
 } from './workers';
 import { SLOTS, gearList, priceOf, slotOf, type Slot } from './gear';
+import {
+  HOUR,
+  callBack,
+  canExpedition,
+  gameTime,
+  sendExpedition,
+  stepExpeditions,
+} from './expedition';
 import { msg, t } from '../textos';
 
 export type Action =
@@ -233,6 +242,9 @@ export type Action =
   | { type: 'assign'; who: string; room: string | null }
   /** `unguard`: los de guardia del grupo dejan la guardia para ir (y vuelven a ella al volver). */
   | { type: 'send'; questId: string; heroIds: string[]; unguard?: boolean }
+  /** Expediciones: salir hacia un rumbo con raciones, o mandar volver a una. */
+  | { type: 'expedition'; heading: Heading; heroIds: string[]; rations: number; unguard?: boolean }
+  | { type: 'expBack'; id: string }
   | { type: 'upgrade'; fac: keyof Facilities }
   | { type: 'upgradeRoom'; id: string }
   | { type: 'build'; room: RoomType; col: number; floor: number }
@@ -691,6 +703,17 @@ function reduceAction(state: GameState, action: Action): GameState {
       if (chain) chain.party = [...action.heroIds];
       return s;
     }
+    case 'expedition': {
+      const { heading, heroIds, rations, unguard } = action;
+      if (canExpedition(state, heading, heroIds, rations, unguard)) return state;
+      const s = structuredClone(state);
+      sendExpedition(s, heading, heroIds, rations);
+      return s;
+    }
+    case 'expBack': {
+      const s = structuredClone(state);
+      return callBack(s, action.id) ? s : state;
+    }
     case 'sell': {
       const it = state.inventory.find((i) => i.id === action.itemId);
       if (!it) return state;
@@ -919,12 +942,17 @@ function reduceAction(state: GameState, action: Action): GameState {
       const news = tut ? [] : stepIncidents(next, state.clock ?? 0, next.clock ?? 0);
       if (!tut) stepRumors(next, state.clock ?? 0, next.clock ?? 0);
       // Los grupos que acaban lo suyo mandan su informe.
-      const ms = next.over ? { next, news: [] } : tickMissions(next);
+      const ms: { next: GameState; news: DawnEvent[] } = next.over
+        ? { next, news: [] }
+        : tickMissions(next);
+      // Las expediciones, hora a hora.
+      const ex = expeditionsDue(ms.next) ? stepHome(structuredClone(ms.next)) : null;
+      if (ex) ms.next = ex.s;
       // Los objetivos también se cobran en cuanto se cumplen.
       const g = ms.next.over ? { next: ms.next, news: [] } : tickGoals(ms.next);
       const all = [
         ...news,
-        ...[...nightNews, ...crafted, ...ms.news, ...g.news].map((n) => ({
+        ...[...nightNews, ...crafted, ...ms.news, ...(ex?.news ?? []), ...g.news].map((n) => ({
           t: n.t,
           k: n.k ?? ('good' as const),
         })),
@@ -1150,6 +1178,23 @@ function backToJob(s: GameState, h: Hero, events: DawnEvent[]): void {
   delete h.jobBefore;
 }
 
+/** Si alguna expedición tiene horas por contar. */
+const expeditionsDue = (s: GameState) =>
+  !!s.expeditions?.some((e) => Math.floor((gameTime(s) - e.from) / HOUR) > e.hours);
+
+/**
+ * Pone al día las expediciones (hasta ahora o hasta el final del día, `at`) y devuelve a su puesto
+ * a los que vuelven sanos. Muta `s`.
+ */
+function stepHome(s: GameState, at?: number): { s: GameState; news: DawnEvent[] } {
+  const { news, home } = stepExpeditions(s, at ?? gameTime(s));
+  for (const id of home) {
+    const h = s.heroes.find((x) => x.id === id);
+    if (h && h.status === 'ok' && (h.jobBefore || h.guardBefore)) backToJob(s, h, news);
+  }
+  return { s, news };
+}
+
 /**
  * Si un grupo ya ha acabado lo suyo: con `part` la parte del día de ahora (0 al amanecer, ya
  * descontado el día que pasa). Ver `resolveAt` en `journey.ts`.
@@ -1370,6 +1415,8 @@ export function endDay(state: GameState, away = false): GameState {
   events.push(...rollNight(s, nightRng(s)));
   failIncidents(s, events);
   events.push(...dawnNight(s));
+  // Las expediciones, hasta el final del día (con el juego cerrado, todo de una vez).
+  events.push(...stepHome(s, s.day * DAY_SECONDS).news);
   s.day++;
   stepWorks(s, events);
   tidyJobs(s);

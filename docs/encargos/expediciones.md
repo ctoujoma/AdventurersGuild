@@ -55,11 +55,37 @@ volver a ver).
 
 | # | Bloque | Estado |
 | --- | --- | --- |
-| 1 | Núcleo (`core/expedition.ts`: la expedición, días, raciones, curva, sucesos sencillos, vuelta sola, juego cerrado, simulador) + hoja de preparar + visor básico + bosque | Pendiente |
+| 1 | Núcleo (`core/expedition.ts`: la expedición, días, raciones, curva, sucesos sencillos, vuelta sola, juego cerrado, simulador) + hoja de preparar + visor básico + bosque | Hecho (PR del bloque 1) |
 | 2 | Sucesos con decisión, cartas, opciones de clase, avisos, silenciar, guardianes y «Ver la pelea» | Pendiente |
 | 3 | Mapa grande con niebla, parajes, fardos perdidos, récords y objetivos | Pendiente (depende del arte del mapa) |
 | 4 | Salida, vuelta, informe «La mochila», brillos por rareza y sonido | Pendiente |
 | 5 | Sierra, marismas y ruinas (antes, «En obras»); tiempo por rumbo; pociones y cristal en los talleres; carta del veterano y tutorial | Pendiente |
+
+## Bloque 1, cómo quedó
+
+- **Núcleo:** `core/expedition.ts`. Corre por horas de juego (24 al día) y cada hora tira con su
+  semilla: igual abierto que cerrado (test). Se pone al día en el reloj (`tick`) y al acabar el día
+  (`endDay`, también con el juego cerrado). Guardado en `GameState.expeditions` y `expBest`
+  (récord por rumbo); campos nuevos opcionales, sin cambiar `SAVE_VERSION`.
+- **Reglas de ahora** (cifras `EXP_` en `balance.ts`): acampan a las 17 h y cenan una ración cada
+  uno; siguen otro día si les queda para él y para la vuelta; si alguien cae (3 heridas) dan la
+  vuelta; si caen todos, vuelve un tercio de la mochila. Sucesos: hallazgo (monedas o materiales
+  del rumbo, más cuanto más lejos), pelea (fuerza media del grupo contra la lejanía; perder hiere),
+  raciones de caza y camino. El clérigo cura de noche. En casa: experiencia por día fuera, heridas
+  en días de enfermería, y quien cayó puede morir (`EXP_DOWN_DEATH`; con clérigo, a veces se salva).
+- **Simplificado hasta el bloque 2:** las peleas aún no usan `core/fight.ts` (no hay «Ver la
+  pelea»); no hay sucesos con decisión ni guardianes.
+- **Visor básico:** `world/expeditionStrip.ts` reutiliza los dibujos de la tira de los encargos
+  (andar, cojear, pelear, acampar, volver con el saco) con el paisaje que pasa y se oscurece con la
+  lejanía. El bueno, del agente de arte.
+- **Dónde se ve:** en el mapa, lista «Grupos fuera»: las expediciones y el botón «Nueva
+  expedición» (`ui/ExpeditionSheet.tsx`); tocar una abre el visor (`ui/ExpeditionView.tsx`). En la
+  escena, quien está fuera sale como «de expedición».
+- **Simulador:** las estrategias que mandan grupos mandan también a los libres al bosque. Con la
+  despensa justa del simulador salen pocas (una por partida); sin contratar, 7 días fuera, 5 de
+  lejanía y unos 5 muertos cada 100 héroes.
+- **Ojo:** con el juego cerrado corre un día por día real; una expedición de 6–9 días tarda casi
+  una semana si no se abre el juego.
 
 ## Depende de otros
 
