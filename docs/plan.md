@@ -269,6 +269,28 @@ lo que hay que tocar y no romper la inmersión. Ahora:
   inicio (encargo de interfaz), candados en el mapa y los adornos y que la barra diga que el
   reloj está parado.
 
+### Pendiente del agente principal (22 de noviembre, tras el agente de textos)
+
+Esperan a que el agente de textos cierre su bloque de `core`, para no pisarse:
+
+- **Juego cerrado: un día cada 24 h reales** (EX7, opción b, en la página de decisiones de las
+  expediciones). Hoy `AWAY_DAY_SECONDS = 3600` (un día por hora) y `AWAY_MAX_DAYS = 8`.
+  Revisar el tope, los pagos estando fuera (`dueTonight`), la carta de «Mientras no estabas» y
+  el texto de la barra (`DayBar.tsx`). Abierto sigue igual (un día cada 5 minutos).
+- **Repasar los tutoriales desde Ajustes** (obras y, cuando exista, expediciones). Idea del
+  usuario: un pase de tarjetas, una por paso, con una captura del juego, flechas o marcos que
+  señalan qué tocar y un texto abajo que explica la acción. Se pasan tocando o deslizando. No
+  es el tutorial guiado otra vez: es una guía para mirar. Enseñar vistas previas antes de meterlo.
+
+- **Veteranía y niveles** (aprobado el 22 de noviembre en la página de las expediciones; medir
+  con `npm run sim`): una sola escalera. **Veterano a 8** (primer caché, cuartos de veteranos y
+  las expediciones: `EXPEDITION_LEVEL` sigue a `VET_LEVEL`), **maestro a 12** (segundo caché) y
+  **nivel máximo** 15 o 20 (por decidir; hoy no hay tope y el sueldo crece sin fin). Hoy:
+  `VET_LEVEL = 4`, `CACHE` en 5 y 8, `levelRaise` dobla desde el 6. **Caché sin pagar:** moral
+  −X fija mientras no se pague, y se puede pagar después (hoy −25 de golpe y rencor 14 días:
+  `CACHE_REFUSE_MORALE`, `CACHE_GRUDGE`). Textos: `HeroCard` (experiencia), ficha de los cuartos
+  de veteranos, `Opening` y comentarios de `balance.ts`.
+
 ### 2b · El segundo, las obras (cuando la taberna es tuya)
 
 Al pagar la deuda: construir una sala nueva, moverla, ampliarla, mejorar otra y excavar un
