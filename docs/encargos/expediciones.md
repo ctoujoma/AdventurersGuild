@@ -56,7 +56,7 @@ volver a ver).
 | # | Bloque | Estado |
 | --- | --- | --- |
 | 1 | Núcleo (`core/expedition.ts`: la expedición, días, raciones, curva, sucesos sencillos, vuelta sola, juego cerrado, simulador) + hoja de preparar + visor básico + bosque | Hecho (#208) |
-| 2 | Sucesos con decisión, cartas, opciones de clase, avisos, silenciar, guardianes y «Ver la pelea» | Hecho (PR del bloque 2) |
+| 2 | Sucesos con decisión, cartas, opciones de clase, avisos, silenciar, guardianes y «Ver la pelea» | Hecho (#209) |
 | 3 | Mapa grande con niebla, parajes, fardos perdidos, récords y objetivos | Pendiente (depende del arte del mapa) |
 | 4 | Salida, vuelta, informe «La mochila», brillos por rareza y sonido | Pendiente |
 | 5 | Sierra, marismas y ruinas (antes, «En obras»); tiempo por rumbo; pociones y cristal en los talleres; carta del veterano y tutorial | Pendiente |
