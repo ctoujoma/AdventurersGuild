@@ -15,7 +15,13 @@ o está en «Más adelante», no se toca sin preguntar. El detalle de cada idea 
   día; solo en la app) y donaciones. Nada de pagar por ganar.
 - **Tecnología:** seguir en web (TypeScript, Preact, three.js) y empaquetar: Capacitor para
   Android e iOS, Electron o Tauri para Steam. Medir pronto el 3D en un Android modesto.
-- **Textos preparados para traducir** (inglés primero) antes de que crezcan más.
+- **Textos preparados para traducir** (inglés primero) antes de que crezcan más. **Pendiente
+  (usuario, 22 de noviembre):** sacar todos los textos del juego a ficheros (por idioma) para
+  revisarlos y traducirlos. Hoy están repartidos por `src/ui`, `src/data`, `src/core` (informes,
+  cartas, avisos) y algo en `src/world`: del orden de 2.000 cadenas con acentos, más las de las
+  fichas, sin contar las frases que se arman por trozos (plurales, nombres, género). Hacerlo
+  por bloques y con un test que avise de textos sueltos. Mientras tanto, los textos nuevos van
+  juntos en `src/data/`.
 
 ## Quién hace qué
 
