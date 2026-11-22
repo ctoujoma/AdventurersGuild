@@ -233,6 +233,12 @@ una fase, `npm run sim` y una partida larga para ver que el ritmo sigue bien.
 9. **Fase 8 · Expediciones** (agente de expediciones, al acabar lo anterior): respuestas ya
    adelantadas en [`propuesta-expediciones.md`](propuesta-expediciones.md), «Respuestas del
    usuario».
+   **Decidido** (22 de noviembre, página «Expediciones del Jarro»,
+   https://claude.ai/artifact/A4zHkyzm3eBMRn67PT6y6y; registro en `decisiones.md`, bloque 8).
+   Encargo: [`encargos/expediciones.md`](encargos/expediciones.md); arte (agente de arte):
+   [`encargos/arte-expediciones.md`](encargos/arte-expediciones.md). Para el agente principal,
+   de paso: veteranía a nivel 8 con nivel máximo, caché sin pagar con moral de menos hasta
+   pagarlo, un día cada 24 h con el juego cerrado y repetir tutoriales desde Ajustes.
 
 ## Fase 2 · Tutoriales
 

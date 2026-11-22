@@ -19,8 +19,8 @@ Pendiente.
   (que no deje a alguien de guardia para siempre).
 - **A2 y el patio (C8, más adelante):** si el patio acaba con un veterano que enseña, esa
   experiencia también respeta el tope de 99 (solo se sube de nivel peleando).
-- **X4:** el tope de 1 a 4, ¿lo abre la sala de mapas o una sala nueva? Se valora al llegar a
-  las expediciones.
+- **X4 (decidido, 22 de noviembre, EX1):** el tope de 1 a 4 lo da el nivel de la sala de mapas;
+  su tamaño, cuántas expediciones a la vez.
 - **C7, D1 y E1:** aprobados, pero el usuario pidió verlos antes: bocetos primero.
 
 ## 1 · El bucle del juego
@@ -534,6 +534,105 @@ Elegida: (b) La mitad (ya conocen el camino).
 Depende de: A7. Dónde: propuesta-expediciones.md, «Para decidir».
 
 Plan: Fase 8 · Expediciones (agente de expediciones).
+
+## 8 · Expediciones: la forma y el juice (22 de noviembre)
+
+Del agente de expediciones, en su propia página: **«Expediciones del Jarro»**
+(https://claude.ai/artifact/A4zHkyzm3eBMRn67PT6y6y; colecciones `respuestas`, `vuelta2`,
+`vuelta3` y `vuelta4`; cuatro vueltas, con maquetas sobre capturas reales). Encargo:
+[`encargos/expediciones.md`](encargos/expediciones.md); arte:
+[`encargos/arte-expediciones.md`](encargos/arte-expediciones.md). Aquí, lo que quedó al final.
+
+### La forma
+
+- **EX1 · Sala de mapas (aprobada):** el nivel da cuántos van (sin sala 1; nivel 1, 2; nivel 2,
+  3; nivel 3, 4) y el tamaño, cuántas expediciones a la vez (1, 2 o 3 huecos). Cierra X4.
+- **EX2 · Ritmo (aprobada con cambios):** sucesos a horas al azar, unos dos al día de media, con
+  días vacíos y rachas; de noche, a veces, algo en el campamento; más seguidos cuanto más lejos.
+  Nota: «muy programado dos al día, se ve el truco».
+- **EX3 · Sin tramos (aprobada con cambios):** como Fallout Shelter, sin zonas con nombre:
+  peligro y botín suben poco a poco con los días y el paisaje se vuelve salvaje sin cortes. Avisos
+  cuando el peligro sube un escalón («el bosque se pone feo»). Marcan el viaje los parajes y el
+  récord.
+- **EX4 · Raciones (aprobada con cambios):** el jugador elige cuántas raciones llevan (de la
+  despensa, una por héroe y día); por el camino pueden encontrar más (caza, campamento
+  abandonado, mercader).
+- **EX5 · La vuelta (aprobada con cambios):** vuelven solos cuando les quedan solo las raciones
+  de la vuelta (o, si se quedan sin, vuelven con hambre: moral y vida); botón «Volver a casa»
+  siempre. La vuelta, la mitad (X5).
+- **EX6 · Si caen todos (aprobada, b):** vuelve un tercio de la mochila con quien sobrevive o con
+  el primer desaparecido que regresa, y el resto queda como **fardo perdido** en el mapa a esa
+  distancia: otra expedición al mismo rumbo puede recuperarlo. Heridas que se acumulan fuera
+  (solo curan clérigo, santuario o poción); bajas con la regla de A8.
+- **EX7 · Juego cerrado (aprobada con cambios, b):** sigue igual que abierto, salvo los sitios
+  donde se puede entrar (cueva, mina, torre, ruinas): esperan a la puerta hasta un día a que el
+  jugador elija; si no, siguen de largo con prudencia y el sitio queda en el mapa. Con
+  «silenciar», nunca esperan. **Además (para todo el juego, pasado al agente principal):** con
+  el juego cerrado, un día cada 24 h reales (hoy, uno por hora).
+- **EX8 · Peleas (aprobada con cambios, b):** se ven en directo en el visor y se resuelven solas.
+  Los guardianes (raros, lejos) avisan y, con el juego abierto, esperan unos 3 minutos a que se
+  abra el visor; si no, pelean solos. **Todas** las peleas se pueden ver en diferido («Ver la
+  pelea», en el diario y en la crónica de «Mientras no estabas»), repitiéndose tal cual.
+- **EX9 · Pista de riesgo y clases (aprobada con cambios, a):** la pista va en palabras (seguro,
+  arriesgado, «depende de su Destreza»; los atributos son Fuerza, Destreza y Mente), más afinada
+  con la sala de mapas o un explorador. Algunos sucesos tienen **opciones de clase** (explorador:
+  rastrear, evitar emboscadas, parajes y raciones; pícaro: trampas y cofres; mago: runas y
+  sellos; clérigo: santuarios, muertos y curar; guerrero: forzar y plantar cara). Las de las
+  clases que no van salen **tachadas** («haría falta un pícaro»): premia los grupos variados sin
+  castigar los iguales.
+- **EX10 · Materiales (aprobada, a):** hierbas, madera buena y cristal salen por fin (y hierro y
+  cuero extra según el rumbo): bosque, madera y hierbas; sierra, hierro y cristal; marismas,
+  hierbas y cuero; ruinas, cristal y objetos. Usos: pociones con hierbas (curan en peleas y
+  fuera), recetas con madera buena (arco, varita mejor) y cristal para «obra maestra». Cierra E3.
+- **EX11 · Encuentros (aprobada):** mercader, viajero que se une, santuario, campamento
+  abandonado, cofre medio enterrado.
+- **EX12 · Descubrimientos y récords (aprobada):** parajes que quedan en el mapa para siempre,
+  récord de lejanía por rumbo y objetivos nuevos.
+
+### Que se vea y se sienta
+
+- **EX13 · La salida (aprobada):** escena de unos 4 s (se juntan, el tabernero les despide,
+  cuerno, salen por el patio), saltable.
+- **EX14 · La hoja de preparar (aprobada):** retratos, cuatro cartas de rumbo (las sin hacer, «En
+  obras»), mochila que se llena tocando raciones y «Para 6 días: 4 de ida y 2 de vuelta».
+- **EX15 · El visor (aprobada con cambios, b):** pantalla propia, tan detallada como la escena de
+  la taberna y entretenida (capas, luz, animales, gestos, campamento, amanecer), con más
+  protagonismo que la tira de los encargos. **Tiempo propio:** cerca de casa, el de la taberna;
+  lejos, el del rumbo (sierra nieve y viento; marismas niebla y lluvia; bosque lluvia y niebla al
+  alba; ruinas polvo y tormentas secas), y pesa un poco: la nieve gasta más raciones, la niebla
+  trae más emboscadas y peor pista, la lluvia hace andar más despacio.
+- **EX16 · Mapa (aprobada con cambios, a):** unas tres veces mayor y arrastrable, con la comarca
+  de hoy en el centro y los cuatro rumbos alrededor bajo la niebla (sierra al norte, bosque al
+  este, marismas al suroeste, ruinas al sureste; al oeste, el mar). La niebla se despeja por donde
+  pasan; quedan parajes y fardos perdidos.
+- **EX17 · Sucesos como cartas (aprobada):** carta ilustrada, pista de riesgo, barra del plazo y
+  silenciar. Si no se elige, eligen ellos con prudencia.
+- **EX18 · Hallazgos que brillan (aprobada)**, **EX19 · La tensión de cuándo volver (aprobada**,
+  con el aviso de escalón en lugar de tramos), **EX20 · La vuelta (aprobada)** y **EX21 · Sonido
+  (aprobada)**: como en la página.
+
+### Cómo se hace
+
+- **EX22 · Arte (aprobada, b):** lo hace el agente de arte ([`encargos/arte-expediciones.md`](encargos/arte-expediciones.md));
+  mientras, marcadores sencillos.
+- **EX23 · Orden (aprobada):** núcleo con hoja, visor básico y bosque; sucesos y decisiones;
+  mapa grande con niebla; salida, vuelta, informe y sonido; los otros rumbos, pociones y cristal.
+  Un PR por bloque, con vistas previas antes.
+- **EX24 · Cuándo se abren (aprobada con cambios):** con el **primer veterano**, que pasa a ser
+  el nivel 8 (unos días después de la deuda: día 32–36 en el simulador). Si hay otro tutorial en
+  marcha (el de obras), el aviso espera. Al abrirse: aviso grande «¡Expediciones!», carta al
+  amanecer, el borde del mapa que se despliega en niebla y un tutorial corto de tres páginas.
+
+### Para el agente principal (todo el juego; pasado el 22 de noviembre)
+
+- **Veteranía y niveles:** una sola cifra de veterano, el **nivel 8** (hoy `VET_LEVEL` = 4,
+  `CACHE` en 5 y 8, `levelRaise` dobla desde el 6): veterano a 8 (primer caché, cuartos de
+  veteranos, expediciones), maestro a 12 (segundo caché) y **nivel máximo 15 o 20** (hoy sin
+  tope). Revisar textos (ficha del héroe, cuartos de veteranos, inicio) y medir con el simulador.
+- **Caché sin pagar:** un −X de moral **permanente** mientras no se pague lo que pide, y poder
+  pagarlo después (hoy: −25 de golpe y rencor durante 14 días).
+- **Un día cada 24 h** con el juego cerrado (EX7).
+- **Repetir tutoriales** desde Ajustes (obras, expediciones…).
 
 ## Cómo se lleva
 
