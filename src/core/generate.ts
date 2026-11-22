@@ -2,14 +2,9 @@
  * Generadores con semilla: candidatos y encargos escalados por el rango del gremio.
  */
 import { GEAR, TREASURES } from '../data/items';
-import {
-  CLIENTS,
-  PLACES,
-  SHADY_CLIENTS,
-  TEMPLATES,
-  TWISTS,
-  type QuestTemplate,
-} from '../data/quests';
+import { CLIENT_IDS, SHADY_IDS, TEMPLATES, TWISTS } from '../data/quests';
+import { PLACES, placeMsg } from '../data/places';
+import { msg } from '../textos';
 import { FIRST_NAMES, QUOTES, SURNAMES } from '../data/names';
 import { BOARD_TIERS, FREE_PAY, REWARD_PER_POINT } from './balance';
 import type { Danger, Hero, Item, Quest, QuestType, Sex } from './model';
@@ -44,18 +39,6 @@ const BORN_TRAITS: readonly TraitId[] = [
 const CLASHES: readonly [TraitId, TraitId][] = [['valiente', 'cobarde']];
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-
-export function fill(text: string, vars: Record<string, string>): string {
-  return text
-    .replace(/\{(\w+)\}/g, (m, key: string) => {
-      const v = vars[key] ?? vars[key.toLowerCase()];
-      if (v === undefined) return m;
-      return key[0] === key[0]!.toUpperCase() ? cap(v) : v;
-    })
-    .replace(/\b([Aa]) el\b/g, '$1l')
-    .replace(/\b([Dd])e el\b/g, '$1el');
-}
 
 function pickTraits(rng: Rng): Trait[] {
   const a = rng.pick(BORN_TRAITS);
@@ -106,7 +89,7 @@ export function generateHero(rng: Rng, id: string, opts: HeroOptions): Hero {
     fee: 15 + lvl * 15 + Math.max(0, quality - 14) * 3,
     status: 'ok',
     days: 0,
-    quote: rng.pick(QUOTES[cls]),
+    quote: msg(`nombres.citas.${cls}.${rng.int(0, QUOTES[cls].length - 1)}`),
     history: [],
   };
 }
@@ -136,12 +119,15 @@ export function homePower(heroes: readonly Hero[]): number | undefined {
  * Título y texto de un encargo: o un título genérico con cualquier texto del tipo, o una
  * historia concreta cuyo título y texto van juntos.
  */
-export function pickStory(rng: Rng, tpl: QuestTemplate): readonly [string, string] {
+export function pickStory(rng: Rng, type: QuestType): readonly [string, string] {
+  const tpl = TEMPLATES[type];
+  const base = `encargos.plantillas.${type}`;
   const pairs = tpl.stories ?? [];
   const i = rng.int(0, tpl.titles.length + pairs.length - 1);
-  return i < tpl.titles.length
-    ? [tpl.titles[i]!, rng.pick(tpl.texts)]
-    : pairs[i - tpl.titles.length]!;
+  if (i < tpl.titles.length)
+    return [`${base}.titulos.${i}`, `${base}.textos.${rng.int(0, tpl.texts.length - 1)}`];
+  const j = i - tpl.titles.length;
+  return [`${base}.historias.${j}.0`, `${base}.historias.${j}.1`];
 }
 
 export function generateQuest(
@@ -160,10 +146,10 @@ export function generateQuest(
   const type = forceType ?? rng.pick(QUEST_TYPES);
   const tpl = TEMPLATES[type];
   const shady = rng.chance(0.12);
-  const client = shady ? rng.pick(SHADY_CLIENTS) : rng.pick(CLIENTS);
+  const client = shady ? rng.pick(SHADY_IDS) : rng.pick(CLIENT_IDS);
   const place = rng.pick(PLACES);
-  const threat = rng.pick(tpl.threats);
-  const vars = { place, threat, client };
+  const threat = `encargos.plantillas.${type}.amenazas.${rng.int(0, tpl.threats.length - 1)}`;
+  const vars = { lugar: placeMsg(place), amenaza: msg(threat) };
 
   const slots = rng.weighted<number>([
     [1, 3],
@@ -223,15 +209,17 @@ export function generateQuest(
       item = { id: uidItem, ...base, value: Math.round(base.value * (1 + rank * 0.4)) };
     }
   }
-  const twist = rng.chance(shady ? 0.6 : 0.12) ? rng.pick(TWISTS) : undefined;
-  const [title, text] = pickStory(rng, tpl);
+  const twist = rng.chance(shady ? 0.6 : 0.12)
+    ? msg(`encargos.giros.${rng.int(0, TWISTS.length - 1)}`)
+    : undefined;
+  const [title, text] = pickStory(rng, type);
 
   return {
     id,
-    title: cap(fill(title, vars)),
+    title: msg(title, vars),
     client,
     type,
-    text: fill(text, vars),
+    text: msg(text, vars),
     place,
     challenges,
     slots,

@@ -1,0 +1,13 @@
+recados:
+  - "Llega sin aliento: «Que salgan al alba, por lo que más quieran»."
+  - "Trae el sello del molinero y mucha prisa."
+  - "Viene a caballo desde la otra punta de la comarca."
+  - "«Mañana ya será tarde», dice, y no quiere ni sentarse."
+quien: "{sexo, select, f {una mensajera} other {un mensajero}}"
+encargo: "{recado} {texto}"
+aceptado: "Anoche llamó {quien} con un encargo urgente: «{titulo}» ({n} monedas) está en el tablón. Sale hoy o se pierde."
+en_tablon: "«{titulo}» ya está en el tablón."
+despedido: "Anoche despediste a {quien}: se llevó su encargo a otra parte."
+recogido: "Anoche llamó {quien} con un encargo urgente y {heroe}, de guardia, le recogió el recado: «{titulo}» ({n} monedas) está en el tablón. Sale hoy o se pierde."
+dormido: "Anoche llamó {quien} con un encargo urgente, pero {heroe} cabeceaba en la puerta y no le oyó: se lo llevó a otra parte."
+nadie: "Anoche llamó {quien} con un encargo urgente, pero nadie le abrió: se lo llevó a otra parte."

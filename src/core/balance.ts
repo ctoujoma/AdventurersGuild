@@ -5,6 +5,7 @@
 import type { RoomType } from '../data/rooms';
 import type { Facilities, Outcome } from './model';
 import type { SkillId } from './party';
+import { type Msg, msg, t } from '../textos';
 
 export const DAYS = 30;
 export const DEBT = 1000;
@@ -202,13 +203,17 @@ export const TROPHY_REP = 3;
 /** Días de cama que se recuperan cada noche. */
 export const healRate = (enf: number) => 1 + enf;
 
-export const RANKS: readonly { name: string; at: number }[] = [
-  { name: 'cobre', at: 0 },
-  { name: 'hierro', at: 40 },
-  { name: 'plata', at: 100 },
-  { name: 'oro', at: 180 },
-  { name: 'leyenda', at: 300 },
-];
+/** Rangos del gremio: `id` (y clave de `etiquetas.rangos`), nombre escrito y reputación. */
+export const RANKS: readonly { id: string; name: string; at: number }[] = [
+  ['cobre', 0],
+  ['hierro', 40],
+  ['plata', 100],
+  ['oro', 180],
+  ['leyenda', 300],
+].map(([id, at]) => ({ id: id as string, name: t(`etiquetas.rangos.${id}`), at: at as number }));
+
+/** El nombre de un rango (índice de `RANKS`), para guardarlo en un texto. */
+export const rankMsg = (r: number): Msg => msg(`etiquetas.rangos.${RANKS[r]!.id}`);
 
 /**
  * Lo que abre cada rango del gremio (índice de `RANKS`): las plantas sobre la baja y los niveles

@@ -1,6 +1,6 @@
 import type { QuestType } from '../core/model';
 import type { SkillId } from '../core/party';
-import { has, t, tl } from '../textos';
+import { has, idText, msg, t, tl, type Txt } from '../textos';
 
 /**
  * Plantillas de encargos. Huecos: {place} lugar, {threat} amenaza, {client} cliente.
@@ -72,13 +72,15 @@ export const TEMPLATES: Record<QuestType, QuestTemplate> = {
   },
 };
 
-export const PLACES = tl('encargos.lugares');
-
 /**
  * Clientes: id, la etiqueta del tablón y cómo se les nombra en una frase (`prosa`, en
  * `encargos.clientes.<id>`). El orden de las listas cuenta (el generador elige por posición).
  */
-const NORMAL_CLIENTS = [
+/** La etiqueta del tablón de un cliente como mensaje («Alcaldía de Hondogrís»). */
+export const clientLabelMsg = (id: string): Txt =>
+  has(`encargos.clientes.${id}.etiqueta`) ? msg(`encargos.clientes.${id}.etiqueta`) : id;
+
+export const CLIENT_IDS = [
   'ilario',
   'mercaderes',
   'odile',
@@ -92,7 +94,7 @@ const NORMAL_CLIENTS = [
   'bartolo',
   'urraca',
 ] as const;
-const SHADY = ['desconocido', 'corvo', 'voz_cortina'] as const;
+export const SHADY_IDS = ['desconocido', 'corvo', 'voz_cortina'] as const;
 /** Los de las historias (data/chains.ts): solo hace falta su prosa. */
 const CHAIN_CLIENTS = [
   'alcaldia_hondogris',
@@ -105,21 +107,27 @@ const CHAIN_CLIENTS = [
   'gremio',
 ] as const;
 
-const clientLabel = (id: string) => t(`encargos.clientes.${id}.etiqueta`);
+const ALL_CLIENTS: readonly string[] = [...CLIENT_IDS, ...SHADY_IDS, ...CHAIN_CLIENTS];
 
-export const CLIENTS: readonly string[] = NORMAL_CLIENTS.map(clientLabel);
+/** Id de un cliente por su etiqueta en español (las partidas viejas guardan la etiqueta). */
+export const clientIdOf = (label: string): string | undefined =>
+  ALL_CLIENTS.find((id) => idText(msg(`encargos.clientes.${id}.etiqueta`)) === label);
 
-export const SHADY_CLIENTS: readonly string[] = SHADY.map(clientLabel);
+const known = (id: string) => has(`encargos.clientes.${id}.etiqueta`);
+
+/** La etiqueta del tablón de un cliente (un id, o la etiqueta de una partida vieja). */
+export const clientLabel = (id: string) => (known(id) ? t(`encargos.clientes.${id}.etiqueta`) : id);
 
 /**
- * Cómo se nombra a cada cliente en una frase («Berta, la posadera, pagó…»): la etiqueta del
- * tablón no lleva artículo y a veces es plural. Los que no tienen prosa, tal cual.
+ * Cómo se nombra a un cliente en una frase («Berta, la posadera, pagó…»), como mensaje: la
+ * etiqueta del tablón no lleva artículo y a veces es plural. Sin prosa, la etiqueta.
  */
-const CLIENT_PROSE: Record<string, string> = Object.fromEntries(
-  [...NORMAL_CLIENTS, ...SHADY, ...CHAIN_CLIENTS]
-    .filter((id) => has(`encargos.clientes.${id}.prosa`))
-    .map((id) => [clientLabel(id), t(`encargos.clientes.${id}.prosa`)]),
-);
-export const clientProse = (label: string) => CLIENT_PROSE[label] ?? label;
+export const clientMsg = (id: string): Txt => {
+  const c = known(id) ? id : clientIdOf(id);
+  if (!c) return id;
+  return has(`encargos.clientes.${c}.prosa`)
+    ? msg(`encargos.clientes.${c}.prosa`)
+    : msg(`encargos.clientes.${c}.etiqueta`);
+};
 
 export const TWISTS = tl('encargos.giros');

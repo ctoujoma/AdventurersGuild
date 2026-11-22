@@ -3,6 +3,7 @@ import { MAT_LOOSE, MAT_SELL, STORE_CAP } from './balance';
 import { newGame } from './game';
 import type { GameState } from './model';
 import { gainMats, hasMats, matCap, matOf, missing, spendMats } from './materials';
+import { tx } from '../textos';
 
 const withStore = (s: GameState, level: number, w = 1): GameState => {
   s.building.rooms.push({
@@ -28,15 +29,15 @@ describe('materiales', () => {
     expect(r.sold).toEqual({ hierro: 2 });
     expect(s.gold).toBe(gold + 2 * MAT_SELL);
     // Durante la deuda aún no se puede construir: se dice cuándo.
-    expect(r.warn).toMatch(/Cuando pagues la deuda podrás construir un almacén/);
+    expect(tx(r.warn)).toMatch(/Cuando pagues la deuda podrás construir un almacén/);
   });
 
   it('ya libre, el aviso pide construir el almacén; con almacén, ampliarlo', () => {
     const s = { ...newGame('libre'), mode: 'libre' as const };
-    expect(gainMats(s, { tela: MAT_LOOSE + 1 }).warn).toMatch(/Construye un almacén/);
+    expect(tx(gainMats(s, { tela: MAT_LOOSE + 1 }).warn)).toMatch(/Construye un almacén/);
     const t = withStore(structuredClone(s), 1);
     expect(matCap(t, 'tela')).toBe(MAT_LOOSE + STORE_CAP[1]);
-    expect(gainMats(t, { tela: 200 }).warn).toMatch(/Amplía el almacén/);
+    expect(tx(gainMats(t, { tela: 200 }).warn)).toMatch(/Amplía el almacén/);
   });
 
   it('el almacén guarda más por nivel y por hueco; los raros solo con nivel 2', () => {

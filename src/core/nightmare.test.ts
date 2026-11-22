@@ -18,6 +18,7 @@ import { NIGHT_CAT_EVENT, huntRooms } from './nightCat';
 import { NIGHTMARE_EVENT, easeIssue, restless, settleNightmare } from './nightmare';
 import { MORALE_LOW } from './party';
 import { Rng } from './rng';
+import { tx } from '../textos';
 
 /** Una partida sin tutorial, en el modo libre (sin deuda), con jarras y raciones. */
 function base(seed = 'noche-b'): GameState {
@@ -80,12 +81,12 @@ describe('la pesadilla', () => {
     const t = structuredClone(s);
     const said = settleNightmare(t);
     expect(said?.k).toBe('warn');
-    expect(said?.t).toContain(h.name);
+    expect(tx(said?.t)).toContain(h.name);
     expect(t.heroes.find((x) => x.id === h.id)!.morale).toBe(was - NIGHTMARE_LOSS);
     expect(t.nightmare).toBeNull();
     // Pasando el día (o con «Pasar la noche») igual: la línea va a la carta del amanecer.
     const next = endDay(s);
-    expect(next.dawn.some((e) => e.t.includes('dando vueltas'))).toBe(true);
+    expect(next.dawn.some((e) => tx(e.t).includes('dando vueltas'))).toBe(true);
     expect(next.nightmare).toBeNull();
   });
 
@@ -159,8 +160,8 @@ describe('el gato cazador', () => {
     const s = cheat(withLarder(), 'gato').state;
     expect(s.clock).toBeGreaterThanOrEqual(NIGHT_ROLL * DAY_SECONDS);
     const next = endDay(s);
-    const line = next.dawn.find((e) => e.t.startsWith('El gato ha cazado'));
-    expect(line?.t).toContain('despensa');
+    const line = next.dawn.find((e) => tx(e.t).startsWith('El gato ha cazado'));
+    expect(tx(line?.t)).toContain('despensa');
     expect(next.nightCat ?? null).toBeNull();
     // El incidente de las ratas no se queda sin hacer: al día siguiente puede haberlas.
     let rats = 0;

@@ -52,16 +52,16 @@ oficios:
 pueblo:
   cocinera:
     nombre: "Remedios"
-    role: "la cocinera"
-    quote: "Aquí no se tira nada. Lo que sobra hoy, mañana es guiso."
+    papel: "la cocinera"
+    cita: "Aquí no se tira nada. Lo que sobra hoy, mañana es guiso."
   bardo:
     nombre: "Tobías"
-    role: "el bardo"
-    quote: "Una canción más y sirvo otra ronda. O al revés."
+    papel: "el bardo"
+    cita: "Una canción más y sirvo otra ronda. O al revés."
   mozo:
     nombre: "Nico"
-    role: "el mozo"
-    quote: "Los barriles pesan menos si no los miras."
+    papel: "el mozo"
+    cita: "Los barriles pesan menos si no los miras."
 citas_trabajadores:
   - "Trabajo de sol a sol y no me quejo. Casi nunca."
   - "En mi casa éramos once. Sé hacer de todo un poco."
@@ -71,3 +71,17 @@ citas_trabajadores:
   - "No sé luchar, pero sé lo que pesa un barril lleno."
   - "Pago mis deudas trabajando. ¿Hay algo que fregar?"
   - "Me han dicho que aquí se come bien. Vengo a comprobarlo."
+titulo: "{nombre}, {oficio}"
+error:
+  de_guardia: "{heroe} está de guardia."
+  sin_trabajo: "En esa sala no hay trabajo."
+  entrenar: "Entrenar es cosa de los héroes."
+  lleno: "No quedan puestos libres en esa sala."
+  no_espera: "Ya no está esperando."
+  sin_cama: "No queda cama: construye o amplía el dormitorio del servicio."
+  basta: "De momento basta con los tres del pueblo."
+aviso:
+  se_cansa: "{nombre} se cansó de esperar trabajo y se fue a otra posada."
+  viene: "Viene a pedir trabajo {quien} (Maña {n})."
+  mana: "{nombre} le ha cogido el truco al trabajo: Maña {n}."
+  voz: "Se ha corrido la voz: viene a pedir trabajo {quien} (Maña {n})."

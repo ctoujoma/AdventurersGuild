@@ -4,6 +4,7 @@
  * legendario; si no, se pierde y no pasa nada. Los textos están en `data/rumors.ts`.
  */
 import { GEAR } from '../data/items';
+import { placeMsg } from '../data/places';
 import { RUMORS } from '../data/rumors';
 import {
   DAY_SECONDS,
@@ -21,6 +22,7 @@ import type { ChipKind, GameState, Quest } from './model';
 import { Rng } from './rng';
 import { active } from './rooms';
 import { bump } from './feats';
+import { idText, msg, type Txt } from '../textos';
 
 /** Sala donde se oye (el salón en uso), si hay. */
 export const rumorRoom = (s: GameState) =>
@@ -38,27 +40,38 @@ export function stepRumors(s: GameState, from: number, to: number): void {
   if (to + RUMOR_SECS >= DUSK * DAY_SECONDS) return;
   const rng = new Rng(s.rng);
   if (rng.chance(Math.max(0, to - from) / RUMOR_EVERY)) {
-    s.rumor = { id: `ru${s.uid++}`, text: rng.pick(RUMORS), from: to, until: to + RUMOR_SECS };
+    s.rumor = {
+      id: `ru${s.uid++}`,
+      text: msg(`rumores.rumores.${rng.int(0, RUMORS.length - 1)}`),
+      from: to,
+      until: to + RUMOR_SECS,
+    };
   }
   s.rng = rng.save();
 }
 
 /** El encargo que sale de un rumor: en el sitio del que se habla, mejor pagado y con botín. */
-export function rumorQuest(s: GameState, rng: Rng, text: string): Quest {
+export function rumorQuest(s: GameState, rng: Rng, text: Txt): Quest {
   const rank = rankIndex(s.rep);
   // Que no se llame igual que otro del tablón.
-  const taken = new Set(s.quests.map((x) => x.title));
+  const taken = new Set(s.quests.map((x) => idText(x.title)));
   const power = homePower(s.heroes);
   const make = () =>
     generateQuest(rng, `q${s.uid++}`, rank, `i${s.uid++}`, s.mode === 'libre', undefined, power);
   let q = make();
-  for (let i = 0; i < 8 && taken.has(q.title); i++) q = make();
+  for (let i = 0; i < 8 && taken.has(idText(q.title)); i++) q = make();
   // Un raro, o (a veces) un épico o un legendario.
   const rarity = rng.chance(RUMOR_LEGEND) ? (rng.chance(0.5) ? 4 : 3) : 2;
   const base = rng.pick(GEAR.filter((g) => g.rarity === rarity));
   return {
     ...q,
-    text: `${text.replace('{place}', q.place)} ${q.text}`,
+    text: msg('rumores.encargo', {
+      rumor:
+        typeof text === 'string'
+          ? text.replace('{place}', q.place)
+          : msg(text.k, { lugar: placeMsg(q.place) }),
+      texto: q.text,
+    }),
     reward: Math.max(RUMOR_MIN_PAY * (1 + rank), Math.round((q.reward * RUMOR_PAY) / 5) * 5),
     danger: Math.max(1, q.danger) as Quest['danger'],
     expires: 2,
@@ -73,7 +86,7 @@ export function rumorQuest(s: GameState, rng: Rng, text: string): Quest {
 }
 
 /** Tocar el rumor a tiempo: el encargo va al tablón. Muta `s` (una copia). */
-export function takeRumor(s: GameState): { t: string; k: ChipKind } | null {
+export function takeRumor(s: GameState): { t: Txt; k: ChipKind } | null {
   const r = s.rumor;
   if (!r) return null;
   const rng = new Rng(s.rng);
@@ -83,7 +96,7 @@ export function takeRumor(s: GameState): { t: string; k: ChipKind } | null {
   s.rumor = undefined;
   bump(s, 'rumors');
   return {
-    t: `Lo apuntas: «${q.title}» ya está en el tablón, con ${q.item!.name} de botín.`,
+    t: msg('rumores.apuntado', { titulo: q.title, objeto: q.item!.name }),
     k: 'good',
   };
 }

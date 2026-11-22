@@ -1,0 +1,8 @@
+todos_de_guardia: "Los que están en casa hacen guardia."
+nadie_en_casa: "No hay nadie en casa para ir."
+nadie_puede: "Nadie de los que están en casa puede ir a este encargo."
+herido: "{heroe} sigue {sexo, select, f {herida} other {herido}}"
+de_mision: "{heroe} está de misión"
+fuera: "{heroe} ya no está en el gremio"
+de_guardia: "{heroe} está de guardia"
+no_cabe: "{heroe} no cabe: este encargo admite {n}"

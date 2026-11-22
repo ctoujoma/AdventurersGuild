@@ -9,6 +9,7 @@ import { Portrait } from './Portrait';
 import type { GameScene } from './SceneView';
 import { plural, shortGold } from './text';
 import { span } from './when';
+import { tx } from '../textos';
 
 interface MarkProps {
   messenger: Messenger;
@@ -106,8 +107,8 @@ export function MessengerCard({ game, onAnswer, onClose }: CardProps) {
               <span class="note-type">{q.type}</span>
               <span class="note-new note-urgent-tag">Urgente</span>
             </span>
-            <b class="note-title">{q.title}</b>
-            <p class="messenger-text">{q.text}</p>
+            <b class="note-title">{tx(q.title)}</b>
+            <p class="messenger-text">{tx(q.text)}</p>
             <span class="note-foot">
               <span class={`danger danger-${dangerClass(q.danger, q.dangerHidden)}`}>
                 {dangerLabel(q.danger, q.dangerHidden)}

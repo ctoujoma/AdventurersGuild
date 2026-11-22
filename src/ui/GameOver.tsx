@@ -1,5 +1,6 @@
 import type { GameState } from '../core/model';
 import { roster } from '../core/game';
+import { tx } from '../textos';
 
 /** Fin de «La deuda»: victoria o ruina, con la puntuación. */
 export function GameOver({ game, onNew }: { game: GameState; onNew: () => void }) {
@@ -14,7 +15,7 @@ export function GameOver({ game, onNew }: { game: GameState; onNew: () => void }
       <article class="dawn-card">
         <span class="eyebrow">{win ? 'La deuda está pagada' : 'Se acabó'}</span>
         <h2>{win ? '¡Victoria!' : 'El prestamista llama a la puerta'}</h2>
-        <p class="quote">{over.text}</p>
+        <p class="quote">{tx(over.text)}</p>
         <ul class="dawn-events">
           <li class="ev ev-info">Héroes en el gremio: {roster(game).length}</li>
           <li class="ev ev-bad">Caídos en estas semanas: {dead}</li>

@@ -1,4 +1,4 @@
-import { t } from '../textos';
+import { has, msg, t, tx, type Txt } from '../textos';
 /**
  * Geografía de la comarca para el mapa: dónde está cada lugar de los encargos (en una
  * rejilla de MAP_W × MAP_H píxeles) y de qué tipo es su terreno.
@@ -55,6 +55,45 @@ export const PLACE_INFO: Record<string, { x: number; y: number; terrain: Terrain
   'el lago Helado': { x: 358, y: 38, terrain: 'rio' },
   'la Corona Blanca': { x: 386, y: 16, terrain: 'monte' },
 };
+
+/**
+ * Clave del nombre de un lugar: el id es su nombre en español («el molino»), el que va en las
+ * partidas; el nombre que se enseña sale de `lugares.sitios.<clave>` («el_molino»).
+ */
+export const placeKey = (id: string) =>
+  id
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_|_$/g, '');
+
+/** El nombre de un lugar como mensaje (para los huecos `{lugar}`); uno desconocido, tal cual. */
+export const placeMsg = (id: string): Txt =>
+  has(`lugares.sitios.${placeKey(id)}`) ? msg(`lugares.sitios.${placeKey(id)}`) : id;
+
+/** El nombre de un lugar, escrito. */
+export const placeName = (id: string) => tx(placeMsg(id));
+
+/** Lugares de los encargos del tablón (ids, por orden: el generador elige por posición). */
+export const PLACES: readonly string[] = [
+  'el molino',
+  'el puente de los ahorcados',
+  'Valdeloro',
+  'la casa del canal',
+  'el vado',
+  'la posada del Cuervo',
+  'los riscos',
+  'las salinas',
+  'Hondogrís',
+  'el bosque de Sotomuro',
+  'la mina vieja',
+  'el cementerio de Ormaz',
+  'la torre caída',
+  'el pantano de las ranas',
+  'la ermita',
+  'el granero de los Cardo',
+];
 
 /** Posición de un lugar (los desconocidos, cerca de la taberna). */
 export function placeAt(name: string): { x: number; y: number } {

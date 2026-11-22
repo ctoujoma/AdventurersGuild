@@ -82,31 +82,31 @@ export const TRADE_LIST = Object.keys(TRADES) as Trade[];
 /** Los tres de siempre: vienen cada mañana del pueblo y vuelven a dormir a su casa. */
 export const VILLAGE: Record<
   StaffId,
-  { name: string; role: string; sex: Sex; trade: Trade; skill: number; quote: string }
+  { name: string; papel: string; sex: Sex; trade: Trade; skill: number; cita: string }
 > = {
   cocinera: {
     name: t('trabajadores.pueblo.cocinera.nombre'),
-    role: t('trabajadores.pueblo.cocinera.role'),
+    papel: t('trabajadores.pueblo.cocinera.papel'),
     sex: 'f',
     trade: 'cocina',
     skill: 4,
-    quote: t('trabajadores.pueblo.cocinera.quote'),
+    cita: t('trabajadores.pueblo.cocinera.cita'),
   },
   bardo: {
     name: t('trabajadores.pueblo.bardo.nombre'),
-    role: t('trabajadores.pueblo.bardo.role'),
+    papel: t('trabajadores.pueblo.bardo.papel'),
     sex: 'm',
     trade: 'salon',
     skill: 4,
-    quote: t('trabajadores.pueblo.bardo.quote'),
+    cita: t('trabajadores.pueblo.bardo.cita'),
   },
   mozo: {
     name: t('trabajadores.pueblo.mozo.nombre'),
-    role: t('trabajadores.pueblo.mozo.role'),
+    papel: t('trabajadores.pueblo.mozo.papel'),
     sex: 'm',
     trade: 'bodega',
     skill: 3,
-    quote: t('trabajadores.pueblo.mozo.quote'),
+    cita: t('trabajadores.pueblo.mozo.cita'),
   },
 };
 

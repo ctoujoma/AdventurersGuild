@@ -1,0 +1,1 @@
+sin_cena: "No hubo comida para todos: {quien} {n, plural, one {se acostó} other {se acostaron}} sin cenar (−{moral} de moral).{servicio, select, si { Ni el servicio cenó.} other {}}"

@@ -159,3 +159,29 @@ estado:
   desaparecido: "{sexo, select, f {Desaparecida} other {Desaparecido}}"
   muerto: "{sexo, select, f {Caída} other {Caído}}"
 sin_efecto: "Sin efecto"
+resultado:
+  brillante: "Éxito brillante"
+  exito: "Éxito"
+  parcial: "Éxito parcial"
+  fracaso: "Fracaso"
+  desastre: "Desastre"
+rangos:
+  cobre: "cobre"
+  hierro: "hierro"
+  plata: "plata"
+  oro: "oro"
+  leyenda: "leyenda"
+habilidades:
+  Combate: "Combate"
+  Trampas: "Trampas"
+  Arcano: "Arcano"
+  Supervivencia: "Supervivencia"
+atributos:
+  F: "Fuerza"
+  D: "Destreza"
+  M: "Mente"
+riesgo:
+  - "Pan comido"
+  - "Probable"
+  - "Arriesgado"
+  - "Suicida"

@@ -13,6 +13,7 @@ import {
 import { endDay, newGame, reduce } from './game';
 import { catHunts, incidentCost, incidentIssue, napping, stepIncidents } from './incidents';
 import type { GameState, Incident } from './model';
+import { tx } from '../textos';
 
 /** Partida en el día 3 con un incidente puesto a mano en la primera sala de su tipo. */
 function withIncident(kind: Incident['kind'], seed = 'incidente'): GameState {
@@ -66,7 +67,7 @@ describe('incidentes', () => {
     const t = reduce(sent, { type: 'arrived', heroId: hero.id, room });
     expect(t.incidents).toEqual([]);
     expect(t.rep).toBe(s.rep + (INCIDENTS.pelea.rep ?? 0));
-    expect(t.incidentNews?.[0]?.t).toContain(hero.name);
+    expect(tx(t.incidentNews?.[0]?.t)).toContain(hero.name);
   });
 
   it('ladrón: al llegar el héroe se pelean, golpe a golpe; al acabar, le pilla o se escapa', () => {
@@ -103,7 +104,7 @@ describe('incidentes', () => {
     // …y a su hora de llegada, arreglado.
     const news = stepIncidents(u, at - 1, at);
     expect(u.incidents).toEqual([]);
-    expect(news.some((n) => n.t.includes(hero.name))).toBe(true);
+    expect(news.some((n) => tx(n.t).includes(hero.name))).toBe(true);
   });
 
   it('quien va a un incidente no pierde su tarea: al acabar, vuelve a ella (y el de guardia, a la puerta)', () => {
@@ -128,7 +129,7 @@ describe('incidentes', () => {
     expect(s.incidents).toHaveLength(1);
     const later = stepIncidents(s, 11, 14);
     expect(s.incidents).toEqual([]);
-    expect(later[0]?.t).toContain(hero.name);
+    expect(tx(later[0]?.t)).toContain(hero.name);
     expect(news).toEqual([]);
   });
 
@@ -186,7 +187,7 @@ describe('incidentes', () => {
     const s = withIncident('gotera');
     const next = endDay(s);
     expect(next.incidents).toEqual([]);
-    expect(next.dawn.some((e) => e.t.includes('gotera'))).toBe(true);
+    expect(next.dawn.some((e) => tx(e.t).includes('gotera'))).toBe(true);
   });
 
   it('el ladrón que se escapa se topa con la guardia en la puerta', () => {
@@ -201,7 +202,7 @@ describe('incidentes', () => {
     expect(s.incidents).toEqual([]);
     expect(s.gold).toBe(500);
     expect(s.incidentLog?.at(-1)).toMatchObject({ how: 'puerta', guard: g.id });
-    expect(news.some((n) => n.t.includes(g.name) && /cierra el paso/.test(n.t))).toBe(true);
+    expect(news.some((n) => tx(n.t).includes(g.name) && /cierra el paso/.test(tx(n.t)))).toBe(true);
   });
 
   it('el de guardia en la cámara se echa encima del ladrón solo (y se avisa igual)', () => {
@@ -218,7 +219,7 @@ describe('incidentes', () => {
     const news = stepIncidents(s, at - 1, at);
     const duel = s.incidents![0]!.duel!;
     expect(duel.who).toBe(g.id);
-    expect(news.some((n) => n.t.includes(g.name) && /cámara/.test(n.t))).toBe(true);
+    expect(news.some((n) => tx(n.t).includes(g.name) && /cámara/.test(tx(n.t)))).toBe(true);
     // Le gana: no se pierde nada.
     stepIncidents(s, at, at + duel.end + 1);
     expect(s.incidents).toEqual([]);
@@ -259,7 +260,7 @@ describe('incidentes', () => {
     const at = 10 + INCIDENT_REACT;
     const news = stepIncidents(s, at - 1, at);
     expect(s.incidents?.[0]?.coming?.who).toBe(g.id);
-    expect(news.some((n) => n.t.includes(g.name))).toBe(true);
+    expect(news.some((n) => tx(n.t).includes(g.name))).toBe(true);
     // Al llegar la separa.
     const room = s.incidents![0]!.room;
     const t = reduce(s, { type: 'arrived', heroId: g.id, room });

@@ -46,9 +46,9 @@ export const WORK: Record<QuestType, readonly string[]> = {
 export type FoeKind = 'bandido' | 'trasgo' | 'bestia' | 'alimana' | 'muerto' | 'grande';
 
 export const FOE_NAMES: Record<FoeKind, string> = {
-  bandido: 'bandidos',
-  trasgo: 'trasgos',
-  bestia: 'bestias',
+  bandido: t('viaje.enemigos.bandido'),
+  trasgo: t('viaje.enemigos.trasgo'),
+  bestia: t('viaje.enemigos.bestia'),
   alimana: t('viaje.enemigos.alimana'),
   muerto: t('viaje.enemigos.muerto'),
   grande: t('viaje.enemigos.grande'),

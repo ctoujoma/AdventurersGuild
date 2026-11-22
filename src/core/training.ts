@@ -6,7 +6,7 @@
  * atributo principal de su clase). Las habilidades suben solas, según lo que pese ese atributo en
  * la clase.
  */
-import { ROOMS, TRAINS } from '../data/rooms';
+import { TRAINS } from '../data/rooms';
 import {
   TRAIN_CAP,
   TRAIN_COST_BASE,
@@ -21,8 +21,14 @@ import { SKILLS, skill, type AttrId, type SkillId } from './party';
 import { active } from './rooms';
 import { assign, shiftShare, shiftStart, slotsOf, workedIn } from './workers';
 import { bump } from './feats';
+import { type Msg, msg, t, tx } from '../textos';
 
-export const ATTR_NAMES: Record<AttrId, string> = { F: 'Fuerza', D: 'Destreza', M: 'Mente' };
+export const ATTR_NAMES: Record<AttrId, string> = {
+  F: t('etiquetas.atributos.F'),
+  D: t('etiquetas.atributos.D'),
+  M: t('etiquetas.atributos.M'),
+};
+const attrMsg = (a: AttrId) => msg(`etiquetas.atributos.${a}`);
 
 /** Hasta dónde llega el atributo entrenando en esta sala. */
 export const trainCap = (r: Room) => TRAIN_CAP[active(r).level] ?? TRAIN_CAP[TRAIN_CAP.length - 1];
@@ -47,9 +53,7 @@ export function capFor(
 
 /** Qué hace falta para seguir subiendo cuando se llega al tope. */
 export const capHint = (by: 'sala' | 'nivel') =>
-  by === 'sala'
-    ? 'Para seguir, hay que mejorar la sala.'
-    : 'Para seguir, tiene que subir de nivel.';
+  by === 'sala' ? t('entreno.mejorar_sala') : t('entreno.subir_nivel');
 
 /** Progreso que da un día en esta sala. */
 export const trainRate = (r: Room) => TRAIN_RATE * (0.75 + 0.25 * active(r).level);
@@ -105,8 +109,15 @@ export function skillGain(h: Hero, a: AttrId): Partial<Record<SkillId, number>> 
 }
 
 /** «Combate +1, Supervivencia +1» (o nada si con este punto aún no se nota). */
-export const gainText = (g: Partial<Record<SkillId, number>>) =>
-  (Object.entries(g) as [SkillId, number][]).map(([k, n]) => `${k} +${n}`).join(', ');
+export const gainText = (g: Partial<Record<SkillId, number>>) => tx(gainMsg(g));
+
+/** Lo mismo, como mensaje («Combate +1, Trampas +1»). */
+const gainMsg = (g: Partial<Record<SkillId, number>>): Msg =>
+  msg('general.lista', {
+    xs: (Object.entries(g) as [SkillId, number][]).map(([k, n]) =>
+      msg('entreno.mas', { habilidad: msg(`etiquetas.habilidades.${k}`), n }),
+    ),
+  });
 
 /** Quien sigue en una sala de entrenamiento sin poder subir más (para avisar en directo). */
 export function cappedTrainees(
@@ -123,8 +134,15 @@ export function cappedTrainees(
 }
 
 /** «Bruna deja la sala de armas: ya no aprende más Fuerza ahí. Para seguir, …» */
+export const capLeaveMsg = (h: Hero, r: Room, a: AttrId, by: 'sala' | 'nivel'): Msg =>
+  msg('entreno.deja', {
+    heroe: h.name,
+    sala: msg(`salas.salas.${r.type}.nombre`),
+    atributo: attrMsg(a),
+    por: by,
+  });
 export const capLeaveText = (h: Hero, r: Room, a: AttrId, by: 'sala' | 'nivel') =>
-  `${h.name} deja la ${ROOMS[r.type].name.toLowerCase()}: ya no aprende más ${ATTR_NAMES[a]} ahí. ${capHint(by)}`;
+  tx(capLeaveMsg(h, r, a, by));
 
 /**
  * La noche de quien entrena: suma el progreso del día y, si lo completa, sube un punto. Quien
@@ -137,7 +155,7 @@ export function stepTraining(s: GameState, events: DawnEvent[]): void {
     const { cap, by } = capFor(h, t.room);
     if (h.attrs[t.attr] >= cap) {
       assign(s, h.id, null);
-      events.push({ t: capLeaveText(h, t.room, t.attr, by), k: 'warn' });
+      events.push({ t: capLeaveMsg(h, t.room, t.attr, by), k: 'warn' });
       continue;
     }
     const train = (h.train ??= {});
@@ -145,19 +163,27 @@ export function stepTraining(s: GameState, events: DawnEvent[]): void {
     let p = (train[t.attr] ?? 0) + trainRate(t.room) * shiftShare(h);
     while (p >= trainCost(h, t.attr) && h.attrs[t.attr] < cap) {
       p -= trainCost(h, t.attr);
-      const gain = gainText(skillGain(h, t.attr));
+      const gain = skillGain(h, t.attr);
       h.attrs[t.attr]++;
       bump(s, 'trained');
-      h.history.push(`Día ${s.day - 1} · Entrenando: ${ATTR_NAMES[t.attr]} ${h.attrs[t.attr]}`);
+      h.history.push(
+        msg('entreno.historial', { dia: s.day - 1, atributo: attrMsg(t.attr), n: h.attrs[t.attr] }),
+      );
       events.push({
-        t: `${h.name} ha entrenado: ${ATTR_NAMES[t.attr]} ${h.attrs[t.attr]}${gain ? ` (${gain})` : ''}.`,
+        t: msg('entreno.sube', {
+          heroe: h.name,
+          atributo: attrMsg(t.attr),
+          n: h.attrs[t.attr],
+          gana: gainMsg(gain),
+          hay: Object.keys(gain).length > 0,
+        }),
         k: 'good',
       });
     }
     train[t.attr] = h.attrs[t.attr] >= cap ? 0 : p;
     if (h.attrs[t.attr] >= cap) {
       assign(s, h.id, null);
-      events.push({ t: capLeaveText(h, t.room, t.attr, by), k: 'warn' });
+      events.push({ t: capLeaveMsg(h, t.room, t.attr, by), k: 'warn' });
     }
   }
 }

@@ -11,6 +11,7 @@ import {
 import { newGame } from './game';
 import { raidChance, stepRaids } from './raids';
 import { Rng } from './rng';
+import { tx } from '../textos';
 
 describe('tiempo que corre solo', () => {
   it('fuera corre más despacio que abierto, con un mínimo y un tope', () => {
@@ -32,7 +33,7 @@ describe('tiempo que corre solo', () => {
     expect(long.state.day).toBe(s.day + 3);
     expect(long.state.clock).toBeCloseTo(DAY_SECONDS / 2, 6);
     // La carta junta los días con su encabezado, y no queda nada que ver en la escena.
-    expect(long.state.dawn.filter((e) => e.head).map((e) => e.t)).toEqual([
+    expect(long.state.dawn.filter((e) => e.head).map((e) => tx(e.t))).toEqual([
       `Día ${s.day + 1}`,
       `Día ${s.day + 2}`,
       `Día ${s.day + 3}`,

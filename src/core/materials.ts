@@ -9,6 +9,7 @@ import type { QuestType } from './model';
 import type { GameState } from './model';
 import { EXPEDITION_LEVEL, MAT_LOOSE, MAT_SELL, STORE_CAP } from './balance';
 import { active } from './rooms';
+import { type Msg, msg, t, tx } from '../textos';
 
 export type Material = 'hierro' | 'cuero' | 'tela' | 'hierbas' | 'madera' | 'cristal';
 export const MATERIAL_LIST: readonly Material[] = [
@@ -22,38 +23,21 @@ export const MATERIAL_LIST: readonly Material[] = [
 /** Los de ahora; los demás, con las expediciones. */
 export const BASIC: readonly Material[] = ['hierro', 'cuero', 'tela'];
 
-export const MATERIALS: Record<Material, { name: string; from: string; uses: string }> = {
-  hierro: {
-    name: 'Hierro',
-    from: 'Sale limpiando guaridas e investigando.',
-    uses: 'Lo piden las armas, las corazas y las ganzúas (crearlas y mejorarlas).',
-  },
-  cuero: {
-    name: 'Cuero',
-    from: 'Sale cazando y explorando.',
-    uses: 'Lo piden las botas, los escudos y las capas buenas.',
-  },
-  tela: {
-    name: 'Tela',
-    from: 'Sale escoltando y recuperando.',
-    uses: 'La piden las capas.',
-  },
-  hierbas: {
-    name: 'Hierbas',
-    from: 'Saldrán en las expediciones.',
-    uses: 'Las piden los amuletos para mejorarlos en la alquimia.',
-  },
-  madera: {
-    name: 'Madera buena',
-    from: 'Saldrá en las expediciones.',
-    uses: 'La piden las varitas para mejorarlas en la alquimia.',
-  },
-  cristal: {
-    name: 'Cristal',
-    from: 'Saldrá, raro, en las expediciones lejanas.',
-    uses: 'Aún no lo pide ningún taller.',
-  },
-};
+/** Nombre, de dónde sale y quién lo pide (`materiales.<id>`), escritos. */
+export const MATERIALS: Record<Material, { name: string; from: string; uses: string }> =
+  Object.fromEntries(
+    MATERIAL_LIST.map((m) => [
+      m,
+      {
+        name: t(`materiales.${m}.nombre`),
+        from: t(`materiales.${m}.de_donde`),
+        uses: t(`materiales.${m}.usos`),
+      },
+    ]),
+  ) as Record<Material, { name: string; from: string; uses: string }>;
+
+/** El nombre de un material, para un hueco. */
+export const matMsg = (m: Material): Msg => msg(`materiales.${m}.nombre`);
 
 /** El material que trae cada tipo de encargo. */
 export const QUEST_MATERIAL: Record<QuestType, Material> = {
@@ -91,15 +75,16 @@ export function matCap(s: GameState, m: Material): number {
   return storeLevel(s) >= 2 ? stored : 0;
 }
 
-/** «2 de cuero y 1 de hierro». */
-export function matsText(m: Mats): string {
-  const parts = MATERIAL_LIST.filter((k) => m[k]).map(
-    (k) => `${m[k]} de ${MATERIALS[k].name.toLowerCase()}`,
+/** «2 de cuero y 1 de hierro», como mensaje. */
+export function matsMsg(m: Mats): Msg {
+  const parts = MATERIAL_LIST.filter((k) => m[k]).map((k) =>
+    msg('materiales.cuanto', { n: m[k], material: matMsg(k) }),
   );
-  return parts.length > 1
-    ? `${parts.slice(0, -1).join(', ')} y ${parts.at(-1)}`
-    : (parts[0] ?? 'nada');
+  return parts.length ? msg('general.lista', { xs: parts }) : msg('materiales.nada');
 }
+
+/** Lo mismo, escrito. */
+export const matsText = (m: Mats): string => tx(matsMsg(m));
 
 /**
  * Guarda materiales: lo que cabe, al montón; lo que no, se vende a `MAT_SELL` cada uno. Devuelve
@@ -108,7 +93,7 @@ export function matsText(m: Mats): string {
 export function gainMats(
   s: GameState,
   gain: Mats,
-): { kept: Mats; sold: Mats; gold: number; warn: string | null } {
+): { kept: Mats; sold: Mats; gold: number; warn: Msg | null } {
   const kept: Mats = {};
   const sold: Mats = {};
   let gold = 0;
@@ -130,12 +115,11 @@ export function gainMats(
   s.mats = mats;
   s.gold += gold;
   if (!gold) return { kept, sold, gold, warn: null };
-  const what = `No cabía: vendido ${matsText(sold)} por ${gold} monedas.`;
-  const warn = storeLevel(s)
-    ? `${what} Amplía el almacén para guardar más.`
-    : s.mode === 'libre'
-      ? `${what} Construye un almacén para guardarlos.`
-      : `${what} Cuando pagues la deuda podrás construir un almacén.`;
+  const warn = msg('materiales.no_cabe', {
+    que: matsMsg(sold),
+    oro: gold,
+    consejo: storeLevel(s) ? 'ampliar' : s.mode === 'libre' ? 'construir' : 'deuda',
+  });
   return { kept, sold, gold, warn };
 }
 
@@ -145,13 +129,13 @@ export function gainMats(
  */
 export function storeNext(s: GameState, level: number): string | null {
   const next = level + 1;
-  const room = `cabe más de cada material (${STORE_CAP[next] ?? STORE_CAP.at(-1)} por hueco)`;
   if (next > STORE_CAP.length - 1) return null;
-  if (next === 2)
-    return `Nivel 2: ${room} y estantes para lo delicado (hierbas, madera buena y cristal)${
-      expeditionsOpen(s) ? '' : ', que llega con las expediciones'
-    }.`;
-  return `Nivel ${next}: ${room}.`;
+  return t('materiales.almacen_siguiente', {
+    nivel: next,
+    n: STORE_CAP[next] ?? STORE_CAP.at(-1),
+    delicado: next === 2,
+    expediciones: expeditionsOpen(s),
+  });
 }
 
 /** Si hay de todo lo que se pide. */

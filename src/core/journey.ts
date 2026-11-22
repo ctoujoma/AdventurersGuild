@@ -5,13 +5,12 @@
  *
  * El tiempo del viaje va de 0 (sale) a 1 (vuelve, al acabar el último día): cada día es 1/días.
  */
-import { BOSSES, type BossKind } from '../data/bosses';
+import type { BossKind } from '../data/bosses';
 import {
   ARRIVE,
   CAMP,
   FIGHT,
   FOE_BY_TYPE,
-  FOE_NAMES,
   FOE_WORDS,
   LEAVE,
   LEGS,
@@ -20,11 +19,13 @@ import {
   type FoeKind,
   type LegId,
 } from '../data/journey';
-import { PLACE_INFO, type Terrain } from '../data/places';
+import { PLACE_INFO, placeMsg, type Terrain } from '../data/places';
+import { outcomeLabel } from '../data/labels';
 import { DAY_SECONDS, DUSK } from './balance';
 import { bossOf, fightRoster } from './chains';
 import type { BossFight, GameState, Mission, Outcome, QuestType } from './model';
 import { Rng } from './rng';
+import { idText, msg, t, tr, tx } from '../textos';
 
 export type { FoeKind, LegId };
 export { LEGS };
@@ -106,7 +107,7 @@ const legAt = (leg: LegId, at: number) => {
 
 /** Contra qué se pelea en un encargo: lo que diga su texto o, si no, lo propio del tipo. */
 export function foeOf(q: Mission['quest']): FoeKind {
-  const text = `${q.title} ${q.text}`;
+  const text = `${idText(q.title)} ${idText(q.text)}`;
   return FOE_WORDS.find(([re]) => re.test(text))?.[1] ?? FOE_BY_TYPE[q.type];
 }
 
@@ -123,27 +124,27 @@ export function journey(m: Mission): Journey {
   const days = Math.max(1, q.days);
   const foe = foeOf(q);
   const events: JourneyEvent[] = [];
+  /** Una frase de una lista (por su clave); `{heroe}` queda como `{id}` para la ficha. */
   const say = (leg: LegId, at: number, kind: JourneyKind, pool: readonly string[]) => {
-    let text = rng
-      .pick(pool)
-      .replace('{sitio}', q.place)
-      .replace('{foe}', FOE_NAMES[foe])
-      .replace(/\b(a|de) el\b/g, (_, p: string) => (p === 'a' ? 'al' : 'del'));
+    const key = rng.pick(pool);
     let heroId: string | undefined;
-    if (text.includes('{h}')) {
-      heroId = rng.pick(m.heroIds);
-      text = text.replace('{h}', `{${heroId}}`);
-    }
+    if (tr(key).includes('{heroe}')) heroId = rng.pick(m.heroIds);
+    const text = t(key, {
+      lugar: placeMsg(q.place),
+      enemigos: msg(`viaje.enemigos.${foe}`),
+      heroe: heroId ? `{${heroId}}` : '',
+    });
     events.push({ leg, at, t: legAt(leg, at), kind, text, heroId });
   };
+  const keys = (base: string, list: readonly unknown[]) => list.map((_, i) => `${base}.${i}`);
 
   // Por el camino, sin repetir frase.
-  const road = [...ROAD[terrain]];
+  const road = keys(`viaje.camino.${terrain}`, ROAD[terrain]);
   const take = () => road.splice(rng.int(0, road.length - 1), 1);
   say('ida', 0.25 + rng.next() * 0.2, 'camino', take());
   if (days > 1 || rng.chance(0.5)) say('ida', 0.65 + rng.next() * 0.2, 'camino', take());
-  say('llegada', 0.3, 'llegada', ARRIVE);
-  const work = WORK[q.type];
+  say('llegada', 0.3, 'llegada', keys('viaje.llegar', ARRIVE));
+  const work = keys(`viaje.trabajo.${q.type}`, WORK[q.type]);
   say('faena', 0.15, 'faena', [work[0]!]);
   let fight: Journey['fight'];
   if (boss) {
@@ -152,22 +153,22 @@ export function journey(m: Mission): Journey {
       at: 0.6,
       t: legAt('faena', 0.6),
       kind: 'jefe',
-      text: `Aparece ${BOSSES[boss].name.replace(/^El /, 'el ').replace(/^La /, 'la ')}.`,
+      text: t('viaje.aparece', { jefe: msg(`jefes.jefes.${boss}.corto`) }),
     });
     fight = { from: legAt('faena', 0.6), to: legAt('faena', 0.95) };
   } else if (FIGHTY.has(q.type) || rng.chance(0.25 + 0.2 * q.danger)) {
     const at = 0.45 + rng.next() * 0.15;
-    say('faena', at, 'pelea', FIGHT);
+    say('faena', at, 'pelea', keys('viaje.pelea', FIGHT));
     fight = { from: legAt('faena', at), to: legAt('faena', at + 0.3) };
   } else say('faena', 0.6, 'faena', [work[1]!]);
-  say('vuelta', 0.1, 'vuelta', LEAVE);
+  say('vuelta', 0.1, 'vuelta', keys('viaje.volver', LEAVE));
   if (road.length) say('vuelta', 0.55 + rng.next() * 0.2, 'camino', road);
 
   // Las noches fuera (las de antes de la última, que es la de volver).
   for (let d = 1; d < days; d++) {
     const t = (d - 1 + DUSK) / days;
     const l = legOf(t);
-    say(l.id, (t - l.from) / (l.to - l.from), 'noche', CAMP);
+    say(l.id, (t - l.from) / (l.to - l.from), 'noche', keys('viaje.acampar', CAMP));
   }
   events.sort((a, b) => a.t - b.t);
   return { seed, type: q.type, terrain, place: q.place, days, boss, foe, fight, events };
@@ -199,7 +200,7 @@ export function journeyNow(s: GameState, m: Mission): JourneyNow {
       at: 0.95,
       t: Math.min(t, resolveAt(m)),
       kind: 'aviso',
-      text: `Mandan aviso: ${m.done.outcome.toLowerCase()}.${bad ? '' : ' Ya vienen.'}`,
+      text: tx(msg('viaje.aviso', { resultado: outcomeLabel(m.done.outcome), malo: bad })),
     });
     past.sort((a, b) => a.t - b.t);
   }
@@ -220,6 +221,6 @@ export function journeyNow(s: GameState, m: Mission): JourneyNow {
 /** La frase de un suceso con el nombre del héroe en su sitio. */
 export function eventText(s: GameState, e: JourneyEvent): string {
   if (!e.heroId) return e.text;
-  const name = s.heroes.find((h) => h.id === e.heroId)?.name ?? 'Alguien';
+  const name = s.heroes.find((h) => h.id === e.heroId)?.name ?? t('general.alguien');
   return e.text.replace(`{${e.heroId}}`, name);
 }

@@ -2,13 +2,13 @@
  * Hazañas (logros con niveles) y resumen de llegada. Se evalúa al amanecer sobre el estado ya
  * copiado (aquí se muta) y deja su línea en el resumen. Los objetivos están en `goals.ts`.
  */
-import { RARITY_NAMES } from '../data/items';
 import { FEATS } from '../data/feats';
 import { GEAR } from '../data/items';
-import { unlockName } from '../data/unlocks';
+import { unlockMsg } from '../data/unlocks';
 import type { Arrival, DawnEvent, GameState, Rarity, Reward, Stats } from './model';
 import type { Rng } from './rng';
 import { priceOf } from './gear';
+import { type Msg, type Txt, msg, tx } from '../textos';
 
 const ROMAN = ['I', 'II', 'III', 'IV', 'V'];
 
@@ -45,28 +45,32 @@ export function statValue(s: GameState, key: string): number {
   return typeof v === 'number' ? v : 0;
 }
 
-export function rewardText(r: Reward): string {
-  const parts: string[] = [];
-  if (r.gold) parts.push(`${r.gold} monedas`);
-  if (r.rep) parts.push(`${r.rep} de reputación`);
-  if (r.item !== undefined) parts.push(`equipo ${RARITY_NAMES[r.item].toLowerCase()}`);
-  if (r.unlock) parts.push(unlockName(r.unlock));
-  return parts.join(' y ');
+/** Lo que da un premio, como mensaje («40 monedas y 3 de reputación»). */
+export function rewardMsg(r: Reward): Msg {
+  const parts: Txt[] = [];
+  if (r.gold) parts.push(msg('hazanas.premio.oro', { n: r.gold }));
+  if (r.rep) parts.push(msg('hazanas.premio.rep', { n: r.rep }));
+  if (r.item !== undefined)
+    parts.push(msg('hazanas.premio.equipo', { rareza: msg(`objetos.rarezas.${r.item}`) }));
+  if (r.unlock) parts.push(unlockMsg(r.unlock));
+  return msg('general.lista', { xs: parts });
 }
 
+/** Lo mismo, escrito (para la interfaz). */
+export const rewardText = (r: Reward): string => tx(rewardMsg(r));
+
 /** Cobra un premio: oro, fama y, si toca, una pieza de equipo al arcón. */
-export function grant(s: GameState, rng: Rng, r: Reward): string {
+export function grant(s: GameState, rng: Rng, r: Reward): Txt {
   if (r.gold) s.gold += r.gold;
   if (r.rep) s.rep += r.rep;
   if (r.unlock && !(s.unlocks ?? []).includes(r.unlock))
     s.unlocks = [...(s.unlocks ?? []), r.unlock];
-  let extra = '';
   if (r.item !== undefined) {
     const base = rng.pick(GEAR.filter((g) => g.rarity === (r.item as Rarity)));
     s.inventory.push({ ...base, id: `i${s.uid++}` });
-    extra = ` (${base.name})`;
+    return msg('hazanas.premio.con_objeto', { premio: rewardMsg(r), objeto: base.name });
   }
-  return rewardText(r) + extra;
+  return rewardMsg(r);
 }
 
 /** Cobra los niveles de hazaña recién cumplidos. */
@@ -76,7 +80,14 @@ export function checkFeats(s: GameState, rng: Rng, events: DawnEvent[]): void {
     let got = s.feats[f.id] ?? 0;
     while (got < f.tiers.length && statValue(s, f.stat) >= f.tiers[got]!) {
       const what = grant(s, rng, f.rewards[got]!);
-      events.push({ t: `Hazaña: «${f.name}» ${ROMAN[got]}. Premio: ${what}.`, k: 'good' });
+      events.push({
+        t: msg('hazanas.cumplida', {
+          nombre: msg(`hazanas.hazanas.${f.id}.nombre`),
+          nivel: ROMAN[got],
+          premio: what,
+        }),
+        k: 'good',
+      });
       got++;
     }
     s.feats[f.id] = got;

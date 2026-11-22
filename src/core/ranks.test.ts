@@ -5,6 +5,7 @@ import type { DawnEvent, GameState, Room } from './model';
 import { checkRank, rankUnlocks } from './ranks';
 import { raidChance } from './raids';
 import { bedsPerCell, problem } from './rooms';
+import { tx } from '../textos';
 
 /** La taberna del tío con dos plantas más (hasta la 4) y escaleras hasta ella. */
 function tall(): GameState {
@@ -57,7 +58,7 @@ describe('rangos que abren cosas', () => {
     expect(old.rankSeen).toBe(2);
     s.rep = RANKS[1]!.at;
     checkRank(s, events);
-    expect(events[0]?.t).toMatch(/hierro.*nivel 3/);
+    expect(tx(events[0]?.t)).toMatch(/hierro.*nivel 3/);
     // Subir de rango es de lo bueno de verdad: la carta del amanecer lo abre con brillo.
     expect(events[0]?.big).toBe(true);
     checkRank(s, events);

@@ -16,6 +16,7 @@ import { MORALE_LOW } from './party';
 import { huntRooms } from './nightCat';
 import { restless } from './nightmare';
 import { maxOut, syncFac } from './rooms';
+import { type Txt, msg, t } from '../textos';
 
 export type Cheat =
   | 'oro'
@@ -42,30 +43,30 @@ export function cheat(state: GameState, kind: Cheat): { state: GameState; note: 
   if (kind === 'dias') {
     let s = state;
     for (let i = 0; i < 3 && !s.over; i++) s = endDay(s);
-    return { state: s, note: `Han pasado 3 días: es el día ${s.day}.` };
+    return { state: s, note: t('trucos.dias', { dia: s.day }) };
   }
   if (kind === 'ladronNoche' || kind === 'mensajero') {
     // Ya de noche (a la hora del suceso, si aún es de día) y el suceso ahora mismo.
     const night = NIGHT_ROLL * DAY_SECONDS;
     const s = structuredClone((state.clock ?? 0) < night ? tick(state, night) : state);
     if (kind === 'mensajero') {
-      if (s.messenger) return { state, note: 'Ya hay un mensajero en la puerta.' };
+      if (s.messenger) return { state, note: t('trucos.ya_mensajero') };
       MESSENGER_EVENT.start(s, new Rng(`prueba-${s.day}-${s.uid}`));
-      return { state: s, note: 'Un mensajero llama a la puerta con un farol.' };
+      return { state: s, note: t('trucos.mensajero') };
     }
-    if (s.incidents?.length) return { state, note: 'Ya hay un incidente en marcha.' };
+    if (s.incidents?.length) return { state, note: t('trucos.ya_incidente') };
     startThief(s);
-    return { state: s, note: 'Ha entrado un ladrón.' };
+    return { state: s, note: t('trucos.ladron') };
   }
   const s = structuredClone(state);
   const rng = new Rng(`prueba-${s.day}-${s.uid}`);
   switch (kind) {
     case 'oro':
       s.gold += 500;
-      return { state: s, note: '+500 monedas.' };
+      return { state: s, note: t('trucos.oro') };
     case 'fama':
       s.rep += 50;
-      return { state: s, note: `+50 de reputación (${s.rep}).` };
+      return { state: s, note: t('trucos.fama', { n: s.rep }) };
     case 'curar':
       for (const h of s.heroes)
         if (h.status === 'herido') {
@@ -73,11 +74,11 @@ export function cheat(state: GameState, kind: Cheat): { state: GameState; note: 
           h.days = 0;
         }
       for (const h of s.heroes) if (h.status !== 'muerto') h.morale = 100;
-      return { state: s, note: 'Todos curados y con la moral al máximo.' };
+      return { state: s, note: t('trucos.curar') };
     case 'obras':
       maxOut(s.building);
       syncFac(s);
-      return { state: s, note: 'Todas las salas y mejoras al máximo.' };
+      return { state: s, note: t('trucos.obras') };
     case 'asalto':
       s.raid = {
         day: s.day + 1,
@@ -85,68 +86,70 @@ export function cheat(state: GameState, kind: Cheat): { state: GameState; note: 
         strength: 8 + rankIndex(s.rep) * 5 + rng.int(0, 4),
         warned: true,
       };
-      return { state: s, note: 'Asalto esta noche: pulsa «Cerrar».' };
+      return { state: s, note: t('trucos.asalto') };
     case 'forastero': {
       // El forastero de la tormenta ahora mismo (sin esperar a la noche ni a la tormenta). Si no
       // hay caídos, cae el primero que esté en casa, para poder probarlo.
       if (!s.heroes.some((h) => h.status === 'muerto')) {
         const h = s.heroes.find((x) => x.status === 'ok');
-        if (!h) return { state, note: 'No hay caídos ni nadie en casa.' };
+        if (!h) return { state, note: t('trucos.sin_caidos') };
         h.status = 'muerto';
         delete h.worn;
         delete h.guard;
         delete h.job;
-        s.fallen.unshift({ id: h.id, name: h.name, epitaph: `Modo prueba · día ${s.day}.` });
+        s.fallen.unshift({
+          id: h.id,
+          name: h.name,
+          epitaph: msg('trucos.epitafio', { dia: s.day }),
+        });
       }
       s.stranger = { day: s.day, at: s.clock ?? 0 };
-      return { state: s, note: 'El forastero de la tormenta está junto al fuego del salón.' };
+      return { state: s, note: t('trucos.forastero') };
     }
     case 'pesadilla': {
       // Si nadie está herido ni con la moral baja, se le baja al primero que duerma en casa.
       let h = restless(s)[0];
       if (!h) {
         const ok = s.heroes.find((x) => x.status === 'ok' && !x.guard);
-        if (!ok) return { state, note: 'No hay nadie en casa que duerma.' };
+        if (!ok) return { state, note: t('trucos.nadie_duerme') };
         ok.morale = Math.min(ok.morale, MORALE_LOW - 10);
         h = restless(s)[0];
-        if (!h) return { state, note: 'No hay cama libre para nadie.' };
+        if (!h) return { state, note: t('trucos.sin_cama') };
       }
       const n = toNight(s);
       n.nightmare = { day: n.day, hero: h.id };
-      return { state: n, note: `${h.name} da vueltas en la cama: tócale para llevarle un trago.` };
+      return { state: n, note: t('trucos.pesadilla', { heroe: h.name }) };
     }
     case 'gato': {
       const room = huntRooms(s)[0];
-      if (!room)
-        return { state, note: 'Hace falta una despensa o una bodega en la planta del salón.' };
+      if (!room) return { state, note: t('trucos.sin_despensa') };
       const n = toNight(s);
       n.nightCat = { day: n.day, room: room.id, n: 3 };
-      return { state: n, note: 'El gato ha salido de caza (se ve de noche).' };
+      return { state: n, note: t('trucos.gato') };
     }
     case 'historia': {
       const cs = activeChain(s);
-      const events: { t: string }[] = [];
+      const events: { t: Txt }[] = [];
       if (!cs) {
         // La siguiente historia sin esperar a tener la fama.
         const next = CHAINS.find((c) => !(s.chains ?? []).some((x) => x.id === c.id));
-        if (!next) return { state, note: 'No quedan historias por empezar.' };
+        if (!next) return { state, note: t('trucos.sin_historias') };
         s.rep = Math.max(s.rep, next.rep);
         offerChain(s, rng, events);
-        return { state: s, note: `Carta nueva: «${next.name}».` };
+        return { state: s, note: t('trucos.carta', { historia: next.name }) };
       }
       // Da por bueno el paso que está en el tablón y trae el siguiente.
       const q = s.quests.find((x) => x.chain?.id === cs.id);
-      if (!q)
-        return { state, note: 'El paso de la historia está en camino; espera a que vuelvan.' };
+      if (!q) return { state, note: t('trucos.en_camino') };
       s.quests = s.quests.filter((x) => x !== q);
       const r: Report = {
         id: `r${s.uid++}`,
         day: s.day,
         title: q.title,
         heroIds: [],
-        who: 'El gremio',
+        who: msg('trucos.el_gremio'),
         outcome: 'Éxito',
-        body: ['(Modo prueba: paso dado por bueno.)'],
+        body: [msg('trucos.paso_bueno')],
         chips: [],
         read: true,
       };
@@ -156,8 +159,8 @@ export function cheat(state: GameState, kind: Cheat): { state: GameState; note: 
         state: s,
         note:
           cs.status === 'hecha'
-            ? `«${def.name}» terminada.`
-            : `«${def.name}»: paso ${cs.step + 1} en el tablón.`,
+            ? t('trucos.terminada', { historia: def.name })
+            : t('trucos.paso', { historia: def.name, n: cs.step + 1 }),
       };
     }
   }

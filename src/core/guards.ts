@@ -5,6 +5,7 @@
 import { MAX_GUARDS } from './balance';
 import type { GameState, Hero } from './model';
 import { vaultOf } from './vault';
+import { t } from '../textos';
 
 export type Post = 'puerta' | 'tesoro';
 
@@ -19,10 +20,8 @@ export const postFull = (s: GameState, post: Post) => guardsAt(s, post).length >
 
 /** Por qué no se puede poner a nadie más en ese puesto (o null). */
 export function postIssue(s: GameState, post: Post): string | null {
-  if (post === 'tesoro' && !vaultOf(s)) return 'No hay cámara del tesoro que guardar.';
+  if (post === 'tesoro' && !vaultOf(s)) return t('guardia.sin_camara');
   if (postFull(s, post))
-    return post === 'tesoro'
-      ? 'Ya hay dos de guardia en la cámara.'
-      : 'Ya hay dos de guardia en la puerta.';
+    return t(post === 'tesoro' ? 'guardia.llena_camara' : 'guardia.llena_puerta');
   return null;
 }

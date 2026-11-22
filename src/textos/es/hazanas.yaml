@@ -22,3 +22,9 @@ hazanas:
   sinbajas:
     nombre: "Todos a casa"
     texto: "Pasa {n} días seguidos sin bajas"
+premio:
+  oro: "{n} monedas"
+  rep: "{n} de reputación"
+  equipo: "equipo {rareza, minus}"
+  con_objeto: "{premio} ({objeto})"
+cumplida: "Hazaña: «{nombre}» {nivel}. Premio: {premio}."

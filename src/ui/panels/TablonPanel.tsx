@@ -10,6 +10,7 @@ import { MatIcon } from '../mats';
 import { Icon, SKILL_ICON } from '../icons';
 import { listNames, plural, shortGold } from '../text';
 import { span } from '../when';
+import { tx } from '../../textos';
 
 interface Props {
   game: GameState;
@@ -120,7 +121,9 @@ export function TablonPanel({ game, quests, seeAll, onOpen }: Props) {
             onClick={() => onOpen(q.id)}
             aria-label={[
               q.title,
-              chain ? `${chain.name}, paso ${q.chain!.step + 1} de ${chain.steps.length}` : q.type,
+              chain
+                ? `${tx(chain.name)}, paso ${q.chain!.step + 1} de ${chain.steps.length}`
+                : q.type,
               q.rumor ? 'de un rumor, con botín especial' : '',
               q.urgent ? 'urgente, lo trajo un mensajero' : '',
               `pide ${listNames(q.challenges.map((c) => c.skill))}`,
@@ -146,7 +149,7 @@ export function TablonPanel({ game, quests, seeAll, onOpen }: Props) {
             <span class="note-top" aria-hidden="true">
               {chain ? (
                 <span class="note-story">
-                  {chain.name} · {q.chain!.step + 1}/{chain.steps.length}
+                  {tx(chain.name)} · {q.chain!.step + 1}/{chain.steps.length}
                 </span>
               ) : (
                 <span class="note-type">{q.type}</span>
@@ -162,7 +165,7 @@ export function TablonPanel({ game, quests, seeAll, onOpen }: Props) {
                 <span class={`note-left ${q.expires <= 1 ? 'urgent' : ''}`}>{expires}</span>
               )}
             </span>
-            <span class="note-title">{q.title}</span>
+            <span class="note-title">{tx(q.title)}</span>
             <Outlook q={q} o={o} game={game} />
             <span class="note-foot" aria-hidden="true">
               <span class={`danger danger-${dangerClass(q.danger, hidden)}`}>

@@ -14,6 +14,7 @@ import { dayIncome, endDay, newGame, reduce } from './game';
 import { beerCap, brewAt, dailyYield, eatersOf, foodCap, hungryTonight } from './larder';
 import type { GameState, Room } from './model';
 import { visitorsOf } from './salon';
+import { tx } from '../textos';
 
 const roomOf = (s: GameState, type: Room['type']) => s.building.rooms.find((r) => r.type === type)!;
 const cook = (s: GameState) => s.workers.find((w) => w.village === 'cocinera')!;
@@ -113,6 +114,6 @@ describe('comida y cerveza', () => {
       const b = starved.heroes.find((x) => x.id === h.id)!;
       expect(a.morale - b.morale).toBe(HUNGER_MORALE);
     }
-    expect(starved.dawn.some((e) => e.t.includes('sin cenar'))).toBe(true);
+    expect(starved.dawn.some((e) => tx(e.t).includes('sin cenar'))).toBe(true);
   });
 });

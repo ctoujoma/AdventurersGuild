@@ -3,6 +3,7 @@
  * juntas al final en una lista plegada; en la de «Mientras no estabas», un día cada vez.
  */
 import type { DawnEvent } from '../core/model';
+import { tx } from '../textos';
 
 /** Lo que se abre de un toque: una noticia, o las pequeñas juntas. */
 export interface Step {
@@ -36,7 +37,7 @@ export function dawnPages(events: DawnEvent[]): Page[] {
   if (!events.some((e) => e.head)) return [{ steps: stepsOf(events) }];
   const pages: { head?: string; events: DawnEvent[] }[] = [];
   for (const e of events) {
-    if (e.head || !pages.length) pages.push({ head: e.head ? e.t : undefined, events: [] });
+    if (e.head || !pages.length) pages.push({ head: e.head ? tx(e.t) : undefined, events: [] });
     if (!e.head) pages.at(-1)!.events.push(e);
   }
   return pages.map((p) => ({ head: p.head, steps: stepsOf(p.events) }));

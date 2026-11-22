@@ -3,7 +3,9 @@
  * Tira un dado por desafío, clasifica el resultado y aplica las consecuencias al estado
  * (que se recibe ya copiado: aquí se muta). Devuelve el informe para el amanecer.
  */
-import { clientProse } from '../data/quests';
+import { clientMsg } from '../data/quests';
+import { msg, type Msg, type Params, type Txt } from '../textos';
+import { outcomeKey } from '../data/labels';
 import { CLOSERS, LINES, OPENERS, SCARS } from '../data/stories';
 import {
   BANTER,
@@ -20,7 +22,6 @@ import {
   ROAD,
   TRAIT_LINES,
 } from '../data/tales';
-import { TRAIT_INFO } from '../data/traits';
 import { partyMods } from './classes';
 import { emptyStats } from './feats';
 import {
@@ -47,9 +48,9 @@ import {
   ATTR_MAX,
   rankIndex,
 } from './balance';
-import { fill, generateQuest, homePower } from './generate';
+import { generateQuest, homePower } from './generate';
 import { TROPHIES } from '../data/items';
-import { PLACE_INFO, placeAt } from '../data/places';
+import { PLACE_INFO, placeAt, placeMsg } from '../data/places';
 import type {
   ChipKind,
   Facilities,
@@ -71,12 +72,12 @@ import {
   type SkillId,
 } from './party';
 import type { Rng } from './rng';
-import { listNames } from './text';
 import { SLOTS, gearList, hasPerk, shownItem, type Gear } from './gear';
 import { MATERIALS, QUEST_MATERIAL, gainMats } from './materials';
 
 const has = (h: Hero, id: string) => h.traits.some((t) => t.id === id);
-const sx = (h: Hero, m: string, f: string) => (h.sex === 'f' ? f : m);
+/** Claves de una lista de textos (`base.0`, `base.1`…), para elegir una por posición. */
+const keysOf = (base: string, list: readonly unknown[]) => list.map((_, i) => `${base}.${i}`);
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 
 export const MAIN_ATTR = {
@@ -132,8 +133,8 @@ export function questEstimate(
 }
 
 /** Sube de nivel si toca (mejora su atributo, sube el sueldo, quizá pide caché). */
-export function levelUp(state: GameState, h: Hero): string[] {
-  const out: string[] = [];
+export function levelUp(state: GameState, h: Hero): { t: Txt; k: ChipKind }[] {
+  const out: { t: Txt; k: ChipKind }[] = [];
   while (h.xp >= XP_PER_LEVEL) {
     h.xp -= XP_PER_LEVEL;
     h.lvl++;
@@ -141,13 +142,13 @@ export function levelUp(state: GameState, h: Hero): string[] {
     // El punto de nivel nunca se pierde (aunque ya esté muy entrenado).
     h.attrs[a] = Math.min(ATTR_MAX, h.attrs[a] + 1);
     h.salary += levelRaise(h.lvl);
-    out.push(`${h.name} sube a nivel ${h.lvl}`);
+    out.push({ t: msg('informes.sube_nivel', { heroe: h.name, nivel: h.lvl }), k: 'good' });
     const st = (state.stats ??= emptyStats());
     st.maxLvl = Math.max(st.maxLvl, h.lvl);
     // Veteranos: al llegar a ciertos niveles piden su caché.
     if (CACHE[h.lvl] && !h.request) {
       h.request = 'cache';
-      out.push(`${h.name} pide caché de veterano`);
+      out.push({ t: msg('informes.cache', { heroe: h.name }), k: 'warn' });
     }
   }
   return out;
@@ -169,21 +170,27 @@ export function resolveMission(
   const party = m.heroIds
     .map((id) => state.heroes.find((h) => h.id === id))
     .filter((h): h is Hero => !!h);
-  const names = listNames(party.map((h) => h.name));
-  const body: string[] = [];
-  const chips: { t: string; k: ChipKind }[] = [];
+  const names = party.map((h) => h.name);
+  const body: Txt[] = [];
+  const chips: { t: Txt; k: ChipKind }[] = [];
   const mods = partyMods(party);
   const stats = (state.stats ??= emptyStats());
-  const say = (text: string, h?: Hero, extra: Record<string, string> = {}) =>
+  const place = placeMsg(q.place);
+  /** Una frase de las listas de relatos (por su clave), con los huecos de siempre. */
+  const say = (key: string, h?: Hero, extra: Params = {}) =>
     body.push(
-      fill(text, {
-        who: names,
-        place: q.place,
-        client: clientProse(q.client),
-        h: h?.name ?? names,
+      msg(key, {
+        grupo: names,
+        lugar: place,
+        cliente: clientMsg(q.client),
+        heroe: h?.name ?? names,
         ...extra,
       }),
     );
+  /** Una frase propia del informe (`informes.…`). */
+  const tell = (key: string, p: Params) => body.push(msg(`informes.${key}`, p));
+  const chip = (key: string, p: Params, k: ChipKind) =>
+    chips.push({ t: msg(`informes.${key}`, p), k });
 
   // Frases sin repetir dentro del mismo informe.
   const used = new Set<string>();
@@ -194,42 +201,40 @@ export function resolveMission(
     return v;
   };
 
-  const opener = rng.pick([...OPENERS[q.type], ...MORE_OPENERS[q.type]]);
-  say(party.length > 1 ? opener[1] : opener[0]);
+  const opener = rng.pick([
+    ...keysOf(`relatos.comienzos.${q.type}`, OPENERS[q.type]),
+    ...keysOf(`relatos.mas_comienzos.${q.type}`, MORE_OPENERS[q.type]),
+  ]);
+  say(`${opener}.${party.length > 1 ? 1 : 0}`);
   const mage = party.find((h) => h.cls === 'mago');
-  if (q.twist)
-    say(
-      mage
-        ? `${mage.name} ya lo había advertido: ${lower(q.twist)}`
-        : `Lo que nadie dijo: ${lower(q.twist)}`,
-    );
+  if (q.twist) tell(mage ? 'giro_mago' : 'giro', { mago: mage?.name, giro: q.twist });
 
   // El camino: un suceso, a veces un hallazgo; piques, rasgos y moral.
   if (rng.chance(0.35)) {
     if (rng.chance(0.3)) {
       const found = rng.int(5, 15);
       state.gold += found;
-      say(rng.pick(FINDS), undefined, { gold: String(found) });
-      chips.push({ t: `Hallazgo: +${found}`, k: 'good' });
-    } else say(rng.pick(ROAD));
+      say(rng.pick(keysOf('relatos.hallazgos', FINDS)), undefined, { oro: found });
+      chip('chip_hallazgo', { n: found }, 'good');
+    } else say(rng.pick(keysOf('relatos.camino', ROAD)));
   }
   if (party.length >= 2 && rng.chance(0.3)) {
     const a = rng.pick(party);
     const b = rng.pick(party.filter((h) => h !== a));
-    say(rng.pick(BANTER), undefined, { a: a.name, b: b.name });
+    say(rng.pick(keysOf('relatos.piques', BANTER)), undefined, { a: a.name, b: b.name });
   }
   const asides = party.flatMap((h) =>
     h.traits.filter((t) => TRAIT_LINES[t.id]).map((t) => [h, t.id] as const),
   );
   if (asides.length && rng.chance(0.45)) {
     const [h, id] = rng.pick(asides);
-    say(rng.pick(TRAIT_LINES[id]!), h);
+    say(rng.pick(keysOf(`relatos.por_rasgo.${id}`, TRAIT_LINES[id]!)), h);
   }
   if (rng.chance(0.4)) {
     const low = party.filter((h) => h.morale < MORALE_LOW);
     const high = party.filter((h) => h.morale >= MORALE_HIGH);
-    if (low.length) say(rng.pick(LOW_MORALE), rng.pick(low));
-    else if (high.length) say(rng.pick(HIGH_MORALE), rng.pick(high));
+    if (low.length) say(rng.pick(keysOf('relatos.desanimados', LOW_MORALE)), rng.pick(low));
+    else if (high.length) say(rng.pick(keysOf('relatos.animados', HIGH_MORALE)), rng.pick(high));
   }
 
   let outcome: Outcome;
@@ -249,9 +254,10 @@ export function resolveMission(
     const warded = party.find((h) => hasPerk(h, 'ward'));
     const jinx = party.some((h) => has(h, 'gafe')) && !warded ? 0.05 : 0;
     if (warded && party.some((h) => has(h, 'gafe')))
-      say(
-        `El ${lower(gearList(warded).find((i) => i.perk === 'ward')!.name)} de ${warded.name} tuvo a raya la mala suerte del grupo.`,
-      );
+      tell('amuleto', {
+        objeto: gearList(warded).find((i) => i.perk === 'ward')!.name,
+        heroe: warded.name,
+      });
     let passes = 0;
     let sumP = 0;
     q.challenges.forEach((c, i) => {
@@ -263,17 +269,20 @@ export function resolveMission(
       if (!ok && lucky.length) {
         const lh = lucky.shift()!;
         ok = rng.chance(p);
-        if (ok) say(`Cuando todo se torcía, la suerte de ${lh.name} lo enderezó.`);
+        if (ok) tell('suerte', { heroe: lh.name });
       }
       if (ok) passes++;
       const best = [...party].sort((a, b) => skill(b, c.skill, true) - skill(a, c.skill, true))[0];
       const k = ok ? 'ok' : 'ko';
       const pool = rng.chance(0.35)
-        ? CLASS_LINES[best!.cls][k]
-        : [...LINES[c.skill][k], ...MORE_LINES[c.skill][k]];
+        ? keysOf(`relatos.por_clase.${best!.cls}.${k}`, CLASS_LINES[best!.cls][k])
+        : [
+            ...keysOf(`relatos.lineas.${c.skill}.${k}`, LINES[c.skill][k]),
+            ...keysOf(`relatos.mas_lineas.${c.skill}.${k}`, MORE_LINES[c.skill][k]),
+          ];
       const shown = shownItem(best!);
       if (ok && (shown?.rarity ?? 0) >= 1 && rng.chance(0.4))
-        say(fresh(ITEM_LINES), best, { item: lower(shown!.name) });
+        say(fresh(keysOf('relatos.por_objeto', ITEM_LINES)), best, { objeto: shown!.name });
       else say(fresh(pool), best);
     });
 
@@ -286,13 +295,19 @@ export function resolveMission(
         party.find((h) => h.cls === 'explorador') ?? party.find((h) => hasPerk(h, 'ambush'));
       if (ambush && scout && rng.chance(1 - SCOUT_AMBUSH)) {
         outcome = 'Fracaso';
-        say(`${scout.name} olió la emboscada a tiempo y los sacó por un barranco. Se salvaron.`);
+        tell('emboscada', { heroe: scout.name });
       } else outcome = ambush ? 'Desastre' : 'Fracaso';
     }
   }
+  const ok = outcomeKey(outcome);
   say(
     rng.pick(
-      rng.chance(0.4) ? CLIENT_CLOSERS[outcome] : [...CLOSERS[outcome], ...MORE_CLOSERS[outcome]],
+      rng.chance(0.4)
+        ? keysOf(`relatos.cierres_cliente.${ok}`, CLIENT_CLOSERS[outcome])
+        : [
+            ...keysOf(`relatos.cierres.${ok}`, CLOSERS[outcome]),
+            ...keysOf(`relatos.mas_cierres.${ok}`, MORE_CLOSERS[outcome]),
+          ],
     ),
   );
 
@@ -300,13 +315,12 @@ export function resolveMission(
   const escort = q.type === 'Escoltar' && state.fac.establo >= 2 ? 1.25 : 1;
   let gold = Math.round(q.reward * PAY[outcome] * mods.gold * escort);
   const rogue = party.find((h) => h.cls === 'picaro');
-  if (gold > 0 && rogue && rng.chance(0.5))
-    say(`${rogue.name} volvió con los bolsillos más llenos de lo que cuenta el contrato.`);
+  if (gold > 0 && rogue && rng.chance(0.5)) tell('picaro', { heroe: rogue.name });
   const greedy = party.find((h) => has(h, 'codicioso'));
   if (gold > 0 && greedy) {
     const cut = Math.round(gold * GREED);
     gold -= cut;
-    chips.push({ t: `${greedy.name} se queda ${cut}`, k: 'warn' });
+    chip('chip_codicioso', { heroe: greedy.name, n: cut }, 'warn');
   }
   state.gold += gold;
   stats.missions++;
@@ -329,27 +343,29 @@ export function resolveMission(
       .map(([n]) => n);
     if (near.length) {
       (state.explored ??= []).push(...near);
-      chips.push({ t: `En el mapa: ${listNames(near)}`, k: 'info' });
+      chip('chip_mapa', { lugares: near.map(placeMsg) }, 'info');
     }
   }
-  chips.unshift({ t: gold > 0 ? `+${gold} monedas` : 'Sin cobrar', k: gold > 0 ? 'good' : 'bad' });
+  chips.unshift({
+    t: gold > 0 ? msg('informes.chip_monedas', { n: gold }) : msg('informes.chip_sin_cobrar'),
+    k: gold > 0 ? 'good' : 'bad',
+  });
   // Materiales: cada tipo de encargo trae el suyo, más cuanto mejor sale.
   const nMat = MAT_PER_OUTCOME[outcome];
   if (nMat > 0) {
     const m = QUEST_MATERIAL[q.type];
     const got = gainMats(state, { [m]: nMat });
-    if (got.kept[m])
-      chips.push({ t: `+${got.kept[m]} ${MATERIALS[m].name.toLowerCase()}`, k: 'info' });
+    if (got.kept[m]) chip('chip_material', { n: got.kept[m], material: MATERIALS[m].name }, 'info');
     if (got.warn) chips.push({ t: got.warn, k: 'warn' });
   }
   const dRep = REP[outcome];
   state.rep = Math.max(0, state.rep + dRep);
-  chips.push({ t: `${dRep >= 0 ? '+' : ''}${dRep} reputación`, k: dRep >= 0 ? 'good' : 'bad' });
+  chip('chip_reputacion', { mas: dRep >= 0, n: dRep }, dRep >= 0 ? 'good' : 'bad');
   const looted = PAY[outcome] >= 1 || (outcome === 'Éxito parcial' && mods.partialLoot);
   if (q.item && looted) {
     state.inventory.push({ ...q.item, id: `i${state.uid++}` });
-    chips.push({ t: `Botín: ${q.item.name}`, k: 'info' });
-    if (PAY[outcome] < 1 && rogue) say(`Aun así, ${rogue.name} no se fue con las manos vacías.`);
+    chip('chip_botin', { objeto: q.item.name }, 'info');
+    if (PAY[outcome] < 1 && rogue) tell('picaro_botin', { heroe: rogue.name });
   }
   // Trofeo: solo de las grandes hazañas.
   if (outcome === 'Éxito brillante' && q.danger >= 2) {
@@ -357,15 +373,15 @@ export function resolveMission(
     state.trophies.push({
       id: `t${state.uid++}`,
       ...t,
-      who: names,
+      who: msg('general.lista', { xs: names }),
       place: q.place,
       day: state.day,
       value: 40 + q.danger * 20,
     });
     state.rep += TROPHY_REP;
     stats.trophies++;
-    say(`Y se trajeron un recuerdo: ${lower(t.name)}. Irá a la pared de la sala.`);
-    chips.push({ t: `Trofeo: ${t.name}`, k: 'good' });
+    tell('trofeo', { trofeo: t.name });
+    chip('chip_trofeo', { trofeo: t.name }, 'good');
   }
 
   // Bajas.
@@ -377,36 +393,41 @@ export function resolveMission(
     const fallenHere = fight ? party.filter((h) => fight.downed.includes(h.id)) : [];
     victim = rng.pick(fallenHere.length ? fallenHere : party);
     if (has(victim, 'cobarde') && rng.chance(COWARD_FLEE)) {
-      say(`${victim.name} salió corriendo a la primera señal. No es heroico, pero está vivo.`);
+      tell('cobarde', { heroe: victim.name });
       victim = null;
     } else if (healer && healer !== victim && rng.chance(CLERIC_SAVE)) {
-      const options = SCARS.filter((x) => !has(victim!, x.trait));
+      const options = SCARS.map((x, i) => ({ ...x, i })).filter((x) => !has(victim!, x.trait));
       victim.status = 'herido';
       victim.days = 5;
       if (options.length) {
         const scar = rng.pick(options);
         victim.traits.push({ id: scar.trait });
-        const nick = victim.nick ?? scar.nick[victim.sex];
+        const nick = victim.nick ?? msg(`relatos.cicatrices.${scar.i}.nick.${victim.sex}`);
         victim.nick = nick;
-        say(
-          `${victim.name} ${scar.text}. Si ha vuelto es porque ${healer.name} rezó muy deprisa. Desde hoy le llaman ${victim.name} ${nick}.`,
-        );
-        chips.push({ t: `Secuela: ${TRAIT_INFO[scar.trait][victim.sex]}`, k: 'warn' });
-      } else say(`${victim.name} estuvo a punto de no contarlo. ${healer.name} rezó muy deprisa.`);
-      chips.push({ t: `${victim.name}: grave, 5 días`, k: 'bad' });
+        tell('secuela', {
+          heroe: victim.name,
+          herida: msg(`relatos.cicatrices.${scar.i}.texto`),
+          curandero: healer.name,
+          apodo: nick,
+        });
+        chip('chip_secuela', { rasgo: msg(`rasgos.rasgos.${scar.trait}.${victim.sex}`) }, 'warn');
+      } else tell('salvado', { heroe: victim.name, curandero: healer.name });
+      chip('chip_grave', { heroe: victim.name, dias: 5 }, 'bad');
     } else if (!rng.chance(LOST_SHARE)) {
       victim.status = 'muerto';
       fallen = victim;
       stats.lastDeath = state.day;
-      for (const it of gearList(victim)) chips.push({ t: `Perdido: ${it.name}`, k: 'bad' });
+      for (const it of gearList(victim)) chip('chip_perdido', { objeto: it.name }, 'bad');
       delete victim.worn;
       state.fallen.unshift({
         id: victim.id,
-        name: victim.name + (victim.nick ? ` «${victim.nick}»` : ''),
-        epitaph: `${q.title} · día ${state.day}.`,
+        name: victim.nick
+          ? msg('general.apodado', { nombre: victim.name, apodo: victim.nick })
+          : victim.name,
+        epitaph: msg('informes.epitafio', { titulo: q.title, dia: state.day }),
       });
-      say(`${victim.name} no volvió. Su nombre irá al Muro de los caídos.`);
-      chips.push({ t: `${victim.name}: ${sx(victim, 'caído', 'caída')}`, k: 'bad' });
+      tell('caido', { heroe: victim.name });
+      chip('chip_caido', { heroe: victim.name, sexo: victim.sex }, 'bad');
     } else {
       victim.status = 'desaparecido';
       victim.lostAt = q.place;
@@ -423,9 +444,9 @@ export function resolveMission(
       );
       state.quests.push({
         ...rq,
-        title: `Rescate de ${victim.name}`,
-        client: 'El propio gremio',
-        text: `Se perdió su rastro cerca de ${q.place}. Si alguien va a buscarle pronto, quizá aún esté a tiempo.`,
+        title: msg('informes.rescate_titulo', { heroe: victim.name }),
+        client: 'gremio',
+        text: msg('informes.rescate_texto', { lugar: place }),
         place: q.place,
         danger: q.danger,
         dangerHidden: undefined,
@@ -435,10 +456,8 @@ export function resolveMission(
         expires: victim.days,
         rescue: victim.id,
       });
-      say(
-        `Nadie sabe qué fue de ${victim.name}. Lo último que vieron fue su sombra cerca de ${q.place}.`,
-      );
-      chips.push({ t: `${victim.name}: ${sx(victim, 'desaparecido', 'desaparecida')}`, k: 'bad' });
+      tell('desaparecido', { heroe: victim.name, lugar: place });
+      chip('chip_desaparecido', { heroe: victim.name, sexo: victim.sex }, 'bad');
     }
   }
 
@@ -456,24 +475,36 @@ export function resolveMission(
       if (fight ? fight.downed.includes(h.id) : rng.chance(risk)) {
         h.status = 'herido';
         h.days = rng.int(2, 4);
-        say(`${h.name} vuelve ${sx(h, 'herido', 'herida')}: ${h.days} días de reposo.`);
-        chips.push({ t: `${h.name}: ${sx(h, 'herido', 'herida')}, ${h.days} días`, k: 'bad' });
+        tell('herido', { heroe: h.name, sexo: h.sex, dias: h.days });
+        chip('chip_herido', { heroe: h.name, sexo: h.sex, dias: h.days }, 'bad');
       }
     }
     h.xp += XP[outcome];
-    for (const t of levelUp(state, h)) chips.push({ t, k: t.includes('caché') ? 'warn' : 'good' });
+    chips.push(...levelUp(state, h));
     let dMorale = MORALE[outcome] - TRIP_FATIGUE * q.days;
     if (fallen) dMorale -= Math.round((has(h, 'leal') ? 20 : 10) * (state.fac.cap >= 2 ? 0.5 : 1));
     if (has(h, 'codicioso') && q.reward >= 200 && PAY[outcome] >= 1) dMorale += 5;
     if (dMorale < 0) dMorale = Math.round(dMorale * mods.solace);
     h.morale = clamp(h.morale + dMorale, 0, 100);
-    h.history.push(`Día ${state.day} · ${q.title} · ${outcome}`);
+    h.history.push(
+      msg('informes.historial', {
+        dia: state.day,
+        titulo: q.title,
+        resultado: outcomeMsg(outcome),
+      }),
+    );
     const hidden = h.traits.find((t) => t.hidden);
     if (hidden) {
       hidden.hidden = false;
-      const label = TRAIT_INFO[hidden.id][h.sex];
-      body.push(fill(fresh(REVEALS), { h: h.name, t: label.toLowerCase(), place: q.place }));
-      chips.push({ t: `Descubierto: ${label}`, k: 'info' });
+      const label = msg(`rasgos.rasgos.${hidden.id}.${h.sex}`);
+      body.push(
+        msg(fresh(keysOf('relatos.revelar', REVEALS)), {
+          heroe: h.name,
+          rasgo: label,
+          lugar: place,
+        }),
+      );
+      chip('chip_descubierto', { rasgo: label }, 'info');
     }
   }
 
@@ -482,7 +513,7 @@ export function resolveMission(
     day: state.day,
     title: q.title,
     heroIds: party.map((h) => h.id),
-    who: names,
+    who: msg('general.lista', { xs: names }),
     outcome,
     body,
     chips,
@@ -490,6 +521,5 @@ export function resolveMission(
   };
 }
 
-function lower(s: string) {
-  return s.charAt(0).toLowerCase() + s.slice(1);
-}
+/** El resultado escrito (los ids de `Outcome` están en español: se enseñan con esto). */
+export const outcomeMsg = (o: Outcome): Msg => msg(`etiquetas.resultado.${outcomeKey(o)}`);

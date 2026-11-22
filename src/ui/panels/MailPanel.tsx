@@ -1,5 +1,6 @@
 import type { Report } from '../../core/model';
 import { OUTCOME_CLASS } from '../../data/labels';
+import { idText, tx } from '../../textos';
 
 /** Correo del amanecer: los informes de los grupos que han vuelto, uno por fila. */
 export function MailPanel({
@@ -33,14 +34,14 @@ export function MailPanel({
             G
           </span>
           <span class="mail-info">
-            <b>{r.title}</b>
-            <span class="row-sub">{r.who}</span>
+            <b>{tx(r.title)}</b>
+            <span class="row-sub">{tx(r.who)}</span>
           </span>
           <span class="mail-side">
             <span
-              class={`outcome-pill outcome-${r.heading?.startsWith('Carta') ? 'mid' : OUTCOME_CLASS[r.outcome]}`}
+              class={`outcome-pill outcome-${idText(r.heading).startsWith('Carta') ? 'mid' : OUTCOME_CLASS[r.outcome]}`}
             >
-              {r.heading?.startsWith('Carta')
+              {idText(r.heading).startsWith('Carta')
                 ? 'Carta'
                 : r.raid
                   ? r.raid.won

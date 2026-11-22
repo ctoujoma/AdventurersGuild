@@ -7,6 +7,7 @@ import { activeChain, advanceChain, chainQuest, offerChain } from './chains';
 import { endDay, newGame } from './game';
 import type { GameState, Report } from './model';
 import { Rng } from './rng';
+import { idText, tx } from '../textos';
 
 const report = (outcome: Report['outcome']): Report => ({
   id: 'r',
@@ -67,7 +68,7 @@ describe('cadenas de misiones', () => {
     const s = withChain();
     expect(activeChain(s)?.id).toBe(CHAINS[0]!.id);
     expect(s.quests.some((q) => q.chain?.step === 0)).toBe(true);
-    expect(s.reports[0]!.heading).toMatch(/Carta/);
+    expect(tx(s.reports[0]!.heading)).toMatch(/Carta/);
     // No cuenta para el tamaño del tablón ni caduca.
     const after = endDay(s);
     expect(after.quests.filter((q) => q.chain).length).toBe(1);
@@ -95,14 +96,14 @@ describe('cadenas de misiones', () => {
     }
     expect(activeChain(s)).toBeNull();
     expect(s.gold).toBe(gold + def.reward.gold);
-    expect(s.inventory.some((it) => it.name === def.reward.item)).toBe(true);
+    expect(s.inventory.some((it) => idText(it.name) === idText(def.reward.item))).toBe(true);
     expect(s.stats?.chains).toBe(1);
   });
 
   it('los premios y los jefes de las historias existen', () => {
     for (const c of CHAINS) {
       expect(
-        GEAR.some((g) => g.name === c.reward.item),
+        GEAR.some((g) => idText(g.name) === idText(c.reward.item)),
         c.id,
       ).toBe(true);
       for (const st of c.steps) if (st.boss) expect(BOSSES[st.boss]).toBeDefined();

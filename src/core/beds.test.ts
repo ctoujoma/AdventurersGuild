@@ -3,6 +3,7 @@ import { VET_SNUB_CAP } from './balance';
 import { awayPlan, dormIssue, isAway, sleepPlan, vetsWithoutWing } from './beds';
 import { endDay, newGame, reduce } from './game';
 import type { GameState, Room } from './model';
+import { tx } from '../textos';
 
 const wing = (level = 1): Room => ({
   id: 'v',
@@ -35,7 +36,7 @@ describe('quién duerme dónde', () => {
     const s = newGame('ala');
     s.building.rooms.push(wing());
     const h = s.heroes.find((x) => x.lvl < 4)!;
-    expect(dormIssue(s, h.id, 'v')).toMatch(/veterano/);
+    expect(dormIssue(s, h.id, 'v')).toMatch(/veteran[oa]/);
     expect(reduce(s, { type: 'dorm', who: h.id, room: 'v' })).toBe(s);
   });
 
@@ -59,12 +60,14 @@ describe('quién duerme dónde', () => {
     h.morale = 90;
     let t = endDay({ ...s, tips: ['*'] });
     const x = t.heroes.find((y) => y.id === h.id)!;
-    expect(t.dawn.filter((e) => e.t.includes(h.name) && /novatos/.test(e.t))).toHaveLength(1);
+    expect(t.dawn.filter((e) => tx(e.t).includes(h.name) && /novatos/.test(tx(e.t)))).toHaveLength(
+      1,
+    );
     expect(x.morale).toBeLessThan(90);
     expect(x.vetSnub).toBe(true);
     // Otra noche: no se repite el aviso.
     t = endDay(t);
-    expect(t.dawn.some((e) => e.t.includes(h.name) && /novatos/.test(e.t))).toBe(false);
+    expect(t.dawn.some((e) => tx(e.t).includes(h.name) && /novatos/.test(tx(e.t)))).toBe(false);
     // Con el ala, se le pasa.
     const w = structuredClone(t);
     w.building.rooms.push(wing());

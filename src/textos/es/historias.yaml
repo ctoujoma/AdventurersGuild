@@ -7,23 +7,18 @@ historias:
     steps:
       rumores_en_la_posada:
         titulo: "Rumores en la posada"
-        place: "la posada del Cuervo"
         texto: "Los arrieros que paran en la posada del Cuervo vieron cruzar algo enorme camino de la sierra. Que lo cuenten con detalle."
       el_mapa_del_capataz:
         titulo: "El mapa del capataz"
-        place: "Hondogrís"
         texto: "El capataz de la mina dejó un mapa de las galerías en prenda en la cantina de Hondogrís. El cantinero no quiere soltarlo."
       las_galerias_de_la_mina_vieja:
         titulo: "Las galerías de la mina vieja"
-        place: "la mina vieja"
         texto: "Con el mapa en la mano, hay que bajar a la mina vieja y encontrar la guarida."
       la_bestia_de_hondogris:
         titulo: "La bestia de Hondogrís"
-        place: "el vado"
         texto: "Las huellas de la guarida bajan cada noche a beber al vado. Toca esperarla allí, y mejor con buenas armas."
     ending: "La bestia de Hondogrís no volverá a bajar de las minas. En el pueblo le han puesto el nombre del gremio a un callejón, que calles no les sobran."
     reward:
-      item: "Hoja de Vadoverde"
       trophy:
         nombre: "Cabeza de la bestia de Hondogrís"
         desc: "Ocupa media pared."
@@ -33,19 +28,15 @@ historias:
     steps:
       la_testigo_de_la_ermita:
         titulo: "La testigo de la ermita"
-        place: "la ermita"
         texto: "Una novicia vio a los encapuchados abrir las tumbas y el culto lo sabe. Hay que llevarla a la ermita sana y salva."
       velas_negras_en_el_granero:
         titulo: "Velas negras en el granero"
-        place: "el granero de los Cardo"
         texto: "La novicia dice que los encapuchados guardan palas y velas negras en el granero de los Cardo. Hay que pasar la noche allí y seguirlos."
       la_cripta_de_ormaz:
         titulo: "La cripta de Ormaz"
-        place: "el cementerio de Ormaz"
         texto: "Los encapuchados llevaron hasta una cripta bajo la capilla del cementerio que no sale en ningún plano. Ahí se reúnen."
     ending: "La cripta está sellada y el culto, disperso. La hermana Odile vino a bendecir la puerta de El Jarro Partido, y de paso se tomó un vino."
     reward:
-      item: "Varita de la Abuela Tormenta"
       trophy:
         nombre: "Máscara del sumo sacerdote"
         desc: "Nadie quiere ponérsela."
@@ -55,19 +46,15 @@ historias:
     steps:
       el_ultimo_meson:
         titulo: "El último mesón"
-        place: "el mesón de Levante"
         texto: "La caravana durmió en el mesón de Levante y salió de madrugada. El mesonero jura que no vio nada, pero tiene sal nueva en la despensa."
       rodadas_en_el_desfiladero:
         titulo: "Rodadas en el desfiladero"
-        place: "el desfiladero de las Cabras"
         texto: "Las rodadas de los carros se salen del camino y se meten en el desfiladero de las Cabras, por donde no pasa nadie con dos dedos de frente."
       el_campamento_de_los_tuertos:
         titulo: "El campamento de los Tuertos"
-        place: "el campamento de los Tuertos"
         texto: "La banda de los Tuertos tiene la sal, las mulas y a los carreteros. Hay que traerlo todo de vuelta, empezando por los carreteros."
     ending: "Los carreteros están en casa y la sal, en su almacén. Los Ferrán han mandado al gremio un saco de sal, que en la cocina siempre viene bien, y una bolsa que viene mejor todavía."
     reward:
-      item: "Botas de siete leguas"
       trophy:
         nombre: "Estandarte de los Tuertos"
         desc: "Un ojo tachado sobre fondo negro."
@@ -77,57 +64,45 @@ historias:
     steps:
       lo_que_se_oye_en_el_molino:
         titulo: "Lo que se oye en el molino"
-        place: "el molino"
         texto: "Del molino salen las barcazas cargadas y algunas no llegan. El molinero las ve pasar todas y sabe más de lo que cuenta."
       el_cargamento_senuelo:
         titulo: "El cargamento señuelo"
-        place: "la casa del canal"
         texto: "Un cargamento falso, bien a la vista, del molino a la casa del canal, donde los guardas estrenan botas cada mes. Si pican, sabremos quiénes son."
       el_escondite_del_pantano:
         titulo: "El escondite del pantano"
-        place: "el pantano de las ranas"
         texto: "Los contrabandistas guardan el botín en el pantano. Toca ir a buscarlo, con barro hasta las cejas."
     ending: "Las barcazas vuelven a llegar a su destino y el gremio de mercaderes paga lo prometido sin regatear, que ya es mucho."
-    reward:
-      item: "Capa élfica"
+    reward: {}
   torre:
     nombre: "Los secretos de la torre caída"
     intro: "Maese Quirico jura que la torre caída fue el observatorio de un mago que cartografió toda la comarca. Si encontráis sus mapas, os deja copiarlos, y además paga bien."
     steps:
       el_camino_de_los_riscos:
         titulo: "El camino de los riscos"
-        place: "los riscos"
         texto: "Para llegar a la torre hay que cruzar los riscos por un sendero que ya no existe."
       el_diario_del_astronomo:
         titulo: "El diario del astrónomo"
-        place: "la torre caída"
         texto: "En lo que queda de la biblioteca tendría que estar su diario, si no se lo han comido las ratas."
       el_sotano_de_la_torre:
         titulo: "El sótano de la torre"
-        place: "la torre caída"
         texto: "El diario habla de un sótano y de «los que guardan los mapas». No suena bien."
     ending: "Los mapas del astrónomo cubren cada rincón de la comarca. Ya no queda niebla en el mapa del desván, y Maese Quirico no se despega de ellos ni para comer."
-    reward:
-      item: "Varita de serbal"
+    reward: {}
   ahogado:
     nombre: "El Rey Ahogado"
     intro: "En Juncal las redes salen llenas de huesos y a medianoche se oye una campana bajo la laguna Negra. Los pescadores dicen que el rey que se ahogó allí hace cien años ha vuelto a reclamar su reino, y que de momento empieza por ellos."
     steps:
       redes_llenas_de_huesos:
         titulo: "Redes llenas de huesos"
-        place: "la aldea de Juncal"
         texto: "Los pescadores de Juncal sacan huesos con las redes y nadie quiere salir a faenar. Hay que saber de dónde vienen."
       la_campana_del_fraile:
         titulo: "La campana del Fraile"
-        place: "el islote del Fraile"
         texto: "En la capilla del islote del Fraile enterraron la corona del rey. Alguien ha abierto la tumba, y la campana ya no está en su torre."
       el_rey_ahogado:
         titulo: "El Rey Ahogado"
-        place: "la laguna Negra"
         texto: "La campana suena cada medianoche en el fondo de la laguna Negra. Ahí espera el rey, con su corona y sus ahogados. Toca devolverlo al fondo."
     ending: "La laguna Negra está en calma y en Juncal las redes vuelven a sacar peces, que huelen peor que los huesos pero se venden mejor. La campana del Fraile suena otra vez en su torre."
     reward:
-      item: "Corona del Rey Ahogado"
       trophy:
         nombre: "Ancla del Rey Ahogado"
         desc: "Gotea aunque haga sol."
@@ -137,19 +112,15 @@ historias:
     steps:
       pastos_quemados:
         titulo: "Pastos quemados"
-        place: "el paso del Lobo"
         texto: "En el paso del Lobo hay pastos quemados en círculo y huesos de oveja limpios como platos. Hay que mirarlo de cerca y contarlo despacio."
       el_bestiario_del_abad:
         titulo: "El bestiario del abad"
-        place: "el monasterio de Peñalta"
         texto: "El bestiario del abad explica cómo se mata una sierpe, pero el copista que lo trae no se atreve a subir solo al monasterio de Peñalta."
       la_sierpe_de_sierra_parda:
         titulo: "La sierpe de Sierra Parda"
-        place: "la cueva de la Sierpe"
         texto: "Según el bestiario, la sierpe duerme en su cueva con la panza llena. Toca entrar con escudos, agua y mucho valor."
     ending: "La sierpe de Sierra Parda no quemará más pastos. El abad Lope ha añadido una página a su bestiario con el nombre del gremio, y los pastores vuelven a subir al monte."
     reward:
-      item: "Coraza de escamas de sierpe"
       trophy:
         nombre: "Cabeza de la sierpe"
         desc: "Aún huele a humo."
@@ -159,19 +130,15 @@ historias:
     steps:
       huellas_en_la_ceniza:
         titulo: "Huellas en la ceniza"
-        place: "la aldea de Carbonera"
         texto: "En Carbonera nadie duerme. Los carboneros han visto huellas del tamaño de un escudo alrededor de las carboneras. Que lo cuenten todo, aunque tiemblen."
       los_pinares_quemados:
         titulo: "Los pinares quemados"
-        place: "los pinares quemados"
         texto: "Las huellas se pierden en los pinares quemados, donde el humo no se va nunca. Hay que encontrar la madriguera sin perderse ni asfixiarse."
       el_jabali_de_ceniza:
         titulo: "El jabalí de ceniza"
-        place: "la loma de Ceniza"
         texto: "El jabalí duerme en la loma de Ceniza, sobre las brasas de lo que quemó. Hay que subir con agua, buenas pieles y la espada afilada."
     ending: "El jabalí de ceniza no volverá a correr delante del fuego. En Carbonera han vuelto a encender las carboneras, y esta vez solo humean lo que deben."
     reward:
-      item: "Capa de piel de ceniza"
       trophy:
         nombre: "Colmillos del jabalí de ceniza"
         desc: "Todavía calientes."
@@ -181,19 +148,15 @@ historias:
     steps:
       los_monjes_que_no_duermen:
         titulo: "Los monjes que no duermen"
-        place: "el priorato de Sanvela"
         texto: "Los monjes de Sanvela quieren sacar los libros del priorato antes de que suba lo que hay abajo. Hay que llevarlos hasta el camino con los libros y la cabeza en su sitio."
       las_catacumbas_de_sanvela:
         titulo: "Las catacumbas de Sanvela"
-        place: "las catacumbas de Sanvela"
         texto: "Las catacumbas están llenas de muertos que se levantan. Hay que abrir paso hasta la puerta de la cripta, y que no se cierre a la espalda."
       la_reina_de_la_cripta:
         titulo: "La Reina de la Cripta"
-        place: "la cripta de la Reina"
         texto: "La Reina espera en su trono con su corte de huesos. Toca devolverla a su sueño, para siempre."
     ending: "La Reina de la Cripta vuelve a dormir, y esta vez con la puerta tapiada. El prior Anselmo ha mandado grabar el escudo del gremio en la piedra, por si alguien vuelve a tener la tentación."
     reward:
-      item: "Cetro de la Reina"
       trophy:
         nombre: "Corona de la Reina de la Cripta"
         desc: "Pesa como una losa."
@@ -203,19 +166,34 @@ historias:
     steps:
       el_refugio_de_nevaza:
         titulo: "El refugio de Nevaza"
-        place: "el refugio de Nevaza"
         texto: "El guía de Nevaza es el único que conoce el paso, pero no sube solo después de lo que vio. Hay que llevarlo hasta el refugio, con la nieve hasta la cintura."
       el_lago_helado:
         titulo: "El lago Helado"
-        place: "el lago Helado"
         texto: "Al pie del glaciar, el lago Helado guarda en el hielo a los que subieron antes. Hay que cruzarlo sin quedarse con ellos."
       la_dragona_de_la_corona_blanca:
         titulo: "La dragona de la Corona Blanca"
-        place: "la Corona Blanca"
         texto: "La dragona duerme en la cumbre, enroscada sobre un tesoro de siglos. Su aliento hiela la sangre. Es lo más difícil que se ha pedido nunca en el tablón."
     ending: "La dragona de la Corona Blanca ha caído y los ríos del norte corren otra vez. Los tres pueblos han hecho una canción con el nombre del gremio, y se canta en todas las tabernas. Hasta en la tuya."
     reward:
-      item: "Escudo de escama blanca"
       trophy:
         nombre: "Cabeza de la dragona blanca"
         desc: "Escarcha la pared."
+carta:
+  titulo: "Carta de {cliente}"
+  primer_paso: "Primer paso en el tablón: «{titulo}»."
+  chip_pasos: "{n} encargos enlazados"
+  chip_premio: "Premio final legendario"
+  aviso: "Carta de {cliente}: «{historia}», una historia en varios encargos."
+paso:
+  torcida: "La historia se ha torcido: habrá que volver a intentarlo, y ahora será más difícil."
+  chip_complica: "«{historia}» se complica"
+  se_tuerce: "«{historia}» se tuerce: «{titulo}» vuelve al tablón, más difícil."
+  chip_avance: "«{historia}» {n}/{de}"
+  avanza: "«{historia}» avanza: en el tablón, «{titulo}»."
+final:
+  planos: "Y de recuerdo, unos planos: ya se sabe crear {receta}."
+  titulo: "Historia cumplida"
+  chip_oro: "+{n} monedas del cliente"
+  chip_legendario: "Legendario: {objeto}"
+  chip_mapa: "Mapa completo de la comarca"
+  aviso: "¡«{historia}» cumplida! {cliente} paga y cuenta la hazaña."

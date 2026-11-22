@@ -1,0 +1,6 @@
+tranquilo: "Ya duerme tranquilo."
+ya_bebio: "{heroe} ya se ha tomado su trago."
+sin_cerveza: "No queda cerveza en la bodega (hace falta una jarra)."
+trago: "{heroe} se incorpora, se bebe el trago y se vuelve a acostar más {sexo, select, f {tranquila} other {tranquilo}} (+{moral} de moral, −{jarras} jarra)."
+durmio: "{heroe} durmió del tirón tras el trago de anoche."
+mala_noche: "{heroe} pasó la noche dando vueltas en la cama, entre pesadillas: amanece con menos moral (−{n})."

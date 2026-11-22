@@ -23,6 +23,7 @@ import type { SceneAway, SceneHero, SceneModel } from '../world/scene';
 import { taskLabel } from './crew';
 import { gearList, type Gear } from '../core/gear';
 import type { GearMark } from '../art/heroes/gear';
+import { idText, tx } from '../textos';
 
 /** Puentes entre el modelo del juego y el arte o la escena. */
 
@@ -70,7 +71,13 @@ export const workerFrame = (w: Pick<Worker, 'trade' | 'village'>) =>
 export const wornMarks = (h: Pick<Hero, 'worn'>): GearMark[] | undefined => {
   const l = gearList(h).flatMap((i) =>
     i.icon
-      ? [{ icon: i.icon, rarity: i.rarity ?? 0, unique: i.rarity === 4 ? i.name : undefined }]
+      ? [
+          {
+            icon: i.icon,
+            rarity: i.rarity ?? 0,
+            unique: i.rarity === 4 ? idText(i.name) : undefined,
+          },
+        ]
       : [],
   );
   return l.length ? l : undefined;
@@ -114,7 +121,7 @@ function visitorOrder(s: GameState): string[] {
   return list;
 }
 
-const fullName = (h: Hero) => (h.nick ? `${h.name} ${h.nick}` : h.name);
+const fullName = (h: Hero) => (h.nick ? `${h.name} ${tx(h.nick)}` : h.name);
 
 /** Lo que se lee de alguien al pasar el ratón: clase y nivel, y su tarea o si está en cama. */
 function heroTitle(s: GameState, h: Hero, candidate = false): string {
@@ -151,7 +158,7 @@ function awayOf(s: GameState): SceneAway[] {
       why: h.status === 'desaparecido' ? 'perdido' : 'encargo',
       dorm: beds.get(h.id),
       group: m?.id,
-      task: m?.quest.title,
+      task: m ? tx(m.quest.title) : undefined,
       days: m?.daysLeft,
     };
   });

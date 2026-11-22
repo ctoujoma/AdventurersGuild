@@ -5,7 +5,7 @@
  */
 import { NIGHT_THIEF_SECS, NIGHT_THIEF_SHARE, NIGHT_THIEF_TOP } from '../core/balance';
 import type { RoomType } from './rooms';
-import { t, tr } from '../textos';
+import { t } from '../textos';
 
 export type IncidentKind =
   'pelea' | 'ladron' | 'fuego' | 'ratas' | 'recaudador' | 'gotera' | 'noble' | 'nocturno';
@@ -32,9 +32,10 @@ export interface IncidentDef {
   ask: string;
   /** Segundos de reloj del día que aguanta antes de salir mal. */
   secs: number;
-  /** Lo que se cuenta si sale bien ({h}: quien lo arregla) y si sale mal ({n}: lo que se pierde). */
-  win: string;
-  lose: string;
+  /*
+   * Lo que se cuenta si sale bien y si sale mal: `incidentes.incidentes.<tipo>.gana` ({heroe}:
+   * quien lo arregla) y `.pierde` ({n}: lo que se pierde), ver `core/incidents.ts`.
+   */
   /** Si sale bien: reputación. */
   rep?: number;
   /** Si sale mal: lo que se pierde (`goldTop`: tope de `goldShare`, por cada rango uno más). */
@@ -61,8 +62,6 @@ export const INCIDENTS: Record<IncidentKind, IncidentDef> = {
     title: t('incidentes.incidentes.pelea.titulo'),
     ask: t('incidentes.incidentes.pelea.ask'),
     secs: 40,
-    win: tr('incidentes.incidentes.pelea.gana'),
-    lose: tr('incidentes.incidentes.pelea.pierde'),
     rep: 1,
     loss: { gold: 15 },
   },
@@ -72,8 +71,6 @@ export const INCIDENTS: Record<IncidentKind, IncidentDef> = {
     title: t('incidentes.incidentes.ladron.titulo'),
     ask: t('incidentes.incidentes.ladron.ask'),
     secs: 30,
-    win: tr('incidentes.incidentes.ladron.gana'),
-    lose: tr('incidentes.incidentes.ladron.pierde'),
     rep: 2,
     loss: { goldShare: 0.08 },
   },
@@ -83,8 +80,6 @@ export const INCIDENTS: Record<IncidentKind, IncidentDef> = {
     title: t('incidentes.incidentes.fuego.titulo'),
     ask: t('incidentes.incidentes.fuego.ask'),
     secs: 35,
-    win: tr('incidentes.incidentes.fuego.gana'),
-    lose: tr('incidentes.incidentes.fuego.pierde'),
     loss: { food: 8 },
   },
   ratas: {
@@ -94,8 +89,6 @@ export const INCIDENTS: Record<IncidentKind, IncidentDef> = {
     ask: t('incidentes.incidentes.ratas.ask'),
     secs: 30,
     taps: 6,
-    win: t('incidentes.incidentes.ratas.gana'),
-    lose: tr('incidentes.incidentes.ratas.pierde'),
     loss: { food: 6 },
   },
   recaudador: {
@@ -105,8 +98,6 @@ export const INCIDENTS: Record<IncidentKind, IncidentDef> = {
     ask: t('incidentes.incidentes.recaudador.ask'),
     secs: 40,
     cost: 15,
-    win: t('incidentes.incidentes.recaudador.gana'),
-    lose: t('incidentes.incidentes.recaudador.pierde'),
     rep: 1,
     loss: { rep: 3 },
   },
@@ -117,8 +108,6 @@ export const INCIDENTS: Record<IncidentKind, IncidentDef> = {
     ask: t('incidentes.incidentes.gotera.ask'),
     secs: 40,
     cost: 20,
-    win: t('incidentes.incidentes.gotera.gana'),
-    lose: tr('incidentes.incidentes.gotera.pierde'),
     loss: { beer: 6 },
   },
   nocturno: {
@@ -128,8 +117,6 @@ export const INCIDENTS: Record<IncidentKind, IncidentDef> = {
     title: t('incidentes.incidentes.nocturno.titulo'),
     ask: t('incidentes.incidentes.nocturno.ask'),
     secs: NIGHT_THIEF_SECS,
-    win: tr('incidentes.incidentes.nocturno.gana'),
-    lose: tr('incidentes.incidentes.nocturno.pierde'),
     rep: 2,
     loss: { goldShare: NIGHT_THIEF_SHARE, goldTop: NIGHT_THIEF_TOP },
   },
@@ -152,8 +139,6 @@ export const INCIDENTS: Record<IncidentKind, IncidentDef> = {
         text: t('incidentes.incidentes.noble.choices.1.texto'),
       },
     ],
-    win: '',
-    lose: t('incidentes.incidentes.noble.pierde'),
     loss: { rep: 2 },
   },
 };

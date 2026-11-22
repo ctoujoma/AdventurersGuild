@@ -19,6 +19,7 @@ import { gearHintText, upgradesFor } from './gearHint';
 import { listNames, plural } from './text';
 import { lookOf, marksOf, memberOf, heroFrame } from './view';
 import { span } from './when';
+import { tx } from '../textos';
 
 interface Props {
   game: GameState;
@@ -123,7 +124,7 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
       <article
         class="herocard questsheet"
         onClick={(e) => e.stopPropagation()}
-        aria-label={`Encargo: ${q.title}`}
+        aria-label={`Encargo: ${tx(q.title)}`}
       >
         <button class="btn-icon herocard-x" data-tut="cerrar" aria-label="Cerrar" onClick={onClose}>
           <Icon name="close" size={14} />
@@ -132,10 +133,10 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
           <header class="qs-head">
             <span class="eyebrow">
               {q.chain
-                ? `${chainDef(q.chain.id).name} · paso ${q.chain.step + 1} de ${chainDef(q.chain.id).steps.length}`
+                ? `${tx(chainDef(q.chain.id).name)} · paso ${q.chain.step + 1} de ${chainDef(q.chain.id).steps.length}`
                 : `${q.type} · ${q.client}`}
             </span>
-            <h3>{q.title}</h3>
+            <h3>{tx(q.title)}</h3>
           </header>
           <div class="chips qs-facts">
             <span class="fact" {...help('Paga si sale bien.')}>
@@ -169,7 +170,7 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
             aria-expanded={story}
             onClick={() => setStory(!story)}
           >
-            {q.text}
+            {tx(q.text)}
           </button>
 
           <div class={`estimate est-${party.length ? est.level : 'none'}`}>
@@ -201,7 +202,7 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
           </div>
           {est.reveal && mage && (
             <div class="twist" role="status">
-              <b>{mage.name} nota algo raro.</b> {q.twist} El primer desafío será más duro.
+              <b>{mage.name} nota algo raro.</b> {tx(q.twist)} El primer desafío será más duro.
             </div>
           )}
           {mage && q.dangerHidden && game.fac.mapas < 2 && (

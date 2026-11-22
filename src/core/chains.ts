@@ -4,10 +4,10 @@
  * Al acabar: oro, fama, un objeto legendario y, a veces, un trofeo o el mapa completo.
  */
 import { learnRecipe } from './crafting';
-import { RECIPES } from '../data/recipes';
 import type { BossKind } from '../data/bosses';
 import { CHAINS, type ChainDef } from '../data/chains';
 import { GEAR } from '../data/items';
+import { clientLabelMsg } from '../data/quests';
 import { PLACE_INFO } from '../data/places';
 import { rankIndex } from './balance';
 import { emptyStats } from './feats';
@@ -15,6 +15,7 @@ import { generateQuest, homePower } from './generate';
 import type { BossFight, DawnEvent, GameState, Hero, Quest, Report } from './model';
 import type { Rng } from './rng';
 import { shownGear } from './gear';
+import { idText, msg } from '../textos';
 
 export const chainDef = (id: string) => CHAINS.find((c) => c.id === id)!;
 
@@ -91,18 +92,18 @@ export function offerChain(s: GameState, rng: Rng, events: DawnEvent[]): void {
     day: s.day,
     title: def.name,
     heroIds: [],
-    who: def.client,
+    who: clientLabelMsg(def.client),
     outcome: 'Éxito',
-    heading: `Carta de ${def.client}`,
-    body: [def.intro, `Primer paso en el tablón: «${def.steps[0]!.title}».`],
+    heading: msg('historias.carta.titulo', { cliente: clientLabelMsg(def.client) }),
+    body: [def.intro, msg('historias.carta.primer_paso', { titulo: def.steps[0]!.title })],
     chips: [
-      { t: `${def.steps.length} encargos enlazados`, k: 'info' },
-      { t: 'Premio final legendario', k: 'good' },
+      { t: msg('historias.carta.chip_pasos', { n: def.steps.length }), k: 'info' },
+      { t: msg('historias.carta.chip_premio'), k: 'good' },
     ],
     read: false,
   });
   events.push({
-    t: `Carta de ${def.client}: «${def.name}», una historia en varios encargos.`,
+    t: msg('historias.carta.aviso', { cliente: clientLabelMsg(def.client), historia: def.name }),
     k: 'good',
   });
 }
@@ -123,12 +124,10 @@ export function advanceChain(
     cs.twists++;
     threat(s, 8);
     s.quests.push(chainQuest(s, rng, def, cs.step, cs.twists));
-    r.body.push(
-      'La historia se ha torcido: habrá que volver a intentarlo, y ahora será más difícil.',
-    );
-    r.chips.push({ t: `«${def.name}» se complica`, k: 'warn' });
+    r.body.push(msg('historias.paso.torcida'));
+    r.chips.push({ t: msg('historias.paso.chip_complica', { historia: def.name }), k: 'warn' });
     events.push({
-      t: `«${def.name}» se tuerce: «${q.title}» vuelve al tablón, más difícil.`,
+      t: msg('historias.paso.se_tuerce', { historia: def.name, titulo: q.title }),
       k: 'bad',
     });
     return;
@@ -137,9 +136,16 @@ export function advanceChain(
   threat(s, -10);
   if (cs.step < def.steps.length) {
     s.quests.push(chainQuest(s, rng, def, cs.step, cs.twists));
-    r.chips.push({ t: `«${def.name}» ${cs.step}/${def.steps.length}`, k: 'info' });
+    r.chips.push({
+      t: msg('historias.paso.chip_avance', {
+        historia: def.name,
+        n: cs.step,
+        de: def.steps.length,
+      }),
+      k: 'info',
+    });
     events.push({
-      t: `«${def.name}» avanza: en el tablón, «${def.steps[cs.step]!.title}».`,
+      t: msg('historias.paso.avanza', { historia: def.name, titulo: def.steps[cs.step]!.title }),
       k: 'good',
     });
     return;
@@ -151,13 +157,16 @@ export function advanceChain(
   stats.chains = (stats.chains ?? 0) + 1;
   s.gold += def.reward.gold;
   s.rep += def.reward.rep;
-  const base = GEAR.find((g) => g.name === def.reward.item);
+  const base = GEAR.find((g) => idText(g.name) === idText(def.reward.item));
   if (base) s.inventory.push({ ...base, id: `i${s.uid++}` });
   // Al acabar una historia, siempre unos planos (si queda algo por aprender).
   const plan = learnRecipe(s, rng);
   if (plan) {
-    r.body.push(`Y de recuerdo, unos planos: ya se sabe crear ${RECIPES[plan].many}.`);
-    r.chips.push({ t: `Receta: ${RECIPES[plan].name.toLowerCase()}`, k: 'good' });
+    r.body.push(msg('historias.final.planos', { receta: msg(`recetas.recetas.${plan}.many`) }));
+    r.chips.push({
+      t: msg('partida.aviso.chip_receta', { receta: msg(`recetas.recetas.${plan}.nombre`) }),
+      k: 'good',
+    });
   }
   if (def.reward.trophy) {
     s.trophies.push({
@@ -171,17 +180,18 @@ export function advanceChain(
     stats.trophies++;
   }
   if (def.reward.revealMap) s.explored = Object.keys(PLACE_INFO);
-  r.heading = 'Historia cumplida';
+  r.heading = msg('historias.final.titulo');
   r.body.push(def.ending);
   r.chips.push(
-    { t: `+${def.reward.gold} monedas del cliente`, k: 'good' },
-    { t: `+${def.reward.rep} reputación`, k: 'good' },
-    { t: `Legendario: ${def.reward.item}`, k: 'good' },
+    { t: msg('historias.final.chip_oro', { n: def.reward.gold }), k: 'good' },
+    { t: msg('asaltos.chip_mas_rep', { n: def.reward.rep }), k: 'good' },
+    { t: msg('historias.final.chip_legendario', { objeto: def.reward.item }), k: 'good' },
   );
-  if (def.reward.trophy) r.chips.push({ t: `Trofeo: ${def.reward.trophy.name}`, k: 'good' });
-  if (def.reward.revealMap) r.chips.push({ t: 'Mapa completo de la comarca', k: 'good' });
+  if (def.reward.trophy)
+    r.chips.push({ t: msg('informes.chip_trofeo', { trofeo: def.reward.trophy.name }), k: 'good' });
+  if (def.reward.revealMap) r.chips.push({ t: msg('historias.final.chip_mapa'), k: 'good' });
   events.push({
-    t: `¡«${def.name}» cumplida! ${def.client} paga y cuenta la hazaña.`,
+    t: msg('historias.final.aviso', { historia: def.name, cliente: clientLabelMsg(def.client) }),
     k: 'good',
     big: true,
   });

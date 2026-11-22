@@ -11,6 +11,7 @@ import { endDay, newGame, reduce, tick } from './game';
 import { failIncidents, napShare, nappers, stepIncidents, type Sentry } from './incidents';
 import type { DawnEvent, GameState } from './model';
 import { THIEF_EVENT, startThief, thiefRoom } from './thief';
+import { tx } from '../textos';
 
 /** Una partida sin tutorial, de noche, con oro, para que entre el ladrón. */
 function night(seed = 'ladron-noche', day = 9): GameState {
@@ -66,7 +67,7 @@ describe('el ladrón nocturno', () => {
     expect(s.incidents).toEqual([]);
     expect(s.gold).toBe(400 - Math.min(Math.floor(400 * NIGHT_THIEF_SHARE), NIGHT_THIEF_TOP));
     expect(ev[0]?.k).toBe('bad');
-    expect(ev[0]?.t).toMatch(/Nadie le vio/);
+    expect(tx(ev[0]?.t)).toMatch(/Nadie le vio/);
     const rich = night();
     rich.gold = 5000;
     startThief(rich);
@@ -90,7 +91,7 @@ describe('el ladrón nocturno', () => {
       const end = s.incidentLog!.at(-1)!;
       if (asleep) {
         expect(end.how).toBe('cuela');
-        expect(ev[0]!.t).toContain('cabeceaba');
+        expect(tx(ev[0]!.t)).toContain('cabeceaba');
         slipped++;
       } else if (end.how === 'bien' || end.how === 'puerta') {
         expect(s.gold).toBe(400);
@@ -186,7 +187,7 @@ describe('el ladrón nocturno', () => {
     expect(done.incidentNews ?? []).toEqual([]);
     expect(done.gold).toBe(400);
     const dawn = endDay(done).dawn;
-    expect(dawn.some((e) => e.t.includes(h.name) && /pilló/.test(e.t))).toBe(true);
+    expect(dawn.some((e) => tx(e.t).includes(h.name) && /pilló/.test(tx(e.t)))).toBe(true);
   });
 
   it('con el reloj y sin tocar, se resuelve igual que al pasar el día', () => {

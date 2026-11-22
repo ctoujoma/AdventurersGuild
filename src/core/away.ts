@@ -18,6 +18,7 @@ import {
 import { endDay, salaries, tick } from './game';
 import { settleWalks } from './workers';
 import type { DawnEvent, GameState } from './model';
+import { type Msg, msg } from '../textos';
 
 export interface AwayDay {
   /** El día que amaneció y lo que se contó al amanecer. */
@@ -97,8 +98,8 @@ export function catchUp(state: GameState, realSeconds: number): Away {
       lastFight: null,
       dawn: [
         ...days.flatMap((d) => [
-          { t: `Día ${d.day}`, head: true },
-          ...(d.events.length ? d.events : [{ t: 'Un día tranquilo.' }]),
+          { t: msg('ausencia.dia', { dia: d.day }), head: true },
+          ...(d.events.length ? d.events : [{ t: msg('ausencia.tranquilo') }]),
         ]),
         ...(waiting ? [{ t: waitText(s, waiting), k: 'bad' as const }] : []),
       ],
@@ -108,5 +109,5 @@ export function catchUp(state: GameState, realSeconds: number): Away {
 }
 
 /** «Esta noche toca pagar 230 y en la caja hay 180: la taberna te ha esperado a la tarde.» */
-export const waitText = (s: GameState, due: number) =>
-  `Esta noche toca pagar ${due} monedas y en la caja hay ${s.gold}: la taberna te ha esperado a la tarde. Vende algo o cobra un encargo antes de que anochezca.`;
+export const waitText = (s: GameState, due: number): Msg =>
+  msg('ausencia.espera', { n: due, oro: s.gold });

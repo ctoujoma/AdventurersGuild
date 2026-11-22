@@ -3,7 +3,7 @@
  * lo que rinde cada sala con la gente que tiene. TS puro: lo usan el reducer, la interfaz y la
  * escena.
  */
-import { VILLAGE, TRADE_LIST, WORKER_QUOTES, TRADES, type Trade } from '../data/workers';
+import { VILLAGE, TRADE_LIST, WORKER_QUOTES, type Trade } from '../data/workers';
 import { FIRST_NAMES } from '../data/names';
 import type { StaffId } from '../data/custom';
 import { TRAINS, type RoomType } from '../data/rooms';
@@ -23,6 +23,7 @@ import {
 import type { Building, DawnEvent, GameState, Hero, Room, Worker } from './model';
 import { active } from './rooms';
 import type { Rng } from './rng';
+import { type Msg, msg, t, tx } from '../textos';
 
 /** Hasta tener el dormitorio del servicio, trabajan los tres del pueblo. */
 export const VILLAGE_COUNT = 3;
@@ -52,10 +53,14 @@ export function staffBeds(b: Building): number {
 export const workerCap = (s: GameState) => Math.max(VILLAGE_COUNT, staffBeds(s.building));
 
 /** Nombre con el oficio, para listas: «Remedios, la cocinera» o «Brom, cervecero». */
-export const workerTitle = (w: Worker) =>
-  w.village
-    ? `${w.name}, ${VILLAGE[w.village].role}`
-    : `${w.name}, ${TRADES[w.trade].name[w.sex].toLowerCase()}`;
+export const workerTitleMsg = (w: Worker): Msg =>
+  msg('trabajadores.titulo', {
+    nombre: w.name,
+    oficio: w.village
+      ? msg(`trabajadores.pueblo.${w.village}.papel`)
+      : msg('general.minus', { x: msg(`trabajadores.oficios.${w.trade}.nombre.${w.sex}`) }),
+  });
+export const workerTitle = (w: Worker) => tx(workerTitleMsg(w));
 
 /** Quién ocupa los puestos de una sala (los héroes con el trabajo apuntado, estén o no hoy). */
 export function crewOf(s: GameState, roomId: string): { workers: Worker[]; heroes: Hero[] } {
@@ -146,19 +151,19 @@ export const bardPlaying = (s: GameState) =>
 export function canAssign(s: GameState, who: string, room: string | null): string | null {
   const w = s.workers.find((x) => x.id === who);
   const h = w ? undefined : s.heroes.find((x) => x.id === who);
-  if (!w && !h) return 'Ya no está en la taberna.';
+  if (!w && !h) return t('camas.fuera');
   if (room === null) return null;
   if (h) {
-    if (h.status !== 'ok') return `${h.name} no está en casa.`;
-    if (h.guard) return `${h.name} está de guardia.`;
+    if (h.status !== 'ok') return t('talleres.ropa.no_en_casa', { heroe: h.name });
+    if (h.guard) return t('trabajadores.error.de_guardia', { heroe: h.name });
   }
   if ((w?.room ?? h?.job) === room) return null;
   const r = s.building.rooms.find((x) => x.id === room);
-  if (!r) return 'Esa sala ya no está.';
-  if (!hasPosts(r.type)) return 'En esa sala no hay trabajo.';
-  if (w && isTrainRoom(r.type)) return 'Entrenar es cosa de los héroes.';
-  if (slotsOf(r) === 0) return 'La sala no está en uso.';
-  if (used(s, room) >= slotsOf(r)) return 'No quedan puestos libres en esa sala.';
+  if (!r) return t('pintor.sin_sala');
+  if (!hasPosts(r.type)) return t('trabajadores.error.sin_trabajo');
+  if (w && isTrainRoom(r.type)) return t('trabajadores.error.entrenar');
+  if (slotsOf(r) === 0) return t('talleres.error.sin_uso');
+  if (used(s, room) >= slotsOf(r)) return t('trabajadores.error.lleno');
   return null;
 }
 
@@ -285,7 +290,7 @@ export function villageCrew(s: GameState): Worker[] {
       salary: 6,
       fee: 0,
       village: k,
-      quote: v.quote,
+      quote: msg(`trabajadores.pueblo.${k}.cita`),
     };
   });
 }
@@ -314,7 +319,7 @@ export function generateWorker(
     xp: 0,
     salary: 3 + skill,
     fee: 5 + skill * 4,
-    quote: rng.pick(WORKER_QUOTES),
+    quote: msg(`trabajadores.citas_trabajadores.${rng.int(0, WORKER_QUOTES.length - 1)}`),
   };
 }
 
@@ -338,10 +343,10 @@ export function addSeeker(s: GameState, rng: Rng, events: DawnEvent[]): void {
   const w = generateWorker(rng, `w${s.uid++}`, namesIn(s), seekerTrades(s, rng));
   if (s.seekers.length >= MAX_SEEKERS) {
     const left = s.seekers.shift()!;
-    events.push({ t: `${left.name} se cansó de esperar trabajo y se fue a otra posada.` });
+    events.push({ t: msg('trabajadores.aviso.se_cansa', { nombre: left.name }) });
   }
   s.seekers.push(w);
-  events.push({ t: `Viene a pedir trabajo ${workerTitle(w)} (Maña ${w.skill}).` });
+  events.push({ t: msg('trabajadores.aviso.viene', { quien: workerTitleMsg(w), n: w.skill }) });
 }
 
 /**
@@ -356,7 +361,7 @@ export function stepWorkers(s: GameState, rng: Rng, events: DawnEvent[], visitor
     if (w.xp < w.skill * SKILL_XP) continue;
     w.xp = 0;
     w.skill++;
-    events.push({ t: `${w.name} le ha cogido el truco al trabajo: Maña ${w.skill}.`, k: 'good' });
+    events.push({ t: msg('trabajadores.aviso.mana', { nombre: w.name, n: w.skill }), k: 'good' });
   }
   if (s.mode !== 'libre') return;
   // Una sala nueva sin nadie de su oficio: se corre la voz y viene alguien a la mañana siguiente.
@@ -370,20 +375,16 @@ export function stepWorkers(s: GameState, rng: Rng, events: DawnEvent[], visitor
     const w = generateWorker(rng, `w${s.uid++}`, namesIn(s), [lack]);
     s.seekers.push(w);
     if (s.seekers.length > MAX_SEEKERS) s.seekers.shift();
-    events.push({
-      t: `Se ha corrido la voz: viene a pedir trabajo ${workerTitle(w)} (Maña ${w.skill}).`,
-    });
+    events.push({ t: msg('trabajadores.aviso.voz', { quien: workerTitleMsg(w), n: w.skill }) });
   } else if (rng.chance(Math.min(0.6, SEEKER_CHANCE + visitors * 0.02))) addSeeker(s, rng, events);
 }
 
 /** Por qué no se puede contratar a alguien que pide trabajo (null = se puede). */
 export function canHireWorker(s: GameState, id: string): string | null {
   const w = s.seekers.find((x) => x.id === id);
-  if (!w) return 'Ya no está esperando.';
+  if (!w) return t('trabajadores.error.no_espera');
   if (s.workers.length >= workerCap(s))
-    return s.mode === 'libre'
-      ? 'No queda cama: construye o amplía el dormitorio del servicio.'
-      : 'De momento basta con los tres del pueblo.';
-  if (s.gold < w.fee) return `Te faltan ${w.fee - s.gold} monedas.`;
+    return t(s.mode === 'libre' ? 'trabajadores.error.sin_cama' : 'trabajadores.error.basta');
+  if (s.gold < w.fee) return t('partida.error.faltan', { n: w.fee - s.gold });
   return null;
 }

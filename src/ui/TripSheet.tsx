@@ -7,6 +7,7 @@ import { Portrait } from './Portrait';
 import { QuestStrip } from './QuestStrip';
 import { lookOf, marksOf, heroFrame } from './view';
 import { dawnIn } from './when';
+import { tx } from '../textos';
 
 interface Props {
   game: GameState;
@@ -41,7 +42,7 @@ export function TripSheet({ game, mission: m, onClose, onHero, onReport, onBoss 
       <article
         class="herocard questsheet tripsheet"
         onClick={(e) => e.stopPropagation()}
-        aria-label={`Encargo en curso: ${q.title}`}
+        aria-label={`Encargo en curso: ${tx(q.title)}`}
       >
         <button class="btn-icon herocard-x" data-tut="cerrar" aria-label="Cerrar" onClick={onClose}>
           <Icon name="close" size={14} />
@@ -51,10 +52,10 @@ export function TripSheet({ game, mission: m, onClose, onHero, onReport, onBoss 
           <header class="qs-head">
             <span class="eyebrow">
               {q.chain
-                ? `${chainDef(q.chain.id).name} · paso ${q.chain.step + 1} de ${chainDef(q.chain.id).steps.length}`
+                ? `${tx(chainDef(q.chain.id).name)} · paso ${q.chain.step + 1} de ${chainDef(q.chain.id).steps.length}`
                 : `Encargo en curso · ${q.type}`}
             </span>
-            <h3>{q.title}</h3>
+            <h3>{tx(q.title)}</h3>
           </header>
           <div class="chips qs-facts">
             <span class="fact">

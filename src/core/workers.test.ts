@@ -19,6 +19,7 @@ import {
   workAt,
   workedIn,
 } from './workers';
+import { tx } from '../textos';
 
 const roomOf = (s: GameState, type: Room['type']) => s.building.rooms.find((r) => r.type === type)!;
 const village = (s: GameState, k: 'cocinera' | 'bardo' | 'mozo') =>
@@ -198,7 +199,7 @@ describe('trabajadores', () => {
     // En su oficio suma dos por noche.
     for (let i = 0; i < (w.skill * SKILL_XP) / 2; i++) stepWorkers(s, new Rng(i), events);
     expect(w.skill).toBe(4);
-    expect(events.some((e) => e.t.includes('Maña 4'))).toBe(true);
+    expect(events.some((e) => tx(e.t).includes('Maña 4'))).toBe(true);
   });
 
   it('desde el día 30 viene gente a pedir trabajo', () => {
@@ -237,6 +238,8 @@ describe('vuelta al trabajo tras caer herido', () => {
     e!.jobBefore = k.id;
     const u = endDay(full);
     expect(u.heroes.find((h) => h.id === e!.id)!.job).toBeUndefined();
-    expect(u.dawn.some((x) => x.t.includes(e!.name) && /no puede volver/.test(x.t))).toBe(true);
+    expect(u.dawn.some((x) => tx(x.t).includes(e!.name) && /no puede volver/.test(tx(x.t)))).toBe(
+      true,
+    );
   });
 });

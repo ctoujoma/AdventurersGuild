@@ -58,3 +58,6 @@ por_tipo:
   Limpiar: "Limpia {n} guaridas"
 construye: "Construye: {sala}"
 sala_nivel: "{sala} a nivel {nivel}"
+cumplido: "Objetivo cumplido: {objetivo}. Premio: {premio}."
+fuente_hazana: "Hazaña «{nombre}» {nivel}"
+fuente: "Objetivo: {objetivo}"

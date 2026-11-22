@@ -54,12 +54,6 @@ function leaves(n: unknown, key: string, out: Leaf[], lists: Map<string, number>
     for (const [k, v] of Object.entries(n)) leaves(v, key ? `${key}.${k}` : k, out, lists);
 }
 
-/**
- * Plantillas que el núcleo aún rellena a su manera: «{viene|vienen}» (asaltos). Se pasan a
- * ICU al convertir el núcleo (ver «Cabos sueltos» en docs/textos.md).
- */
-const LEGACY = /\{[^{}|]*\|[^{}|]*\}/;
-
 const SRC = readFileSync; // (alias corto)
 const all: Leaf[] = [];
 const lists = new Map<string, number>();
@@ -68,7 +62,6 @@ leaves(textsOf(SOURCE), '', all, lists);
 describe('los ficheros de textos', () => {
   it('todos los textos de origen se pueden leer', () => {
     const bad = all.filter(({ text }) => {
-      if (LEGACY.test(text)) return false;
       try {
         parse(text);
         return false;
@@ -91,7 +84,7 @@ describe('los ficheros de textos', () => {
       const extra = mine.filter((x) => !known.has(x.key)).map((x) => x.key);
       expect(extra, `claves de más en «${l}»`).toEqual([]);
       const holes = all
-        .filter((x) => !LEGACY.test(x.text) && theirs.has(x.key))
+        .filter((x) => theirs.has(x.key))
         .filter((x) => argsOf(x.text).join() !== argsOf(theirs.get(x.key)!).join())
         .map((x) => x.key);
       expect(holes, `huecos distintos en «${l}»`).toEqual([]);
@@ -119,12 +112,16 @@ const rel = (f: string) => f.slice(ROOT.length + 1).replace(/\\/g, '/');
  * Carpetas y ficheros que aún tienen textos sueltos (se van sacando por bloques; ver
  * docs/textos.md). Cuando una carpeta queda limpia, se quita de aquí y el test la vigila.
  */
-const PENDING = ['core/', 'ui/', 'world/', 'art/', 'platform/', 'audio/', 'main.tsx'];
+const PENDING = ['ui/', 'world/', 'art/', 'platform/', 'audio/', 'main.tsx'];
 /** Textos que se quedan en el código a propósito, con el porqué. */
 const ALLOWED: Record<string, string> = {
   'data/names.ts': 'nombres propios: no se traducen',
-  'data/places.ts': 'los nombres de lugar aún son su id (pendiente: ids de lugares)',
+  'data/places.ts': 'los lugares van por su id, que es su nombre en español',
+  'core/convert.ts': 'reconoce las frases en español de las partidas viejas',
 };
+
+/** Ids del juego que están en español y se usan como tales (se enseñan con su etiqueta). */
+const IDS = new Set(['Éxito brillante', 'Éxito', 'Éxito parcial', 'Fracaso', 'Desastre']);
 
 const looksText = (s: string) =>
   !/^[\w.${}/-]*$/.test(s) &&
@@ -140,6 +137,10 @@ function scan(file: string) {
     `${rel(file)}:${sf.getLineAndCharacterOfPosition(n.getStart()).line + 1}`;
   const visit = (n: ts.Node): void => {
     if (ts.isImportDeclaration(n) || ts.isExportDeclaration(n)) return;
+    // Los tipos (`'Éxito brillante' | …`) y los errores de programación no se traducen.
+    if (ts.isLiteralTypeNode(n)) return;
+    if (ts.isNewExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'Error')
+      return;
     if (
       ts.isCallExpression(n) &&
       ts.isIdentifier(n.expression) &&
@@ -151,13 +152,18 @@ function scan(file: string) {
         keys.push({ key: a.text, prefix: false, at: at(a) });
       else if (ts.isTemplateExpression(a)) keys.push({ key: a.head.text, prefix: true, at: at(a) });
     }
-    // Las claves de un objeto («'Éxito brillante': …») son ids, no textos.
-    const isName = n.parent && ts.isPropertyAssignment(n.parent) && n.parent.name === n;
+    // Las claves de un objeto («'Éxito brillante': …») son ids, no textos; y los lugares
+    // (`place: 'el molino'`) van por su id, que es su nombre en español.
+    const isName =
+      n.parent &&
+      ts.isPropertyAssignment(n.parent) &&
+      (n.parent.name === n || (ts.isIdentifier(n.parent.name) && n.parent.name.text === 'place'));
     let txt: string | null = null;
     if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n))
       txt = isName ? null : n.text;
     else if (ts.isTemplateHead(n) || ts.isTemplateMiddle(n) || ts.isTemplateTail(n)) txt = n.text;
-    if (txt !== null && looksText(txt)) loose.push(`${at(n)}: ${txt.slice(0, 60)}`);
+    if (txt !== null && looksText(txt) && !IDS.has(txt))
+      loose.push(`${at(n)}: ${txt.slice(0, 60)}`);
     ts.forEachChild(n, visit);
   };
   visit(sf);

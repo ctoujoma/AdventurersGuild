@@ -16,6 +16,7 @@ import { Portrait } from '../Portrait';
 import { Tabs } from '../Tabs';
 import { lookOf, marksOf, memberOf, heroFrame } from '../view';
 import { SLOTS, SLOT_NAMES, priceOf, slotOf, type Slot } from '../../core/gear';
+import { tx } from '../../textos';
 
 export type ArconTab = 'equipo' | 'tesoros' | 'trofeos';
 
@@ -267,7 +268,7 @@ export function ArconPanel({
                   <ItemImage
                     icon={chosen.it.icon ?? 'espada'}
                     rarity={chosen.it.rarity}
-                    name={chosen.it.name}
+                    name={tx(chosen.it.name)}
                     scale={1}
                   />
                 </span>
@@ -326,10 +327,10 @@ export function ArconPanel({
           <div class="rows">
             {treasures.map((it) => (
               <article key={it.id} class="row">
-                <span class="row-info" {...help(it.desc)}>
+                <span class="row-info" {...help(tx(it.desc))}>
                   <b>{itemName(it)}</b>
                 </span>
-                <Sell name={it.name} value={priceOf(it)} onSell={() => onSell(it.id)} />
+                <Sell name={tx(it.name)} value={priceOf(it)} onSell={() => onSell(it.id)} />
               </article>
             ))}
           </div>
@@ -349,14 +350,16 @@ export function ArconPanel({
                 <BufferImage buf={trophyIcon(t.icon)} scale={2} />
                 <span
                   class="row-info"
-                  {...help(`${t.desc} Lo trajeron ${t.who} de ${t.place}, el día ${t.day}.`)}
+                  {...help(
+                    `${tx(t.desc)} Lo trajeron ${tx(t.who)} de ${t.place}, el día ${t.day}.`,
+                  )}
                 >
-                  <b>{t.name}</b>
+                  <b>{tx(t.name)}</b>
                   <span class="row-sub">
                     {i < TROPHY_SLOTS ? 'En la pared del salón' : 'Guardado: no queda pared'}
                   </span>
                 </span>
-                <Sell name={t.name} value={t.value} onSell={() => onSellTrophy(t.id)} />
+                <Sell name={tx(t.name)} value={t.value} onSell={() => onSellTrophy(t.id)} />
               </article>
             ))}
           </div>

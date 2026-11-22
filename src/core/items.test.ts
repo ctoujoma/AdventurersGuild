@@ -7,8 +7,12 @@ import type { GameState, Item } from './model';
 import { questEstimate, resolveMission } from './resolve';
 import { Rng } from './rng';
 import { migrateGear } from './gear';
+import { idText } from '../textos';
 
-const gear = (name: string, id = 'g1'): Item => ({ id, ...GEAR.find((g) => g.name === name)! });
+const gear = (name: string, id = 'g1'): Item => ({
+  id,
+  ...GEAR.find((g) => idText(g.name) === name)!,
+});
 
 function withStock(s: GameState, ...items: Item[]): GameState {
   return { ...s, inventory: [...s.inventory, ...items] };

@@ -34,6 +34,23 @@ export function statusLabel(h: Hero, candidate = false): string {
   return t(`etiquetas.estado.${h.status}`, { sexo: h.sex, dias: h.days });
 }
 
+/** El nombre de una habilidad (los ids están en español: «Combate», «Arcano»…). */
+export const skillName = (k: string) => t(`etiquetas.habilidades.${k}`);
+/** El nombre de un atributo (F, D, M). */
+export const attrName = (a: string) => t(`etiquetas.atributos.${a}`);
+
+/** Clave de cada resultado (`etiquetas.resultado.<clave>`, `relatos.cierres.<clave>`…). */
+export const OUTCOME_KEY: Record<Outcome, string> = {
+  'Éxito brillante': 'brillante',
+  Éxito: 'exito',
+  'Éxito parcial': 'parcial',
+  Fracaso: 'fracaso',
+  Desastre: 'desastre',
+};
+export const outcomeKey = (o: Outcome) => OUTCOME_KEY[o];
+/** El resultado, escrito. */
+export const outcomeLabel = (o: Outcome) => t(`etiquetas.resultado.${OUTCOME_KEY[o]}`);
+
 export const OUTCOME_CLASS: Record<Outcome, string> = {
   'Éxito brillante': 'win',
   Éxito: 'win',

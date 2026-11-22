@@ -3,16 +3,9 @@ import { canSend, endDay, newGame, reduce } from './game';
 import type { GameState } from './model';
 import { notoriety, raidChance, stepRaids } from './raids';
 import { Rng } from './rng';
-import { fill } from './generate';
-import {
-  BANDS,
-  RAID_OPEN,
-  RAID_WON,
-  SCOUT_TIPOFF,
-  TIPOFFS,
-  bandNumber,
-  bandPlural,
-} from '../data/raids';
+import { t, tr } from '../textos';
+import { BANDS, RAID_OPEN, RAID_WON, TIPOFFS, bandParams, bandPlural } from '../data/raids';
+import { tx } from '../textos';
 
 /** Partida con un asalto a punto de llegar esta noche. */
 function underAttack(seed: string, strength: number): GameState {
@@ -58,7 +51,7 @@ describe('asaltos', () => {
     const ds = s.heroes.filter((h) => s.lastRaid!.defenders.includes(h.id));
     expect(ds.length).toBeGreaterThan(0);
     for (const h of ds) expect(h.lvl).toBe(lvl.get(h.id)! + 1);
-    expect(r.chips.some((c) => /sube a nivel/.test(c.t))).toBe(true);
+    expect(r.chips.some((c) => /sube a nivel/.test(tx(c.t)))).toBe(true);
     // En el patio, como mucho a un punto de subir.
     const p = newGame('patio');
     p.building.yard = { ...p.building.yard, patio: 2 };
@@ -105,15 +98,23 @@ describe('asaltos', () => {
 
 describe('textos de los asaltos', () => {
   it('cada banda con su número y sin huecos sin rellenar', () => {
-    const all = [...TIPOFFS, SCOUT_TIPOFF, ...RAID_OPEN, ...RAID_WON];
+    const keys = [
+      ...TIPOFFS.map((_, i) => `asaltos.chivatazos.${i}`),
+      'asaltos.chivatazo_explorador',
+      ...RAID_OPEN.map((_, i) => `asaltos.asalto_empieza.${i}`),
+      ...RAID_WON.map((_, i) => `asaltos.asalto_ganado.${i}`),
+    ];
     for (const band of BANDS)
-      for (const t of all) {
-        const out = fill(bandNumber(t, band), { band, h: 'Brena' });
+      for (const k of keys) {
+        const out = t(k, bandParams(band, { heroe: 'Brena' }));
         expect(out).not.toMatch(/[{}|]/);
         if (bandPlural(band)) expect(out).not.toMatch(/\b(había llegado|Era|huía) /);
         else expect(out).not.toMatch(/\b(habían llegado|Eran|huían) /);
       }
-    expect(bandNumber('{Era|Eran} {band}', 'los Hermanos Cuervo')).toBe('Eran {band}');
-    expect(bandNumber('{Era|Eran} {band}', 'la banda del Tuerto Garra')).toBe('Era {band}');
+    expect(bandPlural(BANDS[1]!)).toBe(true);
+    expect(bandPlural(BANDS[0]!)).toBe(false);
+    // Partidas viejas: la banda viene escrita.
+    expect(bandPlural('los Hermanos Cuervo')).toBe(true);
+    expect(tr('asaltos.chivatazos.0')).toContain('{banda}');
   });
 });

@@ -12,22 +12,19 @@ import {
 } from './balance';
 import type { Quest } from './model';
 import type { ClassId, Member } from './party';
+import { t } from '../textos';
 
+/** Lo que aporta cada clase al grupo (`clases.<clase>`: nombre y descripción). */
+const perk = (c: ClassId, p = {}) => ({
+  name: t(`clases.${c}.nombre`),
+  desc: t(`clases.${c}.desc`, p),
+});
 export const PERKS: Record<ClassId, { name: string; desc: string }> = {
-  guerrero: { name: 'Escudo', desc: 'Cubre al grupo: sus compañeros se hieren la mitad.' },
-  picaro: {
-    name: 'Manos largas',
-    desc: `+${ROGUE_GOLD * 100} % de oro, y trae el objeto aunque el éxito sea parcial.`,
-  },
-  mago: { name: 'Sexto sentido', desc: 'Descubre giros ocultos y el peligro real del encargo.' },
-  clerigo: {
-    name: 'Plegaria',
-    desc: `A veces salva a quien iba a caer y las derrotas desaniman la mitad.`,
-  },
-  explorador: {
-    name: 'Atajos',
-    desc: `En viajes de ${SCOUT_MIN} días o más vuelve ${SCOUT_DAYS} antes, y esquiva la mitad de emboscadas.`,
-  },
+  guerrero: perk('guerrero'),
+  picaro: perk('picaro', { n: ROGUE_GOLD * 100 }),
+  mago: perk('mago'),
+  clerigo: perk('clerigo'),
+  explorador: perk('explorador', { min: SCOUT_MIN, dias: SCOUT_DAYS }),
 };
 
 const hasCls = (party: readonly Member[], c: ClassId) => party.some((m) => m.cls === c);

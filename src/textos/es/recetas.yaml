@@ -14,6 +14,7 @@ recetas:
     good:
       nombre: "Espada bien templada"
       desc: "El herrero le dio un temple de los buenos. Canta al desenvainarla."
+    many: "espadas"
   coraza:
     nombre: "Coraza"
     one: "una coraza"
@@ -23,6 +24,7 @@ recetas:
     good:
       nombre: "Coraza remachada"
       desc: "Cada remache en su sitio. Quien la lleva se planta sin miedo."
+    many: "corazas"
   ganzuas:
     nombre: "Ganzúas"
     one: "unas ganzúas"
@@ -42,6 +44,7 @@ recetas:
     good:
       nombre: "Hacha de doble filo"
       desc: "Dos filos y un equilibrio que da gusto. Parte escudos."
+    many: "hachas"
   escudo:
     nombre: "Escudo"
     one: "un escudo"
@@ -51,6 +54,7 @@ recetas:
     good:
       nombre: "Escudo reforzado"
       desc: "Con bullones de hierro. Más de una flecha se ha quedado ahí."
+    many: "escudos"
   botas:
     nombre: "Botas"
     one: "unas botas"
@@ -60,6 +64,7 @@ recetas:
     good:
       nombre: "Botas de caña alta"
       desc: "Cosidas a medida. Se camina con ellas un día entero sin una ampolla."
+    many: "botas"
   capa:
     nombre: "Capa"
     one: "una capa"
@@ -69,6 +74,7 @@ recetas:
     good:
       nombre: "Capa encerada"
       desc: "Del color del monte. Quien la lleva se pierde entre los árboles."
+    many: "capas"
   amuleto:
     nombre: "Amuleto"
     one: "un amuleto"
@@ -78,6 +84,7 @@ recetas:
     good:
       nombre: "Amuleto bendecido"
       desc: "Pasó tres noches en la capilla. Los malos agüeros no se le acercan."
+    many: "amuletos"
   varita:
     nombre: "Varita"
     one: "una varita"
@@ -87,6 +94,7 @@ recetas:
     good:
       nombre: "Varita de fresno tallado"
       desc: "Tallada a la luz de la luna, como manda el libro."
+    many: "varitas"
   espadaLarga:
     nombre: "Espada larga"
     one: "una espada larga"

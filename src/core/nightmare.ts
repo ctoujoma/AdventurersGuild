@@ -11,6 +11,7 @@ import type { NightEvent } from './night';
 import { MORALE_LOW } from './party';
 import { raidTonight } from './raids';
 import { active } from './rooms';
+import { msg, t } from '../textos';
 
 /** Si está en su cama esta noche: en el reparto de camas o, herido, en la enfermería. */
 function inBed(s: GameState, h: Hero, plan: Map<string, string>): boolean {
@@ -59,9 +60,9 @@ export const NIGHTMARE_EVENT: NightEvent = {
 /** Por qué no se le puede llevar el trago ahora (null: se puede). */
 export function easeIssue(s: GameState): string | null {
   const now = nightmareNow(s);
-  if (!now) return 'Ya duerme tranquilo.';
-  if (now.n.eased) return `${now.h.name} ya se ha tomado su trago.`;
-  if (s.beer < NIGHTMARE_BEER) return 'No queda cerveza en la bodega (hace falta una jarra).';
+  if (!now) return t('pesadilla.tranquilo');
+  if (now.n.eased) return t('pesadilla.ya_bebio', { heroe: now.h.name });
+  if (s.beer < NIGHTMARE_BEER) return t('pesadilla.sin_cerveza');
   return null;
 }
 
@@ -72,7 +73,12 @@ export function easeNightmare(s: GameState): DawnEvent {
   h.morale = Math.min(100, h.morale + NIGHTMARE_EASE);
   n.eased = true;
   return {
-    t: `${h.name} se incorpora, se bebe el trago y se vuelve a acostar más tranquil${h.sex === 'f' ? 'a' : 'o'} (+${NIGHTMARE_EASE} de moral, −${NIGHTMARE_BEER} jarra).`,
+    t: msg('pesadilla.trago', {
+      heroe: h.name,
+      sexo: h.sex,
+      moral: NIGHTMARE_EASE,
+      jarras: NIGHTMARE_BEER,
+    }),
     k: 'good',
   };
 }
@@ -83,10 +89,10 @@ export function settleNightmare(s: GameState): DawnEvent | null {
   if (s.nightmare && s.nightmare.day <= s.day) s.nightmare = null;
   if (!now) return null;
   const { n, h } = now;
-  if (n.eased) return { t: `${h.name} durmió del tirón tras el trago de anoche.`, k: 'good' };
+  if (n.eased) return { t: msg('pesadilla.durmio', { heroe: h.name }), k: 'good' };
   h.morale = Math.max(0, h.morale - NIGHTMARE_LOSS);
   return {
-    t: `${h.name} pasó la noche dando vueltas en la cama, entre pesadillas: amanece con menos moral (−${NIGHTMARE_LOSS}).`,
+    t: msg('pesadilla.mala_noche', { heroe: h.name, n: NIGHTMARE_LOSS }),
     k: 'warn',
   };
 }

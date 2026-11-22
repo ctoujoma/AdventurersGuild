@@ -6,6 +6,7 @@
 import { VET_LEVEL } from './balance';
 import type { GameState, Hero, Room, Worker } from './model';
 import { active, roomBeds } from './rooms';
+import { t } from '../textos';
 
 export const isVet = (h: Pick<Hero, 'lvl'>) => h.lvl >= VET_LEVEL;
 
@@ -122,18 +123,17 @@ export function vetsWithoutWing(s: GameState): Hero[] {
 export function dormIssue(s: GameState, who: string, roomId: string): string | null {
   const p: Hero | Worker | undefined =
     s.heroes.find((h) => h.id === who) ?? s.workers.find((w) => w.id === who);
-  if (!p) return 'Ya no está en la taberna.';
+  if (!p) return t('camas.fuera');
   const r = s.building.rooms.find((x) => x.id === roomId);
-  if (!r || bedsIn(r) <= 0) return 'Ahí no hay camas.';
+  if (!r || bedsIn(r) <= 0) return t('camas.sin_camas');
   if (!fits(p, r)) {
-    if ('cls' in p && r.type === 'veteranos') return `${p.name} aún no es veterano.`;
-    return 'cls' in p
-      ? 'Los héroes duermen en los dormitorios.'
-      : 'Los trabajadores duermen en el servicio.';
+    if ('cls' in p && r.type === 'veteranos')
+      return t('camas.no_veterano', { nombre: p.name, sexo: p.sex });
+    return t('cls' in p ? 'camas.heroes' : 'camas.trabajadores');
   }
-  if (!('cls' in p) && !housed(s).includes(p)) return `${p.name} duerme en el pueblo.`;
+  if (!('cls' in p) && !housed(s).includes(p)) return t('camas.pueblo', { nombre: p.name });
   const plan = sleepPlan(s);
-  if (plan.get(who) === roomId) return `${p.name} ya duerme aquí.`;
+  if (plan.get(who) === roomId) return t('camas.ya_aqui', { nombre: p.name });
   const taken = [...plan.values()].filter((x) => x === roomId).length;
   // Si está lleno, solo con quien no lo ha elegido a mano (se le recoloca).
   const moveable = [...plan].filter(([id, x]) => {
@@ -141,6 +141,6 @@ export function dormIssue(s: GameState, who: string, roomId: string): string | n
     const o = s.heroes.find((h) => h.id === id) ?? s.workers.find((w) => w.id === id);
     return o?.dorm !== roomId;
   }).length;
-  if (taken >= bedsIn(r) && !moveable) return 'No queda cama libre.';
+  if (taken >= bedsIn(r) && !moveable) return t('camas.llenas');
   return null;
 }

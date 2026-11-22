@@ -53,9 +53,14 @@ import { active } from './rooms';
 import { onWay } from './workers';
 import { bump } from './feats';
 import { guardsAt } from './guards';
+import { type Txt, msg, t } from '../textos';
 
 /** Lo último que ha pasado con los incidentes, para el aviso de la interfaz. */
-export type IncidentNews = { t: string; k: ChipKind };
+export type IncidentNews = { t: Txt; k: ChipKind };
+
+/** Un texto de un incidente (`incidentes.incidentes.<tipo>.<clave>`). */
+const say = (kind: string, key: string, p?: Record<string, Txt | number>) =>
+  msg(`incidentes.incidentes.${kind}.${key}`, p);
 
 /** Los dos ladrones (el de la cámara, de día, y el nocturno) pelean con quien llega. */
 export const isThief = (k: IncidentKind) => k === 'ladron' || k === 'nocturno';
@@ -67,9 +72,6 @@ export const isThief = (k: IncidentKind) => k === 'ladron' || k === 'nocturno';
 export function tellDawn(s: GameState, n: DawnEvent): void {
   s.nightLines = [...(s.nightLines ?? []), n];
 }
-
-const fill = (t: string, v: Record<string, string | number>) =>
-  t.replace(/\{(\w+)\}/g, (_, k: string) => String(v[k] ?? ''));
 
 /** Lo que cuesta pagar un incidente (sube con el rango). */
 export function incidentCost(s: GameState, inc: Incident): number {
@@ -226,7 +228,7 @@ function helpers(s: GameState, inc: Incident, to: number): IncidentNews | null {
     if (!g) return null;
     // Deja la puerta un momento: va andando y la separa al llegar (como si se le mandara).
     set({ coming: { who: g, at: to + INCIDENT_WALK } });
-    return { t: `${nameOf(s, g)} deja la puerta un momento para ir a separarlos.`, k: 'info' };
+    return { t: msg('incidentes.guardia.separa', { heroe: nameOf(s, g) }), k: 'info' };
   }
   if (inc.kind === 'ladron' && !inc.duel) {
     const g = guardsAt(s, 'tesoro')[0];
@@ -234,14 +236,14 @@ function helpers(s: GameState, inc: Incident, to: number): IncidentNews | null {
     const duel = thiefDuel(s, g.id, inc.id, to);
     if (!duel) return null;
     set({ duel });
-    return { t: `${g.name}, de guardia en la cámara, se echa encima del ladrón.`, k: 'info' };
+    return { t: msg('incidentes.guardia.ladron', { heroe: g.name }), k: 'info' };
   }
   if (inc.kind === 'recaudador' && !inc.held) {
     const g = awakeGuard(s, to);
     if (!g) return null;
     set({ held: g, until: inc.until + GUARD_HOLD });
     return {
-      t: `${nameOf(s, g)}, de guardia, entretiene al recaudador en la puerta: hay algo más de tiempo.`,
+      t: msg('incidentes.guardia.recaudador', { heroe: nameOf(s, g) }),
       k: 'info',
     };
   }
@@ -263,7 +265,9 @@ function helpers(s: GameState, inc: Incident, to: number): IncidentNews | null {
 
 /** El nombre de alguien de la casa (héroe o trabajador). */
 const nameOf = (s: GameState, id: string) =>
-  s.heroes.find((h) => h.id === id)?.name ?? s.workers.find((w) => w.id === id)?.name ?? 'Alguien';
+  s.heroes.find((h) => h.id === id)?.name ??
+  s.workers.find((w) => w.id === id)?.name ??
+  t('general.alguien');
 
 /** Si alguien puede ir a arreglar un incidente (héroe en casa o, si vale cualquiera, trabajador). */
 function canGo(s: GameState, inc: Incident, who: string): boolean {
@@ -302,7 +306,7 @@ function settleDuel(s: GameState, inc: Incident): IncidentNews {
     return win(s, inc, nameOf(s, d.who));
   }
   const n = fail(s, inc);
-  return { ...n, t: `${nameOf(s, d.who)} no puede con él. ${n.t}` };
+  return { ...n, t: msg('incidentes.no_puede', { heroe: nameOf(s, d.who), resto: n.t }) };
 }
 
 /**
@@ -380,7 +384,7 @@ function fail(s: GameState, inc: Incident): IncidentNews {
   if (!awake) {
     done(s, inc, 'cuela', nap!);
     const n = lose(s, inc);
-    return { ...n, t: `${nameOf(s, nap!)} cabeceaba en la puerta y se le cuela. ${n.t}` };
+    return { ...n, t: msg('incidentes.se_cuela', { heroe: nameOf(s, nap!), resto: n.t }) };
   }
   const duel = thiefDuel(s, awake, `${inc.id}-puerta`, s.clock ?? 0);
   if (duel?.won) {
@@ -390,13 +394,13 @@ function fail(s: GameState, inc: Incident): IncidentNews {
     bump(s, 'incidents');
     bump(s, 'thieves');
     return {
-      t: `${nameOf(s, awake)}, de guardia, le cierra el paso en la puerta y recupera el botín.${d.rep ? ` (+${d.rep} reputación)` : ''}`,
+      t: msg('incidentes.puerta', { heroe: nameOf(s, awake), rep: d.rep ?? 0 }),
       k: 'good',
     };
   }
   done(s, inc, 'mal');
   const n = lose(s, inc);
-  return { ...n, t: `Ni ${nameOf(s, awake)}, de guardia, le para. ${n.t}` };
+  return { ...n, t: msg('incidentes.ni_guardia', { heroe: nameOf(s, awake), resto: n.t }) };
 }
 
 /**
@@ -449,7 +453,7 @@ function lose(s: GameState, inc: Incident): IncidentNews {
   if (l.food) s.food = Math.max(0, s.food - (n = Math.min(s.food, l.food)));
   if (l.beer) s.beer = Math.max(0, s.beer - (n = Math.min(s.beer, l.beer)));
   if (l.rep) s.rep = Math.max(0, s.rep - l.rep);
-  return { t: fill(d.lose, { n }), k: 'bad' };
+  return { t: say(inc.kind, 'pierde', { n }), k: 'bad' };
 }
 
 /** Sale bien: la fama que dé y se cuenta, con quien lo ha arreglado. */
@@ -458,7 +462,10 @@ function win(s: GameState, inc: Incident, who: string): IncidentNews {
   if (d.rep) s.rep += d.rep;
   bump(s, 'incidents');
   if (isThief(inc.kind)) bump(s, 'thieves');
-  return { t: fill(d.win, { h: who }) + (d.rep ? ` (+${d.rep} reputación)` : ''), k: 'good' };
+  return {
+    t: msg('incidentes.con_rep', { texto: say(inc.kind, 'gana', { heroe: who }), rep: d.rep ?? 0 }),
+    k: 'good',
+  };
 }
 
 // ---------- El ladrón nocturno ----------
@@ -474,8 +481,6 @@ function awakeAt(s: GameState, ids: string[], at: number) {
   return { awake: ids.filter((g) => !nap.includes(g)), nap };
 }
 
-const repText = (n?: number) => (n ? ` (+${n} reputación)` : '');
-
 /** Le pillan: la fama y se cuenta (el ladrón de más). Muta `s`. */
 function caughtNight(s: GameState, inc: Incident, how: 'bien' | 'puerta', guard?: string) {
   done(s, inc, how, guard);
@@ -483,10 +488,11 @@ function caughtNight(s: GameState, inc: Incident, how: 'bien' | 'puerta', guard?
   if (def.rep) s.rep += def.rep;
   bump(s, 'incidents');
   bump(s, 'thieves');
-  return repText(def.rep);
+  return def.rep ?? 0;
 }
 
-const NIGHT_HEAD = 'Anoche entró un ladrón.';
+/** «Anoche entró un ladrón.» y lo que pasó antes (`lead`), para empezar la frase. */
+const nightHead = (lead: Txt) => msg('incidentes.noche.cabeza', { lead, hay: lead !== '' });
 
 /**
  * El ladrón nocturno sale con el oro (reloj `at`; las cabezadas, a su hora `until`): si el de
@@ -506,7 +512,7 @@ function nightLate(s: GameState, inc: Incident, at: number, now: boolean): Incid
   }
   // En la cámara: si cabeceaba el de guardia, no le ve; aún queda la puerta.
   if (vault) {
-    const lead = nap[0] ? `${nameOf(s, nap[0])} cabeceaba en la cámara y no le vio.` : '';
+    const lead = nap[0] ? msg('incidentes.noche.cabeceaba', { heroe: nameOf(s, nap[0]) }) : '';
     return slip(s, inc, inc.until + NIGHT_THIEF_RUN, [], lead);
   }
   return slip(s, inc, inc.until, [], '');
@@ -517,7 +523,11 @@ function settleNight(s: GameState, inc: Incident): IncidentNews {
   const d = inc.duel!;
   if (d.won)
     return {
-      t: `${NIGHT_HEAD} ${nameOf(s, d.who)} le salió al paso y le pilló con las manos en la bolsa.${caughtNight(s, inc, 'bien')}`,
+      t: msg('incidentes.noche.pillado', {
+        cabeza: nightHead(''),
+        heroe: nameOf(s, d.who),
+        rep: caughtNight(s, inc, 'bien'),
+      }),
       k: 'good',
     };
   return slip(
@@ -525,7 +535,7 @@ function settleNight(s: GameState, inc: Incident): IncidentNews {
     inc,
     d.at + d.end + NIGHT_THIEF_RUN,
     [d.who],
-    `${nameOf(s, d.who)} le salió al paso, pero no pudo con él.`,
+    msg('incidentes.noche.no_pudo', { heroe: nameOf(s, d.who) }),
   );
 }
 
@@ -533,16 +543,10 @@ function settleNight(s: GameState, inc: Incident): IncidentNews {
  * El nocturno escapa por la puerta (reloj `at`): si hay alguien de guardia despierto (que no sea
  * quien ya ha peleado), le cierra el paso; si cabecean, se cuela; si no, se va con el oro.
  */
-function slip(
-  s: GameState,
-  inc: Incident,
-  at: number,
-  fought: string[],
-  lead: string,
-): IncidentNews {
+function slip(s: GameState, inc: Incident, at: number, fought: string[], lead: Txt): IncidentNews {
   const ids = guardsOf(s).filter((g) => !fought.includes(g));
-  const head = `${NIGHT_HEAD}${lead ? ` ${lead}` : ''}`;
-  const where = toVault(s, inc) ? 'la cámara' : 'la caja';
+  const head = nightHead(lead);
+  const where = msg(toVault(s, inc) ? 'incidentes.noche.la_camara' : 'incidentes.noche.la_caja');
   const take = (how: IncidentEnd['how'], guard?: string) => {
     const before = s.gold;
     done(s, inc, how, guard);
@@ -555,24 +559,33 @@ function slip(
     const duel = thiefDuel(s, g, `${inc.id}-puerta`, at);
     if (duel?.won)
       return {
-        t: `${head} ${nameOf(s, g)}, de guardia, le cerró el paso en la puerta y recuperó el botín.${caughtNight(s, inc, 'puerta', g)}`,
+        t: msg('incidentes.noche.puerta', {
+          cabeza: head,
+          heroe: nameOf(s, g),
+          rep: caughtNight(s, inc, 'puerta', g),
+        }),
         k: 'good',
       };
     const n = take('mal');
     return {
-      t: `${head} Ni ${nameOf(s, g)}, de guardia en la puerta, pudo pararle: se llevó ${n} monedas de ${where}.`,
+      t: msg('incidentes.noche.ni_guardia', { cabeza: head, heroe: nameOf(s, g), n, donde: where }),
       k: 'bad',
     };
   }
   if (nap[0]) {
     const n = take('cuela', nap[0]);
     return {
-      t: `${head} ${nameOf(s, nap[0])} cabeceaba en la puerta y se le coló con ${n} monedas de ${where}.`,
+      t: msg('incidentes.noche.se_cuela', {
+        cabeza: head,
+        heroe: nameOf(s, nap[0]),
+        n,
+        donde: where,
+      }),
       k: 'bad',
     };
   }
   const n = take('mal');
-  return { t: `${head} Nadie le vio salir: se llevó ${n} monedas de ${where}.`, k: 'bad' };
+  return { t: msg('incidentes.noche.nadie', { cabeza: head, n, donde: where }), k: 'bad' };
 }
 
 /** Se acaba: fuera de la lista y, para la escena, cómo acabó (los últimos). */
@@ -590,26 +603,24 @@ export type IncidentAct =
 /** Por qué no se puede hacer eso con el incidente (o null). */
 export function incidentIssue(s: GameState, id: string, act: IncidentAct): string | null {
   const inc = (s.incidents ?? []).find((i) => i.id === id);
-  if (!inc) return 'Eso ya se ha resuelto.';
+  if (!inc) return t('incidentes.error.resuelto');
   const d = INCIDENTS[inc.kind];
   if (act.by === 'who') {
     if (d.how !== 'heroe' && d.how !== 'alguien') return d.ask;
     if (!canGo(s, inc, act.who))
-      return d.how === 'heroe'
-        ? 'Para esto hace falta un héroe.'
-        : 'Tiene que ser alguien de casa.';
-    if (inc.coming) return `Ya va ${nameOf(s, inc.coming.who)}.`;
+      return t(d.how === 'heroe' ? 'incidentes.error.heroe' : 'incidentes.error.de_casa');
+    if (inc.coming) return t('incidentes.error.ya_va', { heroe: nameOf(s, inc.coming.who) });
     return null;
   }
   if (act.by === 'pagar') {
     if (d.how !== 'pagar') return d.ask;
     const cost = incidentCost(s, inc);
-    return s.gold < cost ? `Te faltan ${cost - s.gold} monedas.` : null;
+    return s.gold < cost ? t('partida.error.faltan', { n: cost - s.gold }) : null;
   }
   if (act.by === 'tocar') return d.how === 'tocar' ? null : d.ask;
   if (d.how !== 'elegir' || !d.choices?.[act.option]) return d.ask;
   const c = d.choices[act.option]!;
-  return c.gold && s.gold < -c.gold ? `Te faltan ${-c.gold - s.gold} monedas.` : null;
+  return c.gold && s.gold < -c.gold ? t('partida.error.faltan', { n: -c.gold - s.gold }) : null;
 }
 
 /** Resuelve (o avanza, si es de tocar) un incidente. Muta `s` (una copia). */
@@ -639,8 +650,14 @@ export function actOnIncident(s: GameState, id: string, act: IncidentAct): Incid
   s.gold += c.gold ?? 0;
   s.rep = Math.max(0, s.rep + (c.rep ?? 0));
   done(s, inc);
-  const rep = c.rep ? ` (${c.rep > 0 ? '+' : ''}${c.rep} reputación)` : '';
-  return { t: c.text + rep, k: (c.rep ?? 0) >= 0 ? 'good' : 'warn' };
+  return {
+    t: msg('incidentes.eleccion', {
+      texto: say(inc.kind, `choices.${act.option}.texto`),
+      rep: c.rep ?? 0,
+      mas: (c.rep ?? 0) > 0,
+    }),
+    k: (c.rep ?? 0) >= 0 ? 'good' : 'warn',
+  };
 }
 
 /**

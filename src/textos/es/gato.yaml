@@ -1,0 +1,1 @@
+caza: "El gato ha cazado {n, plural, =1 {una rata} =2 {dos ratas} =3 {tres ratas} =4 {cuatro ratas} other {# ratas}} en {bodega, select, si {la bodega} other {la despensa}}: se salvan {raciones} raciones."
