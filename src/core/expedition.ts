@@ -32,7 +32,27 @@ import {
   EXP_WIPE_KEEP,
   EXP_XP_DAY,
   EXP_XP_FAR,
+  EXP_CHOICES,
+  EXP_FOE,
+  EXP_FOE_SPREAD,
+  EXP_GUARDIAN,
+  EXP_GUARDIAN_MULT,
+  EXP_GUARDIAN_WAIT,
+  EXP_HURT_HP,
+  MAT_SELL,
 } from './balance';
+import {
+  EXP_EVENTS as EXP_EVENTS_DEF,
+  EXP_EVENT_LIST,
+  type ExpEvent,
+  type ExpOption,
+} from '../data/expEvents';
+import type { BossKind } from '../data/bosses';
+import { GEAR } from '../data/items';
+import type { Terrain } from '../data/places';
+import { foeUnits, heroUnit, runCombat, setupCombat, type CombatSetup } from './combat';
+import { fightRoster } from './chains';
+import { generateHero } from './generate';
 import { expeditionsOpen, gainMats, matsMsg, type Material, type Mats } from './materials';
 import type {
   ChipKind,
@@ -45,8 +65,10 @@ import type {
   Hero,
   Outcome,
   Report,
+  BossFight,
+  Item,
 } from './model';
-import { chance, skill } from './party';
+import { attr, chance, skill } from './party';
 import { equip, levelUp } from './resolve';
 import { Rng } from './rng';
 import type { FoeKind } from '../data/journey';
@@ -119,10 +141,14 @@ export function canExpedition(
   return null;
 }
 
-/** Lejanía (días de ida) en la hora `h` de la expedición; de vuelta, baja el doble de deprisa. */
-export function distAt(e: Expedition, h = e.hours): number {
-  if (!e.turn || h <= e.turn.h) return h / EXP_HOURS;
-  return Math.max(0, e.turn.dist - (2 * (h - e.turn.h)) / EXP_HOURS);
+/** Horas andadas (sin las paradas esperando un suceso). */
+const moved = (e: Expedition) => e.hours - (e.idle ?? 0);
+
+/** Lejanía (días de ida) ahora; de vuelta, baja el doble de deprisa. */
+export function distAt(e: Expedition): number {
+  if (!e.turn) return moved(e) / EXP_HOURS;
+  const back = moved(e) - (e.turn.h - (e.turn.idle ?? 0));
+  return Math.max(0, e.turn.dist - (2 * back) / EXP_HOURS);
 }
 
 /** Horas que les quedan para llegar a casa (de ida, contando con dar la vuelta ya). */
@@ -131,7 +157,7 @@ export function hoursHome(e: Expedition): number {
 }
 
 /** Los que siguen en pie. */
-const standing = (e: Expedition, s: GameState) =>
+export const standing = (e: Expedition, s: GameState) =>
   e.heroIds
     .map((id) => s.heroes.find((h) => h.id === id))
     .filter((h): h is Hero => !!h && (e.hurt[h.id] ?? 0) < EXP_HURT_DOWN);
@@ -218,7 +244,7 @@ export function callBack(s: GameState, id: string): boolean {
 }
 
 function turnBack(e: Expedition, why: ExpTurn, hero?: Hero): void {
-  e.turn = { h: e.hours, dist: distAt(e), why };
+  e.turn = { h: e.hours, dist: distAt(e), why, idle: e.idle ?? 0 };
   line(e, 'vuelta', `expediciones.diario.vuelta.${why}`, {
     heroe: hero?.name ?? '',
     sexo: hero?.sex ?? 'm',
@@ -261,7 +287,7 @@ export function stepExpeditions(
     const until = Math.floor((at - e.from) / HOUR);
     while (e.hours < until) {
       e.hours++;
-      stepHour(s, e);
+      stepHour(s, e, news);
       if (e.turn && distAt(e) <= 0) {
         home.push(...arrive(s, e, news));
         break;
@@ -272,9 +298,16 @@ export function stepExpeditions(
 }
 
 /** Lo que pasa en una hora: la noche (cena y cuentas) o, a veces, un suceso. */
-function stepHour(s: GameState, e: Expedition): void {
+function stepHour(s: GameState, e: Expedition, news: DawnEvent[]): void {
   const rng = new Rng(`${e.seed}-${e.hours}`);
   const hod = Math.floor(((e.from + e.hours * HOUR) % DAY_SECONDS) / HOUR);
+  // Esperando un suceso: parados (cenan si es de noche) hasta que se elija o se acabe el plazo.
+  if (e.pending) {
+    e.idle = (e.idle ?? 0) + 1;
+    if (hod === EXP_CAMP) camp(s, e, rng);
+    if (e.pending && e.hours >= e.pending.until) decide(s, e, safeOption(e.pending.kind), true);
+    return;
+  }
   const dist = distAt(e);
   if (hod === EXP_CAMP) {
     camp(s, e, rng);
@@ -290,11 +323,33 @@ function stepHour(s: GameState, e: Expedition): void {
   const up = standing(e, s);
   if (!up.length) return;
   const who = rng.pick(up);
+  // El guardián: raro, lejos y uno por expedición.
+  if (
+    !e.guardian &&
+    !e.turn &&
+    dist >= EXP_EVENTS_DEF.guardian.from &&
+    rng.chance(EXP_GUARDIAN * (dist - 3))
+  ) {
+    e.guardian = true;
+    raise(s, e, 'guardian', news);
+    return;
+  }
   const roll = rng.next();
-  const fightP = 0.3 + Math.min(0.2, 0.03 * dist);
+  const fightP = 0.22 + Math.min(0.15, 0.025 * dist);
+  const kinds = EXP_EVENT_LIST.filter((k) => {
+    const d = EXP_EVENTS_DEF[k];
+    return d.weight > 0 && dist >= d.from && (!d.headings || d.headings.includes(e.heading));
+  });
   if (roll < fightP) fight(s, e, rng, dist);
-  else if (roll < fightP + 0.4) find(e, rng, dist, who);
-  else if (roll < fightP + 0.48) {
+  else if (roll < fightP + EXP_CHOICES * (e.turn ? 0.5 : 1) && kinds.length)
+    raise(
+      s,
+      e,
+      rng.weighted(kinds.map((k) => [k, EXP_EVENTS_DEF[k].weight] as [ExpEvent, number])),
+      news,
+    );
+  else if (roll < fightP + 0.55) find(e, rng, dist, who);
+  else if (roll < fightP + 0.62) {
     const n = rng.int(1, Math.max(1, Math.ceil(up.length / 2)));
     e.rations += n;
     line(e, 'raciones', 'expediciones.diario.raciones', { heroe: who.name, n }, who.id);
@@ -333,15 +388,102 @@ function find(e: Expedition, rng: Rng, dist: number, who: Hero): void {
   );
 }
 
-/** Una pelea: la fuerza del grupo contra el peligro de la lejanía. Perder hiere a uno. */
+/** Una pelea por el camino contra lo que salga en ese rumbo. */
 function fight(s: GameState, e: Expedition, rng: Rng, dist: number): void {
   const foes = tl(`expediciones.enemigos.${e.heading}`);
-  const fi = rng.int(0, foes.length - 1);
-  const enemigos = msg(`expediciones.enemigos.${e.heading}.${fi}`);
-  const p = chance(partyPower(s, e), fightDiff(dist));
+  battle(s, e, rng, dist, rng.int(0, foes.length - 1));
+}
+
+/** Los enemigos de un rumbo, como jefes del motor de peleas (su dibujo y sus golpes). */
+const FOE_BOSS: Partial<Record<Heading, readonly BossKind[]>> = {
+  bosque: ['bestia', 'jabali', 'bestia', 'bestia'],
+};
+const GUARDIAN_BOSS: Partial<Record<Heading, BossKind>> = { bosque: 'jabali' };
+
+/** La pelea de una expedición, ya armada: los que están en pie (y el que se les unió). */
+export function battleSetup(
+  s: GameState,
+  e: Expedition,
+  dist: number,
+  foe: number,
+  mult = 1,
+  guardian = false,
+  roll = 0.5,
+): CombatSetup {
   const up = standing(e, s);
-  const hero = rng.pick(up);
-  if (rng.chance(p)) {
+  const party = [...up, ...(e.guest ? [e.guest] : [])];
+  const units = equip(party, s.fac).map((h) => heroUnit(h));
+  // Lo que pide la pelea, en la escala de los desafíos (suma del grupo); ver `EXP_FOE`.
+  const n = Math.max(1, party.length);
+  // Cada pelea, su enemigo: más o menos fuerte (`roll`, de 0 a 1), para que no esté decidida.
+  const luck = 1 - EXP_FOE_SPREAD + 2 * EXP_FOE_SPREAD * roll;
+  const diff = Math.max(1, n * (fightDiff(dist) * mult - EXP_GROUP * (n - 1))) * EXP_FOE * luck;
+  const boss = (guardian ? GUARDIAN_BOSS[e.heading] : FOE_BOSS[e.heading]?.[foe]) ?? 'bestia';
+  const setup = setupCombat(
+    `${e.seed}-pelea-${e.hours}-${foe}`,
+    boss,
+    units,
+    foeUnits(boss, diff, 2),
+  );
+  // Los heridos empiezan con menos vida.
+  for (const u of setup.units) {
+    const hurt = e.hurt[u.id] ?? 0;
+    if (u.side === 'h' && hurt) u.hp = Math.max(1, Math.round(u.max * (1 - EXP_HURT_HP * hurt)));
+  }
+  return setup;
+}
+
+/**
+ * Pelean (con el motor común: se ve en directo y luego en «Ver la pelea»). Los que caen en la
+ * pelea se llevan una herida; con `EXP_HURT_DOWN`, en el suelo. Devuelve si ganaron.
+ */
+function battle(
+  s: GameState,
+  e: Expedition,
+  rng: Rng,
+  dist: number,
+  foe: number,
+  mult = 1,
+  guardian = false,
+): boolean {
+  const up = standing(e, s);
+  if (!up.length) return false;
+  const enemigos = guardian
+    ? msg(`expediciones.guardianes.${e.heading}`)
+    : msg(`expediciones.enemigos.${e.heading}.${foe}`);
+  const setup = battleSetup(s, e, dist, foe, mult, guardian, rng.next());
+  const res = runCombat(setup);
+  const roster = fightRoster([...up, ...(e.guest ? [e.guest] : [])]);
+  for (const c of roster) if (res.downed.includes(c.id)) c.fate = 'herido';
+  const record: BossFight = {
+    boss: setup.boss,
+    place: '',
+    won: res.won,
+    heroes: roster,
+    sim: { setup, orders: [], auto: true },
+    foe: msg('expediciones.pelea.nombre', { enemigos }),
+    where: msg('expediciones.pelea.donde', { rumbo: e.heading, dias: Math.floor(dist) }),
+    terrain: TERRAIN[e.heading],
+  };
+  // Las heridas: cada uno que cayó en la pelea; si pierden, uno más se lleva otra.
+  const downed = up.filter((h) => res.downed.includes(h.id));
+  for (const h of downed) e.hurt[h.id] = Math.min(EXP_HURT_DOWN, (e.hurt[h.id] ?? 0) + 1);
+  if (!res.won && up.length) {
+    const h = rng.pick(up);
+    e.hurt[h.id] = Math.min(EXP_HURT_DOWN, (e.hurt[h.id] ?? 0) + 1);
+    if (!downed.includes(h)) downed.push(h);
+  }
+  // El que se unió, si cae, se va.
+  if (e.guest && res.downed.includes(e.guest.id)) {
+    line(e, 'aviso', 'expediciones.diario.invitado_se_va', {
+      heroe: e.guest.name,
+      sexo: e.guest.sex,
+    });
+    delete e.guest;
+  }
+  const hero = downed[0] ?? rng.pick(up);
+  const fell = downed.filter((h) => (e.hurt[h.id] ?? 0) >= EXP_HURT_DOWN);
+  if (res.won) {
     e.won++;
     const gold = rng.chance(0.4)
       ? Math.round(rng.int(EXP_GOLD[0], EXP_GOLD[1]) * (1 + EXP_GOLD_FAR * dist) * 0.6)
@@ -350,29 +492,33 @@ function fight(s: GameState, e: Expedition, rng: Rng, dist: number): void {
     line(
       e,
       'pelea',
-      'expediciones.diario.pelea_bien',
-      { enemigos, heroe: hero.name, sexo: hero.sex, oro: gold },
+      guardian ? 'expediciones.diario.guardian_bien' : 'expediciones.diario.pelea_bien',
+      {
+        enemigos,
+        heroe: hero.name,
+        sexo: hero.sex,
+        oro: gold,
+        heridos: downed.map((h) => h.name),
+        m: downed.length,
+      },
       hero.id,
       true,
     );
-    e.log.at(-1)!.foe = fi;
-    return;
+  } else {
+    e.lost++;
+    line(
+      e,
+      'pelea',
+      fell.length ? 'expediciones.diario.pelea_cae' : 'expediciones.diario.pelea_mal',
+      { enemigos, heroe: (fell[0] ?? hero).name, sexo: (fell[0] ?? hero).sex },
+      hero.id,
+      false,
+    );
   }
-  e.lost++;
-  // Pierden: se lleva la herida uno de los que están en pie (a veces, dos de golpe).
-  const n = rng.chance(0.25) ? 2 : 1;
-  e.hurt[hero.id] = Math.min(EXP_HURT_DOWN, (e.hurt[hero.id] ?? 0) + n);
-  const down = e.hurt[hero.id]! >= EXP_HURT_DOWN;
-  line(
-    e,
-    'pelea',
-    down ? 'expediciones.diario.pelea_cae' : 'expediciones.diario.pelea_mal',
-    { enemigos, heroe: hero.name, sexo: hero.sex },
-    hero.id,
-    false,
-  );
-  e.log.at(-1)!.foe = fi;
-  if (!down) return;
+  const last = e.log.at(-1)!;
+  last.foe = foe;
+  last.fight = record;
+  if (!fell.length) return res.won;
   const left = standing(e, s);
   if (!left.length) {
     // Caen todos: se arrastran a casa con lo que pueden cargar.
@@ -381,11 +527,350 @@ function fight(s: GameState, e: Expedition, rng: Rng, dist: number): void {
       e.bag.mats[m] = Math.floor((e.bag.mats[m] ?? 0) * EXP_WIPE_KEEP);
     if (e.turn)
       line(e, 'aviso', 'expediciones.diario.vuelta.caidos', {
-        heroe: hero.name,
+        heroe: fell[0]!.name,
         n: e.heroIds.length,
       });
-    else turnBack(e, 'caidos', hero);
-  } else if (!e.turn) turnBack(e, 'herido', hero);
+    else turnBack(e, 'caidos', fell[0]);
+  } else if (!e.turn) turnBack(e, 'herido', fell[0]);
+  return res.won;
+}
+
+const TERRAIN: Record<Heading, Terrain> = {
+  bosque: 'bosque',
+  sierra: 'monte',
+  marismas: 'pantano',
+  ruinas: 'ruina',
+};
+
+// ---------- Sucesos con decisión ----------
+
+/** La opción prudente de un suceso (la que eligen ellos si nadie dice nada). */
+export const safeOption = (k: ExpEvent) =>
+  (EXP_EVENTS_DEF[k].options.find((o) => o.safe) ?? EXP_EVENTS_DEF[k].options.at(-1)!).id;
+
+/** Horas que faltan para acampar (el plazo de los sucesos que esperan «hasta la noche»). */
+function toCamp(e: Expedition): number {
+  const hod = Math.floor(((e.from + e.hours * HOUR) % DAY_SECONDS) / HOUR);
+  return ((EXP_CAMP - hod + EXP_HOURS - 1) % EXP_HOURS) + 1;
+}
+
+/** Sale un suceso: espera a que elijas (avisa) o, silenciada, eligen ellos ya. */
+function raise(s: GameState, e: Expedition, kind: ExpEvent, news: DawnEvent[]): void {
+  const def = EXP_EVENTS_DEF[kind];
+  line(e, 'suceso', `expediciones.sucesos.${kind}.texto`, { rumbo: e.heading });
+  if (e.mute) {
+    decide(s, e, safeOption(kind), true);
+    return;
+  }
+  const wait = kind === 'guardian' ? EXP_GUARDIAN_WAIT : def.site ? EXP_HOURS : toCamp(e);
+  e.pending = { kind, h: e.hours, until: e.hours + wait };
+  news.push({
+    t: msg(kind === 'guardian' ? 'expediciones.aviso.guardian' : 'expediciones.aviso.suceso', {
+      rumbo: e.heading,
+      que: msg(`expediciones.sucesos.${kind}.titulo`),
+    }),
+    k: 'warn',
+  });
+}
+
+/** Quién haría la opción: el de su clase o, si no, el mejor en su atributo (en pie). */
+function doer(s: GameState, e: Expedition, o: ExpOption): Hero | undefined {
+  const up = standing(e, s);
+  const of = o.cls ? up.filter((h) => h.cls === o.cls) : up;
+  if (!of.length) return undefined;
+  return o.attr
+    ? [...of].sort((a, b) => attr(b, o.attr!, true) - attr(a, o.attr!, true))[0]
+    : of[0];
+}
+
+/** Lo que cuesta dejar una ofrenda o comprar una ración al mercader (de la mochila). */
+export const offering = (dist: number) => Math.round(8 + 2 * dist);
+export const RATION_PRICE = 4;
+
+/** Por qué no se puede elegir esa opción ahora (o null). */
+export function optionIssue(s: GameState, e: Expedition, id: string): string | null {
+  const kind = e.pending?.kind;
+  if (!kind) return t('expediciones.error.sin_suceso');
+  const o = EXP_EVENTS_DEF[kind].options.find((x) => x.id === id);
+  if (!o) return t('expediciones.error.sin_suceso');
+  if (o.cls && !standing(e, s).some((h) => h.cls === o.cls))
+    return t('expediciones.error.falta_clase', { clase: o.cls });
+  if (kind === 'santuario' && id === 'ofrenda' && e.bag.gold < offering(distAt(e)))
+    return t('expediciones.error.sin_oro', { n: offering(distAt(e)) });
+  if (kind === 'mercader' && id === 'comprar' && e.bag.gold < RATION_PRICE)
+    return t('expediciones.error.sin_oro', { n: RATION_PRICE });
+  if (
+    kind === 'mercader' &&
+    id === 'vender' &&
+    !Object.values(e.bag.mats).some((n) => (n ?? 0) > 0)
+  )
+    return t('expediciones.error.sin_materiales');
+  return null;
+}
+
+/** Probabilidad de que la opción salga bien (1 si no hay nada que pueda salir mal). */
+export function optionChance(s: GameState, e: Expedition, o: ExpOption): number {
+  if (!o.attr) return 1;
+  const who = doer(s, e, o);
+  if (!who) return 0;
+  const dist = distAt(e);
+  let p = 0.6 - 0.05 * (dist + (o.hard ?? 0)) + 0.05 * (attr(who, o.attr, true) - 6);
+  if (o.cls) p += 0.15;
+  return Math.max(0.1, Math.min(0.95, p - 0.04 * (e.hurt[who.id] ?? 0)));
+}
+
+/**
+ * La pista de riesgo de una opción, en palabras: 0 seguro … 3 muy arriesgado. Sin explorador ni
+ * sala de mapas buena, menos fina (solo «seguro», «arriesgado» y «muy arriesgado»).
+ */
+export function optionRisk(
+  s: GameState,
+  e: Expedition,
+  id: string,
+): { level: 0 | 1 | 2 | 3; sharp: boolean } {
+  const kind = e.pending?.kind ?? 'cofre';
+  const o = EXP_EVENTS_DEF[kind].options.find((x) => x.id === id)!;
+  const fights =
+    (kind === 'guardian' && id === 'pelear') ||
+    (kind === 'oso' && id === 'plantar') ||
+    (kind === 'ruinas' && id === 'forzar');
+  const p = fights
+    ? chance(
+        partyPower(s, e),
+        fightDiff(distAt(e)) * (kind === 'guardian' ? EXP_GUARDIAN_MULT : 1.2),
+      )
+    : optionChance(s, e, o);
+  const sharp = (mapRoom(s)?.level ?? 0) >= 2 || standing(e, s).some((h) => h.cls === 'explorador');
+  let level: 0 | 1 | 2 | 3 = p >= 0.85 ? 0 : p >= 0.65 ? 1 : p >= 0.45 ? 2 : 3;
+  if (!sharp && level === 1) level = 2;
+  return { level, sharp };
+}
+
+/** El jugador elige una opción del suceso que espera. */
+export function chooseOption(s: GameState, id: string, option: string): boolean {
+  const e = s.expeditions?.find((x) => x.id === id);
+  if (!e?.pending || optionIssue(s, e, option)) return false;
+  decide(s, e, option, false);
+  return true;
+}
+
+/** Silenciar (o no) una expedición: sin avisos ni esperas. */
+export function muteExpedition(s: GameState, id: string, on: boolean): boolean {
+  const e = s.expeditions?.find((x) => x.id === id);
+  if (!e || !!e.mute === on) return false;
+  if (on) e.mute = true;
+  else delete e.mute;
+  // Al silenciar, lo que esperaba se decide ya, con prudencia.
+  if (on && e.pending) decide(s, e, safeOption(e.pending.kind), true);
+  return true;
+}
+
+/** Botín de un suceso: monedas y materiales del rumbo, por `mult`. Lo mete en la mochila. */
+function loot(e: Expedition, rng: Rng, dist: number, mult: number): Msg {
+  const gold = Math.round(rng.int(EXP_GOLD[0], EXP_GOLD[1]) * (1 + EXP_GOLD_FAR * dist) * mult);
+  const kinds = HEADING_MATS[e.heading].filter((m) => m !== 'cristal' || dist >= EXP_CRYSTAL_FROM);
+  const m = rng.pick(kinds);
+  const n = Math.max(1, Math.round((1 + Math.floor(dist / EXP_MAT_FAR)) * mult));
+  e.bag.gold += gold;
+  e.bag.mats[m] = (e.bag.mats[m] ?? 0) + n;
+  return msg('expediciones.botin', { oro: gold, que: matsMsg({ [m]: n }) });
+}
+
+/** Un objeto de equipo (más raro cuanto más lejos y si es de un guardián). */
+function findItem(s: GameState, e: Expedition, rng: Rng, dist: number, guardian = false): Txt {
+  const rarity = guardian
+    ? rng.weighted<number>([
+        [2, 3],
+        [3, 2],
+        [4, 1],
+      ])
+    : rng.weighted<number>([
+        [1, 3],
+        [2, 1 + dist * 0.3],
+        [3, Math.max(0, dist - 3) * 0.2],
+      ]);
+  const pool = GEAR.filter((g) => g.rarity === rarity);
+  const base = rng.pick(pool.length ? pool : GEAR);
+  const item: Item = { id: `i${s.uid++}`, ...base };
+  (e.bag.items ??= []).push(item);
+  return item.name;
+}
+
+/** Hacer una opción: lo que pasa y su línea en el diario. `auto`: eligieron ellos. */
+function decide(s: GameState, e: Expedition, option: string, auto: boolean): void {
+  if (!e.pending) return;
+  const k = e.pending.kind;
+  const h0 = e.pending.h;
+  delete e.pending;
+  const rng = new Rng(`${e.seed}-elige-${h0}-${option}`);
+  const def = EXP_EVENTS_DEF[k];
+  const o = def.options.find((x) => x.id === option) ?? def.options.at(-1)!;
+  const dist = distAt(e);
+  const who = doer(s, e, o) ?? standing(e, s)[0];
+  if (!who) return;
+  const ok = rng.chance(optionChance(s, e, o));
+  const p: Params = { heroe: who.name, sexo: who.sex };
+  if (auto) line(e, 'eleccion', 'expediciones.diario.prudencia', { guardian: k === 'guardian' });
+  const say = (res: string, extra: Params = {}) =>
+    line(
+      e,
+      'eleccion',
+      `expediciones.sucesos.${k}.${o.id}.${res}`,
+      { ...p, ...extra },
+      who.id,
+      res !== 'mal',
+    );
+  const hurt = (h: Hero) => {
+    e.hurt[h.id] = Math.min(EXP_HURT_DOWN, (e.hurt[h.id] ?? 0) + 1);
+    if ((e.hurt[h.id] ?? 0) >= EXP_HURT_DOWN && !e.turn) turnBack(e, 'herido', h);
+  };
+  const key = `${k}.${o.id}`;
+  switch (key) {
+    case 'cofre.forzar':
+    case 'cofre.ganzua':
+    case 'torre.cerradura': {
+      if (!ok) {
+        if (key !== 'torre.cerradura') hurt(who);
+        return say('mal');
+      }
+      const rich = key === 'cofre.forzar' ? 1.5 : 2;
+      const item = dist >= 3 && rng.chance(0.3) ? findItem(s, e, rng, dist) : null;
+      return say('bien', { que: loot(e, rng, dist, rich), objeto: item ?? '', con_objeto: !!item });
+    }
+    case 'santuario.rezar': {
+      for (const id of Object.keys(e.hurt)) {
+        e.hurt[id]!--;
+        if (!e.hurt[id]) delete e.hurt[id];
+      }
+      for (const h of standing(e, s)) h.morale = Math.min(100, h.morale + 5);
+      return say('bien');
+    }
+    case 'santuario.ofrenda': {
+      const cost = offering(dist);
+      e.bag.gold -= cost;
+      const worst = Object.entries(e.hurt).sort((a, b) => b[1] - a[1])[0];
+      if (worst) {
+        e.hurt[worst[0]]!--;
+        if (!e.hurt[worst[0]]) delete e.hurt[worst[0]];
+      }
+      return say('bien', { oro: cost, curado: !!worst });
+    }
+    case 'mercader.comprar': {
+      const n = Math.min(e.heroIds.length * 2, Math.floor(e.bag.gold / RATION_PRICE));
+      e.bag.gold -= n * RATION_PRICE;
+      e.rations += n;
+      return say('bien', { m: n, oro: n * RATION_PRICE });
+    }
+    case 'mercader.vender': {
+      let n = 0;
+      for (const m of Object.keys(e.bag.mats) as Material[]) n += e.bag.mats[m] ?? 0;
+      e.bag.mats = {};
+      e.bag.gold += n * MAT_SELL * 2;
+      return say('bien', { m: n, oro: n * MAT_SELL * 2 });
+    }
+    case 'viajero.unirse':
+    case 'viajero.calar': {
+      const honest = key === 'viajero.calar' ? rng.chance(0.6) : ok;
+      if (!honest) {
+        if (key === 'viajero.calar') return say('mal');
+        const stolen = Math.floor(e.bag.gold / 2);
+        e.bag.gold -= stolen;
+        return say('mal', { oro: stolen });
+      }
+      const g = generateHero(rng, `h${s.uid++}`, {
+        rank: 1,
+        tab: 1,
+        usedNames: s.heroes.map((h) => h.name),
+      });
+      e.guest = g;
+      return say('bien', { otro: g.name, otro_sexo: g.sex });
+    }
+    case 'campamento.registrar': {
+      if (!ok) {
+        say('mal');
+        battle(s, e, rng, dist, 0, 0.9);
+        return;
+      }
+      const n = rng.int(1, e.heroIds.length);
+      e.rations += n;
+      return say('bien', { m: n, que: loot(e, rng, dist, 0.7) });
+    }
+    case 'campamento.rastrear': {
+      const n = rng.int(1, e.heroIds.length) + 1;
+      e.rations += n;
+      return say('bien', { m: n });
+    }
+    case 'oso.plantar': {
+      say('bien');
+      if (battle(s, e, rng, dist, 2, 1.2)) {
+        e.bag.mats.cuero = (e.bag.mats.cuero ?? 0) + 2;
+        line(e, 'hallazgo', 'expediciones.diario.piel', { heroe: who.name });
+      }
+      return;
+    }
+    case 'oso.rodear': {
+      if (ok) return say('bien');
+      say('mal');
+      battle(s, e, rng, dist, 2, 1.2);
+      return;
+    }
+    case 'oso.retroceder':
+      e.idle = (e.idle ?? 0) + 3;
+      return say('bien');
+    case 'cueva.entrar': {
+      if (ok) {
+        const item = dist >= 3 && rng.chance(0.3) ? findItem(s, e, rng, dist) : null;
+        return say('bien', { que: loot(e, rng, dist, 2), objeto: item ?? '', con_objeto: !!item });
+      }
+      say('mal');
+      if (battle(s, e, rng, dist, 0, 1.1))
+        line(e, 'hallazgo', 'expediciones.diario.tras_pelea', { que: loot(e, rng, dist, 1) });
+      return;
+    }
+    case 'cueva.cuidado':
+      return ok ? say('bien', { que: loot(e, rng, dist, 1.5) }) : say('mal');
+    case 'torre.subir':
+      if (!ok) {
+        hurt(who);
+        return say('mal');
+      }
+      return say('bien', { que: loot(e, rng, dist, 1) });
+    case 'ruinas.runas': {
+      if (!ok) {
+        hurt(who);
+        return say('mal');
+      }
+      e.bag.mats.cristal = (e.bag.mats.cristal ?? 0) + 2;
+      const item = rng.chance(0.5) ? findItem(s, e, rng, dist) : null;
+      return say('bien', { objeto: item ?? '', con_objeto: !!item });
+    }
+    case 'ruinas.forzar': {
+      say('bien');
+      if (battle(s, e, rng, dist, 0, 1.3)) {
+        e.bag.mats.cristal = (e.bag.mats.cristal ?? 0) + 2;
+        line(e, 'hallazgo', 'expediciones.diario.tras_pelea', { que: loot(e, rng, dist, 2) });
+      }
+      return;
+    }
+    case 'guardian.pelear': {
+      say('bien');
+      if (battle(s, e, rng, dist, 0, EXP_GUARDIAN_MULT, true)) {
+        const item = findItem(s, e, rng, dist, true);
+        e.bag.mats.cristal = (e.bag.mats.cristal ?? 0) + 2;
+        line(e, 'hallazgo', 'expediciones.diario.guardian_botin', {
+          que: loot(e, rng, dist, 3),
+          objeto: item,
+        });
+      }
+      return;
+    }
+    case 'guardian.volver':
+      say('bien');
+      if (!e.turn) turnBack(e, 'guardian');
+      return;
+    default:
+      return say('bien');
+  }
 }
 
 /** La noche: cenan (una ración cada uno), el clérigo cura y se echan cuentas para seguir. */
@@ -476,6 +961,15 @@ function arrive(s: GameState, e: Expedition, news: DawnEvent[]): string[] {
   const got = gainMats(s, e.bag.mats);
   if (Object.keys(got.kept).length) chip('chip_materiales', { que: matsMsg(got.kept) }, 'info');
   if (got.warn) chips.push({ t: got.warn, k: 'warn' });
+  for (const it of e.bag.items ?? []) {
+    s.inventory.push(it);
+    chip('chip_objeto', { objeto: it.name }, 'good');
+  }
+  // El que se les unió pide entrar: espera en la barra, como los demás candidatos.
+  if (e.guest) {
+    s.candidates.push({ ...e.guest, status: 'ok' });
+    chip('chip_invitado', { heroe: e.guest.name }, 'info');
+  }
   if (e.rations > 0) {
     s.food += e.rations;
     chip('chip_raciones', { n: e.rations }, 'info');
@@ -535,6 +1029,7 @@ function arrive(s: GameState, e: Expedition, news: DawnEvent[]): string[] {
     body,
     chips,
     read: false,
+    exp: { log: e.log },
   };
   s.reports.unshift(r);
   news.push({

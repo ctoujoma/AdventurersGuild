@@ -26,6 +26,8 @@ import type { FightEvent } from './fight';
 import type { Gear } from './gear';
 import type { Mats } from './materials';
 import type { Txt } from '../textos';
+import type { ExpEvent } from '../data/expEvents';
+import type { Terrain } from '../data/places';
 
 /** 6: los textos se guardan como mensajes (las de la 5 se convierten al cargar: `core/convert.ts`). */
 export const SAVE_VERSION = 7;
@@ -258,7 +260,9 @@ export type ExpKind =
   | 'noche'
   | 'aviso'
   | 'vuelta'
-  | 'llegada';
+  | 'llegada'
+  | 'suceso'
+  | 'eleccion';
 
 /** Una línea del diario: la hora (desde la salida), qué fue y el texto guardado. */
 export interface ExpLine {
@@ -270,10 +274,20 @@ export interface ExpLine {
   won?: boolean;
   /** En una pelea, contra quién (su número en `expediciones.enemigos.<rumbo>`). */
   foe?: number;
+  /** La pelea, para verla luego («Ver la pelea»): se vuelve a jugar igual. */
+  fight?: BossFight;
+}
+
+/** Un suceso esperando a que el jugador elija (o, al llegar `until`, eligen ellos). */
+export interface ExpChoice {
+  kind: ExpEvent;
+  /** Hora en que salió y hora hasta la que esperan. */
+  h: number;
+  until: number;
 }
 
 /** Por qué dieron la vuelta. */
-export type ExpTurn = 'raciones' | 'jugador' | 'herido' | 'caidos' | 'hambre';
+export type ExpTurn = 'raciones' | 'jugador' | 'herido' | 'caidos' | 'hambre' | 'guardian';
 
 /**
  * Una expedición (ver `core/expedition.ts`): sin destino, cada día más lejos. Corre por horas
@@ -292,17 +306,27 @@ export interface Expedition {
   /** Las que llevaban al salir. */
   took: number;
   /** Desde cuándo vuelven (hora) y a qué lejanía estaban. */
-  turn?: { h: number; dist: number; why: ExpTurn };
+  turn?: { h: number; dist: number; why: ExpTurn; idle?: number };
   /** Heridas de cada uno (con `EXP_HURT_DOWN`, en el suelo). */
   hurt: Record<string, number>;
   /** Lo que traen. */
-  bag: { gold: number; mats: Mats };
+  bag: { gold: number; mats: Mats; items?: Item[] };
   log: ExpLine[];
   /** Escalones de peligro ya avisados. */
   warned: number;
   /** Peleas ganadas y perdidas. */
   won: number;
   lost: number;
+  /** El suceso que espera a que elijas. */
+  pending?: ExpChoice;
+  /** Horas parados (esperando un suceso): no cuentan para la lejanía. */
+  idle?: number;
+  /** Silenciada: sin avisos y sin esperar (eligen ellos con prudencia). */
+  mute?: boolean;
+  /** Alguien que se les ha unido por el camino (al volver, pide entrar en el gremio). */
+  guest?: Hero;
+  /** Ya les salió el guardián (uno por expedición). */
+  guardian?: boolean;
 }
 
 /** Un encargo resuelto, para el historial (ver `GameState.questLog`). */
@@ -341,6 +365,8 @@ export interface Report {
   heading?: Txt;
   /** Pelea contra un jefe, guardada para verla (y repetirla). */
   fight?: BossFight;
+  /** Informe de una expedición: su diario (con sus peleas, para verlas luego). */
+  exp?: { log: ExpLine[] };
 }
 
 /** Quién peleó contra el jefe y cómo acabó cada uno (para pintar la pelea más tarde). */
@@ -362,6 +388,10 @@ export interface BossFight {
   }[];
   /** La pelea jugada de verdad (`core/combat.ts`): para repetirla igual. Sin ella, la de antes. */
   sim?: { setup: CombatSetup; orders: Order[]; auto?: boolean };
+  /** Pelea de expedición: contra quién (en vez del nombre del jefe), dónde y el paisaje. */
+  foe?: Txt;
+  where?: Txt;
+  terrain?: Terrain;
 }
 
 export interface Fallen {

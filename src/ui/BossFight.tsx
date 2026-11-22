@@ -13,7 +13,7 @@ import { Battle } from '../world/battle';
 import { lightSprite } from '../world/lighting';
 import { Particles } from '../world/particles';
 import { FightCrew, crewCard, type CrewCard } from './FightCrew';
-import { t } from '../textos';
+import { t, tx } from '../textos';
 
 interface Props {
   fight: Fight;
@@ -93,7 +93,9 @@ export function BossFight({ fight, onClose, onResult }: Props) {
   const [chosen, setChosen] = useState<string | null>(null);
   const [result, setResult] = useState<CombatResult | null>(null);
   const boss = BOSSES[fight.boss];
-  const terrain = PLACE_INFO[fight.place]?.terrain ?? 'campo';
+  const terrain = fight.terrain ?? PLACE_INFO[fight.place]?.terrain ?? 'campo';
+  // Pelea de expedición: su enemigo y dónde, en vez del jefe y su lugar.
+  const foeName = fight.foe ? tx(fight.foe) : boss.name;
   const sim = fight.sim;
   const playing = !!sim && !!onResult;
   // En vertical se encuadra más cerca (el escenario recortado por los lados).
@@ -320,13 +322,15 @@ export function BossFight({ fight, onClose, onResult }: Props) {
     <div
       class="bossfight"
       role="dialog"
-      aria-label={t('paneles.bossfight.pelea_contra', { short: boss.short })}
+      aria-label={t('paneles.bossfight.pelea_contra', { short: fight.foe ? foeName : boss.short })}
     >
       <header class="bossfight-head">
         <span class="eyebrow">
-          {t('paneles.bossfight.de_noche', { lugar: placeName(fight.place) })}
+          {fight.where
+            ? tx(fight.where)
+            : t('paneles.bossfight.de_noche', { lugar: placeName(fight.place) })}
         </span>
-        <b class="bossfight-name">{boss.name}</b>
+        <b class="bossfight-name">{foeName}</b>
         <div class="boss-hp" aria-label={`Vida: ${Math.round(hp * 100)} %`}>
           <i style={{ width: `${hp * 100}%` }} />
         </div>
@@ -396,7 +400,17 @@ export function BossFight({ fight, onClose, onResult }: Props) {
         )}
         {ended ? (
           <>
-            <p class={`bossfight-result ${won ? 'won' : 'lost'}`}>{won ? boss.win : boss.lose}</p>
+            <p class={`bossfight-result ${won ? 'won' : 'lost'}`}>
+              {fight.foe
+                ? t(
+                    won
+                      ? 'paneles.bossfight.expedicion_gana'
+                      : 'paneles.bossfight.expedicion_pierde',
+                  )
+                : won
+                  ? boss.win
+                  : boss.lose}
+            </p>
             <button class="btn btn-gold" onClick={onClose}>
               {t('paneles.bossfight.continuar')}
             </button>

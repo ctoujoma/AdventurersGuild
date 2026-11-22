@@ -526,6 +526,9 @@ fightcrew:
   cargando: "{nombre}, charging"
   corriendo: "running"
 bossfight:
+  # Pelea de una expedición (sin jefe de historia).
+  expedicion_gana: "They win the fight!"
+  expedicion_pierde: "They lose the fight and fall back."
   al_jefe: "at the boss"
   al_esbirro: "at the minion"
   pelea_contra: "Fight against {short}"

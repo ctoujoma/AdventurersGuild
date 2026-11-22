@@ -1,10 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { DAY_SECONDS, EXP_HURT_DOWN } from './balance';
-import { canExpedition, distAt, expSlots, partyCap, stepExpeditions } from './expedition';
+import {
+  canExpedition,
+  distAt,
+  expSlots,
+  optionIssue,
+  optionRisk,
+  partyCap,
+  stepExpeditions,
+} from './expedition';
 import { emptyStats } from './feats';
 import { endDay, newGame, reduce, tick } from './game';
 import type { GameState } from './model';
 import { tx } from '../textos';
+import { runCombat } from './combat';
 
 /** Una partida con veterano, comida de sobra y la sala de mapas a nivel 3 (4 por grupo). */
 function ready(seed = 'expedicion'): GameState {
@@ -98,5 +107,64 @@ describe('expediciones', () => {
     // Una pelea perdida con el otro en pie hace volver; aquí lo forzamos con un día largo lejos.
     s = play(s, 14);
     expect(s.expeditions ?? []).toHaveLength(0);
+  });
+});
+
+describe('expediciones: sucesos con decisión y peleas', () => {
+  /** Una expedición en marcha de un solo héroe (un guerrero) con un suceso a elegir. */
+  function waiting(kind: Parameters<typeof raiseFor>[1]) {
+    let s = ready('suceso');
+    const h = s.heroes[0]!;
+    h.cls = 'guerrero';
+    s = reduce(s, { type: 'expedition', heading: 'bosque', heroIds: [h.id], rations: 20 });
+    raiseFor(s, kind);
+    return s;
+  }
+  function raiseFor(s: GameState, kind: 'cofre' | 'guardian' | 'santuario') {
+    const e = s.expeditions![0]!;
+    e.pending = { kind, h: e.hours, until: e.hours + 6 };
+  }
+
+  it('esperan parados al plazo y, si nadie dice nada, eligen con prudencia', () => {
+    let s = waiting('cofre');
+    const e0 = structuredClone(s.expeditions![0]!);
+    s = play(s, 1);
+    const e = s.expeditions![0]!;
+    expect(e.pending).toBeUndefined();
+    expect(e.idle).toBeGreaterThanOrEqual(6);
+    expect(e.log.some((l) => tx(l.t).includes('prudencia'))).toBe(true);
+    expect(e.log.some((l) => tx(l.t).includes('Mejor no tocar'))).toBe(true);
+    expect(distAt(e)).toBeLessThan(distAt({ ...e, idle: 0 }) + 1e-9);
+    expect(e0.idle ?? 0).toBe(0);
+  });
+
+  it('las opciones de una clase que no va salen tachadas', () => {
+    const s = waiting('cofre');
+    const e = s.expeditions![0]!;
+    expect(optionIssue(s, e, 'forzar')).toBeNull();
+    expect(optionIssue(s, e, 'ganzua')).toMatch(/pícaro/);
+    expect(optionRisk(s, e, 'forzar').level).toBeGreaterThanOrEqual(0);
+  });
+
+  it('elegir resuelve ya; silenciar decide con prudencia', () => {
+    let s = waiting('cofre');
+    const id = s.expeditions![0]!.id;
+    s = reduce(s, { type: 'expChoose', id, option: 'forzar' });
+    expect(s.expeditions![0]!.pending).toBeUndefined();
+    let m = waiting('santuario');
+    m = reduce(m, { type: 'expMute', id: m.expeditions![0]!.id, on: true });
+    expect(m.expeditions![0]!.pending).toBeUndefined();
+    expect(m.expeditions![0]!.mute).toBe(true);
+  });
+
+  it('las peleas quedan guardadas y se repiten igual', () => {
+    let s = waiting('guardian');
+    const id = s.expeditions![0]!.id;
+    s = reduce(s, { type: 'expChoose', id, option: 'pelear' });
+    const f =
+      s.expeditions?.[0]?.log.find((l) => l.fight)?.fight ??
+      s.reports[0]?.exp?.log.find((l) => l.fight)?.fight;
+    expect(f).toBeTruthy();
+    expect(runCombat(f!.sim!.setup).won).toBe(f!.won);
   });
 });

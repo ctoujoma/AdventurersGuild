@@ -8529,3 +8529,89 @@ div.item-count {
 .exp-home {
   text-align: center;
 }
+.exp-mute {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  color: var(--text-soft);
+  font-size: var(--t-s);
+  cursor: pointer;
+}
+.exp-card {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0;
+  padding: 10px;
+  background: var(--sand);
+  box-shadow:
+    inset 0 0 0 2px var(--oak),
+    0 2px 0 var(--bark);
+}
+.exp-card.is-guardian {
+  box-shadow:
+    inset 0 0 0 3px var(--wine),
+    0 2px 0 var(--bark);
+}
+.exp-card-art {
+  display: grid;
+  place-items: center;
+  height: 56px;
+  background: linear-gradient(var(--leaf), var(--bark));
+  color: var(--lemon);
+}
+.exp-card-title {
+  margin: 0;
+  font-family: var(--pixel);
+  font-size: var(--t-l);
+}
+.exp-card-text {
+  margin: 0;
+}
+.exp-card-options {
+  display: grid;
+  gap: 6px;
+}
+.exp-option {
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+  padding: 6px 10px;
+  text-align: left;
+}
+.exp-option-hint {
+  font-family: var(--body);
+  font-size: var(--t-s);
+  opacity: 0.9;
+}
+.exp-option.is-struck b {
+  text-decoration: line-through;
+}
+.exp-risk.danger-bajo {
+  color: var(--lime);
+}
+.exp-risk.danger-medio {
+  color: var(--lemon);
+}
+.exp-risk.danger-alto {
+  color: var(--orange);
+}
+.exp-risk.danger-letal {
+  color: var(--red);
+}
+.exp-card-time {
+  display: grid;
+  gap: 2px;
+}
+.exp-watch {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 11px;
+  vertical-align: middle;
+}
+.exp-alert {
+  color: var(--wine);
+}

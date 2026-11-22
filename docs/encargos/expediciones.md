@@ -56,7 +56,7 @@ volver a ver).
 | # | Bloque | Estado |
 | --- | --- | --- |
 | 1 | Núcleo (`core/expedition.ts`: la expedición, días, raciones, curva, sucesos sencillos, vuelta sola, juego cerrado, simulador) + hoja de preparar + visor básico + bosque | Hecho (#208) |
-| 2 | Sucesos con decisión, cartas, opciones de clase, avisos, silenciar, guardianes y «Ver la pelea» | Pendiente |
+| 2 | Sucesos con decisión, cartas, opciones de clase, avisos, silenciar, guardianes y «Ver la pelea» | Hecho (#209) |
 | 3 | Mapa grande con niebla, parajes, fardos perdidos, récords y objetivos | Pendiente (depende del arte del mapa) |
 | 4 | Salida, vuelta, informe «La mochila», brillos por rareza y sonido | Pendiente |
 | 5 | Sierra, marismas y ruinas (antes, «En obras»); tiempo por rumbo; pociones y cristal en los talleres; carta del veterano y tutorial | Pendiente |
@@ -86,6 +86,31 @@ volver a ver).
   lejanía y unos 5 muertos cada 100 héroes.
 - **Ojo:** con el juego cerrado corre un día por día real; una expedición de 6–9 días tarda casi
   una semana si no se abre el juego.
+
+## Bloque 2, cómo quedó
+
+- **Sucesos con decisión** (`data/expEvents.ts`): cofre, santuario, mercader, viajero,
+  campamento abandonado, oso; parajes (cueva, atalaya, ruinas con runas) y el guardián. Cada
+  opción puede pedir una clase (si no va nadie de esa clase en pie, sale tachada: «Haría falta un
+  pícaro») y depender de un atributo. Lo que pasa al elegir, en `decide` (`core/expedition.ts`).
+- **Esperan parados** (`Expedition.pending`; las horas paradas, `idle`, no cuentan para la
+  lejanía): los encuentros hasta la noche, los parajes hasta un día, el guardián 12 horas (unos 3
+  minutos abierto). Al acabar el plazo, eligen la prudente. Igual abierto que cerrado.
+- **Carta en el visor** (`ui/ExpeditionCard.tsx`): cabecera (marcador hasta que llegue la
+  ilustración del agente de arte), texto, opciones con la pista de riesgo en palabras («seguro»,
+  «poco arriesgado», «arriesgado», «muy arriesgado», «depende de su Destreza»; sin explorador ni
+  sala de mapas a nivel 2, menos fina) y barra del plazo. **Silenciar**: sin avisos y eligen ellos
+  ya. **Avisos**: cada suceso y el guardián salen en los avisos de la barra.
+- **Peleas con el motor común** (`core/combat.ts`, como jefes: los del bosque pelean como la bestia
+  o el jabalí). Cada pelea, su enemigo más o menos fuerte (`EXP_FOE_SPREAD`) para que no esté
+  decidida; ajustado (`EXP_FOE`) para ganar más o menos lo mismo que la tirada del bloque 1. Las
+  heridas quitan vida al empezar. Todas se guardan en el diario y se ven con **«Ver la pelea»**
+  (`BossFight` acepta enemigo, sitio y paisaje propios). El diario va también en el informe
+  (`Report.exp`) para verlas al volver (la carta, en el bloque 4).
+- **Viajero que se une**: pelea con ellos y, al volver, espera en la barra como candidato.
+- **Objetos** (cueva, atalaya, ruinas, guardián): a la mochila y al arcón al volver.
+- **Simulador**: no elige nunca (esperan al plazo y van con prudencia): sin contratar, 3,9 días de
+  lejanía (antes 5) y ningún muerto en 60 partidas.
 
 ## Depende de otros
 

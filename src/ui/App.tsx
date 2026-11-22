@@ -1783,6 +1783,21 @@ export function App() {
               audio.play('select');
               dispatch({ type: 'expBack', id: openExp.id });
             }}
+            onChoose={(option) => {
+              audio.play('select');
+              const before = gameRef.current;
+              const next = dispatch({ type: 'expChoose', id: openExp.id, option });
+              // Si eligen pelear, la pelea se ve ya (la última del diario, si es de ahora).
+              const e = next.expeditions?.find((x) => x.id === openExp.id);
+              const last = e?.log.at(-1)?.fight ?? e?.log.at(-2)?.fight;
+              const fresh = next !== before && last && e && e.log.at(-1)!.h === e.hours;
+              if (fresh && last) setWatching({ fight: last, dawn: false });
+            }}
+            onMute={(on) => dispatch({ type: 'expMute', id: openExp.id, on })}
+            onWatch={(fight) => {
+              audio.play('open');
+              setWatching({ fight, dawn: false });
+            }}
           />
         )}
         {openTrip && (

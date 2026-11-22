@@ -640,6 +640,25 @@ export const EXP_HUNGER = 10;
 export const EXP_HOME_MORALE = 6;
 /** Avisos al adentrarse: cada tantos días de lejanía (peligro y botín, poco a poco). */
 export const EXP_STEP = 2;
+/** De los sucesos, la parte que son decisiones (de vuelta, la mitad). */
+export const EXP_CHOICES = 0.25;
+/**
+ * Las peleas van con el motor común (`core/combat.ts`): lo que pide la pelea en la escala de los
+ * desafíos (la suma del grupo), por este ajuste (medido para que gane lo mismo que la tirada de
+ * antes). Cada herida quita `EXP_HURT_HP` de la vida al empezar.
+ */
+export const EXP_FOE = 0.85;
+/** Cuánto más o menos fuerte sale cada enemigo (± esta parte). */
+export const EXP_FOE_SPREAD = 0.35;
+export const EXP_HURT_HP = 0.2;
+/**
+ * El guardián: desde `EXP_EVENTS_DEF.guardian.from` días, cada hora con `EXP_GUARDIAN` × (días − 3)
+ * de probabilidad (uno por expedición); pelea por `EXP_GUARDIAN_MULT` y espera `EXP_GUARDIAN_WAIT`
+ * horas (unos 3 minutos con el juego abierto) a que se mire.
+ */
+export const EXP_GUARDIAN = 0.006;
+export const EXP_GUARDIAN_MULT = 1.6;
+export const EXP_GUARDIAN_WAIT = 12;
 /**
  * Mejorar un objeto en su taller: hasta `TEMPER_MAX`; cada paso cuesta `TEMPER_GOLD` y
  * `TEMPER_HOURS` por el nivel al que llega, y tantos de su material como ese nivel.
