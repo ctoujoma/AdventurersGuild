@@ -3,8 +3,7 @@ import { audio, type Sfx } from '../audio/audio';
 import type { DawnEvent } from '../core/model';
 import { dawnPages, delayAfter, type Step } from './dawnSteps';
 import { Icon } from './icons';
-import { plural } from './text';
-import { tx } from '../textos';
+import { t, tx } from '../textos';
 
 interface Props {
   day: number;
@@ -102,9 +101,7 @@ export function Dawn({
         s.more ? (
           <li key={i} class="ev-more">
             <details>
-              <summary>
-                Y además, {s.list.length} {plural(s.list.length, 'cosa', 'cosas')} más
-              </summary>
+              <summary>{t('pantallas.dawn.y_ademas_mas', { n: s.list.length })}</summary>
               <ul class="dawn-events">
                 {s.list.map((e, j) => (
                   <Line key={j} e={e} />
@@ -118,24 +115,22 @@ export function Dawn({
       );
 
   return (
-    <div class="dawn" role="dialog" aria-label={`Amanece el día ${day}`}>
+    <div class="dawn" role="dialog" aria-label={t('pantallas.dawn.amanece_el_dia', { dia: day })}>
       <div class="dawn-sky" aria-hidden="true">
         <span class="dawn-sun" />
       </div>
       <article class="dawn-card" onClick={() => !done && reveal()}>
         {away ? (
           <>
-            <span class="eyebrow">Mientras no estabas</span>
-            <h2>
-              {away === 1 ? 'Ha pasado un día' : `Han pasado ${away} días`} · día {day}
-            </h2>
+            <span class="eyebrow">{t('pantallas.dawn.mientras_no_estabas')}</span>
+            <h2>{t('pantallas.dawn.han_pasado', { away, dia: day })}</h2>
             {!flat && pages[page]!.head && (
               <p class="dawn-page" key={page}>
                 {pages[page]!.head}
                 {pages.length > 1 && (
                   <small>
                     {' '}
-                    · {page + 1} de {pages.length}
+                    {t('pantallas.dawn.de', { pagina: page + 1, paginas: pages.length })}
                   </small>
                 )}
               </p>
@@ -143,18 +138,18 @@ export function Dawn({
           </>
         ) : (
           <>
-            <span class="eyebrow">Amanece sobre {name}</span>
-            <h2>Día {day}</h2>
+            <span class="eyebrow">{t('pantallas.dawn.amanece_sobre', { nombre: name })}</span>
+            <h2>{t('pantallas.dawn.dia_2', { dia: day })}</h2>
             <p class="quote">{flavor}</p>
           </>
         )}
         <ul class="dawn-events" aria-live="polite">
           {list}
-          {!events.length && <li class="ev ev-info">Una noche tranquila.</li>}
+          {!events.length && <li class="ev ev-info">{t('pantallas.dawn.una_noche_tranquila')}</li>}
         </ul>
         {!done && (
           <p class="dawn-tap" aria-hidden="true">
-            Toca para seguir
+            {t('pantallas.dawn.toca_para_seguir')}
           </p>
         )}
         <div class="dawn-actions">
@@ -162,7 +157,7 @@ export function Dawn({
             <>
               {done ? (
                 <button class="btn btn-gold" onClick={nextPage}>
-                  Día siguiente ›
+                  {t('pantallas.dawn.dia_siguiente')}
                 </button>
               ) : (
                 <button
@@ -172,7 +167,7 @@ export function Dawn({
                     skip();
                   }}
                 >
-                  Saltar
+                  {t('pantallas.dawn.saltar')}
                 </button>
               )}
             </>
@@ -181,24 +176,24 @@ export function Dawn({
               {unread > 0 && (
                 <button
                   class="btn btn-gold"
-                  aria-label={`Leer ${unread} ${plural(unread, 'carta', 'cartas')}`}
+                  aria-label={t('pantallas.dawn.leer_2', { unread })}
                   onClick={onMail}
                 >
-                  <Icon name="letter" size={16} /> Leer · {unread}
+                  <Icon name="letter" size={16} /> {t('pantallas.dawn.leer', { unread })}
                 </button>
               )}
               <button
                 class={`btn ${unread ? 'btn-wood' : 'btn-gold'}`}
-                aria-label="Abrir la taberna"
+                aria-label={t('pantallas.dawn.abrir_la_taberna')}
                 onClick={onClose}
               >
-                <Icon name="taberna" size={16} /> Abrir
+                <Icon name="taberna" size={16} /> {t('pantallas.dawn.abrir')}
               </button>
             </>
           )}
           {skipped && !all && onAlways && (
             <button class="linklike dawn-always" onClick={onAlways}>
-              Siempre de golpe
+              {t('pantallas.dawn.siempre_de_golpe')}
             </button>
           )}
         </div>

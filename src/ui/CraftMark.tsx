@@ -3,6 +3,7 @@ import { itemIcon, scissorsIcon } from '../art/items';
 import type { SceneCraft } from '../world/scene';
 import { BufferImage } from './BufferImage';
 import type { GameScene } from './SceneView';
+import { t } from '../textos';
 
 interface Props {
   craft: SceneCraft;
@@ -37,13 +38,17 @@ export function CraftMark({ craft, scene, aside, slot = 0 }: Props) {
     return () => cancelAnimationFrame(raf);
   }, [craft.room, slot]);
   const pct = Math.round(Math.max(0, Math.min(1, craft.frac)) * 100);
-  const what = craft.hero ? 'Vistiendo' : craft.undo ? 'Desmontando' : 'Haciendo';
+  const what = craft.hero
+    ? t('barra.craftmark.vistiendo')
+    : craft.undo
+      ? t('barra.craftmark.desmontando')
+      : t('barra.craftmark.haciendo');
   return (
     <div
       ref={ref}
       class={`craft-mark ${craft.stalled ? 'is-stalled' : ''} ${aside ? 'is-aside' : ''} ${craft.undo ? 'is-undo' : ''}`}
       role="status"
-      aria-label={`${what}: ${pct} %${craft.stalled ? ', parado (no hay nadie trabajando)' : ''}`}
+      aria-label={t('barra.craftmark.estado', { que: what, pct, parado: !!craft.stalled })}
     >
       <BufferImage
         buf={craft.hero ? scissorsIcon() : itemIcon(craft.icon, craft.rarity)}

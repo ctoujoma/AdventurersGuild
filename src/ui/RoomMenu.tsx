@@ -4,6 +4,7 @@ import type { GameState } from '../core/model';
 import { ROOMS } from '../data/rooms';
 import type { RoomScene } from '../world/rooms/RoomScene';
 import { Icon } from './icons';
+import { t } from '../textos';
 
 interface Props {
   scene: RoomScene;
@@ -53,7 +54,7 @@ export function RoomMenu({
   return (
     <div ref={ref} class="room-menu" role="toolbar" aria-label={`Obras: ${def.name}`}>
       <b class="room-menu-name">
-        {def.name} · nivel {room.level}
+        {t('barra.roommenu.nivel', { nombre: def.name, nivel: room.level })}
       </b>
       <div class="room-menu-row">
         <button
@@ -61,15 +62,15 @@ export function RoomMenu({
           disabled={cost === null}
           aria-label={
             cost === null
-              ? 'Ya está al máximo'
-              : `${room.level ? 'Mejorar' : 'Arreglar'} por ${cost}`
+              ? t('barra.roommenu.ya_esta_al_maximo')
+              : `${room.level ? t('barra.roommenu.mejorar') : t('barra.roommenu.arreglar')} por ${cost}`
           }
           onClick={() => onUpgrade(roomId)}
         >
           <Icon name="mejorar" size={20} />
           <span>
             {cost === null ? (
-              'Máx.'
+              t('barra.roommenu.max')
             ) : (
               <>
                 <Icon name="coin" size={8} /> {cost}
@@ -80,31 +81,42 @@ export function RoomMenu({
         {!def.fixed && (
           <button
             class="room-menu-btn"
-            aria-label="Mover"
+            aria-label={t('barra.roommenu.mover')}
             data-tut="mover"
             onClick={() => onMove(roomId)}
           >
             <Icon name="mover" size={20} />
-            <span>Mover</span>
+            <span>{t('barra.roommenu.mover')}</span>
           </button>
         )}
         {!def.fixed && (
           <button
             class="room-menu-btn"
-            aria-label={def.keep ? 'Quitar (hay que ponerla en otro sitio)' : 'Tirar'}
+            aria-label={
+              def.keep ? t('barra.roommenu.quitar_hay_que_ponerla') : t('barra.roommenu.tirar')
+            }
             onClick={() => onDemolish(roomId)}
           >
             <Icon name="papelera" size={20} />
-            <span>{def.keep ? 'Quitar' : 'Tirar'}</span>
+            <span>{def.keep ? t('barra.roommenu.quitar') : t('barra.roommenu.tirar')}</span>
           </button>
         )}
-        <button class="room-menu-btn" aria-label="Información" onClick={() => onInfo(roomId)}>
+        <button
+          class="room-menu-btn"
+          aria-label={t('barra.roommenu.informacion')}
+          onClick={() => onInfo(roomId)}
+        >
           <Icon name="info" size={20} />
-          <span>Info</span>
+          <span>{t('barra.roommenu.info')}</span>
         </button>
-        <button class="room-menu-btn" data-tut="cerrar" aria-label="Cerrar" onClick={onClose}>
+        <button
+          class="room-menu-btn"
+          data-tut="cerrar"
+          aria-label={t('barra.roommenu.cerrar')}
+          onClick={onClose}
+        >
           <Icon name="close" size={16} />
-          <span>Cerrar</span>
+          <span>{t('barra.roommenu.cerrar')}</span>
         </button>
       </div>
     </div>

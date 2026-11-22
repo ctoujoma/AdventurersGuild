@@ -1,5 +1,5 @@
 // Busca sitios donde un texto guardado (Txt/Msg) se enseña o se compara tal cual: {expr} en JSX
-// (también en atributos), ${expr} en plantillas y `+`, `===` y `!==`. Con `tx()` se escribe y con
+// (también en atributos), ${expr} en plantillas, `+`, `===` y `!==`, y listas unidas con `.join()`. Con `tx()` se escribe y con
 // `idText()` se compara. Uso: npm run textos:sin-tx (sale con error si encuentra algo).
 import ts from 'typescript';
 import { fileURLToPath } from 'node:url';
@@ -42,6 +42,16 @@ for (const sf of program.getSourceFiles()) {
         const t = checker.getTypeAtLocation(side);
         if (isMsgish(t)) report(sf, side);
       }
+    }
+    // Listas con mensajes unidas con `.join()` (saldría «[object Object]»).
+    if (
+      ts.isCallExpression(n) &&
+      ts.isPropertyAccessExpression(n.expression) &&
+      n.expression.name.text === 'join'
+    ) {
+      const arr = checker.getTypeAtLocation(n.expression.expression);
+      const el = checker.isArrayType(arr) ? checker.getTypeArguments(arr)[0] : undefined;
+      if (el && isMsgish(el)) report(sf, n.expression.expression);
     }
     if (e) {
       const t = checker.getTypeAtLocation(e);

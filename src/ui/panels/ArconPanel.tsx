@@ -7,7 +7,7 @@ import { tierOf, type Tier } from '../../art/tiers';
 import { MatShelf } from '../mats';
 import { ItemImage } from '../ItemImage';
 import { ItemGrid, itemScore, type GridEntry } from '../ItemGrid';
-import { CLASS_NAMES } from '../../data/labels';
+import { CLASS_NAMES, skillName } from '../../data/labels';
 import { skill, type SkillId } from '../../core/party';
 import { BufferImage } from '../BufferImage';
 import { help } from '../HoldHelp';
@@ -16,7 +16,8 @@ import { Portrait } from '../Portrait';
 import { Tabs } from '../Tabs';
 import { lookOf, marksOf, memberOf, heroFrame } from '../view';
 import { SLOTS, SLOT_NAMES, priceOf, slotOf, type Slot } from '../../core/gear';
-import { tx } from '../../textos';
+import { t, tx } from '../../textos';
+import { placeName } from '../../data/places';
 
 export type ArconTab = 'equipo' | 'tesoros' | 'trofeos';
 
@@ -39,7 +40,7 @@ function Sell({ name, value, onSell }: { name: string; value: number; onSell: ()
   return (
     <button
       class="btn btn-wood"
-      aria-label={`Vender ${name} por ${value} monedas`}
+      aria-label={t('paneles.arcon.vender_por_monedas', { nombre: name, valor: value })}
       onClick={onSell}
     >
       <Icon name="coin" size={12} /> {value}
@@ -49,10 +50,10 @@ function Sell({ name, value, onSell }: { name: string; value: number; onSell: ()
 
 type Filter = 'todo' | Slot;
 const FILTERS: [Filter, string][] = [
-  ['todo', 'Todo'],
+  ['todo', t('paneles.arcon.todo')],
   ['arma', 'Arma'],
-  ['cuerpo', 'Cuerpo'],
-  ['complemento', 'Complemento'],
+  ['cuerpo', t('paneles.arcon.cuerpo')],
+  ['complemento', t('paneles.arcon.complemento')],
 ];
 
 /** A quién se da un objeto: los retratos de los de casa, con lo que gana cada uno. */
@@ -68,7 +69,11 @@ function GivePicks({
   onGive: (heroId: string) => void;
 }) {
   return (
-    <div class="picks arcon-picks" role="group" aria-label={`¿A quién le das ${itemName(it)}?`}>
+    <div
+      class="picks arcon-picks"
+      role="group"
+      aria-label={t('paneles.arcon.a_quien_le_das', { item_name: itemName(it) })}
+    >
       {takers.map((h) => {
         const slot = slotOf(it) ?? 'arma';
         const was = h.worn?.[slot];
@@ -83,10 +88,14 @@ function GivePicks({
             key={h.id}
             class="pick"
             aria-label={[
-              `Dárselo a ${h.name}`,
-              `${CLASS_NAMES[h.cls][h.sex]} de nivel ${h.lvl}`,
-              was ? `cambia ${itemName(was)}` : `${SLOT_NAMES[slot].toLowerCase()} libre`,
-              ...gains.map((g) => `${g.k} de ${g.now} a ${g.then}`),
+              t('paneles.arcon.darselo_a', { nombre: h.name }),
+              t('paneles.arcon.de_nivel', { clase: CLASS_NAMES[h.cls][h.sex], nivel: h.lvl }),
+              was
+                ? t('paneles.arcon.cambia', { objeto: itemName(was) })
+                : t('paneles.arcon.libre', { ranura: SLOT_NAMES[slot].toLowerCase() }),
+              ...gains.map((g) =>
+                t('paneles.arcon.sube', { hab: skillName(g.k), antes: g.now, despues: g.then }),
+              ),
             ].join('. ')}
             onClick={() => onGive(h.id)}
           >
@@ -106,11 +115,17 @@ function GivePicks({
               </span>
               {gains.map((g) => (
                 <span key={g.k} class={g.then > g.now ? 'up' : ''}>
-                  {g.k.slice(0, 3)} {g.now} → {g.then}
+                  {t('paneles.arcon.sube_corto', {
+                    hab: skillName(g.k).slice(0, 3),
+                    antes: g.now,
+                    despues: g.then,
+                  })}
                 </span>
               ))}
               <span class="pick-gear">
-                {was ? `cambia ${itemName(was)}` : `${SLOT_NAMES[slot].toLowerCase()} libre`}
+                {was
+                  ? t('paneles.arcon.cambia', { objeto: itemName(was) })
+                  : t('paneles.arcon.libre', { ranura: SLOT_NAMES[slot].toLowerCase() })}
               </span>
             </span>
           </button>
@@ -177,18 +192,31 @@ export function ArconPanel({
     <>
       <MatShelf game={game} />
       <Tabs
-        label="Arcón"
+        label={t('paneles.arcon.arcon')}
         value={tab}
         onChange={onTab}
         tabs={[
-          { id: 'equipo', label: 'Piezas', icon: 'espadas', count: stock.length + worn.length },
-          { id: 'tesoros', label: 'Tesoros', icon: 'cofre', count: treasures.length },
+          {
+            id: 'equipo',
+            label: t('paneles.arcon.piezas'),
+            icon: 'espadas',
+            count: stock.length + worn.length,
+          },
+          {
+            id: 'tesoros',
+            label: t('paneles.arcon.tesoros'),
+            icon: 'cofre',
+            count: treasures.length,
+          },
           {
             id: 'trofeos',
-            label: 'Trofeos',
+            label: t('paneles.arcon.trofeos'),
             icon: 'trofeo',
             count: game.trophies.length,
-            help: `Caben ${TROPHY_SLOTS} en la pared del salón; cada uno expuesto suma ${TROPHY_APPEAL} de Atractivo y trae más visitantes.`,
+            help: t('paneles.arcon.caben_en_la_pared', {
+              trophy_slots: TROPHY_SLOTS,
+              trophy_appeal: TROPHY_APPEAL,
+            }),
           },
         ]}
       />
@@ -196,7 +224,7 @@ export function ArconPanel({
       {tab === 'equipo' && (
         <>
           <Tabs
-            label="Filtrar por ranura"
+            label={t('paneles.arcon.filtrar_por_ranura')}
             value={filter}
             onChange={(f) => {
               setFilter(f);
@@ -207,12 +235,14 @@ export function ArconPanel({
           />
           <div class="item-count">
             <span class="row-sub">
-              {entries.length} {entries.length === 1 ? 'objeto' : 'objetos'}
-              {worn.length ? ` · ${worn.length} ${worn.length === 1 ? 'puesto' : 'puestos'}` : ''} ·
-              lo mejor primero
+              {t('paneles.arcon.lo_mejor_primero', { n: entries.length, puestos: worn.length })}
             </span>
             {tierList.length > 1 && (
-              <span class="tier-pips" role="group" aria-label="Filtrar por nivel">
+              <span
+                class="tier-pips"
+                role="group"
+                aria-label={t('paneles.arcon.filtrar_por_nivel')}
+              >
                 {tierList.map(([t, { n, name }]) => (
                   <button
                     key={t}
@@ -235,12 +265,12 @@ export function ArconPanel({
           {!entries.length && (
             <p class="panel-note">
               {filter === 'todo'
-                ? 'Vacío. Los encargos con «+ objeto» traen equipo, y los talleres lo hacen.'
-                : 'Nada de esta ranura.'}
+                ? t('paneles.arcon.vacio_los_encargos_con')
+                : t('paneles.arcon.nada_de_esta_ranura')}
             </p>
           )}
           <ItemGrid
-            label="Equipo"
+            label={t('paneles.arcon.equipo')}
             entries={entries}
             selected={sel}
             onPick={(k) => {
@@ -248,7 +278,7 @@ export function ArconPanel({
               setGiving(false);
             }}
           />
-          <p class="row-sub item-hint">Toca para elegir · mantén pulsado para verlo</p>
+          <p class="row-sub item-hint">{t('paneles.arcon.toca_para_elegir_manten')}</p>
           {chosen && (
             <div class="item-bar">
               {giving && !chosen.who && (
@@ -289,7 +319,7 @@ export function ArconPanel({
                           setSel(null);
                         }}
                       >
-                        Quitar
+                        {t('paneles.arcon.quitar')}
                       </button>
                     )}
                   </>
@@ -301,7 +331,7 @@ export function ArconPanel({
                       aria-expanded={giving}
                       onClick={() => setGiving(!giving)}
                     >
-                      <Icon name="heroe" size={12} /> Dar
+                      <Icon name="heroe" size={12} /> {t('paneles.arcon.dar')}
                     </button>
                     <Sell
                       name={itemName(chosen.it)}
@@ -322,7 +352,7 @@ export function ArconPanel({
       {tab === 'tesoros' && (
         <>
           {!treasures.length && (
-            <p class="panel-note">Vacío. Joyas, reliquias y demás cosas de valor acaban aquí.</p>
+            <p class="panel-note">{t('paneles.arcon.vacio_joyas_reliquias_y')}</p>
           )}
           <div class="rows">
             {treasures.map((it) => (
@@ -340,26 +370,35 @@ export function ArconPanel({
       {tab === 'trofeos' && (
         <>
           {!game.trophies.length && (
-            <p class="panel-note">
-              Un éxito brillante en un encargo peligroso deja un trofeo para la pared del salón.
-            </p>
+            <p class="panel-note">{t('paneles.arcon.un_exito_brillante_en')}</p>
           )}
           <div class="rows">
-            {game.trophies.map((t, i) => (
-              <article key={t.id} class="row">
-                <BufferImage buf={trophyIcon(t.icon)} scale={2} />
+            {game.trophies.map((trophy, i) => (
+              <article key={trophy.id} class="row">
+                <BufferImage buf={trophyIcon(trophy.icon)} scale={2} />
                 <span
                   class="row-info"
                   {...help(
-                    `${tx(t.desc)} Lo trajeron ${tx(t.who)} de ${t.place}, el día ${t.day}.`,
+                    t('paneles.arcon.lo_trajeron_de_el', {
+                      desc: tx(trophy.desc),
+                      quien: tx(trophy.who),
+                      lugar: placeName(trophy.place),
+                      dia: trophy.day,
+                    }),
                   )}
                 >
-                  <b>{tx(t.name)}</b>
+                  <b>{tx(trophy.name)}</b>
                   <span class="row-sub">
-                    {i < TROPHY_SLOTS ? 'En la pared del salón' : 'Guardado: no queda pared'}
+                    {i < TROPHY_SLOTS
+                      ? t('paneles.arcon.en_la_pared_del')
+                      : t('paneles.arcon.guardado_no_queda_pared')}
                   </span>
                 </span>
-                <Sell name={tx(t.name)} value={t.value} onSell={() => onSellTrophy(t.id)} />
+                <Sell
+                  name={tx(trophy.name)}
+                  value={trophy.value}
+                  onSell={() => onSellTrophy(trophy.id)}
+                />
               </article>
             ))}
           </div>

@@ -54,6 +54,7 @@ import { FAR_Z, NEAR_Z, type BedSpot } from './people';
 import type { PoiKind, TaskPoi } from './salas/kit';
 import { STEP_UP, stepladder } from './salas/pintor';
 import { STRIPE, stripeOf } from './pintura';
+import { t } from '../../textos';
 
 /**
  * Una sala que se está pintando, para el pintor: la pared (x del mundo de un lado al otro y
@@ -84,10 +85,10 @@ const VISITOR_LOOK: Record<string, OutfitId> = {
   espia: 'forastero',
 };
 const VISITOR_NAME: Record<string, string> = {
-  campesino: 'Campesino',
-  mercader: 'Mercader',
-  noble: 'Noble',
-  espia: 'Forastero callado',
+  campesino: t('escena.crowd.campesino'),
+  mercader: t('escena.crowd.mercader'),
+  noble: t('escena.crowd.noble'),
+  espia: t('escena.crowd.forastero_callado'),
 };
 const SPEED = 36;
 /**
@@ -1625,8 +1626,8 @@ export class Crowd {
     if (this.actors.size >= MAX_ACTORS) return;
     this.add({
       id: STRANGER_ID,
-      name: 'Forastero encapuchado',
-      title: 'Junto al fuego, esperando',
+      name: t('escena.crowd.forastero_encapuchado'),
+      title: t('escena.crowd.junto_al_fuego_esperando'),
       status: 'ok',
       look: strangerLook(),
       marks: {},
@@ -1657,8 +1658,8 @@ export class Crowd {
     if (this.actors.size >= MAX_ACTORS) return;
     this.add({
       id: MESSENGER_ID,
-      name: 'Mensajero',
-      title: 'Llama a la puerta con un farol',
+      name: t('escena.crowd.mensajero'),
+      title: t('escena.crowd.llama_a_la_puerta'),
       status: 'ok',
       look: messengerLook(m.day, m.sex),
       marks: {},
@@ -1734,7 +1735,7 @@ export class Crowd {
     );
     this.add({
       id,
-      name: VISITOR_NAME[kind] ?? 'Visitante',
+      name: VISITOR_NAME[kind] ?? t('escena.crowd.visitante'),
       status: 'ok',
       look,
       marks: {},
@@ -2087,7 +2088,7 @@ export class Crowd {
   /** Un bandido que aparece en un sitio. */
   addBandit(id: string, look: SceneHero['look'], marks: SceneHero['marks'], p: Place): void {
     if (this.actors.has(id)) return;
-    this.add({ id, name: 'Bandido', status: 'ok', look, marks, bandit: true });
+    this.add({ id, name: t('escena.crowd.bandido'), status: 'ok', look, marks, bandit: true });
     const a = this.actors.get(id)!;
     this.put(a, p);
     a.pose = 'stand';
@@ -2480,7 +2481,7 @@ export class Crowd {
   hoverOf(id: string): string {
     const h = this.actors.get(id)?.hero;
     if (!h) return '';
-    const sub = h.title ?? (h.visitor ? 'De visita en el salón' : '');
+    const sub = h.title ?? (h.visitor ? t('escena.crowd.de_visita_en_el') : '');
     return sub ? `${h.name}\n${sub}` : h.name;
   }
 

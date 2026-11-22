@@ -8,13 +8,12 @@ import { Combat, STEP, type CombatResult, type Order } from '../core/combat';
 import { critReady } from '../core/fight';
 import type { BossFight as Fight } from '../core/model';
 import { BOSSES, type BossKind } from '../data/bosses';
-import { PLACE_INFO } from '../data/places';
+import { PLACE_INFO, placeName } from '../data/places';
 import { Battle } from '../world/battle';
 import { lightSprite } from '../world/lighting';
 import { Particles } from '../world/particles';
 import { FightCrew, crewCard, type CrewCard } from './FightCrew';
-
-const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+import { t } from '../textos';
 
 interface Props {
   fight: Fight;
@@ -66,7 +65,12 @@ function crewOf(c: Combat, fight: Fight): CrewCard[] {
       name: u.name.split(' ')[0]!,
       look: h ? lookFor(h) : undefined,
       marks: h ? { eyepatch: h.eyepatch, scar: h.scar, gear: h.gear } : undefined,
-      note: u.target === 'jefe' ? 'al jefe' : u.target ? 'al esbirro' : '',
+      note:
+        u.target === 'jefe'
+          ? t('paneles.bossfight.al_jefe')
+          : u.target
+            ? t('paneles.bossfight.al_esbirro')
+            : '',
     });
   });
 }
@@ -313,9 +317,15 @@ export function BossFight({ fight, onClose, onResult }: Props) {
     downed ? (downed.includes(h.id) ? 'herido' : 'ok') : h.fate;
 
   return (
-    <div class="bossfight" role="dialog" aria-label={`Pelea contra ${boss.short}`}>
+    <div
+      class="bossfight"
+      role="dialog"
+      aria-label={t('paneles.bossfight.pelea_contra', { short: boss.short })}
+    >
       <header class="bossfight-head">
-        <span class="eyebrow">{capitalize(fight.place)}, de noche</span>
+        <span class="eyebrow">
+          {t('paneles.bossfight.de_noche', { lugar: placeName(fight.place) })}
+        </span>
         <b class="bossfight-name">{boss.name}</b>
         <div class="boss-hp" aria-label={`Vida: ${Math.round(hp * 100)} %`}>
           <i style={{ width: `${hp * 100}%` }} />
@@ -347,7 +357,7 @@ export function BossFight({ fight, onClose, onResult }: Props) {
         <div class="bossfight-crew">
           <FightCrew
             crew={party}
-            label="El grupo"
+            label={t('paneles.bossfight.el_grupo')}
             playing={playing}
             chosen={chosen}
             onCrit={takeCrit}
@@ -366,8 +376,8 @@ export function BossFight({ fight, onClose, onResult }: Props) {
       {playing && !ended && (
         <p class="bossfight-hint">
           {chosen
-            ? 'Toca un enemigo para que vaya a por él.'
-            : 'Arrastra a un héroe hasta un enemigo (o tócalo y luego al enemigo). Si sale un rombo sobre un héroe, tócalo a tiempo: golpe crítico. Cuando el jefe avise, ¡cubríos!'}
+            ? t('paneles.bossfight.toca_un_enemigo_para')
+            : t('paneles.bossfight.arrastra_a_un_heroe')}
         </p>
       )}
       <footer class="bossfight-foot">
@@ -388,12 +398,12 @@ export function BossFight({ fight, onClose, onResult }: Props) {
           <>
             <p class={`bossfight-result ${won ? 'won' : 'lost'}`}>{won ? boss.win : boss.lose}</p>
             <button class="btn btn-gold" onClick={onClose}>
-              Continuar
+              {t('paneles.bossfight.continuar')}
             </button>
           </>
         ) : (
           <button class="btn btn-wood bossfight-skip" onClick={() => skipRef.current()}>
-            {playing ? 'Que se las apañen' : 'Saltar'}
+            {playing ? t('paneles.bossfight.que_se_las_apanen') : t('paneles.bossfight.saltar')}
           </button>
         )}
       </footer>
@@ -415,22 +425,30 @@ export function BossCall({ fight, who, live, onWatch, onLater }: CallProps) {
   const boss = BOSSES[fight.boss];
   return (
     <div class="card-backdrop">
-      <article class="herocard eventcard bosscall" role="dialog" aria-label="Pelea contra un jefe">
+      <article
+        class="herocard eventcard bosscall"
+        role="dialog"
+        aria-label={t('paneles.bossfight.pelea_contra_un_jefe')}
+      >
         <div class="qs-scroll">
           <span class="eyebrow">
-            {live ? 'Ahora mismo' : 'Esta noche'}, en {fight.place}…
+            {t('paneles.bossfight.cuando_donde', { ahora: live, lugar: placeName(fight.place) })}
           </span>
           <p class="event-text">
-            {who} {fight.heroes.length > 1 ? 'han dado' : 'ha dado'} con {boss.short}.
+            {t('paneles.bossfight.con', {
+              quien: who,
+              varios: fight.heroes.length > 1,
+              short: boss.short,
+            })}
           </p>
           <div class="event-options">
             <button class="btn btn-gold" onClick={onWatch}>
-              <span>Verlo ahora</span>
-              <small>La pelea, desde el principio</small>
+              <span>{t('paneles.bossfight.verlo_ahora')}</span>
+              <small>{t('paneles.bossfight.la_pelea_desde_el')}</small>
             </button>
             <button class="btn btn-wood" onClick={onLater}>
-              <span>Ahora no</span>
-              <small>Queda en el informe para verla luego</small>
+              <span>{t('paneles.bossfight.ahora_no')}</span>
+              <small>{t('paneles.bossfight.queda_en_el_informe')}</small>
             </button>
           </div>
         </div>
@@ -454,24 +472,34 @@ export function BossWait({ boss, place, who, many, onWatch, onAuto, onLater }: W
   const b = BOSSES[boss];
   return (
     <div class="card-backdrop">
-      <article class="herocard eventcard bosscall" role="dialog" aria-label="Un grupo ante su jefe">
+      <article
+        class="herocard eventcard bosscall"
+        role="dialog"
+        aria-label={t('paneles.bossfight.un_grupo_ante_su')}
+      >
         <div class="qs-scroll">
-          <span class="eyebrow">Ahora mismo, en {place}…</span>
+          <span class="eyebrow">
+            {t('paneles.bossfight.ahora_mismo_en', { lugar: placeName(place) })}
+          </span>
           <p class="event-text">
-            {who} {many ? 'han dado' : 'ha dado'} con {b.short}. Esperan a que digas.
+            {t('paneles.bossfight.con_esperan_a_que', {
+              quien: who,
+              varios: many,
+              short: b.short,
+            })}
           </p>
           <div class="event-options">
             <button class="btn btn-gold" onClick={onWatch}>
-              <span>Ver la pelea</span>
-              <small>Desde el principio</small>
+              <span>{t('paneles.bossfight.ver_la_pelea')}</span>
+              <small>{t('paneles.bossfight.desde_el_principio')}</small>
             </button>
             <button class="btn btn-wood" onClick={onAuto}>
-              <span>Que se las apañen</span>
-              <small>Se resuelve sola y queda en el informe</small>
+              <span>{t('paneles.bossfight.que_se_las_apanen')}</span>
+              <small>{t('paneles.bossfight.se_resuelve_sola_y')}</small>
             </button>
             <button class="btn btn-wood" onClick={onLater}>
-              <span>Luego</span>
-              <small>Esperan hasta la noche; si no, se las apañan</small>
+              <span>{t('paneles.bossfight.luego')}</span>
+              <small>{t('paneles.bossfight.esperan_hasta_la_noche')}</small>
             </button>
           </div>
         </div>

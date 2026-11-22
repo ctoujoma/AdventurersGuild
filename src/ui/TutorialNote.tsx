@@ -2,6 +2,7 @@ import { useState } from 'preact/hooks';
 import type { GameState } from '../core/model';
 import { payReady, type TutorialSkip, type TutorialStep } from '../core/tutorial';
 import { Icon } from './icons';
+import { t } from '../textos';
 
 interface Props {
   game: GameState;
@@ -19,10 +20,10 @@ interface Props {
 }
 
 const LABEL: Record<'seguir' | TutorialSkip, string> = {
-  seguir: 'Seguir',
-  vuelta: 'Saltar hasta que vuelvan',
-  noche: 'Pasar la noche',
-  pago: 'Saltar al día 7',
+  seguir: t('pantallas.tutorialnote.seguir'),
+  vuelta: t('pantallas.tutorialnote.saltar_hasta_que_vuelvan'),
+  noche: t('pantallas.tutorialnote.pasar_la_noche'),
+  pago: t('pantallas.tutorialnote.saltar_al_dia_7'),
 };
 
 /**
@@ -67,7 +68,7 @@ export function TutorialNote({
         key={step.id}
         class={`notebook-mini ${peek ? 'is-open' : ''}`}
         role="status"
-        aria-label="Cuaderno de Fausto"
+        aria-label={t('pantallas.tutorialnote.cuaderno_de_fausto')}
         // Solo el ratón: en una pantalla táctil, tocar ya abre y cierra.
         onPointerEnter={(e) => e.pointerType === 'mouse' && setHover(true)}
         onPointerLeave={(e) => e.pointerType === 'mouse' && setHover(false)}
@@ -78,7 +79,7 @@ export function TutorialNote({
           onClick={() => setPinned((p) => !(p || hover))}
         >
           <Icon name="libro" size={12} />
-          <span>{step.short?.(game) ?? 'Del cuaderno'}</span>
+          <span>{step.short?.(game) ?? t('pantallas.tutorialnote.del_cuaderno')}</span>
         </button>
         {peek && <p>{step.text(game)}</p>}
         {action}
@@ -89,15 +90,15 @@ export function TutorialNote({
       key={step.id}
       class={`notebook ${up ? 'up' : ''}`}
       role="status"
-      aria-label="Cuaderno de Fausto"
+      aria-label={t('pantallas.tutorialnote.cuaderno_de_fausto')}
     >
       <span class="notebook-head">
-        <Icon name="libro" size={12} /> Del cuaderno de Fausto
+        <Icon name="libro" size={12} /> {t('pantallas.tutorialnote.del_cuaderno_de_fausto')}
       </span>
       <p>{step.text(game)}</p>
       {closing && (
         <p class="notebook-close">
-          <Icon name="close" size={12} /> Antes, cierra lo que tienes abierto.
+          <Icon name="close" size={12} /> {t('pantallas.tutorialnote.antes_cierra_lo_que')}
         </p>
       )}
       <div class="notebook-actions">
@@ -110,13 +111,13 @@ export function TutorialNote({
               setPinned(false);
             }}
           >
-            Entendido
+            {t('pantallas.tutorialnote.entendido')}
           </button>
         )}
         {action}
         {step.id !== 'fin' && step.id !== 'o-fin' && (
           <button class="notebook-skip" onClick={onSkipAll}>
-            Ya sé jugar
+            {t('pantallas.tutorialnote.ya_se_jugar')}
           </button>
         )}
       </div>

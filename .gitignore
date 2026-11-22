@@ -8,3 +8,5 @@ tools/shots/_*.mjs
 # Copias de trabajo de los agentes
 .claude/worktrees
 textos.csv
+# Idioma falso para probar (npm run textos:falso).
+src/textos/xx/

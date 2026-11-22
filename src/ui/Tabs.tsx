@@ -1,5 +1,6 @@
 import { help } from './HoldHelp';
 import { Icon, type IconName } from './icons';
+import { t } from '../textos';
 
 export interface TabItem<T extends string> {
   id: T;
@@ -24,22 +25,22 @@ interface Props<T extends string> {
 export function Tabs<T extends string>({ tabs, value, onChange, label }: Props<T>) {
   return (
     <div class="segs" role="tablist" aria-label={label}>
-      {tabs.map((t) => (
+      {tabs.map((tab) => (
         <button
-          key={t.id}
+          key={tab.id}
           role="tab"
           class="seg"
-          data-tut={`seg-${t.id}`}
-          aria-selected={value === t.id}
-          onClick={() => onChange(t.id)}
-          {...(t.help ? help(t.help) : {})}
+          data-tut={`seg-${tab.id}`}
+          aria-selected={value === tab.id}
+          onClick={() => onChange(tab.id)}
+          {...(tab.help ? help(tab.help) : {})}
         >
-          {t.icon && <Icon name={t.icon} size={14} />}
-          <span>{t.label}</span>
-          {t.count !== undefined && <b class="seg-n">{t.count}</b>}
-          {!!t.alert && (
-            <span class="seg-alert" aria-label={`${t.alert} pendientes`}>
-              {t.alert}
+          {tab.icon && <Icon name={tab.icon} size={14} />}
+          <span>{tab.label}</span>
+          {tab.count !== undefined && <b class="seg-n">{tab.count}</b>}
+          {!!tab.alert && (
+            <span class="seg-alert" aria-label={t('barra.tabs.pendientes', { n: tab.alert })}>
+              {tab.alert}
             </span>
           )}
         </button>

@@ -11,6 +11,7 @@ import type { GardenEdgeId, GardenGroundId, GardenPieceId, RoofId } from '../../
 import { beam as paintBeam, stoneWall } from '../paint';
 import { roofAt } from './fachada';
 import { oakTree, piece, well } from '../props';
+import { t } from '../../textos';
 
 /** Profundidad del pie de las piezas de los trozos (detrás de la gente que cruza). */
 export const PIECE_Z = 62;
@@ -360,7 +361,7 @@ export function verge(w: number): PixelBuffer {
     w,
     6,
     (b) => {
-      const rng = new Rng('canto del jardin');
+      const rng = new Rng(t('escena.jardin.canto_del_jardin'));
       for (let x = 0; x < w; x++) {
         if (rng.chance(0.25)) continue;
         const h = rng.weighted([
@@ -650,7 +651,7 @@ function balustrade(b: PixelBuffer, x: number, y: number, w: number) {
  */
 export function hedgeFace(w: number, h: number, seed: string, seg = 46): PixelBuffer {
   const b = new PixelBuffer(w, h);
-  const rng = new Rng(`cara de seto ${seed}`);
+  const rng = new Rng(t('escena.jardin.cara_de_seto', { seed }));
   for (let x = 0; x < w; x++) {
     const u = x % seg;
     if (u >= seg - 2) continue;
@@ -696,7 +697,7 @@ export function leafTex(w: number, h: number, seed: string, top = false): PixelB
  */
 export function flowerFace(w: number, h: number, seed: string, top = false): PixelBuffer {
   const b = new PixelBuffer(w, h);
-  const rng = new Rng(`macizo corrido ${seed}`);
+  const rng = new Rng(t('escena.jardin.macizo_corrido', { seed }));
   for (let x = 0; x < w; x++) {
     const t = top ? 0 : Math.round(1 + Math.sin(x * 0.35) * 0.8 + rng.int(0, 1));
     for (let y = t; y < h; y++) {

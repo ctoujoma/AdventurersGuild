@@ -3,6 +3,7 @@ import type { GameState, Room } from '../../core/model';
 import { LOCKED, worksOpen } from '../../core/rooms';
 import { ROOMS } from '../../data/rooms';
 import { Icon } from '../icons';
+import { t } from '../../textos';
 
 interface Props {
   game: GameState;
@@ -12,18 +13,25 @@ interface Props {
 }
 
 const FLOOR_NAME = (f: number) =>
-  f === 0 ? 'Planta baja' : f > 0 ? `Planta ${f}` : f === -1 ? 'Sótano' : `Sótano ${-f}`;
+  f === 0
+    ? t('paneles.obras.planta_baja')
+    : f > 0
+      ? t('paneles.obras.planta', { f })
+      : f === -1
+        ? t('paneles.obras.sotano')
+        : t('paneles.obras.sotano_2', { n: -f });
 
 /** Estado corto de una sala para la lista. */
 function stateOf(r: Room): string {
   if (r.works)
     return r.works.kind === 'build'
-      ? 'en obras'
+      ? t('paneles.obras.en_obras')
       : r.works.kind === 'move'
-        ? 'mudándose'
-        : 'ampliándose';
-  if (r.level === 0) return r.type === 'torre' ? 'sin levantar' : 'rota';
-  return `nivel ${r.level}`;
+        ? t('paneles.obras.mudandose')
+        : t('paneles.obras.ampliandose');
+  if (r.level === 0)
+    return r.type === 'torre' ? t('paneles.obras.sin_levantar') : t('paneles.obras.rota');
+  return t('paneles.obras.nivel', { n: r.level });
 }
 
 /**
@@ -40,7 +48,7 @@ export function ObrasPanel({ game, planning, onRoom, onPlan }: Props) {
       {!open && <p class="panel-note">{LOCKED}</p>}
       {open && !planning && (
         <button class="btn btn-gold obras-plan" onClick={onPlan}>
-          <Icon name="martillo" size={16} /> Modo obras
+          <Icon name="martillo" size={16} /> {t('paneles.obras.modo_obras')}
         </button>
       )}
       <section class="obras-floors">

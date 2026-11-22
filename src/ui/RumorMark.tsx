@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'preact/hooks';
 import type { Rumor } from '../core/model';
 import { Icon } from './icons';
 import type { GameScene } from './SceneView';
+import { t } from '../textos';
 
 interface Props {
   rumor: Rumor;
@@ -45,11 +46,11 @@ export function RumorMark({ rumor, room, clock, speed, scene, onTake }: Props) {
       class="rumor"
       data-tut="rumor"
       style={{ '--left': frac }}
-      aria-label={`Un rumor en la barra. Tócalo para apuntarlo. Quedan ${secs} s.`}
+      aria-label={t('barra.rumormark.un_rumor_en_la', { seg: secs })}
       onClick={onTake}
     >
       <Icon name="star" size={14} />
-      <span>¿Qué se oye?</span>
+      <span>{t('barra.rumormark.que_se_oye')}</span>
       <i class="rumor-bar" aria-hidden="true" style={{ width: `${Math.round(frac * 100)}%` }} />
     </button>
   );

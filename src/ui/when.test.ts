@@ -5,7 +5,6 @@ describe('plazos', () => {
   it('lo que dura, en días', () => {
     expect(span(1)).toBe('1 día');
     expect(span(3)).toBe('3 días');
-    expect(span(2, 'noche', 'noches')).toBe('2 noches');
     expect(shortSpan(4)).toBe('4d');
   });
 

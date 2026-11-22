@@ -27,7 +27,7 @@ import { Portrait } from './Portrait';
 import { heroFrame, lookOf, marksOf, memberOf } from './view';
 import { GARMENTS, TINTS, TINT_IDS, type Dress, type GarmentId, type TintId } from '../data/custom';
 import { SLOTS, SLOT_NAMES, gearList, shownItem, slotOf, type Slot } from '../core/gear';
-import { idText, tx } from '../textos';
+import { idText, t, tx } from '../textos';
 
 interface Props {
   game: GameState;
@@ -79,7 +79,9 @@ function DressMenu({
   const swatch = (id: TintId | undefined, label: string, bg?: string) => {
     const why = id && !hasUnlock(game, `tint:${id}`) ? unlockSource(`tint:${id}`) : null;
     const lock = id && !hasUnlock(game, `tint:${id}`);
-    const text = lock ? `${label}. ${why ? `Se gana con: ${why}` : 'Aún no lo tenéis'}` : label;
+    const text = lock
+      ? `${label}. ${why ? t('ficha.herocard.se_gana_con', { why }) : t('ficha.herocard.aun_no_lo_teneis')}`
+      : label;
     return (
       <button
         key={id ?? 'nada'}
@@ -92,7 +94,9 @@ function DressMenu({
         style={bg ? { background: bg } : undefined}
         onClick={() => {
           if (lock)
-            return setLocked(`${label}: ${why ? `se gana con ${why}` : 'aún no lo tenéis'}.`);
+            return setLocked(
+              t('ficha.herocard.bloqueado', { que: label, hay: !!why, como: why ?? '' }),
+            );
           setLocked(null);
           setDraft({ ...draft, dye: id });
         }}
@@ -105,17 +109,17 @@ function DressMenu({
     st.state === 'ok' && !game.workers.some((w) => w.room === st.room && w.trade === 'sastreria');
   return (
     <div class="room-tint dress-menu">
-      <span class="row-sub">Tinte de la ropa</span>
-      <div class="tav-swatches" role="radiogroup" aria-label="Tinte de la ropa">
-        {swatch(undefined, 'Sin tinte')}
+      <span class="row-sub">{t('ficha.herocard.tinte_de_la_ropa')}</span>
+      <div class="tav-swatches" role="radiogroup" aria-label={t('ficha.herocard.tinte_de_la_ropa')}>
+        {swatch(undefined, t('ficha.herocard.sin_tinte'))}
         {TINT_IDS.map((id) => {
           const [, d, m, l] = TINTS[id].ramp;
           return swatch(id, TINTS[id].name, `linear-gradient(${l} 0 30%, ${m} 30% 70%, ${d} 70%)`);
         })}
       </div>
       {locked && <small class="lock-why">{locked}</small>}
-      <span class="row-sub">Prenda</span>
-      <div class="tav-symbols" role="radiogroup" aria-label="Prenda">
+      <span class="row-sub">{t('ficha.herocard.prenda')}</span>
+      <div class="tav-symbols" role="radiogroup" aria-label={t('ficha.herocard.prenda')}>
         {([undefined, ...(Object.keys(GARMENTS) as GarmentId[])] as const).map((g) => (
           <button
             key={g ?? 'nada'}
@@ -124,17 +128,19 @@ function DressMenu({
             class={`btn ${draft.garment === g ? 'btn-gold' : 'btn-wood'}`}
             onClick={() => setDraft({ ...draft, garment: g })}
           >
-            {g ? GARMENTS[g].name : 'Nada'}
+            {g ? GARMENTS[g].name : t('ficha.herocard.nada')}
           </button>
         ))}
       </div>
       {sw ? (
         <p class="dress-state" role="status">
           {sw.walking
-            ? `${h.name} va de camino a la sastrería.`
+            ? t('ficha.herocard.va_de_camino_a', { nombre: h.name })
             : sw.hoursLeft === null
-              ? `${h.name} espera en la sastrería: no hay quien cosa.`
-              : `Le están cosiendo: acaba en ${Math.max(1, Math.ceil(sw.hoursLeft))} h.`}
+              ? t('ficha.herocard.espera_en_la_sastreria', { nombre: h.name })
+              : t('ficha.herocard.le_estan_cosiendo_acaba', {
+                  horas: Math.max(1, Math.ceil(sw.hoursLeft)),
+                })}
         </p>
       ) : st.state === 'ok' ? (
         <>
@@ -143,16 +149,17 @@ function DressMenu({
             onClick={() => onDressAt?.(st.room, draft)}
             disabled={!onDressAt}
           >
-            <Icon name="coin" size={12} /> Encargar a la sastrería · {st.cost}
+            <Icon name="coin" size={12} />{' '}
+            {t('ficha.herocard.encargar_a_la_sastreria', { coste: st.cost })}
           </button>
           <small class="lock-why">
             {noTailor
-              ? 'No hay sastre en la sastrería: no avanzará hasta que pongas a alguien.'
-              : `${h.name} irá andando y el sastre le vestirá.`}
+              ? t('ficha.herocard.no_hay_sastre_en')
+              : t('ficha.herocard.ira_andando_y_el', { nombre: h.name })}
           </small>
         </>
       ) : st.state === 'same' ? (
-        <small class="lock-why">Así va ahora. Elige otro tinte o prenda.</small>
+        <small class="lock-why">{t('ficha.herocard.asi_va_ahora_elige')}</small>
       ) : (
         <>
           <button class="btn btn-wood dress-go locked" disabled>
@@ -161,14 +168,14 @@ function DressMenu({
             ) : (
               <Icon name="coin" size={12} />
             )}{' '}
-            Encargar a la sastrería · {DRESS_GOLD}
+            {t('ficha.herocard.encargar_a_la_sastreria', { coste: DRESS_GOLD })}
           </button>
           <small class="lock-why">{st.why}</small>
         </>
       )}
       {onDress && st.state !== 'same' && (
         <button class="btn btn-wood dress-go" onClick={() => onDress(draft)}>
-          Probar gratis (modo prueba)
+          {t('ficha.herocard.probar_gratis_modo_prueba')}
         </button>
       )}
     </div>
@@ -232,7 +239,7 @@ function GearDoll({
     ));
   return (
     <div class="doll">
-      <div class="doll-slots" role="radiogroup" aria-label="Equipo">
+      <div class="doll-slots" role="radiogroup" aria-label={t('ficha.herocard.equipo')}>
         {SLOTS.map((sl) => {
           const it = h.worn?.[sl];
           return (
@@ -240,7 +247,12 @@ function GearDoll({
               key={sl}
               role="radio"
               aria-checked={sel === sl}
-              aria-label={`${SLOT_NAMES[sl]}: ${it ? itemName(it) : 'nada'}${better.has(sl) ? '. Hay algo mejor en el arcón' : ''}`}
+              aria-label={t('ficha.herocard.ranura', {
+                ranura: SLOT_NAMES[sl],
+                lleva: !!it,
+                objeto: it ? itemName(it) : '',
+                mejor: better.has(sl),
+              })}
               class={`doll-slot tier-${tierOf(it?.rarity)} ${it ? '' : 'is-empty'} ${sel === sl ? 'is-sel' : ''} ${better.has(sl) ? 'has-better' : ''}`}
               onClick={() => setSel(sel === sl ? null : sl)}
             >
@@ -298,10 +310,10 @@ function GearDoll({
                     </small>
                   </>
                 ) : (
-                  <small>{SLOT_NAMES[sel]}: no lleva nada.</small>
+                  <small>{t('ficha.herocard.no_lleva_nada', { ranura: SLOT_NAMES[sel] })}</small>
                 )}
                 {canGear && !picked && fits.length > 0 && (
-                  <small class="swap-hint">Toca uno del arcón para compararlo.</small>
+                  <small class="swap-hint">{t('ficha.herocard.toca_uno_del_arcon')}</small>
                 )}
               </span>
             </div>
@@ -309,7 +321,7 @@ function GearDoll({
               <div class="swap-btns">
                 {was && (
                   <button class="btn btn-wood" onClick={() => onUnequip(sel)}>
-                    Quitar
+                    {t('ficha.herocard.quitar')}
                   </button>
                 )}
                 {picked && (
@@ -320,7 +332,7 @@ function GearDoll({
                       setPick(null);
                     }}
                   >
-                    {was ? 'Cambiar' : 'Ponérselo'}
+                    {was ? t('ficha.herocard.cambiar') : t('ficha.herocard.ponerselo')}
                   </button>
                 )}
               </div>
@@ -328,7 +340,7 @@ function GearDoll({
           </div>
           {canGear && fits.length > 0 && (
             <ItemGrid
-              label={`Del arcón: ${SLOT_NAMES[sel].toLowerCase()}`}
+              label={t('ficha.herocard.del_arcon', { ranura: SLOT_NAMES[sel].toLowerCase() })}
               tut="equipar"
               entries={fits.map((it) => ({ it, key: it.id }))}
               selected={pick}
@@ -337,8 +349,10 @@ function GearDoll({
           )}
           {canGear && !fits.length && (
             <span class="row-sub">
-              En el arcón no hay nada de {SLOT_NAMES[sel].toLowerCase()}.
-              {game.inventory.length ? '' : ' Los encargos con «+ objeto» pueden traer equipo.'}
+              {t('ficha.herocard.en_el_arcon_no', {
+                ranura: SLOT_NAMES[sel].toLowerCase(),
+                vacio: !game.inventory.length,
+              })}
             </span>
           )}
         </div>
@@ -348,9 +362,9 @@ function GearDoll({
 }
 
 const ATTRS = [
-  ['F', 'Fuerza'],
-  ['D', 'Destreza'],
-  ['M', 'Mente'],
+  ['F', t('ficha.herocard.fuerza')],
+  ['D', t('ficha.herocard.destreza')],
+  ['M', t('ficha.herocard.mente')],
 ] as const;
 
 /** Lo que se ha desplegado debajo de los botones: la tarea o el equipo. */
@@ -413,7 +427,12 @@ export function HeroCard({
   const task = taskLabel(game, h.id);
   const toggle = (o: Open) => setOpen(open === o ? null : o);
   const chips = [
-    { id: 'perk', label: perk.name, cls: 'trait-perk', desc: `Habilidad de clase. ${perk.desc}` },
+    {
+      id: 'perk',
+      label: perk.name,
+      cls: 'trait-perk',
+      desc: t('ficha.herocard.habilidad_de_clase', { desc: perk.desc }),
+    },
     ...h.traits.map((t) => ({
       id: t.id,
       label: traitLabel(t, h.sex),
@@ -428,9 +447,14 @@ export function HeroCard({
       <article
         class="herocard herosheet"
         onClick={(e) => e.stopPropagation()}
-        aria-label={`Ficha de ${h.name}`}
+        aria-label={t('ficha.herocard.ficha_de', { nombre: h.name })}
       >
-        <button class="btn-icon herocard-x" data-tut="cerrar" aria-label="Cerrar" onClick={onClose}>
+        <button
+          class="btn-icon herocard-x"
+          data-tut="cerrar"
+          aria-label={t('ficha.herocard.cerrar')}
+          onClick={onClose}
+        >
           <Icon name="close" size={14} />
         </button>
         <div class="qs-scroll">
@@ -440,7 +464,7 @@ export function HeroCard({
               marks={marksOf(h)}
               frame={heroFrame(h)}
               scale={2}
-              label={`Retrato de ${h.name}`}
+              label={t('ficha.herocard.retrato_de', { nombre: h.name })}
             />
             <div class="herocard-id">
               {naming ? (
@@ -460,17 +484,17 @@ export function HeroCard({
                     maxLength={24}
                     defaultValue={h.name}
                     autoFocus
-                    aria-label="Nombre"
+                    aria-label={t('ficha.herocard.nombre')}
                   />
                   <button class="btn btn-gold" data-tut="nombre-ok">
-                    Vale
+                    {t('ficha.herocard.vale')}
                   </button>
                 </form>
               ) : onRename && !candidate ? (
                 <button
                   data-tut="nombre"
                   class="linklike rename-btn"
-                  aria-label={`Cambiar el nombre de ${h.name}`}
+                  aria-label={t('ficha.herocard.cambiar_el_nombre_de', { nombre: h.name })}
                   onClick={() => setNaming(true)}
                 >
                   <h3>{h.name}</h3>
@@ -480,9 +504,9 @@ export function HeroCard({
               )}
               {h.nick && <span class="nick">{tx(h.nick)}</span>}
               <span class="row-sub">
-                {CLASS_NAMES[h.cls][h.sex]} · nivel {h.lvl} · <Icon name="coin" size={10} />
-                {candidate ? `${h.fee} + ` : ''}
-                {h.salary}/sem
+                {t('ficha.herocard.nivel', { clase: CLASS_NAMES[h.cls][h.sex], nivel: h.lvl })}{' '}
+                <Icon name="coin" size={10} />
+                {t('ficha.herocard.sem', { prima: candidate, fichaje: h.fee, sueldo: h.salary })}
               </span>
               {/* En casa, lo que hace ya lo dice el botón de su tarea. */}
               {(candidate || h.status !== 'ok') && (
@@ -495,10 +519,13 @@ export function HeroCard({
                   <div
                     class="meter"
                     {...help(
-                      `Experiencia: al llegar a ${XP_PER_LEVEL} sube de nivel, rinde más y cobra más. Desde el nivel ${VET_LEVEL} es veterano.`,
+                      t('ficha.herocard.experiencia_al_llegar_a', {
+                        xp_per_level: XP_PER_LEVEL,
+                        vet_level: VET_LEVEL,
+                      }),
                     )}
                   >
-                    <span>XP</span>
+                    <span>{t('ficha.herocard.xp')}</span>
                     <span class="track">
                       <i class="xp" style={{ width: `${(h.xp / XP_PER_LEVEL) * 100}%` }} />
                     </span>
@@ -507,10 +534,13 @@ export function HeroCard({
                   <div
                     class="meter"
                     {...help(
-                      `${MORALE_INFO[band].label[h.sex]} ${MORALE_INFO[band].desc} Baja con los viajes, los fracasos, la guardia (de guardia no se duerme) y tras una semana sin salir de aventura; sube descansando.`,
+                      t('ficha.herocard.baja_con_los_viajes', {
+                        animo: MORALE_INFO[band].label[h.sex],
+                        desc: MORALE_INFO[band].desc,
+                      }),
                     )}
                   >
-                    <span>Moral</span>
+                    <span>{t('ficha.herocard.moral')}</span>
                     <span class="track">
                       <i class={moraleK} style={{ width: `${h.morale}%` }} />
                     </span>
@@ -522,15 +552,15 @@ export function HeroCard({
           </div>
           {!candidate && !gone && (
             <Tabs
-              label={`Ficha de ${h.name}`}
+              label={t('ficha.herocard.ficha_de', { nombre: h.name })}
               value={view}
               onChange={(v) => {
                 if (v === 'ropa' && !dressing) setDraft(h.dress ?? {});
                 setView(v);
               }}
               tabs={[
-                { id: 'ficha', label: 'Ficha', icon: 'heroe' },
-                { id: 'ropa', label: 'Ropa y colores', icon: 'tijeras' },
+                { id: 'ficha', label: t('ficha.herocard.ficha'), icon: 'heroe' },
+                { id: 'ropa', label: t('ficha.herocard.ropa_y_colores'), icon: 'tijeras' },
               ]}
             />
           )}
@@ -553,61 +583,64 @@ export function HeroCard({
                   role="status"
                   {...help(
                     h.request === 'cache'
-                      ? `«Nivel ${h.lvl}. Ya no soy un cualquiera, y mi precio tampoco.» Si se lo niegas, se lo tomará muy mal: ${CACHE_GRUDGE.days} días sin pasar de cierto ánimo.`
-                      : `«Con lo que me pagas no me llega ni para la cerveza.» Si se lo niegas, se lo guardará: ${REFUSE_GRUDGE.days} días sin animarse del todo.`,
+                      ? t('ficha.herocard.nivel_ya_no_soy', {
+                          nivel: h.lvl,
+                          dias: CACHE_GRUDGE.days,
+                        })
+                      : t('ficha.herocard.con_lo_que_me', { dias: REFUSE_GRUDGE.days }),
                   )}
                 >
                   <span>
-                    <b>{h.request === 'cache' ? 'Pide su caché de veterano' : 'Pide un aumento'}</b>
-                    : +{requestAmount(h)} por semana.
+                    <b>
+                      {h.request === 'cache'
+                        ? t('ficha.herocard.pide_su_cache_de')
+                        : t('ficha.herocard.pide_un_aumento')}
+                    </b>
+                    {t('ficha.herocard.por_semana', { oro: requestAmount(h) })}
                   </span>
                   <div class="herocard-actions">
                     <button class="btn btn-gold" onClick={() => onAnswer(true)}>
-                      <Icon name="coin" size={12} /> {h.salary + requestAmount(h)}/sem
+                      <Icon name="coin" size={12} />{' '}
+                      {t('ficha.herocard.sem_2', { sueldo: h.salary + requestAmount(h) })}
                     </button>
                     <button class="btn btn-wood" onClick={() => onAnswer(false)}>
-                      No
+                      {t('ficha.herocard.no')}
                     </button>
                   </div>
                 </div>
               )}
 
               {!candidate && !gone && h.grudge && h.grudge.until > game.day && (
-                <p
-                  class="row-sub room-bad"
-                  {...help(
-                    'Le negaste lo que pedía y se lo guarda: su moral no sube del todo. Se le pasa con los días o si le pagas lo siguiente que pida.',
-                  )}
-                >
-                  {h.sex === 'f' ? 'Resentida' : 'Resentido'}: moral −{h.grudge.cap} de tope ·{' '}
-                  {h.grudge.until - game.day} {h.grudge.until - game.day === 1 ? 'día' : 'días'}
+                <p class="row-sub room-bad" {...help(t('ficha.herocard.le_negaste_lo_que'))}>
+                  {t('ficha.herocard.resentido', {
+                    sexo: h.sex,
+                    tope: h.grudge.cap,
+                    dias: h.grudge.until - game.day,
+                  })}
                 </p>
               )}
               {!candidate && !gone && h.veil && h.veil > game.day && (
-                <p
-                  class="row-sub room-bad"
-                  {...help(
-                    'Volvió de entre los muertos y aún no se ha hecho a estar vivo: su moral no sube del todo. Se le pasa con los días.',
-                  )}
-                >
-                  Vuelto del velo: moral −{VEIL_CAP} de tope · {h.veil - game.day}{' '}
-                  {h.veil - game.day === 1 ? 'día' : 'días'}
+                <p class="row-sub room-bad" {...help(t('ficha.herocard.volvio_de_entre_los'))}>
+                  {t('ficha.herocard.vuelto_del_velo_moral', {
+                    veil_cap: VEIL_CAP,
+                    dias: h.veil - game.day,
+                  })}
                 </p>
               )}
               {!candidate && !gone && h.vetSnub && (
-                <p class="row-sub room-bad">
-                  Quiere dormir en el ala de veteranos: mientras no tenga cama allí, se anima menos.
-                </p>
+                <p class="row-sub room-bad">{t('ficha.herocard.quiere_dormir_en_el')}</p>
               )}
               {!candidate && !gone && (
                 <div class="acts">
                   {canTask && (
                     <button
-                      class={`act ${task !== 'Descansa' ? 'on' : ''}`}
+                      class={`act ${task !== t('ficha.crew.descansa') ? 'on' : ''}`}
                       aria-expanded={open === 'trabajo'}
-                      aria-label={`Tarea: ${task}`}
+                      aria-label={t('ficha.herocard.tarea', { tarea: task })}
                       {...help(
-                        `Mientras está en casa puede descansar (recupera la moral), echar una mano en una sala (rinde menos que un trabajador), entrenar o hacer guardia (no sale de misión, pega +${GUARD_BONUS} si asaltan y da la alarma; caben dos; no duerme, así que no recupera moral y la va perdiendo: hay que ir relevando). También puedes llevarlo con el dedo a la sala.`,
+                        t('ficha.herocard.mientras_esta_en_casa', {
+                          guard_bonus: GUARD_BONUS,
+                        }),
                       )}
                       onClick={() => toggle('trabajo')}
                     >
@@ -620,11 +653,13 @@ export function HeroCard({
                       data-tut="equipo"
                       class={`act ${wornShown ? 'on' : ''}`}
                       aria-expanded={open === 'equipo'}
-                      aria-label={`${
-                        worn.length
-                          ? `Equipo (${worn.length} de ${SLOTS.length}): ${worn.map(itemName).join(', ')}`
-                          : 'Equipo: no lleva nada'
-                      }${gearHint ? `. ${gearHint}` : ''}`}
+                      aria-label={t('ficha.herocard.equipo_de', {
+                        n: worn.length,
+                        de: SLOTS.length,
+                        objetos: worn.map(itemName),
+                        hay_pista: !!gearHint,
+                        pista: gearHint ?? '',
+                      })}
                       {...(gearHint ? help(gearHint) : {})}
                       onClick={() => toggle('equipo')}
                     >
@@ -658,12 +693,16 @@ export function HeroCard({
                           );
                         })}
                       </span>
-                      Equipo
+                      {t('ficha.herocard.equipo')}
                     </button>
                   )}
-                  <button class="act" onClick={onLocate} {...help('Ver dónde está en la taberna.')}>
+                  <button
+                    class="act"
+                    onClick={onLocate}
+                    {...help(t('ficha.herocard.ver_donde_esta_en'))}
+                  >
                     <Icon name="home" size={18} />
-                    Ver
+                    {t('ficha.herocard.ver')}
                   </button>
                 </div>
               )}
@@ -725,13 +764,13 @@ export function HeroCard({
         </div>
         {dressing ? null : confirm ? (
           <div class="confirm">
-            <span>¿Despedir a {h.name}? Se va hoy y no vuelve.</span>
+            <span>{t('ficha.herocard.despedir_a_se_va', { nombre: h.name })}</span>
             <div class="herocard-actions">
               <button class="btn btn-red" onClick={onFire}>
-                Sí, despedir
+                {t('ficha.herocard.si_despedir')}
               </button>
               <button class="btn btn-wood" onClick={() => setConfirm(false)}>
-                No
+                {t('ficha.herocard.no')}
               </button>
             </div>
           </div>
@@ -739,12 +778,12 @@ export function HeroCard({
           <div class="herocard-actions">
             {candidate && (
               <button class="btn btn-gold" disabled={!!why} onClick={onHire}>
-                <Icon name="coin" size={14} /> Contratar · {h.fee}
+                <Icon name="coin" size={14} /> {t('ficha.herocard.contratar', { paga: h.fee })}
               </button>
             )}
             {candidate && (
               <button class="btn btn-wood" onClick={onLocate}>
-                <Icon name="home" size={14} /> Ver
+                <Icon name="home" size={14} /> {t('ficha.herocard.ver')}
               </button>
             )}
             {!candidate && h.history.length > 0 && (
@@ -753,12 +792,12 @@ export function HeroCard({
                 aria-expanded={history}
                 onClick={() => setHistory(!history)}
               >
-                <Icon name="historia" size={14} /> Historia
+                <Icon name="historia" size={14} /> {t('ficha.herocard.historia')}
               </button>
             )}
             {home && (
               <button class="btn btn-wood" onClick={() => setConfirm(true)}>
-                <Icon name="papelera" size={14} /> Despedir
+                <Icon name="papelera" size={14} /> {t('ficha.herocard.despedir')}
               </button>
             )}
           </div>

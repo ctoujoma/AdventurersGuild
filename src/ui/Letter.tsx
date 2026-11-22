@@ -1,6 +1,7 @@
 import { render } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
+import type { Material } from '../core/materials';
 import type { Custom, Hero, Report } from '../core/model';
 import { CREST_COLORS, sealInitial } from '../data/custom';
 import { OUTCOME_CLASS, outcomeLabel } from '../data/labels';
@@ -9,7 +10,7 @@ import { Icon } from './icons';
 import { MatIcon, chipMat } from './mats';
 import { Portrait } from './Portrait';
 import { lookOf, marksOf, heroFrame } from './view';
-import { tx } from '../textos';
+import { t, tx } from '../textos';
 
 interface Props {
   report: Report;
@@ -34,7 +35,8 @@ function flyMats(root: HTMLElement): void {
   const r = target.getBoundingClientRect();
   const to = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
   for (const chip of root.querySelectorAll<HTMLElement>('[data-mat]')) {
-    const m = chipMat(chip.dataset.mat ?? '');
+    const [mat, n] = (chip.dataset.mat ?? '').split(':');
+    const m = mat ? { m: mat as Material, n: Number(n) } : null;
     if (!m) continue;
     const c = chip.getBoundingClientRect();
     flyTo(
@@ -86,7 +88,12 @@ export function Letter({ report: r, heroes, seal, onClose, onWatch }: Props) {
         onClick={(e) => e.stopPropagation()}
         aria-label={`Informe: ${tx(r.title)}`}
       >
-        <button class="btn-icon herocard-x" data-tut="cerrar" aria-label="Cerrar" onClick={close}>
+        <button
+          class="btn-icon herocard-x"
+          data-tut="cerrar"
+          aria-label={t('pantallas.letter.cerrar')}
+          onClick={close}
+        >
           <Icon name="close" size={14} />
         </button>
         <div class="qs-scroll">
@@ -97,14 +104,14 @@ export function Letter({ report: r, heroes, seal, onClose, onWatch }: Props) {
           >
             {sealInitial(seal.name)}
           </span>
-          <span class="eyebrow">Informe · día {r.day}</span>
+          <span class="eyebrow">{t('pantallas.letter.informe_dia', { dia: r.day })}</span>
           <h3 class={`outcome outcome-${OUTCOME_CLASS[r.outcome]}`}>
             {r.heading
               ? tx(r.heading)
               : r.raid
                 ? r.raid.won
-                  ? 'Asalto repelido'
-                  : 'Saqueo'
+                  ? t('pantallas.letter.asalto_repelido')
+                  : t('pantallas.letter.saqueo')
                 : outcomeLabel(r.outcome)}
           </h3>
           <b class="letter-title">{tx(r.title)}</b>
@@ -132,12 +139,12 @@ export function Letter({ report: r, heroes, seal, onClose, onWatch }: Props) {
           </div>
           <div class="chips" ref={chipsRef}>
             {r.chips.map((c, i) => {
-              const m = chipMat(tx(c.t));
+              const m = chipMat(c.t);
               return (
                 <span
                   key={i}
                   class={`chip chip-${c.k} ${m ? 'chip-mat' : ''}`}
-                  data-mat={m ? tx(c.t) : undefined}
+                  data-mat={m ? `${m.m}:${m.n}` : undefined}
                 >
                   {m && <MatIcon m={m.m} size={12} />}
                   {tx(c.t)}
@@ -147,10 +154,10 @@ export function Letter({ report: r, heroes, seal, onClose, onWatch }: Props) {
           </div>
           {onWatch && (
             <button class="btn btn-wood letter-watch" onClick={onWatch}>
-              <Icon name="espadas" size={14} /> Ver la batalla
+              <Icon name="espadas" size={14} /> {t('pantallas.letter.ver_la_batalla')}
             </button>
           )}
-          <p class="sign">— anotado en el libro del gremio</p>
+          <p class="sign">{t('pantallas.letter.anotado_en_el_libro')}</p>
         </div>
       </article>
     </div>

@@ -209,6 +209,7 @@ import {
 } from './textures';
 import { BACK, EYE, LIFT, eyeOf, frustum, pinShift, project, scaleAt, type View } from './view3d';
 import { GAME_TOP, SPOT } from './salas/recibidor';
+import { t } from '../../textos';
 
 /** Duración del día de la escena hasta que anochece (el reloj de verdad llega con el día vivo). */
 const DAY_LENGTH = 720;
@@ -410,11 +411,11 @@ const haloOf = (r: number, power: number, fire: boolean) =>
 
 /** Lo que se lee al pasar el ratón por encima de cada cosa tocable de las salas. */
 const ACT_LABEL: Record<ActId, string> = {
-  tablon: 'Tablón de encargos',
-  mapa: 'Mapa de la comarca',
-  candidatos: 'La barra: quien busca trabajo',
-  equipo: 'Equipo del gremio',
-  fuera: 'Quién está fuera',
+  tablon: t('escena.roomscene.tablon_de_encargos'),
+  mapa: t('escena.roomscene.mapa_de_la_comarca'),
+  candidatos: t('escena.roomscene.la_barra_quien_busca'),
+  equipo: t('escena.roomscene.equipo_del_gremio'),
+  fuera: t('escena.roomscene.quien_esta_fuera'),
 };
 
 /** Iconos de 7×5 de los bocadillos (k negro, r rojo, w blanco, g oro, y limón, o roble, m plata, t y c pan). */
@@ -491,9 +492,12 @@ export function roomLabel(b: Building, id: string): string {
   const r = b.rooms.find((x) => x.id === id);
   if (!r) return '';
   const name = ROOMS[r.type].name;
-  if (r.works) return `${name} (en obras)`;
-  if (r.level === 0) return r.type === 'torre' ? `${name} (sin levantar)` : `${name} (rota)`;
-  return `${name} · nivel ${r.level}`;
+  if (r.works) return t('escena.roomscene.en_obras', { nombre: name });
+  if (r.level === 0)
+    return r.type === 'torre'
+      ? t('escena.roomscene.sin_levantar', { nombre: name })
+      : `${name} (rota)`;
+  return t('escena.roomscene.nivel', { nombre: name, nivel: r.level });
 }
 
 export class RoomScene {
@@ -4062,7 +4066,7 @@ export class RoomScene {
     if (T)
       this.plane(
         g,
-        lid(Math.round(xr - xl), T / 2, 'fondo lomo'),
+        lid(Math.round(xr - xl), T / 2, /* no es texto */ 'fondo lomo'),
         [at(xl, top, zb), at(xr, top, zb), at(xr, top, zb + T), at(xl, top, zb + T)],
         o,
       );
@@ -4086,7 +4090,7 @@ export class RoomScene {
       const [a, c] = right ? [xi, xo] : [xo, xi];
       this.plane(
         g,
-        lid(Math.round(c - a), T, `lado lomo${xo}`),
+        lid(Math.round(c - a), T, /* no es texto */ `lado lomo${xo}`),
         [at(a, top, z0), at(c, top, z0), at(c, top, zb), at(a, top, zb)],
         o,
       );
@@ -4169,7 +4173,7 @@ export class RoomScene {
 
   private plantGrass(L: RoomsLayout, classic: Group, mood: Group): void {
     const moodArt = new Map<string, PixelBuffer>();
-    const rng = new Rng('matas del patio');
+    const rng = new Rng(t('escena.roomscene.matas_del_patio'));
     const kinds: TuftKind[] = ['mata', 'mata', 'alta', 'flores', 'trebol', 'mata', 'alta'];
     const art = new Map<string, ReturnType<typeof grassTuft>>();
     // Las 220 de siempre y, con luz con ambiente, 140 matas de flores más (el suelo ya no lleva

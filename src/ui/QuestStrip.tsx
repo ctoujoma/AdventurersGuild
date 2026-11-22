@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'preact/hooks';
 import type { JourneyNow } from '../core/journey';
 import { STRIP_H, TripStrip, homeFrom } from '../world/tripStrip';
+import { t } from '../textos';
 
 /** Ancho de la tira en píxeles del dibujo, más o menos: la escala sale de cuánto cabe. */
 const AIM_W = 200;
@@ -55,16 +56,16 @@ export function QuestStrip({ now }: { now: JourneyNow }) {
   }, []);
 
   const what = now.waiting
-    ? 'El grupo, parado ante el jefe'
+    ? t('barra.queststrip.el_grupo_parado_ante')
     : now.fighting
-      ? 'El grupo, peleando'
+      ? t('barra.queststrip.el_grupo_peleando')
       : now.t >= homeFrom(now).back
         ? homeFrom(now).fast
-          ? 'El grupo, en retirada'
-          : 'El grupo, de vuelta a casa'
+          ? t('barra.queststrip.el_grupo_en_retirada')
+          : t('barra.queststrip.el_grupo_de_vuelta')
         : now.leg === 'ida'
-          ? 'El grupo, de camino'
-          : 'El grupo, en el sitio';
+          ? t('barra.queststrip.el_grupo_de_camino')
+          : t('barra.queststrip.el_grupo_en_el');
   return (
     <div ref={box} class={`trip-strip ${now.night ? 'is-night' : ''}`} data-strip>
       <canvas ref={canvas} class="trip-strip-canvas pixel" role="img" aria-label={what} />

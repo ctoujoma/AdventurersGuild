@@ -11,6 +11,7 @@ import { nightIn } from '../when';
 import { GoalRow } from './LibroPanel';
 import { Icon, type IconName } from '../icons';
 import { capBand } from '../../data/raids';
+import { t } from '../../textos';
 
 interface Props {
   game: GameState;
@@ -63,19 +64,29 @@ export function GremioPanel({
         <div class="row-info" {...help(info.levels[level])}>
           <b>
             {info.name}{' '}
-            <span class="pips" aria-label={`Nivel ${level} de ${facilityMax(k)}`}>
+            <span
+              class="pips"
+              aria-label={t('paneles.gremio.nivel_de', {
+                nivel: level,
+                facility_max: facilityMax(k),
+              })}
+            >
               {Array.from({ length: facilityMax(k) }, (_, i) => (
                 <i key={i} class={i < level ? 'on' : ''} />
               ))}
             </span>
           </b>
           {level > 0 && <span class="row-sub">{info.effect(level)}</span>}
-          {cost !== null && <span class="next-level">Mejora: {info.effect(level + 1)}</span>}
+          {cost !== null && (
+            <span class="next-level">
+              {t('paneles.gremio.mejora', { efecto: info.effect(level + 1) })}
+            </span>
+          )}
         </div>
         {cost !== null ? (
           <button
             class="btn btn-gold"
-            aria-label={`Mejorar ${info.name} por ${cost} monedas`}
+            aria-label={t('paneles.gremio.mejorar_por_monedas', { nombre: info.name, coste: cost })}
             disabled={!!why}
             title={why ?? undefined}
             onClick={() => onUpgrade(k)}
@@ -83,7 +94,7 @@ export function GremioPanel({
             <Icon name="coin" size={12} /> {cost}
           </button>
         ) : (
-          <span class="pill pill-ok">Máximo</span>
+          <span class="pill pill-ok">{t('paneles.gremio.maximo')}</span>
         )}
       </article>
     );
@@ -93,21 +104,21 @@ export function GremioPanel({
     return (
       <>
         <button class="back" onClick={() => setSalas(false)}>
-          ← Gremio
+          {t('paneles.gremio.gremio')}
         </button>
         {obras ? (
           <>
             {obras}
             <section>
-              <h3 class="sec-title">Fuera</h3>
+              <h3 class="sec-title">{t('paneles.gremio.fuera')}</h3>
               <div class="rows">{YARD.map(facility)}</div>
             </section>
           </>
         ) : (
           (
             [
-              ['En la casa', keys.filter((x) => !OUTSIDE.includes(x))],
-              ['Fuera', OUTSIDE],
+              [t('paneles.gremio.en_la_casa'), keys.filter((x) => !OUTSIDE.includes(x))],
+              [t('paneles.gremio.fuera'), OUTSIDE],
             ] as const
           ).map(([title, list]) => (
             <section key={title}>
@@ -133,21 +144,28 @@ export function GremioPanel({
       {game.mode === 'libre' ? (
         <div class="debt">
           <div class="debt-top">
-            <b>El gremio es tuyo</b>
-            <span class="row-sub">deuda saldada</span>
+            <b>{t('paneles.gremio.el_gremio_es_tuyo')}</b>
+            <span class="row-sub">{t('paneles.gremio.deuda_saldada')}</span>
           </div>
           <span class="row-sub">
-            <Icon name="coin" size={10} /> Salarios: {salaries(game)} cada 7 días
-            {next ? ` (día ${next.day})` : ''}
+            <Icon name="coin" size={10} />{' '}
+            {t('paneles.gremio.salarios_cada_7_dias', {
+              salaries: salaries(game),
+              hay: !!next,
+              dia: next?.day ?? 0,
+            })}
           </span>
           {(game.unpaid ?? 0) > 0 && (
-            <span class="qs-warn">La semana pasada no pagaste. Otra más y se acabó.</span>
+            <span class="qs-warn">{t('paneles.gremio.la_semana_pasada_no')}</span>
           )}
         </div>
       ) : (
-        <div class="debt" {...help(`Más los salarios: ${salaries(game)} por semana.`)}>
+        <div
+          class="debt"
+          {...help(t('paneles.gremio.mas_los_salarios_por', { salaries: salaries(game) }))}
+        >
           <div class="debt-top">
-            <b>Deuda con Merlo</b>
+            <b>{t('paneles.gremio.deuda_con_merlo')}</b>
             <span class="debt-num">
               {game.paid} / {DEBT}
             </span>
@@ -162,7 +180,7 @@ export function GremioPanel({
               return (
                 <span key={p.day} class={paid ? 'paid' : p === next ? 'next' : ''}>
                   {paid && <Icon name="check" size={8} class="sched-ok" />}
-                  día {p.day} · {p.amount}
+                  {t('paneles.gremio.dia', { dia: p.day, cantidad: p.amount })}
                 </span>
               );
             })}
@@ -177,28 +195,22 @@ export function GremioPanel({
           </span>
         )}
         {!game.raid?.warned && (game.truce ?? 0) > game.day && (
-          <span class="fact">Tregua hasta el día {game.truce}</span>
+          <span class="fact">{t('paneles.gremio.tregua_hasta_el_dia', { truce: game.truce })}</span>
         )}
         <span
           class="fact"
-          {...help(
-            `Si asaltaran esta noche, se pararían ${def} de cada 10 (${home} en casa, ${guards} de guardia). Se pelea sala a sala: los de guardia salen al patio y los demás acuden desde la cama. La puerta y la cerradura de la cámara les dan tiempo.`,
-          )}
+          {...help(t('paneles.gremio.si_asaltaran_esta_noche', { def, home, guards }))}
         >
-          <Icon name="escudo" size={12} /> Defensa {def}/10
+          <Icon name="escudo" size={12} /> {t('paneles.gremio.defensa_10', { def })}
         </span>
-        <span
-          class="fact"
-          {...help('Notoriedad: cuanto más famoso y rico es el gremio, más tienta a los bandidos.')}
-        >
-          <Icon name="star" size={12} /> Notoriedad {notoriety(game)}
+        <span class="fact" {...help(t('paneles.gremio.notoriedad_cuanto_mas_famoso'))}>
+          <Icon name="star" size={12} />{' '}
+          {t('paneles.gremio.notoriedad', { notoriety: notoriety(game) })}
         </span>
         {(game.threat ?? 0) > 0 && (
-          <span
-            class="fact"
-            {...help('Amenaza en la comarca: crece si una historia espera en el tablón.')}
-          >
-            <Icon name="calavera" size={12} /> Amenaza {game.threat}
+          <span class="fact" {...help(t('paneles.gremio.amenaza_en_la_comarca'))}>
+            <Icon name="calavera" size={12} />{' '}
+            {t('paneles.gremio.amenaza', { threat: game.threat })}
           </span>
         )}
       </div>
@@ -206,9 +218,9 @@ export function GremioPanel({
       {game.goals && game.goals.active.length > 0 && (
         <section class="gremio-goals">
           <h3 class="sec-title">
-            Objetivos{' '}
+            {t('paneles.gremio.objetivos')}{' '}
             <button class="linklike" onClick={onLibro}>
-              ver en el Libro
+              {t('paneles.gremio.ver_en_el_libro')}
             </button>
           </h3>
           <div class="rows">
@@ -222,14 +234,14 @@ export function GremioPanel({
       <div class="tiles">
         {tile(
           'martillo',
-          'Salas',
+          t('paneles.gremio.salas'),
           () => setSalas(true),
           !obras && affordable.length > 0 ? (
             <span class="badge">{affordable.length}</span>
           ) : undefined,
         )}
-        {tile('banderin', 'Adornos', onTaberna)}
-        {tile('libro', 'Libro', onLibro)}
+        {tile('banderin', t('paneles.gremio.adornos'), onTaberna)}
+        {tile('libro', t('paneles.gremio.libro'), onLibro)}
       </div>
     </>
   );

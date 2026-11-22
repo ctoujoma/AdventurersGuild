@@ -5,6 +5,7 @@ import { portraitShine, portraitShines } from '../art/heroes/gear';
 import { FRAMES } from '../art/legendaries';
 import { useShine } from './useShine';
 import { BufferImage } from './BufferImage';
+import { t } from '../textos';
 
 interface Props {
   look: HeroLook;
@@ -49,7 +50,13 @@ export function Portrait({ look, marks = {}, scale = 2, label, alive = true, fra
         scale={scale}
         label={label}
       />
-      {marks.low && <i class="portrait-low" title="Moral baja" aria-label="Moral baja" />}
+      {marks.low && (
+        <i
+          class="portrait-low"
+          title={t('barra.portrait.moral_baja')}
+          aria-label={t('barra.portrait.moral_baja')}
+        />
+      )}
     </span>
   );
 }

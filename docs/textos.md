@@ -96,6 +96,29 @@ tx(report.body[0]); // escribir lo guardado (mensaje o frase vieja)
   arrancar y cambiarlo recarga la página.
 - Una clave que no existe sale como la clave (y avisa en la consola); el test la pilla antes.
 
+### En la interfaz (`src/ui`, `src/world`, `src/audio`)
+
+- Zonas: `pantallas` (App, portada, amanecer, ajustes, partidas…), `barra` (barra de arriba,
+  campana, avisos, plazos, obras, marcas de la escena), `ficha` (ficha del héroe, gente de la
+  casa, objetos), `paneles` (tablón, mapa, héroes, gremio, salas, talleres, peleas…) y `escena`
+  (lo que se pinta en la taberna y la música). Dentro, **una sección por componente**, con el
+  nombre del fichero en minúscula (`paneles.tablon.…` sale de `TablonPanel.tsx`): así quien
+  revise sabe dónde sale cada frase.
+- Todo lo que se lee es texto: también `aria-label`, `title`, `data-help`, `placeholder` y los
+  toasts. En JSX, ninguna palabra suelta (`<b>{n}</b> monedas` → `{t('…monedas', { n })}`).
+- **Frases enteras**: nada de `{n} {n === 1 ? 'día' : 'días'}`, `plural(…)` ni `'Ampliar ' +
+  sala`. El plural, el género y lo opcional van en el texto (`plural`, `select`, sí/no). El
+  `plural()` de español del núcleo ya no existe; `listNames` usa el formato de listas del idioma.
+- **Nunca se compara con un texto traducido** (`task !== 'Descansa'`, `name === 'Gremio'`):
+  se compara con un id, una clave o con `t('…')` de la misma clave. Para reconocer un texto del
+  núcleo, su clave (`c.t.k === 'materiales.no_cabe'`) o el principio de su plantilla (`NO_GOLD`
+  en `ui/works.ts`).
+- Lo que tiene id se enseña con su nombre: lugares con `placeName(id)` (o `placeMsg` en un
+  hueco), clientes con `clientLabel(id)`, tipos de encargo con `questTypeName`, resultados con
+  `outcomeLabel`, habilidades con `skillName`, salas con artículo con `salas.con_articulo.<tipo>`.
+- Un literal que parece texto y no lo es (la semilla de una textura, un nombre interno) se marca
+  con el comentario `/* no es texto */` delante, y el test lo deja.
+
 ## Idioma
 
 - Se guarda en Ajustes (`lang` en `jarro:ajustes`); `src/textos` lo lee al arrancar. Sin él, o
@@ -139,17 +162,21 @@ tx(report.body[0]); // escribir lo guardado (mensaje o frase vieja)
 - Cada otro idioma tiene las mismas claves, los mismos huecos y listas del mismo largo.
 - Las claves que usa el código (`t('…')`, `tl`, `tr`, `has`, `msg`; con `${…}`, el principio)
   existen.
-- **No hay textos sueltos** en el código, salvo en las carpetas de `PENDING` (lo que falta por
-  sacar) y en `ALLOWED` (a propósito, con el porqué). Al acabar una carpeta, se quita de
-  `PENDING`. Detecta frases (dos palabras seguidas) y palabras con tilde, ñ, ¿ o ¡.
+- **No hay textos sueltos** en el código (`PENDING` ya está vacío), salvo en `ALLOWED` (a
+  propósito, con el porqué: nombres de héroes, lugares, el conversor, el dibujo de los
+  legendarios, avisos de dibujos mal hechos y los shaders). Detecta frases (dos palabras
+  seguidas), palabras con tilde, ñ, ¿ o ¡, y **cualquier palabra en el texto de JSX**. No mira
+  los atributos que nunca son texto (`class`, `style`, `key`…) ni lo marcado `/* no es texto */`.
+- Lo que no ve (una palabra suelta sin tilde en el código, `'nadie'`), lo pilla el idioma falso
+  (ver «Herramientas»).
 
 ## Estado (por bloques, un PR cada uno)
 
 | Bloque | Qué | Estado |
 | --- | --- | --- |
 | 1 | Sistema, convención, tabla, tests y `src/data` | Hecho (#201) |
-| 2 | `src/core` (informes, cartas, avisos) con mensajes guardados y conversor v5→v6 | Hecho (este PR) |
-| 3 | `src/ui`, `src/world`, `src/art`, `src/platform` | Después |
+| 2 | `src/core` (informes, cartas, avisos) con mensajes guardados y conversor v5→v6 | Hecho (#203) |
+| 3 | `src/ui`, `src/world`, `src/audio` (la interfaz y la escena) | Hecho (este PR) |
 | 4 | Inglés y selector en Ajustes | Cuando el usuario diga |
 
 Bloque 1, comprobado: todo lo que exportan los módulos de `src/data` sale idéntico (volcado
@@ -165,13 +192,33 @@ español, misma idea): la contracción «a el»/«de el» ya no se come la «í�
 molino»); «calidad buena/rara» (decía «calidad bueno»); «veterana» en femenino; las listas
 llevan «y» al final («3 campesinos y 1 noble»).
 
+Bloque 3: unos 1.250 textos de la interfaz y la escena a `pantallas`, `barra`, `ficha`,
+`paneles` y `escena`, rehechos como frases enteras (unas 200 estaban a trozos). Comprobado:
+`npm run sim` da la misma salida; los 897 tests pasan; el volcado de los textos de todas las
+pantallas (`tools/shots/textos.mjs`, con reloj falso y partida fija) sale igual antes y después
+salvo los cambios a propósito; con el idioma falso no queda texto de la interfaz sin sacar
+(solo lo ya escrito de las partidas viejas, como se decidió). Cambios a propósito: plurales y
+género donde antes no los había («1 héroe», «herida», «desaparecida»), «En el taller de
+alquimia» (salía «En la taller…»), listas con «y» en los avisos. Arreglados de paso cuatro
+fallos del bloque 2: el id del cliente («molinero») en la hoja del encargo, el mapa y el Libro;
+«[object Object]» en el aviso de incidentes, en la ronda de la barra y en la etiqueta de las
+notas del tablón; y la chapita de materiales del informe, que guardaba el nombre ya escrito.
+
 ## Herramientas
 
 - `npm run textos:sacar` / `textos:meter`: la tabla (arriba).
 - `npm run textos:sin-tx`: busca con el comprobador de tipos de TypeScript cada `{expr}` de JSX,
-  cada `` `${expr}` `` y cada `+`, `===` y `!==` cuyo tipo sea `Msg`/`Txt` (un mensaje que se
-  pintaría como objeto o se compararía mal). Pasarlo tras tocar la interfaz; lo que salga, con
-  `tx()` (o `idText()` si es para comparar).
+  cada `` `${expr}` ``, cada `+`, `===` y `!==` y cada `.join()` de una lista cuyo tipo sea
+  `Msg`/`Txt` (un mensaje que se pintaría como «[object Object]» o se compararía mal). Pasarlo
+  tras tocar la interfaz; lo que salga, con `tx()` (o `idText()` si es para comparar).
+- `node tools/shots/textos.mjs <carpeta> <guion.json>`: vuelca el texto de cada pantalla
+  (`innerText` y los `aria-label`, `title`…) con reloj falso, azar con semilla y la partida de
+  `PARTIDA`, así que dos pasadas salen iguales y se pueden comparar antes y después de un
+  cambio. Con `XLANG=xx` usa otro idioma.
+- **El idioma falso**: `npm run textos:falso` crea `src/textos/xx/` con cada texto entre ‹ ›;
+  compilar y volcar con `XLANG=xx` (o ponerlo en Ajustes a mano): todo lo que se lea sin ‹ › es
+  texto escrito en el código. `src/textos/xx/` no se sube (`.gitignore`); se borra con
+  `npm run textos:falso -- --quitar`.
 
 ## Cabos sueltos (para no olvidar)
 
@@ -187,9 +234,11 @@ di en qué PR.
      español, con su nombre traducible en `lugares.sitios`);
    - objetos: el dibujo propio de los legendarios (`art/legendaries.ts`) va por el nombre en
      español (`idText`); valdría un id en el catálogo;
-   - en la interfaz quedan sitios que enseñan `Outcome`, `QuestType` o `SkillId` tal cual (el
-     núcleo ya usa `outcomeLabel`, `skillName`, `attrName`): bloque 3.
-   - `ui/mats.ts` (`chipMat`) busca el material leyendo la chapita en español: bloque 3.
+   - ~~en la interfaz, `Outcome`, `QuestType` o `SkillId` tal cual~~ y ~~`chipMat` leyendo la
+     chapita en español~~: hecho en el bloque 3 (`outcomeLabel`, `questTypeName`, `skillName`;
+     la chapita se reconoce por su clave).
+   - el buzón (`MailPanel`) distingue las cartas con `idText(heading).startsWith('Carta')`:
+     funciona en cualquier idioma (compara en español), pero valdría un campo en el informe.
 5. `FOE_WORDS` (`data/journey.ts`) busca palabras en español en el texto del encargo: en otro
    idioma no casaría. Mejor sacar el enemigo de la plantilla o la amenaza.
 6. `sealInitial` (`data/custom.ts`) se salta artículos en español.
@@ -199,16 +248,29 @@ di en qué PR.
    vale para inglés; para un idioma con mayúsculas en los nombres (alemán) habría que cambiarlo.
 9. Nombres de héroes (`data/names.ts`): se quedan en el código y no se traducen. Si un idioma
    quiere su propia lista para los héroes nuevos, se saca a `nombres.yaml`.
-10. Los colores de las rarezas (`art/tiers.ts`, `TIER_COLOR_NAMES`) y el resto de `src/art`.
+10. Los colores de las rarezas (`art/tiers.ts`, `TIER_COLOR_NAMES`: «gris», «verde»…) siguen en
+    el código (salen en `data/items.ts`); en `src/art` no hay más texto que se enseñe.
 11. ~~Claves en inglés en `trabajadores.yaml`~~: ahora `papel` y `cita` (bloque 2).
 13. Las peleas contra jefes guardan los nombres de los luchadores ya escritos
     (`BossFight.sim.setup`: «Esbirro», el nombre del jefe): una pelea guardada se ve en el idioma
     en que se jugó. Para traducirlas, guardar ids y escribir al pintar.
-14. El test de textos sueltos no ve **palabras sueltas sin tilde** (`'Arma'`, `'nadie'`): se
-    buscaron a mano en `data` y `core` en el bloque 2; en la interfaz habrá que mirar igual.
+14. El test de textos sueltos no ve **palabras sueltas sin tilde** en el código (`'nadie'`):
+    en la interfaz se buscaron con el idioma falso (bloque 3); en `data` y `core`, a mano. Pasar
+    el idioma falso de vez en cuando (ver «Herramientas»).
 15. `RANKS[i].name`, `ATTR_NAMES`, `SLOT_NAMES`, `PERKS`, `MATERIALS` y similares se escriben al
     cargar (en el idioma de la partida); para guardar, usar su mensaje (`rankMsg`, `matMsg`…).
 12. El selector de idioma en Ajustes y la recarga al cambiarlo (bloque 4).
+16. Abreviaturas sacadas cortando el nombre (`skillName(k).slice(0, 3)` en el arcón): en otro
+    idioma pueden salir raras; si molesta, una lista de cortas como `etiquetas.habilidades_corto`.
+17. ~~Comillas «» puestas en el código alrededor de un hueco~~: en la interfaz ya van en el
+    texto (bloque 3), para que cada idioma ponga las suyas (“” en inglés).
+18. Los avisos que miran el informe por su clave (almacén lleno: `materiales.no_cabe`) no
+    reconocen los informes de las partidas v5 (frases): solo se pierde ese aviso una vez.
+19. Muchos nombres se pasan a minúscula para meterlos en una frase (`ROOMS[…].name.toLowerCase()`,
+    materiales, ranuras): ver el 8. Lo limpio sería un texto «en frase» por cada nombre, como
+    `salas.con_articulo`.
+20. Algunas cuentas sin plural siguen como estaban («{n} raciones» en el coste del forastero,
+    «{n} huecos»): con el inglés se verá si hace falta `plural`.
 
 ## Decisiones (22 de noviembre, con el usuario)
 

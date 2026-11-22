@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'preact/hooks';
 import splashUrl from '../assets/splash.webp';
+import { t } from '../textos';
 
 /**
  * Pantalla del desarrollador antes del título. La animación es `assets-src/splash-logo.gif`
@@ -38,7 +39,7 @@ export function Splash({ onDone }: Props) {
     <div
       class={`splash splash-${phase}`}
       role="img"
-      aria-label="Presenta el desarrollador"
+      aria-label={t('pantallas.splash.presenta_el_desarrollador')}
       onClick={() => setPhase('out')}
     >
       <img

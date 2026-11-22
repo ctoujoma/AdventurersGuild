@@ -1,6 +1,7 @@
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import { Icon } from './icons';
+import { t } from '../textos';
 
 interface Props {
   title: string;
@@ -29,7 +30,12 @@ export function Panel({ title, onClose, variant = 'paper', full, low, children }
     >
       <header class="panel-head">
         <h2>{title}</h2>
-        <button class="btn-icon" data-tut="cerrar" aria-label="Cerrar" onClick={close}>
+        <button
+          class="btn-icon"
+          data-tut="cerrar"
+          aria-label={t('barra.panel.cerrar')}
+          onClick={close}
+        >
           <Icon name="close" size={14} />
         </button>
       </header>

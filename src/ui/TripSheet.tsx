@@ -1,13 +1,14 @@
 import { chainDef } from '../core/chains';
 import { eventText, journeyNow, LEGS, type JourneyNow } from '../core/journey';
 import type { GameState, Mission } from '../core/model';
-import { dangerClass, dangerLabel } from '../data/labels';
+import { dangerClass, dangerLabel, questTypeName } from '../data/labels';
 import { Icon, type IconName } from './icons';
 import { Portrait } from './Portrait';
 import { QuestStrip } from './QuestStrip';
 import { lookOf, marksOf, heroFrame } from './view';
 import { dawnIn } from './when';
-import { tx } from '../textos';
+import { t, tx } from '../textos';
+import { placeName } from '../data/places';
 
 interface Props {
   game: GameState;
@@ -42,9 +43,14 @@ export function TripSheet({ game, mission: m, onClose, onHero, onReport, onBoss 
       <article
         class="herocard questsheet tripsheet"
         onClick={(e) => e.stopPropagation()}
-        aria-label={`Encargo en curso: ${tx(q.title)}`}
+        aria-label={t('paneles.tripsheet.encargo_en_curso', { titulo: tx(q.title) })}
       >
-        <button class="btn-icon herocard-x" data-tut="cerrar" aria-label="Cerrar" onClick={onClose}>
+        <button
+          class="btn-icon herocard-x"
+          data-tut="cerrar"
+          aria-label={t('paneles.tripsheet.cerrar')}
+          onClick={onClose}
+        >
           <Icon name="close" size={14} />
         </button>
         <div class="qs-scroll">
@@ -52,22 +58,26 @@ export function TripSheet({ game, mission: m, onClose, onHero, onReport, onBoss 
           <header class="qs-head">
             <span class="eyebrow">
               {q.chain
-                ? `${tx(chainDef(q.chain.id).name)} · paso ${q.chain.step + 1} de ${chainDef(q.chain.id).steps.length}`
-                : `Encargo en curso · ${q.type}`}
+                ? t('paneles.tripsheet.paso_de', {
+                    nombre: tx(chainDef(q.chain.id).name),
+                    paso: q.chain.step + 1,
+                    pasos: chainDef(q.chain.id).steps.length,
+                  })
+                : t('paneles.tripsheet.encargo_en_curso_2', { tipo: questTypeName(q.type) })}
             </span>
             <h3>{tx(q.title)}</h3>
           </header>
           <div class="chips qs-facts">
             <span class="fact">
               <Icon name="pasos" size={12} />
-              {q.place}
+              {placeName(q.place)}
             </span>
             <span class="fact">
               <Icon name="home" size={12} />
-              en casa {dawnIn(m.daysLeft)}
+              {t('paneles.tripsheet.en_casa', { dawn_in: dawnIn(m.daysLeft) })}
             </span>
             <span class={`danger danger-${dangerClass(q.danger, false)}`}>
-              Peligro {dangerLabel(q.danger, false)}
+              {t('paneles.tripsheet.peligro', { danger_label: dangerLabel(q.danger, false) })}
             </span>
           </div>
 
@@ -76,7 +86,7 @@ export function TripSheet({ game, mission: m, onClose, onHero, onReport, onBoss 
               <button
                 key={h.id}
                 class="pick"
-                aria-label={`${h.name}: ver su ficha`}
+                aria-label={t('paneles.tripsheet.ver_su_ficha', { nombre: h.name })}
                 onClick={() => onHero(h.id)}
               >
                 <Portrait
@@ -91,7 +101,7 @@ export function TripSheet({ game, mission: m, onClose, onHero, onReport, onBoss 
             ))}
           </div>
 
-          <ol class="trip-legs" aria-label="El viaje por partes">
+          <ol class="trip-legs" aria-label={t('paneles.tripsheet.el_viaje_por_partes')}>
             {LEGS.map((l, i) => {
               const fill = i < legIndex ? 1 : i === legIndex ? now.legT : 0;
               return (
@@ -111,7 +121,7 @@ export function TripSheet({ game, mission: m, onClose, onHero, onReport, onBoss 
           </ol>
 
           <h4 class="crew-h">
-            <span>Lo que ha pasado</span>
+            <span>{t('paneles.tripsheet.lo_que_ha_pasado')}</span>
           </h4>
           {now.past.length ? (
             <ul class="trip-log">
@@ -123,28 +133,28 @@ export function TripSheet({ game, mission: m, onClose, onHero, onReport, onBoss 
               ))}
             </ul>
           ) : (
-            <p class="tiny">Acaban de salir por la puerta.</p>
+            <p class="tiny">{t('paneles.tripsheet.acaban_de_salir_por')}</p>
           )}
           {m.waiting && (
             <div class="trip-boss" role="status">
-              <b>Están ante el jefe y esperan a que digas.</b>
+              <b>{t('paneles.tripsheet.estan_ante_el_jefe')}</b>
               <div class="trip-boss-actions">
                 <button class="btn btn-gold" onClick={() => onBoss(true)}>
-                  Ver la pelea
+                  {t('paneles.tripsheet.ver_la_pelea')}
                 </button>
                 <button class="btn btn-wood" onClick={() => onBoss(false)}>
-                  Que se las apañen
+                  {t('paneles.tripsheet.que_se_las_apanen')}
                 </button>
               </div>
-              <span class="tiny">Si no dices nada, se las apañan al caer la noche.</span>
+              <span class="tiny">{t('paneles.tripsheet.si_no_dices_nada')}</span>
             </div>
           )}
           {m.done ? (
             <button class="btn btn-wood trip-note" onClick={() => onReport(m.done!.report)}>
-              <Icon name="letter" size={14} /> Leer el informe
+              <Icon name="letter" size={14} /> {t('paneles.tripsheet.leer_el_informe')}
             </button>
           ) : (
-            <p class="tiny trip-note">Cuando acaben lo suyo, mandarán aviso con su informe.</p>
+            <p class="tiny trip-note">{t('paneles.tripsheet.cuando_acaben_lo_suyo')}</p>
           )}
         </div>
       </article>

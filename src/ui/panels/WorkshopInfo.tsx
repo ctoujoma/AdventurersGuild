@@ -40,12 +40,13 @@ import { Icon } from '../icons';
 import { Portrait } from '../Portrait';
 import type { TabItem } from '../Tabs';
 import { heroFrame, lookOf, marksOf } from '../view';
-import { tx } from '../../textos';
+import { t, tx } from '../../textos';
 
 const pct = (p: number) => `${Math.round(p * 100)} %`;
 
 /** «unas 8 h», «menos de 1 h». */
-const hours = (h: number) => (h < 1 ? 'menos de 1 h' : `unas ${Math.round(h)} h`);
+const hours = (h: number) =>
+  h < 1 ? t('paneles.workshopinfo.menos_de_1_h') : `unas ${Math.round(h)} h`;
 
 /** «común 45 %, bueno 38 %, raro 17 %» (sin las calidades que no pueden salir). */
 const oddsText = (odds: Record<Quality, number>) =>
@@ -60,10 +61,15 @@ export type WorkTab = 'crear' | 'templar' | 'vestir';
 export function workshopTabs(game: GameState, room: Room): TabItem<WorkTab>[] {
   const known = knownRecipes(game).filter((id) => recipesFor(room.type).includes(id));
   return [
-    { id: 'crear', label: 'Crear', icon: 'martillo', count: known.length },
-    { id: 'templar', label: 'Templar', icon: 'mejorar', count: forWork(game, room).length },
+    { id: 'crear', label: t('paneles.workshopinfo.crear'), icon: 'martillo', count: known.length },
+    {
+      id: 'templar',
+      label: t('paneles.workshopinfo.templar'),
+      icon: 'mejorar',
+      count: forWork(game, room).length,
+    },
     ...(room.type === 'sastreria'
-      ? [{ id: 'vestir', label: 'Vestir', icon: 'tijeras' } as const]
+      ? [{ id: 'vestir', label: t('paneles.workshopinfo.vestir'), icon: 'tijeras' } as const]
       : []),
   ];
 }
@@ -84,31 +90,37 @@ export function WorkshopInfo({
   onAct?: (a: Action) => void;
 }) {
   const jobs = craftsIn(game, room.id).map((c) => craftState(game, c));
-  const smith = TRADES[room.type as Trade]?.name.m.toLowerCase() ?? 'alguien';
+  const smith =
+    TRADES[room.type as Trade]?.name.m.toLowerCase() ?? t('paneles.workshopinfo.alguien');
   return (
     <div class="forge">
-      <h4 class="sec-title">En marcha</h4>
+      <h4 class="sec-title">{t('paneles.workshopinfo.en_marcha')}</h4>
       <span class="row-sub">
         {jobs.length
-          ? `Trabajando (${jobs.length} de ${craftSlots(room)}).`
-          : `Libre: puede hacer ${craftSlots(room) > 1 ? `${craftSlots(room)} cosas` : 'una cosa'} a la vez.`}
+          ? t('paneles.workshopinfo.trabajando_de', {
+              length: jobs.length,
+              craft_slots: craftSlots(room),
+            })
+          : t('paneles.workshopinfo.libre_puede_hacer_a', { n: craftSlots(room) })}
       </span>
       {!tab && !game.workers.some((w) => w.room === room.id && w.trade === room.type) && (
         <span class="row-sub">
-          Sin {smith}, solo trabaja un héroe que eche una mano, y más despacio. Si viene alguien a
-          pedir trabajo de {smith}, contrátalo (hace falta cama en el dormitorio del servicio).
+          {t('paneles.workshopinfo.sin_solo_trabaja_un', { smith, smith2: smith })}
         </span>
       )}
       {jobs.map(({ craft: c, frac, hoursLeft, walking }) => {
         const rc = c.recipe ? RECIPES[c.recipe] : null;
         const who = c.dress && game.heroes.find((h) => h.id === c.dress!.hero);
         const what = who
-          ? `Vistiendo a ${who.name}`
+          ? t('paneles.workshopinfo.vistiendo_a', { nombre: who.name })
           : c.item && c.temper
-            ? `Mejorando ${itemName(c.item)} a +${(c.item.plus ?? 0) + 1}`
+            ? t('paneles.workshopinfo.mejorando_a', {
+                item_name: itemName(c.item),
+                mas: (c.item.plus ?? 0) + 1,
+              })
             : c.item
-              ? `Desmontando ${itemName(c.item)}`
-              : `Creando: ${rc!.name}`;
+              ? t('paneles.workshopinfo.desmontando', { item_name: itemName(c.item) })
+              : t('paneles.workshopinfo.creando', { objeto: rc!.name });
         return (
           <article key={c.id} class="row forge-job">
             {who ? (
@@ -130,16 +142,19 @@ export function WorkshopInfo({
               <span class={`row-sub ${hoursLeft === null ? 'room-bad' : ''}`}>
                 {hoursLeft === null
                   ? who && who.status !== 'ok'
-                    ? `En pausa: ${who.name} ${who.status === 'mision' ? 'está de misión' : 'no está en pie'}. Sigue cuando vuelva (o cancela para dejar libre la sastrería).`
-                    : `Parado: pon a un ${smith} (o a un héroe) a trabajar aquí.`
+                    ? t('paneles.workshopinfo.en_pausa_sigue_cuando', {
+                        nombre: who.name,
+                        mision: who.status === 'mision',
+                      })
+                    : t('paneles.workshopinfo.parado_pon_a_un', { smith })
                   : walking && who
-                    ? `${who.name} viene de camino.`
-                    : `Le quedan ${hours(hoursLeft)}.`}
+                    ? t('paneles.workshopinfo.viene_de_camino', { nombre: who.name })
+                    : t('paneles.workshopinfo.le_quedan', { horas: hours(hoursLeft) })}
               </span>
             </span>
             {onAct && (
               <button class="btn btn-wood" onClick={() => onAct({ type: 'cancelCraft', id: c.id })}>
-                Cancelar
+                {t('paneles.workshopinfo.cancelar')}
               </button>
             )}
           </article>
@@ -181,8 +196,9 @@ function CraftList({
   return (
     <>
       <span class="row-sub">
-        Ahora, con quien trabaja aquí, sale: {oddsText(qualityOdds(game, room.id))}. El bueno lleva
-        +1; el raro es el que pone en cada receta.
+        {t('paneles.workshopinfo.ahora_con_quien_trabaja', {
+          odds_text: oddsText(qualityOdds(game, room.id)),
+        })}
       </span>
       <div class="rows">
         {all
@@ -201,7 +217,7 @@ function CraftList({
                       class={`forge-good tier-${tierOf(rc.good.rarity)}`}
                       title={tx(rc.good.name)}
                     >
-                      <em>raro</em> {itemEffect({ ...rc.good, id })}
+                      <em>{t('paneles.workshopinfo.raro')}</em> {itemEffect({ ...rc.good, id })}
                     </span>
                   </span>
                   <MatCost game={game} mats={rc.mats} />
@@ -211,10 +227,13 @@ function CraftList({
                     class="btn btn-gold"
                     disabled={!!why}
                     title={why ?? undefined}
-                    aria-label={`Crear ${tx(rc.common.name)} por ${rc.gold} monedas`}
+                    aria-label={t('paneles.workshopinfo.crear_por_monedas', {
+                      nombre: tx(rc.common.name),
+                      oro: rc.gold,
+                    })}
                     onClick={() => onAct({ type: 'craft', room: room.id, recipe: id })}
                   >
-                    Crear · <Icon name="coin" size={10} /> {rc.gold}
+                    {t('paneles.workshopinfo.crear_2')} <Icon name="coin" size={10} /> {rc.gold}
                   </button>
                 )}
               </article>
@@ -223,8 +242,10 @@ function CraftList({
       </div>
       {locked.length > 0 && (
         <span class="row-sub forge-locked">
-          <Icon name="pergamino" size={12} /> Por aprender:{' '}
-          {listNames(locked.map((id) => RECIPES[id].name))} (desmontando uno o como premio).
+          <Icon name="pergamino" size={12} />{' '}
+          {t('paneles.workshopinfo.por_aprender_desmontando_uno', {
+            recetas: listNames(locked.map((id) => RECIPES[id].name)),
+          })}
         </span>
       )}
     </>
@@ -243,22 +264,13 @@ function TemperGrid({
 }) {
   const [pick, setPick] = useState<string | null>(null);
   const work = forWork(game, room);
-  if (!work.length)
-    return (
-      <span class="row-sub">
-        No hay nada en el arcón que se trabaje aquí. Lo que traigan los héroes y no lleven puesto
-        sale en esta pestaña.
-      </span>
-    );
+  if (!work.length) return <span class="row-sub">{t('paneles.workshopinfo.no_hay_nada_en')}</span>;
   const sel = work.find((w) => w.it.id === pick);
   return (
     <>
-      <span class="row-sub">
-        Lo del arcón que se trabaja en este taller. Toca uno: mejorarlo (+1, hasta +3) o desmontarlo
-        para aprender cómo se hace.
-      </span>
+      <span class="row-sub">{t('paneles.workshopinfo.lo_del_arcon_que')}</span>
       <ItemGrid
-        label="Lo del arcón para este taller"
+        label={t('paneles.workshopinfo.lo_del_arcon_para')}
         entries={work.map(({ it }) => ({ it, key: it.id }))}
         selected={pick}
         onPick={setPick}
@@ -284,12 +296,14 @@ function TemperGrid({
                 <MatCost game={game} mats={sel.temper.mats} />
               </>
             ) : (
-              <span class="row-sub">Ya está mejorado del todo (+3).</span>
+              <span class="row-sub">{t('paneles.workshopinfo.ya_esta_mejorado_del')}</span>
             )}
             <span class="row-sub">
               {sel.unmake
-                ? `Desmontar: se pierde; ${pct(undoChance(game, room.id))} de las veces sacas la receta.`
-                : 'Desmontar: ya sabes hacerlo.'}
+                ? t('paneles.workshopinfo.desmontar_se_pierde_de', {
+                    pct: pct(undoChance(game, room.id)),
+                  })
+                : t('paneles.workshopinfo.desmontar_ya_sabes_hacerlo')}
             </span>
           </span>
           {onAct && (
@@ -299,13 +313,18 @@ function TemperGrid({
                   class="btn btn-gold"
                   disabled={!!canTemper(game, room.id, sel.it.id)}
                   title={canTemper(game, room.id, sel.it.id) ?? undefined}
-                  aria-label={`Mejorar ${itemName(sel.it)} a +${sel.temper.to} por ${sel.temper.gold} monedas`}
+                  aria-label={t('paneles.workshopinfo.mejorar_a_por_monedas', {
+                    item_name: itemName(sel.it),
+                    to: sel.temper.to,
+                    oro: sel.temper.gold,
+                  })}
                   onClick={() => {
                     onAct({ type: 'temper', room: room.id, itemId: sel.it.id });
                     setPick(null);
                   }}
                 >
-                  Mejorar · <Icon name="coin" size={10} /> {sel.temper.gold}
+                  {t('paneles.workshopinfo.mejorar')} <Icon name="coin" size={10} />{' '}
+                  {sel.temper.gold}
                 </button>
               )}
               {sel.unmake && (
@@ -318,14 +337,14 @@ function TemperGrid({
                     setPick(null);
                   }}
                 >
-                  Desmontar
+                  {t('paneles.workshopinfo.desmontar')}
                 </button>
               )}
             </span>
           )}
         </article>
       ) : (
-        <span class="row-sub">Toca uno para ver lo que cuesta.</span>
+        <span class="row-sub">{t('paneles.workshopinfo.toca_uno_para_ver')}</span>
       )}
     </>
   );
@@ -356,18 +375,22 @@ function DressPicker({
   return (
     <div class="dress-pick">
       <span class="row-sub">
-        Cambia el color de la ropa y añade una prenda. El héroe viene aquí mientras le cosen (unas{' '}
-        {Math.round(clockHours(DRESS_HOURS))} h) y estrenar le sube la moral. Los tintes nuevos se
-        ganan con hazañas y objetivos.
+        {t('paneles.workshopinfo.cambia_el_color_de', {
+          horas: Math.round(clockHours(DRESS_HOURS)),
+        })}
       </span>
-      {!home.length && <span class="row-sub">No hay nadie en casa.</span>}
-      <div class="picks dress-who" role="group" aria-label="A quién vestir">
+      {!home.length && <span class="row-sub">{t('paneles.workshopinfo.no_hay_nadie_en')}</span>}
+      <div
+        class="picks dress-who"
+        role="group"
+        aria-label={t('paneles.workshopinfo.a_quien_vestir')}
+      >
         {home.map((x) => (
           <button
             key={x.id}
             class="pick"
             aria-pressed={who === x.id}
-            aria-label={`Vestir a ${x.name}`}
+            aria-label={t('paneles.workshopinfo.vestir_a', { nombre: x.name })}
             onClick={() => pick(x.id)}
           >
             <Portrait
@@ -389,15 +412,19 @@ function DressPicker({
             look={lookOf({ ...h, dress: to })}
             marks={marksOf(h)}
             scale={2}
-            label={`Así quedaría ${h.name}`}
+            label={t('paneles.workshopinfo.asi_quedaria', { nombre: h.name })}
           />
           <div class="dress-opts">
-            <div class="tav-swatches" role="radiogroup" aria-label="Tinte">
+            <div
+              class="tav-swatches"
+              role="radiogroup"
+              aria-label={t('paneles.workshopinfo.tinte')}
+            >
               <button
                 role="radio"
                 aria-checked={!to.dye}
-                aria-label="El de su clase"
-                title="El de su clase"
+                aria-label={t('paneles.workshopinfo.el_de_su_clase')}
+                title={t('paneles.workshopinfo.el_de_su_clase')}
                 class={`tav-swatch room-swatch house ${to.dye ? '' : 'on'}`}
                 onClick={() => setTo({ ...to, dye: undefined })}
               />
@@ -405,7 +432,10 @@ function DressPicker({
                 const [, d, m, l] = TINTS[id].ramp;
                 const off = !hasUnlock(game, `tint:${id}`);
                 const label = off
-                  ? `${TINTS[id].name}. Se gana con: ${unlockSource(`tint:${id}`)}`
+                  ? t('paneles.workshopinfo.se_gana_con', {
+                      nombre: TINTS[id].name,
+                      unlock_source: unlockSource(`tint:${id}`),
+                    })
                   : TINTS[id].name;
                 return (
                   <button
@@ -427,7 +457,11 @@ function DressPicker({
               })}
             </div>
             {locked && <small class="lock-why">{locked}</small>}
-            <div class="dress-garments" role="radiogroup" aria-label="Prenda">
+            <div
+              class="dress-garments"
+              role="radiogroup"
+              aria-label={t('paneles.workshopinfo.prenda')}
+            >
               {([undefined, ...Object.keys(GARMENTS)] as (GarmentId | undefined)[]).map((g) => (
                 <button
                   key={g ?? 'nada'}
@@ -436,7 +470,7 @@ function DressPicker({
                   class={`btn ${to.garment === g ? 'btn-gold' : 'btn-wood'}`}
                   onClick={() => setTo({ ...to, garment: g })}
                 >
-                  {g ? GARMENTS[g].name : 'Sin prenda'}
+                  {g ? GARMENTS[g].name : t('paneles.workshopinfo.sin_prenda')}
                 </button>
               ))}
             </div>
@@ -453,10 +487,10 @@ function DressPicker({
             setWho(null);
           }}
         >
-          Vestir · <Icon name="coin" size={10} /> {DRESS_GOLD}
+          {t('paneles.workshopinfo.vestir_2')} <Icon name="coin" size={10} /> {DRESS_GOLD}
         </button>
       )}
-      {h && why && why !== 'Ya va así.' && <p class="qs-warn">{why}</p>}
+      {h && why && why !== t('talleres.ropa.igual') && <p class="qs-warn">{why}</p>}
     </div>
   );
 }

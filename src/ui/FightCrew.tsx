@@ -8,6 +8,7 @@ import type { HeroLook, HeroMarks } from '../art/heroes/look';
 import { ABILITIES, alive, critReady, skillCharge, type AbilityId } from '../core/fight';
 import type { FightUnit } from '../core/fight';
 import { Portrait } from './Portrait';
+import { t } from '../textos';
 
 /** Lo que la barra enseña de cada uno. */
 export interface CrewCard {
@@ -80,7 +81,7 @@ export function FightCrew({
     <div class="fc">
       {playing && warn && onCover && (
         <button class="btn btn-gold fc-cover" onClick={onCover}>
-          ¡Cubríos!
+          {t('paneles.fightcrew.cubrios')}
         </button>
       )}
       <ul class="rc-list" aria-label={label} style={{ '--cols': Math.min(crew.length, 6) }}>
@@ -88,11 +89,15 @@ export function FightCrew({
           const ready = h.charge >= 1 && !h.down;
           const chance = playing && h.chance && !h.down;
           const skill = h.skill ? ABILITIES[h.skill] : null;
-          const state = h.down ? 'en el suelo' : h.moving ? 'corriendo' : (h.note ?? '');
+          const state = h.down
+            ? t('paneles.fightcrew.en_el_suelo')
+            : h.moving
+              ? t('paneles.fightcrew.corriendo')
+              : (h.note ?? '');
           const label = [
             h.name,
             `vida ${Math.round(h.hp * 100)} %`,
-            chance ? '¡crítico!' : '',
+            chance ? t('paneles.fightcrew.critico') : '',
             state,
           ]
             .filter(Boolean)
@@ -133,7 +138,11 @@ export function FightCrew({
                   <i style={{ width: `${Math.round(h.hp * 100)}%` }} />
                 </span>
                 <span class="rc-name" aria-hidden="true">
-                  {h.down ? 'en el suelo' : chance ? '¡Ahora!' : h.name}
+                  {h.down
+                    ? t('paneles.fightcrew.en_el_suelo')
+                    : chance
+                      ? t('paneles.fightcrew.ahora')
+                      : h.name}
                 </span>
                 {h.note && !h.down && (
                   <span class="rc-note" aria-hidden="true">
@@ -146,7 +155,11 @@ export function FightCrew({
                   class="rc-skill"
                   disabled={!playing || !ready}
                   title={`${skill.name}: ${skill.text}`}
-                  aria-label={ready ? `${h.name}: ${skill.name}` : `${skill.name}, cargando`}
+                  aria-label={
+                    ready
+                      ? `${h.name}: ${skill.name}`
+                      : t('paneles.fightcrew.cargando', { nombre: skill.name })
+                  }
                   onClick={() => onSkill(h.id)}
                 >
                   <i style={{ width: `${Math.round(Math.min(1, h.charge) * 100)}%` }} />

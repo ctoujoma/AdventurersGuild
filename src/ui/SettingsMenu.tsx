@@ -9,6 +9,7 @@ import type { Settings } from '../platform/settings';
 import { WEATHER_KINDS, WEATHER_LABEL, type WeatherKind } from '../world/weather';
 import { VERSION } from '../version';
 import { Icon } from './icons';
+import { t } from '../textos';
 
 interface Props {
   settings: Settings;
@@ -24,18 +25,18 @@ interface Props {
 }
 
 const CHEATS: { kind: Cheat; label: string }[] = [
-  { kind: 'oro', label: '+500 monedas' },
-  { kind: 'fama', label: '+50 reputación' },
-  { kind: 'dias', label: 'Pasar 3 días' },
-  { kind: 'curar', label: 'Curar y animar' },
-  { kind: 'obras', label: 'Mejoras al máximo' },
-  { kind: 'asalto', label: 'Asalto esta noche' },
-  { kind: 'historia', label: 'Avanzar historia' },
-  { kind: 'forastero', label: 'Forastero de la tormenta' },
-  { kind: 'ladronNoche', label: 'Ladrón nocturno' },
-  { kind: 'mensajero', label: 'Mensajero tardío' },
-  { kind: 'pesadilla', label: 'Pesadilla' },
-  { kind: 'gato', label: 'Gato cazador' },
+  { kind: 'oro', label: t('pantallas.settingsmenu.n_500_monedas') },
+  { kind: 'fama', label: t('pantallas.settingsmenu.n_50_reputacion') },
+  { kind: 'dias', label: t('pantallas.settingsmenu.pasar_3_dias') },
+  { kind: 'curar', label: t('pantallas.settingsmenu.curar_y_animar') },
+  { kind: 'obras', label: t('pantallas.settingsmenu.mejoras_al_maximo') },
+  { kind: 'asalto', label: t('pantallas.settingsmenu.asalto_esta_noche') },
+  { kind: 'historia', label: t('pantallas.settingsmenu.avanzar_historia') },
+  { kind: 'forastero', label: t('pantallas.settingsmenu.forastero_de_la_tormenta') },
+  { kind: 'ladronNoche', label: t('pantallas.settingsmenu.ladron_nocturno') },
+  { kind: 'mensajero', label: t('pantallas.settingsmenu.mensajero_tardio') },
+  { kind: 'pesadilla', label: t('pantallas.settingsmenu.pesadilla') },
+  { kind: 'gato', label: t('pantallas.settingsmenu.gato_cazador') },
 ];
 
 const SPEEDS: Settings['speed'][] = [1, 1.5, 2];
@@ -81,24 +82,37 @@ export function SettingsMenu({
   );
   return (
     <div class="card-backdrop save-backdrop as-sheet" onClick={onClose}>
-      <article class="herocard settings" onClick={(e) => e.stopPropagation()} aria-label="Ajustes">
-        <button class="btn-icon herocard-x" data-tut="cerrar" aria-label="Cerrar" onClick={onClose}>
+      <article
+        class="herocard settings"
+        onClick={(e) => e.stopPropagation()}
+        aria-label={t('pantallas.settingsmenu.ajustes')}
+      >
+        <button
+          class="btn-icon herocard-x"
+          data-tut="cerrar"
+          aria-label={t('pantallas.settingsmenu.cerrar')}
+          onClick={onClose}
+        >
           <Icon name="close" size={14} />
         </button>
         <div class="qs-scroll">
-          <span class="eyebrow">A tu gusto</span>
-          <h3 onClick={tapTitle}>Ajustes</h3>
-          <h4 class="qs-sub">Sonido</h4>
+          <span class="eyebrow">{t('pantallas.settingsmenu.a_tu_gusto')}</span>
+          <h3 onClick={tapTitle}>{t('pantallas.settingsmenu.ajustes')}</h3>
+          <h4 class="qs-sub">{t('pantallas.settingsmenu.sonido')}</h4>
           <label class="set-check">
             <input type="checkbox" checked={sound} onChange={() => audio.toggle()} />
-            <span>Sonido activado</span>
+            <span>{t('pantallas.settingsmenu.sonido_activado')}</span>
           </label>
-          {slider('music', 'Música')}
-          {slider('sfx', 'Efectos')}
-          {slider('ambient', 'Ambiente')}
-          <h4 class="qs-sub">Velocidad de la escena</h4>
-          <p class="tiny">Noches, asaltos y el ir y venir de la taberna.</p>
-          <div class="set-choices" role="radiogroup" aria-label="Velocidad">
+          {slider('music', t('pantallas.settingsmenu.musica'))}
+          {slider('sfx', t('pantallas.settingsmenu.efectos'))}
+          {slider('ambient', t('pantallas.settingsmenu.ambiente'))}
+          <h4 class="qs-sub">{t('pantallas.settingsmenu.velocidad_de_la_escena')}</h4>
+          <p class="tiny">{t('pantallas.settingsmenu.noches_asaltos_y_el')}</p>
+          <div
+            class="set-choices"
+            role="radiogroup"
+            aria-label={t('pantallas.settingsmenu.velocidad')}
+          >
             {SPEEDS.map((v) => (
               <button
                 key={v}
@@ -111,14 +125,14 @@ export function SettingsMenu({
               </button>
             ))}
           </div>
-          <h4 class="qs-sub">Lectura</h4>
+          <h4 class="qs-sub">{t('pantallas.settingsmenu.lectura')}</h4>
           <label class="set-check">
             <input
               type="checkbox"
               checked={s.bigText}
               onChange={(e) => set({ bigText: e.currentTarget.checked })}
             />
-            <span>Letra más grande en paneles y fichas</span>
+            <span>{t('pantallas.settingsmenu.letra_mas_grande_en')}</span>
           </label>
           <label class="set-check">
             <input
@@ -126,7 +140,7 @@ export function SettingsMenu({
               checked={s.calm}
               onChange={(e) => set({ calm: e.currentTarget.checked })}
             />
-            <span>Menos movimiento en la interfaz</span>
+            <span>{t('pantallas.settingsmenu.menos_movimiento_en_la')}</span>
           </label>
           <label class="set-check">
             <input
@@ -134,7 +148,7 @@ export function SettingsMenu({
               checked={s.dawnAll}
               onChange={(e) => set({ dawnAll: e.currentTarget.checked })}
             />
-            <span>Carta del amanecer de golpe (sin abrir las noticias una a una)</span>
+            <span>{t('pantallas.settingsmenu.carta_del_amanecer_de')}</span>
           </label>
           {canVibrate() && (
             <label class="set-check">
@@ -143,7 +157,7 @@ export function SettingsMenu({
                 checked={s.vibrate}
                 onChange={(e) => set({ vibrate: e.currentTarget.checked })}
               />
-              <span>Vibración en golpes, monedas y asaltos</span>
+              <span>{t('pantallas.settingsmenu.vibracion_en_golpes_monedas')}</span>
             </label>
           )}
           <label class="set-check">
@@ -152,24 +166,25 @@ export function SettingsMenu({
               checked={s.share}
               onChange={(e) => set({ share: e.currentTarget.checked })}
             />
-            <span>
-              Enviar mi partida a los desarrolladores (día, oro, tiempo jugado), para mejorar el
-              juego
-            </span>
+            <span>{t('pantallas.settingsmenu.enviar_mi_partida_a')}</span>
           </label>
-          <h4 class="qs-sub">Imagen</h4>
+          <h4 class="qs-sub">{t('pantallas.settingsmenu.imagen')}</h4>
           <label class="set-check">
             <input
               type="checkbox"
               checked={s.moodLight}
               onChange={(e) => set({ moodLight: e.currentTarget.checked })}
             />
-            <span>Luz con ambiente: salas más oscuras y charcos de luz de fuegos y faroles</span>
+            <span>{t('pantallas.settingsmenu.luz_con_ambiente_salas')}</span>
           </label>
           {s.moodLight && (
             <div class="set-row">
-              <span>Clima</span>
-              <div class="set-choices" role="radiogroup" aria-label="Clima">
+              <span>{t('pantallas.settingsmenu.clima')}</span>
+              <div
+                class="set-choices"
+                role="radiogroup"
+                aria-label={t('pantallas.settingsmenu.clima')}
+              >
                 {(['normal', 'clear'] as const).map((v) => (
                   <button
                     key={v}
@@ -178,25 +193,27 @@ export function SettingsMenu({
                     class={`btn ${s.weather === v ? 'btn-gold' : 'btn-wood'}`}
                     onClick={() => set({ weather: v })}
                   >
-                    {v === 'normal' ? 'Normal' : 'Siempre despejado'}
+                    {v === 'normal'
+                      ? t('pantallas.settingsmenu.normal')
+                      : t('pantallas.settingsmenu.siempre_despejado')}
                   </button>
                 ))}
               </div>
             </div>
           )}
-          <h4 class="qs-sub">Rendimiento</h4>
+          <h4 class="qs-sub">{t('pantallas.settingsmenu.rendimiento')}</h4>
           <label class="set-check">
             <input
               type="checkbox"
               checked={s.fewLights}
               onChange={(e) => set({ fewLights: e.currentTarget.checked })}
             />
-            <span>Pocas luces (solo las del centro de la vista), para móviles lentos</span>
+            <span>{t('pantallas.settingsmenu.pocas_luces_solo_las')}</span>
           </label>
           {s.tester && (
             <>
-              <h4 class="qs-sub">Modo prueba</h4>
-              <p class="tiny">Atajos para probar sin esperar. Cambian la partida en curso.</p>
+              <h4 class="qs-sub">{t('pantallas.settingsmenu.modo_prueba')}</h4>
+              <p class="tiny">{t('pantallas.settingsmenu.atajos_para_probar_sin')}</p>
               <div class="tester-grid">
                 {CHEATS.map((c) => (
                   <button
@@ -215,14 +232,14 @@ export function SettingsMenu({
               )}
               {onWeather && (
                 <label class="set-row">
-                  <span>Forzar el tiempo</span>
+                  <span>{t('pantallas.settingsmenu.forzar_el_tiempo')}</span>
                   <select
                     value={weather ?? ''}
                     onChange={(e) =>
                       onWeather((e.currentTarget.value || null) as WeatherKind | null)
                     }
                   >
-                    <option value="">El que toque</option>
+                    <option value="">{t('pantallas.settingsmenu.el_que_toque')}</option>
                     {WEATHER_KINDS.map((k) => (
                       <option key={k} value={k}>
                         {WEATHER_LABEL[k]}
@@ -233,13 +250,15 @@ export function SettingsMenu({
               )}
               {onLightning && (
                 <button class="btn btn-wood" onClick={onLightning}>
-                  Relámpago
+                  {t('pantallas.settingsmenu.relampago')}
                 </button>
               )}
-              <p class="tiny">
-                Ver una pelea contra un jefe con los héroes de casa (no cambia nada):
-              </p>
-              <div class="set-choices" role="radiogroup" aria-label="Resultado">
+              <p class="tiny">{t('pantallas.settingsmenu.ver_una_pelea_contra')}</p>
+              <div
+                class="set-choices"
+                role="radiogroup"
+                aria-label={t('pantallas.settingsmenu.resultado')}
+              >
                 {[true, false].map((v) => (
                   <button
                     key={String(v)}
@@ -248,7 +267,7 @@ export function SettingsMenu({
                     class={`btn ${won === v ? 'btn-gold' : 'btn-wood'}`}
                     onClick={() => setWon(v)}
                   >
-                    {v ? 'Ganan' : 'Pierden'}
+                    {v ? t('pantallas.settingsmenu.ganan') : t('pantallas.settingsmenu.pierden')}
                   </button>
                 ))}
               </div>
@@ -265,10 +284,7 @@ export function SettingsMenu({
                   checked={s.classicTime}
                   onChange={(e) => set({ classicTime: e.currentTarget.checked })}
                 />
-                <span>
-                  Días a la antigua: el día solo corre con el juego abierto y se cierra con
-                  «Anochecer»
-                </span>
+                <span>{t('pantallas.settingsmenu.dias_a_la_antigua')}</span>
               </label>
               <label class="set-check">
                 <input
@@ -276,16 +292,14 @@ export function SettingsMenu({
                   checked={s.tester}
                   onChange={(e) => set({ tester: e.currentTarget.checked })}
                 />
-                <span>Modo prueba activado</span>
+                <span>{t('pantallas.settingsmenu.modo_prueba_activado')}</span>
               </label>
             </>
           )}
           {/* El glosario, plegado: casi nadie lo lee entero y ocupaba cuatro pantallas. */}
           <details class="set-fold">
-            <summary class="qs-sub">Qué es cada cosa</summary>
-            <p class="tiny">
-              Mantén pulsado un botón, un marcador del mapa o una cifra para ver qué es.
-            </p>
+            <summary class="qs-sub">{t('pantallas.settingsmenu.que_es_cada_cosa')}</summary>
+            <p class="tiny">{t('pantallas.settingsmenu.manten_pulsado_un_boton')}</p>
             <dl class="glossary">
               {GLOSSARY.map((g) => (
                 <div key={g.term}>
@@ -295,7 +309,9 @@ export function SettingsMenu({
               ))}
             </dl>
           </details>
-          <p class="tiny set-version">Versión {VERSION}</p>
+          <p class="tiny set-version">
+            {t('pantallas.settingsmenu.version', { version: VERSION })}
+          </p>
         </div>
       </article>
     </div>

@@ -32,6 +32,7 @@ import { HEARTH_RIGHT } from './salon';
 import { FRONT, MID } from './salas/kit';
 import type { Room } from '../../core/model';
 import { project, scaleAt, type View } from './view3d';
+import { t } from '../../textos';
 
 /**
  * Quién es: el gato, el perro, el cuervo o un bicho de una sala rota (`rata:<sala>`,
@@ -357,12 +358,12 @@ export class Pets {
 
   label(id: PetId): string {
     return {
-      gato: 'Bigotes, el gato',
-      perro: 'Tizón, el perro',
-      cuervo: 'Carbón, el cuervo',
-      rata: 'Una rata',
-      murcielago: 'Murciélagos',
-      presa: 'Una rata',
+      gato: t('escena.pets.bigotes_el_gato'),
+      perro: t('escena.pets.tizon_el_perro'),
+      cuervo: t('escena.pets.carbon_el_cuervo'),
+      rata: t('escena.pets.una_rata'),
+      murcielago: t('escena.pets.murcielagos'),
+      presa: t('escena.pets.una_rata'),
     }[kindOf(id)];
   }
 

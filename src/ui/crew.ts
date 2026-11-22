@@ -17,17 +17,16 @@ import { isWorkshop } from '../core/crafting';
 import { brewAt, cookAt } from '../core/larder';
 import type { GameState, Hero, Room, Worker } from '../core/model';
 import { visitorsOf } from '../core/salon';
-import { plural } from '../core/text';
 import { ATTR_NAMES, gainText, skillGain, trainState } from '../core/training';
 import { crewOf, effortOf, isJobRoom, isTrainRoom, slotsOf, workIn } from '../core/workers';
-import { ROOMS, TRAINS } from '../data/rooms';
+import { TRAINS } from '../data/rooms';
 import { TRADES, TRADE_LIST } from '../data/workers';
 import { CLASS_NAMES, statusLabel } from '../data/labels';
 import { GUARD, GUARD_VAULT, planTask, type Task } from './drop';
 import { guardsAt } from '../core/guards';
 import { vaultOf } from '../core/vault';
 import { jobRoomName } from './roomName';
-import { tx } from '../textos';
+import { t } from '../textos';
 
 /** Alguien de la casa en la lista. */
 export interface Member {
@@ -66,18 +65,21 @@ export function crewEffect(game: GameState, room: Room): string {
   switch (room.type) {
     case 'salon': {
       const v = visitorsOf(game, game.day);
-      return `Hoy se atiende a ${v.served} de ${v.total} visitantes.`;
+      return t('ficha.crew.hoy_se_atiende_a', { served: v.served, total: v.total });
     }
     case 'bodega':
-      return `Saca ${Math.round(brewAt(game, room))} jarras al día.`;
+      return t('ficha.crew.saca_jarras_al_dia', { brew_at: Math.round(brewAt(game, room)) });
     case 'cocina':
-      return `Hace ${Math.round(cookAt(game, room))} raciones al día.`;
+      return t('ficha.crew.hace_raciones_al_dia', { cook_at: Math.round(cookAt(game, room)) });
     case 'enfermeria': {
       // La cuenta del núcleo (`nurseBonus`): con `NURSE_WORK` de mano entre todos, un día más.
       const n = workIn(game, 'enfermeria');
       return n >= NURSE_WORK
-        ? `Llegan a ${NURSE_WORK} de mano: cada noche, un día de cama menos a cada herido. Más gente no cura más deprisa.`
-        : `Con ${NURSE_WORK} de mano entre todos (hoy, ${handText(n)}), cada noche sería un día de cama menos a cada herido.`;
+        ? t('ficha.crew.llegan_a_de_mano', { nurse_work: NURSE_WORK })
+        : t('ficha.crew.con_de_mano_entre', {
+            nurse_work: NURSE_WORK,
+            hand_text: handText(n),
+          });
     }
     default:
       return '';
@@ -104,10 +106,8 @@ function perWork(room: Room): number {
 
 /** «+12 raciones», «+3 jarras» o «Atiende a 2». */
 function givesText(room: Room, n: number): string {
-  if (room.type === 'salon') return `Atiende a ${n}`;
-  return room.type === 'cocina'
-    ? `+${n} ${plural(n, 'ración', 'raciones')}`
-    : `+${n} ${plural(n, 'jarra', 'jarras')}`;
+  if (room.type === 'salon') return t('ficha.crew.atiende_a', { n });
+  return room.type === 'cocina' ? t('ficha.crew.raciones', { n }) : t('ficha.crew.jarras', { n });
 }
 
 /**
@@ -128,10 +128,10 @@ export function givesAt(room: Room, efforts: number[]): (string | undefined)[] {
 const workerMember = (w: Worker, room?: Room): Member => ({
   id: w.id,
   name: w.name,
-  sub: `${TRADES[w.trade].name[w.sex]} · Maña ${w.skill}`,
+  sub: t('ficha.crew.mana', { oficio: TRADES[w.trade].name[w.sex], mana: w.skill }),
   hero: false,
   off: !!room && room.type !== w.trade,
-  more: `«${tx(w.quote)}»`,
+  more: t('ficha.crew.cita', { cita: w.quote }),
 });
 
 const heroMember = (h: Hero, sub: string): Member => ({ id: h.id, name: h.name, sub, hero: true });
@@ -139,31 +139,31 @@ const heroMember = (h: Hero, sub: string): Member => ({ id: h.id, name: h.name, 
 /** «Faltan unos 3 días» (o «Sube esta noche»). */
 export function daysLeft(frac: number, perDay: number): string {
   const d = Math.ceil((1 - frac) / perDay - 1e-9);
-  return d <= 1 ? 'Sube esta noche' : `Faltan unos ${d} días`;
+  return d <= 1 ? t('ficha.crew.sube_esta_noche') : t('ficha.crew.faltan_unos_dias', { d });
 }
 
 /** Un héroe en una sala: entrenando (con su barra) o echando una mano. */
 function heroAt(game: GameState, h: Hero, room: Room): Member {
-  if (h.status !== 'ok') return heroMember(h, 'Fuera hoy');
+  if (h.status !== 'ok') return heroMember(h, t('ficha.crew.fuera_hoy'));
   const attr = TRAINS[room.type];
-  if (!attr) return heroMember(h, 'Héroe, echa una mano');
-  const t = trainState(game, h, dayPart(game));
+  if (!attr) return heroMember(h, t('ficha.crew.heroe_echa_una_mano'));
+  const st = trainState(game, h, dayPart(game));
   const m = heroMember(h, `${ATTR_NAMES[attr]} ${h.attrs[attr]}`);
-  if (!t) return m;
-  if (t.capped)
+  if (!st) return m;
+  if (st.capped)
     return {
       ...m,
-      gives: 'Al máximo',
+      gives: t('ficha.crew.al_maximo'),
       progress: 1,
       maxed: true,
-      more: `${t.by === 'sala' ? 'Aquí ya no aprende más: mejora la sala para que siga.' : 'Ya no aprende más hasta subir de nivel.'} Si se queda, al amanecer se irá a descansar.`,
+      more: t('ficha.crew.si_se_queda_al', { por: st.by }),
     };
   const gain = gainText(skillGain(h, attr));
   return {
     ...m,
-    gives: daysLeft(t.frac, t.perDay),
-    progress: t.frac,
-    more: gain ? `Con ese punto: ${gain}.` : 'Ese punto aún no se notará en las habilidades.',
+    gives: daysLeft(st.frac, st.perDay),
+    progress: st.frac,
+    more: gain ? t('ficha.crew.con_ese_punto', { gain }) : t('ficha.crew.ese_punto_aun_no'),
   };
 }
 
@@ -184,7 +184,9 @@ export function crewGroups(game: GameState): Group[] {
     const attr = TRAINS[room.type];
     groups.push({
       key: room.id,
-      title: train ? `Entrenan · ${jobRoomName(game, room)}` : jobRoomName(game, room),
+      title: train
+        ? t('ficha.crew.entrenan', { job_room_name: jobRoomName(game, room) })
+        : jobRoomName(game, room),
       note: train ? `${ATTR_NAMES[attr!]}.` : crewEffect(game, room),
       slots: slotsOf(room),
       task: room.id,
@@ -210,7 +212,7 @@ export function crewGroups(game: GameState): Group[] {
         ...crew.heroes.map((h) => (h.status === 'ok' && !h.guard ? HERO_WORK * lv : 0)),
       ];
       groups.at(-1)!.people.forEach((m, i) => {
-        if (hands[i]) m.gives = `+${handText(hands[i])} de mano`;
+        if (hands[i]) m.gives = t('ficha.crew.de_mano', { hand_text: handText(hands[i]) });
       });
     }
     // En un taller, cada trabajo va al ritmo de todos juntos: la parte de cada uno (si son varios).
@@ -222,44 +224,45 @@ export function crewGroups(game: GameState): Group[] {
       const sum = parts.reduce((a, b) => a + b, 0);
       if (parts.filter(Boolean).length > 1)
         groups.at(-1)!.people.forEach((m, i) => {
-          if (parts[i]) m.gives = `Hace el ${Math.round((100 * parts[i]) / sum)} %`;
+          if (parts[i])
+            m.gives = t('ficha.crew.hace_el', { pct: Math.round((100 * parts[i]) / sum) });
         });
     }
   }
   groups.push({
     key: GUARD,
-    title: 'De guardia',
-    note: 'En la puerta: no salen de misión y dan la alarma si asaltan.',
+    title: t('ficha.crew.de_guardia'),
+    note: t('ficha.crew.en_la_puerta_no'),
     slots: MAX_GUARDS,
     task: GUARD,
-    people: guardsAt(game, 'puerta').map((h) => heroMember(h, 'Héroe')),
+    people: guardsAt(game, 'puerta').map((h) => heroMember(h, t('ficha.crew.heroe'))),
   });
   if (vaultOf(game))
     groups.push({
       key: GUARD_VAULT,
-      title: 'De guardia en la cámara',
-      note: 'Patrullan el tesoro: se echan encima del ladrón y son la última defensa si asaltan.',
+      title: t('ficha.crew.de_guardia_en_la'),
+      note: t('ficha.crew.patrullan_el_tesoro_se'),
       slots: MAX_GUARDS,
       task: GUARD_VAULT,
-      people: guardsAt(game, 'tesoro').map((h) => heroMember(h, 'Héroe')),
+      people: guardsAt(game, 'tesoro').map((h) => heroMember(h, t('ficha.crew.heroe'))),
     });
   const idle = [
     ...game.workers.filter((w) => !w.room).map((w) => workerMember(w)),
     ...game.heroes
       .filter((h) => h.status === 'ok' && !h.job && !h.guard)
-      .map((h) => heroMember(h, 'Héroe')),
+      .map((h) => heroMember(h, t('ficha.crew.heroe'))),
   ];
   groups.push({
     key: 'descansan',
-    title: 'Descansan',
-    note: 'Los héroes recuperan la moral; los trabajadores cobran igual.',
+    title: t('ficha.crew.descansan'),
+    note: t('ficha.crew.los_heroes_recuperan_la'),
     people: idle,
   });
   const away = game.heroes.filter((h) => h.status === 'mision' || h.status === 'herido');
   if (away.length)
     groups.push({
       key: 'fuera',
-      title: 'Fuera',
+      title: t('ficha.crew.fuera'),
       people: away.map((h) => heroMember(h, statusLabel(h))),
     });
   return groups;
@@ -280,7 +283,10 @@ export function crewAlerts(game: GameState): Alert[] {
   for (const r of rooms) {
     const c = crewOf(game, r.id);
     if (!c.workers.length && !c.heroes.length)
-      out.push({ text: `${jobRoomName(game, r)}: no trabaja nadie.`, room: r.id });
+      out.push({
+        text: t('ficha.crew.no_trabaja_nadie', { job_room_name: jobRoomName(game, r) }),
+        room: r.id,
+      });
   }
   const free = (r: Room) => {
     const c = crewOf(game, r.id);
@@ -288,7 +294,7 @@ export function crewAlerts(game: GameState): Alert[] {
   };
   for (const w of game.workers) {
     if (!w.room) {
-      out.push({ text: `${w.name} no tiene tarea.`, who: w.id });
+      out.push({ text: t('ficha.crew.no_tiene_tarea', { nombre: w.name }), who: w.id });
       continue;
     }
     const now = game.building.rooms.find((r) => r.id === w.room);
@@ -296,7 +302,10 @@ export function crewAlerts(game: GameState): Alert[] {
     const own = rooms.find((r) => r.type === w.trade && free(r) > 0);
     if (own)
       out.push({
-        text: `${w.name} rendiría más en ${jobRoomName(game, own)}: es su oficio.`,
+        text: t('ficha.crew.rendiria_mas_en_es', {
+          nombre: w.name,
+          job_room_name: jobRoomName(game, own),
+        }),
         who: w.id,
       });
   }
@@ -323,7 +332,7 @@ export function taskOf(game: GameState, who: string): Task {
 function freeText(game: GameState, room: Room): string {
   const c = crewOf(game, room.id);
   const n = slotsOf(room) - c.workers.length - c.heroes.length;
-  return n > 0 ? `${n} ${plural(n, 'libre', 'libres')}` : 'llena';
+  return t('ficha.crew.libres', { n: Math.max(0, n) });
 }
 
 /** Todo lo que puede hacer alguien: descansar, cada sala con puestos y (los héroes) la guardia. */
@@ -336,7 +345,9 @@ export function taskOptions(game: GameState, who: string): TaskOption[] {
   };
   // Lo que hace ahora se dice como estado («Trabaja en Salón»); lo demás, como lo que se
   // le manda («Poner a trabajar en Cocina · 1 libre»).
-  const out = [opt(null, now === null ? 'Descansa' : 'Mandar a descansar')];
+  const out = [
+    opt(null, now === null ? t('ficha.crew.descansa') : t('ficha.crew.mandar_a_descansar')),
+  ];
   const h = game.heroes.find((x) => x.id === who);
   const capped = (r: Room) => !!h && !!trainState(game, h)?.capped && h.job === r.id;
   for (const r of postRooms(game)) {
@@ -348,9 +359,15 @@ export function taskOptions(game: GameState, who: string): TaskOption[] {
         r.id,
         r.id === now
           ? attr
-            ? `Entrena ${ATTR_NAMES[attr]} (${name})${capped(r) ? ' · al máximo' : ''}`
-            : `Trabaja en ${name}`
-          : `${attr ? `Poner a entrenar ${ATTR_NAMES[attr]} (${name})` : `Poner a trabajar en ${name}`} · ${freeText(game, r)}`,
+            ? t('ficha.crew.entrena', { atributo: ATTR_NAMES[attr], nombre: name, tope: capped(r) })
+            : t('ficha.crew.trabaja_en', { nombre: name })
+          : attr
+            ? t('ficha.crew.poner_a_entrenar', {
+                atributo: ATTR_NAMES[attr],
+                nombre: name,
+                libres: freeText(game, r),
+              })
+            : t('ficha.crew.poner_a_trabajar_en', { nombre: name, libres: freeText(game, r) }),
       ),
     );
   }
@@ -360,8 +377,10 @@ export function taskOptions(game: GameState, who: string): TaskOption[] {
       opt(
         GUARD,
         now === GUARD
-          ? 'De guardia'
-          : `Poner de guardia · ${left > 0 ? `${left} ${plural(left, 'libre', 'libres')}` : 'llena'}`,
+          ? t('ficha.crew.de_guardia')
+          : t('ficha.crew.poner_de_guardia', {
+              libres: t('ficha.crew.libres', { n: Math.max(0, left) }),
+            }),
       ),
     );
     if (vaultOf(game)) {
@@ -370,8 +389,10 @@ export function taskOptions(game: GameState, who: string): TaskOption[] {
         opt(
           GUARD_VAULT,
           now === GUARD_VAULT
-            ? 'De guardia en la cámara'
-            : `Poner de guardia en la cámara · ${n > 0 ? `${n} ${plural(n, 'libre', 'libres')}` : 'llena'}`,
+            ? t('ficha.crew.de_guardia_en_la')
+            : t('ficha.crew.poner_de_guardia_en', {
+                libres: t('ficha.crew.libres', { n: Math.max(0, n) }),
+              }),
         ),
       );
     }
@@ -388,30 +409,40 @@ export function candidatesFor(game: GameState, task: Task): Member[] {
       // Su oficio y dónde está ahora, para elegir bien.
       out.push({
         ...workerMember(w),
-        sub: `${TRADES[w.trade].name[w.sex]} · ${room ? `en ${jobRoomName(game, room)}` : 'descansa'}`,
+        sub: t('ficha.crew.oficio_y_tarea', {
+          oficio: TRADES[w.trade].name[w.sex],
+          tarea: room
+            ? t('ficha.crew.en_sala', { sala: jobRoomName(game, room) })
+            : t('ficha.crew.descansa_min'),
+        }),
       });
     }
   for (const h of game.heroes)
     if (h.status === 'ok' && taskOf(game, h.id) !== task && planTask(game, h.id, task).ok) {
-      const t = taskOf(game, h.id);
-      const room = game.building.rooms.find((r) => r.id === t);
+      const cur = taskOf(game, h.id);
+      const room = game.building.rooms.find((r) => r.id === cur);
       const where =
-        t === GUARD
-          ? 'de guardia'
-          : t === GUARD_VAULT
-            ? 'de guardia en la cámara'
+        cur === GUARD
+          ? t('ficha.crew.de_guardia_2')
+          : cur === GUARD_VAULT
+            ? t('ficha.crew.de_guardia_en_la_2')
             : room
-              ? `en ${jobRoomName(game, room)}`
-              : 'descansa';
+              ? t('ficha.crew.en_sala', { sala: jobRoomName(game, room) })
+              : t('ficha.crew.descansa_min');
       // La clase y el nivel, que deciden en qué rinde (entrenar, cocinar…).
-      out.push(heroMember(h, `${CLASS_NAMES[h.cls][h.sex]} nv ${h.lvl} · ${where}`));
+      out.push(
+        heroMember(
+          h,
+          t('ficha.crew.clase_nivel_tarea', {
+            clase: CLASS_NAMES[h.cls][h.sex],
+            nivel: h.lvl,
+            tarea: where,
+          }),
+        ),
+      );
     }
   return out;
 }
-
-/** «el salón», «la cocina»: la sala con su artículo, para frases cortas. */
-const withArticle = (room: Room) =>
-  `${room.type === 'salon' ? 'el' : 'la'} ${ROOMS[room.type].name.toLowerCase()}`;
 
 /**
  * La tarea de alguien en dos o tres palabras, para chapas y la escena: «En la cocina», «Entrena
@@ -420,11 +451,13 @@ const withArticle = (room: Room) =>
 export function taskLabel(game: GameState, who: string): string {
   const h = game.heroes.find((x) => x.id === who);
   if (h && h.status !== 'ok') return statusLabel(h);
-  const t = taskOf(game, who);
-  if (t === GUARD) return 'De guardia';
-  if (t === GUARD_VAULT) return 'Guarda la cámara';
-  const room = t ? game.building.rooms.find((r) => r.id === t) : undefined;
-  if (!room) return 'Descansa';
+  const cur = taskOf(game, who);
+  if (cur === GUARD) return t('ficha.crew.de_guardia');
+  if (cur === GUARD_VAULT) return t('ficha.crew.guarda_la_camara');
+  const room = cur ? game.building.rooms.find((r) => r.id === cur) : undefined;
+  if (!room) return t('ficha.crew.descansa');
   const attr = TRAINS[room.type];
-  return attr ? `Entrena ${ATTR_NAMES[attr]}` : `En ${withArticle(room)}`;
+  return attr
+    ? t('ficha.crew.entrena_2', { atributo: ATTR_NAMES[attr] })
+    : t('ficha.crew.en_la_sala', { sala: t(`salas.con_articulo.${room.type}`) });
 }

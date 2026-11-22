@@ -35,6 +35,9 @@ export function statusLabel(h: Hero, candidate = false): string {
 }
 
 /** El nombre de una habilidad (los ids están en español: «Combate», «Arcano»…). */
+/** El tipo de un encargo, para enseñarlo («Cazar»). */
+export const questTypeName = (q: string) => t(`etiquetas.tipos.${q}`);
+
 export const skillName = (k: string) => t(`etiquetas.habilidades.${k}`);
 /** El nombre de un atributo (F, D, M). */
 export const attrName = (a: string) => t(`etiquetas.atributos.${a}`);

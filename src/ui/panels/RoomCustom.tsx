@@ -17,6 +17,7 @@ import {
 import { help } from '../HoldHelp';
 import { Icon } from '../icons';
 import { Buy } from './TabernaPanel';
+import { t } from '../../textos';
 
 /** Lo que se le puede cambiar a una sala desde «Personalizar». */
 export interface CustomProps {
@@ -68,7 +69,7 @@ function RoomTint({
   const job = paintingOf(game, room.id);
   const [pick, setPick] = useState<TintId | null>(job ? job.tint : cur);
   const [locked, setLocked] = useState<string | null>(null);
-  const name = (id: TintId | null) => (id ? TINTS[id].name : 'De la casa');
+  const name = (id: TintId | null) => (id ? TINTS[id].name : t('paneles.roomcustom.de_la_casa'));
   const swatch = (id: TintId | null, bg?: string) => {
     const st = paintStatus(game, room.id, id);
     const lock = st.state === 'lock';
@@ -108,33 +109,39 @@ function RoomTint({
   const js = job ? paintState(game, job) : null;
   return (
     <div class="room-tint">
-      <h4 class="qs-sub">Colores de las telas</h4>
-      <span class="row-sub">Ahora: {name(cur)}</span>
-      <div class="tav-swatches" role="radiogroup" aria-label="Colores de las telas">
+      <h4 class="qs-sub">{t('paneles.roomcustom.colores_de_las_telas')}</h4>
+      <span class="row-sub">{t('paneles.roomcustom.ahora', { nombre: name(cur) })}</span>
+      <div
+        class="tav-swatches"
+        role="radiogroup"
+        aria-label={t('paneles.roomcustom.colores_de_las_telas')}
+      >
         {swatch(null)}
         {TINT_IDS.map((id) => {
           const [, d, m, l] = TINTS[id].ramp;
           return swatch(id, `linear-gradient(${l} 0 30%, ${m} 30% 70%, ${d} 70%)`);
         })}
       </div>
-      {onPreview && <small class="row-sub">Toca un color para ver cómo quedaría.</small>}
+      {onPreview && <small class="row-sub">{t('paneles.roomcustom.toca_un_color_para')}</small>}
       {locked && <small class="lock-why">{locked}</small>}
       {job && js ? (
         <div class="paint-job" role="status">
           <span class="row-sub">
-            Pintándola de {name(job.tint).toLowerCase()}:{' '}
-            {js.walking
-              ? 'el pintor va de camino.'
-              : js.hoursLeft === null
-                ? 'parado, el pintor no está en su taller.'
-                : `acaba en ${Math.max(1, Math.ceil(js.hoursLeft))} h.`}
+            {t('paneles.roomcustom.pintandola_de', {
+              color: name(job.tint).toLowerCase(),
+              estado: js.walking ? 'camino' : js.hoursLeft === null ? 'parado' : 'pintando',
+              horas: Math.max(1, Math.ceil(js.hoursLeft ?? 0)),
+            })}
           </span>
-          <span class="train-bar" aria-label={`${Math.round(js.frac * 100)} %`}>
+          <span
+            class="train-bar"
+            aria-label={t('paneles.roomcustom.pct', { pct: Math.round(js.frac * 100) })}
+          >
             <i style={{ width: `${Math.round(js.frac * 100)}%` }} />
           </span>
           {onAct && (
             <button class="btn btn-wood" onClick={() => onAct({ type: 'cancelPaint', id: job.id })}>
-              Cancelar · devuelve {job.gold}
+              {t('paneles.roomcustom.cancelar_devuelve', { oro: job.gold })}
             </button>
           )}
         </div>
@@ -145,25 +152,27 @@ function RoomTint({
             disabled={!onAct}
             onClick={() => onAct?.({ type: 'paint', room: room.id, tint: pick })}
           >
-            <Icon name="brocha" size={12} /> Pintar de {name(pick).toLowerCase()} · {st.cost}
+            <Icon name="brocha" size={12} />{' '}
+            {t('paneles.roomcustom.pintar_de', { color: name(pick).toLowerCase(), coste: st.cost })}
           </button>
-          <small class="lock-why">El pintor irá andando y la pintará en unas horas.</small>
+          <small class="lock-why">{t('paneles.roomcustom.el_pintor_ira_andando')}</small>
         </>
       ) : st.state === 'same' ? (
         <small class="lock-why">
-          {blocked && 'why' in blocked ? blocked.why : 'Ya es de este color. Elige otro.'}
+          {blocked && 'why' in blocked ? blocked.why : t('paneles.roomcustom.ya_es_de_este')}
         </small>
       ) : (
         <>
           <button class="btn btn-wood dress-go locked" disabled>
-            <Icon name={st.state === 'lock' ? 'candado' : 'brocha'} size={12} /> Pintar · {st.cost}
+            <Icon name={st.state === 'lock' ? 'candado' : 'brocha'} size={12} />{' '}
+            {t('paneles.roomcustom.pintar', { coste: st.cost })}
           </button>
           <small class="lock-why">{st.why}</small>
         </>
       )}
       {onTint && cur !== pick && (
         <button class="btn btn-wood dress-go" onClick={() => onTint(room.id, pick)}>
-          Probar gratis (modo prueba)
+          {t('paneles.roomcustom.probar_gratis_modo_prueba')}
         </button>
       )}
     </div>
@@ -189,30 +198,39 @@ function SalonAdornos({
     <>
       <article
         class={`row ${feastToday ? 'tav-feast' : ''}`}
-        {...help(
-          `Cada ${FEAST_EVERY} días el pueblo sale a la calle. Si la montas en la taberna, esa noche la caja se dobla y los que descansan ganan 10 de moral.`,
-        )}
+        {...help(t('paneles.roomcustom.cada_dias_el_pueblo', { feast_every: FEAST_EVERY }))}
       >
         <Icon name="banderin" size={22} />
         <span class="row-info">
-          <b>{feastToday ? '¡Hoy es la fiesta!' : 'Fiesta de la comarca'}</b>
+          <b>
+            {feastToday
+              ? t('paneles.roomcustom.hoy_es_la_fiesta')
+              : t('paneles.roomcustom.fiesta_de_la_comarca')}
+          </b>
           <span class="row-sub">
-            {feastToday ? 'La caja se dobla esta noche.' : `Día ${nextFeast}`}
+            {feastToday
+              ? t('paneles.roomcustom.la_caja_se_dobla')
+              : t('paneles.roomcustom.dia', { next_feast: nextFeast })}
           </span>
         </span>
         {feastToday &&
           (c.feast === game.day ? (
-            <span class="pill pill-ok">Montada</span>
+            <span class="pill pill-ok">{t('paneles.roomcustom.montada')}</span>
           ) : (
             onFeast && (
-              <Buy price={FEAST_PRICE} gold={game.gold} label="Montar la fiesta" onBuy={onFeast} />
+              <Buy
+                price={FEAST_PRICE}
+                gold={game.gold}
+                label={t('paneles.roomcustom.montar_la_fiesta')}
+                onBuy={onFeast}
+              />
             )
           ))}
       </article>
       <h4 class="qs-sub">
-        Decoración{' '}
+        {t('paneles.roomcustom.decoracion')}{' '}
         <span class="row-sub">
-          {decor.length}/{slots} huecos · uno más por cada nivel del salón
+          {t('paneles.roomcustom.huecos_uno_mas_por', { length: decor.length, slots })}
         </span>
       </h4>
       <div class="adornos">
@@ -223,19 +241,21 @@ function SalonAdornos({
             <article
               key={k}
               class={`adorno ${on ? 'on' : ''}`}
-              {...help(`${d.desc} ${on ? 'Quitarla no devuelve el dinero.' : ''}`.trim())}
+              {...help(
+                `${d.desc} ${on ? t('paneles.roomcustom.quitarla_no_devuelve_el') : ''}`.trim(),
+              )}
             >
               <b>{d.name}</b>
-              <span class="row-sub">+{d.appeal} Atractivo</span>
+              <span class="row-sub">{t('paneles.roomcustom.atractivo', { appeal: d.appeal })}</span>
               {on ? (
                 <button class="btn btn-wood" onClick={() => onDecor(k, false)}>
-                  Quitar
+                  {t('paneles.roomcustom.quitar')}
                 </button>
               ) : (
                 <Buy
                   price={d.price}
                   gold={game.gold}
-                  label={`Poner ${d.name}`}
+                  label={t('paneles.roomcustom.poner', { nombre: d.name })}
                   disabled={decor.length >= slots}
                   onBuy={() => onDecor(k, true)}
                 />

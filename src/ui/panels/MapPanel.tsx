@@ -13,18 +13,20 @@ import {
   REVEAL_RADIUS,
   TAVERN,
   placeAt,
+  placeName,
   type Terrain,
 } from '../../data/places';
 import { audio } from '../../audio/audio';
 import { BufferImage } from '../BufferImage';
 import { dawnIn, nightIn, shortSpan, span } from '../when';
 import { Icon, type IconName } from '../icons';
-import { listNames, plural, shortGold } from '../text';
+import { listNames, shortGold } from '../text';
 import { bandParams, capBand } from '../../data/raids';
 import { THREAT_STEPS, threatTrend } from '../../core/events';
 import { Portrait } from '../Portrait';
 import { heroFrame, lookOf, marksOf } from '../view';
 import { t, tx } from '../../textos';
+import { clientLabel } from '../../data/quests';
 
 interface Props {
   game: GameState;
@@ -40,14 +42,14 @@ const pct = (x: number, y: number) => ({
 });
 
 const TERRAIN: Record<Terrain, string> = {
-  rio: 'Junto al río',
-  pueblo: 'Pueblo',
-  monte: 'Montaña',
-  bosque: 'Bosque',
-  costa: 'Costa',
-  pantano: 'Pantano',
-  campo: 'Campo',
-  ruina: 'Ruinas',
+  rio: t('paneles.map.junto_al_rio'),
+  pueblo: t('paneles.map.pueblo'),
+  monte: t('paneles.map.montana'),
+  bosque: t('paneles.map.bosque'),
+  costa: t('paneles.map.costa'),
+  pantano: t('paneles.map.pantano'),
+  campo: t('paneles.map.campo'),
+  ruina: t('paneles.map.ruinas'),
 };
 const TERRAIN_ICON: Record<Terrain, IconName> = {
   rio: 'agua',
@@ -59,7 +61,12 @@ const TERRAIN_ICON: Record<Terrain, IconName> = {
   campo: 'campo',
   ruina: 'ruina',
 };
-const DANGER_NAMES = ['Peligro bajo', 'Peligro medio', 'Peligro alto', 'Peligro letal'];
+const DANGER_NAMES = [
+  t('paneles.map.peligro_bajo'),
+  t('paneles.map.peligro_medio'),
+  t('paneles.map.peligro_alto'),
+  t('paneles.map.peligro_letal'),
+];
 
 /** Una cifra de la ficha con su icono; el texto completo queda para el lector y el ratón. */
 function Stat({
@@ -319,7 +326,8 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
       .sort((a, b) => a.k - b.k);
     for (const { n } of order) {
       const p = screen(placeAt(n).x, placeAt(n).y);
-      const box = { x: p.x - labelW(n) / 2, y: p.y + 3, w: labelW(n), h: 15 };
+      const w = labelW(placeName(n));
+      const box = { x: p.x - w / 2, y: p.y + 3, w, h: 15 };
       // Solo los que caben enteros en el visor (uno cortado en el borde no se lee).
       if (box.x < 0 || box.x + box.w > size.w || box.y < 0 || box.y + box.h > size.h) continue;
       if (placed.some((b) => hits(b, box))) continue;
@@ -356,9 +364,11 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
             {days(q.days)}
             <span
               class={`mc-stat danger-${dangerClass(q.danger, hidden)}`}
-              title={hidden ? 'Peligro sin saber' : DANGER_NAMES[q.danger]}
-              data-help={`${hidden ? 'Peligro sin saber' : DANGER_NAMES[q.danger]}: una calavera por nivel, de bajo a letal.`}
-              aria-label={hidden ? 'Peligro sin saber' : DANGER_NAMES[q.danger]}
+              title={hidden ? t('paneles.map.peligro_sin_saber') : DANGER_NAMES[q.danger]}
+              data-help={t('paneles.map.una_calavera_por_nivel', {
+                peligro: hidden ? t('paneles.map.peligro_sin_saber') : DANGER_NAMES[q.danger],
+              })}
+              aria-label={hidden ? t('paneles.map.peligro_sin_saber') : DANGER_NAMES[q.danger]}
             >
               {hidden ? (
                 <>
@@ -371,7 +381,7 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
               )}
             </span>
             {q.chain && (
-              <Stat icon="historia" label="Parte de una historia">
+              <Stat icon="historia" label={t('paneles.map.parte_de_una_historia')}>
                 {''}
               </Stat>
             )}
@@ -397,14 +407,30 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
           <b class="map-card-title">
             <span
               class="mc-terrain"
-              title={seen ? (terrain ? TERRAIN[terrain] : 'Lugar') : 'Sin explorar'}
-              data-help={seen ? (terrain ? TERRAIN[terrain] : 'Lugar') : 'Sin explorar'}
+              title={
+                seen
+                  ? terrain
+                    ? TERRAIN[terrain]
+                    : t('paneles.map.lugar')
+                  : t('paneles.map.sin_explorar')
+              }
+              data-help={
+                seen
+                  ? terrain
+                    ? TERRAIN[terrain]
+                    : t('paneles.map.lugar')
+                  : t('paneles.map.sin_explorar')
+              }
             >
               {seen && terrain ? <Icon name={TERRAIN_ICON[terrain]} size={14} /> : '?'}
             </span>
-            {info.name}
+            {placeName(info.name)}
             {explored.includes(info.name) && (
-              <span class="mc-ok" title="Explorado" aria-label="explorado">
+              <span
+                class="mc-ok"
+                title={t('paneles.map.explorado')}
+                aria-label={t('paneles.map.explorado_min')}
+              >
                 <Icon name="check" size={10} />
               </span>
             )}
@@ -412,7 +438,7 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
           {qs.length > 0 && <ul class="map-card-list">{qs.map(questLine)}</ul>}
           {ms.map((m) => (
             <span key={m.id} class="mc-stats">
-              <Stat icon="pasos" label="De camino">
+              <Stat icon="pasos" label={t('paneles.map.de_camino')}>
                 {listNames(party(m).map((h) => h.name))}
               </Stat>
               {days(m.daysLeft)}
@@ -420,10 +446,12 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
           ))}
           {lost.map((h) => (
             <button key={h.id} class="linklike mc-lost" onClick={() => onHero(h.id)}>
-              <i>?</i> Aquí se perdió {h.name}
+              <i>?</i> {t('paneles.map.aqui_se_perdio', { nombre: h.name })}
             </button>
           ))}
-          {!qs.length && !ms.length && !lost.length && <span class="tiny">Nada que hacer.</span>}
+          {!qs.length && !ms.length && !lost.length && (
+            <span class="tiny">{t('paneles.map.nada_que_hacer')}</span>
+          )}
         </>
       ),
     };
@@ -447,7 +475,12 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
               {tx(def.name)}
             </b>
             <span class="tiny">
-              {def.client} · {done ? 'terminada' : `paso ${cs.step + 1} de ${def.steps.length}`}
+              {t('paneles.map.cliente_y_paso', {
+                cliente: clientLabel(def.client),
+                hecha: done,
+                paso: cs.step + 1,
+                pasos: def.steps.length,
+              })}
             </span>
             <ol class="mc-steps">
               {def.steps.slice(0, at + 1).map((st, i) => {
@@ -463,7 +496,7 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
                       ) : (
                         tx(st.title)
                       )}
-                      <small>{st.place}</small>
+                      <small>{placeName(st.place)}</small>
                     </span>
                   </li>
                 );
@@ -471,9 +504,7 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
               {!done && left > 0 && (
                 <li class="later">
                   <i>?</i>
-                  <span>
-                    {left} {plural(left, 'paso más', 'pasos más')} por descubrir
-                  </span>
+                  <span>{t('paneles.map.pasos_por_descubrir', { n: left })}</span>
                 </li>
               )}
             </ol>
@@ -494,13 +525,10 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
             {customOf(game).name}
           </b>
           <span class="mc-stats">
-            <Stat
-              icon="pasos"
-              label={`${game.missions.length} ${plural(game.missions.length, 'grupo fuera', 'grupos fuera')}`}
-            >
+            <Stat icon="pasos" label={t('paneles.map.grupos_fuera', { n: game.missions.length })}>
               {game.missions.length}
             </Stat>
-            <Stat icon="heroe" label={`${out} ${plural(out, 'héroe fuera', 'héroes fuera')}`}>
+            <Stat icon="heroe" label={t('paneles.map.heroes_fuera', { n: out })}>
               {out}
             </Stat>
             <Stat icon="coin" label={`${game.gold} monedas`}>
@@ -547,7 +575,7 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
       <button
         class="btn-icon map-card-x"
         data-tut="cerrar"
-        aria-label="Cerrar"
+        aria-label={t('paneles.map.cerrar')}
         onClick={() => setInfo(null)}
       >
         <Icon name="close" size={10} />
@@ -577,7 +605,12 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
           }}
           onClick={tap(() => setInfo(null))}
         >
-          <BufferImage buf={buf} scale={1} class="map-layer" label="Mapa de la comarca" />
+          <BufferImage
+            buf={buf}
+            scale={1}
+            class="map-layer"
+            label={t('paneles.map.mapa_de_la_comarca')}
+          />
           <BufferImage buf={fog} scale={1} class="map-layer" />
           {threat > 0 && threatAt && (
             <span
@@ -637,14 +670,14 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
                 key={n}
                 class={`map-place ${info?.kind === 'place' && info.name === n ? 'on' : ''}`}
                 style={pct(p.x, p.y)}
-                aria-label={n}
+                aria-label={placeName(n)}
                 onClick={(e) => {
                   e.stopPropagation();
                   tap(() => setInfo({ kind: 'place', name: n }))();
                 }}
               >
                 <i />
-                {shown.has(n) && <small aria-hidden="true">{n}</small>}
+                {shown.has(n) && <small aria-hidden="true">{placeName(n)}</small>}
               </button>
             ))}
           <button
@@ -672,9 +705,18 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
                 <button
                   key={`${cs.id}-${i}`}
                   class={`map-step ${now ? 'now' : 'past'} ${done ? 'closed' : ''}`}
-                  data-help={`«${tx(def.name)}»: ${now ? `paso ${i + 1}, el siguiente que hay que hacer` : `paso ${i + 1}, hecho`}.`}
+                  data-help={t('paneles.map.paso_ayuda', {
+                    nombre: tx(def.name),
+                    paso: i + 1,
+                    ahora: now,
+                  })}
                   style={pct(p.x - 9, p.y - 3)}
-                  aria-label={`«${tx(def.name)}», paso ${i + 1} de ${def.steps.length}: ${now ? 'el siguiente' : 'hecho'}`}
+                  aria-label={t('paneles.map.paso_de', {
+                    nombre: tx(def.name),
+                    paso: i + 1,
+                    pasos: def.steps.length,
+                    ahora: now,
+                  })}
                   onClick={(e) => {
                     e.stopPropagation();
                     tap(() => setInfo({ kind: 'chain', id: cs.id }))();
@@ -693,9 +735,18 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
               <button
                 key={q.id}
                 class={`map-pin danger-${dangerClass(q.danger, hidden)} ${q.chain ? 'chain' : ''}`}
-                data-help={`Encargo: ${tx(q.title)}. El color dice el peligro (${hidden ? 'sin saber' : DANGER_NAMES[q.danger]!.toLowerCase()})${q.chain ? '; el aro dorado, que es de una historia' : ''}.`}
+                data-help={t('paneles.map.encargo_el_color_dice', {
+                  titulo: tx(q.title),
+                  peligro: hidden
+                    ? t('paneles.map.sin_saber')
+                    : DANGER_NAMES[q.danger]!.toLowerCase(),
+                  historia: !!q.chain,
+                })}
                 style={pct(p.x + n * 7, p.y - 6)}
-                aria-label={`${tx(q.title)} (${q.place})`}
+                aria-label={t('paneles.map.encargo_y_lugar', {
+                  titulo: tx(q.title),
+                  lugar: placeName(q.place),
+                })}
                 onClick={(e) => {
                   e.stopPropagation();
                   tap(() => setInfo({ kind: 'place', name: q.place }))();
@@ -717,9 +768,17 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
               <button
                 key={m.id}
                 class={`map-party ${pos.back ? 'is-back' : ''}`}
-                data-help={`Grupo de viaje (${party.length}): ${pos.back ? 'vuelve de' : 'va hacia'} ${m.quest.place}. Gris a la vuelta.`}
+                data-help={t('paneles.map.grupo_de_viaje_gris', {
+                  n: party.length,
+                  vuelta: pos.back,
+                  lugar: placeName(m.quest.place),
+                })}
                 style={{ ...pct(pos.x, pos.y), '--dx': `${near * 20}px` }}
-                aria-label={`${listNames(party.map((h) => h.name))}: ${pos.back ? 'vuelven de' : 'van hacia'} ${m.quest.place}`}
+                aria-label={t('paneles.map.grupo_en_camino', {
+                  quienes: listNames(party.map((h) => h.name)),
+                  vuelta: pos.back,
+                  lugar: placeName(m.quest.place),
+                })}
                 onClick={(e) => {
                   e.stopPropagation();
                   tap(() => onTrip(m.id))();
@@ -733,9 +792,9 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
             <button
               key={h.id}
               class="map-missing"
-              data-help={`Aquí se perdió la pista de ${h.name}.`}
+              data-help={t('paneles.map.aqui_se_perdio_la', { nombre: h.name })}
               style={pct(placeAt(h.lostAt ?? '').x + 6, placeAt(h.lostAt ?? '').y + 4)}
-              aria-label={`${h.name}: se le perdió la pista aquí`}
+              aria-label={t('paneles.map.se_le_perdio_la', { nombre: h.name })}
               onClick={(e) => {
                 e.stopPropagation();
                 tap(() => setInfo({ kind: 'place', name: h.lostAt ?? '' }))();
@@ -763,12 +822,12 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
         </div>
         {cardEl}
         <div class="map-tools" onPointerDown={(e) => e.stopPropagation()}>
-          <span class="map-level" aria-label={`Zoom ×${view.l}`}>
+          <span class="map-level" aria-label={t('paneles.map.zoom', { l: view.l })}>
             ×{view.l}
           </span>
           <button
             class="btn-icon"
-            aria-label="Acercar el mapa"
+            aria-label={t('paneles.map.acercar_el_mapa')}
             disabled={view.l >= MAX_LEVEL}
             onClick={() => zoomTo(view.l + 1, size.w / 2, size.h / 2)}
           >
@@ -776,7 +835,7 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
           </button>
           <button
             class="btn-icon"
-            aria-label="Alejar el mapa"
+            aria-label={t('paneles.map.alejar_el_mapa')}
             disabled={view.l <= 1}
             onClick={() => zoomTo(view.l - 1, size.w / 2, size.h / 2)}
           >
@@ -784,7 +843,7 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
           </button>
           <button
             class="btn-icon"
-            aria-label="Ver la taberna"
+            aria-label={t('paneles.map.ver_la_taberna')}
             onClick={() =>
               setView(centerOn(Math.max(view.l, 2), TAVERN.x, TAVERN.y, size.w, size.h))
             }
@@ -793,7 +852,7 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
           </button>
           <button
             class={`btn-icon map-help ${legend ? 'is-on' : ''}`}
-            aria-label="Qué es cada cosa"
+            aria-label={t('paneles.map.que_es_cada_cosa')}
             aria-expanded={legend}
             onClick={() => setLegend(!legend)}
           >
@@ -805,10 +864,10 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
             <button
               class={`map-threat-line ${threatOpen ? 'is-on' : ''}`}
               aria-expanded={threatOpen}
-              aria-label={`Amenaza en la comarca: ${threat} de 100. Qué pasa si sube`}
+              aria-label={t('paneles.map.amenaza_en_la_comarca', { threat })}
               onClick={() => setThreatOpen(!threatOpen)}
             >
-              <Icon name="calavera" size={10} /> Amenaza {threat}
+              <Icon name="calavera" size={10} /> {t('paneles.map.amenaza', { threat })}
               <span class={`map-threat-trend ${trend.d > 0 ? 'up' : 'down'}`} aria-hidden="true">
                 {trend.d > 0 ? `+${trend.d}` : '-1'}
               </span>
@@ -829,63 +888,61 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
                 {THREAT_STEPS.map((st) => (
                   <li key={st.at} class={threat >= st.at ? 'now' : ''}>
                     <b>{st.at}</b> {st.text}
-                    {threat >= st.at ? ' (ya pasa)' : ''}
+                    {threat >= st.at && <> {t('paneles.map.ya_pasa')}</>}
                   </li>
                 ))}
               </ul>
               <p>
-                Esta noche {trend.d > 0 ? `sube ${trend.d}` : 'baja 1'}: {trend.why}.{' '}
+                {t('paneles.map.esta_noche', { sube: trend.d > 0, n: trend.d, por: trend.why })}{' '}
                 {trend.d > 0
-                  ? 'Baja sola cuando no espera ninguna historia y hay grupos fuera.'
-                  : 'Sube si un paso de una historia espera en el tablón o si pasan días sin mandar a nadie.'}
+                  ? t('paneles.map.baja_sola_cuando_no')
+                  : t('paneles.map.sube_si_un_paso')}
               </p>
             </div>
           )}
           {legend && (
             <ul class="map-legend">
               <li>
-                <i class="lg-route" /> Camino de un grupo
+                <i class="lg-route" /> {t('paneles.map.camino_de_un_grupo')}
               </li>
               <li>
                 <i class="lg-thread" />
                 <span class="lg-step past">
                   <Icon name="check" size={7} />
                 </span>{' '}
-                Historia: paso hecho
+                {t('paneles.map.historia_paso_hecho')}
               </li>
               <li>
                 <i class="lg-thread next" />
-                <span class="lg-step now">2</span> Historia: siguiente paso
+                <span class="lg-step now">2</span> {t('paneles.map.historia_siguiente_paso')}
               </li>
-              {threat > 0 && <li class="lg-threat">Amenaza en la comarca: {threat}</li>}
+              {threat > 0 && (
+                <li class="lg-threat">{t('paneles.map.amenaza_en_la_comarca_2', { threat })}</li>
+              )}
             </ul>
           )}
           {legend && (
-            <p class="map-hint">
-              Toca un lugar para ver qué hay y un grupo para ver su viaje; arrastra o pellizca para
-              moverte.
-              {level < 2 && ' La niebla se levanta explorando (la sala de mapas ayuda).'}
-            </p>
+            <p class="map-hint">{t('paneles.map.toca_un_lugar_para', { niebla: level < 2 })}</p>
           )}
         </div>
       </div>
-      <ul class="map-key" aria-label="Leyenda del mapa">
+      <ul class="map-key" aria-label={t('paneles.map.leyenda_del_mapa')}>
         <li>
-          <span class="lg-pin">!</span> Encargo
+          <span class="lg-pin">!</span> {t('paneles.map.encargo')}
         </li>
         <li>
-          <span class="lg-party">2</span> Grupo fuera
+          <span class="lg-party">2</span> {t('paneles.map.grupo_fuera_2')}
         </li>
         <li>
-          <span class="lg-step now">1</span> Historia
+          <span class="lg-step now">1</span> {t('paneles.map.historia')}
         </li>
         {missing.length > 0 && (
           <li>
-            <span class="lg-missing">?</span> Desaparecido
+            <span class="lg-missing">?</span> {t('paneles.map.desaparecido')}
           </li>
         )}
       </ul>
-      <section class="map-trips" aria-label="Grupos fuera">
+      <section class="map-trips" aria-label={t('paneles.map.grupos_fuera_2')}>
         <button
           class="map-trips-toggle"
           aria-expanded={trips}
@@ -895,11 +952,14 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
           }}
         >
           <Icon name="pasos" size={14} />
-          <b>Grupos fuera</b>
+          <b>{t('paneles.map.grupos_fuera_2')}</b>
           {game.missions.length > 0 && <span class="row-sub">{game.missions.length}</span>}
           {!trips && soonest && (
             <span class="map-trips-next">
-              {tx(soonest.quest.title)}: en casa {dawnIn(soonest.daysLeft)}
+              {t('paneles.map.en_casa_2', {
+                titulo: tx(soonest.quest.title),
+                dawn_in: dawnIn(soonest.daysLeft),
+              })}
             </span>
           )}
           <span class="map-trips-chev" aria-hidden="true">
@@ -917,7 +977,10 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
                   <li key={m.id} class="map-trip">
                     <button
                       class="map-trip-main"
-                      aria-label={`${tx(m.quest.title)}, con ${listNames(party(m).map((h) => h.name))}: ver el viaje`}
+                      aria-label={t('paneles.map.con_ver_el_viaje', {
+                        titulo: tx(m.quest.title),
+                        list_names: listNames(party(m).map((h) => h.name)),
+                      })}
                       onClick={() => onTrip(m.id)}
                     >
                       <span class="map-trip-faces" aria-hidden="true">
@@ -936,8 +999,11 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
                       <span class="map-trip-text">
                         <b>{tx(m.quest.title)}</b>
                         <span class="row-sub">
-                          {pos.back ? 'Vuelven de' : 'Van hacia'} {m.quest.place} · en casa{' '}
-                          {dawnIn(m.daysLeft)}
+                          {t('paneles.map.en_casa', {
+                            vuelta: pos.back,
+                            lugar: placeName(m.quest.place),
+                            dawn_in: dawnIn(m.daysLeft),
+                          })}
                         </span>
                         <span class="train-bar" aria-hidden="true">
                           <i style={{ width: `${Math.round(done * 100)}%` }} />
@@ -952,7 +1018,7 @@ export function MapPanel({ game, onQuest, onHero, onTrip }: Props) {
               })}
           </ul>
         ) : (
-          <p class="tiny">No hay ningún grupo fuera. Los encargos se mandan desde el tablón.</p>
+          <p class="tiny">{t('paneles.map.no_hay_ningun_grupo')}</p>
         )}
       </section>
     </div>

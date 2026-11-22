@@ -8,6 +8,7 @@ import { Counter } from './Counter';
 import { Icon } from './icons';
 import { Portrait } from './Portrait';
 import { lookOf, workerLook } from './view';
+import { t } from '../textos';
 
 type Phase = 'in' | 'coins' | 'stamp' | 'bar' | 'done';
 
@@ -37,10 +38,10 @@ const MERLO = {
 };
 
 const SAYS = [
-  '«Puntual. Así me gusta.»',
-  '«Ni una moneda de menos. Hasta la próxima, sobrino.»',
-  '«Tu tío nunca pagaba a la primera. Vas mejorando.»',
-  '«Cuento rápido, no te preocupes. Bueno, cuento dos veces.»',
+  t('pantallas.payday.puntual_asi_me_gusta'),
+  t('pantallas.payday.ni_una_moneda_de'),
+  t('pantallas.payday.tu_tio_nunca_pagaba'),
+  t('pantallas.payday.cuento_rapido_no_te'),
 ];
 
 const COINS = 10;
@@ -60,10 +61,7 @@ export function PayDay({ game, onClose }: { game: GameState; onClose: () => void
   const cleared = !!pay.debt && after >= DEBT;
   const next = SCHEDULE.find((p) => p.day > pay.day);
   const says = useMemo(
-    () =>
-      cleared
-        ? '«Pues ya está. Nunca pensé que lo vería. La taberna es tuya… hasta que me pidas otro préstamo.»'
-        : SAYS[pay.day % SAYS.length]!,
+    () => (cleared ? t('pantallas.payday.pues_ya_esta_nunca') : SAYS[pay.day % SAYS.length]!),
     [],
   );
   const crew = useMemo(
@@ -112,12 +110,20 @@ export function PayDay({ game, onClose }: { game: GameState; onClose: () => void
   const gold = reached('coins') ? game.gold : game.gold + total;
   const paid = reached('bar') ? after : before;
   return (
-    <div class={`payday payday-${kind} is-${phase}`} role="dialog" aria-label="Día de pago">
+    <div
+      class={`payday payday-${kind} is-${phase}`}
+      role="dialog"
+      aria-label={t('pantallas.payday.dia_de_pago')}
+    >
       <div class="payday-dim" />
       <section class="payday-card" onClick={skip}>
         <header class="payday-head">
-          <span class="payday-day">Día {pay.day}</span>
-          <h2>{kind === 'merlo' ? 'Viene Merlo a cobrar' : 'Día de salarios'}</h2>
+          <span class="payday-day">{t('pantallas.payday.dia', { dia: pay.day })}</span>
+          <h2>
+            {kind === 'merlo'
+              ? t('pantallas.payday.viene_merlo_a_cobrar')
+              : t('pantallas.payday.dia_de_salarios')}
+          </h2>
         </header>
 
         <div class="payday-stage">
@@ -129,7 +135,7 @@ export function PayDay({ game, onClose }: { game: GameState; onClose: () => void
               <Icon name="coin" size={14} />
               <Counter value={gold} />
             </span>
-            <small>La caja</small>
+            <small>{t('pantallas.payday.la_caja')}</small>
           </div>
 
           <div class="payday-track" aria-hidden="true">
@@ -147,12 +153,16 @@ export function PayDay({ game, onClose }: { game: GameState; onClose: () => void
             {kind === 'merlo' ? (
               <>
                 <span class="payday-merlo">
-                  <Portrait look={MERLO} scale={2} label="Merlo, el prestamista" />
+                  <Portrait
+                    look={MERLO}
+                    scale={2}
+                    label={t('pantallas.payday.merlo_el_prestamista')}
+                  />
                   <span class="payday-bag">
                     <Icon name="cofre" size={18} />
                   </span>
                 </span>
-                <small>Merlo</small>
+                <small>{t('pantallas.payday.merlo')}</small>
               </>
             ) : (
               <>
@@ -161,14 +171,14 @@ export function PayDay({ game, onClose }: { game: GameState; onClose: () => void
                     <Portrait key={p.id} look={p.look} scale={1} alive={false} />
                   ))}
                 </span>
-                <small>La gente de la casa</small>
+                <small>{t('pantallas.payday.la_gente_de_la')}</small>
               </>
             )}
           </div>
 
           {reached('stamp') && (
             <span class="payday-stamp" aria-hidden="true">
-              Pagado
+              {t('pantallas.payday.pagado')}
             </span>
           )}
         </div>
@@ -176,16 +186,16 @@ export function PayDay({ game, onClose }: { game: GameState; onClose: () => void
         <ul class="payday-bill">
           {pay.debt > 0 && (
             <li>
-              <span>Cuota de la deuda</span>
+              <span>{t('pantallas.payday.cuota_de_la_deuda')}</span>
               <b>{pay.debt}</b>
             </li>
           )}
           <li>
-            <span>Salarios</span>
+            <span>{t('pantallas.payday.salarios')}</span>
             <b>{pay.wages}</b>
           </li>
           <li class="payday-total">
-            <span>Total</span>
+            <span>{t('pantallas.payday.total')}</span>
             <b>
               <Icon name="coin" size={12} /> {total}
             </b>
@@ -195,7 +205,11 @@ export function PayDay({ game, onClose }: { game: GameState; onClose: () => void
         {kind === 'merlo' && (
           <div class={`payday-debt ${reached('bar') ? 'is-moving' : ''}`}>
             <div class="debt-top">
-              <b>{cleared && reached('bar') ? '¡Deuda saldada!' : 'Deuda con Merlo'}</b>
+              <b>
+                {cleared && reached('bar')
+                  ? t('pantallas.payday.deuda_saldada')
+                  : t('pantallas.payday.deuda_con_merlo')}
+              </b>
               <span class="debt-num">
                 <Counter value={paid} /> / {DEBT}
               </span>
@@ -208,12 +222,12 @@ export function PayDay({ game, onClose }: { game: GameState; onClose: () => void
 
         {reached('stamp') && (
           <p class="payday-says">
-            {kind === 'merlo' ? says : '«Cada uno con lo suyo. La casa sigue en pie.»'}
+            {kind === 'merlo' ? says : t('pantallas.payday.cada_uno_con_lo')}
           </p>
         )}
         {phase === 'done' && kind === 'merlo' && next && !cleared && (
           <p class="payday-next">
-            Próximo pago: día {next.day}, {next.amount} más los salarios.
+            {t('pantallas.payday.proximo_pago_dia_mas', { dia: next.day, cantidad: next.amount })}
           </p>
         )}
 
@@ -225,7 +239,7 @@ export function PayDay({ game, onClose }: { game: GameState; onClose: () => void
             else skip();
           }}
         >
-          {phase === 'done' ? 'Seguir' : 'Saltar'}
+          {phase === 'done' ? t('pantallas.payday.seguir') : t('pantallas.payday.saltar')}
         </button>
       </section>
     </div>

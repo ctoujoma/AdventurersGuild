@@ -6,6 +6,7 @@
  * cambiando poco a poco.
  */
 import { dayKind, rainSpan, skyHash, type WeatherKind } from '../core/sky';
+import { t } from '../textos';
 
 /** Cada componente, de 0 a 1. */
 export interface Weather {
@@ -23,14 +24,14 @@ export interface Weather {
 export { WEATHER_KINDS, dayKind, type WeatherKind } from '../core/sky';
 
 export const WEATHER_LABEL: Record<WeatherKind, string> = {
-  despejado: 'Despejado',
-  nubes: 'Algo nublado',
-  nublado: 'Nublado',
-  niebla: 'Niebla',
-  viento: 'Viento',
-  lluvia: 'Lluvia',
-  tormenta: 'Tormenta',
-  nieve: 'Nieve',
+  despejado: t('escena.weather.despejado'),
+  nubes: t('escena.weather.algo_nublado'),
+  nublado: t('escena.weather.nublado'),
+  niebla: t('escena.weather.niebla'),
+  viento: t('escena.weather.viento'),
+  lluvia: t('escena.weather.lluvia'),
+  tormenta: t('escena.weather.tormenta'),
+  nieve: t('escena.weather.nieve'),
 };
 
 export const CLEAR: Weather = { cloud: 0.1, fog: 0, rain: 0, snow: 0, wind: 0.15, storm: 0 };

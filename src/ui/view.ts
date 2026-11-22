@@ -23,7 +23,7 @@ import type { SceneAway, SceneHero, SceneModel } from '../world/scene';
 import { taskLabel } from './crew';
 import { gearList, type Gear } from '../core/gear';
 import type { GearMark } from '../art/heroes/gear';
-import { idText, tx } from '../textos';
+import { idText, t, tx } from '../textos';
 
 /** Puentes entre el modelo del juego y el arte o la escena. */
 
@@ -121,21 +121,28 @@ function visitorOrder(s: GameState): string[] {
   return list;
 }
 
-const fullName = (h: Hero) => (h.nick ? `${h.name} ${tx(h.nick)}` : h.name);
+const fullName = (h: Hero) =>
+  h.nick ? t('barra.view.nombre_apodo', { nombre: h.name, apodo: h.nick }) : h.name;
 
 /** Lo que se lee de alguien al pasar el ratón: clase y nivel, y su tarea o si está en cama. */
 function heroTitle(s: GameState, h: Hero, candidate = false): string {
-  const a = (m: string, f: string) => (h.sex === 'f' ? f : m);
-  const base = `${CLASS_NAMES[h.cls][h.sex]} · nivel ${h.lvl}`;
-  if (candidate) return `${base} · busca trabajo`;
-  if (h.status === 'herido')
-    return `${base} · ${a('herido', 'herida')}, ${h.days} ${h.days === 1 ? 'día' : 'días'} en cama`;
-  return `${base} · ${taskLabel(s, h.id).toLowerCase()}${onWay(s, h) ? ' (de camino)' : ''}`;
+  const base = t('barra.view.nivel', { clase: CLASS_NAMES[h.cls][h.sex], nivel: h.lvl });
+  if (candidate) return t('barra.view.busca_trabajo', { base });
+  if (h.status === 'herido') return t('barra.view.en_cama', { base, sexo: h.sex, dias: h.days });
+  return t('barra.view.tarea', {
+    base,
+    tarea: taskLabel(s, h.id).toLowerCase(),
+    camino: onWay(s, h),
+  });
 }
 
 /** De un trabajador: su maña y su tarea, con las mismas palabras que Héroes › Tareas. */
 function workerHover(s: GameState, w: Worker): string {
-  return `Maña ${w.skill} · ${taskLabel(s, w.id).toLowerCase()}${onWay(s, w) ? ' (de camino)' : ''}`;
+  return t('barra.view.mana', {
+    mana: w.skill,
+    tarea: taskLabel(s, w.id).toLowerCase(),
+    camino: onWay(s, w),
+  });
 }
 
 /** La barra de entrenamiento de un héroe (si entrena); al tope, llena y marcada. */
@@ -228,7 +235,7 @@ export function sceneModel(s: GameState): SceneModel {
     heroes.push({
       id: w.id,
       name: workerTitle(w),
-      title: `Maña ${w.skill} · busca trabajo`,
+      title: t('barra.view.mana_busca_trabajo', { skill: w.skill }),
       status: 'candidato',
       look: workerLook(w),
       marks: {},

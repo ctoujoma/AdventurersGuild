@@ -3,6 +3,7 @@ import { SCHEDULE, TRAIN_CAP } from '../core/balance';
 import { newGame, salaries } from '../core/game';
 import type { GameState, Room } from '../core/model';
 import { finishedWorks, gatherAlerts, pruneHushed, shownAlerts, type Notice } from './alerts';
+import { msg } from '../textos';
 
 const roomOf = (s: GameState, type: Room['type']) => s.building.rooms.find((r) => r.type === type)!;
 const ids = (s: GameState, done?: string[]) => gatherAlerts(s, done).map((a) => a.id);
@@ -144,7 +145,7 @@ describe('avisos de la campanita', () => {
       {
         ...({} as GameState['reports'][number]),
         id: 'r1',
-        chips: [{ t: 'No cabía: vendido 2 de cuero por 4 monedas.', k: 'warn' }],
+        chips: [{ t: msg('materiales.no_cabe', { que: '2 de cuero', oro: 4 }), k: 'warn' }],
       },
     ];
     expect(gatherAlerts(s).find((a) => a.id === 'almacen-lleno')?.go).toEqual({ panel: 'gremio' });

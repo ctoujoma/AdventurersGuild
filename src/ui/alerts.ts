@@ -7,7 +7,6 @@
 import { nextPayment, salaries, tiredLine } from '../core/game';
 import { MORALE_LOW } from '../core/party';
 import type { ChipKind, GameState } from '../core/model';
-import { listNames, plural } from '../core/text';
 import { ATTR_NAMES, cappedTrainees } from '../core/training';
 import { nurseBonus } from '../core/workers';
 import { RECIPES } from '../data/recipes';
@@ -17,7 +16,7 @@ import { nightmareNow } from '../core/nightmare';
 import { crewAlerts } from './crew';
 import type { IconName } from './icons';
 import { jobRoomName } from './roomName';
-import { idText, tx } from '../textos';
+import { t, tx } from '../textos';
 
 /** Adónde lleva tocar el aviso: una sala (con la cámara), Tareas, un encargo o un panel. */
 export type Go =
@@ -58,7 +57,12 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
     if (left <= 2 && game.gold < due)
       out.push({
         id: `pago:${pay.day}`,
-        text: `${left <= 0 ? 'Hoy' : left === 1 ? 'Mañana' : 'Pasado mañana'} toca pagar ${due} y en la caja hay ${game.gold}: faltan ${due - game.gold}.`,
+        text: t('barra.alerts.toca_pagar_y_en', {
+          dias: Math.max(0, left),
+          pago: due,
+          oro: game.gold,
+          faltan: due - game.gold,
+        }),
         k: 'bad',
         icon: 'pergamino',
         go: { panel: 'gremio' },
@@ -70,16 +74,13 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
   const inf = rooms.find((r) => r.type === 'enfermeria');
   if (hurt.length && inf && !nurseBonus(game)) {
     const n = hurt.length;
-    const who =
-      n === 1
-        ? `${hurt[0]!.name} está ${hurt[0]!.sex === 'f' ? 'herida' : 'herido'}`
-        : `${n} heridos`;
+    const who = { n, nombre: hurt[0]!.name, sexo: hurt[0]!.sex };
     out.push({
       id: 'heridos',
       text:
         inf.level > 0
-          ? `${who} y nadie trabaja en la enfermería: ${plural(n, 'cura', 'curan')} más despacio.`
-          : `${who} y la enfermería está rota: arreglada, ${plural(n, 'curaría', 'curarían')} antes.`,
+          ? t('barra.alerts.y_nadie_trabaja_en', who)
+          : t('barra.alerts.y_la_enfermeria_esta', who),
       k: 'warn',
       icon: 'cruz',
       go: { room: inf.id },
@@ -91,7 +92,7 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
   if (going.length === 1)
     out.push({
       id: `caduca:${going[0]!.id}`,
-      text: `«${tx(going[0]!.title)}» se va del tablón esta noche y nadie lo ha cogido.`,
+      text: t('barra.alerts.se_va_del_tablon', { titulo: tx(going[0]!.title) }),
       k: 'warn',
       icon: 'tablon',
       go: { quest: going[0]!.id },
@@ -99,7 +100,10 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
   else if (going.length > 1)
     out.push({
       id: `caducan:${going.map((q) => q.id).join(',')}`,
-      text: `${going.length} encargos se van del tablón esta noche: ${listNames(going.map((q) => `«${tx(q.title)}»`))}.`,
+      text: t('barra.alerts.encargos_se_van_del', {
+        n: going.length,
+        titulos: going.map((q) => t('barra.alerts.titulo', { titulo: q.title })),
+      }),
       k: 'warn',
       icon: 'tablon',
       go: { panel: 'tablon' },
@@ -110,7 +114,7 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
   if (n)
     out.push({
       id: 'piden',
-      text: `${n} ${n === 1 ? 'trabajador pide' : 'trabajadores piden'} trabajo en la barra.`,
+      text: t('barra.alerts.trabajo_en_la_barra', { n }),
       k: 'info',
       icon: 'jarra',
       go: { barra: true },
@@ -131,7 +135,12 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
   for (const { hero: h, room, attr, by } of cappedTrainees(game))
     out.push({
       id: `tope:${h.id}:${room.id}`,
-      text: `${h.name} ya no aprende más ${ATTR_NAMES[attr]} en ${jobRoomName(game, room)}: ${by === 'sala' ? 'mejora la sala' : 'tiene que subir de nivel'}. Mándale a otra cosa; si no, al amanecer se irá a descansar.`,
+      text: t('barra.alerts.ya_no_aprende_mas', {
+        nombre: h.name,
+        atributo: ATTR_NAMES[attr],
+        sala: jobRoomName(game, room),
+        por: by,
+      }),
       k: 'warn',
       icon: 'diana',
       go: { crew: h.id },
@@ -142,7 +151,7 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
     if (m.waiting)
       out.push({
         id: `jefe:${m.id}`,
-        text: `El grupo de «${tx(m.quest.title)}» está ante el jefe: ¿ves la pelea?`,
+        text: t('barra.alerts.el_grupo_de_esta', { titulo: tx(m.quest.title) }),
         k: 'warn',
         icon: 'calavera',
         go: { trip: m.id },
@@ -153,7 +162,7 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
     if (m.daysLeft <= 1 && !m.waiting)
       out.push({
         id: `vuelve:${m.id}`,
-        text: `El grupo de «${tx(m.quest.title)}» vuelve esta noche.`,
+        text: t('barra.alerts.el_grupo_de_vuelve', { titulo: tx(m.quest.title) }),
         k: 'good',
         icon: 'banderin',
         go: { trip: m.id },
@@ -167,8 +176,8 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
     out.push({
       id: `desmonta:${e.id}`,
       text: learnt
-        ? `Desmontando ${tx(e.undo.item)} han sacado cómo se hace: ya podéis crear ${rc.many}.`
-        : `Han desmontado ${tx(e.undo.item)}, pero no han sacado nada en claro.`,
+        ? t('barra.alerts.desmontando_han_sacado_como', { objeto: tx(e.undo.item), many: rc.many })
+        : t('barra.alerts.han_desmontado_pero_no', { objeto: tx(e.undo.item) }),
       k: learnt ? 'good' : 'info',
       icon: 'yunque',
       go: rooms.some((r) => r.id === e.room) ? { room: e.room } : { panel: 'gremio' },
@@ -179,14 +188,16 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
   // el almacén (o que diga que se podrá al pagar la deuda). Descartado, no vuelve.
   if (
     !storeLevel(game) &&
-    game.reports.some((r) => r.chips.some((c) => idText(c.t).startsWith('No cabía')))
+    game.reports.some((r) =>
+      r.chips.some((c) => typeof c.t === 'object' && c.t.k === 'materiales.no_cabe'),
+    )
   )
     out.push({
       id: 'almacen-lleno',
       text:
         game.mode === 'libre'
-          ? 'En el rincón de la bodega ya no caben más materiales y lo que sobra se vende barato. Construye un almacén.'
-          : 'En el rincón de la bodega ya no caben más materiales y lo que sobra se vende barato. Cuando pagues la deuda podrás construir un almacén.',
+          ? t('barra.alerts.en_el_rincon_de')
+          : t('barra.alerts.en_el_rincon_de_2'),
       k: 'warn',
       icon: 'cofre',
       go: game.mode === 'libre' ? { build: 'almacen' } : { panel: 'gremio' },
@@ -196,7 +207,9 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
   if (game.stranger)
     out.push({
       id: `forastero:${game.stranger.day}`,
-      text: `Un forastero encapuchado espera junto al fuego: ofrece traer de vuelta a un caído. Se irá ${game.day > game.stranger.day ? 'hoy' : 'mañana'} a mediodía.`,
+      text: t('barra.alerts.un_forastero_encapuchado_espera', {
+        hoy: game.day > game.stranger.day,
+      }),
       k: 'warn',
       icon: 'vela',
       go: { stranger: true },
@@ -222,7 +235,10 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
     const bed = nm.h.status === 'herido' && cots ? cots.id : sleepPlan(game).get(nm.h.id);
     out.push({
       id: `pesadilla:${nm.n.day}`,
-      text: `${nm.h.name} da vueltas en la cama, entre pesadillas. Tócal${nm.h.sex === 'f' ? 'a' : 'o'} para llevarle un trago de la bodega.`,
+      text: t('barra.alerts.da_vueltas_en_la', {
+        nombre: nm.h.name,
+        sexo: nm.h.sex,
+      }),
       k: 'warn',
       icon: 'moon',
       go: bed ? { room: bed } : { crew: null },
@@ -235,7 +251,7 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
     if (r && !r.works)
       out.push({
         id: `obra:${id}`,
-        text: `¡Terminada la obra de ${jobRoomName(game, r)}! Ya funciona.`,
+        text: t('barra.alerts.terminada_la_obra_de', { job_room_name: jobRoomName(game, r) }),
         k: 'good',
         icon: 'martillo',
         go: { room: id },

@@ -106,9 +106,10 @@ import { LOCKED, worksOpen } from '../core/rooms';
 import { ROOMS } from '../data/rooms';
 import { TabBar, type TabId } from './TabBar';
 import type { BellView } from './AlertBell';
-import { listNames, plural } from './text';
+import { listNames } from './text';
 import { sceneModel } from './view';
-import { tx } from '../textos';
+import { placeMsg } from '../data/places';
+import { t, tx } from '../textos';
 
 /** El mapa es la pestaña «Mapa»; el arcón, Héroes › Equipo; el correo, la campana. */
 type PanelId = 'tablon' | 'heroes' | 'gremio' | 'fuera' | 'libro' | 'casa' | 'sala' | 'historial';
@@ -331,7 +332,7 @@ export function App() {
     const news = next.incidentNews;
     if (news?.length && news !== before.incidentNews) {
       const last = news.at(-1)!;
-      toast(news.map((n) => n.t).join(' '));
+      toast(news.map((n) => tx(n.t)).join(' '));
       audio.play(last.k === 'good' ? 'cheer' : last.k === 'bad' ? 'thud' : 'creak', 0.6);
       haptic(last.k === 'bad' ? 'thud' : 'select');
     }
@@ -471,7 +472,7 @@ export function App() {
       toast(
         away.waiting
           ? tx(waitText(away.state, away.waiting))
-          : 'La taberna ha seguido abierta mientras no estabas.',
+          : t('pantallas.app.la_taberna_ha_seguido'),
       );
   };
   const comeBackRef = useRef(comeBack);
@@ -626,11 +627,13 @@ export function App() {
   };
 
   const sellTrophy = (id: string) => {
-    const t = game.trophies.find((x) => x.id === id);
+    const trophy = game.trophies.find((x) => x.id === id);
     dispatch({ type: 'sellTrophy', id });
     audio.play('coin');
-    if (t)
-      toast(`Vendido: ${tx(t.name)} por ${t.value} monedas. La pared queda un poco más vacía.`);
+    if (trophy)
+      toast(
+        t('pantallas.app.vendido_por_monedas_la', { nombre: tx(trophy.name), valor: trophy.value }),
+      );
   };
 
   const hire = (id: string) => {
@@ -639,7 +642,7 @@ export function App() {
     const c = game.candidates.find((x) => x.id === id)!;
     dispatch({ type: 'hire', id });
     audio.play('coin');
-    toast(`${c.name} se une al gremio. Su rasgo oculto se sabrá tras su primera misión.`);
+    toast(t('pantallas.app.se_une_al_gremio', { nombre: c.name }));
     setTimeout(() => scene.current?.focusHero(id), 60);
   };
 
@@ -648,7 +651,7 @@ export function App() {
     dispatch({ type: 'fire', id });
     audio.play('close');
     setCard(null);
-    toast(`${h.name} recoge sus cosas y se va sin despedirse.`);
+    toast(t('pantallas.app.recoge_sus_cosas_y', { nombre: h.name }));
   };
 
   /** Manda un grupo: la nota sale del tablón y los héroes cruzan la puerta. */
@@ -665,7 +668,12 @@ export function App() {
     setPanel(null);
     scene.current?.focus('puerta');
     toast(
-      `${names} ${plural(ids.length, 'sale', 'salen')} hacia ${q.place}. Vuelta ${dawnIn(days)}.`,
+      t('pantallas.app.hacia_vuelta', {
+        names,
+        n: ids.length,
+        lugar: placeMsg(q.place),
+        dawn_in: dawnIn(days),
+      }),
     );
   };
 
@@ -689,7 +697,7 @@ export function App() {
     if (why) return toast(why);
     dispatch({ type: 'hireWorker', id });
     audio.play('coin');
-    if (w) toast(`${w.name} se queda a trabajar. Empieza ahora mismo.`);
+    if (w) toast(t('pantallas.app.se_queda_a_trabajar', { nombre: w.name }));
   };
 
   /** Cambiar la tarea de alguien (trabajar, entrenar, guardia, descansar) desde una lista o ficha. */
@@ -886,7 +894,7 @@ export function App() {
           'barra',
           wins.flatMap((r) => r.heroIds),
         );
-        toast(`¡Ronda para todos! ${wins.map((r) => r.who).join(' y ')} lo celebran en la barra.`);
+        toast(t('pantallas.app.ronda_para_todos_lo', { quienes: wins.map((r) => tx(r.who)) }));
       }, 1200);
   };
 
@@ -922,7 +930,7 @@ export function App() {
           wins.flatMap((r) => r.heroIds),
         );
         if (!then) scene.current?.focus('barra');
-        toast(`¡Ronda para todos! ${wins.map((r) => r.who).join(' y ')} lo celebran en la barra.`);
+        toast(t('pantallas.app.ronda_para_todos_lo', { quienes: wins.map((r) => tx(r.who)) }));
       }, 5600);
   };
 
@@ -942,7 +950,7 @@ export function App() {
     setDawnOpen(false);
     setScreen('game');
     audio.play('open');
-    toast(`Partida cargada: día ${s.day}, ${s.gold} monedas.`);
+    toast(t('pantallas.app.partida_cargada_dia_monedas', { dia: s.day, oro: s.gold }));
   };
 
   const toTitle = () => {
@@ -1269,8 +1277,11 @@ export function App() {
               audio.play('click', 0.5);
               say(
                 kind === 'espia'
-                  ? 'Forastero callado: «¿Y la cámara del tesoro… queda muy abajo?»'
-                  : `${VISITORS[kind as VisitorKind].name.replace(/^./, (c) => c.toUpperCase())}: «${RUMORS[(game.day * 7 + i) % RUMORS.length]}»`,
+                  ? t('pantallas.app.forastero_callado_y_la')
+                  : t('pantallas.app.visitante_dice', {
+                      quien: VISITORS[kind as VisitorKind].name,
+                      rumor: RUMORS[(game.day * 7 + i) % RUMORS.length],
+                    }),
                 at,
               );
               return;
@@ -1293,7 +1304,11 @@ export function App() {
             setBubble(null);
             setHint(false);
             const d = room ? planDrop(gameRef.current, id, room) : null;
-            setDragTip({ text: d?.text ?? 'Suéltalo en una sala.', ok: !!d?.ok, at });
+            setDragTip({
+              text: d?.text ?? t('pantallas.app.sueltalo_en_una_sala'),
+              ok: !!d?.ok,
+              at,
+            });
             lastDrop.current = d;
             return d;
           }}
@@ -1310,7 +1325,7 @@ export function App() {
           onRoomDrag={(id) => works.startPick({ kind: 'move', id })}
           onRoomDrop={() => {
             works.cancelPick();
-            toast('Ahí no cabe: suéltala en una casilla verde.');
+            toast(t('pantallas.app.ahi_no_cabe_sueltala'));
           }}
           onDrop={(id, room) => {
             setDragTip(null);
@@ -1416,7 +1431,7 @@ export function App() {
         {/* La nota del tío ya explica lo mismo: el cartel solo sale sin ella. */}
         {hint && !notice && !tip && (
           <div class="hint-toast" role="status">
-            Arrastra para mirar · toca el salón
+            {t('pantallas.app.arrastra_para_mirar_toca')}
           </div>
         )}
         {notice && (
@@ -1428,22 +1443,22 @@ export function App() {
           {/* En pantallas táctiles se acerca pellizcando: sin − ni +. */}
           <button
             class="btn-icon tool-zoom"
-            aria-label="Alejar"
+            aria-label={t('pantallas.app.alejar')}
             onClick={() => scene.current?.zoomBy(-1)}
           >
             <Icon name="minus" size={16} />
           </button>
           <button
             class="btn-icon tool-zoom"
-            aria-label="Acercar"
+            aria-label={t('pantallas.app.acercar')}
             onClick={() => scene.current?.zoomBy(1)}
           >
             <Icon name="plus" size={16} />
           </button>
           <button
             class="btn-icon"
-            aria-label="Volver a la sala"
-            data-help="Vuelve a la sala. Con el patio trasero, tócalo otra vez para ir al anexo (y de vuelta)."
+            aria-label={t('pantallas.app.volver_a_la_sala')}
+            data-help={t('pantallas.app.vuelve_a_la_sala')}
             onClick={() => scene.current?.home()}
           >
             <Icon name="home" size={16} />
@@ -1451,12 +1466,12 @@ export function App() {
           {roomsLive && (
             <button
               class={`btn-icon ${works.planning ? 'is-on' : ''}`}
-              aria-label="Modo obras"
+              aria-label={t('pantallas.app.modo_obras')}
               data-tut="martillo"
-              data-help="Modo obras: marca los huecos que se pueden excavar y el solar de al lado, y abajo salen las salas para construir. Todo se apunta y se paga al final."
+              data-help={t('pantallas.app.modo_obras_marca_los')}
               onClick={() => {
                 if (works.planning && works.steps.length)
-                  toast('Tienes obras apuntadas: págalas o sal desde la barra de abajo.');
+                  toast(t('pantallas.app.tienes_obras_apuntadas_pagalas'));
                 else if (works.planning) works.discard();
                 else if (!worksOpen(works.view)) toast(LOCKED);
                 else {
@@ -1511,7 +1526,11 @@ export function App() {
           />
         )}
         {panel === 'tablon' && (
-          <Panel title="Tablón de encargos" onClose={() => openPanel(null)} variant="cork">
+          <Panel
+            title={t('pantallas.app.tablon_de_encargos')}
+            onClose={() => openPanel(null)}
+            variant="cork"
+          >
             <HistoryButton game={game} onClick={() => openHistory('tablon')} />
             <TablonPanel
               game={game}
@@ -1525,7 +1544,7 @@ export function App() {
           </Panel>
         )}
         {panel === 'heroes' && (
-          <Panel title="Héroes y personal" onClose={() => openPanel(null)}>
+          <Panel title={t('pantallas.app.heroes_y_personal')} onClose={() => openPanel(null)}>
             <HeroesPanel
               game={game}
               focus={crewFocus}
@@ -1538,7 +1557,7 @@ export function App() {
                 const w = game.workers.find((x) => x.id === id);
                 dispatch({ type: 'fireWorker', id });
                 audio.play('close');
-                if (w) toast(`${w.name} recoge sus cosas y se despide.`);
+                if (w) toast(t('pantallas.app.recoge_sus_cosas_y_2', { nombre: w.name }));
               }}
               onTask={setTask}
               equipo={
@@ -1551,7 +1570,8 @@ export function App() {
                     const it = game.inventory.find((x) => x.id === itemId);
                     dispatch({ type: 'equip', heroId, itemId });
                     audio.play('select');
-                    if (h && it) toast(`${h.name} se equipa: ${tx(it.name)}.`);
+                    if (h && it)
+                      toast(t('pantallas.app.se_equipa', { nombre: h.name, nombre2: tx(it.name) }));
                   }}
                   onUnequip={(heroId, slot) => {
                     dispatch({ type: 'unequip', heroId, slot });
@@ -1599,19 +1619,19 @@ export function App() {
                   : (id, on) => {
                       dispatch({ type: 'decor', id, on });
                       audio.play(on ? 'build' : 'close');
-                      if (on) toast(`${DECOR[id].name}: ya luce en el salón.`);
+                      if (on) toast(t('pantallas.app.ya_luce_en_el', { nombre: DECOR[id].name }));
                     }
               }
               onFeast={() => {
                 dispatch({ type: 'feast' });
                 audio.fanfare();
-                toast('¡Fiesta montada! Banderines, música y la caja abierta hasta el alba.');
+                toast(t('pantallas.app.fiesta_montada_banderines_musica'));
               }}
             />
           </Panel>
         )}
         {panel === 'gremio' && (
-          <Panel title="El gremio" onClose={() => openPanel(null)}>
+          <Panel title={t('pantallas.app.el_gremio')} onClose={() => openPanel(null)}>
             <GremioPanel
               game={works.view}
               focus={focusFac}
@@ -1642,7 +1662,11 @@ export function App() {
           </Panel>
         )}
         {panel === 'casa' && (
-          <Panel title="Adornos" low={gardenView} onClose={() => openPanel(null)}>
+          <Panel
+            title={t('pantallas.app.adornos')}
+            low={gardenView}
+            onClose={() => openPanel(null)}
+          >
             <TabernaPanel
               game={game}
               has={has}
@@ -1653,7 +1677,7 @@ export function App() {
               onDog={() => {
                 dispatch({ type: 'buyDog' });
                 audio.play('coin');
-                toast('Tizón ya duerme junto a la puerta. ¡Guau!');
+                toast(t('pantallas.app.tizon_ya_duerme_junto'));
               }}
               onLook={(patch) => dispatch({ type: 'facadeLook', patch })}
               onGarden={(patch) => dispatch({ type: 'gardenLook', patch })}
@@ -1670,25 +1694,25 @@ export function App() {
               onFacade={(id) => {
                 dispatch({ type: 'facade', id });
                 audio.play('build');
-                toast(`${FACADE[id].name}: ya se ven desde el camino.`);
+                toast(t('pantallas.app.ya_se_ven_desde', { nombre: FACADE[id].name }));
               }}
               onRaven={() => {
                 dispatch({ type: 'buyRaven' });
                 audio.play('coin');
-                toast('Carbón se posa en el letrero y grazna. Parece que le gusta el sitio.');
+                toast(t('pantallas.app.carbon_se_posa_en'));
               }}
             />
           </Panel>
         )}
         {panel === 'libro' && (
-          <Panel title="Libro de hazañas" onClose={() => openPanel(null)}>
+          <Panel title={t('pantallas.app.libro_de_hazanas')} onClose={() => openPanel(null)}>
             <LibroPanel game={game} records={records} onHistory={() => openHistory('libro')} />
           </Panel>
         )}
         {panel === 'historial' && (
-          <Panel title="Historial de encargos" onClose={() => openPanel(null)}>
+          <Panel title={t('pantallas.app.historial_de_encargos')} onClose={() => openPanel(null)}>
             <button class="back" onClick={() => openPanel(histFrom)}>
-              ← {histFrom === 'libro' ? 'Libro' : 'Tablón'}
+              ← {histFrom === 'libro' ? t('pantallas.app.libro') : t('pantallas.app.tablon')}
             </button>
             <HistoryPanel
               game={game}
@@ -1701,7 +1725,7 @@ export function App() {
           </Panel>
         )}
         {panel === 'fuera' && (
-          <Panel title="La comarca" full onClose={() => openPanel(null)}>
+          <Panel title={t('pantallas.app.la_comarca')} full onClose={() => openPanel(null)}>
             <MapPanel
               game={game}
               onHero={(id) => setCard(id)}
@@ -1789,8 +1813,11 @@ export function App() {
               if (!scene.current?.focusHero(cardHero.id))
                 say(
                   cardHero.status === 'mision'
-                    ? `${cardHero.name} está de misión. Vuelve ${dawnIn(cardHero.days)}.`
-                    : `${cardHero.name} no está en la taberna.`,
+                    ? t('pantallas.app.esta_de_mision_vuelve', {
+                        nombre: cardHero.name,
+                        dawn_in: dawnIn(cardHero.days),
+                      })
+                    : t('pantallas.app.no_esta_en_la', { nombre: cardHero.name }),
                   { x: 160, y: 120 },
                 );
             }}
@@ -1832,7 +1859,7 @@ export function App() {
             all={settings.dawnAll || settings.calm}
             onAlways={() => {
               setSettings((s) => ({ ...s, dawnAll: true }));
-              toast('Hecho: la carta del amanecer saldrá de golpe. Se cambia en Ajustes.');
+              toast(t('pantallas.app.hecho_la_carta_del'));
             }}
             onClose={() => closeDawn()}
             onMail={() => {
@@ -1845,7 +1872,7 @@ export function App() {
         {screen === 'game' && dawnChip === game.day && !dawnOpen && !passing && !busy && (
           <button
             class={`dawn-chip ${game.dawn.some((e) => e.k === 'bad') ? 'is-bad' : ''}`}
-            aria-label={`Amanece el día ${game.day}: ver el parte`}
+            aria-label={t('pantallas.app.amanece_el_dia_ver', { dia: game.day })}
             onClick={() => {
               audio.play('open');
               fromChip.current = true;
@@ -1855,7 +1882,7 @@ export function App() {
           >
             <Icon name="letter" size={14} />
             <span>
-              Día {game.day} · <b>ver el parte</b>
+              {t('pantallas.app.dia', { dia: game.day })} <b>{t('pantallas.app.ver_el_parte')}</b>
               {game.dawn.length > 0 && <small> ({game.dawn.length})</small>}
             </span>
           </button>
@@ -1875,7 +1902,7 @@ export function App() {
                 audio.play('dawn');
                 dispatch({ type: 'ackOpening' });
                 scene.current?.cheer('barra');
-                toast(`${customOf(game).name} abre sus puertas al mundo. ¡A por la leyenda!`);
+                toast(t('pantallas.app.abre_sus_puertas_al', { nombre: customOf(game).name }));
               }}
               onRetry={restart}
             />
@@ -1885,7 +1912,7 @@ export function App() {
             onName={(name) => {
               dispatch({ type: 'custom', patch: { name } });
               audio.play('coin');
-              toast('Letrero nuevo en la puerta.');
+              toast(t('pantallas.app.letrero_nuevo_en_la'));
             }}
             onLater={() => dispatch({ type: 'nameAsked' })}
           />
@@ -1908,9 +1935,9 @@ export function App() {
       />
       {raiding && (
         <div class="raid-banner" role="status">
-          <b>¡Asalto a la taberna!</b>
+          <b>{t('pantallas.app.asalto_a_la_taberna')}</b>
           <button class="btn btn-wood" onClick={() => scene.current?.skipRaid()}>
-            {raidLive ? 'Que se las apañen' : 'Saltar'}
+            {raidLive ? t('pantallas.app.que_se_las_apanen') : t('pantallas.app.saltar')}
           </button>
         </div>
       )}
@@ -2060,7 +2087,7 @@ export function App() {
           }}
           onBoss={(boss, won) => {
             const fight = testFight(gameRef.current, boss, won);
-            if (!fight) return toast('No hay nadie en casa para pelear.');
+            if (!fight) return toast(t('pantallas.app.no_hay_nadie_en'));
             setSettingsOpen(false);
             setWatching({ fight, dawn: false });
           }}

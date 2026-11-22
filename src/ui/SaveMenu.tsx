@@ -2,6 +2,7 @@ import { useRef, useState } from 'preact/hooks';
 import type { GameState } from '../core/model';
 import { exportSave, parseSave, saveFileName } from '../platform/storage';
 import { Icon } from './icons';
+import { t } from '../textos';
 
 /** Lo mínimo del visor de claude.ai para ofrecer un archivo (capacidad `downloads`). */
 interface Host {
@@ -35,13 +36,13 @@ export function SaveMenu({ game, onLoad, onClose }: Props) {
     if (saver) {
       try {
         await saver.save({ filename, data: exportSave(game) });
-        setMsg(`Guardado como ${filename}.`);
+        setMsg(t('pantallas.savemenu.guardado_como', { filename }));
       } catch (e) {
         const code = (e as { code?: string }).code;
         setMsg(
           code === 'declined'
-            ? 'Descarga cancelada.'
-            : 'Aquí no se puede descargar: usa «Copiar código».',
+            ? t('pantallas.savemenu.descarga_cancelada')
+            : t('pantallas.savemenu.aqui_no_se_puede'),
         );
       }
       return;
@@ -55,9 +56,9 @@ export function SaveMenu({ game, onLoad, onClose }: Props) {
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-      setMsg(`Guardado como ${filename}.`);
+      setMsg(t('pantallas.savemenu.guardado_como', { filename }));
     } catch {
-      setMsg('Este navegador no deja descargar: usa «Copiar código».');
+      setMsg(t('pantallas.savemenu.este_navegador_no_deja'));
     }
   };
 
@@ -65,16 +66,16 @@ export function SaveMenu({ game, onLoad, onClose }: Props) {
     if (!game) return;
     try {
       await navigator.clipboard.writeText(exportSave(game));
-      setMsg('Código copiado. Guárdalo en una nota y pégalo aquí para recuperar la partida.');
+      setMsg(t('pantallas.savemenu.codigo_copiado_guardalo_en'));
     } catch {
       setPaste(exportSave(game));
-      setMsg('No se pudo copiar solo: el código está abajo, selecciónalo y cópialo a mano.');
+      setMsg(t('pantallas.savemenu.no_se_pudo_copiar'));
     }
   };
 
   const load = (text: string) => {
     const s = parseSave(text.trim());
-    if (!s) return setMsg('Eso no parece una partida de El Jarro Partido (o es de otra versión).');
+    if (!s) return setMsg(t('pantallas.savemenu.eso_no_parece_una'));
     onLoad(s);
   };
 
@@ -88,37 +89,39 @@ export function SaveMenu({ game, onLoad, onClose }: Props) {
       <article
         class="herocard savemenu"
         onClick={(e) => e.stopPropagation()}
-        aria-label="Guardar y cargar partida"
+        aria-label={t('pantallas.savemenu.guardar_y_cargar_partida')}
       >
-        <button class="btn-icon herocard-x" data-tut="cerrar" aria-label="Cerrar" onClick={onClose}>
+        <button
+          class="btn-icon herocard-x"
+          data-tut="cerrar"
+          aria-label={t('pantallas.savemenu.cerrar')}
+          onClick={onClose}
+        >
           <Icon name="close" size={14} />
         </button>
         <div class="qs-scroll">
-          <span class="eyebrow">El libro del gremio</span>
-          <h3>Guardar y cargar</h3>
-          <p class="tiny">
-            La partida se guarda sola en este navegador. Aquí puedes sacar una copia para otro
-            dispositivo o por si se borra la caché.
-          </p>
+          <span class="eyebrow">{t('pantallas.savemenu.el_libro_del_gremio')}</span>
+          <h3>{t('pantallas.savemenu.guardar_y_cargar')}</h3>
+          <p class="tiny">{t('pantallas.savemenu.la_partida_se_guarda')}</p>
           {game && (
             <>
               <h4 class="qs-sub">
-                Guardar · día {game.day}, {game.gold} monedas
+                {t('pantallas.savemenu.guardar_dia_monedas', { dia: game.day, oro: game.gold })}
               </h4>
               <div class="herocard-actions">
                 <button class="btn btn-gold" onClick={download}>
-                  Descargar archivo
+                  {t('pantallas.savemenu.descargar_archivo')}
                 </button>
                 <button class="btn btn-wood" onClick={copy}>
-                  Copiar código
+                  {t('pantallas.savemenu.copiar_codigo')}
                 </button>
               </div>
             </>
           )}
-          <h4 class="qs-sub">Cargar</h4>
+          <h4 class="qs-sub">{t('pantallas.savemenu.cargar')}</h4>
           <div class="herocard-actions">
             <button class="btn btn-gold" onClick={() => file.current?.click()}>
-              Abrir archivo…
+              {t('pantallas.savemenu.abrir_archivo')}
             </button>
             <input
               ref={file}
@@ -130,12 +133,12 @@ export function SaveMenu({ game, onLoad, onClose }: Props) {
           </div>
           <textarea
             class="save-code"
-            placeholder="…o pega aquí un código de partida"
+            placeholder={t('pantallas.savemenu.o_pega_aqui_un')}
             value={paste}
             onInput={(e) => setPaste((e.target as HTMLTextAreaElement).value)}
           />
           <button class="btn btn-wood" disabled={!paste.trim()} onClick={() => load(paste)}>
-            Cargar desde el código
+            {t('pantallas.savemenu.cargar_desde_el_codigo')}
           </button>
           {msg && (
             <p class="qs-warn" role="status">

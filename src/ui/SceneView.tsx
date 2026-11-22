@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
 import { RoomScene } from '../world/rooms/RoomScene';
 import type { Point, SceneCallbacks, SceneModel } from '../world/scene';
+import { t } from '../textos';
 
 /** La escena que se ve: el gremio por salas. */
 export type GameScene = RoomScene;
@@ -101,16 +102,15 @@ export function SceneView(props: Props) {
   }, [paused]);
 
   return (
-    <div class={slow ? 'scene slow' : 'scene'} ref={wrap}>
+    <div class={slow ? t('barra.sceneview.scene_slow') : 'scene'} ref={wrap}>
       <canvas
         ref={canvas}
         class="pixel scene-canvas"
-        aria-label="La taberna El Jarro Partido. Arrastra para recorrerla y toca lo que quieras."
+        aria-label={t('barra.sceneview.la_taberna_el_jarro')}
       />
       {failed && (
         <p class="scene-fail" role="alert">
-          Este navegador no puede pintar la taberna (le falta WebGL). Prueba con otro navegador o
-          activa la aceleración por hardware.
+          {t('barra.sceneview.este_navegador_no_puede')}
         </p>
       )}
     </div>

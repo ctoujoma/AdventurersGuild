@@ -5,6 +5,7 @@ import { hushRule, type Notice } from './alerts';
 import { Icon } from './icons';
 import { MailPanel } from './panels/MailPanel';
 import { Tabs } from './Tabs';
+import { t } from '../textos';
 
 /** Lo que enseña la campana abierta: los avisos o los informes (el correo). */
 export type BellView = 'avisos' | 'informes';
@@ -161,14 +162,7 @@ export function AlertBell({
         key={ring}
         class={`btn-icon alerts-bell ${n ? `has-${worst}` : 'is-quiet'} ${ring ? 'is-ringing' : ''}`}
         data-tut="correo"
-        aria-label={
-          [
-            alerts.length ? `${alerts.length} ${alerts.length === 1 ? 'aviso' : 'avisos'}` : '',
-            unread ? `${unread} ${unread === 1 ? 'informe sin leer' : 'informes sin leer'}` : '',
-          ]
-            .filter(Boolean)
-            .join(' y ') || 'Sin avisos ni informes nuevos'
-        }
+        aria-label={t('barra.alertbell.campana', { avisos: alerts.length, informes: unread })}
         aria-expanded={!!open}
         onClick={() => {
           audio.play(open ? 'close' : 'open');
@@ -189,17 +183,27 @@ export function AlertBell({
       {open && (
         <>
           <div class="alerts-scrim" onClick={() => setOpen(null)} />
-          <div class="alerts-pop" role="dialog" aria-label="Avisos e informes">
+          <div class="alerts-pop" role="dialog" aria-label={t('barra.alertbell.avisos_e_informes')}>
             <Tabs
-              label="Buzón"
+              label={t('barra.alertbell.buzon')}
               value={open}
               onChange={(v) => {
                 audio.play('select', 0.5);
                 setOpen(v);
               }}
               tabs={[
-                { id: 'avisos', label: 'Avisos', icon: 'bell', count: alerts.length },
-                { id: 'informes', label: 'Informes', icon: 'letter', alert: unread },
+                {
+                  id: 'avisos',
+                  label: t('barra.alertbell.avisos'),
+                  icon: 'bell',
+                  count: alerts.length,
+                },
+                {
+                  id: 'informes',
+                  label: t('barra.alertbell.informes'),
+                  icon: 'letter',
+                  alert: unread,
+                },
               ]}
             />
             {open === 'informes' ? (
@@ -220,7 +224,7 @@ export function AlertBell({
                       onHistory();
                     }}
                   >
-                    <Icon name="lista" size={12} /> Historial de encargos
+                    <Icon name="lista" size={12} /> {t('barra.alertbell.historial_de_encargos')}
                   </button>
                 )}
               </div>
@@ -252,9 +256,15 @@ export function AlertBell({
                         </span>
                         <span class="alerts-text">
                           {a.text}
-                          {keep && <small class="alerts-keep">Se queda hasta que lo veas.</small>}
+                          {keep && (
+                            <small class="alerts-keep">
+                              {t('barra.alertbell.se_queda_hasta_que')}
+                            </small>
+                          )}
                           {!keep && hushRule(a) === 'day' && (
-                            <small class="alerts-keep">Si lo descartas, vuelve mañana.</small>
+                            <small class="alerts-keep">
+                              {t('barra.alertbell.si_lo_descartas_vuelve')}
+                            </small>
                           )}
                         </span>
                         <span class="alerts-go" aria-hidden="true">
@@ -265,7 +275,7 @@ export function AlertBell({
                         <button
                           class="alerts-x"
                           aria-label={`Descartar: ${a.text}`}
-                          title="Descartar"
+                          title={t('barra.alertbell.descartar')}
                           onClick={() => dismiss([a.id])}
                         >
                           <Icon name="close" size={10} />
@@ -277,14 +287,14 @@ export function AlertBell({
               </ul>
             ) : (
               <p class="alerts-empty">
-                <Icon name="check" size={16} /> Todo en orden. Nada que se te olvide.
+                <Icon name="check" size={16} /> {t('barra.alertbell.todo_en_orden_nada')}
               </p>
             )}
             {open === 'avisos' && (hushable.length > 1 || hushedCount > 0) && (
               <div class="alerts-foot">
                 {hushable.length > 1 && (
                   <button class="linklike" onClick={() => dismiss(hushable.map((a) => a.id))}>
-                    Descartar todos
+                    {t('barra.alertbell.descartar_todos')}
                   </button>
                 )}
                 {hushedCount > 0 && (
@@ -295,7 +305,7 @@ export function AlertBell({
                       onUnhush();
                     }}
                   >
-                    Ver {hushedCount === 1 ? 'el descartado' : `los ${hushedCount} descartados`}
+                    {t('barra.alertbell.ver_descartados', { n: hushedCount })}
                   </button>
                 )}
               </div>

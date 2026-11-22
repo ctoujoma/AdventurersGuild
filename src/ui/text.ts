@@ -1,4 +1,4 @@
-export { listNames, plural } from '../core/text';
+export { listNames } from '../core/text';
 
 /**
  * Oro en corto, para lo que tiene poco sitio (las notas del tablón): hasta 999 tal cual; luego

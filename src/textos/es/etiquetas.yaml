@@ -176,6 +176,12 @@ habilidades:
   Trampas: "Trampas"
   Arcano: "Arcano"
   Supervivencia: "Supervivencia"
+# Las habilidades en tres letras (chapitas de los objetos).
+habilidades_corto:
+  Combate: "CMB"
+  Trampas: "TRA"
+  Arcano: "ARC"
+  Supervivencia: "SUP"
 atributos:
   F: "Fuerza"
   D: "Destreza"
@@ -185,3 +191,11 @@ riesgo:
   - "Probable"
   - "Arriesgado"
   - "Suicida"
+# Tipos de encargo (la chapita de la nota del tablón).
+tipos:
+  Cazar: "Cazar"
+  Escoltar: "Escoltar"
+  Explorar: "Explorar"
+  Recuperar: "Recuperar"
+  Investigar: "Investigar"
+  Limpiar: "Limpiar"

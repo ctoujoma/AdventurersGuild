@@ -13,7 +13,7 @@ import { Icon } from '../icons';
 import { Portrait } from '../Portrait';
 import { Tabs } from '../Tabs';
 import { lookOf, marksOf, heroFrame } from '../view';
-import { tx } from '../../textos';
+import { t, tx } from '../../textos';
 
 export type HeroFilter = 'todos' | 'candidatos' | 'trabajadores' | 'equipo';
 
@@ -35,7 +35,11 @@ interface Props {
 /** Lo que más importa de un héroe, en una chapa: si pide algo, su ánimo o si está de guardia. */
 function heroFlag(h: Hero): { text: string; cls: string } | null {
   if (h.request)
-    return { text: h.request === 'cache' ? 'Pide caché' : 'Pide aumento', cls: 'request' };
+    return {
+      text:
+        h.request === 'cache' ? t('paneles.heroes.pide_cache') : t('paneles.heroes.pide_aumento'),
+      cls: 'request',
+    };
   const band = moraleBand(h.morale);
   if (h.status !== 'muerto' && band !== 'normal')
     return { text: MORALE_INFO[band].label[h.sex].replace('.', ''), cls: band };
@@ -76,7 +80,16 @@ export function HeroesPanel({
         <button
           data-tut={`hero-${h.id}`}
           class="row-main"
-          aria-label={`${h.name}, ${CLASS_NAMES[h.cls][h.sex]} de nivel ${h.lvl}. ${doing}${flag ? `. ${flag.text}` : ''}${gearHint ? `. ${gearHint}` : '.'} Ver ficha`}
+          aria-label={t('paneles.heroes.de_nivel_ver_ficha', {
+            nombre: h.name,
+            clase: CLASS_NAMES[h.cls][h.sex],
+            nivel: h.lvl,
+            doing,
+            hay_aviso: !!flag,
+            aviso: flag?.text ?? '',
+            hay_pista: !!gearHint,
+            pista: gearHint ?? '',
+          })}
           onClick={() => onOpen(h.id)}
         >
           <Portrait
@@ -97,7 +110,7 @@ export function HeroesPanel({
             </b>
             <span class="row-sub">
               {CLASS_NAMES[h.cls][h.sex]} · {h.lvl} · <Icon name="coin" size={10} />
-              {h.salary}/sem
+              {t('paneles.heroes.sem', { salary: h.salary })}
             </span>
           </span>
         </button>
@@ -117,8 +130,11 @@ export function HeroesPanel({
               class="btn btn-gold"
               data-tut="contratar"
               disabled={!!why}
-              title={why ?? `Prima de fichaje: ${h.fee}`}
-              aria-label={`Contratar a ${h.name} por ${h.fee} monedas`}
+              title={why ?? t('paneles.heroes.prima_de_fichaje', { paga: h.fee })}
+              aria-label={t('paneles.heroes.contratar_a_por_monedas', {
+                nombre: h.name,
+                paga: h.fee,
+              })}
               onClick={() => onHire(h.id)}
             >
               <Icon name="coin" size={12} /> {h.fee}
@@ -132,37 +148,37 @@ export function HeroesPanel({
   return (
     <>
       <Tabs
-        label="Héroes"
+        label={t('paneles.heroes.heroes')}
         value={filter}
         onChange={setFilter}
         tabs={[
           {
             id: 'todos',
-            label: 'Héroes',
+            label: t('paneles.heroes.heroes'),
             icon: 'heroe',
             count: roster(game).length,
-            help: 'Tus héroes. Quien está fuera o herido también ocupa cama.',
+            help: t('paneles.heroes.tus_heroes_quien_esta'),
           },
           {
             id: 'candidatos',
-            label: 'Barra',
+            label: t('paneles.heroes.barra'),
             icon: 'jarra',
             count: cands.length + game.seekers.length,
-            help: 'Buscan trabajo en la barra: héroes (cada uno esconde un rasgo, ¿?, que se sabe tras su primera misión) y trabajadores para la casa.',
+            help: t('paneles.heroes.buscan_trabajo_en_la'),
           },
           {
             id: 'trabajadores',
-            label: 'Tareas',
+            label: t('paneles.heroes.tareas'),
             icon: 'martillo',
             alert: crewAlerts(game).length,
-            help: 'Quién hace qué en la casa: dónde trabaja cada uno, quién entrena, la guardia y quién descansa. Toca a alguien para cambiarle la tarea.',
+            help: t('paneles.heroes.quien_hace_que_en'),
           },
           {
             id: 'equipo',
-            label: 'Equipo',
+            label: t('paneles.heroes.equipo'),
             icon: 'cofre',
             count: game.inventory.length,
-            help: 'El arcón: el equipo (el guardado y el puesto), los tesoros para vender, los trofeos y los materiales.',
+            help: t('paneles.heroes.el_arcon_el_equipo'),
           },
         ]}
       />
@@ -173,25 +189,27 @@ export function HeroesPanel({
       ) : filter === 'todos' ? (
         <>
           <div class="rows">{mine.map((h) => row(h, false))}</div>
-          {!mine.length && <p class="panel-note">No te queda nadie. Contrata en la barra.</p>}
+          {!mine.length && <p class="panel-note">{t('paneles.heroes.no_te_queda_nadie')}</p>}
           {mine.length > 0 && (
-            <p class="row-foot" {...help('Los salarios se pagan cada semana, con la deuda.')}>
-              <Icon name="cama" size={10} /> {roster(game).length} de {cap} camas ·{' '}
-              <Icon name="coin" size={10} /> Salarios: {salaries(game)} por semana
+            <p class="row-foot" {...help(t('paneles.heroes.los_salarios_se_pagan'))}>
+              <Icon name="cama" size={10} />{' '}
+              {t('paneles.heroes.de_camas', { length: roster(game).length, cabe: cap })}{' '}
+              <Icon name="coin" size={10} />{' '}
+              {t('paneles.heroes.salarios_por_semana', { salaries: salaries(game) })}
             </p>
           )}
         </>
       ) : (
         <>
-          <section class="crew-group" aria-label="Héroes que buscan gremio">
+          <section class="crew-group" aria-label={t('paneles.heroes.heroes_que_buscan_gremio')}>
             <h3 class="crew-h">
-              <span>Héroes</span>
+              <span>{t('paneles.heroes.heroes')}</span>
               <span class="row-sub">
-                {roster(game).length} de {cap} camas
+                {t('paneles.heroes.de_camas_2', { length: roster(game).length, cabe: cap })}
               </span>
             </h3>
             <div class="rows">{cands.map((h) => row(h, true))}</div>
-            {!cands.length && <p class="panel-note">Hoy no hay ningún héroe buscando gremio.</p>}
+            {!cands.length && <p class="panel-note">{t('paneles.heroes.hoy_no_hay_ningun')}</p>}
           </section>
           <SeekerList game={game} onHire={onHireWorker} />
         </>

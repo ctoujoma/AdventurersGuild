@@ -7,6 +7,7 @@ import { crestBoard } from '../world/props';
 import { BufferImage } from './BufferImage';
 import { VERSION } from '../version';
 import { NEWS, loadSeenNews, saveSeenNews, unseenNews } from '../platform/news';
+import { t } from '../textos';
 
 interface Props {
   /** Partida guardada, si la hay. */
@@ -43,13 +44,13 @@ export function Title({ saved, onContinue, onNew, onSaves, onSettings }: Props) 
         <div class="title-logo">
           <span class="title-dust" aria-hidden="true" />
           <BufferImage buf={sign} scale={4} class="title-sign" />
-          <span class="title-small">El Gremio de</span>
-          <h1 class="title-big">Aventureros</h1>
+          <span class="title-small">{t('pantallas.title.el_gremio_de')}</span>
+          <h1 class="title-big">{t('pantallas.title.aventureros')}</h1>
           <span class="title-plaque">{custom?.name ?? DEFAULT_NAME}</span>
         </div>
         {news.length > 0 && (
           <div class="title-confirm title-news" role="status">
-            <strong>¡Novedades!</strong>
+            <strong>{t('pantallas.title.novedades')}</strong>
             <ul>
               {news.map((n) => (
                 <li key={n.pr}>
@@ -58,28 +59,25 @@ export function Title({ saved, onContinue, onNew, onSaves, onSettings }: Props) 
               ))}
             </ul>
             <button class="btn btn-gold" onClick={closeNews}>
-              Entendido
+              {t('pantallas.title.entendido')}
             </button>
           </div>
         )}
-        <nav class="title-menu" aria-label="Menú principal">
+        <nav class="title-menu" aria-label={t('pantallas.title.menu_principal')}>
           {saved && !confirm && (
             <button class="btn btn-gold" onClick={onContinue}>
-              Continuar · día {saved.day}
+              {t('pantallas.title.continuar_dia', { dia: saved.day })}
             </button>
           )}
           {confirm ? (
             <div class="title-confirm">
-              <span>
-                Ya tienes una partida en el día {saved?.day}. Si empiezas otra, se perderá (puedes
-                guardarla antes).
-              </span>
+              <span>{t('pantallas.title.ya_tienes_una_partida', { dia: saved?.day })}</span>
               <div class="herocard-actions">
                 <button class="btn btn-red" onClick={onNew}>
-                  Empezar otra
+                  {t('pantallas.title.empezar_otra')}
                 </button>
                 <button class="btn btn-wood" onClick={() => setConfirm(false)}>
-                  Cancelar
+                  {t('pantallas.title.cancelar')}
                 </button>
               </div>
             </div>
@@ -88,24 +86,24 @@ export function Title({ saved, onContinue, onNew, onSaves, onSettings }: Props) 
               class={`btn ${saved ? 'btn-wood' : 'btn-gold'}`}
               onClick={() => (saved ? setConfirm(true) : onNew())}
             >
-              Nueva partida
+              {t('pantallas.title.nueva_partida')}
             </button>
           )}
           {!confirm && (
             <button class="btn btn-wood" onClick={onSaves}>
-              Guardar y cargar
+              {t('pantallas.title.guardar_y_cargar')}
             </button>
           )}
           {!confirm && (
             <button class="btn btn-wood" onClick={onSettings}>
-              Ajustes
+              {t('pantallas.title.ajustes')}
             </button>
           )}
         </nav>
       </div>
       <span class="title-foot">
-        Toca un botón para entrar en la taberna
-        <small class="title-version">Versión {VERSION}</small>
+        {t('pantallas.title.toca_un_boton_para')}
+        <small class="title-version">{t('pantallas.title.version', { version: VERSION })}</small>
       </span>
     </div>
   );

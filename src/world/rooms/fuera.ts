@@ -10,6 +10,7 @@ import type { PixelBuffer } from '../../art/pixel';
 import { clothOf } from '../../art/heroes/hero';
 import * as Prop from '../props';
 import type { SceneAway } from '../scene';
+import { list, t } from '../../textos';
 
 /** Filas de la nota como mucho (no cabe más en el corcho) y rayas por fila. */
 export const NOTE_ROWS = 3;
@@ -44,18 +45,15 @@ export function awayGroups(list: readonly SceneAway[]): AwayGroup[] {
 
 /** «Ana», «Ana y Berto», «Ana, Berto y Carla». */
 const names = (who: readonly SceneAway[]) => {
-  const n = who.map((a) => a.name);
-  return n.length < 2 ? (n[0] ?? '') : `${n.slice(0, -1).join(', ')} y ${n.at(-1)}`;
+  return list(who.map((a) => a.name));
 };
 
-const lostWord = (a: SceneAway) => (a.look.sex === 'f' ? 'desaparecida' : 'desaparecido');
+const lostWord = (a: SceneAway) => t('escena.fuera.desaparecido', { sexo: a.look.sex });
 
 /** Cuándo vuelven: «vuelve mañana», «vuelven en 3 días». */
 function back(days: number | undefined, many: boolean): string {
   if (days === undefined) return '';
-  if (days <= 0) return many ? 'vuelven hoy' : 'vuelve hoy';
-  if (days === 1) return many ? 'vuelven mañana' : 'vuelve mañana';
-  return `${many ? 'vuelven' : 'vuelve'} en ${days} días`;
+  return t('escena.fuera.vuelve', { varios: many, dias: Math.max(0, days) });
 }
 
 /** A qué ha ido (el encargo o la expedición) y cuándo vuelve. */
@@ -63,26 +61,31 @@ function what(g: AwayGroup): string {
   const a = g.who[0]!;
   if (g.lost) return lostWord(a);
   const many = g.who.length > 1;
-  const task = a.task ?? (a.why === 'expedicion' ? 'de expedición' : 'de encargo');
+  const task =
+    a.task ??
+    (a.why === 'expedicion' ? t('escena.fuera.de_expedicion') : t('escena.fuera.de_encargo'));
   const when = back(a.days, many);
-  return when ? `${task} (${when})` : task;
+  return when ? t('escena.fuera.tarea_y_vuelta', { tarea: task, vuelta: when }) : task;
 }
 
 /** Lo que dice la nota del tablón (para la etiqueta al pasar por encima o al tocarla). */
 export function awayNote(list: readonly SceneAway[]): string {
-  const lines = awayGroups(list).map((g) => `${names(g.who)}: ${what(g)}`);
+  const lines = awayGroups(list).map((g) =>
+    t('escena.fuera.quien_y_que', { quienes: names(g.who), que: what(g) }),
+  );
   const shown = lines.slice(0, 5);
-  if (lines.length > shown.length) shown.push(`y ${lines.length - shown.length} más`);
-  return ['Fuera del gremio', ...shown].join('\n');
+  if (lines.length > shown.length)
+    shown.push(t('escena.fuera.y_mas', { n: lines.length - shown.length }));
+  return [t('escena.fuera.fuera_del_gremio'), ...shown].join('\n');
 }
 
 /** Lo que dice la cama hecha de alguien que está fuera. */
 export function bedNote(a: SceneAway): string {
   const g: AwayGroup = { who: [a], lost: a.why === 'perdido' };
   const why = g.lost
-    ? `${lostWord(a)[0]!.toUpperCase()}${lostWord(a).slice(1)}: la cama sigue hecha`
-    : `${a.why === 'expedicion' ? 'De expedición' : 'De encargo'}: ${what(g)}`;
-  return `Cama de ${a.name}\n${why}`;
+    ? t('escena.fuera.la_cama_sigue_hecha', { perdido: lostWord(a) })
+    : t('escena.fuera.fuera_por', { expedicion: a.why === 'expedicion', que: what(g) });
+  return t('escena.fuera.cama_de', { nombre: a.name, why });
 }
 
 /**
