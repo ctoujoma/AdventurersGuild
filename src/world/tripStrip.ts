@@ -73,7 +73,7 @@ export function homeFrom(now: JourneyNow): { back: number; fast: boolean } {
 }
 
 /** Lo que se sabe de cada uno para pintarlo, hecho una vez. */
-interface Hero {
+export interface Hero {
   crew: Crew;
   look: HeroLook;
   marks: HeroMarks;
@@ -81,7 +81,7 @@ interface Hero {
 }
 
 const heroCache = new Map<string, Hero>();
-function heroOf(c: Crew): Hero {
+export function heroOf(c: Crew): Hero {
   const hurt = c.fate === 'herido';
   const key = `${c.id}:${c.seed}:${c.cls}:${hurt}:${c.gear?.icon ?? ''}`;
   let h = heroCache.get(key);
@@ -120,7 +120,7 @@ function tint(img: PixelBuffer, color: string): HTMLCanvasElement {
 }
 
 /** Pinta un dibujo por el centro de sus pies (`fx`: columna de los pies), volteado si `left`. */
-function put(
+export function put(
   ctx: CanvasRenderingContext2D,
   img: PixelBuffer | HTMLCanvasElement,
   x: number,
@@ -141,7 +141,7 @@ function put(
 
 // ---------- Los glifos de los bocadillos y la línea ----------
 
-const GLYPH: Record<JourneyEvent['kind'] | 'alerta', string[]> = {
+export const GLYPH: Record<JourneyEvent['kind'] | 'alerta', string[]> = {
   camino: ['.....', 'X..X.', '.....', '..X..X', '......'],
   llegada: ['XXX..', 'XXXX.', 'X....', 'X....', 'X....'],
   faena: ['..XX.', '.X..X', '..XX.', '.X...', 'X....'],
@@ -164,7 +164,14 @@ const KIND_COLOR: Record<JourneyEvent['kind'], string> = {
   vuelta: P.tan,
 };
 
-function px(ctx: CanvasRenderingContext2D, x: number, y: number, c: string, w = 1, h = 1): void {
+export function px(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  c: string,
+  w = 1,
+  h = 1,
+): void {
   ctx.fillStyle = c;
   ctx.fillRect(Math.round(x), Math.round(y), w, h);
 }
@@ -176,7 +183,13 @@ function glyph(ctx: CanvasRenderingContext2D, g: string[], x: number, y: number,
 }
 
 /** Un bocadillo con su glifo, con el piquito hacia abajo en `x`. */
-function bubble(ctx: CanvasRenderingContext2D, x: number, y: number, g: string[], c: string): void {
+export function bubble(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  g: string[],
+  c: string,
+): void {
   const w = 9;
   const h = 9;
   const x0 = Math.round(x - w / 2);
@@ -196,10 +209,10 @@ export class TripStrip {
   private land: PixelBuffer | null = null;
   private landKey = '';
   /** Lo que va encima de todo, también de la noche (los bocadillos). */
-  private later: (() => void)[] = [];
+  protected later: (() => void)[] = [];
   /** Los sacos del botín, encima de la fila. */
   private sacks: (() => void)[] = [];
-  constructor(private w: number) {}
+  constructor(protected w: number) {}
 
   resize(w: number): void {
     this.w = w;
@@ -236,7 +249,7 @@ export class TripStrip {
 
   // ---------- El cielo ----------
 
-  private sky(ctx: CanvasRenderingContext2D, now: JourneyNow, time: number): void {
+  protected sky(ctx: CanvasRenderingContext2D, now: JourneyNow, time: number): void {
     const { w } = this;
     const bands = now.night ? [P.steel, P.steel, P.fog, P.fog] : [P.sky, P.sky, P.sky, P.mist];
     const h = 44;
@@ -257,7 +270,7 @@ export class TripStrip {
     }
   }
 
-  private stars(ctx: CanvasRenderingContext2D, now: JourneyNow, time: number): void {
+  protected stars(ctx: CanvasRenderingContext2D, now: JourneyNow, time: number): void {
     const rng = new Rng(`estrellas-${now.journey.seed}`);
     for (let i = 0; i < 26; i++) {
       const x = rng.int(0, this.w - 1);
@@ -273,7 +286,7 @@ export class TripStrip {
     px(ctx, mx + 2, 6, P.fog, 2, 2);
   }
 
-  private glow(ctx: CanvasRenderingContext2D, x: number, y: number, time: number): void {
+  protected glow(ctx: CanvasRenderingContext2D, x: number, y: number, time: number): void {
     const r = 16 + Math.sin(time * 9) * 1.5;
     const g = ctx.createRadialGradient(x, y, 1, x, y, r);
     g.addColorStop(0, 'rgba(255,170,80,0.55)');
@@ -483,7 +496,7 @@ export class TripStrip {
   }
 
   /** Los enemigos tras la pelea: caídos (`beaten`) o en pie, mirando al grupo. */
-  private standing(
+  protected standing(
     ctx: CanvasRenderingContext2D,
     now: JourneyNow,
     x0: number,
@@ -506,7 +519,7 @@ export class TripStrip {
   }
 
   /** El arma en la mano de un bandido (figura de héroe, mirando a la izquierda). */
-  private held(
+  protected held(
     ctx: CanvasRenderingContext2D,
     f: FoeArt,
     img: PixelBuffer,
@@ -526,7 +539,7 @@ export class TripStrip {
   }
 
   /** Los enemigos de esta pelea (de dos a tres; uno, si es grande). */
-  private foes(now: JourneyNow): FoeArt[] {
+  protected foes(now: JourneyNow): FoeArt[] {
     const j = now.journey;
     const rng = new Rng(`foes-${j.seed}`);
     const n = j.foe === 'grande' ? 1 : j.foe === 'alimana' ? 3 : rng.int(2, 3);
@@ -534,7 +547,7 @@ export class TripStrip {
   }
 
   /** Andando (`left`: hacia la taberna); `hurry`, deprisa; `bag`, con el botín a la espalda. */
-  private walk(
+  protected walk(
     ctx: CanvasRenderingContext2D,
     h: Hero,
     x: number,
@@ -560,7 +573,7 @@ export class TripStrip {
   }
 
   /** Mirando alrededor (`right`: hacia el sitio; si no, hacia atrás, a la taberna). */
-  private look(
+  protected look(
     ctx: CanvasRenderingContext2D,
     h: Hero,
     x: number,
@@ -581,7 +594,7 @@ export class TripStrip {
   }
 
   /** Una pose de pelea con su arma (mirando a la derecha). */
-  private pose(
+  protected pose(
     ctx: CanvasRenderingContext2D,
     h: Hero,
     x: number,
@@ -604,7 +617,7 @@ export class TripStrip {
   }
 
   /** La pelea: el grupo contra los enemigos, cada uno a su ritmo, con destellos al dar. */
-  private fight(
+  protected fight(
     ctx: CanvasRenderingContext2D,
     now: JourneyNow,
     crew: Hero[],
@@ -690,7 +703,7 @@ export class TripStrip {
   }
 
   /** De noche por el camino: sentados alrededor de la hoguera. */
-  private camp(ctx: CanvasRenderingContext2D, crew: Hero[], x: number) {
+  protected camp(ctx: CanvasRenderingContext2D, crew: Hero[], x: number) {
     const G = LAND_GROUND;
     crew.forEach((h, i) => {
       const spr = heroSprites(h.look, h.marks);
@@ -706,7 +719,7 @@ export class TripStrip {
     return { x, y: G - 4 };
   }
 
-  private flames(ctx: CanvasRenderingContext2D, x: number, y: number, time: number): void {
+  protected flames(ctx: CanvasRenderingContext2D, x: number, y: number, time: number): void {
     const tick = Math.floor(time * 10);
     const h = [4, 6, 5, 7, 5][tick % 5]!;
     px(ctx, x - 2, y + 1, P.red, 5, 2);

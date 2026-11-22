@@ -25,7 +25,7 @@ import { canHireWorker } from '../core/workers';
 import { DAY_SECONDS, DELIVERIES, DUSK, NIGHT_RUSH, WORK_END } from '../core/balance';
 import { DECOR, FACADE, isDefaultName, PET_LINES } from '../data/custom';
 import { RUMORS, VISITORS, type VisitorKind } from '../data/visitors';
-import type { BossFight as BossFightRecord, Facilities, GameState } from '../core/model';
+import type { BossFight as BossFightRecord, Facilities, GameState, Heading } from '../core/model';
 import { FACILITY_INFO } from '../data/labels';
 import { loadRecords, mergeRecords, saveRecords } from '../platform/records';
 import { loadGame, saveGame, webStorage } from '../platform/storage';
@@ -75,6 +75,8 @@ import { nextTip } from './tips';
 import { canDrag, planDrop, planTask, type Drop, type Task } from './drop';
 import { UncleNote } from './UncleNote';
 import { TripSheet } from './TripSheet';
+import { ExpeditionSheet } from './ExpeditionSheet';
+import { ExpeditionView } from './ExpeditionView';
 import { TutorialNote } from './TutorialNote';
 import { TutorialFocus } from './TutorialFocus';
 import { tutorialFocus } from './tutorialFocus';
@@ -174,6 +176,8 @@ export function App() {
   const [gardenView, setGardenView] = useState(false);
   /** Grupo fuera cuya ficha «Encargo en curso» está abierta. */
   const [tripId, setTripId] = useState<string | null>(null);
+  /** Expediciones: la hoja de preparar una (`'nueva'`) o el visor de una fuera (su id). */
+  const [expId, setExpId] = useState<string | null>(null);
   const [arconTab, setArconTab] = useState<ArconTab>('equipo');
   /** Sala tocada en la vista de salas (su ficha). */
   const [roomId, setRoomId] = useState<string | null>(null);
@@ -677,6 +681,16 @@ export function App() {
     );
   };
 
+  const sendExpedition = (heading: Heading, ids: string[], rations: number, unguard: boolean) => {
+    const before = gameRef.current;
+    const next = dispatch({ type: 'expedition', heading, heroIds: ids, rations, unguard });
+    if (next === before) return;
+    audio.play('depart');
+    setPanel(null);
+    setExpId(next.expeditions?.at(-1)?.id ?? null);
+    scene.current?.focus('puerta');
+  };
+
   const upgrade = (k: keyof Facilities) => {
     const before = gameRef.current;
     if (dispatch({ type: 'upgrade', fac: k }) === before) return;
@@ -782,6 +796,7 @@ export function App() {
     setQuestId(null);
     setReportId(null);
     setTripId(null);
+    setExpId(null);
     setBell(null);
   };
 
@@ -977,6 +992,7 @@ export function App() {
   const cardIsCandidate = !!cardHero && game.candidates.includes(cardHero);
   const openQuest = game.quests.find((q) => q.id === questId) ?? null;
   const openTrip = game.missions.find((m) => m.id === tripId) ?? null;
+  const openExp = game.expeditions?.find((x) => x.id === expId) ?? null;
   const waitMission = bossWait
     ? (game.missions.find((m) => m.id === bossWait && m.waiting) ?? null)
     : null;
@@ -1733,6 +1749,10 @@ export function App() {
                 audio.play('open');
                 setTripId(id);
               }}
+              onExpedition={(id) => {
+                audio.play('open');
+                setExpId(id ?? 'nueva');
+              }}
               onQuest={(id) => {
                 audio.play('open');
                 setQuestId(id);
@@ -1747,6 +1767,22 @@ export function App() {
             quest={openQuest}
             onClose={() => setQuestId(null)}
             onSend={(ids, unguard) => send(openQuest.id, ids, unguard)}
+          />
+        )}
+        {expId === 'nueva' && (
+          <ExpeditionSheet game={game} onClose={() => setExpId(null)} onSend={sendExpedition} />
+        )}
+        {openExp && (
+          <ExpeditionView
+            key={openExp.id}
+            game={game}
+            exp={openExp}
+            onClose={() => setExpId(null)}
+            onHero={(id) => setCard(id)}
+            onBack={() => {
+              audio.play('select');
+              dispatch({ type: 'expBack', id: openExp.id });
+            }}
           />
         )}
         {openTrip && (

@@ -601,6 +601,46 @@ export const MAT_SELL = 3;
 /** Las expediciones se abren con el primer veterano de verdad (el primer héroe a este nivel). */
 export const EXPEDITION_LEVEL = VET_LEVEL;
 /**
+ * Expediciones (`core/expedition.ts`; decidido con el usuario, bloque 8 de `docs/decisiones.md`).
+ * Corren por horas de juego (`EXP_HOURS` al día); la lejanía son los días de ida y la vuelta va
+ * el doble de deprisa. Sucesos al azar: `EXP_EVENTS` al día de media, más `EXP_EVENTS_FAR` por
+ * cada día de lejanía (de vuelta, la mitad). Acampan a `EXP_CAMP` (hora del día).
+ */
+export const EXP_HOURS = 24;
+export const EXP_CAMP = 17;
+export const EXP_EVENTS = 2;
+export const EXP_EVENTS_FAR = 0.2;
+/**
+ * Peleas: la fuerza del grupo (la media de Combate de los que están en pie, más `EXP_GROUP` por
+ * cada uno de más) contra `EXP_FIGHT + EXP_FIGHT_FAR` × lejanía. Cada derrota hiere a uno; con
+ * `EXP_HURT_DOWN` heridas cae. Cada herida resta 1 a todo y en casa son `EXP_HURT_DAYS` días.
+ */
+export const EXP_GROUP = 1.5;
+export const EXP_FIGHT = 7;
+export const EXP_FIGHT_FAR = 1.4;
+export const EXP_HURT_DOWN = 3;
+export const EXP_HURT_DAYS = 2;
+/** Quien cayó y vuelve a casa: probabilidad de que no salga adelante (con clérigo, `CLERIC_SAVE`). */
+export const EXP_DOWN_DEATH = 0.3;
+/** Si caen todos, vuelve esta parte de la mochila (el resto se queda allí). */
+export const EXP_WIPE_KEEP = 1 / 3;
+/** El clérigo cura una herida por noche con esta probabilidad. */
+export const EXP_CLERIC_HEAL = 0.5;
+/** Botín: monedas de un hallazgo (más por día de lejanía) y materiales (más cada `EXP_MAT_FAR` días). */
+export const EXP_GOLD = [4, 12] as const;
+export const EXP_GOLD_FAR = 0.35;
+export const EXP_MAT_FAR = 2;
+/** El cristal, desde estos días de lejanía. */
+export const EXP_CRYSTAL_FROM = 3;
+/** Experiencia por día fuera, y lo que sube por cada día de la lejanía más alta. */
+export const EXP_XP_DAY = 12;
+export const EXP_XP_FAR = 0.1;
+/** Moral: lo que pierde cada uno por noche sin ración y lo que gana al volver con la mochila llena. */
+export const EXP_HUNGER = 10;
+export const EXP_HOME_MORALE = 6;
+/** Avisos al adentrarse: cada tantos días de lejanía (peligro y botín, poco a poco). */
+export const EXP_STEP = 2;
+/**
  * Mejorar un objeto en su taller: hasta `TEMPER_MAX`; cada paso cuesta `TEMPER_GOLD` y
  * `TEMPER_HOURS` por el nivel al que llega, y tantos de su material como ese nivel.
  */
