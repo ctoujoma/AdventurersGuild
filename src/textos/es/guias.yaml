@@ -1,0 +1,43 @@
+# Guías de Ajustes › «Repetir tutoriales»: tarjetas con una captura y lo que hay que hacer.
+ui:
+  titulo: "Guía · {guia}"
+  cerrar: "Cerrar la guía"
+  antes: "‹ Antes"
+  sigue: "Sigue ›"
+  hecho: "Hecho"
+  paso: "{n}/{de}"
+  # Texto alternativo de la captura.
+  captura: "Captura del juego: {paso}"
+  elige: "¿Qué quieres repasar?"
+obras:
+  nombre: "Obras"
+  abrir:
+    titulo: "Abre el modo obras"
+    texto: "Toca el martillo, a la derecha. Todo lo que hagas es un borrador: ves cómo queda y cuánto cuesta, y nada se paga hasta el final."
+  solar:
+    titulo: "Compra un solar"
+    texto: "El hueco con precio junto a la taberna es un solar. Tócalo para ensanchar la casa, hasta siete huecos de ancho."
+  mover:
+    titulo: "Mueve una sala"
+    texto: "Toca la sala y luego «Mover», o arrástrala con el dedo. Suéltala en un hueco libre: lo que se queda sin paso sale en rojo."
+  ampliar:
+    titulo: "Amplía una sala"
+    texto: "Con la sala elegida, toca el «+» de su lado: ocupa un hueco más y rinde más. El hueco tiene que estar libre."
+  excavar:
+    titulo: "Excava hacia abajo"
+    texto: "Bajo tierra no hay solares: hay roca. Toca un hueco de roca para excavarlo. Cuanto más hondo, más caro."
+  construir:
+    titulo: "Construye una sala nueva"
+    texto: "Abajo, elige una pestaña y una sala, y toca dónde ponerla. Las que aún no se pueden dicen qué falta."
+  pagar:
+    titulo: "Paga las obras"
+    texto: "Abajo ves lo que cuesta todo junto. «Pagar» y se levanta en un momento; la flecha curva deshace la última obra."
+  falta:
+    titulo: "¿No te llega?"
+    texto: "Si falta oro, «Pagar» sale apagado y abajo dice cuánto falta. No hace falta tirarlo: toca la ×."
+  guardar:
+    titulo: "Guarda el borrador"
+    texto: "Con obras apuntadas, la × pregunta: «Guardar» se queda el borrador tal cual y «Descartar» lo tira."
+  seguir:
+    titulo: "Sigue cuando puedas"
+    texto: "Al volver a tocar el martillo, el borrador sigue ahí con todas sus obras. Paga cuando tengas el oro."

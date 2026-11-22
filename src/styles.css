@@ -8278,6 +8278,134 @@ div.item-count {
   line-height: 1.35;
 }
 
+/* ---------- Guías (Ajustes › Repetir tutoriales) ---------- */
+.guide-backdrop {
+  z-index: 9;
+}
+.guide {
+  position: relative;
+  width: min(380px, calc(100% - 24px));
+  max-height: calc(100% - 16px);
+  overflow-y: auto;
+  border-style: solid;
+  border-width: 16px;
+  border-image: var(--frame-wood) 8 / 16px / 0 round;
+  background: var(--tex-paper) var(--sand);
+  background-size: 64px;
+  color: var(--plum);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: pop2 0.18s steps(3);
+}
+.guide-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--pixel);
+  font-size: var(--t-m);
+}
+.guide-pick {
+  display: grid;
+  gap: 8px;
+}
+.guide-shot {
+  position: relative;
+  aspect-ratio: 420 / 360;
+  max-width: 100%;
+  overflow: hidden;
+  border: 3px solid var(--ink);
+  background: var(--ink);
+  touch-action: pan-y;
+  user-select: none;
+}
+.guide-shot img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+}
+.guide-box {
+  position: absolute;
+  border: 3px solid var(--lemon);
+  box-shadow: 0 0 0 9999px rgba(24, 20, 37, 0.45);
+  animation: guide-late 1.1s steps(4) infinite;
+  pointer-events: none;
+}
+@keyframes guide-late {
+  50% {
+    outline: 3px solid rgba(254, 231, 97, 0.5);
+    outline-offset: 4px;
+  }
+}
+.guide-arrow {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  fill: var(--lemon);
+  stroke: var(--ink);
+  stroke-width: 1;
+  pointer-events: none;
+  animation: guide-apunta 1.1s steps(4) infinite;
+}
+.guide-arrow.is-below {
+  rotate: 180deg;
+}
+@keyframes guide-apunta {
+  50% {
+    translate: 0 5px;
+  }
+}
+.guide-arrow.is-below {
+  animation-name: guide-apunta-arriba;
+}
+@keyframes guide-apunta-arriba {
+  50% {
+    translate: 0 -5px;
+  }
+}
+.guide-title {
+  margin: 0;
+  font-family: var(--pixel);
+  font-size: var(--t-m);
+}
+.guide-title small {
+  color: var(--text-soft);
+}
+.guide-text {
+  margin: 0;
+  font-size: var(--t-l);
+  min-height: 4.5em;
+}
+.guide-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.guide-dots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+}
+.guide-dots i {
+  width: 7px;
+  height: 7px;
+  background: var(--tan);
+}
+.guide-dots i.on {
+  background: var(--bark);
+}
+@media (prefers-reduced-motion: reduce) {
+  .guide-box,
+  .guide-arrow {
+    animation: none;
+  }
+}
+
 /* ---------- Expediciones (ui/ExpeditionSheet.tsx, ui/ExpeditionView.tsx) ---------- */
 .exp-headings {
   display: grid;

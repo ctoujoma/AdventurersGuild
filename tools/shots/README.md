@@ -75,3 +75,7 @@ para preparar cualquier situación antes de la captura: subir salas de nivel, pr
     vuelca el texto de cada pantalla (con reloj falso y azar fijo, dos pasadas salen iguales) para
     comparar antes y después; con `XLANG=xx` y `npm run textos:falso`, lo que salga sin ‹ › no sale
     de los ficheros de textos. Ver `docs/textos.md`, «Herramientas».
+
+15. Guía de obras (Ajustes › «Repetir tutoriales»): `node tools/shots/guia.mjs` juega el tutorial
+    de obras y un borrador sin pagar, y deja las capturas y sus marcos (`marcos.json`) en
+    `src/assets/guia/`. Míralas en el juego después: si la cámara se movió, se vuelve a lanzar.

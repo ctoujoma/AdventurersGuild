@@ -8,6 +8,7 @@ import { canVibrate } from '../platform/haptics';
 import { saveSettings, type Settings } from '../platform/settings';
 import { WEATHER_KINDS, WEATHER_LABEL, type WeatherKind } from '../world/weather';
 import { VERSION } from '../version';
+import { GuideCards } from './GuideCards';
 import { Icon } from './icons';
 import { currentLang, LANGS, langName, t } from '../textos';
 
@@ -65,6 +66,7 @@ export function SettingsMenu({
   };
   const [won, setWon] = useState(true);
   const [note, setNote] = useState<string | null>(null);
+  const [guides, setGuides] = useState(false);
   const slider = (key: 'music' | 'sfx' | 'ambient', label: string) => (
     <label class="set-row">
       <span>{label}</span>
@@ -154,6 +156,11 @@ export function SettingsMenu({
               </div>
             </>
           )}
+          <h4 class="qs-sub">{t('pantallas.settingsmenu.tutoriales')}</h4>
+          <p class="tiny">{t('pantallas.settingsmenu.repetir_tutoriales_ayuda')}</p>
+          <button class="btn btn-wood" onClick={() => setGuides(true)}>
+            {t('pantallas.settingsmenu.repetir_tutoriales')}
+          </button>
           <h4 class="qs-sub">{t('pantallas.settingsmenu.lectura')}</h4>
           <label class="set-check">
             <input
@@ -343,6 +350,7 @@ export function SettingsMenu({
           </p>
         </div>
       </article>
+      {guides && <GuideCards onClose={() => setGuides(false)} />}
     </div>
   );
 }

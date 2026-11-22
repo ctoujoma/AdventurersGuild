@@ -274,7 +274,9 @@ lo que hay que tocar y no romper la inmersión. Ahora:
 **Hecho** (rama `claude/peaceful-galileo-ijouv1`): el día de 24 h con el juego cerrado y la
 veteranía (partidas a la versión 7 con `core/ladder.ts`; caché a 8: 30, a 12: 60; caché sin
 pagar: −15 y tope −15 hasta pagarlo). Con el simulador, la nómina de oro y leyenda baja un
-15–30 % (los niveles 6 y 7 ya no doblan la subida); el resto, igual. Falta la guía de tutoriales.
+15–30 % (los niveles 6 y 7 ya no doblan la subida); el resto, igual. **Guías en Ajustes** («Repetir tutoriales»): tarjetas con capturas fijas
+(`src/data/guides.ts`, `ui/GuideCards.tsx`, textos en `guias.yaml`); las capturas y sus marcos
+los saca `tools/shots/guia.mjs` jugando el tutorial. La de expediciones se añade igual.
 
 Esperan a que el agente de textos cierre su bloque de `core`, para no pisarse:
 

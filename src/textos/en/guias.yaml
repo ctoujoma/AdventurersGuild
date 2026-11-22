@@ -1,0 +1,41 @@
+ui:
+  titulo: "Guide · {guia}"
+  cerrar: "Close the guide"
+  antes: "‹ Back"
+  sigue: "Next ›"
+  hecho: "Done"
+  paso: "{n}/{de}"
+  captura: "Game screenshot: {paso}"
+  elige: "What do you want to go over?"
+obras:
+  nombre: "Building"
+  abrir:
+    titulo: "Open building mode"
+    texto: "Tap the hammer on the right. Everything you do is a draft: you see how it looks and what it costs, and nothing is paid until the end."
+  solar:
+    titulo: "Buy a plot"
+    texto: "The space with a price next to the tavern is a plot. Tap it to widen the house, up to seven spaces wide."
+  mover:
+    titulo: "Move a room"
+    texto: "Tap the room and then “Move”, or drag it with your finger. Drop it in a free space: anything left without a way through shows in red."
+  ampliar:
+    titulo: "Enlarge a room"
+    texto: "With the room selected, tap the “+” at its side: it takes one more space and works better. The space must be free."
+  excavar:
+    titulo: "Dig downwards"
+    texto: "Underground there are no plots, just rock. Tap a rock space to dig it out. The deeper, the dearer."
+  construir:
+    titulo: "Build a new room"
+    texto: "At the bottom, pick a tab and a room, and tap where to put it. The ones you can't build yet say what's missing."
+  pagar:
+    titulo: "Pay for the works"
+    texto: "At the bottom you see what it all costs together. “Pay” and it goes up in a moment; the curved arrow undoes the last job."
+  falta:
+    titulo: "Not enough gold?"
+    texto: "If you're short, “Pay” is greyed out and the bottom says how much is missing. No need to throw it away: tap the ×."
+  guardar:
+    titulo: "Save the draft"
+    texto: "With jobs planned, the × asks: “Save” keeps the draft as it is and “Discard” throws it away."
+  seguir:
+    titulo: "Carry on when you can"
+    texto: "When you tap the hammer again, the draft is still there with all its jobs. Pay when you have the gold."
