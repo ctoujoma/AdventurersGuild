@@ -158,14 +158,20 @@ function awayOf(s: GameState): SceneAway[] {
   return s.heroes.filter(isAway).map((h) => {
     // (Quien se perdió ya no va con su grupo, aunque aún no haya vuelto.)
     const m = h.status === 'mision' ? s.missions.find((x) => x.heroIds.includes(h.id)) : undefined;
+    const e =
+      h.status === 'mision' ? s.expeditions?.find((x) => x.heroIds.includes(h.id)) : undefined;
     return {
       id: h.id,
       name: h.name,
       look: lookOf(h),
-      why: h.status === 'desaparecido' ? 'perdido' : 'encargo',
+      why: h.status === 'desaparecido' ? 'perdido' : e ? 'expedicion' : 'encargo',
       dorm: beds.get(h.id),
-      group: m?.id,
-      task: m ? tx(m.quest.title) : undefined,
+      group: m?.id ?? e?.id,
+      task: m
+        ? tx(m.quest.title)
+        : e
+          ? t('expediciones.expeditionview.titulo', { rumbo: e.heading })
+          : undefined,
       days: m?.daysLeft,
     };
   });

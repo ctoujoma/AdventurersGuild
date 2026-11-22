@@ -1,0 +1,147 @@
+# Expediciones (core/expedition.ts y su interfaz). Huecos de siempre: {heroe} un héroe, {sexo}
+# su sexo (f/m), {rumbo} el rumbo (bosque, sierra, marismas, ruinas; para el select), {n} cuántos.
+
+# Los rumbos: el nombre en un hueco, el título de su tarjeta y lo que se cuenta de él.
+rumbos:
+  bosque:
+    nombre: "el bosque"
+    titulo: "Bosque"
+    desc: "Al este, robles y hayas que se van cerrando. Trae {materiales}; lobos, osos y furtivos."
+  sierra:
+    nombre: "la sierra"
+    titulo: "Sierra"
+    desc: "Al norte, nieve y pedreras. Trae {materiales}."
+  marismas:
+    nombre: "las marismas"
+    titulo: "Marismas"
+    desc: "Al suroeste, niebla y juncales. Trae {materiales}."
+  ruinas:
+    nombre: "las ruinas"
+    titulo: "Ruinas"
+    desc: "Al sureste, piedras viejas y polvo. Trae {materiales}."
+
+# Por qué no puede salir (la hoja de preparar lo enseña en el botón).
+error:
+  cerradas: "Las expediciones se abren con el primer veterano (nivel {nivel})."
+  en_obras: "Ese rumbo aún está en obras."
+  sin_hueco: "La sala de mapas no da para más expediciones a la vez ({n}). Amplíala para mandar más."
+  tope: "Con la sala de mapas de ahora van {n, plural, one {# héroe como mucho} other {# héroes como mucho}}. Mejórala para mandar más."
+  pocas_raciones: "Hacen falta al menos {n} raciones: un día de ida y la vuelta."
+  despensa: "En la despensa solo hay {n, plural, one {# ración} other {# raciones}}."
+
+# El diario de la expedición (se guarda en la partida). Una línea por suceso.
+diario:
+  salida: "{grupo} {n, plural, one {sale} other {salen}} hacia {rumbo, select, bosque {el bosque} sierra {la sierra} marismas {las marismas} other {las ruinas}} con {raciones} raciones."
+  # Al adentrarse (cada pocos días de lejanía): más peligro y mejor botín.
+  aviso: "{n, plural, one {Ya lleva} other {Ya llevan}} {dias} días adentro: {rumbo, select, bosque {el bosque} sierra {la sierra} marismas {las marismas} other {las ruinas}} se vuelve más salvaje. Más peligro, mejor botín."
+  raciones: "{heroe} caza algo para la olla: {n, plural, one {# ración más} other {# raciones más}}."
+  oro: "{heroe} encuentra una bolsa con {oro} monedas."
+  hallazgo: "{heroe} encuentra {que}."
+  pelea_bien: "{n, plural, one {{heroe} topa con {enemigos} y sale {sexo, select, f {bien parada} other {bien parado}}} other {Topan con {enemigos}; {heroe} les planta cara y salen bien parados}}.{oro, plural, =0 {} other { Luego {n, plural, one {recoge} other {recogen}} del suelo {oro} monedas.}}"
+  pelea_mal: "{n, plural, one {{heroe} topa con {enemigos} y la cosa sale mal: acaba} other {Topan con {enemigos} y la cosa sale mal: {heroe} acaba}} {sexo, select, f {herida} other {herido}}."
+  pelea_cae: "{n, plural, one {{heroe} topa con {enemigos} y la cosa sale muy mal: cae} other {Topan con {enemigos} y la cosa sale muy mal: {heroe} cae}} y no puede tenerse en pie."
+  cura: "{mismo, select, si {{curandero} se cura sus propias heridas junto al fuego.} other {{curandero} venda las heridas de {heroe} junto al fuego.}}"
+  hambre: "No hay raciones para todos: {quien} se {n, plural, one {acuesta} other {acuestan}} sin cenar."
+  llegada: "{n, plural, one {Llega} other {Llegan}} a la taberna."
+  vuelta:
+    raciones: "Quedan las raciones justas para volver ({raciones}): {n, plural, one {da} other {dan}} media vuelta."
+    jugador: "{n, plural, one {Le llega tu recado: vuelve} other {Les llega tu recado: vuelven}} a casa."
+    herido: "Con {heroe} {sexo, select, f {malherida} other {malherido}}, dan media vuelta."
+    caidos: "{n, plural, one {{heroe} se arrastra hacia casa como puede} other {No queda nadie en pie. Se arrastran hacia casa como pueden}}; la mayor parte de la mochila se queda allí."
+    hambre: "Sin raciones para seguir, {n, plural, one {vuelve} other {vuelven}} a casa."
+  camino:
+    bosque:
+      - "El sendero se pierde entre robles viejos."
+      - "{heroe} jura que algo {n, plural, one {le} other {los}} sigue entre los helechos."
+      - "Un ciervo se cruza en el sendero y se queda mirando."
+      - "{heroe} encuentra setas; mejor no probarlas."
+      - "{heroe} marca los troncos con la navaja para no perderse."
+      - "Llueve entre las hojas; {n, plural, one {sigue} other {siguen}} igual, {n, plural, one {{sexo, select, f {calada} other {calado}}} other {calados}}."
+      - "Un cuervo {n, plural, one {le} other {los}} acompaña un buen trecho, de rama en rama."
+      - "{n, plural, one {Cruza} other {Cruzan}} un arroyo helado por un tronco caído."
+  # La noche en el campamento (una línea cada noche).
+  noche:
+    bosque: "{n, plural, one {Acampa} other {Acampan}} bajo los árboles{vuelta, select, si {, ya de vuelta} other {}}. Quedan {raciones, plural, =0 {cero raciones} one {# ración} other {# raciones}}."
+
+# Contra qué pelean, por rumbo (en un hueco: «Topan con {enemigos}»).
+enemigos:
+  bosque:
+    - "unos lobos"
+    - "un jabalí"
+    - "unos bandidos"
+    - "un oso"
+    - "unos furtivos"
+    - "unas arañas grandes como perros"
+
+# El informe al volver.
+informe:
+  titulo: "Expedición {rumbo, select, bosque {al bosque} sierra {a la sierra} marismas {a las marismas} other {a las ruinas}}"
+  cuerpo: "{dias, plural, one {Un día fuera} other {# días fuera}}: {n, plural, one {llegó} other {llegaron}} a {lejos, plural, =0 {menos de un día} one {un día} other {# días}} de la taberna."
+  peleas: "{ganadas, plural, =0 {Ninguna pelea ganada} one {Una pelea ganada} other {# peleas ganadas}} y {perdidas, plural, =0 {ninguna perdida} one {una perdida} other {# perdidas}}."
+  sin_peleas: "No {n, plural, one {tuvo} other {tuvieron}} que pelear."
+  historial: "Día {dia}: expedición {rumbo, select, bosque {al bosque} sierra {a la sierra} marismas {a las marismas} other {a las ruinas}} ({dias, plural, one {# día} other {# días}})."
+  epitafio: "Cayó en la expedición {rumbo, select, bosque {al bosque} sierra {a la sierra} marismas {a las marismas} other {a las ruinas}}, el día {dia}."
+  chip_oro: "+{n} monedas"
+  chip_materiales: "+{que}"
+  chip_raciones: "+{n, plural, one {# ración} other {# raciones}} sobrantes"
+  chip_xp: "+{n} de experiencia cada uno"
+  chip_record: "¡Récord del rumbo: {dias} días!"
+  chip_herido: "{heroe}, {sexo, select, f {herida} other {herido}} ({dias} d)"
+  chip_caido: "{heroe} no ha vuelto"
+  chip_perdido: "Perdido: {objeto}"
+
+aviso:
+  vuelve: "Vuelve la expedición {rumbo, select, bosque {del bosque} sierra {de la sierra} marismas {de las marismas} other {de las ruinas}}: {grupo}."
+
+# La hoja de preparar una expedición (ui/ExpeditionSheet.tsx).
+expeditionsheet:
+  titulo: "Nueva expedición"
+  cerrar: "Cerrar"
+  a_la_vez: "Fuera ahora: {n} de {max}"
+  rumbo: "Rumbo"
+  en_obras: "En obras"
+  quien_va: "Quién va ({n}/{max})"
+  nivel: "Nv {nivel} · {clase}"
+  tope: "La sala de mapas da para {n, plural, one {# héroe} other {# héroes}} por grupo. Mejórala para mandar más."
+  raciones: "Raciones"
+  menos: "Menos raciones"
+  mas: "Más raciones"
+  raciones_ayuda: "Una por héroe y día, de la despensa. Vuelven solos cuando solo les quedan las de la vuelta; fuera se encuentran más."
+  de_despensa: "de {n} en la despensa"
+  dias: "Dan para unos {dias, plural, =0 {cero días} one {# día} other {# días}} de ida y la vuelta (que tarda la mitad)."
+  elige: "Elige quién va."
+  salir: "{n, plural, one {Que salga} other {Que salgan}}"
+  elige_quien: "Elige quién va"
+
+# El visor de una expedición (ui/ExpeditionView.tsx).
+expeditionview:
+  titulo: "Expedición {rumbo, select, bosque {al bosque} sierra {a la sierra} marismas {a las marismas} other {a las ruinas}}"
+  cerrar: "Cerrar"
+  ahora:
+    walk: "El grupo, {vuelta, select, si {de vuelta a casa} other {adentrándose}}"
+    fight: "El grupo, peleando"
+    camp: "El grupo, acampado"
+  dia: "Día {dia}{vuelta, select, si { · de vuelta} other {}}"
+  lejos: "A {dias, plural, =0 {menos de un día} one {# día} other {# días}} de casa"
+  raciones: "{n, plural, one {# ración} other {# raciones}}"
+  riesgo:
+    - "Tranquilo"
+    - "Algo de peligro"
+    - "Peligroso"
+    - "Muy peligroso"
+  mochila: "Mochila"
+  vacia: "vacía"
+  en_el_suelo: "{sexo, select, f {en el suelo, la llevan} other {en el suelo, lo llevan}}"
+  heridas: "{n, plural, one {# herida} other {# heridas}}"
+  sano: "{sexo, select, f {sana} other {sano}}"
+  diario: "Diario"
+  cuando: "Día {dia}"
+  de_vuelta: "De vuelta: en casa {dias, plural, =0 {antes de un día} one {en un día} other {en # días}}."
+  volver: "Que vuelvan a casa"
+
+# La lista de grupos fuera, en el mapa (ui/panels/MapPanel.tsx).
+mappanel:
+  ver: "Expedición {rumbo, select, bosque {al bosque} sierra {a la sierra} marismas {a las marismas} other {a las ruinas}} con {quien}: ver"
+  estado: "{vuelta, select, si {De vuelta} other {Adentrándose}} · a {dias, plural, =0 {menos de un día} one {# día} other {# días}} · {raciones, plural, one {# ración} other {# raciones}}"
+  sin_hueco: "Expediciones a la vez: {n} (amplía la sala de mapas)"
+  nueva: "Nueva expedición"

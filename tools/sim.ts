@@ -21,6 +21,7 @@ import { settleWalks } from '../src/core/workers';
 import { roughNight } from '../src/core/sky';
 import { slotOf } from '../src/core/gear';
 import { idText } from '../src/textos';
+import { canExpedition, distAt, expSlots, partyCap } from '../src/core/expedition';
 
 declare const process: { argv: string[] };
 
@@ -127,12 +128,40 @@ function playDay(s: GameState, st: Strategy): GameState {
       if (pick) s = reduce(s, { type: 'send', questId: q.id, heroIds: pick.map((h) => h.id) });
     }
   }
+  // Expediciones: con hueco, salen los que se quedan sin encargo (con raciones para unos días y
+  // dejando la cena de casa).
+  if (st.threshold !== null && (s.expeditions?.length ?? 0) < expSlots(s)) {
+    const idle = s.heroes.filter((h) => h.status === 'ok' && !h.guard).slice(0, partyCap(s));
+    const rations = Math.min(idle.length * EXP_RATIONS, s.food - s.heroes.length);
+    const ids = idle.map((h) => h.id);
+    if (ids.length && !canExpedition(s, 'bosque', ids, rations)) {
+      s = reduce(s, { type: 'expedition', heading: 'bosque', heroIds: ids, rations });
+      EXP.sent++;
+    }
+  }
+  const out = new Map((s.expeditions ?? []).map((e) => [e.id, e]));
   // La simulación no tiene escena que diga quién llega a su sala: llegan a su hora (como con el
   // juego cerrado, ver `settleWalks`).
   s = structuredClone(s);
   settleWalks(s);
-  return reduce(s, { type: 'endDay' });
+  const next = reduce(s, { type: 'endDay' });
+  for (const [id, e] of out) {
+    if (next.expeditions?.some((x) => x.id === id)) continue;
+    const last = e;
+    EXP.back++;
+    EXP.days += last.hours / 24;
+    EXP.far += last.turn?.dist ?? distAt(last);
+    EXP.dead += last.heroIds.filter(
+      (h) => next.heroes.find((x) => x.id === h)?.status === 'muerto',
+    ).length;
+    EXP.heroes += last.heroIds.length;
+  }
+  return next;
 }
+
+/** Raciones por héroe que lleva una expedición del simulador, y lo que se cuenta de ellas. */
+const EXP_RATIONS = 8;
+const EXP = { sent: 0, back: 0, days: 0, far: 0, dead: 0, heroes: 0 };
 
 const value = (h: Hero) => h.attrs.F + h.attrs.D + h.attrs.M + h.lvl * 3;
 
@@ -372,6 +401,10 @@ for (const st of STRATEGIES) {
         ', ',
       )}) · ladrones ${(rooms.thieves / N).toFixed(1)} por partida (pillados ${pct(rooms.caught, rooms.thieves)}, se llevan ${(rooms.thiefGold / N).toFixed(0)} monedas) · mensajeros ${(rooms.messengers / N).toFixed(1)} (recado recogido ${pct(rooms.taken, rooms.messengers)})`,
   );
+  console.log(
+    `  expediciones por partida ${(EXP.sent / N).toFixed(1)} · días fuera ${(EXP.days / Math.max(1, EXP.back)).toFixed(1)} · lejanía ${(EXP.far / Math.max(1, EXP.back)).toFixed(1)} días · muertos cada 100 héroes ${((100 * EXP.dead) / Math.max(1, EXP.heroes)).toFixed(1)}`,
+  );
+  Object.assign(EXP, { sent: 0, back: 0, days: 0, far: 0, dead: 0, heroes: 0 });
   if (lossDays.length) {
     const at = (d: number) => lossDays.filter((x) => x === d).length;
     console.log(

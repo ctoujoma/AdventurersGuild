@@ -243,6 +243,68 @@ export interface Mission {
   };
 }
 
+/** Los cuatro rumbos de las expediciones. */
+export type Heading = 'bosque' | 'sierra' | 'marismas' | 'ruinas';
+
+/** Lo que pasa en una expedición, para el diario y el visor. */
+export type ExpKind =
+  | 'salida'
+  | 'camino'
+  | 'hallazgo'
+  | 'raciones'
+  | 'pelea'
+  | 'herida'
+  | 'cura'
+  | 'noche'
+  | 'aviso'
+  | 'vuelta'
+  | 'llegada';
+
+/** Una línea del diario: la hora (desde la salida), qué fue y el texto guardado. */
+export interface ExpLine {
+  h: number;
+  k: ExpKind;
+  t: Txt;
+  /** Quién sale (el visor lo señala); en una pelea, si se ganó. */
+  hero?: string;
+  won?: boolean;
+  /** En una pelea, contra quién (su número en `expediciones.enemigos.<rumbo>`). */
+  foe?: number;
+}
+
+/** Por qué dieron la vuelta. */
+export type ExpTurn = 'raciones' | 'jugador' | 'herido' | 'caidos' | 'hambre';
+
+/**
+ * Una expedición (ver `core/expedition.ts`): sin destino, cada día más lejos. Corre por horas
+ * desde `from` (segundos de juego desde el día 1); `hours` son las ya contadas.
+ */
+export interface Expedition {
+  id: string;
+  heading: Heading;
+  heroIds: string[];
+  /** Semilla de sus sucesos (cada hora tira con la suya: igual abierto que cerrado). */
+  seed: string;
+  from: number;
+  hours: number;
+  /** Raciones que quedan en la mochila. */
+  rations: number;
+  /** Las que llevaban al salir. */
+  took: number;
+  /** Desde cuándo vuelven (hora) y a qué lejanía estaban. */
+  turn?: { h: number; dist: number; why: ExpTurn };
+  /** Heridas de cada uno (con `EXP_HURT_DOWN`, en el suelo). */
+  hurt: Record<string, number>;
+  /** Lo que traen. */
+  bag: { gold: number; mats: Mats };
+  log: ExpLine[];
+  /** Escalones de peligro ya avisados. */
+  warned: number;
+  /** Peleas ganadas y perdidas. */
+  won: number;
+  lost: number;
+}
+
 /** Un encargo resuelto, para el historial (ver `GameState.questLog`). */
 export interface QuestLogEntry {
   /** Id de la misión. */
@@ -893,6 +955,10 @@ export interface GameState {
   nightmare?: Nightmare | null;
   /** El gato de caza por la noche (ver `core/nightCat.ts`); se recoge al amanecer. */
   nightCat?: NightCat | null;
+  /** Expediciones fuera (ver `core/expedition.ts`). */
+  expeditions?: Expedition[];
+  /** Récord de lejanía (días) de cada rumbo. */
+  expBest?: Partial<Record<Heading, number>>;
 }
 
 /** Un héroe da vueltas en la cama la noche del día `day`; `eased`: ya se le llevó el trago. */
