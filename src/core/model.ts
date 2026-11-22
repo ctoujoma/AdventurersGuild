@@ -28,7 +28,7 @@ import type { Mats } from './materials';
 import type { Txt } from '../textos';
 
 /** 6: los textos se guardan como mensajes (las de la 5 se convierten al cargar: `core/convert.ts`). */
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 export type Sex = 'm' | 'f';
 
@@ -58,8 +58,14 @@ export interface Hero {
   days: number;
   quote: Txt;
   history: Txt[];
-  /** Petición pendiente: aumento (desanimado) o caché de veterano (al subir de nivel). */
+  /** Petición pendiente: aumento (desanimado) o caché (al hacerse veterano o maestro). */
   request?: 'raise' | 'cache';
+  /** El nivel del último caché que pidió (pagado o no): no lo vuelve a pedir. */
+  cacheAt?: number;
+  /** Caché negado y aún sin pagar (sueldo que pide): moral más baja hasta que se le pague. */
+  owed?: number;
+  /** Veterano con la regla de antes (nivel 4): lo sigue siendo aunque no llegue al 8. */
+  vet?: boolean;
   /** Lo que lleva puesto, por ranura (ver `core/gear.ts`). Se pierde si cae o deserta. */
   worn?: Gear;
   /** De guardia: no sale de misión y defiende mejor la taberna (no duerme: pierde moral). */

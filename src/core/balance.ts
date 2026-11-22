@@ -55,8 +55,14 @@ export const UPGRADE_COST: Record<keyof Facilities, readonly number[]> = {
   vet: [0, 220, 420, 700],
 };
 
-/** Ala de veteranos: a partir de este nivel de héroe se cuenta como veterano. */
-export const VET_LEVEL = 4;
+/**
+ * La escalera de los héroes (usuario, 22 de noviembre): veterano desde el nivel 8 (primer caché,
+ * cuartos de veteranos, expediciones), maestro desde el 12 (segundo caché) y nivel máximo 15.
+ * Quien ya era veterano con la regla de antes (nivel 4) lo sigue siendo (`Hero.vet`).
+ */
+export const VET_LEVEL = 8;
+export const MASTER_LEVEL = 12;
+export const LEVEL_MAX = 15;
 /** Moral extra por noche y tope de moral extra de los veteranos, por nivel del ala. */
 export const VET_REST = [0, 4, 8, 12] as const;
 export const VET_CAP = [0, 10, 15, 20] as const;
@@ -152,12 +158,12 @@ export const capacity = (dorm: number, vet = 0) => 2 + 2 * dorm + 2 * vet;
  */
 export const DAY_SECONDS = 360;
 /**
- * «Tiempo que corre solo» (en prueba, Ajustes › Modo prueba): con el juego cerrado o en segundo
- * plano el día dura esto en segundos reales (abierto, `DAY_SECONDS`). Al volver se simula de
+ * «Tiempo que corre solo»: con el juego cerrado o en segundo plano el día dura esto en segundos
+ * reales (abierto, `DAY_SECONDS`): un día de juego por cada día real (usuario, 22 de noviembre). Al volver se simula de
  * golpe, hasta `AWAY_MAX_DAYS` días; los asaltos, menos probables (`AWAY_RAID`) y resueltos
  * solos. Menos de `AWAY_MIN_SECONDS` fuera no cuenta.
  */
-export const AWAY_DAY_SECONDS = 3600;
+export const AWAY_DAY_SECONDS = 86400;
 export const AWAY_MAX_DAYS = 8;
 export const AWAY_RAID = 0.4;
 export const AWAY_MIN_SECONDS = 20;
@@ -369,27 +375,30 @@ export const RAISE_MORALE = 25;
 
 // ---------- Veteranos y modo libre ----------
 /**
- * Subida de sueldo al subir de nivel: los veteranos (nivel 6 o más) piden bastante más (4 por
+ * Subida de sueldo al subir de nivel: los veteranos (desde `VET_LEVEL`) piden bastante más (4 por
  * nivel; antes 5, y con plantillas grandes la nómina se comía lo que pagan los encargos).
  */
-export const levelRaise = (lvl: number) => (lvl <= 5 ? 2 * lvl : 4 * lvl);
+export const levelRaise = (lvl: number) => (lvl < VET_LEVEL ? 2 * lvl : 4 * lvl);
 /**
  * Modo libre: hay otros gremios pujando por los encargos y la comarca paga menos que en los
  * apuros de la deuda. Es lo mismo en todos los rangos (antes bajaba con el rango hasta la mitad
  * y, en oro y leyenda, los sueldos de los veteranos se comían la caja): `npm run oro`.
  */
 export const FREE_PAY = 0.5;
-/** Caché de veterano: al llegar a estos niveles piden un plus fijo. */
-export const CACHE: Readonly<Record<number, number>> = { 5: 15, 8: 30 };
-export const CACHE_REFUSE_MORALE = -25;
+/** Caché: al hacerse veterano y maestro piden un plus fijo de sueldo. */
+export const CACHE: Readonly<Record<number, number>> = { [VET_LEVEL]: 30, [MASTER_LEVEL]: 60 };
+/**
+ * Caché sin pagar: pierde esta moral al negárselo y, mientras no se le pague (se puede después,
+ * desde su ficha), su tope de moral queda así de bajo.
+ */
+export const CACHE_OWED_MORALE = 15;
 /** En modo libre se pagan salarios cada SALARY_EVERY días; dos impagos seguidos, quiebra. */
 export const SALARY_EVERY = 7;
 export const UNPAID_LIMIT = 2;
 export const UNPAID_MORALE = -20;
 export const REFUSE_MORALE = -10;
-/** Rencor al negar un aumento o el caché: tope de moral de menos y días que dura. */
+/** Rencor al negar un aumento: tope de moral de menos y días que dura. */
 export const REFUSE_GRUDGE = { cap: 15, days: 7 } as const;
-export const CACHE_GRUDGE = { cap: 20, days: 14 } as const;
 /** Lo que baja cada noche la moral de quien está por encima de su tope (rencor o sin su cuarto). */
 export const OVER_CAP_DROP = 2;
 
@@ -589,8 +598,8 @@ export const PAINT_SLOTS = [0, 1, 1, 2] as const;
 export const MAT_LOOSE = 10;
 export const STORE_CAP = [0, 15, 30, 50] as const;
 export const MAT_SELL = 3;
-/** Las expediciones se abren cuando el primer héroe llega a este nivel. */
-export const EXPEDITION_LEVEL = 5;
+/** Las expediciones se abren con el primer veterano de verdad (el primer héroe a este nivel). */
+export const EXPEDITION_LEVEL = VET_LEVEL;
 /**
  * Mejorar un objeto en su taller: hasta `TEMPER_MAX`; cada paso cuesta `TEMPER_GOLD` y
  * `TEMPER_HOURS` por el nivel al que llega, y tantos de su material como ese nivel.

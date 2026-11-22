@@ -1787,6 +1787,7 @@ export function App() {
             onHire={() => hire(cardHero.id)}
             onFire={() => fire(cardHero.id)}
             onAnswer={(yes) => dispatch({ type: 'answer', id: cardHero.id, yes })}
+            onPayOwed={() => dispatch({ type: 'payOwed', id: cardHero.id })}
             onTask={works.planning ? undefined : (task) => setTask(cardHero.id, task)}
             onRename={(name) => dispatch({ type: 'renameHero', id: cardHero.id, name })}
             onDressAt={(room, dress) => {

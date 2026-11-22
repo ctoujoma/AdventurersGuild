@@ -41,6 +41,7 @@ import {
   TRIP_FATIGUE,
   TROPHY_REP,
   CACHE,
+  LEVEL_MAX,
   levelRaise,
   TWIST_DIFF,
   XP,
@@ -135,7 +136,7 @@ export function questEstimate(
 /** Sube de nivel si toca (mejora su atributo, sube el sueldo, quizá pide caché). */
 export function levelUp(state: GameState, h: Hero): { t: Txt; k: ChipKind }[] {
   const out: { t: Txt; k: ChipKind }[] = [];
-  while (h.xp >= XP_PER_LEVEL) {
+  while (h.lvl < LEVEL_MAX && h.xp >= XP_PER_LEVEL) {
     h.xp -= XP_PER_LEVEL;
     h.lvl++;
     const a = MAIN_ATTR[h.cls];
@@ -145,12 +146,15 @@ export function levelUp(state: GameState, h: Hero): { t: Txt; k: ChipKind }[] {
     out.push({ t: msg('informes.sube_nivel', { heroe: h.name, nivel: h.lvl }), k: 'good' });
     const st = (state.stats ??= emptyStats());
     st.maxLvl = Math.max(st.maxLvl, h.lvl);
-    // Veteranos: al llegar a ciertos niveles piden su caché.
-    if (CACHE[h.lvl] && !h.request) {
+    // Al hacerse veterano y maestro piden su caché (una vez cada uno).
+    if (CACHE[h.lvl] && !h.request && (h.cacheAt ?? 0) < h.lvl) {
       h.request = 'cache';
+      h.cacheAt = h.lvl;
       out.push({ t: msg('informes.cache', { heroe: h.name }), k: 'warn' });
     }
   }
+  // En el nivel máximo ya no se junta experiencia.
+  if (h.lvl >= LEVEL_MAX) h.xp = 0;
   return out;
 }
 

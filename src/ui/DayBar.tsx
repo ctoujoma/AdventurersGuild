@@ -1,4 +1,4 @@
-import { AWAY_DAY_SECONDS, DAY_SECONDS, DUSK, NIGHT_RUSH, WORK_END } from '../core/balance';
+import { AWAY_MAX_DAYS, DAY_SECONDS, DUSK, NIGHT_RUSH, WORK_END } from '../core/balance';
 import { type Pace, paceLabel } from '../platform/settings';
 import { help } from './HoldHelp';
 import { Icon } from './icons';
@@ -47,14 +47,13 @@ export function DayBar(p: Props) {
   const toDusk = ((dusk - part) * DAY_SECONDS) / speed;
   const toNight = ((WORK_END - part) * DAY_SECONDS) / speed;
   const toDawn = ((1 - part) * DAY_SECONDS) / speed;
-  const slow = Math.round(AWAY_DAY_SECONDS / DAY_SECONDS);
   return (
     <div class="daybar">
       {p.real && !p.rush ? (
         <span
           class="clock clock-real"
           aria-label={partName(part, dusk)}
-          {...help(t('barra.daybar.el_reloj_del_dia', { slow }))}
+          {...help(t('barra.daybar.el_reloj_del_dia', { dias: AWAY_MAX_DAYS }))}
         >
           <Icon name="reloj" size={14} />
           <span class="clock-bar" aria-hidden="true">

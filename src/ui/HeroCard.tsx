@@ -1,7 +1,9 @@
 import { tierOf } from '../art/tiers';
-import { CACHE_GRUDGE, REFUSE_GRUDGE, VEIL_CAP } from '../core/balance';
+import { CACHE_OWED_MORALE, REFUSE_GRUDGE, VEIL_CAP } from '../core/balance';
 import { useEffect, useState } from 'preact/hooks';
-import { DRESS_GOLD, GUARD_BONUS, VET_LEVEL, XP_PER_LEVEL } from '../core/balance';
+import { DRESS_GOLD, GUARD_BONUS, LEVEL_MAX, MASTER_LEVEL } from '../core/balance';
+import { VET_LEVEL, XP_PER_LEVEL } from '../core/balance';
+import { isVet } from '../core/beds';
 import { craftState, dressStatus, dressingOf } from '../core/crafting';
 import { hasUnlock, unlockSource } from '../core/goals';
 import { PERKS } from '../core/classes';
@@ -38,6 +40,8 @@ interface Props {
   onFire: () => void;
   onLocate: () => void;
   onAnswer: (yes: boolean) => void;
+  /** Pagar el caché que se le negó. */
+  onPayOwed: () => void;
   onEquip: (itemId: string) => void;
   onUnequip: (slot: Slot) => void;
   /** Cambiar su tarea mientras está en casa (trabajar, entrenar, guardia o descansar). */
@@ -384,6 +388,7 @@ export function HeroCard({
   onFire,
   onLocate,
   onAnswer,
+  onPayOwed,
   onEquip,
   onUnequip,
   onTask,
@@ -419,6 +424,8 @@ export function HeroCard({
   const m = memberOf(h, game.fac);
   const why = candidate ? canHire(game, h.id) : null;
   const gone = h.status === 'muerto' || h.status === 'desaparecido';
+  const maxed = h.lvl >= LEVEL_MAX;
+  const title = h.lvl >= MASTER_LEVEL ? 'maestro' : isVet(h) ? 'veterano' : 'no';
   const band = moraleBand(h.morale);
   const moraleK = band === 'animado' ? 'ok' : band === 'normal' ? 'mid' : 'low';
   const perk = PERKS[h.cls];
@@ -504,7 +511,12 @@ export function HeroCard({
               )}
               {h.nick && <span class="nick">{tx(h.nick)}</span>}
               <span class="row-sub">
-                {t('ficha.herocard.nivel', { clase: CLASS_NAMES[h.cls][h.sex], nivel: h.lvl })}{' '}
+                {t('ficha.herocard.nivel', {
+                  clase: CLASS_NAMES[h.cls][h.sex],
+                  nivel: h.lvl,
+                  titulo: candidate ? 'no' : title,
+                  sexo: h.sex,
+                })}{' '}
                 <Icon name="coin" size={10} />
                 {t('ficha.herocard.sem', { prima: candidate, fichaje: h.fee, sueldo: h.salary })}
               </span>
@@ -522,14 +534,19 @@ export function HeroCard({
                       t('ficha.herocard.experiencia_al_llegar_a', {
                         xp_per_level: XP_PER_LEVEL,
                         vet_level: VET_LEVEL,
+                        maestro: MASTER_LEVEL,
+                        max: LEVEL_MAX,
                       }),
                     )}
                   >
                     <span>{t('ficha.herocard.xp')}</span>
                     <span class="track">
-                      <i class="xp" style={{ width: `${(h.xp / XP_PER_LEVEL) * 100}%` }} />
+                      <i
+                        class="xp"
+                        style={{ width: `${maxed ? 100 : (h.xp / XP_PER_LEVEL) * 100}%` }}
+                      />
                     </span>
-                    <small>{h.xp}</small>
+                    <small>{maxed ? t('ficha.herocard.nivel_maximo') : h.xp}</small>
                   </div>
                   <div
                     class="meter"
@@ -584,8 +601,8 @@ export function HeroCard({
                   {...help(
                     h.request === 'cache'
                       ? t('ficha.herocard.nivel_ya_no_soy', {
-                          nivel: h.lvl,
-                          dias: CACHE_GRUDGE.days,
+                          nivel: h.cacheAt ?? h.lvl,
+                          moral: CACHE_OWED_MORALE,
                         })
                       : t('ficha.herocard.con_lo_que_me', { dias: REFUSE_GRUDGE.days }),
                   )}
@@ -593,7 +610,10 @@ export function HeroCard({
                   <span>
                     <b>
                       {h.request === 'cache'
-                        ? t('ficha.herocard.pide_su_cache_de')
+                        ? t('ficha.herocard.pide_su_cache_de', {
+                            titulo: (h.cacheAt ?? h.lvl) >= MASTER_LEVEL ? 'maestro' : 'veterano',
+                            sexo: h.sex,
+                          })
                         : t('ficha.herocard.pide_un_aumento')}
                     </b>
                     {t('ficha.herocard.por_semana', { oro: requestAmount(h) })}
@@ -610,6 +630,23 @@ export function HeroCard({
                 </div>
               )}
 
+              {!candidate && !gone && !!h.owed && (
+                <div
+                  class="request"
+                  role="status"
+                  {...help(t('ficha.herocard.debe_cache_ayuda', { oro: h.owed }))}
+                >
+                  <span class="room-bad">
+                    <b>{t('ficha.herocard.debe_cache', { moral: CACHE_OWED_MORALE })}</b>
+                  </span>
+                  <div class="herocard-actions">
+                    <button class="btn btn-gold" onClick={onPayOwed}>
+                      <Icon name="coin" size={12} />{' '}
+                      {t('ficha.herocard.pagar_cache', { sueldo: h.salary + h.owed })}
+                    </button>
+                  </div>
+                </div>
+              )}
               {!candidate && !gone && h.grudge && h.grudge.until > game.day && (
                 <p class="row-sub room-bad" {...help(t('ficha.herocard.le_negaste_lo_que'))}>
                   {t('ficha.herocard.resentido', {

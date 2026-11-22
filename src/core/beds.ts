@@ -8,7 +8,8 @@ import type { GameState, Hero, Room, Worker } from './model';
 import { active, roomBeds } from './rooms';
 import { t } from '../textos';
 
-export const isVet = (h: Pick<Hero, 'lvl'>) => h.lvl >= VET_LEVEL;
+/** Veterano: desde `VET_LEVEL`, o quien ya lo era con la regla de antes (`vet`). */
+export const isVet = (h: Pick<Hero, 'lvl' | 'vet'>) => h.lvl >= VET_LEVEL || !!h.vet;
 
 /** Camas de trabajador de una sala del servicio. */
 export const staffBedsOf = (r: Room) =>

@@ -4,6 +4,7 @@ import { SAVE_VERSION, type GameState } from '../core/model';
 import { facOf } from '../core/rooms';
 import { migrateGear } from '../core/gear';
 import { cleanTexts } from '../core/convert';
+import { newLadder } from '../core/ladder';
 
 /**
  * Dónde se guarda la partida. En la web, localStorage; en Android se cambiará por
@@ -58,6 +59,11 @@ export function parseSave(raw: string | null): GameState | null {
     if (s.version === 5) {
       cleanTexts(s);
       s.version = 6;
+    }
+    // De la 6 a la 7: veterano a 8, maestro a 12 y nivel máximo 15 (ver `core/ladder.ts`).
+    if (s.version === 6) {
+      newLadder(s);
+      s.version = 7;
     }
     if (s.version !== SAVE_VERSION) return null;
     s.fac = facOf(s.building);

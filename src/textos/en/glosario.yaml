@@ -34,7 +34,7 @@ terminos:
     texto: "The wounded heal in the infirmary. A missing hero got lost on a quest: they may come back alone (the chapel helps) or with a rescue quest."
   nivel_y_veteranos:
     termino: "Level and veterans"
-    texto: "Experience raises the level, and the wage with it. From level 4 they are veterans: the veterans' wing gives them extra rest and they no longer desert."
+    texto: "Experience raises the level, and the wage with it. From level 8 they are veterans (the veterans' wing gives them extra rest and they no longer desert) and from 12, masters; the highest level is 15. On becoming veterans and masters they ask for their fee."
   equipo:
     termino: "Gear"
     texto: "Some quests bring it (“+ item”). Give it from the chest or the hero's sheet. {rarezas, mayus}; the frame takes its colour. If the hero dies, the item is lost."

@@ -97,4 +97,17 @@ describe('guardado', () => {
     ).toBe(2);
     expect(s.goals!.active[0]!.reward.item).toBe(2);
   });
+
+  it('una partida de la 6 pasa a la escalera nueva: quien era veterano lo sigue siendo', () => {
+    const mem = memory();
+    const old = newGame('escalera-vieja') as GameState & { version: number };
+    old.version = 6;
+    old.heroes[0]!.lvl = 5;
+    old.heroes[1]!.lvl = 2;
+    mem.write(JSON.stringify(old));
+    const s = loadGame(mem)!;
+    expect(s.version).toBe(SAVE_VERSION);
+    expect(s.heroes[0]!.vet).toBe(true);
+    expect(s.heroes[1]!.vet).toBeUndefined();
+  });
 });
