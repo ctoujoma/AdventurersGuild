@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks';
 import type { Arrival } from '../core/model';
+import { t } from '../textos';
 
 interface Props {
   arrival: Arrival;
@@ -16,81 +17,67 @@ export function Opening({ arrival: a, best, rooms, onOpen, onRetry }: Props) {
   const [retry, setRetry] = useState(false);
   const better = best && a.score > best.score;
   return (
-    <div class="dawn opening" role="dialog" aria-label="El gremio es tuyo">
+    <div class="dawn opening" role="dialog" aria-label={t('pantallas.opening.el_gremio_es_tuyo')}>
       <div class="dawn-sky" aria-hidden="true">
         <span class="dawn-sun" />
       </div>
       <article class="dawn-card">
-        <span class="eyebrow">Día {a.day} · la deuda está pagada</span>
-        <h2>El gremio es tuyo</h2>
-        <p class="opening-lead">Ahora empieza la aventura.</p>
+        <span class="eyebrow">{t('pantallas.opening.dia_la_deuda_esta', { dia: a.day })}</span>
+        <h2>{t('pantallas.opening.el_gremio_es_tuyo')}</h2>
+        <p class="opening-lead">{t('pantallas.opening.ahora_empieza_la_aventura')}</p>
         <div class="arrival">
           <span>
-            <b>{a.heroes}</b> héroes
+            <b>{a.heroes}</b> {t('pantallas.opening.heroes', { n: a.heroes })}
           </span>
           <span>
-            <b>{a.gold}</b> monedas
+            <b>{a.gold}</b> {t('pantallas.opening.monedas', { n: a.gold })}
           </span>
           <span>
-            <b>{a.rep}</b> reputación
+            <b>{a.rep}</b> {t('pantallas.opening.reputacion', { n: a.rep })}
           </span>
           <span>
-            <b>{a.trophies}</b> trofeos
+            <b>{a.trophies}</b> {t('pantallas.opening.trofeos', { n: a.trophies })}
           </span>
           <span>
-            <b>{a.facilities}</b> mejoras
+            <b>{a.facilities}</b> {t('pantallas.opening.mejoras', { n: a.facilities })}
           </span>
           <span>
-            <b>{a.fallen}</b> caídos
+            <b>{a.fallen}</b> {t('pantallas.opening.caidos', { n: a.fallen })}
           </span>
         </div>
         <p class="opening-score">
-          Llegada: <b>{a.score}</b> puntos
-          {best && (better ? ' · ¡tu mejor llegada!' : ` · tu mejor: ${best.score}`)}
+          {t('pantallas.opening.llegada')} <b>{a.score}</b>{' '}
+          {t('pantallas.opening.puntos', {
+            n: a.score,
+            mejor: better ? 'si' : best ? 'no' : '',
+            record: best?.score ?? 0,
+          })}
         </p>
         <ul class="dawn-events">
-          {rooms && (
-            <li class="ev ev-good">
-              Se acabaron los apaños: ya puedes construir salas nuevas, ampliarlas, moverlas,
-              excavar el sótano y comprar los solares de al lado.
-            </li>
-          )}
-          <li class="ev ev-info">
-            Sin Merlo encima: cada 7 días solo se pagan salarios. Dos semanas sin pagar y el gremio
-            quiebra.
-          </li>
-          <li class="ev ev-warn">
-            Los veteranos cobran más con cada nivel y piden caché: haz que rindan en encargos de su
-            altura, que ahora pagan más.
-          </li>
-          <li class="ev ev-good">
-            Las hazañas y los objetivos (en el Gremio) dan oro, fama y piezas para la fachada y las
-            telas de las salas.
-          </li>
+          {rooms && <li class="ev ev-good">{t('pantallas.opening.se_acabaron_los_apanos')}</li>}
+          <li class="ev ev-info">{t('pantallas.opening.sin_merlo_encima_cada')}</li>
+          <li class="ev ev-warn">{t('pantallas.opening.los_veteranos_cobran_mas')}</li>
+          <li class="ev ev-good">{t('pantallas.opening.las_hazanas_y_los')}</li>
         </ul>
         {retry ? (
           <div class="title-confirm">
-            <span>
-              ¿No te convence cómo has llegado? Empieza de nuevo y llega en mejores condiciones a la
-              apertura. Esta partida se perderá (puedes guardarla antes en Partidas, en el engranaje
-              de arriba).
-            </span>
+            <span>{t('pantallas.opening.no_te_convence_como')}</span>
             <div class="herocard-actions">
               <button class="btn btn-red" onClick={onRetry}>
-                Otro intento
+                {t('pantallas.opening.otro_intento')}
               </button>
               <button class="btn btn-wood" onClick={() => setRetry(false)}>
-                Cancelar
+                {t('pantallas.opening.cancelar')}
               </button>
             </div>
           </div>
         ) : (
           <div class="dawn-actions">
             <button class="btn btn-gold" onClick={onOpen}>
-              Abrir el gremio al mundo
+              {t('pantallas.opening.abrir_el_gremio_al')}
             </button>
             <button class="btn btn-wood" onClick={() => setRetry(true)}>
-              Otro intento
+              {t('pantallas.opening.otro_intento')}
             </button>
           </div>
         )}

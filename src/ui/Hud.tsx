@@ -99,17 +99,48 @@ export function Hud({
   const opens = nr ? rankUnlocks(RANKS.indexOf(nr)) : [];
   const hungry = hungryTonight(game);
   const tips: Record<Tip, string> = {
-    oro: `Oro: ${game.gold} de ${goldCap(game)} que caben en la cámara del tesoro.${vaultFull(game) ? ' Está casi llena: lo que no quepa se perderá. Gasta, mejórala o hazla más grande.' : ''}`,
+    oro: t('barra.hud.oro_de_que_caben', {
+      oro: game.gold,
+      cabe: goldCap(game),
+      llena: vaultFull(game),
+    }),
     rep: nr
-      ? `Reputación: ${game.rep}. Con ${nr.at} el gremio pasa a ser de ${nr.name}: mejores encargos y héroes${opens.length ? `, y se abre ${listNames(opens)}` : ''}.`
-      : `Reputación: ${game.rep}. Ya sois el gremio más famoso de la comarca.`,
-    comida: `Raciones: ${game.food} de ${foodCap(game.building)} que caben. La cocina hace ${made.food} al día; comen los visitantes y cenan los de casa.${hungry ? ` Esta noche ${hungry} se ${hungry === 1 ? 'quedaría' : 'quedarían'} sin cenar.` : ''}`,
-    cerveza: `Jarras: ${game.beer} de ${beerCap(game.building)} que caben. La bodega saca ${made.beer} al día y cada visitante se toma una.`,
+      ? t('barra.hud.reputacion_con_el_gremio', {
+          fama: game.rep,
+          at: nr.at,
+          nombre: nr.name,
+          hay: opens.length > 0,
+          abre: listNames(opens),
+        })
+      : t('barra.hud.reputacion_ya_sois_el', { fama: game.rep }),
+    comida: t('barra.hud.raciones_de_que_caben', {
+      raciones: game.food,
+      cabe: foodCap(game.building),
+      hace: made.food,
+      sin_cena: hungry,
+    }),
+    cerveza: t('barra.hud.jarras_de_que_caben', {
+      jarras: game.beer,
+      cabe: beerCap(game.building),
+      saca: made.beer,
+    }),
     pago: !pay
       ? ''
       : pay.amount
-        ? `Próximo pago, el día ${pay.day} (${when}): ${pay.amount} al prestamista y ${due - pay.amount} en salarios. Total ${due}.${short ? ' Ahora mismo no llega.' : ''}`
-        : `Salarios del día ${pay.day} (${when}): ${due} monedas.${short ? ' Ahora mismo no llega.' : ''}`,
+        ? t('barra.hud.proximo_pago_el_dia', {
+            dia: pay.day,
+            when,
+            deuda: pay.amount,
+            salarios: due - pay.amount,
+            total: due,
+            no_llega: short,
+          })
+        : t('barra.hud.salarios_del_dia_monedas', {
+            dia: pay.day,
+            when,
+            total: due,
+            no_llega: short,
+          }),
     asalto: game.raid
       ? t('asaltos.aviso_barra', bandParams(game.raid.band, { cuando: nightIn(nights) }))
       : '',
@@ -117,13 +148,13 @@ export function Hud({
   return (
     <header class="hud">
       <div class="hud-day">
-        <span class="hud-k">Día</span>
+        <span class="hud-k">{t('barra.hud.dia')}</span>
         <b>{game.mode === 'libre' ? game.day : Math.min(game.day, DAYS)}</b>
         {game.mode !== 'libre' && <small>/{DAYS}</small>}
       </div>
       <div class="hud-name">
         <b>{customOf(game).name}</b>
-        <span>Gremio de {rankOf(game).name}</span>
+        <span>{t('barra.hud.gremio_de', { nombre: rankOf(game).name })}</span>
       </div>
       <div class="hud-stats">
         <button
@@ -184,11 +215,11 @@ export function Hud({
           >
             <Icon name="flag" size={16} />
             {nights <= 1 ? (
-              <b>hoy</b>
+              <b>{t('barra.hud.hoy')}</b>
             ) : (
               <>
                 <b>{nights}</b>
-                <small class="hud-due">noches</small>
+                <small class="hud-due">{t('barra.hud.noches', { n: nights })}</small>
               </>
             )}
           </button>
@@ -209,7 +240,7 @@ export function Hud({
         />
         <button
           class="btn-icon hud-sound"
-          aria-label={sound ? 'Silenciar' : 'Activar sonido'}
+          aria-label={sound ? t('barra.hud.silenciar') : t('barra.hud.activar_sonido')}
           aria-pressed={sound}
           onClick={() => audio.toggle()}
         >
@@ -219,7 +250,7 @@ export function Hud({
           <button
             class="btn-icon"
             data-tut="engranaje"
-            aria-label="Partidas, ajustes y menú principal"
+            aria-label={t('barra.hud.partidas_ajustes_y_menu')}
             aria-expanded={gear}
             onClick={() => {
               audio.play(gear ? 'close' : 'open');
@@ -231,10 +262,10 @@ export function Hud({
           {gear && (
             <>
               <div class="alerts-scrim" onClick={() => setGear(false)} />
-              <div class="alerts-pop gear-pop" role="menu" aria-label="Sistema">
-                {gearItem('pergamino', 'Partidas', onSaves)}
-                {gearItem('ajustes', 'Ajustes', onSettings)}
-                {gearItem('puerta', 'Menú principal', onTitle)}
+              <div class="alerts-pop gear-pop" role="menu" aria-label={t('barra.hud.sistema')}>
+                {gearItem('pergamino', t('barra.hud.partidas'), onSaves)}
+                {gearItem('ajustes', t('barra.hud.ajustes'), onSettings)}
+                {gearItem('puerta', t('barra.hud.menu_principal'), onTitle)}
               </div>
             </>
           )}

@@ -7,7 +7,8 @@ import { pickTitle, targetsFor, whyNoSpot } from '../world/rooms/works';
 import { audio } from '../audio/audio';
 import { help } from './HoldHelp';
 import { Icon, type IconName } from './icons';
-import type { Works } from './works';
+import { NO_GOLD, type Works } from './works';
+import { t } from '../textos';
 
 interface Props {
   works: Works;
@@ -18,19 +19,24 @@ interface Props {
 /** Pestañas de la cinta, con sus salas (lo que más se construye, primero) y su icono. */
 const TABS: { name: string; icon: IconName; rooms: RoomType[] }[] = [
   {
-    name: 'Gente',
+    name: t('barra.worksbar.gente'),
     icon: 'cama',
     rooms: ['dormitorio', 'servicio', 'enfermeria', 'capilla', 'veteranos'],
   },
-  { name: 'Comida', icon: 'olla', rooms: ['cocina', 'bodega', 'despensa'] },
-  { name: 'Entreno', icon: 'espadas', rooms: ['armas', 'tiro', 'biblioteca'] },
-  { name: 'Defensa', icon: 'escudo', rooms: ['armeria', 'torre', 'tesoro', 'recibidor'] },
+  { name: t('barra.worksbar.comida'), icon: 'olla', rooms: ['cocina', 'bodega', 'despensa'] },
+  { name: t('barra.worksbar.entreno'), icon: 'espadas', rooms: ['armas', 'tiro', 'biblioteca'] },
   {
-    name: 'Talleres',
+    name: t('barra.worksbar.defensa'),
+    icon: 'escudo',
+    rooms: ['armeria', 'torre', 'tesoro', 'recibidor'],
+  },
+  {
+    name: t('barra.worksbar.talleres'),
     icon: 'yunque',
     rooms: ['forja', 'sastreria', 'alquimia', 'pintor'],
   },
-  { name: 'Gremio', icon: 'jarra', rooms: ['salon', 'mapas', 'almacen'] },
+  // La última es la del gremio (con la escalera).
+  { name: t('barra.worksbar.gremio'), icon: 'jarra', rooms: ['salon', 'mapas', 'almacen'] },
 ];
 
 const ICON: Record<RoomType, IconName> = {
@@ -66,7 +72,7 @@ const GARDEN_TILES: [GardenPieceId | 'claustro', string, IconName][] = [
   ...(Object.keys(GARDEN_PIECES) as GardenPieceId[]).map(
     (k) => [k, GARDEN_PIECES[k], k] as [GardenPieceId, string, IconName],
   ),
-  ['claustro', 'Claustro', 'claustro'],
+  ['claustro', t('barra.worksbar.claustro'), 'claustro'],
 ];
 
 /**
@@ -114,7 +120,7 @@ function Ribbon({ works: w, onMore }: Props) {
   const [leaving, setLeaving] = useState(false);
   useEffect(() => setLeaving(false), [n]);
   return (
-    <div class="worksbar ribbon" role="toolbar" aria-label="Modo obras">
+    <div class="worksbar ribbon" role="toolbar" aria-label={t('barra.worksbar.modo_obras')}>
       <div class="ribbon-tabs" role="tablist">
         {TABS.map((x, i) => (
           <button
@@ -136,7 +142,7 @@ function Ribbon({ works: w, onMore }: Props) {
             onClick={() => setTab(TABS.length)}
           >
             <Icon name="arbol" size={14} />
-            Jardín
+            {t('barra.worksbar.jardin')}
           </button>
         )}
       </div>
@@ -148,10 +154,10 @@ function Ribbon({ works: w, onMore }: Props) {
               class={`ribbon-room ${w.pick?.kind === 'garden' && w.pick.piece === k ? 'is-on' : ''}`}
               data-help={
                 k === 'claustro'
-                  ? 'Soportales con arcos pegados a cada fachada del jardín, planta a planta.'
-                  : 'Toca un trozo del jardín para ponerla (o quitarla).'
+                  ? t('barra.worksbar.soportales_con_arcos_pegados')
+                  : t('barra.worksbar.toca_un_trozo_del')
               }
-              aria-label={`${name}, gratis`}
+              aria-label={t('barra.worksbar.gratis', { nombre: name })}
               onClick={() => {
                 lastTab = TABS.length;
                 w.startPick({ kind: 'garden', piece: k });
@@ -159,44 +165,45 @@ function Ribbon({ works: w, onMore }: Props) {
             >
               <Icon name={icon} size={20} />
               <b>{name}</b>
-              <span>Gratis</span>
+              <span>{t('barra.worksbar.gratis_2')}</span>
             </button>
           ))}
-        {items.map(({ t, spots, grow, cost, why }) => (
+        {items.map(({ t: type, spots, grow, cost, why }) => (
           <button
-            key={t}
+            key={type}
             class={`ribbon-room ${spots ? '' : 'is-off'}`}
             aria-disabled={!spots}
-            data-help={ROOMS[t].desc}
-            aria-label={`${grow ? 'Ampliar' : 'Construir'} ${ROOMS[t].name} por ${cost} monedas`}
+            data-help={ROOMS[type].desc}
+            aria-label={`${grow ? t('barra.worksbar.ampliar') : t('barra.worksbar.construir')} ${ROOMS[type].name} por ${cost} monedas`}
             onClick={() => {
               // Sin sitio, se dice por qué (el rango, falta excavar…).
               if (!spots) {
                 w.toast(why);
                 audio.play('deselect');
-              } else w.startPick({ kind: 'build', type: t });
+              } else w.startPick({ kind: 'build', type });
             }}
           >
-            <Icon name={ICON[t]} size={20} />
+            <Icon name={ICON[type]} size={20} />
             <b>
-              {grow ? 'Ampliar ' : ''}
-              {grow ? ROOMS[t].name.toLowerCase() : ROOMS[t].name}
+              {grow
+                ? t('barra.worksbar.ampliar_sala', { sala: ROOMS[type].name.toLowerCase() })
+                : ROOMS[type].name}
             </b>
             <span>
               <Icon name="coin" size={9} /> {cost}
             </span>
           </button>
         ))}
-        {TABS[tab]?.name === 'Gremio' && (
+        {tab === TABS.length - 1 && (
           <button
             class="ribbon-room"
             disabled={!stairs}
-            data-help="Un tramo une una planta con la de encima. Cada tramo cuesta un poco más."
-            aria-label={`Tramo de escalera por ${stairCost(b)} monedas`}
+            data-help={t('barra.worksbar.un_tramo_une_una')}
+            aria-label={t('barra.worksbar.tramo_de_escalera_por', { stair_cost: stairCost(b) })}
             onClick={() => w.startPick({ kind: 'stair' })}
           >
             <Icon name="escalera" size={20} />
-            <b>Escalera</b>
+            <b>{t('barra.worksbar.escalera')}</b>
             <span>
               <Icon name="coin" size={9} /> {stairCost(b)}
             </span>
@@ -206,37 +213,37 @@ function Ribbon({ works: w, onMore }: Props) {
       <span class="worksbar-text ribbon-text">
         {n ? (
           <>
-            {n} {n === 1 ? 'obra apuntada' : 'obras apuntadas'}
+            {t('barra.worksbar.obras_apuntadas', { n })}
             {w.planCost < 0 && (
               <>
                 {' '}
-                · recuperas <Icon name="coin" size={10} /> {-w.planCost}
+                {t('barra.worksbar.recuperas')} <Icon name="coin" size={10} /> {-w.planCost}
               </>
             )}
           </>
         ) : (
-          'Elige una sala abajo o toca una de la casa'
+          t('barra.worksbar.elige_una_sala_abajo')
         )}
         {w.issue && (
           <span class="worksbar-issue">
             {w.issue}
-            {w.issue.startsWith('Te faltan') && ' Guárdalo para luego con la ×.'}
+            {w.issue.startsWith(NO_GOLD) && <> {t('barra.worksbar.guardalo_para_luego_con')}</>}
           </span>
         )}
       </span>
       <div class="ribbon-foot">
         <button
           class="btn-icon"
-          aria-label="Lista de salas"
-          {...help('Lista de salas: todas las salas por planta y las mejoras del patio.')}
+          aria-label={t('barra.worksbar.lista_de_salas')}
+          {...help(t('barra.worksbar.lista_de_salas_todas'))}
           onClick={onMore}
         >
           <Icon name="lista" size={16} />
         </button>
         <button
           class="btn-icon"
-          aria-label="Deshacer la última obra"
-          {...help('Deshacer la última obra apuntada.')}
+          aria-label={t('barra.worksbar.deshacer_la_ultima_obra')}
+          {...help(t('barra.worksbar.deshacer_la_ultima_obra_2'))}
           disabled={!n}
           onClick={w.undo}
         >
@@ -249,33 +256,40 @@ function Ribbon({ works: w, onMore }: Props) {
           title={w.issue ?? undefined}
           aria-label={
             w.planCost >= 0
-              ? `Pagar las obras: ${w.planCost} monedas`
-              : `Pagar las obras: recuperas ${-w.planCost} monedas`
+              ? t('barra.worksbar.pagar_las_obras_monedas', { plan_cost: w.planCost })
+              : t('barra.worksbar.pagar_las_obras_recuperas', { oro: -w.planCost })
           }
           onClick={w.pay}
         >
-          <Icon name="coin" size={14} /> Pagar{n ? ` ${Math.abs(w.planCost)}` : ''}
+          <Icon name="coin" size={14} />{' '}
+          {n
+            ? t('barra.worksbar.pagar_oro', { oro: Math.abs(w.planCost) })
+            : t('barra.worksbar.pagar')}
         </button>
         {leaving && (
           <button
             class="btn btn-wood ribbon-keep"
-            aria-label="Guardar el borrador para luego y salir"
-            {...help('Guarda lo apuntado sin pagar: al volver al modo obras sigue ahí.')}
+            aria-label={t('barra.worksbar.guardar_el_borrador_para')}
+            {...help(t('barra.worksbar.guarda_lo_apuntado_sin'))}
             onClick={w.keep}
           >
-            Guardar
+            {t('barra.worksbar.guardar')}
           </button>
         )}
         <button
           class={`btn ${leaving ? 'btn-red' : 'btn-wood'} ribbon-exit`}
-          aria-label={leaving ? 'Descartar las obras y salir' : 'Salir del modo obras'}
+          aria-label={
+            leaving
+              ? t('barra.worksbar.descartar_las_obras_y')
+              : t('barra.worksbar.salir_del_modo_obras')
+          }
           onClick={() => {
             // Con obras apuntadas, el primer toque pregunta (guardar o descartar).
             if (!n || leaving) w.discard();
             else setLeaving(true);
           }}
         >
-          {leaving ? 'Descartar' : <Icon name="close" size={14} />}
+          {leaving ? t('barra.worksbar.descartar') : <Icon name="close" size={14} />}
         </button>
       </div>
     </div>
@@ -293,7 +307,7 @@ export function WorksBar({ works: w, onMore }: Props) {
       <div class="daybar worksbar" role="status">
         <span class="worksbar-text">{pickTitle(w.view, w.pick)}</span>
         <button class="btn btn-wood" onClick={w.cancelPick}>
-          Volver
+          {t('barra.worksbar.volver')}
         </button>
       </div>
     );

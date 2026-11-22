@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks';
+import { t } from '../textos';
 
 interface Props {
   onName: (name: string) => void;
@@ -10,7 +11,7 @@ export function NameTavern({ onName, onLater }: Props) {
   const [name, setName] = useState('');
   const ok = name.trim().length > 0;
   return (
-    <div class="dawn" role="dialog" aria-label="Nombre de la taberna">
+    <div class="dawn" role="dialog" aria-label={t('pantallas.nametavern.nombre_de_la_taberna')}>
       <form
         class="dawn-card name-tavern"
         onSubmit={(e) => {
@@ -18,28 +19,25 @@ export function NameTavern({ onName, onLater }: Props) {
           if (ok) onName(name);
         }}
       >
-        <span class="eyebrow">El letrero de la puerta</span>
-        <h2>¿Cómo se llama tu taberna?</h2>
-        <p>
-          «El Jarro Partido» era cosa de tu tío. Ahora el gremio es tuyo: ponle un nombre que se lea
-          desde el camino.
-        </p>
+        <span class="eyebrow">{t('pantallas.nametavern.el_letrero_de_la')}</span>
+        <h2>{t('pantallas.nametavern.como_se_llama_tu')}</h2>
+        <p>{t('pantallas.nametavern.el_jarro_partido_era')}</p>
         <input
           class="name-tavern-input"
           maxLength={24}
-          placeholder="La Oca Dorada"
+          placeholder={t('pantallas.nametavern.la_oca_dorada')}
           value={name}
           onInput={(e) => setName(e.currentTarget.value)}
         />
         <div class="herocard-actions">
           <button type="submit" class="btn btn-gold" disabled={!ok}>
-            Colgar el letrero
+            {t('pantallas.nametavern.colgar_el_letrero')}
           </button>
           <button type="button" class="btn btn-wood" onClick={onLater}>
-            Dejar el de siempre
+            {t('pantallas.nametavern.dejar_el_de_siempre')}
           </button>
         </div>
-        <p class="tiny">Puedes cambiarlo cuando quieras en Adornos.</p>
+        <p class="tiny">{t('pantallas.nametavern.puedes_cambiarlo_cuando_quieras')}</p>
       </form>
     </div>
   );

@@ -9,17 +9,25 @@ import { questEstimate } from '../core/resolve';
 import { dressingOf } from '../core/crafting';
 import { guardsAt, postOf } from '../core/guards';
 import { questFit, repeatParty, suggestParty } from '../core/suggest';
-import { CLASS_NAMES, dangerClass, dangerLabel, statusLabel } from '../data/labels';
+import {
+  CLASS_NAMES,
+  dangerClass,
+  dangerLabel,
+  questTypeName,
+  skillName,
+  statusLabel,
+} from '../data/labels';
+import { clientLabel } from '../data/quests';
 import { MATERIALS, QUEST_MATERIAL } from '../core/materials';
 import { help } from './HoldHelp';
 import { MatIcon } from './mats';
 import { Icon } from './icons';
 import { Portrait } from './Portrait';
 import { gearHintText, upgradesFor } from './gearHint';
-import { listNames, plural } from './text';
+import { listNames } from './text';
 import { lookOf, marksOf, memberOf, heroFrame } from './view';
 import { span } from './when';
-import { tx } from '../textos';
+import { t, tx } from '../textos';
 
 interface Props {
   game: GameState;
@@ -61,8 +69,12 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
           const off = guards.filter((h) => postOf(h) === post);
           if (!off.length) return null;
           const left = guardsAt(game, post).length - off.length;
-          const where = post === 'puerta' ? 'la puerta' : 'la cámara';
-          return `${listNames(off.map((h) => h.name.split(' ')[0]!))} ${plural(off.length, 'deja', 'dejan')} la guardia: ${where} se queda ${left ? `con ${left}` : 'sin nadie'} hasta que ${plural(off.length, 'vuelva', 'vuelvan')}.`;
+          return t('paneles.questsheet.la_guardia_se_queda', {
+            quienes: listNames(off.map((h) => h.name.split(' ')[0]!)),
+            n: off.length,
+            puesto: post,
+            quedan: left,
+          });
         })
         .filter(Boolean)
         .join(' ')
@@ -78,8 +90,8 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
   const sewNote = !sewing.length
     ? null
     : sewing.length > 1
-      ? `A ${sewNames} les están cosiendo: la sastrería esperará a que vuelvan.`
-      : `A ${sewNames} le están cosiendo: la sastrería esperará a que vuelva.`;
+      ? t('paneles.questsheet.a_les_estan_cosiendo', { sew_names: sewNames })
+      : t('paneles.questsheet.a_le_estan_cosiendo', { sew_names: sewNames });
   const mage = party.find((h) => h.cls === 'mago');
   const days = tripDays(q, members, game.fac.establo);
   const hideDanger = q.dangerHidden && !mage && game.fac.mapas < 2;
@@ -101,7 +113,7 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
   const again = () => {
     if (!repeat) return;
     const why = repeat.skipped.length ? `${repeat.skipped.join('. ')}.` : null;
-    if (!repeat.ids.length) return setWarn(why ?? 'Nadie de aquel grupo puede ir ahora.');
+    if (!repeat.ids.length) return setWarn(why ?? t('paneles.questsheet.nadie_de_aquel_grupo'));
     audio.play('select');
     setSel(repeat.ids);
     setWarn(why);
@@ -115,8 +127,7 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
     } else if (sel.length < q.slots) {
       audio.play('select');
       setSel([...sel, id]);
-    } else
-      setWarn(`Este encargo admite ${q.slots} ${plural(q.slots, 'héroe', 'héroes')} como máximo.`);
+    } else setWarn(t('paneles.questsheet.este_encargo_admite_como', { n: q.slots }));
   };
 
   return (
@@ -124,46 +135,60 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
       <article
         class="herocard questsheet"
         onClick={(e) => e.stopPropagation()}
-        aria-label={`Encargo: ${tx(q.title)}`}
+        aria-label={t('paneles.questsheet.encargo', { titulo: tx(q.title) })}
       >
-        <button class="btn-icon herocard-x" data-tut="cerrar" aria-label="Cerrar" onClick={onClose}>
+        <button
+          class="btn-icon herocard-x"
+          data-tut="cerrar"
+          aria-label={t('paneles.questsheet.cerrar')}
+          onClick={onClose}
+        >
           <Icon name="close" size={14} />
         </button>
         <div class="qs-scroll">
           <header class="qs-head">
             <span class="eyebrow">
               {q.chain
-                ? `${tx(chainDef(q.chain.id).name)} · paso ${q.chain.step + 1} de ${chainDef(q.chain.id).steps.length}`
-                : `${q.type} · ${q.client}`}
+                ? t('paneles.questsheet.paso_de', {
+                    nombre: tx(chainDef(q.chain.id).name),
+                    paso: q.chain.step + 1,
+                    pasos: chainDef(q.chain.id).steps.length,
+                  })
+                : t('paneles.questsheet.tipo_y_cliente', {
+                    tipo: questTypeName(q.type),
+                    cliente: clientLabel(q.client),
+                  })}
             </span>
             <h3>{tx(q.title)}</h3>
           </header>
           <div class="chips qs-facts">
-            <span class="fact" {...help('Paga si sale bien.')}>
+            <span class="fact" {...help(t('paneles.questsheet.paga_si_sale_bien'))}>
               <Icon name="coin" size={12} />
               {q.reward}
             </span>
             <span
               class="fact"
               {...help(
-                `Trae ${MATERIALS[QUEST_MATERIAL[q.type]].name.toLowerCase()}: más cuanto mejor salga.`,
+                t('paneles.questsheet.trae_mas_cuanto_mejor', {
+                  material: MATERIALS[QUEST_MATERIAL[q.type]].name.toLowerCase(),
+                }),
               )}
             >
               <MatIcon m={QUEST_MATERIAL[q.type]} size={12} />
               {MATERIALS[QUEST_MATERIAL[q.type]].name}
             </span>
-            <span class="fact" {...help('Lo que dura el viaje con este grupo.')}>
+            <span class="fact" {...help(t('paneles.questsheet.lo_que_dura_el'))}>
               <Icon name="pasos" size={12} />
               {span(days)}
             </span>
-            <span class="fact" {...help('Héroes elegidos y cuántos caben.')}>
+            <span class="fact" {...help(t('paneles.questsheet.heroes_elegidos_y_cuantos'))}>
               <Icon name="heroe" size={12} />
               {party.length}/{q.slots}
             </span>
             <span class={`danger danger-${dangerClass(q.danger, hideDanger)}`}>
-              Peligro {dangerLabel(q.danger, hideDanger)}
+              {t('paneles.questsheet.peligro', { danger_label: dangerLabel(q.danger, hideDanger) })}
             </span>
-            {q.item && <span class="chal chal-item">+ objeto</span>}
+            {q.item && <span class="chal chal-item">{t('paneles.questsheet.objeto')}</span>}
           </div>
           <button
             class={`qs-story ${story ? 'open' : ''}`}
@@ -175,7 +200,9 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
 
           <div class={`estimate est-${party.length ? est.level : 'none'}`}>
             <div class="est-head">
-              <b>{party.length ? RISK_LABELS[est.level] : 'Elige quién va'}</b>
+              <b>
+                {party.length ? RISK_LABELS[est.level] : t('paneles.questsheet.elige_quien_va')}
+              </b>
               {partyClasses(members).map((c) => (
                 <span key={c} class="perk-chip" {...help(`${PERKS[c].name}: ${PERKS[c].desc}`)}>
                   {PERKS[c].name}
@@ -187,8 +214,11 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
                 const k = r.power >= r.diff ? 'ok' : r.power >= r.diff - 3 ? 'close' : 'low';
                 return (
                   <div key={r.skill} class="cbar">
-                    <span>{r.skill}</span>
-                    <span class="track" title={`Dificultad ${r.diff}`}>
+                    <span>{skillName(r.skill)}</span>
+                    <span
+                      class="track"
+                      title={t('paneles.questsheet.dificultad', { diff: r.diff })}
+                    >
                       <i class={k} style={{ width: `${(r.power / scale) * 100}%` }} />
                       <b style={{ left: `${(r.diff / scale) * 100}%` }} />
                     </span>
@@ -202,29 +232,29 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
           </div>
           {est.reveal && mage && (
             <div class="twist" role="status">
-              <b>{mage.name} nota algo raro.</b> {tx(q.twist)} El primer desafío será más duro.
+              <b>{t('paneles.questsheet.nota_algo_raro', { nombre: mage.name })}</b>{' '}
+              {t('paneles.questsheet.el_primer_desafio_sera', { twist: tx(q.twist) })}
             </div>
           )}
           {mage && q.dangerHidden && game.fac.mapas < 2 && (
             <div class="twist" role="status">
-              <b>{mage.name} no se fía del cliente.</b> El peligro real es mayor de lo que dice.
+              <b>{t('paneles.questsheet.no_se_fia_del', { nombre: mage.name })}</b>{' '}
+              {t('paneles.questsheet.el_peligro_real_es')}
             </div>
           )}
 
           <div class="qs-who">
-            <h4 class="qs-sub">Quién va</h4>
+            <h4 class="qs-sub">{t('paneles.questsheet.quien_va')}</h4>
             <button
               data-tut="sugerir"
               class={`btn btn-wood qs-suggest ${'why' in suggestion ? 'is-off' : ''}`}
               aria-disabled={'why' in suggestion}
               {...help(
-                'why' in suggestion
-                  ? suggestion.why
-                  : 'Elige el grupo que mejor sale con los que están en casa. Puedes cambiarlo antes de enviar.',
+                'why' in suggestion ? suggestion.why : t('paneles.questsheet.elige_el_grupo_que'),
               )}
               onClick={suggest}
             >
-              <Icon name="star" size={12} /> Sugerir
+              <Icon name="star" size={12} /> {t('paneles.questsheet.sugerir')}
             </button>
           </div>
           {repeat && (
@@ -233,14 +263,16 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
               aria-disabled={!repeat.ids.length}
               {...help(
                 repeat.from === 'paso'
-                  ? 'El grupo que hizo el paso anterior de esta historia. Quien no pueda ir se queda.'
-                  : 'El último grupo que salió de misión. Quien no pueda ir se queda.',
+                  ? t('paneles.questsheet.el_grupo_que_hizo')
+                  : t('paneles.questsheet.el_ultimo_grupo_que'),
               )}
               onClick={again}
             >
               <Icon name="pasos" size={12} />
               <span>
-                {repeat.from === 'paso' ? 'Como en el paso anterior' : 'Como la última vez'}
+                {repeat.from === 'paso'
+                  ? t('paneles.questsheet.como_en_el_paso')
+                  : t('paneles.questsheet.como_la_ultima_vez')}
                 {repeatNames ? `: ${repeatNames}` : ''}
               </span>
             </button>
@@ -256,8 +288,11 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
               const busy = h.status !== 'ok';
               const guard = !busy && !!h.guard;
               const mood = moraleMod(h);
-              const skills = q.challenges.map(
-                (c) => `${c.skill.slice(0, 3)} ${skill(memberOf(h, game.fac), c.skill)}`,
+              const skills = q.challenges.map((c) =>
+                t('paneles.questsheet.habilidad', {
+                  habilidad: skillName(c.skill),
+                  n: skill(memberOf(h, game.fac), c.skill),
+                }),
               );
               const state = busy ? statusLabel(h) : null;
               return (
@@ -266,21 +301,24 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
                   class={`pick ${guard ? 'is-guard' : ''}`}
                   aria-pressed={on}
                   disabled={busy}
-                  {...(guard
-                    ? help(
-                        'De guardia: tócalo para quitarle de guardia y llevarlo. Retoma la guardia al volver.',
-                      )
-                    : {})}
+                  {...(guard ? help(t('paneles.questsheet.de_guardia_tocalo_para')) : {})}
                   aria-label={[
                     h.name,
-                    `${CLASS_NAMES[h.cls][h.sex]} de nivel ${h.lvl}`,
-                    mood > 0 ? (h.sex === 'f' ? 'animada' : 'animado') : '',
-                    mood < 0 ? (h.sex === 'f' ? 'desanimada' : 'desanimado') : '',
+                    t('paneles.questsheet.de_nivel', {
+                      clase: CLASS_NAMES[h.cls][h.sex],
+                      nivel: h.lvl,
+                    }),
+                    mood
+                      ? t('paneles.questsheet.animo', {
+                          animo: mood > 0 ? 'si' : 'no',
+                          sexo: h.sex,
+                        })
+                      : '',
                     state ?? skills.join(', '),
                     guard
                       ? on
-                        ? 'deja la guardia para ir'
-                        : 'de guardia: quitar de guardia y llevar'
+                        ? t('paneles.questsheet.deja_la_guardia_para')
+                        : t('paneles.questsheet.de_guardia_quitar_de')
                       : '',
                   ]
                     .filter(Boolean)
@@ -305,7 +343,7 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
                   {guard && (
                     <span class="pick-guard" aria-hidden="true">
                       <Icon name="escudo" size={10} />
-                      De guardia
+                      {t('paneles.questsheet.de_guardia')}
                     </span>
                   )}
                   {on && (
@@ -323,11 +361,13 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
               <button
                 key={h.id}
                 class="btn btn-wood qs-unguard"
-                {...help('Deja la guardia para ir con el grupo y la retoma al volver.')}
+                {...help(t('paneles.questsheet.deja_la_guardia_para_2'))}
                 onClick={() => toggle(h.id)}
               >
                 <Icon name="escudo" size={12} />
-                <span>Quitar de guardia y llevar a {h.name.split(' ')[0]}</span>
+                <span>
+                  {t('paneles.questsheet.quitar_de_guardia_y', { nombre: h.name.split(' ')[0] })}
+                </span>
               </button>
             ))}
         </div>
@@ -342,13 +382,17 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
           disabled={!party.length || !!blocked}
           aria-label={
             party.length
-              ? `Enviar a ${listNames(party.map((h) => h.name))}`
-              : 'Elige al menos un héroe'
+              ? t('paneles.questsheet.enviar_a', {
+                  list_names: listNames(party.map((h) => h.name)),
+                })
+              : t('paneles.questsheet.elige_al_menos_un')
           }
           onClick={() => onSend(sel, unguard)}
         >
           <Icon name="espadas" size={16} />
-          {party.length ? `Enviar · ${party.length}` : 'Elige quién va'}
+          {party.length
+            ? t('paneles.questsheet.enviar', { length: party.length })
+            : t('paneles.questsheet.elige_quien_va')}
         </button>
       </article>
     </div>

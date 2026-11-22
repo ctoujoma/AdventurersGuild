@@ -1,4 +1,5 @@
 import { Icon, type IconName } from './icons';
+import { t } from '../textos';
 
 /** Las pestañas de abajo. La taberna no tiene: es lo que se ve con todo cerrado. */
 export type TabId = 'tablon' | 'mapa' | 'heroes' | 'gremio';
@@ -6,27 +7,27 @@ export type TabId = 'tablon' | 'mapa' | 'heroes' | 'gremio';
 const TABS: { id: TabId; label: string; icon: IconName; help: string }[] = [
   {
     id: 'tablon',
-    label: 'Tablón',
+    label: t('barra.tabbar.tablon'),
     icon: 'tablon',
-    help: 'Los encargos que se pueden aceptar y mandar.',
+    help: t('barra.tabbar.los_encargos_que_se'),
   },
   {
     id: 'mapa',
-    label: 'Mapa',
+    label: t('barra.tabbar.mapa'),
     icon: 'mapa',
-    help: 'La comarca: los encargos por sitio, los grupos de viaje y las historias.',
+    help: t('barra.tabbar.la_comarca_los_encargos'),
   },
   {
     id: 'heroes',
-    label: 'Héroes',
+    label: t('barra.tabbar.heroes'),
     icon: 'heroes',
-    help: 'Tus héroes, los que buscan trabajo, las tareas de la casa y el equipo.',
+    help: t('barra.tabbar.tus_heroes_los_que'),
   },
   {
     id: 'gremio',
-    label: 'Gremio',
+    label: t('barra.tabbar.gremio'),
     icon: 'gremio',
-    help: 'La casa: la deuda, la seguridad, las salas, los objetivos y el libro.',
+    help: t('barra.tabbar.la_casa_la_deuda'),
   },
 ];
 
@@ -47,7 +48,7 @@ export function TabBar({
 }) {
   if (hidden) return null;
   return (
-    <nav class="tabs" aria-label="Secciones">
+    <nav class="tabs" aria-label={t('barra.tabbar.secciones')}>
       {TABS.map((t) => {
         const n = badges?.[t.id] ?? 0;
         return (

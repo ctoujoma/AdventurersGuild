@@ -7,6 +7,7 @@ import { TRAIT_INFO } from '../data/traits';
 import { Icon, type IconName } from './icons';
 import { Portrait } from './Portrait';
 import { heroFrame, lookOf, marksOf } from './view';
+import { t } from '../textos';
 
 interface Props {
   game: GameState;
@@ -25,10 +26,13 @@ function Cost({
   icon: IconName;
   need: number;
   have: number;
-  label: string;
+  label: 'monedas' | 'raciones' | 'jarras' | 'tela';
 }) {
   return (
-    <span class={`stranger-cost ${have < need ? 'short' : ''}`} aria-label={`${need} ${label}`}>
+    <span
+      class={`stranger-cost ${have < need ? 'short' : ''}`}
+      aria-label={t(`barra.strangercard.coste.${label}`, { n: need })}
+    >
       <Icon name={icon} size={12} />
       {need}
     </span>
@@ -44,29 +48,32 @@ export function StrangerCard({ game, onAnswer, onClose }: Props) {
       <article
         class="herocard eventcard strangercard"
         role="dialog"
-        aria-label="El forastero de la tormenta"
+        aria-label={t('barra.strangercard.el_forastero_de_la')}
         onClick={(e) => e.stopPropagation()}
       >
-        <button class="btn-icon herocard-x" aria-label="Pensarlo" onClick={onClose}>
+        <button
+          class="btn-icon herocard-x"
+          aria-label={t('barra.strangercard.pensarlo')}
+          onClick={onClose}
+        >
           <Icon name="close" size={14} />
         </button>
         <div class="qs-scroll">
           <div class="herocard-top">
-            <Portrait look={strangerLook()} scale={2} label="El forastero" frame="frame-stranger" />
+            <Portrait
+              look={strangerLook()}
+              scale={2}
+              label={t('barra.strangercard.el_forastero')}
+              frame="frame-stranger"
+            />
             <div class="herocard-id">
-              <span class="eyebrow">Noche de tormenta</span>
-              <h3>El forastero</h3>
-              <span class="row-sub">Junto al fuego · se irá mañana a mediodía</span>
+              <span class="eyebrow">{t('barra.strangercard.noche_de_tormenta')}</span>
+              <h3>{t('barra.strangercard.el_forastero')}</h3>
+              <span class="row-sub">{t('barra.strangercard.junto_al_fuego_se')}</span>
             </div>
           </div>
-          <p class="event-text">
-            No ha pedido cena ni cama. Se sacude la lluvia, mira el Muro de los caídos y dice tus
-            nombres sin que nadie se los haya dicho.
-          </p>
-          <p class="stranger-quote">
-            «El velo es fino en noches así. Puedo traer de vuelta a uno de los vuestros. No sale
-            gratis, y no vuelve entero.»
-          </p>
+          <p class="event-text">{t('barra.strangercard.no_ha_pedido_cena')}</p>
+          <p class="stranger-quote">{t('barra.strangercard.el_velo_es_fino')}</p>
           <div class="stranger-list">
             {fallen.map((h) => {
               const p = priceFor(h);
@@ -83,7 +90,10 @@ export function StrangerCard({ game, onAnswer, onClose }: Props) {
                   <div class="stranger-who">
                     <b>{h.name}</b>
                     <span class="row-sub">
-                      {CLASS_NAMES[h.cls][h.sex]} · nivel {h.lvl}
+                      {t('barra.strangercard.nivel', {
+                        clase: CLASS_NAMES[h.cls][h.sex],
+                        nivel: h.lvl,
+                      })}
                     </span>
                     <span class="stranger-costs">
                       <Cost icon="coin" need={p.gold} have={game.gold} label="monedas" />
@@ -93,29 +103,32 @@ export function StrangerCard({ game, onAnswer, onClose }: Props) {
                         icon="tela"
                         need={p.mats.tela ?? 0}
                         have={game.mats?.tela ?? 0}
-                        label="de tela"
+                        label="tela"
                       />
                     </span>
                     {why && <span class="row-sub room-bad">{why}</span>}
                   </div>
                   <button class="btn btn-gold" disabled={!!why} onClick={() => onAnswer(h.id)}>
-                    Traer
+                    {t('barra.strangercard.traer')}
                   </button>
                 </div>
               );
             })}
           </div>
           <p class="row-sub stranger-cost-note">
-            Vuelve en cama {VEIL_BED} días, sin ánimo ({VEIL_DAYS} días con la moral −{VEIL_CAP} de
-            tope) y con un rasgo para siempre: <b>{veil.m}</b> (
-            {veil.desc.replace(/^Secuela: [^.]*\. /, '').replace(/\.$/, '')}).
+            {t('barra.strangercard.vuelve_en_cama_dias', {
+              veil_bed: VEIL_BED,
+              veil_days: VEIL_DAYS,
+              veil_cap: VEIL_CAP,
+            })}{' '}
+            <b>{veil.m}</b> ({veil.desc.replace(/^Secuela: [^.]*\. /, '').replace(/\.$/, '')}).
           </p>
           <div class="herocard-actions stranger-actions">
             <button class="btn btn-wood" onClick={onClose}>
-              Pensarlo
+              {t('barra.strangercard.pensarlo')}
             </button>
             <button class="btn btn-wood" onClick={() => onAnswer(null)}>
-              Que se vaya
+              {t('barra.strangercard.que_se_vaya')}
             </button>
           </div>
         </div>

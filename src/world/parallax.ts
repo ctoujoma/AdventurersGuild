@@ -2,6 +2,7 @@ import { Rng } from '../core/rng';
 import { P } from '../art/palette';
 import { PixelBuffer, bayer } from '../art/pixel';
 import { GROUND, SPAN, WORLD_H, WORLD_X0 } from './geometry';
+import { t } from '../textos';
 
 /**
  * Ancho de las capas lejanas: más que el mundo, porque con el zoom más alejado y el
@@ -157,7 +158,7 @@ export interface Tree {
 }
 
 function forestTrees(): Tree[] {
-  const rng = new Rng('bosque lejano');
+  const rng = new Rng(t('escena.parallax.bosque_lejano'));
   return Array.from({ length: 150 }, () => ({
     x: rng.int(-6, LAYER_W + 6),
     h: rng.int(10, 22),
@@ -175,7 +176,7 @@ export function treelineTrees(): Tree[] {
 }
 
 export function groveTrees(): Tree[] {
-  const rng = new Rng('arboleda cercana');
+  const rng = new Rng(t('escena.parallax.arboleda_cercana'));
   const out: Tree[] = [];
   for (let g = 0; g < Math.ceil(LAYER_W / 260); g++) {
     const gx = g * 260 + rng.int(0, 120);

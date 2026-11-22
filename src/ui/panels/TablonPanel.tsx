@@ -3,14 +3,14 @@ import { chainDef } from '../../core/chains';
 import type { GameState, Quest } from '../../core/model';
 import { RISK_LABELS, moraleBand } from '../../core/party';
 import { outlook, type Outlook } from '../../core/suggest';
-import { dangerClass, dangerLabel } from '../../data/labels';
+import { dangerClass, dangerLabel, questTypeName, skillName } from '../../data/labels';
 import { MATERIALS, QUEST_MATERIAL } from '../../core/materials';
 import { help } from '../HoldHelp';
 import { MatIcon } from '../mats';
 import { Icon, SKILL_ICON } from '../icons';
-import { listNames, plural, shortGold } from '../text';
+import { listNames, shortGold } from '../text';
 import { span } from '../when';
-import { tx } from '../../textos';
+import { t, tx } from '../../textos';
 
 interface Props {
   game: GameState;
@@ -38,7 +38,8 @@ const outlookKey = (s: GameState) =>
   ]);
 
 /** Cuánto le queda a la nota, en palabras: el último día no se confunde con los días de viaje. */
-const leftWords = (n: number) => (n <= 1 ? 'Último día' : `Quedan ${n} días`);
+const leftWords = (n: number) =>
+  n <= 1 ? t('paneles.tablon.ultimo_dia') : t('paneles.tablon.quedan_dias', { n });
 
 /** La fila de lo que pide (verde si el grupo sugerido llega, rojo si no) y la chapa de cómo saldría. */
 function Outlook({ q, o, game }: { q: Quest; o: Outlook | undefined; game: GameState }) {
@@ -52,11 +53,7 @@ function Outlook({ q, o, game }: { q: Quest; o: Outlook | undefined; game: GameS
     <span class="note-odds" aria-hidden="true">
       <span
         class="note-skills"
-        {...help(
-          rows
-            ? `Lo que pide. Verde: tu mejor grupo de casa llega; rojo: se queda corto.`
-            : 'Lo que pide.',
-        )}
+        {...help(rows ? t('paneles.tablon.lo_que_pide_verde') : t('paneles.tablon.lo_que_pide'))}
       >
         {q.challenges.map((c, i) => {
           const r = rows?.[i];
@@ -71,14 +68,21 @@ function Outlook({ q, o, game }: { q: Quest; o: Outlook | undefined; game: GameS
         <span
           class={`note-chance est-${o.est.level}`}
           {...help(
-            `Con ${names}: ${RISK_LABELS[o.est.level].toLowerCase()}, ${Math.round(o.est.total * 100)} % de que salga bien.`,
+            t('paneles.tablon.con_de_que_salga', {
+              names,
+              riesgo: RISK_LABELS[o.est.level].toLowerCase(),
+              pct: Math.round(o.est.total * 100),
+            }),
           )}
         >
-          {RISK_LABELS[o.est.level]} {Math.round(o.est.total * 100)}%
+          {t('paneles.tablon.riesgo_pct', {
+            riesgo: RISK_LABELS[o.est.level],
+            pct: Math.round(o.est.total * 100),
+          })}
         </span>
       ) : (
         <span class="note-chance est-none" {...help(o.why)}>
-          Sin grupo
+          {t('paneles.tablon.sin_grupo')}
         </span>
       )}
     </span>
@@ -98,8 +102,7 @@ export function TablonPanel({ game, quests, seeAll, onOpen }: Props) {
     () => new Map(game.quests.map((q) => [q.id, outlook(game, q.id)] as const)),
     [key],
   );
-  if (!quests.length)
-    return <p class="panel-note">El tablón está vacío. Mañana llegarán más encargos.</p>;
+  if (!quests.length) return <p class="panel-note">{t('paneles.tablon.el_tablon_esta_vacio')}</p>;
   return (
     <div class="notes">
       {[
@@ -120,21 +123,30 @@ export function TablonPanel({ game, quests, seeAll, onOpen }: Props) {
             style={{ '--tilt': `${(i % 2 ? 1 : -1) * (0.5 + (i % 3) * 0.3)}deg` }}
             onClick={() => onOpen(q.id)}
             aria-label={[
-              q.title,
+              tx(q.title),
               chain
-                ? `${tx(chain.name)}, paso ${q.chain!.step + 1} de ${chain.steps.length}`
-                : q.type,
-              q.rumor ? 'de un rumor, con botín especial' : '',
-              q.urgent ? 'urgente, lo trajo un mensajero' : '',
-              `pide ${listNames(q.challenges.map((c) => c.skill))}`,
+                ? t('paneles.tablon.paso_de', {
+                    nombre: tx(chain.name),
+                    paso: q.chain!.step + 1,
+                    pasos: chain.steps.length,
+                  })
+                : questTypeName(q.type),
+              q.rumor ? t('paneles.tablon.de_un_rumor_con') : '',
+              q.urgent ? t('paneles.tablon.urgente_lo_trajo_un') : '',
+              t('paneles.tablon.pide', { que: q.challenges.map((c) => skillName(c.skill)) }),
               o && 'est' in o
-                ? `con tu mejor grupo, ${RISK_LABELS[o.est.level].toLowerCase()}: ${Math.round(o.est.total * 100)} %`
+                ? t('paneles.tablon.con_tu_mejor_grupo', {
+                    riesgo: RISK_LABELS[o.est.level].toLowerCase(),
+                    pct: Math.round(o.est.total * 100),
+                  })
                 : o?.why,
-              `peligro ${dangerLabel(q.danger, hidden)}`,
-              `${span(q.days)} de viaje`,
-              `hasta ${q.slots} ${plural(q.slots, 'héroe', 'héroes')}`,
-              `${q.reward} monedas${q.item ? ' y un objeto' : ''}`,
-              `trae ${MATERIALS[QUEST_MATERIAL[q.type]].name.toLowerCase()}`,
+              t('paneles.tablon.peligro', { peligro: dangerLabel(q.danger, hidden) }),
+              t('paneles.tablon.de_viaje', { span: span(q.days) }),
+              t('paneles.tablon.hasta_heroes', { n: q.slots }),
+              t('paneles.tablon.monedas', { oro: q.reward, objeto: !!q.item }),
+              t('paneles.tablon.trae_material', {
+                material: MATERIALS[QUEST_MATERIAL[q.type]].name.toLowerCase(),
+              }),
               chain ? '' : expires,
             ]
               .filter(Boolean)
@@ -152,14 +164,14 @@ export function TablonPanel({ game, quests, seeAll, onOpen }: Props) {
                   {tx(chain.name)} · {q.chain!.step + 1}/{chain.steps.length}
                 </span>
               ) : (
-                <span class="note-type">{q.type}</span>
+                <span class="note-type">{questTypeName(q.type)}</span>
               )}
               {q.rumor ? (
-                <span class="note-new note-rumor-tag">Rumor</span>
+                <span class="note-new note-rumor-tag">{t('paneles.tablon.rumor')}</span>
               ) : q.urgent ? (
-                <span class="note-new note-urgent-tag">Urgente</span>
+                <span class="note-new note-urgent-tag">{t('paneles.tablon.urgente')}</span>
               ) : (
-                q.fresh && <span class="note-new">Nuevo</span>
+                q.fresh && <span class="note-new">{t('paneles.tablon.nuevo')}</span>
               )}
               {!chain && (
                 <span class={`note-left ${q.expires <= 1 ? 'urgent' : ''}`}>{expires}</span>
@@ -171,17 +183,21 @@ export function TablonPanel({ game, quests, seeAll, onOpen }: Props) {
               <span class={`danger danger-${dangerClass(q.danger, hidden)}`}>
                 {dangerLabel(q.danger, hidden)}
               </span>
-              <span class="note-k" {...help('Días de viaje')}>
+              <span class="note-k" {...help(t('paneles.tablon.dias_de_viaje'))}>
                 <Icon name="pasos" size={10} />
                 {q.days} d
               </span>
-              <span class="note-k" {...help('Héroes que caben')}>
+              <span class="note-k" {...help(t('paneles.tablon.heroes_que_caben'))}>
                 <Icon name="heroe" size={10} />
                 {q.slots}
               </span>
               <span
                 class="note-k note-mat"
-                {...help(`Trae ${MATERIALS[QUEST_MATERIAL[q.type]].name.toLowerCase()}`)}
+                {...help(
+                  t('paneles.tablon.trae', {
+                    material: MATERIALS[QUEST_MATERIAL[q.type]].name.toLowerCase(),
+                  }),
+                )}
               >
                 <MatIcon m={QUEST_MATERIAL[q.type]} size={12} />
               </span>

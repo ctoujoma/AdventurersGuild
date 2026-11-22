@@ -16,7 +16,7 @@ import { help } from '../HoldHelp';
 import { Icon } from '../icons';
 import { Portrait } from '../Portrait';
 import { lookOf, marksOf, workerLook, heroFrame, workerFrame } from '../view';
-import { tx } from '../../textos';
+import { t } from '../../textos';
 
 interface Props {
   game: GameState;
@@ -57,7 +57,7 @@ export function TaskSelect({
   return (
     <select
       class="job-select"
-      aria-label={`Tarea de ${name}`}
+      aria-label={t('paneles.crewlist.tarea_de', { nombre: name })}
       value={now ?? ''}
       onClick={(e) => e.stopPropagation()}
       onChange={(e) => onTask(who, toTask((e.target as HTMLSelectElement).value))}
@@ -96,22 +96,22 @@ function Detail({
       {home && <TaskSelect game={game} who={m.id} name={m.name} onTask={onTask} />}
       {m.hero ? (
         <button class="btn btn-wood" onClick={() => onOpen(m.id)}>
-          Ficha
+          {t('paneles.crewlist.ficha')}
         </button>
       ) : !onFire ? null : sure ? (
         <span class="crew-sure">
           <button class="btn btn-red" onClick={() => onFire(m.id)}>
-            Despedir
+            {t('paneles.crewlist.despedir')}
           </button>
           <button class="btn btn-wood" onClick={() => setSure(false)}>
-            No
+            {t('paneles.crewlist.no')}
           </button>
         </span>
       ) : (
         <button
           class="btn-icon"
-          aria-label={`Despedir a ${m.name}`}
-          {...help(`Despedir a ${m.name}`)}
+          aria-label={t('paneles.crewlist.despedir_a', { nombre: m.name })}
+          {...help(t('paneles.crewlist.despedir_a', { nombre: m.name }))}
           onClick={() => setSure(true)}
         >
           <Icon name="papelera" size={16} />
@@ -134,21 +134,21 @@ function FreeSlot({
   const who = candidatesFor(game, task);
   if (!who.length)
     return (
-      <span class="crew-slot crew-free" aria-label="Puesto libre">
-        Libre
+      <span class="crew-slot crew-free" aria-label={t('paneles.crewlist.puesto_libre')}>
+        {t('paneles.crewlist.libre')}
       </span>
     );
   return (
     <select
       class="crew-slot crew-free"
       value=""
-      aria-label="Puesto libre: poner a alguien"
+      aria-label={t('paneles.crewlist.puesto_libre_poner_a')}
       onChange={(e) => {
         const v = (e.target as HTMLSelectElement).value;
         if (v) onTask(v, task);
       }}
     >
-      <option value="">+ Libre</option>
+      <option value="">{t('paneles.crewlist.libre_2')}</option>
       {who.map((m) => (
         <option key={m.id} value={m.id}>
           {m.name} ({m.sub})
@@ -187,7 +187,7 @@ export function CrewGroup({
         <span>{title}</span>
         {g.slots !== undefined && (
           <span class="row-sub">
-            {g.people.length} de {g.slots}
+            {t('paneles.crewlist.de', { length: g.people.length, slots: g.slots })}
           </span>
         )}
       </h3>
@@ -204,12 +204,14 @@ export function CrewGroup({
             <span class="crew-who">
               <b>{p.name}</b>
               <small>{p.sub}</small>
-              {p.off && <small class="crew-off">No es su oficio</small>}
+              {p.off && <small class="crew-off">{t('paneles.crewlist.no_es_su_oficio')}</small>}
               {p.gives && <small class={`crew-gives ${p.maxed ? 'is-max' : ''}`}>{p.gives}</small>}
               {p.progress !== undefined && (
                 <span
                   class={`train-bar ${p.maxed ? 'is-max' : ''}`}
-                  aria-label={p.maxed ? 'Al máximo' : `${Math.round(p.progress * 100)} %`}
+                  aria-label={
+                    p.maxed ? t('paneles.crewlist.al_maximo') : `${Math.round(p.progress * 100)} %`
+                  }
                 >
                   <i style={{ width: `${Math.round(p.progress * 100)}%` }} />
                 </span>
@@ -251,7 +253,7 @@ export function CrewList({ game, onOpen, onTask, onFire, focus }: Props) {
   return (
     <>
       {alerts.length > 0 && (
-        <ul class="crew-alerts" aria-label="Avisos">
+        <ul class="crew-alerts" aria-label={t('paneles.crewlist.avisos')}>
           {alerts.map((a) => (
             <li key={a.text}>
               {a.who ? (
@@ -289,23 +291,27 @@ export function CrewList({ game, onOpen, onTask, onFire, focus }: Props) {
 /** Quien viene a pedir trabajo de cocinero, herrero…: se contrata en la barra. */
 export function SeekerList({ game, onHire }: { game: GameState; onHire: (id: string) => void }) {
   return (
-    <section class="crew-group" aria-label="Trabajadores que piden trabajo">
+    <section class="crew-group" aria-label={t('paneles.crewlist.trabajadores_que_piden_trabajo')}>
       <h3 class="crew-h">
-        <span>Trabajadores</span>
+        <span>{t('paneles.crewlist.trabajadores')}</span>
         <span class="row-sub">
-          {game.workers.length} de {workerCap(game)} trabajadores
+          {t('paneles.crewlist.de_trabajadores', {
+            length: game.workers.length,
+            worker_cap: workerCap(game),
+          })}
         </span>
       </h3>
       {game.seekers.map((w) => {
         const why = canHireWorker(game, w.id);
         return (
-          <article key={w.id} class="row" {...help(`«${tx(w.quote)}»`)}>
+          <article key={w.id} class="row" {...help(t('ficha.crew.cita', { cita: w.quote }))}>
             <Face game={game} id={w.id} />
             <span class="row-info">
               <b>{w.name}</b>
               <span class="row-sub">
-                {TRADES[w.trade].name[w.sex]} · Maña {w.skill} · <Icon name="coin" size={10} />
-                {w.salary}/sem
+                {t('paneles.crewlist.mana', { oficio: TRADES[w.trade].name[w.sex], mana: w.skill })}{' '}
+                <Icon name="coin" size={10} />
+                {t('paneles.crewlist.sem', { salary: w.salary })}
               </span>
               {why && <small class="crew-off">{why}</small>}
             </span>
@@ -313,10 +319,13 @@ export function SeekerList({ game, onHire }: { game: GameState; onHire: (id: str
               class="btn btn-gold"
               disabled={!!why}
               title={why ?? undefined}
-              aria-label={`Contratar a ${w.name} por ${w.fee} monedas`}
+              aria-label={t('paneles.crewlist.contratar_a_por_monedas', {
+                nombre: w.name,
+                paga: w.fee,
+              })}
               onClick={() => onHire(w.id)}
             >
-              Contratar · <Icon name="coin" size={12} /> {w.fee}
+              {t('paneles.crewlist.contratar')} <Icon name="coin" size={12} /> {w.fee}
             </button>
           </article>
         );
@@ -324,8 +333,8 @@ export function SeekerList({ game, onHire }: { game: GameState; onHire: (id: str
       {!game.seekers.length && (
         <p class="panel-note">
           {game.mode === 'libre'
-            ? 'Hoy no ha venido nadie a pedir trabajo.'
-            : 'Cuando el gremio sea tuyo, vendrá gente del pueblo a pedir trabajo.'}
+            ? t('paneles.crewlist.hoy_no_ha_venido')
+            : t('paneles.crewlist.cuando_el_gremio_sea')}
         </p>
       )}
     </section>

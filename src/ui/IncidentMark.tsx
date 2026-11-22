@@ -4,6 +4,7 @@ import type { GameState, Incident } from '../core/model';
 import { INCIDENTS, type IncidentKind } from '../data/incidents';
 import { Icon, type IconName } from './icons';
 import type { GameScene } from './SceneView';
+import { t } from '../textos';
 
 const ICON: Record<IncidentKind, IconName> = {
   pelea: 'espadas',
@@ -59,14 +60,14 @@ export function IncidentMark({ game, inc, clock, speed, scene, onAct, onAsk }: P
   const cost = d.how === 'pagar' ? incidentCost(game, inc) : 0;
   const action =
     d.how === 'pagar'
-      ? `Pagar ${cost}`
+      ? t('barra.incidentmark.pagar', { coste: cost })
       : d.how === 'tocar'
-        ? `¡Fuera! ×${inc.taps ?? 1}`
+        ? t('barra.incidentmark.fuera', { n: inc.taps ?? 1 })
         : d.how === 'elegir'
-          ? 'Decidir'
+          ? t('barra.incidentmark.decidir')
           : d.how === 'heroe'
-            ? 'Arrastra a un héroe'
-            : 'Arrastra a alguien';
+            ? t('barra.incidentmark.arrastra_a_un_heroe')
+            : t('barra.incidentmark.arrastra_a_alguien');
   const tap = () => {
     if (d.how === 'pagar') onAct({ by: 'pagar' });
     else if (d.how === 'tocar') onAct({ by: 'tocar' });
@@ -82,7 +83,7 @@ export function IncidentMark({ game, inc, clock, speed, scene, onAct, onAsk }: P
       <button
         class="incident-btn"
         data-tut="incidente"
-        aria-label={`${d.title}. ${d.ask} Quedan ${secs} s.`}
+        aria-label={t('barra.incidentmark.quedan_s', { titulo: d.title, ask: d.ask, seg: secs })}
         onClick={tap}
       >
         <Icon name={ICON[inc.kind]} size={18} />

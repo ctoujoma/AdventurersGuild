@@ -10,6 +10,7 @@ import type { GameState } from '../core/model';
 import { FightCrew, crewCard, type CrewCard } from './FightCrew';
 import type { GameScene } from './SceneView';
 import { heroFrame, lookOf, marksOf } from './view';
+import { t } from '../textos';
 
 export function RaidCrew({
   game,
@@ -32,10 +33,10 @@ export function RaidCrew({
         !r
           ? null
           : !r.escaped
-            ? '¡Los habéis echado!'
+            ? t('paneles.raidcrew.los_habeis_echado')
             : r.stolen > 0
-              ? `Se escapan con ${r.stolen} monedas.`
-              : 'Se escapan, pero sin el oro.',
+              ? t('paneles.raidcrew.se_escapan_con_monedas', { stolen: r.stolen })
+              : t('paneles.raidcrew.se_escapan_pero_sin'),
       );
       setCrew(
         live
@@ -63,11 +64,11 @@ export function RaidCrew({
     <div class="raid-crew">
       {/* Mientras avisa el cabecilla, «¡Cubríos!» ocupa el sitio de la pista (sin taparla a medias). */}
       <p class={`raid-crew-hint ${end ? 'is-end' : ''} ${warn && !end ? 'is-hidden' : ''}`}>
-        {end ?? 'Arrastra a los tuyos a una sala · toca a un bandido para ir a por él'}
+        {end ?? t('paneles.raidcrew.arrastra_a_los_tuyos')}
       </p>
       <FightCrew
         crew={crew}
-        label="Los que defienden la taberna"
+        label={t('paneles.raidcrew.los_que_defienden_la')}
         playing={!end}
         onCrit={(id) => raid()?.tap(id)}
         onPick={(id) => raid()?.tap(id)}

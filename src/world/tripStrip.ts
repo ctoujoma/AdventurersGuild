@@ -32,6 +32,7 @@ import { LAND_GROUND, LAND_H, cart, chest, loot, tripLand } from '../art/trip';
 import { BOSS_T, LEGS, RESOLVE_T, type JourneyEvent, type JourneyNow } from '../core/journey';
 import { Rng } from '../core/rng';
 import { WEAPONS, type WeaponId } from './weapons';
+import { t } from '../textos';
 
 /** Alto de la tira (el paisaje y, debajo, la línea del viaje) y margen a los lados. */
 export const STRIP_H = 64;
@@ -55,8 +56,8 @@ const MAIN: Record<string, WeaponId> = {
 const SWING: Record<FightPose, number> = { ready: 25, windup: -50, strike: 80, up: 0, thrust: 90 };
 
 /** Cómo fue: bien (con botín), mal (en retirada); `Éxito parcial`, ni lo uno ni lo otro. */
-const WIN = new Set(['Éxito brillante', 'Éxito']);
-const BAD = new Set(['Fracaso', 'Desastre']);
+const WIN = new Set([t('escena.tripstrip.exito_brillante'), t('escena.tripstrip.exito')]);
+const BAD = new Set([t('escena.tripstrip.fracaso'), t('escena.tripstrip.desastre')]);
 /** Cuánto se meten en el sitio mientras están allí. */
 const SITE_IN = 22;
 

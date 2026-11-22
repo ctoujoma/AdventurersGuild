@@ -42,6 +42,7 @@ import {
   gardenRect,
   gardenSlots,
 } from './layout';
+import { t } from '../../textos';
 
 /** Qué se está eligiendo en la escena. */
 export type Pick =
@@ -98,24 +99,26 @@ export function pickTitle(s: GameState, pick: Pick): string {
   switch (pick.kind) {
     case 'build':
       return ROOMS[pick.type].unique && s.building.rooms.some((r) => r.type === pick.type)
-        ? `Elige por dónde ampliar: ${ROOMS[pick.type].name.toLowerCase()}`
-        : `Elige dónde construir: ${ROOMS[pick.type].name.toLowerCase()}`;
+        ? t('escena.works.elige_por_donde_ampliar', { cosa: ROOMS[pick.type].name.toLowerCase() })
+        : t('escena.works.elige_donde_construir', { cosa: ROOMS[pick.type].name.toLowerCase() });
     case 'move': {
       const r = s.building.rooms.find((x) => x.id === pick.id);
-      return r ? `Elige a dónde mover: ${ROOMS[r.type].name.toLowerCase()}` : 'Elige sitio';
+      return r
+        ? t('escena.works.elige_a_donde_mover', { cosa: ROOMS[r.type].name.toLowerCase() })
+        : t('escena.works.elige_sitio');
     }
     case 'dig':
-      return 'Elige qué hueco excavar';
+      return t('escena.works.elige_que_hueco_excavar');
     case 'stair':
-      return 'Toca para poner o quitar tramos de escalera';
+      return t('escena.works.toca_para_poner_o');
     case 'expand':
-      return 'Toca un hueco para excavarlo o el solar para comprarlo';
+      return t('escena.works.toca_un_hueco_para');
     case 'grow':
-      return 'Toca un «+» para ampliar la sala';
+      return t('escena.works.toca_un_para_ampliar');
     case 'garden':
       return pick.piece === 'claustro'
-        ? 'Claustro: toca una planta de cada lado'
-        : `Elige dónde poner: ${GARDEN_PIECES[pick.piece].toLowerCase()}`;
+        ? t('escena.works.claustro_toca_una_planta')
+        : t('escena.works.elige_donde_poner', { cosa: GARDEN_PIECES[pick.piece].toLowerCase() });
   }
 }
 
@@ -137,7 +140,7 @@ export function whyNoSpot(s: GameState, type: RoomType): string {
       for (let c = 0; c < spanOf(b); c++) if (!roomAt(b, c, f)) note(planBuild(s, type, c, f));
   }
   const all = [...seen].sort((x, y) => y[1] - x[1]).map(([e]) => e);
-  return all.find((e) => /rango/.test(e)) ?? all[0] ?? 'No queda ningún sitio donde hacerlo.';
+  return all.find((e) => /rango/.test(e)) ?? all[0] ?? t('escena.works.no_queda_ningun_sitio');
 }
 
 /**
@@ -204,10 +207,13 @@ function gardenTargets(s: GameState, piece: GardenPieceId | 'claustro'): Target[
       slots[i] = now === piece ? null : piece;
       const label =
         now === piece
-          ? `Quitar ${name}`
+          ? t('escena.works.quitar', { nombre: name })
           : now
-            ? `Cambiar ${GARDEN_PIECES[now].toLowerCase()} por ${name}`
-            : `Poner ${name}`;
+            ? t('escena.works.cambiar_por', {
+                cosa: GARDEN_PIECES[now].toLowerCase(),
+                nombre: name,
+              })
+            : t('escena.works.poner', { nombre: name });
       push(rect, label, { slots });
     });
     return out;
@@ -224,10 +230,16 @@ function gardenTargets(s: GameState, piece: GardenPieceId | 'claustro'): Target[
       const rect = { x, y: floorTop(f), w: CLOISTER_W, h: ROOM_H };
       const n = now[side];
       const set = (k: number) => ({ cloister: { ...now, [side]: k } });
-      if (f === n) push(rect, `Claustro: ${f ? `planta ${f}` : 'planta baja'}`, set(f + 1));
-      else if (f === n - 1) push(rect, 'Quitar esta planta del claustro', set(f));
+      if (f === n)
+        push(rect, `Claustro: ${f ? `planta ${f}` : t('escena.works.planta_baja')}`, set(f + 1));
+      else if (f === n - 1) push(rect, t('escena.works.quitar_esta_planta_del'), set(f));
       else if (f > n)
-        push(rect, 'Primero la planta de abajo.', set(n), 'Primero la planta de abajo.');
+        push(
+          rect,
+          t('escena.works.primero_la_planta_de'),
+          set(n),
+          t('escena.works.primero_la_planta_de'),
+        );
     }
   }
   return out;
@@ -259,11 +271,16 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
           ['up', roomRect(b, { ...own, floor: own.floor + own.h, h: 1 })],
         ];
         for (const [dir, rect] of grow)
-          add(planExtend(s, own.id, dir), rect, `Ampliar ${name.toLowerCase()}`, {
-            type: 'extend',
-            id: own.id,
-            dir,
-          });
+          add(
+            planExtend(s, own.id, dir),
+            rect,
+            t('escena.works.ampliar', { cosa: name.toLowerCase() }),
+            {
+              type: 'extend',
+              id: own.id,
+              dir,
+            },
+          );
         break;
       }
       const hi = pick.type === 'torre' ? MAX_UP + 1 : MAX_UP;
@@ -273,12 +290,17 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
           const plan = planBuild(s, pick.type, c, f);
           // Junto a una igual y del mismo nivel no sale otra sala: se amplía la de al lado.
           const grows = !('error' in plan) && plan.b.rooms.length === b.rooms.length;
-          add(plan, cell(s, c, f), grows ? `Ampliar ${name.toLowerCase()}` : name, {
-            type: 'build',
-            room: pick.type,
-            col: c,
-            floor: f,
-          });
+          add(
+            plan,
+            cell(s, c, f),
+            grows ? t('escena.works.ampliar', { cosa: name.toLowerCase() }) : name,
+            {
+              type: 'build',
+              room: pick.type,
+              col: c,
+              floor: f,
+            },
+          );
         }
       break;
     }
@@ -291,12 +313,17 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
         for (let c = 0; c + r.w <= spanOf(b); c++) {
           if (c === r.col && f === r.floor) continue;
           const plan = planMove(s, r.id, c, f);
-          add(plan, roomRect(b, { ...r, col: c, floor: f }), `Mover ${name.toLowerCase()}`, {
-            type: 'move',
-            id: r.id,
-            col: c,
-            floor: f,
-          });
+          add(
+            plan,
+            roomRect(b, { ...r, col: c, floor: f }),
+            t('escena.works.mover', { cosa: name.toLowerCase() }),
+            {
+              type: 'move',
+              id: r.id,
+              col: c,
+              floor: f,
+            },
+          );
         }
       break;
     }
@@ -324,10 +351,12 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
         const plan = planExtend(s, r.id, dir);
         if ('error' in plan) {
           const why = roomAtRect(b, r, dir)
-            ? `Ahí está ${ROOMS[roomAtRect(b, r, dir)!.type].name.toLowerCase()}.`
+            ? t('escena.works.ahi_esta', {
+                cosa: ROOMS[roomAtRect(b, r, dir)!.type].name.toLowerCase(),
+              })
             : plan.error;
           out.push({ id: `obra:${out.length}`, rect, label: why, cost: 0, action, blocked: why });
-        } else add(plan, rect, `Ampliar ${name}`, action);
+        } else add(plan, rect, t('escena.works.ampliar_2', { nombre: name }), action);
       }
       break;
     }
@@ -337,7 +366,7 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
       // El solar de al lado: el hueco de la planta baja a la derecha del edificio (o del anexo).
       // Con el edificio a todo lo ancho, en ese hueco se compra el patio trasero.
       const plot = { x: roomsLayout(b).right + 4, y: floorTop(0), w: CELL_W - 8, h: ROOM_H };
-      add(planPlot(s), plot, 'Comprar solar', { type: 'buyPlot' });
+      add(planPlot(s), plot, t('escena.works.comprar_solar'), { type: 'buyPlot' });
       // El patio trasero se marca con el jardín: 3 huecos de ancho y 2 plantas de alto, para que se
       // vea que no es un solar más.
       const fake = { ...b, cols: MAX_COLS, wing: WING_START };
@@ -349,7 +378,7 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
         h: floorTop(0) + ROOM_H - floorTop(1),
       };
       const wing = planWing(s);
-      add(wing, yard, 'Comprar el patio trasero', { type: 'buyWing' });
+      add(wing, yard, t('escena.works.comprar_el_patio_trasero'), { type: 'buyWing' });
       // Si aún no se puede, se enseña con candado y el porqué.
       if ('error' in wing && !b.wing && wing.error !== LOCKED) {
         const why = wing.error;
@@ -365,7 +394,7 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
       // Los huecos vacíos no se dibujan: se marcan los que ya son tuyos y no tienen sala (la
       // planta baja del solar y del anexo, lo excavado y los que quedan entre salas al derribar).
       for (const [c, f] of freeCells(b)) {
-        const why = 'Disponible: ¡elige una sala!';
+        const why = t('escena.works.disponible_elige_una_sala');
         out.push({
           id: `obra:${out.length}`,
           rect: cell(s, c, f),
@@ -384,7 +413,11 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
     case 'dig':
       for (const f of floors(-MAX_DOWN, -1))
         for (let c = 0; c < b.cols; c++)
-          add(planDig(s, c, f), cell(s, c, f), 'Excavar', { type: 'dig', col: c, floor: f });
+          add(planDig(s, c, f), cell(s, c, f), t('escena.works.excavar'), {
+            type: 'dig',
+            col: c,
+            floor: f,
+          });
       break;
     case 'stair': {
       // Cada tramo, de la mitad de su rellano de abajo a la del de arriba (no se pisan).
@@ -393,9 +426,17 @@ export function targetsFor(s: GameState, pick: Pick): Target[] {
         for (const f of floors(-MAX_DOWN, MAX_UP - 1)) {
           const y = floorTop(f + 1) + ROOM_H / 2;
           const rect = { x, y, w: STAIR_W, h: PITCH };
-          add(planStair(s, at, f), rect, 'Tramo de escalera', { type: 'addStair', at, floor: f });
+          add(planStair(s, at, f), rect, t('escena.works.tramo_de_escalera'), {
+            type: 'addStair',
+            at,
+            floor: f,
+          });
           // Los que ya hay se pueden quitar (devuelven algo), si no dejan otro en el aire.
-          add(planUnstair(s, at, f), rect, 'Quitar tramo', { type: 'removeStair', at, floor: f });
+          add(planUnstair(s, at, f), rect, t('escena.works.quitar_tramo'), {
+            type: 'removeStair',
+            at,
+            floor: f,
+          });
         }
       }
       break;

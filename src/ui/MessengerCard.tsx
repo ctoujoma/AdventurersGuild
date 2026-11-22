@@ -3,13 +3,13 @@ import { messengerLook } from '../art/heroes/look';
 import { MESSENGER_WAIT } from '../core/balance';
 import { aMessenger, messengerSex } from '../core/messenger';
 import type { GameState, Messenger } from '../core/model';
-import { dangerClass, dangerLabel } from '../data/labels';
+import { dangerClass, dangerLabel, questTypeName } from '../data/labels';
 import { Icon } from './icons';
 import { Portrait } from './Portrait';
 import type { GameScene } from './SceneView';
-import { plural, shortGold } from './text';
+import { shortGold } from './text';
 import { span } from './when';
-import { tx } from '../textos';
+import { t, tx } from '../textos';
 
 interface MarkProps {
   messenger: Messenger;
@@ -50,13 +50,16 @@ export function MessengerMark({ messenger, room, clock, speed, scene, onOpen }: 
     <div ref={ref} class="incident incident-night" role="status">
       <button
         class="incident-btn"
-        aria-label={`Llaman a la puerta: ${aMessenger(messenger.day)} con un farol. Toca para abrir. Quedan ${secs} s.`}
+        aria-label={t('barra.messengercard.llaman_a_la_puerta', {
+          a_messenger: aMessenger(messenger.day),
+          seg: secs,
+        })}
         onClick={onOpen}
       >
         <Icon name="letter" size={18} />
         <span class="incident-text">
-          <b>Llaman a la puerta</b>
-          <small>Abrir · {secs} s</small>
+          <b>{t('barra.messengercard.llaman_a_la_puerta_2')}</b>
+          <small>{t('barra.messengercard.abrir_s', { seg: secs })}</small>
         </span>
         <span class="incident-bar" aria-hidden="true">
           <i style={{ width: `${Math.round(frac * 100)}%` }} />
@@ -82,10 +85,16 @@ export function MessengerCard({ game, onAnswer, onClose }: CardProps) {
       <article
         class="herocard eventcard messengercard"
         role="dialog"
-        aria-label={f ? 'La mensajera' : 'El mensajero'}
+        aria-label={
+          f ? t('barra.messengercard.la_mensajera') : t('barra.messengercard.el_mensajero')
+        }
         onClick={(e) => e.stopPropagation()}
       >
-        <button class="btn-icon herocard-x" aria-label="Cerrar" onClick={onClose}>
+        <button
+          class="btn-icon herocard-x"
+          aria-label={t('barra.messengercard.cerrar')}
+          onClick={onClose}
+        >
           <Icon name="close" size={14} />
         </button>
         <div class="qs-scroll">
@@ -93,19 +102,23 @@ export function MessengerCard({ game, onAnswer, onClose }: CardProps) {
             <Portrait
               look={messengerLook(m.day, messengerSex(m.day))}
               scale={2}
-              label={f ? 'La mensajera' : 'El mensajero'}
+              label={
+                f ? t('barra.messengercard.la_mensajera') : t('barra.messengercard.el_mensajero')
+              }
               frame="frame-stranger"
             />
             <div class="herocard-id">
-              <span class="eyebrow">Llaman a la puerta</span>
-              <h3>{f ? 'Una mensajera' : 'Un mensajero'}</h3>
-              <span class="row-sub">Con un farol y prisa · un encargo urgente</span>
+              <span class="eyebrow">{t('barra.messengercard.llaman_a_la_puerta_2')}</span>
+              <h3>
+                {f ? t('barra.messengercard.una_mensajera') : t('barra.messengercard.un_mensajero')}
+              </h3>
+              <span class="row-sub">{t('barra.messengercard.con_un_farol_y')}</span>
             </div>
           </div>
           <div class="messenger-note">
             <span class="note-top">
-              <span class="note-type">{q.type}</span>
-              <span class="note-new note-urgent-tag">Urgente</span>
+              <span class="note-type">{questTypeName(q.type)}</span>
+              <span class="note-new note-urgent-tag">{t('barra.messengercard.urgente')}</span>
             </span>
             <b class="note-title">{tx(q.title)}</b>
             <p class="messenger-text">{tx(q.text)}</p>
@@ -119,7 +132,7 @@ export function MessengerCard({ game, onAnswer, onClose }: CardProps) {
               </span>
               <span class="note-k">
                 <Icon name="heroe" size={10} />
-                {q.slots} {plural(q.slots, 'héroe', 'héroes')}
+                {t('barra.messengercard.heroes', { n: q.slots })}
               </span>
               <b class="reward">
                 <Icon name="coin" size={12} />
@@ -128,16 +141,13 @@ export function MessengerCard({ game, onAnswer, onClose }: CardProps) {
               </b>
             </span>
           </div>
-          <p class="row-sub messenger-when">
-            Paga más de lo normal, pero corre prisa: hay que salir mañana; si no, se pierde al
-            acabar el día.
-          </p>
+          <p class="row-sub messenger-when">{t('barra.messengercard.paga_mas_de_lo')}</p>
           <div class="herocard-actions stranger-actions">
             <button class="btn btn-wood" onClick={() => onAnswer(false)}>
-              {f ? 'Despedirla' : 'Despedirle'}
+              {f ? t('barra.messengercard.despedirla') : t('barra.messengercard.despedirle')}
             </button>
             <button class="btn btn-gold" onClick={() => onAnswer(true)}>
-              Aceptar
+              {t('barra.messengercard.aceptar')}
             </button>
           </div>
         </div>

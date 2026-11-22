@@ -34,6 +34,7 @@ import { help } from '../HoldHelp';
 import { Icon, type IconName } from '../icons';
 import { roofTile, wallTile } from '../lookTiles';
 import { Tabs } from '../Tabs';
+import { t } from '../../textos';
 
 interface Props {
   game: GameState;
@@ -84,10 +85,13 @@ function Choice<K extends string>({
               role="radio"
               aria-checked={value === k}
               aria-disabled={!!from}
-              aria-label={from ? `${names[k]}. Se gana con: ${from}` : names[k]}
+              aria-label={
+                from ? t('paneles.taberna.se_gana_con_2', { que: names[k], from }) : names[k]
+              }
               class={`btn ${value === k ? 'btn-gold' : 'btn-wood'} ${from ? 'locked' : ''} ${art ? 'look-pick' : ''}`}
               onClick={() => {
-                if (from) return setWhy(`${names[k]}: se gana con ${from}.`);
+                if (from)
+                  return setWhy(t('paneles.taberna.se_gana_con_3', { que: names[k], from }));
                 setWhy(null);
                 onPick(k);
               }}
@@ -113,11 +117,12 @@ function FacadeParts({
   onLook: (p: FacadeLook) => void;
   has: (id: UnlockId) => boolean;
 }) {
-  const lock = (id: UnlockId) => (has(id) ? null : (unlockSource(id) ?? 'más adelante'));
+  const lock = (id: UnlockId) =>
+    has(id) ? null : (unlockSource(id) ?? t('paneles.taberna.mas_adelante'));
   return (
     <div class="look-parts">
       <Choice<RoofId>
-        title="Tejado"
+        title={t('paneles.taberna.tejado')}
         names={ROOFS}
         value={look.roof ?? 'teja'}
         onPick={(roof) => onLook({ roof })}
@@ -125,7 +130,7 @@ function FacadeParts({
         art={(k) => <BufferImage buf={roofTile(k)} scale={2} />}
       />
       <Choice<WallId>
-        title="Paredes"
+        title={t('paneles.taberna.paredes')}
         names={WALLS}
         value={look.walls ?? 'tablas'}
         onPick={(walls) => onLook({ walls })}
@@ -133,7 +138,7 @@ function FacadeParts({
         art={(k) => <BufferImage buf={wallTile(k)} scale={2} />}
       />
       <Choice<SignId>
-        title="Rótulo"
+        title={t('paneles.taberna.rotulo')}
         names={SIGNS}
         value={look.sign ?? 'tablero'}
         onPick={(sign) => onLook({ sign })}
@@ -147,9 +152,11 @@ function FacadeParts({
           disabled={!look.boxes && !!lock('boxes')}
           onChange={(e) => onLook({ boxes: (e.target as HTMLInputElement).checked })}
         />{' '}
-        Jardineras en los ventanucos
+        {t('paneles.taberna.jardineras_en_los_ventanucos')}
         {!look.boxes && lock('boxes') && (
-          <small class="lock-why">Se gana con: {lock('boxes')}</small>
+          <small class="lock-why">
+            {t('paneles.taberna.se_gana_con', { lock: lock('boxes') })}
+          </small>
         )}
       </label>
     </div>
@@ -216,18 +223,21 @@ function GardenParts({
   onLook: (p: GardenLook) => void;
   onWorks: () => void;
 }) {
-  const edges = { [NADA]: 'Ninguno', ...GARDEN_EDGES } as Record<GardenEdgeId | 'nada', string>;
+  const edges = { [NADA]: t('paneles.taberna.ninguno'), ...GARDEN_EDGES } as Record<
+    GardenEdgeId | 'nada',
+    string
+  >;
   return (
     <div class="look-parts">
       <div class="swatch-pair">
         <Swatches<GardenGroundId>
-          title="Suelo"
+          title={t('paneles.taberna.suelo')}
           names={GARDEN_GROUNDS}
           value={look.ground ?? 'hierba'}
           onPick={(ground) => onLook({ ground })}
         />
         <Swatches<GardenEdgeId | 'nada'>
-          title="Borde"
+          title={t('paneles.taberna.borde')}
           names={edges}
           value={look.edge ?? NADA}
           onPick={(k) => onLook({ edge: k === NADA ? undefined : k })}
@@ -238,13 +248,13 @@ function GardenParts({
         aria-pressed={!!look.lamps}
         onClick={() => onLook({ lamps: !look.lamps })}
       >
-        <Icon name="farol" size={16} /> Faroles
+        <Icon name="farol" size={16} /> {t('paneles.taberna.faroles')}
       </button>
       <button class="garden-works" onClick={onWorks}>
         <Icon name="martillo" size={20} />
         <span>
-          <b>Piezas y claustro, en Obras</b>
-          <small>Fuente, árboles, banco… y el claustro planta a planta.</small>
+          <b>{t('paneles.taberna.piezas_y_claustro_en')}</b>
+          <small>{t('paneles.taberna.fuente_arboles_banco_y')}</small>
         </span>
       </button>
     </div>
@@ -311,30 +321,40 @@ export function TabernaPanel({
   return (
     <>
       <Tabs
-        label="Adornos"
+        label={t('paneles.taberna.adornos')}
         value={tab}
         onChange={setTab}
         tabs={[
-          { id: 'letrero', label: 'Letrero', icon: 'letrero' },
+          { id: 'letrero', label: t('paneles.taberna.letrero'), icon: 'letrero' },
           {
             id: 'fachada',
-            label: 'Fachada',
+            label: t('paneles.taberna.fachada'),
             icon: 'taberna',
-            help: `La fachada da Atractivo (ahora ${appeal(game)}): trae más visitantes.`,
+            help: t('paneles.taberna.la_fachada_da_atractivo', { appeal: appeal(game) }),
           },
           ...(game.building.wing
-            ? [{ id: 'jardin' as const, label: 'Jardín', icon: 'arbol' as const }]
+            ? [
+                {
+                  id: 'jardin' as const,
+                  label: t('paneles.taberna.jardin'),
+                  icon: 'arbol' as const,
+                },
+              ]
             : []),
-          { id: 'animales', label: 'Animales', icon: 'pata' },
+          { id: 'animales', label: t('paneles.taberna.animales'), icon: 'pata' },
         ]}
       />
 
       {tab === 'letrero' && (
         <>
           <div class="tav-crest">
-            <BufferImage buf={board} scale={4} label={`Letrero de ${c.name}`} />
+            <BufferImage
+              buf={board}
+              scale={4}
+              label={t('paneles.taberna.letrero_de', { nombre: c.name })}
+            />
             <label class="tav-name">
-              <span class="row-sub">Nombre de la taberna</span>
+              <span class="row-sub">{t('paneles.taberna.nombre_de_la_taberna')}</span>
               <input
                 type="text"
                 maxLength={24}
@@ -345,7 +365,11 @@ export function TabernaPanel({
               />
             </label>
           </div>
-          <div class="tav-swatches" role="radiogroup" aria-label="Color del escudo">
+          <div
+            class="tav-swatches"
+            role="radiogroup"
+            aria-label={t('paneles.taberna.color_del_escudo')}
+          >
             {(Object.keys(CREST_COLORS) as CrestColor[]).map((k) => (
               <button
                 key={k}
@@ -359,7 +383,11 @@ export function TabernaPanel({
               />
             ))}
           </div>
-          <div class="tav-symbols" role="radiogroup" aria-label="Símbolo del escudo">
+          <div
+            class="tav-symbols"
+            role="radiogroup"
+            aria-label={t('paneles.taberna.simbolo_del_escudo')}
+          >
             {(Object.keys(CREST_SYMBOLS) as CrestSymbol[]).map((k) => (
               <button
                 key={k}
@@ -387,14 +415,14 @@ export function TabernaPanel({
             return (
               <article key={k} class={`adorno ${on ? 'on' : ''}`} {...help(f.desc)}>
                 <b>{f.name}</b>
-                <span class="row-sub">+{f.appeal} Atractivo</span>
+                <span class="row-sub">{t('paneles.taberna.atractivo', { appeal: f.appeal })}</span>
                 {on ? (
-                  <span class="pill pill-ok">Puesto</span>
+                  <span class="pill pill-ok">{t('paneles.taberna.puesto')}</span>
                 ) : (
                   <Buy
                     price={f.price}
                     gold={game.gold}
-                    label={`Poner ${f.name}`}
+                    label={t('paneles.taberna.poner', { nombre: f.name })}
                     onBuy={() => onFacade(k)}
                   />
                 )}
@@ -406,44 +434,55 @@ export function TabernaPanel({
 
       {tab === 'animales' && (
         <div class="adornos">
-          <article
-            class="adorno on"
-            {...help(
-              'Duerme junto a la chimenea del salón y a ratos da una vuelta. Si lo tocas, ronronea.',
-            )}
-          >
-            <b>Bigotes, el gato</b>
-            <span class="row-sub">Venía con la taberna</span>
-            <span class="pill pill-ok">En casa</span>
+          <article class="adorno on" {...help(t('paneles.taberna.duerme_junto_a_la'))}>
+            <b>{t('paneles.taberna.bigotes_el_gato')}</b>
+            <span class="row-sub">{t('paneles.taberna.venia_con_la_taberna')}</span>
+            <span class="pill pill-ok">{t('paneles.taberna.en_casa')}</span>
           </article>
           <article
             class={`adorno ${c.dog ? 'on' : ''}`}
-            {...help(
-              `${c.dog ? 'Duerme en el salón y gruñe a quien no conoce. Si lo tocas, ladra.' : 'Ladra a los forasteros y no le teme a nada.'} Si asaltan la taberna, ladra y despierta a todos antes. Y más probabilidad de chivatazo.`,
-            )}
+            {...help(t('paneles.taberna.si_asaltan_la_taberna', { perro: !!c.dog }))}
           >
-            <b>{c.dog ? 'Tizón, el perro' : 'Perro guardián'}</b>
-            <span class="row-sub">Avisa de los asaltos</span>
+            <b>
+              {c.dog ? t('paneles.taberna.tizon_el_perro') : t('paneles.taberna.perro_guardian')}
+            </b>
+            <span class="row-sub">{t('paneles.taberna.avisa_de_los_asaltos')}</span>
             {c.dog ? (
-              <span class="pill pill-ok">En casa</span>
+              <span class="pill pill-ok">{t('paneles.taberna.en_casa')}</span>
             ) : (
-              <Buy price={DOG_PRICE} gold={game.gold} label="Comprar el perro" onBuy={onDog} />
+              <Buy
+                price={DOG_PRICE}
+                gold={game.gold}
+                label={t('paneles.taberna.comprar_el_perro')}
+                onBuy={onDog}
+              />
             )}
           </article>
           <article
             class={`adorno ${c.raven ? 'on' : ''}`}
             {...help(
               c.raven
-                ? 'Vigila desde el letrero y vuela a otros pueblos con noticias del gremio. Si lo tocas, grazna.'
-                : 'Lleva la fama del gremio a otros pueblos.',
+                ? t('paneles.taberna.vigila_desde_el_letrero')
+                : t('paneles.taberna.lleva_la_fama_del'),
             )}
           >
-            <b>{c.raven ? 'Carbón, el cuervo' : 'Cuervo mensajero'}</b>
-            <span class="row-sub">+1 de reputación cada {RAVEN_EVERY} días</span>
+            <b>
+              {c.raven
+                ? t('paneles.taberna.carbon_el_cuervo')
+                : t('paneles.taberna.cuervo_mensajero')}
+            </b>
+            <span class="row-sub">
+              {t('paneles.taberna.n_1_de_reputacion_cada', { raven_every: RAVEN_EVERY })}
+            </span>
             {c.raven ? (
-              <span class="pill pill-ok">En casa</span>
+              <span class="pill pill-ok">{t('paneles.taberna.en_casa')}</span>
             ) : (
-              <Buy price={RAVEN_PRICE} gold={game.gold} label="Comprar el cuervo" onBuy={onRaven} />
+              <Buy
+                price={RAVEN_PRICE}
+                gold={game.gold}
+                label={t('paneles.taberna.comprar_el_cuervo')}
+                onBuy={onRaven}
+              />
             )}
           </article>
         </div>

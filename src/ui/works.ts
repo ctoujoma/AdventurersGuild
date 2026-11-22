@@ -7,6 +7,10 @@ import { obrasVeto } from '../core/tutorialObras';
 import type { GameState, Room } from '../core/model';
 import { ROOMS } from '../data/rooms';
 import { targetsFor, type Pick, type Target } from '../world/rooms/works';
+import { t, tr } from '../textos';
+
+/** El principio de «Te faltan {n} monedas.», para reconocer que lo que falta es oro. */
+export const NO_GOLD = tr('partida.error.faltan').split('{')[0]!;
 
 /**
  * El modo obras desde la interfaz. Es un borrador: todo lo que se hace en él se apunta (con su
@@ -169,25 +173,25 @@ export function useWorks({ game, dispatch, toast, focus, raise, price }: Deps): 
     startPick: (p) => {
       setPick(p);
       setSelected(null);
-      if (!laxly(() => targetsFor(view, p)).length) toast('No queda ningún sitio donde hacerlo.');
+      if (!laxly(() => targetsFor(view, p)).length) toast(t('barra.works.no_queda_ningun_sitio'));
     },
     choose: (id) => {
-      const t = targets.find((x) => x.id === id);
-      if (!t) return;
-      if (t.blocked) {
-        toast(t.blocked);
+      const tg = targets.find((x) => x.id === id);
+      if (!tg) return;
+      if (tg.blocked) {
+        toast(tg.blocked);
         audio.play('deselect');
         return;
       }
       // El jardín no va en el borrador: es gratis y se pone al momento (y sigue marcado).
-      if (t.action.type === 'gardenLook') {
-        if (!game.building.wing) return toast('Primero paga el patio trasero.');
-        dispatch(t.action);
+      if (tg.action.type === 'gardenLook') {
+        if (!game.building.wing) return toast(t('barra.works.primero_paga_el_patio'));
+        dispatch(tg.action);
         audio.play('build', 0.7);
         return;
       }
       // Excavar, ampliar y la escalera siguen marcados (se encadenan); lo demás acaba al hacerlo.
-      if (work(t.action) && pick && pick.kind !== 'expand' && pick.kind !== 'stair') endPick();
+      if (work(tg.action) && pick && pick.kind !== 'expand' && pick.kind !== 'stair') endPick();
     },
     cancelPick: () => {
       endPick();
@@ -205,11 +209,11 @@ export function useWorks({ game, dispatch, toast, focus, raise, price }: Deps): 
         const d = tryWorks(game, saved);
         if ('error' in d) {
           dispatch({ type: 'worksDraft', steps: null });
-          toast('El borrador guardado ya no cuadra con la taberna: se empieza de cero.');
+          toast(t('barra.works.el_borrador_guardado_ya'));
           setSteps([]);
         } else {
           setSteps(saved);
-          toast(`Borrador recuperado: ${saved.length} ${saved.length === 1 ? 'obra' : 'obras'}.`);
+          toast(t('barra.works.borrador_recuperado', { n: saved.length }));
         }
       } else setSteps([]);
       setSelected(null);
@@ -224,22 +228,20 @@ export function useWorks({ game, dispatch, toast, focus, raise, price }: Deps): 
       if (!steps?.length) return;
       const issue = planIssue(view);
       if (issue) {
-        toast(`Antes de pagar: ${issue}`);
+        toast(t('barra.works.antes_de_pagar', { issue }));
         return;
       }
       const before = game;
       const after = dispatch({ type: 'works', steps });
       if (after === before) {
-        toast('Las obras ya no cuadran con la taberna: revísalas.');
+        toast(t('barra.works.las_obras_ya_no'));
         return;
       }
       const ids = touchedRooms(before, after);
       focus(ids);
       raise(ids);
       audio.play('coin');
-      toast(
-        `Obras pagadas: ${steps.length} ${steps.length === 1 ? 'obra hecha' : 'obras hechas'}.`,
-      );
+      toast(t('barra.works.obras_pagadas', { n: steps.length }));
       setSteps(null);
       setSelected(null);
       endPick();
@@ -257,8 +259,7 @@ export function useWorks({ game, dispatch, toast, focus, raise, price }: Deps): 
       setSelected(null);
       endPick();
       audio.play('close');
-      if (steps?.length)
-        toast('Borrador guardado: al volver al modo obras sigue donde lo dejaste.');
+      if (steps?.length) toast(t('barra.works.borrador_guardado_al_volver'));
     },
   };
 }

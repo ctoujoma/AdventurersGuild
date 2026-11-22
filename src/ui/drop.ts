@@ -8,6 +8,7 @@ import { canAssign, hasPosts, isTrainRoom } from '../core/workers';
 import { tutorialVeto } from '../core/tutorial';
 import { TRAINS } from '../data/rooms';
 import { jobRoomName } from './roomName';
+import { t } from '../textos';
 
 /** Lo que pasa si se suelta a alguien en una sala: lo que se hará (y cómo se dice) o por qué no. */
 export type Drop = { ok: true; text: string; actions: Action[] } | { ok: false; text: string };
@@ -35,34 +36,38 @@ export function planTask(game: GameState, who: string, task: Task): Drop {
   const w = game.workers.find((x) => x.id === who);
   if (w) {
     if (task === null) {
-      if (!w.room) return { ok: false, text: `${w.name} ya está descansando.` };
+      if (!w.room)
+        return { ok: false, text: t('ficha.drop.ya_esta_descansando', { nombre: w.name }) };
       return {
         ok: true,
-        text: `${w.name} deja el trabajo y descansa.`,
+        text: t('ficha.drop.deja_el_trabajo_y', { nombre: w.name }),
         actions: [{ type: 'assign', who, room: null }],
       };
     }
-    if (postOfTask(task)) return { ok: false, text: 'La guardia es cosa de los héroes.' };
+    if (postOfTask(task)) return { ok: false, text: t('ficha.drop.la_guardia_es_cosa') };
     const room = game.building.rooms.find((r) => r.id === task);
-    if (!room) return { ok: false, text: 'Esa sala ya no está.' };
+    if (!room) return { ok: false, text: t('ficha.drop.esa_sala_ya_no') };
     const name = jobRoomName(game, room);
-    if (!hasPosts(room.type)) return { ok: false, text: `En ${name} no hay trabajo.` };
-    if (w.room === task) return { ok: false, text: `${w.name} ya trabaja aquí.` };
+    if (!hasPosts(room.type))
+      return { ok: false, text: t('ficha.drop.en_no_hay_trabajo', { nombre: name }) };
+    if (w.room === task)
+      return { ok: false, text: t('ficha.drop.ya_trabaja_aqui', { nombre: w.name }) };
     const why = tutorialVeto(game, who, task) ?? canAssign(game, who, task);
     if (why) return { ok: false, text: why };
     return {
       ok: true,
-      text: `${w.name} trabajará en ${name}.`,
+      text: t('ficha.drop.trabajara_en', { nombre: w.name, nombre2: name }),
       actions: [{ type: 'assign', who, room: task }],
     };
   }
   const h = game.heroes.find((x) => x.id === who);
-  if (!h) return { ok: false, text: 'Ya no está en la taberna.' };
-  if (h.status !== 'ok') return { ok: false, text: `${h.name} no está en casa.` };
+  if (!h) return { ok: false, text: t('ficha.drop.ya_no_esta_en') };
+  if (h.status !== 'ok')
+    return { ok: false, text: t('ficha.drop.no_esta_en_casa', { nombre: h.name }) };
   const post = postOfTask(task);
   if (post) {
     if (h.guard && postOf(h) === post)
-      return { ok: false, text: `${h.name} ya está de guardia aquí.` };
+      return { ok: false, text: t('ficha.drop.ya_esta_de_guardia', { nombre: h.name }) };
     const why = postIssue(game, post);
     if (why) return { ok: false, text: why };
     // De un puesto a otro: deja el de antes.
@@ -72,23 +77,25 @@ export function planTask(game: GameState, who: string, task: Task): Drop {
       ok: true,
       text:
         post === 'tesoro'
-          ? `${h.name} se pone de guardia en la cámara del tesoro.`
-          : `${h.name} se pone de guardia en la puerta.`,
+          ? t('ficha.drop.se_pone_de_guardia', { nombre: h.name })
+          : t('ficha.drop.se_pone_de_guardia_2', { nombre: h.name }),
       actions,
     };
   }
   if (task === null) {
-    if (!h.job && !h.guard) return { ok: false, text: `${h.name} ya está descansando.` };
+    if (!h.job && !h.guard)
+      return { ok: false, text: t('ficha.drop.ya_esta_descansando', { nombre: h.name }) };
     const actions: Action[] = [];
     if (h.guard) actions.push({ type: 'guard', id: who, on: false });
     if (h.job) actions.push({ type: 'assign', who, room: null });
-    return { ok: true, text: `${h.name} se va a descansar.`, actions };
+    return { ok: true, text: t('ficha.drop.se_va_a_descansar', { nombre: h.name }), actions };
   }
   const room = game.building.rooms.find((r) => r.id === task);
-  if (!room) return { ok: false, text: 'Esa sala ya no está.' };
+  if (!room) return { ok: false, text: t('ficha.drop.esa_sala_ya_no') };
   const name = jobRoomName(game, room);
-  if (!hasPosts(room.type)) return { ok: false, text: `En ${name} no hay nada que hacer.` };
-  if (h.job === task) return { ok: false, text: `${h.name} ya está aquí.` };
+  if (!hasPosts(room.type))
+    return { ok: false, text: t('ficha.drop.en_no_hay_nada', { nombre: name }) };
+  if (h.job === task) return { ok: false, text: t('ficha.drop.ya_esta_aqui', { nombre: h.name }) };
   // Quien está de guardia la deja para ponerse a otra cosa.
   const free = h.guard
     ? { ...game, heroes: game.heroes.map((x) => (x === h ? { ...x, guard: undefined } : x)) }
@@ -106,12 +113,28 @@ export function planTask(game: GameState, who: string, task: Task): Drop {
         ok: false,
         text:
           by === 'sala'
-            ? `${h.name} ya tiene ${ATTR_NAMES[attr]} ${h.attrs[attr]}: aquí no aprende más. Mejora la sala.`
-            : `${h.name} ya tiene ${ATTR_NAMES[attr]} ${h.attrs[attr]}: no aprende más hasta subir de nivel.`,
+            ? t('ficha.drop.ya_tiene_aqui_no', {
+                nombre: h.name,
+                atributo: ATTR_NAMES[attr],
+                n: h.attrs[attr],
+              })
+            : t('ficha.drop.ya_tiene_no_aprende', {
+                nombre: h.name,
+                atributo: ATTR_NAMES[attr],
+                n: h.attrs[attr],
+              }),
       };
-    return { ok: true, text: `${h.name} entrenará ${ATTR_NAMES[attr]} aquí.`, actions };
+    return {
+      ok: true,
+      text: t('ficha.drop.entrenara_aqui', { nombre: h.name, atributo: ATTR_NAMES[attr] }),
+      actions,
+    };
   }
-  return { ok: true, text: `${h.name} echará una mano en ${name}.`, actions };
+  return {
+    ok: true,
+    text: t('ficha.drop.echara_una_mano_en', { nombre: h.name, nombre2: name }),
+    actions,
+  };
 }
 
 /**
@@ -120,7 +143,7 @@ export function planTask(game: GameState, who: string, task: Task): Drop {
  */
 export function planDrop(game: GameState, who: string, roomId: string): Drop {
   const room = game.building.rooms.find((r) => r.id === roomId);
-  if (!room) return { ok: false, text: 'Ahí no hay ninguna sala.' };
+  if (!room) return { ok: false, text: t('ficha.drop.ahi_no_hay_ninguna') };
   // Si en la sala pasa algo que se arregla mandando a alguien, primero eso.
   const inc = incidentIn(game, roomId);
   const how = inc && INCIDENTS[inc.kind].how;

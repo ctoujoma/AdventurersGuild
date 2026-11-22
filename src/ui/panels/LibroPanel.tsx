@@ -6,6 +6,7 @@ import { FEATS } from '../../data/feats';
 import type { Records } from '../../platform/records';
 import { Icon } from '../icons';
 import { t, tx } from '../../textos';
+import { clientLabel } from '../../data/quests';
 
 interface Props {
   game: GameState;
@@ -19,7 +20,7 @@ export function HistoryButton({ game, onClick }: { game: GameState; onClick: () 
   const n = (game.questLog?.length ?? 0) + game.missions.length;
   return (
     <button class="btn btn-wood history-btn" onClick={onClick}>
-      <Icon name="lista" size={14} /> Historial de encargos{n ? ` · ${n}` : ''}
+      <Icon name="lista" size={14} /> {t('paneles.libro.historial_de_encargos', { n })}
     </button>
   );
 }
@@ -51,7 +52,7 @@ export function LibroPanel({ game, records, onHistory }: Props) {
       <HistoryButton game={game} onClick={onHistory} />
       {goals && (
         <section>
-          <h3 class="sec-title">Objetivos</h3>
+          <h3 class="sec-title">{t('paneles.libro.objetivos')}</h3>
           <div class="rows">
             {goals.active.map((g) => (
               <GoalRow key={g.id} game={game} goal={g} />
@@ -59,11 +60,12 @@ export function LibroPanel({ game, records, onHistory }: Props) {
           </div>
           {goals.log.length > 0 && (
             <details class="set-fold goal-log">
-              <summary>Cumplidos · {goals.log.length}</summary>
+              <summary>{t('paneles.libro.cumplidos', { length: goals.log.length })}</summary>
               <ul>
                 {goals.log.map((l, i) => (
                   <li key={i}>
-                    <b>Día {l.day}</b> · {tx(l.text)} <small>({tx(l.reward)})</small>
+                    <b>{t('paneles.libro.dia', { dia: l.day })}</b> · {tx(l.text)}{' '}
+                    <small>({tx(l.reward)})</small>
                   </li>
                 ))}
               </ul>
@@ -74,7 +76,7 @@ export function LibroPanel({ game, records, onHistory }: Props) {
 
       {(game.chains ?? []).length > 0 && (
         <section>
-          <h3 class="sec-title">Historias</h3>
+          <h3 class="sec-title">{t('paneles.libro.historias')}</h3>
           <div class="rows">
             {(game.chains ?? []).map((cs) => {
               const def = chainDef(cs.id);
@@ -90,10 +92,13 @@ export function LibroPanel({ game, records, onHistory }: Props) {
                     </span>
                   </div>
                   <small>
-                    {def.client} ·{' '}
+                    {clientLabel(def.client)} ·{' '}
                     {cs.status === 'hecha'
-                      ? 'Cumplida'
-                      : `En el tablón: «${tx(def.steps[cs.step]!.title)}»${cs.twists ? ` (se ha torcido ${cs.twists} ${cs.twists === 1 ? 'vez' : 'veces'})` : ''}`}
+                      ? t('paneles.libro.cumplida')
+                      : t('paneles.libro.en_el_tablon', {
+                          titulo: tx(def.steps[cs.step]!.title),
+                          vueltas: cs.twists ?? 0,
+                        })}
                   </small>
                 </article>
               );
@@ -103,7 +108,7 @@ export function LibroPanel({ game, records, onHistory }: Props) {
       )}
 
       <section>
-        <h3 class="sec-title">Hazañas</h3>
+        <h3 class="sec-title">{t('paneles.libro.hazanas')}</h3>
         <div class="rows">
           {FEATS.map((f) => {
             const got = game.feats?.[f.id] ?? 0;
@@ -114,7 +119,10 @@ export function LibroPanel({ game, records, onHistory }: Props) {
               <article key={f.id} class={`feat ${next === undefined ? 'done' : ''}`}>
                 <div class="feat-head">
                   <b>{f.name}</b>
-                  <span class="pips" aria-label={`Nivel ${got} de ${f.tiers.length}`}>
+                  <span
+                    class="pips"
+                    aria-label={t('paneles.libro.nivel_de', { got, length: f.tiers.length })}
+                  >
                     {f.tiers.map((_, i) => (
                       <i key={i} class={i < got ? 'on' : ''} />
                     ))}
@@ -126,12 +134,18 @@ export function LibroPanel({ game, records, onHistory }: Props) {
                       <i style={{ width: `${((v - prev) / (next - prev)) * 100}%` }} />
                     </span>
                     <small>
-                      {t(f.text, { n: next })} · {Math.min(v, next)}/{next} · Premio:{' '}
-                      {rewardText(f.rewards[got]!)}
+                      {t('paneles.libro.premio', {
+                        hazana: t(f.text, { n: next }),
+                        v: Math.min(v, next),
+                        next,
+                        premio: rewardText(f.rewards[got]!),
+                      })}
                     </small>
                   </>
                 ) : (
-                  <small>Completada: {t(f.text, { n: f.tiers.at(-1) })}.</small>
+                  <small>
+                    {t('paneles.libro.completada', { t: t(f.text, { n: f.tiers.at(-1) }) })}
+                  </small>
                 )}
               </article>
             );
@@ -140,34 +154,34 @@ export function LibroPanel({ game, records, onHistory }: Props) {
       </section>
 
       <section>
-        <h3 class="sec-title">Récords</h3>
+        <h3 class="sec-title">{t('paneles.libro.records')}</h3>
         <div class="records">
           <span>
-            Mejor llegada a la apertura <b>{records.bestArrival?.score ?? '—'}</b>
+            {t('paneles.libro.mejor_llegada_a_la')} <b>{records.bestArrival?.score ?? '—'}</b>
           </span>
           <span>
-            Más días al frente <b>{records.maxDays || '—'}</b>
+            {t('paneles.libro.mas_dias_al_frente')} <b>{records.maxDays || '—'}</b>
           </span>
           <span>
-            Más oro en la caja <b>{records.maxGold || '—'}</b>
+            {t('paneles.libro.mas_oro_en_la')} <b>{records.maxGold || '—'}</b>
           </span>
           <span>
-            Más trofeos <b>{records.maxTrophies || '—'}</b>
+            {t('paneles.libro.mas_trofeos')} <b>{records.maxTrophies || '—'}</b>
           </span>
         </div>
       </section>
 
       {game.fallen.length > 0 && (
         <section>
-          <h3 class="sec-title">Muro de los caídos</h3>
+          <h3 class="sec-title">{t('paneles.libro.muro_de_los_caidos')}</h3>
           <div class="rows">
             {game.fallen.map((f, i) => (
-              <div key={i} class={f.back ? 'fallen back' : 'fallen'}>
+              <div key={i} class={f.back ? t('paneles.libro.fallen_back') : 'fallen'}>
                 <b>{tx(f.name)}</b>
                 <span>{tx(f.epitaph)}</span>
                 {f.back && (
                   <span class="fallen-back">
-                    Volvió del velo el día {f.back}: lo trajo el forastero de la tormenta.
+                    {t('paneles.libro.volvio_del_velo_el', { back: f.back })}
                   </span>
                 )}
               </div>

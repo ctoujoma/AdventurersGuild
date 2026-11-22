@@ -9,6 +9,7 @@ import {
   MATERIAL_LIST,
   MATERIALS,
   matCap,
+  matMsg,
   matOf,
   storeLevel,
   type Material,
@@ -18,6 +19,7 @@ import type { GameState } from '../core/model';
 import type { IconName } from './icons';
 import { BufferImage } from './BufferImage';
 import { materialIcon } from '../art/materials';
+import { idText, t, type Txt } from '../textos';
 
 export const MAT_ICON: Record<Material, IconName> = {
   hierro: 'lingote',
@@ -43,11 +45,20 @@ export function MatIcon({ m, size = 14 }: { m: Material; size?: number }) {
   );
 }
 
-/** «+2 cuero» de un chip del informe: el material, si lo es (para el dibujo y el salto). */
-export function chipMat(t: string): { m: Material; n: number } | null {
-  const hit = /^\+(\d+) (.+)$/.exec(t);
+/**
+ * El material de un chip del informe («+2 cuero»), si lo es (para el dibujo y el salto): por su
+ * clave; en las partidas viejas, leyendo la frase en español.
+ */
+export function chipMat(c: Txt | undefined): { m: Material; n: number } | null {
+  if (c && typeof c === 'object') {
+    if (c.k !== 'informes.chip_material') return null;
+    const name = idText(c.p?.material as Txt | undefined).toLowerCase();
+    const m = MATERIAL_LIST.find((k) => idText(matMsg(k)).toLowerCase() === name);
+    return m ? { m, n: Number(c.p?.n) } : null;
+  }
+  const hit = /^\+(\d+) (.+)$/.exec(c ?? '');
   if (!hit) return null;
-  const m = MATERIAL_LIST.find((k) => MATERIALS[k].name.toLowerCase() === hit[2]);
+  const m = MATERIAL_LIST.find((k) => idText(matMsg(k)).toLowerCase() === hit[2]);
   return m ? { m, n: Number(hit[1]) } : null;
 }
 
@@ -66,11 +77,15 @@ export function MatCost({ game, mats }: { game: GameState; mats?: Mats }) {
           <span
             key={m}
             class={`mat-need ${ok ? 'is-ok' : 'is-short'}`}
-            title={ok ? `${need} de ${name}` : `${need} de ${name}: faltan ${need - have}`}
+            title={
+              ok
+                ? t('barra.mats.de', { n: need, nombre: name })
+                : t('barra.mats.de_faltan', { n: need, nombre: name, faltan: need - have })
+            }
           >
             <MatIcon m={m} size={12} />
             {need}
-            {!ok && <small> (faltan {need - have})</small>}
+            {!ok && <small> {t('barra.mats.faltan', { n: need - have })}</small>}
           </span>
         );
       })}
@@ -89,7 +104,7 @@ export function MatShelf({ game }: { game: GameState }) {
   );
   return (
     <div class="mat-shelf">
-      <div class="mat-jars" role="group" aria-label="Materiales">
+      <div class="mat-jars" role="group" aria-label={t('barra.mats.materiales')}>
         {list.map((m) => {
           const n = matOf(game, m);
           const cap = matCap(game, m);
@@ -117,7 +132,9 @@ export function MatShelf({ game }: { game: GameState }) {
         </p>
       )}
       {!storeLevel(game) && (
-        <small class="mat-loose">Sin almacén caben {MAT_LOOSE} de cada, en un rincón.</small>
+        <small class="mat-loose">
+          {t('barra.mats.sin_almacen_caben_de', { mat_loose: MAT_LOOSE })}
+        </small>
       )}
     </div>
   );

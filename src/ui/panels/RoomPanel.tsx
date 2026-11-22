@@ -29,7 +29,7 @@ import {
 import { FACILITY_INFO } from '../../data/labels';
 import { roomEffect } from '../../data/roomInfo';
 import { ROOMS, TRAINS, type RoomType } from '../../data/rooms';
-import { listNames, plural } from '../../core/text';
+import { listNames } from '../../core/text';
 import {
   hasPosts,
   isTrainRoom,
@@ -51,33 +51,34 @@ import { GUARD, type Task } from '../drop';
 import { dawnIn } from '../when';
 import { RoomCustom, canCustomize, feastPending } from './RoomCustom';
 import { Tabs, type TabItem } from '../Tabs';
-import { tx } from '../../textos';
+import { t } from '../../textos';
+import { NO_GOLD } from '../works';
 
 /** A dónde lleva cada sala: los paneles de siempre que tienen que ver con ella. */
 export type RoomLink =
   'tablon' | 'candidatos' | 'heroes' | 'trabajadores' | 'libro' | 'fuera' | 'equipo' | 'tesoros';
 
-const WORK = { to: 'trabajadores', label: 'Tareas', icon: 'martillo' } as const;
+const WORK = { to: 'trabajadores', label: t('paneles.room.tareas'), icon: 'martillo' } as const;
 
 const LINKS: Partial<Record<RoomType, { to: RoomLink; label: string; icon: IconName }[]>> = {
   salon: [
-    { to: 'tablon', label: 'Tablón', icon: 'tablon' },
-    { to: 'candidatos', label: 'Barra', icon: 'jarra' },
+    { to: 'tablon', label: t('paneles.room.tablon'), icon: 'tablon' },
+    { to: 'candidatos', label: t('paneles.room.barra'), icon: 'jarra' },
     WORK,
   ],
   cocina: [WORK],
   bodega: [WORK],
   enfermeria: [WORK],
   servicio: [WORK],
-  dormitorio: [{ to: 'heroes', label: 'Héroes', icon: 'heroe' }],
-  veteranos: [{ to: 'heroes', label: 'Héroes', icon: 'heroe' }],
+  dormitorio: [{ to: 'heroes', label: t('paneles.room.heroes'), icon: 'heroe' }],
+  veteranos: [{ to: 'heroes', label: t('paneles.room.heroes'), icon: 'heroe' }],
   mapas: [
-    { to: 'fuera', label: 'Mapa', icon: 'mapa' },
-    { to: 'libro', label: 'Libro', icon: 'libro' },
+    { to: 'fuera', label: t('paneles.room.mapa'), icon: 'mapa' },
+    { to: 'libro', label: t('paneles.room.libro'), icon: 'libro' },
   ],
-  armeria: [{ to: 'equipo', label: 'Equipo', icon: 'espadas' }],
-  forja: [{ to: 'equipo', label: 'Equipo', icon: 'espadas' }],
-  tesoro: [{ to: 'tesoros', label: 'Tesoros', icon: 'coin' }],
+  armeria: [{ to: 'equipo', label: t('paneles.room.equipo'), icon: 'espadas' }],
+  forja: [{ to: 'equipo', label: t('paneles.room.equipo'), icon: 'espadas' }],
+  tesoro: [{ to: 'tesoros', label: t('paneles.room.tesoros'), icon: 'coin' }],
 };
 
 /** Una cifra de la sala en una chapa; lo que significa, manteniendo pulsado. */
@@ -127,17 +128,23 @@ function SalonInfo({ game }: { game: GameState }) {
   return (
     <>
       <div class="chips">
-        <Fact info="Más Atractivo (decoración, fachada, trofeos y el nivel del salón) trae más gente; la reputación también.">
-          <Icon name="star" size={12} /> Atractivo {appeal(game)}
+        <Fact info={t('paneles.room.mas_atractivo_decoracion_fachada')}>
+          <Icon name="star" size={12} /> {t('paneles.room.atractivo', { appeal: appeal(game) })}
         </Fact>
-        <Fact info="Sitios para sentarse en el salón.">{seatsOf(game.building)} plazas</Fact>
-        <Fact info="Visitantes de hoy y cuántos se pueden atender." warn={v.served < v.total}>
+        <Fact info={t('paneles.room.sitios_para_sentarse_en')}>
+          {t('paneles.room.plazas', { seats_of: seatsOf(game.building) })}
+        </Fact>
+        <Fact info={t('paneles.room.visitantes_de_hoy_y')} warn={v.served < v.total}>
           <Icon name="heroes" size={12} /> {v.served}/{v.total}
         </Fact>
       </div>
       <span class="row-sub">
-        Hoy {v.total ? `vienen ${tx(visitorList(v))}` : 'no viene nadie'}.
-        {v.served < v.total ? ` Solo se atiende a ${v.served}: falta gente en la barra.` : ''}
+        {t('paneles.room.hoy_vienen', {
+          n: v.total,
+          quienes: visitorList(v),
+          faltan: v.served < v.total,
+          atendidos: v.served,
+        })}
       </span>
     </>
   );
@@ -157,22 +164,22 @@ function LarderInfo({ game, room }: { game: GameState; room: Room }) {
         <Fact
           info={
             beer
-              ? 'Jarras guardadas y cuántas caben. Cada jarra deja una moneda; lo que no cabe se echa a perder.'
-              : 'Raciones guardadas y cuántas caben. Sin raciones, los visitantes solo beben y los de casa se acuestan sin cenar. Lo que no cabe se echa a perder: la despensa guarda mucho más.'
+              ? t('paneles.room.jarras_guardadas_y_cuantas')
+              : t('paneles.room.raciones_guardadas_y_cuantas')
           }
         >
           <Icon name={beer ? 'jarra' : 'pan'} size={12} /> {beer ? game.beer : game.food}/
           {beer ? beerCap(game.building) : foodCap(game.building)}
         </Fact>
-        <Fact info="Lo que se hace al día." warn={made < need}>
-          +{made} al día
+        <Fact info={t('paneles.room.lo_que_se_hace')} warn={made < need}>
+          {t('paneles.room.al_dia', { made })}
         </Fact>
       </div>
       <span class="row-sub">
         {beer
-          ? `Hoy beberán ${v.served} visitantes.`
-          : `Hoy comen ${v.served} visitantes y cenan ${home} de casa.`}
-        {made < need ? ' Se gasta más de lo que se hace.' : ''}
+          ? t('paneles.room.hoy_beberan_visitantes', { served: v.served })
+          : t('paneles.room.hoy_comen_visitantes_y', { served: v.served, home })}
+        {made < need && <> {t('paneles.room.se_gasta_mas_de')}</>}
       </span>
     </>
   );
@@ -190,17 +197,24 @@ function VaultInfo({ game }: { game: GameState }) {
   return (
     <>
       <div class="chips">
-        <Fact info="Oro guardado y cuánto cabe. Lo que no cabe se pierde." warn={game.gold >= cap}>
+        <Fact info={t('paneles.room.oro_guardado_y_cuanto')} warn={game.gold >= cap}>
           <Icon name="coin" size={12} /> {game.gold}/{cap}
         </Fact>
-        <Fact info="Cuánto aguanta la cerradura a los bandidos.">Cerradura {lockTime(game)} s</Fact>
-        <Fact
-          info={`Lo que tardarían los bandidos en llegar desde la puerta${names.length ? `, pasando por ${listNames(names)}` : ''}: el camino rojo de la escena. Cuanto más lejos de la puerta y mejor cerrada, más tiempo para que los nuestros se despierten y les corten el paso.`}
-        >
-          Camino {routeTime(game.building)} s
+        <Fact info={t('paneles.room.cuanto_aguanta_la_cerradura')}>
+          {t('paneles.room.cerradura_s', { lock_time: lockTime(game) })}
         </Fact>
         <Fact
-          info={`Si asaltaran esta noche, se ${odds === 1 ? 'pararía' : 'pararían'} ${odds} de cada 10 asaltos como el que podría venir.`}
+          info={t('paneles.room.lo_que_tardarian_los', {
+            hay: names.length > 0,
+            salas: listNames(names),
+          })}
+        >
+          {t('paneles.room.camino_s', { route_time: routeTime(game.building) })}
+        </Fact>
+        <Fact
+          info={t('paneles.room.si_asaltaran_esta_noche', {
+            odds,
+          })}
         >
           <Icon name="escudo" size={12} /> {odds}/10
         </Fact>
@@ -213,7 +227,9 @@ function VaultInfo({ game }: { game: GameState }) {
 function DoorInfo({ game }: { game: GameState }) {
   return (
     <div class="chips">
-      <Fact info="Cuánto aguanta la puerta a los bandidos.">Puerta {doorTime(game)} s</Fact>
+      <Fact info={t('paneles.room.cuanto_aguanta_la_puerta')}>
+        {t('paneles.room.puerta_s', { door_time: doorTime(game) })}
+      </Fact>
     </div>
   );
 }
@@ -230,20 +246,26 @@ function InfirmaryInfo({ game }: { game: GameState }) {
   return (
     <div class="chips">
       <Fact
-        info={`Días de cama que se le quitan a cada herido cada noche: ${base} por la sala${bonus ? ' y 1 más por quien trabaja aquí' : ''}.`}
+        info={t('paneles.room.dias_de_cama_que', {
+          base,
+          mano: bonus > 0,
+        })}
       >
-        <Icon name="cama" size={12} /> −{base + bonus} {plural(base + bonus, 'día', 'días')} por
-        noche
+        <Icon name="cama" size={12} /> {t('paneles.room.dias_por_noche', { n: base + bonus })}
       </Fact>
       <Fact
-        info={`Con ${NURSE_WORK} de mano entre todos (un enfermero, o trabajadores y héroes echando una mano), cada herido se cura un día más por noche. Rinden más en una enfermería mejor.`}
+        info={t('paneles.room.con_de_mano_entre', { nurse_work: NURSE_WORK })}
         warn={!bonus && hurt > 0}
       >
-        <Icon name="martillo" size={12} /> Mano {handText(hand)} de {NURSE_WORK}
-        {bonus ? ': −1 día' : ''}
+        <Icon name="martillo" size={12} />{' '}
+        {t('paneles.room.mano_de', {
+          hand_text: handText(hand),
+          nurse_work: NURSE_WORK,
+          mano: bonus > 0,
+        })}
       </Fact>
-      <Fact info="Héroes heridos ahora mismo.">
-        <Icon name="cruz" size={12} /> {hurt} {plural(hurt, 'herido', 'heridos')}
+      <Fact info={t('paneles.room.heroes_heridos_ahora_mismo')}>
+        <Icon name="cruz" size={12} /> {t('paneles.room.heridos', { n: hurt })}
       </Fact>
     </div>
   );
@@ -255,9 +277,13 @@ function TrainInfo({ room }: { room: Room }) {
   return (
     <div class="chips">
       <Fact
-        info={`Pon aquí a un héroe que esté en casa para que entrene. Las habilidades suben solas según su clase. Cada héroe llega como mucho a ${TRAIN_HERO_BASE} más ${TRAIN_PER_LEVEL} por nivel (${TRAIN_MAIN_BONUS} más en el atributo principal de su clase).`}
+        info={t('paneles.room.pon_aqui_a_un', {
+          train_hero_base: TRAIN_HERO_BASE,
+          train_per_level: TRAIN_PER_LEVEL,
+          train_main_bonus: TRAIN_MAIN_BONUS,
+        })}
       >
-        {ATTR_NAMES[attr]} hasta {trainCap(room)}
+        {t('paneles.room.hasta', { atributo: ATTR_NAMES[attr], train_cap: trainCap(room) })}
       </Fact>
     </div>
   );
@@ -283,7 +309,11 @@ function RoomCrew({
   const g = crewGroups(game).find((x) => x.key === key);
   if (!g) return null;
   const title =
-    key === GUARD ? 'De guardia' : isTrainRoom(room.type) ? 'Entrenan aquí' : 'Trabajan aquí';
+    key === GUARD
+      ? t('paneles.room.de_guardia')
+      : isTrainRoom(room.type)
+        ? t('paneles.room.entrenan_aqui')
+        : t('paneles.room.trabajan_aqui');
   return (
     <CrewGroup
       game={game}
@@ -298,9 +328,9 @@ function RoomCrew({
 }
 
 const DIRS: { dir: ExtendDir; label: string }[] = [
-  { dir: 'left', label: 'Ampliar a la izquierda' },
-  { dir: 'right', label: 'Ampliar a la derecha' },
-  { dir: 'up', label: 'Subir una planta' },
+  { dir: 'left', label: t('paneles.room.ampliar_a_la_izquierda') },
+  { dir: 'right', label: t('paneles.room.ampliar_a_la_derecha') },
+  { dir: 'up', label: t('paneles.room.subir_una_planta') },
 ];
 
 /** Ampliar, mover y destruir: lo que se puede hacer con la sala una vez pagada la deuda. */
@@ -317,8 +347,7 @@ function RoomWorks({
 }) {
   const [sure, setSure] = useState(false);
   const def = ROOMS[room.type];
-  if (!worksOpen(game))
-    return <span class="muted">Ampliar, mover o tirar salas: al pagar la deuda.</span>;
+  if (!worksOpen(game)) return <span class="muted">{t('paneles.room.ampliar_mover_o_tirar')}</span>;
   if (room.works) return null;
   const grow = DIRS.filter(
     ({ dir }) => (dir === 'up' ? room.h < def.maxH : room.w < def.maxW) && room.level > 0,
@@ -326,9 +355,8 @@ function RoomWorks({
   const open = grow.filter((g) => !('error' in g.plan));
   // Si falta oro se dice; si no, es que al lado no hay hueco.
   const growWhy =
-    grow
-      .map((g) => ('error' in g.plan ? g.plan.error : ''))
-      .find((e) => e.startsWith('Te faltan')) ?? 'no hay hueco libre al lado.';
+    grow.map((g) => ('error' in g.plan ? g.plan.error : '')).find((e) => e.startsWith(NO_GOLD)) ??
+    t('paneles.room.no_hay_hueco_libre');
   const demolish = planDemolish(game, room.id);
   const refund = 'error' in demolish ? 0 : -demolish.cost;
   return (
@@ -342,10 +370,12 @@ function RoomWorks({
           {g.label} <Icon name="coin" size={10} /> {'cost' in g.plan ? g.plan.cost : ''}
         </button>
       ))}
-      {grow.length > 0 && !open.length && <span class="muted">Ampliar: {growWhy}</span>}
+      {grow.length > 0 && !open.length && (
+        <span class="muted">{t('paneles.room.ampliar', { grow_why: growWhy })}</span>
+      )}
       {!def.fixed && onMove && (
         <button class="btn btn-wood" onClick={() => onMove(room.id)}>
-          Mover
+          {t('paneles.room.mover')}
         </button>
       )}
       {!def.fixed &&
@@ -353,21 +383,21 @@ function RoomWorks({
           <span class="room-sure">
             <span>
               {def.keep
-                ? '¿Quitarla del plano? Antes de pagar tendrás que ponerla en otro sitio.'
+                ? t('paneles.room.quitarla_del_plano_antes')
                 : refund > 0
-                  ? `¿Tirarla? Recuperas ${refund} monedas.`
-                  : '¿Tirarla? No recuperas nada.'}
+                  ? t('paneles.room.tirarla_recuperas_monedas', { refund })
+                  : t('paneles.room.tirarla_no_recuperas_nada')}
             </span>
             <button class="btn btn-red" onClick={() => onWork({ type: 'demolish', id: room.id })}>
-              Tirar
+              {t('paneles.room.tirar')}
             </button>
             <button class="btn btn-wood" onClick={() => setSure(false)}>
-              No
+              {t('paneles.room.no')}
             </button>
           </span>
         ) : (
           <button class="btn btn-wood" onClick={() => setSure(true)}>
-            Tirar
+            {t('paneles.room.tirar')}
           </button>
         ))}
     </div>
@@ -400,7 +430,7 @@ export function RoomPanel({
   // La pestaña elegida es de esta sala: al abrir otra, se vuelve a «Sala».
   const [pick, setPick] = useState<{ room: string; tab: RoomTab }>({ room: roomId, tab: 'sala' });
   const room = game.building.rooms.find((r) => r.id === roomId);
-  if (!room) return <p class="panel-note">Esa sala ya no está.</p>;
+  if (!room) return <p class="panel-note">{t('paneles.room.esa_sala_ya_no')}</p>;
   const def = ROOMS[room.type];
   const info = def.fac ? FACILITY_INFO[def.fac] : null;
   const max = roomMax(room.type);
@@ -408,11 +438,14 @@ export function RoomPanel({
   const why = canWork(game, { type: 'upgradeRoom', id: room.id });
   const size = room.w * room.h;
   const state = room.works
-    ? `En obras: estará ${room.works.kind === 'move' ? 'en su sitio' : 'lista'} ${dawnIn(room.works.nights)}.`
+    ? t('paneles.room.en_obras_estara', {
+        mudanza: room.works.kind === 'move',
+        dawn_in: dawnIn(room.works.nights),
+      })
     : room.level === 0
       ? room.type === 'torre'
-        ? 'Solar vacío: hay que levantarla.'
-        : 'Rota: hay que arreglarla para que sirva.'
+        ? t('paneles.room.solar_vacio_hay_que')
+        : t('paneles.room.rota_hay_que_arreglarla')
       : null;
   const links = LINKS[room.type] ?? [];
   const cells = room.w * room.h;
@@ -421,10 +454,17 @@ export function RoomPanel({
   const feast = customizable && feastPending(game, room);
   const workshop = isWorkshop(room.type) && room.level > 0 && !room.works;
   const tabs: TabItem<RoomTab>[] = [
-    { id: 'sala', label: 'Sala', icon: 'puerta' },
+    { id: 'sala', label: t('paneles.room.sala'), icon: 'puerta' },
     ...(workshop ? workshopTabs(game, room) : []),
     ...(customizable
-      ? [{ id: 'custom', label: 'Personalizar', icon: 'brocha', alert: feast ? 1 : 0 } as const]
+      ? [
+          {
+            id: 'custom',
+            label: t('paneles.room.personalizar'),
+            icon: 'brocha',
+            alert: feast ? 1 : 0,
+          } as const,
+        ]
       : []),
   ];
   const want = pick.room === roomId ? pick.tab : 'sala';
@@ -458,41 +498,54 @@ export function RoomPanel({
       {bar}
       <div class="room-top">
         <div class="room-head" {...(info ? help(info.levels[room.level]) : {})}>
-          <span class="pips" aria-label={`Nivel ${room.level} de ${max}`}>
+          <span class="pips" aria-label={t('paneles.room.nivel_de', { nivel: room.level, max })}>
             {Array.from({ length: max }, (_, i) => (
               <i key={i} class={i < room.level ? 'on' : ''} />
             ))}
           </span>
           <span class="row-sub">
-            {room.level ? `Nivel ${room.level} de ${max}` : 'Sin arreglar'}
-            {size > 1 ? ` · ${size} ${plural(size, 'hueco', 'huecos')}` : ''}
+            {room.level
+              ? t('paneles.room.nivel_de', { nivel: room.level, max })
+              : t('paneles.room.sin_arreglar')}
+            {size > 1 && <> · {t('paneles.room.huecos', { n: size })}</>}
           </span>
         </div>
         {cost !== null ? (
           <button
             class="btn btn-gold room-up"
             data-tut={`mejorar-${room.type}`}
-            aria-label={`${room.level === 0 ? 'Arreglar' : 'Mejorar'} ${def.name} por ${cost} monedas`}
+            aria-label={t('paneles.room.mejorar_por', {
+              arreglar: room.level === 0,
+              sala: def.name,
+              coste: cost,
+            })}
             disabled={!!why}
             title={why ?? undefined}
             onClick={() => onUpgrade(room.id)}
           >
-            <Icon name="mejorar" size={14} /> {room.level === 0 ? 'Arreglar' : 'Mejorar'} ·{' '}
+            <Icon name="mejorar" size={14} />{' '}
+            {room.level === 0 ? t('paneles.room.arreglar') : t('paneles.room.mejorar')} ·{' '}
             <Icon name="coin" size={10} /> {cost}
           </button>
         ) : (
-          <span class="pill pill-ok room-max">Al máximo</span>
+          <span class="pill pill-ok room-max">{t('paneles.room.al_maximo')}</span>
         )}
       </div>
       <div class="room-levels">
         {room.level > 0 && (
           <p class="room-now">
-            <b>Ahora:</b> {roomEffect(room.type, room.level, cells)}.
+            <b>{t('paneles.room.ahora')}</b> {roomEffect(room.type, room.level, cells)}.
           </p>
         )}
         {cost !== null && (
           <p class="next-level">
-            <b>{room.level > 0 ? 'Mejora' : room.type === 'torre' ? 'Levantada' : 'Arreglada'}:</b>{' '}
+            <b>
+              {room.level > 0
+                ? t('paneles.room.mejora')
+                : room.type === 'torre'
+                  ? t('paneles.room.levantada')
+                  : t('paneles.room.arreglada')}
+            </b>{' '}
             {roomEffect(room.type, room.level + 1, cells)}.
           </p>
         )}
@@ -501,7 +554,7 @@ export function RoomPanel({
       {state && <p class="room-state">{state}</p>}
       <p class="room-desc">{def.desc}</p>
       {links.length > 0 && (
-        <div class="room-links" role="group" aria-label="Ir a">
+        <div class="room-links" role="group" aria-label={t('paneles.room.ir_a')}>
           {links.map((l) => (
             <button key={l.to} class="btn btn-wood" onClick={() => onLink(l.to)}>
               <Icon name={l.icon} size={14} /> {l.label}
@@ -519,31 +572,36 @@ export function RoomPanel({
       {room.type === 'recibidor' && <DoorInfo game={game} />}
       {(room.type === 'dormitorio' || room.type === 'veteranos') && room.level > 0 && (
         <div class="chips">
-          <Fact info="Camas de esta sala.">
-            <Icon name="cama" size={12} /> {roomBeds(room)}{' '}
-            {plural(roomBeds(room), 'cama', 'camas')} aquí
+          <Fact info={t('paneles.room.camas_de_esta_sala')}>
+            <Icon name="cama" size={12} /> {t('paneles.room.aqui', { n: roomBeds(room) })}
           </Fact>
-          <Fact info="Héroes en el gremio y camas en total: quien está fuera o herido también ocupa cama.">
-            <Icon name="heroe" size={12} /> {roster(game).length} de {beds(game.building)} héroes
+          <Fact info={t('paneles.room.heroes_en_el_gremio')}>
+            <Icon name="heroe" size={12} />{' '}
+            {t('paneles.room.de_heroes', {
+              length: roster(game).length,
+              beds: beds(game.building),
+            })}
           </Fact>
         </div>
       )}
       {room.type === 'servicio' && room.level > 0 && (
         <div class="chips">
-          <Fact info="Camas del servicio: una por cada trabajador de más de tres.">
-            <Icon name="cama" size={12} /> {staffBeds(game.building)}{' '}
-            {plural(staffBeds(game.building), 'cama', 'camas')}
+          <Fact info={t('paneles.room.camas_del_servicio_una')}>
+            <Icon name="cama" size={12} />{' '}
+            {t('paneles.room.camas', { n: staffBeds(game.building) })}
           </Fact>
-          <Fact info="Trabajadores y cuántos puede haber.">
-            <Icon name="martillo" size={12} /> {game.workers.length} de {workerCap(game)}{' '}
-            trabajadores
+          <Fact info={t('paneles.room.trabajadores_y_cuantos_puede')}>
+            <Icon name="martillo" size={12} />{' '}
+            {t('paneles.room.de_trabajadores', {
+              length: game.workers.length,
+              worker_cap: workerCap(game),
+            })}
           </Fact>
         </div>
       )}
       {hasPosts(room.type) && room.level === 0 && (
         <span class="row-sub">
-          Arreglada, tendrá {room.w * 2}{' '}
-          {isTrainRoom(room.type) ? 'sitios para entrenar' : 'puestos de trabajo'}.
+          {t('paneles.room.arreglada_tendra', { n: room.w * 2, entrenar: isTrainRoom(room.type) })}
         </span>
       )}
       {neighborsOf(game.building, room).map((n) => (

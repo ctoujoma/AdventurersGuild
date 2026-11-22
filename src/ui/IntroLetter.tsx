@@ -1,9 +1,10 @@
 import { LETTER } from '../core/tutorial';
+import { t } from '../textos';
 
 /** La carta del tío Fausto: lo primero que se lee al empezar una partida con tutorial. */
 export function IntroLetter({ onOpen }: { onOpen: () => void }) {
   return (
-    <div class="intro-letter" role="dialog" aria-label="Carta de tu tío Fausto">
+    <div class="intro-letter" role="dialog" aria-label={t('pantallas.introletter.carta_de_tu_tio')}>
       <article class="intro-page">
         <span class="intro-head">{LETTER.head}</span>
         {LETTER.body.map((p, i) => (
@@ -15,7 +16,7 @@ export function IntroLetter({ onOpen }: { onOpen: () => void }) {
           {LETTER.sign}
         </span>
         <button class="btn btn-gold intro-go" onClick={onOpen}>
-          Entrar en la taberna
+          {t('pantallas.introletter.entrar_en_la_taberna')}
         </button>
       </article>
     </div>

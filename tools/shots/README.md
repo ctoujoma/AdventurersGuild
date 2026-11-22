@@ -70,3 +70,8 @@ para preparar cualquier situación antes de la captura: subir salas de nivel, pr
 13. Equipo: `node tools/shots/equipo.mjs <carpeta> [ancho] [alto]` viste a los héroes con una pieza
     por ranura (común, buena, legendaria con dibujo propio y la corona) y saca su ficha, el Arcón y
     la sala con ellos.
+
+14. Textos: `PARTIDA=src/core/fixtures/partida-v5.json node tools/shots/textos.mjs <carpeta> <guion.json>`
+    vuelca el texto de cada pantalla (con reloj falso y azar fijo, dos pasadas salen iguales) para
+    comparar antes y después; con `XLANG=xx` y `npm run textos:falso`, lo que salga sin ‹ › no sale
+    de los ficheros de textos. Ver `docs/textos.md`, «Herramientas».

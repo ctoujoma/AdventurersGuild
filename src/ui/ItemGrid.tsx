@@ -16,7 +16,8 @@ import { ROOMS } from '../data/rooms';
 import { haptic } from '../platform/haptics';
 import { ItemImage } from './ItemImage';
 import { Icon } from './icons';
-import { tx } from '../textos';
+import { t, tx } from '../textos';
+import { skillName } from '../data/labels';
 
 /** Lo que dura la pulsación larga (la misma que la ayuda de `HoldHelp`). */
 const HOLD_MS = 450;
@@ -73,7 +74,7 @@ function ItemTile({
     RARITY_NAMES[it.rarity ?? 0],
     ...stats.map((s) => `+${s.n} ${s.k}`),
     it.perk ? PERK_INFO[it.perk] : '',
-    who ? `lo lleva ${who}` : '',
+    who ? t('ficha.itemgrid.lo_lleva', { quien: who }) : '',
   ]
     .filter(Boolean)
     .join(', ');
@@ -133,7 +134,7 @@ function ItemTile({
             key={s.k}
             class={`item-chip skill-${SKILL_SHORT[s.k]} ${i || tie ? '' : 'is-main'}`}
           >
-            {SKILL_SHORT[s.k]} {s.n}
+            {t('ficha.itemgrid.chapa', { hab: t(`etiquetas.habilidades_corto.${s.k}`), n: s.n })}
           </span>
         ))}
       </span>
@@ -173,11 +174,14 @@ function ItemTip({ e, at }: { e: GridEntry; at: DOMRect }) {
       <div class="item-tip-stats">
         {itemStats(it).map((s) => (
           <span key={s.k}>
-            <b class={`item-chip skill-${SKILL_SHORT[s.k]}`}>{SKILL_SHORT[s.k]}</b> +{s.n} {s.k}
+            <b class={`item-chip skill-${SKILL_SHORT[s.k]}`}>
+              {t(`etiquetas.habilidades_corto.${s.k}`)}
+            </b>{' '}
+            {t('ficha.itemgrid.sube', { n: s.n, hab: skillName(s.k) })}
             {s.n !== s.base && (
               <small>
                 {' '}
-                ({s.base} {s.base === 1 ? 'suya' : 'suyas'}, +{s.n - s.base} del taller)
+                {t('ficha.itemgrid.del_taller', { base: s.base, taller: s.n - s.base })}
               </small>
             )}
           </span>
@@ -189,16 +193,21 @@ function ItemTip({ e, at }: { e: GridEntry; at: DOMRect }) {
         )}
         {cost ? (
           <small>
-            Se puede mejorar a +{cost.to} en {ROOMS[cost.room].name.toLowerCase()}.
+            {t('ficha.itemgrid.se_puede_mejorar_a', {
+              to: cost.to,
+              sala: ROOMS[cost.room].name.toLowerCase(),
+            })}
           </small>
         ) : it.plus ? (
-          <small>Mejorado del todo: no sube más.</small>
+          <small>{t('ficha.itemgrid.mejorado_del_todo_no')}</small>
         ) : null}
       </div>
       {it.desc && <p class="item-tip-desc">«{tx(it.desc)}»</p>}
       <div class="item-tip-foot">
-        <span>{who ? `Lo lleva ${who}` : 'En el arcón'}</span>
-        <span>Vale {priceOf(it)} monedas</span>
+        <span>
+          {who ? t('ficha.itemgrid.lo_lleva_2', { quien: who }) : t('ficha.itemgrid.en_el_arcon')}
+        </span>
+        <span>{t('ficha.itemgrid.vale_monedas', { price_of: priceOf(it) })}</span>
       </div>
     </div>
   );

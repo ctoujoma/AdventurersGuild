@@ -73,7 +73,7 @@ import {
 } from './party';
 import type { Rng } from './rng';
 import { SLOTS, gearList, hasPerk, shownItem, type Gear } from './gear';
-import { MATERIALS, QUEST_MATERIAL, gainMats } from './materials';
+import { QUEST_MATERIAL, gainMats, matMsg } from './materials';
 
 const has = (h: Hero, id: string) => h.traits.some((t) => t.id === id);
 /** Claves de una lista de textos (`base.0`, `base.1`…), para elegir una por posición. */
@@ -355,7 +355,7 @@ export function resolveMission(
   if (nMat > 0) {
     const m = QUEST_MATERIAL[q.type];
     const got = gainMats(state, { [m]: nMat });
-    if (got.kept[m]) chip('chip_material', { n: got.kept[m], material: MATERIALS[m].name }, 'info');
+    if (got.kept[m]) chip('chip_material', { n: got.kept[m], material: matMsg(m) }, 'info');
     if (got.warn) chips.push({ t: got.warn, k: 'warn' });
   }
   const dRep = REP[outcome];

@@ -112,12 +112,17 @@ const rel = (f: string) => f.slice(ROOT.length + 1).replace(/\\/g, '/');
  * Carpetas y ficheros que aún tienen textos sueltos (se van sacando por bloques; ver
  * docs/textos.md). Cuando una carpeta queda limpia, se quita de aquí y el test la vigila.
  */
-const PENDING = ['ui/', 'world/', 'art/', 'platform/', 'audio/', 'main.tsx'];
+const PENDING: string[] = [];
 /** Textos que se quedan en el código a propósito, con el porqué. */
 const ALLOWED: Record<string, string> = {
   'data/names.ts': 'nombres propios: no se traducen',
   'data/places.ts': 'los lugares van por su id, que es su nombre en español',
   'core/convert.ts': 'reconoce las frases en español de las partidas viejas',
+  'art/legendaries.ts': 'el dibujo de los legendarios va por su nombre en español (cabo suelto 4)',
+  'art/heroes/gear.ts': 'el dibujo de los legendarios va por su nombre en español (cabo suelto 4)',
+  'art/sprite.ts': 'avisos de dibujos mal hechos, para quien programa',
+  'world/rooms/gl.ts': 'shaders (GLSL)',
+  'world/rooms/lluvia.ts': 'shaders (GLSL)',
 };
 
 /** Ids del juego que están en español y se usan como tales (se enseñan con su etiqueta). */
@@ -125,7 +130,20 @@ const IDS = new Set(['Éxito brillante', 'Éxito', 'Éxito parcial', 'Fracaso', 
 
 const looksText = (s: string) =>
   !/^[\w.${}/-]*$/.test(s) &&
+  !/^\s*([a-z][\w]*-[\w-]*\s*)+$/.test(s) && // clases css («pf-hero pf-»)
   (/[áéíóúñ¿¡]/i.test(s) || /[A-Za-zÁÉÍÓÚáéíóúñ]{2,},? [A-Za-zÁÉÍÓÚáéíóúñ]{2,}/.test(s));
+
+/** Atributos de JSX que nunca llevan texto. */
+const NOT_TEXT_ATTRS = new Set([
+  'class',
+  'className',
+  'style',
+  'key',
+  'id',
+  'role',
+  'type',
+  'data-tut',
+]);
 
 const keyFns = new Set(['t', 'tr', 'tl', 'has', 'msg']);
 
@@ -141,6 +159,8 @@ function scan(file: string) {
     if (ts.isLiteralTypeNode(n)) return;
     if (ts.isNewExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === 'Error')
       return;
+    // Atributos de JSX que no son texto (clases, estilos, claves…).
+    if (ts.isJsxAttribute(n) && NOT_TEXT_ATTRS.has(n.name.getText())) return;
     if (
       ts.isCallExpression(n) &&
       ts.isIdentifier(n.expression) &&
@@ -162,6 +182,11 @@ function scan(file: string) {
     if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n))
       txt = isName ? null : n.text;
     else if (ts.isTemplateHead(n) || ts.isTemplateMiddle(n) || ts.isTemplateTail(n)) txt = n.text;
+    // En JSX, toda palabra es texto (la «¡» final hace que el filtro la vea).
+    else if (ts.isJsxText(n) && /[A-Za-zÁÉÍÓÚáéíóúñ]{2,}/.test(n.text)) txt = `${n.text.trim()} ¡`;
+    // Un literal que parece texto y no lo es (una semilla, un nombre interno) se marca así.
+    if (txt !== null && sf.text.slice(n.getFullStart(), n.getStart()).includes('no es texto'))
+      txt = null;
     if (txt !== null && looksText(txt) && !IDS.has(txt))
       loose.push(`${at(n)}: ${txt.slice(0, 60)}`);
     ts.forEachChild(n, visit);

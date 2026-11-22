@@ -1,3 +1,4 @@
+import { t } from '../textos';
 /**
  * Partituras de la taberna. Cada tema es una melodía en compases de 6 corcheas (aire de
  * giga) o de 8 (reel, marcha), un bajo por compás y, si acaso, percusión. Se escriben con
@@ -109,7 +110,7 @@ function tune(
 }
 
 export const TUNES = {
-  jarra: tune('La jarra rota', {
+  jarra: tune(t('escena.music.la_jarra_rota'), {
     step: 0.29,
     voice: 'laud',
     scale: DORIAN_D,
@@ -123,7 +124,7 @@ export const TUNES = {
     bass: `D3 A3 | F3 C3 | C3 G3 | A2 E3 | D3 A3 | F3 C3 | G2 D3 | D3 A2 |
            D3 A3 | C3 G3 | A2 E3 | D3 A3 | F3 C3 | A2 E3 | C3 G3 | D3 D3`,
   }),
-  camino: tune('El camino real', {
+  camino: tune(t('escena.music.el_camino_real'), {
     step: 0.25,
     voice: 'laud',
     scale: MIXO_G,
@@ -137,7 +138,7 @@ export const TUNES = {
     bass: `G2 D3 | C3 G2 | D3 A2 | G2 D3 | G2 D3 | F2 C3 | D3 A2 | G2 D3 |
            D3 A2 | G2 D3 | F2 C3 | G2 D3 | D3 A2 | C3 G2 | D3 A2 | G2 G2`,
   }),
-  velas: tune('Velas en la bodega', {
+  velas: tune(t('escena.music.velas_en_la_bodega'), {
     step: 0.36,
     voice: 'flauta',
     scale: AEOLIAN_A,
@@ -152,7 +153,7 @@ export const TUNES = {
     bass: `A2 E3 | E2 B2 | A2 E3 | A2 E3 | G2 D3 | F2 C3 | E2 B2 | A2 A2 |
            F2 C3 | D3 A2 | D3 A2 | E2 B2 | A2 E3 | D3 A2 | E2 B2 | A2 A2`,
   }),
-  leyenda: tune('Gremio de leyenda', {
+  leyenda: tune(t('escena.music.gremio_de_leyenda'), {
     step: 0.27,
     voice: 'laud',
     scale: MIXO_D,
@@ -166,7 +167,7 @@ export const TUNES = {
     bass: `D3 A3 | D3 A2 | G2 D3 | A2 E3 | D3 A3 | D3 A2 | C3 G3 | D3 D3 |
            D3 A3 | C3 G3 | D3 A2 | D3 A3 | D3 A2 | G2 D3 | C3 G3 | D3 D3`,
   }),
-  antorchas: tune('Antorchas en el camino', {
+  antorchas: tune(t('escena.music.antorchas_en_el_camino'), {
     step: 0.3,
     voice: 'flauta',
     scale: PHRYGIAN_D,
@@ -178,7 +179,7 @@ export const TUNES = {
             F4 . . G4 . A4 | Bb4 . A4 G4 . F4 | Eb4 . F4 Eb4 . D4 | D4 . . - . .`,
     bass: 'D2 A2 | Eb2 Bb2 | D2 A2 | D2 A2 | F2 C3 | G2 D3 | Eb2 Bb2 | D2 D2',
   }),
-  armas: tune('¡A las armas!', {
+  armas: tune(t('escena.music.a_las_armas'), {
     step: 0.19,
     voice: 'laud',
     scale: PHRYGIAN_D,
@@ -191,7 +192,7 @@ export const TUNES = {
             G4 . A4 Bb4 . C5 | D5 . C5 Bb4 . A4 | G4 . F4 Eb4 . Eb4 | D4 . . - . -`,
     bass: 'D2 A2 | Eb2 Bb2 | G2 D3 | D2 A2 | G2 D3 | Bb2 F3 | Eb2 Bb2 | D2 D2',
   }),
-  brindis: tune('¡Brindis!', {
+  brindis: tune(t('escena.music.brindis'), {
     step: 0.17,
     voice: 'laud',
     scale: MAJOR_G,
@@ -203,7 +204,7 @@ export const TUNES = {
             G5 . D5 B4 . G4 | C5 . E5 D5 . B4 | A4 B4 C5 D5 E5 F#5 | G5 . . G4 . -`,
     bass: 'G2 D3 | C3 G3 | G2 D3 | D3 A2 | G2 D3 | C3 G2 | D3 A2 | G2 G2',
   }),
-  molino: tune('El molino de la ribera', {
+  molino: tune(t('escena.music.el_molino_de_la'), {
     step: 0.2,
     bar: 8,
     voice: 'laud',
@@ -219,7 +220,7 @@ export const TUNES = {
     bass: `A2 E3 | A2 E3 | G2 D3 | E2 B2 | A2 E3 | C3 G3 | G2 D3 | A2 A2 |
            A2 E3 | G2 D3 | C3 G3 | A2 E3 | A2 E3 | C3 G3 | G2 D3 | A2 A2`,
   }),
-  nana: tune('Nana junto al fuego', {
+  nana: tune(t('escena.music.nana_junto_al_fuego'), {
     step: 0.42,
     voice: 'flauta',
     scale: MAJOR_G,
@@ -235,7 +236,7 @@ export const TUNES = {
     bass: `G2 D3 | D3 A2 | E2 B2 | D3 A2 | G2 D3 | C3 G2 | D3 A2 | G2 G2 |
            G2 D3 | G2 D3 | E2 B2 | C3 G2 | C3 G2 | A2 E3 | D3 A2 | G2 G2`,
   }),
-  herrero: tune('El martillo del herrero', {
+  herrero: tune(t('escena.music.el_martillo_del_herrero'), {
     step: 0.21,
     bar: 8,
     voice: 'laud',
@@ -251,7 +252,7 @@ export const TUNES = {
     bass: `D3 A2 | G2 D3 | D3 A2 | A2 E3 | D3 A2 | G2 D3 | A2 E3 | D3 D3 |
            D3 A2 | E3 B2 | D3 A2 | A2 E3 | D3 A2 | G2 D3 | A2 E3 | D3 D3`,
   }),
-  lluvia: tune('Lluvia en el tejado', {
+  lluvia: tune(t('escena.music.lluvia_en_el_tejado'), {
     step: 0.38,
     voice: 'laud',
     scale: AEOLIAN_E,
@@ -266,7 +267,7 @@ export const TUNES = {
     bass: `E2 B2 | A2 E3 | D3 A2 | B2 F#3 | E2 B2 | G2 D3 | D3 A2 | E2 E2 |
            C3 G2 | G2 D3 | A2 E3 | B2 F#3 | C3 G2 | A2 E3 | B2 F#3 | E2 E2`,
   }),
-  zancos: tune('Los zancos de la feria', {
+  zancos: tune(t('escena.music.los_zancos_de_la'), {
     step: 0.22,
     voice: 'flauta',
     scale: MAJOR_G,
@@ -282,7 +283,7 @@ export const TUNES = {
     bass: `G2 D3 | C3 G2 | D3 A2 | G2 D3 | G2 D3 | C3 G2 | D3 A2 | G2 G2 |
            G2 D3 | C3 G2 | C3 G2 | D3 A2 | G2 D3 | G2 D3 | D3 A2 | G2 G2`,
   }),
-  romance: tune('Romance del caballero', {
+  romance: tune(t('escena.music.romance_del_caballero'), {
     step: 0.33,
     voice: 'violin',
     scale: DORIAN_D,
@@ -298,7 +299,7 @@ export const TUNES = {
     bass: `D3 A2 | F2 C3 | C3 G2 | A2 E3 | D3 A2 | C3 G2 | A2 E3 | D3 D3 |
            D3 A2 | F2 C3 | D3 A2 | A2 E3 | F2 C3 | D3 A2 | C3 G2 | D3 D3`,
   }),
-  patio: tune('Mañana en el patio', {
+  patio: tune(t('escena.music.manana_en_el_patio'), {
     step: 0.24,
     bar: 8,
     voice: 'laud',
@@ -314,7 +315,7 @@ export const TUNES = {
     bass: `F2 C3 | Bb2 F3 | G2 D3 | C3 G2 | F2 C3 | F2 C3 | C3 G2 | F2 F2 |
            F2 C3 | Bb2 F3 | F2 C3 | C3 G2 | F2 C3 | Bb2 F3 | C3 G2 | F2 F2`,
   }),
-  carreta: tune('La carreta del molinero', {
+  carreta: tune(t('escena.music.la_carreta_del_molinero'), {
     step: 0.23,
     voice: 'laud',
     scale: MIXO_A,
@@ -329,7 +330,7 @@ export const TUNES = {
     bass: `A2 E3 | D3 A2 | G2 D3 | A2 E3 | A2 E3 | G2 D3 | E2 B2 | A2 A2 |
            A2 E3 | D3 A2 | A2 E3 | G2 D3 | A2 E3 | D3 A2 | G2 D3 | A2 A2`,
   }),
-  luna: tune('La luna sobre el pozo', {
+  luna: tune(t('escena.music.la_luna_sobre_el'), {
     step: 0.4,
     voice: 'flauta',
     scale: MAJOR_C,

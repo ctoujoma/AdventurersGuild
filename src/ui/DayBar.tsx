@@ -3,6 +3,7 @@ import { type Pace, paceLabel } from '../platform/settings';
 import { help } from './HoldHelp';
 import { Icon } from './icons';
 import { countdown } from './when';
+import { t } from '../textos';
 
 interface Props {
   /** Parte del día que ha pasado (0 por la mañana, 1 de noche). */
@@ -26,9 +27,9 @@ interface Props {
 
 /** Nombre de la hora del día, para el reloj de la barra. */
 export function partName(part: number, dusk: number): string {
-  if (part >= WORK_END) return 'Noche';
-  if (part >= dusk) return 'Anochecer';
-  return part < dusk / 2 ? 'Mañana' : 'Tarde';
+  if (part >= WORK_END) return t('barra.daybar.noche');
+  if (part >= dusk) return t('barra.daybar.anochecer');
+  return part < dusk / 2 ? t('barra.daybar.manana') : t('barra.daybar.tarde');
 }
 
 /**
@@ -53,9 +54,7 @@ export function DayBar(p: Props) {
         <span
           class="clock clock-real"
           aria-label={partName(part, dusk)}
-          {...help(
-            `El reloj del día corre solo y la noche cae sola. Con el juego cerrado la taberna sigue, ${slow} veces más despacio, y al volver te cuenta lo que ha pasado.`,
-          )}
+          {...help(t('barra.daybar.el_reloj_del_dia', { slow }))}
         >
           <Icon name="reloj" size={14} />
           <span class="clock-bar" aria-hidden="true">
@@ -66,11 +65,12 @@ export function DayBar(p: Props) {
       ) : (
         <button
           class="clock"
-          aria-label={`${partName(part, dusk)}. Velocidad ×${paceLabel(p.pace)}: toca para cambiarla`}
+          aria-label={t('barra.daybar.velocidad_toca_para_cambiarla', {
+            part_name: partName(part, dusk),
+            pace_label: paceLabel(p.pace),
+          })}
           data-help={
-            p.real
-              ? 'El reloj del día corre solo. Mientras pagas la deuda puedes acelerarlo: toca para cambiar la velocidad.'
-              : 'El reloj del día: la caja va entregando lo de la taberna hasta el anochecer. Toca para cambiar su velocidad (de ×½ a ×8).'
+            p.real ? t('barra.daybar.el_reloj_del_dia_2') : t('barra.daybar.el_reloj_del_dia_3')
           }
           onClick={p.onPace}
         >
@@ -86,7 +86,7 @@ export function DayBar(p: Props) {
         <button
           class={`btn ${p.rushing ? 'btn-gold' : 'btn-wood'} endday`}
           aria-pressed={!!p.rushing}
-          data-help={`Pasar la noche: el reloj corre ×${NIGHT_RUSH} hasta el amanecer. Si hay asalto, empieza a su ritmo.`}
+          data-help={t('barra.daybar.pasar_la_noche_el', { night_rush: NIGHT_RUSH })}
           onClick={p.onRushNight}
         >
           <Icon name="moon" size={18} />
@@ -95,30 +95,32 @@ export function DayBar(p: Props) {
               ×{NIGHT_RUSH} · {countdown(toDawn)}
             </>
           ) : (
-            <>Pasar la noche</>
+            <>{t('barra.daybar.pasar_la_noche')}</>
           )}
         </button>
       ) : p.real ? (
         <span class="daybar-left" aria-live="off">
           <Icon name={part < dusk ? 'reloj' : 'moon'} size={16} />
-          <span class="daybar-word">{part < dusk ? 'Anochece en' : 'Noche en'}</span>
+          <span class="daybar-word">
+            {part < dusk ? t('barra.daybar.anochece_en') : t('barra.daybar.noche_en')}
+          </span>
           {countdown(part < dusk ? toDusk : toNight)}
         </span>
       ) : p.canClose ? (
         <button
           class="btn btn-gold endday"
-          data-help="Cerrar: cierra la taberna y pasa la noche. Los grupos avanzan y por la mañana llegan los informes."
+          data-help={t('barra.daybar.cerrar_cierra_la_taberna')}
           onClick={p.onEndDay}
         >
-          <Icon name="moon" size={18} /> Cerrar
+          <Icon name="moon" size={18} /> {t('barra.daybar.cerrar')}
         </button>
       ) : (
         <button
           class="btn btn-wood endday"
-          data-help="Anochecer: salta al final del día. La caja entrega lo que queda y ya se puede cerrar."
+          data-help={t('barra.daybar.anochecer_salta_al_final')}
           onClick={p.onDusk}
         >
-          <Icon name="reloj" size={18} /> Anochecer
+          <Icon name="reloj" size={18} /> {t('barra.daybar.anochecer')}
         </button>
       )}
     </div>

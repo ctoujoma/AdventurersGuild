@@ -8,6 +8,7 @@ import { TRADES } from '../../data/workers';
 import { jobRoomName } from '../roomName';
 import { Face } from './CrewList';
 import { dawnIn } from '../when';
+import { t } from '../../textos';
 
 const isHero = (p: Hero | Worker): p is Hero => 'cls' in p;
 
@@ -48,7 +49,12 @@ export function DormList({
   const roomOf = (id: string) => game.building.rooms.find((r) => r.id === plan.get(id));
   const sub = (p: Hero | Worker) =>
     isHero(p)
-      ? `${CLASS_NAMES[p.cls][p.sex]} nv ${p.lvl}${p.status === 'herido' ? ' · herido' : ''}`
+      ? t('paneles.dormlist.clase_nivel', {
+          clase: CLASS_NAMES[p.cls][p.sex],
+          nivel: p.lvl,
+          herido: p.status === 'herido',
+          sexo: p.sex,
+        })
       : TRADES[p.trade].name[p.sex];
   // A quién se puede traer a una cama libre: de otras salas del mismo uso.
   const movers = all.filter(
@@ -57,12 +63,11 @@ export function DormList({
   const chosen = here.find((p) => p.id === sel);
   const others = dormRooms(game, room).filter((r) => r.id !== room.id);
   return (
-    <section class="crew-group" aria-label="Duermen aquí">
+    <section class="crew-group" aria-label={t('paneles.dormlist.duermen_aqui')}>
       <h3 class="crew-h">
-        <span>Duermen aquí</span>
+        <span>{t('paneles.dormlist.duermen_aqui')}</span>
         <span class="row-sub">
-          {here.length + gone.length} de {total}
-          {gone.length ? ` · ${gone.length} sin acostar` : ''}
+          {t('paneles.dormlist.de', { n: here.length + gone.length, total, fuera: gone.length })}
         </span>
       </h3>
       <div class="crew-slots">
@@ -79,7 +84,7 @@ export function DormList({
               <span class="crew-who">
                 <b>{p.name}</b>
                 <small>{sub(p)}</small>
-                {snub && <small class="crew-off">Quiere el ala de veteranos</small>}
+                {snub && <small class="crew-off">{t('paneles.dormlist.quiere_el_ala_de')}</small>}
               </span>
             </button>
           );
@@ -88,7 +93,10 @@ export function DormList({
           <button
             key={h.id}
             class={`crew-slot is-hero ${h.guard ? 'is-guard' : 'is-away'}`}
-            aria-label={`${h.name}, ${h.guard ? 'de guardia' : 'fuera esta noche'}: su cama le espera`}
+            aria-label={t('paneles.dormlist.su_cama_le_espera', {
+              nombre: h.name,
+              guardia: !!h.guard,
+            })}
             onClick={() => onOpen?.(h.id)}
           >
             <Face game={game} id={h.id} />
@@ -97,8 +105,12 @@ export function DormList({
               <small>{sub(h)}</small>
               <small>
                 {h.guard
-                  ? 'De guardia esta noche'
-                  : `Fuera esta noche · ${h.status === 'mision' ? `vuelve ${dawnIn(h.days)}` : 'desaparecido'}`}
+                  ? t('paneles.dormlist.de_guardia_esta_noche')
+                  : t('paneles.dormlist.fuera_esta_noche_2', {
+                      mision: h.status === 'mision',
+                      cuando: dawnIn(h.days),
+                      sexo: h.sex,
+                    })}
               </small>
             </span>
           </button>
@@ -109,22 +121,25 @@ export function DormList({
               key={i}
               class="crew-slot crew-free"
               value=""
-              aria-label="Cama libre: traer a alguien"
+              aria-label={t('paneles.dormlist.cama_libre_traer_a')}
               onChange={(e) => {
                 const v = (e.target as HTMLSelectElement).value;
                 if (v) onAct({ type: 'dorm', who: v, room: room.id });
               }}
             >
-              <option value="">+ Cama libre</option>
+              <option value="">{t('paneles.dormlist.cama_libre_2')}</option>
               {movers.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.name} (en {jobRoomName(game, roomOf(p.id)!).toLowerCase()})
+                  {t('paneles.dormlist.en', {
+                    nombre: p.name,
+                    sala: jobRoomName(game, roomOf(p.id)!).toLowerCase(),
+                  })}
                 </option>
               ))}
             </select>
           ) : (
-            <span key={i} class="crew-slot crew-free" aria-label="Cama libre">
-              Libre
+            <span key={i} class="crew-slot crew-free" aria-label={t('paneles.dormlist.cama_libre')}>
+              {t('paneles.dormlist.libre')}
             </span>
           ),
         )}
@@ -134,7 +149,7 @@ export function DormList({
           {others.length > 0 && (
             <select
               class="job-select"
-              aria-label={`Dónde duerme ${chosen.name}`}
+              aria-label={t('paneles.dormlist.donde_duerme', { nombre: chosen.name })}
               value=""
               onChange={(e) => {
                 const v = (e.target as HTMLSelectElement).value;
@@ -142,7 +157,7 @@ export function DormList({
                 setSel(null);
               }}
             >
-              <option value="">Mandar a dormir a…</option>
+              <option value="">{t('paneles.dormlist.mandar_a_dormir_a')}</option>
               {others.map((r) => {
                 const why = dormIssue(game, chosen.id, r.id);
                 return (
@@ -156,7 +171,7 @@ export function DormList({
           )}
           {isHero(chosen) && onOpen && (
             <button class="btn btn-wood" onClick={() => onOpen(chosen.id)}>
-              Ficha
+              {t('paneles.dormlist.ficha')}
             </button>
           )}
         </div>

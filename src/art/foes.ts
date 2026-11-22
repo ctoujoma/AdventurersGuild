@@ -347,7 +347,7 @@ function troll(rng: Rng): FoeArt {
   );
   return {
     kind: 'grande',
-    what: skin.s === P.steel ? 'trol de piedra' : 'trol',
+    what: skin.s === P.steel ? 'trol_piedra' : 'trol',
     poses,
     foot: TROLL_FOOT - shift,
     chest: 30,

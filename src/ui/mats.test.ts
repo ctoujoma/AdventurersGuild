@@ -7,6 +7,11 @@ describe('materiales en la interfaz', () => {
     expect(chipMat('+2 cuero')).toEqual({ m: 'cuero', n: 2 });
     expect(chipMat('+1 madera buena')).toEqual({ m: 'madera', n: 1 });
     expect(chipMat('+40 monedas')).toBeNull();
+    const m = {
+      k: 'informes.chip_material',
+      p: { n: 3, material: { k: 'materiales.tela.nombre' } },
+    };
+    expect(chipMat(m)).toEqual({ m: 'tela', n: 3 });
     expect(chipMat('+3 reputación')).toBeNull();
   });
 

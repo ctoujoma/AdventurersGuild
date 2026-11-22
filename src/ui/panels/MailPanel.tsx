@@ -1,6 +1,6 @@
 import type { Report } from '../../core/model';
-import { OUTCOME_CLASS } from '../../data/labels';
-import { idText, tx } from '../../textos';
+import { OUTCOME_CLASS, outcomeLabel } from '../../data/labels';
+import { idText, t, tx } from '../../textos';
 
 /** Correo del amanecer: los informes de los grupos que han vuelto, uno por fila. */
 export function MailPanel({
@@ -13,14 +13,13 @@ export function MailPanel({
   /** Marca todo como leído (sale si hay algo sin leer). */
   onReadAll?: () => void;
 }) {
-  if (!reports.length)
-    return <p class="panel-note">Nadie ha vuelto todavía. Los informes llegan aquí al amanecer.</p>;
+  if (!reports.length) return <p class="panel-note">{t('paneles.mail.nadie_ha_vuelto_todavia')}</p>;
   const unread = reports.filter((r) => !r.read).length;
   return (
     <div class="rows">
       {onReadAll && unread > 1 && (
         <button class="btn btn-wood mail-all" onClick={onReadAll}>
-          Leído todo ({unread})
+          {t('paneles.mail.leido_todo', { unread })}
         </button>
       )}
       {reports.map((r) => (
@@ -42,18 +41,20 @@ export function MailPanel({
               class={`outcome-pill outcome-${idText(r.heading).startsWith('Carta') ? 'mid' : OUTCOME_CLASS[r.outcome]}`}
             >
               {idText(r.heading).startsWith('Carta')
-                ? 'Carta'
+                ? t('paneles.mail.carta')
                 : r.raid
                   ? r.raid.won
-                    ? 'Repelido'
-                    : 'Saqueo'
-                  : r.outcome}
+                    ? t('paneles.mail.repelido')
+                    : t('paneles.mail.saqueo')
+                  : outcomeLabel(r.outcome)}
             </span>
-            <small class="row-sub">{r.read ? `día ${r.day}` : 'Nuevo'}</small>
+            <small class="row-sub">
+              {r.read ? t('paneles.mail.dia', { dia: r.day }) : t('paneles.mail.nuevo')}
+            </small>
           </span>
         </button>
       ))}
-      <p class="panel-note">Se guardan los últimos 50 informes.</p>
+      <p class="panel-note">{t('paneles.mail.se_guardan_los_ultimos')}</p>
     </div>
   );
 }

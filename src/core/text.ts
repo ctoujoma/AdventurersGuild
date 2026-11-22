@@ -1,7 +1,4 @@
-/** «Lysa», «Lysa y Maren», «Lysa, Maren y Brom». */
-export function listNames(names: readonly string[]): string {
-  if (names.length <= 1) return names[0] ?? '';
-  return `${names.slice(0, -1).join(', ')} y ${names[names.length - 1]}`;
-}
+import { list } from '../textos';
 
-export const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
+/** «Lysa», «Lysa y Maren», «Lysa, Maren y Brom» (en el idioma de la partida). */
+export const listNames = (names: readonly string[]): string => list(names);
