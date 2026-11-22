@@ -5,11 +5,11 @@ import type { BossKind } from '../data/bosses';
 import { BOSSES } from '../data/bosses';
 import { GLOSSARY } from '../data/glossary';
 import { canVibrate } from '../platform/haptics';
-import type { Settings } from '../platform/settings';
+import { saveSettings, type Settings } from '../platform/settings';
 import { WEATHER_KINDS, WEATHER_LABEL, type WeatherKind } from '../world/weather';
 import { VERSION } from '../version';
 import { Icon } from './icons';
-import { t } from '../textos';
+import { currentLang, LANGS, langName, t } from '../textos';
 
 interface Props {
   settings: Settings;
@@ -125,6 +125,35 @@ export function SettingsMenu({
               </button>
             ))}
           </div>
+          {LANGS.length > 1 && (
+            <>
+              <h4 class="qs-sub">{t('pantallas.settingsmenu.idioma')}</h4>
+              <div
+                class="set-choices"
+                role="radiogroup"
+                aria-label={t('pantallas.settingsmenu.idioma')}
+              >
+                {LANGS.map((l) => (
+                  <button
+                    key={l}
+                    role="radio"
+                    lang={l}
+                    aria-checked={currentLang() === l}
+                    class={`btn ${currentLang() === l ? 'btn-gold' : 'btn-wood'}`}
+                    onClick={() => {
+                      if (l === currentLang()) return;
+                      // Los textos se eligen al arrancar: se guarda y se recarga (la partida se
+                      // guarda sola al salir).
+                      saveSettings({ ...s, lang: l });
+                      location.reload();
+                    }}
+                  >
+                    {langName(l)}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
           <h4 class="qs-sub">{t('pantallas.settingsmenu.lectura')}</h4>
           <label class="set-check">
             <input

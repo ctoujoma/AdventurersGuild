@@ -1,0 +1,85 @@
+oficios:
+  salon:
+    nombre:
+      m: "Waiter"
+      f: "Waitress"
+    trabajo: "Serves in the hall"
+    da: "more gold in the till"
+  cocina:
+    nombre:
+      m: "Cook"
+      f: "Cook"
+    trabajo: "Cooks"
+    da: "the house's food"
+  bodega:
+    nombre:
+      m: "Brewer"
+      f: "Brewer"
+    trabajo: "Brews beer"
+    da: "beer for the hall"
+  enfermeria:
+    nombre:
+      m: "Nurse"
+      f: "Nurse"
+    trabajo: "Tends the wounded"
+    da: "the wounded heal sooner"
+  forja:
+    nombre:
+      m: "Smith"
+      f: "Smith"
+    trabajo: "Works at the forge"
+    da: "makes weapons and armour"
+  sastreria:
+    nombre:
+      m: "Tailor"
+      f: "Tailor"
+    trabajo: "Sews at the tailor's"
+    da: "dresses the heroes and makes boots and cloaks"
+  alquimia:
+    nombre:
+      m: "Alchemist"
+      f: "Alchemist"
+    trabajo: "Works in the alchemy workshop"
+    da: "makes amulets and wands"
+  pintor:
+    nombre:
+      m: "Painter"
+      f: "Painter"
+    trabajo: "Works in the painter's workshop"
+    da: "paints the rooms whatever colour you choose"
+pueblo:
+  cocinera:
+    nombre: "Remedios"
+    papel: "the cook"
+    cita: "Nothing gets thrown out here. Today's leftovers are tomorrow's stew."
+  bardo:
+    nombre: "Tobías"
+    papel: "the bard"
+    cita: "One more song and I'll serve another round. Or the other way round."
+  mozo:
+    nombre: "Nico"
+    papel: "the stable lad"
+    cita: "Barrels weigh less if you don't look at them."
+citas_trabajadores:
+  - "I work sunup to sundown and don't complain. Hardly ever."
+  - "There were eleven of us at home. I can do a bit of everything."
+  - "They threw me out of the roadside inn for turning up early. Odd, right?"
+  - "If there's a bed and a hot meal, I'm staying."
+  - "My mother ran a tavern. Hers was worse than this one."
+  - "I can't fight, but I know what a full barrel weighs."
+  - "I pay my debts by working. Anything to scrub?"
+  - "I was told the food's good here. I've come to check."
+titulo: "{nombre}, {oficio}"
+error:
+  de_guardia: "{heroe} is on guard duty."
+  sin_trabajo: "There's no work in that room."
+  entrenar: "Training is for heroes."
+  lleno: "There are no free posts in that room."
+  no_espera: "No longer waiting."
+  sin_cama: "No beds left: build or expand the staff quarters."
+  basta: "For now the three villagers are enough."
+aviso:
+  se_cansa: "{nombre} got tired of waiting for work and went to another inn."
+  viene: "{quien} comes asking for work (Skill {n})."
+  mana: "{nombre} has got the knack of the job: Skill {n}."
+  voz: "Word has spread: {quien} comes asking for work (Skill {n})."

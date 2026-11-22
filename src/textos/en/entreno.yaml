@@ -1,0 +1,6 @@
+mejorar_sala: "To keep going, the room needs upgrading."
+subir_nivel: "To keep going, they need to level up."
+mas: "{habilidad} +{n}"
+deja: "{heroe} leaves the {sala, minus}: there's no more {atributo} to learn there. {por, select, sala {To keep going, the room needs upgrading.} other {To keep going, they need to level up.}}"
+historial: "Day {dia} · Training: {atributo} {n}"
+sube: "{heroe} has trained: {atributo} {n}{hay, select, si { ({gana})} other {}}."

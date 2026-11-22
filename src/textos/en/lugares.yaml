@@ -1,0 +1,48 @@
+regiones:
+  sierra_parda:
+    nombre: "Sierra Parda"
+  mar_del_poniente:
+    nombre: "Western Sea"
+  las_marismas:
+    nombre: "The Marshes"
+  tierras_del_este:
+    nombre: "Eastern Lands"
+  llanos_del_sur:
+    nombre: "Southern Plains"
+  montes_de_la_niebla:
+    nombre: "Misty Mountains"
+sitios:
+  el_molino: "the mill"
+  el_puente_de_los_ahorcados: "the Hanged Men's Bridge"
+  valdeloro: "Valdeloro"
+  la_casa_del_canal: "the canal house"
+  el_vado: "the ford"
+  la_posada_del_cuervo: "the Crow Inn"
+  los_riscos: "the crags"
+  las_salinas: "the salt flats"
+  hondogris: "Greyhollow"
+  el_bosque_de_sotomuro: "Sotomuro forest"
+  la_mina_vieja: "the old mine"
+  el_cementerio_de_ormaz: "Ormaz cemetery"
+  la_torre_caida: "the fallen tower"
+  el_pantano_de_las_ranas: "the frog marsh"
+  la_ermita: "the hermitage"
+  el_granero_de_los_cardo: "the Cardos' barn"
+  el_meson_de_levante: "the Levante tavern"
+  el_desfiladero_de_las_cabras: "Goat Gorge"
+  el_campamento_de_los_tuertos: "the One-Eyes' camp"
+  la_aldea_de_juncal: "Juncal village"
+  el_islote_del_fraile: "Friar's Islet"
+  la_laguna_negra: "the Black Lagoon"
+  el_paso_del_lobo: "Wolf Pass"
+  el_monasterio_de_penalta: "Peñalta monastery"
+  la_cueva_de_la_sierpe: "the Wyrm's Cave"
+  la_aldea_de_carbonera: "Carbonera village"
+  los_pinares_quemados: "the burnt pinewoods"
+  la_loma_de_ceniza: "Ash Hill"
+  el_priorato_de_sanvela: "Sanvela priory"
+  las_catacumbas_de_sanvela: "the Sanvela catacombs"
+  la_cripta_de_la_reina: "the Queen's Crypt"
+  el_refugio_de_nevaza: "the Nevaza refuge"
+  el_lago_helado: "the Frozen Lake"
+  la_corona_blanca: "the White Crown"

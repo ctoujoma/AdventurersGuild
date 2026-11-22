@@ -1,0 +1,258 @@
+plantillas:
+  Cazar:
+    titulos:
+      - "{amenaza, mayus} at {lugar}"
+      - "The beast of {lugar}"
+      - "Hunt {amenaza}"
+      - "Bounty on {amenaza}"
+      - "Something comes down from the hills"
+    textos:
+      - "Since the new moon, {amenaza} has been coming down to {lugar} and there isn't a hen left alive."
+      - "The locals talk of something “big, stinking and very bad-tempered”. It's {amenaza}, and it roams {lugar}."
+      - "Near {lugar} the shepherds can't sleep a wink. {amenaza, mayus}, on the other hand, sleeps by day, and that's when to go."
+      - "There's a price on the head of {amenaza}, which prowls around {lugar}. Nobody has collected yet."
+      - "Near {lugar} there are tracks the size of a shield. Since then nobody leaves home after supper."
+      - "{amenaza, mayus} has taken two sheep and the dog that guarded them. Near {lugar} they want its hide hung in the square."
+      - "A hunter went after {amenaza} on the way to {lugar}. His boots came back; he didn't."
+      - "Near {lugar} they shut the gates at nightfall because of {amenaza}. The fair goes ahead anyway, but by day."
+    historias:
+      - - "The missing calf"
+        - "For three nights something has prowled near {lugar}. This morning a calf was missing. It's {amenaza}."
+      - - "Hides for the tanner"
+        - "The tanner pays well for the hide of {amenaza}, whole and with no extra holes. It roams {lugar}."
+      - - "Blood in the trough"
+        - "The trough by {lugar} was red this morning. The tracks lead to the hills, and they belong to {amenaza}."
+    amenazas:
+      - "a one-eyed warg"
+      - "a bad-tempered bear"
+      - "a boar the size of a cart"
+      - "a wolf pack"
+      - "a young griffin"
+      - "a bridge troll"
+      - "a brown bear with an arrow stuck in it"
+      - "a pair of wargs"
+      - "a swamp serpent"
+  Escoltar:
+    titulos:
+      - "Escort the wagon to {lugar}"
+      - "The road to {lugar}"
+      - "A cart, three trunks and {lugar}"
+      - "To {lugar} without a scratch"
+    textos:
+      - "A load has to get to {lugar}. The last two carts never arrived."
+      - "A merchant in a hurry, with little faith in the roads, wants to reach {lugar} in one piece."
+      - "On the road to {lugar} carts get raided, and they say it's {amenaza}. The load has to get through."
+      - "Three carts of salt leave for {lugar} at dawn. Last year they were lost because of {amenaza}."
+      - "A rich pilgrim wants to go and pray at {lugar}. He prays a lot, but trusts swords more."
+    historias:
+      - - "The tax collector"
+        - "A tax collector has to reach {lugar} with a full purse. Nobody on the road wants him alive."
+      - - "A wedding at {lugar}"
+        - "A bride travels to {lugar} with her trousseau and an aunt who won't shut up. The second can't be helped."
+      - - "A coffin bound for {lugar}"
+        - "A coffin has to be taken to {lugar} without opening it. Whoever's paying insists a lot on the not opening it."
+      - - "The bishop's wine"
+        - "Twelve casks for the bishop, who's waiting at {lugar}. If one goes missing, it'll show in the sermon."
+    amenazas:
+      - "some bandits"
+      - "some highwaymen"
+      - "the Cardo brothers"
+      - "a goblin band"
+      - "some deserters"
+      - "an orc war party"
+      - "some toll collectors nobody appointed"
+      - "the Black Hand lot"
+  Explorar:
+    titulos:
+      - "The ruins of {lugar}"
+      - "What lies beneath {lugar}"
+      - "Map {lugar}"
+      - "Beyond {lugar}"
+    textos:
+      - "Nobody has come back from {lugar} with a map. Some have come back without boots."
+      - "A scholar pays to know what's left at {lugar}. He, of course, stays at home."
+      - "Under {lugar} there are tunnels, and in the tunnels, they say, {amenaza}."
+      - "The count wants to know if a road can be opened through {lugar}. If it can't, he wants to know that too, but pays less."
+      - "The children swear there's a door in the rock near {lugar}. The grown-ups say no, but they don't go near."
+    historias:
+      - - "The crack"
+        - "After the last tremor a crack opened near {lugar}. Hot air comes up from the bottom; they say down there is {amenaza}."
+      - - "Half a map"
+        - "An old map marks a cross at {lugar}. The man who sold it swore it was genuine and left in a great hurry."
+      - - "The dry well"
+        - "A well by {lugar} dried up overnight. The well-digger went down with a candle and saw a staircase nobody remembered."
+      - - "The sunken tower"
+        - "With the drought, a tower has surfaced in the lagoon near {lugar}. A hundred years ago it wasn't on any map."
+    amenazas:
+      - "spiders"
+      - "something that crawls"
+      - "something that mimics voices"
+      - "an ancient guardian"
+      - "bats the size of dogs"
+      - "a hermit who doesn't want visitors"
+      - "dizzying fumes"
+      - "a sealed crypt"
+  Recuperar:
+    titulos:
+      - "What they left at {lugar}"
+      - "A discreet job at {lugar}"
+      - "Get it out of {lugar}"
+    textos:
+      - "The item is at {lugar}, guarded by {amenaza}. The client swears it belongs to him."
+      - "Near {lugar}, in a locked house, there's a ledger someone would rather see burned. The client would rather have it in hand."
+      - "Something that isn't yours is waiting at {lugar}, watched over by {amenaza}. The client gives no more details."
+    historias:
+      - - "A box at {lugar}"
+        - "A box has to be taken out of an empty house at {lugar} without asking what's inside. Half up front."
+      - - "Grandmother's ring"
+        - "A family heirloom has to be recovered from {lugar}. The family isn't very trustworthy."
+      - - "The notary's seal"
+        - "The notary's seal was stolen, and the thief is hiding at {lugar}. No seal, no inheritances, and no inheritances means lots of angry cousins."
+      - - "The widow's jewels"
+        - "A widow wants her jewels back before they're sold at the fair. They're at {lugar}; she knows who has them, but won't say it out loud."
+      - - "The stolen bell"
+        - "The hermitage bell was taken on a moonless night. It weighs as much as an ox, so it can't have got past {lugar}."
+      - - "What the river left at {lugar}"
+        - "The flood swept a chest down to {lugar}. The owner wants it back and won't ask how."
+    amenazas:
+      - "some bored guards"
+      - "some ancient traps"
+      - "a huge dog"
+      - "a dwarven lock"
+      - "a thief very jealous of his things"
+      - "a family of bears"
+      - "some smugglers"
+      - "a cat that isn't just a cat"
+  Investigar:
+    titulos:
+      - "What rings at {lugar}"
+      - "The ghost of {lugar}"
+      - "Something odd at {lugar}"
+      - "What's going on at {lugar}"
+    textos:
+      - "For a week now bells have been ringing at {lugar}. There are no bells at {lugar}."
+      - "“It's not that he's scary, it's that he doesn't pay.” An innkeeper near {lugar} has a dead guest."
+      - "Near {lugar} they buried a smith on Tuesday. On Thursday he was back at his forge. They say it's {amenaza}."
+      - "A well by {lugar} sings at night, always the same song. Nobody knows it, but everyone knows the words."
+    historias:
+      - - "Strange lights at {lugar}"
+        - "At night green lights are seen over {lugar}. The priest says it's {amenaza}."
+      - - "The cows of {lugar}"
+        - "Near {lugar} the cows give sour milk and look at you funny. The vet says it's not his business."
+      - - "The girl who knows things"
+        - "Near {lugar} there's a girl who says what will happen tomorrow. Yesterday she was right. The mayor is very nervous."
+      - - "Missing at {lugar}"
+        - "Three villagers have vanished in a month. They had all gone to fetch water at {lugar}."
+    amenazas:
+      - "a wraith"
+      - "a fairground warlock"
+      - "an old curse"
+      - "a spirit with unfinished business"
+      - "a swamp witch"
+      - "a spiteful imp"
+      - "a cult of amateurs"
+      - "something that lives in mirrors"
+  Limpiar:
+    titulos:
+      - "Clear out {lugar}"
+      - "Plague at {lugar}"
+      - "Vermin at {lugar}"
+    textos:
+      - "There's {amenaza} at {lugar}, and the fair is in a week."
+      - "A family came back from the fair and found {amenaza} at home, near {lugar}. They don't intend to move."
+      - "At {lugar} there's {amenaza}. It smells worse than usual, which is saying something."
+    historias:
+      - - "Rats at {lugar}"
+        - "“They're rats, but big ones. Very big. Well, one.” It's at {lugar}."
+      - - "The alchemist's cellar"
+        - "The deceased kept “alchemy things” at {lugar}. Since the funeral, something moves down there."
+      - - "The locked cellar"
+        - "A wine cellar by {lugar} has been locked for a month. The wine is still inside, and so is {amenaza}."
+      - - "The abandoned mill"
+        - "Something has nested in an old mill by {lugar}. The miller no longer grinds; now he only curses."
+      - - "The cemetery won't rest"
+        - "The dead in the cemetery by {lugar} won't keep still. The gravedigger asks for help and a new shovel."
+    amenazas:
+      - "a giant rat"
+      - "acid slugs"
+      - "a kobold nest"
+      - "a hungry slime"
+      - "giant wasps"
+      - "skeletons that won't keep still"
+      - "a swarm of bats"
+      - "goblins who've moved in"
+clientes:
+  ilario:
+    etiqueta: "Ilario, miller"
+    prosa: "Ilario, the miller,"
+  mercaderes:
+    etiqueta: "Merchants' Guild"
+    prosa: "the Merchants' Guild"
+  odile:
+    etiqueta: "Sister Odile, temple"
+    prosa: "Sister Odile, from the temple,"
+  berta:
+    etiqueta: "Berta, innkeeper"
+    prosa: "Berta, the innkeeper,"
+  alcaldia_sotomuro:
+    etiqueta: "Sotomuro town hall"
+    prosa: "the Sotomuro town hall"
+  viuda_arnau:
+    etiqueta: "Arnau's widow"
+    prosa: "Arnau's widow"
+  mayordomo:
+    etiqueta: "The count's steward"
+    prosa: "the count's steward"
+  salinas_ormaz:
+    etiqueta: "Ormaz salt works"
+    prosa: "the foreman of the Ormaz salt works"
+  quirico:
+    etiqueta: "Master Quirico, scholar"
+    prosa: "Master Quirico, the scholar,"
+  pastores:
+    etiqueta: "The valley shepherds"
+    prosa: "the head of the valley shepherds"
+  bartolo:
+    etiqueta: "Bartolo the smith"
+    prosa: "Bartolo the smith"
+  urraca:
+    etiqueta: "Lady Urraca"
+  desconocido:
+    etiqueta: "Stranger"
+    prosa: "the stranger"
+  corvo:
+    etiqueta: "A certain Corvo"
+    prosa: "a certain Corvo"
+  voz_cortina:
+    etiqueta: "A voice behind the curtain"
+    prosa: "the voice behind the curtain"
+  alcaldia_hondogris:
+    etiqueta: "Greyhollow town hall"
+    prosa: "the Greyhollow town hall"
+  casa_ferran:
+    etiqueta: "House Ferrán, salt makers"
+    prosa: "House Ferrán, the salt makers,"
+  cofradia_juncal:
+    etiqueta: "Juncal fishermen's guild"
+    prosa: "the Juncal fishermen's guild"
+  abad_lope:
+    etiqueta: "Abbot Lope, Peñalta monastery"
+    prosa: "Abbot Lope, from Peñalta monastery,"
+  concejo_carbonera:
+    etiqueta: "Carbonera council"
+    prosa: "the Carbonera council"
+  prior_anselmo:
+    etiqueta: "Prior Anselmo of Sanvela"
+    prosa: "Prior Anselmo of Sanvela"
+  tres_pueblos:
+    etiqueta: "The three northern villages"
+    prosa: "the spokesman of the three northern villages"
+  gremio:
+    etiqueta: "The guild itself"
+    prosa: "the guild itself"
+giros:
+  - "What they were looking for had company."
+  - "The client forgot to mention the others."
+  - "On the way, something nobody had mentioned blocked their path."
+  - "Someone else wanted the same thing, and got there first."
+  - "The threat was twice as big as promised."

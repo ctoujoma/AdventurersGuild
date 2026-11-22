@@ -93,6 +93,7 @@ const scan = () => {
 for (const size of SIZES) {
   const [W, H] = size.split('x').map(Number);
   const ctx = await browser.newContext({
+    locale: 'es-ES',
     viewport: { width: W, height: H },
     hasTouch: W < 1024 || H < 500,
     isMobile: W < 1024 || H < 500,

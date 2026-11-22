@@ -1,4 +1,4 @@
-import { TIER_COLOR_NAMES, tierOf } from '../art/tiers';
+import { tierOf } from '../art/tiers';
 import type { Item, QuestType, Rarity, TrophyIcon } from '../core/model';
 import { list, msg, t, tl, tx, type Txt } from '../textos';
 
@@ -371,7 +371,7 @@ export function rarityList(): string {
     r
       ? t('objetos.rareza_color', {
           rareza: n.toLowerCase(),
-          color: TIER_COLOR_NAMES[tierOf(r as Rarity)],
+          color: tl('objetos.colores')[tierOf(r as Rarity)],
         })
       : n.toLowerCase(),
   );

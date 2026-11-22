@@ -211,6 +211,8 @@ settingsmenu:
   cerrar: "Cerrar"
   a_tu_gusto: "A tu gusto"
   sonido: "Sonido"
+  # Título del selector de idioma (cambiarlo recarga el juego).
+  idioma: "Idioma"
   sonido_activado: "Sonido activado"
   musica: "Música"
   efectos: "Efectos"

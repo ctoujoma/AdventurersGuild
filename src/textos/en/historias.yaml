@@ -1,0 +1,197 @@
+historias:
+  hondogris:
+    nombre: "The Shadow of Greyhollow"
+    intro: "Something comes down from the mines at night and carries off the goats. Last week it took a shepherd. The mayor of Greyhollow pays well to whoever sorts it out, and doesn't care how."
+    steps:
+      rumores_en_la_posada:
+        titulo: "Rumours at the inn"
+        texto: "The muleteers who stop at the Crow Inn saw something huge crossing towards the sierra. Get them to tell it in detail."
+      el_mapa_del_capataz:
+        titulo: "The foreman's map"
+        texto: "The mine foreman left a map of the tunnels as a pledge at the Greyhollow canteen. The barkeep won't let it go."
+      las_galerias_de_la_mina_vieja:
+        titulo: "The tunnels of the old mine"
+        texto: "Map in hand, go down into the old mine and find the lair."
+      la_bestia_de_hondogris:
+        titulo: "The Beast of Greyhollow"
+        texto: "The tracks from the lair go down to the ford every night to drink. Wait for it there, and better with good weapons."
+    ending: "The Beast of Greyhollow will never come down from the mines again. The village has named an alley after the guild, since they don't have streets to spare."
+    reward:
+      trophy:
+        nombre: "Head of the Beast of Greyhollow"
+        desc: "It takes up half a wall."
+  ormaz:
+    nombre: "The Cult of Ormaz"
+    intro: "In Ormaz cemetery, graves are turning up opened from the inside. Sister Odile suspects a cult and wants it ended before the new moon."
+    steps:
+      la_testigo_de_la_ermita:
+        titulo: "The witness at the hermitage"
+        texto: "A novice saw the hooded figures open the graves and the cult knows it. She must be taken to the hermitage safe and sound."
+      velas_negras_en_el_granero:
+        titulo: "Black candles in the barn"
+        texto: "The novice says the hooded ones keep shovels and black candles in the Cardos' barn. Spend the night there and follow them."
+      la_cripta_de_ormaz:
+        titulo: "The Ormaz crypt"
+        texto: "The hooded figures led to a crypt under the cemetery chapel that appears on no plan. That's where they meet."
+    ending: "The crypt is sealed and the cult scattered. Sister Odile came to bless the door of El Jarro Partido, and had a glass of wine while she was at it."
+    reward:
+      trophy:
+        nombre: "High priest's mask"
+        desc: "Nobody wants to put it on."
+  caravana:
+    nombre: "The Salt Caravan"
+    intro: "The Ferráns' salt caravan never reached Levante: no carts, no mules, not a single carter. The family will pay whatever it takes to know what happened, and more if the salt comes back."
+    steps:
+      el_ultimo_meson:
+        titulo: "The last tavern"
+        texto: "The caravan slept at the Levante tavern and left before dawn. The landlord swears he saw nothing, but he has fresh salt in his pantry."
+      rodadas_en_el_desfiladero:
+        titulo: "Wheel ruts in the gorge"
+        texto: "The carts' ruts leave the road and head into Goat Gorge, where nobody with any sense goes."
+      el_campamento_de_los_tuertos:
+        titulo: "The One-Eyes' camp"
+        texto: "The One-Eyes gang has the salt, the mules and the carters. Bring it all back, starting with the carters."
+    ending: "The carters are home and the salt is in its warehouse. The Ferráns have sent the guild a sack of salt, always handy in the kitchen, and a purse that's handier still."
+    reward:
+      trophy:
+        nombre: "The One-Eyes' banner"
+        desc: "A crossed-out eye on a black field."
+  canal:
+    nombre: "Smuggling on the Canal"
+    intro: "Whole barges vanish between the mill and the canal house. The Merchants' Guild suspects smugglers with powerful friends and would rather an outsider poke their nose in."
+    steps:
+      lo_que_se_oye_en_el_molino:
+        titulo: "What's heard at the mill"
+        texto: "Loaded barges leave the mill and some never arrive. The miller sees them all go by and knows more than he lets on."
+      el_cargamento_senuelo:
+        titulo: "The decoy cargo"
+        texto: "A fake cargo, in plain sight, from the mill to the canal house, where the guards wear new boots every month. If they bite, we'll know who they are."
+      el_escondite_del_pantano:
+        titulo: "The marsh hideout"
+        texto: "The smugglers keep the loot in the marsh. Time to go and get it, mud up to the eyebrows."
+    ending: "The barges reach their destination again and the Merchants' Guild pays what it promised without haggling, which is saying a lot."
+    reward: {}
+  torre:
+    nombre: "Secrets of the Fallen Tower"
+    intro: "Master Quirico swears the fallen tower was the observatory of a wizard who mapped the whole county. If you find his maps, he'll let you copy them, and pay well besides."
+    steps:
+      el_camino_de_los_riscos:
+        titulo: "The path through the crags"
+        texto: "To reach the tower you have to cross the crags along a path that no longer exists."
+      el_diario_del_astronomo:
+        titulo: "The astronomer's diary"
+        texto: "What's left of the library should hold his diary, unless the rats have eaten it."
+      el_sotano_de_la_torre:
+        titulo: "The tower cellar"
+        texto: "The diary talks of a cellar and of “those who guard the maps”. It doesn't sound good."
+    ending: "The astronomer's maps cover every corner of the county. There's no fog left on the attic map, and Master Quirico won't leave them even to eat."
+    reward: {}
+  ahogado:
+    nombre: "The Drowned King"
+    intro: "In Juncal the nets come up full of bones and at midnight a bell rings under the Black Lagoon. The fishermen say the king who drowned there a hundred years ago has come back to claim his kingdom, and he's starting with them."
+    steps:
+      redes_llenas_de_huesos:
+        titulo: "Nets full of bones"
+        texto: "The Juncal fishermen haul up bones in their nets and nobody wants to go out fishing. Find out where they come from."
+      la_campana_del_fraile:
+        titulo: "The Friar's bell"
+        texto: "The king's crown was buried in the chapel on Friar's Islet. Someone has opened the tomb, and the bell is gone from its tower."
+      el_rey_ahogado:
+        titulo: "The Drowned King"
+        texto: "The bell rings every midnight at the bottom of the Black Lagoon. There the king waits, with his crown and his drowned. Send him back to the depths."
+    ending: "The Black Lagoon is calm and in Juncal the nets bring up fish again, which smell worse than bones but sell better. The Friar's bell rings once more in its tower."
+    reward:
+      trophy:
+        nombre: "The Drowned King's anchor"
+        desc: "It drips even when it's sunny."
+  sierpe:
+    nombre: "The Wyrm of Sierra Parda"
+    intro: "The pastures of Sierra Parda are burning and whole flocks are missing. Abbot Lope, of Peñalta monastery, says it's a wyrm: it's in his books and books don't lie. The shepherd who saw it says nothing anymore; he's moved to the plains."
+    steps:
+      pastos_quemados:
+        titulo: "Burnt pastures"
+        texto: "At Wolf Pass there are pastures burnt in circles and sheep bones picked clean as plates. Take a close look and report it slowly."
+      el_bestiario_del_abad:
+        titulo: "The abbot's bestiary"
+        texto: "The abbot's bestiary explains how to kill a wyrm, but the copyist bringing it won't go up to Peñalta monastery alone."
+      la_sierpe_de_sierra_parda:
+        titulo: "The Wyrm of Sierra Parda"
+        texto: "According to the bestiary, the wyrm sleeps in its cave with a full belly. Go in with shields, water and plenty of courage."
+    ending: "The Wyrm of Sierra Parda won't burn any more pastures. Abbot Lope has added a page to his bestiary with the guild's name, and the shepherds are going back up the mountain."
+    reward:
+      trophy:
+        nombre: "Wyrm's head"
+        desc: "Still smells of smoke."
+  ceniza:
+    nombre: "The Ash Boar"
+    intro: "The western pinewoods burn every full moon and in Carbonera they say it's not the fire: it's a boar grey as ash, big as a cart, running ahead of the flames. The council has gathered all it has so someone stops it before the village burns."
+    steps:
+      huellas_en_la_ceniza:
+        titulo: "Tracks in the ash"
+        texto: "Nobody sleeps in Carbonera. The charcoal burners have seen tracks the size of a shield around the kilns. Get them to tell everything, even if they tremble."
+      los_pinares_quemados:
+        titulo: "The burnt pinewoods"
+        texto: "The tracks vanish into the burnt pinewoods, where the smoke never clears. Find the den without getting lost or choking."
+      el_jabali_de_ceniza:
+        titulo: "The Ash Boar"
+        texto: "The boar sleeps on Ash Hill, on the embers of what it burned. Go up with water, good hides and a sharp sword."
+    ending: "The Ash Boar will never again run ahead of the fire. In Carbonera they've lit the kilns again, and this time they only smoke as they should."
+    reward:
+      trophy:
+        nombre: "Ash Boar tusks"
+        desc: "Still warm."
+  sanvela:
+    nombre: "The Crypt Queen"
+    intro: "Beneath Sanvela priory sleeps a queen nobody remembers. Someone has woken her: the monks hear footsteps in the catacombs and the dead in the cemetery aren't where they were left. Prior Anselmo asks the most famous guild in the county to go down after her."
+    steps:
+      los_monjes_que_no_duermen:
+        titulo: "The sleepless monks"
+        texto: "The Sanvela monks want to get the priory's books out before whatever is below comes up. Escort them to the road with the books, and their heads, in place."
+      las_catacumbas_de_sanvela:
+        titulo: "The Sanvela catacombs"
+        texto: "The catacombs are full of dead that rise. Clear a way to the crypt door, and don't let it close behind you."
+      la_reina_de_la_cripta:
+        titulo: "The Crypt Queen"
+        texto: "The Queen waits on her throne with her court of bones. Send her back to her slumber, for good."
+    ending: "The Crypt Queen sleeps again, and this time with the door bricked up. Prior Anselmo has had the guild's crest carved into the stone, in case anyone is ever tempted again."
+    reward:
+      trophy:
+        nombre: "Crown of the Crypt Queen"
+        desc: "Heavy as a gravestone."
+  corona:
+    nombre: "The Dragon of the White Crown"
+    intro: "From the peak of the White Crown comes a wind that freezes the rivers in summer. The Nevaza shepherds have seen a white dragon over the glacier, and the three northern villages have agreed for the first time in a hundred years: send the legendary guild."
+    steps:
+      el_refugio_de_nevaza:
+        titulo: "The Nevaza refuge"
+        texto: "The Nevaza guide is the only one who knows the pass, but won't go up alone after what he saw. Take him to the refuge, waist-deep in snow."
+      el_lago_helado:
+        titulo: "The Frozen Lake"
+        texto: "At the foot of the glacier, the Frozen Lake keeps those who climbed before in its ice. Cross it without joining them."
+      la_dragona_de_la_corona_blanca:
+        titulo: "The Dragon of the White Crown"
+        texto: "The dragon sleeps on the summit, coiled over a centuries-old hoard. Her breath freezes the blood. It's the hardest thing ever asked on the board."
+    ending: "The Dragon of the White Crown has fallen and the northern rivers flow again. The three villages have made a song with the guild's name, and it's sung in every tavern. Even yours."
+    reward:
+      trophy:
+        nombre: "White dragon's head"
+        desc: "It frosts the wall."
+carta:
+  titulo: "Letter from {cliente}"
+  primer_paso: "First step on the board: “{titulo}”."
+  chip_pasos: "{n} linked quests"
+  chip_premio: "Legendary final reward"
+  aviso: "Letter from {cliente}: “{historia}”, a story across several quests."
+paso:
+  torcida: "The story has gone wrong: you'll have to try again, and now it'll be harder."
+  chip_complica: "“{historia}” gets complicated"
+  se_tuerce: "“{historia}” goes wrong: “{titulo}” returns to the board, harder."
+  chip_avance: "“{historia}” {n}/{de}"
+  avanza: "“{historia}” moves on: on the board, “{titulo}”."
+final:
+  planos: "And as a keepsake, some plans: you now know how to make {receta}."
+  titulo: "Story complete"
+  chip_oro: "+{n} gold from the client"
+  chip_legendario: "Legendary: {objeto}"
+  chip_mapa: "Full map of the county"
+  aviso: "“{historia}” complete! {cliente} pays and spreads word of the feat."

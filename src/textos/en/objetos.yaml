@@ -1,0 +1,187 @@
+equipo:
+  espada_oxidada:
+    nombre: "Rusty sword"
+    desc: "With a good clean, it might cut something."
+  ganzuas_de_alambre:
+    nombre: "Wire lockpicks"
+    desc: "Bent by hand. They open almost anything, given time."
+  botas_remendadas:
+    nombre: "Patched boots"
+    desc: "More patches than leather, but they keep the water out."
+  talisman_de_ajo:
+    nombre: "Garlic talisman"
+    desc: "Wards off spirits. And friends."
+  coraza_abollada:
+    nombre: "Dented breastplate"
+    desc: "Full of dents, but it still stops blows."
+  espada_de_soldado:
+    nombre: "Soldier's sword"
+    desc: "The kind the army hands out. Good steel, no frills."
+  ganzuas_de_laton:
+    nombre: "Brass lockpicks"
+    desc: "They don't bend at the first try. That's something."
+  botas_de_caminante:
+    nombre: "Walker's boots"
+    desc: "Double soles and laces that don't come undone."
+  colgante_de_cuarzo:
+    nombre: "Quartz pendant"
+    desc: "It clouds over when something strange is near."
+  cota_de_anillas:
+    nombre: "Ring mail"
+    desc: "It jingles as you walk, but it stops a slash."
+  vara_de_avellano:
+    nombre: "Hazel staff"
+    desc: "Straight and light. Some apprentice carved runes on it with a knife."
+  hacha_de_lenador_enano:
+    nombre: "Dwarven woodcutter's axe"
+    desc: "It's heavy, but splits a log in one blow."
+  ganzuas_finas:
+    nombre: "Fine lockpicks"
+    desc: "Velvet case. Someone will miss them."
+  capa_de_explorador:
+    nombre: "Scout's cloak"
+    desc: "Brownish green. Lying in the hills, not even your mother would spot you."
+  amuleto_de_hueso:
+    nombre: "Bone amulet"
+    desc: "Smells of smoke and something else. Bad luck keeps away."
+  escudo_con_blason:
+    nombre: "Emblazoned shield"
+    desc: "Bears the arms of a noble house that died out years ago."
+  varita_de_serbal:
+    nombre: "Rowan wand"
+    desc: "Trembles a little when magic is near."
+  mandoble_de_hierronegro:
+    nombre: "Blackiron greatsword"
+    desc: "Forged at night, in a smithy that no longer exists."
+  hacha_de_guerra_runica:
+    nombre: "Runic war axe"
+    desc: "The runes on the blade light up when it bites."
+  ganzuas_de_sombra:
+    nombre: "Shadow lockpicks"
+    desc: "Nobody hears a door open with them."
+  amuleto_del_vigia:
+    nombre: "Watcher's amulet"
+    desc: "A stone eye that never blinks."
+  escudo_de_la_torre:
+    nombre: "Tower shield"
+    desc: "Bears the notches of a hundred sieges."
+  baculo_de_ceniza:
+    nombre: "Ash staff"
+    desc: "Smells of bonfire though it has never burned."
+  hoja_de_vadoverde:
+    nombre: "Blade of Greenford"
+    desc: "Made for a king who died before using it. It whistles as it cuts."
+  capa_elfica:
+    nombre: "Elven cloak"
+    desc: "Whoever wears it makes no noise and leaves no trace."
+  varita_de_la_abuela_tormenta:
+    nombre: "Granny Storm's wand"
+    desc: "Smells of rain. Sometimes it thunders inside your pocket."
+  botas_de_siete_leguas:
+    nombre: "Seven-league boots"
+    desc: "From a carter of the Ferrán family. With them roads get shorter, or so it seems."
+  corona_del_rey_ahogado:
+    nombre: "Crown of the Drowned King"
+    desc: "Green with algae and cold as the lagoon's bottom. Whoever wears it doesn't fear the dead."
+  coraza_de_escamas_de_sierpe:
+    nombre: "Wyrmscale breastplate"
+    desc: "Made from the scales of the Wyrm of Sierra Parda. It won't burn, even on embers."
+  capa_de_piel_de_ceniza:
+    nombre: "Ashhide cloak"
+    desc: "From the Ash Boar. Smells of smoke and keeps out both cold and arrows."
+  cetro_de_la_reina:
+    nombre: "The Queen's Sceptre"
+    desc: "Cold to the touch. The dead who hear it strike the ground lie back down."
+  escudo_de_escama_blanca:
+    nombre: "White Scale Shield"
+    desc: "A single scale from the Dragon of the White Crown, with a handle. Neither fire nor ice can notch it."
+tesoros:
+  colmillos_de_huargo:
+    nombre: "Warg fangs"
+    desc: "The potion shop would buy them."
+  llave_de_hierro_negro:
+    nombre: "Black iron key"
+    desc: "It opens no door in the county. It's been tried."
+  mapa_a_medio_quemar:
+    nombre: "Half-burnt map"
+    desc: "Missing precisely the important part."
+  reliquia_sin_nombre:
+    nombre: "Nameless relic"
+    desc: "It stays warm even after a night in the open."
+  bolsa_de_gemas_turbias:
+    nombre: "Bag of cloudy gems"
+    desc: "They shine less than they promise."
+  caliz_de_plata:
+    nombre: "Silver chalice"
+    desc: "With a monastery's crest."
+rarezas:
+  - "Common"
+  - "Good"
+  - "Rare"
+  - "Epic"
+  - "Legendary"
+efectos:
+  guard: "The wearer takes half the wounds"
+  luck: "Rerolls one failed roll per quest"
+  ward: "Cancels the party's jinx"
+  ambush: "Dodges half the ambushes"
+trofeos:
+  Cazar:
+    cabeza_de_huargo:
+      nombre: "Warg head"
+      desc: "Still baring its teeth."
+    colmillos_de_basilisco:
+      nombre: "Basilisk fangs"
+      desc: "Nobody wants to look at them straight on."
+    cabeza_de_jabali_negro:
+      nombre: "Black boar head"
+      desc: "They say it knocked down a mill."
+  Limpiar:
+    estandarte_orco:
+      nombre: "Orc banner"
+      desc: "Smells the same as the day it was brought in."
+    calavera_del_rey_de_las_ratas:
+      nombre: "Rat King's skull"
+      desc: "It wears a tiny crown."
+  Explorar:
+    idolo_de_jade:
+      nombre: "Jade idol"
+      desc: "Its eyes follow whoever walks by."
+    calavera_con_runas:
+      nombre: "Runed skull"
+      desc: "The runes glow when it rains."
+  Investigar:
+    mascara_del_culto:
+      nombre: "Cult mask"
+      desc: "It has a smile nobody likes."
+    estandarte_de_la_hermandad:
+      nombre: "Brotherhood banner"
+      desc: "There's nobody left of the brotherhood."
+  Recuperar:
+    idolo_del_templo_hundido:
+      nombre: "Sunken temple idol"
+      desc: "Heavier than it looks."
+    mascara_del_ladron_sin_rostro:
+      nombre: "Mask of the Faceless Thief"
+      desc: "It's warm on the inside."
+  Escoltar:
+    estandarte_de_los_bandidos:
+      nombre: "Bandit banner"
+      desc: "Captured on the king's road."
+    colmillos_del_lobo_blanco:
+      nombre: "White wolf fangs"
+      desc: "It attacked the caravan and lost."
+colores:
+  - "grey"
+  - "green"
+  - "blue"
+  - "purple"
+  - "gold"
+rareza_color: "{rareza} ({color})"
+con_mejora: "{nombre} +{mas}"
+bono: "+{n} {habilidad}"
+solo_venta: "Only worth what you can get for it"
+ranuras:
+  arma: "Weapon"
+  cuerpo: "Body"
+  complemento: "Accessory"

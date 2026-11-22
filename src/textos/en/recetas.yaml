@@ -1,0 +1,155 @@
+taller:
+  forja: "the forge"
+  sastreria: "the tailor's"
+  alquimia: "the alchemy workshop"
+recetas:
+  espada:
+    nombre: "Sword"
+    one: "a sword"
+    common:
+      nombre: "House sword"
+      desc: "Fresh off the guild's anvil. Simple, but it cuts."
+    good:
+      nombre: "Well-tempered sword"
+      desc: "The smith gave it a fine temper. It sings when drawn."
+    many: "swords"
+  coraza:
+    nombre: "Breastplate"
+    one: "a breastplate"
+    common:
+      nombre: "House breastplate"
+      desc: "Thick plate and new straps. Heavy, but it stops blows."
+    good:
+      nombre: "Riveted breastplate"
+      desc: "Every rivet in its place. Whoever wears it stands without fear."
+    many: "breastplates"
+  ganzuas:
+    nombre: "Lockpicks"
+    one: "a set of lockpicks"
+    many: "lockpicks"
+    common:
+      nombre: "House lockpicks"
+      desc: "Good wire, well bent. They open the usual."
+    good:
+      nombre: "Fine steel lockpicks"
+      desc: "So fine you can hear the locks think."
+  hacha:
+    nombre: "Axe"
+    one: "an axe"
+    common:
+      nombre: "House axe"
+      desc: "Copied from a dwarven axe. Not as good, but close."
+    good:
+      nombre: "Double-bladed axe"
+      desc: "Two edges and a balance that's a joy. Splits shields."
+    many: "axes"
+  escudo:
+    nombre: "Shield"
+    one: "a shield"
+    common:
+      nombre: "House shield"
+      desc: "Wood with iron rims and the guild's crest painted on."
+    good:
+      nombre: "Reinforced shield"
+      desc: "With iron bosses. More than one arrow has stuck there."
+    many: "shields"
+  botas:
+    nombre: "Boots"
+    one: "a pair of boots"
+    common:
+      nombre: "House boots"
+      desc: "Tanned leather and double soles. They handle the mud."
+    good:
+      nombre: "High boots"
+      desc: "Made to measure. You can walk a whole day in them without a blister."
+    many: "boots"
+  capa:
+    nombre: "Cloak"
+    one: "a cloak"
+    common:
+      nombre: "Travelling cloak"
+      desc: "Thick hooded wool. Keeps out the cold and the rain."
+    good:
+      nombre: "Waxed cloak"
+      desc: "The colour of the hills. Whoever wears it vanishes among the trees."
+    many: "cloaks"
+  amuleto:
+    nombre: "Amulet"
+    one: "an amulet"
+    common:
+      nombre: "House amulet"
+      desc: "A stone with a hole and some herbs. It does something."
+    good:
+      nombre: "Blessed amulet"
+      desc: "It spent three nights in the chapel. Bad omens keep away."
+    many: "amulets"
+  varita:
+    nombre: "Wand"
+    one: "a wand"
+    common:
+      nombre: "Hazel wand"
+      desc: "Straight, with its rune. It sparks a little."
+    good:
+      nombre: "Carved ash wand"
+      desc: "Carved by moonlight, as the book says."
+    many: "wands"
+  espadaLarga:
+    nombre: "Longsword"
+    one: "a longsword"
+    many: "longswords"
+    common:
+      nombre: "Longsword"
+      desc: "More iron, more reach. Can be wielded two-handed if needed."
+    good:
+      nombre: "Well-tempered longsword"
+      desc: "Long, straight, with an edge that won't notch."
+  cota:
+    nombre: "Chainmail"
+    one: "a chainmail shirt"
+    many: "chainmail shirts"
+    common:
+      nombre: "Chainmail"
+      desc: "Thousands of iron rings. Heavy, but it stops blows."
+    good:
+      nombre: "Double chainmail"
+      desc: "Double rings under a leather breastplate. Arrows bounce off."
+  escudoTachonado:
+    nombre: "Studded shield"
+    one: "a studded shield"
+    many: "studded shields"
+    common:
+      nombre: "Studded shield"
+      desc: "Leather-covered wood and iron studs."
+    good:
+      nombre: "Rimmed studded shield"
+      desc: "With an iron rim that withstands an axe blow."
+  ganzuasTempladas:
+    nombre: "Tempered lockpicks"
+    one: "a set of tempered lockpicks"
+    many: "tempered lockpicks"
+    common:
+      nombre: "Tempered lockpicks"
+      desc: "Tempered steel: they won't bend in the most stubborn lock."
+    good:
+      nombre: "Locksmith's picks"
+      desc: "A full set, in its leather case."
+  botasCuero:
+    nombre: "Leather boots"
+    one: "a pair of leather boots"
+    many: "leather boots"
+    common:
+      nombre: "Tanned leather boots"
+      desc: "Real leather, hand-stitched. Good for a week on the road."
+    good:
+      nombre: "Tracker's boots"
+      desc: "Soft soles: they make no noise and leave no trace."
+  capaForrada:
+    nombre: "Lined cloak"
+    one: "a lined cloak"
+    many: "lined cloaks"
+    common:
+      nombre: "Lined cloak"
+      desc: "Double cloth and a leather collar. Not even the mountain wind gets through."
+    good:
+      nombre: "Ranger's cloak"
+      desc: "Lined, with inside pockets and the colour of the hills."

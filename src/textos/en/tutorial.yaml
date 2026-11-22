@@ -1,0 +1,63 @@
+casa:
+  texto: "This is El Jarro Partido, top to bottom. Each slot is a room and each room does its job: the hall serves, the kitchen makes rations, the cellar brews beer and the heroes sleep in the dormitories. Drag to look at the whole thing."
+dinero:
+  texto: "Money comes in through two doors. One is the hall's till: what customers spend trickles in during the day, and more if there are rations and beer. The other is the quests on the board, which pay much more but need heroes and days away. With both, you pay Merlo."
+barra:
+  texto: "Two swords won't get you far. At the bar there's always someone looking for work: hire one. The signing fee is paid once; the wage, every week."
+  regalo: "In the cigar box at the bar there were {n} gold: “For the first signing fee.”"
+nombre:
+  texto: "Adventurers arrive with the name their mother gave them, and sometimes it doesn't suit them. Open the new one's sheet and tap their name: keep it or change it, but make it one of the house."
+enfermeria:
+  texto: "The infirmary collapsed last winter. Repair it before someone comes back with an arrow in the thigh: in a real bed they heal twice as fast."
+  regalo: "Between the pages of the notebook there were {n} gold, with a note: “For the infirmary. Don't drink it.”"
+esperar:
+  texto: "With the party on the road, the house is yours: look around, tap whatever you like and let the day go by. And if you get tired of waiting, skip ahead until they're back."
+  corto: "The party is out."
+informe:
+  texto: "Every party that comes back brings a report. Read it all: that's where you see what each of them is made of."
+ratas:
+  texto: "If you hear scratching in the kitchen, it's rats. Scare them off before they eat the rations. Something like this happens every day: deal with it in time, or it gets expensive."
+rumor:
+  texto: "At the bar people talk more than they should. When you hear something that glitters, note it down before it's lost: that's where the best quests come from."
+mandar:
+  texto: "That rumour is now a quest, and it pays in kind. Send whoever you have at home, even if they go alone."
+objetivos:
+  texto: "In the Guild I keep track of what's left to do around the house: always three things. Completing them brings gold and prestige."
+fin:
+  texto: "If you've made it this far, the tavern is still yours. The rest of the notebook is recipes and unpaid bills: you'll read it when the time comes."
+oficio_sitio:
+  salon: "the hall"
+  cocina: "the kitchen"
+  bodega: "the cellar"
+  enfermeria: "the infirmary"
+  forja: "the forge"
+  sastreria: "the tailor's"
+  alquimia: "the alchemy workshop"
+  pintor: "the painter's workshop"
+veto_cocina: "{quien}: they're best in {sitio}, not at the stove. For the kitchen, a hero is better{hay, select, si {: try {heroe}} other {}}."
+carta:
+  cabecera: "Hondovado, at the onset of winter"
+  cuerpo:
+    - "Nephew:"
+    - "If this letter reaches you, I'm gone and El Jarro Partido is yours. Along with the tavern I leave you two adventurers who don't charge much, the cat, and a thousand gold of debt to Merlo, the moneylender, who collects every seven days and never lets one slide."
+    - "Under the bar you'll find my notebook. I wrote it for whoever came after me: read it calmly and do what it says, it took me years to learn."
+  firma: "Fausto"
+tablon:
+  texto: "First, the board. This house lives off quests. There's an easy one, “{titulo}”: send {quien}, they know how."
+  el_primero: "the first one"
+mover:
+  texto: "Everyone performs where you put them. The villagers know their trade; the heroes, in their spare time, lend a hand wherever needed: they're no cooks, but they help a bit. Grab {heroe} with your finger and drop them in the kitchen."
+  un_heroe: "a hero"
+equipo:
+  texto: "What they bring is better worn than in a chest. Give {hay, select, si {“{objeto}”} other {the gear}} to {heroe}: sheet, “Gear”."
+  alguien: "someone"
+herido:
+  texto: "{heroe} came back wounded. They can't go out until they heal: it heals by itself with time, faster with the infirmary."
+  alguien: "Someone"
+pago:
+  cabeza: "On day {dia} Merlo comes: {cuota} gold, plus {sueldos} in wages."
+  listo: "{cabeza} The till is ready: don't keep him waiting."
+  falta: "{cabeza} You're {n} short, with {noches, plural, one {# night} other {# nights}} left. The hall's till brings something every night and the board has more quests: keep passing the nights until you have it."
+  corto_listo: "Merlo, day {dia}: till ready."
+  corto_falta: "Merlo, day {dia}: {n} short."
+  tio: "Your uncle puts in {n} gold so you can make the payment: “You'll pay me back.”"

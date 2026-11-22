@@ -1,0 +1,154 @@
+nombre_inicial: "El Jarro Partido"
+escudo_colores:
+  vino:
+    nombre: "Wine"
+    field: "#a22633"
+    dark: "#3e2731"
+  mar:
+    nombre: "Sea"
+    field: "#124e89"
+    dark: "#262b44"
+  bosque:
+    nombre: "Forest"
+    field: "#3e8948"
+    dark: "#193c3e"
+  oro:
+    nombre: "Gold"
+    field: "#d77643"
+    dark: "#733e39"
+  noche:
+    nombre: "Night"
+    field: "#3a4466"
+    dark: "#181425"
+tintes:
+  vino:
+    nombre: "Wine"
+  mar:
+    nombre: "Sea"
+  bosque:
+    nombre: "Forest"
+  ocre:
+    nombre: "Ochre"
+  morado:
+    nombre: "Purple"
+  ceniza:
+    nombre: "Ash"
+  lino:
+    nombre: "Linen"
+escudo_simbolos:
+  jarra: "Broken jug"
+  espada: "Sword"
+  llave: "Key"
+  estrella: "Star"
+  dragon: "Dragon"
+  luna: "Moon"
+adornos:
+  naipes:
+    nombre: "Card table"
+    desc: "+6 gold a day, but more brawls in the hall."
+  tarima:
+    nombre: "Bard's stage"
+    desc: "+2 morale per night; with the bard playing in the hall, brings 8 more gold."
+  tapices:
+    nombre: "Crest tapestries"
+    desc: "+1 reputation every 14 days: the tavern looks the part."
+  barril:
+    nombre: "Special beer barrel"
+    desc: "+1 morale per night and +2 gold a day."
+  lampara:
+    nombre: "Iron lamp"
+    desc: "Lots of light and no dark corners: the hall looks bigger."
+  chimenea:
+    nombre: "Big fireplace"
+    desc: "A good fire all night: +1 morale for those resting."
+fachada:
+  flores:
+    nombre: "Flower pots"
+    desc: "Geraniums by the door."
+  faroles:
+    nombre: "Yard lanterns"
+    desc: "At night the tavern can be seen from the road."
+  banderines:
+    nombre: "Colourful bunting"
+    desc: "From the sign to the well, in the crest's colours."
+  letrero:
+    nombre: "Painted sign"
+    desc: "The tavern's name in golden letters."
+tejados:
+  teja: "Red tile"
+  pizarra: "Slate"
+  paja: "Thatch"
+  verde: "Green tile"
+  tablilla: "Shingles"
+paredes:
+  tablas: "Planks"
+  entramado: "Timber frame"
+  piedra: "Stone"
+  troncos: "Logs"
+  ladrillo: "Brick"
+  tapial: "Rammed earth"
+  pizarra: "Flagstone"
+  encalado: "Whitewash"
+rotulos:
+  tablero: "Board"
+  hierro: "Iron"
+  pintado: "Painted"
+jardin_suelos:
+  hierba: "Grass"
+  grava: "Gravel"
+  losas: "Paving"
+jardin_piezas:
+  fuente: "Fountain"
+  pozo: "Well"
+  arbol: "Tree"
+  estatua: "Statue"
+  banco: "Bench"
+  huerto: "Vegetable patch"
+  flores: "Flowerbed"
+jardin_bordes:
+  seto: "Hedge"
+  flores: "Flowers"
+  verja: "Railing"
+prendas:
+  capa:
+    nombre: "Cloak"
+  tabardo:
+    nombre: "Tabard"
+  faja:
+    nombre: "Sash"
+  bufanda:
+    nombre: "Scarf"
+mascota:
+  gato:
+    - "Whiskers purrs. He's been here longer than you."
+    - "Whiskers opens one eye, looks at you and closes it again."
+    - "Whiskers lets you scratch behind his ear. Just a little."
+    - "Whiskers headbutts your hand. He smells of the kitchen."
+    - "Whiskers stretches out by the fire. The spot is his."
+  perro:
+    - "Woof, woof! Ember wags his tail and lies back down."
+    - "Ember licks your hand and sighs."
+    - "Ember barks at the door. Nobody there… for now."
+    - "Ember rolls belly up. Some guard dog."
+    - "Ember pricks up his ears: he heard something in the yard."
+  cuervo:
+    - "Caw, caw! Coal says he brings news, but won't let anything slip."
+    - "Coal eyes you sideways and preens a feather."
+    - "Coal tilts his head: he expects something shiny in return."
+    - "Coal croaks your name. Or something like it."
+    - "Coal doesn't trust strangers. You, halfway."
+  rata:
+    - "A rat. It came out of the hole in the floor and that's where it goes back."
+    - "The rat looks at you, thinks it over and bolts."
+    - "Until the room is repaired, the rats are in charge here."
+    - "Whiskers should deal with this. Whiskers disagrees."
+  murcielago:
+    - "The bats scatter and hang themselves back on the beams."
+    - "Bats in the ceiling. With the room repaired, they'd find another home."
+    - "A flutter, a squeak and still again, upside down."
+premio:
+  jardineras: "window boxes for the facade"
+  tejado: "{nombre, minus} roof"
+  paredes: "{nombre, minus} walls"
+  rotulo: "{nombre, minus} sign"
+  tinte: "{nombre, minus} cloth"

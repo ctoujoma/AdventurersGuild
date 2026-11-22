@@ -1,0 +1,121 @@
+salas:
+  recibidor:
+    nombre: "Entrance hall"
+    desc: "The way in from the yard. Heroes on guard stand here."
+  salon:
+    nombre: "Hall"
+    desc: "The heart of the tavern: here visitors eat, drink and pay."
+  cocina:
+    nombre: "Kitchen"
+    desc: "Makes food for visitors and for our own."
+  bodega:
+    nombre: "Cellar"
+    desc: "Brews and stores the beer. It comes out better underground."
+  tesoro:
+    nombre: "Treasure vault"
+    desc: "Holds the guild's gold. It's what the bandits are after."
+  dormitorio:
+    nombre: "Dormitory"
+    desc: "Beds for the heroes."
+  enfermeria:
+    nombre: "Infirmary"
+    desc: "The wounded heal sooner."
+  capilla:
+    nombre: "Chapel"
+    desc: "Morale for everyone and a candle for each of the fallen."
+  mapas:
+    nombre: "Map room"
+    desc: "More quests on the board and, with levels, the real danger."
+  armeria:
+    nombre: "Armoury"
+    desc: "Gear for everyone who goes out on a quest."
+  forja:
+    nombre: "Forge"
+    desc: "Makes weapons and armour, and tempers those in the chest."
+  veteranos:
+    nombre: "Veterans' quarters"
+    desc: "Rooms for high-level heroes."
+  torre:
+    nombre: "Watchtower"
+    desc: "Warns of incoming raids."
+  servicio:
+    nombre: "Staff quarters"
+    desc: "Beds for the workers."
+  despensa:
+    nombre: "Pantry"
+    desc: "Stores the food."
+  armas:
+    nombre: "Weapons room"
+    desc: "Trains Strength."
+  tiro:
+    nombre: "Shooting gallery"
+    desc: "Trains Dexterity."
+  biblioteca:
+    nombre: "Library"
+    desc: "Trains Mind."
+  sastreria:
+    nombre: "Tailor's"
+    desc: "Dyes and dresses the heroes, and makes boots and cloaks."
+  alquimia:
+    nombre: "Alchemy workshop"
+    desc: "Makes amulets and wands."
+  pintor:
+    nombre: "Painter's workshop"
+    desc: "The painter paints the rooms whatever colour you choose."
+  almacen:
+    nombre: "Storeroom"
+    desc: "Stores the materials quests bring: more with each level and each slot."
+efecto:
+  taller_0: "Makes nothing"
+  taller: "{n, plural, one {# job} other {# jobs}} at once, at {ritmo}% pace; quality: {calidad}; when dismantling, {receta}% chance of learning the recipe"
+  entreno_0: "No training"
+  entreno: "{atributo} up to {tope}, at {ritmo}% pace"
+  candidatos:
+    - "higher-level candidates"
+    - "higher-level, stronger candidates"
+    - "even higher-level, stronger candidates"
+  recibidor: "The door holds the bandits for {s} s"
+  salon_0: "Nobody comes: no income"
+  salon_atractivo: "+{n} Appeal"
+  salon_encargos: "+{n, plural, one {# quest} other {# quests}} on the board"
+  salon_moral: "+{moral} morale per night when resting (up to {tope})"
+  salon_adornos: "{n} decoration slots"
+  cocina_0: "Neither cooks nor stores anything"
+  cocina: "Cooks work at {ritmo}% and {n} rations fit"
+  bodega_0: "Neither brews nor stores beer"
+  bodega: "Brewers work at {ritmo}% and {n} jugs fit"
+  despensa_0: "Stores nothing"
+  despensa: "{n} rations fit"
+  tesoro: "{n} gold fits{colchon, select, si { (under the mattress)} other {}} and the lock holds for {s} s"
+  dormitorio_0: "No beds: straw on the floor"
+  dormitorio: "{camas, plural, one {# bed} other {# beds}} for heroes{moral, select, 0 {} other {; +{moral} morale per night for those at home}}"
+  veteranos: "{camas, plural, one {# bed} other {# beds}}; heroes of level {nivel} or higher: +{moral} morale per night and cap +{tope}{balcon, select, si {; they never desert} other {}}"
+  servicio_0: "No beds: only the {n} villagers work"
+  servicio: "{camas, plural, one {# bed} other {# beds}} for workers"
+  pintor_0: "Paints nothing"
+  pintor: "{n, plural, one {# painter} other {# painters}} at once, at {ritmo}% pace"
+  almacen_0: "Stores nothing"
+  almacen: "{n} more of each{delicado, select, si { material, including delicate goods (herbs, fine wood and crystal)} other { basic material}} fit"
+con_articulo:
+  recibidor: "the entrance hall"
+  salon: "the hall"
+  cocina: "the kitchen"
+  bodega: "the cellar"
+  tesoro: "the treasure vault"
+  dormitorio: "the dormitory"
+  enfermeria: "the infirmary"
+  capilla: "the chapel"
+  mapas: "the map room"
+  armeria: "the armoury"
+  forja: "the forge"
+  veteranos: "the veterans' quarters"
+  torre: "the watchtower"
+  servicio: "the staff quarters"
+  despensa: "the pantry"
+  armas: "the weapons room"
+  tiro: "the shooting gallery"
+  biblioteca: "the library"
+  sastreria: "the tailor's"
+  alquimia: "the alchemy workshop"
+  pintor: "the painter's workshop"
+  almacen: "the storeroom"

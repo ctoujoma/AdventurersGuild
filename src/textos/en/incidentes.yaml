@@ -1,0 +1,73 @@
+incidentes:
+  pelea:
+    titulo: "Brawl in the hall"
+    ask: "Drag a hero to the hall to break it up."
+    gana: "{heroe} pulls the drunks apart before the chairs start flying."
+    pierde: "The brawl ends with broken chairs: {n} gold in repairs."
+  ladron:
+    titulo: "A thief in the vault"
+    ask: "Drag a hero to the treasure vault."
+    gana: "{heroe} catches the thief red-handed."
+    pierde: "The thief escapes with {n} gold."
+  fuego:
+    titulo: "Fire in the kitchen"
+    ask: "Drag someone from the house to the kitchen to put it out."
+    gana: "{heroe} puts the fire out with buckets."
+    pierde: "The fire eats up {n} rations."
+  ratas:
+    titulo: "Rats in the pantry"
+    ask: "Tap the rats to scare them off."
+    gana: "Rats gone: not a single one left."
+    pierde: "The rats eat {n} rations."
+  recaudador:
+    titulo: "The mayor's tax collector"
+    ask: "Tap to pay the tax."
+    gana: "You pay the tax and the collector notes it in the guild's favour."
+    pierde: "The collector leaves in a bad mood and tells the town hall."
+  gotera:
+    titulo: "A leak in the cellar"
+    ask: "Tap to call the carpenter."
+    gana: "The carpenter patches the leak before the casks get watered down."
+    pierde: "The leak spoils {n} jugs."
+  nocturno:
+    titulo: "A thief has got in"
+    ask: "Drag a hero: they wake up and go after the thief."
+    gana: "{heroe} catches the thief red-handed."
+    pierde: "The thief escapes with {n} gold."
+  noble:
+    titulo: "A drunken noble"
+    ask: "Tap to decide what to do with him."
+    choices:
+      "0":
+        etiqueta: "Throw him out"
+        texto: "You put him out on the street: the hall breathes again, but the noble won't forget."
+      "1":
+        etiqueta: "Pay his tab"
+        texto: "You pay his tab and he leaves singing the guild's praises."
+    pierde: "The noble leaves without paying and says ugly things about the guild around town."
+guardia:
+  separa: "{heroe} leaves the door for a moment to break it up."
+  ladron: "{heroe}, guarding the vault, jumps on the thief."
+  recaudador: "{heroe}, on guard, keeps the collector busy at the door: there's a bit more time."
+no_puede: "{heroe} can't handle him. {resto}"
+se_cuela: "{heroe} was nodding off at the door and he slips past. {resto}"
+puerta: "{heroe}, on guard, blocks his way at the door and recovers the loot.{rep, plural, =0 {} other { (+# reputation)}}"
+ni_guardia: "Not even {heroe}, on guard, can stop him. {resto}"
+con_rep: "{texto}{rep, plural, =0 {} other { (+# reputation)}}"
+noche:
+  cabeza: "A thief got in last night.{hay, select, si { {lead}} other {}}"
+  cabeceaba: "{heroe} was nodding off in the vault and didn't see him."
+  pillado: "{cabeza} {heroe} stepped in and caught him red-handed.{rep, plural, =0 {} other { (+# reputation)}}"
+  no_pudo: "{heroe} stepped in, but couldn't handle him."
+  la_camara: "the vault"
+  la_caja: "the till"
+  puerta: "{cabeza} {heroe}, on guard, blocked his way at the door and recovered the loot.{rep, plural, =0 {} other { (+# reputation)}}"
+  ni_guardia: "{cabeza} Not even {heroe}, guarding the door, could stop him: he took {n} gold from {donde}."
+  se_cuela: "{cabeza} {heroe} was nodding off at the door and he slipped past with {n} gold from {donde}."
+  nadie: "{cabeza} Nobody saw him leave: he took {n} gold from {donde}."
+error:
+  resuelto: "That's already been dealt with."
+  heroe: "This needs a hero."
+  de_casa: "It has to be someone from the house."
+  ya_va: "{heroe} is already on it."
+eleccion: "{texto}{rep, plural, =0 {} other { ({mas, select, si {+} other {}}# reputation)}}"

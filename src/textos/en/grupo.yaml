@@ -1,0 +1,8 @@
+todos_de_guardia: "Everyone at home is on guard duty."
+nadie_en_casa: "There's nobody at home to go."
+nadie_puede: "Nobody at home can take this quest."
+herido: "{heroe} is still wounded"
+de_mision: "{heroe} is on a quest"
+fuera: "{heroe} is no longer in the guild"
+de_guardia: "{heroe} is on guard duty"
+no_cabe: "{heroe} doesn't fit: this quest takes {n}"

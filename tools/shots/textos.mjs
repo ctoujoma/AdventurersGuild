@@ -38,7 +38,11 @@ const dump = (page) =>
     return document.body.innerText + '\n---\n' + attrs;
   });
 async function open(fresh) {
-  const ctx = await browser.newContext({ viewport: { width: 420, height: 860 }, hasTouch: true });
+  const ctx = await browser.newContext({
+    locale: 'es-ES',
+    viewport: { width: 420, height: 860 },
+    hasTouch: true,
+  });
   const page = await ctx.newPage();
   const errs = [];
   page.on('pageerror', (e) => errs.push('PAGEERROR ' + String(e)));

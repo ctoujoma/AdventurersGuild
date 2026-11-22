@@ -1,0 +1,83 @@
+tramos:
+  ida:
+    nombre: "On the way"
+  llegada:
+    nombre: "Arrival"
+  faena:
+    nombre: "Down to work"
+  vuelta:
+    nombre: "Heading back"
+camino:
+  rio:
+    - "They cross the ford knee-deep in water."
+    - "{heroe} stops to fill the canteens at the bank."
+    - "They follow the riverbank among reeds and mosquitoes."
+  pueblo:
+    - "They pass a market; {heroe} haggles over a fig loaf."
+    - "Some kids follow them a while along the king's road."
+    - "A carter tells them the latest gossip."
+  monte:
+    - "They climb a goat track."
+    - "{heroe} slips on a scree slope, but it's nothing."
+    - "From the pass you can see the tavern, tiny, far below."
+  bosque:
+    - "The path gets lost among old oaks."
+    - "{heroe} swears something is following them through the ferns."
+    - "They find mushrooms; nobody dares try them."
+  costa:
+    - "The sea wind tugs at their cloaks."
+    - "They go down to the beach along a salt path."
+    - "{heroe} picks up a shell for the bar."
+  pantano:
+    - "They hop from tussock to tussock so as not to sink."
+    - "The frogs go suddenly silent as they pass."
+    - "{heroe} loses a boot in the mud and fishes it out."
+  campo:
+    - "They cut through a wheat field; a farmer shouts at them."
+    - "They eat in the shade of an oak."
+    - "{heroe} sings to keep the pace."
+  ruina:
+    - "They pass a fallen wall covered in ivy."
+    - "They see old marks on the stones of the road."
+    - "{heroe} pockets an old coin peeking out of the mud."
+trabajo:
+  Cazar:
+    - "They find fresh tracks and follow them."
+    - "They set up the ambush downwind."
+  Escoltar:
+    - "They set off with the cart."
+    - "{heroe} goes ahead, watching every bend."
+  Explorar:
+    - "They sketch the place on a sheet."
+    - "{heroe} squeezes through a narrow passage with the torch."
+  Recuperar:
+    - "They search through the rubble."
+    - "{heroe} thinks it's close."
+  Investigar:
+    - "They question the folk of {lugar}."
+    - "{heroe} finds something that doesn't add up."
+  Limpiar:
+    - "They drive the first ones out of their burrow."
+    - "They close ranks and advance."
+enemigos:
+  alimana: "vermin"
+  muerto: "restless dead"
+  grande: "huge beasts"
+  bandido: "bandits"
+  trasgo: "goblins"
+  bestia: "beasts"
+pelea:
+  - "{enemigos, mayus} block their way. To arms!"
+  - "They come to blows with {enemigos}."
+  - "{heroe} shouts a warning: {enemigos}, coming straight at them."
+llegar:
+  - "They reach {lugar}."
+  - "At last, {lugar}."
+volver:
+  - "They start back."
+  - "They pack up and head back to the tavern."
+acampar:
+  - "They make camp for the night."
+  - "They sleep in the open; {heroe} takes first watch."
+aparece: "{jefe, mayus} appears."
+aviso: "They send word: {resultado, minus}.{malo, select, si {} other { They're on their way.}}"

@@ -1,0 +1,1 @@
+caza: "The cat caught {n, plural, =1 {a rat} =2 {two rats} =3 {three rats} =4 {four rats} other {# rats}} in the {bodega, select, si {cellar} other {pantry}}: {raciones} rations are saved."
