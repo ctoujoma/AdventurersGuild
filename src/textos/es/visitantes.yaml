@@ -1,0 +1,24 @@
+# Visitantes del salón y lo que se oye en las mesas (data/visitors.ts).
+
+visitantes:
+  campesino:
+    desc: "Gastan poco, pero vienen siempre."
+  mercader:
+    desc: "Pagan bien y llegan con la fama del gremio."
+  noble:
+    desc: "Solo vienen a un salón con mucho Atractivo. Dan fama."
+  espia:
+    nombre: "forastero callado"
+    plural: "forasteros callados"
+    desc: "Mira mucho y bebe poco: puede ser un espía de los bandidos."
+rumores:
+  - "Dicen que en el molino viejo se oyen cadenas de noche."
+  - "Al hijo del herrero le han visto hablando con los del bosque."
+  - "La cosecha viene buena, si no la pisan los jabalíes."
+  - "En la feria de Robledo pagan el doble por pieles de lobo."
+  - "Hay quien jura que la mina de Hondogrís no está vacía."
+  - "El prestamista Merlo ha comprado otra casa. Otra."
+  - "Por el camino del norte bajan carros sin escolta. Mala idea."
+  - "Esta cerveza es mejor que la de la posada del cruce."
+  - "Mi primo dice que vio un dragón. Mi primo ve muchas cosas."
+  - "Los bandidos del Tuerto se reparten el botín en la ermita."

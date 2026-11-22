@@ -1,4 +1,5 @@
 import type { ClassId } from '../core/party';
+import { tl } from '../textos';
 
 /** Nombres de pila del pueblo y alrededores. */
 export const FIRST_NAMES = {
@@ -183,34 +184,9 @@ export const SURNAMES = [
 
 /** Lo que dicen al pedir trabajo en la barra. */
 export const QUOTES: Record<ClassId, readonly string[]> = {
-  guerrero: [
-    '«¿A quién hay que pegar?»',
-    '«Traigo escudo, espada y ganas. Lo de pensar, mejor que lo haga otro.»',
-    '«He sobrevivido a tres guerras y a un matrimonio.»',
-    '«Cobro por golpe. Es broma. Más o menos.»',
-  ],
-  picaro: [
-    '«Las cerraduras me hablan. Sobre todo a partir de la tercera jarra.»',
-    '«No pregunto de dónde viene el oro. Tú tampoco preguntes.»',
-    '«Esa bolsa que buscas… ¿era roja? Qué casualidad.»',
-    '«Trabajo de noche. Y de día, si hay que esconderse.»',
-  ],
-  mago: [
-    '«Cobro por adelantado. Y no me llames bruja.»',
-    '«Lo mío es la magia defensiva. Sobre todo, defenderme a mí.»',
-    '«Leo runas, estrellas y contratos. Los contratos dan más miedo.»',
-    '«Si ves humo verde, aléjate. Si ves humo morado, corre.»',
-  ],
-  clerigo: [
-    '«Rezo por todos. Por algunos, más caro.»',
-    '«He cerrado heridas peores que la tuya. Y bocas.»',
-    '«Los dioses me escuchan. A veces contestan.»',
-    '«Llevo vendas y ungüento. La paciencia la traigo justa.»',
-  ],
-  explorador: [
-    '«Lo de gafe son rumores. Casi todos.»',
-    '«Conozco un atajo. Bueno, conozco a uno que lo conoce.»',
-    '«Duermo mejor bajo un árbol que bajo tu techo. Sin ofender.»',
-    '«Huelo la lluvia dos días antes. Y a los bandidos, tres.»',
-  ],
+  guerrero: tl('nombres.citas.guerrero'),
+  picaro: tl('nombres.citas.picaro'),
+  mago: tl('nombres.citas.mago'),
+  clerigo: tl('nombres.citas.clerigo'),
+  explorador: tl('nombres.citas.explorador'),
 };

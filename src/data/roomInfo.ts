@@ -26,7 +26,8 @@ import {
   salonAppeal,
 } from '../core/balance';
 import { bedsPerCell } from '../core/rooms';
-import { listNames, plural } from '../core/text';
+import { listNames } from '../core/text';
+import { t, tl } from '../textos';
 import { ATTR_NAMES } from '../core/training';
 import { VILLAGE_COUNT } from '../core/workers';
 import { decorSlots } from './custom';
@@ -36,26 +37,34 @@ import { TRAINS, type RoomType } from './rooms';
 /** Lo que da una sala de ese nivel y con esos huecos. */
 type Effect = (level: number, cells: number) => string;
 
-/** Lo que rinden los que trabajan o entrenan en la sala, según su nivel (`workAt`, `trainRate`). */
-const pace = (l: number) => `${Math.round(100 * (0.75 + 0.25 * l))} %`;
+/** Lo que rinden los que trabajan o entrenan en la sala, según su nivel (`workAt`, `trainRate`), en %. */
+const pace = (l: number) => Math.round(100 * (0.75 + 0.25 * l));
 
 /** El valor de una tabla por nivel (los de más arriba, el último). */
 const at = <T>(t: readonly T[], l: number): T => t[Math.min(l, t.length - 1)]!;
 
 /** Un taller (forja, sastrería, alquimia): trabajos a la vez, ritmo, calidad y recetas. */
 const workshop: Effect = (l) => {
-  if (l === 0) return 'No crea nada';
-  const n = at(CRAFT_SLOTS, l);
-  return `${n} ${plural(n, 'trabajo', 'trabajos')} a la vez, al ${pace(l)} de ritmo; sale: ${qualityText(l)}; al desmontar, ${Math.round(100 * at(UNDO_CHANCE, l))} % de sacar la receta`;
+  if (l === 0) return t('salas.efecto.taller_0');
+  return t('salas.efecto.taller', {
+    n: at(CRAFT_SLOTS, l),
+    ritmo: pace(l),
+    calidad: qualityText(l),
+    receta: Math.round(100 * at(UNDO_CHANCE, l)),
+  });
 };
 
 /** Una sala de entrenamiento: hasta dónde y a qué ritmo. */
 const training =
-  (t: RoomType): Effect =>
+  (r: RoomType): Effect =>
   (l) =>
     l === 0
-      ? 'No se entrena'
-      : `${ATTR_NAMES[TRAINS[t]!]} hasta ${at(TRAIN_CAP, l)}, al ${pace(l)} de ritmo`;
+      ? t('salas.efecto.entreno_0')
+      : t('salas.efecto.entreno', {
+          atributo: ATTR_NAMES[TRAINS[r]!],
+          tope: at(TRAIN_CAP, l),
+          ritmo: pace(l),
+        });
 
 /** Las instalaciones de antes que ya dicen bien lo que dan. */
 const fac =
@@ -65,50 +74,56 @@ const fac =
 
 /** Candidatos que llegan a la barra según el salón (`generateHero`). */
 const recruits = (l: number) =>
-  l >= 4
-    ? 'candidatos de aún más nivel y más fuertes'
-    : l >= 3
-      ? 'candidatos de más nivel y más fuertes'
-      : l >= 2
-        ? 'candidatos de más nivel'
-        : null;
+  l >= 2 ? tl('salas.efecto.candidatos')[Math.min(l, 4) - 2]! : null;
 
 export const ROOM_INFO: Record<RoomType, Effect> = {
-  recibidor: (l) => `La puerta aguanta ${at(DOOR_TIME, l)} s a los bandidos`,
+  recibidor: (l) => t('salas.efecto.recibidor', { s: at(DOOR_TIME, l) }),
   salon: (l) => {
-    if (l === 0) return 'No viene nadie: no deja dinero';
-    const more = BOARD_SIZE(l) - BOARD_SIZE(0);
+    if (l === 0) return t('salas.efecto.salon_0');
     return listNames(
       [
-        `+${salonAppeal(l)} de Atractivo`,
-        `+${more} ${plural(more, 'encargo', 'encargos')} en el tablón`,
-        `+${restMorale(l)} de moral por noche al descansar (hasta ${restCap(l)})`,
-        `${decorSlots(l)} huecos de decoración`,
+        t('salas.efecto.salon_atractivo', { n: salonAppeal(l) }),
+        t('salas.efecto.salon_encargos', { n: BOARD_SIZE(l) - BOARD_SIZE(0) }),
+        t('salas.efecto.salon_moral', { moral: restMorale(l), tope: restCap(l) }),
+        t('salas.efecto.salon_adornos', { n: decorSlots(l) }),
         recruits(l),
       ].filter((x): x is string => !!x),
     );
   },
   cocina: (l, n) =>
     l === 0
-      ? 'No cocina ni guarda nada'
-      : `Los cocineros rinden al ${pace(l)} y caben ${KITCHEN_STORE * l * n} raciones`,
+      ? t('salas.efecto.cocina_0')
+      : t('salas.efecto.cocina', { ritmo: pace(l), n: KITCHEN_STORE * l * n }),
   bodega: (l, n) =>
     l === 0
-      ? 'No hace ni guarda cerveza'
-      : `Los cerveceros rinden al ${pace(l)} y caben ${CELLAR_STORE * l * n} jarras`,
-  despensa: (l, n) => (l === 0 ? 'No guarda nada' : `Caben ${PANTRY_STORE * l * n} raciones`),
+      ? t('salas.efecto.bodega_0')
+      : t('salas.efecto.bodega', { ritmo: pace(l), n: CELLAR_STORE * l * n }),
+  despensa: (l, n) =>
+    l === 0
+      ? t('salas.efecto.despensa_0')
+      : t('salas.efecto.despensa', { n: PANTRY_STORE * l * n }),
   tesoro: (l, n) =>
-    `Caben ${Math.max(VAULT_STORE[0], at(VAULT_STORE, l) * (l ? n : 1))} monedas${l ? '' : ' (bajo el colchón)'} y la cerradura aguanta ${at(LOCK_TIME, l)} s`,
+    t('salas.efecto.tesoro', {
+      n: Math.max(VAULT_STORE[0], at(VAULT_STORE, l) * (l ? n : 1)),
+      colchon: !l,
+      s: at(LOCK_TIME, l),
+    }),
   dormitorio: (l, n) => {
-    if (l === 0) return 'Sin camas: paja en el suelo';
-    const b = bedsPerCell('dormitorio', l) * n;
-    const rest = at(DORM_REST, l);
-    return `${b} ${plural(b, 'cama', 'camas')} para héroes${rest ? `; +${rest} de moral por noche a los de casa` : ''}`;
+    if (l === 0) return t('salas.efecto.dormitorio_0');
+    return t('salas.efecto.dormitorio', {
+      camas: bedsPerCell('dormitorio', l) * n,
+      moral: at(DORM_REST, l),
+    });
   },
   veteranos: (l, n) => {
-    if (l === 0) return 'Sin efecto';
-    const b = bedsPerCell('veteranos', l) * n;
-    return `${b} ${plural(b, 'cama', 'camas')}; los héroes de nivel ${VET_LEVEL} o más: +${at(VET_REST, l)} de moral por noche y tope +${at(VET_CAP, l)}${l >= 2 ? '; nunca desertan' : ''}`;
+    if (l === 0) return t('etiquetas.sin_efecto');
+    return t('salas.efecto.veteranos', {
+      camas: bedsPerCell('veteranos', l) * n,
+      nivel: VET_LEVEL,
+      moral: at(VET_REST, l),
+      tope: at(VET_CAP, l),
+      balcon: l >= 2,
+    });
   },
   enfermeria: fac('enf'),
   capilla: fac('cap'),
@@ -118,23 +133,21 @@ export const ROOM_INFO: Record<RoomType, Effect> = {
   forja: workshop,
   sastreria: workshop,
   alquimia: workshop,
-  servicio: (l, n) => {
-    if (l === 0) return `Sin camas: solo trabajan los ${VILLAGE_COUNT} del pueblo`;
-    const b = 2 * l * n;
-    return `${b} ${plural(b, 'cama', 'camas')} para trabajadores`;
-  },
+  servicio: (l, n) =>
+    l === 0
+      ? t('salas.efecto.servicio_0', { n: VILLAGE_COUNT })
+      : t('salas.efecto.servicio', { camas: 2 * l * n }),
   armas: training('armas'),
   tiro: training('tiro'),
   biblioteca: training('biblioteca'),
-  pintor: (l) => {
-    if (l === 0) return 'No pinta nada';
-    const n = at(PAINT_SLOTS, l);
-    return `${n} ${plural(n, 'pintor', 'pintores')} a la vez, al ${pace(l)} de ritmo`;
-  },
+  pintor: (l) =>
+    l === 0
+      ? t('salas.efecto.pintor_0')
+      : t('salas.efecto.pintor', { n: at(PAINT_SLOTS, l), ritmo: pace(l) }),
   almacen: (l, n) =>
     l === 0
-      ? 'No guarda nada'
-      : `Caben ${at(STORE_CAP, l) * n} más de cada material${l >= 2 ? ', y lo delicado (hierbas, madera buena y cristal)' : ' básico'}`,
+      ? t('salas.efecto.almacen_0')
+      : t('salas.efecto.almacen', { n: at(STORE_CAP, l) * n, delicado: l >= 2 }),
 };
 
 /** Lo que da una sala de ese tipo con ese nivel y esos huecos, para «Ahora: …» y «Mejora: …». */

@@ -1,0 +1,81 @@
+# La ficha del encargo en curso (data/journey.ts). Huecos: {sitio} el lugar, {foe} los enemigos,
+# {h} un héroe.
+
+tramos:
+  ida:
+    nombre: "De camino"
+  llegada:
+    nombre: "Llegan"
+  faena:
+    nombre: "Manos a la obra"
+  vuelta:
+    nombre: "De vuelta"
+camino:
+  rio:
+    - "Cruzan el vado con el agua por las rodillas."
+    - "{h} se para a llenar las cantimploras en la orilla."
+    - "Siguen la ribera entre juncos y mosquitos."
+  pueblo:
+    - "Pasan por un mercado; {h} regatea un pan de higos."
+    - "Unos críos los siguen un trecho por el camino real."
+    - "Un carretero les cuenta las últimas habladurías."
+  monte:
+    - "Suben por una trocha de cabras."
+    - "{h} resbala en una pedrera, pero no pasa nada."
+    - "Desde el collado se ve la taberna, pequeña, allá abajo."
+  bosque:
+    - "El camino se pierde entre robles viejos."
+    - "{h} jura que algo los sigue entre los helechos."
+    - "Encuentran setas; nadie se atreve a probarlas."
+  costa:
+    - "El viento del mar les tira de las capas."
+    - "Bajan a la playa por un sendero de sal."
+    - "{h} recoge una concha para la barra."
+  pantano:
+    - "Avanzan de mata en mata para no hundirse."
+    - "Las ranas se callan de golpe cuando pasan."
+    - "{h} pierde una bota en el lodo y la recupera."
+  campo:
+    - "Atajan por un trigal; un labriego les grita."
+    - "Comen a la sombra de una encina."
+    - "{h} canta para llevar el paso."
+  ruina:
+    - "Pasan junto a una muralla caída cubierta de hiedra."
+    - "Ven marcas viejas en las piedras del camino."
+    - "{h} se guarda una moneda antigua que asomaba en el barro."
+trabajo:
+  Cazar:
+    - "Encuentran huellas frescas y las siguen."
+    - "Preparan la emboscada a favor del viento."
+  Escoltar:
+    - "Se ponen en marcha con el carro."
+    - "{h} va delante, mirando cada recodo."
+  Explorar:
+    - "Dibujan el sitio en un pliego."
+    - "{h} se mete por un paso estrecho con la antorcha."
+  Recuperar:
+    - "Buscan entre los escombros."
+    - "{h} cree que lo tiene cerca."
+  Investigar:
+    - "Preguntan a los vecinos de {sitio}."
+    - "{h} encuentra algo que no encaja."
+  Limpiar:
+    - "Sacan a los primeros de su madriguera."
+    - "Se cierran en formación y avanzan."
+enemigos:
+  alimana: "alimañas"
+  muerto: "muertos que no descansan"
+  grande: "bestias enormes"
+pelea:
+  - "Les salen al paso {foe}. ¡A las armas!"
+  - "Se lían a golpes con {foe}."
+  - "{h} da la voz: {foe}, y vienen derechos."
+llegar:
+  - "Llegan a {sitio}."
+  - "Por fin, {sitio}."
+volver:
+  - "Emprenden la vuelta."
+  - "Recogen y vuelven hacia la taberna."
+acampar:
+  - "Acampan para pasar la noche."
+  - "Duermen al raso; {h} hace la primera guardia."

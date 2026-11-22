@@ -5,19 +5,40 @@
 
 import { P } from '../art/palette';
 import type { RoomType } from './rooms';
+import { t, tl } from '../textos';
 
 export type CrestColor = 'vino' | 'mar' | 'bosque' | 'oro' | 'noche';
 export type CrestSymbol = 'jarra' | 'espada' | 'llave' | 'estrella' | 'dragon' | 'luna';
 export type StaffId = 'cocinera' | 'bardo' | 'mozo';
 
-export const DEFAULT_NAME = 'El Jarro Partido';
+export const DEFAULT_NAME = t('personalizar.nombre_inicial');
 
 export const CREST_COLORS: Record<CrestColor, { name: string; field: string; dark: string }> = {
-  vino: { name: 'Vino', field: '#a22633', dark: '#3e2731' },
-  mar: { name: 'Mar', field: '#124e89', dark: '#262b44' },
-  bosque: { name: 'Bosque', field: '#3e8948', dark: '#193c3e' },
-  oro: { name: 'Oro', field: '#d77643', dark: '#733e39' },
-  noche: { name: 'Noche', field: '#3a4466', dark: '#181425' },
+  vino: {
+    name: t('personalizar.escudo_colores.vino.nombre'),
+    field: t('personalizar.escudo_colores.vino.field'),
+    dark: t('personalizar.escudo_colores.vino.dark'),
+  },
+  mar: {
+    name: t('personalizar.escudo_colores.mar.nombre'),
+    field: t('personalizar.escudo_colores.mar.field'),
+    dark: t('personalizar.escudo_colores.mar.dark'),
+  },
+  bosque: {
+    name: t('personalizar.escudo_colores.bosque.nombre'),
+    field: t('personalizar.escudo_colores.bosque.field'),
+    dark: t('personalizar.escudo_colores.bosque.dark'),
+  },
+  oro: {
+    name: t('personalizar.escudo_colores.oro.nombre'),
+    field: t('personalizar.escudo_colores.oro.field'),
+    dark: t('personalizar.escudo_colores.oro.dark'),
+  },
+  noche: {
+    name: t('personalizar.escudo_colores.noche.nombre'),
+    field: t('personalizar.escudo_colores.noche.field'),
+    dark: t('personalizar.escudo_colores.noche.dark'),
+  },
 };
 
 /**
@@ -31,13 +52,19 @@ export const TINTS: Record<
   TintId,
   { name: string; ramp: readonly [string, string, string, string] }
 > = {
-  vino: { name: 'Vino', ramp: [P.plum, P.wine, P.red, P.coral] },
-  mar: { name: 'Mar', ramp: [P.navy, P.ocean, P.sky, P.mist] },
-  bosque: { name: 'Bosque', ramp: [P.deep, P.forest, P.leaf, P.lime] },
-  ocre: { name: 'Ocre', ramp: [P.plum, P.rust, P.amber, P.gold] },
-  morado: { name: 'Morado', ramp: [P.plum, P.grape, P.rose, P.coral] },
-  ceniza: { name: 'Ceniza', ramp: [P.navy, P.slate, P.steel, P.fog] },
-  lino: { name: 'Lino', ramp: [P.rust, P.clay, P.tan, P.sand] },
+  vino: { name: t('personalizar.tintes.vino.nombre'), ramp: [P.plum, P.wine, P.red, P.coral] },
+  mar: { name: t('personalizar.tintes.mar.nombre'), ramp: [P.navy, P.ocean, P.sky, P.mist] },
+  bosque: {
+    name: t('personalizar.tintes.bosque.nombre'),
+    ramp: [P.deep, P.forest, P.leaf, P.lime],
+  },
+  ocre: { name: t('personalizar.tintes.ocre.nombre'), ramp: [P.plum, P.rust, P.amber, P.gold] },
+  morado: {
+    name: t('personalizar.tintes.morado.nombre'),
+    ramp: [P.plum, P.grape, P.rose, P.coral],
+  },
+  ceniza: { name: t('personalizar.tintes.ceniza.nombre'), ramp: [P.navy, P.slate, P.steel, P.fog] },
+  lino: { name: t('personalizar.tintes.lino.nombre'), ramp: [P.rust, P.clay, P.tan, P.sand] },
 };
 export const TINT_IDS = Object.keys(TINTS) as TintId[];
 
@@ -55,12 +82,12 @@ export const TINT_FROM: Partial<Record<RoomType, number>> = {
 };
 
 export const CREST_SYMBOLS: Record<CrestSymbol, string> = {
-  jarra: 'Jarra partida',
-  espada: 'Espada',
-  llave: 'Llave',
-  estrella: 'Estrella',
-  dragon: 'Dragón',
-  luna: 'Luna',
+  jarra: t('personalizar.escudo_simbolos.jarra'),
+  espada: t('personalizar.escudo_simbolos.espada'),
+  llave: t('personalizar.escudo_simbolos.llave'),
+  estrella: t('personalizar.escudo_simbolos.estrella'),
+  dragon: t('personalizar.escudo_simbolos.dragon'),
+  luna: t('personalizar.escudo_simbolos.luna'),
 };
 
 export type DecorId = 'naipes' | 'tarima' | 'tapices' | 'barril' | 'lampara' | 'chimenea';
@@ -72,38 +99,38 @@ export type DecorId = 'naipes' | 'tarima' | 'tapices' | 'barril' | 'lampara' | '
 export const DECOR: Record<DecorId, { name: string; desc: string; price: number; appeal: number }> =
   {
     naipes: {
-      name: 'Mesa de naipes',
-      desc: '+6 monedas al día, pero hay más peleas en el salón.',
+      name: t('personalizar.adornos.naipes.nombre'),
+      desc: t('personalizar.adornos.naipes.desc'),
       price: 50,
       appeal: 1,
     },
     tarima: {
-      name: 'Tarima del bardo',
-      desc: '+2 de moral por noche; con el bardo tocando en el salón, trae 8 monedas más.',
+      name: t('personalizar.adornos.tarima.nombre'),
+      desc: t('personalizar.adornos.tarima.desc'),
       price: 60,
       appeal: 1,
     },
     tapices: {
-      name: 'Tapices con el escudo',
-      desc: '+1 de reputación cada 14 días: la taberna luce.',
+      name: t('personalizar.adornos.tapices.nombre'),
+      desc: t('personalizar.adornos.tapices.desc'),
       price: 45,
       appeal: 2,
     },
     barril: {
-      name: 'Barril de cerveza especial',
-      desc: '+1 de moral por noche y +2 monedas al día.',
+      name: t('personalizar.adornos.barril.nombre'),
+      desc: t('personalizar.adornos.barril.desc'),
       price: 35,
       appeal: 1,
     },
     lampara: {
-      name: 'Lámpara de hierro',
-      desc: 'Mucha luz y ninguna esquina oscura: el salón parece más grande.',
+      name: t('personalizar.adornos.lampara.nombre'),
+      desc: t('personalizar.adornos.lampara.desc'),
       price: 70,
       appeal: 3,
     },
     chimenea: {
-      name: 'Chimenea grande',
-      desc: 'Fuego bueno toda la noche: +1 de moral a quien descansa.',
+      name: t('personalizar.adornos.chimenea.nombre'),
+      desc: t('personalizar.adornos.chimenea.desc'),
       price: 90,
       appeal: 3,
     },
@@ -117,22 +144,27 @@ export const FACADE: Record<
   FacadeId,
   { name: string; desc: string; price: number; appeal: number }
 > = {
-  flores: { name: 'Macetas con flores', desc: 'Geranios en la puerta.', price: 30, appeal: 1 },
+  flores: {
+    name: t('personalizar.fachada.flores.nombre'),
+    desc: t('personalizar.fachada.flores.desc'),
+    price: 30,
+    appeal: 1,
+  },
   faroles: {
-    name: 'Faroles en el patio',
-    desc: 'De noche se ve la taberna desde el camino.',
+    name: t('personalizar.fachada.faroles.nombre'),
+    desc: t('personalizar.fachada.faroles.desc'),
     price: 50,
     appeal: 2,
   },
   banderines: {
-    name: 'Banderines de colores',
-    desc: 'Del letrero al pozo, con los colores del escudo.',
+    name: t('personalizar.fachada.banderines.nombre'),
+    desc: t('personalizar.fachada.banderines.desc'),
     price: 40,
     appeal: 1,
   },
   letrero: {
-    name: 'Letrero pintado',
-    desc: 'El nombre de la taberna en letras doradas.',
+    name: t('personalizar.fachada.letrero.nombre'),
+    desc: t('personalizar.fachada.letrero.desc'),
     price: 80,
     appeal: 3,
   },
@@ -155,26 +187,26 @@ export interface FacadeLook {
 }
 
 export const ROOFS: Record<RoofId, string> = {
-  teja: 'Teja roja',
-  pizarra: 'Pizarra',
-  paja: 'Paja',
-  verde: 'Teja verde',
-  tablilla: 'Tablillas',
+  teja: t('personalizar.tejados.teja'),
+  pizarra: t('personalizar.tejados.pizarra'),
+  paja: t('personalizar.tejados.paja'),
+  verde: t('personalizar.tejados.verde'),
+  tablilla: t('personalizar.tejados.tablilla'),
 };
 export const WALLS: Record<WallId, string> = {
-  tablas: 'Tablas',
-  entramado: 'Entramado',
-  piedra: 'Piedra',
-  troncos: 'Troncos',
-  ladrillo: 'Ladrillo',
-  tapial: 'Tapial',
-  pizarra: 'Lajas',
-  encalado: 'Encalado',
+  tablas: t('personalizar.paredes.tablas'),
+  entramado: t('personalizar.paredes.entramado'),
+  piedra: t('personalizar.paredes.piedra'),
+  troncos: t('personalizar.paredes.troncos'),
+  ladrillo: t('personalizar.paredes.ladrillo'),
+  tapial: t('personalizar.paredes.tapial'),
+  pizarra: t('personalizar.paredes.pizarra'),
+  encalado: t('personalizar.paredes.encalado'),
 };
 export const SIGNS: Record<SignId, string> = {
-  tablero: 'Tablero',
-  hierro: 'De hierro',
-  pintado: 'Pintado',
+  tablero: t('personalizar.rotulos.tablero'),
+  hierro: t('personalizar.rotulos.hierro'),
+  pintado: t('personalizar.rotulos.pintado'),
 };
 
 /**
@@ -206,23 +238,23 @@ export interface CloisterLook {
 }
 
 export const GARDEN_GROUNDS: Record<GardenGroundId, string> = {
-  hierba: 'Hierba',
-  grava: 'Grava',
-  losas: 'Losas',
+  hierba: t('personalizar.jardin_suelos.hierba'),
+  grava: t('personalizar.jardin_suelos.grava'),
+  losas: t('personalizar.jardin_suelos.losas'),
 };
 export const GARDEN_PIECES: Record<GardenPieceId, string> = {
-  fuente: 'Fuente',
-  pozo: 'Pozo',
-  arbol: 'Árbol',
-  estatua: 'Estatua',
-  banco: 'Banco',
-  huerto: 'Huerto',
-  flores: 'Macizo de flores',
+  fuente: t('personalizar.jardin_piezas.fuente'),
+  pozo: t('personalizar.jardin_piezas.pozo'),
+  arbol: t('personalizar.jardin_piezas.arbol'),
+  estatua: t('personalizar.jardin_piezas.estatua'),
+  banco: t('personalizar.jardin_piezas.banco'),
+  huerto: t('personalizar.jardin_piezas.huerto'),
+  flores: t('personalizar.jardin_piezas.flores'),
 };
 export const GARDEN_EDGES: Record<GardenEdgeId, string> = {
-  seto: 'Seto',
-  flores: 'Flores',
-  verja: 'Verja',
+  seto: t('personalizar.jardin_bordes.seto'),
+  flores: t('personalizar.jardin_bordes.flores'),
+  verja: t('personalizar.jardin_bordes.verja'),
 };
 
 /**
@@ -231,10 +263,10 @@ export const GARDEN_EDGES: Record<GardenEdgeId, string> = {
  */
 export type GarmentId = 'capa' | 'tabardo' | 'faja' | 'bufanda';
 export const GARMENTS: Record<GarmentId, { name: string; tint: TintId }> = {
-  capa: { name: 'Capa', tint: 'vino' },
-  tabardo: { name: 'Tabardo', tint: 'mar' },
-  faja: { name: 'Faja', tint: 'ocre' },
-  bufanda: { name: 'Bufanda', tint: 'bosque' },
+  capa: { name: t('personalizar.prendas.capa.nombre'), tint: 'vino' },
+  tabardo: { name: t('personalizar.prendas.tabardo.nombre'), tint: 'mar' },
+  faja: { name: t('personalizar.prendas.faja.nombre'), tint: 'ocre' },
+  bufanda: { name: t('personalizar.prendas.bufanda.nombre'), tint: 'bosque' },
 };
 
 /** Lo que el héroe lleva de la sastrería. */
@@ -266,38 +298,11 @@ export const PET_LINES: Record<
   'gato' | 'perro' | 'cuervo' | 'rata' | 'murcielago',
   readonly string[]
 > = {
-  gato: [
-    'Bigotes ronronea. Lleva aquí más años que tú.',
-    'Bigotes abre un ojo, te mira y lo vuelve a cerrar.',
-    'Bigotes se deja rascar detrás de la oreja. Solo un poco.',
-    'Bigotes te da un cabezazo en la mano. Huele a la cocina.',
-    'Bigotes se estira junto al fuego. El sitio es suyo.',
-  ],
-  perro: [
-    '¡Guau, guau! Tizón mueve el rabo y vuelve a tumbarse.',
-    'Tizón te lame la mano y suspira.',
-    'Tizón ladra a la puerta. No hay nadie… de momento.',
-    'Tizón se pone panza arriba. Menudo perro guardián.',
-    'Tizón levanta las orejas: ha oído algo en el patio.',
-  ],
-  cuervo: [
-    '¡Cra, cra! Carbón dice que trae noticias, pero no suelta prenda.',
-    'Carbón te mira de lado y se atusa una pluma.',
-    'Carbón ladea la cabeza: espera algo brillante a cambio.',
-    'Carbón grazna tu nombre. O algo que se le parece.',
-    'Carbón no se fía de los forasteros. De ti, a medias.',
-  ],
-  rata: [
-    'Una rata. Ha salido por el boquete del suelo y por ahí se vuelve.',
-    'La rata te mira, se lo piensa y echa a correr.',
-    'Mientras no se arregle la sala, aquí mandan las ratas.',
-    'Bigotes debería ocuparse de esto. Bigotes no opina lo mismo.',
-  ],
-  murcielago: [
-    'Los murciélagos salen en desbandada y vuelven a colgarse de las vigas.',
-    'Murciélagos en el techo. Con la sala arreglada, buscarían otra casa.',
-    'Un aleteo, un chillido y otra vez quietos, boca abajo.',
-  ],
+  gato: tl('personalizar.mascota.gato'),
+  perro: tl('personalizar.mascota.perro'),
+  cuervo: tl('personalizar.mascota.cuervo'),
+  rata: tl('personalizar.mascota.rata'),
+  murcielago: tl('personalizar.mascota.murcielago'),
 };
 
 /** Inicial del lacre: la primera palabra que no sea un artículo («El Jarro Partido» → J). */

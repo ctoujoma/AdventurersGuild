@@ -1,0 +1,61 @@
+# Rasgos de los héroes (data/traits.ts): m y f son la forma para él y para ella.
+
+rasgos:
+  valiente:
+    m: "Valiente"
+    f: "Valiente"
+    desc: "+2 Combate. Nunca huye, aunque debería."
+  cobarde:
+    m: "Cobarde"
+    f: "Cobarde"
+    desc: "−2 Combate. Cuando todo se tuerce, a veces huye a tiempo… y sobrevive."
+  codicioso:
+    m: "Codicioso"
+    f: "Codiciosa"
+    desc: "Se queda el 10 % del oro. Rinde más si la paga es alta."
+  afortunado:
+    m: "Afortunado"
+    f: "Afortunada"
+    desc: "Repite una tirada fallida por misión."
+  gafe:
+    m: "Gafe"
+    f: "Gafe"
+    desc: "Empeora un poco todas las tiradas del grupo."
+  bebedor:
+    m: "Bebedor"
+    f: "Bebedora"
+    desc: "−1 Destreza. Más moral si la taberna está mejorada."
+  leal:
+    m: "Leal"
+    f: "Leal"
+    desc: "Nunca deserta. Sufre el doble si cae un compañero."
+  arrogante:
+    m: "Arrogante"
+    f: "Arrogante"
+    desc: "No acepta ir con héroes de menor nivel."
+  supersticioso:
+    m: "Supersticioso"
+    f: "Supersticiosa"
+    desc: "−2 Arcano. Odia las criptas."
+  tuerto:
+    m: "Tuerto"
+    f: "Tuerta"
+    desc: "Secuela. −1 Destreza, +1 Combate: da más miedo."
+  cojo:
+    m: "Cojo"
+    f: "Coja"
+    desc: "Secuela. −2 Supervivencia: los caminos largos se le hacen eternos."
+  curtido:
+    m: "Curtido"
+    f: "Curtida"
+    desc: "Sobrevivió perdido en la comarca. +2 Supervivencia."
+  cortado:
+    m: "Cara cortada"
+    f: "Cara cortada"
+    desc: "Secuela. +1 Combate: con esa cara, nadie quiere pelea."
+  velo:
+    m: "Vuelto del velo"
+    f: "Vuelta del velo"
+    desc: "Secuela: murió y volvió. +2 Arcano (ha visto el otro lado), −1 Fuerza (algo se quedó allí)."
+pista_oculto: "Rasgo oculto: se descubre tras su primera misión"
+oculto: "¿?"

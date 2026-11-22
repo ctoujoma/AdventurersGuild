@@ -1,0 +1,33 @@
+# Asaltos a la taberna (data/raids.ts). Huecos: {band} la banda, {h} un héroe, {who} los defensores.
+# «{viene|vienen}»: lo de la izquierda si la banda es una, lo de la derecha si son varios
+# (pendiente de pasar a ICU, ver docs/textos.md).
+
+bandas:
+  - "la banda del Tuerto Garra"
+  - "los Hermanos Cuervo"
+  - "las Ratas del Vado"
+  - "la Compañía Sin Bandera"
+  - "los Lobos de Hondogrís"
+  - "la cuadrilla de Mano Negra"
+chivatazos:
+  - "El tabernero ha oído en la barra que {band} {anda|andan} preguntando por El Jarro Partido."
+  - "Un buhonero asustado cuenta que {band} {acampa|acampan} a dos leguas, y que hablan de tu caja."
+  - "Bigotes lleva dos noches bufando a la puerta, y alguien ha pintado en el poste del camino la señal de {band}."
+  - "Una niña del pueblo trae un recado: {band} {viene|vienen} a por el gremio."
+chivatazo_explorador: "{h} ha visto huellas y hogueras en el camino real: {es|son} {band}, y vienen hacia aquí."
+asalto_empieza:
+  - "Pasada la medianoche, una fila de antorchas bajó por el camino real: era {band}."
+  - "Los perros del pueblo ladraron a la vez. Luego se oyeron botas y voces en el patio: {había|habían} llegado {band}."
+  - "A deshoras, alguien aporreó la puerta con el pomo de una espada. {Era|Eran} {band}."
+asalto_pelea:
+  - "{h} salió por la puerta antes que nadie y tumbó a dos antes de que encendieran la segunda antorcha."
+  - "{h} se plantó junto al pozo y por ahí no pasó nadie."
+  - "{h} peleó espalda con espalda junto al poste del camino."
+  - "Un bandido intentó colarse por la ventana de la sala; {h} lo despidió con un taburete."
+asalto_ganado:
+  - "Al alba, {band} {huía|huían} camino abajo. En el patio se dejaron las antorchas y un sombrero de ala ancha."
+  - "Los que quedaban en pie salieron corriendo. En el pueblo ya cuentan que en El Jarro Partido no se roba."
+asalto_perdido:
+  - "Eran demasiados. Se llevaron lo que quisieron y antes del alba ya no estaban."
+  - "Cuando por fin se fueron, la caja estaba medio vacía y la puerta, arrancada."
+asalto_vacio: "No había nadie en casa para defenderla. El tabernero se escondió en la bodega con Bigotes y oyó cómo vaciaban la caja."

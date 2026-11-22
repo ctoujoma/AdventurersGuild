@@ -1,5 +1,6 @@
 import { TIER_COLOR_NAMES, tierOf } from '../art/tiers';
 import type { Item, QuestType, Rarity, TrophyIcon } from '../core/model';
+import { list, t, tl } from '../textos';
 
 /**
  * Catálogo de botín. El equipo tiene tipo, rareza (0 común, 1 bueno, 2 raro, 3
@@ -12,8 +13,8 @@ export type GearBase = Omit<Item, 'id'>;
 export const GEAR: readonly GearBase[] = [
   // Común.
   {
-    name: 'Espada oxidada',
-    desc: 'Con una buena limpieza, quizá corte algo.',
+    name: t('objetos.equipo.espada_oxidada.nombre'),
+    desc: t('objetos.equipo.espada_oxidada.desc'),
     value: 20,
     kind: 'arma',
     rarity: 0,
@@ -21,8 +22,8 @@ export const GEAR: readonly GearBase[] = [
     bonus: { Combate: 1 },
   },
   {
-    name: 'Ganzúas de alambre',
-    desc: 'Dobladas a mano. Abren casi todo, si se les da tiempo.',
+    name: t('objetos.equipo.ganzuas_de_alambre.nombre'),
+    desc: t('objetos.equipo.ganzuas_de_alambre.desc'),
     value: 18,
     kind: 'herramienta',
     rarity: 0,
@@ -30,8 +31,8 @@ export const GEAR: readonly GearBase[] = [
     bonus: { Trampas: 1 },
   },
   {
-    name: 'Botas remendadas',
-    desc: 'Tienen más parches que cuero, pero no calan.',
+    name: t('objetos.equipo.botas_remendadas.nombre'),
+    desc: t('objetos.equipo.botas_remendadas.desc'),
     value: 16,
     kind: 'herramienta',
     rarity: 0,
@@ -39,8 +40,8 @@ export const GEAR: readonly GearBase[] = [
     bonus: { Supervivencia: 1 },
   },
   {
-    name: 'Talismán de ajo',
-    desc: 'Ahuyenta espíritus. Y amigos.',
+    name: t('objetos.equipo.talisman_de_ajo.nombre'),
+    desc: t('objetos.equipo.talisman_de_ajo.desc'),
     value: 16,
     kind: 'amuleto',
     rarity: 0,
@@ -48,8 +49,8 @@ export const GEAR: readonly GearBase[] = [
     bonus: { Arcano: 1 },
   },
   {
-    name: 'Coraza abollada',
-    desc: 'Está llena de bollos, pero sigue parando golpes.',
+    name: t('objetos.equipo.coraza_abollada.nombre'),
+    desc: t('objetos.equipo.coraza_abollada.desc'),
     value: 24,
     kind: 'armadura',
     rarity: 0,
@@ -58,8 +59,8 @@ export const GEAR: readonly GearBase[] = [
   },
   // Bueno.
   {
-    name: 'Espada de soldado',
-    desc: 'De las que reparte el ejército. Buen acero, sin adornos.',
+    name: t('objetos.equipo.espada_de_soldado.nombre'),
+    desc: t('objetos.equipo.espada_de_soldado.desc'),
     value: 32,
     kind: 'arma',
     rarity: 1,
@@ -67,8 +68,8 @@ export const GEAR: readonly GearBase[] = [
     bonus: { Combate: 1, Supervivencia: 1 },
   },
   {
-    name: 'Ganzúas de latón',
-    desc: 'No se doblan a la primera. Ya es algo.',
+    name: t('objetos.equipo.ganzuas_de_laton.nombre'),
+    desc: t('objetos.equipo.ganzuas_de_laton.desc'),
     value: 30,
     kind: 'herramienta',
     rarity: 1,
@@ -76,8 +77,8 @@ export const GEAR: readonly GearBase[] = [
     bonus: { Trampas: 1, Combate: 1 },
   },
   {
-    name: 'Botas de caminante',
-    desc: 'Suela doble y cordones que no se sueltan.',
+    name: t('objetos.equipo.botas_de_caminante.nombre'),
+    desc: t('objetos.equipo.botas_de_caminante.desc'),
     value: 30,
     kind: 'herramienta',
     rarity: 1,
@@ -85,8 +86,8 @@ export const GEAR: readonly GearBase[] = [
     bonus: { Supervivencia: 1, Trampas: 1 },
   },
   {
-    name: 'Colgante de cuarzo',
-    desc: 'Se empaña cuando algo raro anda cerca.',
+    name: t('objetos.equipo.colgante_de_cuarzo.nombre'),
+    desc: t('objetos.equipo.colgante_de_cuarzo.desc'),
     value: 30,
     kind: 'amuleto',
     rarity: 1,
@@ -94,8 +95,8 @@ export const GEAR: readonly GearBase[] = [
     bonus: { Arcano: 1, Supervivencia: 1 },
   },
   {
-    name: 'Cota de anillas',
-    desc: 'Tintinea al andar, pero para un tajo.',
+    name: t('objetos.equipo.cota_de_anillas.nombre'),
+    desc: t('objetos.equipo.cota_de_anillas.desc'),
     value: 34,
     kind: 'armadura',
     rarity: 1,
@@ -103,8 +104,8 @@ export const GEAR: readonly GearBase[] = [
     bonus: { Combate: 1, Supervivencia: 1 },
   },
   {
-    name: 'Vara de avellano',
-    desc: 'Recta y ligera. Algún aprendiz le hizo runas a navaja.',
+    name: t('objetos.equipo.vara_de_avellano.nombre'),
+    desc: t('objetos.equipo.vara_de_avellano.desc'),
     value: 32,
     kind: 'arma',
     rarity: 1,
@@ -113,8 +114,8 @@ export const GEAR: readonly GearBase[] = [
   },
   // Raro.
   {
-    name: 'Hacha de leñador enano',
-    desc: 'Pesa lo suyo, pero parte un tronco de un tajo.',
+    name: t('objetos.equipo.hacha_de_lenador_enano.nombre'),
+    desc: t('objetos.equipo.hacha_de_lenador_enano.desc'),
     value: 48,
     kind: 'arma',
     rarity: 2,
@@ -122,8 +123,8 @@ export const GEAR: readonly GearBase[] = [
     bonus: { Combate: 2 },
   },
   {
-    name: 'Ganzúas finas',
-    desc: 'Estuche de terciopelo. Alguien las echará de menos.',
+    name: t('objetos.equipo.ganzuas_finas.nombre'),
+    desc: t('objetos.equipo.ganzuas_finas.desc'),
     value: 44,
     kind: 'herramienta',
     rarity: 2,
@@ -131,8 +132,8 @@ export const GEAR: readonly GearBase[] = [
     bonus: { Trampas: 2 },
   },
   {
-    name: 'Capa de explorador',
-    desc: 'Parda y verdosa. Tumbado en el monte, no te ve ni tu madre.',
+    name: t('objetos.equipo.capa_de_explorador.nombre'),
+    desc: t('objetos.equipo.capa_de_explorador.desc'),
     value: 46,
     kind: 'herramienta',
     rarity: 2,
@@ -141,8 +142,8 @@ export const GEAR: readonly GearBase[] = [
     perk: 'ambush',
   },
   {
-    name: 'Amuleto de hueso',
-    desc: 'Huele a humo y a otra cosa. La mala suerte no se le acerca.',
+    name: t('objetos.equipo.amuleto_de_hueso.nombre'),
+    desc: t('objetos.equipo.amuleto_de_hueso.desc'),
     value: 42,
     kind: 'amuleto',
     rarity: 2,
@@ -151,8 +152,8 @@ export const GEAR: readonly GearBase[] = [
     perk: 'ward',
   },
   {
-    name: 'Escudo con blasón',
-    desc: 'Lleva las armas de una casa noble que se extinguió hace años.',
+    name: t('objetos.equipo.escudo_con_blason.nombre'),
+    desc: t('objetos.equipo.escudo_con_blason.desc'),
     value: 50,
     kind: 'armadura',
     rarity: 2,
@@ -161,8 +162,8 @@ export const GEAR: readonly GearBase[] = [
     perk: 'guard',
   },
   {
-    name: 'Varita de serbal',
-    desc: 'Tiembla un poco cuando hay magia cerca.',
+    name: t('objetos.equipo.varita_de_serbal.nombre'),
+    desc: t('objetos.equipo.varita_de_serbal.desc'),
     value: 48,
     kind: 'arma',
     rarity: 2,
@@ -171,8 +172,8 @@ export const GEAR: readonly GearBase[] = [
   },
   // Épico.
   {
-    name: 'Mandoble de Hierronegro',
-    desc: 'Forjado de noche, en una fragua que ya no existe.',
+    name: t('objetos.equipo.mandoble_de_hierronegro.nombre'),
+    desc: t('objetos.equipo.mandoble_de_hierronegro.desc'),
     value: 85,
     kind: 'arma',
     rarity: 3,
@@ -180,8 +181,8 @@ export const GEAR: readonly GearBase[] = [
     bonus: { Combate: 3 },
   },
   {
-    name: 'Hacha de guerra rúnica',
-    desc: 'Las runas del filo se encienden cuando muerde.',
+    name: t('objetos.equipo.hacha_de_guerra_runica.nombre'),
+    desc: t('objetos.equipo.hacha_de_guerra_runica.desc'),
     value: 85,
     kind: 'arma',
     rarity: 3,
@@ -190,8 +191,8 @@ export const GEAR: readonly GearBase[] = [
     perk: 'luck',
   },
   {
-    name: 'Ganzúas de sombra',
-    desc: 'Nadie oye abrirse una puerta con ellas.',
+    name: t('objetos.equipo.ganzuas_de_sombra.nombre'),
+    desc: t('objetos.equipo.ganzuas_de_sombra.desc'),
     value: 80,
     kind: 'herramienta',
     rarity: 3,
@@ -200,8 +201,8 @@ export const GEAR: readonly GearBase[] = [
     perk: 'ambush',
   },
   {
-    name: 'Amuleto del vigía',
-    desc: 'Un ojo de piedra que nunca parpadea.',
+    name: t('objetos.equipo.amuleto_del_vigia.nombre'),
+    desc: t('objetos.equipo.amuleto_del_vigia.desc'),
     value: 80,
     kind: 'amuleto',
     rarity: 3,
@@ -210,8 +211,8 @@ export const GEAR: readonly GearBase[] = [
     perk: 'ward',
   },
   {
-    name: 'Escudo de la torre',
-    desc: 'Lleva las mellas de cien asedios.',
+    name: t('objetos.equipo.escudo_de_la_torre.nombre'),
+    desc: t('objetos.equipo.escudo_de_la_torre.desc'),
     value: 90,
     kind: 'armadura',
     rarity: 3,
@@ -220,8 +221,8 @@ export const GEAR: readonly GearBase[] = [
     perk: 'guard',
   },
   {
-    name: 'Báculo de ceniza',
-    desc: 'Huele a hoguera aunque nunca se haya quemado.',
+    name: t('objetos.equipo.baculo_de_ceniza.nombre'),
+    desc: t('objetos.equipo.baculo_de_ceniza.desc'),
     value: 85,
     kind: 'arma',
     rarity: 3,
@@ -231,8 +232,8 @@ export const GEAR: readonly GearBase[] = [
   },
   // Legendario.
   {
-    name: 'Hoja de Vadoverde',
-    desc: 'Se hizo para un rey que murió sin estrenarla. Silba al cortar.',
+    name: t('objetos.equipo.hoja_de_vadoverde.nombre'),
+    desc: t('objetos.equipo.hoja_de_vadoverde.desc'),
     value: 120,
     kind: 'arma',
     rarity: 4,
@@ -241,8 +242,8 @@ export const GEAR: readonly GearBase[] = [
     perk: 'luck',
   },
   {
-    name: 'Capa élfica',
-    desc: 'Quien la lleva no hace ruido ni deja huella.',
+    name: t('objetos.equipo.capa_elfica.nombre'),
+    desc: t('objetos.equipo.capa_elfica.desc'),
     value: 110,
     kind: 'herramienta',
     rarity: 4,
@@ -251,8 +252,8 @@ export const GEAR: readonly GearBase[] = [
     perk: 'ambush',
   },
   {
-    name: 'Varita de la Abuela Tormenta',
-    desc: 'Huele a lluvia. A veces truena dentro del bolsillo.',
+    name: t('objetos.equipo.varita_de_la_abuela_tormenta.nombre'),
+    desc: t('objetos.equipo.varita_de_la_abuela_tormenta.desc'),
     value: 115,
     kind: 'arma',
     rarity: 4,
@@ -261,8 +262,8 @@ export const GEAR: readonly GearBase[] = [
     perk: 'ward',
   },
   {
-    name: 'Botas de siete leguas',
-    desc: 'De un carretero de los Ferrán. Con ellas los caminos se acortan, o eso parece.',
+    name: t('objetos.equipo.botas_de_siete_leguas.nombre'),
+    desc: t('objetos.equipo.botas_de_siete_leguas.desc'),
     value: 110,
     kind: 'herramienta',
     rarity: 4,
@@ -271,8 +272,8 @@ export const GEAR: readonly GearBase[] = [
     perk: 'ambush',
   },
   {
-    name: 'Corona del Rey Ahogado',
-    desc: 'Verde de algas y fría como el fondo de la laguna. Quien la lleva no teme a los muertos.',
+    name: t('objetos.equipo.corona_del_rey_ahogado.nombre'),
+    desc: t('objetos.equipo.corona_del_rey_ahogado.desc'),
     value: 125,
     kind: 'amuleto',
     rarity: 4,
@@ -281,8 +282,8 @@ export const GEAR: readonly GearBase[] = [
     perk: 'ward',
   },
   {
-    name: 'Coraza de escamas de sierpe',
-    desc: 'Hecha con las escamas de la sierpe de Sierra Parda. No arde ni con brasas.',
+    name: t('objetos.equipo.coraza_de_escamas_de_sierpe.nombre'),
+    desc: t('objetos.equipo.coraza_de_escamas_de_sierpe.desc'),
     value: 140,
     kind: 'armadura',
     rarity: 4,
@@ -291,8 +292,8 @@ export const GEAR: readonly GearBase[] = [
     perk: 'guard',
   },
   {
-    name: 'Capa de piel de ceniza',
-    desc: 'Del jabalí de ceniza. Huele a humo y no deja pasar el frío ni las flechas.',
+    name: t('objetos.equipo.capa_de_piel_de_ceniza.nombre'),
+    desc: t('objetos.equipo.capa_de_piel_de_ceniza.desc'),
     value: 160,
     kind: 'armadura',
     rarity: 4,
@@ -300,8 +301,8 @@ export const GEAR: readonly GearBase[] = [
     bonus: { Supervivencia: 3, Combate: 1 },
   },
   {
-    name: 'Cetro de la Reina',
-    desc: 'Frío al tacto. Los muertos que lo oyen golpear el suelo se vuelven a tumbar.',
+    name: t('objetos.equipo.cetro_de_la_reina.nombre'),
+    desc: t('objetos.equipo.cetro_de_la_reina.desc'),
     value: 180,
     kind: 'amuleto',
     rarity: 4,
@@ -309,8 +310,8 @@ export const GEAR: readonly GearBase[] = [
     bonus: { Arcano: 4 },
   },
   {
-    name: 'Escudo de escama blanca',
-    desc: 'Una sola escama de la dragona de la Corona Blanca, con asa. Ni el fuego ni el hielo la mellan.',
+    name: t('objetos.equipo.escudo_de_escama_blanca.nombre'),
+    desc: t('objetos.equipo.escudo_de_escama_blanca.desc'),
     value: 200,
     kind: 'armadura',
     rarity: 4,
@@ -322,39 +323,44 @@ export const GEAR: readonly GearBase[] = [
 
 export const TREASURES: readonly GearBase[] = [
   {
-    name: 'Colmillos de huargo',
-    desc: 'La tienda de pociones los compraría.',
+    name: t('objetos.tesoros.colmillos_de_huargo.nombre'),
+    desc: t('objetos.tesoros.colmillos_de_huargo.desc'),
     value: 24,
     kind: 'tesoro',
   },
   {
-    name: 'Llave de hierro negro',
-    desc: 'No abre ninguna puerta de la comarca. Ya se ha probado.',
+    name: t('objetos.tesoros.llave_de_hierro_negro.nombre'),
+    desc: t('objetos.tesoros.llave_de_hierro_negro.desc'),
     value: 10,
     kind: 'tesoro',
   },
   {
-    name: 'Mapa a medio quemar',
-    desc: 'Falta justo la parte importante.',
+    name: t('objetos.tesoros.mapa_a_medio_quemar.nombre'),
+    desc: t('objetos.tesoros.mapa_a_medio_quemar.desc'),
     value: 15,
     kind: 'tesoro',
   },
   {
-    name: 'Reliquia sin nombre',
-    desc: 'Sigue tibia aunque pase la noche al raso.',
+    name: t('objetos.tesoros.reliquia_sin_nombre.nombre'),
+    desc: t('objetos.tesoros.reliquia_sin_nombre.desc'),
     value: 60,
     kind: 'tesoro',
   },
   {
-    name: 'Bolsa de gemas turbias',
-    desc: 'Brillan menos de lo que prometen.',
+    name: t('objetos.tesoros.bolsa_de_gemas_turbias.nombre'),
+    desc: t('objetos.tesoros.bolsa_de_gemas_turbias.desc'),
     value: 45,
     kind: 'tesoro',
   },
-  { name: 'Cáliz de plata', desc: 'Con el escudo de un monasterio.', value: 40, kind: 'tesoro' },
+  {
+    name: t('objetos.tesoros.caliz_de_plata.nombre'),
+    desc: t('objetos.tesoros.caliz_de_plata.desc'),
+    value: 40,
+    kind: 'tesoro',
+  },
 ];
 
-export const RARITY_NAMES = ['Común', 'Bueno', 'Raro', 'Épico', 'Legendario'] as const;
+export const RARITY_NAMES = tl('objetos.rarezas');
 
 /**
  * Las rarezas en una frase, con el color de las que no son comunes: «común, bueno (verde),
@@ -362,16 +368,21 @@ export const RARITY_NAMES = ['Común', 'Bueno', 'Raro', 'Épico', 'Legendario'] 
  */
 export function rarityList(): string {
   const all = RARITY_NAMES.map((n, r) =>
-    r ? `${n.toLowerCase()} (${TIER_COLOR_NAMES[tierOf(r as Rarity)]})` : n.toLowerCase(),
+    r
+      ? t('objetos.rareza_color', {
+          rareza: n.toLowerCase(),
+          color: TIER_COLOR_NAMES[tierOf(r as Rarity)],
+        })
+      : n.toLowerCase(),
   );
-  return `${all.slice(0, -1).join(', ')} o ${all[all.length - 1]}`;
+  return list(all, 'o');
 }
 
 export const PERK_INFO: Record<NonNullable<Item['perk']>, string> = {
-  guard: 'Quien lo lleva se hiere la mitad',
-  luck: 'Repite una tirada fallida por misión',
-  ward: 'Anula al gafe del grupo',
-  ambush: 'Esquiva la mitad de las emboscadas',
+  guard: t('objetos.efectos.guard'),
+  luck: t('objetos.efectos.luck'),
+  ward: t('objetos.efectos.ward'),
+  ambush: t('objetos.efectos.ambush'),
 };
 
 /** Trofeos por tipo de encargo: solo tras un éxito brillante en encargos peligrosos. */
@@ -380,58 +391,94 @@ export const TROPHIES: Record<
   readonly { name: string; desc: string; icon: TrophyIcon }[]
 > = {
   Cazar: [
-    { name: 'Cabeza de huargo', desc: 'Aún enseña los dientes.', icon: 'cabeza' },
-    { name: 'Colmillos de basilisco', desc: 'Nadie quiere mirarlos de frente.', icon: 'colmillos' },
-    { name: 'Cabeza de jabalí negro', desc: 'Dicen que derribó un molino.', icon: 'cabeza' },
+    {
+      name: t('objetos.trofeos.Cazar.cabeza_de_huargo.nombre'),
+      desc: t('objetos.trofeos.Cazar.cabeza_de_huargo.desc'),
+      icon: 'cabeza',
+    },
+    {
+      name: t('objetos.trofeos.Cazar.colmillos_de_basilisco.nombre'),
+      desc: t('objetos.trofeos.Cazar.colmillos_de_basilisco.desc'),
+      icon: 'colmillos',
+    },
+    {
+      name: t('objetos.trofeos.Cazar.cabeza_de_jabali_negro.nombre'),
+      desc: t('objetos.trofeos.Cazar.cabeza_de_jabali_negro.desc'),
+      icon: 'cabeza',
+    },
   ],
   Limpiar: [
     {
-      name: 'Estandarte orco',
-      desc: 'Huele igual que el día que lo trajeron.',
+      name: t('objetos.trofeos.Limpiar.estandarte_orco.nombre'),
+      desc: t('objetos.trofeos.Limpiar.estandarte_orco.desc'),
       icon: 'estandarte',
     },
-    { name: 'Calavera del rey de las ratas', desc: 'Lleva una corona diminuta.', icon: 'calavera' },
+    {
+      name: t('objetos.trofeos.Limpiar.calavera_del_rey_de_las_ratas.nombre'),
+      desc: t('objetos.trofeos.Limpiar.calavera_del_rey_de_las_ratas.desc'),
+      icon: 'calavera',
+    },
   ],
   Explorar: [
-    { name: 'Ídolo de jade', desc: 'Sus ojos siguen a quien pasa.', icon: 'idolo' },
-    { name: 'Calavera con runas', desc: 'Las runas brillan cuando llueve.', icon: 'calavera' },
+    {
+      name: t('objetos.trofeos.Explorar.idolo_de_jade.nombre'),
+      desc: t('objetos.trofeos.Explorar.idolo_de_jade.desc'),
+      icon: 'idolo',
+    },
+    {
+      name: t('objetos.trofeos.Explorar.calavera_con_runas.nombre'),
+      desc: t('objetos.trofeos.Explorar.calavera_con_runas.desc'),
+      icon: 'calavera',
+    },
   ],
   Investigar: [
     {
-      name: 'Máscara del culto',
-      desc: 'Tiene una sonrisa que no le gusta a nadie.',
+      name: t('objetos.trofeos.Investigar.mascara_del_culto.nombre'),
+      desc: t('objetos.trofeos.Investigar.mascara_del_culto.desc'),
       icon: 'mascara',
     },
     {
-      name: 'Estandarte de la hermandad',
-      desc: 'De la hermandad ya no queda nadie.',
+      name: t('objetos.trofeos.Investigar.estandarte_de_la_hermandad.nombre'),
+      desc: t('objetos.trofeos.Investigar.estandarte_de_la_hermandad.desc'),
       icon: 'estandarte',
     },
   ],
   Recuperar: [
-    { name: 'Ídolo del templo hundido', desc: 'Pesa más de lo que parece.', icon: 'idolo' },
-    { name: 'Máscara del ladrón sin rostro', desc: 'Por dentro está caliente.', icon: 'mascara' },
+    {
+      name: t('objetos.trofeos.Recuperar.idolo_del_templo_hundido.nombre'),
+      desc: t('objetos.trofeos.Recuperar.idolo_del_templo_hundido.desc'),
+      icon: 'idolo',
+    },
+    {
+      name: t('objetos.trofeos.Recuperar.mascara_del_ladron_sin_rostro.nombre'),
+      desc: t('objetos.trofeos.Recuperar.mascara_del_ladron_sin_rostro.desc'),
+      icon: 'mascara',
+    },
   ],
   Escoltar: [
     {
-      name: 'Estandarte de los bandidos',
-      desc: 'Capturado en el camino real.',
+      name: t('objetos.trofeos.Escoltar.estandarte_de_los_bandidos.nombre'),
+      desc: t('objetos.trofeos.Escoltar.estandarte_de_los_bandidos.desc'),
       icon: 'estandarte',
     },
-    { name: 'Colmillos del lobo blanco', desc: 'Atacó la caravana y perdió.', icon: 'colmillos' },
+    {
+      name: t('objetos.trofeos.Escoltar.colmillos_del_lobo_blanco.nombre'),
+      desc: t('objetos.trofeos.Escoltar.colmillos_del_lobo_blanco.desc'),
+      icon: 'colmillos',
+    },
   ],
 };
 
 /** Resumen corto de lo que hace un objeto: «+2 Combate · Esquiva emboscadas». */
 /** El nombre con su mejora del taller: «Espada larga +2». */
 export const itemName = (it: Pick<Item, 'name' | 'plus'>) =>
-  it.plus ? `${it.name} +${it.plus}` : it.name;
+  it.plus ? t('objetos.con_mejora', { nombre: it.name, mas: it.plus }) : it.name;
 
 export function itemEffect(it: Item): string {
   // La mejora del taller (`plus`) suma a la habilidad principal (la primera), como en `gearOf`.
-  const parts = Object.entries(it.bonus ?? {}).map(
-    ([k, v], i) => `+${v + (i === 0 ? (it.plus ?? 0) : 0)} ${k}`,
+  const parts = Object.entries(it.bonus ?? {}).map(([k, v], i) =>
+    t('objetos.bono', { n: v + (i === 0 ? (it.plus ?? 0) : 0), habilidad: k }),
   );
   if (it.perk) parts.push(PERK_INFO[it.perk]);
-  return parts.join(' · ') || 'Solo vale lo que te den por él';
+  return parts.join(' · ') || t('objetos.solo_venta');
 }

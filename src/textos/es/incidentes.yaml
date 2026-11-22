@@ -1,0 +1,49 @@
+# Incidentes de la taberna (data/incidents.ts). Huecos: {h} quien lo arregla, {n} cifras.
+
+incidentes:
+  pelea:
+    titulo: "Pelea en el salón"
+    ask: "Arrastra a un héroe al salón para separarlos."
+    gana: "{h} separa a los borrachos antes de que vuelen las sillas."
+    pierde: "La pelea acaba con sillas rotas: {n} monedas en arreglos."
+  ladron:
+    titulo: "Un ladrón en la cámara"
+    ask: "Arrastra a un héroe a la cámara del tesoro."
+    gana: "{h} pilla al ladrón con las manos en la bolsa."
+    pierde: "El ladrón se escapa con {n} monedas."
+  fuego:
+    titulo: "Fuego en la cocina"
+    ask: "Arrastra a alguien de la casa a la cocina para apagarlo."
+    gana: "{h} apaga el fuego a cubos."
+    pierde: "El fuego se come {n} raciones."
+  ratas:
+    titulo: "Ratas en la despensa"
+    ask: "Toca las ratas para espantarlas."
+    gana: "Fuera ratas: no queda ni una."
+    pierde: "Las ratas se comen {n} raciones."
+  recaudador:
+    titulo: "El recaudador del alcalde"
+    ask: "Toca para pagar la tasa."
+    gana: "Pagas la tasa y el recaudador lo apunta a favor del gremio."
+    pierde: "El recaudador se va de mal humor y lo cuenta en el ayuntamiento."
+  gotera:
+    titulo: "Una gotera en la bodega"
+    ask: "Toca para llamar al carpintero."
+    gana: "El carpintero tapa la gotera antes de que se aguen las cubas."
+    pierde: "La gotera echa a perder {n} jarras."
+  nocturno:
+    titulo: "Ha entrado un ladrón"
+    ask: "Arrastra a un héroe: se despierta y va a por el ladrón."
+    gana: "{h} pilla al ladrón con las manos en la bolsa."
+    pierde: "El ladrón se escapa con {n} monedas."
+  noble:
+    titulo: "Un noble borracho"
+    ask: "Toca para decidir qué hacer con él."
+    choices:
+      "0":
+        etiqueta: "Echarlo a la calle"
+        texto: "Lo sacas a la calle: el salón respira, pero el noble no olvida."
+      "1":
+        etiqueta: "Pagarle la cuenta"
+        texto: "Le pagas la cuenta y se va cantando las alabanzas del gremio."
+    pierde: "El noble se va sin pagar y dice cosas feas del gremio por ahí."

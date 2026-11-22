@@ -1,0 +1,161 @@
+# Etiquetas que dependen de los datos (data/labels.ts): clases, peligro, estado de los héroes,
+# mejoras del gremio y moral.
+
+clases:
+  guerrero:
+    m: "Guerrero"
+    f: "Guerrera"
+  picaro:
+    m: "Pícaro"
+    f: "Pícara"
+  mago:
+    m: "Mago"
+    f: "Maga"
+  clerigo:
+    m: "Clérigo"
+    f: "Clériga"
+  explorador:
+    m: "Explorador"
+    f: "Exploradora"
+peligro:
+  - "Bajo"
+  - "Medio"
+  - "Alto"
+  - "Letal"
+mejoras:
+  dorm:
+    nombre: "Dormitorios"
+    niveles:
+      - "En ruinas: paja en el suelo"
+      - "2 literas"
+      - "3 literas y cortinas"
+      - "4 literas con colchas, farol y banderines"
+      - "Literas con dosel, mantas bordadas y alfombras"
+    efecto: "{camas} camas por hueco; cada dormitorio suma las suyas{lujo, select, si {; +2 de moral por noche a los de casa} other {}}"
+  enf:
+    nombre: "Enfermería"
+    niveles:
+      - "Cerrada y llena de trastos"
+      - "1 camilla y una vela"
+      - "2 camillas, farol y hierbas secándose"
+      - "2 camillas y botica con pociones"
+    efecto_0: "Las heridas curan a su ritmo"
+    efecto: "Las heridas curan {veces} veces más rápido"
+  tab:
+    nombre: "Taberna"
+    niveles:
+      - "En ruinas: chimenea apagada y telarañas"
+      - "Yeso desconchado, barra de tablas, un farol y lo justo"
+      - "Encalado con cenefa, barriles, apliques, diana, caldero y velas"
+      - "Arrimadero de paneles, manteles, trofeo, laúd, candelabro y fuego grande"
+      - "Gran salón: alfombra larga, araña de latón, dos candelabros y barra dorada"
+      - "Salón de banquetes: araña de cristal, vidrieras, chimenea y barra de mármol"
+    efecto_0: "No deja dinero: no viene nadie"
+    efecto: "+{atractivo} de Atractivo (más visitantes){encargos, select, si {, más encargos} other {}}{candidatos, select, si { y mejores candidatos} other {}}; descansar anima más"
+  mapas:
+    nombre: "Sala de mapas"
+    niveles:
+      - "Un mapa viejo clavado en el desván"
+      - "Mesa de cartografía y mapas de la comarca"
+      - "Catalejo, globo y rutas marcadas con hilo rojo"
+      - "Gran mapa con rosa de los vientos y damasco verde"
+    efecto: "+{n, plural, one {# encargo} other {# encargos}} en el tablón, +15 % de chivatazo de los asaltos{todos, select, si {; ves el peligro real de todos} other {}}"
+  arm:
+    nombre: "Armería"
+    niveles:
+      - "Cuatro espadas oxidadas en la bodega"
+      - "Armero con lanzas, espadas y escudos"
+      - "Armaduras, yunque y piedra de afilar"
+      - "Tres filas de estantes y paredes de arenisca"
+    efecto:
+      - "Cada cual va con lo suyo"
+      - "+1 Combate a todos"
+      - "+1 Combate, Trampas y Supervivencia a todos"
+      - "+2 Combate y +1 Trampas y Supervivencia a todos"
+  cap:
+    nombre: "Capilla"
+    niveles:
+      - "No hay: se reza donde se puede"
+      - "Anexo de piedra con altar y una vela por cada caído"
+      - "Campana, vidriera y bancos"
+      - "Más velas, otra fila de caídos y damasco morado"
+    efecto: "Moral +{moral} por noche, vuelve el {vuelve} % de los desaparecidos (sin capilla, el {sin} %){mitad, select, si { y los caídos duelen la mitad} other {}}"
+  forja:
+    nombre: "Forja"
+    niveles:
+      - "No hay: el herrero del pueblo cobra caro"
+      - "Cobertizo con fragua, yunque y fuelle"
+      - "Fragua grande con chimenea y armero"
+      - "Una pieza al rojo en la fragua y paredes de arenisca"
+    efecto: "Calidad de la sala: {calidad} (un buen artesano la sube)"
+  establo:
+    nombre: "Establo"
+    niveles:
+      - "No hay: se va a pie"
+      - "Cuadra con dos caballos"
+      - "Cuadra grande y carro"
+    efecto: "Un día menos en viajes de 3 o más días{carro, select, si {; las escoltas pagan un 25 % más} other {}}"
+  patio:
+    nombre: "Patio de entrenamiento"
+    niveles:
+      - "No hay"
+      - "Muñecos de paja junto al camino"
+      - "Muñecos, diana y armero de prácticas"
+    efecto: "+{xp} de experiencia por noche a quien descansa (de nivel se sube peleando)"
+  empal:
+    nombre: "Empalizada"
+    niveles:
+      - "No hay"
+      - "Estacas afiladas cerrando el patio"
+      - "Empalizada doble con pasarela"
+    efecto: "+{defensa} a la defensa si asaltan la taberna"
+  torre:
+    nombre: "Torre del vigía"
+    niveles:
+      - "No hay"
+      - "Torre de madera con farol"
+      - "Torre alta con campana y estandarte"
+      - "Almenara encendida, pendón y bandera"
+    efecto: "Siempre hay chivatazo de los asaltos{campana, select, si {; un encargo más en el tablón} other {}}{almenara, select, si {; con la almenara, las bandas se lo piensan más} other {}}"
+  vet:
+    nombre: "Ala de veteranos"
+    niveles:
+      - "No hay"
+      - "Cuartos con ventana para los veteranos"
+      - "Ala con balcón y sus trofeos"
+      - "Armadura bajo la ventana y damasco granate"
+    efecto: "{camas} camas por hueco. Héroes de nivel 4 o más: +{moral} de moral por noche y más tope{balcon, select, si {; nunca desertan} other {}}"
+moral:
+  animado:
+    etiqueta:
+      m: "Animado."
+      f: "Animada."
+    corto: "+1"
+    desc: "+1 a todas las habilidades."
+  normal:
+    etiqueta:
+      m: "Tranquilo."
+      f: "Tranquila."
+    desc: "Descansar en la taberna le sube la moral; mejorarla, más."
+  desanimado:
+    etiqueta:
+      m: "Desanimado."
+      f: "Desanimada."
+    corto: "−1"
+    desc: "−1 a todas las habilidades. Puede pedirte un aumento."
+  harto:
+    etiqueta:
+      m: "Harto."
+      f: "Harta."
+    corto: "−1"
+    desc: "−1 a todo y puede irse cualquier noche. Déjale descansar o súbele el sueldo."
+calidad: "común {c} %, bueno {b} %, raro {r} %"
+peligro_oculto: "¿?"
+estado:
+  candidato: "Busca trabajo"
+  ok: "Disponible"
+  mision: "De misión · {dias} d"
+  herido: "{sexo, select, f {Herida} other {Herido}} · {dias} d"
+  desaparecido: "{sexo, select, f {Desaparecida} other {Desaparecido}}"
+  muerto: "{sexo, select, f {Caída} other {Caído}}"
+sin_efecto: "Sin efecto"

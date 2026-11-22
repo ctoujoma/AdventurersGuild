@@ -6,6 +6,7 @@ import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
 import preact from '@preact/preset-vite';
 import { parseNews } from './src/platform/news';
+import { textosVite } from './tools/textos/cargar.mjs';
 
 /** Todos los ficheros de una carpeta, con su ruta relativa a ella. */
 function walk(dir: string, root = dir): string[] {
@@ -80,7 +81,7 @@ function news() {
 export default defineConfig({
   // Rutas relativas: el mismo build sirve en GitHub Pages, en local y dentro de Capacitor.
   base: './',
-  plugins: [preact(), precache()],
+  plugins: [preact(), precache(), textosVite()],
   define: { __VERSION__: JSON.stringify(version()), __NEWS__: JSON.stringify(news()) },
   // three.js va dentro del mismo fichero (el juego se empaqueta en un solo HTML).
   build: { chunkSizeWarningLimit: 1200 },

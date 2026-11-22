@@ -1,48 +1,37 @@
 import type { Danger, Facilities, Hero, Outcome } from '../core/model';
 import { CRAFT_QUALITY, TRAINING_XP, returnChance, salonAppeal } from '../core/balance';
 import type { ClassId, MoraleBand } from '../core/party';
+import { t, tl } from '../textos';
 
 /** Textos de la interfaz que dependen de los datos del juego. */
 
 /** «común 45 %, bueno 38 %, raro 17 %»: lo que sale de un taller de ese nivel (con artesano). */
 export function qualityText(level: number): string {
   const [c, b, r] = CRAFT_QUALITY[level] ?? CRAFT_QUALITY.at(-1)!;
-  const pct = (x: number) => `${Math.round(100 * x)} %`;
-  return `común ${pct(c)}, bueno ${pct(b)}, raro ${pct(r)}`;
+  const pct = (x: number) => Math.round(100 * x);
+  return t('etiquetas.calidad', { c: pct(c), b: pct(b), r: pct(r) });
 }
 
 export const CLASS_NAMES: Record<ClassId, { m: string; f: string }> = {
-  guerrero: { m: 'Guerrero', f: 'Guerrera' },
-  picaro: { m: 'Pícaro', f: 'Pícara' },
-  mago: { m: 'Mago', f: 'Maga' },
-  clerigo: { m: 'Clérigo', f: 'Clériga' },
-  explorador: { m: 'Explorador', f: 'Exploradora' },
+  guerrero: { m: t('etiquetas.clases.guerrero.m'), f: t('etiquetas.clases.guerrero.f') },
+  picaro: { m: t('etiquetas.clases.picaro.m'), f: t('etiquetas.clases.picaro.f') },
+  mago: { m: t('etiquetas.clases.mago.m'), f: t('etiquetas.clases.mago.f') },
+  clerigo: { m: t('etiquetas.clases.clerigo.m'), f: t('etiquetas.clases.clerigo.f') },
+  explorador: { m: t('etiquetas.clases.explorador.m'), f: t('etiquetas.clases.explorador.f') },
 };
 
-export const DANGER_LABELS = ['Bajo', 'Medio', 'Alto', 'Letal'] as const;
+export const DANGER_LABELS = tl('etiquetas.peligro');
 export const dangerClass = (d: Danger, hidden?: boolean) =>
   hidden ? 'x' : ['bajo', 'medio', 'alto', 'letal'][d]!;
 export const dangerLabel = (d: Danger, hidden?: boolean) =>
-  hidden ? '¿?' : DANGER_LABELS[d].toLowerCase();
+  hidden ? t('etiquetas.peligro_oculto') : DANGER_LABELS[d]!.toLowerCase();
 
 /** Estado visible de un héroe (los candidatos no son del gremio todavía). */
 export type ViewStatus = Hero['status'] | 'candidato';
 
 export function statusLabel(h: Hero, candidate = false): string {
-  const a = (m: string, f: string) => (h.sex === 'f' ? f : m);
-  if (candidate) return 'Busca trabajo';
-  switch (h.status) {
-    case 'ok':
-      return 'Disponible';
-    case 'mision':
-      return `De misión · ${h.days} d`;
-    case 'herido':
-      return `${a('Herido', 'Herida')} · ${h.days} d`;
-    case 'desaparecido':
-      return a('Desaparecido', 'Desaparecida');
-    case 'muerto':
-      return a('Caído', 'Caída');
-  }
+  if (candidate) return t('etiquetas.estado.candidato');
+  return t(`etiquetas.estado.${h.status}`, { sexo: h.sex, dias: h.days });
 }
 
 export const OUTCOME_CLASS: Record<Outcome, string> = {
@@ -55,160 +44,123 @@ export const OUTCOME_CLASS: Record<Outcome, string> = {
 
 export const FACILITY_INFO: Record<
   keyof Facilities,
-  { name: string; room: string; levels: string[]; effect: (l: number) => string }
+  { name: string; room: string; levels: readonly string[]; effect: (l: number) => string }
 > = {
   dorm: {
-    name: 'Dormitorios',
+    name: t('etiquetas.mejoras.dorm.nombre'),
     room: 'dormitorios',
-    levels: [
-      'En ruinas: paja en el suelo',
-      '2 literas',
-      '3 literas y cortinas',
-      '4 literas con colchas, farol y banderines',
-      'Literas con dosel, mantas bordadas y alfombras',
-    ],
+    levels: tl('etiquetas.mejoras.dorm.niveles'),
     // Por hueco: el tope de héroes es la suma de las camas de todos los dormitorios (y veteranos).
-    effect: (l) =>
-      `${Math.min(l + 1, 4)} camas por hueco; cada dormitorio suma las suyas${l >= 4 ? '; +2 de moral por noche a los de casa' : ''}`,
+    effect: (l) => t('etiquetas.mejoras.dorm.efecto', { camas: Math.min(l + 1, 4), lujo: l >= 4 }),
   },
   enf: {
-    name: 'Enfermería',
+    name: t('etiquetas.mejoras.enf.nombre'),
     room: 'enfermeria',
-    levels: [
-      'Cerrada y llena de trastos',
-      '1 camilla y una vela',
-      '2 camillas, farol y hierbas secándose',
-      '2 camillas y botica con pociones',
-    ],
+    levels: tl('etiquetas.mejoras.enf.niveles'),
     effect: (l) =>
-      l === 0 ? 'Las heridas curan a su ritmo' : `Las heridas curan ${l + 1} veces más rápido`,
+      l === 0
+        ? t('etiquetas.mejoras.enf.efecto_0')
+        : t('etiquetas.mejoras.enf.efecto', { veces: l + 1 }),
   },
   tab: {
-    name: 'Taberna',
+    name: t('etiquetas.mejoras.tab.nombre'),
     room: 'sala',
-    levels: [
-      'En ruinas: chimenea apagada y telarañas',
-      'Yeso desconchado, barra de tablas, un farol y lo justo',
-      'Encalado con cenefa, barriles, apliques, diana, caldero y velas',
-      'Arrimadero de paneles, manteles, trofeo, laúd, candelabro y fuego grande',
-      'Gran salón: alfombra larga, araña de latón, dos candelabros y barra dorada',
-      'Salón de banquetes: araña de cristal, vidrieras, chimenea y barra de mármol',
-    ],
+    levels: tl('etiquetas.mejoras.tab.niveles'),
     effect: (l) =>
       l === 0
-        ? 'No deja dinero: no viene nadie'
-        : `+${salonAppeal(l)} de Atractivo (más visitantes)${l <= 2 ? ', más encargos' : ''}${l >= 2 ? ' y mejores candidatos' : ''}; descansar anima más`,
+        ? t('etiquetas.mejoras.tab.efecto_0')
+        : t('etiquetas.mejoras.tab.efecto', {
+            atractivo: salonAppeal(l),
+            encargos: l <= 2,
+            candidatos: l >= 2,
+          }),
   },
   mapas: {
-    name: 'Sala de mapas',
+    name: t('etiquetas.mejoras.mapas.nombre'),
     room: 'despacho',
-    levels: [
-      'Un mapa viejo clavado en el desván',
-      'Mesa de cartografía y mapas de la comarca',
-      'Catalejo, globo y rutas marcadas con hilo rojo',
-      'Gran mapa con rosa de los vientos y damasco verde',
-    ],
+    levels: tl('etiquetas.mejoras.mapas.niveles'),
     effect: (l) =>
       l === 0
-        ? 'Sin efecto'
-        : `+${l} ${l === 1 ? 'encargo' : 'encargos'} en el tablón, +15 % de chivatazo de los asaltos${l >= 2 ? '; ves el peligro real de todos' : ''}`,
+        ? t('etiquetas.sin_efecto')
+        : t('etiquetas.mejoras.mapas.efecto', { n: l, todos: l >= 2 }),
   },
   arm: {
-    name: 'Armería',
+    name: t('etiquetas.mejoras.arm.nombre'),
     room: 'armeria',
-    levels: [
-      'Cuatro espadas oxidadas en la bodega',
-      'Armero con lanzas, espadas y escudos',
-      'Armaduras, yunque y piedra de afilar',
-      'Tres filas de estantes y paredes de arenisca',
-    ],
-    effect: (l) =>
-      l === 0
-        ? 'Cada cual va con lo suyo'
-        : l === 1
-          ? '+1 Combate a todos'
-          : l === 2
-            ? '+1 Combate, Trampas y Supervivencia a todos'
-            : '+2 Combate y +1 Trampas y Supervivencia a todos',
+    levels: tl('etiquetas.mejoras.arm.niveles'),
+    effect: (l) => tl('etiquetas.mejoras.arm.efecto')[Math.min(l, 3)]!,
   },
   cap: {
-    name: 'Capilla',
+    name: t('etiquetas.mejoras.cap.nombre'),
     room: 'capilla',
-    levels: [
-      'No hay: se reza donde se puede',
-      'Anexo de piedra con altar y una vela por cada caído',
-      'Campana, vidriera y bancos',
-      'Más velas, otra fila de caídos y damasco morado',
-    ],
+    levels: tl('etiquetas.mejoras.cap.niveles'),
     effect: (l) =>
       l === 0
-        ? 'Sin efecto'
-        : `Moral +${2 * l} por noche, vuelve el ${Math.round(100 * returnChance(l))} % de los desaparecidos (sin capilla, el ${Math.round(100 * returnChance(0))} %)${l >= 2 ? ' y los caídos duelen la mitad' : ''}`,
+        ? t('etiquetas.sin_efecto')
+        : t('etiquetas.mejoras.cap.efecto', {
+            moral: 2 * l,
+            vuelve: Math.round(100 * returnChance(l)),
+            sin: Math.round(100 * returnChance(0)),
+            mitad: l >= 2,
+          }),
   },
   forja: {
-    name: 'Forja',
+    name: t('etiquetas.mejoras.forja.nombre'),
     room: 'forja',
-    levels: [
-      'No hay: el herrero del pueblo cobra caro',
-      'Cobertizo con fragua, yunque y fuelle',
-      'Fragua grande con chimenea y armero',
-      'Una pieza al rojo en la fragua y paredes de arenisca',
-    ],
+    levels: tl('etiquetas.mejoras.forja.niveles'),
     effect: (l) =>
-      l === 0 ? 'Sin efecto' : `Calidad de la sala: ${qualityText(l)} (un buen artesano la sube)`,
+      l === 0
+        ? t('etiquetas.sin_efecto')
+        : t('etiquetas.mejoras.forja.efecto', { calidad: qualityText(l) }),
   },
   establo: {
-    name: 'Establo',
+    name: t('etiquetas.mejoras.establo.nombre'),
     room: 'establo',
-    levels: ['No hay: se va a pie', 'Cuadra con dos caballos', 'Cuadra grande y carro'],
+    levels: tl('etiquetas.mejoras.establo.niveles'),
     effect: (l) =>
       l === 0
-        ? 'Sin efecto'
-        : `Un día menos en viajes de 3 o más días${l >= 2 ? '; las escoltas pagan un 25 % más' : ''}`,
+        ? t('etiquetas.sin_efecto')
+        : t('etiquetas.mejoras.establo.efecto', { carro: l >= 2 }),
   },
   patio: {
-    name: 'Patio de entrenamiento',
+    name: t('etiquetas.mejoras.patio.nombre'),
     room: 'patio-entreno',
-    levels: ['No hay', 'Muñecos de paja junto al camino', 'Muñecos, diana y armero de prácticas'],
+    levels: tl('etiquetas.mejoras.patio.niveles'),
     effect: (l) =>
       l === 0
-        ? 'Sin efecto'
-        : `+${TRAINING_XP[l]} de experiencia por noche a quien descansa (de nivel se sube peleando)`,
+        ? t('etiquetas.sin_efecto')
+        : t('etiquetas.mejoras.patio.efecto', { xp: TRAINING_XP[l] }),
   },
   empal: {
-    name: 'Empalizada',
+    name: t('etiquetas.mejoras.empal.nombre'),
     room: 'empalizada',
-    levels: ['No hay', 'Estacas afiladas cerrando el patio', 'Empalizada doble con pasarela'],
+    levels: tl('etiquetas.mejoras.empal.niveles'),
     effect: (l) =>
-      l === 0 ? 'Sin efecto' : `+${[0, 5, 10][l]} a la defensa si asaltan la taberna`,
+      l === 0
+        ? t('etiquetas.sin_efecto')
+        : t('etiquetas.mejoras.empal.efecto', { defensa: [0, 5, 10][l] }),
   },
   torre: {
-    name: 'Torre del vigía',
+    name: t('etiquetas.mejoras.torre.nombre'),
     room: 'torre',
-    levels: [
-      'No hay',
-      'Torre de madera con farol',
-      'Torre alta con campana y estandarte',
-      'Almenara encendida, pendón y bandera',
-    ],
+    levels: tl('etiquetas.mejoras.torre.niveles'),
     effect: (l) =>
       l === 0
-        ? 'Sin efecto'
-        : `Siempre hay chivatazo de los asaltos${l >= 2 ? '; un encargo más en el tablón' : ''}${l >= 3 ? '; con la almenara, las bandas se lo piensan más' : ''}`,
+        ? t('etiquetas.sin_efecto')
+        : t('etiquetas.mejoras.torre.efecto', { campana: l >= 2, almenara: l >= 3 }),
   },
   vet: {
-    name: 'Ala de veteranos',
+    name: t('etiquetas.mejoras.vet.nombre'),
     room: 'veteranos',
-    levels: [
-      'No hay',
-      'Cuartos con ventana para los veteranos',
-      'Ala con balcón y sus trofeos',
-      'Armadura bajo la ventana y damasco granate',
-    ],
+    levels: tl('etiquetas.mejoras.vet.niveles'),
     effect: (l) =>
       l === 0
-        ? 'Sin efecto'
-        : `${2 * Math.min(l, 2)} camas por hueco. Héroes de nivel 4 o más: +${[0, 4, 8, 12][l]} de moral por noche y más tope${l >= 2 ? '; nunca desertan' : ''}`,
+        ? t('etiquetas.sin_efecto')
+        : t('etiquetas.mejoras.vet.efecto', {
+            camas: 2 * Math.min(l, 2),
+            moral: [0, 4, 8, 12][l],
+            balcon: l >= 2,
+          }),
   },
 };
 
@@ -218,23 +170,29 @@ export const MORALE_INFO: Record<
   { label: { m: string; f: string }; short: string; desc: string }
 > = {
   animado: {
-    label: { m: 'Animado.', f: 'Animada.' },
-    short: '+1',
-    desc: '+1 a todas las habilidades.',
+    label: {
+      m: t('etiquetas.moral.animado.etiqueta.m'),
+      f: t('etiquetas.moral.animado.etiqueta.f'),
+    },
+    short: t('etiquetas.moral.animado.corto'),
+    desc: t('etiquetas.moral.animado.desc'),
   },
   normal: {
-    label: { m: 'Tranquilo.', f: 'Tranquila.' },
+    label: { m: t('etiquetas.moral.normal.etiqueta.m'), f: t('etiquetas.moral.normal.etiqueta.f') },
     short: '',
-    desc: 'Descansar en la taberna le sube la moral; mejorarla, más.',
+    desc: t('etiquetas.moral.normal.desc'),
   },
   desanimado: {
-    label: { m: 'Desanimado.', f: 'Desanimada.' },
-    short: '−1',
-    desc: '−1 a todas las habilidades. Puede pedirte un aumento.',
+    label: {
+      m: t('etiquetas.moral.desanimado.etiqueta.m'),
+      f: t('etiquetas.moral.desanimado.etiqueta.f'),
+    },
+    short: t('etiquetas.moral.desanimado.corto'),
+    desc: t('etiquetas.moral.desanimado.desc'),
   },
   harto: {
-    label: { m: 'Harto.', f: 'Harta.' },
-    short: '−1',
-    desc: '−1 a todo y puede irse cualquier noche. Déjale descansar o súbele el sueldo.',
+    label: { m: t('etiquetas.moral.harto.etiqueta.m'), f: t('etiquetas.moral.harto.etiqueta.f') },
+    short: t('etiquetas.moral.harto.corto'),
+    desc: t('etiquetas.moral.harto.desc'),
   },
 };
