@@ -145,6 +145,15 @@ function playDay(s: GameState, st: Strategy): GameState {
   s = structuredClone(s);
   settleWalks(s);
   const next = reduce(s, { type: 'endDay' });
+  EXP.sites += (next.stats?.expSites ?? 0) - (s.stats?.expSites ?? 0);
+  EXP.found += (next.stats?.expBundles ?? 0) - (s.stats?.expBundles ?? 0);
+  EXP.lost += Math.max(
+    0,
+    (next.expBundles?.length ?? 0) -
+      (s.expBundles?.length ?? 0) +
+      (next.stats?.expBundles ?? 0) -
+      (s.stats?.expBundles ?? 0),
+  );
   for (const [id, e] of out) {
     if (next.expeditions?.some((x) => x.id === id)) continue;
     const last = e;
@@ -161,7 +170,7 @@ function playDay(s: GameState, st: Strategy): GameState {
 
 /** Raciones por héroe que lleva una expedición del simulador, y lo que se cuenta de ellas. */
 const EXP_RATIONS = 8;
-const EXP = { sent: 0, back: 0, days: 0, far: 0, dead: 0, heroes: 0 };
+const EXP = { sent: 0, back: 0, days: 0, far: 0, dead: 0, heroes: 0, sites: 0, found: 0, lost: 0 };
 
 const value = (h: Hero) => h.attrs.F + h.attrs.D + h.attrs.M + h.lvl * 3;
 
@@ -402,9 +411,19 @@ for (const st of STRATEGIES) {
       )}) · ladrones ${(rooms.thieves / N).toFixed(1)} por partida (pillados ${pct(rooms.caught, rooms.thieves)}, se llevan ${(rooms.thiefGold / N).toFixed(0)} monedas) · mensajeros ${(rooms.messengers / N).toFixed(1)} (recado recogido ${pct(rooms.taken, rooms.messengers)})`,
   );
   console.log(
-    `  expediciones por partida ${(EXP.sent / N).toFixed(1)} · días fuera ${(EXP.days / Math.max(1, EXP.back)).toFixed(1)} · lejanía ${(EXP.far / Math.max(1, EXP.back)).toFixed(1)} días · muertos cada 100 héroes ${((100 * EXP.dead) / Math.max(1, EXP.heroes)).toFixed(1)}`,
+    `  expediciones por partida ${(EXP.sent / N).toFixed(1)} · días fuera ${(EXP.days / Math.max(1, EXP.back)).toFixed(1)} · lejanía ${(EXP.far / Math.max(1, EXP.back)).toFixed(1)} días · muertos cada 100 héroes ${((100 * EXP.dead) / Math.max(1, EXP.heroes)).toFixed(1)} · parajes ${(EXP.sites / N).toFixed(1)} · fardos perdidos ${(EXP.lost / N).toFixed(2)} (recuperados ${(EXP.found / N).toFixed(2)}) por partida`,
   );
-  Object.assign(EXP, { sent: 0, back: 0, days: 0, far: 0, dead: 0, heroes: 0 });
+  Object.assign(EXP, {
+    sent: 0,
+    back: 0,
+    days: 0,
+    far: 0,
+    dead: 0,
+    heroes: 0,
+    sites: 0,
+    found: 0,
+    lost: 0,
+  });
   if (lossDays.length) {
     const at = (d: number) => lossDays.filter((x) => x === d).length;
     console.log(

@@ -57,7 +57,7 @@ volver a ver).
 | --- | --- | --- |
 | 1 | Núcleo (`core/expedition.ts`: la expedición, días, raciones, curva, sucesos sencillos, vuelta sola, juego cerrado, simulador) + hoja de preparar + visor básico + bosque | Hecho (#208) |
 | 2 | Sucesos con decisión, cartas, opciones de clase, avisos, silenciar, guardianes y «Ver la pelea» | Hecho (#209) |
-| 3 | Mapa grande con niebla, parajes, fardos perdidos, récords y objetivos | Pendiente (depende del arte del mapa) |
+| 3 | Mapa grande con niebla, parajes, fardos perdidos, récords y objetivos | Hecho (PR del bloque 3; el dibujo del mapa, marcador hasta el del agente de arte) |
 | 4 | Salida, vuelta, informe «La mochila», brillos por rareza y sonido | Pendiente |
 | 5 | Sierra, marismas y ruinas (antes, «En obras»); tiempo por rumbo; pociones y cristal en los talleres; carta del veterano y tutorial | Pendiente |
 
@@ -111,6 +111,33 @@ volver a ver).
 - **Objetos** (cueva, atalaya, ruinas, guardián): a la mochila y al arcón al volver.
 - **Simulador**: no elige nunca (esperan al plazo y van con prudencia): sin contratar, 3,9 días de
   lejanía (antes 5) y ningún muerto en 60 partidas.
+
+## Bloque 3, cómo quedó
+
+- **Parajes que quedan** (`GameState.expSites`): cada cueva, atalaya o ruinas que sale se apunta
+  en el mapa con su lejanía y un desvío a un lado del camino. Si siguieron de largo, la próxima
+  expedición a ese rumbo vuelve a dar con él al pasar («Dan con una cueva que el gremio vio el día
+  12 y dejó sin explorar») y puede entrar; si ya se entró, solo una línea al pasar.
+- **Fardos perdidos** (`GameState.expBundles`, `dropBundle`): si caen todos, vuelve un tercio de la
+  mochila y el resto (monedas, materiales y objetos) queda como fardo a esa lejanía; otra
+  expedición al rumbo lo recoge al pasar (aviso en la barra). Como mucho `EXP_BUNDLES_MAX` (6).
+- **Récord**: ya estaba por rumbo (`expBest`); ahora, al pasarlo, una línea en el diario («Llegan
+  más lejos que nadie del gremio»).
+- **Objetivos** (con las expediciones abiertas): completar expediciones (se repite), descubrir
+  parajes (se repite) y llegar a 3, 5 y 8 días de lejanía (en serie). Contadores nuevos en
+  `Stats` (`expeditions`, `expSites`, `expBundles`).
+- **Mapa de rumbos** (`ui/ExpeditionMap.tsx`; en el mapa, botones «Comarca / Rumbos»): tres
+  veces el de la comarca, con ella en medio; niebla que se despeja hasta el récord de cada rumbo y
+  por donde van los de ahora; estela de cada expedición y la del récord; parajes (vistos o sin
+  explorar), fardos (brillan) y el rótulo de cada rumbo con su récord. Se arrastra y se acerca;
+  tocar algo abre su ficha; tocar un grupo, su visor.
+- **Dibujo**: `art/expMap.ts` es un marcador (manchas de color por rumbo; niebla de nubes a color o
+  rayada en pergamino). `expPoint(rumbo, días, lado)` es la geometría que usa la interfaz; el
+  dibujo bueno del agente de arte puede sustituir `worldBuffer` y `worldFog` sin tocarla.
+- **Arreglo**: con la expedición silenciada, los sucesos no se resolvían (se quedaban sin pasar
+  nada); ahora deciden al momento con prudencia.
+- **Simulador**: cuenta parajes y fardos. Sin contratar: 3,9 días de lejanía, 0,3 parajes y 0,1
+  fardos por partida (igual que `main` en lo demás).
 
 ## Depende de otros
 

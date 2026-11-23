@@ -284,6 +284,35 @@ export interface ExpChoice {
   /** Hora en que salió y hora hasta la que esperan. */
   h: number;
   until: number;
+  /** El paraje del mapa (si es un sitio donde se puede entrar). */
+  site?: string;
+}
+
+/** Un paraje que queda en el mapa para siempre (bloque 3): dónde y si ya se entró. */
+export interface ExpSite {
+  id: string;
+  kind: ExpEvent;
+  heading: Heading;
+  /** Lejanía (días) y desvío a un lado del camino (−1 a 1). */
+  dist: number;
+  side: number;
+  /** Día en que se vio y día en que se entró (si se entró). */
+  day: number;
+  done?: number;
+}
+
+/** Lo que quedó tirado cuando cayeron todos (EX6): otra expedición al rumbo puede recogerlo. */
+export interface ExpBundle {
+  id: string;
+  heading: Heading;
+  dist: number;
+  side: number;
+  day: number;
+  /** Quiénes lo perdieron (nombres, para el texto). */
+  who: string[];
+  gold: number;
+  mats: Mats;
+  items?: Item[];
 }
 
 /** Por qué dieron la vuelta. */
@@ -327,6 +356,10 @@ export interface Expedition {
   guest?: Hero;
   /** Ya les salió el guardián (uno por expedición). */
   guardian?: boolean;
+  /** Parajes y fardos del mapa por los que ya han pasado (bloque 3). */
+  passed?: string[];
+  /** Ya pasaron el récord del rumbo (se apunta una vez en el diario). */
+  record?: boolean;
 }
 
 /** Un encargo resuelto, para el historial (ver `GameState.questLog`). */
@@ -796,6 +829,10 @@ export interface Stats {
   trained?: number;
   /** Caídos que han vuelto del velo. */
   revived?: number;
+  /** Expediciones de vuelta, parajes vistos por primera vez y fardos recuperados. */
+  expeditions?: number;
+  expSites?: number;
+  expBundles?: number;
   byType: Partial<Record<QuestType, number>>;
 }
 
@@ -989,6 +1026,9 @@ export interface GameState {
   expeditions?: Expedition[];
   /** Récord de lejanía (días) de cada rumbo. */
   expBest?: Partial<Record<Heading, number>>;
+  /** Parajes vistos y fardos perdidos, en el mapa de rumbos (bloque 3). */
+  expSites?: ExpSite[];
+  expBundles?: ExpBundle[];
 }
 
 /** Un héroe da vueltas en la cama la noche del día `day`; `eased`: ya se le llevó el trago. */

@@ -23,6 +23,8 @@ export type GoalDef =
       fromDay?: number;
       /** Solo sale con alguna de estas salas en uso (los talleres, el pintor…). */
       needs?: readonly RoomType[];
+      /** Solo con las expediciones abiertas. */
+      exp?: boolean;
     }
   | {
       id: string;
@@ -37,13 +39,15 @@ export type GoalDef =
       text: string;
       /**
        * Llegar a tener: jarras, raciones, trabajadores, héroes, reputación, un héroe de ese nivel
-       * (`level`) o días seguidos sin bajas (`safe`).
+       * (`level`), días seguidos sin bajas (`safe`) o días de lejanía en una expedición (`far`).
        */
-      have: 'beer' | 'food' | 'workers' | 'heroes' | 'rep' | 'level' | 'safe';
+      have: 'beer' | 'food' | 'workers' | 'heroes' | 'rep' | 'level' | 'safe' | 'far';
       n: number;
       reward: Reward;
       /** Sale después de cumplir este otro (en serie). */
       after?: string;
+      /** Solo con las expediciones abiertas. */
+      exp?: boolean;
     };
 
 const byType = (t: QuestType, n: number, reward: Reward): GoalDef => ({
@@ -186,6 +190,51 @@ export const GOALS: readonly GoalDef[] = [
     step: 2,
     reward: { gold: 40 },
     needs: ['armas', 'tiro', 'biblioteca'],
+  },
+  // Expediciones (bloque 3): volver de unas cuantas, ver parajes y llegar lejos (en serie).
+  {
+    id: 'expediciones',
+    text: 'expediciones.objetivos.expediciones',
+    stat: 'expeditions',
+    n: 1,
+    step: 1,
+    reward: { gold: 50 },
+    exp: true,
+  },
+  {
+    id: 'parajes',
+    text: 'expediciones.objetivos.parajes',
+    stat: 'expSites',
+    n: 2,
+    step: 2,
+    reward: { gold: 60, rep: 1 },
+    exp: true,
+  },
+  {
+    id: 'lejos-3',
+    text: 'expediciones.objetivos.lejos',
+    have: 'far',
+    n: 3,
+    reward: { gold: 60 },
+    exp: true,
+  },
+  {
+    id: 'lejos-5',
+    after: 'lejos-3',
+    text: 'expediciones.objetivos.lejos',
+    have: 'far',
+    n: 5,
+    reward: { gold: 100, rep: 2 },
+    exp: true,
+  },
+  {
+    id: 'lejos-8',
+    after: 'lejos-5',
+    text: 'expediciones.objetivos.lejos',
+    have: 'far',
+    n: 8,
+    reward: { rep: 4, item: 3 },
+    exp: true,
   },
   byType('Cazar', 2, { gold: 50 }),
   byType('Explorar', 2, { gold: 50 }),

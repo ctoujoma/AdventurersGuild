@@ -27,6 +27,11 @@ error:
   sin_oro: "The pack doesn't hold {n} coins."
   sin_materiales: "They carry nothing to sell."
 diario:
+  record: "They have gone further into {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}} than anyone from the guild: a new record."
+  fardo_queda: "What they can't carry is left behind in a bundle; maybe another expedition will find it."
+  fardo: "A guild bundle! It's the one {quien} lost: {que}."
+  paraje_visto: "They pass by {que}; the guild already went in there on day {dia}."
+  paraje_otra_vez: "They come across {que}, which the guild saw on day {dia} and left unexplored."
   salida: "{grupo} {n, plural, one {sets} other {set}} out for {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}} with {raciones} rations."
   aviso: "{dias} days in: {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}} {n, plural, one {grows} other {grows}} wilder. More danger, better loot."
   raciones: "{heroe} catches something for the pot: {n, plural, one {# more ration} other {# more rations}}."
@@ -74,6 +79,7 @@ guardianes:
 pelea:
   nombre: "{enemigos, mayus}"
   donde: "In {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}, {dias, plural, =0 {less than a day} one {one day} other {# days}} from home"
+monedas: "{n, plural, one {one coin} other {# coins}}"
 botin: "{oro, plural, =0 {} one {one coin and } other {# coins and }}{que}"
 informe:
   titulo: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}"
@@ -93,6 +99,7 @@ informe:
   chip_objeto: "Brought back: {objeto}"
   chip_invitado: "{heroe} wants to stay: waiting at the bar"
 aviso:
+  fardo: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}: they found the bundle {quien} lost!"
   suceso: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}: {que, mayus}. They're waiting for your call."
   guardian: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}: {que}! Open the viewer to watch."
   vuelve: "The expedition is back from {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}: {grupo}."
@@ -287,3 +294,29 @@ carta:
   depende: "depends on their {atributo, select, F {Strength} D {Dexterity} other {Mind}}"
   cuesta: "{n} coins"
   ver_pelea: "Watch the fight"
+
+# Objetivos de las expediciones (data/goals.ts).
+objetivos:
+  expediciones: "Complete {n, plural, one {an expedition} other {# expeditions}}"
+  parajes: "Discover {n, plural, one {a landmark} other {# landmarks}} on expeditions"
+  lejos: "Reach {n} days out on an expedition"
+
+# The headings map (ui/ExpeditionMap.tsx).
+mapa:
+  titulo: "Headings map"
+  comarca: "Shire"
+  rumbos: "Headings"
+  paraje: "{que, mayus}"
+  donde: "{dias, plural, one {One day} other {# days}} into {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}"
+  explorado: "The guild went in on day {dia}."
+  sin_explorar: "Seen on day {dia}, unexplored: the next expedition passing by can go in."
+  fardo: "Bundle lost by {quien}"
+  fardo_lleva: "Left there on day {dia}: {que}. Another expedition this way will pick it up."
+  en_obras: "Under construction: you can't go yet."
+  sin_ir: "Nobody has been yet."
+  record: "Guild record: {dias, plural, =0 {less than a day} one {one day} other {# days}} out."
+  record_corto: "record {dias} d"
+  parajes: "{n, plural, =0 {No landmarks seen} one {One landmark seen} other {# landmarks seen}}."
+  cerrar: "Close"
+  acercar: "Zoom in"
+  alejar: "Zoom out"

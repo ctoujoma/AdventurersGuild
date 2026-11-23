@@ -35,6 +35,11 @@ error:
 
 # El diario de la expedición (se guarda en la partida). Una línea por suceso.
 diario:
+  record: "{n, plural, one {Llega} other {Llegan}} más lejos que nadie del gremio por {rumbo, select, bosque {el bosque} sierra {la sierra} marismas {las marismas} other {las ruinas}}: es un récord."
+  fardo_queda: "Lo que no pueden cargar queda tirado en un fardo; quizá otra expedición lo encuentre."
+  fardo: "¡Un fardo del gremio! Es el que {m, plural, one {perdió {quien}} other {perdieron {quien}}}: {que}."
+  paraje_visto: "{n, plural, one {Pasa} other {Pasan}} junto a {que}; el gremio ya entró allí el día {dia}."
+  paraje_otra_vez: "{n, plural, one {Da} other {Dan}} con {que} que el gremio vio el día {dia} y dejó sin explorar."
   salida: "{grupo} {n, plural, one {sale} other {salen}} hacia {rumbo, select, bosque {el bosque} sierra {la sierra} marismas {las marismas} other {las ruinas}} con {raciones} raciones."
   # Al adentrarse (cada pocos días de lejanía): más peligro y mejor botín.
   aviso: "{n, plural, one {Ya lleva} other {Ya llevan}} {dias} días adentro: {rumbo, select, bosque {el bosque} sierra {la sierra} marismas {las marismas} other {las ruinas}} se vuelve más salvaje. Más peligro, mejor botín."
@@ -92,6 +97,7 @@ pelea:
   donde: "En {rumbo, select, bosque {el bosque} sierra {la sierra} marismas {las marismas} other {las ruinas}}, a {dias, plural, =0 {menos de un día} one {un día} other {# días}} de casa"
 
 # Lo que encuentran en un suceso (en el hueco {que}).
+monedas: "{n, plural, one {una moneda} other {# monedas}}"
 botin: "{oro, plural, =0 {} one {una moneda y } other {# monedas y }}{que}"
 
 # El informe al volver.
@@ -114,6 +120,7 @@ informe:
   chip_invitado: "{heroe} quiere quedarse: espera en la barra"
 
 aviso:
+  fardo: "Expedición {rumbo, select, bosque {al bosque} sierra {a la sierra} marismas {a las marismas} other {a las ruinas}}: ¡encuentran el fardo que {m, plural, one {perdió {quien}} other {perdieron {quien}}}!"
   suceso: "Expedición {rumbo, select, bosque {al bosque} sierra {a la sierra} marismas {a las marismas} other {a las ruinas}}: {que, mayus}. Esperan a que digas."
   guardian: "Expedición {rumbo, select, bosque {al bosque} sierra {a la sierra} marismas {a las marismas} other {a las ruinas}}: ¡{que}! Abre el visor para verlo."
   vuelve: "Vuelve la expedición {rumbo, select, bosque {del bosque} sierra {de la sierra} marismas {de las marismas} other {de las ruinas}}: {grupo}."
@@ -321,3 +328,29 @@ carta:
   depende: "depende de su {atributo, select, F {Fuerza} D {Destreza} other {Mente}}"
   cuesta: "{n} monedas"
   ver_pelea: "Ver la pelea"
+
+# Objetivos de las expediciones (data/goals.ts).
+objetivos:
+  expediciones: "Completa {n, plural, one {una expedición} other {# expediciones}}"
+  parajes: "Descubre {n, plural, one {un paraje} other {# parajes}} en las expediciones"
+  lejos: "Llega a {n} días de lejanía en una expedición"
+
+# El mapa de rumbos (ui/ExpeditionMap.tsx).
+mapa:
+  titulo: "Mapa de rumbos"
+  comarca: "Comarca"
+  rumbos: "Rumbos"
+  paraje: "{que, mayus}"
+  donde: "{dias, plural, one {A un día} other {A # días}} por {rumbo, select, bosque {el bosque} sierra {la sierra} marismas {las marismas} other {las ruinas}}"
+  explorado: "El gremio entró el día {dia}."
+  sin_explorar: "Visto el día {dia}, sin explorar: la próxima expedición que pase podrá entrar."
+  fardo: "Fardo perdido de {quien}"
+  fardo_lleva: "Quedó allí el día {dia}: {que}. Otra expedición a este rumbo lo recogerá al pasar."
+  en_obras: "En obras: aún no se puede ir."
+  sin_ir: "Aún no ha ido nadie."
+  record: "Récord del gremio: {dias, plural, =0 {menos de un día} one {un día} other {# días}} de lejanía."
+  record_corto: "récord {dias} d"
+  parajes: "{n, plural, =0 {Ningún paraje visto} one {Un paraje visto} other {# parajes vistos}}."
+  cerrar: "Cerrar"
+  acercar: "Acercar el mapa"
+  alejar: "Alejar el mapa"

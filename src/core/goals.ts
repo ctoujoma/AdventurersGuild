@@ -11,6 +11,7 @@ import { grant, statValue } from './feats';
 import type { ActiveGoal, ChipKind, GameState, Goals, Reward } from './model';
 import { Rng } from './rng';
 import { active } from './rooms';
+import { expeditionsOpen } from './materials';
 import { type Msg, type Txt, msg, t, tx } from '../textos';
 
 const defOf = (id: string) => GOALS.find((g) => g.id === id);
@@ -28,6 +29,7 @@ function measure(s: GameState, d: GoalDef): number {
   if (d.have === 'workers') return s.workers.length;
   if (d.have === 'rep') return s.rep;
   if (d.have === 'safe') return statValue(s, 'safeDays');
+  if (d.have === 'far') return Math.floor(Math.max(0, ...Object.values(s.expBest ?? {})));
   if (d.have === 'level')
     return Math.max(0, ...s.heroes.filter((h) => h.status !== 'muerto').map((h) => h.lvl));
   return s.heroes.filter((h) => h.status !== 'muerto' && h.status !== 'desaparecido').length;
@@ -43,6 +45,7 @@ export function goalProgress(s: GameState, g: ActiveGoal): number {
 /** Si un objetivo puede salir ahora: no repetido (salvo los de contar) y que aún no esté hecho. */
 function available(s: GameState, d: GoalDef, goals: Goals): boolean {
   if (goals.active.some((g) => g.id === d.id)) return false;
+  if (!('room' in d) && d.exp && !expeditionsOpen(s)) return false;
   if ('stat' in d)
     return s.day >= (d.fromDay ?? 0) && (!d.needs || d.needs.some((t) => roomLevel(s, t) > 0));
   if (goals.done[d.id]) return false;
