@@ -200,7 +200,7 @@ Las pociones **solo existen si se han creado en la alquimia**, como la forja cre
   (`GameState.potions`), y se dan en la hoja igual que las raciones. También se encuentran por el
   camino (`EXP_POTION_FIND` en los hallazgos), y las que sobran vuelven a la alquimia. Ya no se
   gastan hierbas al salir.
-- **Falta (agente principal, talleres):** la receta de la poción en la alquimia: hierbas y su
+- **Falta (agente principal, talleres; encargo en [`pociones.md`](pociones.md)):** la receta de la poción en la alquimia: hierbas y su
   tiempo; al acabar, `s.potions++`, que se vea en la alquimia y en la despensa. Hasta entonces, sin
   pociones hechas, la hoja no enseña la fila de pociones.
 
