@@ -28,6 +28,7 @@ error:
   sin_oro: "The pack doesn't hold {n} coins."
   sin_materiales: "They carry nothing to sell."
 diario:
+  nadie: "Nobody was fit to deal with {que}: they let it go."
   pocion_hallada: "{heroe} finds a potion among some roots: into the pack."
   pocion: "{heroe} drinks a herbal potion and feels better: one wound less."
   record: "They have gone further into {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}} than anyone from the guild: a new record."
