@@ -176,6 +176,8 @@ import { customOf } from './custom';
 import { arrivePaint, cancelPaint, nightPaints, startPaint, stepPaints } from './paint';
 import {
   canCraft,
+  canPotion,
+  startPotion,
   arrive,
   canDress,
   canTemper,
@@ -225,6 +227,8 @@ import { msg, t } from '../textos';
 export type Action =
   /** Talleres: crear de una receta, desmontar un objeto del arcón o cancelar un trabajo. */
   | { type: 'craft'; room: string; recipe: RecipeId }
+  /** Preparar una poción en la alquimia. */
+  | { type: 'potion'; room: string }
   | { type: 'undoItem'; room: string; itemId: string }
   /** Mejorar un objeto del arcón en su taller (+1 a su habilidad principal, hasta +3). */
   | { type: 'temper'; room: string; itemId: string }
@@ -237,6 +241,8 @@ export type Action =
   /** La escena: un héroe ha llegado andando a una sala (la sastrería empieza a coser). */
   | { type: 'arrived'; heroId: string; room: string }
   | { type: 'hire'; id: string }
+  /** Rechazar a quien espera en la barra: se va y deja sitio a otro. */
+  | { type: 'reject'; id: string }
   | { type: 'fire'; id: string }
   | { type: 'hireWorker'; id: string }
   | { type: 'fireWorker'; id: string }
@@ -617,6 +623,10 @@ function reduceAction(state: GameState, action: Action): GameState {
       c.history.push(msg('partida.historial.contratado', { dia: s.day, sexo: c.sex }));
       s.heroes.push(c);
       return s;
+    }
+    case 'reject': {
+      if (!state.candidates.some((x) => x.id === action.id)) return state;
+      return { ...state, candidates: state.candidates.filter((x) => x.id !== action.id) };
     }
     case 'fire': {
       const h = state.heroes.find((x) => x.id === action.id);
@@ -1057,6 +1067,12 @@ function reduceAction(state: GameState, action: Action): GameState {
       if (canCraft(state, action.room, action.recipe)) return state;
       const s = structuredClone(state);
       startCraft(s, action.room, action.recipe);
+      return s;
+    }
+    case 'potion': {
+      if (canPotion(state, action.room)) return state;
+      const s = structuredClone(state);
+      startPotion(s, action.room);
       return s;
     }
     case 'temper': {

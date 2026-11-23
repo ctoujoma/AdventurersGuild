@@ -31,6 +31,8 @@ calidad:
   bueno: "bueno"
   raro: "raro"
 aviso:
+  # Al acabar una poción en la alquimia (n: las que se suman; 0 si ya no cabían).
+  pocion: "{n, plural, =0 {En la alquimia han acabado una poción, pero ya no cabía ninguna más.} one {En la alquimia han preparado una poción.} other {En la alquimia han preparado # pociones de una tanda.}}"
   vestido: "{heroe} estrena ropa: sale de la sastrería {sexo, select, f {hecha} other {hecho}} un pincel."
   mejorado: "En {taller} han mejorado {objeto}: ahora es +{mas}. Ya está en el arcón."
   receta: "Desmontando {objeto}, en {taller} han sacado cómo se hace: ya podéis crear {receta}."
@@ -39,3 +41,13 @@ aviso:
   creado_bueno: "En {taller} han creado {objeto}. Ha salido de calidad buena. Ya está en el arcón."
   creado_raro: "¡En {taller} han creado {objeto}! Ha salido de calidad rara. Ya está en el arcón."
   cancelado: "La sastrería deja lo que cosía{para, select, si { para {heroe}} other {}} y devuelve {n} monedas."
+# Pociones de la alquimia (las llevan las expediciones).
+pocion:
+  nombre: "Poción"
+  titulo: "Pociones: {n} de {tope}"
+  ayuda: "Curan una herida por la noche en las expediciones. Se llevan al salir, como las raciones; las que sobran vuelven."
+  preparar: "Preparar una poción"
+  coste: "{oro} monedas, {hierbas} hierbas · {horas}"
+  dos: "A veces salen dos ({pct} %)."
+  llenas: "Ya hay {n} pociones: no caben más. Mejora la alquimia para guardar más."
+  preparando: "Preparando una poción"

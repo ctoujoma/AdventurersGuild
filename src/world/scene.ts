@@ -189,6 +189,8 @@ export interface SceneCraft {
   stalled: boolean;
   /** Desmontando un objeto (no creando). */
   undo: boolean;
+  /** Una poción (alquimia): se dibuja el frasco en vez de `icon`. */
+  potion?: boolean;
   /** Vistiendo a un héroe (id): está en la sala mientras dura. */
   hero?: string;
   /** Aún no se cose: el héroe va de camino a la sala (el sastre le espera). */

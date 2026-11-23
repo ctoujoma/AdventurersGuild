@@ -522,6 +522,20 @@ export function trophyIcon(icon: TrophyIcon): PixelBuffer {
   });
 }
 
+/** La poción de la alquimia (frasco verde con tapón), 12×12. */
+export function potionIcon(): PixelBuffer {
+  return make('i:pocion', 12, 12, (b) => {
+    // Tapón de corcho, cuello y la panza redonda con el líquido verde y un brillo.
+    b.rect(5, 0, 2, 2, P.oak);
+    b.rect(4, 2, 4, 1, P.black);
+    b.rect(5, 3, 2, 2, P.mist);
+    b.ellipse(6, 8, 4, 3.5, (_x, _y, d) => (d > 0.85 ? P.black : P.mist));
+    b.ellipse(6, 9, 3, 2.2, (_x, _y, d) => (d > 0.7 ? P.leaf : P.lime));
+    b.set(4, 7, P.white);
+    b.set(4, 8, P.white);
+  });
+}
+
 /** Las tijeras de la sastrería (el bocadillo de vestir a un héroe), 12×12. */
 export function scissorsIcon(): PixelBuffer {
   return make('i:tijeras', 12, 12, (b) => {

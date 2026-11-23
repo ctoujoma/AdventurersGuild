@@ -59,6 +59,8 @@ herocard:
   despedir_a_se_va: "¿Despedir a {nombre}? Se va hoy y no vuelve."
   si_despedir: "Sí, despedir"
   contratar: "Contratar · {paga}"
+  rechazar: "Que se vaya"
+  rechazar_ayuda: "No le contratas: se va de la barra y deja sitio a otro que venga a pedir."
   historia: "Historia"
   despedir: "Despedir"
   no_lleva_nada: "{ranura}: no lleva nada."

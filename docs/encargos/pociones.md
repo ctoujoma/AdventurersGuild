@@ -54,3 +54,7 @@ objetos. Las expediciones las llevan **como las raciones**, de lo que haya hecho
 
 Se puede crear una poción en la alquimia; aparece en la hoja de una expedición; se gasta curando
 por el camino; y las que sobran vuelven.
+
+## Estado
+
+**Hecho** (agente principal, 23 de noviembre): trabajo propio de la alquimia (`Craft.potion`, `canPotion`/`startPotion`/`potionCap` en `core/crafting.ts`, acción `potion`), cifras `POTION_*` en `balance.ts`, fila en «Crear», «Pociones: n de tope» en la ficha y junto a las raciones, frasco en la escena (`potionIcon` en `art/items.ts`) y aviso al acabar. Vista previa: https://claude.ai/artifact/PwiGaSFfVA2q2eDbweYzTt.

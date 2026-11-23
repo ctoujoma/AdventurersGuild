@@ -310,6 +310,7 @@ export function sceneModel(s: GameState): SceneModel {
         frac: st.frac,
         stalled: st.hoursLeft === null,
         undo: !!c.item && !c.temper,
+        potion: c.potion,
         hero: c.dress?.hero,
         walking: st.walking || undefined,
       };

@@ -37,6 +37,8 @@ interface Props {
   candidate: boolean;
   onClose: () => void;
   onHire: () => void;
+  /** Candidato: que se vaya (deja sitio a otro). */
+  onReject?: () => void;
   onFire: () => void;
   onLocate: () => void;
   onAnswer: (yes: boolean) => void;
@@ -385,6 +387,7 @@ export function HeroCard({
   candidate,
   onClose,
   onHire,
+  onReject,
   onFire,
   onLocate,
   onAnswer,
@@ -816,6 +819,15 @@ export function HeroCard({
             {candidate && (
               <button class="btn btn-gold" disabled={!!why} onClick={onHire}>
                 <Icon name="coin" size={14} /> {t('ficha.herocard.contratar', { paga: h.fee })}
+              </button>
+            )}
+            {candidate && onReject && (
+              <button
+                class="btn btn-wood"
+                {...help(t('ficha.herocard.rechazar_ayuda'))}
+                onClick={onReject}
+              >
+                {t('ficha.herocard.rechazar')}
               </button>
             )}
             {candidate && (

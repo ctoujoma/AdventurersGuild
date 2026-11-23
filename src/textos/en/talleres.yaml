@@ -31,6 +31,7 @@ calidad:
   bueno: "good"
   raro: "rare"
 aviso:
+  pocion: "{n, plural, =0 {The alchemy lab finished a potion, but there was no room for another.} one {The alchemy lab has brewed a potion.} other {The alchemy lab has brewed # potions in one batch.}}"
   vestido: "{heroe} has new clothes: leaves the tailor's looking sharp."
   mejorado: "At {taller} they've upgraded {objeto}: it's now +{mas}. It's in the chest."
   receta: "Taking apart {objeto}, at {taller} they figured out how it's made: you can now make {receta}."
@@ -39,3 +40,12 @@ aviso:
   creado_bueno: "At {taller} they've made {objeto}. It came out good quality. It's in the chest."
   creado_raro: "At {taller} they've made {objeto}! It came out rare quality. It's in the chest."
   cancelado: "The tailor's drops what it was sewing{para, select, si { for {heroe}} other {}} and refunds {n} gold."
+pocion:
+  nombre: "Potion"
+  titulo: "Potions: {n} of {tope}"
+  ayuda: "They heal a wound at night on expeditions. Taken along like rations; leftovers come back."
+  preparar: "Brew a potion"
+  coste: "{oro} coins, {hierbas} herbs · {horas}"
+  dos: "Sometimes you get two ({pct} %)."
+  llenas: "There are already {n} potions: no room for more. Upgrade the alchemy lab to store more."
+  preparando: "Brewing a potion"

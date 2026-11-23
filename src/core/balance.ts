@@ -570,6 +570,15 @@ export const CRAFT_QUALITY: readonly (readonly [number, number, number])[] = [
 export const CRAFT_GOOD_PER_SKILL = 0.03;
 /** Desmontar: horas que tarda y probabilidad de sacar la receta, por nivel de la sala. */
 export const UNDO_HOURS = 4;
+/**
+ * Pociones (alquimia): lo que cuesta prepararlas (oro y hierbas) y las horas, como una receta de
+ * serie. Las guardadas tienen tope por el nivel de la alquimia (la mejor de la casa); con un
+ * buen alquimista o la sala a más nivel, a veces salen dos (la probabilidad de lo «raro»).
+ */
+export const POTION_GOLD = 10;
+export const POTION_HERBS = 2;
+export const POTION_HOURS = 6;
+export const POTION_CAP = [0, 4, 6, 8, 10] as const;
 export const UNDO_CHANCE = [0, 0.5, 0.6, 0.7, 0.8] as const;
 /** Vestir a un héroe en la sastrería: lo que cuesta, lo que tarda y la moral que da estrenar. */
 export const DRESS_GOLD = 15;
