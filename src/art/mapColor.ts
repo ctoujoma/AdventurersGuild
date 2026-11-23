@@ -106,14 +106,22 @@ export function colorRender(t: Terrain, deco?: (b: PixelBuffer) => void): PixelB
       const range = t.range[i]!;
       // Dónde empieza la roca y dónde la nieve, en cada sierra.
       const rockAt = range === 2 ? 0.44 : range === 3 ? 0.54 : range === 4 ? 0.46 : 0.5;
-      const snowAt = range === 2 ? 0.66 : range === 3 ? 9 : range === 4 ? 0.86 : 0.9;
+      // La sierra alta del norte (mapa de rumbos): roca como la de la comarca y nieve a manchas.
+      const snowAt =
+        range === 2
+          ? 0.66
+          : range === 3
+            ? 9
+            : range === 4
+              ? 0.94 + (fbm(x / 22, y / 18, 95, 3) - 0.5) * 0.5
+              : 0.9;
       if (t.forest[i] === BURNT) c = ramp(ASH, 0.35 + (s - 0.5) * 0.8, x, y);
       else if (t.forest[i] && h < rockAt) c = ramp(WOOD, 0.5 + (s - 0.5), x, y);
       else if (t.marsh[i]) c = ramp(MARSH, 0.5 + meadow * 0.5 - wl * 0.45, x, y, 0.5);
       else if (t.depth[i]! <= 1.5 && h < 0.24) c = ramp(SAND, 0.55 + (s - 0.5), x, y);
       else if (sd && sd + (bayer(x, y) - 0.5) * 0.5 > 0.42) c = dune(x, y, s, wl);
       else {
-        const rock = range === 2 || range === 4 ? NIEBLA : range === 3 ? ESTE : PARDA;
+        const rock = range === 2 ? NIEBLA : range === 3 ? ESTE : PARDA;
         const shaded = 0.1 + s * 0.85;
         // De la hierba a la roca y a la nieve, con trama en el paso.
         const k = (h - rockAt) / 0.06 + (bayer(x, y) - 0.5) * 1.2;
@@ -288,9 +296,15 @@ function sea(d: number, x: number, y: number, deep = false): Color {
   if (d <= 1) return bayer(x, y) < 0.6 ? P.white : P.mist;
   if (d <= 2) return bayer(x, y) < 0.3 ? P.mist : P.cyan;
   const v = deep
-    ? Math.max(1 - Math.min(1, (d - 2) / 60), 0.1 + (fbm(x / 70, y / 34, 23, 3) - 0.5) * 0.5)
+    ? Math.max(1 - Math.min(1, (d - 2) / 110), 0.12 + (fbm(x / 70, y / 34, 23, 3) - 0.5) * 0.4)
     : 1 - Math.min(1, (d - 2) / 44);
   let c: Color = ramp([P.navy, P.ocean, P.ocean, P.ocean, P.sky, P.sky], v, x, y, 1.4);
+  // Mar abierto (mapa de rumbos): oleaje tramado, filas de crestas que van y vienen.
+  if (deep && d > 5) {
+    const q = ((((y + fbm(x / 40, y / 40, 24, 2) * 16) / 8) % 1) + 1) % 1;
+    if (q < 0.13 && bayer(x, y) < 0.5 && fbm(x / 16, y / 9, 25, 2) > 0.52)
+      return c === P.navy ? P.ocean : c === P.ocean ? P.sky : P.mist;
+  }
   // Olas: rayitas claras sueltas.
   const cx = Math.floor(x / 9);
   const cy = Math.floor(y / 6);

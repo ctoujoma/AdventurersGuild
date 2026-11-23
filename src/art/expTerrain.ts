@@ -513,9 +513,18 @@ export function worldTerrain(): Terrain {
   ruins.push(...marks);
   ruins.sort((a, b) => a.y - b.y);
 
+  // El fondo del mar se mide hasta la costa de tierra firme (las islas, solo su orla de espuma):
+  // así el mar se aclara hacia la costa y no hay halos alrededor de cada isla.
+  const toMain = chamfer(W, H, (i) => {
+    if (water[i] === SEA) return false;
+    const y = Math.floor(i / W) + Y0;
+    return (i % W) + X0 > worldCoast(y) - 25;
+  });
   const depth = new Uint8Array(N);
-  for (let i = 0; i < N; i++)
-    depth[i] = Math.min(255, Math.round(water[i] === SEA ? toLand[i]! : shore[i]!));
+  for (let i = 0; i < N; i++) {
+    const sea = toLand[i]! <= 3 ? Math.min(toLand[i]!, toMain[i]!) : toMain[i]!;
+    depth[i] = Math.min(255, Math.round(water[i] === SEA ? sea : shore[i]!));
+  }
 
   cached = {
     x0: X0,

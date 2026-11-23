@@ -2,14 +2,16 @@
  * La niebla del mapa de rumbos: tapa lo que el gremio no ha visto, se despeja por donde pasan los
  * grupos (y alrededor de los parajes) y se mueve despacio. La comarca, siempre despejada.
  *
- * Para que moverla salga barato, el ruido se calcula una vez en un mosaico de 256 × 256 que se
- * repite (`tile`) y en cada fotograma solo se desplaza: la densidad de un punto es su lejanía a lo
- * visto (`fogField`, una vez por cada cambio de lo visto) más dos capas del mosaico corridas a
- * distinta velocidad. `paintFog` pinta un fotograma en el estilo de la sala de mapas:
- * - pergamino: pergamino sin pintar, con las nubes dibujadas a tinta en el borde (contorno de
- *   lóbulos y su panza rayada);
- * - color: nubes blancas con volumen (luz arriba a la izquierda, sombra abajo a la derecha) y el
- *   borde tramado.
+ * Para que moverla salga barato, el ruido se calcula una vez en tres mosaicos que se repiten
+ * (`tiles`: masas grandes de 1024 px, medianas de 512 y detalle de 256, así no se ve ningún patrón)
+ * y en cada fotograma solo se desplazan, las masas grandes más despacio que el resto. La densidad
+ * de un punto es su lejanía a lo visto (`fogField`, una vez por cada cambio) más el ruido. Al
+ * despejar, la niebla de antes se retira poco a poco (`FogFrame.from`). `paintFog` pinta un
+ * fotograma en el estilo de la sala de mapas:
+ * - pergamino: pergamino sin pintar, con las nubes a tinta en el borde como en un grabado
+ *   (contorno, segundo trazo y rayado por debajo);
+ * - color: bancos de nubes blancas con volumen (luz arriba a la izquierda, panza en sombra),
+ *   borde tramado y algún hueco por el que se intuye el terreno.
  */
 import { MAP_H, MAP_W } from '../data/places';
 import { OX, OY, WORLD_H, WORLD_W } from './expGeo';
@@ -24,10 +26,6 @@ export interface Clear {
   y: number;
   r: number;
 }
-
-const T = 256;
-const TM = T - 1;
-let tileCache: Float32Array | null = null;
 
 /** Ruido de valor que se repite cada `period` celdas. */
 function wrapNoise(x: number, y: number, period: number, seed: number): number {
@@ -45,41 +43,65 @@ function wrapNoise(x: number, y: number, period: number, seed: number): number {
   return a + (b - a) * su + (c - a) * sv + (a - b - c + d) * su * sv;
 }
 
+const S = 256;
+
 /**
- * El mosaico de ruido (0–1): bolas de nube (lóbulos redondos, para que el borde salga a festones)
- * sobre un ruido suave. Se repite sin costura en los dos ejes.
+ * Un mosaico de ruido fractal de `S × S` que se repite sin costura, estirado a todo su recorrido
+ * (0–1) y agrandado `up` veces (interpolando, así las masas grandes salen suaves).
  */
-export function tile(): Float32Array {
-  if (tileCache) return tileCache;
-  const out = new Float32Array(T * T);
-  for (let y = 0; y < T; y++)
-    for (let x = 0; x < T; x++) {
+function noiseTile(periods: readonly number[], seed: number, up: number): Uint8Array {
+  const base = new Float32Array(S * S);
+  let lo = Infinity;
+  let hi = -Infinity;
+  for (let y = 0; y < S; y++)
+    for (let x = 0; x < S; x++) {
       let v = 0;
-      let amp = 0.5;
+      let amp = 1;
       let norm = 0;
-      for (const p of [4, 8, 16]) {
-        v += wrapNoise((x / T) * p, (y / T) * p, p, 600 + p) * amp;
+      for (const p of periods) {
+        v += wrapNoise((x / S) * p, (y / S) * p, p, seed + p) * amp;
         norm += amp;
-        amp *= 0.5;
+        amp *= 0.55;
       }
-      out[y * T + x] = (v / norm) * 0.55;
+      v /= norm;
+      base[y * S + x] = v;
+      lo = Math.min(lo, v);
+      hi = Math.max(hi, v);
     }
-  // Las bolas, con vuelta por los bordes.
-  for (let k = 0; k < 90; k++) {
-    const cx = hash2(k, 1, 611) * T;
-    const cy = hash2(k, 2, 611) * T;
-    const r = 6 + hash2(k, 3, 611) * 13;
-    const R = Math.ceil(r);
-    for (let dy = -R; dy <= R; dy++)
-      for (let dx = -R; dx <= R; dx++) {
-        const d = (dx * dx + dy * dy * 1.6) / (r * r);
-        if (d >= 1) continue;
-        const i = ((Math.floor(cy) + dy) & TM) * T + ((Math.floor(cx) + dx) & TM);
-        out[i] = Math.max(out[i]!, 0.3 + 0.55 * Math.sqrt(1 - d));
-      }
-  }
-  tileCache = out;
+  const N = S * up;
+  const out = new Uint8Array(N * N);
+  const at = (x: number, y: number) => base[(y & (S - 1)) * S + (x & (S - 1))]!;
+  for (let y = 0; y < N; y++)
+    for (let x = 0; x < N; x++) {
+      const fx = x / up;
+      const fy = y / up;
+      const x0 = Math.floor(fx);
+      const y0 = Math.floor(fy);
+      const u = fx - x0;
+      const v = fy - y0;
+      const top = at(x0, y0) + (at(x0 + 1, y0) - at(x0, y0)) * u;
+      const bot = at(x0, y0 + 1) + (at(x0 + 1, y0 + 1) - at(x0, y0 + 1)) * u;
+      out[y * N + x] = Math.round(((top + (bot - top) * v - lo) / (hi - lo)) * 255);
+    }
   return out;
+}
+
+interface Tiles {
+  /** Las masas grandes (1024 de lado), las medianas (512) y el detalle (256). */
+  big: Uint8Array;
+  mid: Uint8Array;
+  fine: Uint8Array;
+}
+let tilesCache: Tiles | null = null;
+
+/** Los tres mosaicos de la niebla, a tres escalas (se calculan una vez). */
+export function tiles(): Tiles {
+  tilesCache ??= {
+    big: noiseTile([2, 4, 8, 16], 600, 4),
+    mid: noiseTile([4, 8, 16], 640, 2),
+    fine: noiseTile([8, 16, 32], 680, 1),
+  };
+  return tilesCache;
 }
 
 /**
@@ -131,20 +153,34 @@ function paper(): Uint8Array {
   return p;
 }
 
-/** Cuánto se ha movido la niebla a los `t` segundos (dos capas, en píxeles enteros). */
+/**
+ * Cuánto se ha movido la niebla a los `t` segundos, en píxeles enteros: las masas grandes, muy
+ * despacio; las medianas y el detalle, algo más deprisa y hacia otro lado.
+ */
 function drift(t: number): [number, number, number, number] {
-  return [Math.floor(t * 2.2), Math.floor(t * 0.7), Math.floor(-t * 1.3), Math.floor(t * 1.6)];
+  return [Math.floor(t * 0.9), Math.floor(t * 0.35), Math.floor(-t * 1.7), Math.floor(t * 0.8)];
 }
 
 const TH = 0.42;
+/** Lo que sube la densidad de un banco de nubes al de encima (a color). */
+const BANK = 0.42;
 /** Densidad de lo que no cambia de un fotograma a otro (se deja como estaba). */
 const STILL = 9;
+
+/** Opciones de un fotograma. */
+export interface FogFrame {
+  /** Pintarlo todo (el primero); si no, lo hondo del pergamino, que no cambia, ni se mira. */
+  full?: boolean;
+  /** Al despejar: la lejanía de antes y cuánto va de la retirada (0–1). */
+  from?: Float32Array;
+  p?: number;
+}
 
 /**
  * Pinta un fotograma de la niebla en `out` (ABGR, `WORLD_W × WORLD_H`, el formato de ImageData),
  * a los `t` segundos. `dens` es un búfer de trabajo del mismo tamaño (para no pedir memoria cada
- * vez). Lo despejado queda transparente. Con `full` falso, lo que no cambia ni se mira (lo
- * hondo del pergamino): sirve para los fotogramas que siguen al primero.
+ * vez). Lo despejado queda transparente. Con `from`, la niebla de antes se retira hacia la nueva
+ * deshilachándose: cada punto se va a su ritmo, según el detalle del ruido.
  */
 export function paintFog(
   out: Uint32Array,
@@ -152,37 +188,68 @@ export function paintFog(
   far: Float32Array,
   t: number,
   style: MapStyle,
-  full = true,
+  frame: FogFrame = {},
 ): void {
   const W = WORLD_W;
   const H = WORLD_H;
-  const n = tile();
+  const { big, mid, fine } = tiles();
   const [ax, ay, bx, by] = drift(t);
+  const full = frame.full ?? true;
+  const from = frame.from;
+  const p = frame.p ?? 1;
   // El marco del mapa queda a la vista.
   const M = style === 'color' ? 4 : 7;
-  // La densidad: lejanía + las dos capas del mosaico.
+  const ink = style === 'pergamino';
+  softBuf ??= new Float32Array(W * H);
+  const soft = softBuf;
   for (let y = 0; y < H; y++) {
-    const ra = ((y + ay) & TM) * T;
-    const rb = (((y >> 1) + by) & TM) * T;
+    const rBig = ((y + ay) & 1023) * 1024;
+    const rMid = ((y + by) & 511) * 512;
+    const rFine = ((y + by) & 255) * 256;
+    const rStill = (y & 255) * 256;
     for (let x = 0; x < W; x++) {
       const i = y * W + x;
-      const f = far[i]!;
-      if (f < -20 || x < M || y < M || x >= W - M || y >= H - M) {
+      let f = far[i]!;
+      if (from) {
+        const fo = from[i]!;
+        if (fo > f) {
+          const q = Math.max(0, Math.min(1, p * 1.7 - (fine[rStill + (x & 255)]! / 255) * 0.7));
+          f = fo + (f - fo) * q * q * (3 - 2 * q);
+        }
+      }
+      if (f < -24 || x < M || y < M || x >= W - M || y >= H - M) {
         dens[i] = 0;
         continue;
       }
       // En pergamino, lo hondo es papel quieto: tras el primer fotograma no se toca.
-      if (!full && style === 'pergamino' && f > 70) {
+      if (!full && ink && f > 80) {
         dens[i] = STILL;
         continue;
       }
-      const base = Math.min(1.4, f / 46);
-      const v = n[ra + ((x + ax) & TM)]! * 0.65 + n[rb + (((x >> 1) + bx) & TM)]! * 0.45;
-      dens[i] = base + (v - 0.45) * 1.4;
+      const nb = big[rBig + ((x + ax) & 1023)]!;
+      const nm = mid[rMid + ((x + bx) & 511)]!;
+      const nf = fine[rFine + ((x + bx) & 255)]!;
+      if (ink) {
+        // A tinta, masas suaves (poco detalle): el contorno sale limpio.
+        // A tinta, masas suaves con lóbulos redondos en el borde: el contorno sale a festones.
+        const n = (nb * 0.62 + nm * 0.38) / 255;
+        const lob = 1 - Math.abs((2 * nf) / 255 - 1);
+        dens[i] = (f < 0 ? f / 8 : Math.min(1.5, f / 44)) + (n - 0.5) * 1.4 + (lob - 0.5) * 0.45;
+      } else {
+        // A color: los bancos salen de las masas grandes y medianas (`soft`); el detalle solo
+        // festonea los bordes.
+        // Lo ya visto queda despejado (la niebla solo se asoma unos píxeles).
+        const base = f < 0 ? f / 8 : Math.min(1.2, f / 50);
+        const sm = base + ((nb * 0.6 + nm * 0.4) / 255 - 0.5) * 2.2;
+        soft[i] = sm;
+        // Lóbulos redondos (ruido «hinchado»: cimas romas y valles marcados), como cúmulos.
+        const lob = 1 - Math.abs((2 * nf) / 255 - 1);
+        dens[i] = sm + (lob - 0.5) * 0.65;
+      }
     }
   }
   const at = (x: number, y: number) => (x < 0 || y < 0 || x >= W || y >= H ? 1 : dens[y * W + x]!);
-  if (style === 'color') paintColor(out, dens, at);
+  if (style === 'color') paintColor(out, dens, far);
   else paintInk(out, dens, at, paper());
 }
 
@@ -199,31 +266,62 @@ const C = {
   cocoa: rgba(P.cocoa),
 };
 
-function paintColor(out: Uint32Array, dens: Float32Array, at: (x: number, y: number) => number) {
+let softBuf: Float32Array | null = null;
+let levels: Int8Array | null = null;
+let belly: Uint8Array | null = null;
+
+function paintColor(out: Uint32Array, dens: Float32Array, far: Float32Array) {
   const W = WORLD_W;
-  for (let y = 0; y < WORLD_H; y++)
+  const H = WORLD_H;
+  // Cada escalón de densidad es un banco de nubes; de cada punto, lo que le queda por debajo hasta
+  // el borde de abajo de su banco (la panza), en una pasada por columnas de abajo arriba.
+  levels ??= new Int8Array(W * H);
+  belly ??= new Uint8Array(W * H);
+  const lv = levels;
+  const bl = belly;
+  const soft = softBuf!;
+  for (let i = 0; i < W * H; i++) {
+    const d = dens[i]! < TH && soft[i]! > TH + 0.2 ? TH : dens[i]!;
+    lv[i] = d < TH ? -1 : Math.max(0, Math.min(100, Math.floor((soft[i]! - TH) / BANK)));
+  }
+  for (let x = 0; x < W; x++) {
+    let run = 99;
+    for (let y = H - 1; y >= 0; y--) {
+      const i = y * W + x;
+      const below = y < H - 1 ? lv[i + W]! : -1;
+      run = below < lv[i]! ? 1 : below > lv[i]! ? 99 : Math.min(99, run + 1);
+      bl[i] = run;
+    }
+  }
+  for (let y = 0; y < H; y++)
     for (let x = 0; x < W; x++) {
       const i = y * W + x;
-      const d = dens[i]!;
-      if (d < TH - 0.1) {
-        out[i] = C.none;
+      let d = dens[i]!;
+      const bay = bayer(x, y);
+      // Dentro de un banco, las arrugas del detalle no abren agujeros.
+      if (d < TH && soft[i]! > TH + 0.2) d = TH + 0.01;
+      if (d < TH - 0.12) {
+        // Un hueco entre bancos, lejos de lo visto: el terreno se intuye bajo un velo tramado.
+        const deep = (far[i]! - 60) / 60;
+        out[i] = deep > 0 && bay < Math.min(1, deep) * 0.6 ? C.mist : C.none;
         continue;
       }
       // El borde, tramado.
       if (d < TH) {
-        out[i] = bayer(x, y) < (d - TH + 0.1) / 0.1 ? C.mist : C.none;
+        out[i] = bay < (d - TH + 0.12) / 0.12 ? C.mist : C.none;
         continue;
       }
-      // El volumen: la cara que mira arriba a la izquierda, a la luz; la de abajo, en sombra.
-      const g = at(x + 2, y + 2) - at(x - 2, y - 2);
+      // La panza de cada banco: oscura justo en el borde de abajo y aclarando hacia arriba (la del
+      // banco de fuera, más oscura); la luz, arriba a la izquierda.
+      const r = bl[i]!;
+      const outer = lv[i] === 0;
       let c: number;
-      if (d < TH + 0.14) {
-        // Junto al borde: la panza gris abajo y a la derecha, la luz arriba.
-        if (at(x, y + 2) < TH || at(x + 2, y + 1) < TH) c = C.steel;
-        else if (g < -0.03) c = bayer(x, y) < 0.6 ? C.fog : C.mist;
-        else c = g > 0.05 ? C.white : C.mist;
-      } else if (g < -0.3 && d < TH + 0.6) c = bayer(x, y) < 0.35 ? C.fog : C.mist;
-      else if (g < -0.18) c = bayer(x, y) < 0.5 ? C.mist : C.white;
+      if (r <= 1) c = outer ? C.steel : C.fog;
+      else if (r <= 3) c = outer ? (bay < 0.6 ? C.fog : C.steel) : C.fog;
+      else if (r <= 6) c = bay < (outer ? 0.75 : 0.5) ? C.fog : C.mist;
+      else if (r <= 9) c = bay < (outer ? 0.3 : 0.15) ? C.fog : C.mist;
+      else if (r <= 13) c = bay < 0.5 ? C.mist : C.white;
+      else if (r <= 16) c = bay < 0.2 ? C.mist : C.white;
       else c = C.white;
       out[i] = c;
     }
@@ -259,20 +357,23 @@ function paintInk(
         out[i] = C.umber;
         continue;
       }
-      // La sombra de la panza (abajo y a la derecha del festón), rayada, y un segundo festón.
-      const below = at(x + 1, y + 3) < TH || at(x, y + 2) < TH;
-      if (below && d < TH + 0.18) {
-        out[i] = (x + y) % 2 ? C.tan : C.sand;
+      // El trazo, más grueso por debajo (lleno y perfil, como a pluma).
+      if (at(x, y + 2) < TH && at(x - 1, y + 2) < TH) {
+        out[i] = C.umber;
         continue;
       }
-      const inner = TH + 0.2;
-      if (d >= inner && d < inner + 0.05 && (at(x, y + 1) < inner || at(x + 1, y) < inner)) {
-        out[i] = hash2(x >> 2, y >> 2, 621) < 0.55 ? C.cocoa : C.sand;
-        continue;
-      }
-      if (d < TH + 0.3 && at(x, y + 4) < d - 0.08 && (x - y + 900) % 3 === 0) {
-        out[i] = C.tan;
-        continue;
+      // Por debajo del festón, como en los grabados: un segundo trazo paralelo y el rayado
+      // entre los dos; arriba, limpio.
+      const under = at(x, y + 4) < d - 0.05;
+      if (under && d < TH + 0.2) {
+        if (d >= TH + 0.13 && (at(x, y + 1) < TH + 0.13 || at(x + 1, y + 1) < TH + 0.13)) {
+          out[i] = C.cocoa;
+          continue;
+        }
+        if (d < TH + 0.13 && (x - y + 900) % 3 === 0) {
+          out[i] = C.tan;
+          continue;
+        }
       }
       // El pergamino sin pintar, con el mismo tono que el papel del mapa.
       out[i] = paper[i] ? C.tan : C.sand;

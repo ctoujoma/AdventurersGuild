@@ -158,7 +158,12 @@ export function inkRender(t: Terrain, deco?: (b: PixelBuffer) => void): PixelBuf
       let c: Color;
       if (w === ICE) c = edge ? P.steel : (x * 2 + y) % 7 === 0 ? P.fog : P.white;
       else if (w === BLACK) c = edge ? P.navy : (x + y) % 2 ? P.slate : P.steel;
-      else if (w === POOL) c = edge ? P.ocean : y % 2 ? P.mist : P.sky;
+      else if (w === POOL && t.wild) {
+        // Las charcas del mapa de rumbos: orilla a tinta azulada y una aguada floja.
+        if (edge) c = P.steel;
+        else if (bayer(x, y) < 0.3) c = P.mist;
+        else continue;
+      } else if (w === POOL) c = edge ? P.ocean : y % 2 ? P.mist : P.sky;
       else c = edge ? P.ocean : y % 3 === 0 && !edge ? P.mist : P.sky;
       b.set(x, y, c);
     }
