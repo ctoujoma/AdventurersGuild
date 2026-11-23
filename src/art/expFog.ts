@@ -2,16 +2,19 @@
  * La niebla del mapa de rumbos: tapa lo que el gremio no ha visto, se despeja por donde pasan los
  * grupos (y alrededor de los parajes) y se mueve despacio. La comarca, siempre despejada.
  *
- * Para que moverla salga barato, el ruido se calcula una vez en tres mosaicos que se repiten
- * (`tiles`: masas grandes de 1024 px, medianas de 512 y detalle de 256, así no se ve ningún patrón)
- * y en cada fotograma solo se desplazan, las masas grandes más despacio que el resto. La densidad
- * de un punto es su lejanía a lo visto (`fogField`, una vez por cada cambio) más el ruido. Al
- * despejar, la niebla de antes se retira poco a poco (`FogFrame.from`). `paintFog` pinta un
+ * Para que moverla salga barato, todo se precalcula una vez y en cada fotograma solo se desplaza.
+ * La lejanía a lo visto (`fogField`) se calcula al cambiar lo visto. `paintFog` pinta un
  * fotograma en el estilo de la sala de mapas:
  * - pergamino: pergamino sin pintar, con las nubes a tinta en el borde como en un grabado
- *   (contorno, segundo trazo y rayado por debajo);
- * - color: bancos de nubes blancas con volumen (luz arriba a la izquierda, panza en sombra),
- *   borde tramado y algún hueco por el que se intuye el terreno.
+ *   (contorno, segundo trazo y rayado por debajo); la densidad sale de tres mosaicos de ruido
+ *   (`tiles`) a tres escalas.
+ * - color: un mar de cúmulos visto desde arriba (`cloudLayers`): dos capas de bolas (medias
+ *   esferas) pintadas en mosaicos de 512 × 512 sin costura, que se mueven a distinta velocidad.
+ *   Cada bola lleva su luz (cara clara arriba a la izquierda, cuerpo, sombra propia) y la sombra
+ *   de los cúmulos cae tramada sobre la capa de debajo y el terreno. Junto a lo visto las bolas se
+ *   encogen o se quitan enteras, así el borde sale redondo.
+ * Al despejar, la niebla de antes se retira poco a poco (`FogFrame.from`): a tinta, cada punto a
+ * su ritmo; a color, cada bola se encoge con su propio retardo.
  */
 import { MAP_H, MAP_W } from '../data/places';
 import { OX, OY, WORLD_H, WORLD_W } from './expGeo';
@@ -121,7 +124,7 @@ export function fogField(clears: readonly Clear[]): Float32Array {
       far[y * W + x] = (dx || dy ? Math.hypot(dx, dy) : -inner) - 8;
     }
   for (const c of clears) {
-    const reach = c.r + 70;
+    const reach = c.r + FAR;
     const x0 = Math.max(0, Math.floor(c.x - reach));
     const x1 = Math.min(W - 1, Math.ceil(c.x + reach));
     const y0 = Math.max(0, Math.floor(c.y - reach));
@@ -132,8 +135,14 @@ export function fogField(clears: readonly Clear[]): Float32Array {
         if (d < far[y * W + x]!) far[y * W + x] = d;
       }
   }
+  // Tope a la lejanía (más allá, todo es niebla cerrada): así no hay saltos en el borde de la
+  // caja de cada círculo, que al retirarse la niebla se verían como cortes rectos.
+  for (let i = 0; i < far.length; i++) if (far[i]! > FAR) far[i] = FAR;
   return far;
 }
+
+/** Lejanía a partir de la cual la niebla es cerrada. */
+const FAR = 120;
 
 let paperCache: Uint8Array | null = null;
 
@@ -162,8 +171,6 @@ function drift(t: number): [number, number, number, number] {
 }
 
 const TH = 0.42;
-/** Lo que sube la densidad de un banco de nubes al de encima (a color). */
-const BANK = 0.42;
 /** Densidad de lo que no cambia de un fotograma a otro (se deja como estaba). */
 const STILL = 9;
 
@@ -190,6 +197,10 @@ export function paintFog(
   style: MapStyle,
   frame: FogFrame = {},
 ): void {
+  if (style === 'color') {
+    paintClouds(out, far, t, frame);
+    return;
+  }
   const W = WORLD_W;
   const H = WORLD_H;
   const { big, mid, fine } = tiles();
@@ -198,10 +209,7 @@ export function paintFog(
   const from = frame.from;
   const p = frame.p ?? 1;
   // El marco del mapa queda a la vista.
-  const M = style === 'color' ? 4 : 7;
-  const ink = style === 'pergamino';
-  softBuf ??= new Float32Array(W * H);
-  const soft = softBuf;
+  const M = 7;
   for (let y = 0; y < H; y++) {
     const rBig = ((y + ay) & 1023) * 1024;
     const rMid = ((y + by) & 511) * 512;
@@ -222,35 +230,21 @@ export function paintFog(
         continue;
       }
       // En pergamino, lo hondo es papel quieto: tras el primer fotograma no se toca.
-      if (!full && ink && f > 80) {
+      if (!full && f > 80) {
         dens[i] = STILL;
         continue;
       }
       const nb = big[rBig + ((x + ax) & 1023)]!;
       const nm = mid[rMid + ((x + bx) & 511)]!;
       const nf = fine[rFine + ((x + bx) & 255)]!;
-      if (ink) {
-        // A tinta, masas suaves (poco detalle): el contorno sale limpio.
-        // A tinta, masas suaves con lóbulos redondos en el borde: el contorno sale a festones.
-        const n = (nb * 0.62 + nm * 0.38) / 255;
-        const lob = 1 - Math.abs((2 * nf) / 255 - 1);
-        dens[i] = (f < 0 ? f / 8 : Math.min(1.5, f / 44)) + (n - 0.5) * 1.4 + (lob - 0.5) * 0.45;
-      } else {
-        // A color: los bancos salen de las masas grandes y medianas (`soft`); el detalle solo
-        // festonea los bordes.
-        // Lo ya visto queda despejado (la niebla solo se asoma unos píxeles).
-        const base = f < 0 ? f / 8 : Math.min(1.2, f / 50);
-        const sm = base + ((nb * 0.6 + nm * 0.4) / 255 - 0.5) * 2.2;
-        soft[i] = sm;
-        // Lóbulos redondos (ruido «hinchado»: cimas romas y valles marcados), como cúmulos.
-        const lob = 1 - Math.abs((2 * nf) / 255 - 1);
-        dens[i] = sm + (lob - 0.5) * 0.65;
-      }
+      // A tinta, masas suaves con lóbulos redondos en el borde: el contorno sale a festones.
+      const n = (nb * 0.62 + nm * 0.38) / 255;
+      const lob = 1 - Math.abs((2 * nf) / 255 - 1);
+      dens[i] = (f < 0 ? f / 8 : Math.min(1.5, f / 44)) + (n - 0.5) * 1.4 + (lob - 0.5) * 0.45;
     }
   }
   const at = (x: number, y: number) => (x < 0 || y < 0 || x >= W || y >= H ? 1 : dens[y * W + x]!);
-  if (style === 'color') paintColor(out, dens, far);
-  else paintInk(out, dens, at, paper());
+  paintInk(out, dens, at, paper());
 }
 
 const C = {
@@ -265,67 +259,6 @@ const C = {
   umber: rgba(P.umber),
   cocoa: rgba(P.cocoa),
 };
-
-let softBuf: Float32Array | null = null;
-let levels: Int8Array | null = null;
-let belly: Uint8Array | null = null;
-
-function paintColor(out: Uint32Array, dens: Float32Array, far: Float32Array) {
-  const W = WORLD_W;
-  const H = WORLD_H;
-  // Cada escalón de densidad es un banco de nubes; de cada punto, lo que le queda por debajo hasta
-  // el borde de abajo de su banco (la panza), en una pasada por columnas de abajo arriba.
-  levels ??= new Int8Array(W * H);
-  belly ??= new Uint8Array(W * H);
-  const lv = levels;
-  const bl = belly;
-  const soft = softBuf!;
-  for (let i = 0; i < W * H; i++) {
-    const d = dens[i]! < TH && soft[i]! > TH + 0.2 ? TH : dens[i]!;
-    lv[i] = d < TH ? -1 : Math.max(0, Math.min(100, Math.floor((soft[i]! - TH) / BANK)));
-  }
-  for (let x = 0; x < W; x++) {
-    let run = 99;
-    for (let y = H - 1; y >= 0; y--) {
-      const i = y * W + x;
-      const below = y < H - 1 ? lv[i + W]! : -1;
-      run = below < lv[i]! ? 1 : below > lv[i]! ? 99 : Math.min(99, run + 1);
-      bl[i] = run;
-    }
-  }
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
-      const i = y * W + x;
-      let d = dens[i]!;
-      const bay = bayer(x, y);
-      // Dentro de un banco, las arrugas del detalle no abren agujeros.
-      if (d < TH && soft[i]! > TH + 0.2) d = TH + 0.01;
-      if (d < TH - 0.12) {
-        // Un hueco entre bancos, lejos de lo visto: el terreno se intuye bajo un velo tramado.
-        const deep = (far[i]! - 60) / 60;
-        out[i] = deep > 0 && bay < Math.min(1, deep) * 0.6 ? C.mist : C.none;
-        continue;
-      }
-      // El borde, tramado.
-      if (d < TH) {
-        out[i] = bay < (d - TH + 0.12) / 0.12 ? C.mist : C.none;
-        continue;
-      }
-      // La panza de cada banco: oscura justo en el borde de abajo y aclarando hacia arriba (la del
-      // banco de fuera, más oscura); la luz, arriba a la izquierda.
-      const r = bl[i]!;
-      const outer = lv[i] === 0;
-      let c: number;
-      if (r <= 1) c = outer ? C.steel : C.fog;
-      else if (r <= 3) c = outer ? (bay < 0.6 ? C.fog : C.steel) : C.fog;
-      else if (r <= 6) c = bay < (outer ? 0.75 : 0.5) ? C.fog : C.mist;
-      else if (r <= 9) c = bay < (outer ? 0.3 : 0.15) ? C.fog : C.mist;
-      else if (r <= 13) c = bay < 0.5 ? C.mist : C.white;
-      else if (r <= 16) c = bay < 0.2 ? C.mist : C.white;
-      else c = C.white;
-      out[i] = c;
-    }
-}
 
 function paintInk(
   out: Uint32Array,
@@ -385,4 +318,218 @@ export function fogBuffer(clears: readonly Clear[], style: MapStyle, t = 0): Pix
   const b = new PixelBuffer(WORLD_W, WORLD_H);
   paintFog(b.data, new Float32Array(WORLD_W * WORLD_H), fogField(clears), t, style);
   return b;
+}
+
+// ---------- A color: un mar de cúmulos ----------
+
+/** Lado del mosaico de nubes (se repite sin costura). */
+const CT = 512;
+const CM = CT - 1;
+
+/** Una capa de nubes: de quién es cada píxel (la bola que asoma más), y dónde cae su centro. */
+interface CloudLayer {
+  owner: Uint16Array;
+  dx: Int8Array;
+  dy: Int8Array;
+  /** Tapado por una bola más alta de arriba a la izquierda (su sombra). */
+  occ: Uint8Array;
+  /** El radio de cada bola y su retardo al deshacerse (0–1). */
+  r: Float32Array;
+  lag: Float32Array;
+}
+
+/**
+ * Pinta una capa de cúmulos en un mosaico de `CT × CT` sin costura: bolas por una rejilla con
+ * desvío (`cell` de lado, radios de `r0` a `r1`), cada una una media esfera; cada píxel es de la
+ * bola que más alto asoma. Se calcula una vez.
+ */
+function cloudLayer(
+  seed: number,
+  cell: number,
+  r0: number,
+  r1: number,
+  extra: number,
+  gap: number,
+): CloudLayer {
+  const balls: { x: number; y: number; r: number; z: number }[] = [];
+  const n = CT / cell;
+  for (let gy = 0; gy < n; gy++)
+    for (let gx = 0; gx < n; gx++)
+      for (let k = 0; k < 1 + extra; k++) {
+        const h = (j: number) => hash2(gx * 7 + k, gy * 13 + j, seed);
+        if (k > 0 && h(9) > extra / (1 + extra)) continue;
+        const x = (gx + h(1)) * cell;
+        const y = (gy + h(2)) * cell;
+        // Las bolas van a montones: donde el ruido lento sube, más grandes; donde baja, nada.
+        const clump =
+          wrapNoise((x / CT) * 4, (y / CT) * 4, 4, seed + 1) * 0.6 +
+          wrapNoise((x / CT) * 8, (y / CT) * 8, 8, seed + 2) * 0.4;
+        if (clump < gap) continue;
+        const r = (r0 + (r1 - r0) * h(3) ** (k ? 2 : 1)) * (0.65 + 0.6 * clump);
+        balls.push({ x, y, r, z: h(4) * 4 + r * 0.3 + clump * 10 });
+      }
+  const N = CT * CT;
+  const height = new Float32Array(N).fill(-1);
+  const owner = new Uint16Array(N);
+  const dx = new Int8Array(N);
+  const dy = new Int8Array(N);
+  balls.forEach((b, id) => {
+    const R = Math.ceil(b.r);
+    for (let oy = -R; oy <= R; oy++)
+      for (let ox = -R; ox <= R; ox++) {
+        const px = Math.round(b.x) + ox;
+        const py = Math.round(b.y) + oy;
+        const ex = px - b.x;
+        const ey = py - b.y;
+        const d2 = (ex * ex + ey * ey) / (b.r * b.r);
+        if (d2 >= 1) continue;
+        const z = b.z + b.r * Math.sqrt(1 - d2);
+        const i = (py & CM) * CT + (px & CM);
+        if (z <= height[i]!) continue;
+        height[i] = z;
+        owner[i] = id;
+        dx[i] = Math.round(ex);
+        dy[i] = Math.round(ey);
+      }
+  });
+  // La sombra propia entre bolas: lo que queda bajo una bola más alta de arriba a la izquierda.
+  const occ = new Uint8Array(N);
+  for (let y = 0; y < CT; y++)
+    for (let x = 0; x < CT; x++) {
+      const i = y * CT + x;
+      if (height[i]! < 0) continue;
+      for (const k of [2, 4]) {
+        const j = ((y - k) & CM) * CT + ((x - k) & CM);
+        if (owner[j] !== owner[i] && height[j]! > height[i]! + k * 0.9) {
+          occ[i] = k === 2 ? 2 : 1;
+          break;
+        }
+      }
+    }
+  for (let i = 0; i < N; i++) if (height[i]! < 0) owner[i] = 0xffff;
+  const r = new Float32Array(balls.map((b) => b.r));
+  const lag = new Float32Array(balls.map((_, id) => hash2(id, 5, seed)));
+  return { owner, dx, dy, occ, r, lag };
+}
+
+let cloudCache: [CloudLayer, CloudLayer] | null = null;
+
+/** Las dos capas: el fondo, de bolas grandes y apretadas, y los cúmulos de encima, más sueltos. */
+export function cloudLayers(): [CloudLayer, CloudLayer] {
+  cloudCache ??= [cloudLayer(701, 32, 15, 30, 0.6, 0), cloudLayer(733, 32, 7, 30, 1.4, 0.38)];
+  return cloudCache;
+}
+
+/** La luz, de arriba a la izquierda (normalizada). */
+const LX = -0.5;
+const LY = -0.55;
+const LZ = 0.67;
+
+const NONE = -1;
+
+/**
+ * Pinta el mar de cúmulos. Cada bola se ve entera, encogida o nada según lo lejos que quede su
+ * centro de lo visto (así el borde con lo explorado sale redondo, a bolas); al despejar, cada bola
+ * se encoge con su propio retardo. La luz va por bola (cara clara, cuerpo, sombra propia) y la
+ * sombra de los cúmulos cae, tramada, sobre la capa de debajo y sobre el terreno.
+ */
+function paintClouds(out: Uint32Array, far: Float32Array, t: number, frame: FogFrame): void {
+  const W = WORLD_W;
+  const H = WORLD_H;
+  const [lo, hi] = cloudLayers();
+  const from = frame.from;
+  const p = frame.p ?? 1;
+  // Las dos capas se mueven a distinta velocidad.
+  const lx = Math.floor(t * 0.8);
+  const ly = Math.floor(t * 0.3);
+  const hx = Math.floor(t * 2);
+  const hy = Math.floor(t * 0.6);
+  const M = 4;
+  // Lo lejos que queda de lo visto un punto (con la retirada, según el retardo de la bola).
+  const farAt = (x: number, y: number, lag: number) => {
+    const cx = x < 0 ? 0 : x >= W ? W - 1 : x;
+    const cy = y < 0 ? 0 : y >= H ? H - 1 : y;
+    const i = cy * W + cx;
+    let f = far[i]!;
+    if (from) {
+      const fo = from[i]!;
+      if (fo > f) {
+        const q = Math.max(0, Math.min(1, p * 1.6 - lag * 0.6));
+        f = fo + (f - fo) * q * q * (3 - 2 * q);
+      }
+    }
+    return f;
+  };
+  /**
+   * El tono (0 luz, 1 cuerpo, 2 sombra, 3 hondo) de una capa en un punto, o `NONE` si no hay
+   * nube. `ox, oy`: lo que se ha movido la capa.
+   */
+  const tone = (L: CloudLayer, x: number, y: number, ox: number, oy: number, deep: boolean) => {
+    const i = ((y + oy) & CM) * CT + ((x + ox) & CM);
+    const id = L.owner[i]!;
+    if (id === 0xffff) return NONE;
+    const ex = L.dx[i]!;
+    const ey = L.dy[i]!;
+    const r = L.r[id]!;
+    let sc = 1;
+    if (!deep || from) {
+      const fc = farAt(x - ex, y - ey, L.lag[id]!);
+      sc = Math.max(0, Math.min(1, (fc + 2) / (r + 18)));
+      // Las que se encogen mucho desaparecen (no quedan canicas sueltas).
+      if (r * sc < 5) return NONE;
+    }
+    const rr = r * sc;
+    const d2 = (ex * ex + ey * ey) / (rr * rr);
+    if (d2 >= 1) return NONE;
+    const nz = Math.sqrt(1 - d2);
+    const light = (ex / rr) * LX + (ey / rr) * LY + nz * LZ;
+    const b = bayer(x + ox, y + oy);
+    // Tres escalones por luz (cara clara, cuerpo, sombra propia), tramados en el paso.
+    let k =
+      light > 0.6
+        ? 0
+        : light > 0.48
+          ? b < (light - 0.48) / 0.12
+            ? 0
+            : 1
+          : light > 0.14
+            ? 1
+            : light > 0.02
+              ? b < (light - 0.02) / 0.12
+                ? 1
+                : 2
+              : 2;
+    if (sc === 1 && L.occ[i]) k = Math.min(3, k + L.occ[i]!);
+    return k;
+  };
+  const HI = [C.white, C.mist, C.fog, C.steel];
+  const LO = [C.mist, C.mist, C.fog, C.steel];
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const i = y * W + x;
+      if (x < M || y < M || x >= W - M || y >= H - M || far[i]! < -30) {
+        out[i] = C.none;
+        continue;
+      }
+      // Lejos de lo visto (y sin retirada), todas las bolas enteras: no hace falta mirar más.
+      const deep = far[i]! > 80 && !from;
+      const a = tone(hi, x, y, hx, hy, deep);
+      if (a !== NONE) {
+        out[i] = HI[a]!;
+        continue;
+      }
+      const bay = bayer(x, y);
+      // La sombra que echan los cúmulos de encima (abajo a la derecha).
+      const shade = tone(hi, x - 4, y - 4, hx, hy, deep) !== NONE;
+      const c = tone(lo, x, y, lx, ly, deep);
+      if (c !== NONE) {
+        // La capa de debajo, más apagada: cuerpo liso y sombra honda tramada.
+        const k = Math.min(3, c + (shade ? 1 : 0));
+        out[i] = k === 3 ? (bay < 0.5 ? C.steel : C.fog) : LO[k]!;
+        continue;
+      }
+      // Sin nube: el terreno, con la sombra de las nubes tramada encima.
+      const drop = shade || tone(lo, x - 4, y - 4, lx, ly, deep) !== NONE;
+      out[i] = drop && bay < 0.5 ? C.steel : C.none;
+    }
 }
