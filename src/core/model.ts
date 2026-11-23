@@ -276,7 +276,12 @@ export interface ExpLine {
   foe?: number;
   /** La pelea, para verla luego («Ver la pelea»): se vuelve a jugar igual. */
   fight?: BossFight;
+  /** Brillo de lo que se encontró (bloque 4): 1 bueno, 2 raro, 3 legendario (común, sin él). */
+  g?: Glow;
 }
+
+/** La escala de brillo de los hallazgos: común (nada), bueno, raro y legendario. */
+export type Glow = 1 | 2 | 3;
 
 /** Un suceso esperando a que el jugador elija (o, al llegar `until`, eligen ellos). */
 export interface ExpChoice {
@@ -399,7 +404,15 @@ export interface Report {
   /** Pelea contra un jefe, guardada para verla (y repetirla). */
   fight?: BossFight;
   /** Informe de una expedición: su diario (con sus peleas, para verlas luego). */
-  exp?: { log: ExpLine[] };
+  exp?: {
+    log: ExpLine[];
+    /** Para «La mochila» (bloque 4): el rumbo, días fuera, lejanía, si fue récord y lo que trajeron. */
+    heading?: Heading;
+    days?: number;
+    far?: number;
+    record?: boolean;
+    bag?: { gold: number; mats: Mats; items?: Item[] };
+  };
 }
 
 /** Quién peleó contra el jefe y cómo acabó cada uno (para pintar la pelea más tarde). */
@@ -653,6 +666,8 @@ export interface DawnEvent {
   head?: boolean;
   /** Lo bueno de verdad (subir de rango, botín raro, una historia cumplida…): la carta lo abre con brillo. */
   big?: boolean;
+  /** Un hallazgo de una expedición: su brillo (suena y se ve según la rareza). */
+  glow?: Glow;
 }
 
 export interface Custom {
@@ -993,7 +1008,7 @@ export interface GameState {
   /** Rumor que se oye ahora en la barra (solo con el juego abierto). */
   rumor?: Rumor;
   /** Lo último que ha pasado con los incidentes, para el aviso de la interfaz (de paso). */
-  incidentNews?: { t: Txt; k: ChipKind }[];
+  incidentNews?: { t: Txt; k: ChipKind; glow?: Glow }[];
   /** Rango más alto ya anunciado (para avisar al subir; ver `core/ranks.ts`). */
   rankSeen?: number;
   /** Noches seguidas sin nadie fuera de encargo (la comarca se olvida del gremio). */

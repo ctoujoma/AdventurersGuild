@@ -129,6 +129,7 @@ import {
   SAVE_VERSION,
   type AssaultOutcome,
   type DawnEvent,
+  type Glow,
   type Mission,
   type Facilities,
   type GameState,
@@ -968,6 +969,7 @@ function reduceAction(state: GameState, action: Action): GameState {
         ...[...nightNews, ...crafted, ...ms.news, ...(ex?.news ?? []), ...g.news].map((n) => ({
           t: n.t,
           k: n.k ?? ('good' as const),
+          ...('glow' in n && n.glow ? { glow: n.glow as Glow } : {}),
         })),
       ];
       g.next.incidentNews = all.length ? all : undefined;

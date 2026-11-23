@@ -57,8 +57,8 @@ volver a ver).
 | --- | --- | --- |
 | 1 | Núcleo (`core/expedition.ts`: la expedición, días, raciones, curva, sucesos sencillos, vuelta sola, juego cerrado, simulador) + hoja de preparar + visor básico + bosque | Hecho (#208) |
 | 2 | Sucesos con decisión, cartas, opciones de clase, avisos, silenciar, guardianes y «Ver la pelea» | Hecho (#209) |
-| 3 | Mapa grande con niebla, parajes, fardos perdidos, récords y objetivos | Hecho (PR del bloque 3; el dibujo del mapa, marcador hasta el del agente de arte) |
-| 4 | Salida, vuelta, informe «La mochila», brillos por rareza y sonido | Pendiente |
+| 3 | Mapa grande con niebla, parajes, fardos perdidos, récords y objetivos | Hecho (#211; el dibujo del mapa, marcador hasta el del agente de arte) |
+| 4 | Salida, vuelta, informe «La mochila», brillos por rareza y sonido | Hecho (PR del bloque 4) |
 | 5 | Sierra, marismas y ruinas (antes, «En obras»); tiempo por rumbo; pociones y cristal en los talleres; carta del veterano y tutorial | Pendiente |
 
 ## Bloque 1, cómo quedó
@@ -138,6 +138,35 @@ volver a ver).
   nada); ahora deciden al momento con prudencia.
 - **Simulador**: cuenta parajes y fardos. Sin contratar: 3,9 días de lejanía, 0,3 parajes y 0,1
   fardos por partida (igual que `main` en lo demás).
+
+## Bloque 4, cómo quedó
+
+- **Brillo por rareza** (EX18; `ExpLine.g`, `itemGlow`, `matGlow`, `ui/glow.ts`): común (oro y
+  materiales), nada y un «tac»; bueno (objetos comunes), destello; raro (cristal y objetos de
+  rareza 2), brillo azul; legendario (rareza 3 o más), dorado, pausa y fanfarria. La misma escala en
+  el diario y la mochila del visor (también los objetos, con su dibujo), en el destello sobre la
+  tira, en los avisos de la barra (lo raro y lo legendario se avisan: «Expedición al bosque: ¡algo
+  legendario! …») y en «La mochila». Se calcula en el núcleo, igual abierto o cerrado.
+- **Sonidos nuevos** (`audio.ts`): `tac`, `glint`, `shimmer` y `fanfare` (con vibración los dos
+  últimos); la salida suena con el laúd de partida y el cuerno; la vuelta, con la ronda.
+- **«La mochila»** (EX20; `ui/ExpBag.tsx`): la primera vez que se abre el informe de una
+  expedición sale antes que la carta: lo que trajeron, como cartas boca abajo que se dan la vuelta
+  de menos a más (lo legendario, el último, tras una pausa). Tocar el montón (o «Verlo todo») las
+  vuelve todas. Luego, la carta con su botón «La mochila» y «Lo más destacado del diario» (peleas
+  con «Ver la pelea» y hallazgos con brillo). El informe guarda rumbo, días, lejanía, récord y la
+  mochila (`Report.exp`).
+- **Salida en la escena** (EX13): unos 4 s antes de abrir el visor: la cámara se acerca y sigue
+  al primero del grupo, los de casa que están de pie dan saltos, notas en la puerta y el cuerno.
+  Se salta tocando la pantalla; con «Menos movimiento», nada (como antes). Falta lo que es dibujo:
+  juntarse en la puerta con petates y salir por el patio (punto 8 del encargo de arte); en 4 s se
+  les ve camino de la puerta, aún sin llegar al patio.
+- **Vuelta** (EX20): si vuelven con el juego abierto y sin otra cosa en pantalla, la cámara les
+  sigue al entrar por el patio y luego hay ronda en la barra. Los fardos que crecen con lo que
+  traen son del agente de arte (punto 8).
+- **Toca** `src/world` (`crowd.waveOff`, `RoomScene.farewell` y `farewellEnd`) y `App.tsx`.
+- **Arte (nota del usuario, 23 nov):** el visor y el mapa tienen que verse bien de verdad, sin
+  reaprovechar la tira de los encargos; quizá un visor propio más grande. El agente de arte
+  plantea opciones antes de dibujar (apuntado en `arte-expediciones.md` y `plan-arte.md`).
 
 ## Depende de otros
 

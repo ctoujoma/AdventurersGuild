@@ -43,7 +43,11 @@ export type Sfx =
   | 'holy'
   | 'thunder'
   | 'roar'
-  | 'whoosh';
+  | 'whoosh'
+  | 'tac'
+  | 'glint'
+  | 'shimmer'
+  | 'fanfare';
 
 import { haptic } from '../platform/haptics';
 import {
@@ -429,6 +433,36 @@ class AudioEngine {
         [62, 66, 69, 74, 69, 74, 78].forEach((n, i) => this.pluck(n, t + 0.25 + i * 0.12, 0.3 * v));
         this.thump(t + 0.25, 0.1 * v);
         this.thump(t + 0.61, 0.1 * v);
+        break;
+      // Los hallazgos de las expediciones, por rareza (EX18): común, bueno, raro y legendario.
+      case 'tac':
+        // Algo cae en la mochila: un golpecito de madera.
+        this.tone('triangle', 520, 300, t, 0.05, 0.06 * v);
+        this.crackle(t, 0.06 * v);
+        break;
+      case 'glint':
+        // Destello: dos campanillas agudas.
+        this.ping(midi(88), t, 0.25, 0.04 * v);
+        this.ping(midi(95), t + 0.07, 0.35, 0.035 * v);
+        break;
+      case 'shimmer':
+        // Brillo azul: arpegio de campanillas que sube y se queda vibrando.
+        [79, 83, 86, 91, 95].forEach((n, i) => this.ping(midi(n), t + i * 0.06, 0.7, 0.03 * v));
+        this.tone('sine', 1400, 2200, t, 0.5, 0.012 * v);
+        break;
+      case 'fanfare':
+        // Legendario: un silencio corto y la fanfarria de metales, con su campanada.
+        [55, 59, 62].forEach((n) =>
+          this.tone('sawtooth', midi(n), midi(n), t + 0.25, 0.22, 0.03 * v),
+        );
+        [60, 64, 67].forEach((n) =>
+          this.tone('sawtooth', midi(n), midi(n), t + 0.5, 0.22, 0.03 * v),
+        );
+        [67, 71, 74, 79].forEach((n) =>
+          this.tone('sawtooth', midi(n), midi(n), t + 0.75, 0.9, 0.028 * v),
+        );
+        [86, 91, 95].forEach((n, i) => this.ping(midi(n), t + 0.75 + i * 0.05, 1.2, 0.035 * v));
+        this.thump(t + 0.75, 0.12 * v);
         break;
       case 'depart':
         // Pequeña fanfarria de laúd: el grupo sale a la aventura.

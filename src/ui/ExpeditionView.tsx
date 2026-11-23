@@ -1,13 +1,16 @@
-import { useEffect, useRef } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
+import { audio } from '../audio/audio';
 import { EXP_HOURS, EXP_HURT_DOWN } from '../core/balance';
-import { distAt, hoursHome, riskNow } from '../core/expedition';
+import { distAt, hoursHome, itemGlow, matGlow, riskNow } from '../core/expedition';
 import type { BossFight, ExpKind, Expedition, GameState } from '../core/model';
 import { ExpeditionCard } from './ExpeditionCard';
 import { matsMsg, type Material } from '../core/materials';
 import { STRIP_H } from '../world/tripStrip';
 import { dangerClass } from '../data/labels';
 import { ExpeditionStrip } from '../world/expeditionStrip';
+import { GLOW_SFX, glowClass } from './glow';
 import { Icon, type IconName } from './icons';
+import { ItemImage, itemProps } from './ItemImage';
 import { MatIcon } from './mats';
 import { Portrait } from './Portrait';
 import { marchNow } from './expedition';
@@ -97,6 +100,21 @@ export function ExpeditionView({
     };
   }, []);
 
+  // Lo que encuentran con el visor abierto suena y brilla según su rareza (EX18).
+  const seen = useRef(e.log.length);
+  const [flash, setFlash] = useState<{ g: number; key: number } | null>(null);
+  useEffect(() => {
+    const fresh = e.log.slice(seen.current).filter((l) => l.k === 'hallazgo' || l.g);
+    seen.current = e.log.length;
+    if (!fresh.length) return;
+    const g = Math.max(...fresh.map((l) => l.g ?? 0)) as 0 | 1 | 2 | 3;
+    audio.play(GLOW_SFX[g], g === 0 ? 0.6 : 1);
+    if (!g) return;
+    setFlash({ g, key: Date.now() });
+    const id = setTimeout(() => setFlash(null), g === 3 ? 2600 : 1500);
+    return () => clearTimeout(id);
+  }, [e.log.length]);
+
   const heroes = e.heroIds.map((id) => game.heroes.find((h) => h.id === id)).filter((h) => !!h);
   const dist = distAt(e);
   const risk = riskNow(game, e);
@@ -126,6 +144,14 @@ export function ExpeditionView({
               role="img"
               aria-label={t(`expediciones.expeditionview.ahora.${now.mode}`, { vuelta: now.home })}
             />
+            {flash && (
+              <span
+                key={flash.key}
+                class={`exp-flash glow-${flash.g}`}
+                style={{ left: now.home ? '40%' : '60%' }}
+                aria-hidden="true"
+              />
+            )}
           </div>
           <header class="qs-head">
             <span class="eyebrow">
@@ -165,12 +191,25 @@ export function ExpeditionView({
               </span>
             )}
             {mats.map((m) => (
-              <span key={m} class="fact" title={tx(matsMsg({ [m]: e.bag.mats[m] }))}>
+              <span
+                key={m}
+                class={`fact ${glowClass(matGlow(m))}`}
+                title={tx(matsMsg({ [m]: e.bag.mats[m] }))}
+              >
                 <MatIcon m={m} size={12} />
                 {e.bag.mats[m]}
               </span>
             ))}
-            {!e.bag.gold && !mats.length && (
+            {(e.bag.items ?? []).map((it) => (
+              <span
+                key={it.id}
+                class={`fact exp-bag-item ${glowClass(itemGlow(it.rarity))}`}
+                title={tx(it.name)}
+              >
+                <ItemImage {...itemProps(it)} scale={1} />
+              </span>
+            ))}
+            {!e.bag.gold && !mats.length && !e.bag.items?.length && (
               <span class="tiny">{t('expediciones.expeditionview.vacia')}</span>
             )}
           </div>
@@ -203,7 +242,7 @@ export function ExpeditionView({
             {[...e.log].reverse().map((l, i) => (
               <li
                 key={`${l.h}-${i}`}
-                class={`exp-line is-${l.k} ${l.won === false ? 'is-bad' : ''}`}
+                class={`exp-line is-${l.k} ${l.won === false ? 'is-bad' : ''} ${glowClass(l.g)}`}
               >
                 <Icon name={KIND_ICON[l.k]} size={12} />
                 <span class="exp-when">

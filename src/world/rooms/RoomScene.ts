@@ -2224,6 +2224,33 @@ export class RoomScene {
     this.cb.onSound?.('cheer');
   }
 
+  /**
+   * La despedida de una expedición (EX13): notas en la puerta y los de casa (`home`) que están de
+   * pie dan saltos. La cámara la lleva la interfaz (`focus` y `follow`).
+   */
+  farewell(home: readonly string[], lead?: string): void {
+    this.crowd.waveOff(home);
+    // Más cerca, para que se les vea salir (al acabar, `farewellEnd` vuelve al zoom de antes).
+    const cur = this.zoomAnim?.to ?? this.camera.zoom;
+    this.byeZoom = cur;
+    const near = Math.min(MAX_ZOOM, crispNear(cur * 2));
+    if (near > cur + 0.001) this.zoomTo(near);
+    if (lead) this.follow(lead);
+    const p = this.layout ? focusPoint(this.layout, 'puerta') : null;
+    if (!p) return;
+    for (let i = 0; i < 8; i++)
+      this.particles.spawn('note', p.x + (Math.random() - 0.5) * 50, p.y - 6 - Math.random() * 14);
+  }
+
+  private byeZoom: number | null = null;
+
+  /** Acaba la despedida: deja de seguirles y vuelve el zoom de antes. */
+  farewellEnd(): void {
+    this.follow(null);
+    if (this.byeZoom !== null) this.zoomTo(this.byeZoom);
+    this.byeZoom = null;
+  }
+
   celebrate(room: string): void {
     const p = this.layout ? focusPoint(this.layout, room) : null;
     if (!p) return;
