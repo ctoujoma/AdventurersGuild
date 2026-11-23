@@ -427,8 +427,22 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
 
 0. **Expediciones** ([`encargos/arte-expediciones.md`](encargos/arte-expediciones.md)): el usuario
    pide (23 nov) que el visor y el mapa de rumbos se vean bien de verdad, sin reaprovechar la tira de
-   los encargos, y valora un visor propio a más tamaño. **Primero, opciones con maquetas** para que
-   elija; luego, dibujar.
+   los encargos, y valora un visor propio a más tamaño. Opciones con maquetas en
+   https://claude.ai/artifact/Uc7GCVw5D5sEQ9oHp7MEog. **Elegido (23 nov):**
+   - **Visor en el móvil: el cuadro enmarcado (B).** 156 × 140 píxeles a ×2, marco de madera de 10 px,
+     cámara cerca; los héroes con su vida en el borde de abajo del marco y el día, la hora y el rumbo
+     en la chapa de arriba. Debajo, título, mochila y diario.
+   - **Visor en escritorio: pantalla entera (C).** 320 × 200 a ×3, la interfaz flota encima: arriba,
+     el día y la distancia; abajo a la izquierda, los héroes; el diario en un panel a la derecha. Tocar
+     el paisaje la esconde.
+   - El dibujo es el mismo (capas, gente, tiempo); solo cambian el encuadre (horizonte y cámara) y el
+     tamaño, así que la escena tiene que poder pintarse a cualquier ancho y alto.
+   - **Mapa de rumbos: coherente con la sala de mapas**, como el de la comarca: pergamino a tinta
+     (sala rota o a nivel 1) y terreno a color (nivel 2 o más). Un solo terreno debajo para los dos,
+     así nada se mueve al subir la sala. Niebla en cada estilo: pergamino sin pintar con nubes a tinta;
+     nubes blancas con volumen a color.
+   - Orden: el bosque bien acabado primero (salvo que el usuario diga otra cosa); luego sierra,
+     marismas y ruinas.
 1. **Más cilindros y cuerpos de verdad**: los barriles apilados, las mesas (tablero y patas), el
    horno de pan (cúpula) y la caldera (cúpula de cobre) con la misma idea que `round`.
 2. [x] **Atlas de la gente en dos filas** (#100): se dibuja en una tira y se pliega (`fold` en
