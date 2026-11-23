@@ -458,9 +458,12 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      `capturas/expediciones/mapa-rumbos/`.
    - [ ] Pendiente: gestos nuevos de héroe (recoger, cofre, beber, señalar, dormir tumbado),
      fardos a la vuelta y hallazgos en el visor; la pantalla entera de escritorio (hoy el visor va
-     en la hoja lateral: interfaz del agente de expediciones); afinar el mapa a color (sierra alta
-     muy blanca, mar con halos, textura de la niebla repetida) y el azul de las marismas en
-     pergamino; transición al despejar la niebla; luego sierra, marismas y ruinas en el visor.
+     en la hoja lateral: interfaz del agente de expediciones); en la niebla a color, que las bolas
+     no parezcan guijarros (cortes rectos donde se tocan) y algún hueco que deja ver terreno no
+     explorado; luego sierra, marismas y ruinas en el visor.
+   - [x] Pulido del mapa: niebla a color como mar de cúmulos (bolas con luz propia en dos capas,
+     borde redondo, se encogen al despejar en 1,6 s), pergamino con borde a festones grabado y
+     retirada, sierra alta con nieve a manchas, mar sin halos, marismas a tinta.
 1. **Más cilindros y cuerpos de verdad**: los barriles apilados, las mesas (tablero y patas), el
    horno de pan (cúpula) y la caldera (cúpula de cobre) con la misma idea que `round`.
 2. [x] **Atlas de la gente en dos filas** (#100): se dibuja en una tira y se pliega (`fold` en
