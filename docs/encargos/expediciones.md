@@ -58,8 +58,8 @@ volver a ver).
 | 1 | Núcleo (`core/expedition.ts`: la expedición, días, raciones, curva, sucesos sencillos, vuelta sola, juego cerrado, simulador) + hoja de preparar + visor básico + bosque | Hecho (#208) |
 | 2 | Sucesos con decisión, cartas, opciones de clase, avisos, silenciar, guardianes y «Ver la pelea» | Hecho (#209) |
 | 3 | Mapa grande con niebla, parajes, fardos perdidos, récords y objetivos | Hecho (#211; el dibujo del mapa, marcador hasta el del agente de arte) |
-| 4 | Salida, vuelta, informe «La mochila», brillos por rareza y sonido | Hecho (PR del bloque 4) |
-| 5 | Sierra, marismas y ruinas (antes, «En obras»); tiempo por rumbo; pociones y cristal en los talleres; carta del veterano y tutorial | Pendiente |
+| 4 | Salida, vuelta, informe «La mochila», brillos por rareza y sonido | Hecho (#212) |
+| 5 | Sierra, marismas y ruinas (antes, «En obras»); tiempo por rumbo; pociones y cristal en los talleres; carta del veterano y tutorial | Hecho (PR del bloque 5) |
 
 ## Bloque 1, cómo quedó
 
@@ -168,9 +168,46 @@ volver a ver).
   reaprovechar la tira de los encargos; quizá un visor propio más grande. El agente de arte
   plantea opciones antes de dibujar (apuntado en `arte-expediciones.md` y `plan-arte.md`).
 
+## Bloque 5, cómo quedó
+
+- **Los cuatro rumbos abiertos** (`OPEN_HEADINGS`): sierra, marismas y ruinas con sus líneas de
+  camino y de noche, cuatro enemigos cada uno (con su familia para el visor y su jefe para el
+  motor de peleas) y su guardián (Sierpe Blanca, Reina del Juncal, Dragona de Ceniza). El oso solo
+  sale en el bosque y la sierra; el santuario y el guardián ya no dicen «bosque».
+- **Tiempo por rumbo** (`expWeather`): cerca de casa (menos de `EXP_WEATHER_FROM` días), sin
+  efecto; lejos, uno por día con su semilla. Bosque, lluvia o niebla; sierra, nieve o viento;
+  marismas, niebla o lluvia; ruinas, polvo o tormenta seca. Lluvia, viento y tormenta les paran a
+  ratos (`EXP_RAIN_SLOW`); niebla, polvo y tormenta tapan la pista, y la niebla trae más
+  emboscadas (`EXP_FOG_AMBUSH`); la nieve gasta más raciones por la noche (`EXP_SNOW_EAT`). Línea
+  en el diario al cambiar y un chip en el visor. El dibujo del tiempo es del agente de arte.
+- **Pociones**: las hechas en la alquimia (`GameState.potions`) se llevan como las raciones; por
+  la noche, una cura una herida del que está peor; las que sobran vuelven. Ver el pendiente.
+- **Obra maestra**: un cuarto paso de mejora (+4) que pide además 1 de cristal.
+- **Recetas nuevas** (de serie): hacha de roble (forja; madera y hierro), saquito de hierbas
+  (alquimia; hierbas; el bueno da una segunda oportunidad) y varita de cristal (alquimia; cristal y
+  madera). Los textos de los materiales dicen ya de dónde salen y qué los pide.
+- **Carta del veterano** (EX24): con el primer veterano, al amanecer (si hay otro tutorial en
+  marcha, espera), firmada por el de más nivel, con aviso grande. Al cerrarla, o la primera vez
+  que se abre el mapa, un **tutorial corto de tres páginas** (`ui/ExpIntro.tsx`) que acaba en el
+  mapa. Falta lo que es dibujo: el sello de mapa enrollado y el borde del mapa que se despliega.
+- **Simulador**: reparte las expediciones entre los cuatro rumbos.
+
+## Pendiente: las pociones las hace la alquimia (el usuario, 23 de noviembre)
+
+Las pociones **solo existen si se han creado en la alquimia**, como la forja crea sus objetos.
+
+- **Hecho (expediciones):** las expediciones solo llevan las que hay hechas
+  (`GameState.potions`), y se dan en la hoja igual que las raciones. También se encuentran por el
+  camino (`EXP_POTION_FIND` en los hallazgos), y las que sobran vuelven a la alquimia. Ya no se
+  gastan hierbas al salir.
+- **Falta (agente principal, talleres; encargo en [`pociones.md`](pociones.md)):** la receta de la poción en la alquimia: hierbas y su
+  tiempo; al acabar, `s.potions++`, que se vea en la alquimia y en la despensa. Hasta entonces, sin
+  pociones hechas, la hoja no enseña la fila de pociones.
+
 ## Depende de otros
 
-- **Agente principal:** veteranía a nivel 8 (y maestro, nivel máximo), caché sin pagar, un día
+- **Agente principal:** las pociones como trabajo de la alquimia (ver «Pendiente: las
+  pociones» arriba); veteranía a nivel 8 (y maestro, nivel máximo), caché sin pagar, un día
   cada 24 h con el juego cerrado, repetir tutoriales desde Ajustes (ver `decisiones.md`, bloque 8,
   «Para el agente principal»).
 - **Agente de arte:** el visor por rumbo, el mapa grande y lo demás de

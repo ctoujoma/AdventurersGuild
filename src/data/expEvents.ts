@@ -84,6 +84,7 @@ export const EXP_EVENTS: Record<ExpEvent, ExpEventDef> = {
   oso: {
     from: 1,
     weight: 2,
+    headings: ['bosque', 'sierra'],
     options: [
       { id: 'plantar', cls: 'guerrero' },
       { id: 'rodear', cls: 'explorador', attr: 'D', hard: -3 },

@@ -30,6 +30,8 @@ import {
   DAY_SECONDS,
   TEMPER_GOLD,
   TEMPER_HOURS,
+  TEMPER_CRYSTAL,
+  TEMPER_MASTER,
   TEMPER_MAX,
   UNDO_CHANCE,
   UNDO_HOURS,
@@ -161,12 +163,15 @@ export function temperCost(
 ): { room: RoomType; gold: number; hours: number; mats: Mats; to: number } | null {
   if (!it.icon || !it.kind || it.kind === 'tesoro') return null;
   const to = (it.plus ?? 0) + 1;
-  if (to > TEMPER_MAX) return null;
+  if (to > TEMPER_MASTER) return null;
+  // Pasado el tope de siempre, la obra maestra: pide cristal además de su material.
+  const mats: Mats = { [ICON_MATERIAL[it.icon]]: to };
+  if (to > TEMPER_MAX) mats.cristal = (mats.cristal ?? 0) + TEMPER_CRYSTAL;
   return {
     room: ICON_SHOP[it.icon],
     gold: TEMPER_GOLD * to,
     hours: TEMPER_HOURS * to,
-    mats: { [ICON_MATERIAL[it.icon]]: to },
+    mats,
     to,
   };
 }
@@ -180,7 +185,9 @@ export function canTemper(s: GameState, roomId: string, itemId: string): string 
   if (!it) return t('talleres.error.no_arcon_puesto');
   const cost = temperCost(it);
   if (!cost)
-    return t((it.plus ?? 0) >= TEMPER_MAX ? 'talleres.error.mejorado' : 'talleres.error.no_mejora');
+    return t(
+      (it.plus ?? 0) >= TEMPER_MASTER ? 'talleres.error.mejorado' : 'talleres.error.no_mejora',
+    );
   if (cost.room !== r.type) return t('talleres.error.otro_taller');
   if (s.gold < cost.gold) return t('partida.error.faltan', { n: cost.gold - s.gold });
   return lackText(s, cost.mats);

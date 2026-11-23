@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
 import { EXP_HOURS, EXP_HURT_DOWN } from '../core/balance';
-import { distAt, hoursHome, itemGlow, matGlow, riskNow } from '../core/expedition';
+import { distAt, expWeather, hoursHome, itemGlow, matGlow, riskNow } from '../core/expedition';
 import type { BossFight, ExpKind, Expedition, GameState } from '../core/model';
 import { ExpeditionCard } from './ExpeditionCard';
 import { matsMsg, type Material } from '../core/materials';
@@ -118,6 +118,7 @@ export function ExpeditionView({
   const heroes = e.heroIds.map((id) => game.heroes.find((h) => h.id === id)).filter((h) => !!h);
   const dist = distAt(e);
   const risk = riskNow(game, e);
+  const sky = expWeather(e);
   const mats = Object.keys(e.bag.mats).filter(
     (m) => (e.bag.mats[m as Material] ?? 0) > 0,
   ) as Material[];
@@ -178,6 +179,9 @@ export function ExpeditionView({
               <Icon name="pan" size={12} />
               {t('expediciones.expeditionview.raciones', { n: e.rations })}
             </span>
+            {sky !== 'claro' && (
+              <span class="fact exp-sky">{t(`expediciones.expeditionview.tiempo.${sky}`)}</span>
+            )}
             <span class={`danger danger-${dangerClass(risk)}`}>
               {t(`expediciones.expeditionview.riesgo.${risk}`)}
             </span>

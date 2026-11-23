@@ -6,16 +6,17 @@ rumbos:
   sierra:
     nombre: "the mountains"
     titulo: "Mountains"
-    desc: "To the north, snow and scree. Brings {materiales}."
+    desc: "To the north, snow and scree. Brings {materiales}; wolves, mine goblins and blizzards."
   marismas:
     nombre: "the marshes"
     titulo: "Marshes"
-    desc: "To the southwest, fog and reed beds. Brings {materiales}."
+    desc: "To the southwest, fog and reed beds. Brings {materiales}; leeches, drowned ones and smugglers."
   ruinas:
     nombre: "the ruins"
     titulo: "Ruins"
-    desc: "To the southeast, old stones and dust. Brings {materiales}."
+    desc: "To the southeast, old stones and dust. Brings {materiales}; skeletons, looters and traps."
 error:
+  pociones: "The alchemist only has {n, plural, =0 {no potions made} one {# potion made} other {# potions made}}."
   cerradas: "Expeditions open with your first veteran (level {nivel})."
   en_obras: "That heading is still under construction."
   sin_hueco: "The map room can't handle more expeditions at once ({n}). Extend it to send more."
@@ -27,6 +28,8 @@ error:
   sin_oro: "The pack doesn't hold {n} coins."
   sin_materiales: "They carry nothing to sell."
 diario:
+  pocion_hallada: "{heroe} finds a potion among some roots: into the pack."
+  pocion: "{heroe} drinks a herbal potion and feels better: one wound less."
   record: "They have gone further into {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}} than anyone from the guild: a new record."
   fardo_queda: "What they can't carry is left behind in a bundle; maybe another expedition will find it."
   fardo: "A guild bundle! It's the one {quien} lost: {que}."
@@ -66,22 +69,74 @@ diario:
       - "Rain drips through the leaves; {n, plural, one {keeps} other {they keep}} going anyway, {n, plural, one {{sexo, select, f {soaked} other {soaked}}} other {soaked}}."
       - "A crow follows {n, plural, one {them} other {them}} a long way, from branch to branch."
       - "{n, plural, one {Crosses} other {They cross}} a freezing stream on a fallen log."
+    sierra:
+      - "The path turns to scree; {n, plural, one {climbs} other {they climb}} carefully."
+      - "{heroe} points at huge tracks in the snow."
+      - "An eagle circles high above."
+      - "{n, plural, one {Finds} other {They find}} the mouth of an abandoned mine; better not go in blind."
+      - "The wind whistles between the crags."
+      - "{heroe} slips on the ice, but nothing comes of it."
+    marismas:
+      - "The water comes up to their knees."
+      - "{heroe} pulls a leech off an arm."
+      - "The frogs fall silent as they pass."
+      - "A heron takes off from the reeds."
+      - "{n, plural, one {Follows} other {They follow}} a path of half-rotten boards."
+      - "It smells of mud and rain."
+    ruinas:
+      - "Broken columns poke out of the sand."
+      - "{heroe} finds an old coin with a face nobody knows."
+      - "A lizard suns itself on a headless statue."
+      - "{heroe} steps on a slab that sounds hollow; better go around."
+      - "What's left of a mosaic: a dragon, or so it seems."
+      - "The dust rises in whirls."
   noche:
     bosque: "{n, plural, one {Camps} other {They camp}} under the trees{vuelta, select, si {, on the way back} other {}}. {raciones, plural, =0 {No rations} one {# ration} other {# rations}} left."
+    sierra: "{n, plural, one {Camps} other {They camp}} in the lee of a crag{vuelta, select, si {, on the way back} other {}}. {raciones, plural, =0 {No rations} one {# ration} other {# rations}} left."
+    marismas: "{n, plural, one {Camps} other {They camp}} on a dry islet{vuelta, select, si {, on the way back} other {}}. {raciones, plural, =0 {No rations} one {# ration} other {# rations}} left."
+    ruinas: "{n, plural, one {Camps} other {They camp}} among old walls{vuelta, select, si {, on the way back} other {}}. {raciones, plural, =0 {No rations} one {# ration} other {# rations}} left."
+  nieve: "The snow bites: they burn {m, plural, one {one more ration} other {# more rations}} to keep warm."
+  tiempo:
+    claro: "It clears up: the day turns bright."
+    lluvia: "It starts to rain: the path turns to mud and they slow down."
+    niebla: "Fog rolls in: you can't see ten paces ahead."
+    nieve: "It starts to snow."
+    viento: "An icy wind picks up and holds them back."
+    polvo: "The wind raises dust: it's hard to see what lies ahead."
+    tormenta: "A dry storm rolls in: lightning without rain and dust everywhere."
 enemigos:
   bosque:
     - "a pack of wolves"
     - "a wild boar"
     - "a bear"
     - "a huge wolf"
+  sierra:
+    - "a pack of grey wolves"
+    - "a goblin raiding party"
+    - "a brown bear"
+    - "a snow giant"
+  marismas:
+    - "giant leeches"
+    - "a drowned one"
+    - "some smugglers"
+    - "a water snake"
+  ruinas:
+    - "some skeletons"
+    - "some looters"
+    - "rats the size of dogs"
+    - "a stone golem"
 guardianes:
   bosque: "Old Tusk"
+  sierra: "the White Serpent"
+  marismas: "the Reed Queen"
+  ruinas: "the Ash Dragon"
 pelea:
   nombre: "{enemigos, mayus}"
   donde: "In {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}, {dias, plural, =0 {less than a day} one {one day} other {# days}} from home"
 monedas: "{n, plural, one {one coin} other {# coins}}"
 botin: "{oro, plural, =0 {} one {one coin and } other {# coins and }}{que}"
 informe:
+  chip_pociones: "{n, plural, one {One potion left over: it goes} other {# potions left over: they go}} back to the alchemist"
   titulo: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}"
   cuerpo: "{dias, plural, one {One day away} other {# days away}}: {n, plural, one {got} other {they got}} {lejos, plural, =0 {less than a day} one {one day} other {# days}} from the tavern."
   peleas: "{ganadas, plural, =0 {No fights won} one {One fight won} other {# fights won}} and {perdidas, plural, =0 {none lost} one {one lost} other {# lost}}."
@@ -105,6 +160,10 @@ aviso:
   guardian: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}: {que}! Open the viewer to watch."
   vuelve: "The expedition is back from {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}: {grupo}."
 expeditionsheet:
+  pociones: "Potions"
+  pociones_ayuda: "of {n} made at the alchemist's"
+  menos_pociones: "One potion fewer"
+  mas_pociones: "One more potion"
   titulo: "New expedition"
   cerrar: "Close"
   a_la_vez: "Out now: {n} of {max}"
@@ -123,6 +182,13 @@ expeditionsheet:
   salir: "Set out"
   elige_quien: "Choose who goes"
 expeditionview:
+  tiempo:
+    lluvia: "Rain: slower"
+    niebla: "Fog: ambushes, poorer hints"
+    nieve: "Snow: more rations"
+    viento: "Wind: slower"
+    polvo: "Dust: poorer hints"
+    tormenta: "Dry storm: slower, poorer hints"
   titulo: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}"
   cerrar: "Close"
   ahora:
@@ -168,7 +234,7 @@ sucesos:
       nombre: "Leave it"
       bien: "Better not to touch what someone else buried. They move on."
   santuario:
-    titulo: "a forest shrine"
+    titulo: "a wayside shrine"
     texto: "A moss-covered stone shrine, with candles someone lit not long ago."
     rezar:
       nombre: "Pray"
@@ -273,8 +339,8 @@ sucesos:
       nombre: "Leave them be"
       bien: "Some things are better left shut. They move on."
   guardian:
-    titulo: "the guardian of the forest"
-    texto: "The ground shakes: Old Tusk, the boar that guards the deepest forest, blocks their way."
+    titulo: "the guardian of this heading"
+    texto: "{rumbo, select, bosque {The ground shakes: Old Tusk, the boar that guards the deepest forest, blocks their way.} sierra {The snow creaks: the White Serpent, asleep in the drifts, uncoils before them.} marismas {The reeds part: the Reed Queen rises from the black water and blocks their way.} other {A cloud of ash rises: the Ash Dragon wakes among the broken columns.}}"
     pelear:
       nombre: "Get it!"
       bien: "{heroe} shouts and they charge at the guardian."
@@ -333,3 +399,23 @@ mochila:
 
 salida:
   saltar: "Tap to open the viewer"
+
+veterano:
+  titulo: "A letter from the veteran"
+  cabecera: "Expeditions!"
+  carta: "{heroe} leaves a letter on the bar: “I know every road in the county by now. Beyond the fog there are forests no one has walked, mountains, marshes and old ruins. Give me rations and a couple of companions, and I'll bring back what quests never do: fine wood, herbs, crystal… and some glory.”"
+  carta2: "With the map room you can send expeditions: further every day, with more danger and better loot. They head home on their own when they have just enough rations left."
+  chip: "Expeditions unlocked: on the map"
+  aviso: "{heroe} wants to go beyond the county: expeditions are open!"
+intro:
+  titulo: "Expeditions"
+  siguiente: "Next"
+  vamos: "To the map"
+  cerrar: "Close"
+  paso: "{n} of {total}"
+  p1_titulo: "Choose who goes and where"
+  p1_texto: "On the map, “New expedition”. The map room says how many can go. Each heading brings its own: wood and herbs in the forest, iron and crystal in the mountains, herbs and leather in the marshes, crystal and items in the ruins."
+  p2_titulo: "Rations: how long they last"
+  p2_texto: "One ration per hero per day. The more they carry, the further they get: more danger and better loot. The way back takes half as long. If the alchemist has made potions, pack them some."
+  p3_titulo: "Follow them in the viewer"
+  p3_texto: "Tap their card to watch them walk, fight and camp. Sometimes they ask what to do: answer before nightfall or they'll play it safe. They come home on their own, or when you tell them."

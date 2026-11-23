@@ -77,6 +77,7 @@ import { UncleNote } from './UncleNote';
 import { TripSheet } from './TripSheet';
 import { ExpeditionSheet } from './ExpeditionSheet';
 import { ExpeditionView } from './ExpeditionView';
+import { ExpIntro } from './ExpIntro';
 import { GLOW_SFX, type GlowLevel } from './glow';
 import { TutorialNote } from './TutorialNote';
 import { TutorialFocus } from './TutorialFocus';
@@ -183,6 +184,8 @@ export function App() {
   const [expId, setExpId] = useState<string | null>(null);
   /** La despedida de una expedición en la escena (EX13): unos 4 s antes de abrir su visor. */
   const [bye, setBye] = useState<string | null>(null);
+  /** El tutorial corto de las expediciones (tras la carta del veterano o al abrir el mapa). */
+  const [expIntro, setExpIntro] = useState(false);
   const byeTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const [arconTab, setArconTab] = useState<ArconTab>('equipo');
   /** Sala tocada en la vista de salas (su ficha). */
@@ -617,6 +620,9 @@ export function App() {
     if (p === panel) return;
     audio.play(p ? 'open' : 'close');
     setPanel(p);
+    // La primera vez que se abre el mapa con las expediciones abiertas, su tutorial corto.
+    const g = gameRef.current;
+    if (p === 'fuera' && g.expOpened && !g.tips?.includes('expediciones')) setExpIntro(true);
     setCard(null);
     setQuestId(null);
     setReportId(null);
@@ -727,9 +733,22 @@ export function App() {
    * Sale una expedición (EX13): la cámara va a la puerta, los de casa les despiden, suena el
    * cuerno y la cámara les sigue por el patio; a los ~4 s (o al tocar) se abre su visor.
    */
-  const sendExpedition = (heading: Heading, ids: string[], rations: number, unguard: boolean) => {
+  const sendExpedition = (
+    heading: Heading,
+    ids: string[],
+    rations: number,
+    unguard: boolean,
+    potions = 0,
+  ) => {
     const before = gameRef.current;
-    const next = dispatch({ type: 'expedition', heading, heroIds: ids, rations, unguard });
+    const next = dispatch({
+      type: 'expedition',
+      heading,
+      heroIds: ids,
+      rations,
+      unguard,
+      potions,
+    });
     if (next === before) return;
     audio.play('depart');
     setPanel(null);
@@ -1830,6 +1849,15 @@ export function App() {
             onSend={(ids, unguard) => send(openQuest.id, ids, unguard)}
           />
         )}
+        {expIntro && (
+          <ExpIntro
+            onDone={(toMap) => {
+              setExpIntro(false);
+              dispatch({ type: 'tip', id: 'expediciones' });
+              if (toMap && panel !== 'fuera') openPanel('fuera');
+            }}
+          />
+        )}
         {bye && (
           <button class="exp-bye" onClick={() => endBye(bye)}>
             <span>{t('expediciones.salida.saltar')}</span>
@@ -1888,7 +1916,10 @@ export function App() {
             report={report}
             heroes={game.heroes}
             seal={customOf(game)}
-            onClose={() => setReportId(null)}
+            onClose={() => {
+              setReportId(null);
+              if (report.vet && !gameRef.current.tips?.includes('expediciones')) setExpIntro(true);
+            }}
             onWatch={
               report.fight ? () => setWatching({ fight: report.fight!, dawn: false }) : undefined
             }

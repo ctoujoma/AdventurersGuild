@@ -64,6 +64,9 @@ describe('la forja crea objetos', () => {
       'ganzuasTempladas',
       'botasCuero',
       'capaForrada',
+      'hachaRoble',
+      'amuletoHierbas',
+      'varitaCristal',
     ]);
   });
 
@@ -524,7 +527,12 @@ describe('materiales en los talleres', () => {
     const it = t.inventory.find((i) => i.id === 'esp')!;
     expect(it.plus).toBe(1);
     expect(t.dawn.some((e) => /ahora es \+1/.test(tx(e.t)))).toBe(true);
-    expect(temperCost({ ...it, plus: 3 })).toBeNull();
+    // A +3, la obra maestra pide cristal; a +4, ya no hay más.
+    expect(temperCost({ ...it, plus: 3 })).toMatchObject({
+      to: 4,
+      mats: { hierro: 4, cristal: 1 },
+    });
+    expect(temperCost({ ...it, plus: 4 })).toBeNull();
     // Las botas se mejoran en la sastrería, no en la forja.
     s.inventory.push({
       id: 'bot',

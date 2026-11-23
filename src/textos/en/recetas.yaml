@@ -153,3 +153,33 @@ recetas:
     good:
       nombre: "Ranger's cloak"
       desc: "Lined, with inside pockets and the colour of the hills."
+  hachaRoble:
+    nombre: "Oak-handled axe"
+    one: "an oak-handled axe"
+    many: "oak-handled axes"
+    common:
+      nombre: "Oak axe"
+      desc: "A handle of old forest oak: it won't split even on the worst blow."
+    good:
+      nombre: "Seasoned oak axe"
+      desc: "Smoke-seasoned oak and a blade that bites."
+  amuletoHierbas:
+    nombre: "Herb pouch"
+    one: "a herb pouch"
+    many: "herb pouches"
+    common:
+      nombre: "Herb pouch"
+      desc: "Marsh herbs sewn into a little pouch: it smells of the wild and of luck."
+    good:
+      nombre: "Healer's pouch"
+      desc: "The good herbs, well chosen. Whoever carries it gets a second chance."
+  varitaCristal:
+    nombre: "Crystal wand"
+    one: "a crystal wand"
+    many: "crystal wands"
+    common:
+      nombre: "Crystal wand"
+      desc: "Good wood tipped with mountain crystal that hums in the hand."
+    good:
+      nombre: "Cut crystal wand"
+      desc: "The crystal, patiently cut: the magic flows clean."

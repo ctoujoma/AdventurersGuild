@@ -24,7 +24,10 @@ export type RecipeId =
   | 'escudoTachonado'
   | 'ganzuasTempladas'
   | 'botasCuero'
-  | 'capaForrada';
+  | 'capaForrada'
+  | 'hachaRoble'
+  | 'amuletoHierbas'
+  | 'varitaCristal';
 
 /** Los talleres, para las frases («en la sastrería»). */
 export const WORKSHOP_PLACE: Partial<Record<RoomType, string>> = {
@@ -499,6 +502,98 @@ export const RECIPES: Record<RecipeId, Recipe> = {
       icon: 'capa',
       bonus: { Supervivencia: 2 },
       perk: 'ambush',
+    },
+  },
+  // Con lo que traen las expediciones (bloque 5): madera buena, hierbas y cristal.
+  hachaRoble: {
+    name: t('recetas.recetas.hachaRoble.nombre'),
+    one: t('recetas.recetas.hachaRoble.one'),
+    many: t('recetas.recetas.hachaRoble.many'),
+    room: 'forja',
+    icon: 'hacha',
+    kind: 'arma',
+    gold: 35,
+    hours: 10,
+    free: true,
+    mats: { madera: 2, hierro: 1 },
+    common: {
+      name: msg('recetas.recetas.hachaRoble.common.nombre'),
+      desc: msg('recetas.recetas.hachaRoble.common.desc'),
+      value: 45,
+      kind: 'arma',
+      rarity: 0,
+      icon: 'hacha',
+      bonus: { Combate: 2 },
+    },
+    good: {
+      name: msg('recetas.recetas.hachaRoble.good.nombre'),
+      desc: msg('recetas.recetas.hachaRoble.good.desc'),
+      value: 80,
+      kind: 'arma',
+      rarity: 2,
+      icon: 'hacha',
+      bonus: { Combate: 3 },
+    },
+  },
+  amuletoHierbas: {
+    name: t('recetas.recetas.amuletoHierbas.nombre'),
+    one: t('recetas.recetas.amuletoHierbas.one'),
+    many: t('recetas.recetas.amuletoHierbas.many'),
+    room: 'alquimia',
+    icon: 'amuleto',
+    kind: 'amuleto',
+    gold: 30,
+    hours: 10,
+    free: true,
+    mats: { hierbas: 3 },
+    common: {
+      name: msg('recetas.recetas.amuletoHierbas.common.nombre'),
+      desc: msg('recetas.recetas.amuletoHierbas.common.desc'),
+      value: 40,
+      kind: 'amuleto',
+      rarity: 0,
+      icon: 'amuleto',
+      bonus: { Supervivencia: 2 },
+    },
+    good: {
+      name: msg('recetas.recetas.amuletoHierbas.good.nombre'),
+      desc: msg('recetas.recetas.amuletoHierbas.good.desc'),
+      value: 70,
+      kind: 'amuleto',
+      rarity: 2,
+      icon: 'amuleto',
+      bonus: { Supervivencia: 2 },
+      perk: 'luck',
+    },
+  },
+  varitaCristal: {
+    name: t('recetas.recetas.varitaCristal.nombre'),
+    one: t('recetas.recetas.varitaCristal.one'),
+    many: t('recetas.recetas.varitaCristal.many'),
+    room: 'alquimia',
+    icon: 'varita',
+    kind: 'arma',
+    gold: 50,
+    hours: 14,
+    free: true,
+    mats: { cristal: 1, madera: 1 },
+    common: {
+      name: msg('recetas.recetas.varitaCristal.common.nombre'),
+      desc: msg('recetas.recetas.varitaCristal.common.desc'),
+      value: 60,
+      kind: 'arma',
+      rarity: 0,
+      icon: 'varita',
+      bonus: { Arcano: 3 },
+    },
+    good: {
+      name: msg('recetas.recetas.varitaCristal.good.nombre'),
+      desc: msg('recetas.recetas.varitaCristal.good.desc'),
+      value: 110,
+      kind: 'arma',
+      rarity: 2,
+      icon: 'varita',
+      bonus: { Arcano: 4 },
     },
   },
 };

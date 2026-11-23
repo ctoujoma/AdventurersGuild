@@ -422,3 +422,8 @@ Repartida en cuatro agentes y juntada en la rama (sin choques):
   73 → 69 %). Con jugador real y guardias, menos. El usuario: «OK de momento y vemos».
 - En marcha aparte: zoom suave, tirones al aplicar obras, la cámara que se mueve sola y el
   encuadre en móviles (agente en otra copia, sobre esta rama).
+
+## Pendiente que deja el agente de expediciones (23 de noviembre)
+
+- **Pociones en la alquimia:** encargo completo en [`encargos/pociones.md`](encargos/pociones.md)
+  (las expediciones ya las llevan de `GameState.potions`; falta crearlas en la alquimia).

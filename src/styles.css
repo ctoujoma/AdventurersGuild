@@ -8943,3 +8943,35 @@ div.item-count {
   font-size: var(--t-s);
   animation: fadein 0.4s 0.6s both;
 }
+/* El tutorial corto de las expediciones (bloque 5). */
+.exp-intro h3 {
+  margin: 4px 0;
+}
+.exp-intro-pic {
+  display: grid;
+  place-items: center;
+  height: 84px;
+  margin: 6px 0;
+  background: repeating-linear-gradient(45deg, #5a3524 0 6px, #4a2a1e 6px 12px);
+  color: #ffd35a;
+  border: 3px solid var(--ink);
+}
+.exp-intro-dots {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin: 10px 0;
+}
+.exp-intro-dots i {
+  width: 8px;
+  height: 8px;
+  background: #b89a6a;
+  border: 1px solid var(--ink);
+}
+.exp-intro-dots i.is-on {
+  background: #f2a33a;
+}
+.exp-sky {
+  background: #dfe8f0;
+  color: #1d2a3a;
+}
