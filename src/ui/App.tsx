@@ -1937,6 +1937,11 @@ export function App() {
             candidate={cardIsCandidate}
             onClose={() => setCard(null)}
             onHire={() => hire(cardHero.id)}
+            onReject={() => {
+              audio.play('close');
+              dispatch({ type: 'reject', id: cardHero.id });
+              setCard(null);
+            }}
             onFire={() => fire(cardHero.id)}
             onAnswer={(yes) => dispatch({ type: 'answer', id: cardHero.id, yes })}
             onPayOwed={() => dispatch({ type: 'payOwed', id: cardHero.id })}

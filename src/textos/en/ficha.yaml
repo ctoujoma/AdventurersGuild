@@ -55,6 +55,8 @@ herocard:
   despedir_a_se_va: "Dismiss {nombre}? They leave today and won't come back."
   si_despedir: "Yes, dismiss"
   contratar: "Hire · {paga}"
+  rechazar: "Send away"
+  rechazar_ayuda: "You don't hire them: they leave the bar and make room for someone else to come and ask."
   historia: "History"
   despedir: "Dismiss"
   no_lleva_nada: "{ranura}: nothing equipped."

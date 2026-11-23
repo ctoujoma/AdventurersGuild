@@ -52,3 +52,13 @@ describe('negar lo que piden', () => {
     expect(s.heroes.find((x) => x.id === id)?.grudge).toBeUndefined();
   });
 });
+
+describe('candidatos', () => {
+  it('rechazar a quien espera en la barra le quita de la lista', () => {
+    const s = newGame('rechazo');
+    s.candidates.push({ ...structuredClone(s.heroes[0]!), id: 'c1' });
+    const next = reduce(s, { type: 'reject', id: 'c1' });
+    expect(next.candidates.some((c) => c.id === 'c1')).toBe(false);
+    expect(reduce(next, { type: 'reject', id: 'c1' })).toBe(next);
+  });
+});

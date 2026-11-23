@@ -237,6 +237,8 @@ export type Action =
   /** La escena: un héroe ha llegado andando a una sala (la sastrería empieza a coser). */
   | { type: 'arrived'; heroId: string; room: string }
   | { type: 'hire'; id: string }
+  /** Rechazar a quien espera en la barra: se va y deja sitio a otro. */
+  | { type: 'reject'; id: string }
   | { type: 'fire'; id: string }
   | { type: 'hireWorker'; id: string }
   | { type: 'fireWorker'; id: string }
@@ -617,6 +619,10 @@ function reduceAction(state: GameState, action: Action): GameState {
       c.history.push(msg('partida.historial.contratado', { dia: s.day, sexo: c.sex }));
       s.heroes.push(c);
       return s;
+    }
+    case 'reject': {
+      if (!state.candidates.some((x) => x.id === action.id)) return state;
+      return { ...state, candidates: state.candidates.filter((x) => x.id !== action.id) };
     }
     case 'fire': {
       const h = state.heroes.find((x) => x.id === action.id);
