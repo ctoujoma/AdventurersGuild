@@ -36,6 +36,7 @@ error:
 
 # El diario de la expedición (se guarda en la partida). Una línea por suceso.
 diario:
+  nadie: "Nadie estaba en condiciones de ocuparse de {que}: lo dejan pasar."
   pocion_hallada: "{heroe} encuentra una poción entre unas raíces: a la mochila."
   pocion: "{heroe} se bebe una poción de hierbas y se siente mejor: una herida menos."
   record: "{n, plural, one {Llega} other {Llegan}} más lejos que nadie del gremio por {rumbo, select, bosque {el bosque} sierra {la sierra} marismas {las marismas} other {las ruinas}}: es un récord."

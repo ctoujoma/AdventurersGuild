@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DAY_SECONDS, EXP_HURT_DOWN } from './balance';
+import { DAY_SECONDS, EXP_HURT_DOWN, MAX_CANDIDATES } from './balance';
 import {
   canExpedition,
   distAt,
@@ -347,5 +347,34 @@ describe('expediciones: bloque 5 (rumbos, tiempo, pociones y la carta)', () => {
     o.tutorial = { step: 0, track: 'obras', letter: true, wait: true };
     o = endDay(o);
     expect(o.expOpened).toBeUndefined();
+  });
+
+  const out = (seed: string) => {
+    const s = ready(seed);
+    const h = s.heroes[0]!;
+    return reduce(s, { type: 'expedition', heading: 'bosque', heroIds: [h.id], rations: 20 });
+  };
+
+  it('el que se une no pasa del tope de la barra, y sin nadie en pie el suceso queda en el diario', () => {
+    let s = out('arreglos');
+    const e = s.expeditions![0]!;
+    const g = { ...s.heroes[1]!, id: 'guest1', name: 'Invitado' };
+    e.guest = g;
+    while (s.candidates.length < MAX_CANDIDATES)
+      s.candidates.push({ ...g, id: `c${s.candidates.length}` });
+    const first = s.candidates[0]!.id;
+    s = reduce(s, { type: 'expBack', id: e.id });
+    s = play(s, 2);
+    // (Al amanecer pueden llegar otros: nunca pasa del tope y el primero ya se fue.)
+    expect(s.candidates.length).toBeLessThanOrEqual(MAX_CANDIDATES);
+    expect(s.candidates.some((c) => c.id === first)).toBe(false);
+    // Todos en el suelo con un suceso esperando.
+    let t = out('nadie');
+    const x = t.expeditions![0]!;
+    x.hurt[x.heroIds[0]!] = EXP_HURT_DOWN;
+    x.pending = { kind: 'cofre', h: x.hours, until: x.hours };
+    t = play(t, 1);
+    const log = (t.expeditions?.[0] ?? null)?.log ?? t.reports.find((r) => r.exp)!.exp!.log;
+    expect(log.some((l) => tx(l.t).startsWith('Nadie estaba'))).toBe(true);
   });
 });

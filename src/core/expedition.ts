@@ -15,6 +15,7 @@ import {
   EXP_CLERIC_HEAL,
   EXP_CRYSTAL_FROM,
   EXP_FOG_AMBUSH,
+  MAX_CANDIDATES,
   EXP_POTION_FIND,
   EXP_RAIN_SLOW,
   EXP_SNOW_EAT,
@@ -936,7 +937,13 @@ function decide(s: GameState, e: Expedition, option: string, auto: boolean): voi
   const o = def.options.find((x) => x.id === option) ?? def.options.at(-1)!;
   const dist = distAt(e);
   const who = doer(s, e, o) ?? standing(e, s)[0];
-  if (!who) return;
+  // Nadie en pie: el suceso se pierde, pero queda en el diario.
+  if (!who) {
+    line(e, 'suceso', 'expediciones.diario.nadie', {
+      que: msg(`expediciones.sucesos.${k}.titulo`),
+    });
+    return;
+  }
   const ok = rng.chance(optionChance(s, e, o));
   // Entrar en un paraje lo deja visto en el mapa; seguir de largo, para otra vez.
   const site = siteId ? s.expSites?.find((x) => x.id === siteId) : undefined;
@@ -1228,6 +1235,11 @@ function arrive(s: GameState, e: Expedition, news: DawnEvent[]): string[] {
   }
   // El que se les unió pide entrar: espera en la barra, como los demás candidatos.
   if (e.guest) {
+    // Como al amanecer: con la barra llena, se va el que lleva más tiempo esperando.
+    if (s.candidates.length >= MAX_CANDIDATES) {
+      const left = s.candidates.shift()!;
+      news.push({ t: msg('partida.noche.se_cansa', { heroe: left.name }) });
+    }
     s.candidates.push({ ...e.guest, status: 'ok' });
     chip('chip_invitado', { heroe: e.guest.name }, 'info');
   }
