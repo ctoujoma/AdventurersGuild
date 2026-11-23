@@ -39,6 +39,7 @@ import {
   EXP_GUARDIAN_MULT,
   EXP_GUARDIAN_WAIT,
   EXP_HURT_HP,
+  EXP_BUNDLES_MAX,
   MAT_SELL,
 } from './balance';
 import {
@@ -66,6 +67,7 @@ import type {
   Outcome,
   Report,
   BossFight,
+  ExpBundle,
   Item,
 } from './model';
 import { attr, chance, skill } from './party';
@@ -318,6 +320,14 @@ function stepHour(s: GameState, e: Expedition, news: DawnEvent[]): void {
     e.warned = Math.floor(dist / EXP_STEP);
     line(e, 'aviso', 'expediciones.diario.aviso', { rumbo: e.heading, dias: Math.floor(dist) });
   }
+  // Más lejos que nunca por este rumbo (una vez).
+  const best = s.expBest?.[e.heading];
+  if (!e.turn && !e.record && best !== undefined && dist > best) {
+    e.record = true;
+    line(e, 'aviso', 'expediciones.diario.record', { rumbo: e.heading, dias: Math.floor(best) });
+  }
+  // Lo que ya está en el mapa: fardos perdidos y parajes que quedaron sin ver.
+  if (!e.turn && mapStop(s, e, dist, news)) return;
   const rate = (EXP_EVENTS + EXP_EVENTS_FAR * dist) * (e.turn ? 0.5 : 1);
   if (!rng.chance(rate / (EXP_HOURS - 1))) return;
   const up = standing(e, s);
@@ -521,10 +531,8 @@ function battle(
   if (!fell.length) return res.won;
   const left = standing(e, s);
   if (!left.length) {
-    // Caen todos: se arrastran a casa con lo que pueden cargar.
-    e.bag.gold = Math.floor(e.bag.gold * EXP_WIPE_KEEP);
-    for (const m of Object.keys(e.bag.mats) as Material[])
-      e.bag.mats[m] = Math.floor((e.bag.mats[m] ?? 0) * EXP_WIPE_KEEP);
+    // Caen todos: se arrastran a casa con lo que pueden cargar; el resto queda como fardo.
+    dropBundle(s, e, rng, dist);
     if (e.turn)
       line(e, 'aviso', 'expediciones.diario.vuelta.caidos', {
         heroe: fell[0]!.name,
@@ -533,6 +541,90 @@ function battle(
     else turnBack(e, 'caidos', fell[0]);
   } else if (!e.turn) turnBack(e, 'herido', fell[0]);
   return res.won;
+}
+
+/** Lo que no pueden cargar queda tirado como fardo en el mapa (EX6). */
+export function dropBundle(s: GameState, e: Expedition, rng: Rng, dist: number): void {
+  const keep = (n: number) => Math.floor(n * EXP_WIPE_KEEP);
+  const b: ExpBundle = {
+    id: `f${s.uid++}`,
+    heading: e.heading,
+    dist,
+    side: rng.next() * 2 - 1,
+    day: s.day,
+    who: e.heroIds.map((id) => s.heroes.find((h) => h.id === id)?.name ?? '').filter(Boolean),
+    gold: e.bag.gold - keep(e.bag.gold),
+    mats: {},
+  };
+  e.bag.gold = keep(e.bag.gold);
+  for (const m of Object.keys(e.bag.mats) as Material[]) {
+    const n = e.bag.mats[m] ?? 0;
+    if (n - keep(n) > 0) b.mats[m] = n - keep(n);
+    e.bag.mats[m] = keep(n);
+  }
+  const items = e.bag.items ?? [];
+  const held = keep(items.length);
+  if (items.length > held) {
+    b.items = items.slice(held);
+    e.bag.items = items.slice(0, held);
+  }
+  if (!b.gold && !Object.keys(b.mats).length && !b.items) return;
+  const list = (s.expBundles ??= []);
+  list.push(b);
+  if (list.length > EXP_BUNDLES_MAX) list.splice(0, list.length - EXP_BUNDLES_MAX);
+  (e.passed ??= []).push(b.id);
+  line(e, 'aviso', 'expediciones.diario.fardo_queda');
+}
+
+/** Lo que hay en un fardo, para un hueco («34 monedas, 3 de madera y una espada»). */
+export function bundleMsg(b: { gold: number; mats: Mats; items?: Item[] }): Msg {
+  const parts: Txt[] = [];
+  if (b.gold) parts.push(msg('expediciones.monedas', { n: b.gold }));
+  if (Object.keys(b.mats).length) parts.push(matsMsg(b.mats));
+  for (const it of b.items ?? []) parts.push(it.name);
+  return msg('general.lista', { xs: parts });
+}
+
+/**
+ * Lo que ya está en el mapa al pasar por su lejanía: un fardo perdido (lo recogen), un paraje que
+ * quedó sin ver (vuelve a salir, para entrar esta vez) o uno ya visto (solo una línea).
+ */
+function mapStop(s: GameState, e: Expedition, dist: number, news: DawnEvent[]): boolean {
+  const passed = (e.passed ??= []);
+  const near = <T extends { id: string; heading: Heading; dist: number }>(xs: T[] | undefined) =>
+    xs?.find((x) => x.heading === e.heading && x.dist <= dist && !passed.includes(x.id));
+  const b = near(s.expBundles);
+  if (b) {
+    passed.push(b.id);
+    s.expBundles = s.expBundles!.filter((x) => x.id !== b.id);
+    e.bag.gold += b.gold;
+    for (const m of Object.keys(b.mats) as Material[])
+      e.bag.mats[m] = (e.bag.mats[m] ?? 0) + (b.mats[m] ?? 0);
+    if (b.items?.length) (e.bag.items ??= []).push(...b.items);
+    const stats = (s.stats ??= emptyStats());
+    stats.expBundles = (stats.expBundles ?? 0) + 1;
+    line(e, 'hallazgo', 'expediciones.diario.fardo', {
+      quien: b.who,
+      m: b.who.length,
+      que: bundleMsg(b),
+    });
+    news.push({
+      t: msg('expediciones.aviso.fardo', { rumbo: e.heading, quien: b.who, m: b.who.length }),
+      k: 'good',
+    });
+    return true;
+  }
+  const site = near(s.expSites);
+  if (!site) return false;
+  passed.push(site.id);
+  const what = msg(`expediciones.sucesos.${site.kind}.titulo`);
+  if (site.done) {
+    line(e, 'camino', 'expediciones.diario.paraje_visto', { que: what, dia: site.done });
+    return false;
+  }
+  line(e, 'suceso', 'expediciones.diario.paraje_otra_vez', { que: what, dia: site.day });
+  raise(s, e, site.kind, news, site.id);
+  return true;
 }
 
 const TERRAIN: Record<Heading, Terrain> = {
@@ -555,15 +647,38 @@ function toCamp(e: Expedition): number {
 }
 
 /** Sale un suceso: espera a que elijas (avisa) o, silenciada, eligen ellos ya. */
-function raise(s: GameState, e: Expedition, kind: ExpEvent, news: DawnEvent[]): void {
+function raise(
+  s: GameState,
+  e: Expedition,
+  kind: ExpEvent,
+  news: DawnEvent[],
+  again?: string,
+): void {
   const def = EXP_EVENTS_DEF[kind];
-  line(e, 'suceso', `expediciones.sucesos.${kind}.texto`, { rumbo: e.heading });
+  let site = again;
+  if (!site) line(e, 'suceso', `expediciones.sucesos.${kind}.texto`, { rumbo: e.heading });
+  if (def.site && !site) {
+    // Un paraje nuevo: queda en el mapa para siempre.
+    const rng = new Rng(`${e.seed}-paraje-${e.hours}`);
+    site = `p${s.uid++}`;
+    (s.expSites ??= []).push({
+      id: site,
+      kind,
+      heading: e.heading,
+      dist: distAt(e),
+      side: rng.next() * 2 - 1,
+      day: s.day,
+    });
+    (e.passed ??= []).push(site);
+    const stats = (s.stats ??= emptyStats());
+    stats.expSites = (stats.expSites ?? 0) + 1;
+  }
+  const wait = kind === 'guardian' ? EXP_GUARDIAN_WAIT : def.site ? EXP_HOURS : toCamp(e);
+  e.pending = { kind, h: e.hours, until: e.hours + wait, ...(site ? { site } : {}) };
   if (e.mute) {
     decide(s, e, safeOption(kind), true);
     return;
   }
-  const wait = kind === 'guardian' ? EXP_GUARDIAN_WAIT : def.site ? EXP_HOURS : toCamp(e);
-  e.pending = { kind, h: e.hours, until: e.hours + wait };
   news.push({
     t: msg(kind === 'guardian' ? 'expediciones.aviso.guardian' : 'expediciones.aviso.suceso', {
       rumbo: e.heading,
@@ -701,6 +816,7 @@ function decide(s: GameState, e: Expedition, option: string, auto: boolean): voi
   if (!e.pending) return;
   const k = e.pending.kind;
   const h0 = e.pending.h;
+  const siteId = e.pending.site;
   delete e.pending;
   const rng = new Rng(`${e.seed}-elige-${h0}-${option}`);
   const def = EXP_EVENTS_DEF[k];
@@ -709,6 +825,9 @@ function decide(s: GameState, e: Expedition, option: string, auto: boolean): voi
   const who = doer(s, e, o) ?? standing(e, s)[0];
   if (!who) return;
   const ok = rng.chance(optionChance(s, e, o));
+  // Entrar en un paraje lo deja visto en el mapa; seguir de largo, para otra vez.
+  const site = siteId ? s.expSites?.find((x) => x.id === siteId) : undefined;
+  if (site && !o.safe) site.done = s.day;
   const p: Params = { heroe: who.name, sexo: who.sex };
   if (auto) line(e, 'eleccion', 'expediciones.diario.prudencia', { guardian: k === 'guardian' });
   const say = (res: string, extra: Params = {}) =>
@@ -930,6 +1049,7 @@ function arrive(s: GameState, e: Expedition, news: DawnEvent[]): string[] {
   const far = e.turn?.dist ?? distAt(e);
   const days = Math.max(1, Math.round(e.hours / EXP_HOURS));
   const stats = (s.stats ??= emptyStats());
+  stats.expeditions = (stats.expeditions ?? 0) + 1;
   body.push(
     msg('expediciones.informe.cuerpo', {
       dias: days,

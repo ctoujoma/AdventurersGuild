@@ -3,6 +3,7 @@ import { DAY_SECONDS, EXP_HURT_DOWN } from './balance';
 import {
   canExpedition,
   distAt,
+  dropBundle,
   expSlots,
   optionIssue,
   optionRisk,
@@ -14,6 +15,7 @@ import { endDay, newGame, reduce, tick } from './game';
 import type { GameState } from './model';
 import { tx } from '../textos';
 import { runCombat } from './combat';
+import { Rng } from './rng';
 
 /** Una partida con veterano, comida de sobra y la sala de mapas a nivel 3 (4 por grupo). */
 function ready(seed = 'expedicion'): GameState {
@@ -166,5 +168,87 @@ describe('expediciones: sucesos con decisión y peleas', () => {
       s.reports[0]?.exp?.log.find((l) => l.fight)?.fight;
     expect(f).toBeTruthy();
     expect(runCombat(f!.sim!.setup).won).toBe(f!.won);
+  });
+});
+
+describe('expediciones: el mapa (parajes, fardos y récords)', () => {
+  function out(seed: string, mute = false) {
+    let s = ready(seed);
+    const h = s.heroes[0]!;
+    h.cls = 'guerrero';
+    s = reduce(s, { type: 'expedition', heading: 'bosque', heroIds: [h.id], rations: 20 });
+    if (mute) s.expeditions![0]!.mute = true;
+    return s;
+  }
+  const site = {
+    id: 'p1',
+    kind: 'cueva' as const,
+    heading: 'bosque' as const,
+    dist: 0.3,
+    side: 0,
+    day: 1,
+  };
+
+  it('un paraje sin ver vuelve a salir al pasar; entrar lo deja visto', () => {
+    let s = out('paraje');
+    s.expSites = [{ ...site }];
+    s = play(s, 1);
+    const e = s.expeditions![0]!;
+    expect(e.passed).toContain('p1');
+    expect(e.log.some((l) => tx(l.t).includes('dejó sin explorar'))).toBe(true);
+    if (e.pending) {
+      expect(e.pending.site).toBe('p1');
+      s = reduce(s, { type: 'expChoose', id: e.id, option: 'entrar' });
+      expect(s.expSites![0]!.done).toBe(s.day);
+    } else expect(s.expSites![0]!.done).toBeUndefined();
+  });
+
+  it('silenciada, sigue de largo y el paraje queda para otra vez', () => {
+    let s = out('paraje-mudo', true);
+    s.expSites = [{ ...site }];
+    s = play(s, 1);
+    const e = s.expeditions![0]!;
+    expect(e.pending).toBeUndefined();
+    expect(e.log.some((l) => tx(l.t).includes('prudencia'))).toBe(true);
+    expect(s.expSites![0]!.done).toBeUndefined();
+  });
+
+  it('si caen todos, lo que no cargan queda como fardo y otra expedición lo recoge', () => {
+    let s = out('fardo');
+    const e = s.expeditions![0]!;
+    e.bag.gold = 90;
+    e.bag.mats = { madera: 6 };
+    dropBundle(s, e, new Rng('x'), 0.3);
+    expect(e.bag.gold).toBe(30);
+    expect(e.bag.mats.madera).toBe(2);
+    const b = s.expBundles![0]!;
+    expect(b.gold).toBe(60);
+    expect(b.mats.madera).toBe(4);
+    // Otra expedición al bosque pasa por allí.
+    s.expeditions = [];
+    s.heroes[0]!.status = 'ok';
+    s = reduce(s, {
+      type: 'expedition',
+      heading: 'bosque',
+      heroIds: [s.heroes[0]!.id],
+      rations: 20,
+    });
+    s = play(s, 1);
+    expect(s.expBundles ?? []).toHaveLength(0);
+    expect(s.stats!.expBundles).toBe(1);
+    const e2 = s.expeditions![0]!;
+    expect(e2.bag.gold).toBeGreaterThanOrEqual(60);
+    expect(e2.log.some((l) => tx(l.t).includes('fardo del gremio'))).toBe(true);
+  });
+
+  it('al pasar el récord del rumbo lo apuntan; al volver, el récord sube', () => {
+    let s = out('record');
+    s.expBest = { bosque: 0.1 };
+    s = play(s, 1);
+    expect(s.expeditions![0]!.log.some((l) => tx(l.t).includes('récord'))).toBe(true);
+    s = reduce(s, { type: 'expBack', id: s.expeditions![0]!.id });
+    s = play(s, 2);
+    expect(s.expBest!.bosque!).toBeGreaterThan(0.1);
+    expect(s.stats!.expeditions).toBe(1);
   });
 });

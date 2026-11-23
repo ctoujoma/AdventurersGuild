@@ -659,6 +659,8 @@ export const EXP_HURT_HP = 0.2;
 export const EXP_GUARDIAN = 0.006;
 export const EXP_GUARDIAN_MULT = 1.6;
 export const EXP_GUARDIAN_WAIT = 12;
+/** Fardos perdidos que quedan en el mapa a la vez (los más viejos se pierden). */
+export const EXP_BUNDLES_MAX = 6;
 /**
  * Mejorar un objeto en su taller: hasta `TEMPER_MAX`; cada paso cuesta `TEMPER_GOLD` y
  * `TEMPER_HOURS` por el nivel al que llega, y tantos de su material como ese nivel.
