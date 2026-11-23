@@ -390,7 +390,8 @@ export function worldTerrain(): Terrain {
       const i = idx(x, y);
       if (!marsh[i] || water[i]) continue;
       const wl = wild[i]! / 255;
-      if (fbm(x / (4 + 4 * wl), y / (3 + 3 * wl), 23, 3) > 0.69 - 0.04 * wl) water[i] = POOL;
+      // (La escala, fija: si cambiara con lo salvaje, las charcas saldrían estiradas.)
+      if (fbm(x / 8, y / 7, 311, 3) > 0.66 - 0.05 * wl) water[i] = POOL;
     }
 
   // ---------- Bosques ----------
@@ -491,25 +492,23 @@ export function worldTerrain(): Terrain {
   put(150, 390, 0);
   put(-20, 360, 1);
 
-  // ---------- Las piedras de las ruinas ----------
+  // ---------- Las ruinas: corros de cimientos y columnas, y alguna piedra suelta ----------
   const ruins: Ruin[] = [];
   const rng = new Rng('ruinas');
-  const KINDS = ['muro', 'muro', 'columna', 'columnas', 'caida', 'arco', 'muroL', 'basa'];
-  for (let gy = 0; gy < Y1; gy += 13)
-    for (let gx = 200; gx < X1; gx += 15) {
-      const x = gx + rng.int(-4, 4);
-      const y = gy + rng.int(-3, 3);
-      if (!inside(x, y) || inShire(x, y)) {
-        rng.next();
-        continue;
-      }
+  const LOOSE = ['columna', 'columnas', 'caida', 'arco', 'basa', 'muro'];
+  for (let gy = 0; gy < Y1; gy += 26)
+    for (let gx = 180; gx < X1; gx += 30) {
+      const x = gx + rng.int(-8, 8);
+      const y = gy + rng.int(-6, 6);
+      const roll = rng.next();
+      const pick = rng.int(0, LOOSE.length - 1);
+      if (!inside(x, y) || inShire(x, y)) continue;
       const i = idx(x, y);
-      // Las piedras van a corros (donde hubo pueblos), más cuanto más lejos.
-      const site = smooth(0.5, 0.75, fbm(x / 60, y / 50, 309, 2));
-      const p = (sand[i]! / 255) * (0.04 + 0.7 * site * (wild[i]! / 255));
-      const kind = KINDS[rng.int(0, KINDS.length - 1)]!;
-      if (water[i] || rng.next() > p) continue;
-      ruins.push({ x, y, kind });
+      if (water[i] || sand[i]! < 120) continue;
+      const wl = wild[i]! / 255;
+      // Los cimientos de una casa o un templo, más cuanto más lejos; si no, una piedra suelta.
+      if (roll < 0.03 + 0.2 * wl) ruins.push({ x, y, kind: 'sitio' });
+      else if (roll < 0.1 + 0.25 * wl) ruins.push({ x, y, kind: LOOSE[pick]! });
     }
   ruins.push(...marks);
   ruins.sort((a, b) => a.y - b.y);

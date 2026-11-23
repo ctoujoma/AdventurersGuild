@@ -137,11 +137,14 @@ function drift(t: number): [number, number, number, number] {
 }
 
 const TH = 0.42;
+/** Densidad de lo que no cambia de un fotograma a otro (se deja como estaba). */
+const STILL = 9;
 
 /**
  * Pinta un fotograma de la niebla en `out` (ABGR, `WORLD_W × WORLD_H`, el formato de ImageData),
  * a los `t` segundos. `dens` es un búfer de trabajo del mismo tamaño (para no pedir memoria cada
- * vez). Lo despejado queda transparente.
+ * vez). Lo despejado queda transparente. Con `full` falso, lo que no cambia ni se mira (lo
+ * hondo del pergamino): sirve para los fotogramas que siguen al primero.
  */
 export function paintFog(
   out: Uint32Array,
@@ -149,6 +152,7 @@ export function paintFog(
   far: Float32Array,
   t: number,
   style: MapStyle,
+  full = true,
 ): void {
   const W = WORLD_W;
   const H = WORLD_H;
@@ -165,6 +169,11 @@ export function paintFog(
       const f = far[i]!;
       if (f < -20 || x < M || y < M || x >= W - M || y >= H - M) {
         dens[i] = 0;
+        continue;
+      }
+      // En pergamino, lo hondo es papel quieto: tras el primer fotograma no se toca.
+      if (!full && style === 'pergamino' && f > 70) {
+        dens[i] = STILL;
         continue;
       }
       const base = Math.min(1.4, f / 46);
@@ -213,8 +222,8 @@ function paintColor(out: Uint32Array, dens: Float32Array, at: (x: number, y: num
         if (at(x, y + 2) < TH || at(x + 2, y + 1) < TH) c = C.steel;
         else if (g < -0.03) c = bayer(x, y) < 0.6 ? C.fog : C.mist;
         else c = g > 0.05 ? C.white : C.mist;
-      } else if (g < -0.2) c = bayer(x, y) < 0.5 ? C.fog : C.mist;
-      else if (g < -0.1) c = bayer(x, y) < 0.6 ? C.mist : C.white;
+      } else if (g < -0.3 && d < TH + 0.6) c = bayer(x, y) < 0.35 ? C.fog : C.mist;
+      else if (g < -0.18) c = bayer(x, y) < 0.5 ? C.mist : C.white;
       else c = C.white;
       out[i] = c;
     }
@@ -231,6 +240,7 @@ function paintInk(
     for (let x = 0; x < W; x++) {
       const i = y * W + x;
       const d = dens[i]!;
+      if (d === STILL) continue;
       if (d < TH) {
         out[i] = C.none;
         continue;

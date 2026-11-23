@@ -217,7 +217,7 @@ export function inkRender(t: Terrain, deco?: (b: PixelBuffer) => void): PixelBuf
         const y = gy + Math.floor(hash2(gx, gy, 225) * 4);
         if (!inside(x, y) || t.water[at(x, y)] || t.road[at(x, y)]) continue;
         const sd = t.sand[at(x, y)]! / 255;
-        if (sd < 0.55 || hash2(gx, gy, 226) > (sd - 0.4) * 0.7) continue;
+        if (sd < 0.6 || hash2(gx, gy, 226) > (sd - 0.5) * 0.6) continue;
         stamp(
           b,
           x,

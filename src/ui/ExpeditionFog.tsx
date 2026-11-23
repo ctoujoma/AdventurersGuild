@@ -27,7 +27,7 @@ export function ExpeditionFog({ clears, style }: Props) {
     const px = new Uint32Array(img.data.buffer);
     const dens = new Float32Array(WORLD_W * WORLD_H);
     const draw = (t: number) => {
-      paintFog(px, dens, far, t, style);
+      paintFog(px, dens, far, t, style, t === 0);
       ctx.putImageData(img, 0, 0);
     };
     const still =

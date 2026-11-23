@@ -34,10 +34,14 @@ function piece(
   pal: Record<string, Color>,
   line: Color,
   style: MapStyle,
+  bold = false,
 ): void {
+  // A color, sin contorno (salvo lo grande, `bold`): la piedra sobre la arena, con su sombra (como el relieve del mapa).
   if (style === 'color') {
     const shade = Object.fromEntries(Object.keys(pal).map((k) => [k, P.clay]));
-    stamp(b, x + 2, y + 1, rows, shade, null);
+    stamp(b, x + 1, y + 1, rows, shade, null);
+    stamp(b, x, y, rows, { ...pal, T: P.slate }, bold ? line : null);
+    return;
   }
   stamp(b, x, y, rows, pal, line);
 }
@@ -76,74 +80,128 @@ function sunkTower(b: PixelBuffer, x: number, y: number, line: Color): void {
     x,
     y,
     [
-      '...s.s.s',
-      '...sssss',
-      '..sSSSST',
-      '..sSdSST',
-      '..sSSSST',
-      '.sSSdSST',
-      '.sSSSSTT',
-      '.sSSSSTT',
-      'sSSdSSTT',
-      'cccccccccc',
-      '.mmmmmmm..',
+      '.....s.s.s..',
+      '.....sssss..',
+      '....sSSSSST.',
+      '....sSdSSST.',
+      '...sSSSSSTT.',
+      '...sSSSSSTT.',
+      '...sSSdSSTT.',
+      '..sSSSSSSTT.',
+      '..sSSSSSSTT.',
+      '..sSSSSSTTT.',
+      '.sSSdSSSSTT.',
+      '.sSSSSSSTTT.',
+      'cccccccccccc',
+      '.mmmmmmmmm..',
     ],
     { ...STONE, c: P.mist, m: P.sky },
     line,
   );
-  b.hline(x - 9, y + 2, 3, P.mist);
-  b.hline(x + 7, y + 2, 4, P.mist);
-  b.hline(x - 6, y + 4, 3, P.sky);
+  b.hline(x - 11, y + 2, 4, P.mist);
+  b.hline(x + 8, y + 2, 4, P.mist);
+  b.hline(x - 8, y + 4, 3, P.sky);
+  b.hline(x + 5, y + 4, 3, P.sky);
 }
 
-/** La ciudad perdida de las ruinas: el templo escalonado, la muralla rota y la cabeza caída. */
-function lostCity(b: PixelBuffer, x: number, y: number, line: Color, style: MapStyle): void {
-  // La muralla, a trozos alrededor.
-  const wall = (x0: number, y0: number, w: number) => {
-    for (let k = 0; k < w; k += 1) {
-      if (hash2(x0 + k, y0, 501) < 0.22) continue;
-      piece(b, x0 + k, y0, ['s', 'S', 'T'], STONE, line, style);
+/**
+ * Unos cimientos vistos desde lo alto: un rectángulo de muro roto (la cara de arriba clara y la
+ * de delante en sombra), como letras para `stamp`. `seed` decide los huecos.
+ */
+function foundation(w: number, h: number, seed: number, gaps = 0.22): string[] {
+  const g: string[][] = Array.from({ length: h + 1 }, () => Array<string>(w).fill('.'));
+  const broken = (k: number) => hash2(k, seed, 507) < gaps;
+  for (let x = 0; x < w; x++) {
+    if (!broken(x)) {
+      g[0]![x] = 's';
+      g[1]![x] = g[1]![x] === '.' ? 'T' : g[1]![x]!;
     }
-  };
-  wall(x - 24, y - 16, 48);
-  wall(x - 24, y + 10, 48);
-  for (let k = -14; k <= 8; k += 4) {
-    if (hash2(x, k, 502) < 0.3) continue;
-    piece(b, x - 25, y + k, ['s', 'S', 'S', 'T'], STONE, line, style);
-    piece(b, x + 24, y + k, ['s', 'S', 'S', 'T'], STONE, line, style);
+    if (!broken(x + 100)) {
+      g[h - 1]![x] = 's';
+      g[h]![x] = 'T';
+    }
   }
+  for (let y = 1; y < h - 1; y++) {
+    if (!broken(y + 200)) g[y]![0] = 'S';
+    if (!broken(y + 300)) g[y]![w - 1] = 'S';
+    // Algún tabique por dentro.
+    if (w > 9 && !broken(y + 400) && hash2(seed, 1, 508) < 0.6) g[y]![w >> 1] = 'S';
+  }
+  return g.map((r) => r.join(''));
+}
+
+/** Un corro de ruinas: cimientos rotos, alguna columna en pie y otra caída. */
+function site(b: PixelBuffer, x: number, y: number, line: Color, style: MapStyle): void {
+  const seed = Math.floor(hash2(x, y, 509) * 9999);
+  const w = 8 + Math.floor(hash2(seed, 2, 510) * 9);
+  const h = 5 + Math.floor(hash2(seed, 3, 510) * 5);
+  piece(b, x, y, foundation(w, h, seed), STONE, line, style);
+  const n = Math.floor(hash2(seed, 4, 510) * 3);
+  for (let k = 0; k < n; k++) {
+    const cx = x - (w >> 1) + 1 + Math.floor(hash2(seed, 10 + k, 510) * (w - 2));
+    piece(b, cx, y - h - 1, PIECES.columna!, STONE, line, style);
+  }
+  if (hash2(seed, 5, 510) < 0.6)
+    piece(b, x + (w >> 1) + 4, y + 2, PIECES.caida!, STONE, line, style);
+}
+
+/** La ciudad perdida de las ruinas: la muralla rota con sus torres, el templo escalonado, la
+ * avenida de columnas y la cabeza de piedra caída. */
+function lostCity(b: PixelBuffer, x: number, y: number, line: Color, style: MapStyle): void {
+  // Cimientos de casas dentro de la muralla.
+  for (const [dx, dy, s] of [
+    [-20, -8, 1],
+    [20, -9, 2],
+    [-21, 12, 3],
+    [22, 13, 4],
+  ] as const)
+    piece(b, x + dx, y + dy, foundation(9, 6, s, 0.3), STONE, line, style);
+  // La muralla, rota, y las torres de las esquinas.
+  piece(b, x, y + 20, foundation(64, 40, 77, 0.2), STONE, line, style);
+  const tower = ['ssss', 'sSST', 'sSST', 'TTTT'];
+  for (const [dx, dy] of [
+    [-31, -18],
+    [31, -18],
+    [-31, 21],
+    [31, 21],
+  ] as const)
+    piece(b, x + dx, y + dy, tower, STONE, line, style, true);
+  // La avenida de columnas hasta el templo.
+  for (const dy of [6, 12, 18])
+    for (const dx of [-5, 5]) piece(b, x + dx, y + dy, PIECES.columna!, STONE, line, style);
   // El templo escalonado.
   piece(
     b,
     x,
-    y + 4,
+    y,
     [
-      '.......ss.......',
-      '......sddS......',
-      '.....sSSSSS.....',
-      '....sSSSSSST....',
-      '...sSSSddSSTT...',
-      '..sSSSSddSSSTT..',
-      '.sSSSSSddSSSSTT.',
-      'sSSSSSSddSSSSSTT',
-      'TTTTTTTTTTTTTTTT',
+      '........ss........',
+      '.......sddS.......',
+      '......sSSSST......',
+      '.....sSSSSSST.....',
+      '....sSSSddSSSTT...',
+      '...sSSSSddSSSSTT..',
+      '..sSSSSSddSSSSSTT.',
+      '.sSSSSSSddSSSSSSTT',
+      'sSSSSSSSddSSSSSSTT',
+      'TTTTTTTTTTTTTTTTTT',
     ],
     STONE,
     line,
     style,
+    true,
   );
-  // Columnas delante y la cabeza de piedra caída.
-  for (const dx of [-17, -12, 12, 17]) piece(b, x + dx, y + 7, PIECES.columna!, STONE, line, style);
+  // La cabeza de piedra caída, fuera de la muralla.
   piece(
     b,
-    x + 6,
-    y + 18,
-    ['..ssss..', '.sSSSSS.', 'sSdSSdST', 'sSSSSSST', 'sSSddSST', '.TTTTTT.'],
+    x + 40,
+    y + 26,
+    ['..sssss..', '.sSSSSSS.', 'sSdSSSdST', 'sSSSSSSST', 'sSSSddSST', '.sSSSSST.', '..TTTTT..'],
     STONE,
     line,
     style,
+    true,
   );
-  piece(b, x - 10, y + 17, PIECES.caida!, STONE, line, style);
 }
 
 /** El faro en su islote: torre a franjas y la luz. */
@@ -221,7 +279,7 @@ export function expDeco(t: Terrain, style: MapStyle): (b: PixelBuffer) => void {
         const i = at(x, y);
         if (!t.marsh[i] || t.water[i] || t.road[i] || t.forest[i]) continue;
         const wl = t.wild ? t.wild[i]! / 255 : 0;
-        if (hash2(gx, gy, 505) > (wl - 0.35) * 0.5) continue;
+        if (hash2(gx, gy, 505) > (wl - 0.45) * 0.28) continue;
         if (style === 'color')
           stamp(
             b,
@@ -262,6 +320,9 @@ function draw(b: PixelBuffer, r: Ruin, line: Color, style: MapStyle): void {
       break;
     case 'torre_hundida':
       sunkTower(b, r.x, r.y + 3, line);
+      break;
+    case 'sitio':
+      site(b, r.x, r.y, line, style);
       break;
     case 'ciudad':
       lostCity(b, r.x, r.y, line, style);

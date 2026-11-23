@@ -306,7 +306,7 @@ function sea(d: number, x: number, y: number, deep = false): Color {
  */
 function dune(x: number, y: number, s: number, wl: number): Color {
   const warp = fbm(x / 38, y / 30, 92, 3) * 22 + Math.sin(x / 19) * 4;
-  const q = ((((y + warp) / (7 + 3 * wl)) % 1) + 1) % 1;
+  const q = ((((y + warp) / 9) % 1) + 1) % 1;
   const on = fbm(x / 26, y / 18, 93, 2) < 0.35 + 0.35 * wl;
   if (on && q < 0.18) return bayer(x, y) < 0.7 ? P.sand : P.tan;
   if (on && q < 0.42) return bayer(x, y) < 0.5 + (0.42 - q) * 2 ? P.clay : P.tan;
