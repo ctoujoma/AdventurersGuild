@@ -192,9 +192,22 @@ volver a ver).
   mapa. Falta lo que es dibujo: el sello de mapa enrollado y el borde del mapa que se despliega.
 - **Simulador**: reparte las expediciones entre los cuatro rumbos.
 
+## Pendiente: las pociones, como existencias (el usuario, 23 de noviembre)
+
+Hoy (bloque 5) la hoja «prepara» las pociones al salir gastando hierbas. El usuario lo quiere así:
+
+1. **Talleres (agente principal):** la alquimia **hace pociones** como un trabajo más del taller
+   (receta con hierbas, que tarda su tiempo) y quedan en una despensa propia (`GameState.potions`
+   o similar), a la vista donde las raciones.
+2. **Expediciones (agente de expediciones), cuando esté lo de arriba:** la hoja las da **igual que
+   las raciones**, de esa despensa (sin gastar hierbas al salir); también **se encuentran por el
+   camino** (en el botín de hallazgos, cofres y campamentos); las que sobran **vuelven a la
+   despensa** (no como hierbas). Quitar `EXP_POTION_HERBS` y el gasto en `sendExpedition`.
+
 ## Depende de otros
 
-- **Agente principal:** veteranía a nivel 8 (y maestro, nivel máximo), caché sin pagar, un día
+- **Agente principal:** las pociones como trabajo de la alquimia (ver «Pendiente: las
+  pociones» arriba); veteranía a nivel 8 (y maestro, nivel máximo), caché sin pagar, un día
   cada 24 h con el juego cerrado, repetir tutoriales desde Ajustes (ver `decisiones.md`, bloque 8,
   «Para el agente principal»).
 - **Agente de arte:** el visor por rumbo, el mapa grande y lo demás de
