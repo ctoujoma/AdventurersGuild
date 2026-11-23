@@ -48,6 +48,7 @@ const SHOTS: Shot[] = [
   { name: 'pelea-bandidos', m: { mode: 'fight', wild: 0.35, hour: 16, foe: 'bandido' }, time: 0.4 },
   { name: 'campamento', m: { mode: 'camp', wild: 0.8, hour: 23.5 } },
   { name: 'velada', m: { mode: 'camp', wild: 0.5, hour: 20.2 } },
+  { name: 'amanecer', m: { mode: 'camp', wild: 0.3, hour: 6.4 } },
   { name: 'alba-niebla', m: { mode: 'camp', wild: 0.6, hour: 6.2, weather: 'niebla' } },
   { name: 'manana-niebla', m: { wild: 0.6, hour: 8, weather: 'niebla' } },
   { name: 'lluvia', m: { wild: 0.5, hour: 12, weather: 'lluvia' } },

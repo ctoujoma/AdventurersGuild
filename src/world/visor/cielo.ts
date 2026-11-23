@@ -75,7 +75,13 @@ export function sunAt(e: Encuadre, hour: number, rise = 5.6, set = 19.8) {
 /** El sol: disco, corona tramada y, bajo, más grande y encendido. */
 export function drawSun(b: PixelBuffer, e: Encuadre, l: Luz): void {
   const s = sunAt(e, l.hour);
-  if (!s.up || l.clima.cloud > 0.85 || l.clima.rain > 0.1) return;
+  if (l.clima.rain > 0.1) return;
+  // Al salir y al ponerse, el cielo se enciende alrededor (aunque el sol esté tras los montes).
+  const u = (l.hour - 5.6) / (19.8 - 5.6);
+  const near = Math.max(0, 1 - Math.min(Math.abs(u + 0.02), Math.abs(u - 1.02)) / 0.2);
+  if (near > 0 && l.clima.cloud < 0.9)
+    glow(b, e, s.x, Math.max(s.y, e.hor - 6), near * (1 - l.clima.cloud * 0.6));
+  if (!s.up || l.clima.cloud > 0.85) return;
   const low = s.low;
   const r = 3.5 + low * 1.8;
   const core = rgba(low > 0.75 ? '#ffe6a0' : '#ffffff');
@@ -91,6 +97,28 @@ export function drawSun(b: PixelBuffer, e: Encuadre, l: Luz): void {
       if (d <= r - 1) b.data[y * b.w + x] = core;
       else if (d <= r) b.data[y * b.w + x] = rim;
       else if (d <= R && (1 - (d - r) / (R - r)) * 0.4 > bayer(x, y)) b.data[y * b.w + x] = halo;
+    }
+}
+
+/** Resplandor cálido del sol bajo: mezcla el cielo hacia el oro, en anillos. */
+function glow(b: PixelBuffer, e: Encuadre, x0: number, y0: number, k: number) {
+  const R = e.hor * 0.75;
+  const warm = unpack(rgba('#ffd09a'));
+  for (let y = Math.max(0, Math.floor(y0 - R)); y < Math.min(b.h, e.hor + 6); y++)
+    for (let x = Math.max(0, Math.floor(x0 - R * 1.6)); x < Math.min(b.w, x0 + R * 1.6); x++) {
+      const d = Math.hypot((x - x0) / 1.6, y - y0) / R;
+      if (d >= 1) continue;
+      // Anillos lisos (sin tramar): seis escalones de mezcla.
+      const q = Math.floor((1 - d) ** 1.6 * k * 6) / 6;
+      if (q <= 0) continue;
+      const i = y * b.w + x;
+      const c = unpack(b.data[i]!);
+      const t = Math.min(0.75, q * 0.75);
+      b.data[i] = pack([
+        c[0] + (warm[0] - c[0]) * t,
+        c[1] + (warm[1] - c[1]) * t,
+        c[2] + (warm[2] - c[2]) * t,
+      ]);
     }
 }
 
