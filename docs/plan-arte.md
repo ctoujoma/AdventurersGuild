@@ -441,8 +441,26 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      (sala rota o a nivel 1) y terreno a color (nivel 2 o más). Un solo terreno debajo para los dos,
      así nada se mueve al subir la sala. Niebla en cada estilo: pergamino sin pintar con nubes a tinta;
      nubes blancas con volumen a color.
-   - Orden: el bosque bien acabado primero (salvo que el usuario diga otra cosa); luego sierra,
+   - Orden: el bosque bien acabado primero (el usuario: «a full detalle, luego vamos desbloqueando zonas»); luego sierra,
      marismas y ruinas.
+   - [x] **Visor del bosque** (`src/world/visor/`, encuadres `MOVIL` y `ESCRITORIO` en
+     `encuadre.ts`): capas con paralaje en tiras precalculadas, lejanía gradual (sembrados y
+     vallas → bosque viejo con musgo y sendero), luz por la hora (alba, día, atardecer, noche con
+     luna y fugaces), cuervos, ciervos que huyen, lobos en la linde, lluvia y niebla al alba
+     (`VisorForce` para forzarlas), héroes que andan y cojean, peleas por turnos con cifras y
+     campamento (velada, noche con guardia y ojos, alba). `marchNow` añade `hour` (la del juego
+     corrida 2 h: andan de 7 a 19), `weather` y `day`; se borra `expeditionStrip.ts`. Capturas en
+     `capturas/expediciones/visor-bosque/`; herramienta `tools/visor.ts`.
+   - [x] **Mapa de rumbos** (`expTerrain.ts`, `expFog.ts`, `ExpeditionFog.tsx`): un terreno para
+     los dos estilos, pintado con los pinceles de la comarca (que sale idéntica, con test); niebla
+     animada a 5 fps (papel con nubes a tinta / nubes blancas); estela de huellas y marcas de
+     parajes. Marismas a 107° (a 135° el camino pisaba el mar). Capturas en
+     `capturas/expediciones/mapa-rumbos/`.
+   - [ ] Pendiente: gestos nuevos de héroe (recoger, cofre, beber, señalar, dormir tumbado),
+     fardos a la vuelta y hallazgos en el visor; la pantalla entera de escritorio (hoy el visor va
+     en la hoja lateral: interfaz del agente de expediciones); afinar el mapa a color (sierra alta
+     muy blanca, mar con halos, textura de la niebla repetida) y el azul de las marismas en
+     pergamino; transición al despejar la niebla; luego sierra, marismas y ruinas en el visor.
 1. **Más cilindros y cuerpos de verdad**: los barriles apilados, las mesas (tablero y patas), el
    horno de pan (cúpula) y la caldera (cúpula de cobre) con la misma idea que `round`.
 2. [x] **Atlas de la gente en dos filas** (#100): se dibuja en una tira y se pliega (`fold` en
