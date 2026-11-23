@@ -6,7 +6,7 @@
  * madera. La niebla de lo no explorado son nubes (`colorFog`).
  */
 import { MAP_H, MAP_W } from '../data/places';
-import { compass, house, placeIcons, serpent, ship, stamp, whale } from './mapIcons';
+import { compass, house, placeIcons, serpent, ship, shifted, stamp, whale } from './mapIcons';
 import {
   BLACK,
   BROAD,
@@ -19,12 +19,12 @@ import {
   RIVER_W,
   SEA,
   SENDA,
-  at,
   fbm,
+  from,
   hash2,
-  inside,
   shadeAt,
   terrain,
+  type Terrain,
 } from './mapTerrain';
 import { P } from './palette';
 import { PixelBuffer, bayer, type Color } from './pixel';
@@ -55,21 +55,35 @@ const CROPS: [Color, Color][] = [
 
 let cached: PixelBuffer | null = null;
 
+/** La comarca a color. */
 export function colorMap(): PixelBuffer {
-  if (cached) return cached;
-  const t = terrain();
-  const b = new PixelBuffer(MAP_W, MAP_H);
-  const W = MAP_W;
-  const H = MAP_H;
+  cached ??= colorRender(terrain());
+  return cached;
+}
+
+/**
+ * Un terreno a color (la comarca o el mapa de rumbos, que la lleva dentro), en coordenadas de la
+ * comarca. `deco` pinta lo suyo antes del marco.
+ */
+export function colorRender(t: Terrain, deco?: (b: PixelBuffer) => void): PixelBuffer {
+  const { W, H } = t;
+  const X0 = t.x0;
+  const Y0 = t.y0;
+  const X1 = X0 + W;
+  const Y1 = Y0 + H;
+  const out = new PixelBuffer(W, H);
+  const b = shifted(out, -X0, -Y0);
+  const { at, inside } = t;
+  const deep = !!t.wild;
   const wat = (x: number, y: number) => (inside(x, y) ? t.water[at(x, y)]! : SEA);
 
   // ---------- El suelo ----------
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
+  for (let y = Y0; y < Y1; y++)
+    for (let x = X0; x < X1; x++) {
       const i = at(x, y);
       const w = t.water[i]!;
       if (w === SEA) {
-        b.set(x, y, sea(t.depth[i]!, x, y));
+        b.set(x, y, sea(t.depth[i]!, x, y, deep));
         continue;
       }
       if (w) {
@@ -85,15 +99,27 @@ export function colorMap(): PixelBuffer {
           break;
         }
       const meadow = (fbm(x / 16, y / 16, 91) - 0.5) * 0.25;
+      // Lo salvaje (solo en el mapa de rumbos): más oscuro cuanto más lejos.
+      const wl = t.wild ? t.wild[i]! / 255 : 0;
+      const sd = t.sand ? t.sand[i]! / 255 : 0;
       let c: Color;
       const range = t.range[i]!;
       // Dónde empieza la roca y dónde la nieve, en cada sierra.
-      const rockAt = range === 2 ? 0.44 : range === 3 ? 0.54 : 0.5;
-      const snowAt = range === 2 ? 0.66 : range === 3 ? 9 : 0.9;
+      const rockAt = range === 2 ? 0.44 : range === 3 ? 0.54 : range === 4 ? 0.46 : 0.5;
+      // La sierra alta del norte (mapa de rumbos): roca como la de la comarca y nieve a manchas.
+      const snowAt =
+        range === 2
+          ? 0.66
+          : range === 3
+            ? 9
+            : range === 4
+              ? 0.94 + (fbm(x / 22, y / 18, 95, 3) - 0.5) * 0.5
+              : 0.9;
       if (t.forest[i] === BURNT) c = ramp(ASH, 0.35 + (s - 0.5) * 0.8, x, y);
       else if (t.forest[i] && h < rockAt) c = ramp(WOOD, 0.5 + (s - 0.5), x, y);
-      else if (t.marsh[i]) c = ramp(MARSH, 0.5 + meadow * 0.5, x, y, 0.5);
+      else if (t.marsh[i]) c = ramp(MARSH, 0.5 + meadow * 0.5 - wl * 0.45, x, y, 0.5);
       else if (t.depth[i]! <= 1.5 && h < 0.24) c = ramp(SAND, 0.55 + (s - 0.5), x, y);
+      else if (sd && sd + (bayer(x, y) - 0.5) * 0.5 > 0.42) c = dune(x, y, s, wl);
       else {
         const rock = range === 2 ? NIEBLA : range === 3 ? ESTE : PARDA;
         const shaded = 0.1 + s * 0.85;
@@ -102,7 +128,11 @@ export function colorMap(): PixelBuffer {
         const n = (h - snowAt) / 0.05 + (bayer(x + 1, y) - 0.5) * 0.8 + (s - 0.5) * 1.6;
         if (range && n > 0) c = ramp(SNOW, 0.2 + s * 0.85, x, y);
         else if (range && k > 0) c = ramp(rock, shaded, x, y);
-        else c = ramp(GRASS, 0.48 + meadow + (s - 0.5) * 1.2, x, y, 0.7);
+        else {
+          c = ramp(GRASS, 0.48 + meadow + (s - 0.5) * 1.2 - wl * 0.12 + sd * 0.25, x, y, 0.7);
+          // Hacia la arena, la hierba se seca.
+          if (sd > 0.12 && bayer(x + 2, y + 1) < (sd - 0.12) * 1.4) c = sd > 0.3 ? P.tan : P.lime;
+        }
       }
       // La orilla de ríos y lagos, más verde y oscura.
       if (
@@ -114,14 +144,14 @@ export function colorMap(): PixelBuffer {
     }
 
   // ---------- Las parcelas, con surcos y setos ----------
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
+  for (let y = Y0; y < Y1; y++)
+    for (let x = X0; x < X1; x++) {
       const f = t.field[at(x, y)]!;
       if (!f) continue;
       const crop = t.crop(f - 1);
       const [base, furrow] = CROPS[crop.kind]!;
-      const right = x + 1 < W ? t.field[at(x + 1, y)] : 0;
-      const down = y + 1 < H ? t.field[at(x, y + 1)] : 0;
+      const right = x + 1 < X1 ? t.field[at(x + 1, y)] : 0;
+      const down = y + 1 < Y1 ? t.field[at(x, y + 1)] : 0;
       if (right !== f || down !== f) {
         b.set(x, y, hash2(x, y, 7) < 0.7 ? P.forest : P.leaf);
         continue;
@@ -131,8 +161,8 @@ export function colorMap(): PixelBuffer {
     }
 
   // ---------- Caminos y puentes ----------
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
+  for (let y = Y0; y < Y1; y++)
+    for (let x = X0; x < X1; x++) {
       const r = t.road[at(x, y)]!;
       if (!r) continue;
       const w = t.water[at(x, y)]!;
@@ -163,8 +193,8 @@ export function colorMap(): PixelBuffer {
 
   // ---------- Bosques, copa a copa ----------
   const trees: [number, number, number][] = [];
-  for (let gy = 0; gy < H; gy += 2)
-    for (let gx = (gy / 2) % 2 ? 1 : 0; gx < W; gx += 3) {
+  for (let gy = from(Y0, 2); gy < Y1; gy += 2)
+    for (let gx = from(X0, 3) + ((gy / 2) % 2 ? 1 : 0); gx < X1; gx += 3) {
       const x = gx + Math.floor(hash2(gx, gy, 11) * 3) - 1;
       const y = gy + Math.floor(hash2(gx, gy, 12) * 2);
       if (!inside(x, y)) continue;
@@ -175,6 +205,8 @@ export function colorMap(): PixelBuffer {
     }
   trees.sort((a, c) => a[1] - c[1]);
   for (const [x, y, f] of trees) {
+    // En lo hondo del bosque (mapa de rumbos), copas más oscuras.
+    const dark = t.wild ? t.wild[at(x, y)]! / 255 + (hash2(x, y, 18) - 0.5) * 0.5 > 0.55 : false;
     if (f === BROAD) {
       const tone = hash2(x, y, 14) < 0.25;
       stamp(
@@ -182,12 +214,14 @@ export function colorMap(): PixelBuffer {
         x,
         y,
         ['.hl.', 'hllf', 'llff', '.fd.'],
-        tone
-          ? { h: P.leaf, l: P.leaf, f: P.forest, d: P.deep }
-          : { h: P.lime, l: P.leaf, f: P.forest, d: P.deep },
+        dark
+          ? { h: P.leaf, l: P.forest, f: P.deep, d: P.black }
+          : tone
+            ? { h: P.leaf, l: P.leaf, f: P.forest, d: P.deep }
+            : { h: P.lime, l: P.leaf, f: P.forest, d: P.deep },
         null,
       );
-      if (inside(x + 2, y + 1)) b.set(x + 2, y + 1, P.deep);
+      if (inside(x + 2, y + 1)) b.set(x + 2, y + 1, dark ? P.black : P.deep);
     } else if (f === PINE) {
       const snowy = t.h[at(x, y)]! > 0.6;
       stamp(
@@ -195,7 +229,9 @@ export function colorMap(): PixelBuffer {
         x,
         y,
         ['.l.', '.ld', 'lfd', 'lfd', '.b.'],
-        { l: snowy ? P.mist : P.leaf, f: P.forest, d: P.deep, b: P.bark },
+        dark && !snowy
+          ? { l: P.forest, f: P.deep, d: P.black, b: P.bark }
+          : { l: snowy ? P.mist : P.leaf, f: P.forest, d: P.deep, b: P.bark },
         null,
       );
     } else
@@ -210,8 +246,8 @@ export function colorMap(): PixelBuffer {
   }
 
   // ---------- Charcas y juncos de la marisma ----------
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
+  for (let y = Y0; y < Y1; y++)
+    for (let x = X0; x < X1; x++) {
       const i = at(x, y);
       if (!t.marsh[i] || t.water[i] || t.forest[i] || t.road[i]) continue;
       if (hash2(x, y, 16) < 0.06) {
@@ -247,22 +283,28 @@ export function colorMap(): PixelBuffer {
   serpent(b, 30, 160, P.black);
   compass(b, 44, 240, 15, P.bark);
 
-  frame(b);
-  cached = b;
-  return b;
+  deco?.(b);
+  frame(out);
+  return out;
 }
 
-/** El mar según la distancia a tierra: espuma, bajío, mar y alta mar; con olas sueltas. */
-function sea(d: number, x: number, y: number): Color {
+/**
+ * El mar según la distancia a tierra: espuma, bajío, mar y alta mar; con olas sueltas. Con
+ * `deep` (el mapa de rumbos, de mar más ancho), la alta mar tiene vetas y se va más despacio.
+ */
+function sea(d: number, x: number, y: number, deep = false): Color {
   if (d <= 1) return bayer(x, y) < 0.6 ? P.white : P.mist;
   if (d <= 2) return bayer(x, y) < 0.3 ? P.mist : P.cyan;
-  let c: Color = ramp(
-    [P.navy, P.ocean, P.ocean, P.ocean, P.sky, P.sky],
-    1 - Math.min(1, (d - 2) / 44),
-    x,
-    y,
-    1.4,
-  );
+  const v = deep
+    ? Math.max(1 - Math.min(1, (d - 2) / 110), 0.12 + (fbm(x / 70, y / 34, 23, 3) - 0.5) * 0.4)
+    : 1 - Math.min(1, (d - 2) / 44);
+  let c: Color = ramp([P.navy, P.ocean, P.ocean, P.ocean, P.sky, P.sky], v, x, y, 1.4);
+  // Mar abierto (mapa de rumbos): oleaje tramado, filas de crestas que van y vienen.
+  if (deep && d > 5) {
+    const q = ((((y + fbm(x / 40, y / 40, 24, 2) * 16) / 8) % 1) + 1) % 1;
+    if (q < 0.13 && bayer(x, y) < 0.5 && fbm(x / 16, y / 9, 25, 2) > 0.52)
+      return c === P.navy ? P.ocean : c === P.ocean ? P.sky : P.mist;
+  }
   // Olas: rayitas claras sueltas.
   const cx = Math.floor(x / 9);
   const cy = Math.floor(y / 6);
@@ -270,6 +312,19 @@ function sea(d: number, x: number, y: number): Color {
   if (hash2(cx, cy, 22) < 0.35 && y % 6 === 3 && x % 9 >= hx && x % 9 < hx + 3)
     c = c === P.navy ? P.ocean : c === P.ocean ? P.sky : P.mist;
   return c;
+}
+
+/**
+ * La arena de las ruinas: dunas en media luna (cresta clara, cara de sombra), más altas y
+ * seguidas cuanto más lejos; entre ellas, arena llana con su luz.
+ */
+function dune(x: number, y: number, s: number, wl: number): Color {
+  const warp = fbm(x / 38, y / 30, 92, 3) * 22 + Math.sin(x / 19) * 4;
+  const q = ((((y + warp) / 9) % 1) + 1) % 1;
+  const on = fbm(x / 26, y / 18, 93, 2) < 0.35 + 0.35 * wl;
+  if (on && q < 0.18) return bayer(x, y) < 0.7 ? P.sand : P.tan;
+  if (on && q < 0.42) return bayer(x, y) < 0.5 + (0.42 - q) * 2 ? P.clay : P.tan;
+  return ramp(SAND, 0.62 + (s - 0.5) * 0.6, x, y);
 }
 
 /** El agua de tierra adentro: ríos, lagos, charcas, el lago Helado y la laguna Negra. */

@@ -1,0 +1,32 @@
+/** Lo que pinta el visor de una expedición (lo rellena `ui/expedition.ts`, `marchNow`). */
+import type { FoeKind } from '../../core/journey';
+import type { BossFight, ExpKind, ExpWeather } from '../../core/model';
+import type { Terrain } from '../../data/places';
+
+/** Lo que hacen ahora. */
+export type MarchMode = 'walk' | 'fight' | 'camp';
+
+export interface MarchNow {
+  seed: string;
+  terrain: Terrain;
+  crew: BossFight['heroes'];
+  mode: MarchMode;
+  night: boolean;
+  /** De vuelta a casa (andan hacia la izquierda). */
+  home: boolean;
+  /** Contra qué pelean, si pelean. */
+  foe: FoeKind;
+  /** Lo salvaje del sitio (0 cerca de casa, 1 muy lejos). */
+  wild: number;
+  /** El último suceso, si es reciente (sale en un bocadillo). */
+  last?: ExpKind;
+  /**
+   * Hora del día para la luz (0–24, con decimales; 0 medianoche): andan de 7 a 19 y acampan de
+   * 19 a 7, así el alba cae en el campamento y la niebla de la mañana al echar a andar.
+   */
+  hour?: number;
+  /** El tiempo del día en el rumbo (`expWeather`). */
+  weather?: ExpWeather;
+  /** Día de la expedición (para la luna y la semilla del tiempo). */
+  day?: number;
+}

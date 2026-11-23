@@ -1,115 +1,41 @@
 /**
  * El mapa de rumbos de las expediciones (bloque 3; EX16): unas tres veces el de la comarca, con
- * ella en el centro y alrededor la sierra (norte), el bosque (este), las marismas (suroeste), las
- * ruinas (sureste) y el mar (oeste), bajo una niebla que se despeja por donde pasan.
- *
- * Es un **marcador** hasta que llegue el dibujo del agente de arte (`docs/encargos/
- * arte-expediciones.md`, punto 6): manchas de color por rumbo con un poco de trama. La geometría
- * (`expPoint`: dónde cae un rumbo a tantos días) es la que usa la interfaz para poner encima los
- * grupos, los parajes y los fardos; el dibujo bueno puede cambiar sin tocarla.
+ * ella en el centro y alrededor la sierra (norte), el bosque (este), las marismas (sur-suroeste),
+ * las ruinas (sureste) y el mar (oeste), bajo una niebla que se despeja por donde pasan
+ * (`expFog.ts`). Sigue a la sala de mapas como el de la comarca (`mapStyleFor`): pergamino a tinta
+ * o terreno a color, los dos del mismo terreno (`expTerrain.ts`) y con los mismos pinceles que la
+ * comarca, que va dentro tal cual. Encima, la estela de pasos de los grupos (`trailBuffer`) y las
+ * marcas de parajes y fardos (`markBuffer`). La geometría (`expPoint`) está en `expGeo.ts`.
  */
 import type { Heading } from '../core/model';
-import { MAP_H, MAP_W, TAVERN } from '../data/places';
-import { mapBuffer, type MapStyle } from './map';
-import { fbm } from './mapTerrain';
+import { MARKS, expDeco } from './expArt';
+import type { Clear } from './expFog';
+import { WORLD_H, WORLD_W, expPoint } from './expGeo';
+import { worldTerrain } from './expTerrain';
+import type { MapStyle } from './map';
+import { colorRender } from './mapColor';
+import { inkRender } from './mapInk';
+import { stamp } from './mapIcons';
 import { P } from './palette';
-import { PixelBuffer, bayer, type Color } from './pixel';
+import { PixelBuffer, type Color } from './pixel';
 
-export const WORLD_W = MAP_W * 3;
-export const WORLD_H = MAP_H * 3;
-/** Dónde cae la esquina de la comarca dentro del mapa grande. */
-export const OX = MAP_W;
-export const OY = MAP_H;
-/** Píxeles por día de lejanía, pasada la comarca. */
-export const PX_DAY = 34;
-
-/** Hacia dónde sale cada rumbo desde la taberna (radianes; 0 = este, y hacia abajo). */
-const ANGLE: Record<Heading, number> = {
-  bosque: 0,
-  sierra: -Math.PI / 2,
-  marismas: (3 * Math.PI) / 4,
-  ruinas: Math.PI / 4,
-};
-const PHASE: Record<Heading, number> = { bosque: 0.3, sierra: 1.9, marismas: 3.1, ruinas: 4.4 };
-
-/** Distancia (px) de la taberna al borde de la comarca en esa dirección. */
-function edge(a: number): number {
-  const cx = Math.cos(a);
-  const cy = Math.sin(a);
-  const tx = cx > 1e-6 ? (MAP_W - TAVERN.x) / cx : cx < -1e-6 ? -TAVERN.x / cx : Infinity;
-  const ty = cy > 1e-6 ? (MAP_H - TAVERN.y) / cy : cy < -1e-6 ? -TAVERN.y / cy : Infinity;
-  return Math.min(tx, ty);
-}
-
-/**
- * Dónde cae, en el mapa grande, un punto del rumbo a `dist` días; `side` (−1 a 1) lo aparta a un
- * lado del camino (los parajes y los fardos). El primer día cruza la comarca; luego, `PX_DAY`.
- */
-export function expPoint(h: Heading, dist: number, side = 0): { x: number; y: number } {
-  const a = ANGLE[h];
-  const e = edge(a);
-  const d = Math.max(0, dist);
-  const r = d <= 1 ? d * e : e + (d - 1) * PX_DAY;
-  const wig = Math.sin(d * 1.7 + PHASE[h]) * 10 * Math.min(1, d) + side * 18;
-  const x = OX + TAVERN.x + Math.cos(a) * r - Math.sin(a) * wig;
-  const y = OY + TAVERN.y + Math.sin(a) * r + Math.cos(a) * wig;
-  return {
-    x: Math.max(8, Math.min(WORLD_W - 8, x)),
-    y: Math.max(8, Math.min(WORLD_H - 8, y)),
-  };
-}
-
-type Region = Heading | 'mar';
-const COLOR: Record<Region, readonly Color[]> = {
-  bosque: [P.deep, P.forest, P.forest, P.leaf],
-  sierra: [P.slate, P.steel, P.fog, P.mist],
-  marismas: [P.forest, P.ocean, P.leaf, P.lime],
-  ruinas: [P.umber, P.clay, P.tan, P.sand],
-  mar: [P.navy, P.navy, P.ocean, P.sky],
-};
-
-/** El rumbo más cercano en ángulo (con algo de ruido en las lindes); al oeste, el mar. */
-function regionAt(x: number, y: number): Region {
-  const a = Math.atan2(y - (OY + TAVERN.y), x - (OX + TAVERN.x));
-  const n = (fbm(x / 60, y / 60, 71, 3) - 0.5) * 0.9;
-  const coast = OX - 30 + (fbm(0, y / 40, 72, 3) - 0.5) * 80;
-  if (x < coast && !(y > OY + MAP_H && x > OX * 0.55)) return 'mar';
-  let best: Region = 'bosque';
-  let gap = Infinity;
-  for (const h of Object.keys(ANGLE) as Heading[]) {
-    const d = Math.abs(Math.atan2(Math.sin(a + n - ANGLE[h]), Math.cos(a + n - ANGLE[h])));
-    if (d < gap) {
-      gap = d;
-      best = h;
-    }
-  }
-  return best;
-}
+export { OX, OY, PX_DAY, WORLD_H, WORLD_W, expPoint } from './expGeo';
+export type { Clear } from './expFog';
 
 const cache = new Map<MapStyle, PixelBuffer>();
+
+/** El dibujo, si ya está hecho (si no, `null`: hacerlo tarda un poco). */
+export const peekWorld = (style: MapStyle): PixelBuffer | null => cache.get(style) ?? null;
 
 /** El dibujo del mapa grande (con la comarca en medio), a juego con el estilo de la comarca. */
 export function worldBuffer(style: MapStyle): PixelBuffer {
   const hit = cache.get(style);
   if (hit) return hit;
-  const b = new PixelBuffer(WORLD_W, WORLD_H);
-  for (let y = 0; y < WORLD_H; y++)
-    for (let x = 0; x < WORLD_W; x++) {
-      if (x >= OX && x < OX + MAP_W && y >= OY && y < OY + MAP_H) continue;
-      const r = COLOR[regionAt(x, y)];
-      const v = fbm(x / 22, y / 22, 73, 3) + (bayer(x, y) - 0.5) * 0.25;
-      b.set(x, y, r[Math.max(0, Math.min(r.length - 1, Math.floor(v * r.length)))]!);
-    }
-  b.blit(mapBuffer(style), OX, OY);
+  const t = worldTerrain();
+  const deco = expDeco(t, style);
+  const b = style === 'color' ? colorRender(t, deco) : inkRender(t, deco);
   cache.set(style, b);
   return b;
-}
-
-/** Lo que se ve: círculos (en píxeles del mapa grande) despejados de niebla. */
-export interface Clear {
-  x: number;
-  y: number;
-  r: number;
 }
 
 /** Lo ya recorrido de un rumbo hasta `dist` días, como círculos despejados. */
@@ -120,55 +46,76 @@ export function trailClears(h: Heading, dist: number, r = 26): Clear[] {
   return out;
 }
 
+/** Una estela: el rumbo, hasta dónde, y si es la de un grupo de ahora o la de antes (el récord). */
+export interface Trail {
+  h: Heading;
+  dist: number;
+  now: boolean;
+}
+
 /**
- * La niebla del mapa grande: espesa lejos de lo visto, con borde tramado. La comarca, siempre
- * despejada (tiene su propia niebla en el mapa de la comarca). Se pinta a bloques de 2 × 2.
+ * La estela de pasos: huellas que alternan izquierda y derecha a lo largo del camino. En
+ * pergamino, a tinta roja (las de antes, desvaídas); a color, claras con su sombra, para que se
+ * lean sobre cualquier suelo.
  */
-export function worldFog(clears: readonly Clear[], style: MapStyle): PixelBuffer {
-  const S = 2;
-  const w = WORLD_W / S;
-  const h = WORLD_H / S;
-  const far = new Float32Array(w * h).fill(Infinity);
-  // Lo de fuera de la comarca: a qué distancia queda del rectángulo.
-  for (let y = 0; y < h; y++)
-    for (let x = 0; x < w; x++) {
-      const px = x * S;
-      const py = y * S;
-      const dx = Math.max(OX - px, 0, px - (OX + MAP_W));
-      const dy = Math.max(OY - py, 0, py - (OY + MAP_H));
-      far[y * w + x] = Math.hypot(dx, dy) + 6;
-    }
-  for (const c of clears) {
-    const x0 = Math.max(0, Math.floor((c.x - c.r - 40) / S));
-    const x1 = Math.min(w - 1, Math.ceil((c.x + c.r + 40) / S));
-    const y0 = Math.max(0, Math.floor((c.y - c.r - 40) / S));
-    const y1 = Math.min(h - 1, Math.ceil((c.y + c.r + 40) / S));
-    for (let y = y0; y <= y1; y++)
-      for (let x = x0; x <= x1; x++) {
-        const d = Math.hypot(x * S - c.x, y * S - c.y) - c.r;
-        if (d < far[y * w + x]!) far[y * w + x] = d;
-      }
-  }
-  const lo = [P.fog, P.mist, P.white];
+export function trailBuffer(trails: readonly Trail[], style: MapStyle): PixelBuffer {
   const b = new PixelBuffer(WORLD_W, WORLD_H);
-  for (let y = 0; y < h; y++)
-    for (let x = 0; x < w; x++) {
-      const best = far[y * w + x]!;
-      if (best <= 0) continue;
-      const d = Math.min(1, best / 30) + (fbm(x / 14, y / 9, 131, 3) - 0.5) * 0.8;
-      if (d < 0.3) continue;
-      if (d < 0.42 && bayer(x, y) >= (d - 0.3) / 0.12) continue;
-      if (style === 'color') {
-        const c = d < 0.55 ? lo[0]! : d < 0.8 ? lo[1]! : lo[2]!;
-        b.rect(x * S, y * S, S, S, c);
-        continue;
+  // Las de antes primero; las de ahora, encima.
+  for (const tr of [...trails].sort((a, c) => Number(a.now) - Number(c.now))) {
+    const ink: Color = style === 'color' ? (tr.now ? P.white : P.sand) : tr.now ? P.wine : P.clay;
+    const shade: Color | null = style === 'color' ? (tr.now ? P.black : P.ebony) : null;
+    let prev = expPoint(tr.h, 0);
+    let run = 0;
+    let step = 0;
+    const gap = tr.now ? 5 : 6;
+    for (let d = 0.004; d <= tr.dist + 1e-9; d += 0.004) {
+      const p = expPoint(tr.h, d);
+      const dx = p.x - prev.x;
+      const dy = p.y - prev.y;
+      const len = Math.hypot(dx, dy);
+      run += len;
+      if (len > 0 && run >= gap) {
+        run = 0;
+        step++;
+        if (d < 0.08) {
+          prev = p;
+          continue;
+        }
+        // Huella: dos píxeles en el sentido de la marcha, a un lado y al otro.
+        const ux = dx / len;
+        const uy = dy / len;
+        const side = step % 2 ? 1.5 : -1.5;
+        const x = Math.round(p.x - uy * side);
+        const y = Math.round(p.y + ux * side);
+        const x2 = Math.round(p.x - uy * side - ux);
+        const y2 = Math.round(p.y + ux * side - uy);
+        const pts = [x, y, x2, y2];
+        if (shade)
+          for (let k = 0; k < pts.length; k += 2) b.set(pts[k]! + 1, pts[k + 1]! + 1, shade);
+        for (let k = 0; k < pts.length; k += 2) b.set(pts[k]!, pts[k + 1]!, ink);
       }
-      // Pergamino: «tierra ignota», rayada en diagonal.
-      for (let k = 0; k < S * S; k++) {
-        const px = x * S + (k % S);
-        const py = y * S + Math.floor(k / S);
-        b.set(px, py, (px + py) % 6 === 0 ? P.tan : d < 0.55 ? P.tan : P.sand);
-      }
+      prev = p;
     }
+  }
+  return b;
+}
+
+const markCache = new Map<string, PixelBuffer>();
+
+/**
+ * La marca de un paraje o de un fardo (`cofre`, `cueva`, `mina`, `torre`, `ruinas`, `santuario`,
+ * `mercader`, `viajero`, `campamento`, `fardo`), con su contorno en tinta (pergamino) o negro
+ * (color), como los lugares de la comarca. Lo que no se conoce sale como cofre.
+ */
+export function markBuffer(kind: string, style: MapStyle): PixelBuffer {
+  const key = `${kind}|${style}`;
+  const hit = markCache.get(key);
+  if (hit) return hit;
+  const ic = MARKS[kind] ?? MARKS.cofre!;
+  const w = Math.max(...ic.rows.map((r) => r.length)) + 2;
+  const h = ic.rows.length + 2;
+  const b = new PixelBuffer(w, h);
+  stamp(b, w >> 1, h - 2, ic.rows, ic.pal, style === 'color' ? P.black : P.bark);
+  markCache.set(key, b);
   return b;
 }

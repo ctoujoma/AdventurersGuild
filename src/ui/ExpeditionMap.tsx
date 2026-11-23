@@ -6,17 +6,21 @@ import {
   WORLD_H,
   WORLD_W,
   expPoint,
+  markBuffer,
+  peekWorld,
+  trailBuffer,
   trailClears,
   worldBuffer,
-  worldFog,
   type Clear,
+  type Trail,
 } from '../art/expMap';
-import { EXP_EVENTS } from '../data/expEvents';
+import type { PixelBuffer } from '../art/pixel';
+import { ExpeditionFog } from './ExpeditionFog';
 import { TAVERN } from '../data/places';
 import { HEADINGS, OPEN_HEADINGS, bundleMsg, distAt } from '../core/expedition';
 import type { GameState, Heading } from '../core/model';
 import { BufferImage } from './BufferImage';
-import { Icon, type IconName } from './icons';
+import { Icon } from './icons';
 import { listNames } from './text';
 import { msg, t, tx } from '../textos';
 
@@ -33,11 +37,6 @@ const pct = (p: { x: number; y: number }) => ({
   left: `${(p.x / WORLD_W) * 100}%`,
   top: `${(p.y / WORLD_H) * 100}%`,
 });
-const SITE_ICON: Partial<Record<string, IconName>> = {
-  cueva: 'monte',
-  torre: 'torre',
-  ruinas: 'ruina',
-};
 
 type Info =
   { kind: 'site'; id: string } | { kind: 'bundle'; id: string } | { kind: 'rumbo'; h: Heading };
@@ -46,11 +45,22 @@ type Info =
  * El mapa de rumbos (bloque 3; EX16): la comarca en el centro y los cuatro rumbos bajo la niebla,
  * que se despeja hasta donde ha llegado el gremio (el récord de cada rumbo) y por donde van los
  * grupos de ahora. Encima, la estela de cada expedición, los parajes vistos y los fardos perdidos.
- * Se arrastra y se acerca (a escala entera). El dibujo es un marcador (`art/expMap.ts`).
+ * Se arrastra y se acerca (a escala entera). El dibujo, la estela y las marcas, en
+ * `art/expMap.ts`; la niebla, que se mueve, en `ExpeditionFog.tsx`.
  */
 export function ExpeditionMap({ game, onExpedition, children }: Props) {
   const style = mapStyleFor(game.fac.mapas);
-  const buf = worldBuffer(style);
+  // El dibujo tarda un poco la primera vez: se hace tras pintar la vista (y mientras, el fondo).
+  const [buf, setBuf] = useState<PixelBuffer | null>(() => peekWorld(style));
+  useEffect(() => {
+    const hit = peekWorld(style);
+    if (hit) {
+      setBuf(hit);
+      return;
+    }
+    const id = setTimeout(() => setBuf(worldBuffer(style)), 30);
+    return () => clearTimeout(id);
+  }, [style]);
   const exps = game.expeditions ?? [];
   const best = game.expBest ?? {};
   const sites = game.expSites ?? [];
@@ -62,12 +72,23 @@ export function ExpeditionMap({ game, onExpedition, children }: Props) {
       ...exps.filter((e) => e.heading === h).map((e) => e.turn?.dist ?? distAt(e)),
     );
   const fogKey = HEADINGS.map((h) => reach(h).toFixed(1)).join('|') + `|${sites.length}|${style}`;
-  const fog = useMemo(() => {
-    const clears: Clear[] = [];
-    for (const h of HEADINGS) clears.push(...trailClears(h, reach(h)));
-    for (const s of sites) clears.push({ ...expPoint(s.heading, s.dist, s.side), r: 14 });
-    return worldFog(clears, style);
+  const clears = useMemo(() => {
+    const out: Clear[] = [];
+    for (const h of HEADINGS) out.push(...trailClears(h, reach(h)));
+    for (const s of sites) out.push({ ...expPoint(s.heading, s.dist, s.side), r: 14 });
+    return out;
   }, [fogKey]);
+  // La estela de pasos: la del récord de cada rumbo y la de los grupos de ahora.
+  const trails: Trail[] = [
+    ...HEADINGS.filter((h) => best[h] !== undefined).map((h) => ({
+      h,
+      dist: best[h]!,
+      now: false,
+    })),
+    ...exps.map((e) => ({ h: e.heading, dist: e.turn?.dist ?? distAt(e), now: true })),
+  ];
+  const trailKey = trails.map((x) => `${x.h}${x.dist.toFixed(2)}${x.now}`).join('|') + style;
+  const steps = useMemo(() => trailBuffer(trails, style), [trailKey]);
 
   // ---------- Arrastre y zoom ----------
   const vp = useRef<HTMLDivElement>(null);
@@ -140,17 +161,8 @@ export function ExpeditionMap({ game, onExpedition, children }: Props) {
   };
 
   const [info, setInfo] = useState<Info | null>(null);
-  const trail = (h: Heading, to: number) => {
-    const pts: string[] = [];
-    for (let d = 0; d <= to + 1e-9; d += 0.1) {
-      const p = expPoint(h, d);
-      pts.push(`${p.x.toFixed(1)},${p.y.toFixed(1)}`);
-    }
-    const p = expPoint(h, to);
-    pts.push(`${p.x.toFixed(1)},${p.y.toFixed(1)}`);
-    return pts.join(' ');
-  };
-
+  // Las marcas siguen el tamaño de los píxeles del mapa (y al menos al doble, para tocarlas).
+  const mark = Math.max(2, view.z);
   const card = (() => {
     if (!info) return null;
     if (info.kind === 'site') {
@@ -232,24 +244,16 @@ export function ExpeditionMap({ game, onExpedition, children }: Props) {
         }}
         onClick={tap(() => setInfo(null))}
       >
-        <BufferImage buf={buf} scale={1} class="map-layer" label={t('expediciones.mapa.titulo')} />
-        <BufferImage buf={fog} scale={1} class="map-layer" />
-        <svg
-          class="map-layer exp-map-trails"
-          viewBox={`0 0 ${WORLD_W} ${WORLD_H}`}
-          aria-hidden="true"
-        >
-          {HEADINGS.filter((h) => best[h] !== undefined).map((h) => (
-            <polyline key={h} class="exp-trail is-old" points={trail(h, best[h]!)} />
-          ))}
-          {exps.map((e) => (
-            <polyline
-              key={e.id}
-              class="exp-trail"
-              points={trail(e.heading, e.turn?.dist ?? distAt(e))}
-            />
-          ))}
-        </svg>
+        {buf && (
+          <BufferImage
+            buf={buf}
+            scale={1}
+            class="map-layer"
+            label={t('expediciones.mapa.titulo')}
+          />
+        )}
+        <BufferImage buf={steps} scale={1} class="map-layer" />
+        <ExpeditionFog clears={clears} style={style} />
         {HEADINGS.map((h) => {
           const at = expPoint(h, Math.max(1.6, reach(h) + 0.8));
           return (
@@ -276,10 +280,7 @@ export function ExpeditionMap({ game, onExpedition, children }: Props) {
             })}
             onClick={tap(() => setInfo({ kind: 'site', id: s.id }))}
           >
-            <Icon
-              name={SITE_ICON[s.kind] ?? (EXP_EVENTS[s.kind].site ? 'torre' : 'star')}
-              size={10}
-            />
+            <BufferImage buf={markBuffer(s.kind, style)} scale={mark} />
           </button>
         ))}
         {bundles.map((b) => (
@@ -290,7 +291,7 @@ export function ExpeditionMap({ game, onExpedition, children }: Props) {
             aria-label={t('expediciones.mapa.fardo', { quien: b.who, m: b.who.length })}
             onClick={tap(() => setInfo({ kind: 'bundle', id: b.id }))}
           >
-            <Icon name="cofre" size={10} />
+            <BufferImage buf={markBuffer('fardo', style)} scale={mark} />
           </button>
         ))}
         <span class="map-tavern exp-map-home" style={pct({ x: OX + TAVERN.x, y: OY + TAVERN.y })}>

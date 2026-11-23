@@ -427,8 +427,43 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
 
 0. **Expediciones** ([`encargos/arte-expediciones.md`](encargos/arte-expediciones.md)): el usuario
    pide (23 nov) que el visor y el mapa de rumbos se vean bien de verdad, sin reaprovechar la tira de
-   los encargos, y valora un visor propio a más tamaño. **Primero, opciones con maquetas** para que
-   elija; luego, dibujar.
+   los encargos, y valora un visor propio a más tamaño. Opciones con maquetas en
+   https://claude.ai/artifact/Uc7GCVw5D5sEQ9oHp7MEog. **Elegido (23 nov):**
+   - **Visor en el móvil: el cuadro enmarcado (B).** 156 × 140 píxeles a ×2, marco de madera de 10 px,
+     cámara cerca; los héroes con su vida en el borde de abajo del marco y el día, la hora y el rumbo
+     en la chapa de arriba. Debajo, título, mochila y diario.
+   - **Visor en escritorio: pantalla entera (C).** 320 × 200 a ×3, la interfaz flota encima: arriba,
+     el día y la distancia; abajo a la izquierda, los héroes; el diario en un panel a la derecha. Tocar
+     el paisaje la esconde.
+   - El dibujo es el mismo (capas, gente, tiempo); solo cambian el encuadre (horizonte y cámara) y el
+     tamaño, así que la escena tiene que poder pintarse a cualquier ancho y alto.
+   - **Mapa de rumbos: coherente con la sala de mapas**, como el de la comarca: pergamino a tinta
+     (sala rota o a nivel 1) y terreno a color (nivel 2 o más). Un solo terreno debajo para los dos,
+     así nada se mueve al subir la sala. Niebla en cada estilo: pergamino sin pintar con nubes a tinta;
+     nubes blancas con volumen a color.
+   - Orden: el bosque bien acabado primero (el usuario: «a full detalle, luego vamos desbloqueando zonas»); luego sierra,
+     marismas y ruinas.
+   - [x] **Visor del bosque** (`src/world/visor/`, encuadres `MOVIL` y `ESCRITORIO` en
+     `encuadre.ts`): capas con paralaje en tiras precalculadas, lejanía gradual (sembrados y
+     vallas → bosque viejo con musgo y sendero), luz por la hora (alba, día, atardecer, noche con
+     luna y fugaces), cuervos, ciervos que huyen, lobos en la linde, lluvia y niebla al alba
+     (`VisorForce` para forzarlas), héroes que andan y cojean, peleas por turnos con cifras y
+     campamento (velada, noche con guardia y ojos, alba). `marchNow` añade `hour` (la del juego
+     corrida 2 h: andan de 7 a 19), `weather` y `day`; se borra `expeditionStrip.ts`. Capturas en
+     `capturas/expediciones/visor-bosque/`; herramienta `tools/visor.ts`.
+   - [x] **Mapa de rumbos** (`expTerrain.ts`, `expFog.ts`, `ExpeditionFog.tsx`): un terreno para
+     los dos estilos, pintado con los pinceles de la comarca (que sale idéntica, con test); niebla
+     animada a 5 fps (papel con nubes a tinta / nubes blancas); estela de huellas y marcas de
+     parajes. Marismas a 107° (a 135° el camino pisaba el mar). Capturas en
+     `capturas/expediciones/mapa-rumbos/`.
+   - [ ] Pendiente: gestos nuevos de héroe (recoger, cofre, beber, señalar, dormir tumbado),
+     fardos a la vuelta y hallazgos en el visor; la pantalla entera de escritorio (hoy el visor va
+     en la hoja lateral: interfaz del agente de expediciones); en la niebla a color, que las bolas
+     no parezcan guijarros (cortes rectos donde se tocan) y algún hueco que deja ver terreno no
+     explorado; luego sierra, marismas y ruinas en el visor.
+   - [x] Pulido del mapa: niebla a color como mar de cúmulos (bolas con luz propia en dos capas,
+     borde redondo, se encogen al despejar en 1,6 s), pergamino con borde a festones grabado y
+     retirada, sierra alta con nieve a manchas, mar sin halos, marismas a tinta.
 1. **Más cilindros y cuerpos de verdad**: los barriles apilados, las mesas (tablero y patas), el
    horno de pan (cúpula) y la caldera (cúpula de cobre) con la misma idea que `round`.
 2. [x] **Atlas de la gente en dos filas** (#100): se dibuja en una tira y se pliega (`fold` en

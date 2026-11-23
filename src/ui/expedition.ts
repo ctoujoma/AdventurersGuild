@@ -1,12 +1,12 @@
 /**
  * Lo que la interfaz de las expediciones necesita del núcleo, ya hecho: cuántos días de ida dan
- * unas raciones y qué pinta el visor ahora (`world/expeditionStrip.ts`).
+ * unas raciones y qué pinta el visor ahora (`world/visor/`).
  */
-import { DAY_SECONDS, DUSK, EXP_CAMP, EXP_HURT_DOWN } from '../core/balance';
+import { DAY_SECONDS, DUSK, EXP_CAMP, EXP_HOURS, EXP_HURT_DOWN } from '../core/balance';
 import { fightRoster } from '../core/chains';
-import { HEADING_FOES, HOUR, distAt } from '../core/expedition';
+import { HEADING_FOES, HOUR, distAt, expWeather, gameTime } from '../core/expedition';
 import type { Expedition, GameState } from '../core/model';
-import type { MarchNow } from '../world/expeditionStrip';
+import type { MarchNow } from '../world/visor/marcha';
 
 /**
  * Días de ida que dan `rations` raciones a `n` héroes, con la regla del núcleo: siguen otro día
@@ -25,6 +25,14 @@ export function daysOut(n: number, rations: number): number {
 /** Hora del día (0–23) en la hora `h` de la expedición. */
 export const hourOfDay = (e: Expedition, h = e.hours) =>
   Math.floor(((e.from + h * HOUR) % DAY_SECONDS) / HOUR);
+
+/**
+ * La hora para la luz del visor (0–24, con decimales; 0 medianoche). La hora de la expedición
+ * cuenta desde el alba de la taberna y acampan de `EXP_CAMP` a las 5: se corre dos horas para que
+ * anden de día (de 7 a 19) y el alba caiga en el campamento.
+ */
+export const visorHour = (s: GameState) =>
+  ((((gameTime(s) % DAY_SECONDS) + DAY_SECONDS) % DAY_SECONDS) / HOUR + 2) % 24;
 
 /** Lo que pinta el visor ahora. */
 export function marchNow(s: GameState, e: Expedition): MarchNow {
@@ -59,6 +67,9 @@ export function marchNow(s: GameState, e: Expedition): MarchNow {
     foe: foes[fightLine?.foe ?? 0] ?? 'bestia',
     wild: Math.min(1, distAt(e) / 8),
     last: recent?.k,
+    hour: visorHour(s),
+    weather: expWeather(e),
+    day: Math.floor(e.hours / EXP_HOURS) + 1,
   };
 }
 

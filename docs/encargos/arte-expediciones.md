@@ -16,6 +16,12 @@ dibujar, plantéale opciones** (una página con maquetas, 2 o 3 caminos: tamaño
 estilo, cuánto detalle, cómo se ve en móvil) y que elija. La interfaz de alrededor (barra de
 estado, mochila, diario, botón de volver) la adapto yo a lo que elija: dime qué hueco necesitas.
 
+**Elegido (23 nov),** detalle en [`../plan-arte.md`](../plan-arte.md): en el móvil, el cuadro
+enmarcado (156 × 140 a ×2, marco de 10 px, héroes con su vida en el marco y el día en la chapa de
+arriba; debajo, título, mochila y diario); en escritorio, pantalla entera (320 × 200 a ×3, barra
+arriba, héroes abajo a la izquierda, diario en un panel a la derecha, tocar el paisaje esconde la
+interfaz). El mapa de rumbos sigue a la sala de mapas: pergamino (rota o nivel 1) y color (nivel 2+).
+
 1. **El visor por rumbo** (bosque primero; sierra, marismas y ruinas después): fondo con varias
    capas que se mueven a distinta velocidad, que se va volviendo salvaje **poco a poco** con los
    días de lejanía (sin cortes: un valor de 0 a 1), con la luz de la hora del juego, nubes,

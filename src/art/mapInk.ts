@@ -7,7 +7,7 @@
  * la sierpe y un marco de leguas. Lo no explorado se cubre de rayado (`inkFog`).
  */
 import { MAP_H, MAP_W } from '../data/places';
-import { compass, house, placeIcons, serpent, ship, stamp, whale } from './mapIcons';
+import { compass, house, placeIcons, serpent, ship, shifted, stamp, whale } from './mapIcons';
 import {
   BLACK,
   BROAD,
@@ -18,11 +18,11 @@ import {
   REAL,
   SEA,
   SENDA,
-  at,
   fbm,
+  from,
   hash2,
-  inside,
   terrain,
+  type Terrain,
 } from './mapTerrain';
 import { P } from './palette';
 import { PixelBuffer, bayer, type Color } from './pixel';
@@ -32,19 +32,33 @@ const ROSE: [number, number] = [44, 240];
 
 let cached: PixelBuffer | null = null;
 
+/** El pergamino de la comarca. */
 export function inkMap(): PixelBuffer {
-  if (cached) return cached;
-  const t = terrain();
-  const W = MAP_W;
-  const H = MAP_H;
-  const b = new PixelBuffer(W, H);
+  cached ??= inkRender(terrain());
+  return cached;
+}
+
+/**
+ * El pergamino de un terreno (la comarca o el mapa de rumbos, que la lleva dentro): se dibuja en
+ * coordenadas de la comarca, así lo de dentro sale igual en los dos. `deco` pinta lo suyo antes
+ * del marco.
+ */
+export function inkRender(t: Terrain, deco?: (b: PixelBuffer) => void): PixelBuffer {
+  const { W, H } = t;
+  const X0 = t.x0;
+  const Y0 = t.y0;
+  const X1 = X0 + W;
+  const Y1 = Y0 + H;
+  const out = new PixelBuffer(W, H);
+  const b = shifted(out, -X0, -Y0);
+  const { at, inside } = t;
   const wat = (x: number, y: number) => (inside(x, y) ? t.water[at(x, y)]! : SEA);
   const land = (x: number, y: number) => inside(x, y) && !t.water[at(x, y)];
 
   // ---------- El papel ----------
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
-      const edge = Math.min(x, y, W - 1 - x, H - 1 - y);
+  for (let y = Y0; y < Y1; y++)
+    for (let x = X0; x < X1; x++) {
+      const edge = Math.min(x - X0, y - Y0, X1 - 1 - x, Y1 - 1 - y);
       const tone = fbm(x / 34, y / 26, 201);
       let c: Color = P.sand;
       if (tone > 0.6 && bayer(x, y) < (tone - 0.6) * 0.9) c = P.tan;
@@ -56,8 +70,8 @@ export function inkMap(): PixelBuffer {
     }
 
   // ---------- El mar ----------
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
+  for (let y = Y0; y < Y1; y++)
+    for (let x = X0; x < X1; x++) {
       const i = at(x, y);
       if (t.water[i] !== SEA) continue;
       const d = t.depth[i]!;
@@ -74,8 +88,8 @@ export function inkMap(): PixelBuffer {
         if (Math.abs(d - L) < 0.55 && hash2(x >> 2, y >> 2, 204 + L) > gap) b.set(x, y, c);
     }
   // Olitas sueltas mar adentro.
-  for (let cy = 0; cy < H; cy += 9)
-    for (let cx = 0; cx < W; cx += 13) {
+  for (let cy = from(Y0, 9); cy < Y1; cy += 9)
+    for (let cx = from(X0, 13); cx < X1; cx += 13) {
       const x = cx + Math.floor(hash2(cx, cy, 205) * 9);
       const y = cy + Math.floor(hash2(cx, cy, 206) * 6);
       if (!inside(x, y) || t.water[at(x, y)] !== SEA || t.depth[at(x, y)]! < 16) continue;
@@ -94,15 +108,22 @@ export function inkMap(): PixelBuffer {
   }
 
   // ---------- Aguadas de la tierra ----------
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
+  for (let y = Y0; y < Y1; y++)
+    for (let x = X0; x < X1; x++) {
       const i = at(x, y);
       if (t.water[i]) continue;
       const f = t.forest[i]!;
+      const wl = t.wild ? t.wild[i]! / 255 : 0;
+      const sd = t.sand ? t.sand[i]! / 255 : 0;
       if (f === BURNT) {
         if (bayer(x, y) < 0.35) b.set(x, y, P.tan);
       } else if (f) {
-        if (bayer(x, y) < 0.1) b.set(x, y, P.lime);
+        // Lo hondo del bosque (mapa de rumbos), con una aguada más cargada.
+        if (bayer(x, y) < 0.1 + wl * 0.2) b.set(x, y, wl > 0.5 ? P.leaf : P.lime);
+      } else if (sd > 0.3) {
+        // La arena: punteado, más cerrado cuanto más arena.
+        if (hash2(x, y, 222) < sd * 0.09) b.set(x, y, P.tan);
+        else if (sd > 0.7 && bayer(x, y) < (sd - 0.7) * 0.5) b.set(x, y, P.tan);
       } else if (t.marsh[i]) {
         if (bayer(x, y) < 0.08) b.set(x, y, P.mist);
       } else if (t.range[i] && t.h[i]! > 0.36) {
@@ -111,13 +132,13 @@ export function inkMap(): PixelBuffer {
     }
 
   // ---------- Parcelas: rayadas, con algún sembrado en color ----------
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
+  for (let y = Y0; y < Y1; y++)
+    for (let x = X0; x < X1; x++) {
       const fi = t.field[at(x, y)]!;
       if (!fi) continue;
       const crop = t.crop(fi - 1);
-      const right = x + 1 < W ? t.field[at(x + 1, y)] : 0;
-      const down = y + 1 < H ? t.field[at(x, y + 1)] : 0;
+      const right = x + 1 < X1 ? t.field[at(x + 1, y)] : 0;
+      const down = y + 1 < Y1 ? t.field[at(x, y + 1)] : 0;
       if (right !== fi || down !== fi) {
         if ((x + y) % 2 === 0) b.set(x, y, P.oak);
         continue;
@@ -129,27 +150,32 @@ export function inkMap(): PixelBuffer {
     }
 
   // ---------- Agua de tierra adentro ----------
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
+  for (let y = Y0; y < Y1; y++)
+    for (let x = X0; x < X1; x++) {
       const w = t.water[at(x, y)]!;
       if (!w || w === SEA) continue;
       const edge = [wat(x - 1, y), wat(x + 1, y), wat(x, y - 1), wat(x, y + 1)].some((v) => !v);
       let c: Color;
       if (w === ICE) c = edge ? P.steel : (x * 2 + y) % 7 === 0 ? P.fog : P.white;
       else if (w === BLACK) c = edge ? P.navy : (x + y) % 2 ? P.slate : P.steel;
-      else if (w === POOL) c = edge ? P.ocean : y % 2 ? P.mist : P.sky;
+      else if (w === POOL && t.wild) {
+        // Las charcas del mapa de rumbos: orilla a tinta azulada y una aguada floja.
+        if (edge) c = P.steel;
+        else if (bayer(x, y) < 0.3) c = P.mist;
+        else continue;
+      } else if (w === POOL) c = edge ? P.ocean : y % 2 ? P.mist : P.sky;
       else c = edge ? P.ocean : y % 3 === 0 && !edge ? P.mist : P.sky;
       b.set(x, y, c);
     }
   // La costa entintada.
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++)
+  for (let y = Y0; y < Y1; y++)
+    for (let x = X0; x < X1; x++)
       if (land(x, y) && [wat(x - 1, y), wat(x + 1, y), wat(x, y - 1), wat(x, y + 1)].includes(SEA))
         b.set(x, y, INK);
 
   // ---------- Caminos a trazos y puentes ----------
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
+  for (let y = Y0; y < Y1; y++)
+    for (let x = X0; x < X1; x++) {
       const r = t.road[at(x, y)]!;
       if (!r) continue;
       if (t.water[at(x, y)] && r === SENDA) continue;
@@ -164,8 +190,8 @@ export function inkMap(): PixelBuffer {
 
   // ---------- Montes a plumilla ----------
   const peaks: [number, number, number][] = [];
-  for (let gy = 0; gy < H; gy += 6)
-    for (let gx = 0; gx < W; gx += 11) {
+  for (let gy = from(Y0, 6); gy < Y1; gy += 6)
+    for (let gx = from(X0, 11); gx < X1; gx += 11) {
       const x = gx + Math.floor(hash2(gx, gy, 209) * 9);
       const y = gy + Math.floor(hash2(gx, gy, 210) * 5);
       if (!inside(x, y) || !t.range[at(x, y)] || t.water[at(x, y)]) continue;
@@ -176,8 +202,8 @@ export function inkMap(): PixelBuffer {
   peaks.sort((a, c) => a[1] - c[1]);
   for (const [x, y, s] of peaks) mount(b, x, y, s, hash2(x, y, 211));
   // Lomas: arcos con su sombra.
-  for (let gy = 0; gy < H; gy += 6)
-    for (let gx = 0; gx < W; gx += 9) {
+  for (let gy = from(Y0, 6); gy < Y1; gy += 6)
+    for (let gx = from(X0, 9); gx < X1; gx += 9) {
       const x = gx + Math.floor(hash2(gx, gy, 212) * 9);
       const y = gy + Math.floor(hash2(gx, gy, 213) * 6);
       if (!inside(x, y) || t.water[at(x, y)] || t.forest[at(x, y)] || t.field[at(x, y)]) continue;
@@ -188,10 +214,31 @@ export function inkMap(): PixelBuffer {
       stamp(b, x, y, ['.kkk.', 'k..hk', '...h.'], { k: INK, h: P.cocoa }, null);
     }
 
+  // ---------- Dunas (mapa de rumbos): medias lunas a plumilla ----------
+  if (t.sand)
+    for (let gy = from(Y0, 7); gy < Y1; gy += 7)
+      for (let gx = from(X0, 11); gx < X1; gx += 11) {
+        const x = gx + Math.floor(hash2(gx, gy, 224) * 7);
+        const y = gy + Math.floor(hash2(gx, gy, 225) * 4);
+        if (!inside(x, y) || t.water[at(x, y)] || t.road[at(x, y)]) continue;
+        const sd = t.sand[at(x, y)]! / 255;
+        if (sd < 0.6 || hash2(gx, gy, 226) > (sd - 0.5) * 0.6) continue;
+        stamp(
+          b,
+          x,
+          y,
+          hash2(gx, gy, 227) < 0.5
+            ? ['..kkk.', '.k..hk', 'k....h']
+            : ['.kkk..', 'kh..k.', 'h....k'],
+          { k: INK, h: P.cocoa },
+          null,
+        );
+      }
+
   // ---------- Bosques, árbol a árbol ----------
   const trees: [number, number, number][] = [];
-  for (let gy = 0; gy < H; gy += 4)
-    for (let gx = (gy / 4) % 2 ? 3 : 0; gx < W; gx += 5) {
+  for (let gy = from(Y0, 4); gy < Y1; gy += 4)
+    for (let gx = from(X0, 5) + ((gy / 4) % 2 ? 3 : 0); gx < X1; gx += 5) {
       const x = gx + Math.floor(hash2(gx, gy, 215) * 3) - 1;
       const y = gy + Math.floor(hash2(gx, gy, 216) * 2);
       if (!inside(x, y)) continue;
@@ -201,23 +248,34 @@ export function inkMap(): PixelBuffer {
     }
   trees.sort((a, c) => a[1] - c[1]);
   for (const [x, y, f] of trees) {
+    // En lo hondo del bosque (mapa de rumbos), árboles más oscuros.
+    const dark = t.wild ? t.wild[at(x, y)]! / 255 + (hash2(x, y, 223) - 0.5) * 0.5 > 0.55 : false;
     if (f === BROAD)
       stamp(
         b,
         x,
         y,
         ['.ll.', 'llLf', 'lLLf', '.ff.', '..k.'],
-        { l: P.lime, L: P.leaf, f: P.leaf, k: P.bark },
-        P.forest,
+        dark
+          ? { l: P.leaf, L: P.forest, f: P.forest, k: P.bark }
+          : { l: P.lime, L: P.leaf, f: P.leaf, k: P.bark },
+        dark ? P.deep : P.forest,
       );
     else if (f === PINE)
-      stamp(b, x, y, ['.l.', '.lf', 'llf', '.k.'], { l: P.lime, f: P.leaf, k: P.bark }, P.forest);
+      stamp(
+        b,
+        x,
+        y,
+        ['.l.', '.lf', 'llf', '.k.'],
+        dark ? { l: P.leaf, f: P.forest, k: P.bark } : { l: P.lime, f: P.leaf, k: P.bark },
+        dark ? P.deep : P.forest,
+      );
     else stamp(b, x, y, ['k.k', '.k.', '.k.'], { k: P.bark }, null);
   }
 
   // ---------- Juncos de la marisma ----------
-  for (let gy = 0; gy < H; gy += 5)
-    for (let gx = 0; gx < W; gx += 7) {
+  for (let gy = from(Y0, 5); gy < Y1; gy += 5)
+    for (let gx = from(X0, 7); gx < X1; gx += 7) {
       const x = gx + Math.floor(hash2(gx, gy, 217) * 4);
       const y = gy + Math.floor(hash2(gx, gy, 218) * 3);
       if (!inside(x, y) || !t.marsh[at(x, y)] || t.water[at(x, y)] || t.road[at(x, y)]) continue;
@@ -235,16 +293,16 @@ export function inkMap(): PixelBuffer {
   serpent(b, 30, 160, P.bark);
   compass(b, ROSE[0], ROSE[1], 15, P.bark);
 
-  border(b);
-  cached = b;
-  return b;
+  deco?.(b);
+  border(out);
+  return out;
 }
 
 /**
  * Un monte a plumilla, por el centro de su base: relleno de papel (tapa a los de detrás), la
  * cara de sombra rayada, el contorno en tinta y, si es alto, nieve en la cumbre.
  */
-function mount(b: PixelBuffer, x: number, y: number, s: number, r: number): void {
+export function mount(b: PixelBuffer, x: number, y: number, s: number, r: number): void {
   const top = y - s;
   const lean = Math.round((r - 0.5) * 2);
   const ax = x + lean;

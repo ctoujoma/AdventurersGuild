@@ -5,9 +5,9 @@ import { distAt, expWeather, hoursHome, itemGlow, matGlow, riskNow } from '../co
 import type { BossFight, ExpKind, Expedition, GameState } from '../core/model';
 import { ExpeditionCard } from './ExpeditionCard';
 import { matsMsg, type Material } from '../core/materials';
-import { STRIP_H } from '../world/tripStrip';
 import { dangerClass } from '../data/labels';
-import { ExpeditionStrip } from '../world/expeditionStrip';
+import { ESCRITORIO, MOVIL } from '../world/visor/encuadre';
+import { Visor } from '../world/visor/escena';
 import { GLOW_SFX, glowClass } from './glow';
 import { Icon, type IconName } from './icons';
 import { ItemImage, itemProps } from './ItemImage';
@@ -45,7 +45,9 @@ const KIND_ICON: Record<ExpKind, IconName> = {
   eleccion: 'check',
 };
 
-const AIM_W = 220;
+/** Desde qué ancho de pantalla el visor va a pantalla entera (320 × 200 a ×3). */
+const DESK = '(min-width: 1000px)';
+const wide = () => typeof matchMedia !== 'undefined' && matchMedia(DESK).matches;
 
 /** El visor: el paisaje con el grupo en directo y, debajo, cómo van y su diario. */
 export function ExpeditionView({
@@ -58,47 +60,42 @@ export function ExpeditionView({
   onMute,
   onWatch,
 }: Props) {
-  const box = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const now = marchNow(game, e);
   const nowRef = useRef(now);
   nowRef.current = now;
 
+  // El visor (`world/visor/`): en el móvil, el cuadro de 156 × 140 a ×2; en escritorio, 320 × 200
+  // a ×3. Se pinta a unos 12 fotogramas por segundo.
+  const [desk, setDesk] = useState(wide);
   useEffect(() => {
-    const el = box.current;
+    if (typeof matchMedia === 'undefined') return;
+    const mq = matchMedia(DESK);
+    const on = () => setDesk(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  useEffect(() => {
     const c = canvas.current;
     const ctx = c?.getContext('2d');
-    if (!el || !c || !ctx) return;
-    const strip = new ExpeditionStrip(AIM_W);
-    const fit = () => {
-      const width = el.clientWidth || AIM_W * 2;
-      const scale = Math.max(1, Math.round(width / AIM_W));
-      const w = Math.ceil(width / scale);
-      c.width = w;
-      c.height = STRIP_H;
-      c.style.width = `${w * scale}px`;
-      c.style.height = `${STRIP_H * scale}px`;
-      strip.resize(w);
-    };
-    fit();
-    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : null;
-    ro?.observe(el);
+    if (!c || !ctx) return;
+    const enc = desk ? ESCRITORIO : MOVIL;
+    c.width = enc.w;
+    c.height = enc.h;
+    const visor = new Visor(enc);
     let raf = 0;
     let last = -1;
     const start = performance.now();
     const loop = (ms: number) => {
       raf = requestAnimationFrame(loop);
-      const tick = Math.floor((ms - start) / 100);
+      const tick = Math.floor((ms - start) / 83);
       if (tick === last) return;
       last = tick;
-      strip.drawMarch(ctx, nowRef.current, (ms - start) / 1000);
+      visor.draw(ctx, nowRef.current, (ms - start) / 1000);
     };
     raf = requestAnimationFrame(loop);
-    return () => {
-      cancelAnimationFrame(raf);
-      ro?.disconnect();
-    };
-  }, []);
+    return () => cancelAnimationFrame(raf);
+  }, [desk]);
 
   // Lo que encuentran con el visor abierto suena y brilla según su rareza (EX18).
   const seen = useRef(e.log.length);
@@ -138,10 +135,10 @@ export function ExpeditionView({
           <Icon name="close" size={14} />
         </button>
         <div class="qs-scroll">
-          <div ref={box} class={`trip-strip ${now.night ? 'is-night' : ''}`}>
+          <div class={`exp-visor ${desk ? 'is-desk' : 'is-frame'}`}>
             <canvas
               ref={canvas}
-              class="trip-strip-canvas pixel"
+              class="exp-visor-canvas pixel"
               role="img"
               aria-label={t(`expediciones.expeditionview.ahora.${now.mode}`, { vuelta: now.home })}
             />
