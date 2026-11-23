@@ -35,6 +35,10 @@ import {
   TEMPER_MAX,
   UNDO_CHANCE,
   UNDO_HOURS,
+  POTION_CAP,
+  POTION_GOLD,
+  POTION_HERBS,
+  POTION_HOURS,
 } from './balance';
 import type { Craft, CraftEnd, DawnEvent, GameState, Item, ItemIcon, Rarity, Room } from './model';
 import { Rng } from './rng';
@@ -485,8 +489,62 @@ export function undoChance(s: GameState, roomId: string): number {
   return r ? (UNDO_CHANCE[active(r).level] ?? UNDO_CHANCE.at(-1)!) : 0;
 }
 
+// ---------- Pociones (alquimia) ----------
+
+/** Lo que pide una poción. */
+export const POTION_MATS: Mats = { hierbas: POTION_HERBS };
+/** Pociones que caben guardadas: por el nivel de la mejor alquimia en uso (0 sin alquimia). */
+export function potionCap(s: GameState): number {
+  const lvl = s.building.rooms
+    .filter((r) => r.type === 'alquimia')
+    .reduce((a, r) => Math.max(a, active(r).level), 0);
+  return POTION_CAP[lvl] ?? POTION_CAP.at(-1)!;
+}
+/** Las que se están preparando ahora. */
+export const potionsBrewing = (s: GameState) => (s.crafts ?? []).filter((c) => c.potion).length;
+
+/** Por qué no se puede preparar una poción en esta sala (null = se puede). */
+export function canPotion(s: GameState, roomId: string): string | null {
+  const why = canStart(s, roomId);
+  if (why) return why;
+  const r = s.building.rooms.find((x) => x.id === roomId)!;
+  if (r.type !== 'alquimia') return t('talleres.error.otra_sala');
+  const cap = potionCap(s);
+  if ((s.potions ?? 0) + potionsBrewing(s) >= cap) return t('talleres.pocion.llenas', { n: cap });
+  if (s.gold < POTION_GOLD) return t('partida.error.faltan', { n: POTION_GOLD - s.gold });
+  return lackText(s, POTION_MATS);
+}
+
+/** Empieza una poción (ya comprobado con `canPotion`). */
+export function startPotion(s: GameState, roomId: string): void {
+  s.gold -= POTION_GOLD;
+  spendMats(s, POTION_MATS);
+  s.crafts = [
+    ...(s.crafts ?? []),
+    {
+      id: `c${s.uid++}`,
+      room: roomId,
+      need: hoursToWork(POTION_HOURS),
+      done: 0,
+      at: partOf(s),
+      gold: POTION_GOLD,
+      mats: { ...POTION_MATS },
+      potion: true,
+    },
+  ];
+}
+
 /** Acaba un trabajo: el objeto al arcón, o la receta (o nada) al desmontar. */
 function finish(s: GameState, c: Craft, rng: Rng, news: DawnEvent[]): void {
+  if (c.potion) {
+    // A veces salen dos; lo que no cabe (las de las expediciones pueden pasar del tope) no sobra.
+    const n = rng.chance(goodChance(s, c.room)) ? 2 : 1;
+    const had = s.potions ?? 0;
+    s.potions = Math.max(had, Math.min(potionCap(s), had + n));
+    logEnd(s, c, 'hecho', n > 1 ? 2 : 0);
+    news.push({ t: msg('talleres.aviso.pocion', { n: s.potions - had }), k: 'good' });
+    return;
+  }
   if (c.dress) {
     const { hero, to } = c.dress;
     s.heroes = s.heroes.map((h) =>

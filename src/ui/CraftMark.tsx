@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'preact/hooks';
-import { itemIcon, scissorsIcon } from '../art/items';
+import { itemIcon, potionIcon, scissorsIcon } from '../art/items';
 import type { SceneCraft } from '../world/scene';
 import { BufferImage } from './BufferImage';
 import type { GameScene } from './SceneView';
@@ -51,7 +51,13 @@ export function CraftMark({ craft, scene, aside, slot = 0 }: Props) {
       aria-label={t('barra.craftmark.estado', { que: what, pct, parado: !!craft.stalled })}
     >
       <BufferImage
-        buf={craft.hero ? scissorsIcon() : itemIcon(craft.icon, craft.rarity)}
+        buf={
+          craft.hero
+            ? scissorsIcon()
+            : craft.potion
+              ? potionIcon()
+              : itemIcon(craft.icon, craft.rarity)
+        }
         scale={2}
       />
       <span class="craft-bar">

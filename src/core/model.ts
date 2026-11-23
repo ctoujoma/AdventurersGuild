@@ -532,6 +532,8 @@ export interface Craft {
   temper?: true;
   /** Materiales gastados al empezar (se devuelven al cancelar). */
   mats?: Mats;
+  /** Una poción (alquimia): al acabar, `GameState.potions` sube (no sale un objeto). */
+  potion?: true;
 }
 
 /** Cómo acabó un trabajo de taller (por su id). */

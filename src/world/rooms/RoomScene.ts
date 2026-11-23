@@ -63,7 +63,7 @@ import type {
   ScenePaint,
   SoundName,
 } from '../scene';
-import { rackIcon } from '../../art/items';
+import { potionIcon, rackIcon } from '../../art/items';
 import { hasLegend } from '../../art/heroes/gear';
 import { LANTERN, dummy, furnish, gearRoom, type Glow, type RGB } from './furniture';
 import { chalkPlan } from './ruina';
@@ -676,6 +676,7 @@ export class RoomScene {
     until: number;
     rarity: number;
     icon: SceneCraft['icon'];
+    potion?: boolean;
     x: number;
     y: number;
   }[] = [];
@@ -2117,6 +2118,7 @@ export class RoomScene {
       until: this.t + (good ? 2.6 : 1.8),
       rarity: end.rarity ?? 0,
       icon: c.icon,
+      potion: c.potion,
       x: p.x,
       y: p.y,
     });
@@ -2147,7 +2149,7 @@ export class RoomScene {
         const x = Math.round(f.x - camera.px) - 6;
         const y = Math.round(f.y - camera.py - 14 - k * 10);
         this.paintFading(
-          rackIcon(f.icon, f.rarity as Rarity),
+          f.potion ? potionIcon() : rackIcon(f.icon, f.rarity as Rarity),
           x,
           y,
           1 - Math.max(0, k - 0.6) / 0.4,

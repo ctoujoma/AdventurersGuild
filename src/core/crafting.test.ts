@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { RECIPES } from '../data/recipes';
 import { DAY_SECONDS, DRESS_GOLD, DRESS_WALK, WORK_END, WORK_START } from './balance';
+import { POTION_CAP, POTION_GOLD, POTION_HERBS } from './balance';
 import { Rng } from './rng';
 import { planBuild } from './rooms';
 import {
@@ -20,6 +21,8 @@ import {
   stepCrafts,
   undoable,
   clockHours,
+  canPotion,
+  potionCap,
 } from './crafting';
 import { endDay, newGame, reduce } from './game';
 import type { GameState, Worker } from './model';
@@ -569,5 +572,51 @@ describe('el nivel del taller da la calidad', () => {
     expect(crafted(rc, 'comun')).toEqual(rc.common);
     expect(crafted(rc, 'bueno')).toMatchObject({ name: rc.common.name, rarity: 1, plus: 1 });
     expect(crafted(rc, 'raro')).toEqual(rc.good);
+  });
+});
+
+describe('pociones en la alquimia', () => {
+  it('preparar una poción gasta oro y hierbas, y al acabar suben las pociones', () => {
+    const { s, room } = withShop('pocion', 'alquimia');
+    s.mats = { ...s.mats, hierbas: POTION_HERBS };
+    expect(potionCap(s)).toBe(POTION_CAP[1]);
+    expect(canPotion(s, room)).toBeNull();
+    const a = reduce(s, { type: 'potion', room });
+    expect(a.gold).toBe(s.gold - POTION_GOLD);
+    expect(a.mats?.hierbas ?? 0).toBe(0);
+    expect(a.crafts?.some((c) => c.potion)).toBe(true);
+    // En dos noches está de sobra (unas 6 h de taller).
+    const b = endDay(endDay(a, true), true);
+    expect(b.crafts?.some((c) => c.potion) ?? false).toBe(false);
+    expect(b.potions ?? 0).toBeGreaterThanOrEqual(1);
+    expect(b.potions ?? 0).toBeLessThanOrEqual(2);
+  });
+
+  it('sin hierbas o con las pociones a tope, no se puede', () => {
+    const { s, room } = withShop('sin-hierbas', 'alquimia');
+    s.mats = { ...s.mats, hierbas: 0 };
+    expect(canPotion(s, room)).toMatch(/hierba/i);
+    s.mats = { ...s.mats, hierbas: 10 };
+    s.potions = POTION_CAP[1];
+    expect(canPotion(s, room)).toMatch(/no caben/);
+    expect(reduce(s, { type: 'potion', room })).toBe(s);
+    // Las que se preparan cuentan para el tope (a nivel 3 caben dos trabajos a la vez).
+    s.building.rooms.find((r) => r.id === room)!.level = 3;
+    s.potions = POTION_CAP[3] - 1;
+    const a = reduce(s, { type: 'potion', room });
+    expect(a.crafts?.length).toBe(1);
+    expect(canPotion(a, room)).toMatch(/no caben/);
+  });
+
+  it('cancelar devuelve el oro y las hierbas; fuera de la alquimia, no', () => {
+    const { s, room } = withShop('cancela', 'alquimia');
+    s.mats = { ...s.mats, hierbas: POTION_HERBS };
+    const a = reduce(s, { type: 'potion', room });
+    const c = a.crafts!.find((x) => x.potion)!;
+    const b = reduce(a, { type: 'cancelCraft', id: c.id });
+    expect(b.gold).toBe(s.gold);
+    expect(b.mats?.hierbas).toBe(POTION_HERBS);
+    const forja = withShop('forja-no', 'sastreria');
+    expect(canPotion(forja.s, forja.room)).not.toBeNull();
   });
 });

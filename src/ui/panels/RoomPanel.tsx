@@ -5,6 +5,8 @@ import { appeal, neighborsOf, seatsOf, visitorList, visitorsOf } from '../../cor
 import { canWork, roster, type Action } from '../../core/game';
 import type { DecorId, TintId } from '../../data/custom';
 import { beerCap, dailyYield, eatersOf, foodCap } from '../../core/larder';
+import { potionIcon } from '../../art/items';
+import { BufferImage } from '../BufferImage';
 import { ATTR_NAMES, trainCap } from '../../core/training';
 import {
   NURSE_WORK,
@@ -45,7 +47,7 @@ import { Icon, type IconName } from '../icons';
 import { CrewGroup } from './CrewList';
 import { WorkshopInfo, workshopTabs, type WorkTab } from './WorkshopInfo';
 import { DormList } from './DormList';
-import { isWorkshop } from '../../core/crafting';
+import { isWorkshop, potionCap } from '../../core/crafting';
 import { crewGroups } from '../crew';
 import { GUARD, type Task } from '../drop';
 import { dawnIn } from '../when';
@@ -174,6 +176,12 @@ function LarderInfo({ game, room }: { game: GameState; room: Room }) {
         <Fact info={t('paneles.room.lo_que_se_hace')} warn={made < need}>
           {t('paneles.room.al_dia', { made })}
         </Fact>
+        {/* Junto a las raciones, las pociones de la alquimia (las dos se llevan de expedición). */}
+        {!beer && (potionCap(game) > 0 || (game.potions ?? 0) > 0) && (
+          <Fact info={t('talleres.pocion.ayuda')}>
+            <BufferImage buf={potionIcon()} scale={1} /> {game.potions ?? 0}/{potionCap(game)}
+          </Fact>
+        )}
       </div>
       <span class="row-sub">
         {beer

@@ -6,11 +6,17 @@
  */
 import { useState } from 'preact/hooks';
 import { ItemImage } from '../ItemImage';
-import { DRESS_GOLD, DRESS_HOURS } from '../../core/balance';
+import { DRESS_GOLD, DRESS_HOURS, POTION_GOLD, POTION_HOURS } from '../../core/balance';
+import { potionIcon } from '../../art/items';
+import { BufferImage } from '../BufferImage';
 import {
   QUALITY_NAME,
   canCraft,
   canDress,
+  canPotion,
+  goodChance,
+  POTION_MATS,
+  potionCap,
   canTemper,
   canUndo,
   clockHours,
@@ -61,7 +67,12 @@ export type WorkTab = 'crear' | 'templar' | 'vestir';
 export function workshopTabs(game: GameState, room: Room): TabItem<WorkTab>[] {
   const known = knownRecipes(game).filter((id) => recipesFor(room.type).includes(id));
   return [
-    { id: 'crear', label: t('paneles.workshopinfo.crear'), icon: 'martillo', count: known.length },
+    {
+      id: 'crear',
+      label: t('paneles.workshopinfo.crear'),
+      icon: 'martillo',
+      count: known.length + (room.type === 'alquimia' ? 1 : 0),
+    },
     {
       id: 'templar',
       label: t('paneles.workshopinfo.templar'),
@@ -120,11 +131,15 @@ export function WorkshopInfo({
               })
             : c.item
               ? t('paneles.workshopinfo.desmontando', { item_name: itemName(c.item) })
-              : t('paneles.workshopinfo.creando', { objeto: rc!.name });
+              : c.potion
+                ? t('talleres.pocion.preparando')
+                : t('paneles.workshopinfo.creando', { objeto: rc!.name });
         return (
           <article key={c.id} class="row forge-job">
             {who ? (
               <Portrait look={lookOf(who)} marks={marksOf(who)} scale={1} alive={false} />
+            ) : c.potion ? (
+              <BufferImage buf={potionIcon()} scale={2} />
             ) : (
               <ItemImage
                 icon={c.item?.icon ?? rc!.icon}
@@ -160,6 +175,10 @@ export function WorkshopInfo({
           </article>
         );
       })}
+      {room.type === 'alquimia' && !tab && <PotionStock game={game} />}
+      {tab === 'crear' && room.type === 'alquimia' && (
+        <PotionRow game={game} room={room} onAct={onAct} />
+      )}
       {tab === 'crear' && <CraftList game={game} room={room} onAct={onAct} />}
       {tab === 'templar' && <TemperGrid game={game} room={room} onAct={onAct} />}
       {tab === 'vestir' && room.type === 'sastreria' && (
@@ -181,6 +200,59 @@ function forWork(game: GameState, room: Room) {
 }
 
 /** Crear: una fila por receta sabida; las que faltan por aprender, en una línea al final. */
+/** «Pociones: 3 de 6», con lo que hacen. */
+function PotionStock({ game }: { game: GameState }) {
+  return (
+    <span class="row-sub potion-stock" data-help={t('talleres.pocion.ayuda')}>
+      <BufferImage buf={potionIcon()} scale={1} />{' '}
+      <b>{t('talleres.pocion.titulo', { n: game.potions ?? 0, tope: potionCap(game) })}</b>
+    </span>
+  );
+}
+
+/** La poción, la receta de serie de la alquimia: no sale un objeto, suben las pociones. */
+function PotionRow({
+  game,
+  room,
+  onAct,
+}: {
+  game: GameState;
+  room: Room;
+  onAct?: (a: Action) => void;
+}) {
+  const why = canPotion(game, room.id);
+  return (
+    <>
+      <PotionStock game={game} />
+      <div class="rows">
+        <article class="row">
+          <BufferImage buf={potionIcon()} scale={2} />
+          <span class="row-info">
+            <b>{t('talleres.pocion.nombre')}</b>
+            <span class="row-sub">
+              {t('talleres.pocion.ayuda')} {hours(clockHours(POTION_HOURS))} ·{' '}
+              {t('talleres.pocion.dos', { pct: Math.round(goodChance(game, room.id) * 100) })}
+            </span>
+            <MatCost game={game} mats={POTION_MATS} />
+          </span>
+          {onAct && (
+            <button
+              class="btn btn-gold"
+              disabled={!!why}
+              title={why ?? undefined}
+              aria-label={t('talleres.pocion.preparar')}
+              onClick={() => onAct({ type: 'potion', room: room.id })}
+            >
+              {t('paneles.workshopinfo.crear_2')} <Icon name="coin" size={10} /> {POTION_GOLD}
+            </button>
+          )}
+        </article>
+      </div>
+      {why && <span class="row-sub room-bad">{why}</span>}
+    </>
+  );
+}
+
 function CraftList({
   game,
   room,
