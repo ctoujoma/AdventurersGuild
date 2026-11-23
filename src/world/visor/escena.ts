@@ -138,6 +138,7 @@ export class Visor {
     drawAnimals(ctx, 'medio');
     drawMist(b, e, l, time, travel, 'lejos');
     layer('cerca');
+    drawAnimals(ctx, 'cerca');
     layer('suelo');
     drawMist(b, e, l, time, travel, 'cerca');
     // La gente.

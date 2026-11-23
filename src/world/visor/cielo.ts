@@ -90,7 +90,7 @@ export function drawSun(b: PixelBuffer, e: Encuadre, l: Luz): void {
       if (veil > bayer(x + 1, y + 3) * 1.4 && d > r - 1) continue;
       if (d <= r - 1) b.data[y * b.w + x] = core;
       else if (d <= r) b.data[y * b.w + x] = rim;
-      else if (d <= R && (1 - (d - r) / (R - r)) * 0.55 > bayer(x, y)) b.data[y * b.w + x] = halo;
+      else if (d <= R && (1 - (d - r) / (R - r)) * 0.4 > bayer(x, y)) b.data[y * b.w + x] = halo;
     }
 }
 

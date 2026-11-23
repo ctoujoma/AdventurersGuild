@@ -4,24 +4,24 @@
  * alto de las colinas (sentados, uno aullando). Van en las coordenadas de su capa, así se mueven
  * con su paralaje.
  */
-import { PixelBuffer } from '../../art/pixel';
+import { PixelBuffer, rgba } from '../../art/pixel';
 import { SPEED, stripLen } from './capas';
 import type { Ctx } from './ctx';
 import { put, tinted } from './pintar';
 import { hash, smooth } from './tonos';
 
-export type Where = 'cielo' | 'sierra' | 'colinas' | 'medio';
+export type Where = 'cielo' | 'sierra' | 'colinas' | 'medio' | 'cerca';
 
 export function drawAnimals(c: Ctx, where: Where): void {
   if (where === 'cielo') crows(c);
-  else if (where === 'colinas') wolves(c);
   else if (where === 'medio') deer(c);
+  else if (where === 'cerca') wolves(c);
 }
 
 // ---------- Dibujos ----------
 
 const sprite = (rows: string[], pal: Record<string, string>): PixelBuffer => {
-  const b = new PixelBuffer(rows[0]!.length, rows.length);
+  const b = new PixelBuffer(Math.max(...rows.map((r) => r.length)), rows.length);
   rows.forEach((r, y) => [...r].forEach((ch, x) => pal[ch] && b.set(x, y, pal[ch]!)));
   return b;
 };
@@ -104,29 +104,36 @@ for (const [k, rows] of Object.entries(DEER_ROWS)) {
   );
 }
 
-const WOLF_PAL = { g: '#3a4466', G: '#262b44', l: '#5a6988', e: '#feae34' };
+const WOLF_PAL = { g: '#727e95', G: '#3e4458', l: '#a9b4c4', k: '#181425' };
+// Sentado de perfil (mirando a la derecha) y aullando con el hocico al cielo.
 const WOLF = {
   sit: sprite(
     [
-      '......g.g',
-      '......ggg',
-      '.....gglge',
-      'g...ggggg.',
-      'gg.gggg...',
-      '.ggGgg....',
-      '..gGgG....',
+      '..........g.g.',
+      '..........ggg.',
+      '.........gglgk',
+      '.........gggg.',
+      '........gggl..',
+      '.......ggggl..',
+      '..g...gggggg..',
+      '.gg..gggggGg..',
+      'gg..ggggGgGg..',
+      '.ggggGGG.G.G..',
     ],
     WOLF_PAL,
   ),
   howl: sprite(
     [
-      '........gg',
-      '.......gg.',
-      '......ggl.',
-      'g....ggg..',
-      'gg.gggg...',
-      '.ggGgg....',
-      '..gGgG....',
+      '............k',
+      '...........gg',
+      '..........gg.',
+      '.........ggl.',
+      '........ggggl',
+      '.......ggggl.',
+      '..g...gggggg.',
+      '.gg..gggggGg.',
+      'gg..ggggGgGg.',
+      '.ggggGGG.G.G.',
     ],
     WOLF_PAL,
   ),
@@ -169,7 +176,7 @@ function deer(c: Ctx): void {
   const off = travel * SPEED.medio;
   const dir = m.home ? -1 : 1;
   const lead = e.w / 2 + dir * 20;
-  const groups = Math.round(L / 160);
+  const groups = Math.round(L / 110);
   for (let g = 0; g < groups; g++) {
     if (hash(g * 13 + c.seed) > p) continue;
     const wx = (g + 0.3 + hash(g * 7) * 0.4) * (L / groups);
@@ -202,29 +209,34 @@ function deer(c: Ctx): void {
 // ---------- Lobos ----------
 
 function wolves(c: Ctx): void {
-  const { b, e, l, lk, time, travel, m, capas } = c;
+  const { b, e, l, lk, time, travel, m } = c;
   const dusk = smooth(17, 18.5, l.hour) + (l.hour < 5 ? 1 : 0);
   const p = smooth(0.45, 0.8, m.wild) * Math.min(1, dusk);
   if (p <= 0) return;
-  const col = capas.find((k) => k.id === 'colinas')!;
-  const L = col.t.w;
-  const off = travel * col.speed;
-  const groups = Math.round(L / 200);
+  // En la linde del bosque, al pie de los árboles (se mueven con ellos).
+  const L = stripLen(e.w);
+  const off = travel * SPEED.cerca;
+  const groups = Math.max(1, Math.round(L / 180));
+  const eye = rgba('#feae34');
   for (let g = 0; g < groups; g++) {
     if (hash(g * 23 + c.seed + 5) > p) continue;
-    const wx = (g + 0.5) * (L / groups);
-    const n = 1 + Math.floor(hash(g * 29) * 2);
+    const wx = (g + 0.62) * (L / groups);
+    const n = 1 + Math.floor(hash(g * 29) * 3);
     for (let k = 0; k < n; k++) {
-      let x = ((Math.round(wx + k * 9 - off) % L) + L) % L;
+      let x = ((Math.round(wx + k * 15 - off) % L) + L) % L;
       if (x > e.w + 10) x -= L;
       if (x < -10 || x > e.w + 10) continue;
-      // Lo alto de la colina en esa columna.
-      const sx = (((x + Math.round(off)) % L) + L) % L;
-      let top = 0;
-      while (top < col.t.h && !col.t.d[top * L + sx]) top++;
+      // Uno aúlla a ratos (la cabeza al cielo); los otros, sentados, miran.
       const howl = k === 0 && (time / 5 + g) % 2 < 0.8;
       const img = tinted(howl ? WOLF.howl : WOLF.sit, l, lk);
-      put(b, img, x, col.y + top + 1, 4, img.h - 1, k % 2 === 1);
+      const left = x > e.w / 2;
+      const y = e.ground + 2 + (k % 2);
+      put(b, img, x, y, 6, img.h - 1, left);
+      // Los ojos, que brillan con la última luz.
+      if (!howl && l.night > 0.25 && Math.floor(time * 1.7 + k * 3) % 9) {
+        const ex = left ? x - 5 : x + 5;
+        b.set(ex, y - img.h + 3, eye);
+      }
     }
   }
 }

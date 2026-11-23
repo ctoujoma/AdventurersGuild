@@ -8,7 +8,7 @@
  * toca a esa lejanía (más árboles, más altos y más viejos, menos sembrados, camino más estrecho).
  */
 import type { Encuadre } from './encuadre';
-import { bush, fern, leafy, pine, pineSmall, rock, tuft } from './arboles';
+import { bush, fern, leafy, pine, pineSmall, rock, tuft, wheat } from './arboles';
 import type { Depth } from './luz';
 import { M, Tonos, clamp01, fbm1, hash, hash2, lerp, noise2, smooth, type Mat } from './tonos';
 import { bayer } from '../../art/pixel';
@@ -418,8 +418,11 @@ function suelo(e: Encuadre, L: number, wild: number, seed: number): [Tonos, numb
         if (y > bot && y < bot + 2) v -= 1; // el borde del camino, hundido
         // El suelo del bosque: pinocha y tierra a manchas, y musgo.
         const floor = noise2(x / 7, y / 3, seed + 77, Math.round(L / 7));
-        if (floor < smooth(0.3, 1, wild) * 0.3 && Math.abs(y - path) > half + 3) {
-          t.set(x, y, M.tierra, step(1.6 + (n - 0.5) * 1.4 + near * 0.5, x, y));
+        if (floor < smooth(0.3, 1, wild) * 0.34 && Math.abs(y - path) > half + 3) {
+          // Sombra húmeda con pinocha suelta.
+          const needle = hash2(x, y, 78) < 0.18;
+          if (needle) t.set(x, y, M.tierra, 2 + (hash2(x, y, 79) < 0.5 ? 1 : 0));
+          else t.set(x, y, M.hierba, step(0.8 + (n - 0.5) * 1.2 + near * 0.4, x, y));
           continue;
         }
         if (wild > 0.55 && hash2(x, y, 76) < (wild - 0.55) * 0.5) {
@@ -497,7 +500,7 @@ function delante(e: Encuadre, L: number, wild: number, seed: number): [Tonos, nu
     const s = i * 17 + seed;
     if (wild < 0.3 && k < 0.4) {
       // Espigas y hierba alta del borde de los sembrados.
-      tuft(t, x, base, Math.round(H * 0.7), s, M.mies, 0.5);
+      wheat(t, x, base, Math.round(H * 0.75), s);
     } else if (wild > 0.35 && k < 0.55) fern(t, x, base + 2, Math.round(H * 0.55), s, M.hierba);
     else if (k < 0.8) tuft(t, x, base, Math.round(H * (0.5 + hash2(i, 4, seed) * 0.4)), s);
     else bush(t, x, base + 2, 14, Math.round(H * 0.45), wild > 0.5 ? M.pino : M.hoja, s);

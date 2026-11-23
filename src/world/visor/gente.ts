@@ -127,13 +127,13 @@ export class Gente {
       if (!c.walking) f = 0;
       else if (h.hurt) {
         // Cojea: la pierna mala apoya poco (pasa deprisa por esos tiempos) y el cuerpo se hunde.
-        const ph = (time * rate + i * 3) % 8;
+        const ph = (((time * rate + i * 3) % 8) + 8) % 8;
         const warp = ph < 5 ? ph * 0.8 : 4 + (ph - 5) * (4 / 3);
         f = Math.floor(warp) % 8;
         dip = f === 4 || f === 5 ? 1 : 0;
-      } else f = Math.floor(time * rate + i * 3) % 8;
+      } else f = ((Math.floor(time * rate + i * 3) % 8) + 8) % 8;
       shadow(b, x, e.feet, 5);
-      const img = c.walking ? spr.walk[f]! : spr.idle[Math.floor(time * 2 + i) % 2]!;
+      const img = c.walking ? spr.walk[f]! : spr.idle[Math.abs(Math.floor(time * 2 + i)) % 2]!;
       put(b, tinted(img, l, lk), x, e.feet + dip, 9, FEET_Y, dir < 0);
     }
   }
@@ -234,7 +234,7 @@ export class Gente {
         this.pops.push({
           text: String(dmg),
           x: foeXs[j]!,
-          y: e.feet - (f.big ? 44 : 26),
+          y: e.feet - f.poses.idle.h - 3,
           u: (p - 0.32) / 0.68,
           color: crit ? '#fee761' : '#ffffff',
         });

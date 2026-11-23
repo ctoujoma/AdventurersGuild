@@ -323,3 +323,24 @@ export function tuft(
     }
   }
 }
+
+/** Unas espigas: tallos finos que se doblan con la espiga (más gorda y clara) en la punta. */
+export function wheat(t: Tonos, x: number, base: number, h: number, s: number) {
+  const n = 4 + Math.floor(hash2(s, 1, 3) * 4);
+  for (let i = 0; i < n; i++) {
+    const ox = Math.round((i - n / 2) * 1.6 + (hash2(i, s, 4) - 0.5) * 2);
+    const len = Math.round(h * (0.6 + hash2(i, s, 5) * 0.4));
+    const bend = 1 + hash2(i, s, 6) * 2;
+    for (let k = 0; k < len; k++) {
+      const u = k / len;
+      const px = x + ox + bend * u * u;
+      const py = base - k;
+      if (u > 0.72) {
+        // La espiga: granos a los dos lados.
+        t.set(px, py, M.mies, 4 + (k & 1), true);
+        if (k % 2 === 0) t.set(px - 1, py, M.mies, 3, true);
+        else t.set(px + 1, py, M.mies, 2, true);
+      } else t.set(px, py, u < 0.3 ? M.hierba : M.mies, u < 0.3 ? 3 : 2, true);
+    }
+  }
+}
