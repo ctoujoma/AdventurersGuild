@@ -28,6 +28,7 @@ import { heroFrame, lookOf, marksOf } from '../view';
 import { msg, t, tx } from '../../textos';
 import { distAt, expSlots, expeditionsOpen } from '../../core/expedition';
 import { clientLabel } from '../../data/quests';
+import { ExpeditionMap } from '../ExpeditionMap';
 
 interface Props {
   game: GameState;
@@ -181,6 +182,8 @@ export function MapPanel({ game, onQuest, onHero, onTrip, onExpedition }: Props)
     () => typeof window !== 'undefined' && window.innerWidth > window.innerHeight,
   );
   const [info, setInfo] = useState<Info | null>(null);
+  /** El mapa de rumbos de las expediciones en lugar de la comarca. */
+  const [world, setWorld] = useState(false);
   /** El resto de la leyenda y la ayuda, plegadas tras el botón «?». */
   const [legend, setLegend] = useState(false);
   /** Qué es la amenaza y qué pasa si sube, al tocarla. */
@@ -232,7 +235,7 @@ export function MapPanel({ game, onQuest, onHero, onTrip, onExpedition }: Props)
     const ro = new ResizeObserver(fit);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [world]);
   const zoomTo = (level: number, px: number, py: number) =>
     setView((v) => {
       const l = Math.max(1, Math.min(MAX_LEVEL, Math.round(level)));
@@ -588,348 +591,376 @@ export function MapPanel({ game, onQuest, onHero, onTrip, onExpedition }: Props)
     </div>
   );
 
+  const modes = expeditionsOpen(game) && (
+    <div class="map-mode" role="group" onPointerDown={(e) => e.stopPropagation()}>
+      <button
+        class={`btn btn-wood ${world ? '' : 'is-on'}`}
+        aria-pressed={!world}
+        onClick={() => setWorld(false)}
+      >
+        {t('expediciones.mapa.comarca')}
+      </button>
+      <button
+        class={`btn btn-wood ${world ? 'is-on' : ''}`}
+        aria-pressed={world}
+        onClick={() => setWorld(true)}
+      >
+        {t('expediciones.mapa.rumbos')}
+      </button>
+    </div>
+  );
+
   return (
     <div class={`map-wrap ${trips ? 'trips-open' : ''}`}>
-      <div
-        ref={vp}
-        class="map-viewport"
-        onPointerDown={onDown}
-        onPointerMove={onMove}
-        onPointerUp={onUp}
-        onPointerCancel={onUp}
-        onWheel={onWheel}
-      >
+      {world && modes ? (
+        <ExpeditionMap game={game} onExpedition={(id) => onExpedition(id)}>
+          {modes}
+        </ExpeditionMap>
+      ) : (
         <div
-          class="map"
-          style={{
-            width: `${buf.w}px`,
-            height: `${buf.h}px`,
-            transform: `translate(${view.x}px, ${view.y}px) scale(${view.z})`,
-            ['--inv' as string]: String(1 / view.z),
-          }}
-          onClick={tap(() => setInfo(null))}
+          ref={vp}
+          class="map-viewport"
+          onPointerDown={onDown}
+          onPointerMove={onMove}
+          onPointerUp={onUp}
+          onPointerCancel={onUp}
+          onWheel={onWheel}
         >
-          <BufferImage
-            buf={buf}
-            scale={1}
-            class="map-layer"
-            label={t('paneles.map.mapa_de_la_comarca')}
-          />
-          <BufferImage buf={fog} scale={1} class="map-layer" />
-          {threat > 0 && threatAt && (
-            <span
-              class="map-threat"
-              style={{
-                ...pct(threatAt.x, threatAt.y),
-                width: `${((12 + threat * 0.9) / MAP_W) * 200}%`,
-                aspectRatio: '1',
-                opacity: 0.25 + threat / 160,
-              }}
-              aria-hidden="true"
-            />
-          )}
-          <svg
-            class="map-routes"
-            viewBox={`0 0 ${MAP_W} ${MAP_H}`}
-            style={{ ['--u' as string]: String(unit) }}
-            aria-hidden="true"
+          <div
+            class="map"
+            style={{
+              width: `${buf.w}px`,
+              height: `${buf.h}px`,
+              transform: `translate(${view.x}px, ${view.y}px) scale(${view.z})`,
+              ['--inv' as string]: String(1 / view.z),
+            }}
+            onClick={tap(() => setInfo(null))}
           >
-            {(game.chains ?? []).map((cs) => {
+            <BufferImage
+              buf={buf}
+              scale={1}
+              class="map-layer"
+              label={t('paneles.map.mapa_de_la_comarca')}
+            />
+            <BufferImage buf={fog} scale={1} class="map-layer" />
+            {threat > 0 && threatAt && (
+              <span
+                class="map-threat"
+                style={{
+                  ...pct(threatAt.x, threatAt.y),
+                  width: `${((12 + threat * 0.9) / MAP_W) * 200}%`,
+                  aspectRatio: '1',
+                  opacity: 0.25 + threat / 160,
+                }}
+                aria-hidden="true"
+              />
+            )}
+            <svg
+              class="map-routes"
+              viewBox={`0 0 ${MAP_W} ${MAP_H}`}
+              style={{ ['--u' as string]: String(unit) }}
+              aria-hidden="true"
+            >
+              {(game.chains ?? []).map((cs) => {
+                const def = chainDef(cs.id);
+                const done = cs.status === 'hecha';
+                const upto = done ? def.steps.length - 1 : cs.step;
+                const pts = def.steps.slice(0, upto + 1).map((st) => placeAt(st.place));
+                return (
+                  <g key={cs.id} class={`thread ${done ? 'done' : ''}`}>
+                    {pts.slice(1).map((q, i) => {
+                      const a = pts[i]!;
+                      // El último tramo de una historia en marcha lleva al paso que falta.
+                      const next = !done && i === pts.length - 2;
+                      return (
+                        <g key={i} class={next ? 'next' : ''}>
+                          <line x1={a.x} y1={a.y} x2={q.x} y2={q.y} />
+                          <path d={arrow(a, q, unit)} />
+                        </g>
+                      );
+                    })}
+                  </g>
+                );
+              })}
+              {game.missions.map((m) => {
+                const p = placeAt(m.quest.place);
+                return (
+                  <line key={m.id} x1={TAVERN.x} y1={TAVERN.y} x2={p.x} y2={p.y} class="route" />
+                );
+              })}
+            </svg>
+            {REGIONS.filter((r) => regionSeen(r.x, r.y) && shown.has(`region:${r.name}`)).map(
+              (r) => (
+                <span key={r.name} class="map-region" style={pct(r.x, r.y)} aria-hidden="true">
+                  {r.name}
+                </span>
+              ),
+            )}
+            {Object.entries(PLACE_INFO)
+              .filter(([n]) => known(n))
+              .map(([n, p]) => (
+                <button
+                  key={n}
+                  class={`map-place ${info?.kind === 'place' && info.name === n ? 'on' : ''}`}
+                  style={pct(p.x, p.y)}
+                  aria-label={placeName(n)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    tap(() => setInfo({ kind: 'place', name: n }))();
+                  }}
+                >
+                  <i />
+                  {shown.has(n) && <small aria-hidden="true">{placeName(n)}</small>}
+                </button>
+              ))}
+            <button
+              class="map-tavern"
+              style={pct(TAVERN.x, TAVERN.y)}
+              title={customOf(game).name}
+              onClick={(e) => {
+                e.stopPropagation();
+                tap(() => setInfo({ kind: 'tavern' }))();
+              }}
+            >
+              <b>
+                <Icon name="home" size={14} />
+              </b>
+              <small>{customOf(game).name}</small>
+            </button>
+            {(game.chains ?? []).flatMap((cs) => {
               const def = chainDef(cs.id);
               const done = cs.status === 'hecha';
               const upto = done ? def.steps.length - 1 : cs.step;
-              const pts = def.steps.slice(0, upto + 1).map((st) => placeAt(st.place));
-              return (
-                <g key={cs.id} class={`thread ${done ? 'done' : ''}`}>
-                  {pts.slice(1).map((q, i) => {
-                    const a = pts[i]!;
-                    // El último tramo de una historia en marcha lleva al paso que falta.
-                    const next = !done && i === pts.length - 2;
-                    return (
-                      <g key={i} class={next ? 'next' : ''}>
-                        <line x1={a.x} y1={a.y} x2={q.x} y2={q.y} />
-                        <path d={arrow(a, q, unit)} />
-                      </g>
-                    );
-                  })}
-                </g>
-              );
+              return def.steps.slice(0, upto + 1).map((st, i) => {
+                const p = placeAt(st.place);
+                const now = !done && i === cs.step;
+                return (
+                  <button
+                    key={`${cs.id}-${i}`}
+                    class={`map-step ${now ? 'now' : 'past'} ${done ? 'closed' : ''}`}
+                    data-help={t('paneles.map.paso_ayuda', {
+                      nombre: tx(def.name),
+                      paso: i + 1,
+                      ahora: now,
+                    })}
+                    style={pct(p.x - 9, p.y - 3)}
+                    aria-label={t('paneles.map.paso_de', {
+                      nombre: tx(def.name),
+                      paso: i + 1,
+                      pasos: def.steps.length,
+                      ahora: now,
+                    })}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      tap(() => setInfo({ kind: 'chain', id: cs.id }))();
+                    }}
+                  >
+                    {now ? i + 1 : <Icon name="check" size={7} />}
+                  </button>
+                );
+              });
             })}
-            {game.missions.map((m) => {
-              const p = placeAt(m.quest.place);
-              return (
-                <line key={m.id} x1={TAVERN.x} y1={TAVERN.y} x2={p.x} y2={p.y} class="route" />
-              );
-            })}
-          </svg>
-          {REGIONS.filter((r) => regionSeen(r.x, r.y) && shown.has(`region:${r.name}`)).map((r) => (
-            <span key={r.name} class="map-region" style={pct(r.x, r.y)} aria-hidden="true">
-              {r.name}
-            </span>
-          ))}
-          {Object.entries(PLACE_INFO)
-            .filter(([n]) => known(n))
-            .map(([n, p]) => (
-              <button
-                key={n}
-                class={`map-place ${info?.kind === 'place' && info.name === n ? 'on' : ''}`}
-                style={pct(p.x, p.y)}
-                aria-label={placeName(n)}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  tap(() => setInfo({ kind: 'place', name: n }))();
-                }}
-              >
-                <i />
-                {shown.has(n) && <small aria-hidden="true">{placeName(n)}</small>}
-              </button>
-            ))}
-          <button
-            class="map-tavern"
-            style={pct(TAVERN.x, TAVERN.y)}
-            title={customOf(game).name}
-            onClick={(e) => {
-              e.stopPropagation();
-              tap(() => setInfo({ kind: 'tavern' }))();
-            }}
-          >
-            <b>
-              <Icon name="home" size={14} />
-            </b>
-            <small>{customOf(game).name}</small>
-          </button>
-          {(game.chains ?? []).flatMap((cs) => {
-            const def = chainDef(cs.id);
-            const done = cs.status === 'hecha';
-            const upto = done ? def.steps.length - 1 : cs.step;
-            return def.steps.slice(0, upto + 1).map((st, i) => {
-              const p = placeAt(st.place);
-              const now = !done && i === cs.step;
+            {game.quests.map((q) => {
+              const p = placeAt(q.place);
+              const n = (pinsAt[q.place] = (pinsAt[q.place] ?? 0) + 1) - 1;
+              const hidden = q.dangerHidden && level < 2;
               return (
                 <button
-                  key={`${cs.id}-${i}`}
-                  class={`map-step ${now ? 'now' : 'past'} ${done ? 'closed' : ''}`}
-                  data-help={t('paneles.map.paso_ayuda', {
-                    nombre: tx(def.name),
-                    paso: i + 1,
-                    ahora: now,
+                  key={q.id}
+                  class={`map-pin danger-${dangerClass(q.danger, hidden)} ${q.chain ? 'chain' : ''}`}
+                  data-help={t('paneles.map.encargo_el_color_dice', {
+                    titulo: tx(q.title),
+                    peligro: hidden
+                      ? t('paneles.map.sin_saber')
+                      : DANGER_NAMES[q.danger]!.toLowerCase(),
+                    historia: !!q.chain,
                   })}
-                  style={pct(p.x - 9, p.y - 3)}
-                  aria-label={t('paneles.map.paso_de', {
-                    nombre: tx(def.name),
-                    paso: i + 1,
-                    pasos: def.steps.length,
-                    ahora: now,
+                  style={pct(p.x + n * 7, p.y - 6)}
+                  aria-label={t('paneles.map.encargo_y_lugar', {
+                    titulo: tx(q.title),
+                    lugar: placeName(q.place),
                   })}
                   onClick={(e) => {
                     e.stopPropagation();
-                    tap(() => setInfo({ kind: 'chain', id: cs.id }))();
+                    tap(() => setInfo({ kind: 'place', name: q.place }))();
                   }}
                 >
-                  {now ? i + 1 : <Icon name="check" size={7} />}
+                  !
                 </button>
               );
-            });
-          })}
-          {game.quests.map((q) => {
-            const p = placeAt(q.place);
-            const n = (pinsAt[q.place] = (pinsAt[q.place] ?? 0) + 1) - 1;
-            const hidden = q.dangerHidden && level < 2;
-            return (
+            })}
+            {game.missions.map((m, i) => {
+              const pos = partyPos(m.quest.place, m.quest.days, m.daysLeft);
+              const party = m.heroIds.map(byId).filter((h): h is Hero => !!h);
+              // Dos grupos en el mismo sitio se ponen uno al lado del otro (si no, se pisan).
+              const near = game.missions.slice(0, i).filter((o) => {
+                const p = partyPos(o.quest.place, o.quest.days, o.daysLeft);
+                return Math.abs(p.x - pos.x) < 14 && Math.abs(p.y - pos.y) < 14;
+              }).length;
+              return (
+                <button
+                  key={m.id}
+                  class={`map-party ${pos.back ? 'is-back' : ''}`}
+                  data-help={t('paneles.map.grupo_de_viaje_gris', {
+                    n: party.length,
+                    vuelta: pos.back,
+                    lugar: placeName(m.quest.place),
+                  })}
+                  style={{ ...pct(pos.x, pos.y), '--dx': `${near * 20}px` }}
+                  aria-label={t('paneles.map.grupo_en_camino', {
+                    quienes: listNames(party.map((h) => h.name)),
+                    vuelta: pos.back,
+                    lugar: placeName(m.quest.place),
+                  })}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    tap(() => onTrip(m.id))();
+                  }}
+                >
+                  {party.length}
+                </button>
+              );
+            })}
+            {missing.map((h) => (
               <button
-                key={q.id}
-                class={`map-pin danger-${dangerClass(q.danger, hidden)} ${q.chain ? 'chain' : ''}`}
-                data-help={t('paneles.map.encargo_el_color_dice', {
-                  titulo: tx(q.title),
-                  peligro: hidden
-                    ? t('paneles.map.sin_saber')
-                    : DANGER_NAMES[q.danger]!.toLowerCase(),
-                  historia: !!q.chain,
-                })}
-                style={pct(p.x + n * 7, p.y - 6)}
-                aria-label={t('paneles.map.encargo_y_lugar', {
-                  titulo: tx(q.title),
-                  lugar: placeName(q.place),
-                })}
+                key={h.id}
+                class="map-missing"
+                data-help={t('paneles.map.aqui_se_perdio_la', { nombre: h.name })}
+                style={pct(placeAt(h.lostAt ?? '').x + 6, placeAt(h.lostAt ?? '').y + 4)}
+                aria-label={t('paneles.map.se_le_perdio_la', { nombre: h.name })}
                 onClick={(e) => {
                   e.stopPropagation();
-                  tap(() => setInfo({ kind: 'place', name: q.place }))();
+                  tap(() => setInfo({ kind: 'place', name: h.lostAt ?? '' }))();
                 }}
               >
-                !
+                ?
               </button>
-            );
-          })}
-          {game.missions.map((m, i) => {
-            const pos = partyPos(m.quest.place, m.quest.days, m.daysLeft);
-            const party = m.heroIds.map(byId).filter((h): h is Hero => !!h);
-            // Dos grupos en el mismo sitio se ponen uno al lado del otro (si no, se pisan).
-            const near = game.missions.slice(0, i).filter((o) => {
-              const p = partyPos(o.quest.place, o.quest.days, o.daysLeft);
-              return Math.abs(p.x - pos.x) < 14 && Math.abs(p.y - pos.y) < 14;
-            }).length;
-            return (
-              <button
-                key={m.id}
-                class={`map-party ${pos.back ? 'is-back' : ''}`}
-                data-help={t('paneles.map.grupo_de_viaje_gris', {
-                  n: party.length,
-                  vuelta: pos.back,
-                  lugar: placeName(m.quest.place),
-                })}
-                style={{ ...pct(pos.x, pos.y), '--dx': `${near * 20}px` }}
-                aria-label={t('paneles.map.grupo_en_camino', {
-                  quienes: listNames(party.map((h) => h.name)),
-                  vuelta: pos.back,
-                  lugar: placeName(m.quest.place),
-                })}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  tap(() => onTrip(m.id))();
-                }}
+            ))}
+            {game.raid?.warned && (
+              <span
+                class="map-raid"
+                data-help={t(
+                  'asaltos.aviso_mapa',
+                  bandParams(game.raid.band, { cuando: nightIn(game.raid.day - game.day) }),
+                )}
+                style={pct(
+                  Math.max(8, TAVERN.x - 14 * Math.max(1, game.raid.day - game.day)),
+                  TAVERN.y + 10,
+                )}
+                title={`${capBand(game.raid.band)}: ${nightIn(game.raid.day - game.day)}`}
               >
-                {party.length}
-              </button>
-            );
-          })}
-          {missing.map((h) => (
+                <Icon name="espadas" size={15} />
+              </span>
+            )}
+          </div>
+          {cardEl}
+          {modes}
+          <div class="map-tools" onPointerDown={(e) => e.stopPropagation()}>
+            <span class="map-level" aria-label={t('paneles.map.zoom', { l: view.l })}>
+              ×{view.l}
+            </span>
             <button
-              key={h.id}
-              class="map-missing"
-              data-help={t('paneles.map.aqui_se_perdio_la', { nombre: h.name })}
-              style={pct(placeAt(h.lostAt ?? '').x + 6, placeAt(h.lostAt ?? '').y + 4)}
-              aria-label={t('paneles.map.se_le_perdio_la', { nombre: h.name })}
-              onClick={(e) => {
-                e.stopPropagation();
-                tap(() => setInfo({ kind: 'place', name: h.lostAt ?? '' }))();
-              }}
+              class="btn-icon"
+              aria-label={t('paneles.map.acercar_el_mapa')}
+              disabled={view.l >= MAX_LEVEL}
+              onClick={() => zoomTo(view.l + 1, size.w / 2, size.h / 2)}
+            >
+              <Icon name="plus" size={14} />
+            </button>
+            <button
+              class="btn-icon"
+              aria-label={t('paneles.map.alejar_el_mapa')}
+              disabled={view.l <= 1}
+              onClick={() => zoomTo(view.l - 1, size.w / 2, size.h / 2)}
+            >
+              <Icon name="minus" size={14} />
+            </button>
+            <button
+              class="btn-icon"
+              aria-label={t('paneles.map.ver_la_taberna')}
+              onClick={() =>
+                setView(centerOn(Math.max(view.l, 2), TAVERN.x, TAVERN.y, size.w, size.h))
+              }
+            >
+              <Icon name="home" size={14} />
+            </button>
+            <button
+              class={`btn-icon map-help ${legend ? 'is-on' : ''}`}
+              aria-label={t('paneles.map.que_es_cada_cosa')}
+              aria-expanded={legend}
+              onClick={() => setLegend(!legend)}
             >
               ?
             </button>
-          ))}
-          {game.raid?.warned && (
-            <span
-              class="map-raid"
-              data-help={t(
-                'asaltos.aviso_mapa',
-                bandParams(game.raid.band, { cuando: nightIn(game.raid.day - game.day) }),
-              )}
-              style={pct(
-                Math.max(8, TAVERN.x - 14 * Math.max(1, game.raid.day - game.day)),
-                TAVERN.y + 10,
-              )}
-              title={`${capBand(game.raid.band)}: ${nightIn(game.raid.day - game.day)}`}
-            >
-              <Icon name="espadas" size={15} />
-            </span>
-          )}
-        </div>
-        {cardEl}
-        <div class="map-tools" onPointerDown={(e) => e.stopPropagation()}>
-          <span class="map-level" aria-label={t('paneles.map.zoom', { l: view.l })}>
-            ×{view.l}
-          </span>
-          <button
-            class="btn-icon"
-            aria-label={t('paneles.map.acercar_el_mapa')}
-            disabled={view.l >= MAX_LEVEL}
-            onClick={() => zoomTo(view.l + 1, size.w / 2, size.h / 2)}
-          >
-            <Icon name="plus" size={14} />
-          </button>
-          <button
-            class="btn-icon"
-            aria-label={t('paneles.map.alejar_el_mapa')}
-            disabled={view.l <= 1}
-            onClick={() => zoomTo(view.l - 1, size.w / 2, size.h / 2)}
-          >
-            <Icon name="minus" size={14} />
-          </button>
-          <button
-            class="btn-icon"
-            aria-label={t('paneles.map.ver_la_taberna')}
-            onClick={() =>
-              setView(centerOn(Math.max(view.l, 2), TAVERN.x, TAVERN.y, size.w, size.h))
-            }
-          >
-            <Icon name="home" size={14} />
-          </button>
-          <button
-            class={`btn-icon map-help ${legend ? 'is-on' : ''}`}
-            aria-label={t('paneles.map.que_es_cada_cosa')}
-            aria-expanded={legend}
-            onClick={() => setLegend(!legend)}
-          >
-            ?
-          </button>
-        </div>
-        <div class="map-over" onPointerDown={(e) => e.stopPropagation()}>
-          {threat > 0 && !legend && (
-            <button
-              class={`map-threat-line ${threatOpen ? 'is-on' : ''}`}
-              aria-expanded={threatOpen}
-              aria-label={t('paneles.map.amenaza_en_la_comarca', { threat })}
-              onClick={() => setThreatOpen(!threatOpen)}
-            >
-              <Icon name="calavera" size={10} /> {t('paneles.map.amenaza', { threat })}
-              <span class={`map-threat-trend ${trend.d > 0 ? 'up' : 'down'}`} aria-hidden="true">
-                {trend.d > 0 ? `+${trend.d}` : '-1'}
-              </span>
-              <span class="map-threat-more" aria-hidden="true">
-                {threatOpen ? '×' : '?'}
-              </span>
-            </button>
-          )}
-          {threat > 0 && !legend && threatOpen && (
-            <div class="map-threat-info">
-              <span class="map-threat-meter" aria-hidden="true">
-                <i style={{ width: `${threat}%` }} />
-                {THREAT_STEPS.map((st) => (
-                  <b key={st.at} style={{ left: `${st.at}%` }} />
-                ))}
-              </span>
-              <ul>
-                {THREAT_STEPS.map((st) => (
-                  <li key={st.at} class={threat >= st.at ? 'now' : ''}>
-                    <b>{st.at}</b> {st.text}
-                    {threat >= st.at && <> {t('paneles.map.ya_pasa')}</>}
-                  </li>
-                ))}
+          </div>
+          <div class="map-over" onPointerDown={(e) => e.stopPropagation()}>
+            {threat > 0 && !legend && (
+              <button
+                class={`map-threat-line ${threatOpen ? 'is-on' : ''}`}
+                aria-expanded={threatOpen}
+                aria-label={t('paneles.map.amenaza_en_la_comarca', { threat })}
+                onClick={() => setThreatOpen(!threatOpen)}
+              >
+                <Icon name="calavera" size={10} /> {t('paneles.map.amenaza', { threat })}
+                <span class={`map-threat-trend ${trend.d > 0 ? 'up' : 'down'}`} aria-hidden="true">
+                  {trend.d > 0 ? `+${trend.d}` : '-1'}
+                </span>
+                <span class="map-threat-more" aria-hidden="true">
+                  {threatOpen ? '×' : '?'}
+                </span>
+              </button>
+            )}
+            {threat > 0 && !legend && threatOpen && (
+              <div class="map-threat-info">
+                <span class="map-threat-meter" aria-hidden="true">
+                  <i style={{ width: `${threat}%` }} />
+                  {THREAT_STEPS.map((st) => (
+                    <b key={st.at} style={{ left: `${st.at}%` }} />
+                  ))}
+                </span>
+                <ul>
+                  {THREAT_STEPS.map((st) => (
+                    <li key={st.at} class={threat >= st.at ? 'now' : ''}>
+                      <b>{st.at}</b> {st.text}
+                      {threat >= st.at && <> {t('paneles.map.ya_pasa')}</>}
+                    </li>
+                  ))}
+                </ul>
+                <p>
+                  {t('paneles.map.esta_noche', { sube: trend.d > 0, n: trend.d, por: trend.why })}{' '}
+                  {trend.d > 0
+                    ? t('paneles.map.baja_sola_cuando_no')
+                    : t('paneles.map.sube_si_un_paso')}
+                </p>
+              </div>
+            )}
+            {legend && (
+              <ul class="map-legend">
+                <li>
+                  <i class="lg-route" /> {t('paneles.map.camino_de_un_grupo')}
+                </li>
+                <li>
+                  <i class="lg-thread" />
+                  <span class="lg-step past">
+                    <Icon name="check" size={7} />
+                  </span>{' '}
+                  {t('paneles.map.historia_paso_hecho')}
+                </li>
+                <li>
+                  <i class="lg-thread next" />
+                  <span class="lg-step now">2</span> {t('paneles.map.historia_siguiente_paso')}
+                </li>
+                {threat > 0 && (
+                  <li class="lg-threat">{t('paneles.map.amenaza_en_la_comarca_2', { threat })}</li>
+                )}
               </ul>
-              <p>
-                {t('paneles.map.esta_noche', { sube: trend.d > 0, n: trend.d, por: trend.why })}{' '}
-                {trend.d > 0
-                  ? t('paneles.map.baja_sola_cuando_no')
-                  : t('paneles.map.sube_si_un_paso')}
-              </p>
-            </div>
-          )}
-          {legend && (
-            <ul class="map-legend">
-              <li>
-                <i class="lg-route" /> {t('paneles.map.camino_de_un_grupo')}
-              </li>
-              <li>
-                <i class="lg-thread" />
-                <span class="lg-step past">
-                  <Icon name="check" size={7} />
-                </span>{' '}
-                {t('paneles.map.historia_paso_hecho')}
-              </li>
-              <li>
-                <i class="lg-thread next" />
-                <span class="lg-step now">2</span> {t('paneles.map.historia_siguiente_paso')}
-              </li>
-              {threat > 0 && (
-                <li class="lg-threat">{t('paneles.map.amenaza_en_la_comarca_2', { threat })}</li>
-              )}
-            </ul>
-          )}
-          {legend && (
-            <p class="map-hint">{t('paneles.map.toca_un_lugar_para', { niebla: level < 2 })}</p>
-          )}
+            )}
+            {legend && (
+              <p class="map-hint">{t('paneles.map.toca_un_lugar_para', { niebla: level < 2 })}</p>
+            )}
+          </div>
         </div>
-      </div>
+      )}
       <ul class="map-key" aria-label={t('paneles.map.leyenda_del_mapa')}>
         <li>
           <span class="lg-pin">!</span> {t('paneles.map.encargo')}

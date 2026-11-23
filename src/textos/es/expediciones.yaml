@@ -334,3 +334,23 @@ objetivos:
   expediciones: "Completa {n, plural, one {una expedición} other {# expediciones}}"
   parajes: "Descubre {n, plural, one {un paraje} other {# parajes}} en las expediciones"
   lejos: "Llega a {n} días de lejanía en una expedición"
+
+# El mapa de rumbos (ui/ExpeditionMap.tsx).
+mapa:
+  titulo: "Mapa de rumbos"
+  comarca: "Comarca"
+  rumbos: "Rumbos"
+  paraje: "{que, mayus}"
+  donde: "{dias, plural, one {A un día} other {A # días}} por {rumbo, select, bosque {el bosque} sierra {la sierra} marismas {las marismas} other {las ruinas}}"
+  explorado: "El gremio entró el día {dia}."
+  sin_explorar: "Visto el día {dia}, sin explorar: la próxima expedición que pase podrá entrar."
+  fardo: "Fardo perdido de {quien}"
+  fardo_lleva: "Quedó allí el día {dia}: {que}. Otra expedición a este rumbo lo recogerá al pasar."
+  en_obras: "En obras: aún no se puede ir."
+  sin_ir: "Aún no ha ido nadie."
+  record: "Récord del gremio: {dias, plural, =0 {menos de un día} one {un día} other {# días}} de lejanía."
+  record_corto: "récord {dias} d"
+  parajes: "{n, plural, =0 {Ningún paraje visto} one {Un paraje visto} other {# parajes vistos}}."
+  cerrar: "Cerrar"
+  acercar: "Acercar el mapa"
+  alejar: "Alejar el mapa"

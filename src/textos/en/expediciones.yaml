@@ -300,3 +300,23 @@ objetivos:
   expediciones: "Complete {n, plural, one {an expedition} other {# expeditions}}"
   parajes: "Discover {n, plural, one {a landmark} other {# landmarks}} on expeditions"
   lejos: "Reach {n} days out on an expedition"
+
+# The headings map (ui/ExpeditionMap.tsx).
+mapa:
+  titulo: "Headings map"
+  comarca: "Shire"
+  rumbos: "Headings"
+  paraje: "{que, mayus}"
+  donde: "{dias, plural, one {One day} other {# days}} into {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}"
+  explorado: "The guild went in on day {dia}."
+  sin_explorar: "Seen on day {dia}, unexplored: the next expedition passing by can go in."
+  fardo: "Bundle lost by {quien}"
+  fardo_lleva: "Left there on day {dia}: {que}. Another expedition this way will pick it up."
+  en_obras: "Under construction: you can't go yet."
+  sin_ir: "Nobody has been yet."
+  record: "Guild record: {dias, plural, =0 {less than a day} one {one day} other {# days}} out."
+  record_corto: "record {dias} d"
+  parajes: "{n, plural, =0 {No landmarks seen} one {One landmark seen} other {# landmarks seen}}."
+  cerrar: "Close"
+  acercar: "Zoom in"
+  alejar: "Zoom out"

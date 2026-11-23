@@ -580,7 +580,7 @@ export function dropBundle(s: GameState, e: Expedition, rng: Rng, dist: number):
 export function bundleMsg(b: { gold: number; mats: Mats; items?: Item[] }): Msg {
   const parts: Txt[] = [];
   if (b.gold) parts.push(msg('expediciones.monedas', { n: b.gold }));
-  if (Object.keys(b.mats).length) parts.push(matsMsg(b.mats));
+  for (const m of Object.keys(b.mats) as Material[]) parts.push(matsMsg({ [m]: b.mats[m] }));
   for (const it of b.items ?? []) parts.push(it.name);
   return msg('general.lista', { xs: parts });
 }
