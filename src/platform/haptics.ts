@@ -21,6 +21,8 @@ const PATTERNS: Partial<Record<Sfx, number | number[]>> = {
   roar: [30, 20, 30],
   horn: [80, 60, 80],
   cheer: [25, 50, 25, 50, 60],
+  shimmer: [12, 40, 12],
+  fanfare: [30, 200, 40, 60, 80],
 };
 
 /** Separación mínima entre vibraciones sueltas, para que una pelea no zumbe sin parar. */

@@ -2141,6 +2141,20 @@ export class Crowd {
     }
   }
 
+  /**
+   * Sale una expedición (EX13): los de casa que están de pie sin hacer nada les despiden dando
+   * saltos donde están (sin dejar lo que hacían los sentados o los que andan).
+   */
+  waveOff(ids: readonly string[]): void {
+    for (const id of ids) {
+      const a = this.actors.get(id);
+      if (!a || a.gone || a.leaving || a.held || a.pose !== 'stand' || a.path.length) continue;
+      if (a.hero.bandit || a.hero.status !== 'ok') continue;
+      a.cheer = this.now + 2.5;
+      a.wait = Math.max(a.wait, 2.5 + this.rnd());
+    }
+  }
+
   /** Se levanta de la cama (o de la silla) de un salto. */
   wake(id: string): void {
     const a = this.actors.get(id);

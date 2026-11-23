@@ -8,6 +8,14 @@ Rama propia, PR contra `main`; pon al día `docs/plan-arte.md`. Vistas previas a
 cosa. Lo más importante: **el visor tiene que apetecer abrirlo** (más detalle y protagonismo que la
 tira de los encargos, `ui/QuestStrip.tsx`, que sirve de punto de partida).
 
+**Nota del usuario (23 de noviembre), antes que nada:** el visor y el mapa de rumbos tienen que
+**verse bien de verdad**, sin reaprovechar el dibujo de los encargos (`tripStrip.ts`, `art/trip.ts`)
+ni el marcador del mapa (`art/expMap.ts`): hoy se ven esquemáticos y con poco detalle. Valora
+incluso **un panel distinto**, un visor propio a más tamaño (no la tira alargada de hoy). **Antes de
+dibujar, plantéale opciones** (una página con maquetas, 2 o 3 caminos: tamaño y forma del visor,
+estilo, cuánto detalle, cómo se ve en móvil) y que elija. La interfaz de alrededor (barra de
+estado, mochila, diario, botón de volver) la adapto yo a lo que elija: dime qué hueco necesitas.
+
 1. **El visor por rumbo** (bosque primero; sierra, marismas y ruinas después): fondo con varias
    capas que se mueven a distinta velocidad, que se va volviendo salvaje **poco a poco** con los
    días de lejanía (sin cortes: un valor de 0 a 1), con la luz de la hora del juego, nubes,

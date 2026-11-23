@@ -77,6 +77,7 @@ import { UncleNote } from './UncleNote';
 import { TripSheet } from './TripSheet';
 import { ExpeditionSheet } from './ExpeditionSheet';
 import { ExpeditionView } from './ExpeditionView';
+import { GLOW_SFX, type GlowLevel } from './glow';
 import { TutorialNote } from './TutorialNote';
 import { TutorialFocus } from './TutorialFocus';
 import { tutorialFocus } from './tutorialFocus';
@@ -162,6 +163,8 @@ function SpeechBubble({ bubble, scene }: { bubble: Bubble; scene: { current: Gam
 
 /** Segundos de respiro antes del tutorial de obras tras poner nombre a la taberna. */
 const NAME_BREATH = 18;
+/** Lo que dura la despedida de una expedición en la escena (ms). */
+const BYE_MS = 4200;
 
 export function App() {
   const [saved] = useState(loadGame);
@@ -178,6 +181,9 @@ export function App() {
   const [tripId, setTripId] = useState<string | null>(null);
   /** Expediciones: la hoja de preparar una (`'nueva'`) o el visor de una fuera (su id). */
   const [expId, setExpId] = useState<string | null>(null);
+  /** La despedida de una expedición en la escena (EX13): unos 4 s antes de abrir su visor. */
+  const [bye, setBye] = useState<string | null>(null);
+  const byeTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const [arconTab, setArconTab] = useState<ArconTab>('equipo');
   /** Sala tocada en la vista de salas (su ficha). */
   const [roomId, setRoomId] = useState<string | null>(null);
@@ -337,9 +343,23 @@ export function App() {
     if (news?.length && news !== before.incidentNews) {
       const last = news.at(-1)!;
       toast(news.map((n) => tx(n.t)).join(' '));
-      audio.play(last.k === 'good' ? 'cheer' : last.k === 'bad' ? 'thud' : 'creak', 0.6);
+      // Un hallazgo raro o legendario de una expedición suena con su brillo (EX18).
+      const glow = Math.max(0, ...news.map((n) => n.glow ?? 0)) as GlowLevel;
+      if (glow) audio.play(GLOW_SFX[glow]);
+      else audio.play(last.k === 'good' ? 'cheer' : last.k === 'bad' ? 'thud' : 'creak', 0.6);
       haptic(last.k === 'bad' ? 'thud' : 'select');
     }
+    // Vuelve una expedición con el juego abierto (EX20): la cámara les ve entrar por el patio y
+    // luego, ronda en la barra (si no se está mirando otra cosa).
+    const back = (before.expeditions ?? []).filter(
+      (e) => !next.expeditions?.some((x) => x.id === e.id),
+    );
+    if (back.length && !panel && !bye && !reportId && (!expId || back.some((e) => e.id === expId)))
+      welcome(
+        back
+          .flatMap((e) => e.heroIds)
+          .filter((id) => next.heroes.some((h) => h.id === id && h.status !== 'muerto')),
+      );
     // Un grupo ha llegado ante su jefe con el juego abierto: el aviso, al momento.
     if (next.bossWait && next.bossWait !== before.bossWait) setBossWait(next.bossWait);
     return next;
@@ -356,6 +376,19 @@ export function App() {
   });
 
   const toast = (text: string) => setNotice({ text, key: Date.now() });
+
+  /** Los de una expedición que vuelve: la cámara les sigue al entrar y, al llegar, ronda. */
+  const welcome = (ids: string[]) => {
+    if (!ids.length || settings.calm) return;
+    setTimeout(() => {
+      scene.current?.focus('patio');
+      scene.current?.follow(ids[0]!);
+    }, 300);
+    setTimeout(() => {
+      scene.current?.follow(null);
+      scene.current?.cheer('barra', ids);
+    }, 300 + BYE_MS);
+  };
 
   // Fuera de Adornos se acaba la vista previa del jardín.
   useEffect(() => {
@@ -681,14 +714,42 @@ export function App() {
     );
   };
 
+  /** Acaba la despedida (sola o al tocar para saltarla) y abre el visor de la expedición. */
+  const endBye = (id: string | null) => {
+    for (const x of byeTimers.current) clearTimeout(x);
+    byeTimers.current = [];
+    scene.current?.farewellEnd();
+    setBye(null);
+    if (id) setExpId(id);
+  };
+
+  /**
+   * Sale una expedición (EX13): la cámara va a la puerta, los de casa les despiden, suena el
+   * cuerno y la cámara les sigue por el patio; a los ~4 s (o al tocar) se abre su visor.
+   */
   const sendExpedition = (heading: Heading, ids: string[], rations: number, unguard: boolean) => {
     const before = gameRef.current;
     const next = dispatch({ type: 'expedition', heading, heroIds: ids, rations, unguard });
     if (next === before) return;
     audio.play('depart');
     setPanel(null);
-    setExpId(next.expeditions?.at(-1)?.id ?? null);
-    scene.current?.focus('puerta');
+    setExpId(null);
+    const id = next.expeditions?.at(-1)?.id ?? null;
+    const s = scene.current;
+    if (!s || settings.calm) {
+      setExpId(id);
+      s?.focus('puerta');
+      return;
+    }
+    s.farewell(
+      next.heroes.filter((h) => h.status === 'ok').map((h) => h.id),
+      ids[0],
+    );
+    setBye(id);
+    byeTimers.current = [
+      setTimeout(() => audio.play('horn', 0.7), 700),
+      setTimeout(() => endBye(id), BYE_MS),
+    ];
   };
 
   const upgrade = (k: keyof Facilities) => {
@@ -1769,6 +1830,11 @@ export function App() {
             onSend={(ids, unguard) => send(openQuest.id, ids, unguard)}
           />
         )}
+        {bye && (
+          <button class="exp-bye" onClick={() => endBye(bye)}>
+            <span>{t('expediciones.salida.saltar')}</span>
+          </button>
+        )}
         {expId === 'nueva' && (
           <ExpeditionSheet game={game} onClose={() => setExpId(null)} onSend={sendExpedition} />
         )}
@@ -1826,6 +1892,10 @@ export function App() {
             onWatch={
               report.fight ? () => setWatching({ fight: report.fight!, dawn: false }) : undefined
             }
+            onWatchFight={(fight) => {
+              audio.play('open');
+              setWatching({ fight, dawn: false });
+            }}
           />
         )}
         {cardHero && (

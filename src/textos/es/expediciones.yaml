@@ -120,6 +120,7 @@ informe:
   chip_invitado: "{heroe} quiere quedarse: espera en la barra"
 
 aviso:
+  brillo: "Expedición {rumbo, select, bosque {al bosque} sierra {a la sierra} marismas {a las marismas} other {a las ruinas}}: {brillo, select, 3 {¡algo legendario!} other {¡algo raro!}} {que}"
   fardo: "Expedición {rumbo, select, bosque {al bosque} sierra {a la sierra} marismas {a las marismas} other {a las ruinas}}: ¡encuentran el fardo que {m, plural, one {perdió {quien}} other {perdieron {quien}}}!"
   suceso: "Expedición {rumbo, select, bosque {al bosque} sierra {a la sierra} marismas {a las marismas} other {a las ruinas}}: {que, mayus}. Esperan a que digas."
   guardian: "Expedición {rumbo, select, bosque {al bosque} sierra {a la sierra} marismas {a las marismas} other {a las ruinas}}: ¡{que}! Abre el visor para verlo."
@@ -354,3 +355,17 @@ mapa:
   cerrar: "Cerrar"
   acercar: "Acercar el mapa"
   alejar: "Alejar el mapa"
+
+# «La mochila»: lo que trae una expedición, en cartas que se dan la vuelta (ui/ExpBag.tsx).
+mochila:
+  titulo: "La mochila"
+  resumen: "{dias, plural, one {Un día fuera} other {# días fuera}}, hasta {lejos, plural, =0 {menos de un día} one {un día} other {# días}} de casa.{record, select, si { ¡Récord del rumbo!} other {}}"
+  vacia: "La mochila vuelve vacía."
+  saltar: "Verlo todo"
+  carta: "Leer el informe"
+  ver: "La mochila"
+  diario: "Lo más destacado del diario"
+
+# La despedida en la escena al salir una expedición (ui/App.tsx).
+salida:
+  saltar: "Toca para ir al visor"

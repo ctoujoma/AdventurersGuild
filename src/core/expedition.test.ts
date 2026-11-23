@@ -5,6 +5,8 @@ import {
   distAt,
   dropBundle,
   expSlots,
+  itemGlow,
+  matGlow,
   optionIssue,
   optionRisk,
   partyCap,
@@ -13,6 +15,7 @@ import {
 import { emptyStats } from './feats';
 import { endDay, newGame, reduce, tick } from './game';
 import type { GameState } from './model';
+import { GEAR } from '../data/items';
 import { tx } from '../textos';
 import { runCombat } from './combat';
 import { Rng } from './rng';
@@ -250,5 +253,37 @@ describe('expediciones: el mapa (parajes, fardos y récords)', () => {
     s = play(s, 2);
     expect(s.expBest!.bosque!).toBeGreaterThan(0.1);
     expect(s.stats!.expeditions).toBe(1);
+  });
+
+  it('lo que encuentran brilla según su rareza y lo raro se avisa', () => {
+    expect([0, 1, 2, 3, 4].map((r) => itemGlow(r as 0))).toEqual([1, 1, 2, 3, 3]);
+    expect(matGlow('cristal')).toBe(2);
+    expect(matGlow('madera')).toBe(0);
+    let s = out('brillo');
+    const leg = GEAR.find((g) => g.rarity === 3)!;
+    s.expBundles = [
+      {
+        id: 'f1',
+        heading: 'bosque',
+        dist: 0.3,
+        side: 0,
+        day: 1,
+        who: ['Bruna'],
+        gold: 5,
+        mats: {},
+        items: [{ id: 'iL', ...leg }],
+      },
+    ];
+    const { news } = stepExpeditions(s, s.expeditions![0]!.from + DAY_SECONDS);
+    const e = s.expeditions![0]!;
+    expect(e.log.find((l) => tx(l.t).includes('fardo del gremio'))?.g).toBe(3);
+    expect(news.some((n) => n.glow === 3 && n.big)).toBe(true);
+    // Al volver, el informe guarda la mochila para «La mochila».
+    s = reduce(s, { type: 'expBack', id: e.id });
+    s = play(s, 2);
+    const r = s.reports.find((x) => x.exp)!;
+    expect(r.exp!.heading).toBe('bosque');
+    expect(r.exp!.bag!.items!.some((it) => it.id === 'iL')).toBe(true);
+    expect(r.exp!.days).toBeGreaterThanOrEqual(1);
   });
 });

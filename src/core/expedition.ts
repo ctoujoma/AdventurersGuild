@@ -68,7 +68,9 @@ import type {
   Report,
   BossFight,
   ExpBundle,
+  Glow,
   Item,
+  Rarity,
 } from './model';
 import { attr, chance, skill } from './party';
 import { equip, levelUp } from './resolve';
@@ -255,6 +257,21 @@ function turnBack(e: Expedition, why: ExpTurn, hero?: Hero): void {
   });
 }
 
+/**
+ * El brillo de lo que se acaba de encontrar (bloque 4; EX18): lo suben `find`, `loot` y
+ * `findItem`, y se lo lleva la siguiente línea del diario (`line`). El paso es síncrono y con la
+ * misma semilla, así que da lo mismo con el juego abierto o cerrado.
+ */
+let glowNext: 0 | Glow = 0;
+const shine = (g: 0 | Glow) => {
+  if (g > glowNext) glowNext = g;
+};
+
+/** El brillo de un objeto según su rareza: bueno (hasta 1), raro (2) y legendario (3 o más). */
+export const itemGlow = (r: Rarity | undefined): Glow => ((r ?? 0) >= 3 ? 3 : r === 2 ? 2 : 1);
+/** El de un material: el cristal es raro; lo demás, común. */
+export const matGlow = (m: Material): 0 | Glow => (m === 'cristal' ? 2 : 0);
+
 function line(
   e: Expedition,
   k: ExpKind,
@@ -269,7 +286,9 @@ function line(
     t: msg(key, { n: e.heroIds.length, ...p }),
     ...(hero ? { hero } : {}),
     ...(won !== undefined ? { won } : {}),
+    ...(glowNext ? { g: glowNext } : {}),
   });
+  glowNext = 0;
 }
 
 // ---------- Hora a hora ----------
@@ -289,7 +308,18 @@ export function stepExpeditions(
     const until = Math.floor((at - e.from) / HOUR);
     while (e.hours < until) {
       e.hours++;
+      glowNext = 0;
+      const n0 = e.log.length;
       stepHour(s, e, news);
+      // Lo raro y lo legendario se avisan en la barra (con su brillo y su sonido).
+      for (const l of e.log.slice(n0))
+        if ((l.g ?? 0) >= 2)
+          news.push({
+            t: msg('expediciones.aviso.brillo', { rumbo: e.heading, brillo: l.g!, que: l.t }),
+            k: 'good',
+            glow: l.g,
+            ...(l.g === 3 ? { big: true } : {}),
+          });
       if (e.turn && distAt(e) <= 0) {
         home.push(...arrive(s, e, news));
         break;
@@ -388,6 +418,7 @@ function find(e: Expedition, rng: Rng, dist: number, who: Hero): void {
   const m = rng.pick(kinds);
   const n = 1 + rng.int(0, Math.floor(dist / EXP_MAT_FAR));
   e.bag.mats[m] = (e.bag.mats[m] ?? 0) + n;
+  shine(matGlow(m));
   const got: Mats = { [m]: n };
   line(
     e,
@@ -601,6 +632,8 @@ function mapStop(s: GameState, e: Expedition, dist: number, news: DawnEvent[]): 
     for (const m of Object.keys(b.mats) as Material[])
       e.bag.mats[m] = (e.bag.mats[m] ?? 0) + (b.mats[m] ?? 0);
     if (b.items?.length) (e.bag.items ??= []).push(...b.items);
+    for (const it of b.items ?? []) shine(itemGlow(it.rarity));
+    for (const m of Object.keys(b.mats) as Material[]) shine(matGlow(m));
     const stats = (s.stats ??= emptyStats());
     stats.expBundles = (stats.expBundles ?? 0) + 1;
     line(e, 'hallazgo', 'expediciones.diario.fardo', {
@@ -788,6 +821,7 @@ function loot(e: Expedition, rng: Rng, dist: number, mult: number): Msg {
   const n = Math.max(1, Math.round((1 + Math.floor(dist / EXP_MAT_FAR)) * mult));
   e.bag.gold += gold;
   e.bag.mats[m] = (e.bag.mats[m] ?? 0) + n;
+  shine(matGlow(m));
   return msg('expediciones.botin', { oro: gold, que: matsMsg({ [m]: n }) });
 }
 
@@ -808,6 +842,7 @@ function findItem(s: GameState, e: Expedition, rng: Rng, dist: number, guardian 
   const base = rng.pick(pool.length ? pool : GEAR);
   const item: Item = { id: `i${s.uid++}`, ...base };
   (e.bag.items ??= []).push(item);
+  shine(itemGlow(item.rarity));
   return item.name;
 }
 
@@ -1067,11 +1102,15 @@ function arrive(s: GameState, e: Expedition, news: DawnEvent[]): string[] {
   if (why) body.push(why.t);
   // Récord del rumbo.
   const best = (s.expBest ??= {});
+  let record = false;
   if (far > (best[e.heading] ?? 0) + 1e-9) {
     const had = best[e.heading] !== undefined;
     best[e.heading] = far;
+    record = had;
     if (had) chip('chip_record', { dias: Math.round(far) }, 'good');
   }
+  // Lo que trajeron, tal cual (para «La mochila»: lo que no cupo se dice en los chips).
+  const bag = structuredClone(e.bag);
   // La mochila.
   if (e.bag.gold) {
     s.gold += e.bag.gold;
@@ -1149,7 +1188,7 @@ function arrive(s: GameState, e: Expedition, news: DawnEvent[]): string[] {
     body,
     chips,
     read: false,
-    exp: { log: e.log },
+    exp: { log: e.log, heading: e.heading, days, far, record, bag },
   };
   s.reports.unshift(r);
   news.push({

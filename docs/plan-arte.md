@@ -425,6 +425,10 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
 
 ## Siguiente (en este orden, salvo que el usuario diga otra cosa)
 
+0. **Expediciones** ([`encargos/arte-expediciones.md`](encargos/arte-expediciones.md)): el usuario
+   pide (23 nov) que el visor y el mapa de rumbos se vean bien de verdad, sin reaprovechar la tira de
+   los encargos, y valora un visor propio a más tamaño. **Primero, opciones con maquetas** para que
+   elija; luego, dibujar.
 1. **Más cilindros y cuerpos de verdad**: los barriles apilados, las mesas (tablero y patas), el
    horno de pan (cúpula) y la caldera (cúpula de cobre) con la misma idea que `round`.
 2. [x] **Atlas de la gente en dos filas** (#100): se dibuja en una tira y se pliega (`fold` en

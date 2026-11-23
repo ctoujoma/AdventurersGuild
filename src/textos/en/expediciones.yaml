@@ -99,6 +99,7 @@ informe:
   chip_objeto: "Brought back: {objeto}"
   chip_invitado: "{heroe} wants to stay: waiting at the bar"
 aviso:
+  brillo: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}: {brillo, select, 3 {something legendary!} other {something rare!}} {que}"
   fardo: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}: they found the bundle {quien} lost!"
   suceso: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}: {que, mayus}. They're waiting for your call."
   guardian: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}: {que}! Open the viewer to watch."
@@ -320,3 +321,15 @@ mapa:
   cerrar: "Close"
   acercar: "Zoom in"
   alejar: "Zoom out"
+
+mochila:
+  titulo: "The pack"
+  resumen: "{dias, plural, one {One day out} other {# days out}}, as far as {lejos, plural, =0 {less than a day} one {one day} other {# days}} from home.{record, select, si { A record for this heading!} other {}}"
+  vacia: "The pack comes back empty."
+  saltar: "Show everything"
+  carta: "Read the report"
+  ver: "The pack"
+  diario: "Diary highlights"
+
+salida:
+  saltar: "Tap to open the viewer"
