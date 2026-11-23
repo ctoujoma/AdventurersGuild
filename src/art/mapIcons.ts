@@ -37,6 +37,36 @@ export function stamp(
     for (let i = 0; i < w; i++) if (on(i, j)) b.set(x0 + i, y0 + j, pal[rows[j]![i]!]!);
 }
 
+/**
+ * Una vista de `b` corrida: pintar en (x, y) pinta en (x + dx, y + dy). Sirve para dibujar en
+ * coordenadas de la comarca dentro de un búfer más grande (el mapa de rumbos).
+ */
+export function shifted(b: PixelBuffer, dx: number, dy: number): PixelBuffer {
+  return dx || dy ? new Shifted(b, dx, dy) : b;
+}
+
+class Shifted extends PixelBuffer {
+  constructor(
+    private readonly to: PixelBuffer,
+    private readonly dx: number,
+    private readonly dy: number,
+  ) {
+    super(0, 0);
+  }
+  override inside(x: number, y: number): boolean {
+    return this.to.inside((x | 0) + this.dx, (y | 0) + this.dy);
+  }
+  override get(x: number, y: number): number {
+    return this.to.get((x | 0) + this.dx, (y | 0) + this.dy);
+  }
+  override set(x: number, y: number, color: Color): void {
+    this.to.set((x | 0) + this.dx, (y | 0) + this.dy, color);
+  }
+  override rect(x: number, y: number, w: number, h: number, color: Color): void {
+    this.to.rect(x + this.dx, y + this.dy, w, h, color);
+  }
+}
+
 const STONE = { s: P.mist, S: P.fog, T: P.steel, d: P.black, g: P.leaf };
 
 type Icon = { rows: string[]; pal: Record<string, Color> };

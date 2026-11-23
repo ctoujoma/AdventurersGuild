@@ -48,6 +48,9 @@ export function fbm(x: number, y: number, s: number, oct = 4): number {
   return sum / norm;
 }
 
+/** El primer múltiplo de `step` desde `v` hacia abajo (para que las rejillas casen). */
+export const from = (v: number, step: number) => Math.floor(v / step) * step;
+
 const smooth = (a: number, b: number, x: number) => {
   const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
   return t * t * (3 - 2 * t);
@@ -292,6 +295,17 @@ export interface House {
 }
 
 export interface Terrain {
+  /**
+   * Qué trozo cubre, en coordenadas de la comarca: de `x0, y0` y `W × H` de grande (la comarca,
+   * de 0, 0 y 400 × 280; el mapa de rumbos, más grande y con la comarca dentro).
+   */
+  x0: number;
+  y0: number;
+  W: number;
+  H: number;
+  /** El índice de un punto (en coordenadas de la comarca) y si cae dentro. */
+  at: (x: number, y: number) => number;
+  inside: (x: number, y: number) => boolean;
   /** Altura, 0–1. */
   h: Float32Array;
   /** Qué sierra (0 ninguna, 1 Parda, 2 Niebla, 3 Este). */
@@ -308,6 +322,18 @@ export interface Terrain {
   houses: House[];
   /** El arco de cada parcela, por id: su cultivo (0–3) y la dirección de los surcos. */
   crop: (id: number) => { kind: number; dir: number };
+  /** Solo en el mapa de rumbos: arena de las ruinas (0–255) y lo salvaje (0–255). */
+  sand?: Uint8Array;
+  wild?: Uint8Array;
+  /** Solo en el mapa de rumbos: piedras sueltas (muros, columnas…) y accidentes. */
+  ruins?: readonly Ruin[];
+}
+
+/** Una piedra de las ruinas o un accidente del mapa de rumbos, por el centro de su base. */
+export interface Ruin {
+  x: number;
+  y: number;
+  kind: string;
 }
 
 let cached: Terrain | null = null;
@@ -342,6 +368,46 @@ function distField(src: (i: number) => boolean): Float32Array {
     }
   for (let i = 0; i < W * H; i++) d[i] = d[i]! / 3;
   return d;
+}
+
+let bumps: { x: number; y: number; r: number }[] | null = null;
+const RIVERS = [RIVER, BROOK, STREAM];
+
+/**
+ * El relieve de la comarca en un punto, antes del mar y la marisma: llanura ondulada, sierras con
+ * crestas, lomas sueltas y los valles de los ríos. Sirve también fuera de la comarca (el mapa de
+ * rumbos lo usa junto al borde, para empalmar).
+ */
+export function reliefAt(x: number, y: number): { v: number; range: number } {
+  if (!bumps) {
+    const rng = new Rng('comarca');
+    bumps = Array.from({ length: 18 }, () => ({
+      x: rng.int(140, 360),
+      y: rng.int(100, 260),
+      r: rng.int(6, 11),
+    })).filter((b) => Math.hypot(b.x - TAVERN.x, b.y - TAVERN.y) > 18);
+  }
+  let range = 0;
+  let v = 0.13 + 0.1 * fbm(x / 50, y / 50, 1) + 0.04 * fbm(x / 10, y / 10, 2);
+  let m = 0;
+  for (const r of RANGES) {
+    const d = distTo(r.pts, x, y) + (fbm(x / 20, y / 20, 5) - 0.5) * 14;
+    const f = Math.exp(-((d / r.w) ** 2)) * r.top;
+    if (f > m) {
+      m = f;
+      if (f > 0.18) range = r.kind;
+    }
+  }
+  const ridge = 1 - Math.abs(2 * fbm(x / 24, y / 20, 3, 5) - 1);
+  v += m * (0.3 + 0.7 * ridge ** 2);
+  for (const b of bumps) {
+    const d = Math.hypot(x - b.x, (y - b.y) * 1.4) / b.r;
+    if (d < 1) v += 0.1 * (1 - d * d) ** 2;
+  }
+  // Los ríos abren valles.
+  const dr = Math.min(...RIVERS.map((r) => distTo(r, x, y)));
+  v = 0.12 + (v - 0.12) * (1 - 0.65 * Math.exp(-((dr / 8) ** 2)));
+  return { v, range };
 }
 
 export function terrain(): Terrain {
@@ -382,35 +448,12 @@ export function terrain(): Terrain {
     }
 
   // La altura: llanura ondulada, sierras con crestas, lomas sueltas.
-  const rng = new Rng('comarca');
-  const bumps = Array.from({ length: 18 }, () => ({
-    x: rng.int(140, 360),
-    y: rng.int(100, 260),
-    r: rng.int(6, 11),
-  })).filter((b) => Math.hypot(b.x - TAVERN.x, b.y - TAVERN.y) > 18);
-  const rivers = [RIVER, BROOK, STREAM];
   for (let y = 0; y < H; y++)
     for (let x = 0; x < W; x++) {
       const i = idx(x, y);
-      let v = 0.13 + 0.1 * fbm(x / 50, y / 50, 1) + 0.04 * fbm(x / 10, y / 10, 2);
-      let m = 0;
-      for (const r of RANGES) {
-        const d = distTo(r.pts, x, y) + (fbm(x / 20, y / 20, 5) - 0.5) * 14;
-        const f = Math.exp(-((d / r.w) ** 2)) * r.top;
-        if (f > m) {
-          m = f;
-          if (f > 0.18) range[i] = r.kind;
-        }
-      }
-      const ridge = 1 - Math.abs(2 * fbm(x / 24, y / 20, 3, 5) - 1);
-      v += m * (0.3 + 0.7 * ridge ** 2);
-      for (const b of bumps) {
-        const d = Math.hypot(x - b.x, (y - b.y) * 1.4) / b.r;
-        if (d < 1) v += 0.1 * (1 - d * d) ** 2;
-      }
-      // Los ríos abren valles.
-      const dr = Math.min(...rivers.map((r) => distTo(r, x, y)));
-      v = 0.12 + (v - 0.12) * (1 - 0.65 * Math.exp(-((dr / 8) ** 2)));
+      const r = reliefAt(x, y);
+      let v = r.v;
+      range[i] = r.range;
       // Junto al mar, bajo; en la marisma, llano.
       v = Math.min(v, 0.1 + shore[i]! * 0.035);
       if (marsh[i]) v = Math.min(v, 0.11 + 0.02 * fbm(x / 6, y / 6, 4));
@@ -559,6 +602,12 @@ export function terrain(): Terrain {
     depth[i] = Math.min(255, Math.round(water[i] === SEA ? toLand[i]! : shore[i]!));
 
   cached = {
+    x0: 0,
+    y0: 0,
+    W,
+    H,
+    at: idx,
+    inside,
     h,
     range,
     water,
@@ -576,7 +625,12 @@ export function terrain(): Terrain {
 /** La luz de una ladera (0 sombra – 1 luz), con el sol al noroeste. */
 export function shadeAt(t: Terrain, x: number, y: number, k = 9): number {
   const at = (px: number, py: number) =>
-    t.h[idx(Math.max(0, Math.min(W - 1, px)), Math.max(0, Math.min(H - 1, py)))]!;
+    t.h[
+      t.at(
+        Math.max(t.x0, Math.min(t.x0 + t.W - 1, px)),
+        Math.max(t.y0, Math.min(t.y0 + t.H - 1, py)),
+      )
+    ]!;
   const gx = at(x + 1, y) - at(x - 1, y);
   const gy = at(x, y + 1) - at(x, y - 1);
   return Math.max(0, Math.min(1, 0.5 + (gx + gy) * k));
