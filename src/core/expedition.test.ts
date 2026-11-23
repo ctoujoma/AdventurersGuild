@@ -10,6 +10,8 @@ import {
   optionIssue,
   optionRisk,
   partyCap,
+  potionsMax,
+  expWeather,
   stepExpeditions,
 } from './expedition';
 import { emptyStats } from './feats';
@@ -49,7 +51,7 @@ describe('expediciones', () => {
     const s = ready();
     const ids = s.heroes.slice(0, 2).map((h) => h.id);
     expect(canExpedition(s, 'bosque', ids, 10)).toBeNull();
-    expect(canExpedition(s, 'sierra', ids, 10)).toMatch(/obras/);
+    expect(canExpedition(s, 'sierra', ids, 10)).toBeNull();
     expect(canExpedition(s, 'bosque', ids, 3)).toMatch(/raciones/);
     expect(canExpedition(s, 'bosque', ids, 999)).toMatch(/despensa/);
     expect(canExpedition({ ...s, stats: emptyStats() }, 'bosque', ids, 10)).toMatch(/veterano/);
@@ -285,5 +287,69 @@ describe('expediciones: el mapa (parajes, fardos y récords)', () => {
     expect(r.exp!.heading).toBe('bosque');
     expect(r.exp!.bag!.items!.some((it) => it.id === 'iL')).toBe(true);
     expect(r.exp!.days).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('expediciones: bloque 5 (rumbos, tiempo, pociones y la carta)', () => {
+  it('se puede ir a los cuatro rumbos, cada uno con sus enemigos', () => {
+    for (const heading of ['sierra', 'marismas', 'ruinas'] as const) {
+      let s = ready(`rumbo-${heading}`);
+      const ids = s.heroes.slice(0, 2).map((h) => h.id);
+      expect(canExpedition(s, heading, ids, 12)).toBeNull();
+      s = reduce(s, { type: 'expedition', heading, heroIds: ids, rations: 12 });
+      s = play(s, 8);
+      const r = s.reports.find((x) => x.exp?.heading === heading);
+      expect(r).toBeTruthy();
+    }
+  });
+
+  it('el tiempo es el del rumbo lejos de casa, y la nieve gasta más raciones', () => {
+    let s = ready('nieve');
+    const ids = s.heroes.slice(0, 2).map((h) => h.id);
+    s = reduce(s, { type: 'expedition', heading: 'sierra', heroIds: ids, rations: 40 });
+    const e0 = s.expeditions![0]!;
+    expect(expWeather(e0)).toBe('claro');
+    s = play(s, 6);
+    const e = s.expeditions?.[0] ?? null;
+    const log = e?.log ?? s.reports.find((x) => x.exp)!.exp!.log;
+    // En seis días por la sierra, alguno nieva o hace viento (y se apunta).
+    expect(log.some((l) => /nevar|viento/.test(tx(l.t)))).toBe(true);
+  });
+
+  it('las pociones salen de las hierbas, curan por la noche y las que sobran vuelven', () => {
+    let s = ready('pocion');
+    s.building.rooms.push({
+      ...s.building.rooms.find((r) => r.type === 'mapas')!,
+      id: 'lab',
+      type: 'alquimia',
+      level: 1,
+    });
+    s.mats = { ...(s.mats ?? {}), hierbas: 6 };
+    expect(potionsMax(s)).toBe(3);
+    const ids = [s.heroes[0]!.id];
+    expect(canExpedition(s, 'bosque', ids, 12, false, 4)).toMatch(/pociones/);
+    s = reduce(s, { type: 'expedition', heading: 'bosque', heroIds: ids, rations: 12, potions: 2 });
+    expect(s.mats!.hierbas).toBe(2);
+    const e = s.expeditions![0]!;
+    e.hurt[ids[0]!] = 1;
+    s = play(s, 1);
+    const e2 = s.expeditions![0]!;
+    expect(e2.potions).toBe(1);
+    expect(e2.log.some((l) => tx(l.t).includes('poción'))).toBe(true);
+  });
+
+  it('con el primer veterano llega la carta, una vez y sin pisar otro tutorial', () => {
+    let s = ready('carta');
+    expect(s.expOpened).toBeUndefined();
+    s = endDay(s);
+    expect(s.expOpened).toBe(s.day);
+    expect(s.reports.filter((r) => r.vet)).toHaveLength(1);
+    s = endDay(s);
+    expect(s.reports.filter((r) => r.vet)).toHaveLength(1);
+    // Con el tutorial de obras en marcha, espera.
+    let o = ready('carta-obras');
+    o.tutorial = { step: 0, track: 'obras', letter: true, wait: true };
+    o = endDay(o);
+    expect(o.expOpened).toBeUndefined();
   });
 });

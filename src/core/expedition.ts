@@ -14,6 +14,12 @@ import {
   EXP_CAMP,
   EXP_CLERIC_HEAL,
   EXP_CRYSTAL_FROM,
+  EXP_FOG_AMBUSH,
+  EXP_POTION_HERBS,
+  EXP_POTIONS_MAX,
+  EXP_RAIN_SLOW,
+  EXP_SNOW_EAT,
+  EXP_WEATHER_FROM,
   EXP_DOWN_DEATH,
   EXP_EVENTS,
   EXP_EVENTS_FAR,
@@ -54,7 +60,16 @@ import type { Terrain } from '../data/places';
 import { foeUnits, heroUnit, runCombat, setupCombat, type CombatSetup } from './combat';
 import { fightRoster } from './chains';
 import { generateHero } from './generate';
-import { expeditionsOpen, gainMats, matsMsg, type Material, type Mats } from './materials';
+import {
+  expeditionsOpen,
+  gainMats,
+  matOf,
+  matsMsg,
+  spendMats,
+  type Material,
+  type Mats,
+} from './materials';
+import { active } from './rooms';
 import type {
   ChipKind,
   DawnEvent,
@@ -68,6 +83,7 @@ import type {
   Report,
   BossFight,
   ExpBundle,
+  ExpWeather,
   Glow,
   Item,
   Rarity,
@@ -82,7 +98,7 @@ import { msg, t, tl, type Msg, type Params, type Txt } from '../textos';
 
 export const HEADINGS: readonly Heading[] = ['bosque', 'sierra', 'marismas', 'ruinas'];
 /** Los rumbos que ya se pueden tomar (los demás, «En obras»). */
-export const OPEN_HEADINGS: readonly Heading[] = ['bosque'];
+export const OPEN_HEADINGS: readonly Heading[] = HEADINGS;
 
 /** Lo que trae cada rumbo: lo de siempre y lo de lejos (el cristal, desde `EXP_CRYSTAL_FROM`). */
 export const HEADING_MATS: Record<Heading, readonly Material[]> = {
@@ -95,7 +111,45 @@ export const HEADING_MATS: Record<Heading, readonly Material[]> = {
 /** Qué familia de enemigos dibujar para cada uno de `expediciones.enemigos.<rumbo>`. */
 export const HEADING_FOES: Partial<Record<Heading, readonly FoeKind[]>> = {
   bosque: ['bestia', 'bestia', 'bandido', 'bestia', 'bandido', 'alimana'],
+  sierra: ['bestia', 'trasgo', 'bestia', 'grande'],
+  marismas: ['alimana', 'muerto', 'bandido', 'alimana'],
+  ruinas: ['muerto', 'bandido', 'alimana', 'grande'],
 };
+
+/** El tiempo que puede hacer en cada rumbo y lo probable que es cada día (si no, claro). */
+const SKY: Record<Heading, readonly [ExpWeather, number][]> = {
+  bosque: [
+    ['lluvia', 0.3],
+    ['niebla', 0.15],
+  ],
+  sierra: [
+    ['nieve', 0.4],
+    ['viento', 0.2],
+  ],
+  marismas: [
+    ['niebla', 0.4],
+    ['lluvia', 0.25],
+  ],
+  ruinas: [
+    ['polvo', 0.3],
+    ['tormenta', 0.15],
+  ],
+};
+/** Lo que hace cada tiempo: les para a ratos, tapa la pista (y trae emboscadas) o gasta raciones. */
+const SLOWS: readonly ExpWeather[] = ['lluvia', 'viento', 'tormenta'];
+const BLINDS: readonly ExpWeather[] = ['niebla', 'polvo', 'tormenta'];
+
+/**
+ * El tiempo que les hace ahora (bloque 5): cerca de casa, el de la taberna (sin efecto, `claro`);
+ * lejos, el del rumbo, uno por día con su semilla (igual abierto que cerrado).
+ */
+export function expWeather(e: Expedition): ExpWeather {
+  if (distAt(e) < EXP_WEATHER_FROM) return 'claro';
+  const r = new Rng(`${e.seed}-tiempo-${Math.floor(e.hours / EXP_HOURS)}`).next();
+  let acc = 0;
+  for (const [w, p] of SKY[e.heading]) if (r < (acc += p)) return w;
+  return 'claro';
+}
 
 /** Segundos de juego de una hora de expedición. */
 export const HOUR = DAY_SECONDS / EXP_HOURS;
@@ -128,6 +182,7 @@ export function canExpedition(
   heroIds: readonly string[],
   rations: number,
   unguard = false,
+  potions = 0,
 ): string | null {
   if (!expeditionsOpen(s)) return t('expediciones.error.cerradas', { nivel: EXPEDITION_LEVEL });
   if (!OPEN_HEADINGS.includes(heading)) return t('expediciones.error.en_obras');
@@ -142,7 +197,14 @@ export function canExpedition(
   if (rations < minRations(heroIds.length))
     return t('expediciones.error.pocas_raciones', { n: minRations(heroIds.length) });
   if (rations > s.food) return t('expediciones.error.despensa', { n: s.food });
+  if (potions > potionsMax(s)) return t('expediciones.error.pociones');
   return null;
+}
+
+/** Cuántas pociones puede preparar la alquimia para una expedición (0 sin alquimia en pie). */
+export function potionsMax(s: GameState): number {
+  const lab = s.building.rooms.some((r) => r.type === 'alquimia' && active(r).level > 0);
+  return lab ? Math.min(EXP_POTIONS_MAX, Math.floor(matOf(s, 'hierbas') / EXP_POTION_HERBS)) : 0;
 }
 
 /** Horas andadas (sin las paradas esperando un suceso). */
@@ -194,6 +256,7 @@ export function sendExpedition(
   heading: Heading,
   heroIds: readonly string[],
   rations: number,
+  potions = 0,
 ): Expedition {
   const party = heroIds.map((id) => s.heroes.find((h) => h.id === id)!);
   for (const h of party) {
@@ -207,6 +270,7 @@ export function sendExpedition(
     delete h.job;
   }
   s.food -= rations;
+  if (potions) spendMats(s, { hierbas: potions * EXP_POTION_HERBS });
   const id = `x${s.uid++}`;
   const e: Expedition = {
     id,
@@ -223,6 +287,7 @@ export function sendExpedition(
     warned: 0,
     won: 0,
     lost: 0,
+    ...(potions ? { potions } : {}),
   };
   e.log.push({
     h: 0,
@@ -345,6 +410,16 @@ function stepHour(s: GameState, e: Expedition, news: DawnEvent[]): void {
     camp(s, e, rng);
     return;
   }
+  // El tiempo del día: se apunta al cambiar; la lluvia, el viento y la tormenta les paran a ratos.
+  const sky = expWeather(e);
+  if (sky !== (e.sky ?? 'claro')) {
+    e.sky = sky;
+    line(e, 'camino', `expediciones.diario.tiempo.${sky}`, { rumbo: e.heading });
+  }
+  if (SLOWS.includes(sky) && rng.chance(EXP_RAIN_SLOW)) {
+    e.idle = (e.idle ?? 0) + 1;
+    return;
+  }
   // Escalones de peligro: un aviso al adentrarse (de ida).
   if (!e.turn && Math.floor(dist / EXP_STEP) > e.warned) {
     e.warned = Math.floor(dist / EXP_STEP);
@@ -375,7 +450,7 @@ function stepHour(s: GameState, e: Expedition, news: DawnEvent[]): void {
     return;
   }
   const roll = rng.next();
-  const fightP = 0.22 + Math.min(0.15, 0.025 * dist);
+  const fightP = 0.22 + Math.min(0.15, 0.025 * dist) + (sky === 'niebla' ? EXP_FOG_AMBUSH : 0);
   const kinds = EXP_EVENT_LIST.filter((k) => {
     const d = EXP_EVENTS_DEF[k];
     return d.weight > 0 && dist >= d.from && (!d.headings || d.headings.includes(e.heading));
@@ -436,10 +511,18 @@ function fight(s: GameState, e: Expedition, rng: Rng, dist: number): void {
 }
 
 /** Los enemigos de un rumbo, como jefes del motor de peleas (su dibujo y sus golpes). */
-const FOE_BOSS: Partial<Record<Heading, readonly BossKind[]>> = {
+const FOE_BOSS: Record<Heading, readonly BossKind[]> = {
   bosque: ['bestia', 'jabali', 'bestia', 'bestia'],
+  sierra: ['bestia', 'bestia', 'bestia', 'jabali'],
+  marismas: ['sierpe', 'ahogado', 'bestia', 'sierpe'],
+  ruinas: ['ahogado', 'bestia', 'bestia', 'jabali'],
 };
-const GUARDIAN_BOSS: Partial<Record<Heading, BossKind>> = { bosque: 'jabali' };
+const GUARDIAN_BOSS: Record<Heading, BossKind> = {
+  bosque: 'jabali',
+  sierra: 'sierpe',
+  marismas: 'reina',
+  ruinas: 'dragona',
+};
 
 /** La pelea de una expedición, ya armada: los que están en pie (y el que se les unió). */
 export function battleSetup(
@@ -459,7 +542,7 @@ export function battleSetup(
   // Cada pelea, su enemigo: más o menos fuerte (`roll`, de 0 a 1), para que no esté decidida.
   const luck = 1 - EXP_FOE_SPREAD + 2 * EXP_FOE_SPREAD * roll;
   const diff = Math.max(1, n * (fightDiff(dist) * mult - EXP_GROUP * (n - 1))) * EXP_FOE * luck;
-  const boss = (guardian ? GUARDIAN_BOSS[e.heading] : FOE_BOSS[e.heading]?.[foe]) ?? 'bestia';
+  const boss = (guardian ? GUARDIAN_BOSS[e.heading] : FOE_BOSS[e.heading][foe]) ?? 'bestia';
   const setup = setupCombat(
     `${e.seed}-pelea-${e.hours}-${foe}`,
     boss,
@@ -788,7 +871,10 @@ export function optionRisk(
         fightDiff(distAt(e)) * (kind === 'guardian' ? EXP_GUARDIAN_MULT : 1.2),
       )
     : optionChance(s, e, o);
-  const sharp = (mapRoom(s)?.level ?? 0) >= 2 || standing(e, s).some((h) => h.cls === 'explorador');
+  // Con niebla, polvo o tormenta, la pista se ve peor (como sin sala ni explorador).
+  const sharp =
+    !BLINDS.includes(expWeather(e)) &&
+    ((mapRoom(s)?.level ?? 0) >= 2 || standing(e, s).some((h) => h.cls === 'explorador'));
   let level: 0 | 1 | 2 | 3 = p >= 0.85 ? 0 : p >= 0.65 ? 1 : p >= 0.45 ? 2 : 3;
   if (!sharp && level === 1) level = 2;
   return { level, sharp };
@@ -1034,6 +1120,14 @@ function camp(s: GameState, e: Expedition, rng: Rng): void {
   const ate = Math.min(n, e.rations);
   e.rations -= ate;
   const hungry = party.slice(ate);
+  // Con nieve, se gasta más para calentarse (si queda).
+  if (!hungry.length && expWeather(e) === 'nieve') {
+    const extra = Math.min(e.rations, Math.ceil(n * EXP_SNOW_EAT));
+    if (extra) {
+      e.rations -= extra;
+      line(e, 'raciones', 'expediciones.diario.nieve', { m: extra });
+    }
+  }
   for (const h of hungry) h.morale = Math.max(0, h.morale - EXP_HUNGER);
   // El clérigo (en pie) cura a veces una herida, la del que está peor.
   const cleric = standing(e, s).find((h) => h.cls === 'clerigo');
@@ -1049,6 +1143,22 @@ function camp(s: GameState, e: Expedition, rng: Rng): void {
       'expediciones.diario.cura',
       { curandero: cleric.name, heroe: worst.name, mismo: cleric === worst },
       cleric.id,
+    );
+  }
+  // Una poción, al que sigue peor (si queda alguna).
+  const hurtNow = party
+    .filter((h) => (e.hurt[h.id] ?? 0) > 0)
+    .sort((a, b) => (e.hurt[b.id] ?? 0) - (e.hurt[a.id] ?? 0))[0];
+  if (hurtNow && (e.potions ?? 0) > 0) {
+    e.potions!--;
+    e.hurt[hurtNow.id]!--;
+    if (!e.hurt[hurtNow.id]) delete e.hurt[hurtNow.id];
+    line(
+      e,
+      'cura',
+      'expediciones.diario.pocion',
+      { heroe: hurtNow.name, sexo: hurtNow.sex },
+      hurtNow.id,
     );
   }
   if (hungry.length)
@@ -1128,6 +1238,11 @@ function arrive(s: GameState, e: Expedition, news: DawnEvent[]): string[] {
   if (e.guest) {
     s.candidates.push({ ...e.guest, status: 'ok' });
     chip('chip_invitado', { heroe: e.guest.name }, 'info');
+  }
+  if (e.potions) {
+    const herbs = gainMats(s, { hierbas: e.potions * EXP_POTION_HERBS });
+    if (herbs.warn) chips.push({ t: herbs.warn, k: 'warn' });
+    chip('chip_pociones', { n: e.potions }, 'info');
   }
   if (e.rations > 0) {
     s.food += e.rations;

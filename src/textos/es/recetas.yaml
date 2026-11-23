@@ -155,3 +155,33 @@ recetas:
     good:
       nombre: "Capa de montaraz"
       desc: "Forrada, con bolsillos por dentro y del color del monte."
+  hachaRoble:
+    nombre: "Hacha de mango de roble"
+    one: "un hacha de mango de roble"
+    many: "hachas de mango de roble"
+    common:
+      nombre: "Hacha de roble"
+      desc: "Mango de roble viejo del bosque: no se raja ni con el peor golpe."
+    good:
+      nombre: "Hacha de roble curado"
+      desc: "Roble curado al humo y una hoja que muerde."
+  amuletoHierbas:
+    nombre: "Saquito de hierbas"
+    one: "un saquito de hierbas"
+    many: "saquitos de hierbas"
+    common:
+      nombre: "Saquito de hierbas"
+      desc: "Hierbas de las marismas cosidas en un saquito: huele a monte y a suerte."
+    good:
+      nombre: "Saquito de la curandera"
+      desc: "Las hierbas buenas, bien escogidas. Quien lo lleva tiene una segunda oportunidad."
+  varitaCristal:
+    nombre: "Varita de cristal"
+    one: "una varita de cristal"
+    many: "varitas de cristal"
+    common:
+      nombre: "Varita de cristal"
+      desc: "Madera buena con una punta de cristal de la sierra que zumba en la mano."
+    good:
+      nombre: "Varita de cristal tallado"
+      desc: "El cristal, tallado con paciencia: la magia sale limpia."

@@ -58,8 +58,8 @@ volver a ver).
 | 1 | Núcleo (`core/expedition.ts`: la expedición, días, raciones, curva, sucesos sencillos, vuelta sola, juego cerrado, simulador) + hoja de preparar + visor básico + bosque | Hecho (#208) |
 | 2 | Sucesos con decisión, cartas, opciones de clase, avisos, silenciar, guardianes y «Ver la pelea» | Hecho (#209) |
 | 3 | Mapa grande con niebla, parajes, fardos perdidos, récords y objetivos | Hecho (#211; el dibujo del mapa, marcador hasta el del agente de arte) |
-| 4 | Salida, vuelta, informe «La mochila», brillos por rareza y sonido | Hecho (PR del bloque 4) |
-| 5 | Sierra, marismas y ruinas (antes, «En obras»); tiempo por rumbo; pociones y cristal en los talleres; carta del veterano y tutorial | Pendiente |
+| 4 | Salida, vuelta, informe «La mochila», brillos por rareza y sonido | Hecho (#212) |
+| 5 | Sierra, marismas y ruinas (antes, «En obras»); tiempo por rumbo; pociones y cristal en los talleres; carta del veterano y tutorial | Hecho (PR del bloque 5) |
 
 ## Bloque 1, cómo quedó
 
@@ -167,6 +167,30 @@ volver a ver).
 - **Arte (nota del usuario, 23 nov):** el visor y el mapa tienen que verse bien de verdad, sin
   reaprovechar la tira de los encargos; quizá un visor propio más grande. El agente de arte
   plantea opciones antes de dibujar (apuntado en `arte-expediciones.md` y `plan-arte.md`).
+
+## Bloque 5, cómo quedó
+
+- **Los cuatro rumbos abiertos** (`OPEN_HEADINGS`): sierra, marismas y ruinas con sus líneas de
+  camino y de noche, cuatro enemigos cada uno (con su familia para el visor y su jefe para el
+  motor de peleas) y su guardián (Sierpe Blanca, Reina del Juncal, Dragona de Ceniza). El oso solo
+  sale en el bosque y la sierra; el santuario y el guardián ya no dicen «bosque».
+- **Tiempo por rumbo** (`expWeather`): cerca de casa (menos de `EXP_WEATHER_FROM` días), sin
+  efecto; lejos, uno por día con su semilla. Bosque, lluvia o niebla; sierra, nieve o viento;
+  marismas, niebla o lluvia; ruinas, polvo o tormenta seca. Lluvia, viento y tormenta les paran a
+  ratos (`EXP_RAIN_SLOW`); niebla, polvo y tormenta tapan la pista, y la niebla trae más
+  emboscadas (`EXP_FOG_AMBUSH`); la nieve gasta más raciones por la noche (`EXP_SNOW_EAT`). Línea
+  en el diario al cambiar y un chip en el visor. El dibujo del tiempo es del agente de arte.
+- **Pociones**: con la alquimia en pie, la hoja deja llevar hasta 3 (2 hierbas cada una). Por la
+  noche, una cura una herida del que está peor; las que sobran vuelven como hierbas.
+- **Obra maestra**: un cuarto paso de mejora (+4) que pide además 1 de cristal.
+- **Recetas nuevas** (de serie): hacha de roble (forja; madera y hierro), saquito de hierbas
+  (alquimia; hierbas; el bueno da una segunda oportunidad) y varita de cristal (alquimia; cristal y
+  madera). Los textos de los materiales dicen ya de dónde salen y qué los pide.
+- **Carta del veterano** (EX24): con el primer veterano, al amanecer (si hay otro tutorial en
+  marcha, espera), firmada por el de más nivel, con aviso grande. Al cerrarla, o la primera vez
+  que se abre el mapa, un **tutorial corto de tres páginas** (`ui/ExpIntro.tsx`) que acaba en el
+  mapa. Falta lo que es dibujo: el sello de mapa enrollado y el borde del mapa que se despliega.
+- **Simulador**: reparte las expediciones entre los cuatro rumbos.
 
 ## Depende de otros
 

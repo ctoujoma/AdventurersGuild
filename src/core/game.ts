@@ -213,6 +213,7 @@ import {
   HOUR,
   callBack,
   canExpedition,
+  expeditionsOpen,
   chooseOption,
   muteExpedition,
   gameTime,
@@ -246,7 +247,14 @@ export type Action =
   /** `unguard`: los de guardia del grupo dejan la guardia para ir (y vuelven a ella al volver). */
   | { type: 'send'; questId: string; heroIds: string[]; unguard?: boolean }
   /** Expediciones: salir hacia un rumbo con raciones, o mandar volver a una. */
-  | { type: 'expedition'; heading: Heading; heroIds: string[]; rations: number; unguard?: boolean }
+  | {
+      type: 'expedition';
+      heading: Heading;
+      heroIds: string[];
+      rations: number;
+      unguard?: boolean;
+      potions?: number;
+    }
   | { type: 'expBack'; id: string }
   /** El suceso que espera en una expedición: elegir una opción; o silenciarla. */
   | { type: 'expChoose'; id: string; option: string }
@@ -710,10 +718,10 @@ function reduceAction(state: GameState, action: Action): GameState {
       return s;
     }
     case 'expedition': {
-      const { heading, heroIds, rations, unguard } = action;
-      if (canExpedition(state, heading, heroIds, rations, unguard)) return state;
+      const { heading, heroIds, rations, unguard, potions = 0 } = action;
+      if (canExpedition(state, heading, heroIds, rations, unguard, potions)) return state;
       const s = structuredClone(state);
-      sendExpedition(s, heading, heroIds, rations);
+      sendExpedition(s, heading, heroIds, rations, potions);
       return s;
     }
     case 'expBack': {
@@ -1201,6 +1209,36 @@ const expeditionsDue = (s: GameState) =>
  * Pone al día las expediciones (hasta ahora o hasta el final del día, `at`) y devuelve a su puesto
  * a los que vuelven sanos. Muta `s`.
  */
+/**
+ * Se abren las expediciones (bloque 5; EX24): con el primer veterano, la carta al amanecer (si no
+ * hay otro tutorial en marcha; si lo hay, espera). La firma el veterano de más nivel.
+ */
+function openExpeditions(s: GameState, events: DawnEvent[]): void {
+  if (s.expOpened || !expeditionsOpen(s) || tutorialOn(s)) return;
+  const vet = s.heroes
+    .filter((h) => h.status !== 'muerto' && h.status !== 'desaparecido')
+    .sort((a, b) => b.lvl - a.lvl)[0];
+  if (!vet) return;
+  s.expOpened = s.day;
+  s.reports.unshift({
+    id: `r${s.uid++}`,
+    day: s.day,
+    title: msg('expediciones.veterano.titulo'),
+    heroIds: [vet.id],
+    who: vet.name,
+    outcome: 'Éxito',
+    heading: msg('expediciones.veterano.cabecera'),
+    body: [
+      msg('expediciones.veterano.carta', { heroe: vet.name, sexo: vet.sex }),
+      msg('expediciones.veterano.carta2'),
+    ],
+    chips: [{ t: msg('expediciones.veterano.chip'), k: 'good' }],
+    read: false,
+    vet: true,
+  });
+  events.push({ t: msg('expediciones.veterano.aviso', { heroe: vet.name }), k: 'good', big: true });
+}
+
 function stepHome(s: GameState, at?: number): { s: GameState; news: DawnEvent[] } {
   const { news, home } = stepExpeditions(s, at ?? gameTime(s));
   for (const id of home) {
@@ -1433,6 +1471,7 @@ export function endDay(state: GameState, away = false): GameState {
   // Las expediciones, hasta el final del día (con el juego cerrado, todo de una vez).
   events.push(...stepHome(s, s.day * DAY_SECONDS).news);
   s.day++;
+  openExpeditions(s, events);
   stepWorks(s, events);
   tidyJobs(s);
 

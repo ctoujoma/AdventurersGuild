@@ -8,7 +8,9 @@ import {
   expSlots,
   minRations,
   partyCap,
+  potionsMax,
 } from '../core/expedition';
+import { EXP_POTION_HERBS } from '../core/balance';
 import type { GameState, Heading } from '../core/model';
 import { CLASS_NAMES, statusLabel } from '../data/labels';
 import { MATERIALS } from '../core/materials';
@@ -24,7 +26,13 @@ import { t } from '../textos';
 interface Props {
   game: GameState;
   onClose: () => void;
-  onSend: (heading: Heading, ids: string[], rations: number, unguard: boolean) => void;
+  onSend: (
+    heading: Heading,
+    ids: string[],
+    rations: number,
+    unguard: boolean,
+    potions: number,
+  ) => void;
 }
 
 const HEADING_ICON: Record<Heading, IconName> = {
@@ -46,7 +54,9 @@ export function ExpeditionSheet({ game, onClose, onSend }: Props) {
   const [rations, setRations] = useState(() => Math.min(game.food, 12));
   const party = sel.map((id) => game.heroes.find((h) => h.id === id)!).filter(Boolean);
   const unguard = party.some((h) => h.guard);
-  const blocked = canExpedition(game, heading, sel, rations, unguard);
+  const potMax = potionsMax(game);
+  const [potions, setPotions] = useState(0);
+  const blocked = canExpedition(game, heading, sel, rations, unguard, potions);
   const days = daysOut(n, rations);
   const heroes = game.heroes
     .filter((h) => h.status !== 'muerto')
@@ -211,6 +221,43 @@ export function ExpeditionSheet({ game, onClose, onSend }: Props) {
               +
             </button>
           </div>
+          {potMax > 0 && (
+            <>
+              <h4 class="qs-sub">{t('expediciones.expeditionsheet.pociones')}</h4>
+              <div class="exp-rations">
+                <button
+                  class="btn btn-wood"
+                  aria-label={t('expediciones.expeditionsheet.menos_pociones')}
+                  onClick={() => {
+                    audio.play('select', 0.5);
+                    setPotions(Math.max(0, potions - 1));
+                  }}
+                >
+                  −
+                </button>
+                <span class="exp-rations-n">
+                  <MatIcon m="hierbas" size={14} />
+                  <b>{potions}</b>
+                  <span class="row-sub">
+                    {t('expediciones.expeditionsheet.pociones_ayuda', {
+                      n: EXP_POTION_HERBS,
+                      max: potMax,
+                    })}
+                  </span>
+                </span>
+                <button
+                  class="btn btn-wood"
+                  aria-label={t('expediciones.expeditionsheet.mas_pociones')}
+                  onClick={() => {
+                    audio.play('select', 0.5);
+                    setPotions(Math.min(potMax, potions + 1));
+                  }}
+                >
+                  +
+                </button>
+              </div>
+            </>
+          )}
           <p class="tiny exp-days" role="status">
             {sel.length
               ? t('expediciones.expeditionsheet.dias', { dias: days, n: sel.length })
@@ -225,7 +272,7 @@ export function ExpeditionSheet({ game, onClose, onSend }: Props) {
         <button
           class="btn btn-gold qs-send"
           disabled={!sel.length || !!blocked}
-          onClick={() => onSend(heading, sel, rations, unguard)}
+          onClick={() => onSend(heading, sel, rations, unguard, potions)}
         >
           <Icon name="pasos" size={16} />
           {sel.length

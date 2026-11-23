@@ -10,18 +10,19 @@ rumbos:
   sierra:
     nombre: "la sierra"
     titulo: "Sierra"
-    desc: "Al norte, nieve y pedreras. Trae {materiales}."
+    desc: "Al norte, nieve y pedreras. Trae {materiales}; lobos, trasgos de las minas y ventiscas."
   marismas:
     nombre: "las marismas"
     titulo: "Marismas"
-    desc: "Al suroeste, niebla y juncales. Trae {materiales}."
+    desc: "Al suroeste, niebla y juncales. Trae {materiales}; sanguijuelas, ahogados y contrabandistas."
   ruinas:
     nombre: "las ruinas"
     titulo: "Ruinas"
-    desc: "Al sureste, piedras viejas y polvo. Trae {materiales}."
+    desc: "Al sureste, piedras viejas y polvo. Trae {materiales}; esqueletos, saqueadores y trampas."
 
 # Por qué no puede salir (la hoja de preparar lo enseña en el botón).
 error:
+  pociones: "No hay hierbas para tantas pociones (o no hay alquimia)."
   cerradas: "Las expediciones se abren con el primer veterano (nivel {nivel})."
   en_obras: "Ese rumbo aún está en obras."
   sin_hueco: "La sala de mapas no da para más expediciones a la vez ({n}). Amplíala para mandar más."
@@ -35,6 +36,7 @@ error:
 
 # El diario de la expedición (se guarda en la partida). Una línea por suceso.
 diario:
+  pocion: "{heroe} se bebe una poción de hierbas y se siente mejor: una herida menos."
   record: "{n, plural, one {Llega} other {Llegan}} más lejos que nadie del gremio por {rumbo, select, bosque {el bosque} sierra {la sierra} marismas {las marismas} other {las ruinas}}: es un récord."
   fardo_queda: "Lo que no pueden cargar queda tirado en un fardo; quizá otra expedición lo encuentre."
   fardo: "¡Un fardo del gremio! Es el que {m, plural, one {perdió {quien}} other {perdieron {quien}}}: {que}."
@@ -75,9 +77,43 @@ diario:
       - "Llueve entre las hojas; {n, plural, one {sigue} other {siguen}} igual, {n, plural, one {{sexo, select, f {calada} other {calado}}} other {calados}}."
       - "Un cuervo {n, plural, one {le} other {los}} acompaña un buen trecho, de rama en rama."
       - "{n, plural, one {Cruza} other {Cruzan}} un arroyo helado por un tronco caído."
+    sierra:
+      - "El camino se vuelve pedrera; {n, plural, one {sube} other {suben}} con cuidado."
+      - "{heroe} señala unas huellas enormes en la nieve."
+      - "Un águila da vueltas muy arriba."
+      - "{n, plural, one {Encuentra} other {Encuentran}} la boca de una mina abandonada; mejor no entrar a oscuras."
+      - "El viento silba entre las peñas."
+      - "{heroe} resbala en el hielo, pero no pasa nada."
+    marismas:
+      - "El agua les llega a las rodillas."
+      - "{heroe} se arranca una sanguijuela del brazo."
+      - "Las ranas se callan de golpe a su paso."
+      - "Una garza levanta el vuelo entre los juncos."
+      - "{n, plural, one {Sigue} other {Siguen}} un sendero de tablas medio podridas."
+      - "Huele a cieno y a lluvia."
+    ruinas:
+      - "Columnas rotas asoman entre la arena."
+      - "{heroe} encuentra una moneda vieja con una cara que nadie conoce."
+      - "Un lagarto toma el sol sobre una estatua sin cabeza."
+      - "{heroe} pisa una losa que suena hueca; mejor rodear."
+      - "Restos de un mosaico: un dragón, o eso parece."
+      - "El polvo se levanta en remolinos."
   # La noche en el campamento (una línea cada noche).
   noche:
     bosque: "{n, plural, one {Acampa} other {Acampan}} bajo los árboles{vuelta, select, si {, ya de vuelta} other {}}. Quedan {raciones, plural, =0 {cero raciones} one {# ración} other {# raciones}}."
+    sierra: "{n, plural, one {Acampa} other {Acampan}} al abrigo de una peña{vuelta, select, si {, ya de vuelta} other {}}. Quedan {raciones, plural, =0 {cero raciones} one {# ración} other {# raciones}}."
+    marismas: "{n, plural, one {Acampa} other {Acampan}} en un islote seco{vuelta, select, si {, ya de vuelta} other {}}. Quedan {raciones, plural, =0 {cero raciones} one {# ración} other {# raciones}}."
+    ruinas: "{n, plural, one {Acampa} other {Acampan}} entre muros viejos{vuelta, select, si {, ya de vuelta} other {}}. Quedan {raciones, plural, =0 {cero raciones} one {# ración} other {# raciones}}."
+  nieve: "La nieve aprieta: gastan {m, plural, one {una ración más} other {# raciones más}} para calentarse."
+  # El tiempo, al cambiar (bloque 5).
+  tiempo:
+    claro: "Escampa: el día se queda claro."
+    lluvia: "Empieza a llover: el camino se vuelve barro y van más despacio."
+    niebla: "Baja la niebla: no se ve a diez pasos."
+    nieve: "Empieza a nevar."
+    viento: "Se levanta un viento helado que les frena."
+    polvo: "El viento levanta polvo: cuesta ver lo que hay delante."
+    tormenta: "Llega una tormenta seca: rayos sin lluvia y polvo por todas partes."
 
 # Contra qué pelean, por rumbo (en un hueco: «Topan con {enemigos}»).
 enemigos:
@@ -86,10 +122,28 @@ enemigos:
     - "un jabalí"
     - "un oso"
     - "un lobo enorme"
+  sierra:
+    - "una manada de lobos grises"
+    - "una partida de trasgos"
+    - "un oso pardo"
+    - "un gigante de las nieves"
+  marismas:
+    - "sanguijuelas enormes"
+    - "un ahogado"
+    - "unos contrabandistas"
+    - "una culebra de agua"
+  ruinas:
+    - "unos esqueletos"
+    - "unos saqueadores"
+    - "ratas del tamaño de perros"
+    - "un gólem de piedra"
 
 # El guardián de cada rumbo (raro y lejos), en un hueco como los enemigos.
 guardianes:
   bosque: "el Viejo Colmillo"
+  sierra: "la Sierpe Blanca"
+  marismas: "la Reina del Juncal"
+  ruinas: "la Dragona de Ceniza"
 
 # La pelea, para verla luego: el nombre de arriba y dónde fue.
 pelea:
@@ -102,6 +156,7 @@ botin: "{oro, plural, =0 {} one {una moneda y } other {# monedas y }}{que}"
 
 # El informe al volver.
 informe:
+  chip_pociones: "{n, plural, one {Sobra una poción: vuelve} other {Sobran # pociones: vuelven}} a la alquimia como hierbas"
   titulo: "Expedición {rumbo, select, bosque {al bosque} sierra {a la sierra} marismas {a las marismas} other {a las ruinas}}"
   cuerpo: "{dias, plural, one {Un día fuera} other {# días fuera}}: {n, plural, one {llegó} other {llegaron}} a {lejos, plural, =0 {menos de un día} one {un día} other {# días}} de la taberna."
   peleas: "{ganadas, plural, =0 {Ninguna pelea ganada} one {Una pelea ganada} other {# peleas ganadas}} y {perdidas, plural, =0 {ninguna perdida} one {una perdida} other {# perdidas}}."
@@ -128,6 +183,10 @@ aviso:
 
 # La hoja de preparar una expedición (ui/ExpeditionSheet.tsx).
 expeditionsheet:
+  pociones: "Pociones"
+  pociones_ayuda: "{n} hierbas cada una · hasta {max}"
+  menos_pociones: "Una poción menos"
+  mas_pociones: "Una poción más"
   titulo: "Nueva expedición"
   cerrar: "Cerrar"
   a_la_vez: "Fuera ahora: {n} de {max}"
@@ -148,6 +207,13 @@ expeditionsheet:
 
 # El visor de una expedición (ui/ExpeditionView.tsx).
 expeditionview:
+  tiempo:
+    lluvia: "Lluvia: más despacio"
+    niebla: "Niebla: emboscadas, peor pista"
+    nieve: "Nieve: más raciones"
+    viento: "Viento: más despacio"
+    polvo: "Polvo: peor pista"
+    tormenta: "Tormenta seca: despacio, peor pista"
   titulo: "Expedición {rumbo, select, bosque {al bosque} sierra {a la sierra} marismas {a las marismas} other {a las ruinas}}"
   cerrar: "Cerrar"
   ahora:
@@ -200,7 +266,7 @@ sucesos:
       nombre: "Dejarlo"
       bien: "Mejor no tocar lo que otro ha enterrado. Siguen."
   santuario:
-    titulo: "un santuario en el bosque"
+    titulo: "un santuario en el camino"
     texto: "Un santuario de piedra cubierto de musgo, con velas que alguien ha encendido hace poco."
     rezar:
       nombre: "Rezar"
@@ -305,8 +371,8 @@ sucesos:
       nombre: "No tocarlas"
       bien: "Hay cosas que es mejor no abrir. Siguen."
   guardian:
-    titulo: "el guardián del bosque"
-    texto: "Tiembla el suelo: el Viejo Colmillo, el jabalí que guarda lo más hondo del bosque, les cierra el paso."
+    titulo: "el guardián del rumbo"
+    texto: "{rumbo, select, bosque {Tiembla el suelo: el Viejo Colmillo, el jabalí que guarda lo más hondo del bosque, les cierra el paso.} sierra {Cruje la nieve: la Sierpe Blanca, que duerme en los ventisqueros, se desenrosca ante ellos.} marismas {Se abren los juncos: la Reina del Juncal sale del agua negra y les cierra el paso.} other {Se levanta una nube de ceniza: la Dragona de Ceniza despierta entre las columnas rotas.}}"
     pelear:
       nombre: "¡A por él!"
       bien: "{heroe} grita y cargan contra el guardián."
@@ -369,3 +435,24 @@ mochila:
 # La despedida en la escena al salir una expedición (ui/App.tsx).
 salida:
   saltar: "Toca para ir al visor"
+
+# Cuando se abren (bloque 5): la carta del veterano y el tutorial corto (ui/ExpIntro.tsx).
+veterano:
+  titulo: "Una carta del veterano"
+  cabecera: "¡Expediciones!"
+  carta: "{heroe} deja una carta en la barra: «Ya conozco cada camino de la comarca. Más allá de la niebla hay bosques que nadie ha pisado, sierras, marismas y ruinas viejas. Dadme raciones y un par de compañeros, y os traeré lo que no traen los encargos: madera buena, hierbas, cristal… y algo de gloria.»"
+  carta2: "Con la sala de mapas se pueden mandar expediciones: cada día más lejos, con más peligro y mejor botín. Vuelven solas cuando les quedan las raciones justas."
+  chip: "Expediciones abiertas: en el mapa"
+  aviso: "{heroe} propone ir más allá de la comarca: ¡se abren las expediciones!"
+intro:
+  titulo: "Expediciones"
+  siguiente: "Siguiente"
+  vamos: "Al mapa"
+  cerrar: "Cerrar"
+  paso: "{n} de {total}"
+  p1_titulo: "Elige quién va y hacia dónde"
+  p1_texto: "En el mapa, «Nueva expedición». La sala de mapas dice cuántos van. Cada rumbo trae lo suyo: madera y hierbas en el bosque, hierro y cristal en la sierra, hierbas y cuero en las marismas, cristal y objetos en las ruinas."
+  p2_titulo: "Raciones: cuánto duran"
+  p2_texto: "Una ración por héroe y día. Cuantas más lleven, más lejos llegan: más peligro y mejor botín. La vuelta tarda la mitad. Con la alquimia, llévales pociones de hierbas."
+  p3_titulo: "Síguelos en el visor"
+  p3_texto: "Toca su ficha para verlos andar, pelear y acampar. A veces te preguntan qué hacer: contesta antes de la noche o eligen ellos con prudencia. Vuelven solos, o cuando les digas."

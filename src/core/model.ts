@@ -247,6 +247,8 @@ export interface Mission {
 
 /** Los cuatro rumbos de las expediciones. */
 export type Heading = 'bosque' | 'sierra' | 'marismas' | 'ruinas';
+/** El tiempo de una expedición, por rumbo (bloque 5). */
+export type ExpWeather = 'claro' | 'lluvia' | 'niebla' | 'nieve' | 'viento' | 'polvo' | 'tormenta';
 
 /** Lo que pasa en una expedición, para el diario y el visor. */
 export type ExpKind =
@@ -365,6 +367,10 @@ export interface Expedition {
   passed?: string[];
   /** Ya pasaron el récord del rumbo (se apunta una vez en el diario). */
   record?: boolean;
+  /** El tiempo que ya se apuntó en el diario (bloque 5). */
+  sky?: ExpWeather;
+  /** Pociones que llevan (bloque 5). */
+  potions?: number;
 }
 
 /** Un encargo resuelto, para el historial (ver `GameState.questLog`). */
@@ -404,6 +410,8 @@ export interface Report {
   /** Pelea contra un jefe, guardada para verla (y repetirla). */
   fight?: BossFight;
   /** Informe de una expedición: su diario (con sus peleas, para verlas luego). */
+  /** La carta del veterano que abre las expediciones (bloque 5): al cerrarla, su tutorial. */
+  vet?: boolean;
   exp?: {
     log: ExpLine[];
     /** Para «La mochila» (bloque 4): el rumbo, días fuera, lejanía, si fue récord y lo que trajeron. */
@@ -931,6 +939,8 @@ export interface GameState {
   over: GameOver;
   /** Notas del tutorial ya leídas ('*' = sin consejos). */
   tips?: string[];
+  /** Día en que se abrieron las expediciones (llegó la carta del veterano). */
+  expOpened?: number;
   /**
    * Toca pedir nombre a la taberna (se pide al pagar la deuda, y una vez a las partidas de antes
    * de que existiera el aviso) si aún lleva el de serie.

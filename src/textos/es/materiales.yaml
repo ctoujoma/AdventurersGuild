@@ -12,16 +12,16 @@ tela:
   usos: "La piden las capas."
 hierbas:
   nombre: "Hierbas"
-  de_donde: "Saldrán en las expediciones."
-  usos: "Las piden los amuletos para mejorarlos en la alquimia."
+  de_donde: "Las traen las expediciones al bosque y a las marismas."
+  usos: "Las piden las pociones de las expediciones, el saquito de hierbas y la mejora de los amuletos (en la alquimia)."
 madera:
   nombre: "Madera buena"
-  de_donde: "Saldrá en las expediciones."
-  usos: "La piden las varitas para mejorarlas en la alquimia."
+  de_donde: "La traen las expediciones al bosque."
+  usos: "La piden el hacha de roble (forja), la varita de cristal y la mejora de las varitas (alquimia)."
 cristal:
   nombre: "Cristal"
-  de_donde: "Saldrá, raro, en las expediciones lejanas."
-  usos: "Aún no lo pide ningún taller."
+  de_donde: "Lo traen, raro, las expediciones lejanas a la sierra y a las ruinas."
+  usos: "Lo pide la varita de cristal y la obra maestra: mejorar un objeto a +4 en su taller."
 cuanto: "{n} de {material, minus}"
 nada: "nada"
 no_cabe: "No cabía: vendido {que} por {oro} monedas.{consejo, select, ampliar { Amplía el almacén para guardar más.} construir { Construye un almacén para guardarlos.} other { Cuando pagues la deuda podrás construir un almacén.}}"

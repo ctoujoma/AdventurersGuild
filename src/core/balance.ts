@@ -632,6 +632,23 @@ export const EXP_GOLD_FAR = 0.35;
 export const EXP_MAT_FAR = 2;
 /** El cristal, desde estos días de lejanía. */
 export const EXP_CRYSTAL_FROM = 3;
+/**
+ * El tiempo de cada rumbo (bloque 5; EX15): desde esta lejanía (días), el del rumbo (antes, el de
+ * casa, sin efecto). La nieve gasta más raciones (por héroe y noche); la niebla trae más
+ * emboscadas (se suma a la probabilidad de pelea); la lluvia, el viento y la tormenta les paran a
+ * ratos (probabilidad por hora de no avanzar).
+ */
+export const EXP_WEATHER_FROM = 1;
+export const EXP_SNOW_EAT = 0.5;
+export const EXP_FOG_AMBUSH = 0.08;
+export const EXP_RAIN_SLOW = 0.25;
+/**
+ * Pociones (bloque 5): con la alquimia en pie, se preparan al salir con `EXP_POTION_HERBS` hierbas
+ * cada una (hasta `EXP_POTIONS_MAX`); por la noche, una cura una herida del que está peor. Las que
+ * sobran vuelven como hierbas.
+ */
+export const EXP_POTION_HERBS = 2;
+export const EXP_POTIONS_MAX = 3;
 /** Experiencia por día fuera, y lo que sube por cada día de la lejanía más alta. */
 export const EXP_XP_DAY = 12;
 export const EXP_XP_FAR = 0.1;
@@ -666,6 +683,9 @@ export const EXP_BUNDLES_MAX = 6;
  * `TEMPER_HOURS` por el nivel al que llega, y tantos de su material como ese nivel.
  */
 export const TEMPER_MAX = 3;
+/** La obra maestra (bloque 5): un paso más, a +4, que pide además `TEMPER_CRYSTAL` de cristal. */
+export const TEMPER_MASTER = 4;
+export const TEMPER_CRYSTAL = 1;
 export const TEMPER_GOLD = 15;
 export const TEMPER_HOURS = 4;
 export const MAT_PER_OUTCOME: Record<Outcome, number> = {
