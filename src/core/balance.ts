@@ -643,12 +643,11 @@ export const EXP_SNOW_EAT = 0.5;
 export const EXP_FOG_AMBUSH = 0.08;
 export const EXP_RAIN_SLOW = 0.25;
 /**
- * Pociones (bloque 5): con la alquimia en pie, se preparan al salir con `EXP_POTION_HERBS` hierbas
- * cada una (hasta `EXP_POTIONS_MAX`); por la noche, una cura una herida del que está peor. Las que
- * sobran vuelven como hierbas.
+ * Pociones (bloque 5): las hace la alquimia (`GameState.potions`) y se llevan como las raciones;
+ * por la noche, una cura una herida del que está peor; las que sobran vuelven a la alquimia. Un
+ * hallazgo por el camino es, a veces (`EXP_POTION_FIND`), una poción.
  */
-export const EXP_POTION_HERBS = 2;
-export const EXP_POTIONS_MAX = 3;
+export const EXP_POTION_FIND = 0.08;
 /** Experiencia por día fuera, y lo que sube por cada día de la lejanía más alta. */
 export const EXP_XP_DAY = 12;
 export const EXP_XP_FAR = 0.1;

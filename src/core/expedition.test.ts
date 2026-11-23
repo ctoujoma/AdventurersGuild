@@ -316,26 +316,22 @@ describe('expediciones: bloque 5 (rumbos, tiempo, pociones y la carta)', () => {
     expect(log.some((l) => /nevar|viento/.test(tx(l.t)))).toBe(true);
   });
 
-  it('las pociones salen de las hierbas, curan por la noche y las que sobran vuelven', () => {
+  it('las pociones son las hechas en la alquimia, curan por la noche y las que sobran vuelven', () => {
     let s = ready('pocion');
-    s.building.rooms.push({
-      ...s.building.rooms.find((r) => r.type === 'mapas')!,
-      id: 'lab',
-      type: 'alquimia',
-      level: 1,
-    });
-    s.mats = { ...(s.mats ?? {}), hierbas: 6 };
-    expect(potionsMax(s)).toBe(3);
+    expect(potionsMax(s)).toBe(0);
     const ids = [s.heroes[0]!.id];
-    expect(canExpedition(s, 'bosque', ids, 12, false, 4)).toMatch(/pociones/);
+    expect(canExpedition(s, 'bosque', ids, 12, false, 1)).toMatch(/alquimia/);
+    s.potions = 3;
     s = reduce(s, { type: 'expedition', heading: 'bosque', heroIds: ids, rations: 12, potions: 2 });
-    expect(s.mats!.hierbas).toBe(2);
-    const e = s.expeditions![0]!;
-    e.hurt[ids[0]!] = 1;
+    expect(s.potions).toBe(1);
+    s.expeditions![0]!.hurt[ids[0]!] = 1;
     s = play(s, 1);
-    const e2 = s.expeditions![0]!;
-    expect(e2.potions).toBe(1);
-    expect(e2.log.some((l) => tx(l.t).includes('poción'))).toBe(true);
+    const e = s.expeditions![0]!;
+    expect(e.log.some((l) => tx(l.t).includes('bebe una poción'))).toBe(true);
+    const left = e.potions ?? 0;
+    s = reduce(s, { type: 'expBack', id: e.id });
+    s = play(s, 2);
+    expect(s.potions).toBe(1 + left);
   });
 
   it('con el primer veterano llega la carta, una vez y sin pisar otro tutorial', () => {

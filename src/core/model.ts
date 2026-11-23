@@ -939,6 +939,8 @@ export interface GameState {
   over: GameOver;
   /** Notas del tutorial ya leídas ('*' = sin consejos). */
   tips?: string[];
+  /** Pociones hechas en la alquimia, para llevar a las expediciones (como las raciones). */
+  potions?: number;
   /** Día en que se abrieron las expediciones (llegó la carta del veterano). */
   expOpened?: number;
   /**

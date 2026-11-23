@@ -15,8 +15,7 @@ import {
   EXP_CLERIC_HEAL,
   EXP_CRYSTAL_FROM,
   EXP_FOG_AMBUSH,
-  EXP_POTION_HERBS,
-  EXP_POTIONS_MAX,
+  EXP_POTION_FIND,
   EXP_RAIN_SLOW,
   EXP_SNOW_EAT,
   EXP_WEATHER_FROM,
@@ -60,16 +59,7 @@ import type { Terrain } from '../data/places';
 import { foeUnits, heroUnit, runCombat, setupCombat, type CombatSetup } from './combat';
 import { fightRoster } from './chains';
 import { generateHero } from './generate';
-import {
-  expeditionsOpen,
-  gainMats,
-  matOf,
-  matsMsg,
-  spendMats,
-  type Material,
-  type Mats,
-} from './materials';
-import { active } from './rooms';
+import { expeditionsOpen, gainMats, matsMsg, type Material, type Mats } from './materials';
 import type {
   ChipKind,
   DawnEvent,
@@ -197,15 +187,12 @@ export function canExpedition(
   if (rations < minRations(heroIds.length))
     return t('expediciones.error.pocas_raciones', { n: minRations(heroIds.length) });
   if (rations > s.food) return t('expediciones.error.despensa', { n: s.food });
-  if (potions > potionsMax(s)) return t('expediciones.error.pociones');
+  if (potions > potionsMax(s)) return t('expediciones.error.pociones', { n: potionsMax(s) });
   return null;
 }
 
-/** Cuántas pociones puede preparar la alquimia para una expedición (0 sin alquimia en pie). */
-export function potionsMax(s: GameState): number {
-  const lab = s.building.rooms.some((r) => r.type === 'alquimia' && active(r).level > 0);
-  return lab ? Math.min(EXP_POTIONS_MAX, Math.floor(matOf(s, 'hierbas') / EXP_POTION_HERBS)) : 0;
-}
+/** Las pociones hechas en la alquimia que se pueden llevar (sin hacer, no hay). */
+export const potionsMax = (s: GameState): number => s.potions ?? 0;
 
 /** Horas andadas (sin las paradas esperando un suceso). */
 const moved = (e: Expedition) => e.hours - (e.idle ?? 0);
@@ -270,7 +257,7 @@ export function sendExpedition(
     delete h.job;
   }
   s.food -= rations;
-  if (potions) spendMats(s, { hierbas: potions * EXP_POTION_HERBS });
+  if (potions) s.potions = (s.potions ?? 0) - potions;
   const id = `x${s.uid++}`;
   const e: Expedition = {
     id,
@@ -483,6 +470,11 @@ function stepHour(s: GameState, e: Expedition, news: DawnEvent[]): void {
 
 /** Un hallazgo: monedas o materiales del rumbo (más cuanto más lejos). */
 function find(e: Expedition, rng: Rng, dist: number, who: Hero): void {
+  if (rng.chance(EXP_POTION_FIND)) {
+    e.potions = (e.potions ?? 0) + 1;
+    line(e, 'hallazgo', 'expediciones.diario.pocion_hallada', { heroe: who.name }, who.id);
+    return;
+  }
   if (rng.chance(0.35)) {
     const gold = Math.round(rng.int(EXP_GOLD[0], EXP_GOLD[1]) * (1 + EXP_GOLD_FAR * dist));
     e.bag.gold += gold;
@@ -1240,8 +1232,7 @@ function arrive(s: GameState, e: Expedition, news: DawnEvent[]): string[] {
     chip('chip_invitado', { heroe: e.guest.name }, 'info');
   }
   if (e.potions) {
-    const herbs = gainMats(s, { hierbas: e.potions * EXP_POTION_HERBS });
-    if (herbs.warn) chips.push({ t: herbs.warn, k: 'warn' });
+    s.potions = (s.potions ?? 0) + e.potions;
     chip('chip_pociones', { n: e.potions }, 'info');
   }
   if (e.rations > 0) {

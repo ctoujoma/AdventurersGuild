@@ -180,8 +180,8 @@ volver a ver).
   ratos (`EXP_RAIN_SLOW`); niebla, polvo y tormenta tapan la pista, y la niebla trae más
   emboscadas (`EXP_FOG_AMBUSH`); la nieve gasta más raciones por la noche (`EXP_SNOW_EAT`). Línea
   en el diario al cambiar y un chip en el visor. El dibujo del tiempo es del agente de arte.
-- **Pociones**: con la alquimia en pie, la hoja deja llevar hasta 3 (2 hierbas cada una). Por la
-  noche, una cura una herida del que está peor; las que sobran vuelven como hierbas.
+- **Pociones**: las hechas en la alquimia (`GameState.potions`) se llevan como las raciones; por
+  la noche, una cura una herida del que está peor; las que sobran vuelven. Ver el pendiente.
 - **Obra maestra**: un cuarto paso de mejora (+4) que pide además 1 de cristal.
 - **Recetas nuevas** (de serie): hacha de roble (forja; madera y hierro), saquito de hierbas
   (alquimia; hierbas; el bueno da una segunda oportunidad) y varita de cristal (alquimia; cristal y
@@ -192,17 +192,17 @@ volver a ver).
   mapa. Falta lo que es dibujo: el sello de mapa enrollado y el borde del mapa que se despliega.
 - **Simulador**: reparte las expediciones entre los cuatro rumbos.
 
-## Pendiente: las pociones, como existencias (el usuario, 23 de noviembre)
+## Pendiente: las pociones las hace la alquimia (el usuario, 23 de noviembre)
 
-Hoy (bloque 5) la hoja «prepara» las pociones al salir gastando hierbas. El usuario lo quiere así:
+Las pociones **solo existen si se han creado en la alquimia**, como la forja crea sus objetos.
 
-1. **Talleres (agente principal):** la alquimia **hace pociones** como un trabajo más del taller
-   (receta con hierbas, que tarda su tiempo) y quedan en una despensa propia (`GameState.potions`
-   o similar), a la vista donde las raciones.
-2. **Expediciones (agente de expediciones), cuando esté lo de arriba:** la hoja las da **igual que
-   las raciones**, de esa despensa (sin gastar hierbas al salir); también **se encuentran por el
-   camino** (en el botín de hallazgos, cofres y campamentos); las que sobran **vuelven a la
-   despensa** (no como hierbas). Quitar `EXP_POTION_HERBS` y el gasto en `sendExpedition`.
+- **Hecho (expediciones):** las expediciones solo llevan las que hay hechas
+  (`GameState.potions`), y se dan en la hoja igual que las raciones. También se encuentran por el
+  camino (`EXP_POTION_FIND` en los hallazgos), y las que sobran vuelven a la alquimia. Ya no se
+  gastan hierbas al salir.
+- **Falta (agente principal, talleres):** la receta de la poción en la alquimia: hierbas y su
+  tiempo; al acabar, `s.potions++`, que se vea en la alquimia y en la despensa. Hasta entonces, sin
+  pociones hechas, la hoja no enseña la fila de pociones.
 
 ## Depende de otros
 

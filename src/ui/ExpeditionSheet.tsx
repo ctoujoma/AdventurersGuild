@@ -10,7 +10,6 @@ import {
   partyCap,
   potionsMax,
 } from '../core/expedition';
-import { EXP_POTION_HERBS } from '../core/balance';
 import type { GameState, Heading } from '../core/model';
 import { CLASS_NAMES, statusLabel } from '../data/labels';
 import { MATERIALS } from '../core/materials';
@@ -239,10 +238,7 @@ export function ExpeditionSheet({ game, onClose, onSend }: Props) {
                   <MatIcon m="hierbas" size={14} />
                   <b>{potions}</b>
                   <span class="row-sub">
-                    {t('expediciones.expeditionsheet.pociones_ayuda', {
-                      n: EXP_POTION_HERBS,
-                      max: potMax,
-                    })}
+                    {t('expediciones.expeditionsheet.pociones_ayuda', { n: potMax })}
                   </span>
                 </span>
                 <button

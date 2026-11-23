@@ -425,9 +425,8 @@ Repartida en cuatro agentes y juntada en la rama (sin choques):
 
 ## Pendiente que deja el agente de expediciones (23 de noviembre)
 
-- **Pociones en la alquimia:** el usuario quiere que la alquimia las haga como un trabajo del
-  taller (con hierbas) y que queden en una despensa, para que las expediciones las lleven como
-  las raciones (y las encuentren por el camino). Detalle en
-  [`encargos/expediciones.md`](encargos/expediciones.md), «Pendiente: las pociones». Cuando esté,
-  el agente de expediciones cambia la hoja.
-
+- **Pociones en la alquimia:** el usuario quiere que solo haya pociones si se crean en la alquimia,
+  como la forja crea sus objetos (receta con hierbas y su tiempo). Al acabar, `GameState.potions`
+  sube en uno; las expediciones ya las llevan de ahí, como las raciones. Que se vean en la
+  alquimia y donde la despensa. Detalle en [`encargos/expediciones.md`](encargos/expediciones.md),
+  «Pendiente: las pociones».

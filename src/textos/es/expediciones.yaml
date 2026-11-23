@@ -22,7 +22,7 @@ rumbos:
 
 # Por qué no puede salir (la hoja de preparar lo enseña en el botón).
 error:
-  pociones: "No hay hierbas para tantas pociones (o no hay alquimia)."
+  pociones: "En la alquimia solo hay {n, plural, =0 {ninguna poción hecha} one {# poción hecha} other {# pociones hechas}}."
   cerradas: "Las expediciones se abren con el primer veterano (nivel {nivel})."
   en_obras: "Ese rumbo aún está en obras."
   sin_hueco: "La sala de mapas no da para más expediciones a la vez ({n}). Amplíala para mandar más."
@@ -36,6 +36,7 @@ error:
 
 # El diario de la expedición (se guarda en la partida). Una línea por suceso.
 diario:
+  pocion_hallada: "{heroe} encuentra una poción entre unas raíces: a la mochila."
   pocion: "{heroe} se bebe una poción de hierbas y se siente mejor: una herida menos."
   record: "{n, plural, one {Llega} other {Llegan}} más lejos que nadie del gremio por {rumbo, select, bosque {el bosque} sierra {la sierra} marismas {las marismas} other {las ruinas}}: es un récord."
   fardo_queda: "Lo que no pueden cargar queda tirado en un fardo; quizá otra expedición lo encuentre."
@@ -156,7 +157,7 @@ botin: "{oro, plural, =0 {} one {una moneda y } other {# monedas y }}{que}"
 
 # El informe al volver.
 informe:
-  chip_pociones: "{n, plural, one {Sobra una poción: vuelve} other {Sobran # pociones: vuelven}} a la alquimia como hierbas"
+  chip_pociones: "{n, plural, one {Sobra una poción: vuelve} other {Sobran # pociones: vuelven}} a la alquimia"
   titulo: "Expedición {rumbo, select, bosque {al bosque} sierra {a la sierra} marismas {a las marismas} other {a las ruinas}}"
   cuerpo: "{dias, plural, one {Un día fuera} other {# días fuera}}: {n, plural, one {llegó} other {llegaron}} a {lejos, plural, =0 {menos de un día} one {un día} other {# días}} de la taberna."
   peleas: "{ganadas, plural, =0 {Ninguna pelea ganada} one {Una pelea ganada} other {# peleas ganadas}} y {perdidas, plural, =0 {ninguna perdida} one {una perdida} other {# perdidas}}."
@@ -184,7 +185,7 @@ aviso:
 # La hoja de preparar una expedición (ui/ExpeditionSheet.tsx).
 expeditionsheet:
   pociones: "Pociones"
-  pociones_ayuda: "{n} hierbas cada una · hasta {max}"
+  pociones_ayuda: "de {n} hechas en la alquimia"
   menos_pociones: "Una poción menos"
   mas_pociones: "Una poción más"
   titulo: "Nueva expedición"
@@ -453,6 +454,6 @@ intro:
   p1_titulo: "Elige quién va y hacia dónde"
   p1_texto: "En el mapa, «Nueva expedición». La sala de mapas dice cuántos van. Cada rumbo trae lo suyo: madera y hierbas en el bosque, hierro y cristal en la sierra, hierbas y cuero en las marismas, cristal y objetos en las ruinas."
   p2_titulo: "Raciones: cuánto duran"
-  p2_texto: "Una ración por héroe y día. Cuantas más lleven, más lejos llegan: más peligro y mejor botín. La vuelta tarda la mitad. Con la alquimia, llévales pociones de hierbas."
+  p2_texto: "Una ración por héroe y día. Cuantas más lleven, más lejos llegan: más peligro y mejor botín. La vuelta tarda la mitad. Si la alquimia ha hecho pociones, llévales alguna."
   p3_titulo: "Síguelos en el visor"
   p3_texto: "Toca su ficha para verlos andar, pelear y acampar. A veces te preguntan qué hacer: contesta antes de la noche o eligen ellos con prudencia. Vuelven solos, o cuando les digas."
