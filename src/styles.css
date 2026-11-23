@@ -6862,6 +6862,43 @@ p.notebook-close {
   display: block;
   image-rendering: pixelated;
 }
+/* El visor de las expediciones (`world/visor/`): en el móvil, un cuadro de 156 × 140 a ×2 con
+   marco de madera (10 px del dibujo); en escritorio, 320 × 200 a ×3 (lo que quepa). La interfaz
+   buena de alrededor la hace el agente de expediciones. */
+.exp-visor {
+  position: relative;
+  flex: none;
+  margin: 0 auto 10px;
+  width: max-content;
+  max-width: 100%;
+}
+.exp-visor-canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+.exp-visor.is-frame {
+  padding: 20px;
+  background: #4f2f2d;
+  box-shadow:
+    inset 0 0 0 4px #733e39,
+    inset 0 0 0 8px #3e2731,
+    inset 0 0 0 14px #4f2f2d,
+    inset 0 0 0 16px #2e1f27,
+    0 4px 0 var(--ink);
+}
+.exp-visor.is-frame .exp-visor-canvas {
+  width: 312px;
+  max-width: calc(100vw - 72px);
+  height: auto;
+  aspect-ratio: 156 / 140;
+}
+.exp-visor.is-desk .exp-visor-canvas {
+  width: 960px;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 320 / 200;
+  box-shadow: 0 0 0 2px var(--ink);
+}
 .trip-crew {
   display: flex;
   flex-wrap: wrap;
