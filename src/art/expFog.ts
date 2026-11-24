@@ -326,19 +326,11 @@ export function fogBuffer(clears: readonly Clear[], style: MapStyle, t = 0): Pix
 const CT = 512;
 const CM = CT - 1;
 
-/**
- * Una capa de nubes: de quién es cada píxel (la bola que asoma más) y dónde cae su centro; y, donde
- * dos bolas se tocan, la otra bola y cuánto se funden (así no queda un corte recto entre ellas).
- */
+/** Una capa de nubes: de quién es cada píxel (la bola que asoma más), y dónde cae su centro. */
 interface CloudLayer {
   owner: Uint16Array;
   dx: Int8Array;
   dy: Int8Array;
-  owner2: Uint16Array;
-  dx2: Int8Array;
-  dy2: Int8Array;
-  /** Cuánto se funde con la otra bola (0–128 = 0–½). */
-  mix: Uint8Array;
   /** Tapado por una bola más alta de arriba a la izquierda (su sombra). */
   occ: Uint8Array;
   /** El radio de cada bola y su retardo al deshacerse (0–1). */
@@ -346,18 +338,10 @@ interface CloudLayer {
   lag: Float32Array;
 }
 
-/** Las bolas, algo achatadas: más anchas que altas y con la base más plana. */
-const WIDE = 1.2;
-const BASE = 1.4;
-
-/** Coordenadas de un punto dentro de su bola (−1 a 1; la base, aplastada). */
-const ballU = (ex: number, r: number) => ex / (r * WIDE);
-const ballV = (ey: number, r: number) => (ey < 0 ? ey / r : (ey * BASE) / r);
-
 /**
  * Pinta una capa de cúmulos en un mosaico de `CT × CT` sin costura: bolas por una rejilla con
- * desvío (`cell` de lado, radios de `r0` a `r1`), cada una una media bola achatada; cada píxel es
- * de la bola que más alto asoma, y junto a la que le sigue se funde un poco. Se calcula una vez.
+ * desvío (`cell` de lado, radios de `r0` a `r1`), cada una una media esfera; cada píxel es de la
+ * bola que más alto asoma. Se calcula una vez.
  */
 function cloudLayer(
   seed: number,
@@ -386,50 +370,28 @@ function cloudLayer(
       }
   const N = CT * CT;
   const height = new Float32Array(N).fill(-1);
-  const height2 = new Float32Array(N).fill(-1);
   const owner = new Uint16Array(N);
   const dx = new Int8Array(N);
   const dy = new Int8Array(N);
-  const owner2 = new Uint16Array(N).fill(0xffff);
-  const dx2 = new Int8Array(N);
-  const dy2 = new Int8Array(N);
   balls.forEach((b, id) => {
-    const RX = Math.ceil(b.r * WIDE);
     const R = Math.ceil(b.r);
     for (let oy = -R; oy <= R; oy++)
-      for (let ox = -RX; ox <= RX; ox++) {
+      for (let ox = -R; ox <= R; ox++) {
         const px = Math.round(b.x) + ox;
         const py = Math.round(b.y) + oy;
         const ex = px - b.x;
         const ey = py - b.y;
-        const u = ballU(ex, b.r);
-        const v = ballV(ey, b.r);
-        const d2 = u * u + v * v;
+        const d2 = (ex * ex + ey * ey) / (b.r * b.r);
         if (d2 >= 1) continue;
         const z = b.z + b.r * Math.sqrt(1 - d2);
         const i = (py & CM) * CT + (px & CM);
-        if (z > height[i]!) {
-          height2[i] = height[i]!;
-          owner2[i] = height[i]! < 0 ? 0xffff : owner[i]!;
-          dx2[i] = dx[i]!;
-          dy2[i] = dy[i]!;
-          height[i] = z;
-          owner[i] = id;
-          dx[i] = Math.round(ex);
-          dy[i] = Math.round(ey);
-        } else if (z > height2[i]!) {
-          height2[i] = z;
-          owner2[i] = id;
-          dx2[i] = Math.round(ex);
-          dy2[i] = Math.round(ey);
-        }
+        if (z <= height[i]!) continue;
+        height[i] = z;
+        owner[i] = id;
+        dx[i] = Math.round(ex);
+        dy[i] = Math.round(ey);
       }
   });
-  // Donde dos bolas casi igual de altas se tocan, se funden unos píxeles.
-  const mix = new Uint8Array(N);
-  for (let i = 0; i < N; i++)
-    if (owner2[i] !== 0xffff && height[i]! >= 0)
-      mix[i] = Math.round(Math.max(0, 1 - (height[i]! - height2[i]!) / 4) * 128);
   // La sombra propia entre bolas: lo que queda bajo una bola más alta de arriba a la izquierda.
   const occ = new Uint8Array(N);
   for (let y = 0; y < CT; y++)
@@ -447,7 +409,7 @@ function cloudLayer(
   for (let i = 0; i < N; i++) if (height[i]! < 0) owner[i] = 0xffff;
   const r = new Float32Array(balls.map((b) => b.r));
   const lag = new Float32Array(balls.map((_, id) => hash2(id, 5, seed)));
-  return { owner, dx, dy, owner2, dx2, dy2, mix, occ, r, lag };
+  return { owner, dx, dy, occ, r, lag };
 }
 
 let cloudCache: [CloudLayer, CloudLayer] | null = null;
@@ -502,66 +464,25 @@ function paintClouds(out: Uint32Array, far: Float32Array, t: number, frame: FogF
    * El tono (0 luz, 1 cuerpo, 2 sombra, 3 hondo) de una capa en un punto, o `NONE` si no hay
    * nube. `ox, oy`: lo que se ha movido la capa.
    */
-  /**
-   * La luz de una bola en un punto (`ex, ey` desde su centro), o `NaN` si no se ve ahí: encogida
-   * según lo lejos que quede su centro de lo visto (o entera, `deep`).
-   */
-  const ballLight = (
-    L: CloudLayer,
-    id: number,
-    ex: number,
-    ey: number,
-    x: number,
-    y: number,
-    deep: boolean,
-  ) => {
+  const tone = (L: CloudLayer, x: number, y: number, ox: number, oy: number, deep: boolean) => {
+    const i = ((y + oy) & CM) * CT + ((x + ox) & CM);
+    const id = L.owner[i]!;
+    if (id === 0xffff) return NONE;
+    const ex = L.dx[i]!;
+    const ey = L.dy[i]!;
     const r = L.r[id]!;
     let sc = 1;
     if (!deep || from) {
       const fc = farAt(x - ex, y - ey, L.lag[id]!);
       sc = Math.max(0, Math.min(1, (fc + 2) / (r + 18)));
       // Las que se encogen mucho desaparecen (no quedan canicas sueltas).
-      if (r * sc < 5) return NaN;
+      if (r * sc < 5) return NONE;
     }
     const rr = r * sc;
-    const u = ballU(ex, rr);
-    const v = ballV(ey, rr);
-    const d2 = u * u + v * v;
-    if (d2 >= 1) return NaN;
-    // La base, algo más en sombra.
-    return (
-      u * LX + v * LY + Math.sqrt(1 - d2) * LZ - (v > 0.4 ? (v - 0.4) * 0.5 : 0) + (sc < 1 ? 0 : 2)
-    );
-  };
-  /**
-   * El tono (0 luz, 1 cuerpo, 2 sombra, 3 hondo) de una capa en un punto, o `NONE` si no hay
-   * nube. `ox, oy`: lo que se ha movido la capa.
-   */
-  const tone = (L: CloudLayer, x: number, y: number, ox: number, oy: number, deep: boolean) => {
-    const i = ((y + oy) & CM) * CT + ((x + ox) & CM);
-    const id = L.owner[i]!;
-    if (id === 0xffff) return NONE;
-    let l1 = ballLight(L, id, L.dx[i]!, L.dy[i]!, x, y, deep);
-    const id2 = L.owner2[i]!;
-    let full = false;
-    if (id2 !== 0xffff && (L.mix[i]! > 0 || Number.isNaN(l1))) {
-      const l2 = ballLight(L, id2, L.dx2[i]!, L.dy2[i]!, x, y, deep);
-      if (Number.isNaN(l1)) l1 = l2;
-      else if (!Number.isNaN(l2)) {
-        // Donde se tocan, la luz de las dos se funde y queda un pliegue suave.
-        const w = L.mix[i]! / 256;
-        const f1 = l1 >= 1.5;
-        const a = f1 ? l1 - 2 : l1;
-        const c = l2 >= 1.5 ? l2 - 2 : l2;
-        l1 = a * (1 - w) + c * w - w * 0.12 + (f1 ? 2 : 0);
-      }
-    }
-    if (Number.isNaN(l1)) return NONE;
-    if (l1 >= 1.5) {
-      full = true;
-      l1 -= 2;
-    }
-    const light = l1;
+    const d2 = (ex * ex + ey * ey) / (rr * rr);
+    if (d2 >= 1) return NONE;
+    const nz = Math.sqrt(1 - d2);
+    const light = (ex / rr) * LX + (ey / rr) * LY + nz * LZ;
     const b = bayer(x + ox, y + oy);
     // Tres escalones por luz (cara clara, cuerpo, sombra propia), tramados en el paso.
     let k =
@@ -578,7 +499,7 @@ function paintClouds(out: Uint32Array, far: Float32Array, t: number, frame: FogF
                 ? 1
                 : 2
               : 2;
-    if (full && L.occ[i]) k = Math.min(3, k + L.occ[i]!);
+    if (sc === 1 && L.occ[i]) k = Math.min(3, k + L.occ[i]!);
     return k;
   };
   const HI = [C.white, C.mist, C.fog, C.steel];
@@ -590,10 +511,8 @@ function paintClouds(out: Uint32Array, far: Float32Array, t: number, frame: FogF
         out[i] = C.none;
         continue;
       }
-      // Lejos de lo visto (y sin retirada), todas las bolas están enteras: no hace falta mirar
-      // más. (Una bola llega a 45 px de su centro y está entera desde 54 px de lo visto, más los 4
-      // de la sombra: desde 105 px es seguro.)
-      const deep = far[i]! >= 105 && !from;
+      // Lejos de lo visto (y sin retirada), todas las bolas enteras: no hace falta mirar más.
+      const deep = far[i]! > 80 && !from;
       const a = tone(hi, x, y, hx, hy, deep);
       if (a !== NONE) {
         out[i] = HI[a]!;
@@ -609,14 +528,8 @@ function paintClouds(out: Uint32Array, far: Float32Array, t: number, frame: FogF
         out[i] = k === 3 ? (bay < 0.5 ? C.steel : C.fog) : LO[k]!;
         continue;
       }
-      // Sin nube, lejos de lo visto: un fondo de nube que cierra los huecos (no asoma terreno sin
-      // explorar); cerca, el terreno, con la sombra de las nubes tramada encima.
+      // Sin nube: el terreno, con la sombra de las nubes tramada encima.
       const drop = shade || tone(lo, x - 4, y - 4, lx, ly, deep) !== NONE;
-      const fill = (far[i]! - 70) / 40;
-      if (fill > 0 && bay < fill) {
-        out[i] = drop ? (bay < 0.5 ? C.steel : C.fog) : C.fog;
-        continue;
-      }
       out[i] = drop && bay < 0.5 ? C.steel : C.none;
     }
 }
