@@ -463,7 +463,10 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      explorado; luego sierra, marismas y ruinas en el visor.
    - [x] Pulido del mapa: niebla a color como mar de cúmulos (bolas con luz propia en dos capas,
      borde redondo, se encogen al despejar en 1,6 s), pergamino con borde a festones grabado y
-     retirada, sierra alta con nieve a manchas, mar sin halos, marismas a tinta.
+     retirada, sierra alta con nieve a manchas, mar sin halos, marismas a tinta. Probadas 4 variantes de
+     nubes y una mezcla (https://claude.ai/artifact/Hao1eL5R5RPZf8HrruaE8p): el usuario se queda con
+     esta. Animación más fluida: deriva más rápida, se repinta cada vez que la niebla se mueve un
+     píxel (hasta 20 fps) y solo lo que se ve (`rect`, de ~30 ms a 1,5–4,5 ms por fotograma).
 1. **Más cilindros y cuerpos de verdad**: los barriles apilados, las mesas (tablero y patas), el
    horno de pan (cúpula) y la caldera (cúpula de cobre) con la misma idea que `round`.
 2. [x] **Atlas de la gente en dos filas** (#100): se dibuja en una tira y se pliega (`fold` en
