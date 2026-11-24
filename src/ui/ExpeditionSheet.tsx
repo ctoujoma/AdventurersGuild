@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks';
+import { hurtNote } from './hurtNote';
 import { audio } from '../audio/audio';
 import {
   HEADINGS,
@@ -263,6 +264,11 @@ export function ExpeditionSheet({ game, onClose, onSend }: Props) {
         {blocked && sel.length > 0 && (
           <p class="qs-warn" role="status">
             {blocked}
+          </p>
+        )}
+        {!blocked && hurtNote(game, sel) && (
+          <p class="qs-warn" role="status">
+            {hurtNote(game, sel)}
           </p>
         )}
         <button

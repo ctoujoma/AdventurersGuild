@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { CLERIC_NURSE, DAY_SECONDS, HEAL_IN_BED } from './balance';
+import { CLERIC_NURSE, DAY_SECONDS, HEAL_IN_BED, HP_DAY, HP_GRAVE } from './balance';
+import { hpOf } from './health';
 import { endDay, newGame, tick } from './game';
 import { cotsIn, healAt, infirmaryPlan, restHours, staffing } from './infirmary';
 import type { GameState, Hero, Room } from './model';
@@ -71,8 +72,10 @@ describe('enfermería', () => {
     expect(cotsIn(enf)).toBe(2);
     const plan = infirmaryPlan(s);
     expect([...plan.keys()]).toEqual(['h0', 'h1']);
+    const hp = (x: GameState, id: string) => hpOf(x.heroes.find((h) => h.id === id)!);
     const next = endDay({ ...s, tips: ['*'] }, true);
-    expect(next.heroes.find((h) => h.id === 'h3')!.days).toBe(7 - HEAL_IN_BED);
+    // Sin catre, en su cama: lo de un día a ×1.
+    expect(hp(next, 'h3') - hp(s, 'h3')).toBeCloseTo(HP_DAY * HEAL_IN_BED, 6);
   });
 
   it('puede haber dos: el que no cabe en una va a la otra', () => {
@@ -86,13 +89,14 @@ describe('enfermería', () => {
   it('se cura hora a hora: medio día cura la mitad y se sabe cuánto falta', () => {
     const { s } = ward('horas', 1, 1);
     const h = s.heroes[0]!;
-    h.days = 2;
+    // Le faltan dos días a ×1 para levantarse (el 20 %).
+    h.hp = HP_GRAVE - 2 * HP_DAY;
     expect(restHours(s, h)).toBe(48);
     const half = tick({ ...s, clock: 0 }, DAY_SECONDS / 2);
-    expect(half.heroes[0]!.days).toBeCloseTo(1.5, 6);
+    expect(half.heroes[0]!.hp).toBeCloseTo(h.hp + HP_DAY / 2, 6);
     expect(restHours(half, half.heroes[0]!)).toBe(36);
-    // Y quien llega a cero se levanta en el momento, sin esperar al amanecer.
-    h.days = 0.25;
+    // Y quien llega al 20 % se levanta en el momento, sin esperar al amanecer.
+    h.hp = HP_GRAVE - HP_DAY / 4;
     const up = tick({ ...s, clock: 0 }, DAY_SECONDS / 2);
     expect(up.heroes[0]!.status).toBe('ok');
   });

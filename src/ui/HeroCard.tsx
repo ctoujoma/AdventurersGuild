@@ -1,4 +1,8 @@
 import { tierOf } from '../art/tiers';
+import { HP_GRAVE, HP_LIGHT } from '../core/balance';
+import { healthOf, hpOf, workFactor } from '../core/health';
+import { restHours } from '../core/infirmary';
+import { restText } from '../data/labels';
 import { CACHE_OWED_MORALE, REFUSE_GRUDGE, VEIL_CAP } from '../core/balance';
 import { useEffect, useState } from 'preact/hooks';
 import { DRESS_GOLD, GUARD_BONUS, LEVEL_MAX, MASTER_LEVEL } from '../core/balance';
@@ -531,6 +535,32 @@ export function HeroCard({
               )}
               {!candidate && !gone && (
                 <div class="meters">
+                  {/* La vida que se guarda: marcas del 50 % (leve) y del 20 % (grave). */}
+                  <div
+                    class="meter meter-hp"
+                    {...help(
+                      t('ficha.herocard.vida_ayuda', {
+                        estado: healthOf(h),
+                        sexo: h.sex,
+                        leve: Math.round(HP_LIGHT * 100),
+                        grave: Math.round(HP_GRAVE * 100),
+                        falta: restText(restHours(game, h)),
+                        hay_falta: restHours(game, h) > 0,
+                        rinde: Math.round(workFactor(h) * 100),
+                      }),
+                    )}
+                  >
+                    <span>{t('ficha.herocard.vida')}</span>
+                    <span class="track">
+                      <i
+                        class={`hp-${healthOf(h)}`}
+                        style={{ width: `${Math.round(hpOf(h) * 100)}%` }}
+                      />
+                      <b style={{ left: `${HP_GRAVE * 100}%` }} />
+                      <b style={{ left: `${HP_LIGHT * 100}%` }} />
+                    </span>
+                    <small>{Math.round(hpOf(h) * 100)}</small>
+                  </div>
                   <div
                     class="meter"
                     {...help(

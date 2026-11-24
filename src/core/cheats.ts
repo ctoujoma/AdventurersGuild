@@ -69,9 +69,10 @@ export function cheat(state: GameState, kind: Cheat): { state: GameState; note: 
       return { state: s, note: t('trucos.fama', { n: s.rep }) };
     case 'curar':
       for (const h of s.heroes)
-        if (h.status === 'herido') {
-          h.status = 'ok';
+        if (h.status === 'herido' || (h.hp ?? 1) < 1) {
+          if (h.status === 'herido') h.status = 'ok';
           h.days = 0;
+          h.hp = 1;
         }
       for (const h of s.heroes) if (h.status !== 'muerto') h.morale = 100;
       return { state: s, note: t('trucos.curar') };

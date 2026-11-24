@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'preact/hooks';
+import { hurtNote } from './hurtNote';
 import { audio } from '../audio/audio';
 import { canSend } from '../core/game';
 import type { GameState, Quest } from '../core/model';
@@ -374,6 +375,11 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
         {(warn || blocked || guardNote || sewNote) && (
           <p class="qs-warn" role="status">
             {warn ?? blocked ?? guardNote ?? sewNote}
+          </p>
+        )}
+        {hurtNote(game, sel) && (
+          <p class="qs-warn" role="status">
+            {hurtNote(game, sel)}
           </p>
         )}
         <button

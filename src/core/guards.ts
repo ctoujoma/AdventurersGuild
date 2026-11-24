@@ -6,6 +6,7 @@ import { MAX_GUARDS } from './balance';
 import type { GameState, Hero } from './model';
 import { vaultOf } from './vault';
 import { t } from '../textos';
+import { isLight } from './health';
 
 export type Post = 'puerta' | 'tesoro';
 
@@ -19,6 +20,12 @@ export const guardsAt = (s: GameState, post: Post): Hero[] =>
 export const postFull = (s: GameState, post: Post) => guardsAt(s, post).length >= MAX_GUARDS;
 
 /** Por qué no se puede poner a nadie más en ese puesto (o null). */
+/** Por qué este héroe no puede hacer guardia en `post` (herido leve, o el puesto). */
+export function guardIssue(s: GameState, h: Hero, post: Post): string | null {
+  if (isLight(h)) return t('guardia.herido', { heroe: h.name, sexo: h.sex });
+  return postIssue(s, post);
+}
+
 export function postIssue(s: GameState, post: Post): string | null {
   if (post === 'tesoro' && !vaultOf(s)) return t('guardia.sin_camara');
   if (postFull(s, post))

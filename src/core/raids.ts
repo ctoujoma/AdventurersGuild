@@ -4,6 +4,7 @@
  * sala (core/assault.ts): si alguien sale con vida, saqueo; si caen todos, tregua y botín.
  * Todo se aplica sobre el estado ya copiado al terminar el día.
  */
+import { healthOf, hpOf, setHp, woundChip } from './health';
 import { DOG_TIPOFF } from '../data/custom';
 import {
   BANDS,
@@ -25,6 +26,8 @@ import {
   SPY_DAYS,
   SPY_RISK,
   rankIndex,
+  DOWNED_HP,
+  RAID_DEATH,
 } from './balance';
 import {
   YARD,
@@ -207,18 +210,28 @@ function resolveRaid(s: GameState, rng: Rng, events: DawnEvent[]): Report {
     }
     for (const h of ds) h.morale = Math.max(0, h.morale - 10);
   }
-  for (const h of hurt) {
-    h.status = 'herido';
-    h.days = rng.int(2, 3);
-    // Lo que hacía, para volver a ello al curarse.
-    if (h.job) h.jobBefore = h.job;
-    if (h.guard) h.guardBefore = true;
-    delete h.guard;
-    delete h.job;
-    chips.push({
-      t: msg('informes.chip_herido', { heroe: h.name, sexo: h.sex, dias: h.days }),
-      k: 'bad',
-    });
+  // La vida que le queda a cada uno; quien cayó, grave (y, muy raro, no lo cuenta).
+  for (const h of s.heroes) {
+    const end = fight.hp?.[h.id];
+    if (fallen.has(h.id)) {
+      if (rng.chance(RAID_DEATH)) {
+        h.status = 'muerto';
+        delete h.guard;
+        delete h.job;
+        delete h.worn;
+        s.fallen.unshift({
+          id: h.id,
+          name: h.nick ? msg('general.apodado', { nombre: h.name, apodo: h.nick }) : h.name,
+          epitaph: msg('asaltos.epitafio', { ...band, dia: s.day }),
+        });
+        stats.lastDeath = s.day;
+        chip('chip_caido', { heroe: h.name, sexo: h.sex }, 'bad');
+        continue;
+      }
+      setHp(h, rng.range(DOWNED_HP[0], DOWNED_HP[1]));
+    } else if (end !== undefined && end < hpOf(h)) setHp(h, end);
+    else continue;
+    if (healthOf(h) !== 'sano') chips.push({ t: woundChip(h), k: 'bad' });
   }
   for (const w of s.workers) if (fallen.has(w.id)) chip('chip_golpes', { nombre: w.name }, 'bad');
   for (const h of ds) h.history.push(msg('asaltos.historial', { dia: s.day, banda: raid.band }));

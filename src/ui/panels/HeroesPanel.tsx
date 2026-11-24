@@ -1,4 +1,5 @@
 import type { ComponentChildren } from 'preact';
+import { hpOf, isLight } from '../../core/health';
 import { canHire, roster, salaries } from '../../core/game';
 import type { GameState, Hero } from '../../core/model';
 import type { Task } from '../drop';
@@ -39,6 +40,12 @@ function heroFlag(h: Hero): { text: string; cls: string } | null {
       text:
         h.request === 'cache' ? t('paneles.heroes.pide_cache') : t('paneles.heroes.pide_aumento'),
       cls: 'request',
+    };
+  // Herido leve (en pie): se ve antes que el ánimo.
+  if (isLight(h))
+    return {
+      text: t('paneles.heroes.leve', { sexo: h.sex, pct: Math.round(hpOf(h) * 100) }),
+      cls: 'herido',
     };
   const band = moraleBand(h.morale);
   if (h.status !== 'muerto' && band !== 'normal')

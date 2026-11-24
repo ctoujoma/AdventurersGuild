@@ -56,8 +56,10 @@ export interface Hero {
   /** Prima de fichaje (solo cuenta mientras es candidato). */
   fee: number;
   status: HeroStatus;
-  /** Días que le quedan fuera o en cama. */
+  /** Días que le quedan fuera (o, desaparecido, para volver). */
   days: number;
+  /** La vida que le queda (0–1; sin esto, entera): ver `core/health.ts`. */
+  hp?: number;
   quote: Txt;
   history: Txt[];
   /** Petición pendiente: aumento (desanimado) o caché (al hacerse veterano o maestro). */
@@ -808,6 +810,8 @@ export interface AssaultOutcome {
   escaped: number;
   stolen: number;
   recovered: number;
+  /** La vida con la que acabó cada héroe (0–1). */
+  hp?: Record<string, number>;
 }
 
 export interface RaidPlan {

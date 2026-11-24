@@ -2,6 +2,7 @@
  * La comarca se mueve: la amenaza regional (crece si se ignoran o se fallan las historias)
  * y los sucesos de la taberna en los que hay que elegir.
  */
+import { hurt } from './health';
 import { GEAR } from '../data/items';
 import { QUIET_AFTER } from './balance';
 import { activeChain, chainDef } from './chains';
@@ -181,8 +182,7 @@ const EVENTS: readonly EventDef[] = [
         apply: (s, rng, w) => {
           s.rep += 6;
           if (rng.chance(0.25)) {
-            w[0]!.status = 'herido';
-            w[0]!.days = 2;
+            hurt(w[0]!, 0.35);
             return say('lobos', 'mordisco', { heroe: w[0]!.name });
           }
           return say('lobos', 'ayuda', { heroe: w[0]!.name });

@@ -11,6 +11,8 @@ import {
   COTS_EXTRA,
   HEAL_IN_BED,
   HERO_WORK,
+  HP_GRAVE,
+  HP_LIGHT,
   NURSE_FULL,
   NURSE_MAX,
   healRate,
@@ -18,6 +20,7 @@ import {
 import type { GameState, Hero, Room } from './model';
 import { active } from './rooms';
 import { workAt } from './workers';
+import { hpOf, regenPerDay } from './health';
 
 /** Catres de una enfermería: uno por hueco de ancho y uno más (ninguno si no está en uso). */
 export function cotsIn(r: Room): number {
@@ -63,7 +66,7 @@ export function infirmaryPlan(s: GameState): Map<string, string> {
   const plan = new Map<string, string>();
   const hurt = s.heroes
     .filter((h) => h.status === 'herido')
-    .sort((a, b) => b.days - a.days || a.id.localeCompare(b.id));
+    .sort((a, b) => hpOf(a) - hpOf(b) || a.id.localeCompare(b.id));
   let i = 0;
   for (const r of infirmaries(s)) {
     for (let n = cotsIn(r); n > 0 && i < hurt.length; n--) plan.set(hurt[i++]!.id, r.id);
@@ -78,8 +81,13 @@ export function healOf(s: GameState, h: Hero, plan = infirmaryPlan(s)): number {
   return r ? healAt(s, r) : HEAL_IN_BED;
 }
 
-/** Horas de juego (el día, 24) que le faltan a un herido para levantarse, a su ritmo de ahora. */
+/**
+ * Horas de juego (el día, 24) que le faltan, a su ritmo de ahora: al grave, para levantarse (el
+ * 20 %); al leve, para estar sano (el 50 %). 0 si ya lo está.
+ */
 export function restHours(s: GameState, h: Hero, plan = infirmaryPlan(s)): number {
-  if (h.status !== 'herido') return 0;
-  return Math.max(1, Math.ceil((h.days / healOf(s, h, plan)) * 24 - 1e-9));
+  const goal = h.status === 'herido' ? HP_GRAVE : HP_LIGHT;
+  const gap = goal - hpOf(h);
+  if (gap <= 0) return 0;
+  return Math.max(1, Math.ceil((gap / regenPerDay(healOf(s, h, plan))) * 24 - 1e-9));
 }

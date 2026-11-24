@@ -65,3 +65,6 @@ aviso_robo: "{banda, mayus} {varios, select, si {asaltaron} other {asaltó}} la 
 aviso_arcon: "{banda, mayus} {varios, select, si {asaltaron} other {asaltó}} la taberna y {varios, select, si {salieron} other {salió}} con lo que {varios, select, si {pudieron} other {pudo}} del arcón."
 aviso_barra: "Chivatazo: {banda} {varios, select, si {llegan} other {llega}} {cuando}. Prepara las defensas."
 aviso_mapa: "{banda, mayus} {varios, select, si {vienen} other {viene}} hacia la taberna: {varios, select, si {llegan} other {llega}} {cuando}."
+# Quien cae en un asalto se salva casi siempre; muy raro, no lo cuenta.
+epitafio: "Cayó defendiendo la taberna de {banda} el día {dia}"
+chip_caido: "{heroe} no se levanta: ha muerto defendiendo la casa"

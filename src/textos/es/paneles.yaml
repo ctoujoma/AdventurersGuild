@@ -100,6 +100,7 @@ gremio:
   notoriedad_cuanto_mas_famoso: "Notoriedad: cuanto más famoso y rico es el gremio, más tienta a los bandidos."
   mejora: "Mejora: {efecto}"
 heroes:
+  leve: "{sexo, select, f {Herida leve} other {Herido leve}} · {pct} %"
   pide_cache: "Pide caché"
   pide_aumento: "Pide aumento"
   de_nivel_ver_ficha: "{nombre}, {clase} de nivel {nivel}. {doing}{hay_aviso, select, si {. {aviso}} other {}}{hay_pista, select, si {. {pista}} other {.}} Ver ficha"

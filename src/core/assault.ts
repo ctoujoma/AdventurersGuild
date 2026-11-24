@@ -11,6 +11,7 @@
  * abierto se juega en directo (`Assault`, con órdenes del jugador) y, si no, solo. La escena
  * enseña la lista de pasos que sale (RaidPlan).
  */
+import { hpOf } from './health';
 import {
   BANDIT_CARRY,
   BANDIT_EVERY,
@@ -186,6 +187,8 @@ export interface Defender {
   power: number;
   /** Vida. */
   hp: number;
+  /** La vida entera (los heridos entran con menos: `hp`); sin esto, `hp`. */
+  full?: number;
   /** Sala en la que está al empezar (los de guardia, en el recibidor). */
   at: string;
   guard?: boolean;
@@ -276,7 +279,9 @@ export function assaultSetup(s: GameState, strength: number, rng: Rng): AssaultS
     return {
       id: h.id,
       power: u.atk + (armedUp ? GUARD_BONUS : 0),
-      hp: Math.round(u.max * (armedUp ? GUARD_HP : 1)),
+      // Entra con la vida que le queda (la que se guarda entre peleas).
+      hp: Math.max(1, Math.round(u.max * (armedUp ? GUARD_HP : 1) * hpOf(h))),
+      full: Math.round(u.max * (armedUp ? GUARD_HP : 1)),
       def: u.def,
       every: u.every,
       ability: u.ability,
@@ -734,6 +739,14 @@ export class Assault extends Fight<Fighter, RaidOrder, AssaultResult> {
         .map((d) => d.id),
       downed: bands.filter((b) => b.down).length,
       escaped: bands.filter((b) => b.gone).length,
+      hp: Object.fromEntries(
+        this.setup.defenders
+          .filter((d) => !d.worker)
+          .map((d) => {
+            const u = this.units.find((x) => x.id === d.id);
+            return [d.id, u ? Math.max(0, u.hp) / (d.full ?? d.hp) : 1];
+          }),
+      ),
       stolen: this.stolen,
       recovered: this.recovered,
     };

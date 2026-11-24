@@ -29,6 +29,8 @@ rescate_texto: "Their trail was lost near {lugar}. If someone goes looking soon,
 desaparecido: "Nobody knows what became of {heroe}. The last thing seen was their shadow near {lugar}."
 chip_desaparecido: "{heroe}: missing"
 herido: "{heroe} comes back wounded: {dias} days of rest."
+herida: "{heroe} comes back wounded{grave, select, si { badly: straight to bed} other {, but on their feet}} ({pct} % health)."
+chip_herida: "{heroe}: {grave, select, si {badly hurt} other {hurt}} · {pct} %"
 chip_herido: "{heroe}: wounded, {dias} days"
 sube_nivel: "{heroe} reaches level {nivel}"
 cache: "{heroe} asks for a veteran's fee"

@@ -144,7 +144,8 @@ describe('trabajadores', () => {
     const s = reduce(start, { type: 'upgradeRoom', id: roomOf(start, 'enfermeria').id });
     const h = s.heroes[0]!;
     h.status = 'herido';
-    h.days = 6;
+    h.days = 0;
+    h.hp = 0.02;
     const mozo = village(s, 'mozo').id;
     const inf = roomOf(s, 'enfermeria').id;
     const nurse = reduce(reduce(s, { type: 'assign', who: mozo, room: inf }), {
@@ -152,8 +153,8 @@ describe('trabajadores', () => {
       heroId: mozo,
       room: inf,
     });
-    const days = (x: GameState) => x.heroes.find((y) => y.id === h.id)!.days;
-    expect(days(endDay(nurse))).toBe(days(endDay(s)) - 1);
+    const hp = (x: GameState) => x.heroes.find((y) => y.id === h.id)!.hp ?? 1;
+    expect(hp(endDay(nurse))).toBeGreaterThan(hp(endDay(s)));
   });
 
   it('hasta el día 30 bastan los del pueblo; después, una cama del servicio para cada uno', () => {
@@ -221,8 +222,8 @@ describe('vuelta al trabajo tras caer herido', () => {
     a!.status = 'herido';
     a!.days = 1;
     a!.jobBefore = cocina.id;
-    b!.status = 'herido';
-    b!.days = 1;
+    // La guardia, solo al estar sano (50 %): esta noche lo pasa.
+    b!.hp = 0.48;
     b!.guardBefore = true;
     const t = endDay(s);
     expect(t.heroes.find((h) => h.id === a!.id)!.job).toBe(cocina.id);

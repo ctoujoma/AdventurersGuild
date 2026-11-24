@@ -297,6 +297,24 @@ export const INJURY: Record<Outcome, number> = {
   Fracaso: 0.45,
   Desastre: 0.7,
 };
+/**
+ * La vida que quitan los encargos sin pelea: a todos, un rasguño según el resultado; al que se
+ * hiere (`INJURY`), además, una herida de `WOUND_HP` (entre los dos, al azar). Las dos, por el
+ * peligro (`DANGER_HP`). Nadie llega a 0 así: la baja la decide `CASUALTY`.
+ */
+export const SCRATCH_HP: Record<Outcome, number> = {
+  'Éxito brillante': 0,
+  Éxito: 0.04,
+  'Éxito parcial': 0.08,
+  Fracaso: 0.12,
+  Desastre: 0.2,
+};
+export const WOUND_HP = [0.3, 0.65] as const;
+export const DANGER_HP = [0.7, 0.9, 1.1, 1.3] as const;
+/** Quien cae en una pelea y no es la baja: grave, con esta vida (entre los dos). */
+export const DOWNED_HP = [0.04, 0.15] as const;
+/** En casa (asaltos) quien cae se salva casi siempre: solo muere así de raro. */
+export const RAID_DEATH = 0.03;
 export const MORALE: Record<Outcome, number> = {
   'Éxito brillante': 10,
   Éxito: 6,
@@ -496,6 +514,15 @@ export const NURSE_MAX = 1;
 export const CLERIC_NURSE = 2;
 export const COTS_EXTRA = 1;
 export const HEAL_IN_BED = 1;
+/**
+ * La vida (`core/health.ts`): por debajo de `HP_LIGHT`, herido leve; de `HP_GRAVE`, grave (en
+ * cama). `HP_DAY`: lo que se recupera por día en casa a ritmo ×1 (su cama). `LIGHT_WORK_MIN`: lo
+ * que rinde trabajando el herido leve al borde de grave.
+ */
+export const HP_LIGHT = 0.5;
+export const HP_GRAVE = 0.2;
+export const HP_DAY = 0.06;
+export const LIGHT_WORK_MIN = 0.5;
 /** Noches de trabajo por cada punto de Maña que ya se tiene para subir otro. */
 export const SKILL_XP = 5;
 /** Probabilidad base de que alguien pida trabajo cada día (desde que se paga la deuda) y cuántos esperan. */
@@ -641,6 +668,8 @@ export const EXP_FIGHT = 7;
 export const EXP_FIGHT_FAR = 1.4;
 export const EXP_HURT_DOWN = 3;
 export const EXP_HURT_DAYS = 2;
+/** Vida que quita cada herida de expedición al volver (con la vida que se guarda). */
+export const EXP_HURT_HP_LOSS = 0.3;
 /** Quien cayó y vuelve a casa: probabilidad de que no salga adelante (con clérigo, `CLERIC_SAVE`). */
 export const EXP_DOWN_DEATH = 0.3;
 /** Si caen todos, vuelve esta parte de la mochila (el resto se queda allí). */
