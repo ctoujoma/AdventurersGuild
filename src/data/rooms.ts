@@ -114,7 +114,6 @@ export const ROOMS: Record<RoomType, RoomDef> = {
     maxW: 3,
     maxH: 1,
     place: 'libre',
-    unique: true,
     fac: 'enf',
   },
   capilla: {

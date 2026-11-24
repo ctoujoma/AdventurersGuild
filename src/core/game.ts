@@ -64,7 +64,6 @@ import {
   QUEST_LOG_KEEP,
   START_FOOD,
   chapelRest,
-  healRate,
   rankIndex,
   restCap,
   restMorale,
@@ -118,6 +117,7 @@ import {
   tutorialStep,
 } from './tutorial';
 import { stepRaids } from './raids';
+import { healOf, infirmaryPlan } from './infirmary';
 import { dawnNight, nightDue, nightRng, rollNight } from './night';
 import { acceptMessenger, dismissMessenger, messengerGone, stepMessenger } from './messenger';
 import { easeIssue, easeNightmare } from './nightmare';
@@ -205,7 +205,6 @@ import {
   canAssign,
   canHireWorker,
   freeRoomFor,
-  nurseBonus,
   stepWorkers,
   tidyJobs,
   villageCrew,
@@ -1629,9 +1628,10 @@ export function endDay(state: GameState, away = false): GameState {
   s.missions = s.missions.filter((x) => x.daysLeft > 0);
 
   // Curación y desaparecidos.
+  const cots = infirmaryPlan(s);
   for (const h of s.heroes) {
     if (h.status === 'herido') {
-      h.days -= healRate(s.fac.enf) + nurseBonus(s);
+      h.days -= healOf(s, h, cots);
       if (h.days <= 0) {
         h.status = 'ok';
         h.days = 0;

@@ -77,6 +77,7 @@ crew:
   hoy_se_atiende_a: "Hoy se atiende a {served} de {total} visitantes."
   saca_jarras_al_dia: "Saca {brew_at} jarras al día."
   hace_raciones_al_dia: "Hace {cook_at} raciones al día."
+  enf_mano: "Mano al {pct} %: quien está en sus catres se cura {dias, plural, one {# día} other {# días}} por noche."
   llegan_a_de_mano: "Llegan a {nurse_work} de mano: cada noche, un día de cama menos a cada herido. Más gente no cura más deprisa."
   con_de_mano_entre: "Con {nurse_work} de mano entre todos (hoy, {hand_text}), cada noche sería un día de cama menos a cada herido."
   atiende_a: "Atiende a {n}"

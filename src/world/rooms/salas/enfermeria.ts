@@ -5,6 +5,7 @@
  * del cuerpo. Las anchas ponen un catre bajo cada ventana y llenan los tramos de en medio: la
  * botica (frascos y el botiquín), y la tina de los baños con el emblema del sanador encima.
  */
+import { COTS_EXTRA } from '../../../core/balance';
 import { P } from '../../../art/palette';
 import { PixelBuffer } from '../../../art/pixel';
 import type { Room } from '../../../core/model';
@@ -41,13 +42,13 @@ const COT_W = Prop.cot().w / scaleAt(COT_Z);
 const SIDE_GAP = 6;
 
 /**
- * Catres: uno por nivel y hueco de más (tres como mucho), contra la pared (son bajos: caben
+ * Catres: uno por hueco de ancho y uno más (`cotsIn` del núcleo: el ancho da plazas), contra la pared (son bajos: caben
  * bajo las ventanas). En la de un hueco, repartidos a lo ancho (lo de en medio queda para el
  * curandero); en las anchas, uno bajo cada ventana (y el que sobre, contra la pared de la
  * izquierda), y los muebles del curandero en los tramos de pared de entre medias.
  */
 export function cotsOf(room: Room, w: number): Bed[] {
-  const n = Math.min(3, room.level + room.w - 1);
+  const n = room.level > 0 ? room.w + COTS_EXTRA : 0;
   const cot = (x: number): Bed => ({ kind: 'catre', x, z: COT_Z, top: 3, level: room.level });
   if (room.w > 1) {
     const wins = cellsOf(room, w).map((c) => c.win);

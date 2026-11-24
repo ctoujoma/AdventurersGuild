@@ -36,11 +36,12 @@ mejoras:
     nombre: "Enfermería"
     niveles:
       - "Cerrada y llena de trastos"
-      - "1 camilla y una vela"
-      - "2 camillas, farol y hierbas secándose"
-      - "2 camillas y botica con pociones"
+      - "Catres y una vela"
+      - "Farol y hierbas secándose"
+      - "Botica con pociones"
     efecto_0: "Las heridas curan a su ritmo"
-    efecto: "Las heridas curan {veces} veces más rápido"
+    # Lo que cura un catre cada noche con la mano a pleno (sin nadie, como una cama).
+    efecto: "Con quien la atienda, en sus catres se curan hasta {dias} días por noche"
   tab:
     nombre: "Taberna"
     niveles:

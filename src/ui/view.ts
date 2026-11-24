@@ -1,4 +1,5 @@
 import { messengerSex } from '../core/messenger';
+import { infirmaryPlan } from '../core/infirmary';
 import { nightCatNow } from '../core/nightCat';
 import { nightmareNow } from '../core/nightmare';
 import { INCIDENTS } from '../data/incidents';
@@ -188,6 +189,7 @@ export function sceneModel(s: GameState): SceneModel {
   const callHeroes = asks.some((h) => h === 'heroe' || h === 'alguien') || undefined;
   const callStaff = asks.includes('alguien') || undefined;
   const plan = sleepPlan(s);
+  const cots = infirmaryPlan(s);
   for (const h of s.heroes) {
     if (h.status === 'muerto' || h.status === 'desaparecido') continue;
     heroes.push({
@@ -201,6 +203,7 @@ export function sceneModel(s: GameState): SceneModel {
       vault: (h.guard && h.post === 'tesoro') || undefined,
       sentry: h.guard ? { lvl: h.lvl, morale: h.morale } : undefined,
       dorm: plan.get(h.id),
+      cot: cots.get(h.id),
       // Mientras lo visten, está en la sastrería.
       work: dressingOf(s, h.id)?.room ?? h.job,
       goTo: goTo(h.id),

@@ -9,7 +9,6 @@ import {
   COOK_PER_WORK,
   HERO_WORK,
   MAX_GUARDS,
-  NURSE_WORK,
   SERVE_PER_WORK,
 } from '../core/balance';
 import { dayPart } from '../core/game';
@@ -18,7 +17,8 @@ import { brewAt, cookAt } from '../core/larder';
 import type { GameState, Hero, Room, Worker } from '../core/model';
 import { visitorsOf } from '../core/salon';
 import { ATTR_NAMES, gainText, skillGain, trainState } from '../core/training';
-import { crewOf, effortOf, isJobRoom, isTrainRoom, slotsOf, workIn } from '../core/workers';
+import { crewOf, effortOf, isJobRoom, isTrainRoom, slotsOf } from '../core/workers';
+import { healAt, staffing } from '../core/infirmary';
 import { TRAINS } from '../data/rooms';
 import { TRADES, TRADE_LIST } from '../data/workers';
 import { CLASS_NAMES, statusLabel } from '../data/labels';
@@ -71,16 +71,12 @@ export function crewEffect(game: GameState, room: Room): string {
       return t('ficha.crew.saca_jarras_al_dia', { brew_at: Math.round(brewAt(game, room)) });
     case 'cocina':
       return t('ficha.crew.hace_raciones_al_dia', { cook_at: Math.round(cookAt(game, room)) });
-    case 'enfermeria': {
-      // La cuenta del núcleo (`nurseBonus`): con `NURSE_WORK` de mano entre todos, un día más.
-      const n = workIn(game, 'enfermeria');
-      return n >= NURSE_WORK
-        ? t('ficha.crew.llegan_a_de_mano', { nurse_work: NURSE_WORK })
-        : t('ficha.crew.con_de_mano_entre', {
-            nurse_work: NURSE_WORK,
-            hand_text: handText(n),
-          });
-    }
+    case 'enfermeria':
+      // La cuenta del núcleo (`core/infirmary.ts`): la mano de esta sala frente a la que pide.
+      return t('ficha.crew.enf_mano', {
+        pct: Math.round(staffing(game, room) * 100),
+        dias: healAt(game, room),
+      });
     default:
       return '';
   }

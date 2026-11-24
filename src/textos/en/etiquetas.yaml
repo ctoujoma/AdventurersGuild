@@ -33,11 +33,11 @@ mejoras:
     nombre: "Infirmary"
     niveles:
       - "Closed and full of junk"
-      - "1 cot and a candle"
-      - "2 cots, a lantern and herbs drying"
-      - "2 cots and an apothecary chest with potions"
+      - "Cots and a candle"
+      - "A lantern and herbs drying"
+      - "An apothecary chest with potions"
     efecto_0: "Wounds heal at their own pace"
-    efecto: "Wounds heal {veces} times faster"
+    efecto: "With someone tending it, its cots heal up to {dias} days per night"
   tab:
     nombre: "Tavern"
     niveles:

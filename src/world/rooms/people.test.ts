@@ -79,7 +79,7 @@ describe('la gente de la casa', () => {
     expect(S.beds.length).toBeGreaterThan(0);
     const h = homes(
       [
-        { id: 'a', status: 'herido' },
+        { id: 'a', status: 'herido', cot: b.rooms.find((r) => r.type === 'enfermeria')!.id },
         { id: 'b', status: 'ok', guard: true },
         { id: 'c', status: 'ok' },
         { id: 'd', status: 'candidato' },

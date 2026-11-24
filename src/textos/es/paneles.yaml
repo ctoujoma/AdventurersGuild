@@ -298,6 +298,15 @@ room:
   mano_de: "Mano {hand_text} de {nurse_work}{mano, select, si {: −1 día} other {}}"
   con_de_mano_entre: "Con {nurse_work} de mano entre todos (un enfermero, o trabajadores y héroes echando una mano), cada herido se cura un día más por noche. Rinden más en una enfermería mejor."
   heroes_heridos_ahora_mismo: "Héroes heridos ahora mismo."
+  # Enfermería: catres (el ancho), lo que cura (el nivel, con quien trabaje) y la mano.
+  enf:
+    catres: "{n}/{de} catres"
+    catres_ayuda: "Un catre por hueco de ancho y {extra} más. Van primero los más graves, a la enfermería que mejor cura; los que no caben se curan en su cama."
+    cura_ayuda: "Días de cama que se le quitan cada noche a quien está en un catre. Sin nadie trabajando, {cama}, como en su cama; con mano, lo del nivel {nivel} y uno más, en proporción a la mano que hay."
+    mano: "Mano {pct} %"
+    mano_ayuda: "La mano de quien trabaja aquí frente a la que pide la sala (más cuanto más ancha). Un enfermero rinde según su maña; un héroe echando una mano, menos; un clérigo, {clerigo} veces lo de un héroe."
+    sin_nadie: "Nadie trabaja aquí: sus catres curan como una cama. Pon a un enfermero o a alguien echando una mano."
+    sin_catre: "Sin catre (se curan {cama} día por noche en su cama):"
   en_cama_de: "Ficha de {nombre}, en cama"
   noches_para_curarse: "{n, plural, one {En pie mañana} other {# noches para curarse}}"
   pon_aqui_a_un: "Pon aquí a un héroe que esté en casa para que entrene. Las habilidades suben solas según su clase. Cada héroe llega como mucho a {train_hero_base} más {train_per_level} por nivel ({train_main_bonus} más en el atributo principal de su clase)."

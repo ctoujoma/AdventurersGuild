@@ -279,6 +279,8 @@ export interface Resident {
   vault?: boolean;
   /** Su dormitorio (id): coge una cama de esa sala si queda. */
   dorm?: string;
+  /** Herido con catre: la enfermería (id) en la que está. */
+  cot?: string;
   /** Trabajador: con cama en el servicio o de los que duermen en el pueblo (sin sitio fijo). */
   staff?: 'casa' | 'pueblo';
 }
@@ -303,8 +305,16 @@ export function homes(people: readonly Resident[], S: Spots): Map<string, Goal> 
     const i = dorm ? list.findIndex((b) => b.roomId === dorm) : -1;
     return i >= 0 ? list.splice(i, 1)[0] : list.shift();
   };
-  for (const p of people.filter((x) => x.status === 'herido')) {
-    const b = cots.shift() ?? take(free, p.dorm);
+  // Los heridos con catre (el núcleo dice en qué enfermería: `cot`), en uno de esa sala; los
+  // que no caben, en su cama.
+  const hurt = people.filter((x) => x.status === 'herido');
+  for (const p of hurt.filter((x) => x.cot)) {
+    const i = cots.findIndex((c) => c.roomId === p.cot);
+    const b = i >= 0 ? cots.splice(i, 1)[0] : cots.shift();
+    if (b) out.set(p.id, bed(b));
+  }
+  for (const p of hurt.filter((x) => !out.has(x.id))) {
+    const b = take(free, p.dorm);
     if (b) out.set(p.id, bed(b));
   }
   let g = 0;

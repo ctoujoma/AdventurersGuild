@@ -1,5 +1,6 @@
 import type { Danger, Facilities, Hero, Outcome } from '../core/model';
-import { CRAFT_QUALITY, TRAINING_XP, returnChance, salonAppeal } from '../core/balance';
+import { CRAFT_QUALITY, HEAL_IN_BED, NURSE_MAX, TRAINING_XP, healRate } from '../core/balance';
+import { returnChance, salonAppeal } from '../core/balance';
 import type { ClassId, MoraleBand } from '../core/party';
 import { t, tl } from '../textos';
 
@@ -80,7 +81,7 @@ export const FACILITY_INFO: Record<
     effect: (l) =>
       l === 0
         ? t('etiquetas.mejoras.enf.efecto_0')
-        : t('etiquetas.mejoras.enf.efecto', { veces: l + 1 }),
+        : t('etiquetas.mejoras.enf.efecto', { dias: HEAL_IN_BED + healRate(l) - 1 + NURSE_MAX }),
   },
   tab: {
     name: t('etiquetas.mejoras.tab.nombre'),
