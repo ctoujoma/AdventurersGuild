@@ -304,17 +304,17 @@ export const INJURY: Record<Outcome, number> = {
  */
 export const SCRATCH_HP: Record<Outcome, number> = {
   'Éxito brillante': 0,
-  Éxito: 0.04,
-  'Éxito parcial': 0.08,
-  Fracaso: 0.12,
-  Desastre: 0.2,
+  Éxito: 0.02,
+  'Éxito parcial': 0.04,
+  Fracaso: 0.06,
+  Desastre: 0.1,
 };
 export const WOUND_HP = [0.3, 0.65] as const;
 export const DANGER_HP = [0.7, 0.9, 1.1, 1.3] as const;
 /** Quien cae en una pelea y no es la baja: grave, con esta vida (entre los dos). */
 export const DOWNED_HP = [0.04, 0.15] as const;
 /** En casa (asaltos) quien cae se salva casi siempre: solo muere así de raro. */
-export const RAID_DEATH = 0.03;
+export const RAID_DEATH = 0.01;
 export const MORALE: Record<Outcome, number> = {
   'Éxito brillante': 10,
   Éxito: 6,
@@ -521,7 +521,7 @@ export const HEAL_IN_BED = 1;
  */
 export const HP_LIGHT = 0.5;
 export const HP_GRAVE = 0.2;
-export const HP_DAY = 0.06;
+export const HP_DAY = 0.1;
 export const LIGHT_WORK_MIN = 0.5;
 /** Noches de trabajo por cada punto de Maña que ya se tiene para subir otro. */
 export const SKILL_XP = 5;
