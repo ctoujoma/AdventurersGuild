@@ -294,7 +294,7 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
                   n: skill(memberOf(h, game.fac), c.skill),
                 }),
               );
-              const state = busy ? statusLabel(h) : null;
+              const state = busy ? statusLabel(h, false, game) : null;
               return (
                 <button
                   key={h.id}

@@ -41,7 +41,7 @@ mejoras:
       - "Botica con pociones"
     efecto_0: "Las heridas curan a su ritmo"
     # Lo que cura un catre cada noche con la mano a pleno (sin nadie, como una cama).
-    efecto: "Con quien la atienda, en sus catres se curan hasta {dias} días por noche"
+    efecto: "Con quien la atienda, sus catres curan hasta ×{dias} de deprisa"
   tab:
     nombre: "Taberna"
     niveles:
@@ -157,6 +157,8 @@ estado:
   ok: "Disponible"
   mision: "De misión · {dias} d"
   herido: "{sexo, select, f {Herida} other {Herido}} · {dias} d"
+  # Herido, con lo que le falta para levantarse («2 d 12 h»).
+  herido_falta: "{sexo, select, f {Herida} other {Herido}} · {tiempo}"
   desaparecido: "{sexo, select, f {Desaparecida} other {Desaparecido}}"
   muerto: "{sexo, select, f {Caída} other {Caído}}"
 sin_efecto: "Sin efecto"

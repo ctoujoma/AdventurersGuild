@@ -37,7 +37,7 @@ mejoras:
       - "A lantern and herbs drying"
       - "An apothecary chest with potions"
     efecto_0: "Wounds heal at their own pace"
-    efecto: "With someone tending it, its cots heal up to {dias} days per night"
+    efecto: "With someone tending it, its cots heal up to ×{dias} as fast"
   tab:
     nombre: "Tavern"
     niveles:
@@ -153,6 +153,7 @@ estado:
   ok: "Available"
   mision: "On a quest · {dias} d"
   herido: "Wounded · {dias} d"
+  herido_falta: "Wounded · {tiempo}"
   desaparecido: "Missing"
   muerto: "Fallen"
 sin_efecto: "No effect"

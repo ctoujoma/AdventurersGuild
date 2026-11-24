@@ -106,7 +106,7 @@ when:
 view:
   nivel: "{clase} · nivel {nivel}"
   busca_trabajo: "{base} · busca trabajo"
-  en_cama: "{base} · {sexo, select, f {herida} other {herido}}, {dias, plural, one {# día} other {# días}} en cama"
+  en_cama: "{base} · {sexo, select, f {herida} other {herido}}: le faltan {tiempo} de cama"
   mana: "Maña {mana} · {tarea}{camino, select, si { (de camino)} other {}}"
   mana_busca_trabajo: "Maña {skill} · busca trabajo"
   nombre_apodo: "{nombre} {apodo}"

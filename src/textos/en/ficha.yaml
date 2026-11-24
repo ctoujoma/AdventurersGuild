@@ -73,7 +73,7 @@ crew:
   hoy_se_atiende_a: "Today {served} of {total} visitors are served."
   saca_jarras_al_dia: "Makes {brew_at} jugs a day."
   hace_raciones_al_dia: "Makes {cook_at} rations a day."
-  enf_mano: "Staffed at {pct} %: whoever is in its cots heals {dias, plural, one {# day} other {# days}} per night."
+  enf_mano: "Staffed at {pct} %: its cots heal at ×{dias}."
   llegan_a_de_mano: "They reach {nurse_work} hands: each night, one day less in bed for each wounded. More people don't heal faster."
   con_de_mano_entre: "With {nurse_work} hands between them (today, {hand_text}), each night would mean one day less in bed for each wounded."
   atiende_a: "Serves {n}"

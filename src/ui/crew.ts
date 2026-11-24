@@ -259,7 +259,7 @@ export function crewGroups(game: GameState): Group[] {
     groups.push({
       key: 'fuera',
       title: t('ficha.crew.fuera'),
-      people: away.map((h) => heroMember(h, statusLabel(h))),
+      people: away.map((h) => heroMember(h, statusLabel(h, false, game))),
     });
   return groups;
 }
@@ -446,7 +446,7 @@ export function candidatesFor(game: GameState, task: Task): Member[] {
  */
 export function taskLabel(game: GameState, who: string): string {
   const h = game.heroes.find((x) => x.id === who);
-  if (h && h.status !== 'ok') return statusLabel(h);
+  if (h && h.status !== 'ok') return statusLabel(h, false, game);
   const cur = taskOf(game, who);
   if (cur === GUARD) return t('ficha.crew.de_guardia');
   if (cur === GUARD_VAULT) return t('ficha.crew.guarda_la_camara');

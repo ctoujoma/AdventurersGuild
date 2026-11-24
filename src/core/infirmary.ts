@@ -77,3 +77,9 @@ export function healOf(s: GameState, h: Hero, plan = infirmaryPlan(s)): number {
   const r = id && s.building.rooms.find((x) => x.id === id);
   return r ? healAt(s, r) : HEAL_IN_BED;
 }
+
+/** Horas de juego (el día, 24) que le faltan a un herido para levantarse, a su ritmo de ahora. */
+export function restHours(s: GameState, h: Hero, plan = infirmaryPlan(s)): number {
+  if (h.status !== 'herido') return 0;
+  return Math.max(1, Math.ceil((h.days / healOf(s, h, plan)) * 24 - 1e-9));
+}

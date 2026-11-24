@@ -1,5 +1,6 @@
 import { MatShelf } from '../mats';
-import { cotsIn, healAt, infirmaryPlan, staffing } from '../../core/infirmary';
+import { cotsIn, healAt, infirmaryPlan, restHours, staffing } from '../../core/infirmary';
+import { restText } from '../../data/labels';
 import { useState } from 'preact/hooks';
 import { roomMax } from '../../core/balance';
 import { appeal, neighborsOf, seatsOf, visitorList, visitorsOf } from '../../core/salon';
@@ -255,7 +256,7 @@ function InfirmaryInfo({
   const staff = staffing(game, room);
   const here = game.heroes.filter((h) => plan.get(h.id) === room.id);
   const out = game.heroes.filter((h) => h.status === 'herido' && !plan.has(h.id));
-  const row = (h: (typeof here)[number], n: number) => (
+  const row = (h: (typeof here)[number]) => (
     <button
       key={h.id}
       class="crew-slot is-hero"
@@ -265,9 +266,7 @@ function InfirmaryInfo({
       <Face game={game} id={h.id} />
       <span class="crew-who">
         <b>{h.name}</b>
-        <small>
-          {t('paneles.room.noches_para_curarse', { n: Math.max(1, Math.ceil(h.days / n)) })}
-        </small>
+        <small>{t('paneles.room.enf.falta', { tiempo: restText(restHours(game, h, plan)) })}</small>
       </span>
     </button>
   );
@@ -290,13 +289,11 @@ function InfirmaryInfo({
         </Fact>
       </div>
       {staff === 0 && <span class="row-sub room-bad">{t('paneles.room.enf.sin_nadie')}</span>}
-      {here.length > 0 && (
-        <div class="crew-slots infirmary-list">{here.map((h) => row(h, heal))}</div>
-      )}
+      {here.length > 0 && <div class="crew-slots infirmary-list">{here.map((h) => row(h))}</div>}
       {out.length > 0 && (
         <>
           <span class="row-sub">{t('paneles.room.enf.sin_catre', { cama: HEAL_IN_BED })}</span>
-          <div class="crew-slots infirmary-list">{out.map((h) => row(h, HEAL_IN_BED))}</div>
+          <div class="crew-slots infirmary-list">{out.map((h) => row(h))}</div>
         </>
       )}
     </>

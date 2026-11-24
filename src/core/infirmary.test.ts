@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { CLERIC_NURSE, HEAL_IN_BED } from './balance';
-import { endDay, newGame } from './game';
-import { cotsIn, healAt, infirmaryPlan, staffing } from './infirmary';
+import { CLERIC_NURSE, DAY_SECONDS, HEAL_IN_BED } from './balance';
+import { endDay, newGame, tick } from './game';
+import { cotsIn, healAt, infirmaryPlan, restHours, staffing } from './infirmary';
 import type { GameState, Hero, Room } from './model';
 
 /** La partida del tío con la enfermería arreglada (nivel `level`) y `hurt` heridos de 10 días. */
@@ -81,5 +81,19 @@ describe('enfermería', () => {
     s.building.cols++;
     expect(new Set(infirmaryPlan(s).values()).size).toBe(2);
     expect(infirmaryPlan(s).size).toBe(3);
+  });
+
+  it('se cura hora a hora: medio día cura la mitad y se sabe cuánto falta', () => {
+    const { s } = ward('horas', 1, 1);
+    const h = s.heroes[0]!;
+    h.days = 2;
+    expect(restHours(s, h)).toBe(48);
+    const half = tick({ ...s, clock: 0 }, DAY_SECONDS / 2);
+    expect(half.heroes[0]!.days).toBeCloseTo(1.5, 6);
+    expect(restHours(half, half.heroes[0]!)).toBe(36);
+    // Y quien llega a cero se levanta en el momento, sin esperar al amanecer.
+    h.days = 0.25;
+    const up = tick({ ...s, clock: 0 }, DAY_SECONDS / 2);
+    expect(up.heroes[0]!.status).toBe('ok');
   });
 });

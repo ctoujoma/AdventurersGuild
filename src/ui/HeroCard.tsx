@@ -526,7 +526,7 @@ export function HeroCard({
               {/* En casa, lo que hace ya lo dice el botón de su tarea. */}
               {(candidate || h.status !== 'ok') && (
                 <span class={`pill pill-${candidate ? 'candidato' : h.status}`}>
-                  {statusLabel(h, candidate)}
+                  {statusLabel(h, candidate, game)}
                 </span>
               )}
               {!candidate && !gone && (
