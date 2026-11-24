@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { EXPEDITION_LEVEL, MAT_LOOSE, MAT_SELL, STORE_CAP } from './balance';
 import { newGame } from './game';
 import type { GameState } from './model';
-import { gainMats, hasMats, matCap, matOf, missing, spendMats } from './materials';
+import { gainMats, hasMats, matCap, matOf, missing, spendMats, storeShare } from './materials';
 import { tx } from '../textos';
 
 const withStore = (s: GameState, level: number, w = 1): GameState => {
@@ -69,5 +69,27 @@ describe('el almacén por niveles', () => {
     expect(storeNext(s, 3)).toBeNull();
     expect(levelRank('almacen', 2)).toBe(0);
     expect(levelRank('almacen', 3)).toBe(2);
+  });
+});
+
+describe('varios almacenes', () => {
+  it('cada uno guarda su parte: entre todos suman el total y los topes', () => {
+    const s = withStore(newGame('dos-almacenes'), 2, 2);
+    s.building.rooms.push({
+      ...s.building.rooms.at(-1)!,
+      id: 'alm2',
+      col: s.building.cols + 2,
+      w: 1,
+      level: 1,
+    });
+    s.mats = { ...s.mats, hierro: 25, cristal: 3 };
+    const a = storeShare(s, 'alm', 'hierro')!;
+    const b = storeShare(s, 'alm2', 'hierro')!;
+    expect(a.n + b.n).toBe(25);
+    expect(a.cap + b.cap).toBe(matCap(s, 'hierro'));
+    expect(a.n).toBeGreaterThan(b.n);
+    // Lo raro, solo en el de nivel 2: el otro no lo guarda.
+    expect(storeShare(s, 'alm', 'cristal')!.n).toBe(3);
+    expect(storeShare(s, 'alm2', 'cristal')).toBeNull();
   });
 });

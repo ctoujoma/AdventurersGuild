@@ -294,6 +294,8 @@ room:
   mano_de: "Hands {hand_text} of {nurse_work}{mano, select, si {: −1 day} other {}}"
   con_de_mano_entre: "With {nurse_work} hands between them (a nurse, or workers and heroes lending a hand), each wounded heals one more day per night. They do better in a better infirmary."
   heroes_heridos_ahora_mismo: "Heroes wounded right now."
+  en_cama_de: "{nombre}'s sheet, in bed"
+  noches_para_curarse: "{n, plural, one {Up tomorrow} other {# nights to heal}}"
   pon_aqui_a_un: "Put a hero who's at home here to train. Skills rise by themselves according to their class. Each hero can reach at most {train_hero_base} plus {train_per_level} per level ({train_main_bonus} more in their class's main attribute)."
   de_guardia: "On guard"
   entrenan_aqui: "Training here"

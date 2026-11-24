@@ -44,7 +44,7 @@ import { handText } from '../crew';
 import type { ComponentChildren } from 'preact';
 import { help } from '../HoldHelp';
 import { Icon, type IconName } from '../icons';
-import { CrewGroup } from './CrewList';
+import { CrewGroup, Face } from './CrewList';
 import { WorkshopInfo, workshopTabs, type WorkTab } from './WorkshopInfo';
 import { DormList } from './DormList';
 import { isWorkshop, potionCap } from '../../core/crafting';
@@ -246,36 +246,63 @@ function DoorInfo({ game }: { game: GameState }) {
  * La enfermería: cuánto cura cada noche (el nivel y, con mano suficiente, un día más: las
  * cuentas de `endDay`), la mano que hay hoy y los heridos.
  */
-function InfirmaryInfo({ game }: { game: GameState }) {
+function InfirmaryInfo({ game, onOpen }: { game: GameState; onOpen?: (id: string) => void }) {
   const base = healRate(game.fac.enf);
   const bonus = nurseBonus(game);
   const hand = workIn(game, 'enfermeria');
-  const hurt = game.heroes.filter((h) => h.status === 'herido').length;
+  const patients = game.heroes.filter((h) => h.status === 'herido').sort((a, b) => a.days - b.days);
+  const hurt = patients.length;
+  const rate = base + bonus;
   return (
-    <div class="chips">
-      <Fact
-        info={t('paneles.room.dias_de_cama_que', {
-          base,
-          mano: bonus > 0,
-        })}
-      >
-        <Icon name="cama" size={12} /> {t('paneles.room.dias_por_noche', { n: base + bonus })}
-      </Fact>
-      <Fact
-        info={t('paneles.room.con_de_mano_entre', { nurse_work: NURSE_WORK })}
-        warn={!bonus && hurt > 0}
-      >
-        <Icon name="martillo" size={12} />{' '}
-        {t('paneles.room.mano_de', {
-          hand_text: handText(hand),
-          nurse_work: NURSE_WORK,
-          mano: bonus > 0,
-        })}
-      </Fact>
-      <Fact info={t('paneles.room.heroes_heridos_ahora_mismo')}>
-        <Icon name="cruz" size={12} /> {t('paneles.room.heridos', { n: hurt })}
-      </Fact>
-    </div>
+    <>
+      <div class="chips">
+        <Fact
+          info={t('paneles.room.dias_de_cama_que', {
+            base,
+            mano: bonus > 0,
+          })}
+        >
+          <Icon name="cama" size={12} /> {t('paneles.room.dias_por_noche', { n: base + bonus })}
+        </Fact>
+        <Fact
+          info={t('paneles.room.con_de_mano_entre', { nurse_work: NURSE_WORK })}
+          warn={!bonus && hurt > 0}
+        >
+          <Icon name="martillo" size={12} />{' '}
+          {t('paneles.room.mano_de', {
+            hand_text: handText(hand),
+            nurse_work: NURSE_WORK,
+            mano: bonus > 0,
+          })}
+        </Fact>
+        <Fact info={t('paneles.room.heroes_heridos_ahora_mismo')}>
+          <Icon name="cruz" size={12} /> {t('paneles.room.heridos', { n: hurt })}
+        </Fact>
+      </div>
+      {/* Quien está en cama y cuántas noches le quedan (con lo que se cura ahora cada noche). */}
+      {patients.length > 0 && (
+        <div class="crew-slots infirmary-list">
+          {patients.map((h) => (
+            <button
+              key={h.id}
+              class="crew-slot is-hero"
+              aria-label={t('paneles.room.en_cama_de', { nombre: h.name })}
+              onClick={() => onOpen?.(h.id)}
+            >
+              <Face game={game} id={h.id} />
+              <span class="crew-who">
+                <b>{h.name}</b>
+                <small>
+                  {t('paneles.room.noches_para_curarse', {
+                    n: Math.max(1, Math.ceil(h.days / Math.max(1, rate))),
+                  })}
+                </small>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </>
   );
 }
 
@@ -570,12 +597,14 @@ export function RoomPanel({
           ))}
         </div>
       )}
-      {room.type === 'almacen' && room.level > 0 && <MatShelf game={game} />}
+      {room.type === 'almacen' && room.level > 0 && <MatShelf game={game} room={room} />}
       {room.type === 'salon' && room.level > 0 && <SalonInfo game={game} />}
       {(room.type === 'cocina' || room.type === 'despensa' || room.type === 'bodega') &&
         room.level > 0 && <LarderInfo game={game} room={room} />}
       {isTrainRoom(room.type) && room.level > 0 && <TrainInfo room={room} />}
-      {room.type === 'enfermeria' && room.level > 0 && <InfirmaryInfo game={game} />}
+      {room.type === 'enfermeria' && room.level > 0 && (
+        <InfirmaryInfo game={game} onOpen={onOpen} />
+      )}
       {room.type === 'tesoro' && <VaultInfo game={game} />}
       {room.type === 'recibidor' && <DoorInfo game={game} />}
       {(room.type === 'dormitorio' || room.type === 'veteranos') && room.level > 0 && (

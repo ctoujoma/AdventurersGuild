@@ -12,10 +12,11 @@ import {
   matMsg,
   matOf,
   storeLevel,
+  storeShare,
   type Material,
   type Mats,
 } from '../core/materials';
-import type { GameState } from '../core/model';
+import type { GameState, Room } from '../core/model';
 import type { IconName } from './icons';
 import { BufferImage } from './BufferImage';
 import { materialIcon } from '../art/materials';
@@ -97,17 +98,25 @@ export function MatCost({ game, mats }: { game: GameState; mats?: Mats }) {
  * El estante del Arcón: un tarro por material con su dibujo, cuántos hay y cuántos caben. Al
  * tocarlo, de dónde sale y para qué sirve. Los raros, solo si hay sitio para ellos o alguno.
  */
-export function MatShelf({ game }: { game: GameState }) {
+export function MatShelf({ game, room }: { game: GameState; room?: Room }) {
   const [open, setOpen] = useState<Material | null>(null);
-  const list = MATERIAL_LIST.filter(
-    (m) => BASIC.includes(m) || matCap(game, m) > 0 || matOf(game, m) > 0,
+  // En la ficha de un almacén, si hay varios: solo su parte (el arcón enseña el total).
+  const stores = game.building.rooms.filter((r) => r.type === 'almacen' && r.level > 0).length;
+  const own = room && stores > 1 ? room.id : null;
+  const amount = (m: Material) =>
+    own
+      ? (storeShare(game, own, m) ?? { n: 0, cap: 0 })
+      : { n: matOf(game, m), cap: matCap(game, m) };
+  const list = MATERIAL_LIST.filter((m) =>
+    own
+      ? storeShare(game, own, m) !== null
+      : BASIC.includes(m) || matCap(game, m) > 0 || matOf(game, m) > 0,
   );
   return (
     <div class="mat-shelf">
       <div class="mat-jars" role="group" aria-label={t('barra.mats.materiales')}>
         {list.map((m) => {
-          const n = matOf(game, m);
-          const cap = matCap(game, m);
+          const { n, cap } = amount(m);
           return (
             <button
               key={m}
@@ -131,6 +140,7 @@ export function MatShelf({ game }: { game: GameState }) {
           <b>{MATERIALS[open].name}.</b> {MATERIALS[open].from} {MATERIALS[open].uses}
         </p>
       )}
+      {own && <small class="mat-loose">{t('barra.mats.parte_de', { n: stores })}</small>}
       {!storeLevel(game) && (
         <small class="mat-loose">
           {t('barra.mats.sin_almacen_caben_de', { mat_loose: MAT_LOOSE })}

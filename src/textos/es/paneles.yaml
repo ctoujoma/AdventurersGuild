@@ -298,6 +298,8 @@ room:
   mano_de: "Mano {hand_text} de {nurse_work}{mano, select, si {: −1 día} other {}}"
   con_de_mano_entre: "Con {nurse_work} de mano entre todos (un enfermero, o trabajadores y héroes echando una mano), cada herido se cura un día más por noche. Rinden más en una enfermería mejor."
   heroes_heridos_ahora_mismo: "Héroes heridos ahora mismo."
+  en_cama_de: "Ficha de {nombre}, en cama"
+  noches_para_curarse: "{n, plural, one {En pie mañana} other {# noches para curarse}}"
   pon_aqui_a_un: "Pon aquí a un héroe que esté en casa para que entrene. Las habilidades suben solas según su clase. Cada héroe llega como mucho a {train_hero_base} más {train_per_level} por nivel ({train_main_bonus} más en el atributo principal de su clase)."
   de_guardia: "De guardia"
   entrenan_aqui: "Entrenan aquí"
