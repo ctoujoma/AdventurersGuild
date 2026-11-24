@@ -232,3 +232,11 @@ en cama, sin ánimo unos días y con el rasgo «Vuelto del velo».
 Rehacer sus dibujos (son los de antes de las salas) y darles uso nuevo: caballos de verdad en el
 establo que los héroes usen en las expediciones; en el patio, un veterano que enseña a uno de
 nivel bajo y le da experiencia (respetando el tope de 99: solo se sube de nivel peleando, A2).
+
+## Cementerio de los caídos (idea del usuario, 24 de noviembre)
+
+Un cementerio en algún sitio de la escena (el patio, junto a la capilla o al fondo) donde se vean
+las tumbas de los caídos, con su nombre y epitafio al tocarlas (los datos ya están en
+`GameState.fallen`). De vez en cuando, sus espíritus vagando por la noche. A definir: dónde va,
+si se construye o está desde el principio, cuántas tumbas caben y qué hacen los espíritus (solo
+verse, o algo con la capilla y el forastero de la tormenta).

@@ -298,6 +298,19 @@ Esperan a que el agente de textos cierre su bloque de `core`, para no pisarse:
   `CACHE_REFUSE_MORALE`, `CACHE_GRUDGE`). Textos: `HeroCard` (experiencia), ficha de los cuartos
   de veteranos, `Opening` y comentarios de `balance.ts`.
 
+### Vida que se guarda (decidido con el usuario, 24 de noviembre)
+
+Sustituye a los «días de cama». Cada héroe guarda su vida entre peleas (`Hero.hp`, de 0 a 1):
+**50 % o más, sano; menos del 50 %, herido leve** (trabaja con penalización que crece hasta
+la mitad cerca del 20 %, no hace guardia, puede salir de encargo o expedición con aviso);
+**menos del 20 %, herido grave** (en cama); **0 %, puede morir**: el clérigo lo salva a veces
+(grave y con cicatriz); si no, fuera 7 de 10 desaparecen y 3 mueren; en casa se salva casi
+siempre. Quita vida: las peleas (lo que le quede al acabar) y los encargos sin pelea (según
+resultado y peligro). Se recupera hora a hora descansando en la taberna (más en un catre con
+mano), un poco cada noche fuera y con pociones. En expediciones, con heridos se camina más
+despacio y se avisa de volver. Por partes: (1) núcleo y curación, (2) daño en peleas y
+encargos con el simulador, (3) expediciones con su agente.
+
 ### 2b · El segundo, las obras (cuando la taberna es tuya)
 
 Al pagar la deuda: construir una sala nueva, moverla, ampliarla, mejorar otra y excavar un
