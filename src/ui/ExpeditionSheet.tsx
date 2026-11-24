@@ -159,7 +159,7 @@ export function ExpeditionSheet({ game, onClose, onSend }: Props) {
                       clase: CLASS_NAMES[h.cls][h.sex],
                       nivel: h.lvl,
                     }),
-                    busy ? statusLabel(h) : '',
+                    busy ? statusLabel(h, false, game) : '',
                   ]
                     .filter(Boolean)
                     .join('. ')}
@@ -177,7 +177,7 @@ export function ExpeditionSheet({ game, onClose, onSend }: Props) {
                   </span>
                   <span class="pick-skills" aria-hidden="true">
                     {busy
-                      ? statusLabel(h)
+                      ? statusLabel(h, false, game)
                       : t('expediciones.expeditionsheet.nivel', {
                           nivel: h.lvl,
                           clase: CLASS_NAMES[h.cls][h.sex],

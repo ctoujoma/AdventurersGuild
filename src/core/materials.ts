@@ -75,6 +75,41 @@ export function matCap(s: GameState, m: Material): number {
   return storeLevel(s) >= 2 ? stored : 0;
 }
 
+/**
+ * Lo que guarda un almacén de un material, cuando hay varios: el total se reparte según lo que
+ * cabe en cada uno (los raros, solo en los de nivel 2 o más); el primero lleva además lo que cabe
+ * suelto de los básicos (`MAT_LOOSE`). Null si este almacén no guarda ese material.
+ */
+export function storeShare(
+  s: GameState,
+  roomId: string,
+  m: Material,
+): { n: number; cap: number } | null {
+  const rare = !BASIC.includes(m);
+  const rooms = s.building.rooms.filter(
+    (r) => r.type === 'almacen' && active(r).level >= (rare ? 2 : 1),
+  );
+  if (!rooms.some((r) => r.id === roomId)) return null;
+  const caps = rooms.map((r, i) => {
+    const { level, cells } = active(r);
+    return (STORE_CAP[level] ?? STORE_CAP.at(-1)!) * cells + (!rare && i === 0 ? MAT_LOOSE : 0);
+  });
+  const total = caps.reduce((a, c) => a + c, 0);
+  const n = Math.min(matOf(s, m), total);
+  // Reparto por lo que cabe en cada uno, con los restos a los que más decimales tengan.
+  const exact = caps.map((c) => (total ? (n * c) / total : 0));
+  const share = exact.map(Math.floor);
+  let left = n - share.reduce((a, x) => a + x, 0);
+  const order = exact.map((x, i) => [x - Math.floor(x), i] as const).sort((a, b) => b[0] - a[0]);
+  for (const [, i] of order) {
+    if (left <= 0) break;
+    share[i]!++;
+    left--;
+  }
+  const i = rooms.findIndex((r) => r.id === roomId);
+  return { n: share[i]!, cap: caps[i]! };
+}
+
 /** «2 de cuero y 1 de hierro», como mensaje. */
 export function matsMsg(m: Mats): Msg {
   const parts = MATERIAL_LIST.filter((k) => m[k]).map((k) =>

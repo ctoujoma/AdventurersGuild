@@ -102,7 +102,7 @@ when:
 view:
   nivel: "{clase} · level {nivel}"
   busca_trabajo: "{base} · looking for work"
-  en_cama: "{base} · wounded, {dias, plural, one {# day} other {# days}} in bed"
+  en_cama: "{base} · wounded: {tiempo} of bed rest to go"
   mana: "Skill {mana} · {tarea}{camino, select, si { (on the way)} other {}}"
   mana_busca_trabajo: "Skill {skill} · looking for work"
   nombre_apodo: "{nombre} {apodo}"
@@ -240,6 +240,7 @@ strangercard:
   que_se_vaya: "Send him away"
 mats:
   materiales: "Materials"
+  parte_de: "What this storeroom holds: the {n} of them share out the house's stock. The total is in the chest."
   sin_almacen_caben_de: "Without a storeroom, {mat_loose} of each fit, in a corner."
   de_faltan: "{n} {nombre}: {faltan} short"
   faltan: "({n} short)"

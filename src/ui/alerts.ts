@@ -8,7 +8,7 @@ import { nextPayment, salaries, tiredLine } from '../core/game';
 import { MORALE_LOW } from '../core/party';
 import type { ChipKind, GameState } from '../core/model';
 import { ATTR_NAMES, cappedTrainees } from '../core/training';
-import { nurseBonus } from '../core/workers';
+import { infirmaryPlan, staffing } from '../core/infirmary';
 import { RECIPES } from '../data/recipes';
 import { storeLevel } from '../core/materials';
 import { sleepPlan } from '../core/beds';
@@ -72,7 +72,12 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
   // Heridos sin quien los cure.
   const hurt = game.heroes.filter((h) => h.status === 'herido');
   const inf = rooms.find((r) => r.type === 'enfermeria');
-  if (hurt.length && inf && !nurseBonus(game)) {
+  // Sin nadie trabajando, sus catres curan como una cama: avisa si alguna con heridos está vacía.
+  const cots = infirmaryPlan(game);
+  const idle = rooms.some(
+    (r) => r.type === 'enfermeria' && [...cots.values()].includes(r.id) && staffing(game, r) === 0,
+  );
+  if (hurt.length && inf && (inf.level === 0 || idle)) {
     const n = hurt.length;
     const who = { n, nombre: hurt[0]!.name, sexo: hurt[0]!.sex };
     out.push({
@@ -231,8 +236,7 @@ export function gatherAlerts(game: GameState, done: string[] = []): Notice[] {
   const nm = nightmareNow(game);
   if (nm && !nm.n.eased) {
     // Los heridos, en los catres de la enfermería (si está en uso); los demás, en su dormitorio.
-    const cots = rooms.find((r) => r.type === 'enfermeria' && r.level > 0 && !r.works);
-    const bed = nm.h.status === 'herido' && cots ? cots.id : sleepPlan(game).get(nm.h.id);
+    const bed = (nm.h.status === 'herido' && cots.get(nm.h.id)) || sleepPlan(game).get(nm.h.id);
     out.push({
       id: `pesadilla:${nm.n.day}`,
       text: t('barra.alerts.da_vueltas_en_la', {

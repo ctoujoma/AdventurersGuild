@@ -36,11 +36,12 @@ mejoras:
     nombre: "Enfermería"
     niveles:
       - "Cerrada y llena de trastos"
-      - "1 camilla y una vela"
-      - "2 camillas, farol y hierbas secándose"
-      - "2 camillas y botica con pociones"
+      - "Catres y una vela"
+      - "Farol y hierbas secándose"
+      - "Botica con pociones"
     efecto_0: "Las heridas curan a su ritmo"
-    efecto: "Las heridas curan {veces} veces más rápido"
+    # Lo que cura un catre cada noche con la mano a pleno (sin nadie, como una cama).
+    efecto: "Con quien la atienda, sus catres curan hasta ×{dias} de deprisa"
   tab:
     nombre: "Taberna"
     niveles:
@@ -156,6 +157,8 @@ estado:
   ok: "Disponible"
   mision: "De misión · {dias} d"
   herido: "{sexo, select, f {Herida} other {Herido}} · {dias} d"
+  # Herido, con lo que le falta para levantarse («2 d 12 h»).
+  herido_falta: "{sexo, select, f {Herida} other {Herido}} · {tiempo}"
   desaparecido: "{sexo, select, f {Desaparecida} other {Desaparecido}}"
   muerto: "{sexo, select, f {Caída} other {Caído}}"
 sin_efecto: "Sin efecto"

@@ -41,9 +41,9 @@ describe('la casa por tareas', () => {
     const h = s.heroes[0]!;
     s = task(s, h.id, enf.id);
     const g = group(s, enf.id);
-    // Un héroe pone 2 de los 3 que hacen falta: aún no basta.
+    // Un héroe pone 2 de mano (cuenta desde que llega: hoy, la parte del día que le quede).
     expect(g.people.find((p) => p.id === h.id)!.gives).toBe('+2 de mano');
-    expect(g.note).toMatch(/Con 3 de mano entre todos/);
+    expect(g.note).toMatch(/Mano al \d+ %/);
   });
 
   it('soltar a un héroe en la cámara del tesoro lo pone de guardia allí (y de la puerta se cambia)', () => {

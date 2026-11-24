@@ -482,8 +482,20 @@ export const JOB_SLOTS = 2;
 export const TRADE_BONUS = 1.5;
 /** Lo que rinde un héroe echando una mano (menos que cualquier trabajador con maña). */
 export const HERO_WORK = 2;
-/** Trabajo en la enfermería con el que los heridos se curan un día antes. */
+/**
+ * Enfermería (`core/infirmary.ts`): sin nadie trabajando, sus catres curan como una cama
+ * (`HEAL_IN_BED` día por noche). Con mano, curan además lo del nivel (`healRate` − 1) y
+ * `NURSE_MAX`, en proporción a la mano que hay frente a la que pide (`NURSE_FULL` por hueco: un
+ * enfermero de Maña 4 llena una de un hueco). El clérigo que echa una mano rinde `CLERIC_NURSE`
+ * veces lo de un héroe. Catres: uno por hueco de ancho y uno más (`COTS_EXTRA`).
+ * `NURSE_WORK`: la mano que la interfaz llama «suficiente» para el aviso.
+ */
 export const NURSE_WORK = 3;
+export const NURSE_FULL = 6;
+export const NURSE_MAX = 1;
+export const CLERIC_NURSE = 2;
+export const COTS_EXTRA = 1;
+export const HEAL_IN_BED = 1;
 /** Noches de trabajo por cada punto de Maña que ya se tiene para subir otro. */
 export const SKILL_XP = 5;
 /** Probabilidad base de que alguien pida trabajo cada día (desde que se paga la deuda) y cuántos esperan. */

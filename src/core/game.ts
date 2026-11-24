@@ -64,7 +64,6 @@ import {
   QUEST_LOG_KEEP,
   START_FOOD,
   chapelRest,
-  healRate,
   rankIndex,
   restCap,
   restMorale,
@@ -118,6 +117,7 @@ import {
   tutorialStep,
 } from './tutorial';
 import { stepRaids } from './raids';
+import { healOf, infirmaryPlan } from './infirmary';
 import { dawnNight, nightDue, nightRng, rollNight } from './night';
 import { acceptMessenger, dismissMessenger, messengerGone, stepMessenger } from './messenger';
 import { easeIssue, easeNightmare } from './nightmare';
@@ -205,7 +205,6 @@ import {
   canAssign,
   canHireWorker,
   freeRoomFor,
-  nurseBonus,
   stepWorkers,
   tidyJobs,
   villageCrew,
@@ -963,8 +962,19 @@ function reduceAction(state: GameState, action: Action): GameState {
         stepMessenger(next);
         next.rng = rng.save();
       }
+      // Quien se ha levantado de la cama en este rato (se cura hora a hora en `tick`).
+      const cured = next.heroes
+        .filter(
+          (h) =>
+            h.status === 'ok' && state.heroes.some((x) => x.id === h.id && x.status === 'herido'),
+        )
+        .map((h) => ({
+          t: msg('partida.noche.curado', { heroe: h.name, sexo: h.sex }),
+          k: 'good' as const,
+        }));
       const part = Math.min(1, (next.clock ?? 0) / DAY_SECONDS);
       const crafted = [
+        ...cured,
         ...(next.crafts?.length ? stepCrafts(next, part) : []),
         ...(next.paints?.length ? stepPaints(next, part) : []),
       ];
@@ -1438,7 +1448,8 @@ export function nightLeft(s: GameState): number {
 export function tick(state: GameState, to: number): GameState {
   const clock = Math.min(DAY_SECONDS, Math.max(state.clock ?? 0, to));
   if (clock === (state.clock ?? 0)) return state;
-  const s = { ...state, clock };
+  // Los heridos se curan hora a hora (la parte del día que pasa), cada uno a su ritmo.
+  const s = healFor({ ...state, clock }, (clock - (state.clock ?? 0)) / DAY_SECONDS).s;
   const n = Math.min(DELIVERIES, Math.floor((clock / (DUSK * DAY_SECONDS)) * DELIVERIES));
   const due = Math.floor((dayIncome(s, s.day) * n) / DELIVERIES);
   const till = s.till ?? 0;
@@ -1447,6 +1458,48 @@ export function tick(state: GameState, to: number): GameState {
     s.till = due;
   }
   return s;
+}
+
+/**
+ * Cura a los heridos la parte del día `part` (0–1): a cada uno se le quitan los días de cama que
+ * cure su catre (o su cama) en ese rato (`healOf`, días por día). Quien llega a cero se levanta y
+ * vuelve a su puesto. Si nadie se cura, solo copia a los heridos; si alguien sí, copia el estado.
+ */
+export function healFor(
+  state: GameState,
+  part: number,
+): { s: GameState; cured: Hero[]; news: DawnEvent[] } {
+  if (part <= 0 || !state.heroes.some((h) => h.status === 'herido'))
+    return { s: state, cured: [], news: [] };
+  const plan = infirmaryPlan(state);
+  const left = new Map(
+    state.heroes
+      .filter((h) => h.status === 'herido')
+      .map((h) => [h.id, h.days - healOf(state, h, plan) * part] as const),
+  );
+  const done = [...left].filter(([, d]) => d <= 1e-9).map(([id]) => id);
+  if (!done.length)
+    return {
+      s: {
+        ...state,
+        heroes: state.heroes.map((h) => (left.has(h.id) ? { ...h, days: left.get(h.id)! } : h)),
+      },
+      cured: [],
+      news: [],
+    };
+  const s = structuredClone(state);
+  const cured: Hero[] = [];
+  const news: DawnEvent[] = [];
+  for (const h of s.heroes) {
+    if (!left.has(h.id)) continue;
+    h.days = Math.max(0, left.get(h.id)!);
+    if (!done.includes(h.id)) continue;
+    h.status = 'ok';
+    h.days = 0;
+    if (h.jobBefore || h.guardBefore) backToJob(s, h, news);
+    cured.push(h);
+  }
+  return { s, cured, news };
 }
 
 /** Pasa la noche y amanece. `away`: con el juego cerrado (menos asaltos; ver `away.ts`). */
@@ -1628,17 +1681,15 @@ export function endDay(state: GameState, away = false): GameState {
   }
   s.missions = s.missions.filter((x) => x.daysLeft > 0);
 
-  // Curación y desaparecidos.
+  // Curación (lo que quede del día si se acuesta antes: el resto ya se curó hora a hora) y
+  // desaparecidos.
+  const rest = healFor(s, Math.max(0, 1 - (state.clock ?? 0) / DAY_SECONDS));
+  if (rest.s !== s) Object.assign(s, rest.s);
+  for (const h of rest.cured)
+    events.push({ t: msg('partida.noche.curado', { heroe: h.name, sexo: h.sex }) });
+  events.push(...rest.news);
   for (const h of s.heroes) {
-    if (h.status === 'herido') {
-      h.days -= healRate(s.fac.enf) + nurseBonus(s);
-      if (h.days <= 0) {
-        h.status = 'ok';
-        h.days = 0;
-        if (h.jobBefore || h.guardBefore) backToJob(s, h, events);
-        events.push({ t: msg('partida.noche.curado', { heroe: h.name, sexo: h.sex }) });
-      }
-    } else if (h.status === 'desaparecido') {
+    if (h.status === 'desaparecido') {
       // Mientras haya un grupo buscándole, no se le da por perdido.
       if (s.missions.some((m) => m.quest.rescue === h.id)) continue;
       h.days--;

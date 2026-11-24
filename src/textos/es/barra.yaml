@@ -106,7 +106,7 @@ when:
 view:
   nivel: "{clase} · nivel {nivel}"
   busca_trabajo: "{base} · busca trabajo"
-  en_cama: "{base} · {sexo, select, f {herida} other {herido}}, {dias, plural, one {# día} other {# días}} en cama"
+  en_cama: "{base} · {sexo, select, f {herida} other {herido}}: le faltan {tiempo} de cama"
   mana: "Maña {mana} · {tarea}{camino, select, si { (de camino)} other {}}"
   mana_busca_trabajo: "Maña {skill} · busca trabajo"
   nombre_apodo: "{nombre} {apodo}"
@@ -245,6 +245,8 @@ strangercard:
   que_se_vaya: "Que se vaya"
 mats:
   materiales: "Materiales"
+  # En la ficha de un almacén, cuando hay varios.
+  parte_de: "Lo que guarda este almacén: entre los {n} se reparten lo de la casa. El total, en el arcón."
   sin_almacen_caben_de: "Sin almacén caben {mat_loose} de cada, en un rincón."
   de_faltan: "{n} de {nombre}: faltan {faltan}"
   faltan: "(faltan {n})"

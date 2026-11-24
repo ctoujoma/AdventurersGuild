@@ -2,3 +2,5 @@ lista: "{xs}"
 apodado: "{nombre} «{apodo}»"
 minus: "{x, minus}"
 alguien: "Alguien"
+# Tiempo en días y horas de juego («2 d 12 h», «5 h», «3 d»).
+dias_horas: "{d, plural, =0 {{h} h} other {{h, plural, =0 {{d} d} other {{d} d {h} h}}}}"

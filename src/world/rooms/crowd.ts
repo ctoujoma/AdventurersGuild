@@ -2620,6 +2620,7 @@ export class Crowd {
         guard: a.hero.guard,
         vault: a.hero.vault,
         dorm: a.hero.dorm,
+        cot: a.hero.cot,
         staff: a.hero.staff,
       }));
     this.homes = homes(people, this.S);

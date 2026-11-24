@@ -1,5 +1,7 @@
-import type { Danger, Facilities, Hero, Outcome } from '../core/model';
-import { CRAFT_QUALITY, TRAINING_XP, returnChance, salonAppeal } from '../core/balance';
+import type { Danger, Facilities, GameState, Hero, Outcome } from '../core/model';
+import { restHours } from '../core/infirmary';
+import { CRAFT_QUALITY, HEAL_IN_BED, NURSE_MAX, TRAINING_XP, healRate } from '../core/balance';
+import { returnChance, salonAppeal } from '../core/balance';
 import type { ClassId, MoraleBand } from '../core/party';
 import { t, tl } from '../textos';
 
@@ -29,10 +31,17 @@ export const dangerLabel = (d: Danger, hidden?: boolean) =>
 /** Estado visible de un héroe (los candidatos no son del gremio todavía). */
 export type ViewStatus = Hero['status'] | 'candidato';
 
-export function statusLabel(h: Hero, candidate = false): string {
+export function statusLabel(h: Hero, candidate = false, s?: GameState): string {
   if (candidate) return t('etiquetas.estado.candidato');
-  return t(`etiquetas.estado.${h.status}`, { sexo: h.sex, dias: h.days });
+  // Herido: lo que le falta en días y horas, a su ritmo de ahora (su catre o su cama).
+  if (h.status === 'herido' && s)
+    return t('etiquetas.estado.herido_falta', { sexo: h.sex, tiempo: restText(restHours(s, h)) });
+  return t(`etiquetas.estado.${h.status}`, { sexo: h.sex, dias: Math.ceil(h.days) });
 }
+
+/** «2 d 12 h», «5 h»: horas de juego en días (de 24) y horas. */
+export const restText = (hours: number) =>
+  t('general.dias_horas', { d: Math.floor(hours / 24), h: hours % 24 });
 
 /** El nombre de una habilidad (los ids están en español: «Combate», «Arcano»…). */
 /** El tipo de un encargo, para enseñarlo («Cazar»). */
@@ -80,7 +89,7 @@ export const FACILITY_INFO: Record<
     effect: (l) =>
       l === 0
         ? t('etiquetas.mejoras.enf.efecto_0')
-        : t('etiquetas.mejoras.enf.efecto', { veces: l + 1 }),
+        : t('etiquetas.mejoras.enf.efecto', { dias: HEAL_IN_BED + healRate(l) - 1 + NURSE_MAX }),
   },
   tab: {
     name: t('etiquetas.mejoras.tab.nombre'),

@@ -1,4 +1,5 @@
 import { messengerSex } from '../core/messenger';
+import { infirmaryPlan, restHours } from '../core/infirmary';
 import { nightCatNow } from '../core/nightCat';
 import { nightmareNow } from '../core/nightmare';
 import { INCIDENTS } from '../data/incidents';
@@ -16,7 +17,7 @@ import { trainState } from '../core/training';
 import { goldCap } from '../core/vault';
 import { MATERIAL_LIST, matCap, matOf, storeLevel } from '../core/materials';
 import { CREST_COLORS } from '../data/custom';
-import { CLASS_NAMES } from '../data/labels';
+import { CLASS_NAMES, restText } from '../data/labels';
 import { gearOf } from '../core/resolve';
 import type { Member } from '../core/party';
 import type { SceneAway, SceneHero, SceneModel } from '../world/scene';
@@ -128,7 +129,8 @@ const fullName = (h: Hero) =>
 function heroTitle(s: GameState, h: Hero, candidate = false): string {
   const base = t('barra.view.nivel', { clase: CLASS_NAMES[h.cls][h.sex], nivel: h.lvl });
   if (candidate) return t('barra.view.busca_trabajo', { base });
-  if (h.status === 'herido') return t('barra.view.en_cama', { base, sexo: h.sex, dias: h.days });
+  if (h.status === 'herido')
+    return t('barra.view.en_cama', { base, sexo: h.sex, tiempo: restText(restHours(s, h)) });
   return t('barra.view.tarea', {
     base,
     tarea: taskLabel(s, h.id).toLowerCase(),
@@ -188,6 +190,7 @@ export function sceneModel(s: GameState): SceneModel {
   const callHeroes = asks.some((h) => h === 'heroe' || h === 'alguien') || undefined;
   const callStaff = asks.includes('alguien') || undefined;
   const plan = sleepPlan(s);
+  const cots = infirmaryPlan(s);
   for (const h of s.heroes) {
     if (h.status === 'muerto' || h.status === 'desaparecido') continue;
     heroes.push({
@@ -201,6 +204,7 @@ export function sceneModel(s: GameState): SceneModel {
       vault: (h.guard && h.post === 'tesoro') || undefined,
       sentry: h.guard ? { lvl: h.lvl, morale: h.morale } : undefined,
       dorm: plan.get(h.id),
+      cot: cots.get(h.id),
       // Mientras lo visten, está en la sastrería.
       work: dressingOf(s, h.id)?.room ?? h.job,
       goTo: goTo(h.id),
