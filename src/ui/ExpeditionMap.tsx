@@ -127,6 +127,15 @@ export function ExpeditionMap({ game, onExpedition, children }: Props) {
       if (nz === v.z) return v;
       return clamp({ z: nz, x: px - ((px - v.x) * nz) / v.z, y: py - ((py - v.y) * nz) / v.z });
     });
+  /** Lo que se ve del mapa (en sus píxeles, con margen): la niebla solo repinta eso. */
+  const seen = useMemo(() => {
+    const pad = 24;
+    const x0 = Math.max(0, Math.floor(-view.x / view.z) - pad);
+    const y0 = Math.max(0, Math.floor(-view.y / view.z) - pad);
+    const x1 = Math.min(WORLD_W, Math.ceil((size.w - view.x) / view.z) + pad);
+    const y1 = Math.min(WORLD_H, Math.ceil((size.h - view.y) / view.z) + pad);
+    return x1 > x0 && y1 > y0 ? { x0, y0, x1, y1 } : { x0: 0, y0: 0, x1: WORLD_W, y1: WORLD_H };
+  }, [view.x, view.y, view.z, size.w, size.h]);
   const drag = useRef<{ x: number; y: number; moved: number } | null>(null);
   const onDown = (e: PointerEvent) => {
     drag.current = { x: e.clientX, y: e.clientY, moved: 0 };
@@ -253,7 +262,7 @@ export function ExpeditionMap({ game, onExpedition, children }: Props) {
           />
         )}
         <BufferImage buf={steps} scale={1} class="map-layer" />
-        <ExpeditionFog clears={clears} style={style} />
+        <ExpeditionFog clears={clears} style={style} rect={seen} />
         {HEADINGS.map((h) => {
           const at = expPoint(h, Math.max(1.6, reach(h) + 0.8));
           return (
