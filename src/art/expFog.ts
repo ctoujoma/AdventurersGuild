@@ -166,8 +166,20 @@ function paper(): Uint8Array {
  * Cuánto se ha movido la niebla a los `t` segundos, en píxeles enteros: las masas grandes, muy
  * despacio; las medianas y el detalle, algo más deprisa y hacia otro lado.
  */
+/** Lo que se han movido las dos capas de cúmulos (a color), en píxeles enteros. */
+function cloudDrift(t: number): [number, number, number, number] {
+  return [Math.floor(t * 2), Math.floor(t * 0.7), Math.floor(t * 5), Math.floor(t * 1.5)];
+}
+
+/**
+ * Cambia solo cuando la niebla se ha movido un píxel: entre medias no hace falta repintarla.
+ */
+export function fogKey(t: number, style: MapStyle): string {
+  return (style === 'color' ? cloudDrift(t) : drift(t)).join(',');
+}
+
 function drift(t: number): [number, number, number, number] {
-  return [Math.floor(t * 0.9), Math.floor(t * 0.35), Math.floor(-t * 1.7), Math.floor(t * 0.8)];
+  return [Math.floor(t * 1.8), Math.floor(t * 0.7), Math.floor(-t * 3.4), Math.floor(t * 1.6)];
 }
 
 const TH = 0.42;
@@ -181,7 +193,19 @@ export interface FogFrame {
   /** Al despejar: la lejanía de antes y cuánto va de la retirada (0–1). */
   from?: Float32Array;
   p?: number;
+  /** Solo este trozo (lo que se ve), en píxeles del mapa; si no, todo. */
+  rect?: FogRect;
 }
+
+/** Un trozo del mapa: de `x0, y0` (dentro) a `x1, y1` (fuera). */
+export interface FogRect {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
+const ALL: FogRect = { x0: 0, y0: 0, x1: WORLD_W, y1: WORLD_H };
 
 /**
  * Pinta un fotograma de la niebla en `out` (ABGR, `WORLD_W × WORLD_H`, el formato de ImageData),
@@ -208,14 +232,16 @@ export function paintFog(
   const full = frame.full ?? true;
   const from = frame.from;
   const p = frame.p ?? 1;
+  // Lo hondo del pergamino solo se pinta en los fotogramas enteros: esos, todo el mapa.
+  const R = full ? ALL : (frame.rect ?? ALL);
   // El marco del mapa queda a la vista.
   const M = 7;
-  for (let y = 0; y < H; y++) {
+  for (let y = R.y0; y < R.y1; y++) {
     const rBig = ((y + ay) & 1023) * 1024;
     const rMid = ((y + by) & 511) * 512;
     const rFine = ((y + by) & 255) * 256;
     const rStill = (y & 255) * 256;
-    for (let x = 0; x < W; x++) {
+    for (let x = R.x0; x < R.x1; x++) {
       const i = y * W + x;
       let f = far[i]!;
       if (from) {
@@ -244,7 +270,7 @@ export function paintFog(
     }
   }
   const at = (x: number, y: number) => (x < 0 || y < 0 || x >= W || y >= H ? 1 : dens[y * W + x]!);
-  paintInk(out, dens, at, paper());
+  paintInk(out, dens, at, paper(), R);
 }
 
 const C = {
@@ -265,10 +291,11 @@ function paintInk(
   dens: Float32Array,
   at: (x: number, y: number) => number,
   paper: Uint8Array,
+  R: FogRect,
 ) {
   const W = WORLD_W;
-  for (let y = 0; y < WORLD_H; y++)
-    for (let x = 0; x < W; x++) {
+  for (let y = R.y0; y < R.y1; y++)
+    for (let x = R.x0; x < R.x1; x++) {
       const i = y * W + x;
       const d = dens[i]!;
       if (d === STILL) continue;
@@ -439,11 +466,9 @@ function paintClouds(out: Uint32Array, far: Float32Array, t: number, frame: FogF
   const [lo, hi] = cloudLayers();
   const from = frame.from;
   const p = frame.p ?? 1;
+  const R = frame.rect ?? ALL;
   // Las dos capas se mueven a distinta velocidad.
-  const lx = Math.floor(t * 0.8);
-  const ly = Math.floor(t * 0.3);
-  const hx = Math.floor(t * 2);
-  const hy = Math.floor(t * 0.6);
+  const [lx, ly, hx, hy] = cloudDrift(t);
   const M = 4;
   // Lo lejos que queda de lo visto un punto (con la retirada, según el retardo de la bola).
   const farAt = (x: number, y: number, lag: number) => {
@@ -504,15 +529,16 @@ function paintClouds(out: Uint32Array, far: Float32Array, t: number, frame: FogF
   };
   const HI = [C.white, C.mist, C.fog, C.steel];
   const LO = [C.mist, C.mist, C.fog, C.steel];
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
+  for (let y = R.y0; y < R.y1; y++)
+    for (let x = R.x0; x < R.x1; x++) {
       const i = y * W + x;
       if (x < M || y < M || x >= W - M || y >= H - M || far[i]! < -30) {
         out[i] = C.none;
         continue;
       }
       // Lejos de lo visto (y sin retirada), todas las bolas enteras: no hace falta mirar más.
-      const deep = far[i]! > 80 && !from;
+      // (Las bolas miden hasta ~45 px de ancho: desde 105 px de lo visto es seguro.)
+      const deep = far[i]! >= 105 && !from;
       const a = tone(hi, x, y, hx, hy, deep);
       if (a !== NONE) {
         out[i] = HI[a]!;
