@@ -29,12 +29,15 @@ export function drawCamp(c: Ctx): Fire {
   const fy = e.feet;
   const phase = campPhase(l.hour);
   const power = phase === 'velada' ? 1 : phase === 'noche' ? 0.7 : 0.35;
-  const crew = m.crew.map(heroOf);
+  const crew = m.crew.map((c) => heroOf(c, m.dress?.[c.id]));
   const n = crew.length;
   // Sitios alrededor del fuego: a un lado y a otro, cada vez más lejos.
   const spot = (i: number) => fx + (i % 2 ? 1 : -1) * (15 + Math.floor(i / 2) * 17);
   const guard = n > 1 ? Math.floor(l.hour / 2) % n : -1;
   const tc = (col: number) => tintColor(col, l);
+  // La lona tendida entre dos palos, detrás de todos.
+  const reach = 15 + Math.floor((n - 1) / 2) * 17 + 12;
+  tarp(b, fx - reach, fx + reach, fy, l);
   // Los de detrás primero (los más apartados).
   const order = crew
     .map((_, i) => i)
@@ -72,9 +75,53 @@ export function drawCamp(c: Ctx): Fire {
     }
   }
   // La hoguera y, en la velada, el puchero en sus trébedes.
-  hearth(b, fx, fy, power, time, l);
+  hearth(b, fx, fy, power, time, l, l.clima.wind ?? 0);
   if (phase === 'velada') pot(b, fx, fy, time, tc);
   return { x: fx, y: fy - 3, power };
+}
+
+/**
+ * La lona: dos palos con su cuerda y la tela que cae hacia atrás (se ve su cara de dentro, en
+ * sombra, y el borde de delante combado), con los vientos clavados al suelo.
+ */
+function tarp(b: PixelBuffer, x0: number, x1: number, y: number, l: Luz) {
+  const tc = (c: string) => tintColor(rgba(c), l);
+  const pole = [tc('#3e2731'), tc('#5f463a')];
+  // Lona de tela cruda: la cara de dentro, en sombra; el borde de delante, claro.
+  const cloth = [tc('#5a4c38'), tc('#76664a'), tc('#958260'), tc('#b8a47c'), tc('#d8c49a')];
+  const H = 26;
+  const top = y - 4 - H;
+  const w = x1 - x0;
+  const back = y - 14;
+  for (let x = x0 - 6; x <= x1 + 6; x++) {
+    const inside = x >= x0 && x <= x1;
+    const u = clamp01((x - x0) / w);
+    // Por fuera de los palos, la tela baja en diagonal hasta el suelo de atrás (los costados).
+    const out = x < x0 ? x0 - x : x > x1 ? x - x1 : 0;
+    const ridge = Math.round(top + Math.sin(u * Math.PI) * 3 + out * 2.2);
+    const bottom = back - (out ? 0 : Math.round(Math.sin(u * Math.PI) * 1));
+    if (ridge > bottom) continue;
+    for (let yy = ridge; yy <= bottom; yy++) {
+      const v = (yy - ridge) / Math.max(1, bottom - ridge);
+      let c = inside ? (v < 0.12 ? 3 : v < 0.45 ? 2 : 1) : 1;
+      // Pliegues verticales que cuelgan de la cuerda.
+      if (inside && v > 0.15 && Math.round((x - x0) / 5) % 2 === 0) c -= 1;
+      if (yy === ridge) c = inside ? 4 : 2;
+      b.set(x, yy, cloth[Math.max(0, c)]!);
+    }
+    // El borde de abajo, a festones.
+    if (inside && (x - x0) % 5 < 3) b.set(x, bottom + 1, cloth[0]!);
+  }
+  // Los palos (asoman por arriba) y los vientos hasta las estacas.
+  for (const px of [x0, x1]) {
+    for (let yy = top - 3; yy <= y - 4; yy++) {
+      b.set(px, yy, pole[1]!);
+      b.set(px + 1, yy, pole[0]!);
+    }
+    const dir = px === x0 ? -1 : 1;
+    for (let k = 0; k <= 12; k++)
+      b.set(px + dir * (k + 6), top + 1 + Math.round((k / 12) * (H - 2)), pole[0]!);
+  }
 }
 
 /** El tronco donde se sientan. */
@@ -186,7 +233,15 @@ function sleeper(
 }
 
 /** Piedras, troncos cruzados, llamas, brasas, chispas y (si arde poco) humo. */
-function hearth(b: PixelBuffer, x: number, y: number, power: number, time: number, l: Luz) {
+function hearth(
+  b: PixelBuffer,
+  x: number,
+  y: number,
+  power: number,
+  time: number,
+  l: Luz,
+  wind = 0,
+) {
   const stone = [tintColor(rgba('#3e4458'), l), tintColor(rgba('#727e95'), l)];
   const wood = [tintColor(rgba('#2e211d'), l), tintColor(rgba('#5f463a'), l)];
   // Los troncos cruzados.
@@ -239,18 +294,21 @@ function hearth(b: PixelBuffer, x: number, y: number, power: number, time: numbe
     const sy = Math.round(y - 4 - u * (14 + power * 18));
     b.set(sx, sy, fire[u < 0.25 ? 4 : u < 0.5 ? 3 : 2]!);
   }
-  // Humo cuando arde poco (al alba): bocanadas grises que suben y se deshacen.
-  if (power < 0.6) {
+  // Humo: bocanadas grises que suben, se deshacen y se las lleva el viento (más espeso al alba,
+  // cuando arde poco; tenue con la llama alta).
+  {
+    const thick = power < 0.6 ? 0.75 : 0.4;
     const smoke = [tintColor(rgba('#8b9bb4'), l), tintColor(rgba('#c0cbdc'), l)];
-    for (let k = 0; k < 6; k++) {
-      const u = (time * 0.18 + k / 6) % 1;
-      const cx = x + Math.sin(u * 5 + k) * 2 + u * 10;
-      const cy = y - 8 - u * 34;
-      const r = 1.5 + u * 3;
+    const drift = 10 + wind * 40;
+    for (let k = 0; k < 7; k++) {
+      const u = (time * 0.16 + k / 7) % 1;
+      const cx = x + Math.sin(u * 5 + k) * 2 + u * u * drift + u * 4;
+      const cy = y - 10 - power * 6 - u * (34 - wind * 14);
+      const r = 1.2 + u * 3.2;
       for (let yy = Math.floor(cy - r); yy <= cy + r; yy++)
         for (let xx = Math.floor(cx - r); xx <= cx + r; xx++) {
           if (Math.hypot(xx - cx, yy - cy) > r) continue;
-          if ((1 - u) * 0.75 > bayer(xx, yy)) b.set(xx, yy, smoke[(xx - yy) & 1 ? 0 : 1]!);
+          if ((1 - u) * thick > bayer(xx, yy)) b.set(xx, yy, smoke[(xx - yy) & 1 ? 0 : 1]!);
         }
     }
   }

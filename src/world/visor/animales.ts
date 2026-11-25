@@ -354,6 +354,14 @@ function wolves(c: Ctx, W: typeof WOLF = WOLF): void {
       let x = ((Math.round(wx + k * 15 - off) % L) + L) % L;
       if (x > e.w + 10) x -= L;
       if (x < -10 || x > e.w + 10) continue;
+      // De noche cerrada, de los lobos solo se ven los ojos (que parpadean).
+      if (l.night > 0.6) {
+        if (Math.floor(time * 1.3 + k * 2.7 + g) % 6 === 0) continue;
+        const ey = e.ground - 3 + (k % 2) - k;
+        b.set(x, ey, eye);
+        b.set(x + 2, ey, eye);
+        continue;
+      }
       // Uno aúlla a ratos (la cabeza al cielo); los otros, sentados, miran.
       const howl = k === 0 && (time / 5 + g) % 2 < 0.8;
       const img = tinted(howl ? W.howl : W.sit, l, lk);
