@@ -9,6 +9,7 @@ import { PixelBuffer } from '../../art/pixel';
 import type { ExpWeather } from '../../core/model';
 import { drawAnimals } from './animales';
 import { buildCapas, type Capa } from './capas';
+import { biomaOf, type Bioma } from './bioma';
 import { Nubes, drawMoon, drawStars, drawSun, skyBuffer } from './cielo';
 import type { Encuadre } from './encuadre';
 import { drawCamp, fireLight } from './fuego';
@@ -16,7 +17,7 @@ import { Gente } from './gente';
 import { luzAt, lutOf, type Clima, type Luz } from './luz';
 import type { MarchNow } from './marcha';
 import { blitStrip, luzKey } from './pintar';
-import { Lluvia, climaOf, drawMist } from './tiempo';
+import { Aire, Lluvia, climaOf, drawMist } from './tiempo';
 import { smooth } from './tonos';
 
 /** Para forzar la hora o el tiempo (pruebas, capturas). */
@@ -41,6 +42,7 @@ export class Visor {
   private skyKey = '';
   private nubes: Nubes;
   private lluvia: Lluvia;
+  private aire: Aire;
   private gente = new Gente();
   readonly buf: PixelBuffer;
   private travel = 0;
@@ -52,26 +54,28 @@ export class Visor {
     this.buf = new PixelBuffer(e.w, e.h);
     this.nubes = new Nubes(e, 7);
     this.lluvia = new Lluvia(e, 11);
+    this.aire = new Aire(e, 13);
   }
 
   /** Las capas a esta lejanía (en escalones, para no redibujar a cada momento). */
-  private layers(wild: number, seed: number): Capa[] {
+  private layers(wild: number, seed: number, bio: Bioma, snow: number): Capa[] {
     const w = Math.round(wild * WILD_STEPS) / WILD_STEPS;
-    const key = `${w}:${seed}`;
+    const sn = Math.round(snow * 4) / 4;
+    const key = `${w}:${seed}:${bio.id}:${sn}`;
     if (key !== this.capasKey) {
       this.capasKey = key;
-      this.capas = buildCapas(this.e, w, seed);
+      this.capas = buildCapas(this.e, w, seed, bio.paisaje, { snow: sn });
       this.colorKey = '';
     }
     return this.capas;
   }
 
-  private colorize(capas: Capa[], l: Luz): void {
-    const key = `${l.hour.toFixed(1)}:${l.clima.fog.toFixed(2)}:${l.clima.cloud.toFixed(2)}:${l.clima.rain.toFixed(1)}`;
+  private colorize(capas: Capa[], l: Luz, bio: Bioma): void {
+    const key = `${bio.id}:${l.hour.toFixed(1)}:${l.clima.fog.toFixed(2)}:${l.clima.cloud.toFixed(2)}:${l.clima.rain.toFixed(1)}:${(l.clima.dust ?? 0).toFixed(2)}:${(l.clima.storm ?? 0).toFixed(1)}`;
     if (key === this.colorKey) return;
     this.colorKey = key;
     for (const c of capas) {
-      const lut = lutOf(l, c.depth);
+      const lut = lutOf(l, c.depth, bio.ramps);
       let out = this.colored.get(c.id);
       if (!out || out.w !== c.t.w || out.h !== c.t.h) {
         out = new PixelBuffer(c.t.w, c.t.h);
@@ -109,10 +113,11 @@ export class Visor {
     if (walking) this.travel += dt * speed * (m.home ? -1 : 1);
     const travel = f.travel ?? this.travel;
     const l = this.luz(m, f);
-    const capas = this.layers(m.wild, this.seed);
-    this.colorize(capas, l);
+    const bio = biomaOf(m.terrain);
+    const capas = this.layers(m.wild, this.seed, bio, l.clima.snow ?? 0);
+    this.colorize(capas, l, bio);
     // El cielo.
-    const sk = `${l.hour.toFixed(1)}:${l.clima.cloud.toFixed(1)}:${l.clima.rain.toFixed(1)}`;
+    const sk = `${l.hour.toFixed(1)}:${l.clima.cloud.toFixed(1)}:${l.clima.rain.toFixed(1)}:${(l.clima.dust ?? 0).toFixed(1)}`;
     if (sk !== this.skyKey || !this.sky) {
       this.skyKey = sk;
       this.sky = skyBuffer(e, l);
@@ -128,7 +133,7 @@ export class Visor {
       blitStrip(b, this.colored.get(id)!, travel * c.speed, c.y);
     };
     layer('lejos');
-    this.nubes.draw(b, l, time, travel, 1 + l.clima.rain);
+    this.nubes.draw(b, l, time, travel, 1 + l.clima.rain + (l.clima.wind ?? 0) * 5);
     drawAnimals(ctx, 'cielo');
     layer('sierra');
     drawAnimals(ctx, 'sierra');
@@ -146,6 +151,7 @@ export class Visor {
     if (m.mode !== 'camp') this.gente.draw(ctx);
     layer('delante');
     this.lluvia.draw(b, l, time, travel);
+    this.aire.draw(b, l, time, travel, bio.id === 'sierra');
     if (fire) fireLight(ctx, fire);
     this.gente.overlay(ctx);
     return b;

@@ -461,6 +461,15 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      en la hoja lateral: interfaz del agente de expediciones); en la niebla a color, que las bolas
      no parezcan guijarros (cortes rectos donde se tocan) y algún hueco que deja ver terreno no
      explorado; luego sierra, marismas y ruinas en el visor.
+   - [ ] **Revisión del bosque y rumbos nuevos (25 nov, en revisión):** página
+     https://claude.ai/artifact/WaQtdS7PyuAzdXRLPLxDR5 con la crítica del bosque (B1–B11), la dirección de
+     sierra, marismas y ruinas con capturas del motor (S1, M1, R1), el tiempo por rumbo (T1), la fauna
+     (F1) y el reparto de enemigos y guardianes con dibujo propio (E1). Esperando el visto bueno por
+     códigos. Prototipo en la rama `claude/arte-expediciones-areas` (sin PR): `visor/bioma.ts` (cada
+     rumbo, su `Paisaje` y sus rampas), `capas-sierra.ts`, `capas-marismas.ts`, `capas-ruinas.ts`;
+     `Clima` con `snow`, `wind`, `dust` y `storm` y la clase `Aire` en `tiempo.ts` (copos, rachas,
+     polvo, relámpago; la «tormenta» de `expWeather` pasa a ser seca); fauna por rumbo en
+     `animales.ts`. El bosque sale idéntico. Maquetas: `tools/visor-biomas.ts`.
    - [x] Pulido del mapa: niebla a color como mar de cúmulos (bolas con luz propia en dos capas,
      borde redondo, se encogen al despejar en 1,6 s), pergamino con borde a festones grabado y
      retirada, sierra alta con nieve a manchas, mar sin halos, marismas a tinta. Probadas 4 variantes de

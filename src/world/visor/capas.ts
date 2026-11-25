@@ -56,7 +56,7 @@ const DIM: Record<CapaId, number> = {
   delante: 0.32,
 };
 
-const step = (v: number, x: number, y: number) => {
+export const step = (v: number, x: number, y: number) => {
   const b = Math.floor(v);
   return v - b > bayer(x, y) ? b + 1 : b;
 };
@@ -64,29 +64,60 @@ const step = (v: number, x: number, y: number) => {
 /** Largo de las tiras para un ancho de pantalla. */
 export const stripLen = (w: number) => Math.max(384, Math.ceil((w * 2) / 32) * 32);
 
-export function buildCapas(e: Encuadre, wild: number, seed: number): Capa[] {
+/** Lo que pinta una capa: su tira de tonos y la fila donde va. */
+export interface PaintOpts {
+  /** Nieve posada por el tiempo (0–1), además de la que toque por la lejanía. */
+  snow?: number;
+}
+export type Painter = (
+  e: Encuadre,
+  L: number,
+  wild: number,
+  seed: number,
+  o: PaintOpts,
+) => [Tonos, number];
+
+/** Un paisaje: cómo se pinta cada capa y cuánto se apaga en lo más hondo. */
+export interface Paisaje {
+  capas: Record<CapaId, Painter>;
+  dim?: Partial<Record<CapaId, number>>;
+  /** Cuánto pesa la bruma de la distancia (1 como en el bosque; el aire seco, menos). */
+  haze?: number;
+}
+
+export const BOSQUE: Paisaje = {
+  capas: { lejos, sierra, colinas, medio, cerca, suelo, delante },
+  dim: DIM,
+};
+
+export function buildCapas(
+  e: Encuadre,
+  wild: number,
+  seed: number,
+  p: Paisaje = BOSQUE,
+  o: PaintOpts = {},
+): Capa[] {
   const L = stripLen(e.w);
-  const mk = (id: CapaId, t: Tonos, y: number): Capa => ({
-    id,
-    t,
-    y,
-    speed: SPEED[id],
-    depth: { ...DEPTH[id], dim: 1 - DIM[id] * smooth(0.3, 1, wild) },
+  const ids: CapaId[] = ['lejos', 'sierra', 'colinas', 'medio', 'cerca', 'suelo', 'delante'];
+  return ids.map((id) => {
+    const [t, y] = p.capas[id](e, L, wild, seed, o);
+    return {
+      id,
+      t,
+      y,
+      speed: SPEED[id],
+      depth: {
+        ...DEPTH[id],
+        haze: DEPTH[id].haze * (p.haze ?? 1),
+        dim: 1 - (p.dim?.[id] ?? 0) * smooth(0.3, 1, wild),
+      },
+    };
   });
-  return [
-    mk('lejos', ...lejos(e, L, wild, seed)),
-    mk('sierra', ...sierra(e, L, wild, seed)),
-    mk('colinas', ...colinas(e, L, wild, seed)),
-    mk('medio', ...medio(e, L, wild, seed)),
-    mk('cerca', ...cerca(e, L, wild, seed)),
-    mk('suelo', ...suelo(e, L, wild, seed)),
-    mk('delante', ...delante(e, L, wild, seed)),
-  ];
 }
 
 // ---------- Montes lejanos ----------
 
-function lejos(e: Encuadre, L: number, wild: number, seed: number): [Tonos, number] {
+export function lejos(e: Encuadre, L: number, wild: number, seed: number): [Tonos, number] {
   const H = Math.round(e.hor * 0.62);
   const t = new Tonos(L, H + 2);
   const amp = H * lerp(0.82, 1, wild);
@@ -106,7 +137,7 @@ function lejos(e: Encuadre, L: number, wild: number, seed: number): [Tonos, numb
  * cresta cerca de él (más ancho cuanto más abajo: las caras grandes), con surcos en diagonal que
  * bajan hacia fuera y la nieve por encima de una línea que sube y baja (con calvas de roca).
  */
-function paintRange(
+export function paintRange(
   t: Tonos,
   tops: number[],
   o: { snow: number; seed: number; mat: Mat; foot: number },
@@ -256,7 +287,7 @@ function colinas(e: Encuadre, L: number, wild: number, seed: number): [Tonos, nu
   return [t, y0];
 }
 
-function house(t: Tonos, x: number, base: number, s: number) {
+export function house(t: Tonos, x: number, base: number, s: number) {
   const w = 9 + (s % 3) * 2;
   const h = 5;
   for (let y = base - h; y <= base; y++)
