@@ -68,6 +68,8 @@ import {
   applyLook,
   loadSettings,
   nextPace,
+  paceMax,
+  type Pace,
   saveSettings,
   type Settings,
 } from '../platform/settings';
@@ -271,7 +273,9 @@ export function App() {
   // El tiempo corre solo salvo con los días a la antigua (modo prueba).
   const realTime = !settings.classicTime;
   // Acelerar el reloj: mientras dura «La deuda» y en el modo prueba (más adelante, quizá de pago).
-  const canRush = game.mode !== 'libre' || settings.tester;
+  // El reloj se acelera siempre: hasta ×4, y ×8 con el modo prueba (`paceMax`).
+  const canRush = true;
+  const clockSpeed = Math.min(settings.pace, paceMax(settings.tester)) as Pace;
   // Las piezas que se ganan; en el modo prueba, todas.
   const has = (id: UnlockId) => settings.tester || hasUnlock(game, id);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -1190,7 +1194,7 @@ export function App() {
   const isNight = clock >= WORK_END * DAY_SECONDS;
   // Con el tiempo que corre solo, acelerar el día solo se puede mientras dura «La deuda» (y en el
   // modo prueba): luego el reloj es el de verdad. La noche se puede pasar siempre.
-  const clockPace = nightRush && isNight ? NIGHT_RUSH : realTime && !canRush ? 1 : settings.pace;
+  const clockPace = nightRush && isNight ? NIGHT_RUSH : realTime && !canRush ? 1 : clockSpeed;
   const paceRef = useRef(clockPace);
   paceRef.current = clockPace;
   const ticking =
@@ -1605,7 +1609,7 @@ export function App() {
             rush={canRush}
             canClose={clock >= DUSK * DAY_SECONDS}
             night={passing}
-            pace={settings.pace}
+            pace={clockSpeed}
             rushing={nightRush}
             onRushNight={() => {
               audio.play('select', 0.5);
@@ -1615,7 +1619,7 @@ export function App() {
               // Con «Pasar la noche» puesto el reloj va a su ritmo: tocar el reloj lo quita, para
               // que la velocidad elegida se note.
               if (nightRush && isNight) setNightRush(false);
-              setSettings({ ...settings, pace: nextPace(settings.pace) });
+              setSettings({ ...settings, pace: nextPace(clockSpeed, paceMax(settings.tester)) });
             }}
             onDusk={() =>
               moveClock(Math.max(clockRef.current, DUSK * DAY_SECONDS), clockRef.current)

@@ -2,9 +2,17 @@
 export const PACES = [1, 2, 4, 8, 0.5] as const;
 export type Pace = (typeof PACES)[number];
 
-/** El siguiente ritmo al tocar el reloj: ×1 → ×2 → ×4 → ×8 → ×½ → ×1. */
-export function nextPace(p: Pace): Pace {
-  return PACES[(PACES.indexOf(p) + 1) % PACES.length]!;
+/**
+ * Lo más deprisa que se deja ir el reloj (decidido con el usuario, 25 de noviembre): ×4 siempre
+ * (también con la deuda pagada) y ×8 con el modo prueba.
+ */
+export const paceMax = (tester: boolean): Pace => (tester ? 8 : 4);
+
+/** El siguiente ritmo al tocar el reloj: ×1 → ×2 → ×4 (→ ×8) → ×½ → ×1, hasta `max`. */
+export function nextPace(p: Pace, max: Pace = 8): Pace {
+  const list = PACES.filter((x) => x <= max);
+  const i = list.indexOf(p as (typeof list)[number]);
+  return list[(i + 1) % list.length]!;
 }
 
 /** El ritmo escrito para la barra: «½» en vez de «0.5». */

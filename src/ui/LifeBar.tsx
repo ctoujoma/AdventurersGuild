@@ -4,7 +4,7 @@ import type { Hero } from '../core/model';
 import { t } from '../textos';
 
 /**
- * La vida bajo el retrato (expediciones): la barra con las marcas del 20 % y del 50 %, y debajo
+ * La vida bajo el retrato (al elegir quién va a un encargo o una expedición, y en el visor): la barra con las marcas del 20 % y del 50 %, y debajo
  * cómo va (sano, herido leve, grave o en el suelo) con su tanto por ciento.
  */
 export function LifeBar({ hero: h }: { hero: Hero }) {

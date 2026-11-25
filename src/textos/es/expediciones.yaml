@@ -482,7 +482,7 @@ intro:
 
 # La vida bajo el retrato en el visor y la hoja (ui/LifeBar.tsx).
 vida:
-  sano: "{sexo, select, f {Sana} other {Sano}} · {pct} %"
-  leve: "{sexo, select, f {Herida leve} other {Herido leve}} · {pct} %"
-  grave: "{sexo, select, f {Herida grave} other {Herido grave}} · {pct} %"
+  sano: "{sexo, select, f {Sana} other {Sano}} · {pct} %"
+  leve: "{sexo, select, f {Herida leve} other {Herido leve}} · {pct} %"
+  grave: "{sexo, select, f {Herida grave} other {Herido grave}} · {pct} %"
   suelo: "{sexo, select, f {En el suelo, la llevan} other {En el suelo, lo llevan}}"
