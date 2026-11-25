@@ -204,6 +204,30 @@ Las pociones **solo existen si se han creado en la alquimia**, como la forja cre
   tiempo; al acabar, `s.potions++`, que se vea en la alquimia y en la despensa. Hasta entonces, sin
   pociones hechas, la hoja no enseña la fila de pociones.
 
+## La vida que se guarda en las expediciones (parte 3, 25 de noviembre)
+
+Con la vida que se guarda (`core/health.ts`, #219), las expediciones ya no cuentan heridas:
+
+- **Peleas:** cada uno entra con su vida (`hpOf`) y sale con la que le quede, aunque la mitad de lo
+  perdido son golpes que se pasan (`EXP_FIGHT_WEAR`). Quien cae queda grave; si ya iba grave, al
+  suelo (a 0, le llevan). Si pierden, uno más se lleva un golpe (`EXP_LOSS_HP`), sin tumbarle.
+  Un suceso que sale mal quita `EXP_EVENT_HP`.
+- **Avisos y vuelta:** en cuanto alguien baja del 50 % hay línea en el diario y aviso en la barra
+  («quizá convenga volver»). Grave (de ida), dan la vuelta.
+- **Más despacio con heridos:** cada hora, por cada leve `EXP_SLOW_LIGHT` y por cada grave
+  `EXP_SLOW_GRAVE` de no avanzar (`hurtSlow`).
+- **Curarse fuera:** de noche, al acampar, los que cenan recuperan `EXP_CAMP_HEAL`; el clérigo,
+  a veces, `EXP_CLERIC_HP` al que está peor. Una poción, si alguien baja del 50 %, da
+  `EXP_POTION_HP`. El santuario también cura vida.
+- **Al volver:** cada uno con la vida que trae (en pie o a la cama, `setHp`). Quien llega en el
+  suelo puede morir, como antes (`EXP_DOWN_DEATH`, con el clérigo que salva); si no, grave. Se
+  quita el apaño de `EXP_HURT_HP_LOSS`, que solo queda para pasar las partidas de antes
+  (`legacyHurt`).
+- **Barra de vida bajo el retrato** (`ui/LifeBar.tsx`), en el visor y en la hoja: marcas del 20 y
+  del 50 %, y «Sano / Herido leve / Herido grave · n %» o «En el suelo».
+- **Simulador** (sin contratar): 1,8 muertos por cada 100 héroes (antes 2,6) y 2,7 días de
+  lejanía (antes 3,6): con heridos vuelven antes.
+
 ## Depende de otros
 
 - **Agente principal:** las pociones como trabajo de la alquimia (ver «Pendiente: las

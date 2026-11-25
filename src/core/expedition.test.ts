@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DAY_SECONDS, EXP_HURT_DOWN, MAX_CANDIDATES } from './balance';
+import { DAY_SECONDS, MAX_CANDIDATES } from './balance';
 import {
   canExpedition,
   distAt,
@@ -11,6 +11,7 @@ import {
   optionRisk,
   partyCap,
   potionsMax,
+  hurtSlow,
   expWeather,
   stepExpeditions,
 } from './expedition';
@@ -109,8 +110,7 @@ describe('expediciones', () => {
     let s = ready('caer');
     const ids = s.heroes.slice(0, 2).map((h) => h.id);
     s = reduce(s, { type: 'expedition', heading: 'bosque', heroIds: ids, rations: 20 });
-    const e = s.expeditions![0]!;
-    e.hurt[ids[0]!] = EXP_HURT_DOWN;
+    s.heroes.find((h) => h.id === ids[0])!.hp = 0;
     // Una pelea perdida con el otro en pie hace volver; aquí lo forzamos con un día largo lejos.
     s = play(s, 14);
     expect(s.expeditions ?? []).toHaveLength(0);
@@ -324,7 +324,7 @@ describe('expediciones: bloque 5 (rumbos, tiempo, pociones y la carta)', () => {
     s.potions = 3;
     s = reduce(s, { type: 'expedition', heading: 'bosque', heroIds: ids, rations: 12, potions: 2 });
     expect(s.potions).toBe(1);
-    s.expeditions![0]!.hurt[ids[0]!] = 1;
+    s.heroes.find((h) => h.id === ids[0])!.hp = 0.3;
     s = play(s, 1);
     const e = s.expeditions![0]!;
     expect(e.log.some((l) => tx(l.t).includes('bebe una poción'))).toBe(true);
@@ -371,10 +371,40 @@ describe('expediciones: bloque 5 (rumbos, tiempo, pociones y la carta)', () => {
     // Todos en el suelo con un suceso esperando.
     let t = out('nadie');
     const x = t.expeditions![0]!;
-    x.hurt[x.heroIds[0]!] = EXP_HURT_DOWN;
+    t.heroes.find((h) => h.id === x.heroIds[0])!.hp = 0;
     x.pending = { kind: 'cofre', h: x.hours, until: x.hours };
     t = play(t, 1);
     const log = (t.expeditions?.[0] ?? null)?.log ?? t.reports.find((r) => r.exp)!.exp!.log;
     expect(log.some((l) => tx(l.t).startsWith('Nadie estaba'))).toBe(true);
+  });
+
+  it('la vida se guarda: entran con la suya, se curan algo de noche y vuelven con la que traen', () => {
+    let s = out('vida');
+    const h = s.heroes.find((x) => x.id === s.expeditions![0]!.heroIds[0])!;
+    h.hp = 0.4;
+    s = play(s, 1);
+    const h1 = s.heroes.find((x) => x.id === h.id)!;
+    const e = s.expeditions?.[0];
+    // De noche, al acampar, algo mejor (si no les ha pasado nada peor) y avisado de que va herido.
+    if (e && !e.log.some((l) => l.k === 'pelea' || l.won === false))
+      expect(h1.hp!).toBeGreaterThan(0.4);
+    // Ir con heridos les frena.
+    if (e) expect(hurtSlow(e, s)).toBeGreaterThanOrEqual(0);
+    // Al volver, la vida que traen manda: sigue «leve» o mejor, y en pie (no a la cama).
+    s = reduce(s, { type: 'expBack', id: s.expeditions![0]!.id });
+    s = play(s, 2);
+    const back = s.heroes.find((x) => x.id === h.id)!;
+    expect(back.status === 'ok' || back.status === 'herido').toBe(true);
+    expect(back.hp).toBeDefined();
+  });
+
+  it('las partidas de antes (heridas contadas) pasan a vida al seguir', () => {
+    let s = out('antes');
+    const e = s.expeditions![0]!;
+    const id = e.heroIds[0]!;
+    e.hurt = { [id]: 1 };
+    s = play(s, 1);
+    expect(s.expeditions?.[0]?.hurt).toBeUndefined();
+    expect(s.heroes.find((x) => x.id === id)!.hp!).toBeLessThan(1);
   });
 });

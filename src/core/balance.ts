@@ -660,21 +660,42 @@ export const EXP_EVENTS = 2;
 export const EXP_EVENTS_FAR = 0.2;
 /**
  * Peleas: la fuerza del grupo (la media de Combate de los que están en pie, más `EXP_GROUP` por
- * cada uno de más) contra `EXP_FIGHT + EXP_FIGHT_FAR` × lejanía. Cada derrota hiere a uno; con
- * `EXP_HURT_DOWN` heridas cae. Cada herida resta 1 a todo y en casa son `EXP_HURT_DAYS` días.
+ * cada uno de más) contra `EXP_FIGHT + EXP_FIGHT_FAR` × lejanía.
  */
 export const EXP_GROUP = 1.5;
 export const EXP_FIGHT = 7;
 export const EXP_FIGHT_FAR = 1.4;
-export const EXP_HURT_DOWN = 3;
-export const EXP_HURT_DAYS = 2;
-/** Vida que quita cada herida de expedición al volver (con la vida que se guarda). */
+/**
+ * La vida en las expediciones (con la vida que se guarda, `core/health.ts`): las peleas dejan a
+ * cada uno con la que le quede (quien cae, grave; si ya iba grave, en el suelo, a 0); si pierden,
+ * uno más pierde `EXP_LOSS_HP`; un suceso que sale mal quita `EXP_EVENT_HP`. De noche, al
+ * acampar, los que están en pie recuperan `EXP_CAMP_HEAL`; el clérigo (a veces) `EXP_CLERIC_HP`
+ * al que está peor; una poción, `EXP_POTION_HP`. Con heridos andan más despacio: cada hora, por
+ * cada leve `EXP_SLOW_LIGHT` y por cada grave `EXP_SLOW_GRAVE` de no avanzar (hasta
+ * `EXP_SLOW_MAX`).
+ */
+export const EXP_LOSS_HP = 0.15;
+/**
+ * De lo que pierden en una pelea, la parte que se queda (el resto son golpes y rasguños que se
+ * pasan al recobrar el aliento). Quien cae ya iba grave: con `EXP_GRAVE_FALL`, al suelo.
+ */
+export const EXP_FIGHT_WEAR = 0.5;
+export const EXP_GRAVE_FALL = 1;
+export const EXP_EVENT_HP = 0.2;
+export const EXP_CAMP_HEAL = 0.1;
+export const EXP_CLERIC_HP = 0.15;
+export const EXP_POTION_HP = 0.35;
+export const EXP_SLOW_LIGHT = 0.08;
+export const EXP_SLOW_GRAVE = 0.2;
+export const EXP_SLOW_MAX = 0.6;
+/** Partidas de antes (heridas contadas): vida que quita cada una, y las que tumbaban. */
 export const EXP_HURT_HP_LOSS = 0.3;
+export const EXP_HURT_DOWN = 3;
 /** Quien cayó y vuelve a casa: probabilidad de que no salga adelante (con clérigo, `CLERIC_SAVE`). */
 export const EXP_DOWN_DEATH = 0.3;
 /** Si caen todos, vuelve esta parte de la mochila (el resto se queda allí). */
 export const EXP_WIPE_KEEP = 1 / 3;
-/** El clérigo cura una herida por noche con esta probabilidad. */
+/** El clérigo cura al que está peor por la noche con esta probabilidad. */
 export const EXP_CLERIC_HEAL = 0.5;
 /** Botín: monedas de un hallazgo (más por día de lejanía) y materiales (más cada `EXP_MAT_FAR` días). */
 export const EXP_GOLD = [4, 12] as const;
@@ -711,12 +732,11 @@ export const EXP_CHOICES = 0.25;
 /**
  * Las peleas van con el motor común (`core/combat.ts`): lo que pide la pelea en la escala de los
  * desafíos (la suma del grupo), por este ajuste (medido para que gane lo mismo que la tirada de
- * antes). Cada herida quita `EXP_HURT_HP` de la vida al empezar.
+ * antes). Cada uno entra con la vida que le queda.
  */
 export const EXP_FOE = 0.85;
 /** Cuánto más o menos fuerte sale cada enemigo (± esta parte). */
 export const EXP_FOE_SPREAD = 0.35;
-export const EXP_HURT_HP = 0.2;
 /**
  * El guardián: desde `EXP_EVENTS_DEF.guardian.from` días, cada hora con `EXP_GUARDIAN` × (días − 3)
  * de probabilidad (uno por expedición); pelea por `EXP_GUARDIAN_MULT` y espera `EXP_GUARDIAN_WAIT`

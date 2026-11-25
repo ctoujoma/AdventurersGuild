@@ -345,8 +345,13 @@ export interface Expedition {
   took: number;
   /** Desde cuándo vuelven (hora) y a qué lejanía estaban. */
   turn?: { h: number; dist: number; why: ExpTurn; idle?: number };
-  /** Heridas de cada uno (con `EXP_HURT_DOWN`, en el suelo). */
-  hurt: Record<string, number>;
+  /**
+   * Partidas de antes: heridas contadas de cada uno. Ahora la vida va en `Hero.hp` (se pasa a
+   * vida al seguir; ver `legacyHurt`).
+   */
+  hurt?: Record<string, number>;
+  /** A quién ya se avisó de que va herido (una vez cada uno). */
+  hurtWarned?: string[];
   /** Lo que traen. */
   bag: { gold: number; mats: Mats; items?: Item[] };
   log: ExpLine[];
