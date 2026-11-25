@@ -643,3 +643,48 @@ Del agente de expediciones, en su propia página: **«Expediciones del Jarro»**
   con lo aprobado, de lo troncal a lo menudo.
 - Para añadir o cambiar un punto: aquí y en la base de datos (`set` de uno nuevo, o `update` de
   los campos del texto con `if_version`, sin tocar los que escribe el usuario).
+
+## Rumbos del visor (arte de expediciones, 25 de noviembre)
+
+Página: https://claude.ai/artifact/WaQtdS7PyuAzdXRLPLxDR5 (agente «Arte de expediciones»).
+
+**Bosque (B):**
+
+- **B1–B7 — Aprobadas:** camino con vida y primer plano con cuerpo (B1); varias filas de árboles,
+  sotobosque y sombras (B2); lo hondo con claros, rayos y copas por delante en vez de un muro
+  (B3); más especies (B4); cosas que marcan el avance y hallazgos en el camino (B5); animales
+  más grandes y cercanos (B6); cielo por semilla y día, sol con halo y rayos al alba (B7).
+- **B8 — Rechazada por ahora:** la cámara más cerca en escritorio se queda como está (verlo más
+  adelante).
+- **B9 — Aprobada con cambios:** el campamento con lona, humo, luz de la hoguera y solo los ojos de
+  los lobos, pero **sin tumbarlos**: se quedan sentados con la manta. La manta, del color de cada
+  héroe (el que tenga por defecto o el de su ropa personalizada).
+- **B10 — Aprobada:** la lluvia moja (charcos con anillos, suelo oscuro, goterones de las copas).
+- **B11 — Aprobada:** cada enemigo con su dibujo, destello al empezar, polvo al embestir y el que
+  cae se queda en el suelo. **Además (mecánica):** en ciertos encuentros con jefes, verlos de lejos
+  y pararse a esperar al jugador: pelear en directo (con el juego abierto), que se resuelva solo o
+  **intentar escapar** sin pelear (con riesgo de caer si sale mal la tirada); sin respuesta, se
+  resuelve solo al día siguiente. Agente de expediciones (el guardián ya espera con «Ver la
+  pelea»: se amplía).
+
+**Áreas:**
+
+- **S1 — Sierra, aprobada:** la nieve baja hasta el camino desde media lejanía.
+- **M1 — Marismas, aprobada con barracas:** antes de meterlas, enseñar cómo serían; que no sean
+  repetitivas ni un recurso del que se abuse.
+- **R1 — Ruinas, aprobada (clásicas, para empezar):** primera pasada y el usuario guía. La idea:
+  las ruinas de una gran civilización que, al adentrarse, se vuelven el interior de una ciudad o
+  complejo antiguo colosal, cada vez más denso de ruina. Valorar mezclar con lo de fortaleza para
+  no repetir.
+- **T1 — Aprobada:** el tiempo de cada rumbo como en las animaciones.
+- **F1 — Aprobada:** la fauna de cada rumbo, con el cuidado de los ciervos. **Idea apuntada**
+  (`futuro.md`): algunas cosas que salen en el visor se pueden tocar antes de que desaparezcan y dan
+  algo a los exploradores (una poción, raciones…).
+
+**Enemigos:**
+
+- **E1 — Aprobada:** enemigos y guardianes con dibujo propio por rumbo, como en la tabla. Sienta
+  el precedente para una **pasada de calidad a los jefes de los encargos** más adelante.
+
+**Pociones (nota del usuario):** que se usen solas (como ahora: de noche, al que está peor) pero
+que se pueda tocar una para dársela a un héroe cuando se quiera. Agente de expediciones.
