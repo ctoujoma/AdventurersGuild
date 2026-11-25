@@ -250,9 +250,13 @@ settingsmenu:
   ganan: "Ganan"
   pierden: "Pierden"
   dias_a_la_antigua: "Días a la antigua: el día solo corre con el juego abierto y se cierra con «Anochecer»"
+  medidor_rendimiento: "Medidor de rendimiento (fotogramas y lo que se dibuja)"
   modo_prueba_activado: "Modo prueba activado"
   que_es_cada_cosa: "Qué es cada cosa"
   manten_pulsado_un_boton: "Mantén pulsado un botón, un marcador del mapa o una cifra para ver qué es."
   version: "Versión {version}"
   n_500_monedas: "+500 monedas"
   n_50_reputacion: "+50 reputación"
+# Medidor de rendimiento (modo prueba): fotogramas, milisegundos (media y peor de cada diez) y lo dibujado.
+perf:
+  linea: "{fps} fps · {ms} ms (peor {peor}) · {llamadas} llamadas · {tri} k triángulos · {tex} texturas · {w}×{h}"

@@ -330,6 +330,14 @@ export function SettingsMenu({
                 />
                 <span>{t('pantallas.settingsmenu.modo_prueba_activado')}</span>
               </label>
+              <label class="set-check">
+                <input
+                  type="checkbox"
+                  checked={s.perf}
+                  onChange={(e) => set({ perf: e.currentTarget.checked })}
+                />
+                <span>{t('pantallas.settingsmenu.medidor_rendimiento')}</span>
+              </label>
             </>
           )}
           {/* El glosario, plegado: casi nadie lo lee entero y ocupaba cuatro pantallas. */}

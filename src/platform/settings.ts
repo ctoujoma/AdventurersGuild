@@ -53,6 +53,8 @@ export interface Settings {
   share: boolean;
   /** Modo prueba: atajos en Ajustes (se abre tocando cinco veces el título). */
   tester: boolean;
+  /** Modo prueba: el medidor de rendimiento (fotogramas, milisegundos y lo dibujado). */
+  perf: boolean;
   /**
    * Idioma de los textos (`src/textos/<idioma>`); sin él, español. Lo lee `src/textos` al
    * arrancar: cambiarlo recarga la página. El selector sale cuando haya más de un idioma.
@@ -80,6 +82,7 @@ export const DEFAULT_SETTINGS: Settings = {
   classicTime: false,
   share: true,
   tester: false,
+  perf: false,
 };
 
 const clamp01 = (v: unknown, d: number) =>
@@ -105,6 +108,7 @@ export function parseSettings(raw: unknown): Settings {
     classicTime: r.classicTime === true,
     share: r.share !== false,
     tester: r.tester === true,
+    perf: r.perf === true,
     ...(typeof r.lang === 'string' && /^[a-z]{2}(-[A-Z]{2})?$/.test(r.lang)
       ? { lang: r.lang }
       : {}),
