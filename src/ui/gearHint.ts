@@ -1,9 +1,9 @@
 /**
  * El aviso de equipo olvidado: cuando en el arcón hay algo mejor que lo que lleva alguien en una
- * ranura (o no lleva nada). Lo que es «mejor» lo decide el núcleo (`betterGear`).
+ * ranura (o no lleva nada). Lo que es «mejor» lo decide el núcleo (`gearAdvice`: cada objeto, a quien más gana con él por su clase).
  */
 import { gearInStock } from '../core/game';
-import { betterGear, type Upgrade } from '../core/gear';
+import { gearAdvice, type Upgrade } from '../core/gear';
 import type { GameState, Hero, Item } from '../core/model';
 import { listNames } from './text';
 import { t } from '../textos';
@@ -11,7 +11,9 @@ import { t } from '../textos';
 /** Lo mejor del arcón para cada ranura de un héroe que puede cambiarse de equipo. */
 export function upgradesFor(game: GameState, h: Hero): Upgrade[] {
   if (h.status !== 'ok' && h.status !== 'herido') return [];
-  return betterGear(h, gearInStock(game));
+  // El consejo de toda la casa: cada objeto, a quien más gana con él (y le sirve a su clase).
+  const home = game.heroes.filter((x) => x.status === 'ok' || x.status === 'herido');
+  return gearAdvice(home, gearInStock(game)).get(h.id) ?? [];
 }
 
 /** Cómo se nombra una pieza en la frase del aviso, y si va en plural («unas botas»). */

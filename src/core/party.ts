@@ -80,6 +80,16 @@ const WEIGHTS: Record<ClassId, Record<SkillId, readonly [number, number, number]
   },
 };
 
+/**
+ * Cuánto usa una clase cada habilidad (0–1): la suma de sus pesos frente a la que más usa. Para
+ * saber si un objeto le sirve (a un mago, una espada casi nada).
+ */
+export function skillUse(cls: ClassId, sk: SkillId): number {
+  const sum = (s: SkillId) => WEIGHTS[cls][s].reduce((a, b) => a + b, 0);
+  const max = Math.max(...SKILLS.map(sum));
+  return max ? sum(sk) / max : 0;
+}
+
 /** Lo que cada rasgo suma o resta a atributos y habilidades. */
 const TRAIT_EFFECTS: Partial<
   Record<TraitId, { attrs?: Partial<Attrs>; skills?: Partial<Record<SkillId, number>> }>
