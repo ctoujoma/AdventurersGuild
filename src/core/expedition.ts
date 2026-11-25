@@ -7,7 +7,7 @@
  * Corren por horas de juego: cada hora tira con su propia semilla, así que pasa lo mismo con el
  * juego abierto que cerrado (`away.ts` pasa por `endDay`, que las pone al día).
  */
-import { hpOf, setHp, woundChip } from './health';
+import { healthOf, hpOf, setHp, woundChip } from './health';
 import {
   CLERIC_SAVE,
   DAY_SECONDS,
@@ -46,7 +46,18 @@ import {
   EXP_GUARDIAN,
   EXP_GUARDIAN_MULT,
   EXP_GUARDIAN_WAIT,
-  EXP_HURT_HP,
+  EXP_LOSS_HP,
+  EXP_FIGHT_WEAR,
+  EXP_GRAVE_FALL,
+  EXP_EVENT_HP,
+  EXP_CAMP_HEAL,
+  EXP_CLERIC_HP,
+  EXP_POTION_HP,
+  EXP_SLOW_LIGHT,
+  EXP_SLOW_GRAVE,
+  EXP_SLOW_MAX,
+  HP_GRAVE,
+  HP_LIGHT,
   EXP_BUNDLES_MAX,
   MAT_SELL,
 } from './balance';
@@ -212,11 +223,68 @@ export function hoursHome(e: Expedition): number {
   return Math.ceil((distAt(e) * EXP_HOURS) / 2);
 }
 
-/** Los que siguen en pie. */
+/** Los que siguen en pie (con algo de vida; a 0, en el suelo: les llevan los demás). */
 export const standing = (e: Expedition, s: GameState) =>
   e.heroIds
     .map((id) => s.heroes.find((h) => h.id === id))
-    .filter((h): h is Hero => !!h && (e.hurt[h.id] ?? 0) < EXP_HURT_DOWN);
+    .filter((h): h is Hero => !!h && hpOf(h) > 0);
+
+/**
+ * La vida fuera de casa: se apunta en `Hero.hp` sin tocar su estado (siguen «de misión»); al
+ * volver, `arrive` les pone en pie o en cama según la que traigan.
+ */
+const setLife = (h: Hero, hp: number) => {
+  h.hp = Math.max(0, Math.min(1, hp));
+};
+
+/** Partidas de antes: las heridas contadas pasan a vida (una vez). */
+function legacyHurt(s: GameState, e: Expedition): void {
+  if (!e.hurt) return;
+  for (const [id, n] of Object.entries(e.hurt)) {
+    const h = s.heroes.find((x) => x.id === id);
+    if (h && n) setLife(h, n >= EXP_HURT_DOWN ? 0 : hpOf(h) - EXP_HURT_HP_LOSS * n);
+  }
+  delete e.hurt;
+}
+
+/**
+ * Le quitan vida en una expedición. Si queda grave (de ida), dan la vuelta; si ya iba sin
+ * fuerzas, al suelo. Avisa la primera vez que alguien va herido.
+ */
+function wound(e: Expedition, h: Hero, amount: number): void {
+  const was = hpOf(h);
+  setLife(h, was < HP_GRAVE ? was - amount : Math.max(0.02, was - amount));
+  warnHurt(e, h);
+  if (hpOf(h) < HP_GRAVE && !e.turn) turnBack(e, 'herido', h);
+}
+
+/** «Va herido: quizá convenga volver» (una vez por héroe, en cuanto baja del 50 %). */
+function warnHurt(e: Expedition, h: Hero): void {
+  if (e.turn || hpOf(h) >= HP_LIGHT || hpOf(h) < HP_GRAVE || e.hurtWarned?.includes(h.id)) return;
+  (e.hurtWarned ??= []).push(h.id);
+  line(e, 'herida', 'expediciones.diario.herido_leve', { heroe: h.name, sexo: h.sex }, h.id);
+}
+
+/** Los del grupo (en pie o no). */
+const party = (s: GameState, e: Expedition) =>
+  e.heroIds.map((id) => s.heroes.find((h) => h.id === id)).filter((h): h is Hero => !!h);
+
+/** El que tiene menos vida (si a alguno le falta). */
+const worstOf = (xs: readonly Hero[]) =>
+  xs.filter((h) => hpOf(h) < 1).sort((a, b) => hpOf(a) - hpOf(b))[0];
+
+/** Cada hora, la probabilidad de no avanzar por ir con heridos (leves y graves). */
+export function hurtSlow(e: Expedition, s: GameState): number {
+  let p = 0;
+  for (const id of e.heroIds) {
+    const h = s.heroes.find((x) => x.id === id);
+    if (!h) continue;
+    const hp = hpOf(h);
+    if (hp < HP_GRAVE) p += EXP_SLOW_GRAVE;
+    else if (hp < HP_LIGHT) p += EXP_SLOW_LIGHT;
+  }
+  return Math.min(EXP_SLOW_MAX, p);
+}
 
 /** La dificultad de una pelea a esa lejanía. */
 export const fightDiff = (dist: number) => EXP_FIGHT + EXP_FIGHT_FAR * dist;
@@ -226,7 +294,7 @@ export function partyPower(s: GameState, e: Expedition): number {
   const up = standing(e, s);
   if (!up.length) return 0;
   const sum = equip(up, s.fac).reduce(
-    (a, h) => a + Math.max(0, skill(h, 'Combate', true) - (e.hurt[h.id] ?? 0)),
+    (a, h) => a + Math.max(0, skill(h, 'Combate', true) - 3 * (1 - hpOf(h))),
     0,
   );
   return sum / up.length + EXP_GROUP * (up.length - 1);
@@ -271,7 +339,6 @@ export function sendExpedition(
     hours: 0,
     rations,
     took: rations,
-    hurt: {},
     bag: { gold: 0, mats: {} },
     log: [],
     warned: 0,
@@ -360,6 +427,7 @@ export function stepExpeditions(
   const home: string[] = [];
   if (!s.expeditions?.length) return { news, home };
   for (const e of [...s.expeditions]) {
+    legacyHurt(s, e);
     const until = Math.floor((at - e.from) / HOUR);
     while (e.hours < until) {
       e.hours++;
@@ -367,7 +435,19 @@ export function stepExpeditions(
       const n0 = e.log.length;
       stepHour(s, e, news);
       // Lo raro y lo legendario se avisan en la barra (con su brillo y su sonido).
-      for (const l of e.log.slice(n0))
+      for (const l of e.log.slice(n0)) {
+        // Alguien va herido: aviso en la barra (por si conviene mandarles volver).
+        const hk = typeof l.t === 'object' && l.t.k === 'expediciones.diario.herido_leve';
+        const who = hk ? s.heroes.find((h) => h.id === l.hero) : undefined;
+        if (who)
+          news.push({
+            t: msg('expediciones.aviso.herido', {
+              rumbo: e.heading,
+              heroe: who.name,
+              sexo: who.sex,
+            }),
+            k: 'warn',
+          });
         if ((l.g ?? 0) >= 2)
           news.push({
             t: msg('expediciones.aviso.brillo', { rumbo: e.heading, brillo: l.g!, que: l.t }),
@@ -375,6 +455,7 @@ export function stepExpeditions(
             glow: l.g,
             ...(l.g === 3 ? { big: true } : {}),
           });
+      }
       if (e.turn && distAt(e) <= 0) {
         home.push(...arrive(s, e, news));
         break;
@@ -406,7 +487,9 @@ function stepHour(s: GameState, e: Expedition, news: DawnEvent[]): void {
     e.sky = sky;
     line(e, 'camino', `expediciones.diario.tiempo.${sky}`, { rumbo: e.heading });
   }
-  if (SLOWS.includes(sky) && rng.chance(EXP_RAIN_SLOW)) {
+  // La lluvia, el viento y la tormenta les paran a ratos; los heridos, también.
+  const slow = 1 - (1 - (SLOWS.includes(sky) ? EXP_RAIN_SLOW : 0)) * (1 - hurtSlow(e, s));
+  if (slow > 0 && rng.chance(slow)) {
     e.idle = (e.idle ?? 0) + 1;
     return;
   }
@@ -544,10 +627,10 @@ export function battleSetup(
     units,
     foeUnits(boss, diff, 2),
   );
-  // Los heridos empiezan con menos vida.
+  // Cada uno entra con la vida que le queda (la que se guarda).
   for (const u of setup.units) {
-    const hurt = e.hurt[u.id] ?? 0;
-    if (u.side === 'h' && hurt) u.hp = Math.max(1, Math.round(u.max * (1 - EXP_HURT_HP * hurt)));
+    const h = party.find((x) => x.id === u.id);
+    if (u.side === 'h' && h) u.hp = Math.max(1, Math.round(u.max * hpOf(h)));
   }
   return setup;
 }
@@ -584,14 +667,26 @@ function battle(
     where: msg('expediciones.pelea.donde', { rumbo: e.heading, dias: Math.floor(dist) }),
     terrain: TERRAIN[e.heading],
   };
-  // Las heridas: cada uno que cayó en la pelea; si pierden, uno más se lleva otra.
+  // La vida: cada uno, la que le quede; quien cae, grave (si ya iba grave, al suelo); si
+  // pierden, uno más se lleva otro golpe.
+  const before = new Map(up.map((h) => [h.id, hpOf(h)]));
   const downed = up.filter((h) => res.downed.includes(h.id));
-  for (const h of downed) e.hurt[h.id] = Math.min(EXP_HURT_DOWN, (e.hurt[h.id] ?? 0) + 1);
+  for (const h of up) {
+    const was = before.get(h.id)!;
+    if (downed.includes(h))
+      setLife(
+        h,
+        was < HP_GRAVE && rng.chance(EXP_GRAVE_FALL) ? 0 : rng.range(DOWNED_HP[0], DOWNED_HP[1]),
+      );
+    else if (res.hp?.[h.id] !== undefined) setLife(h, was - (was - res.hp[h.id]!) * EXP_FIGHT_WEAR);
+  }
   if (!res.won && up.length) {
     const h = rng.pick(up);
-    e.hurt[h.id] = Math.min(EXP_HURT_DOWN, (e.hurt[h.id] ?? 0) + 1);
+    // (Un golpe más, sin tumbar: tumba solo caer en la pelea.)
+    if (hpOf(h) > 0) setLife(h, Math.max(Math.min(hpOf(h), 0.02), hpOf(h) - EXP_LOSS_HP));
     if (!downed.includes(h)) downed.push(h);
   }
+  for (const h of up) warnHurt(e, h);
   // El que se unió, si cae, se va.
   if (e.guest && res.downed.includes(e.guest.id)) {
     line(e, 'aviso', 'expediciones.diario.invitado_se_va', {
@@ -601,7 +696,8 @@ function battle(
     delete e.guest;
   }
   const hero = downed[0] ?? rng.pick(up);
-  const fell = downed.filter((h) => (e.hurt[h.id] ?? 0) >= EXP_HURT_DOWN);
+  const fell = downed.filter((h) => hpOf(h) <= 0);
+  const grave = up.filter((h) => hpOf(h) > 0 && hpOf(h) < HP_GRAVE);
   if (res.won) {
     e.won++;
     const gold = rng.chance(0.4)
@@ -637,7 +733,10 @@ function battle(
   const last = e.log.at(-1)!;
   last.foe = foe;
   last.fight = record;
-  if (!fell.length) return res.won;
+  if (!fell.length) {
+    if (grave.length && !e.turn) turnBack(e, 'herido', grave[0]);
+    return res.won;
+  }
   const left = standing(e, s);
   if (!left.length) {
     // Caen todos: se arrastran a casa con lo que pueden cargar; el resto queda como fardo.
@@ -842,7 +941,7 @@ export function optionChance(s: GameState, e: Expedition, o: ExpOption): number 
   const dist = distAt(e);
   let p = 0.6 - 0.05 * (dist + (o.hard ?? 0)) + 0.05 * (attr(who, o.attr, true) - 6);
   if (o.cls) p += 0.15;
-  return Math.max(0.1, Math.min(0.95, p - 0.04 * (e.hurt[who.id] ?? 0)));
+  return Math.max(0.1, Math.min(0.95, p - 0.15 * (1 - hpOf(who))));
 }
 
 /**
@@ -961,10 +1060,7 @@ function decide(s: GameState, e: Expedition, option: string, auto: boolean): voi
       who.id,
       res !== 'mal',
     );
-  const hurt = (h: Hero) => {
-    e.hurt[h.id] = Math.min(EXP_HURT_DOWN, (e.hurt[h.id] ?? 0) + 1);
-    if ((e.hurt[h.id] ?? 0) >= EXP_HURT_DOWN && !e.turn) turnBack(e, 'herido', h);
-  };
+  const hurt = (h: Hero) => wound(e, h, EXP_EVENT_HP);
   const key = `${k}.${o.id}`;
   switch (key) {
     case 'cofre.forzar':
@@ -979,21 +1075,15 @@ function decide(s: GameState, e: Expedition, option: string, auto: boolean): voi
       return say('bien', { que: loot(e, rng, dist, rich), objeto: item ?? '', con_objeto: !!item });
     }
     case 'santuario.rezar': {
-      for (const id of Object.keys(e.hurt)) {
-        e.hurt[id]!--;
-        if (!e.hurt[id]) delete e.hurt[id];
-      }
+      for (const h of party(s, e)) if (hpOf(h) < 1) setLife(h, hpOf(h) + EXP_POTION_HP / 2);
       for (const h of standing(e, s)) h.morale = Math.min(100, h.morale + 5);
       return say('bien');
     }
     case 'santuario.ofrenda': {
       const cost = offering(dist);
       e.bag.gold -= cost;
-      const worst = Object.entries(e.hurt).sort((a, b) => b[1] - a[1])[0];
-      if (worst) {
-        e.hurt[worst[0]]!--;
-        if (!e.hurt[worst[0]]) delete e.hurt[worst[0]];
-      }
+      const worst = worstOf(party(s, e));
+      if (worst) setLife(worst, hpOf(worst) + EXP_POTION_HP);
       return say('bien', { oro: cost, curado: !!worst });
     }
     case 'mercader.comprar': {
@@ -1130,14 +1220,14 @@ function camp(s: GameState, e: Expedition, rng: Rng): void {
     }
   }
   for (const h of hungry) h.morale = Math.max(0, h.morale - EXP_HUNGER);
-  // El clérigo (en pie) cura a veces una herida, la del que está peor.
+  // Descansar cura un poco a los que están en pie (los que cenan).
+  for (const h of party)
+    if (hpOf(h) > 0 && !hungry.includes(h)) setLife(h, hpOf(h) + EXP_CAMP_HEAL);
+  // El clérigo (en pie) cura a veces al que está peor.
   const cleric = standing(e, s).find((h) => h.cls === 'clerigo');
-  const worst = party
-    .filter((h) => (e.hurt[h.id] ?? 0) > 0)
-    .sort((a, b) => (e.hurt[b.id] ?? 0) - (e.hurt[a.id] ?? 0))[0];
+  const worst = worstOf(party);
   if (cleric && worst && rng.chance(EXP_CLERIC_HEAL)) {
-    e.hurt[worst.id]!--;
-    if (!e.hurt[worst.id]) delete e.hurt[worst.id];
+    setLife(worst, hpOf(worst) + EXP_CLERIC_HP);
     line(
       e,
       'cura',
@@ -1147,13 +1237,11 @@ function camp(s: GameState, e: Expedition, rng: Rng): void {
     );
   }
   // Una poción, al que sigue peor (si queda alguna).
-  const hurtNow = party
-    .filter((h) => (e.hurt[h.id] ?? 0) > 0)
-    .sort((a, b) => (e.hurt[b.id] ?? 0) - (e.hurt[a.id] ?? 0))[0];
-  if (hurtNow && (e.potions ?? 0) > 0) {
+  // Una poción, al que sigue peor, si va herido (por debajo del 50 %).
+  const hurtNow = worstOf(party);
+  if (hurtNow && hpOf(hurtNow) < HP_LIGHT && (e.potions ?? 0) > 0) {
     e.potions!--;
-    e.hurt[hurtNow.id]!--;
-    if (!e.hurt[hurtNow.id]) delete e.hurt[hurtNow.id];
+    setLife(hurtNow, hpOf(hurtNow) + EXP_POTION_HP);
     line(
       e,
       'cura',
@@ -1255,15 +1343,15 @@ function arrive(s: GameState, e: Expedition, news: DawnEvent[]): string[] {
   }
   // Cada uno a lo suyo.
   const xp = Math.round(EXP_XP_DAY * (e.hours / EXP_HOURS) * (1 + EXP_XP_FAR * far));
-  const cleric = party.find((h) => h.cls === 'clerigo' && (e.hurt[h.id] ?? 0) < EXP_HURT_DOWN);
+  const cleric = party.find((h) => h.cls === 'clerigo' && hpOf(h) > 0);
   const fallen: Hero[] = [];
   const back: string[] = [];
   let worst: Outcome = e.turn?.why === 'caidos' ? 'Fracaso' : 'Éxito';
   for (const h of party) {
-    const hurt = e.hurt[h.id] ?? 0;
+    const life = hpOf(h);
     h.days = 0;
     if (
-      hurt >= EXP_HURT_DOWN &&
+      life <= 0 &&
       !(cleric && cleric !== h && rng.chance(CLERIC_SAVE)) &&
       rng.chance(EXP_DOWN_DEATH)
     ) {
@@ -1281,11 +1369,12 @@ function arrive(s: GameState, e: Expedition, news: DawnEvent[]): string[] {
       worst = 'Desastre';
       continue;
     }
-    // Cada herida, un buen trozo de vida; quien cayó (y no murió), grave.
+    // Llegan con la vida que traen (en pie o a la cama); quien cayó (y no murió), grave.
     h.status = 'ok';
     h.days = 0;
+    setHp(h, life <= 0 ? DOWNED_HP[1] : life);
+    const hurt = healthOf(h) !== 'sano';
     if (hurt) {
-      setHp(h, hurt >= EXP_HURT_DOWN ? DOWNED_HP[1] : hpOf(h) - EXP_HURT_HP_LOSS * hurt);
       chips.push({ t: woundChip(h), k: 'bad' });
       if (worst === 'Éxito') worst = 'Éxito parcial';
     }

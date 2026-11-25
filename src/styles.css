@@ -9031,6 +9031,48 @@ div.item-count {
   width: 2px;
   background: var(--plum);
 }
+/* La vida bajo el retrato en el visor y la hoja de la expedición (ui/LifeBar.tsx). */
+.life {
+  display: grid;
+  gap: 1px;
+  justify-items: center;
+  width: 100%;
+}
+.life-track {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 64px;
+  height: 6px;
+  background: #3a2016;
+  border: 1px solid var(--ink);
+}
+.life-track i {
+  display: block;
+  height: 100%;
+  background: var(--lime);
+}
+.life-track b {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(0, 0, 0, 0.5);
+}
+.life-leve .life-track i {
+  background: var(--orange);
+}
+.life-grave .life-track i,
+.life-suelo .life-track i {
+  background: var(--red);
+}
+.life-leve .row-sub {
+  color: #9a5a10;
+}
+.life-grave .row-sub,
+.life-suelo .row-sub {
+  color: var(--red);
+}
 
 /* Versión nueva publicada: aviso fijo arriba (no se apaga) que recarga al tocarlo. */
 .update-bar {

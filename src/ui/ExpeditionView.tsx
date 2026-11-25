@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
-import { EXP_HOURS, EXP_HURT_DOWN } from '../core/balance';
+import { EXP_HOURS } from '../core/balance';
+import { LifeBar } from './LifeBar';
 import { distAt, expWeather, hoursHome, itemGlow, matGlow, riskNow } from '../core/expedition';
 import type { BossFight, ExpKind, Expedition, GameState } from '../core/model';
 import { ExpeditionCard } from './ExpeditionCard';
@@ -215,28 +216,19 @@ export function ExpeditionView({
             )}
           </div>
           <div class="exp-crew">
-            {heroes.map((h) => {
-              const hurt = e.hurt[h.id] ?? 0;
-              return (
-                <button key={h.id} class="exp-member" onClick={() => onHero(h.id)}>
-                  <Portrait
-                    look={lookOf(h)}
-                    marks={marksOf(h)}
-                    frame={heroFrame(h)}
-                    scale={1}
-                    alive={false}
-                  />
-                  <span class="pick-name">{h.name.split(' ')[0]}</span>
-                  <span class="row-sub">
-                    {hurt >= EXP_HURT_DOWN
-                      ? t('expediciones.expeditionview.en_el_suelo', { sexo: h.sex })
-                      : hurt
-                        ? t('expediciones.expeditionview.heridas', { n: hurt })
-                        : t('expediciones.expeditionview.sano', { sexo: h.sex })}
-                  </span>
-                </button>
-              );
-            })}
+            {heroes.map((h) => (
+              <button key={h.id} class="exp-member" onClick={() => onHero(h.id)}>
+                <Portrait
+                  look={lookOf(h)}
+                  marks={marksOf(h)}
+                  frame={heroFrame(h)}
+                  scale={1}
+                  alive={false}
+                />
+                <span class="pick-name">{h.name.split(' ')[0]}</span>
+                <LifeBar hero={h} />
+              </button>
+            ))}
           </div>
           <h4 class="qs-sub">{t('expediciones.expeditionview.diario')}</h4>
           <ol class="trip-log exp-log">

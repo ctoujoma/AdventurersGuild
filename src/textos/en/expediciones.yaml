@@ -28,6 +28,7 @@ error:
   sin_oro: "The pack doesn't hold {n} coins."
   sin_materiales: "They carry nothing to sell."
 diario:
+  herido_leve: "{heroe} is hurt: slower and careful now. It may be time to head back."
   nadie: "Nobody was fit to deal with {que}: they let it go."
   pocion_hallada: "{heroe} finds a potion among some roots: into the pack."
   pocion: "{heroe} drinks a herbal potion and feels better: one wound less."
@@ -155,6 +156,7 @@ informe:
   chip_objeto: "Brought back: {objeto}"
   chip_invitado: "{heroe} wants to stay: waiting at the bar"
 aviso:
+  herido: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}: {heroe} is wounded. Maybe call them back."
   brillo: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}: {brillo, select, 3 {something legendary!} other {something rare!}} {que}"
   fardo: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}: they found the bundle {quien} lost!"
   suceso: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}: {que, mayus}. They're waiting for your call."
@@ -206,9 +208,6 @@ expeditionview:
     - "Very dangerous"
   mochila: "Pack"
   vacia: "empty"
-  en_el_suelo: "{sexo, select, f {down, being carried} other {down, being carried}}"
-  heridas: "{n, plural, one {# wound} other {# wounds}}"
-  sano: "{sexo, select, f {healthy} other {healthy}}"
   diario: "Journal"
   cuando: "Day {dia}"
   de_vuelta: "Heading back: home {dias, plural, =0 {within a day} one {in one day} other {in # days}}."
@@ -420,3 +419,9 @@ intro:
   p2_texto: "One ration per hero per day. The more they carry, the further they get: more danger and better loot. The way back takes half as long. If the alchemist has made potions, pack them some."
   p3_titulo: "Follow them in the viewer"
   p3_texto: "Tap their card to watch them walk, fight and camp. Sometimes they ask what to do: answer before nightfall or they'll play it safe. They come home on their own, or when you tell them."
+
+vida:
+  sano: "Healthy · {pct}%"
+  leve: "Lightly wounded · {pct}%"
+  grave: "Badly wounded · {pct}%"
+  suelo: "Down, being carried"

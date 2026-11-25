@@ -16,6 +16,7 @@ import { CLASS_NAMES, statusLabel } from '../data/labels';
 import { MATERIALS } from '../core/materials';
 import { help } from './HoldHelp';
 import { MatIcon } from './mats';
+import { LifeBar } from './LifeBar';
 import { Icon, type IconName } from './icons';
 import { Portrait } from './Portrait';
 import { daysOut } from './expedition';
@@ -176,6 +177,7 @@ export function ExpeditionSheet({ game, onClose, onSend }: Props) {
                   <span class="pick-name" aria-hidden="true">
                     {h.name.split(' ')[0]}
                   </span>
+                  <LifeBar hero={h} />
                   <span class="pick-skills" aria-hidden="true">
                     {busy
                       ? statusLabel(h, false, game)

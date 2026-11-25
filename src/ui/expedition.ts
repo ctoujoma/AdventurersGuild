@@ -2,10 +2,11 @@
  * Lo que la interfaz de las expediciones necesita del núcleo, ya hecho: cuántos días de ida dan
  * unas raciones y qué pinta el visor ahora (`world/visor/`).
  */
-import { DAY_SECONDS, DUSK, EXP_CAMP, EXP_HOURS, EXP_HURT_DOWN } from '../core/balance';
+import { DAY_SECONDS, DUSK, EXP_CAMP, EXP_HOURS, HP_LIGHT } from '../core/balance';
+import { hpOf } from '../core/health';
 import { fightRoster } from '../core/chains';
 import { HEADING_FOES, HOUR, distAt, expWeather, gameTime } from '../core/expedition';
-import type { Expedition, GameState } from '../core/model';
+import type { Expedition, GameState, Hero } from '../core/model';
 import type { MarchNow } from '../world/visor/marcha';
 
 /**
@@ -41,7 +42,10 @@ export function visorHour(s: GameState): number {
 export function marchNow(s: GameState, e: Expedition): MarchNow {
   const heroes = e.heroIds.map((id) => s.heroes.find((h) => h.id === id)).filter((h) => !!h);
   const crew = fightRoster(heroes);
-  for (const c of crew) if ((e.hurt[c.id] ?? 0) > 0) c.fate = 'herido';
+  for (const c of crew) {
+    const h = heroes.find((x) => x.id === c.id);
+    if (h && hpOf(h) < HP_LIGHT) c.fate = 'herido';
+  }
   const last = e.log.at(-1);
   const recent = last && e.hours - last.h <= 1 ? last : undefined;
   const fightLine = [...e.log].reverse().find((l) => l.k === 'pelea');
@@ -77,5 +81,5 @@ export function marchNow(s: GameState, e: Expedition): MarchNow {
   };
 }
 
-/** Quién está en el suelo. */
-export const isDown = (e: Expedition, id: string) => (e.hurt[id] ?? 0) >= EXP_HURT_DOWN;
+/** Quién está en el suelo (sin vida: le llevan los demás). */
+export const isDown = (h: Hero) => hpOf(h) <= 0;
