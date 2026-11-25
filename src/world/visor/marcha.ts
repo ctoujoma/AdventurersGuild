@@ -2,6 +2,7 @@
 import type { FoeKind } from '../../core/journey';
 import type { BossFight, ExpKind, ExpWeather } from '../../core/model';
 import type { Terrain } from '../../data/places';
+import type { Dress } from '../../data/custom';
 
 /** Lo que hacen ahora. */
 export type MarchMode = 'walk' | 'fight' | 'camp';
@@ -29,4 +30,6 @@ export interface MarchNow {
   weather?: ExpWeather;
   /** Día de la expedición (para la luna y la semilla del tiempo). */
   day?: number;
+  /** Lo de la sastrería de cada héroe (por id): el traje y el color, como en la taberna. */
+  dress?: Record<string, Dress>;
 }

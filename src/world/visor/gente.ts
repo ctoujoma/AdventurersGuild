@@ -5,6 +5,7 @@
  * cuando, uno que cae. Los muñecos son los de verdad (`heroSprites`, `fightSprites`, `foeArt`).
  */
 import { foeArt, type FoeArt, type FoePose } from '../../art/foes';
+import type { Dress } from '../../data/custom';
 import {
   FEET_Y,
   HAND,
@@ -34,12 +35,14 @@ export interface Hero {
 }
 
 const heroCache = new Map<string, Hero>();
-export function heroOf(c: Crew): Hero {
+export function heroOf(c: Crew, dress?: Dress): Hero {
   const hurt = c.fate === 'herido';
-  const key = `${c.id}:${c.seed}:${c.cls}:${hurt}:${c.gear?.icon ?? ''}`;
+  const key = `${c.id}:${c.seed}:${c.cls}:${hurt}:${c.gear?.icon ?? ''}:${dress?.dye ?? ''}:${dress?.garment ?? ''}`;
   let h = heroCache.get(key);
   if (!h) {
-    const look = generateLook(c.seed, c.cls, c.sex);
+    const base = generateLook(c.seed, c.cls, c.sex);
+    // Lo de la sastrería, encima (como `lookOf` en la taberna).
+    const look = dress?.dye || dress?.garment ? { ...base, ...dress } : base;
     h = {
       crew: c,
       look,
@@ -110,7 +113,7 @@ export class Gente {
   /** Andando por el camino. */
   private walk(c: Ctx): void {
     const { b, e, m, l, lk, time } = c;
-    const crew = m.crew.map(heroOf);
+    const crew = m.crew.map((c) => heroOf(c, m.dress?.[c.id]));
     const n = crew.length;
     const dir = m.home ? -1 : 1;
     const lead = Math.round(e.w / 2 + (dir * (n - 1) * GAP) / 2);
@@ -148,7 +151,7 @@ export class Gente {
   /** La pelea, por turnos: el grupo y los enemigos se van dando. */
   private fight(c: Ctx, t: number): void {
     const { b, e, m, l, lk } = c;
-    const crew = m.crew.map(heroOf);
+    const crew = m.crew.map((c) => heroOf(c, m.dress?.[c.id]));
     const foes = this.foes(m);
     const n = crew.length;
     const dir = m.home ? -1 : 1;
