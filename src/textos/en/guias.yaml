@@ -39,3 +39,35 @@ obras:
   seguir:
     titulo: "Carry on when you can"
     texto: "When you tap the hammer again, the draft is still there with all its jobs. Pay when you have the gold."
+expediciones:
+  nombre: "Expeditions"
+  abrir:
+    titulo: "Open an expedition"
+    texto: "On the map, “New expedition”. They open with your first veteran; the map room says how many can go at once."
+  rumbo:
+    titulo: "Pick a heading"
+    texto: "Each heading brings its own and has its own danger. The next ones open after going far on the previous one."
+  quien:
+    titulo: "Pick who goes"
+    texto: "Under each portrait, their health. A lightly wounded hero can go, but starts fights with what they have left."
+  raciones:
+    titulo: "Rations and potions"
+    texto: "They eat every night: out of rations, they turn back. Alchemy potions heal on the road; leftovers come back."
+  salir:
+    titulo: "Send them off"
+    texto: "There is no destination: each day they go further, with more danger and better loot. They carry on even with the game closed."
+  visor:
+    titulo: "Follow them in the viewer"
+    texto: "Tap their group on the map. They walk by day and camp at night, in step with the tavern."
+  suceso:
+    titulo: "Decide when they wait"
+    texto: "Sometimes they stop for you to choose: a chest, a traveller, a shrine. If you say nothing, they choose carefully."
+  vida:
+    titulo: "See how they are"
+    texto: "Each one's health. With wounded they walk slower and warn that it's time to head back."
+  volver:
+    titulo: "Bring them home"
+    texto: "Whenever you like, or on their own if they run out of rations or someone is badly hurt. The way back takes half as long."
+  mochila:
+    titulo: "The backpack"
+    texto: "On arrival, what they bring, one by one; and in their report, the whole log and the fights to watch."

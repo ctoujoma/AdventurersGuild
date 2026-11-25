@@ -15,6 +15,16 @@ import o7 from '../assets/guia/obras-7.jpg';
 import o8 from '../assets/guia/obras-8.jpg';
 import o9 from '../assets/guia/obras-9.jpg';
 import o10 from '../assets/guia/obras-10.jpg';
+import e1 from '../assets/guia/exp-1.jpg';
+import e2 from '../assets/guia/exp-2.jpg';
+import e3 from '../assets/guia/exp-3.jpg';
+import e4 from '../assets/guia/exp-4.jpg';
+import e5 from '../assets/guia/exp-5.jpg';
+import e6 from '../assets/guia/exp-6.jpg';
+import e7 from '../assets/guia/exp-7.jpg';
+import e8 from '../assets/guia/exp-8.jpg';
+import e9 from '../assets/guia/exp-9.jpg';
+import e10 from '../assets/guia/exp-10.jpg';
 
 export interface GuideCard {
   /** La captura (recorte de 420 × 360 del móvil). */
@@ -44,6 +54,18 @@ export const GUIDES = {
     card(o8, 'obras-8', 'falta'),
     card(o9, 'obras-9', 'guardar'),
     card(o10, 'obras-10', 'seguir'),
+  ],
+  expediciones: [
+    card(e1, 'exp-1', 'abrir'),
+    card(e2, 'exp-2', 'rumbo'),
+    card(e3, 'exp-3', 'quien'),
+    card(e4, 'exp-4', 'raciones'),
+    card(e5, 'exp-5', 'salir'),
+    card(e6, 'exp-6', 'visor'),
+    card(e7, 'exp-7', 'suceso'),
+    card(e8, 'exp-8', 'vida'),
+    card(e9, 'exp-9', 'volver'),
+    card(e10, 'exp-10', 'mochila'),
   ],
 } satisfies Record<string, readonly GuideCard[]>;
 
