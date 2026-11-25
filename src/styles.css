@@ -9031,3 +9031,23 @@ div.item-count {
   width: 2px;
   background: var(--plum);
 }
+
+/* Versión nueva publicada: aviso fijo arriba (no se apaga) que recarga al tocarlo. */
+.update-bar {
+  position: absolute;
+  left: 50%;
+  top: calc(env(safe-area-inset-top, 0px) + 44px);
+  transform: translateX(-50%);
+  z-index: 60;
+  font-family: var(--pixel);
+  font-size: var(--t-m);
+  padding: 6px 12px;
+  max-width: calc(100% - 32px);
+  color: var(--sand);
+  background: rgba(24, 20, 37, 0.92);
+  border: 0;
+  box-shadow:
+    0 0 0 2px var(--gold),
+    0 0 0 4px var(--ink);
+  cursor: pointer;
+}

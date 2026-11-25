@@ -1,4 +1,6 @@
 app:
+  # Aviso fijo cuando se ha publicado una versión nueva del juego; al tocarlo se recarga.
+  version_nueva: "A new version is out: tap to update"
   la_taberna_ha_seguido: "The tavern stayed open while you were away."
   se_une_al_gremio: "{nombre} joins the guild. Their hidden trait will be revealed after their first quest."
   recoge_sus_cosas_y: "{nombre} packs up and leaves without saying goodbye."
