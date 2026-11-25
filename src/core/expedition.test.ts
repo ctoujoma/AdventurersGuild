@@ -21,6 +21,7 @@ import { endDay, newGame, reduce, tick } from './game';
 import type { GameState } from './model';
 import { GEAR } from '../data/items';
 import { tx } from '../textos';
+import { marchNow } from '../ui/expedition';
 import { runCombat } from './combat';
 import { Rng } from './rng';
 
@@ -466,5 +467,27 @@ describe('expediciones: bloque 5 (rumbos, tiempo, pociones y la carta)', () => {
     s = reduce(s, { type: 'drink', heroId: home.id });
     expect(s.potions).toBe(1);
     expect(s.heroes.find((x) => x.id === home.id)!.hp!).toBeCloseTo(0.75);
+  });
+
+  it('quien acaba una pelea grave bebe una poción al momento', () => {
+    let s = out('pocion-pelea');
+    const e = s.expeditions![0]!;
+    const h = s.heroes.find((x) => x.id === e.heroIds[0])!;
+    h.hp = 0.15;
+    e.potions = 2;
+    e.pending = { kind: 'jefe', h: e.hours, until: e.hours + 24, foe: 3 };
+    s = reduce(s, { type: 'expChoose', id: e.id, option: 'solos' });
+    const x = s.expeditions?.[0];
+    const log = x?.log ?? s.reports.find((r) => r.exp)!.exp!.log;
+    expect(log.some((l) => tx(l.t).startsWith('Acabada la pelea'))).toBe(true);
+    expect(s.heroes.find((y) => y.id === h.id)!.hp!).toBeGreaterThan(0);
+  });
+
+  it('con un suceso esperando, en el visor están parados', () => {
+    const s = out('parados');
+    const e = s.expeditions![0]!;
+    e.pending = { kind: 'jefe', h: e.hours, until: e.hours + 24, foe: 3 };
+    const m = marchNow(s, e);
+    expect(['wait', 'camp']).toContain(m.mode);
   });
 });

@@ -7,6 +7,7 @@ import { GLOW_SFX, glowClass, type GlowLevel } from './glow';
 import { Icon } from './icons';
 import { ItemImage, itemProps } from './ItemImage';
 import { MatIcon } from './mats';
+import { PotionIcon } from './PotionIcon';
 import { t, tx } from '../textos';
 
 interface Props {
@@ -57,6 +58,14 @@ export function ExpBag({ report: r, onDone }: Props) {
           label: tx(matsMsg({ [m]: n })),
         });
     }
+    if (bag.potions)
+      out.push({
+        key: 'pociones',
+        g: 0,
+        n: bag.potions,
+        pic: <PotionIcon scale={2} />,
+        label: t('expediciones.expeditionview.pociones', { n: bag.potions }),
+      });
     for (const it of bag.items ?? [])
       out.push({
         key: it.id,

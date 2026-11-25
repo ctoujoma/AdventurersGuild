@@ -18,6 +18,7 @@ import { CLASS_NAMES, statusLabel } from '../data/labels';
 import { MATERIALS } from '../core/materials';
 import { help } from './HoldHelp';
 import { MatIcon } from './mats';
+import { PotionIcon } from './PotionIcon';
 import { LifeBar } from './LifeBar';
 import { hpOf } from '../core/health';
 import { Icon, type IconName } from './icons';
@@ -213,7 +214,7 @@ export function ExpeditionSheet({ game, onClose, onSend, onDrink }: Props) {
                 .filter((h) => canDrink(game, h.id))
                 .map((h) => (
                   <button key={h.id} class="btn btn-wood exp-drink" onClick={() => onDrink(h.id)}>
-                    <MatIcon m="hierbas" size={10} />
+                    <PotionIcon />
                     {t('expediciones.expeditionsheet.pocion_a', {
                       heroe: h.name.split(' ')[0],
                       pct: Math.round(hpOf(h) * 100),
@@ -265,7 +266,7 @@ export function ExpeditionSheet({ game, onClose, onSend, onDrink }: Props) {
                   −
                 </button>
                 <span class="exp-rations-n">
-                  <MatIcon m="hierbas" size={14} />
+                  <PotionIcon />
                   <b>{potions}</b>
                   <span class="row-sub">
                     {t('expediciones.expeditionsheet.pociones_ayuda', { n: potMax })}

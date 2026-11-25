@@ -16,6 +16,7 @@ import {
   EXP_CLERIC_HEAL,
   EXP_CRYSTAL_FROM,
   EXP_FOG_AMBUSH,
+  EXP_POTION_AFTER,
   EXP_BOSS_SEEN,
   EXP_BOSS_MULT,
   EXP_ESCAPE_HP,
@@ -711,6 +712,13 @@ function battle(
     if (hpOf(h) > 0) setLife(h, Math.max(Math.min(hpOf(h), 0.02), hpOf(h) - EXP_LOSS_HP));
     if (!downed.includes(h)) downed.push(h);
   }
+  // Quien acaba grave (o en el suelo) se bebe al momento una poción, si llevan (el peor primero).
+  for (const h of [...up].sort((a, b) => hpOf(a) - hpOf(b))) {
+    if (hpOf(h) >= EXP_POTION_AFTER || !(e.potions ?? 0)) continue;
+    e.potions!--;
+    setLife(h, Math.max(0, hpOf(h)) + EXP_POTION_HP);
+    line(e, 'cura', 'expediciones.diario.pocion_pelea', { heroe: h.name, sexo: h.sex }, h.id);
+  }
   for (const h of up) warnHurt(e, h);
   // El que se unió, si cae, se va.
   if (e.guest && res.downed.includes(e.guest.id)) {
@@ -1404,7 +1412,7 @@ function arrive(s: GameState, e: Expedition, news: DawnEvent[]): string[] {
       news.push({ t: msg('expediciones.aviso.abierto', { rumbo: h }), k: 'good', big: true });
     }
   // Lo que trajeron, tal cual (para «La mochila»: lo que no cupo se dice en los chips).
-  const bag = structuredClone(e.bag);
+  const bag = { ...structuredClone(e.bag), ...(e.potions ? { potions: e.potions } : {}) };
   // La mochila.
   if (e.bag.gold) {
     s.gold += e.bag.gold;

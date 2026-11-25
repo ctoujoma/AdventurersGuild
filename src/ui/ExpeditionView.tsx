@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
 import { EXP_HOURS } from '../core/balance';
 import { LifeBar } from './LifeBar';
+import { hpOf } from '../core/health';
 import {
   canDrink,
   distAt,
@@ -21,6 +22,7 @@ import { GLOW_SFX, glowClass } from './glow';
 import { Icon, type IconName } from './icons';
 import { ItemImage, itemProps } from './ItemImage';
 import { MatIcon } from './mats';
+import { PotionIcon } from './PotionIcon';
 import { Portrait } from './Portrait';
 import { marchNow } from './expedition';
 import { lookOf, marksOf, heroFrame } from './view';
@@ -128,6 +130,10 @@ export function ExpeditionView({
   const dist = distAt(e);
   const risk = riskNow(game, e);
   const sky = expWeather(e);
+  // Tocar las pociones: una para el que está peor (si a alguien le falta vida).
+  const worstDrinker = heroes
+    .filter((h) => canDrink(game, h.id, e.id))
+    .sort((a, b) => hpOf(a) - hpOf(b))[0];
   const mats = Object.keys(e.bag.mats).filter(
     (m) => (e.bag.mats[m as Material] ?? 0) > 0,
   ) as Material[];
@@ -188,6 +194,17 @@ export function ExpeditionView({
               <Icon name="pan" size={12} />
               {t('expediciones.expeditionview.raciones', { n: e.rations })}
             </span>
+            {(e.potions ?? 0) > 0 && (
+              <button
+                class="fact exp-potions"
+                disabled={!worstDrinker}
+                aria-label={t('expediciones.expeditionview.pociones_ayuda', { n: e.potions ?? 0 })}
+                onClick={() => worstDrinker && onDrink(worstDrinker.id)}
+              >
+                <PotionIcon />
+                {t('expediciones.expeditionview.pociones', { n: e.potions ?? 0 })}
+              </button>
+            )}
             {sky !== 'claro' && (
               <span class="fact exp-sky">{t(`expediciones.expeditionview.tiempo.${sky}`)}</span>
             )}
@@ -246,7 +263,7 @@ export function ExpeditionView({
                     aria-label={t('expediciones.expeditionview.pocion_a', { heroe: h.name })}
                     onClick={() => onDrink(h.id)}
                   >
-                    <MatIcon m="hierbas" size={10} />
+                    <PotionIcon />
                     {t('expediciones.expeditionview.pocion')}
                   </button>
                 )}

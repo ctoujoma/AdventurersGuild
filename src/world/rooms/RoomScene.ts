@@ -1588,6 +1588,7 @@ export class RoomScene {
     const was = this.covered;
     if (c.right === was.right && c.bottom === was.bottom) return;
     this.covered = c;
+    this.camera.coverCss = { ...c };
     const open = c.right > 0 || c.bottom > 0;
     if (!open) {
       // Si se alejó para que la sala cupiera y nadie ha tocado el zoom, vuelve al de antes.

@@ -36,6 +36,7 @@ error:
 
 # El diario de la expedición (se guarda en la partida). Una línea por suceso.
 diario:
+  pocion_pelea: "Acabada la pelea, {heroe} se bebe una poción de un trago: se tiene en pie."
   herido_leve: "{heroe} va {sexo, select, f {tocada} other {tocado}}: más despacio y con cuidado. Quizá convenga volver."
   nadie: "Nadie estaba en condiciones de ocuparse de {que}: lo dejan pasar."
   pocion_hallada: "{heroe} encuentra una poción entre unas raíces: a la mochila."
@@ -214,6 +215,8 @@ expeditionsheet:
 
 # El visor de una expedición (ui/ExpeditionView.tsx).
 expeditionview:
+  pociones: "{n, plural, one {# poción} other {# pociones}}"
+  pociones_ayuda: "{n, plural, one {# poción} other {# pociones}}: toca para darle una al que está peor"
   pocion: "Poción"
   pocion_a: "Darle una poción a {heroe}"
   tiempo:
@@ -226,6 +229,7 @@ expeditionview:
   titulo: "Expedición {rumbo, select, bosque {al bosque} sierra {a la sierra} marismas {a las marismas} other {a las ruinas}}"
   cerrar: "Cerrar"
   ahora:
+    wait: "El grupo, parado, esperando a que digas"
     walk: "El grupo, {vuelta, select, si {de vuelta a casa} other {adentrándose}}"
     fight: "El grupo, peleando"
     camp: "El grupo, acampado"
@@ -482,7 +486,7 @@ intro:
 
 # La vida bajo el retrato en el visor y la hoja (ui/LifeBar.tsx).
 vida:
-  sano: "{sexo, select, f {Sana} other {Sano}} · {pct} %"
-  leve: "{sexo, select, f {Herida leve} other {Herido leve}} · {pct} %"
-  grave: "{sexo, select, f {Herida grave} other {Herido grave}} · {pct} %"
+  sano: "{sexo, select, f {Sana} other {Sano}} · {pct} %"
+  leve: "{sexo, select, f {Herida leve} other {Herido leve}} · {pct} %"
+  grave: "{sexo, select, f {Herida grave} other {Herido grave}} · {pct} %"
   suelo: "{sexo, select, f {En el suelo, la llevan} other {En el suelo, lo llevan}}"

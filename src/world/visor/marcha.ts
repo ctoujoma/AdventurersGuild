@@ -5,7 +5,8 @@ import type { Terrain } from '../../data/places';
 import type { Dress } from '../../data/custom';
 
 /** Lo que hacen ahora. */
-export type MarchMode = 'walk' | 'fight' | 'camp';
+/** Lo que hacen: andar, pelear, acampar o esperar parados (un suceso, un jefe a la vista). */
+export type MarchMode = 'walk' | 'fight' | 'camp' | 'wait';
 
 export interface MarchNow {
   seed: string;

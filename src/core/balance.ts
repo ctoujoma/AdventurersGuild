@@ -729,6 +729,8 @@ export const EXP_RAIN_SLOW = 0.25;
  * hallazgo por el camino es, a veces (`EXP_POTION_FIND`), una poción.
  */
 export const EXP_POTION_FIND = 0.08;
+/** Tras una pelea, quien queda por debajo de esto (grave o casi) bebe una poción al momento. */
+export const EXP_POTION_AFTER = 0.25;
 /** Experiencia por día fuera, y lo que sube por cada día de la lejanía más alta. */
 export const EXP_XP_DAY = 12;
 export const EXP_XP_FAR = 0.1;
