@@ -19,6 +19,8 @@ npm run build`.
   arte y vuelque el `PixelBuffer` a PNG (como en `scratchpad`). Mucho más rápido para iterar.
 - En el PR, decir si se toca `RoomScene.ts`, `TabernaPanel.tsx`, la ficha del héroe o algo fuera
   del arte. No tocar `core/`, las reglas ni `SAVE_VERSION`.
+- PR apiladas: cuando se fusione la de abajo, cambiar la base de la de arriba a `main` (o rehacer la rama
+  desde `main`) antes de que el usuario la fusione (la #228 se quedó en su rama base; la subió la #229).
 - Esperar el visto bueno del usuario: se fija en alineaciones, en que nada tape nada y en que se
   vea bien en el móvil.
 
