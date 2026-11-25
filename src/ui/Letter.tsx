@@ -11,6 +11,7 @@ import { ExpBag } from './ExpBag';
 import { glowClass } from './glow';
 import { Icon } from './icons';
 import { MatIcon, chipMat } from './mats';
+import { PotionIcon } from './PotionIcon';
 import { Portrait } from './Portrait';
 import { lookOf, marksOf, heroFrame } from './view';
 import { t, tx } from '../textos';
@@ -161,6 +162,9 @@ export function Letter({ report: r, heroes, seal, onClose, onWatch, onWatchFight
                   data-mat={m ? `${m.m}:${m.n}` : undefined}
                 >
                   {m && <MatIcon m={m.m} size={12} />}
+                  {typeof c.t === 'object' && c.t.k === 'expediciones.informe.chip_pociones' && (
+                    <PotionIcon />
+                  )}
                   {tx(c.t)}
                 </span>
               );

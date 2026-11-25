@@ -28,6 +28,7 @@ error:
   sin_oro: "The pack doesn't hold {n} coins."
   sin_materiales: "They carry nothing to sell."
 diario:
+  pocion_pelea: "Once the fight is over, {heroe} downs a potion in one gulp: back on their feet."
   herido_leve: "{heroe} is hurt: slower and careful now. It may be time to head back."
   nadie: "Nobody was fit to deal with {que}: they let it go."
   pocion_hallada: "{heroe} finds a potion among some roots: into the pack."
@@ -188,6 +189,8 @@ expeditionsheet:
   salir: "Set out"
   elige_quien: "Choose who goes"
 expeditionview:
+  pociones: "{n, plural, one {# potion} other {# potions}}"
+  pociones_ayuda: "{n, plural, one {# potion} other {# potions}}: tap to give one to whoever is worst off"
   pocion: "Potion"
   pocion_a: "Give {heroe} a potion"
   tiempo:
@@ -200,6 +203,7 @@ expeditionview:
   titulo: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}"
   cerrar: "Close"
   ahora:
+    wait: "The party, stopped, waiting for your word"
     walk: "The group, {vuelta, select, si {heading home} other {pushing deeper}}"
     fight: "The group, fighting"
     camp: "The group, in camp"
