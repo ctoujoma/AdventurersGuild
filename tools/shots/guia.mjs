@@ -180,5 +180,146 @@ await page.waitForTimeout(3500);
 await page.click('.ribbon-exit');
 await page.waitForTimeout(500);
 await shot('obras-9', 500, await rect('.ribbon-keep'), false);
+
+// 3. La guía de expediciones: preparar, salir, seguirlas en el visor y la vuelta.
+/** El rectángulo que junta todo lo que casa con `sel`, en píxeles del móvil. */
+const around = (sel) =>
+  page.$$eval(sel, (els) => {
+    const rs = els.map((e) => e.getBoundingClientRect()).filter((r) => r.width > 0);
+    const x0 = Math.min(...rs.map((r) => r.x));
+    const y0 = Math.min(...rs.map((r) => r.y));
+    const x1 = Math.max(...rs.map((r) => r.x + r.width));
+    const y1 = Math.max(...rs.map((r) => r.y + r.height));
+    return [x0, y0, x1 - x0, y1 - y0];
+  });
+/** Captura centrada en lo que hay que tocar (el recorte, dentro de la pantalla). */
+async function shotAt(name, sel) {
+  const box = await around(sel);
+  const y = Math.round(Math.max(0, Math.min(860 - 360, box[1] + box[3] / 2 - 180)));
+  await shot(name, y, box, false);
+}
+const tap = async (sel) => {
+  await page.click(sel, { force: true });
+  await page.waitForTimeout(700);
+};
+/** Pasa la carta del veterano y su tutorial corto, si salen. */
+async function skipIntro() {
+  for (let k = 0; k < 4; k++) {
+    const next = page.locator('button').filter({ hasText: /Siguiente|Al mapa|Vamos|Entendido/ });
+    if (!(await next.count())) break;
+    await next.first().click();
+    await page.waitForTimeout(500);
+  }
+}
+/** Pasa días enteros (con el reloj a saltos) en la página. */
+const days = (n) =>
+  page.evaluate((n) => {
+    const d = window.__game.dispatch;
+    for (let i = 0; i < n; i++) {
+      for (let c = (window.__game.get().clock ?? 0) + 5; c <= 360; c += 5)
+        d({ type: 'tick', to: c });
+      d({ type: 'endDay' });
+    }
+  }, n);
+await open(() => {
+  const s = structuredClone(window.__game.get());
+  delete s.tutorial;
+  s.dawn = [];
+  s.tips = ['*'];
+  s.mode = 'libre';
+  s.gold = 900;
+  s.food = 40;
+  s.potions = 3;
+  s.stats.maxLvl = 8;
+  for (const h of s.heroes) {
+    h.lvl = 8;
+    h.status = 'ok';
+    delete h.guard;
+    delete h.job;
+  }
+  const m = s.building.rooms.find((r) => r.type === 'mapas');
+  if (m) m.level = 3;
+  window.__game.set(s);
+});
+for (let k = 0; k < 3 && (await page.$('.dawn')); k++) await tap('.dawn button');
+const mapTab = page.locator('nav button, .tabs button').filter({ hasText: /Mapa/ }).first();
+await mapTab.click();
+await page.waitForTimeout(800);
+await skipIntro();
+if (await page.$('.map-trips-toggle[aria-expanded="false"]')) await tap('.map-trips-toggle');
+const nueva = page
+  .locator('button')
+  .filter({ hasText: /Nueva expedición/ })
+  .first();
+const nb = await nueva.boundingBox();
+await shot('exp-1', 500, [nb.x, nb.y, nb.width, nb.height], false);
+await nueva.click();
+await page.waitForTimeout(800);
+await shotAt('exp-2', '.expsheet .exp-headings');
+for (const k of (await page.$$('.expsheet .picks .pick')).slice(0, 2)) await k.click();
+await page.waitForTimeout(400);
+await shotAt('exp-3', '.expsheet .picks');
+await page.locator('.expsheet .qs-scroll').evaluate((e) => e.scrollTo(0, 9999));
+await page.waitForTimeout(500);
+await shotAt('exp-4', '.expsheet .exp-rations');
+await shotAt('exp-5', '.expsheet .qs-send');
+await tap('.expsheet .qs-send');
+// Al día siguiente, a media mañana: el visor, un suceso que espera y el grupo.
+await days(1);
+for (let k = 0; k < 3 && (await page.$('.dawn')); k++) await tap('.dawn button');
+await page.evaluate(() => {
+  const d = window.__game.dispatch;
+  for (let c = 5; c <= 120; c += 5) d({ type: 'tick', to: c });
+  const s = structuredClone(window.__game.get());
+  const e = s.expeditions[0];
+  e.pending = { kind: 'cofre', h: e.hours, until: e.hours + 20 };
+  window.__game.set(s);
+});
+await mapTab.click();
+await page.waitForTimeout(800);
+if (!(await page.$('.expview'))) {
+  if (await page.$('.map-trips-toggle[aria-expanded="false"]')) await tap('.map-trips-toggle');
+  await tap('.map-trip-main');
+}
+await shotAt('exp-6', '.expview .exp-visor');
+await shotAt('exp-7', '.expview .exp-card');
+await page.evaluate(() => {
+  const s = structuredClone(window.__game.get());
+  const e = s.expeditions[0];
+  delete e.pending;
+  e.bag = { gold: 85, mats: { madera: 2, hierbas: 3 } };
+  window.__game.set(s);
+});
+await page.waitForTimeout(600);
+await page.locator('.expview .qs-scroll').evaluate((e) => e.scrollTo(0, 9999));
+await page.waitForTimeout(500);
+await shotAt('exp-8', '.expview .exp-crew');
+await shotAt('exp-9', '.expview .qs-send');
+// La vuelta: que vuelvan, pasar el tiempo hasta que lleguen y abrir su informe.
+await tap('.expview .qs-send');
+for (let i = 0; i < 3 && (await page.evaluate(() => window.__game.get().expeditions?.length)); i++)
+  await days(1);
+await page.waitForTimeout(800);
+await skipIntro();
+for (let k = 0; k < 3; k++) {
+  const x = await page.$('.herocard-x, [data-tut="cerrar"]');
+  if (!x) break;
+  await x.click({ force: true });
+  await page.waitForTimeout(400);
+}
+await tap('[data-tut="correo"]');
+await page
+  .locator('.alerts-pop button')
+  .filter({ hasText: /Informes/ })
+  .first()
+  .click();
+await page.waitForTimeout(400);
+await page
+  .getByText(/Expedición al bosque/)
+  .first()
+  .click();
+await page.waitForTimeout(2500);
+await shotAt('exp-10', '.exp-bagpage');
+
 writeFileSync(`${out}/marcos.json`, JSON.stringify(boxes, null, 2) + '\n');
 await browser.close();

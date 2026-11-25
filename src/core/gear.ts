@@ -6,6 +6,7 @@
 import { PRICE_KIND, PRICE_TIERS } from './balance';
 import type { Hero, Item, ItemIcon, ItemPerk, Rarity } from './model';
 import { t } from '../textos';
+import { skillUse, type ClassId, type SkillId } from './party';
 
 export type Slot = 'arma' | 'cuerpo' | 'complemento';
 export const SLOTS: readonly Slot[] = ['arma', 'cuerpo', 'complemento'];
@@ -83,6 +84,52 @@ export function priceOf(it: Item): number {
 export function gearPower(it: Item): number {
   const bonus = Object.values(it.bonus ?? {}).reduce((a, b) => a + (b ?? 0), 0);
   return bonus + (it.plus ?? 0) + (it.perk ? 1 : 0);
+}
+
+/**
+ * Lo que vale un objeto para una clase: sus bonos, cada uno por lo que la clase usa esa habilidad
+ * (`skillUse`); la mejora (+N) va con su habilidad principal y el efecto especial cuenta uno.
+ */
+export function gearValueFor(it: Item, cls: ClassId): number {
+  const entries = Object.entries(it.bonus ?? {}) as [SkillId, number][];
+  const bonus = entries.reduce((a, [sk, n]) => a + n * skillUse(cls, sk), 0);
+  const main = entries.sort((a, b) => b[1] - a[1])[0]?.[0];
+  return bonus + (it.plus ?? 0) * (main ? skillUse(cls, main) : 1) + (it.perk ? 1 : 0);
+}
+
+/** Lo mínimo que tiene que ganar un héroe para que se le avise (no por una minucia). */
+export const GEAR_HINT_MIN = 0.75;
+
+/**
+ * El consejo del arcón para toda la casa: cada objeto guardado, solo a quien más gana con él
+ * (por su clase y lo que ya lleva), y a cada uno, como mucho uno por ranura. Así una espada nueva
+ * no se le sugiere a todos a la vez, ni a un mago. Devuelve, por héroe, lo que le conviene.
+ */
+export function gearAdvice(
+  heroes: readonly Pick<Hero, 'id' | 'cls' | 'worn'>[],
+  stock: readonly Item[],
+): Map<string, Upgrade[]> {
+  const pairs: { hero: string; slot: Slot; item: Item; gain: number }[] = [];
+  for (const h of heroes)
+    for (const it of stock) {
+      if (!it.kind || it.kind === 'tesoro') continue;
+      const slot = slotOf(it);
+      if (!slot) continue;
+      const now = h.worn?.[slot];
+      const gain = gearValueFor(it, h.cls) - (now ? gearValueFor(now, h.cls) : 0);
+      if (gain >= GEAR_HINT_MIN) pairs.push({ hero: h.id, slot, item: it, gain });
+    }
+  pairs.sort((a, b) => b.gain - a.gain || a.hero.localeCompare(b.hero));
+  const out = new Map<string, Upgrade[]>();
+  const used = new Set<string>();
+  const filled = new Set<string>();
+  for (const p of pairs) {
+    if (used.has(p.item.id) || filled.has(`${p.hero}:${p.slot}`)) continue;
+    used.add(p.item.id);
+    filled.add(`${p.hero}:${p.slot}`);
+    out.set(p.hero, [...(out.get(p.hero) ?? []), { slot: p.slot, item: p.item }]);
+  }
+  return out;
 }
 
 /** Algo del arcón que da más que lo que lleva un héroe en esa ranura (o que lleva nada). */

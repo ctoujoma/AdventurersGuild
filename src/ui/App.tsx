@@ -62,6 +62,7 @@ import { MapPanel } from './panels/MapPanel';
 import { SaveMenu } from './SaveMenu';
 import { UpdateBar } from './UpdateBar';
 import { SettingsMenu } from './SettingsMenu';
+import { PerfMeter } from './PerfMeter';
 import type { WeatherKind } from '../world/weather';
 import {
   applyLook,
@@ -2224,6 +2225,7 @@ export function App() {
         />
       )}
       {screen === 'splash' && <Splash onDone={() => setScreen('title')} />}
+      {settings.tester && settings.perf && <PerfMeter scene={scene} />}
       {settingsOpen && (
         <SettingsMenu
           settings={settings}

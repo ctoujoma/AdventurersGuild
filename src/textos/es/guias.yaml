@@ -41,3 +41,35 @@ obras:
   seguir:
     titulo: "Sigue cuando puedas"
     texto: "Al volver a tocar el martillo, el borrador sigue ahí con todas sus obras. Paga cuando tengas el oro."
+expediciones:
+  nombre: "Expediciones"
+  abrir:
+    titulo: "Abre una expedición"
+    texto: "En el mapa, «Nueva expedición». Se abren con el primer veterano; la sala de mapas dice cuántos pueden ir a la vez."
+  rumbo:
+    titulo: "Elige el rumbo"
+    texto: "Cada rumbo trae lo suyo y tiene su peligro. Los siguientes se abren tras ir lejos en el anterior."
+  quien:
+    titulo: "Elige quién va"
+    texto: "Bajo cada retrato, su vida. Un herido leve puede ir, pero empieza las peleas con la que le queda."
+  raciones:
+    titulo: "Raciones y pociones"
+    texto: "Comen cada noche: sin raciones, dan la vuelta. Las pociones de la alquimia curan por el camino; las que sobran vuelven."
+  salir:
+    titulo: "Que salgan"
+    texto: "No hay destino: cada día van más lejos, con más peligro y mejor botín. Siguen aunque cierres el juego."
+  visor:
+    titulo: "Síguelos en el visor"
+    texto: "Toca su grupo en el mapa. Andan de día y acampan de noche, al compás de la taberna."
+  suceso:
+    titulo: "Decide cuando te esperan"
+    texto: "A veces paran a que elijas: un cofre, un viajero, un santuario. Si no dices nada, eligen con prudencia."
+  vida:
+    titulo: "Mira cómo van"
+    texto: "La vida de cada uno. Con heridos andan más despacio y avisan de que conviene volver."
+  volver:
+    titulo: "Que vuelvan a casa"
+    texto: "Cuando quieras, o solos si se quedan sin raciones o alguien cae grave. La vuelta tarda la mitad."
+  mochila:
+    titulo: "La mochila"
+    texto: "Al llegar, lo que traen, uno a uno; y en su informe, el diario entero y las peleas para verlas."

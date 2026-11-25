@@ -244,9 +244,12 @@ settingsmenu:
   ganan: "They win"
   pierden: "They lose"
   dias_a_la_antigua: "Old-style days: the day only runs with the game open and ends with “Nightfall”"
+  medidor_rendimiento: "Performance meter (frames and what is drawn)"
   modo_prueba_activado: "Test mode on"
   que_es_cada_cosa: "What everything means"
   manten_pulsado_un_boton: "Press and hold a button, a map marker or a number to see what it is."
   version: "Version {version}"
   n_500_monedas: "+500 gold"
   n_50_reputacion: "+50 reputation"
+perf:
+  linea: "{fps} fps · {ms} ms (worst {peor}) · {llamadas} calls · {tri} k triangles · {tex} textures · {w}×{h}"

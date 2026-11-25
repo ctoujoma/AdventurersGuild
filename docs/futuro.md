@@ -240,3 +240,14 @@ las tumbas de los caídos, con su nombre y epitafio al tocarlas (los datos ya es
 `GameState.fallen`). De vez en cuando, sus espíritus vagando por la noche. A definir: dónde va,
 si se construye o está desde el principio, cuántas tumbas caben y qué hacen los espíritus (solo
 verse, o algo con la capilla y el forastero de la tormenta).
+
+## Cosas que se tocan en el visor (idea del usuario, 25 de noviembre)
+
+Algunas cosas que salen en el visor de una expedición (un cofrecillo, unas hierbas, un animal que
+cruza) se pueden tocar antes de que desaparezcan; si se consigue, dan algo a los exploradores (una
+poción, raciones, algún material). A pensar: cuántas salen, que no obligue a mirar el visor todo
+el rato y que no se pueda abusar.
+
+## Cámara del visor en escritorio (B8, 25 de noviembre)
+
+La propuesta de acercar la cámara en escritorio (el grupo más grande) se deja para más adelante.

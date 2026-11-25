@@ -465,6 +465,41 @@ en medio, para que los edificios salgan más interesantes (y, más adelante, pas
   molino, bandera, luciérnagas y estrellas fugaces. En el patio, pradera con flores y matas que
   mueve el viento a rachas (`art/grass.ts`). Capturas: `tools/shots/fondo.mjs`.
 
+## Pendiente (25 de noviembre)
+
+**Decisiones del usuario (25 de noviembre):**
+
+- **Aviso de equipo mejor en el arcón (D3):** hecho (`gearAdvice`: cada objeto, a quien más gana
+  con él por su clase).
+- **Animales y fachada:** en **Gremio › Adornos** (ya estaban: Letrero, Fachada, Jardín y
+  Animales).
+- **Cartas del amanecer una a una:** se quedan así; quizá se cambie el sistema más adelante.
+- **Historias:** hay 10 (y 6 jefes dibujados, que pelean como 3). Se añadirán más; valorar
+  generar algunas al azar. Lo que hace falta seguro es **más variedad de jefes**: las
+  expediciones reutilizan los de los encargos (un lobo sale como la bestia). Dibujos propios de
+  cada enemigo y guardián por rumbo: agente de arte de expediciones.
+- **Rumbos que se desbloquean** con expediciones previas (p. ej. la sierra, tras una expedición
+  de 7 días en el bosque): agente de expediciones.
+
+**Arte de las expediciones** (agente propio desde el 25 de noviembre, en paralelo; el bosque se
+revisa y mejora): el visor solo está dibujado para el **bosque** (el usuario: «a full
+detalle, luego vamos desbloqueando zonas»). Faltan **sierra, marismas y ruinas** en el visor (hoy
+se ven con el paisaje del bosque), el dibujo del tiempo de cada rumbo, gestos nuevos de los
+héroes (recoger, cofre, beber, señalar, dormir tumbado), fardos y hallazgos, la pantalla entera
+en escritorio, el sello y el mapa que se despliega en la carta del veterano. Del agente de arte
+(`plan-arte.md`, punto 0).
+
+**Trabajo concreto (agente principal):** el rendimiento (en el contenedor no se ve: el código del
+juego no ha empeorado y las llamadas de dibujo son las mismas, ~500 por fotograma; hay un medidor
+en Ajustes › Modo prueba para mirarlo en el dispositivo del usuario); guía de expediciones en
+Ajustes (hecha) (tarjetas, como la de obras); la barra que
+diga que el reloj está parado en el tutorial y los candados del mapa y los adornos; el fallo de
+las escaleras planeadas en obras (no se reproduce en el núcleo ni con varios tramos sin oro: falta
+el caso concreto del usuario).
+
+**Fases grandes sin empezar:** 6 (amigos) y 7 (lanzamiento: Android, anuncios, cosméticos,
+eventos).
+
 ## Pendiente de revisar
 
 - **Asaltos en directo** (hechos, con cámara lenta al arrastrar y el objetivo «sin heridos»):

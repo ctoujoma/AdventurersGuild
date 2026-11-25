@@ -9093,6 +9093,22 @@ div.item-count {
     0 0 0 4px var(--ink);
   cursor: pointer;
 }
+
+/* ---------- Medidor de rendimiento (modo prueba) ---------- */
+.perf-meter {
+  position: fixed;
+  left: max(4px, env(safe-area-inset-left, 0px));
+  bottom: max(4px, env(safe-area-inset-bottom, 0px));
+  z-index: 50;
+  padding: 2px 6px;
+  font:
+    11px/1.3 ui-monospace,
+    monospace;
+  color: var(--lime);
+  background: rgba(24, 20, 37, 0.8);
+  pointer-events: none;
+}
+
 /* Rumbos cerrados (se abren por turnos): candado y lo que falta. */
 .exp-lock {
   font-size: 10px;

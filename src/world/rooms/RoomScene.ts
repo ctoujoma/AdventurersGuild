@@ -846,6 +846,8 @@ export class RoomScene {
     });
     this.renderer.setPixelRatio(1);
     this.renderer.autoClear = false;
+    // Las cuentas de lo dibujado se suman en todo el fotograma (para el medidor de rendimiento).
+    this.renderer.info.autoReset = false;
     this.renderer.setClearColor(P.black, 1);
     for (const tex of [this.skyTex, this.topTex]) {
       tex.magFilter = NearestFilter;
@@ -1325,6 +1327,20 @@ export class RoomScene {
    * girar el teléfono, el de partida: ver `startZoom`): así, al cambiar de alto la ventana (la
    * barra del navegador del móvil que sale y se esconde) no cambia lo que se mira.
    */
+  /** Lo que costó el último fotograma, para el medidor del modo prueba. */
+  perfStats(): { calls: number; tris: number; tex: number; geo: number; w: number; h: number } {
+    const i = this.renderer.info;
+    const c = this.renderer.domElement;
+    return {
+      calls: i.render.calls,
+      tris: i.render.triangles,
+      tex: i.memory.textures,
+      geo: i.memory.geometries,
+      w: c.width,
+      h: c.height,
+    };
+  }
+
   resize(cssW: number, cssH: number, zoom?: number): void {
     const turned = !this.cssW || cssW > cssH !== this.cssW > this.cssH;
     this.cssW = cssW;
@@ -5477,6 +5493,7 @@ export class RoomScene {
     };
     // Prueba de luz (estudio del estilo nuevo), apagada salvo que se pida desde la consola.
     const shadows = w.__shadows === true;
+    r.info.reset();
     this.shared.uAmbK.value = w.__ambK ?? (this.moodLight ? MOOD_AMBIENT : 1);
     // El sol con dirección (luz con ambiente): sale por la derecha y se pone por la izquierda,
     // como el del cielo, y viene algo de delante; de noche, la luna, alta y de lado.

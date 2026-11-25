@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { betterGear, gearPower } from './gear';
+import { betterGear, gearAdvice, gearPower } from './gear';
 import type { Item } from './model';
 
 const item = (id: string, over: Partial<Item>): Item => ({
@@ -44,5 +44,22 @@ describe('equipo mejor en el arcón', () => {
       item('palo', {}),
     ];
     expect(betterGear({}, stock)).toEqual([]);
+  });
+});
+
+describe('consejo del arcón para toda la casa', () => {
+  const hero = (id: string, cls: 'guerrero' | 'mago' | 'picaro') => ({ id, cls, worn: {} });
+
+  it('cada objeto, a un solo héroe: el que más gana con él', () => {
+    const stock = [item('espada', { bonus: { Combate: 3 } })];
+    const advice = gearAdvice([hero('a', 'guerrero'), hero('b', 'picaro')], stock);
+    expect([...advice.keys()]).toEqual(['a']);
+  });
+
+  it('mira la clase: a un mago no se le sugiere una espada', () => {
+    const stock = [item('espada', { bonus: { Combate: 1 } })];
+    expect(gearAdvice([hero('m', 'mago')], stock).size).toBe(0);
+    const vara = item('vara', { icon: 'varita', bonus: { Arcano: 2 } });
+    expect(gearAdvice([hero('m', 'mago')], [vara]).get('m')).toHaveLength(1);
   });
 });
