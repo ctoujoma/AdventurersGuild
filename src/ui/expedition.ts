@@ -28,12 +28,15 @@ export const hourOfDay = (e: Expedition, h = e.hours) =>
   Math.floor(((e.from + h * HOUR) % DAY_SECONDS) / HOUR);
 
 /**
- * La hora para la luz del visor (0–24, con decimales; 0 medianoche). La hora de la expedición
- * cuenta desde el alba de la taberna y acampan de `EXP_CAMP` a las 5: se corre dos horas para que
- * anden de día (de 7 a 19) y el alba caiga en el campamento.
+ * La hora para la luz del visor (0–24, con decimales; 0 medianoche), al compás de la taberna: su
+ * día (del alba al anochecer, `DUSK`) va de las 6 a las 20 y su noche, de las 20 a las 6. Así, de
+ * día en la taberna es de día en la expedición, y la noche cae a la vez en las dos.
  */
-export const visorHour = (s: GameState) =>
-  ((((gameTime(s) % DAY_SECONDS) + DAY_SECONDS) % DAY_SECONDS) / HOUR + 2) % 24;
+export function visorHour(s: GameState): number {
+  const f = (((gameTime(s) % DAY_SECONDS) + DAY_SECONDS) % DAY_SECONDS) / DAY_SECONDS;
+  const h = f < DUSK ? 6 + (14 * f) / DUSK : 20 + (10 * (f - DUSK)) / (1 - DUSK);
+  return h % 24;
+}
 
 /** Lo que pinta el visor ahora. */
 export function marchNow(s: GameState, e: Expedition): MarchNow {
@@ -63,7 +66,8 @@ export function marchNow(s: GameState, e: Expedition): MarchNow {
     mode:
       recent?.k === 'pelea' && e.hours === recent.h
         ? 'fight'
-        : hod >= EXP_CAMP || hod < 5
+        : // Acampan con la noche de la taberna (de `EXP_CAMP` al alba): de día, andan.
+          hod >= EXP_CAMP
           ? 'camp'
           : 'walk',
     night: clock >= DUSK * DAY_SECONDS || clock < 0.04 * DAY_SECONDS,

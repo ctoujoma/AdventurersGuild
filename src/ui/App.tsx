@@ -60,6 +60,7 @@ import { Panel } from './Panel';
 import { HistoryButton, LibroPanel } from './panels/LibroPanel';
 import { MapPanel } from './panels/MapPanel';
 import { SaveMenu } from './SaveMenu';
+import { UpdateBar } from './UpdateBar';
 import { SettingsMenu } from './SettingsMenu';
 import type { WeatherKind } from '../world/weather';
 import {
@@ -2259,6 +2260,9 @@ export function App() {
         />
       )}
       <HoldHelp />
+      <UpdateBar
+        onBeforeReload={() => hasGame && saveGame({ ...gameRef.current, lastSeen: Date.now() })}
+      />
     </div>
   );
 }

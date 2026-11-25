@@ -3,6 +3,8 @@
 # Los huecos con nombre de persona ({nombre}, {quienes}) no se traducen.
 
 app:
+  # Aviso fijo cuando se ha publicado una versión nueva del juego; al tocarlo se recarga.
+  version_nueva: "Hay una versión nueva: toca para actualizar"
   la_taberna_ha_seguido: "La taberna ha seguido abierta mientras no estabas."
   se_une_al_gremio: "{nombre} se une al gremio. Su rasgo oculto se sabrá tras su primera misión."
   recoge_sus_cosas_y: "{nombre} recoge sus cosas y se va sin despedirse."
