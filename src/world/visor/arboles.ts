@@ -163,24 +163,33 @@ export interface LeafOpts {
   /** Copa más alta que ancha (chopo) o redonda (frutal, roble). */
   tall?: boolean;
   mat?: Mat;
+  /** La corteza (el abedul, blanca con manchas). */
+  bark?: Mat;
 }
 
 /** Un árbol de hoja con la base en (`x`, `base`): tronco que se abre y copa en racimos. */
 export function leafy(t: Tonos, x: number, base: number, h: number, o: LeafOpts): void {
   const s = o.seed;
   const mat = o.mat ?? M.hoja;
+  const bark = o.bark ?? M.corteza;
   const trunkH = Math.round(h * (o.tall ? 0.18 : 0.3));
   const cw = h * (o.tall ? 0.28 : 0.6);
   // Tronco con dos ramas.
   for (let y = base - trunkH - 2; y <= base; y++) {
     const w = y > base - 2 ? 1 : 0;
     for (let dx = -w; dx <= Math.max(w, 1) - 1 + (h > 24 ? 1 : 0); dx++)
-      t.set(x + dx, y, M.corteza, dx <= 0 ? 3 : 1, true);
+      t.set(
+        x + dx,
+        y,
+        bark,
+        bark === M.nieve ? (hash2(dx, y >> 1, s) < 0.25 ? 0 : dx <= 0 ? 4 : 2) : dx <= 0 ? 3 : 1,
+        true,
+      );
   }
   const fy = base - trunkH;
   for (let d = 0; d < Math.round(h * 0.18); d++) {
-    t.set(x - 1 - (d >> 1), fy - d, M.corteza, 3, true);
-    t.set(x + 1 + (d >> 1), fy - d - 1, M.corteza, 1, true);
+    t.set(x - 1 - (d >> 1), fy - d, bark, 3, true);
+    t.set(x + 1 + (d >> 1), fy - d - 1, bark, 1, true);
   }
   // Racimos: discos repartidos por la copa, de atrás (oscuros) a delante (claros).
   const cy = base - trunkH - (h - trunkH) * 0.5;
@@ -343,4 +352,50 @@ export function wheat(t: Tonos, x: number, base: number, h: number, s: number) {
       } else t.set(px, py, u < 0.3 ? M.hierba : M.mies, u < 0.3 ? 3 : 2, true);
     }
   }
+}
+
+/** Un tronco caído a lo largo, con musgo encima y el corte claro con anillos. */
+export function log(t: Tonos, x: number, base: number, w: number, s: number, moss = 0) {
+  const r = Math.max(2, Math.round(w / 10));
+  for (let i = 0; i < w; i++)
+    for (let j = 0; j < r * 2; j++) {
+      const y = base - j;
+      const u = j / (r * 2);
+      let v = u > 0.65 ? 3.2 : u > 0.3 ? 2.4 : 1.2;
+      if (hash2(i >> 2, j, s) < 0.15) v -= 0.8;
+      if (moss && u > 0.7 && hash2(i, j, s + 1) < 0.5 + moss * 0.4)
+        t.set(x + i, y, M.musgo, Math.round(v + 0.5), true);
+      else t.set(x + i, y, M.corteza, Math.round(v), true);
+    }
+  // El corte: la madera clara con un anillo.
+  for (let j = 0; j < r * 2; j++) {
+    t.set(x + w, base - j, M.valla, j === 0 || j === r * 2 - 1 ? 3 : 5, true);
+    if (j > 0 && j < r * 2 - 1) t.set(x + w + 1, base - j, M.valla, 4, true);
+  }
+  t.set(x + w, base - r, M.valla, 2, true);
+}
+
+/** Un tocón: corto, con raíces que se abren y el corte claro con anillos arriba. */
+export function stump(t: Tonos, x: number, base: number, w: number, s: number) {
+  const h = Math.round(w * 0.55);
+  for (let j = 0; j < h; j++) {
+    const half = w / 2 - 1 + (j < 3 ? (3 - j) * 0.8 : 0);
+    for (let i = Math.floor(-half); i <= Math.ceil(half); i++) {
+      if (j < 3 && Math.abs(i) > w / 2 - 1 && hash2(i, j, s) < 0.4) continue;
+      const v = i < -w / 5 ? 3 : i > w / 5 ? 1 : 2;
+      t.set(x + i, base - j, M.corteza, v - (hash2(i, j >> 1, s + 1) < 0.15 ? 1 : 0), true);
+    }
+  }
+  // El corte, en óvalo: madera clara con un anillo.
+  for (let i = -w / 2 + 1; i <= w / 2 - 1; i++)
+    for (let j = 0; j < 2; j++) {
+      const ring = Math.abs(i) === Math.round(w / 4);
+      t.set(
+        x + i,
+        base - h - j,
+        M.valla,
+        j === 1 && Math.abs(i) > w / 2 - 2 ? 3 : ring ? 3 : 5,
+        true,
+      );
+    }
 }
