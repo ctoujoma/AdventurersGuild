@@ -31,11 +31,11 @@ att=[]
 P=lambda **k:k
 seq=[
  {},
- {'cuerpo':{'dy':2,'dx':-2},'cabeza':{'dy':1,'dx':0},'cola':{'vshear':-0.1},'del_cerca':{'shear':-0.1},'del_lejos':{'shear':-0.1},'tras_cerca':{'shear':0.15},'tras_lejos':{'shear':0.15}},
- {'cuerpo':{'dy':3,'dx':-3},'cabeza':{'dy':2,'dx':-1},'cola':{'vshear':-0.14},'del_cerca':{'shear':-0.15},'del_lejos':{'shear':-0.15},'tras_cerca':{'shear':0.2},'tras_lejos':{'shear':0.2}},
- {'cuerpo':{'dy':-2,'dx':5},'cabeza':{'dy':-2,'dx':1},'cola':{'vshear':0.12},'del_cerca':{'shear':-0.35,'lift':4},'del_lejos':{'shear':-0.4,'lift':5},'tras_cerca':{'shear':0.3},'tras_lejos':{'shear':0.3}},
- {'cuerpo':{'dy':0,'dx':7},'cabeza':{'dy':1,'dx':1},'cola':{'vshear':0.08},'del_cerca':{'shear':-0.25},'del_lejos':{'shear':-0.3},'tras_cerca':{'shear':0.35},'tras_lejos':{'shear':0.35}},
- {'cuerpo':{'dx':4},'cabeza':{'dx':1},'tras_cerca':{'shear':0.15},'tras_lejos':{'shear':0.15}},
+ {'cuerpo':{'dy':2,'dx':-2},'cabeza':{'dy':1,'dx':0},'cola':{'vshear':-0.1},'del_cerca':{'shear':+0.1},'del_lejos':{'shear':+0.1},'tras_cerca':{'shear':-0.15},'tras_lejos':{'shear':-0.15}},
+ {'cuerpo':{'dy':3,'dx':-3},'cabeza':{'dy':2,'dx':-1},'cola':{'vshear':-0.14},'del_cerca':{'shear':+0.15},'del_lejos':{'shear':+0.15},'tras_cerca':{'shear':-0.2},'tras_lejos':{'shear':-0.2}},
+ {'cuerpo':{'dy':-2,'dx':5},'cabeza':{'dy':-2,'dx':1},'cola':{'vshear':0.12},'del_cerca':{'shear':+0.35,'lift':4},'del_lejos':{'shear':+0.4,'lift':5},'tras_cerca':{'shear':-0.3},'tras_lejos':{'shear':-0.3}},
+ {'cuerpo':{'dy':0,'dx':7},'cabeza':{'dy':1,'dx':1},'cola':{'vshear':0.08},'del_cerca':{'shear':+0.25},'del_lejos':{'shear':+0.3},'tras_cerca':{'shear':-0.35},'tras_lejos':{'shear':-0.35}},
+ {'cuerpo':{'dx':4},'cabeza':{'dx':1},'tras_cerca':{'shear':-0.15},'tras_lejos':{'shear':-0.15}},
  {'cuerpo':{'dx':1}},
 ]
 att=[r.frame(p) for p in seq]

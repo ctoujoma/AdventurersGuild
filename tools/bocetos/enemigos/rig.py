@@ -42,6 +42,11 @@ class Rig:
                     l,r,u,d=out[y][x-1],out[y][x+1],out[y-1][x],out[y+1][x]
                     if l and r: out[y][x]=l
                     elif u and d and (l or r): out[y][x]=u
+        # píxeles sueltos (sin vecinos): fuera
+        for y in range(H):
+            for x in range(W):
+                if out[y][x] and not any(0<=y+dy<H and 0<=x+dx<W and out[y+dy][x+dx] for dx,dy in((1,0),(-1,0),(0,1),(0,-1))):
+                    out[y][x]=None
         return out
 def save_frames(frames, scale, path, bg=(233,226,210), dur=90):
     ims=[]
