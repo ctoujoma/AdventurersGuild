@@ -480,7 +480,11 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      `capturas/expediciones/visor-bosque/`. **Hecho: campamento (B9)**, rama `claude/arte-visor-campamento`:
      sentados con la manta del color de la ropa de cada héroe (con lo de la sastrería: `MarchNow.dress`, lo
      rellena `marchNow`), lona entre dos palos, humo con viento y lobos que de noche son solo ojos;
-     capturas en `capturas/expediciones/visor-campamento/`. Siguiente: enemigos y guardianes con dibujo
+     capturas en `capturas/expediciones/visor-campamento/`. Enemigos (E1): el reparto por rumbo vale (`art/expFoes.ts`,
+     rama `claude/arte-enemigos`), pero el usuario pide más calidad en los grandes y los guardianes:
+     **dibujados a mano, píxel a píxel**, sin formas geométricas ni partir de los jefes de los encargos
+     (que se rehacen más adelante). Muestra: el lobo enorme (`tools/bocetos/enemigos/huargo5.py`),
+     esperando visto bueno (MA en la página). Siguiente: enemigos y guardianes con dibujo
      propio (E1, B11) y una pasada de profundidad a sierra, marismas y ruinas. Orden: rumbos nuevos, bosque,
      campamento, enemigos. Para los enemigos: jefes a la vista en #225 (grupo parado mirando al jefe a
      lo lejos cuando `e.pending.kind === 'jefe'`, con `e.pending.foe`; `'guardian'` para el guardián). Prototipo en la rama `claude/arte-expediciones-areas` (sin PR): `visor/bioma.ts` (cada

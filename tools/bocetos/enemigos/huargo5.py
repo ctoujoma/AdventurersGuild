@@ -1,0 +1,37 @@
+from render import render
+PAL={'o':(24,20,37),'d':(38,43,68),'m':(58,68,102),'l':(90,105,136),'h':(139,155,180),'s':(192,203,220),'w':(240,240,246),
+     'y':(254,231,97),'Y':(254,174,52),'r':(162,38,51),'R':(228,59,68),'n':(14,12,22),'c':(192,203,220)}
+ROWS=[
+"                                       o  o            ",
+"                                      oho olo          ",
+"                                     ohlmolhmo         ",
+"                                    ohllmmlmmo         ",
+"                         o o  o    ohlmmmmmmmo         ",
+"                       oolohlohoo ohllmmmmmmmmoo       ",
+"                     oohlhllhllloolmmmmmmmyYmmmmoo     ",
+"            ooo oo ohlllllllllllollmmmmmmmmmmmlmmmoo   ",
+"         oohlhohlhlllhhhlllllllllollmmmmmmmmmmmmlllmmoo",
+"   oo   ohlllhllllllllllllllllmmmmlmmmmmmmmmmmlllllnno ",
+"  ohlo ohlllllllmmmmmmmlllmmmmmmmmlmmmmmmmmmoooooooo   ",
+" ohlmlohllllmmmmmmmmmmmmmmmmmmmmmlmmmmmmmmorRwwwwo     ",
+" olmmlohllmmmmmmmmmmmmmmmmmmmmmmmmlmmmmmmorRRRRo       ",
+" olmmlohlmmmmmmmmmmmmmmmmmmmmmmmmmlmmmmmmmoowowoo      ",
+" olmmlollmmmmmmmmmmmmmmmmmmmmmmmmmmdmmmmmmo ooo        ",
+"  olmmolmmmmmmmmmmmmmmmmmmmmmmmmmmmdmmmmmo             ",
+"  olmmmolmmmmmmmmdmmmmdmmmmdmmmmmmmdddmmmo             ",
+"   olmmo olmmmmmddmdddmddddmdddmmmmmmmsdmmmo           ",
+"   odmmo olmmmmdddddddddddddddddddmmssssmmo            ",
+"    odmo  olmmmmmdddddddddddddddddmssssslmo            ",
+"    odmo  olmmmmmmddo odddddssssssssssssslmo           ",
+"     odo  ollmmmmmmdo   odddo oooooooo odmlllo         ",
+"     odo   ollmmmmdo    oddo           oddo lllo       ",
+"      oo   olllmmdo     oddo           oddo lllo       ",
+"            olllmdo     oddo           oddo lmlo       ",
+"             ollmdo     oddo           oddo lmllo      ",
+"              olmdo     oddo           oddo lmmlo      ",
+"              olmmdo    oddo           oddo lmmlo      ",
+"            oollmmmdo  ooddo          ooddo olmmmlo    ",
+"            occcccco   occco          occco occcccco   ",
+]
+render(ROWS,PAL,8,'huargo5.png')
+render(ROWS,PAL,3,'huargo5_3x.png')
