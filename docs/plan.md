@@ -467,25 +467,30 @@ en medio, para que los edificios salgan más interesantes (y, más adelante, pas
 
 ## Pendiente (25 de noviembre)
 
-**Decisiones del usuario (por pensar):**
+**Decisiones del usuario (25 de noviembre):**
 
-- **Aviso de equipo mejor en el arcón (D3):** hoy marca a casi todos los héroes y no mira la clase.
-  Opciones: avisar solo si el objeto es claramente mejor y le sirve a su clase (un mago no quiere
-  una espada), o solo si tiene la ranura vacía.
-- **Animales y fachada en Gremio › Adornos:** si el gato, el perro y las piezas de la fachada se
-  compran y eligen ahí (junto al jardín) o siguen en «Personalizar» de su sala.
-- **Cartas del amanecer una a una:** hechas; falta que el usuario diga si se quedan así.
-- **Al acabar todas las historias** ya no llegan más: que se repitan (con otro jefe o más
-  difíciles) o una nueva por temporada.
+- **Aviso de equipo mejor en el arcón (D3):** arreglarlo (que no marque a casi todos y mire la
+  clase). Agente principal.
+- **Animales y fachada:** se compran y eligen en **Gremio › Adornos** (junto al jardín). Agente
+  principal.
+- **Cartas del amanecer una a una:** se quedan así; quizá se cambie el sistema más adelante.
+- **Historias:** hay 10 (y 6 jefes dibujados, que pelean como 3). Se añadirán más; valorar
+  generar algunas al azar. Lo que hace falta seguro es **más variedad de jefes**: las
+  expediciones reutilizan los de los encargos (un lobo sale como la bestia). Dibujos propios de
+  cada enemigo y guardián por rumbo: agente de arte de expediciones.
+- **Rumbos que se desbloquean** con expediciones previas (p. ej. la sierra, tras una expedición
+  de 7 días en el bosque): agente de expediciones.
 
-**Arte de las expediciones:** el visor solo está dibujado para el **bosque** (el usuario: «a full
+**Arte de las expediciones** (agente propio desde el 25 de noviembre, en paralelo; el bosque se
+revisa y mejora): el visor solo está dibujado para el **bosque** (el usuario: «a full
 detalle, luego vamos desbloqueando zonas»). Faltan **sierra, marismas y ruinas** en el visor (hoy
 se ven con el paisaje del bosque), el dibujo del tiempo de cada rumbo, gestos nuevos de los
 héroes (recoger, cofre, beber, señalar, dormir tumbado), fardos y hallazgos, la pantalla entera
 en escritorio, el sello y el mapa que se despliega en la carta del veterano. Del agente de arte
 (`plan-arte.md`, punto 0).
 
-**Trabajo concreto:** guía de expediciones en Ajustes (tarjetas, como la de obras); la barra que
+**Trabajo concreto (agente principal):** el rendimiento (ha bajado, sobre todo en obras); guía de
+expediciones en Ajustes (tarjetas, como la de obras); la barra que
 diga que el reloj está parado en el tutorial y los candados del mapa y los adornos; el fallo de
 las escaleras planeadas en obras (falta el caso).
 
