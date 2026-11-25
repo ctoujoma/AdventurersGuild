@@ -11,6 +11,7 @@ import {
   minRations,
   partyCap,
   potionsMax,
+  canDrink,
 } from '../core/expedition';
 import type { GameState, Heading } from '../core/model';
 import { CLASS_NAMES, statusLabel } from '../data/labels';
@@ -18,6 +19,7 @@ import { MATERIALS } from '../core/materials';
 import { help } from './HoldHelp';
 import { MatIcon } from './mats';
 import { LifeBar } from './LifeBar';
+import { hpOf } from '../core/health';
 import { Icon, type IconName } from './icons';
 import { Portrait } from './Portrait';
 import { daysOut } from './expedition';
@@ -35,6 +37,8 @@ interface Props {
     unguard: boolean,
     potions: number,
   ) => void;
+  /** Darle a alguien una poción de la alquimia antes de salir. */
+  onDrink: (heroId: string) => void;
 }
 
 const HEADING_ICON: Record<Heading, IconName> = {
@@ -48,7 +52,7 @@ const HEADING_ICON: Record<Heading, IconName> = {
  * La hoja de preparar una expedición: el rumbo (los que faltan, «En obras»), quién va (tope por
  * la sala de mapas) y cuántas raciones llevan (de la despensa), con los días de ida que dan.
  */
-export function ExpeditionSheet({ game, onClose, onSend }: Props) {
+export function ExpeditionSheet({ game, onClose, onSend, onDrink }: Props) {
   const [heading, setHeading] = useState<Heading>('bosque');
   const [sel, setSel] = useState<string[]>([]);
   const cap = partyCap(game);
@@ -203,6 +207,21 @@ export function ExpeditionSheet({ game, onClose, onSend }: Props) {
               );
             })}
           </div>
+          {party.some((h) => canDrink(game, h.id)) && (
+            <div class="chips exp-drinks">
+              {party
+                .filter((h) => canDrink(game, h.id))
+                .map((h) => (
+                  <button key={h.id} class="btn btn-wood exp-drink" onClick={() => onDrink(h.id)}>
+                    <MatIcon m="hierbas" size={10} />
+                    {t('expediciones.expeditionsheet.pocion_a', {
+                      heroe: h.name.split(' ')[0],
+                      pct: Math.round(hpOf(h) * 100),
+                    })}
+                  </button>
+                ))}
+            </div>
+          )}
           {sel.length >= cap && cap < 4 && (
             <p class="tiny">{t('expediciones.expeditionsheet.tope', { n: cap })}</p>
           )}

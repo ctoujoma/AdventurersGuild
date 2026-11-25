@@ -25,13 +25,22 @@ export function ExpeditionCard({ game, exp: e, onChoose }: Props) {
   return (
     <section class={`exp-card is-${p.kind}`} aria-live="polite">
       <div class="exp-card-art" aria-hidden="true">
-        <Icon name={p.kind === 'guardian' ? 'calavera' : def.site ? 'torre' : 'star'} size={28} />
+        <Icon
+          name={
+            p.kind === 'guardian' || p.kind === 'jefe' ? 'calavera' : def.site ? 'torre' : 'star'
+          }
+          size={28}
+        />
       </div>
       <h4 class="exp-card-title">
         {t('expediciones.carta.titulo', { que: msg(`expediciones.sucesos.${p.kind}.titulo`) })}
       </h4>
       <p class="exp-card-text">
-        {t(`expediciones.sucesos.${p.kind}.texto`, { rumbo: e.heading, n: e.heroIds.length })}
+        {t(`expediciones.sucesos.${p.kind}.texto`, {
+          rumbo: e.heading,
+          n: e.heroIds.length,
+          enemigos: p.foe === undefined ? '' : msg(`expediciones.enemigos.${e.heading}.${p.foe}`),
+        })}
       </p>
       <div class="exp-card-options">
         {def.options.map((o) => {
@@ -74,7 +83,7 @@ export function ExpeditionCard({ game, exp: e, onChoose }: Props) {
           <i style={{ width: `${Math.round((left / total) * 100)}%` }} />
         </span>
         <span class="tiny">
-          {p.kind === 'guardian'
+          {p.kind === 'guardian' || p.kind === 'jefe'
             ? t('expediciones.carta.espera_guardian', { horas: left })
             : t('expediciones.carta.espera', { sitio: !!def.site, horas: left })}
         </span>

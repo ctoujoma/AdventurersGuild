@@ -48,7 +48,7 @@ diario:
   cura: "{mismo, select, si {{curandero} tends to their own wounds by the fire.} other {{curandero} bandages {heroe}'s wounds by the fire.}}"
   hambre: "There aren't rations for everyone: {quien} {n, plural, one {goes} other {go}} to bed hungry."
   llegada: "{n, plural, one {Arrives} other {They arrive}} at the tavern."
-  prudencia: "{guardian, select, si {No one says a word, and the guardian won't wait any longer.} other {No one says a word: {n, plural, one {plays it safe} other {they play it safe}}.}}"
+  prudencia: "{guardian, select, si {No one says a word: they fight on their own.} other {No one says a word: {n, plural, one {plays it safe} other {they play it safe}}.}}"
   invitado_se_va: "{heroe} falls in the fight and, as soon as {sexo, select, f {she} other {he}} can stand, says goodbye: this isn't for {sexo, select, f {her} other {him}}."
   guardian_bien: "{enemigos, mayus} falls! {heroe} lands the final blow.{m, plural, =0 {} one { {heridos} ends up hurt.} other { {heridos} end up hurt.}}"
   piel: "{heroe} takes the hide: 2 leather."
@@ -165,6 +165,7 @@ aviso:
   guardian: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}: {que}! Open the viewer to watch."
   vuelve: "The expedition is back from {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}: {grupo}."
 expeditionsheet:
+  pocion_a: "Potion for {heroe} ({pct}%)"
   cerrado: "Reach {dias} days in {antes, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}} (record: {record})"
   pociones: "Potions"
   pociones_ayuda: "of {n} made at the alchemist's"
@@ -187,6 +188,8 @@ expeditionsheet:
   salir: "Set out"
   elige_quien: "Choose who goes"
 expeditionview:
+  pocion: "Potion"
+  pocion_a: "Give {heroe} a potion"
   tiempo:
     lluvia: "Rain: slower"
     niebla: "Fog: ambushes, poorer hints"
@@ -344,15 +347,32 @@ sucesos:
     titulo: "the guardian of this heading"
     texto: "{rumbo, select, bosque {The ground shakes: Old Tusk, the boar that guards the deepest forest, blocks their way.} sierra {The snow creaks: the White Serpent, asleep in the drifts, uncoils before them.} marismas {The reeds part: the Reed Queen rises from the black water and blocks their way.} other {A cloud of ash rises: the Ash Dragon wakes among the broken columns.}}"
     pelear:
-      nombre: "Get it!"
+      nombre: "Fight it live"
       bien: "{heroe} shouts and they charge at the guardian."
-    volver:
-      nombre: "Turn back"
-      bien: "They back away without turning their backs on it."
+    solos:
+      nombre: "Let them fight on their own"
+      bien: "They charge at the guardian on their own."
+    escapar:
+      nombre: "Sneak away and turn back"
+      bien: "{heroe} leads them through the shadows: {enemigos} never notices, and they turn back."
+      mal: "{enemigos, mayus} catches their scent as they slip away: {herido} takes a heavy blow before they flee."
+  jefe:
+    titulo: "something big up ahead"
+    texto: "In the distance: {enemigos}. {n, plural, one {Stops} other {They stop}} to watch, quietly, and {n, plural, one {waits} other {wait}} for your word."
+    pelear:
+      nombre: "Fight it live"
+      bien: "They go after {enemigos}."
+    solos:
+      nombre: "Let them fight on their own"
+      bien: "They go after {enemigos} on their own."
+    escapar:
+      nombre: "Try to go around it"
+      bien: "{heroe} finds a way around: {enemigos} is left behind without seeing them."
+      mal: "A branch snaps: {enemigos} is on them, and {herido} takes a heavy blow before they get away."
 carta:
   titulo: "{que, mayus}"
   espera: "{sitio, select, si {They wait at the door until tomorrow} other {They wait until nightfall}}: {horas, plural, one {# hour left} other {# hours left}}."
-  espera_guardian: "The guardian won't wait long: {horas, plural, one {# hour left} other {# hours left}}."
+  espera_guardian: "They hold still, eyes on it, until tomorrow: {horas, plural, one {# hour left} other {# hours left}}. If you say nothing, they fight."
   silenciar: "Mute this expedition"
   silenciada: "Muted: no alerts, they decide"
   riesgo:

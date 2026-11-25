@@ -425,4 +425,46 @@ describe('expediciones: bloque 5 (rumbos, tiempo, pociones y la carta)', () => {
     expect(news.some((n) => n.big && /sierra/.test(tx(n.t)))).toBe(true);
     expect(headingOpen(s, 'sierra')).toBe(true);
   });
+
+  it('un jefe a la vista espera al jugador: pelear, que peleen solos o escapar', () => {
+    let s = out('jefe');
+    const e = s.expeditions![0]!;
+    e.pending = { kind: 'jefe', h: e.hours, until: e.hours + 24, foe: 3 };
+    // Esperan parados hasta el día siguiente.
+    s = reduce(s, { type: 'tick', to: (s.clock ?? 0) + 60 });
+    expect(s.expeditions![0]!.pending?.kind).toBe('jefe');
+    // Escapar: sin pelea (bien o con un golpe).
+    s = reduce(s, { type: 'expChoose', id: e.id, option: 'escapar' });
+    const x = s.expeditions?.[0] ?? null;
+    if (x) {
+      expect(x.pending).toBeUndefined();
+      expect(x.log.some((l) => l.k === 'pelea')).toBe(false);
+    }
+    // Sin respuesta, pelean solos.
+    let t = out('jefe-solos');
+    const y = t.expeditions![0]!;
+    y.pending = { kind: 'jefe', h: y.hours, until: y.hours + 1, foe: 3 };
+    t = play(t, 1);
+    const log = t.expeditions?.[0]?.log ?? t.reports.find((r) => r.exp)!.exp!.log;
+    expect(log.some((l) => l.k === 'pelea')).toBe(true);
+  });
+
+  it('se puede dar una poción a mano (fuera, de las que llevan; en casa, de la alquimia)', () => {
+    let s = out('beber');
+    const e = s.expeditions![0]!;
+    const h = s.heroes.find((x) => x.id === e.heroIds[0])!;
+    h.hp = 0.3;
+    e.potions = 1;
+    s = reduce(s, { type: 'drink', heroId: h.id, expId: e.id });
+    expect(s.heroes.find((x) => x.id === h.id)!.hp!).toBeCloseTo(0.65);
+    expect(s.expeditions![0]!.potions).toBe(0);
+    expect(reduce(s, { type: 'drink', heroId: h.id, expId: e.id })).toBe(s);
+    // En casa.
+    const home = s.heroes.find((x) => x.status === 'ok')!;
+    home.hp = 0.4;
+    s.potions = 2;
+    s = reduce(s, { type: 'drink', heroId: home.id });
+    expect(s.potions).toBe(1);
+    expect(s.heroes.find((x) => x.id === home.id)!.hp!).toBeCloseTo(0.75);
+  });
 });

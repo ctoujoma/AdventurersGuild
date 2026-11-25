@@ -57,7 +57,7 @@ diario:
   cura: "{mismo, select, si {{curandero} se cura sus propias heridas junto al fuego.} other {{curandero} venda las heridas de {heroe} junto al fuego.}}"
   hambre: "No hay raciones para todos: {quien} se {n, plural, one {acuesta} other {acuestan}} sin cenar."
   llegada: "{n, plural, one {Llega} other {Llegan}} a la taberna."
-  prudencia: "{guardian, select, si {Nadie dice nada y el guardián no espera más.} other {Nadie dice nada: {n, plural, one {decide} other {deciden}} con prudencia.}}"
+  prudencia: "{guardian, select, si {Nadie dice nada: pelean por su cuenta.} other {Nadie dice nada: {n, plural, one {decide} other {deciden}} con prudencia.}}"
   invitado_se_va: "{heroe} cae en la pelea y, en cuanto puede tenerse en pie, se despide: esto no es para {sexo, select, f {ella} other {él}}."
   guardian_bien: "¡{enemigos, mayus} cae! {heroe} le da el último golpe.{m, plural, =0 {} one { {heridos} acaba con heridas.} other { {heridos} acaban con heridas.}}"
   piel: "{heroe} aprovecha la piel: 2 de cuero."
@@ -189,6 +189,7 @@ aviso:
 
 # La hoja de preparar una expedición (ui/ExpeditionSheet.tsx).
 expeditionsheet:
+  pocion_a: "Poción para {heroe} ({pct} %)"
   cerrado: "Llega a {dias} días en {antes, select, bosque {el bosque} sierra {la sierra} marismas {las marismas} other {las ruinas}} (récord: {record})"
   pociones: "Pociones"
   pociones_ayuda: "de {n} hechas en la alquimia"
@@ -213,6 +214,8 @@ expeditionsheet:
 
 # El visor de una expedición (ui/ExpeditionView.tsx).
 expeditionview:
+  pocion: "Poción"
+  pocion_a: "Darle una poción a {heroe}"
   tiempo:
     lluvia: "Lluvia: más despacio"
     niebla: "Niebla: emboscadas, peor pista"
@@ -377,17 +380,34 @@ sucesos:
     titulo: "el guardián del rumbo"
     texto: "{rumbo, select, bosque {Tiembla el suelo: el Viejo Colmillo, el jabalí que guarda lo más hondo del bosque, les cierra el paso.} sierra {Cruje la nieve: la Sierpe Blanca, que duerme en los ventisqueros, se desenrosca ante ellos.} marismas {Se abren los juncos: la Reina del Juncal sale del agua negra y les cierra el paso.} other {Se levanta una nube de ceniza: la Dragona de Ceniza despierta entre las columnas rotas.}}"
     pelear:
-      nombre: "¡A por él!"
+      nombre: "Pelear en directo"
       bien: "{heroe} grita y cargan contra el guardián."
-    volver:
-      nombre: "Dar media vuelta"
-      bien: "Se retiran sin darle la espalda."
+    solos:
+      nombre: "Que peleen solos"
+      bien: "Cargan contra el guardián por su cuenta."
+    escapar:
+      nombre: "Escabullirse y volver"
+      bien: "{heroe} les guía entre las sombras: {enemigos} ni se entera, y dan media vuelta."
+      mal: "{enemigos, mayus} les huele al escabullirse: {herido} se lleva un buen golpe antes de huir."
+  jefe:
+    titulo: "algo grande a la vista"
+    texto: "A lo lejos, {enemigos}. {n, plural, one {Se para} other {Se paran}} a mirar, sin hacer ruido, y {n, plural, one {espera} other {esperan}} a que digas."
+    pelear:
+      nombre: "Pelear en directo"
+      bien: "Van a por {enemigos}."
+    solos:
+      nombre: "Que peleen solos"
+      bien: "Van a por {enemigos} por su cuenta."
+    escapar:
+      nombre: "Intentar rodearlo"
+      bien: "{heroe} encuentra un rodeo: {enemigos} se queda atrás sin verles."
+      mal: "Cruje una rama: {enemigos} se les echa encima y {herido} se lleva un buen golpe antes de escapar."
 
 # La carta del suceso, en el visor (ui/ExpeditionView.tsx).
 carta:
   titulo: "{que, mayus}"
   espera: "{sitio, select, si {Esperan a la puerta hasta mañana} other {Esperan hasta la noche}}: {horas, plural, one {queda # hora} other {quedan # horas}}."
-  espera_guardian: "El guardián no espera mucho: {horas, plural, one {queda # hora} other {quedan # horas}}."
+  espera_guardian: "Esperan quietos, sin quitarle ojo, hasta mañana: {horas, plural, one {queda # hora} other {quedan # horas}}. Si no dices nada, pelean."
   silenciar: "Silenciar esta expedición"
   silenciada: "Silenciada: sin avisos, eligen ellos"
   riesgo:

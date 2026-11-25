@@ -16,6 +16,9 @@ import {
   EXP_CLERIC_HEAL,
   EXP_CRYSTAL_FROM,
   EXP_FOG_AMBUSH,
+  EXP_BOSS_SEEN,
+  EXP_BOSS_MULT,
+  EXP_ESCAPE_HP,
   EXP_UNLOCK,
   MAX_CANDIDATES,
   EXP_POTION_FIND,
@@ -544,7 +547,7 @@ function stepHour(s: GameState, e: Expedition, news: DawnEvent[]): void {
     const d = EXP_EVENTS_DEF[k];
     return d.weight > 0 && dist >= d.from && (!d.headings || d.headings.includes(e.heading));
   });
-  if (roll < fightP) fight(s, e, rng, dist);
+  if (roll < fightP) fight(s, e, rng, dist, news);
   else if (roll < fightP + EXP_CHOICES * (e.turn ? 0.5 : 1) && kinds.length)
     raise(
       s,
@@ -599,9 +602,15 @@ function find(e: Expedition, rng: Rng, dist: number, who: Hero): void {
 }
 
 /** Una pelea por el camino contra lo que salga en ese rumbo. */
-function fight(s: GameState, e: Expedition, rng: Rng, dist: number): void {
+function fight(s: GameState, e: Expedition, rng: Rng, dist: number, news: DawnEvent[]): void {
   const foes = tl(`expediciones.enemigos.${e.heading}`);
-  battle(s, e, rng, dist, rng.int(0, foes.length - 1));
+  const foe = rng.int(0, foes.length - 1);
+  // El grande del rumbo, a veces, se ve de lejos: se paran y esperan a que digas (B11).
+  if (!e.turn && foe === foes.length - 1 && rng.chance(EXP_BOSS_SEEN)) {
+    raise(s, e, 'jefe', news, undefined, foe);
+    return;
+  }
+  battle(s, e, rng, dist, foe);
 }
 
 /** Los enemigos de un rumbo, como jefes del motor de peleas (su dibujo y sus golpes). */
@@ -879,10 +888,13 @@ function raise(
   kind: ExpEvent,
   news: DawnEvent[],
   again?: string,
+  foe?: number,
 ): void {
   const def = EXP_EVENTS_DEF[kind];
   let site = again;
-  if (!site) line(e, 'suceso', `expediciones.sucesos.${kind}.texto`, { rumbo: e.heading });
+  const enemigos = foe === undefined ? '' : msg(`expediciones.enemigos.${e.heading}.${foe}`);
+  if (!site)
+    line(e, 'suceso', `expediciones.sucesos.${kind}.texto`, { rumbo: e.heading, enemigos });
   if (def.site && !site) {
     // Un paraje nuevo: queda en el mapa para siempre.
     const rng = new Rng(`${e.seed}-paraje-${e.hours}`);
@@ -899,16 +911,23 @@ function raise(
     const stats = (s.stats ??= emptyStats());
     stats.expSites = (stats.expSites ?? 0) + 1;
   }
-  const wait = kind === 'guardian' ? EXP_GUARDIAN_WAIT : def.site ? EXP_HOURS : toCamp(e);
-  e.pending = { kind, h: e.hours, until: e.hours + wait, ...(site ? { site } : {}) };
+  const boss = kind === 'guardian' || kind === 'jefe';
+  const wait = boss ? EXP_GUARDIAN_WAIT : def.site ? EXP_HOURS : toCamp(e);
+  e.pending = {
+    kind,
+    h: e.hours,
+    until: e.hours + wait,
+    ...(site ? { site } : {}),
+    ...(foe !== undefined ? { foe } : {}),
+  };
   if (e.mute) {
     decide(s, e, safeOption(kind), true);
     return;
   }
   news.push({
-    t: msg(kind === 'guardian' ? 'expediciones.aviso.guardian' : 'expediciones.aviso.suceso', {
+    t: msg(boss ? 'expediciones.aviso.guardian' : 'expediciones.aviso.suceso', {
       rumbo: e.heading,
-      que: msg(`expediciones.sucesos.${kind}.titulo`),
+      que: kind === 'jefe' ? enemigos : msg(`expediciones.sucesos.${kind}.titulo`),
     }),
     k: 'warn',
   });
@@ -972,13 +991,14 @@ export function optionRisk(
   const kind = e.pending?.kind ?? 'cofre';
   const o = EXP_EVENTS_DEF[kind].options.find((x) => x.id === id)!;
   const fights =
-    (kind === 'guardian' && id === 'pelear') ||
+    ((kind === 'guardian' || kind === 'jefe') && (id === 'pelear' || id === 'solos')) ||
     (kind === 'oso' && id === 'plantar') ||
     (kind === 'ruinas' && id === 'forzar');
   const p = fights
     ? chance(
         partyPower(s, e),
-        fightDiff(distAt(e)) * (kind === 'guardian' ? EXP_GUARDIAN_MULT : 1.2),
+        fightDiff(distAt(e)) *
+          (kind === 'guardian' ? EXP_GUARDIAN_MULT : kind === 'jefe' ? EXP_BOSS_MULT : 1.2),
       )
     : optionChance(s, e, o);
   // Con niebla, polvo o tormenta, la pista se ve peor (como sin sala ni explorador).
@@ -1006,6 +1026,33 @@ export function muteExpedition(s: GameState, id: string, on: boolean): boolean {
   else delete e.mute;
   // Al silenciar, lo que esperaba se decide ya, con prudencia.
   if (on && e.pending) decide(s, e, safeOption(e.pending.kind), true);
+  return true;
+}
+
+/**
+ * Darle una poción a un héroe cuando se quiera (usuario, 25 de noviembre): de las que lleva la
+ * expedición (`expId`) o, en casa, de las de la alquimia. Solo si le falta vida y quedan.
+ */
+export function canDrink(s: GameState, heroId: string, expId?: string): boolean {
+  const h = s.heroes.find((x) => x.id === heroId);
+  if (!h || hpOf(h) >= 1 || h.status === 'muerto' || h.status === 'desaparecido') return false;
+  if (!expId) return h.status !== 'mision' && (s.potions ?? 0) > 0;
+  const e = s.expeditions?.find((x) => x.id === expId);
+  return !!e && e.heroIds.includes(heroId) && (e.potions ?? 0) > 0;
+}
+
+export function drinkPotion(s: GameState, heroId: string, expId?: string): boolean {
+  if (!canDrink(s, heroId, expId)) return false;
+  const h = s.heroes.find((x) => x.id === heroId)!;
+  if (expId) {
+    const e = s.expeditions!.find((x) => x.id === expId)!;
+    e.potions!--;
+    setLife(h, hpOf(h) + EXP_POTION_HP);
+    line(e, 'cura', 'expediciones.diario.pocion', { heroe: h.name, sexo: h.sex }, h.id);
+  } else {
+    s.potions = (s.potions ?? 0) - 1;
+    setHp(h, hpOf(h) + EXP_POTION_HP);
+  }
   return true;
 }
 
@@ -1048,6 +1095,7 @@ function decide(s: GameState, e: Expedition, option: string, auto: boolean): voi
   const k = e.pending.kind;
   const h0 = e.pending.h;
   const siteId = e.pending.site;
+  const foe = e.pending.foe ?? 0;
   delete e.pending;
   const rng = new Rng(`${e.seed}-elige-${h0}-${option}`);
   const def = EXP_EVENTS_DEF[k];
@@ -1066,7 +1114,10 @@ function decide(s: GameState, e: Expedition, option: string, auto: boolean): voi
   const site = siteId ? s.expSites?.find((x) => x.id === siteId) : undefined;
   if (site && !o.safe) site.done = s.day;
   const p: Params = { heroe: who.name, sexo: who.sex };
-  if (auto) line(e, 'eleccion', 'expediciones.diario.prudencia', { guardian: k === 'guardian' });
+  if (auto)
+    line(e, 'eleccion', 'expediciones.diario.prudencia', {
+      guardian: k === 'guardian' || k === 'jefe',
+    });
   const say = (res: string, extra: Params = {}) =>
     line(
       e,
@@ -1199,6 +1250,31 @@ function decide(s: GameState, e: Expedition, option: string, auto: boolean): voi
       }
       return;
     }
+    case 'jefe.pelear':
+    case 'jefe.solos': {
+      const enemigos = msg(`expediciones.enemigos.${e.heading}.${foe}`);
+      say('bien', { enemigos });
+      if (battle(s, e, rng, dist, foe, EXP_BOSS_MULT))
+        line(e, 'hallazgo', 'expediciones.diario.tras_pelea', { que: loot(e, rng, dist, 2) });
+      return;
+    }
+    case 'jefe.escapar':
+    case 'guardian.escapar': {
+      const enemigos =
+        k === 'jefe'
+          ? msg(`expediciones.enemigos.${e.heading}.${foe}`)
+          : msg(`expediciones.guardianes.${e.heading}`);
+      if (ok) say('bien', { enemigos });
+      else {
+        // Les ve: uno se lleva un buen golpe al huir (si ya iba grave, puede caer).
+        const hit = rng.pick(standing(e, s));
+        say('mal', { enemigos, herido: hit.name, sexo_herido: hit.sex });
+        wound(e, hit, EXP_ESCAPE_HP);
+      }
+      if (k === 'guardian' && !e.turn) turnBack(e, 'guardian');
+      return;
+    }
+    case 'guardian.solos':
     case 'guardian.pelear': {
       say('bien');
       if (battle(s, e, rng, dist, 0, EXP_GUARDIAN_MULT, true)) {
@@ -1211,10 +1287,6 @@ function decide(s: GameState, e: Expedition, option: string, auto: boolean): voi
       }
       return;
     }
-    case 'guardian.volver':
-      say('bien');
-      if (!e.turn) turnBack(e, 'guardian');
-      return;
     default:
       return say('bien');
   }

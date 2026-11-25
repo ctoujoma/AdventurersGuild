@@ -754,7 +754,15 @@ export const EXP_FOE_SPREAD = 0.35;
  */
 export const EXP_GUARDIAN = 0.006;
 export const EXP_GUARDIAN_MULT = 1.6;
-export const EXP_GUARDIAN_WAIT = 12;
+export const EXP_GUARDIAN_WAIT = EXP_HOURS;
+/**
+ * Un jefe a la vista (B11): cuando la pelea es contra el enemigo grande del rumbo (el último de
+ * `expediciones.enemigos.<rumbo>`), con esta probabilidad lo ven de lejos y esperan al jugador (de
+ * ida). Pelea por `EXP_BOSS_MULT`. Escapar sale mal según la opción: uno pierde `EXP_ESCAPE_HP`.
+ */
+export const EXP_BOSS_SEEN = 0.7;
+export const EXP_BOSS_MULT = 1.3;
+export const EXP_ESCAPE_HP = 0.35;
 /** Fardos perdidos que quedan en el mapa a la vez (los más viejos se pierden). */
 export const EXP_BUNDLES_MAX = 6;
 /**
