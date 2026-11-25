@@ -471,7 +471,14 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      R2 muralla y siluetas colosales). M2 sí; R2 sí, sin edificios con aire moderno (ahora templos,
      arquerías y escombros) y con la muralla baja, rota e irregular para que no tape; la torre colosal del
      fondo le gusta. **Hecho: rumbos nuevos en el visor (paisaje, tiempo y fauna), PR de
-     `claude/arte-expediciones-areas`**; capturas en `capturas/expediciones/visor-rumbos/`. Orden: rumbos nuevos, bosque,
+     `claude/arte-expediciones-areas`**; capturas en `capturas/expediciones/visor-rumbos/` (PR #226).
+     **Hecho: el bosque nuevo (B1–B7, B10)**, rama `claude/arte-visor-bosque`: camino que serpentea con
+     huellas, piedras y charcos, arroyo con puente, dos filas de árboles con sombra, especies por lejanía
+     (`arbol` en `capas.ts`), señales del camino, copas que cierran (capa `copas`, solo donde los árboles
+     llegan arriba: el móvil), rayos de sol, pájaros, conejos, mariposas y luciérnagas (`vida.ts`),
+     nubes por semilla y día, halo del sol liso y anillos de lluvia. Capturas en
+     `capturas/expediciones/visor-bosque/`. Siguiente: campamento (B9), luego enemigos (E1, B11) y una
+     pasada de profundidad a sierra, marismas y ruinas. Orden: rumbos nuevos, bosque,
      campamento, enemigos. Para los enemigos: jefes a la vista en #225 (grupo parado mirando al jefe a
      lo lejos cuando `e.pending.kind === 'jefe'`, con `e.pending.foe`; `'guardian'` para el guardián). Prototipo en la rama `claude/arte-expediciones-areas` (sin PR): `visor/bioma.ts` (cada
      rumbo, su `Paisaje` y sus rampas), `capas-sierra.ts`, `capas-marismas.ts`, `capas-ruinas.ts`;

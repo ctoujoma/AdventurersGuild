@@ -747,7 +747,9 @@ function delante(e: Encuadre, L: number, wild: number, seed: number): [Tonos, nu
 function copas(e: Encuadre, L: number, wild: number, seed: number): [Tonos, number] {
   const H = Math.round(e.hor * 0.55);
   const t = new Tonos(L, H);
-  const k = smooth(0.6, 1, wild);
+  // Solo donde los árboles de cerca llegan arriba del cuadro (el móvil); con mucho cielo
+  // (escritorio) las copas quedarían colgando lejos de los árboles.
+  const k = e.ground > 100 ? 0 : smooth(0.6, 1, wild);
   if (k <= 0) return [t, 0];
   // El borde de la copa: una franja arriba, mellada por abajo, con huecos de cielo.
   const band = (x: number) => {

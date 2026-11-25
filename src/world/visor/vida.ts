@@ -61,7 +61,10 @@ export function drawRays(c: Ctx): void {
   const span = e.w + 80;
   const y1 = e.feet + 4;
   // En el bosque abierto (el alba), los rayos salen de entre las copas, no del cielo.
-  const ys = Math.round(e.hor * 0.55 * (1 - smooth(0.6, 0.9, m.wild)));
+  // Salen de entre las copas: arriba del todo solo si hay copas que cierran (el móvil, en lo
+  // hondo); si no, desde la altura de los árboles.
+  const canopy = e.ground <= 100 ? smooth(0.6, 0.9, m.wild) : 0;
+  const ys = Math.round(e.hor * 0.55 * (1 - canopy));
   for (let r = 0; r < n; r++) {
     const w = 5 + Math.round(hash(r * 7 + c.seed) * 10);
     const x0 = ((((hash(r * 13 + c.seed) * span - off) % span) + span) % span) - 40;
