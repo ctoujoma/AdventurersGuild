@@ -8,7 +8,9 @@ import type { MarchNow } from '../src/world/visor/marcha';
 import type { Heading } from '../src/core/model';
 const [dir, rumbo = 'bosque'] = process.argv.slice(2);
 const heading = rumbo as Heading;
-const terrain = ({ bosque: 'bosque', sierra: 'monte', marismas: 'pantano', ruinas: 'ruina' } as const)[heading];
+const terrain = (
+  { bosque: 'bosque', sierra: 'monte', marismas: 'pantano', ruinas: 'ruina' } as const
+)[heading];
 mkdirSync(`${dir}/gif`, { recursive: true });
 const crew: MarchNow['crew'] = [
   { id: 'a', name: 'V', seed: 'violante-7', cls: 'guerrero', sex: 'f', fate: 'ok' },

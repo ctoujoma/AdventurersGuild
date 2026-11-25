@@ -133,7 +133,6 @@ function giant(what: string, skin: Record<string, string>, cloth: string, runes 
   return { kind: 'grande', what, poses, foot: TROLL_FOOT - shift, chest: 30, span: 36, big: true };
 }
 
-
 /**
  * Un enemigo calcado (`expCalcos.ts`): sus fotogramas en un lienzo común, pegados abajo y por la
  * cola, y qué fotograma hace cada pose. Caído, panza arriba.

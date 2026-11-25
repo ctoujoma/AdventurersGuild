@@ -5,7 +5,13 @@
  */
 
 /** `.` vacío, `0`–`6` la rampa del pelaje, y los colores de la boca y los ojos. */
-export const BOCA = { y: '#fee761', w: '#e8e0d0', p: '#d07888', r: '#9a2c40', m: '#3a0c1c' } as const;
+export const BOCA = {
+  y: '#fee761',
+  w: '#e8e0d0',
+  p: '#d07888',
+  r: '#9a2c40',
+  m: '#3a0c1c',
+} as const;
 
 export interface Calco {
   ramp: readonly string[];
