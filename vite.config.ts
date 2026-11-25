@@ -19,7 +19,8 @@ function walk(dir: string, root = dir): string[] {
 /**
  * Al acabar el build, el service worker (public/sw.js) apunta todos los ficheros del juego para
  * guardarlos de una vez al instalarse, y una huella de su contenido como nombre de la caché: así
- * basta con abrir el juego una vez con conexión para poder jugar sin ella.
+ * basta con abrir el juego una vez con conexión para poder jugar sin ella. También la versión del
+ * juego, para que la página sepa si el service worker nuevo es el suyo (src/platform/update.ts).
  */
 function precache(): Plugin {
   let out = 'dist';
@@ -42,6 +43,7 @@ function precache(): Plugin {
           "const CACHE = 'jarro-v1';",
           `const CACHE = 'jarro-${hash.digest('hex').slice(0, 10)}';`,
         )
+        .replace("const VERSION = 'dev';", `const VERSION = ${JSON.stringify(version())};`)
         .replace(
           'const FILES = [];',
           `const FILES = ${JSON.stringify(files.map((f) => `./${f}`))};`,

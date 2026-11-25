@@ -7,6 +7,8 @@ import './styles.css';
 import { App } from './ui/App';
 import { installPixelUi } from './ui/pixelui';
 import { currentLang, t } from './textos';
+import { registerSw } from './platform/update';
+import { VERSION } from './version';
 
 document.documentElement.lang = currentLang();
 document.title = t('pantallas.title.app');
@@ -19,7 +21,7 @@ if (
   'serviceWorker' in navigator &&
   (location.protocol === 'https:' || location.hostname === 'localhost')
 ) {
-  navigator.serviceWorker.register('./sw.js').catch(() => {
+  registerSw(VERSION).catch(() => {
     /* sin service worker (p. ej. dentro de un iframe): el juego funciona igual */
   });
 }
