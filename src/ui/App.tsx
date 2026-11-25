@@ -188,6 +188,8 @@ export function App() {
   const [bye, setBye] = useState<string | null>(null);
   /** El tutorial corto de las expediciones (tras la carta del veterano o al abrir el mapa). */
   const [expIntro, setExpIntro] = useState(false);
+  /** Informes de expediciones que acaban de volver: su «La mochila» sale sola en cuanto se pueda. */
+  const [bagQueue, setBagQueue] = useState<string[]>([]);
   const byeTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const [arconTab, setArconTab] = useState<ArconTab>('equipo');
   /** Sala tocada en la vista de salas (su ficha). */
@@ -359,6 +361,13 @@ export function App() {
     const back = (before.expeditions ?? []).filter(
       (e) => !next.expeditions?.some((x) => x.id === e.id),
     );
+    // Su mochila sale sola, como aviso grande (espera a que no haya nada abierto).
+    if (back.length) {
+      const fresh = next.reports
+        .filter((r) => r.exp?.bag && !before.reports.some((x) => x.id === r.id))
+        .map((r) => r.id);
+      if (fresh.length) setBagQueue((q) => [...q, ...fresh]);
+    }
     if (back.length && !panel && !bye && !reportId && (!expId || back.some((e) => e.id === expId)))
       welcome(
         back
@@ -1096,6 +1105,17 @@ export function App() {
     saveMenu ||
     !!watching;
   busyRef.current = busy;
+  // La mochila de la expedición que ha vuelto: cuando no haya nada abierto, tras verles entrar.
+  useEffect(() => {
+    if (!bagQueue.length || busy || bye || expIntro || expId || dawnOpen) return;
+    const id = setTimeout(() => {
+      const [first, ...rest] = bagQueue;
+      setBagQueue(rest);
+      if (first && gameRef.current.reports.some((r) => r.id === first && !r.read))
+        openReport(first);
+    }, BYE_MS);
+    return () => clearTimeout(id);
+  }, [bagQueue, busy, bye, expIntro, expId, dawnOpen]);
   useEffect(() => {
     if (!busy) held.free();
   }, [busy]);

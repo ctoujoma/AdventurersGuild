@@ -256,6 +256,18 @@ Con la vida que se guarda (`core/health.ts`, #219), las expediciones ya no cuent
   salir. Siguen usándose solas de noche al que está peor.
 - Falta el dibujo del grupo parado mirando al jefe (agente «Arte de expediciones»).
 
+## Pulido tras jugar (usuario, 25 de noviembre)
+
+- **El frasco** (`potionIcon`, `ui/PotionIcon.tsx`) en la hoja, el visor, «La mochila» y la
+  chapa del informe, en lugar de la hierba.
+- **El visor enseña las pociones** que llevan; tocarlas da una al que está peor.
+- **Poción tras una pelea:** quien acaba por debajo de `EXP_POTION_AFTER` (grave o en el suelo)
+  bebe una al momento, si llevan (el peor primero), con su línea en el diario.
+- **«La mochila» sale sola** al volver con el juego abierto: tras verles entrar, en cuanto no haya
+  nada abierto (panel, pelea, ficha…).
+- **Parados con un suceso esperando** (`MarchMode` `wait`): en el visor, quietos, de pie, sin
+  andar.
+
 ## Depende de otros
 
 - **Agente principal:** las pociones como trabajo de la alquimia (ver «Pendiente: las

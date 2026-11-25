@@ -69,7 +69,10 @@ export function marchNow(s: GameState, e: Expedition): MarchNow {
         : // Acampan con la noche de la taberna (de `EXP_CAMP` al alba): de día, andan.
           hod >= EXP_CAMP
           ? 'camp'
-          : 'walk',
+          : // Con un suceso esperando (un jefe a la vista…), parados mirando al frente.
+            e.pending
+            ? 'wait'
+            : 'walk',
     night: clock >= DUSK * DAY_SECONDS || clock < 0.04 * DAY_SECONDS,
     home: !!e.turn,
     foe: foes[fightLine?.foe ?? 0] ?? 'bestia',

@@ -428,7 +428,7 @@ export interface Report {
     days?: number;
     far?: number;
     record?: boolean;
-    bag?: { gold: number; mats: Mats; items?: Item[] };
+    bag?: { gold: number; mats: Mats; items?: Item[]; potions?: number };
   };
 }
 
