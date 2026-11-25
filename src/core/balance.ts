@@ -710,6 +710,16 @@ export const EXP_CRYSTAL_FROM = 3;
  * ratos (probabilidad por hora de no avanzar).
  */
 export const EXP_WEATHER_FROM = 1;
+/**
+ * Los rumbos se abren por turnos (decidido con el usuario, 25 de noviembre): el bosque, de entrada;
+ * cada uno de los demás, al volver de una expedición que llegó a tantos días de lejanía en el
+ * anterior (el récord de ese rumbo).
+ */
+export const EXP_UNLOCK = {
+  sierra: { after: 'bosque', dias: 5 },
+  marismas: { after: 'sierra', dias: 6 },
+  ruinas: { after: 'marismas', dias: 7 },
+} as const;
 export const EXP_SNOW_EAT = 0.5;
 export const EXP_FOG_AMBUSH = 0.08;
 export const EXP_RAIN_SLOW = 0.25;
