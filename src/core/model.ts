@@ -295,6 +295,8 @@ export interface ExpChoice {
   until: number;
   /** El paraje del mapa (si es un sitio donde se puede entrar). */
   site?: string;
+  /** El jefe a la vista: cuál de `expediciones.enemigos.<rumbo>`. */
+  foe?: number;
 }
 
 /** Un paraje que queda en el mapa para siempre (bloque 3): dónde y si ya se entró. */

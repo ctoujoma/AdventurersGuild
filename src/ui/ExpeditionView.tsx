@@ -2,7 +2,15 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { audio } from '../audio/audio';
 import { EXP_HOURS } from '../core/balance';
 import { LifeBar } from './LifeBar';
-import { distAt, expWeather, hoursHome, itemGlow, matGlow, riskNow } from '../core/expedition';
+import {
+  canDrink,
+  distAt,
+  expWeather,
+  hoursHome,
+  itemGlow,
+  matGlow,
+  riskNow,
+} from '../core/expedition';
 import type { BossFight, ExpKind, Expedition, GameState } from '../core/model';
 import { ExpeditionCard } from './ExpeditionCard';
 import { matsMsg, type Material } from '../core/materials';
@@ -28,6 +36,8 @@ interface Props {
   onMute: (on: boolean) => void;
   /** Ver una pelea del diario. */
   onWatch: (fight: BossFight) => void;
+  /** Darle a alguien una de las pociones que llevan. */
+  onDrink: (heroId: string) => void;
 }
 
 const KIND_ICON: Record<ExpKind, IconName> = {
@@ -60,6 +70,7 @@ export function ExpeditionView({
   onChoose,
   onMute,
   onWatch,
+  onDrink,
 }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const now = marchNow(game, e);
@@ -217,17 +228,29 @@ export function ExpeditionView({
           </div>
           <div class="exp-crew">
             {heroes.map((h) => (
-              <button key={h.id} class="exp-member" onClick={() => onHero(h.id)}>
-                <Portrait
-                  look={lookOf(h)}
-                  marks={marksOf(h)}
-                  frame={heroFrame(h)}
-                  scale={1}
-                  alive={false}
-                />
-                <span class="pick-name">{h.name.split(' ')[0]}</span>
-                <LifeBar hero={h} />
-              </button>
+              <div key={h.id} class="exp-member-wrap">
+                <button class="exp-member" onClick={() => onHero(h.id)}>
+                  <Portrait
+                    look={lookOf(h)}
+                    marks={marksOf(h)}
+                    frame={heroFrame(h)}
+                    scale={1}
+                    alive={false}
+                  />
+                  <span class="pick-name">{h.name.split(' ')[0]}</span>
+                  <LifeBar hero={h} />
+                </button>
+                {canDrink(game, h.id, e.id) && (
+                  <button
+                    class="btn btn-wood exp-drink"
+                    aria-label={t('expediciones.expeditionview.pocion_a', { heroe: h.name })}
+                    onClick={() => onDrink(h.id)}
+                  >
+                    <MatIcon m="hierbas" size={10} />
+                    {t('expediciones.expeditionview.pocion')}
+                  </button>
+                )}
+              </div>
             ))}
           </div>
           <h4 class="qs-sub">{t('expediciones.expeditionview.diario')}</h4>

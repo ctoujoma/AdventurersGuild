@@ -18,7 +18,8 @@ export type ExpEvent =
   | 'cueva'
   | 'torre'
   | 'ruinas'
-  | 'guardian';
+  | 'guardian'
+  | 'jefe';
 
 export interface ExpOption {
   id: string;
@@ -121,11 +122,19 @@ export const EXP_EVENTS: Record<ExpEvent, ExpEventDef> = {
       { id: 'seguir', safe: true },
     ],
   },
-  // El guardián: raro y lejos; avisa y espera un rato; si nadie dice nada, pelean.
+  // El guardián: raro y lejos; avisa y espera hasta el día siguiente: pelear en directo, que
+  // peleen solos (lo que hacen si nadie dice nada) o intentar escabullirse y volver.
   guardian: {
     from: 4,
     weight: 0,
-    options: [{ id: 'pelear', safe: true }, { id: 'volver' }],
+    options: [{ id: 'pelear' }, { id: 'solos', safe: true }, { id: 'escapar', attr: 'D', hard: 2 }],
+  },
+  // Un jefe a la vista (B11): el enemigo grande del rumbo, visto de lejos; esperan igual que con
+  // el guardián. Escapar: rodearlo sin pelear (si sale mal, alguien se lleva un buen golpe).
+  jefe: {
+    from: 1,
+    weight: 0,
+    options: [{ id: 'pelear' }, { id: 'solos', safe: true }, { id: 'escapar', attr: 'D' }],
   },
 };
 

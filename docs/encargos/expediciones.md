@@ -241,6 +241,21 @@ Con la vida que se guarda (`core/health.ts`, #219), las expediciones ya no cuent
   jefes nuevos, se cambian `FOE_BOSS`, `GUARDIAN_BOSS` y `HEADING_FOES` en `core/expedition.ts`
   (los puede tocar él mismo y avisar, o pedírmelo).
 
+## Jefes a la vista y pociones a mano (usuario, 25 de noviembre; B11 de «Rumbos del visor»)
+
+- **Un jefe a la vista** (suceso `jefe`): cuando la pelea es contra el enemigo grande del rumbo (el
+  último de `expediciones.enemigos.<rumbo>`), con `EXP_BOSS_SEEN` lo ven de lejos (de ida) y se
+  paran hasta el día siguiente. Opciones: **pelear en directo** (se abre la pelea), **que peleen
+  solos** (queda en el diario con «Ver la pelea»; es lo que hacen si nadie dice nada) e
+  **intentar rodearlo** (Destreza; si sale mal, uno pierde `EXP_ESCAPE_HP`, y si ya iba grave
+  puede caer). Pelea por `EXP_BOSS_MULT`.
+- **El guardián**, igual: pelear en directo, que peleen solos (sin respuesta) o escabullirse y
+  volver (con el mismo riesgo). Espera hasta el día siguiente (`EXP_GUARDIAN_WAIT`).
+- **Pociones a mano** (acción `drink`): en el visor, un botón «Poción» bajo cada uno al que le
+  falte vida (de las que llevan); en la hoja, «Poción para X» de las de la alquimia, antes de
+  salir. Siguen usándose solas de noche al que está peor.
+- Falta el dibujo del grupo parado mirando al jefe (agente «Arte de expediciones»).
+
 ## Depende de otros
 
 - **Agente principal:** las pociones como trabajo de la alquimia (ver «Pendiente: las

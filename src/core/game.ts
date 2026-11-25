@@ -220,6 +220,7 @@ import {
   expeditionsOpen,
   chooseOption,
   muteExpedition,
+  drinkPotion,
   gameTime,
   sendExpedition,
   stepExpeditions,
@@ -267,6 +268,8 @@ export type Action =
   /** El suceso que espera en una expedición: elegir una opción; o silenciarla. */
   | { type: 'expChoose'; id: string; option: string }
   | { type: 'expMute'; id: string; on: boolean }
+  /** Darle una poción a un héroe: de las de su expedición (`expId`) o de la alquimia. */
+  | { type: 'drink'; heroId: string; expId?: string }
   | { type: 'upgrade'; fac: keyof Facilities }
   | { type: 'upgradeRoom'; id: string }
   | { type: 'build'; room: RoomType; col: number; floor: number }
@@ -743,6 +746,10 @@ function reduceAction(state: GameState, action: Action): GameState {
     case 'expChoose': {
       const s = structuredClone(state);
       return chooseOption(s, action.id, action.option) ? s : state;
+    }
+    case 'drink': {
+      const s = structuredClone(state);
+      return drinkPotion(s, action.heroId, action.expId) ? s : state;
     }
     case 'expMute': {
       const s = structuredClone(state);

@@ -1865,7 +1865,15 @@ export function App() {
           </button>
         )}
         {expId === 'nueva' && (
-          <ExpeditionSheet game={game} onClose={() => setExpId(null)} onSend={sendExpedition} />
+          <ExpeditionSheet
+            game={game}
+            onClose={() => setExpId(null)}
+            onSend={sendExpedition}
+            onDrink={(heroId) => {
+              audio.play('glint');
+              dispatch({ type: 'drink', heroId });
+            }}
+          />
         )}
         {openExp && (
           <ExpeditionView
@@ -1886,9 +1894,14 @@ export function App() {
               const e = next.expeditions?.find((x) => x.id === openExp.id);
               const last = e?.log.at(-1)?.fight ?? e?.log.at(-2)?.fight;
               const fresh = next !== before && last && e && e.log.at(-1)!.h === e.hours;
-              if (fresh && last) setWatching({ fight: last, dawn: false });
+              // «Que peleen solos»: sin abrirla (queda en el diario con «Ver la pelea»).
+              if (fresh && last && option !== 'solos') setWatching({ fight: last, dawn: false });
             }}
             onMute={(on) => dispatch({ type: 'expMute', id: openExp.id, on })}
+            onDrink={(heroId) => {
+              audio.play('glint');
+              dispatch({ type: 'drink', heroId, expId: openExp.id });
+            }}
             onWatch={(fight) => {
               audio.play('open');
               setWatching({ fight, dawn: false });

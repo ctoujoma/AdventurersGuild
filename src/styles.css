@@ -9102,3 +9102,17 @@ div.item-count {
 .exp-heading.is-locked b {
   opacity: 0.7;
 }
+/* Darle una poción a alguien (en el visor y en la hoja). */
+.exp-member-wrap {
+  display: grid;
+  gap: 4px;
+  justify-items: stretch;
+}
+.exp-drink {
+  font-size: 11px;
+  padding: 2px 6px;
+  gap: 4px;
+}
+.exp-drinks {
+  margin: 4px 0;
+}
