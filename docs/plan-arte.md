@@ -468,7 +468,10 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      (sentados con la manta del color de cada héroe); S1 nieve desde media lejanía; M1 barracas, pero
      enseñarlas antes y sin abusar; R1 clásicas que al adentrarse se vuelven una ciudad colosal, con
      algo de fortaleza. Segunda vuelta en la misma página (M2 barracas variadas, `tools/visor-barracas.ts`;
-     R2 muralla, fachadas y siluetas colosales), esperando visto bueno. Orden: rumbos nuevos, bosque,
+     R2 muralla y siluetas colosales). M2 sí; R2 sí, sin edificios con aire moderno (ahora templos,
+     arquerías y escombros) y con la muralla baja, rota e irregular para que no tape; la torre colosal del
+     fondo le gusta. **Hecho: rumbos nuevos en el visor (paisaje, tiempo y fauna), PR de
+     `claude/arte-expediciones-areas`**; capturas en `capturas/expediciones/visor-rumbos/`. Orden: rumbos nuevos, bosque,
      campamento, enemigos. Para los enemigos: jefes a la vista en #225 (grupo parado mirando al jefe a
      lo lejos cuando `e.pending.kind === 'jefe'`, con `e.pending.foe`; `'guardian'` para el guardián). Prototipo en la rama `claude/arte-expediciones-areas` (sin PR): `visor/bioma.ts` (cada
      rumbo, su `Paisaje` y sus rampas), `capas-sierra.ts`, `capas-marismas.ts`, `capas-ruinas.ts`;
