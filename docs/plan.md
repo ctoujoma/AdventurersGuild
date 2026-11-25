@@ -465,6 +465,33 @@ en medio, para que los edificios salgan más interesantes (y, más adelante, pas
   molino, bandera, luciérnagas y estrellas fugaces. En el patio, pradera con flores y matas que
   mueve el viento a rachas (`art/grass.ts`). Capturas: `tools/shots/fondo.mjs`.
 
+## Pendiente (25 de noviembre)
+
+**Decisiones del usuario (por pensar):**
+
+- **Aviso de equipo mejor en el arcón (D3):** hoy marca a casi todos los héroes y no mira la clase.
+  Opciones: avisar solo si el objeto es claramente mejor y le sirve a su clase (un mago no quiere
+  una espada), o solo si tiene la ranura vacía.
+- **Animales y fachada en Gremio › Adornos:** si el gato, el perro y las piezas de la fachada se
+  compran y eligen ahí (junto al jardín) o siguen en «Personalizar» de su sala.
+- **Cartas del amanecer una a una:** hechas; falta que el usuario diga si se quedan así.
+- **Al acabar todas las historias** ya no llegan más: que se repitan (con otro jefe o más
+  difíciles) o una nueva por temporada.
+
+**Arte de las expediciones:** el visor solo está dibujado para el **bosque** (el usuario: «a full
+detalle, luego vamos desbloqueando zonas»). Faltan **sierra, marismas y ruinas** en el visor (hoy
+se ven con el paisaje del bosque), el dibujo del tiempo de cada rumbo, gestos nuevos de los
+héroes (recoger, cofre, beber, señalar, dormir tumbado), fardos y hallazgos, la pantalla entera
+en escritorio, el sello y el mapa que se despliega en la carta del veterano. Del agente de arte
+(`plan-arte.md`, punto 0).
+
+**Trabajo concreto:** guía de expediciones en Ajustes (tarjetas, como la de obras); la barra que
+diga que el reloj está parado en el tutorial y los candados del mapa y los adornos; el fallo de
+las escaleras planeadas en obras (falta el caso).
+
+**Fases grandes sin empezar:** 6 (amigos) y 7 (lanzamiento: Android, anuncios, cosméticos,
+eventos).
+
 ## Pendiente de revisar
 
 - **Asaltos en directo** (hechos, con cámara lenta al arrastrar y el objetivo «sin heridos»):
