@@ -469,10 +469,10 @@ en medio, para que los edificios salgan más interesantes (y, más adelante, pas
 
 **Decisiones del usuario (25 de noviembre):**
 
-- **Aviso de equipo mejor en el arcón (D3):** arreglarlo (que no marque a casi todos y mire la
-  clase). Agente principal.
-- **Animales y fachada:** se compran y eligen en **Gremio › Adornos** (junto al jardín). Agente
-  principal.
+- **Aviso de equipo mejor en el arcón (D3):** hecho (`gearAdvice`: cada objeto, a quien más gana
+  con él por su clase).
+- **Animales y fachada:** en **Gremio › Adornos** (ya estaban: Letrero, Fachada, Jardín y
+  Animales).
 - **Cartas del amanecer una a una:** se quedan así; quizá se cambie el sistema más adelante.
 - **Historias:** hay 10 (y 6 jefes dibujados, que pelean como 3). Se añadirán más; valorar
   generar algunas al azar. Lo que hace falta seguro es **más variedad de jefes**: las
@@ -489,10 +489,13 @@ héroes (recoger, cofre, beber, señalar, dormir tumbado), fardos y hallazgos, l
 en escritorio, el sello y el mapa que se despliega en la carta del veterano. Del agente de arte
 (`plan-arte.md`, punto 0).
 
-**Trabajo concreto (agente principal):** el rendimiento (ha bajado, sobre todo en obras); guía de
-expediciones en Ajustes (tarjetas, como la de obras); la barra que
+**Trabajo concreto (agente principal):** el rendimiento (en el contenedor no se ve: el código del
+juego no ha empeorado y las llamadas de dibujo son las mismas, ~500 por fotograma; hay un medidor
+en Ajustes › Modo prueba para mirarlo en el dispositivo del usuario); guía de expediciones en
+Ajustes (hecha) (tarjetas, como la de obras); la barra que
 diga que el reloj está parado en el tutorial y los candados del mapa y los adornos; el fallo de
-las escaleras planeadas en obras (falta el caso).
+las escaleras planeadas en obras (no se reproduce en el núcleo ni con varios tramos sin oro: falta
+el caso concreto del usuario).
 
 **Fases grandes sin empezar:** 6 (amigos) y 7 (lanzamiento: Android, anuncios, cosméticos,
 eventos).
