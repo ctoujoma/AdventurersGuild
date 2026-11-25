@@ -57,7 +57,7 @@ herocard:
   vuelto_del_velo_moral: "Vuelto del velo: moral −{veil_cap} de tope · {dias, plural, one {# día} other {# días}}"
   volvio_de_entre_los: "Volvió de entre los muertos y aún no se ha hecho a estar vivo: su moral no sube del todo. Se le pasa con los días."
   quiere_dormir_en_el: "Quiere dormir en el ala de veteranos: mientras no tenga cama allí, se anima menos."
-  mientras_esta_en_casa: "Mientras está en casa puede descansar (recupera la moral), echar una mano en una sala (rinde menos que un trabajador), entrenar o hacer guardia (no sale de misión, pega +{guard_bonus} si asaltan y da la alarma; caben dos; no duerme, así que no recupera moral y la va perdiendo: hay que ir relevando). También puedes llevarlo con el dedo a la sala."
+  mientras_esta_en_casa: "Mientras está en casa puede descansar (recupera la moral), echar una mano en una sala (rinde menos que un trabajador), entrenar o hacer guardia (no sale de misión, pega +{guard_bonus} si asaltan y da la alarma; caben dos, más con la puerta mejorada; no duerme, así que no recupera moral y la va perdiendo: hay que ir relevando). También puedes llevarlo con el dedo a la sala."
   equipo_de: "{n, plural, =0 {Equipo: no lleva nada} other {Equipo ({n} de {de}): {objetos}}}{hay_pista, select, si {. {pista}} other {}}"
   ver: "Ver"
   ver_donde_esta_en: "Ver dónde está en la taberna."

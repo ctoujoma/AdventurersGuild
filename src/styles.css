@@ -9132,3 +9132,15 @@ div.item-count {
 .exp-drinks {
   margin: 4px 0;
 }
+
+/* ---------- Confirmar antes de vender (por encima de todo) ---------- */
+.confirm-backdrop {
+  z-index: 40;
+}
+.confirm-card {
+  width: min(320px, calc(100% - 32px));
+}
+.confirm-card p {
+  margin: 0;
+  font-size: var(--t-l);
+}

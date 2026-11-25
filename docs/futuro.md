@@ -251,3 +251,10 @@ el rato y que no se pueda abusar.
 ## Cámara del visor en escritorio (B8, 25 de noviembre)
 
 La propuesta de acercar la cámara en escritorio (el grupo más grande) se deja para más adelante.
+
+## Revisar los asaltos (nota del usuario, 25 de noviembre)
+
+Repasar el sistema de asaltos entero: cuándo y cuántos llegan, cómo se defienden (guardias en la
+puerta, que ahora crecen con el nivel del recibidor, y en la cámara), lo que se llevan, cómo se
+ven en directo y si engancha o cansa. Con el simulador (`asaltos ganados` por perfil) y una
+partida larga.

@@ -42,3 +42,18 @@ describe('la vida que se guarda', () => {
     expect(hpFromBedDays(4)).toBeLessThan(hpFromBedDays(2));
   });
 });
+
+describe('sitios de guardia', () => {
+  it('la puerta mejorada deja poner más; en la cámara, dos', async () => {
+    const { guardSlots } = await import('./guards');
+    const { DOOR_GUARDS, MAX_GUARDS } = await import('./balance');
+    const s = newGame('puerta');
+    const door = s.building.rooms.find((r) => r.type === 'recibidor')!;
+    door.level = 1;
+    expect(guardSlots(s, 'puerta')).toBe(DOOR_GUARDS[1]);
+    door.level = 3;
+    expect(guardSlots(s, 'puerta')).toBe(DOOR_GUARDS[3]);
+    expect(guardSlots(s, 'puerta')).toBeGreaterThan(MAX_GUARDS);
+    expect(guardSlots(s, 'tesoro')).toBe(MAX_GUARDS);
+  });
+});

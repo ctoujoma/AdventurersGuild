@@ -74,7 +74,7 @@ efecto:
     - "higher-level candidates"
     - "higher-level, stronger candidates"
     - "even higher-level, stronger candidates"
-  recibidor: "The door holds the bandits for {s} s"
+  recibidor: "The door holds the bandits for {s} s; {n} can stand guard"
   salon_0: "Nobody comes: no income"
   salon_atractivo: "+{n} Appeal"
   salon_encargos: "+{n, plural, one {# quest} other {# quests}} on the board"

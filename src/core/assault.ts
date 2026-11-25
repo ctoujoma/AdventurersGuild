@@ -12,6 +12,7 @@
  * enseña la lista de pasos que sale (RaidPlan).
  */
 import { hpOf } from './health';
+import { guardSlots } from './guards';
 import {
   BANDIT_CARRY,
   BANDIT_EVERY,
@@ -260,7 +261,7 @@ export function assaultSetup(s: GameState, strength: number, rng: Rng): AssaultS
 
   const home = s.heroes.filter((h) => h.status === 'ok');
   const armed = equip(home, s.fac);
-  const guards = new Set(home.filter((h) => h.guard && !h.post).slice(0, MAX_GUARDS));
+  const guards = new Set(home.filter((h) => h.guard && !h.post).slice(0, guardSlots(s, 'puerta')));
   const vaultRoom = rooms.find((r) => r.type === 'tesoro')?.id;
   const keepers = new Set(
     vaultRoom ? home.filter((h) => h.guard && h.post === 'tesoro').slice(0, MAX_GUARDS) : [],
