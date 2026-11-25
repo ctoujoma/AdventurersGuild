@@ -11,6 +11,7 @@ import {
   optionRisk,
   partyCap,
   potionsMax,
+  headingOpen,
   hurtSlow,
   expWeather,
   stepExpeditions,
@@ -52,7 +53,9 @@ describe('expediciones', () => {
     const s = ready();
     const ids = s.heroes.slice(0, 2).map((h) => h.id);
     expect(canExpedition(s, 'bosque', ids, 10)).toBeNull();
-    expect(canExpedition(s, 'sierra', ids, 10)).toBeNull();
+    expect(canExpedition(s, 'sierra', ids, 10)).toMatch(/5 días/);
+    expect(canExpedition({ ...s, expBest: { bosque: 5 } }, 'sierra', ids, 10)).toBeNull();
+    expect(canExpedition({ ...s, expBest: { bosque: 5 } }, 'marismas', ids, 10)).toMatch(/6 días/);
     expect(canExpedition(s, 'bosque', ids, 3)).toMatch(/raciones/);
     expect(canExpedition(s, 'bosque', ids, 999)).toMatch(/despensa/);
     expect(canExpedition({ ...s, stats: emptyStats() }, 'bosque', ids, 10)).toMatch(/veterano/);
@@ -294,6 +297,7 @@ describe('expediciones: bloque 5 (rumbos, tiempo, pociones y la carta)', () => {
   it('se puede ir a los cuatro rumbos, cada uno con sus enemigos', () => {
     for (const heading of ['sierra', 'marismas', 'ruinas'] as const) {
       let s = ready(`rumbo-${heading}`);
+      s.expBest = { bosque: 5, sierra: 6, marismas: 7 };
       const ids = s.heroes.slice(0, 2).map((h) => h.id);
       expect(canExpedition(s, heading, ids, 12)).toBeNull();
       s = reduce(s, { type: 'expedition', heading, heroIds: ids, rations: 12 });
@@ -305,6 +309,7 @@ describe('expediciones: bloque 5 (rumbos, tiempo, pociones y la carta)', () => {
 
   it('el tiempo es el del rumbo lejos de casa, y la nieve gasta más raciones', () => {
     let s = ready('nieve');
+    s.expBest = { bosque: 5 };
     const ids = s.heroes.slice(0, 2).map((h) => h.id);
     s = reduce(s, { type: 'expedition', heading: 'sierra', heroIds: ids, rations: 40 });
     const e0 = s.expeditions![0]!;
@@ -406,5 +411,18 @@ describe('expediciones: bloque 5 (rumbos, tiempo, pociones y la carta)', () => {
     s = play(s, 1);
     expect(s.expeditions?.[0]?.hurt).toBeUndefined();
     expect(s.heroes.find((x) => x.id === id)!.hp!).toBeLessThan(1);
+  });
+
+  it('al volver con el récord que pide, se abre el rumbo siguiente (con aviso)', () => {
+    const s = out('abre');
+    s.expBest = { bosque: 4.9 };
+    const e = s.expeditions![0]!;
+    // Como si hubieran llegado a 5 días: media vuelta allí.
+    e.turn = { h: e.hours, dist: 5.2, why: 'jugador', idle: 0 };
+    e.hours = 0;
+    const { news } = stepExpeditions(s, e.from + 12 * DAY_SECONDS);
+    expect(s.expeditions ?? []).toHaveLength(0);
+    expect(news.some((n) => n.big && /sierra/.test(tx(n.t)))).toBe(true);
+    expect(headingOpen(s, 'sierra')).toBe(true);
   });
 });

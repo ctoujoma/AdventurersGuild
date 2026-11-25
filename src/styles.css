@@ -9093,3 +9093,12 @@ div.item-count {
     0 0 0 4px var(--ink);
   cursor: pointer;
 }
+/* Rumbos cerrados (se abren por turnos): candado y lo que falta. */
+.exp-lock {
+  font-size: 10px;
+  line-height: 1.15;
+  color: #6b4a2a;
+}
+.exp-heading.is-locked b {
+  opacity: 0.7;
+}

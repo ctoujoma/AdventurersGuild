@@ -22,9 +22,9 @@ rumbos:
 
 # Por qué no puede salir (la hoja de preparar lo enseña en el botón).
 error:
+  cerrado: "Ese rumbo se abre al llegar a {dias} días de lejanía en {antes, select, bosque {el bosque} sierra {la sierra} marismas {las marismas} other {las ruinas}}."
   pociones: "En la alquimia solo hay {n, plural, =0 {ninguna poción hecha} one {# poción hecha} other {# pociones hechas}}."
   cerradas: "Las expediciones se abren con el primer veterano (nivel {nivel})."
-  en_obras: "Ese rumbo aún está en obras."
   sin_hueco: "La sala de mapas no da para más expediciones a la vez ({n}). Amplíala para mandar más."
   tope: "Con la sala de mapas de ahora van {n, plural, one {# héroe como mucho} other {# héroes como mucho}}. Mejórala para mandar más."
   pocas_raciones: "Hacen falta al menos {n} raciones: un día de ida y la vuelta."
@@ -159,6 +159,7 @@ botin: "{oro, plural, =0 {} one {una moneda y } other {# monedas y }}{que}"
 
 # El informe al volver.
 informe:
+  chip_abierto: "¡Nuevo rumbo: {rumbo, select, bosque {el bosque} sierra {la sierra} marismas {las marismas} other {las ruinas}}!"
   chip_pociones: "{n, plural, one {Sobra una poción: vuelve} other {Sobran # pociones: vuelven}} a la alquimia"
   titulo: "Expedición {rumbo, select, bosque {al bosque} sierra {a la sierra} marismas {a las marismas} other {a las ruinas}}"
   cuerpo: "{dias, plural, one {Un día fuera} other {# días fuera}}: {n, plural, one {llegó} other {llegaron}} a {lejos, plural, =0 {menos de un día} one {un día} other {# días}} de la taberna."
@@ -178,6 +179,7 @@ informe:
   chip_invitado: "{heroe} quiere quedarse: espera en la barra"
 
 aviso:
+  abierto: "¡Se abre {rumbo, select, bosque {el bosque} sierra {la sierra} marismas {las marismas} other {las ruinas}}! Ya se pueden mandar expediciones."
   herido: "Expedición {rumbo, select, bosque {al bosque} sierra {a la sierra} marismas {a las marismas} other {a las ruinas}}: {heroe} va {sexo, select, f {herida} other {herido}}. Quizá convenga mandarles volver."
   brillo: "Expedición {rumbo, select, bosque {al bosque} sierra {a la sierra} marismas {a las marismas} other {a las ruinas}}: {brillo, select, 3 {¡algo legendario!} other {¡algo raro!}} {que}"
   fardo: "Expedición {rumbo, select, bosque {al bosque} sierra {a la sierra} marismas {a las marismas} other {a las ruinas}}: ¡encuentran el fardo que {m, plural, one {perdió {quien}} other {perdieron {quien}}}!"
@@ -187,6 +189,7 @@ aviso:
 
 # La hoja de preparar una expedición (ui/ExpeditionSheet.tsx).
 expeditionsheet:
+  cerrado: "Llega a {dias} días en {antes, select, bosque {el bosque} sierra {la sierra} marismas {las marismas} other {las ruinas}} (récord: {record})"
   pociones: "Pociones"
   pociones_ayuda: "de {n} hechas en la alquimia"
   menos_pociones: "Una poción menos"
@@ -195,7 +198,6 @@ expeditionsheet:
   cerrar: "Cerrar"
   a_la_vez: "Fuera ahora: {n} de {max}"
   rumbo: "Rumbo"
-  en_obras: "En obras"
   quien_va: "Quién va ({n}/{max})"
   nivel: "Nv {nivel} · {clase}"
   tope: "La sala de mapas da para {n, plural, one {# héroe} other {# héroes}} por grupo. Mejórala para mandar más."
@@ -405,6 +407,7 @@ objetivos:
 
 # El mapa de rumbos (ui/ExpeditionMap.tsx).
 mapa:
+  cerrado: "Cerrado: se abre al llegar a {dias} días en {antes, select, bosque {el bosque} sierra {la sierra} marismas {las marismas} other {las ruinas}} (récord: {record})."
   titulo: "Mapa de rumbos"
   comarca: "Comarca"
   rumbos: "Rumbos"
@@ -414,7 +417,6 @@ mapa:
   sin_explorar: "Visto el día {dia}, sin explorar: la próxima expedición que pase podrá entrar."
   fardo: "Fardo perdido de {quien}"
   fardo_lleva: "Quedó allí el día {dia}: {que}. Otra expedición a este rumbo lo recogerá al pasar."
-  en_obras: "En obras: aún no se puede ir."
   sin_ir: "Aún no ha ido nadie."
   record: "Récord del gremio: {dias, plural, =0 {menos de un día} one {un día} other {# días}} de lejanía."
   record_corto: "récord {dias} d"

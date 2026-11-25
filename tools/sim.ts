@@ -21,7 +21,14 @@ import { settleWalks } from '../src/core/workers';
 import { roughNight } from '../src/core/sky';
 import { slotOf } from '../src/core/gear';
 import { idText } from '../src/textos';
-import { canExpedition, HEADINGS, distAt, expSlots, partyCap } from '../src/core/expedition';
+import {
+  canExpedition,
+  HEADINGS,
+  distAt,
+  expSlots,
+  headingOpen,
+  partyCap,
+} from '../src/core/expedition';
 
 declare const process: { argv: string[] };
 
@@ -135,7 +142,8 @@ function playDay(s: GameState, st: Strategy): GameState {
     const rations = Math.min(idle.length * EXP_RATIONS, s.food - s.heroes.length);
     const ids = idle.map((h) => h.id);
     // Los cuatro rumbos, según el día (así, con una o dos por partida, salen todos).
-    const heading = HEADINGS[s.day % HEADINGS.length]!;
+    const open = HEADINGS.filter((h) => headingOpen(s, h));
+    const heading = open[s.day % open.length]!;
     if (ids.length && !canExpedition(s, heading, ids, rations)) {
       s = reduce(s, { type: 'expedition', heading, heroIds: ids, rations });
       EXP.sent++;

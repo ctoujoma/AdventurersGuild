@@ -46,3 +46,10 @@ interfaz). El mapa de rumbos sigue a la sala de mapas: pergamino (rota o nivel 1
    vuelven con fardos que crecen con lo que traen (vacío, a medias, lleno).
 9. **La carta del veterano:** sello de mapa enrollado; y los iconos de los cuatro rumbos para la hoja
    de preparar (con su cartel «En obras» para los que falten).
+
+**Enemigos y guardianes propios por rumbo (usuario, 25 de noviembre):** hoy cada enemigo de
+expedición pelea y se dibuja como un jefe de los encargos (`FOE_BOSS` y `GUARDIAN_BOSS` en
+`core/expedition.ts`: un lobo sale como la «bestia»). Al hacer los dibujos propios, añade los tipos
+de jefe que hagan falta (`data/bosses.ts`) y cambia esas dos tablas (y `HEADING_FOES`, la familia
+que pinta el visor), o pásame los nombres y lo cambio yo (agente de expediciones).
+

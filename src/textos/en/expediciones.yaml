@@ -16,9 +16,9 @@ rumbos:
     titulo: "Ruins"
     desc: "To the southeast, old stones and dust. Brings {materiales}; skeletons, looters and traps."
 error:
+  cerrado: "This heading opens once an expedition reaches {dias} days out in {antes, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}."
   pociones: "The alchemist only has {n, plural, =0 {no potions made} one {# potion made} other {# potions made}}."
   cerradas: "Expeditions open with your first veteran (level {nivel})."
-  en_obras: "That heading is still under construction."
   sin_hueco: "The map room can't handle more expeditions at once ({n}). Extend it to send more."
   tope: "With the map room as it is, {n, plural, one {# hero at most can go} other {# heroes at most can go}}. Upgrade it to send more."
   pocas_raciones: "You need at least {n} rations: one day out and the way back."
@@ -138,6 +138,7 @@ pelea:
 monedas: "{n, plural, one {one coin} other {# coins}}"
 botin: "{oro, plural, =0 {} one {one coin and } other {# coins and }}{que}"
 informe:
+  chip_abierto: "New heading: {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}!"
   chip_pociones: "{n, plural, one {One potion left over: it goes} other {# potions left over: they go}} back to the alchemist"
   titulo: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}"
   cuerpo: "{dias, plural, one {One day away} other {# days away}}: {n, plural, one {got} other {they got}} {lejos, plural, =0 {less than a day} one {one day} other {# days}} from the tavern."
@@ -156,6 +157,7 @@ informe:
   chip_objeto: "Brought back: {objeto}"
   chip_invitado: "{heroe} wants to stay: waiting at the bar"
 aviso:
+  abierto: "New heading open: {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}! You can send expeditions there now."
   herido: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}: {heroe} is wounded. Maybe call them back."
   brillo: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}: {brillo, select, 3 {something legendary!} other {something rare!}} {que}"
   fardo: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}: they found the bundle {quien} lost!"
@@ -163,6 +165,7 @@ aviso:
   guardian: "Expedition to {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}: {que}! Open the viewer to watch."
   vuelve: "The expedition is back from {rumbo, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}}: {grupo}."
 expeditionsheet:
+  cerrado: "Reach {dias} days in {antes, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}} (record: {record})"
   pociones: "Potions"
   pociones_ayuda: "of {n} made at the alchemist's"
   menos_pociones: "One potion fewer"
@@ -171,7 +174,6 @@ expeditionsheet:
   cerrar: "Close"
   a_la_vez: "Out now: {n} of {max}"
   rumbo: "Heading"
-  en_obras: "Under construction"
   quien_va: "Who goes ({n}/{max})"
   nivel: "Lv {nivel} · {clase}"
   tope: "The map room allows {n, plural, one {# hero} other {# heroes}} per group. Upgrade it to send more."
@@ -370,6 +372,7 @@ objetivos:
 
 # The headings map (ui/ExpeditionMap.tsx).
 mapa:
+  cerrado: "Locked: opens once you reach {dias} days in {antes, select, bosque {the forest} sierra {the mountains} marismas {the marshes} other {the ruins}} (record: {record})."
   titulo: "Headings map"
   comarca: "Shire"
   rumbos: "Headings"
@@ -379,7 +382,6 @@ mapa:
   sin_explorar: "Seen on day {dia}, unexplored: the next expedition passing by can go in."
   fardo: "Bundle lost by {quien}"
   fardo_lleva: "Left there on day {dia}: {que}. Another expedition this way will pick it up."
-  en_obras: "Under construction: you can't go yet."
   sin_ir: "Nobody has been yet."
   record: "Guild record: {dias, plural, =0 {less than a day} one {one day} other {# days}} out."
   record_corto: "record {dias} d"
