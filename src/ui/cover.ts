@@ -1,7 +1,10 @@
 import type { Cover } from '../world/rooms/RoomScene';
 
-/** Lo que tapa la escena: los paneles (menos el mapa, que la tapa entera) y las fichas en hoja. */
-export const SHEETS = '.panel:not(.panel-full), .card-backdrop.as-sheet > *';
+/**
+ * Lo que tapa la escena: los paneles (menos el mapa, que la tapa entera), las fichas en hoja y la
+ * barra de las obras.
+ */
+export const SHEETS = '.panel:not(.panel-full), .card-backdrop.as-sheet > *, .worksbar';
 
 /**
  * El recuadro de `el` dentro de `root` según la maqueta, sin las transformaciones (así vale
