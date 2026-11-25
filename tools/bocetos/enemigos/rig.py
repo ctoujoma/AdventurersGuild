@@ -29,11 +29,19 @@ class Rig:
             piv=self.parts[name]['pivot'] if name!='cuerpo' else (0,0)
             dx=p.get('dx',0)+(bx if name!='cuerpo' else 0); dy=p.get('dy',0)+(by if name!='cuerpo' else 0)
             sh=p.get('shear',0); vs=p.get('vshear',0); lift=p.get('lift',0); ln=self.parts.get(name,{}).get('len',20)
+            mouth=self.parts.get(name,{}).get('mouth')
             for (x,y),o in self.owner.items():
                 if o!=name: continue
                 ox=x+dx+round((y-piv[1])*sh)
-                oy=y+dy+round((x-piv[0])*vs)-round(lift*max(0,(y-piv[1]))/ln)
+                drop=round((x-piv[0])*vs)
+                oy=y+dy+drop-round(lift*max(0,(y-piv[1]))/ln)
                 if 0<=ox+pad<W and 0<=oy+pad<H: out[oy+pad][ox+pad]=self.g[y][x]
+                # la boca que se abre: lo que deja la mandíbula al bajar, oscuro (y la lengua)
+                if mouth and drop>0 and self.owner.get((x,y-1))!=name:
+                    for k in range(1,drop+1):
+                        yy=oy-k+pad; xx=ox+pad
+                        if 0<=yy<H and 0<=xx<W and out[yy][xx] is None:
+                            out[yy][xx]=mouth[1] if (k==1 and drop>=2 and piv[0]+3<=x<=piv[0]+8) else mouth[0]
         # tapar las rendijas que abren las piezas al moverse (copia el vecino)
         for _ in range(3):
             for y in range(1,H-1):
