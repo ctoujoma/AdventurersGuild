@@ -19,6 +19,7 @@ import type { MarchNow } from './marcha';
 import { blitStrip, luzKey } from './pintar';
 import { Aire, Lluvia, climaOf, drawMist } from './tiempo';
 import { smooth } from './tonos';
+import { drawRays, drawVida } from './vida';
 
 /** Para forzar la hora o el tiempo (pruebas, capturas). */
 export interface VisorForce {
@@ -41,6 +42,7 @@ export class Visor {
   private sky: PixelBuffer | null = null;
   private skyKey = '';
   private nubes: Nubes;
+  private nubesKey = '';
   private lluvia: Lluvia;
   private aire: Aire;
   private gente = new Gente();
@@ -58,13 +60,14 @@ export class Visor {
   }
 
   /** Las capas a esta lejanía (en escalones, para no redibujar a cada momento). */
-  private layers(wild: number, seed: number, bio: Bioma, snow: number): Capa[] {
+  private layers(wild: number, seed: number, bio: Bioma, snow: number, rain: number): Capa[] {
     const w = Math.round(wild * WILD_STEPS) / WILD_STEPS;
     const sn = Math.round(snow * 4) / 4;
-    const key = `${w}:${seed}:${bio.id}:${sn}`;
+    const wet = rain > 0.05 ? 1 : 0;
+    const key = `${w}:${seed}:${bio.id}:${sn}:${wet}`;
     if (key !== this.capasKey) {
       this.capasKey = key;
-      this.capas = buildCapas(this.e, w, seed, bio.paisaje, { snow: sn });
+      this.capas = buildCapas(this.e, w, seed, bio.paisaje, { snow: sn, wet });
       this.colorKey = '';
     }
     return this.capas;
@@ -114,7 +117,7 @@ export class Visor {
     const travel = f.travel ?? this.travel;
     const l = this.luz(m, f);
     const bio = biomaOf(m.terrain);
-    const capas = this.layers(m.wild, this.seed, bio, l.clima.snow ?? 0);
+    const capas = this.layers(m.wild, this.seed, bio, l.clima.snow ?? 0, l.clima.rain);
     this.colorize(capas, l, bio);
     // El cielo.
     const sk = `${l.hour.toFixed(1)}:${l.clima.cloud.toFixed(1)}:${l.clima.rain.toFixed(1)}:${(l.clima.dust ?? 0).toFixed(1)}`;
@@ -123,13 +126,20 @@ export class Visor {
       this.sky = skyBuffer(e, l);
     }
     b.data.set(this.sky.data);
+    // Las nubes, repartidas por la semilla y el día (cada día, su cielo).
+    const nk = `${this.seed}:${m.day ?? 1}`;
+    if (nk !== this.nubesKey) {
+      this.nubesKey = nk;
+      this.nubes = new Nubes(e, 7 + ((this.seed * 31 + (m.day ?? 1) * 101) % 997));
+    }
     drawStars(b, e, l, time, this.seed);
     drawMoon(b, e, l, m.day ?? 1);
     drawSun(b, e, l);
     const lk = luzKey(l);
     const ctx = { b, e, l, lk, time, travel, m, capas, seed: this.seed, walking };
     const layer = (id: Capa['id']) => {
-      const c = capas.find((x) => x.id === id)!;
+      const c = capas.find((x) => x.id === id);
+      if (!c) return;
       blitStrip(b, this.colored.get(id)!, travel * c.speed, c.y);
     };
     layer('lejos');
@@ -145,11 +155,14 @@ export class Visor {
     layer('cerca');
     drawAnimals(ctx, 'cerca');
     layer('suelo');
+    drawVida(ctx);
     drawMist(b, e, l, time, travel, 'cerca');
     // La gente.
     const fire = m.mode === 'camp' ? drawCamp(ctx) : null;
     if (m.mode !== 'camp') this.gente.draw(ctx);
     layer('delante');
+    layer('copas');
+    drawRays(ctx);
     this.lluvia.draw(b, l, time, travel);
     this.aire.draw(b, l, time, travel, bio.id === 'sierra');
     if (fire) fireLight(ctx, fire);
