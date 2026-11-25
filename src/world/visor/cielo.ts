@@ -52,10 +52,27 @@ export function skyBuffer(e: Encuadre, l: Luz): PixelBuffer {
   const ov = clamp01(l.clima.cloud * 0.9 + l.clima.rain * 0.4 - 0.1);
   const g = strip(l.night > 0.5 ? GREY_NIGHT : GREY_BANDS, w, h, y1);
   const out = new PixelBuffer(e.w, h);
+  const dust = clamp01(l.clima.dust ?? 0);
+  const dc = pack([l.fogColor[0] * 0.5 + 103, l.fogColor[1] * 0.5 + 76, l.fogColor[2] * 0.5 + 44]);
+  const storm = clamp01(l.clima.storm ?? 0) * 0.75;
+  const sc = pack([46, 44, 58]);
   for (let y = 0; y < h; y++)
     for (let x = 0; x < e.w; x++) {
       let c = mixc(a.data[y * w + x]!, b.data[y * w + x]!, l.skyT);
       if (ov > 0) c = mixc(c, g.data[y * w + x]!, ov);
+      // Polvo: el cielo se vuelve ocre, más abajo que arriba (por bandas, tramado).
+      if (dust > 0) {
+        const u = clamp01(y / (e.hor + 2));
+        const k =
+          Math.floor(Math.min(1, dust * 1.25 * (0.55 + 0.45 * u)) * 6 + bayer(x, y) * 0.999) / 6;
+        if (k > 0) c = mixc(c, dc, k);
+      }
+      // Tormenta: negro plomizo arriba, que aclara hacia el horizonte.
+      if (storm > 0) {
+        const u = clamp01(y / (e.hor + 2));
+        const k = Math.floor(storm * (1 - 0.5 * u) * 6 + bayer(x, y) * 0.999) / 6;
+        if (k > 0) c = mixc(c, sc, k);
+      }
       out.data[y * e.w + x] = c;
     }
   return out;
@@ -75,7 +92,8 @@ export function sunAt(e: Encuadre, hour: number, rise = 5.6, set = 19.8) {
 /** El sol: disco, corona tramada y, bajo, más grande y encendido. */
 export function drawSun(b: PixelBuffer, e: Encuadre, l: Luz): void {
   const s = sunAt(e, l.hour);
-  if (l.clima.rain > 0.1) return;
+  const c = l.clima;
+  if (c.rain > 0.1 || (c.snow ?? 0) > 0.3 || (c.storm ?? 0) > 0.2 || (c.dust ?? 0) > 0.75) return;
   // Al salir y al ponerse, el cielo se enciende alrededor (aunque el sol esté tras los montes).
   const u = (l.hour - 5.6) / (19.8 - 5.6);
   const near = Math.max(0, 1 - Math.min(Math.abs(u + 0.02), Math.abs(u - 1.02)) / 0.2);

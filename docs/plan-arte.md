@@ -461,6 +461,23 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      en la hoja lateral: interfaz del agente de expediciones); en la niebla a color, que las bolas
      no parezcan guijarros (cortes rectos donde se tocan) y algún hueco que deja ver terreno no
      explorado; luego sierra, marismas y ruinas en el visor.
+   - [ ] **Revisión del bosque y rumbos nuevos (25 nov, en revisión):** página
+     https://claude.ai/artifact/WaQtdS7PyuAzdXRLPLxDR5 con la crítica del bosque (B1–B11), la dirección de
+     sierra, marismas y ruinas con capturas del motor (S1, M1, R1), el tiempo por rumbo (T1), la fauna
+     (F1) y el reparto de enemigos y guardianes con dibujo propio (E1). Respuestas (25 nov): B1–B7, B10, B11 (dibujo), T1, F1 y E1 sí; B8 no por ahora; B9 sin tumbarlos
+     (sentados con la manta del color de cada héroe); S1 nieve desde media lejanía; M1 barracas, pero
+     enseñarlas antes y sin abusar; R1 clásicas que al adentrarse se vuelven una ciudad colosal, con
+     algo de fortaleza. Segunda vuelta en la misma página (M2 barracas variadas, `tools/visor-barracas.ts`;
+     R2 muralla y siluetas colosales). M2 sí; R2 sí, sin edificios con aire moderno (ahora templos,
+     arquerías y escombros) y con la muralla baja, rota e irregular para que no tape; la torre colosal del
+     fondo le gusta. **Hecho: rumbos nuevos en el visor (paisaje, tiempo y fauna), PR de
+     `claude/arte-expediciones-areas`**; capturas en `capturas/expediciones/visor-rumbos/`. Orden: rumbos nuevos, bosque,
+     campamento, enemigos. Para los enemigos: jefes a la vista en #225 (grupo parado mirando al jefe a
+     lo lejos cuando `e.pending.kind === 'jefe'`, con `e.pending.foe`; `'guardian'` para el guardián). Prototipo en la rama `claude/arte-expediciones-areas` (sin PR): `visor/bioma.ts` (cada
+     rumbo, su `Paisaje` y sus rampas), `capas-sierra.ts`, `capas-marismas.ts`, `capas-ruinas.ts`;
+     `Clima` con `snow`, `wind`, `dust` y `storm` y la clase `Aire` en `tiempo.ts` (copos, rachas,
+     polvo, relámpago; la «tormenta» de `expWeather` pasa a ser seca); fauna por rumbo en
+     `animales.ts`. El bosque sale idéntico. Maquetas: `tools/visor-biomas.ts`.
    - [x] Pulido del mapa: niebla a color como mar de cúmulos (bolas con luz propia en dos capas,
      borde redondo, se encogen al despejar en 1,6 s), pergamino con borde a festones grabado y
      retirada, sierra alta con nieve a manchas, mar sin halos, marismas a tinta. Probadas 4 variantes de

@@ -9,13 +9,21 @@ import { SPEED, stripLen } from './capas';
 import type { Ctx } from './ctx';
 import { put, tinted } from './pintar';
 import { hash, smooth } from './tonos';
+import { biomaIdOf, type BiomaId } from './bioma';
 
 export type Where = 'cielo' | 'sierra' | 'colinas' | 'medio' | 'cerca';
 
 export function drawAnimals(c: Ctx, where: Where): void {
-  if (where === 'cielo') crows(c);
-  else if (where === 'medio') deer(c);
-  else if (where === 'cerca') wolves(c);
+  const bio = biomaIdOf(c.m.terrain);
+  if (where === 'cielo') {
+    if (bio === 'bosque') crows(c);
+    else if (bio === 'marismas') crows(c, GARZA_FLY, 0.5);
+    else soar(c, bio === 'sierra' ? 1 : 3, bio === 'sierra' ? AGUILA : BUITRE);
+  } else if (where === 'medio') deer(c, HERD[bio]);
+  else if (where === 'cerca') {
+    if (bio === 'marismas') wisps(c);
+    else wolves(c, bio === 'ruinas' ? JACKAL : WOLF);
+  }
 }
 
 // ---------- Dibujos ----------
@@ -104,44 +112,163 @@ for (const [k, rows] of Object.entries(DEER_ROWS)) {
   );
 }
 
+interface Herd {
+  male: Record<string, PixelBuffer>;
+  female: Record<string, PixelBuffer>;
+}
+/** Otros pelajes con el mismo dibujo: rebecos (sierra) y cabras (ruinas). */
+function herdOf(pal: Record<string, string>, horns: (r: string) => string): Herd {
+  const male: Record<string, PixelBuffer> = {};
+  const female: Record<string, PixelBuffer> = {};
+  for (const [k, rows] of Object.entries(DEER_ROWS)) {
+    male[k] = sprite(rows.map(horns), pal);
+    female[k] = sprite(rows.map(horns), pal);
+  }
+  return { male, female };
+}
+// Cuernos cortos en gancho (la fila de arriba fuera; la segunda, los ganchos).
+const hooks = (r: string) => r.replace(/a\.a/g, '.a.').replace(/^\.{10}a\.\.$/, '.........a..');
+const REBECO = herdOf(
+  {
+    o: '#5f3c2e',
+    O: '#3e2731',
+    t: '#7a5236',
+    w: '#ead4aa',
+    k: '#181425',
+    a: '#181425',
+    e: '#ead4aa',
+  },
+  hooks,
+);
+const CABRA = herdOf(
+  {
+    o: '#b8946a',
+    O: '#86603c',
+    t: '#d4b48a',
+    w: '#ece0c8',
+    k: '#3e2731',
+    a: '#5a4636',
+    e: '#181425',
+  },
+  hooks,
+);
+const HERD: Record<BiomaId, Herd | null> = {
+  bosque: { male: DEER, female: DOE },
+  sierra: REBECO,
+  marismas: null,
+  ruinas: CABRA,
+};
+
+// Rapaces que planean en círculos (alas abiertas, alguna batida).
+const RAPTOR_ROWS = [
+  ['k.........k', '.kk.....kk.', '..kkkhkkk..', '....kyk....'],
+  ['...........', 'kkk.....kkk', '..kkkhkkk..', '....kyk....'],
+];
+const AGUILA = RAPTOR_ROWS.map((r) => sprite(r, { k: '#3e2731', h: '#c28569', y: '#feae34' }));
+const BUITRE = RAPTOR_ROWS.map((r) =>
+  sprite(
+    r.map((x) => x.replace(/h/g, 'w')),
+    { k: '#2e211d', w: '#ead4aa', y: '#c28569' },
+  ),
+);
+const GARZA_FLY = [
+  sprite(['w.......', '.ww..ww.', '..wwwwwy', '..g.....'], {
+    w: '#dfe6ee',
+    g: '#8b9bb4',
+    y: '#feae34',
+  }),
+  sprite(['........', '..wwww..', 'gwwwwwwy', '........'], {
+    w: '#dfe6ee',
+    g: '#8b9bb4',
+    y: '#feae34',
+  }),
+  sprite(['........', '...ww...', '.gwwwwwy', 'ww....ww'], {
+    w: '#dfe6ee',
+    g: '#8b9bb4',
+    y: '#feae34',
+  }),
+];
+
+function soar(c: Ctx, n: number, frames: PixelBuffer[]): void {
+  const { b, e, l, lk, time } = c;
+  if (l.night > 0.5 || (l.clima.storm ?? 0) > 0.5) return;
+  for (let i = 0; i < n; i++) {
+    const r = e.w * (0.12 + hash(i * 3 + c.seed) * 0.08);
+    const cx = e.w * (0.55 + hash(i * 5 + c.seed) * 0.3) + Math.sin(time * 0.05) * 20;
+    const cy = e.hor * (0.3 + hash(i * 7) * 0.15);
+    const a = time * (0.35 + hash(i * 11) * 0.1) + i * 2.1;
+    const x = cx + Math.cos(a) * r;
+    const y = cy + Math.sin(a) * r * 0.25;
+    const flap = Math.floor(time * 5 + i) % 23 < 2 ? 1 : 0;
+    put(b, tinted(frames[flap]!, l, lk), x, y, 5, 2, Math.sin(a) > 0);
+  }
+}
+
+/** Fuegos fatuos: luces verdosas que flotan sobre el agua de noche. */
+function wisps(c: Ctx): void {
+  const { b, e, l, time, travel, m } = c;
+  const p = l.night * smooth(0.3, 0.8, m.wild);
+  if (p <= 0.1) return;
+  const L = stripLen(e.w);
+  const off = travel * SPEED.cerca;
+  const core = rgba('#d8f8c8');
+  const halo = rgba('#5ac88a');
+  for (let i = 0; i < 6; i++) {
+    if (hash(i * 31 + c.seed) > p) continue;
+    const x = ((Math.round(hash(i * 7) * L - off + Math.sin(time * 0.4 + i) * 8) % L) + L) % L;
+    if (x > e.w + 4) continue;
+    const y = Math.round(e.ground - 2 - hash(i * 3) * 10 + Math.sin(time * 1.3 + i * 2) * 3);
+    if (Math.floor(time * 2 + i * 1.7) % 7 === 0) continue;
+    b.set(x, y, core);
+    for (const [dx, dy] of [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1],
+    ] as const)
+      b.set(x + dx, y + dy, halo);
+  }
+}
+
 const WOLF_PAL = { g: '#727e95', G: '#3e4458', l: '#a9b4c4', k: '#181425' };
+const JACKAL_PAL = { g: '#b08a5a', G: '#6e5236', l: '#dcc49a', k: '#181425' };
 // Sentado de perfil (mirando a la derecha) y aullando con el hocico al cielo.
+const WOLF_SIT = [
+  '..........g.g.',
+  '..........ggg.',
+  '.........gglgk',
+  '.........gggg.',
+  '........gggl..',
+  '.......ggggl..',
+  '..g...gggggg..',
+  '.gg..gggggGg..',
+  'gg..ggggGgGg..',
+  '.ggggGGG.G.G..',
+];
+const WOLF_HOWL = [
+  '............k',
+  '...........gg',
+  '..........gg.',
+  '.........ggl.',
+  '........ggggl',
+  '.......ggggl.',
+  '..g...gggggg.',
+  '.gg..gggggGg.',
+  'gg..ggggGgGg.',
+  '.ggggGGG.G.G.',
+];
 const WOLF = {
-  sit: sprite(
-    [
-      '..........g.g.',
-      '..........ggg.',
-      '.........gglgk',
-      '.........gggg.',
-      '........gggl..',
-      '.......ggggl..',
-      '..g...gggggg..',
-      '.gg..gggggGg..',
-      'gg..ggggGgGg..',
-      '.ggggGGG.G.G..',
-    ],
-    WOLF_PAL,
-  ),
-  howl: sprite(
-    [
-      '............k',
-      '...........gg',
-      '..........gg.',
-      '.........ggl.',
-      '........ggggl',
-      '.......ggggl.',
-      '..g...gggggg.',
-      '.gg..gggggGg.',
-      'gg..ggggGgGg.',
-      '.ggggGGG.G.G.',
-    ],
-    WOLF_PAL,
-  ),
+  sit: sprite(WOLF_SIT, WOLF_PAL),
+  howl: sprite(WOLF_HOWL, WOLF_PAL),
+};
+const JACKAL = {
+  sit: sprite(WOLF_SIT, JACKAL_PAL),
+  howl: sprite(WOLF_HOWL, JACKAL_PAL),
 };
 
 // ---------- Cuervos ----------
 
-function crows(c: Ctx): void {
+function crows(c: Ctx, frames: PixelBuffer[] = CROW, flap = 1): void {
   const { b, e, l, lk, time } = c;
   if (l.night > 0.6) return;
   // Cada 16 s puede pasar una bandada (de 2 a 4), de un lado a otro.
@@ -158,15 +285,16 @@ function crows(c: Ctx): void {
     if (v < 0) continue;
     const x = ltr ? -10 + v * (e.w + 20) : e.w + 10 - v * (e.w + 20);
     const y = y0 + i * 3 + Math.sin(time * 2 + i) * 2 - (i % 2) * 4;
-    const f = Math.floor(time * 7 + i * 2) % 4;
-    const img = CROW[f === 3 ? 1 : f]!;
-    put(b, tinted(img, l, lk), x, y, 3, 3, !ltr);
+    const f = Math.floor(time * 7 * flap + i * 2) % 4;
+    const img = frames[f === 3 ? 1 : f]!;
+    put(b, tinted(img, l, lk), x, y, img.w >> 1, img.h - 1, !ltr);
   }
 }
 
 // ---------- Ciervos ----------
 
-function deer(c: Ctx): void {
+function deer(c: Ctx, herd: Herd | null): void {
+  if (!herd) return;
   const { b, e, l, lk, time, travel, m } = c;
   // Salen a media lejanía: ni junto a las casas ni en lo más hondo del bosque.
   const w = m.wild;
@@ -198,7 +326,7 @@ function deer(c: Ctx): void {
         pose = t < 0.8 ? 'look' : 'graze';
       }
       if (x < -16 || x > e.w + 16) continue;
-      const set = k === 0 && hash(g * 17) < 0.6 ? DEER : DOE;
+      const set = k === 0 && hash(g * 17) < 0.6 ? herd.male : herd.female;
       const img = tinted(set[pose]!, l, lk);
       const facing = scared ? dir < 0 : hash(g * 19 + k) < 0.5;
       put(b, img, x, e.ground + 1 + (k % 2), 6, img.h - 1, facing);
@@ -208,7 +336,7 @@ function deer(c: Ctx): void {
 
 // ---------- Lobos ----------
 
-function wolves(c: Ctx): void {
+function wolves(c: Ctx, W: typeof WOLF = WOLF): void {
   const { b, e, l, lk, time, travel, m } = c;
   const dusk = smooth(17, 18.5, l.hour) + (l.hour < 5 ? 1 : 0);
   const p = smooth(0.45, 0.8, m.wild) * Math.min(1, dusk);
@@ -228,7 +356,7 @@ function wolves(c: Ctx): void {
       if (x < -10 || x > e.w + 10) continue;
       // Uno aúlla a ratos (la cabeza al cielo); los otros, sentados, miran.
       const howl = k === 0 && (time / 5 + g) % 2 < 0.8;
-      const img = tinted(howl ? WOLF.howl : WOLF.sit, l, lk);
+      const img = tinted(howl ? W.howl : W.sit, l, lk);
       const left = x > e.w / 2;
       const y = e.ground + 2 + (k % 2);
       put(b, img, x, y, 6, img.h - 1, left);

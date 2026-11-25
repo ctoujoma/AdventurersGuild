@@ -4,7 +4,7 @@
  * otro tramando. Con eso se hace una tabla de 256 colores por capa (`lutOf`).
  */
 import type { SkyPhase } from '../../art/clouds';
-import { RAMPS, clamp01, lerp, type Mat } from './tonos';
+import { RAMPS, clamp01, lerp, type Mat, type Ramps } from './tonos';
 
 type RGB = [number, number, number];
 const hex = (s: string): RGB => {
@@ -53,7 +53,18 @@ export interface Clima {
   fog: number;
   /** Cubierto (nubes grises y menos luz). */
   cloud: number;
+  /** Nieve que cae (la sierra). */
+  snow?: number;
+  /** Viento: rachas, nubes que corren, nieve o polvo que vuela. */
+  wind?: number;
+  /** Polvo en el aire: la luz y la bruma se vuelven ocres (las ruinas). */
+  dust?: number;
+  /** Tormenta seca: cielo negro, relámpagos sin lluvia. */
+  storm?: number;
 }
+
+/** El color del polvo en el aire. */
+export const DUST: RGB = [206, 164, 112];
 
 export interface Luz {
   hour: number;
@@ -86,7 +97,18 @@ export function luzAt(hour: number, clima: Clima): Luz {
   const ov = clamp01(clima.cloud * 0.8 + clima.rain * 0.5);
   tint = mix(tint, [tint[0] * 0.78, tint[1] * 0.8, tint[2] * 0.86], ov);
   haze = mix(haze, grey, ov * 0.7);
-  const fogColor = mix(mix(haze, [200, 208, 222], 0.55 * (1 - night * 0.7)), haze, 0.2);
+  let fogColor = mix(mix(haze, [200, 208, 222], 0.55 * (1 - night * 0.7)), haze, 0.2);
+  // Polvo: todo más cálido y la bruma ocre (de noche, pardo oscuro).
+  const dust = clamp01(clima.dust ?? 0);
+  if (dust > 0) {
+    const dc = mix(DUST, [60, 46, 40], night * 0.8);
+    tint = mix(tint, [tint[0] * 1.04, tint[1] * 0.92, tint[2] * 0.74], dust);
+    haze = mix(haze, dc, dust * 0.75);
+    fogColor = mix(fogColor, dc, dust);
+  }
+  // Tormenta seca: luz plomiza y verdosa.
+  const storm = clamp01(clima.storm ?? 0);
+  if (storm > 0) tint = mix(tint, [tint[0] * 0.62, tint[1] * 0.64, tint[2] * 0.66], storm);
   return {
     hour: h,
     tint,
@@ -112,14 +134,14 @@ export interface Depth {
 }
 
 /** Tabla de colores de una capa: `lut[code]` (code = mat << 4 | escalón). */
-export function lutOf(l: Luz, d: Depth): Uint32Array {
+export function lutOf(l: Luz, d: Depth, ramps: Ramps = RAMPS): Uint32Array {
   const lut = new Uint32Array(256);
   const hz = clamp01(d.haze * l.hz);
   const fg = clamp01(d.fog * l.clima.fog * 0.92);
   const desat = clamp01(l.clima.cloud * 0.25 + l.clima.rain * 0.2 + l.night * 0.15);
-  for (const key of Object.keys(RAMPS)) {
+  for (const key of Object.keys(ramps)) {
     const m = Number(key) as Mat;
-    const ramp = RAMPS[m];
+    const ramp = ramps[m];
     for (let i = 0; i < 16; i++) {
       const j = Math.max(0, Math.min(ramp.length - 1, i - (d.dark ?? 0)));
       let c = hex(ramp[j]!);

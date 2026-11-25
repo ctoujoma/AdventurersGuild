@@ -3,6 +3,7 @@ import { buildCapas, stripLen } from './capas';
 import { ESCRITORIO, MOVIL, encuadre } from './encuadre';
 import { Visor } from './escena';
 import type { MarchNow } from './marcha';
+import { biomaOf } from './bioma';
 
 const crew: MarchNow['crew'] = [
   { id: 'a', name: 'A', seed: 'a-1', cls: 'guerrero', sex: 'f', fate: 'ok' },
@@ -41,6 +42,30 @@ describe('visor de las expediciones', () => {
         expect(b.w).toBe(enc.w);
         expect(b.data.every((px) => px >>> 24 === 255)).toBe(true);
       }
+  });
+
+  it('cada rumbo tiene su paisaje y su tiempo, sin huecos', () => {
+    const rumbos: [MarchNow['terrain'], MarchNow['weather'][]][] = [
+      ['monte', ['nieve', 'viento']],
+      ['pantano', ['niebla', 'lluvia']],
+      ['ruina', ['polvo', 'tormenta']],
+    ];
+    const bosque = new Visor(MOVIL).frame(base, 2, { travel: 120 }).data.slice();
+    for (const [terrain, ws] of rumbos)
+      for (const weather of ['claro', ...ws] as MarchNow['weather'][])
+        for (const wild of [0, 0.6, 1]) {
+          const m = { ...base, terrain, weather, wild };
+          const v = new Visor(MOVIL);
+          v.frame(m, 0);
+          const b = v.frame(m, 2, { travel: 120 });
+          expect(b.data.every((px) => px >>> 24 === 255)).toBe(true);
+          if (weather === 'claro' && wild === 0.6)
+            expect(Buffer.from(b.data.buffer).equals(Buffer.from(bosque.buffer))).toBe(false);
+        }
+    // Las capas empalman también en los rumbos nuevos.
+    for (const t of ['monte', 'pantano', 'ruina'] as const)
+      for (const c of buildCapas(MOVIL, 0.5, 3, biomaOf(t).paisaje))
+        expect(c.t.w).toBe(stripLen(MOVIL.w));
   });
 
   it('es determinista: lo mismo al mismo tiempo', () => {

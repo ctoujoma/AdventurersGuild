@@ -3,7 +3,7 @@
  * niebla (la del alba, que se levanta a media mañana; jirones que se mueven despacio). El tipo de
  * día sale de `expWeather` (una semilla por día); aquí solo se le da forma según la hora.
  */
-import type { PixelBuffer } from '../../art/pixel';
+import { bayer, type PixelBuffer } from '../../art/pixel';
 import type { ExpWeather } from '../../core/model';
 import type { Encuadre } from './encuadre';
 import { pack, unpack, type Clima, type Luz } from './luz';
@@ -28,11 +28,14 @@ export function climaOf(
     case 'lluvia':
       return { rain: 0.45 + 0.45 * wave, fog: 0.3, cloud: 1 };
     case 'tormenta':
-      return { rain: 1, fog: 0.2, cloud: 1 };
+      // Tormenta seca (las ruinas): negra, con polvo y relámpagos, sin una gota.
+      return { rain: 0, fog: 0.35, cloud: 1, storm: 1, dust: 0.35, wind: 0.7 };
     case 'nieve':
+      return { rain: 0, fog: 0.3, cloud: 0.85, snow: 0.55 + 0.45 * wave, wind: 0.15 };
     case 'viento':
+      return { rain: 0, fog: 0.08, cloud: 0.35, wind: 0.55 + 0.45 * wave };
     case 'polvo':
-      return { rain: 0, fog: 0.1, cloud: 0.45 };
+      return { rain: 0, fog: 0.45 + 0.3 * wave, cloud: 0.15, dust: 0.6 + 0.3 * wave, wind: 0.6 };
     default:
       return {
         rain: 0,
@@ -149,7 +152,9 @@ export function drawMist(
   const [r, g, bl] = unpack(lite);
   const y0 = where === 'lejos' ? Math.round(e.hor - e.hor * 0.25) : e.ground - 4;
   const y1 = where === 'lejos' ? e.ground + 6 : e.feet + 3;
-  const drift = time * (where === 'lejos' ? 1.5 : 3) + travel * (where === 'lejos' ? 0.3 : 0.9);
+  const gust = 1 + (l.clima.wind ?? 0) * 8;
+  const drift =
+    time * (where === 'lejos' ? 1.5 : 3) * gust + travel * (where === 'lejos' ? 0.3 : 0.9);
   const k = where === 'lejos' ? 1 : 0.7;
   const cap = where === 'lejos' ? 1 : 0.7;
   for (let y = y0; y < y1; y++) {
@@ -172,4 +177,183 @@ export function drawMist(
       b.data[i] = pack([cr + (r - cr) * q, cg + (g - cg) * q, cb + (bl - cb) * q]);
     }
   }
+}
+
+// ---------- Nieve, viento, polvo y relámpagos ----------
+
+interface Mote {
+  x: number;
+  y: number;
+  v: number;
+  ph: number;
+  far: boolean;
+}
+
+/**
+ * Lo que vuela por el aire con el tiempo de cada rumbo: copos (en dos planos, que se mecen y se
+ * inclinan con el viento), rachas (rayas claras que cruzan deprisa; en la sierra, nieve que el
+ * viento levanta del suelo), motas de polvo y, con tormenta seca, el relámpago (fogonazo y rayo).
+ */
+export class Aire {
+  private motes: Mote[] = [];
+  constructor(
+    private e: Encuadre,
+    seed: number,
+  ) {
+    const n = Math.round((e.w * e.h) / 60);
+    for (let i = 0; i < n; i++)
+      this.motes.push({
+        x: hash(i * 3 + seed) * (e.w + 40),
+        y: hash(i * 7 + seed) * (e.h + 20),
+        v: 0.6 + hash(i * 11 + seed) * 0.8,
+        ph: hash(i * 13 + seed) * 6.28,
+        far: hash(i * 5 + seed) < 0.55,
+      });
+  }
+
+  draw(b: PixelBuffer, l: Luz, time: number, travel: number, snowy: boolean): void {
+    const c = l.clima;
+    const wind = c.wind ?? 0;
+    if (c.snow) this.snow(b, l, time, travel, c.snow, wind);
+    if (wind > 0.3) this.streaks(b, l, time, wind, snowy, c.dust ?? 0);
+    if (c.dust) this.dust(b, l, time, travel, c.dust, wind);
+    if (c.storm) this.storm(b, l, time, c.storm);
+  }
+
+  private snow(b: PixelBuffer, l: Luz, time: number, travel: number, k: number, wind: number) {
+    const e = this.e;
+    const n = Math.round(this.motes.length * k);
+    const lite = tone([236, 242, 250], l);
+    const dim = tone([176, 188, 210], l);
+    const span = e.h + 20;
+    const wspan = e.w + 40;
+    for (let i = 0; i < n; i++) {
+      const m = this.motes[i]!;
+      const fall = m.far ? 9 : 16;
+      const y = (m.y + time * fall * m.v) % span;
+      const sway = Math.sin(time * 1.3 + m.ph) * (m.far ? 2 : 4);
+      const x0 = m.x - y * wind * 1.4 + sway - time * wind * 30 - travel * (m.far ? 0.3 : 1.1);
+      const x = Math.round((((x0 % wspan) + wspan) % wspan) - 20);
+      const Y = Math.round(y - 10);
+      if (m.far && Y > e.feet) continue;
+      if (m.far) b.set(x, Y, dim);
+      else {
+        b.set(x, Y, lite);
+        b.set(x + 1, Y, lite);
+        b.set(x, Y + 1, lite);
+        b.set(x + 1, Y + 1, dim);
+      }
+    }
+  }
+
+  /** Rachas: rayas que cruzan; en la sierra, nieve levantada a ras de suelo. */
+  private streaks(
+    b: PixelBuffer,
+    l: Luz,
+    time: number,
+    wind: number,
+    snowy: boolean,
+    dust: number,
+  ) {
+    const e = this.e;
+    const n = Math.round((e.w / 4) * wind);
+    const col = dust > 0 ? tone([230, 196, 150], l) : tone([226, 234, 246], l);
+    for (let i = 0; i < n; i++) {
+      const sp = 0.5 + wind * 0.4;
+      const cyc = Math.floor(time * sp + hash(i * 7));
+      const u = (time * sp + hash(i * 7)) % 1;
+      const y = Math.round(hash(cyc * 31 + i) * e.h * 0.9);
+      const len = 10 + Math.round(hash(cyc * 17 + i) * 16);
+      const x = Math.round(e.w + 30 - u * (e.w + 60));
+      const wave = Math.sin(u * 9 + i) * 1.5;
+      for (let k = 0; k < len; k++) {
+        if ((k + i) % 3 === 0 && k > 2) continue;
+        dith(b, x + k, Math.round(y + wave * (k / len)), col, 0.9 - (k / len) * 0.5);
+      }
+    }
+    // Nieve que el viento levanta del suelo.
+    if (snowy) {
+      const m = Math.round(e.w * 1.6 * wind);
+      for (let i = 0; i < m; i++) {
+        const u = (time * (1.2 + hash(i) * 0.8) + hash(i * 3)) % 1;
+        const x = Math.round(e.w + 10 - u * (e.w + 30));
+        const y = Math.round(
+          e.feet + 6 - Math.sin(u * 3.1) * (4 + hash(i * 5) * 14) - hash(i * 9) * 8,
+        );
+        b.set(x, y, col);
+        if (hash(i * 13) < 0.4) b.set(x + 1, y, col);
+      }
+    }
+  }
+
+  private dust(b: PixelBuffer, l: Luz, time: number, travel: number, k: number, wind: number) {
+    const e = this.e;
+    const n = Math.round(this.motes.length * 0.5 * k);
+    const a = tone([224, 186, 132], l);
+    const d = tone([168, 128, 86], l);
+    const wspan = e.w + 40;
+    for (let i = 0; i < n; i++) {
+      const m = this.motes[i]!;
+      const x0 = m.x - time * (40 + wind * 90) * m.v - travel * (m.far ? 0.3 : 1.1);
+      const x = Math.round((((x0 % wspan) + wspan) % wspan) - 20);
+      const y = Math.round((m.y % e.h) + Math.sin(time * 2 + m.ph) * 3);
+      b.set(x, y, m.far ? d : a);
+      if (!m.far && hash(i) < 0.3) b.set(x + 1, y, d);
+    }
+  }
+
+  /** Cada rato, un relámpago: fogonazo en escalones y el rayo a tirones de dos píxeles. */
+  private storm(b: PixelBuffer, _l: Luz, time: number, k: number) {
+    const e = this.e;
+    const P = 7;
+    const cyc = Math.floor(time / P);
+    const t = time - cyc * P;
+    if (hash(cyc * 13 + 5) > 0.75 * k) return;
+    const at = 1 + hash(cyc * 7) * 3;
+    const dt = t - at;
+    if (dt < 0 || dt > 0.6) return;
+    const flash =
+      dt < 0.08 ? 0.55 : dt < 0.16 ? 0.1 : dt < 0.26 ? 0.35 : 0.12 * (1 - (dt - 0.26) / 0.34);
+    const fc = pack([226, 222, 246]);
+    for (let y = 0; y < e.h; y++)
+      for (let x = 0; x < e.w; x++) {
+        const i = y * b.w + x;
+        const q = Math.floor(flash * (y < e.hor ? 1 : 0.5) * 4 + bayer(x, y) * 0.999) / 4;
+        if (q > 0) b.data[i] = mixPix(b.data[i]!, fc, q);
+      }
+    if (dt > 0.3) return;
+    // El rayo: de arriba al horizonte, quebrado, con una rama.
+    let x = Math.round(e.w * (0.15 + hash(cyc * 3) * 0.7));
+    const core = pack([250, 248, 255]);
+    const glow = pack([170, 160, 230]);
+    for (let y = 0; y < e.hor - 4; y += 2) {
+      x += Math.round((hash(cyc * 97 + y) - 0.5) * 4);
+      for (let j = 0; j < 2; j++) {
+        b.set(x, y + j, core);
+        b.set(x + 1, y + j, glow);
+        b.set(x - 1, y + j, glow);
+      }
+      if (y === Math.round(e.hor * 0.4)) {
+        let bx = x;
+        for (let yy = y; yy < y + e.hor * 0.3; yy += 2) {
+          bx += hash(cyc + yy) < 0.7 ? 2 : -1;
+          b.set(bx, yy, glow);
+          b.set(bx, yy + 1, core);
+        }
+      }
+    }
+  }
+}
+
+function mixPix(a: number, c: number, q: number): number {
+  const [r, g, bl] = unpack(a);
+  const [r2, g2, b2] = unpack(c);
+  return pack([r + (r2 - r) * q, g + (g2 - g) * q, bl + (b2 - bl) * q]);
+}
+
+/** Un píxel a medias (tramado). */
+function dith(b: PixelBuffer, x: number, y: number, c: number, a: number) {
+  if (!b.inside(x, y)) return;
+  if (hash2(x, y, 7) > a) return;
+  b.data[y * b.w + x] = c;
 }

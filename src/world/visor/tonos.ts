@@ -26,7 +26,7 @@ export const M = {
 export type Mat = (typeof M)[keyof typeof M];
 
 /** Rampas de cada material a pleno día, de la sombra a la luz (hasta 16 escalones). */
-export const RAMPS: Record<Mat, readonly string[]> = {
+export const RAMPS: Ramps = {
   // Pinos y abetos: verdes fríos y apagados (los del fondo de la taberna).
   [M.pino]: ['#0f1f22', '#16292a', '#1f3a35', '#2d5141', '#41694d', '#5f845a', '#86a066'],
   // Frutales, robles y matas: más amarillos.
@@ -47,6 +47,9 @@ export const RAMPS: Record<Mat, readonly string[]> = {
   [M.viejo]: ['#0a1518', '#0f1f22', '#152a2b', '#1d3834', '#28483d', '#3a5c48', '#557552'],
   [M.agua]: ['#193c5e', '#245a80', '#3a7ea4', '#62a6c8', '#a0d0ee'],
 };
+
+/** Las rampas de todos los materiales (cada rumbo puede cambiar algunas: `bioma.ts`). */
+export type Ramps = Record<Mat, readonly string[]>;
 
 export const code = (m: Mat, i: number) => (m << 4) | Math.max(0, Math.min(15, i | 0));
 
