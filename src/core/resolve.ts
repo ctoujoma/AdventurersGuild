@@ -3,6 +3,7 @@
  * Tira un dado por desafío, clasifica el resultado y aplica las consecuencias al estado
  * (que se recibe ya copiado: aquí se muta). Devuelve el informe para el amanecer.
  */
+import { healthOf, hpOf, setHp, woundChip, woundParams } from './health';
 import { clientMsg } from '../data/quests';
 import { msg, type Msg, type Params, type Txt } from '../textos';
 import { outcomeKey } from '../data/labels';
@@ -34,6 +35,10 @@ import {
   GREED,
   MAT_PER_OUTCOME,
   INJURY,
+  DANGER_HP,
+  DOWNED_HP,
+  SCRATCH_HP,
+  WOUND_HP,
   MORALE,
   PAY,
   REP,
@@ -162,6 +167,8 @@ export function levelUp(state: GameState, h: Hero): { t: Txt; k: ChipKind }[] {
 export interface FightOutcome {
   won: boolean;
   downed: readonly string[];
+  /** La vida con la que acabó cada héroe (0–1). */
+  hp?: Readonly<Record<string, number>>;
 }
 
 export function resolveMission(
@@ -401,8 +408,7 @@ export function resolveMission(
       victim = null;
     } else if (healer && healer !== victim && rng.chance(CLERIC_SAVE)) {
       const options = SCARS.map((x, i) => ({ ...x, i })).filter((x) => !has(victim!, x.trait));
-      victim.status = 'herido';
-      victim.days = 5;
+      setHp(victim, DOWNED_HP[0]);
       if (options.length) {
         const scar = rng.pick(options);
         victim.traits.push({ id: scar.trait });
@@ -416,7 +422,7 @@ export function resolveMission(
         });
         chip('chip_secuela', { rasgo: msg(`rasgos.rasgos.${scar.trait}.${victim.sex}`) }, 'warn');
       } else tell('salvado', { heroe: victim.name, curandero: healer.name });
-      chip('chip_grave', { heroe: victim.name, dias: 5 }, 'bad');
+      chips.push({ t: woundChip(victim), k: 'bad' });
     } else if (!rng.chance(LOST_SHARE)) {
       victim.status = 'muerto';
       fallen = victim;
@@ -471,16 +477,25 @@ export function resolveMission(
     if (h !== victim) {
       h.status = 'ok';
       h.days = 0;
+      const before = healthOf(h);
       const guarded = party.some((o) => o !== h && o.cls === 'guerrero');
       const armored = hasPerk(h, 'guard') ? 0.5 : 1;
       const risk =
         INJURY[outcome] * (guarded ? mods.guard : 1) * armored + (has(h, 'valiente') ? 0.08 : 0);
-      // Contra el jefe, se hiere quien cayó en la pelea.
-      if (fight ? fight.downed.includes(h.id) : rng.chance(risk)) {
-        h.status = 'herido';
-        h.days = rng.int(2, 4);
-        tell('herido', { heroe: h.name, sexo: h.sex, dias: h.days });
-        chip('chip_herido', { heroe: h.name, sexo: h.sex, dias: h.days }, 'bad');
+      const dk = DANGER_HP[q.danger] ?? 1;
+      if (fight) {
+        // Contra el jefe: la vida con la que acabó la pelea; quien cayó, grave.
+        if (fight.downed.includes(h.id)) setHp(h, rng.range(DOWNED_HP[0], DOWNED_HP[1]));
+        else if (fight.hp?.[h.id] !== undefined) setHp(h, fight.hp[h.id]!);
+      } else {
+        // Sin pelea: un rasguño a todos y, a quien le toca, una herida (sin llegar a 0).
+        const wound = rng.chance(risk) ? rng.range(WOUND_HP[0], WOUND_HP[1]) * armored : 0;
+        const left = hpOf(h) - (SCRATCH_HP[outcome] + wound) * dk;
+        setHp(h, Math.max(DOWNED_HP[0], left));
+      }
+      if (healthOf(h) !== 'sano' && healthOf(h) !== before) {
+        tell('herida', woundParams(h));
+        chips.push({ t: woundChip(h), k: 'bad' });
       }
     }
     h.xp += XP[outcome];

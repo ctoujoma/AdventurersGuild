@@ -30,6 +30,9 @@ desaparecido: "Nadie sabe qué fue de {heroe}. Lo último que vieron fue su somb
 chip_desaparecido: "{heroe}: {sexo, select, f {desaparecida} other {desaparecido}}"
 herido: "{heroe} vuelve {sexo, select, f {herida} other {herido}}: {dias} días de reposo."
 chip_herido: "{heroe}: {sexo, select, f {herida} other {herido}}, {dias} días"
+# Con la vida que se guarda: herido leve (en pie) o grave (en cama), y la vida que le queda.
+herida: "{heroe} vuelve {sexo, select, f {herida} other {herido}}{grave, select, si {de gravedad: a la cama} other {, pero en pie}} ({pct} % de vida)."
+chip_herida: "{heroe}: {grave, select, si {grave} other {leve}} · {pct} %"
 sube_nivel: "{heroe} sube a nivel {nivel}"
 cache: "{heroe} pide caché de veterano"
 historial: "Día {dia} · {titulo} · {resultado}"

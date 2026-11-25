@@ -6,6 +6,7 @@
  * atributo principal de su clase). Las habilidades suben solas, según lo que pese ese atributo en
  * la clase.
  */
+import { workFactor } from './health';
 import { TRAINS } from '../data/rooms';
 import {
   TRAIN_CAP,
@@ -90,7 +91,8 @@ export function trainState(s: GameState, h: Hero, part = 0): TrainState | null {
   const { cap, by } = capFor(h, t.room);
   const cost = trainCost(h, t.attr);
   const capped = value >= cap;
-  const perDay = capped ? 0 : trainRate(t.room) / cost;
+  // Herido leve, entrena peor (como trabaja: `workFactor`).
+  const perDay = capped ? 0 : (trainRate(t.room) * workFactor(h)) / cost;
   // Cuenta la parte de la jornada que lleva en la sala (quien llegó tarde, o aún va, menos).
   const here = workedIn(shiftStart(h), part);
   const frac = capped ? 0 : Math.min(1, (h.train?.[t.attr] ?? 0) / cost + perDay * here);
@@ -160,7 +162,7 @@ export function stepTraining(s: GameState, events: DawnEvent[]): void {
     }
     const train = (h.train ??= {});
     // Solo la parte del día que ha estado allí (si llegó a media jornada, menos).
-    let p = (train[t.attr] ?? 0) + trainRate(t.room) * shiftShare(h);
+    let p = (train[t.attr] ?? 0) + trainRate(t.room) * workFactor(h) * shiftShare(h);
     while (p >= trainCost(h, t.attr) && h.attrs[t.attr] < cap) {
       p -= trainCost(h, t.attr);
       const gain = skillGain(h, t.attr);

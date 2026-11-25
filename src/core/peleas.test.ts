@@ -176,7 +176,7 @@ function playCombat(setup: CombatSetup, p: Player): Combat {
 }
 
 const combatSummary = (c: Combat) => ({
-  result: c.result,
+  result: c.result && noHp(c.result),
   hp: c.units.map((u) => u.hp),
   events: digest(c.events.map(oldCombatEvent)),
 });
@@ -235,7 +235,7 @@ function playAssault(setup: AssaultSetup, state: number, p: RaidPlayer): Assault
 const assaultSummary = (a: Assault) => {
   const { plan, ...rest } = a.result!;
   return {
-    result: rest,
+    result: noHp(rest),
     end: plan.end,
     start: plan.start,
     hp: plan.hp,
@@ -539,6 +539,15 @@ const fx = unpack(JSON.parse((await fs()).readFileSync(FILE, 'utf8'), reviver) a
 
 /** Lo mismo que se grabó, pasado por el JSON (sin `undefined`, con `Infinity`). */
 const plain = <T>(v: T): T => JSON.parse(JSON.stringify(v, replacer), reviver) as T;
+/**
+ * La vida con la que acaba cada héroe (`hp`, para guardarla: `core/health.ts`) sale de la misma
+ * pelea; las grabadas no la traen, así que no se compara (la pelea sí, entera).
+ */
+const noHp = <T extends { hp?: unknown }>(r: T): Omit<T, 'hp'> => {
+  const rest = { ...r };
+  delete rest.hp;
+  return rest;
+};
 
 describe('peleas de referencia: jefes', () => {
   it('hay de todo: sin jugador, con jugador quieto y con cada tipo de orden', () => {
@@ -554,13 +563,13 @@ describe('peleas de referencia: jefes', () => {
     // Jugada en directo, sale igual y da las mismas órdenes.
     const live = playCombatCase(cc);
     expect(plain({ ...combatSummary(live), orders: live.orders })).toEqual(cc.expect);
-    if (cc.mode === 'auto') expect(plain(runCombat(cc.setup))).toEqual(want.result);
+    if (cc.mode === 'auto') expect(plain(noHp(runCombat(cc.setup)))).toEqual(want.result);
     if (cc.mode !== 'player') return;
     // Repetida con las órdenes guardadas (como un informe), también.
     const again = new Combat(cc.setup, orders, false);
     again.run();
     expect(plain(combatSummary(again))).toEqual(want);
-    expect(plain(runCombat(cc.setup, orders))).toEqual(want.result);
+    expect(plain(noHp(runCombat(cc.setup, orders)))).toEqual(want.result);
   });
 });
 

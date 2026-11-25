@@ -7,6 +7,7 @@
  * en que se dieron. La interfaz juega la pelea en directo y el núcleo la vuelve a jugar con las
  * mismas órdenes para sacar el resultado (y el informe la repite igual).
  */
+import { hpOf } from './health';
 import { BOSSES, type BossKind } from '../data/bosses';
 import {
   Fight,
@@ -59,6 +60,8 @@ export interface CombatResult {
   /** Héroes que acabaron en el suelo. */
   downed: string[];
   steps: number;
+  /** La vida con la que acabó cada héroe (0–1): se guarda (`core/health.ts`). */
+  hp?: Record<string, number>;
 }
 
 /** Cuánto pesa el jefe frente a lo que pide el encargo (calibrado con `tools/calib.ts`). */
@@ -165,9 +168,10 @@ export class Combat extends Fight<Unit, Order, CombatResult> {
     const hs = this.heroes();
     const fs = this.foes();
     const downed = hs.filter((h) => !alive(h)).map((h) => h.id);
-    if (!fs.some(alive)) this.result = { won: true, downed, steps: this.step };
+    const hp = () => Object.fromEntries(hs.map((h) => [h.id, Math.max(0, h.hp) / h.max]));
+    if (!fs.some(alive)) this.result = { won: true, downed, steps: this.step, hp: hp() };
     else if (!hs.some(alive) || this.t >= MAX_TIME)
-      this.result = { won: false, downed, steps: this.step };
+      this.result = { won: false, downed, steps: this.step, hp: hp() };
   }
 
   protected foesOf(u: Unit): Unit[] {
@@ -220,5 +224,11 @@ export function missionCombat(s: GameState, m: Mission, boss: BossKind): CombatS
   const heroes = equip(party as NonNullable<(typeof party)[number]>[], s.fac).map((h) =>
     heroUnit(h),
   );
-  return setupCombat(`pelea-${m.id}`, boss, heroes, questFoes(boss, m.quest.challenges));
+  const setup = setupCombat(`pelea-${m.id}`, boss, heroes, questFoes(boss, m.quest.challenges));
+  // Cada héroe entra con la vida que le queda (la que se guarda entre peleas).
+  for (const u of setup.units) {
+    const h = party.find((x) => x?.id === u.id);
+    if (h) u.hp = Math.max(1, Math.round(u.max * hpOf(h)));
+  }
+  return setup;
 }

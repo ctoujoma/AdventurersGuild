@@ -1,5 +1,5 @@
 import type { Action } from '../core/game';
-import { postIssue, postOf, type Post } from '../core/guards';
+import { guardIssue, postOf, type Post } from '../core/guards';
 import { incidentIn, incidentIssue } from '../core/incidents';
 import type { GameState } from '../core/model';
 import { INCIDENTS } from '../data/incidents';
@@ -68,7 +68,7 @@ export function planTask(game: GameState, who: string, task: Task): Drop {
   if (post) {
     if (h.guard && postOf(h) === post)
       return { ok: false, text: t('ficha.drop.ya_esta_de_guardia', { nombre: h.name }) };
-    const why = postIssue(game, post);
+    const why = guardIssue(game, h, post);
     if (why) return { ok: false, text: why };
     // De un puesto a otro: deja el de antes.
     const actions: Action[] = h.guard ? [{ type: 'guard', id: who, on: false }] : [];

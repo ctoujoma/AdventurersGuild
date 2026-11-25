@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { hpFromBedDays } from './health';
 import {
   DAY_SECONDS,
   NIGHT_ROLL,
@@ -154,7 +155,7 @@ describe('el forastero trae de vuelta a un caído', () => {
     expect(next.beer).toBe(s.beer - p.beer);
     expect(next.mats?.tela).toBe(9 - p.mats.tela!);
     expect(h.status).toBe('herido');
-    expect(h.days).toBe(VEIL_BED);
+    expect(h.hp).toBeCloseTo(hpFromBedDays(VEIL_BED), 6);
     expect(h.morale).toBe(VEIL_MORALE);
     expect(h.veil).toBe(s.day + VEIL_DAYS);
     expect(h.traits.some((t) => t.id === 'velo')).toBe(true);

@@ -39,6 +39,11 @@ export class Rng {
     return min + Math.floor(this.next() * (max - min + 1));
   }
 
+  /** Número en [min, max). */
+  range(min: number, max: number): number {
+    return min + this.next() * (max - min);
+  }
+
   chance(p: number): boolean {
     return this.next() < p;
   }

@@ -4,7 +4,7 @@
  */
 import { earn, spill, vaultNews } from './vault';
 import { dormIssue, sleepPlan, isVet } from './beds';
-import { guardsAt, postFull, postIssue, postOf, type Post } from './guards';
+import { guardIssue, guardsAt, postFull, postIssue, postOf, type Post } from './guards';
 import { FLAVOR } from '../data/stories';
 import { checkRank, fadeFame } from './ranks';
 import {
@@ -69,6 +69,8 @@ import {
   restMorale,
   returnChance,
   rankMsg,
+  HP_GRAVE,
+  HP_LIGHT,
 } from './balance';
 import { tripDays } from './classes';
 import {
@@ -118,6 +120,7 @@ import {
 } from './tutorial';
 import { stepRaids } from './raids';
 import { healOf, infirmaryPlan } from './infirmary';
+import { hpFromBedDays, hpOf, needsCare, regenPerDay } from './health';
 import { dawnNight, nightDue, nightRng, rollNight } from './night';
 import { acceptMessenger, dismissMessenger, messengerGone, stepMessenger } from './messenger';
 import { easeIssue, easeNightmare } from './nightmare';
@@ -923,7 +926,7 @@ function reduceAction(state: GameState, action: Action): GameState {
       const post = action.post ?? 'puerta';
       if (!h || h.status !== 'ok') return state;
       if (action.on ? h.guard && postOf(h) === post : !h.guard) return state;
-      if (action.on && postIssue(state, post)) return state;
+      if (action.on && guardIssue(state, h, post)) return state;
       const s = structuredClone(state);
       const g = s.heroes.find((x) => x.id === action.id)!;
       g.guard = action.on || undefined;
@@ -1407,7 +1410,8 @@ function rescue(s: GameState, id: string, r: Report, events: DawnEvent[]): void 
     return;
   }
   h.status = 'herido';
-  h.days = 2;
+  h.days = 0;
+  h.hp = hpFromBedDays(2);
   h.morale = Math.min(100, h.morale + 10);
   h.history.push(msg('partida.rescate.historial', { dia: s.day, grupo: r.who }));
   r.heading = msg('partida.rescate.titulo');
@@ -1461,28 +1465,33 @@ export function tick(state: GameState, to: number): GameState {
 }
 
 /**
- * Cura a los heridos la parte del día `part` (0–1): a cada uno se le quitan los días de cama que
- * cure su catre (o su cama) en ese rato (`healOf`, días por día). Quien llega a cero se levanta y
- * vuelve a su puesto. Si nadie se cura, solo copia a los heridos; si alguien sí, copia el estado.
+ * Cura la parte del día `part` (0–1) a quien está en casa sin la vida entera: cada uno recupera
+ * `HP_DAY` por día a su ritmo (×1 en su cama; en un catre de la enfermería, el suyo: `healOf`).
+ * El grave que pasa del 20 % se levanta y vuelve a su puesto; el que pasa del 50 % vuelve a la
+ * guardia si la hacía. Si nadie cambia de estado, solo copia a los heridos; si no, el estado.
  */
 export function healFor(
   state: GameState,
   part: number,
 ): { s: GameState; cured: Hero[]; news: DawnEvent[] } {
-  if (part <= 0 || !state.heroes.some((h) => h.status === 'herido'))
-    return { s: state, cured: [], news: [] };
+  if (part <= 0 || !state.heroes.some(needsCare)) return { s: state, cured: [], news: [] };
   const plan = infirmaryPlan(state);
-  const left = new Map(
+  const next = new Map(
     state.heroes
-      .filter((h) => h.status === 'herido')
-      .map((h) => [h.id, h.days - healOf(state, h, plan) * part] as const),
+      .filter(needsCare)
+      .map(
+        (h) => [h.id, Math.min(1, hpOf(h) + regenPerDay(healOf(state, h, plan)) * part)] as const,
+      ),
   );
-  const done = [...left].filter(([, d]) => d <= 1e-9).map(([id]) => id);
-  if (!done.length)
+  // Se levanta (grave a leve) o vuelve a estar sano con la guardia pendiente.
+  const turns = (h: Hero, hp: number) =>
+    (h.status === 'herido' && hp >= HP_GRAVE) ||
+    (h.status === 'ok' && !!h.guardBefore && hpOf(h) < HP_LIGHT && hp >= HP_LIGHT);
+  if (!state.heroes.some((h) => next.has(h.id) && turns(h, next.get(h.id)!)))
     return {
       s: {
         ...state,
-        heroes: state.heroes.map((h) => (left.has(h.id) ? { ...h, days: left.get(h.id)! } : h)),
+        heroes: state.heroes.map((h) => (next.has(h.id) ? { ...h, hp: next.get(h.id)! } : h)),
       },
       cured: [],
       news: [],
@@ -1491,13 +1500,23 @@ export function healFor(
   const cured: Hero[] = [];
   const news: DawnEvent[] = [];
   for (const h of s.heroes) {
-    if (!left.has(h.id)) continue;
-    h.days = Math.max(0, left.get(h.id)!);
-    if (!done.includes(h.id)) continue;
-    h.status = 'ok';
-    h.days = 0;
-    if (h.jobBefore || h.guardBefore) backToJob(s, h, news);
-    cured.push(h);
+    const hp = next.get(h.id);
+    if (hp === undefined) continue;
+    const turn = turns(h, hp);
+    h.hp = hp;
+    if (!turn) continue;
+    if (h.status === 'herido') {
+      h.status = 'ok';
+      h.days = 0;
+      cured.push(h);
+    }
+    // La guardia, solo con el 50 %: hasta entonces se queda pendiente.
+    if (hp < HP_LIGHT && h.guardBefore) {
+      const keep = h.guardBefore;
+      delete h.guardBefore;
+      if (h.jobBefore) backToJob(s, h, news);
+      h.guardBefore = keep;
+    } else if (h.jobBefore || h.guardBefore) backToJob(s, h, news);
   }
   return { s, cured, news };
 }
@@ -1696,7 +1715,8 @@ export function endDay(state: GameState, away = false): GameState {
       if (h.days > 0) continue;
       if (rng.chance(returnChance(s.fac.cap))) {
         h.status = 'herido';
-        h.days = 2;
+        h.days = 0;
+        h.hp = hpFromBedDays(2);
         h.morale = Math.max(0, h.morale - 10);
         h.history.push(msg('partida.historial.volvio', { dia: s.day }));
         const toughened = !h.traits.some((t) => t.id === 'curtido');

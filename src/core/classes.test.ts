@@ -72,7 +72,7 @@ describe('habilidades de clase', () => {
           { id: 'm', quest: q, heroIds: ['a', 'b'], daysLeft: 0 },
           new Rng(`g${i}`),
         );
-        if (st.heroes[0]!.status === 'herido') n++;
+        n += 1 - (st.heroes[0]!.hp ?? 1);
       }
       return n;
     };

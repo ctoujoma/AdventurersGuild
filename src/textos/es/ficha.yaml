@@ -36,6 +36,11 @@ herocard:
   nivel: "{clase} · nivel {nivel}{titulo, select, veterano {, {sexo, select, f {veterana} other {veterano}}} maestro {, {sexo, select, f {maestra} other {maestro}}} other {}} ·"
   baja_con_los_viajes: "{animo} {desc} Baja con los viajes, los fracasos, la guardia (de guardia no se duerme) y tras una semana sin salir de aventura; sube descansando."
   moral: "Moral"
+  vida: "Vida"
+  # Al formar un grupo con heridos leves (quien: nombres con su vida).
+  van_heridos: "{n, plural, one {Va herido leve} other {Van heridos leves}}: {quien}. Empiezan las peleas con esa vida; si caen a 0, pueden no volver."
+  # La barra de vida: estado (sano/leve/grave), umbrales y lo que le falta a su ritmo de ahora.
+  vida_ayuda: "{estado, select, grave {{sexo, select, f {Herida grave} other {Herido grave}}: en cama hasta pasar del {grave} %.} leve {{sexo, select, f {Herida leve} other {Herido leve}}: trabaja y entrena al {rinde} %, no hace guardia; puede salir, pero empieza las peleas así.} other {Sano.}}{hay_falta, select, si { Le faltan {falta}.} other {}} Se recupera hora a hora en casa (más deprisa en un catre de la enfermería con quien la atienda), un poco de noche fuera y con pociones. A 0, puede caer."
   ficha: "Ficha"
   ropa_y_colores: "Ropa y colores"
   nivel_ya_no_soy: "«Nivel {nivel}. Ya no soy un cualquiera, y mi precio tampoco.» Si se lo niegas, perderá {moral} de moral y no la recuperará hasta que se lo pagues (puedes hacerlo luego, desde su ficha)."

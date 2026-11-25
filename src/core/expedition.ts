@@ -7,6 +7,7 @@
  * Corren por horas de juego: cada hora tira con su propia semilla, así que pasa lo mismo con el
  * juego abierto que cerrado (`away.ts` pasa por `endDay`, que las pone al día).
  */
+import { hpOf, setHp, woundChip } from './health';
 import {
   CLERIC_SAVE,
   DAY_SECONDS,
@@ -31,7 +32,8 @@ import {
   EXP_HOME_MORALE,
   EXP_HOURS,
   EXP_HUNGER,
-  EXP_HURT_DAYS,
+  EXP_HURT_HP_LOSS,
+  DOWNED_HP,
   EXP_HURT_DOWN,
   EXP_MAT_FAR,
   EXP_STEP,
@@ -1279,10 +1281,12 @@ function arrive(s: GameState, e: Expedition, news: DawnEvent[]): string[] {
       worst = 'Desastre';
       continue;
     }
-    h.status = hurt ? 'herido' : 'ok';
-    h.days = hurt * EXP_HURT_DAYS;
+    // Cada herida, un buen trozo de vida; quien cayó (y no murió), grave.
+    h.status = 'ok';
+    h.days = 0;
     if (hurt) {
-      chip('chip_herido', { heroe: h.name, sexo: h.sex, dias: h.days }, 'bad');
+      setHp(h, hurt >= EXP_HURT_DOWN ? DOWNED_HP[1] : hpOf(h) - EXP_HURT_HP_LOSS * hurt);
+      chips.push({ t: woundChip(h), k: 'bad' });
       if (worst === 'Éxito') worst = 'Éxito parcial';
     }
     h.xp += xp;

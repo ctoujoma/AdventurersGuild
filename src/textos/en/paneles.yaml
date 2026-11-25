@@ -96,6 +96,7 @@ gremio:
   notoriedad_cuanto_mas_famoso: "Notoriety: the more famous and rich the guild, the more it tempts the bandits."
   mejora: "Upgrade: {efecto}"
 heroes:
+  leve: "Lightly wounded · {pct} %"
   pide_cache: "Asks for a fee"
   pide_aumento: "Asks for a raise"
   de_nivel_ver_ficha: "{nombre}, level {nivel} {clase}. {doing}{hay_aviso, select, si {. {aviso}} other {}}{hay_pista, select, si {. {pista}} other {.}} View sheet"

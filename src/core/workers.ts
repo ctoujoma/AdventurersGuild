@@ -3,6 +3,7 @@
  * lo que rinde cada sala con la gente que tiene. TS puro: lo usan el reducer, la interfaz y la
  * escena.
  */
+import { workFactor } from './health';
 import { VILLAGE, TRADE_LIST, WORKER_QUOTES, type Trade } from '../data/workers';
 import { FIRST_NAMES } from '../data/names';
 import type { StaffId } from '../data/custom';
@@ -125,7 +126,7 @@ export function workAt(s: GameState, r: Room, now = false): number {
   for (const w of s.workers) if (w.room === r.id) n += effortOf(w, r.type) * k(w);
   for (const h of s.heroes)
     if (h.job === r.id && h.status === 'ok' && !h.guard && !dressing(s, h.id))
-      n += HERO_WORK * k(h);
+      n += HERO_WORK * workFactor(h) * k(h);
   return n * (0.75 + 0.25 * r.level);
 }
 

@@ -5,6 +5,7 @@
  * día siguiente a mediodía. El revivido vuelve en cama, con la moral por los suelos unos días y
  * con un rasgo para siempre («Vuelto del velo»).
  */
+import { hpFromBedDays } from './health';
 import {
   DAY_SECONDS,
   STRANGER_CHANCE,
@@ -91,7 +92,8 @@ export function revive(s: GameState, id: string): DawnEvent {
   if (entry) entry.back = s.day;
   // Vuelve en cama, sin ganas de nada y sin lo que llevaba aprendido hacia el siguiente nivel.
   h.status = 'herido';
-  h.days = VEIL_BED;
+  h.days = 0;
+  h.hp = hpFromBedDays(VEIL_BED);
   h.morale = VEIL_MORALE;
   h.xp = 0;
   h.idle = 0;

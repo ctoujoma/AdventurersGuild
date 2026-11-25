@@ -9013,3 +9013,21 @@ div.item-count {
   background: #dfe8f0;
   color: #1d2a3a;
 }
+
+/* ---------- La vida en la ficha: sano, leve y grave, con las marcas del 50 % y del 20 % ---------- */
+.meter-hp .track i.hp-sano {
+  background: var(--lime);
+}
+.meter-hp .track i.hp-leve {
+  background: var(--orange);
+}
+.meter-hp .track i.hp-grave {
+  background: var(--red);
+}
+.meter-hp .track b {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--plum);
+}
