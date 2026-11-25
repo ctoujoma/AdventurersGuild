@@ -98,9 +98,9 @@ function muro(t: Tonos, x: number, base: number, w: number, h: number, s: number
     }
 }
 
-const lejos: Painter = (e, L, _wild, seed) => {
+const lejos: Painter = (e, L, wild, seed) => {
   const H = Math.round(e.hor * 0.42);
-  const t = new Tonos(L, H + 2);
+  const m = new Tonos(L, H + 2);
   // Mesas: lomas recortadas a la altura de una capa dura (cima plana, cantil y talud).
   const cap = (x: number) => 0.5 + 0.4 * fbm1(x, 200, L, seed + 303, 2);
   const hgt = Array.from({ length: L }, (_, x) => {
@@ -113,17 +113,90 @@ const lejos: Painter = (e, L, _wild, seed) => {
     const c = cap(x);
     const flat = hgt[x]! >= c * 0.98;
     const sl = hgt[(x + 3) % L]! - hgt[(x - 3 + L) % L]!;
-    for (let y = Math.max(0, top); y < t.h; y++) {
+    for (let y = Math.max(0, top); y < m.h; y++) {
       const d = y - top;
       // Estratos: bandas claras y oscuras horizontales; el cantil, debajo de la cima.
       const band = Math.floor((y + fbm1(x, 50, L, seed + 302, 2) * 4) / 3) % 3;
       let v = 4 + (band === 0 ? -0.7 : band === 1 ? 0.3 : 0);
       v += sl > 0.03 ? 0.7 : sl < -0.03 ? -1 : 0;
       if (flat && d < 2) v += 0.8;
-      t.set(x, y, M.monte, step(v, x, y));
+      m.set(x, y, M.monte, step(v, x, y));
     }
   }
-  return [t, e.hor - H + 1];
+  // Sitio de sobra por arriba para lo colosal (las mesetas, abajo del todo).
+  const HC = Math.round(e.hor * 0.85);
+  const t = new Tonos(L, HC + 2);
+  t.stamp(m, 0, HC - H);
+  // Lo más hondo: siluetas colosales de la ciudad (un templo escalonado, una cúpula hundida,
+  // una estatua rota) recortadas sobre las mesetas.
+  const city = smooth(0.7, 0.95, wild);
+  if (city > 0)
+    for (let k = 0; k < L / 160; k++) {
+      if (hash2(k, 1, seed + 304) > city) continue;
+      const x = Math.round(k * 160 + hash2(k, 2, seed + 304) * 80);
+      const kind = hash2(k, 3, seed + 304);
+      const hh = Math.round(HC * (0.75 + hash2(k, 4, seed) * 0.25));
+      if (kind < 0.4) {
+        // Templo escalonado: gradas y un santuario arriba, mellado.
+        const steps = 6;
+        for (let g = 0; g < steps; g++) {
+          const gw = Math.round(Math.round(hh * 1.2) * (1 - (g / steps) * 0.8));
+          const gy = HC + 1 - Math.round(((g + 1) * hh) / steps);
+          for (let i = -gw / 2; i < gw / 2; i++)
+            for (let y = gy; y < gy + Math.ceil(hh / steps); y++)
+              if (!(i > gw / 2 - 3 && hash2(i, y, k) < 0.4))
+                t.set(x + i, y, M.monte, y === gy ? 6 : i > 0 ? 1 : 4, true);
+        }
+      } else if (kind < 0.7) {
+        // Cúpula hundida sobre un tambor.
+        const r = Math.round(hh * 0.4);
+        for (let i = -r - 4; i <= r + 4; i++)
+          for (let y = HC + 1 - Math.round(hh * 0.5); y <= HC + 1; y++)
+            t.set(x + i, y, M.monte, (i + 64) % 6 === 0 ? 1 : i > 0 ? 2 : 4, true);
+        for (let i = -r; i <= r; i++) {
+          const top = Math.round(HC + 1 - hh * 0.5 - Math.sqrt(r * r - i * i));
+          const hole = Math.abs(i - r * 0.3) < r * 0.25;
+          for (let y = top + (hole ? Math.round(r * 0.5) : 0); y < HC + 1 - hh * 0.5; y++)
+            t.set(x + i, y, M.monte, i > r * 0.3 ? 1 : i > -r * 0.3 ? 3 : 5, true);
+        }
+      } else {
+        // Estatua colosal: piernas, torso, el muñón del cuello y un brazo alzado con la lanza rota.
+        const bw = Math.round(hh * 0.13);
+        const top = HC + 1 - hh;
+        for (let y = top; y <= HC - 3; y++) {
+          const u = (y - top) / hh;
+          for (let i = -bw * 2; i <= bw * 2; i++) {
+            const a = Math.abs(i);
+            let inside = false;
+            if (u < 0.07)
+              inside = a <= bw * 0.35 && hash2(i, y, k) > 0.3; // cuello roto
+            else if (u < 0.5) inside = a <= bw * (1.25 - (u - 0.07) * 0.6);
+            else if (u < 0.58) inside = a <= bw * 1.05;
+            else inside = a <= bw && a >= bw * 0.18; // dos piernas
+            if (!inside) continue;
+            const v = i < -bw * 0.3 ? 5 : i > bw * 0.4 ? 1 : 3;
+            t.set(x + i, y, M.monte, v, true);
+          }
+        }
+        // El brazo alzado y la lanza.
+        for (let j = 0; j < hh * 0.32; j++) {
+          t.set(x - bw - 1 - (j >> 3), top + hh * 0.12 - j, M.monte, 4, true);
+          t.set(x - bw - (j >> 3), top + hh * 0.12 - j, M.monte, 2, true);
+        }
+        for (let j = 0; j < hh * 0.5; j++)
+          t.set(
+            x - bw - 2 - Math.round(hh * 0.04) + (j >> 4),
+            top - hh * 0.25 + j,
+            M.monte,
+            1,
+            true,
+          );
+        // Pedestal.
+        for (let i = -bw * 2; i <= bw * 2; i++)
+          for (let j = 0; j < 4; j++) t.set(x + i, HC + 1 - j, M.monte, j === 3 ? 5 : 2, true);
+      }
+    }
+  return [t, e.hor - HC + 1];
 };
 
 /** Una loma de tierra rota (cárcavas) con, lejos, torres caídas recortadas en la cresta. */
@@ -158,8 +231,61 @@ const sierra: Painter = (e, L, wild, seed) => {
     }
     t.set(x + (w >> 1), tp - h + 3, M.roca, 0, true);
   }
+  // De media lejanía en adelante, la muralla de la ciudad corre por la loma: lienzos con almenas
+  // rotas y torres cuadradas; cuanto más hondo, más entera y más alta.
+  const wall = smooth(0.45, 0.8, wild);
+  if (wall > 0) {
+    const wh = Math.round(H * lerp(0.35, 0.7, wall));
+    for (let x = 0; x < L; x++) {
+      const seg = Math.floor(x / 90);
+      if (hash2(seg, 7, seed + 315) > wall * 1.1) continue;
+      const tp = Math.round(tops[x]!);
+      const tower = x % 60 < 12;
+      const broken = Math.round(fbm1(x, 18, L, seed + 316, 2) * wh * (1.1 - wall));
+      const top = tp - (tower ? Math.round(wh * 1.35) : wh) + broken;
+      const merlon = !tower && (x >> 1) % 3 === 0 && broken < 2;
+      for (let y = top - (merlon ? 2 : 0); y <= tp + 2; y++) {
+        const row = Math.floor(y / 3);
+        let v = tower ? (x % 60 < 3 ? 4.2 : x % 60 > 9 ? 2 : 3.4) : 3;
+        if (y % 3 === 0 || (x + row * 4) % 8 === 0) v -= 0.8;
+        if (tower && x % 60 === 6 && (y - top) % 9 === 4) v = 0;
+        t.set(x, y, M.roca, step(v, x, y));
+      }
+    }
+  }
   return [t, e.hor - H + 1];
 };
+
+/** Una fachada de varios pisos con huecos de ventana en arco (el interior de la ciudad). */
+function fachada(t: Tonos, x: number, base: number, w: number, h: number, s: number) {
+  const floors = Math.max(2, Math.round(h / 9));
+  const fh = h / floors;
+  const cols = Math.max(1, Math.round(w / 7));
+  const cw = w / cols;
+  const flip = hash2(s, 1, 2) < 0.5;
+  for (let i = 0; i < w; i++) {
+    const u = (flip ? w - 1 - i : i) / w;
+    const drop = Math.max(0, u - 0.5) * 2 * h * 0.6 * hash2(Math.floor(i / 5), s, 4);
+    const top = Math.round(base - h + Math.round(drop / 3) * 3);
+    for (let y = top; y <= base; y++) {
+      const fy = (base - y) % fh;
+      const ci = (i % cw) - cw / 2;
+      const win =
+        fy > fh * 0.25 &&
+        fy < fh * 0.85 &&
+        Math.abs(ci) < cw * 0.22 + (fy > fh * 0.7 ? -(fy - fh * 0.7) * 0.6 : 0);
+      if (win) {
+        t.set(x + i, y, M.roca, ci > 0 ? 0 : 1, true);
+        continue;
+      }
+      const cornice = Math.round(fy) === 0;
+      let v = cornice ? 4.4 : 3.2 + (hash2(i >> 2, Math.floor(y / 3), s) - 0.5);
+      if (y === top) v += 0.8;
+      if (i >= w - 2) v -= 1.2;
+      t.set(x + i, y, M.roca, step(v, x + i, y), true);
+    }
+  }
+}
 
 /** El acueducto: dos pisos de arcos que cruzan el valle, rotos a trechos. */
 function acueducto(t: Tonos, y: number, h: number, L: number, seed: number) {
@@ -258,6 +384,17 @@ const colinas: Painter = (e, L, wild, seed) => {
       false,
     );
   }
+  // Lejos, la ciudad: bloques de fachadas que llenan las lomas, cada vez más juntos.
+  const city = smooth(0.55, 0.9, wild);
+  if (city > 0)
+    for (let k = 0; k < L / 14; k++) {
+      if (hash2(k, 51, seed) > city) continue;
+      const x = Math.round(k * 14 + hash2(k, 52, seed) * 8);
+      const w = 10 + Math.round(hash2(k, 53, seed) * 12);
+      const b = Math.round(tops[x % L]!) + 6 + Math.round(hash2(k, 54, seed) * (H * 0.4));
+      if (b >= H + 2) continue;
+      fachada(t, x, b, w, 8 + Math.round(hash2(k, 55, seed) * 14), k + seed);
+    }
   return [t, y0];
 };
 
@@ -273,7 +410,16 @@ const medio: Painter = (e, L, wild, seed) => {
     const b = base - Math.round(hash2(i, 3, seed + 340) * 3);
     const r = hash2(i, 4, seed + 340);
     if (hash2(i, 2, seed + 340) > lerp(0.55, 0.85, wild)) continue;
-    if (r < ruin * 0.45) {
+    if (r < smooth(0.55, 0.9, wild) * 0.45) {
+      fachada(
+        t,
+        x,
+        b,
+        18 + Math.round(hash2(i, 12, seed) * 16),
+        Math.round(lerp(18, 36, wild) + hash2(i, 13, seed) * 10),
+        i + seed,
+      );
+    } else if (r < ruin * 0.45) {
       // Columnata: tres o cuatro seguidas, alguna rota.
       const n = 2 + Math.round(hash2(i, 5, seed) * 2);
       const h = Math.round(lerp(14, 26, wild) + hash2(i, 6, seed) * 6);

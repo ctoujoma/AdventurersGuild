@@ -6,7 +6,7 @@
  */
 import { bush, leafy, tuft } from './arboles';
 import { step, type Paisaje, type Painter } from './capas';
-import { M, Tonos, clamp01, fbm1, hash2, lerp, noise2, smooth } from './tonos';
+import { M, Tonos, clamp01, fbm1, hash2, lerp, noise2, smooth, type Mat } from './tonos';
 
 /** Rampas de las marismas: juncal, sauce plateado, ciprés oliva, carrizo, lodo y agua turbia. */
 export const MARISMAS_RAMPS = {
@@ -159,22 +159,111 @@ function orillas(t: Tonos): void {
     }
 }
 
-/** Barraca: paredes encaladas, puerta azul y tejado de carrizo muy empinado. */
-function barraca(t: Tonos, x: number, base: number, s: number) {
-  const w = 10 + (s % 2) * 2;
-  const h = 4;
-  for (let y = base - h; y <= base; y++)
-    for (let i = 0; i < w; i++) t.set(x + i, y, M.nieve, i < 2 ? 2 : 4, true);
-  const rh = 7;
-  for (let j = 0; j < rh; j++) {
-    const inset = Math.round((j / rh) * (w / 2 - 1));
-    for (let i = inset - 1; i <= w - inset; i++)
-      t.set(x + i, base - h - 1 - j, M.mies, i < w / 2 ? 4 - (j & 1) : 2, true);
+/**
+ * Barraca: paredes encaladas, puerta y ventanuco en el hastial y tejado de carrizo muy empinado.
+ * Cada una distinta (semilla `s`): tamaño, color de la puerta, cruz o no en la cumbrera, y a veces
+ * un emparrado, un anexo bajo, un almiar o una higuera al lado; las viejas, con la cal caída y el
+ * carrizo oscuro. `k` es la escala (1 lejos, 2 a media distancia).
+ */
+export function barraca(t: Tonos, x: number, base: number, s: number, k = 1) {
+  const r = (n: number) => hash2(s, n, 303);
+  const px = (i: number, j: number, m: Mat, v: number) => t.set(x + i, base - j, m, v, true);
+  const w = Math.round((8 + Math.round(r(1) * 4)) * k);
+  const h = Math.round((4 + Math.round(r(2))) * k);
+  const rh = Math.round((6 + Math.round(r(3) * 3)) * k);
+  const old = r(4) < 0.25;
+  const door = r(5) < 0.5 ? M.agua : r(5) < 0.8 ? M.hierba : M.valla;
+  const side = r(6) < 0.5 ? -1 : 1;
+  const extra = r(7);
+  const thatch = (i: number, j: number, lit: boolean, v0: number) => {
+    // Carrizo: hiladas de 2 px (1 lejos) con el canto claro y la fibra en vertical.
+    const row = k > 1 ? j % 2 : j % 2;
+    let v = v0 + (lit ? 1.6 : 0) - row * (k > 1 ? 0.9 : 0.5);
+    if (k > 1 && hash2(i, j >> 1, s + 9) < 0.18) v -= 0.8;
+    if (old) v -= 1;
+    return Math.round(v);
+  };
+  // Anexo bajo (corral o cuadra) a un lado, con tejadillo a un agua.
+  if (extra < 0.3) {
+    const aw = Math.round((4 + Math.round(r(8) * 3)) * k);
+    const ah = 3 * k;
+    const ax = side < 0 ? -aw : w;
+    for (let i = 0; i < aw; i++) {
+      for (let j = 0; j < ah; j++) px(ax + i, j, M.nieve, j === ah - 1 ? 2 : 3);
+      const u = side < 0 ? i / aw : 1 - i / aw;
+      const top = ah + Math.round(u * 2 * k);
+      for (let j = ah; j <= top; j++) px(ax + i, j, M.mies, thatch(i, j, false, 2));
+    }
+    if (k > 1) for (let j = 0; j < 2 * k; j++) px(ax + Math.floor(aw / 2), j, M.corteza, 1);
   }
-  t.set(x + w / 2, base - h - 1 - rh, M.corteza, 1, true);
-  t.set(x + 4, base, M.agua, 1, true);
-  t.set(x + 4, base - 1, M.agua, 1, true);
-  t.set(x + 4, base - 2, M.agua, 2, true);
+  // Paredes: cal (la vieja, con rodales caídos donde asoma el barro); sombra bajo el alero.
+  for (let i = 0; i < w; i++)
+    for (let j = 0; j < h; j++) {
+      const peel = old && hash2(i >> 1, j >> 1, s) < 0.22;
+      let v = i === 0 ? 2 : i === w - 1 ? 3 : 4;
+      if (j === h - 1) v -= 1;
+      px(i, j, peel ? M.tierra : M.nieve, peel ? 3 : v);
+    }
+  // Zócalo azulado (la cal con añil a ras de suelo).
+  if (!old) for (let i = 0; i < w; i++) for (let j = 0; j < k; j++) px(i, j, M.agua, 3);
+  // Tejado: triángulo empinado que vuela sobre la pared; el lado de la sombra, oscuro.
+  const ov = k;
+  for (let j = 0; j < rh; j++) {
+    const half = (w / 2 + ov) * (1 - j / rh);
+    const sag = old && j > rh / 2 ? 1 : 0;
+    for (let i = Math.floor(w / 2 - half); i <= Math.ceil(w / 2 + half) - 1; i++) {
+      const lit = i < w / 2;
+      px(i, h + j - sag, M.mies, thatch(i, j, lit, 2));
+    }
+  }
+  // El alero: una raya oscura bajo el tejado.
+  for (let i = -ov; i < w + ov; i++) px(i, h, M.mies, old ? 0 : 1);
+  // Cruz en la cumbrera.
+  const cx = Math.floor(w / 2);
+  if (r(9) < 0.5) {
+    for (let j = 0; j < 2 * k; j++) px(cx, h + rh + j, M.corteza, 1);
+    if (k > 1 || r(10) < 0.5) {
+      px(cx - 1, h + rh + Math.round(k * 1.2), M.corteza, 1);
+      px(cx + 1, h + rh + Math.round(k * 1.2), M.corteza, 1);
+    }
+  }
+  // Puerta (con su marco, a media distancia) y ventanuco en el hastial.
+  const dw = Math.max(1, Math.round(1.6 * k));
+  const dh = Math.min(h - 1, Math.round(3 * k));
+  const dx = cx - Math.floor(dw / 2) - (r(11) < 0.5 ? 0 : k);
+  for (let i = 0; i < dw; i++)
+    for (let j = 0; j < dh; j++) px(dx + i, j, door, j === dh - 1 ? 2 : i === 0 && k > 1 ? 2 : 1);
+  if (k > 1) {
+    px(dx - 1 + dw + (r(12) < 0.5 ? 2 : -3), Math.round(h * 0.55), M.corteza, 0);
+    px(dx - 1 + dw + (r(12) < 0.5 ? 3 : -2), Math.round(h * 0.55), M.corteza, 0);
+  }
+  if (rh > 6 * k)
+    for (let a = 0; a < k; a++)
+      for (let b2 = 0; b2 < k; b2++) px(cx + a - (k >> 1), h + 2 * k + b2, M.corteza, 0);
+  // Al lado: emparrado, almiar o higuera.
+  if (extra >= 0.3 && extra < 0.5) {
+    const ew = 6 * k;
+    const ex = side < 0 ? -ew : w;
+    const eh = 4 * k;
+    for (let i = 0; i < ew; i++) {
+      for (let j = 0; j < Math.max(2, k + 1); j++) px(ex + i, eh + j, M.hierba, 3 + ((i + j) & 1));
+      if (hash2(i, s, 5) < 0.4) for (let j = 1; j <= k; j++) px(ex + i, eh - j, M.hierba, 2);
+    }
+    for (let j = 0; j < eh; j++) {
+      px(ex + (side < 0 ? 0 : ew - 1), j, M.corteza, 2);
+      px(ex + (side < 0 ? ew - 1 : 0), j, M.corteza, 1);
+    }
+  } else if (extra >= 0.5 && extra < 0.68) {
+    const ex = side < 0 ? -4 * k : w + 3 * k;
+    const ah = 6 * k;
+    for (let j = 0; j < ah; j++) {
+      const half = Math.round((1 - j / ah) * 2.4 * k);
+      for (let i = -half; i <= half; i++) px(ex + i, j, M.mies, thatch(i, j, i < 0, 2));
+    }
+    px(ex, ah, M.corteza, 1);
+  } else if (extra >= 0.68 && extra < 0.82) {
+    bush(t, x + (side < 0 ? -4 * k : w + 4 * k), base - 2 * k, 7 * k, 6 * k, M.hoja, s);
+  }
 }
 
 const lejos: Painter = (e, L, wild, seed) => {
@@ -247,8 +336,10 @@ const colinas: Painter = (e, L, wild, seed) => {
   // Barracas en los arrozales; árboles muertos en las lagunas.
   for (let k = 0; k < L / 80; k++) {
     const x = Math.round(k * 80 + hash2(k, 1, seed + 227) * 40);
-    const y = 4 + Math.round(hash2(k, 2, seed + 227) * (H - 10));
-    if (hash2(k, 3, seed + 227) < farm * 0.6) barraca(t, x, y, k + seed);
+    const y = 6 + Math.round(hash2(k, 2, seed + 227) * (H - 10));
+    // Barracas sueltas, pocas: una de cada tres huecos como mucho, y solo entre arrozales.
+    if (k % 3 === Math.floor(hash2(seed, 3, 9) * 3) && hash2(k, 3, seed + 227) < farm * 0.9)
+      barraca(t, x, y, k * 7 + seed);
     else if (hash2(k, 4, seed + 227) < lagoon * 0.8)
       cipres(t, x, y, 8 + Math.round(y * 0.5), k + seed, 0, true);
   }
@@ -293,6 +384,8 @@ const medio: Painter = (e, L, wild, seed) => {
       );
     }
   }
+  // Cerca de casa, una sola barraca grande a media distancia en toda la tira.
+  if (wild < 0.3) barraca(t, Math.round(hash2(seed, 5, 7) * (L - 40)) + 10, base, seed * 3 + 1, 2);
   return [t, y0];
 };
 
