@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_SETTINGS, MOOD_LIGHT_V, nextPace, paceLabel, parseSettings } from './settings';
+import {
+  DEFAULT_SETTINGS,
+  MOOD_LIGHT_V,
+  nextPace,
+  paceLabel,
+  paceMax,
+  parseSettings,
+} from './settings';
 
 describe('ajustes', () => {
   it('rellena lo que falta y corrige lo que viene mal', () => {
@@ -40,5 +47,14 @@ describe('ajustes', () => {
     expect(parseSettings({ pace: 3 }).pace).toBe(1);
     expect(paceLabel(0.5)).toBe('½');
     expect(paceLabel(4)).toBe('4');
+  });
+});
+
+describe('lo más deprisa del reloj', () => {
+  it('×4 siempre y ×8 con el modo prueba', () => {
+    expect(paceMax(false)).toBe(4);
+    expect(paceMax(true)).toBe(8);
+    expect(nextPace(4, 4)).toBe(0.5);
+    expect(nextPace(4, 8)).toBe(8);
   });
 });

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'preact/hooks';
+import { LifeBar } from './LifeBar';
 import { hurtNote } from './hurtNote';
 import { audio } from '../audio/audio';
 import { canSend } from '../core/game';
@@ -338,6 +339,8 @@ export function QuestSheet({ game, quest: q, onClose, onSend }: Props) {
                     {mood > 0 && <span class="mood up"> +</span>}
                     {mood < 0 && <span class="mood down"> −</span>}
                   </span>
+                  {/* La vida que le queda (los heridos leves pueden ir, con la que tengan). */}
+                  {!busy && <LifeBar hero={h} />}
                   <span class="pick-skills" aria-hidden="true">
                     {state ?? skills.map((x) => <span key={x}>{x}</span>)}
                   </span>

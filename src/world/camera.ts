@@ -27,6 +27,12 @@ export class Camera {
   lift = 0;
   /** Lo mismo hacia la derecha, para dejar algo a la vista junto a un panel de lado. */
   liftX = 0;
+  /**
+   * Lo que tapan por abajo y por la derecha los paneles y barras abiertos (en píxeles CSS): la
+   * cámara puede pasar el borde del mundo eso, para ver lo que quedaría debajo (en obras, lo más
+   * hondo del sótano bajo la barra).
+   */
+  coverCss = { right: 0, bottom: 0 };
   x = 0;
   y = 0;
   zoom = 2;
@@ -93,12 +99,20 @@ export class Camera {
     const minY = this.vh >= h ? y0 + (h - this.vh) / 2 : y0;
     const maxY = this.vh >= h ? minY : y1 - this.vh;
     const r = this.reach;
-    if (!r) return { minX, maxX: maxX + this.liftX, minY, maxY: maxY + this.lift };
+    const padX = this.coverCss.right / this.zoom;
+    const padY = this.coverCss.bottom / this.zoom;
+    if (!r)
+      return {
+        minX,
+        maxX: maxX + Math.max(this.liftX, padX),
+        minY,
+        maxY: maxY + Math.max(this.lift, padY),
+      };
     return {
       minX: Math.min(minX, r.x0 - this.vw / 2),
-      maxX: Math.max(maxX, r.x1 - this.vw / 2) + this.liftX,
+      maxX: Math.max(maxX, r.x1 - this.vw / 2) + Math.max(this.liftX, padX),
       minY: Math.min(minY, r.y0 - this.vh / 2),
-      maxY: Math.max(maxY, r.y1 - this.vh / 2) + this.lift,
+      maxY: Math.max(maxY, r.y1 - this.vh / 2) + Math.max(this.lift, padY),
     };
   }
 
