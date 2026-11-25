@@ -904,3 +904,105 @@ export function bossArt(kind: BossKind): BossArt {
   }
   return a;
 }
+
+// ---------------------------------------------------------------------------------------
+// Los guardianes de las expediciones: cada uno, su dibujo (sobre el cuerpo de un jefe).
+// ---------------------------------------------------------------------------------------
+
+/** El Viejo Colmillo (bosque): un jabalí viejo, canoso, de ojos pálidos. */
+const COLMILLO: BeastLook = {
+  fur: [P.black, P.navy, P.slate, P.steel, P.fog, P.mist],
+  stripe: P.white,
+  snout: [P.fog, P.steel],
+  legs: [P.slate, P.navy],
+  eye: [P.lemon, P.white],
+};
+/** La Sierpe Blanca (sierra): escamas de nieve, alas de escarcha y ojos rojos, sin corona. */
+const BLANCA: WyrmLook = {
+  scales: [P.fog, P.mist, P.white, P.white, P.white],
+  wing: [P.steel, P.fog, P.mist, P.white],
+  belly: [P.sky, P.mist],
+  bone: [P.slate, P.steel],
+  dark: P.fog,
+  darker: P.steel,
+  mid: P.mist,
+  spike: P.sky,
+  mouth: P.red,
+  horn: [P.steel, P.fog],
+  eye: [P.red, P.hot],
+  icicles: true,
+};
+/** La Dragona de Ceniza (ruinas): escamas de carbón, alas con el borde encendido y ojos de brasa. */
+const CENIZA: WyrmLook = {
+  scales: [P.black, P.navy, P.slate, P.steel, P.fog],
+  wing: [P.black, P.plum, P.brick, P.orange],
+  belly: [P.rust, P.amber],
+  bone: [P.black, P.ebony],
+  dark: P.slate,
+  darker: P.black,
+  mid: P.steel,
+  spike: P.orange,
+  mouth: P.orange,
+  horn: [P.ebony, P.black],
+  eye: [P.orange, P.lemon],
+  crown: true,
+};
+
+/** Cambia unos colores por otros en todas las poses (la Reina del Juncal, de la de hueso). */
+function recolor(a: Omit<BossArt, 'downFoot'>, map: Record<string, string>) {
+  const m = new Map<number, number>();
+  for (const [from, to] of Object.entries(map)) {
+    const f = new PixelBuffer(1, 1);
+    f.set(0, 0, from);
+    const t = new PixelBuffer(1, 1);
+    t.set(0, 0, to);
+    m.set(f.data[0]!, t.data[0]!);
+  }
+  const poses = {} as Record<BossPose, PixelBuffer>;
+  for (const [k, b] of Object.entries(a.poses) as [BossPose, PixelBuffer][]) {
+    const o = new PixelBuffer(b.w, b.h);
+    for (let i = 0; i < b.data.length; i++) o.data[i] = m.get(b.data[i]!) ?? b.data[i]!;
+    poses[k] = o;
+  }
+  return { ...a, poses };
+}
+
+/** La Reina del Juncal (marismas): la de hueso vuelta de juncos y agua, con corona de eneas. */
+function juncalArt(): Omit<BossArt, 'downFoot'> {
+  const q = recolor(queenArt(), {
+    [P.white]: P.lime,
+    [P.mist]: P.leaf,
+    [P.fog]: P.forest,
+    [P.steel]: P.deep,
+    [P.gold]: P.cocoa,
+    [P.lemon]: P.tan,
+    [P.amber]: P.umber,
+    [P.cyan]: P.cyan,
+    [P.rose]: P.lime,
+    [P.grape]: P.ocean,
+    [P.plum]: P.navy,
+    [P.wine]: P.ocean,
+    [P.red]: P.sky,
+  });
+  return { ...q, fall: 'sink' };
+}
+
+export type GuardianKind = 'colmillo' | 'blanca' | 'juncal' | 'ceniza';
+const GUARDIAN_ART: Record<GuardianKind, () => Omit<BossArt, 'downFoot'>> = {
+  colmillo: () => beastArt(COLMILLO),
+  blanca: () => wyrmArt(BLANCA),
+  juncal: juncalArt,
+  ceniza: () => wyrmArt(CENIZA),
+};
+const gcache = new Map<GuardianKind, BossArt>();
+
+/** El dibujo de un guardián de expedición (pelea con el cuerpo de su jefe de base). */
+export function guardianArt(kind: GuardianKind): BossArt {
+  let a = gcache.get(kind);
+  if (!a) {
+    const base = GUARDIAN_ART[kind]();
+    a = { ...base, downFoot: groundOf(base.poses.down) };
+    gcache.set(kind, a);
+  }
+  return a;
+}
