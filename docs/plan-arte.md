@@ -469,7 +469,8 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      enseñarlas antes y sin abusar; R1 clásicas que al adentrarse se vuelven una ciudad colosal, con
      algo de fortaleza. Segunda vuelta en la misma página (M2 barracas variadas, `tools/visor-barracas.ts`;
      R2 muralla, fachadas y siluetas colosales), esperando visto bueno. Orden: rumbos nuevos, bosque,
-     campamento, enemigos. Prototipo en la rama `claude/arte-expediciones-areas` (sin PR): `visor/bioma.ts` (cada
+     campamento, enemigos. Para los enemigos: jefes a la vista en #225 (grupo parado mirando al jefe a
+     lo lejos cuando `e.pending.kind === 'jefe'`, con `e.pending.foe`; `'guardian'` para el guardián). Prototipo en la rama `claude/arte-expediciones-areas` (sin PR): `visor/bioma.ts` (cada
      rumbo, su `Paisaje` y sus rampas), `capas-sierra.ts`, `capas-marismas.ts`, `capas-ruinas.ts`;
      `Clima` con `snow`, `wind`, `dust` y `storm` y la clase `Aire` en `tiempo.ts` (copos, rachas,
      polvo, relámpago; la «tormenta» de `expWeather` pasa a ser seca); fauna por rumbo en
