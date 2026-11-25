@@ -4,7 +4,8 @@ import { audio } from '../audio/audio';
 import {
   HEADINGS,
   HEADING_MATS,
-  OPEN_HEADINGS,
+  headingOpen,
+  unlockOf,
   canExpedition,
   expSlots,
   minRations,
@@ -107,28 +108,35 @@ export function ExpeditionSheet({ game, onClose, onSend }: Props) {
           <h4 class="qs-sub">{t('expediciones.expeditionsheet.rumbo')}</h4>
           <div class="exp-headings" role="radiogroup">
             {HEADINGS.map((h) => {
-              const open = OPEN_HEADINGS.includes(h);
+              const open = headingOpen(game, h);
+              const need = unlockOf(h);
               return (
                 <button
                   key={h}
                   role="radio"
                   aria-checked={heading === h}
-                  class={`exp-heading ${open ? '' : 'is-works'}`}
+                  class={`exp-heading ${open ? '' : 'is-works is-locked'}`}
                   disabled={!open}
                   onClick={() => {
                     audio.play('select');
                     setHeading(h);
                   }}
                 >
-                  <Icon name={HEADING_ICON[h]} size={20} />
+                  <Icon name={open ? HEADING_ICON[h] : 'candado'} size={20} />
                   <b>{t(`expediciones.rumbos.${h}.titulo`)}</b>
                   <span class="exp-heading-mats">
                     {HEADING_MATS[h].map((m) => (
                       <MatIcon key={m} m={m} size={11} />
                     ))}
                   </span>
-                  {!open && (
-                    <span class="exp-works">{t('expediciones.expeditionsheet.en_obras')}</span>
+                  {!open && need && (
+                    <span class="exp-lock">
+                      {t('expediciones.expeditionsheet.cerrado', {
+                        antes: need.after,
+                        dias: need.dias,
+                        record: Math.round((game.expBest?.[need.after] ?? 0) * 10) / 10,
+                      })}
+                    </span>
                   )}
                 </button>
               );

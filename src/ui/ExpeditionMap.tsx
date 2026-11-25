@@ -17,7 +17,7 @@ import {
 import type { PixelBuffer } from '../art/pixel';
 import { ExpeditionFog } from './ExpeditionFog';
 import { TAVERN } from '../data/places';
-import { HEADINGS, OPEN_HEADINGS, bundleMsg, distAt } from '../core/expedition';
+import { HEADINGS, bundleMsg, distAt, headingOpen, unlockOf } from '../core/expedition';
 import type { GameState, Heading } from '../core/model';
 import { BufferImage } from './BufferImage';
 import { Icon } from './icons';
@@ -218,8 +218,12 @@ export function ExpeditionMap({ game, onExpedition, children }: Props) {
       <>
         <b>{t(`expediciones.rumbos.${h}.titulo`)}</b>
         <span>
-          {!OPEN_HEADINGS.includes(h)
-            ? t('expediciones.mapa.en_obras')
+          {!headingOpen(game, h)
+            ? t('expediciones.mapa.cerrado', {
+                antes: unlockOf(h)!.after,
+                dias: unlockOf(h)!.dias,
+                record: Math.round((best[unlockOf(h)!.after] ?? 0) * 10) / 10,
+              })
             : r === undefined
               ? t('expediciones.mapa.sin_ir')
               : t('expediciones.mapa.record', { dias: Math.round(r) })}
@@ -268,10 +272,11 @@ export function ExpeditionMap({ game, onExpedition, children }: Props) {
           return (
             <button
               key={h}
-              class={`exp-map-rumbo ${OPEN_HEADINGS.includes(h) ? '' : 'is-works'}`}
+              class={`exp-map-rumbo ${headingOpen(game, h) ? '' : 'is-works is-locked'}`}
               style={pct(at)}
               onClick={tap(() => setInfo({ kind: 'rumbo', h }))}
             >
+              {!headingOpen(game, h) && <Icon name="candado" size={10} />}
               {t(`expediciones.rumbos.${h}.titulo`)}
               {best[h] !== undefined && (
                 <small>{t('expediciones.mapa.record_corto', { dias: Math.round(best[h]!) })}</small>

@@ -16,6 +16,7 @@ import {
   EXP_CLERIC_HEAL,
   EXP_CRYSTAL_FROM,
   EXP_FOG_AMBUSH,
+  EXP_UNLOCK,
   MAX_CANDIDATES,
   EXP_POTION_FIND,
   EXP_RAIN_SLOW,
@@ -101,8 +102,20 @@ import { emptyStats } from './feats';
 import { msg, t, tl, type Msg, type Params, type Txt } from '../textos';
 
 export const HEADINGS: readonly Heading[] = ['bosque', 'sierra', 'marismas', 'ruinas'];
-/** Los rumbos que ya se pueden tomar (los demás, «En obras»). */
-export const OPEN_HEADINGS: readonly Heading[] = HEADINGS;
+/** Lo que pide un rumbo para abrirse (sin nada, abierto de entrada). */
+export const unlockOf = (h: Heading): { after: Heading; dias: number } | null =>
+  h === 'bosque' ? null : EXP_UNLOCK[h];
+
+/**
+ * Si un rumbo ya se puede tomar: el bosque siempre; los demás, con el récord pedido en el
+ * anterior (o si ya se fue alguna vez, en partidas de antes).
+ */
+export function headingOpen(s: GameState, h: Heading): boolean {
+  const u = unlockOf(h);
+  if (!u) return true;
+  const best = s.expBest ?? {};
+  return best[h] !== undefined || (best[u.after] ?? 0) >= u.dias;
+}
 
 /** Lo que trae cada rumbo: lo de siempre y lo de lejos (el cristal, desde `EXP_CRYSTAL_FROM`). */
 export const HEADING_MATS: Record<Heading, readonly Material[]> = {
@@ -189,7 +202,10 @@ export function canExpedition(
   potions = 0,
 ): string | null {
   if (!expeditionsOpen(s)) return t('expediciones.error.cerradas', { nivel: EXPEDITION_LEVEL });
-  if (!OPEN_HEADINGS.includes(heading)) return t('expediciones.error.en_obras');
+  if (!headingOpen(s, heading)) {
+    const u = unlockOf(heading)!;
+    return t('expediciones.error.cerrado', { antes: u.after, dias: u.dias });
+  }
   if ((s.expeditions?.length ?? 0) >= expSlots(s))
     return t('expediciones.error.sin_hueco', { n: expSlots(s) });
   if (!heroIds.length) return t('partida.error.sin_heroes');
@@ -1300,6 +1316,7 @@ function arrive(s: GameState, e: Expedition, news: DawnEvent[]): string[] {
   const why = [...e.log].reverse().find((l) => l.k === 'vuelta');
   if (why) body.push(why.t);
   // Récord del rumbo.
+  const wasOpen = HEADINGS.filter((h) => headingOpen(s, h));
   const best = (s.expBest ??= {});
   let record = false;
   if (far > (best[e.heading] ?? 0) + 1e-9) {
@@ -1308,6 +1325,12 @@ function arrive(s: GameState, e: Expedition, news: DawnEvent[]): string[] {
     record = had;
     if (had) chip('chip_record', { dias: Math.round(far) }, 'good');
   }
+  // Un rumbo nuevo: se abre al volver con el récord que pedía.
+  for (const h of HEADINGS)
+    if (!wasOpen.includes(h) && headingOpen(s, h)) {
+      chip('chip_abierto', { rumbo: h }, 'good');
+      news.push({ t: msg('expediciones.aviso.abierto', { rumbo: h }), k: 'good', big: true });
+    }
   // Lo que trajeron, tal cual (para «La mochila»: lo que no cupo se dice en los chips).
   const bag = structuredClone(e.bag);
   // La mochila.

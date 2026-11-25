@@ -228,6 +228,19 @@ Con la vida que se guarda (`core/health.ts`, #219), las expediciones ya no cuent
 - **Simulador** (sin contratar): 1,8 muertos por cada 100 héroes (antes 2,6) y 2,7 días de
   lejanía (antes 3,6): con heridos vuelven antes.
 
+## Rumbos que se abren por turnos (decidido con el usuario, 25 de noviembre)
+
+- El bosque, de entrada. La sierra se abre al volver de una expedición que llegó a **5 días** de
+  lejanía en el bosque; las marismas, a **6** en la sierra; las ruinas, a **7** en las marismas
+  (`EXP_UNLOCK`, `headingOpen`). Cuenta el récord del rumbo anterior (`expBest`). En partidas de
+  antes, un rumbo al que ya se fue sigue abierto.
+- **Cerrado:** en la hoja, la carta del rumbo con candado y «Llega a 5 días en el bosque (récord:
+  3,4)»; en el mapa de rumbos, su rótulo con candado y la ficha lo mismo.
+- **Al abrirse:** chapa en el informe («¡Nuevo rumbo: la sierra!») y aviso grande en la barra.
+- **Enemigos propios por rumbo:** los dibuja el agente «Arte de expediciones». Cuando tenga los
+  jefes nuevos, se cambian `FOE_BOSS`, `GUARDIAN_BOSS` y `HEADING_FOES` en `core/expedition.ts`
+  (los puede tocar él mismo y avisar, o pedírmelo).
+
 ## Depende de otros
 
 - **Agente principal:** las pociones como trabajo de la alquimia (ver «Pendiente: las
