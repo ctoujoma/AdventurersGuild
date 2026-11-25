@@ -4,7 +4,7 @@ lengua al fondo, dientes abajo, labio oscuro alrededor."""
 RAMP=['#0e0b18','#191a30','#232a48','#2f3a60','#3e4c78','#566694','#7a88b0']
 W_,P_,R_,M_='#e8e0d0','#d07888','#9a2c40','#3a0c1c'
 SPEC={W_,P_,R_,M_}
-def limpia(g, zona=26, gap=3, opts=None):
+def limpia(g, zona=26, gap=3, opts=None, ramp=RAMP):
     o=opts or {}
     H=len(g); W=len(g[0]); xa=W-zona
     R=set((x,y) for y in range(H) for x in range(xa,W) if g[y][x] in SPEC)
@@ -60,9 +60,9 @@ def limpia(g, zona=26, gap=3, opts=None):
     for (x,y) in list(R):
         for dx,dy in((1,0),(-1,0),(0,1),(0,-1),(1,1),(1,-1)):
             q=(x+dx,y+dy)
-            if 0<=q[0]<W and 0<=q[1]<H and q not in R and g[q[1]][q[0]] is None: g[q[1]][q[0]]=RAMP[0]
+            if 0<=q[0]<W and 0<=q[1]<H and q not in R and g[q[1]][q[0]] is None: g[q[1]][q[0]]=ramp[0]
     return g
-def sanea(g, zona=26):
+def sanea(g, zona=26, ramp=RAMP):
     """Huecos de fondo encerrados -> pelo; rojos/blancos sueltos fuera de la boca -> pelo o contorno."""
     H=len(g); W=len(g[0])
     out=set(); st=[(x,y) for x in range(W) for y in (0,H-1)]+[(x,y) for y in range(H) for x in (0,W-1)]
@@ -76,8 +76,8 @@ def sanea(g, zona=26):
     g=[row[:] for row in g]
     def fur(x,y):
         from collections import Counter
-        c=Counter(g[y+dy][x+dx] for dx in(-1,0,1) for dy in(-1,0,1) if 0<=x+dx<W and 0<=y+dy<H and g[y+dy][x+dx] in RAMP[1:])
-        return c.most_common(1)[0][0] if c else RAMP[2]
+        c=Counter(g[y+dy][x+dx] for dx in(-1,0,1) for dy in(-1,0,1) if 0<=x+dx<W and 0<=y+dy<H and g[y+dy][x+dx] in ramp[1:])
+        return c.most_common(1)[0][0] if c else ramp[2]
     for y in range(H):
         for x in range(W):
             if g[y][x] is None and (x,y) not in out: g[y][x]=fur(x,y)
@@ -88,5 +88,5 @@ def sanea(g, zona=26):
                 n=sum(1 for dx,dy in((1,0),(-1,0),(0,1),(0,-1)) if 0<=x+dx<W and 0<=y+dy<H and g[y+dy][x+dx] in SPEC)
                 if n==0 or x<W-zona:
                     edge=any(not(0<=x+dx<W and 0<=y+dy<H) or g[y+dy][x+dx] is None for dx,dy in((1,0),(-1,0),(0,1),(0,-1)))
-                    g[y][x]=RAMP[0] if edge else fur(x,y)
+                    g[y][x]=ramp[0] if edge else fur(x,y)
     return g

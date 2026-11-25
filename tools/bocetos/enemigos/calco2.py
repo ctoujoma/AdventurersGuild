@@ -5,13 +5,14 @@ from PIL import Image
 from collections import Counter
 import numpy as np
 BG=np.array((231,225,207))
+RED=(30,0.25)
 def clase(p):
     r,g,b=p
     if abs(r-BG[0])+abs(g-BG[1])+abs(b-BG[2])<60: return 'bg'
     h,s,v=colorsys.rgb_to_hsv(r/255,g/255,b/255); h*=360
     if 30<=h<=90 and s>0.12 and v>0.55: return 'ojo'
-    if v>0.68 and s<0.32 and (h<30 or h>300): return 'diente'
-    if (h<30 or h>300) and s>0.25:
+    if v>0.68 and s<0.32 and (h<40 or h>300): return 'diente'
+    if (h<RED[0] or h>330) and s>RED[1]:
         if v>0.62: return 'encia'
         if v>0.28: return 'rojo'
         return 'boca'
@@ -29,7 +30,9 @@ def mejor_rejilla(a,box,ks):
                 e=err/max(n,1)
                 if best is None or e<best[0]: best=(e,k,ox,oy)
     return best
-def calco(src,box,k,ox,oy,ramp,cols,levels=None):
+def calco(src,box,k,ox,oy,ramp,cols,levels=None,cuts=None,bg=None):
+    global BG
+    if bg is not None: BG=np.array(bg)
     a=np.array(Image.open(src).convert('RGB')).astype(int)
     x0,y0,x1,y1=box
     W=int((x1-x0-ox)/k); H=int((y1-y0-oy)/k)
@@ -37,7 +40,7 @@ def calco(src,box,k,ox,oy,ramp,cols,levels=None):
     for j in range(H):
         for i in range(W):
             sx=x0+ox+i*k; sy=y0+oy+j*k
-            c=a[int(sy+0.6):int(sy+k-0.6), int(sx+0.6):int(sx+k-0.6)].reshape(-1,3)
+            mg=min(0.6,k*0.15); c=a[int(sy+mg):max(int(sy+mg)+1,int(sy+k-mg)), int(sx+mg):max(int(sx+mg)+1,int(sx+k-mg))].reshape(-1,3)
             cl=Counter(clase(p) for p in c)
             v,n=cl.most_common(1)[0]
             # especiales con menos votos (detalles pequeños)
@@ -54,7 +57,8 @@ def calco(src,box,k,ox,oy,ramp,cols,levels=None):
             if cls[j][i] and sum(1 for dx,dy in((1,0),(-1,0),(0,1),(0,-1)) if 0<=i+dx<W and 0<=j+dy<H and cls[j+dy][i+dx])<=1: cls[j][i]=None; lum.pop((i,j),None)
     vals=sorted(lum.values()); n=len(ramp)-1
     qs=levels or [i/n for i in range(1,n)]
-    cuts=[vals[int(q*(len(vals)-1))] for q in qs]
+    cuts=cuts or [vals[int(q*(len(vals)-1))] for q in qs]
+    calco.cuts=cuts
     g=[[None]*W for _ in range(H)]
     for j in range(H):
         for i in range(W):

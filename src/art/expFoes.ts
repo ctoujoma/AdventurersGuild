@@ -17,10 +17,10 @@ import {
   upsideDown,
   rotated,
   type FoeArt,
+  type FoePose,
 } from './foes';
 import {
   bearBody,
-  boarBody,
   goblinBody,
   ratBody,
   skeletonBody,
@@ -29,8 +29,8 @@ import {
   TROLL_FOOT,
   wolfBody,
   type PoseSpec,
-  type Quad,
 } from './foeSprites';
+import { BOCA, CALCOS } from './expCalcos';
 import { P } from './palette';
 import { PixelBuffer, alpha } from './pixel';
 
@@ -38,27 +38,6 @@ export interface ExpFoe {
   art: FoeArt;
   /** Cuántos salen (una manada, tres; un oso, uno). */
   count: number;
-}
-
-/** Un cuerpo de cuatro patas al doble (el lobo enorme): el mismo dibujo con más píxeles. */
-function doubled(q: Quad): Quad {
-  const wide = (r: string) => [...r].map((c) => c + c).join('');
-  const rows = (rs: readonly string[]) => rs.flatMap((r) => [wide(r), wide(r)]);
-  const pairs = (ps: readonly [number, string][] = []) =>
-    ps.flatMap(([i, r]) => [
-      [i * 2, wide(r)] as [number, string],
-      [i * 2 + 1, wide(r)] as [number, string],
-    ]);
-  return {
-    ...q,
-    body: rows(q.body),
-    bite: pairs(q.bite),
-    ouch: pairs(q.ouch),
-    legsAt: q.legsAt.map((x) => x * 2) as Quad['legsAt'],
-    legTop: q.legTop * 2,
-    legH: q.legH * 2,
-    leg: { ...q.leg, w: q.leg.w * 2 },
-  };
 }
 
 /** Salpica unas manchas de un color sobre lo pintado (algas, liquen). */
@@ -154,18 +133,88 @@ function giant(what: string, skin: Record<string, string>, cloth: string, runes 
   return { kind: 'grande', what, poses, foot: TROLL_FOOT - shift, chest: 30, span: 36, big: true };
 }
 
+
+/**
+ * Un enemigo calcado (`expCalcos.ts`): sus fotogramas en un lienzo común, pegados abajo y por la
+ * cola, y qué fotograma hace cada pose. Caído, panza arriba.
+ */
+function calcoArt(
+  kind: FoeArt['kind'],
+  what: string,
+  pose: Record<Exclude<FoePose, 'down'>, number>,
+  big = false,
+): FoeArt {
+  const c = CALCOS[what]!;
+  const w = Math.max(...c.frames.map((f) => f[0]!.length));
+  const h = Math.max(...c.frames.map((f) => f.length));
+  const col = (ch: string) =>
+    ch >= '0' && ch <= '6' ? c.ramp[+ch]! : BOCA[ch as keyof typeof BOCA];
+  const frames = c.frames.map((f) => {
+    const b = new PixelBuffer(w, h);
+    f.forEach((row, y) =>
+      [...row].forEach((ch, x) => {
+        if (ch !== '.') b.set(x, h - f.length + y, col(ch));
+      }),
+    );
+    return b;
+  });
+  const poses = {} as Record<FoePose, PixelBuffer>;
+  for (const k of Object.keys(pose) as (keyof typeof pose)[]) poses[k] = frames[pose[k]]!;
+  poses.down = trim(upsideDown(poses.idle));
+  const iw = c.frames[pose.idle]![0]!.length;
+  return { kind, what, poses, foot: Math.round(iw / 2), chest: Math.round(h / 2), span: iw, big };
+}
+
 const banditOf = (seed: string) => bandit(new Rng(`exp-bandido-${seed}`));
 
 /** Cómo se hace cada enemigo de cada rumbo (en el orden de los textos). */
 const FOES: Record<Heading, readonly (() => ExpFoe)[]> = {
   bosque: [
-    () => ({ art: quadArt('bestia', 'lobo', wolfBody(P.steel, P.slate, P.fog)), count: 3 }),
-    () => ({ art: quadArt('bestia', 'jabali', boarBody()), count: 1 }),
-    () => ({ art: quadArt('bestia', 'oso', bearBody(P.cocoa, P.umber)), count: 1 }),
-    () => {
-      const a = quadArt('bestia', 'lobo_enorme', doubled(wolfBody(P.slate, P.navy, P.steel)));
-      return { art: { ...a, big: true }, count: 1 };
-    },
+    () => ({
+      art: calcoArt('bestia', 'lobo', {
+        idle: 0,
+        idle2: 1,
+        walk1: 0,
+        walk2: 1,
+        windup: 2,
+        strike: 3,
+        hurt: 0,
+      }),
+      count: 3,
+    }),
+    () => ({
+      art: calcoArt('bestia', 'jabali', {
+        idle: 0,
+        idle2: 0,
+        walk1: 1,
+        walk2: 2,
+        windup: 1,
+        strike: 2,
+        hurt: 0,
+      }),
+      count: 1,
+    }),
+    () => ({
+      art: calcoArt('bestia', 'oso', {
+        idle: 0,
+        idle2: 1,
+        walk1: 1,
+        walk2: 2,
+        windup: 1,
+        strike: 3,
+        hurt: 0,
+      }),
+      count: 1,
+    }),
+    () => ({
+      art: calcoArt(
+        'bestia',
+        'huargo',
+        { idle: 0, idle2: 7, walk1: 6, walk2: 7, windup: 2, strike: 4, hurt: 1 },
+        true,
+      ),
+      count: 1,
+    }),
   ],
   sierra: [
     () => ({ art: quadArt('bestia', 'lobo_gris', wolfBody(P.fog, P.steel, P.mist)), count: 3 }),
