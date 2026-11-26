@@ -504,7 +504,7 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      daño avanzan con la fase del turno. `calco3.py` separa familias de color (`split`), aclara tonos
      medios (`lift`) y conserva los ojos rojos (`acc`). Gigante v3 (hoja con muerte; la fila de andar se descarta
      porque trae el brazo y el garrote mal): fotogramas alineados por los pies, respira (quieto con
-     una fila menos, sintético), carga, golpe, herido y muere en cinco pasos (`seq.down`). En el visor el
+     una fila menos, sintético), carga, golpe, herido y muere cayendo (`seq.down`; sin los dos de tambalearse, que cogen el garrote del revés). En el visor el
      último enemigo nunca caía: ahora, si la pelea se ganó (`MarchNow.won`), al acabar los que quedan
      caen con su animación y el grupo lo celebra (`cheer`, saltitos) unos 3 s, con el paisaje parado
      (`Gente.holds`), antes de seguir. Falta: el resto de enemigos de sierra y marismas; la sanguijuela

@@ -257,16 +257,15 @@ const FOES: Record<Heading, readonly (() => ExpFoe)[]> = {
       art: calcoArt(
         'grande',
         'gigante',
-        { idle: 0, idle2: 14, walk1: 0, walk2: 1, windup: 3, strike: 4, hurt: 7, down: 13 },
+        { idle: 0, idle2: 12, walk1: 0, walk2: 1, windup: 3, strike: 4, hurt: 7, down: 11 },
         true,
-        // Respira; guardia y garrote arriba, lo estampa y lo recoge; herido, se dobla; al morir se
-        // tambalea, suelta el garrote y cae.
+        // Respira; guardia y garrote arriba, lo estampa y lo recoge; herido, se dobla; al morir cae.
         {
-          idle: [0, 0, 14, 14],
+          idle: [0, 0, 12, 12],
           windup: [1, 2, 3],
           strike: [4, 5, 5, 6],
           hurt: [7, 8],
-          down: [9, 10, 11, 12, 13],
+          down: [9, 10, 11],
         },
       ),
       count: 1,
