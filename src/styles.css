@@ -1214,6 +1214,20 @@ button:focus-visible {
   flex: none;
 }
 
+/* Retrato de la lista con la vida debajo, en una barra fina. */
+.row-face {
+  flex: none;
+  display: grid;
+  gap: 3px;
+  justify-items: center;
+}
+
+.life-bare .life-track {
+  width: 44px;
+  height: 5px;
+  box-shadow: 0 0 0 1px var(--ink);
+}
+
 .row-info {
   flex: 1;
   min-width: 0;
@@ -9163,4 +9177,16 @@ div.item-count {
   gap: 8px;
   justify-content: center;
   margin: 8px 0;
+}
+
+/* ---------- Confirmar antes de vender (por encima de todo) ---------- */
+.confirm-backdrop {
+  z-index: 40;
+}
+.confirm-card {
+  width: min(320px, calc(100% - 32px));
+}
+.confirm-card p {
+  margin: 0;
+  font-size: var(--t-l);
 }

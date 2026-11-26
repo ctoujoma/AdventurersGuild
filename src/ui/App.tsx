@@ -595,7 +595,12 @@ export function App() {
     },
   });
   const draft = works.planning ? works.view : null;
-  const model = useMemo(() => sceneModel(draft ?? sceneGame), [sceneGame, draft]);
+  // Con el menú de Héroes abierto, se resaltan todos en la taberna para verlos bien.
+  const spotHeroes = panel === 'heroes';
+  const model = useMemo(
+    () => sceneModel(draft ?? sceneGame, spotHeroes),
+    [sceneGame, draft, spotHeroes],
+  );
   useEffect(() => {
     const s = scene.current;
     if (!s) return;
@@ -831,12 +836,20 @@ export function App() {
     );
   };
 
+  // Vender pregunta antes (nombre y precio); al confirmar, se vende.
+  const [selling, setSelling] = useState<string | null>(null);
   const sell = (itemId: string) => {
+    audio.play('open', 0.5);
+    setSelling(itemId);
+  };
+  const sellNow = (itemId: string) => {
     const it = game.inventory.find((i) => i.id === itemId);
+    setSelling(null);
     dispatch({ type: 'sell', itemId });
     audio.play('coin');
-    if (it) toast(`Vendido: ${tx(it.name)} por ${priceOf(it)} monedas.`);
+    if (it) toast(t('pantallas.app.vendido', { objeto: tx(it.name), oro: priceOf(it) }));
   };
+  const sellIt = selling ? game.inventory.find((i) => i.id === selling) : undefined;
 
   // Escape y el botón «atrás» del móvil cierran lo que esté encima (ajustes, partidas,
   // informe, encargo, ficha, panel).
@@ -2267,6 +2280,35 @@ export function App() {
       )}
       {screen === 'splash' && <Splash onDone={() => setScreen('title')} />}
       {settings.tester && settings.perf && <PerfMeter scene={scene} />}
+      {sellIt && (
+        <div class="card-backdrop confirm-backdrop" onClick={() => setSelling(null)}>
+          <article
+            class="herocard confirm-card"
+            role="alertdialog"
+            aria-label={t('pantallas.app.vender_pregunta', {
+              objeto: tx(sellIt.name),
+              oro: priceOf(sellIt),
+            })}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p>
+              {t('pantallas.app.vender_pregunta', {
+                objeto: tx(sellIt.name),
+                oro: priceOf(sellIt),
+              })}
+            </p>
+            <div class="herocard-actions">
+              <button class="btn btn-gold" onClick={() => sellNow(sellIt.id)}>
+                <Icon name="coin" size={12} />{' '}
+                {t('pantallas.app.vender_si', { oro: priceOf(sellIt) })}
+              </button>
+              <button class="btn btn-wood" onClick={() => setSelling(null)}>
+                {t('pantallas.app.vender_no')}
+              </button>
+            </div>
+          </article>
+        </div>
+      )}
       {settingsOpen && (
         <SettingsMenu
           settings={settings}

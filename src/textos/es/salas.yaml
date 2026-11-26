@@ -76,7 +76,7 @@ efecto:
     - "candidatos de más nivel"
     - "candidatos de más nivel y más fuertes"
     - "candidatos de aún más nivel y más fuertes"
-  recibidor: "La puerta aguanta {s} s a los bandidos"
+  recibidor: "La puerta aguanta {s} s a los bandidos; caben {n} de guardia"
   salon_0: "No viene nadie: no deja dinero"
   salon_atractivo: "+{n} de Atractivo"
   salon_encargos: "+{n, plural, one {# encargo} other {# encargos}} en el tablón"

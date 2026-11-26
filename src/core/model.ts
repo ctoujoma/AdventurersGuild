@@ -86,6 +86,10 @@ export interface Hero {
   jobBefore?: string;
   /** Dormitorio elegido a mano (id); sin esto, el que le toque (ver `core/beds.ts`). */
   dorm?: string;
+  /** En un catre de esta enfermería (id), en cama hasta tener la vida entera (`core/infirmary.ts`). */
+  cot?: string;
+  /** Le dieron el alta a mano: no se le acuesta solo en un catre hasta curarse o volver a caer. */
+  cotOff?: boolean;
   /**
    * Rencor por negarle un aumento o su caché: hasta el día `until`, su moral no pasa del tope de
    * siempre menos `cap`. Se le pasa antes si se le paga lo siguiente que pida.

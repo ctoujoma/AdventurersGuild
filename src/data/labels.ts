@@ -35,7 +35,10 @@ export function statusLabel(h: Hero, candidate = false, s?: GameState): string {
   if (candidate) return t('etiquetas.estado.candidato');
   // Herido: lo que le falta en días y horas, a su ritmo de ahora (su catre o su cama).
   if (h.status === 'herido' && s)
-    return t('etiquetas.estado.herido_falta', { sexo: h.sex, tiempo: restText(restHours(s, h)) });
+    return t(h.cot ? 'etiquetas.estado.enfermeria' : 'etiquetas.estado.herido_falta', {
+      sexo: h.sex,
+      tiempo: restText(restHours(s, h)),
+    });
   return t(`etiquetas.estado.${h.status}`, { sexo: h.sex, dias: Math.ceil(h.days) });
 }
 

@@ -88,6 +88,7 @@ export function marchNow(s: GameState, e: Expedition): MarchNow {
     hour: visorHour(s),
     weather: expWeather(e),
     day: Math.floor(e.hours / EXP_HOURS) + 1,
+    event: e.pending ? { kind: e.pending.kind, foe: e.pending.foe } : undefined,
     dress: Object.fromEntries(heroes.filter((h) => h.dress).map((h) => [h.id, h.dress!])),
   };
 }

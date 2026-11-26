@@ -179,7 +179,8 @@ function awayOf(s: GameState): SceneAway[] {
   });
 }
 
-export function sceneModel(s: GameState): SceneModel {
+/** `spot`: con el menú de Héroes abierto, se resalta a todos los héroes que están en casa. */
+export function sceneModel(s: GameState, spot = false): SceneModel {
   const heroes: SceneHero[] = [];
   // Quien va a arreglar un incidente corre a esa sala.
   const goTo = (id: string) => s.incidents?.find((i) => i.coming?.who === id)?.room;
@@ -208,7 +209,7 @@ export function sceneModel(s: GameState): SceneModel {
       // Mientras lo visten, está en la sastrería.
       work: dressingOf(s, h.id)?.room ?? h.job,
       goTo: goTo(h.id),
-      callout: (h.status === 'ok' && callHeroes) || undefined,
+      callout: (h.status === 'ok' && callHeroes) || (spot && h.status !== 'mision') || undefined,
       due: h.walk !== undefined || undefined,
       train: trainBar(s, h),
     });

@@ -20,6 +20,7 @@ import { blitStrip, luzKey } from './pintar';
 import { Aire, Lluvia, climaOf, drawMist } from './tiempo';
 import { smooth } from './tonos';
 import { drawRays, drawVida } from './vida';
+import { drawEscondite, drawSuceso, drawSucesoFondo } from './sucesos';
 
 /** Para forzar la hora o el tiempo (pruebas, capturas). */
 export interface VisorForce {
@@ -209,12 +210,15 @@ export class Visor {
     drawMist(b, e, l, time, travel, 'lejos');
     layer('cerca');
     drawAnimals(ctx, 'cerca');
+    drawSucesoFondo(ctx);
     layer('suelo');
     drawVida(ctx);
+    drawSuceso(ctx);
     drawMist(b, e, l, time, travel, 'cerca');
     // La gente.
     const fire = m.mode === 'camp' ? drawCamp(ctx) : null;
     if (m.mode !== 'camp') this.gente.draw(ctx);
+    drawEscondite(ctx);
     layer('delante');
     layer('copas');
     drawRays(ctx);

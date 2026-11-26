@@ -1,0 +1,4 @@
+fuera: "Ya no está en la taberna."
+sano: "Está {sexo, select, f {sana} other {sano}}: no necesita catre."
+cerrada: "Esta enfermería no tiene catres."
+ya: "Ya está en un catre aquí."

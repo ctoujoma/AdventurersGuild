@@ -9,6 +9,7 @@ import {
   CELLAR_STORE,
   CRAFT_SLOTS,
   DOOR_TIME,
+  DOOR_GUARDS,
   DORM_REST,
   KITCHEN_STORE,
   LOCK_TIME,
@@ -77,7 +78,11 @@ const recruits = (l: number) =>
   l >= 2 ? tl('salas.efecto.candidatos')[Math.min(l, 4) - 2]! : null;
 
 export const ROOM_INFO: Record<RoomType, Effect> = {
-  recibidor: (l) => t('salas.efecto.recibidor', { s: at(DOOR_TIME, l) }),
+  recibidor: (l) =>
+    t('salas.efecto.recibidor', {
+      s: at(DOOR_TIME, l),
+      n: DOOR_GUARDS[l] ?? DOOR_GUARDS.at(-1)!,
+    }),
   salon: (l) => {
     if (l === 0) return t('salas.efecto.salon_0');
     return listNames(
