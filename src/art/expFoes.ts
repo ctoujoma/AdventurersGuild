@@ -361,7 +361,8 @@ export function expGuardianArt(heading: Heading): FoeArt {
               {
                 idle: [13, 14, 15, 16, 17, 16, 15, 14],
                 windup: [18, 6],
-                strike: [7, 8, 9, 8],
+                // Un solo chorro (el otro dibujo va en otro ángulo y parpadeaba), titilando.
+                strike: [7, 8, 25, 8, 25],
                 hurt: [23],
                 down: [19, 20, 21, 22, 24, 24],
               },

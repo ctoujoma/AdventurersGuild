@@ -37,11 +37,24 @@ for name, a in AN.items():
     if name == 'gigante':  # respira: el quieto con una fila menos a la altura del pecho
         g = out[name][0]; y = round(len(g) * 0.42)
         out[name].append([[None] * len(g[0])] + g[:y] + g[y + 1:])
+    if name == 'dragon':  # 25: el aliento del 8 con la llama del borde comida (titila sin moverse)
+        g = out[name][8]; H, W = len(g), len(g[0])
+        lum = lambda c: sum(int(c[i:i+2], 16) * w for i, w in ((1, .3), (3, .59), (5, .11)))
+        fl = lambda x, y: 0 <= x < W and 0 <= y < H and g[y][x] and x > W * 0.6 and lum(g[y][x]) > 170
+        v = [r[:] for r in g]
+        for y in range(H):
+            for x in range(W):
+                if fl(x, y) and not all(fl(x + dx, y + dy) for dx, dy in ((1,0),(-1,0),(0,1),(0,-1))) \
+                        and (x + y) % 2 == 0:
+                    v[y][x] = None
+        out[name].append(v)
     if a.get('feet'):  # alineados por los pies (el centro de lo que pisa), no por la izquierda
         def pie(g):
             xs = [x for r in g[-3:] for x, c in enumerate(r) if c]
             return round(sum(xs) / len(xs))
-        an = [pie(g) for g in out[name]]; m = max(an)
+        an = [pie(g) for g in out[name]]
+        if name == 'dragon': an[25] = an[8]  # la variante del aliento, igual que su original
+        m = max(an)
         out[name] = [[[None] * (m - p) + r for r in g] for g, p in zip(out[name], an)]
     print(name, [(len(g[0]), len(g)) for g in out[name]])
 json.dump(out, open('sierra_calco.json', 'w'))
