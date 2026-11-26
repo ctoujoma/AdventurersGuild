@@ -486,7 +486,14 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      rama `claude/arte-enemigos`), pero el usuario pide más calidad en los grandes y los guardianes:
      **dibujados a mano, píxel a píxel**, sin formas geométricas ni partir de los jefes de los encargos
      (que se rehacen más adelante). Muestra: el lobo enorme (`tools/bocetos/enemigos/huargo5.py`),
-     esperando visto bueno (MA en la página). Siguiente: enemigos y guardianes con dibujo
+     esperando visto bueno (MA en la página). **Hecho (26 nov):** los del bosque calcados de las referencias
+     del usuario y limpiados (`art/expCalcos.ts`, generado por `tools/bocetos/enemigos/bosque_calco.py` +
+     `a_ts.py`; `calco2.py` calca por celdas y `boca_limpia.py` rehace las bocas): lobos, jabalí, oso y
+     huargo con varios fotogramas, en la pelea del visor (`MarchNow.rival`, solo bosque; capturas con
+     `tools/visor-pelea.ts`). El usuario: «no te compliques», vale un estilo propio si es más fluido.
+     Falta: ratas y el resto de rumbos (sin referencia: estilo propio), guardianes, «Ver la pelea».
+     Luego: pasada visual a sierra/marismas/ruinas y transiciones suaves (lluvia y fondo cambian de golpe).
+     Siguiente: enemigos y guardianes con dibujo
      propio (E1, B11) y una pasada de profundidad a sierra, marismas y ruinas. Orden: rumbos nuevos, bosque,
      campamento, enemigos. Para los enemigos: jefes a la vista en #225 (grupo parado mirando al jefe a
      lo lejos cuando `e.pending.kind === 'jefe'`, con `e.pending.foe`; `'guardian'` para el guardián). Prototipo en la rama `claude/arte-expediciones-areas` (sin PR): `visor/bioma.ts` (cada
