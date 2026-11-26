@@ -4,6 +4,7 @@
  * con estocada, destello y retroceso del que lo recibe, cifras de daño que suben y, de vez en
  * cuando, uno que cae. Los muñecos son los de verdad (`heroSprites`, `fightSprites`, `foeArt`).
  */
+import { expFoeArt } from '../../art/expFoes';
 import { foeArt, type FoeArt, type FoePose } from '../../art/foes';
 import type { Dress } from '../../data/custom';
 import {
@@ -143,6 +144,10 @@ export class Gente {
 
   /** Los enemigos de esta pelea (de dos a tres; uno, si es grande; tres, si son alimañas). */
   private foes(m: MarchNow): FoeArt[] {
+    if (m.rival) {
+      const { art, count } = expFoeArt(m.rival.heading, m.rival.idx);
+      return Array.from({ length: count }, () => art);
+    }
     const rng = new Rng(`visor-foes-${m.seed}-${m.foe}`);
     const n = m.foe === 'grande' ? 1 : m.foe === 'alimana' ? 3 : rng.int(2, 3);
     return Array.from({ length: n }, (_, i) => foeArt(m.foe, `${m.seed}-${i}`));
@@ -174,7 +179,7 @@ export class Gente {
     const lead = Math.round(e.w / 2 - dir * 8);
     const heroX = (i: number) => lead - dir * i * (GAP + 2);
     const foeXs: number[] = [];
-    let fx = lead + dir * 27;
+    let fx = lead + dir * Math.max(27, 10 + Math.ceil((foes[0]?.span ?? 0) / 2));
     for (const f of foes) {
       if (f.big) fx += dir * 10;
       foeXs.push(fx);
