@@ -6,7 +6,7 @@ import { DAY_SECONDS, DUSK, EXP_CAMP, EXP_HOURS, HP_LIGHT } from '../core/balanc
 import { hpOf } from '../core/health';
 import { fightRoster } from '../core/chains';
 import { HEADING_FOES, HOUR, distAt, expWeather, gameTime } from '../core/expedition';
-import type { Expedition, GameState, Hero } from '../core/model';
+import type { BossFight, Expedition, GameState, Hero } from '../core/model';
 import type { MarchNow } from '../world/visor/marcha';
 
 /**
@@ -33,7 +33,12 @@ export const hourOfDay = (e: Expedition, h = e.hours) =>
  * día en la taberna es de día en la expedición, y la noche cae a la vez en las dos.
  */
 export function visorHour(s: GameState): number {
-  const f = (((gameTime(s) % DAY_SECONDS) + DAY_SECONDS) % DAY_SECONDS) / DAY_SECONDS;
+  return hourAt(gameTime(s));
+}
+
+/** La hora del visor en un momento (segundos de juego desde el alba del día 1). */
+function hourAt(at: number): number {
+  const f = (((at % DAY_SECONDS) + DAY_SECONDS) % DAY_SECONDS) / DAY_SECONDS;
   const h = f < DUSK ? 6 + (14 * f) / DUSK : 20 + (10 * (f - DUSK)) / (1 - DUSK);
   return h % 24;
 }
@@ -84,6 +89,42 @@ export function marchNow(s: GameState, e: Expedition): MarchNow {
     weather: expWeather(e),
     day: Math.floor(e.hours / EXP_HOURS) + 1,
     event: e.pending ? { kind: e.pending.kind, foe: e.pending.foe } : undefined,
+    dress: Object.fromEntries(heroes.filter((h) => h.dress).map((h) => [h.id, h.dress!])),
+  };
+}
+
+/**
+ * Lo que pinta el visor al repetir una pelea de expedición («Ver la pelea»): la misma escena que
+ * en directo (rumbo, enemigo, lejanía, hora y tiempo de entonces), en modo pelea.
+ */
+export function replayNow(s: GameState, f: BossFight): MarchNow | null {
+  const x = f.exp;
+  if (!x) return null;
+  const foes = HEADING_FOES[x.heading] ?? ['bestia'];
+  const part = (((x.at % DAY_SECONDS) + DAY_SECONDS) % DAY_SECONDS) / DAY_SECONDS;
+  const heroes = f.heroes
+    .map((c) => s.heroes.find((h) => h.id === c.id))
+    .filter((h): h is Hero => !!h);
+  return {
+    seed: `${f.boss}-${x.at}-${x.foe}`,
+    terrain:
+      x.heading === 'bosque'
+        ? 'bosque'
+        : x.heading === 'sierra'
+          ? 'monte'
+          : x.heading === 'marismas'
+            ? 'pantano'
+            : 'ruina',
+    crew: f.heroes,
+    mode: 'fight',
+    night: part >= DUSK || part < 0.04,
+    home: x.home,
+    foe: foes[x.foe] ?? 'bestia',
+    rival: x.heading === 'bosque' ? { heading: x.heading, idx: x.foe } : undefined,
+    wild: Math.min(1, x.dist / 8),
+    hour: hourAt(x.at),
+    weather: x.weather,
+    day: Math.floor(x.at / DAY_SECONDS) + 1,
     dress: Object.fromEntries(heroes.filter((h) => h.dress).map((h) => [h.id, h.dress!])),
   };
 }

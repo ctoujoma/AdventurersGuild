@@ -268,6 +268,18 @@ Con la vida que se guarda (`core/health.ts`, #219), las expediciones ya no cuent
 - **Parados con un suceso esperando** (`MarchMode` `wait`): en el visor, quietos, de pie, sin
   andar.
 
+## La noche, solo de campamento, y «Ver la pelea» con la escena del visor (usuario, 26 nov)
+
+- **De noche** (de `EXP_CAMP` al alba, lo que el visor enseña como campamento) no hay sucesos ni
+  decisiones: los del día se reparten en las horas de marcha (los mismos al día). A veces atacan
+  el campamento (`EXP_CAMP_RAID`; nunca el grande del rumbo, y con ventaja,
+  `EXP_CAMP_RAID_MULT`): la pelea se ve en el visor. Si no, a veces una línea tranquila (aullidos,
+  la guardia…).
+- **«Ver la pelea»** de una expedición (`ui/ExpFightReplay.tsx`) ya no usa la pantalla de las
+  peleas de los encargos: la misma escena del visor (paraje, hora, tiempo y enemigos con su
+  dibujo), unos 7 s, y luego cómo acabó (ganan o pierden, y quién cae), con «Otra vez». Cada
+  pelea guarda lo justo para eso (`BossFight.exp`). «Pelear en directo» también la enseña así.
+
 ## Depende de otros
 
 - **Agente principal:** las pociones como trabajo de la alquimia (ver «Pendiente: las

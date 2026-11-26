@@ -82,6 +82,7 @@ import { TripSheet } from './TripSheet';
 import { ExpeditionSheet } from './ExpeditionSheet';
 import { ExpeditionView } from './ExpeditionView';
 import { ExpIntro } from './ExpIntro';
+import { ExpFightReplay } from './ExpFightReplay';
 import { GLOW_SFX, type GlowLevel } from './glow';
 import { TutorialNote } from './TutorialNote';
 import { TutorialFocus } from './TutorialFocus';
@@ -2180,7 +2181,10 @@ export function App() {
           onLater={() => setBossWait(null)}
         />
       )}
-      {watching && (
+      {watching?.fight.exp && !watching.play && (
+        <ExpFightReplay game={game} fight={watching.fight} onClose={closeWatch} />
+      )}
+      {watching && !(watching.fight.exp && !watching.play) && (
         <BossFight
           fight={watching.fight}
           onClose={closeWatch}

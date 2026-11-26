@@ -36,6 +36,13 @@ error:
 
 # El diario de la expedición (se guarda en la partida). Una línea por suceso.
 diario:
+  asalto_campamento: "De noche, algo se mueve junto al fuego del campamento: ¡{enemigos}! A las armas."
+  de_noche:
+    - "Aúllan los lobos a lo lejos; {heroe} echa otro leño al fuego."
+    - "{heroe} hace la primera guardia, con la espalda contra un tronco."
+    - "Algo cruje en la oscuridad, pero no se acerca."
+    - "{heroe} cuenta una historia junto al fuego; nadie se la cree."
+    - "Las brasas crepitan. Duermen de un tirón."
   pocion_pelea: "Acabada la pelea, {heroe} se bebe una poción de un trago: se tiene en pie."
   herido_leve: "{heroe} va {sexo, select, f {tocada} other {tocado}}: más despacio y con cuidado. Quizá convenga volver."
   nadie: "Nadie estaba en condiciones de ocuparse de {que}: lo dejan pasar."
@@ -490,3 +497,12 @@ vida:
   leve: "{sexo, select, f {Herida leve} other {Herido leve}} · {pct} %"
   grave: "{sexo, select, f {Herida grave} other {Herido grave}} · {pct} %"
   suelo: "{sexo, select, f {En el suelo, la llevan} other {En el suelo, lo llevan}}"
+
+# «Ver la pelea» de una expedición, con la escena del visor (ui/ExpFightReplay.tsx).
+repeticion:
+  titulo: "La pelea"
+  ganan: "¡Ganan la pelea!"
+  pierden: "Pierden la pelea"
+  caen: "{n, plural, one {Cae} other {Caen}}: {quien}."
+  otra_vez: "Otra vez"
+  cerrar: "Cerrar"

@@ -9146,6 +9146,38 @@ div.item-count {
 .exp-drinks {
   margin: 4px 0;
 }
+/* «Ver la pelea» de una expedición: la escena del visor y, al acabar, cómo fue. */
+.exp-replay .exp-visor {
+  position: relative;
+}
+.exp-replay-end {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  padding: 8px 14px;
+  background: rgba(24, 20, 37, 0.88);
+  color: #f7ecd0;
+  border: 2px solid #000;
+  box-shadow: 0 0 0 2px var(--gold);
+  text-align: center;
+  animation: fadein 0.3s both;
+}
+.exp-replay-end.is-won b {
+  color: #ffd35a;
+}
+.exp-replay-end.is-lost b {
+  color: #ff8a7a;
+}
+.exp-replay-acts {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 8px 0;
+}
 
 /* ---------- Confirmar antes de vender (por encima de todo) ---------- */
 .confirm-backdrop {

@@ -661,6 +661,16 @@ export const EXPEDITION_LEVEL = VET_LEVEL;
  */
 export const EXP_HOURS = 24;
 export const EXP_CAMP = 17;
+/**
+ * De noche (de `EXP_CAMP` al alba, lo que el visor enseña como campamento) solo pasan cosas de
+ * campamento (usuario, 26 de noviembre): por hora, `EXP_CAMP_RAID` de que ataquen el campamento
+ * (una pelea que se ve en el visor, con ventaja: `EXP_CAMP_RAID_MULT`) y `EXP_NIGHT_LINE` de una línea tranquila. Los sucesos del
+ * día se reparten en las horas de marcha.
+ */
+export const EXP_CAMP_RAID = 0.012;
+/** Lo fuerte que es el ataque al campamento (pelean junto al fuego y con guardia). */
+export const EXP_CAMP_RAID_MULT = 0.7;
+export const EXP_NIGHT_LINE = 0.08;
 export const EXP_EVENTS = 2;
 export const EXP_EVENTS_FAR = 0.2;
 /**

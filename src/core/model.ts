@@ -459,6 +459,19 @@ export interface BossFight {
   foe?: Txt;
   where?: Txt;
   terrain?: Terrain;
+  /**
+   * Pelea de una expedición: lo justo para repetirla con la escena del visor (rumbo, enemigo,
+   * lejanía, si iban de vuelta, el momento en segundos de juego y el tiempo que hacía).
+   */
+  exp?: {
+    heading: Heading;
+    foe: number;
+    dist: number;
+    home: boolean;
+    at: number;
+    weather: ExpWeather;
+    guardian?: boolean;
+  };
 }
 
 export interface Fallen {
