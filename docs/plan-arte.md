@@ -492,6 +492,14 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      huargo con varios fotogramas, en la pelea del visor (`MarchNow.rival`, solo bosque; capturas con
      `tools/visor-pelea.ts`). El usuario: «no te compliques», vale un estilo propio si es más fluido.
      Falta: ratas y el resto de rumbos (sin referencia: estilo propio), guardianes, «Ver la pelea».
+     **Sierra y marismas, primera pasada (26 nov):** el usuario trae los diseños (otra IA) y se calcan a color con
+     `tools/bocetos/enemigos/calco3.py` (mediana por celda, k-medias por criatura, borde oscurecido;
+     `sierra_calco.py`; `de_ts.py` saca los del bosque del `.ts` para regenerar con `a_ts.py`). Entran la
+     sanguijuela (marismas: quieta, enroscada, salto, se alza, se lanza, revienta y charco), el gigante de
+     hielo con garrote (sierra, en lugar del gigante de las nieves) y el dragón de hielo como guardián de
+     sierra a la vista (`expGuardianArt`, `MarchNow.heading`). Todos los rumbos usan ya su reparto en la
+     pelea del visor (`rival` siempre). Faltan poses: el gigante y el dragón traen solo dos (para la otra
+     IA: andar, golpe bajado, herido) y el resto de enemigos de sierra y marismas.
      Luego: pasada visual a sierra/marismas/ruinas y transiciones suaves (lluvia y fondo cambian de golpe).
      **Sucesos a la vista (26 nov):** con `e.pending` el visor pinta delante lo que hay (`visor/sucesos.ts`, `MarchNow.event`):
      cofre, santuario, mercader con carro, viajero, campamento abandonado, oso, cueva, torre y ruinas, pintados en

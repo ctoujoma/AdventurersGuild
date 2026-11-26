@@ -34,6 +34,8 @@ export interface MarchNow {
   day?: number;
   /** Lo de la sastrería de cada héroe (por id): el traje y el color, como en la taberna. */
   dress?: Record<string, Dress>;
+  /** El rumbo (el guardián que sale a la vista es el suyo). */
+  heading?: Heading;
   /** El enemigo de verdad (rumbo y número en `expediciones.enemigos`): su dibujo propio. */
   rival?: { heading: Heading; idx: number };
   /** El suceso que tienen delante mientras esperan a que elijas (con un jefe, cuál). */

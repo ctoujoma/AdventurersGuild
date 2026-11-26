@@ -24,7 +24,6 @@ import {
   goblinBody,
   ratBody,
   skeletonBody,
-  slimePose,
   trollPose,
   TROLL_FOOT,
   wolfBody,
@@ -137,17 +136,22 @@ function giant(what: string, skin: Record<string, string>, cloth: string, runes 
  * Un enemigo calcado (`expCalcos.ts`): sus fotogramas en un lienzo común, pegados abajo y por la
  * cola, y qué fotograma hace cada pose. Caído, panza arriba.
  */
+/** Los caracteres de los colores de `ramp` en los calcos (`expCalcos.ts`). */
+const IDX = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
 function calcoArt(
   kind: FoeArt['kind'],
   what: string,
-  pose: Record<Exclude<FoePose, 'down'>, number>,
+  pose: Record<Exclude<FoePose, 'down'>, number> & { down?: number },
   big = false,
 ): FoeArt {
   const c = CALCOS[what]!;
   const w = Math.max(...c.frames.map((f) => f[0]!.length));
   const h = Math.max(...c.frames.map((f) => f.length));
-  const col = (ch: string) =>
-    ch >= '0' && ch <= '6' ? c.ramp[+ch]! : BOCA[ch as keyof typeof BOCA];
+  const col = (ch: string) => {
+    const i = IDX.indexOf(ch);
+    return i >= 0 ? c.ramp[i]! : BOCA[ch as keyof typeof BOCA];
+  };
   const frames = c.frames.map((f) => {
     const b = new PixelBuffer(w, h);
     f.forEach((row, y) =>
@@ -158,8 +162,9 @@ function calcoArt(
     return b;
   });
   const poses = {} as Record<FoePose, PixelBuffer>;
-  for (const k of Object.keys(pose) as (keyof typeof pose)[]) poses[k] = frames[pose[k]]!;
-  poses.down = trim(upsideDown(poses.idle));
+  for (const k of Object.keys(pose) as FoePose[]) poses[k] = frames[pose[k]!]!;
+  // Caído: el suyo si lo tiene (la sanguijuela reventada) y si no, panza arriba.
+  if (pose.down === undefined) poses.down = trim(upsideDown(poses.idle));
   const iw = c.frames[pose.idle]![0]!.length;
   return { kind, what, poses, foot: Math.round(iw / 2), chest: Math.round(h / 2), span: iw, big };
 }
@@ -227,29 +232,29 @@ const FOES: Record<Heading, readonly (() => ExpFoe)[]> = {
     }),
     () => ({ art: quadArt('bestia', 'oso_pardo', bearBody(P.mocha, P.ebony)), count: 1 }),
     () => ({
-      art: giant('gigante_nieves', { h: P.white, s: P.mist, S: P.fog }, P.steel),
+      art: calcoArt(
+        'grande',
+        'gigante',
+        { idle: 0, idle2: 0, walk1: 0, walk2: 1, windup: 1, strike: 0, hurt: 0 },
+        true,
+      ),
       count: 1,
     }),
   ],
   marismas: [
-    () => {
-      const poses = posesOf(
-        (p) => slimePose(P.wine, P.coral, P.plum, p),
-        (idle) => trim(upsideDown(idle)),
-      );
-      return {
-        art: {
-          kind: 'alimana',
-          what: 'sanguijuela',
-          poses,
-          foot: 11,
-          chest: 7,
-          span: 18,
-          big: false,
-        },
-        count: 3,
-      };
-    },
+    () => ({
+      art: calcoArt('alimana', 'sanguijuela', {
+        idle: 0,
+        idle2: 5,
+        walk1: 1,
+        walk2: 2,
+        windup: 3,
+        strike: 4,
+        hurt: 6,
+        down: 7,
+      }),
+      count: 3,
+    }),
     () => {
       const a = bipedArt('muerto', 'ahogado', skeletonBody(P.lime, false, 'oxidada', false));
       const poses = { ...a.poses };
@@ -283,6 +288,31 @@ export function expFoeArt(heading: Heading, idx: number): ExpFoe {
     cache.set(key, f);
   }
   return f;
+}
+
+/**
+ * El guardián del rumbo en las expediciones (el que espera a la vista): el de sierra, el dragón
+ * de hielo; los demás, de momento, el huargo del bosque.
+ */
+export function expGuardianArt(heading: Heading): FoeArt {
+  const key = `guardian:${heading}`;
+  let f = cache.get(key);
+  if (!f) {
+    f =
+      heading === 'sierra'
+        ? {
+            art: calcoArt(
+              'grande',
+              'dragon',
+              { idle: 0, idle2: 0, walk1: 0, walk2: 0, windup: 0, strike: 1, hurt: 0 },
+              true,
+            ),
+            count: 1,
+          }
+        : expFoeArt('bosque', 3);
+    cache.set(key, f);
+  }
+  return f.art;
 }
 
 /** El guardián de cada rumbo (su dibujo, en `art/bosses.ts`). */

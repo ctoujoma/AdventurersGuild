@@ -1,12 +1,17 @@
 // Capturas de los sucesos del visor (lo que tienen delante al esperar, y el jefe a la vista):
-// `node tools/textos/esbuild.mjs tools/visor-sucesos.ts sucesos <carpeta>`.
+// `node tools/textos/esbuild.mjs tools/visor-sucesos.ts sucesos <carpeta> [rumbo]`.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { png } from './visor-png';
 import { ESCRITORIO, MOVIL } from '../src/world/visor/encuadre';
 import { Visor } from '../src/world/visor/escena';
 import type { MarchNow } from '../src/world/visor/marcha';
 import type { ExpEvent } from '../src/data/expEvents';
-const [dir] = process.argv.slice(2);
+import type { Heading } from '../src/core/model';
+const [dir, rumbo = 'bosque'] = process.argv.slice(2);
+const heading = rumbo as Heading;
+const terrain = (
+  { bosque: 'bosque', sierra: 'monte', marismas: 'pantano', ruinas: 'ruina' } as const
+)[heading];
 mkdirSync(dir!, { recursive: true });
 const crew: MarchNow['crew'] = [
   { id: 'a', name: 'V', seed: 'violante-7', cls: 'guerrero', sex: 'f', fate: 'ok' },
@@ -33,7 +38,8 @@ for (const kind of EVS)
   ] as const) {
     const m: MarchNow = {
       seed: 'visor-sucesos',
-      terrain: 'bosque',
+      terrain,
+      heading,
       crew,
       mode: 'wait',
       night: false,
@@ -43,7 +49,7 @@ for (const kind of EVS)
       hour: 10.5,
       weather: 'claro',
       day: 2,
-      event: { kind, foe: kind === 'jefe' ? 2 : undefined },
+      event: { kind, foe: kind === 'jefe' ? 3 : undefined },
     };
     const v = new Visor(enc);
     v.frame(m, 0, { travel: 300 });
