@@ -62,9 +62,15 @@ def hexc(c): return '#%02x%02x%02x' % tuple(int(round(max(0, min(255, v)))) for 
 
 def criatura(src, boxes, k, n, bg, thr=40, drop=None, edge=0.55, keep=(), acc=None, lift=1.0, split=False):
     """keep: colores fijos (hex) que se respetan si una celda se parece (ojos, fuego)."""
-    a = np.array(Image.open(src).convert('RGB')).astype(int)
+    imgs = {}
+    def img(p):
+        if p not in imgs: imgs[p] = np.array(Image.open(p).convert('RGB')).astype(int)
+        return imgs[p]
     bg = np.array(bg)
-    grids = [celdas(a, b, k, bg, thr, drop, acc) for b in boxes]
+    # una caja es (x0, y0, x1, y1) de `src`, o (otra imagen, x0, y0, x1, y1, su k): así los
+    # fotogramas de varias hojas comparten paleta
+    grids = [celdas(img(src), b, k, bg, thr, drop, acc) if len(b) == 4
+             else celdas(img(b[0]), b[1:5], b[5], bg, thr, drop, acc) for b in boxes]
     px = [c for g in grids for r in g for c in r if c is not None and not isinstance(c, tuple)]
     if split:  # dos familias de color (la sanguijuela verde y roja): sin medias entre ellas
         rd = [c for c in px if c[0] > c[1] + 12]; gr = [c for c in px if not c[0] > c[1] + 12]

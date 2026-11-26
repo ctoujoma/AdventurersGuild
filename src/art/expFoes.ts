@@ -332,14 +332,16 @@ export function expGuardianArt(heading: Heading): FoeArt {
             art: calcoArt(
               'grande',
               'dragon',
-              { idle: 13, idle2: 14, walk1: 2, walk2: 4, windup: 6, strike: 8, hurt: 10, down: 12 },
+              { idle: 13, idle2: 14, walk1: 2, walk2: 4, windup: 6, strike: 8, hurt: 23, down: 24 },
               true,
-              // Respira, abre las alas y ruge, echa el aliento de hielo; herido, se encabrita.
+              // Respira, abre las alas y ruge, echa el aliento de hielo; herido, se escarcha; al morir
+              // se encabrita, se dobla, se desploma y queda helado.
               {
                 idle: [13, 14, 15, 16, 17, 16, 15, 14],
                 windup: [18, 6],
                 strike: [7, 8, 9, 8],
-                hurt: [10, 11],
+                hurt: [23],
+                down: [19, 20, 21, 22, 24],
               },
             ),
             count: 1,
