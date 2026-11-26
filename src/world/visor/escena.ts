@@ -33,11 +33,24 @@ export interface VisorForce {
 export const WALK_SPEED = 16;
 
 const WILD_STEPS = 24;
+/** Segundos que tarda el tiempo en llegar a lo que toca (lluvia, niebla, nubes…). */
+const CLIMA_TAU = 6;
+/** Segundos del fundido entre un paisaje y el siguiente (al alejarse, mojarse o nevar). */
+const FADE = 1.6;
+const CLIMA_KEYS = ['rain', 'fog', 'cloud', 'snow', 'wind', 'dust', 'storm'] as const;
+/** Bayer 4×4: el fundido por puntos, como se hace en pixel art. */
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+const bayer = (x: number, y: number) => (BAYER[(y & 3) * 4 + (x & 3)]! + 0.5) / 16;
 
 export class Visor {
   private capas: Capa[] = [];
   private capasKey = '';
   private colored = new Map<string, PixelBuffer>();
+  /** El paisaje de antes, mientras se funde con el nuevo (`fade` de 0 a 1). */
+  private prev: { capas: Capa[]; colored: Map<string, PixelBuffer> } | null = null;
+  private fade = 1;
+  /** El tiempo que se ve: se acerca poco a poco al que toca. */
+  private clima: Clima | null = null;
   private colorKey = '';
   private sky: PixelBuffer | null = null;
   private skyKey = '';
@@ -66,6 +79,12 @@ export class Visor {
     const wet = rain > 0.05 ? 1 : 0;
     const key = `${w}:${seed}:${bio.id}:${sn}:${wet}`;
     if (key !== this.capasKey) {
+      // La primera vez, de golpe; luego, fundido desde lo que se veía.
+      if (this.capasKey) {
+        this.prev = { capas: this.capas, colored: this.colored };
+        this.colored = new Map();
+        this.fade = 0;
+      }
       this.capasKey = key;
       this.capas = buildCapas(this.e, w, seed, bio.paisaje, { snow: sn, wet });
       this.colorKey = '';
@@ -103,6 +122,29 @@ export class Visor {
     return luzAt(hour, clima);
   }
 
+  /**
+   * El tiempo que se ve, acercándose al que toca (`CLIMA_TAU`): la lluvia empieza poco a poco y
+   * la niebla entra despacio. El primer fotograma (o con el tiempo forzado), tal cual.
+   */
+  private smoothed(target: Luz, dt: number, snap: boolean): Luz {
+    const cur = this.clima;
+    if (!cur || snap || dt <= 0) {
+      if (!cur || snap) this.clima = { ...target.clima };
+      return cur && !snap ? luzAt(target.hour, cur) : target;
+    }
+    const k = 1 - Math.exp(-dt / CLIMA_TAU);
+    const next: Clima = { ...target.clima };
+    for (const key of CLIMA_KEYS) {
+      const a = cur[key] ?? 0;
+      const b = target.clima[key] ?? 0;
+      // Escalones de 0,02 para no recolorear a cada fotograma.
+      const v = Math.abs(b - a) < 0.02 ? b : a + (b - a) * k;
+      next[key] = v;
+    }
+    this.clima = next;
+    return luzAt(target.hour, next);
+  }
+
   /** Pinta el fotograma del tiempo `time` (segundos) y lo devuelve. */
   frame(m: MarchNow, time: number, f: VisorForce = {}): PixelBuffer {
     const e = this.e;
@@ -115,7 +157,11 @@ export class Visor {
     const speed = WALK_SPEED * (hurt ? 0.75 : 1);
     if (walking) this.travel += dt * speed * (m.home ? -1 : 1);
     const travel = f.travel ?? this.travel;
-    const l = this.luz(m, f);
+    const l = this.smoothed(this.luz(m, f), dt, !!f.weather);
+    if (this.fade < 1) {
+      this.fade = Math.min(1, this.fade + dt / FADE);
+      if (this.fade >= 1) this.prev = null;
+    }
     const bio = biomaOf(m.terrain);
     const capas = this.layers(m.wild, this.seed, bio, l.clima.snow ?? 0, l.clima.rain);
     this.colorize(capas, l, bio);
@@ -139,6 +185,15 @@ export class Visor {
     const ctx = { b, e, l, lk, time, travel, m, capas, seed: this.seed, walking };
     const layer = (id: Capa['id']) => {
       const c = capas.find((x) => x.id === id);
+      const old = this.prev?.capas.find((x) => x.id === id);
+      const fade = this.fade;
+      if (old && this.prev && fade < 1) {
+        const ob = this.prev.colored.get(id);
+        if (ob) blitStrip(b, ob, travel * old.speed, old.y, (x, y) => bayer(x, y) >= fade);
+        if (c)
+          blitStrip(b, this.colored.get(id)!, travel * c.speed, c.y, (x, y) => bayer(x, y) < fade);
+        return;
+      }
       if (!c) return;
       blitStrip(b, this.colored.get(id)!, travel * c.speed, c.y);
     };
