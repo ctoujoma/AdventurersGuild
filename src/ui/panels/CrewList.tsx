@@ -134,8 +134,15 @@ function FreeSlot({
   const who = candidatesFor(game, task);
   if (!who.length)
     return (
-      <span class="crew-slot crew-free" aria-label={t('paneles.crewlist.puesto_libre')}>
-        {t('paneles.crewlist.libre')}
+      <span
+        class="crew-slot crew-free"
+        aria-label={t('paneles.crewlist.nadie_libre')}
+        title={t('paneles.crewlist.nadie_libre')}
+      >
+        <span class="crew-who">
+          <b>{t('paneles.crewlist.libre')}</b>
+          <small>{t('paneles.crewlist.nadie_libre_corto')}</small>
+        </span>
       </span>
     );
   return (

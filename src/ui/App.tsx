@@ -594,7 +594,12 @@ export function App() {
     },
   });
   const draft = works.planning ? works.view : null;
-  const model = useMemo(() => sceneModel(draft ?? sceneGame), [sceneGame, draft]);
+  // Con el menú de Héroes abierto, se resaltan todos en la taberna para verlos bien.
+  const spotHeroes = panel === 'heroes';
+  const model = useMemo(
+    () => sceneModel(draft ?? sceneGame, spotHeroes),
+    [sceneGame, draft, spotHeroes],
+  );
   useEffect(() => {
     const s = scene.current;
     if (!s) return;

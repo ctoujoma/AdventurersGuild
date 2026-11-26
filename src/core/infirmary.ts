@@ -6,7 +6,8 @@
  *
  * Los catres (26 de noviembre): quien entra en uno (`Hero.cot`) se queda en cama (`status:
  * 'herido'`, sin puesto ni guardia) hasta tener la vida entera, aunque esté leve o casi sano; así no
- * se rota. Los catres libres se llenan solos con los heridos de casa, el de menos vida primero; a
+ * se rota. Los catres libres se llenan solos con los heridos de casa, el de menos vida primero; si
+ * no queda ninguno y llega un grave, deja su sitio el que esté mejor (si no es grave también). A
  * mano (la ficha de la enfermería) se cambia a quién se cura en cada uno o se le da el alta. A quien
  * se le da el alta (`cotOff`) no se le vuelve a acostar solo hasta que se cure o le vuelvan a herir.
  */
@@ -81,6 +82,8 @@ export const wantsCot = (h: Hero) => atHome(h) && hpOf(h) < 1 && !(h.status === 
 
 /** Lo acuesta en un catre: deja su puesto y la guardia, para volver a ellos al curarse. Muta. */
 export function lieIn(h: Hero, roomId: string): void {
+  // La vida, fija antes de poner `days` a 0 (las partidas de antes la sacan de los días).
+  h.hp = hpOf(h);
   if (h.status === 'ok') {
     if (h.job) h.jobBefore = h.job;
     if (h.guard) h.guardBefore = true;
@@ -138,9 +141,21 @@ export function admit(s: GameState, up: (h: Hero) => void): boolean {
     .sort((a, b) => hpOf(a) - hpOf(b) || a.id.localeCompare(b.id));
   for (const h of waiting) {
     const r = rooms.find((x) => used.get(x.id)! < cap.get(x.id)!);
-    if (!r) break;
-    lieIn(h, r.id);
-    used.set(r.id, used.get(r.id)! + 1);
+    if (r) {
+      lieIn(h, r.id);
+      used.set(r.id, used.get(r.id)! + 1);
+      changed = true;
+      continue;
+    }
+    // Sin catre libre, un grave pasa delante: deja su sitio el que esté mejor (si no es grave).
+    if (hpOf(h) >= HP_GRAVE) continue;
+    const best = s.heroes
+      .filter((x) => x.status === 'herido' && x.cot && cap.has(x.cot) && hpOf(x) >= HP_GRAVE)
+      .sort((a, b) => hpOf(b) - hpOf(a) || a.id.localeCompare(b.id))[0];
+    if (!best) continue;
+    const at = best.cot!;
+    leaveCot(best, up);
+    lieIn(h, at);
     changed = true;
   }
   return changed;

@@ -140,4 +140,26 @@ describe('enfermería', () => {
     x = tick(x, (x.clock ?? 0) + DAY_SECONDS / 24);
     expect(cotsOf(x, enf.id).map((h) => h.id)).toEqual([out.id]);
   });
+
+  it('si llega un grave sin catre libre, deja su sitio el que esté mejor', () => {
+    const { s, enf } = ward('relevo', 1, 3);
+    s.heroes[0]!.hp = 0.6;
+    s.heroes[1]!.hp = 0.4;
+    s.heroes[0]!.status = 'ok';
+    s.heroes[1]!.status = 'ok';
+    s.heroes[2]!.status = 'ok';
+    s.heroes[2]!.hp = 0.9;
+    let x = tick({ ...s, clock: 0 }, DAY_SECONDS / 24);
+    expect(cotsOf(x, enf.id).map((h) => h.id)).toEqual(['h1', 'h0']);
+    // Cae grave el de fuera: entra y se levanta el que está mejor (h0).
+    x = {
+      ...x,
+      heroes: x.heroes.map((h) =>
+        h.id === 'h2' ? { ...h, hp: 0.1, status: 'herido' as const } : h,
+      ),
+    };
+    x = tick(x, (x.clock ?? 0) + DAY_SECONDS / 24);
+    expect(cotsOf(x, enf.id).map((h) => h.id)).toEqual(['h2', 'h1']);
+    expect(x.heroes.find((h) => h.id === 'h0')!.status).toBe('ok');
+  });
 });

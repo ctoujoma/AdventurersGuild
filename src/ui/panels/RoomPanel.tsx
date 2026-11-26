@@ -10,6 +10,7 @@ import {
 } from '../../core/infirmary';
 import { hpOf } from '../../core/health';
 import { LifeBar } from '../LifeBar';
+import { absentText } from '../absent';
 import { restText } from '../../data/labels';
 import { useState } from 'preact/hooks';
 import { roomMax } from '../../core/balance';
@@ -54,7 +55,7 @@ import { WorkshopInfo, workshopTabs, type WorkTab } from './WorkshopInfo';
 import { DormList } from './DormList';
 import { isWorkshop, potionCap } from '../../core/crafting';
 import { crewGroups } from '../crew';
-import { GUARD, type Task } from '../drop';
+import { GUARD, GUARD_VAULT, type Task } from '../drop';
 import { dawnIn } from '../when';
 import { RoomCustom, canCustomize, feastPending } from './RoomCustom';
 import { Tabs, type TabItem } from '../Tabs';
@@ -316,7 +317,11 @@ function InfirmaryInfo({
           {t('paneles.room.enf.mano', { pct: Math.round(staff * 100) })}
         </Fact>
       </div>
-      {staff === 0 && <span class="row-sub room-bad">{t('paneles.room.enf.sin_nadie')}</span>}
+      {staff === 0 && (
+        <span class="row-sub room-bad">
+          {absentText(game, room) ?? t('paneles.room.enf.sin_nadie')}
+        </span>
+      )}
       <div class="crew-slots infirmary-list">
         {here.map((h) => row(h, true))}
         {Array.from({ length: free }, (_, i) =>
@@ -412,7 +417,7 @@ function TrainInfo({ room }: { room: Room }) {
 
 /**
  * Los puestos de la sala como huecos (los mismos de Héroes › Tareas): quién está, lo que pone y
- * los libres para poner a alguien. En el recibidor, los dos de guardia.
+ * los libres para poner a alguien. En el recibidor y en la cámara, los de guardia.
  */
 function RoomCrew({
   game,
@@ -426,11 +431,11 @@ function RoomCrew({
   onOpen: (id: string) => void;
 }) {
   const [sel, setSel] = useState<string | null>(null);
-  const key = room.type === 'recibidor' ? GUARD : room.id;
+  const key = room.type === 'recibidor' ? GUARD : room.type === 'tesoro' ? GUARD_VAULT : room.id;
   const g = crewGroups(game).find((x) => x.key === key);
   if (!g) return null;
   const title =
-    key === GUARD
+    key === GUARD || key === GUARD_VAULT
       ? t('paneles.room.de_guardia')
       : isTrainRoom(room.type)
         ? t('paneles.room.entrenan_aqui')
@@ -738,9 +743,11 @@ export function RoomPanel({
         (!room.works || room.works.kind === 'extend') && (
           <DormList game={game} room={room} onAct={onAct} onOpen={onOpen} />
         )}
-      {onTask && onOpen && (hasPosts(room.type) || room.type === 'recibidor') && (
-        <RoomCrew game={game} room={room} onTask={onTask} onOpen={onOpen} />
-      )}
+      {onTask &&
+        onOpen &&
+        (hasPosts(room.type) || room.type === 'recibidor' || room.type === 'tesoro') && (
+          <RoomCrew game={game} room={room} onTask={onTask} onOpen={onOpen} />
+        )}
       {workshop && <WorkshopInfo key={room.id} game={game} room={room} onAct={onAct} />}
       {onWork && <RoomWorks game={game} room={room} onWork={onWork} onMove={onMove} />}
     </>
