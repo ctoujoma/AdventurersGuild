@@ -502,8 +502,13 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      que se pone roja al atacar (10), gigante (9) y dragón (19). Las poses pueden tener varios
      fotogramas (`FoeArt.seq`, `foeFrame` en `visor/gente.ts`): quieto respira, la carga, el golpe y el
      daño avanzan con la fase del turno. `calco3.py` separa familias de color (`split`), aclara tonos
-     medios (`lift`) y conserva los ojos rojos (`acc`). Falta: el resto de enemigos de sierra y marismas;
-     la sanguijuela queda oscura en la marisma (es su color).
+     medios (`lift`) y conserva los ojos rojos (`acc`). Gigante v3 (hoja con muerte; la fila de andar se descarta
+     porque trae el brazo y el garrote mal): fotogramas alineados por los pies, respira (quieto con
+     una fila menos, sintético), carga, golpe, herido y muere en cinco pasos (`seq.down`). En el visor el
+     último enemigo nunca caía: ahora, si la pelea se ganó (`MarchNow.won`), al acabar los que quedan
+     caen con su animación y el grupo lo celebra (`cheer`, saltitos) unos 3 s, con el paisaje parado
+     (`Gente.holds`), antes de seguir. Falta: el resto de enemigos de sierra y marismas; la sanguijuela
+     queda oscura en la marisma (es su color).
      Luego: pasada visual a sierra/marismas/ruinas y transiciones suaves (lluvia y fondo cambian de golpe).
      **Sucesos a la vista (26 nov):** con `e.pending` el visor pinta delante lo que hay (`visor/sucesos.ts`, `MarchNow.event`):
      cofre, santuario, mercader con carro, viajero, campamento abandonado, oso, cueva, torre y ruinas, pintados en

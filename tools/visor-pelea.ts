@@ -46,4 +46,11 @@ for (let idx = 0; idx < 4; idx++) {
       `${dir}/gif/${idx}-${String(k).padStart(3, '0')}.png`,
       png(v.frame(m, k / 10), 2),
     );
+  // Ganada: los que quedaban en pie caen y el grupo sigue.
+  const won: MarchNow = { ...m, mode: 'walk', won: true };
+  for (let k = 60; k < 100; k++)
+    writeFileSync(
+      `${dir}/gif/${idx}-${String(k).padStart(3, '0')}.png`,
+      png(v.frame(won, k / 10), 2),
+    );
 }

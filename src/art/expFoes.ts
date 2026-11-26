@@ -18,6 +18,7 @@ import {
   rotated,
   type FoeArt,
   type FoePose,
+  type FoeSeq,
 } from './foes';
 import {
   bearBody,
@@ -144,7 +145,7 @@ function calcoArt(
   what: string,
   pose: Record<Exclude<FoePose, 'down'>, number> & { down?: number },
   big = false,
-  seq?: Partial<Record<'idle' | 'windup' | 'strike' | 'hurt', number[]>>,
+  seq?: Partial<Record<FoeSeq, number[]>>,
 ): FoeArt {
   const c = CALCOS[what]!;
   const w = Math.max(...c.frames.map((f) => f[0]!.length));
@@ -167,11 +168,17 @@ function calcoArt(
   // Caído: el suyo si lo tiene (la sanguijuela reventada) y si no, panza arriba.
   if (pose.down === undefined) poses.down = trim(upsideDown(poses.idle));
   const iw = c.frames[pose.idle]![0]!.length;
+  // Con varios fotogramas por pose, los pies van donde pisa de verdad (el centro de las filas de
+  // abajo), que es por donde se alinean los fotogramas (`tools/bocetos/enemigos`).
+  const low = c.frames[pose.idle]!.slice(-3);
+  const xs = low.flatMap((r) => [...r].flatMap((ch, x) => (ch === '.' ? [] : [x])));
+  const foot =
+    seq && xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : Math.round(iw / 2);
   const art: FoeArt = {
     kind,
     what,
     poses,
-    foot: Math.round(iw / 2),
+    foot,
     chest: Math.round(h / 2),
     span: iw,
     big,
@@ -250,10 +257,17 @@ const FOES: Record<Heading, readonly (() => ExpFoe)[]> = {
       art: calcoArt(
         'grande',
         'gigante',
-        { idle: 0, idle2: 8, walk1: 1, walk2: 4, windup: 2, strike: 5, hurt: 1 },
+        { idle: 0, idle2: 14, walk1: 0, walk2: 1, windup: 3, strike: 4, hurt: 7, down: 13 },
         true,
-        // Alza el garrote, lo baja contra el suelo y lo recoge.
-        { idle: [0, 8], windup: [1, 2], strike: [3, 5, 5, 6], hurt: [1] },
+        // Respira; guardia y garrote arriba, lo estampa y lo recoge; herido, se dobla; al morir se
+        // tambalea, suelta el garrote y cae.
+        {
+          idle: [0, 0, 14, 14],
+          windup: [1, 2, 3],
+          strike: [4, 5, 5, 6],
+          hurt: [7, 8],
+          down: [9, 10, 11, 12, 13],
+        },
       ),
       count: 1,
     }),

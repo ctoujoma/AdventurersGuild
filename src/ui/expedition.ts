@@ -82,6 +82,7 @@ export function marchNow(s: GameState, e: Expedition): MarchNow {
     home: !!e.turn,
     foe: foes[fightLine?.foe ?? 0] ?? 'bestia',
     heading: e.heading,
+    won: fightLine?.won,
     rival: { heading: e.heading, idx: fightLine?.foe ?? 0 },
     wild: Math.min(1, distAt(e) / 8),
     last: recent?.k,

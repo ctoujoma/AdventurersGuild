@@ -70,6 +70,8 @@ const SWING: Record<FightPose, number> = { ready: 25, windup: -50, strike: 80, u
 export const GAP = 13;
 /** Lo que dura un turno de la pelea (s). */
 const TURN = 0.95;
+/** Ganada la pelea: los que quedaban en pie caen y el grupo lo celebra (s); luego siguen. */
+const AFTER = 3.2;
 
 interface Pop {
   text: string;
@@ -97,17 +99,35 @@ export function shadow(b: PixelBuffer, x: number, y: number, w: number): void {
 
 export class Gente {
   private fightFrom = -1;
+  /** Al ganar, los que quedaban en pie caen (cuándo acabó y cuánto duró la pelea). */
+  private after?: { from: number; t: number };
   private pops: Pop[] = [];
   private sparks: { x: number; y: number; big: boolean }[] = [];
+
+  /** Parados celebrando (el paisaje no avanza aunque ya anden). */
+  holds(m: MarchNow, time: number): boolean {
+    if (m.mode !== 'walk') return false;
+    if (this.fightFrom >= 0) return !!m.won;
+    return !!this.after && time - this.after.from < AFTER;
+  }
 
   draw(c: Ctx): void {
     this.pops = [];
     this.sparks = [];
     if (c.m.mode === 'fight') {
       if (this.fightFrom < 0) this.fightFrom = c.time;
+      this.after = undefined;
       this.fight(c, c.time - this.fightFrom);
     } else {
+      if (this.fightFrom >= 0 && c.m.won && c.m.mode === 'walk')
+        this.after = { from: c.time, t: c.time - this.fightFrom };
       this.fightFrom = -1;
+      const end = this.after ? (c.time - this.after.from) / AFTER : 1;
+      if (this.after && end >= 0 && end < 1) {
+        this.fight(c, this.after.t, end);
+        return;
+      }
+      this.after = undefined;
       if (hiding(c)) drawEscondidos(c);
       else this.walk(c);
     }
@@ -156,7 +176,7 @@ export class Gente {
   }
 
   /** La pelea, por turnos: el grupo y los enemigos se van dando. */
-  private fight(c: Ctx, t: number): void {
+  private fight(c: Ctx, t: number, end?: number): void {
     const { b, e, m, l, lk } = c;
     const crew = m.crew.map((c) => heroOf(c, m.dress?.[c.id]));
     const foes = this.foes(m);
@@ -167,14 +187,17 @@ export class Gente {
     // Cuándo cae cada uno (el último aguanta: la pelea acaba en el diario, no aquí).
     const kills = foes.slice(0, -1).map((_, j) => (foes.length > 2 ? 4 + j * 4 : 6 + j * 6));
     const downAt = (j: number) => kills[j] ?? Infinity;
-    const isDown = (j: number) => k > downAt(j) || (k === downAt(j) && p > 0.55);
-    const heroTurn = k % 2 === 0;
+    const fell = (j: number) => k > downAt(j) || (k === downAt(j) && p > 0.55);
+    // Ganada la pelea (`end`, 0–1), caen todos: los que seguían en pie, ahora.
+    const isDown = (j: number) => end !== undefined || fell(j);
+    const heroTurn = end === undefined && k % 2 === 0;
     const alive = foes.map((_, j) => j).filter((j) => !isDown(j) || (k === downAt(j) && p <= 0.55));
     const front = alive[0] ?? 0;
     const atkHero = heroTurn ? (k >> 1) % n : -1;
-    const atkFoe = !heroTurn && alive.length ? alive[(k >> 1) % alive.length]! : -1;
+    const atkFoe =
+      end === undefined && !heroTurn && alive.length ? alive[(k >> 1) % alive.length]! : -1;
     const tgtHero = !heroTurn ? Math.floor(hash(k * 7 + 3) * Math.min(n, 2)) : -1;
-    const hit = p > 0.32 && p < 0.62;
+    const hit = end === undefined && p > 0.32 && p < 0.62;
     const flash = p > 0.32 && p < 0.44 && Math.floor(t * 20) % 2 === 0;
     const white = rgba('#ffffff');
     // Posiciones: el grupo a un lado, los enemigos al otro, de cara.
@@ -199,7 +222,17 @@ export class Gente {
       else if (j === atkFoe) pose = p < 0.3 ? 'windup' : p < 0.58 ? 'strike' : 'idle';
       else pose = Math.floor(t * 2 + j) % 2 ? 'idle2' : 'idle';
       const u =
-        pose === 'windup' ? p / 0.3 : pose === 'strike' ? (p - 0.3) / 0.28 : (p - 0.32) / 0.3;
+        pose === 'down'
+          ? end !== undefined && !fell(j)
+            ? end / 0.45
+            : k === downAt(j)
+              ? (p - 0.55) / 0.4
+              : 1
+          : pose === 'windup'
+            ? p / 0.3
+            : pose === 'strike'
+              ? (p - 0.3) / 0.28
+              : (p - 0.32) / 0.3;
       const img = tinted(foeFrame(f, pose, u, t + j * 0.7), l, lk);
       const back = struck ? dir * Math.round(2 + (p < 0.45 ? 1 : 0)) : 0;
       const x = foeXs[j]! + back - dir * lunge(j === atkFoe);
@@ -255,6 +288,14 @@ export class Gente {
     // El grupo, de atrás adelante.
     for (let i = n - 1; i >= 0; i--) {
       const h = crew[i]!;
+      // Ganada: de frente con los brazos en alto, cada uno a su ritmo, dando saltitos.
+      if (end !== undefined && end > 0.12 + i * 0.06) {
+        const x = heroX(i);
+        const hop = Math.round(Math.abs(Math.sin(c.time * 7 + i * 1.9)) * 3);
+        shadow(b, x, e.feet, hop > 1 ? 4 : 5);
+        put(b, tinted(heroSprites(h.look, h.marks).cheer, l, lk), x, e.feet - hop, 9, FEET_Y);
+        continue;
+      }
       const me = i === atkHero;
       const pose: FightPose = me ? (p < 0.3 ? 'windup' : p < 0.58 ? 'strike' : 'ready') : 'ready';
       const struck = i === tgtHero && hit;
@@ -332,11 +373,11 @@ export class Gente {
 
 /**
  * El fotograma de un enemigo en su pose: con `seq`, quieto va pasando los suyos (respira) y la
- * carga, el golpe y el daño avanzan con `u` (0–1, lo que lleva de la pose).
+ * carga, el golpe, el daño y la caída avanzan con `u` (0–1, lo que lleva de la pose).
  */
 export function foeFrame(f: FoeArt, pose: FoePose, u: number, t: number): PixelBuffer {
   const k = pose === 'idle2' ? 'idle' : pose;
-  const s = k === 'walk1' || k === 'walk2' || k === 'down' ? undefined : f.seq?.[k];
+  const s = k === 'walk1' || k === 'walk2' ? undefined : f.seq?.[k];
   if (!s?.length) return f.poses[pose];
   if (k === 'idle') return s[Math.floor(t * 5) % s.length]!;
   return s[Math.max(0, Math.min(s.length - 1, Math.floor(u * s.length)))]!;
