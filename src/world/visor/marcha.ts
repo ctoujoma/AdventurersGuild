@@ -3,6 +3,7 @@ import type { FoeKind } from '../../core/journey';
 import type { BossFight, ExpKind, ExpWeather, Heading } from '../../core/model';
 import type { Terrain } from '../../data/places';
 import type { Dress } from '../../data/custom';
+import type { ExpEvent } from '../../data/expEvents';
 
 /** Lo que hacen ahora. */
 /** Lo que hacen: andar, pelear, acampar o esperar parados (un suceso, un jefe a la vista). */
@@ -35,4 +36,6 @@ export interface MarchNow {
   dress?: Record<string, Dress>;
   /** El enemigo de verdad (rumbo y número en `expediciones.enemigos`): su dibujo propio. */
   rival?: { heading: Heading; idx: number };
+  /** El suceso que tienen delante mientras esperan a que elijas (con un jefe, cuál). */
+  event?: { kind: ExpEvent; foe?: number };
 }

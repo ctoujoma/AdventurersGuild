@@ -25,6 +25,7 @@ import { pack, tintColor, unpack } from './luz';
 import type { MarchNow } from './marcha';
 import { digits, put, putRot, tinted } from './pintar';
 import { hash } from './tonos';
+import { drawEscondidos, hiding } from './sucesos';
 
 type Crew = MarchNow['crew'][number];
 
@@ -107,7 +108,8 @@ export class Gente {
       this.fight(c, c.time - this.fightFrom);
     } else {
       this.fightFrom = -1;
-      this.walk(c);
+      if (hiding(c)) drawEscondidos(c);
+      else this.walk(c);
     }
   }
 
