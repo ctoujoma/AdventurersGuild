@@ -10,3 +10,6 @@ tools/shots/_*.mjs
 textos.csv
 # Idioma falso para probar (npm run textos:falso).
 src/textos/xx/
+
+# Calcos intermedios (se regeneran con tools/bocetos/enemigos)
+tools/bocetos/enemigos/*.json
