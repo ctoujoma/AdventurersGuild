@@ -645,6 +645,26 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
 
    Capturas: `node tools/shots/anexo.mjs <carpeta>`.
 
+## Paisaje de sierra
+
+Agente de arte de sierra (rama `claude/arte-visor-sierra`). Listón: el bosque. Piezas, una PR cada una:
+(a) nieve y suelo, (b) profundidad por capas (matorral, piornos, canchales, pinos y abetos por
+distancia), (c) fauna (rebecos, marmotas, chovas, quebrantahuesos) y viento en hierba y nieve,
+(d) sucesos con material de montaña (torre sobre peña, cueva en risco, santuario, refugio de pastor).
+Herramientas: `tools/visor-hoja.ts` (hojas de lejanía, claro y nevando, móvil y escritorio) y
+`tools/visor-sucesos.ts <carpeta> sierra`.
+
+- [x] **(a) Nieve y suelo** (`capas-sierra.ts`): neveros a manchas con labio al sol, panza en sombra
+  y hierba mojada al pie (`neveros`, campo guardado por franja para no recalcularlo al rehacer
+  tiras); `snowFar` (colinas y medio, crece hasta cubrir) y `snowNear` (lo de cerca, tope de
+  neveros sueltos: S1), más si nieva; la senda serpentea con losas, escalones y cascajo y con nieve
+  queda pisada y gris con huellas; arroyo de deshielo con espuma y pasaderas; césped de altura con
+  musgo, genciana, árnica y edelweiss; cantos de caras planas (`canto`) y peñascos de tres hechuras
+  con estratos, diaclasas, liquen y nieve en las repisas (`crag`); canchales en cono; delante
+  festuca, cardos y cantos claros. Rendimiento igual que antes. Capturas en
+  `capturas/expediciones/visor-sierra/` (`antes-*` es `main`).
+- [ ] (b), (c), (d).
+
 ## Lo que ha dicho el usuario (para no repetir errores)
 
 - **Montañas:** sí a la bruma que las aclara (dan lejanía); la silueta, de sierra de verdad
