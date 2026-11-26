@@ -20,7 +20,7 @@ import { blitStrip, luzKey } from './pintar';
 import { Aire, Lluvia, climaOf, drawMist } from './tiempo';
 import { smooth } from './tonos';
 import { drawRays, drawVida } from './vida';
-import { drawEscondite, drawSuceso } from './sucesos';
+import { drawEscondite, drawSuceso, drawSucesoFondo } from './sucesos';
 
 /** Para forzar la hora o el tiempo (pruebas, capturas). */
 export interface VisorForce {
@@ -210,6 +210,7 @@ export class Visor {
     drawMist(b, e, l, time, travel, 'lejos');
     layer('cerca');
     drawAnimals(ctx, 'cerca');
+    drawSucesoFondo(ctx);
     layer('suelo');
     drawVida(ctx);
     drawSuceso(ctx);

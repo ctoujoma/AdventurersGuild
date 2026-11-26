@@ -494,7 +494,8 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      Falta: ratas y el resto de rumbos (sin referencia: estilo propio), guardianes, «Ver la pelea».
      Luego: pasada visual a sierra/marismas/ruinas y transiciones suaves (lluvia y fondo cambian de golpe).
      **Sucesos a la vista (26 nov):** con `e.pending` el visor pinta delante lo que hay (`visor/sucesos.ts`, `MarchNow.event`):
-     cofre, santuario, mercader con carro, viajero, campamento abandonado, oso, cueva, torre y ruinas; con jefe o
+     cofre, santuario, mercader con carro, viajero, campamento abandonado, oso, cueva, torre y ruinas, pintados en
+     tonos con la tabla de su capa (como el paisaje: sin contorno, luz por la izquierda); con jefe o
      guardián, el grupo agazapado tras matas y una roca a un lado y el jefe al otro (guardián: el huargo, de momento).
      Capturas con `tools/visor-sucesos.ts`. El bosque es el listón para los otros rumbos.
      Siguiente: enemigos y guardianes con dibujo
