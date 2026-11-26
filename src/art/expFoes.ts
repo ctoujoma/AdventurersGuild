@@ -259,11 +259,11 @@ const FOES: Record<Heading, readonly (() => ExpFoe)[]> = {
         'gigante',
         { idle: 0, idle2: 12, walk1: 0, walk2: 1, windup: 3, strike: 4, hurt: 7, down: 11 },
         true,
-        // Respira; guardia y garrote arriba, lo estampa y lo recoge; herido, se dobla; al morir cae.
+        // Respira; guardia y garrote arriba y lo estampa (el de recogerlo bailaba: fuera); herido, se dobla; al morir cae.
         {
           idle: [0, 0, 12, 12],
           windup: [1, 2, 3],
-          strike: [4, 5, 5, 6],
+          strike: [4, 5, 5, 5],
           hurt: [7, 8],
           down: [9, 10, 11],
         },

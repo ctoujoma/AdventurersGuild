@@ -235,7 +235,8 @@ export class Gente {
               : (p - 0.32) / 0.3;
       const img = tinted(foeFrame(f, pose, u, t + j * 0.7), l, lk);
       const back = struck ? dir * Math.round(2 + (p < 0.45 ? 1 : 0)) : 0;
-      const x = foeXs[j]! + back - dir * lunge(j === atkFoe);
+      // Los que traen su golpe dibujado (`seq.strike`) ya se echan adelante: sin embestida.
+      const x = foeXs[j]! + back - dir * (f.seq?.strike ? 0 : lunge(j === atkFoe));
       if (!down) shadow(b, x, e.feet, f.big ? 10 : 6);
       const fy = img.h - 1;
       put(
