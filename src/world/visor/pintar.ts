@@ -6,7 +6,13 @@ import { PixelBuffer, bayer, rgba } from '../../art/pixel';
 import { tintColor, type Luz } from './luz';
 
 /** Pega `src` con la x de su tira desplazada `off` (da la vuelta) en la fila `y` de `dst`. */
-export function blitStrip(dst: PixelBuffer, src: PixelBuffer, off: number, y: number): void {
+export function blitStrip(
+  dst: PixelBuffer,
+  src: PixelBuffer,
+  off: number,
+  y: number,
+  keep?: (x: number, y: number) => boolean,
+): void {
   const L = src.w;
   const o = ((Math.round(off) % L) + L) % L;
   for (let yy = 0; yy < src.h; yy++) {
@@ -17,7 +23,7 @@ export function blitStrip(dst: PixelBuffer, src: PixelBuffer, off: number, y: nu
     let sx = o;
     for (let x = 0; x < dst.w; x++) {
       const c = src.data[row + sx]!;
-      if (c >>> 24) dst.data[out + x] = c;
+      if (c >>> 24 && (!keep || keep(x, ty))) dst.data[out + x] = c;
       if (++sx === L) sx = 0;
     }
   }
