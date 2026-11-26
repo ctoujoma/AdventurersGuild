@@ -1,6 +1,6 @@
 /** Lo que pinta el visor de una expedición (lo rellena `ui/expedition.ts`, `marchNow`). */
 import type { FoeKind } from '../../core/journey';
-import type { BossFight, ExpKind, ExpWeather } from '../../core/model';
+import type { BossFight, ExpKind, ExpWeather, Heading } from '../../core/model';
 import type { Terrain } from '../../data/places';
 import type { Dress } from '../../data/custom';
 
@@ -33,4 +33,6 @@ export interface MarchNow {
   day?: number;
   /** Lo de la sastrería de cada héroe (por id): el traje y el color, como en la taberna. */
   dress?: Record<string, Dress>;
+  /** El enemigo de verdad (rumbo y número en `expediciones.enemigos`): su dibujo propio. */
+  rival?: { heading: Heading; idx: number };
 }

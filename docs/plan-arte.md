@@ -19,6 +19,8 @@ npm run build`.
   arte y vuelque el `PixelBuffer` a PNG (como en `scratchpad`). Mucho más rápido para iterar.
 - En el PR, decir si se toca `RoomScene.ts`, `TabernaPanel.tsx`, la ficha del héroe o algo fuera
   del arte. No tocar `core/`, las reglas ni `SAVE_VERSION`.
+- PR apiladas: cuando se fusione la de abajo, cambiar la base de la de arriba a `main` (o rehacer la rama
+  desde `main`) antes de que el usuario la fusione (la #228 se quedó en su rama base; la subió la #229).
 - Esperar el visto bueno del usuario: se fija en alineaciones, en que nada tape nada y en que se
   vea bien en el móvil.
 
@@ -480,7 +482,18 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      `capturas/expediciones/visor-bosque/`. **Hecho: campamento (B9)**, rama `claude/arte-visor-campamento`:
      sentados con la manta del color de la ropa de cada héroe (con lo de la sastrería: `MarchNow.dress`, lo
      rellena `marchNow`), lona entre dos palos, humo con viento y lobos que de noche son solo ojos;
-     capturas en `capturas/expediciones/visor-campamento/`. Siguiente: enemigos y guardianes con dibujo
+     capturas en `capturas/expediciones/visor-campamento/`. Enemigos (E1): el reparto por rumbo vale (`art/expFoes.ts`,
+     rama `claude/arte-enemigos`), pero el usuario pide más calidad en los grandes y los guardianes:
+     **dibujados a mano, píxel a píxel**, sin formas geométricas ni partir de los jefes de los encargos
+     (que se rehacen más adelante). Muestra: el lobo enorme (`tools/bocetos/enemigos/huargo5.py`),
+     esperando visto bueno (MA en la página). **Hecho (26 nov):** los del bosque calcados de las referencias
+     del usuario y limpiados (`art/expCalcos.ts`, generado por `tools/bocetos/enemigos/bosque_calco.py` +
+     `a_ts.py`; `calco2.py` calca por celdas y `boca_limpia.py` rehace las bocas): lobos, jabalí, oso y
+     huargo con varios fotogramas, en la pelea del visor (`MarchNow.rival`, solo bosque; capturas con
+     `tools/visor-pelea.ts`). El usuario: «no te compliques», vale un estilo propio si es más fluido.
+     Falta: ratas y el resto de rumbos (sin referencia: estilo propio), guardianes, «Ver la pelea».
+     Luego: pasada visual a sierra/marismas/ruinas y transiciones suaves (lluvia y fondo cambian de golpe).
+     Siguiente: enemigos y guardianes con dibujo
      propio (E1, B11) y una pasada de profundidad a sierra, marismas y ruinas. Orden: rumbos nuevos, bosque,
      campamento, enemigos. Para los enemigos: jefes a la vista en #225 (grupo parado mirando al jefe a
      lo lejos cuando `e.pending.kind === 'jefe'`, con `e.pending.foe`; `'guardian'` para el guardián). Prototipo en la rama `claude/arte-expediciones-areas` (sin PR): `visor/bioma.ts` (cada

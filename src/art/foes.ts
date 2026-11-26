@@ -74,7 +74,7 @@ export interface FoeArt {
 }
 
 /** Recorta lo vacío alrededor (para la pose de caído). */
-function trim(b: PixelBuffer): PixelBuffer {
+export function trim(b: PixelBuffer): PixelBuffer {
   let x0 = b.w;
   let y0 = b.h;
   let x1 = -1;
@@ -91,7 +91,7 @@ function trim(b: PixelBuffer): PixelBuffer {
 }
 
 /** Tumbado boca arriba: girado un cuarto (la cabeza, atrás). */
-function rotated(b: PixelBuffer): PixelBuffer {
+export function rotated(b: PixelBuffer): PixelBuffer {
   const r = new PixelBuffer(b.h, b.w);
   for (let y = 0; y < b.h; y++)
     for (let x = 0; x < b.w; x++) {
@@ -102,7 +102,7 @@ function rotated(b: PixelBuffer): PixelBuffer {
 }
 
 /** Patas arriba (los bichos caídos). */
-function upsideDown(b: PixelBuffer): PixelBuffer {
+export function upsideDown(b: PixelBuffer): PixelBuffer {
   const r = new PixelBuffer(b.w, b.h);
   for (let y = 0; y < b.h; y++)
     for (let x = 0; x < b.w; x++) r.data[(b.h - 1 - y) * b.w + x] = b.data[y * b.w + x]!;
@@ -111,7 +111,7 @@ function upsideDown(b: PixelBuffer): PixelBuffer {
 
 // ---------- Las poses ----------
 
-const POSE: Record<Exclude<FoePose, 'down'>, PoseSpec> = {
+export const POSE: Record<Exclude<FoePose, 'down'>, PoseSpec> = {
   idle: { legs: 'stand', arm: 'rest', lean: 0, bob: 0 },
   idle2: { legs: 'stand', arm: 'rest', lean: 0, bob: 1 },
   walk1: { legs: 'a', arm: 'rest', lean: 0, bob: 0 },
@@ -121,12 +121,12 @@ const POSE: Record<Exclude<FoePose, 'down'>, PoseSpec> = {
   hurt: { legs: 'stand', arm: 'up', lean: -2, bob: 0, hurt: true },
 };
 
-const STANDING = Object.keys(POSE) as Exclude<FoePose, 'down'>[];
+export const STANDING = Object.keys(POSE) as Exclude<FoePose, 'down'>[];
 
 const pick = <T>(rng: Rng, list: readonly T[]) => list[rng.int(0, list.length - 1)]!;
 
 /** Todas las poses de pie con `paint`, y la de caído a partir de la de quieto. */
-function posesOf(
+export function posesOf(
   paintPose: (p: PoseSpec, i: number) => PixelBuffer,
   down: (idle: PixelBuffer) => PixelBuffer,
 ): Record<FoePose, PixelBuffer> {
@@ -136,7 +136,7 @@ function posesOf(
   return poses;
 }
 
-function bipedArt(kind: FoeKind, what: string, d: Biped): FoeArt {
+export function bipedArt(kind: FoeKind, what: string, d: Biped): FoeArt {
   const poses = posesOf(
     (p) => bipedPose(d, p),
     (idle) => trim(rotated(idle)),
@@ -154,7 +154,7 @@ function bipedArt(kind: FoeKind, what: string, d: Biped): FoeArt {
   };
 }
 
-function quadArt(kind: FoeKind, what: string, d: Quad): FoeArt {
+export function quadArt(kind: FoeKind, what: string, d: Quad): FoeArt {
   const poses = posesOf(
     (p) => quadPose(d, p),
     (idle) => trim(upsideDown(idle)),
@@ -180,7 +180,7 @@ const BANDIT_WEAPON: Record<string, WeaponId> = {
 };
 
 /** Un bandido de los asaltos: la misma figura que los héroes (y que en la taberna). */
-function bandit(rng: Rng): FoeArt {
+export function bandit(rng: Rng): FoeArt {
   const style = pick(rng, BANDIT_TYPES);
   const { look, marks } = banditLook(style, rng.int(0, 99));
   const f = fightSprites(look, marks);
@@ -360,7 +360,7 @@ function troll(rng: Rng): FoeArt {
  * Recorta el aire de los lados de todas las poses de pie a la vez (el mismo trozo en todas, para
  * que no bailen) y ajusta la columna de los pies.
  */
-function trimAll(poses: Record<FoePose, PixelBuffer>): {
+export function trimAll(poses: Record<FoePose, PixelBuffer>): {
   poses: Record<FoePose, PixelBuffer>;
   shift: number;
 } {
