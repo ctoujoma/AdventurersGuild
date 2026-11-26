@@ -144,6 +144,7 @@ function calcoArt(
   what: string,
   pose: Record<Exclude<FoePose, 'down'>, number> & { down?: number },
   big = false,
+  seq?: Partial<Record<'idle' | 'windup' | 'strike' | 'hurt', number[]>>,
 ): FoeArt {
   const c = CALCOS[what]!;
   const w = Math.max(...c.frames.map((f) => f[0]!.length));
@@ -166,7 +167,21 @@ function calcoArt(
   // Caído: el suyo si lo tiene (la sanguijuela reventada) y si no, panza arriba.
   if (pose.down === undefined) poses.down = trim(upsideDown(poses.idle));
   const iw = c.frames[pose.idle]![0]!.length;
-  return { kind, what, poses, foot: Math.round(iw / 2), chest: Math.round(h / 2), span: iw, big };
+  const art: FoeArt = {
+    kind,
+    what,
+    poses,
+    foot: Math.round(iw / 2),
+    chest: Math.round(h / 2),
+    span: iw,
+    big,
+  };
+  if (seq) {
+    art.seq = {};
+    for (const k of Object.keys(seq) as (keyof typeof seq)[])
+      art.seq[k] = seq[k]!.map((i) => frames[i]!);
+  }
+  return art;
 }
 
 const banditOf = (seed: string) => bandit(new Rng(`exp-bandido-${seed}`));
@@ -235,24 +250,24 @@ const FOES: Record<Heading, readonly (() => ExpFoe)[]> = {
       art: calcoArt(
         'grande',
         'gigante',
-        { idle: 0, idle2: 0, walk1: 0, walk2: 1, windup: 1, strike: 0, hurt: 0 },
+        { idle: 0, idle2: 8, walk1: 1, walk2: 4, windup: 2, strike: 5, hurt: 1 },
         true,
+        // Alza el garrote, lo baja contra el suelo y lo recoge.
+        { idle: [0, 8], windup: [1, 2], strike: [3, 5, 5, 6], hurt: [1] },
       ),
       count: 1,
     }),
   ],
   marismas: [
     () => ({
-      art: calcoArt('alimana', 'sanguijuela', {
-        idle: 0,
-        idle2: 5,
-        walk1: 1,
-        walk2: 2,
-        windup: 3,
-        strike: 4,
-        hurt: 6,
-        down: 7,
-      }),
+      // Verde y, al atacar, se llena de sangre (roja).
+      art: calcoArt(
+        'alimana',
+        'sanguijuela',
+        { idle: 0, idle2: 6, walk1: 4, walk2: 5, windup: 7, strike: 8, hurt: 1, down: 5 },
+        false,
+        { idle: [0, 9, 6, 9], windup: [2, 7], strike: [8], hurt: [1] },
+      ),
       count: 3,
     }),
     () => {
@@ -304,8 +319,15 @@ export function expGuardianArt(heading: Heading): FoeArt {
             art: calcoArt(
               'grande',
               'dragon',
-              { idle: 0, idle2: 0, walk1: 0, walk2: 0, windup: 0, strike: 1, hurt: 0 },
+              { idle: 13, idle2: 14, walk1: 2, walk2: 4, windup: 6, strike: 8, hurt: 10, down: 12 },
               true,
+              // Respira, abre las alas y ruge, echa el aliento de hielo; herido, se encabrita.
+              {
+                idle: [13, 14, 15, 16, 17, 16, 15, 14],
+                windup: [18, 6],
+                strike: [7, 8, 9, 8],
+                hurt: [10, 11],
+              },
             ),
             count: 1,
           }

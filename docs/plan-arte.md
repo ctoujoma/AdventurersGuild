@@ -498,8 +498,12 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      sanguijuela (marismas: quieta, enroscada, salto, se alza, se lanza, revienta y charco), el gigante de
      hielo con garrote (sierra, en lugar del gigante de las nieves) y el dragón de hielo como guardián de
      sierra a la vista (`expGuardianArt`, `MarchNow.heading`). Todos los rumbos usan ya su reparto en la
-     pelea del visor (`rival` siempre). Faltan poses: el gigante y el dragón traen solo dos (para la otra
-     IA: andar, golpe bajado, herido) y el resto de enemigos de sierra y marismas.
+     pelea del visor (`rival` siempre). Segunda vuelta (hojas por enemigo): sanguijuela verde
+     que se pone roja al atacar (10), gigante (9) y dragón (19). Las poses pueden tener varios
+     fotogramas (`FoeArt.seq`, `foeFrame` en `visor/gente.ts`): quieto respira, la carga, el golpe y el
+     daño avanzan con la fase del turno. `calco3.py` separa familias de color (`split`), aclara tonos
+     medios (`lift`) y conserva los ojos rojos (`acc`). Falta: el resto de enemigos de sierra y marismas;
+     la sanguijuela queda oscura en la marisma (es su color).
      Luego: pasada visual a sierra/marismas/ruinas y transiciones suaves (lluvia y fondo cambian de golpe).
      **Sucesos a la vista (26 nov):** con `e.pending` el visor pinta delante lo que hay (`visor/sucesos.ts`, `MarchNow.event`):
      cofre, santuario, mercader con carro, viajero, campamento abandonado, oso, cueva, torre y ruinas, pintados en

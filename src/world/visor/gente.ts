@@ -198,7 +198,9 @@ export class Gente {
       else if (struck) pose = 'hurt';
       else if (j === atkFoe) pose = p < 0.3 ? 'windup' : p < 0.58 ? 'strike' : 'idle';
       else pose = Math.floor(t * 2 + j) % 2 ? 'idle2' : 'idle';
-      const img = tinted(f.poses[pose], l, lk);
+      const u =
+        pose === 'windup' ? p / 0.3 : pose === 'strike' ? (p - 0.3) / 0.28 : (p - 0.32) / 0.3;
+      const img = tinted(foeFrame(f, pose, u, t + j * 0.7), l, lk);
       const back = struck ? dir * Math.round(2 + (p < 0.45 ? 1 : 0)) : 0;
       const x = foeXs[j]! + back - dir * lunge(j === atkFoe);
       if (!down) shadow(b, x, e.feet, f.big ? 10 : 6);
@@ -326,4 +328,16 @@ export class Gente {
       digits(b, p.text, p.x, p.y - rise, p.color, '#181425');
     }
   }
+}
+
+/**
+ * El fotograma de un enemigo en su pose: con `seq`, quieto va pasando los suyos (respira) y la
+ * carga, el golpe y el daño avanzan con `u` (0–1, lo que lleva de la pose).
+ */
+export function foeFrame(f: FoeArt, pose: FoePose, u: number, t: number): PixelBuffer {
+  const k = pose === 'idle2' ? 'idle' : pose;
+  const s = k === 'walk1' || k === 'walk2' || k === 'down' ? undefined : f.seq?.[k];
+  if (!s?.length) return f.poses[pose];
+  if (k === 'idle') return s[Math.floor(t * 5) % s.length]!;
+  return s[Math.max(0, Math.min(s.length - 1, Math.floor(u * s.length)))]!;
 }

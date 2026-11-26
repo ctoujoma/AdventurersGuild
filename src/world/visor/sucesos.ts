@@ -17,7 +17,7 @@ import { bush, rock, tuft } from './arboles';
 import { biomaOf } from './bioma';
 import { step, type CapaId } from './capas';
 import type { Ctx } from './ctx';
-import { GAP, heroOf, shadow } from './gente';
+import { GAP, foeFrame, heroOf, shadow } from './gente';
 import { lutOf, pack, unpack, type Depth } from './luz';
 import { put, tinted } from './pintar';
 import { M, Tonos, hash, hash2, type Mat } from './tonos';
@@ -627,7 +627,7 @@ function boss(c: Ctx, idx?: number): void {
   const art = idx === undefined ? expGuardianArt(h) : expFoeArt(h, idx).art;
   const dir = dirOf(c);
   const x = Math.round(c.e.w / 2 + dir * c.e.w * 0.3);
-  const img = art.poses[Math.floor(c.time * 1.2) % 2 ? 'idle2' : 'idle'];
+  const img = foeFrame(art, Math.floor(c.time * 1.2) % 2 ? 'idle2' : 'idle', 0, c.time);
   shadow(c.b, x, c.e.feet, art.big ? 10 : 6);
   put(c.b, tinted(img, c.l, c.lk), x, c.e.feet, art.foot, img.h - 1, dir > 0);
 }

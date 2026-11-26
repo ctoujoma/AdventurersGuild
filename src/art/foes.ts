@@ -67,6 +67,11 @@ export interface FoeArt {
   /** El doble de grande que un héroe. */
   big: boolean;
   /**
+   * Más fotogramas por pose (los calcados): quieto respira, y la carga, el golpe y el daño se
+   * suceden en vez de ser un dibujo fijo. Si no hay, la pose de `poses`.
+   */
+  seq?: Partial<Record<'idle' | 'windup' | 'strike' | 'hurt', readonly PixelBuffer[]>>;
+  /**
    * Los bandidos son los de los asaltos (`banditLook`): figuras de héroe sin el arma, que se
    * pinta aparte en la mano (`HAND`), como en la pelea.
    */
