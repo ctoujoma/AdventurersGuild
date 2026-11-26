@@ -159,6 +159,7 @@ estado:
   herido: "{sexo, select, f {Herida} other {Herido}} · {dias} d"
   # Herido, con lo que le falta para levantarse («2 d 12 h»).
   herido_falta: "{sexo, select, f {Herida} other {Herido}} · {tiempo}"
+  enfermeria: "En la enfermería · {tiempo}"
   desaparecido: "{sexo, select, f {Desaparecida} other {Desaparecido}}"
   muerto: "{sexo, select, f {Caída} other {Caído}}"
 sin_efecto: "Sin efecto"

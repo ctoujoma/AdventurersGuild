@@ -1,5 +1,15 @@
 import { MatShelf } from '../mats';
-import { cotsIn, healAt, infirmaryPlan, restHours, staffing } from '../../core/infirmary';
+import {
+  cotsIn,
+  cotsOf,
+  healAt,
+  infirmaryPlan,
+  restHours,
+  staffing,
+  wantsCot,
+} from '../../core/infirmary';
+import { hpOf } from '../../core/health';
+import { LifeBar } from '../LifeBar';
 import { restText } from '../../data/labels';
 import { useState } from 'preact/hooks';
 import { roomMax } from '../../core/balance';
@@ -21,7 +31,7 @@ import {
 import { raidRoute, routeTime } from '../../core/assault';
 import { defense } from '../../core/raids';
 import { doorTime, goldCap, lockTime } from '../../core/vault';
-import type { GameState, Room } from '../../core/model';
+import type { GameState, Hero, Room } from '../../core/model';
 import {
   beds,
   planDemolish,
@@ -239,37 +249,55 @@ function DoorInfo({ game }: { game: GameState }) {
 
 /**
  * Una enfermería: sus catres (el ancho), lo que cura cada noche en ellos (el nivel, pero solo con
- * quien trabaje: en proporción a su mano) y quién está en ellos. Abajo, los heridos que no caben en
- * ninguna, que se curan más despacio en su cama. Las cuentas son las de `core/infirmary.ts`.
+ * quien trabaje: en proporción a su mano) y quién está en ellos, hasta tener la vida entera. Como en
+ * los dormitorios, tocar a alguien deja cambiarlo por otro herido o darle el alta, y en un catre
+ * libre se elige a quién acostar. Abajo, los heridos sin catre. Las cuentas, en `core/infirmary.ts`.
  */
 function InfirmaryInfo({
   game,
   room,
   onOpen,
+  onAct,
 }: {
   game: GameState;
   room: Room;
   onOpen?: (id: string) => void;
+  onAct?: (a: Action) => void;
 }) {
+  const [sel, setSel] = useState<string | null>(null);
   const plan = infirmaryPlan(game);
   const heal = healAt(game, room);
   const staff = staffing(game, room);
-  const here = game.heroes.filter((h) => plan.get(h.id) === room.id);
-  const out = game.heroes.filter((h) => h.status === 'herido' && !plan.has(h.id));
-  const row = (h: (typeof here)[number]) => (
+  const here = cotsOf(game, room.id);
+  const free = Math.max(0, cotsIn(room) - here.length);
+  // Quien podría venir a un catre de esta sala: los heridos de casa que no están ya en ella.
+  const movers = game.heroes
+    .filter((h) => wantsCot(h) || (plan.has(h.id) && plan.get(h.id) !== room.id))
+    .sort((x, y) => hpOf(x) - hpOf(y));
+  const out = movers.filter((h) => !plan.has(h.id));
+  const label = (h: Hero) =>
+    t('paneles.room.enf.opcion', {
+      nombre: h.name,
+      pct: Math.round(hpOf(h) * 100),
+      otra: plan.has(h.id),
+    });
+  const row = (h: Hero, mine: boolean) => (
     <button
       key={h.id}
-      class="crew-slot is-hero"
+      class={`crew-slot is-hero ${sel === h.id ? 'is-sel' : ''}`}
       aria-label={t('paneles.room.en_cama_de', { nombre: h.name })}
-      onClick={() => onOpen?.(h.id)}
+      aria-expanded={mine ? sel === h.id : undefined}
+      onClick={() => (mine && onAct ? setSel(sel === h.id ? null : h.id) : onOpen?.(h.id))}
     >
       <Face game={game} id={h.id} />
       <span class="crew-who">
         <b>{h.name}</b>
+        <LifeBar hero={h} />
         <small>{t('paneles.room.enf.falta', { tiempo: restText(restHours(game, h, plan)) })}</small>
       </span>
     </button>
   );
+  const chosen = here.find((h) => h.id === sel);
   return (
     <>
       <div class="chips">
@@ -289,11 +317,75 @@ function InfirmaryInfo({
         </Fact>
       </div>
       {staff === 0 && <span class="row-sub room-bad">{t('paneles.room.enf.sin_nadie')}</span>}
-      {here.length > 0 && <div class="crew-slots infirmary-list">{here.map((h) => row(h))}</div>}
+      <div class="crew-slots infirmary-list">
+        {here.map((h) => row(h, true))}
+        {Array.from({ length: free }, (_, i) =>
+          onAct && movers.length ? (
+            <select
+              key={`f${i}`}
+              class="crew-slot crew-free"
+              value=""
+              aria-label={t('paneles.room.enf.libre_traer')}
+              onChange={(e) => {
+                const v = (e.target as HTMLSelectElement).value;
+                if (v) onAct({ type: 'cot', who: v, room: room.id });
+              }}
+            >
+              <option value="">{t('paneles.room.enf.libre_traer')}</option>
+              {movers.map((h) => (
+                <option key={h.id} value={h.id}>
+                  {label(h)}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span key={`f${i}`} class="crew-slot crew-free">
+              {t('paneles.room.enf.libre')}
+            </span>
+          ),
+        )}
+      </div>
+      {chosen && onAct && (
+        <div class="crew-detail">
+          {movers.length > 0 && (
+            <select
+              class="job-select"
+              aria-label={t('paneles.room.enf.cambiar', { nombre: chosen.name })}
+              value=""
+              onChange={(e) => {
+                const v = (e.target as HTMLSelectElement).value;
+                if (v) onAct({ type: 'cot', who: v, room: room.id, out: chosen.id });
+                setSel(null);
+              }}
+            >
+              <option value="">{t('paneles.room.enf.cambiar', { nombre: chosen.name })}</option>
+              {movers.map((h) => (
+                <option key={h.id} value={h.id}>
+                  {label(h)}
+                </option>
+              ))}
+            </select>
+          )}
+          <button
+            class="btn btn-wood"
+            onClick={() => {
+              onAct({ type: 'cot', who: chosen.id });
+              setSel(null);
+            }}
+          >
+            {t('paneles.room.enf.alta')}
+          </button>
+          {onOpen && (
+            <button class="btn btn-wood" onClick={() => onOpen(chosen.id)}>
+              {t('paneles.dormlist.ficha')}
+            </button>
+          )}
+        </div>
+      )}
       {out.length > 0 && (
         <>
           <span class="row-sub">{t('paneles.room.enf.sin_catre', { cama: HEAL_IN_BED })}</span>
-          <div class="crew-slots infirmary-list">{out.map((h) => row(h))}</div>
+          <div class="crew-slots infirmary-list">{out.map((h) => row(h, false))}</div>
         </>
       )}
     </>
@@ -597,7 +689,7 @@ export function RoomPanel({
         room.level > 0 && <LarderInfo game={game} room={room} />}
       {isTrainRoom(room.type) && room.level > 0 && <TrainInfo room={room} />}
       {room.type === 'enfermeria' && room.level > 0 && (
-        <InfirmaryInfo game={game} room={room} onOpen={onOpen} />
+        <InfirmaryInfo game={game} room={room} onOpen={onOpen} onAct={onAct} />
       )}
       {room.type === 'tesoro' && <VaultInfo game={game} />}
       {room.type === 'recibidor' && <DoorInfo game={game} />}

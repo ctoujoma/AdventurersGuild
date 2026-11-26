@@ -12,6 +12,7 @@ import { help } from '../HoldHelp';
 import { gearHintText, upgradesFor } from '../gearHint';
 import { Icon } from '../icons';
 import { Portrait } from '../Portrait';
+import { LifeBar } from '../LifeBar';
 import { Tabs } from '../Tabs';
 import { lookOf, marksOf, heroFrame } from '../view';
 import { t, tx } from '../../textos';
@@ -42,7 +43,7 @@ function heroFlag(h: Hero): { text: string; cls: string } | null {
       cls: 'request',
     };
   // Herido leve (en pie): se ve antes que el ánimo.
-  if (isLight(h))
+  if (isLight(h) && h.status === 'ok')
     return {
       text: t('paneles.heroes.leve', { sexo: h.sex, pct: Math.round(hpOf(h) * 100) }),
       cls: 'herido',
@@ -99,13 +100,19 @@ export function HeroesPanel({
           })}
           onClick={() => onOpen(h.id)}
         >
-          <Portrait
-            look={lookOf(h)}
-            marks={marksOf(h)}
-            frame={heroFrame(h)}
-            scale={1}
-            alive={false}
-          />
+          <span class="row-face">
+            <Portrait
+              look={lookOf(h)}
+              marks={marksOf(h)}
+              frame={heroFrame(h)}
+              scale={1}
+              alive={false}
+            />
+            {!candidate &&
+              (h.status === 'ok' || h.status === 'herido' || h.status === 'mision') && (
+                <LifeBar hero={h} bare />
+              )}
+          </span>
           <span class="row-info" aria-hidden="true">
             <b>
               {h.name} {h.nick && <span class="nick">{tx(h.nick)}</span>}

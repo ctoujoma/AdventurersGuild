@@ -311,6 +311,15 @@ mano), un poco cada noche fuera y con pociones. En expediciones, con heridos se 
 despacio y se avisa de volver. Por partes: (1) núcleo y curación, (2) daño en peleas y
 encargos con el simulador, (3) expediciones con su agente.
 
+**Catres de la enfermería (26 de noviembre):** el catre es una cama que obliga a quedarse.
+Quien entra (`Hero.cot`) se queda en cama, sin tarea ni guardia, **hasta tener el 100 %**,
+aunque esté leve o casi sano: así no se rota. Los catres libres se llenan solos con cualquier
+herido de casa, primero el de menos vida; no se echa a nadie solo (ni por un grave que llega).
+En la ficha de la enfermería, como en los dormitorios: tocar a quien está en un catre deja
+**cambiarlo por otro herido** o **darle el alta** (no se le vuelve a acostar solo hasta curarse o
+volver a caer), y en un catre libre se elige a quién acostar. En la lista de héroes, una barra de
+vida fina bajo el retrato.
+
 ### 2b · El segundo, las obras (cuando la taberna es tuya)
 
 Al pagar la deuda: construir una sala nueva, moverla, ampliarla, mejorar otra y excavar un
