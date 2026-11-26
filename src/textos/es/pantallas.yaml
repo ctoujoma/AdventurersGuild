@@ -3,6 +3,11 @@
 # Los huecos con nombre de persona ({nombre}, {quienes}) no se traducen.
 
 app:
+  # Vender del arcón: se pregunta antes (objeto y precio).
+  vender_pregunta: "¿Vender {objeto} por {oro} monedas? No se puede deshacer."
+  vender_si: "Vender · {oro}"
+  vender_no: "No"
+  vendido: "Vendido: {objeto} por {oro} monedas."
   # Aviso fijo cuando se ha publicado una versión nueva del juego; al tocarlo se recarga.
   version_nueva: "Hay una versión nueva: toca para actualizar"
   la_taberna_ha_seguido: "La taberna ha seguido abierta mientras no estabas."

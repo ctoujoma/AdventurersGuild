@@ -119,7 +119,16 @@ import {
   tutorialStep,
 } from './tutorial';
 import { stepRaids } from './raids';
-import { healOf, infirmaryPlan } from './infirmary';
+import {
+  admit,
+  cotIssue,
+  cotsIn,
+  cotsOf,
+  healOf,
+  infirmaryPlan,
+  leaveCot,
+  lieIn,
+} from './infirmary';
 import { hpFromBedDays, hpOf, needsCare, regenPerDay } from './health';
 import { dawnNight, nightDue, nightRng, rollNight } from './night';
 import { acceptMessenger, dismissMessenger, messengerGone, stepMessenger } from './messenger';
@@ -299,6 +308,11 @@ export type Action =
   | { type: 'guard'; id: string; on: boolean; post?: Post }
   /** Cambiar a alguien de dormitorio (héroes) o de cuarto del servicio (trabajadores). */
   | { type: 'dorm'; who: string; room: string }
+  /**
+   * Catre de la enfermería: pone a `who` en uno de `room` (si está lleno, en el de `out`, que se
+   * levanta o, si `who` venía de otro catre, se cambia a ese); sin `room`, le da el alta.
+   */
+  | { type: 'cot'; who: string; room?: string; out?: string }
   | { type: 'choose'; index: number }
   | { type: 'custom'; patch: Partial<Pick<Custom, 'name' | 'color' | 'symbol'>> }
   | { type: 'buyDog' }
@@ -928,6 +942,29 @@ function reduceAction(state: GameState, action: Action): GameState {
       p.dorm = action.room;
       return s;
     }
+    case 'cot': {
+      const h = state.heroes.find((x) => x.id === action.who);
+      if (!h) return state;
+      const up = (x: Hero) => backToJob(s, x, []);
+      const s = structuredClone(state);
+      const me = s.heroes.find((x) => x.id === action.who)!;
+      if (!action.room) {
+        if (!(me.status === 'herido' && me.cot)) return state;
+        leaveCot(me, up, true);
+        return s;
+      }
+      if (cotIssue(state, action.who, action.room)) return state;
+      const room = s.building.rooms.find((r) => r.id === action.room)!;
+      const from = me.status === 'herido' ? me.cot : undefined;
+      if (cotsOf(s, room.id).length >= cotsIn(room)) {
+        const out = s.heroes.find((x) => x.id === action.out && x.cot === room.id);
+        if (!out) return state;
+        if (from) out.cot = from;
+        else leaveCot(out, up, true);
+      }
+      lieIn(me, room.id);
+      return s;
+    }
     case 'guard': {
       const h = state.heroes.find((x) => x.id === action.id);
       const post = action.post ?? 'puerta';
@@ -1482,6 +1519,10 @@ export function healFor(
   part: number,
 ): { s: GameState; cured: Hero[]; news: DawnEvent[] } {
   if (part <= 0 || !state.heroes.some(needsCare)) return { s: state, cured: [], news: [] };
+  // Primero, los catres en orden: se acuesta a los heridos que quepan.
+  const news0: DawnEvent[] = [];
+  const sorted = structuredClone(state);
+  if (admit(sorted, (h) => backToJob(sorted, h, news0))) state = sorted;
   const plan = infirmaryPlan(state);
   const next = new Map(
     state.heroes
@@ -1490,9 +1531,10 @@ export function healFor(
         (h) => [h.id, Math.min(1, hpOf(h) + regenPerDay(healOf(state, h, plan)) * part)] as const,
       ),
   );
-  // Se levanta (grave a leve) o vuelve a estar sano con la guardia pendiente.
+  // Se levanta (del catre, con la vida entera; de su cama, al 20 %) o vuelve a estar sano con la
+  // guardia pendiente.
   const turns = (h: Hero, hp: number) =>
-    (h.status === 'herido' && hp >= HP_GRAVE) ||
+    (h.status === 'herido' && hp >= (plan.has(h.id) ? 1 : HP_GRAVE)) ||
     (h.status === 'ok' && !!h.guardBefore && hpOf(h) < HP_LIGHT && hp >= HP_LIGHT);
   if (!state.heroes.some((h) => next.has(h.id) && turns(h, next.get(h.id)!)))
     return {
@@ -1501,11 +1543,11 @@ export function healFor(
         heroes: state.heroes.map((h) => (next.has(h.id) ? { ...h, hp: next.get(h.id)! } : h)),
       },
       cured: [],
-      news: [],
+      news: news0,
     };
   const s = structuredClone(state);
   const cured: Hero[] = [];
-  const news: DawnEvent[] = [];
+  const news: DawnEvent[] = [...news0];
   for (const h of s.heroes) {
     const hp = next.get(h.id);
     if (hp === undefined) continue;
@@ -1515,6 +1557,7 @@ export function healFor(
     if (h.status === 'herido') {
       h.status = 'ok';
       h.days = 0;
+      delete h.cot;
       cured.push(h);
     }
     // La guardia, solo con el 50 %: hasta entonces se queda pendiente.

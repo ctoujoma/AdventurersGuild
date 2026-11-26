@@ -34,6 +34,7 @@ import {
 import type { Action } from '../../core/game';
 import type { GameState, Room } from '../../core/model';
 import { itemEffect, itemName } from '../../data/items';
+import { absentText } from '../absent';
 import { tierOf } from '../../art/tiers';
 import { MatCost } from '../mats';
 import { ItemGrid } from '../ItemGrid';
@@ -152,7 +153,7 @@ export function WorkshopInfo({
             <span class="row-info">
               <b>{what}</b>
               <span class="train-bar" aria-label={pct(frac)}>
-                <i style={{ width: pct(frac) }} />
+                <i style={{ width: `${Math.round(frac * 100)}%` }} />
               </span>
               <span class={`row-sub ${hoursLeft === null ? 'room-bad' : ''}`}>
                 {hoursLeft === null
@@ -161,7 +162,8 @@ export function WorkshopInfo({
                         nombre: who.name,
                         mision: who.status === 'mision',
                       })
-                    : t('paneles.workshopinfo.parado_pon_a_un', { smith })
+                    : (absentText(game, room) ??
+                      t('paneles.workshopinfo.parado_pon_a_un', { smith }))
                   : walking && who
                     ? t('paneles.workshopinfo.viene_de_camino', { nombre: who.name })
                     : t('paneles.workshopinfo.le_quedan', { horas: hours(hoursLeft) })}

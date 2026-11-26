@@ -1,5 +1,5 @@
 sin_camara: "No hay cámara del tesoro que guardar."
-llena_camara: "Ya hay dos de guardia en la cámara."
-llena_puerta: "Ya hay dos de guardia en la puerta."
+llena_camara: "Ya hay {n} de guardia en la cámara."
+llena_puerta: "Ya hay {n} de guardia en la puerta. Mejora el recibidor para que quepan más."
 # Herido leve: no hace guardia hasta estar sano (50 % de vida).
 herido: "{heroe} está {sexo, select, f {herida} other {herido}}: hasta que se recupere, nada de guardias."

@@ -1,4 +1,4 @@
 sin_camara: "There is no treasure vault to guard."
-llena_camara: "There are already two on guard in the vault."
-llena_puerta: "There are already two on guard at the door."
+llena_camara: "There are already {n} on guard in the vault."
+llena_puerta: "There are already {n} on guard at the door. Upgrade the entrance hall to fit more."
 herido: "{heroe} is wounded: no guard duty until they recover."

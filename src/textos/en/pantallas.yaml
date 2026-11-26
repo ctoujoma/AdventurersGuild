@@ -1,4 +1,8 @@
 app:
+  vender_pregunta: "Sell {objeto} for {oro} coins? This can't be undone."
+  vender_si: "Sell · {oro}"
+  vender_no: "No"
+  vendido: "Sold: {objeto} for {oro} coins."
   # Aviso fijo cuando se ha publicado una versión nueva del juego; al tocarlo se recarga.
   version_nueva: "A new version is out: tap to update"
   la_taberna_ha_seguido: "The tavern stayed open while you were away."

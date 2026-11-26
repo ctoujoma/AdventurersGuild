@@ -3553,7 +3553,11 @@ export class Crowd {
    * fotograma que su figura, un pelo por detrás, latiendo. Si ya no toca, se esconde.
    */
   private placeRing(a: Actor, t: number): void {
-    const on = !!a.hero.callout && !a.gone && !a.leaving && a.hero.status === 'ok';
+    const on =
+      !!a.hero.callout &&
+      !a.gone &&
+      !a.leaving &&
+      (a.hero.status === 'ok' || a.hero.status === 'herido');
     if (!on) {
       if (a.ring) a.ring.visible = false;
       return;

@@ -51,7 +51,7 @@ herocard:
   vuelto_del_velo_moral: "Back from the veil: morale cap −{veil_cap} · {dias, plural, one {# day} other {# days}}"
   volvio_de_entre_los: "Came back from the dead and isn't used to being alive yet: their morale won't fully recover. It passes with time."
   quiere_dormir_en_el: "Wants to sleep in the veterans' wing: until they have a bed there, they cheer up less."
-  mientras_esta_en_casa: "While at home they can rest (recovers morale), lend a hand in a room (less than a worker), train or stand guard (doesn't go on quests, hits +{guard_bonus} if raided and raises the alarm; two fit; doesn't sleep, so doesn't recover morale and keeps losing it: rotate them). You can also drag them to the room with your finger."
+  mientras_esta_en_casa: "While at home they can rest (recovers morale), lend a hand in a room (less than a worker), train or stand guard (doesn't go on quests, hits +{guard_bonus} if raided and raises the alarm; two fit, more with an upgraded door; doesn't sleep, so doesn't recover morale and keeps losing it: rotate them). You can also drag them to the room with your finger."
   equipo_de: "{n, plural, =0 {Gear: wearing nothing} other {Gear ({n} of {de}): {objetos}}}{hay_pista, select, si {. {pista}} other {}}"
   ver: "View"
   ver_donde_esta_en: "See where they are in the tavern."

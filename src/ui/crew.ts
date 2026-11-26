@@ -23,7 +23,7 @@ import { TRAINS } from '../data/rooms';
 import { TRADES, TRADE_LIST } from '../data/workers';
 import { CLASS_NAMES, statusLabel } from '../data/labels';
 import { GUARD, GUARD_VAULT, planTask, type Task } from './drop';
-import { guardsAt } from '../core/guards';
+import { guardSlots, guardsAt } from '../core/guards';
 import { vaultOf } from '../core/vault';
 import { jobRoomName } from './roomName';
 import { t } from '../textos';
@@ -229,7 +229,7 @@ export function crewGroups(game: GameState): Group[] {
     key: GUARD,
     title: t('ficha.crew.de_guardia'),
     note: t('ficha.crew.en_la_puerta_no'),
-    slots: MAX_GUARDS,
+    slots: guardSlots(game, 'puerta'),
     task: GUARD,
     people: guardsAt(game, 'puerta').map((h) => heroMember(h, t('ficha.crew.heroe'))),
   });
@@ -368,7 +368,7 @@ export function taskOptions(game: GameState, who: string): TaskOption[] {
     );
   }
   if (hero) {
-    const left = MAX_GUARDS - guardsAt(game, 'puerta').length;
+    const left = guardSlots(game, 'puerta') - guardsAt(game, 'puerta').length;
     out.push(
       opt(
         GUARD,

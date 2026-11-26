@@ -2,7 +2,8 @@
  * La vida de los héroes, que se guarda entre peleas (decidido con el usuario, 24 de noviembre).
  * `Hero.hp` va de 0 a 1 (sin él, entero). Con el 50 % o más, sano; por debajo, herido leve:
  * trabaja peor (cuanto más herido, peor, hasta la mitad) y no hace guardia, pero puede salir; por
- * debajo del 20 %, herido grave: en cama (`status: 'herido'`). A 0, la baja (`resolve.ts`).
+ * debajo del 20 %, herido grave: en cama (`status: 'herido'`; también lo está quien se cura en
+ * un catre de la enfermería, aunque tenga más vida). A 0, la baja (`resolve.ts`).
  * Se recupera hora a hora en casa (más deprisa en un catre de la enfermería con quien la atienda).
  */
 import { HP_DAY, HP_GRAVE, HP_LIGHT, LIGHT_WORK_MIN } from './balance';
@@ -17,7 +18,8 @@ export const hpOf = (h: Pick<Hero, 'hp' | 'status' | 'days'>): number =>
 
 export function healthOf(h: Pick<Hero, 'hp' | 'status' | 'days'>): Health {
   const hp = hpOf(h);
-  if (h.status === 'herido' || hp < HP_GRAVE) return 'grave';
+  // En cama puede estar también quien se cura en un catre (leve o casi sano): cuenta su vida.
+  if (hp < HP_GRAVE) return 'grave';
   return hp < HP_LIGHT ? 'leve' : 'sano';
 }
 
@@ -41,6 +43,8 @@ export function workFactor(h: Pick<Hero, 'hp' | 'status' | 'days'>): number {
  * decide quien llama. Muta `h`.
  */
 export function setHp(h: Hero, hp: number): void {
+  // Si le vuelven a herir, se le puede volver a acostar en un catre (ver `core/infirmary.ts`).
+  if (hp < hpOf(h)) delete h.cotOff;
   h.hp = Math.max(0, Math.min(1, hp));
   if (h.hp < HP_GRAVE) {
     if (h.status === 'ok') {

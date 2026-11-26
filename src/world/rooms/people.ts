@@ -330,6 +330,13 @@ export function homes(people: readonly Resident[], S: Spots): Map<string, Goal> 
       out.set(p.id, { place: S.guard[g++]!, pose: 'sit', z: S.guardZ });
       continue;
     }
+    if (p.guard && S.guard.length) {
+      // Con la puerta mejorada caben más: los que no tienen taburete, de pie a su lado.
+      const k = g++ - S.guard.length;
+      const at = S.guard.at(-1)!;
+      out.set(p.id, { place: { x: at.x + 14 + 12 * k, floor: at.floor }, pose: 'stand' });
+      continue;
+    }
     if (p.vault && S.vault) {
       const v = S.vault;
       out.set(p.id, {

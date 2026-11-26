@@ -432,6 +432,11 @@ export const RAID_BASE = 0.45;
 export const GUARD_BONUS = 3;
 /** Como mucho, tantos de guardia en el recibidor. */
 export const MAX_GUARDS = 2;
+/**
+ * Sitios de guardia en la puerta por el nivel del recibidor (decidido con el usuario, 25 de
+ * noviembre: mejorar la puerta deja poner más); en la cámara, siempre `MAX_GUARDS`.
+ */
+export const DOOR_GUARDS = [2, 2, 3, 4, 4] as const;
 
 // ---------- Cámara del tesoro ----------
 /** Oro que cabe por hueco de la cámara, según su nivel (el 0 es lo que se esconde sin cámara). */

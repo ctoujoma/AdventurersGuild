@@ -154,6 +154,7 @@ estado:
   mision: "On a quest · {dias} d"
   herido: "Wounded · {dias} d"
   herido_falta: "Wounded · {tiempo}"
+  enfermeria: "In the infirmary · {tiempo}"
   desaparecido: "Missing"
   muerto: "Fallen"
 sin_efecto: "No effect"
