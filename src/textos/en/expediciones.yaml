@@ -28,6 +28,13 @@ error:
   sin_oro: "The pack doesn't hold {n} coins."
   sin_materiales: "They carry nothing to sell."
 diario:
+  asalto_campamento: "In the night, something stirs by the campfire: {enemigos}! To arms."
+  de_noche:
+    - "Wolves howl in the distance; {heroe} throws another log on the fire."
+    - "{heroe} takes the first watch, back against a tree trunk."
+    - "Something creaks in the dark, but it doesn't come closer."
+    - "{heroe} tells a story by the fire; nobody believes it."
+    - "The embers crackle. They sleep right through."
   pocion_pelea: "Once the fight is over, {heroe} downs a potion in one gulp: back on their feet."
   herido_leve: "{heroe} is hurt: slower and careful now. It may be time to head back."
   nadie: "Nobody was fit to deal with {que}: they let it go."
@@ -451,3 +458,11 @@ vida:
   leve: "Lightly wounded · {pct}%"
   grave: "Badly wounded · {pct}%"
   suelo: "Down, being carried"
+
+repeticion:
+  titulo: "The fight"
+  ganan: "They win the fight!"
+  pierden: "They lose the fight"
+  caen: "{n, plural, one {Down} other {Down}}: {quien}."
+  otra_vez: "Again"
+  cerrar: "Close"

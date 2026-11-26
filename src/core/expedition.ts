@@ -16,6 +16,9 @@ import {
   EXP_CLERIC_HEAL,
   EXP_CRYSTAL_FROM,
   EXP_FOG_AMBUSH,
+  EXP_CAMP_RAID,
+  EXP_CAMP_RAID_MULT,
+  EXP_NIGHT_LINE,
   EXP_POTION_AFTER,
   EXP_BOSS_SEEN,
   EXP_BOSS_MULT,
@@ -501,6 +504,11 @@ function stepHour(s: GameState, e: Expedition, news: DawnEvent[]): void {
     camp(s, e, rng);
     return;
   }
+  // De noche, en el campamento: solo cosas de campamento (lo que se ve en el visor).
+  if (hod > EXP_CAMP) {
+    nightHour(s, e, rng, dist);
+    return;
+  }
   // El tiempo del día: se apunta al cambiar; la lluvia, el viento y la tormenta les paran a ratos.
   const sky = expWeather(e);
   if (sky !== (e.sky ?? 'claro')) {
@@ -527,7 +535,8 @@ function stepHour(s: GameState, e: Expedition, news: DawnEvent[]): void {
   // Lo que ya está en el mapa: fardos perdidos y parajes que quedaron sin ver.
   if (!e.turn && mapStop(s, e, dist, news)) return;
   const rate = (EXP_EVENTS + EXP_EVENTS_FAR * dist) * (e.turn ? 0.5 : 1);
-  if (!rng.chance(rate / (EXP_HOURS - 1))) return;
+  // (Solo en las horas de marcha, del alba a la acampada: los mismos sucesos al día que antes.)
+  if (!rng.chance(rate / EXP_CAMP)) return;
   const up = standing(e, s);
   if (!up.length) return;
   const who = rng.pick(up);
@@ -568,6 +577,35 @@ function stepHour(s: GameState, e: Expedition, news: DawnEvent[]): void {
       e,
       'camino',
       `expediciones.diario.camino.${e.heading}.${i}`,
+      { heroe: who.name, sexo: who.sex },
+      who.id,
+    );
+  }
+}
+
+/**
+ * Una hora de noche en el campamento: a veces les atacan junto al fuego (la pelea se ve en el
+ * visor; nunca el grande del rumbo) y, si no, a veces una línea tranquila.
+ */
+function nightHour(s: GameState, e: Expedition, rng: Rng, dist: number): void {
+  if (!standing(e, s).length) return;
+  if (rng.chance(EXP_CAMP_RAID)) {
+    const foes = tl(`expediciones.enemigos.${e.heading}`);
+    const foe = rng.int(0, Math.max(0, foes.length - 2));
+    line(e, 'noche', 'expediciones.diario.asalto_campamento', {
+      enemigos: msg(`expediciones.enemigos.${e.heading}.${foe}`),
+    });
+    // Junto al fuego y con guardia, pelean con ventaja.
+    battle(s, e, rng, dist, foe, EXP_CAMP_RAID_MULT);
+    return;
+  }
+  if (rng.chance(EXP_NIGHT_LINE)) {
+    const pool = tl('expediciones.diario.de_noche');
+    const who = rng.pick(standing(e, s));
+    line(
+      e,
+      'noche',
+      `expediciones.diario.de_noche.${rng.int(0, pool.length - 1)}`,
       { heroe: who.name, sexo: who.sex },
       who.id,
     );
@@ -692,6 +730,15 @@ function battle(
     foe: msg('expediciones.pelea.nombre', { enemigos }),
     where: msg('expediciones.pelea.donde', { rumbo: e.heading, dias: Math.floor(dist) }),
     terrain: TERRAIN[e.heading],
+    exp: {
+      heading: e.heading,
+      foe,
+      dist,
+      home: !!e.turn,
+      at: e.from + e.hours * HOUR,
+      weather: expWeather(e),
+      ...(guardian ? { guardian: true } : {}),
+    },
   };
   // La vida: cada uno, la que le quede; quien cae, grave (si ya iba grave, al suelo); si
   // pierden, uno más se lleva otro golpe.

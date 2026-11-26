@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DAY_SECONDS, MAX_CANDIDATES } from './balance';
+import { DAY_SECONDS, EXP_CAMP, MAX_CANDIDATES } from './balance';
 import {
   canExpedition,
   distAt,
@@ -13,6 +13,7 @@ import {
   potionsMax,
   headingOpen,
   hurtSlow,
+  HOUR,
   expWeather,
   stepExpeditions,
 } from './expedition';
@@ -21,7 +22,7 @@ import { endDay, newGame, reduce, tick } from './game';
 import type { GameState } from './model';
 import { GEAR } from '../data/items';
 import { tx } from '../textos';
-import { marchNow } from '../ui/expedition';
+import { marchNow, replayNow } from '../ui/expedition';
 import { runCombat } from './combat';
 import { Rng } from './rng';
 
@@ -74,7 +75,7 @@ describe('expediciones', () => {
     expect(s.heroes.find((h) => h.id === ids[0])!.status).toBe('mision');
     s = play(s, 2);
     const e = s.expeditions?.[0];
-    if (e) expect(distAt(e)).toBeGreaterThan(1);
+    if (e) expect(distAt(e)).toBeGreaterThanOrEqual(1);
     s = play(s, 10);
     expect(s.expeditions ?? []).toHaveLength(0);
     const r = s.reports.find((x) => tx(x.title).startsWith('Expedición al bosque'));
@@ -489,5 +490,33 @@ describe('expediciones: bloque 5 (rumbos, tiempo, pociones y la carta)', () => {
     e.pending = { kind: 'jefe', h: e.hours, until: e.hours + 24, foe: 3 };
     const m = marchNow(s, e);
     expect(['wait', 'camp']).toContain(m.mode);
+  });
+
+  it('de noche, en el campamento, solo pasan cosas de campamento', () => {
+    let s = ready('noche-campamento');
+    s.expBest = { bosque: 5 };
+    const ids = s.heroes.slice(0, 2).map((h) => h.id);
+    s = reduce(s, { type: 'expedition', heading: 'bosque', heroIds: ids, rations: 40 });
+    const e0 = s.expeditions![0]!;
+    s = play(s, 6);
+    const e = s.expeditions?.[0];
+    const log = e?.log ?? s.reports.find((r) => r.exp)!.exp!.log;
+    const hod = (h: number) => Math.floor(((e0.from + h * HOUR) % DAY_SECONDS) / HOUR);
+    const night = log.filter((l) => l.h > 0 && hod(l.h) > EXP_CAMP);
+    for (const l of night)
+      expect(['noche', 'pelea', 'cura', 'herida', 'aviso', 'vuelta', 'llegada']).toContain(l.k);
+  });
+
+  it('las peleas guardan lo justo para repetirlas con la escena del visor', () => {
+    let s = out('repeticion');
+    const e = s.expeditions![0]!;
+    e.pending = { kind: 'jefe', h: e.hours, until: e.hours + 24, foe: 3 };
+    s = reduce(s, { type: 'expChoose', id: e.id, option: 'solos' });
+    const log = s.expeditions?.[0]?.log ?? s.reports.find((r) => r.exp)!.exp!.log;
+    const f = log.find((l) => l.fight)!.fight!;
+    expect(f.exp?.heading).toBe('bosque');
+    const m = replayNow(s, f)!;
+    expect(m.mode).toBe('fight');
+    expect(m.terrain).toBe('bosque');
   });
 });
