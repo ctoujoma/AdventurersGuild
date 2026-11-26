@@ -38,8 +38,8 @@ export interface MarchNow {
   won?: boolean;
   /** El rumbo (el guardián que sale a la vista es el suyo). */
   heading?: Heading;
-  /** El enemigo de verdad (rumbo y número en `expediciones.enemigos`): su dibujo propio. */
-  rival?: { heading: Heading; idx: number };
+  /** El enemigo de verdad (rumbo y número en `expediciones.enemigos`, o el guardián): su dibujo. */
+  rival?: { heading: Heading; idx: number; guardian?: boolean };
   /** El suceso que tienen delante mientras esperan a que elijas (con un jefe, cuál). */
   event?: { kind: ExpEvent; foe?: number };
 }

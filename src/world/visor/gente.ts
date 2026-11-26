@@ -4,7 +4,7 @@
  * con estocada, destello y retroceso del que lo recibe, cifras de daño que suben y, de vez en
  * cuando, uno que cae. Los muñecos son los de verdad (`heroSprites`, `fightSprites`, `foeArt`).
  */
-import { expFoeArt } from '../../art/expFoes';
+import { expFoeArt, expGuardianArt } from '../../art/expFoes';
 import { foeArt, type FoeArt, type FoePose } from '../../art/foes';
 import type { Dress } from '../../data/custom';
 import {
@@ -166,6 +166,7 @@ export class Gente {
 
   /** Los enemigos de esta pelea (de dos a tres; uno, si es grande; tres, si son alimañas). */
   private foes(m: MarchNow): FoeArt[] {
+    if (m.rival?.guardian) return [expGuardianArt(m.rival.heading)];
     if (m.rival) {
       const { art, count } = expFoeArt(m.rival.heading, m.rival.idx);
       return Array.from({ length: count }, () => art);
@@ -206,7 +207,8 @@ export class Gente {
     const foeXs: number[] = [];
     let fx = lead + dir * Math.max(27, 10 + Math.ceil((foes[0]?.span ?? 0) / 2));
     for (const f of foes) {
-      if (f.big) fx += dir * 10;
+      // Los grandes, un poco más allá (el dragón ya ocupa media pantalla: no, que se cortaría).
+      if (f.big && f.span < 50) fx += dir * 10;
       foeXs.push(fx);
       fx += dir * (f.span + 3);
     }

@@ -509,7 +509,10 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      caen con su animación y el grupo lo celebra (`cheer`, saltitos) unos 3 s, con el paisaje parado
      (`Gente.holds`), antes de seguir. Dragón: muerte de una hoja aparte (se encabrita, se dobla, se desploma, queda
      helado y se deshace en tramado, `fade`; calcada con la misma paleta, `calco3` admite cajas de otra imagen) y el de escarcha para el
-     golpe; también alineado por los pies. GIFs de todas las animaciones: `tools/enemigos-gif.ts`.
+     golpe; también alineado por los pies. GIFs de todas las animaciones: `tools/enemigos-gif.ts`. La pelea contra el guardián
+     ya sale en el visor (el núcleo la resolvía, también sola con «que peleen solos», pero el visor
+     pintaba el enemigo 0 y, al ganar, la línea de botín tapaba la pelea): `rival.guardian` sale de
+     `fight.exp.guardian` y el modo pelea mira la línea de pelea de esa hora, no la última.
      Falta: el resto de enemigos de sierra y marismas; la sanguijuela
      queda oscura en la marisma (es su color).
      Luego: pasada visual a sierra/marismas/ruinas y transiciones suaves (lluvia y fondo cambian de golpe).
