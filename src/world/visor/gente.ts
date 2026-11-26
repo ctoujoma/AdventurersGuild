@@ -71,7 +71,7 @@ export const GAP = 13;
 /** Lo que dura un turno de la pelea (s). */
 const TURN = 0.95;
 /** Ganada la pelea: los que quedaban en pie caen y el grupo lo celebra (s); luego siguen. */
-const AFTER = 3.2;
+const AFTER = 3.6;
 
 interface Pop {
   text: string;
@@ -224,7 +224,7 @@ export class Gente {
       const u =
         pose === 'down'
           ? end !== undefined && !fell(j)
-            ? end / 0.45
+            ? end / 0.6
             : k === downAt(j)
               ? (p - 0.55) / 0.4
               : 1

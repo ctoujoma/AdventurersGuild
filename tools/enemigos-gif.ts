@@ -9,7 +9,7 @@ import { PixelBuffer, alpha } from '../src/art/pixel';
 import { foeFrame } from '../src/world/visor/gente';
 const [dir] = process.argv.slice(2);
 const FPS = 10;
-const N = 60;
+const N = 80;
 const ARTS: Record<string, FoeArt> = {
   sanguijuela: expFoeArt('marismas', 0).art,
   gigante: expFoeArt('sierra', 3).art,
@@ -27,8 +27,8 @@ const PANELS: ((t: number) => [FoePose, number])[] = [
     return u < 0.4 ? ['hurt', u / 0.4] : ['idle', 0];
   },
   (t) => {
-    const u = (t % 3) / 3; // cae en un segundo y medio y se queda
-    return u < 0.08 ? ['idle', 0] : ['down', (u - 0.08) / 0.45];
+    const u = (t % 4) / 4; // cae en algo más de dos segundos y se queda
+    return u < 0.06 ? ['idle', 0] : ['down', (u - 0.06) / 0.55];
   },
 ];
 for (const [name, art] of Object.entries(ARTS)) {

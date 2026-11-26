@@ -507,8 +507,8 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      una fila menos, sintético), carga, golpe, herido y muere cayendo (`seq.down`; sin los dos de tambalearse, que cogen el garrote del revés). En el visor el
      último enemigo nunca caía: ahora, si la pelea se ganó (`MarchNow.won`), al acabar los que quedan
      caen con su animación y el grupo lo celebra (`cheer`, saltitos) unos 3 s, con el paisaje parado
-     (`Gente.holds`), antes de seguir. Dragón: muerte de una hoja aparte (se encabrita, se dobla, se desploma y queda
-     helado; calcada con la misma paleta, `calco3` admite cajas de otra imagen) y el de escarcha para el
+     (`Gente.holds`), antes de seguir. Dragón: muerte de una hoja aparte (se encabrita, se dobla, se desploma, queda
+     helado y se deshace en tramado, `fade`; calcada con la misma paleta, `calco3` admite cajas de otra imagen) y el de escarcha para el
      golpe; también alineado por los pies. GIFs de todas las animaciones: `tools/enemigos-gif.ts`.
      Falta: el resto de enemigos de sierra y marismas; la sanguijuela
      queda oscura en la marisma (es su color).

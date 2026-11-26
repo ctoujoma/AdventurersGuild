@@ -137,6 +137,18 @@ function giant(what: string, skin: Record<string, string>, cloth: string, runes 
  * Un enemigo calcado (`expCalcos.ts`): sus fotogramas en un lienzo común, pegados abajo y por la
  * cola, y qué fotograma hace cada pose. Caído, panza arriba.
  */
+/** Bayer 4×4: el orden en que se borran los píxeles al deshacerse. */
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+
+/** El dibujo con una parte `u` (0–1) de sus píxeles borrada en tramado. */
+function dissolve(img: PixelBuffer, u: number): PixelBuffer {
+  const out = img.clone();
+  for (let y = 0; y < img.h; y++)
+    for (let x = 0; x < img.w; x++)
+      if (BAYER[(y & 3) * 4 + (x & 3)]! < u * 16) out.data[y * img.w + x] = 0;
+  return out;
+}
+
 /** Los caracteres de los colores de `ramp` en los calcos (`expCalcos.ts`). */
 const IDX = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
@@ -146,6 +158,7 @@ function calcoArt(
   pose: Record<Exclude<FoePose, 'down'>, number> & { down?: number },
   big = false,
   seq?: Partial<Record<FoeSeq, number[]>>,
+  fade = 0,
 ): FoeArt {
   const c = CALCOS[what]!;
   const w = Math.max(...c.frames.map((f) => f[0]!.length));
@@ -187,6 +200,15 @@ function calcoArt(
     art.seq = {};
     for (const k of Object.keys(seq) as (keyof typeof seq)[])
       art.seq[k] = seq[k]!.map((i) => frames[i]!);
+    // Al acabar de morir se deshace en `fade` pasos (tramado, como el fundido del paisaje) y no
+    // queda nada: caído, ya no se ve.
+    const d = art.seq.down;
+    if (fade && d?.length) {
+      const last = d[d.length - 1]!;
+      const gone = Array.from({ length: fade }, (_, i) => dissolve(last, (i + 1) / fade));
+      art.seq.down = [...d, ...gone];
+      poses.down = gone[gone.length - 1]!;
+    }
   }
   return art;
 }
@@ -335,14 +357,15 @@ export function expGuardianArt(heading: Heading): FoeArt {
               { idle: 13, idle2: 14, walk1: 2, walk2: 4, windup: 6, strike: 8, hurt: 23, down: 24 },
               true,
               // Respira, abre las alas y ruge, echa el aliento de hielo; herido, se escarcha; al morir
-              // se encabrita, se dobla, se desploma y queda helado.
+              // se encabrita, se dobla, se desploma, queda helado y se deshace.
               {
                 idle: [13, 14, 15, 16, 17, 16, 15, 14],
                 windup: [18, 6],
                 strike: [7, 8, 9, 8],
                 hurt: [23],
-                down: [19, 20, 21, 22, 24],
+                down: [19, 20, 21, 22, 24, 24],
               },
+              4,
             ),
             count: 1,
           }
