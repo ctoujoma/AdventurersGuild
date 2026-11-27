@@ -3,7 +3,7 @@
 // `node tools/textos/esbuild.mjs tools/glosario-enemigos.ts glosario docs/glosario-enemigos.html`.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { png } from './visor-png';
-import { expFoeArt, expGuardianArt } from '../src/art/expFoes';
+import { ahogadoGrandeArt, deathOf, expFoeArt, expGuardianArt } from '../src/art/expFoes';
 import { CALCOS } from '../src/art/expCalcos';
 import { bossArtFor } from '../src/art/bossCalco';
 import { foeArt, type FoeArt } from '../src/art/foes';
@@ -40,13 +40,22 @@ const ids = (bs: readonly PixelBuffer[]) =>
     return i;
   });
 
-type Anims = { quieto: number[]; ataque: number[]; herido: number[]; muerte: number[] };
+type Anims = {
+  quieto: number[];
+  ataque: number[];
+  herido: number[];
+  muerte: number[];
+  /** La otra muerte, si tiene dos. */
+  muerte2?: number[];
+};
 interface Entry {
   name: string;
   /** Calcado de una hoja (con sus secuencias) o el dibujo antiguo (poses sueltas). */
   calco: boolean;
   where: string[];
   anims: Anims;
+  /** Aún no sale en el juego. */
+  unused?: boolean;
 }
 
 type Pose = 'idle' | 'windup' | 'strike' | 'hurt' | 'down';
@@ -297,7 +306,7 @@ function scene(a: Actor): Anims {
     drawFxGlow(b, fxs, LUZ);
     return b;
   };
-  const run = (k: keyof Anims, secs: number) =>
+  const run = (k: Exclude<keyof Anims, 'muerte2'>, secs: number) =>
     ids(Array.from({ length: Math.round(secs * FPS) }, (_, i) => draw(k, i / FPS)));
   return {
     quieto: run('quieto', 3.2),
@@ -307,7 +316,11 @@ function scene(a: Actor): Anims {
   };
 }
 
-const foeAnims = (f: FoeArt) => scene(foeActor(f));
+const foeAnims = (f: FoeArt): Anims => {
+  const a = scene(foeActor(f));
+  if (f.downAlt?.length) a.muerte2 = scene(foeActor(deathOf(f, 1))).muerte;
+  return a;
+};
 const bossAnims = (b: BossArt, k: BossKind) => scene(bossActor(b, k));
 
 /** Dónde más sale un dibujo de las expediciones (fuera de su rumbo). */
@@ -391,12 +404,26 @@ const strip: Entry[] = KINDS.map((k) => {
   };
 });
 
+/** Calcados que aún no salen en el juego (para más adelante). */
+const reserva: Entry[] = [
+  {
+    name: 'Ahogado grande',
+    calco: true,
+    unused: true,
+    where: [
+      'Sin usar todavía: el ahogado de las marismas a la escala de su hoja, para un jefe más adelante',
+    ],
+    anims: foeAnims(ahogadoGrandeArt()),
+  },
+];
+
 const data = {
   pool,
   groups: [
     ...exp.map((e) => ({ title: `Expediciones · ${e.heading}`, items: e.foes })),
     { title: 'Encargos · jefes de las historias', items: bosses },
     { title: 'Encargos · enemigos de la tira', items: strip },
+    { title: 'Reserva · calcados sin usar todavía', items: reserva },
   ],
 };
 const tpl = readFileSync('tools/glosario-enemigos.html', 'utf8');

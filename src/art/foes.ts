@@ -74,6 +74,8 @@ export interface FoeArt {
    * caída se suceden en vez de ser un dibujo fijo. Si no hay, la pose de `poses`.
    */
   seq?: Partial<Record<FoeSeq, readonly PixelBuffer[]>>;
+  /** Otras muertes (el ahogado se desarma o se queda sentado): cada pelea elige una (`deathOf`). */
+  downAlt?: readonly (readonly PixelBuffer[])[];
   /**
    * Los bandidos son los de los asaltos (`banditLook`): figuras de héroe sin el arma, que se
    * pinta aparte en la mano (`HAND`), como en la pelea.
