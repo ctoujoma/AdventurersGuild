@@ -492,6 +492,29 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      huargo con varios fotogramas, en la pelea del visor (`MarchNow.rival`, solo bosque; capturas con
      `tools/visor-pelea.ts`). El usuario: «no te compliques», vale un estilo propio si es más fluido.
      Falta: ratas y el resto de rumbos (sin referencia: estilo propio), guardianes, «Ver la pelea».
+     **Sierra y marismas, primera pasada (26 nov):** el usuario trae los diseños (otra IA) y se calcan a color con
+     `tools/bocetos/enemigos/calco3.py` (mediana por celda, k-medias por criatura, borde oscurecido;
+     `sierra_calco.py`; `de_ts.py` saca los del bosque del `.ts` para regenerar con `a_ts.py`). Entran la
+     sanguijuela (marismas: quieta, enroscada, salto, se alza, se lanza, revienta y charco), el gigante de
+     hielo con garrote (sierra, en lugar del gigante de las nieves) y el dragón de hielo como guardián de
+     sierra a la vista (`expGuardianArt`, `MarchNow.heading`). Todos los rumbos usan ya su reparto en la
+     pelea del visor (`rival` siempre). Segunda vuelta (hojas por enemigo): sanguijuela verde
+     que se pone roja al atacar (10), gigante (9) y dragón (19). Las poses pueden tener varios
+     fotogramas (`FoeArt.seq`, `foeFrame` en `visor/gente.ts`): quieto respira, la carga, el golpe y el
+     daño avanzan con la fase del turno. `calco3.py` separa familias de color (`split`), aclara tonos
+     medios (`lift`) y conserva los ojos rojos (`acc`). Gigante v3 (hoja con muerte; la fila de andar se descarta
+     porque trae el brazo y el garrote mal): fotogramas alineados por los pies, respira (quieto con
+     una fila menos, sintético), carga, golpe, herido y muere cayendo (`seq.down`; sin los dos de tambalearse, que cogen el garrote del revés). En el visor el
+     último enemigo nunca caía: ahora, si la pelea se ganó (`MarchNow.won`), al acabar los que quedan
+     caen con su animación y el grupo lo celebra (`cheer`, saltitos) unos 3 s, con el paisaje parado
+     (`Gente.holds`), antes de seguir. Dragón: muerte de una hoja aparte (se encabrita, se dobla, se desploma, queda
+     helado y se deshace en tramado, `fade`; calcada con la misma paleta, `calco3` admite cajas de otra imagen) y el de escarcha para el
+     golpe; también alineado por los pies. GIFs de todas las animaciones: `tools/enemigos-gif.ts`. La pelea contra el guardián
+     ya sale en el visor (el núcleo la resolvía, también sola con «que peleen solos», pero el visor
+     pintaba el enemigo 0 y, al ganar, la línea de botín tapaba la pelea): `rival.guardian` sale de
+     `fight.exp.guardian` y el modo pelea mira la línea de pelea de esa hora, no la última.
+     Falta: el resto de enemigos de sierra y marismas; la sanguijuela
+     queda oscura en la marisma (es su color).
      Luego: pasada visual a sierra/marismas/ruinas y transiciones suaves (lluvia y fondo cambian de golpe).
      **Sucesos a la vista (26 nov):** con `e.pending` el visor pinta delante lo que hay (`visor/sucesos.ts`, `MarchNow.event`):
      cofre, santuario, mercader con carro, viajero, campamento abandonado, oso, cueva, torre y ruinas, pintados en

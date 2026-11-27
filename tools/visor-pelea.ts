@@ -17,7 +17,8 @@ const crew: MarchNow['crew'] = [
   { id: 'b', name: 'T', seed: 'toda-3', cls: 'explorador', sex: 'f', fate: 'ok' },
   { id: 'c', name: 'O', seed: 'odo-11', cls: 'mago', sex: 'm', fate: 'ok' },
 ];
-for (let idx = 0; idx < 4; idx++) {
+// 0–3, los enemigos del rumbo; 4, su guardián.
+for (let idx = 0; idx < 5; idx++) {
   const m: MarchNow = {
     seed: 'visor-pelea',
     terrain,
@@ -30,7 +31,7 @@ for (let idx = 0; idx < 4; idx++) {
     hour: 11,
     weather: 'claro',
     day: 2,
-    rival: { heading, idx },
+    rival: { heading, idx: idx % 4, guardian: idx === 4 },
   };
   for (const [tag, enc, sc] of [
     ['escritorio', ESCRITORIO, 3],
@@ -45,5 +46,12 @@ for (let idx = 0; idx < 4; idx++) {
     writeFileSync(
       `${dir}/gif/${idx}-${String(k).padStart(3, '0')}.png`,
       png(v.frame(m, k / 10), 2),
+    );
+  // Ganada: los que quedaban en pie caen y el grupo sigue.
+  const won: MarchNow = { ...m, mode: 'walk', won: true };
+  for (let k = 60; k < 100; k++)
+    writeFileSync(
+      `${dir}/gif/${idx}-${String(k).padStart(3, '0')}.png`,
+      png(v.frame(won, k / 10), 2),
     );
 }

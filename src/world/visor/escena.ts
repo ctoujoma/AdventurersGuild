@@ -153,7 +153,8 @@ export class Visor {
     this.seed = hashString(m.seed) % 1000;
     const dt = this.last < 0 ? 0 : Math.min(0.5, Math.max(0, time - this.last));
     this.last = time;
-    const walking = m.mode === 'walk';
+    // Al ganar una pelea se quedan un momento celebrando antes de seguir.
+    const walking = m.mode === 'walk' && !this.gente.holds(m, time);
     const hurt = m.crew.some((c) => c.fate === 'herido');
     const speed = WALK_SPEED * (hurt ? 0.75 : 1);
     if (walking) this.travel += dt * speed * (m.home ? -1 : 1);

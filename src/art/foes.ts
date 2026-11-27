@@ -53,6 +53,9 @@ export const FOE_POSES: readonly FoePose[] = [
   'down',
 ];
 
+/** Las poses que pueden tener varios fotogramas (`FoeArt.seq`). */
+export type FoeSeq = 'idle' | 'windup' | 'strike' | 'hurt' | 'down';
+
 export interface FoeArt {
   kind: FoeKind;
   /** Qué es, dentro de la familia (`lobo`, `arana`, `orco`…), por si se quiere nombrar. */
@@ -66,6 +69,11 @@ export interface FoeArt {
   span: number;
   /** El doble de grande que un héroe. */
   big: boolean;
+  /**
+   * Más fotogramas por pose (los calcados): quieto respira, y la carga, el golpe, el daño y la
+   * caída se suceden en vez de ser un dibujo fijo. Si no hay, la pose de `poses`.
+   */
+  seq?: Partial<Record<FoeSeq, readonly PixelBuffer[]>>;
   /**
    * Los bandidos son los de los asaltos (`banditLook`): figuras de héroe sin el arma, que se
    * pinta aparte en la mano (`HAND`), como en la pelea.
