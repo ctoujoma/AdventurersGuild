@@ -313,6 +313,7 @@ const bossAnims = (b: BossArt, k: BossKind) => scene(bossActor(b, k));
 /** Dónde más sale un dibujo de las expediciones (fuera de su rumbo). */
 const MORE: Record<string, string[]> = {
   'bosque:0': ['Encargos: las bestias de la tira del viaje'],
+  'sierra:1': ['Encargos: los trasgos de la tira del viaje'],
   'bosque:2': ['Expediciones: el oso que se ve delante (suceso «oso»)'],
   'bosque:3': [
     'Expediciones: guardián de bosque, marismas y ruinas (de momento)',
@@ -361,16 +362,22 @@ const bosses: Entry[] = (Object.keys(BOSSES) as BossKind[]).map((k) => {
   };
 });
 
+/** Las familias de la tira que salen calcadas (como `STRIP_CALCO` de `world/tripStrip.ts`). */
+const STRIP_FROM: Partial<Record<FoeKind, { art: () => FoeArt; as: string }>> = {
+  bestia: { art: () => expFoeArt('bosque', 0).art, as: 'los lobos del bosque' },
+  trasgo: { art: () => expFoeArt('sierra', 1).art, as: 'los trasgos de la sierra' },
+};
 const KINDS: FoeKind[] = ['bandido', 'trasgo', 'bestia', 'alimana', 'muerto', 'grande'];
 const strip: Entry[] = KINDS.map((k) => {
-  const calco = k === 'bestia';
-  const art = calco ? expFoeArt('bosque', 0).art : foeArt(k, 'glosario');
+  const from = STRIP_FROM[k];
+  const calco = !!from;
+  const art = from ? from.art() : foeArt(k, 'glosario');
   const rumbos = HEADINGS.filter((h) => HEADING_FOES[h]?.includes(k)).map(rumbo);
   return {
     name: FOE_NAMES[k].replace(/^./, (c) => c.toUpperCase()),
     calco,
     where: [
-      `Encargos: enemigos de la tira del viaje${calco ? ' (los lobos del bosque)' : ''}`,
+      `Encargos: enemigos de la tira del viaje${from ? ` (${from.as})` : ''}`,
       ...(rumbos.length ? [`Familia de: ${rumbos.join(', ')}`] : []),
     ],
     anims: foeAnims(art),

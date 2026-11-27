@@ -3,6 +3,7 @@ d=json.load(open('bosque_calco.json'))
 d.update(json.load(open('sierra_calco.json')))
 d.update(json.load(open('bosque2_calco.json')))
 d.update(json.load(open('ceniza_calco.json')))
+d.update(json.load(open('trasgo_calco.json')))
 import os
 if os.path.exists('huargo_muerte.json'): d['huargo'] = d['huargo'][:8] + json.load(open('huargo_muerte.json'))
 IDX='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
