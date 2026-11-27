@@ -67,7 +67,7 @@ salas:
     desc: "Stores the materials quests bring: more with each level and each slot."
 efecto:
   taller_0: "Makes nothing"
-  taller: "{n, plural, one {# job} other {# jobs}} at once, at {ritmo}% pace; quality: {calidad}; when dismantling, {receta}% chance of learning the recipe"
+  taller: "{sitios, plural, one {# place} other {# places}} (the rest queues), {n, plural, one {# job} other {# jobs}} at once, at {ritmo}% pace; quality: {calidad}; when dismantling, {receta}% chance of learning the recipe"
   entreno_0: "No training"
   entreno: "{atributo} up to {tope}, at {ritmo}% pace"
   candidatos:

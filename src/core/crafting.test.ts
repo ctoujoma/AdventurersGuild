@@ -196,6 +196,37 @@ describe('la forja crea objetos', () => {
     expect(canCraft(u, big.forge, 'coraza')).toBeNull();
   });
 
+  it('con más nivel o más ancho, más sitios: lo de más espera en cola y empieza solo', () => {
+    const { s, forge } = withForge('cola', 2);
+    let t = reduceRaw(s, { type: 'craft', room: forge, recipe: 'espada' });
+    expect(canCraft(t, forge, 'ganzuas')).toBeNull();
+    t = reduceRaw(t, { type: 'craft', room: forge, recipe: 'ganzuas' });
+    // Nivel 2: dos sitios y un puesto. La segunda espera (pagada) y no avanza.
+    expect(canCraft(t, forge, 'espada')).toMatch(/a tope/);
+    const [a, b] = t.crafts!;
+    expect(craftState(t, b!).queued).toBe(true);
+    t = reduceRaw(t, { type: 'tick', to: DAY_SECONDS * 0.2 });
+    expect(craftState(t, t.crafts![1]!).frac).toBe(0);
+    // Acaba la espada (sin recoger): las ganzúas empiezan solas y acaban el mismo día.
+    t = reduceRaw(t, { type: 'tick', to: DAY_SECONDS * 0.8 });
+    expect(t.crafts!.find((c) => c.id === a!.id)!.ready).toBe(true);
+    expect(t.crafts!.find((c) => c.id === b!.id)!.ready).toBe(true);
+    // Lo acabado sin recoger ocupa su sitio.
+    expect(canCraft(t, forge, 'espada')).toMatch(/a tope/);
+    const wide = withForge('ancha', 1);
+    wide.s.building.rooms.find((r) => r.id === wide.forge)!.w = 2;
+    const w = reduceRaw(wide.s, { type: 'craft', room: wide.forge, recipe: 'espada' });
+    expect(canCraft(w, wide.forge, 'ganzuas')).toBeNull();
+  });
+
+  it('con el juego cerrado, lo de la cola se hace en la misma noche', () => {
+    const { s, forge } = withForge('cola-cerrado', 2);
+    let t = reduceRaw(s, { type: 'craft', room: forge, recipe: 'espada' });
+    t = reduceRaw(t, { type: 'craft', room: forge, recipe: 'ganzuas' });
+    t = endRaw(t, true);
+    expect(readyCrafts(t)).toHaveLength(2);
+  });
+
   it('cancelar devuelve el oro', () => {
     const { s, forge } = withForge('cancelar');
     const t = reduce(s, { type: 'craft', room: forge, recipe: 'espada' });

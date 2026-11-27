@@ -616,6 +616,12 @@ export const ATTR_MAX = 15;
 export const CRAFT_STD_WORK = 6;
 /** Trabajos a la vez en un taller, por nivel de la sala. */
 export const CRAFT_SLOTS = [0, 1, 1, 2, 2] as const;
+/**
+ * Sitios de un taller por nivel (usuario, 27 de noviembre): lo que trabaja, lo que espera en cola
+ * (pagado; empieza solo al quedar un puesto libre, también con el juego cerrado) y lo acabado sin
+ * recoger. Cada hueco de ancho de más, un sitio más.
+ */
+export const CRAFT_PLACES = [0, 1, 2, 3, 4] as const;
 /** Probabilidad de que salga bueno, por nivel de la sala; más con un buen herrero. */
 /**
  * Calidad de lo que sale de un taller según su nivel (índice): probabilidad de común, bueno y raro.

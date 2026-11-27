@@ -4,7 +4,7 @@ import { nightCatNow } from '../core/nightCat';
 import { nightmareNow } from '../core/nightmare';
 import { INCIDENTS } from '../data/incidents';
 import { awayPlan, isAway, sleepPlan } from '../core/beds';
-import { craftState, dressingOf } from '../core/crafting';
+import { craftState, dressingOf, queuedIds } from '../core/crafting';
 import { paintState, painterAt } from '../core/paint';
 import { RECIPES } from '../data/recipes';
 import { generateLook, type HeroLook, type HeroMarks, type OutfitId } from '../art/heroes/look';
@@ -182,6 +182,7 @@ function awayOf(s: GameState): SceneAway[] {
 /** `spot`: con el menú de Héroes abierto, se resalta a todos los héroes que están en casa. */
 export function sceneModel(s: GameState, spot = false): SceneModel {
   const heroes: SceneHero[] = [];
+  const queued = queuedIds(s);
   // Quien va a arreglar un incidente corre a esa sala.
   const goTo = (id: string) => s.incidents?.find((i) => i.coming?.who === id)?.room;
   // Un incidente que espera a que se arrastre a alguien: se resalta a quien puede ir.
@@ -305,22 +306,25 @@ export function sceneModel(s: GameState, spot = false): SceneModel {
     incidentEnds: s.incidentLog,
     clock: { day: s.day, secs: s.clock ?? 0 },
     seed: s.seed,
-    crafts: (s.crafts ?? []).map((c) => {
-      const st = craftState(s, c);
-      return {
-        id: c.id,
-        room: c.room,
-        icon: c.item?.icon ?? (c.recipe ? RECIPES[c.recipe].icon : 'capa'),
-        rarity: c.item?.rarity ?? 0,
-        frac: st.frac,
-        stalled: st.hoursLeft === null,
-        undo: !!c.item && !c.temper,
-        potion: c.potion,
-        hero: c.dress?.hero,
-        walking: st.walking || undefined,
-        ready: c.ready,
-      };
-    }),
+    // Lo que espera en cola no se ve (ni marca ni gente trabajando en ello) hasta que empieza.
+    crafts: (s.crafts ?? [])
+      .filter((c) => !queued.has(c.id))
+      .map((c) => {
+        const st = craftState(s, c);
+        return {
+          id: c.id,
+          room: c.room,
+          icon: c.item?.icon ?? (c.recipe ? RECIPES[c.recipe].icon : 'capa'),
+          rarity: c.item?.rarity ?? 0,
+          frac: st.frac,
+          stalled: st.hoursLeft === null,
+          undo: !!c.item && !c.temper,
+          potion: c.potion,
+          hero: c.dress?.hero,
+          walking: st.walking || undefined,
+          ready: c.ready,
+        };
+      }),
     craftEnds: s.craftLog,
     paints: (s.paints ?? []).map((p) => {
       const st = paintState(s, p);
