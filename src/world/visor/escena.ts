@@ -227,6 +227,8 @@ export class Visor {
     this.aire.draw(b, l, time, travel, bio.id === 'sierra');
     if (fire) fireLight(ctx, fire);
     this.gente.overlay(ctx);
+    // El golpe de un grande: todo el cuadro tiembla un píxel.
+    if (this.gente.shake) shiftY(b, this.gente.shake);
     return b;
   }
 
@@ -241,3 +243,14 @@ export class Visor {
 
 /** Lo salvaje convertido en algo más suave en los extremos (para animales y tiempo). */
 export const wildEase = (w: number) => smooth(0, 1, w);
+
+/** Corre el cuadro `dy` píxeles en vertical (repite la fila del borde). */
+function shiftY(b: PixelBuffer, dy: number): void {
+  const w = b.w;
+  if (dy > 0) {
+    b.data.copyWithin(dy * w, 0, (b.h - dy) * w);
+  } else {
+    b.data.copyWithin(0, -dy * w, b.h * w);
+    b.data.copyWithin((b.h + dy) * w, (b.h + dy - 1) * w, (b.h + dy) * w);
+  }
+}

@@ -178,7 +178,7 @@ function calcoArt(
   });
   const poses = {} as Record<FoePose, PixelBuffer>;
   for (const k of Object.keys(pose) as FoePose[]) poses[k] = frames[pose[k]!]!;
-  // Caído: el suyo si lo tiene (la sanguijuela reventada) y si no, panza arriba.
+  // Caído: el suyo si lo tiene (la sanguijuela reventada); si no, se deshace (abajo).
   if (pose.down === undefined) poses.down = trim(upsideDown(poses.idle));
   const iw = c.frames[pose.idle]![0]!.length;
   // Con varios fotogramas por pose, los pies van donde pisa de verdad (el centro de las filas de
@@ -209,6 +209,13 @@ function calcoArt(
       art.seq.down = [...d, ...gone];
       poses.down = gone[gone.length - 1]!;
     }
+  }
+  // Sin muerte dibujada (el bosque): herido, se deshace en tramado en vez de quedar panza arriba.
+  if (pose.down === undefined) {
+    const h = poses.hurt;
+    const gone = [0.25, 0.5, 0.75, 1].map((u) => dissolve(h, u));
+    art.seq = { ...art.seq, down: [h, h, ...gone] };
+    poses.down = gone[gone.length - 1]!;
   }
   return art;
 }
