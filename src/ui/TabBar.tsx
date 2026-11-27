@@ -40,28 +40,40 @@ export function TabBar({
   onTab,
   hidden,
   badges,
+  locked,
+  onLocked,
 }: {
   tab: TabId | null;
   onTab: (t: TabId) => void;
   hidden?: boolean;
   badges?: Partial<Record<TabId, number>>;
+  /** Con candado (el tutorial): se ve pero no se abre; al tocar, `onLocked` con el porqué. */
+  locked?: Partial<Record<TabId, string>>;
+  onLocked?: (why: string) => void;
 }) {
   if (hidden) return null;
   return (
     <nav class="tabs" aria-label={t('barra.tabbar.secciones')}>
       {TABS.map((t) => {
         const n = badges?.[t.id] ?? 0;
+        const lock = locked?.[t.id];
         return (
           <button
             key={t.id}
-            class="tab"
+            class={`tab ${lock ? 'is-locked' : ''}`}
             data-tut={`tab-${t.id}`}
             aria-current={tab === t.id ? 'page' : undefined}
-            data-help={t.help}
-            onClick={() => onTab(t.id)}
+            aria-disabled={lock ? true : undefined}
+            data-help={lock ?? t.help}
+            onClick={() => (lock ? onLocked?.(lock) : onTab(t.id))}
           >
             <span class="tab-ico">
               <Icon name={t.icon} size={24} />
+              {lock && (
+                <span class="tab-lock" aria-hidden="true">
+                  <Icon name="candado" size={12} />
+                </span>
+              )}
               {n > 0 && <span class="badge badge-info">{n}</span>}
             </span>
             <span>{t.label}</span>

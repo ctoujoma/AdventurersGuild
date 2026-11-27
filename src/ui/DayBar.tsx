@@ -21,6 +21,8 @@ interface Props {
   /** Con el tiempo que corre solo, se puede acelerar (mientras dura «La deuda» y en pruebas). */
   rush?: boolean;
   onPace: () => void;
+  /** El tutorial tiene el reloj parado: la barra lo dice en vez de la cuenta o la acción. */
+  frozen?: boolean;
   onDusk: () => void;
   onEndDay: () => void;
 }
@@ -81,7 +83,16 @@ export function DayBar(p: Props) {
           <span class="clock-pace">×{paceLabel(p.pace)}</span>
         </button>
       )}
-      {p.night ? null : night && p.onRushNight && (p.real || !p.canClose) ? (
+      {p.frozen && !p.night ? (
+        <span
+          class="daybar-left daybar-frozen"
+          role="status"
+          {...help(t('barra.daybar.parado_ayuda'))}
+        >
+          <Icon name="reloj" size={16} />
+          <span class="daybar-word">{t('barra.daybar.parado')}</span>
+        </span>
+      ) : p.night ? null : night && p.onRushNight && (p.real || !p.canClose) ? (
         <button
           class={`btn ${p.rushing ? 'btn-gold' : 'btn-wood'} endday`}
           aria-pressed={!!p.rushing}

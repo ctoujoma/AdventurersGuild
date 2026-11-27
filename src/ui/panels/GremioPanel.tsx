@@ -23,6 +23,9 @@ interface Props {
   obras?: ComponentChildren;
   /** Abrir directamente en las salas (mientras se planea una reforma). */
   obrasFirst?: boolean;
+  /** Los adornos con candado (el tutorial): el porqué, que se dice al tocar. */
+  adornosLocked?: string;
+  onLocked?: (why: string) => void;
 }
 
 const OUTSIDE: (keyof Facilities)[] = ['forja', 'establo', 'patio', 'empal', 'torre'];
@@ -41,6 +44,8 @@ export function GremioPanel({
   onTaberna,
   obras,
   obrasFirst,
+  adornosLocked,
+  onLocked,
 }: Props) {
   const [salas, setSalas] = useState(!!focus || !!obrasFirst);
   useEffect(() => {
@@ -131,8 +136,19 @@ export function GremioPanel({
     );
 
   let cum = 0;
-  const tile = (icon: IconName, label: string, onClick: () => void, extra?: ComponentChildren) => (
-    <button class="tile" onClick={onClick}>
+  const tile = (
+    icon: IconName,
+    label: string,
+    onClick: () => void,
+    extra?: ComponentChildren,
+    lock?: string,
+  ) => (
+    <button
+      class={`tile ${lock ? 'is-locked' : ''}`}
+      aria-disabled={lock ? true : undefined}
+      data-help={lock}
+      onClick={() => (lock ? onLocked?.(lock) : onClick())}
+    >
       <Icon name={icon} size={22} />
       <span>{label}</span>
       {extra}
@@ -240,7 +256,13 @@ export function GremioPanel({
             <span class="badge">{affordable.length}</span>
           ) : undefined,
         )}
-        {tile('banderin', t('paneles.gremio.adornos'), onTaberna)}
+        {tile(
+          'banderin',
+          t('paneles.gremio.adornos'),
+          onTaberna,
+          adornosLocked ? <Icon name="candado" size={12} /> : undefined,
+          adornosLocked,
+        )}
         {tile('libro', t('paneles.gremio.libro'), onLibro)}
       </div>
     </>

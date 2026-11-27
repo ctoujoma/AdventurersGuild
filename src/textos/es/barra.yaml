@@ -32,6 +32,8 @@ daybar:
   pasar_la_noche_el: "Pasar la noche: el reloj corre ×{night_rush} hasta el amanecer. Si hay asalto, empieza a su ritmo."
   pasar_la_noche: "Pasar la noche"
   anochece_en: "Anochece en"
+  parado: "Reloj parado"
+  parado_ayuda: "Mientras lees el cuaderno del tío, el reloj no corre: tómate tu tiempo."
   noche_en: "Noche en"
   cerrar: "Cerrar"
   velocidad_toca_para_cambiarla: "{part_name}. Velocidad ×{pace_label}: toca para cambiarla"
