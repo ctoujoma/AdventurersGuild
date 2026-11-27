@@ -19,7 +19,8 @@
     "textos:sacar": "node tools/textos/tabla.mjs sacar",
     "textos:meter": "node tools/textos/tabla.mjs meter",
     "textos:sin-tx": "node tools/textos/sin-tx.mjs",
-    "textos:falso": "node tools/textos/falso.mjs"
+    "textos:falso": "node tools/textos/falso.mjs",
+    "auditoria": "node tools/textos/esbuild.mjs tools/auditoria-oro.ts auditoria"
   },
   "dependencies": {
     "@fontsource/alegreya-sans": "^5.3.0",
