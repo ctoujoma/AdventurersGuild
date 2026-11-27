@@ -6,6 +6,7 @@
 - Trabajo en curso: el arte de cada sala, ver [`docs/salas/encargo-arte.md`](docs/salas/encargo-arte.md).
 - Si eres el agente de arte, el plan y el estado de lo que viene: [`docs/plan-arte.md`](docs/plan-arte.md)
   (léelo al empezar y ponlo al día al acabar cada pieza).
+- Enemigos de las expediciones (calco de las hojas del usuario, animación, visor): [`docs/enemigos.md`](docs/enemigos.md).
 - Si eres el agente principal, para retomar: [`docs/agente-principal.md`](docs/agente-principal.md).
 - Decisiones abiertas con el usuario (aprobar o rechazar por partes): [`docs/decisiones.md`](docs/decisiones.md)
   y la página «Decisiones del Jarro» (https://claude.ai/artifact/5MgZx3bgd3pJQay91rDtjk). Léelas antes de empezar algo nuevo.
