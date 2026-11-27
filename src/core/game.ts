@@ -3,6 +3,7 @@
  * `reduce(state, action)` nunca muta el estado que recibe: copia y devuelve uno nuevo.
  */
 import { earn, spill, vaultNews } from './vault';
+import { pastDusk, takeAll, takeTill, takeYield } from './collect';
 import { dormIssue, sleepPlan, isVet } from './beds';
 import { guardIssue, guardsAt, postFull, postIssue, postOf, type Post } from './guards';
 import { FLAVOR } from '../data/stories';
@@ -199,6 +200,7 @@ import {
   startDress,
   canUndo,
   cancelCraft,
+  collectCraft,
   nightCrafts,
   startCraft,
   startUndo,
@@ -313,6 +315,11 @@ export type Action =
    * levanta o, si `who` venía de otro catre, se cambia a ese); sin `room`, le da el alta.
    */
   | { type: 'cot'; who: string; room?: string; out?: string }
+  /**
+   * Recoger lo que flota sobre una sala (`core/collect.ts`): la bolsa de la caja, lo de una
+   * cocina o bodega (`id`: la sala) o lo acabado en un taller (`id`: el trabajo).
+   */
+  | { type: 'collect'; what: 'caja' | 'sala' | 'taller'; id?: string }
   | { type: 'choose'; index: number }
   | { type: 'custom'; patch: Partial<Pick<Custom, 'name' | 'color' | 'symbol'>> }
   | { type: 'buyDog' }
@@ -942,6 +949,21 @@ function reduceAction(state: GameState, action: Action): GameState {
       p.dorm = action.room;
       return s;
     }
+    case 'collect': {
+      const s = structuredClone(state);
+      if (action.what === 'caja') {
+        if (!takeTill(s)) return state;
+      } else if (action.what === 'sala') {
+        const n = takeYield(s, action.id ?? '');
+        if (!n.food && !n.beer) return state;
+      } else {
+        // Lo que sale de un taller se cuenta al momento (como los incidentes).
+        const news = collectCraft(s, action.id ?? '');
+        if (!news.length) return state;
+        s.incidentNews = news.map((n) => ({ ...n, k: n.k ?? 'good' }));
+      }
+      return s;
+    }
     case 'cot': {
       const h = state.heroes.find((x) => x.id === action.who);
       if (!h) return state;
@@ -1500,11 +1522,10 @@ export function tick(state: GameState, to: number): GameState {
   const s = healFor({ ...state, clock }, (clock - (state.clock ?? 0)) / DAY_SECONDS).s;
   const n = Math.min(DELIVERIES, Math.floor((clock / (DUSK * DAY_SECONDS)) * DELIVERIES));
   const due = Math.floor((dayIncome(s, s.day) * n) / DELIVERIES);
-  const till = s.till ?? 0;
-  if (due > till) {
-    earn(s, due - till);
-    s.till = due;
-  }
+  // Lo que entregan los visitantes se junta en la bolsa de la barra (se recoge tocándola).
+  if (due > (s.till ?? 0)) s.till = due;
+  // Al anochecer, lo que no se haya recogido se recoge solo.
+  if (pastDusk(s)) takeAll(s);
   return s;
 }
 
@@ -1623,10 +1644,11 @@ export function endDay(state: GameState, away = false): GameState {
   if (s.missions.length) s.quiet = 0;
   else if (!away && !tutorialOn(s)) s.quiet = (s.quiet ?? 0) + 1;
   const lost = stepThreat(s, rng, events, income, (s.quiet ?? 0) > QUIET_AFTER);
-  // Lo que la caja ya entregó durante el día no se cobra otra vez.
-  s.gold += income - lost - (s.till ?? 0);
+  // Lo que la caja ya entregó y se recogió durante el día no se cobra otra vez.
+  s.gold += income - lost - (s.tillTaken ?? 0);
   s.clock = 0;
   s.till = 0;
+  delete s.tillTaken;
   if (income - lost > 0) {
     events.push({
       t: msg('partida.noche.caja', {

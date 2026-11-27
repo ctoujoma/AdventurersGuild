@@ -39,6 +39,7 @@ aviso:
   creado_comun: "At {taller} they've made {objeto}. It's in the chest."
   creado_bueno: "At {taller} they've made {objeto}. It came out good quality. It's in the chest."
   creado_raro: "At {taller} they've made {objeto}! It came out rare quality. It's in the chest."
+  listo: "{taller} has finished: it is waiting over the room. Tap it to collect it."
   cancelado: "The tailor's drops what it was sewing{para, select, si { for {heroe}} other {}} and refunds {n} gold."
 pocion:
   nombre: "Potion"

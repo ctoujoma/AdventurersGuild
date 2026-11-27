@@ -40,6 +40,8 @@ aviso:
   creado_comun: "En {taller} han creado {objeto}. Ya está en el arcón."
   creado_bueno: "En {taller} han creado {objeto}. Ha salido de calidad buena. Ya está en el arcón."
   creado_raro: "¡En {taller} han creado {objeto}! Ha salido de calidad rara. Ya está en el arcón."
+  # Al acabar algo que espera a que lo recojan (flota sobre la sala).
+  listo: "En {taller} han acabado: está esperando sobre la sala. Tócalo para recogerlo."
   cancelado: "La sastrería deja lo que cosía{para, select, si { para {heroe}} other {}} y devuelve {n} monedas."
 # Pociones de la alquimia (las llevan las expediciones).
 pocion:

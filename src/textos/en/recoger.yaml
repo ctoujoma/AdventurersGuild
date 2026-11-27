@@ -1,0 +1,6 @@
+# What floats over a room waiting to be collected (ui/CollectMark.tsx).
+caja: "Collect the hall's till: {n} coins"
+caja_hecho: "+{n} coins from the till."
+sala: "Collect {comida, plural, =0 {} one {# ration} other {# rations}}{y, select, si { and } other {}}{bebida, plural, =0 {} one {# jug} other {# jugs}}"
+sala_hecho: "{comida, plural, =0 {} one {+# ration} other {+# rations}}{y, select, si { and } other {}}{bebida, plural, =0 {} one {+# jug} other {+# jugs}}."
+taller: "Collect what {taller} has finished"

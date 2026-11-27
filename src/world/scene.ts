@@ -197,6 +197,8 @@ export interface SceneCraft {
   hero?: string;
   /** Aún no se cose: el héroe va de camino a la sala (el sastre le espera). */
   walking?: boolean;
+  /** Acabado: espera a que lo recojan (flota sobre la sala; `ui/CollectMark.tsx`). */
+  ready?: boolean;
 }
 
 /** Un incidente tal como lo ve la escena: qué pasa y en qué sala (id). */

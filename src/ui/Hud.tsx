@@ -177,6 +177,7 @@ export function Hud({
           <Counter value={game.rep} />
         </button>
         <button
+          data-food
           class={`hud-stat ${hungry ? 'warn' : ''}`}
           aria-label={tips.comida}
           aria-expanded={tip === 'comida'}
@@ -186,6 +187,7 @@ export function Hud({
           <Counter value={game.food} />
         </button>
         <button
+          data-beer
           class="hud-stat"
           aria-label={tips.cerveza}
           aria-expanded={tip === 'cerveza'}

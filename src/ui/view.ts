@@ -318,6 +318,7 @@ export function sceneModel(s: GameState, spot = false): SceneModel {
         potion: c.potion,
         hero: c.dress?.hero,
         walking: st.walking || undefined,
+        ready: c.ready,
       };
     }),
     craftEnds: s.craftLog,

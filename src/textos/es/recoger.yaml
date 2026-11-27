@@ -1,0 +1,6 @@
+# Lo que flota sobre una sala para recogerlo (ui/CollectMark.tsx).
+caja: "Recoger la caja del salón: {n} monedas"
+caja_hecho: "+{n} monedas de la caja."
+sala: "Recoger {comida, plural, =0 {} one {# ración} other {# raciones}}{y, select, si { y } other {}}{bebida, plural, =0 {} one {# jarra} other {# jarras}}"
+sala_hecho: "{comida, plural, =0 {} one {+# ración} other {+# raciones}}{y, select, si { y } other {}}{bebida, plural, =0 {} one {+# jarra} other {+# jarras}}."
+taller: "Recoger lo que ha acabado {taller}"
