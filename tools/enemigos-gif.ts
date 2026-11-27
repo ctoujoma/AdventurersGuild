@@ -3,7 +3,7 @@
 // Saca PNG por fotograma (`<carpeta>/<enemigo>/000.png`…), que luego se juntan en un GIF.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { png } from './visor-png';
-import { cenizaArt, expFoeArt, expGuardianArt } from '../src/art/expFoes';
+import { cenizaArt, expFoeArt, expGuardianArt, reyArt } from '../src/art/expFoes';
 import type { FoeArt, FoePose } from '../src/art/foes';
 import { PixelBuffer, alpha } from '../src/art/pixel';
 import { foeFrame } from '../src/world/visor/gente';
@@ -12,6 +12,7 @@ const FPS = 10;
 const N = 80;
 const ARTS: Record<string, FoeArt> = {
   ceniza: cenizaArt(),
+  rey: reyArt(),
   huargo: expFoeArt('bosque', 3).art,
   oso: expFoeArt('bosque', 2).art,
   oso_pardo: expFoeArt('sierra', 2).art,

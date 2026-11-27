@@ -548,6 +548,15 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      **Trasgo de sierra** (hoja del usuario, `trasgo_calco.py`; `calco3` con `minc` bajo para que no se pierda
      el garrote que vuela): respira, descarga el garrote; herido, se le escapa y lo recoge; muere y queda
      tendido junto a él. También en la tira de los encargos (`STRIP_CALCO`). Sierra, completa.
+     **Rey Ahogado** (hoja del usuario, `rey_calco.py`): primer calco **exacto** (`calco3` con `exact=True`:
+     la rejilla sobre los píxeles de la hoja, 2,875 px, con su desfase por fotograma, y el centro de cada
+     uno; el usuario pidió calcar tal cual porque la corona se rompía). `reyArt()` en `expFoes.ts`; sin
+     enganchar en `BOSS_CALCO` (lo hace el agente de expediciones). En el glosario, como pendiente.
+     Ojos: la hoja los trae inconsistentes (y gotas cian sueltas): se quita todo el cian y se pone una
+     pupila `#a4e6f3` por ojo, buscada bajo la corona (`marks` de `calco3`); al morir, sin luz. Motas
+     claras sueltas, fuera (`sin_motas`). La estela pálida solo se quita en el barrido y el golpe (en el resto
+     eran las costillas), y como la hoja trae las costillas a ratos, a los de pie va el pecho del primero
+     (`pecho`, alineado por la corona). `calco3`: `drop(p, box)` puede mirar el fotograma.
      Luego: pasada visual a sierra/marismas/ruinas y transiciones suaves (lluvia y fondo cambian de golpe).
      **Sucesos a la vista (26 nov):** con `e.pending` el visor pinta delante lo que hay (`visor/sucesos.ts`, `MarchNow.event`):
      cofre, santuario, mercader con carro, viajero, campamento abandonado, oso, cueva, torre y ruinas, pintados en
