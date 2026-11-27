@@ -615,7 +615,9 @@ export function expFoeArt(heading: Heading, idx: number): ExpFoe {
  * El guardián del rumbo en las expediciones (el que espera a la vista): el de sierra, el dragón
  * de hielo; los demás, de momento, el huargo del bosque.
  */
-export function expGuardianArt(heading: Heading): FoeArt {
+export function expGuardianArt(heading: Heading, n = 0): FoeArt {
+  // El segundo guardián del bosque: el Jabalí Quemado (el calco del jabalí de ceniza).
+  if (n && heading === 'bosque') return cenizaArt();
   const key = `guardian:${heading}`;
   let f = cache.get(key);
   if (!f) {

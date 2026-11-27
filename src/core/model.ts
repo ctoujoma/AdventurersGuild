@@ -376,6 +376,8 @@ export interface Expedition {
   guest?: Hero;
   /** Ya les salió el guardián (uno por expedición). */
   guardian?: boolean;
+  /** Y el segundo, más adelante (donde lo hay: el bosque). */
+  guardian2?: boolean;
   /** Parajes y fardos del mapa por los que ya han pasado (bloque 3). */
   passed?: string[];
   /** Ya pasaron el récord del rumbo (se apunta una vez en el diario). */

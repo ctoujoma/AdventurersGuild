@@ -639,15 +639,19 @@ export function drawSuceso(c: Ctx): void {
     }
     case 'jefe':
     case 'guardian':
-      boss(c, ev.kind === 'guardian' ? undefined : (ev.foe ?? 3));
+      boss(
+        c,
+        ev.kind === 'guardian' ? undefined : (ev.foe ?? 3),
+        ev.kind === 'guardian' ? ev.foe : 0,
+      );
       break;
   }
 }
 
 /** El jefe a la vista, al otro lado, quieto y mirando (sin número, el guardián del rumbo). */
-function boss(c: Ctx, idx?: number): void {
+function boss(c: Ctx, idx?: number, guard = 0): void {
   const h = c.m.heading ?? 'bosque';
-  const art = idx === undefined ? expGuardianArt(h) : expFoeArt(h, idx).art;
+  const art = idx === undefined ? expGuardianArt(h, guard) : expFoeArt(h, idx).art;
   const dir = dirOf(c);
   const x = Math.round(c.e.w / 2 + dir * c.e.w * 0.3);
   const img = foeFrame(art, Math.floor(c.time * 1.2) % 2 ? 'idle2' : 'idle', 0, c.time);
