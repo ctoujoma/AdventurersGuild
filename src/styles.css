@@ -2131,6 +2131,32 @@ button:focus-visible {
 }
 
 /* Tiempo que corre solo: en vez de los botones, cuánto falta para la noche. */
+.tab.is-locked,
+.tile.is-locked {
+  opacity: 0.55;
+}
+.tab-lock {
+  position: absolute;
+  right: -6px;
+  bottom: -4px;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  background: var(--ink);
+  color: var(--sand);
+}
+.daybar-frozen {
+  opacity: 0.85;
+}
+.daybar-frozen svg {
+  animation: daybar-frozen 2s steps(2) infinite;
+}
+@keyframes daybar-frozen {
+  50% {
+    opacity: 0.35;
+  }
+}
 .daybar-left {
   display: inline-flex;
   align-items: center;

@@ -10,7 +10,7 @@ import type { Rng } from './rng';
 import { priceOf } from './gear';
 import { type Msg, type Txt, msg, tx } from '../textos';
 
-const ROMAN = ['I', 'II', 'III', 'IV', 'V'];
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
 
 export function emptyStats(): Stats {
   return {

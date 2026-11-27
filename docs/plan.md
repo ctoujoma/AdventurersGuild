@@ -567,6 +567,10 @@ eventos).
   de contar sube con el rango (`GOAL_RANK_GOLD`: ×1, 1,5, 2,5, 4 y 6), y hay objetivos desde Plata
   (encargos de peligro 3, vencer jefes) y en serie (maestro a nivel 12, rangos de oro y leyenda,
   expedición de 12 días).
+- **Hazañas para el juego largo (27 de noviembre):** las 7 de antes llegan más arriba (encargos
+  hasta 400, oro ganado hasta 60.000, héroe a nivel 15…) y hay 8 nuevas (historias, jefes,
+  expediciones, talleres, incidentes, curados, jarras servidas y entrenar), con premios que llegan
+  a 1.000–2.500 de oro y legendarios. En partidas viejas, lo ya contado se cobra al amanecer.
 - **Al acabar todas las historias** no llegan más: historias que se repitan o una por
   temporada.
 
