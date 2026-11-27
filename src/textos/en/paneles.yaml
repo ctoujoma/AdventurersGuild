@@ -429,6 +429,8 @@ tablon:
   trae_material: "brings {material}"
   riesgo_pct: "{riesgo} {pct}%"
 workshopinfo:
+  listo: "Done: waiting over the room for you to collect it. Until then it takes this slot."
+  recoger: "Collect"
   menos_de_1_h: "less than 1 h"
   crear: "Make"
   templar: "Temper"

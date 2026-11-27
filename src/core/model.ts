@@ -560,6 +560,11 @@ export interface Craft {
   mats?: Mats;
   /** Una poción (alquimia): al acabar, `GameState.potions` sube (no sale un objeto). */
   potion?: true;
+  /**
+   * Acabado y esperando a que lo recojan (flota sobre la sala): ocupa su puesto del taller hasta
+   * entonces. Lo que sale se decide al recoger (`collectCraft`).
+   */
+  ready?: true;
 }
 
 /** Cómo acabó un trabajo de taller (por su id). */
@@ -941,8 +946,12 @@ export interface GameState {
   paid: number;
   /** Segundos que lleva el día de hoy (el reloj se para con el juego cerrado). */
   clock?: number;
-  /** Lo que la caja de hoy ya ha entregado durante el día. */
+  /** Lo que la caja de hoy ya ha entregado durante el día (en la bolsa de la barra). */
   till?: number;
+  /** Lo que ya se ha recogido de la caja hoy (lo demás espera en la bolsa: `core/collect.ts`). */
+  tillTaken?: number;
+  /** Lo recogido hoy de cada cocina y bodega (sala → raciones y jarras): `core/collect.ts`. */
+  taken?: Record<string, { food?: number; beer?: number }>;
   /** Raciones en la cocina y la despensa, y jarras en la bodega. */
   food: number;
   beer: number;

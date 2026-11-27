@@ -290,7 +290,8 @@ function logEnd(s: GameState, c: Craft, how: CraftEnd['how'], rarity?: Rarity): 
 
 /** Cancela un trabajo: se devuelve lo pagado (o el objeto, si se desmontaba). */
 export function cancelCraft(s: GameState, id: string): void {
-  const c = s.crafts?.find((x) => x.id === id);
+  // Lo acabado no se cancela: se recoge.
+  const c = s.crafts?.find((x) => x.id === id && !x.ready);
   if (!c) return;
   s.gold += c.gold;
   if (c.item) s.inventory.push(c.item);
@@ -424,6 +425,7 @@ export interface CraftState {
 
 /** Cómo va un trabajo ahora (para la ficha y la escena). */
 export function craftState(s: GameState, c: Craft): CraftState {
+  if (c.ready) return { craft: c, frac: 1, hoursLeft: 0, walking: false };
   const rate = craftRate(s, c.room, c);
   const done = Math.min(c.need, c.done + rate * workedIn(c.at, partOf(s)));
   return {
@@ -614,6 +616,26 @@ function finish(s: GameState, c: Craft, rng: Rng, news: DawnEvent[]): void {
 }
 
 /**
+ * Recoge lo que un taller tiene listo (tocando lo que flota sobre la sala): sale lo que sea (la
+ * calidad se tira ahora) y deja libre su puesto. Devuelve los avisos (vacío si no había nada).
+ * Muta `s` (ya es una copia).
+ */
+export function collectCraft(s: GameState, id: string): DawnEvent[] {
+  const c = s.crafts?.find((x) => x.id === id && x.ready);
+  if (!c) return [];
+  const news: DawnEvent[] = [];
+  const rng = new Rng(s.rng);
+  s.crafts = s.crafts!.filter((x) => x.id !== id);
+  if (!s.crafts.length) delete s.crafts;
+  finish(s, c, rng, news);
+  s.rng = rng.save();
+  return news;
+}
+
+/** Lo listo para recoger en cada taller (sala → trabajos acabados). */
+export const readyCrafts = (s: GameState) => (s.crafts ?? []).filter((c) => c.ready);
+
+/**
  * Avanza los talleres hasta la parte del día `part` (0–1) y acaba lo que esté listo. El estado ya
  * es una copia (o se copia aquí lo que se toca). Devuelve las noticias. Con `shared`, usa esa
  * tirada (la de la noche) en vez de la del estado.
@@ -631,6 +653,12 @@ export function stepCrafts(
   const keep: Craft[] = [];
   for (const old of s.crafts) {
     const c = { ...old };
+    if (c.ready) {
+      // Acabado: espera a que lo recojan (si el taller ya no está, va directo al arcón).
+      if (s.building.rooms.some((r) => r.id === c.room)) keep.push(c);
+      else finish(s, c, rng, news);
+      continue;
+    }
     if (!s.building.rooms.some((r) => r.id === c.room)) {
       // El taller ya no está: se devuelve lo pagado o el objeto.
       s.gold += c.gold;
@@ -668,8 +696,17 @@ export function stepCrafts(
     // Solo avanza en la jornada, con quien está en la sala.
     c.done += craftRate(s, c.room, c) * workedIn(c.at, part);
     c.at = Math.max(c.at, part);
-    if (c.done >= c.need - 1e-9) finish(s, c, rng, news);
-    else keep.push(c);
+    if (c.done >= c.need - 1e-9) {
+      // Vestir se ve en el héroe; lo demás se queda flotando sobre la sala hasta que lo recojan.
+      if (c.dress) finish(s, c, rng, news);
+      else {
+        c.done = c.need;
+        c.ready = true;
+        keep.push(c);
+        const room = s.building.rooms.find((r) => r.id === c.room);
+        news.push({ t: msg('talleres.aviso.listo', { taller: shopMsg(room?.type) }), k: 'good' });
+      }
+    } else keep.push(c);
   }
   if (keep.length) s.crafts = keep;
   else delete s.crafts;

@@ -73,17 +73,23 @@ export function eatersOf(s: GameState): { heroes: Hero[]; workers: Worker[] } {
 
 /**
  * La noche en la despensa: lo que tomaron los visitantes sale de lo guardado, se suma lo que han
- * hecho la cocina y la bodega, y cenan los de casa (los trabajadores primero: son quienes
+ * hecho la cocina y la bodega (lo que no se recogió de día), y cenan los de casa (los trabajadores primero: son quienes
  * cocinan). Quien se acuesta sin cenar pierde moral. Lo que no cabe se echa a perder.
  */
 export function stepLarder(s: GameState, visits: DayVisitors, events: DawnEvent[]): void {
   s.food = Math.max(0, s.food - visits.fed);
   s.beer = Math.max(0, s.beer - visits.drank);
   s.yields = yieldsOf(s);
+  // Lo que ya se recogió durante el día (`core/collect.ts`) no se suma otra vez.
+  const left = (room: string, kind: 'food' | 'beer', n: number) => {
+    const got = s.taken?.[room]?.[kind] ?? 0;
+    return Math.max(0, n - got);
+  };
   for (const y of s.yields) {
-    s.food += y.food ?? 0;
-    s.beer += y.beer ?? 0;
+    s.food += left(y.room, 'food', y.food ?? 0);
+    s.beer += left(y.room, 'beer', y.beer ?? 0);
   }
+  delete s.taken;
   const { heroes, workers } = eatersOf(s);
   const meals = Math.min(s.food, heroes.length + workers.length);
   s.food -= meals;

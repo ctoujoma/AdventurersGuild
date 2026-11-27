@@ -1,5 +1,9 @@
 import { easeIssue, nightmareNow } from '../core/nightmare';
 import { CraftMark } from './CraftMark';
+import { CollectMark, collectFx } from './CollectMark';
+import { BufferImage } from './BufferImage';
+import { tillReady, yieldsReady } from '../core/collect';
+import { itemIcon, potionIcon } from '../art/items';
 import { flyCoins } from './coinFlight';
 import { SHEETS, coverOf } from './cover';
 import { useEffect, useMemo, useRef, useState } from 'preact/hooks';
@@ -396,6 +400,8 @@ export function App() {
   });
 
   const toast = (text: string) => setNotice({ text, key: Date.now() });
+  // El salón, donde flota la bolsa de la caja.
+  const salonId = game.building.rooms.find((r) => r.type === 'salon')?.id;
 
   /** Los de una expedición que vuelve: la cámara les sigue al entrar y, al llegar, ronda. */
   const welcome = (ids: string[]) => {
@@ -1529,15 +1535,75 @@ export function App() {
         {!passing &&
           !dawnOpen &&
           !paying &&
-          (model.crafts ?? []).map((c, i, all) => (
-            <CraftMark
-              key={c.id}
-              craft={c}
-              slot={all.slice(0, i).filter((x) => x.room === c.room).length}
-              scene={scene}
-              aside={(game.incidents ?? []).some((i) => i.room === c.room)}
-            />
-          ))}
+          (model.crafts ?? []).map((c, i, all) => {
+            const slot = all.slice(0, i).filter((x) => x.room === c.room).length;
+            const aside = (game.incidents ?? []).some((x) => x.room === c.room);
+            if (!c.ready)
+              return <CraftMark key={c.id} craft={c} slot={slot} scene={scene} aside={aside} />;
+            const type = game.building.rooms.find((r) => r.id === c.room)?.type;
+            return (
+              <CollectMark
+                key={c.id}
+                room={c.room}
+                scene={scene}
+                slot={slot}
+                aside={aside}
+                label={t('recoger.taller', {
+                  taller: t(type ? `recetas.taller.${type}` : 'talleres.el_taller'),
+                })}
+                onTake={(el) => {
+                  audio.play('shimmer', 0.7);
+                  haptic('select');
+                  collectFx(el, '[data-tut="tab-heroes"]');
+                  dispatch({ type: 'collect', what: 'taller', id: c.id });
+                }}
+              >
+                <BufferImage buf={c.potion ? potionIcon() : itemIcon(c.icon, c.rarity)} scale={2} />
+              </CollectMark>
+            );
+          })}
+        {!passing && !dawnOpen && !paying && tillReady(game) > 0 && salonId && (
+          <CollectMark
+            room={salonId}
+            scene={scene}
+            count={`+${tillReady(game)}`}
+            label={t('recoger.caja', { n: tillReady(game) })}
+            onTake={(el) => {
+              const n = tillReady(gameRef.current);
+              audio.play('coin', 0.8);
+              haptic('select');
+              collectFx(el, '[data-gold]');
+              dispatch({ type: 'collect', what: 'caja' });
+              toast(t('recoger.caja_hecho', { n }));
+            }}
+          >
+            <Icon name="coin" size={24} />
+          </CollectMark>
+        )}
+        {!passing &&
+          !dawnOpen &&
+          !paying &&
+          yieldsReady(game).map((y) => {
+            const p = { comida: y.food, bebida: y.beer, y: y.food && y.beer ? 'si' : 'no' };
+            return (
+              <CollectMark
+                key={`y-${y.room}`}
+                room={y.room}
+                scene={scene}
+                count={`+${y.food || y.beer}`}
+                label={t('recoger.sala', p)}
+                onTake={(el) => {
+                  audio.play('glint', 0.6);
+                  haptic('select');
+                  collectFx(el, y.food ? '[data-food]' : '[data-beer]');
+                  dispatch({ type: 'collect', what: 'sala', id: y.room });
+                  toast(t('recoger.sala_hecho', p));
+                }}
+              >
+                <Icon name={y.food ? 'pan' : 'jarra'} size={24} />
+              </CollectMark>
+            );
+          })}
         {!passing && !dawnOpen && knocking && messengerRoom(game) && (
           <MessengerMark
             messenger={game.messenger!}

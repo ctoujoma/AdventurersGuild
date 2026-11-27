@@ -336,7 +336,7 @@ describe('el día vivo', () => {
     return s;
   };
 
-  it('la caja llega en entregas durante el día y al cerrar se cobra lo mismo que de golpe', () => {
+  it('la caja se junta en la bolsa durante el día, se recoge a mano o sola al anochecer', () => {
     const plain = endDay(open('caja'));
     let s = open('caja');
     const income = dayIncome(s, s.day);
@@ -345,6 +345,10 @@ describe('el día vivo', () => {
     s = reduce(s, { type: 'tick', to: 10 });
     expect(s.gold).toBe(gold0);
     s = reduce(s, { type: 'tick', to: (DUSK * DAY_SECONDS) / 2 });
+    // En la bolsa de la barra, hasta que se toca.
+    expect(s.gold).toBe(gold0);
+    expect(s.till).toBe(Math.floor(income / 2));
+    s = reduce(s, { type: 'collect', what: 'caja' });
     expect(s.gold).toBe(gold0 + Math.floor(income / 2));
     s = reduce(s, { type: 'dusk' });
     expect(s.gold).toBe(gold0 + income);

@@ -18,14 +18,34 @@ import {
   qualityOdds,
   knownRecipes,
   learnRecipe,
-  stepCrafts,
+  stepCrafts as stepRaw,
+  collectCraft,
+  readyCrafts,
   undoable,
   clockHours,
   canPotion,
   potionCap,
 } from './crafting';
-import { endDay, newGame, reduce } from './game';
-import type { GameState, Worker } from './model';
+import { endDay as endRaw, newGame, reduce as reduceRaw, type Action } from './game';
+import type { DawnEvent, GameState, Worker } from './model';
+
+/**
+ * Lo acabado espera en su taller hasta que se recoge (`collectCraft`): aquí, para ver qué sale,
+ * se recoge en cuanto está listo.
+ */
+function pick<T extends GameState>(s: T): T {
+  if (!readyCrafts(s).length) return s;
+  const x = structuredClone(s);
+  for (const c of readyCrafts(x)) collectCraft(x, c.id);
+  return x;
+}
+const endDay = (s: GameState, away?: boolean) => pick(endRaw(s, away));
+const reduce = (s: GameState, a: Action) => pick(reduceRaw(s, a));
+function stepCrafts(s: GameState, ...a: [number, Rng?, boolean?]): DawnEvent[] {
+  const news = stepRaw(s, ...a);
+  for (const c of readyCrafts(s)) news.push(...collectCraft(s, c.id));
+  return news;
+}
 import { tx } from '../textos';
 
 /** Partida con la forja en uso (nivel `level`) y un herrero de Maña `skill` trabajando en ella. */
@@ -92,7 +112,7 @@ describe('la forja crea objetos', () => {
     expect(t.inventory).toHaveLength(inv + 1);
     const it = t.inventory.at(-1)!;
     expect([RECIPES.espada.common.name, RECIPES.espada.good.name].map(tx)).toContain(tx(it.name));
-    expect(t.incidentNews?.some((n) => /han creado/.test(tx(n.t)))).toBe(true);
+    expect(t.incidentNews?.some((n) => /han acabado/.test(tx(n.t)))).toBe(true);
   });
 
   it('solo se trabaja en la jornada: de noche se para y a la mañana sigue', () => {
@@ -146,7 +166,7 @@ describe('la forja crea objetos', () => {
     t = endDay(t, true);
     expect(t.crafts).toBeUndefined();
     expect(t.inventory.some((i) => i.icon === 'coraza')).toBe(true);
-    expect(t.dawn.some((e) => /han creado/.test(tx(e.t)))).toBe(true);
+    expect(t.dawn.some((e) => /han acabado/.test(tx(e.t)))).toBe(true);
   });
 
   it('sin nadie en la sala se para; un héroe echa una mano, más despacio', () => {
@@ -529,7 +549,7 @@ describe('materiales en los talleres', () => {
     t = endDay(t, true);
     const it = t.inventory.find((i) => i.id === 'esp')!;
     expect(it.plus).toBe(1);
-    expect(t.dawn.some((e) => /ahora es \+1/.test(tx(e.t)))).toBe(true);
+    expect(t.dawn.some((e) => /han acabado/.test(tx(e.t)))).toBe(true);
     // A +3, la obra maestra pide cristal; a +4, ya no hay más.
     expect(temperCost({ ...it, plus: 3 })).toMatchObject({
       to: 4,

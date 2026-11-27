@@ -164,12 +164,22 @@ export function WorkshopInfo({
                       })
                     : (absentText(game, room) ??
                       t('paneles.workshopinfo.parado_pon_a_un', { smith }))
-                  : walking && who
-                    ? t('paneles.workshopinfo.viene_de_camino', { nombre: who.name })
-                    : t('paneles.workshopinfo.le_quedan', { horas: hours(hoursLeft) })}
+                  : c.ready
+                    ? t('paneles.workshopinfo.listo')
+                    : walking && who
+                      ? t('paneles.workshopinfo.viene_de_camino', { nombre: who.name })
+                      : t('paneles.workshopinfo.le_quedan', { horas: hours(hoursLeft) })}
               </span>
             </span>
-            {onAct && (
+            {onAct && c.ready && (
+              <button
+                class="btn btn-gold"
+                onClick={() => onAct({ type: 'collect', what: 'taller', id: c.id })}
+              >
+                {t('paneles.workshopinfo.recoger')}
+              </button>
+            )}
+            {onAct && !c.ready && (
               <button class="btn btn-wood" onClick={() => onAct({ type: 'cancelCraft', id: c.id })}>
                 {t('paneles.workshopinfo.cancelar')}
               </button>

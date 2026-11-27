@@ -475,6 +475,20 @@ en medio, para que los edificios salgan más interesantes (y, más adelante, pas
   molino, bandera, luciérnagas y estrellas fugaces. En el patio, pradera con flores y matas que
   mueve el viento a rachas (`art/grass.ts`). Capturas: `tools/shots/fondo.mjs`.
 
+## Recoger lo que da la taberna (decidido con el usuario, 27 de noviembre)
+
+Lo que da la taberna flota sobre su sala hasta que se toca, con halo y un destello que vuela al
+marcador (`ui/CollectMark.tsx`, `core/collect.ts`); vista previa: «Recoger lo creado»
+(https://claude.ai/artifact/HV3DfDxNuFHoAahskLqdDy).
+- **Talleres:** lo acabado (equipo, mejoras, lo desmontado, pociones; vestir no) ocupa su puesto
+  hasta que se recoge (`Craft.ready`); con dos puestos (nivel 3), el otro sigue y se ven los dos
+  iconos. **No se recoge solo**, ni con el juego cerrado: espera a que vuelva el jugador. La
+  calidad se tira al recoger. En la ficha del taller, botón «Recoger».
+- **Caja del salón, cocina y bodega:** las monedas se juntan en una bolsa sobre el salón y las
+  raciones y jarras sobre su sala, a medida que avanza la jornada (la comida es un recurso: se
+  lleva de expedición). Si no se recogen a mano, **al anochecer se recogen solas**; con el juego
+  cerrado, igual. El total del día no cambia: lo recogido no se cuenta dos veces por la noche.
+
 ## Pendiente (25 de noviembre)
 
 **Decisiones del usuario (25 de noviembre):**

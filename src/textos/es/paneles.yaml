@@ -434,6 +434,8 @@ tablon:
   trae_material: "trae {material}"
   riesgo_pct: "{riesgo} {pct}%"
 workshopinfo:
+  listo: "Listo: espera sobre la sala a que lo recojas. Mientras, ocupa este puesto."
+  recoger: "Recoger"
   menos_de_1_h: "menos de 1 h"
   crear: "Crear"
   templar: "Templar"
