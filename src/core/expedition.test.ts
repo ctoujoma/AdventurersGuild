@@ -518,5 +518,10 @@ describe('expediciones: bloque 5 (rumbos, tiempo, pociones y la carta)', () => {
     const m = replayNow(s, f)!;
     expect(m.mode).toBe('fight');
     expect(m.terrain).toBe('bosque');
+    // Las guardadas antes (sin `exp`) también: el rumbo y el enemigo salen de sus textos.
+    const old = { ...f, exp: undefined };
+    const m2 = replayNow(s, old)!;
+    expect(m2.mode).toBe('fight');
+    expect(m2.terrain).toBe('bosque');
   });
 });

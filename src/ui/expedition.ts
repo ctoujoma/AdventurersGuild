@@ -6,7 +6,7 @@ import { DAY_SECONDS, DUSK, EXP_CAMP, EXP_HOURS, HP_LIGHT } from '../core/balanc
 import { hpOf } from '../core/health';
 import { fightRoster } from '../core/chains';
 import { HEADING_FOES, HOUR, distAt, expWeather, gameTime } from '../core/expedition';
-import type { BossFight, Expedition, GameState, Hero } from '../core/model';
+import type { BossFight, Expedition, GameState, Heading, Hero } from '../core/model';
 import type { MarchNow } from '../world/visor/marcha';
 
 /**
@@ -100,11 +100,36 @@ export function marchNow(s: GameState, e: Expedition): MarchNow {
 }
 
 /**
+ * Lo que hace falta para repetir una pelea de expedición con la escena del visor. Las guardadas
+ * antes de que se apuntara (`f.exp`) lo sacan de sus textos: el rumbo y la lejanía de «dónde» y el
+ * enemigo de su nombre (a mediodía y con buen tiempo, que eso no se guardaba). null si no es de
+ * una expedición.
+ */
+export function expOf(f: BossFight): BossFight['exp'] | null {
+  if (f.exp) return f.exp;
+  const where = typeof f.where === 'object' ? f.where : null;
+  if (where?.k !== 'expediciones.pelea.donde') return null;
+  const heading = where.p?.rumbo as Heading | undefined;
+  if (!heading || !HEADING_FOES[heading]) return null;
+  const name = typeof f.foe === 'object' ? f.foe.p?.enemigos : undefined;
+  const key = name && typeof name === 'object' && 'k' in name ? String(name.k) : '';
+  const foe = Number(key.match(/\.(\d+)$/)?.[1] ?? 0);
+  return {
+    heading,
+    foe,
+    dist: Number(where.p?.dias ?? 1),
+    home: false,
+    at: DAY_SECONDS * 0.3,
+    weather: 'claro',
+  };
+}
+
+/**
  * Lo que pinta el visor al repetir una pelea de expedición («Ver la pelea»): la misma escena que
  * en directo (rumbo, enemigo, lejanía, hora y tiempo de entonces), en modo pelea.
  */
 export function replayNow(s: GameState, f: BossFight): MarchNow | null {
-  const x = f.exp;
+  const x = expOf(f);
   if (!x) return null;
   const foes = HEADING_FOES[x.heading] ?? ['bestia'];
   const part = (((x.at % DAY_SECONDS) + DAY_SECONDS) % DAY_SECONDS) / DAY_SECONDS;
