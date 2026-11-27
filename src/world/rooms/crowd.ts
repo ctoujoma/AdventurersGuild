@@ -34,6 +34,7 @@ import {
   LANES,
   awayBeds,
   homes,
+  outFade,
   outside,
   insides,
   route,
@@ -3541,6 +3542,8 @@ export class Crowd {
     u.uAxisU!.value.set(w, 0, 0);
     u.uAxisV!.value.set(0, h, 0);
     u.uUvOffset!.value.set(...uvOf(f.frame));
+    // Por el camino de fuera, aparece (o se borra) por tramas.
+    u.uFade!.value = a.held ? 1 : outFade(a.x, a.floor);
     this.placeRing(a, t);
     const look = this.tint(a.x, a.floor);
     u.uAmbient!.value.set(...look.ambient);

@@ -72,8 +72,25 @@ export const FAR_Z = 44;
  */
 export const YARD_FRONT = 7;
 
-/** Por dónde se sale al patio y dónde se pierde uno de vista al irse de misión. */
-export const outside = (): Place => ({ x: -PATIO_W + 24, floor: 0 });
+/**
+ * Por dónde llega y se va la gente de fuera (los que salen de misión, los visitantes, los del
+ * pueblo, el mensajero…): pasado el borde del patio hasta el que llega la cámara (el `x0` del
+ * plano, `-PATIO_W - 40`), para que se les vea llegar andando y perderse por el camino.
+ */
+export const OUT_X = -PATIO_W - 72;
+export const outside = (): Place => ({ x: OUT_X, floor: 0 });
+/**
+ * Los píxeles de camino en los que aparecen (o se borran) por tramas al llegar (o irse): empieza
+ * fuera del encuadre y acaba ya dentro, para que se les vea fundirse sin que se esfumen de golpe.
+ */
+export const OUT_FADE = 100;
+
+/** Cuánto se ve a alguien por el camino de fuera (0 en `outside`, 1 ya en el patio), suave. */
+export const outFade = (x: number, floor: number): number => {
+  if (floor !== 0) return 1;
+  const u = Math.max(0, Math.min(1, (x - OUT_X) / OUT_FADE));
+  return u * u * (3 - 2 * u);
+};
 
 export function segments(L: RoomsLayout): Segments {
   const raw = new Map<number, [number, number][]>();
@@ -87,7 +104,7 @@ export function segments(L: RoomsLayout): Segments {
   for (const w of insides(L).walks) push(w.floor, w.x0, w.x1);
   for (const s of L.stairs) for (const f of [...s.floors, ...s.halls]) push(f, s.x, s.x + STAIR_W);
   // El patio, delante del recibidor, y el jardín de entre los dos edificios.
-  push(0, -PATIO_W, 0);
+  push(0, OUT_X - 2, 0);
   if (L.garden) push(0, L.garden.x, L.garden.x + L.garden.w);
   const out: Segments = new Map();
   for (const [f, list] of raw) {
