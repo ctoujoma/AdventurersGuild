@@ -11,4 +11,5 @@ for m in re.finditer(r"  (\w+): \{\n    ramp: \[([^\]]*)\],\n    frames: \[\n(.*
     out[m.group(1)] = [[[None if ch == '.' else (R[IDX.index(ch)] if ch in IDX else boca[ch]) for ch in r]
                         for r in re.findall(r"'([^']*)'", blk)]
                        for blk in re.findall(r"      \[\n(.*?)\n      \],", m.group(3), re.S)]
+out['huargo'] = out['huargo'][:8]  # los de la muerte (8 en adelante) los añade a_ts.py
 json.dump(out, open('bosque_calco.json', 'w'))

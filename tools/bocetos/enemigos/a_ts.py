@@ -1,6 +1,8 @@
 import json
 d=json.load(open('bosque_calco.json'))
 d.update(json.load(open('sierra_calco.json')))
+import os
+if os.path.exists('huargo_muerte.json'): d['huargo'] = d['huargo'][:8] + json.load(open('huargo_muerte.json'))
 IDX='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 RAMPS={'huargo':['#0e0b18','#191a30','#232a48','#2f3a60','#3e4c78','#566694','#7a88b0'],
  'oso':['#1a0f10','#2e1a16','#4a2a1e','#663a24','#85502e','#a6683a','#c4874e'],
