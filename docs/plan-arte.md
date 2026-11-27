@@ -545,6 +545,9 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      **Lobo gris y oso pardo de sierra:** los calcos del bosque con otra rampa (`recolor`, opción `ramp`
      de `calcoArt`): el lobo, más claro y frío; el oso, terroso. Glosario de enemigos con los efectos de la
      pelea del visor (misma lógica que `gente.ts`, copiada en la herramienta): `docs/glosario-enemigos.html`.
+     **Trasgo de sierra** (hoja del usuario, `trasgo_calco.py`; `calco3` con `minc` bajo para que no se pierda
+     el garrote que vuela): respira, descarga el garrote; herido, se le escapa y lo recoge; muere y queda
+     tendido junto a él. También en la tira de los encargos (`STRIP_CALCO`). Sierra, completa.
      Luego: pasada visual a sierra/marismas/ruinas y transiciones suaves (lluvia y fondo cambian de golpe).
      **Sucesos a la vista (26 nov):** con `e.pending` el visor pinta delante lo que hay (`visor/sucesos.ts`, `MarchNow.event`):
      cofre, santuario, mercader con carro, viajero, campamento abandonado, oso, cueva, torre y ruinas, pintados en
