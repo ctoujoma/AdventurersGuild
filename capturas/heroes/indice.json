@@ -1,0 +1,4930 @@
+[
+  {
+    "name": "1-heroes",
+    "title": "Héroes: las clases",
+    "scale": 5,
+    "sections": [
+      {
+        "title": "Las 5 clases de héroe (sprite de frente, 18×28)",
+        "note": "El aspecto sale de una semilla: piel, pelo, barba, tocado, cara, cejas, boca, pecas y cicatriz.",
+        "rows": [
+          {
+            "label": "guerrero · hombre",
+            "cells": [
+              {
+                "file": "sueltos/heroes/0000_guerrero-m-0.png"
+              },
+              {
+                "file": "sueltos/heroes/0001_guerrero-m-1.png"
+              },
+              {
+                "file": "sueltos/heroes/0002_guerrero-m-2.png"
+              },
+              {
+                "file": "sueltos/heroes/0003_guerrero-m-3.png"
+              },
+              {
+                "file": "sueltos/heroes/0004_guerrero-m-4.png"
+              },
+              {
+                "file": "sueltos/heroes/0005_guerrero-m-5.png"
+              }
+            ]
+          },
+          {
+            "label": "guerrero · mujer",
+            "cells": [
+              {
+                "file": "sueltos/heroes/0012_guerrero-f-0.png"
+              },
+              {
+                "file": "sueltos/heroes/0013_guerrero-f-1.png"
+              },
+              {
+                "file": "sueltos/heroes/0014_guerrero-f-2.png"
+              },
+              {
+                "file": "sueltos/heroes/0015_guerrero-f-3.png"
+              },
+              {
+                "file": "sueltos/heroes/0016_guerrero-f-4.png"
+              },
+              {
+                "file": "sueltos/heroes/0017_guerrero-f-5.png"
+              }
+            ]
+          },
+          {
+            "label": "picaro · hombre",
+            "cells": [
+              {
+                "file": "sueltos/heroes/0024_picaro-m-0.png"
+              },
+              {
+                "file": "sueltos/heroes/0025_picaro-m-1.png"
+              },
+              {
+                "file": "sueltos/heroes/0026_picaro-m-2.png"
+              },
+              {
+                "file": "sueltos/heroes/0027_picaro-m-3.png"
+              },
+              {
+                "file": "sueltos/heroes/0028_picaro-m-4.png"
+              },
+              {
+                "file": "sueltos/heroes/0029_picaro-m-5.png"
+              }
+            ]
+          },
+          {
+            "label": "picaro · mujer",
+            "cells": [
+              {
+                "file": "sueltos/heroes/0036_picaro-f-0.png"
+              },
+              {
+                "file": "sueltos/heroes/0037_picaro-f-1.png"
+              },
+              {
+                "file": "sueltos/heroes/0038_picaro-f-2.png"
+              },
+              {
+                "file": "sueltos/heroes/0039_picaro-f-3.png"
+              },
+              {
+                "file": "sueltos/heroes/0040_picaro-f-4.png"
+              },
+              {
+                "file": "sueltos/heroes/0041_picaro-f-5.png"
+              }
+            ]
+          },
+          {
+            "label": "mago · hombre",
+            "cells": [
+              {
+                "file": "sueltos/heroes/0048_mago-m-0.png"
+              },
+              {
+                "file": "sueltos/heroes/0049_mago-m-1.png"
+              },
+              {
+                "file": "sueltos/heroes/0050_mago-m-2.png"
+              },
+              {
+                "file": "sueltos/heroes/0051_mago-m-3.png"
+              },
+              {
+                "file": "sueltos/heroes/0052_mago-m-4.png"
+              },
+              {
+                "file": "sueltos/heroes/0053_mago-m-5.png"
+              }
+            ]
+          },
+          {
+            "label": "mago · mujer",
+            "cells": [
+              {
+                "file": "sueltos/heroes/0060_mago-f-0.png"
+              },
+              {
+                "file": "sueltos/heroes/0061_mago-f-1.png"
+              },
+              {
+                "file": "sueltos/heroes/0062_mago-f-2.png"
+              },
+              {
+                "file": "sueltos/heroes/0063_mago-f-3.png"
+              },
+              {
+                "file": "sueltos/heroes/0064_mago-f-4.png"
+              },
+              {
+                "file": "sueltos/heroes/0065_mago-f-5.png"
+              }
+            ]
+          },
+          {
+            "label": "clerigo · hombre",
+            "cells": [
+              {
+                "file": "sueltos/heroes/0072_clerigo-m-0.png"
+              },
+              {
+                "file": "sueltos/heroes/0073_clerigo-m-1.png"
+              },
+              {
+                "file": "sueltos/heroes/0074_clerigo-m-2.png"
+              },
+              {
+                "file": "sueltos/heroes/0075_clerigo-m-3.png"
+              },
+              {
+                "file": "sueltos/heroes/0076_clerigo-m-4.png"
+              },
+              {
+                "file": "sueltos/heroes/0077_clerigo-m-5.png"
+              }
+            ]
+          },
+          {
+            "label": "clerigo · mujer",
+            "cells": [
+              {
+                "file": "sueltos/heroes/0084_clerigo-f-0.png"
+              },
+              {
+                "file": "sueltos/heroes/0085_clerigo-f-1.png"
+              },
+              {
+                "file": "sueltos/heroes/0086_clerigo-f-2.png"
+              },
+              {
+                "file": "sueltos/heroes/0087_clerigo-f-3.png"
+              },
+              {
+                "file": "sueltos/heroes/0088_clerigo-f-4.png"
+              },
+              {
+                "file": "sueltos/heroes/0089_clerigo-f-5.png"
+              }
+            ]
+          },
+          {
+            "label": "explorador · hombre",
+            "cells": [
+              {
+                "file": "sueltos/heroes/0096_explorador-m-0.png"
+              },
+              {
+                "file": "sueltos/heroes/0097_explorador-m-1.png"
+              },
+              {
+                "file": "sueltos/heroes/0098_explorador-m-2.png"
+              },
+              {
+                "file": "sueltos/heroes/0099_explorador-m-3.png"
+              },
+              {
+                "file": "sueltos/heroes/0100_explorador-m-4.png"
+              },
+              {
+                "file": "sueltos/heroes/0101_explorador-m-5.png"
+              }
+            ]
+          },
+          {
+            "label": "explorador · mujer",
+            "cells": [
+              {
+                "file": "sueltos/heroes/0108_explorador-f-0.png"
+              },
+              {
+                "file": "sueltos/heroes/0109_explorador-f-1.png"
+              },
+              {
+                "file": "sueltos/heroes/0110_explorador-f-2.png"
+              },
+              {
+                "file": "sueltos/heroes/0111_explorador-f-3.png"
+              },
+              {
+                "file": "sueltos/heroes/0112_explorador-f-4.png"
+              },
+              {
+                "file": "sueltos/heroes/0113_explorador-f-5.png"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "2-retratos",
+    "title": "Héroes: retratos",
+    "scale": 3,
+    "sections": [
+      {
+        "title": "Los mismos, en retrato (ficha)",
+        "rows": [
+          {
+            "label": "guerrero · hombre",
+            "cells": [
+              {
+                "file": "sueltos/retratos/0006_guerrero-m-0.png"
+              },
+              {
+                "file": "sueltos/retratos/0007_guerrero-m-1.png"
+              },
+              {
+                "file": "sueltos/retratos/0008_guerrero-m-2.png"
+              },
+              {
+                "file": "sueltos/retratos/0009_guerrero-m-3.png"
+              },
+              {
+                "file": "sueltos/retratos/0010_guerrero-m-4.png"
+              },
+              {
+                "file": "sueltos/retratos/0011_guerrero-m-5.png"
+              }
+            ]
+          },
+          {
+            "label": "guerrero · mujer",
+            "cells": [
+              {
+                "file": "sueltos/retratos/0018_guerrero-f-0.png"
+              },
+              {
+                "file": "sueltos/retratos/0019_guerrero-f-1.png"
+              },
+              {
+                "file": "sueltos/retratos/0020_guerrero-f-2.png"
+              },
+              {
+                "file": "sueltos/retratos/0021_guerrero-f-3.png"
+              },
+              {
+                "file": "sueltos/retratos/0022_guerrero-f-4.png"
+              },
+              {
+                "file": "sueltos/retratos/0023_guerrero-f-5.png"
+              }
+            ]
+          },
+          {
+            "label": "picaro · hombre",
+            "cells": [
+              {
+                "file": "sueltos/retratos/0030_picaro-m-0.png"
+              },
+              {
+                "file": "sueltos/retratos/0031_picaro-m-1.png"
+              },
+              {
+                "file": "sueltos/retratos/0032_picaro-m-2.png"
+              },
+              {
+                "file": "sueltos/retratos/0033_picaro-m-3.png"
+              },
+              {
+                "file": "sueltos/retratos/0034_picaro-m-4.png"
+              },
+              {
+                "file": "sueltos/retratos/0035_picaro-m-5.png"
+              }
+            ]
+          },
+          {
+            "label": "picaro · mujer",
+            "cells": [
+              {
+                "file": "sueltos/retratos/0042_picaro-f-0.png"
+              },
+              {
+                "file": "sueltos/retratos/0043_picaro-f-1.png"
+              },
+              {
+                "file": "sueltos/retratos/0044_picaro-f-2.png"
+              },
+              {
+                "file": "sueltos/retratos/0045_picaro-f-3.png"
+              },
+              {
+                "file": "sueltos/retratos/0046_picaro-f-4.png"
+              },
+              {
+                "file": "sueltos/retratos/0047_picaro-f-5.png"
+              }
+            ]
+          },
+          {
+            "label": "mago · hombre",
+            "cells": [
+              {
+                "file": "sueltos/retratos/0054_mago-m-0.png"
+              },
+              {
+                "file": "sueltos/retratos/0055_mago-m-1.png"
+              },
+              {
+                "file": "sueltos/retratos/0056_mago-m-2.png"
+              },
+              {
+                "file": "sueltos/retratos/0057_mago-m-3.png"
+              },
+              {
+                "file": "sueltos/retratos/0058_mago-m-4.png"
+              },
+              {
+                "file": "sueltos/retratos/0059_mago-m-5.png"
+              }
+            ]
+          },
+          {
+            "label": "mago · mujer",
+            "cells": [
+              {
+                "file": "sueltos/retratos/0066_mago-f-0.png"
+              },
+              {
+                "file": "sueltos/retratos/0067_mago-f-1.png"
+              },
+              {
+                "file": "sueltos/retratos/0068_mago-f-2.png"
+              },
+              {
+                "file": "sueltos/retratos/0069_mago-f-3.png"
+              },
+              {
+                "file": "sueltos/retratos/0070_mago-f-4.png"
+              },
+              {
+                "file": "sueltos/retratos/0071_mago-f-5.png"
+              }
+            ]
+          },
+          {
+            "label": "clerigo · hombre",
+            "cells": [
+              {
+                "file": "sueltos/retratos/0078_clerigo-m-0.png"
+              },
+              {
+                "file": "sueltos/retratos/0079_clerigo-m-1.png"
+              },
+              {
+                "file": "sueltos/retratos/0080_clerigo-m-2.png"
+              },
+              {
+                "file": "sueltos/retratos/0081_clerigo-m-3.png"
+              },
+              {
+                "file": "sueltos/retratos/0082_clerigo-m-4.png"
+              },
+              {
+                "file": "sueltos/retratos/0083_clerigo-m-5.png"
+              }
+            ]
+          },
+          {
+            "label": "clerigo · mujer",
+            "cells": [
+              {
+                "file": "sueltos/retratos/0090_clerigo-f-0.png"
+              },
+              {
+                "file": "sueltos/retratos/0091_clerigo-f-1.png"
+              },
+              {
+                "file": "sueltos/retratos/0092_clerigo-f-2.png"
+              },
+              {
+                "file": "sueltos/retratos/0093_clerigo-f-3.png"
+              },
+              {
+                "file": "sueltos/retratos/0094_clerigo-f-4.png"
+              },
+              {
+                "file": "sueltos/retratos/0095_clerigo-f-5.png"
+              }
+            ]
+          },
+          {
+            "label": "explorador · hombre",
+            "cells": [
+              {
+                "file": "sueltos/retratos/0102_explorador-m-0.png"
+              },
+              {
+                "file": "sueltos/retratos/0103_explorador-m-1.png"
+              },
+              {
+                "file": "sueltos/retratos/0104_explorador-m-2.png"
+              },
+              {
+                "file": "sueltos/retratos/0105_explorador-m-3.png"
+              },
+              {
+                "file": "sueltos/retratos/0106_explorador-m-4.png"
+              },
+              {
+                "file": "sueltos/retratos/0107_explorador-m-5.png"
+              }
+            ]
+          },
+          {
+            "label": "explorador · mujer",
+            "cells": [
+              {
+                "file": "sueltos/retratos/0114_explorador-f-0.png"
+              },
+              {
+                "file": "sueltos/retratos/0115_explorador-f-1.png"
+              },
+              {
+                "file": "sueltos/retratos/0116_explorador-f-2.png"
+              },
+              {
+                "file": "sueltos/retratos/0117_explorador-f-3.png"
+              },
+              {
+                "file": "sueltos/retratos/0118_explorador-f-4.png"
+              },
+              {
+                "file": "sueltos/retratos/0119_explorador-f-5.png"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "3-variaciones",
+    "title": "Héroes: variaciones del aspecto",
+    "scale": 4,
+    "sections": [
+      {
+        "title": "Peinados",
+        "rows": [
+          {
+            "label": "hombre",
+            "cells": [
+              {
+                "file": "sueltos/pelo/0120_m-0-f.png",
+                "label": "corto"
+              },
+              {
+                "file": "sueltos/pelo/0121_m-1-f.png",
+                "label": "largo"
+              },
+              {
+                "file": "sueltos/pelo/0122_m-2-f.png",
+                "label": "coleta"
+              },
+              {
+                "file": "sueltos/pelo/0123_m-3-f.png",
+                "label": "punta"
+              },
+              {
+                "file": "sueltos/pelo/0124_m-4-f.png",
+                "label": "mono"
+              },
+              {
+                "file": "sueltos/pelo/0125_m-5-f.png",
+                "label": "calvo"
+              }
+            ]
+          },
+          {
+            "label": "mujer",
+            "cells": [
+              {
+                "file": "sueltos/pelo/0126_f-0-f.png",
+                "label": "corto"
+              },
+              {
+                "file": "sueltos/pelo/0127_f-1-f.png",
+                "label": "largo"
+              },
+              {
+                "file": "sueltos/pelo/0128_f-2-f.png",
+                "label": "coleta"
+              },
+              {
+                "file": "sueltos/pelo/0129_f-3-f.png",
+                "label": "punta"
+              },
+              {
+                "file": "sueltos/pelo/0130_f-4-f.png",
+                "label": "mono"
+              },
+              {
+                "file": "sueltos/pelo/0131_f-5-f.png",
+                "label": "calvo"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Color de pelo",
+        "rows": [
+          {
+            "label": "hombre",
+            "cells": [
+              {
+                "file": "sueltos/color-pelo/0132_m-0-f.png",
+                "label": "negro"
+              },
+              {
+                "file": "sueltos/color-pelo/0133_m-1-f.png",
+                "label": "castaño"
+              },
+              {
+                "file": "sueltos/color-pelo/0134_m-2-f.png",
+                "label": "pelirrojo"
+              },
+              {
+                "file": "sueltos/color-pelo/0135_m-3-f.png",
+                "label": "rubio"
+              },
+              {
+                "file": "sueltos/color-pelo/0136_m-4-f.png",
+                "label": "canoso"
+              },
+              {
+                "file": "sueltos/color-pelo/0137_m-5-f.png",
+                "label": "blanco"
+              }
+            ]
+          },
+          {
+            "label": "mujer",
+            "cells": [
+              {
+                "file": "sueltos/color-pelo/0138_f-0-f.png",
+                "label": "negro"
+              },
+              {
+                "file": "sueltos/color-pelo/0139_f-1-f.png",
+                "label": "castaño"
+              },
+              {
+                "file": "sueltos/color-pelo/0140_f-2-f.png",
+                "label": "pelirrojo"
+              },
+              {
+                "file": "sueltos/color-pelo/0141_f-3-f.png",
+                "label": "rubio"
+              },
+              {
+                "file": "sueltos/color-pelo/0142_f-4-f.png",
+                "label": "canoso"
+              },
+              {
+                "file": "sueltos/color-pelo/0143_f-5-f.png",
+                "label": "blanco"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Piel y ojos (en retrato)",
+        "rows": [
+          {
+            "label": "piel",
+            "cells": [
+              {
+                "file": "sueltos/piel/0144_piel-0.png",
+                "label": "piel 0"
+              },
+              {
+                "file": "sueltos/piel/0145_piel-1.png",
+                "label": "piel 1"
+              },
+              {
+                "file": "sueltos/piel/0146_piel-2.png",
+                "label": "piel 2"
+              },
+              {
+                "file": "sueltos/piel/0147_piel-3.png",
+                "label": "piel 3"
+              }
+            ]
+          },
+          {
+            "label": "ojos",
+            "cells": [
+              {
+                "file": "sueltos/ojos/0148_ojos-0.png",
+                "label": "ojos 0"
+              },
+              {
+                "file": "sueltos/ojos/0149_ojos-1.png",
+                "label": "ojos 1"
+              },
+              {
+                "file": "sueltos/ojos/0150_ojos-2.png",
+                "label": "ojos 2"
+              },
+              {
+                "file": "sueltos/ojos/0151_ojos-3.png",
+                "label": "ojos 3"
+              },
+              {
+                "file": "sueltos/ojos/0152_ojos-4.png",
+                "label": "ojos 4"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Cara, cejas y boca (en retrato)",
+        "rows": [
+          {
+            "label": "cara",
+            "cells": [
+              {
+                "file": "sueltos/cara/0153_redonda.png",
+                "label": "redonda"
+              },
+              {
+                "file": "sueltos/cara/0154_cuadrada.png",
+                "label": "cuadrada"
+              },
+              {
+                "file": "sueltos/cara/0155_alargada.png",
+                "label": "alargada"
+              }
+            ]
+          },
+          {
+            "label": "cejas",
+            "cells": [
+              {
+                "file": "sueltos/cejas/0156_recta.png",
+                "label": "recta"
+              },
+              {
+                "file": "sueltos/cejas/0157_arqueada.png",
+                "label": "arqueada"
+              },
+              {
+                "file": "sueltos/cejas/0158_fruncida.png",
+                "label": "fruncida"
+              }
+            ]
+          },
+          {
+            "label": "boca",
+            "cells": [
+              {
+                "file": "sueltos/boca/0159_neutra.png",
+                "label": "neutra"
+              },
+              {
+                "file": "sueltos/boca/0160_sonrisa.png",
+                "label": "sonrisa"
+              },
+              {
+                "file": "sueltos/boca/0161_mueca.png",
+                "label": "mueca"
+              },
+              {
+                "file": "sueltos/boca/0162_seria.png",
+                "label": "seria"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Tocados (cada clase tiene el suyo; el resto, de la gente de fuera)",
+        "rows": [
+          {
+            "label": "sprite",
+            "cells": [
+              {
+                "file": "sueltos/tocados/0163_casco-guerrero-.png",
+                "label": "casco (guerrero)"
+              },
+              {
+                "file": "sueltos/tocados/0164_capucha-p-caro-.png",
+                "label": "capucha (pícaro)"
+              },
+              {
+                "file": "sueltos/tocados/0165_sombrero-mago-.png",
+                "label": "sombrero (mago)"
+              },
+              {
+                "file": "sueltos/tocados/0166_gorra-explorador-.png",
+                "label": "gorra (explorador)"
+              },
+              {
+                "file": "sueltos/tocados/0167_paja-campesino-.png",
+                "label": "paja (campesino)"
+              },
+              {
+                "file": "sueltos/tocados/0168_boina-mercader-.png",
+                "label": "boina (mercader)"
+              },
+              {
+                "file": "sueltos/tocados/0169_pluma-noble-.png",
+                "label": "pluma (noble)"
+              },
+              {
+                "file": "sueltos/tocados/0170_velo-velado-.png",
+                "label": "velo (velado)"
+              }
+            ]
+          },
+          {
+            "label": "perfil",
+            "cells": [
+              {
+                "file": "sueltos/tocados/0171_casco-guerrero-.png",
+                "label": "casco (guerrero)"
+              },
+              {
+                "file": "sueltos/tocados/0172_capucha-p-caro-.png",
+                "label": "capucha (pícaro)"
+              },
+              {
+                "file": "sueltos/tocados/0173_sombrero-mago-.png",
+                "label": "sombrero (mago)"
+              },
+              {
+                "file": "sueltos/tocados/0174_gorra-explorador-.png",
+                "label": "gorra (explorador)"
+              },
+              {
+                "file": "sueltos/tocados/0175_paja-campesino-.png",
+                "label": "paja (campesino)"
+              },
+              {
+                "file": "sueltos/tocados/0176_boina-mercader-.png",
+                "label": "boina (mercader)"
+              },
+              {
+                "file": "sueltos/tocados/0177_pluma-noble-.png",
+                "label": "pluma (noble)"
+              },
+              {
+                "file": "sueltos/tocados/0178_velo-velado-.png",
+                "label": "velo (velado)"
+              }
+            ]
+          },
+          {
+            "label": "retrato",
+            "cells": [
+              {
+                "file": "sueltos/tocados/0179_casco-guerrero-.png",
+                "label": "casco (guerrero)"
+              },
+              {
+                "file": "sueltos/tocados/0180_capucha-p-caro-.png",
+                "label": "capucha (pícaro)"
+              },
+              {
+                "file": "sueltos/tocados/0181_sombrero-mago-.png",
+                "label": "sombrero (mago)"
+              },
+              {
+                "file": "sueltos/tocados/0182_gorra-explorador-.png",
+                "label": "gorra (explorador)"
+              },
+              {
+                "file": "sueltos/tocados/0183_paja-campesino-.png",
+                "label": "paja (campesino)"
+              },
+              {
+                "file": "sueltos/tocados/0184_boina-mercader-.png",
+                "label": "boina (mercader)"
+              },
+              {
+                "file": "sueltos/tocados/0185_pluma-noble-.png",
+                "label": "pluma (noble)"
+              },
+              {
+                "file": "sueltos/tocados/0186_velo-velado-.png",
+                "label": "velo (velado)"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Marcas: barba, pecas, cicatriz, parche (rasgo «tuerto»), herido",
+        "rows": [
+          {
+            "label": "sprite",
+            "cells": [
+              {
+                "file": "sueltos/marcas/0187_nada.png",
+                "label": "nada"
+              },
+              {
+                "file": "sueltos/marcas/0188_barba.png",
+                "label": "barba"
+              },
+              {
+                "file": "sueltos/marcas/0189_pecas.png",
+                "label": "pecas"
+              },
+              {
+                "file": "sueltos/marcas/0190_cicatriz.png",
+                "label": "cicatriz"
+              },
+              {
+                "file": "sueltos/marcas/0191_parche.png",
+                "label": "parche"
+              },
+              {
+                "file": "sueltos/marcas/0192_herido.png",
+                "label": "herido"
+              }
+            ]
+          },
+          {
+            "label": "perfil",
+            "cells": [
+              {
+                "file": "sueltos/marcas/0193_nada.png",
+                "label": "nada"
+              },
+              {
+                "file": "sueltos/marcas/0194_barba.png",
+                "label": "barba"
+              },
+              {
+                "file": "sueltos/marcas/0195_pecas.png",
+                "label": "pecas"
+              },
+              {
+                "file": "sueltos/marcas/0196_cicatriz.png",
+                "label": "cicatriz"
+              },
+              {
+                "file": "sueltos/marcas/0197_parche.png",
+                "label": "parche"
+              },
+              {
+                "file": "sueltos/marcas/0198_herido.png",
+                "label": "herido"
+              }
+            ]
+          },
+          {
+            "label": "retrato",
+            "cells": [
+              {
+                "file": "sueltos/marcas/0199_nada.png",
+                "label": "nada"
+              },
+              {
+                "file": "sueltos/marcas/0200_barba.png",
+                "label": "barba"
+              },
+              {
+                "file": "sueltos/marcas/0201_pecas.png",
+                "label": "pecas"
+              },
+              {
+                "file": "sueltos/marcas/0202_cicatriz.png",
+                "label": "cicatriz"
+              },
+              {
+                "file": "sueltos/marcas/0203_parche.png",
+                "label": "parche"
+              },
+              {
+                "file": "sueltos/marcas/0204_herido.png",
+                "label": "herido"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "4-sastreria",
+    "title": "Héroes: tintes y prendas",
+    "scale": 4,
+    "sections": [
+      {
+        "title": "Tintes de la sastrería (sobre cada clase)",
+        "rows": [
+          {
+            "label": "guerrero",
+            "cells": [
+              {
+                "file": "sueltos/tintes/0205_guerrero-sin.png",
+                "label": "sin tinte"
+              },
+              {
+                "file": "sueltos/tintes/0206_guerrero-vino.png",
+                "label": "vino"
+              },
+              {
+                "file": "sueltos/tintes/0207_guerrero-mar.png",
+                "label": "mar"
+              },
+              {
+                "file": "sueltos/tintes/0208_guerrero-bosque.png",
+                "label": "bosque"
+              },
+              {
+                "file": "sueltos/tintes/0209_guerrero-ocre.png",
+                "label": "ocre"
+              },
+              {
+                "file": "sueltos/tintes/0210_guerrero-morado.png",
+                "label": "morado"
+              },
+              {
+                "file": "sueltos/tintes/0211_guerrero-ceniza.png",
+                "label": "ceniza"
+              },
+              {
+                "file": "sueltos/tintes/0212_guerrero-lino.png",
+                "label": "lino"
+              }
+            ]
+          },
+          {
+            "label": "picaro",
+            "cells": [
+              {
+                "file": "sueltos/tintes/0213_picaro-sin.png",
+                "label": "sin tinte"
+              },
+              {
+                "file": "sueltos/tintes/0214_picaro-vino.png",
+                "label": "vino"
+              },
+              {
+                "file": "sueltos/tintes/0215_picaro-mar.png",
+                "label": "mar"
+              },
+              {
+                "file": "sueltos/tintes/0216_picaro-bosque.png",
+                "label": "bosque"
+              },
+              {
+                "file": "sueltos/tintes/0217_picaro-ocre.png",
+                "label": "ocre"
+              },
+              {
+                "file": "sueltos/tintes/0218_picaro-morado.png",
+                "label": "morado"
+              },
+              {
+                "file": "sueltos/tintes/0219_picaro-ceniza.png",
+                "label": "ceniza"
+              },
+              {
+                "file": "sueltos/tintes/0220_picaro-lino.png",
+                "label": "lino"
+              }
+            ]
+          },
+          {
+            "label": "mago",
+            "cells": [
+              {
+                "file": "sueltos/tintes/0221_mago-sin.png",
+                "label": "sin tinte"
+              },
+              {
+                "file": "sueltos/tintes/0222_mago-vino.png",
+                "label": "vino"
+              },
+              {
+                "file": "sueltos/tintes/0223_mago-mar.png",
+                "label": "mar"
+              },
+              {
+                "file": "sueltos/tintes/0224_mago-bosque.png",
+                "label": "bosque"
+              },
+              {
+                "file": "sueltos/tintes/0225_mago-ocre.png",
+                "label": "ocre"
+              },
+              {
+                "file": "sueltos/tintes/0226_mago-morado.png",
+                "label": "morado"
+              },
+              {
+                "file": "sueltos/tintes/0227_mago-ceniza.png",
+                "label": "ceniza"
+              },
+              {
+                "file": "sueltos/tintes/0228_mago-lino.png",
+                "label": "lino"
+              }
+            ]
+          },
+          {
+            "label": "clerigo",
+            "cells": [
+              {
+                "file": "sueltos/tintes/0229_clerigo-sin.png",
+                "label": "sin tinte"
+              },
+              {
+                "file": "sueltos/tintes/0230_clerigo-vino.png",
+                "label": "vino"
+              },
+              {
+                "file": "sueltos/tintes/0231_clerigo-mar.png",
+                "label": "mar"
+              },
+              {
+                "file": "sueltos/tintes/0232_clerigo-bosque.png",
+                "label": "bosque"
+              },
+              {
+                "file": "sueltos/tintes/0233_clerigo-ocre.png",
+                "label": "ocre"
+              },
+              {
+                "file": "sueltos/tintes/0234_clerigo-morado.png",
+                "label": "morado"
+              },
+              {
+                "file": "sueltos/tintes/0235_clerigo-ceniza.png",
+                "label": "ceniza"
+              },
+              {
+                "file": "sueltos/tintes/0236_clerigo-lino.png",
+                "label": "lino"
+              }
+            ]
+          },
+          {
+            "label": "explorador",
+            "cells": [
+              {
+                "file": "sueltos/tintes/0237_explorador-sin.png",
+                "label": "sin tinte"
+              },
+              {
+                "file": "sueltos/tintes/0238_explorador-vino.png",
+                "label": "vino"
+              },
+              {
+                "file": "sueltos/tintes/0239_explorador-mar.png",
+                "label": "mar"
+              },
+              {
+                "file": "sueltos/tintes/0240_explorador-bosque.png",
+                "label": "bosque"
+              },
+              {
+                "file": "sueltos/tintes/0241_explorador-ocre.png",
+                "label": "ocre"
+              },
+              {
+                "file": "sueltos/tintes/0242_explorador-morado.png",
+                "label": "morado"
+              },
+              {
+                "file": "sueltos/tintes/0243_explorador-ceniza.png",
+                "label": "ceniza"
+              },
+              {
+                "file": "sueltos/tintes/0244_explorador-lino.png",
+                "label": "lino"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Prendas de la sastrería (con su tinte de serie)",
+        "rows": [
+          {
+            "label": "guerrero",
+            "cells": [
+              {
+                "file": "sueltos/prendas/0245_guerrero-capa.png",
+                "label": "capa"
+              },
+              {
+                "file": "sueltos/prendas/0246_guerrero-capa-perfil.png",
+                "label": "capa perfil"
+              },
+              {
+                "file": "sueltos/prendas/0247_guerrero-capa-retrato.png",
+                "label": "capa retrato"
+              },
+              {
+                "file": "sueltos/prendas/0248_guerrero-tabardo.png",
+                "label": "tabardo"
+              },
+              {
+                "file": "sueltos/prendas/0249_guerrero-tabardo-perfil.png",
+                "label": "tabardo perfil"
+              },
+              {
+                "file": "sueltos/prendas/0250_guerrero-tabardo-retrato.png",
+                "label": "tabardo retrato"
+              },
+              {
+                "file": "sueltos/prendas/0251_guerrero-faja.png",
+                "label": "faja"
+              },
+              {
+                "file": "sueltos/prendas/0252_guerrero-faja-perfil.png",
+                "label": "faja perfil"
+              },
+              {
+                "file": "sueltos/prendas/0253_guerrero-faja-retrato.png",
+                "label": "faja retrato"
+              },
+              {
+                "file": "sueltos/prendas/0254_guerrero-bufanda.png",
+                "label": "bufanda"
+              },
+              {
+                "file": "sueltos/prendas/0255_guerrero-bufanda-perfil.png",
+                "label": "bufanda perfil"
+              },
+              {
+                "file": "sueltos/prendas/0256_guerrero-bufanda-retrato.png",
+                "label": "bufanda retrato"
+              }
+            ]
+          },
+          {
+            "label": "picaro",
+            "cells": [
+              {
+                "file": "sueltos/prendas/0257_picaro-capa.png",
+                "label": "capa"
+              },
+              {
+                "file": "sueltos/prendas/0258_picaro-capa-perfil.png",
+                "label": "capa perfil"
+              },
+              {
+                "file": "sueltos/prendas/0259_picaro-capa-retrato.png",
+                "label": "capa retrato"
+              },
+              {
+                "file": "sueltos/prendas/0260_picaro-tabardo.png",
+                "label": "tabardo"
+              },
+              {
+                "file": "sueltos/prendas/0261_picaro-tabardo-perfil.png",
+                "label": "tabardo perfil"
+              },
+              {
+                "file": "sueltos/prendas/0262_picaro-tabardo-retrato.png",
+                "label": "tabardo retrato"
+              },
+              {
+                "file": "sueltos/prendas/0263_picaro-faja.png",
+                "label": "faja"
+              },
+              {
+                "file": "sueltos/prendas/0264_picaro-faja-perfil.png",
+                "label": "faja perfil"
+              },
+              {
+                "file": "sueltos/prendas/0265_picaro-faja-retrato.png",
+                "label": "faja retrato"
+              },
+              {
+                "file": "sueltos/prendas/0266_picaro-bufanda.png",
+                "label": "bufanda"
+              },
+              {
+                "file": "sueltos/prendas/0267_picaro-bufanda-perfil.png",
+                "label": "bufanda perfil"
+              },
+              {
+                "file": "sueltos/prendas/0268_picaro-bufanda-retrato.png",
+                "label": "bufanda retrato"
+              }
+            ]
+          },
+          {
+            "label": "mago",
+            "cells": [
+              {
+                "file": "sueltos/prendas/0269_mago-capa.png",
+                "label": "capa"
+              },
+              {
+                "file": "sueltos/prendas/0270_mago-capa-perfil.png",
+                "label": "capa perfil"
+              },
+              {
+                "file": "sueltos/prendas/0271_mago-capa-retrato.png",
+                "label": "capa retrato"
+              },
+              {
+                "file": "sueltos/prendas/0272_mago-tabardo.png",
+                "label": "tabardo"
+              },
+              {
+                "file": "sueltos/prendas/0273_mago-tabardo-perfil.png",
+                "label": "tabardo perfil"
+              },
+              {
+                "file": "sueltos/prendas/0274_mago-tabardo-retrato.png",
+                "label": "tabardo retrato"
+              },
+              {
+                "file": "sueltos/prendas/0275_mago-faja.png",
+                "label": "faja"
+              },
+              {
+                "file": "sueltos/prendas/0276_mago-faja-perfil.png",
+                "label": "faja perfil"
+              },
+              {
+                "file": "sueltos/prendas/0277_mago-faja-retrato.png",
+                "label": "faja retrato"
+              },
+              {
+                "file": "sueltos/prendas/0278_mago-bufanda.png",
+                "label": "bufanda"
+              },
+              {
+                "file": "sueltos/prendas/0279_mago-bufanda-perfil.png",
+                "label": "bufanda perfil"
+              },
+              {
+                "file": "sueltos/prendas/0280_mago-bufanda-retrato.png",
+                "label": "bufanda retrato"
+              }
+            ]
+          },
+          {
+            "label": "clerigo",
+            "cells": [
+              {
+                "file": "sueltos/prendas/0281_clerigo-capa.png",
+                "label": "capa"
+              },
+              {
+                "file": "sueltos/prendas/0282_clerigo-capa-perfil.png",
+                "label": "capa perfil"
+              },
+              {
+                "file": "sueltos/prendas/0283_clerigo-capa-retrato.png",
+                "label": "capa retrato"
+              },
+              {
+                "file": "sueltos/prendas/0284_clerigo-tabardo.png",
+                "label": "tabardo"
+              },
+              {
+                "file": "sueltos/prendas/0285_clerigo-tabardo-perfil.png",
+                "label": "tabardo perfil"
+              },
+              {
+                "file": "sueltos/prendas/0286_clerigo-tabardo-retrato.png",
+                "label": "tabardo retrato"
+              },
+              {
+                "file": "sueltos/prendas/0287_clerigo-faja.png",
+                "label": "faja"
+              },
+              {
+                "file": "sueltos/prendas/0288_clerigo-faja-perfil.png",
+                "label": "faja perfil"
+              },
+              {
+                "file": "sueltos/prendas/0289_clerigo-faja-retrato.png",
+                "label": "faja retrato"
+              },
+              {
+                "file": "sueltos/prendas/0290_clerigo-bufanda.png",
+                "label": "bufanda"
+              },
+              {
+                "file": "sueltos/prendas/0291_clerigo-bufanda-perfil.png",
+                "label": "bufanda perfil"
+              },
+              {
+                "file": "sueltos/prendas/0292_clerigo-bufanda-retrato.png",
+                "label": "bufanda retrato"
+              }
+            ]
+          },
+          {
+            "label": "explorador",
+            "cells": [
+              {
+                "file": "sueltos/prendas/0293_explorador-capa.png",
+                "label": "capa"
+              },
+              {
+                "file": "sueltos/prendas/0294_explorador-capa-perfil.png",
+                "label": "capa perfil"
+              },
+              {
+                "file": "sueltos/prendas/0295_explorador-capa-retrato.png",
+                "label": "capa retrato"
+              },
+              {
+                "file": "sueltos/prendas/0296_explorador-tabardo.png",
+                "label": "tabardo"
+              },
+              {
+                "file": "sueltos/prendas/0297_explorador-tabardo-perfil.png",
+                "label": "tabardo perfil"
+              },
+              {
+                "file": "sueltos/prendas/0298_explorador-tabardo-retrato.png",
+                "label": "tabardo retrato"
+              },
+              {
+                "file": "sueltos/prendas/0299_explorador-faja.png",
+                "label": "faja"
+              },
+              {
+                "file": "sueltos/prendas/0300_explorador-faja-perfil.png",
+                "label": "faja perfil"
+              },
+              {
+                "file": "sueltos/prendas/0301_explorador-faja-retrato.png",
+                "label": "faja retrato"
+              },
+              {
+                "file": "sueltos/prendas/0302_explorador-bufanda.png",
+                "label": "bufanda"
+              },
+              {
+                "file": "sueltos/prendas/0303_explorador-bufanda-perfil.png",
+                "label": "bufanda perfil"
+              },
+              {
+                "file": "sueltos/prendas/0304_explorador-bufanda-retrato.png",
+                "label": "bufanda retrato"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "5-otros-personajes",
+    "title": "Otros personajes (mismo cuerpo que los héroes)",
+    "scale": 4,
+    "sections": [
+      {
+        "title": "Trabajadores y visitantes",
+        "rows": [
+          {
+            "label": "tabernero (personal del salón)",
+            "cells": [
+              {
+                "file": "sueltos/otros/0305_tabernero-0.png"
+              },
+              {
+                "file": "sueltos/otros/0306_tabernero-0-r.png"
+              },
+              {
+                "file": "sueltos/otros/0307_tabernero-1.png"
+              },
+              {
+                "file": "sueltos/otros/0308_tabernero-1-r.png"
+              },
+              {
+                "file": "sueltos/otros/0309_tabernero-2.png"
+              },
+              {
+                "file": "sueltos/otros/0310_tabernero-2-r.png"
+              },
+              {
+                "file": "sueltos/otros/0311_tabernero-3.png"
+              },
+              {
+                "file": "sueltos/otros/0312_tabernero-3-r.png"
+              }
+            ]
+          },
+          {
+            "label": "herrero (forja)",
+            "cells": [
+              {
+                "file": "sueltos/otros/0313_herrero-0.png"
+              },
+              {
+                "file": "sueltos/otros/0314_herrero-0-r.png"
+              },
+              {
+                "file": "sueltos/otros/0315_herrero-1.png"
+              },
+              {
+                "file": "sueltos/otros/0316_herrero-1-r.png"
+              },
+              {
+                "file": "sueltos/otros/0317_herrero-2.png"
+              },
+              {
+                "file": "sueltos/otros/0318_herrero-2-r.png"
+              },
+              {
+                "file": "sueltos/otros/0319_herrero-3.png"
+              },
+              {
+                "file": "sueltos/otros/0320_herrero-3-r.png"
+              }
+            ]
+          },
+          {
+            "label": "sastre (sastrería)",
+            "cells": [
+              {
+                "file": "sueltos/otros/0321_sastre-0.png"
+              },
+              {
+                "file": "sueltos/otros/0322_sastre-0-r.png"
+              },
+              {
+                "file": "sueltos/otros/0323_sastre-1.png"
+              },
+              {
+                "file": "sueltos/otros/0324_sastre-1-r.png"
+              },
+              {
+                "file": "sueltos/otros/0325_sastre-2.png"
+              },
+              {
+                "file": "sueltos/otros/0326_sastre-2-r.png"
+              },
+              {
+                "file": "sueltos/otros/0327_sastre-3.png"
+              },
+              {
+                "file": "sueltos/otros/0328_sastre-3-r.png"
+              }
+            ]
+          },
+          {
+            "label": "alquimista",
+            "cells": [
+              {
+                "file": "sueltos/otros/0329_alquimista-0.png"
+              },
+              {
+                "file": "sueltos/otros/0330_alquimista-0-r.png"
+              },
+              {
+                "file": "sueltos/otros/0331_alquimista-1.png"
+              },
+              {
+                "file": "sueltos/otros/0332_alquimista-1-r.png"
+              },
+              {
+                "file": "sueltos/otros/0333_alquimista-2.png"
+              },
+              {
+                "file": "sueltos/otros/0334_alquimista-2-r.png"
+              },
+              {
+                "file": "sueltos/otros/0335_alquimista-3.png"
+              },
+              {
+                "file": "sueltos/otros/0336_alquimista-3-r.png"
+              }
+            ]
+          },
+          {
+            "label": "pintor",
+            "cells": [
+              {
+                "file": "sueltos/otros/0337_pintor-0.png"
+              },
+              {
+                "file": "sueltos/otros/0338_pintor-0-r.png"
+              },
+              {
+                "file": "sueltos/otros/0339_pintor-1.png"
+              },
+              {
+                "file": "sueltos/otros/0340_pintor-1-r.png"
+              },
+              {
+                "file": "sueltos/otros/0341_pintor-2.png"
+              },
+              {
+                "file": "sueltos/otros/0342_pintor-2-r.png"
+              },
+              {
+                "file": "sueltos/otros/0343_pintor-3.png"
+              },
+              {
+                "file": "sueltos/otros/0344_pintor-3-r.png"
+              }
+            ]
+          },
+          {
+            "label": "campesino (visitante)",
+            "cells": [
+              {
+                "file": "sueltos/otros/0345_campesino-0.png"
+              },
+              {
+                "file": "sueltos/otros/0346_campesino-0-r.png"
+              },
+              {
+                "file": "sueltos/otros/0347_campesino-1.png"
+              },
+              {
+                "file": "sueltos/otros/0348_campesino-1-r.png"
+              },
+              {
+                "file": "sueltos/otros/0349_campesino-2.png"
+              },
+              {
+                "file": "sueltos/otros/0350_campesino-2-r.png"
+              },
+              {
+                "file": "sueltos/otros/0351_campesino-3.png"
+              },
+              {
+                "file": "sueltos/otros/0352_campesino-3-r.png"
+              }
+            ]
+          },
+          {
+            "label": "mercader (visitante)",
+            "cells": [
+              {
+                "file": "sueltos/otros/0353_mercader-0.png"
+              },
+              {
+                "file": "sueltos/otros/0354_mercader-0-r.png"
+              },
+              {
+                "file": "sueltos/otros/0355_mercader-1.png"
+              },
+              {
+                "file": "sueltos/otros/0356_mercader-1-r.png"
+              },
+              {
+                "file": "sueltos/otros/0357_mercader-2.png"
+              },
+              {
+                "file": "sueltos/otros/0358_mercader-2-r.png"
+              },
+              {
+                "file": "sueltos/otros/0359_mercader-3.png"
+              },
+              {
+                "file": "sueltos/otros/0360_mercader-3-r.png"
+              }
+            ]
+          },
+          {
+            "label": "noble (visitante)",
+            "cells": [
+              {
+                "file": "sueltos/otros/0361_noble-0.png"
+              },
+              {
+                "file": "sueltos/otros/0362_noble-0-r.png"
+              },
+              {
+                "file": "sueltos/otros/0363_noble-1.png"
+              },
+              {
+                "file": "sueltos/otros/0364_noble-1-r.png"
+              },
+              {
+                "file": "sueltos/otros/0365_noble-2.png"
+              },
+              {
+                "file": "sueltos/otros/0366_noble-2-r.png"
+              },
+              {
+                "file": "sueltos/otros/0367_noble-3.png"
+              },
+              {
+                "file": "sueltos/otros/0368_noble-3-r.png"
+              }
+            ]
+          },
+          {
+            "label": "forastero / mensajero",
+            "cells": [
+              {
+                "file": "sueltos/otros/0369_forastero-0.png"
+              },
+              {
+                "file": "sueltos/otros/0370_forastero-0-r.png"
+              },
+              {
+                "file": "sueltos/otros/0371_forastero-1.png"
+              },
+              {
+                "file": "sueltos/otros/0372_forastero-1-r.png"
+              },
+              {
+                "file": "sueltos/otros/0373_forastero-2.png"
+              },
+              {
+                "file": "sueltos/otros/0374_forastero-2-r.png"
+              },
+              {
+                "file": "sueltos/otros/0375_forastero-3.png"
+              },
+              {
+                "file": "sueltos/otros/0376_forastero-3-r.png"
+              }
+            ]
+          },
+          {
+            "label": "velado (forastero de la tormenta)",
+            "cells": [
+              {
+                "file": "sueltos/otros/0377_velado-0.png"
+              },
+              {
+                "file": "sueltos/otros/0378_velado-0-r.png"
+              },
+              {
+                "file": "sueltos/otros/0379_velado-1.png"
+              },
+              {
+                "file": "sueltos/otros/0380_velado-1-r.png"
+              },
+              {
+                "file": "sueltos/otros/0381_velado-2.png"
+              },
+              {
+                "file": "sueltos/otros/0382_velado-2-r.png"
+              },
+              {
+                "file": "sueltos/otros/0383_velado-3.png"
+              },
+              {
+                "file": "sueltos/otros/0384_velado-3-r.png"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "El tío Anselmo (retrato de la pared)",
+        "rows": [
+          {
+            "cells": [
+              {
+                "file": "sueltos/otros/0385_tio.png"
+              },
+              {
+                "file": "sueltos/otros/0386_tio-r.png"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "6-equipo-iconos",
+    "title": "Equipo: iconos",
+    "scale": 3,
+    "sections": [
+      {
+        "title": "Todos los objetos del juego (icono 32×32), por tipo y rareza",
+        "note": "Rarezas: 0 común, 1 bueno, 2 raro, 3 épico, 4 legendario (los legendarios tienen dibujo propio).",
+        "rows": [
+          {
+            "label": "espada",
+            "cells": [
+              {
+                "file": "sueltos/iconos/0387_espada-0.png",
+                "label": "Espada oxidada (Común)"
+              },
+              {
+                "file": "sueltos/iconos/0388_espada-1.png",
+                "label": "Espada de soldado (Bueno)"
+              },
+              {
+                "file": "sueltos/iconos/0389_espada-3.png",
+                "label": "Mandoble de Hierronegro (Épico)"
+              },
+              {
+                "file": "sueltos/iconos/0390_espada-4.png",
+                "label": "Hoja de Vadoverde (Legendario)"
+              }
+            ]
+          },
+          {
+            "label": "hacha",
+            "cells": [
+              {
+                "file": "sueltos/iconos/0391_hacha-2.png",
+                "label": "Hacha de leñador enano (Raro)"
+              },
+              {
+                "file": "sueltos/iconos/0392_hacha-3.png",
+                "label": "Hacha de guerra rúnica (Épico)"
+              }
+            ]
+          },
+          {
+            "label": "escudo",
+            "cells": [
+              {
+                "file": "sueltos/iconos/0393_escudo-2.png",
+                "label": "Escudo con blasón (Raro)"
+              },
+              {
+                "file": "sueltos/iconos/0394_escudo-3.png",
+                "label": "Escudo de la torre (Épico)"
+              },
+              {
+                "file": "sueltos/iconos/0395_escudo-4.png",
+                "label": "Escudo de escama blanca (Legendario)"
+              }
+            ]
+          },
+          {
+            "label": "varita",
+            "cells": [
+              {
+                "file": "sueltos/iconos/0396_varita-1.png",
+                "label": "Vara de avellano (Bueno)"
+              },
+              {
+                "file": "sueltos/iconos/0397_varita-2.png",
+                "label": "Varita de serbal (Raro)"
+              },
+              {
+                "file": "sueltos/iconos/0398_varita-3.png",
+                "label": "Báculo de ceniza (Épico)"
+              },
+              {
+                "file": "sueltos/iconos/0399_varita-4.png",
+                "label": "Varita de la Abuela Tormenta (Legendario)"
+              },
+              {
+                "file": "sueltos/iconos/0400_varita-4.png",
+                "label": "Cetro de la Reina (Legendario)"
+              }
+            ]
+          },
+          {
+            "label": "coraza",
+            "cells": [
+              {
+                "file": "sueltos/iconos/0401_coraza-0.png",
+                "label": "Coraza abollada (Común)"
+              },
+              {
+                "file": "sueltos/iconos/0402_coraza-1.png",
+                "label": "Cota de anillas (Bueno)"
+              },
+              {
+                "file": "sueltos/iconos/0403_coraza-4.png",
+                "label": "Coraza de escamas de sierpe (Legendario)"
+              }
+            ]
+          },
+          {
+            "label": "capa",
+            "cells": [
+              {
+                "file": "sueltos/iconos/0404_capa-2.png",
+                "label": "Capa de explorador (Raro)"
+              },
+              {
+                "file": "sueltos/iconos/0405_capa-4.png",
+                "label": "Capa élfica (Legendario)"
+              },
+              {
+                "file": "sueltos/iconos/0406_capa-4.png",
+                "label": "Capa de piel de ceniza (Legendario)"
+              }
+            ]
+          },
+          {
+            "label": "botas",
+            "cells": [
+              {
+                "file": "sueltos/iconos/0407_botas-0.png",
+                "label": "Botas remendadas (Común)"
+              },
+              {
+                "file": "sueltos/iconos/0408_botas-1.png",
+                "label": "Botas de caminante (Bueno)"
+              },
+              {
+                "file": "sueltos/iconos/0409_botas-4.png",
+                "label": "Botas de siete leguas (Legendario)"
+              }
+            ]
+          },
+          {
+            "label": "amuleto",
+            "cells": [
+              {
+                "file": "sueltos/iconos/0410_amuleto-0.png",
+                "label": "Talismán de ajo (Común)"
+              },
+              {
+                "file": "sueltos/iconos/0411_amuleto-1.png",
+                "label": "Colgante de cuarzo (Bueno)"
+              },
+              {
+                "file": "sueltos/iconos/0412_amuleto-2.png",
+                "label": "Amuleto de hueso (Raro)"
+              },
+              {
+                "file": "sueltos/iconos/0413_amuleto-3.png",
+                "label": "Amuleto del vigía (Épico)"
+              },
+              {
+                "file": "sueltos/iconos/0414_amuleto-4.png",
+                "label": "Corona del Rey Ahogado (Legendario)"
+              }
+            ]
+          },
+          {
+            "label": "ganzua",
+            "cells": [
+              {
+                "file": "sueltos/iconos/0415_ganzua-0.png",
+                "label": "Ganzúas de alambre (Común)"
+              },
+              {
+                "file": "sueltos/iconos/0416_ganzua-1.png",
+                "label": "Ganzúas de latón (Bueno)"
+              },
+              {
+                "file": "sueltos/iconos/0417_ganzua-2.png",
+                "label": "Ganzúas finas (Raro)"
+              },
+              {
+                "file": "sueltos/iconos/0418_ganzua-3.png",
+                "label": "Ganzúas de sombra (Épico)"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Cada tipo en cada rareza (genérico, 16×16); con mejoras del taller (+1, +2, +3)",
+        "rows": [
+          {
+            "label": "espada",
+            "cells": [
+              {
+                "file": "sueltos/iconos-nivel/0419_espada-0.png",
+                "label": "Común"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0420_espada-1.png",
+                "label": "Bueno"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0421_espada-2.png",
+                "label": "Raro"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0422_espada-3.png",
+                "label": "Épico"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0423_espada-4.png",
+                "label": "Legendario"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0424_espada-plus1.png",
+                "label": "+1"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0425_espada-plus2.png",
+                "label": "+2"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0426_espada-plus3.png",
+                "label": "+3"
+              }
+            ]
+          },
+          {
+            "label": "hacha",
+            "cells": [
+              {
+                "file": "sueltos/iconos-nivel/0427_hacha-0.png",
+                "label": "Común"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0428_hacha-1.png",
+                "label": "Bueno"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0429_hacha-2.png",
+                "label": "Raro"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0430_hacha-3.png",
+                "label": "Épico"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0431_hacha-4.png",
+                "label": "Legendario"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0432_hacha-plus1.png",
+                "label": "+1"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0433_hacha-plus2.png",
+                "label": "+2"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0434_hacha-plus3.png",
+                "label": "+3"
+              }
+            ]
+          },
+          {
+            "label": "escudo",
+            "cells": [
+              {
+                "file": "sueltos/iconos-nivel/0435_escudo-0.png",
+                "label": "Común"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0436_escudo-1.png",
+                "label": "Bueno"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0437_escudo-2.png",
+                "label": "Raro"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0438_escudo-3.png",
+                "label": "Épico"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0439_escudo-4.png",
+                "label": "Legendario"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0440_escudo-plus1.png",
+                "label": "+1"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0441_escudo-plus2.png",
+                "label": "+2"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0442_escudo-plus3.png",
+                "label": "+3"
+              }
+            ]
+          },
+          {
+            "label": "varita",
+            "cells": [
+              {
+                "file": "sueltos/iconos-nivel/0443_varita-0.png",
+                "label": "Común"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0444_varita-1.png",
+                "label": "Bueno"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0445_varita-2.png",
+                "label": "Raro"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0446_varita-3.png",
+                "label": "Épico"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0447_varita-4.png",
+                "label": "Legendario"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0448_varita-plus1.png",
+                "label": "+1"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0449_varita-plus2.png",
+                "label": "+2"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0450_varita-plus3.png",
+                "label": "+3"
+              }
+            ]
+          },
+          {
+            "label": "coraza",
+            "cells": [
+              {
+                "file": "sueltos/iconos-nivel/0451_coraza-0.png",
+                "label": "Común"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0452_coraza-1.png",
+                "label": "Bueno"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0453_coraza-2.png",
+                "label": "Raro"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0454_coraza-3.png",
+                "label": "Épico"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0455_coraza-4.png",
+                "label": "Legendario"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0456_coraza-plus1.png",
+                "label": "+1"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0457_coraza-plus2.png",
+                "label": "+2"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0458_coraza-plus3.png",
+                "label": "+3"
+              }
+            ]
+          },
+          {
+            "label": "capa",
+            "cells": [
+              {
+                "file": "sueltos/iconos-nivel/0459_capa-0.png",
+                "label": "Común"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0460_capa-1.png",
+                "label": "Bueno"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0461_capa-2.png",
+                "label": "Raro"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0462_capa-3.png",
+                "label": "Épico"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0463_capa-4.png",
+                "label": "Legendario"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0464_capa-plus1.png",
+                "label": "+1"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0465_capa-plus2.png",
+                "label": "+2"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0466_capa-plus3.png",
+                "label": "+3"
+              }
+            ]
+          },
+          {
+            "label": "botas",
+            "cells": [
+              {
+                "file": "sueltos/iconos-nivel/0467_botas-0.png",
+                "label": "Común"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0468_botas-1.png",
+                "label": "Bueno"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0469_botas-2.png",
+                "label": "Raro"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0470_botas-3.png",
+                "label": "Épico"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0471_botas-4.png",
+                "label": "Legendario"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0472_botas-plus1.png",
+                "label": "+1"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0473_botas-plus2.png",
+                "label": "+2"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0474_botas-plus3.png",
+                "label": "+3"
+              }
+            ]
+          },
+          {
+            "label": "amuleto",
+            "cells": [
+              {
+                "file": "sueltos/iconos-nivel/0475_amuleto-0.png",
+                "label": "Común"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0476_amuleto-1.png",
+                "label": "Bueno"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0477_amuleto-2.png",
+                "label": "Raro"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0478_amuleto-3.png",
+                "label": "Épico"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0479_amuleto-4.png",
+                "label": "Legendario"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0480_amuleto-plus1.png",
+                "label": "+1"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0481_amuleto-plus2.png",
+                "label": "+2"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0482_amuleto-plus3.png",
+                "label": "+3"
+              }
+            ]
+          },
+          {
+            "label": "ganzua",
+            "cells": [
+              {
+                "file": "sueltos/iconos-nivel/0483_ganzua-0.png",
+                "label": "Común"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0484_ganzua-1.png",
+                "label": "Bueno"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0485_ganzua-2.png",
+                "label": "Raro"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0486_ganzua-3.png",
+                "label": "Épico"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0487_ganzua-4.png",
+                "label": "Legendario"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0488_ganzua-plus1.png",
+                "label": "+1"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0489_ganzua-plus2.png",
+                "label": "+2"
+              },
+              {
+                "file": "sueltos/iconos-nivel/0490_ganzua-plus3.png",
+                "label": "+3"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "7-equipo-puesto-a",
+    "title": "Equipo puesto (1/2)",
+    "scale": 4,
+    "sections": [
+      {
+        "title": "espada puesto (sobre un guerrero)",
+        "rows": [
+          {
+            "label": "sin nada",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0491_espada-nada.png"
+              }
+            ]
+          },
+          {
+            "label": "frente",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0492_espada-0-f.png",
+                "label": "Espada oxidada"
+              },
+              {
+                "file": "sueltos/puesto/0493_espada-1-f.png",
+                "label": "Espada de soldado"
+              },
+              {
+                "file": "sueltos/puesto/0494_espada-3-f.png",
+                "label": "Mandoble de Hierronegro"
+              },
+              {
+                "file": "sueltos/puesto/0495_espada-4-f.png",
+                "label": "Hoja de Vadoverde"
+              }
+            ]
+          },
+          {
+            "label": "perfil",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0496_espada-0-p.png",
+                "label": "Espada oxidada"
+              },
+              {
+                "file": "sueltos/puesto/0497_espada-1-p.png",
+                "label": "Espada de soldado"
+              },
+              {
+                "file": "sueltos/puesto/0498_espada-3-p.png",
+                "label": "Mandoble de Hierronegro"
+              },
+              {
+                "file": "sueltos/puesto/0499_espada-4-p.png",
+                "label": "Hoja de Vadoverde"
+              }
+            ]
+          },
+          {
+            "label": "espalda",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0500_espada-0-e.png",
+                "label": "Espada oxidada"
+              },
+              {
+                "file": "sueltos/puesto/0501_espada-1-e.png",
+                "label": "Espada de soldado"
+              },
+              {
+                "file": "sueltos/puesto/0502_espada-3-e.png",
+                "label": "Mandoble de Hierronegro"
+              },
+              {
+                "file": "sueltos/puesto/0503_espada-4-e.png",
+                "label": "Hoja de Vadoverde"
+              }
+            ]
+          },
+          {
+            "label": "retrato",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0504_espada-0-r.png",
+                "label": "Espada oxidada"
+              },
+              {
+                "file": "sueltos/puesto/0505_espada-1-r.png",
+                "label": "Espada de soldado"
+              },
+              {
+                "file": "sueltos/puesto/0506_espada-3-r.png",
+                "label": "Mandoble de Hierronegro"
+              },
+              {
+                "file": "sueltos/puesto/0507_espada-4-r.png",
+                "label": "Hoja de Vadoverde"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "hacha puesto (sobre un guerrero)",
+        "rows": [
+          {
+            "label": "sin nada",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0508_hacha-nada.png"
+              }
+            ]
+          },
+          {
+            "label": "frente",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0509_hacha-2-f.png",
+                "label": "Hacha de leñador enano"
+              },
+              {
+                "file": "sueltos/puesto/0510_hacha-3-f.png",
+                "label": "Hacha de guerra rúnica"
+              }
+            ]
+          },
+          {
+            "label": "perfil",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0511_hacha-2-p.png",
+                "label": "Hacha de leñador enano"
+              },
+              {
+                "file": "sueltos/puesto/0512_hacha-3-p.png",
+                "label": "Hacha de guerra rúnica"
+              }
+            ]
+          },
+          {
+            "label": "espalda",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0513_hacha-2-e.png",
+                "label": "Hacha de leñador enano"
+              },
+              {
+                "file": "sueltos/puesto/0514_hacha-3-e.png",
+                "label": "Hacha de guerra rúnica"
+              }
+            ]
+          },
+          {
+            "label": "retrato",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0515_hacha-2-r.png",
+                "label": "Hacha de leñador enano"
+              },
+              {
+                "file": "sueltos/puesto/0516_hacha-3-r.png",
+                "label": "Hacha de guerra rúnica"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "escudo puesto (sobre un guerrero)",
+        "rows": [
+          {
+            "label": "sin nada",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0517_escudo-nada.png"
+              }
+            ]
+          },
+          {
+            "label": "frente",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0518_escudo-2-f.png",
+                "label": "Escudo con blasón"
+              },
+              {
+                "file": "sueltos/puesto/0519_escudo-3-f.png",
+                "label": "Escudo de la torre"
+              },
+              {
+                "file": "sueltos/puesto/0520_escudo-4-f.png",
+                "label": "Escudo de escama blanca"
+              }
+            ]
+          },
+          {
+            "label": "perfil",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0521_escudo-2-p.png",
+                "label": "Escudo con blasón"
+              },
+              {
+                "file": "sueltos/puesto/0522_escudo-3-p.png",
+                "label": "Escudo de la torre"
+              },
+              {
+                "file": "sueltos/puesto/0523_escudo-4-p.png",
+                "label": "Escudo de escama blanca"
+              }
+            ]
+          },
+          {
+            "label": "espalda",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0524_escudo-2-e.png",
+                "label": "Escudo con blasón"
+              },
+              {
+                "file": "sueltos/puesto/0525_escudo-3-e.png",
+                "label": "Escudo de la torre"
+              },
+              {
+                "file": "sueltos/puesto/0526_escudo-4-e.png",
+                "label": "Escudo de escama blanca"
+              }
+            ]
+          },
+          {
+            "label": "retrato",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0527_escudo-2-r.png",
+                "label": "Escudo con blasón"
+              },
+              {
+                "file": "sueltos/puesto/0528_escudo-3-r.png",
+                "label": "Escudo de la torre"
+              },
+              {
+                "file": "sueltos/puesto/0529_escudo-4-r.png",
+                "label": "Escudo de escama blanca"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "varita puesto (sobre un mago)",
+        "rows": [
+          {
+            "label": "sin nada",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0530_varita-nada.png"
+              }
+            ]
+          },
+          {
+            "label": "frente",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0531_varita-1-f.png",
+                "label": "Vara de avellano"
+              },
+              {
+                "file": "sueltos/puesto/0532_varita-2-f.png",
+                "label": "Varita de serbal"
+              },
+              {
+                "file": "sueltos/puesto/0533_varita-3-f.png",
+                "label": "Báculo de ceniza"
+              },
+              {
+                "file": "sueltos/puesto/0534_varita-4-f.png",
+                "label": "Varita de la Abuela Tormenta"
+              },
+              {
+                "file": "sueltos/puesto/0535_varita-4-f.png",
+                "label": "Cetro de la Reina"
+              }
+            ]
+          },
+          {
+            "label": "perfil",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0536_varita-1-p.png",
+                "label": "Vara de avellano"
+              },
+              {
+                "file": "sueltos/puesto/0537_varita-2-p.png",
+                "label": "Varita de serbal"
+              },
+              {
+                "file": "sueltos/puesto/0538_varita-3-p.png",
+                "label": "Báculo de ceniza"
+              },
+              {
+                "file": "sueltos/puesto/0539_varita-4-p.png",
+                "label": "Varita de la Abuela Tormenta"
+              },
+              {
+                "file": "sueltos/puesto/0540_varita-4-p.png",
+                "label": "Cetro de la Reina"
+              }
+            ]
+          },
+          {
+            "label": "espalda",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0541_varita-1-e.png",
+                "label": "Vara de avellano"
+              },
+              {
+                "file": "sueltos/puesto/0542_varita-2-e.png",
+                "label": "Varita de serbal"
+              },
+              {
+                "file": "sueltos/puesto/0543_varita-3-e.png",
+                "label": "Báculo de ceniza"
+              },
+              {
+                "file": "sueltos/puesto/0544_varita-4-e.png",
+                "label": "Varita de la Abuela Tormenta"
+              },
+              {
+                "file": "sueltos/puesto/0545_varita-4-e.png",
+                "label": "Cetro de la Reina"
+              }
+            ]
+          },
+          {
+            "label": "retrato",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0546_varita-1-r.png",
+                "label": "Vara de avellano"
+              },
+              {
+                "file": "sueltos/puesto/0547_varita-2-r.png",
+                "label": "Varita de serbal"
+              },
+              {
+                "file": "sueltos/puesto/0548_varita-3-r.png",
+                "label": "Báculo de ceniza"
+              },
+              {
+                "file": "sueltos/puesto/0549_varita-4-r.png",
+                "label": "Varita de la Abuela Tormenta"
+              },
+              {
+                "file": "sueltos/puesto/0550_varita-4-r.png",
+                "label": "Cetro de la Reina"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "coraza puesto (sobre un guerrero)",
+        "rows": [
+          {
+            "label": "sin nada",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0551_coraza-nada.png"
+              }
+            ]
+          },
+          {
+            "label": "frente",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0552_coraza-0-f.png",
+                "label": "Coraza abollada"
+              },
+              {
+                "file": "sueltos/puesto/0553_coraza-1-f.png",
+                "label": "Cota de anillas"
+              },
+              {
+                "file": "sueltos/puesto/0554_coraza-4-f.png",
+                "label": "Coraza de escamas de sierpe"
+              }
+            ]
+          },
+          {
+            "label": "perfil",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0555_coraza-0-p.png",
+                "label": "Coraza abollada"
+              },
+              {
+                "file": "sueltos/puesto/0556_coraza-1-p.png",
+                "label": "Cota de anillas"
+              },
+              {
+                "file": "sueltos/puesto/0557_coraza-4-p.png",
+                "label": "Coraza de escamas de sierpe"
+              }
+            ]
+          },
+          {
+            "label": "espalda",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0558_coraza-0-e.png",
+                "label": "Coraza abollada"
+              },
+              {
+                "file": "sueltos/puesto/0559_coraza-1-e.png",
+                "label": "Cota de anillas"
+              },
+              {
+                "file": "sueltos/puesto/0560_coraza-4-e.png",
+                "label": "Coraza de escamas de sierpe"
+              }
+            ]
+          },
+          {
+            "label": "retrato",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0561_coraza-0-r.png",
+                "label": "Coraza abollada"
+              },
+              {
+                "file": "sueltos/puesto/0562_coraza-1-r.png",
+                "label": "Cota de anillas"
+              },
+              {
+                "file": "sueltos/puesto/0563_coraza-4-r.png",
+                "label": "Coraza de escamas de sierpe"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "8-equipo-puesto-b",
+    "title": "Equipo puesto (2/2)",
+    "scale": 4,
+    "sections": [
+      {
+        "title": "capa puesto (sobre un explorador)",
+        "rows": [
+          {
+            "label": "sin nada",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0564_capa-nada.png"
+              }
+            ]
+          },
+          {
+            "label": "frente",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0565_capa-2-f.png",
+                "label": "Capa de explorador"
+              },
+              {
+                "file": "sueltos/puesto/0566_capa-4-f.png",
+                "label": "Capa élfica"
+              },
+              {
+                "file": "sueltos/puesto/0567_capa-4-f.png",
+                "label": "Capa de piel de ceniza"
+              }
+            ]
+          },
+          {
+            "label": "perfil",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0568_capa-2-p.png",
+                "label": "Capa de explorador"
+              },
+              {
+                "file": "sueltos/puesto/0569_capa-4-p.png",
+                "label": "Capa élfica"
+              },
+              {
+                "file": "sueltos/puesto/0570_capa-4-p.png",
+                "label": "Capa de piel de ceniza"
+              }
+            ]
+          },
+          {
+            "label": "espalda",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0571_capa-2-e.png",
+                "label": "Capa de explorador"
+              },
+              {
+                "file": "sueltos/puesto/0572_capa-4-e.png",
+                "label": "Capa élfica"
+              },
+              {
+                "file": "sueltos/puesto/0573_capa-4-e.png",
+                "label": "Capa de piel de ceniza"
+              }
+            ]
+          },
+          {
+            "label": "retrato",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0574_capa-2-r.png",
+                "label": "Capa de explorador"
+              },
+              {
+                "file": "sueltos/puesto/0575_capa-4-r.png",
+                "label": "Capa élfica"
+              },
+              {
+                "file": "sueltos/puesto/0576_capa-4-r.png",
+                "label": "Capa de piel de ceniza"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "botas puesto (sobre un explorador)",
+        "rows": [
+          {
+            "label": "sin nada",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0577_botas-nada.png"
+              }
+            ]
+          },
+          {
+            "label": "frente",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0578_botas-0-f.png",
+                "label": "Botas remendadas"
+              },
+              {
+                "file": "sueltos/puesto/0579_botas-1-f.png",
+                "label": "Botas de caminante"
+              },
+              {
+                "file": "sueltos/puesto/0580_botas-4-f.png",
+                "label": "Botas de siete leguas"
+              }
+            ]
+          },
+          {
+            "label": "perfil",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0581_botas-0-p.png",
+                "label": "Botas remendadas"
+              },
+              {
+                "file": "sueltos/puesto/0582_botas-1-p.png",
+                "label": "Botas de caminante"
+              },
+              {
+                "file": "sueltos/puesto/0583_botas-4-p.png",
+                "label": "Botas de siete leguas"
+              }
+            ]
+          },
+          {
+            "label": "espalda",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0584_botas-0-e.png",
+                "label": "Botas remendadas"
+              },
+              {
+                "file": "sueltos/puesto/0585_botas-1-e.png",
+                "label": "Botas de caminante"
+              },
+              {
+                "file": "sueltos/puesto/0586_botas-4-e.png",
+                "label": "Botas de siete leguas"
+              }
+            ]
+          },
+          {
+            "label": "retrato",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0587_botas-0-r.png",
+                "label": "Botas remendadas"
+              },
+              {
+                "file": "sueltos/puesto/0588_botas-1-r.png",
+                "label": "Botas de caminante"
+              },
+              {
+                "file": "sueltos/puesto/0589_botas-4-r.png",
+                "label": "Botas de siete leguas"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "amuleto puesto (sobre un clerigo)",
+        "rows": [
+          {
+            "label": "sin nada",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0590_amuleto-nada.png"
+              }
+            ]
+          },
+          {
+            "label": "frente",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0591_amuleto-0-f.png",
+                "label": "Talismán de ajo"
+              },
+              {
+                "file": "sueltos/puesto/0592_amuleto-1-f.png",
+                "label": "Colgante de cuarzo"
+              },
+              {
+                "file": "sueltos/puesto/0593_amuleto-2-f.png",
+                "label": "Amuleto de hueso"
+              },
+              {
+                "file": "sueltos/puesto/0594_amuleto-3-f.png",
+                "label": "Amuleto del vigía"
+              },
+              {
+                "file": "sueltos/puesto/0595_amuleto-4-f.png",
+                "label": "Corona del Rey Ahogado"
+              }
+            ]
+          },
+          {
+            "label": "perfil",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0596_amuleto-0-p.png",
+                "label": "Talismán de ajo"
+              },
+              {
+                "file": "sueltos/puesto/0597_amuleto-1-p.png",
+                "label": "Colgante de cuarzo"
+              },
+              {
+                "file": "sueltos/puesto/0598_amuleto-2-p.png",
+                "label": "Amuleto de hueso"
+              },
+              {
+                "file": "sueltos/puesto/0599_amuleto-3-p.png",
+                "label": "Amuleto del vigía"
+              },
+              {
+                "file": "sueltos/puesto/0600_amuleto-4-p.png",
+                "label": "Corona del Rey Ahogado"
+              }
+            ]
+          },
+          {
+            "label": "espalda",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0601_amuleto-0-e.png",
+                "label": "Talismán de ajo"
+              },
+              {
+                "file": "sueltos/puesto/0602_amuleto-1-e.png",
+                "label": "Colgante de cuarzo"
+              },
+              {
+                "file": "sueltos/puesto/0603_amuleto-2-e.png",
+                "label": "Amuleto de hueso"
+              },
+              {
+                "file": "sueltos/puesto/0604_amuleto-3-e.png",
+                "label": "Amuleto del vigía"
+              },
+              {
+                "file": "sueltos/puesto/0605_amuleto-4-e.png",
+                "label": "Corona del Rey Ahogado"
+              }
+            ]
+          },
+          {
+            "label": "retrato",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0606_amuleto-0-r.png",
+                "label": "Talismán de ajo"
+              },
+              {
+                "file": "sueltos/puesto/0607_amuleto-1-r.png",
+                "label": "Colgante de cuarzo"
+              },
+              {
+                "file": "sueltos/puesto/0608_amuleto-2-r.png",
+                "label": "Amuleto de hueso"
+              },
+              {
+                "file": "sueltos/puesto/0609_amuleto-3-r.png",
+                "label": "Amuleto del vigía"
+              },
+              {
+                "file": "sueltos/puesto/0610_amuleto-4-r.png",
+                "label": "Corona del Rey Ahogado"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "ganzua puesto (sobre un picaro)",
+        "rows": [
+          {
+            "label": "sin nada",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0611_ganzua-nada.png"
+              }
+            ]
+          },
+          {
+            "label": "frente",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0612_ganzua-0-f.png",
+                "label": "Ganzúas de alambre"
+              },
+              {
+                "file": "sueltos/puesto/0613_ganzua-1-f.png",
+                "label": "Ganzúas de latón"
+              },
+              {
+                "file": "sueltos/puesto/0614_ganzua-2-f.png",
+                "label": "Ganzúas finas"
+              },
+              {
+                "file": "sueltos/puesto/0615_ganzua-3-f.png",
+                "label": "Ganzúas de sombra"
+              }
+            ]
+          },
+          {
+            "label": "perfil",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0616_ganzua-0-p.png",
+                "label": "Ganzúas de alambre"
+              },
+              {
+                "file": "sueltos/puesto/0617_ganzua-1-p.png",
+                "label": "Ganzúas de latón"
+              },
+              {
+                "file": "sueltos/puesto/0618_ganzua-2-p.png",
+                "label": "Ganzúas finas"
+              },
+              {
+                "file": "sueltos/puesto/0619_ganzua-3-p.png",
+                "label": "Ganzúas de sombra"
+              }
+            ]
+          },
+          {
+            "label": "espalda",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0620_ganzua-0-e.png",
+                "label": "Ganzúas de alambre"
+              },
+              {
+                "file": "sueltos/puesto/0621_ganzua-1-e.png",
+                "label": "Ganzúas de latón"
+              },
+              {
+                "file": "sueltos/puesto/0622_ganzua-2-e.png",
+                "label": "Ganzúas finas"
+              },
+              {
+                "file": "sueltos/puesto/0623_ganzua-3-e.png",
+                "label": "Ganzúas de sombra"
+              }
+            ]
+          },
+          {
+            "label": "retrato",
+            "cells": [
+              {
+                "file": "sueltos/puesto/0624_ganzua-0-r.png",
+                "label": "Ganzúas de alambre"
+              },
+              {
+                "file": "sueltos/puesto/0625_ganzua-1-r.png",
+                "label": "Ganzúas de latón"
+              },
+              {
+                "file": "sueltos/puesto/0626_ganzua-2-r.png",
+                "label": "Ganzúas finas"
+              },
+              {
+                "file": "sueltos/puesto/0627_ganzua-3-r.png",
+                "label": "Ganzúas de sombra"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "9-equipo-completo",
+    "title": "Equipo completo por clase (arma + cuerpo + complemento)",
+    "scale": 4,
+    "sections": [
+      {
+        "title": "guerrero: espada + coraza + amuleto",
+        "rows": [
+          {
+            "label": "Común",
+            "cells": [
+              {
+                "file": "sueltos/kit/0628_guerrero-0.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0629_guerrero-0-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0630_guerrero-0-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0631_guerrero-0-r.png",
+                "label": "retrato"
+              }
+            ]
+          },
+          {
+            "label": "Bueno",
+            "cells": [
+              {
+                "file": "sueltos/kit/0632_guerrero-1.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0633_guerrero-1-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0634_guerrero-1-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0635_guerrero-1-r.png",
+                "label": "retrato"
+              }
+            ]
+          },
+          {
+            "label": "Raro",
+            "cells": [
+              {
+                "file": "sueltos/kit/0636_guerrero-2.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0637_guerrero-2-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0638_guerrero-2-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0639_guerrero-2-r.png",
+                "label": "retrato"
+              }
+            ]
+          },
+          {
+            "label": "Épico",
+            "cells": [
+              {
+                "file": "sueltos/kit/0640_guerrero-3.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0641_guerrero-3-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0642_guerrero-3-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0643_guerrero-3-r.png",
+                "label": "retrato"
+              }
+            ]
+          },
+          {
+            "label": "Legendario",
+            "cells": [
+              {
+                "file": "sueltos/kit/0644_guerrero-4.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0645_guerrero-4-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0646_guerrero-4-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0647_guerrero-4-r.png",
+                "label": "retrato"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "picaro: espada + capa + ganzua",
+        "rows": [
+          {
+            "label": "Común",
+            "cells": [
+              {
+                "file": "sueltos/kit/0648_picaro-0.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0649_picaro-0-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0650_picaro-0-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0651_picaro-0-r.png",
+                "label": "retrato"
+              }
+            ]
+          },
+          {
+            "label": "Bueno",
+            "cells": [
+              {
+                "file": "sueltos/kit/0652_picaro-1.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0653_picaro-1-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0654_picaro-1-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0655_picaro-1-r.png",
+                "label": "retrato"
+              }
+            ]
+          },
+          {
+            "label": "Raro",
+            "cells": [
+              {
+                "file": "sueltos/kit/0656_picaro-2.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0657_picaro-2-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0658_picaro-2-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0659_picaro-2-r.png",
+                "label": "retrato"
+              }
+            ]
+          },
+          {
+            "label": "Épico",
+            "cells": [
+              {
+                "file": "sueltos/kit/0660_picaro-3.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0661_picaro-3-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0662_picaro-3-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0663_picaro-3-r.png",
+                "label": "retrato"
+              }
+            ]
+          },
+          {
+            "label": "Legendario",
+            "cells": [
+              {
+                "file": "sueltos/kit/0664_picaro-4.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0665_picaro-4-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0666_picaro-4-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0667_picaro-4-r.png",
+                "label": "retrato"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "mago: varita + capa + amuleto",
+        "rows": [
+          {
+            "label": "Común",
+            "cells": [
+              {
+                "file": "sueltos/kit/0668_mago-0.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0669_mago-0-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0670_mago-0-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0671_mago-0-r.png",
+                "label": "retrato"
+              }
+            ]
+          },
+          {
+            "label": "Bueno",
+            "cells": [
+              {
+                "file": "sueltos/kit/0672_mago-1.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0673_mago-1-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0674_mago-1-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0675_mago-1-r.png",
+                "label": "retrato"
+              }
+            ]
+          },
+          {
+            "label": "Raro",
+            "cells": [
+              {
+                "file": "sueltos/kit/0676_mago-2.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0677_mago-2-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0678_mago-2-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0679_mago-2-r.png",
+                "label": "retrato"
+              }
+            ]
+          },
+          {
+            "label": "Épico",
+            "cells": [
+              {
+                "file": "sueltos/kit/0680_mago-3.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0681_mago-3-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0682_mago-3-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0683_mago-3-r.png",
+                "label": "retrato"
+              }
+            ]
+          },
+          {
+            "label": "Legendario",
+            "cells": [
+              {
+                "file": "sueltos/kit/0684_mago-4.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0685_mago-4-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0686_mago-4-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0687_mago-4-r.png",
+                "label": "retrato"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "clerigo: hacha + coraza + amuleto",
+        "rows": [
+          {
+            "label": "Común",
+            "cells": [
+              {
+                "file": "sueltos/kit/0688_clerigo-0.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0689_clerigo-0-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0690_clerigo-0-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0691_clerigo-0-r.png",
+                "label": "retrato"
+              }
+            ]
+          },
+          {
+            "label": "Bueno",
+            "cells": [
+              {
+                "file": "sueltos/kit/0692_clerigo-1.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0693_clerigo-1-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0694_clerigo-1-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0695_clerigo-1-r.png",
+                "label": "retrato"
+              }
+            ]
+          },
+          {
+            "label": "Raro",
+            "cells": [
+              {
+                "file": "sueltos/kit/0696_clerigo-2.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0697_clerigo-2-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0698_clerigo-2-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0699_clerigo-2-r.png",
+                "label": "retrato"
+              }
+            ]
+          },
+          {
+            "label": "Épico",
+            "cells": [
+              {
+                "file": "sueltos/kit/0700_clerigo-3.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0701_clerigo-3-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0702_clerigo-3-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0703_clerigo-3-r.png",
+                "label": "retrato"
+              }
+            ]
+          },
+          {
+            "label": "Legendario",
+            "cells": [
+              {
+                "file": "sueltos/kit/0704_clerigo-4.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0705_clerigo-4-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0706_clerigo-4-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0707_clerigo-4-r.png",
+                "label": "retrato"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "explorador: escudo + capa + botas",
+        "rows": [
+          {
+            "label": "Común",
+            "cells": [
+              {
+                "file": "sueltos/kit/0708_explorador-0.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0709_explorador-0-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0710_explorador-0-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0711_explorador-0-r.png",
+                "label": "retrato"
+              }
+            ]
+          },
+          {
+            "label": "Bueno",
+            "cells": [
+              {
+                "file": "sueltos/kit/0712_explorador-1.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0713_explorador-1-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0714_explorador-1-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0715_explorador-1-r.png",
+                "label": "retrato"
+              }
+            ]
+          },
+          {
+            "label": "Raro",
+            "cells": [
+              {
+                "file": "sueltos/kit/0716_explorador-2.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0717_explorador-2-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0718_explorador-2-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0719_explorador-2-r.png",
+                "label": "retrato"
+              }
+            ]
+          },
+          {
+            "label": "Épico",
+            "cells": [
+              {
+                "file": "sueltos/kit/0720_explorador-3.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0721_explorador-3-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0722_explorador-3-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0723_explorador-3-r.png",
+                "label": "retrato"
+              }
+            ]
+          },
+          {
+            "label": "Legendario",
+            "cells": [
+              {
+                "file": "sueltos/kit/0724_explorador-4.png",
+                "label": "frente"
+              },
+              {
+                "file": "sueltos/kit/0725_explorador-4-p.png",
+                "label": "perfil"
+              },
+              {
+                "file": "sueltos/kit/0726_explorador-4-e.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/kit/0727_explorador-4-r.png",
+                "label": "retrato"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "10-armas-pelea",
+    "title": "Armas de la pelea y herramientas (se pintan en la mano)",
+    "scale": 6,
+    "sections": [
+      {
+        "title": "Héroes: espada (guerrero), daga (pícaro), bastón (mago), maza (clérigo), arco (explorador), escudo",
+        "note": "El punto de agarre es (px, py) de cada dibujo; se giran según la pose.",
+        "rows": [
+          {
+            "cells": [
+              {
+                "file": "sueltos/armas/0728_espada.png",
+                "label": "espada"
+              },
+              {
+                "file": "sueltos/armas/0729_daga.png",
+                "label": "daga"
+              },
+              {
+                "file": "sueltos/armas/0730_baston.png",
+                "label": "baston"
+              },
+              {
+                "file": "sueltos/armas/0731_maza.png",
+                "label": "maza"
+              },
+              {
+                "file": "sueltos/armas/0732_arco.png",
+                "label": "arco"
+              },
+              {
+                "file": "sueltos/armas/0733_garrote.png",
+                "label": "garrote"
+              },
+              {
+                "file": "sueltos/armas/0734_cuchillo.png",
+                "label": "cuchillo"
+              },
+              {
+                "file": "sueltos/armas/0735_martillo.png",
+                "label": "martillo"
+              },
+              {
+                "file": "sueltos/armas/0736_tenaza.png",
+                "label": "tenaza"
+              },
+              {
+                "file": "sueltos/armas/0737_tijera.png",
+                "label": "tijera"
+              },
+              {
+                "file": "sueltos/armas/0738_aguja.png",
+                "label": "aguja"
+              },
+              {
+                "file": "sueltos/armas/0739_cinta.png",
+                "label": "cinta"
+              },
+              {
+                "file": "sueltos/armas/0740_tela.png",
+                "label": "tela"
+              },
+              {
+                "file": "sueltos/armas/0741_palo.png",
+                "label": "palo"
+              },
+              {
+                "file": "sueltos/armas/0742_frasco.png",
+                "label": "frasco"
+              },
+              {
+                "file": "sueltos/armas/0743_maja.png",
+                "label": "maja"
+              },
+              {
+                "file": "sueltos/armas/0744_atizador.png",
+                "label": "atizador"
+              },
+              {
+                "file": "sueltos/armas/0745_sorbo.png",
+                "label": "sorbo"
+              },
+              {
+                "file": "sueltos/armas/0746_brocha.png",
+                "label": "brocha"
+              },
+              {
+                "file": "sueltos/armas/0747_pluma.png",
+                "label": "pluma"
+              },
+              {
+                "file": "sueltos/armas/0748_lima.png",
+                "label": "lima"
+              },
+              {
+                "file": "sueltos/armas/0749_hacha.png",
+                "label": "hacha"
+              },
+              {
+                "file": "sueltos/armas/0750_antorcha.png",
+                "label": "antorcha"
+              },
+              {
+                "file": "sueltos/armas/0751_escudo.png",
+                "label": "escudo"
+              },
+              {
+                "file": "sueltos/armas/0752_cucharon.png",
+                "label": "cucharon"
+              },
+              {
+                "file": "sueltos/armas/0753_pala.png",
+                "label": "pala"
+              },
+              {
+                "file": "sueltos/armas/0754_cuenco.png",
+                "label": "cuenco"
+              },
+              {
+                "file": "sueltos/armas/0755_jarra.png",
+                "label": "jarra"
+              },
+              {
+                "file": "sueltos/armas/0756_trapo.png",
+                "label": "trapo"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "11-animaciones-guerrero",
+    "title": "Animaciones: guerrero",
+    "scale": 5,
+    "sections": [
+      {
+        "title": "Todos los fotogramas del sprite (los usa la escena de la taberna)",
+        "note": "Andar: ciclo de 8 tiempos, 2 px por tiempo. Respirar: 2 tiempos. Perfil mirando a la derecha (se voltea).",
+        "rows": [
+          {
+            "label": "de frente",
+            "cells": [
+              {
+                "file": "sueltos/anim-guerrero/0757_quieto-1.png",
+                "label": "quieto 1"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0758_quieto-2-respira-.png",
+                "label": "quieto 2 (respira)"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0759_parpadeo.png",
+                "label": "parpadeo"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0760_celebra.png",
+                "label": "celebra"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0761_se-estira.png",
+                "label": "se estira"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0762_bosteza.png",
+                "label": "bosteza"
+              }
+            ]
+          },
+          {
+            "label": "andar",
+            "cells": [
+              {
+                "file": "sueltos/anim-guerrero/0763_paso-0.png",
+                "label": "paso 0"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0764_paso-1.png",
+                "label": "paso 1"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0765_paso-2.png",
+                "label": "paso 2"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0766_paso-3.png",
+                "label": "paso 3"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0767_paso-4.png",
+                "label": "paso 4"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0768_paso-5.png",
+                "label": "paso 5"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0769_paso-6.png",
+                "label": "paso 6"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0770_paso-7.png",
+                "label": "paso 7"
+              }
+            ]
+          },
+          {
+            "label": "escalera",
+            "cells": [
+              {
+                "file": "sueltos/anim-guerrero/0771_espalda.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0772_espalda-pie-izq.png",
+                "label": "espalda pie izq"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0773_espalda-pie-der.png",
+                "label": "espalda pie der"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0774_frente-pie-izq.png",
+                "label": "frente pie izq"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0775_frente-pie-der.png",
+                "label": "frente pie der"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0776_3-4-espalda.png",
+                "label": "3/4 espalda"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0777_3-4-espalda-paso.png",
+                "label": "3/4 espalda paso"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0778_3-4-frente.png",
+                "label": "3/4 frente"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0779_3-4-frente-paso.png",
+                "label": "3/4 frente paso"
+              }
+            ]
+          },
+          {
+            "label": "mesa y cama",
+            "cells": [
+              {
+                "file": "sueltos/anim-guerrero/0780_sentado.png",
+                "label": "sentado"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0781_incorporado.png",
+                "label": "incorporado"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0782_bebe-1.png",
+                "label": "bebe 1"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0783_bebe-2.png",
+                "label": "bebe 2"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0784_bebe-3.png",
+                "label": "bebe 3"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0785_herido-almohada-.png",
+                "label": "herido (almohada)"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0786_dormido-almohada-.png",
+                "label": "dormido (almohada)"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Pelea (perfil; el arma se pinta aparte en la mano)",
+        "note": "Orden de un golpe: en guardia → carga → golpe; «arriba» al encajar; estocada para la daga.",
+        "rows": [
+          {
+            "label": "con arma",
+            "cells": [
+              {
+                "file": "sueltos/anim-guerrero/0787_ready.png",
+                "label": "ready"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0788_windup.png",
+                "label": "windup"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0789_strike.png",
+                "label": "strike"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0790_up.png",
+                "label": "up"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0791_thrust.png",
+                "label": "thrust"
+              }
+            ]
+          },
+          {
+            "label": "sin arma",
+            "cells": [
+              {
+                "file": "sueltos/anim-guerrero/0792_ready.png",
+                "label": "ready"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0793_windup.png",
+                "label": "windup"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0794_strike.png",
+                "label": "strike"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0795_up.png",
+                "label": "up"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0796_thrust.png",
+                "label": "thrust"
+              }
+            ]
+          },
+          {
+            "label": "pies quietos (trabajar)",
+            "cells": [
+              {
+                "file": "sueltos/anim-guerrero/0797_ready.png",
+                "label": "ready"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0798_windup.png",
+                "label": "windup"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0799_strike.png",
+                "label": "strike"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0800_up.png",
+                "label": "up"
+              },
+              {
+                "file": "sueltos/anim-guerrero/0801_thrust.png",
+                "label": "thrust"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "12-animaciones-picaro",
+    "title": "Animaciones: picaro",
+    "scale": 5,
+    "sections": [
+      {
+        "title": "Todos los fotogramas del sprite (los usa la escena de la taberna)",
+        "note": "Andar: ciclo de 8 tiempos, 2 px por tiempo. Respirar: 2 tiempos. Perfil mirando a la derecha (se voltea).",
+        "rows": [
+          {
+            "label": "de frente",
+            "cells": [
+              {
+                "file": "sueltos/anim-picaro/0802_quieto-1.png",
+                "label": "quieto 1"
+              },
+              {
+                "file": "sueltos/anim-picaro/0803_quieto-2-respira-.png",
+                "label": "quieto 2 (respira)"
+              },
+              {
+                "file": "sueltos/anim-picaro/0804_parpadeo.png",
+                "label": "parpadeo"
+              },
+              {
+                "file": "sueltos/anim-picaro/0805_celebra.png",
+                "label": "celebra"
+              },
+              {
+                "file": "sueltos/anim-picaro/0806_se-estira.png",
+                "label": "se estira"
+              },
+              {
+                "file": "sueltos/anim-picaro/0807_bosteza.png",
+                "label": "bosteza"
+              }
+            ]
+          },
+          {
+            "label": "andar",
+            "cells": [
+              {
+                "file": "sueltos/anim-picaro/0808_paso-0.png",
+                "label": "paso 0"
+              },
+              {
+                "file": "sueltos/anim-picaro/0809_paso-1.png",
+                "label": "paso 1"
+              },
+              {
+                "file": "sueltos/anim-picaro/0810_paso-2.png",
+                "label": "paso 2"
+              },
+              {
+                "file": "sueltos/anim-picaro/0811_paso-3.png",
+                "label": "paso 3"
+              },
+              {
+                "file": "sueltos/anim-picaro/0812_paso-4.png",
+                "label": "paso 4"
+              },
+              {
+                "file": "sueltos/anim-picaro/0813_paso-5.png",
+                "label": "paso 5"
+              },
+              {
+                "file": "sueltos/anim-picaro/0814_paso-6.png",
+                "label": "paso 6"
+              },
+              {
+                "file": "sueltos/anim-picaro/0815_paso-7.png",
+                "label": "paso 7"
+              }
+            ]
+          },
+          {
+            "label": "escalera",
+            "cells": [
+              {
+                "file": "sueltos/anim-picaro/0816_espalda.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/anim-picaro/0817_espalda-pie-izq.png",
+                "label": "espalda pie izq"
+              },
+              {
+                "file": "sueltos/anim-picaro/0818_espalda-pie-der.png",
+                "label": "espalda pie der"
+              },
+              {
+                "file": "sueltos/anim-picaro/0819_frente-pie-izq.png",
+                "label": "frente pie izq"
+              },
+              {
+                "file": "sueltos/anim-picaro/0820_frente-pie-der.png",
+                "label": "frente pie der"
+              },
+              {
+                "file": "sueltos/anim-picaro/0821_3-4-espalda.png",
+                "label": "3/4 espalda"
+              },
+              {
+                "file": "sueltos/anim-picaro/0822_3-4-espalda-paso.png",
+                "label": "3/4 espalda paso"
+              },
+              {
+                "file": "sueltos/anim-picaro/0823_3-4-frente.png",
+                "label": "3/4 frente"
+              },
+              {
+                "file": "sueltos/anim-picaro/0824_3-4-frente-paso.png",
+                "label": "3/4 frente paso"
+              }
+            ]
+          },
+          {
+            "label": "mesa y cama",
+            "cells": [
+              {
+                "file": "sueltos/anim-picaro/0825_sentado.png",
+                "label": "sentado"
+              },
+              {
+                "file": "sueltos/anim-picaro/0826_incorporado.png",
+                "label": "incorporado"
+              },
+              {
+                "file": "sueltos/anim-picaro/0827_bebe-1.png",
+                "label": "bebe 1"
+              },
+              {
+                "file": "sueltos/anim-picaro/0828_bebe-2.png",
+                "label": "bebe 2"
+              },
+              {
+                "file": "sueltos/anim-picaro/0829_bebe-3.png",
+                "label": "bebe 3"
+              },
+              {
+                "file": "sueltos/anim-picaro/0830_herido-almohada-.png",
+                "label": "herido (almohada)"
+              },
+              {
+                "file": "sueltos/anim-picaro/0831_dormido-almohada-.png",
+                "label": "dormido (almohada)"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Pelea (perfil; el arma se pinta aparte en la mano)",
+        "note": "Orden de un golpe: en guardia → carga → golpe; «arriba» al encajar; estocada para la daga.",
+        "rows": [
+          {
+            "label": "con arma",
+            "cells": [
+              {
+                "file": "sueltos/anim-picaro/0832_ready.png",
+                "label": "ready"
+              },
+              {
+                "file": "sueltos/anim-picaro/0833_windup.png",
+                "label": "windup"
+              },
+              {
+                "file": "sueltos/anim-picaro/0834_strike.png",
+                "label": "strike"
+              },
+              {
+                "file": "sueltos/anim-picaro/0835_up.png",
+                "label": "up"
+              },
+              {
+                "file": "sueltos/anim-picaro/0836_thrust.png",
+                "label": "thrust"
+              }
+            ]
+          },
+          {
+            "label": "sin arma",
+            "cells": [
+              {
+                "file": "sueltos/anim-picaro/0837_ready.png",
+                "label": "ready"
+              },
+              {
+                "file": "sueltos/anim-picaro/0838_windup.png",
+                "label": "windup"
+              },
+              {
+                "file": "sueltos/anim-picaro/0839_strike.png",
+                "label": "strike"
+              },
+              {
+                "file": "sueltos/anim-picaro/0840_up.png",
+                "label": "up"
+              },
+              {
+                "file": "sueltos/anim-picaro/0841_thrust.png",
+                "label": "thrust"
+              }
+            ]
+          },
+          {
+            "label": "pies quietos (trabajar)",
+            "cells": [
+              {
+                "file": "sueltos/anim-picaro/0842_ready.png",
+                "label": "ready"
+              },
+              {
+                "file": "sueltos/anim-picaro/0843_windup.png",
+                "label": "windup"
+              },
+              {
+                "file": "sueltos/anim-picaro/0844_strike.png",
+                "label": "strike"
+              },
+              {
+                "file": "sueltos/anim-picaro/0845_up.png",
+                "label": "up"
+              },
+              {
+                "file": "sueltos/anim-picaro/0846_thrust.png",
+                "label": "thrust"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "13-animaciones-mago",
+    "title": "Animaciones: mago",
+    "scale": 5,
+    "sections": [
+      {
+        "title": "Todos los fotogramas del sprite (los usa la escena de la taberna)",
+        "note": "Andar: ciclo de 8 tiempos, 2 px por tiempo. Respirar: 2 tiempos. Perfil mirando a la derecha (se voltea).",
+        "rows": [
+          {
+            "label": "de frente",
+            "cells": [
+              {
+                "file": "sueltos/anim-mago/0847_quieto-1.png",
+                "label": "quieto 1"
+              },
+              {
+                "file": "sueltos/anim-mago/0848_quieto-2-respira-.png",
+                "label": "quieto 2 (respira)"
+              },
+              {
+                "file": "sueltos/anim-mago/0849_parpadeo.png",
+                "label": "parpadeo"
+              },
+              {
+                "file": "sueltos/anim-mago/0850_celebra.png",
+                "label": "celebra"
+              },
+              {
+                "file": "sueltos/anim-mago/0851_se-estira.png",
+                "label": "se estira"
+              },
+              {
+                "file": "sueltos/anim-mago/0852_bosteza.png",
+                "label": "bosteza"
+              }
+            ]
+          },
+          {
+            "label": "andar",
+            "cells": [
+              {
+                "file": "sueltos/anim-mago/0853_paso-0.png",
+                "label": "paso 0"
+              },
+              {
+                "file": "sueltos/anim-mago/0854_paso-1.png",
+                "label": "paso 1"
+              },
+              {
+                "file": "sueltos/anim-mago/0855_paso-2.png",
+                "label": "paso 2"
+              },
+              {
+                "file": "sueltos/anim-mago/0856_paso-3.png",
+                "label": "paso 3"
+              },
+              {
+                "file": "sueltos/anim-mago/0857_paso-4.png",
+                "label": "paso 4"
+              },
+              {
+                "file": "sueltos/anim-mago/0858_paso-5.png",
+                "label": "paso 5"
+              },
+              {
+                "file": "sueltos/anim-mago/0859_paso-6.png",
+                "label": "paso 6"
+              },
+              {
+                "file": "sueltos/anim-mago/0860_paso-7.png",
+                "label": "paso 7"
+              }
+            ]
+          },
+          {
+            "label": "escalera",
+            "cells": [
+              {
+                "file": "sueltos/anim-mago/0861_espalda.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/anim-mago/0862_espalda-pie-izq.png",
+                "label": "espalda pie izq"
+              },
+              {
+                "file": "sueltos/anim-mago/0863_espalda-pie-der.png",
+                "label": "espalda pie der"
+              },
+              {
+                "file": "sueltos/anim-mago/0864_frente-pie-izq.png",
+                "label": "frente pie izq"
+              },
+              {
+                "file": "sueltos/anim-mago/0865_frente-pie-der.png",
+                "label": "frente pie der"
+              },
+              {
+                "file": "sueltos/anim-mago/0866_3-4-espalda.png",
+                "label": "3/4 espalda"
+              },
+              {
+                "file": "sueltos/anim-mago/0867_3-4-espalda-paso.png",
+                "label": "3/4 espalda paso"
+              },
+              {
+                "file": "sueltos/anim-mago/0868_3-4-frente.png",
+                "label": "3/4 frente"
+              },
+              {
+                "file": "sueltos/anim-mago/0869_3-4-frente-paso.png",
+                "label": "3/4 frente paso"
+              }
+            ]
+          },
+          {
+            "label": "mesa y cama",
+            "cells": [
+              {
+                "file": "sueltos/anim-mago/0870_sentado.png",
+                "label": "sentado"
+              },
+              {
+                "file": "sueltos/anim-mago/0871_incorporado.png",
+                "label": "incorporado"
+              },
+              {
+                "file": "sueltos/anim-mago/0872_bebe-1.png",
+                "label": "bebe 1"
+              },
+              {
+                "file": "sueltos/anim-mago/0873_bebe-2.png",
+                "label": "bebe 2"
+              },
+              {
+                "file": "sueltos/anim-mago/0874_bebe-3.png",
+                "label": "bebe 3"
+              },
+              {
+                "file": "sueltos/anim-mago/0875_herido-almohada-.png",
+                "label": "herido (almohada)"
+              },
+              {
+                "file": "sueltos/anim-mago/0876_dormido-almohada-.png",
+                "label": "dormido (almohada)"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Pelea (perfil; el arma se pinta aparte en la mano)",
+        "note": "Orden de un golpe: en guardia → carga → golpe; «arriba» al encajar; estocada para la daga.",
+        "rows": [
+          {
+            "label": "con arma",
+            "cells": [
+              {
+                "file": "sueltos/anim-mago/0877_ready.png",
+                "label": "ready"
+              },
+              {
+                "file": "sueltos/anim-mago/0878_windup.png",
+                "label": "windup"
+              },
+              {
+                "file": "sueltos/anim-mago/0879_strike.png",
+                "label": "strike"
+              },
+              {
+                "file": "sueltos/anim-mago/0880_up.png",
+                "label": "up"
+              },
+              {
+                "file": "sueltos/anim-mago/0881_thrust.png",
+                "label": "thrust"
+              }
+            ]
+          },
+          {
+            "label": "sin arma",
+            "cells": [
+              {
+                "file": "sueltos/anim-mago/0882_ready.png",
+                "label": "ready"
+              },
+              {
+                "file": "sueltos/anim-mago/0883_windup.png",
+                "label": "windup"
+              },
+              {
+                "file": "sueltos/anim-mago/0884_strike.png",
+                "label": "strike"
+              },
+              {
+                "file": "sueltos/anim-mago/0885_up.png",
+                "label": "up"
+              },
+              {
+                "file": "sueltos/anim-mago/0886_thrust.png",
+                "label": "thrust"
+              }
+            ]
+          },
+          {
+            "label": "pies quietos (trabajar)",
+            "cells": [
+              {
+                "file": "sueltos/anim-mago/0887_ready.png",
+                "label": "ready"
+              },
+              {
+                "file": "sueltos/anim-mago/0888_windup.png",
+                "label": "windup"
+              },
+              {
+                "file": "sueltos/anim-mago/0889_strike.png",
+                "label": "strike"
+              },
+              {
+                "file": "sueltos/anim-mago/0890_up.png",
+                "label": "up"
+              },
+              {
+                "file": "sueltos/anim-mago/0891_thrust.png",
+                "label": "thrust"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "14-animaciones-clerigo",
+    "title": "Animaciones: clerigo",
+    "scale": 5,
+    "sections": [
+      {
+        "title": "Todos los fotogramas del sprite (los usa la escena de la taberna)",
+        "note": "Andar: ciclo de 8 tiempos, 2 px por tiempo. Respirar: 2 tiempos. Perfil mirando a la derecha (se voltea).",
+        "rows": [
+          {
+            "label": "de frente",
+            "cells": [
+              {
+                "file": "sueltos/anim-clerigo/0892_quieto-1.png",
+                "label": "quieto 1"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0893_quieto-2-respira-.png",
+                "label": "quieto 2 (respira)"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0894_parpadeo.png",
+                "label": "parpadeo"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0895_celebra.png",
+                "label": "celebra"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0896_se-estira.png",
+                "label": "se estira"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0897_bosteza.png",
+                "label": "bosteza"
+              }
+            ]
+          },
+          {
+            "label": "andar",
+            "cells": [
+              {
+                "file": "sueltos/anim-clerigo/0898_paso-0.png",
+                "label": "paso 0"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0899_paso-1.png",
+                "label": "paso 1"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0900_paso-2.png",
+                "label": "paso 2"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0901_paso-3.png",
+                "label": "paso 3"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0902_paso-4.png",
+                "label": "paso 4"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0903_paso-5.png",
+                "label": "paso 5"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0904_paso-6.png",
+                "label": "paso 6"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0905_paso-7.png",
+                "label": "paso 7"
+              }
+            ]
+          },
+          {
+            "label": "escalera",
+            "cells": [
+              {
+                "file": "sueltos/anim-clerigo/0906_espalda.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0907_espalda-pie-izq.png",
+                "label": "espalda pie izq"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0908_espalda-pie-der.png",
+                "label": "espalda pie der"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0909_frente-pie-izq.png",
+                "label": "frente pie izq"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0910_frente-pie-der.png",
+                "label": "frente pie der"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0911_3-4-espalda.png",
+                "label": "3/4 espalda"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0912_3-4-espalda-paso.png",
+                "label": "3/4 espalda paso"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0913_3-4-frente.png",
+                "label": "3/4 frente"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0914_3-4-frente-paso.png",
+                "label": "3/4 frente paso"
+              }
+            ]
+          },
+          {
+            "label": "mesa y cama",
+            "cells": [
+              {
+                "file": "sueltos/anim-clerigo/0915_sentado.png",
+                "label": "sentado"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0916_incorporado.png",
+                "label": "incorporado"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0917_bebe-1.png",
+                "label": "bebe 1"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0918_bebe-2.png",
+                "label": "bebe 2"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0919_bebe-3.png",
+                "label": "bebe 3"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0920_herido-almohada-.png",
+                "label": "herido (almohada)"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0921_dormido-almohada-.png",
+                "label": "dormido (almohada)"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Pelea (perfil; el arma se pinta aparte en la mano)",
+        "note": "Orden de un golpe: en guardia → carga → golpe; «arriba» al encajar; estocada para la daga.",
+        "rows": [
+          {
+            "label": "con arma",
+            "cells": [
+              {
+                "file": "sueltos/anim-clerigo/0922_ready.png",
+                "label": "ready"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0923_windup.png",
+                "label": "windup"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0924_strike.png",
+                "label": "strike"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0925_up.png",
+                "label": "up"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0926_thrust.png",
+                "label": "thrust"
+              }
+            ]
+          },
+          {
+            "label": "sin arma",
+            "cells": [
+              {
+                "file": "sueltos/anim-clerigo/0927_ready.png",
+                "label": "ready"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0928_windup.png",
+                "label": "windup"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0929_strike.png",
+                "label": "strike"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0930_up.png",
+                "label": "up"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0931_thrust.png",
+                "label": "thrust"
+              }
+            ]
+          },
+          {
+            "label": "pies quietos (trabajar)",
+            "cells": [
+              {
+                "file": "sueltos/anim-clerigo/0932_ready.png",
+                "label": "ready"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0933_windup.png",
+                "label": "windup"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0934_strike.png",
+                "label": "strike"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0935_up.png",
+                "label": "up"
+              },
+              {
+                "file": "sueltos/anim-clerigo/0936_thrust.png",
+                "label": "thrust"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "15-animaciones-explorador",
+    "title": "Animaciones: explorador",
+    "scale": 5,
+    "sections": [
+      {
+        "title": "Todos los fotogramas del sprite (los usa la escena de la taberna)",
+        "note": "Andar: ciclo de 8 tiempos, 2 px por tiempo. Respirar: 2 tiempos. Perfil mirando a la derecha (se voltea).",
+        "rows": [
+          {
+            "label": "de frente",
+            "cells": [
+              {
+                "file": "sueltos/anim-explorador/0937_quieto-1.png",
+                "label": "quieto 1"
+              },
+              {
+                "file": "sueltos/anim-explorador/0938_quieto-2-respira-.png",
+                "label": "quieto 2 (respira)"
+              },
+              {
+                "file": "sueltos/anim-explorador/0939_parpadeo.png",
+                "label": "parpadeo"
+              },
+              {
+                "file": "sueltos/anim-explorador/0940_celebra.png",
+                "label": "celebra"
+              },
+              {
+                "file": "sueltos/anim-explorador/0941_se-estira.png",
+                "label": "se estira"
+              },
+              {
+                "file": "sueltos/anim-explorador/0942_bosteza.png",
+                "label": "bosteza"
+              }
+            ]
+          },
+          {
+            "label": "andar",
+            "cells": [
+              {
+                "file": "sueltos/anim-explorador/0943_paso-0.png",
+                "label": "paso 0"
+              },
+              {
+                "file": "sueltos/anim-explorador/0944_paso-1.png",
+                "label": "paso 1"
+              },
+              {
+                "file": "sueltos/anim-explorador/0945_paso-2.png",
+                "label": "paso 2"
+              },
+              {
+                "file": "sueltos/anim-explorador/0946_paso-3.png",
+                "label": "paso 3"
+              },
+              {
+                "file": "sueltos/anim-explorador/0947_paso-4.png",
+                "label": "paso 4"
+              },
+              {
+                "file": "sueltos/anim-explorador/0948_paso-5.png",
+                "label": "paso 5"
+              },
+              {
+                "file": "sueltos/anim-explorador/0949_paso-6.png",
+                "label": "paso 6"
+              },
+              {
+                "file": "sueltos/anim-explorador/0950_paso-7.png",
+                "label": "paso 7"
+              }
+            ]
+          },
+          {
+            "label": "escalera",
+            "cells": [
+              {
+                "file": "sueltos/anim-explorador/0951_espalda.png",
+                "label": "espalda"
+              },
+              {
+                "file": "sueltos/anim-explorador/0952_espalda-pie-izq.png",
+                "label": "espalda pie izq"
+              },
+              {
+                "file": "sueltos/anim-explorador/0953_espalda-pie-der.png",
+                "label": "espalda pie der"
+              },
+              {
+                "file": "sueltos/anim-explorador/0954_frente-pie-izq.png",
+                "label": "frente pie izq"
+              },
+              {
+                "file": "sueltos/anim-explorador/0955_frente-pie-der.png",
+                "label": "frente pie der"
+              },
+              {
+                "file": "sueltos/anim-explorador/0956_3-4-espalda.png",
+                "label": "3/4 espalda"
+              },
+              {
+                "file": "sueltos/anim-explorador/0957_3-4-espalda-paso.png",
+                "label": "3/4 espalda paso"
+              },
+              {
+                "file": "sueltos/anim-explorador/0958_3-4-frente.png",
+                "label": "3/4 frente"
+              },
+              {
+                "file": "sueltos/anim-explorador/0959_3-4-frente-paso.png",
+                "label": "3/4 frente paso"
+              }
+            ]
+          },
+          {
+            "label": "mesa y cama",
+            "cells": [
+              {
+                "file": "sueltos/anim-explorador/0960_sentado.png",
+                "label": "sentado"
+              },
+              {
+                "file": "sueltos/anim-explorador/0961_incorporado.png",
+                "label": "incorporado"
+              },
+              {
+                "file": "sueltos/anim-explorador/0962_bebe-1.png",
+                "label": "bebe 1"
+              },
+              {
+                "file": "sueltos/anim-explorador/0963_bebe-2.png",
+                "label": "bebe 2"
+              },
+              {
+                "file": "sueltos/anim-explorador/0964_bebe-3.png",
+                "label": "bebe 3"
+              },
+              {
+                "file": "sueltos/anim-explorador/0965_herido-almohada-.png",
+                "label": "herido (almohada)"
+              },
+              {
+                "file": "sueltos/anim-explorador/0966_dormido-almohada-.png",
+                "label": "dormido (almohada)"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Pelea (perfil; el arma se pinta aparte en la mano)",
+        "note": "Orden de un golpe: en guardia → carga → golpe; «arriba» al encajar; estocada para la daga.",
+        "rows": [
+          {
+            "label": "con arma",
+            "cells": [
+              {
+                "file": "sueltos/anim-explorador/0967_ready.png",
+                "label": "ready"
+              },
+              {
+                "file": "sueltos/anim-explorador/0968_windup.png",
+                "label": "windup"
+              },
+              {
+                "file": "sueltos/anim-explorador/0969_strike.png",
+                "label": "strike"
+              },
+              {
+                "file": "sueltos/anim-explorador/0970_up.png",
+                "label": "up"
+              },
+              {
+                "file": "sueltos/anim-explorador/0971_thrust.png",
+                "label": "thrust"
+              }
+            ]
+          },
+          {
+            "label": "sin arma",
+            "cells": [
+              {
+                "file": "sueltos/anim-explorador/0972_ready.png",
+                "label": "ready"
+              },
+              {
+                "file": "sueltos/anim-explorador/0973_windup.png",
+                "label": "windup"
+              },
+              {
+                "file": "sueltos/anim-explorador/0974_strike.png",
+                "label": "strike"
+              },
+              {
+                "file": "sueltos/anim-explorador/0975_up.png",
+                "label": "up"
+              },
+              {
+                "file": "sueltos/anim-explorador/0976_thrust.png",
+                "label": "thrust"
+              }
+            ]
+          },
+          {
+            "label": "pies quietos (trabajar)",
+            "cells": [
+              {
+                "file": "sueltos/anim-explorador/0977_ready.png",
+                "label": "ready"
+              },
+              {
+                "file": "sueltos/anim-explorador/0978_windup.png",
+                "label": "windup"
+              },
+              {
+                "file": "sueltos/anim-explorador/0979_strike.png",
+                "label": "strike"
+              },
+              {
+                "file": "sueltos/anim-explorador/0980_up.png",
+                "label": "up"
+              },
+              {
+                "file": "sueltos/anim-explorador/0981_thrust.png",
+                "label": "thrust"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]
