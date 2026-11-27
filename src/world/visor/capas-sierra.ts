@@ -202,7 +202,8 @@ export function canto(
     for (let y = tp; y <= base; y++) {
       const d = y - tp;
       const q = d / rows;
-      const face = u < cut1 + q * 0.12 ? 0 : u < cut2 - q * 0.06 ? 1 : 2;
+      const wob = (noise2(y / 3, 1.3, s + 14, 1 << 12) - 0.5) * 0.12;
+      const face = u < cut1 + q * 0.2 + wob ? 0 : u < cut2 - q * 0.16 + wob ? 1 : 2;
       if (y === tp) faces.push(face);
       let v = face === 0 ? 4.1 : face === 1 ? 3.1 : 1.9;
       if (d === 0) v += face === 2 ? 0.7 : 1;
@@ -550,9 +551,9 @@ export function crag(
   w: number,
   h: number,
   s: number,
-  o: { snow?: number; lichen?: number } = {},
+  o: { snow?: number; lichen?: number; kind?: number } = {},
 ) {
-  const kind = Math.floor(hash2(s, 21, 3) * 3);
+  const kind = o.kind ?? Math.floor(hash2(s, 21, 3) * 3);
   if (kind === 2) h *= 0.55;
   h = Math.min(h, w * (kind === 1 ? 0.9 : 0.62));
   const tilt = (hash2(s, 22, 3) - 0.5) * 0.4;
@@ -560,8 +561,8 @@ export function crag(
     const u = (i / w) * 2 - 1;
     const r = ridged(fbm1(i + s * 13, 10, 1 << 12, s, 2));
     if (kind === 0) {
-      // Bloque: lados casi a plomo y el techo tendido, con algún escalón.
-      const side = Math.max(0, 1 - Math.abs(u) ** 5);
+      // Bloque: lados empinados (no a plomo) y el techo tendido, con algún escalón.
+      const side = Math.max(0, 1 - Math.abs(u) ** 3.2);
       const steps = fbm1(i + s * 7, 12, 1 << 12, s + 1, 1) > 0.55 ? 1 : 0;
       return base - h * side * (0.88 + 0.12 * steps) + u * tilt * h * 0.3;
     }
@@ -577,19 +578,37 @@ export function crag(
   const c2 = 0.45 + hash2(s, 24, 3) * 0.1;
   const c3 = 0.7 + hash2(s, 25, 3) * 0.1;
   const strat = Math.round(4 + hash2(s, 26, 3) * 2);
+  // Grietas: torcidas, inclinadas y que no cruzan la peña entera (nada de rayas a plomo).
+  const cracks = Array.from({ length: Math.max(1, Math.round(w / 11)) }, (_, k) => ({
+    x: (k + 0.3 + hash2(s, 40 + k, 3) * 0.5) * (w / Math.max(1, Math.round(w / 11))),
+    lean: (hash2(s, 50 + k, 3) - 0.5) * 0.9,
+    a: base - h * (0.3 + hash2(s, 60 + k, 3) * 0.6),
+    b: base - h * hash2(s, 70 + k, 3) * 0.25,
+    on: hash2(s, 80 + k, 3) < 0.75,
+  }));
+  const grieta = (i: number, y: number) =>
+    cracks.some(
+      (c) =>
+        c.on &&
+        y > c.a &&
+        y < c.b &&
+        Math.abs(
+          i - (c.x + (y - c.a) * c.lean + (noise2(y / 3, c.x, s + 41, 1 << 12) - 0.5) * 2.4),
+        ) < 0.55,
+    );
   const tops: number[] = [];
   for (let i = 0; i < w; i++) {
     const tp = Math.round(top(i));
     tops.push(tp);
     const u = (i + 0.5) / w;
     const px = x + i;
-    // Diaclasas: grietas a plomo, una de cada tantas columnas.
-    const joint =
-      (i + s) % (kind === 1 ? 6 : 9) === 0 && hash2(Math.floor((i + s) / 9), s, 27) < 0.6;
     for (let y = tp; y <= base; y++) {
       const d = y - tp;
       const q = d / Math.max(1, base - tp);
-      const f = u < c1 + q * 0.06 ? 0 : u < c2 + q * 0.04 ? 1 : u < c3 - q * 0.04 ? 2 : 3;
+      // Las aristas entre caras bajan en diagonal y torcidas (nunca a plomo).
+      const wob = (noise2(y / 4, 3.7, s + 34, 1 << 12) - 0.5) * 0.09;
+      const f =
+        u < c1 + q * 0.16 + wob ? 0 : u < c2 + q * 0.12 + wob ? 1 : u < c3 - q * 0.14 + wob ? 2 : 3;
       let v = [4.2, 3.6, 2.9, 1.8][f]!;
       if (d === 0) v += f === 3 ? 0.7 : 1.1;
       v += (grainOf(px, y, s) - 0.5) * 0.5 - q * 0.9;
@@ -598,7 +617,7 @@ export function crag(
       const layered = kind !== 1 && noise2(px / 6, sy / strat, s + 33, 1 << 12) > 0.35;
       if (layered && d > 1 && sy % strat === 0) v -= 1.2;
       else if (layered && d > 1 && sy % strat === 1) v += 0.4;
-      if (joint && d > 1 && f > 0) v -= 1.3;
+      if (d > 1 && f > 0 && grieta(i, y)) v -= 1.3;
       if (y === base) v = 0.8;
       if (
         o.lichen &&
@@ -623,7 +642,7 @@ export function crag(
       }
       for (let y = tp + 3; y < base - 1; y++) {
         const sy = Math.round(base - y + i * tilt);
-        if (sy % strat === 1 && noise2((x + i) / 3, y, s + 30, 1 << 12) < sn * 0.55)
+        if (sy % strat === 1 && noise2((x + i) / 2, y * 3, s + 30, 1 << 12) < sn * 0.32)
           t.set(x + i, y, M.nieve, sh ? 2 : 4, true);
       }
     }
