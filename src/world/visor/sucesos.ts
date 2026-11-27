@@ -10,14 +10,14 @@
  * tienda, santuario) va detrás del camino, entre los árboles de cerca y el suelo; lo pequeño (cofre,
  * carro, fuego, matas), en el camino. Medida: un héroe mide unos 22 px.
  */
-import { expFoeArt } from '../../art/expFoes';
+import { expFoeArt, expGuardianArt } from '../../art/expFoes';
 import { FEET_Y, generateLook, heroSprites } from '../../art/heroes/hero';
 import { PixelBuffer } from '../../art/pixel';
 import { bush, rock, tuft } from './arboles';
 import { biomaOf } from './bioma';
 import { step, type CapaId } from './capas';
 import type { Ctx } from './ctx';
-import { GAP, heroOf, shadow } from './gente';
+import { GAP, foeFrame, heroOf, shadow } from './gente';
 import { lutOf, pack, unpack, type Depth } from './luz';
 import { put, tinted } from './pintar';
 import { M, Tonos, hash, hash2, type Mat } from './tonos';
@@ -616,17 +616,18 @@ export function drawSuceso(c: Ctx): void {
     }
     case 'jefe':
     case 'guardian':
-      boss(c, ev.kind === 'guardian' ? 3 : (ev.foe ?? 3));
+      boss(c, ev.kind === 'guardian' ? undefined : (ev.foe ?? 3));
       break;
   }
 }
 
-/** El jefe a la vista, al otro lado, quieto y mirando. */
-function boss(c: Ctx, idx: number): void {
-  const { art } = expFoeArt('bosque', idx);
+/** El jefe a la vista, al otro lado, quieto y mirando (sin número, el guardián del rumbo). */
+function boss(c: Ctx, idx?: number): void {
+  const h = c.m.heading ?? 'bosque';
+  const art = idx === undefined ? expGuardianArt(h) : expFoeArt(h, idx).art;
   const dir = dirOf(c);
   const x = Math.round(c.e.w / 2 + dir * c.e.w * 0.3);
-  const img = art.poses[Math.floor(c.time * 1.2) % 2 ? 'idle2' : 'idle'];
+  const img = foeFrame(art, Math.floor(c.time * 1.2) % 2 ? 'idle2' : 'idle', 0, c.time);
   shadow(c.b, x, c.e.feet, art.big ? 10 : 6);
   put(c.b, tinted(img, c.l, c.lk), x, c.e.feet, art.foot, img.h - 1, dir > 0);
 }

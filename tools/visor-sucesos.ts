@@ -6,6 +6,7 @@ import { ESCRITORIO, MOVIL } from '../src/world/visor/encuadre';
 import { Visor } from '../src/world/visor/escena';
 import type { MarchNow } from '../src/world/visor/marcha';
 import type { ExpEvent } from '../src/data/expEvents';
+import type { Heading } from '../src/core/model';
 const [dir, rumbo = 'bosque'] = process.argv.slice(2);
 const TERRENO = {
   bosque: 'bosque',
@@ -14,6 +15,7 @@ const TERRENO = {
   ruinas: 'ruina',
 } as const;
 const terrain: MarchNow['terrain'] = TERRENO[rumbo as keyof typeof TERRENO] ?? 'bosque';
+const heading = (rumbo in TERRENO ? rumbo : 'bosque') as Heading;
 mkdirSync(dir!, { recursive: true });
 const crew: MarchNow['crew'] = [
   { id: 'a', name: 'V', seed: 'violante-7', cls: 'guerrero', sex: 'f', fate: 'ok' },
@@ -41,6 +43,7 @@ for (const kind of EVS)
     const m: MarchNow = {
       seed: 'visor-sucesos',
       terrain,
+      heading,
       crew,
       mode: 'wait',
       night: false,
@@ -50,7 +53,7 @@ for (const kind of EVS)
       hour: 10.5,
       weather: 'claro',
       day: 2,
-      event: { kind, foe: kind === 'jefe' ? 2 : undefined },
+      event: { kind, foe: kind === 'jefe' ? 3 : undefined },
     };
     const v = new Visor(enc);
     v.frame(m, 0, { travel: 300 });

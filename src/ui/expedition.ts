@@ -69,7 +69,8 @@ export function marchNow(s: GameState, e: Expedition): MarchNow {
             : 'ruina',
     crew,
     mode:
-      recent?.k === 'pelea' && e.hours === recent.h
+      // La pelea de esta hora (aunque detrás venga el botín en el diario).
+      fightLine && e.hours === fightLine.h
         ? 'fight'
         : // Acampan con la noche de la taberna (de `EXP_CAMP` al alba): de día, andan.
           hod >= EXP_CAMP
@@ -81,8 +82,13 @@ export function marchNow(s: GameState, e: Expedition): MarchNow {
     night: clock >= DUSK * DAY_SECONDS || clock < 0.04 * DAY_SECONDS,
     home: !!e.turn,
     foe: foes[fightLine?.foe ?? 0] ?? 'bestia',
-    // Por ahora solo el bosque tiene sus enemigos calcados; los demás rumbos, la familia.
-    rival: e.heading === 'bosque' ? { heading: e.heading, idx: fightLine?.foe ?? 0 } : undefined,
+    heading: e.heading,
+    won: fightLine?.won,
+    rival: {
+      heading: e.heading,
+      idx: fightLine?.foe ?? 0,
+      guardian: !!fightLine?.fight?.exp?.guardian,
+    },
     wild: Math.min(1, distAt(e) / 8),
     last: recent?.k,
     hour: visorHour(s),
