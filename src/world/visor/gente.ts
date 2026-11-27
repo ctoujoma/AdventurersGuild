@@ -193,14 +193,7 @@ export class Gente {
 
   /** Los enemigos de esta pelea (de dos a tres; uno, si es grande; tres, si son alimañas). */
   private foes(m: MarchNow): FoeArt[] {
-    if (m.rival?.guardian) return [expGuardianArt(m.rival.heading)];
-    if (m.rival) {
-      const { art, count } = expFoeArt(m.rival.heading, m.rival.idx);
-      return Array.from({ length: count }, () => art);
-    }
-    const rng = new Rng(`visor-foes-${m.seed}-${m.foe}`);
-    const n = m.foe === 'grande' ? 1 : m.foe === 'alimana' ? 3 : rng.int(2, 3);
-    return Array.from({ length: n }, (_, i) => foeArt(m.foe, `${m.seed}-${i}`));
+    return foesOf(m);
   }
 
   /** La pelea, por turnos: el grupo y los enemigos se van dando. */
@@ -550,3 +543,28 @@ export function foeFrame(f: FoeArt, pose: FoePose, u: number, t: number): PixelB
   if (k === 'idle') return s[Math.floor(t * 5) % s.length]!;
   return s[Math.max(0, Math.min(s.length - 1, Math.floor(u * s.length)))]!;
 }
+
+/** Los enemigos de una pelea del visor (siempre los mismos para la misma pelea). */
+function foesOf(m: MarchNow): FoeArt[] {
+  if (m.rival?.guardian) return [expGuardianArt(m.rival.heading)];
+  if (m.rival) {
+    const { art, count } = expFoeArt(m.rival.heading, m.rival.idx);
+    return Array.from({ length: count }, () => art);
+  }
+  const rng = new Rng(`visor-foes-${m.seed}-${m.foe}`);
+  const n = m.foe === 'grande' ? 1 : m.foe === 'alimana' ? 3 : rng.int(2, 3);
+  return Array.from({ length: n }, (_, i) => foeArt(m.foe, `${m.seed}-${i}`));
+}
+
+/**
+ * Lo que tarda la pelea del visor en tumbar a los que caen por turnos (el último aguanta hasta
+ * que se gana), más un par de turnos: para la repetición de «Ver la pelea» (s).
+ */
+export function fightSpan(m: MarchNow): number {
+  const n = foesOf(m).length;
+  const last = n > 2 ? 4 + (n - 2) * 4 : n === 2 ? 6 : 2;
+  return (last + 2) * TURN;
+}
+
+/** Lo que dura, al ganar, la caída de los que quedan y la celebración (s). */
+export const WIN_AFTER = AFTER;
