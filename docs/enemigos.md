@@ -3,6 +3,10 @@
 Lo aprendido con sierra (#237), para retomarlo en otro rumbo. El estado y el plan están en
 [`plan-arte.md`](plan-arte.md).
 
+Glosario de todos los enemigos y jefes, con sus animaciones y dónde salen: [`glosario-enemigos.html`](glosario-enemigos.html)
+(se regenera con `node tools/textos/esbuild.mjs tools/glosario-enemigos.ts glosario docs/glosario-enemigos.html`
+al cambiar un enemigo).
+
 ## Flujo
 
 1. El usuario trae una hoja por enemigo, hecha con otra IA. Funciona mejor así: fondo liso, de perfil
@@ -69,8 +73,8 @@ Lo aprendido con sierra (#237), para retomarlo en otro rumbo. El estado y el pla
 
 ## En los encargos (la pelea contra un jefe y la tira)
 
-- **Jefes calcados** (`src/art/bossCalco.ts`): `BOSS_CALCO` dice qué jefe sale de qué calco (hoy,
-  la bestia de Hondogrís, del huargo). `calcoBoss` hace el `BossArt` con sus poses y, en `seq`, los
+- **Jefes calcados** (`src/art/bossCalco.ts`): `BOSS_CALCO` dice qué jefe sale de qué calco (la
+  bestia de Hondogrís, del huargo; el jabalí de ceniza, de su hoja con `cenizaArt()`). `calcoBoss` hace el `BossArt` con sus poses y, en `seq`, los
   fotogramas; `world/battle.ts` (`bossFrame`) los pasa: en guardia respira a 5 fps, y la carga, el
   golpe, el daño y la caída avanzan desde que empieza la pose (`SEQ_POSE`, `SEQ_DOWN`). Los golpes
   y lo que hace en la pelea siguen siendo los de su jefe. Para pasar otro: una línea en `BOSS_CALCO`.

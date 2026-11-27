@@ -1,19 +1,20 @@
 /**
  * Jefes de los encargos con el dibujo calcado de las expediciones (usuario, 26 de noviembre): en
  * vez del jefe pintado de `bosses.ts`, el calco con sus animaciones (respira, carga, golpea,
- * recibe y muere). De momento, la bestia de Hondogrís sale como el huargo del bosque; para pasar
+ * recibe y muere). La bestia de Hondogrís sale como el huargo del bosque y el jabalí de ceniza, con su hoja; para pasar
  * otro, basta con añadirlo a `BOSS_CALCO`. Los golpes y lo que hace en la pelea siguen siendo los
  * de su jefe (`world/battle.ts`); solo cambia el dibujo.
  */
 import type { BossKind } from '../data/bosses';
 import { bossArt, type BossArt, type BossPose } from './bosses';
-import { expFoeArt } from './expFoes';
+import { cenizaArt, expFoeArt } from './expFoes';
 import type { FoeArt } from './foes';
 import type { PixelBuffer } from './pixel';
 
 /** Los jefes que ya salen de un calco (y de cuál). */
 const BOSS_CALCO: Partial<Record<BossKind, () => FoeArt>> = {
   bestia: () => expFoeArt('bosque', 3).art,
+  jabali: cenizaArt,
 };
 
 /** La fila del suelo de un dibujo (la de abajo con algo pintado) y su centro. */

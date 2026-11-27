@@ -1,0 +1,265 @@
+<title>Bestiario del Jarro</title>
+<meta name="claude:viewport-fit-sides" content="cover" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Inter:wght@400;600&display=swap"
+/>
+<style>
+  /* Plantilla de tools/glosario-enemigos.ts: fichas en rejilla por grupo, cuatro animaciones por ficha. */
+  :root {
+    --bg: #ece6d6;
+    --card: #f7f3e8;
+    --ink: #2b2620;
+    --muted: #6f665a;
+    --line: #d6ccb6;
+    --stage: #e2dac5;
+    --ok: #3f7a4a;
+    --old: #9a6a22;
+    --display: 'Silkscreen', ui-monospace, monospace;
+    --body: 'Inter', system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --bg: #1c1a17;
+      --card: #262320;
+      --ink: #ece4d4;
+      --muted: #a59a88;
+      --line: #3a352e;
+      --stage: #e2dac5;
+      --ok: #7cc48a;
+      --old: #e0aa58;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme='dark'] {
+    --bg: #1c1a17;
+    --card: #262320;
+    --ink: #ece4d4;
+    --muted: #a59a88;
+    --line: #3a352e;
+    --stage: #e2dac5;
+    --ok: #7cc48a;
+    --old: #e0aa58;
+    color-scheme: dark;
+  }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    line-height: 1.45;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 24px 48px;
+  }
+  main {
+    max-width: 1180px;
+    margin: 0 auto;
+    display: grid;
+    gap: 36px;
+  }
+  header {
+    display: grid;
+    gap: 8px;
+  }
+  h1,
+  h2 {
+    font-family: var(--display);
+    font-weight: 400;
+    margin: 0;
+    text-wrap: balance;
+  }
+  h1 {
+    font-size: 1.9rem;
+    letter-spacing: 0.02em;
+  }
+  h2 {
+    font-size: 1.05rem;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 6px;
+  }
+  header p {
+    margin: 0;
+    color: var(--muted);
+    max-width: 70ch;
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  section {
+    display: grid;
+    gap: 14px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 520px), 1fr));
+    gap: 14px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 12px;
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+  }
+  .head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 10px;
+  }
+  .head h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  .chip {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 1px 7px;
+    border-radius: 99px;
+    border: 1px solid currentColor;
+  }
+  .chip.ok {
+    color: var(--ok);
+  }
+  .chip.old {
+    color: var(--old);
+  }
+  ul {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 0.86rem;
+    color: var(--muted);
+  }
+  .anims {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+  figure {
+    margin: 0;
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+  }
+  canvas {
+    width: 100%;
+    height: auto;
+    background: var(--stage);
+    border-radius: 4px;
+    image-rendering: pixelated;
+  }
+  figcaption {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    text-align: center;
+  }
+  @media (max-width: 460px) {
+    .anims {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>
+<main>
+  <header>
+    <h1>Bestiario del Jarro</h1>
+    <p>
+      Todos los enemigos y jefes que hay ahora en el juego, con sus animaciones sacadas del propio
+      arte y dónde salen. Se regenera con <code>tools/glosario-enemigos.ts</code> cada vez que
+      cambia un enemigo.
+    </p>
+    <div class="legend">
+      <span><span class="chip ok">calco</span> hoja propia con sus cuatro animaciones</span
+      ><span
+        ><span class="chip old">antiguo</span> dibujo hecho a mano, poses sueltas: está por
+        rehacer</span
+      >
+    </div>
+  </header>
+  <div id="groups"></div>
+</main>
+<script>
+  const DATA = /*DATOS*/ null;
+  const NAMES = { quieto: 'Quieto', ataque: 'Ataque', herido: 'Herido', muerte: 'Muerte' };
+  const imgs = DATA.pool.map((src) => {
+    const i = new Image();
+    i.src = src;
+    return i;
+  });
+  const players = [];
+  const root = document.getElementById('groups');
+  root.style.display = 'grid';
+  root.style.gap = '36px';
+  for (const g of DATA.groups) {
+    const sec = document.createElement('section');
+    sec.innerHTML = `<h2>${g.title}</h2>`;
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    for (const e of g.items) {
+      const card = document.createElement('article');
+      card.className = 'card';
+      card.innerHTML = `<div class="head"><h3></h3><span class="chip ${e.calco ? 'ok' : 'old'}">${e.calco ? 'calco' : 'antiguo'}</span></div><ul>${e.where.map((w) => `<li></li>`).join('')}</ul><div class="anims"></div>`;
+      card.querySelector('h3').textContent = e.name;
+      card.querySelectorAll('li').forEach((li, i) => (li.textContent = e.where[i]));
+      const all = Object.values(e.anims).flat();
+      const anims = card.querySelector('.anims');
+      for (const k of Object.keys(NAMES)) {
+        const f = document.createElement('figure');
+        const c = document.createElement('canvas');
+        f.append(c);
+        const cap = document.createElement('figcaption');
+        cap.textContent = NAMES[k];
+        f.append(cap);
+        anims.append(f);
+        players.push({ c, frames: e.anims[k], all, k });
+      }
+      grid.append(card);
+    }
+    sec.append(grid);
+    root.append(sec);
+  }
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function size(p) {
+    const W = Math.max(...p.all.map((i) => imgs[i].width)) + 4;
+    const H = Math.max(...p.all.map((i) => imgs[i].height)) + 4;
+    p.c.width = W;
+    p.c.height = H;
+    p.W = W;
+    p.H = H;
+  }
+  /** Qué fotograma toca: quieto a 5 por segundo; el resto a 8 y un respiro (la muerte se queda caída). */
+  function pick(p, t) {
+    const n = p.frames.length;
+    if (still) return p.frames[p.k === 'muerte' ? n - 1 : 0];
+    if (p.k === 'quieto') return p.frames[Math.floor(t * 5) % n];
+    const run = n / 8,
+      hold = p.k === 'muerte' ? 1.6 : 0.6;
+    const u = t % (run + hold);
+    return p.frames[Math.min(n - 1, Math.floor(u * 8))];
+  }
+  function draw(now) {
+    const t = now / 1000;
+    for (const p of players) {
+      if (!p.W) size(p);
+      const im = imgs[pick(p, t)];
+      const x = p.c.getContext('2d');
+      x.clearRect(0, 0, p.W, p.H);
+      x.drawImage(im, Math.round((p.W - im.width) / 2), p.H - 2 - im.height);
+    }
+    if (!still) requestAnimationFrame(draw);
+  }
+  Promise.all(
+    imgs.map((i) => (i.complete ? 0 : new Promise((r) => (i.onload = i.onerror = r)))),
+  ).then(() => requestAnimationFrame(draw));
+</script>

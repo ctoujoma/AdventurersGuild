@@ -406,6 +406,30 @@ const FOES: Record<Heading, readonly (() => ExpFoe)[]> = {
 
 const cache = new Map<string, ExpFoe>();
 
+let ceniza: FoeArt | undefined;
+
+/**
+ * El jabalí de ceniza, jefe de la historia «Ceniza» (hoja del usuario, 27 de noviembre): resopla;
+ * escarba, arranca y embiste agachado hasta dar la cornada hacia arriba; herido, chilla y se
+ * encoge; al morir se encabrita, se desploma y se deshace en un montón de ceniza.
+ */
+export function cenizaArt(): FoeArt {
+  ceniza ??= calcoArt(
+    'grande',
+    'ceniza',
+    { idle: 0, idle2: 2, walk1: 1, walk2: 3, windup: 7, strike: 8, hurt: 11, down: 20 },
+    true,
+    {
+      idle: [0, 1, 2, 3, 4, 3, 2, 1],
+      windup: [5, 6, 7],
+      strike: [8, 9, 10],
+      hurt: [11, 12, 13, 14],
+      down: [15, 16, 17, 18, 18, 19, 20],
+    },
+  );
+  return ceniza;
+}
+
 /** El enemigo número `idx` del rumbo (siempre el mismo dibujo). */
 export function expFoeArt(heading: Heading, idx: number): ExpFoe {
   const key = `${heading}:${idx}`;
