@@ -123,6 +123,16 @@ describe('objetivos', () => {
     expect(draw(120, 'jefes')).not.toBeNull();
   });
 
+  it('hazañas: niveles que suben, un premio por nivel, y las del juego largo llegan muy arriba', () => {
+    for (const f of FEATS) {
+      expect(f.rewards).toHaveLength(f.tiers.length);
+      for (let i = 1; i < f.tiers.length; i++) expect(f.tiers[i]!).toBeGreaterThan(f.tiers[i - 1]!);
+      expect(f.rewards.at(-1)!.gold ?? 0).toBeGreaterThanOrEqual(900);
+    }
+    expect(FEATS.find((f) => f.id === 'encargos')!.tiers.at(-1)).toBe(400);
+    expect(FEATS.some((f) => f.stat === 'bosses')).toBe(true);
+  });
+
   it('el progreso no pasa de lo que pide', () => {
     const s = newGame('progreso');
     for (const g of s.goals!.active) {

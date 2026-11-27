@@ -20,6 +20,30 @@ hazanas:
   sinbajas:
     nombre: "Everyone home"
     texto: "Go {n} days in a row without losses"
+  historias:
+    nombre: "Told in every tavern"
+    texto: "Complete {n, plural, one {one story} other {# stories}}"
+  jefes:
+    nombre: "Legend hunters"
+    texto: "Defeat {n, plural, one {one boss} other {# bosses}}"
+  expediciones:
+    nombre: "Beyond the map"
+    texto: "Return from {n, plural, one {one expedition} other {# expeditions}}"
+  talleres:
+    nombre: "Golden hands"
+    texto: "Make {n, plural, one {one item} other {# items}} in the workshops"
+  incidentes:
+    nombre: "I'm in charge here"
+    texto: "Resolve {n} incidents in the tavern"
+  curados:
+    nombre: "Healing hands"
+    texto: "Fully heal {n, plural, one {one hero} other {# heroes}} in the cots"
+  jarras:
+    nombre: "Best beer in the county"
+    texto: "Serve {n} jugs in the hall"
+  entrenar:
+    nombre: "Sweat and iron"
+    texto: "Gain {n} attribute points training"
 premio:
   oro: "{n} gold"
   rep: "{n} reputation"
