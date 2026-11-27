@@ -3,6 +3,7 @@ import { audio } from '../audio/audio';
 import type { BossFight, GameState } from '../core/model';
 import { ESCRITORIO, MOVIL } from '../world/visor/encuadre';
 import { Visor } from '../world/visor/escena';
+import { WIN_AFTER, fightSpan } from '../world/visor/gente';
 import { replayNow } from './expedition';
 import { Icon } from './icons';
 import { t, tx } from '../textos';
@@ -13,8 +14,6 @@ interface Props {
   onClose: () => void;
 }
 
-/** Lo que dura la pelea en la repetición antes de contar cómo acabó (s). */
-const REPLAY_S = 7;
 const DESK = '(min-width: 1000px)';
 
 /**
@@ -37,6 +36,11 @@ export function ExpFightReplay({ game, fight: f, onClose }: Props) {
     c.height = enc.h;
     // Al empezar, todos en pie (quién cayó se cuenta al final).
     const now = { ...m, crew: m.crew.map((h) => ({ ...h, fate: 'ok' as const })) };
+    // La pelea entera (hasta que caen los que caen por turnos) y, si ganan, como en directo: los
+    // que quedan caen y el grupo lo celebra; luego, el cartel.
+    const span = fightSpan(now);
+    const end = span + (f.won ? WIN_AFTER : 0.6);
+    const after = { ...now, mode: 'walk' as const };
     const visor = new Visor(enc);
     setDone(false);
     audio.play('horn', 0.5);
@@ -49,13 +53,13 @@ export function ExpFightReplay({ game, fight: f, onClose }: Props) {
       if (tick === last) return;
       last = tick;
       const time = (ms - start) / 1000;
-      if (time >= REPLAY_S) {
+      if (time >= end) {
         cancelAnimationFrame(raf);
         setDone(true);
         audio.play(f.won ? 'cheer' : 'thud', 0.6);
         return;
       }
-      visor.draw(ctx, now, time);
+      visor.draw(ctx, time < span || !f.won ? now : after, time);
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
