@@ -21,6 +21,15 @@ import { GAP, foeFrame, heroOf, shadow } from './gente';
 import { lutOf, pack, unpack, type Depth } from './luz';
 import { put, tinted } from './pintar';
 import { M, Tonos, hash, hash2, type Mat } from './tonos';
+import {
+  VELAS_SIERRA,
+  cuevaSierra,
+  esconditeSierra,
+  refugio,
+  ruinasSierra,
+  santuarioSierra,
+  torreSierra,
+} from './sucesos-sierra';
 
 // ---------- Pintar en tonos ----------
 
@@ -452,21 +461,31 @@ function escondite(): Tonos {
 
 const PAINT = { torre, cueva, ruinas, tienda, santuario, cofre, carro, brasas, escondite };
 type Pieza = keyof typeof PAINT;
-const tones = new Map<Pieza, Tonos>();
+/** En la sierra, las piezas con material de montaña (`sucesos-sierra.ts`). */
+const SIERRA: Partial<Record<Pieza, () => Tonos>> = {
+  torre: torreSierra,
+  cueva: cuevaSierra,
+  ruinas: ruinasSierra,
+  tienda: refugio,
+  santuario: santuarioSierra,
+  escondite: esconditeSierra,
+};
+const tones = new Map<string, Tonos>();
 const colored = new Map<string, { key: string; out: PixelBuffer }>();
 
 /** La pieza coloreada con la tabla de la capa `id` (la misma luz, sombra y niebla que el paisaje). */
 function painted(c: Ctx, p: Pieza, id: CapaId): PixelBuffer {
-  let t = tones.get(p);
+  const bio = biomaOf(c.m.terrain);
+  const tk = `${bio.id}:${p}`;
+  let t = tones.get(tk);
   if (!t) {
-    t = PAINT[p]();
-    tones.set(p, t);
+    t = ((bio.id === 'sierra' && SIERRA[p]) || PAINT[p])();
+    tones.set(tk, t);
   }
   const l = c.l;
-  const bio = biomaOf(c.m.terrain);
   const depth: Depth = c.capas.find((x) => x.id === id)?.depth ?? { haze: 0, fog: 0.2 };
   const key = `${bio.id}:${l.hour.toFixed(1)}:${l.clima.fog.toFixed(2)}:${l.clima.cloud.toFixed(2)}:${l.clima.rain.toFixed(1)}:${(l.clima.dust ?? 0).toFixed(2)}:${l.night.toFixed(2)}`;
-  const ck = `${p}:${id}`;
+  const ck = `${tk}:${id}`;
   const hit = colored.get(ck);
   if (hit && hit.key === key) return hit.out;
   const lut = lutOf(l, depth, bio.ramps);
@@ -569,8 +588,12 @@ export function drawSucesoFondo(c: Ctx): void {
     case 'santuario': {
       const x = ahead(c, 26);
       plant(c, 'santuario', 'cerca', x, y, flip);
-      glint(c, x - 2, y - 12, 0.4);
-      glint(c, x + 1, y - 12, 1.9);
+      if (biomaOf(c.m.terrain).id === 'sierra')
+        VELAS_SIERRA.forEach(([dx, dy], k) => glint(c, x + dx, y - dy, k * 1.5 + 0.4));
+      else {
+        glint(c, x - 2, y - 12, 0.4);
+        glint(c, x + 1, y - 12, 1.9);
+      }
       break;
     }
   }

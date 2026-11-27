@@ -711,7 +711,15 @@ Herramientas: `tools/visor-hoja.ts` (hojas de lejanía, claro y nevando, móvil 
   hierba del suelo y la festuca de delante en ráfagas que pasan como olas, arrastra nieve en polvo
   de los neveros y arranca penachos de las cumbres. Coste: unos 0,07 ms por fotograma. Capturas:
   `hoja-viento.png`, `hoja-fauna-movil.png`.
-- [ ] (d) sucesos.
+- [x] **(d) Sucesos de montaña** (rama `claude/arte-visor-sierra-sucesos`, `sucesos-sierra.ts`):
+  en la sierra, la torre de vigía cuadrada de mampostería con talud, sillares de esquina, la puerta
+  en alto con su escalera de mano y el remate roto, plantada en su peña (unas 3,5 alturas de
+  héroe); la cueva abierta en un risco de caras a plomo de refilón, con canchal al pie; el
+  humilladero (cruz de piedra sobre un montón de piedras con hornacina y velas); el refugio de
+  pastor de piedra seca y losa (en lugar de la tienda); la ermita en ruinas con la espadaña y su
+  campana; y el escondite de piornos y un canto. Las piezas se eligen por rumbo en `sucesos.ts`.
+  También: las peñas ya no tienen rayas a plomo (grietas torcidas e inclinadas y aristas en
+  diagonal; lo pidió el usuario). Capturas en `capturas/expediciones/visor-sierra/sucesos/`.
 
 ## Lo que ha dicho el usuario (para no repetir errores)
 
