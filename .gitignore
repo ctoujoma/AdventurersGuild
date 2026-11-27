@@ -13,3 +13,4 @@ src/textos/xx/
 
 # Calcos intermedios (se regeneran con tools/bocetos/enemigos)
 tools/bocetos/enemigos/*.json
+__pycache__/

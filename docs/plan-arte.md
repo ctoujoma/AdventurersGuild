@@ -538,7 +538,13 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      velocidad desde la grupa del dibujo de ese momento, polvo de las pezuñas y choque fuerte con
      temblor en vez del zarpazo. La repetición de las peleas de expedición (`replayNow`) ya usa los
      dibujos nuevos en todos los rumbos (antes, solo el bosque: en sierra salía el gigante antiguo) y el
-     guardián.
+     guardián. **Jabalí de ceniza** (jefe de la historia «Ceniza», hoja del usuario): `ceniza_calco.py`,
+     `cenizaArt()` en `expFoes.ts` y una línea en `BOSS_CALCO`; resopla, escarba y embiste hasta la cornada,
+     y al morir, desde que empieza a deshacerse, se lo lleva el viento en ceniza y brasas (`ashOut` con
+     motas propias; el montón de la hoja quedaba pobre). La bestia de Hondogrís sigue siendo el huargo.
+     **Lobo gris y oso pardo de sierra:** los calcos del bosque con otra rampa (`recolor`, opción `ramp`
+     de `calcoArt`): el lobo, más claro y frío; el oso, terroso. Glosario de enemigos con los efectos de la
+     pelea del visor (misma lógica que `gente.ts`, copiada en la herramienta): `docs/glosario-enemigos.html`.
      Luego: pasada visual a sierra/marismas/ruinas y transiciones suaves (lluvia y fondo cambian de golpe).
      **Sucesos a la vista (26 nov):** con `e.pending` el visor pinta delante lo que hay (`visor/sucesos.ts`, `MarchNow.event`):
      cofre, santuario, mercader con carro, viajero, campamento abandonado, oso, cueva, torre y ruinas, pintados en

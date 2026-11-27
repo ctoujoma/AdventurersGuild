@@ -21,13 +21,11 @@ import {
   type FoeSeq,
 } from './foes';
 import {
-  bearBody,
   goblinBody,
   ratBody,
   skeletonBody,
   trollPose,
   TROLL_FOOT,
-  wolfBody,
   type PoseSpec,
 } from './foeSprites';
 import { BOCA, CALCOS } from './expCalcos';
@@ -137,6 +135,11 @@ function giant(what: string, skin: Record<string, string>, cloth: string, runes 
  * Un enemigo calcado (`expCalcos.ts`): sus fotogramas en un lienzo común, pegados abajo y por la
  * cola, y qué fotograma hace cada pose. Caído, panza arriba.
  */
+/** Las motas de ceniza (grises). */
+const ASH = ['#6e6e80', '#8e8ea0', '#b0b0c0'];
+/** Las del jabalí de ceniza: ceniza y alguna brasa. */
+const EMBERS = ['#6e6e80', '#8e8ea0', '#6e6e80', '#e8642a', '#f0a030'];
+
 /** Bayer 4×4: el orden en que se borran los píxeles al deshacerse. */
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 
@@ -144,7 +147,7 @@ const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
  * Se vuelve ceniza y se la lleva el viento: en `n` pasos se deshace de arriba abajo y lo que se
  * suelta sube y se va hacia atrás en motas grises que se apagan. El último, vacío.
  */
-function ashOut(img: PixelBuffer, n: number): PixelBuffer[] {
+function ashOut(img: PixelBuffer, n: number, motes: readonly string[] = ASH): PixelBuffer[] {
   const pts: { x: number; y: number; c: number; o: number; h: number; g: number }[] = [];
   let top = img.h;
   for (let y = 0; y < img.h; y++)
@@ -163,7 +166,6 @@ function ashOut(img: PixelBuffer, n: number): PixelBuffer[] {
       const o = 0.45 * ((y - top) / tall) + 0.3 * (1 - x / img.w) + 0.25 * rnd(x * 31 + y * 57 + 1);
       pts.push({ x, y, c, o, h: rnd(x * 17 + y * 89 + 3), g: rnd(x * 7 + y * 13 + 5) });
     }
-  const ASH = ['#6e6e80', '#8e8ea0', '#b0b0c0'];
   return Array.from({ length: n }, (_, i) => {
     const t = ((i + 1) / n) * 1.3;
     const out = new PixelBuffer(img.w, img.h);
@@ -179,7 +181,7 @@ function ashOut(img: PixelBuffer, n: number): PixelBuffer[] {
       const x = p.x - q * (10 + p.g * 18);
       const y = p.y - q * (6 + p.h * 60) + Math.sin(q * 7 + p.g * 9) * 1.2;
       if (y < 0) continue;
-      out.set(x, y, q < 0.15 ? p.c : ASH[Math.floor(p.g * 3)]!);
+      out.set(x, y, q < 0.15 ? p.c : motes[Math.floor(p.g * motes.length)]!);
     }
     return out;
   });
@@ -203,10 +205,19 @@ function calcoArt(
   pose: Record<Exclude<FoePose, 'down'>, number> & { down?: number },
   big = false,
   seq?: Partial<Record<FoeSeq, number[]>>,
-  fade = 0,
-  ash = 0,
+  o: {
+    /** Al acabar de morir, se deshace en tramado en tantos pasos. */
+    fade?: number;
+    /** O se vuelve ceniza que se lleva el viento, en tantos pasos y con estas motas. */
+    ash?: number;
+    motes?: readonly string[];
+    /** Otros colores para el mismo dibujo (el lobo gris de la sierra, del lobo del bosque). */
+    ramp?: (ramp: readonly string[]) => readonly string[];
+  } = {},
 ): FoeArt {
-  const c = CALCOS[what]!;
+  const { fade = 0, ash = 0 } = o;
+  const base = CALCOS[what]!;
+  const c = o.ramp ? { ...base, ramp: o.ramp(base.ramp) } : base;
   const w = Math.max(...c.frames.map((f) => f[0]!.length));
   const h = Math.max(...c.frames.map((f) => f.length));
   const col = (ch: string) => {
@@ -250,7 +261,7 @@ function calcoArt(
     // queda nada: caído, ya no se ve.
     const d = art.seq.down;
     if (ash && d?.length) {
-      const gone = ashOut(d[d.length - 1]!, ash);
+      const gone = ashOut(d[d.length - 1]!, ash, o.motes);
       art.seq.down = [...d, ...gone];
       poses.down = gone[gone.length - 1]!;
     } else if (fade && d?.length) {
@@ -268,6 +279,50 @@ function calcoArt(
     poses.down = gone[gone.length - 1]!;
   }
   return art;
+}
+
+/**
+ * La misma rampa con otro tono: cada color pasa a `hue` (grados) con `sat` de saturación (por la
+ * que tenía) y se aclara (`lift`: 0 igual, 1 blanco) sin perder el orden de oscuro a claro.
+ */
+function recolor(
+  ramp: readonly string[],
+  o: { hue: number; sat: number; lift: number },
+): readonly string[] {
+  return ramp.map((h) => {
+    const v = parseInt(h.slice(1), 16);
+    const [r, g, b] = [(v >> 16) / 255, ((v >> 8) & 255) / 255, (v & 255) / 255];
+    // La boca y la sangre, como estaban.
+    if (r > 0.45 && r > g * 1.8) return h;
+    const mx = Math.max(r, g, b);
+    const mn = Math.min(r, g, b);
+    let l = (mx + mn) / 2;
+    const s0 = mx === mn ? 0 : (mx - mn) / (1 - Math.abs(2 * l - 1));
+    l = l + (1 - l) * o.lift * Math.sqrt(l);
+    const s = Math.min(1, s0 * o.sat + 0.06);
+    // HSL a RGB
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const hh = (o.hue / 60) % 6;
+    const x = c * (1 - Math.abs((hh % 2) - 1));
+    const [r1, g1, b1] =
+      hh < 1
+        ? [c, x, 0]
+        : hh < 2
+          ? [x, c, 0]
+          : hh < 3
+            ? [0, c, x]
+            : hh < 4
+              ? [0, x, c]
+              : hh < 5
+                ? [x, 0, c]
+                : [c, 0, x];
+    const m = l - c / 2;
+    const to = (u: number) =>
+      Math.round(Math.max(0, Math.min(1, u + m)) * 255)
+        .toString(16)
+        .padStart(2, '0');
+    return '#' + to(r1) + to(g1) + to(b1);
+  });
 }
 
 const banditOf = (seed: string) => bandit(new Rng(`exp-bandido-${seed}`));
@@ -336,14 +391,30 @@ const FOES: Record<Heading, readonly (() => ExpFoe)[]> = {
         // lleva el viento.
         // Herido, se encabrita aullando (el primero de la muerte) y vuelve.
         { hurt: [8, 8, 1], down: [8, 9, 10, 11, 12, 13, 13] },
-        0,
-        6,
+        { ash: 6 },
       ),
       count: 1,
     }),
   ],
   sierra: [
-    () => ({ art: quadArt('bestia', 'lobo_gris', wolfBody(P.fog, P.steel, P.mist)), count: 3 }),
+    () => ({
+      // El lobo del bosque, más claro y frío: de pelo de nieve.
+      art: calcoArt(
+        'bestia',
+        'lobo',
+        { idle: 0, idle2: 2, walk1: 1, walk2: 3, windup: 6, strike: 8, hurt: 11, down: 18 },
+        false,
+        {
+          idle: [0, 1, 2, 3, 4, 3, 2, 1],
+          windup: [5, 6],
+          strike: [7, 8, 9, 10],
+          hurt: [11, 12, 13, 14],
+          down: [15, 16, 17, 18],
+        },
+        { ramp: (r) => recolor(r, { hue: 215, sat: 0.12, lift: 0.3 }) },
+      ),
+      count: 3,
+    }),
     () => ({
       art: bipedArt(
         'trasgo',
@@ -352,7 +423,24 @@ const FOES: Record<Heading, readonly (() => ExpFoe)[]> = {
       ),
       count: 3,
     }),
-    () => ({ art: quadArt('bestia', 'oso_pardo', bearBody(P.mocha, P.ebony)), count: 1 }),
+    () => ({
+      // El oso del bosque, pardo: menos rojo, más terroso y con las puntas más claras.
+      art: calcoArt(
+        'bestia',
+        'oso',
+        { idle: 0, idle2: 2, walk1: 1, walk2: 3, windup: 7, strike: 8, hurt: 11, down: 18 },
+        false,
+        {
+          idle: [0, 1, 2, 3, 4, 3, 2, 1],
+          windup: [5, 6, 7],
+          strike: [8, 9, 10],
+          hurt: [11, 12, 13, 14],
+          down: [15, 16, 17, 18],
+        },
+        { ramp: (r) => recolor(r, { hue: 30, sat: 0.72, lift: 0.1 }) },
+      ),
+      count: 1,
+    }),
     () => ({
       art: calcoArt(
         'grande',
@@ -406,6 +494,33 @@ const FOES: Record<Heading, readonly (() => ExpFoe)[]> = {
 
 const cache = new Map<string, ExpFoe>();
 
+let ceniza: FoeArt | undefined;
+
+/**
+ * El jabalí de ceniza, jefe de la historia «Ceniza» (hoja del usuario, 27 de noviembre): resopla;
+ * escarba, arranca y embiste agachado hasta dar la cornada hacia arriba; herido, chilla y se
+ * encoge; al morir se encabrita, se desploma y se deshace en ceniza y brasas que se lleva el viento.
+ */
+export function cenizaArt(): FoeArt {
+  ceniza ??= calcoArt(
+    'grande',
+    'ceniza',
+    { idle: 0, idle2: 2, walk1: 1, walk2: 3, windup: 7, strike: 8, hurt: 11, down: 19 },
+    true,
+    {
+      idle: [0, 1, 2, 3, 4, 3, 2, 1],
+      windup: [5, 6, 7],
+      strike: [8, 9, 10],
+      hurt: [11, 12, 13, 14],
+      // El montón de ceniza de la hoja quedaba pobre: desde que empieza a deshacerse, se lo lleva
+      // el viento en ceniza y brasas.
+      down: [15, 16, 17, 18, 18, 19],
+    },
+    { ash: 7, motes: EMBERS },
+  );
+  return ceniza;
+}
+
 /** El enemigo número `idx` del rumbo (siempre el mismo dibujo). */
 export function expFoeArt(heading: Heading, idx: number): ExpFoe {
   const key = `${heading}:${idx}`;
@@ -444,7 +559,7 @@ export function expGuardianArt(heading: Heading): FoeArt {
                 hurt: [23],
                 down: [19, 20, 21, 22, 24, 24],
               },
-              4,
+              { fade: 4 },
             ),
             count: 1,
           }

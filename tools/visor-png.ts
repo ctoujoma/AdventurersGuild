@@ -16,7 +16,8 @@ const crc = (() => {
   };
 })();
 
-export function png(b: PixelBuffer, s: number): Buffer {
+/** `clear`: lo vacío, transparente (si no, negro). */
+export function png(b: PixelBuffer, s: number, clear = false): Buffer {
   const W = b.w * s;
   const H = b.h * s;
   const raw = Buffer.alloc((W * 4 + 1) * H);
@@ -28,7 +29,7 @@ export function png(b: PixelBuffer, s: number): Buffer {
       raw[o] = c & 255;
       raw[o + 1] = (c >> 8) & 255;
       raw[o + 2] = (c >> 16) & 255;
-      raw[o + 3] = 255;
+      raw[o + 3] = clear ? (c >>> 24) & 255 : 255;
     }
   }
   const chunk = (type: string, data: Buffer) => {
