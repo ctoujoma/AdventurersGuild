@@ -25,6 +25,7 @@ import {
   WORK_START,
   CRAFT_QUALITY,
   CRAFT_GOOD_PER_SKILL,
+  CRAFT_PLACES,
   CRAFT_SLOTS,
   CRAFT_STD_WORK,
   DAY_SECONDS,
@@ -89,6 +90,36 @@ export const craftsIn = (s: GameState, roomId: string) =>
 /** Cuántos trabajos a la vez caben en un taller. */
 export const craftSlots = (r: Room) => CRAFT_SLOTS[active(r).level] ?? CRAFT_SLOTS.at(-1)!;
 
+/** Sitios de un taller (trabajando, en cola y acabado sin recoger): por nivel, y uno por hueco de más. */
+export function craftPlaces(r: Room): number {
+  const { level, cells } = active(r);
+  if (level <= 0) return 0;
+  return (CRAFT_PLACES[level] ?? CRAFT_PLACES.at(-1)!) + Math.max(0, cells - 1);
+}
+
+/**
+ * Lo que está en cola en cada taller: de lo no acabado, por orden de encargo, los que pasan de los
+ * puestos que trabajan a la vez (vestir siempre trabaja: solo se encarga con un puesto libre).
+ */
+export function queuedIds(s: GameState): Set<string> {
+  const out = new Set<string>();
+  const busy = new Map<string, number>();
+  for (const c of s.crafts ?? []) {
+    if (c.ready) continue;
+    const r = s.building.rooms.find((x) => x.id === c.room);
+    const n = busy.get(c.room) ?? 0;
+    if (!c.dress && r && n >= craftSlots(r)) out.add(c.id);
+    else busy.set(c.room, n + 1);
+  }
+  return out;
+}
+
+/** Trabajos en marcha (ni en cola ni acabados) de un taller. */
+const workingIn = (s: GameState, roomId: string) => {
+  const q = queuedIds(s);
+  return craftsIn(s, roomId).filter((c) => !c.ready && !q.has(c.id)).length;
+};
+
 const hoursToWork = (h: number) => (h / 24) * CRAFT_STD_WORK;
 
 /**
@@ -101,12 +132,18 @@ export const clockHours = (h: number) => h * (WORK_END - WORK_START);
 const shopMsg = (type?: RoomType) =>
   type && WORKSHOP_PLACE[type] ? msg(`recetas.taller.${type}`) : msg('talleres.el_taller');
 
-/** Por qué no se puede empezar algo en un taller (null = se puede). */
-function canStart(s: GameState, roomId: string): string | null {
+/**
+ * Por qué no se puede encargar algo en un taller (null = se puede). Con sitio libre se encarga
+ * aunque los puestos estén ocupados (espera en cola); con `now`, hace falta un puesto libre ya
+ * (vestir: el héroe va a la sala).
+ */
+function canStart(s: GameState, roomId: string, now = false): string | null {
   const r = s.building.rooms.find((x) => x.id === roomId);
   if (!r || !isWorkshop(r.type)) return t('talleres.error.no_taller');
   if (active(r).level === 0) return t('talleres.error.sin_uso');
-  if (craftsIn(s, roomId).length >= craftSlots(r))
+  if (craftsIn(s, roomId).length >= craftPlaces(r))
+    return t(craftPlaces(r) > 1 ? 'talleres.error.a_tope' : 'talleres.error.uno');
+  if (now && workingIn(s, roomId) >= craftSlots(r))
     return t(craftSlots(r) > 1 ? 'talleres.error.a_tope' : 'talleres.error.uno');
   return null;
 }
@@ -323,7 +360,7 @@ const sameDress = (a: Dress = {}, b: Dress = {}) => a.dye === b.dye && a.garment
 
 /** Por qué no se puede vestir a un héroe así en la sastrería (null = se puede). */
 export function canDress(s: GameState, roomId: string, heroId: string, to: Dress): string | null {
-  const why = canStart(s, roomId);
+  const why = canStart(s, roomId, true);
   if (why) return why;
   const r = s.building.rooms.find((x) => x.id === roomId)!;
   if (r.type !== 'sastreria') return t('talleres.error.sastreria');
@@ -373,7 +410,7 @@ export function dressStatus(s: GameState, heroId: string, to: Dress): DressStatu
     return { state: 'away', why: t('talleres.ropa.no_en_casa', { heroe: h.name }), cost };
   if (dressingOf(s, heroId))
     return { state: 'sewing', why: t('talleres.ropa.cosiendo', { heroe: h.name }), cost };
-  const free = rooms.find((r) => !canStart(s, r.id));
+  const free = rooms.find((r) => !canStart(s, r.id, true));
   if (!free) {
     const r = rooms[0]!;
     const c = craftsIn(s, r.id)[0];
@@ -421,11 +458,21 @@ export interface CraftState {
   hoursLeft: number | null;
   /** Aún no ha empezado: el héroe va de camino a la sastrería. */
   walking: boolean;
+  /** En cola: empieza solo cuando quede un puesto libre. */
+  queued?: boolean;
 }
 
 /** Cómo va un trabajo ahora (para la ficha y la escena). */
 export function craftState(s: GameState, c: Craft): CraftState {
   if (c.ready) return { craft: c, frac: 1, hoursLeft: 0, walking: false };
+  if (queuedIds(s).has(c.id))
+    return {
+      craft: c,
+      frac: c.need > 0 ? c.done / c.need : 0,
+      hoursLeft: null,
+      walking: false,
+      queued: true,
+    };
   const rate = craftRate(s, c.room, c);
   const done = Math.min(c.need, c.done + rate * workedIn(c.at, partOf(s)));
   return {
@@ -650,6 +697,24 @@ export function stepCrafts(
   if (!s.crafts?.length) return [];
   const news: DawnEvent[] = [];
   const rng = shared ?? new Rng(s.rng);
+  // Con algo en cola, a trozos: lo que espera empieza en cuanto acaba lo de delante (también de
+  // un tirón, con el juego cerrado), no al día siguiente.
+  if (queuedIds(s).size) {
+    const from = Math.min(...s.crafts.filter((c) => !c.ready).map((c) => c.at), part);
+    for (let p = from + QUEUE_STEP; p < part && queuedIds(s).size; p += QUEUE_STEP)
+      stepOnce(s, p, rng, unseen, news);
+  }
+  stepOnce(s, part, rng, unseen, news);
+  if (!shared) s.rng = rng.save();
+  return news;
+}
+
+/** Trozo de día con el que avanzan los talleres cuando hay algo en cola. */
+const QUEUE_STEP = 0.02;
+
+function stepOnce(s: GameState, part: number, rng: Rng, unseen: boolean, news: DawnEvent[]): void {
+  if (!s.crafts?.length) return;
+  const queued = queuedIds(s);
   const keep: Craft[] = [];
   for (const old of s.crafts) {
     const c = { ...old };
@@ -693,6 +758,12 @@ export function stepCrafts(
       keep.push(c);
       continue;
     }
+    // En cola: no cuenta trabajo hasta que le toca.
+    if (queued.has(c.id)) {
+      c.at = Math.max(c.at, part);
+      keep.push(c);
+      continue;
+    }
     // Solo avanza en la jornada, con quien está en la sala.
     c.done += craftRate(s, c.room, c) * workedIn(c.at, part);
     c.at = Math.max(c.at, part);
@@ -710,8 +781,6 @@ export function stepCrafts(
   }
   if (keep.length) s.crafts = keep;
   else delete s.crafts;
-  if (!shared) s.rng = rng.save();
-  return news;
 }
 
 /**

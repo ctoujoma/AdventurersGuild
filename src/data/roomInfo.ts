@@ -8,6 +8,7 @@ import {
   BOARD_SIZE,
   CELLAR_STORE,
   byLevel,
+  CRAFT_PLACES,
   CRAFT_SLOTS,
   DOOR_TIME,
   DOOR_GUARDS,
@@ -45,10 +46,11 @@ const pace = (l: number) => Math.round(100 * (0.75 + 0.25 * l));
 /** El valor de una tabla por nivel (los de más arriba, el último). */
 const at = <T>(t: readonly T[], l: number): T => t[Math.min(l, t.length - 1)]!;
 
-/** Un taller (forja, sastrería, alquimia): trabajos a la vez, ritmo, calidad y recetas. */
-const workshop: Effect = (l) => {
+/** Un taller (forja, sastrería, alquimia): sitios, trabajos a la vez, ritmo, calidad y recetas. */
+const workshop: Effect = (l, cells) => {
   if (l === 0) return t('salas.efecto.taller_0');
   return t('salas.efecto.taller', {
+    sitios: at(CRAFT_PLACES, l) + Math.max(0, cells - 1),
     n: at(CRAFT_SLOTS, l),
     ritmo: pace(l),
     calidad: qualityText(l),

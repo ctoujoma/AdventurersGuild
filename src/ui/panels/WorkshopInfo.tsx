@@ -20,6 +20,7 @@ import {
   canTemper,
   canUndo,
   clockHours,
+  craftPlaces,
   craftSlots,
   craftState,
   craftsIn,
@@ -110,17 +111,21 @@ export function WorkshopInfo({
       <span class="row-sub">
         {jobs.length
           ? t('paneles.workshopinfo.trabajando_de', {
-              length: jobs.length,
-              craft_slots: craftSlots(room),
+              usados: jobs.length,
+              sitios: craftPlaces(room),
+              puestos: craftSlots(room),
             })
-          : t('paneles.workshopinfo.libre_puede_hacer_a', { n: craftSlots(room) })}
+          : t('paneles.workshopinfo.libre_puede_hacer_a', {
+              n: craftSlots(room),
+              sitios: craftPlaces(room),
+            })}
       </span>
       {!tab && !game.workers.some((w) => w.room === room.id && w.trade === room.type) && (
         <span class="row-sub">
           {t('paneles.workshopinfo.sin_solo_trabaja_un', { smith, smith2: smith })}
         </span>
       )}
-      {jobs.map(({ craft: c, frac, hoursLeft, walking }) => {
+      {jobs.map(({ craft: c, frac, hoursLeft, walking, queued }) => {
         const rc = c.recipe ? RECIPES[c.recipe] : null;
         const who = c.dress && game.heroes.find((h) => h.id === c.dress!.hero);
         const what = who
@@ -155,20 +160,22 @@ export function WorkshopInfo({
               <span class="train-bar" aria-label={pct(frac)}>
                 <i style={{ width: `${Math.round(frac * 100)}%` }} />
               </span>
-              <span class={`row-sub ${hoursLeft === null ? 'room-bad' : ''}`}>
-                {hoursLeft === null
-                  ? who && who.status !== 'ok'
-                    ? t('paneles.workshopinfo.en_pausa_sigue_cuando', {
-                        nombre: who.name,
-                        mision: who.status === 'mision',
-                      })
-                    : (absentText(game, room) ??
-                      t('paneles.workshopinfo.parado_pon_a_un', { smith }))
-                  : c.ready
-                    ? t('paneles.workshopinfo.listo')
-                    : walking && who
-                      ? t('paneles.workshopinfo.viene_de_camino', { nombre: who.name })
-                      : t('paneles.workshopinfo.le_quedan', { horas: hours(hoursLeft) })}
+              <span class={`row-sub ${hoursLeft === null && !queued ? 'room-bad' : ''}`}>
+                {queued
+                  ? t('paneles.workshopinfo.en_cola')
+                  : hoursLeft === null
+                    ? who && who.status !== 'ok'
+                      ? t('paneles.workshopinfo.en_pausa_sigue_cuando', {
+                          nombre: who.name,
+                          mision: who.status === 'mision',
+                        })
+                      : (absentText(game, room) ??
+                        t('paneles.workshopinfo.parado_pon_a_un', { smith }))
+                    : c.ready
+                      ? t('paneles.workshopinfo.listo')
+                      : walking && who
+                        ? t('paneles.workshopinfo.viene_de_camino', { nombre: who.name })
+                        : t('paneles.workshopinfo.le_quedan', { horas: hours(hoursLeft) })}
               </span>
             </span>
             {onAct && c.ready && (

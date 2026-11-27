@@ -492,7 +492,11 @@ marcador (`ui/CollectMark.tsx`, `core/collect.ts`); vista previa: «Recoger lo c
   los visitantes; con el juego cerrado o en el simulador, lo de todo el día sin que pare.
 - **Caja del salón:** sin tope. La bolsa sale sobre el salón desde 100 monedas; la ficha del salón
   deja recogerla siempre. Al anochecer se recoge sola.
-- Pendiente: pulir el efecto (en `futuro.md`).
+- Pulir el efecto: hecho (27 de noviembre).
+- **Talleres con cola (27 de noviembre):** cada taller tiene sitios (`CRAFT_PLACES`, 1/2/3/4 por
+  nivel y +1 por hueco de ancho de más): lo que trabaja (`CRAFT_SLOTS`, 1/1/2/2 a la vez), lo que
+  espera en cola (pagado; empieza solo al quedar un puesto libre, también con el juego cerrado) y
+  lo acabado sin recoger. Vestir pide un puesto libre ya. `queuedIds` en `core/crafting.ts`.
 
 ## Pendiente (25 de noviembre)
 

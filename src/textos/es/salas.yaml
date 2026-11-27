@@ -69,7 +69,7 @@ salas:
     desc: "Guarda los materiales que traen los encargos: más con cada nivel y cada hueco."
 efecto:
   taller_0: "No crea nada"
-  taller: "{n, plural, one {# trabajo} other {# trabajos}} a la vez, al {ritmo} % de ritmo; sale: {calidad}; al desmontar, {receta} % de sacar la receta"
+  taller: "{sitios, plural, one {# sitio} other {# sitios}} (lo de más, en cola), {n, plural, one {# trabajo} other {# trabajos}} a la vez, al {ritmo} % de ritmo; sale: {calidad}; al desmontar, {receta} % de sacar la receta"
   entreno_0: "No se entrena"
   entreno: "{atributo} hasta {tope}, al {ritmo} % de ritmo"
   candidatos:
