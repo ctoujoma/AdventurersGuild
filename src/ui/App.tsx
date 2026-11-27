@@ -1552,9 +1552,8 @@ export function App() {
                   taller: t(type ? `recetas.taller.${type}` : 'talleres.el_taller'),
                 })}
                 onTake={(el) => {
-                  audio.play('shimmer', 0.7);
                   haptic('select');
-                  collectFx(el, '[data-tut="tab-heroes"]');
+                  collectFx(el, '[data-tut="tab-heroes"]', 'objeto');
                   dispatch({ type: 'collect', what: 'taller', id: c.id });
                 }}
               >
@@ -1570,9 +1569,8 @@ export function App() {
             label={t('recoger.caja', { n: tillReady(game) })}
             onTake={(el) => {
               const n = tillReady(gameRef.current);
-              audio.play('coin', 0.8);
               haptic('select');
-              collectFx(el, '[data-gold]');
+              collectFx(el, '[data-gold]', 'oro', n, `+${n}`);
               dispatch({ type: 'collect', what: 'caja' });
               toast(t('recoger.caja_hecho', { n }));
             }}
@@ -1589,6 +1587,7 @@ export function App() {
               room={y.room}
               scene={scene}
               count={y.full ? '!' : `+${y.n}`}
+              full={y.full}
               label={t('recoger.sala', { que: y.kind, n: y.n })}
               onTake={(el) => {
                 if (y.full) {
@@ -1596,9 +1595,14 @@ export function App() {
                   toast(t('recoger.lleno', { que: y.kind }));
                   return;
                 }
-                audio.play('glint', 0.6);
                 haptic('select');
-                collectFx(el, y.kind === 'food' ? '[data-food]' : '[data-beer]');
+                collectFx(
+                  el,
+                  y.kind === 'food' ? '[data-food]' : '[data-beer]',
+                  y.kind === 'food' ? 'pan' : 'jarra',
+                  y.n,
+                  `+${y.n}`,
+                );
                 dispatch({ type: 'collect', what: 'sala', id: y.room });
                 toast(t('recoger.sala_hecho', { que: y.kind, n: y.n }));
               }}
