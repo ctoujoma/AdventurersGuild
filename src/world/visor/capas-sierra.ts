@@ -1013,12 +1013,7 @@ const delante: Painter = (e, L, wild, seed, o) => {
       canto(t, x, base + 2, w, Math.round(H * 0.4), s, { lichen: 0.8, snow: near, lift: 0.8 });
       tuft(t, x + Math.round(w / 2), base + 1, Math.round(H * 0.35), s, M.hierba, 0.6);
     } else if (k < 0.45) cardo(t, x, base, Math.round(H * (0.45 + hash2(i, 5, seed) * 0.2)), s);
-    else if (k < 0.85) {
-      // Festuca: matas altas y finas, de dos en dos.
-      tuft(t, x, base, Math.round(H * (0.5 + hash2(i, 6, seed) * 0.35)), s, M.hierba, 0.6);
-      if (hash2(i, 7, seed) < 0.6)
-        tuft(t, x + 4, base + 1, Math.round(H * 0.35), s + 1, M.musgo, 0.4);
-    } else tuft(t, x, base, Math.round(H * 0.6), s, M.musgo, 0.4);
+    // La festuca de delante la pinta el viento (`vida-sierra.ts`), que la mece.
   }
   nevar(t, near * 0.7, seed + 201);
   return [t, e.h - H];
