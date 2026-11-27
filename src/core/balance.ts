@@ -399,10 +399,12 @@ export const RAISE_MORALE = 25;
 
 // ---------- Veteranos y modo libre ----------
 /**
- * Subida de sueldo al subir de nivel: los veteranos (desde `VET_LEVEL`) piden bastante más (4 por
- * nivel; antes 5, y con plantillas grandes la nómina se comía lo que pagan los encargos).
+ * Subida de sueldo al subir de nivel: los veteranos (desde `VET_LEVEL`) piden más (3 por nivel;
+ * antes 5 y luego 4). Con 4 y cachés de 30 y 60, un héroe pasaba de 64 a la semana a nivel 7 a 354
+ * a nivel 12 (×5,5) y la nómina se multiplicaba por cinco del día 35 al 60 (`npm run auditoria`;
+ * usuario, 27 de noviembre: «suavizar»). Ahora: 108 a nivel 8, 274 a nivel 12 y 400 a nivel 15.
  */
-export const levelRaise = (lvl: number) => (lvl < VET_LEVEL ? 2 * lvl : 4 * lvl);
+export const levelRaise = (lvl: number) => (lvl < VET_LEVEL ? 2 * lvl : 3 * lvl);
 /**
  * Modo libre: hay otros gremios pujando por los encargos y la comarca paga menos que en los
  * apuros de la deuda. Es lo mismo en todos los rangos (antes bajaba con el rango hasta la mitad
@@ -410,7 +412,7 @@ export const levelRaise = (lvl: number) => (lvl < VET_LEVEL ? 2 * lvl : 4 * lvl)
  */
 export const FREE_PAY = 0.5;
 /** Caché: al hacerse veterano y maestro piden un plus fijo de sueldo. */
-export const CACHE: Readonly<Record<number, number>> = { [VET_LEVEL]: 30, [MASTER_LEVEL]: 60 };
+export const CACHE: Readonly<Record<number, number>> = { [VET_LEVEL]: 20, [MASTER_LEVEL]: 40 };
 /**
  * Caché sin pagar: pierde esta moral al negárselo y, mientras no se le pague (se puede después,
  * desde su ficha), su tope de moral queda así de bajo.
@@ -742,9 +744,14 @@ export const EXP_DOWN_DEATH = 0.3;
 export const EXP_WIPE_KEEP = 1 / 3;
 /** El clérigo cura al que está peor por la noche con esta probabilidad. */
 export const EXP_CLERIC_HEAL = 0.5;
-/** Botín: monedas de un hallazgo (más por día de lejanía) y materiales (más cada `EXP_MAT_FAR` días). */
-export const EXP_GOLD = [4, 12] as const;
-export const EXP_GOLD_FAR = 0.35;
+/**
+ * Botín: monedas de un hallazgo (más por día de lejanía) y materiales (más cada `EXP_MAT_FAR` días).
+ * Medido con `npm run auditoria` (usuario, 27 de noviembre: «que paguen»): antes, 4–12 y 0,35, unas
+ * 2 monedas por héroe y día de viaje; ahora de 10 (lejanía 2) a 20–24 (lejanía 6–8) por héroe y
+ * día, algo por debajo de un encargo de rango alto (~30), que no trae materiales ni récords.
+ */
+export const EXP_GOLD = [35, 95] as const;
+export const EXP_GOLD_FAR = 0.7;
 export const EXP_MAT_FAR = 2;
 /** El cristal, desde estos días de lejanía. */
 export const EXP_CRYSTAL_FROM = 3;
