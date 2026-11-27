@@ -500,6 +500,30 @@ const FOES: Record<Heading, readonly (() => ExpFoe)[]> = {
 
 const cache = new Map<string, ExpFoe>();
 
+let ahogadoGrande: FoeArt | undefined;
+
+/**
+ * El ahogado a la escala de su hoja (~57 px), para un jefe más adelante (usuario, 27 de noviembre):
+ * sin usar todavía. Las mismas animaciones y las dos muertes que el de las marismas.
+ */
+export function ahogadoGrandeArt(): FoeArt {
+  ahogadoGrande ??= calcoArt(
+    'muerto',
+    'ahogado_grande',
+    { idle: 0, idle2: 2, walk1: 1, walk2: 3, windup: 6, strike: 7, hurt: 11, down: 20 },
+    true,
+    {
+      idle: [0, 1, 2, 3, 4, 3, 2, 1],
+      windup: [5, 6],
+      strike: [7, 8, 9],
+      hurt: [11, 12, 13, 14],
+      down: [15, 16, 17, 18, 20],
+    },
+    { downAlt: [[15, 19]] },
+  );
+  return ahogadoGrande;
+}
+
 const deaths = new WeakMap<FoeArt, FoeArt[]>();
 
 /**

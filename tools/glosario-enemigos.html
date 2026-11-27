@@ -131,6 +131,9 @@
   .chip.ok {
     color: var(--ok);
   }
+  .chip.unused {
+    color: var(--muted);
+  }
   .chip.old {
     color: var(--old);
   }
@@ -216,7 +219,7 @@
     for (const e of g.items) {
       const card = document.createElement('article');
       card.className = 'card';
-      card.innerHTML = `<div class="head"><h3></h3><span class="chip ${e.calco ? 'ok' : 'old'}">${e.calco ? 'calco' : 'antiguo'}</span></div><ul>${e.where.map((w) => `<li></li>`).join('')}</ul><div class="anims"></div>`;
+      card.innerHTML = `<div class="head"><h3></h3><span class="chip ${e.calco ? 'ok' : 'old'}">${e.calco ? 'calco' : 'antiguo'}</span>${e.unused ? '<span class="chip unused">sin usar</span>' : ''}</div><ul>${e.where.map((w) => `<li></li>`).join('')}</ul><div class="anims"></div>`;
       card.querySelector('h3').textContent = e.name;
       card.querySelectorAll('li').forEach((li, i) => (li.textContent = e.where[i]));
       const all = Object.values(e.anims).flat();

@@ -43,12 +43,15 @@ def dos_tercios(g):
     ys = [y for y in range(H) if y % 3 != 1]
     xs = [x for x in range(W) if x % 3 != 1]
     return [[g[y][x] for x in xs] for y in ys]
+grande = fr  # a escala de la hoja: para un jefe más adelante (usuario)
 fr = [dos_tercios(g) for g in fr]
 def pie(g):
     xs = [x for r in g[-3:] for x, c in enumerate(r) if c]
     return round(sum(xs) / len(xs))
-an = [pie(g) for g in fr]; m = max(an)
-out = {'ahogado': [[[None] * (m - p) + r for r in g] for g, p in zip(fr, an)]}
-print([(len(g[0]), len(g)) for g in out['ahogado']])
+def alinea(fr):
+    an = [pie(g) for g in fr]; m = max(an)
+    return [[[None] * (m - p) + r for r in g] for g, p in zip(fr, an)]
+out = {'ahogado': alinea(fr), 'ahogado_grande': alinea(grande)}
+print([(len(g[0]), len(g)) for g in out['ahogado']], [(len(g[0]), len(g)) for g in out['ahogado_grande']][:1])
 json.dump(out, open('ahogado_calco.json', 'w'))
 C.hoja(out, S + '/scratchpad/ahogado.png', esc=6)

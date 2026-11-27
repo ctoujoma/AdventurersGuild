@@ -3,7 +3,7 @@
 // `node tools/textos/esbuild.mjs tools/glosario-enemigos.ts glosario docs/glosario-enemigos.html`.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { png } from './visor-png';
-import { deathOf, expFoeArt, expGuardianArt, reyArt } from '../src/art/expFoes';
+import { ahogadoGrandeArt, deathOf, expFoeArt, expGuardianArt } from '../src/art/expFoes';
 import { CALCOS } from '../src/art/expCalcos';
 import { bossArtFor } from '../src/art/bossCalco';
 import { foeArt, type FoeArt } from '../src/art/foes';
@@ -54,6 +54,8 @@ interface Entry {
   calco: boolean;
   where: string[];
   anims: Anims;
+  /** Aún no sale en el juego. */
+  unused?: boolean;
 }
 
 type Pose = 'idle' | 'windup' | 'strike' | 'hurt' | 'down';
@@ -358,7 +360,7 @@ const exp: { heading: string; foes: Entry[] }[] = HEADINGS.map((h) => {
 });
 
 /** Jefes ya calcados que aún no se han enganchado en `BOSS_CALCO`: se enseña el calco. */
-const PENDING: Partial<Record<BossKind, () => FoeArt>> = { ahogado: reyArt };
+const PENDING: Partial<Record<BossKind, () => FoeArt>> = {};
 
 const bosses: Entry[] = (Object.keys(BOSSES) as BossKind[]).map((k) => {
   const b = bossArtFor(k);
@@ -402,12 +404,26 @@ const strip: Entry[] = KINDS.map((k) => {
   };
 });
 
+/** Calcados que aún no salen en el juego (para más adelante). */
+const reserva: Entry[] = [
+  {
+    name: 'Ahogado grande',
+    calco: true,
+    unused: true,
+    where: [
+      'Sin usar todavía: el ahogado de las marismas a la escala de su hoja, para un jefe más adelante',
+    ],
+    anims: foeAnims(ahogadoGrandeArt()),
+  },
+];
+
 const data = {
   pool,
   groups: [
     ...exp.map((e) => ({ title: `Expediciones · ${e.heading}`, items: e.foes })),
     { title: 'Encargos · jefes de las historias', items: bosses },
     { title: 'Encargos · enemigos de la tira', items: strip },
+    { title: 'Reserva · calcados sin usar todavía', items: reserva },
   ],
 };
 const tpl = readFileSync('tools/glosario-enemigos.html', 'utf8');

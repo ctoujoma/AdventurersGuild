@@ -560,7 +560,9 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      **Ahogado de marismas** (hoja del usuario, `ahogado_calco.py`): calco exacto a escala nativa y luego a
      dos tercios (`dos_tercios`, sin mezclar colores; a la mitad se empastaba), ~38 px. **Dos muertes**
      (usuario): se desarma y queda tendido, o se sienta y se queda así; `FoeArt.downAlt` y `deathOf(art, n)`
-     (cada pelea del visor elige una, siempre la misma). En el glosario, «Otra muerte».
+     (cada pelea del visor elige una, siempre la misma). En el glosario, «Otra muerte». **Ahogado grande**
+     (`ahogadoGrandeArt()`, ~57 px, a la escala de la hoja): sin usar, para un jefe más adelante; en el
+     glosario, en «Reserva».
      Luego: pasada visual a sierra/marismas/ruinas y transiciones suaves (lluvia y fondo cambian de golpe).
      **Sucesos a la vista (26 nov):** con `e.pending` el visor pinta delante lo que hay (`visor/sucesos.ts`, `MarchNow.event`):
      cofre, santuario, mercader con carro, viajero, campamento abandonado, oso, cueva, torre y ruinas, pintados en
