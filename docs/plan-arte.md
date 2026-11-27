@@ -557,6 +557,10 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      claras sueltas, fuera (`sin_motas`). La estela pálida solo se quita en el barrido y el golpe (en el resto
      eran las costillas), y como la hoja trae las costillas a ratos, a los de pie va el pecho del primero
      (`pecho`, alineado por la corona). `calco3`: `drop(p, box)` puede mirar el fotograma.
+     **Ahogado de marismas** (hoja del usuario, `ahogado_calco.py`): calco exacto a escala nativa y luego a
+     dos tercios (`dos_tercios`, sin mezclar colores; a la mitad se empastaba), ~38 px. **Dos muertes**
+     (usuario): se desarma y queda tendido, o se sienta y se queda así; `FoeArt.downAlt` y `deathOf(art, n)`
+     (cada pelea del visor elige una, siempre la misma). En el glosario, «Otra muerte».
      Luego: pasada visual a sierra/marismas/ruinas y transiciones suaves (lluvia y fondo cambian de golpe).
      **Sucesos a la vista (26 nov):** con `e.pending` el visor pinta delante lo que hay (`visor/sucesos.ts`, `MarchNow.event`):
      cofre, santuario, mercader con carro, viajero, campamento abandonado, oso, cueva, torre y ruinas, pintados en

@@ -20,9 +20,11 @@ def fase(a, box, k):
 def celdas(a, box, k, bg, thr=40, drop=None, acc=None, minc=0.12, exact=False, marks=None):
     x0, y0, x1, y1 = box
     if exact:
-        # calco exacto: la rejilla sobre los píxeles de la hoja y, de cada uno, el centro
-        px, py = fase(a, box, k)
-        x0, y0 = x0 + px - k, y0 + py - k
+        # calco exacto: la rejilla sobre los píxeles de la hoja y, de cada uno, el centro. Con
+        # exact=n (>1), cada celda junta n×n píxeles de la hoja (a escala menor, sin mezclar a medias)
+        n = exact if exact is not True else 1
+        px, py = fase(a, box, k / n)
+        x0, y0 = x0 + px - k / n, y0 + py - k / n
     # drop puede mirar también de qué fotograma es el píxel: drop(p, box)
     if drop is not None and drop.__code__.co_argcount == 2:
         drop = (lambda f, bx: (lambda p: f(p, bx)))(drop, box)
@@ -31,7 +33,7 @@ def celdas(a, box, k, bg, thr=40, drop=None, acc=None, minc=0.12, exact=False, m
     for j in range(H):
         for i in range(W):
             sx = x0 + i * k; sy = y0 + j * k
-            if exact:
+            if exact is True:
                 cx, cy = sx + k / 2, sy + k / 2
                 c = a[int(cy - 0.5):int(cy + 1.5), int(cx - 0.5):int(cx + 1.5)].reshape(-1, 3)
                 if len(c) == 0: continue

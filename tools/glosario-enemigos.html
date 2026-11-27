@@ -142,7 +142,7 @@
   }
   .anims {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr));
     gap: 6px;
   }
   figure {
@@ -192,7 +192,13 @@
 </main>
 <script>
   const DATA = /*DATOS*/ null;
-  const NAMES = { quieto: 'Quieto', ataque: 'Ataque', herido: 'Herido', muerte: 'Muerte' };
+  const NAMES = {
+    quieto: 'Quieto',
+    ataque: 'Ataque',
+    herido: 'Herido',
+    muerte: 'Muerte',
+    muerte2: 'Otra muerte',
+  };
   const imgs = DATA.pool.map((src) => {
     const i = new Image();
     i.src = src;
@@ -215,7 +221,9 @@
       card.querySelectorAll('li').forEach((li, i) => (li.textContent = e.where[i]));
       const all = Object.values(e.anims).flat();
       const anims = card.querySelector('.anims');
-      for (const k of Object.keys(NAMES)) {
+      const keys = Object.keys(NAMES).filter((k) => e.anims[k]);
+      anims.style.setProperty('--n', keys.length);
+      for (const k of keys) {
         const f = document.createElement('figure');
         const c = document.createElement('canvas');
         f.append(c);
