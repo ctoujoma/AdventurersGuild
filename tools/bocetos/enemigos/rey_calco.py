@@ -6,15 +6,25 @@ import json
 import calco3 as C
 S = '/tmp/claude-0/-home-user-AdventurersGuild/40ff8843-c43b-5ced-88ab-6b5c5084b85c'
 I = S + '/images/'
+# El 3.º y el 4.º de la muerte se cruzan: la corona que cae del 4.º queda encima del ancla del 3.º.
+# Cada uno se calca de una copia de la hoja sin lo del otro.
+from PIL import Image
+K = 2.875
+_h = Image.open(I + '18.webp').convert('RGB')
+H3, H4 = S + '/scratchpad/rey_h3.png', S + '/scratchpad/rey_h4.png'
+_a = _h.copy(); _a.paste((225, 216, 187), (686, 655, 724, 697)); _a.save(H3)
+_b = _h.copy(); _b.paste((225, 216, 187), (680, 700, 694, 762)); _b.save(H4)
 BOX = [(63,20,173,192),(258,20,368,192),(452,20,562,192),(644,19,754,192),(846,19,957,192),
        (20,228,176,383),(240,218,390,383),(478,210,737,383),(756,244,945,385),(1005,232,1116,385),
        (1223,214,1331,383),(13,408,236,576),(287,407,425,575),(473,427,636,575),(687,408,794,575),
-       (26,587,233,762),(252,590,460,762),(464,636,726,762),(733,639,911,761),(917,714,1098,764),
+       (26,587,233,762),(252,590,460,762),(H3,464,636,693,762,K),(H4,684,639,911,761,K),(917,714,1098,764),
        (1146,714,1325,764)]
+def idx(box):  # qué fotograma es una caja (sola o con su hoja delante)
+    return next(i for i, b in enumerate(BOX) if tuple(b[-5:-1] if len(b) == 6 else b) == tuple(box))
 def fuera(p, box):  # el cian de los ojos y las gotas (los ojos se ponen luego, uno por ojo) y, solo
     r, g, b = p       # en el barrido y el golpe, la estela pálida (en el resto, eso son las costillas);
     # el barro se queda: con él se iba el borde de la corona
-    pale = BOX.index(box) in (7, 8) and b > r + 15 and (r + g + b) / 3 > 170
+    pale = idx(box) in (7, 8) and b > r + 15 and (r + g + b) / 3 > 170
     cyan = g - r > 45 and b > 185 and b - r > 45
     return pale or cyan
 OJO = '#a4e6f3'
@@ -23,7 +33,7 @@ def ojos(a, box):
     corona, los dos puntos más cian de la cara (o uno, de perfil). Sin corona (al morir, se le cae),
     sin luz en los ojos."""
     import numpy as np
-    if BOX.index(box) >= 15: return []  # muere: se le va la luz de los ojos
+    if idx(box) >= 15: return []  # muere: se le va la luz de los ojos
     x0, y0, x1, y1 = box
     reg = a[y0:y1, x0:x1]
     r, g, b = reg[:, :, 0], reg[:, :, 1], reg[:, :, 2]
