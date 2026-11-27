@@ -553,7 +553,7 @@ function seedNum(s: string): number {
 
 /** Los enemigos de una pelea del visor (siempre los mismos para la misma pelea). */
 function foesOf(m: MarchNow): FoeArt[] {
-  if (m.rival?.guardian) return [expGuardianArt(m.rival.heading)];
+  if (m.rival?.guardian) return [expGuardianArt(m.rival.heading, m.rival.idx)];
   if (m.rival) {
     const { art, count } = expFoeArt(m.rival.heading, m.rival.idx);
     // Con varias muertes dibujadas, cada uno la suya (siempre la misma en la misma pelea).
