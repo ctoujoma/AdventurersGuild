@@ -1,6 +1,10 @@
-# Lo que flota sobre una sala para recogerlo (ui/CollectMark.tsx).
+# Lo que flota sobre una sala para recogerlo (ui/CollectMark.tsx, core/collect.ts).
 caja: "Recoger la caja del salón: {n} monedas"
 caja_hecho: "+{n} monedas de la caja."
-sala: "Recoger {comida, plural, =0 {} one {# ración} other {# raciones}}{y, select, si { y } other {}}{bebida, plural, =0 {} one {# jarra} other {# jarras}}"
-sala_hecho: "{comida, plural, =0 {} one {+# ración} other {+# raciones}}{y, select, si { y } other {}}{bebida, plural, =0 {} one {+# jarra} other {+# jarras}}."
+sala: "Recoger {que, select, food {{n, plural, one {# ración} other {# raciones}}} other {{n, plural, one {# jarra} other {# jarras}}}}"
+sala_hecho: "{que, select, food {{n, plural, one {+# ración a la despensa.} other {+# raciones a la despensa.}}} other {{n, plural, one {+# jarra a la bodega.} other {+# jarras a la bodega.}}}}"
+lleno: "{que, select, food {La despensa está llena: no cabe más comida. Amplía la cocina o haz una despensa.} other {La bodega está llena: no cabe más cerveza. Amplíala o súbela de nivel.}}"
 taller: "Recoger lo que ha acabado {taller}"
+cola: "{que, select, food {Raciones hechas} other {Jarras hechas}}: {n} de {cap}"
+cola_ayuda: "Lo hecho espera aquí a que lo recojas. Llena, la sala para hasta que haya sitio. Al irse a dormir se recoge solo, lo que quepa en {que, select, food {la despensa} other {la bodega}}."
+recoger: "Recoger"

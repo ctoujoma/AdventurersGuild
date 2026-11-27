@@ -9296,3 +9296,11 @@ div.item-count {
     animation: none;
   }
 }
+
+/* La cola de la cocina y la bodega en su ficha: lo hecho, la barra y «Recoger». */
+.queue-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
