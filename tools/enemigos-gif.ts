@@ -14,6 +14,8 @@ const ARTS: Record<string, FoeArt> = {
   ceniza: cenizaArt(),
   huargo: expFoeArt('bosque', 3).art,
   oso: expFoeArt('bosque', 2).art,
+  oso_pardo: expFoeArt('sierra', 2).art,
+  lobo_gris: expFoeArt('sierra', 0).art,
   lobo: expFoeArt('bosque', 0).art,
   jabali: expFoeArt('bosque', 1).art,
   sanguijuela: expFoeArt('marismas', 0).art,

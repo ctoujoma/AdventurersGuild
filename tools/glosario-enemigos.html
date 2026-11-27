@@ -175,9 +175,10 @@
   <header>
     <h1>Bestiario del Jarro</h1>
     <p>
-      Todos los enemigos y jefes que hay ahora en el juego, con sus animaciones sacadas del propio
-      arte y dónde salen. Se regenera con <code>tools/glosario-enemigos.ts</code> cada vez que
-      cambia un enemigo.
+      Todos los enemigos y jefes que hay ahora en el juego, con sus animaciones y los efectos de la
+      pelea del visor (zarpazo, choque, embestida, tajo, sangre, polvo y temblor), sacados del
+      propio arte, y dónde salen. Se regenera con <code>tools/glosario-enemigos.ts</code> cada vez
+      que cambia un enemigo.
     </p>
     <div class="legend">
       <span><span class="chip ok">calco</span> hoja propia con sus cuatro animaciones</span
@@ -231,22 +232,19 @@
   }
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   function size(p) {
-    const W = Math.max(...p.all.map((i) => imgs[i].width)) + 4;
-    const H = Math.max(...p.all.map((i) => imgs[i].height)) + 4;
+    const W = Math.max(...p.all.map((i) => imgs[i].width));
+    const H = Math.max(...p.all.map((i) => imgs[i].height));
     p.c.width = W;
     p.c.height = H;
     p.W = W;
     p.H = H;
   }
   /** Qué fotograma toca: quieto a 5 por segundo; el resto a 8 y un respiro (la muerte se queda caída). */
+  /** Las escenas vienen hechas a 10 fotogramas por segundo, con sus pausas dentro. */
   function pick(p, t) {
     const n = p.frames.length;
-    if (still) return p.frames[p.k === 'muerte' ? n - 1 : 0];
-    if (p.k === 'quieto') return p.frames[Math.floor(t * 5) % n];
-    const run = n / 8,
-      hold = p.k === 'muerte' ? 1.6 : 0.6;
-    const u = t % (run + hold);
-    return p.frames[Math.min(n - 1, Math.floor(u * 8))];
+    if (still) return p.frames[p.k === 'muerte' ? n - 1 : Math.floor(n * 0.4)];
+    return p.frames[Math.floor(t * 10) % n];
   }
   function draw(now) {
     const t = now / 1000;
@@ -255,7 +253,7 @@
       const im = imgs[pick(p, t)];
       const x = p.c.getContext('2d');
       x.clearRect(0, 0, p.W, p.H);
-      x.drawImage(im, Math.round((p.W - im.width) / 2), p.H - 2 - im.height);
+      x.drawImage(im, 0, 0);
     }
     if (!still) requestAnimationFrame(draw);
   }
