@@ -95,7 +95,9 @@ describe('objetivos', () => {
       if (a.id.includes('-') && GOALS.find((d) => d.id === a.id && 'room' in d)) {
         const d = GOALS.find((x) => x.id === a.id)!;
         if (!('room' in d)) continue;
+        // Sin la sala, cuenta como nivel 0 (el almacén sale para construirlo).
         const lv = Math.max(
+          0,
           ...s.building.rooms.filter((r) => r.type === d.room).map((r) => r.level),
         );
         expect(lv).toBe(d.level - 1);

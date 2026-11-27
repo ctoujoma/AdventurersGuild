@@ -561,7 +561,9 @@ eventos).
   **el usuario sigue valorando si le gustan como están.**
 - **El ritmo del tiempo:** un día son 5 minutos abierto y una hora cerrado; si se quiere más
   calma, alargar `DAY_SECONDS`.
-- **Objetivos:** más variedad («gana un asalto sin heridos», «sirve 40 jarras»).
+- **Objetivos:** más variedad. **Hecho (27 de noviembre):** sirve jarras, recoge a mano la caja y
+  lo de la cocina y la bodega, cura en los catres, prepara pociones y mejora objetos (contadores
+  nuevos en `Stats`; «asalto sin heridos» ya estaba).
 - **Al acabar todas las historias** no llegan más: historias que se repitan o una por
   temporada.
 

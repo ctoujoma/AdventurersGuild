@@ -15,6 +15,18 @@ objetivos:
     texto: "Note down {n} rumours from the bar"
   historias:
     texto: "Complete {n} stories"
+  jarras-servidas:
+    texto: "Serve {n} jugs in the hall"
+  caja:
+    texto: "Collect the hall's till by hand {n, plural, one {once} other {# times}}"
+  recoger:
+    texto: "Collect {n} rations or jugs by hand from the kitchen and the cellar"
+  curados:
+    texto: "Fully heal {n, plural, one {one hero} other {# heroes}} in the infirmary cots"
+  pociones:
+    texto: "Brew {n, plural, one {one potion} other {# potions}} in the alchemy lab"
+  mejorar:
+    texto: "Improve {n, plural, one {one item} other {# items}} in the workshops"
   talleres:
     texto: "Make {n} items in the workshops"
   vestir:

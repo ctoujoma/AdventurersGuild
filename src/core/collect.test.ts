@@ -80,6 +80,20 @@ describe('recoger lo que da la taberna', () => {
     expect(cap(1, 3) - cap(1, 2)).toBeGreaterThan(cap(1, 2) - cap(1, 1));
   });
 
+  it('recoger a mano cuenta para los objetivos (la caja, las raciones) y servir jarras también', () => {
+    let s = home('cuenta');
+    s.food = 0;
+    s = at(s, DUSK - 0.01);
+    const k = kitchenOf(s);
+    const n = readyIn(s, k)!.n;
+    const a = reduce(s, { type: 'collect', what: 'sala', id: k.id });
+    expect(a.stats?.gathered).toBe(n);
+    const b = reduce({ ...a, till: TILL_SHOW }, { type: 'collect', what: 'caja' });
+    expect(b.stats?.tills).toBe(1);
+    const c = endDay({ ...home('beben'), beer: 20 });
+    expect(c.stats?.beerServed ?? 0).toBeGreaterThan(0);
+  });
+
   it('la bolsa de la caja sale sobre el salón desde 100 monedas', () => {
     const s = home('bolsa');
     expect(tillShows({ ...s, till: TILL_SHOW - 1 })).toBe(false);

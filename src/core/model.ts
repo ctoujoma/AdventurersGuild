@@ -893,6 +893,17 @@ export interface Stats {
   expeditions?: number;
   expSites?: number;
   expBundles?: number;
+  /** Jarras que se han bebido los visitantes del salón. */
+  beerServed?: number;
+  /** Veces que se ha recogido a mano la caja del salón. */
+  tills?: number;
+  /** Raciones y jarras recogidas a mano de la cocina y la bodega. */
+  gathered?: number;
+  /** Héroes que se han levantado curados del catre de la enfermería. */
+  healed?: number;
+  /** Pociones preparadas y objetos mejorados en los talleres. */
+  potions?: number;
+  tempered?: number;
   byType: Partial<Record<QuestType, number>>;
 }
 
