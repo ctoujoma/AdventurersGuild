@@ -17,7 +17,7 @@ import {
   type HeroLook,
   type HeroMarks,
 } from '../../art/heroes/hero';
-import { PixelBuffer, rgba } from '../../art/pixel';
+import { PixelBuffer, alpha, rgba } from '../../art/pixel';
 import { Rng } from '../../core/rng';
 import { WEAPONS, type WeaponId } from '../weapons';
 import type { Ctx } from './ctx';
@@ -278,7 +278,21 @@ export class Gente {
       const img = tinted(foeFrame(f, pose, u, t + j * 0.7), l, lk);
       const back = struck ? dir * Math.round(2 + (p < 0.45 ? 1 : 0)) : 0;
       // Los que traen su golpe dibujado (`seq.strike`) ya se echan adelante: sin embestida.
-      const x = foeXs[j]! + back - dir * (f.seq?.strike ? 0 : lunge(j === atkFoe));
+      // El jabalí se lanza de verdad unos píxeles al embestir (y vuelve despacio).
+      const dash =
+        j === atkFoe && f.what === 'jabali'
+          ? Math.round(
+              8 *
+                (p < 0.24
+                  ? 0
+                  : p < 0.34
+                    ? (p - 0.24) / 0.1
+                    : p < 0.5
+                      ? 1
+                      : Math.max(0, 1 - (p - 0.5) / 0.3)),
+            )
+          : 0;
+      const x = foeXs[j]! + back - dir * (f.seq?.strike ? dash : lunge(j === atkFoe));
       if (!down) shadow(b, x, feet, f.big ? 10 : 6);
       const fy = img.h - 1;
       put(
@@ -335,6 +349,30 @@ export class Gente {
           cols: [...BLOOD, ...furOf(f.poses.idle)],
           n: f.big ? 11 : 7,
         });
+      }
+      // El jabalí embiste: estelas de velocidad tras la grupa y polvo de las pezuñas.
+      if (j === atkFoe && f.what === 'jabali' && p > 0.22 && p < 0.66) {
+        const img0 = f.poses.idle;
+        // La grupa de verdad en el dibujo de ahora: lo de más atrás del cuerpo, fila a fila en la
+        // mitad de abajo, quedándose con la mediana (la cola, levantada y fina, no cuenta).
+        const cols: number[] = [];
+        for (let y = Math.round(img.h * 0.4); y < Math.round(img.h * 0.8); y++) {
+          let c0 = 0;
+          while (c0 < img.w && !alpha(img.get(c0, y))) c0++;
+          if (c0 < img.w) cols.push(c0);
+        }
+        cols.sort((p0, p1) => p0 - p1);
+        const col = cols[Math.floor(cols.length / 2)] ?? 0;
+        this.fx.push({
+          k: 'rush',
+          x: x + dir * (f.foot - col),
+          top: feet - img0.h + 4,
+          bottom: feet - 3,
+          back: dir,
+          a: (p - 0.22) / 0.44,
+          seed: k,
+        });
+        this.fx.push({ k: 'dust', x: x + dir * 6, y: feet, a: (p - 0.26) / 0.4, w: 7 });
       }
       // El golpe de un grande: tiembla todo y levanta polvo delante.
       if (j === atkFoe && f.big && p > 0.32 && p < 0.7) {
@@ -435,19 +473,27 @@ export class Gente {
         (col) => tintColor(col, l),
       );
       if (struck && p >= 0.32) {
-        // Las bestias arañan; el resto, un golpe.
+        // Las bestias arañan (el jabalí embiste: choque fuerte y tiembla); el resto, un golpe.
         const by = foes[atkFoe];
-        if (by && (by.kind === 'bestia' || by.kind === 'alimana') && !by.big)
+        const ram = by?.what === 'jabali';
+        if (ram && p < 0.4) this.shake = Math.floor(t * 40) % 2 ? 1 : -1;
+        if (by && !ram && (by.kind === 'bestia' || by.kind === 'alimana') && !by.big)
           this.fx.push({ k: 'claw', x: x + dir * 2, y: e.feet - 14, dir, a: (p - 0.32) / 0.4 });
         else
           this.fx.push({
             k: 'impact',
             x: x + dir * 4,
             y: e.feet - 14,
-            a: (p - 0.32) / 0.14,
-            big: false,
+            a: (p - 0.32) / (ram ? 0.18 : 0.14),
+            big: ram,
           });
-        this.fx.push({ k: 'dust', x: x - dir * 2, y: e.feet, a: (p - 0.32) / 0.4, w: 5 });
+        this.fx.push({
+          k: 'dust',
+          x: x - dir * 2,
+          y: e.feet,
+          a: (p - 0.32) / 0.4,
+          w: ram ? 9 : 5,
+        });
         const dmg = Math.round(1 + hash(k * 3 + 2) * 5);
         this.pops.push({
           text: String(dmg),
