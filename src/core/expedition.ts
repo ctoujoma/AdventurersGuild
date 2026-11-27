@@ -53,6 +53,8 @@ import {
   EXP_FOE_SPREAD,
   EXP_GUARDIAN,
   EXP_GUARDIAN_MULT,
+  EXP_GUARDIAN2_FROM,
+  EXP_GUARDIAN2_MULT,
   EXP_GUARDIAN_WAIT,
   EXP_LOSS_HP,
   EXP_FIGHT_WEAR,
@@ -551,6 +553,19 @@ function stepHour(s: GameState, e: Expedition, news: DawnEvent[]): void {
     raise(s, e, 'guardian', news);
     return;
   }
+  // El segundo guardián: más lejos, pasado el primero (donde lo hay).
+  if (
+    e.guardian &&
+    !e.guardian2 &&
+    !e.turn &&
+    GUARDIAN2[e.heading] &&
+    dist >= EXP_GUARDIAN2_FROM &&
+    rng.chance(EXP_GUARDIAN * (dist - 3))
+  ) {
+    e.guardian2 = true;
+    raise(s, e, 'guardian', news, undefined, 1);
+    return;
+  }
   const roll = rng.next();
   const fightP = 0.22 + Math.min(0.15, 0.025 * dist) + (sky === 'niebla' ? EXP_FOG_AMBUSH : 0);
   const kinds = EXP_EVENT_LIST.filter((k) => {
@@ -665,6 +680,15 @@ const GUARDIAN_BOSS: Record<Heading, BossKind> = {
   marismas: 'reina',
   ruinas: 'dragona',
 };
+/**
+ * El segundo guardián (usuario, 27 de noviembre): más adelante, pasado el primero, en los rumbos
+ * que lo tienen (el bosque: el Jabalí Quemado). En los sucesos y las peleas, `foe` 1.
+ */
+const GUARDIAN2: Partial<Record<Heading, BossKind>> = { bosque: 'jabali' };
+
+/** El nombre del guardián (`n` 1, el segundo). */
+const guardName = (e: Expedition, n = 0): Txt =>
+  msg(n ? `expediciones.guardianes.${e.heading}_2` : `expediciones.guardianes.${e.heading}`);
 
 /** La pelea de una expedición, ya armada: los que están en pie (y el que se les unió). */
 export function battleSetup(
@@ -684,7 +708,10 @@ export function battleSetup(
   // Cada pelea, su enemigo: más o menos fuerte (`roll`, de 0 a 1), para que no esté decidida.
   const luck = 1 - EXP_FOE_SPREAD + 2 * EXP_FOE_SPREAD * roll;
   const diff = Math.max(1, n * (fightDiff(dist) * mult - EXP_GROUP * (n - 1))) * EXP_FOE * luck;
-  const boss = (guardian ? GUARDIAN_BOSS[e.heading] : FOE_BOSS[e.heading][foe]) ?? 'bestia';
+  const boss =
+    (guardian
+      ? ((foe ? GUARDIAN2[e.heading] : undefined) ?? GUARDIAN_BOSS[e.heading])
+      : FOE_BOSS[e.heading][foe]) ?? 'bestia';
   const setup = setupCombat(
     `${e.seed}-pelea-${e.hours}-${foe}`,
     boss,
@@ -714,9 +741,7 @@ function battle(
 ): boolean {
   const up = standing(e, s);
   if (!up.length) return false;
-  const enemigos = guardian
-    ? msg(`expediciones.guardianes.${e.heading}`)
-    : msg(`expediciones.enemigos.${e.heading}.${foe}`);
+  const enemigos = guardian ? guardName(e, foe) : msg(`expediciones.enemigos.${e.heading}.${foe}`);
   const setup = battleSetup(s, e, dist, foe, mult, guardian, rng.next());
   const res = runCombat(setup);
   const roster = fightRoster([...up, ...(e.guest ? [e.guest] : [])]);
@@ -947,9 +972,14 @@ function raise(
 ): void {
   const def = EXP_EVENTS_DEF[kind];
   let site = again;
-  const enemigos = foe === undefined ? '' : msg(`expediciones.enemigos.${e.heading}.${foe}`);
+  const enemigos =
+    foe === undefined || kind !== 'jefe' ? '' : msg(`expediciones.enemigos.${e.heading}.${foe}`);
+  const second = kind === 'guardian' && !!foe;
   if (!site)
-    line(e, 'suceso', `expediciones.sucesos.${kind}.texto`, { rumbo: e.heading, enemigos });
+    line(e, 'suceso', `expediciones.sucesos.${kind}.texto${second ? '_2' : ''}`, {
+      rumbo: e.heading,
+      enemigos,
+    });
   if (def.site && !site) {
     // Un paraje nuevo: queda en el mapa para siempre.
     const rng = new Rng(`${e.seed}-paraje-${e.hours}`);
@@ -1053,7 +1083,13 @@ export function optionRisk(
     ? chance(
         partyPower(s, e),
         fightDiff(distAt(e)) *
-          (kind === 'guardian' ? EXP_GUARDIAN_MULT : kind === 'jefe' ? EXP_BOSS_MULT : 1.2),
+          (kind === 'guardian'
+            ? e.pending?.foe
+              ? EXP_GUARDIAN2_MULT
+              : EXP_GUARDIAN_MULT
+            : kind === 'jefe'
+              ? EXP_BOSS_MULT
+              : 1.2),
       )
     : optionChance(s, e, o);
   // Con niebla, polvo o tormenta, la pista se ve peor (como sin sala ni explorador).
@@ -1124,18 +1160,30 @@ function loot(e: Expedition, rng: Rng, dist: number, mult: number): Msg {
 }
 
 /** Un objeto de equipo (más raro cuanto más lejos y si es de un guardián). */
-function findItem(s: GameState, e: Expedition, rng: Rng, dist: number, guardian = false): Txt {
-  const rarity = guardian
+function findItem(
+  s: GameState,
+  e: Expedition,
+  rng: Rng,
+  dist: number,
+  guardian = false,
+  second = false,
+): Txt {
+  const rarity = second
     ? rng.weighted<number>([
-        [2, 3],
         [3, 2],
-        [4, 1],
+        [4, 2],
       ])
-    : rng.weighted<number>([
-        [1, 3],
-        [2, 1 + dist * 0.3],
-        [3, Math.max(0, dist - 3) * 0.2],
-      ]);
+    : guardian
+      ? rng.weighted<number>([
+          [2, 3],
+          [3, 2],
+          [4, 1],
+        ])
+      : rng.weighted<number>([
+          [1, 3],
+          [2, 1 + dist * 0.3],
+          [3, Math.max(0, dist - 3) * 0.2],
+        ]);
   const pool = GEAR.filter((g) => g.rarity === rarity);
   const base = rng.pick(pool.length ? pool : GEAR);
   const item: Item = { id: `i${s.uid++}`, ...base };
@@ -1316,9 +1364,7 @@ function decide(s: GameState, e: Expedition, option: string, auto: boolean): voi
     case 'jefe.escapar':
     case 'guardian.escapar': {
       const enemigos =
-        k === 'jefe'
-          ? msg(`expediciones.enemigos.${e.heading}.${foe}`)
-          : msg(`expediciones.guardianes.${e.heading}`);
+        k === 'jefe' ? msg(`expediciones.enemigos.${e.heading}.${foe}`) : guardName(e, foe);
       if (ok) say('bien', { enemigos });
       else {
         // Les ve: uno se lleva un buen golpe al huir (si ya iba grave, puede caer).
@@ -1332,8 +1378,9 @@ function decide(s: GameState, e: Expedition, option: string, auto: boolean): voi
     case 'guardian.solos':
     case 'guardian.pelear': {
       say('bien');
-      if (battle(s, e, rng, dist, 0, EXP_GUARDIAN_MULT, true)) {
-        const item = findItem(s, e, rng, dist, true);
+      const mult = foe ? EXP_GUARDIAN2_MULT : EXP_GUARDIAN_MULT;
+      if (battle(s, e, rng, dist, foe, mult, true)) {
+        const item = findItem(s, e, rng, dist, true, !!foe);
         e.bag.mats.cristal = (e.bag.mats.cristal ?? 0) + 2;
         line(e, 'hallazgo', 'expediciones.diario.guardian_botin', {
           que: loot(e, rng, dist, 3),

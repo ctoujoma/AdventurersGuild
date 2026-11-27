@@ -31,19 +31,6 @@ export interface ExpFoe {
   count: number;
 }
 
-/** Salpica unas manchas de un color sobre lo pintado (algas, liquen). */
-function speckle(b: PixelBuffer, col: string, k: number, seed: number): PixelBuffer {
-  const o = b.clone();
-  const r = new Rng(`motas-${seed}`);
-  for (let y = 0; y < b.h; y++)
-    for (let x = 0; x < b.w; x++) {
-      const c = b.get(x, y);
-      if (!alpha(c) || !alpha(b.get(x, y - 1))) continue;
-      if (r.next() < k) o.set(x, y, col);
-    }
-  return o;
-}
-
 /** La culebra de agua: cuerpo en ese a ras de suelo, el cuello alzado y la lengua al morder. */
 function snakePose(p: PoseSpec, i: number): PixelBuffer {
   const b = new PixelBuffer(30, 16);
@@ -206,6 +193,8 @@ function calcoArt(
     motes?: readonly string[];
     /** Otros colores para el mismo dibujo (el lobo gris de la sierra, del lobo del bosque). */
     ramp?: (ramp: readonly string[]) => readonly string[];
+    /** Otras muertes (fotogramas), además de `seq.down`. */
+    downAlt?: number[][];
   } = {},
 ): FoeArt {
   const { fade = 0, ash = 0 } = o;
@@ -264,6 +253,7 @@ function calcoArt(
       poses.down = gone[gone.length - 1]!;
     }
   }
+  if (o.downAlt) art.downAlt = o.downAlt.map((d) => d.map((i) => frames[i]!));
   // Sin muerte dibujada (el bosque): herido, se deshace en tramado en vez de quedar panza arriba.
   if (pose.down === undefined) {
     const h = poses.hurt;
@@ -474,13 +464,26 @@ const FOES: Record<Heading, readonly (() => ExpFoe)[]> = {
       ),
       count: 3,
     }),
-    () => {
-      const a = bipedArt('muerto', 'ahogado', skeletonBody(P.lime, false, 'oxidada', false));
-      const poses = { ...a.poses };
-      for (const k of Object.keys(poses) as (keyof typeof poses)[])
-        poses[k] = speckle(poses[k], P.leaf, 0.22, k.length);
-      return { art: { ...a, poses }, count: 1 };
-    },
+    () => ({
+      // Esqueleto con verdín y garrote: respira; lo levanta y barre hasta clavarlo en el agua;
+      // herido, se descoyunta; muere de dos maneras: se desarma y queda tendido, o se sienta y
+      // se queda así.
+      art: calcoArt(
+        'muerto',
+        'ahogado',
+        { idle: 0, idle2: 2, walk1: 1, walk2: 3, windup: 6, strike: 7, hurt: 11, down: 20 },
+        false,
+        {
+          idle: [0, 1, 2, 3, 4, 3, 2, 1],
+          windup: [5, 6],
+          strike: [7, 8, 9],
+          hurt: [11, 12, 13, 14],
+          down: [15, 16, 17, 18, 20],
+        },
+        { downAlt: [[15, 19]] },
+      ),
+      count: 1,
+    }),
     () => ({ art: banditOf('contrabandista'), count: 3 }),
     () => ({ art: snakeArt(), count: 1 }),
   ],
@@ -496,6 +499,53 @@ const FOES: Record<Heading, readonly (() => ExpFoe)[]> = {
 };
 
 const cache = new Map<string, ExpFoe>();
+
+let ahogadoGrande: FoeArt | undefined;
+
+/**
+ * El ahogado a la escala de su hoja (~57 px), para un jefe más adelante (usuario, 27 de noviembre):
+ * sin usar todavía. Las mismas animaciones y las dos muertes que el de las marismas.
+ */
+export function ahogadoGrandeArt(): FoeArt {
+  ahogadoGrande ??= calcoArt(
+    'muerto',
+    'ahogado_grande',
+    { idle: 0, idle2: 2, walk1: 1, walk2: 3, windup: 6, strike: 7, hurt: 11, down: 20 },
+    true,
+    {
+      idle: [0, 1, 2, 3, 4, 3, 2, 1],
+      windup: [5, 6],
+      strike: [7, 8, 9],
+      hurt: [11, 12, 13, 14],
+      down: [15, 16, 17, 18, 20],
+    },
+    { downAlt: [[15, 19]] },
+  );
+  return ahogadoGrande;
+}
+
+const deaths = new WeakMap<FoeArt, FoeArt[]>();
+
+/**
+ * El dibujo con una de sus muertes (`n`, cualquier número: se reparte entre `seq.down` y
+ * `downAlt`). Sin otras muertes, el mismo dibujo.
+ */
+export function deathOf(art: FoeArt, n: number): FoeArt {
+  if (!art.downAlt?.length || !art.seq?.down) return art;
+  let all = deaths.get(art);
+  if (!all) {
+    all = [
+      art,
+      ...art.downAlt.map((d) => ({
+        ...art,
+        seq: { ...art.seq, down: d },
+        poses: { ...art.poses, down: d[d.length - 1]! },
+      })),
+    ];
+    deaths.set(art, all);
+  }
+  return all[((Math.floor(n) % all.length) + all.length) % all.length]!;
+}
 
 let rey: FoeArt | undefined;
 
@@ -565,7 +615,9 @@ export function expFoeArt(heading: Heading, idx: number): ExpFoe {
  * El guardián del rumbo en las expediciones (el que espera a la vista): el de sierra, el dragón
  * de hielo; los demás, de momento, el huargo del bosque.
  */
-export function expGuardianArt(heading: Heading): FoeArt {
+export function expGuardianArt(heading: Heading, n = 0): FoeArt {
+  // El segundo guardián del bosque: el Jabalí Quemado (el calco del jabalí de ceniza).
+  if (n && heading === 'bosque') return cenizaArt();
   const key = `guardian:${heading}`;
   let f = cache.get(key);
   if (!f) {

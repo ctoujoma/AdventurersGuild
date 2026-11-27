@@ -4,7 +4,7 @@
  * con estocada, destello y retroceso del que lo recibe, cifras de daño que suben y, de vez en
  * cuando, uno que cae. Los muñecos son los de verdad (`heroSprites`, `fightSprites`, `foeArt`).
  */
-import { expFoeArt, expGuardianArt } from '../../art/expFoes';
+import { deathOf, expFoeArt, expGuardianArt } from '../../art/expFoes';
 import { foeArt, type FoeArt, type FoePose } from '../../art/foes';
 import type { Dress } from '../../data/custom';
 import {
@@ -544,12 +544,22 @@ export function foeFrame(f: FoeArt, pose: FoePose, u: number, t: number): PixelB
   return s[Math.max(0, Math.min(s.length - 1, Math.floor(u * s.length)))]!;
 }
 
+/** Un número de una cadena (para la semilla de la pelea). */
+function seedNum(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 100003;
+  return h;
+}
+
 /** Los enemigos de una pelea del visor (siempre los mismos para la misma pelea). */
 function foesOf(m: MarchNow): FoeArt[] {
-  if (m.rival?.guardian) return [expGuardianArt(m.rival.heading)];
+  if (m.rival?.guardian) return [expGuardianArt(m.rival.heading, m.rival.idx)];
   if (m.rival) {
     const { art, count } = expFoeArt(m.rival.heading, m.rival.idx);
-    return Array.from({ length: count }, () => art);
+    // Con varias muertes dibujadas, cada uno la suya (siempre la misma en la misma pelea).
+    return Array.from({ length: count }, (_, j) =>
+      deathOf(art, Math.floor(hash(seedNum(`${m.seed}:${m.day ?? 0}:${m.hour}`) + j * 17) * 97)),
+    );
   }
   const rng = new Rng(`visor-foes-${m.seed}-${m.foe}`);
   const n = m.foe === 'grande' ? 1 : m.foe === 'alimana' ? 3 : rng.int(2, 3);

@@ -797,6 +797,12 @@ export const EXP_GUARDIAN = 0.006;
 export const EXP_GUARDIAN_MULT = 1.6;
 export const EXP_GUARDIAN_WAIT = EXP_HOURS;
 /**
+ * El segundo guardián (el bosque: el Jabalí Quemado): pasado el primero, desde `EXP_GUARDIAN2_FROM`
+ * días, con la misma probabilidad por hora; pelea por `EXP_GUARDIAN2_MULT` y su objeto es mejor.
+ */
+export const EXP_GUARDIAN2_FROM = 6;
+export const EXP_GUARDIAN2_MULT = 1.75;
+/**
  * Un jefe a la vista (B11): cuando la pelea es contra el enemigo grande del rumbo (el último de
  * `expediciones.enemigos.<rumbo>`), con esta probabilidad lo ven de lejos y esperan al jugador (de
  * ida). Pelea por `EXP_BOSS_MULT`. Escapar sale mal según la opción: uno pierde `EXP_ESCAPE_HP`.
