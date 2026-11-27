@@ -1400,6 +1400,7 @@ function settleMission(
       sim: setup ? { setup, orders: orders ?? [] } : undefined,
     };
     if (setup && !orders) r.fight.sim!.auto = true;
+    if (r.fight.won) bump(s, 'bosses');
   }
   if (m.quest.chain) advanceChain(s, rng, m.quest, r, events);
   // Un éxito brillante a veces trae los planos de algo que no se sabía hacer.

@@ -107,7 +107,7 @@ import { equip, levelUp } from './resolve';
 import { Rng } from './rng';
 import type { FoeKind } from '../data/journey';
 import { gearList } from './gear';
-import { emptyStats } from './feats';
+import { bump, emptyStats } from './feats';
 import { msg, t, tl, type Msg, type Params, type Txt } from '../textos';
 
 export const HEADINGS: readonly Heading[] = ['bosque', 'sierra', 'marismas', 'ruinas'];
@@ -767,6 +767,7 @@ function battle(
   };
   // La vida: cada uno, la que le quede; quien cae, grave (si ya iba grave, al suelo); si
   // pierden, uno más se lleva otro golpe.
+  if (guardian && res.won) bump(s, 'bosses');
   const before = new Map(up.map((h) => [h.id, hpOf(h)]));
   const downed = up.filter((h) => res.downed.includes(h.id));
   for (const h of up) {

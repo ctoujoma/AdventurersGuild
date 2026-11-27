@@ -218,6 +218,12 @@ export const RANKS: readonly { id: string; name: string; at: number }[] = [
   ['leyenda', 300],
 ].map(([id, at]) => ({ id: id as string, name: t(`etiquetas.rangos.${id}`), at: at as number }));
 
+/**
+ * El oro de los objetivos de contar, por rango (índice de `RANKS`): a más rango, la caja es más
+ * grande y el premio tiene que seguir notándose (usuario, 27 de noviembre).
+ */
+export const GOAL_RANK_GOLD = [1, 1.5, 2.5, 4, 6] as const;
+
 /** El nombre de un rango (índice de `RANKS`), para guardarlo en un texto. */
 export const rankMsg = (r: number): Msg => msg(`etiquetas.rangos.${RANKS[r]!.id}`);
 

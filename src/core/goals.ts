@@ -6,7 +6,7 @@
 import { GOALS, GOAL_LOG, GOAL_SLOTS, type GoalDef } from '../data/goals';
 import { FEATS } from '../data/feats';
 import { FREE, unlockName, type UnlockId } from '../data/unlocks';
-import { levelRank, rankIndex, roomMax } from './balance';
+import { GOAL_RANK_GOLD, levelRank, rankIndex, roomMax } from './balance';
 import { grant, statValue } from './feats';
 import type { ActiveGoal, ChipKind, GameState, Goals, Reward } from './model';
 import { Rng } from './rng';
@@ -47,7 +47,11 @@ function available(s: GameState, d: GoalDef, goals: Goals): boolean {
   if (goals.active.some((g) => g.id === d.id)) return false;
   if (!('room' in d) && d.exp && !expeditionsOpen(s)) return false;
   if ('stat' in d)
-    return s.day >= (d.fromDay ?? 0) && (!d.needs || d.needs.some((t) => roomLevel(s, t) > 0));
+    return (
+      s.day >= (d.fromDay ?? 0) &&
+      rankIndex(s.rep) >= (d.fromRank ?? 0) &&
+      (!d.needs || d.needs.some((t) => roomLevel(s, t) > 0))
+    );
   if (goals.done[d.id]) return false;
   if ('room' in d) {
     // La sala ya está, un nivel por debajo, y el siguiente se puede hacer con el rango de ahora.
@@ -68,7 +72,9 @@ function make(s: GameState, d: GoalDef, goals: Goals): ActiveGoal {
     const target = d.n + d.step * times;
     const r = d.reward;
     const reward: Reward = { ...r };
-    if (r.gold) reward.gold = Math.round((r.gold * (1 + 0.5 * times)) / 5) * 5;
+    // Cada vez que se cumple, más; y con el rango, la caja es más grande (`GOAL_RANK_GOLD`).
+    const rank = GOAL_RANK_GOLD[rankIndex(s.rep)] ?? GOAL_RANK_GOLD.at(-1)!;
+    if (r.gold) reward.gold = Math.round((r.gold * (1 + 0.5 * times) * rank) / 5) * 5;
     if (r.rep) reward.rep = r.rep + Math.floor(times / 2);
     return {
       id: d.id,

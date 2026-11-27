@@ -41,7 +41,9 @@ export type Counter =
   | 'gathered'
   | 'healed'
   | 'potions'
-  | 'tempered';
+  | 'tempered'
+  | 'hardWins'
+  | 'bosses';
 
 /** Suma `n` a un contador de la partida. */
 export function bump(s: GameState, key: Counter, n = 1): void {

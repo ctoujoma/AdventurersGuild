@@ -904,6 +904,9 @@ export interface Stats {
   /** Pociones preparadas y objetos mejorados en los talleres. */
   potions?: number;
   tempered?: number;
+  /** Encargos de peligro 3 cumplidos y jefes vencidos (en encargos y guardianes de expedición). */
+  hardWins?: number;
+  bosses?: number;
   byType: Partial<Record<QuestType, number>>;
 }
 

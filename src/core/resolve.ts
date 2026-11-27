@@ -339,6 +339,7 @@ export function resolveMission(
   if (outcome === 'Éxito' || outcome === 'Éxito brillante') {
     stats.wins++;
     stats.byType[q.type] = (stats.byType[q.type] ?? 0) + 1;
+    if (q.danger >= 3) stats.hardWins = (stats.hardWins ?? 0) + 1;
   }
   if (outcome === 'Éxito brillante') stats.brilliant++;
   // Explorar con éxito descubre los dos lugares más cercanos en el mapa.

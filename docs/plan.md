@@ -563,7 +563,10 @@ eventos).
   calma, alargar `DAY_SECONDS`.
 - **Objetivos:** más variedad. **Hecho (27 de noviembre):** sirve jarras, recoge a mano la caja y
   lo de la cocina y la bodega, cura en los catres, prepara pociones y mejora objetos (contadores
-  nuevos en `Stats`; «asalto sin heridos» ya estaba).
+  nuevos en `Stats`; «asalto sin heridos» ya estaba). Para el final de la partida: el oro de los
+  de contar sube con el rango (`GOAL_RANK_GOLD`: ×1, 1,5, 2,5, 4 y 6), y hay objetivos desde Plata
+  (encargos de peligro 3, vencer jefes) y en serie (maestro a nivel 12, rangos de oro y leyenda,
+  expedición de 12 días).
 - **Al acabar todas las historias** no llegan más: historias que se repitan o una por
   temporada.
 
