@@ -300,15 +300,20 @@ const FOES: Record<Heading, readonly (() => ExpFoe)[]> = {
       count: 1,
     }),
     () => ({
-      art: calcoArt('bestia', 'oso', {
-        idle: 0,
-        idle2: 1,
-        walk1: 1,
-        walk2: 2,
-        windup: 1,
-        strike: 3,
-        hurt: 0,
-      }),
+      art: calcoArt(
+        'bestia',
+        'oso',
+        { idle: 0, idle2: 2, walk1: 1, walk2: 3, windup: 7, strike: 8, hurt: 11, down: 18 },
+        false,
+        // Respira; se alza y suelta el zarpazo; herido, ruge y se encoge; muere y queda tendido.
+        {
+          idle: [0, 1, 2, 3, 4, 3, 2, 1],
+          windup: [5, 6, 7],
+          strike: [8, 9, 10],
+          hurt: [11, 12, 13, 14],
+          down: [15, 16, 17, 18],
+        },
+      ),
       count: 1,
     }),
     () => ({

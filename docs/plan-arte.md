@@ -524,7 +524,13 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      arriba: heridos, se deshacen en tramado. El huargo ya tiene su muerte (hoja del usuario, calcada con su paleta fija:
      `huargo_muerte.py`, `calco3` con `pal`): se encabrita, se desploma, se oscurece, queda en ceniza y
      se la lleva el viento (`ashOut`, el parámetro `ash` de `calcoArt`). Pendiente: lobos pequeños y oso
-     mejorados (el usuario los está preparando).
+     mejorados (el usuario los está preparando). **Oso nuevo** (hoja con las cuatro
+     animaciones: respira, se alza y da el zarpazo, herido ruge y se encoge, muere y queda tendido;
+     `bosque2_calco.py`, que sustituye al oso de `bosque_calco.py`). **Los caídos se quedan en el
+     camino** (idea del usuario): tras la celebración el grupo sigue andando y el cuerpo se queda en el
+     suelo, pasa con el camino y se quita al salir de la vista (`Gente.corpses`). Los que desaparecen
+     solos (el dragón se deshace, el huargo en ceniza, los del bosque sin muerte dibujada) no dejan
+     nada.
      Luego: pasada visual a sierra/marismas/ruinas y transiciones suaves (lluvia y fondo cambian de golpe).
      **Sucesos a la vista (26 nov):** con `e.pending` el visor pinta delante lo que hay (`visor/sucesos.ts`, `MarchNow.event`):
      cofre, santuario, mercader con carro, viajero, campamento abandonado, oso, cueva, torre y ruinas, pintados en

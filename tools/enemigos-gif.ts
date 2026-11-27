@@ -12,6 +12,7 @@ const FPS = 10;
 const N = 80;
 const ARTS: Record<string, FoeArt> = {
   huargo: expFoeArt('bosque', 3).art,
+  oso: expFoeArt('bosque', 2).art,
   sanguijuela: expFoeArt('marismas', 0).art,
   gigante: expFoeArt('sierra', 3).art,
   dragon: expGuardianArt('sierra'),

@@ -101,7 +101,9 @@ export function shadow(b: PixelBuffer, x: number, y: number, w: number): void {
 export class Gente {
   private fightFrom = -1;
   /** Al ganar, los que quedaban en pie caen (cuándo acabó y cuánto duró la pelea). */
-  private after?: { from: number; t: number };
+  private after?: { from: number; t: number; travel: number };
+  /** Los enemigos de la última pelea y dónde estaban (los caídos se quedan en el camino). */
+  private last?: { foes: FoeArt[]; xs: number[] };
   private pops: Pop[] = [];
   private sparks: { x: number; y: number; big: boolean }[] = [];
   /** Los efectos de este fotograma (`vfx.ts`) y el temblor de los grandes (px, arriba o abajo). */
@@ -126,17 +128,36 @@ export class Gente {
       this.fight(c, c.time - this.fightFrom);
     } else {
       if (this.fightFrom >= 0 && c.m.won && c.m.mode === 'walk')
-        this.after = { from: c.time, t: c.time - this.fightFrom };
+        this.after = { from: c.time, t: c.time - this.fightFrom, travel: c.travel };
       this.fightFrom = -1;
       const end = this.after ? (c.time - this.after.from) / AFTER : 1;
       if (this.after && end >= 0 && end < 1) {
         this.fight(c, this.after.t, end);
         return;
       }
-      this.after = undefined;
+      // Luego siguen andando y los caídos se quedan en el camino hasta salir de la vista.
+      if (!this.after || !this.corpses(c)) this.after = undefined;
       if (hiding(c)) drawEscondidos(c);
       else this.walk(c);
     }
+  }
+
+  /** Los caídos de la pelea ganada, quietos en el suelo mientras el camino pasa (false: ya no se ven). */
+  private corpses(c: Ctx): boolean {
+    const { b, e, l, lk } = c;
+    if (!this.last || !this.after) return false;
+    const dir = c.m.home ? -1 : 1;
+    const shift = c.travel - this.after.travel;
+    let seen = false;
+    this.last.foes.forEach((f, j) => {
+      const x = Math.round(this.last!.xs[j]! - shift);
+      if (x < -f.span || x > e.w + f.span) return;
+      const img = foeFrame(f, 'down', 1, c.time);
+      if (img.isEmpty()) return;
+      seen = true;
+      put(b, tinted(img, l, lk), x, e.feet + 1, f.foot, img.h - 1, dir > 0);
+    });
+    return seen;
   }
 
   /** Andando por el camino. */
@@ -218,6 +239,7 @@ export class Gente {
       foeXs.push(fx);
       fx += dir * (f.span + 3);
     }
+    this.last = { foes, xs: foeXs };
     const lunge = (who: boolean) => (who && p > 0.3 && p < 0.58 ? 3 : 0);
     // Los enemigos (los caídos, debajo).
     for (let j = foes.length - 1; j >= 0; j--) {
