@@ -5,7 +5,7 @@ import colorsys
 import numpy as np
 from PIL import Image
 
-def celdas(a, box, k, bg, thr=40, drop=None, acc=None):
+def celdas(a, box, k, bg, thr=40, drop=None, acc=None, minc=0.12):
     x0, y0, x1, y1 = box
     W = int((x1 - x0) / k); H = int((y1 - y0) / k)
     g = [[None] * W for _ in range(H)]
@@ -36,7 +36,7 @@ def celdas(a, box, k, bg, thr=40, drop=None, acc=None):
             comps.append(comp)
     big = max(len(c) for c in comps)
     for c in comps:
-        if len(c) < 0.12 * big:
+        if len(c) < minc * big:
             for x, y in c: g[y][x] = None
     # sueltos fuera
     for j in range(H):
@@ -61,7 +61,7 @@ def kmedias(px, n, it=30, seed=1):
 def hexc(c): return '#%02x%02x%02x' % tuple(int(round(max(0, min(255, v)))) for v in c)
 
 def criatura(src, boxes, k, n, bg, thr=40, drop=None, edge=0.55, keep=(), acc=None, lift=1.0, split=False,
-             pal=None):
+             pal=None, minc=0.12):
     """pal: paleta fija (hex, de oscuro a claro) para añadir fotogramas a un calco que ya existe; el borde,
     el más oscuro."""
     """keep: colores fijos (hex) que se respetan si una celda se parece (ojos, fuego)."""
@@ -72,8 +72,10 @@ def criatura(src, boxes, k, n, bg, thr=40, drop=None, edge=0.55, keep=(), acc=No
     bg = np.array(bg)
     # una caja es (x0, y0, x1, y1) de `src`, o (otra imagen, x0, y0, x1, y1, su k): así los
     # fotogramas de varias hojas comparten paleta
-    grids = [celdas(img(src), b, k, bg, thr, drop, acc) if len(b) == 4
-             else celdas(img(b[0]), b[1:5], b[5], bg, thr, drop, acc) for b in boxes]
+    # minc: los trozos sueltos más pequeños que esto (por el mayor) fuera; más bajo, se queda lo que
+    # vuela (el garrote del trasgo)
+    grids = [celdas(img(src), b, k, bg, thr, drop, acc, minc) if len(b) == 4
+             else celdas(img(b[0]), b[1:5], b[5], bg, thr, drop, acc, minc) for b in boxes]
     px = [c for g in grids for r in g for c in r if c is not None and not isinstance(c, tuple)]
     if pal is not None:
         cen = np.array([[int(h[i:i+2], 16) for i in (1, 3, 5)] for h in pal], float)
