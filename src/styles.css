@@ -9146,9 +9146,66 @@ div.item-count {
 .exp-drinks {
   margin: 4px 0;
 }
-/* «Ver la pelea» de una expedición: la escena del visor y, al acabar, cómo fue. */
-.exp-replay .exp-visor {
+/* «Ver la pelea» de una expedición: ventana flotante centrada, la pelea tan grande como quepa
+   (lo que dejan la cabecera y los botones, ~150 px), sin pasarse del ancho ni del alto. De pie,
+   el encuadre se estira hacia arriba (ExpFightReplay pone su proporción en el lienzo). */
+.replay-backdrop {
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  background: rgba(12, 10, 20, 0.86);
+}
+.replay-win {
+  --replay-ar: 320 / 200;
+  --replay-arn: 1.6;
   position: relative;
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  padding: 10px;
+  background: #4f2f2d;
+  border: 2px solid var(--ink);
+  box-shadow:
+    inset 0 0 0 3px #733e39,
+    inset 0 0 0 6px #3e2731,
+    0 6px 0 var(--ink),
+    0 0 40px rgba(0, 0, 0, 0.6);
+  animation: fadein 0.2s both;
+}
+.replay-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  padding: 2px 34px 0 4px;
+  color: #f7ecd0;
+  min-width: 0;
+}
+.replay-head h3 {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.replay-head .eyebrow {
+  color: #e8c9a0;
+  white-space: nowrap;
+}
+.replay-x {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+.replay-stage {
+  position: relative;
+}
+.replay-canvas {
+  display: block;
+  image-rendering: pixelated;
+  width: min(calc(100vw - 48px), calc((100dvh - 150px) * var(--replay-arn)));
+  height: auto;
+  aspect-ratio: var(--replay-ar);
+  box-shadow: 0 0 0 2px var(--ink);
 }
 .exp-replay-end {
   position: absolute;
@@ -9176,7 +9233,6 @@ div.item-count {
   display: flex;
   gap: 8px;
   justify-content: center;
-  margin: 8px 0;
 }
 
 /* ---------- Confirmar antes de vender (por encima de todo) ---------- */
