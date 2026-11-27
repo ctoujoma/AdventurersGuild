@@ -554,7 +554,9 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      enganchar en `BOSS_CALCO` (lo hace el agente de expediciones). En el glosario, como pendiente.
      Ojos: la hoja los trae inconsistentes (y gotas cian sueltas): se quita todo el cian y se pone una
      pupila `#a4e6f3` por ojo, buscada bajo la corona (`marks` de `calco3`); al morir, sin luz. Motas
-     claras sueltas, fuera (`sin_motas`).
+     claras sueltas, fuera (`sin_motas`). La estela pálida solo se quita en el barrido y el golpe (en el resto
+     eran las costillas), y como la hoja trae las costillas a ratos, a los de pie va el pecho del primero
+     (`pecho`, alineado por la corona). `calco3`: `drop(p, box)` puede mirar el fotograma.
      Luego: pasada visual a sierra/marismas/ruinas y transiciones suaves (lluvia y fondo cambian de golpe).
      **Sucesos a la vista (26 nov):** con `e.pending` el visor pinta delante lo que hay (`visor/sucesos.ts`, `MarchNow.event`):
      cofre, santuario, mercader con carro, viajero, campamento abandonado, oso, cueva, torre y ruinas, pintados en

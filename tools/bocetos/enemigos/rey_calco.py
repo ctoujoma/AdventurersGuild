@@ -11,9 +11,10 @@ BOX = [(63,20,173,192),(258,20,368,192),(452,20,562,192),(644,19,754,192),(846,1
        (1223,214,1331,383),(13,408,236,576),(287,407,425,575),(473,427,636,575),(687,408,794,575),
        (26,587,233,762),(252,590,460,762),(464,636,726,762),(733,639,911,761),(917,714,1098,764),
        (1146,714,1325,764)]
-def fuera(p):  # la estela pálida del barrido, las gotas y el cian de los ojos (los ojos se ponen
-    r, g, b = p  # luego, uno por ojo); el barro se queda: con él se iba el borde de la corona
-    pale = b > r + 15 and (r + g + b) / 3 > 170
+def fuera(p, box):  # el cian de los ojos y las gotas (los ojos se ponen luego, uno por ojo) y, solo
+    r, g, b = p       # en el barrido y el golpe, la estela pálida (en el resto, eso son las costillas);
+    # el barro se queda: con él se iba el borde de la corona
+    pale = BOX.index(box) in (7, 8) and b > r + 15 and (r + g + b) / 3 > 170
     cyan = g - r > 45 and b > 185 and b - r > 45
     return pale or cyan
 OJO = '#a4e6f3'
@@ -98,6 +99,21 @@ def sin_motas(g):
                 out[j][i] = max(set(nb), key=nb.count)
     return out
 fr = [sin_motas(g) for g in fr]
+# Las costillas: en la hoja, de pie, unas veces se ven y otras no (el cuarto de quieto, sin ellas).
+# Al resto de fotogramas de pie va el pecho del primero, alineado por la corona y sin tocar su silueta.
+def corona(g):
+    pts = [(x, y) for y, r in enumerate(g) for x, c in enumerate(r) if c and oro(c)]
+    top = min(y for _, y in pts)
+    return min(x for x, y in pts if y < top + 4), top
+def pecho(dst, src):
+    (sx, sy), (dx, dy) = corona(src), corona(dst)
+    for y in range(sy + 14, sy + 35):
+        for x in range(sx - 6, sx + 17):
+            ty, tx = y - sy + dy, x - sx + dx
+            if 0 <= ty < len(dst) and 0 <= tx < len(dst[0]) and dst[ty][tx] and src[y][x] and dst[ty][tx] != OJO:
+                dst[ty][tx] = src[y][x]
+for i in (1, 2, 3, 4, 10, 14):
+    pecho(fr[i], fr[0])
 def pie(g):
     xs = [x for r in g[-3:] for x, c in enumerate(r) if c]
     return round(sum(xs) / len(xs))

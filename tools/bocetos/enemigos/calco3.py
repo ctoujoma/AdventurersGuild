@@ -23,6 +23,9 @@ def celdas(a, box, k, bg, thr=40, drop=None, acc=None, minc=0.12, exact=False, m
         # calco exacto: la rejilla sobre los píxeles de la hoja y, de cada uno, el centro
         px, py = fase(a, box, k)
         x0, y0 = x0 + px - k, y0 + py - k
+    # drop puede mirar también de qué fotograma es el píxel: drop(p, box)
+    if drop is not None and drop.__code__.co_argcount == 2:
+        drop = (lambda f, bx: (lambda p: f(p, bx)))(drop, box)
     W = int((x1 - x0) / k); H = int((y1 - y0) / k)
     g = [[None] * W for _ in range(H)]
     for j in range(H):
