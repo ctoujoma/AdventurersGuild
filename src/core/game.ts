@@ -3,7 +3,7 @@
  * `reduce(state, action)` nunca muta el estado que recibe: copia y devuelve uno nuevo.
  */
 import { earn, spill, vaultNews } from './vault';
-import { pastDusk, takeAll, takeTill, takeYield } from './collect';
+import { pastDusk, stepQueues, takeQueue, takeTill } from './collect';
 import { dormIssue, sleepPlan, isVet } from './beds';
 import { guardIssue, guardsAt, postFull, postIssue, postOf, type Post } from './guards';
 import { FLAVOR } from '../data/stories';
@@ -954,8 +954,7 @@ function reduceAction(state: GameState, action: Action): GameState {
       if (action.what === 'caja') {
         if (!takeTill(s)) return state;
       } else if (action.what === 'sala') {
-        const n = takeYield(s, action.id ?? '');
-        if (!n.food && !n.beer) return state;
+        if (!takeQueue(s, action.id ?? '')) return state;
       } else {
         // Lo que sale de un taller se cuenta al momento (como los incidentes).
         const news = collectCraft(s, action.id ?? '');
@@ -1524,8 +1523,10 @@ export function tick(state: GameState, to: number): GameState {
   const due = Math.floor((dayIncome(s, s.day) * n) / DELIVERIES);
   // Lo que entregan los visitantes se junta en la bolsa de la barra (se recoge tocándola).
   if (due > (s.till ?? 0)) s.till = due;
-  // Al anochecer, lo que no se haya recogido se recoge solo.
-  if (pastDusk(s)) takeAll(s);
+  // La cocina y la bodega llenan su cola (llena, paran).
+  stepQueues(s, clock / DAY_SECONDS);
+  // Al anochecer, la caja se recoge sola (la cocina y la bodega, al cerrar el día).
+  if (pastDusk(s)) takeTill(s);
   return s;
 }
 

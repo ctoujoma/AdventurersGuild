@@ -950,8 +950,12 @@ export interface GameState {
   till?: number;
   /** Lo que ya se ha recogido de la caja hoy (lo demás espera en la bolsa: `core/collect.ts`). */
   tillTaken?: number;
-  /** Lo recogido hoy de cada cocina y bodega (sala → raciones y jarras): `core/collect.ts`. */
-  taken?: Record<string, { food?: number; beer?: number }>;
+  /**
+   * La cola de cada cocina y bodega (sala → raciones y jarras hechas que esperan a que se recojan,
+   * con decimales): `core/collect.ts`. `queueAt`: la parte del día hasta la que está contada.
+   */
+  queue?: Record<string, { food?: number; beer?: number }>;
+  queueAt?: number;
   /** Raciones en la cocina y la despensa, y jarras en la bodega. */
   food: number;
   beer: number;

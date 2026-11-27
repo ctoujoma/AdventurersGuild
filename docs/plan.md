@@ -484,10 +484,15 @@ marcador (`ui/CollectMark.tsx`, `core/collect.ts`); vista previa: «Recoger lo c
   hasta que se recoge (`Craft.ready`); con dos puestos (nivel 3), el otro sigue y se ven los dos
   iconos. **No se recoge solo**, ni con el juego cerrado: espera a que vuelva el jugador. La
   calidad se tira al recoger. En la ficha del taller, botón «Recoger».
-- **Caja del salón, cocina y bodega:** las monedas se juntan en una bolsa sobre el salón y las
-  raciones y jarras sobre su sala, a medida que avanza la jornada (la comida es un recurso: se
-  lleva de expedición). Si no se recogen a mano, **al anochecer se recogen solas**; con el juego
-  cerrado, igual. El total del día no cambia: lo recogido no se cuenta dos veces por la noche.
+- **Cocina y bodega (cola, 27 de noviembre):** lo que hacen va a su cola, de medio día por hueco
+  y nivel (6 raciones o 3 jarras). Llena, **paran** hasta que se recoja, como en Fallout Shelter.
+  Recoger lo pasa a los armarios (despensa y bodega, con su tope; lo que no cabe se queda en la
+  cola). La burbuja sale con la cola al 90 %; la ficha deja recoger siempre (raciones para una
+  expedición). Al irse a dormir (al cerrar el día) entra todo lo de la cola, después de que coman
+  los visitantes; con el juego cerrado o en el simulador, lo de todo el día sin que pare.
+- **Caja del salón:** sin tope. La bolsa sale sobre el salón desde 100 monedas; la ficha del salón
+  deja recogerla siempre. Al anochecer se recoge sola.
+- Pendiente: pulir el efecto (en `futuro.md`).
 
 ## Pendiente (25 de noviembre)
 

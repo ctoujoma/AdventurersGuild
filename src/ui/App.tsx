@@ -2,7 +2,7 @@ import { easeIssue, nightmareNow } from '../core/nightmare';
 import { CraftMark } from './CraftMark';
 import { CollectMark, collectFx } from './CollectMark';
 import { BufferImage } from './BufferImage';
-import { tillReady, yieldsReady } from '../core/collect';
+import { queuesShowing, tillReady, tillShows } from '../core/collect';
 import { itemIcon, potionIcon } from '../art/items';
 import { flyCoins } from './coinFlight';
 import { SHEETS, coverOf } from './cover';
@@ -1562,7 +1562,7 @@ export function App() {
               </CollectMark>
             );
           })}
-        {!passing && !dawnOpen && !paying && tillReady(game) > 0 && salonId && (
+        {!passing && !dawnOpen && !paying && tillShows(game) && salonId && (
           <CollectMark
             room={salonId}
             scene={scene}
@@ -1583,27 +1583,29 @@ export function App() {
         {!passing &&
           !dawnOpen &&
           !paying &&
-          yieldsReady(game).map((y) => {
-            const p = { comida: y.food, bebida: y.beer, y: y.food && y.beer ? 'si' : 'no' };
-            return (
-              <CollectMark
-                key={`y-${y.room}`}
-                room={y.room}
-                scene={scene}
-                count={`+${y.food || y.beer}`}
-                label={t('recoger.sala', p)}
-                onTake={(el) => {
-                  audio.play('glint', 0.6);
-                  haptic('select');
-                  collectFx(el, y.food ? '[data-food]' : '[data-beer]');
-                  dispatch({ type: 'collect', what: 'sala', id: y.room });
-                  toast(t('recoger.sala_hecho', p));
-                }}
-              >
-                <Icon name={y.food ? 'pan' : 'jarra'} size={24} />
-              </CollectMark>
-            );
-          })}
+          queuesShowing(game).map((y) => (
+            <CollectMark
+              key={`y-${y.room}`}
+              room={y.room}
+              scene={scene}
+              count={y.full ? '!' : `+${y.n}`}
+              label={t('recoger.sala', { que: y.kind, n: y.n })}
+              onTake={(el) => {
+                if (y.full) {
+                  audio.play('thud', 0.5);
+                  toast(t('recoger.lleno', { que: y.kind }));
+                  return;
+                }
+                audio.play('glint', 0.6);
+                haptic('select');
+                collectFx(el, y.kind === 'food' ? '[data-food]' : '[data-beer]');
+                dispatch({ type: 'collect', what: 'sala', id: y.room });
+                toast(t('recoger.sala_hecho', { que: y.kind, n: y.n }));
+              }}
+            >
+              <Icon name={y.kind === 'food' ? 'pan' : 'jarra'} size={24} />
+            </CollectMark>
+          ))}
         {!passing && !dawnOpen && knocking && messengerRoom(game) && (
           <MessengerMark
             messenger={game.messenger!}

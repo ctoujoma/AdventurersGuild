@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { DAY_SECONDS, DUSK } from './balance';
-import { yieldReady, yieldsReady } from './collect';
+import { DAY_SECONDS, DUSK, TILL_SHOW } from './balance';
+import { queueCap, queueOf, queuesShowing, readyIn, tillShows } from './collect';
 import { endDay, newGame, reduce } from './game';
-import { yieldsOf } from './larder';
+import { cookAt, foodCap } from './larder';
+import type { GameState } from './model';
 
 /** La partida del tío, sin objetivos que sumen (la cocina de Remedios ya hace raciones). */
 function home(seed: string) {
@@ -12,30 +13,62 @@ function home(seed: string) {
   s.tips = ['*'];
   return s;
 }
+const kitchenOf = (s: GameState) => s.building.rooms.find((r) => r.type === 'cocina')!;
+const at = (s: GameState, part: number) => reduce(s, { type: 'tick', to: part * DAY_SECONDS });
 
 describe('recoger lo que da la taberna', () => {
-  it('la cocina junta raciones durante el día; recogerlas no las cuenta dos veces', () => {
-    const s0 = home('cocina');
-    const kitchen = yieldsOf(s0).find((y) => y.food)!;
-    expect(kitchen).toBeDefined();
-    let s = reduce(s0, { type: 'tick', to: (DUSK * DAY_SECONDS) / 2 });
-    const ready = yieldReady(s, kitchen.room);
-    expect(ready.food).toBeGreaterThan(0);
-    const food0 = s.food;
-    s = reduce(s, { type: 'collect', what: 'sala', id: kitchen.room });
-    expect(s.food).toBe(food0 + ready.food);
-    expect(yieldReady(s, kitchen.room).food).toBe(0);
-    // Al cerrar el día, lo mismo que sin recoger nada.
-    const plain = endDay(reduce(s0, { type: 'tick', to: (DUSK * DAY_SECONDS) / 2 }));
-    expect(endDay(s).food).toBe(plain.food);
+  it('la cocina llena su cola (medio día) y, llena, para', () => {
+    const s0 = home('cola');
+    const k = kitchenOf(s0);
+    expect(cookAt(s0, k)).toBeGreaterThan(0);
+    const cap = queueCap(k);
+    expect(cap).toBeGreaterThan(0);
+    // A media jornada lleva algo; al anochecer, la cola no pasa de su tope.
+    const mid = at(s0, 0.2);
+    expect(queueOf(mid, kitchenOf(mid))!.n).toBeGreaterThan(0);
+    const late = at(s0, DUSK - 0.01);
+    expect(queueOf(late, kitchenOf(late))!.n).toBeLessThanOrEqual(cap);
   });
 
-  it('al anochecer se recoge solo todo lo que quede', () => {
-    let s = home('anochecer');
-    s = reduce(s, { type: 'tick', to: (DUSK * DAY_SECONDS) / 2 });
-    expect(yieldsReady(s).length).toBeGreaterThan(0);
-    s = reduce(s, { type: 'dusk' });
-    expect(yieldsReady(s)).toEqual([]);
-    expect(s.tillTaken ?? 0).toBe(s.till ?? 0);
+  it('la burbuja sale al 90 %; recoger pasa a los armarios lo que quepa', () => {
+    let s = home('burbuja');
+    s.food = 0;
+    s = at(s, DUSK - 0.01);
+    const k = kitchenOf(s);
+    const q = queueOf(s, k)!;
+    if (q.n >= q.cap * 0.9) expect(queuesShowing(s).some((x) => x.room === k.id)).toBe(true);
+    const ready = readyIn(s, k)!;
+    expect(ready.n).toBeGreaterThan(0);
+    const next = reduce(s, { type: 'collect', what: 'sala', id: k.id });
+    expect(next.food).toBe(ready.n);
+    expect(queueOf(next, kitchenOf(next))!.n).toBeLessThan(1);
+  });
+
+  it('con los armarios llenos no se recoge: lo hecho se queda en la cola', () => {
+    let s = home('lleno');
+    s.food = foodCap(s.building);
+    s = at(s, 0.3);
+    const k = kitchenOf(s);
+    expect(readyIn(s, k)!.full).toBe(true);
+    expect(reduce(s, { type: 'collect', what: 'sala', id: k.id })).toBe(s);
+  });
+
+  it('al irse a dormir entra todo lo de las colas; sin pasar por el día, lo de todo el día', () => {
+    const plain = home('dormir');
+    plain.food = 0;
+    // A media mañana la cola aún no ha parado: al cerrar el día, lo mismo que sin reloj.
+    const s = at(plain, 0.3);
+    expect(queueOf(s, kitchenOf(s))!.n).toBeGreaterThan(0);
+    const a = endDay(s);
+    const b = endDay(plain);
+    expect(a.queue).toBeUndefined();
+    expect(a.food).toBe(b.food);
+    expect(b.queueAt).toBe(0);
+  });
+
+  it('la bolsa de la caja sale sobre el salón desde 100 monedas', () => {
+    const s = home('bolsa');
+    expect(tillShows({ ...s, till: TILL_SHOW - 1 })).toBe(false);
+    expect(tillShows({ ...s, till: TILL_SHOW })).toBe(true);
   });
 });

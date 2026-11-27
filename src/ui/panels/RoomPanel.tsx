@@ -1,4 +1,5 @@
 import { MatShelf } from '../mats';
+import { queueOf, readyIn, tillReady } from '../../core/collect';
 import {
   cotsIn,
   cotsOf,
@@ -131,8 +132,9 @@ interface Props {
 }
 
 /** El salón por dentro: su Atractivo, las plazas y quién viene hoy. */
-function SalonInfo({ game }: { game: GameState }) {
+function SalonInfo({ game, onAct }: { game: GameState; onAct?: (a: Action) => void }) {
   const v = visitorsOf(game, game.day);
+  const bag = tillReady(game);
   return (
     <>
       <div class="chips">
@@ -154,13 +156,28 @@ function SalonInfo({ game }: { game: GameState }) {
           atendidos: v.served,
         })}
       </span>
+      {onAct && bag > 0 && (
+        <button class="btn btn-gold" onClick={() => onAct({ type: 'collect', what: 'caja' })}>
+          <Icon name="coin" size={12} /> {t('recoger.caja', { n: bag })}
+        </button>
+      )}
     </>
   );
 }
 
 /** Lo guardado y lo que se gasta: raciones en la cocina y la despensa, jarras en la bodega. */
-function LarderInfo({ game, room }: { game: GameState; room: Room }) {
+function LarderInfo({
+  game,
+  room,
+  onAct,
+}: {
+  game: GameState;
+  room: Room;
+  onAct?: (a: Action) => void;
+}) {
   const beer = room.type === 'bodega';
+  const q = queueOf(game, room);
+  const ready = readyIn(game, room);
   const v = visitorsOf(game, game.day);
   const e = eatersOf(game);
   const home = e.heroes.length + e.workers.length;
@@ -195,6 +212,29 @@ function LarderInfo({ game, room }: { game: GameState; room: Room }) {
           : t('paneles.room.hoy_comen_visitantes_y', { served: v.served, home })}
         {made < need && <> {t('paneles.room.se_gasta_mas_de')}</>}
       </span>
+      {q && q.cap > 0 && (
+        <div class="queue-row">
+          <Fact info={t('recoger.cola_ayuda', { que: q.kind })} warn={q.n >= q.cap}>
+            {t('recoger.cola', { que: q.kind, n: Math.floor(q.n), cap: q.cap })}
+          </Fact>
+          <span class="train-bar" aria-hidden="true">
+            <i style={{ width: `${Math.round((100 * q.n) / q.cap)}%` }} />
+          </span>
+          {onAct && ready && (
+            <button
+              class="btn btn-gold"
+              disabled={ready.n <= 0}
+              title={ready.full ? t('recoger.lleno', { que: ready.kind }) : undefined}
+              onClick={() => onAct({ type: 'collect', what: 'sala', id: room.id })}
+            >
+              {t('recoger.recoger')}
+            </button>
+          )}
+        </div>
+      )}
+      {ready?.full && (
+        <span class="row-sub room-bad">{t('recoger.lleno', { que: ready.kind })}</span>
+      )}
     </>
   );
 }
@@ -689,9 +729,9 @@ export function RoomPanel({
         </div>
       )}
       {room.type === 'almacen' && room.level > 0 && <MatShelf game={game} room={room} />}
-      {room.type === 'salon' && room.level > 0 && <SalonInfo game={game} />}
+      {room.type === 'salon' && room.level > 0 && <SalonInfo game={game} onAct={onAct} />}
       {(room.type === 'cocina' || room.type === 'despensa' || room.type === 'bodega') &&
-        room.level > 0 && <LarderInfo game={game} room={room} />}
+        room.level > 0 && <LarderInfo game={game} room={room} onAct={onAct} />}
       {isTrainRoom(room.type) && room.level > 0 && <TrainInfo room={room} />}
       {room.type === 'enfermeria' && room.level > 0 && (
         <InfirmaryInfo game={game} room={room} onOpen={onOpen} onAct={onAct} />

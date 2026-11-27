@@ -564,6 +564,16 @@ export const CELLAR_COOL = 1.25;
 export const KITCHEN_STORE = 12;
 export const PANTRY_STORE = 30;
 export const CELLAR_STORE = 20;
+/**
+ * La cola de la cocina y la bodega (lo hecho que espera sobre la sala a que se recoja): por hueco y
+ * nivel, medio día de lo que hacen. Llena, paran hasta que se recoja (usuario, 27 de noviembre).
+ */
+export const COOK_QUEUE = 6;
+export const BREW_QUEUE = 3;
+/** La burbuja de la cocina o la bodega sale con la cola a esta parte. */
+export const QUEUE_SHOW = 0.9;
+/** La bolsa de la caja sale sobre el salón desde estas monedas (en la ficha, siempre). */
+export const TILL_SHOW = 100;
 /** Lo que paga cada visitante por su jarra. */
 export const BEER_COIN = 1;
 /** Moral que pierde quien se acuesta sin cenar. */
