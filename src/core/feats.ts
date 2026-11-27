@@ -28,7 +28,22 @@ export function emptyStats(): Stats {
 
 /** Contadores que se suman de uno en uno (ver `bump`). */
 export type Counter =
-  'incidents' | 'thieves' | 'rumors' | 'crafted' | 'dressed' | 'painted' | 'trained' | 'cleanRaids';
+  | 'incidents'
+  | 'thieves'
+  | 'rumors'
+  | 'crafted'
+  | 'dressed'
+  | 'painted'
+  | 'trained'
+  | 'cleanRaids'
+  | 'beerServed'
+  | 'tills'
+  | 'gathered'
+  | 'healed'
+  | 'potions'
+  | 'tempered'
+  | 'hardWins'
+  | 'bosses';
 
 /** Suma `n` a un contador de la partida. */
 export function bump(s: GameState, key: Counter, n = 1): void {

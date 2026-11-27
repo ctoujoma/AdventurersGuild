@@ -17,6 +17,22 @@ objetivos:
     texto: "Apunta {n} rumores de la barra"
   historias:
     texto: "Completa {n} historias"
+  jarras-servidas:
+    texto: "Sirve {n} jarras en el salón"
+  caja:
+    texto: "Recoge a mano la caja del salón {n, plural, one {una vez} other {# veces}}"
+  recoger:
+    texto: "Recoge a mano {n} raciones o jarras de la cocina y la bodega"
+  curados:
+    texto: "Cura del todo a {n, plural, one {un héroe} other {# héroes}} en los catres de la enfermería"
+  pociones:
+    texto: "Prepara {n, plural, one {una poción} other {# pociones}} en la alquimia"
+  mejorar:
+    texto: "Mejora {n, plural, one {un objeto} other {# objetos}} en los talleres"
+  dificiles:
+    texto: "Cumple {n} encargos de peligro máximo"
+  jefes:
+    texto: "Vence a {n, plural, one {un jefe} other {# jefes}} (en encargos o guardianes de expedición)"
   talleres:
     texto: "Crea {n} objetos en los talleres"
   vestir:
@@ -41,6 +57,8 @@ objetivos:
     texto: "Que un héroe llegue a nivel {n}"
   nivel-8:
     texto: "Que un héroe llegue a nivel {n}"
+  nivel-12:
+    texto: "Que un héroe llegue a maestro (nivel {n})"
   sin-bajas:
     texto: "Pasa {n} días seguidos sin bajas"
   sin-bajas-30:
@@ -49,6 +67,10 @@ objetivos:
     texto: "Llega al rango de hierro ({n} de reputación)"
   plata:
     texto: "Llega al rango de plata ({n} de reputación)"
+  oro-rango:
+    texto: "Llega al rango de oro ({n} de reputación)"
+  leyenda:
+    texto: "Llega al rango de leyenda ({n} de reputación)"
 por_tipo:
   Cazar: "Cumple {n} encargos de caza"
   Explorar: "Cumple {n} exploraciones"

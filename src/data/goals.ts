@@ -25,6 +25,8 @@ export type GoalDef =
       needs?: readonly RoomType[];
       /** Solo con las expediciones abiertas. */
       exp?: boolean;
+      /** No sale antes de este rango (índice de `RANKS`): los del final de la partida. */
+      fromRank?: number;
     }
   | {
       id: string;
@@ -155,6 +157,77 @@ export const GOALS: readonly GoalDef[] = [
     step: 1,
     reward: { gold: 80, rep: 3 },
   },
+  // Los de lo de cada día (27 de noviembre): servir, recoger, curar, pociones y mejorar.
+  {
+    id: 'jarras-servidas',
+    text: 'objetivos.objetivos.jarras-servidas.texto',
+    stat: 'beerServed',
+    n: 30,
+    step: 20,
+    reward: { gold: 40 },
+  },
+  {
+    id: 'caja',
+    text: 'objetivos.objetivos.caja.texto',
+    stat: 'tills',
+    n: 3,
+    step: 2,
+    reward: { gold: 30 },
+  },
+  {
+    id: 'recoger',
+    text: 'objetivos.objetivos.recoger.texto',
+    stat: 'gathered',
+    n: 20,
+    step: 15,
+    reward: { gold: 30 },
+  },
+  {
+    id: 'curados',
+    text: 'objetivos.objetivos.curados.texto',
+    stat: 'healed',
+    n: 2,
+    step: 2,
+    reward: { gold: 40, rep: 1 },
+    needs: ['enfermeria'],
+  },
+  {
+    id: 'pociones',
+    text: 'objetivos.objetivos.pociones.texto',
+    stat: 'potions',
+    n: 2,
+    step: 2,
+    reward: { gold: 50 },
+    needs: ['alquimia'],
+  },
+  {
+    id: 'mejorar',
+    text: 'objetivos.objetivos.mejorar.texto',
+    stat: 'tempered',
+    n: 1,
+    step: 1,
+    reward: { gold: 60 },
+    needs: ['forja', 'sastreria', 'alquimia'],
+  },
+  // Los del final de la partida (desde Plata): encargos de peligro 3 y jefes.
+  {
+    id: 'dificiles',
+    text: 'objetivos.objetivos.dificiles.texto',
+    stat: 'hardWins',
+    n: 2,
+    step: 1,
+    reward: { gold: 80, rep: 3 },
+    fromRank: 2,
+  },
+  {
+    id: 'jefes',
+    text: 'objetivos.objetivos.jefes.texto',
+    stat: 'bosses',
+    n: 1,
+    step: 1,
+    reward: { gold: 100, rep: 4 },
+    fromRank: 2,
+  },
   {
     id: 'talleres',
     text: 'objetivos.objetivos.talleres.texto',
@@ -236,6 +309,15 @@ export const GOALS: readonly GoalDef[] = [
     reward: { rep: 4, item: 3 },
     exp: true,
   },
+  {
+    id: 'lejos-12',
+    after: 'lejos-8',
+    text: 'expediciones.objetivos.lejos',
+    have: 'far',
+    n: 12,
+    reward: { gold: 300, rep: 6, item: 4 },
+    exp: true,
+  },
   byType('Cazar', 2, { gold: 50 }),
   byType('Explorar', 2, { gold: 50 }),
   byType('Escoltar', 2, { gold: 50 }),
@@ -309,6 +391,14 @@ export const GOALS: readonly GoalDef[] = [
     reward: { gold: 120, item: 4 },
   },
   {
+    id: 'nivel-12',
+    after: 'nivel-8',
+    text: 'objetivos.objetivos.nivel-12.texto',
+    have: 'level',
+    n: 12,
+    reward: { gold: 400, rep: 6, item: 4 },
+  },
+  {
     id: 'sin-bajas',
     text: 'objetivos.objetivos.sin-bajas.texto',
     have: 'safe',
@@ -337,6 +427,22 @@ export const GOALS: readonly GoalDef[] = [
     have: 'rep',
     n: 100,
     reward: { gold: 120, unlock: 'tint:ceniza' },
+  },
+  {
+    id: 'oro-rango',
+    after: 'plata',
+    text: 'objetivos.objetivos.oro-rango.texto',
+    have: 'rep',
+    n: 180,
+    reward: { gold: 300, item: 4 },
+  },
+  {
+    id: 'leyenda',
+    after: 'oro-rango',
+    text: 'objetivos.objetivos.leyenda.texto',
+    have: 'rep',
+    n: 300,
+    reward: { gold: 600, item: 4 },
   },
 ];
 

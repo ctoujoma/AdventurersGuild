@@ -104,7 +104,7 @@ import {
   type Dress,
 } from '../data/custom';
 import type { RoomType } from '../data/rooms';
-import { arrival, checkFeats, emptyStats } from './feats';
+import { arrival, bump, checkFeats, emptyStats } from './feats';
 import { checkGoals, tickGoals } from './goals';
 import { stepRumors, takeRumor } from './rumors';
 import {
@@ -953,8 +953,11 @@ function reduceAction(state: GameState, action: Action): GameState {
       const s = structuredClone(state);
       if (action.what === 'caja') {
         if (!takeTill(s)) return state;
+        bump(s, 'tills');
       } else if (action.what === 'sala') {
-        if (!takeQueue(s, action.id ?? '')) return state;
+        const got = takeQueue(s, action.id ?? '');
+        if (!got) return state;
+        bump(s, 'gathered', got.n);
       } else {
         // Lo que sale de un taller se cuenta al momento (como los incidentes).
         const news = collectCraft(s, action.id ?? '');
@@ -1397,6 +1400,7 @@ function settleMission(
       sim: setup ? { setup, orders: orders ?? [] } : undefined,
     };
     if (setup && !orders) r.fight.sim!.auto = true;
+    if (r.fight.won) bump(s, 'bosses');
   }
   if (m.quest.chain) advanceChain(s, rng, m.quest, r, events);
   // Un éxito brillante a veces trae los planos de algo que no se sabía hacer.
@@ -1579,6 +1583,7 @@ export function healFor(
     if (h.status === 'herido') {
       h.status = 'ok';
       h.days = 0;
+      if (h.cot) bump(s, 'healed');
       delete h.cot;
       cured.push(h);
     }

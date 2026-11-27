@@ -15,6 +15,22 @@ objetivos:
     texto: "Note down {n} rumours from the bar"
   historias:
     texto: "Complete {n} stories"
+  jarras-servidas:
+    texto: "Serve {n} jugs in the hall"
+  caja:
+    texto: "Collect the hall's till by hand {n, plural, one {once} other {# times}}"
+  recoger:
+    texto: "Collect {n} rations or jugs by hand from the kitchen and the cellar"
+  curados:
+    texto: "Fully heal {n, plural, one {one hero} other {# heroes}} in the infirmary cots"
+  pociones:
+    texto: "Brew {n, plural, one {one potion} other {# potions}} in the alchemy lab"
+  mejorar:
+    texto: "Improve {n, plural, one {one item} other {# items}} in the workshops"
+  dificiles:
+    texto: "Complete {n} quests of maximum danger"
+  jefes:
+    texto: "Defeat {n, plural, one {a boss} other {# bosses}} (in quests or as expedition guardians)"
   talleres:
     texto: "Make {n} items in the workshops"
   vestir:
@@ -39,6 +55,8 @@ objetivos:
     texto: "Get a hero to level {n}"
   nivel-8:
     texto: "Get a hero to level {n}"
+  nivel-12:
+    texto: "Get a hero to master (level {n})"
   sin-bajas:
     texto: "Go {n} days in a row without losses"
   sin-bajas-30:
@@ -47,6 +65,10 @@ objetivos:
     texto: "Reach iron rank ({n} reputation)"
   plata:
     texto: "Reach silver rank ({n} reputation)"
+  oro-rango:
+    texto: "Reach the gold rank ({n} reputation)"
+  leyenda:
+    texto: "Reach the legend rank ({n} reputation)"
 por_tipo:
   Cazar: "Complete {n} hunting quests"
   Explorar: "Complete {n} explorations"

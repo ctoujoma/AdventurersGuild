@@ -590,6 +590,7 @@ function finish(s: GameState, c: Craft, rng: Rng, news: DawnEvent[]): void {
     const n = rng.chance(goodChance(s, c.room)) ? 2 : 1;
     const had = s.potions ?? 0;
     s.potions = Math.max(had, Math.min(potionCap(s), had + n));
+    bump(s, 'potions');
     logEnd(s, c, 'hecho', n > 1 ? 2 : 0);
     news.push({ t: msg('talleres.aviso.pocion', { n: s.potions - had }), k: 'good' });
     return;
@@ -615,6 +616,7 @@ function finish(s: GameState, c: Craft, rng: Rng, news: DawnEvent[]): void {
   if (c.temper && c.item) {
     const it = { ...c.item, plus: (c.item.plus ?? 0) + 1 };
     s.inventory.push(it);
+    bump(s, 'tempered');
     logEnd(s, c, 'templado');
     const room = s.building.rooms.find((r) => r.id === c.room);
     news.push({

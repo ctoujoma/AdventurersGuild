@@ -3,6 +3,7 @@
  * cabe en la casa y quién se lo toma. Lo que dan las salas se suma al terminar el día; los
  * visitantes comen y beben de lo guardado, y los de casa cenan por la noche.
  */
+import { bump } from './feats';
 import type { RoomType } from '../data/rooms';
 import {
   BREW_PER_WORK,
@@ -83,7 +84,9 @@ export function eatersOf(s: GameState): { heroes: Hero[]; workers: Worker[] } {
  */
 export function stepLarder(s: GameState, visits: DayVisitors, events: DawnEvent[]): void {
   s.food = Math.max(0, s.food - visits.fed);
-  s.beer = Math.max(0, s.beer - visits.drank);
+  const served = Math.min(s.beer, visits.drank);
+  if (served > 0) bump(s, 'beerServed', served);
+  s.beer -= served;
   // Lo que hacen la cocina y la bodega llega por su cola: al irse a dormir entra lo que quede.
   s.yields = yieldsOf(s);
   nightQueues(s);

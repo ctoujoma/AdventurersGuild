@@ -95,11 +95,32 @@ describe('objetivos', () => {
       if (a.id.includes('-') && GOALS.find((d) => d.id === a.id && 'room' in d)) {
         const d = GOALS.find((x) => x.id === a.id)!;
         if (!('room' in d)) continue;
+        // Sin la sala, cuenta como nivel 0 (el almacén sale para construirlo).
         const lv = Math.max(
+          0,
           ...s.building.rooms.filter((r) => r.type === d.room).map((r) => r.level),
         );
         expect(lv).toBe(d.level - 1);
       }
+  });
+
+  it('con más rango, más oro; los del final de la partida, desde Plata', () => {
+    const draw = (rep: number, id: string) => {
+      const s = structuredClone(newGame('rango'));
+      s.rep = rep;
+      const rng = new Rng(5);
+      for (let i = 0; i < 200; i++) {
+        s.goals = { active: [], done: {}, log: [] };
+        checkGoals(s, rng, []);
+        const g = s.goals.active.find((x) => x.id === id);
+        if (g) return g;
+      }
+      return null;
+    };
+    expect(draw(0, 'encargos')!.reward.gold).toBe(40);
+    expect(draw(200, 'encargos')!.reward.gold).toBe(160);
+    expect(draw(0, 'jefes')).toBeNull();
+    expect(draw(120, 'jefes')).not.toBeNull();
   });
 
   it('el progreso no pasa de lo que pide', () => {
