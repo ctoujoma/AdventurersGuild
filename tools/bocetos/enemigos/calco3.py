@@ -17,7 +17,7 @@ def fase(a, box, k):
         out.append(best[1] + 1)  # el borde va entre un píxel y el siguiente
     return out
 
-def celdas(a, box, k, bg, thr=40, drop=None, acc=None, minc=0.12, exact=False):
+def celdas(a, box, k, bg, thr=40, drop=None, acc=None, minc=0.12, exact=False, marks=None):
     x0, y0, x1, y1 = box
     if exact:
         # calco exacto: la rejilla sobre los píxeles de la hoja y, de cada uno, el centro
@@ -68,6 +68,10 @@ def celdas(a, box, k, bg, thr=40, drop=None, acc=None, minc=0.12, exact=False):
             if g[j][i] is not None and sum(1 for dx, dy in ((1,0),(-1,0),(0,1),(0,-1))
                     if 0 <= i+dx < W and 0 <= j+dy < H and g[j+dy][i+dx] is not None) <= 1:
                 g[j][i] = None
+    # marcas puestas a mano (los ojos): (x, y, color) en la hoja, a la celda que cae
+    for mx, my, mc in (marks(a, box) if marks else []):
+        i, j = int((mx - x0) / k), int((my - y0) / k)
+        if 0 <= i < W and 0 <= j < H: g[j][i] = ('acc', mc)
     return g
 
 def kmedias(px, n, it=30, seed=1):
@@ -85,7 +89,7 @@ def kmedias(px, n, it=30, seed=1):
 def hexc(c): return '#%02x%02x%02x' % tuple(int(round(max(0, min(255, v)))) for v in c)
 
 def criatura(src, boxes, k, n, bg, thr=40, drop=None, edge=0.55, keep=(), acc=None, lift=1.0, split=False,
-             pal=None, minc=0.12, exact=False):
+             pal=None, minc=0.12, exact=False, marks=None):
     """pal: paleta fija (hex, de oscuro a claro) para añadir fotogramas a un calco que ya existe; el borde,
     el más oscuro."""
     """keep: colores fijos (hex) que se respetan si una celda se parece (ojos, fuego)."""
@@ -98,8 +102,8 @@ def criatura(src, boxes, k, n, bg, thr=40, drop=None, edge=0.55, keep=(), acc=No
     # fotogramas de varias hojas comparten paleta
     # minc: los trozos sueltos más pequeños que esto (por el mayor) fuera; más bajo, se queda lo que
     # vuela (el garrote del trasgo)
-    grids = [celdas(img(src), b, k, bg, thr, drop, acc, minc, exact) if len(b) == 4
-             else celdas(img(b[0]), b[1:5], b[5], bg, thr, drop, acc, minc, exact) for b in boxes]
+    grids = [celdas(img(src), b, k, bg, thr, drop, acc, minc, exact, marks) if len(b) == 4
+             else celdas(img(b[0]), b[1:5], b[5], bg, thr, drop, acc, minc, exact, marks) for b in boxes]
     px = [c for g in grids for r in g for c in r if c is not None and not isinstance(c, tuple)]
     if pal is not None:
         cen = np.array([[int(h[i:i+2], 16) for i in (1, 3, 5)] for h in pal], float)

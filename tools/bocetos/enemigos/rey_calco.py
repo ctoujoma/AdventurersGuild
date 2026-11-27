@@ -11,13 +11,45 @@ BOX = [(63,20,173,192),(258,20,368,192),(452,20,562,192),(644,19,754,192),(846,1
        (1223,214,1331,383),(13,408,236,576),(287,407,425,575),(473,427,636,575),(687,408,794,575),
        (26,587,233,762),(252,590,460,762),(464,636,726,762),(733,639,911,761),(917,714,1098,764),
        (1146,714,1325,764)]
-def fuera(p):  # la estela pálida del barrido y las salpicaduras del golpe (el barro se queda: con él
-    r, g, b = p  # se iba también el borde de la corona)
-    return b > r + 15 and (r + g + b) / 3 > 165
+def fuera(p):  # la estela pálida del barrido, las gotas y el cian de los ojos (los ojos se ponen
+    r, g, b = p  # luego, uno por ojo); el barro se queda: con él se iba el borde de la corona
+    pale = b > r + 15 and (r + g + b) / 3 > 170
+    cyan = g - r > 45 and b > 185 and b - r > 45
+    return pale or cyan
+OJO = '#a4e6f3'
+def ojos(a, box):
+    """Los ojos, siempre una pupila cian por ojo (en la hoja unas veces brillan y otras no): bajo la
+    corona, los dos puntos más cian de la cara (o uno, de perfil). Sin corona (al morir, se le cae),
+    sin luz en los ojos."""
+    import numpy as np
+    if BOX.index(box) >= 15: return []  # muere: se le va la luz de los ojos
+    x0, y0, x1, y1 = box
+    reg = a[y0:y1, x0:x1]
+    r, g, b = reg[:, :, 0], reg[:, :, 1], reg[:, :, 2]
+    gold = (r > 160) & (g > 100) & (b < 110) & (r - b > 70)
+    ys, xs = np.nonzero(gold)
+    if len(ys) < 30: return []
+    # la corona puesta: la mancha de oro más alta; la cara, justo debajo
+    top = ys.min(); sel = ys < top + 40
+    cy0, cx0, cx1 = ys[sel].max() + 2, xs[sel].min() - 6, xs[sel].max() + 6
+    if cy0 - top > 45: return []
+    face = reg[cy0:cy0 + 28, max(0, cx0):cx1]
+    sc = (face[:, :, 1] - face[:, :, 0]) + (face[:, :, 2] - face[:, :, 0]) + face.sum(2) / 6
+    order = np.argsort(-sc.ravel())
+    pts = []
+    for k in order[:400]:
+        y, x = divmod(int(k), sc.shape[1])
+        if all(abs(x - px) > 4 or abs(y - py) > 4 for px, py, _ in pts):
+            pts.append((x, y, sc[y, x]))
+        if len(pts) == 6: break
+    a1 = pts[0]
+    pair = [p for p in pts[1:] if abs(p[1] - a1[1]) <= 5 and 6 <= abs(p[0] - a1[0]) <= 22 and p[2] > a1[2] * 0.8]
+    eyes = [a1] + pair[:1]
+    return [(x0 + max(0, cx0) + x, y0 + cy0 + y, OJO) for x, y, _ in eyes]
 ojo = lambda p: p[2] > 170 and p[1] > 160 and p[0] < 170
 verdin = lambda p: p[1] > p[0] + 22 and p[1] > p[2] + 4
 fr = C.criatura(I + '18.webp', BOX, 2.875, 16, (225, 216, 187), drop=fuera, minc=0.03, exact=True, edge=1.0,
-                keep=('#f0b030', '#c88a20'), acc=[(ojo, '#9ae6f2', 1), (verdin, '#3f7552', 3)])
+                keep=('#f0b030', '#c88a20'), acc=[(verdin, '#3f7552', 3)], marks=ojos)
 # Fuera de la muerte (donde vuelan la corona y el ancla), sin trozos sueltos (restos de la estela).
 def limpia(g):
     H, W = len(g), len(g[0]); seen = set(); comps = []
@@ -43,12 +75,29 @@ fr = [limpia(g) if i < 15 else g for i, g in enumerate(fr)]
 def sin_brillos(g):
     H, W = len(g), len(g[0])
     for _ in range(2):
-        rm = [(i, j) for j in range(H) for i in range(W) if g[j][i] == '#9ae6f2' and any(
+        rm = [(i, j) for j in range(H) for i in range(W) if g[j][i] == '#a4e6f3' and False and any(
             not (0 <= i + dx < W and 0 <= j + dy < H) or g[j + dy][i + dx] is None
             for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)))]
         for i, j in rm: g[j][i] = None
     return g
 fr = [sin_brillos(g) for g in fr]
+# Motas: un píxel mucho más claro que todos los de alrededor (brillos sueltos del agrandado) toma el
+# color que más hay a su alrededor. Ni el oro de la corona ni los ojos.
+def lum(h): return int(h[1:3], 16) * .3 + int(h[3:5], 16) * .59 + int(h[5:7], 16) * .11
+def oro(h): return int(h[1:3], 16) > int(h[3:5], 16) + 30
+def sin_motas(g):
+    H, W = len(g), len(g[0]); out = [r[:] for r in g]
+    for j in range(H):
+        for i in range(W):
+            c = g[j][i]
+            if not c or c == OJO or oro(c): continue
+            nb = [g[j + dy][i + dx] for dx in (-1, 0, 1) for dy in (-1, 0, 1)
+                  if (dx or dy) and 0 <= i + dx < W and 0 <= j + dy < H and g[j + dy][i + dx]]
+            nb = [n for n in nb if n != OJO and not oro(n)]
+            if len(nb) >= 3 and lum(c) > max(lum(n) for n in nb) + 25:
+                out[j][i] = max(set(nb), key=nb.count)
+    return out
+fr = [sin_motas(g) for g in fr]
 def pie(g):
     xs = [x for r in g[-3:] for x, c in enumerate(r) if c]
     return round(sum(xs) / len(xs))

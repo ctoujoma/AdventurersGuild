@@ -552,6 +552,9 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      la rejilla sobre los píxeles de la hoja, 2,875 px, con su desfase por fotograma, y el centro de cada
      uno; el usuario pidió calcar tal cual porque la corona se rompía). `reyArt()` en `expFoes.ts`; sin
      enganchar en `BOSS_CALCO` (lo hace el agente de expediciones). En el glosario, como pendiente.
+     Ojos: la hoja los trae inconsistentes (y gotas cian sueltas): se quita todo el cian y se pone una
+     pupila `#a4e6f3` por ojo, buscada bajo la corona (`marks` de `calco3`); al morir, sin luz. Motas
+     claras sueltas, fuera (`sin_motas`).
      Luego: pasada visual a sierra/marismas/ruinas y transiciones suaves (lluvia y fondo cambian de golpe).
      **Sucesos a la vista (26 nov):** con `e.pending` el visor pinta delante lo que hay (`visor/sucesos.ts`, `MarchNow.event`):
      cofre, santuario, mercader con carro, viajero, campamento abandonado, oso, cueva, torre y ruinas, pintados en
