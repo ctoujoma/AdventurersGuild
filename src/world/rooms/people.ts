@@ -79,12 +79,18 @@ export const YARD_FRONT = 7;
  */
 export const OUT_X = -PATIO_W - 72;
 export const outside = (): Place => ({ x: OUT_X, floor: 0 });
-/** Los píxeles de camino en los que aparecen (o se borran) por tramas al llegar (o irse). */
-export const OUT_FADE = 40;
+/**
+ * Los píxeles de camino en los que aparecen (o se borran) por tramas al llegar (o irse): empieza
+ * fuera del encuadre y acaba ya dentro, para que se les vea fundirse sin que se esfumen de golpe.
+ */
+export const OUT_FADE = 100;
 
-/** Cuánto se ve a alguien por el camino de fuera (0 en `outside`, 1 ya cerca del patio). */
-export const outFade = (x: number, floor: number): number =>
-  floor !== 0 ? 1 : Math.max(0, Math.min(1, (x - OUT_X) / OUT_FADE));
+/** Cuánto se ve a alguien por el camino de fuera (0 en `outside`, 1 ya en el patio), suave. */
+export const outFade = (x: number, floor: number): number => {
+  if (floor !== 0) return 1;
+  const u = Math.max(0, Math.min(1, (x - OUT_X) / OUT_FADE));
+  return u * u * (3 - 2 * u);
+};
 
 export function segments(L: RoomsLayout): Segments {
   const raw = new Map<number, [number, number][]>();
