@@ -13,7 +13,7 @@
  *   lo de todo el día, sin que la cola pare.
  * - Lo de los talleres no se recoge solo: espera en su puesto (`core/crafting.ts`).
  */
-import { BREW_QUEUE, COOK_QUEUE, DUSK, QUEUE_SHOW, TILL_SHOW } from './balance';
+import { BREW_QUEUE, COOK_QUEUE, DUSK, QUEUE_SHOW, TILL_SHOW, byLevel } from './balance';
 import { beerCap, brewAt, cookAt, foodCap } from './larder';
 import type { GameState, Room } from './model';
 import { active } from './rooms';
@@ -47,8 +47,8 @@ function makes(s: GameState, r: Room): { kind: Kind; perDay: number } | null {
 export function queueCap(r: Room): number {
   const { cells, level } = active(r);
   if (level <= 0) return 0;
-  if (r.type === 'cocina') return cells * level * COOK_QUEUE;
-  if (r.type === 'bodega') return cells * level * BREW_QUEUE;
+  if (r.type === 'cocina') return cells * byLevel(COOK_QUEUE, level);
+  if (r.type === 'bodega') return cells * byLevel(BREW_QUEUE, level);
   return 0;
 }
 

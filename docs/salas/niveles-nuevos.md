@@ -40,8 +40,8 @@ ladrillo) y una araña de latón con seis velas que alumbra más.
 | --- | --- | --- |
 | Cámara del tesoro | Mármol con cornisa dorada, puerta de latón de cámara acorazada, corona en la repisa, vitrina con el cetro. | Precio ~900. `VAULT_STORE` y `LOCK_TIME` con un valor más (p. ej. 20000 y 20 s). |
 | Dormitorio | Literas con dosel, mantas moradas con oro, candelabro, alfombras con flecos. | Precio ~750. `beds` da nivel + 1 camas por hueco: 5. El arte enseña 4 por hueco (dos literas): habría que poner una de tres pisos o dejar 4 camas y dar otro efecto (más moral al dormir). |
-| Cocina | Encalada con azulejo, cordero en el asador, batería de cobre, loza con filo de oro. | Precio ~750. El almacén crece solo con el nivel (`KITCHEN_STORE` × nivel × huecos). |
-| Bodega | Bóveda de ladrillo, cubas con el medallón de la casa, mesa de cata. | Precio ~750. El almacén crece solo con el nivel (`CELLAR_STORE` × nivel × huecos). |
+| Cocina | Encalada con azulejo, cordero en el asador, batería de cobre, loza con filo de oro. | Precio ~750. El almacén crece con el nivel, cada vez más, y con los huecos (`KITCHEN_STORE[nivel]` × huecos). |
+| Bodega | Bóveda de ladrillo, cubas con el medallón de la casa, mesa de cata. | Precio ~750. El almacén crece con el nivel, cada vez más, y con los huecos (`CELLAR_STORE[nivel]` × huecos). |
 | Sala de armas | Armadura de gala, espadas de acero, círculo de combate dorado. | Precio ~850. `TRAIN_CAP` con un valor más (p. ej. 11); `trainRate` ya sube con el nivel. |
 | Galería de tiro | Dianas de concurso, tablón de honor con medallas, raya dorada. | Igual que la sala de armas. |
 | Biblioteca | Estanterías con copete dorado, esfera armilar, alfombras con cenefa. | Igual que la sala de armas. |

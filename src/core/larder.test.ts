@@ -50,8 +50,8 @@ describe('comida y cerveza', () => {
 
   it('la cocina guarda poco, la despensa mucho y la cerveza va a la bodega', () => {
     const s = newGame('almacen');
-    expect(foodCap(s.building)).toBe(KITCHEN_STORE);
-    expect(beerCap(s.building)).toBe(CELLAR_STORE);
+    expect(foodCap(s.building)).toBe(KITCHEN_STORE[1]);
+    expect(beerCap(s.building)).toBe(CELLAR_STORE[1]);
     const t = structuredClone(s);
     t.building.rooms.push({
       id: 'dsp',
@@ -63,7 +63,7 @@ describe('comida y cerveza', () => {
       level: 1,
       spent: 0,
     });
-    expect(foodCap(t.building)).toBe(KITCHEN_STORE + 2 * PANTRY_STORE);
+    expect(foodCap(t.building)).toBe(KITCHEN_STORE[1] + 2 * PANTRY_STORE);
     // Lo que no cabe se echa a perder al terminar el día.
     const full = endDay({ ...s, food: 999, beer: 999 });
     expect(full.food).toBeLessThanOrEqual(foodCap(s.building));
