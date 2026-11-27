@@ -534,7 +534,11 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      fotogramas de deshacerse: el cuerpo se queda en el camino). Con ellos todo el bosque tiene muerte
      propia. **La manada va en corrillo** (idea del usuario): varios pequeños, más juntos y a tres
      profundidades (0, −4, +3 px), pintados de atrás adelante. El huargo, herido, se encabrita.
-     «Ver la pelea» con calcos y secuencias (opción 2 del usuario): pasado al agente principal.
+     «Ver la pelea» con calcos y secuencias (opción 2 del usuario): pasado al agente principal. **Embestida del jabalí** (`rush` en `vfx.ts`): se lanza 8 px, estelas de
+     velocidad desde la grupa del dibujo de ese momento, polvo de las pezuñas y choque fuerte con
+     temblor en vez del zarpazo. La repetición de las peleas de expedición (`replayNow`) ya usa los
+     dibujos nuevos en todos los rumbos (antes, solo el bosque: en sierra salía el gigante antiguo) y el
+     guardián.
      Luego: pasada visual a sierra/marismas/ruinas y transiciones suaves (lluvia y fondo cambian de golpe).
      **Sucesos a la vista (26 nov):** con `e.pending` el visor pinta delante lo que hay (`visor/sucesos.ts`, `MarchNow.event`):
      cofre, santuario, mercader con carro, viajero, campamento abandonado, oso, cueva, torre y ruinas, pintados en

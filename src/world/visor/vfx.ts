@@ -14,6 +14,8 @@ export type Fx =
   | { k: 'impact'; x: number; y: number; a: number; big: boolean; magia?: boolean }
   /** Zarpazo de una bestia: tres rayas que se abren sobre el golpeado. */
   | { k: 'claw'; x: number; y: number; dir: number; a: number }
+  /** Embestida: estelas de velocidad detrás de quien carga (`back`: su lado de atrás, ±1). */
+  | { k: 'rush'; x: number; top: number; bottom: number; back: number; a: number; seed: number }
   /** El mago carga el orbe en la punta del bastón: chispas que se juntan. */
   | { k: 'charge'; x: number; y: number; a: number }
   /** Estela del arma al dar un tajo (arco delante de quien golpea). */
@@ -78,6 +80,7 @@ export function drawFxGlow(b: PixelBuffer, fx: Fx[], l: Luz): void {
     if (f.k === 'impact') impact(b, f);
     else if (f.k === 'claw') claw(b, f);
     else if (f.k === 'charge') charge(b, f);
+    else if (f.k === 'rush') rush(b, f);
     else if (f.k === 'slash') slash(b, f);
     else if (f.k === 'bolt') bolt(b, f, l);
   }
@@ -224,6 +227,30 @@ function claw(b: PixelBuffer, f: Extract<Fx, { k: 'claw' }>): void {
       const mid = d > 1 && d < len - 1;
       dot(b, px, py, mid && a < 0.5 ? WHITE : BLOOD[0]!);
       if (mid) dot(b, px + dir, py, BLOOD[1]!);
+    }
+  }
+}
+
+/** Rayas horizontales que salen de la grupa y se quedan atrás, cada vez más largas y finas. */
+function rush(b: PixelBuffer, f: Extract<Fx, { k: 'rush' }>): void {
+  const { x, top, bottom, back, a, seed } = f;
+  if (a < 0 || a >= 1) return;
+  const n = 6;
+  for (let i = 0; i < n; i++) {
+    const h = hash(seed * 13 + i * 29);
+    const y = Math.round(top + ((bottom - top) * (i + 0.5)) / n + (h - 0.5) * 2);
+    // Cada raya arranca a su tiempo y se aleja hacia atrás.
+    const u = clamp01((a - h * 0.25) / 0.75);
+    if (u <= 0 || u >= 1) continue;
+    // Pegadas a la grupa (un poco metidas: salen del cuerpo).
+    const start = x + back * (u * 3 + h * 2 - 2);
+    const len = Math.round(5 + u * 12 + h * 6);
+    for (let d = 0; d < len; d++) {
+      const v = d / len;
+      // La cola, en tramado; al final se apagan.
+      if (v > 0.5 && (d + y) % 2) continue;
+      if (u > 0.6 && hash(i * 7 + d) < (u - 0.6) / 0.4) continue;
+      dot(b, start + back * d, y, v < 0.3 && u < 0.5 ? WHITE : v < 0.6 ? STEEL : SHADE);
     }
   }
 }
