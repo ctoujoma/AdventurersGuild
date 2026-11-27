@@ -1649,13 +1649,13 @@ export function endDay(state: GameState, away = false): GameState {
   // Noches sin nadie fuera (con el juego cerrado o en el tutorial no cuentan).
   if (s.missions.length) s.quiet = 0;
   else if (!away && !tutorialOn(s)) s.quiet = (s.quiet ?? 0) + 1;
-  const lost = stepThreat(s, rng, events, income, (s.quiet ?? 0) > QUIET_AFTER);
+  stepThreat(s, rng, events, (s.quiet ?? 0) > QUIET_AFTER);
   // Lo que la caja ya entregó y se recogió durante el día no se cobra otra vez.
-  s.gold += income - lost - (s.tillTaken ?? 0);
+  s.gold += income - (s.tillTaken ?? 0);
   s.clock = 0;
   s.till = 0;
   delete s.tillTaken;
-  if (income - lost > 0) {
+  if (income > 0) {
     events.push({
       t: msg('partida.noche.caja', {
         vinieron: visits.total
@@ -1666,7 +1666,9 @@ export function endDay(state: GameState, away = false): GameState {
             })
           : '',
         sin_comer: visits.fed < visits.served ? visits.served - visits.fed : 0,
-        n: income - lost,
+        n: income,
+        propinas: visits.tips,
+        miedo: visits.fear,
         fiesta: feast,
       }),
       k: 'good',
@@ -1954,7 +1956,7 @@ export function endDay(state: GameState, away = false): GameState {
   s.quests = s.quests.filter((q) => q.expires > 0);
   let fresh = 0;
   while (
-    s.quests.filter((q) => !q.chain && !q.rescue && !q.rumor && !q.urgent).length <
+    s.quests.filter((q) => !q.chain && !q.rescue && !q.rumor && !q.urgent && !q.caravan).length <
     BOARD_SIZE(s.fac.tab, s.fac.mapas) + (s.fac.torre >= 2 ? 1 : 0) - scaredClients(s)
   ) {
     s.quests.push(quest(s, rng));

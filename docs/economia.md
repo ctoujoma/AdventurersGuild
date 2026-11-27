@@ -27,32 +27,47 @@ juego cerrado y qué exploits hay. Resultados, gráficos y propuestas en la pág
   y 40 (antes 30 y 60). Un héroe contratado a nivel 1 cobra 108 a nivel 8, 274 a nivel 12 y 400
   a nivel 15 (antes 126, 354 y 522). Solo cambia lo que se sube a partir de ahora: los sueldos
   ya guardados en las partidas se quedan como están.
-- **Medido después** (30 partidas, `npm run auditoria`): la nómina del día 148 baja de 5.191 a
-  4.571 a la semana y los sueldos de toda la partida un 16 %; las expediciones del simulador (que
-  manda viajes cortos) traen ×9,5. Ojo: el oro que se pierde por la cámara llena pasa de ~14.500
-  a ~28.800 por partida, así que los **sumideros del modo libre** son ahora lo más urgente.
+- **La caravana asaltada, con otro sentido** (`stepThreat` en `core/events.ts`): ya no se lleva
+  la caja del día (que se cobra en casa; además dejaba el oro en negativo). Con la amenaza alta
+  (≥ 40) asaltan una caravana de la comarca y sale un encargo de Recuperar lo robado
+  (`caravanQuest`): paga ×1,5 (`CARAVAN_PAY`), da 3 de fama de más si sale bien (`CARAVAN_REP`),
+  dura 4 días y no cuenta para el tablón. Uno a la vez. En el tablón lleva la etiqueta «Robado».
+- **Los caminos dan miedo** (amenaza ≥ 60): 2 o 3 días (`FEAR_DAYS`) viene a la taberna el 60 %
+  de la gente (`FEAR_VISITS`, `GameState.roadFear`); lo dice la carta del amanecer.
+- **Cámara del tesoro más amplia:** `VAULT_STORE` de 300 / 1.500 / 4.000 / 10.000 / 20.000 por
+  hueco a 400 / 2.500 / 7.000 / 18.000 / 40.000.
+- **Más visitantes y propinas:** `VISIT_BASE` 3 → 4, `VISIT_PER_APPEAL` 0,7 → 0,9, `SEAT_TURNS`
+  1,5 → 2, `SERVE_BASE` 2 → 3 y `SERVE_PER_WORK` 0,8 → 1. Los bien atendidos (con cena y jarra)
+  dejan a veces propina según quién sea (`VISITORS[k].tip`): campesino 25 % de 1–2, mercader 40 %
+  de 1–4 y noble 60 % de 4–16; un salón mejor anima (×0,8 a nivel 1, ×1,2 a nivel 5) y atender a
+  todos, ×1,2 más. La carta del amanecer dice cuánto fue de propinas. Un salón de banquetes de 3×2
+  con 4 camareros da ~290 al día (antes ~170); uno de nivel 2 con un camarero, ~48 (antes ~39).
 
-## Por decidir con el usuario
+**Medido con todo junto** (30 partidas de 148 días, `npm run auditoria`; antes → después):
 
-- **La caravana asaltada** (`stepThreat` en `core/events.ts`): hoy se lleva la caja del día,
-  aunque se cobra en casa, y si ya se había recogido y gastado deja el oro en negativo. Al
-  usuario no le cuadra lo que se cuenta. Ideas para darle otro sentido (pendiente de elegir):
-  1. **Asaltan la carreta de la despensa:** se pierden raciones y jarras (o no llega la entrega
-     de mañana), no oro. Se nota en el salón de forma natural: sin cena, los visitantes solo beben.
-  2. **Los caminos dan miedo:** unos días vienen menos mercaderes y nobles al salón.
-  3. **Encargo de rescate del cargamento:** sale un encargo urgente (Recuperar o Escoltar) que
-     devuelve lo perdido y paga; si nadie va, baja la fama y algún cliente se asusta. Encaja con
-     A4 (algo que empuje a mandar héroes).
-  4. **Peaje de los bandidos:** piden dinero en la puerta; pagar o arriesgarse a un asalto.
+| | Antes | Después |
+| --- | --- | --- |
+| Ganan la deuda | 20 de 30 | 22 de 30 |
+| Caja del salón al día (día 60, mismo salón) | 44 | 74 |
+| Parte del oro que da el salón | 4,6 % | 7,3 % |
+| Parte que dan las expediciones (viajes cortos del simulador) | 0,1 % | 0,8 % |
+| Nómina semanal el día 148 | 5.191 | 3.993 |
+| Sueldos de toda la partida | 44.701 | 37.980 |
+| Oro perdido por la cámara llena | 14.563 | 16.034 |
+| Oro en caja el día 148 | 15.626 | 37.295 |
+| 8 días con el juego cerrado (desde el día 90) | −8.671 | −6.298 |
 
-  Propuesta: 1 + 3. Mientras tanto, el fallo del oro negativo sigue ahí.
+El jugador simulado no amplía el salón, así que en una partida de verdad el salón dará más. Al
+final sobra aún más oro que antes: los **sumideros del modo libre** son ahora lo más urgente.
 
 ## Pendiente (apuntado, sin hacer)
 
 - **Vender lo fabricado da dinero sin fin** (talleres a nivel 3–4 con buen artesano: +7 a +19 por
   pieza de serie). El usuario lo deja para más adelante: no le parece preocupante.
-- **Un salón que crezca con el gremio:** más gasto por visitante con el rango, más plazas por
-  nivel o huéspedes; avisar de que los visitantes no cenan si la cocina no da.
+- **Peaje de los bandidos** (idea de futuro del usuario): con la amenaza alta, unos bandidos
+  piden dinero en la puerta; pagar o arriesgarse a un asalto.
+- **El salón:** avisar de que los visitantes no cenan si la cocina no da para toda la casa (con el
+  juego cerrado, la caja cae a ~19 al día por eso); quizá huéspedes más adelante.
 - **Sumideros para el modo libre:** mantenimiento de salas, obras de prestigio, compras de élite;
   tope o caída de la fama.
 - **Ausencias sin sangría:** encargos largos que se dejan asignados, media paga fuera, o comida

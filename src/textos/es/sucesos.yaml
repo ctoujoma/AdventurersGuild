@@ -1,13 +1,24 @@
 amenaza:
-  caravana: "Han asaltado la caravana que traía el vino: hoy la taberna no deja nada. La comarca está revuelta."
-  miedo: "Corre el miedo por los caminos: hoy llegan menos encargos."
+  # Amenaza alta: asaltan una caravana y sale un encargo para recuperar lo robado ({titulo}).
+  caravana: "Unos salteadores han asaltado una caravana en el camino real. Los arrieros piden ayuda: «{titulo}» está en el tablón."
+  # Amenaza alta: unos días ({n}) viene menos gente a la taberna.
+  miedo: "Corre el miedo por los caminos: {n, plural, one {mañana} other {estos # días}} vendrá menos gente a la taberna."
   por_historia: "el siguiente paso de «{historia}» espera en el tablón"
   por_quietud: "hace días que no sale nadie de encargo"
   en_camino: "hay grupos por los caminos"
   en_calma: "la comarca está en calma"
-  tramo_caravanas: "asaltan caravanas: algún día la taberna no deja nada"
-  tramo_encargos: "llegan menos encargos al tablón"
+  tramo_caravanas: "asaltan caravanas: salen encargos para recuperar lo robado"
+  tramo_encargos: "llegan menos encargos al tablón y, a ratos, menos gente a la taberna"
   tramo_asaltos: "los bandidos se fijan más en el gremio: más asaltos"
+# El encargo de la caravana asaltada (Recuperar): {carga} es una de `cargas`; {lugar}, dónde se esconden.
+caravana:
+  titulo: "Recuperar {carga}"
+  texto: "Unos salteadores asaltaron la caravana que traía {carga} y se esconden cerca de {lugar}. Los arrieros pagan bien a quien lo recupere, y la comarca no lo olvidará."
+  cargas:
+    - "el vino de la ribera"
+    - "la sal del puerto"
+    - "las telas de Levante"
+    - "el grano del molino"
 buhonero:
   texto: "Un buhonero con un carro lleno de cachivaches jura que tiene «un objeto de verdad» escondido bajo la lona. Pide 60 monedas, sin enseñarlo antes."
   opciones:

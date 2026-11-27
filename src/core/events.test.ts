@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { CHAINS } from '../data/chains';
 import { offerChain } from './chains';
-import { maybeEvent, stepThreat, threatTrend } from './events';
+import { caravanQuest, maybeEvent, stepThreat, threatTrend } from './events';
+import { CARAVAN_EXPIRES } from './balance';
 import { endDay, newGame, reduce } from './game';
 import type { GameState } from './model';
 import { resolveMission } from './resolve';
@@ -48,15 +49,34 @@ describe('sucesos', () => {
 });
 
 describe('amenaza regional', () => {
-  it('crece si una historia espera en el tablón y se lleva ingresos', () => {
+  it('crece si una historia espera en el tablón; alta, asaltan caravanas y da miedo', () => {
     const s = newGame('amenaza');
     s.rep = CHAINS[0]!.rep;
     offerChain(s, new Rng('o'), []);
-    for (let d = 0; d < 30; d++) stepThreat(s, new Rng(`t${d}`), [], 10);
+    for (let d = 0; d < 30; d++) stepThreat(s, new Rng(`t${d}`), []);
     expect(s.threat).toBeGreaterThanOrEqual(40);
-    let lost = 0;
-    for (let d = 0; d < 50; d++) lost += stepThreat(s, new Rng(`c${d}`), [], 10);
-    expect(lost).toBeGreaterThan(0);
+    const gold = s.gold;
+    let feared = false;
+    for (let d = 0; d < 80 && !(feared && s.quests.some((q) => q.caravan)); d++) {
+      s.day++;
+      stepThreat(s, new Rng(`c${d}`), []);
+      if ((s.roadFear ?? 0) >= s.day) feared = true;
+    }
+    // La caravana no toca el oro: sale un encargo (uno solo a la vez) para recuperar lo robado.
+    expect(s.gold).toBe(gold);
+    const robbed = s.quests.filter((q) => q.caravan);
+    expect(robbed).toHaveLength(1);
+    expect(robbed[0]!.type).toBe('Recuperar');
+    // Los caminos dan miedo: unos días viene menos gente al salón.
+    expect(feared).toBe(true);
+  });
+
+  it('el encargo de la caravana paga más y da fama de más', () => {
+    const s = newGame('caravana');
+    const q = caravanQuest(s, new Rng('q'));
+    expect(q.caravan).toBe(true);
+    expect(q.expires).toBe(CARAVAN_EXPIRES);
+    expect(q.reward).toBeGreaterThan(0);
   });
 
   it('dice hacia dónde va y por qué', () => {
@@ -71,7 +91,7 @@ describe('amenaza regional', () => {
     expect(threatTrend(s)).toMatchObject({ d: 2, why: /espera en el tablón/ });
     // Y es lo que hace la noche.
     s.threat = 10;
-    stepThreat(s, new Rng('n'), [], 0, true);
+    stepThreat(s, new Rng('n'), [], true);
     expect(s.threat).toBe(12);
   });
 });

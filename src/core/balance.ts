@@ -447,8 +447,12 @@ export const MAX_GUARDS = 2;
 export const DOOR_GUARDS = [2, 2, 3, 4, 4] as const;
 
 // ---------- Cámara del tesoro ----------
-/** Oro que cabe por hueco de la cámara, según su nivel (el 0 es lo que se esconde sin cámara). */
-export const VAULT_STORE = [300, 1500, 4000, 10000, 20000] as const;
+/**
+ * Oro que cabe por hueco de la cámara, según su nivel (el 0 es lo que se esconde sin cámara).
+ * Ampliada con la auditoría del oro (usuario, 27 de noviembre): antes 300, 1.500, 4.000, 10.000 y
+ * 20.000, y en el modo libre se perdían ~14.500 monedas por partida por no caber.
+ */
+export const VAULT_STORE = [400, 2500, 7000, 18000, 40000] as const;
 /** A partir de esta parte del tope, el juego avisa de que la cámara está casi llena. */
 export const VAULT_WARN = 0.85;
 /** Segundos que tardan los bandidos en abrir la cerradura, según el nivel de la cámara. */
@@ -543,15 +547,40 @@ export const SEEKER_CHANCE = 0.2;
 export const MAX_SEEKERS = 3;
 
 // ---------- Salón y visitantes ----------
-/** Visitantes que quiere venir: unos fijos, más con la reputación y con el Atractivo. */
-export const VISIT_BASE = 3;
+/**
+ * Visitantes que quiere venir: unos fijos, más con la reputación y con el Atractivo. Subidos con la
+ * auditoría del oro (usuario, 27 de noviembre: «que venga más gente»): antes 3, 1/25 y 0,7, con
+ * las plazas llenándose 1,5 veces y 2 + 0,8 por trabajo atendidos; el salón daba un 4,6 % del oro.
+ */
+export const VISIT_BASE = 4;
 export const VISIT_PER_REP = 1 / 25;
-export const VISIT_PER_APPEAL = 0.7;
+export const VISIT_PER_APPEAL = 0.9;
 /** Cuántas veces se llena cada plaza del salón en un día. */
-export const SEAT_TURNS = 1.5;
+export const SEAT_TURNS = 2;
 /** Visitantes que se atienden sin nadie en el salón, y cuántos más por punto de trabajo. */
-export const SERVE_BASE = 2;
-export const SERVE_PER_WORK = 0.8;
+export const SERVE_BASE = 3;
+export const SERVE_PER_WORK = 1;
+/**
+ * Propinas: el visitante bien atendido (con cena y jarra) deja a veces algo de más, según quién
+ * sea (`VISITORS[k].tip`: probabilidad y tramo). Un salón mejor anima: la probabilidad va por
+ * `TIP_BASE + TIP_PER_LEVEL` × nivel del salón, y si se ha atendido a todos, por `TIP_ALL`.
+ */
+export const TIP_BASE = 0.7;
+export const TIP_PER_LEVEL = 0.1;
+export const TIP_ALL = 1.2;
+/**
+ * Los caminos dan miedo (amenaza alta, ver `core/events.ts`): unos días (`FEAR_DAYS`, entre los
+ * dos) viene a la taberna esta parte de la gente.
+ */
+export const FEAR_VISITS = 0.6;
+export const FEAR_DAYS = [2, 3] as const;
+/**
+ * La caravana asaltada (amenaza alta): el encargo de recuperar lo robado paga esto de más, da esta
+ * fama de más si sale bien y dura estos días en el tablón.
+ */
+export const CARAVAN_PAY = 1.5;
+export const CARAVAN_REP = 3;
+export const CARAVAN_EXPIRES = 4;
 /** Atractivo mínimo para que vengan nobles. */
 export const NOBLE_APPEAL = 8;
 /** Días que dura el peligro tras la visita de un espía y cuánto sube el riesgo de asalto. */

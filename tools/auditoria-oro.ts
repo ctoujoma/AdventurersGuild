@@ -11,7 +11,6 @@ import { FEATS } from '../src/data/feats';
 import { DECOR, FACADE, RAVEN_PRICE, FEAST_PRICE, DOG_PRICE } from '../src/data/custom';
 import { RECIPES } from '../src/data/recipes';
 import { GEAR, TREASURES } from '../src/data/items';
-import { VISITORS } from '../src/data/visitors';
 import { generateHero, generateQuest } from '../src/core/generate';
 import { Rng } from '../src/core/rng';
 import { idText } from '../src/textos';
@@ -33,6 +32,7 @@ import {
 import { catchUp } from '../src/core/away';
 import { settleWalks } from '../src/core/workers';
 import { vaultFull, vaultOf, goldCap } from '../src/core/vault';
+import { appeal, visitorsOf } from '../src/core/salon';
 import {
   HEADINGS,
   HOUR,
@@ -240,100 +240,74 @@ const workerWages = { village: 6, seekerMin: 3 + 2, seekerMax: 3 + 6, perSkill: 
 // ---------------------------------------------------------------------------------------------
 
 /**
- * Copia de `visitorsOf` sin semilla (la media del ±1): visitantes, atendidos y monedas con comida
- * y cerveza de sobra. `work`: trabajo en el salón (Maña × oficio × nivel; ver `workAt`).
+ * La caja de un salón con `visitorsOf` del juego (media de 40 días): salón de nivel `level` y
+ * `w`×`h` huecos, `workers` camareros de Maña 4 en su oficio, la cocina al lado si cabe, comida y
+ * cerveza de sobra y la decoración como Atractivo de más (en trofeos).
  */
 function salonDay(o: {
   level: number;
   w: number;
   h?: number;
   rep: number;
-  work: number;
-  kitchen?: boolean;
-  decorAppeal?: number;
-  trophies?: number;
-}): { total: number; served: number; coins: number; appeal: number } {
-  const h = o.h ?? 1;
-  const appeal =
-    B.salonAppeal(o.level) +
-    (h > 1 ? 2 : 0) +
-    (o.decorAppeal ?? 0) +
-    Math.min(o.trophies ?? 0, B.TROPHY_SLOTS) * B.TROPHY_APPEAL;
-  const seats = Math.max(1, o.w * 2 - 1) * 2 + (h > 1 && o.w >= 3 ? 6 : 0);
-  let coins = 0;
-  let total = 0;
-  let served = 0;
-  for (const d of [-1, 0, 1]) {
-    const want = B.VISIT_BASE + o.rep * B.VISIT_PER_REP + appeal * B.VISIT_PER_APPEAL + d;
-    const t = Math.max(1, Math.min(Math.round(seats * B.SEAT_TURNS), Math.round(want)));
-    const cap = B.SERVE_BASE + o.work * B.SERVE_PER_WORK + (o.kitchen ? 2 : 0);
-    const sv = Math.min(t, Math.round(cap));
-    // Reparto medio de visitantes (sin espías): nobles con Atractivo, mercaderes con fama.
-    const noble =
-      appeal >= B.NOBLE_APPEAL ? Math.min(1, 0.08 + (appeal - B.NOBLE_APPEAL) * 0.02) : 0;
-    const merch = Math.max(0, 0.25 + Math.min(0.25, o.rep / 1600) - noble);
-    const spend =
-      noble * VISITORS.noble.spend +
-      merch * VISITORS.mercader.spend +
-      (1 - noble - merch) * VISITORS.campesino.spend;
-    // Se atiende antes a quien más gasta: con pocos atendidos, la media sube; se aproxima.
-    coins += sv * (spend + B.BEER_COIN);
-    total += t;
-    served += sv;
-  }
-  return { total: r1(total / 3), served: r1(served / 3), coins: r1(coins / 3), appeal };
-}
-/** Trabajo de un trabajador de Maña `m` en su oficio en un salón de nivel `lvl`. */
-const salonWork = (n: number, m: number, lvl: number) =>
-  n * m * B.TRADE_BONUS * (0.75 + 0.25 * lvl);
-
-const salonGrid: {
-  label: string;
-  level: number;
-  w: number;
-  h: number;
   workers: number;
-  rep: number;
-  coins: number;
-  served: number;
-  total: number;
-  appeal: number;
-}[] = [];
-for (const [label, level, w, h, workers, rep, decor] of [
+  trophies?: number;
+}): { total: number; served: number; coins: number; tips: number; appeal: number } {
+  const s = newGame(`aud-salon-${o.level}-${o.w}-${o.workers}`);
+  const r = s.building.rooms.find((x) => x.type === 'salon')!;
+  r.level = o.level;
+  r.w = o.w;
+  r.h = o.h ?? 1;
+  s.rep = o.rep;
+  s.food = 9999;
+  s.beer = 9999;
+  s.trophies = Array.from({ length: o.trophies ?? 0 }, (_, i) => ({
+    id: `t${i}`,
+    name: 'x',
+    desc: 'x',
+    icon: 'cabeza',
+    value: 0,
+  })) as unknown as GameState['trophies'];
+  s.workers = Array.from({ length: o.workers }, (_, i) => ({
+    ...s.workers[0]!,
+    id: `ws${i}`,
+    village: undefined,
+    trade: 'salon',
+    skill: 4,
+    room: r.id,
+    walk: undefined,
+    since: undefined,
+  })) as GameState['workers'];
+  const vs = Array.from({ length: 40 }, (_, d) => visitorsOf(s, d + 1));
+  const m = (f: (v: (typeof vs)[number]) => number) => r1(mean(vs.map(f)));
+  return {
+    total: m((v) => v.total),
+    served: m((v) => v.served),
+    coins: m((v) => v.coins),
+    tips: m((v) => v.tips),
+    appeal: appeal(s),
+  };
+}
+
+const salonGrid: Record<string, unknown>[] = [];
+for (const [label, level, w, h, workers, rep, trophies] of [
   ['Inicio (salón 1, 1 hueco, sin camarero, fama 0)', 1, 1, 1, 0, 0, 0],
   ['Salón 1, 2 huecos, 1 camarero', 1, 2, 1, 1, 0, 0],
-  ['Salón 2, 2 huecos, 1 camarero, fama 40 (hierro)', 2, 2, 1, 1, 40, 4],
-  ['Salón 3, 3 huecos, 2 camareros, fama 100 (plata)', 3, 3, 1, 2, 100, 8],
-  ['Salón 4, 3 huecos, 2 alturas, 3 camareros, fama 180 (oro)', 4, 3, 2, 3, 180, 12],
-  ['Salón 5 (banquetes), 3×2, 4 camareros, fama 300 (leyenda)', 5, 3, 2, 4, 300, 16],
-  ['Salón 5, 3×2, 6 camareros, fama 1100 (lo que alcanza el simulador)', 5, 3, 2, 6, 1100, 16],
+  ['Salón 2, 2 huecos, 1 camarero, fama 40 (hierro)', 2, 2, 1, 1, 40, 1],
+  ['Salón 3, 3 huecos, 2 camareros, fama 100 (plata)', 3, 3, 1, 2, 100, 2],
+  ['Salón 4, 3 huecos, 2 alturas, 3 camareros, fama 180 (oro)', 4, 3, 2, 3, 180, 3],
+  ['Salón 5 (banquetes), 3×2, 4 camareros, fama 300 (leyenda)', 5, 3, 2, 4, 300, 4],
+  ['Salón 5, 3×2, 6 camareros, fama 1100', 5, 3, 2, 6, 1100, 4],
 ] as const) {
-  const d = salonDay({
+  salonGrid.push({
+    label,
     level,
     w,
     h,
+    workers,
     rep,
-    work: salonWork(workers, 4, level),
-    kitchen: true,
-    decorAppeal: decor,
-    trophies: level,
+    ...salonDay({ level, w, h, rep, workers, trophies }),
   });
-  salonGrid.push({ label, level, w, h, workers, rep, ...d });
 }
-// La caja por fama (salón máximo, plazas de sobra) para ver dónde topa.
-const salonByRep = [0, 40, 100, 180, 300, 500, 800, 1100].map((rep) => ({
-  rep,
-  ...salonDay({
-    level: 5,
-    w: 3,
-    h: 2,
-    rep,
-    work: salonWork(6, 6, 5),
-    kitchen: true,
-    decorAppeal: 16,
-    trophies: 4,
-  }),
-}));
 
 // ---------------------------------------------------------------------------------------------
 // 5. Expediciones: oro medio por lejanía (el grupo se da la vuelta al llegar a esa lejanía).
@@ -872,7 +846,6 @@ const out = {
   wages,
   workerWages,
   salonGrid,
-  salonByRep,
   expeditions,
   daily,
   totals: Object.fromEntries(Object.entries(totals).map(([k, v]) => [k, Math.round(v / GAMES)])),
