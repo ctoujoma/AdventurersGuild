@@ -1,5 +1,5 @@
 // Capturas de los sucesos del visor (lo que tienen delante al esperar, y el jefe a la vista):
-// `node tools/textos/esbuild.mjs tools/visor-sucesos.ts sucesos <carpeta> [rumbo]`.
+// `node tools/textos/esbuild.mjs tools/visor-sucesos.ts sucesos <carpeta> [bosque|sierra|marismas|ruinas]`.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { png } from './visor-png';
 import { ESCRITORIO, MOVIL } from '../src/world/visor/encuadre';
@@ -8,10 +8,14 @@ import type { MarchNow } from '../src/world/visor/marcha';
 import type { ExpEvent } from '../src/data/expEvents';
 import type { Heading } from '../src/core/model';
 const [dir, rumbo = 'bosque'] = process.argv.slice(2);
-const heading = rumbo as Heading;
-const terrain = (
-  { bosque: 'bosque', sierra: 'monte', marismas: 'pantano', ruinas: 'ruina' } as const
-)[heading];
+const TERRENO = {
+  bosque: 'bosque',
+  sierra: 'monte',
+  marismas: 'pantano',
+  ruinas: 'ruina',
+} as const;
+const terrain: MarchNow['terrain'] = TERRENO[rumbo as keyof typeof TERRENO] ?? 'bosque';
+const heading = (rumbo in TERRENO ? rumbo : 'bosque') as Heading;
 mkdirSync(dir!, { recursive: true });
 const crew: MarchNow['crew'] = [
   { id: 'a', name: 'V', seed: 'violante-7', cls: 'guerrero', sex: 'f', fate: 'ok' },
