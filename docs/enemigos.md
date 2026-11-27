@@ -74,7 +74,8 @@ al cambiar un enemigo).
 ## En los encargos (la pelea contra un jefe y la tira)
 
 - **Jefes calcados** (`src/art/bossCalco.ts`): `BOSS_CALCO` dice qué jefe sale de qué calco (la
-  bestia de Hondogrís, del huargo; el jabalí de ceniza, de su hoja con `cenizaArt()`). `calcoBoss` hace el `BossArt` con sus poses y, en `seq`, los
+  bestia de Hondogrís, del huargo; el jabalí de ceniza, de su hoja con `cenizaArt()`; el Rey Ahogado, con `reyArt()`, que cae tendido
+  con su propia muerte en vez de hundirse como el antiguo: `calcoBoss` no pone `fall`). `calcoBoss` hace el `BossArt` con sus poses y, en `seq`, los
   fotogramas; `world/battle.ts` (`bossFrame`) los pasa: en guardia respira a 5 fps, y la carga, el
   golpe, el daño y la caída avanzan desde que empieza la pose (`SEQ_POSE`, `SEQ_DOWN`). Los golpes
   y lo que hace en la pelea siguen siendo los de su jefe. Para pasar otro: una línea en `BOSS_CALCO`.
