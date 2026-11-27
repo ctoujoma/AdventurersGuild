@@ -515,6 +515,26 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      `fight.exp.guardian` y el modo pelea mira la línea de pelea de esa hora, no la última.
      Falta: el resto de enemigos de sierra y marismas; la sanguijuela
      queda oscura en la marisma (es su color).
+     **Efectos de pelea (prueba en el bosque, 27 nov, rama `claude/visor-vfx`):** `visor/vfx.ts`, sin
+     estado (todo sale de la fase del turno): destello de impacto en cuatro tiempos (azul si es magia),
+     tajo en media luna para espada, daga y maza, flecha con parábola, orbe que se carga en el bastón,
+     zarpazo de las bestias sobre el héroe, sangre y pelo que saltan y se quedan en el suelo, polvo al
+     recibir, al pisar fuerte un grande y al caer, temblor de un píxel con los golpes y caídas de los
+     grandes y un respiro en el impacto. Los calcos sin muerte dibujada (el bosque) ya no quedan panza
+     arriba: heridos, se deshacen en tramado. El huargo ya tiene su muerte (hoja del usuario, calcada con su paleta fija:
+     `huargo_muerte.py`, `calco3` con `pal`): se encabrita, se desploma, se oscurece, queda en ceniza y
+     se la lleva el viento (`ashOut`, el parámetro `ash` de `calcoArt`). Pendiente: lobos pequeños y oso
+     mejorados (el usuario los está preparando). **Oso nuevo** (hoja con las cuatro
+     animaciones: respira, se alza y da el zarpazo, herido ruge y se encoge, muere y queda tendido;
+     `bosque2_calco.py`, que sustituye al oso de `bosque_calco.py`). **Los caídos se quedan en el
+     camino** (idea del usuario): tras la celebración el grupo sigue andando y el cuerpo se queda en el
+     suelo, pasa con el camino y se quita al salir de la vista (`Gente.corpses`). Los que desaparecen
+     solos (el dragón se deshace, el huargo en ceniza, los del bosque sin muerte dibujada) no dejan
+     nada. **Lobo pequeño y jabalí nuevos** (hojas con las cuatro animaciones; sin los
+     fotogramas de deshacerse: el cuerpo se queda en el camino). Con ellos todo el bosque tiene muerte
+     propia. **La manada va en corrillo** (idea del usuario): varios pequeños, más juntos y a tres
+     profundidades (0, −4, +3 px), pintados de atrás adelante. El huargo, herido, se encabrita.
+     «Ver la pelea» con calcos y secuencias (opción 2 del usuario): pasado al agente principal.
      Luego: pasada visual a sierra/marismas/ruinas y transiciones suaves (lluvia y fondo cambian de golpe).
      **Sucesos a la vista (26 nov):** con `e.pending` el visor pinta delante lo que hay (`visor/sucesos.ts`, `MarchNow.event`):
      cofre, santuario, mercader con carro, viajero, campamento abandonado, oso, cueva, torre y ruinas, pintados en
@@ -693,7 +713,23 @@ Herramientas: `tools/visor-hoja.ts` (hojas de lejanía, claro y nevando, móvil 
   pedregales; cerca, árboles sueltos detrás de los peñascos y una orilla de matorral delante;
   colinas con motas de piorno y enebro a rodales (solo en lo verde) y abetos pequeños abajo.
   Rendimiento igual. Capturas en `capturas/expediciones/visor-sierra/`.
-- [ ] (c) fauna y viento, (d) sucesos.
+- [x] **(c) Fauna y viento** (rama `claude/arte-visor-sierra-vida`): rebeco con dibujo propio (más
+  recio que el ciervo, antifaz y cuernos en gancho; sigue en lo más hondo), marmotas en los pastos
+  altos que asoman, se sientan, silban y se meten en la madriguera si el grupo se acerca, chovas en
+  bandada, el águila y, desde media lejanía, el quebrantahuesos de tarde en tarde (`animales.ts`).
+  El viento (`vida-sierra.ts`): una brisa que nunca para (más con «viento») mece briznas sobre la
+  hierba del suelo y la festuca de delante en ráfagas que pasan como olas, arrastra nieve en polvo
+  de los neveros y arranca penachos de las cumbres. Coste: unos 0,07 ms por fotograma. Capturas:
+  `hoja-viento.png`, `hoja-fauna-movil.png`.
+- [x] **(d) Sucesos de montaña** (rama `claude/arte-visor-sierra-sucesos`, `sucesos-sierra.ts`):
+  en la sierra, la torre de vigía cuadrada de mampostería con talud, sillares de esquina, la puerta
+  en alto con su escalera de mano y el remate roto, plantada en su peña (unas 3,5 alturas de
+  héroe); la cueva abierta en un risco de caras a plomo de refilón, con canchal al pie; el
+  humilladero (cruz de piedra sobre un montón de piedras con hornacina y velas); el refugio de
+  pastor de piedra seca y losa (en lugar de la tienda); la ermita en ruinas con la espadaña y su
+  campana; y el escondite de piornos y un canto. Las piezas se eligen por rumbo en `sucesos.ts`.
+  También: las peñas ya no tienen rayas a plomo (grietas torcidas e inclinadas y aristas en
+  diagonal; lo pidió el usuario). Capturas en `capturas/expediciones/visor-sierra/sucesos/`.
 
 ## Lo que ha dicho el usuario (para no repetir errores)
 

@@ -20,6 +20,7 @@ import { blitStrip, luzKey } from './pintar';
 import { Aire, Lluvia, climaOf, drawMist } from './tiempo';
 import { smooth } from './tonos';
 import { drawRays, drawVida } from './vida';
+import { drawCumbres, drawDelanteSierra } from './vida-sierra';
 import { drawEscondite, drawSuceso, drawSucesoFondo } from './sucesos';
 
 /** Para forzar la hora o el tiempo (pruebas, capturas). */
@@ -200,6 +201,7 @@ export class Visor {
       blitStrip(b, this.colored.get(id)!, travel * c.speed, c.y);
     };
     layer('lejos');
+    drawCumbres(ctx);
     this.nubes.draw(b, l, time, travel, 1 + l.clima.rain + (l.clima.wind ?? 0) * 5);
     drawAnimals(ctx, 'cielo');
     layer('sierra');
@@ -221,12 +223,15 @@ export class Visor {
     if (m.mode !== 'camp') this.gente.draw(ctx);
     drawEscondite(ctx);
     layer('delante');
+    drawDelanteSierra(ctx);
     layer('copas');
     drawRays(ctx);
     this.lluvia.draw(b, l, time, travel);
     this.aire.draw(b, l, time, travel, bio.id === 'sierra');
     if (fire) fireLight(ctx, fire);
     this.gente.overlay(ctx);
+    // El golpe de un grande: todo el cuadro tiembla un píxel.
+    if (this.gente.shake) shiftY(b, this.gente.shake);
     return b;
   }
 
@@ -241,3 +246,14 @@ export class Visor {
 
 /** Lo salvaje convertido en algo más suave en los extremos (para animales y tiempo). */
 export const wildEase = (w: number) => smooth(0, 1, w);
+
+/** Corre el cuadro `dy` píxeles en vertical (repite la fila del borde). */
+function shiftY(b: PixelBuffer, dy: number): void {
+  const w = b.w;
+  if (dy > 0) {
+    b.data.copyWithin(dy * w, 0, (b.h - dy) * w);
+  } else {
+    b.data.copyWithin(0, -dy * w, b.h * w);
+    b.data.copyWithin((b.h + dy) * w, (b.h + dy - 1) * w, (b.h + dy) * w);
+  }
+}

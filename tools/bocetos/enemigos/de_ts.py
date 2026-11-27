@@ -6,9 +6,10 @@ boca = dict(re.findall(r"(\w): '(#\w+)'", t.split('as const')[0].split('BOCA =')
 IDX = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 out = {}
 for m in re.finditer(r"  (\w+): \{\n    ramp: \[([^\]]*)\],\n    frames: \[\n(.*?)\n    \],\n  \},", t, re.S):
-    if m.group(1) not in ('huargo', 'oso', 'jabali', 'lobo'): continue
+    if m.group(1) != 'huargo': continue  # el oso, el lobo y el jabalí, en bosque2_calco.py
     R = re.findall(r"'(#\w+)'", m.group(2))
     out[m.group(1)] = [[[None if ch == '.' else (R[IDX.index(ch)] if ch in IDX else boca[ch]) for ch in r]
                         for r in re.findall(r"'([^']*)'", blk)]
                        for blk in re.findall(r"      \[\n(.*?)\n      \],", m.group(3), re.S)]
+out['huargo'] = out['huargo'][:8]  # los de la muerte (8 en adelante) los añade a_ts.py
 json.dump(out, open('bosque_calco.json', 'w'))

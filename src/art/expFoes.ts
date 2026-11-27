@@ -140,6 +140,51 @@ function giant(what: string, skin: Record<string, string>, cloth: string, runes 
 /** Bayer 4×4: el orden en que se borran los píxeles al deshacerse. */
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 
+/**
+ * Se vuelve ceniza y se la lleva el viento: en `n` pasos se deshace de arriba abajo y lo que se
+ * suelta sube y se va hacia atrás en motas grises que se apagan. El último, vacío.
+ */
+function ashOut(img: PixelBuffer, n: number): PixelBuffer[] {
+  const pts: { x: number; y: number; c: number; o: number; h: number; g: number }[] = [];
+  let top = img.h;
+  for (let y = 0; y < img.h; y++)
+    for (let x = 0; x < img.w; x++) if (alpha(img.get(x, y))) top = Math.min(top, y);
+  const tall = Math.max(1, img.h - top);
+  const rnd = (k: number) => {
+    const v = Math.sin(k * 12.9898) * 43758.5453;
+    return v - Math.floor(v);
+  };
+  for (let y = 0; y < img.h; y++)
+    for (let x = 0; x < img.w; x++) {
+      const c = img.get(x, y);
+      if (!alpha(c)) continue;
+      // Primero lo de arriba y la cabeza (a la derecha), con un poco de azar para que no se corte
+      // en líneas.
+      const o = 0.45 * ((y - top) / tall) + 0.3 * (1 - x / img.w) + 0.25 * rnd(x * 31 + y * 57 + 1);
+      pts.push({ x, y, c, o, h: rnd(x * 17 + y * 89 + 3), g: rnd(x * 7 + y * 13 + 5) });
+    }
+  const ASH = ['#6e6e80', '#8e8ea0', '#b0b0c0'];
+  return Array.from({ length: n }, (_, i) => {
+    const t = ((i + 1) / n) * 1.3;
+    const out = new PixelBuffer(img.w, img.h);
+    for (const p of pts) {
+      if (p.o > t) {
+        out.set(p.x, p.y, p.c);
+        continue;
+      }
+      // Solo una de cada cinco motas se ve volar; se va hacia atrás y arriba, y se apaga.
+      const q = (t - p.o) / 0.45;
+      if (q >= 1 || p.h > 0.2) continue;
+      if (q > 0.6 && p.g < (q - 0.6) / 0.4) continue;
+      const x = p.x - q * (10 + p.g * 18);
+      const y = p.y - q * (6 + p.h * 60) + Math.sin(q * 7 + p.g * 9) * 1.2;
+      if (y < 0) continue;
+      out.set(x, y, q < 0.15 ? p.c : ASH[Math.floor(p.g * 3)]!);
+    }
+    return out;
+  });
+}
+
 /** El dibujo con una parte `u` (0–1) de sus píxeles borrada en tramado. */
 function dissolve(img: PixelBuffer, u: number): PixelBuffer {
   const out = img.clone();
@@ -159,6 +204,7 @@ function calcoArt(
   big = false,
   seq?: Partial<Record<FoeSeq, number[]>>,
   fade = 0,
+  ash = 0,
 ): FoeArt {
   const c = CALCOS[what]!;
   const w = Math.max(...c.frames.map((f) => f[0]!.length));
@@ -178,7 +224,7 @@ function calcoArt(
   });
   const poses = {} as Record<FoePose, PixelBuffer>;
   for (const k of Object.keys(pose) as FoePose[]) poses[k] = frames[pose[k]!]!;
-  // Caído: el suyo si lo tiene (la sanguijuela reventada) y si no, panza arriba.
+  // Caído: el suyo si lo tiene (la sanguijuela reventada); si no, se deshace (abajo).
   if (pose.down === undefined) poses.down = trim(upsideDown(poses.idle));
   const iw = c.frames[pose.idle]![0]!.length;
   // Con varios fotogramas por pose, los pies van donde pisa de verdad (el centro de las filas de
@@ -203,12 +249,23 @@ function calcoArt(
     // Al acabar de morir se deshace en `fade` pasos (tramado, como el fundido del paisaje) y no
     // queda nada: caído, ya no se ve.
     const d = art.seq.down;
-    if (fade && d?.length) {
+    if (ash && d?.length) {
+      const gone = ashOut(d[d.length - 1]!, ash);
+      art.seq.down = [...d, ...gone];
+      poses.down = gone[gone.length - 1]!;
+    } else if (fade && d?.length) {
       const last = d[d.length - 1]!;
       const gone = Array.from({ length: fade }, (_, i) => dissolve(last, (i + 1) / fade));
       art.seq.down = [...d, ...gone];
       poses.down = gone[gone.length - 1]!;
     }
+  }
+  // Sin muerte dibujada (el bosque): herido, se deshace en tramado en vez de quedar panza arriba.
+  if (pose.down === undefined) {
+    const h = poses.hurt;
+    const gone = [0.25, 0.5, 0.75, 1].map((u) => dissolve(h, u));
+    art.seq = { ...art.seq, down: [h, h, ...gone] };
+    poses.down = gone[gone.length - 1]!;
   }
   return art;
 }
@@ -219,47 +276,68 @@ const banditOf = (seed: string) => bandit(new Rng(`exp-bandido-${seed}`));
 const FOES: Record<Heading, readonly (() => ExpFoe)[]> = {
   bosque: [
     () => ({
-      art: calcoArt('bestia', 'lobo', {
-        idle: 0,
-        idle2: 1,
-        walk1: 0,
-        walk2: 1,
-        windup: 2,
-        strike: 3,
-        hurt: 0,
-      }),
+      // Respira; se agacha, salta y muerde; herido, se encoge; muere y queda tendido.
+      art: calcoArt(
+        'bestia',
+        'lobo',
+        { idle: 0, idle2: 2, walk1: 1, walk2: 3, windup: 6, strike: 8, hurt: 11, down: 18 },
+        false,
+        {
+          idle: [0, 1, 2, 3, 4, 3, 2, 1],
+          windup: [5, 6],
+          strike: [7, 8, 9, 10],
+          hurt: [11, 12, 13, 14],
+          down: [15, 16, 17, 18],
+        },
+      ),
       count: 3,
     }),
     () => ({
-      art: calcoArt('bestia', 'jabali', {
-        idle: 0,
-        idle2: 0,
-        walk1: 1,
-        walk2: 2,
-        windup: 1,
-        strike: 2,
-        hurt: 0,
-      }),
+      // Respira; escarba, carga y embiste; herido, se encabrita; muere y queda tendido.
+      art: calcoArt(
+        'bestia',
+        'jabali',
+        { idle: 0, idle2: 2, walk1: 1, walk2: 3, windup: 7, strike: 8, hurt: 11, down: 18 },
+        false,
+        {
+          idle: [0, 1, 2, 3, 4, 3, 2, 1],
+          windup: [5, 6, 7],
+          strike: [8, 9, 10],
+          hurt: [11, 12, 13, 14],
+          down: [15, 16, 17, 18],
+        },
+      ),
       count: 1,
     }),
     () => ({
-      art: calcoArt('bestia', 'oso', {
-        idle: 0,
-        idle2: 1,
-        walk1: 1,
-        walk2: 2,
-        windup: 1,
-        strike: 3,
-        hurt: 0,
-      }),
+      art: calcoArt(
+        'bestia',
+        'oso',
+        { idle: 0, idle2: 2, walk1: 1, walk2: 3, windup: 7, strike: 8, hurt: 11, down: 18 },
+        false,
+        // Respira; se alza y suelta el zarpazo; herido, ruge y se encoge; muere y queda tendido.
+        {
+          idle: [0, 1, 2, 3, 4, 3, 2, 1],
+          windup: [5, 6, 7],
+          strike: [8, 9, 10],
+          hurt: [11, 12, 13, 14],
+          down: [15, 16, 17, 18],
+        },
+      ),
       count: 1,
     }),
     () => ({
       art: calcoArt(
         'bestia',
         'huargo',
-        { idle: 0, idle2: 7, walk1: 6, walk2: 7, windup: 2, strike: 4, hurt: 1 },
+        { idle: 0, idle2: 7, walk1: 6, walk2: 7, windup: 2, strike: 4, hurt: 1, down: 13 },
         true,
+        // Muere: se encabrita, agacha la cabeza, se desploma, se oscurece y queda en ceniza, que se
+        // lleva el viento.
+        // Herido, se encabrita aullando (el primero de la muerte) y vuelve.
+        { hurt: [8, 8, 1], down: [8, 9, 10, 11, 12, 13, 13] },
+        0,
+        6,
       ),
       count: 1,
     }),

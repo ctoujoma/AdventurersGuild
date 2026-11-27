@@ -22,6 +22,7 @@ import { Rng } from '../../core/rng';
 import { WEAPONS, type WeaponId } from '../weapons';
 import type { Ctx } from './ctx';
 import { pack, tintColor, unpack } from './luz';
+import { BLOOD, drawFxGlow, drawFxScene, furOf, type Fx } from './vfx';
 import type { MarchNow } from './marcha';
 import { digits, put, putRot, tinted } from './pintar';
 import { hash } from './tonos';
@@ -100,9 +101,14 @@ export function shadow(b: PixelBuffer, x: number, y: number, w: number): void {
 export class Gente {
   private fightFrom = -1;
   /** Al ganar, los que quedaban en pie caen (cuándo acabó y cuánto duró la pelea). */
-  private after?: { from: number; t: number };
+  private after?: { from: number; t: number; travel: number };
+  /** Los enemigos de la última pelea y dónde estaban (los caídos se quedan en el camino). */
+  private last?: { foes: FoeArt[]; xs: number[]; ys: number[] };
   private pops: Pop[] = [];
   private sparks: { x: number; y: number; big: boolean }[] = [];
+  /** Los efectos de este fotograma (`vfx.ts`) y el temblor de los grandes (px, arriba o abajo). */
+  private fx: Fx[] = [];
+  shake = 0;
 
   /** Parados celebrando (el paisaje no avanza aunque ya anden). */
   holds(m: MarchNow, time: number): boolean {
@@ -114,23 +120,44 @@ export class Gente {
   draw(c: Ctx): void {
     this.pops = [];
     this.sparks = [];
+    this.fx = [];
+    this.shake = 0;
     if (c.m.mode === 'fight') {
       if (this.fightFrom < 0) this.fightFrom = c.time;
       this.after = undefined;
       this.fight(c, c.time - this.fightFrom);
     } else {
       if (this.fightFrom >= 0 && c.m.won && c.m.mode === 'walk')
-        this.after = { from: c.time, t: c.time - this.fightFrom };
+        this.after = { from: c.time, t: c.time - this.fightFrom, travel: c.travel };
       this.fightFrom = -1;
       const end = this.after ? (c.time - this.after.from) / AFTER : 1;
       if (this.after && end >= 0 && end < 1) {
         this.fight(c, this.after.t, end);
         return;
       }
-      this.after = undefined;
+      // Luego siguen andando y los caídos se quedan en el camino hasta salir de la vista.
+      if (!this.after || !this.corpses(c)) this.after = undefined;
       if (hiding(c)) drawEscondidos(c);
       else this.walk(c);
     }
+  }
+
+  /** Los caídos de la pelea ganada, quietos en el suelo mientras el camino pasa (false: ya no se ven). */
+  private corpses(c: Ctx): boolean {
+    const { b, e, l, lk } = c;
+    if (!this.last || !this.after) return false;
+    const dir = c.m.home ? -1 : 1;
+    const shift = c.travel - this.after.travel;
+    let seen = false;
+    this.last.foes.forEach((f, j) => {
+      const x = Math.round(this.last!.xs[j]! - shift);
+      if (x < -f.span || x > e.w + f.span) return;
+      const img = foeFrame(f, 'down', 1, c.time);
+      if (img.isEmpty()) return;
+      seen = true;
+      put(b, tinted(img, l, lk), x, e.feet + 1 + this.last!.ys[j]!, f.foot, img.h - 1, dir > 0);
+    });
+    return seen;
   }
 
   /** Andando por el camino. */
@@ -206,16 +233,27 @@ export class Gente {
     const heroX = (i: number) => lead - dir * i * (GAP + 2);
     const foeXs: number[] = [];
     let fx = lead + dir * Math.max(27, 10 + Math.ceil((foes[0]?.span ?? 0) / 2));
+    // Una manada (varios pequeños) va en corrillo, no en fila: más juntos y a distintas
+    // profundidades (unos más atrás, otros más adelante).
+    const pack = foes.length > 1 && !foes.some((f) => f.big);
+    const DEPTH = [0, -4, 3];
+    const depth = (j: number) => (pack ? DEPTH[j % 3]! : 0);
     for (const f of foes) {
       // Los grandes, un poco más allá (el dragón ya ocupa media pantalla: no, que se cortaría).
       if (f.big && f.span < 50) fx += dir * 10;
       foeXs.push(fx);
-      fx += dir * (f.span + 3);
+      fx += dir * (pack ? Math.round(f.span * 0.5) : f.span + 3);
     }
+    // De atrás adelante (y los caídos, debajo).
+    const order = foes
+      .map((_, j) => j)
+      .sort((a, b) => depth(a) - depth(b) || Number(isDown(b)) - Number(isDown(a)) || b - a);
+    this.last = { foes, xs: foeXs, ys: foes.map((_, j) => depth(j)) };
     const lunge = (who: boolean) => (who && p > 0.3 && p < 0.58 ? 3 : 0);
     // Los enemigos (los caídos, debajo).
-    for (let j = foes.length - 1; j >= 0; j--) {
+    for (const j of order) {
       const f = foes[j]!;
+      const feet = e.feet + depth(j);
       const down = isDown(j);
       const struck = heroTurn && j === front && hit;
       let pose: FoePose;
@@ -223,6 +261,8 @@ export class Gente {
       else if (struck) pose = 'hurt';
       else if (j === atkFoe) pose = p < 0.3 ? 'windup' : p < 0.58 ? 'strike' : 'idle';
       else pose = Math.floor(t * 2 + j) % 2 ? 'idle2' : 'idle';
+      // Un respiro en el impacto (el golpe pesa): la carrera de la pose se para un instante.
+      const ph = p > 0.32 && p < 0.37 ? 0.32 : p > 0.37 ? p - 0.05 * (1 - (p - 0.37) / 0.63) : p;
       const u =
         pose === 'down'
           ? end !== undefined && !fell(j)
@@ -233,19 +273,19 @@ export class Gente {
           : pose === 'windup'
             ? p / 0.3
             : pose === 'strike'
-              ? (p - 0.3) / 0.28
-              : (p - 0.32) / 0.3;
+              ? (ph - 0.3) / 0.28
+              : (ph - 0.32) / 0.3;
       const img = tinted(foeFrame(f, pose, u, t + j * 0.7), l, lk);
       const back = struck ? dir * Math.round(2 + (p < 0.45 ? 1 : 0)) : 0;
       // Los que traen su golpe dibujado (`seq.strike`) ya se echan adelante: sin embestida.
       const x = foeXs[j]! + back - dir * (f.seq?.strike ? 0 : lunge(j === atkFoe));
-      if (!down) shadow(b, x, e.feet, f.big ? 10 : 6);
+      if (!down) shadow(b, x, feet, f.big ? 10 : 6);
       const fy = img.h - 1;
       put(
         b,
         img,
         x,
-        e.feet + (down ? 1 : 0),
+        feet + (down ? 1 : 0),
         f.foot,
         fy,
         dir > 0,
@@ -266,7 +306,7 @@ export class Gente {
           b,
           wp.img,
           x - dir * (hd.x - 9),
-          e.feet - FEET_Y + hd.y,
+          feet - FEET_Y + hd.y,
           wp.px,
           wp.py,
           f.hand.weapon === 'arco' ? 0 : SWING[fp],
@@ -274,15 +314,53 @@ export class Gente {
           (col) => tintColor(col, l),
         );
       }
-      if (struck && p < 0.5)
-        this.sparks.push({ x: x - dir * 4, y: e.feet - f.chest, big: p < 0.4 });
+      if (struck) {
+        const fx = this.fx;
+        fx.push({
+          k: 'impact',
+          x: x - dir * 4,
+          y: feet - f.chest,
+          a: (p - 0.32) / 0.16,
+          big: f.big,
+          magia: atkHero >= 0 && MAIN[crew[atkHero]!.crew.cls] === 'baston',
+        });
+        fx.push({
+          k: 'bits',
+          x: x - dir * 3,
+          y: feet - f.chest,
+          floor: feet + 1,
+          dir,
+          a: (p - 0.32) / 0.62,
+          seed: k * 7 + j,
+          cols: [...BLOOD, ...furOf(f.poses.idle)],
+          n: f.big ? 11 : 7,
+        });
+      }
+      // El golpe de un grande: tiembla todo y levanta polvo delante.
+      if (j === atkFoe && f.big && p > 0.32 && p < 0.7) {
+        if (p < 0.42) this.shake = Math.floor(t * 40) % 2 ? 1 : -1;
+        this.fx.push({
+          k: 'dust',
+          x: x - dir * Math.round(f.span * 0.45),
+          y: feet,
+          a: (p - 0.32) / 0.38,
+          w: 12,
+        });
+      }
+      // Cae: polvo donde da el cuerpo (y, si es grande, un golpe sordo).
+      const fallU =
+        end !== undefined && !fell(j) ? (end - 0.18) / 0.3 : k === downAt(j) ? (p - 0.7) / 0.3 : -1;
+      if (fallU >= 0 && fallU < 1) {
+        this.fx.push({ k: 'dust', x, y: feet, a: fallU, w: Math.max(8, f.span * 0.4) });
+        if (f.big && fallU < 0.12) this.shake = Math.floor(c.time * 40) % 2 ? 1 : -1;
+      }
       if (heroTurn && j === front && p > 0.32 && (!down || k === downAt(j))) {
         const crit = hash(k * 13) > 0.82;
         const dmg = Math.round(2 + hash(k * 5 + 1) * 8) * (crit ? 2 : 1);
         this.pops.push({
           text: String(dmg),
           x: foeXs[j]!,
-          y: e.feet - f.poses.idle.h - 3,
+          y: feet - f.poses.idle.h - 3,
           u: (p - 0.32) / 0.68,
           color: crit ? '#fee761' : '#ffffff',
         });
@@ -316,6 +394,33 @@ export class Gente {
         struck && flash ? white : undefined,
       );
       const wid = MAIN[h.crew.cls] ?? 'espada';
+      // Lo que lleva su golpe hasta el enemigo: la flecha y el orbe vuelan; el resto, un tajo.
+      if (me && alive.length) {
+        const tf = foes[front]!;
+        const fxX = foeXs[front]!;
+        const near = fxX - dir * Math.round(tf.span / 2);
+        const y = e.feet - Math.min(14, tf.chest + 2);
+        if (wid === 'baston')
+          this.fx.push({ k: 'charge', x: x - dir * 7, y: e.feet - 15, a: (p - 0.04) / 0.2 });
+        if (wid === 'arco' || wid === 'baston')
+          this.fx.push({
+            k: 'bolt',
+            what: wid === 'arco' ? 'flecha' : 'orbe',
+            x0: x + dir * 7,
+            x1: near + dir * 2,
+            y,
+            a: (p - (wid === 'arco' ? 0.18 : 0.22)) / (wid === 'arco' ? 0.14 : 0.1),
+          });
+        else
+          this.fx.push({
+            k: 'slash',
+            x: near - dir * 7,
+            y: e.feet - tf.chest,
+            dir,
+            a: (p - 0.27) / 0.13,
+            big: wid === 'maza',
+          });
+      }
       const wp = WEAPONS[wid];
       const hd = HAND[pose];
       putRot(
@@ -330,7 +435,19 @@ export class Gente {
         (col) => tintColor(col, l),
       );
       if (struck && p >= 0.32) {
-        if (p < 0.42) this.sparks.push({ x: x + dir * 4, y: e.feet - 14, big: p < 0.37 });
+        // Las bestias arañan; el resto, un golpe.
+        const by = foes[atkFoe];
+        if (by && (by.kind === 'bestia' || by.kind === 'alimana') && !by.big)
+          this.fx.push({ k: 'claw', x: x + dir * 2, y: e.feet - 14, dir, a: (p - 0.32) / 0.4 });
+        else
+          this.fx.push({
+            k: 'impact',
+            x: x + dir * 4,
+            y: e.feet - 14,
+            a: (p - 0.32) / 0.14,
+            big: false,
+          });
+        this.fx.push({ k: 'dust', x: x - dir * 2, y: e.feet, a: (p - 0.32) / 0.4, w: 5 });
         const dmg = Math.round(1 + hash(k * 3 + 2) * 5);
         this.pops.push({
           text: String(dmg),
@@ -341,11 +458,13 @@ export class Gente {
         });
       }
     }
+    drawFxScene(b, this.fx, l);
   }
 
   /** Lo que va por encima de todo (y de la luz): destellos y cifras. */
   overlay(c: Ctx): void {
     const { b } = c;
+    drawFxGlow(b, this.fx, c.l);
     for (const s of this.sparks) {
       const r = s.big ? 3 : 2;
       const lemon = rgba('#fee761');
