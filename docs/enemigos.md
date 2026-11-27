@@ -66,3 +66,15 @@ Lo aprendido con sierra (#237), para retomarlo en otro rumbo. El estado y el pla
   la línea de pelea de esa hora del diario, no la última, porque detrás puede venir el botín.
 - **Grandes:** los de más de 50 px de ancho no se separan los 10 px extra, para que no se corten en
   el móvil.
+
+## En los encargos (la pelea contra un jefe y la tira)
+
+- **Jefes calcados** (`src/art/bossCalco.ts`): `BOSS_CALCO` dice qué jefe sale de qué calco (hoy,
+  la bestia de Hondogrís, del huargo). `calcoBoss` hace el `BossArt` con sus poses y, en `seq`, los
+  fotogramas; `world/battle.ts` (`bossFrame`) los pasa: en guardia respira a 5 fps, y la carga, el
+  golpe, el daño y la caída avanzan desde que empieza la pose (`SEQ_POSE`, `SEQ_DOWN`). Los golpes
+  y lo que hace en la pelea siguen siendo los de su jefe. Para pasar otro: una línea en `BOSS_CALCO`.
+- **La tira de los encargos** (`world/tripStrip.ts`): `STRIP_CALCO` dice qué familias salen
+  calcadas (hoy, las bestias, como los lobos del bosque), con `foeFrame` como en el visor. El jefe
+  que espera al final del camino también respira si es calcado.
+

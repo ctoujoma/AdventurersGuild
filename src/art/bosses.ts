@@ -26,7 +26,11 @@ export interface BossArt {
   /** Boca o arma respecto a los pies, mirando a la derecha, en cada pose. */
   mouth: Record<BossPose, { x: number; y: number }>;
   /** Hasta dónde llega el cuerpo por delante: ahí se plantan los que pelean cuerpo a cuerpo. */
-  reach: number;
+  reach: number; /**
+   * Varios fotogramas por pose (los jefes calcados, `bossCalco.ts`): en guardia respira en bucle;
+   * la carga, el golpe, el daño y la caída avanzan desde que empieza la pose.
+   */
+  seq?: Partial<Record<BossPose, readonly PixelBuffer[]>>;
 }
 
 const outline = (b: PixelBuffer) => b.outlined((n) => darker(toHex(n), 3));
