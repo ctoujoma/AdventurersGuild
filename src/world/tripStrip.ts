@@ -38,10 +38,12 @@ import { t } from '../textos';
 
 /**
  * Las familias de enemigos de los encargos que ya salen calcadas en la tira (con sus
- * animaciones), como en el visor: de momento, las bestias, como los lobos del bosque.
+ * animaciones), como en el visor: las bestias, como los lobos del bosque, y los trasgos, como los
+ * de la sierra.
  */
 const STRIP_CALCO: Partial<Record<FoeKind, () => FoeArt>> = {
   bestia: () => expFoeArt('bosque', 0).art,
+  trasgo: () => expFoeArt('sierra', 1).art,
 };
 
 /** Alto de la tira (el paisaje y, debajo, la línea del viaje) y margen a los lados. */

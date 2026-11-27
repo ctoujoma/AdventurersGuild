@@ -20,14 +20,7 @@ import {
   type FoePose,
   type FoeSeq,
 } from './foes';
-import {
-  goblinBody,
-  ratBody,
-  skeletonBody,
-  trollPose,
-  TROLL_FOOT,
-  type PoseSpec,
-} from './foeSprites';
+import { ratBody, skeletonBody, trollPose, TROLL_FOOT, type PoseSpec } from './foeSprites';
 import { BOCA, CALCOS } from './expCalcos';
 import { P } from './palette';
 import { PixelBuffer, alpha } from './pixel';
@@ -416,10 +409,20 @@ const FOES: Record<Heading, readonly (() => ExpFoe)[]> = {
       count: 3,
     }),
     () => ({
-      art: bipedArt(
+      // Respira con el garrote al hombro; lo echa atrás y descarga; herido, se le escapa y lo
+      // recoge; al morir lo suelta, cae y queda tendido junto a él.
+      art: calcoArt(
         'trasgo',
         'trasgo',
-        goblinBody({ h: P.lemon, s: P.lime, S: P.leaf }, P.umber, 'lanza'),
+        { idle: 0, idle2: 2, walk1: 1, walk2: 3, windup: 6, strike: 7, hurt: 11, down: 20 },
+        false,
+        {
+          idle: [0, 1, 2, 3, 4, 3, 2, 1],
+          windup: [5, 6],
+          strike: [7, 8, 9, 10],
+          hurt: [11, 12, 14],
+          down: [15, 16, 17, 18, 19, 20],
+        },
       ),
       count: 3,
     }),
