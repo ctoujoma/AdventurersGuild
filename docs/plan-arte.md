@@ -686,7 +686,14 @@ Herramientas: `tools/visor-hoja.ts` (hojas de lejanía, claro y nevando, móvil 
   con estratos, diaclasas, liquen y nieve en las repisas (`crag`); canchales en cono; delante
   festuca, cardos y cantos claros. Rendimiento igual que antes. Capturas en
   `capturas/expediciones/visor-sierra/` (`antes-*` es `main`).
-- [ ] (b), (c), (d).
+- [x] **(b) Profundidad por capas** (rama `claude/arte-visor-sierra-capas`): abetos (`abeto`, cono
+  prieto y oscuro de las umbrías bajas) que dejan paso al pino negro con la altura; piornos en
+  cojín, en flor en los pastos medios (`piorno`), y enebro rastrero arriba (`enebro`; los dos con
+  `mata`); medio en dos filas y a rodales con claros de pasto, con matorral a los pies y
+  pedregales; cerca, árboles sueltos detrás de los peñascos y una orilla de matorral delante;
+  colinas con motas de piorno y enebro a rodales (solo en lo verde) y abetos pequeños abajo.
+  Rendimiento igual. Capturas en `capturas/expediciones/visor-sierra/`.
+- [ ] (c) fauna y viento, (d) sucesos.
 
 ## Lo que ha dicho el usuario (para no repetir errores)
 

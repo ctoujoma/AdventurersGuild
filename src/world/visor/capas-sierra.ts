@@ -233,6 +233,112 @@ export function canto(
 
 const grainOf = (x: number, y: number, s: number) => hash2(x >> 1, y >> 1, s);
 
+// ---------- Plantas de montaña ----------
+
+/**
+ * Un abeto: cono estrecho y prieto de pisos cortos y tiesos, con la punta en aguja; más oscuro y
+ * azulado que el pino negro (es el árbol de las umbrías bajas).
+ */
+export function abeto(t: Tonos, x: number, base: number, h: number, s: number, lift = 0): void {
+  const trunkH = Math.max(1, Math.round(h * 0.08));
+  const crown = h - trunkH;
+  const w = h * (0.16 + hash2(s, 1, 5) * 0.05);
+  const tierH = Math.max(2, Math.round(2 + h * 0.06));
+  for (let y = base - trunkH; y <= base; y++) {
+    t.set(x, y, M.corteza, 2, true);
+    if (h > 26) t.set(x + 1, y, M.corteza, 1, true);
+  }
+  for (let j = 0; j < crown; j++) {
+    const y = base - trunkH - j;
+    const u = j / crown;
+    const tv = ((j + (s & 1)) % tierH) / tierH;
+    let half = w * (1 - u) ** 0.95 * (0.7 + 0.3 * (1 - tv));
+    // Las puntas de cada piso, de un lado o del otro.
+    if (tv === 0 && hash2(j, s, 6) < 0.5) half += 0.8;
+    if (u > 0.88) half = Math.min(half, 0.4);
+    for (let dx = Math.floor(-half - 0.5); dx <= Math.ceil(half + 0.5); dx++) {
+      if (Math.abs(dx) > half + 0.35) continue;
+      const g = hash2((x + dx) >> 1, y >> 1, s + 7);
+      let v = 3 + lift - (dx / Math.max(1, half)) * 1.4 + (tv < 0.34 ? -0.8 : 0.2);
+      v += (g - 0.5) * 0.6;
+      if (j >= crown - 2) v += 0.5;
+      t.set(x + dx, y, M.viejo, step(v, x + dx, y), true);
+    }
+  }
+}
+
+/**
+ * Un piorno: cojín de ramitas prietas, redondo y achaparrado, con el borde de arriba en púas; en
+ * flor (amarillo) en los pastos de media altura.
+ */
+export function piorno(
+  t: Tonos,
+  x: number,
+  base: number,
+  w: number,
+  h: number,
+  s: number,
+  flor = 0,
+  lift = 0,
+): void {
+  for (let xx = Math.floor(x - w / 2); xx <= x + w / 2; xx++) {
+    const dx = (xx + 0.5 - x) / (w / 2);
+    const prof = 1 - dx * dx;
+    if (prof <= 0) continue;
+    const top = base - h * prof ** 0.5 * (0.8 + 0.35 * hash2(xx, s, 3));
+    for (let y = Math.round(top); y <= base; y++) {
+      const dy = (base - y) / h;
+      const g = hash2(xx >> 1, (y + (xx & 1)) >> 1, s + 2);
+      let v = 2.2 + lift - dx * 1.1 + dy * 1.4 + (g - 0.5) * 1.1;
+      if (y === Math.round(top)) v += 0.6;
+      if (y === base) v = 0.6;
+      if (
+        flor &&
+        y < base - 1 &&
+        dy > 0.4 &&
+        hash2(xx >> 1, y, s + 4) < flor * 0.24 * (1 - dx * 0.6)
+      )
+        t.set(xx, y, M.flor, dx < 0.2 ? 3 : 2.6, true);
+      else t.set(xx, y, M.musgo, step(v, xx, y), true);
+    }
+  }
+}
+
+/** Un enebro rastrero: mata ancha y baja, verde azulado y oscuro, con el lomo ondulado. */
+export function enebro(
+  t: Tonos,
+  x: number,
+  base: number,
+  w: number,
+  h: number,
+  s: number,
+  lift = 0,
+) {
+  w = Math.max(4, Math.round(w));
+  const x0 = Math.round(x - w / 2);
+  for (let i = 0; i < w; i++) {
+    const u = (i + 0.5) / w;
+    const lump = 0.7 + 0.3 * Math.sin(u * 9 + s) * hash2(i >> 2, s, 8);
+    const ph = Math.max(1, Math.round(h * (1 - Math.abs(2 * u - 1) ** 2.5) * lump));
+    for (let j = 0; j <= ph; j++) {
+      const y = base - j;
+      const g = hash2((x0 + i) >> 1, y >> 1, s + 9);
+      let v = 1.8 + lift - (u - 0.4) * 1.4 + (j / Math.max(1, ph)) * 1.2 + (g - 0.5) * 0.9;
+      if (j === ph) v += 0.6;
+      if (j === 0) v = 0.4;
+      t.set(x0 + i, y, M.pino, step(v, x0 + i, y), true);
+    }
+  }
+}
+
+/** Matorral a los pies de algo: piorno (con flor si toca) o enebro, según la altura. */
+function mata(t: Tonos, x: number, base: number, size: number, wild: number, s: number, lift = 0) {
+  const flor = 1 - smooth(0.35, 0.8, wild);
+  if (hash2(s, 51, 7) < lerp(0.75, 0.25, wild))
+    piorno(t, x, base, size, Math.round(size * 0.55), s, flor, lift);
+  else enebro(t, x, base, size * 1.5, Math.round(size * 0.3), s, lift);
+}
+
 // ---------- Cumbres ----------
 
 const lejos: Painter = (e, L, wild, seed) => {
@@ -362,6 +468,24 @@ const colinas: Painter = (e, L, wild, seed, o) => {
     seed + 124,
     L,
   );
+  // Matorral de lejos: motas de piorno (con flor) y de enebro, a rodales por la ladera.
+  const flor = 1 - smooth(0.35, 0.8, wild);
+  for (let i = 0; i < (L * H) / 14; i++) {
+    const x = Math.floor(hash2(i, 61, seed) * L);
+    const tp = tops[x]!;
+    const u = hash2(i, 62, seed);
+    const y = Math.round(tp + 2 + u * (H - tp - 2));
+    if (noise2(x / 32, y / 6, seed + 63, L / 32) < 0.5) continue;
+    const c = t.get(x, y) >> 4;
+    if (c !== M.hierba && c !== M.mies) continue;
+    const dark = hash2(i, 64, seed) < lerp(0.35, 0.75, wild);
+    const w = 1 + Math.round(u * 2 + hash2(i, 65, seed));
+    for (let k = 0; k < w; k++) {
+      t.set(x + k, y - 1, dark ? M.pino : M.musgo, k === 0 ? 3 : 2, true);
+      t.set(x + k, y, dark ? M.pino : M.musgo, 1, true);
+    }
+    if (!dark && hash2(i, 66, seed) < flor * 0.25) t.set(x, y - 1, M.flor, 3, true);
+  }
   // Muros de piedra seca que siguen la ladera (cerca de casa).
   if (farm > 0)
     for (let r = 0; r < 3; r++) {
@@ -405,7 +529,9 @@ const colinas: Painter = (e, L, wild, seed, o) => {
       if (y >= H + 2) continue;
       const clump = noise2(x / 22, r / 3, seed + 127, Math.round(L / 22));
       if (clump < 0.6 || hash2(id, 3, seed) > forest) continue;
-      pineSmall(t, x, y, Math.round(4 + hash2(id, 5, seed) * 4), M.pino, id, r / 8 - 0.3);
+      const fir = hash2(id, 6, seed) < 1 - smooth(0.1, 0.5, wild);
+      const h = Math.round(4 + hash2(id, 5, seed) * 4);
+      pineSmall(t, x, y, fir ? h + 1 : h, fir ? M.viejo : M.pino, id, r / 8 - (fir ? 0.1 : 0.3));
     }
   nevar(t, snow * 0.7, seed + 128);
   return [t, y0];
@@ -532,24 +658,68 @@ const medio: Painter = (e, L, wild, seed, o) => {
   const y0 = e.ground + 2 - H;
   const t = new Tonos(L, H);
   const base = H - 2;
-  const gap = Math.round(lerp(11, 22, wild));
-  const density = lerp(0.85, 0.3, smooth(0.2, 1, wild));
-  for (let i = 0; i < L / gap; i++) {
-    const x = Math.round(i * gap + hash2(i, 1, seed + 140) * gap * 0.8);
-    const b = base - Math.round(hash2(i, 3, seed + 140) * 3);
-    if (hash2(i, 2, seed + 140) < density) {
-      // El pino negro: más bajo y más torcido cuanto más arriba.
-      const h = Math.round(lerp(22, 10, wild) + hash2(i, 8, seed + 140) * lerp(12, 6, wild));
-      pine(t, x, b, Math.min(H - 1, h), { seed: i * 13 + seed, old: wild * 0.6, fat: 1.1 });
-    } else if (hash2(i, 4, seed + 140) < 0.6) {
-      const w = 8 + Math.round(hash2(i, 5, seed) * 8);
-      canto(t, x, b + 1, w, Math.round(w * (0.35 + hash2(i, 6, seed) * 0.2)), i, {
-        lichen: 0.5,
-        snow: snowFar(wild, o),
-      });
+  const sn = snowFar(wild, o);
+  // Abajo, abetos en las umbrías; luego pino negro, cada vez más bajo y torcido; arriba, matorral.
+  const fir = 1 - smooth(0.12, 0.55, wild);
+  // Dos filas: la de atrás más arriba y más baja (más lejos) y la de delante.
+  for (const row of [0, 1]) {
+    const gap = Math.round(lerp(9, 17, wild) * (row ? 1.2 : 1));
+    const density = lerp(0.8, 0.28, smooth(0.2, 1, wild)) * (row ? 0.85 : 1);
+    const scale = row ? 1 : 0.72;
+    for (let i = 0; i < L / gap; i++) {
+      const id = i + row * 991;
+      const x = Math.round(i * gap + (row ? gap * 0.5 : 0) + hash2(id, 1, seed + 140) * gap * 0.7);
+      const b = row
+        ? base - Math.round(hash2(id, 3, seed + 140) * 2)
+        : base - 5 - Math.round(hash2(id, 3, seed + 140) * 2);
+      const lift = row ? 0 : 0.3;
+      // Rodales con claros de pasto entre medias (no una pared de árboles).
+      const stand = smooth(0.35, 0.65, fbm1(x, 64, L, seed + 142 + row, 2)) * 1.3;
+      if (hash2(id, 2, seed + 140) < density * stand) {
+        if (hash2(id, 9, seed + 140) < fir) {
+          const h = Math.round((lerp(20, 14, wild) + hash2(id, 8, seed + 140) * 12) * scale);
+          abeto(t, x, b, Math.min(H - 1, h), id + seed, lift);
+        } else {
+          // El pino negro: más bajo y más torcido cuanto más arriba.
+          const h = Math.round(
+            (lerp(22, 10, wild) + hash2(id, 8, seed + 140) * lerp(12, 6, wild)) * scale,
+          );
+          pine(t, x, b, Math.min(H - 1, h), { seed: id * 13 + seed, old: wild * 0.6, fat: 1.1 });
+        }
+        if (row && hash2(id, 10, seed + 140) < 0.45)
+          mata(t, x + 5, b + 1, 5 + Math.round(hash2(id, 11, seed) * 3), wild, id + seed);
+        continue;
+      }
+      const k = hash2(id, 4, seed + 140);
+      if (k < 0.45) {
+        // Un rodal de matorral: dos o tres matas juntas.
+        const n = 2 + Math.floor(hash2(id, 12, seed) * 2);
+        for (let j = 0; j < n; j++)
+          mata(
+            t,
+            x + j * 5,
+            b + 1 - (j & 1),
+            Math.round(lerp(5, 8, hash2(id, 13 + j, seed)) * scale + 1),
+            wild,
+            id * 3 + j + seed,
+            lift,
+          );
+      } else if (k < 0.75) {
+        // Un pedregal: un canto grande y otros pequeños al lado.
+        const w = Math.round((8 + hash2(id, 5, seed) * 8) * scale + 2);
+        canto(t, x, b + 1, w, Math.round(w * (0.35 + hash2(id, 6, seed) * 0.2)), id, {
+          lichen: 0.5,
+          snow: sn,
+          lift,
+        });
+        canto(t, x + w * 0.6, b + 2, Math.round(w * 0.45), Math.round(w * 0.2), id + 1, {
+          snow: sn,
+          lift,
+        });
+      }
     }
   }
-  nevar(t, snowFar(wild, o) * 0.8, seed + 141);
+  nevar(t, sn * 0.8, seed + 141);
   return [t, y0];
 };
 
@@ -575,6 +745,20 @@ const cerca: Painter = (e, L, wild, seed, o) => {
     }
   }
   neveros(t, y1, H - 1, () => Math.min(0.9, near * 1.2), seed + 153, L);
+  // Detrás, árboles sueltos: abetos abajo y pino negro torcido arriba.
+  const fir = 1 - smooth(0.12, 0.55, wild);
+  const gap = Math.round(lerp(34, 64, wild));
+  for (let i = 0; i < L / gap; i++) {
+    if (hash2(i, 2, seed + 160) > lerp(0.85, 0.35, wild)) continue;
+    const x = Math.round(i * gap + hash2(i, 1, seed + 160) * gap * 0.6);
+    const b = base - 2 + Math.round(hash2(i, 3, seed + 160) * 3);
+    if (hash2(i, 9, seed + 160) < fir)
+      abeto(t, x, b, Math.round(lerp(40, 30, wild) + hash2(i, 7, seed) * 16), i * 31 + seed);
+    else {
+      const h = Math.round(lerp(46, 22, wild) + hash2(i, 7, seed) * 18);
+      pine(t, x, b, h, { seed: i * 31 + seed, old: 0.3 + wild * 0.5, fat: 1.2 });
+    }
+  }
   // Peñascos de tanto en tanto (más a más altura), cada uno de su hechura.
   const rockSnow = clamp01(near * 1.3 + smooth(0.55, 1, wild) * 0.35);
   const big = Math.round(L / 128);
@@ -585,13 +769,18 @@ const cerca: Painter = (e, L, wild, seed, o) => {
     const h = Math.round(e.ground * lerp(0.28, 0.55, hash2(k, 4, seed + 154)));
     crag(t, x, base + 1, w, h, k * 7 + seed, { snow: rockSnow, lichen: 0.7 });
   }
-  // Pinos negros torcidos sueltos.
-  const gap = Math.round(lerp(40, 70, wild));
-  for (let i = 0; i < L / gap; i++) {
-    if (hash2(i, 2, seed + 160) > lerp(0.85, 0.35, wild)) continue;
-    const x = Math.round(i * gap + hash2(i, 1, seed + 160) * gap * 0.6);
-    const h = Math.round(lerp(46, 22, wild) + hash2(i, 7, seed) * 18);
-    pine(t, x, base, h, { seed: i * 31 + seed, old: 0.3 + wild * 0.5, fat: 1.2 });
+  // Matorral delante de los peñascos y los árboles: piornos y enebros a lo largo de la orilla.
+  for (let i = 0; i < L / 16; i++) {
+    if (hash2(i, 1, seed + 165) > lerp(0.55, 0.7, wild)) continue;
+    const x = Math.round(i * 16 + hash2(i, 2, seed + 165) * 10);
+    mata(
+      t,
+      x,
+      base + 1 + Math.round(hash2(i, 3, seed + 165) * 2),
+      8 + Math.round(hash2(i, 4, seed + 165) * 6),
+      wild,
+      i + seed,
+    );
   }
   // Hitos y piedras a la orilla del camino.
   for (let i = 0; i < L / 60; i++) {
