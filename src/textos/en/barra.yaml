@@ -28,6 +28,8 @@ daybar:
   pasar_la_noche_el: "Pass the night: the clock runs ×{night_rush} until dawn. If there's a raid, it starts at its own pace."
   pasar_la_noche: "Pass the night"
   anochece_en: "Nightfall in"
+  parado: "Clock stopped"
+  parado_ayuda: "While you read your uncle's notebook the clock does not run: take your time."
   noche_en: "Night in"
   cerrar: "Close"
   velocidad_toca_para_cambiarla: "{part_name}. Speed ×{pace_label}: tap to change it"

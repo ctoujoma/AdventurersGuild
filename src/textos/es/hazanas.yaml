@@ -22,6 +22,30 @@ hazanas:
   sinbajas:
     nombre: "Todos a casa"
     texto: "Pasa {n} días seguidos sin bajas"
+  historias:
+    nombre: "Se cuenta en las tabernas"
+    texto: "Completa {n, plural, one {una historia} other {# historias}}"
+  jefes:
+    nombre: "Cazadores de leyendas"
+    texto: "Vence a {n, plural, one {un jefe} other {# jefes}}"
+  expediciones:
+    nombre: "Más allá del mapa"
+    texto: "Vuelve de {n, plural, one {una expedición} other {# expediciones}}"
+  talleres:
+    nombre: "Manos de oro"
+    texto: "Crea {n, plural, one {un objeto} other {# objetos}} en los talleres"
+  incidentes:
+    nombre: "Aquí mando yo"
+    texto: "Resuelve {n} incidentes en la taberna"
+  curados:
+    nombre: "Manos que curan"
+    texto: "Cura del todo a {n, plural, one {un héroe} other {# héroes}} en los catres"
+  jarras:
+    nombre: "La mejor cerveza de la comarca"
+    texto: "Sirve {n} jarras en el salón"
+  entrenar:
+    nombre: "Sudor y hierro"
+    texto: "Gana {n} puntos de atributo entrenando"
 premio:
   oro: "{n} monedas"
   rep: "{n} de reputación"

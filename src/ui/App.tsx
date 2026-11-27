@@ -1712,6 +1712,7 @@ export function App() {
         {!panel && !game.over && !works.pick && !works.planning && (
           <DayBar
             part={clock / DAY_SECONDS}
+            frozen={tutorialFrozen(game)}
             real={realTime}
             rush={canRush}
             canClose={clock >= DUSK * DAY_SECONDS}
@@ -1867,6 +1868,11 @@ export function App() {
               }
               onLibro={() => openPanel('libro')}
               onTaberna={() => openPanel('casa')}
+              adornosLocked={tutorialOn(game) ? t('tutorial.candado') : undefined}
+              onLocked={(why) => {
+                audio.play('thud', 0.4);
+                toast(why);
+              }}
             />
           </Panel>
         )}
@@ -2208,6 +2214,11 @@ export function App() {
         hidden={works.planning}
         tab={tab}
         badges={{ mapa: away }}
+        locked={tutorialOn(game) ? { mapa: t('tutorial.candado') } : undefined}
+        onLocked={(why) => {
+          audio.play('thud', 0.4);
+          toast(why);
+        }}
         onTab={(t) => {
           const p = t === 'mapa' ? 'fuera' : t;
           // Tocar la pestaña abierta vuelve a la taberna.

@@ -81,8 +81,9 @@ Segunda ronda (feedback del usuario):
 
 Pendiente que ya estaba apuntado:
 
-- Candados en el mapa y en los adornos durante el tutorial (que no se pueda ir a otra cosa).
-- Que la barra del día diga que el reloj está parado mientras dura el tutorial.
+- Hecho (27 de noviembre): candado en la pestaña del Mapa y en Gremio › Adornos mientras dura el
+  tutorial (al tocar, un aviso dice que se abren al acabar el cuaderno), y la barra del día dice
+  «Reloj parado» mientras el tutorial lo tiene parado (`tutorialFrozen`).
 - El salto de días cuando no queda nada que hacer (ya hay «Saltar hasta que vuelvan» y «Saltar
   al día 7»: revisar con el usuario si basta).
 - Fase 2b, el tutorial de las obras: pasa a otro agente, ver
