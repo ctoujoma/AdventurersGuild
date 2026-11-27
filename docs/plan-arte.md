@@ -521,7 +521,10 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      zarpazo de las bestias sobre el héroe, sangre y pelo que saltan y se quedan en el suelo, polvo al
      recibir, al pisar fuerte un grande y al caer, temblor de un píxel con los golpes y caídas de los
      grandes y un respiro en el impacto. Los calcos sin muerte dibujada (el bosque) ya no quedan panza
-     arriba: heridos, se deshacen en tramado.
+     arriba: heridos, se deshacen en tramado. El huargo ya tiene su muerte (hoja del usuario, calcada con su paleta fija:
+     `huargo_muerte.py`, `calco3` con `pal`): se encabrita, se desploma, se oscurece, queda en ceniza y
+     se la lleva el viento (`ashOut`, el parámetro `ash` de `calcoArt`). Pendiente: lobos pequeños y oso
+     mejorados (el usuario los está preparando).
      Luego: pasada visual a sierra/marismas/ruinas y transiciones suaves (lluvia y fondo cambian de golpe).
      **Sucesos a la vista (26 nov):** con `e.pending` el visor pinta delante lo que hay (`visor/sucesos.ts`, `MarchNow.event`):
      cofre, santuario, mercader con carro, viajero, campamento abandonado, oso, cueva, torre y ruinas, pintados en

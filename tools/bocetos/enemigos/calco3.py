@@ -60,7 +60,10 @@ def kmedias(px, n, it=30, seed=1):
 
 def hexc(c): return '#%02x%02x%02x' % tuple(int(round(max(0, min(255, v)))) for v in c)
 
-def criatura(src, boxes, k, n, bg, thr=40, drop=None, edge=0.55, keep=(), acc=None, lift=1.0, split=False):
+def criatura(src, boxes, k, n, bg, thr=40, drop=None, edge=0.55, keep=(), acc=None, lift=1.0, split=False,
+             pal=None):
+    """pal: paleta fija (hex, de oscuro a claro) para añadir fotogramas a un calco que ya existe; el borde,
+    el más oscuro."""
     """keep: colores fijos (hex) que se respetan si una celda se parece (ojos, fuego)."""
     imgs = {}
     def img(p):
@@ -72,7 +75,9 @@ def criatura(src, boxes, k, n, bg, thr=40, drop=None, edge=0.55, keep=(), acc=No
     grids = [celdas(img(src), b, k, bg, thr, drop, acc) if len(b) == 4
              else celdas(img(b[0]), b[1:5], b[5], bg, thr, drop, acc) for b in boxes]
     px = [c for g in grids for r in g for c in r if c is not None and not isinstance(c, tuple)]
-    if split:  # dos familias de color (la sanguijuela verde y roja): sin medias entre ellas
+    if pal is not None:
+        cen = np.array([[int(h[i:i+2], 16) for i in (1, 3, 5)] for h in pal], float)
+    elif split:  # dos familias de color (la sanguijuela verde y roja): sin medias entre ellas
         rd = [c for c in px if c[0] > c[1] + 12]; gr = [c for c in px if not c[0] > c[1] + 12]
         cen = np.vstack([kmedias(rd, max(2, n * len(rd) // len(px))), kmedias(gr, n - max(2, n * len(rd) // len(px)))])
     else:
@@ -80,6 +85,7 @@ def criatura(src, boxes, k, n, bg, thr=40, drop=None, edge=0.55, keep=(), acc=No
     # borde: versión oscura del más oscuro de la paleta
     # lift > 1 aclara y separa los tonos medios (las criaturas oscuras se empastan al reducir)
     cen = 255 * (cen / 255) ** (1 / lift)
+    fixed_pal = pal is not None
     pal = sorted(cen.tolist(), key=lambda c: c[0]*0.3 + c[1]*0.59 + c[2]*0.11)
     fixed = [np.array([int(h[i:i+2], 16) for i in (1, 3, 5)]) for h in keep]
     out = []
@@ -98,7 +104,7 @@ def criatura(src, boxes, k, n, bg, thr=40, drop=None, edge=0.55, keep=(), acc=No
                     if ((f - c) ** 2).sum() < ((np.array(pal[best]) - c) ** 2).sum() * 0.6:
                         o[j][i] = hexc(f); break
                 else:
-                    o[j][i] = hexc(np.array(pal[best]) * edge) if e else hexc(pal[best])
+                    o[j][i] = (hexc(pal[0]) if fixed_pal else hexc(np.array(pal[best]) * edge)) if e else hexc(pal[best])
         ys = [y for y, r in enumerate(o) if any(r)]
         xs = [x for x in range(W) if any(r[x] for r in o)]
         out.append([r[xs[0]:xs[-1] + 1] for r in o[ys[0]:ys[-1] + 1]])
