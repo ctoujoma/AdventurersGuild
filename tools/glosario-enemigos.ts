@@ -3,7 +3,7 @@
 // `node tools/textos/esbuild.mjs tools/glosario-enemigos.ts glosario docs/glosario-enemigos.html`.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { png } from './visor-png';
-import { expFoeArt, expGuardianArt } from '../src/art/expFoes';
+import { expFoeArt, expGuardianArt, reyArt } from '../src/art/expFoes';
 import { CALCOS } from '../src/art/expCalcos';
 import { bossArtFor } from '../src/art/bossCalco';
 import { foeArt, type FoeArt } from '../src/art/foes';
@@ -346,19 +346,26 @@ const exp: { heading: string; foes: Entry[] }[] = HEADINGS.map((h) => {
   return { heading: rumbo(h), foes };
 });
 
+/** Jefes ya calcados que aún no se han enganchado en `BOSS_CALCO`: se enseña el calco. */
+const PENDING: Partial<Record<BossKind, () => FoeArt>> = { ahogado: reyArt };
+
 const bosses: Entry[] = (Object.keys(BOSSES) as BossKind[]).map((k) => {
   const b = bossArtFor(k);
+  const pend = !b.seq ? PENDING[k] : undefined;
   const chain = CHAINS.find((c) => c.steps.some((s) => s.boss === k));
   const step = chain?.steps.find((s) => s.boss === k);
   return {
     name: BOSSES[k].name,
-    calco: !!b.seq,
+    calco: !!b.seq || !!pend,
     where: [
       chain
         ? `Encargos: historia «${tx(chain.name)}»${step?.place ? `, en ${tx(step.place)}` : ''}`
         : 'Encargos: sin historia',
+      ...(pend
+        ? ['Calcado, pendiente de enganchar en la pelea (en el juego sale aún el antiguo)']
+        : []),
     ],
-    anims: bossAnims(b, k),
+    anims: pend ? foeAnims(pend()) : bossAnims(b, k),
   };
 });
 

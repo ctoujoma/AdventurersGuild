@@ -497,6 +497,31 @@ const FOES: Record<Heading, readonly (() => ExpFoe)[]> = {
 
 const cache = new Map<string, ExpFoe>();
 
+let rey: FoeArt | undefined;
+
+/**
+ * El Rey Ahogado, jefe de la historia del mismo nombre (hoja del usuario, 27 de noviembre): respira
+ * con el ancla al lado; la echa atrás, la levanta, barre y la clava en el suelo; herido, se echa
+ * atrás y se encoge; al morir pierde la corona y el ancla, cae de rodillas y queda tendido. Aún sin
+ * enganchar en `BOSS_CALCO` (lo hace el agente de expediciones).
+ */
+export function reyArt(): FoeArt {
+  rey ??= calcoArt(
+    'muerto',
+    'rey',
+    { idle: 0, idle2: 2, walk1: 1, walk2: 3, windup: 6, strike: 7, hurt: 11, down: 20 },
+    true,
+    {
+      idle: [0, 1, 2, 3, 4, 3, 2, 1],
+      windup: [5, 6],
+      strike: [7, 8, 8, 9],
+      hurt: [11, 12, 13, 14],
+      down: [15, 16, 17, 18, 19, 20],
+    },
+  );
+  return rey;
+}
+
 let ceniza: FoeArt | undefined;
 
 /**

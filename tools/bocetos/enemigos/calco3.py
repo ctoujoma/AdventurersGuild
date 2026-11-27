@@ -5,21 +5,45 @@ import colorsys
 import numpy as np
 from PIL import Image
 
-def celdas(a, box, k, bg, thr=40, drop=None, acc=None, minc=0.12):
+def fase(a, box, k):
+    """Dónde empiezan los píxeles de verdad en una hoja de pixel art agrandada: el desfase de la
+    rejilla (en x y en y) que mejor cae sobre los bordes."""
     x0, y0, x1, y1 = box
+    reg = a[y0:y1, x0:x1]
+    out = []
+    for d in (np.abs(np.diff(reg, axis=1)).sum(2).sum(0), np.abs(np.diff(reg, axis=0)).sum(2).sum(1)):
+        best = max((d[np.round(np.arange(ph, len(d) - 1, k)).astype(int)].mean(), ph)
+                   for ph in np.arange(0, k, 0.1))
+        out.append(best[1] + 1)  # el borde va entre un píxel y el siguiente
+    return out
+
+def celdas(a, box, k, bg, thr=40, drop=None, acc=None, minc=0.12, exact=False):
+    x0, y0, x1, y1 = box
+    if exact:
+        # calco exacto: la rejilla sobre los píxeles de la hoja y, de cada uno, el centro
+        px, py = fase(a, box, k)
+        x0, y0 = x0 + px - k, y0 + py - k
     W = int((x1 - x0) / k); H = int((y1 - y0) / k)
     g = [[None] * W for _ in range(H)]
     for j in range(H):
         for i in range(W):
             sx = x0 + i * k; sy = y0 + j * k
-            c = a[int(sy):int(sy + k), int(sx):int(sx + k)].reshape(-1, 3)
+            if exact:
+                cx, cy = sx + k / 2, sy + k / 2
+                c = a[int(cy - 0.5):int(cy + 1.5), int(cx - 0.5):int(cx + 1.5)].reshape(-1, 3)
+                if len(c) == 0: continue
+            else:
+                c = a[int(sy):int(sy + k), int(sx):int(sx + k)].reshape(-1, 3)
             fg = c[np.abs(c - bg).sum(1) > thr]
             if drop is not None and len(fg):
                 fg = np.array([p for p in fg if not drop(p)]).reshape(-1, 3)
             if len(fg) < 0.45 * len(c): continue
             g[j][i] = np.median(fg, axis=0)
             # detalles pequeños (los ojos rojos): bastan unos pocos píxeles muy marcados
-            if acc and sum(1 for p in fg if acc[0](p)) >= acc[2]: g[j][i] = ('acc', acc[1])
+            # (o varios: una lista de ellos; gana el primero que se cumpla)
+            for ac in (acc if isinstance(acc, list) else [acc] if acc else []):
+                if sum(1 for p in fg if ac[0](p)) >= ac[2]:
+                    g[j][i] = ('acc', ac[1]); break
     # solo los trozos grandes (fuera los pedazos de los vecinos en hojas apretadas)
     seen = set(); comps = []
     for j in range(H):
@@ -61,7 +85,7 @@ def kmedias(px, n, it=30, seed=1):
 def hexc(c): return '#%02x%02x%02x' % tuple(int(round(max(0, min(255, v)))) for v in c)
 
 def criatura(src, boxes, k, n, bg, thr=40, drop=None, edge=0.55, keep=(), acc=None, lift=1.0, split=False,
-             pal=None, minc=0.12):
+             pal=None, minc=0.12, exact=False):
     """pal: paleta fija (hex, de oscuro a claro) para añadir fotogramas a un calco que ya existe; el borde,
     el más oscuro."""
     """keep: colores fijos (hex) que se respetan si una celda se parece (ojos, fuego)."""
@@ -74,8 +98,8 @@ def criatura(src, boxes, k, n, bg, thr=40, drop=None, edge=0.55, keep=(), acc=No
     # fotogramas de varias hojas comparten paleta
     # minc: los trozos sueltos más pequeños que esto (por el mayor) fuera; más bajo, se queda lo que
     # vuela (el garrote del trasgo)
-    grids = [celdas(img(src), b, k, bg, thr, drop, acc, minc) if len(b) == 4
-             else celdas(img(b[0]), b[1:5], b[5], bg, thr, drop, acc, minc) for b in boxes]
+    grids = [celdas(img(src), b, k, bg, thr, drop, acc, minc, exact) if len(b) == 4
+             else celdas(img(b[0]), b[1:5], b[5], bg, thr, drop, acc, minc, exact) for b in boxes]
     px = [c for g in grids for r in g for c in r if c is not None and not isinstance(c, tuple)]
     if pal is not None:
         cen = np.array([[int(h[i:i+2], 16) for i in (1, 3, 5)] for h in pal], float)
