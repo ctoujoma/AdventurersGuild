@@ -324,7 +324,8 @@ const FOES: Record<Heading, readonly (() => ExpFoe)[]> = {
         true,
         // Muere: se encabrita, agacha la cabeza, se desploma, se oscurece y queda en ceniza, que se
         // lleva el viento.
-        { down: [8, 9, 10, 11, 12, 13, 13] },
+        // Herido, se encabrita aullando (el primero de la muerte) y vuelve.
+        { hurt: [8, 8, 1], down: [8, 9, 10, 11, 12, 13, 13] },
         0,
         6,
       ),
