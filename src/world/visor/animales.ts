@@ -18,11 +18,17 @@ export function drawAnimals(c: Ctx, where: Where): void {
   if (where === 'cielo') {
     if (bio === 'bosque') crows(c);
     else if (bio === 'marismas') crows(c, GARZA_FLY, 0.5);
-    else soar(c, bio === 'sierra' ? 1 : 3, bio === 'sierra' ? AGUILA : BUITRE);
+    else if (bio === 'sierra') {
+      // Un águila, chovas en bandada que juegan con el viento y, arriba del todo, el quebrantahuesos.
+      soar(c, 1, AGUILA);
+      crows(c, CHOVA, 1.5, 0.95);
+      if (c.m.wild > 0.55) quebranta(c);
+    } else soar(c, 3, BUITRE);
   } else if (where === 'medio') deer(c, HERD[bio]);
   else if (where === 'cerca') {
     if (bio === 'marismas') wisps(c);
     else wolves(c, bio === 'ruinas' ? JACKAL : WOLF);
+    if (bio === 'sierra') marmots(c);
   }
 }
 
@@ -116,7 +122,7 @@ interface Herd {
   male: Record<string, PixelBuffer>;
   female: Record<string, PixelBuffer>;
 }
-/** Otros pelajes con el mismo dibujo: rebecos (sierra) y cabras (ruinas). */
+/** Otros pelajes con el mismo dibujo: cabras (ruinas). */
 function herdOf(pal: Record<string, string>, horns: (r: string) => string): Herd {
   const male: Record<string, PixelBuffer> = {};
   const female: Record<string, PixelBuffer> = {};
@@ -128,18 +134,72 @@ function herdOf(pal: Record<string, string>, horns: (r: string) => string): Herd
 }
 // Cuernos cortos en gancho (la fila de arriba fuera; la segunda, los ganchos).
 const hooks = (r: string) => r.replace(/a\.a/g, '.a.').replace(/^\.{10}a\.\.$/, '.........a..');
-const REBECO = herdOf(
-  {
-    o: '#5f3c2e',
-    O: '#3e2731',
-    t: '#7a5236',
-    w: '#ead4aa',
-    k: '#181425',
-    a: '#181425',
-    e: '#ead4aa',
-  },
-  hooks,
-);
+
+// El rebeco, con su dibujo: más pequeño y recio que el ciervo, pardo con la raya del lomo
+// oscura, la cara clara con el antifaz negro y los cuernos en gancho (mirando a la derecha).
+const REBECO_PAL = {
+  o: '#7a5236',
+  O: '#4f3324',
+  t: '#a07048',
+  w: '#e8d8b8',
+  k: '#181425',
+  a: '#181425',
+};
+const REBECO_ROWS: Record<string, string[]> = {
+  graze: [
+    '...........',
+    '...........',
+    '...........',
+    '...........',
+    'kOOOOOOOO..',
+    'ooooooooooa',
+    '.ottttttowk',
+    '.k.k...kkw.',
+    '.k.k...k...',
+  ],
+  look: [
+    '........a..',
+    '........aa.',
+    '.......wkw.',
+    '.......wwkk',
+    'kOOOOOOOw..',
+    'ooooooooo..',
+    '.otttttto..',
+    '.k.k...k.k.',
+    '.k.k...k.k.',
+  ],
+  run1: [
+    '.........a.',
+    '.........aa',
+    '........wkw',
+    'k.......wwk',
+    'OOOOOOOOo..',
+    'ooooooooo..',
+    '.ottttto...',
+    'k.......k..',
+    '.........k.',
+  ],
+  run2: [
+    '...........',
+    '.........a.',
+    '.........aa',
+    '........wkw',
+    'kOOOOOOOwwk',
+    'ooooooooo..',
+    '.ottttto...',
+    '..kk..kk...',
+    '..k....k...',
+  ],
+};
+const REBECO: Herd = { male: {}, female: {} };
+for (const [k, rows] of Object.entries(REBECO_ROWS)) {
+  REBECO.male[k] = sprite(rows, REBECO_PAL);
+  // La hembra, con los cuernos más finos (un gancho de un píxel).
+  REBECO.female[k] = sprite(
+    rows.map((r) => r.replace('aa', 'a.')),
+    REBECO_PAL,
+  );
+}
 const CABRA = herdOf(
   {
     o: '#b8946a',
@@ -188,6 +248,120 @@ const GARZA_FLY = [
     y: '#feae34',
   }),
 ];
+
+// Chovas: negras, con el pico amarillo y las patas rojas.
+const CHOVA_PAL = { k: '#181425', n: '#262b44', y: '#fee761', r: '#e43b44' };
+const CHOVA = [
+  sprite(['k....k', '.k..k.', '..kkky', '...r..'], CHOVA_PAL),
+  sprite(['......', '..kk..', 'kkkkky', '...r..'], CHOVA_PAL),
+  sprite(['......', '...k..', '.kkkky', 'kk..kk'], CHOVA_PAL),
+];
+
+// El quebrantahuesos: alas largas y estrechas, la cola en cuña y el pecho rojizo.
+const QUEBRANTA_PAL = { k: '#2e211d', K: '#4f3324', w: '#ead4aa', h: '#c28569' };
+const QUEBRANTA = [
+  sprite(
+    [
+      'kk.............kk',
+      '.kkKk.......kKkk.',
+      '...kkKkkhwkKkk...',
+      '......khhhk......',
+      '.......kKk.......',
+      '........k........',
+    ],
+    QUEBRANTA_PAL,
+  ),
+  sprite(
+    [
+      '.................',
+      'kkkKk.......kKkkk',
+      '...kkKkkhwkKkk...',
+      '......khhhk......',
+      '.......kKk.......',
+      '........k........',
+    ],
+    QUEBRANTA_PAL,
+  ),
+];
+
+/** El quebrantahuesos: planea muy alto, despacio y en línea, casi sin batir. */
+function quebranta(c: Ctx): void {
+  const { b, e, l, lk, time } = c;
+  if (l.night > 0.5 || (l.clima.storm ?? 0) > 0.5) return;
+  // Pasa de tarde en tarde: cada 40 s, a veces.
+  const cyc = Math.floor(time / 40);
+  if (hash(cyc * 13 + c.seed + 7) > 0.6) return;
+  const u = (time % 40) / 40;
+  const ltr = hash(cyc * 5 + 1) < 0.5;
+  const x = ltr ? -20 + u * (e.w + 40) : e.w + 20 - u * (e.w + 40);
+  const y = e.hor * (0.18 + hash(cyc * 3) * 0.12) + Math.sin(time * 0.4) * 3;
+  const flap = Math.floor(time * 4) % 31 < 2 ? 1 : 0;
+  put(b, tinted(QUEBRANTA[flap]!, l, lk), x, y, 8, 3, !ltr);
+}
+
+// La marmota: sentada en alto junto a su madriguera (con el montón de tierra), asomando o metida.
+const MARMOTA_PAL = {
+  g: '#9a7448',
+  G: '#5f4630',
+  l: '#d8b98a',
+  k: '#181425',
+  m: '#7a5a40',
+  d: '#3e2c22',
+};
+const MARMOTA: Record<string, PixelBuffer> = {
+  up: sprite(
+    ['..gG..', '.ggkl.', '..gll.', '..ggl.', '.gggl.', '.gGgl.', 'mmGGmm', 'dmmmmd'],
+    MARMOTA_PAL,
+  ),
+  // Silbando: la boca abierta y la cabeza algo alta.
+  silba: sprite(
+    ['..gG..', '.ggkl.', '..gkl.', '..ggl.', '.gggl.', '.gGgl.', 'mmGGmm', 'dmmmmd'],
+    MARMOTA_PAL,
+  ),
+  peek: sprite(
+    ['......', '......', '......', '......', '..gG..', '.ggkl.', 'mmggmm', 'dmmmmd'],
+    MARMOTA_PAL,
+  ),
+  hole: sprite(
+    ['......', '......', '......', '......', '......', '......', '.mddm.', 'dmmmmd'],
+    MARMOTA_PAL,
+  ),
+};
+
+/**
+ * Marmotas en los pastos altos: asoman, se sientan a mirar y, si el grupo se acerca, silban (la
+ * alarma) y se meten en la madriguera hasta que ha pasado.
+ */
+function marmots(c: Ctx): void {
+  const { b, e, l, lk, time, travel, m } = c;
+  const p = smooth(0.3, 0.5, m.wild) * (1 - smooth(0.92, 1, m.wild));
+  if (p <= 0 || l.night > 0.4 || (l.clima.snow ?? 0) > 0.3) return;
+  const L = stripLen(e.w);
+  const off = travel * SPEED.cerca;
+  const groups = Math.round(L / 90);
+  for (let g = 0; g < groups; g++) {
+    if (hash(g * 41 + c.seed + 3) > p * 0.8) continue;
+    const wx = (g + 0.2 + hash(g * 43) * 0.6) * (L / groups);
+    const n = 1 + Math.floor(hash(g * 47) * 2.4);
+    for (let k = 0; k < n; k++) {
+      let x = ((Math.round(wx + k * 9 - off) % L) + L) % L;
+      if (x > e.w + 8) x -= L;
+      if (x < -8 || x > e.w + 8) continue;
+      const near = Math.abs(x - e.w / 2);
+      let pose: string;
+      if (c.walking && near < 34) pose = 'hole';
+      else if (c.walking && near < 80) pose = Math.floor(time * 3 + k) % 4 === 0 ? 'up' : 'silba';
+      else {
+        const per = 7 + hash(g * 5 + k) * 5;
+        const u = (time / per + hash(g * 7 + k)) % 1;
+        pose = u < 0.25 ? 'hole' : u < 0.35 || u > 0.92 ? 'peek' : 'up';
+        if (pose === 'up' && Math.floor(time * 0.8 + k * 3) % 11 === 0) pose = 'silba';
+      }
+      const img = tinted(MARMOTA[pose]!, l, lk);
+      put(b, img, x, e.ground + 3 + (k % 2) * 2, 3, img.h - 1, hash(g * 9 + k) < 0.5);
+    }
+  }
+}
 
 function soar(c: Ctx, n: number, frames: PixelBuffer[]): void {
   const { b, e, l, lk, time } = c;
@@ -268,12 +442,12 @@ const JACKAL = {
 
 // ---------- Cuervos ----------
 
-function crows(c: Ctx, frames: PixelBuffer[] = CROW, flap = 1): void {
+function crows(c: Ctx, frames: PixelBuffer[] = CROW, flap = 1, often = 0.75): void {
   const { b, e, l, lk, time } = c;
   if (l.night > 0.6) return;
   // Cada 16 s puede pasar una bandada (de 2 a 4), de un lado a otro.
   const cyc = Math.floor(time / 16);
-  if (hash(cyc * 7 + c.seed) > 0.75) return;
+  if (hash(cyc * 7 + c.seed) > often) return;
   const u = (time % 16) / 9;
   if (u > 1) return;
   const ltr = hash(cyc * 3) < 0.5;
@@ -298,7 +472,8 @@ function deer(c: Ctx, herd: Herd | null): void {
   const { b, e, l, lk, time, travel, m } = c;
   // Salen a media lejanía: ni junto a las casas ni en lo más hondo del bosque.
   const w = m.wild;
-  const p = smooth(0.1, 0.3, w) * (1 - smooth(0.75, 0.95, w));
+  const p =
+    herd === REBECO ? smooth(0.2, 0.4, w) : smooth(0.1, 0.3, w) * (1 - smooth(0.75, 0.95, w));
   if (p <= 0 || l.night > 0.8) return;
   const L = stripLen(e.w);
   const off = travel * SPEED.medio;

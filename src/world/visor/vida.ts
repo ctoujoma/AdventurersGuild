@@ -11,6 +11,7 @@ import type { Ctx } from './ctx';
 import { pack, unpack } from './luz';
 import { put, tinted } from './pintar';
 import { M, clamp01, hash, smooth } from './tonos';
+import { drawVidaSierra } from './vida-sierra';
 
 const sprite = (rows: string[], pal: Record<string, string>): PixelBuffer => {
   const b = new PixelBuffer(Math.max(...rows.map((r) => r.length)), rows.length);
@@ -33,6 +34,7 @@ const RABBIT = {
 
 /** Todo lo de este archivo, en su sitio del fotograma (tras el suelo, antes de la gente). */
 export function drawVida(c: Ctx): void {
+  if (c.m.terrain === 'monte') drawVidaSierra(c);
   if (c.m.terrain !== 'bosque') return;
   birds(c);
   rabbits(c);

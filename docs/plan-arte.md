@@ -693,7 +693,15 @@ Herramientas: `tools/visor-hoja.ts` (hojas de lejanía, claro y nevando, móvil 
   pedregales; cerca, árboles sueltos detrás de los peñascos y una orilla de matorral delante;
   colinas con motas de piorno y enebro a rodales (solo en lo verde) y abetos pequeños abajo.
   Rendimiento igual. Capturas en `capturas/expediciones/visor-sierra/`.
-- [ ] (c) fauna y viento, (d) sucesos.
+- [x] **(c) Fauna y viento** (rama `claude/arte-visor-sierra-vida`): rebeco con dibujo propio (más
+  recio que el ciervo, antifaz y cuernos en gancho; sigue en lo más hondo), marmotas en los pastos
+  altos que asoman, se sientan, silban y se meten en la madriguera si el grupo se acerca, chovas en
+  bandada, el águila y, desde media lejanía, el quebrantahuesos de tarde en tarde (`animales.ts`).
+  El viento (`vida-sierra.ts`): una brisa que nunca para (más con «viento») mece briznas sobre la
+  hierba del suelo y la festuca de delante en ráfagas que pasan como olas, arrastra nieve en polvo
+  de los neveros y arranca penachos de las cumbres. Coste: unos 0,07 ms por fotograma. Capturas:
+  `hoja-viento.png`, `hoja-fauna-movil.png`.
+- [ ] (d) sucesos.
 
 ## Lo que ha dicho el usuario (para no repetir errores)
 
