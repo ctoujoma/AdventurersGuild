@@ -276,39 +276,54 @@ const banditOf = (seed: string) => bandit(new Rng(`exp-bandido-${seed}`));
 const FOES: Record<Heading, readonly (() => ExpFoe)[]> = {
   bosque: [
     () => ({
-      art: calcoArt('bestia', 'lobo', {
-        idle: 0,
-        idle2: 1,
-        walk1: 0,
-        walk2: 1,
-        windup: 2,
-        strike: 3,
-        hurt: 0,
-      }),
+      // Respira; se agacha, salta y muerde; herido, se encoge; muere y queda tendido.
+      art: calcoArt(
+        'bestia',
+        'lobo',
+        { idle: 0, idle2: 2, walk1: 1, walk2: 3, windup: 6, strike: 8, hurt: 11, down: 18 },
+        false,
+        {
+          idle: [0, 1, 2, 3, 4, 3, 2, 1],
+          windup: [5, 6],
+          strike: [7, 8, 9, 10],
+          hurt: [11, 12, 13, 14],
+          down: [15, 16, 17, 18],
+        },
+      ),
       count: 3,
     }),
     () => ({
-      art: calcoArt('bestia', 'jabali', {
-        idle: 0,
-        idle2: 0,
-        walk1: 1,
-        walk2: 2,
-        windup: 1,
-        strike: 2,
-        hurt: 0,
-      }),
+      // Respira; escarba, carga y embiste; herido, se encabrita; muere y queda tendido.
+      art: calcoArt(
+        'bestia',
+        'jabali',
+        { idle: 0, idle2: 2, walk1: 1, walk2: 3, windup: 7, strike: 8, hurt: 11, down: 18 },
+        false,
+        {
+          idle: [0, 1, 2, 3, 4, 3, 2, 1],
+          windup: [5, 6, 7],
+          strike: [8, 9, 10],
+          hurt: [11, 12, 13, 14],
+          down: [15, 16, 17, 18],
+        },
+      ),
       count: 1,
     }),
     () => ({
-      art: calcoArt('bestia', 'oso', {
-        idle: 0,
-        idle2: 1,
-        walk1: 1,
-        walk2: 2,
-        windup: 1,
-        strike: 3,
-        hurt: 0,
-      }),
+      art: calcoArt(
+        'bestia',
+        'oso',
+        { idle: 0, idle2: 2, walk1: 1, walk2: 3, windup: 7, strike: 8, hurt: 11, down: 18 },
+        false,
+        // Respira; se alza y suelta el zarpazo; herido, ruge y se encoge; muere y queda tendido.
+        {
+          idle: [0, 1, 2, 3, 4, 3, 2, 1],
+          windup: [5, 6, 7],
+          strike: [8, 9, 10],
+          hurt: [11, 12, 13, 14],
+          down: [15, 16, 17, 18],
+        },
+      ),
       count: 1,
     }),
     () => ({
@@ -319,7 +334,8 @@ const FOES: Record<Heading, readonly (() => ExpFoe)[]> = {
         true,
         // Muere: se encabrita, agacha la cabeza, se desploma, se oscurece y queda en ceniza, que se
         // lleva el viento.
-        { down: [8, 9, 10, 11, 12, 13, 13] },
+        // Herido, se encabrita aullando (el primero de la muerte) y vuelve.
+        { hurt: [8, 8, 1], down: [8, 9, 10, 11, 12, 13, 13] },
         0,
         6,
       ),

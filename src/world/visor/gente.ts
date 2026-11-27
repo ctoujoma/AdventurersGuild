@@ -101,7 +101,9 @@ export function shadow(b: PixelBuffer, x: number, y: number, w: number): void {
 export class Gente {
   private fightFrom = -1;
   /** Al ganar, los que quedaban en pie caen (cuándo acabó y cuánto duró la pelea). */
-  private after?: { from: number; t: number };
+  private after?: { from: number; t: number; travel: number };
+  /** Los enemigos de la última pelea y dónde estaban (los caídos se quedan en el camino). */
+  private last?: { foes: FoeArt[]; xs: number[]; ys: number[] };
   private pops: Pop[] = [];
   private sparks: { x: number; y: number; big: boolean }[] = [];
   /** Los efectos de este fotograma (`vfx.ts`) y el temblor de los grandes (px, arriba o abajo). */
@@ -126,17 +128,36 @@ export class Gente {
       this.fight(c, c.time - this.fightFrom);
     } else {
       if (this.fightFrom >= 0 && c.m.won && c.m.mode === 'walk')
-        this.after = { from: c.time, t: c.time - this.fightFrom };
+        this.after = { from: c.time, t: c.time - this.fightFrom, travel: c.travel };
       this.fightFrom = -1;
       const end = this.after ? (c.time - this.after.from) / AFTER : 1;
       if (this.after && end >= 0 && end < 1) {
         this.fight(c, this.after.t, end);
         return;
       }
-      this.after = undefined;
+      // Luego siguen andando y los caídos se quedan en el camino hasta salir de la vista.
+      if (!this.after || !this.corpses(c)) this.after = undefined;
       if (hiding(c)) drawEscondidos(c);
       else this.walk(c);
     }
+  }
+
+  /** Los caídos de la pelea ganada, quietos en el suelo mientras el camino pasa (false: ya no se ven). */
+  private corpses(c: Ctx): boolean {
+    const { b, e, l, lk } = c;
+    if (!this.last || !this.after) return false;
+    const dir = c.m.home ? -1 : 1;
+    const shift = c.travel - this.after.travel;
+    let seen = false;
+    this.last.foes.forEach((f, j) => {
+      const x = Math.round(this.last!.xs[j]! - shift);
+      if (x < -f.span || x > e.w + f.span) return;
+      const img = foeFrame(f, 'down', 1, c.time);
+      if (img.isEmpty()) return;
+      seen = true;
+      put(b, tinted(img, l, lk), x, e.feet + 1 + this.last!.ys[j]!, f.foot, img.h - 1, dir > 0);
+    });
+    return seen;
   }
 
   /** Andando por el camino. */
@@ -212,16 +233,27 @@ export class Gente {
     const heroX = (i: number) => lead - dir * i * (GAP + 2);
     const foeXs: number[] = [];
     let fx = lead + dir * Math.max(27, 10 + Math.ceil((foes[0]?.span ?? 0) / 2));
+    // Una manada (varios pequeños) va en corrillo, no en fila: más juntos y a distintas
+    // profundidades (unos más atrás, otros más adelante).
+    const pack = foes.length > 1 && !foes.some((f) => f.big);
+    const DEPTH = [0, -4, 3];
+    const depth = (j: number) => (pack ? DEPTH[j % 3]! : 0);
     for (const f of foes) {
       // Los grandes, un poco más allá (el dragón ya ocupa media pantalla: no, que se cortaría).
       if (f.big && f.span < 50) fx += dir * 10;
       foeXs.push(fx);
-      fx += dir * (f.span + 3);
+      fx += dir * (pack ? Math.round(f.span * 0.5) : f.span + 3);
     }
+    // De atrás adelante (y los caídos, debajo).
+    const order = foes
+      .map((_, j) => j)
+      .sort((a, b) => depth(a) - depth(b) || Number(isDown(b)) - Number(isDown(a)) || b - a);
+    this.last = { foes, xs: foeXs, ys: foes.map((_, j) => depth(j)) };
     const lunge = (who: boolean) => (who && p > 0.3 && p < 0.58 ? 3 : 0);
     // Los enemigos (los caídos, debajo).
-    for (let j = foes.length - 1; j >= 0; j--) {
+    for (const j of order) {
       const f = foes[j]!;
+      const feet = e.feet + depth(j);
       const down = isDown(j);
       const struck = heroTurn && j === front && hit;
       let pose: FoePose;
@@ -247,13 +279,13 @@ export class Gente {
       const back = struck ? dir * Math.round(2 + (p < 0.45 ? 1 : 0)) : 0;
       // Los que traen su golpe dibujado (`seq.strike`) ya se echan adelante: sin embestida.
       const x = foeXs[j]! + back - dir * (f.seq?.strike ? 0 : lunge(j === atkFoe));
-      if (!down) shadow(b, x, e.feet, f.big ? 10 : 6);
+      if (!down) shadow(b, x, feet, f.big ? 10 : 6);
       const fy = img.h - 1;
       put(
         b,
         img,
         x,
-        e.feet + (down ? 1 : 0),
+        feet + (down ? 1 : 0),
         f.foot,
         fy,
         dir > 0,
@@ -274,7 +306,7 @@ export class Gente {
           b,
           wp.img,
           x - dir * (hd.x - 9),
-          e.feet - FEET_Y + hd.y,
+          feet - FEET_Y + hd.y,
           wp.px,
           wp.py,
           f.hand.weapon === 'arco' ? 0 : SWING[fp],
@@ -287,7 +319,7 @@ export class Gente {
         fx.push({
           k: 'impact',
           x: x - dir * 4,
-          y: e.feet - f.chest,
+          y: feet - f.chest,
           a: (p - 0.32) / 0.16,
           big: f.big,
           magia: atkHero >= 0 && MAIN[crew[atkHero]!.crew.cls] === 'baston',
@@ -295,8 +327,8 @@ export class Gente {
         fx.push({
           k: 'bits',
           x: x - dir * 3,
-          y: e.feet - f.chest,
-          floor: e.feet + 1,
+          y: feet - f.chest,
+          floor: feet + 1,
           dir,
           a: (p - 0.32) / 0.62,
           seed: k * 7 + j,
@@ -310,7 +342,7 @@ export class Gente {
         this.fx.push({
           k: 'dust',
           x: x - dir * Math.round(f.span * 0.45),
-          y: e.feet,
+          y: feet,
           a: (p - 0.32) / 0.38,
           w: 12,
         });
@@ -319,7 +351,7 @@ export class Gente {
       const fallU =
         end !== undefined && !fell(j) ? (end - 0.18) / 0.3 : k === downAt(j) ? (p - 0.7) / 0.3 : -1;
       if (fallU >= 0 && fallU < 1) {
-        this.fx.push({ k: 'dust', x, y: e.feet, a: fallU, w: Math.max(8, f.span * 0.4) });
+        this.fx.push({ k: 'dust', x, y: feet, a: fallU, w: Math.max(8, f.span * 0.4) });
         if (f.big && fallU < 0.12) this.shake = Math.floor(c.time * 40) % 2 ? 1 : -1;
       }
       if (heroTurn && j === front && p > 0.32 && (!down || k === downAt(j))) {
@@ -328,7 +360,7 @@ export class Gente {
         this.pops.push({
           text: String(dmg),
           x: foeXs[j]!,
-          y: e.feet - f.poses.idle.h - 3,
+          y: feet - f.poses.idle.h - 3,
           u: (p - 0.32) / 0.68,
           color: crit ? '#fee761' : '#ffffff',
         });
