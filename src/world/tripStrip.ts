@@ -13,9 +13,11 @@
  *
  * Solo pinta: recibe `JourneyNow` y el reloj de la animación (segundos). Ver `ui/QuestStrip.tsx`.
  */
-import { bossArt } from '../art/bosses';
+import { bossArtFor } from '../art/bossCalco';
+import { expFoeArt } from '../art/expFoes';
 import { bufferCanvas } from '../art/canvas';
-import { foeArt, type FoeArt, type FoePose } from '../art/foes';
+import { foeArt, type FoeArt, type FoeKind, type FoePose } from '../art/foes';
+import { foeFrame } from './visor/gente';
 import {
   FEET_Y,
   HAND,
@@ -33,6 +35,14 @@ import { BOSS_T, LEGS, RESOLVE_T, type JourneyEvent, type JourneyNow } from '../
 import { Rng } from '../core/rng';
 import { WEAPONS, type WeaponId } from './weapons';
 import { t } from '../textos';
+
+/**
+ * Las familias de enemigos de los encargos que ya salen calcadas en la tira (con sus
+ * animaciones), como en el visor: de momento, las bestias, como los lobos del bosque.
+ */
+const STRIP_CALCO: Partial<Record<FoeKind, () => FoeArt>> = {
+  bestia: () => expFoeArt('bosque', 0).art,
+};
 
 /** Alto de la tira (el paisaje y, debajo, la línea del viaje) y margen a los lados. */
 export const STRIP_H = 64;
@@ -386,9 +396,15 @@ export class TripStrip {
     const pos = this.posOf(now.t, back, fast);
     const bossOn = !!j.boss && now.t >= BOSS_T - 0.02;
     // El jefe (mirando a la izquierda): dónde pisa y hasta dónde llega por delante.
-    const art = j.boss ? bossArt(j.boss) : null;
+    const art = j.boss ? bossArtFor(j.boss) : null;
     const down = !!j.boss && !!outcome && !BAD.has(outcome);
-    const bossImg = art ? (down ? art.poses.down : art.poses.ready) : null;
+    const bossImg = art
+      ? down
+        ? art.poses.down
+        : art.seq?.ready
+          ? art.seq.ready[Math.floor(time * 5) % art.seq.ready.length]!
+          : art.poses.ready
+      : null;
     const bossFoot = art ? (down ? art.downFoot : art.foot) : { x: 0, y: 0 };
     const k = bossImg ? Math.min(1, 46 / bossImg.h) : 1;
     const bossX = bossImg
@@ -507,10 +523,12 @@ export class TripStrip {
     this.foes(now).forEach((f, i) => {
       if (f.big) x += 8;
       if (beaten) {
-        const img = f.poses.down;
+        const img = foeFrame(f, 'down', 1, time);
         put(ctx, img, x, LAND_GROUND + 1, Math.round(img.w / 2), img.h - 1);
       } else {
-        const img = f.poses[Math.floor(time * 2 + i) % 2 ? 'idle2' : 'idle'];
+        const img = f.seq?.idle
+          ? foeFrame(f, 'idle', 0, time + i * 0.3)
+          : f.poses[Math.floor(time * 2 + i) % 2 ? 'idle2' : 'idle'];
         put(ctx, img, x, LAND_GROUND + 1, f.foot, img.h - 1, true);
         this.held(ctx, f, img, x, 'ready');
       }
@@ -543,7 +561,8 @@ export class TripStrip {
     const j = now.journey;
     const rng = new Rng(`foes-${j.seed}`);
     const n = j.foe === 'grande' ? 1 : j.foe === 'alimana' ? 3 : rng.int(2, 3);
-    return Array.from({ length: n }, (_, i) => foeArt(j.foe, `${j.seed}-${i}`));
+    const calco = STRIP_CALCO[j.foe];
+    return Array.from({ length: n }, (_, i) => (calco ? calco() : foeArt(j.foe, `${j.seed}-${i}`)));
   }
 
   /** Andando (`left`: hacia la taberna); `hurry`, deprisa; `bag`, con el botín a la espalda. */
@@ -652,8 +671,11 @@ export class TripStrip {
             : p < 0.8
               ? 'strike'
               : 'idle';
-      const img = f.poses[pose];
-      const dx = pose === 'strike' ? -2 : pose === 'hurt' ? 1 : 0;
+      // Los calcados pasan sus fotogramas: quietos respiran; la carga y el golpe, con la fase.
+      const u =
+        pose === 'windup' ? (p - 0.4) / 0.2 : pose === 'strike' ? (p - 0.6) / 0.2 : (time * 3) % 1;
+      const img = foeFrame(f, pose, u, time + i * 0.3);
+      const dx = pose === 'strike' && !f.seq ? -2 : pose === 'hurt' ? 1 : 0;
       const flash = hurt && Math.floor(time * 12) % 2 === 0;
       put(ctx, flash ? tint(img, P.white) : img, x + dx, G + 1, f.foot, img.h - 1, true);
       // Los bandidos (figuras de héroe), con su arma en la mano, como en la pelea.

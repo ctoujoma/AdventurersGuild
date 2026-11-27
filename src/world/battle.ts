@@ -1,4 +1,5 @@
-import { bossArt, type BossArt, type BossPose } from '../art/bosses';
+import { type BossArt, type BossPose } from '../art/bosses';
+import { bossArtFor } from '../art/bossCalco';
 import { bufferCanvas } from '../art/canvas';
 import { P } from '../art/palette';
 import {
@@ -171,6 +172,9 @@ interface Fighter {
   ghostTint?: string;
   /** Cuándo cayó (para la animación de muerte del jefe) y si ya ha tocado el suelo. */
   downAt?: number;
+  /** El jefe calcado: la pose que tiene y desde cuándo (para pasar sus fotogramas). */
+  poseOf?: BossPose;
+  poseAt?: number;
   landed?: boolean;
 }
 
@@ -221,7 +225,11 @@ export const BATTLE_TIME = 13;
 const DOOR = 98;
 /** Muerte de los jefes: cuánto tarda en tocar el suelo, y cuánto se tambalea antes. */
 const TIP_SWAY = 0.5;
-const deathTime = (f: { art?: { fall?: 'sink' } }) => (f.art?.fall === 'sink' ? 2 : 0.55);
+const deathTime = (f: { art?: { fall?: 'sink'; seq?: { down?: unknown } } }) =>
+  f.art?.fall === 'sink' ? 2 : f.art?.seq?.down ? SEQ_DOWN : 0.55;
+/** Jefes calcados: lo que tarda cada pose en pasar sus fotogramas, y la caída entera (s). */
+const SEQ_POSE = 0.35;
+const SEQ_DOWN = 1.2;
 
 /** Pelea contra un jefe: llegada, golpes, desenlace y final. */
 const ARENA_TIMES = { fight: 3.4, outcome: 15.5, end: 20 };
@@ -1014,7 +1022,7 @@ export class Battle {
 
   /** Jefe y esbirros a la derecha; el grupo entra andando por la izquierda. */
   private setupArena(a: NonNullable<BattleSpec['arena']>): void {
-    const art = bossArt(a.boss);
+    const art = bossArtFor(a.boss);
     const bx = Math.round(a.width * 0.74);
     const dummy = banditLook('jefe', 0);
     const boss = this.fighter('b', a.boss, dummy.look, dummy.marks, {
@@ -1899,7 +1907,7 @@ export class Battle {
           ? { pose: 'up', angle: 0, dx: Math.sin(this.t * 40) * 1.5 }
           : null;
     const pose: BossPose = fr ? fr.pose : 'down';
-    const img = art.poses[pose];
+    const img = this.bossFrame(f, art, pose);
     const face = fr?.turn ? -f.face : f.face;
     ctx.save();
     ctx.translate(
@@ -1918,6 +1926,31 @@ export class Battle {
       ctx.globalAlpha = 1;
     }
     ctx.restore();
+  }
+
+  /**
+   * El fotograma del jefe en su pose: los calcados (con `seq`) respiran en guardia y pasan los de
+   * la carga, el golpe, el daño y la caída desde que empieza cada pose; los demás, su dibujo fijo.
+   */
+  private bossFrame(f: Fighter, art: BossArt, pose: BossPose): PixelBuffer {
+    const seq = art.seq;
+    if (!seq) return art.poses[pose];
+    // Al morir, la caída entera (con su encabritarse) desde que cae; luego, el último.
+    if (f.state === 'down') {
+      const s = seq.down;
+      if (!s?.length) return art.poses.down;
+      const u = clamp01((this.t - (f.downAt ?? this.t)) / SEQ_DOWN);
+      return s[Math.min(s.length - 1, Math.floor(u * s.length))]!;
+    }
+    if (pose !== f.poseOf) {
+      f.poseOf = pose;
+      f.poseAt = this.t;
+    }
+    const s = seq[pose];
+    if (!s?.length) return art.poses[pose];
+    if (pose === 'ready') return s[Math.floor(this.t * 5) % s.length]!;
+    const u = clamp01((this.t - (f.poseAt ?? this.t)) / SEQ_POSE);
+    return s[Math.min(s.length - 1, Math.floor(u * s.length))]!;
   }
 
   /**
