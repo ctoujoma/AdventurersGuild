@@ -20,6 +20,7 @@ import { blitStrip, luzKey } from './pintar';
 import { Aire, Lluvia, climaOf, drawMist } from './tiempo';
 import { smooth } from './tonos';
 import { drawRays, drawVida } from './vida';
+import { drawCumbres, drawDelanteSierra } from './vida-sierra';
 import { drawEscondite, drawSuceso, drawSucesoFondo } from './sucesos';
 
 /** Para forzar la hora o el tiempo (pruebas, capturas). */
@@ -200,6 +201,7 @@ export class Visor {
       blitStrip(b, this.colored.get(id)!, travel * c.speed, c.y);
     };
     layer('lejos');
+    drawCumbres(ctx);
     this.nubes.draw(b, l, time, travel, 1 + l.clima.rain + (l.clima.wind ?? 0) * 5);
     drawAnimals(ctx, 'cielo');
     layer('sierra');
@@ -221,6 +223,7 @@ export class Visor {
     if (m.mode !== 'camp') this.gente.draw(ctx);
     drawEscondite(ctx);
     layer('delante');
+    drawDelanteSierra(ctx);
     layer('copas');
     drawRays(ctx);
     this.lluvia.draw(b, l, time, travel);
