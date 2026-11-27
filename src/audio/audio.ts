@@ -238,6 +238,34 @@ class AudioEngine {
     }
   }
 
+  /**
+   * Recoger (ui/CollectMark.tsx): un golpe por cada icono que llega a su marcador, cada uno un
+   * semitono más agudo. `i` es cuál llega (0, 1, 2…): monedas, un cacharro de cocina, jarras o el
+   * brillo de lo hecho en un taller.
+   */
+  gather(kind: 'oro' | 'pan' | 'jarra' | 'objeto', i: number, volume = 0.7): void {
+    const ctx = this.ctx;
+    if (!ctx || !this.enabled) return;
+    const t = ctx.currentTime + 0.005;
+    const v = volume;
+    const up = Math.pow(2, Math.min(i, 8) / 12);
+    if (kind === 'oro') {
+      this.ping(1318 * up, t, 0.25, 0.07 * v);
+      this.ping(1760 * up, t + 0.05, 0.35, 0.05 * v);
+    } else if (kind === 'pan') {
+      // Cacharro: un golpe sordo de olla y su tintineo de metal.
+      this.thump(t, 0.06 * v);
+      this.ping(880 * up, t, 0.18, 0.045 * v);
+      this.ping(1245 * up, t + 0.01, 0.12, 0.02 * v);
+    } else if (kind === 'jarra') {
+      // Jarras que chocan: madera y un vidrio agudo.
+      this.tone('triangle', 420 * up, 260 * up, t, 0.05, 0.06 * v);
+      this.ping(2093 * up, t + 0.02, 0.2, 0.03 * v);
+    } else {
+      [79, 86, 91].forEach((n, k) => this.ping(midi(n) * up, t + k * 0.05, 0.4, 0.03 * v));
+    }
+  }
+
   /** Cuánto se afinan arriba o abajo los efectos que suenan ahora (ver `play`). */
   private detune = 1;
 

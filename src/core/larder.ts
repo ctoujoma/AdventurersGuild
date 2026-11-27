@@ -12,6 +12,7 @@ import {
   HUNGER_MORALE,
   KITCHEN_STORE,
   PANTRY_STORE,
+  byLevel,
 } from './balance';
 import type { Building, DawnEvent, GameState, Hero, Room, RoomYield, Worker } from './model';
 import { active } from './rooms';
@@ -49,12 +50,15 @@ export function dailyYield(s: GameState): { food: number; beer: number } {
   };
 }
 
-/** Lo que cabe en las salas de un tipo: tanto por hueco y nivel. */
-const stored = (b: Building, type: RoomType, per: number) =>
+/**
+ * Lo que cabe en las salas de un tipo: por hueco, lo de su nivel en la tabla (o, con un número,
+ * tanto por hueco y nivel).
+ */
+const stored = (b: Building, type: RoomType, per: number | readonly number[]) =>
   b.rooms.reduce((a, r) => {
     if (r.type !== type) return a;
     const { cells, level } = active(r);
-    return a + cells * level * per;
+    return a + cells * (typeof per === 'number' ? level * per : byLevel(per, level));
   }, 0);
 
 /** Raciones que caben: unas pocas en la cocina y muchas en la despensa. */

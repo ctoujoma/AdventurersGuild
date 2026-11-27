@@ -7,6 +7,7 @@
 import {
   BOARD_SIZE,
   CELLAR_STORE,
+  byLevel,
   CRAFT_SLOTS,
   DOOR_TIME,
   DOOR_GUARDS,
@@ -98,11 +99,11 @@ export const ROOM_INFO: Record<RoomType, Effect> = {
   cocina: (l, n) =>
     l === 0
       ? t('salas.efecto.cocina_0')
-      : t('salas.efecto.cocina', { ritmo: pace(l), n: KITCHEN_STORE * l * n }),
+      : t('salas.efecto.cocina', { ritmo: pace(l), n: byLevel(KITCHEN_STORE, l) * n }),
   bodega: (l, n) =>
     l === 0
       ? t('salas.efecto.bodega_0')
-      : t('salas.efecto.bodega', { ritmo: pace(l), n: CELLAR_STORE * l * n }),
+      : t('salas.efecto.bodega', { ritmo: pace(l), n: byLevel(CELLAR_STORE, l) * n }),
   despensa: (l, n) =>
     l === 0
       ? t('salas.efecto.despensa_0')

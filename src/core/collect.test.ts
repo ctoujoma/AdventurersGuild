@@ -66,6 +66,20 @@ describe('recoger lo que da la taberna', () => {
     expect(b.queueAt).toBe(0);
   });
 
+  it('más ancha y de más nivel, más cola y más almacén (cada nivel, más que el anterior)', () => {
+    const s = home('ancha');
+    const k = kitchenOf(s);
+    const at = (w: number, level: number) => ({ ...k, w, level });
+    expect(queueCap(at(1, 1))).toBe(8);
+    expect(queueCap(at(3, 1))).toBe(24);
+    expect(queueCap(at(3, 4))).toBe(78);
+    const cap = (w: number, level: number) => foodCap({ ...s.building, rooms: [at(w, level)] });
+    expect(cap(1, 1)).toBe(20);
+    expect(cap(3, 1)).toBe(60);
+    expect(cap(1, 4)).toBe(110);
+    expect(cap(1, 3) - cap(1, 2)).toBeGreaterThan(cap(1, 2) - cap(1, 1));
+  });
+
   it('la bolsa de la caja sale sobre el salón desde 100 monedas', () => {
     const s = home('bolsa');
     expect(tillShows({ ...s, till: TILL_SHOW - 1 })).toBe(false);

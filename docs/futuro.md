@@ -261,5 +261,6 @@ partida larga.
 
 ## Pulir el efecto de recoger (nota del usuario, 27 de noviembre)
 
-La burbuja que flota sobre la sala y el destello al tocarla (`ui/CollectMark.tsx`) funcionan, pero
-hay que pulirlos a mano: chispas en píxel, el vuelo hasta el marcador, el halo y el sonido.
+**Hecho (27 de noviembre):** de 1 a 6 iconos sin marco vuelan en arco, con contorno y halo; sale un
+«+N»; las chispas son de píxel; la cifra del marcador espera al primero y cuenta; la burbuja entra
+con un rebote y, llena, tiembla; y cada icono que llega suena un poco más agudo (`ui/CollectMark.tsx`).
