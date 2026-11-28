@@ -1871,6 +1871,14 @@ export function App() {
               onLibro={() => openPanel('libro')}
               onBestiario={() => openPanel('bestiario')}
               onTaberna={() => openPanel('casa')}
+              onPayDebt={() => {
+                // Merlo cobra (con su sello) y, al cerrar, la carta de «El gremio es tuyo».
+                dispatch({ type: 'payDebt' });
+                clearScreen();
+                payThen.current = null;
+                setPaying(true);
+                setTimeout(() => audio.fanfare(), 60);
+              }}
               adornosLocked={tutorialOn(game) ? t('tutorial.candado') : undefined}
               onLocked={(why) => {
                 audio.play('thud', 0.4);
@@ -2085,6 +2093,7 @@ export function App() {
             onFire={() => fire(cardHero.id)}
             onAnswer={(yes) => dispatch({ type: 'answer', id: cardHero.id, yes })}
             onPayOwed={() => dispatch({ type: 'payOwed', id: cardHero.id })}
+            onDrink={() => dispatch({ type: 'drink', heroId: cardHero.id })}
             onTask={works.planning ? undefined : (task) => setTask(cardHero.id, task)}
             onRename={(name) => dispatch({ type: 'renameHero', id: cardHero.id, name })}
             onDressAt={(room, dress) => {

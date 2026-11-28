@@ -544,6 +544,14 @@ eventos).
   más y aguantan más; el asalto dura y da tiempo a actuar (estrategia normal 84/78/57 % → 88/81/74 %).
 - **«El gremio es tuyo»:** sin «otro intento».
 
+## Pociones, nivel y pago a Merlo (28 de noviembre)
+
+- [x] Selector de encargos: el nivel en la esquina del retrato; la vida también en los de la cama y
+      en «Encargo en curso».
+- [x] Pociones en casa: botón en la ficha del héroe y en la enfermería (con un chip de las que hay).
+- [x] Pagar a Merlo todo lo que queda de una vez (Gremio, dos toques): abre ya el modo libre, con el
+      cobro de Merlo y la carta de «El gremio es tuyo». Sin cuotas después; salarios cada 7 días.
+
 ## Pendiente de revisar
 
 - **Asaltos en directo** (hechos, con cámara lenta al arrastrar y el objetivo «sin heridos»):

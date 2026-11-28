@@ -3,6 +3,7 @@ import { eventText, journeyNow, LEGS, type JourneyNow } from '../core/journey';
 import type { GameState, Mission } from '../core/model';
 import { dangerClass, dangerLabel, questTypeName } from '../data/labels';
 import { Icon, type IconName } from './icons';
+import { LifeBar } from './LifeBar';
 import { Portrait } from './Portrait';
 import { QuestStrip } from './QuestStrip';
 import { lookOf, marksOf, heroFrame } from './view';
@@ -97,6 +98,7 @@ export function TripSheet({ game, mission: m, onClose, onHero, onReport, onBoss 
                   alive={false}
                 />
                 <span class="pick-name">{h.name.split(' ')[0]}</span>
+                <LifeBar hero={h} />
               </button>
             ))}
           </div>

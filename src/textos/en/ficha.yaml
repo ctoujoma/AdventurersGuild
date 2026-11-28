@@ -34,6 +34,8 @@ herocard:
   baja_con_los_viajes: "{animo} {desc} Drops with journeys, failures, guard duty (no sleep on guard) and after a week without an adventure; rises with rest."
   moral: "Morale"
   vida: "Health"
+  pocion: "Give a potion ({n} left)"
+  pocion_ayuda: "An alchemy potion restores {pct}% health right away. If they were in their own bed and go above 20%, they get up soon; on an infirmary cot they stay until fully healed."
   van_heridos: "{n, plural, one {Going while wounded} other {Going while wounded}}: {quien}. They start fights with that health; at 0, they may not come back."
   vida_ayuda: "{estado, select, grave {Badly wounded: in bed until above {grave} %.} leve {Lightly wounded: works and trains at {rinde} %, no guard duty; can go out, but starts fights like this.} other {Healthy.}}{hay_falta, select, si { {falta} to go.} other {}} Recovers hour by hour at home (faster in an infirmary cot with someone tending it), a little at night outside and with potions. At 0, they may fall."
   ficha: "Sheet"

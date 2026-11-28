@@ -37,6 +37,8 @@ herocard:
   baja_con_los_viajes: "{animo} {desc} Baja con los viajes, los fracasos, la guardia (de guardia no se duerme) y tras una semana sin salir de aventura; sube descansando."
   moral: "Moral"
   vida: "Vida"
+  pocion: "Darle una poción (quedan {n})"
+  pocion_ayuda: "Una poción de la alquimia le devuelve un {pct} % de vida al momento. Si estaba en su cama y pasa del 20 %, se levanta enseguida; en un catre de la enfermería sigue hasta curarse del todo."
   # Al formar un grupo con heridos leves (quien: nombres con su vida).
   van_heridos: "{n, plural, one {Va herido leve} other {Van heridos leves}}: {quien}. Empiezan las peleas con esa vida; si caen a 0, pueden no volver."
   # La barra de vida: estado (sano/leve/grave), umbrales y lo que le falta a su ritmo de ahora.
