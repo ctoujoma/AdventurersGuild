@@ -312,7 +312,7 @@ export function assaultSetup(s: GameState, strength: number, rng: Rng): AssaultS
   const n = banditCount(strength);
   const bandits = Array.from({ length: n }, (_, i) => ({
     id: `b${i}`,
-    power: ((strength / Math.min(n, BANDIT_SPLIT)) * BANDIT_POWER) / banditHpK(strength),
+    power: ((strength / Math.min(n, BANDIT_SPLIT)) * BANDIT_POWER) / banditHpK(strength) ** 0.85,
     hp: Math.round(BANDIT_HP * banditHpK(strength) * (i ? 1 : LEADER_HP)),
     ...(i ? {} : { leader: true }),
   }));
