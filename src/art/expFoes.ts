@@ -195,6 +195,8 @@ function calcoArt(
     ramp?: (ramp: readonly string[]) => readonly string[];
     /** Otras muertes (fotogramas), además de `seq.down`. */
     downAlt?: number[][];
+    /** Otro nombre que el del calco (para el visor: el Viejo Jabalí embiste como un jabalí). */
+    as?: string;
   } = {},
 ): FoeArt {
   const { fade = 0, ash = 0 } = o;
@@ -228,7 +230,7 @@ function calcoArt(
     seq && xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : Math.round(iw / 2);
   const art: FoeArt = {
     kind,
-    what,
+    what: o.as ?? what,
     poses,
     foot,
     chest: Math.round(h / 2),
@@ -599,6 +601,65 @@ export function cenizaArt(): FoeArt {
   return ceniza;
 }
 
+let viejo: FoeArt | undefined;
+
+/**
+ * El Viejo Jabalí, segundo guardián del bosque (agente de expediciones, a petición del usuario): el
+ * calco del jabalí de ceniza con los tonos del jabalí del bosque, sin brasas. Embiste como un jabalí
+ * (estelas y choque) y al morir cae y queda tendido, sin deshacerse.
+ */
+export function viejoJabaliArt(): FoeArt {
+  viejo ??= calcoArt(
+    'grande',
+    'ceniza',
+    { idle: 0, idle2: 2, walk1: 1, walk2: 3, windup: 7, strike: 8, hurt: 11, down: 18 },
+    true,
+    {
+      idle: [0, 1, 2, 3, 4, 3, 2, 1],
+      windup: [5, 6, 7],
+      strike: [8, 9, 10],
+      hurt: [11, 12, 13, 14],
+      down: [15, 16, 17, 18],
+    },
+    { ramp: (r) => deCeniza(r, CALCOS.jabali!.ramp), as: 'viejo_jabali' },
+  );
+  return viejo;
+}
+
+/**
+ * Los tonos del jabalí de ceniza llevados a los del jabalí del bosque: cada gris, al color del
+ * jabalí de la misma altura de luz; las brasas, a pelo pardo; colmillos y ojos claros, como están.
+ */
+function deCeniza(from: readonly string[], to: readonly string[]): readonly string[] {
+  const rgb = (h: string) =>
+    [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)) as [number, number, number];
+  const lum = (h: string) => {
+    const [r, g, b] = rgb(h);
+    return r * 0.3 + g * 0.59 + b * 0.11;
+  };
+  // Del jabalí, solo el pelo (fuera el rosa del hocico y el blanco de los colmillos).
+  const fur = to
+    .filter((h) => {
+      const [r, g, b] = rgb(h);
+      return !(r > 150 && b > 90 && r > g + 40) && lum(h) < 200;
+    })
+    .sort((a, b) => lum(a) - lum(b));
+  const greys = from.filter((h) => {
+    const [r, g] = rgb(h);
+    return !(r > 120 && r > g * 1.5) && lum(h) < 200;
+  });
+  // Por orden de luz (no por cuánta): los grises del de ceniza se amontonan en lo oscuro.
+  const order = [...greys].sort((a, b) => lum(a) - lum(b));
+  return from.map((h) => {
+    const [r, g] = rgb(h);
+    if (lum(h) >= 200) return h; // colmillos
+    // Brasa: pelo pardo de los tonos medios-claros del jabalí.
+    if (r > 120 && r > g * 1.5) return fur[Math.round(fur.length * 0.75)]!;
+    const u = order.length > 1 ? order.indexOf(h) / (order.length - 1) : 0;
+    return fur[Math.min(fur.length - 1, Math.round(u * (fur.length - 1)))]!;
+  });
+}
+
 /** El enemigo número `idx` del rumbo (siempre el mismo dibujo). */
 export function expFoeArt(heading: Heading, idx: number): ExpFoe {
   const key = `${heading}:${idx}`;
@@ -616,9 +677,8 @@ export function expFoeArt(heading: Heading, idx: number): ExpFoe {
  * de hielo; los demás, de momento, el huargo del bosque.
  */
 export function expGuardianArt(heading: Heading, n = 0): FoeArt {
-  // El segundo guardián del bosque: el Viejo Jabalí (de momento, el calco del jabalí de ceniza;
-  // el agente de arte lo recolorea con los tonos del jabalí normal).
-  if (n && heading === 'bosque') return cenizaArt();
+  // El segundo guardián del bosque: el Viejo Jabalí (`viejoJabaliArt`).
+  if (n && heading === 'bosque') return viejoJabaliArt();
   const key = `guardian:${heading}`;
   let f = cache.get(key);
   if (!f) {

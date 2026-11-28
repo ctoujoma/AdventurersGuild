@@ -283,9 +283,8 @@ Con la vida que se guarda (`core/health.ts`, #219), las expediciones ya no cuent
 ## El segundo guardián del bosque: el Viejo Jabalí (usuario, 27 nov)
 
 - **Más adelante, pasado el primero:** en el bosque, tras el Viejo Colmillo (el huargo), desde
-  `EXP_GUARDIAN2_FROM` días puede salir el Viejo Jabalí (usuario, 28 nov: el calco del jabalí
-  de ceniza recoloreado con los tonos del jabalí normal, sin brasas; lo prepara el agente de arte,
-  y mientras tanto sale `cenizaArt()`). Pelea por `EXP_GUARDIAN2_MULT`
+  `EXP_GUARDIAN2_FROM` días puede salir el Viejo Jabalí (usuario, 28 nov: `viejoJabaliArt()`, el calco del jabalí de ceniza recoloreado
+  con los tonos del jabalí normal, sin brasas; del agente de arte, #269). Pelea por `EXP_GUARDIAN2_MULT`
   y su objeto es mejor. En el suceso y la pelea va como `foe` 1 del guardián
   (`GUARDIAN2` en `core/expedition.ts`; `expGuardianArt(rumbo, 1)`), y se apunta en
   `Expedition.guardian2`. Textos: `guardianes.bosque_2` y `sucesos.guardian.texto_2`.
