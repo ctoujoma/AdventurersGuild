@@ -43,6 +43,12 @@ juego cerrado y qué exploits hay. Resultados, gráficos y propuestas en la pág
   todos, ×1,2 más. La carta del amanecer dice cuánto fue de propinas. Un salón de banquetes de 3×2
   con 4 camareros da ~290 al día (antes ~170); uno de nivel 2 con un camarero, ~48 (antes ~39).
 
+- **Niveles altos más caros** (28 de noviembre): el nivel 4 de las salas, un 40 % más (dormitorio,
+  cocina, bodega y salón 750 → 1.050; cámara 900 → 1.250; armas, tiro y biblioteca 850 → 1.200) y
+  el 5 del salón, 1.200 → 1.800.
+- **Tope al ladrón de la cámara** (28 de noviembre): el de día se lleva el 8 % como el nocturno,
+  pero como mucho 60 × (rango + 1) (`DAY_THIEF_TOP`; antes sin tope).
+
 **Medido con todo junto** (30 partidas de 148 días, `npm run auditoria`; antes → después):
 
 | | Antes | Después |
@@ -72,7 +78,6 @@ final sobra aún más oro que antes: los **sumideros del modo libre** son ahora 
   tope o caída de la fama.
 - **Ausencias sin sangría:** encargos largos que se dejan asignados, media paga fuera, o comida
   aparte para los visitantes.
-- **Topes coherentes:** el ladrón de la cámara (incidente de día) se lleva el 8 % sin tope; los
-  encargos, la mochila, las historias y las hazañas suman sin el tope de la cámara hasta la noche
-  (usar `earn()`).
+- **Tope de la cámara durante el día:** los encargos, la mochila, las historias y las hazañas
+  suman sin el tope de la cámara hasta la noche (usar `earn()`).
 - **La deuda castiga contratar:** en el simulador gana más quien no contrata (77 % frente a 68 %).

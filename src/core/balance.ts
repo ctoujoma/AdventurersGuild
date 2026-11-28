@@ -38,12 +38,16 @@ export const START = {
   quests: 4,
 };
 
-/** Coste de subir a cada nivel (índice = nivel nuevo); el nivel máximo es el último. */
+/**
+ * Coste de subir a cada nivel (índice = nivel nuevo); el nivel máximo es el último. Los niveles 4
+ * y 5, más caros (usuario, 28 de noviembre, tras la auditoría del oro: en el modo libre sobraba
+ * dinero): el 4, un 40 % más (750 → 1.050) y el 5 del salón, un 50 % (1.200 → 1.800).
+ */
 export const UPGRADE_COST: Record<keyof Facilities, readonly number[]> = {
-  dorm: [0, 80, 170, 420, 750],
+  dorm: [0, 80, 170, 420, 1050],
   enf: [0, 100, 230, 450],
   // El 5 (salón de banquetes): 2 de Atractivo más (ver `salonAppeal`).
-  tab: [0, 90, 250, 450, 750, 1200],
+  tab: [0, 90, 250, 450, 1050, 1800],
   mapas: [0, 120, 340, 620],
   arm: [0, 150, 380, 650],
   cap: [0, 110, 320, 600],
@@ -89,9 +93,9 @@ export const facilityMax = (k: keyof Facilities) => UPGRADE_COST[k].length - 1;
 export const ROOM_COST: Record<RoomType, readonly number[]> = {
   recibidor: [0, 100, 150, 320],
   salon: UPGRADE_COST.tab,
-  cocina: [0, 100, 220, 400, 750],
-  bodega: [0, 100, 220, 400, 750],
-  tesoro: [0, 120, 260, 480, 900],
+  cocina: [0, 100, 220, 400, 1050],
+  bodega: [0, 100, 220, 400, 1050],
+  tesoro: [0, 120, 260, 480, 1250],
   dormitorio: UPGRADE_COST.dorm,
   enfermeria: UPGRADE_COST.enf,
   capilla: UPGRADE_COST.cap,
@@ -102,9 +106,9 @@ export const ROOM_COST: Record<RoomType, readonly number[]> = {
   torre: UPGRADE_COST.torre,
   servicio: [0, 80, 170, 380],
   despensa: [0, 80, 180, 360],
-  armas: [0, 150, 320, 520, 850],
-  tiro: [0, 150, 320, 520, 850],
-  biblioteca: [0, 150, 320, 520, 850],
+  armas: [0, 150, 320, 520, 1200],
+  tiro: [0, 150, 320, 520, 1200],
+  biblioteca: [0, 150, 320, 520, 1200],
   sastreria: [0, 160, 340, 620],
   pintor: [0, 140, 300, 520],
   almacen: [0, 90, 200, 400],
@@ -990,6 +994,11 @@ export const NIGHT_THIEF_RUN = 9;
 export const NIGHT_THIEF_SHARE = 0.08;
 export const NIGHT_THIEF_TOP = 25;
 export const NIGHT_THIEF_EVERY = 3;
+/**
+ * El ladrón de la cámara (incidente de día): se lleva la misma parte que el nocturno, con un tope
+ * más alto (por cada rango, uno más). Antes no tenía tope: con 19.000 en caja, 1.500 de golpe.
+ */
+export const DAY_THIEF_TOP = 60;
 /** Oro mínimo para que un ladrón se moleste en entrar. */
 export const NIGHT_THIEF_MIN = 30;
 /** Desde qué día viene (no antes del primer pago: aún se está aprendiendo a jugar). */
