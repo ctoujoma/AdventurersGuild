@@ -499,17 +499,16 @@ export const BANDIT_HP_FROM = 10;
 export const BANDIT_HP_PER = 40;
 export const banditHpK = (strength: number) =>
   1 + Math.max(0, strength - BANDIT_HP_FROM) / BANDIT_HP_PER;
-/** Lo que pegan todos los bandidos (por igual, desde el principio) y cuánto pesa su vida extra. */
-export const BANDIT_HIT_K = 0.65;
-export const BANDIT_HIT_EXP = 0.4;
 /**
- * Daño de cada golpe de un bandido: la fuerza de la banda, repartida entre los primeros, menos
- * una parte de su vida extra. Así cada golpe sube un poco con la partida (de ~6 a ~7) y la banda
- * fuerte pega fuerte, pero el asalto dura más.
+ * Daño de cada golpe de un bandido (usuario, 28 de noviembre): casi fijo, `BANDIT_HIT` al
+ * principio y un pelo más con la fuerza de la banda (como mucho `BANDIT_HIT_MAX`). Una banda fuerte
+ * es peligrosa porque son más y aguantan más, no porque cada golpe sea enorme: el asalto dura y da
+ * tiempo a hacer algo.
  */
-export const banditHit = (strength: number, n: number) =>
-  ((strength / Math.min(n, BANDIT_SPLIT)) * BANDIT_POWER * BANDIT_HIT_K) /
-  banditHpK(strength) ** BANDIT_HIT_EXP;
+export const BANDIT_HIT = 7;
+export const BANDIT_HIT_MAX = 8;
+export const banditHit = (strength: number) =>
+  Math.min(BANDIT_HIT_MAX, BANDIT_HIT * (1 + Math.max(0, strength - BANDIT_HP_FROM) / 300));
 /** Daño de cada golpe de un bandido por punto de fuerza de la banda (repartida), y su ritmo. */
 export const BANDIT_POWER = 1.9;
 export const BANDIT_EVERY = 1.4;
