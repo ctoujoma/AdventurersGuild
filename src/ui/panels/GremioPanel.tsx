@@ -18,6 +18,7 @@ interface Props {
   focus: keyof Facilities | null;
   onUpgrade: (k: keyof Facilities) => void;
   onLibro: () => void;
+  onBestiario: () => void;
   onTaberna: () => void;
   /** Vista de salas: la lista de obras sustituye a la de mejoras (el patio sigue igual). */
   obras?: ComponentChildren;
@@ -41,6 +42,7 @@ export function GremioPanel({
   focus,
   onUpgrade,
   onLibro,
+  onBestiario,
   onTaberna,
   obras,
   obrasFirst,
@@ -264,6 +266,7 @@ export function GremioPanel({
           adornosLocked,
         )}
         {tile('libro', t('paneles.gremio.libro'), onLibro)}
+        {tile('espadas', t('bestiario.titulo'), onBestiario)}
       </div>
     </>
   );

@@ -1,0 +1,18 @@
+# El bestiario (ui/panels/BestiaryPanel.tsx): cada enemigo vencido, como un cuaderno de cazador.
+titulo: "Bestiario"
+intro: "Lo que el gremio ha vencido: {n} de {total}. Lo que aún no, sale en sombra con una pista de dónde buscarlo."
+seccion:
+  jefes: "Jefes de las historias"
+  bosque: "Expediciones: el bosque"
+  sierra: "Expediciones: la sierra"
+  marismas: "Expediciones: las marismas"
+  ruinas: "Expediciones: las ruinas"
+  bandas: "Bandas que asaltan la taberna"
+desconocido: "???"
+vencido: "{n, plural, one {Vencido una vez} other {Vencido # veces}} · la primera, el día {dia}"
+veces: "×{n}"
+pista:
+  jefe: "Al final de la historia «{historia}», en {lugar}."
+  exp: "En las expediciones a {rumbo}."
+  guardian: "El guardián de {rumbo}: sale raro, muy lejos de casa."
+  banda: "Asaltan la taberna de noche, cuando el gremio da que hablar."

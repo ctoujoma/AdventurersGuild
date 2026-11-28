@@ -478,6 +478,16 @@ export const GUARD_HP = 1.5;
 /** Vida de los trabajadores y de cada bandido. */
 export const WORKER_HP = 20;
 export const BANDIT_HP = 38;
+/**
+ * La vida de los bandidos crece con la fuerza de la banda (usuario, 28 de noviembre): por encima
+ * de `BANDIT_HP_FROM`, una parte más por cada `BANDIT_HP_PER` de fuerza. Para no pasarse (no
+ * siempre están todos para defender), sus golpes se reparten esa subida (`banditHpK`): el asalto
+ * dura más y aguanta a héroes fuertes sin ganarse menos.
+ */
+export const BANDIT_HP_FROM = 10;
+export const BANDIT_HP_PER = 40;
+export const banditHpK = (strength: number) =>
+  1 + Math.max(0, strength - BANDIT_HP_FROM) / BANDIT_HP_PER;
 /** Daño de cada golpe de un bandido por punto de fuerza de la banda (repartida), y su ritmo. */
 export const BANDIT_POWER = 1.9;
 export const BANDIT_EVERY = 1.4;
