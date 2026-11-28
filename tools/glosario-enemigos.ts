@@ -1,9 +1,17 @@
+// Todo enemigo o jefe nuevo va aquí, en su sección (rumbo, guardianes, jefes de encargos, tira o
+// reserva), y se regenera la página y el artefacto «Bestiario del Jarro».
 // El glosario de enemigos (`docs/glosario-enemigos.html`): todos los enemigos y jefes que hay, con
 // sus animaciones sacadas del arte del juego y dónde salen. Se regenera al cambiar un enemigo:
 // `node tools/textos/esbuild.mjs tools/glosario-enemigos.ts glosario docs/glosario-enemigos.html`.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { png } from './visor-png';
-import { ahogadoGrandeArt, deathOf, expFoeArt, expGuardianArt } from '../src/art/expFoes';
+import {
+  ahogadoGrandeArt,
+  cenizaArt,
+  deathOf,
+  expFoeArt,
+  expGuardianArt,
+} from '../src/art/expFoes';
 import { CALCOS } from '../src/art/expCalcos';
 import { bossArtFor } from '../src/art/bossCalco';
 import { foeArt, type FoeArt } from '../src/art/foes';
@@ -334,6 +342,25 @@ const MORE: Record<string, string[]> = {
   ],
 };
 
+/**
+ * Otros guardianes de un rumbo (los que no da `expGuardianArt(h)`). El Jabalí Quemado: segundo
+ * guardián del bosque, más adelante (agente de expediciones, `expGuardianArt('bosque', 1)`).
+ */
+const MORE_GUARDIANS: Partial<
+  Record<Heading, { name: string; art: () => FoeArt; where: string[] }[]>
+> = {
+  bosque: [
+    {
+      name: 'El Jabalí Quemado',
+      art: cenizaArt,
+      where: [
+        'Expediciones: segundo guardián del bosque, más adelante (el dibujo del jabalí de ceniza)',
+        'Encargos: el jabalí de ceniza (jefe de la historia «Ceniza»)',
+      ],
+    },
+  ],
+};
+
 const exp: { heading: string; foes: Entry[] }[] = HEADINGS.map((h) => {
   const names = tl<string[]>(`expediciones.enemigos.${h}`);
   const foes: Entry[] = names.map((n, i) => {
@@ -356,6 +383,8 @@ const exp: { heading: string; foes: Entry[] }[] = HEADINGS.map((h) => {
       where: [`Expediciones: guardián de ${rumbo(h)} (raro, espera a la vista)`],
       anims: foeAnims(g),
     });
+  for (const x of MORE_GUARDIANS[h] ?? [])
+    foes.push({ name: x.name, calco: true, where: x.where, anims: foeAnims(x.art()) });
   return { heading: rumbo(h), foes };
 });
 
