@@ -83,6 +83,13 @@ gremio:
   la_semana_pasada_no: "Last week you didn't pay. One more and it's over."
   mas_los_salarios_por: "Plus wages: {salaries} per week."
   deuda_con_merlo: "Debt to Merlo"
+  adelanto:
+    boton: "Pay it all now ({n} gold)"
+    seguro: "Sure? Tap again to pay {n}"
+    ayuda: "Settle the debt today and the guild is yours: free mode starts without waiting for day 28. From then on, wages every 7 days."
+    no_hay: "No debt left."
+    tutorial: "Finish Merlo's notebook first."
+    falta: "You need {n} more gold to pay it all."
   dia: "day {dia} · {cantidad}"
   tregua_hasta_el_dia: "Truce until day {truce}"
   defensa_10: "Defence {def}/10"
@@ -298,6 +305,9 @@ room:
   con_de_mano_entre: "With {nurse_work} hands between them (a nurse, or workers and heroes lending a hand), each wounded heals one more day per night. They do better in a better infirmary."
   heroes_heridos_ahora_mismo: "Heroes wounded right now."
   enf:
+    pociones: "{n, plural, one {# potion} other {# potions}}"
+    pociones_ayuda: "From the alchemy lab. Tap a wounded hero in the list to give one."
+    pocion: "Potion ({n} left)"
     catres: "{n}/{de} cots"
     cura_ayuda: "How fast whoever is in a cot heals, hour by hour: ×{cama} is like their own bed (and so with nobody working); with staff, the level's {nivel} plus one, in proportion to the staffing. A 3-day wound takes 3 days in bed, and at ×3, one."
     mano: "Staff {pct} %"
@@ -479,6 +489,7 @@ workshopinfo:
   creando: "Making: {objeto}"
   alguien: "someone"
 questsheet:
+  nv: "lv {nivel}"
   la_guardia_se_queda: "{quienes} {n, plural, one {leaves} other {leave}} guard duty: the {puesto, select, puerta {door} other {vault}} is left {quedan, plural, =0 {with nobody} other {with #}} until they return."
   a_les_estan_cosiendo: "{sew_names} are being fitted: the tailor's will wait for them to return."
   a_le_estan_cosiendo: "{sew_names} is being fitted: the tailor's will wait for them to return."

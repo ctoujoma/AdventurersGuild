@@ -14,7 +14,9 @@ import { LifeBar } from '../LifeBar';
 import { absentText } from '../absent';
 import { restText } from '../../data/labels';
 import { useState } from 'preact/hooks';
-import { roomMax } from '../../core/balance';
+import { EXP_POTION_HP, roomMax } from '../../core/balance';
+import { canDrink } from '../../core/expedition';
+import { PotionIcon } from '../PotionIcon';
 import { appeal, neighborsOf, seatsOf, visitorList, visitorsOf } from '../../core/salon';
 import { canWork, roster, type Action } from '../../core/game';
 import type { DecorId, TintId } from '../../data/custom';
@@ -356,6 +358,11 @@ function InfirmaryInfo({
           <Icon name="martillo" size={12} />{' '}
           {t('paneles.room.enf.mano', { pct: Math.round(staff * 100) })}
         </Fact>
+        {(game.potions ?? 0) > 0 && here.length > 0 && (
+          <Fact info={t('paneles.room.enf.pociones_ayuda')}>
+            <PotionIcon /> {t('paneles.room.enf.pociones', { n: game.potions ?? 0 })}
+          </Fact>
+        )}
       </div>
       {staff === 0 && (
         <span class="row-sub room-bad">
@@ -420,6 +427,16 @@ function InfirmaryInfo({
           >
             {t('paneles.room.enf.alta')}
           </button>
+          {canDrink(game, chosen.id) && (
+            <button
+              class="btn btn-wood"
+              {...help(t('ficha.herocard.pocion_ayuda', { pct: Math.round(EXP_POTION_HP * 100) }))}
+              onClick={() => onAct({ type: 'drink', heroId: chosen.id })}
+            >
+              <PotionIcon />
+              {t('paneles.room.enf.pocion', { n: game.potions ?? 0 })}
+            </button>
+          )}
           {onOpen && (
             <button class="btn btn-wood" onClick={() => onOpen(chosen.id)}>
               {t('paneles.dormlist.ficha')}

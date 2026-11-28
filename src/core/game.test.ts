@@ -12,6 +12,7 @@ import {
 import { describe, expect, it } from 'vitest';
 import { DEBT, SCHEDULE, capacity } from './balance';
 import {
+  canPayDebt,
   canSend,
   endDay,
   newGame,
@@ -292,6 +293,30 @@ describe('avance de día', () => {
     expect(s.opening?.seen).toBe(true);
     // Y la partida sigue: los salarios se pagan cada semana.
     for (let i = 0; i < 10; i++) s = endDay({ ...s, gold: s.gold + 500 });
+    expect(s.over).toBeNull();
+  });
+
+  it('pagar a Merlo por adelantado abre ya el modo libre', () => {
+    let s = { ...newGame('adelanto'), gold: 5000 };
+    while (s.day < 10) s = endDay({ ...s, gold: 5000 });
+    s = { ...s, tutorial: undefined, gold: 300 };
+    // Sin el oro de lo que queda, no.
+    expect(canPayDebt(s)).toMatch(/faltan/);
+    expect(reduce(s, { type: 'payDebt' })).toBe(s);
+    s = { ...s, gold: 2000 };
+    const left = DEBT - s.paid;
+    expect(left).toBeGreaterThan(0);
+    s = reduce(s, { type: 'payDebt' });
+    expect(s.mode).toBe('libre');
+    expect(s.paid).toBe(DEBT);
+    expect(s.gold).toBe(2000 - left);
+    expect(s.payday).toMatchObject({ day: s.day, debt: left, wages: 0 });
+    expect(s.opening?.seen).toBe(false);
+    // Ya no hay cuotas: el día 14 solo se pagan salarios.
+    expect(canPayDebt(s)).not.toBeNull();
+    while (s.day < 14) s = endDay({ ...s, gold: s.gold + 500 });
+    expect(s.paid).toBe(DEBT);
+    expect(s.payday?.debt ?? 0).toBe(0);
     expect(s.over).toBeNull();
   });
 

@@ -87,6 +87,13 @@ gremio:
   la_semana_pasada_no: "La semana pasada no pagaste. Otra más y se acabó."
   mas_los_salarios_por: "Más los salarios: {salaries} por semana."
   deuda_con_merlo: "Deuda con Merlo"
+  adelanto:
+    boton: "Pagarlo todo ya ({n} de oro)"
+    seguro: "¿Seguro? Toca otra vez para pagar {n}"
+    ayuda: "Saldas la deuda hoy y el gremio es tuyo: empieza el modo libre sin esperar al día 28. Los salarios, desde entonces, cada 7 días."
+    no_hay: "No queda deuda."
+    tutorial: "Acaba antes el cuaderno de Merlo."
+    falta: "Te faltan {n} de oro para pagarlo todo."
   dia: "día {dia} · {cantidad}"
   tregua_hasta_el_dia: "Tregua hasta el día {truce}"
   defensa_10: "Defensa {def}/10"
@@ -303,6 +310,9 @@ room:
   heroes_heridos_ahora_mismo: "Héroes heridos ahora mismo."
   # Enfermería: catres (el ancho), lo que cura (el nivel, con quien trabaje) y la mano.
   enf:
+    pociones: "{n, plural, one {# poción} other {# pociones}}"
+    pociones_ayuda: "Las de la alquimia. Toca a un herido de la lista para darle una."
+    pocion: "Poción (quedan {n})"
     catres: "{n}/{de} catres"
     cura_ayuda: "Lo deprisa que se cura quien está en un catre, hora a hora: ×{cama} es como en su cama (sin nadie trabajando, igual); con mano, lo del nivel {nivel} y uno más, en proporción a la mano que hay. Un herido de 3 días tarda 3 días en su cama, y a ×3, uno."
     mano: "Mano {pct} %"
@@ -484,6 +494,7 @@ workshopinfo:
   creando: "Creando: {objeto}"
   alguien: "alguien"
 questsheet:
+  nv: "nv {nivel}"
   la_guardia_se_queda: "{quienes} {n, plural, one {deja} other {dejan}} la guardia: {puesto, select, puerta {la puerta} other {la cámara}} se queda {quedan, plural, =0 {sin nadie} other {con #}} hasta que {n, plural, one {vuelva} other {vuelvan}}."
   a_les_estan_cosiendo: "A {sew_names} les están cosiendo: la sastrería esperará a que vuelvan."
   a_le_estan_cosiendo: "A {sew_names} le están cosiendo: la sastrería esperará a que vuelva."

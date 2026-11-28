@@ -1,7 +1,14 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { DEBT, SCHEDULE, facilityMax } from '../../core/balance';
-import { canUpgrade, nextPayment, salaries, upgradeCost } from '../../core/game';
+import {
+  canPayDebt,
+  canUpgrade,
+  debtLeft,
+  nextPayment,
+  salaries,
+  upgradeCost,
+} from '../../core/game';
 import { defense, notoriety } from '../../core/raids';
 import type { Facilities, GameState } from '../../core/model';
 import { FACILITY_INFO } from '../../data/labels';
@@ -20,6 +27,8 @@ interface Props {
   onLibro: () => void;
   onBestiario: () => void;
   onTaberna: () => void;
+  /** Pagar a Merlo lo que queda de una vez (abre el modo libre). */
+  onPayDebt?: () => void;
   /** Vista de salas: la lista de obras sustituye a la de mejoras (el patio sigue igual). */
   obras?: ComponentChildren;
   /** Abrir directamente en las salas (mientras se planea una reforma). */
@@ -44,12 +53,15 @@ export function GremioPanel({
   onLibro,
   onBestiario,
   onTaberna,
+  onPayDebt,
   obras,
   obrasFirst,
   adornosLocked,
   onLocked,
 }: Props) {
   const [salas, setSalas] = useState(!!focus || !!obrasFirst);
+  /** Pagar todo a Merlo: el primer toque pide confirmar. */
+  const [sure, setSure] = useState(false);
   useEffect(() => {
     if (focus) setSalas(true);
   }, [focus]);
@@ -203,6 +215,20 @@ export function GremioPanel({
               );
             })}
           </div>
+          {onPayDebt && !canPayDebt(game) && (
+            // Dos toques: el primero pregunta (es mucho oro y no tiene vuelta atrás).
+            <button
+              class={`btn ${sure ? 'btn-gold' : 'btn-wood'} debt-pay`}
+              {...help(t('paneles.gremio.adelanto.ayuda'))}
+              onClick={() => (sure ? onPayDebt() : setSure(true))}
+              onBlur={() => setSure(false)}
+            >
+              <Icon name="coin" size={12} />{' '}
+              {t(sure ? 'paneles.gremio.adelanto.seguro' : 'paneles.gremio.adelanto.boton', {
+                n: debtLeft(game),
+              })}
+            </button>
+          )}
         </div>
       )}
 

@@ -1,5 +1,6 @@
 import { tierOf } from '../art/tiers';
-import { HP_GRAVE, HP_LIGHT } from '../core/balance';
+import { EXP_POTION_HP, HP_GRAVE, HP_LIGHT } from '../core/balance';
+import { canDrink } from '../core/expedition';
 import { healthOf, hpOf, workFactor } from '../core/health';
 import { restHours } from '../core/infirmary';
 import { restText } from '../data/labels';
@@ -30,6 +31,7 @@ import { TaskSelect } from './panels/CrewList';
 import { Tabs } from './Tabs';
 import { ItemGrid } from './ItemGrid';
 import { Portrait } from './Portrait';
+import { PotionIcon } from './PotionIcon';
 import { heroFrame, lookOf, marksOf, memberOf } from './view';
 import { GARMENTS, TINTS, TINT_IDS, type Dress, type GarmentId, type TintId } from '../data/custom';
 import { SLOTS, SLOT_NAMES, gearList, shownItem, slotOf, type Slot } from '../core/gear';
@@ -60,6 +62,8 @@ interface Props {
   onFollow?: (on: boolean) => void;
   /** Cambiarle el nombre (solo a los de casa). */
   onRename?: (name: string) => void;
+  /** Darle una poción de la alquimia (en casa, si le falta vida). */
+  onDrink?: () => void;
 }
 
 /**
@@ -403,6 +407,7 @@ export function HeroCard({
   onDress,
   onFollow,
   onRename,
+  onDrink,
 }: Props) {
   const [open, setOpen] = useState<Open>(null);
   /** La ropa que se está mirando en «Ropa y colores» (el retrato la enseña). */
@@ -596,6 +601,18 @@ export function HeroCard({
                     </span>
                     <small>{h.morale}</small>
                   </div>
+                  {onDrink && canDrink(game, h.id) && (
+                    <button
+                      class="btn btn-wood hero-drink"
+                      {...help(
+                        t('ficha.herocard.pocion_ayuda', { pct: Math.round(EXP_POTION_HP * 100) }),
+                      )}
+                      onClick={onDrink}
+                    >
+                      <PotionIcon />
+                      {t('ficha.herocard.pocion', { n: game.potions ?? 0 })}
+                    </button>
+                  )}
                 </div>
               )}
             </div>

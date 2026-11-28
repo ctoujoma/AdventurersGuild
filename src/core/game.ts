@@ -302,6 +302,8 @@ export type Action =
   | { type: 'answer'; id: string; yes: boolean }
   /** Pagar después el caché que se le negó. */
   | { type: 'payOwed'; id: string }
+  /** Pagar a Merlo lo que queda de la deuda (abre el modo libre). */
+  | { type: 'payDebt' }
   | { type: 'equip'; heroId: string; itemId: string }
   | { type: 'unequip'; heroId: string; slot?: Slot }
   | { type: 'sellTrophy'; id: string }
@@ -826,6 +828,21 @@ function reduceAction(state: GameState, action: Action): GameState {
         };
         x.history.push(msg('partida.historial.negado', { dia: s.day, cache }));
       }
+      return s;
+    }
+    case 'payDebt': {
+      if (canPayDebt(state)) return state;
+      const s = structuredClone(state);
+      const left = debtLeft(s);
+      s.gold -= left;
+      s.paid += left;
+      // El cobro de Merlo, como un día de pago (sin salarios: esos van cada 7 días).
+      s.payday = { day: s.day, debt: left, wages: 0 };
+      const rng = new Rng(s.rng);
+      const news: DawnEvent[] = [];
+      freeGuild(s, rng, news, roster(s).length);
+      s.rng = rng.save();
+      s.incidentNews = news.map((n) => ({ t: n.t, k: n.k ?? 'good' }));
       return s;
     }
     case 'payOwed': {
@@ -1612,6 +1629,41 @@ export function tiredLine(hs: readonly Pick<Hero, 'name' | 'sex'>[]): string {
   });
 }
 
+/** La deuda saldada: el gremio es tuyo y empieza el modo libre (al último pago o por adelantado). */
+function freeGuild(s: GameState, rng: Rng, events: DawnEvent[], alive: number): void {
+  s.mode = 'libre';
+  s.opening = { ...arrival(s, alive), seen: false };
+  // Tras la carta de la apertura, el cuaderno enseña a hacer obra (`core/tutorialObras.ts`).
+  startObras(s);
+  // Con las obras llega también gente a pedir trabajo (y el dormitorio del servicio).
+  for (let i = 0; i < 2; i++) addSeeker(s, rng, events);
+  events.push({
+    t: msg('partida.pago.libre', {
+      taberna: customOf(s).name,
+      rango: rankMsg(rankIndex(s.rep)),
+      n: alive,
+      oro: s.gold,
+    }),
+    k: 'good',
+    big: true,
+  });
+}
+
+/** Lo que queda de la deuda con Merlo (0 en el modo libre). */
+export const debtLeft = (s: GameState) => (s.mode === 'libre' ? 0 : Math.max(0, DEBT - s.paid));
+
+/**
+ * Pagar a Merlo todo lo que queda de una vez (usuario, 28 de noviembre): si se tiene el oro, el
+ * gremio es tuyo ya, sin esperar al día 28. Null si se puede; si no, el porqué.
+ */
+export function canPayDebt(s: GameState): string | null {
+  const left = debtLeft(s);
+  if (!left || s.over) return t('paneles.gremio.adelanto.no_hay');
+  if (tutorialOn(s)) return t('paneles.gremio.adelanto.tutorial');
+  if (s.gold < left) return t('paneles.gremio.adelanto.falta', { n: left - s.gold });
+  return null;
+}
+
 export function endDay(state: GameState, away = false): GameState {
   if (state.over) return state;
   const s = structuredClone(state);
@@ -1985,8 +2037,8 @@ export function endDay(state: GameState, away = false): GameState {
   // Cadenas de misiones: carta del siguiente cliente cuando toca.
   offerChain(s, rng, events);
 
-  // Día de pago.
-  const pay = SCHEDULE.find((p) => p.day === s.day);
+  // Día de pago (si la deuda se pagó antes, ya no hay cuotas).
+  const pay = s.mode !== 'libre' ? SCHEDULE.find((p) => p.day === s.day) : undefined;
   if (pay) {
     const wages = salaries(s);
     const total = wages + pay.amount;
@@ -2043,24 +2095,8 @@ export function endDay(state: GameState, away = false): GameState {
   // y empieza la aventura; si se acaba el plazo sin pagarla, se pierde.
   if (!s.over && s.mode !== 'libre' && (s.paid >= DEBT || s.day > DAYS)) {
     const alive = roster(s).length;
-    if (s.paid >= DEBT) {
-      s.mode = 'libre';
-      s.opening = { ...arrival(s, alive), seen: false };
-      // Tras la carta de la apertura, el cuaderno enseña a hacer obra (`core/tutorialObras.ts`).
-      startObras(s);
-      // Con las obras llega también gente a pedir trabajo (y el dormitorio del servicio).
-      for (let i = 0; i < 2; i++) addSeeker(s, rng, events);
-      events.push({
-        t: msg('partida.pago.libre', {
-          taberna: customOf(s).name,
-          rango: rankMsg(rankIndex(s.rep)),
-          n: alive,
-          oro: s.gold,
-        }),
-        k: 'good',
-        big: true,
-      });
-    } else s.over = { kind: 'derrota', text: msg('partida.pago.plazo'), score: 0 };
+    if (s.paid >= DEBT) freeGuild(s, rng, events, alive);
+    else s.over = { kind: 'derrota', text: msg('partida.pago.plazo'), score: 0 };
   }
 
   if (!s.over) {
