@@ -679,6 +679,8 @@ export function expFoeArt(heading: Heading, idx: number): ExpFoe {
 export function expGuardianArt(heading: Heading, n = 0): FoeArt {
   // El segundo guardián del bosque: el Viejo Jabalí (`viejoJabaliArt`).
   if (n && heading === 'bosque') return viejoJabaliArt();
+  // El segundo de las marismas: el Rey Ahogado (con sus ahogados; ver `data/rivales.ts`).
+  if (n && heading === 'marismas') return reyArt();
   const key = `guardian:${heading}`;
   let f = cache.get(key);
   if (!f) {

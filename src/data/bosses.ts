@@ -1,4 +1,5 @@
 import { t } from '../textos';
+import type { MinionKind } from './rivales';
 /**
  * Los jefes que cierran algunas historias. La pelea se puede ver: el núcleo decide el
  * resultado y la escena lo cuenta (src/world/battle.ts y src/art/bosses.ts).
@@ -14,6 +15,8 @@ export interface BossDef {
   short: string;
   /** Esbirros que pelean a su lado. */
   minions: number;
+  /** Qué criatura son sus esbirros (los que tienen sentido con él: el Rey, ahogados). */
+  minion: MinionKind;
   /** Frase al ganar y al perder, para el final de la pelea. */
   win: string;
   lose: string;
@@ -29,6 +32,7 @@ export const BOSSES: Record<BossKind, BossDef> = {
     name: t('jefes.jefes.bestia.nombre'),
     short: t('jefes.jefes.bestia.corto'),
     minions: 0,
+    minion: 'lobo',
     win: t('jefes.jefes.bestia.gana'),
     lose: t('jefes.jefes.bestia.pierde'),
   },
@@ -36,6 +40,7 @@ export const BOSSES: Record<BossKind, BossDef> = {
     name: t('jefes.jefes.ahogado.nombre'),
     short: t('jefes.jefes.ahogado.corto'),
     minions: 2,
+    minion: 'ahogado',
     win: t('jefes.jefes.ahogado.gana'),
     lose: t('jefes.jefes.ahogado.pierde'),
   },
@@ -43,6 +48,7 @@ export const BOSSES: Record<BossKind, BossDef> = {
     name: t('jefes.jefes.sierpe.nombre'),
     short: t('jefes.jefes.sierpe.corto'),
     minions: 0,
+    minion: 'lobo_gris',
     win: t('jefes.jefes.sierpe.gana'),
     lose: t('jefes.jefes.sierpe.pierde'),
   },
@@ -50,6 +56,7 @@ export const BOSSES: Record<BossKind, BossDef> = {
     name: t('jefes.jefes.jabali.nombre'),
     short: t('jefes.jefes.jabali.corto'),
     minions: 0,
+    minion: 'jabato',
     win: t('jefes.jefes.jabali.gana'),
     lose: t('jefes.jefes.jabali.pierde'),
     base: 'bestia',
@@ -58,6 +65,7 @@ export const BOSSES: Record<BossKind, BossDef> = {
     name: t('jefes.jefes.reina.nombre'),
     short: t('jefes.jefes.reina.corto'),
     minions: 3,
+    minion: 'esqueleto',
     win: t('jefes.jefes.reina.gana'),
     lose: t('jefes.jefes.reina.pierde'),
     base: 'ahogado',
@@ -66,6 +74,7 @@ export const BOSSES: Record<BossKind, BossDef> = {
     name: t('jefes.jefes.dragona.nombre'),
     short: t('jefes.jefes.dragona.corto'),
     minions: 0,
+    minion: 'esqueleto',
     win: t('jefes.jefes.dragona.gana'),
     lose: t('jefes.jefes.dragona.pierde'),
     base: 'sierpe',

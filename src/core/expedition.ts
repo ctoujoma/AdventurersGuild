@@ -77,10 +77,10 @@ import {
   type ExpEvent,
   type ExpOption,
 } from '../data/expEvents';
-import type { BossKind } from '../data/bosses';
 import { GEAR } from '../data/items';
 import type { Terrain } from '../data/places';
 import { heroUnit, packUnits, runCombat, setupCombat, type CombatSetup } from './combat';
+import { expRival, hasGuardian2, minionsAt } from '../data/rivales';
 import { fightRoster } from './chains';
 import { generateHero } from './generate';
 import { expeditionsOpen, gainMats, matsMsg, type Material, type Mats } from './materials';
@@ -559,7 +559,7 @@ function stepHour(s: GameState, e: Expedition, news: DawnEvent[]): void {
     e.guardian &&
     !e.guardian2 &&
     !e.turn &&
-    GUARDIAN2[e.heading] &&
+    hasGuardian2(e.heading) &&
     dist >= EXP_GUARDIAN2_FROM &&
     rng.chance(EXP_GUARDIAN * (dist - 3))
   ) {
@@ -668,13 +668,6 @@ function fight(s: GameState, e: Expedition, rng: Rng, dist: number, news: DawnEv
   battle(s, e, rng, dist, foe);
 }
 
-/** Los enemigos de un rumbo, como jefes del motor de peleas (su dibujo y sus golpes). */
-const FOE_BOSS: Record<Heading, readonly BossKind[]> = {
-  bosque: ['bestia', 'jabali', 'bestia', 'bestia'],
-  sierra: ['bestia', 'bestia', 'bestia', 'jabali'],
-  marismas: ['sierpe', 'ahogado', 'bestia', 'sierpe'],
-  ruinas: ['ahogado', 'bestia', 'bestia', 'jabali'],
-};
 /**
  * Cuántos son los enemigos de cada rumbo (los mismos que dibuja el visor, `expFoeArt(rumbo, i)
  * .count`; lo comprueba una prueba del arte): en la pelea, una unidad por cada uno. Los guardianes,
@@ -686,18 +679,6 @@ export const EXP_FOE_COUNT: Record<Heading, readonly number[]> = {
   marismas: [3, 1, 3, 1],
   ruinas: [3, 3, 3, 1],
 };
-const GUARDIAN_BOSS: Record<Heading, BossKind> = {
-  bosque: 'jabali',
-  sierra: 'sierpe',
-  marismas: 'reina',
-  ruinas: 'dragona',
-};
-/**
- * El segundo guardián (usuario, 27 de noviembre): más adelante, pasado el primero, en los rumbos
- * que lo tienen (el bosque: el Viejo Jabalí). En los sucesos y las peleas, `foe` 1.
- */
-const GUARDIAN2: Partial<Record<Heading, BossKind>> = { bosque: 'jabali' };
-
 /** El nombre del guardián (`n` 1, el segundo). */
 const guardName = (e: Expedition, n = 0): Txt =>
   msg(n ? `expediciones.guardianes.${e.heading}_2` : `expediciones.guardianes.${e.heading}`);
@@ -720,15 +701,15 @@ export function battleSetup(
   // Cada pelea, su enemigo: más o menos fuerte (`roll`, de 0 a 1), para que no esté decidida.
   const luck = 1 - EXP_FOE_SPREAD + 2 * EXP_FOE_SPREAD * roll;
   const diff = Math.max(1, n * (fightDiff(dist) * mult - EXP_GROUP * (n - 1))) * EXP_FOE * luck;
-  const boss =
-    (guardian
-      ? ((foe ? GUARDIAN2[e.heading] : undefined) ?? GUARDIAN_BOSS[e.heading])
-      : FOE_BOSS[e.heading][foe]) ?? 'bestia';
+  // Qué criatura es (sus golpes) y sus esbirros, que se ven y pelean: los guardianes y los
+  // enemigos grandes, desde lejos (`minionsAt`); el Rey Ahogado, siempre con los suyos.
+  const rival = expRival(e.heading, foe, guardian ? foe : null);
+  const count = guardian ? 1 : (EXP_FOE_COUNT[e.heading][foe] ?? 1);
   const setup = setupCombat(
     `${e.seed}-pelea-${e.hours}-${foe}`,
-    boss,
+    rival.engine,
     units,
-    packUnits(boss, diff, guardian ? 1 : (EXP_FOE_COUNT[e.heading][foe] ?? 1)),
+    packUnits(rival.engine, diff, count, minionsAt(rival, dist)),
   );
   // Cada uno entra con la vida que le queda (la que se guarda).
   for (const u of setup.units) {
