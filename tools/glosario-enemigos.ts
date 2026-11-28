@@ -74,7 +74,7 @@ interface Actor {
 }
 
 function foeActor(f: FoeArt): Actor {
-  const ram = f.what === 'jabali' || f.what === 'ceniza';
+  const ram = f.what === 'jabali' || f.what === 'ceniza' || f.what === 'viejo_jabali';
   return {
     frame: (pose, u, t) => ({ img: foeFrame(f, pose, u, t), foot: f.foot }),
     all: [...Object.values(f.poses), ...Object.values(f.seq ?? {}).flat()],
