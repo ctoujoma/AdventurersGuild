@@ -500,11 +500,11 @@ export const BANDIT_HP_PER = 40;
 export const banditHpK = (strength: number) =>
   1 + Math.max(0, strength - BANDIT_HP_FROM) / BANDIT_HP_PER;
 /** Lo que pegan todos los bandidos (por igual, desde el principio) y cuánto pesa su vida extra. */
-export const BANDIT_HIT_K = 0.75;
+export const BANDIT_HIT_K = 0.65;
 export const BANDIT_HIT_EXP = 0.4;
 /**
  * Daño de cada golpe de un bandido: la fuerza de la banda, repartida entre los primeros, menos
- * una parte de su vida extra. Así cada golpe sube un poco con la partida (de ~7 a ~8) y la banda
+ * una parte de su vida extra. Así cada golpe sube un poco con la partida (de ~6 a ~7) y la banda
  * fuerte pega fuerte, pero el asalto dura más.
  */
 export const banditHit = (strength: number, n: number) =>
