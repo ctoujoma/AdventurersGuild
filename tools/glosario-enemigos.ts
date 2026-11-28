@@ -1,3 +1,5 @@
+// Todo enemigo o jefe nuevo va aquí, en su sección (rumbo, guardianes, jefes de encargos, tira o
+// reserva), y se regenera la página y el artefacto «Bestiario del Jarro».
 // El glosario de enemigos (`docs/glosario-enemigos.html`): todos los enemigos y jefes que hay, con
 // sus animaciones sacadas del arte del juego y dónde salen. Se regenera al cambiar un enemigo:
 // `node tools/textos/esbuild.mjs tools/glosario-enemigos.ts glosario docs/glosario-enemigos.html`.
@@ -74,7 +76,7 @@ interface Actor {
 }
 
 function foeActor(f: FoeArt): Actor {
-  const ram = f.what === 'jabali' || f.what === 'ceniza';
+  const ram = f.what === 'jabali' || f.what === 'ceniza' || f.what === 'viejo_jabali';
   return {
     frame: (pose, u, t) => ({ img: foeFrame(f, pose, u, t), foot: f.foot }),
     all: [...Object.values(f.poses), ...Object.values(f.seq ?? {}).flat()],
@@ -334,6 +336,24 @@ const MORE: Record<string, string[]> = {
   ],
 };
 
+/**
+ * Otros guardianes de un rumbo (los que no da `expGuardianArt(h)`). El Viejo Jabalí: segundo
+ * guardián del bosque (agente de expediciones, `expGuardianArt('bosque', 1)`).
+ */
+const MORE_GUARDIANS: Partial<
+  Record<Heading, { name: string; art: () => FoeArt; where: string[] }[]>
+> = {
+  bosque: [
+    {
+      name: 'El Viejo Jabalí',
+      art: () => expGuardianArt('bosque', 1),
+      where: [
+        'Expediciones: segundo guardián del bosque (el jabalí de ceniza con los tonos del jabalí del bosque)',
+      ],
+    },
+  ],
+};
+
 const exp: { heading: string; foes: Entry[] }[] = HEADINGS.map((h) => {
   const names = tl<string[]>(`expediciones.enemigos.${h}`);
   const foes: Entry[] = names.map((n, i) => {
@@ -356,6 +376,8 @@ const exp: { heading: string; foes: Entry[] }[] = HEADINGS.map((h) => {
       where: [`Expediciones: guardián de ${rumbo(h)} (raro, espera a la vista)`],
       anims: foeAnims(g),
     });
+  for (const x of MORE_GUARDIANS[h] ?? [])
+    foes.push({ name: x.name, calco: true, where: x.where, anims: foeAnims(x.art()) });
   return { heading: rumbo(h), foes };
 });
 

@@ -562,7 +562,10 @@ shader, apagada. Siguiente: [`plan-luz.md`](plan-luz.md) (fase 1: la fachada con
      (usuario): se desarma y queda tendido, o se sienta y se queda así; `FoeArt.downAlt` y `deathOf(art, n)`
      (cada pelea del visor elige una, siempre la misma). En el glosario, «Otra muerte». **Ahogado grande**
      (`ahogadoGrandeArt()`, ~57 px, a la escala de la hoja): sin usar, para un jefe más adelante; en el
-     glosario, en «Reserva».
+     glosario, en «Reserva». **Viejo Jabalí** (segundo guardián del bosque, a petición del agente de
+     expediciones): `viejoJabaliArt()`, el calco del de ceniza con los tonos del jabalí del bosque
+     (`deCeniza`, por orden de luz), sin brasas; embiste como un jabalí (`RAMS` en `gente.ts`) y muere
+     tendido.
      Luego: pasada visual a sierra/marismas/ruinas y transiciones suaves (lluvia y fondo cambian de golpe).
      **Sucesos a la vista (26 nov):** con `e.pending` el visor pinta delante lo que hay (`visor/sucesos.ts`, `MarchNow.event`):
      cofre, santuario, mercader con carro, viajero, campamento abandonado, oso, cueva, torre y ruinas, pintados en
