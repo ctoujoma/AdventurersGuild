@@ -68,8 +68,13 @@ export interface CombatResult {
 export const FOE_TUNE = { hp: 18.4, atk: 0.555, minionHp: 2.26, minionAtk: 0.235 };
 /** Lo que pega de más una manada (ver `packUnits`). */
 export const PACK_ATK = 1.8;
-/** Lo que pega de más, sin esbirros, un jefe que los tenía a montones (ver `packUnits`). */
-export const SOLO_ATK = 1.18;
+/**
+ * Los esbirros de una pelea de expedición (ver `packUnits`): la vida y lo que pega cada uno (parte
+ * de lo del jefe solo) y lo que pierde el jefe por cada uno.
+ */
+export const MINION_HP = 0.2;
+export const MINION_ATK = 0.25;
+export const MINION_CUT = 0.1;
 
 /**
  * El jefe y sus esbirros, según lo que pide el encargo: la dificultad media de sus desafíos
@@ -111,31 +116,49 @@ export function foeUnits(boss: BossKind, diff: number, n: number): Unit[] {
 
 /**
  * Los enemigos de una pelea de expedición, tantos como dibuja el visor (`count`: una manada de
- * tres lobos son tres): sin esbirros que no se ven. Se reparten la vida y la fuerza del enemigo de
- * siempre (`foeUnits(boss, diff, 2)` sin esbirros), y la manada pega algo más (`PACK_ATK`), porque
- * al caer uno deja de pegar: así pide lo mismo que antes (medido: se gana lo mismo). Ver `docs/encargos/expediciones.md`.
+ * tres lobos son tres), cada uno con su vida, su ritmo y su blanco. Se reparten la vida y la
+ * fuerza del enemigo de siempre (`foeUnits(boss, diff, 2)` sin esbirros), y la manada pega algo
+ * más (`PACK_ATK`), porque al caer uno deja de pegar: así pide lo mismo que antes (medido).
+ *
+ * `minions`: los esbirros que se ven a su lado (ids `esbirro-N`, detrás del jefe), más flojos
+ * (`MINION_HP`, `MINION_ATK` de lo que pediría él solo); el jefe pierde `MINION_CUT` por cada uno
+ * para que la pelea pida lo mismo (medido). Ver `docs/encargos/expediciones.md`.
  */
-export function packUnits(boss: BossKind, diff: number, count: number): Unit[] {
+export function packUnits(boss: BossKind, diff: number, count: number, minions = 0): Unit[] {
   const b = BOSSES[boss];
   const n = Math.max(1, Math.round(count));
+  const m = Math.max(0, Math.round(minions));
   const hp = FOE_TUNE.hp * (diff + 3);
-  // (Sin sus esbirros, el de muchos —la Reina, 3— pega algo más; el de 2 queda igual.)
-  const solo = b.minions >= 3 ? SOLO_ATK : 1;
-  const atk = FOE_TUNE.atk * diff * 1.05 * (n > 1 ? PACK_ATK : solo);
-  return Array.from({ length: n }, (_, i) => ({
+  const atk = FOE_TUNE.atk * diff * 1.05;
+  const keep = Math.max(0.2, 1 - MINION_CUT * m);
+  const out: Unit[] = Array.from({ length: n }, (_, i) => ({
     id: i ? `jefe-${i}` : 'jefe',
     side: 'e' as const,
     name: b.name,
     kind: 'jefe' as const,
-    max: Math.max(1, Math.round(hp / n)),
+    max: Math.max(1, Math.round((hp * keep) / n)),
     hp: 0,
-    atk: atk / n,
+    atk: (atk * keep * (n > 1 ? PACK_ATK : 1)) / n,
     def: 2,
     every: 1.8,
     // (Que no peguen todos a la vez.)
     cool: 1.5 + i * 0.35,
     special: 8,
   }));
+  for (let i = 0; i < m; i++)
+    out.push({
+      id: `esbirro-${i}`,
+      side: 'e',
+      name: t('peleas.esbirro'),
+      kind: 'esbirro',
+      max: Math.max(1, Math.round(hp * MINION_HP)),
+      hp: 0,
+      atk: atk * MINION_ATK,
+      def: 1,
+      every: 1.5,
+      cool: 0.8 + i * 0.4,
+    });
+  return out;
 }
 
 /** El jefe de un encargo (el último paso de una historia). */

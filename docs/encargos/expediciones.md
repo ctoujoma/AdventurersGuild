@@ -313,6 +313,23 @@ Con la vida que se guarda (`core/health.ts`, #219), las expediciones ya no cuent
 - El agente de arte hace que «Ver la pelea» y el visor en directo jueguen los golpes de verdad de
   la pelea guardada (`sim.setup`), con botón de velocidad.
 
+## Esbirros que se ven y pelean (usuario, 28 nov)
+
+- **Cada jefe, los suyos** (`data/rivales.ts`): aparte del perfil del motor (`engine`, sus
+  golpes), qué esbirros trae (`minion`). Bosque: el lobo enorme y el Viejo Colmillo, lobos; el
+  Viejo Jabalí, jabatos. Sierra: el gigante, trasgos; la Sierpe Blanca, lobos grises. Marismas: la
+  culebra y la Reina del Juncal, sanguijuelas. Ruinas: el gólem y la Dragona, esqueletos. Los
+  enemigos normales, ninguno.
+- **Cuándo:** los guardianes y los enemigos grandes, desde 6 días de lejanía 1 y desde 9 días 2
+  (`MINIONS_FROM`). El Rey Ahogado, siempre con sus dos ahogados.
+- **El Rey Ahogado, segundo guardián de las marismas** (`expGuardianArt('marismas', 1)`, texto
+  `guardianes.marismas_2` y `sucesos.guardian.texto_2`), en el glosario.
+- **En el motor** (`packUnits`, cuarto argumento): unidades `esbirro-N` aparte, cada una con su
+  vida, su ritmo y su blanco, más flojas (`MINION_HP`, `MINION_ATK`); el jefe pierde `MINION_CUT`
+  (10 %) por cada uno. Medido con 300 peleas: se gana lo mismo con 0, 1 o 2. Fuera `SOLO_ATK`.
+- **Encargos e historias:** `BossDef.minion` (el Rey, ahogados; la Reina de la Cripta,
+  esqueletos…); cuántos, como antes. El dibujo, del agente de arte (visor y `world/battle.ts`).
+
 ## Depende de otros
 
 - **Agente principal:** las pociones como trabajo de la alquimia (ver «Pendiente: las

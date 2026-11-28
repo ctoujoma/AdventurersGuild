@@ -140,6 +140,7 @@ guardianes:
   bosque_2: "the Old Boar"
   sierra: "the White Serpent"
   marismas: "the Reed Queen"
+  marismas_2: "the Drowned King"
   ruinas: "the Ash Dragon"
 pelea:
   nombre: "{enemigos, mayus}"
@@ -358,7 +359,7 @@ sucesos:
   guardian:
     titulo: "the guardian of this heading"
     texto: "{rumbo, select, bosque {The ground shakes: Old Tusk, the huge wolf that guards the deepest forest, blocks their way.} sierra {The snow creaks: the White Serpent, asleep in the drifts, uncoils before them.} marismas {The reeds part: the Reed Queen rises from the black water and blocks their way.} other {A cloud of ash rises: the Ash Dragon wakes among the broken columns.}}"
-    texto_2: "{rumbo, select, bosque {Branches snap and the ground rumbles: the Old Boar, bigger than a cart and with scarred tusks, comes out of the thicket.} other {Something even bigger blocks their way.}}"
+    texto_2: "{rumbo, select, bosque {Branches snap and the ground rumbles: the Old Boar, bigger than a cart and with scarred tusks, comes out of the thicket.} marismas {The black water boils and a bell tolls beneath the reeds: the Drowned King rises with his anchor and his crown, and two drowned men crawl out of the mud beside him.} other {Something even bigger blocks their way.}}"
     pelear:
       nombre: "Fight it live"
       bien: "{heroe} shouts and they charge at the guardian."

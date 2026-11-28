@@ -337,8 +337,8 @@ const MORE: Record<string, string[]> = {
 };
 
 /**
- * Otros guardianes de un rumbo (los que no da `expGuardianArt(h)`). El Viejo Jabalí: segundo
- * guardián del bosque (agente de expediciones, `expGuardianArt('bosque', 1)`).
+ * Otros guardianes de un rumbo (los que no da `expGuardianArt(h)`): el Viejo Jabalí, segundo
+ * guardián del bosque, y el Rey Ahogado, de las marismas (`expGuardianArt(rumbo, 1)`).
  */
 const MORE_GUARDIANS: Partial<
   Record<Heading, { name: string; art: () => FoeArt; where: string[] }[]>
@@ -349,6 +349,16 @@ const MORE_GUARDIANS: Partial<
       art: () => expGuardianArt('bosque', 1),
       where: [
         'Expediciones: segundo guardián del bosque (el jabalí de ceniza con los tonos del jabalí del bosque)',
+      ],
+    },
+  ],
+  marismas: [
+    {
+      name: 'El Rey Ahogado',
+      art: () => expGuardianArt('marismas', 1),
+      where: [
+        'Expediciones: segundo guardián de las marismas, siempre con dos ahogados',
+        'Encargos: jefe de la historia «El Rey Ahogado»',
       ],
     },
   ],
