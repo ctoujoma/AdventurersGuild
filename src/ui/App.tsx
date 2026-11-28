@@ -2202,7 +2202,6 @@ export function App() {
                 scene.current?.cheer('barra');
                 toast(t('pantallas.app.abre_sus_puertas_al', { nombre: customOf(game).name }));
               }}
-              onRetry={restart}
             />
           )}
         {pendingEvent === null && naming && (
