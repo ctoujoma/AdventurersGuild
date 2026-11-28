@@ -47,7 +47,7 @@ rescate:
   chip: "{heroe} vuelve a casa"
   aviso: "¡{grupo} ha rescatado a {heroe}!"
 noche:
-  caja: "{vinieron}{sin_comer, plural, =0 {} one {Faltó comida: # solo bebió. } other {Faltó comida: # solo bebieron. }}La taberna deja {n} monedas{fiesta, select, si {: ¡la fiesta ha llenado el salón!} other {.}}"
+  caja: "{vinieron}{sin_comer, plural, =0 {} one {Faltó comida: # solo bebió. } other {Faltó comida: # solo bebieron. }}{miedo, select, si {Con el miedo de los caminos vino menos gente. } other {}}La taberna deja {n} monedas{propinas, plural, =0 {} other {, # de propinas}}{fiesta, select, si {: ¡la fiesta ha llenado el salón!} other {.}}"
   vinieron: "Vinieron {quien}{faltan, select, si { (se atendió a {atendidos})} other {}}. "
   cuervo: "El cuervo vuelve de otro pueblo: allí ya se habla del gremio (+1 reputación)."
   nobles: "{n, plural, one {Un noble ha cenado} other {Unos nobles han cenado}} en el salón: se hablará del gremio (+1 reputación)."

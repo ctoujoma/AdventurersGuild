@@ -109,7 +109,8 @@ export function TablonPanel({ game, quests, seeAll, onOpen }: Props) {
         ...quests.filter((q) => q.chain),
         ...quests.filter((q) => q.rumor),
         ...quests.filter((q) => q.urgent),
-        ...quests.filter((q) => !q.chain && !q.rumor && !q.urgent),
+        ...quests.filter((q) => q.caravan),
+        ...quests.filter((q) => !q.chain && !q.rumor && !q.urgent && !q.caravan),
       ].map((q, i) => {
         const hidden = q.dangerHidden && !seeAll;
         const chain = q.chain ? chainDef(q.chain.id) : null;
@@ -133,6 +134,7 @@ export function TablonPanel({ game, quests, seeAll, onOpen }: Props) {
                 : questTypeName(q.type),
               q.rumor ? t('paneles.tablon.de_un_rumor_con') : '',
               q.urgent ? t('paneles.tablon.urgente_lo_trajo_un') : '',
+              q.caravan ? t('paneles.tablon.de_la_caravana') : '',
               t('paneles.tablon.pide', { que: q.challenges.map((c) => skillName(c.skill)) }),
               o && 'est' in o
                 ? t('paneles.tablon.con_tu_mejor_grupo', {
@@ -170,6 +172,8 @@ export function TablonPanel({ game, quests, seeAll, onOpen }: Props) {
                 <span class="note-new note-rumor-tag">{t('paneles.tablon.rumor')}</span>
               ) : q.urgent ? (
                 <span class="note-new note-urgent-tag">{t('paneles.tablon.urgente')}</span>
+              ) : q.caravan ? (
+                <span class="note-new note-urgent-tag">{t('paneles.tablon.robado')}</span>
               ) : (
                 q.fresh && <span class="note-new">{t('paneles.tablon.nuevo')}</span>
               )}

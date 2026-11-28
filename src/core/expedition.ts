@@ -1029,9 +1029,12 @@ function doer(s: GameState, e: Expedition, o: ExpOption): Hero | undefined {
     : of[0];
 }
 
-/** Lo que cuesta dejar una ofrenda o comprar una ración al mercader (de la mochila). */
-export const offering = (dist: number) => Math.round(8 + 2 * dist);
-export const RATION_PRICE = 4;
+/**
+ * Lo que cuesta dejar una ofrenda o comprar una ración al mercader (de la mochila). Van con el
+ * botín (`EXP_GOLD`): si la mochila trae ocho veces más, la ofrenda no puede ser calderilla.
+ */
+export const offering = (dist: number) => Math.round(30 + 10 * dist);
+export const RATION_PRICE = 12;
 
 /** Por qué no se puede elegir esa opción ahora (o null). */
 export function optionIssue(s: GameState, e: Expedition, id: string): string | null {
