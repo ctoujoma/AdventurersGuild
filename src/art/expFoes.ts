@@ -616,7 +616,8 @@ export function expFoeArt(heading: Heading, idx: number): ExpFoe {
  * de hielo; los demás, de momento, el huargo del bosque.
  */
 export function expGuardianArt(heading: Heading, n = 0): FoeArt {
-  // El segundo guardián del bosque: el Jabalí Quemado (el calco del jabalí de ceniza).
+  // El segundo guardián del bosque: el Viejo Jabalí (de momento, el calco del jabalí de ceniza;
+  // el agente de arte lo recolorea con los tonos del jabalí normal).
   if (n && heading === 'bosque') return cenizaArt();
   const key = `guardian:${heading}`;
   let f = cache.get(key);
