@@ -10,6 +10,7 @@
 - Si eres el agente principal, para retomar: [`docs/agente-principal.md`](docs/agente-principal.md).
 - Decisiones abiertas con el usuario (aprobar o rechazar por partes): [`docs/decisiones.md`](docs/decisiones.md)
   y la página «Decisiones del Jarro» (https://claude.ai/artifact/5MgZx3bgd3pJQay91rDtjk). Léelas antes de empezar algo nuevo.
+- Economía del oro (auditoría, lo hecho y lo pendiente; `npm run auditoria`): [`docs/economia.md`](docs/economia.md).
 - Plan del juego completo (lo decidido, por fases y quién hace qué): [`docs/plan.md`](docs/plan.md).
   Ideas y detalle: [`docs/futuro.md`](docs/futuro.md).
 - **Textos:** todo texto del juego va en `src/textos/<idioma>/*.yaml` y se usa con `t('zona.clave', { huecos })`;

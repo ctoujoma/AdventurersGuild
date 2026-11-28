@@ -22,6 +22,7 @@ revisión crítica y propuestas, **sin decidir**: el usuario elige qué entra y 
   - nadie se queda sin cenar en el simulador;
   - el oro que se pierde con la cámara del tesoro llena;
   - en el modo libre sobra dinero si no se construye.
+  - la auditoría del oro (27 de noviembre) y lo que queda por hacer: [`economia.md`](economia.md).
 - **Niveles nuevos de salas** (arte hecho, sin activar): precios y efectos propuestos en
   [`salas/niveles-nuevos.md`](salas/niveles-nuevos.md).
 - **Paralaje de los muebles:** las camas ya van separadas de la pared y los hogares y fraguas

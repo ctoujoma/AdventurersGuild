@@ -273,7 +273,7 @@ export class Gente {
       // Los que traen su golpe dibujado (`seq.strike`) ya se echan adelante: sin embestida.
       // El jabalí se lanza de verdad unos píxeles al embestir (y vuelve despacio).
       const dash =
-        j === atkFoe && f.what === 'jabali'
+        j === atkFoe && RAMS.has(f.what)
           ? Math.round(
               8 *
                 (p < 0.24
@@ -344,7 +344,7 @@ export class Gente {
         });
       }
       // El jabalí embiste: estelas de velocidad tras la grupa y polvo de las pezuñas.
-      if (j === atkFoe && f.what === 'jabali' && p > 0.22 && p < 0.66) {
+      if (j === atkFoe && RAMS.has(f.what) && p > 0.22 && p < 0.66) {
         const img0 = f.poses.idle;
         // La grupa de verdad en el dibujo de ahora: lo de más atrás del cuerpo, fila a fila en la
         // mitad de abajo, quedándose con la mediana (la cola, levantada y fina, no cuenta).
@@ -468,7 +468,7 @@ export class Gente {
       if (struck && p >= 0.32) {
         // Las bestias arañan (el jabalí embiste: choque fuerte y tiembla); el resto, un golpe.
         const by = foes[atkFoe];
-        const ram = by?.what === 'jabali';
+        const ram = !!by && RAMS.has(by.what);
         if (ram && p < 0.4) this.shake = Math.floor(t * 40) % 2 ? 1 : -1;
         if (by && !ram && (by.kind === 'bestia' || by.kind === 'alimana') && !by.big)
           this.fx.push({ k: 'claw', x: x + dir * 2, y: e.feet - 14, dir, a: (p - 0.32) / 0.4 });
@@ -543,6 +543,9 @@ export function foeFrame(f: FoeArt, pose: FoePose, u: number, t: number): PixelB
   if (k === 'idle') return s[Math.floor(t * 5) % s.length]!;
   return s[Math.max(0, Math.min(s.length - 1, Math.floor(u * s.length)))]!;
 }
+
+/** Los que embisten (estelas, se lanzan y choque fuerte): el jabalí y el Viejo Jabalí. */
+const RAMS = new Set(['jabali', 'viejo_jabali']);
 
 /** Un número de una cadena (para la semilla de la pelea). */
 function seedNum(s: string): number {

@@ -222,6 +222,8 @@ export interface Quest {
   rumor?: boolean;
   /** Lo trajo el mensajero tardío: urgente, mejor pagado y caduca pronto (no cuenta para el tablón). */
   urgent?: boolean;
+  /** Recuperar lo robado a una caravana asaltada: mejor pagado, con fama de más (no cuenta para el tablón). */
+  caravan?: boolean;
 }
 
 /** Un rumor en la barra: se oye un rato y, si se toca a tiempo, abre un encargo especial. */
@@ -1094,6 +1096,8 @@ export interface GameState {
    */
   questLog?: QuestLogEntry[];
   /** Hora real (ms) de la última vez que se guardó con el juego abierto (tiempo que corre solo). */
+  /** Los caminos dan miedo hasta este día (incluido): viene menos gente al salón. */
+  roadFear?: number;
   lastSeen?: number;
   /** Sucesos nocturnos: la última noche ya tirada y el último día de cada suceso (`core/night.ts`). */
   nights?: NightLog;

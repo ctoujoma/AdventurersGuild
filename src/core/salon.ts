@@ -17,6 +17,10 @@ import {
   SEAT_TURNS,
   SERVE_BASE,
   SERVE_PER_WORK,
+  FEAR_VISITS,
+  TIP_ALL,
+  TIP_BASE,
+  TIP_PER_LEVEL,
   TROPHY_APPEAL,
   TROPHY_SLOTS,
   VISIT_BASE,
@@ -126,8 +130,12 @@ export interface DayVisitors {
   fed: number;
   drank: number;
   kinds: Record<VisitorKind, number>;
-  /** Lo que dejan en la caja los atendidos: la cena y la cerveza. */
+  /** Lo que dejan en la caja los atendidos: la cena, la cerveza y las propinas. */
   coins: number;
+  /** De eso, las propinas de los bien atendidos (con cena y jarra). */
+  tips: number;
+  /** Los caminos dan miedo: hoy viene menos gente (`roadFear`). */
+  fear: boolean;
 }
 
 const KINDS = Object.keys(VISITORS) as VisitorKind[];
@@ -139,10 +147,13 @@ const KINDS = Object.keys(VISITORS) as VisitorKind[];
 export function visitorsOf(s: GameState, day: number): DayVisitors {
   const kinds: Record<VisitorKind, number> = { campesino: 0, mercader: 0, noble: 0, espia: 0 };
   const seats = seatsOf(s.building);
-  if (!seats) return { total: 0, served: 0, fed: 0, drank: 0, kinds, coins: 0 };
+  const fear = (s.roadFear ?? 0) >= day;
+  if (!seats) return { total: 0, served: 0, fed: 0, drank: 0, kinds, coins: 0, tips: 0, fear };
   const rng = new Rng(`${s.seed}:visitas:${day}`);
   const a = appeal(s);
-  const want = VISIT_BASE + s.rep * VISIT_PER_REP + a * VISIT_PER_APPEAL + rng.int(-1, 1);
+  const want =
+    (VISIT_BASE + s.rep * VISIT_PER_REP + a * VISIT_PER_APPEAL + rng.int(-1, 1)) *
+    (fear ? FEAR_VISITS : 1);
   const total = Math.max(1, Math.min(Math.round(seats * SEAT_TURNS), Math.round(want)));
   // Quién es cada uno: los nobles piden Atractivo; los mercaderes, fama; el espía, un gremio
   // con algo que robar.
@@ -160,19 +171,31 @@ export function visitorsOf(s: GameState, day: number): DayVisitors {
   // Se atiende antes a quien más gasta; sin raciones guardadas, solo beben.
   let left = served;
   let food = Math.max(0, Math.floor(s.food));
+  let beer = Math.max(0, Math.floor(s.beer));
   let fed = 0;
   let coins = 0;
+  let tips = 0;
+  // Propinas: un salón mejor (y que atiende a todos) anima a dejar algo.
+  const level = salonOf(s.building)!.level;
+  const mood = (TIP_BASE + TIP_PER_LEVEL * level) * (served >= total ? TIP_ALL : 1);
   for (const k of ['noble', 'mercader', 'campesino', 'espia'] as const) {
     const n = Math.min(left, kinds[k]);
     const f = Math.min(n, food);
+    const d = Math.min(n, beer);
     coins += f * VISITORS[k].spend;
     food -= f;
+    beer -= d;
     fed += f;
     left -= n;
+    // Bien atendido: con su cena y su jarra.
+    const tip = VISITORS[k].tip;
+    for (let i = 0; i < Math.min(f, d); i++)
+      if (tip.chance > 0 && rng.chance(Math.min(1, tip.chance * mood)))
+        tips += rng.int(tip.min, tip.max);
   }
   const drank = Math.min(served, Math.max(0, Math.floor(s.beer)));
-  coins += drank * BEER_COIN;
-  return { total, served, fed, drank, kinds, coins };
+  coins += drank * BEER_COIN + tips;
+  return { total, served, fed, drank, kinds, coins, tips, fear };
 }
 
 /** Probabilidad de pelea en el salón con esta gente. */

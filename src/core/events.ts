@@ -4,9 +4,11 @@
  */
 import { hurt } from './health';
 import { GEAR } from '../data/items';
-import { QUIET_AFTER } from './balance';
+import { CARAVAN_EXPIRES, CARAVAN_PAY, FEAR_DAYS, QUIET_AFTER, rankIndex } from './balance';
+import { generateQuest, homePower } from './generate';
+import { placeMsg } from '../data/places';
 import { activeChain, chainDef } from './chains';
-import type { DawnEvent, GameState, Hero, PendingEvent, Rarity } from './model';
+import type { DawnEvent, GameState, Hero, PendingEvent, Quest, Rarity } from './model';
 import type { Rng } from './rng';
 import { type Msg, type Txt, msg, t } from '../textos';
 
@@ -25,27 +27,60 @@ export function addThreat(s: GameState, d: number): void {
 /**
  * Cada noche: si hay una historia en marcha y su paso espera en el tablón sin que nadie
  * vaya, la amenaza crece; también si pasan días sin que nadie salga de encargo. Si no, se calma.
- * Devuelve los ingresos perdidos.
+ * Con la amenaza alta asaltan una caravana de la comarca (sale un encargo para recuperar lo
+ * robado) y los caminos dan miedo (unos días viene menos gente al salón). Antes la caravana se
+ * llevaba la caja del día, que se cobra en casa (usuario, 27 de noviembre: no tenía sentido).
  */
 export function stepThreat(
   s: GameState,
   rng: Rng,
   events: DawnEvent[],
-  income: number,
   /** Nadie sale de encargo desde hace días: la comarca se revuelve. */
   idle = false,
-): number {
+): void {
   const cs = activeChain(s);
   const waiting = cs && s.quests.some((q) => q.chain?.id === cs.id);
   addThreat(s, waiting ? 2 : idle ? 1 : -1);
   const t = threatOf(s);
-  if (t >= THREAT_CARAVAN && income > 0 && rng.chance(0.2)) {
-    events.push({ t: msg('sucesos.amenaza.caravana'), k: 'bad' });
-    return income;
+  if (t >= THREAT_CARAVAN && !s.quests.some((q) => q.caravan) && rng.chance(0.2)) {
+    const q = caravanQuest(s, rng);
+    s.quests = [...s.quests, q];
+    events.push({ t: msg('sucesos.amenaza.caravana', { titulo: q.title }), k: 'warn' });
   }
-  if (t >= THREAT_SCARED && rng.chance(0.15))
-    events.push({ t: msg('sucesos.amenaza.miedo'), k: 'warn' });
-  return 0;
+  if (t >= THREAT_SCARED && (s.roadFear ?? 0) < s.day && rng.chance(0.15)) {
+    const days = rng.int(FEAR_DAYS[0], FEAR_DAYS[1]);
+    s.roadFear = s.day + days - 1;
+    events.push({ t: msg('sucesos.amenaza.miedo', { n: days }), k: 'warn' });
+  }
+}
+
+/** Cargas de las caravanas (`sucesos.caravana.cargas`). */
+const CARGOS = 4;
+
+/**
+ * El encargo de la caravana asaltada: recuperar lo robado (del nivel de la casa), mejor pagado,
+ * con fama de más si sale bien (`CARAVAN_REP`) y con prisa. No cuenta para el tablón.
+ */
+export function caravanQuest(s: GameState, rng: Rng): Quest {
+  const q = generateQuest(
+    rng,
+    `q${s.uid++}`,
+    rankIndex(s.rep),
+    `i${s.uid++}`,
+    s.mode === 'libre',
+    'Recuperar',
+    homePower(s.heroes),
+  );
+  const carga = msg(`sucesos.caravana.cargas.${rng.int(0, CARGOS - 1)}`);
+  return {
+    ...q,
+    title: msg('sucesos.caravana.titulo', { carga }),
+    text: msg('sucesos.caravana.texto', { carga, lugar: placeMsg(q.place) }),
+    reward: Math.round((q.reward * CARAVAN_PAY) / 5) * 5,
+    expires: CARAVAN_EXPIRES,
+    fresh: true,
+    caravan: true,
+  };
 }
 
 /**

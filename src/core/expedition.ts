@@ -683,7 +683,7 @@ const GUARDIAN_BOSS: Record<Heading, BossKind> = {
 };
 /**
  * El segundo guardián (usuario, 27 de noviembre): más adelante, pasado el primero, en los rumbos
- * que lo tienen (el bosque: el Jabalí Quemado). En los sucesos y las peleas, `foe` 1.
+ * que lo tienen (el bosque: el Viejo Jabalí). En los sucesos y las peleas, `foe` 1.
  */
 const GUARDIAN2: Partial<Record<Heading, BossKind>> = { bosque: 'jabali' };
 
@@ -1032,9 +1032,12 @@ function doer(s: GameState, e: Expedition, o: ExpOption): Hero | undefined {
     : of[0];
 }
 
-/** Lo que cuesta dejar una ofrenda o comprar una ración al mercader (de la mochila). */
-export const offering = (dist: number) => Math.round(8 + 2 * dist);
-export const RATION_PRICE = 4;
+/**
+ * Lo que cuesta dejar una ofrenda o comprar una ración al mercader (de la mochila). Van con el
+ * botín (`EXP_GOLD`): si la mochila trae ocho veces más, la ofrenda no puede ser calderilla.
+ */
+export const offering = (dist: number) => Math.round(30 + 10 * dist);
+export const RATION_PRICE = 12;
 
 /** Por qué no se puede elegir esa opción ahora (o null). */
 export function optionIssue(s: GameState, e: Expedition, id: string): string | null {

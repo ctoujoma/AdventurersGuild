@@ -47,7 +47,7 @@ rescate:
   chip: "{heroe} comes home"
   aviso: "{grupo} rescued {heroe}!"
 noche:
-  caja: "{vinieron}{sin_comer, plural, =0 {} one {Food ran out: # only drank. } other {Food ran out: # only drank. }}The tavern makes {n} gold{fiesta, select, si {: the festival packed the hall!} other {.}}"
+  caja: "{vinieron}{sin_comer, plural, =0 {} one {Food ran out: # only drank. } other {Food ran out: # only drank. }}{miedo, select, si {With fear on the roads, fewer people came. } other {}}The tavern makes {n} gold{propinas, plural, =0 {} other {, # in tips}}{fiesta, select, si {: the festival packed the hall!} other {.}}"
   vinieron: "In came {quien}{faltan, select, si { ({atendidos} were served)} other {}}. "
   cuervo: "The raven is back from another village: they're already talking about the guild there (+1 reputation)."
   nobles: "{n, plural, one {A noble dined} other {Some nobles dined}} in the hall: people will talk about the guild (+1 reputation)."

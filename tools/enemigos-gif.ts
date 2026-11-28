@@ -10,6 +10,7 @@ import {
   expFoeArt,
   expGuardianArt,
   reyArt,
+  viejoJabaliArt,
 } from '../src/art/expFoes';
 import type { FoeArt, FoePose } from '../src/art/foes';
 import { PixelBuffer, alpha } from '../src/art/pixel';
@@ -23,6 +24,7 @@ const ARTS: Record<string, FoeArt> = {
   ahogado: expFoeArt('marismas', 1).art,
   ahogado_sentado: deathOf(expFoeArt('marismas', 1).art, 1),
   ahogado_grande: ahogadoGrandeArt(),
+  viejo_jabali: viejoJabaliArt(),
   huargo: expFoeArt('bosque', 3).art,
   oso: expFoeArt('bosque', 2).art,
   oso_pardo: expFoeArt('sierra', 2).art,

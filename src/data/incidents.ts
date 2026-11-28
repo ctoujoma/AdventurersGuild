@@ -3,7 +3,12 @@
  * jugador haga algo (a lo Fallout Shelter, con lo nuestro). Datos: dónde pasa cada uno, cómo
  * se resuelve, cuánto aguanta y lo que se cuenta. Las reglas están en `core/incidents.ts`.
  */
-import { NIGHT_THIEF_SECS, NIGHT_THIEF_SHARE, NIGHT_THIEF_TOP } from '../core/balance';
+import {
+  DAY_THIEF_TOP,
+  NIGHT_THIEF_SECS,
+  NIGHT_THIEF_SHARE,
+  NIGHT_THIEF_TOP,
+} from '../core/balance';
 import type { RoomType } from './rooms';
 import { t } from '../textos';
 
@@ -72,7 +77,7 @@ export const INCIDENTS: Record<IncidentKind, IncidentDef> = {
     ask: t('incidentes.incidentes.ladron.ask'),
     secs: 30,
     rep: 2,
-    loss: { goldShare: 0.08 },
+    loss: { goldShare: NIGHT_THIEF_SHARE, goldTop: DAY_THIEF_TOP },
   },
   fuego: {
     rooms: ['cocina'],

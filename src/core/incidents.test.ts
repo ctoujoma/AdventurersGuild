@@ -8,10 +8,19 @@ import {
   GUARD_HOLD,
   GUARD_NAP,
   INCIDENT_EVERY,
+  DAY_THIEF_TOP,
   INCIDENT_REACT,
+  NIGHT_THIEF_SHARE,
 } from './balance';
 import { endDay, newGame, reduce } from './game';
-import { catHunts, incidentCost, incidentIssue, napping, stepIncidents } from './incidents';
+import {
+  catHunts,
+  failIncidents,
+  incidentCost,
+  incidentIssue,
+  napping,
+  stepIncidents,
+} from './incidents';
 import type { GameState, Incident } from './model';
 import { tx } from '../textos';
 
@@ -89,6 +98,21 @@ describe('incidentes', () => {
     const news = stepIncidents(late, 10, duel!.at + duel!.end);
     expect(late.incidents).toEqual([]);
     expect(news[0]?.k).toBe(duel!.won ? 'good' : 'bad');
+  });
+
+  it('el ladrón de la cámara que nadie para se lleva una parte, con tope por rango', () => {
+    const s = withIncident('ladron');
+    for (const h of s.heroes) delete h.guard;
+    s.gold = 50000;
+    s.rep = 0;
+    failIncidents(s, []);
+    // Antes, el 8 % sin tope: 4.000; ahora, como mucho el tope del rango (cobre: uno).
+    expect(50000 - s.gold).toBe(DAY_THIEF_TOP);
+    const poor = withIncident('ladron');
+    for (const h of poor.heroes) delete h.guard;
+    poor.gold = 500;
+    failIncidents(poor, []);
+    expect(500 - poor.gold).toBe(Math.floor(500 * NIGHT_THIEF_SHARE));
   });
 
   it('mientras alguien va de camino no sale mal; si nadie dice que llega, se da por llegado', () => {

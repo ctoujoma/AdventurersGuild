@@ -46,6 +46,7 @@ import {
   TRIP_FATIGUE,
   TROPHY_REP,
   CACHE,
+  CARAVAN_REP,
   LEVEL_MAX,
   levelRaise,
   TWIST_DIFF,
@@ -370,7 +371,8 @@ export function resolveMission(
     if (got.kept[m]) chip('chip_material', { n: got.kept[m], material: matMsg(m) }, 'info');
     if (got.warn) chips.push({ t: got.warn, k: 'warn' });
   }
-  const dRep = REP[outcome];
+  // Recuperar lo de la caravana asaltada: la comarca lo agradece.
+  const dRep = REP[outcome] + (q.caravan && PAY[outcome] >= 1 ? CARAVAN_REP : 0);
   state.rep = Math.max(0, state.rep + dRep);
   chip('chip_reputacion', { mas: dRep >= 0, n: dRep }, dRep >= 0 ? 'good' : 'bad');
   const looted = PAY[outcome] >= 1 || (outcome === 'Éxito parcial' && mods.partialLoot);

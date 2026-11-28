@@ -19,7 +19,7 @@ terminos:
     texto: "Some stories end against a boss. That night, at dawn, a notice appears to watch the fight; if you leave it for later, it stays in the report with “Watch the battle”."
   amenaza_de_la_comarca:
     termino: "County threat"
-    texto: "Grows every night a story step waits on the board and drops if none is under way. When high, caravans get raided, fewer quests arrive and bandits come to the tavern."
+    texto: "Grows every night a story step waits on the board and drops if none is under way. When high, caravans get raided (a quest appears to recover the stolen goods), the roads grow fearful (fewer people come to the tavern), fewer quests arrive and bandits come."
   asaltos_y_chivatazos:
     termino: "Raids and tip-offs"
     texto: "From day 12, a gang may attack the tavern at night. With luck someone warns you first (the red flag at the top counts the nights). The fight goes room by room: those on guard (two at most) go out to the yard and raise the alarm; if they fall, the gang breaks down the door and goes for the treasure vault. Those asleep come running, and the door, the lock and the distance buy them time. Whatever the bandits carry is recovered if they fall before getting out."

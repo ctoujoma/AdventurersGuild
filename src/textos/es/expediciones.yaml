@@ -152,7 +152,7 @@ enemigos:
 # El guardián de cada rumbo (raro y lejos), en un hueco como los enemigos.
 guardianes:
   bosque: "el Viejo Colmillo"
-  bosque_2: "el Jabalí Quemado"
+  bosque_2: "el Viejo Jabalí"
   sierra: "la Sierpe Blanca"
   marismas: "la Reina del Juncal"
   ruinas: "la Dragona de Ceniza"
@@ -391,7 +391,7 @@ sucesos:
   guardian:
     titulo: "el guardián del rumbo"
     texto: "{rumbo, select, bosque {Tiembla el suelo: el Viejo Colmillo, el lobo enorme que guarda lo más hondo del bosque, les cierra el paso.} sierra {Cruje la nieve: la Sierpe Blanca, que duerme en los ventisqueros, se desenrosca ante ellos.} marismas {Se abren los juncos: la Reina del Juncal sale del agua negra y les cierra el paso.} other {Se levanta una nube de ceniza: la Dragona de Ceniza despierta entre las columnas rotas.}}"
-    texto_2: "{rumbo, select, bosque {Huele a quemado y cae ceniza entre los árboles: el Jabalí Quemado, más grande que un carro y con brasas en el lomo, sale de entre los troncos negros.} other {Algo aún más grande les cierra el paso.}}"
+    texto_2: "{rumbo, select, bosque {Crujen las ramas y el suelo retumba: el Viejo Jabalí, más grande que un carro y con los colmillos llenos de cicatrices, sale de la espesura.} other {Algo aún más grande les cierra el paso.}}"
     pelear:
       nombre: "Pelear en directo"
       bien: "{heroe} grita y cargan contra el guardián."

@@ -1,13 +1,21 @@
 amenaza:
-  caravana: "The caravan bringing the wine has been raided: the tavern makes nothing today. The county is restless."
-  miedo: "Fear runs along the roads: fewer quests arrive today."
+  caravana: "Highwaymen have raided a caravan on the king's road. The muleteers ask for help: “{titulo}” is on the board."
+  miedo: "Fear runs along the roads: {n, plural, one {tomorrow} other {for these # days}} fewer people will come to the tavern."
   por_historia: "the next step of “{historia}” is waiting on the board"
   por_quietud: "nobody has gone out on a quest for days"
   en_camino: "there are parties out on the roads"
   en_calma: "the county is calm"
-  tramo_caravanas: "caravans get raided: some days the tavern makes nothing"
-  tramo_encargos: "fewer quests reach the board"
+  tramo_caravanas: "caravans get raided: quests appear to recover the stolen goods"
+  tramo_encargos: "fewer quests reach the board and, at times, fewer people come to the tavern"
   tramo_asaltos: "bandits take more notice of the guild: more raids"
+caravana:
+  titulo: "Recover {carga}"
+  texto: "Highwaymen raided the caravan bringing {carga} and are hiding near {lugar}. The muleteers pay well to whoever gets it back, and the county won't forget it."
+  cargas:
+    - "the riverside wine"
+    - "the salt from the port"
+    - "the cloth from the east"
+    - "the grain from the mill"
 buhonero:
   texto: "A pedlar with a cart full of knick-knacks swears he has “a real item” hidden under the tarp. He asks 60 gold, without showing it first."
   opciones:

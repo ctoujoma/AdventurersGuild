@@ -69,6 +69,25 @@ describe('el salón y sus visitantes', () => {
     expect(visitorsOf(shut, 4).total).toBe(0);
   });
 
+  it('los bien atendidos dejan propina (más los nobles) y con miedo viene menos gente', () => {
+    const s = { ...newGame('propinas'), rep: 300, food: 999, beer: 999 };
+    room(s, 'salon').level = 5;
+    const days = Array.from({ length: 30 }, (_, d) => visitorsOf(s, d + 1));
+    const tips = days.reduce((a, v) => a + v.tips, 0);
+    expect(tips).toBeGreaterThan(0);
+    for (const v of days) expect(v.coins).toBeGreaterThanOrEqual(v.tips);
+    // Sin cena ni jarra no hay propina.
+    expect(visitorsOf({ ...s, food: 0, beer: 0 }, 3).tips).toBe(0);
+    // Los caminos dan miedo hasta el día 10: menos gente esos días, no después.
+    const fear = { ...s, rep: 0, roadFear: 10 };
+    const calm = { ...s, rep: 0 };
+    expect(visitorsOf(fear, 10).fear).toBe(true);
+    expect(visitorsOf(fear, 11).fear).toBe(false);
+    const sum = (x: GameState) =>
+      Array.from({ length: 10 }, (_, d) => visitorsOf(x, d + 1).total).reduce((a, b) => a + b, 0);
+    expect(sum(fear)).toBeLessThan(sum(calm));
+  });
+
   it('los nobles solo vienen a un salón con mucho Atractivo', () => {
     const s = { ...newGame('nobles'), rep: 200 };
     const nobles = (x: GameState) =>
