@@ -5,12 +5,7 @@
 // `node tools/textos/esbuild.mjs tools/glosario-enemigos.ts glosario docs/glosario-enemigos.html`.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { png } from './visor-png';
-import {
-  ahogadoGrandeArt,
-  deathOf,
-  expFoeArt,
-  expGuardianArt,
-} from '../src/art/expFoes';
+import { ahogadoGrandeArt, deathOf, expFoeArt, expGuardianArt } from '../src/art/expFoes';
 import { CALCOS } from '../src/art/expCalcos';
 import { bossArtFor } from '../src/art/bossCalco';
 import { foeArt, type FoeArt } from '../src/art/foes';
