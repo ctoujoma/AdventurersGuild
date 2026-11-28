@@ -19,8 +19,6 @@ import {
   BANDIT_HP,
   BANDIT_MAX,
   BANDIT_PER,
-  BANDIT_POWER,
-  BANDIT_SPLIT,
   GUARD_BONUS,
   GUARD_HP,
   LEADER_HP,
@@ -40,6 +38,7 @@ import {
   RAID_WAKE_DOG,
   RAID_YARD,
   WORKER_HP,
+  banditHit,
   banditHpK,
   rankIndex,
 } from './balance';
@@ -312,7 +311,7 @@ export function assaultSetup(s: GameState, strength: number, rng: Rng): AssaultS
   const n = banditCount(strength);
   const bandits = Array.from({ length: n }, (_, i) => ({
     id: `b${i}`,
-    power: ((strength / Math.min(n, BANDIT_SPLIT)) * BANDIT_POWER) / banditHpK(strength),
+    power: banditHit(strength, n),
     hp: Math.round(BANDIT_HP * banditHpK(strength) * (i ? 1 : LEADER_HP)),
     ...(i ? {} : { leader: true }),
   }));
