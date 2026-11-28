@@ -27,6 +27,7 @@ import type { MarchNow } from './marcha';
 import { digits, put, putRot, tinted } from './pintar';
 import { hash } from './tonos';
 import { drawEscondidos, hiding } from './sucesos';
+import { scriptOf, stubScript, type Act, type Script, type Track } from './replay';
 
 type Crew = MarchNow['crew'][number];
 
@@ -73,6 +74,10 @@ export const GAP = 13;
 const TURN = 0.95;
 /** Ganada la pelea: los que quedaban en pie caen y el grupo lo celebra (s); luego siguen. */
 const AFTER = 3.6;
+/** En directo, lo más que dura la pelea en el visor (s): si la de verdad duró más, va más deprisa. */
+const LIVE = 12;
+/** En qué punto del gesto entra el golpe (0–1). */
+const IMPACT = 0.32;
 
 interface Pop {
   text: string;
@@ -196,30 +201,54 @@ export class Gente {
     return foesOf(m);
   }
 
-  /** La pelea, por turnos: el grupo y los enemigos se van dando. */
+  /** El guion de la pelea de ahora: la de verdad si viene (`m.sim`); si no, uno de relleno. */
+  private scriptOf(m: MarchNow, heroes: number, n: number): Script {
+    if (m.sim)
+      return scriptOf(
+        m.sim,
+        m.crew.map((h) => h.id),
+        n,
+      );
+    return stubScript(heroes, n, m.won !== false, TURN);
+  }
+
+  /**
+   * La pelea, tal cual fue (`replay.ts`): cada uno pega cuando pegó, a quien pegó y lo que quitó;
+   * cae quien cayó y cuando cayó. `t`: segundos desde que empezó; `end` (0–1): ganada, el grupo
+   * lo celebra.
+   */
   private fight(c: Ctx, t: number, end?: number): void {
     const { b, e, m, l, lk } = c;
     const crew = m.crew.map((c) => heroOf(c, m.dress?.[c.id]));
     const foes = this.foes(m);
     const n = crew.length;
     const dir = m.home ? -1 : 1;
-    const k = Math.floor(t / TURN);
-    const p = (t % TURN) / TURN;
-    // Cuándo cae cada uno (el último aguanta: la pelea acaba en el diario, no aquí).
-    const kills = foes.slice(0, -1).map((_, j) => (foes.length > 2 ? 4 + j * 4 : 6 + j * 6));
-    const downAt = (j: number) => kills[j] ?? Infinity;
-    const fell = (j: number) => k > downAt(j) || (k === downAt(j) && p > 0.55);
-    // Ganada la pelea (`end`, 0–1), caen todos: los que seguían en pie, ahora.
-    const isDown = (j: number) => end !== undefined || fell(j);
-    const heroTurn = end === undefined && k % 2 === 0;
-    const alive = foes.map((_, j) => j).filter((j) => !isDown(j) || (k === downAt(j) && p <= 0.55));
-    const front = alive[0] ?? 0;
-    const atkHero = heroTurn ? (k >> 1) % n : -1;
-    const atkFoe =
-      end === undefined && !heroTurn && alive.length ? alive[(k >> 1) % alive.length]! : -1;
-    const tgtHero = !heroTurn ? Math.floor(hash(k * 7 + 3) * Math.min(n, 2)) : -1;
-    const hit = end === undefined && p > 0.32 && p < 0.62;
-    const flash = p > 0.32 && p < 0.44 && Math.floor(t * 20) % 2 === 0;
+    const sc = this.scriptOf(m, n, foes.length);
+    // En directo, la pelea cabe en su hora del camino (más deprisa si hace falta); al repetirla,
+    // a su paso (`pace` 1; el botón de acelerar adelanta el reloj).
+    const pace = m.pace ?? Math.max(1, sc.T / LIVE);
+    const ct = end !== undefined ? sc.T + 99 : t * pace;
+    // Lo que dura cada gesto en segundos de la pelea; la fase del gesto que empezó en `at` (el
+    // golpe entra en 0,32, como en el resto de peleas).
+    const span = TURN * pace;
+    const phase = (at: number) => (ct - at) / span + IMPACT;
+    /** El gesto de ahora de uno (o nada): el último que ha empezado y no ha acabado. */
+    const actOf = (tr: Track): { a: Act; p: number } | null => {
+      for (let i = tr.acts.length - 1; i >= 0; i--) {
+        const p = phase(tr.acts[i]!.at);
+        if (p >= 1) return null;
+        if (p >= 0) return { a: tr.acts[i]!, p };
+      }
+      return null;
+    };
+    /** Lo que ha recibido hace poco (para la cifra que sube y el retroceso). */
+    const takenOf = (tr: Track) =>
+      tr.taken.map((x) => ({ x, p: phase(x.at) })).filter(({ p }) => p >= IMPACT && p < 1);
+    const fallP = (tr: Track) => (tr.downAt === Infinity ? -1 : phase(tr.downAt));
+    // Cae del todo un poco después del golpe que le tumba (el golpe se ve primero).
+    const isDown = (j: number) => fallP(sc.foes[j]!) > 0.55;
+    const heroDown = (i: number) => fallP(sc.heroes[i]!) > 0.55;
+    const flash = Math.floor(t * 20) % 2 === 0;
     const white = rgba('#ffffff');
     // Posiciones: el grupo a un lado, los enemigos al otro, de cara.
     const lead = Math.round(e.w / 2 - dir * 8);
@@ -242,62 +271,57 @@ export class Gente {
       .map((_, j) => j)
       .sort((a, b) => depth(a) - depth(b) || Number(isDown(b)) - Number(isDown(a)) || b - a);
     this.last = { foes, xs: foeXs, ys: foes.map((_, j) => depth(j)) };
-    const lunge = (who: boolean) => (who && p > 0.3 && p < 0.58 ? 3 : 0);
+    const lunge = (p: number) => (p > 0.3 && p < 0.58 ? 3 : 0);
+    const heroActs = sc.heroes.map(actOf);
     // Los enemigos (los caídos, debajo).
     for (const j of order) {
       const f = foes[j]!;
+      const tr = sc.foes[j]!;
       const feet = e.feet + depth(j);
       const down = isDown(j);
-      const struck = heroTurn && j === front && hit;
+      const act = down ? null : actOf(tr);
+      const p = act?.p ?? 0;
+      const taken = takenOf(tr).filter(({ x }) => !x.heal);
+      const hitNow = taken.find(({ p: q }) => q < 0.62);
+      const struck = !!hitNow && end === undefined;
+      const hp = hitNow?.p ?? 0;
       let pose: FoePose;
       if (down) pose = 'down';
       else if (struck) pose = 'hurt';
-      else if (j === atkFoe) pose = p < 0.3 ? 'windup' : p < 0.58 ? 'strike' : 'idle';
+      else if (act) pose = p < 0.3 ? 'windup' : p < 0.58 ? 'strike' : 'idle';
       else pose = Math.floor(t * 2 + j) % 2 ? 'idle2' : 'idle';
       // Un respiro en el impacto (el golpe pesa): la carrera de la pose se para un instante.
       const ph = p > 0.32 && p < 0.37 ? 0.32 : p > 0.37 ? p - 0.05 * (1 - (p - 0.37) / 0.63) : p;
       const u =
         pose === 'down'
-          ? end !== undefined && !fell(j)
-            ? end / 0.6
-            : k === downAt(j)
-              ? (p - 0.55) / 0.4
-              : 1
+          ? (fallP(tr) - 0.55) / 0.4
           : pose === 'windup'
             ? p / 0.3
             : pose === 'strike'
               ? (ph - 0.3) / 0.28
-              : (ph - 0.32) / 0.3;
+              : (hp - 0.32) / 0.3;
       const img = tinted(foeFrame(f, pose, u, t + j * 0.7), l, lk);
-      const back = struck ? dir * Math.round(2 + (p < 0.45 ? 1 : 0)) : 0;
+      const back = struck ? dir * Math.round(2 + (hp < 0.45 ? 1 : 0)) : 0;
       // Los que traen su golpe dibujado (`seq.strike`) ya se echan adelante: sin embestida.
       // El jabalí se lanza de verdad unos píxeles al embestir (y vuelve despacio).
-      const dash =
-        j === atkFoe && RAMS.has(f.what)
-          ? Math.round(
-              8 *
-                (p < 0.24
-                  ? 0
-                  : p < 0.34
-                    ? (p - 0.24) / 0.1
-                    : p < 0.5
-                      ? 1
-                      : Math.max(0, 1 - (p - 0.5) / 0.3)),
-            )
-          : 0;
-      const x = foeXs[j]! + back - dir * (f.seq?.strike ? dash : lunge(j === atkFoe));
+      const rams = !!act && RAMS.has(f.what);
+      const dash = rams
+        ? Math.round(
+            8 *
+              (p < 0.24
+                ? 0
+                : p < 0.34
+                  ? (p - 0.24) / 0.1
+                  : p < 0.5
+                    ? 1
+                    : Math.max(0, 1 - (p - 0.5) / 0.3)),
+          )
+        : 0;
+      const x = foeXs[j]! + back - dir * (f.seq?.strike ? dash : act ? lunge(p) : 0);
       if (!down) shadow(b, x, feet, f.big ? 10 : 6);
       const fy = img.h - 1;
-      put(
-        b,
-        img,
-        x,
-        feet + (down ? 1 : 0),
-        f.foot,
-        fy,
-        dir > 0,
-        struck && flash ? white : undefined,
-      );
+      const hitFlash = struck && hp < 0.44 && flash;
+      put(b, img, x, feet + (down ? 1 : 0), f.foot, fy, dir > 0, hitFlash ? white : undefined);
       if (f.hand && !down) {
         const fp: FightPose =
           pose === 'windup'
@@ -322,29 +346,29 @@ export class Gente {
         );
       }
       if (struck) {
-        const fx = this.fx;
-        fx.push({
+        const by = crew[hitNow!.x.from];
+        this.fx.push({
           k: 'impact',
           x: x - dir * 4,
           y: feet - f.chest,
-          a: (p - 0.32) / 0.16,
-          big: f.big,
-          magia: atkHero >= 0 && MAIN[crew[atkHero]!.crew.cls] === 'baston',
+          a: (hp - 0.32) / 0.16,
+          big: f.big || hitNow!.x.crit,
+          magia: !!by && MAIN[by.crew.cls] === 'baston',
         });
-        fx.push({
+        this.fx.push({
           k: 'bits',
           x: x - dir * 3,
           y: feet - f.chest,
           floor: feet + 1,
           dir,
-          a: (p - 0.32) / 0.62,
-          seed: k * 7 + j,
+          a: (hp - 0.32) / 0.62,
+          seed: Math.round(hitNow!.x.at * 10) * 7 + j,
           cols: [...BLOOD, ...furOf(f.poses.idle)],
           n: f.big ? 11 : 7,
         });
       }
       // El jabalí embiste: estelas de velocidad tras la grupa y polvo de las pezuñas.
-      if (j === atkFoe && RAMS.has(f.what) && p > 0.22 && p < 0.66) {
+      if (rams && p > 0.22 && p < 0.66) {
         const img0 = f.poses.idle;
         // La grupa de verdad en el dibujo de ahora: lo de más atrás del cuerpo, fila a fila en la
         // mitad de abajo, quedándose con la mediana (la cola, levantada y fina, no cuenta).
@@ -363,55 +387,76 @@ export class Gente {
           bottom: feet - 3,
           back: dir,
           a: (p - 0.22) / 0.44,
-          seed: k,
+          seed: Math.round(act!.a.at * 10),
         });
         this.fx.push({ k: 'dust', x: x + dir * 6, y: feet, a: (p - 0.26) / 0.4, w: 7 });
       }
-      // El golpe de un grande: tiembla todo y levanta polvo delante.
-      if (j === atkFoe && f.big && p > 0.32 && p < 0.7) {
+      // El golpe de un grande (y el golpe fuerte de cualquiera): tiembla todo y levanta polvo.
+      if (act && (f.big || act.a.kind === 'fuerte') && p > 0.32 && p < 0.7) {
         if (p < 0.42) this.shake = Math.floor(t * 40) % 2 ? 1 : -1;
         this.fx.push({
           k: 'dust',
           x: x - dir * Math.round(f.span * 0.45),
           y: feet,
           a: (p - 0.32) / 0.38,
-          w: 12,
+          w: act.a.kind === 'fuerte' ? 18 : 12,
         });
       }
       // Cae: polvo donde da el cuerpo (y, si es grande, un golpe sordo).
-      const fallU =
-        end !== undefined && !fell(j) ? (end - 0.18) / 0.3 : k === downAt(j) ? (p - 0.7) / 0.3 : -1;
+      const fallU = (fallP(tr) - 0.7) / 0.3;
       if (fallU >= 0 && fallU < 1) {
         this.fx.push({ k: 'dust', x, y: feet, a: fallU, w: Math.max(8, f.span * 0.4) });
         if (f.big && fallU < 0.12) this.shake = Math.floor(c.time * 40) % 2 ? 1 : -1;
       }
-      if (heroTurn && j === front && p > 0.32 && (!down || k === downAt(j))) {
-        const crit = hash(k * 13) > 0.82;
-        const dmg = Math.round(2 + hash(k * 5 + 1) * 8) * (crit ? 2 : 1);
-        this.pops.push({
-          text: String(dmg),
-          x: foeXs[j]!,
-          y: feet - f.poses.idle.h - 3,
-          u: (p - 0.32) / 0.68,
-          color: crit ? '#fee761' : '#ffffff',
+      // Lo que le quitan, de verdad (los críticos, en amarillo).
+      if (end === undefined)
+        taken.forEach(({ x: hit, p: q }, k) => {
+          if (!hit.amount) return;
+          this.pops.push({
+            text: String(hit.amount),
+            x: foeXs[j]!,
+            y: feet - f.poses.idle.h - 3 - k * 7,
+            u: (q - 0.32) / 0.68,
+            color: hit.crit ? '#fee761' : '#ffffff',
+          });
         });
-      }
     }
     // El grupo, de atrás adelante.
     for (let i = n - 1; i >= 0; i--) {
       const h = crew[i]!;
-      // Ganada: de frente con los brazos en alto, cada uno a su ritmo, dando saltitos.
-      if (end !== undefined && end > 0.12 + i * 0.06) {
-        const x = heroX(i);
-        const hop = Math.round(Math.abs(Math.sin(c.time * 7 + i * 1.9)) * 3);
-        shadow(b, x, e.feet, hop > 1 ? 4 : 5);
-        put(b, tinted(heroSprites(h.look, h.marks).cheer, l, lk), x, e.feet - hop, 9, FEET_Y);
+      const tr = sc.heroes[i];
+      const x0 = heroX(i);
+      // Caído en la pelea: tumbado en el suelo, de espaldas a los enemigos.
+      if (tr && heroDown(i)) {
+        const img = tinted(fightSprites(h.look, h.marks).ready, l, lk);
+        putRot(b, img, x0, e.feet - 4, 9, FEET_Y - 9, dir > 0 ? -90 : 90, dir < 0);
         continue;
       }
-      const me = i === atkHero;
-      const pose: FightPose = me ? (p < 0.3 ? 'windup' : p < 0.58 ? 'strike' : 'ready') : 'ready';
-      const struck = i === tgtHero && hit;
-      const x = heroX(i) + dir * lunge(me) - (struck ? dir * 2 : 0);
+      // Ganada: de frente con los brazos en alto, cada uno a su ritmo, dando saltitos.
+      if (end !== undefined && end > 0.12 + i * 0.06) {
+        const hop = Math.round(Math.abs(Math.sin(c.time * 7 + i * 1.9)) * 3);
+        shadow(b, x0, e.feet, hop > 1 ? 4 : 5);
+        put(b, tinted(heroSprites(h.look, h.marks).cheer, l, lk), x0, e.feet - hop, 9, FEET_Y);
+        continue;
+      }
+      const act = end === undefined ? heroActs[i] : null;
+      const p = act?.p ?? 0;
+      const heal = act?.a.kind === 'cura';
+      const pose: FightPose = !act
+        ? 'ready'
+        : heal
+          ? p < 0.6
+            ? 'up'
+            : 'ready'
+          : p < 0.3
+            ? 'windup'
+            : p < 0.58
+              ? 'strike'
+              : 'ready';
+      const taken = tr && end === undefined ? takenOf(tr) : [];
+      const hitNow = taken.find(({ x, p: q }) => !x.heal && q < 0.62);
+      const struck = !!hitNow;
+      const x = x0 + dir * (act && !heal ? lunge(p) : 0) - (struck ? dir * 2 : 0);
       shadow(b, x, e.feet, 5);
       const poses = fightSprites(h.look, h.marks);
       put(
@@ -422,35 +467,49 @@ export class Gente {
         9,
         FEET_Y,
         dir < 0,
-        struck && flash ? white : undefined,
+        struck && hitNow!.p < 0.44 && flash ? white : undefined,
       );
       const wid = MAIN[h.crew.cls] ?? 'espada';
       // Lo que lleva su golpe hasta el enemigo: la flecha y el orbe vuelan; el resto, un tajo.
-      if (me && alive.length) {
-        const tf = foes[front]!;
-        const fxX = foeXs[front]!;
-        const near = fxX - dir * Math.round(tf.span / 2);
-        const y = e.feet - Math.min(14, tf.chest + 2);
-        if (wid === 'baston')
-          this.fx.push({ k: 'charge', x: x - dir * 7, y: e.feet - 15, a: (p - 0.04) / 0.2 });
-        if (wid === 'arco' || wid === 'baston')
-          this.fx.push({
-            k: 'bolt',
-            what: wid === 'arco' ? 'flecha' : 'orbe',
-            x0: x + dir * 7,
-            x1: near + dir * 2,
-            y,
-            a: (p - (wid === 'arco' ? 0.18 : 0.22)) / (wid === 'arco' ? 0.14 : 0.1),
-          });
-        else
-          this.fx.push({
-            k: 'slash',
-            x: near - dir * 7,
-            y: e.feet - tf.chest,
-            dir,
-            a: (p - 0.27) / 0.13,
-            big: wid === 'maza',
-          });
+      // La cura: una luz que va al herido.
+      if (act && heal) {
+        const to = act.a.blows[0]?.to ?? i;
+        this.fx.push({
+          k: 'bolt',
+          what: 'luz',
+          x0: x + dir * 4,
+          x1: heroX(to),
+          y: e.feet - 16,
+          a: (p - 0.1) / 0.3,
+        });
+      } else if (act) {
+        const tj = Math.min(foes.length - 1, act.a.blows[0]?.to ?? 0);
+        const tf = foes[tj];
+        if (tf) {
+          const fxX = foeXs[tj]!;
+          const near = fxX - dir * Math.round(tf.span / 2);
+          const y = e.feet - Math.min(14, tf.chest + 2);
+          if (wid === 'baston')
+            this.fx.push({ k: 'charge', x: x - dir * 7, y: e.feet - 15, a: (p - 0.04) / 0.2 });
+          if (wid === 'arco' || wid === 'baston')
+            this.fx.push({
+              k: 'bolt',
+              what: wid === 'arco' ? 'flecha' : 'orbe',
+              x0: x + dir * 7,
+              x1: near + dir * 2,
+              y,
+              a: (p - (wid === 'arco' ? 0.18 : 0.22)) / (wid === 'arco' ? 0.14 : 0.1),
+            });
+          else
+            this.fx.push({
+              k: 'slash',
+              x: near - dir * 7,
+              y: e.feet - tf.chest,
+              dir,
+              a: (p - 0.27) / 0.13,
+              big: wid === 'maza' || act.a.kind === 'habilidad',
+            });
+        }
       }
       const wp = WEAPONS[wid];
       const hd = HAND[pose];
@@ -465,37 +524,42 @@ export class Gente {
         dir < 0,
         (col) => tintColor(col, l),
       );
-      if (struck && p >= 0.32) {
+      if (struck) {
+        const q = hitNow!.p;
         // Las bestias arañan (el jabalí embiste: choque fuerte y tiembla); el resto, un golpe.
-        const by = foes[atkFoe];
+        const by = foes[hitNow!.x.from];
         const ram = !!by && RAMS.has(by.what);
-        if (ram && p < 0.4) this.shake = Math.floor(t * 40) % 2 ? 1 : -1;
-        if (by && !ram && (by.kind === 'bestia' || by.kind === 'alimana') && !by.big)
-          this.fx.push({ k: 'claw', x: x + dir * 2, y: e.feet - 14, dir, a: (p - 0.32) / 0.4 });
+        const big = ram || !!hitNow!.x.big;
+        if (big && q < 0.4) this.shake = Math.floor(t * 40) % 2 ? 1 : -1;
+        if (by && !big && (by.kind === 'bestia' || by.kind === 'alimana') && !by.big)
+          this.fx.push({ k: 'claw', x: x + dir * 2, y: e.feet - 14, dir, a: (q - 0.32) / 0.4 });
         else
           this.fx.push({
             k: 'impact',
             x: x + dir * 4,
             y: e.feet - 14,
-            a: (p - 0.32) / (ram ? 0.18 : 0.14),
-            big: ram,
+            a: (q - 0.32) / (big ? 0.18 : 0.14),
+            big,
           });
         this.fx.push({
           k: 'dust',
           x: x - dir * 2,
           y: e.feet,
-          a: (p - 0.32) / 0.4,
-          w: ram ? 9 : 5,
-        });
-        const dmg = Math.round(1 + hash(k * 3 + 2) * 5);
-        this.pops.push({
-          text: String(dmg),
-          x,
-          y: e.feet - 30,
-          u: (p - 0.32) / 0.68,
-          color: '#f6757a',
+          a: (q - 0.32) / 0.4,
+          w: big ? 9 : 5,
         });
       }
+      // Lo que le quitan (en rojo) y lo que le curan (en verde, con su +).
+      taken.forEach(({ x: hit, p: q }, k) => {
+        if (!hit.amount) return;
+        this.pops.push({
+          text: hit.heal ? `+${hit.amount}` : String(hit.amount),
+          x: x0,
+          y: e.feet - 30 - k * 7,
+          u: (q - 0.32) / 0.68,
+          color: hit.heal ? '#63c74d' : '#f6757a',
+        });
+      });
     }
     drawFxScene(b, this.fx, l);
   }
@@ -570,13 +634,20 @@ function foesOf(m: MarchNow): FoeArt[] {
 }
 
 /**
- * Lo que tarda la pelea del visor en tumbar a los que caen por turnos (el último aguanta hasta
- * que se gana), más un par de turnos: para la repetición de «Ver la pelea» (s).
+ * Lo que dura la pelea en el visor (s): la de verdad a su paso (o más deprisa en directo), más
+ * lo que tarda en caer el último. Para «Ver la pelea».
  */
 export function fightSpan(m: MarchNow): number {
   const n = foesOf(m).length;
-  const last = n > 2 ? 4 + (n - 2) * 4 : n === 2 ? 6 : 2;
-  return (last + 2) * TURN;
+  const sc = m.sim
+    ? scriptOf(
+        m.sim,
+        m.crew.map((h) => h.id),
+        n,
+      )
+    : stubScript(m.crew.length, n, m.won !== false, TURN);
+  const pace = m.pace ?? Math.max(1, sc.T / LIVE);
+  return sc.T / pace + TURN;
 }
 
 /** Lo que dura, al ganar, la caída de los que quedan y la celebración (s). */

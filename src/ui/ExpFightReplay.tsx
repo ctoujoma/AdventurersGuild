@@ -38,6 +38,11 @@ export function ExpFightReplay({ game, fight: f, onClose }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const [run, setRun] = useState(0);
   const [done, setDone] = useState(false);
+  // Acelerar (usuario, 28 de noviembre): el reloj de la escena corre ×1, ×2 o ×4.
+  const [speed, setSpeed] = useState(1);
+  const speedRef = useRef(1);
+  speedRef.current = speed;
+  const skipRef = useRef(false);
   const desk = typeof matchMedia !== 'undefined' && matchMedia(WIDE).matches;
   useEffect(() => {
     const c = canvas.current;
@@ -51,8 +56,8 @@ export function ExpFightReplay({ game, fight: f, onClose }: Props) {
     c.style.setProperty('--replay-arn', String(enc.w / enc.h));
     // Al empezar, todos en pie (quién cayó se cuenta al final).
     const now = { ...m, crew: m.crew.map((h) => ({ ...h, fate: 'ok' as const })) };
-    // La pelea entera (hasta que caen los que caen por turnos) y, si ganan, como en directo: los
-    // que quedan caen y el grupo lo celebra; luego, el cartel.
+    // La pelea entera, tal cual fue (`world/visor/replay.ts`), y si ganan, como en directo: el
+    // grupo lo celebra; luego, el cartel.
     const span = fightSpan(now);
     const end = span + (f.won ? WIN_AFTER : 0.6);
     const after = { ...now, mode: 'walk' as const };
@@ -61,13 +66,22 @@ export function ExpFightReplay({ game, fight: f, onClose }: Props) {
     audio.play('horn', 0.5);
     let raf = 0;
     let last = -1;
-    const start = performance.now();
+    let prev = performance.now();
+    // El reloj de la escena (s): avanza a la velocidad elegida.
+    let time = 0;
+    skipRef.current = false;
     const loop = (ms: number) => {
       raf = requestAnimationFrame(loop);
-      const tick = Math.floor((ms - start) / 83);
+      time += (Math.min(0.1, (ms - prev) / 1000) || 0) * speedRef.current;
+      prev = ms;
+      // Al final: la escena salta a cuando acaba la pelea (la celebración se ve igual).
+      if (skipRef.current) {
+        skipRef.current = false;
+        time = Math.max(time, span);
+      }
+      const tick = Math.floor(time * 12);
       if (tick === last) return;
       last = tick;
-      const time = (ms - start) / 1000;
       if (time >= end) {
         cancelAnimationFrame(raf);
         setDone(true);
@@ -112,6 +126,20 @@ export function ExpFightReplay({ game, fight: f, onClose }: Props) {
           )}
         </div>
         <div class="exp-replay-acts">
+          {!done && (
+            <button
+              class="btn btn-wood"
+              aria-pressed={speed > 1}
+              onClick={() => setSpeed((v) => (v >= 4 ? 1 : v * 2))}
+            >
+              <Icon name="reloj" size={14} /> {t('expediciones.repeticion.velocidad', { n: speed })}
+            </button>
+          )}
+          {!done && (
+            <button class="btn btn-wood" onClick={() => (skipRef.current = true)}>
+              {t('expediciones.repeticion.saltar')}
+            </button>
+          )}
           <button class="btn btn-wood" onClick={() => setRun((r) => r + 1)}>
             <Icon name="espadas" size={14} /> {t('expediciones.repeticion.otra_vez')}
           </button>

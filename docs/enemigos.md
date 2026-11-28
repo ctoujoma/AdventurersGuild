@@ -60,6 +60,18 @@ al cambiar un enemigo).
 
 ## En el visor (estándar para todos los rumbos)
 
+- **La pelea, tal cual fue** (usuario, 28 de noviembre): el visor y «Ver la pelea» repiten la pelea de
+  verdad (`visor/replay.ts`: `Combat` con el `sim.setup` que guarda el diario). Cada uno pega
+  cuando pegó, a quien pegó y lo que quitó (las cifras son las de verdad; críticos en amarillo,
+  curas en verde); el golpe fuerte del jefe tiembla; cae quien cayó, con el golpe que le tumba, y
+  los héroes caídos quedan tendidos.
+  - En directo, la pelea cabe en su hora del camino (va más deprisa si duró más de 12 s); al
+    repetirla, a su paso, con botón de velocidad (×1, ×2, ×4) y «Al final».
+  - Si el motor y el dibujo no cuentan los mismos enemigos (la manada de tres lobos es una unidad;
+    los esbirros del ahogado no se dibujan), la vida de todos se reparte entre los muñecos: cada
+    uno cae con el golpe que se lleva su parte. Pedido al agente de expediciones que el motor
+    arme tantas unidades como muñecos.
+  - Capturas: `node tools/textos/esbuild.mjs tools/visor-replay.ts replay <carpeta> <rumbo> <n> [lejanía]`.
 - **Al ganar:** los enemigos que quedan en pie caen y el grupo lo celebra (`cheer` y saltitos) durante
   unos 3,6 s, con el paisaje parado, y luego sigue andando.
   - Vale para cualquier enemigo y rumbo.

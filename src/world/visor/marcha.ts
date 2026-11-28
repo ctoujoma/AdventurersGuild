@@ -4,6 +4,7 @@ import type { BossFight, ExpKind, ExpWeather, Heading } from '../../core/model';
 import type { Terrain } from '../../data/places';
 import type { Dress } from '../../data/custom';
 import type { ExpEvent } from '../../data/expEvents';
+import type { CombatSetup } from '../../core/combat';
 
 /** Lo que hacen ahora. */
 /** Lo que hacen: andar, pelear, acampar o esperar parados (un suceso, un jefe a la vista). */
@@ -40,6 +41,13 @@ export interface MarchNow {
   heading?: Heading;
   /** El enemigo de verdad (rumbo y número en `expediciones.enemigos`, o el guardián): su dibujo. */
   rival?: { heading: Heading; idx: number; guardian?: boolean };
+  /** La pelea de verdad (la que guarda el diario): el visor la repite tal cual (`replay.ts`). */
+  sim?: CombatSetup;
+  /**
+   * Segundos de pelea por segundo del visor: al repetirla, 1 (el botón de acelerar adelanta el
+   * reloj); en directo, sin poner: tan deprisa como haga falta para que quepa en su hora.
+   */
+  pace?: number;
   /** El suceso que tienen delante mientras esperan a que elijas (con un jefe, cuál). */
   event?: { kind: ExpEvent; foe?: number };
 }
