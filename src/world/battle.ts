@@ -226,7 +226,18 @@ const DOOR = 98;
 /** Muerte de los jefes: cuánto tarda en tocar el suelo, y cuánto se tambalea antes. */
 const TIP_SWAY = 0.5;
 const deathTime = (f: { art?: { fall?: 'sink'; seq?: { down?: unknown } } }) =>
-  f.art?.fall === 'sink' ? 2 : f.art?.seq?.down ? SEQ_DOWN : 0.55;
+  f.art?.fall === 'sink'
+    ? f.art.seq?.down
+      ? SEQ_DOWN + SINK_CORPSE
+      : 2
+    : f.art?.seq?.down
+      ? SEQ_DOWN
+      : 0.55;
+/** El calcado que se hunde (el Rey Ahogado): cae con su muerte y luego el cuerpo se hunde (s). */
+const SINK_CORPSE = 1.8;
+/** Desde cuándo se le ve hundirse (s desde que cae): el calcado, al acabar de caer. */
+const sinkFrom = (f: { art?: { seq?: { down?: unknown } } }) =>
+  f.art?.seq?.down ? SEQ_DOWN : TIP_SWAY;
 /** Jefes calcados: lo que tarda cada pose en pasar sus fotogramas, y la caída entera (s). */
 const SEQ_POSE = 0.35;
 const SEQ_DOWN = 1.2;
@@ -1537,7 +1548,7 @@ export class Battle {
     // último remolino) y el polvo.
     const dead = boss.state === 'down' ? this.t - (boss.downAt ?? 0) : -1;
     const sinks = boss.art!.fall === 'sink';
-    if (sinks && dead > TIP_SWAY && !boss.landed && Math.random() < 0.5)
+    if (sinks && dead > sinkFrom(boss) && !boss.landed && Math.random() < 0.5)
       this.hooks.burst('splash', boss.x + (Math.random() - 0.5) * 24, this.feet(boss) - 1, 1);
     if (dead >= deathTime(boss) && !boss.landed) {
       boss.landed = true;
@@ -1894,7 +1905,11 @@ export class Battle {
     cy: number,
   ): void {
     const art = f.art!;
-    if (f.state === 'down' && art.fall === 'sink') {
+    if (
+      f.state === 'down' &&
+      art.fall === 'sink' &&
+      (!art.seq?.down || this.t - (f.downAt ?? this.t) >= SEQ_DOWN)
+    ) {
       this.drawSinking(ctx, f, feet, cx, cy);
       return;
     }
@@ -1966,6 +1981,24 @@ export class Battle {
   ): void {
     const art = f.art!;
     const e = this.t - (f.downAt ?? this.t);
+    const corpse = art.seq?.down?.at(-1);
+    if (corpse) {
+      // El calcado ya ha caído: el cuerpo tendido se hunde despacio, sin girar.
+      const k = clamp01((e - SEQ_DOWN) / SINK_CORPSE);
+      if (k >= 1) return;
+      const depth = Math.pow(k, 1.4) * (art.downFoot.y + 4);
+      const gx = Math.round(f.x + f.knock + Math.sin(e * 6) * 0.6 * f.face) - cx;
+      const gy = Math.round(feet) - cy;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(gx - 120, gy - 120, 240, 120);
+      ctx.clip();
+      ctx.translate(gx, gy + Math.round(depth));
+      if (f.face < 0) ctx.scale(-1, 1);
+      ctx.drawImage(bufferCanvas(corpse), -art.downFoot.x, -art.downFoot.y);
+      ctx.restore();
+      return;
+    }
     const k = clamp01((e - TIP_SWAY) / (deathTime(f) - TIP_SWAY));
     if (k >= 1) return;
     const sway = e < TIP_SWAY ? Math.sin(e * 28) * 1.5 * (1 - e / TIP_SWAY) : Math.sin(e * 9);

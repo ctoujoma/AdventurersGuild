@@ -12,10 +12,10 @@ describe('jefes calcados', () => {
     expect(bossArtFor('reina')).toBe(bossArt('reina'));
   });
 
-  it('el Rey Ahogado sale del calco, con su caída (no se hunde) y la Reina sigue con el suyo', () => {
+  it('el Rey Ahogado sale del calco, con su caída y luego se hunde; la Reina sigue con el suyo', () => {
     const a = bossArtFor('ahogado');
     expect(a.seq?.down?.length).toBeGreaterThan(1);
-    expect(a.fall).toBeUndefined();
+    expect(a.fall).toBe('sink');
     expect(bossArtFor('reina').seq).toBeUndefined();
   });
 });

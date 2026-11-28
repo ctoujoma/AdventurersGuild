@@ -80,7 +80,7 @@ import {
 import type { BossKind } from '../data/bosses';
 import { GEAR } from '../data/items';
 import type { Terrain } from '../data/places';
-import { foeUnits, heroUnit, runCombat, setupCombat, type CombatSetup } from './combat';
+import { heroUnit, packUnits, runCombat, setupCombat, type CombatSetup } from './combat';
 import { fightRoster } from './chains';
 import { generateHero } from './generate';
 import { expeditionsOpen, gainMats, matsMsg, type Material, type Mats } from './materials';
@@ -675,6 +675,17 @@ const FOE_BOSS: Record<Heading, readonly BossKind[]> = {
   marismas: ['sierpe', 'ahogado', 'bestia', 'sierpe'],
   ruinas: ['ahogado', 'bestia', 'bestia', 'jabali'],
 };
+/**
+ * Cuántos son los enemigos de cada rumbo (los mismos que dibuja el visor, `expFoeArt(rumbo, i)
+ * .count`; lo comprueba una prueba del arte): en la pelea, una unidad por cada uno. Los guardianes,
+ * uno solo.
+ */
+export const EXP_FOE_COUNT: Record<Heading, readonly number[]> = {
+  bosque: [3, 1, 1, 1],
+  sierra: [3, 3, 1, 1],
+  marismas: [3, 1, 3, 1],
+  ruinas: [3, 3, 3, 1],
+};
 const GUARDIAN_BOSS: Record<Heading, BossKind> = {
   bosque: 'jabali',
   sierra: 'sierpe',
@@ -717,7 +728,7 @@ export function battleSetup(
     `${e.seed}-pelea-${e.hours}-${foe}`,
     boss,
     units,
-    foeUnits(boss, diff, 2),
+    packUnits(boss, diff, guardian ? 1 : (EXP_FOE_COUNT[e.heading][foe] ?? 1)),
   );
   // Cada uno entra con la vida que le queda (la que se guarda).
   for (const u of setup.units) {

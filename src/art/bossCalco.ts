@@ -57,6 +57,12 @@ export function calcoBoss(f: FoeArt): BossArt {
   };
 }
 
+/**
+ * Los calcados que, al morir, se hunden como su jefe de antes (usuario, 28 de noviembre: el cuerpo
+ * del Rey Ahogado se lo traga la laguna): primero su caída y luego el cuerpo se hunde.
+ */
+const CALCO_SINK: readonly BossKind[] = ['ahogado'];
+
 const cache = new Map<BossKind, BossArt>();
 
 /** El dibujo de un jefe para la pelea: el calco, si lo tiene; si no, el de siempre. */
@@ -66,6 +72,7 @@ export function bossArtFor(kind: BossKind): BossArt {
   let a = cache.get(kind);
   if (!a) {
     a = calcoBoss(make());
+    if (CALCO_SINK.includes(kind)) a.fall = 'sink';
     cache.set(kind, a);
   }
   return a;
