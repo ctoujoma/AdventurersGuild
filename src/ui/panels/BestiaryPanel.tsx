@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks';
-import { bossArt, guardianArt } from '../../art/bosses';
+import { bossArtFor } from '../../art/bossCalco';
 import { bandit, type FoeArt } from '../../art/foes';
-import { cenizaArt, expFoeArt, GUARDIAN_OF } from '../../art/expFoes';
+import { expFoeArt, expGuardianArt } from '../../art/expFoes';
 import type { PixelBuffer } from '../../art/pixel';
 import { HEADINGS } from '../../core/expedition';
 import type { GameState, Heading } from '../../core/model';
@@ -40,7 +40,8 @@ function sections(): Section[] {
         lugar: step ? placeMsg(step.place) : '',
       }),
       art: () => {
-        const a = bossArt(k);
+        // El de la pelea: los que ya tienen calco, con él (`bossCalco.ts`).
+        const a = bossArtFor(k);
         return a.seq?.ready?.[0] ?? a.poses.ready;
       },
     };
@@ -57,7 +58,7 @@ function sections(): Section[] {
       key: `guardian:${h}`,
       name: msg(`expediciones.guardianes.${h}`),
       hint: msg('bestiario.pista.guardian', { rumbo: rumbo(h) }),
-      art: () => guardianArt(GUARDIAN_OF[h]).poses.ready,
+      art: () => still(expGuardianArt(h)),
     };
     const second: Entry[] =
       h === 'bosque'
@@ -66,7 +67,7 @@ function sections(): Section[] {
               key: 'guardian:bosque_2',
               name: msg('expediciones.guardianes.bosque_2'),
               hint: msg('bestiario.pista.guardian', { rumbo: rumbo(h) }),
-              art: () => still(cenizaArt()),
+              art: () => still(expGuardianArt('bosque', 1)),
             },
           ]
         : [];
