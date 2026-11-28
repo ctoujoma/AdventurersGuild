@@ -292,6 +292,27 @@ Con la vida que se guarda (`core/health.ts`, #219), las expediciones ya no cuent
 - **Pendiente (usuario):** revisar que los jefes y guardianes salgan más al azar y no tan
   fijos (hoy, cada rumbo tiene siempre el mismo guardián y el mismo enemigo grande).
 
+## Peleas 1:1 con el visor (usuario, 28 nov)
+
+- **El motor cuenta los enemigos que dibuja el visor** (`packUnits` en `core/combat.ts`;
+  `EXP_FOE_COUNT` en `core/expedition.ts`, que una prueba del arte compara con
+  `expFoeArt(rumbo, i).count`): una manada de tres lobos son tres unidades (`jefe`, `jefe-1`,
+  `jefe-2`), que se reparten la vida y la fuerza del enemigo de antes. Los guardianes y los
+  enemigos grandes, uno solo, sin esbirros que no se ven.
+- **El mismo balance**, medido con 300 peleas por caso: la manada pega `PACK_ATK` (1,8) veces más,
+  porque al caer uno deja de pegar. Sin sus esbirros, la Reina pega `SOLO_ATK` (1,18) veces más y el
+  ahogado queda igual. Se gana lo mismo que antes (78 %, 32 % y 2 % a 1, 3 y 6 días con dos
+  héroes).
+- **El cuerpo del Rey Ahogado se hunde** en la pelea del encargo (usuario, 28 nov): cae con su
+  muerte calcada y luego la laguna se lo traga (`CALCO_SINK` en `art/bossCalco.ts`;
+  `SINK_CORPSE` en `world/battle.ts`).
+- **Pendiente (usuario):** el combate es real en todo el proyecto: cada enemigo con su vida y su
+  ritmo de ataque, sin turnos. Los esbirros de los jefes siguen en los encargos y las historias. En
+  las expediciones, idea: a mucha lejanía, los jefes y guardianes vuelven con refuerzos (esbirros
+  que se dibujan, uno por unidad), cuando el visor los sepa pintar.
+- El agente de arte hace que «Ver la pelea» y el visor en directo jueguen los golpes de verdad de
+  la pelea guardada (`sim.setup`), con botón de velocidad.
+
 ## Depende de otros
 
 - **Agente principal:** las pociones como trabajo de la alquimia (ver «Pendiente: las
