@@ -7,7 +7,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { png } from './visor-png';
 import {
   ahogadoGrandeArt,
-  cenizaArt,
+  viejoJabaliArt,
   deathOf,
   expFoeArt,
   expGuardianArt,
@@ -343,19 +343,18 @@ const MORE: Record<string, string[]> = {
 };
 
 /**
- * Otros guardianes de un rumbo (los que no da `expGuardianArt(h)`). El Jabalí Quemado: segundo
- * guardián del bosque, más adelante (agente de expediciones, `expGuardianArt('bosque', 1)`).
+ * Otros guardianes de un rumbo (los que no da `expGuardianArt(h)`). El Viejo Jabalí: segundo
+ * guardián del bosque (agente de expediciones, `expGuardianArt('bosque', 1)`).
  */
 const MORE_GUARDIANS: Partial<
   Record<Heading, { name: string; art: () => FoeArt; where: string[] }[]>
 > = {
   bosque: [
     {
-      name: 'El Jabalí Quemado',
-      art: cenizaArt,
+      name: 'El Viejo Jabalí',
+      art: viejoJabaliArt,
       where: [
-        'Expediciones: segundo guardián del bosque, más adelante (el dibujo del jabalí de ceniza)',
-        'Encargos: el jabalí de ceniza (jefe de la historia «Ceniza»)',
+        'Expediciones: segundo guardián del bosque (el jabalí de ceniza con los tonos del jabalí del bosque)',
       ],
     },
   ],

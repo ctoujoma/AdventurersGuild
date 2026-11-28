@@ -648,14 +648,14 @@ function deCeniza(from: readonly string[], to: readonly string[]): readonly stri
     const [r, g] = rgb(h);
     return !(r > 120 && r > g * 1.5) && lum(h) < 200;
   });
-  const lo = Math.min(...greys.map(lum));
-  const hi = Math.max(...greys.map(lum));
+  // Por orden de luz (no por cuánta): los grises del de ceniza se amontonan en lo oscuro.
+  const order = [...greys].sort((a, b) => lum(a) - lum(b));
   return from.map((h) => {
     const [r, g] = rgb(h);
     if (lum(h) >= 200) return h; // colmillos
     // Brasa: pelo pardo de los tonos medios-claros del jabalí.
     if (r > 120 && r > g * 1.5) return fur[Math.round(fur.length * 0.75)]!;
-    const u = hi > lo ? (lum(h) - lo) / (hi - lo) : 0;
+    const u = order.length > 1 ? order.indexOf(h) / (order.length - 1) : 0;
     return fur[Math.min(fur.length - 1, Math.round(u * (fur.length - 1)))]!;
   });
 }
