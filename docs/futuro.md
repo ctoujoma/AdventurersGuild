@@ -260,6 +260,21 @@ puerta, que ahora crecen con el nivel del recibidor, y en la cámara), lo que se
 ven en directo y si engancha o cansa. Con el simulador (`asaltos ganados` por perfil) y una
 partida larga.
 
+**Más (usuario, 28 de noviembre): auditoría a fondo, con cariño.** El juego del asalto casi no
+existe: la cámara se clava en la pelea, los héroes van solos y al jugador le cuesta entender qué
+pasa más allá de mirarlo. Hay que pensar qué decide el jugador (a quién mandar, a qué sala, cuándo
+retirarse, usar la cerradura o la puerta…), cómo se cuenta lo que pasa (quién pelea dónde, qué se
+llevan) y la cámara. Primero una auditoría y una propuesta; luego se decide.
+
+## El cobro de Merlo con el tiempo que corre solo (usuario, 28 de noviembre)
+
+Hoy, con el juego cerrado, si la víspera de un pago no llega el dinero la taberna se para esa tarde
+y espera al jugador (`dueTonight` en `core/away.ts`): así no se pierde estando fuera. Pero eso
+deja unas 24 horas de juego para juntar lo que falta, y casi nunca da tiempo: es casi una sentencia.
+A revisar con cariño: dejar el oro en negativo (una deuda que crece con intereses o con Merlo
+enfadado), un aplazamiento con recargo, avisos con más días, o los anuncios de la fase 7. Decidir
+con el usuario antes de tocar nada.
+
 ## Pulir el efecto de recoger (nota del usuario, 27 de noviembre)
 
 **Hecho (27 de noviembre):** de 1 a 6 iconos sin marco vuelan en arco, con contorno y halo; sale un

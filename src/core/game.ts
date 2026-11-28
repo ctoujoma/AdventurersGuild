@@ -105,6 +105,7 @@ import {
 } from '../data/custom';
 import type { RoomType } from '../data/rooms';
 import { arrival, bump, checkFeats, emptyStats } from './feats';
+import { defeated } from './bestiary';
 import { checkGoals, tickGoals } from './goals';
 import { stepRumors, takeRumor } from './rumors';
 import {
@@ -1400,7 +1401,10 @@ function settleMission(
       sim: setup ? { setup, orders: orders ?? [] } : undefined,
     };
     if (setup && !orders) r.fight.sim!.auto = true;
-    if (r.fight.won) bump(s, 'bosses');
+    if (r.fight.won) {
+      bump(s, 'bosses');
+      defeated(s, `jefe:${boss}`);
+    }
   }
   if (m.quest.chain) advanceChain(s, rng, m.quest, r, events);
   // Un éxito brillante a veces trae los planos de algo que no se sabía hacer.

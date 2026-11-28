@@ -108,6 +108,7 @@ import { Rng } from './rng';
 import type { FoeKind } from '../data/journey';
 import { gearList } from './gear';
 import { bump, emptyStats } from './feats';
+import { defeated } from './bestiary';
 import { msg, t, tl, type Msg, type Params, type Txt } from '../textos';
 
 export const HEADINGS: readonly Heading[] = ['bosque', 'sierra', 'marismas', 'ruinas'];
@@ -768,6 +769,8 @@ function battle(
   // La vida: cada uno, la que le quede; quien cae, grave (si ya iba grave, al suelo); si
   // pierden, uno más se lleva otro golpe.
   if (guardian && res.won) bump(s, 'bosses');
+  if (res.won)
+    defeated(s, guardian ? `guardian:${e.heading}${foe ? '_2' : ''}` : `exp:${e.heading}:${foe}`);
   const before = new Map(up.map((h) => [h.id, hpOf(h)]));
   const downed = up.filter((h) => res.downed.includes(h.id));
   for (const h of up) {

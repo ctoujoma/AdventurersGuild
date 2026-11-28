@@ -9436,3 +9436,75 @@ div.item-count {
   align-items: center;
   gap: 8px;
 }
+
+/* ---------- El bestiario (ui/panels/BestiaryPanel.tsx) ---------- */
+.bestiary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.bestiary-cell {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 8px 4px 6px;
+  background: var(--sand);
+  border: 2px solid var(--ink);
+  box-shadow: 0 2px 0 var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.bestiary-cell.is-on {
+  box-shadow:
+    0 0 0 2px var(--gold),
+    0 2px 0 var(--ink);
+}
+.bestiary-art {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 52px;
+}
+.bestiary-art.is-big {
+  width: 150px;
+  height: 110px;
+  flex: none;
+}
+.is-unknown .bestiary-art canvas {
+  filter: brightness(0) opacity(0.45);
+}
+.bestiary-name {
+  font-size: 12px;
+  line-height: 1.15;
+  text-align: center;
+}
+.is-unknown .bestiary-name {
+  opacity: 0.6;
+}
+.bestiary-count {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  padding: 0 4px;
+  background: var(--ink);
+  color: var(--sand);
+  font-size: 11px;
+}
+.bestiary-card {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  margin: 8px 0 12px;
+  background: var(--sand);
+  border: 2px solid var(--ink);
+  box-shadow:
+    0 0 0 2px var(--gold),
+    0 3px 0 var(--ink);
+}
+.bestiary-card > div {
+  display: grid;
+  gap: 4px;
+}

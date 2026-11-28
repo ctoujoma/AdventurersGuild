@@ -1014,6 +1014,8 @@ export interface GameState {
   /** Resumen de la llegada a la apertura; se enseña una vez al pagar la deuda. */
   opening?: Arrival & { seen: boolean };
   stats?: Stats;
+  /** El bestiario: cada enemigo vencido (clave en `core/bestiary.ts`), cuántas veces y el primer día. */
+  bestiary?: Record<string, { n: number; day: number }>;
   /** Hazañas: cuántos niveles se han cobrado de cada una. */
   feats?: Record<string, number>;
   /** Objetivos siempre activos (sustituyen a los desafíos del mes). */

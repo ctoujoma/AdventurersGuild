@@ -488,6 +488,27 @@ export const GUARD_HP = 1.5;
 /** Vida de los trabajadores y de cada bandido. */
 export const WORKER_HP = 20;
 export const BANDIT_HP = 38;
+/**
+ * La vida de los bandidos crece con la fuerza de la banda (usuario, 28 de noviembre): por encima
+ * de `BANDIT_HP_FROM`, una parte más por cada `BANDIT_HP_PER` de fuerza. Para no pasarse (no
+ * siempre están todos para defender), sus golpes bajan lo mismo (`assault.ts`): el asalto dura
+ * más, da tiempo a hacer algo y se gana algo más que antes (usuario, 28 de noviembre; calibrado
+ * con `npm run sim`, asaltos ganados por tramo).
+ */
+export const BANDIT_HP_FROM = 10;
+export const BANDIT_HP_PER = 40;
+export const banditHpK = (strength: number) =>
+  1 + Math.max(0, strength - BANDIT_HP_FROM) / BANDIT_HP_PER;
+/**
+ * Daño de cada golpe de un bandido (usuario, 28 de noviembre): casi fijo, `BANDIT_HIT` al
+ * principio y un pelo más con la fuerza de la banda (como mucho `BANDIT_HIT_MAX`). Una banda fuerte
+ * es peligrosa porque son más y aguantan más, no porque cada golpe sea enorme: el asalto dura y da
+ * tiempo a hacer algo.
+ */
+export const BANDIT_HIT = 7;
+export const BANDIT_HIT_MAX = 8;
+export const banditHit = (strength: number) =>
+  Math.min(BANDIT_HIT_MAX, BANDIT_HIT * (1 + Math.max(0, strength - BANDIT_HP_FROM) / 300));
 /** Daño de cada golpe de un bandido por punto de fuerza de la banda (repartida), y su ritmo. */
 export const BANDIT_POWER = 1.9;
 export const BANDIT_EVERY = 1.4;

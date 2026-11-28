@@ -1,0 +1,18 @@
+# The bestiary (ui/panels/BestiaryPanel.tsx).
+titulo: "Bestiary"
+intro: "What the guild has defeated: {n} of {total}. What it hasn't yet shows as a shadow with a hint of where to look."
+seccion:
+  jefes: "Story bosses"
+  bosque: "Expeditions: the forest"
+  sierra: "Expeditions: the mountains"
+  marismas: "Expeditions: the marshes"
+  ruinas: "Expeditions: the ruins"
+  bandas: "Gangs that raid the tavern"
+desconocido: "???"
+vencido: "{n, plural, one {Defeated once} other {Defeated # times}} · first on day {dia}"
+veces: "×{n}"
+pista:
+  jefe: "At the end of the story «{historia}», in {lugar}."
+  exp: "On expeditions to {rumbo}."
+  guardian: "The guardian of {rumbo}: rare, very far from home."
+  banda: "They raid the tavern at night, when the guild gets talked about."

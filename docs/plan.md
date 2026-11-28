@@ -533,6 +533,17 @@ el caso concreto del usuario).
 **Fases grandes sin empezar:** 6 (amigos) y 7 (lanzamiento: Android, anuncios, cosméticos,
 eventos).
 
+## Bestiario y bandidos (28 de noviembre)
+
+- **Bestiario** (Gremio › Bestiario, `ui/panels/BestiaryPanel.tsx`, `core/bestiary.ts`): cada
+  enemigo vencido (los 6 jefes, los 4 enemigos y el guardián de cada rumbo, y las 6 bandas), con su
+  dibujo (el de la pelea, calcos incluidos), cuántas veces y el primer día; lo que no, en sombra
+  con una pista. Se apunta al ganar: jefe de encargo, pelea de expedición y asalto.
+- **Bandidos:** la vida crece con la fuerza de la banda (`banditHpK`) y cada golpe es casi fijo
+  (`banditHit`: 7, y como mucho 8 con bandas muy fuertes): una banda fuerte es peligrosa porque son
+  más y aguantan más; el asalto dura y da tiempo a actuar (estrategia normal 84/78/57 % → 88/81/74 %).
+- **«El gremio es tuyo»:** sin «otro intento».
+
 ## Pendiente de revisar
 
 - **Asaltos en directo** (hechos, con cámara lenta al arrastrar y el objetivo «sin heridos»):
@@ -540,16 +551,16 @@ eventos).
 - **Hecho (6 de noviembre):** la velocidad x2/x4 también acelera la escena, y la sastrería no
   cose hasta que llega el héroe.
 
-- **Pelea contra jefes, perfilarla antes de llevarla a los asaltos** (ver la propuesta en el
-  último punto de situación).
+- **Pelea contra jefes, perfilarla antes de llevarla a los asaltos:** hecho (28 de noviembre,
+  comprobado): los asaltos usan el mismo motor que los jefes (`core/fight.ts`: habilidades,
+  críticos y el cabecilla que avisa de su golpe fuerte).
 
-- **El cobro de la deuda con Merlo** (lo hecho con los agentes de arte e interfaz): que encaje
-  con el tiempo que corre solo, los pagos estando fuera (`dueTonight`), los avisos y los
-  objetivos.
+- **El cobro de la deuda con Merlo:** con el juego cerrado no se pierde (la taberna espera la
+  víspera), pero solo deja un día para juntar el dinero. A revisar con cariño más adelante (oro en
+  negativo, aplazar…): ver `futuro.md`. Los asaltos, igual: auditoría a fondo (`futuro.md`).
 - **Feedback de jugar más** (hecho todo): la vuelta de la tira, el resultado que no engaña y el
   mapa (arte); descartar avisos y el mapa grande (interfaz); la clase en el selector, volver al
   trabajo y resolver al acabar la pelea de la tira (agente principal).
-- **Pelea contra jefes, perfilarla antes de llevarla a los asaltos** (sin formaciones).
 - **Obras:** borrador guardado para luego (hecho). Escaleras planeadas que no dejan seguir
   planeando sin pagar: falta el caso concreto para reproducirlo (en el núcleo el borrador sí
   cuenta con ellas).

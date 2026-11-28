@@ -1,6 +1,7 @@
 import { easeIssue, nightmareNow } from '../core/nightmare';
 import { CraftMark } from './CraftMark';
 import { CollectMark, collectFx } from './CollectMark';
+import { BestiaryPanel } from './panels/BestiaryPanel';
 import { BufferImage } from './BufferImage';
 import { queuesShowing, tillReady, tillShows } from '../core/collect';
 import { itemIcon, potionIcon } from '../art/items';
@@ -126,7 +127,8 @@ import { placeMsg } from '../data/places';
 import { t, tx } from '../textos';
 
 /** El mapa es la pestaña «Mapa»; el arcón, Héroes › Equipo; el correo, la campana. */
-type PanelId = 'tablon' | 'heroes' | 'gremio' | 'fuera' | 'libro' | 'casa' | 'sala' | 'historial';
+type PanelId =
+  'tablon' | 'heroes' | 'gremio' | 'fuera' | 'libro' | 'bestiario' | 'casa' | 'sala' | 'historial';
 
 interface Bubble {
   text: string;
@@ -1286,7 +1288,7 @@ export function App() {
       ? panel
       : panel === 'fuera'
         ? 'mapa'
-        : panel === 'libro' || panel === 'casa'
+        : panel === 'libro' || panel === 'casa' || panel === 'bestiario'
           ? 'gremio'
           : panel === 'historial'
             ? histFrom === 'libro'
@@ -1867,6 +1869,7 @@ export function App() {
                 ) : undefined
               }
               onLibro={() => openPanel('libro')}
+              onBestiario={() => openPanel('bestiario')}
               onTaberna={() => openPanel('casa')}
               adornosLocked={tutorialOn(game) ? t('tutorial.candado') : undefined}
               onLocked={(why) => {
@@ -1922,6 +1925,11 @@ export function App() {
         {panel === 'libro' && (
           <Panel title={t('pantallas.app.libro_de_hazanas')} onClose={() => openPanel(null)}>
             <LibroPanel game={game} records={records} onHistory={() => openHistory('libro')} />
+          </Panel>
+        )}
+        {panel === 'bestiario' && (
+          <Panel title={t('bestiario.titulo')} onClose={() => openPanel(null)}>
+            <BestiaryPanel game={game} />
           </Panel>
         )}
         {panel === 'historial' && (
@@ -2194,7 +2202,6 @@ export function App() {
                 scene.current?.cheer('barra');
                 toast(t('pantallas.app.abre_sus_puertas_al', { nombre: customOf(game).name }));
               }}
-              onRetry={restart}
             />
           )}
         {pendingEvent === null && naming && (

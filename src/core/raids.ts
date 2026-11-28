@@ -4,6 +4,7 @@
  * sala (core/assault.ts): si alguien sale con vida, saqueo; si caen todos, tregua y botín.
  * Todo se aplica sobre el estado ya copiado al terminar el día.
  */
+import { bandKey, defeated } from './bestiary';
 import { healthOf, hpOf, setHp, woundChip } from './health';
 import { DOG_TIPOFF } from '../data/custom';
 import {
@@ -135,6 +136,8 @@ function resolveRaid(s: GameState, rng: Rng, events: DawnEvent[]): Report {
   const chip = (key: string, p: Params, k: 'good' | 'bad' | 'info') =>
     chips.push({ t: msg(`asaltos.${key}`, p), k });
   const won = fight.escaped === 0;
+  const key = won ? bandKey(raid.band) : null;
+  if (key) defeated(s, key);
   const hurt = s.heroes.filter((h) => fallen.has(h.id));
   const steps = raidLog(fight.plan);
   const guards = s.heroes.filter((h) => fight.plan.start[h.id] === fight.plan.route[0] && h.guard);

@@ -1,4 +1,3 @@
-import { useState } from 'preact/hooks';
 import type { Arrival } from '../core/model';
 import { t } from '../textos';
 
@@ -9,12 +8,13 @@ interface Props {
   /** Vista de salas: se abren las obras. */
   rooms?: boolean;
   onOpen: () => void;
-  onRetry: () => void;
 }
 
-/** Al pagar la deuda: el gremio es tuyo y empieza la aventura (o se intenta otra vez). */
-export function Opening({ arrival: a, best, rooms, onOpen, onRetry }: Props) {
-  const [retry, setRetry] = useState(false);
+/**
+ * Al pagar la deuda: el gremio es tuyo y empieza la aventura. Sin «otro intento» (usuario, 28 de
+ * noviembre): tras la campaña, la partida sigue; para empezar otra, el menú de partidas.
+ */
+export function Opening({ arrival: a, best, rooms, onOpen }: Props) {
   const better = best && a.score > best.score;
   return (
     <div class="dawn opening" role="dialog" aria-label={t('pantallas.opening.el_gremio_es_tuyo')}>
@@ -59,28 +59,11 @@ export function Opening({ arrival: a, best, rooms, onOpen, onRetry }: Props) {
           <li class="ev ev-warn">{t('pantallas.opening.los_veteranos_cobran_mas')}</li>
           <li class="ev ev-good">{t('pantallas.opening.las_hazanas_y_los')}</li>
         </ul>
-        {retry ? (
-          <div class="title-confirm">
-            <span>{t('pantallas.opening.no_te_convence_como')}</span>
-            <div class="herocard-actions">
-              <button class="btn btn-red" onClick={onRetry}>
-                {t('pantallas.opening.otro_intento')}
-              </button>
-              <button class="btn btn-wood" onClick={() => setRetry(false)}>
-                {t('pantallas.opening.cancelar')}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div class="dawn-actions">
-            <button class="btn btn-gold" onClick={onOpen}>
-              {t('pantallas.opening.abrir_el_gremio_al')}
-            </button>
-            <button class="btn btn-wood" onClick={() => setRetry(true)}>
-              {t('pantallas.opening.otro_intento')}
-            </button>
-          </div>
-        )}
+        <div class="dawn-actions">
+          <button class="btn btn-gold" onClick={onOpen}>
+            {t('pantallas.opening.abrir_el_gremio_al')}
+          </button>
+        </div>
       </article>
     </div>
   );
