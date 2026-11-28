@@ -7,7 +7,6 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { png } from './visor-png';
 import {
   ahogadoGrandeArt,
-  viejoJabaliArt,
   deathOf,
   expFoeArt,
   expGuardianArt,
@@ -352,7 +351,7 @@ const MORE_GUARDIANS: Partial<
   bosque: [
     {
       name: 'El Viejo Jabalí',
-      art: viejoJabaliArt,
+      art: () => expGuardianArt('bosque', 1),
       where: [
         'Expediciones: segundo guardián del bosque (el jabalí de ceniza con los tonos del jabalí del bosque)',
       ],
