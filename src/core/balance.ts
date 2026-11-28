@@ -491,9 +491,9 @@ export const BANDIT_HP = 38;
 /**
  * La vida de los bandidos crece con la fuerza de la banda (usuario, 28 de noviembre): por encima
  * de `BANDIT_HP_FROM`, una parte más por cada `BANDIT_HP_PER` de fuerza. Para no pasarse (no
- * siempre están todos para defender), sus golpes bajan casi lo mismo (`banditHpK` ^ 0,85, en
- * `assault.ts`): el asalto dura más y aguanta a héroes fuertes, y se gana lo mismo que antes
- * (calibrado con `npm run sim`, asaltos ganados por tramo).
+ * siempre están todos para defender), sus golpes bajan lo mismo (`assault.ts`): el asalto dura
+ * más, da tiempo a hacer algo y se gana algo más que antes (usuario, 28 de noviembre; calibrado
+ * con `npm run sim`, asaltos ganados por tramo).
  */
 export const BANDIT_HP_FROM = 10;
 export const BANDIT_HP_PER = 40;

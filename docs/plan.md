@@ -539,8 +539,8 @@ eventos).
   enemigo vencido (los 6 jefes, los 4 enemigos y el guardián de cada rumbo, y las 6 bandas), con su
   dibujo (el de la pelea, calcos incluidos), cuántas veces y el primer día; lo que no, en sombra
   con una pista. Se apunta al ganar: jefe de encargo, pelea de expedición y asalto.
-- **Bandidos:** la vida crece con la fuerza de la banda (`banditHpK`) y sus golpes bajan casi lo
-  mismo: el asalto se gana igual que antes (estrategia normal 84/78/57 % → 88/78/57 %).
+- **Bandidos:** la vida crece con la fuerza de la banda (`banditHpK`) y sus golpes bajan lo mismo:
+  el asalto dura más y se gana algo más (estrategia normal 84/78/57 % → 89/81/65 %).
 - **«El gremio es tuyo»:** sin «otro intento».
 
 ## Pendiente de revisar
