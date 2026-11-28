@@ -467,4 +467,6 @@ repeticion:
   pierden: "They lose the fight"
   caen: "{n, plural, one {Down} other {Down}}: {quien}."
   otra_vez: "Again"
+  velocidad: "Speed ×{n}"
+  saltar: "Skip to end"
   cerrar: "Close"
