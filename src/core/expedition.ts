@@ -682,7 +682,7 @@ const GUARDIAN_BOSS: Record<Heading, BossKind> = {
 };
 /**
  * El segundo guardián (usuario, 27 de noviembre): más adelante, pasado el primero, en los rumbos
- * que lo tienen (el bosque: el Jabalí Quemado). En los sucesos y las peleas, `foe` 1.
+ * que lo tienen (el bosque: el Viejo Jabalí). En los sucesos y las peleas, `foe` 1.
  */
 const GUARDIAN2: Partial<Record<Heading, BossKind>> = { bosque: 'jabali' };
 

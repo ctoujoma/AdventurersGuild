@@ -791,7 +791,7 @@ export const EXP_GUARDIAN = 0.006;
 export const EXP_GUARDIAN_MULT = 1.6;
 export const EXP_GUARDIAN_WAIT = EXP_HOURS;
 /**
- * El segundo guardián (el bosque: el Jabalí Quemado): pasado el primero, desde `EXP_GUARDIAN2_FROM`
+ * El segundo guardián (el bosque: el Viejo Jabalí): pasado el primero, desde `EXP_GUARDIAN2_FROM`
  * días, con la misma probabilidad por hora; pelea por `EXP_GUARDIAN2_MULT` y su objeto es mejor.
  */
 export const EXP_GUARDIAN2_FROM = 6;
