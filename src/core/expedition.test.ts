@@ -180,7 +180,7 @@ describe('expediciones: sucesos con decisión y peleas', () => {
     expect(runCombat(f!.sim!.setup).won).toBe(f!.won);
   });
 
-  it('el segundo guardián del bosque es el Jabalí Quemado, con su pelea', () => {
+  it('el segundo guardián del bosque es el Viejo Jabalí, con su pelea', () => {
     let s = waiting('guardian');
     const e = s.expeditions![0]!;
     e.pending!.foe = 1;
@@ -189,7 +189,7 @@ describe('expediciones: sucesos con decisión y peleas', () => {
     const f = lines.find((l) => l.fight)?.fight;
     expect(f?.exp?.guardian).toBe(true);
     expect(f?.exp?.foe).toBe(1);
-    expect(tx(f!.foe)).toMatch(/Jabalí Quemado/);
+    expect(tx(f!.foe)).toMatch(/Viejo Jabalí/);
   });
 });
 
